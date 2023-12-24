@@ -168,6 +168,17 @@ int invalidOptionError(const ARState &st, const ArrayObject &obj, const GetOptSt
   return showUsage(obj);
 }
 
+int parseFD(StringRef value) {
+  if (value.startsWith("/dev/fd/")) {
+    value.removePrefix(strlen("/dev/fd/"));
+  }
+  auto ret = convertToDecimal<int32_t>(value.begin(), value.end());
+  if (!ret || ret.value < 0) {
+    return -1;
+  }
+  return ret.value;
+}
+
 static void printAllUsage(FILE *fp) {
   unsigned int size = getBuiltinCmdSize();
   auto *cmdList = getBuiltinCmdDescList();

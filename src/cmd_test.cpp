@@ -71,17 +71,6 @@ static UnaryFileOp resolveFileOp(const char ch) {
   return UnaryFileOp::INVALID;
 }
 
-int parseFD(StringRef value) {
-  if (value.startsWith("/dev/fd/")) {
-    value.removePrefix(strlen("/dev/fd/"));
-  }
-  auto ret = convertToDecimal<int32_t>(value.begin(), value.end());
-  if (!ret || ret.value < 0) {
-    return -1;
-  }
-  return ret.value;
-}
-
 static bool testFile(const UnaryFileOp op, const char *value) {
   switch (op) {
   case UnaryFileOp::IS_EXIST:
