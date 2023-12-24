@@ -17,7 +17,7 @@
 #include <dirent.h>
 
 #include "glob.h"
-#include "misc/resource.hpp"
+#include "misc/files.hpp"
 
 namespace arsh {
 
@@ -64,7 +64,7 @@ public:
    * must be null terminated
    * @return
    */
-  WildMatchResult match(const char *name, GlobMatchOption option);
+  GlobPatternStatus match(const char *name, Glob::Option option);
 
 private:
   bool isEndOrSep() const { return this->isEnd() || *this->iter == '/'; }
@@ -98,7 +98,7 @@ private:
   }
 };
 
-WildMatchResult PatternScanner::match(const char *name, const GlobMatchOption option) {
+GlobPatternStatus PatternScanner::match(const char *name, const Glob::Option option) {
   const char *cp = name;
   auto oldIter = this->end;
 
@@ -107,24 +107,24 @@ WildMatchResult PatternScanner::match(const char *name, const GlobMatchOption op
     if (!name[1] || (name[1] == '.' && !name[2])) { // check '.' or '..'
       switch (this->matchDots(name)) {
       case 1:
-        return WildMatchResult::DOT;
+        return GlobPatternStatus::DOT;
       case 2:
-        return WildMatchResult::DOTDOT;
+        return GlobPatternStatus::DOTDOT;
       default:
-        return WildMatchResult::FAILED;
+        return GlobPatternStatus::FAILED;
       }
     }
 
     if (!this->isEndOrSep() && *this->iter != '.') {
-      if (!hasFlag(option, GlobMatchOption::DOTGLOB)) {
-        return WildMatchResult::FAILED;
+      if (!hasFlag(option, Glob::Option::DOTGLOB)) {
+        return GlobPatternStatus::FAILED;
       }
     }
   }
 
   for (; *name; ++name) {
     if (this->isEndOrSep()) {
-      return WildMatchResult::FAILED;
+      return GlobPatternStatus::FAILED;
     }
     char ch = *this->iter;
     switch (ch) {
@@ -142,7 +142,7 @@ WildMatchResult PatternScanner::match(const char *name, const GlobMatchOption op
       break;
     }
     if (*name != ch) {
-      return WildMatchResult::FAILED;
+      return GlobPatternStatus::FAILED;
     }
     ++this->iter;
   }
@@ -162,7 +162,7 @@ BREAK:
       case '*':
         ++this->iter;
         if (this->isEndOrSep()) {
-          return WildMatchResult::MATCHED;
+          return GlobPatternStatus::MATCHED;
         }
         oldIter = this->iter;
         cp = name + 1;
@@ -187,10 +187,10 @@ BREAK:
   }
   for (; !this->isEndOrSep() && *this->iter == '*'; ++this->iter)
     ;
-  return this->isEndOrSep() ? WildMatchResult::MATCHED : WildMatchResult::FAILED;
+  return this->isEndOrSep() ? GlobPatternStatus::MATCHED : GlobPatternStatus::FAILED;
 }
 
-WildMatchResult matchGlobMeta(const char *pattern, const char *name, GlobMatchOption option) {
+GlobPatternStatus matchGlobMeta(const char *pattern, const char *name, Glob::Option option) {
   const StringRef ref(pattern);
   PatternScanner scanner(ref.begin(), ref.end());
   return scanner.match(name, option);
@@ -232,7 +232,7 @@ Glob::Status Glob::operator()() {
   if (!r) {
     return Status::TILDE_FAIL;
   }
-  if (hasFlag(this->option, GlobMatchOption::ABSOLUTE_BASE_DIR) && this->base[0] != '/') {
+  if (hasFlag(this->option, Option::ABSOLUTE_BASE_DIR) && this->base[0] != '/') {
     return Status::NEED_ABSOLUTE_BASE_DIR;
   }
   return this->invoke(std::move(baseDir), iter);
@@ -288,7 +288,7 @@ BREAK:
     iter = latestSep + 1;
     for (; !baseDir.empty() && baseDir.back() != '/'; baseDir.pop_back())
       ;
-    if (hasFlag(this->option, GlobMatchOption::TILDE) && this->tildeExpander) {
+    if (hasFlag(this->option, Option::TILDE) && this->tildeExpander) {
       if (!this->tildeExpander(baseDir)) {
         return false;
       }
@@ -327,8 +327,7 @@ std::pair<Glob::Status, bool> Glob::match(const char *baseDir, const char *&iter
   }
 
   for (dirent *entry; (entry = readdir(dir.get())) != nullptr;) {
-    if (hasFlag(this->option, GlobMatchOption::GLOB_LIMIT) &&
-        this->readdirCount++ == READDIR_LIMIT) {
+    if (hasFlag(this->option, Option::GLOB_LIMIT) && this->readdirCount++ == READDIR_LIMIT) {
       return {Status::RESOURCE_LIMIT, true};
     }
 
@@ -337,8 +336,8 @@ std::pair<Glob::Status, bool> Glob::match(const char *baseDir, const char *&iter
     }
 
     PatternScanner scanner(iter, this->end());
-    const WildMatchResult ret = scanner.match(entry->d_name, this->option);
-    if (ret == WildMatchResult::FAILED) {
+    const GlobPatternStatus ret = scanner.match(entry->d_name, this->option);
+    if (ret == GlobPatternStatus::FAILED) {
       continue;
     }
 
@@ -348,7 +347,7 @@ std::pair<Glob::Status, bool> Glob::match(const char *baseDir, const char *&iter
     }
     name += entry->d_name;
 
-    if (hasFlag(this->option, GlobMatchOption::GLOB_LIMIT) && this->statCount++ == STAT_LIMIT) {
+    if (hasFlag(this->option, Option::GLOB_LIMIT) && this->statCount++ == STAT_LIMIT) {
       return {Status::RESOURCE_LIMIT, true};
     }
     if (isDirectory(dir.get(), entry)) {
@@ -363,7 +362,7 @@ std::pair<Glob::Status, bool> Glob::match(const char *baseDir, const char *&iter
         }
       }
       if (!scanner.isEnd()) {
-        if (ret == WildMatchResult::DOTDOT && hasFlag(this->option, GlobMatchOption::FASTGLOB)) {
+        if (ret == GlobPatternStatus::DOTDOT && hasFlag(this->option, Option::FASTGLOB)) {
           iter = scanner.getIter();
           return {Status::MATCH, false};
         }
@@ -386,7 +385,7 @@ std::pair<Glob::Status, bool> Glob::match(const char *baseDir, const char *&iter
       this->matchCount++;
     }
 
-    if (ret == WildMatchResult::DOT || ret == WildMatchResult::DOTDOT) {
+    if (ret == GlobPatternStatus::DOT || ret == GlobPatternStatus::DOTDOT) {
       break;
     }
   }

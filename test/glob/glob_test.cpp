@@ -5,6 +5,7 @@
 #include "gtest/gtest.h"
 
 #include <glob.h>
+#include <misc/files.hpp>
 
 #ifndef GLOB_TEST_WORK_DIR
 #error "require EXEC_TEST_DIR"
@@ -13,13 +14,12 @@
 using namespace arsh;
 
 // for testing
-static WildMatchResult matchPatternRaw(const char *name, const char *p,
-                                       GlobMatchOption option = {}) {
+static GlobPatternStatus matchPatternRaw(const char *name, const char *p, Glob::Option option = {}) {
   return matchGlobMeta(p, name, option);
 }
 
-static bool matchPattern(const char *name, const char *p, GlobMatchOption option = {}) {
-  return matchPatternRaw(name, p, option) != WildMatchResult::FAILED;
+static bool matchPattern(const char *name, const char *p, Glob::Option option = {}) {
+  return matchPatternRaw(name, p, option) != GlobPatternStatus::FAILED;
 }
 
 class Consumer {
@@ -47,7 +47,7 @@ public:
     }
   }
 
-  unsigned int testGlobBase(const char *dir, const char *pattern, GlobMatchOption option = {}) {
+  unsigned int testGlobBase(const char *dir, const char *pattern, Glob::Option option = {}) {
     CancelToken cancel;
     Glob glob(pattern, option, dir);
     glob.setCancelToken(cancel);
@@ -56,11 +56,11 @@ public:
     return glob.getMatchCount();
   }
 
-  unsigned int testGlob(const char *pattern, GlobMatchOption option = {}) {
+  unsigned int testGlob(const char *pattern, Glob::Option option = {}) {
     return this->testGlobAt(nullptr, pattern, option);
   }
 
-  unsigned int testGlobAt(const char *baseDir, const char *pattern, GlobMatchOption option = {}) {
+  unsigned int testGlobAt(const char *baseDir, const char *pattern, Glob::Option option = {}) {
     CancelToken cancel;
     Glob glob(pattern, option, baseDir);
     glob.setCancelToken(cancel);
@@ -103,28 +103,28 @@ TEST_F(GlobTest, pattern1) {
 }
 
 TEST_F(GlobTest, pattern2) {
-  ASSERT_EQ(WildMatchResult::DOT, matchPatternRaw(".", "."));
-  ASSERT_EQ(WildMatchResult::DOT, matchPatternRaw(".", ".", GlobMatchOption::DOTGLOB));
+  ASSERT_EQ(GlobPatternStatus::DOT, matchPatternRaw(".", "."));
+  ASSERT_EQ(GlobPatternStatus::DOT, matchPatternRaw(".", ".", Glob::Option::DOTGLOB));
   ASSERT_FALSE(matchPattern(".", "*"));
-  ASSERT_FALSE(matchPattern(".", "*", GlobMatchOption::DOTGLOB));
+  ASSERT_FALSE(matchPattern(".", "*", Glob::Option::DOTGLOB));
   ASSERT_FALSE(matchPattern(".conf", "*"));
-  ASSERT_TRUE(matchPattern(".conf", "*", GlobMatchOption::DOTGLOB));
+  ASSERT_TRUE(matchPattern(".conf", "*", Glob::Option::DOTGLOB));
   ASSERT_FALSE(matchPattern(".", "?"));
-  ASSERT_FALSE(matchPattern(".", "?", GlobMatchOption::DOTGLOB));
-  ASSERT_EQ(WildMatchResult::DOTDOT, matchPatternRaw("..", ".."));
-  ASSERT_EQ(WildMatchResult::DOTDOT, matchPatternRaw("..", "..", GlobMatchOption::DOTGLOB));
+  ASSERT_FALSE(matchPattern(".", "?", Glob::Option::DOTGLOB));
+  ASSERT_EQ(GlobPatternStatus::DOTDOT, matchPatternRaw("..", ".."));
+  ASSERT_EQ(GlobPatternStatus::DOTDOT, matchPatternRaw("..", "..", Glob::Option::DOTGLOB));
   ASSERT_FALSE(matchPattern("..", "*"));
-  ASSERT_FALSE(matchPattern("..", "*", GlobMatchOption::DOTGLOB));
+  ASSERT_FALSE(matchPattern("..", "*", Glob::Option::DOTGLOB));
   ASSERT_FALSE(matchPattern("..", "*?"));
-  ASSERT_FALSE(matchPattern("..", "*?", GlobMatchOption::DOTGLOB));
+  ASSERT_FALSE(matchPattern("..", "*?", Glob::Option::DOTGLOB));
   ASSERT_FALSE(matchPattern("..", "?*"));
-  ASSERT_FALSE(matchPattern("..", "?*", GlobMatchOption::DOTGLOB));
+  ASSERT_FALSE(matchPattern("..", "?*", Glob::Option::DOTGLOB));
   ASSERT_FALSE(matchPattern(".hoge", "*?"));
-  ASSERT_TRUE(matchPattern(".hoge", "*?", GlobMatchOption::DOTGLOB));
+  ASSERT_TRUE(matchPattern(".hoge", "*?", Glob::Option::DOTGLOB));
   ASSERT_FALSE(matchPattern("..", ".*?"));
-  ASSERT_FALSE(matchPattern("..", ".*?", GlobMatchOption::DOTGLOB));
+  ASSERT_FALSE(matchPattern("..", ".*?", Glob::Option::DOTGLOB));
   ASSERT_TRUE(matchPattern(".hoge", ".?*"));
-  ASSERT_TRUE(matchPattern(".hoge", ".?*", GlobMatchOption::DOTGLOB));
+  ASSERT_TRUE(matchPattern(".hoge", ".?*", Glob::Option::DOTGLOB));
   ASSERT_FALSE(matchPattern("h.log", "h."));
   ASSERT_FALSE(matchPattern("h.log", "h.."));
   ASSERT_FALSE(matchPattern("", "."));
@@ -207,7 +207,7 @@ TEST_F(GlobTest, base_fileOrDir1) { // match file or dir
   ASSERT_EQ(1, ret.size());
   ASSERT_EQ("bbb/./.hidden", ret[0]);
 
-  s = testGlobBase(".", "*/./*", GlobMatchOption::DOTGLOB);
+  s = testGlobBase(".", "*/./*", Glob::Option::DOTGLOB);
   ASSERT_EQ(3, s);
   ASSERT_EQ(3, ret.size());
   ASSERT_EQ("bbb/./.hidden", ret[0]);
@@ -342,14 +342,14 @@ TEST_F(GlobTest, glob) {
   ASSERT_EQ("bbb/AA21", ret[0]);
   ASSERT_EQ("bbb/b21", ret[1]);
 
-  s = testGlob("bbb/*", GlobMatchOption::DOTGLOB);
+  s = testGlob("bbb/*", Glob::Option::DOTGLOB);
   ASSERT_EQ(3, s);
   ASSERT_EQ(3, ret.size());
   ASSERT_EQ("bbb/.hidden", ret[0]);
   ASSERT_EQ("bbb/AA21", ret[1]);
   ASSERT_EQ("bbb/b21", ret[2]);
 
-  s = testGlob("bbb///*//", GlobMatchOption::DOTGLOB);
+  s = testGlob("bbb///*//", Glob::Option::DOTGLOB);
   ASSERT_EQ(1, s);
   ASSERT_EQ(1, ret.size());
   ASSERT_EQ("bbb/b21/", ret[0]);
@@ -416,14 +416,14 @@ TEST_F(GlobTest, globAt) {
   ASSERT_EQ(GLOB_TEST_WORK_DIR "/bbb/AA21", ret[0]);
   ASSERT_EQ(GLOB_TEST_WORK_DIR "/bbb/b21", ret[1]);
 
-  s = testGlobAt(GLOB_TEST_WORK_DIR, "bbb/*", GlobMatchOption::DOTGLOB);
+  s = testGlobAt(GLOB_TEST_WORK_DIR, "bbb/*", Glob::Option::DOTGLOB);
   ASSERT_EQ(3, s);
   ASSERT_EQ(3, ret.size());
   ASSERT_EQ(GLOB_TEST_WORK_DIR "/bbb/.hidden", ret[0]);
   ASSERT_EQ(GLOB_TEST_WORK_DIR "/bbb/AA21", ret[1]);
   ASSERT_EQ(GLOB_TEST_WORK_DIR "/bbb/b21", ret[2]);
 
-  s = testGlobAt(GLOB_TEST_WORK_DIR, "bbb///*//", GlobMatchOption::DOTGLOB);
+  s = testGlobAt(GLOB_TEST_WORK_DIR, "bbb///*//", Glob::Option::DOTGLOB);
   ASSERT_EQ(1, s);
   ASSERT_EQ(1, ret.size());
   ASSERT_EQ(GLOB_TEST_WORK_DIR "/bbb/b21/", ret[0]);
@@ -455,60 +455,60 @@ TEST_F(GlobTest, fast) {
   }
   ASSERT_NO_FATAL_FAILURE(ASSERT_TRUE(isSameFile(getCWD().get(), GLOB_TEST_WORK_DIR)));
 
-  auto s = testGlob("*", GlobMatchOption::FASTGLOB);
+  auto s = testGlob("*", Glob::Option::FASTGLOB);
   ASSERT_EQ(2, s);
   ASSERT_EQ(2, ret.size());
   ASSERT_EQ("AAA", ret[0]);
   ASSERT_EQ("bbb", ret[1]);
 
-  s = testGlob("*/*1/../", GlobMatchOption::FASTGLOB);
+  s = testGlob("*/*1/../", Glob::Option::FASTGLOB);
   ASSERT_EQ(1, s);
   ASSERT_EQ(1, ret.size());
   ASSERT_EQ("bbb/b21/../", ret[0]);
 
-  s = testGlob("*/*1/..", GlobMatchOption::FASTGLOB);
+  s = testGlob("*/*1/..", Glob::Option::FASTGLOB);
   ASSERT_EQ(1, s);
   ASSERT_EQ(1, ret.size());
   ASSERT_EQ("bbb/b21/..", ret[0]);
 
-  s = testGlob("*/../A*", GlobMatchOption::FASTGLOB);
+  s = testGlob("*/../A*", Glob::Option::FASTGLOB);
   ASSERT_EQ(1, s);
   ASSERT_EQ(1, ret.size());
   ASSERT_EQ("AAA", ret[0]);
 
-  s = testGlob("./*/../A*", GlobMatchOption::FASTGLOB);
+  s = testGlob("./*/../A*", Glob::Option::FASTGLOB);
   ASSERT_EQ(1, s);
   ASSERT_EQ(1, ret.size());
   ASSERT_EQ("./AAA", ret[0]);
 
-  s = testGlob("*/../*/", GlobMatchOption::FASTGLOB);
+  s = testGlob("*/../*/", Glob::Option::FASTGLOB);
   ASSERT_EQ(1, s);
   ASSERT_EQ(1, ret.size());
   ASSERT_EQ("bbb/", ret[0]);
 
-  s = testGlob("*/../*/*", GlobMatchOption::FASTGLOB | GlobMatchOption::DOTGLOB);
+  s = testGlob("*/../*/*", Glob::Option::FASTGLOB | Glob::Option::DOTGLOB);
   ASSERT_EQ(3, s);
   ASSERT_EQ(3, ret.size());
   ASSERT_EQ("bbb/.hidden", ret[0]);
   ASSERT_EQ("bbb/AA21", ret[1]);
   ASSERT_EQ("bbb/b21", ret[2]);
 
-  s = testGlob("../*/", GlobMatchOption::FASTGLOB);
+  s = testGlob("../*/", Glob::Option::FASTGLOB);
   ASSERT_EQ(1, s);
   ASSERT_EQ(1, ret.size());
   ASSERT_EQ("../dir/", ret[0]);
 
-  s = testGlob("*/../../d*", GlobMatchOption::FASTGLOB);
+  s = testGlob("*/../../d*", Glob::Option::FASTGLOB);
   ASSERT_EQ(1, s);
   ASSERT_EQ(1, ret.size());
   ASSERT_EQ("../dir", ret[0]);
 
-  s = testGlob("*/../../../g*/d*/", GlobMatchOption::FASTGLOB);
+  s = testGlob("*/../../../g*/d*/", Glob::Option::FASTGLOB);
   ASSERT_EQ(1, s);
   ASSERT_EQ(1, ret.size());
   ASSERT_EQ("../../glob/dir/", ret[0]);
 
-  s = testGlob("*/../../../../t*/g*/d*", GlobMatchOption::FASTGLOB);
+  s = testGlob("*/../../../../t*/g*/d*", Glob::Option::FASTGLOB);
   ASSERT_EQ(1, s);
   ASSERT_EQ(1, ret.size());
   ASSERT_EQ("../../../test/glob/dir", ret[0]);
@@ -516,7 +516,7 @@ TEST_F(GlobTest, fast) {
 
 TEST_F(GlobTest, fail) {
   const char *pattern = "bbb/*";
-  Glob glob(pattern, GlobMatchOption::DOTGLOB, GLOB_TEST_WORK_DIR);
+  Glob glob(pattern, Glob::Option::DOTGLOB, GLOB_TEST_WORK_DIR);
   glob.setConsumer([&](std::string &&value) {
     if (this->ret.size() == 2) {
       return false;
@@ -534,7 +534,7 @@ struct AlwaysCancel : CancelToken {
 
 TEST_F(GlobTest, cancel) {
   const char *pattern = "bbb/*";
-  Glob glob(pattern, GlobMatchOption::DOTGLOB, GLOB_TEST_WORK_DIR);
+  Glob glob(pattern, Glob::Option::DOTGLOB, GLOB_TEST_WORK_DIR);
   AlwaysCancel cancel;
   glob.setCancelToken(cancel);
   glob.setConsumer([&](std::string &&value) {

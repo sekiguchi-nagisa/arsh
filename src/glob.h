@@ -20,25 +20,23 @@
 #include <functional>
 
 #include "misc/flag_util.hpp"
-#include "misc/glob.hpp"
+#include "misc/resource.hpp"
 #include "misc/string_ref.hpp"
 
 #include "cancel.h"
 
 namespace arsh {
 
-/**
- * \brief for debug
- * \param pattern
- * \param name
- * must not contain '/'
- * \param option
- * \return
- */
-WildMatchResult matchGlobMeta(const char *pattern, const char *name, GlobMatchOption option);
-
 class Glob {
 public:
+  enum class Option : unsigned char {
+    TILDE = 1u << 0u,             // apply tilde expansion before globbing
+    DOTGLOB = 1u << 1u,           // match file names start with '.'
+    FASTGLOB = 1u << 2u,          // posix incompatible optimized search
+    ABSOLUTE_BASE_DIR = 1u << 3u, // only allow absolute base dir
+    GLOB_LIMIT = 1u << 4u,        // limit the number of readdir
+  };
+
   enum class Status : unsigned char {
     MATCH,
     NOMATCH,
@@ -52,7 +50,7 @@ public:
 private:
   std::string base; // base dir of glob
   const StringRef pattern;
-  const GlobMatchOption option;
+  const Option option;
 
   unsigned int readdirCount{0}; // for GLOB_LIMIT option
 
@@ -71,7 +69,7 @@ private:
   static constexpr unsigned int STAT_LIMIT = 4096;
 
 public:
-  Glob(StringRef pattern, GlobMatchOption option, const char *baseDir = nullptr)
+  Glob(StringRef pattern, Option option, const char *baseDir = nullptr)
       : base(baseDir ? baseDir : ""), pattern(pattern), option(option) {}
 
   const auto &getBaseDir() const { return this->base; }
@@ -109,6 +107,40 @@ private:
 
   std::pair<Status, bool> match(const char *baseDir, const char *&iter);
 };
+
+template <>
+struct allow_enum_bitop<Glob::Option> : std::true_type {};
+
+enum class GlobPatternStatus : unsigned char {
+  FAILED,  // match failed
+  DOT,     // match '.'
+  DOTDOT,  // match '..'
+  MATCHED, // match pattern
+};
+
+/**
+ * \brief for debug
+ * \param pattern
+ * \param name
+ * must not contain '/'
+ * \param option
+ * \return
+ */
+GlobPatternStatus matchGlobMeta(const char *pattern, const char *name, Glob::Option option);
+
+inline void appendAndEscapeGlobMeta(const StringRef ref, std::string &out) {
+  for (const char ch : ref) {
+    switch (ch) {
+    case '?':
+    case '*':
+    case '\\':
+      out += '\\';
+    default:
+      break;
+    }
+    out += ch;
+  }
+}
 
 } // namespace arsh
 

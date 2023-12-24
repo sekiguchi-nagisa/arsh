@@ -14,7 +14,8 @@
  * limitations under the License.
  */
 
-#include "misc/glob.hpp"
+#include "glob.h"
+#include "misc/files.hpp"
 #include "misc/num_util.hpp"
 #include "paths.h"
 #include "type_checker.h"
@@ -351,59 +352,6 @@ void TypeChecker::visitSourceNode(SourceNode &node) {
   node.setType(this->typePool().get(node.isUnreachable() ? TYPE::Nothing : TYPE::Void));
 }
 
-class SourceGlobIter {
-private:
-  using iterator = SourceListNode::path_iterator;
-
-  iterator cur;
-  const char *ptr{nullptr};
-
-public:
-  explicit SourceGlobIter(iterator begin) : cur(begin) {
-    if (isa<StringNode>(**this->cur)) {
-      this->ptr = cast<StringNode>(**this->cur).getValue().c_str();
-    }
-  }
-
-  char operator*() const { return this->ptr == nullptr ? '\0' : *this->ptr; }
-
-  bool operator==(const SourceGlobIter &other) const {
-    return this->cur == other.cur && this->ptr == other.ptr;
-  }
-
-  bool operator!=(const SourceGlobIter &other) const { return !(*this == other); }
-
-  SourceGlobIter &operator++() {
-    if (this->ptr) {
-      this->ptr++;
-      if (*this->ptr == '\0') { // if reaches null, increment iterator
-        this->ptr = nullptr;
-      }
-    }
-    if (!this->ptr) {
-      ++this->cur;
-      if (isa<StringNode>(**this->cur)) {
-        this->ptr = cast<StringNode>(**this->cur).getValue().c_str();
-      }
-    }
-    return *this;
-  }
-
-  iterator getIter() const { return this->cur; }
-};
-
-struct SourceGlobMeta {
-  static bool isAny(SourceGlobIter iter) {
-    auto &node = **iter.getIter();
-    return isa<WildCardNode>(node) && cast<WildCardNode>(node).meta == ExpandMeta::ANY;
-  }
-
-  static bool isZeroOrMore(SourceGlobIter iter) {
-    auto &node = **iter.getIter();
-    return isa<WildCardNode>(node) && cast<WildCardNode>(node).meta == ExpandMeta::ZERO_OR_MORE;
-  }
-};
-
 static std::string concat(SourceListNode::path_iterator begin, SourceListNode::path_iterator end) {
   std::string path;
   for (; begin != end; ++begin) {
@@ -418,21 +366,24 @@ static std::string concat(SourceListNode::path_iterator begin, SourceListNode::p
   return path;
 }
 
-static bool isDirPattern(SourceListNode::path_iterator begin, SourceListNode::path_iterator end) {
-  assert(begin < end);
-  ssize_t size = end - begin;
-  for (ssize_t i = size - 1; i > -1; i--) {
-    auto &e = **(begin + i);
+static std::string concatAsGlobPattern(SourceListNode::path_iterator begin,
+                                       SourceListNode::path_iterator end) {
+  std::string value;
+  for (; begin != end; ++begin) {
+    auto &e = **begin;
+    assert(isa<StringNode>(e) || isa<WildCardNode>(e));
     if (isa<StringNode>(e)) {
-      StringRef ref = cast<StringNode>(e).getValue();
-      if (ref.empty()) {
-        continue;
-      }
-      return ref.back() == '/' || ref.endsWith("/.") || ref.endsWith("/..");
+      appendAndEscapeGlobMeta(cast<StringNode>(e).getValue(), value);
+    } else {
+      value += toString(cast<WildCardNode>(e).meta);
     }
-    break;
   }
-  return false;
+  return value;
+}
+
+static bool isDirPattern(const StringRef ref) {
+  assert(!ref.empty());
+  return ref.back() == '/' || ref.endsWith("/.") || ref.endsWith("/..");
 }
 
 static unsigned int getExpansionLimit() {
@@ -486,56 +437,53 @@ void TypeChecker::reportTildeExpansionError(Token token, const std::string &path
 bool TypeChecker::applyGlob(Token token, std::vector<std::shared_ptr<const std::string>> &results,
                             const SourceListNode::path_iterator begin,
                             const SourceListNode::path_iterator end, GlobOp op) {
-  if (isDirPattern(begin, end)) {
-    std::string path = concat(begin, end);
-    this->reportError<NoGlobDir>(token, path.c_str());
+  const std::string pattern = concatAsGlobPattern(begin, end);
+  if (isDirPattern(pattern)) {
+    this->reportError<NoGlobDir>(token, pattern.c_str());
     return false;
   }
 
-  const unsigned int oldSize = results.size();
-  auto appender = [&results](std::string &&path) { return appendPath(results, std::move(path)); };
-  auto option =
-      GlobMatchOption::FASTGLOB | GlobMatchOption::ABSOLUTE_BASE_DIR | GlobMatchOption::GLOB_LIMIT;
+  auto option = Glob::Option::FASTGLOB | Glob::Option::ABSOLUTE_BASE_DIR | Glob::Option::GLOB_LIMIT;
   if (hasFlag(op, GlobOp::TILDE)) {
-    setFlag(option, GlobMatchOption::TILDE);
+    setFlag(option, Glob::Option::TILDE);
   }
+
+  const unsigned int oldSize = results.size();
   CancelToken dummy;
-  auto matcher =
-      createGlobMatcher<SourceGlobMeta>(nullptr, SourceGlobIter(begin), SourceGlobIter(end),
-                                        std::reference_wrapper<CancelToken>(dummy), option);
   TildeExpandStatus tildeExpandStatus{};
-  auto expander = [&tildeExpandStatus](std::string &path) {
+  Glob glob(pattern, option, nullptr);
+  glob.setCancelToken(dummy);
+  glob.setConsumer([&results](std::string &&path) { return appendPath(results, std::move(path)); });
+  glob.setTildeExpander([&tildeExpandStatus](std::string &path) {
     tildeExpandStatus = expandTilde(path, true, nullptr);
     return tildeExpandStatus == TildeExpandStatus::OK;
-  };
-  auto ret = matcher(std::move(expander), appender);
-  if (ret == GlobMatchResult::MATCH ||
-      (ret == GlobMatchResult::NOMATCH && hasFlag(op, GlobOp::OPTIONAL))) {
-    std::sort(results.begin() + oldSize, results.end(),
-              [](const std::shared_ptr<const std::string> &x,
-                 const std::shared_ptr<const std::string> &y) { return *x < *y; });
-    return true;
-  } else {
-    std::string path = concat(begin, end);
-    switch (ret) {
-    case GlobMatchResult::NOMATCH:
-      this->reportError<NoGlobMatch>(token, path.c_str());
-      return false;
-    case GlobMatchResult::NEED_ABSOLUTE_BASE_DIR:
-      this->reportError<NoRelativeGlob>(token, path.c_str());
-      return false;
-    case GlobMatchResult::TILDE_FAIL:
-      assert(tildeExpandStatus != TildeExpandStatus::OK);
-      this->reportTildeExpansionError(token, matcher.getBase(), tildeExpandStatus);
-      return false;
-    case GlobMatchResult::RESOURCE_LIMIT:
-      this->reportError<GlobResource>(token);
-      return false;
-    default:
-      assert(ret == GlobMatchResult::LIMIT);
-      this->reportError<ExpandRetLimit>(token);
-      return false;
+  });
+
+  switch (const auto ret = glob(); ret) {
+  case Glob::Status::MATCH:
+  case Glob::Status::NOMATCH:
+    if (ret == Glob::Status::MATCH || hasFlag(op, GlobOp::OPTIONAL)) {
+      std::sort(results.begin() + oldSize, results.end(),
+                [](const std::shared_ptr<const std::string> &x,
+                   const std::shared_ptr<const std::string> &y) { return *x < *y; });
+      return true;
     }
+    this->reportError<NoGlobMatch>(token, pattern.c_str());
+    return false;
+  case Glob::Status::NEED_ABSOLUTE_BASE_DIR:
+    this->reportError<NoRelativeGlob>(token, pattern.c_str());
+    return false;
+  case Glob::Status::TILDE_FAIL:
+    assert(tildeExpandStatus != TildeExpandStatus::OK);
+    this->reportTildeExpansionError(token, glob.getBaseDir(), tildeExpandStatus);
+    return false;
+  case Glob::Status::RESOURCE_LIMIT:
+    this->reportError<GlobResource>(token);
+    return false;
+  default:
+    assert(ret == Glob::Status::LIMIT);
+    this->reportError<ExpandRetLimit>(token);
+    return false;
   }
 }
 

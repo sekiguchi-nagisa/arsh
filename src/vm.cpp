@@ -22,9 +22,9 @@
 
 #include "arg_parser.h"
 #include "brace.h"
+#include "glob.h"
 #include "logger.h"
 #include "misc/files.hpp"
-#include "misc/glob.hpp"
 #include "misc/num_util.hpp"
 #include "opcode.h"
 #include "ordered_map.h"
@@ -1290,45 +1290,6 @@ bool VM::callPipeline(ARState &state, Value &&desc, bool lastPipe, ForkKind fork
   return true;
 }
 
-class GlobIter {
-private:
-  const Value *cur;
-  const char *ptr{nullptr};
-
-public:
-  explicit GlobIter(const Value *value) : cur(value) {
-    if (this->cur->hasStrRef()) {
-      this->ptr = this->cur->asStrRef().begin();
-    }
-  }
-
-  char operator*() const { return this->ptr == nullptr ? '\0' : *this->ptr; }
-
-  bool operator==(const GlobIter &other) const {
-    return this->cur == other.cur && this->ptr == other.ptr;
-  }
-
-  bool operator!=(const GlobIter &other) const { return !(*this == other); }
-
-  GlobIter &operator++() {
-    if (this->ptr) {
-      this->ptr++;
-      if (*this->ptr == '\0') { // if StringRef iterator reaches null, increment DSValue iterator
-        this->ptr = nullptr;
-      }
-    }
-    if (!this->ptr) {
-      this->cur++;
-      if (this->cur->hasStrRef()) {
-        this->ptr = this->cur->asStrRef().begin();
-      }
-    }
-    return *this;
-  }
-
-  const Value *getIter() const { return this->cur; }
-};
-
 static const char *toMessagePrefix(TildeExpandStatus status) {
   switch (status) {
   case TildeExpandStatus::OK:
@@ -1396,99 +1357,89 @@ public:
   }
 };
 
-struct DSValueGlobMeta {
-  static bool isAny(GlobIter iter) {
-    auto &v = *iter.getIter();
-    return v.kind() == ValueKind::EXPAND_META && v.asExpandMeta().first == ExpandMeta::ANY;
-  }
-
-  static bool isZeroOrMore(GlobIter iter) {
-    auto &v = *iter.getIter();
-    return v.kind() == ValueKind::EXPAND_META && v.asExpandMeta().first == ExpandMeta::ZERO_OR_MORE;
-  }
-};
-
-static void raiseGlobbingError(ARState &state, const Value *begin, const Value *end,
-                               const char *message) {
+static void raiseGlobbingError(ARState &state, const std::string &pattern, const char *message) {
   std::string value = message;
   value += " `";
-  for (; begin != end; ++begin) {
-    auto &v = *begin;
-    if (v.hasStrRef()) {
-      for (auto &e : v.asStrRef()) {
-        if (e != '\0') {
-          value += e;
-        } else {
-          value += "\\x00";
-        }
-      }
-    } else {
-      value += v.toString();
+  splitByDelim(pattern, '\0', [&value](StringRef ref, bool delim) {
+    value += ref;
+    if (delim) {
+      value += "\\x00";
     }
-  }
+    return true;
+  });
   value += "'";
   raiseError(state, TYPE::GlobbingError, std::move(value));
 }
 
+static std::string concatAsGlobPattern(const Value *begin, const Value *end) {
+  std::string value;
+  for (; begin != end; ++begin) {
+    if (auto &v = *begin; v.hasStrRef()) {
+      appendAndEscapeGlobMeta(v.asStrRef(), value);
+    } else {
+      assert(v.kind() == ValueKind::EXPAND_META);
+      value += v.toString();
+    }
+  }
+  return value;
+}
+
 bool VM::addGlobbingPath(ARState &state, ArrayObject &argv, const Value *begin, const Value *end,
                          bool tilde) {
+  const std::string pattern = concatAsGlobPattern(begin, end);
+
   // check if glob path fragments have null character
-  for (auto *iter = begin; iter != end; ++iter) {
-    auto &v = *iter;
-    if (v.hasStrRef()) {
-      auto ref = v.asStrRef();
-      if (unlikely(ref.hasNullChar())) {
-        raiseGlobbingError(state, begin, end, "glob pattern has null characters");
-        return false;
-      }
-    }
+  if (unlikely(StringRef(pattern).hasNullChar())) {
+    raiseGlobbingError(state, pattern, "glob pattern has null characters");
+    return false;
+  }
+
+  Glob::Option option{};
+  if (tilde) {
+    setFlag(option, Glob::Option::TILDE);
+  }
+  if (state.has(RuntimeOption::DOTGLOB)) {
+    setFlag(option, Glob::Option::DOTGLOB);
+  }
+  if (state.has(RuntimeOption::FASTGLOB)) {
+    setFlag(option, Glob::Option::FASTGLOB);
   }
 
   const unsigned int oldSize = argv.size();
-  auto appender = [&](std::string &&path) {
-    return argv.append(state, Value::createStr(std::move(path)));
-  };
-  GlobMatchOption option{};
-  if (tilde) {
-    setFlag(option, GlobMatchOption::TILDE);
-  }
-  if (state.has(RuntimeOption::DOTGLOB)) {
-    setFlag(option, GlobMatchOption::DOTGLOB);
-  }
-  if (state.has(RuntimeOption::FASTGLOB)) {
-    setFlag(option, GlobMatchOption::FASTGLOB);
-  }
-  auto matcher = createGlobMatcher<DSValueGlobMeta>(
-      nullptr, GlobIter(begin), GlobIter(end), [] { return ARState::isInterrupted(); }, option);
   DefaultDirStackProvider provider(state);
   TildeExpandStatus tildeExpandStatus{};
   const bool failTilde = state.has(RuntimeOption::FAIL_TILDE);
-  auto expander = [&provider, &tildeExpandStatus, failTilde](std::string &path) {
+  RuntimeCancelToken cancel;
+  Glob glob(pattern, option, nullptr);
+  glob.setCancelToken(cancel);
+  glob.setConsumer([&argv, &state](std::string &&path) {
+    return argv.append(state, Value::createStr(std::move(path)));
+  });
+  glob.setTildeExpander([&provider, &tildeExpandStatus, failTilde](std::string &path) {
     tildeExpandStatus = expandTilde(path, true, &provider);
     return tildeExpandStatus == TildeExpandStatus::OK || !failTilde;
-  };
-  auto ret = matcher(std::move(expander), appender);
-  switch (ret) {
-  case GlobMatchResult::MATCH:
-  case GlobMatchResult::NOMATCH:
-    if (ret == GlobMatchResult::MATCH || state.has(RuntimeOption::NULLGLOB)) {
+  });
+
+  switch (const auto ret = glob(); ret) {
+  case Glob::Status::MATCH:
+  case Glob::Status::NOMATCH:
+    if (ret == Glob::Status::MATCH || state.has(RuntimeOption::NULLGLOB)) {
       argv.sortAsStrArray(oldSize); // not check iterator invalidation
       return true;
-    } else {
-      raiseGlobbingError(state, begin, end, "no matches for glob pattern");
-      return false;
     }
-  case GlobMatchResult::CANCELED:
+    raiseGlobbingError(state, pattern, "no matches for glob pattern");
+    return false;
+  case Glob::Status::CANCELED:
     raiseSystemError(state, EINTR, "glob expansion is canceled");
     return false;
-  case GlobMatchResult::TILDE_FAIL:
+  case Glob::Status::TILDE_FAIL:
     assert(tildeExpandStatus != TildeExpandStatus::OK);
-    raiseTildeError(state, provider, matcher.getBase(), tildeExpandStatus);
+    raiseTildeError(state, provider, glob.getBaseDir(), tildeExpandStatus);
     return false;
-    //  case GlobMatchResult::RESOURCE_LIMIT:
+    //  case Glob::Status::RESOURCE_LIMIT:
     //    return false; //FIXME:
   default:
-    assert(ret == GlobMatchResult::LIMIT && state.hasError());
+    assert(ret == Glob::Status::LIMIT && state.hasError());
     return false;
   }
 }
@@ -1529,7 +1480,7 @@ static bool needGlob(const Value *begin, const Value *end) {
 /**
  *
  * @param cur
- * @param rangeState
+ * @param obj
  * (begin, end, step, (digits, kind))
  * @return
  */
