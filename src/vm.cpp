@@ -1375,10 +1375,17 @@ static std::string concatAsGlobPattern(const Value *begin, const Value *end) {
   std::string value;
   for (; begin != end; ++begin) {
     if (auto &v = *begin; v.hasStrRef()) {
-      appendAndEscapeGlobMeta(v.asStrRef(), value);
+      if (!appendAndEscapeGlobMeta(v.asStrRef(), StringObject::MAX_SIZE, value)) {
+        return "";
+      }
     } else {
       assert(v.kind() == ValueKind::EXPAND_META);
-      value += v.toString();
+      if (const auto r = v.toString(); value.size() <= StringObject::MAX_SIZE &&
+                                       r.size() <= StringObject::MAX_SIZE - value.size()) {
+        value += r;
+        continue;
+      }
+      return "";
     }
   }
   return value;
@@ -1402,6 +1409,10 @@ static std::string unescapeGlobPattern(StringRef pattern) {
 bool VM::addGlobbingPath(ARState &state, ArrayObject &argv, const Value *begin, const Value *end,
                          bool tilde) {
   const std::string pattern = concatAsGlobPattern(begin, end);
+  if (pattern.empty()) {
+    raiseError(state, TYPE::OutOfRangeError, ERROR_STRING_LIMIT);
+    return false;
+  }
 
   // check if glob path fragments have null character
   if (unlikely(StringRef(pattern).hasNullChar())) {

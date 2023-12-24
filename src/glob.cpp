@@ -392,4 +392,36 @@ std::pair<Glob::Status, bool> Glob::match(const char *baseDir, const char *&iter
   return {Status::MATCH, true};
 }
 
+bool appendAndEscapeGlobMeta(const StringRef ref, const size_t maxSize, std::string &out) {
+  const char *const end = ref.end();
+  const char *start = ref.begin();
+
+  for (const char *iter = ref.begin(); iter != end; ++iter) {
+    switch (*iter) {
+    case '?':
+    case '*':
+    case '\\':
+      if (maxSize > 0 && out.size() <= maxSize - 1) {
+        out += '\\';
+        if (const StringRef sub(start, iter - start);
+            maxSize >= sub.size() && out.size() <= maxSize - sub.size()) {
+          out += sub;
+          start = iter;
+          break;
+        }
+      }
+      return false;
+    default:
+      break;
+    }
+  }
+  assert(start <= end);
+  if (const StringRef sub(start, end - start);
+      maxSize >= sub.size() && out.size() <= maxSize - sub.size()) {
+    out += sub;
+    return true;
+  }
+  return false;
+}
+
 } // namespace arsh

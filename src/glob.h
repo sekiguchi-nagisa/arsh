@@ -128,19 +128,7 @@ enum class GlobPatternStatus : unsigned char {
  */
 GlobPatternStatus matchGlobMeta(const char *pattern, const char *name, Glob::Option option);
 
-inline void appendAndEscapeGlobMeta(const StringRef ref, std::string &out) {
-  for (const char ch : ref) {
-    switch (ch) {
-    case '?':
-    case '*':
-    case '\\':
-      out += '\\';
-    default:
-      break;
-    }
-    out += ch;
-  }
-}
+bool appendAndEscapeGlobMeta(StringRef ref, size_t maxSize, std::string &out);
 
 } // namespace arsh
 

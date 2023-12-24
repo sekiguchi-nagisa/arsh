@@ -373,7 +373,7 @@ static std::string concatAsGlobPattern(SourceListNode::path_iterator begin,
     auto &e = **begin;
     assert(isa<StringNode>(e) || isa<WildCardNode>(e));
     if (isa<StringNode>(e)) {
-      appendAndEscapeGlobMeta(cast<StringNode>(e).getValue(), value);
+      appendAndEscapeGlobMeta(cast<StringNode>(e).getValue(), value.max_size(), value);
     } else {
       value += toString(cast<WildCardNode>(e).meta);
     }
