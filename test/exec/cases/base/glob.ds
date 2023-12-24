@@ -68,4 +68,14 @@ shctl set fastglob
 var bb = @(../*/../*)
 assert $aa.size() > $bb.size()
 
+# fail glob
+shctl unset fastglob nullglob dotglob failglob
+$aa = @(\**"\\2")
+assert $aa.size() == 1
+assert $aa[0] == '**\2'
+
+# fail glob and null glob
+shctl set failglob nullglob
+assert @(\**"\\2").empty()
+
 true

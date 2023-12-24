@@ -40,14 +40,15 @@ namespace arsh {
   OP(CLOBBER, (1u << 1u), "clobber")                                                               \
   OP(DOTGLOB, (1u << 2u), "dotglob")                                                               \
   OP(ERR_RAISE, (1u << 3u), "errraise")                                                            \
-  OP(FAIL_SIGPIPE, (1u << 4u), "failsigpipe")                                                      \
-  OP(FAIL_TILDE, (1u << 5u), "failtilde")                                                          \
-  OP(FASTGLOB, (1u << 6u), "fastglob")                                                             \
-  OP(HUP_EXIT, (1u << 7u), "huponexit")                                                            \
-  OP(MONITOR, (1u << 8u), "monitor")                                                               \
-  OP(NULLGLOB, (1u << 9u), "nullglob")                                                             \
-  OP(TRACE_EXIT, (1u << 10u), "traceonexit")                                                       \
-  OP(XTRACE, (1u << 11u), "xtrace")
+  OP(FAIL_GLOB, (1u << 4u), "failglob")                                                            \
+  OP(FAIL_SIGPIPE, (1u << 5u), "failsigpipe")                                                      \
+  OP(FAIL_TILDE, (1u << 6u), "failtilde")                                                          \
+  OP(FASTGLOB, (1u << 7u), "fastglob")                                                             \
+  OP(HUP_EXIT, (1u << 8u), "huponexit")                                                            \
+  OP(MONITOR, (1u << 9u), "monitor")                                                               \
+  OP(NULLGLOB, (1u << 10u), "nullglob")                                                            \
+  OP(TRACE_EXIT, (1u << 11u), "traceonexit")                                                       \
+  OP(XTRACE, (1u << 12u), "xtrace")
 
 // set/unset via 'shctl' command
 enum class RuntimeOption : unsigned short {
@@ -98,7 +99,8 @@ public:
 
 private:
   RuntimeOption runtimeOption{RuntimeOption::HUP_EXIT | RuntimeOption::ASSERT |
-                              RuntimeOption::CLOBBER | RuntimeOption::FAIL_TILDE};
+                              RuntimeOption::CLOBBER | RuntimeOption::FAIL_GLOB |
+                              RuntimeOption::FAIL_TILDE};
 
 public:
   const bool support_strftime_plus; // if support strftime '%+' specifier

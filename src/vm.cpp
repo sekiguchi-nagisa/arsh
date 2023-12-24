@@ -1384,6 +1384,21 @@ static std::string concatAsGlobPattern(const Value *begin, const Value *end) {
   return value;
 }
 
+static std::string unescapeGlobPattern(StringRef pattern) {
+  std::string value;
+  const auto size = pattern.size();
+  for (StringRef::size_type i = 0; i < size; i++) {
+    char ch = pattern[i];
+    if (ch == '\\') {
+      if (i + 1 < size) {
+        ch = pattern[++i];
+      }
+    }
+    value += ch;
+  }
+  return value;
+}
+
 bool VM::addGlobbingPath(ARState &state, ArrayObject &argv, const Value *begin, const Value *end,
                          bool tilde) {
   const std::string pattern = concatAsGlobPattern(begin, end);
@@ -1427,8 +1442,11 @@ bool VM::addGlobbingPath(ARState &state, ArrayObject &argv, const Value *begin, 
       argv.sortAsStrArray(oldSize); // not check iterator invalidation
       return true;
     }
-    raiseGlobbingError(state, pattern, "no matches for glob pattern");
-    return false;
+    if (state.has(RuntimeOption::FAIL_GLOB)) {
+      raiseGlobbingError(state, pattern, "no matches for glob pattern");
+      return false;
+    }
+    return argv.append(state, Value::createStr(unescapeGlobPattern(pattern)));
   case Glob::Status::CANCELED:
     raiseSystemError(state, EINTR, "glob expansion is canceled");
     return false;

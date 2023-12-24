@@ -6,6 +6,11 @@
 
 #### Core
 
+- add ``failglob`` runtime option
+    - enable/disable glob expansion error check
+        - if disabled, not throw ``GlobbingError`` even if glob expansion failed
+        - ``failglob`` option is enabled by default
+        - if both ``nullglob`` and ``failglob`` are enabled, ``nullglob`` has priority
 - add `failtilde` runtime option
     - enable/disable tilde expansion error check
         - if disabled, not throw ``TildeError`` even if tilde expansion failed
@@ -108,6 +113,7 @@
 - fix typo of builtin ``command`` message
 - fix ``errraise`` option handling in builtin ``command``, ``exec``
 - fix ``-g`` unary op behavior of builtin test command
+- glob expansion does not match pattern having empty string fragments
 
 ## [0.31.0] - 2023-09-30
 
