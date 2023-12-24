@@ -10,6 +10,18 @@ try { echo "~/"*; } catch $e { $ex = $e; }
 assert $ex is GlobbingError
 
 $ex = 2
+try { echo /"*"*; } catch $e { $ex = $e; }
+assert $ex is GlobbingError
+
+$ex = 2
+try { echo /'?'*; } catch $e { $ex = $e; }
+assert $ex is GlobbingError
+
+$ex = 2
+try { echo ?\**; } catch $e { $ex = $e; }
+assert $ex is GlobbingError
+
+$ex = 2
 try { echo '~/'*; } catch $e { $ex = $e; }
 assert $ex is GlobbingError
 
@@ -32,6 +44,9 @@ assert "$(echo ///us*///)" == "$(echo /us*/)"
 assert "$(echo ///us*///././)" == "$(echo /us*/././)"
 assert "$(echo ~/*)" == "$(echo ~"/"*)"
 assert "$(echo ~/*)" == "$(echo ~'/'*)"
+assert "$(echo ~/*)" == "$(echo ~/""*)"
+assert "$(echo ~/*)" == "$(echo ~/*"")"
+assert "$(echo *)" == "$(echo ""*)"
 
 # null glob
 shctl set nullglob
