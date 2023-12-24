@@ -20,6 +20,7 @@
 #include <functional>
 
 #include "attribute.h"
+#include "cancel.h"
 #include "lexer.h"
 #include "misc/buffer.hpp"
 #include "misc/hash.hpp"
@@ -28,17 +29,6 @@
 #include "tcerror.h"
 
 namespace arsh {
-
-struct CancelToken {
-  virtual ~CancelToken() = default;
-
-  /**
-   * for type checker cancellation
-   * @return
-   * if canceled, return true
-   */
-  virtual bool operator()() { return false; }
-};
 
 enum class CoercionKind : unsigned char {
   PERFORM_COERCION,

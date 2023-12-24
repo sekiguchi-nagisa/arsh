@@ -4,8 +4,7 @@
 
 #include "gtest/gtest.h"
 
-#include <misc/glob.hpp>
-#include <misc/string_ref.hpp>
+#include <glob.h>
 
 #ifndef GLOB_TEST_WORK_DIR
 #error "require EXEC_TEST_DIR"
@@ -14,36 +13,14 @@
 using namespace arsh;
 
 // for testing
-struct StrMetaChar {
-  static bool isAny(const char *iter) { return *iter == '?'; }
-
-  static bool isZeroOrMore(const char *iter) { return *iter == '*'; }
-};
-
 static WildMatchResult matchPatternRaw(const char *name, const char *p,
                                        GlobMatchOption option = {}) {
-  return createWildCardMatcher<StrMetaChar>(p, p + strlen(p), option)(name);
+  return matchGlobMeta(p, name, option);
 }
 
 static bool matchPattern(const char *name, const char *p, GlobMatchOption option = {}) {
   return matchPatternRaw(name, p, option) != WildMatchResult::FAILED;
 }
-
-struct Appender {
-  std::vector<std::string> &ref;
-
-  explicit Appender(std::vector<std::string> &value) : ref(value) { this->ref.clear(); }
-
-  bool operator()(std::string &&path) {
-    this->ref.push_back(path);
-    std::sort(this->ref.begin(), this->ref.end());
-    return true;
-  }
-};
-
-struct CancelPoint {
-  bool operator()() { return false; }
-};
 
 class GlobTest : public ::testing::Test {
 protected:
@@ -57,11 +34,16 @@ public:
   }
 
   unsigned int testGlobBase(const char *dir, const char *pattern, GlobMatchOption option = {}) {
-    Appender appender(this->ret);
-    auto matcher = createGlobMatcher<StrMetaChar>(dir, pattern, pattern + strlen(pattern),
-                                                  CancelPoint(), option);
-    matcher.matchExactly(appender);
-    return matcher.getMatchCount();
+    this->ret.clear();
+    CancelToken cancel;
+    Glob glob(pattern, option, dir);
+    glob.setCancelToken(cancel);
+    glob.setConsumer([&](std::string &&value) {
+      this->ret.push_back(std::move(value));
+      return true;
+    });
+    glob.matchExactly();
+    return glob.getMatchCount();
   }
 
   unsigned int testGlob(const char *pattern, GlobMatchOption option = {}) {
@@ -69,11 +51,16 @@ public:
   }
 
   unsigned int testGlobAt(const char *baseDir, const char *pattern, GlobMatchOption option = {}) {
-    Appender appender(this->ret);
-    auto matcher = createGlobMatcher<StrMetaChar>(baseDir, pattern, pattern + strlen(pattern),
-                                                  CancelPoint(), option);
-    matcher([](std::string &) { return true; }, appender);
-    return matcher.getMatchCount();
+    this->ret.clear();
+    CancelToken cancel;
+    Glob glob(pattern, option, baseDir);
+    glob.setCancelToken(cancel);
+    glob.setConsumer([&](std::string &&value) {
+      this->ret.push_back(std::move(value));
+      return true;
+    });
+    glob();
+    return glob.getMatchCount();
   }
 };
 
@@ -523,31 +510,33 @@ TEST_F(GlobTest, fast) {
 
 TEST_F(GlobTest, fail) {
   const char *pattern = "bbb/*";
-  auto matcher =
-      createGlobMatcher<StrMetaChar>(GLOB_TEST_WORK_DIR, pattern, pattern + strlen(pattern),
-                                     CancelPoint(), GlobMatchOption::DOTGLOB);
-  auto appender = [&](std::string &&path) {
+  Glob glob(pattern, GlobMatchOption::DOTGLOB, GLOB_TEST_WORK_DIR);
+  glob.setConsumer([&](std::string &&value) {
     if (this->ret.size() == 2) {
       return false;
     }
-    this->ret.push_back(std::move(path));
+    this->ret.push_back(std::move(value));
     return true;
-  };
-  auto s = matcher.matchExactly(appender);
-  ASSERT_EQ(GlobMatchResult::LIMIT, s);
+  });
+  auto s = glob.matchExactly();
+  ASSERT_EQ(Glob::Status::LIMIT, s);
 }
+
+struct AlwaysCancel : CancelToken {
+  bool operator()() override { return true; }
+};
 
 TEST_F(GlobTest, cancel) {
   const char *pattern = "bbb/*";
-  auto matcher = createGlobMatcher<StrMetaChar>(
-      GLOB_TEST_WORK_DIR, pattern, pattern + strlen(pattern), [] { return true; },
-      GlobMatchOption::DOTGLOB);
-  auto appender = [&](std::string &&path) {
-    this->ret.push_back(std::move(path));
+  Glob glob(pattern, GlobMatchOption::DOTGLOB, GLOB_TEST_WORK_DIR);
+  AlwaysCancel cancel;
+  glob.setCancelToken(cancel);
+  glob.setConsumer([&](std::string &&value) {
+    this->ret.push_back(std::move(value));
     return true;
-  };
-  auto s = matcher.matchExactly(appender);
-  ASSERT_EQ(GlobMatchResult::CANCELED, s);
+  });
+  auto s = glob.matchExactly();
+  ASSERT_EQ(Glob::Status::CANCELED, s);
 }
 
 int main(int argc, char **argv) {

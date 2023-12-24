@@ -249,6 +249,7 @@ set(ARSH_SRC
         src/arg_parser.cpp
         src/attribute.cpp
         src/line_buffer.cpp
+        src/glob.cpp
         ${lexer_src}
         ${bind_src}
         ${embed_src})
