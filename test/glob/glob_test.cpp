@@ -14,7 +14,8 @@
 using namespace arsh;
 
 // for testing
-static GlobPatternStatus matchPatternRaw(const char *name, const char *p, Glob::Option option = {}) {
+static GlobPatternStatus matchPatternRaw(const char *name, const char *p,
+                                         Glob::Option option = {}) {
   return matchGlobMeta(p, name, option);
 }
 
@@ -131,6 +132,23 @@ TEST_F(GlobTest, pattern2) {
   ASSERT_FALSE(matchPattern("", ".."));
   ASSERT_FALSE(matchPattern("hgoe", "."));
   ASSERT_FALSE(matchPattern("huga", ".."));
+}
+
+TEST_F(GlobTest, pattern3) {
+  ASSERT_TRUE(matchPattern("*", "*"));
+  ASSERT_TRUE(matchPattern("12", "*"));
+  ASSERT_TRUE(matchPattern("*", "\\*"));
+  ASSERT_FALSE(matchPattern("12", "\\*"));
+  ASSERT_TRUE(matchPattern("\\*", "\\\\*"));
+  ASSERT_TRUE(matchPattern("\\34", "\\\\*"));
+
+  ASSERT_TRUE(matchPattern("?", "?"));
+  ASSERT_TRUE(matchPattern("2", "?"));
+  ASSERT_TRUE(matchPattern("?", "\\?"));
+  ASSERT_FALSE(matchPattern("2", "\\?"));
+  ASSERT_TRUE(matchPattern("\\?", "\\\\?"));
+  ASSERT_TRUE(matchPattern("\\\\", "\\\\?"));
+  ASSERT_TRUE(matchPattern("\\@", "\\\\?"));
 }
 
 // test `globBase' api
@@ -447,6 +465,12 @@ TEST_F(GlobTest, globAt) {
   s = testGlobAt(GLOB_TEST_WORK_DIR, "bbb/A*/");
   ASSERT_EQ(0, s);
   ASSERT_EQ(0, ret.size());
+}
+
+TEST_F(GlobTest, escapeDir) {
+  Glob glob("/hogehoge/\\*234\\?ss////*", {}, nullptr);
+  ASSERT_EQ(Glob::Status::NOMATCH, glob());
+  ASSERT_EQ("/hogehoge/*234?ss/", glob.getBaseDir());
 }
 
 TEST_F(GlobTest, fast) {
