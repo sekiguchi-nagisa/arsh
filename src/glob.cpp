@@ -401,12 +401,12 @@ bool appendAndEscapeGlobMeta(const StringRef ref, const size_t maxSize, std::str
     case '?':
     case '*':
     case '\\':
-      if (maxSize > 0 && out.size() <= maxSize - 1) {
-        out += '\\';
-        if (const StringRef sub(start, iter - start);
-            maxSize >= sub.size() && out.size() <= maxSize - sub.size()) {
-          out += sub;
-          start = iter;
+      if (const StringRef sub(start, iter - start);
+          maxSize >= sub.size() && out.size() <= maxSize - sub.size()) {
+        out += sub;
+        start = iter;
+        if (maxSize > 0 && out.size() <= maxSize - 1) {
+          out += '\\';
           break;
         }
       }

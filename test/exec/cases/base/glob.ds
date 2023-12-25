@@ -25,6 +25,12 @@ $ex = 2
 try { echo '~/'*; } catch $e { $ex = $e; }
 assert $ex is GlobbingError
 
+$ex = 2
+try { echo *\*\??; } catch $e { $ex = $e; }
+assert $ex is GlobbingError
+assert ($ex as GlobbingError).message() == "no matches for glob pattern \`*\*\??'"
+
+
 # glob pattern have null characters, throw GlobbingError
 $ex = 34
 try { echo *$'\x00'*; } catch $e { $ex = $e; }
@@ -73,6 +79,11 @@ shctl unset fastglob nullglob dotglob failglob
 $aa = @(\**"\\2")
 assert $aa.size() == 1
 assert $aa[0] == '**\2'
+
+$aa = @(*\*\??)
+assert $aa.size() == 1
+assert $aa[0] == '**??'
+
 
 # fail glob and null glob
 shctl set failglob nullglob
