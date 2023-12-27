@@ -31,6 +31,10 @@
         - set east asian width
     - ``configs``: get internal configurations
 
+#### Module
+
+- add ``PRE_PROMPTS`` for pre-prompt hook
+
 #### LSP
 
 - support the following request

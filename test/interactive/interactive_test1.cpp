@@ -599,6 +599,24 @@ TEST_F(InteractiveTest, history4) {
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
 }
 
+TEST_F(InteractiveTest, prePrompt) {
+  this->invoke("--quiet", "--rcfile", INTERACTIVE_TEST_WORK_DIR "/rcfile4");
+
+  std::this_thread::sleep_for(std::chrono::milliseconds(400));
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $PRE_PROMPTS.empty()"));
+
+  this->send("var c = 0; $PROMPT_HOOK = function(s) => $c + '> '\r");
+  ASSERT_NO_FATAL_FAILURE(
+      this->expect(PROMPT + "var c = 0; $PROMPT_HOOK = function(s) => $c + '> '\n0> "));
+  this->send("$PRE_PROMPTS.push(function() => { $c++; })\r");
+  ASSERT_NO_FATAL_FAILURE(this->expect("0> $PRE_PROMPTS.push(function() => { $c++; })\n1> "));
+  this->send("\r");
+  ASSERT_NO_FATAL_FAILURE(this->expect("\n2> "));
+  this->send(CTRL_D);
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
+}
+
 TEST_F(InteractiveTest, insert) {
   this->invoke("--quiet", "--norc");
 
