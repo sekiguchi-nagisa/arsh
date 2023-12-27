@@ -134,6 +134,12 @@ assert "$(TZ= printf '%(%Y/%m/%d %H:%M:%S.%N)T' 1689511935.00023)" == '2023/07/1
 assert "$(TZ= printf '%(%Y/%m/%d %H:%M:%S.%N)T' 1689511935)" == '2023/07/16 12:52:15.000000000'
 assert "$(TZ= printf '%(%Y/%m/%d %H:%M:%S.%N)T' 1689511935.98)" == '2023/07/16 12:52:15.980000000'
 assert "$(TZ= printf '%(%Y/%m/%d %H:%M:%S.%N)T' -214748364799.888000000)" == '-4836/11/23 12:26:40.112000000'
+{
+    printf -v var "%(%N)T=%(%N)T" -1
+    var ss = $reply['var'].split('=')
+    assert $ss.size() == 2
+    assert $ss[0] == $ss[1]
+}
 
 ## '+' specifier (may be equivalent to date command default format)
 assert "$(printf '%(%+)T' $epoch)" == "$(date $passEpoch($epoch))"

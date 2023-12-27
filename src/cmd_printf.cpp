@@ -169,13 +169,14 @@ private:
   FILE *fp{nullptr}; // do not close it
   std::string error;
   const timestamp initTimestamp;
+  const timestamp curTimestamp;
   const bool useBuf;
   bool restoreLocale{false};
   bool supportPlusTimeFormat{false};
 
 public:
   FormatPrinter(StringRef format, timestamp init, bool useBuf)
-      : format(format), initTimestamp(init), useBuf(useBuf) {
+      : format(format), initTimestamp(init), curTimestamp(getCurrentTimestamp()), useBuf(useBuf) {
     this->setOutput(stdout);
     setlocale(LC_TIME, ""); // always sync LC_TIME
   }
@@ -809,12 +810,12 @@ bool FormatPrinter::appendAsTimeFormat(FormatFlag flags, int width, int precisio
     }
     bool frac = ref.contains('.');
     if (targetTime.tv_sec == -1 && targetTime.tv_nsec == 0 && !frac) {
-      targetTime = timestampToTimespec(getCurrentTimestamp()); // use current timestamp
+      targetTime = timestampToTimespec(this->curTimestamp); // use current timestamp
     } else if (targetTime.tv_sec == -2 && targetTime.tv_nsec == 0 && !frac) {
       targetTime = timestampToTimespec(this->initTimestamp); // use startup timestamp
     }
   } else { // if no arg, get current timestamp
-    targetTime = timestampToTimespec(getCurrentTimestamp());
+    targetTime = timestampToTimespec(this->curTimestamp);
   }
 
   struct tm tm {};
@@ -1094,8 +1095,8 @@ int builtin_printf(ARState &state, ArrayObject &argvObj) {
 
   if (setVar && !state.hasError()) {
     auto &reply = typeAs<OrderedMapObject>(state.getGlobal(BuiltinVarOffset::REPLY_VAR));
-    auto old = reply.put(state, Value::createStr(target),
-                         Value::createStr(std::move(printer).takeBuf()));
+    auto old =
+        reply.put(state, Value::createStr(target), Value::createStr(std::move(printer).takeBuf()));
     if (unlikely(!old)) {
       return 1;
     }
