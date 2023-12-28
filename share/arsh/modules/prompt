@@ -13,6 +13,36 @@ function _escape(s : String) : String {
     return $ret
 }
 
+function _buildTimeFormat(fmt : String) : (String, Int) {
+    var ret = ""
+    var c = 0;
+    var ss = $fmt.split(")T")
+    if $ss.size() == 1 {
+        $c++
+        return ("%(" + $fmt + ")T", $c)
+    }
+    var size = $ss.size()
+    for (var i = 0; $i < $size; $i++) {
+        var s = $ss[$i]
+        if !$s.empty() {
+            $c++
+            $ss[$i] = "%(" + $s + ")T"
+        }
+    }
+    $ret = $ss.join(")T")
+    return ($ret, $c)
+}
+
+function _formatCurTime(key : String, fmt : String, epoc : String) : String {
+    var epocs : [String]
+    var p = $_buildTimeFormat($fmt)
+    for(var i = 0; $i < $p._1; $i++) {
+        $epocs.add($epoc)
+    }
+    printf -v $key ${p._0} $epocs &>> /dev/null
+    return $reply.remove($key) ?? $fmt
+}
+
 let _cache = [
     'c' : '\\c',
     'h' : $_escape("$(uname -n)").split(".")[0],
@@ -35,32 +65,30 @@ function renderPrompt(p : String) : String {
         $reply.addAll($old_reply) # restore reply
     }
 
-    importenv PWD : "."
     var ret = ""
     let size = $p.size()
     let key = "_" + $RANDOM % 1000000000
+    printf -v $key "%(%s.%N)T"
+    let curTime = $reply.remove($key)!
     for(var i = 0; $i < $size; $i++) {
         var ch = $p[$i]
         if $ch == '\' && $i + 1 < $size {
             $i++
             var k = $p[$i]
             case $k {
-            'd' => {
-                LANG=C printf -v $key '%(%a %m %d)T'
-                $ch = $reply.remove($key)!
+            'd' => { printf -v $key '%(%a %m %d)T' $curTime; $ch = $reply.remove($key)! }
+            'D' => if $i + 1 < $size && $p[$i + 1] == '{' {
+                var r = $p.indexOf("}", $i + 1)
+                if $r != -1 {
+                    var fmt = $p.slice($i + 2, $r)
+                    $i = $r
+                    $ch = $_escape($_formatCurTime($key, $fmt, $curTime))
+                }
             }
-            't' => { 
-                printf -v $key '%(%T)T'
-                $ch = $reply.remove($key)!
-            }
-            'T' => { 
-                printf -v $key '%(%I:%M:%S)T'
-                $ch = $reply.remove($key)!
-            }
-            '@' => {
-                LANG=C printf -v $key '%(%I:%M %p)T'
-                $ch = $reply.remove($key)!
-            }
+            't' => { printf -v $key '%(%T)T' $curTime; $ch = $reply.remove($key)! }
+            'T' => { printf -v $key '%(%I:%M:%S)T' $curTime; $ch = $reply.remove($key)! }
+            '@' => { printf -v $key '%(%I:%M %p)T' $curTime; $ch = $reply.remove($key)! }
+            'A' => { printf -v $key '%(%H:%M)T' $curTime; $ch = $reply.remove($key)! }
             'w' => {
                 if $PWD.startsWith($_home) {
                     $ch = "~" + $_escape($PWD.slice($_home.size()))
@@ -92,28 +120,30 @@ function _usage(fd : UnixFD, short : Boolean) : Int  {
     if $short { return 2; }
 
     echo >& $fd "Prompt Escape Sequence:
-    \a    bell
-    \d    date
-    \e    escape sequence
-    \h    host name
-    \H    fully qualified host name
-    \n    newline
-    \r    carriage return
-    \s    base name of \$0
-    \t    24 hour notation (HH:MM:SS)
-    \T    12 hour notation (HH:MM:SS)
-    \@    12 hour notation with AM/PM
-    \u    user name
-    \v    version
-    \V    version with patch level
-    \w    current directory
-    \W    base name of current directory(\$HOME is replaced by tilde)
-    \\\$    # if uid is 0, otherwise \$
-    \\\\    backslash
-    \[    begin of unprintable sequence
-    \]    end of unprintable sequence
-    \0nnn N is octal number.  NNN can be 0 to 3 number
-    \xnn  N is hex number.  NN can be 1 to 2 number"
+    \a      bell
+    \d      date
+    \D{fmt} interpret FMT as time format
+    \e      escape sequence
+    \h      host name
+    \H      fully qualified host name
+    \n      newline
+    \r      carriage return
+    \s      base name of \$0
+    \t      24 hour notation (HH:MM:SS)
+    \T      12 hour notation (HH:MM:SS)
+    \@      12 hour notation with AM/PM
+    \A      24 hour notation (HH:MM)
+    \u      user name
+    \v      version
+    \V      version with patch level
+    \w      current directory
+    \W      base name of current directory(\$HOME is replaced by tilde)
+    \\\$      # if uid is 0, otherwise \$
+    \\\\      backslash
+    \[      begin of unprintable sequence
+    \]      end of unprintable sequence
+    \0nnn   N is octal number.  NNN can be 0 to 3 number
+    \xnn    N is hex number.  NN can be 1 to 2 number"
 
     return 2;
 }

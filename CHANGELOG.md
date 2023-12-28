@@ -34,6 +34,7 @@
 #### Module
 
 - add ``PRE_PROMPTS`` for pre-prompt hook
+- add ``\D``, ``\A`` specifier to prompt renderer
 
 #### LSP
 

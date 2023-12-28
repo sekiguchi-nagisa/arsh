@@ -73,6 +73,18 @@ assert $renderPrompt( '\a') == $'\a'   # bell
 assert($renderPrompt('hoge') == "hoge")
 assert($renderPrompt('\|') == "\|")    # meaningless backslash
 
+{
+    var ss = $renderPrompt('\D{%N}=\D{%N}').split('=')
+    assert $ss.size() == 2
+    assert $ss[0] == $ss[1]
+    $ss = $renderPrompt('\D{%N)T%N}').split(')T')
+    assert $ss.size() == 2
+    assert $ss[0] == $ss[1]
+
+    assert $renderPrompt('\D{)T}') == ')T'
+    assert $renderPrompt('\D{%1}') == '%1'
+}
+
 # escape sequence
 var e = $renderPrompt('\[\e[32m\]')
 assert($e.size() == 5)
