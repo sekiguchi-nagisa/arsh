@@ -73,12 +73,6 @@ static void setPWDs() {
   }
 }
 
-static void setEnvIfUndef(const char *name, const char *value) {
-  if (!getenv(name)) {
-    setenv(name, value, 1);
-  }
-}
-
 static void initEnv() {
   // set locale
   setLocaleSetting();
@@ -95,13 +89,13 @@ static void initEnv() {
   // not overwrite existing environmental variable for compatibility (ex. sudo)
   if (struct passwd *pw = getpwuid(getuid()); likely(pw != nullptr)) {
     // set HOME
-    setEnvIfUndef(ENV_HOME, pw->pw_dir);
+    setenv(ENV_HOME, pw->pw_dir, 0 /*not overwrite */);
 
     // set LOGNAME
-    setEnvIfUndef(ENV_LOGNAME, pw->pw_name);
+    setenv(ENV_LOGNAME, pw->pw_name, 0 /*not overwrite */);
 
     // set USER
-    setEnvIfUndef(ENV_USER, pw->pw_name);
+    setenv(ENV_USER, pw->pw_name, 0 /*not overwrite */);
   } else {
 #ifndef __EMSCRIPTEN__
     fatal_perror("getpwuid failed");
