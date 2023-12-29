@@ -47,6 +47,7 @@ let _cache = [
     'c' : '\\c',
     'h' : $_escape("$(uname -n)").split(".")[0],
     'H' : $_escape("$(uname -n)"),
+    'l': "$(tty 2> /dev/null)".basename(),
     's' : $_escape($0.basename()),
     'u' : $_escape("$(whoami)"),
     'v' : $VERSION.slice(0, $VERSION.lastIndexOf('.')),

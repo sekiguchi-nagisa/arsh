@@ -25,6 +25,7 @@ assert $renderPrompt('hello\cworld') == "hello\cworld"
 assert $renderPrompt('\H') == "$(uname -n)"
 assert $renderPrompt('\\H') == '\H'
 assert $renderPrompt('\h') == "$(uname -n)".split('.')[0]
+assert $renderPrompt('\l') == "$(tty 2> /dev/null)".basename()
 assert $renderPrompt('\n') == $'\n'
 assert $renderPrompt('\\n') == '\n'
 assert $renderPrompt('\\\n') == $'\\\n'
