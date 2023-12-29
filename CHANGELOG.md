@@ -53,6 +53,10 @@
 - **Breaking Change**: need spaces between `${` and number
     - due to suppress potential syntax ambiguity
     - now ``${345 }``, ``${3.14}`` notations are syntax error
+- **Breaking Change**: not overwrite the following environmental variables at startup time for compatibility with other
+  shells
+    - ``HOME``, ``LOGNAME``, ``USER``
+    - some command manually set theme and affect own child process behavior (ex. sudo)
 - add ``toplevel`` parameter to ``CLI`` attribute
 - in io redirection, allow file descriptor number greater than 4 (up to 9)
     - now support like the following bash idiom
