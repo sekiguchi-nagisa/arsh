@@ -41,7 +41,7 @@ int builtin_pwd(ARState &state, ArrayObject &argvObj) {
     }
   }
 
-  auto workdir = state.getWorkingDir(useLogical);
+  const auto workdir = state.getWorkingDir(useLogical);
   if (!workdir) {
     PERROR(state, argvObj, ".");
     return 1;
@@ -72,10 +72,9 @@ int builtin_cd(ARState &state, ArrayObject &argvObj) {
     }
   }
 
-  unsigned int index = optState.index;
   StringRef dest;
   bool useOldpwd = false;
-  if (index < argvObj.getValues().size()) {
+  if (const unsigned int index = optState.index; index < argvObj.getValues().size()) {
     dest = argvObj.getValues()[index].asStrRef();
     if (dest == "-") {
       const char *v = getenv(ENV_OLDPWD);
@@ -113,7 +112,7 @@ END:
   return 0;
 }
 
-enum class PrintDirOp : unsigned int {
+enum class PrintDirOp : unsigned char {
   FULL_PATH = 1u << 0u,
   PER_LINE = 1u << 1u,
   LINENO = 1u << 2u,
@@ -153,7 +152,8 @@ static int printDirStack(const ArrayObject &dirStack, const char *cwd, const Pri
   assert(dirStack.size() <= SYS_LIMIT_DIRSTACK_SIZE);
   const auto size = static_cast<int>(dirStack.size());
   if (hasFlag(dirOp, PrintDirOp::PER_LINE)) {
-    unsigned int count = hasFlag(dirOp, PrintDirOp::LINENO) ? countDigits(dirStack.size()) : 0;
+    const unsigned int count =
+        hasFlag(dirOp, PrintDirOp::LINENO) ? countDigits(dirStack.size()) : 0;
     std::string prefix;
     if (count) {
       prefix = padLeft(0, count, ' ');
@@ -216,12 +216,12 @@ int builtin_dirs(ARState &state, ArrayObject &argvObj) {
     }
   }
 
-  auto cwd = state.getWorkingDir();
+  const auto cwd = state.getWorkingDir();
   if (!cwd) {
     PERROR(state, argvObj, "cannot resolve current working dir");
     return 1;
   }
-  int errNum = printDirStack(dirStack, cwd.get(), dirOp);
+  const int errNum = printDirStack(dirStack, cwd.get(), dirOp);
   CHECK_STDOUT_ERROR(state, argvObj, errNum);
   return 0;
 }
@@ -239,13 +239,12 @@ int builtin_pushd_popd(ARState &state, ArrayObject &argvObj) {
   for (int opt; (opt = optState(argvObj)) != -1;) {
     if (opt == 'h') {
       return showHelp(argvObj);
-    } else {
-      if (auto ref = argvObj.getValues()[optState.index].asStrRef();
-          ref.size() > 1 && isDecimal(ref[1])) {
-        break;
-      }
-      return invalidOptionError(state, argvObj, optState);
     }
+    if (const auto ref = argvObj.getValues()[optState.index].asStrRef();
+        ref.size() > 1 && isDecimal(ref[1])) {
+      break;
+    }
+    return invalidOptionError(state, argvObj, optState);
   }
 
   uint64_t rotateIndex = 0;
@@ -254,7 +253,7 @@ int builtin_pushd_popd(ARState &state, ArrayObject &argvObj) {
   if (optState.index < argvObj.size()) {
     dest = argvObj.getValues()[optState.index].asStrRef();
     if (dest.startsWith("+") || dest.startsWith("-")) {
-      auto pair = convertToDecimal<uint64_t>(dest.begin() + 1, dest.end());
+      const auto pair = convertToDecimal<uint64_t>(dest.begin() + 1, dest.end());
       if (!pair) {
         ERROR(state, argvObj, "%s: invalid number", toPrintable(dest).c_str());
         return 1;
@@ -273,7 +272,7 @@ int builtin_pushd_popd(ARState &state, ArrayObject &argvObj) {
     }
   }
   if (argvObj.getValues()[0].asStrRef() == "pushd") {
-    auto cwd = state.getWorkingDir();
+    const auto cwd = state.getWorkingDir();
     if (!cwd) {
       PERROR(state, argvObj, "cannot resolve current working dir");
       return 1;
@@ -331,9 +330,9 @@ int builtin_pushd_popd(ARState &state, ArrayObject &argvObj) {
       dirStack.refValues().pop_back();
     }
   }
-  auto cwd = state.getWorkingDir();
+  const auto cwd = state.getWorkingDir();
   assert(cwd);
-  int errNum = printDirStack(dirStack, cwd.get(), PrintDirOp{});
+  const int errNum = printDirStack(dirStack, cwd.get(), PrintDirOp{});
   CHECK_STDOUT_ERROR(state, argvObj, errNum);
   return 0;
 }

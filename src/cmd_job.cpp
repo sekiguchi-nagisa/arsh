@@ -26,7 +26,7 @@ static auto toInt32(StringRef str) { return convertToDecimal<int32_t>(str.begin(
 
 static int toSigNum(StringRef str) {
   if (!str.empty() && isDecimal(*str.data())) {
-    auto pair = toInt32(str);
+    const auto pair = toInt32(str);
     if (!pair) {
       return -1;
     }
@@ -39,7 +39,7 @@ static int toSigNum(StringRef str) {
 static bool printNumOrName(StringRef str, int &errNum) {
   std::string value;
   if (!str.empty() && isDecimal(*str.data())) {
-    auto pair = toInt32(str);
+    const auto pair = toInt32(str);
     if (!pair) {
       return false;
     }
@@ -49,7 +49,7 @@ static bool printNumOrName(StringRef str, int &errNum) {
     }
     value = name;
   } else {
-    int sigNum = getSignalNum(str);
+    const int sigNum = getSignalNum(str);
     if (sigNum < 0) {
       return false;
     }
@@ -68,8 +68,8 @@ using ProcOrJob = Union<pid_t, Job, const ProcTable::Entry *>;
 static ProcOrJob parseProcOrJob(const ARState &state, const ArrayObject &argvObj, StringRef arg,
                                 bool allowNoChild) {
   auto &jobTable = state.jobTable;
-  bool isJob = arg.startsWith("%");
-  auto pair = toInt32(isJob ? arg.substr(1) : arg);
+  const bool isJob = arg.startsWith("%");
+  const auto pair = toInt32(isJob ? arg.substr(1) : arg);
   if (!pair) {
     ERROR(state, argvObj, "%s: arguments must be pid or job id", toPrintable(arg).c_str());
     return {};
@@ -78,23 +78,24 @@ static ProcOrJob parseProcOrJob(const ARState &state, const ArrayObject &argvObj
 
   if (isJob) {
     if (id > 0) {
-      auto job = jobTable.find(static_cast<unsigned int>(id));
-      if (job) {
+      if (auto job = jobTable.find(static_cast<unsigned int>(id))) {
         return {std::move(job)};
       }
     }
     ERROR(state, argvObj, "%s: no such job", toPrintable(arg).c_str());
     return {};
-  } else {
-    if (const ProcTable::Entry * e; id > -1 && (e = jobTable.getProcTable().findProc(id))) {
+  }
+
+  if (id > -1) {
+    if (const auto *e = jobTable.getProcTable().findProc(id)) {
       return {e};
-    } else if (allowNoChild) {
-      return {id};
-    } else {
-      ERROR(state, argvObj, "%s: not a child of this shell", toPrintable(arg).c_str());
-      return {};
     }
   }
+  if (allowNoChild) {
+    return {id};
+  }
+  ERROR(state, argvObj, "%s: not a child of this shell", toPrintable(arg).c_str());
+  return {};
 }
 
 static bool killProcOrJob(const ARState &state, const ArrayObject &argvObj, StringRef arg,
@@ -104,7 +105,7 @@ static bool killProcOrJob(const ARState &state, const ArrayObject &argvObj, Stri
     return false;
   }
   if (is<pid_t>(target) || is<const ProcTable::Entry *>(target)) {
-    pid_t pid =
+    const pid_t pid =
         is<pid_t>(target) ? get<pid_t>(target) : get<const ProcTable::Entry *>(target)->pid();
     if (kill(pid, sigNum) < 0) {
       PERROR(state, argvObj, "%s", toPrintable(arg).c_str());
@@ -129,8 +130,7 @@ int builtin_kill(ARState &state, ArrayObject &argvObj) {
   }
 
   GetOptState optState(":ls:h");
-  const int opt = optState(argvObj);
-  switch (opt) {
+  switch (const int opt = optState(argvObj); opt) {
   case 'l':
     listing = true;
     break;
@@ -161,8 +161,8 @@ int builtin_kill(ARState &state, ArrayObject &argvObj) {
 
   if (begin == end) {
     if (listing) {
-      auto sigList = getUniqueSignalList();
-      unsigned int size = sigList.size();
+      const auto sigList = getUniqueSignalList();
+      const unsigned int size = sigList.size();
       int errNum = 0;
       for (unsigned int i = 0; i < size; i++) {
         const char suffix = (i % 5 == 4 || i == size - 1) ? '\n' : '\t';
@@ -181,7 +181,7 @@ int builtin_kill(ARState &state, ArrayObject &argvObj) {
   int errNum = 0;
   unsigned int count = 0;
   for (; begin != end; ++begin) {
-    auto arg = begin->asStrRef();
+    const auto arg = begin->asStrRef();
     if (listing) {
       if (!printNumOrName(arg, errNum)) {
         count++;
@@ -215,7 +215,7 @@ static Job tryToGetJob(const JobTable &table, StringRef name, bool needPrefix) {
     return nullptr;
   }
   Job job;
-  auto pair = toInt32(name);
+  const auto pair = toInt32(name);
   if (pair && pair.value > -1) {
     job = table.find(pair.value);
   }
@@ -237,9 +237,9 @@ int builtin_fg_bg(ARState &state, ArrayObject &argvObj) {
     }
   }
 
-  bool fg = argvObj.getValues()[0].asStrRef() == "fg";
+  const bool fg = argvObj.getValues()[0].asStrRef() == "fg";
   const unsigned int size = argvObj.getValues().size();
-  unsigned int index = optState.index;
+  const unsigned int index = optState.index;
   Job job;
   StringRef arg = "current";
   if (index == size) {
@@ -269,8 +269,9 @@ int builtin_fg_bg(ARState &state, ArrayObject &argvObj) {
   }
 
   if (fg) {
-    int s = state.jobTable.waitForJob(job, WaitOp::BLOCK_UNTRACED, true); // FIXME: check root shell
-    int errNum = errno;
+    const int s =
+        state.jobTable.waitForJob(job, WaitOp::BLOCK_UNTRACED, true); // FIXME: check root shell
+    const int errNum = errno;
     if (job->isRunning()) {
       state.jobTable.setCurrentJob(job);
       job->showInfo();
@@ -329,7 +330,7 @@ int builtin_wait(ARState &state, ArrayObject &argvObj) {
     }
   }
   for (unsigned int i = optState.index; i < argvObj.size(); i++) {
-    auto ref = argvObj.getValues()[i].asStrRef();
+    const auto ref = argvObj.getValues()[i].asStrRef();
     auto target = parseProcOrJob(state, argvObj, ref, false);
     Job job;
     int offset = -1;
@@ -350,7 +351,7 @@ int builtin_wait(ARState &state, ArrayObject &argvObj) {
   int lastStatus = 0;
   if (breakNext) {
     do {
-      for (auto &target : targets) {
+      for (const auto &target : targets) {
         if (!target.first->isRunning()) {
           return target.first->exitStatus();
         }
@@ -371,13 +372,13 @@ int builtin_wait(ARState &state, ArrayObject &argvObj) {
   return lastStatus;
 }
 
-enum class JobsTarget {
+enum class JobsTarget : unsigned char {
   ALL,
   RUNNING,
   STOPPED,
 };
 
-enum class JobsOutput {
+enum class JobsOutput : unsigned char {
   DEFAULT,
   PID_ONLY,
   VERBOSE,
@@ -457,7 +458,7 @@ int builtin_jobs(ARState &state, ArrayObject &argvObj) {
   // show specified jobs
   bool hasError = false;
   for (unsigned int i = optState.index; i < argvObj.size(); i++) {
-    auto ref = argvObj.getValues()[i].asStrRef();
+    const auto ref = argvObj.getValues()[i].asStrRef();
     auto job = tryToGetJob(state.jobTable, ref, true);
     if (!job) {
       ERROR(state, argvObj, "%s: no such job", toPrintable(ref).c_str());
@@ -480,7 +481,7 @@ int builtin_disown(ARState &state, ArrayObject &argvObj) {
   }
 
   if (optState.index == argvObj.size()) {
-    auto job = state.jobTable.syncAndGetCurPrevJobs().cur;
+    const auto job = state.jobTable.syncAndGetCurPrevJobs().cur;
     if (!job) {
       ERROR(state, argvObj, "current: no such job");
       return 1;
@@ -489,8 +490,8 @@ int builtin_disown(ARState &state, ArrayObject &argvObj) {
     return 0;
   }
   for (unsigned int i = optState.index; i < argvObj.size(); i++) {
-    auto ref = argvObj.getValues()[i].asStrRef();
-    auto job = tryToGetJob(state.jobTable, ref, true);
+    const auto ref = argvObj.getValues()[i].asStrRef();
+    const auto job = tryToGetJob(state.jobTable, ref, true);
     if (!job) {
       ERROR(state, argvObj, "%s: no such job", toPrintable(ref).c_str());
       return 1;

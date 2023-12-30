@@ -41,10 +41,10 @@ SigSet ARState::pendingSigSet;
  * if environmental variable SHLVL dose not exist, set 0.
  */
 static int64_t getShellLevel() {
-  char *shlvl = getenv(ENV_SHLVL);
+  const char *shlvl = getenv(ENV_SHLVL);
   int64_t level = 0;
   if (shlvl != nullptr) {
-    auto pair = convertToDecimal<int64_t>(shlvl);
+    const auto pair = convertToDecimal<int64_t>(shlvl);
     if (pair && pair.value > -1) {
       level = pair.value;
     }
@@ -58,7 +58,7 @@ static int64_t originalShellLevel() {
 }
 
 static void setPWDs() {
-  auto v = getCWD();
+  const auto v = getCWD();
   const char *cwd = v ? v.get() : ".";
 
   const char *pwd = getenv(ENV_PWD);
@@ -67,8 +67,8 @@ static void setPWDs() {
     pwd = cwd;
   }
 
-  const char *oldPwd = getenv(ENV_OLDPWD);
-  if (!oldPwd || *oldPwd != '/' || !S_ISDIR(getStMode(oldPwd))) {
+  if (const char *oldPwd = getenv(ENV_OLDPWD);
+      !oldPwd || *oldPwd != '/' || !S_ISDIR(getStMode(oldPwd))) {
     setenv(ENV_OLDPWD, pwd, 1);
   }
 }
@@ -80,14 +80,14 @@ static void initEnv() {
   // set environmental variables
 
   // update shell level
-  if (auto level = originalShellLevel(); level < INT64_MAX) {
+  if (const auto level = originalShellLevel(); level < INT64_MAX) {
     setenv(ENV_SHLVL, std::to_string(level + 1).c_str(), 1);
   } else {
     setenv(ENV_SHLVL, "1", 1);
   }
 
   // not overwrite existing environmental variable for compatibility (ex. sudo)
-  if (struct passwd *pw = getpwuid(getuid()); likely(pw != nullptr)) {
+  if (const struct passwd *pw = getpwuid(getuid()); likely(pw != nullptr)) {
     // set HOME
     setenv(ENV_HOME, pw->pw_dir, 0 /*not overwrite */);
 
@@ -107,13 +107,12 @@ static void initEnv() {
 }
 
 static bool check_strftime_plus(timestamp ts) {
-  auto time = timestampToTimespec(ts);
+  const auto time = timestampToTimespec(ts);
   struct tm tm {};
   if (gmtime_r(&time.tv_sec, &tm)) {
     char buf[64];
-    auto s = strftime_l(buf, std::size(buf), "%+", &tm, POSIX_LOCALE_C.get());
-    auto ret = StringRef(buf, s);
-    if (!ret.empty() && ret != "%+") {
+    const auto s = strftime_l(buf, std::size(buf), "%+", &tm, POSIX_LOCALE_C.get());
+    if (const auto ret = StringRef(buf, s); !ret.empty() && ret != "%+") {
       return true;
     }
   }
@@ -175,13 +174,13 @@ const char *VM::loadEnv(ARState &state, bool hasDefault) {
   if (hasDefault) {
     dValue = state.stack.pop();
   }
-  auto nameObj = state.stack.pop();
-  auto nameRef = nameObj.asStrRef();
+  const auto nameObj = state.stack.pop();
+  const auto nameRef = nameObj.asStrRef();
   assert(!nameRef.hasNullChar());
   const char *name = nameRef.data();
   const char *env = getenv(name);
   if (env == nullptr && hasDefault) {
-    auto ref = dValue.asStrRef();
+    const auto ref = dValue.asStrRef();
     if (ref.hasNullChar()) {
       std::string message = ERROR_SET_ENV;
       message += name;
@@ -201,10 +200,10 @@ const char *VM::loadEnv(ARState &state, bool hasDefault) {
 }
 
 bool VM::storeEnv(ARState &state) {
-  auto value = state.stack.pop();
-  auto name = state.stack.pop();
-  auto nameRef = name.asStrRef();
-  auto valueRef = value.asStrRef();
+  const auto value = state.stack.pop();
+  const auto name = state.stack.pop();
+  const auto nameRef = name.asStrRef();
+  const auto valueRef = value.asStrRef();
   assert(!nameRef.hasNullChar());
   if (setenv(valueRef.hasNullChar() ? "" : nameRef.data(), valueRef.data(), 1) == 0) {
     return true;
@@ -274,7 +273,7 @@ static bool readAsStr(ARState &state, int fd, Value &ret) {
   std::string str;
   while (true) {
     char buf[256];
-    ssize_t readSize = read(fd, buf, std::size(buf));
+    const ssize_t readSize = read(fd, buf, std::size(buf));
     if (readSize == -1 && errno == EAGAIN) {
       continue;
     }
@@ -301,7 +300,7 @@ static bool readAsStr(ARState &state, int fd, Value &ret) {
 }
 
 static bool readAsStrArray(ARState &state, int fd, Value &ret) {
-  auto ifsRef = state.getGlobal(BuiltinVarOffset::IFS).asStrRef();
+  const auto ifsRef = state.getGlobal(BuiltinVarOffset::IFS).asStrRef();
   unsigned int skipCount = 1;
   std::string str;
   auto obj = Value::create<ArrayObject>(state.typePool.get(TYPE::StringArray));
@@ -309,7 +308,7 @@ static bool readAsStrArray(ARState &state, int fd, Value &ret) {
 
   while (true) {
     char buf[256];
-    ssize_t readSize = read(fd, buf, std::size(buf));
+    const ssize_t readSize = read(fd, buf, std::size(buf));
     if (readSize == -1 && errno == EAGAIN) {
       continue;
     }
@@ -322,8 +321,8 @@ static bool readAsStrArray(ARState &state, int fd, Value &ret) {
     }
 
     for (ssize_t i = 0; i < readSize; i++) {
-      char ch = buf[i];
-      bool fieldSep = matchFieldSep(ifsRef, ch);
+      const char ch = buf[i];
+      const bool fieldSep = matchFieldSep(ifsRef, ch);
       if (fieldSep && skipCount > 0) {
         if (isSpace(ch)) {
           continue;
@@ -371,8 +370,7 @@ static ObjPtr<UnixFdObject> newFD(const ARState &st, int &fd) {
   int v = fd;
   fd = -1;
   setCloseOnExec(v, true);
-  auto value = Value::create<UnixFdObject>(v);
-  return toObjPtr<UnixFdObject>(value);
+  return toObjPtr<UnixFdObject>(Value::create<UnixFdObject>(v));
 }
 
 bool VM::attachAsyncJob(ARState &state, Value &&desc, unsigned int procSize, const Proc *procs,
@@ -380,15 +378,15 @@ bool VM::attachAsyncJob(ARState &state, Value &&desc, unsigned int procSize, con
   switch (forkKind) {
   case ForkKind::NONE:
   case ForkKind::PIPE_FAIL: {
-    auto entry = JobObject::create(procSize, procs, false, state.emptyFDObj, state.emptyFDObj,
-                                   std::move(desc));
+    const auto entry = JobObject::create(procSize, procs, false, state.emptyFDObj, state.emptyFDObj,
+                                         std::move(desc));
     // job termination
-    auto waitOp = state.isJobControl() ? WaitOp::BLOCK_UNTRACED : WaitOp::BLOCKING;
-    int status = entry->wait(waitOp);
-    int errNum = errno;
+    const auto waitOp = state.isJobControl() ? WaitOp::BLOCK_UNTRACED : WaitOp::BLOCKING;
+    const int status = entry->wait(waitOp);
+    const int errNum = errno;
     state.updatePipeStatus(entry->getProcSize(), entry->getProcs(), false);
     if (entry->isRunning()) {
-      auto job = state.jobTable.attach(entry);
+      const auto job = state.jobTable.attach(entry);
       if (job->getProcs()[0].is(Proc::State::STOPPED) && state.isJobControl()) {
         job->showInfo();
       }
@@ -403,8 +401,7 @@ bool VM::attachAsyncJob(ARState &state, Value &&desc, unsigned int procSize, con
     if (forkKind == ForkKind::PIPE_FAIL && state.has(RuntimeOption::ERR_RAISE)) {
       for (unsigned int index = 0; index < entry->getProcSize(); index++) {
         auto &proc = entry->getProcs()[index];
-        int s = proc.exitStatus();
-        if (s != 0) {
+        if (const int s = proc.exitStatus(); s != 0) {
           if (index < entry->getProcSize() - 1 && proc.signaled() && proc.asSigNum() == SIGPIPE) {
             if (!state.has(RuntimeOption::FAIL_SIGPIPE)) {
               continue;
@@ -426,8 +423,8 @@ bool VM::attachAsyncJob(ARState &state, Value &&desc, unsigned int procSize, con
   case ForkKind::IN_PIPE:
   case ForkKind::OUT_PIPE: {
     int &fd = forkKind == ForkKind::IN_PIPE ? pipeSet.in[WRITE_PIPE] : pipeSet.out[READ_PIPE];
-    auto fdObj = newFD(state, fd);
-    auto entry = JobObject::create(
+    const auto fdObj = newFD(state, fd);
+    const auto entry = JobObject::create(
         procSize, procs, false, forkKind == ForkKind::IN_PIPE ? fdObj : state.emptyFDObj,
         forkKind == ForkKind::OUT_PIPE ? fdObj : state.emptyFDObj, std::move(desc));
     state.jobTable.attach(entry, true);
@@ -437,9 +434,10 @@ bool VM::attachAsyncJob(ARState &state, Value &&desc, unsigned int procSize, con
   case ForkKind::COPROC:
   case ForkKind::JOB:
   case ForkKind::DISOWN: {
-    bool disown = forkKind == ForkKind::DISOWN;
-    auto entry = JobObject::create(procSize, procs, false, newFD(state, pipeSet.in[WRITE_PIPE]),
-                                   newFD(state, pipeSet.out[READ_PIPE]), std::move(desc));
+    const bool disown = forkKind == ForkKind::DISOWN;
+    const auto entry =
+        JobObject::create(procSize, procs, false, newFD(state, pipeSet.in[WRITE_PIPE]),
+                          newFD(state, pipeSet.out[READ_PIPE]), std::move(desc));
     state.jobTable.attach(entry, disown);
     ret = Value(entry.get());
     break;
@@ -471,6 +469,7 @@ static bool needForeground(ForkKind kind) {
  * for `setpgid(pid, pgid)`
  *
  * @param rootShell
+ * @param kind
  * @return
  * if created child process should be process group leader (create job), return 0
  * otherwise, return its parent process group id (default)
@@ -526,8 +525,9 @@ bool VM::forkAndEval(ARState &state, Value &&desc) {
     case ForkKind::ARRAY: { // always disable job control (so not change foreground process group)
       assert(!hasFlag(procOp, Proc::Op::JOB_CONTROL));
       tryToClose(pipeSet.in[WRITE_PIPE]);
-      bool ret = forkKind == ForkKind::STR ? readAsStr(state, pipeSet.out[READ_PIPE], obj)
-                                           : readAsStrArray(state, pipeSet.out[READ_PIPE], obj);
+      const bool ret = forkKind == ForkKind::STR
+                           ? readAsStr(state, pipeSet.out[READ_PIPE], obj)
+                           : readAsStrArray(state, pipeSet.out[READ_PIPE], obj);
       if (!ret || ARState::isInterrupted()) {
         /**
          * if read failed, not wait termination (always attach to job table)
@@ -543,9 +543,9 @@ bool VM::forkAndEval(ARState &state, Value &&desc) {
         return false;
       }
 
-      auto waitOp = jobCtrl ? WaitOp::BLOCK_UNTRACED : WaitOp::BLOCKING;
-      int status = proc.wait(waitOp); // wait exit
-      int errNum = errno;
+      const auto waitOp = jobCtrl ? WaitOp::BLOCK_UNTRACED : WaitOp::BLOCKING;
+      const int status = proc.wait(waitOp); // wait exit
+      const int errNum = errno;
       tryToClose(pipeSet.out[READ_PIPE]); // close read pipe after wait, due to prevent EPIPE
       if (!proc.is(Proc::State::TERMINATED)) {
         state.jobTable.attach(
@@ -566,8 +566,8 @@ bool VM::forkAndEval(ARState &state, Value &&desc) {
       break;
     }
     default:
-      Proc procs[1] = {proc};
-      if (!attachAsyncJob(state, std::move(desc), 1, procs, forkKind, pipeSet, obj)) {
+      if (const Proc procs[1] = {proc};
+          !attachAsyncJob(state, std::move(desc), 1, procs, forkKind, pipeSet, obj)) {
         return false;
       }
     }
@@ -599,11 +599,10 @@ static NativeCode initCode(OpCode op) {
   return NativeCode(code);
 }
 
-static ResolvedCmd lookupUdcFromIndex(const ARState &state, ModId modId, unsigned int index,
-                                      bool nullChar = false) {
+static ResolvedCmd lookupUdcFromIndex(const ARState &state, const ModId modId,
+                                      const unsigned int index, const bool nullChar = false) {
   const FuncObject *udcObj = nullptr;
-  auto &v = state.getGlobal(index);
-  if (v) {
+  if (auto &v = state.getGlobal(index)) {
     udcObj = &typeAs<FuncObject>(v);
   } else {
     return ResolvedCmd::illegalUdc();
@@ -630,8 +629,8 @@ static ResolvedCmd lookupUdcFromIndex(const ARState &state, ModId modId, unsigne
  */
 static bool lookupUdc(const ARState &state, const ModType &modType, const char *name, bool nullChar,
                       ResolvedCmd &cmd) {
-  std::string fullname = toCmdFullName(name);
-  auto handle = modType.lookupVisibleSymbolAtModule(state.typePool, fullname);
+  const std::string fullname = toCmdFullName(name);
+  const auto handle = modType.lookupVisibleSymbolAtModule(state.typePool, fullname);
   if (handle) {
     cmd = lookupUdcFromIndex(state, handle->getModId(), handle->getIndex(), nullChar);
     return true;
@@ -645,11 +644,11 @@ ResolvedCmd CmdResolver::operator()(const ARState &state, const Value &name,
 
   // first, check user-defined command
   if (hasFlag(this->resolveOp, FROM_UDC)) {
-    auto fqn = hasFlag(this->resolveOp, FROM_FQN_UDC) ? ref.find('\0') : StringRef::npos;
+    const auto fqn = hasFlag(this->resolveOp, FROM_FQN_UDC) ? ref.find('\0') : StringRef::npos;
     const char *cmdName = ref.data();
     const bool hasNullChar = fqn != StringRef::npos;
     if (hasNullChar) {
-      auto ret = state.typePool.getType(cmdName);
+      const auto ret = state.typePool.getType(cmdName);
       if (!ret || !ret->isModType() || ref.find('\0', fqn + 1) != StringRef::npos) {
         return ResolvedCmd::invalid();
       }
@@ -662,17 +661,17 @@ ResolvedCmd CmdResolver::operator()(const ARState &state, const Value &name,
       modType = state.typePool.getModTypeById(ROOT_MOD_ID);
       assert(modType);
     }
-    ResolvedCmd cmd{};
-    if (lookupUdc(state, *modType, cmdName, hasNullChar, cmd)) {
+    if (ResolvedCmd cmd{}; lookupUdc(state, *modType, cmdName, hasNullChar, cmd)) {
       return cmd;
-    } else if (hasNullChar) {
+    }
+    if (hasNullChar) {
       return ResolvedCmd::invalid();
     }
   }
 
   // second, check builtin command
   if (hasFlag(this->resolveOp, FROM_BUILTIN)) {
-    if (builtin_command_t bcmd = lookupBuiltinCommand(ref); bcmd != nullptr) {
+    if (const builtin_command_t bcmd = lookupBuiltinCommand(ref); bcmd != nullptr) {
       return ResolvedCmd::fromBuiltin(bcmd);
     }
 
@@ -681,9 +680,9 @@ ResolvedCmd CmdResolver::operator()(const ARState &state, const Value &name,
         {"call", initCode(OpCode::BUILTIN_CALL)},
         {"exec", initCode(OpCode::BUILTIN_EXEC)},
     };
-    for (auto &e : sb) {
-      if (ref == e.first) {
-        return ResolvedCmd::fromBuiltin(e.second);
+    for (auto &[name, code] : sb) {
+      if (ref == name) {
+        return ResolvedCmd::fromBuiltin(code);
       }
     }
   }
@@ -691,7 +690,7 @@ ResolvedCmd CmdResolver::operator()(const ARState &state, const Value &name,
   // resolve dynamic registered user-defined command
   if (hasFlag(this->resolveOp, FROM_DYNA_UDC)) {
     auto &map = typeAs<OrderedMapObject>(state.getGlobal(BuiltinVarOffset::DYNA_UDCS));
-    if (auto retIndex = map.lookup(name); retIndex != -1) {
+    if (const auto retIndex = map.lookup(name); retIndex != -1) {
       auto *obj = map[retIndex].getValue().get();
       assert(isa<FuncObject>(*obj) || isa<ClosureObject>(*obj));
       return ResolvedCmd::fromCmdObj(obj);
@@ -732,7 +731,7 @@ static void raiseCmdError(ARState &state, const char *cmdName, int errNum) {
 
 static void raiseInvalidCmdError(ARState &state, StringRef ref) {
   std::string message = "command contains null character: `";
-  for (char ch : ref) {
+  for (const char ch : ref) {
     if (ch == '\0') {
       message += "\\x00";
     } else {
@@ -776,8 +775,8 @@ bool VM::forkAndExec(ARState &state, const char *filePath, char *const *argv, Va
     close(selfPipe[READ_PIPE]);
     xexecve(filePath, argv, nullptr);
 
-    int errNum = errno;
-    ssize_t r = write(selfPipe[WRITE_PIPE], &errNum, sizeof(int));
+    const int errNum = errno;
+    const ssize_t r = write(selfPipe[WRITE_PIPE], &errNum, sizeof(int));
     (void)r; // FIXME:
     exit(-1);
   } else { // parent process
@@ -801,7 +800,7 @@ bool VM::forkAndExec(ARState &state, const char *filePath, char *const *argv, Va
     const int status = proc.wait(waitOp);
     int errNum2 = errno;
     if (!proc.is(Proc::State::TERMINATED)) {
-      auto job = state.jobTable.attach(
+      const auto job = state.jobTable.attach(
           JobObject::create(proc, state.emptyFDObj, state.emptyFDObj, toCmdDesc(argv)));
       if (proc.is(Proc::State::STOPPED) && state.isJobControl()) {
         job->showInfo();
@@ -831,15 +830,15 @@ bool VM::prepareSubCommand(ARState &state, const ModType &modType, ObjPtr<ArrayO
     return true;
   }
 
-  auto subCmd = array.getValues()[1].asStrRef();
+  const auto subCmd = array.getValues()[1].asStrRef();
   if (subCmd[0] == '_') {
     ERROR(state, array, "cannot resolve private subcommand: %s", toPrintable(subCmd).c_str());
     pushExitStatus(state, 1);
     return true;
   }
 
-  std::string key = toCmdFullName(subCmd);
-  auto handle = modType.lookup(state.typePool, key);
+  const std::string key = toCmdFullName(subCmd);
+  const auto handle = modType.lookup(state.typePool, key);
   if (!handle) {
     ERROR(state, array, "undefined subcommand: %s", toPrintable(subCmd).c_str());
     pushExitStatus(state, 2);
@@ -853,7 +852,7 @@ bool VM::prepareSubCommand(ARState &state, const ModType &modType, ObjPtr<ArrayO
 
 bool VM::callCommand(ARState &state, CmdResolver resolver, ObjPtr<ArrayObject> &&argvObj,
                      Value &&redirConfig, CmdCallAttr attr) {
-  auto cmd = resolver(state, argvObj->getValues()[0]);
+  const auto cmd = resolver(state, argvObj->getValues()[0]);
   return callCommand(state, cmd, std::move(argvObj), std::move(redirConfig), attr);
 }
 
@@ -892,7 +891,7 @@ bool VM::callCommand(ARState &state, const ResolvedCmd &cmd, ObjPtr<ArrayObject>
   auto &array = *argvObj;
   if (cmd.hasNullChar()) { // adjust command name
     StringRef name = array.getValues()[0].asStrRef();
-    auto pos = name.find('\0');
+    const auto pos = name.find('\0');
     assert(pos != StringRef::npos);
     name = name.substr(pos + 1);
     array.refValues()[0] = Value::createStr(name); // not check iterator invalidation
@@ -910,17 +909,16 @@ bool VM::callCommand(ARState &state, const ResolvedCmd &cmd, ObjPtr<ArrayObject>
                                          std::move(redirConfig), attr);
   case ResolvedCmd::BUILTIN: {
     errno = 0;
-    int status = cmd.builtinCmd()(state, array);
+    const int status = cmd.builtinCmd()(state, array);
     flushStdFD();
     if (state.hasError()) {
       return false;
     }
-    if (checkCmdExecError(state, attr, status)) {
-      pushExitStatus(state, status);
-      return true;
-    } else {
+    if (!checkCmdExecError(state, attr, status)) {
       return false;
     }
+    pushExitStatus(state, status);
+    return true;
   }
   case ResolvedCmd::MODULE:
     return prepareSubCommand(state, cmd.modType(), std::move(argvObj), std::move(redirConfig));
@@ -948,9 +946,9 @@ bool VM::callCommand(ARState &state, const ResolvedCmd &cmd, ObjPtr<ArrayObject>
     argv[size] = nullptr;
 
     if (hasFlag(attr, CmdCallAttr::NEED_FORK)) {
-      bool ret = forkAndExec(state, cmd.filePath(), argv, std::move(redirConfig));
+      const bool ret = forkAndExec(state, cmd.filePath(), argv, std::move(redirConfig));
       if (ret) {
-        int status = state.getMaskedExitStatus();
+        const int status = state.getMaskedExitStatus();
         if (!checkCmdExecError(state, attr, status)) {
           return false;
         }
@@ -1014,7 +1012,7 @@ VM::BuiltinCmdResult VM::builtinCommand(ARState &state, ObjPtr<ArrayObject> &&ar
     case 'h':
       return BuiltinCmdResult::display(showHelp(arrayObj));
     default:
-      int s = invalidOptionError(state, arrayObj, optState);
+      const int s = invalidOptionError(state, arrayObj, optState);
       return BuiltinCmdResult::display(s);
     }
   }
@@ -1027,7 +1025,7 @@ VM::BuiltinCmdResult VM::builtinCommand(ARState &state, ObjPtr<ArrayObject> &&ar
 
   if (showDesc == 0) { // execute command
     if (arrayObj.getValues()[1].asStrRef().hasNullChar()) {
-      auto name = toPrintable(arrayObj.getValues()[1].asStrRef());
+      const auto name = toPrintable(arrayObj.getValues()[1].asStrRef());
       ERROR(state, arrayObj, "contains null characters: %s", name.c_str());
       return BuiltinCmdResult::display(1);
     }
@@ -1035,9 +1033,9 @@ VM::BuiltinCmdResult VM::builtinCommand(ARState &state, ObjPtr<ArrayObject> &&ar
     auto &values = arrayObj.refValues();
     values.erase(values.begin(), values.begin() + index); // not check iterator invalidation
 
-    auto resolve = CmdResolver(CmdResolver::NO_UDC, useDefaultPath ? FilePathCache::USE_DEFAULT_PATH
-                                                                   : FilePathCache::NON);
-    bool r = callCommand(state, resolve, std::move(argvObj), std::move(redir), attr);
+    const auto resolve = CmdResolver(
+        CmdResolver::NO_UDC, useDefaultPath ? FilePathCache::USE_DEFAULT_PATH : FilePathCache::NON);
+    const bool r = callCommand(state, resolve, std::move(argvObj), std::move(redir), attr);
     return BuiltinCmdResult::call(r);
   }
 
@@ -1150,11 +1148,11 @@ int VM::builtinExec(ARState &state, const ArrayObject &argvObj, Value &&redir) {
     }
   }
 
-  unsigned int index = optState.index;
+  const unsigned int index = optState.index;
   const unsigned int argc = argvObj.getValues().size();
   if (index < argc) { // exec
     if (argvObj.getValues()[index].asStrRef().hasNullChar()) {
-      auto name = toPrintable(argvObj.getValues()[index].asStrRef());
+      const auto name = toPrintable(argvObj.getValues()[index].asStrRef());
       ERROR(state, argvObj, "contains null characters: %s", name.c_str());
       return 1;
     }
@@ -1179,7 +1177,7 @@ int VM::builtinExec(ARState &state, const ArrayObject &argvObj, Value &&redir) {
 }
 
 bool VM::returnFromUserDefinedCommand(ARState &state, int64_t status) {
-  auto attr = static_cast<CmdCallAttr>(state.stack.getLocal(UDC_PARAM_ATTR).asNum());
+  const auto attr = static_cast<CmdCallAttr>(state.stack.getLocal(UDC_PARAM_ATTR).asNum());
   state.stack.unwind();
   if (!checkCmdExecError(state, attr, status)) {
     return false;
@@ -1317,7 +1315,7 @@ static void raiseTildeError(ARState &state, const DirStackProvider &provider,
                             const std::string &path, TildeExpandStatus status) {
   assert(status != TildeExpandStatus::OK);
   StringRef ref = path;
-  if (auto pos = ref.find("/"); pos != StringRef::npos) {
+  if (const auto pos = ref.find("/"); pos != StringRef::npos) {
     ref = ref.substr(0, pos);
   }
   std::string str = toMessagePrefix(status);
@@ -1347,10 +1345,11 @@ public:
   }
 
   StringRef get(size_t index) override {
-    size_t size = this->size();
+    const size_t size = this->size();
     if (index < size) {
       return this->dirStack().getValues()[index].asStrRef();
-    } else if (index == size) {
+    }
+    if (index == size) {
       this->cwd = this->state.getWorkingDir();
       return this->cwd.get();
     }
@@ -1516,7 +1515,7 @@ static bool needGlob(const Value *begin, const Value *end) {
  */
 static bool tryUpdate(int64_t &cur, const BaseObject &obj) {
   auto &nums = obj[3].asNumList();
-  BraceRange range = {
+  const BraceRange range = {
       .begin = obj[0].asInt(),
       .end = obj[1].asInt(),
       .step = obj[2].asInt(),
@@ -1545,7 +1544,7 @@ bool VM::applyBraceExpansion(ARState &state, ArrayObject &argv, const Value *beg
         unsigned int closeIndex = i + 1;
         for (int level = 1; closeIndex < size; closeIndex++) {
           if (begin[closeIndex].kind() == ValueKind::EXPAND_META) {
-            auto next = begin[closeIndex].asExpandMeta();
+            const auto next = begin[closeIndex].asExpandMeta();
             if (next.first == ExpandMeta::BRACE_CLOSE) {
               if (--level == 0) {
                 break;
@@ -1565,11 +1564,11 @@ bool VM::applyBraceExpansion(ARState &state, ArrayObject &argv, const Value *beg
       }
       case ExpandMeta::BRACE_SEP:
       case ExpandMeta::BRACE_CLOSE: {
-        auto iter =
+        const auto iter =
             std::lower_bound(stack.begin(), stack.end(), meta.second, ExpandState::Compare());
         assert(iter != stack.end());
-        (*iter).index = i;
-        i = (*iter).closeIndex;
+        iter->index = i;
+        i = iter->closeIndex;
         goto CONTINUE;
       }
       case ExpandMeta::BRACE_TILDE:
@@ -1593,8 +1592,8 @@ bool VM::applyBraceExpansion(ARState &state, ArrayObject &argv, const Value *beg
       }
       case ExpandMeta::BRACE_SEQ_CLOSE: {
         auto &nums = typeAs<BaseObject>(begin[i - 1])[3].asNumList();
-        unsigned int digits = nums[0];
-        auto kind = static_cast<BraceRange::Kind>(nums[1]);
+        const unsigned int digits = nums[0];
+        const auto kind = static_cast<BraceRange::Kind>(nums[1]);
         values[usedSize++] = Value::createStr(
             formatSeqValue(seqStack.back(), digits, kind == BraceRange::Kind::CHAR));
         goto CONTINUE;
@@ -1614,8 +1613,8 @@ bool VM::applyBraceExpansion(ARState &state, ArrayObject &argv, const Value *beg
 
       values[usedSize] = Value(); // sentinel
 
-      auto *vbegin = values.get();
-      auto *vend = vbegin + usedSize;
+      const auto *vbegin = values.get();
+      const auto *vend = vbegin + usedSize;
       bool tilde = hasFlag(expandOp, ExpandOp::TILDE);
       if (!tilde && usedSize > 0 && vbegin->kind() == ValueKind::EXPAND_META &&
           vbegin->asExpandMeta().first == ExpandMeta::BRACE_TILDE) {
@@ -1632,7 +1631,7 @@ bool VM::applyBraceExpansion(ARState &state, ArrayObject &argv, const Value *beg
         if (tilde) {
           DefaultDirStackProvider dirStackProvider(state);
           std::string str = path.asStrRef().toString();
-          if (auto s = expandTilde(str, true, &dirStackProvider);
+          if (const auto s = expandTilde(str, true, &dirStackProvider);
               s != TildeExpandStatus::OK && state.has(RuntimeOption::FAIL_TILDE)) {
             raiseTildeError(state, dirStackProvider, str, s);
             return false;
@@ -1647,10 +1646,10 @@ bool VM::applyBraceExpansion(ARState &state, ArrayObject &argv, const Value *beg
       }
 
       while (!stack.empty()) {
-        unsigned int oldIndex = stack.back().index;
+        const unsigned int oldIndex = stack.back().index;
         auto &old = begin[oldIndex];
         assert(old.kind() == ValueKind::EXPAND_META);
-        auto meta = old.asExpandMeta().first;
+        const auto meta = old.asExpandMeta().first;
         if (meta == ExpandMeta::BRACE_CLOSE) {
           stack.pop_back();
         } else if (meta == ExpandMeta::BRACE_SEQ_CLOSE) {
@@ -1730,7 +1729,7 @@ bool VM::kickSignalHandler(ARState &state, int sigNum, Value &&func) {
 
 void VM::kickVMHook(ARState &state) {
   assert(state.hook);
-  auto op = static_cast<OpCode>(*state.stack.ip());
+  const auto op = static_cast<OpCode>(*state.stack.ip());
   state.hook->vmFetchHook(state, op);
 }
 
@@ -2582,9 +2581,9 @@ bool VM::mainLoop(ARState &state) {
 }
 
 void VM::rethrowFromFinally(ARState &state) {
-  auto entry = state.stack.exitFinally();
-  if (entry.hasError()) { // ignore current exception and rethrow
-    auto curError = state.stack.takeThrownObject();
+  if (const auto entry = state.stack.exitFinally();
+      entry.hasError()) { // ignore current exception and rethrow
+    const auto curError = state.stack.takeThrownObject();
     curError->printStackTrace(state, ErrorObject::PrintOp::IGNORED);
     state.stack.setErrorObj(entry.asError());
   }
@@ -2688,15 +2687,13 @@ EvalRet VM::startEval(ARState &state, EvalOP op, ARError *dsError, Value &value)
 bool VM::callToplevel(ARState &state, const ObjPtr<FuncObject> &func, ARError *dsError) {
   assert(state.stack.recDepth() == 0);
 
-  EvalOP op{};
-
   // set module to global
   state.globals.resize(state.rootModScope->getMaxGlobalVarIndex());
   {
     auto &type = state.typePool.get(func->getTypeID());
     assert(isa<ModType>(type));
     auto &modType = cast<ModType>(type);
-    unsigned int index = modType.getIndex();
+    const unsigned int index = modType.getIndex();
     state.setGlobal(index, Value(func));
   }
 
@@ -2706,7 +2703,7 @@ bool VM::callToplevel(ARState &state, const ObjPtr<FuncObject> &func, ARError *d
   state.stack.wind(0, 0, func->getCode());
 
   Value ret;
-  auto s = startEval(state, op, dsError, ret);
+  const auto s = startEval(state, EvalOP{}, dsError, ret);
   assert(s != EvalRet::HAS_ERROR);
   return s == EvalRet::SUCCESS;
 }
@@ -2715,7 +2712,7 @@ unsigned int VM::prepareArguments(VMState &state, Value &&recv, CallArgs &&args)
   state.clearThrownObject();
 
   // push arguments
-  unsigned int size = args.first;
+  const unsigned int size = args.first;
   state.reserve(size + 1);
   state.push(std::move(recv));
   for (unsigned int i = 0; i < size; i++) {
@@ -2769,7 +2766,7 @@ Value VM::callFunction(ARState &state, Value &&funcObj, CallArgs &&args) {
   GUARD_RECURSION(state);
 
   auto &type = state.typePool.get(funcObj.getTypeID());
-  unsigned int size = prepareArguments(state.stack, std::move(funcObj), std::move(args));
+  const unsigned int size = prepareArguments(state.stack, std::move(funcObj), std::move(args));
 
   Value ret;
   if (prepareFuncCall(state, size)) {
@@ -2810,7 +2807,7 @@ ARErrorKind VM::handleUncaughtException(ARState &state, ARError *dsError) {
   std::string sourceName;
   if (state.typePool.get(TYPE::Error).isSameOrBaseTypeOf(errorType) ||
       kind != AR_ERROR_KIND_RUNTIME_ERROR) {
-    auto &obj = typeAs<ErrorObject>(except);
+    const auto &obj = typeAs<ErrorObject>(except);
     errorLineNum = getOccurredLineNum(obj.getStackTrace());
     const char *ptr = getOccurredSourceName(obj.getStackTrace());
     sourceName = ptr;

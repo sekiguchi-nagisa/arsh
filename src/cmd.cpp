@@ -113,7 +113,7 @@ static auto initBuiltinMap() {
 builtin_command_t lookupBuiltinCommand(StringRef commandName) {
   static auto builtinMap = initBuiltinMap();
 
-  auto iter = builtinMap.find(commandName);
+  const auto iter = builtinMap.find(commandName);
   if (iter == builtinMap.end()) {
     return nullptr;
   }
@@ -122,8 +122,8 @@ builtin_command_t lookupBuiltinCommand(StringRef commandName) {
 
 int GetOptState::operator()(const ArrayObject &obj) {
   auto iter = StrArrayIter(obj.getValues().begin() + this->index);
-  auto end = StrArrayIter(obj.getValues().end());
-  int ret = opt::GetOptState::operator()(iter, end);
+  const auto end = StrArrayIter(obj.getValues().end());
+  const int ret = opt::GetOptState::operator()(iter, end);
   this->index = iter.actual - obj.getValues().begin();
   return ret;
 }
@@ -133,11 +133,10 @@ int GetOptState::operator()(const ArrayObject &obj) {
  */
 static bool printUsage(FILE *fp, StringRef prefix, bool isShortHelp = true) {
   bool matched = false;
-  unsigned int size = getBuiltinCmdSize();
+  const unsigned int size = getBuiltinCmdSize();
   auto *cmdList = getBuiltinCmdDescList();
   for (unsigned int i = 0; i < size; i++) {
-    const char *cmdName = cmdList[i].name;
-    if (StringRef(cmdName).startsWith(prefix)) {
+    if (const char *cmdName = cmdList[i].name; StringRef(cmdName).startsWith(prefix)) {
       fprintf(fp, "%s: %s %s\n", cmdName, cmdName, cmdList[i].usage);
       if (!isShortHelp) {
         fprintf(fp, "%s\n", cmdList[i].detail);
@@ -172,7 +171,7 @@ int parseFD(StringRef value) {
   if (value.startsWith("/dev/fd/")) {
     value.removePrefix(strlen("/dev/fd/"));
   }
-  auto ret = convertToDecimal<int32_t>(value.begin(), value.end());
+  const auto ret = convertToDecimal<int32_t>(value.begin(), value.end());
   if (!ret || ret.value < 0) {
     return -1;
   }
@@ -180,7 +179,7 @@ int parseFD(StringRef value) {
 }
 
 static void printAllUsage(FILE *fp) {
-  unsigned int size = getBuiltinCmdSize();
+  const unsigned int size = getBuiltinCmdSize();
   auto *cmdList = getBuiltinCmdDescList();
   for (unsigned int i = 0; i < size; i++) {
     fprintf(fp, "%s %s\n", cmdList[i].name, cmdList[i].usage);
@@ -210,7 +209,7 @@ static int builtin_help(ARState &st, ArrayObject &argvObj) {
   }
   unsigned int count = 0;
   for (; index < size; index++) {
-    auto arg = argvObj.getValues()[index].asStrRef();
+    const auto arg = argvObj.getValues()[index].asStrRef();
     if (printUsage(stdout, arg, shortHelp)) {
       count++;
     }
@@ -258,8 +257,8 @@ static int builtin_eval(ARState &st, ArrayObject &argvObj) {
 static int parseExitStatus(const ARState &state, const ArrayObject &argvObj, unsigned int index) {
   int64_t ret = state.getGlobal(BuiltinVarOffset::EXIT_STATUS).asInt();
   if (index < argvObj.size() && index > 0) {
-    auto value = argvObj.getValues()[index].asStrRef();
-    auto pair = convertToDecimal<int64_t>(value.begin(), value.end());
+    const auto value = argvObj.getValues()[index].asStrRef();
+    const auto pair = convertToDecimal<int64_t>(value.begin(), value.end());
     if (pair) {
       ret = pair.value;
     }
@@ -278,12 +277,11 @@ static int builtin_exit(ARState &state, ArrayObject &argvObj) {
   }
 
 END:
-  int ret = parseExitStatus(state, argvObj, optState.index);
+  const int ret = parseExitStatus(state, argvObj, optState.index);
   if (argvObj.getValues()[0].asStrRef() == "_exit") {
     exit(ret);
-  } else {
-    raiseShellExit(state, ret);
   }
+  raiseShellExit(state, ret);
   return ret;
 }
 
@@ -307,7 +305,7 @@ static int builtin_gets(ARState &st, ArrayObject &argvObj) {
   char buf[256];
   ssize_t readSize = 0;
   while ((readSize = read(STDIN_FILENO, buf, std::size(buf))) > 0) {
-    ssize_t r = write(STDOUT_FILENO, buf, readSize);
+    const ssize_t r = write(STDOUT_FILENO, buf, readSize);
     (void)r;
   }
   return 0;
@@ -390,7 +388,7 @@ static int builtin_hash(ARState &state, ArrayObject &argvObj) {
     for (; index < size; index++) {
       auto ref = argvObj.getValues()[index].asStrRef();
       const char *name = ref.data();
-      bool hasNul = ref.hasNullChar();
+      const bool hasNul = ref.hasNullChar();
       if (remove) {
         state.pathCache.removePath(hasNul ? nullptr : name);
       } else {
@@ -496,7 +494,7 @@ static int builtin_complete(ARState &state, ArrayObject &argvObj) {
   }
   if (show) {
     int errNum = 0;
-    auto &ret = typeAs<ArrayObject>(state.getGlobal(BuiltinVarOffset::COMPREPLY));
+    const auto &ret = typeAs<ArrayObject>(state.getGlobal(BuiltinVarOffset::COMPREPLY));
     for (const auto &e : ret.getValues()) {
       errNum = writeLine(e.asStrRef(), stdout, false);
       if (errNum != 0) {
@@ -518,13 +516,13 @@ static int builtin_getenv(ARState &state, ArrayObject &argvObj) {
     }
   }
 
-  unsigned int index = optState.index;
+  const unsigned int index = optState.index;
   if (index == argvObj.size()) {
     return showUsage(argvObj);
   }
 
   state.setGlobal(BuiltinVarOffset::REPLY, Value::createStr());
-  auto envName = argvObj.getValues()[index].asStrRef();
+  const auto envName = argvObj.getValues()[index].asStrRef();
   if (envName.hasNullChar()) {
     ERROR(state, argvObj, "contains null characters: %s", toPrintable(envName).c_str());
     return 1;
@@ -566,7 +564,7 @@ static int builtin_setenv(ARState &st, ArrayObject &argvObj) {
 
   for (; index < size; index++) {
     auto kv = argvObj.getValues()[index].asStrRef();
-    auto pos = kv.hasNullChar() ? StringRef::npos : kv.find("=");
+    const auto pos = kv.hasNullChar() ? StringRef::npos : kv.find("=");
     errno = EINVAL;
     if (pos != StringRef::npos && pos != 0) {
       auto name = kv.substr(0, pos).toString();
@@ -679,8 +677,7 @@ static constexpr ulimitOp ulimitOps[] = {
 static unsigned int computeMaxNameLen() {
   unsigned int max = 0;
   for (auto &e : ulimitOps) {
-    unsigned int len = strlen(e.name);
-    if (len > max) {
+    if (const unsigned int len = strlen(e.name); len > max) {
       max = len;
     }
   }
@@ -708,7 +705,7 @@ static bool parseUlimitOpt(StringRef ref, unsigned int index, UlimitOptEntry &en
     return true;
   }
 
-  auto pair = convertToDecimal<underlying_t>(str);
+  const auto pair = convertToDecimal<underlying_t>(str);
   if (!pair) {
     return false;
   }
@@ -787,8 +784,7 @@ static int builtin_ulimit(ARState &st, ArrayObject &argvObj) {
     case '?':
       return invalidOptionError(st, argvObj, optState);
     default:
-      int ret = table.tryToUpdate(st, optState, argvObj, opt);
-      if (ret) {
+      if (const int ret = table.tryToUpdate(st, optState, argvObj, opt)) {
         return ret;
       }
       break;
@@ -797,8 +793,7 @@ static int builtin_ulimit(ARState &st, ArrayObject &argvObj) {
 
   // parse remain
   if (table.count == 0) {
-    int ret = table.tryToUpdate(st, optState, argvObj, 'f');
-    if (ret) {
+    if (const int ret = table.tryToUpdate(st, optState, argvObj, 'f')) {
       return ret;
     }
   }
@@ -808,7 +803,7 @@ static int builtin_ulimit(ARState &st, ArrayObject &argvObj) {
   }
 
   if (showAll) {
-    unsigned int maxDescLen = computeMaxNameLen();
+    const unsigned int maxDescLen = computeMaxNameLen();
     int errNum = 0;
     for (auto &e : ulimitOps) {
       if (!e.print(limOpt, maxDescLen)) {
@@ -831,7 +826,7 @@ static int builtin_ulimit(ARState &st, ArrayObject &argvObj) {
       const auto &op = ulimitOps[index];
       rlimit limit{};
       getrlimit(op.resource, &limit);
-      rlim_t value = table.entries[index].getValue(limit);
+      const rlim_t value = table.entries[index].getValue(limit);
       if (hasFlag(limOpt, RLIM_SOFT)) {
         limit.rlim_cur = value;
       }
@@ -862,7 +857,7 @@ static int builtin_ulimit(ARState &st, ArrayObject &argvObj) {
     }                                                                                              \
   } while (false)
 
-enum class PrintMaskOp : unsigned int {
+enum class PrintMaskOp : unsigned char {
   ONLY_PRINT = 1 << 0,
   REUSE = 1 << 1,
   SYMBOLIC = 1 << 2,
@@ -916,8 +911,7 @@ static bool parseMode(const char *&value, mode_t &mode) {
   // [ugoa]*
   mode_t user = 0;
   for (bool next = true; next;) {
-    char ch = *(value++);
-    switch (ch) {
+    switch (*(value++)) {
     case 'u':
       user |= 0700;
       break;
@@ -941,7 +935,7 @@ static bool parseMode(const char *&value, mode_t &mode) {
   }
 
   // [-+=]
-  char op = *(value++);
+  const char op = *(value++);
   if (op != '-' && op != '+' && op != '=') {
     return false;
   }
@@ -949,8 +943,7 @@ static bool parseMode(const char *&value, mode_t &mode) {
   // [rwx]*
   mode_t newMode = 0;
   while (*value && *value != ',') {
-    char ch = *(value++);
-    switch (ch) {
+    switch (*(value++)) {
     case 'r':
       newMode |= 0444 & user;
       break;
@@ -1009,7 +1002,7 @@ static SymbolicParseResult parseSymbolicMode(StringRef ref, mode_t mode) {
     return ret;
   }
   while (*value) {
-    if (*(value++) == ',' && parseMode(value, ret.mode)) {
+    if (const char ch = *(value++); ch == ',' && parseMode(value, ret.mode)) {
       continue;
     }
     ret.success = false;
@@ -1043,20 +1036,20 @@ static int builtin_umask(ARState &st, ArrayObject &argvObj) {
 
   if (optState.index < argvObj.getValues().size()) {
     unsetFlag(op, PrintMaskOp::ONLY_PRINT | PrintMaskOp::REUSE);
-    auto value = argvObj.getValues()[optState.index].asStrRef();
+    const auto value = argvObj.getValues()[optState.index].asStrRef();
     if (!value.empty() && isDecimal(*value.data())) {
-      auto pair = convertToNum<int32_t>(value.begin(), value.end(), 8);
-      int num = pair.value;
+      const auto pair = convertToNum<int32_t>(value.begin(), value.end(), 8);
+      const int num = pair.value;
       if (!pair || num < 0 || num > 0777) {
         ERROR(st, argvObj, "%s: octal number out of range (0000~0777)", toPrintable(value).c_str());
         return 1;
       }
       mask = num;
     } else {
-      auto ret = parseSymbolicMode(value, mask);
+      const auto ret = parseSymbolicMode(value, mask);
       mask = ret.mode;
       if (!ret.success) {
-        int ch = static_cast<unsigned char>(ret.invalid);
+        const int ch = static_cast<unsigned char>(ret.invalid);
         if (isascii(ch) && ch != 0) {
           ERROR(st, argvObj, "%c: invalid symbolic operator", ch);
         } else {
