@@ -15,39 +15,8 @@ jobs:
         uses: actions/checkout@v3
       - name: Build Packages
         uses: ./tools/dockerfiles/cpack-rpm-build
-      - name: Get the package name
-        id: get_rpm_name
-        run: |
-          cd build
-          echo "RPM_NAME=$(ls | grep .rpm | grep -v debug)" >> $GITHUB_OUTPUT
-          echo "RPM_DEBUGINFO_NAME=$(ls | grep .rpm | grep debug)" >> $GITHUB_OUTPUT
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Release
+        uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ github.ref }}
-          release_name: Release ${{ github.ref }}
           draft: true
-          prerelease: false
-      - name: Upload RPM
-        id: upload-release-rpm-asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: build/${{ steps.get_rpm_name.outputs.RPM_NAME }}
-          asset_name: ${{ steps.get_rpm_name.outputs.RPM_NAME }}
-          asset_content_type: application/rpm
-      - name: Upload RPM debuginfo
-        id: upload-release-debuginfo-asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: build/${{ steps.get_rpm_name.outputs.RPM_DEBUGINFO_NAME }}
-          asset_name: ${{ steps.get_rpm_name.outputs.RPM_DEBUGINFO_NAME }}
-          asset_content_type: application/rpm
+          files: '*.rpm'
