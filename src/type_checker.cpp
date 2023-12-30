@@ -36,8 +36,7 @@ const DSType *TypeChecker::toType(TypeNode &node) {
 
     // fist lookup type alias
     auto &typeName = typeNode.getTokenText();
-    auto ret = this->curScope->lookup(toTypeAliasFullName(typeName));
-    if (ret) {
+    if (auto ret = this->curScope->lookup(toTypeAliasFullName(typeName))) {
       auto handle = std::move(ret).take();
       typeNode.setHandle(handle);
       return &this->typePool().get(handle->getTypeId());
@@ -62,8 +61,7 @@ const DSType *TypeChecker::toType(TypeNode &node) {
     auto &qualifiedNode = cast<QualifiedTypeNode>(node);
     auto &recvType = this->checkTypeExactly(qualifiedNode.getRecvTypeNode());
     std::string typeName = toTypeAliasFullName(qualifiedNode.getNameTypeNode().getTokenText());
-    auto ret = this->curScope->lookupField(this->typePool(), recvType, typeName);
-    if (ret) {
+    if (auto ret = this->curScope->lookupField(this->typePool(), recvType, typeName)) {
       qualifiedNode.getNameTypeNode().setHandle(ret.asOk());
       return &this->typePool().get(ret.asOk()->getTypeId());
     } else {
@@ -141,7 +139,8 @@ const DSType *TypeChecker::toType(TypeNode &node) {
   return nullptr;
 }
 
-static bool checkCoercion(TypePool &pool, const DSType &requiredType, const DSType &targetType) {
+static bool checkCoercion(const TypePool &pool, const DSType &requiredType,
+                          const DSType &targetType) {
   if (requiredType.isVoidType()) { // pop stack top
     return true;
   }
@@ -246,16 +245,16 @@ static void adjustDeferDropSize(BlockNode &blockNode) {
   blockNode.setFirstDeferOffset(lastDefer->getDropLocalOffset());
 
   for (; index < size; index++) {
-    auto *node = blockNode.getNodes()[index].get();
-    if (isa<DeferNode>(node)) {
+    if (auto *node = blockNode.getNodes()[index].get(); isa<DeferNode>(node)) {
       auto *curDefer = cast<DeferNode>(node);
-      unsigned int dropSize = curDefer->getDropLocalOffset() - lastDefer->getDropLocalOffset();
+      const unsigned int dropSize =
+          curDefer->getDropLocalOffset() - lastDefer->getDropLocalOffset();
       lastDefer->setDropLocalSize(dropSize);
       lastDefer = curDefer;
     }
   }
-  unsigned int localLimit = blockNode.getBaseIndex() + blockNode.getVarSize();
-  unsigned int dropSize = localLimit - lastDefer->getDropLocalOffset();
+  const unsigned int localLimit = blockNode.getBaseIndex() + blockNode.getVarSize();
+  const unsigned int dropSize = localLimit - lastDefer->getDropLocalOffset();
   lastDefer->setDropLocalSize(dropSize);
 }
 
@@ -394,9 +393,8 @@ HandlePtr TypeChecker::addUdcEntry(const UserDefinedCmdNode &node) {
     type = ret.asOk();
   }
 
-  auto ret =
-      this->curScope->defineHandle(toCmdFullName(node.getCmdName()), *type, HandleAttr::READ_ONLY);
-  if (ret) {
+  if (auto ret = this->curScope->defineHandle(toCmdFullName(node.getCmdName()), *type,
+                                              HandleAttr::READ_ONLY)) {
     return std::move(ret).take();
   } else {
     this->reportNameRegisterError(node.getToken(), ErrorSymbolKind::UDC, ret.asErr(),
@@ -462,7 +460,7 @@ void TypeChecker::reportMethodLookupError(ApplyNode::Attr attr, const AccessNode
     }
     std::string suffix;
     if (attr == ApplyNode::DEFAULT) {
-      auto suggestion =
+      const auto suggestion =
           suggestSimilarMember(methodName, this->typePool(), *this->curScope,
                                node.getRecvNode().getType(), SuggestMemberType::METHOD);
       if (!suggestion.empty()) {
@@ -539,7 +537,7 @@ CallSignature TypeChecker::resolveCallSignature(ApplyNode &node) {
     const Handle *ptr = nullptr;
     const char *name = nullptr;
     if (isa<VarNode>(exprNode)) {
-      auto &varNode = cast<VarNode>(exprNode);
+      const auto &varNode = cast<VarNode>(exprNode);
       ptr = varNode.getHandle().get();
       name = varNode.getVarName().c_str();
     }
@@ -552,9 +550,8 @@ CallSignature TypeChecker::resolveCallSignature(ApplyNode &node) {
 
 bool TypeChecker::checkAccessNode(AccessNode &node) {
   auto &recvType = this->checkTypeAsExpr(node.getRecvNode());
-  auto ret = this->curScope->lookupField(this->typePool(), recvType, node.getFieldName());
-  if (ret) {
-    auto handle = ret.asOk();
+  if (auto ret = this->curScope->lookupField(this->typePool(), recvType, node.getFieldName())) {
+    const auto handle = ret.asOk();
     node.setHandle(handle);
     node.setType(this->typePool().get(handle->getTypeId()));
     return true;
@@ -590,7 +587,7 @@ void TypeChecker::checkArgsNode(const CallSignature &callSignature, ArgsNode &no
       this->reportError<UnmatchParam>(node, paramSize, argSize);
     }
   }
-  unsigned int maxSize = std::max(argSize, paramSize);
+  const unsigned int maxSize = std::max(argSize, paramSize);
   for (unsigned int i = 0; i < maxSize; i++) {
     if (i < argSize && i < paramSize) {
       this->checkType(*callSignature.paramTypes[i], *node.getNodes()[i]);
@@ -610,8 +607,8 @@ void TypeChecker::checkArgsNode(const CallSignature &callSignature, ArgsNode &no
   this->checkTypeExactly(node);
 
   if (this->signatureHandler && argSize > 0 && isa<CodeCompNode>(*node.getNodes()[argSize - 1])) {
-    auto &compNode = cast<CodeCompNode>(*node.getNodes()[argSize - 1]);
-    if (compNode.getKind() == CodeCompNode::Kind::CALL_SIGNATURE) {
+    if (cast<CodeCompNode>(*node.getNodes()[argSize - 1]).getKind() ==
+        CodeCompNode::Kind::CALL_SIGNATURE) {
       this->signatureHandler(callSignature, argSize - 1);
     }
   }
@@ -644,8 +641,8 @@ void TypeChecker::resolveCastOp(TypeOpNode &node, bool forceToString) {
   /**
    * number cast
    */
-  int beforeIndex = exprType.getNumTypeIndex();
-  int afterIndex = targetType.getNumTypeIndex();
+  const int beforeIndex = exprType.getNumTypeIndex();
+  const int afterIndex = targetType.getNumTypeIndex();
   if (beforeIndex > -1 && afterIndex > -1) {
     assert(beforeIndex < 8 && afterIndex < 8);
     node.setOpKind(TypeOpNode::NUM_CAST);
@@ -680,7 +677,7 @@ void TypeChecker::resolveCastOp(TypeOpNode &node, bool forceToString) {
 
 // visitor api
 void TypeChecker::visitTypeNode(TypeNode &node) {
-  if (auto ret = this->toType(node)) {
+  if (const auto ret = this->toType(node)) {
     node.setType(*ret);
   }
 }
@@ -758,7 +755,7 @@ void TypeChecker::visitRegexNode(RegexNode &node) {
 }
 
 void TypeChecker::visitArrayNode(ArrayNode &node) {
-  unsigned int size = node.getExprNodes().size();
+  const unsigned int size = node.getExprNodes().size();
   assert(size != 0);
   auto &firstElementNode = node.getExprNodes()[0];
   auto &elementType = this->checkTypeAsSomeExpr(*firstElementNode);
@@ -773,7 +770,7 @@ void TypeChecker::visitArrayNode(ArrayNode &node) {
 }
 
 void TypeChecker::visitMapNode(MapNode &node) {
-  unsigned int size = node.getValueNodes().size();
+  const unsigned int size = node.getValueNodes().size();
   assert(size != 0);
   auto &firstKeyNode = node.getKeyNodes()[0];
   this->checkTypeAsSomeExpr(*firstKeyNode);
@@ -792,13 +789,12 @@ void TypeChecker::visitMapNode(MapNode &node) {
 }
 
 void TypeChecker::visitTupleNode(TupleNode &node) {
-  unsigned int size = node.getNodes().size();
+  const unsigned int size = node.getNodes().size();
   std::vector<const DSType *> types(size);
   for (unsigned int i = 0; i < size; i++) {
     types[i] = &this->checkTypeAsSomeExpr(*node.getNodes()[i]);
   }
-  auto typeOrError = this->typePool().createTupleType(std::move(types));
-  if (typeOrError) {
+  if (auto typeOrError = this->typePool().createTupleType(std::move(types))) {
     node.setType(*std::move(typeOrError).take());
   } else {
     this->reportError(node.getToken(), std::move(*typeOrError.asErr()));
@@ -808,15 +804,14 @@ void TypeChecker::visitTupleNode(TupleNode &node) {
 void TypeChecker::visitVarNode(VarNode &node) {
   switch (node.getExtraOp()) {
   case VarNode::NONE: {
-    auto ret = this->curScope->lookupAndCaptureUpVar(node.getVarName());
-    if (ret) {
-      auto handle = std::move(ret).take();
+    if (auto ret = this->curScope->lookupAndCaptureUpVar(node.getVarName())) {
+      const auto handle = std::move(ret).take();
       node.setHandle(handle);
       node.setType(this->typePool().get(handle->getTypeId()));
     } else {
       switch (ret.asErr()) {
       case NameLookupError::NOT_FOUND: {
-        auto suggestion = suggestSimilarVarName(node.getVarName(), *this->curScope);
+        const auto suggestion = suggestSimilarVarName(node.getVarName(), *this->curScope);
         std::string suffix;
         if (!suggestion.empty()) {
           addSuggestionSuffix(suffix, suggestion);
@@ -847,13 +842,13 @@ void TypeChecker::visitVarNode(VarNode &node) {
     break;
   }
   case VarNode::POSITIONAL_ARG: { // $0, $1 ...
-    StringRef ref = node.getVarName();
-    if (auto pair = convertToDecimal<uint32_t>(ref.begin(), ref.end());
+    const StringRef ref = node.getVarName();
+    if (const auto pair = convertToDecimal<uint32_t>(ref.begin(), ref.end());
         pair && pair.value <= SYS_LIMIT_ARRAY_MAX) {
       if (pair.value == 0) { // $0
         auto ret = this->curScope->lookupAndCaptureUpVar("0");
         assert(ret);
-        auto handle = ret.asOk();
+        const auto handle = ret.asOk();
         node.setHandle(handle);
         node.setType(this->typePool().get(handle->getTypeId()));
       } else {
@@ -877,8 +872,9 @@ void TypeChecker::visitVarNode(VarNode &node) {
 void TypeChecker::visitAccessNode(AccessNode &node) {
   if (!this->checkAccessNode(node)) {
     std::string suffix;
-    auto suggestion = suggestSimilarMember(node.getFieldName(), this->typePool(), *this->curScope,
-                                           node.getRecvNode().getType(), SuggestMemberType::FIELD);
+    const auto suggestion =
+        suggestSimilarMember(node.getFieldName(), this->typePool(), *this->curScope,
+                             node.getRecvNode().getType(), SuggestMemberType::FIELD);
     if (!suggestion.empty()) {
       addSuggestionSuffix(suffix, suggestion);
     }
@@ -1018,7 +1014,7 @@ void TypeChecker::visitApplyNode(ApplyNode &node) {
     break;
   }
   default:
-    CallSignature callSignature = this->resolveCallSignature(node);
+    const CallSignature callSignature = this->resolveCallSignature(node);
     this->checkArgsNode(callSignature, node.getArgsNode());
     node.setType(*callSignature.returnType);
     if (node.getType().isNothingType() &&
@@ -1058,9 +1054,8 @@ void TypeChecker::visitEmbedNode(EmbedNode &node) {
   if (node.getKind() == EmbedNode::STR_EXPR) {
     auto &type = this->typePool().get(TYPE::String);
     if (!type.isSameOrBaseTypeOf(exprType)) { // call __INTERP__()
-      std::string methodName(OP_INTERP);
-      auto *handle = this->typePool().lookupMethod(exprType, methodName);
-      if (handle) {
+      const std::string methodName(OP_INTERP);
+      if (auto *handle = this->typePool().lookupMethod(exprType, methodName)) {
         assert(handle->getReturnType() == type);
         node.setHandle(handle);
       } else { // if exprType is Unresolved
@@ -1173,8 +1168,7 @@ void TypeChecker::visitTypeDefNode(TypeDefNode &node) {
         shadowing = true;
       }
     }
-    auto ret = this->curScope->defineTypeAlias(this->typePool(), nameInfo.getName(), type);
-    if (ret) {
+    if (auto ret = this->curScope->defineTypeAlias(this->typePool(), nameInfo.getName(), type)) {
       node.setHandle(ret.asOk());
       if (shadowing) {
         this->reportError<TypeAliasShadowing>(nameInfo.getToken(), nameInfo.getName().c_str());
@@ -1191,12 +1185,10 @@ void TypeChecker::visitTypeDefNode(TypeDefNode &node) {
       break;
     }
     auto &errorType = this->checkType(this->typePool().get(TYPE::Error), node.getTargetTypeNode());
-    auto typeOrError =
-        this->typePool().createErrorType(node.getName(), errorType, this->curScope->modId);
-    if (typeOrError) {
-      auto ret =
-          this->curScope->defineTypeAlias(this->typePool(), node.getName(), *typeOrError.asOk());
-      if (ret) {
+    if (auto typeOrError =
+            this->typePool().createErrorType(node.getName(), errorType, this->curScope->modId)) {
+      if (auto ret = this->curScope->defineTypeAlias(this->typePool(), node.getName(),
+                                                     *typeOrError.asOk())) {
         node.setHandle(ret.asOk());
       } else {
         this->reportNameRegisterError(node.getNameInfo().getToken(), ErrorSymbolKind::TYPE_ALIAS,
@@ -1245,8 +1237,8 @@ void TypeChecker::visitLoopNode(LoopNode &node) {
   // adjust local offset
   if (node.getInitNode().is(NodeKind::VarDecl)) {
     auto &blockNode = node.getBlockNode();
-    unsigned int baseIndex = blockNode.getBaseIndex();
-    unsigned int varSize = blockNode.getVarSize();
+    const unsigned int baseIndex = blockNode.getBaseIndex();
+    const unsigned int varSize = blockNode.getVarSize();
     blockNode.setBaseIndex(baseIndex + 1);
     blockNode.setVarSize(varSize - 1);
   }
@@ -1298,7 +1290,7 @@ void TypeChecker::visitIfNode(IfNode &node) {
   types.reserve(4);
   types.push_back(&node.getThenNode().getType());
 
-  for (auto *elseNode = &node.refElseNode();;) {
+  for (const auto *elseNode = &node.refElseNode();;) {
     if (isa<IfNode>(**elseNode) && cast<IfNode>(**elseNode).isElif()) {
       auto &elifNode = cast<IfNode>(**elseNode);
       assert(elifNode.getType().isUnresolved());
@@ -1332,8 +1324,8 @@ bool TypeChecker::IntPatternMap::collect(const Node &constNode) {
   if (constNode.getNodeKind() != NodeKind::Number) {
     return false;
   }
-  int64_t value = cast<const NumberNode>(constNode).getIntValue();
-  auto pair = this->set.insert(value);
+  const int64_t value = cast<const NumberNode>(constNode).getIntValue();
+  const auto pair = this->set.insert(value);
   return pair.second;
 }
 
@@ -1342,7 +1334,7 @@ bool TypeChecker::StrPatternMap::collect(const Node &constNode) {
     return false;
   }
   const char *str = cast<const StringNode>(constNode).getValue().c_str();
-  auto pair = this->set.insert(str);
+  const auto pair = this->set.insert(str);
   return pair.second;
 }
 
@@ -1385,7 +1377,7 @@ void TypeChecker::visitCaseNode(CaseNode &node) {
   }
 
   // resolve arm expr type
-  unsigned int size = node.getArmNodes().size();
+  const unsigned int size = node.getArmNodes().size();
   std::vector<const DSType *> types(size);
   for (unsigned int i = 0; i < size; i++) {
     types[i] = &this->checkTypeExactly(*node.getArmNodes()[i]);
@@ -1414,7 +1406,7 @@ void TypeChecker::checkPatternType(ArmNode &node, PatternCollector &collector) {
   if (node.getPatternNodes().empty()) {
     if (collector.hasElsePattern()) {
       Token token{node.getPos(), 4};
-      auto elseNode = std::make_unique<StringNode>(token, "else");
+      const auto elseNode = std::make_unique<StringNode>(token, "else");
       this->reportError<DupPattern>(*elseNode);
     }
     collector.setElsePattern(true);
@@ -1512,7 +1504,7 @@ const DSType &TypeChecker::resolveCommonSuperType(const Node &node,
     return *fallbackType;
   } else {
     std::string value;
-    for (auto &t : types) {
+    for (const auto &t : types) {
       if (!value.empty()) {
         value += ", ";
       }
@@ -1809,8 +1801,8 @@ void TypeChecker::visitCatchNode(CatchNode &node) {
     /**
      * check type catch block
      */
-    auto handle = this->addEntry(node.getNameInfo(), exceptionType, HandleAttr::READ_ONLY);
-    if (handle) {
+    if (const auto handle =
+            this->addEntry(node.getNameInfo(), exceptionType, HandleAttr::READ_ONLY)) {
       node.setAttribute(*handle);
     }
     this->checkTypeWithCurrentScope(nullptr, node.getBlockNode());
@@ -1825,7 +1817,7 @@ void TypeChecker::visitTryNode(TryNode &node) {
   }
 
   // check type try block
-  const DSType *exprType = nullptr;
+  const DSType *exprType;
   {
     auto try1 = this->funcCtx->intoTry();
     exprType = &this->checkTypeExactly(node.getExprNode());
@@ -1885,10 +1877,10 @@ void TypeChecker::checkTypeVarDecl(VarDeclNode &node, bool willBeField) {
       setFlag(attr, HandleAttr::UNCAPTURED);
     }
     auto &exprType = this->checkTypeAsSomeExpr(*node.getExprNode());
-    if (auto handle = this->addEntry(node.getNameInfo(), exprType, attr)) {
+    if (const auto handle = this->addEntry(node.getNameInfo(), exprType, attr)) {
       if (willBeField && isa<CLIRecordType>(this->funcCtx->getReturnType())) {
-        auto &cliType = this->typePool().get(TYPE::CLI);
-        if (this->typePool().hasMethod(cliType, node.getVarName())) {
+        if (auto &cliType = this->typePool().get(TYPE::CLI);
+            this->typePool().hasMethod(cliType, node.getVarName())) {
           this->reportError<SameNameCLIField>(node.getNameInfo().getToken(),
                                               node.getVarName().c_str());
         }
@@ -1908,8 +1900,8 @@ void TypeChecker::checkTypeVarDecl(VarDeclNode &node, bool willBeField) {
     if (node.getExprNode() != nullptr) {
       this->checkType(this->typePool().get(TYPE::String), *node.getExprNode());
     }
-    bool allowCapture = !willBeField;
-    if (auto handle =
+    const bool allowCapture = !willBeField;
+    if (const auto handle =
             this->addEnvEntry(node.getNameInfo().getToken(), node.getVarName(), allowCapture)) {
       node.setHandle(handle);
     }
@@ -1928,13 +1920,13 @@ void TypeChecker::visitAssignNode(AssignNode &node) {
   auto &leftNode = node.getLeftNode();
   auto &leftType = this->checkTypeAsExpr(leftNode);
   if (isa<AssignableNode>(leftNode)) {
-    auto &assignable = cast<AssignableNode>(leftNode);
+    const auto &assignable = cast<AssignableNode>(leftNode);
     if (assignable.getHandle() && assignable.hasAttr(HandleAttr::READ_ONLY)) {
       if (isa<VarNode>(leftNode)) {
         this->reportError<ReadOnlySymbol>(leftNode, cast<VarNode>(leftNode).getVarName().c_str());
       } else {
         assert(isa<AccessNode>(leftNode));
-        auto &accessNode = cast<AccessNode>(leftNode);
+        const auto &accessNode = cast<AccessNode>(leftNode);
         this->reportError<ReadOnlyField>(accessNode.getNameToken(),
                                          accessNode.getFieldName().c_str(),
                                          accessNode.getRecvNode().getType().getName());
@@ -1949,7 +1941,7 @@ void TypeChecker::visitAssignNode(AssignNode &node) {
   }
   if (node.isSelfAssignment()) {
     assert(node.getRightNode().is(NodeKind::BinaryOp));
-    auto &opNode = cast<BinaryOpNode>(node.getRightNode());
+    const auto &opNode = cast<BinaryOpNode>(node.getRightNode());
     opNode.getLeftNode()->setType(leftType);
     if (isa<AccessNode>(leftNode)) {
       cast<AccessNode>(leftNode).setAdditionalOp(AccessNode::DUP_RECV);
@@ -1988,7 +1980,8 @@ void TypeChecker::visitPrefixAssignNode(PrefixAssignNode &node) {
       assert(isa<VarNode>(e->getLeftNode()));
       auto &leftNode = cast<VarNode>(e->getLeftNode());
       leftNode.setType(this->typePool().getUnresolvedType());
-      if (auto handle = this->addEnvEntry(leftNode.getToken(), leftNode.getVarName(), false)) {
+      if (const auto handle =
+              this->addEnvEntry(leftNode.getToken(), leftNode.getVarName(), false)) {
         leftNode.setHandle(handle);
         leftNode.setType(rightType);
       }
@@ -2016,14 +2009,15 @@ void TypeChecker::registerRecordType(FunctionNode &node) {
     for (auto &e : node.getAttrNodes()) {
       if (e->getAttrKind() == AttributeKind::CLI) {
         cli = true;
-        if (auto index = e->findValidAttrParamIndex(Attribute::Param::VERBOSE); index != -1) {
+        if (const auto index = e->findValidAttrParamIndex(Attribute::Param::VERBOSE); index != -1) {
           if (cast<NumberNode>(*e->getConstNodes()[index]).getAsBoolValue()) {
             setFlag(attr, CLIRecordType::Attr::VERBOSE);
           } else {
             unsetFlag(attr, CLIRecordType::Attr::VERBOSE);
           }
         }
-        if (auto index = e->findValidAttrParamIndex(Attribute::Param::TOPLEVEL); index != -1) {
+        if (const auto index = e->findValidAttrParamIndex(Attribute::Param::TOPLEVEL);
+            index != -1) {
           if (cast<NumberNode>(*e->getConstNodes()[index]).getAsBoolValue()) {
             setFlag(attr, CLIRecordType::Attr::TOPLEVEL);
           } else {
@@ -2118,9 +2112,8 @@ void TypeChecker::registerFuncHandle(FunctionNode &node) {
       node.setResolvedType(funcType);
       if (!node.isAnonymousFunc()) {
         auto &nameInfo = node.getNameInfo();
-        auto ret =
-            this->curScope->defineNamedFunction(nameInfo.getName(), funcType, std::move(packed));
-        if (ret) {
+        if (auto ret = this->curScope->defineNamedFunction(nameInfo.getName(), funcType,
+                                                           std::move(packed))) {
           node.setHandle(std::move(ret).take());
         } else {
           this->reportNameRegisterError(nameInfo.getToken(), ErrorSymbolKind::VAR, ret.asErr(),
@@ -2271,7 +2264,7 @@ void TypeChecker::postprocessConstructor(FunctionNode &node) {
     this->reportError(node.getNameInfo().getToken(), std::move(*typeOrError.asErr()));
   }
 
-  unsigned int fieldSize = cast<RecordType>(node.getResolvedType())->getFieldSize();
+  const unsigned int fieldSize = cast<RecordType>(node.getResolvedType())->getFieldSize();
   auto returnNode = JumpNode::newReturnInit(*node.getResolvedType(), offset, fieldSize);
   returnNode->setType(this->typePool().get(TYPE::Nothing));
   node.getBlockNode().addNode(std::move(returnNode));
@@ -2367,7 +2360,7 @@ void TypeChecker::checkTypeFunction(FunctionNode &node, const FuncCheckOp op) {
                                node.isConstructor() ? FuncContext::CONSTRUCTOR : FuncContext::FUNC);
     // register parameter
     if (node.isMethod()) {
-      NameInfo nameInfo(node.getRecvTypeNode()->getToken(), VAR_THIS);
+      const NameInfo nameInfo(node.getRecvTypeNode()->getToken(), VAR_THIS);
       this->addEntry(nameInfo, node.getRecvTypeNode()->getType(), HandleAttr::READ_ONLY);
     }
     for (auto &paramNode : node.getParamNodes()) {
@@ -2381,10 +2374,10 @@ void TypeChecker::checkTypeFunction(FunctionNode &node, const FuncCheckOp op) {
     if (isa<CLIRecordType>(node.getResolvedType())) {
       Token dummy = node.getNameInfo().getToken();
       std::unique_ptr<Node> exprNode;
-      if (auto attr = cast<CLIRecordType>(node.getResolvedType())->getAttr();
+      if (const auto attr = cast<CLIRecordType>(node.getResolvedType())->getAttr();
           hasFlag(attr, CLIRecordType::Attr::TOPLEVEL)) {
         auto varNode = std::make_unique<VarNode>(Token{0, 0}, CVAR_ARG0);
-        auto handle = this->curScope->getGlobalScope()->lookup(CVAR_ARG0).take();
+        const auto handle = this->curScope->getGlobalScope()->lookup(CVAR_ARG0).take();
         varNode->setHandle(handle);
         varNode->setType(this->typePool().get(TYPE::String));
         exprNode = std::move(varNode);
@@ -2457,7 +2450,7 @@ void TypeChecker::checkTypeUserDefinedCmd(UserDefinedCmdNode &node, const FuncCh
 
     auto func = this->intoFunc(returnType); // pseudo return type
     {
-      auto old = this->allowWarning;
+      const auto old = this->allowWarning;
       this->allowWarning = false; // temporary disable variable shadowing check
 
       // register dummy parameter (for propagating command attr)
@@ -2492,7 +2485,7 @@ void TypeChecker::checkTypeUserDefinedCmd(UserDefinedCmdNode &node, const FuncCh
       if (returnType->isNothingType()) {
         this->reportError<UnfoundReturn>(node.getNameInfo().getToken(), node.getCmdName().c_str());
       } else {
-        unsigned int lastPos = node.getBlockNode().getToken().endPos();
+        const unsigned int lastPos = node.getBlockNode().getToken().endPos();
         auto varNode = std::make_unique<VarNode>(Token{lastPos, 0}, "?");
         this->checkTypeAsExpr(*varNode);
         addReturnNodeToLast(node.getBlockNode(), this->typePool(), std::move(varNode));
@@ -2563,10 +2556,10 @@ void TypeChecker::visitCodeCompNode(CodeCompNode &node) {
     assert(node.getExprNode());
     assert(isa<AttributeNode>(*node.getExprNode()));
     this->checkTypeExactly(*node.getExprNode());
-    auto &attrNode = cast<AttributeNode>(*node.getExprNode());
+    const auto &attrNode = cast<AttributeNode>(*node.getExprNode());
 
     AttributeParamSet targetParamSet;
-    AttributeParamSet resolved = attrNode.getResolvedParamSet();
+    const AttributeParamSet resolved = attrNode.getResolvedParamSet();
     if (auto *attr = this->attributeMap.lookup(attrNode.getAttrName())) {
       for (auto &e : attr->getParams()) {
         if (resolved.has(e.second)) {
