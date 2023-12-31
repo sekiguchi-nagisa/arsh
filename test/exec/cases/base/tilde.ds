@@ -21,7 +21,7 @@ var homev = "$(echo ~)"
 assert($HOME == $homev)
 assert "hellohome!@!" == $homev
 unsetenv HOME
-assert $home == "$(echo ~)"
+assert  "$(echo ~)" == "$(exec -c $BIN_NAME -c 'echo $HOME')"  # if HOME unset, use actual HOME (/etc/passwd)
 $HOME = $home
 
 ## expand to PWD
