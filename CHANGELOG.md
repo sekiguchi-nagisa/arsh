@@ -1,6 +1,6 @@
 # Changelog
 
-## [Unreleased]
+## [0.32.0] - 2023-12-31
 
 ### Added
 
@@ -54,6 +54,8 @@
 - **Breaking Change**: need spaces between `${` and number
     - due to suppress potential syntax ambiguity
     - now ``${345 }``, ``${3.14}`` notations are syntax error
+- **Breaking Change**: change to-string of collection having invalid value
+    - now emit ``(invalid)`` instead of throwing ``UnwrappingError``
 - **Breaking Change**: not overwrite the following environmental variables at startup time for compatibility with other
   shells
     - ``HOME``, ``LOGNAME``, ``USER``
@@ -91,8 +93,6 @@
         - ``group``: get group by index
         - ``named``: get group by name
         - ``names``: get names of named group
-- **Breaking Change**: change to-string of collection having invalid value
-    - now emit ``(invalid)`` instead of throwing ``UnwrappingError``
 - ``LineEditor#readLine`` method correctly report out-of-memory error
 - ``shctl info`` sub-command show unicode version
 - check io error in builtin ``command``
