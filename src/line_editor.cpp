@@ -552,8 +552,9 @@ void LineEditorObject::refreshLine(struct linenoiseState &l, bool repaint,
   auto [promptRows, promptCols] = renderPrompt(l, lineBuf);
 
   /* render and compute line row/columns length */
-  auto [rows, continueLine2] = renderLines(
-      l, promptCols, this->highlight ? makeObserver(this->escapeSeqMap) : nullptr, pager, lineBuf);
+  auto [rows, continueLine2] =
+      renderLines(l, promptCols, this->langExtension ? makeObserver(this->escapeSeqMap) : nullptr,
+                  pager, lineBuf);
   rows += promptRows + 1;
   this->continueLine = continueLine2;
 

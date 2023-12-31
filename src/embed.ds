@@ -27,7 +27,7 @@ var TERM_HOOK : ((Int, Any) => Void)?
 var COMP_HOOK : Func<[String]?, [Module, [String], Int]>?
 
 # line editor instance for repl
-let LINE_EDIT : LineEditor
+let LINE_EDIT : LineEditor; $LINE_EDIT.config("lang-extension", $true)
 
 # command fallback handler definition
 var CMD_FALLBACK : ((Module, [String]) -> Bool)?

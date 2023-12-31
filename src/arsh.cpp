@@ -579,7 +579,6 @@ ssize_t ARState_readLine(ARState *st, char *buf, size_t bufSize, ARError *e) {
     *e = initARError();
   }
   auto &editor = typeAs<LineEditorObject>(getBuiltinGlobal(*st, VAR_LINE_EDIT));
-  editor.enableHighlight();
   auto ret = editor.readline(*st, defaultPrompt(), buf, bufSize);
   if (errno == ENOMEM) {
     raiseSystemError(*st, ENOMEM, ERROR_READLINE);

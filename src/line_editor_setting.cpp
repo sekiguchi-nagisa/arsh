@@ -102,11 +102,12 @@ bool LineEditorObject::defineCustomAction(ARState &state, StringRef name, String
 }
 
 #define EACH_EDIT_CONFIG(OP)                                                                       \
-  OP(KILL_RING_SIZE, "killring-size", TYPE::Int)                                                   \
-  OP(EAW, "eaw", TYPE::Int)                                                                        \
   OP(USE_BRACKETED_PASTE, "bracketed-paste", TYPE::Bool)                                           \
+  OP(COLOR, "color", TYPE::String)                                                                 \
+  OP(EAW, "eaw", TYPE::Int)                                                                        \
   OP(USE_FLOW_CONTROL, "flow-control", TYPE::Bool)                                                 \
-  OP(COLOR, "color", TYPE::String)
+  OP(KILL_RING_SIZE, "killring-size", TYPE::Int)                                                   \
+  OP(LANG_EXTENSION, "lang-extension", TYPE::Bool)
 
 enum class EditConfig : unsigned char {
 #define GEN_ENUM(E, S, T) E,
@@ -194,6 +195,9 @@ bool LineEditorObject::setConfig(ARState &state, StringRef name, const Value &va
   case EditConfig::COLOR:
     this->setColor(value.asStrRef());
     return true;
+  case EditConfig::LANG_EXTENSION:
+    this->langExtension = value.asBool();
+    return true;
   }
   raiseError(state, TYPE::ArgumentError, std::move(message));
   return false;
@@ -244,6 +248,9 @@ Value LineEditorObject::getConfigs(ARState &state) const {
       value = Value::createStr(std::move(code));
       break;
     }
+    case EditConfig::LANG_EXTENSION:
+      value = Value::createBool(this->langExtension);
+      break;
     }
     map.insert(key, std::move(value));
   }

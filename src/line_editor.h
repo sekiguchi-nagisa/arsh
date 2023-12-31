@@ -38,7 +38,10 @@ private:
 
   bool rawMode{false};
 
-  bool highlight{false};
+  /**
+   * enable language specific features (syntax highlight, auto-line continuation)
+   */
+  bool langExtension{false};
 
   bool continueLine{false};
 
@@ -113,8 +116,6 @@ public:
   void setColor(StringRef colorSetting) {
     this->escapeSeqMap = ANSIEscapeSeqMap::fromString(colorSetting);
   }
-
-  void enableHighlight() { this->highlight = true; }
 
   /**
    *

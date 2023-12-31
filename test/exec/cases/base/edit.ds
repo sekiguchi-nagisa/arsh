@@ -132,12 +132,13 @@ assert ($ex as ArgumentError).message() == "number of custom actions reaches lim
 # configuration
 ## config list
 var configs = $editor.configs()
-assert $configs.size() == 5
+assert $configs.size() == 6
 assert $configs['killring-size'] as Int == 15
 assert $configs['eaw'] as Int == 0
 assert $configs['bracketed-paste'] as Bool
 assert $configs['flow-control'] as Bool
 assert $configs['color'] as String == ''
+assert !($configs["lang-extension"] as Bool)
 
 ## invalid config
 $ex = 34

@@ -29,6 +29,7 @@
         - change kill-ring size
         - set syntax highlight color (only accept valid SGR sequence)
         - set east asian width
+        - enable/disable language specific feature (syntax highlight, auto line-continuation)
     - ``configs``: get internal configurations
 
 #### Module
