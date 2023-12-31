@@ -18,7 +18,7 @@ WORKDIR /home/tux/dev
 
 # actual build dir is /home/tux/project_root_dir_for_cpack_rpm_build (for CPackRPM workaround)
 CMD cat /proc/1/cgroup && \
-    DIR="$(pwd)" && export HOME=/home/tux \
+    DIR="$(pwd)" && export HOME=/home/tux && \
     mkdir /home/tux/project_root_dir_for_cpack_rpm_build && \
     cp -r ./ /home/tux/project_root_dir_for_cpack_rpm_build && \
     cd /home/tux/project_root_dir_for_cpack_rpm_build && \
