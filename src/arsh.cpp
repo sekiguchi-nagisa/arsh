@@ -480,7 +480,7 @@ const char *ARState_version(ARVersion *version) {
   return "arsh, version " X_INFO_VERSION ", build by " X_INFO_CPP " " X_INFO_CPP_V;
 }
 
-const char *ARState_copyright() { return "Copyright (C) 2015-2023 Nagisa Sekiguchi"; }
+const char *ARState_copyright() { return "Copyright (C) 2015-2024 Nagisa Sekiguchi"; }
 
 static constexpr unsigned int featureBit() {
   unsigned int featureBit = 0;
