@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+
+- fix help message of ``prompt`` command in ``prompt`` module
+
 ## [0.32.0] - 2023-12-31
 
 ### Added

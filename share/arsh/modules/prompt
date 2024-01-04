@@ -127,6 +127,7 @@ function _usage(fd : UnixFD, short : Boolean) : Int  {
     \e      escape sequence
     \h      host name
     \H      fully qualified host name
+    \l      base name of tty
     \n      newline
     \r      carriage return
     \s      base name of \$0
