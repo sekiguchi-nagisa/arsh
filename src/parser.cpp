@@ -17,6 +17,7 @@
 #include "parser.h"
 #include "brace.h"
 #include "comp_context.h"
+#include "misc/format.hpp"
 #include "signals.h"
 
 // helper macro
@@ -1482,7 +1483,7 @@ static bool isHereDocStart(StringRef ref) {
   }
   unsigned int count = 0;
   for (auto ch : ref) {
-    if (isalnum(ch) || ch == '-' || ch == '_') {
+    if (isLetterOrDigit(ch) || ch == '-' || ch == '_') {
       count++;
     } else {
       return false;

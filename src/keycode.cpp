@@ -20,6 +20,7 @@
 
 #include "constant.h"
 #include "keycode.h"
+#include "misc/format.hpp"
 #include "misc/unicode.hpp"
 
 #ifdef __APPLE__
@@ -453,7 +454,7 @@ Result<unsigned int, KeyBindings::DefineError> KeyBindings::defineCustomAction(S
     return Err(DefineError::INVALID_NAME);
   }
   for (auto &e : name) {
-    if (std::isalnum(e) || e == '-' || e == '_') {
+    if (isLetterOrDigit(e) || e == '-' || e == '_') {
       continue;
     } else {
       return Err(DefineError::INVALID_NAME);

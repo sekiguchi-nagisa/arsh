@@ -19,14 +19,12 @@
 
 #include <cctype>
 #include <cerrno>
-#include <climits>
 #include <clocale>
 #include <cmath>
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
 #include <limits>
-#include <memory>
 #include <utility>
 
 #ifdef __APPLE__

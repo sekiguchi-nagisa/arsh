@@ -18,8 +18,6 @@
 #include <grp.h>
 #include <pwd.h>
 
-#include <cctype>
-
 #include "cmd_desc.h"
 #include "complete.h"
 #include "frontend.h"
@@ -489,7 +487,7 @@ void completeType(const TypePool &pool, const NameScope &scope, const DSType *re
       continue;
     }
     StringRef name = t->getNameRef();
-    if (name.startsWith(word) && std::all_of(name.begin(), name.end(), isalnum)) {
+    if (name.startsWith(word) && std::all_of(name.begin(), name.end(), isLetterOrDigit)) {
       consumer(name, CompCandidateKind::TYPE);
     }
   }

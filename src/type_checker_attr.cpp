@@ -175,12 +175,12 @@ static bool isValidLongOpt(const std::string &opt) {
     return false;
   }
   // [a-zA-Z] [a-zA-Z0-9-]+
-  if (!std::isalpha(opt[0])) {
+  if (!isLetter(opt[0])) {
     return false;
   }
   for (size_t i = 1; i < opt.size(); i++) {
     char ch = opt[i];
-    if (!std::isalnum(ch) && ch != '-') {
+    if (!isLetterOrDigit(ch) && ch != '-') {
       return false;
     }
   }
@@ -270,7 +270,7 @@ void TypeChecker::resolveArgEntry(std::unordered_set<std::string> &foundOptionSe
     }
     case Attribute::Param::SHORT: {
       auto &optName = cast<StringNode>(constNode).getValue();
-      if (optName.size() != 1 || !std::isalpha(optName[0])) {
+      if (optName.size() != 1 || !isLetter(optName[0])) {
         this->reportError<InvalidShortOpt>(constNode, optName.c_str());
         return;
       }

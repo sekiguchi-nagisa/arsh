@@ -131,9 +131,13 @@ inline void splitCamelCaseIdentifier(const StringRef ref, Func func) {
   }
 }
 
-inline bool isIdentifierStart(char ch) {
-  return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || ch == '_';
-}
+constexpr bool isLetter(char ch) { return (ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z'); }
+
+constexpr bool isDigit(char ch) { return ch >= '0' && ch <= '9'; }
+
+constexpr bool isLetterOrDigit(char ch) { return isLetter(ch) || isDigit(ch); }
+
+constexpr bool isIdentifierStart(char ch) { return isLetter(ch) || ch == '_'; }
 
 /**
  *
@@ -152,7 +156,7 @@ inline bool isValidIdentifier(const StringRef value) {
   }
   for (begin++; begin != end; begin++) {
     char ch = *begin;
-    if (!isIdentifierStart(ch) && !(ch >= '0' && ch <= '9')) {
+    if (!isIdentifierStart(ch) && !isDigit(ch)) {
       return false;
     }
   }
