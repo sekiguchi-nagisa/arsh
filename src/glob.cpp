@@ -64,7 +64,28 @@ public:
    * must be null terminated
    * @return
    */
-  GlobPatternStatus match(const char *name, Glob::Option option);
+  GlobPatternStatus match(const char *name, const Glob::Option option) {
+    // ignore starting with '.'
+    if (*name == '.') {
+      if (!name[1] || (name[1] == '.' && !name[2])) { // check '.' or '..'
+        switch (this->matchDots(name)) {
+        case 1:
+          return GlobPatternStatus::DOT;
+        case 2:
+          return GlobPatternStatus::DOTDOT;
+        default:
+          return GlobPatternStatus::FAILED;
+        }
+      }
+
+      if (!this->isEndOrSep() && *this->iter != '.') {
+        if (!hasFlag(option, Glob::Option::DOTGLOB)) {
+          return GlobPatternStatus::FAILED;
+        }
+      }
+    }
+    return this->matchMeta(name) ? GlobPatternStatus::MATCHED : GlobPatternStatus::FAILED;
+  }
 
 private:
   bool isEndOrSep() const { return this->isEnd() || *this->iter == '/'; }
@@ -96,63 +117,15 @@ private:
     this->iter = old;
     return 0;
   }
+
+  bool matchMeta(const char *name);
 };
 
-GlobPatternStatus PatternScanner::match(const char *name, const Glob::Option option) {
-  const char *cp = name;
+bool PatternScanner::matchMeta(const char *name) {
+  const char *oldName = nullptr;
   auto oldIter = this->end;
-
-  // ignore starting with '.'
-  if (*name == '.') {
-    if (!name[1] || (name[1] == '.' && !name[2])) { // check '.' or '..'
-      switch (this->matchDots(name)) {
-      case 1:
-        return GlobPatternStatus::DOT;
-      case 2:
-        return GlobPatternStatus::DOTDOT;
-      default:
-        return GlobPatternStatus::FAILED;
-      }
-    }
-
-    if (!this->isEndOrSep() && *this->iter != '.') {
-      if (!hasFlag(option, Glob::Option::DOTGLOB)) {
-        return GlobPatternStatus::FAILED;
-      }
-    }
-  }
-
-  for (; *name; ++name) {
-    if (this->isEndOrSep()) {
-      return GlobPatternStatus::FAILED;
-    }
-    char ch = *this->iter;
-    switch (ch) {
-    case '?':
-      ++this->iter;
-      continue;
-    case '*':
-      goto BREAK;
-    case '\\':
-      if (this->iter + 1 != this->end) {
-        ch = *++this->iter;
-      }
-      break;
-    default:
-      break;
-    }
-    if (*name != ch) {
-      return GlobPatternStatus::FAILED;
-    }
-    ++this->iter;
-  }
-
-BREAK:
   while (*name) {
-    if (this->isEndOrSep()) {
-      this->iter = oldIter;
-      name = cp++;
-    } else {
+    if (!this->isEndOrSep()) {
       char ch = *this->iter;
       switch (ch) {
       case '?':
@@ -162,10 +135,10 @@ BREAK:
       case '*':
         ++this->iter;
         if (this->isEndOrSep()) {
-          return GlobPatternStatus::MATCHED;
+          return true;
         }
         oldIter = this->iter;
-        cp = name + 1;
+        oldName = name + 1;
         continue;
       case '\\':
         if (this->iter + 1 != this->end) {
@@ -179,15 +152,20 @@ BREAK:
       if (*name == ch) {
         ++name;
         ++this->iter;
-      } else {
-        this->iter = oldIter;
-        name = cp++;
+        continue;
       }
     }
+
+    if (oldName) {
+      this->iter = oldIter;
+      name = oldName++;
+      continue;
+    }
+    return false;
   }
   for (; !this->isEndOrSep() && *this->iter == '*'; ++this->iter)
     ;
-  return this->isEndOrSep() ? GlobPatternStatus::MATCHED : GlobPatternStatus::FAILED;
+  return this->isEndOrSep();
 }
 
 GlobPatternStatus matchGlobMeta(const char *pattern, const char *name, Glob::Option option) {
