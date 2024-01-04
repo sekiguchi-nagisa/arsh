@@ -44,7 +44,7 @@ static bool interpretEscapeSeq(const StringRef ref, T callback) {
       break;
     }
     pos = retPos;
-    auto ret = parseEscapeSeq(ref.begin() + pos, ref.end(), true);
+    const auto ret = parseEscapeSeq(ref.begin() + pos, ref.end(), true);
     switch (ret.kind) {
     case EscapeSeqResult::OK_CODE: {
       char buf[5];
@@ -297,8 +297,9 @@ private:
 
   bool parseInt32(ArrayObject::IterType &begin, ArrayObject::IterType end, int &value) {
     if (begin != end) {
-      auto ref = (*begin++).asStrRef();
-      auto ret = convertToNum<int>(ref.begin(), ref.end(), 0);
+      const auto ref = begin->asStrRef();
+      ++begin;
+      const auto ret = convertToNum<int>(ref.begin(), ref.end(), 0);
       if (!ret) {
         this->error = "`";
         this->error += toPrintable(ref);
@@ -311,7 +312,7 @@ private:
   }
 
   bool parseDecimal(StringRef ref, int &value) {
-    auto ret = convertToDecimal<int>(ref.begin(), ref.end());
+    const auto ret = convertToDecimal<int>(ref.begin(), ref.end());
     if (!ret) {
       this->error = "`";
       this->error += toPrintable(ref);
