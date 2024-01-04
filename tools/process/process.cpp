@@ -22,7 +22,6 @@
 #include <sys/ttydefaults.h>
 #endif
 
-#include <cctype>
 #include <chrono>
 #include <cstdlib>
 #include <thread>
@@ -171,8 +170,16 @@ std::pair<std::string, std::string> ProcHandle::readAll(int timeout) const {
 }
 
 static void trimLastSpace(std::string &str) {
-  for (; !str.empty() && isspace(str.back()); str.pop_back())
-    ;
+  for (; !str.empty(); str.pop_back()) {
+    switch (str.back()) {
+    case ' ':
+    case '\t':
+    case '\n':
+      continue;
+    default:
+      return;
+    }
+  }
 }
 
 Output ProcHandle::waitAndGetResult(bool removeLastSpace) {
