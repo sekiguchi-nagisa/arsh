@@ -19,6 +19,7 @@
 
 #include <clocale>
 #include <new>
+#include <utility>
 
 #ifdef __APPLE__
 #include <xlocale.h>
