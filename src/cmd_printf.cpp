@@ -170,20 +170,19 @@ private:
   std::string error;
   const timestamp initTimestamp;
   const timestamp curTimestamp;
+  Locale locale;
   const bool useBuf;
-  bool restoreLocale{false};
   bool supportPlusTimeFormat{false};
 
 public:
   FormatPrinter(StringRef format, timestamp init, bool useBuf)
       : format(format), initTimestamp(init), curTimestamp(getCurrentTimestamp()), useBuf(useBuf) {
     this->setOutput(stdout);
-    setlocale(LC_TIME, ""); // always sync LC_TIME
   }
 
   ~FormatPrinter() {
-    if (this->restoreLocale) {
-      setlocale(LC_NUMERIC, "C"); // reset locale
+    if (this->locale) {
+      Locale::restore();
     }
   }
 
@@ -205,9 +204,9 @@ public:
 
 private:
   void syncLocale() {
-    if (!this->restoreLocale) {
-      this->restoreLocale = true;
-      setlocale(LC_NUMERIC, ""); // printf should use current locale setting specified by env
+    if (!this->locale) {
+      this->locale = Locale(LC_NUMERIC_MASK | LC_TIME_MASK, "");
+      this->locale.use(); // printf should use current locale setting specified by env
     }
   }
 
@@ -833,6 +832,7 @@ bool FormatPrinter::appendAsTimeFormat(FormatFlag flags, int width, int precisio
   if (timeFormat.empty()) {
     timeFormat = "%X";
   }
+  this->syncLocale();
   if (!interpretTimeFormat(buf, timeFormat, this->supportPlusTimeFormat, tm, targetTime.tv_nsec,
                            this->error)) {
     if (this->error.empty()) {
