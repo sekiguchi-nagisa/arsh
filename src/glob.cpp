@@ -18,6 +18,7 @@
 
 #include "glob.h"
 #include "misc/files.hpp"
+#include "misc/unicode.hpp"
 
 namespace arsh {
 
@@ -46,7 +47,7 @@ public:
   }
 
   bool consumeDot() {
-    auto old = this->iter;
+    const auto old = this->iter;
     if (!this->isEnd() && *this->iter == '.') {
       ++this->iter;
       if (this->isEndOrSep()) {
@@ -124,14 +125,21 @@ private:
 bool PatternScanner::matchMeta(const char *name) {
   const char *oldName = nullptr;
   auto oldIter = this->end;
+  const char *const endName = name + strlen(name);
   while (*name) {
     if (!this->isEndOrSep()) {
       char ch = *this->iter;
       switch (ch) {
-      case '?':
-        ++name;
+      case '?': {
+        int codePoint = 0;
+        if (const unsigned int byteSize = UnicodeUtil::utf8ToCodePoint(name, endName, codePoint)) {
+          name += byteSize;
+        } else { // invalid byte
+          ++name;
+        }
         ++this->iter;
         continue;
+      }
       case '*':
         ++this->iter;
         if (this->isEndOrSep()) {

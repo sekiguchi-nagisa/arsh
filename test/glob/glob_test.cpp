@@ -101,6 +101,8 @@ TEST_F(GlobTest, pattern1) {
   ASSERT_FALSE(matchPattern("hoge", "h*ge**?"));
   ASSERT_FALSE(matchPattern("hoge", "h*ge**?/"));
   ASSERT_TRUE(matchPattern("hoge", "h*ge**/AAA"));
+  ASSERT_TRUE(matchPattern("\xFE", "?"));
+  ASSERT_TRUE(matchPattern("あ", "?"));
 
   ASSERT_TRUE(matchPattern(
       "hoge",

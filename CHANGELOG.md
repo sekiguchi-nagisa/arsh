@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+### Changed
+
+#### Core
+
+- **Breaking Change**: various glob expansion improvements
+    - now ``?`` meta character is unicode-aware
+
 ### Fixed
 
 - fix help message of ``prompt`` command in ``prompt`` module
