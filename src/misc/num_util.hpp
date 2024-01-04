@@ -17,21 +17,15 @@
 #ifndef MISC_LIB_NUM_UTIL_HPP
 #define MISC_LIB_NUM_UTIL_HPP
 
-#include <cctype>
 #include <cerrno>
-#include <clocale>
 #include <cmath>
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
 #include <limits>
-#include <utility>
-
-#ifdef __APPLE__
-#include <xlocale.h>
-#endif
 
 #include "detect.hpp"
+#include "locale.hpp"
 
 BEGIN_MISC_LIB_NAMESPACE_DECL
 
@@ -286,28 +280,6 @@ inline IntConversionResult<T> convertToDecimal(const char *str) {
   return convertToDecimal<T>(str, str + strlen(str));
 }
 
-class Locale {
-private:
-  locale_t value;
-
-public:
-  Locale(int mask, const char *locale, locale_t base = nullptr)
-      : value(newlocale(mask, locale, base)) {}
-
-  ~Locale() { freelocale(this->value); }
-
-  locale_t get() const { return this->value; }
-
-  void use() const { uselocale(this->value); }
-
-  /**
-   * set thread locale to global
-   */
-  static void restore() { uselocale(LC_GLOBAL_LOCALE); }
-};
-
-inline auto POSIX_LOCALE_C = Locale(LC_ALL_MASK, "C");
-
 struct DoubleConversionResult {
   enum Kind : unsigned char {
     OK,
@@ -332,12 +304,20 @@ inline DoubleConversionResult convertToDouble(const char *str, bool skipIllegalC
   errno = 0;
 
   // convert to double
-  if (std::isspace(*str)) {
+  switch (*str) {
+  case ' ':
+  case '\t':
+  case '\n':
+  case '\r':
+  case '\f':
+  case '\v':
     return {
         .kind = DoubleConversionResult::ILLEGAL_CHAR,
         .consumedSize = 0,
         .value = 0,
     };
+  default:
+    break;
   }
   char *end;
   DoubleConversionResult ret = {
