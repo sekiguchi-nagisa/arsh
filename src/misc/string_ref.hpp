@@ -35,7 +35,7 @@ public:
 
   using size_type = std::size_t;
 
-  static constexpr const size_type npos = -1;
+  static constexpr size_type npos = -1;
 
 private:
   const char *ptr_;
@@ -136,8 +136,8 @@ public:
     if (ref.size_ == 0) {
       return pos;
     }
-    auto *ret = memmem(this->ptr_ + pos, this->size_ - pos, ref.ptr_, ref.size_);
-    return ret != nullptr ? static_cast<const char *>(ret) - this->ptr_ : npos;
+    const char *ret = xmemmem(*this, pos, ref);
+    return ret != nullptr ? ret - this->ptr_ : npos;
   }
 
   size_type find(char ch, size_type pos = 0) const {
@@ -148,23 +148,30 @@ public:
 
   bool contains(char ch) const { return this->find(ch, 0) != npos; }
 
-  bool contains(StringRefBase ref) const { return this->find(ref, 0) != npos; }
+  bool contains(const StringRefBase ref) const { return this->find(ref, 0) != npos; }
 
   bool hasNullChar() const { return this->contains('\0'); }
 
-  size_type indexOf(StringRefBase ref) const { return this->find(ref, 0); }
+  size_type indexOf(const StringRefBase ref) const { return this->find(ref, 0); }
 
-  size_type lastIndexOf(StringRefBase ref) const {
-    size_type ret = npos;
-    size_type pos = 0;
-    do {
-      auto tmp = this->find(ref, pos);
-      if (tmp == npos) {
+  size_type lastIndexOf(const StringRefBase ref) const {
+    if (ref.empty()) {
+      return this->size();
+    }
+    if (ref.size() > this->size()) {
+      return npos;
+    }
+    for (size_type pos = this->size() - ref.size();;) {
+      if (auto *ptr = xmemmem(*this, pos, ref)) {
+        return ptr - this->ptr_;
+      }
+      if (pos) {
+        --pos;
+      } else {
         break;
       }
-      ret = tmp;
-    } while (++pos != this->size_);
-    return ret;
+    }
+    return npos;
   }
 
   bool startsWith(StringRefBase ref) const {
@@ -177,6 +184,13 @@ public:
   }
 
   std::string toString() const { return std::string(this->data(), this->size()); }
+
+private:
+  static const char *xmemmem(const StringRefBase haystack, const size_type pos,
+                             const StringRefBase needle) {
+    return static_cast<const char *>(
+        memmem(haystack.data() + pos, haystack.size() - pos, needle.data(), needle.size()));
+  }
 };
 
 using StringRef = StringRefBase<true>;

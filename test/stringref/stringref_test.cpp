@@ -141,7 +141,7 @@ TEST_F(StringRefTest, find) {
   ASSERT_EQ(ref.size() - 1, ref.lastIndexOf("!"));
   ASSERT_EQ(StringRef::npos, ref.lastIndexOf("?"));
   ASSERT_EQ(StringRef::npos, ref.lastIndexOf("hello world!! hey"));
-  ASSERT_EQ(ref.size() - 1, ref.lastIndexOf(""));
+  ASSERT_EQ(ref.size(), ref.lastIndexOf(""));
   ASSERT_EQ(0, StringRef("").lastIndexOf(""));
   ASSERT_EQ(StringRef::npos, StringRef("").lastIndexOf("l"));
 
