@@ -14,13 +14,16 @@
 using namespace arsh;
 
 // for testing
-static GlobPatternStatus matchPatternRaw(const char *name, const char *p,
-                                         Glob::Option option = {}) {
-  return matchGlobMeta(p, name, option);
+static GlobPatternScanner::Status matchPatternRaw(const char *name, const char *p,
+                                                  Glob::Option option = {}) {
+  const StringRef ref = p;
+  GlobPatternScanner scanner(ref.begin(), ref.end());
+  return scanner.match(name, option);
 }
 
 static bool matchPattern(const char *name, const char *p, Glob::Option option = {}) {
-  return matchPatternRaw(name, p, option) != GlobPatternStatus::FAILED;
+  const auto s = matchPatternRaw(name, p, option);
+  return s != GlobPatternScanner::Status::UNMATCHED && s != GlobPatternScanner::Status::BAD_PATTERN;
 }
 
 class Consumer {
@@ -116,16 +119,16 @@ TEST_F(GlobTest, pattern1) {
 }
 
 TEST_F(GlobTest, pattern2) {
-  ASSERT_EQ(GlobPatternStatus::DOT, matchPatternRaw(".", "."));
-  ASSERT_EQ(GlobPatternStatus::DOT, matchPatternRaw(".", ".", Glob::Option::DOTGLOB));
+  ASSERT_EQ(GlobPatternScanner::Status::DOT, matchPatternRaw(".", "."));
+  ASSERT_EQ(GlobPatternScanner::Status::DOT, matchPatternRaw(".", ".", Glob::Option::DOTGLOB));
   ASSERT_FALSE(matchPattern(".", "*"));
   ASSERT_FALSE(matchPattern(".", "*", Glob::Option::DOTGLOB));
   ASSERT_FALSE(matchPattern(".conf", "*"));
   ASSERT_TRUE(matchPattern(".conf", "*", Glob::Option::DOTGLOB));
   ASSERT_FALSE(matchPattern(".", "?"));
   ASSERT_FALSE(matchPattern(".", "?", Glob::Option::DOTGLOB));
-  ASSERT_EQ(GlobPatternStatus::DOTDOT, matchPatternRaw("..", ".."));
-  ASSERT_EQ(GlobPatternStatus::DOTDOT, matchPatternRaw("..", "..", Glob::Option::DOTGLOB));
+  ASSERT_EQ(GlobPatternScanner::Status::DOTDOT, matchPatternRaw("..", ".."));
+  ASSERT_EQ(GlobPatternScanner::Status::DOTDOT, matchPatternRaw("..", "..", Glob::Option::DOTGLOB));
   ASSERT_FALSE(matchPattern("..", "*"));
   ASSERT_FALSE(matchPattern("..", "*", Glob::Option::DOTGLOB));
   ASSERT_FALSE(matchPattern("..", "*?"));

@@ -20,6 +20,7 @@
 #include <functional>
 
 #include "misc/flag_util.hpp"
+#include "misc/locale.hpp"
 #include "misc/resource.hpp"
 #include "misc/string_ref.hpp"
 
@@ -111,22 +112,114 @@ private:
 template <>
 struct allow_enum_bitop<Glob::Option> : std::true_type {};
 
-enum class GlobPatternStatus : unsigned char {
-  FAILED,  // match failed
-  DOT,     // match '.'
-  DOTDOT,  // match '..'
-  MATCHED, // match pattern
-};
+using GlobCharClassOp = int (*)(int, locale_t);
 
-/**
- * \brief for debug
- * \param pattern
- * \param name
- * must not contain '/'
- * \param option
- * \return
- */
-GlobPatternStatus matchGlobMeta(const char *pattern, const char *name, Glob::Option option);
+GlobCharClassOp lookupGlobCharClassOp(StringRef className);
+
+class GlobPatternScanner {
+public:
+  enum class Status : unsigned char {
+    DOT,         // match '.'
+    DOTDOT,      // match '..'
+    MATCHED,     // match pattern
+    UNMATCHED,   // match failed
+    BAD_PATTERN, // broken pattern syntax
+  };
+
+private:
+  const char *iter;
+  const char *const end;
+
+public:
+  GlobPatternScanner(const char *begin, const char *end) : iter(begin), end(end) {}
+
+  const char *getIter() const { return this->iter; }
+
+  bool isEnd() const { return this->iter == this->end; }
+
+  unsigned int consumeSeps() {
+    unsigned int count = 0;
+    for (; !this->isEnd() && *this->iter == '/'; ++this->iter) {
+      count++;
+    }
+    return count;
+  }
+
+  bool consumeDot() {
+    const auto old = this->iter;
+    if (!this->isEnd() && *this->iter == '.') {
+      ++this->iter;
+      if (this->isEndOrSep()) {
+        return true;
+      }
+    }
+    this->iter = old;
+    return false;
+  }
+
+  /**
+   * based on (https://www.codeproject.com/Articles/1088/Wildcard-string-compare-globbing)
+   * @param name
+   * must be null terminated
+   * @param option
+   * @return
+   */
+  Status match(const char *name, Glob::Option option);
+
+  enum class CharSetStatus : unsigned char {
+    MATCH,
+    UNMATCH,
+    SYNTAX_ERROR,
+    NO_CLASS,
+  };
+
+  /**
+   * for bracket expression (ex. [~a-z[:digit:]])
+   * @param codePoint
+   * @return
+   */
+  CharSetStatus matchCharSet(int codePoint);
+
+private:
+  bool isEndOrSep() const { return this->isEnd() || *this->iter == '/'; }
+
+  /**
+   *
+   * @param name
+   * @return
+   * return 0, if not match '.' or '..'
+   * return 1, if match '.'
+   * return 2, if match '..'
+   */
+  unsigned int matchDots(const char *name) {
+    const auto old = this->iter;
+    if (*name == '.' && *this->iter == '.') {
+      ++name;
+      ++this->iter;
+      if (!*name && this->isEndOrSep()) {
+        return 1;
+      }
+      if (*name == '.' && *this->iter == '.') {
+        ++name;
+        ++this->iter;
+        if (!*name && this->isEndOrSep()) {
+          return 2;
+        }
+      }
+    }
+    this->iter = old;
+    return 0;
+  }
+
+  /**
+   * for [:class:] notation
+   * @param codePoint
+   * @return
+   */
+  CharSetStatus tryMatchCharClass(int codePoint);
+
+  int consumeCharSetPart();
+};
 
 bool appendAndEscapeGlobMeta(StringRef ref, size_t maxSize, std::string &out);
 

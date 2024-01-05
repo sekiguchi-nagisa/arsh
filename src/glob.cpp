@@ -22,107 +22,31 @@
 
 namespace arsh {
 
-// ############################
-// ##     PatternScanner     ##
-// ############################
+// ################################
+// ##     GlobPatternScanner     ##
+// ################################
 
-class PatternScanner {
-private:
-  const char *iter;
-  const char *const end;
-
-public:
-  PatternScanner(const char *begin, const char *end) : iter(begin), end(end) {}
-
-  const char *getIter() const { return this->iter; }
-
-  bool isEnd() const { return this->iter == this->end; }
-
-  unsigned int consumeSeps() {
-    unsigned int count = 0;
-    for (; !this->isEnd() && *this->iter == '/'; ++this->iter) {
-      count++;
-    }
-    return count;
-  }
-
-  bool consumeDot() {
-    const auto old = this->iter;
-    if (!this->isEnd() && *this->iter == '.') {
-      ++this->iter;
-      if (this->isEndOrSep()) {
-        return true;
+GlobPatternScanner::Status GlobPatternScanner::match(const char *name, const Glob::Option option) {
+  // ignore starting with '.'
+  if (*name == '.') {
+    if (!name[1] || (name[1] == '.' && !name[2])) { // check '.' or '..'
+      switch (this->matchDots(name)) {
+      case 1:
+        return Status::DOT;
+      case 2:
+        return Status::DOTDOT;
+      default:
+        return Status::UNMATCHED;
       }
     }
-    this->iter = old;
-    return false;
-  }
 
-  /**
-   * based on (https://www.codeproject.com/Articles/1088/Wildcard-string-compare-globbing)
-   *
-   * @param name
-   * must be null terminated
-   * @return
-   */
-  GlobPatternStatus match(const char *name, const Glob::Option option) {
-    // ignore starting with '.'
-    if (*name == '.') {
-      if (!name[1] || (name[1] == '.' && !name[2])) { // check '.' or '..'
-        switch (this->matchDots(name)) {
-        case 1:
-          return GlobPatternStatus::DOT;
-        case 2:
-          return GlobPatternStatus::DOTDOT;
-        default:
-          return GlobPatternStatus::FAILED;
-        }
-      }
-
-      if (!this->isEndOrSep() && *this->iter != '.') {
-        if (!hasFlag(option, Glob::Option::DOTGLOB)) {
-          return GlobPatternStatus::FAILED;
-        }
+    if (!this->isEndOrSep() && *this->iter != '.') {
+      if (!hasFlag(option, Glob::Option::DOTGLOB)) {
+        return Status::UNMATCHED;
       }
     }
-    return this->matchMeta(name) ? GlobPatternStatus::MATCHED : GlobPatternStatus::FAILED;
   }
 
-private:
-  bool isEndOrSep() const { return this->isEnd() || *this->iter == '/'; }
-
-  /**
-   *
-   * @param name
-   * @return
-   * return 0, if not match '.' or '..'
-   * return 1, if match '.'
-   * return 2, if match '..'
-   */
-  unsigned int matchDots(const char *name) {
-    const auto old = this->iter;
-    if (*name == '.' && *this->iter == '.') {
-      ++name;
-      ++this->iter;
-      if (!*name && this->isEndOrSep()) {
-        return 1;
-      }
-      if (*name == '.' && *this->iter == '.') {
-        ++name;
-        ++this->iter;
-        if (!*name && this->isEndOrSep()) {
-          return 2;
-        }
-      }
-    }
-    this->iter = old;
-    return 0;
-  }
-
-  bool matchMeta(const char *name);
-};
-
-bool PatternScanner::matchMeta(const char *name) {
   const char *oldName = nullptr;
   auto oldIter = this->end;
   const char *const endName = name + strlen(name);
@@ -130,20 +54,33 @@ bool PatternScanner::matchMeta(const char *name) {
     if (!this->isEndOrSep()) {
       char ch = *this->iter;
       switch (ch) {
-      case '?': {
+      case '?':
+      case '[': {
         int codePoint = 0;
         if (const unsigned int byteSize = UnicodeUtil::utf8ToCodePoint(name, endName, codePoint)) {
           name += byteSize;
         } else { // invalid byte
           ++name;
         }
-        ++this->iter;
-        continue;
+        if (ch == '?') {
+          ++this->iter;
+          continue;
+        }
+        switch (this->matchCharSet(codePoint)) {
+        case CharSetStatus::MATCH:
+          continue;
+        case CharSetStatus::UNMATCH:
+          break;
+        case CharSetStatus::SYNTAX_ERROR:
+        case CharSetStatus::NO_CLASS:
+          return Status::BAD_PATTERN; // force terminate matching
+        }
+        goto BACKTRACK;
       }
       case '*':
         ++this->iter;
         if (this->isEndOrSep()) {
-          return true;
+          return Status::MATCHED;
         }
         oldIter = this->iter;
         oldName = name + 1;
@@ -164,22 +101,152 @@ bool PatternScanner::matchMeta(const char *name) {
       }
     }
 
+  BACKTRACK:
     if (oldName) {
       this->iter = oldIter;
       name = oldName++;
       continue;
     }
-    return false;
+    return Status::UNMATCHED;
   }
   for (; !this->isEndOrSep() && *this->iter == '*'; ++this->iter)
     ;
-  return this->isEndOrSep();
+  return this->isEndOrSep() ? Status::MATCHED : Status::UNMATCHED;
 }
 
-GlobPatternStatus matchGlobMeta(const char *pattern, const char *name, Glob::Option option) {
-  const StringRef ref(pattern);
-  PatternScanner scanner(ref.begin(), ref.end());
-  return scanner.match(name, option);
+GlobPatternScanner::CharSetStatus GlobPatternScanner::matchCharSet(const int codePoint) {
+  assert(*this->iter == '[');
+  ++this->iter;
+  bool negate = false;
+  if (!this->isEndOrSep() && (*this->iter == '!' || *this->iter == '^')) {
+    negate = true;
+    ++this->iter;
+  }
+  unsigned int matchCount = 0;
+  if (!this->isEndOrSep() && *this->iter == '[') {
+    switch (this->tryMatchCharClass(codePoint)) {
+    case CharSetStatus::MATCH:
+      matchCount++;
+      break;
+    case CharSetStatus::UNMATCH:
+    case CharSetStatus::SYNTAX_ERROR:
+      break;
+    case CharSetStatus::NO_CLASS:
+      return CharSetStatus::SYNTAX_ERROR;
+    }
+  }
+  while (!this->isEndOrSep() && *this->iter != ']') {
+    const int lower = this->consumeCharSetPart();
+    if (lower < 0) {
+      return CharSetStatus::SYNTAX_ERROR;
+    }
+    int upper = lower;
+    if (this->isEndOrSep()) {
+      return CharSetStatus::SYNTAX_ERROR;
+    }
+    if (*this->iter == '-') {
+      ++this->iter;
+      upper = this->consumeCharSetPart();
+      if (upper < 0) {
+        return CharSetStatus::SYNTAX_ERROR;
+      }
+    }
+    if (codePoint >= lower && codePoint <= upper) {
+      matchCount++;
+    }
+  }
+  if (!this->isEndOrSep() && *this->iter == ']') {
+    ++this->iter;
+    return matchCount > 0 || negate ? CharSetStatus::MATCH : CharSetStatus::UNMATCH;
+  }
+  return CharSetStatus::SYNTAX_ERROR;
+}
+
+static int isword_l(int ch, locale_t locale) { return isalnum_l(ch, locale) || ch == '_'; }
+
+static int isascii_l(int ch, locale_t) { return isascii(ch); }
+
+GlobCharClassOp lookupGlobCharClassOp(const StringRef className) {
+#define EACH_CHAR_CLASS_OP(OP)                                                                     \
+  OP(alnum)                                                                                        \
+  OP(alpha)                                                                                        \
+  OP(ascii)                                                                                        \
+  OP(blank)                                                                                        \
+  OP(cntrl)                                                                                        \
+  OP(digit)                                                                                        \
+  OP(graph)                                                                                        \
+  OP(lower)                                                                                        \
+  OP(print)                                                                                        \
+  OP(punct)                                                                                        \
+  OP(space)                                                                                        \
+  OP(upper)                                                                                        \
+  OP(word)                                                                                         \
+  OP(xdigit)
+
+  static const StrRefMap<GlobCharClassOp> map = {
+#define GEN_ENTRY(E) {#E, is##E##_l},
+      EACH_CHAR_CLASS_OP(GEN_ENTRY)
+#undef GEN_ENTRY
+  };
+
+  if (const auto iter = map.find(className); iter != map.end()) {
+    return iter->second;
+  }
+  return nullptr;
+}
+
+GlobPatternScanner::CharSetStatus GlobPatternScanner::tryMatchCharClass(const int codePoint) {
+  const auto oldIter = this->iter;
+  assert(*this->iter == '[');
+  ++this->iter; // skip '['
+  if (!this->isEndOrSep() && *this->iter == ':') {
+    ++this->iter;
+    std::string className;
+    while (!this->isEndOrSep() && *this->iter != ':') {
+      if (const char ch = *this->iter; ch >= 'a' && ch <= 'z') {
+        className += ch;
+        ++this->iter;
+      } else {
+        goto SYNTAX_ERROR;
+      }
+    }
+    if (this->isEndOrSep() || *this->iter != ':') {
+      goto SYNTAX_ERROR;
+    }
+    ++this->iter;
+
+    if (this->isEndOrSep() || *this->iter != ']') {
+      goto SYNTAX_ERROR;
+    }
+    ++this->iter;
+
+    if (auto *op = lookupGlobCharClassOp(className)) {
+      return op(codePoint, POSIX_LOCALE_C.get()) ? CharSetStatus::MATCH : CharSetStatus::UNMATCH;
+    }
+    this->iter = oldIter;
+    return CharSetStatus::NO_CLASS;
+  }
+
+SYNTAX_ERROR:
+  this->iter = oldIter;
+  return CharSetStatus::SYNTAX_ERROR;
+}
+
+int GlobPatternScanner::consumeCharSetPart() {
+  if (this->isEndOrSep()) {
+    return -1;
+  }
+  if (*this->iter == '\\') {
+    ++this->iter;
+  }
+  int codePoint = -1;
+  if (!this->isEndOrSep()) {
+    if (const unsigned int byteSize =
+            UnicodeUtil::utf8ToCodePoint(this->iter, this->end, codePoint)) {
+      this->iter += byteSize;
+    }
+  }
+  return codePoint;
 }
 
 // ##################
@@ -248,6 +315,7 @@ bool Glob::resolveBaseDir(const char *&iter, std::string &baseDir) const {
     switch (ch) {
     case '*':
     case '?':
+    case '[':
       goto BREAK;
     case '\\':
       if (iter + 1 != this->end()) {
@@ -321,9 +389,9 @@ std::pair<Glob::Status, bool> Glob::match(const char *baseDir, const char *&iter
       return {Status::CANCELED, true};
     }
 
-    PatternScanner scanner(iter, this->end());
-    const GlobPatternStatus ret = scanner.match(entry->d_name, this->option);
-    if (ret == GlobPatternStatus::FAILED) {
+    GlobPatternScanner scanner(iter, this->end());
+    const auto ret = scanner.match(entry->d_name, this->option);
+    if (ret == GlobPatternScanner::Status::UNMATCHED) {
       continue;
     }
 
@@ -348,7 +416,7 @@ std::pair<Glob::Status, bool> Glob::match(const char *baseDir, const char *&iter
         }
       }
       if (!scanner.isEnd()) {
-        if (ret == GlobPatternStatus::DOTDOT && hasFlag(this->option, Option::FASTGLOB)) {
+        if (ret == GlobPatternScanner::Status::DOTDOT && hasFlag(this->option, Option::FASTGLOB)) {
           iter = scanner.getIter();
           return {Status::MATCH, false};
         }
@@ -371,7 +439,7 @@ std::pair<Glob::Status, bool> Glob::match(const char *baseDir, const char *&iter
       this->matchCount++;
     }
 
-    if (ret == GlobPatternStatus::DOT || ret == GlobPatternStatus::DOTDOT) {
+    if (ret == GlobPatternScanner::Status::DOT || ret == GlobPatternScanner::Status::DOTDOT) {
       break;
     }
   }
@@ -386,6 +454,7 @@ bool appendAndEscapeGlobMeta(const StringRef ref, const size_t maxSize, std::str
     switch (*iter) {
     case '?':
     case '*':
+    case '[':
     case '\\':
       if (const StringRef sub(start, iter - start);
           maxSize >= sub.size() && out.size() <= maxSize - sub.size()) {
