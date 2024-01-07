@@ -26,6 +26,19 @@ static bool matchPattern(const char *name, const char *p, Glob::Option option = 
   return s != GlobPatternScanner::Status::UNMATCHED && s != GlobPatternScanner::Status::BAD_PATTERN;
 }
 
+struct CharSetResult {
+  GlobPatternScanner::CharSetStatus status{GlobPatternScanner::CharSetStatus::UNMATCH};
+  std::string err;
+};
+
+static CharSetResult matchCharSet(const int codePoint, const char *pattern) {
+  const StringRef p = pattern;
+  GlobPatternScanner scanner(p.begin(), p.end());
+  CharSetResult ret;
+  ret.status = scanner.matchCharSet(codePoint, &ret.err);
+  return ret;
+}
+
 class Consumer {
 private:
   std::vector<std::string> &ret;
@@ -71,6 +84,20 @@ public:
     glob.setConsumer(Consumer(this->ret));
     glob();
     return glob.getMatchCount();
+  }
+
+  static void checkCharSet(const char *pattern) {
+    const CharSetResult expect = {
+        .status = GlobPatternScanner::CharSetStatus::UNMATCH,
+        .err = "",
+    };
+    checkCharSet(pattern, expect);
+  }
+
+  static void checkCharSet(const char *pattern, const CharSetResult &expect) {
+    const auto ret = matchCharSet(0, pattern);
+    ASSERT_EQ(expect.err, ret.err);
+    ASSERT_EQ(expect.status, ret.status);
   }
 };
 
@@ -164,6 +191,47 @@ TEST_F(GlobTest, pattern3) {
   ASSERT_TRUE(matchPattern("\\?", "\\\\?"));
   ASSERT_TRUE(matchPattern("\\\\", "\\\\?"));
   ASSERT_TRUE(matchPattern("\\@", "\\\\?"));
+}
+
+TEST_F(GlobTest, charset1) {
+  ASSERT_NO_FATAL_FAILURE(checkCharSet("", {GlobPatternScanner::CharSetStatus::SYNTAX_ERROR,
+                                            "bracket expression must start with `['"}));
+  ASSERT_NO_FATAL_FAILURE(checkCharSet("1", {GlobPatternScanner::CharSetStatus::SYNTAX_ERROR,
+                                             "bracket expression must start with `['"}));
+  ASSERT_NO_FATAL_FAILURE(checkCharSet("[!", {GlobPatternScanner::CharSetStatus::SYNTAX_ERROR,
+                                              "bracket expression must end with `]'"}));
+  ASSERT_NO_FATAL_FAILURE(checkCharSet("[[", {GlobPatternScanner::CharSetStatus::SYNTAX_ERROR,
+                                              "bracket expression must end with `]'"}));
+  ASSERT_NO_FATAL_FAILURE(checkCharSet("[a-z", {GlobPatternScanner::CharSetStatus::SYNTAX_ERROR,
+                                                "bracket expression must end with `]'"}));
+  ASSERT_NO_FATAL_FAILURE(checkCharSet("[]"));
+  ASSERT_NO_FATAL_FAILURE(checkCharSet("[1]"));
+  ASSERT_NO_FATAL_FAILURE(checkCharSet("[-]"));
+  ASSERT_NO_FATAL_FAILURE(checkCharSet("[-12]"));
+  ASSERT_NO_FATAL_FAILURE(checkCharSet("[^-]", {GlobPatternScanner::CharSetStatus::MATCH, ""}));
+  ASSERT_NO_FATAL_FAILURE(checkCharSet("[!-]", {GlobPatternScanner::CharSetStatus::MATCH, ""}));
+  ASSERT_NO_FATAL_FAILURE(checkCharSet("[12-]"));
+  ASSERT_NO_FATAL_FAILURE(checkCharSet("[---]"));
+  ASSERT_NO_FATAL_FAILURE(checkCharSet("[^12-]", {GlobPatternScanner::CharSetStatus::MATCH, ""}));
+  ASSERT_NO_FATAL_FAILURE(checkCharSet("[!12-]", {GlobPatternScanner::CharSetStatus::MATCH, ""}));
+  ASSERT_NO_FATAL_FAILURE(checkCharSet("[^]]", {GlobPatternScanner::CharSetStatus::MATCH, ""}));
+  ASSERT_NO_FATAL_FAILURE(checkCharSet("[!]]", {GlobPatternScanner::CharSetStatus::MATCH, ""}));
+  ASSERT_NO_FATAL_FAILURE(checkCharSet("[^]", {GlobPatternScanner::CharSetStatus::SYNTAX_ERROR,
+                                               "bracket expression must end with `]'"}));
+  ASSERT_NO_FATAL_FAILURE(checkCharSet("[!]", {GlobPatternScanner::CharSetStatus::SYNTAX_ERROR,
+                                               "bracket expression must end with `]'"}));
+  ASSERT_NO_FATAL_FAILURE(checkCharSet("[a--]", {GlobPatternScanner::CharSetStatus::SYNTAX_ERROR,
+                                                 "character range is out of order"}));
+  ASSERT_NO_FATAL_FAILURE(checkCharSet("[z-a]", {GlobPatternScanner::CharSetStatus::SYNTAX_ERROR,
+                                                 "character range is out of order"}));
+  ASSERT_NO_FATAL_FAILURE(checkCharSet("[a-z_0-9]"));
+
+  ASSERT_NO_FATAL_FAILURE(checkCharSet("[\\]]"));
+  ASSERT_NO_FATAL_FAILURE(checkCharSet("[z\\-a]"));
+  ASSERT_NO_FATAL_FAILURE(checkCharSet(
+      "[12\\", {GlobPatternScanner::CharSetStatus::SYNTAX_ERROR, "need character after `\\'"}));
+  ASSERT_NO_FATAL_FAILURE(checkCharSet(
+      "[12\xFF", {GlobPatternScanner::CharSetStatus::SYNTAX_ERROR, "invalid utf-8 sequence"}));
 }
 
 // test `globBase' api

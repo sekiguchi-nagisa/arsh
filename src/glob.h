@@ -170,15 +170,26 @@ public:
     MATCH,
     UNMATCH,
     SYNTAX_ERROR,
-    NO_CLASS,
+    NO_CLASS,  // not follow char class, such as `[:digit:]`
+    BAD_CLASS, // invalid char class name
   };
 
   /**
-   * for bracket expression (ex. [~a-z[:digit:]])
+   * for bracket expression (ex. [^a-z[:digit:]])
    * @param codePoint
+   * @param err
+   * for error reporting. may be null
    * @return
    */
-  CharSetStatus matchCharSet(int codePoint);
+  CharSetStatus matchCharSet(int codePoint, std::string *err) {
+    if (this->isEndOrSep() || *this->iter != '[') {
+      if (err) {
+        *err = "bracket expression must start with `['";
+      }
+      return CharSetStatus::SYNTAX_ERROR;
+    }
+    return this->matchCharSetImpl(codePoint, err);
+  }
 
 private:
   bool isEndOrSep() const { return this->isEnd() || *this->iter == '/'; }
@@ -211,14 +222,18 @@ private:
     return 0;
   }
 
+  CharSetStatus matchCharSetImpl(int codePoint, std::string *err);
+
   /**
    * for [:class:] notation
    * @param codePoint
+   * @param err
+   * for error reporting
    * @return
    */
-  CharSetStatus tryMatchCharClass(int codePoint);
+  CharSetStatus tryMatchCharClass(int codePoint, std::string *err);
 
-  int consumeCharSetPart();
+  int consumeCharSetPart(bool first, std::string *err);
 };
 
 bool appendAndEscapeGlobMeta(StringRef ref, size_t maxSize, std::string &out);

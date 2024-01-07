@@ -66,13 +66,14 @@ GlobPatternScanner::Status GlobPatternScanner::match(const char *name, const Glo
           ++this->iter;
           continue;
         }
-        switch (this->matchCharSet(codePoint)) {
+        switch (this->matchCharSetImpl(codePoint, nullptr)) {
         case CharSetStatus::MATCH:
           continue;
         case CharSetStatus::UNMATCH:
           break;
         case CharSetStatus::SYNTAX_ERROR:
         case CharSetStatus::NO_CLASS:
+        case CharSetStatus::BAD_CLASS:
           return Status::BAD_PATTERN; // force terminate matching
         }
         goto BACKTRACK;
@@ -114,42 +115,64 @@ GlobPatternScanner::Status GlobPatternScanner::match(const char *name, const Glo
   return this->isEndOrSep() ? Status::MATCHED : Status::UNMATCHED;
 }
 
-GlobPatternScanner::CharSetStatus GlobPatternScanner::matchCharSet(const int codePoint) {
+static constexpr const char *needCloseBracket = "bracket expression must end with `]'";
+
+GlobPatternScanner::CharSetStatus GlobPatternScanner::matchCharSetImpl(const int codePoint,
+                                                                       std::string *err) {
   assert(*this->iter == '[');
   ++this->iter;
   bool negate = false;
-  if (!this->isEndOrSep() && (*this->iter == '!' || *this->iter == '^')) {
-    negate = true;
-    ++this->iter;
-  }
   unsigned int matchCount = 0;
-  if (!this->isEndOrSep() && *this->iter == '[') {
-    switch (this->tryMatchCharClass(codePoint)) {
-    case CharSetStatus::MATCH:
-      matchCount++;
-      break;
-    case CharSetStatus::UNMATCH:
-    case CharSetStatus::SYNTAX_ERROR:
-      break;
-    case CharSetStatus::NO_CLASS:
-      return CharSetStatus::SYNTAX_ERROR;
+  for (bool first = true; !this->isEndOrSep() && *this->iter != ']'; first = false) {
+    if (first && (*this->iter == '!' || *this->iter == '^')) {
+      negate = true;
+      ++this->iter;
+      if (this->isEndOrSep()) {
+        break;
+      }
     }
-  }
-  while (!this->isEndOrSep() && *this->iter != ']') {
-    const int lower = this->consumeCharSetPart();
+
+    if (*this->iter == '[') {
+      switch (this->tryMatchCharClass(codePoint, err)) {
+      case CharSetStatus::MATCH:
+        matchCount++;
+      case CharSetStatus::UNMATCH:
+        continue;
+      case CharSetStatus::SYNTAX_ERROR: // unreachable
+      case CharSetStatus::NO_CLASS:
+        break;
+      case CharSetStatus::BAD_CLASS:
+        return CharSetStatus::SYNTAX_ERROR;
+      }
+    }
+
+    const int lower = this->consumeCharSetPart(first, err);
     if (lower < 0) {
       return CharSetStatus::SYNTAX_ERROR;
     }
     int upper = lower;
     if (this->isEndOrSep()) {
+      if (err) {
+        *err = needCloseBracket;
+      }
       return CharSetStatus::SYNTAX_ERROR;
     }
     if (*this->iter == '-') {
       ++this->iter;
-      upper = this->consumeCharSetPart();
-      if (upper < 0) {
-        return CharSetStatus::SYNTAX_ERROR;
+      if (this->isEndOrSep() || *this->iter == ']') {
+        --this->iter;
+      } else {
+        upper = this->consumeCharSetPart(false, err);
+        if (upper < 0) {
+          return CharSetStatus::SYNTAX_ERROR;
+        }
       }
+    }
+    if (lower > upper) {
+      if (err) {
+        *err = "character range is out of order";
+      }
+      return CharSetStatus::SYNTAX_ERROR;
     }
     if (codePoint >= lower && codePoint <= upper) {
       matchCount++;
@@ -158,6 +181,9 @@ GlobPatternScanner::CharSetStatus GlobPatternScanner::matchCharSet(const int cod
   if (!this->isEndOrSep() && *this->iter == ']') {
     ++this->iter;
     return matchCount > 0 || negate ? CharSetStatus::MATCH : CharSetStatus::UNMATCH;
+  }
+  if (err) {
+    *err = needCloseBracket;
   }
   return CharSetStatus::SYNTAX_ERROR;
 }
@@ -195,7 +221,8 @@ GlobCharClassOp lookupGlobCharClassOp(const StringRef className) {
   return nullptr;
 }
 
-GlobPatternScanner::CharSetStatus GlobPatternScanner::tryMatchCharClass(const int codePoint) {
+GlobPatternScanner::CharSetStatus GlobPatternScanner::tryMatchCharClass(const int codePoint,
+                                                                        std::string *err) {
   const auto oldIter = this->iter;
   assert(*this->iter == '[');
   ++this->iter; // skip '['
@@ -224,29 +251,60 @@ GlobPatternScanner::CharSetStatus GlobPatternScanner::tryMatchCharClass(const in
       return op(codePoint, POSIX_LOCALE_C.get()) ? CharSetStatus::MATCH : CharSetStatus::UNMATCH;
     }
     this->iter = oldIter;
-    return CharSetStatus::NO_CLASS;
+    if (err) {
+      *err = "undefined char class: ";
+      *err += className;
+    }
+    return CharSetStatus::BAD_CLASS;
   }
 
 SYNTAX_ERROR:
   this->iter = oldIter;
-  return CharSetStatus::SYNTAX_ERROR;
+  return CharSetStatus::NO_CLASS;
 }
 
-int GlobPatternScanner::consumeCharSetPart() {
-  if (this->isEndOrSep()) {
-    return -1;
-  }
-  if (*this->iter == '\\') {
+int GlobPatternScanner::consumeCharSetPart(const bool first, std::string *err) {
+  assert(!this->isEndOrSep());
+  switch (*this->iter) {
+  case '-':
     ++this->iter;
+    if (first || (!this->isEndOrSep() && *this->iter == ']')) {
+      return '-';
+    }
+    --this->iter;
+    if (err) {
+      *err = "unescaped `-' is only available in first or last";
+    }
+    return -1;
+  case ']':
+    if (first) {
+      ++this->iter;
+      return ']';
+    }
+    break;  // unreachable
+  case '\\':
+    ++this->iter;
+    if (this->isEndOrSep()) {
+      --this->iter;
+      if (err) {
+        *err = "need character after `\\'";
+      }
+      return -1;
+    }
+    break;
+  default:
+    break;
   }
   int codePoint = -1;
-  if (!this->isEndOrSep()) {
-    if (const unsigned int byteSize =
-            UnicodeUtil::utf8ToCodePoint(this->iter, this->end, codePoint)) {
-      this->iter += byteSize;
-    }
+  if (const unsigned int byteSize =
+          UnicodeUtil::utf8ToCodePoint(this->iter, this->end, codePoint)) {
+    this->iter += byteSize;
+    return codePoint;
   }
-  return codePoint;
+  if (err) {
+    *err = "invalid utf-8 sequence";
+  }
+  return -1;
 }
 
 // ##################
@@ -277,7 +335,7 @@ static void popDir(std::string &path) {
 }
 
 Glob::Status Glob::operator()() {
-  // preapre base dir
+  // prepare base dir
   auto iter = this->pattern.begin();
   std::string baseDir;
   const bool r = this->resolveBaseDir(iter, baseDir);
