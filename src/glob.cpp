@@ -136,6 +136,7 @@ GlobPatternScanner::CharSetStatus GlobPatternScanner::matchCharSetImpl(const int
       switch (this->tryMatchCharClass(codePoint, err)) {
       case CharSetStatus::MATCH:
         matchCount++;
+        continue;
       case CharSetStatus::UNMATCH:
         continue;
       case CharSetStatus::SYNTAX_ERROR: // unreachable
@@ -281,7 +282,7 @@ int GlobPatternScanner::consumeCharSetPart(const bool first, std::string *err) {
       ++this->iter;
       return ']';
     }
-    break;  // unreachable
+    break; // unreachable
   case '\\':
     ++this->iter;
     if (this->isEndOrSep()) {
