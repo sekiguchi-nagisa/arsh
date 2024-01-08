@@ -140,7 +140,7 @@ public:
 
   unsigned int consumeSeps() {
     unsigned int count = 0;
-    for (; !this->isEnd() && *this->iter == '/'; ++this->iter) {
+    for (; this->expect('/'); ++this->iter) {
       count++;
     }
     return count;
@@ -148,7 +148,7 @@ public:
 
   bool consumeDot() {
     const auto old = this->iter;
-    if (!this->isEnd() && *this->iter == '.') {
+    if (this->expect('.')) {
       ++this->iter;
       if (this->isEndOrSep()) {
         return true;
@@ -183,17 +183,19 @@ public:
    * @return
    */
   CharSetStatus matchCharSet(int codePoint, std::string *err) {
-    if (this->isEndOrSep() || *this->iter != '[') {
-      if (err) {
-        *err = "bracket expression must start with `['";
-      }
-      return CharSetStatus::SYNTAX_ERROR;
+    if (this->expect('[')) {
+      return this->matchCharSetImpl(codePoint, err);
     }
-    return this->matchCharSetImpl(codePoint, err);
+    if (err) {
+      *err = "bracket expression must start with `['";
+    }
+    return CharSetStatus::SYNTAX_ERROR;
   }
 
 private:
   bool isEndOrSep() const { return this->isEnd() || *this->iter == '/'; }
+
+  bool expect(const char ch) const { return !this->isEnd() && *this->iter == ch; }
 
   /**
    *
@@ -205,13 +207,13 @@ private:
    */
   unsigned int matchDots(const char *name) {
     const auto old = this->iter;
-    if (*name == '.' && *this->iter == '.') {
+    if (*name == '.' && this->expect('.')) {
       ++name;
       ++this->iter;
       if (!*name && this->isEndOrSep()) {
         return 1;
       }
-      if (*name == '.' && *this->iter == '.') {
+      if (*name == '.' && this->expect('.')) {
         ++name;
         ++this->iter;
         if (!*name && this->isEndOrSep()) {

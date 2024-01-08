@@ -110,7 +110,7 @@ GlobPatternScanner::Status GlobPatternScanner::match(const char *name, const Glo
     }
     return Status::UNMATCHED;
   }
-  for (; !this->isEndOrSep() && *this->iter == '*'; ++this->iter)
+  for (; this->expect('*'); ++this->iter)
     ;
   return this->isEndOrSep() ? Status::MATCHED : Status::UNMATCHED;
 }
@@ -120,7 +120,7 @@ static constexpr const char *charClassInRange = "`[:' is not allowed in characte
 
 GlobPatternScanner::CharSetStatus GlobPatternScanner::matchCharSetImpl(const int codePoint,
                                                                        std::string *err) {
-  assert(*this->iter == '[');
+  assert(this->expect('['));
   ++this->iter;
   bool negate = false;
   unsigned int matchCount = 0;
@@ -152,9 +152,9 @@ GlobPatternScanner::CharSetStatus GlobPatternScanner::matchCharSetImpl(const int
     }
     if (foundCharClass) {
       const auto old = this->iter;
-      if (!this->isEndOrSep() && *this->iter == '-') {
+      if (this->expect('-')) {
         ++this->iter;
-        if (!this->isEnd() && *this->iter != ']') {
+        if (!this->expect(']')) {
           if (err) {
             *err = charClassInRange;
           }
@@ -197,7 +197,7 @@ GlobPatternScanner::CharSetStatus GlobPatternScanner::matchCharSetImpl(const int
       matchCount++;
     }
   }
-  if (!this->isEndOrSep() && *this->iter == ']') {
+  if (this->expect(']')) {
     ++this->iter;
     bool r = matchCount > 0;
     if (negate) {
@@ -248,8 +248,8 @@ GlobPatternScanner::CharSetStatus GlobPatternScanner::tryMatchCharClass(const in
                                                                         std::string *err) {
   const auto oldIter = this->iter;
   assert(*this->iter == '[');
-  ++this->iter;                                    // skip '['
-  if (!this->isEndOrSep() && *this->iter == ':') { // start with '[:' is char class
+  ++this->iter;            // skip '['
+  if (this->expect(':')) { // start with '[:' is char class
     ++this->iter;
     std::string className;
     while (!this->isEndOrSep() && *this->iter != ':') {
@@ -262,9 +262,9 @@ GlobPatternScanner::CharSetStatus GlobPatternScanner::tryMatchCharClass(const in
     }
 
     bool close = false;
-    if (!this->isEndOrSep() && *this->iter == ':') {
+    if (this->expect(':')) {
       ++this->iter;
-      if (!this->isEndOrSep() && *this->iter == ']') {
+      if (this->expect(']')) {
         ++this->iter;
         close = true;
       }
@@ -295,7 +295,7 @@ int GlobPatternScanner::consumeCharSetPart(const bool first, std::string *err) {
   switch (*this->iter) {
   case '-':
     ++this->iter;
-    if (first || (!this->isEndOrSep() && *this->iter == ']')) {
+    if (first || this->expect(']')) {
       return '-';
     }
     --this->iter;
@@ -312,7 +312,7 @@ int GlobPatternScanner::consumeCharSetPart(const bool first, std::string *err) {
   case '[': {
     const auto old = this->iter;
     ++this->iter;
-    if (!this->isEnd() && *this->iter == ':') { // not allow '[:'
+    if (this->expect(':')) { // not allow '[:'
       if (err) {
         *err = charClassInRange;
       }
