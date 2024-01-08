@@ -193,7 +193,7 @@ TEST_F(GlobTest, pattern3) {
   ASSERT_TRUE(matchPattern("\\@", "\\\\?"));
 }
 
-TEST_F(GlobTest, charset1) {
+TEST_F(GlobTest, parse_charset1) {
   ASSERT_NO_FATAL_FAILURE(checkCharSet("", {GlobPatternScanner::CharSetStatus::SYNTAX_ERROR,
                                             "bracket expression must start with `['"}));
   ASSERT_NO_FATAL_FAILURE(checkCharSet("1", {GlobPatternScanner::CharSetStatus::SYNTAX_ERROR,
@@ -202,8 +202,18 @@ TEST_F(GlobTest, charset1) {
                                               "bracket expression must end with `]'"}));
   ASSERT_NO_FATAL_FAILURE(checkCharSet("[[", {GlobPatternScanner::CharSetStatus::SYNTAX_ERROR,
                                               "bracket expression must end with `]'"}));
+  ASSERT_NO_FATAL_FAILURE(
+      checkCharSet("[a-/", {GlobPatternScanner::CharSetStatus::SYNTAX_ERROR,
+                            "unescaped `-' is only available in first or last"}));
+  ASSERT_NO_FATAL_FAILURE(
+      checkCharSet("[a---e]", {GlobPatternScanner::CharSetStatus::SYNTAX_ERROR,
+                               "unescaped `-' is only available in first or last"}));
   ASSERT_NO_FATAL_FAILURE(checkCharSet("[a-z", {GlobPatternScanner::CharSetStatus::SYNTAX_ERROR,
                                                 "bracket expression must end with `]'"}));
+  ASSERT_NO_FATAL_FAILURE(checkCharSet("[a-z/", {GlobPatternScanner::CharSetStatus::SYNTAX_ERROR,
+                                                 "bracket expression must end with `]'"}));
+  ASSERT_NO_FATAL_FAILURE(checkCharSet("[a90z/", {GlobPatternScanner::CharSetStatus::SYNTAX_ERROR,
+                                                  "bracket expression must end with `]'"}));
   ASSERT_NO_FATAL_FAILURE(checkCharSet("[]"));
   ASSERT_NO_FATAL_FAILURE(checkCharSet("[1]"));
   ASSERT_NO_FATAL_FAILURE(checkCharSet("[-]"));
@@ -231,7 +241,86 @@ TEST_F(GlobTest, charset1) {
   ASSERT_NO_FATAL_FAILURE(checkCharSet(
       "[12\\", {GlobPatternScanner::CharSetStatus::SYNTAX_ERROR, "need character after `\\'"}));
   ASSERT_NO_FATAL_FAILURE(checkCharSet(
+      "[12\\/", {GlobPatternScanner::CharSetStatus::SYNTAX_ERROR, "need character after `\\'"}));
+  ASSERT_NO_FATAL_FAILURE(checkCharSet(
       "[12\xFF", {GlobPatternScanner::CharSetStatus::SYNTAX_ERROR, "invalid utf-8 sequence"}));
+}
+
+TEST_F(GlobTest, parse_charset2) {
+  ASSERT_NO_FATAL_FAILURE(checkCharSet("[[:a:]]", {GlobPatternScanner::CharSetStatus::SYNTAX_ERROR,
+                                                   "undefined character class: a"}));
+  ASSERT_NO_FATAL_FAILURE(checkCharSet(
+      "[[::]]", {GlobPatternScanner::CharSetStatus::SYNTAX_ERROR, "undefined character class: "}));
+  ASSERT_NO_FATAL_FAILURE(checkCharSet("[[:ascii", {GlobPatternScanner::CharSetStatus::SYNTAX_ERROR,
+                                                    "character class must end with `:]'"}));
+  ASSERT_NO_FATAL_FAILURE(checkCharSet("[[:a:", {GlobPatternScanner::CharSetStatus::SYNTAX_ERROR,
+                                                 "character class must end with `:]'"}));
+  ASSERT_NO_FATAL_FAILURE(checkCharSet("[[:a:s", {GlobPatternScanner::CharSetStatus::SYNTAX_ERROR,
+                                                  "character class must end with `:]'"}));
+  ASSERT_NO_FATAL_FAILURE(checkCharSet("[[:a/", {GlobPatternScanner::CharSetStatus::SYNTAX_ERROR,
+                                                 "character class must end with `:]'"}));
+  ASSERT_NO_FATAL_FAILURE(checkCharSet("[[:a:/", {GlobPatternScanner::CharSetStatus::SYNTAX_ERROR,
+                                                  "character class must end with `:]'"}));
+  ASSERT_NO_FATAL_FAILURE(
+      checkCharSet("[[:space:]/", {GlobPatternScanner::CharSetStatus::SYNTAX_ERROR,
+                                   "bracket expression must end with `]'"}));
+  ASSERT_NO_FATAL_FAILURE(
+      checkCharSet("[[:a123:]]", {GlobPatternScanner::CharSetStatus::SYNTAX_ERROR,
+                                  "character class must end with `:]'"}));
+  ASSERT_NO_FATAL_FAILURE(
+      checkCharSet("[[:a\xFF:]]", {GlobPatternScanner::CharSetStatus::SYNTAX_ERROR,
+                                   "character class must end with `:]'"}));
+  ASSERT_NO_FATAL_FAILURE(checkCharSet("[[:space:]]"));
+  ASSERT_NO_FATAL_FAILURE(
+      checkCharSet("[^[:space:]aaa[:digit:]-]", {GlobPatternScanner::CharSetStatus::MATCH, ""}));
+  ASSERT_NO_FATAL_FAILURE(
+      checkCharSet("[a-[:space:]]", {GlobPatternScanner::CharSetStatus::SYNTAX_ERROR,
+                                     "`[:' is not allowed in character range"}));
+  ASSERT_NO_FATAL_FAILURE(
+      checkCharSet("[^[:space:]-a]", {GlobPatternScanner::CharSetStatus::SYNTAX_ERROR,
+                                      "`[:' is not allowed in character range"}));
+}
+
+TEST_F(GlobTest, charsetPattern1) {
+  ASSERT_TRUE(matchPattern("a", "[abc]"));
+  ASSERT_TRUE(matchPattern("b", "[abc]"));
+  ASSERT_TRUE(matchPattern("c", "[abc]"));
+  ASSERT_FALSE(matchPattern("d", "[abc]"));
+  ASSERT_FALSE(matchPattern("あ", "[abc]"));
+  ASSERT_TRUE(matchPattern("-", "[abc-]"));
+  ASSERT_TRUE(matchPattern("う", "[あ-お]"));
+  ASSERT_TRUE(matchPattern("]", "[abc\\]]"));
+  ASSERT_TRUE(matchPattern("0", "[abc\\0]"));
+  ASSERT_FALSE(matchPattern("d", "[^]"));
+  ASSERT_FALSE(matchPattern("", "[]"));
+  ASSERT_TRUE(matchPattern("d", "[^abc]"));
+  ASSERT_TRUE(matchPattern("d", "[!abc]"));
+
+  ASSERT_TRUE(matchPattern("f", "[a-z]"));
+  ASSERT_TRUE(matchPattern("a", "[a-z]"));
+  ASSERT_TRUE(matchPattern("z", "[a-z]"));
+  ASSERT_FALSE(matchPattern("Z", "[a-z]"));
+  ASSERT_FALSE(matchPattern("{", "[a-z]"));
+  ASSERT_FALSE(matchPattern("`", "[a-z]"));
+}
+
+TEST_F(GlobTest, charsetPattern2) {
+  ASSERT_TRUE(matchPattern("a", "[[:ascii:]]"));
+  ASSERT_FALSE(matchPattern("あ", "[[:ascii:]]"));
+  ASSERT_TRUE(matchPattern("あ", "[^[:ascii:]]"));
+  ASSERT_TRUE(matchPattern("ｶ", "[![:ascii:]]"));
+  ASSERT_TRUE(matchPattern(" ", "[[:space:]]"));
+  ASSERT_TRUE(matchPattern("_", "[[:space:]_]"));
+  ASSERT_TRUE(matchPattern("a", "[[:alpha:][:digit:]]"));
+  ASSERT_TRUE(matchPattern("E", "[[:alpha:][:digit:]]"));
+  ASSERT_TRUE(matchPattern("7", "[[:alpha:][:digit:]]"));
+  ASSERT_FALSE(matchPattern("_", "[[:alpha:][:digit:]]"));
+  ASSERT_TRUE(matchPattern("7", "[[:word:]]"));
+  ASSERT_TRUE(matchPattern("_", "[[:word:]]"));
+  ASSERT_TRUE(matchPattern("x", "[[:word:]]"));
+  ASSERT_TRUE(matchPattern("Y", "[[:word:]]"));
+  ASSERT_FALSE(matchPattern("-", "[[:word:]]"));
+  ASSERT_FALSE(matchPattern("-", "[[:word:]]*"));
 }
 
 // test `globBase' api

@@ -46,6 +46,7 @@ public:
     NEED_ABSOLUTE_BASE_DIR,
     TILDE_FAIL,
     RESOURCE_LIMIT,
+    BAD_PATTERN,
   };
 
 private:

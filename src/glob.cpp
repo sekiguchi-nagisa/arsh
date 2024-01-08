@@ -116,6 +116,7 @@ GlobPatternScanner::Status GlobPatternScanner::match(const char *name, const Glo
 }
 
 static constexpr const char *needCloseBracket = "bracket expression must end with `]'";
+static constexpr const char *charClassInRange = "`[:' is not allowed in character range";
 
 GlobPatternScanner::CharSetStatus GlobPatternScanner::matchCharSetImpl(const int codePoint,
                                                                        std::string *err) {
@@ -132,19 +133,36 @@ GlobPatternScanner::CharSetStatus GlobPatternScanner::matchCharSetImpl(const int
       }
     }
 
+    bool foundCharClass = false;
     if (*this->iter == '[') {
       switch (this->tryMatchCharClass(codePoint, err)) {
       case CharSetStatus::MATCH:
         matchCount++;
-        continue;
+        foundCharClass = true;
+        break;
       case CharSetStatus::UNMATCH:
-        continue;
-      case CharSetStatus::SYNTAX_ERROR: // unreachable
+        foundCharClass = true;
+        break;
       case CharSetStatus::NO_CLASS:
         break;
+      case CharSetStatus::SYNTAX_ERROR:
       case CharSetStatus::BAD_CLASS:
         return CharSetStatus::SYNTAX_ERROR;
       }
+    }
+    if (foundCharClass) {
+      const auto old = this->iter;
+      if (!this->isEndOrSep() && *this->iter == '-') {
+        ++this->iter;
+        if (!this->isEnd() && *this->iter != ']') {
+          if (err) {
+            *err = charClassInRange;
+          }
+          return CharSetStatus::SYNTAX_ERROR;
+        }
+      }
+      this->iter = old;
+      continue;
     }
 
     const int lower = this->consumeCharSetPart(first, err);
@@ -181,7 +199,11 @@ GlobPatternScanner::CharSetStatus GlobPatternScanner::matchCharSetImpl(const int
   }
   if (!this->isEndOrSep() && *this->iter == ']') {
     ++this->iter;
-    return matchCount > 0 || negate ? CharSetStatus::MATCH : CharSetStatus::UNMATCH;
+    bool r = matchCount > 0;
+    if (negate) {
+      r = !r;
+    }
+    return r ? CharSetStatus::MATCH : CharSetStatus::UNMATCH;
   }
   if (err) {
     *err = needCloseBracket;
@@ -226,8 +248,8 @@ GlobPatternScanner::CharSetStatus GlobPatternScanner::tryMatchCharClass(const in
                                                                         std::string *err) {
   const auto oldIter = this->iter;
   assert(*this->iter == '[');
-  ++this->iter; // skip '['
-  if (!this->isEndOrSep() && *this->iter == ':') {
+  ++this->iter;                                    // skip '['
+  if (!this->isEndOrSep() && *this->iter == ':') { // start with '[:' is char class
     ++this->iter;
     std::string className;
     while (!this->isEndOrSep() && *this->iter != ':') {
@@ -235,31 +257,35 @@ GlobPatternScanner::CharSetStatus GlobPatternScanner::tryMatchCharClass(const in
         className += ch;
         ++this->iter;
       } else {
-        goto SYNTAX_ERROR;
+        break;
       }
     }
-    if (this->isEndOrSep() || *this->iter != ':') {
-      goto SYNTAX_ERROR;
-    }
-    ++this->iter;
 
-    if (this->isEndOrSep() || *this->iter != ']') {
-      goto SYNTAX_ERROR;
+    bool close = false;
+    if (!this->isEndOrSep() && *this->iter == ':') {
+      ++this->iter;
+      if (!this->isEndOrSep() && *this->iter == ']') {
+        ++this->iter;
+        close = true;
+      }
     }
-    ++this->iter;
+    if (!close) {
+      if (err) {
+        *err = "character class must end with `:]'";
+      }
+      return CharSetStatus::SYNTAX_ERROR;
+    }
 
     if (auto *op = lookupGlobCharClassOp(className)) {
       return op(codePoint, POSIX_LOCALE_C.get()) ? CharSetStatus::MATCH : CharSetStatus::UNMATCH;
     }
     this->iter = oldIter;
     if (err) {
-      *err = "undefined char class: ";
+      *err = "undefined character class: ";
       *err += className;
     }
     return CharSetStatus::BAD_CLASS;
   }
-
-SYNTAX_ERROR:
   this->iter = oldIter;
   return CharSetStatus::NO_CLASS;
 }
@@ -283,6 +309,18 @@ int GlobPatternScanner::consumeCharSetPart(const bool first, std::string *err) {
       return ']';
     }
     break; // unreachable
+  case '[': {
+    const auto old = this->iter;
+    ++this->iter;
+    if (!this->isEnd() && *this->iter == ':') { // not allow '[:'
+      if (err) {
+        *err = charClassInRange;
+      }
+      return -1;
+    }
+    this->iter = old;
+    break;
+  }
   case '\\':
     ++this->iter;
     if (this->isEndOrSep()) {
@@ -452,6 +490,9 @@ std::pair<Glob::Status, bool> Glob::match(const char *baseDir, const char *&iter
     const auto ret = scanner.match(entry->d_name, this->option);
     if (ret == GlobPatternScanner::Status::UNMATCHED) {
       continue;
+    }
+    if (ret == GlobPatternScanner::Status::BAD_PATTERN) {
+      return {Status::BAD_PATTERN, true};
     }
 
     std::string name = strcmp(baseDir, ".") != 0 ? baseDir : "";
