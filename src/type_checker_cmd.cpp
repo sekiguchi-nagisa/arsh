@@ -31,12 +31,12 @@ void TypeChecker::visitCmdNode(CmdNode &node) {
     node.setType(this->typePool().get(TYPE::Nothing));
   } else {
     node.setType(this->typePool().get(TYPE::Bool));
-    std::string cmdName = toCmdFullName(node.getNameNode().getValue());
+    const std::string cmdName = toCmdFullName(node.getNameNode().getValue());
     if (auto ret = this->curScope->lookup(cmdName)) {
-      auto handle = std::move(ret).take();
+      const auto handle = std::move(ret).take();
       node.setHandle(handle);
-      auto &type = this->typePool().get(handle->getTypeId());
-      if (type.isFuncType()) { // resolved command may be module object
+      if (auto &type = this->typePool().get(handle->getTypeId());
+          type.isFuncType()) { // resolved command may be module object
         auto &returnType = cast<FunctionType>(type).getReturnType();
         assert(returnType.is(TYPE::Int) || returnType.isNothingType());
         if (returnType.isNothingType()) {
@@ -57,8 +57,7 @@ void TypeChecker::checkBraceExpansion(CmdArgNode &node) {
   auto &segmentNodes = node.refSegmentNodes();
   const unsigned int size = segmentNodes.size();
   for (unsigned int i = 0; i < size; i++) {
-    auto &e = *segmentNodes[i];
-    if (isa<WildCardNode>(e)) {
+    if (auto &e = *segmentNodes[i]; isa<WildCardNode>(e)) {
       auto &wild = cast<WildCardNode>(e);
       switch (wild.meta) {
       case ExpandMeta::BRACE_OPEN:
@@ -131,8 +130,7 @@ void TypeChecker::checkBraceExpansion(CmdArgNode &node) {
         break;
       }
     } else if (isa<WildCardNode>(*e)) {
-      auto &wild = cast<WildCardNode>(*e);
-      if (wild.meta == ExpandMeta::BRACE_TILDE) {
+      if (auto &wild = cast<WildCardNode>(*e); wild.meta == ExpandMeta::BRACE_TILDE) {
         if (stack.empty()) {
           assert(i + 1 < size && isa<StringNode>(*segmentNodes[i + 1]));
           cast<StringNode>(*segmentNodes[i + 1]).unsetTilde();
@@ -150,8 +148,7 @@ void TypeChecker::checkExpansion(CmdArgNode &node) {
   const unsigned int size = node.getSegmentNodes().size();
   unsigned int expansionSize = 0;
   for (unsigned int i = 0; i < size; i++) {
-    auto &e = node.refSegmentNodes()[i];
-    if (isExpandingWildCard(*e)) {
+    if (isExpandingWildCard(*node.getSegmentNodes()[i])) {
       if (expansionSize == 0 && i > 0) {
         expansionSize++;
       }
@@ -197,8 +194,7 @@ void TypeChecker::visitCmdArgNode(CmdArgNode &node) {
 
 void TypeChecker::visitArgArrayNode(ArgArrayNode &node) {
   for (auto &argNode : node.getCmdArgNodes()) {
-    auto &type = this->checkTypeAsExpr(*argNode);
-    if (type.is(TYPE::FD)) {
+    if (this->checkTypeAsExpr(*argNode).is(TYPE::FD)) {
       this->reportError<FdArgArray>(*argNode);
     }
   }
@@ -214,7 +210,7 @@ static IntConversionResult<int32_t> toNumericCmdArg(const CmdArgNode &argNode) {
   if (argNode.getSegmentNodes().size() == 1 && isa<StringNode>(*argNode.getSegmentNodes()[0])) {
     auto &strNode = cast<StringNode>(*argNode.getSegmentNodes()[0]);
     if (strNode.getToken().size == strNode.getValue().size()) {
-      StringRef ref = strNode.getValue();
+      const StringRef ref = strNode.getValue();
       return convertToDecimal<int32_t>(ref.begin(), ref.end());
     }
   }
@@ -228,8 +224,8 @@ static IntConversionResult<int32_t> toNumericCmdArg(const CmdArgNode &argNode) {
 void TypeChecker::visitRedirNode(RedirNode &node) {
   {
     // check fd format
-    StringRef ref = node.getFdName();
-    auto pair = convertToDecimal<int32_t>(ref.begin(), ref.end());
+    const StringRef ref = node.getFdName();
+    const auto pair = convertToDecimal<int32_t>(ref.begin(), ref.end());
     if (pair && pair.value >= 0 && static_cast<unsigned int>(pair.value) < RESERVED_FD_LIMIT) {
       node.setNewFd(pair.value);
     } else {
@@ -251,10 +247,9 @@ void TypeChecker::visitRedirNode(RedirNode &node) {
   case RedirOp::HERE_STR:
     this->checkType(this->typePool().get(TYPE::String), argNode);
     break;
-  case RedirOp::DUP_FD: {
-    auto &type = this->checkTypeExactly(argNode);
-    if (!type.is(TYPE::FD)) {
-      auto pair = toNumericCmdArg(argNode);
+  case RedirOp::DUP_FD:
+    if (!this->checkTypeExactly(argNode).is(TYPE::FD)) {
+      const auto pair = toNumericCmdArg(argNode);
       if (pair && pair.value >= 0 && static_cast<unsigned int>(pair.value) < RESERVED_FD_LIMIT) {
         node.setTargetFd(pair.value);
       } else {
@@ -262,7 +257,6 @@ void TypeChecker::visitRedirNode(RedirNode &node) {
       }
     }
     break;
-  }
   }
   node.setType(this->typePool().get(TYPE::Any));
 }
@@ -272,11 +266,11 @@ void TypeChecker::visitWildCardNode(WildCardNode &node) {
 }
 
 void TypeChecker::visitBraceSeqNode(BraceSeqNode &node) {
-  auto kind = node.getRange().kind;
-  if (kind == BraceRange::Kind::UNINIT_CHAR || kind == BraceRange::Kind::UNINIT_INT) {
+  if (const auto kind = node.getRange().kind;
+      kind == BraceRange::Kind::UNINIT_CHAR || kind == BraceRange::Kind::UNINIT_INT) {
     std::string error;
-    auto range = toBraceRange(this->lexer.get().toStrRef(node.getActualToken()),
-                              kind == BraceRange::Kind::UNINIT_CHAR, error);
+    const auto range = toBraceRange(this->lexer.get().toStrRef(node.getActualToken()),
+                                    kind == BraceRange::Kind::UNINIT_CHAR, error);
     node.setRange(range);
     switch (range.kind) {
     case BraceRange::Kind::CHAR:
@@ -296,7 +290,7 @@ void TypeChecker::visitBraceSeqNode(BraceSeqNode &node) {
 }
 
 void TypeChecker::visitPipelineNode(PipelineNode &node) {
-  unsigned int size = node.getNodes().size();
+  const unsigned int size = node.getNodes().size();
   if (size + (node.isLastPipe() ? 0 : 1) > SYS_LIMIT_PIPE_LEN) {
     this->reportError<PipeLimit>(node);
   }
@@ -328,14 +322,14 @@ void TypeChecker::visitSourceNode(SourceNode &node) {
   if (hasFlag(node.getModType().getAttr(), ModAttr::HAS_ERRORS)) { // if error recovery is enabled
     this->reportError<ErrorMod>(node, node.getPathName().c_str());
   }
-  auto ret = this->curScope->importForeignHandles(this->typePool(), node.getModType(),
-                                                  node.getImportedModKind());
+  const auto ret = this->curScope->importForeignHandles(this->typePool(), node.getModType(),
+                                                        node.getImportedModKind());
   if (!ret.empty()) {
     this->reportError<ConflictSymbol>(node, ret.c_str(), node.getPathName().c_str());
   }
   if (node.getNameInfo()) { // scoped import
     auto &nameInfo = *node.getNameInfo();
-    auto handle = node.getModType().toAliasHandle(this->curScope->modId);
+    const auto handle = node.getModType().toAliasHandle(this->curScope->modId);
 
     // register actual module handle
     if (!this->curScope->defineAlias(std::string(nameInfo.getName()), handle)) {
@@ -413,7 +407,7 @@ void TypeChecker::reportTildeExpansionError(Token token, const std::string &path
     assert(pos > 0);
     ref = ref.substr(0, pos);
   }
-  auto value = ref.toString();
+  const auto value = ref.toString();
 
   switch (status) {
   case TildeExpandStatus::OK:
@@ -434,7 +428,8 @@ void TypeChecker::reportTildeExpansionError(Token token, const std::string &path
   assert(false);
 }
 
-bool TypeChecker::applyGlob(Token token, std::vector<std::shared_ptr<const std::string>> &results,
+bool TypeChecker::applyGlob(const Token token,
+                            std::vector<std::shared_ptr<const std::string>> &results,
                             const SourceListNode::path_iterator begin,
                             const SourceListNode::path_iterator end, GlobOp op) {
   const std::string pattern = concatAsGlobPattern(begin, end);
@@ -502,20 +497,19 @@ struct SrcExpandState {
 
 static bool needGlob(SourceListNode::path_iterator begin, SourceListNode::path_iterator end) {
   for (; begin != end; ++begin) {
-    auto &v = **begin;
-    if (isExpandingWildCard(v)) {
+    if (auto &v = **begin; isExpandingWildCard(v)) {
       return true;
     }
   }
   return false;
 }
 
-bool TypeChecker::applyBraceExpansion(Token token,
+bool TypeChecker::applyBraceExpansion(const Token token,
                                       std::vector<std::shared_ptr<const std::string>> &results,
                                       const SourceListNode::path_iterator begin,
                                       const SourceListNode::path_iterator end, const GlobOp op) {
   assert(begin <= end);
-  auto sentinel = std::make_unique<EmptyNode>();
+  const auto sentinel = std::make_unique<EmptyNode>();
   const unsigned int size = end - begin;
   FlexBuffer<SrcExpandState> stack;
   std::vector<Node *> values;
@@ -528,14 +522,14 @@ bool TypeChecker::applyBraceExpansion(Token token,
   for (unsigned int i = 0; i < size; i++) {
     auto &v = begin[i];
     if (isExpandingWildCard(*v)) {
-      auto wild = cast<WildCardNode>(v);
+      const auto wild = cast<WildCardNode>(v);
       switch (wild->meta) {
       case ExpandMeta::BRACE_OPEN: {
         // find close index
         unsigned int closeIndex = i + 1;
         for (int level = 1; closeIndex < size; closeIndex++) {
           if (isExpandingWildCard(*begin[closeIndex])) {
-            auto next = cast<WildCardNode>(begin[closeIndex])->meta;
+            const auto next = cast<WildCardNode>(begin[closeIndex])->meta;
             if (next == ExpandMeta::BRACE_CLOSE) {
               if (--level == 0) {
                 break;
@@ -558,8 +552,8 @@ bool TypeChecker::applyBraceExpansion(Token token,
         auto iter = std::lower_bound(stack.begin(), stack.end(), wild->getBraceId(),
                                      SrcExpandState::Compare());
         assert(iter != stack.end());
-        (*iter).index = i;
-        i = (*iter).closeIndex;
+        iter->index = i;
+        i = iter->closeIndex;
         goto CONTINUE;
       }
       case ExpandMeta::BRACE_TILDE:
@@ -633,7 +627,7 @@ bool TypeChecker::applyBraceExpansion(Token token,
       }
 
       while (!stack.empty()) {
-        unsigned int oldIndex = stack.back().index;
+        const unsigned int oldIndex = stack.back().index;
         auto &old = begin[oldIndex];
         assert(isExpandingWildCard(*old));
         auto meta = cast<WildCardNode>(*old).meta;
@@ -674,7 +668,7 @@ void TypeChecker::resolvePathList(SourceListNode &node) {
   if (!node.isExpansion()) {
     std::string path = concat(begin, end);
     if (pathNode.isTilde()) {
-      if (auto s = expandTilde(path, true, nullptr); s != TildeExpandStatus::OK) {
+      if (const auto s = expandTilde(path, true, nullptr); s != TildeExpandStatus::OK) {
         this->reportTildeExpansionError(pathNode.getToken(), path, s);
         return;
       }
@@ -713,7 +707,7 @@ void TypeChecker::visitSourceListNode(SourceListNode &node) {
   this->checkType(exprType, node.getPathNode());
 
   std::unique_ptr<CmdArgNode> constPathNode;
-  auto &pathNode = node.getPathNode();
+  const auto &pathNode = node.getPathNode();
   for (auto &e : pathNode.getSegmentNodes()) {
     auto constNode = this->evalConstant(*e);
     if (!constNode) {
@@ -722,8 +716,7 @@ void TypeChecker::visitSourceListNode(SourceListNode &node) {
     assert(isa<StringNode>(*constNode) || isa<WildCardNode>(*constNode) ||
            isa<BraceSeqNode>(*constNode));
     if (isa<StringNode>(*constNode)) {
-      auto ref = StringRef(cast<StringNode>(*constNode).getValue());
-      if (ref.hasNullChar()) {
+      if (const auto ref = StringRef(cast<StringNode>(*constNode).getValue()); ref.hasNullChar()) {
         this->reportError<NullInPath>(pathNode);
         return;
       }

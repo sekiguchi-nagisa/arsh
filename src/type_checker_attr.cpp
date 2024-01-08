@@ -120,7 +120,7 @@ void TypeChecker::checkAttributes(const std::vector<std::unique_ptr<AttributeNod
 
 static std::string concatTypeNames(const TypePool &pool, const std::vector<TYPE> &typeIds) {
   std::string value;
-  unsigned int size = typeIds.size();
+  const unsigned int size = typeIds.size();
   for (unsigned int i = 0; i < size; i++) {
     if (i > 0) {
       value += ", ";
@@ -179,8 +179,7 @@ static bool isValidLongOpt(const std::string &opt) {
     return false;
   }
   for (size_t i = 1; i < opt.size(); i++) {
-    char ch = opt[i];
-    if (!isLetterOrDigit(ch) && ch != '-') {
+    if (const char ch = opt[i]; !isLetterOrDigit(ch) && ch != '-') {
       return false;
     }
   }
@@ -446,7 +445,7 @@ std::vector<ArgEntry> TypeChecker::resolveArgEntries(const FunctionNode &node,
   // check Flag/Option
   std::unordered_set<std::string> foundOptionSet = {"h", "help"};
   iterateFieldAttribute(node, [&](const AttributeNode &attrNode, const VarDeclNode &declNode) {
-    if (auto kind = attrNode.getAttrKind();
+    if (const auto kind = attrNode.getAttrKind();
         kind == AttributeKind::FLAG || kind == AttributeKind::OPTION) {
       this->resolveArgEntry(foundOptionSet, offset, attrNode, declNode, entries);
     }
