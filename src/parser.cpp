@@ -1482,7 +1482,7 @@ static bool isHereDocStart(StringRef ref) {
     ref.removeSuffix(1);
   }
   unsigned int count = 0;
-  for (auto ch : ref) {
+  for (const auto ch : ref) {
     if (isLetterOrDigit(ch) || ch == '-' || ch == '_') {
       count++;
     } else {
@@ -1504,7 +1504,7 @@ std::unique_ptr<Node> Parser::parse_cmdArgSeg(CmdArgNode &argNode, CmdArgParseOp
 
   switch (CUR_KIND()) {
   case TokenKind::CMD_ARG_PART: {
-    Token token = this->curToken;
+    const Token token = this->curToken;
     if (hasFlag(opt, CmdArgParseOpt::HERE_START)) {
       if (isHereDocStart(this->lexer->toStrRef(token))) {
         this->lexer->setHereDocStart(this->hereOp.kind, token, this->hereOp.pos);
@@ -1536,7 +1536,7 @@ std::unique_ptr<Node> Parser::parse_cmdArgSeg(CmdArgNode &argNode, CmdArgParseOp
       });
       this->addCmdArgSeg(argNode, prefixToken, StringNode::STRING);
       if (prefixToken != token) { // prefix='if=', remain='path'
-        auto remainToken = token.sliceFrom(prefixToken.size);
+        const auto remainToken = token.sliceFrom(prefixToken.size);
         auto kind = StringNode::STRING;
         if (this->lexer->startsWith(remainToken, '~') && prefixToken.size > 1) {
           kind = StringNode::TILDE;
@@ -1556,10 +1556,18 @@ std::unique_ptr<Node> Parser::parse_cmdArgSeg(CmdArgNode &argNode, CmdArgParseOp
   }
   case TokenKind::BRACE_CHAR_SEQ:
   case TokenKind::BRACE_INT_SEQ: {
-    Token token = this->curToken;
-    if (!this->parse_braceSeq(argNode)) {
-      this->addCmdArgSeg(argNode, token, StringNode::STRING);
-    }
+    const Token token = this->curToken;
+    const TokenKind kind = this->scan();
+    const Token seqToken = token.slice(1, token.size - 1); // skip '{' '}'
+
+    argNode.addSegmentNode(
+        std::make_unique<WildCardNode>(token.slice(0, 1), ExpandMeta::BRACE_SEQ_OPEN));
+    auto node = std::make_unique<BraceSeqNode>(seqToken, kind == TokenKind::BRACE_CHAR_SEQ
+                                                             ? BraceRange::Kind::UNINIT_CHAR
+                                                             : BraceRange::Kind::UNINIT_INT);
+    argNode.addSegmentNode(std::move(node));
+    argNode.addSegmentNode(std::make_unique<WildCardNode>(token.sliceFrom(token.size - 1),
+                                                          ExpandMeta::BRACE_SEQ_CLOSE));
     return nullptr;
   }
   default: {
@@ -1624,23 +1632,6 @@ std::unique_ptr<Node> Parser::parse_cmdArgSegImpl(CmdArgParseOpt opt) {
                                                      : ParseErrorKind::CMD_ARG,
                EACH_LA_cmdArg(GEN_LA_ALTER));
   }
-}
-
-bool Parser::parse_braceSeq(CmdArgNode &argNode) {
-  assert(CUR_KIND() == TokenKind::BRACE_CHAR_SEQ || CUR_KIND() == TokenKind::BRACE_INT_SEQ);
-  const Token token = this->curToken;
-  const TokenKind kind = this->scan();
-  const Token seqToken = token.slice(1, token.size - 1); // skip '{' '}'
-
-  argNode.addSegmentNode(
-      std::make_unique<WildCardNode>(token.slice(0, 1), ExpandMeta::BRACE_SEQ_OPEN));
-  auto node = std::make_unique<BraceSeqNode>(seqToken, kind == TokenKind::BRACE_CHAR_SEQ
-                                                           ? BraceRange::Kind::UNINIT_CHAR
-                                                           : BraceRange::Kind::UNINIT_INT);
-  argNode.addSegmentNode(std::move(node));
-  argNode.addSegmentNode(
-      std::make_unique<WildCardNode>(token.sliceFrom(token.size - 1), ExpandMeta::BRACE_SEQ_CLOSE));
-  return true;
 }
 
 static std::unique_ptr<Node> createBinaryNode(std::unique_ptr<Node> &&leftNode, TokenKind op,
