@@ -165,11 +165,11 @@ TokenKind Lexer::nextToken(Token &token) {
     INNER_FIELD = "${" VAR_NAME ("." VAR_NAME)+ "}";
 
     CMD_START_CHAR     = "\\" [^\n\000] | [^ \t\n\\;='"`|&<>(){}$#[\]!+\-0-9\000];
-    CMD_CHAR           = "\\" [^\000]     | [^ \t\n\\;='"`|&<>(){}$\000];
+    CMD_CHAR           = "\\" [^\000] | [^ \t\n\\;='"`|&<>(){}$\000];
     CMD = CMD_START_CHAR CMD_CHAR*;
 
     CMD_ARG_START_CHAR = "\\" [^\n\000] | [^ \t\n\\;'"`|&<>()$?*{},#\000];
-    CMD_ARG_CHAR       = "\\" [^\000]     | [^ \t\n\\;'"`|&<>()$?*{},\000];
+    CMD_ARG_CHAR       = "\\" [^\000] | [^ \t\n\\;'"`|&<>()$?*{},\000];
     CMD_ARG = CMD_ARG_START_CHAR CMD_ARG_CHAR*;
 
     ENV_ASSIGN = CMD "=";
@@ -395,7 +395,8 @@ INIT:
     <ATTR> ":"               { MODE(STMT); RET(ATTR_ASSIGN); }
 
     <STMT,EXPR,CMD> LINE_END { MODE(STMT); RET(LINE_END); }
-    <STMT,EXPR,TYPE> NEW_LINE     { CHECK_HERE(); UPDATE_LN(); FIND_NEW_LINE(); }
+    <STMT,EXPR,TYPE> NEW_LINE
+                             { CHECK_HERE(); UPDATE_LN(); FIND_NEW_LINE(); }
     <NAME,PARAM,ATTR> NEW_LINE
                              { UPDATE_LN(); FIND_NEW_LINE(); }
 
