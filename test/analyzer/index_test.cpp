@@ -1,7 +1,7 @@
 
 #include "gtest/gtest.h"
 
-#include <constant.h>
+#include <config.h>
 
 #include "analyzer.h"
 #include "indexer.h"

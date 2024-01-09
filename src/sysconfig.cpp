@@ -16,10 +16,12 @@
 
 #include <pwd.h>
 
+#include "constant.h"
 #include "misc/files.hpp"
 #include "misc/unicode_version.in"
 #include "regex_wrapper.h"
 #include "sysconfig.h"
+#include <config.h>
 
 namespace arsh {
 
@@ -73,7 +75,7 @@ SysConfig::SysConfig() {
 
   {
     std::string value;
-    if (auto version = PCRE::version()) {
+    if (const auto version = PCRE::version()) {
       value += "PCRE2 ";
       value += std::to_string(version.major);
       value += ".";

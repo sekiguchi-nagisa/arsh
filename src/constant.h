@@ -22,14 +22,13 @@
 
 #include "misc/flag_util.hpp"
 #include "misc/string_ref.hpp"
-#include <config.h>
 
 namespace arsh {
 
 /**
  * enum order is corresponding to builtin variable declaration order.
  */
-enum class BuiltinVarOffset : unsigned int {
+enum class BuiltinVarOffset : unsigned char {
   DUMMY_,      // dummy entry (indicate builtin module object)
   SCRIPT_NAME, // SCRIPT_NAME
   SCRIPT_DIR,  // SCRIPT_DIR

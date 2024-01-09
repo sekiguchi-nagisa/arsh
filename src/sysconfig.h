@@ -17,7 +17,7 @@
 #ifndef ARSH_SYSCONFIG_H
 #define ARSH_SYSCONFIG_H
 
-#include "constant.h"
+#include "misc/string_ref.hpp"
 
 namespace arsh {
 
