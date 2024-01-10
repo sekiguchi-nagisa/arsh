@@ -2795,7 +2795,7 @@ ARErrorKind VM::handleUncaughtException(ARState &state, ARError *dsError) {
   case AR_ERROR_KIND_RUNTIME_ERROR:
   case AR_ERROR_KIND_ASSERTION_ERROR:
   case AR_ERROR_KIND_EXIT:
-    state.setExitStatus(typeAs<ErrorObject>(except).getStatus());
+    state.setExitStatus(except->getStatus());
     break;
   default:
     break;
@@ -2806,7 +2806,7 @@ ARErrorKind VM::handleUncaughtException(ARState &state, ARError *dsError) {
   std::string sourceName;
   if (state.typePool.get(TYPE::Error).isSameOrBaseTypeOf(errorType) ||
       kind != AR_ERROR_KIND_RUNTIME_ERROR) {
-    auto &trace = typeAs<ErrorObject>(except).getStackTrace();
+    auto &trace = except->getStackTrace();
     errorLineNum = getOccurredLineNum(trace);
     sourceName = getOccurredSourceName(trace);
   }
@@ -2814,7 +2814,7 @@ ARErrorKind VM::handleUncaughtException(ARState &state, ARError *dsError) {
   // print error message
   if (kind == AR_ERROR_KIND_RUNTIME_ERROR || kind == AR_ERROR_KIND_ASSERTION_ERROR ||
       state.has(RuntimeOption::TRACE_EXIT)) {
-    typeAs<ErrorObject>(except).printStackTrace(state, ErrorObject::PrintOp::UNCAUGHT);
+    except->printStackTrace(state, ErrorObject::PrintOp::UNCAUGHT);
   }
 
   if (dsError != nullptr) {

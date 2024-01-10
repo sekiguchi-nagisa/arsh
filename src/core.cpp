@@ -343,7 +343,7 @@ public:
 };
 
 static Value createArgv(const TypePool &pool, const Lexer &lex, const CmdNode &cmdNode,
-                          const std::string &word, bool tilde) {
+                        const std::string &word, bool tilde) {
   std::vector<Value> values;
 
   // add cmd
@@ -700,7 +700,7 @@ Result<ObjPtr<FuncObject>, ObjPtr<ErrorObject>> loadExprAsFunc(ARState &state, S
   auto message = Value::createStr(std::move(errorConsumer.value));
   auto error =
       ErrorObject::newError(state, state.typePool.get(TYPE::ArgumentError), std::move(message), 1);
-  return Err(toObjPtr<ErrorObject>(error));
+  return Err(error);
 }
 
 std::string resolveFullCommandName(const ARState &state, const Value &name,
@@ -780,8 +780,8 @@ static bool merge(ARState &state, ArrayObject &arrayObj, Value *buf, const Value
   return true;
 }
 
-static bool mergeSortImpl(ARState &state, ArrayObject &arrayObj, Value *buf,
-                          const Value &compFunc, size_t left, size_t right) {
+static bool mergeSortImpl(ARState &state, ArrayObject &arrayObj, Value *buf, const Value &compFunc,
+                          size_t left, size_t right) {
   if (left + 1 >= right) {
     return true;
   }
