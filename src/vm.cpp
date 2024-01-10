@@ -2806,10 +2806,9 @@ ARErrorKind VM::handleUncaughtException(ARState &state, ARError *dsError) {
   std::string sourceName;
   if (state.typePool.get(TYPE::Error).isSameOrBaseTypeOf(errorType) ||
       kind != AR_ERROR_KIND_RUNTIME_ERROR) {
-    const auto &obj = typeAs<ErrorObject>(except);
-    errorLineNum = getOccurredLineNum(obj.getStackTrace());
-    const char *ptr = getOccurredSourceName(obj.getStackTrace());
-    sourceName = ptr;
+    auto &trace = typeAs<ErrorObject>(except).getStackTrace();
+    errorLineNum = getOccurredLineNum(trace);
+    sourceName = getOccurredSourceName(trace);
   }
 
   // print error message
