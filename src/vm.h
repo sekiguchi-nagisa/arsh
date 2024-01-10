@@ -442,7 +442,6 @@ public:
 
   /**
    *
-   * @param state
    * @param arg
    * @return
    * if has error, return false
@@ -475,7 +474,7 @@ private:
 
   static bool windStackFrame(ARState &state, unsigned int stackTopOffset, unsigned int paramSize,
                              const DSCode &code) {
-    auto ret = state.stack.wind(stackTopOffset, paramSize, code);
+    const auto ret = state.stack.wind(stackTopOffset, paramSize, code);
     if (unlikely(!ret)) {
       raiseError(state, TYPE::StackOverflowError, "local stack size reaches limit");
     }
@@ -541,7 +540,7 @@ private:
                  "attempt to call uninitialized method or constructor");
       return false;
     }
-    auto &func = typeAs<FuncObject>(value);
+    const auto &func = typeAs<FuncObject>(value);
     return windStackFrame(state, actualParamSize, actualParamSize, func.getCode());
   }
 
@@ -602,7 +601,7 @@ private:
   static BuiltinCmdResult builtinCommand(ARState &state, ObjPtr<ArrayObject> &&argvObj,
                                          Value &&redir, CmdCallAttr attr);
 
-  static int builtinExec(ARState &state, const ArrayObject &argObj, Value &&redir);
+  static int builtinExec(ARState &state, const ArrayObject &argvObj, Value &&redir);
 
   static bool returnFromUserDefinedCommand(ARState &state, int64_t status);
 

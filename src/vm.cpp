@@ -391,7 +391,7 @@ bool VM::attachAsyncJob(ARState &state, Value &&desc, unsigned int procSize, con
         job->showInfo();
       }
     }
-    state.tryToBeForeground();
+    static_cast<void>(state.tryToBeForeground());
     state.jobTable.waitForAny();
     state.setExitStatus(status);
     if (errNum != 0) {
@@ -630,8 +630,7 @@ static ResolvedCmd lookupUdcFromIndex(const ARState &state, const ModId modId,
 static bool lookupUdc(const ARState &state, const ModType &modType, const char *name, bool nullChar,
                       ResolvedCmd &cmd) {
   const std::string fullname = toCmdFullName(name);
-  const auto handle = modType.lookupVisibleSymbolAtModule(state.typePool, fullname);
-  if (handle) {
+  if (const auto handle = modType.lookupVisibleSymbolAtModule(state.typePool, fullname)) {
     cmd = lookupUdcFromIndex(state, handle->getModId(), handle->getIndex(), nullChar);
     return true;
   }
@@ -1280,7 +1279,7 @@ bool VM::callPipeline(ARState &state, Value &&desc, bool lastPipe, ForkKind fork
   } else {
     // force terminate forked process.
     for (unsigned int i = 0; i < procIndex; i++) {
-      children[i].send(SIGKILL);
+      static_cast<void>(children[i].send(SIGKILL));
     }
 
     raiseSystemError(state, EAGAIN, "fork failed");
@@ -2807,7 +2806,7 @@ ARErrorKind VM::handleUncaughtException(ARState &state, ARError *dsError) {
   std::string sourceName;
   if (state.typePool.get(TYPE::Error).isSameOrBaseTypeOf(errorType) ||
       kind != AR_ERROR_KIND_RUNTIME_ERROR) {
-    auto &obj = typeAs<ErrorObject>(except);
+    const auto &obj = typeAs<ErrorObject>(except);
     errorLineNum = getOccurredLineNum(obj.getStackTrace());
     const char *ptr = getOccurredSourceName(obj.getStackTrace());
     sourceName = ptr;

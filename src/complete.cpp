@@ -48,8 +48,7 @@ static bool mayBeQuoted(CompCandidateKind kind) {
 
 std::string CompCandidate::quote() const {
   std::string ret;
-  auto ref = this->value;
-  if (mayBeQuoted(this->kind) && !ref.empty()) {
+  if (const StringRef ref = this->value; mayBeQuoted(this->kind) && !ref.empty()) {
     quoteAsCmdOrShellArg(ref, ret, this->kind == CompCandidateKind::COMMAND_NAME);
   } else {
     ret += ref;
@@ -73,18 +72,17 @@ static bool isExprKeyword(TokenKind kind) {
 
 static void completeKeyword(const std::string &prefix, CodeCompOp option,
                             CompCandidateConsumer &consumer) {
-  TokenKind table[] = {
+  const TokenKind table[] = {
 #define GEN_ITEM(T) TokenKind::T,
       EACH_LA_statement(GEN_ITEM)
 #undef GEN_ITEM
   };
-  bool onlyExpr = !hasFlag(option, CodeCompOp::STMT_KW);
+  const bool onlyExpr = !hasFlag(option, CodeCompOp::STMT_KW);
   for (auto &e : table) {
     if (onlyExpr && !isExprKeyword(e)) {
       continue;
     }
-    StringRef value = toString(e);
-    if (isKeyword(value) && value.startsWith(prefix)) {
+    if (const StringRef value = toString(e); isKeyword(value) && value.startsWith(prefix)) {
       consumer(value, CompCandidateKind::KEYWORD);
     }
   }
@@ -94,14 +92,14 @@ static void completeEnvName(const std::string &namePrefix, CompCandidateConsumer
                             bool validNameOnly) {
   for (unsigned int i = 0; environ[i] != nullptr; i++) {
     StringRef env(environ[i]);
-    auto r = env.indexOf("=");
+    const auto r = env.indexOf("=");
     assert(r != StringRef::npos);
-    auto name = env.substr(0, r);
-    if (name.startsWith(namePrefix)) {
+    if (const auto name = env.substr(0, r); name.startsWith(namePrefix)) {
       if (validNameOnly && !isValidIdentifier(name)) {
         continue;
       }
-      auto kind = validNameOnly ? CompCandidateKind::VALID_ENV_NAME : CompCandidateKind::ENV_NAME;
+      const auto kind =
+          validNameOnly ? CompCandidateKind::VALID_ENV_NAME : CompCandidateKind::ENV_NAME;
       consumer(name, kind);
     }
   }
@@ -110,8 +108,7 @@ static void completeEnvName(const std::string &namePrefix, CompCandidateConsumer
 static void completeSigName(const std::string &prefix, CompCandidateConsumer &consumer) {
   auto *list = getSignalList();
   for (unsigned int i = 0; list[i].name != nullptr; i++) {
-    StringRef sigName = list[i].name;
-    if (sigName.startsWith(prefix)) {
+    if (StringRef sigName = list[i].name; sigName.startsWith(prefix)) {
       consumer(sigName, CompCandidateKind::SIGNAL);
     }
   }
@@ -189,11 +186,10 @@ static bool completeCmdName(const NameScope &scope, const std::string &cmdPrefix
 
   // complete builtin command
   if (hasFlag(option, CodeCompOp::BUILTIN)) {
-    unsigned int bsize = getBuiltinCmdSize();
+    const unsigned int bsize = getBuiltinCmdSize();
     auto *cmdList = getBuiltinCmdDescList();
     for (unsigned int i = 0; i < bsize; i++) {
-      StringRef builtin = cmdList[i].name;
-      if (builtin.startsWith(cmdPrefix)) {
+      if (StringRef builtin = cmdList[i].name; builtin.startsWith(cmdPrefix)) {
         consumer(builtin, CompCandidateKind::COMMAND_NAME);
       }
     }
@@ -397,8 +393,7 @@ static void completeExpected(const std::vector<std::string> &expected, const std
 void completeMember(const TypePool &pool, const NameScope &scope, const DSType &recvType,
                     const StringRef word, CompCandidateConsumer &consumer) {
   // complete field
-  std::function<bool(StringRef, const Handle &)> fieldWalker = [&](StringRef name,
-                                                                   const Handle &handle) {
+  auto fieldWalker = [&](StringRef name, const Handle &handle) {
     if (name.startsWith(word) && isVarName(name)) {
       if (handle.isVisibleInMod(scope.modId, name)) {
         CompCandidate candidate(name, CompCandidateKind::FIELD, 0);
@@ -457,8 +452,7 @@ void completeMember(const TypePool &pool, const NameScope &scope, const DSType &
 void completeType(const TypePool &pool, const NameScope &scope, const DSType *recvType,
                   const StringRef word, CompCandidateConsumer &consumer) {
   if (recvType) {
-    std::function<bool(StringRef, const Handle &)> fieldWalker = [&](StringRef name,
-                                                                     const Handle &handle) {
+    auto fieldWalker = [&](StringRef name, const Handle &handle) {
       if (name.startsWith(word) && isTypeAliasFullName(name)) {
         if (handle.isVisibleInMod(scope.modId, name)) {
           name.removeSuffix(strlen(TYPE_ALIAS_SYMBOL_SUFFIX));
@@ -486,22 +480,21 @@ void completeType(const TypePool &pool, const NameScope &scope, const DSType *re
         t->isFuncType()) {
       continue;
     }
-    StringRef name = t->getNameRef();
-    if (name.startsWith(word) && std::all_of(name.begin(), name.end(), isLetterOrDigit)) {
+    if (const StringRef name = t->getNameRef();
+        name.startsWith(word) && std::all_of(name.begin(), name.end(), isLetterOrDigit)) {
       consumer(name, CompCandidateKind::TYPE);
     }
   }
 
   // search TypeTemplate
   for (auto &e : pool.getTemplateMap()) {
-    StringRef name = e.first;
-    if (name.startsWith(word)) {
+    if (StringRef name = e.first; name.startsWith(word)) {
       consumer(name, CompCandidateKind::TYPE);
     }
   }
 
   // typeof
-  if (StringRef name = "typeof"; name.startsWith(word)) {
+  if (constexpr StringRef name = "typeof"; name.startsWith(word)) {
     consumer(name, CompCandidateKind::TYPE);
   }
 }
@@ -512,12 +505,11 @@ static void completeAttribute(const std::string &prefix, CompCandidateConsumer &
       EACH_ATTRIBUTE_KIND(GEN_TABLE)
 #undef GEN_TABLE
   };
-  for (auto kind : kinds) {
+  for (auto &kind : kinds) {
     if (kind == AttributeKind::NONE) {
       continue;
     }
-    StringRef attr = toString(kind);
-    if (attr.startsWith(prefix)) {
+    if (const StringRef attr = toString(kind); attr.startsWith(prefix)) {
       consumer(attr, CompCandidateKind::KEYWORD);
     }
   }
@@ -548,7 +540,7 @@ static bool completeSubcommand(const TypePool &pool, const NameScope &scope, con
     return false;
   }
 
-  std::string cmdName = toCmdFullName(cmdNode.getNameNode().getValue());
+  const std::string cmdName = toCmdFullName(cmdNode.getNameNode().getValue());
   auto handle = scope.lookup(cmdName);
   if (!handle) {
     return false;
@@ -558,7 +550,7 @@ static bool completeSubcommand(const TypePool &pool, const NameScope &scope, con
   if (!type.isModType()) {
     return false;
   }
-  std::function<bool(StringRef, const Handle &)> fieldWalker = [&](StringRef name, const Handle &) {
+  auto fieldWalker = [&](StringRef name, const Handle &) {
     if (name.startsWith(word) && isCmdFullName(name)) {
       if (!name.startsWith("_")) {
         name.removeSuffix(strlen(CMD_SYMBOL_SUFFIX));
@@ -596,7 +588,7 @@ bool CodeCompleter::invoke(const CodeCompletionContext &ctx) {
     completeGroupName(ctx.getCompWord(), this->consumer);
   }
   if (ctx.has(CodeCompOp::FILE) || ctx.has(CodeCompOp::EXEC) || ctx.has(CodeCompOp::DIR)) {
-    auto prefix = StringRef(ctx.getCompWord()).substr(ctx.getCompWordOffset());
+    const auto prefix = StringRef(ctx.getCompWord()).substr(ctx.getCompWordOffset());
     TRY(completeFileName(this->logicalWorkingDir, prefix, ctx.getCompOp(), this->consumer,
                          this->cancel));
   }
@@ -608,7 +600,7 @@ bool CodeCompleter::invoke(const CodeCompletionContext &ctx) {
     completeKeyword(ctx.getCompWord(), ctx.getCompOp(), this->consumer);
   }
   if (ctx.has(CodeCompOp::VAR)) {
-    bool inCmdArg = ctx.has(CodeCompOp::CMD_ARG);
+    const bool inCmdArg = ctx.has(CodeCompOp::CMD_ARG);
     completeVarName(ctx.getScope(), ctx.getCompWord(), inCmdArg, this->consumer);
   }
   if (ctx.has(CodeCompOp::EXPECT)) {
@@ -629,18 +621,19 @@ bool CodeCompleter::invoke(const CodeCompletionContext &ctx) {
   }
   if (ctx.has(CodeCompOp::HOOK)) {
     if (this->userDefinedComp) {
-      int s =
+      const int s =
           this->userDefinedComp(*ctx.getLexer(), *ctx.getCmdNode(), ctx.getCompWord(),
                                 hasFlag(ctx.getFallbackOp(), CodeCompOp::TILDE), this->consumer);
       if (s < 0 && errno == EINTR) {
         return false;
-      } else if (s > -1) {
+      }
+      if (s > -1) {
         return true;
       }
     }
     if (!completeSubcommand(this->pool, ctx.getScope(), *ctx.getCmdNode(), ctx.getCompWord(),
                             this->consumer)) {
-      auto prefix = StringRef(ctx.getCompWord()).substr(ctx.getCompWordOffset());
+      const auto prefix = StringRef(ctx.getCompWord()).substr(ctx.getCompWordOffset());
       TRY(completeFileName(this->logicalWorkingDir, prefix, ctx.getFallbackOp(), this->consumer,
                            this->cancel));
     }
@@ -659,11 +652,10 @@ static LexerPtr lex(const std::string &scriptName, StringRef ref, const std::str
 static std::string toScriptDir(const std::string &scriptName) {
   std::string value;
   if (scriptName[0] != '/') {
-    auto cwd = getCWD();
-    value = cwd.get();
+    value = getCWD().get();
   } else {
     StringRef ref = scriptName;
-    auto pos = ref.lastIndexOf("/");
+    const auto pos = ref.lastIndexOf("/");
     ref = pos == 0 ? "/" : ref.substr(0, pos);
     value = ref.toString();
   }
@@ -672,7 +664,7 @@ static std::string toScriptDir(const std::string &scriptName) {
 
 bool CodeCompleter::operator()(NameScopePtr scope, const std::string &scriptName, StringRef ref,
                                CodeCompOp option) {
-  auto scriptDir = toScriptDir(scriptName);
+  const auto scriptDir = toScriptDir(scriptName);
   CodeCompletionContext compCtx(std::move(scope), scriptDir);
   if (this->provider) {
     // prepare
@@ -683,10 +675,9 @@ bool CodeCompleter::operator()(NameScopePtr scope, const std::string &scriptName
     consumeAllInput(frontEnd);
     compCtx.ignore(option);
     return this->invoke(compCtx);
-  } else {
-    compCtx.addCompRequest(option, ref.toString());
-    return this->invoke(compCtx);
   }
+  compCtx.addCompRequest(option, ref.toString());
+  return this->invoke(compCtx);
 }
 
 class SuggestionCollector : public CompCandidateConsumer {
@@ -710,7 +701,7 @@ public:
 
   void operator()(const CompCandidate &candidate) override {
     if (this->targetMemberType) {
-      auto targetType = *this->targetMemberType;
+      const auto targetType = *this->targetMemberType;
       if (candidate.kind == CompCandidateKind::FIELD &&
           !hasFlag(targetType, SuggestMemberType::FIELD)) {
         return;
@@ -722,7 +713,7 @@ public:
       }
     }
 
-    auto ref = candidate.value;
+    const auto ref = candidate.value;
     if (this->src[0] != ref[0]) {
       return;
     }
@@ -732,7 +723,7 @@ public:
       }
     }
 
-    auto dist = this->editDistance(this->src, ref);
+    const auto dist = this->editDistance(this->src, ref);
     if (dist < this->score) {
       this->score = dist;
       this->target = ref;
