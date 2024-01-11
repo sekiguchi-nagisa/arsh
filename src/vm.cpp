@@ -1356,8 +1356,8 @@ public:
   }
 };
 
-static void raiseGlobbingError(ARState &state, const std::string &pattern, const char *message) {
-  std::string value = message;
+static void raiseGlobbingError(ARState &state, const std::string &pattern, std::string &&message) {
+  std::string value = std::move(message);
   value += " `";
   splitByDelim(pattern, '\0', [&value](StringRef ref, bool delim) {
     value += ref;
@@ -1445,7 +1445,8 @@ bool VM::addGlobbingPath(ARState &state, ArrayObject &argv, const Value *begin, 
     return tildeExpandStatus == TildeExpandStatus::OK || !failTilde;
   });
 
-  switch (const auto ret = glob(); ret) {
+  std::string err;
+  switch (const auto ret = glob(&err); ret) {
   case Glob::Status::MATCH:
   case Glob::Status::NOMATCH:
     if (ret == Glob::Status::MATCH || state.has(RuntimeOption::NULLGLOB)) {
@@ -1462,7 +1463,10 @@ bool VM::addGlobbingPath(ARState &state, ArrayObject &argv, const Value *begin, 
     return false;
   case Glob::Status::TILDE_FAIL:
     assert(tildeExpandStatus != TildeExpandStatus::OK);
-    raiseTildeError(state, provider, glob.getBaseDir(), tildeExpandStatus);
+    raiseTildeError(state, provider, err, tildeExpandStatus);
+    return false;
+  case Glob::Status::BAD_PATTERN:
+    raiseGlobbingError(state, pattern, "bad glob pattern: " + err);
     return false;
     //  case Glob::Status::RESOURCE_LIMIT:
     //    return false; //FIXME:

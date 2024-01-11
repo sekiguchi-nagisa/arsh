@@ -20,7 +20,6 @@
 #include <functional>
 
 #include "misc/flag_util.hpp"
-#include "misc/locale.hpp"
 #include "misc/resource.hpp"
 #include "misc/string_ref.hpp"
 
@@ -50,7 +49,7 @@ public:
   };
 
 private:
-  std::string base; // base dir of glob
+  const std::string base; // base dir of glob
   const StringRef pattern;
   const Option option;
 
@@ -74,8 +73,6 @@ public:
   Glob(StringRef pattern, Option option, const char *baseDir = nullptr)
       : base(baseDir ? baseDir : ""), pattern(pattern), option(option) {}
 
-  const auto &getBaseDir() const { return this->base; }
-
   void setCancelToken(CancelToken &token) { this->cancel = makeObserver(token); }
 
   unsigned int getMatchCount() const { return this->matchCount; }
@@ -86,16 +83,18 @@ public:
 
   void setConsumer(std::function<bool(std::string &&)> &&func) { this->consumer = std::move(func); }
 
-  Status operator()();
+  Status operator()(std::string *err);
 
   /**
    * \brief for debugging. (directly use specified base dir)
    * \return
    */
-  Status matchExactly() { return this->invoke(std::string(this->base), this->pattern.begin()); }
+  Status matchExactly() {
+    return this->invoke(std::string(this->base), this->pattern.begin(), nullptr);
+  }
 
 private:
-  Status invoke(std::string &&baseDir, const char *iter);
+  Status invoke(std::string &&baseDir, const char *iter, std::string *err);
 
   const char *end() const { return this->pattern.end(); }
 
@@ -107,7 +106,7 @@ private:
    */
   bool resolveBaseDir(const char *&iter, std::string &baseDir) const;
 
-  std::pair<Status, bool> match(const char *baseDir, const char *&iter);
+  std::pair<Status, bool> match(const char *baseDir, const char *&iter, std::string *err);
 };
 
 template <>
@@ -163,9 +162,10 @@ public:
    * @param name
    * must be null terminated
    * @param option
+   * @param err
    * @return
    */
-  Status match(const char *name, Glob::Option option);
+  Status match(const char *name, Glob::Option option, std::string *err);
 
   enum class CharSetStatus : unsigned char {
     MATCH,

@@ -18,7 +18,7 @@ static GlobPatternScanner::Status matchPatternRaw(const char *name, const char *
                                                   Glob::Option option = {}) {
   const StringRef ref = p;
   GlobPatternScanner scanner(ref.begin(), ref.end());
-  return scanner.match(name, option);
+  return scanner.match(name, option, nullptr);
 }
 
 static bool matchPattern(const char *name, const char *p, Glob::Option option = {}) {
@@ -82,7 +82,7 @@ public:
     Glob glob(pattern, option, baseDir);
     glob.setCancelToken(cancel);
     glob.setConsumer(Consumer(this->ret));
-    glob();
+    glob(nullptr);
     return glob.getMatchCount();
   }
 
@@ -640,9 +640,10 @@ TEST_F(GlobTest, globAt) {
 }
 
 TEST_F(GlobTest, escapeDir) {
-  Glob glob("/hogehoge/\\*234\\?ss////*", {}, nullptr);
-  ASSERT_EQ(Glob::Status::NOMATCH, glob());
-  ASSERT_EQ("/hogehoge/*234?ss/", glob.getBaseDir());
+  Glob glob("hogehoge/\\*234\\?ss////*", Glob::Option::ABSOLUTE_BASE_DIR, nullptr);
+  std::string err;
+  ASSERT_EQ(Glob::Status::NEED_ABSOLUTE_BASE_DIR, glob(&err));
+  ASSERT_EQ("hogehoge/*234?ss/", err);
 }
 
 TEST_F(GlobTest, fast) {

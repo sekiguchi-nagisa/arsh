@@ -454,7 +454,8 @@ bool TypeChecker::applyGlob(const Token token,
     return tildeExpandStatus == TildeExpandStatus::OK;
   });
 
-  switch (const auto ret = glob(); ret) {
+  std::string err;
+  switch (const auto ret = glob(&err); ret) {
   case Glob::Status::MATCH:
   case Glob::Status::NOMATCH:
     if (ret == Glob::Status::MATCH || hasFlag(op, GlobOp::OPTIONAL)) {
@@ -470,10 +471,13 @@ bool TypeChecker::applyGlob(const Token token,
     return false;
   case Glob::Status::TILDE_FAIL:
     assert(tildeExpandStatus != TildeExpandStatus::OK);
-    this->reportTildeExpansionError(token, glob.getBaseDir(), tildeExpandStatus);
+    this->reportTildeExpansionError(token, err, tildeExpandStatus);
     return false;
   case Glob::Status::RESOURCE_LIMIT:
     this->reportError<GlobResource>(token);
+    return false;
+  case Glob::Status::BAD_PATTERN:
+    this->reportError<BadGlobPattern>(token, err.c_str());
     return false;
   default:
     assert(ret == Glob::Status::LIMIT);

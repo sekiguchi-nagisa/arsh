@@ -18,6 +18,7 @@
 
 #include "glob.h"
 #include "misc/files.hpp"
+#include "misc/locale.hpp"
 #include "misc/unicode.hpp"
 
 namespace arsh {
@@ -26,7 +27,8 @@ namespace arsh {
 // ##     GlobPatternScanner     ##
 // ################################
 
-GlobPatternScanner::Status GlobPatternScanner::match(const char *name, const Glob::Option option) {
+GlobPatternScanner::Status GlobPatternScanner::match(const char *name, const Glob::Option option,
+                                                     std::string *err) {
   // ignore starting with '.'
   if (*name == '.') {
     if (!name[1] || (name[1] == '.' && !name[2])) { // check '.' or '..'
@@ -66,7 +68,7 @@ GlobPatternScanner::Status GlobPatternScanner::match(const char *name, const Glo
           ++this->iter;
           continue;
         }
-        switch (this->matchCharSetImpl(codePoint, nullptr)) {
+        switch (this->matchCharSetImpl(codePoint, err)) {
         case CharSetStatus::MATCH:
           continue;
         case CharSetStatus::UNMATCH:
@@ -373,28 +375,32 @@ static void popDir(std::string &path) {
   }
 }
 
-Glob::Status Glob::operator()() {
+Glob::Status Glob::operator()(std::string *err) {
   // prepare base dir
   auto iter = this->pattern.begin();
   std::string baseDir;
-  const bool r = this->resolveBaseDir(iter, baseDir);
-  this->base = baseDir;
-  if (!r) {
+  if (!this->resolveBaseDir(iter, baseDir)) {
+    if (err) {
+      *err = baseDir;
+    }
     return Status::TILDE_FAIL;
   }
-  if (hasFlag(this->option, Option::ABSOLUTE_BASE_DIR) && this->base[0] != '/') {
+  if (hasFlag(this->option, Option::ABSOLUTE_BASE_DIR) && baseDir[0] != '/') {
+    if (err) {
+      *err = baseDir;
+    }
     return Status::NEED_ABSOLUTE_BASE_DIR;
   }
-  return this->invoke(std::move(baseDir), iter);
+  return this->invoke(std::move(baseDir), iter, err);
 }
 
-Glob::Status Glob::invoke(std::string &&baseDir, const char *iter) {
+Glob::Status Glob::invoke(std::string &&baseDir, const char *iter, std::string *err) {
   // do glob match
   this->matchCount = 0;
   this->statCount = 0;
   this->readdirCount = 0;
   std::pair<Status, bool> s;
-  for (; !(s = this->match(baseDir.c_str(), iter)).second; popDir(baseDir))
+  for (; !(s = this->match(baseDir.c_str(), iter, err)).second; popDir(baseDir))
     ;
   if (s.first != Status::MATCH) {
     return s.first;
@@ -471,7 +477,8 @@ static std::unique_ptr<DIR, DirDeleter> openDir(const char *path) {
   return std::unique_ptr<DIR, DirDeleter>(dir);
 }
 
-std::pair<Glob::Status, bool> Glob::match(const char *baseDir, const char *&iter) {
+std::pair<Glob::Status, bool> Glob::match(const char *baseDir, const char *&iter,
+                                          std::string *err) {
   const auto dir = openDir(baseDir);
   if (!dir) {
     return {Status::MATCH, true};
@@ -487,7 +494,7 @@ std::pair<Glob::Status, bool> Glob::match(const char *baseDir, const char *&iter
     }
 
     GlobPatternScanner scanner(iter, this->end());
-    const auto ret = scanner.match(entry->d_name, this->option);
+    const auto ret = scanner.match(entry->d_name, this->option, err);
     if (ret == GlobPatternScanner::Status::UNMATCHED) {
       continue;
     }
@@ -521,7 +528,7 @@ std::pair<Glob::Status, bool> Glob::match(const char *baseDir, const char *&iter
           return {Status::MATCH, false};
         }
         auto next = scanner.getIter();
-        auto s = this->match(name.c_str(), next);
+        auto s = this->match(name.c_str(), next, err);
         if (!s.second) {
           iter = next;
           rewinddir(dir.get());
