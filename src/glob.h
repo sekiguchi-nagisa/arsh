@@ -17,6 +17,7 @@
 #ifndef ARSH_GLOB_H
 #define ARSH_GLOB_H
 
+#include <clocale> //for macOS
 #include <functional>
 
 #include "misc/flag_util.hpp"
