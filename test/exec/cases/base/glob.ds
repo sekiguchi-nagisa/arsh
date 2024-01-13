@@ -30,6 +30,13 @@ try { echo *\*\??; } catch $e { $ex = $e; }
 assert $ex is GlobbingError
 assert ($ex as GlobbingError).message() == "no matches for glob pattern \`*\*\??'"
 
+$ex = 2
+try {
+    @(
+        ~/fjarifja/*
+    )
+} catch e { $ex = $e; }
+assert ($ex as GlobbingError).lineno() == 36
 
 # glob pattern have null characters, throw GlobbingError
 $ex = 34

@@ -888,6 +888,7 @@ void ByteCodeGenerator::visitCmdNode(CmdNode &node) {
 
 void ByteCodeGenerator::visitCmdArgNode(CmdArgNode &node) {
   if (node.getExpansionSize() > 0) {
+    this->emitSourcePos(node.getPos());
     const unsigned int size = node.getSegmentNodes().size();
     unsigned int firstIndex = 0;
     for (unsigned int i = 0; i < size; i++) {
