@@ -18,7 +18,6 @@
 
 #include "glob.h"
 #include "misc/files.hpp"
-#include "misc/locale.hpp"
 #include "misc/unicode.hpp"
 
 namespace arsh {
