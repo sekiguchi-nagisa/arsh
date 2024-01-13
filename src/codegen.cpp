@@ -922,9 +922,9 @@ void ByteCodeGenerator::visitArgArrayNode(ArgArrayNode &node) {
 }
 
 void ByteCodeGenerator::visitRedirNode(RedirNode &node) {
-  if (int newFd = node.getNewFd();
+  if (const int newFd = node.getNewFd();
       newFd >= 0 && static_cast<unsigned int>(newFd) < RESERVED_FD_LIMIT) {
-    if (int targetFd = node.getTargetFd();
+    if (const int targetFd = node.getTargetFd();
         targetFd >= 0 && static_cast<unsigned int>(targetFd) < RESERVED_FD_LIMIT) {
       this->emitInt(targetFd);
     } else {
@@ -932,7 +932,7 @@ void ByteCodeGenerator::visitRedirNode(RedirNode &node) {
     }
     if (newFd < 3) {
       constexpr auto offset = toUnderlying(OpCode::ADD_REDIR_OP0);
-      auto op = static_cast<OpCode>(offset + newFd);
+      const auto op = static_cast<OpCode>(offset + newFd);
       this->emit1byteIns(op, toUnderlying(node.getRedirOp()));
     } else {
       this->emit2byteIns(OpCode::ADD_REDIR_OP, toUnderlying(node.getRedirOp()),
