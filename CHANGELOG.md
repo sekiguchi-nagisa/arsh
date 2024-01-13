@@ -7,6 +7,7 @@
 - fix help message of ``prompt`` command in ``prompt`` module
 - fix return value of ``String#lastIndexOf`` when specified empty string
     - now return haystack size
+- fix lineno of command argument
 
 ## [0.32.0] - 2023-12-31
 

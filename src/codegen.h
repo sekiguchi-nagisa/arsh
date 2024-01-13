@@ -442,7 +442,8 @@ private:
   unsigned int concatCmdArgSegment(CmdArgNode &node, unsigned int index);
 
   void generateCmdArg(CmdArgNode &node) {
-    unsigned int size = node.getSegmentNodes().size();
+    this->emitSourcePos(node.getPos());
+    const unsigned int size = node.getSegmentNodes().size();
     for (unsigned int index = 0; index < size; index = this->concatCmdArgSegment(node, index))
       ;
   }
