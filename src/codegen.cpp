@@ -22,7 +22,7 @@
 namespace arsh {
 
 int getByteSize(OpCode code) {
-  int table[] = {
+  constexpr int table[] = {
 #define GEN_BYTE_SIZE(CODE, N, S) N,
       OPCODE_LIST(GEN_BYTE_SIZE)
 #undef GEN_BYTE_SIZE
@@ -107,14 +107,14 @@ void ByteCodeGenerator::emitIns(OpCode op) {
   this->curBuilder().append8(toUnderlying(op));
 
   // max stack depth size
-  int table[] = {
+  constexpr int table[] = {
 #define GEN_SIZE_TABLE(C, N, S) S,
       OPCODE_LIST(GEN_SIZE_TABLE)
 #undef GEN_SIZE_TABLE
   };
-  int size = table[toUnderlying(op)];
+  const int size = table[toUnderlying(op)];
   this->curBuilder().stackDepthCount += static_cast<short>(size);
-  auto count = this->curBuilder().stackDepthCount;
+  const auto count = this->curBuilder().stackDepthCount;
   if (count > 0 && static_cast<unsigned short>(count) > this->curBuilder().maxStackDepth) {
     this->curBuilder().maxStackDepth = count;
   }
@@ -122,7 +122,7 @@ void ByteCodeGenerator::emitIns(OpCode op) {
 
 unsigned int ByteCodeGenerator::emitConstant(Value &&value) {
   this->curBuilder().constBuffer.append(std::move(value));
-  unsigned int index = this->curBuilder().constBuffer.getSize() - 1;
+  const unsigned int index = this->curBuilder().constBuffer.getSize() - 1;
   if (index > 0xFFFFFF) {
     fatal("const pool index is up to 24bit\n");
   }
@@ -133,7 +133,7 @@ void ByteCodeGenerator::emitMethodCallIns(const MethodHandle &handle) {
   /**
    * in constructor call, dose not pass receiver
    */
-  unsigned int actualParamSize = handle.getParamSize() + (handle.isConstructor() ? 0 : 1);
+  const unsigned int actualParamSize = handle.getParamSize() + (handle.isConstructor() ? 0 : 1);
   if (handle.isNative()) {
     if (handle.getRecvTypeId() == toUnderlying(TYPE::Command) &&
         StringRef("call") == nativeFuncInfoTable()[handle.getIndex()].funcName) {
@@ -153,7 +153,7 @@ void ByteCodeGenerator::emitMethodCallIns(const MethodHandle &handle) {
 }
 
 void ByteCodeGenerator::emitLdcIns(Value &&value) {
-  unsigned int index = this->emitConstant(std::move(value));
+  const unsigned int index = this->emitConstant(std::move(value));
   if (index <= UINT8_MAX) {
     this->emit1byteIns(OpCode::LOAD_CONST, index);
   } else if (index <= UINT16_MAX) {
@@ -230,7 +230,7 @@ void ByteCodeGenerator::pushLoopLabels(Label breakLabel, Label continueLabel,
 
 void ByteCodeGenerator::emitSourcePos(unsigned int pos) {
   const unsigned int index = this->currentCodeOffset();
-  unsigned int lineNum = this->curBuilder().lexer->getLineNumByPos(pos);
+  const unsigned int lineNum = this->curBuilder().lexer->getLineNumByPos(pos);
   if (this->curBuilder().lineNumEntries.empty() ||
       this->curBuilder().lineNumEntries.back().lineNum != lineNum) {
     this->curBuilder().lineNumEntries.push_back({index, lineNum});
@@ -272,22 +272,21 @@ void ByteCodeGenerator::enterMultiFinally(unsigned int depth, unsigned int local
   }
 
   for (; index < depth; index++) {
-    auto &e = this->tryFinallyLabels()[size - 1 - index];
-    if (e.finallyLabel) {
+    if (auto &e = this->tryFinallyLabels()[size - 1 - index]; e.finallyLabel) {
       this->enterFinally(e.finallyLabel);
     }
   }
 }
 
-unsigned int ByteCodeGenerator::concatCmdArgSegment(CmdArgNode &node, unsigned int index) {
+unsigned int ByteCodeGenerator::concatCmdArgSegment(const CmdArgNode &node, unsigned int index) {
   const unsigned int size = node.getSegmentNodes().size();
   const unsigned int baseIndex = index;
-  bool tilde = node.isTildeAt(index);
+  const bool tilde = node.isTildeAt(index);
   for (; index < size; index++) {
-    if ((index - baseIndex) > 0 && node.isTildeAt(index)) {
+    if (index - baseIndex > 0 && node.isTildeAt(index)) {
       break;
     }
-    this->generateConcat(*node.getSegmentNodes()[index], (index - baseIndex) > 0);
+    this->generateConcat(*node.getSegmentNodes()[index], index - baseIndex > 0);
   }
   if (tilde) {
     this->emit0byteIns(OpCode::EXPAND_TILDE);
@@ -309,7 +308,7 @@ static Value toPipelineDesc(const Lexer &lexer, const PipelineNode &node) {
   return Value::createStr(std::move(value));
 }
 
-void ByteCodeGenerator::generatePipeline(PipelineNode &node, ForkKind forkKind) {
+void ByteCodeGenerator::generatePipeline(const PipelineNode &node, ForkKind forkKind) {
   const bool lastPipe = node.isLastPipe();
   const unsigned int size = node.getNodes().size() - (lastPipe ? 1 : 0);
   const unsigned int labelSize = node.getNodes().size() + (lastPipe ? 0 : 1);
@@ -395,7 +394,7 @@ void ByteCodeGenerator::generateConcat(Node &node, const bool fragment) {
     }
     break;
   case NodeKind::StringExpr: {
-    auto &strExprNode = cast<StringExprNode>(node);
+    const auto &strExprNode = cast<StringExprNode>(node);
     const unsigned int size = strExprNode.getExprNodes().size();
     if (size == 0) {
       if (!fragment) {
@@ -410,7 +409,7 @@ void ByteCodeGenerator::generateConcat(Node &node, const bool fragment) {
   }
   case NodeKind::BinaryOp:
     if (isBinaryStrConcat(node)) {
-      auto &binaryNode = cast<BinaryOpNode>(node);
+      const auto &binaryNode = cast<BinaryOpNode>(node);
       this->generateConcat(*binaryNode.getLeftNode(), fragment);
       this->generateConcat(*binaryNode.getRightNode(), true);
       return;
@@ -540,7 +539,7 @@ void ByteCodeGenerator::visitVarNode(VarNode &node) {
   } else if (node.getHandle()->is(HandleKind::MOD_CONST)) {
     this->emit0byteIns(OpCode::LOAD_CUR_MOD);
 
-    unsigned int index = node.getIndex();
+    const unsigned int index = node.getIndex();
     const char *op = index == toIndex(BuiltinVarOffset::SCRIPT_NAME)  ? METHOD_SCRIPT_NAME
                      : index == toIndex(BuiltinVarOffset::SCRIPT_DIR) ? METHOD_SCRIPT_DIR
                                                                       : "";
@@ -718,7 +717,7 @@ void ByteCodeGenerator::visitUnaryOpNode(UnaryOpNode &node) {
 }
 
 void ByteCodeGenerator::visitBinaryOpNode(BinaryOpNode &node) {
-  auto kind = node.getOp();
+  const auto kind = node.getOp();
   if (kind == TokenKind::COND_AND || kind == TokenKind::COND_OR) {
     auto elseLabel = makeLabel();
     auto mergeLabel = makeLabel();
@@ -1742,7 +1741,7 @@ ObjPtr<FuncObject> ByteCodeGenerator::finalizeToplevelCodeBuilder(Token token,
     this->toplevelDeferNodes().pop_back();
   }
 
-  auto lex = this->curBuilder().lexer;
+  const auto lex = this->curBuilder().lexer;
   auto code = this->finalizeCodeBuilder(modType.toName());
   ObjPtr<FuncObject> func;
   if (code) {
@@ -1755,7 +1754,7 @@ ObjPtr<FuncObject> ByteCodeGenerator::finalizeToplevelCodeBuilder(Token token,
 }
 
 bool ByteCodeGenerator::exitModule(const SourceNode &node) {
-  auto func =
+  const auto func =
       this->finalizeToplevelCodeBuilder(node.getToken(), node.getMaxVarNum(), node.getModType());
   if (!func) {
     return false;
@@ -1843,7 +1842,7 @@ void ByteCodeDumper::dumpCode(const CompiledCode &c) {
     };
 
     for (unsigned int i = 0; i < c.getCodeSize(); i++) {
-      auto code = static_cast<OpCode>(c.getCode()[i]);
+      const auto code = static_cast<OpCode>(c.getCode()[i]);
       fprintf(this->fp, "  %s: %s", formatNum(c.getCodeSize(), i).c_str(),
               opName[toUnderlying(code)]);
       if (isTypeOp(code)) {
@@ -1858,15 +1857,17 @@ void ByteCodeDumper::dumpCode(const CompiledCode &c) {
                    code == OpCode::INIT_FIELDS || code == OpCode::PUSH_META) {
           fprintf(this->fp, "  %d  %d", read8(c.getCode(), i + 1), read8(c.getCode(), i + 2));
         } else if (code == OpCode::CALL_BUILTIN) {
-          unsigned int paramSize = read8(c.getCode(), i + 1);
+          const unsigned int paramSize = read8(c.getCode(), i + 1);
           const char *name = nativeFuncInfoTable()[read8(c.getCode(), i + 2)].funcName;
           fprintf(this->fp, "  %d  %s", paramSize, name);
         } else if (code == OpCode::PUSH_STR1 || code == OpCode::PUSH_STR2 ||
                    code == OpCode::PUSH_STR3) {
           char data[4];
-          unsigned int size = code == OpCode::PUSH_STR1 ? 1 : code == OpCode::PUSH_STR2 ? 2 : 3;
+          const unsigned int size = code == OpCode::PUSH_STR1   ? 1
+                                    : code == OpCode::PUSH_STR2 ? 2
+                                                                : 3;
           for (unsigned int index = 0; index < size; index++) {
-            data[index] = read8(c.getCode(), i + 1 + index);
+            data[index] = static_cast<char>(read8(c.getCode(), i + 1 + index));
           }
           data[size] = '\0';
           fprintf(this->fp, "  `%s'", data);
@@ -1889,7 +1890,7 @@ void ByteCodeDumper::dumpCode(const CompiledCode &c) {
               fprintf(this->fp, " %d", read8(c.getCode(), i + 1));
               i++;
             }
-            auto s = static_cast<unsigned int>(read8(c.getCode(), i + 1));
+            const auto s = static_cast<unsigned int>(read8(c.getCode(), i + 1));
             fprintf(this->fp, " %d", s);
             for (unsigned int index = 0; index < s; index++) {
               fprintf(this->fp, "  %d", read16(c.getCode(), i + 2 + index * 2));

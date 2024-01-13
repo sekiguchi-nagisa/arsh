@@ -439,7 +439,7 @@ private:
   void enterMultiFinally(unsigned int depth, unsigned int localOffset = 0,
                          unsigned int localSize = 0);
 
-  unsigned int concatCmdArgSegment(CmdArgNode &node, unsigned int index);
+  unsigned int concatCmdArgSegment(const CmdArgNode &node, unsigned int index);
 
   void generateCmdArg(CmdArgNode &node) {
     this->emitSourcePos(node.getPos());
@@ -448,7 +448,7 @@ private:
       ;
   }
 
-  void generatePipeline(PipelineNode &node, ForkKind forkKind);
+  void generatePipeline(const PipelineNode &node, ForkKind forkKind);
   void emitPipelineIns(const std::vector<Label> &labels, bool lastPipe, ForkKind forkKind);
 
   void generateConcat(Node &node, bool fragment = false);
@@ -480,7 +480,7 @@ private:
   void initCodeBuilder(CodeKind kind, ModId modId, LexerPtr lex, unsigned short localVarNum) {
     this->builders.emplace_back(modId, std::move(lex), kind, localVarNum);
     if (kind == CodeKind::TOPLEVEL) {
-      auto &lexer = *this->curBuilder().lexer;
+      const auto &lexer = *this->curBuilder().lexer;
       this->curBuilder().constBuffer.append(Value::createStr(lexer.getSourceName()));
       this->curBuilder().constBuffer.append(Value::createStr(lexer.getScriptDir()));
     }
