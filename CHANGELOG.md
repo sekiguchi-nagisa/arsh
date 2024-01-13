@@ -8,6 +8,10 @@
 
 - **Breaking Change**: various glob expansion improvements
     - now ``?`` meta character is unicode-aware
+- auto-unwrap option type expression in for-in
+  ```
+  for a in "123" as String? { echo $a; }
+  ```
 
 ### Fixed
 

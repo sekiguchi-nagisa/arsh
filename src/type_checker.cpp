@@ -493,9 +493,10 @@ void TypeChecker::reportMethodLookupError(ApplyNode::Attr attr, const AccessNode
 
 // for ApplyNode type checking
 /**
- * lookup resolve function/method like the following step
+ * resolve function/method like the following step
  * 1. if node.isMethodCall()
  * 1-1. check type receiver, and lookup method. if found, return MethodHandle
+ * 1-1-1. if receiver type is Optional and NEW_ITER op, lookup from element type of receiver
  * 1-2. if method is not found, lookup field.
  * 1-2-1. if field is found and is callable, return function type
  * 1-2-2. if field is not callable, report NotCallable error
@@ -514,7 +515,12 @@ CallSignature TypeChecker::resolveCallSignature(ApplyNode &node) {
 
     // first lookup method
     auto &recvType = this->checkTypeAsExpr(accessNode.getRecvNode());
-    if (auto *handle = this->curScope->lookupMethod(this->typePool(), recvType, methodName)) {
+    if (auto *handle = this->curScope->lookupMethod(
+            this->typePool(),
+            node.getAttr() == ApplyNode::NEW_ITER && recvType.isOptionType()
+                ? cast<OptionType>(recvType).getElementType()
+                : recvType,
+            methodName)) {
       accessNode.setType(this->typePool().get(TYPE::Any));
       node.setKind(ApplyNode::METHOD_CALL);
       node.setHandle(handle);

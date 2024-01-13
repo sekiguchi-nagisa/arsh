@@ -803,6 +803,9 @@ void ByteCodeGenerator::visitApplyNode(ApplyNode &node) {
     // do nothing
   } else if (node.isMethodCall()) {
     this->visit(node.getRecvNode());
+    if (node.getAttr() == ApplyNode::NEW_ITER && node.getRecvNode().getType().isOptionType()) {
+      this->emitBranchIns(OpCode::IF_INVALID, this->peekLoopLabels().breakLabel);
+    }
     this->visit(node.getArgsNode());
     this->emitSourcePos(node.getActualPos());
     this->emitMethodCallIns(*node.getHandle());
@@ -1197,7 +1200,7 @@ void ByteCodeGenerator::generateMapCase(CaseNode &node) {
   auto mergeLabel = makeLabel();
   auto elseLabel = makeLabel();
   auto value = Value::create<OrderedMapObject>(this->typePool.get(TYPE::Void),
-                                                 reinterpret_cast<uintptr_t>(&node));
+                                               reinterpret_cast<uintptr_t>(&node));
   auto &map = typeAs<OrderedMapObject>(value);
 
   this->emitLdcIns(value);

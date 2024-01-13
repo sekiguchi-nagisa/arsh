@@ -77,3 +77,14 @@ assert $rr[4] == '�'
 assert $rr[4] == $invalid.charAt(4)
 assert $rr[5] == $'\u0E33'
 assert $rr[5] == $invalid.charAt(5)
+
+## for-in optional (check unwrap)
+$rr.clear()
+for e in $none as String? { $rr.add($e); }
+assert $rr.empty()
+
+for e in "123" as String? { $rr.add($e); }
+assert $rr.size() == 3
+assert $rr[0] == '1'
+assert $rr[1] == '2'
+assert $rr[2] == '3'
