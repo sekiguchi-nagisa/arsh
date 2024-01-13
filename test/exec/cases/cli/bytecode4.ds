@@ -29,7 +29,7 @@ Constant Pool:
   2: String echo
   3: Any (49, 53, 1, [0, 0, 0])
 Line Number Table:
-  lineNum: 1, address: 16
+  lineNum: 1, address:  4
 Exception Table:"
 
 $expect("$(ds --dump-code -n -c 'echo {1..5}')", 0, $out)
@@ -61,7 +61,7 @@ Constant Pool:
   2: String echo
   3: Any (5, -1, 2, [3, 1, 0])
 Line Number Table:
-  lineNum: 1, address: 16
+  lineNum: 1, address:  4
 Exception Table:"
 
 $expect("$(ds --dump-code -n -c 'echo {-01..6..-2}')", 0, $out)
