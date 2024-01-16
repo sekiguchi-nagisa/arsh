@@ -33,16 +33,9 @@ assert($e is Error)
 assert($e.name() == "KeyNotFoundError")
 assert $e.lineno() == 30
 
-$e = new TypeCastError("")
+$e = new TypeCastError("", 0)
 assert($e is TypeCastError)
 assert($e is Error)
 assert($e.name() == "TypeCastError")
 assert $e.lineno() == 36
-
-## error with zero status
-var ex = 34 as Any
-try {
-    $e = new Error("", 0)
-} catch e { $ex = $e; }
-assert $ex is InvalidOperationError
-assert ($ex as InvalidOperationError).message() == 'Error constructor only allow non-zero status'
+assert $e.status() == 0

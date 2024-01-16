@@ -2014,11 +2014,7 @@ ARSH_METHOD error_init(RuntimeContext &ctx) {
   SUPPRESS_WARNING(error_init);
   auto &type = ctx.typePool.get(LOCAL(0).getTypeID());
   auto &v = LOCAL(2);
-  int64_t status = v.isInvalid() ? 1 : v.asInt();
-  if (status == 0) {
-    raiseInvalidOperationError(ctx, "Error constructor only allow non-zero status");
-    RET_ERROR;
-  }
+  const int64_t status = v.isInvalid() ? 1 : v.asInt();
   RET(Value(ErrorObject::newError(ctx, type, LOCAL(1), status)));
 }
 
