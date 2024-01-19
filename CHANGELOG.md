@@ -8,6 +8,12 @@
 
 - **Breaking Change**: various glob expansion improvements
     - now ``?`` meta character is unicode-aware
+- **Breaking Change**: now not preserve exit status during finally/defer block
+    - now the following code is valid
+      ```
+      let old = $?
+      defer { $? = $old; }
+      ```
 - auto-unwrap option type expression in for-in
   ```
   for a in "123" as String? { echo $a; }

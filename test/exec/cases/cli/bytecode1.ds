@@ -30,7 +30,7 @@ $out = "### dump compiled code ###
 Source File: (string)
 DSCode: top level
   code size: 30
-  max stack depth: 4
+  max stack depth: 3
   number of local variable: 0
   number of global variable: 51
 Code:

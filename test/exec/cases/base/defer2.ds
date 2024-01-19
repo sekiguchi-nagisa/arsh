@@ -1,9 +1,10 @@
 
-#$test($status = 0,$out = $'hello11\nhello21\nhello22\ndefer22\ndefer21\nhello12\ndefer12: true\ndefer11: @@@\n')
+#$test($status = 11,$out = $'hello11\nhello21\nhello22\ndefer22\ndefer21\nhello12\ndefer12: true\ndefer11: @@@\n')
 
 var a = '@@@'
 
 defer {
+  assert $? == 12
   echo defer11: $a
   $? = 11
 }
@@ -11,6 +12,7 @@ defer {
 echo hello11
 
 defer {
+  assert $? == 0
   echo defer12: $true
   $? = 12
 }
@@ -18,6 +20,7 @@ defer {
 {
   echo hello21
   defer {
+    assert $? == 22
     echo defer21
     $? = 21
   }

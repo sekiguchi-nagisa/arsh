@@ -2243,22 +2243,17 @@ bool VM::mainLoop(ARState &state) {
         unsigned int index = read32(state.stack.ip());
         const unsigned int savedIndex = state.stack.getFrame().getIPOffset() + 4;
         state.stack.updateIPByOffset(index);
-        state.stack.push(state.getGlobal(BuiltinVarOffset::EXIT_STATUS));
         state.stack.enterFinally(index, savedIndex);
         vmnext;
       }
       vmcase(EXIT_FINALLY) {
-        auto v = state.stack.pop();
-        assert(v.kind() == ValueKind::INT);
-        state.setGlobal(BuiltinVarOffset::EXIT_STATUS, std::move(v));
         auto entry = state.stack.exitFinally();
         if (entry.hasError()) {
           state.stack.setErrorObj(entry.asError());
           vmerror;
-        } else {
-          state.stack.updateIPByOffset(entry.asRetAddr());
-          vmnext;
         }
+        state.stack.updateIPByOffset(entry.asRetAddr());
+        vmnext;
       }
       vmcase(LOOKUP_HASH) {
         auto key = state.stack.pop();
@@ -2634,7 +2629,6 @@ bool VM::handleException(ARState &state) {
           state.stack.clearOperandsUntilGuard(StackGuardType::TRY, entry.guardLevel);
           state.stack.reclaimLocals(entry.localOffset, entry.localSize);
           if (entryType.is(TYPE::Root_)) { // finally block
-            state.stack.push(state.getGlobal(BuiltinVarOffset::EXIT_STATUS));
             state.stack.enterFinally(entry.dest);
           } else { // catch block
             state.stack.loadThrownObject();
