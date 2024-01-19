@@ -14,6 +14,7 @@
       let old = $?
       defer { $? = $old; }
       ```
+- **Breaking Change**: not reset exit status before call user-defined command due to posix shell compatibility
 - auto-unwrap option type expression in for-in
   ```
   for a in "123" as String? { echo $a; }

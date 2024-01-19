@@ -23,11 +23,19 @@ hoge5() {
 hoge5
 assert $? == 1
 
+$? = 123
 hoge6() {
-    34  # if any commands are called, exit status is always 0.
+    34  # if any commands are called, exit status is equivalent to previous
 }
 hoge6
-assert $? == 0
+assert $? == 123
+
+$? = 456
+hoge7() {
+    return $?
+}
+hoge7
+assert $? == 456
 
 # argument
 echo2() {

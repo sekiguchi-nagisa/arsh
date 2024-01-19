@@ -240,11 +240,6 @@ void VM::pushNewObject(ARState &state, const DSType &type) {
 bool VM::prepareUserDefinedCommandCall(ARState &state, const DSCode &code,
                                        ObjPtr<ArrayObject> &&argvObj, Value &&redirConfig,
                                        const CmdCallAttr attr) {
-  if (hasFlag(attr, CmdCallAttr::SET_VAR)) {
-    // reset exit status
-    state.setExitStatus(0);
-  }
-
   // set parameter
   state.stack.reserve(UDC_PARAM_N);
   state.stack.push(Value::createNum(toUnderlying(attr)));
