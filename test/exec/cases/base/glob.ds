@@ -121,10 +121,16 @@ $aa = @(/$meta*)
 assert $aa.size() == 1
 assert $aa[0] == '/[a-zA-Z]*'
 
-$meta = "a-zA-Z"
+$meta = "a-z0-9"
 $aa = @(/[$meta]*)
 assert $aa.size() == 1
-assert $aa[0] == '/[a-zA-Z]*'
+assert $aa[0] == '/[a-z0-9]*'
+
+$meta = "a-zA-Z"
+$aa = @(/[A-Z][$meta]*)
+assert $aa.size() == 1
+assert $aa[0] == '/[A-Z][a-zA-Z]*'
+
 
 $meta = "^"
 $aa = @(/[${meta}@]*)
