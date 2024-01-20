@@ -513,6 +513,11 @@ public:
    */
   Value withMetaData(uint32_t metaData) const;
 
+  /**
+   * get meta data.
+   * only called for value from withMetaData()
+   * @return
+   */
   uint32_t getMetaData() const;
 
   /**
@@ -531,7 +536,7 @@ public:
 
   /**
    * OP_INTERP method implementation. write result to 'toStrBuf'
-   * @param state
+   * @param builder
    * @return
    * if has error, return false
    */
