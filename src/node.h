@@ -452,7 +452,7 @@ public:
 
 class StringNode : public WithRtti<Node, NodeKind::String> {
 public:
-  enum StringKind {
+  enum StringKind : unsigned char {
     STRING,
     TILDE,
     BACKQUOTE,
@@ -462,6 +462,7 @@ private:
   std::string value;
   StringKind kind;
   bool init;
+  bool escaped{false};
 
 public:
   /**
@@ -487,6 +488,10 @@ public:
   void dump(NodeDumper &dumper) const override;
 
   bool isInit() const { return this->init; }
+
+  bool isEscaped() const { return this->escaped; }
+
+  void setEscaped(bool r) { this->escaped = r; }
 
   void setValue(std::string &&v) {
     this->init = true;
@@ -1220,6 +1225,7 @@ class CmdArgNode : public WithRtti<Node, NodeKind::CmdArg> {
 private:
   unsigned int expansionSize{0};
   bool braceExpansion{false};
+  bool bracketExpr{false}; // for glob
   bool expansionError{false};
   std::vector<std::unique_ptr<Node>> segmentNodes; // at-least one element
 
@@ -1254,6 +1260,8 @@ public:
   unsigned int getExpansionSize() const { return this->expansionSize; }
 
   void setExpansionSize(unsigned int size) { this->expansionSize = size; }
+
+  bool hasBracketExpr() const { return this->bracketExpr; }
 
   void setExpansionError(bool set) { this->expansionError = set; }
 
@@ -1356,6 +1364,10 @@ public:
 
 inline bool isExpandingWildCard(const Node &node) {
   return isa<WildCardNode>(node) && cast<WildCardNode>(node).isExpand();
+}
+
+inline bool isEscapedStr(const Node &node) {
+  return isa<StringNode>(node) && cast<StringNode>(node).isEscaped();
 }
 
 class BraceSeqNode : public WithRtti<Node, NodeKind::BraceSeq> {

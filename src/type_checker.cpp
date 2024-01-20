@@ -1542,6 +1542,7 @@ std::unique_ptr<Node> TypeChecker::evalConstant(const Node &node) {
     auto constNode = std::make_unique<StringNode>(
         strNode.getToken(), std::string(strNode.getValue()), strNode.getKind());
     constNode->setType(strNode.getType());
+    constNode->setEscaped(strNode.isEscaped());
     return constNode;
   }
   case NodeKind::Regex: {

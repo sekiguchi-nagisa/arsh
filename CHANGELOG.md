@@ -8,6 +8,8 @@
 
 - **Breaking Change**: various glob expansion improvements
     - now ``?`` meta character is unicode-aware
+    - support bracket expression (`[^a-zA-Z-]`)
+        - also support character class such as ``alnum``, ``space``
 - **Breaking Change**: now not preserve exit status during finally/defer block
     - now the following code is valid
       ```

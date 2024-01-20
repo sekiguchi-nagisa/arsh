@@ -78,6 +78,11 @@ assert $aa[0] == '{~/}'  # unexpand tilde
 assert "$(echo ./* ../*)" == "$(echo {.,..}/*)"
 assert "$(echo ./* ../*)" == "$(echo {./*,../*})"
 assert "$(echo */ */..)" == "$(echo */{,..})"
+assert "$(echo /[a-zA-Z]* /[^@]*)" == "$(echo /[{a-zA-Z,^@}]*)"
+assert "$(echo /[!@\#\ ]* /1234)" == "$(echo /{[!@\#\ ]*,1234})"
+shctl unset failglob
+assert "$(echo /[a-zA-Z]* /@]\*)" == "$(echo /{[a-zA-Z,@}]*)"
+shctl set failglob
 
 $ex = 34
 try { echo ~hogessss/*; } catch e { $ex = $e; }

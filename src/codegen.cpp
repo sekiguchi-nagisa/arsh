@@ -481,7 +481,15 @@ void ByteCodeGenerator::visitNumberNode(NumberNode &node) {
   }
 }
 
-void ByteCodeGenerator::visitStringNode(StringNode &node) { this->emitString(node.takeValue()); }
+void ByteCodeGenerator::visitStringNode(StringNode &node) {
+  if (node.isEscaped()) {
+    auto value = Value::createStr(node.takeValue());
+    const unsigned int index = this->emitConstant(std::move(value));
+    this->emitLdcIns(Value::createNum(index));
+  } else {
+    this->emitString(node.takeValue());
+  }
+}
 
 void ByteCodeGenerator::visitStringExprNode(StringExprNode &node) { this->generateConcat(node); }
 
@@ -892,7 +900,7 @@ void ByteCodeGenerator::visitCmdArgNode(CmdArgNode &node) {
     unsigned int firstIndex = 0;
     for (unsigned int i = 0; i < size; i++) {
       auto &e = node.getSegmentNodes()[i];
-      if (isExpandingWildCard(*e)) {
+      if (isExpandingWildCard(*e) || isEscapedStr(*e)) {
         this->visit(*e);
         firstIndex = i + 1;
       } else {

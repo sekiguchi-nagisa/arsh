@@ -157,6 +157,8 @@
   TOKEN(APPLIED_NAME_WITH_FIELD, "<$ Name.field>")                                                 \
   TOKEN(GLOB_ANY, "<glob ?>")                                                                      \
   TOKEN(GLOB_ZERO_OR_MORE, "<glob *>")                                                             \
+  TOKEN(GLOB_BRACKET_OPEN, "<glob [>")                                                             \
+  TOKEN(GLOB_BRACKET_CLOSE, "<glob ]>")                                                            \
   TOKEN(BRACE_OPEN, "{")                                                                           \
   TOKEN(BRACE_CLOSE, "}")                                                                          \
   TOKEN(BRACE_SEP, ",")                                                                            \
@@ -348,6 +350,8 @@
   OP(BRACE_INT_SEQ)                                                                                \
   OP(GLOB_ANY)                                                                                     \
   OP(GLOB_ZERO_OR_MORE)                                                                            \
+  OP(GLOB_BRACKET_OPEN)                                                                            \
+  OP(GLOB_BRACKET_CLOSE)                                                                           \
   OP(BRACE_OPEN)                                                                                   \
   OP(BRACE_CLOSE)                                                                                  \
   OP(BRACE_SEP)                                                                                    \

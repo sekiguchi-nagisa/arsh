@@ -154,6 +154,7 @@ nodes:
           type: "String"
           kind: "STRING"
           init: true
+          escaped: false
           value: "hello"
     targetTypeNode: null
     opKind: "TO_VOID"
@@ -191,6 +192,7 @@ nodes:
             type:
             kind: "STRING"
             init: false
+            escaped: false
             value: ""
           attrNodes:
           kind: "VAR"
@@ -299,6 +301,7 @@ nodes:
         type:
         kind: "STRING"
         init: false
+        escaped: false
         value: ""
       nameInfo:
         token:
@@ -556,6 +559,7 @@ nodes:
                     type:
                     kind: "STRING"
                     init: true
+                    escaped: false
                     value: "ls"
                   argNodes:
                     - nodeKind: Redir
@@ -575,6 +579,7 @@ nodes:
                         expansionSize: 0
                         expansionError: false
                         braceExpansion: false
+                        bracketExpr: false
                         segmentNodes:
                           - nodeKind: String
                             token:
@@ -583,6 +588,7 @@ nodes:
                             type:
                             kind: "STRING"
                             init: true
+                            escaped: false
                             value: "34"
                       targetFd: -1
                       hereStart:
@@ -627,6 +633,7 @@ nodes:
                       expansionSize: 0
                       expansionError: false
                       braceExpansion: false
+                      bracketExpr: false
                       segmentNodes:
                         - nodeKind: Embed
                           token:
@@ -680,6 +687,7 @@ nodes:
       type:
       kind: "STRING"
       init: true
+      escaped: false
       value: "`(!ls > 34 | 34 with < ${ 34.1} &).poll()'"
 )EOF"},
 
@@ -985,6 +993,7 @@ nodes:
           expansionSize: 0
           expansionError: false
           braceExpansion: false
+          bracketExpr: false
           segmentNodes:
             - nodeKind: String
               token:
@@ -993,6 +1002,7 @@ nodes:
               type:
               kind: "STRING"
               init: true
+              escaped: false
               value: "1234"
         attributeSet: ""
     exprNode: null
@@ -1020,6 +1030,7 @@ nodes:
         type: "String"
         kind: "STRING"
         init: true
+        escaped: false
         value: "echo"
       argNodes:
         - nodeKind: CmdArg
@@ -1030,6 +1041,7 @@ nodes:
           expansionSize: 1
           expansionError: false
           braceExpansion: false
+          bracketExpr: false
           segmentNodes:
             - nodeKind: WildCard
               token:
@@ -1182,6 +1194,7 @@ nodes:
           type: "String"
           kind: "STRING"
           init: true
+          escaped: false
           value: "echo"
         argNodes:
         redirCount: 0
@@ -1363,6 +1376,7 @@ nodes:
         type: "String"
         kind: "STRING"
         init: true
+        escaped: false
         value: "cat"
       argNodes:
         - nodeKind: Redir
@@ -1382,6 +1396,7 @@ nodes:
             expansionSize: 0
             expansionError: false
             braceExpansion: false
+            bracketExpr: false
             segmentNodes:
               - nodeKind: StringExpr
                 token:
@@ -1396,6 +1411,7 @@ nodes:
                     type: "String"
                     kind: "STRING"
                     init: true
+                    escaped: false
                     value: "this is a pen\n"
           targetFd: -1
           hereStart:

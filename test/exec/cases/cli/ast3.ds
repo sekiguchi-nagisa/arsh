@@ -23,6 +23,7 @@ nodes:
       expansionSize: 0
       expansionError: false
       braceExpansion: false
+      bracketExpr: false
       segmentNodes:
         - nodeKind: String
           token:
@@ -31,6 +32,7 @@ nodes:
           type:
           kind: \"STRING\"
           init: true
+          escaped: false
           value: \"$mod\"
     constNodes:
     name: null
@@ -151,6 +153,7 @@ nodes:
       expansionSize: 0
       expansionError: false
       braceExpansion: false
+      bracketExpr: false
       segmentNodes:
         - nodeKind: String
           token:
@@ -159,6 +162,7 @@ nodes:
           type: \"String\"
           kind: \"STRING\"
           init: true
+          escaped: false
           value: \"$mod\"
     constNodes:
       - nodeKind: String
@@ -168,6 +172,7 @@ nodes:
         type: \"String\"
         kind: \"STRING\"
         init: true
+        escaped: false
         value: \"$mod\"
       - nodeKind: Empty
         token:

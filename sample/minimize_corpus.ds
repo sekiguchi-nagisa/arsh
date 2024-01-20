@@ -4,7 +4,7 @@ usage() : Nothing {
     if !$@.empty() {
         echo $@ 1>&2
     }
-    echo [usage] $0 [fuzzer path] [corpus path] 1>&2
+    echo "[usage] $0 [fuzzer path] [corpus path]" 1>&2
     exit 1
 }
 

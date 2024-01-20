@@ -2,7 +2,7 @@
 #$test($result = 'exit', $status = 2, $lineNum = 6, $err = $'[usage] require non-empty argument\n', $out = '')
 
 usage() : Nothing {
-    echo 1>&2 [usage] $@
+    echo 1>&2 "[usage] $@"
     exit 2
 }
 

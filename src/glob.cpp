@@ -561,10 +561,15 @@ bool appendAndEscapeGlobMeta(const StringRef ref, const size_t maxSize, std::str
     case '?':
     case '*':
     case '[':
+    case ']':
+    case '^':
+    case '!':
+    case '-':
     case '\\':
       if (const StringRef sub(start, iter - start); checkedAppend(sub, maxSize, out)) {
         start = iter;
-        if (checkedAppend(StringRef("\\"), maxSize, out)) {
+        if (out.size() < maxSize) {
+          out += '\\';
           break;
         }
       }

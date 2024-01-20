@@ -1,0 +1,4 @@
+#$test($result = 'type', $lineNum = 4, $chars = 3, $errorKind = 'BadGlobPattern', $status = 1)
+
+source \
+  /[a-zA-Z9-0]

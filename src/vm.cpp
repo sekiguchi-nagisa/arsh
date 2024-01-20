@@ -1364,22 +1364,30 @@ static void raiseGlobbingError(ARState &state, const std::string &pattern, std::
   raiseError(state, TYPE::GlobbingError, std::move(value));
 }
 
-static std::string concatAsGlobPattern(const Value *begin, const Value *end) {
-  std::string value;
+static bool concatAsGlobPattern(ARState &state, const Value *const constPool, const Value *begin,
+                                const Value *end, std::string &out) {
   for (; begin != end; ++begin) {
     if (auto &v = *begin; v.hasStrRef()) {
-      if (!appendAndEscapeGlobMeta(v.asStrRef(), StringObject::MAX_SIZE, value)) {
-        return "";
+      if (!appendAndEscapeGlobMeta(v.asStrRef(), StringObject::MAX_SIZE, out)) {
+        goto NOMEM;
+      }
+    } else if (v.kind() == ValueKind::NUMBER) { // for escaped string
+      if (const StringRef ref = constPool[v.asNum()].asStrRef();
+          !checkedAppend(ref, StringObject::MAX_SIZE, out)) {
+        goto NOMEM;
       }
     } else {
       assert(v.kind() == ValueKind::EXPAND_META);
-      if (checkedAppend(v.toString(), StringObject::MAX_SIZE, value)) {
-        continue;
+      if (!checkedAppend(v.toString(), StringObject::MAX_SIZE, out)) {
+        goto NOMEM;
       }
-      return "";
     }
   }
-  return value;
+  return true;
+
+NOMEM:
+  raiseError(state, TYPE::OutOfRangeError, ERROR_STRING_LIMIT);
+  return false;
 }
 
 static std::string unescapeGlobPattern(StringRef pattern) {
@@ -1399,9 +1407,8 @@ static std::string unescapeGlobPattern(StringRef pattern) {
 
 bool VM::addGlobbingPath(ARState &state, ArrayObject &argv, const Value *begin, const Value *end,
                          bool tilde) {
-  const std::string pattern = concatAsGlobPattern(begin, end);
-  if (pattern.empty()) {
-    raiseError(state, TYPE::OutOfRangeError, ERROR_STRING_LIMIT);
+  std::string pattern;
+  if (!concatAsGlobPattern(state, CONST_POOL(state), begin, end, pattern)) {
     return false;
   }
 
@@ -1458,7 +1465,7 @@ bool VM::addGlobbingPath(ARState &state, ArrayObject &argv, const Value *begin, 
     raiseTildeError(state, provider, err, tildeExpandStatus);
     return false;
   case Glob::Status::BAD_PATTERN:
-    raiseGlobbingError(state, pattern, "bad glob pattern: " + err);
+    raiseGlobbingError(state, pattern, err + " in");
     return false;
     //  case Glob::Status::RESOURCE_LIMIT:
     //    return false; //FIXME:
@@ -1468,12 +1475,20 @@ bool VM::addGlobbingPath(ARState &state, ArrayObject &argv, const Value *begin, 
   }
 }
 
-static Value concatPath(ARState &state, const Value *begin, const Value *end) {
+static Value concatPath(ARState &state, const Value *const constPool, const Value *begin,
+                        const Value *end) {
   auto ret = Value::createStr();
   for (; begin != end; ++begin) {
-    if (!ret.appendAsStr(state, begin->asStrRef())) {
-      return {};
+    if (begin->kind() == ValueKind::NUMBER) { // for escaped string
+      const StringRef ref = constPool[begin->asNum()].asStrRef();
+      if (std::string tmp;
+          appendAsUnescaped(ref, StringObject::MAX_SIZE, tmp) && ret.appendAsStr(state, tmp)) {
+        continue;
+      }
+    } else if (ret.appendAsStr(state, begin->asStrRef())) {
+      continue;
     }
+    return {};
   }
   return ret;
 }
@@ -1493,8 +1508,8 @@ struct ExpandState {
 
 static bool needGlob(const Value *begin, const Value *end) {
   for (; begin != end; ++begin) {
-    auto &v = *begin;
-    if (v.kind() == ValueKind::EXPAND_META) {
+    if (const auto &v = *begin;
+        v.kind() == ValueKind::EXPAND_META && v.asExpandMeta().first != ExpandMeta::BRACKET_CLOSE) {
       return true;
     }
   }
@@ -1622,7 +1637,7 @@ bool VM::applyBraceExpansion(ARState &state, ArrayObject &argv, const Value *beg
           return false;
         }
       } else {
-        Value path = concatPath(state, vbegin, vend);
+        Value path = concatPath(state, CONST_POOL(state), vbegin, vend);
         if (tilde) {
           DefaultDirStackProvider dirStackProvider(state);
           std::string str = path.asStrRef().toString();

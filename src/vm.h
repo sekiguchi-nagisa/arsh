@@ -606,15 +606,17 @@ private:
   static bool returnFromUserDefinedCommand(ARState &state, int64_t status);
 
   /**
-   *
+   * @param state
+   * @param desc
    * @param lastPipe
    * if true, evaluate last pipe in parent shell
+   * @param forkKind
    * @return
    * if has error, return false.
    */
   static bool callPipeline(ARState &state, Value &&desc, bool lastPipe, ForkKind forkKind);
 
-  static bool addGlobbingPath(ARState &state, ArrayObject &arv, const Value *begin,
+  static bool addGlobbingPath(ARState &state, ArrayObject &argv, const Value *begin,
                               const Value *end, bool tilde);
 
   static bool applyBraceExpansion(ARState &state, ArrayObject &argv, const Value *begin,
@@ -627,7 +629,7 @@ private:
   static void kickVMHook(ARState &state);
 
   /**
-   *
+   * @param state
    * @return
    * if has exception, return false.
    */

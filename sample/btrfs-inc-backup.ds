@@ -1,8 +1,8 @@
 #!/usr/bin/env arsh
 
 usage() : Nothing {
-    echo 1>&2 [error] $1
-    echo [usage] $0 [backup src subvol path] [backup dest subvol path] 1>&2
+    echo 1>&2 "[error] $1"
+    echo "[usage] $0 [backup src subvol path] [backup dest subvol path]" 1>&2
     exit 1
 }
 

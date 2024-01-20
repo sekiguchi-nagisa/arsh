@@ -288,6 +288,7 @@ static void iteratePathList(const Lexer &lex, const Token token, const char deli
     const char ch = ref[pos++];
     if (ch == '\\' && pos < size) {
       pos++;
+      continue;
     }
     if (ch == delim || pos == size) {
       if (Token sub = token.slice(startPos, pos); !func(sub, ch == delim)) {
@@ -1579,21 +1580,40 @@ std::unique_ptr<Node> Parser::parse_cmdArgSegImpl(CmdArgParseOpt opt) {
   GUARD_DEEP_NESTING(guard);
 
   switch (CUR_KIND()) {
-  case TokenKind::GLOB_ANY: {
+  case TokenKind::GLOB_ANY:
+  case TokenKind::GLOB_ZERO_OR_MORE:
+  case TokenKind::GLOB_BRACKET_OPEN:
+  case TokenKind::GLOB_BRACKET_CLOSE: {
     Token token = this->curToken;
-    this->consume();
-    return std::make_unique<WildCardNode>(token, ExpandMeta::ANY);
-  }
-  case TokenKind::GLOB_ZERO_OR_MORE: {
-    Token token = this->curToken;
-    this->consume();
-    return std::make_unique<WildCardNode>(token, ExpandMeta::ZERO_OR_MORE);
+    const TokenKind kind = this->scan();
+    ExpandMeta meta = ExpandMeta::ANY;
+    switch (kind) {
+    case TokenKind::GLOB_ANY:
+      meta = ExpandMeta::ANY;
+      break;
+    case TokenKind::GLOB_ZERO_OR_MORE:
+      meta = ExpandMeta::ZERO_OR_MORE;
+      break;
+    case TokenKind::GLOB_BRACKET_OPEN:
+      meta = ExpandMeta::BRACKET_OPEN;
+      break;
+    case TokenKind::GLOB_BRACKET_CLOSE:
+      meta = ExpandMeta::BRACKET_CLOSE;
+      break;
+    default:
+      break;
+    }
+    auto node = std::make_unique<WildCardNode>(token, meta);
+    if (meta == ExpandMeta::BRACKET_CLOSE) {
+      node->setExpand(false);
+    }
+    return node;
   }
   case TokenKind::BRACE_OPEN:
   case TokenKind::BRACE_CLOSE:
   case TokenKind::BRACE_SEP: {
     Token token = this->curToken;
-    TokenKind kind = this->scan();
+    const TokenKind kind = this->scan();
     ExpandMeta meta = ExpandMeta::BRACE_SEP;
     if (kind == TokenKind::BRACE_OPEN) {
       meta = ExpandMeta::BRACE_OPEN;

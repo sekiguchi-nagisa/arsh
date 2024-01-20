@@ -148,13 +148,16 @@ void TypeChecker::checkExpansion(CmdArgNode &node) {
   const unsigned int size = node.getSegmentNodes().size();
   unsigned int expansionSize = 0;
   for (unsigned int i = 0; i < size; i++) {
-    if (isExpandingWildCard(*node.getSegmentNodes()[i])) {
+    if (auto &cur = *node.getSegmentNodes()[i]; isExpandingWildCard(cur) || isEscapedStr(cur)) {
       if (expansionSize == 0 && i > 0) {
         expansionSize++;
       }
       expansionSize++;
-    } else if (i > 0 && isExpandingWildCard(*node.getSegmentNodes()[i - 1])) {
-      expansionSize++;
+    } else if (i > 0) {
+      if (auto &prev = *node.getSegmentNodes()[i - 1];
+          isExpandingWildCard(prev) || isEscapedStr(prev)) {
+        expansionSize++;
+      }
     }
   }
   node.setExpansionSize(expansionSize);
@@ -352,7 +355,11 @@ static std::string concat(SourceListNode::path_iterator begin, SourceListNode::p
     auto &e = **begin;
     assert(isa<StringNode>(e) || isa<WildCardNode>(e));
     if (isa<StringNode>(e)) {
-      path += cast<StringNode>(e).getValue();
+      if (const auto &strNode = cast<StringNode>(e); strNode.isEscaped()) {
+        appendAsUnescaped(strNode.getValue(), path.max_size(), path);
+      } else {
+        path += strNode.getValue();
+      }
     } else {
       path += toString(cast<WildCardNode>(e).meta);
     }
@@ -367,7 +374,11 @@ static std::string concatAsGlobPattern(SourceListNode::path_iterator begin,
     auto &e = **begin;
     assert(isa<StringNode>(e) || isa<WildCardNode>(e));
     if (isa<StringNode>(e)) {
-      appendAndEscapeGlobMeta(cast<StringNode>(e).getValue(), value.max_size(), value);
+      if (const auto &strNode = cast<StringNode>(e); strNode.isEscaped()) {
+        value += strNode.getValue();
+      } else {
+        appendAndEscapeGlobMeta(cast<StringNode>(e).getValue(), value.max_size(), value);
+      }
     } else {
       value += toString(cast<WildCardNode>(e).meta);
     }
@@ -477,7 +488,7 @@ bool TypeChecker::applyGlob(const Token token,
     this->reportError<GlobResource>(token);
     return false;
   case Glob::Status::BAD_PATTERN:
-    this->reportError<BadGlobPattern>(token, err.c_str());
+    this->reportError<BadGlobPattern>(token, pattern.c_str(), err.c_str());
     return false;
   default:
     assert(ret == Glob::Status::LIMIT);
@@ -501,7 +512,8 @@ struct SrcExpandState {
 
 static bool needGlob(SourceListNode::path_iterator begin, SourceListNode::path_iterator end) {
   for (; begin != end; ++begin) {
-    if (auto &v = **begin; isExpandingWildCard(v)) {
+    if (auto &v = **begin;
+        isExpandingWildCard(v) && cast<WildCardNode>(v).meta != ExpandMeta::BRACKET_CLOSE) {
       return true;
     }
   }

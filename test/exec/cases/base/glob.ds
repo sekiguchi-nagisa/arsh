@@ -38,6 +38,22 @@ try {
 } catch e { $ex = $e; }
 assert ($ex as GlobbingError).lineno() == 36
 
+$ex = 2
+try { echo [[:aaa:]]*; } catch $e { $ex = $e; }
+assert $ex is GlobbingError
+assert ($ex as GlobbingError).message() == "undefined character class: aaa in \`[[:aaa:]]*'"
+
+$ex = 2
+try { echo [a-zA-Z; } catch $e { $ex = $e; }
+assert $ex is GlobbingError
+assert ($ex as GlobbingError).message() == "bracket expression must end with \`]' in \`[a-zA-Z'"
+
+$ex = 2
+try { var m = '-'; echo [9${m}0]*; } catch $e { $ex = $e; }
+assert $ex is GlobbingError
+assert ($ex as GlobbingError).message() == "no matches for glob pattern \`[9\\-0]*'"
+
+
 # glob pattern have null characters, throw GlobbingError
 $ex = 34
 try { echo *$'\x00'*; } catch $e { $ex = $e; }
@@ -60,6 +76,11 @@ assert "$(echo ~/*)" == "$(echo ~'/'*)"
 assert "$(echo ~/*)" == "$(echo ~/""*)"
 assert "$(echo ~/*)" == "$(echo ~/*"")"
 assert "$(echo *)" == "$(echo ""*)"
+assert $(echo /[a-zA-Z]*).sort().join(" ") == $(sh -c 'echo /[a-zA-Z]*').sort().join(" ")
+assert $(echo /[!@]*).sort().join(" ") == $(sh -c 'echo /[!@]*').sort().join(" ")
+assert $(echo /[^@]*).sort().join(" ") == $(sh -c 'echo /[^@]*').sort().join(" ")
+assert $(echo /[[:alnum:]]*).sort().join(" ") == $(sh -c 'echo /[[:alnum:]]*').sort().join(" ")
+assert $(echo ~/[a-z]*).sort().join(" ") == $(sh -c 'echo ~/[a-z]*').sort().join(" ")
 
 # null glob
 shctl set nullglob
@@ -91,6 +112,39 @@ $aa = @(*\*\??)
 assert $aa.size() == 1
 assert $aa[0] == '**??'
 
+$aa = @(~[a-z]*)
+assert $aa.size() == 1
+assert $aa[0] == '~[a-z]*'
+
+var meta = "[a-zA-Z]"
+$aa = @(/$meta*)
+assert $aa.size() == 1
+assert $aa[0] == '/[a-zA-Z]*'
+
+$meta = "a-zA-Z"
+$aa = @(/[$meta]*)
+assert $aa.size() == 1
+assert $aa[0] == '/[a-zA-Z]*'
+
+$meta = "^"
+$aa = @(/[${meta}@]*)
+assert $aa.size() == 1
+assert $aa[0] == '/[^@]*'
+
+$meta = "!"
+$aa = @(/[${meta}@\]]*)
+assert $aa.size() == 1
+assert $aa[0] == '/[!@]]*'
+
+$meta = "-"
+$aa = @(/[9${meta}0@\-]*)
+assert $aa.size() == 1
+assert $aa[0] == '/[9-0@-]*'
+
+$meta = "*"
+$aa = @(/[a-z]$meta)
+assert $aa.size() == 1
+assert $aa[0] == '/[a-z]*'
 
 # fail glob and null glob
 shctl set failglob nullglob

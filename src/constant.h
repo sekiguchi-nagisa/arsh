@@ -371,6 +371,8 @@ enum class ForkKind : unsigned char {
 enum class ExpandMeta : unsigned char {
   ANY,
   ZERO_OR_MORE,
+  BRACKET_OPEN,
+  BRACKET_CLOSE,
 
   BRACE_OPEN,
   BRACE_CLOSE,
@@ -395,6 +397,10 @@ inline const char *toString(ExpandMeta meta) {
     return "?";
   case ExpandMeta::ZERO_OR_MORE:
     return "*";
+  case ExpandMeta::BRACKET_OPEN:
+    return "[";
+  case ExpandMeta::BRACKET_CLOSE:
+    return "]";
   case ExpandMeta::BRACE_OPEN:
   case ExpandMeta::BRACE_SEQ_OPEN:
     return "{";

@@ -1,7 +1,7 @@
 #!/usr/bin/env arsh
 
 $# == 2 || {
-    echo 1>&2 [usage] $0 [src dir] [dest dir]
+    echo 1>&2 "[usage] $0 [src dir] [dest dir]"
     exit 1
 }
 

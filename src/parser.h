@@ -196,7 +196,11 @@ protected:
   }
 
   void addCmdArgSeg(CmdArgNode &cmdArgNode, Token token, StringNode::StringKind k) {
-    auto node = std::make_unique<StringNode>(token, this->lexer->toCmdArg(token), k);
+    const bool unescape = !cmdArgNode.hasBracketExpr(); // if has bracket expr, not unescape
+    auto node = std::make_unique<StringNode>(token, this->lexer->toCmdArg(token, unescape), k);
+    if (!unescape) {
+      node->setEscaped(true);
+    }
     cmdArgNode.addSegmentNode(std::move(node));
   }
 

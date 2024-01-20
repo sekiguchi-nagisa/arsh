@@ -387,7 +387,7 @@ std::string Lexer::doubleElementToString(Token token) const {
   return str;
 }
 
-std::string Lexer::toCmdArg(Token token) const {
+std::string Lexer::toCmdArg(Token token, bool unescape) const {
   assert(this->withinRange(token));
 
   std::string str;
@@ -396,11 +396,13 @@ std::string Lexer::toCmdArg(Token token) const {
   for (unsigned int i = 0; i < token.size; i++) {
     char ch = this->buf[token.pos + i];
     if (ch == '\\') {
-      char next = this->buf[token.pos + ++i];
+      const char next = this->buf[token.pos + ++i];
       if (next == '\n') {
         continue;
-      } else {
-        ch = next;
+      }
+      ch = next;
+      if (!unescape) { // for glob bracket expression
+        str += '\\';
       }
     }
     str += ch;

@@ -245,8 +245,11 @@ public:
 
   /**
    * convert token to command argument
+   * @param token
+   * @param unescape
+   * normally true
    */
-  std::string toCmdArg(Token token) const;
+  std::string toCmdArg(Token token, bool unescape = true) const;
 
   std::string toHereDocBody(Token token, HereDocState::Attr attr) const;
 
@@ -386,6 +389,21 @@ inline std::string quoteAsShellArg(StringRef ref) {
  * @return
  */
 std::string toPrintable(StringRef ref);
+
+inline bool appendAsUnescaped(const StringRef value, const size_t maxSize, std::string &out) {
+  const auto size = value.size();
+  for (StringRef::size_type i = 0; i < size; i++) {
+    char ch = value[i];
+    if (ch == '\\' && i + 1 < size) {
+      ch = value[++i];
+    }
+    if (out.size() == maxSize) {
+      return false;
+    }
+    out += ch;
+  }
+  return true;
+}
 
 } // namespace arsh
 

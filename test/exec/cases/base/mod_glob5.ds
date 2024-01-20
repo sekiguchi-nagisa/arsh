@@ -1,0 +1,4 @@
+
+#$test($status = 0, $out=$'hello module!!\n')
+
+source $SCRIPT_DIR/../../_module4test/e[^m-x]*

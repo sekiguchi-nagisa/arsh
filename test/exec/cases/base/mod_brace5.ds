@@ -1,0 +1,11 @@
+
+source $SCRIPT_DIR/../../_module4test/module[{2,!14}]*
+
+
+var aa = IFS=$'\n' $(shctl module)
+assert $aa.size() == 5
+assert $aa[0].basename() == '(builtin)'
+assert $aa[1].basename() == '(root)'
+assert $aa[2].basename() == 'mod_brace5.ds'
+assert $aa[3].basename() == 'module2.ds'
+assert $aa[4].basename() == 'module3.ds'

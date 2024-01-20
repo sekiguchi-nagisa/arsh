@@ -117,7 +117,7 @@ function renderPrompt(p : String) : String {
 }
 
 function _usage(fd : UnixFD, short : Boolean) : Int  {
-    echo >& $fd usage: prompt [-h] [--help] [prompt]
+    echo >& $fd "usage: prompt [-h] [--help] [prompt]"
     if $short { return 2; }
 
     echo >& $fd "Prompt Escape Sequence:

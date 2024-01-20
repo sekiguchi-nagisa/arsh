@@ -1359,8 +1359,10 @@ TEST_F(LexerTest_Lv1, CMD_ARG1) { // allow  '[' and ']'
   const char *text = "[[][";
   this->initLexer(text);
   this->lexer->pushLexerMode(yycCMD);
-  ASSERT_NO_FATAL_FAILURE(
-      EXPECT(TokenKind::CMD_ARG_PART, text, TokenKind::NEW_LINE, "\n", TokenKind::EOS, ""));
+  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::GLOB_BRACKET_OPEN, "[", TokenKind::GLOB_BRACKET_OPEN,
+                                 "[", TokenKind::GLOB_BRACKET_CLOSE, "]",
+                                 TokenKind::GLOB_BRACKET_OPEN, "[", TokenKind::NEW_LINE, "\n",
+                                 TokenKind::EOS, ""));
 }
 
 TEST_F(LexerTest_Lv1, CMD_ARG2) {

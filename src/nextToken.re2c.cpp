@@ -168,8 +168,8 @@ TokenKind Lexer::nextToken(Token &token) {
     CMD_CHAR           = "\\" [^\000] | [^ \t\n\\;='"`|&<>(){}$\000];
     CMD = CMD_START_CHAR CMD_CHAR*;
 
-    CMD_ARG_START_CHAR = "\\" [^\n\000] | [^ \t\n\\;'"`|&<>()$?*{},#\000];
-    CMD_ARG_CHAR       = "\\" [^\000] | [^ \t\n\\;'"`|&<>()$?*{},\000];
+    CMD_ARG_START_CHAR = "\\" [^\n\000] | [^ \t\n\\;'"`|&<>()$?*[\]{},#\000];
+    CMD_ARG_CHAR       = "\\" [^\000] | [^ \t\n\\;'"`|&<>()$?*[\]{},\000];
     CMD_ARG = CMD_ARG_START_CHAR CMD_ARG_CHAR*;
 
     ENV_ASSIGN = CMD "=";
@@ -339,6 +339,8 @@ INIT:
     <CMD> BRACE_INT_SEQ      { RET(BRACE_INT_SEQ); }
     <CMD> "?"                { RET(GLOB_ANY); }
     <CMD> "*"                { RET(GLOB_ZERO_OR_MORE); }
+    <CMD> "["                { RET(GLOB_BRACKET_OPEN); }
+    <CMD> "]"                { RET(GLOB_BRACKET_CLOSE); }
     <CMD> "{"                { RET(BRACE_OPEN); }
     <CMD> "}"                { RET(BRACE_CLOSE); }
     <CMD> ","                { RET(BRACE_SEP); }

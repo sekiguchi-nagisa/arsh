@@ -170,6 +170,7 @@ void StringNode::dump(NodeDumper &dumper) const {
 #undef EACH_ENUM
 
   DUMP(init);
+  DUMP(escaped);
   DUMP(value);
 }
 
@@ -415,6 +416,12 @@ void CmdArgNode::addSegmentNode(std::unique_ptr<Node> &&node) {
       tilde->setExpand(false);
       this->segmentNodes.push_back(std::move(tilde));
     }
+  } else if (isa<WildCardNode>(*node)) {
+    if (auto &wild = cast<WildCardNode>(*node); wild.meta == ExpandMeta::BRACKET_OPEN) {
+      this->bracketExpr = true;
+    } else if (wild.meta == ExpandMeta::BRACKET_CLOSE && this->hasBracketExpr()) {
+      wild.setExpand(true);
+    }
   }
   this->segmentNodes.push_back(std::move(node));
 }
@@ -423,6 +430,7 @@ void CmdArgNode::dump(NodeDumper &dumper) const {
   DUMP(expansionSize);
   DUMP(expansionError);
   DUMP(braceExpansion);
+  DUMP(bracketExpr);
   DUMP(segmentNodes);
 }
 
