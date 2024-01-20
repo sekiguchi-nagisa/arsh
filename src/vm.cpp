@@ -1479,14 +1479,21 @@ static Value concatPath(ARState &state, const Value *const constPool, const Valu
                         const Value *end) {
   auto ret = Value::createStr();
   for (; begin != end; ++begin) {
-    if (begin->kind() == ValueKind::NUMBER) { // for escaped string
+    if (begin->hasStrRef()) {
+      if (ret.appendAsStr(state, begin->asStrRef())) {
+        continue;
+      }
+    } else if (begin->kind() == ValueKind::NUMBER) { // for escaped string
       const StringRef ref = constPool[begin->asNum()].asStrRef();
       if (std::string tmp;
           appendAsUnescaped(ref, StringObject::MAX_SIZE, tmp) && ret.appendAsStr(state, tmp)) {
         continue;
       }
-    } else if (ret.appendAsStr(state, begin->asStrRef())) {
-      continue;
+    } else {
+      assert(begin->kind() == ValueKind::EXPAND_META);
+      if (ret.appendAsStr(state, begin->toString())) {
+        continue;
+      }
     }
     return {};
   }

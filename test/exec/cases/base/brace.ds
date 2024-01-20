@@ -80,6 +80,7 @@ assert "$(echo ./* ../*)" == "$(echo {./*,../*})"
 assert "$(echo */ */..)" == "$(echo */{,..})"
 assert "$(echo /[a-zA-Z]* /[^@]*)" == "$(echo /[{a-zA-Z,^@}]*)"
 assert "$(echo /[!@\#\ ]* /1234)" == "$(echo /{[!@\#\ ]*,1234})"
+assert "$(echo [a-z]* ])" == "$(echo {[a-z]*,]})"
 shctl unset failglob
 assert "$(echo /[a-zA-Z]* /@]\*)" == "$(echo /{[a-zA-Z,@}]*)"
 shctl set failglob
