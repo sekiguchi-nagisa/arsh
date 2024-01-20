@@ -60,9 +60,9 @@ struct ControlFrame {
 
 class FinallyEntry {
 private:
-  unsigned int addr;   // finally block start address
-  unsigned int depth;  // control frame depth
-  Value errorOrAddr; // Error or return address of try block
+  unsigned int addr;  // finally block start address
+  unsigned int depth; // control frame depth
+  Value errorOrAddr;  // Error or return address of try block
 
 public:
   FinallyEntry(unsigned int addr, unsigned int depth, ObjPtr<ErrorObject> &&error)
@@ -136,9 +136,11 @@ public:
     return this->operands[this->frame.stackTopIndex - offset];
   }
 
-  void push(const Value &value) { this->push(Value(value)); }
+  void push(const Value &value) { new (&this->operands[++this->frame.stackTopIndex]) Value(value); }
 
-  void push(Value &&value) { this->operands[++this->frame.stackTopIndex] = std::move(value); }
+  void push(Value &&value) {
+    new (&this->operands[++this->frame.stackTopIndex]) Value(std::move(value));
+  }
 
   Value pop() { return std::move(this->operands[this->frame.stackTopIndex--]); }
 
