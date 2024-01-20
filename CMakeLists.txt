@@ -250,6 +250,7 @@ set(ARSH_SRC
         src/attribute.cpp
         src/line_buffer.cpp
         src/glob.cpp
+        src/expand.cpp
         ${lexer_src}
         ${bind_src}
         ${embed_src})
