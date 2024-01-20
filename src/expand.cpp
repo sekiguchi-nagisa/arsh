@@ -237,8 +237,11 @@ static Value concatPath(ARState &state, const Value *const constPool, const Valu
       }
     } else if (begin->kind() == ValueKind::NUMBER) { // for escaped string
       const StringRef ref = constPool[begin->asNum()].asStrRef();
-      if (std::string tmp;
-          appendAsUnescaped(ref, StringObject::MAX_SIZE, tmp) && ret.appendAsStr(state, tmp)) {
+      std::string tmp;
+      bool r = appendAsUnescaped(ref, StringObject::MAX_SIZE, tmp);
+      (void)r;
+      assert(r);
+      if (ret.appendAsStr(state, tmp)) {
         continue;
       }
     } else {
@@ -398,6 +401,9 @@ bool VM::applyBraceExpansion(ARState &state, ArrayObject &argv, const Value *beg
       } else {
         Value path =
             concatPath(state, cast<CompiledCode>(state.stack.code())->getConstPool(), vbegin, vend);
+        if (!path) {
+          return false;
+        }
         if (tilde) {
           DefaultDirStackProvider dirStackProvider(state);
           std::string str = path.asStrRef().toString();
