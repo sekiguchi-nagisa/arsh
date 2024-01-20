@@ -110,15 +110,13 @@ uint32_t Value::getMetaData() const {
          this->kind() != ValueKind::STACK_GUARD && this->kind() != ValueKind::DUMMY);
 
   if (isSmallStr(this->kind())) {
-    if (smallStrSize(this->kind()) <= 10) {
-      union { // NOLINT
-        char i8[4];
-        uint32_t u32;
-      } conv;
-      memcpy(conv.i8, this->str.value + 11, 4);
-      return conv.u32;
-    }
-    return 0;
+    assert(smallStrSize(this->kind()) <= 10);
+    union { // NOLINT
+      char i8[4];
+      uint32_t u32;
+    } conv;
+    memcpy(conv.i8, this->str.value + 11, 4);
+    return conv.u32;
   }
   return this->value.meta;
 }

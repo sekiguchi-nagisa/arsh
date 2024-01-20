@@ -364,7 +364,7 @@ private:
     if (data) {
       memcpy(this->str.value, data, size);
     }
-    std::fill(std::begin(this->str.value) + size, std::end(this->str.value), '\0');
+    this->str.value[size] = '\0';
   }
 
 public:
