@@ -203,7 +203,11 @@ public:
 
   unsigned int size() const { return this->value.size(); }
 
-  void append(StringRef v) { this->value += v; }
+  /**
+   * unsafe api. not directly use it
+   * @param v
+   */
+  void unsafeAppend(StringRef v) { this->value += v; }
 };
 
 enum class StackGuardType : unsigned char {

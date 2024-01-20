@@ -162,6 +162,26 @@ TEST_F(StringRefTest, remove) {
   ASSERT_NO_FATAL_FAILURE(this->equals("world", ref));
 }
 
+TEST_F(StringRefTest, append) {
+  std::string out;
+  ASSERT_TRUE(checkedAppend("", 0, out));
+  ASSERT_EQ("", out);
+  ASSERT_TRUE(checkedAppend("", 1, out));
+  ASSERT_EQ("", out);
+
+  out = "12";
+  ASSERT_FALSE(checkedAppend("34", 0, out));
+  ASSERT_EQ("12", out);
+  ASSERT_FALSE(checkedAppend("34", 1, out));
+  ASSERT_EQ("12", out);
+  ASSERT_FALSE(checkedAppend("34", 2, out));
+  ASSERT_EQ("12", out);
+  ASSERT_FALSE(checkedAppend("34", 3, out));
+  ASSERT_EQ("12", out);
+  ASSERT_TRUE(checkedAppend("34", 4, out));
+  ASSERT_EQ("1234", out);
+}
+
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

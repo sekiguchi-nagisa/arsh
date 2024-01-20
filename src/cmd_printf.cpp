@@ -450,13 +450,11 @@ bool FormatPrinter::appendAsStr(FormatFlag flags, int width, int precision, char
     } else {
       std::string str;
       bool r = interpretEscapeSeq(ref, [&str](StringRef sub) {
-        if (sub.size() <= SYS_LIMIT_STRING_MAX && str.size() <= SYS_LIMIT_STRING_MAX - sub.size()) {
-          str += sub;
-          return true;
-        } else {
+        const bool s = checkedAppend(sub, StringObject::MAX_SIZE, str);
+        if (!s) {
           errno = ENOMEM;
-          return false;
         }
+        return s;
       });
       return r && this->appendWithPadding(width, str, precision, leftAdjust);
     }

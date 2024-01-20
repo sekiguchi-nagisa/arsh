@@ -562,12 +562,9 @@ bool appendAndEscapeGlobMeta(const StringRef ref, const size_t maxSize, std::str
     case '*':
     case '[':
     case '\\':
-      if (const StringRef sub(start, iter - start);
-          maxSize >= sub.size() && out.size() <= maxSize - sub.size()) {
-        out += sub;
+      if (const StringRef sub(start, iter - start); checkedAppend(sub, maxSize, out)) {
         start = iter;
-        if (maxSize > 0 && out.size() <= maxSize - 1) {
-          out += '\\';
+        if (checkedAppend(StringRef("\\"), maxSize, out)) {
           break;
         }
       }
@@ -577,12 +574,7 @@ bool appendAndEscapeGlobMeta(const StringRef ref, const size_t maxSize, std::str
     }
   }
   assert(start <= end);
-  if (const StringRef sub(start, end - start);
-      maxSize >= sub.size() && out.size() <= maxSize - sub.size()) {
-    out += sub;
-    return true;
-  }
-  return false;
+  return checkedAppend(StringRef(start, end - start), maxSize, out);
 }
 
 } // namespace arsh

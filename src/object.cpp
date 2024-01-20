@@ -513,7 +513,7 @@ bool Value::appendAsStr(ARState &state, StringRef value) {
     }
     (*this) = Value::create<StringObject>(StringRef(this->str.value, size));
   }
-  typeAs<StringObject>(*this).append(value);
+  typeAs<StringObject>(*this).unsafeAppend(value);
   return true;
 }
 

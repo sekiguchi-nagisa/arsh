@@ -213,6 +213,14 @@ inline std::string &operator+=(std::string &str, StringRef ref) {
   return str.append(ref.data(), ref.size());
 }
 
+inline bool checkedAppend(const StringRef ref, const size_t maxSize, std::string &out) {
+  if (out.size() <= maxSize && ref.size() <= maxSize - out.size()) {
+    out += ref;
+    return true;
+  }
+  return false;
+}
+
 struct StrRefHash {
   std::size_t operator()(const StringRef &ref) const {
     return FNVHash::compute(ref.begin(), ref.end());

@@ -279,11 +279,10 @@ static bool readAsStr(ARState &state, int fd, Value &ret) {
       }
       break;
     }
-    if (unlikely(str.size() > StringObject::MAX_SIZE - readSize)) {
+    if (unlikely(!checkedAppend(StringRef(buf, readSize), StringObject::MAX_SIZE, str))) {
       raiseError(state, TYPE::OutOfRangeError, ERROR_STRING_LIMIT);
       return false;
     }
-    str.append(buf, readSize);
   }
 
   // remove last newlines
@@ -1374,9 +1373,7 @@ static std::string concatAsGlobPattern(const Value *begin, const Value *end) {
       }
     } else {
       assert(v.kind() == ValueKind::EXPAND_META);
-      if (const auto r = v.toString(); value.size() <= StringObject::MAX_SIZE &&
-                                       r.size() <= StringObject::MAX_SIZE - value.size()) {
-        value += r;
+      if (checkedAppend(v.toString(), StringObject::MAX_SIZE, value)) {
         continue;
       }
       return "";
