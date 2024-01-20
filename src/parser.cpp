@@ -280,6 +280,7 @@ static constexpr bool iterate_requirement_v =
 
 template <typename Func, enable_when<iterate_requirement_v<Func>> = nullptr>
 static void iteratePathList(const Lexer &lex, const Token token, const char delim, Func func) {
+  assert(delim != '\\');
   const StringRef ref = lex.toStrRef(token);
   const unsigned int size = ref.size();
   unsigned int startPos = 0;
@@ -288,7 +289,6 @@ static void iteratePathList(const Lexer &lex, const Token token, const char deli
     const char ch = ref[pos++];
     if (ch == '\\' && pos < size) {
       pos++;
-      continue;
     }
     if (ch == delim || pos == size) {
       if (Token sub = token.slice(startPos, pos); !func(sub, ch == delim)) {
