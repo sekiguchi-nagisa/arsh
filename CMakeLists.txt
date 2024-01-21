@@ -4,7 +4,7 @@ if (POLICY CMP0069)
     cmake_policy(SET CMP0069 NEW)
 endif ()
 
-project(arsh VERSION 0.33.0)
+project(arsh VERSION 0.32.1)
 enable_language(CXX)
 
 set(CMAKE_MODULE_PATH "${PROJECT_SOURCE_DIR}/cmake/modules")
@@ -21,7 +21,7 @@ include(GenLexer)
 #     project version      #
 #++++++++++++++++++++++++++#
 
-set(ARSH_STABLE_RELEASE off)
+set(ARSH_STABLE_RELEASE on)
 set(ARSH_VERSION ${PROJECT_VERSION})
 if (NOT ${ARSH_STABLE_RELEASE})
     set(ARSH_VERSION ${ARSH_VERSION}-unstable)
