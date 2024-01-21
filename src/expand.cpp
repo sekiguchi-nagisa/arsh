@@ -115,6 +115,34 @@ static void raiseGlobbingError(ARState &state, const std::string &pattern, std::
   raiseError(state, TYPE::GlobbingError, std::move(value));
 }
 
+static Value concatPath(ARState &state, const Value *const constPool, const Value *begin,
+                        const Value *end) {
+  auto ret = Value::createStr();
+  for (; begin != end; ++begin) {
+    if (begin->hasStrRef()) {
+      if (ret.appendAsStr(state, begin->asStrRef())) {
+        continue;
+      }
+    } else if (begin->kind() == ValueKind::NUMBER) { // for escaped string
+      const StringRef ref = constPool[begin->asNum()].asStrRef();
+      std::string tmp;
+      bool r = appendAsUnescaped(ref, StringObject::MAX_SIZE, tmp);
+      (void)r;
+      assert(r);
+      if (ret.appendAsStr(state, tmp)) {
+        continue;
+      }
+    } else {
+      assert(begin->kind() == ValueKind::EXPAND_META);
+      if (ret.appendAsStr(state, begin->toString())) {
+        continue;
+      }
+    }
+    return {};
+  }
+  return ret;
+}
+
 static bool concatAsGlobPattern(ARState &state, const Value *const constPool, const Value *begin,
                                 const Value *end, std::string &out) {
   for (; begin != end; ++begin) {
@@ -141,23 +169,8 @@ NOMEM:
   return false;
 }
 
-static std::string unescapeGlobPattern(StringRef pattern) {
-  std::string value;
-  const auto size = pattern.size();
-  for (StringRef::size_type i = 0; i < size; i++) {
-    char ch = pattern[i];
-    if (ch == '\\') {
-      if (i + 1 < size) {
-        ch = pattern[++i];
-      }
-    }
-    value += ch;
-  }
-  return value;
-}
-
-bool VM::addGlobbingPath(ARState &state, ArrayObject &argv, const Value *begin, const Value *end,
-                         bool tilde) {
+bool VM::addGlobbingPath(ARState &state, ArrayObject &argv, const Value *const begin,
+                         const Value *const end, const bool tilde) {
   std::string pattern;
   if (!concatAsGlobPattern(state, cast<CompiledCode>(state.stack.code())->getConstPool(), begin,
                            end, pattern)) {
@@ -199,7 +212,7 @@ bool VM::addGlobbingPath(ARState &state, ArrayObject &argv, const Value *begin, 
   std::string err;
   switch (const auto ret = glob(&err); ret) {
   case Glob::Status::MATCH:
-  case Glob::Status::NOMATCH:
+  case Glob::Status::NOMATCH: {
     if (ret == Glob::Status::MATCH || state.has(RuntimeOption::NULLGLOB)) {
       argv.sortAsStrArray(oldSize); // not check iterator invalidation
       return true;
@@ -208,7 +221,10 @@ bool VM::addGlobbingPath(ARState &state, ArrayObject &argv, const Value *begin, 
       raiseGlobbingError(state, pattern, "no matches for glob pattern");
       return false;
     }
-    return argv.append(state, Value::createStr(unescapeGlobPattern(pattern)));
+    auto path =
+        concatPath(state, cast<CompiledCode>(state.stack.code())->getConstPool(), begin, end);
+    return path && argv.append(state, std::move(path));
+  }
   case Glob::Status::CANCELED:
     raiseSystemError(state, EINTR, "glob expansion is canceled");
     return false;
@@ -225,34 +241,6 @@ bool VM::addGlobbingPath(ARState &state, ArrayObject &argv, const Value *begin, 
     assert(ret == Glob::Status::LIMIT && state.hasError());
     return false;
   }
-}
-
-static Value concatPath(ARState &state, const Value *const constPool, const Value *begin,
-                        const Value *end) {
-  auto ret = Value::createStr();
-  for (; begin != end; ++begin) {
-    if (begin->hasStrRef()) {
-      if (ret.appendAsStr(state, begin->asStrRef())) {
-        continue;
-      }
-    } else if (begin->kind() == ValueKind::NUMBER) { // for escaped string
-      const StringRef ref = constPool[begin->asNum()].asStrRef();
-      std::string tmp;
-      bool r = appendAsUnescaped(ref, StringObject::MAX_SIZE, tmp);
-      (void)r;
-      assert(r);
-      if (ret.appendAsStr(state, tmp)) {
-        continue;
-      }
-    } else {
-      assert(begin->kind() == ValueKind::EXPAND_META);
-      if (ret.appendAsStr(state, begin->toString())) {
-        continue;
-      }
-    }
-    return {};
-  }
-  return ret;
 }
 
 struct ExpandState {
