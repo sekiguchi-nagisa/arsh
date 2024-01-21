@@ -26,6 +26,8 @@
 
 - ``Error`` type constructor now accept `0` status
 
+## [0.32.1] - 2024-01-21
+
 ### Fixed
 
 - fix help message of ``prompt`` command in ``prompt`` module
