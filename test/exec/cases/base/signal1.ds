@@ -27,5 +27,5 @@ assert ($ex as KeyNotFoundError).message() == "undefined signal: sys\x00name"
 
 assert $SIG.list()[0] is Signal
 
-assert ($SIG as String).startsWith('DSObject(')
+assert ($SIG as String).startsWith('Object(')
 

@@ -186,19 +186,19 @@ void bindBuiltins(Consumer &consumer, const SysConfig &config, TypePool &pool, N
 
   /**
    * process id of root shell. ($$)
-   * must be Int_Object
+   * must be Int
    */
   binder.bind("$", getpid());
 
   /**
    * process id of current process.
-   * must be Int_Object
+   * must be Int
    */
   binder.bind("PID", getpid());
 
   /**
    * parent process id of current process.
-   * must be Int_Object
+   * must be Int
    */
   binder.bind("PPID", getppid());
 
@@ -206,19 +206,19 @@ void bindBuiltins(Consumer &consumer, const SysConfig &config, TypePool &pool, N
 
   /**
    * uid of shell
-   * must be Int_Object
+   * must be Int
    */
   binder.bind("UID", getuid());
 
   /**
    * euid of shell
-   * must be Int_Object
+   * must be Int
    */
   binder.bind("EUID", geteuid());
 
   /**
    * dummy object for signal handler setting
-   * must be DSObject
+   * must be Object
    */
   binder.bind("SIG", pool.get(TYPE::Signals));
 

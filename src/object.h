@@ -442,7 +442,7 @@ public:
   explicit operator bool() const noexcept { return this->kind() != ValueKind::EMPTY; }
 
   /**
-   * if represents DSObject, return true.
+   * if represents Object, return true.
    */
   bool isObject() const noexcept { return this->kind() == ValueKind::OBJECT; }
 
@@ -569,7 +569,7 @@ public:
 
   template <typename T, typename... A>
   static Value create(A &&...args) {
-    static_assert(std::is_base_of_v<Object, T>, "must be subtype of DSObject");
+    static_assert(std::is_base_of_v<Object, T>, "must be subtype of Object");
 
     return Value(ObjectConstructor<T, A...>::construct(std::forward<A>(args)...));
   }
@@ -662,7 +662,7 @@ public:
 
 template <typename T>
 T &typeAs(const Value &value) noexcept {
-  static_assert(std::is_base_of_v<Object, T>, "must be subtype of DSObject");
+  static_assert(std::is_base_of_v<Object, T>, "must be subtype of Object");
 
 #ifdef USE_SAFE_CAST
   constexpr bool useSafeCast = true;
@@ -672,7 +672,7 @@ T &typeAs(const Value &value) noexcept {
 
   if (useSafeCast) {
     if (!value.isObject()) {
-      fatal("must be represent DSObject, but actual is: %d\n", toUnderlying(value.kind()));
+      fatal("must be represent Object, but actual is: %d\n", toUnderlying(value.kind()));
     }
     auto *r = checked_cast<T>(value.get());
     if (r == nullptr) {

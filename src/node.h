@@ -1007,7 +1007,7 @@ private:
 };
 
 /**
- * allocate new DSObject and call constructor.
+ * allocate new Object and call constructor.
  */
 class NewNode : public WithRtti<Node, NodeKind::New> {
 private:

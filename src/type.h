@@ -515,7 +515,7 @@ public:
 
 /**
  * builtin type(any, void, value ...)
- * not support override. (if override method, must override DSObject's method)
+ * not support override. (if override method, must override Object's method)
  * so this->getFieldSize is equivalent to superType->getFieldSize() + infoSize
  */
 class BuiltinType : public DSType {

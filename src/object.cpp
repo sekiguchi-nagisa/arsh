@@ -139,7 +139,7 @@ std::string Value::toString() const {
       str += ")";
       return str;
     } else {
-      std::string str("DSObject(");
+      std::string str("Object(");
       str += std::to_string(typeId);
       str += ")";
       return str;
@@ -255,7 +255,7 @@ std::string Value::toString() const {
     return str;
   }
   default:
-    std::string str("DSObject(");
+    std::string str("Object(");
     str += std::to_string(reinterpret_cast<uintptr_t>(this->get()));
     str += ")";
     return str;
