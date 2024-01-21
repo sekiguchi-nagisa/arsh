@@ -89,7 +89,7 @@ Value Value::withMetaData(uint32_t metaData) const {
   if (isSmallStr(newValue.kind())) {
     StringRef ref{newValue.str.value, smallStrSize(newValue.kind())};
     if (newValue.kind() <= ValueKind::SSTR10) {
-      union {
+      const union {
         char i8[4];
         uint32_t u32;
       } conv = {
@@ -98,7 +98,7 @@ Value Value::withMetaData(uint32_t metaData) const {
       memcpy(newValue.str.value + 11, conv.i8, 4);
       return newValue;
     } else {
-      newValue = Value::create<StringObject>(ref);
+      newValue = create<StringObject>(ref);
     }
   }
   newValue.value.meta = metaData;

@@ -139,7 +139,7 @@ public:
   JobNotifyCallback notifyCallback;
 
 private:
-  friend class arsh::VM;
+  friend class VM;
 
   VMHook *hook{nullptr};
 
@@ -154,7 +154,7 @@ private:
 public:
   static SigSet pendingSigSet;
 
-  static int popPendingSignal() { return ARState::pendingSigSet.popPendingSig(); }
+  static int popPendingSignal() { return pendingSigSet.popPendingSig(); }
 
   /**
    *
@@ -163,13 +163,13 @@ public:
    */
   static void clearPendingSignal(int sigNum = 0) {
     if (sigNum > 0) {
-      ARState::pendingSigSet.del(sigNum);
+      pendingSigSet.del(sigNum);
     } else {
-      ARState::pendingSigSet.clear();
+      pendingSigSet.clear();
     }
   }
 
-  static bool isInterrupted() { return ARState::pendingSigSet.has(SIGINT); }
+  static bool isInterrupted() { return pendingSigSet.has(SIGINT); }
 
   static bool hasSignals() { return !pendingSigSet.empty(); }
 
@@ -236,7 +236,7 @@ public:
 
   void setVMHook(VMHook *h) { this->hook = h; }
 
-  VMHook *getVMHook() { return this->hook; }
+  VMHook *getVMHook() const { return this->hook; }
 
   const VMState &getCallStack() const { return this->stack; }
 
@@ -642,11 +642,14 @@ private:
   /**
    * if found exception handler, return true.
    * otherwise return false.
+   * @param state
+   * @return
    */
   static bool handleException(ARState &state);
 
   /**
    * actual entry point of interpreter.
+   * @param state
    * @param op
    * @param dsError
    * if not null, set error info
@@ -665,6 +668,7 @@ public:
   // entry point
   /**
    * entry point of toplevel code evaluation.
+   * @param state
    * @param func
    * must be toplevel compiled function.
    * @param dsError
@@ -676,6 +680,7 @@ public:
 
   /**
    * execute command.
+   * @param state
    * @param argv
    * Value must be String_Object
    * @param propagate
@@ -687,7 +692,7 @@ public:
   static Value execCommand(ARState &state, std::vector<Value> &&argv, bool propagate);
 
   /**
-   *
+   * @param state
    * @param funcObj
    * @param args
    * @return

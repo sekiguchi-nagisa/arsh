@@ -158,7 +158,7 @@ public:
     if (!forceClose && this->fd < 0) {
       return 0;
     }
-    int s = close(this->fd);
+    const int s = close(this->fd);
     this->fd = -1;
     return s;
   }
@@ -641,14 +641,14 @@ public:
     if (ref.size() <= smallStrSize(ValueKind::SSTR14)) {
       return Value(ref.data(), ref.size());
     }
-    return Value::create<StringObject>(ref);
+    return create<StringObject>(ref);
   }
 
   static Value createStr(std::string &&value) {
     if (value.size() <= smallStrSize(ValueKind::SSTR14)) {
       return Value(value.data(), value.size());
     }
-    return Value::create<StringObject>(std::move(value));
+    return create<StringObject>(std::move(value));
   }
 
   /**
@@ -661,7 +661,7 @@ public:
 };
 
 template <typename T>
-inline T &typeAs(const Value &value) noexcept {
+T &typeAs(const Value &value) noexcept {
   static_assert(std::is_base_of_v<Object, T>, "must be subtype of DSObject");
 
 #ifdef USE_SAFE_CAST
@@ -686,7 +686,7 @@ inline T &typeAs(const Value &value) noexcept {
 }
 
 template <typename T>
-inline ObjPtr<T> toObjPtr(const Value &value) noexcept {
+ObjPtr<T> toObjPtr(const Value &value) noexcept {
   auto &ref = typeAs<T>(value);
   return ObjPtr<T>(&ref);
 }
@@ -1308,7 +1308,7 @@ struct ObjectConstructor<ClosureObject, Arg...> {
 using CallArgs = std::pair<unsigned int, std::array<Value, 3>>;
 
 template <typename... T>
-inline CallArgs makeArgs(T &&...arg) {
+CallArgs makeArgs(T &&...arg) {
   static_assert(sizeof...(arg) <= 3, "too long");
   return std::make_pair(sizeof...(arg), std::array<Value, 3>{{std::forward<T>(arg)...}});
 }
