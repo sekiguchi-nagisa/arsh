@@ -83,6 +83,8 @@ using namespace arsh;
 
 struct ARState {
 public:
+  friend class arsh::VM;
+
   const SysConfig sysConfig;
 
   ModuleLoader modLoader;
@@ -139,8 +141,6 @@ public:
   JobNotifyCallback notifyCallback;
 
 private:
-  friend class VM;
-
   VMHook *hook{nullptr};
 
   std::vector<Value> globals{64};
