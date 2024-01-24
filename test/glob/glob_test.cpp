@@ -586,13 +586,13 @@ TEST_F(GlobTest, globAt) {
   auto s = testGlobAt(GLOB_TEST_WORK_DIR, "*");
   ASSERT_EQ(2, s);
   ASSERT_EQ(2, ret.size());
-  ASSERT_EQ(GLOB_TEST_WORK_DIR "/./AAA", ret[0]);
-  ASSERT_EQ(GLOB_TEST_WORK_DIR "/./bbb", ret[1]);
+  ASSERT_EQ(GLOB_TEST_WORK_DIR "/AAA", ret[0]);
+  ASSERT_EQ(GLOB_TEST_WORK_DIR "/bbb", ret[1]);
 
   s = testGlobAt(GLOB_TEST_WORK_DIR, "b*");
   ASSERT_EQ(1, s);
   ASSERT_EQ(1, ret.size());
-  ASSERT_EQ(GLOB_TEST_WORK_DIR "/./bbb", ret[0]);
+  ASSERT_EQ(GLOB_TEST_WORK_DIR "/bbb", ret[0]);
 
   s = testGlobAt(GLOB_TEST_WORK_DIR, "./././*");
   ASSERT_EQ(2, s);

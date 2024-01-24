@@ -407,12 +407,15 @@ Glob::Status Glob::invoke(std::string &&baseDir, const char *iter, std::string *
   return this->getMatchCount() > 0 ? Status::MATCH : Status::NOMATCH;
 }
 
-bool Glob::resolveBaseDir(const char *&iter, std::string &baseDir) const {
-  const char *const old = iter; // for backup
-  const char *latestSep = this->end();
+std::string Glob::extractDirFromPattern(StringRef &pattern) {
+  std::string baseDir;
+
+  const char *iter = pattern.begin();
+  const char *const end = pattern.end();
+  const char *latestSep = end;
 
   // extract until glob meta
-  for (; iter != this->end(); ++iter) {
+  for (; iter != end; ++iter) {
     char ch = *iter;
     switch (ch) {
     case '*':
@@ -420,7 +423,7 @@ bool Glob::resolveBaseDir(const char *&iter, std::string &baseDir) const {
     case '[':
       goto BREAK;
     case '\\':
-      if (iter + 1 != this->end()) {
+      if (iter + 1 != end) {
         ch = *++iter; // skip '\\'
       }
       break;
@@ -437,26 +440,38 @@ bool Glob::resolveBaseDir(const char *&iter, std::string &baseDir) const {
   }
 
 BREAK:
-  if (latestSep == this->end()) { // not found '/'
-    iter = old;
-    baseDir = ".";
-  } else {
-    iter = latestSep + 1;
-    for (; !baseDir.empty() && baseDir.back() != '/'; baseDir.pop_back())
-      ;
-    if (hasFlag(this->option, Option::TILDE) && this->tildeExpander) {
-      if (!this->tildeExpander(baseDir)) {
-        return false;
-      }
+  if (latestSep == end) { // not found '/'
+    return "";
+  }
+
+  iter = latestSep + 1;
+  for (; !baseDir.empty() && baseDir.back() != '/'; baseDir.pop_back())
+    ;
+  pattern = {iter, static_cast<size_t>(end - iter)};
+  return baseDir;
+}
+
+bool Glob::resolveBaseDir(const char *&iter, std::string &baseDir) const {
+  StringRef tmpPattern = this->pattern;
+  baseDir = extractDirFromPattern(tmpPattern);
+  iter = tmpPattern.begin();
+  if (hasFlag(this->option, Option::TILDE) && this->tildeExpander && !baseDir.empty()) {
+    if (!this->tildeExpander(baseDir)) {
+      return false;
     }
   }
 
   // concat specify base dir and resolved dir
   if (!this->base.empty() && this->base[0] == '/' && baseDir[0] != '/') {
     std::string tmp = this->base;
-    tmp += "/";
+    if (tmp.back() != '/') {
+      tmp += "/";
+    }
     tmp += baseDir;
     baseDir = std::move(tmp);
+  }
+  if (baseDir.empty()) {
+    baseDir = ".";
   }
   return true;
 }

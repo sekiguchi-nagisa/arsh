@@ -94,6 +94,15 @@ public:
     return this->invoke(std::string(this->base), this->pattern.begin(), nullptr);
   }
 
+  /**
+   *
+   * @param pattern
+   * after extraction, maintains remain pattern
+   * @return
+   * if no dir, return empty
+   */
+  static std::string extractDirFromPattern(StringRef &pattern);
+
 private:
   Status invoke(std::string &&baseDir, const char *iter, std::string *err);
 
