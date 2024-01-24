@@ -640,10 +640,9 @@ TEST_F(GlobTest, globAt) {
 }
 
 TEST_F(GlobTest, escapeDir) {
-  Glob glob("hogehoge/\\*234\\?ss////*", Glob::Option::ABSOLUTE_BASE_DIR, nullptr);
-  std::string err;
-  ASSERT_EQ(Glob::Status::NEED_ABSOLUTE_BASE_DIR, glob(&err));
-  ASSERT_EQ("hogehoge/*234?ss/", err);
+  StringRef ref = "hogehoge/\\*234\\?ss////*";
+  std::string out = Glob::extractDirFromPattern(ref);
+  ASSERT_EQ("hogehoge/*234?ss/", out);
 }
 
 TEST_F(GlobTest, fast) {

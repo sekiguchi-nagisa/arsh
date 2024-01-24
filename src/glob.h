@@ -31,11 +31,9 @@ namespace arsh {
 class Glob {
 public:
   enum class Option : unsigned char {
-    TILDE = 1u << 0u,             // apply tilde expansion before globbing
-    DOTGLOB = 1u << 1u,           // match file names start with '.'
-    FASTGLOB = 1u << 2u,          // posix incompatible optimized search
-    ABSOLUTE_BASE_DIR = 1u << 3u, // only allow absolute base dir
-    GLOB_LIMIT = 1u << 4u,        // limit the number of readdir
+    DOTGLOB = 1u << 1u,    // match file names start with '.'
+    FASTGLOB = 1u << 2u,   // posix incompatible optimized search
+    GLOB_LIMIT = 1u << 4u, // limit the number of readdir
   };
 
   enum class Status : unsigned char {
@@ -43,8 +41,6 @@ public:
     NOMATCH,
     LIMIT,
     CANCELED,
-    NEED_ABSOLUTE_BASE_DIR,
-    TILDE_FAIL,
     RESOURCE_LIMIT,
     BAD_PATTERN,
   };
@@ -62,8 +58,6 @@ private:
 
   ObserverPtr<CancelToken> cancel;
 
-  std::function<bool(std::string &)> tildeExpander;
-
   std::function<bool(std::string &&)> consumer;
 
   static constexpr unsigned int READDIR_LIMIT = 16 * 1024;
@@ -78,13 +72,13 @@ public:
 
   unsigned int getMatchCount() const { return this->matchCount; }
 
-  void setTildeExpander(std::function<bool(std::string &)> &&func) {
-    this->tildeExpander = std::move(func);
-  }
-
   void setConsumer(std::function<bool(std::string &&)> &&func) { this->consumer = std::move(func); }
 
-  Status operator()(std::string *err);
+  Status operator()(std::string *err) {
+    auto iter = this->pattern.begin();
+    std::string baseDir = this->resolveBaseDir(iter);
+    return this->invoke(std::move(baseDir), iter, err);
+  }
 
   /**
    * \brief for debugging. (directly use specified base dir)
@@ -111,10 +105,9 @@ private:
   /**
    * \brief extract and resolve base dir
    * \param iter
-   * \param baseDir
    * \return
    */
-  bool resolveBaseDir(const char *&iter, std::string &baseDir) const;
+  std::string resolveBaseDir(const char *&iter) const;
 
   std::pair<Status, bool> match(const char *baseDir, const char *&iter, std::string *err);
 };
@@ -250,6 +243,28 @@ private:
 };
 
 bool appendAndEscapeGlobMeta(StringRef ref, size_t maxSize, std::string &out);
+
+struct GlobPattern {
+  std::string baseDir; // must be unescaped string
+  std::string pattern; // must be glob pattern
+
+  bool join(size_t maxSize, std::string &out) const {
+    if (!this->baseDir.empty()) {
+      if (appendAndEscapeGlobMeta(this->baseDir, maxSize, out)) {
+        if (out.size() + 1 <= maxSize) {
+          out += '/';
+        }
+      }
+    }
+    return checkedAppend(this->pattern, maxSize, out);
+  }
+
+  std::string join() const {
+    std::string out;
+    this->join(out.max_size(), out);
+    return out;
+  }
+};
 
 } // namespace arsh
 

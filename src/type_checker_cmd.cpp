@@ -367,8 +367,14 @@ static std::string concat(SourceListNode::path_iterator begin, SourceListNode::p
   return path;
 }
 
-static std::string concatAsGlobPattern(SourceListNode::path_iterator begin,
-                                       SourceListNode::path_iterator end) {
+static bool isDirPattern(const StringRef ref) {
+  assert(!ref.empty());
+  return ref.back() == '/' || ref.endsWith("/.") || ref.endsWith("/..");
+}
+
+bool TypeChecker::concatAsGlobPattern(const Token token, SourceListNode::path_iterator begin,
+                                      SourceListNode::path_iterator end, const GlobOp op,
+                                      GlobPattern &pattern) {
   std::string value;
   for (; begin != end; ++begin) {
     auto &e = **begin;
@@ -383,12 +389,30 @@ static std::string concatAsGlobPattern(SourceListNode::path_iterator begin,
       value += toString(cast<WildCardNode>(e).meta);
     }
   }
-  return value;
-}
 
-static bool isDirPattern(const StringRef ref) {
-  assert(!ref.empty());
-  return ref.back() == '/' || ref.endsWith("/.") || ref.endsWith("/..");
+  if (isDirPattern(value)) {
+    this->reportError<NoGlobDir>(token, value.c_str());
+    return false;
+  }
+  const StringRef ref = value;
+  StringRef tmp = ref;
+  pattern.baseDir = Glob::extractDirFromPattern(tmp);
+  if (tmp.begin() != ref.begin()) {
+    value.erase(0, tmp.begin() - ref.begin());
+  }
+  pattern.pattern = std::move(value);
+
+  if (hasFlag(op, GlobOp::TILDE) && !pattern.baseDir.empty()) {
+    if (const auto s = expandTilde(pattern.baseDir, true, nullptr); s != TildeExpandStatus::OK) {
+      this->reportTildeExpansionError(token, pattern.baseDir, s);
+      return false;
+    }
+  }
+  if (pattern.baseDir.empty() || pattern.baseDir[0] != '/') {
+    this->reportError<NoRelativeGlob>(token, pattern.join().c_str());
+    return false;
+  }
+  return true;
 }
 
 static unsigned int getExpansionLimit() {
@@ -414,7 +438,7 @@ void TypeChecker::reportTildeExpansionError(Token token, const std::string &path
   assert(status != TildeExpandStatus::OK);
 
   StringRef ref = path;
-  if (auto pos = ref.find("/"); pos != StringRef::npos) {
+  if (const auto pos = ref.find("/"); pos != StringRef::npos) {
     assert(pos > 0);
     ref = ref.substr(0, pos);
   }
@@ -443,27 +467,17 @@ bool TypeChecker::applyGlob(const Token token,
                             std::vector<std::shared_ptr<const std::string>> &results,
                             const SourceListNode::path_iterator begin,
                             const SourceListNode::path_iterator end, GlobOp op) {
-  const std::string pattern = concatAsGlobPattern(begin, end);
-  if (isDirPattern(pattern)) {
-    this->reportError<NoGlobDir>(token, pattern.c_str());
+  GlobPattern pattern;
+  if (!this->concatAsGlobPattern(token, begin, end, op, pattern)) {
     return false;
-  }
-
-  auto option = Glob::Option::FASTGLOB | Glob::Option::ABSOLUTE_BASE_DIR | Glob::Option::GLOB_LIMIT;
-  if (hasFlag(op, GlobOp::TILDE)) {
-    setFlag(option, Glob::Option::TILDE);
   }
 
   const unsigned int oldSize = results.size();
   CancelToken dummy;
-  TildeExpandStatus tildeExpandStatus{};
-  Glob glob(pattern, option, nullptr);
+  Glob glob(pattern.pattern, Glob::Option::FASTGLOB | Glob::Option::GLOB_LIMIT,
+            pattern.baseDir.c_str());
   glob.setCancelToken(dummy);
   glob.setConsumer([&results](std::string &&path) { return appendPath(results, std::move(path)); });
-  glob.setTildeExpander([&tildeExpandStatus](std::string &path) {
-    tildeExpandStatus = expandTilde(path, true, nullptr);
-    return tildeExpandStatus == TildeExpandStatus::OK;
-  });
 
   std::string err;
   switch (const auto ret = glob(&err); ret) {
@@ -475,20 +489,13 @@ bool TypeChecker::applyGlob(const Token token,
                    const std::shared_ptr<const std::string> &y) { return *x < *y; });
       return true;
     }
-    this->reportError<NoGlobMatch>(token, pattern.c_str());
-    return false;
-  case Glob::Status::NEED_ABSOLUTE_BASE_DIR:
-    this->reportError<NoRelativeGlob>(token, pattern.c_str());
-    return false;
-  case Glob::Status::TILDE_FAIL:
-    assert(tildeExpandStatus != TildeExpandStatus::OK);
-    this->reportTildeExpansionError(token, err, tildeExpandStatus);
+    this->reportError<NoGlobMatch>(token, pattern.join().c_str());
     return false;
   case Glob::Status::RESOURCE_LIMIT:
     this->reportError<GlobResource>(token);
     return false;
   case Glob::Status::BAD_PATTERN:
-    this->reportError<BadGlobPattern>(token, pattern.c_str(), err.c_str());
+    this->reportError<BadGlobPattern>(token, pattern.join().c_str(), err.c_str());
     return false;
   default:
     assert(ret == Glob::Status::LIMIT);

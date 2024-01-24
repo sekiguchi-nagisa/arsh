@@ -101,7 +101,7 @@ struct DirStackProvider {
   virtual StringRef get(size_t index) = 0;
 };
 
-enum class TildeExpandStatus {
+enum class TildeExpandStatus : unsigned char {
   OK,
   NO_TILDE,       // not start with tilde
   NO_USER,        // not found corresponding user

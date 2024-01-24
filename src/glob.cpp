@@ -374,25 +374,6 @@ static void popDir(std::string &path) {
   }
 }
 
-Glob::Status Glob::operator()(std::string *err) {
-  // prepare base dir
-  auto iter = this->pattern.begin();
-  std::string baseDir;
-  if (!this->resolveBaseDir(iter, baseDir)) {
-    if (err) {
-      *err = baseDir;
-    }
-    return Status::TILDE_FAIL;
-  }
-  if (hasFlag(this->option, Option::ABSOLUTE_BASE_DIR) && baseDir[0] != '/') {
-    if (err) {
-      *err = baseDir;
-    }
-    return Status::NEED_ABSOLUTE_BASE_DIR;
-  }
-  return this->invoke(std::move(baseDir), iter, err);
-}
-
 Glob::Status Glob::invoke(std::string &&baseDir, const char *iter, std::string *err) {
   // do glob match
   this->matchCount = 0;
@@ -451,18 +432,13 @@ BREAK:
   return baseDir;
 }
 
-bool Glob::resolveBaseDir(const char *&iter, std::string &baseDir) const {
+std::string Glob::resolveBaseDir(const char *&iter) const {
   StringRef tmpPattern = this->pattern;
-  baseDir = extractDirFromPattern(tmpPattern);
+  std::string baseDir = extractDirFromPattern(tmpPattern);
   iter = tmpPattern.begin();
-  if (hasFlag(this->option, Option::TILDE) && this->tildeExpander && !baseDir.empty()) {
-    if (!this->tildeExpander(baseDir)) {
-      return false;
-    }
-  }
 
   // concat specify base dir and resolved dir
-  if (!this->base.empty() && this->base[0] == '/' && baseDir[0] != '/') {
+  if (!this->base.empty() && baseDir[0] != '/') {
     std::string tmp = this->base;
     if (tmp.back() != '/') {
       tmp += "/";
@@ -473,7 +449,7 @@ bool Glob::resolveBaseDir(const char *&iter, std::string &baseDir) const {
   if (baseDir.empty()) {
     baseDir = ".";
   }
-  return true;
+  return baseDir;
 }
 
 struct DirDeleter {

@@ -101,9 +101,8 @@ bool VM::applyTildeExpansion(ARState &state, StringRef path) {
   return true;
 }
 
-static void raiseGlobbingError(ARState &state, const std::string &pattern, std::string &&message) {
-  std::string value = std::move(message);
-  value += " `";
+static void raiseGlobbingErrorWithNull(ARState &state, const std::string &pattern) {
+  std::string value = "glob pattern has null characters `";
   splitByDelim(pattern, '\0', [&value](StringRef ref, bool delim) {
     value += ref;
     if (delim) {
@@ -111,6 +110,14 @@ static void raiseGlobbingError(ARState &state, const std::string &pattern, std::
     }
     return true;
   });
+  value += "'";
+  raiseError(state, TYPE::GlobbingError, std::move(value));
+}
+
+static void raiseGlobbingError(ARState &state, const GlobPattern &pattern, std::string &&message) {
+  std::string value = std::move(message);
+  value += " `";
+  pattern.join(StringObject::MAX_SIZE, value); // FIXME: check length
   value += "'";
   raiseError(state, TYPE::GlobbingError, std::move(value));
 }
@@ -144,7 +151,8 @@ static Value concatPath(ARState &state, const Value *const constPool, const Valu
 }
 
 static bool concatAsGlobPattern(ARState &state, const Value *const constPool, const Value *begin,
-                                const Value *end, std::string &out) {
+                                const Value *end, const bool tilde, GlobPattern &pattern) {
+  std::string out;
   for (; begin != end; ++begin) {
     if (auto &v = *begin; v.hasStrRef()) {
       if (!appendAndEscapeGlobMeta(v.asStrRef(), StringObject::MAX_SIZE, out)) {
@@ -157,8 +165,31 @@ static bool concatAsGlobPattern(ARState &state, const Value *const constPool, co
       }
     } else {
       assert(v.kind() == ValueKind::EXPAND_META);
+      if (v.asExpandMeta().first == ExpandMeta::BRACE_OPEN) {
+      }
       if (!checkedAppend(v.toString(), StringObject::MAX_SIZE, out)) {
         goto NOMEM;
+      }
+    }
+  }
+  // check if glob path fragments have null character
+  if (const StringRef ref = out; unlikely(ref.hasNullChar())) {
+    raiseGlobbingErrorWithNull(state, out);
+    return false;
+  } else {
+    StringRef tmp = ref;
+    pattern.baseDir = Glob::extractDirFromPattern(tmp);
+    if (tmp.begin() != ref.begin()) {
+      out.erase(0, tmp.begin() - ref.begin());
+    }
+    pattern.pattern = std::move(out);
+
+    if (tilde && !pattern.baseDir.empty()) {
+      DefaultDirStackProvider provider(state);
+      if (const auto s = expandTilde(pattern.baseDir, true, &provider);
+          s != TildeExpandStatus::OK && state.has(RuntimeOption::FAIL_TILDE)) {
+        raiseTildeError(state, provider, pattern.baseDir, s);
+        return false;
       }
     }
   }
@@ -171,22 +202,13 @@ NOMEM:
 
 bool VM::addGlobbingPath(ARState &state, ArrayObject &argv, const Value *const begin,
                          const Value *const end, const bool tilde) {
-  std::string pattern;
+  GlobPattern pattern;
   if (!concatAsGlobPattern(state, cast<CompiledCode>(state.stack.code())->getConstPool(), begin,
-                           end, pattern)) {
-    return false;
-  }
-
-  // check if glob path fragments have null character
-  if (unlikely(StringRef(pattern).hasNullChar())) {
-    raiseGlobbingError(state, pattern, "glob pattern has null characters");
+                           end, tilde, pattern)) {
     return false;
   }
 
   Glob::Option option{};
-  if (tilde) {
-    setFlag(option, Glob::Option::TILDE);
-  }
   if (state.has(RuntimeOption::DOTGLOB)) {
     setFlag(option, Glob::Option::DOTGLOB);
   }
@@ -195,18 +217,11 @@ bool VM::addGlobbingPath(ARState &state, ArrayObject &argv, const Value *const b
   }
 
   const unsigned int oldSize = argv.size();
-  DefaultDirStackProvider provider(state);
-  TildeExpandStatus tildeExpandStatus{};
-  const bool failTilde = state.has(RuntimeOption::FAIL_TILDE);
   RuntimeCancelToken cancel;
-  Glob glob(pattern, option, nullptr);
+  Glob glob(pattern.pattern, option, pattern.baseDir.c_str());
   glob.setCancelToken(cancel);
   glob.setConsumer([&argv, &state](std::string &&path) {
     return argv.append(state, Value::createStr(std::move(path)));
-  });
-  glob.setTildeExpander([&provider, &tildeExpandStatus, failTilde](std::string &path) {
-    tildeExpandStatus = expandTilde(path, true, &provider);
-    return tildeExpandStatus == TildeExpandStatus::OK || !failTilde;
   });
 
   std::string err;
@@ -227,10 +242,6 @@ bool VM::addGlobbingPath(ARState &state, ArrayObject &argv, const Value *const b
   }
   case Glob::Status::CANCELED:
     raiseSystemError(state, EINTR, "glob expansion is canceled");
-    return false;
-  case Glob::Status::TILDE_FAIL:
-    assert(tildeExpandStatus != TildeExpandStatus::OK);
-    raiseTildeError(state, provider, err, tildeExpandStatus);
     return false;
   case Glob::Status::BAD_PATTERN:
     raiseGlobbingError(state, pattern, err + " in");

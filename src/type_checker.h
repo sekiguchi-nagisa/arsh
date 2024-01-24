@@ -269,7 +269,9 @@ public:
 
 class CodeCompletionContext;
 
-enum class TildeExpandStatus;
+enum class TildeExpandStatus : unsigned char;
+
+struct GlobPattern;
 
 using SignatureHandler = std::function<void(const CallSignature &, unsigned int)>;
 
@@ -688,10 +690,13 @@ private:
    */
   std::unique_ptr<Node> evalConstant(const Node &node);
 
-  enum class GlobOp : unsigned int {
+  enum class GlobOp : unsigned char {
     TILDE = 1u << 0u,
     OPTIONAL = 1u << 1u,
   };
+
+  bool concatAsGlobPattern(Token token, SourceListNode::path_iterator begin,
+                           SourceListNode::path_iterator end, GlobOp op, GlobPattern &pattern);
 
   /**
    *
