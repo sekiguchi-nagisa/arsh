@@ -219,4 +219,9 @@ assert $rr.size() == 2
 assert $rr[0] == '~hogehoge'
 assert $rr[1] == @(~)[0]
 
+shctl unset fail_tilde fail_glob
+var aa = @(~hogehoge/*fjrie${'[0-9]'}*)
+assert $aa.size() == 1
+assert $aa[0] == '~hogehoge/*fjrie[0-9]*'
+
 true

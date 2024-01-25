@@ -133,7 +133,7 @@ static Value concatPath(ARState &state, const Value *const constPool, const Valu
     } else if (begin->kind() == ValueKind::NUMBER) { // for escaped string
       const StringRef ref = constPool[begin->asNum()].asStrRef();
       std::string tmp;
-      bool r = appendAsUnescaped(ref, StringObject::MAX_SIZE, tmp);
+      const bool r = appendAsUnescaped(ref, StringObject::MAX_SIZE, tmp);
       (void)r;
       assert(r);
       if (ret.appendAsStr(state, tmp)) {
@@ -145,6 +145,28 @@ static Value concatPath(ARState &state, const Value *const constPool, const Valu
         continue;
       }
     }
+    return {};
+  }
+  return ret;
+}
+
+static Value concatAsPath(ARState &state, const GlobPattern &pattern) {
+  auto ret = Value::createStr();
+  if (!pattern.baseDir.empty()) {
+    if (!ret.appendAsStr(state, pattern.baseDir)) {
+      return {};
+    }
+    if (pattern.baseDir.back() != '/') {
+      if (!ret.appendAsStr(state, StringRef("/"))) {
+        return {};
+      }
+    }
+  }
+  std::string tmp;
+  const bool r = appendAsUnescaped(pattern.pattern, StringObject::MAX_SIZE, tmp);
+  (void)r;
+  assert(r);
+  if (!ret.appendAsStr(state, tmp)) {
     return {};
   }
   return ret;
@@ -236,8 +258,7 @@ bool VM::addGlobbingPath(ARState &state, ArrayObject &argv, const Value *const b
       raiseGlobbingError(state, pattern, "no matches for glob pattern");
       return false;
     }
-    auto path =
-        concatPath(state, cast<CompiledCode>(state.stack.code())->getConstPool(), begin, end);
+    auto path = concatAsPath(state, pattern);
     return path && argv.append(state, std::move(path));
   }
   case Glob::Status::CANCELED:

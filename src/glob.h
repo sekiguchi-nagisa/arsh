@@ -248,10 +248,15 @@ struct GlobPattern {
   std::string baseDir; // must be unescaped string
   std::string pattern; // must be glob pattern
 
+  /**
+   * for error message
+   * @param maxSize
+   * @param out
+   */
   bool join(size_t maxSize, std::string &out) const {
     if (!this->baseDir.empty()) {
-      if (appendAndEscapeGlobMeta(this->baseDir, maxSize, out)) {
-        if (out.size() + 1 <= maxSize) {
+      if (checkedAppend(this->baseDir, maxSize, out)) {
+        if (out.back() != '/' && out.size() + 1 <= maxSize) {
           out += '/';
         }
       }

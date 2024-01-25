@@ -53,6 +53,10 @@ try { var m = '-'; echo [9${m}0]*; } catch $e { $ex = $e; }
 assert $ex is GlobbingError
 assert ($ex as GlobbingError).message() == "no matches for glob pattern \`[9\\-0]*'"
 
+$ex = 2
+try { echo ~/*fjeirjf*${'[0-9]'}; } catch $e { $ex = $e; }
+assert ($ex as GlobbingError).message() == "no matches for glob pattern \`$HOME/*fjeirjf*\[0\-9\]'"
+
 
 # glob pattern have null characters, throw GlobbingError
 $ex = 34
@@ -151,6 +155,10 @@ $meta = "*"
 $aa = @(/[a-z]$meta)
 assert $aa.size() == 1
 assert $aa[0] == '/[a-z]*'
+
+$aa = @(~/*jfi[z-a]rea**${'[0-9]*'})
+assert $aa.size() == 1
+assert $aa[0] == "$HOME/*jfi[z-a]rea**[0-9]*"
 
 # fail glob and null glob
 shctl set failglob nullglob
