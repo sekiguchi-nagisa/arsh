@@ -150,7 +150,7 @@ static Value concatPath(ARState &state, const Value *const constPool, const Valu
   return ret;
 }
 
-static Value concatAsPath(ARState &state, const GlobPattern &pattern) {
+static Value joinAsPath(ARState &state, const GlobPattern &pattern) {
   auto ret = Value::createStr();
   if (!pattern.baseDir.empty()) {
     if (!ret.appendAsStr(state, pattern.baseDir)) {
@@ -187,8 +187,6 @@ static bool concatAsGlobPattern(ARState &state, const Value *const constPool, co
       }
     } else {
       assert(v.kind() == ValueKind::EXPAND_META);
-      if (v.asExpandMeta().first == ExpandMeta::BRACE_OPEN) {
-      }
       if (!checkedAppend(v.toString(), StringObject::MAX_SIZE, out)) {
         goto NOMEM;
       }
@@ -258,7 +256,7 @@ bool VM::addGlobbingPath(ARState &state, ArrayObject &argv, const Value *const b
       raiseGlobbingError(state, pattern, "no matches for glob pattern");
       return false;
     }
-    auto path = concatAsPath(state, pattern);
+    auto path = joinAsPath(state, pattern);
     return path && argv.append(state, std::move(path));
   }
   case Glob::Status::CANCELED:
