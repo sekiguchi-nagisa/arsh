@@ -8,7 +8,9 @@
 
 - **Breaking Change**: various glob expansion improvements
     - now ``?`` meta character is unicode-aware
-    - support bracket expression (`[^a-zA-Z-]`)
+    - support bracket expression (such as `[^a-zA-Z-]`)
+        - now ``[]`` is recognized as glob bracket expression
+            - single ``[`` and ``]`` are not recognized as bracket expression
         - also support character class such as ``alnum``, ``space``
     - always perform tilde expansion before glob expansion
         - if ``failglob`` is disabled and glob expansion failed, return tide expanded string
