@@ -1,0 +1,6 @@
+
+#$test($result = 'type', $lineNum = 6, $chars =8, $errorKind = 'NoGlobMatch', $status = 1)
+
+## for potentially blowup pattern
+
+source /*/../*/../*/../*/../*/../*/../*/../*/../*blablahaha
