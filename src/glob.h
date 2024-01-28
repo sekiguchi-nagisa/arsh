@@ -122,11 +122,12 @@ GlobCharClassOp lookupGlobCharClassOp(StringRef className);
 class GlobPatternScanner {
 public:
   enum class Status : unsigned char {
-    DOT,         // match '.'
-    DOTDOT,      // match '..'
-    MATCHED,     // match pattern
-    UNMATCHED,   // match failed
-    BAD_PATTERN, // broken pattern syntax
+    DOT,           // match '.'
+    DOTDOT,        // match '..'
+    MATCHED,       // match pattern
+    UNMATCHED,     // match failed
+    UNMATCHED_DOT, // match failed (dot prefix)
+    BAD_PATTERN,   // broken pattern syntax
   };
 
 private:

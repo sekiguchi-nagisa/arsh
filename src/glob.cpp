@@ -43,7 +43,7 @@ GlobPatternScanner::Status GlobPatternScanner::match(const char *name, const Glo
 
     if (!this->isEndOrSep() && *this->iter != '.') {
       if (!hasFlag(option, Glob::Option::DOTGLOB)) {
-        return Status::UNMATCHED;
+        return Status::UNMATCHED_DOT;
       }
     }
   }
@@ -485,7 +485,8 @@ std::pair<Glob::Status, bool> Glob::match(const char *baseDir, const char *&iter
 
     GlobPatternScanner scanner(iter, this->end());
     const auto ret = scanner.match(entry->d_name, this->option, err);
-    if (ret == GlobPatternScanner::Status::UNMATCHED) {
+    if (ret == GlobPatternScanner::Status::UNMATCHED ||
+        ret == GlobPatternScanner::Status::UNMATCHED_DOT) {
       continue;
     }
     if (ret == GlobPatternScanner::Status::BAD_PATTERN) {
