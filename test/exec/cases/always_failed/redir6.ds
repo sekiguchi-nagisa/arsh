@@ -1,0 +1,6 @@
+# not allow glob op in redirection target
+
+#$test($result = 'type', $lineNum = 6, $chars = 14, $errorKind = 'Required', $status = 1)
+
+
+echo hello > [

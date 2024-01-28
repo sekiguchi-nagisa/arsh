@@ -31,9 +31,9 @@ namespace arsh {
 class Glob {
 public:
   enum class Option : unsigned char {
-    DOTGLOB = 1u << 1u,    // match file names start with '.'
-    FASTGLOB = 1u << 2u,   // posix incompatible optimized search
-    GLOB_LIMIT = 1u << 4u, // limit the number of readdir
+    DOTGLOB = 1u << 0u,    // match file names start with '.'
+    FASTGLOB = 1u << 1u,   // posix incompatible optimized search
+    GLOB_LIMIT = 1u << 2u, // limit the number of readdir
   };
 
   enum class Status : unsigned char {

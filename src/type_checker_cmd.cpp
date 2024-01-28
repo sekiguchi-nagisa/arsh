@@ -143,13 +143,6 @@ void TypeChecker::checkBraceExpansion(CmdArgNode &node) {
 }
 
 void TypeChecker::checkExpansion(CmdArgNode &node) {
-  if (node.getSegmentNodes().size() == 1 && isa<WildCardNode>(*node.getSegmentNodes()[0])) {
-    if (auto &wild = cast<WildCardNode>(*node.getSegmentNodes()[0]);
-        wild.meta == ExpandMeta::BRACKET_OPEN) {
-      wild.setExpand(false); // single '[' is not treated as glob pattern
-    }
-  }
-
   this->checkBraceExpansion(node);
 
   const unsigned int size = node.getSegmentNodes().size();

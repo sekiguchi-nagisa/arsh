@@ -81,9 +81,11 @@ assert "$(echo ~/*)" == "$(echo ~/""*)"
 assert "$(echo ~/*)" == "$(echo ~/*"")"
 assert "$(echo *)" == "$(echo ""*)"
 assert "$(echo [)" == '['
+assert "$(echo ${34}['')" == '['
 assert "$(echo ])" == ']'
 assert "$(echo ]2345)" == ']2345'
 assert "$(echo [ ])" == '[ ]'
+assert "$(echo [${""}""$34)" == '['
 assert $(echo /[a-zA-Z]*).sort().join(" ") == $(sh -c 'echo /[a-zA-Z]*').sort().join(" ")
 assert $(echo /[!@]*).sort().join(" ") == $(sh -c 'echo /[!@]*').sort().join(" ")
 assert $(echo /[^@]*).sort().join(" ") == $(sh -c 'echo /[^@]*').sort().join(" ")

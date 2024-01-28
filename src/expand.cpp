@@ -227,6 +227,10 @@ bool VM::addGlobbingPath(ARState &state, ArrayObject &argv, const Value *const b
                            end, tilde, pattern)) {
     return false;
   }
+  if (pattern.baseDir.empty() && pattern.pattern.size() == 1 &&
+      pattern.pattern == "[") { // ignore '['
+    return argv.append(state, Value::createStr(pattern.pattern));
+  }
 
   Glob::Option option{};
   if (state.has(RuntimeOption::DOTGLOB)) {
