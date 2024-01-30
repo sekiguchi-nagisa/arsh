@@ -3,6 +3,7 @@
 #include "../test_common.h"
 
 #include <line_renderer.h>
+#include <comp_candidates.h>
 #include <object.h>
 #include <type_pool.h>
 
@@ -444,7 +445,7 @@ public:
 
 TEST_F(PagerTest, small1) { // less than pager length
   auto array = this->create("AAA", "BBB", "CCC", "DDD", "EEE", "FFF");
-  auto pager = ArrayPager::create(*array, this->ps, {.rows = 24, .cols = 10});
+  auto pager = CompletionPager::create(*array, this->ps, {.rows = 24, .cols = 10});
   ASSERT_EQ(2, pager.getPanes());
   ASSERT_TRUE(pager.getRows() < pager.getWinSize().rows);
   ASSERT_TRUE(pager.getRows() > array->size() / 2);
@@ -502,7 +503,7 @@ TEST_F(PagerTest, small1) { // less than pager length
 
 TEST_F(PagerTest, small2) { // less than pager length
   auto array = this->create("AAA", "BBB", "CCC", "DDD", "EEE", "FFF");
-  auto pager = ArrayPager::create(*array, this->ps, {.rows = 24, .cols = 10});
+  auto pager = CompletionPager::create(*array, this->ps, {.rows = 24, .cols = 10});
   ASSERT_EQ(2, pager.getPanes());
 
   const char *expect = "\x1b[7mAAA \x1b[0mDDD \r\nBBB EEE \r\nCCC FFF \r\n";
@@ -567,7 +568,7 @@ TEST_F(PagerTest, small2) { // less than pager length
 
 TEST_F(PagerTest, small3) { // less than pager length
   auto array = this->create("AAAAA", "BBBBB", "CCCCC", "DDDDD", "EEEEE");
-  auto pager = ArrayPager::create(*array, this->ps, {.rows = 24, .cols = 20});
+  auto pager = CompletionPager::create(*array, this->ps, {.rows = 24, .cols = 20});
   ASSERT_EQ(2, pager.getPanes());
 
   /**
@@ -615,7 +616,7 @@ TEST_F(PagerTest, small3) { // less than pager length
 
 TEST_F(PagerTest, large1) { // larger than pager length
   auto array = this->create("AAA", "BBB", "CC\nC", "DDD", "EEE", "FFF", "GG\t", "HHH");
-  auto pager = ArrayPager::create(*array, this->ps, {.rows = 5, .cols = 20});
+  auto pager = CompletionPager::create(*array, this->ps, {.rows = 5, .cols = 20});
   ASSERT_EQ(2, pager.getPanes());
   ASSERT_TRUE(pager.getRows() < array->size() / 2);
   ASSERT_EQ(0, pager.getCurRow());
@@ -709,7 +710,7 @@ TEST_F(PagerTest, large2) { // larger than pager length
    * DDD HHH
    */
   auto array = this->create("AAA", "BBB", "CC\nC", "DDD", "EEE", "FFF", "GGG", "HHH");
-  auto pager = ArrayPager::create(*array, this->ps, {.rows = 5, .cols = 10});
+  auto pager = CompletionPager::create(*array, this->ps, {.rows = 5, .cols = 10});
   ASSERT_EQ(2, pager.getPanes());
 
   const char *expect = "\x1b[7mAAA \x1b[0mEEE \r\nBBB FFF \r\n";
@@ -792,7 +793,7 @@ TEST_F(PagerTest, single) { // larger than pager length
    * DDD
    */
   auto array = this->create("AAA", "BBB", "CCC", "DDD");
-  auto pager = ArrayPager::create(*array, this->ps, {.rows = 100, .cols = 5});
+  auto pager = CompletionPager::create(*array, this->ps, {.rows = 100, .cols = 5});
   ASSERT_EQ(1, pager.getPanes());
   ASSERT_EQ(0, pager.getCurRow());
   ASSERT_EQ(0, pager.getIndex());
@@ -853,7 +854,7 @@ TEST_F(PagerTest, truncate) {
   this->ps.zwjSeqFallback = true;
   auto array = this->create("@@@", "ABCD123456", "ABCD987\r", "ABCDEああ", "123456\t\t",
                             "12345👩🏼‍🏭111");
-  auto pager = ArrayPager::create(*array, this->ps, {.rows = 100, .cols = 10});
+  auto pager = CompletionPager::create(*array, this->ps, {.rows = 100, .cols = 10});
   ASSERT_EQ(1, pager.getPanes());
   ASSERT_EQ(8, pager.getPaneLen());
   pager.setShowCursor(false);

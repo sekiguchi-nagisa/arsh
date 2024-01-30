@@ -59,7 +59,9 @@ namespace arsh {
   OP(Job)                                                                                          \
   OP(Pipeline)                                                                                     \
   OP(Redir)                                                                                        \
-  OP(LineEditor)
+  OP(LineEditor)                                                                                   \
+  OP(CompCandidate)                                                                                \
+  OP(CompCandidates)
 
 /**
  * for LLVM-style RTTI

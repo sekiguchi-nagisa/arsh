@@ -169,7 +169,7 @@ hoge(p : Param) { $p.p'))
 
 # type
 var types = [
-    'Any',  "ArgumentError", 'ArithmeticError', "Array", 'Bool', 'Boolean', 'CLI', 'CLIError', 'Command', 'Error', 'ExecError', "FD", 'Float',
+    'Any',  "ArgumentError", 'ArithmeticError', "Array", 'Bool', 'Boolean','CLI', 'CLIError','Candidates', 'Command', 'Error', 'ExecError', "FD", 'Float',
     'Func', 'GlobbingError', 'IllegalAccessError', 'Int', 'InvalidOperationError', 'Job', 'KeyNotFoundError', 
     'LineEditor', "Map", 'Module', 'Nothing', 'Option',
     'OutOfRangeError', 'Regex', 'RegexMatch', 'RegexMatchError', 'RegexSyntaxError', 'Signal', 'Signals',

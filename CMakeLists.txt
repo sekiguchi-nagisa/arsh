@@ -251,6 +251,7 @@ set(ARSH_SRC
         src/line_buffer.cpp
         src/glob.cpp
         src/expand.cpp
+        src/comp_candidates.cpp
         ${lexer_src}
         ${bind_src}
         ${embed_src})
