@@ -136,13 +136,6 @@ public:
 
   Value getConfigs(ARState &state) const;
 
-  enum class CompStatus {
-    OK,
-    ERROR,    // interval error during completion
-    CANCEL,   // cancel completion
-    CONTINUE, // continue completion candidates paging
-  };
-
 private:
   int enableRawMode(int fd);
 
@@ -165,7 +158,7 @@ private:
 
   ssize_t editInRawMode(ARState &state, struct linenoiseState &l);
 
-  CompStatus completeLine(ARState &state, struct linenoiseState &ls, KeyCodeReader &reader);
+  EditActionStatus completeLine(ARState &state, struct linenoiseState &ls, KeyCodeReader &reader);
 
   Value kickCallback(ARState &state, Value &&callback, CallArgs &&callArgs);
 

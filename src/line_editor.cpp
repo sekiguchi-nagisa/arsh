@@ -504,8 +504,7 @@ static std::pair<unsigned int, unsigned int> renderPrompt(const struct linenoise
 
 static std::pair<unsigned int, bool> renderLines(const struct linenoiseState &l, size_t promptCols,
                                                  ObserverPtr<const ANSIEscapeSeqMap> escapeSeqMap,
-                                                 ObserverPtr<ArrayPager> pager,
-                                                 std::string &out) {
+                                                 ObserverPtr<ArrayPager> pager, std::string &out) {
   size_t rows = 0;
   StringRef lineRef = l.buf.get();
   if (pager) {
@@ -793,9 +792,9 @@ ssize_t LineEditorObject::editInRawMode(ARState &state, struct linenoiseState &l
     case EditActionType::COMPLETE:
       if (this->completionCallback) {
         auto s = this->completeLine(state, l, reader);
-        if (s == CompStatus::ERROR) {
+        if (s == EditActionStatus::ERROR) {
           return -1;
-        } else if (s == CompStatus::CANCEL) {
+        } else if (s == EditActionStatus::CANCEL) {
           errno = EAGAIN;
           return -1;
         }
@@ -1114,43 +1113,8 @@ static size_t resolveEstimatedSuffix(const LineBuffer &buf, const ArrayObject &c
   return matched ? offset : buf.getCursor();
 }
 
-static LineEditorObject::CompStatus
-waitPagerAction(ArrayPager &pager, const KeyBindings &bindings, KeyCodeReader &reader) {
-  // read key code and update pager state
-  if (reader.fetch() <= 0) {
-    return LineEditorObject::CompStatus::ERROR;
-  }
-  if (!reader.hasControlChar()) {
-    return LineEditorObject::CompStatus::OK;
-  }
-  const auto *action = bindings.findPagerAction(reader.get());
-  if (!action) {
-    return LineEditorObject::CompStatus::OK;
-  }
-  reader.clear();
-  switch (*action) {
-  case PagerAction::SELECT:
-    return LineEditorObject::CompStatus::OK;
-  case PagerAction::CANCEL:
-    return LineEditorObject::CompStatus::CANCEL;
-  case PagerAction::PREV:
-    pager.moveCursorToForward();
-    break;
-  case PagerAction::NEXT:
-    pager.moveCursorToNext();
-    break;
-  case PagerAction::LEFT:
-    pager.moveCursorToLeft();
-    break;
-  case PagerAction::RIGHT:
-    pager.moveCursorToRight();
-    break;
-  }
-  return LineEditorObject::CompStatus::CONTINUE;
-}
-
-LineEditorObject::CompStatus
-LineEditorObject::completeLine(ARState &state, struct linenoiseState &ls, KeyCodeReader &reader) {
+EditActionStatus LineEditorObject::completeLine(ARState &state, struct linenoiseState &ls,
+                                                KeyCodeReader &reader) {
   reader.clear();
 
   auto candidates = this->kickCompletionCallback(state, ls.buf.getToCursor());
@@ -1158,7 +1122,7 @@ LineEditorObject::completeLine(ARState &state, struct linenoiseState &ls, KeyCod
     this->refreshLine(ls);
   }
   if (!candidates) {
-    return CompStatus::CANCEL;
+    return EditActionStatus::CANCEL;
   }
 
   StringRef inserting;
@@ -1167,16 +1131,16 @@ LineEditorObject::completeLine(ARState &state, struct linenoiseState &ls, KeyCod
     if (ls.buf.insertToCursor(inserting)) {
       this->refreshLine(ls);
     } else {
-      return CompStatus::ERROR;
+      return EditActionStatus::ERROR;
     }
   }
   if (const auto len = candidates->size(); len == 0) {
     linenoiseBeep(ls.ofd);
-    return CompStatus::OK;
+    return EditActionStatus::OK;
   } else if (len == 1) {
-    return CompStatus::OK;
+    return EditActionStatus::OK;
   } else {
-    auto status = CompStatus::CONTINUE;
+    auto status = EditActionStatus::CONTINUE;
     auto pager = ArrayPager::create(*candidates, ls.ps, {.rows = ls.rows, .cols = ls.cols});
 
     /**
@@ -1186,16 +1150,16 @@ LineEditorObject::completeLine(ARState &state, struct linenoiseState &ls, KeyCod
     pager.setShowCursor(false);
     this->refreshLine(ls, true, makeObserver(pager));
     if (reader.fetch() <= 0) {
-      status = CompStatus::ERROR;
+      status = EditActionStatus::ERROR;
       goto END;
     }
     if (!reader.hasControlChar()) {
-      status = CompStatus::OK;
+      status = EditActionStatus::OK;
       goto END;
     }
     if (auto *action = this->keyBindings.findAction(reader.get());
         !action || action->type != EditActionType::COMPLETE) {
-      status = CompStatus::OK;
+      status = EditActionStatus::OK;
       goto END;
     }
 
@@ -1203,7 +1167,7 @@ LineEditorObject::completeLine(ARState &state, struct linenoiseState &ls, KeyCod
      * paging completion candidates
      */
     pager.setShowCursor(true);
-    for (size_t prevCanLen = 0; status == CompStatus::CONTINUE;) {
+    for (size_t prevCanLen = 0; status == EditActionStatus::CONTINUE;) {
       // render pager
       if (prevCanLen) {
         ls.buf.undo();
@@ -1215,7 +1179,7 @@ LineEditorObject::completeLine(ARState &state, struct linenoiseState &ls, KeyCod
       if (ls.buf.insertToCursor({can.data() + prefixLen, prevCanLen})) {
         this->refreshLine(ls, true, makeObserver(pager));
       } else {
-        status = CompStatus::ERROR;
+        status = EditActionStatus::ERROR;
         break;
       }
       status = waitPagerAction(pager, this->keyBindings, reader);

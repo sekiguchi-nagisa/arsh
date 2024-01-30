@@ -18,6 +18,7 @@
 #define ARSH_PAGER_H
 
 #include "constant.h"
+#include "keycode.h"
 #include "misc/buffer.hpp"
 
 namespace arsh {
@@ -211,6 +212,9 @@ public:
     }
   }
 };
+
+EditActionStatus waitPagerAction(ArrayPager &pager, const KeyBindings &bindings,
+                                 KeyCodeReader &reader);
 
 } // namespace arsh
 

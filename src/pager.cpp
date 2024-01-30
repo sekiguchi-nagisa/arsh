@@ -155,4 +155,39 @@ void ArrayPager::render(std::string &out) const {
   }
 }
 
+EditActionStatus waitPagerAction(ArrayPager &pager, const KeyBindings &bindings,
+                                 KeyCodeReader &reader) {
+  // read key code and update pager state
+  if (reader.fetch() <= 0) {
+    return EditActionStatus::ERROR;
+  }
+  if (!reader.hasControlChar()) {
+    return EditActionStatus::OK;
+  }
+  const auto *action = bindings.findPagerAction(reader.get());
+  if (!action) {
+    return EditActionStatus::OK;
+  }
+  reader.clear();
+  switch (*action) {
+  case PagerAction::SELECT:
+    return EditActionStatus::OK;
+  case PagerAction::CANCEL:
+    return EditActionStatus::CANCEL;
+  case PagerAction::PREV:
+    pager.moveCursorToForward();
+    break;
+  case PagerAction::NEXT:
+    pager.moveCursorToNext();
+    break;
+  case PagerAction::LEFT:
+    pager.moveCursorToLeft();
+    break;
+  case PagerAction::RIGHT:
+    pager.moveCursorToRight();
+    break;
+  }
+  return EditActionStatus::CONTINUE;
+}
+
 } // namespace arsh

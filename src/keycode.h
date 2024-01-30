@@ -222,6 +222,13 @@ struct EditAction {
       : type(EditActionType::CUSTOM), customActionType(type), customActionIndex(index) {}
 };
 
+enum class EditActionStatus : unsigned char {
+  OK,
+  ERROR,    // interval error during edit action
+  CANCEL,   // cancel edit action
+  CONTINUE, // continue completion candidates paging
+};
+
 class CustomActionMap {
 private:
   StrRefMap<unsigned int> indexes;

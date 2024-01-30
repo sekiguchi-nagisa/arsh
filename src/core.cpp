@@ -305,22 +305,21 @@ bool RuntimeCancelToken::operator()() {
 class DefaultCompConsumer : public CompCandidateConsumer {
 private:
   ARState &state;
-  Value reply;
+  ObjPtr<ArrayObject> reply;
   CompCandidateKind kind{CompCandidateKind::COMMAND_NAME};
   bool overflow{false};
 
 public:
   explicit DefaultCompConsumer(ARState &state)
-      : state(state),
-        reply(Value::create<ArrayObject>(this->state.typePool.get(TYPE::StringArray))) {}
+      : state(state), reply(toObjPtr<ArrayObject>(Value::create<ArrayObject>(
+                          this->state.typePool.get(TYPE::StringArray)))) {}
 
   void operator()(const CompCandidate &candidate) override {
     if (candidate.value.empty()) {
       return;
     }
     if (!this->overflow) {
-      auto &obj = typeAs<ArrayObject>(this->reply);
-      if (!obj.append(this->state, Value::createStr(candidate.quote()))) {
+      if (!this->reply->append(this->state, Value::createStr(candidate.quote()))) {
         this->overflow = true;
         return;
       }
@@ -330,9 +329,9 @@ public:
 
   CompCandidateKind getKind() const { return this->kind; }
 
-  Value finalize() && {
-    if (auto &values = typeAs<ArrayObject>(this->reply).refValues(); values.size() > 1) {
-      typeAs<ArrayObject>(this->reply).sortAsStrArray(); // not check iterator invalidation
+  ObjPtr<ArrayObject> finalize() && {
+    if (auto &values = this->reply->refValues(); values.size() > 1) {
+      this->reply->sortAsStrArray(); // not check iterator invalidation
       auto iter = std::unique(values.begin(), values.end(), [](const Value &x, const Value &y) {
         return x.asStrRef() == y.asStrRef();
       });
