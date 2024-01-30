@@ -690,4 +690,19 @@ void JobTable::removeTerminatedJobs() {
   }
 }
 
+bool formatJobDesc(const StringRef ref, std::string &out) {
+  return splitByDelim(ref, '\n', [&out](StringRef sub, bool newline) {
+    out += sub;
+    if (newline) {
+      out += "\\n";
+    }
+    if (out.size() > SYS_LIMIT_JOB_DESC_LEN) {
+      out.resize(SYS_LIMIT_JOB_DESC_LEN - 3);
+      out += "...";
+      return false;
+    }
+    return true;
+  });
+}
+
 } // namespace arsh

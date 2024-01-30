@@ -20,7 +20,6 @@
 #include <tuple>
 
 #include "detect.hpp"
-#include "enum_util.hpp"
 #include "string_ref.hpp"
 #include "unicode.hpp"
 

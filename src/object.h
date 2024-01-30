@@ -28,7 +28,6 @@
 
 #include "constant.h"
 #include "misc/files.hpp"
-#include "misc/grapheme.hpp"
 #include "misc/rtti.hpp"
 #include "misc/string_ref.hpp"
 #include "regex_wrapper.h"
@@ -330,6 +329,7 @@ struct ObjectConstructor {
 };
 
 class StrBuilder;
+class GraphemeCluster;
 
 class Value : public RawValue {
 private:
@@ -754,6 +754,28 @@ public:
   const PCRE &getRE() const { return this->re; }
 
   const char *getStr() const { return this->re.getPattern(); }
+};
+
+// for command argument construction
+class CmdArgsBuilder {
+private:
+  ARState &state;
+  ObjPtr<ArrayObject> argv;
+  Value redir; // may be null, invalid, RedirObject
+
+public:
+  explicit CmdArgsBuilder(ARState &state, ObjPtr<ArrayObject> argv, Value &&redir)
+      : state(state), argv(std::move(argv)), redir(std::move(redir)) {}
+
+  /**
+   *
+   * @param arg
+   * @return
+   * if has error, return false
+   */
+  bool add(Value &&arg);
+
+  Value takeRedir() && { return std::move(this->redir); }
 };
 
 class RegexMatchObject : public ObjectWithRtti<ObjectKind::RegexMatch> {
@@ -1390,15 +1412,42 @@ public:
   ~TimerObject();
 };
 
-/**
- * for JobObject
- * @param ref
- * @param out
- * append formatted string
- * @return
- * if out.size() reaches limit, trim out and return false
- */
-bool formatJobDesc(StringRef ref, std::string &out);
+class CandidateObject : public ObjectWithRtti<ObjectKind::Candidate> {
+private:
+  const unsigned int allocSize; // len(candidate) + len(signature)
+  const unsigned int size;      // len(candidate)
+
+  char payload[]; // candidate + signature
+
+  CandidateObject(StringRef cadidate, StringRef signature)
+      : ObjectWithRtti(TYPE::String), allocSize(cadidate.size() + signature.size()),
+        size(cadidate.size()) {
+    memcpy(this->payload, cadidate.data(), cadidate.size());
+    memcpy(this->payload + this->size, signature.data(), signature.size());
+  }
+
+public:
+  static ObjPtr<CandidateObject> create(StringRef candidate, StringRef signature) {
+    assert(candidate.size() <= INT32_MAX);
+    assert(signature.size() <= INT32_MAX);
+    const unsigned int allocSize = candidate.size() + signature.size();
+    void *ptr = malloc(sizeof(CandidateObject) + sizeof(char) * allocSize);
+    auto *obj = new (ptr) CandidateObject(candidate, signature);
+    return ObjPtr<CandidateObject>(obj);
+  }
+
+  static void operator delete(void *ptr) noexcept { // NOLINT
+    free(ptr);
+  }
+
+  unsigned int candidateSize() const { return this->size; }
+
+  unsigned int signatureSize() const { return this->allocSize - this->size; }
+
+  StringRef candidate() const { return {this->payload, this->candidateSize()}; }
+
+  StringRef signature() const { return {this->payload + this->size, this->signatureSize()}; }
+};
 
 }; // namespace arsh
 

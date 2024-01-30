@@ -20,6 +20,7 @@
 #include <langinfo.h>
 
 #include "cmd.h"
+#include "misc/grapheme.hpp"
 #include "misc/num_util.hpp"
 #include "misc/time_util.hpp"
 #include "ordered_map.h"

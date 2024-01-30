@@ -17,49 +17,12 @@
 #ifndef ARSH_PAGER_H
 #define ARSH_PAGER_H
 
-#include "object.h"
+#include "constant.h"
+#include "misc/buffer.hpp"
 
 namespace arsh {
 
-// for runtime code completion
-
-class CandidateObject : public ObjectWithRtti<ObjectKind::Candidate> {
-private:
-  const unsigned int allocSize; // len(candidate) + len(signature)
-  const unsigned int size;      // len(candidate)
-
-  char payload[]; // candidate + signature
-
-  CandidateObject(StringRef cadidate, StringRef signature)
-      : ObjectWithRtti(TYPE::String), allocSize(cadidate.size() + signature.size()),
-        size(cadidate.size()) {
-    memcpy(this->payload, cadidate.data(), cadidate.size());
-    memcpy(this->payload + this->size, signature.data(), signature.size());
-  }
-
-public:
-  static ObjPtr<CandidateObject> create(StringRef candidate, StringRef signature) {
-    assert(candidate.size() <= INT32_MAX);
-    assert(signature.size() <= INT32_MAX);
-    const unsigned int allocSize = candidate.size() + signature.size();
-    void *ptr = malloc(sizeof(CandidateObject) + sizeof(char) * allocSize);
-    auto *obj = new (ptr) CandidateObject(candidate, signature);
-    return ObjPtr<CandidateObject>(obj);
-  }
-
-  static void operator delete(void *ptr) noexcept { // NOLINT
-    free(ptr);
-  }
-
-  unsigned int candidateSize() const { return this->size; }
-
-  unsigned int signatureSize() const { return this->allocSize - this->size; }
-
-  StringRef candidate() const { return {this->payload, this->candidateSize()}; }
-
-  StringRef signature() const { return {this->payload + this->size, this->signatureSize()}; }
-};
-
+class ArrayObject;
 class LineRenderer;
 struct CharWidthProperties;
 

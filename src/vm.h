@@ -429,28 +429,6 @@ enum class CmdCallAttr : unsigned char {
 template <>
 struct allow_enum_bitop<CmdCallAttr> : std::true_type {};
 
-// for command argument construction
-class CmdArgsBuilder {
-private:
-  ARState &state;
-  ObjPtr<ArrayObject> argv;
-  Value redir; // may be null, invalid, RedirObject
-
-public:
-  explicit CmdArgsBuilder(ARState &state, ObjPtr<ArrayObject> argv, Value &&redir)
-      : state(state), argv(std::move(argv)), redir(std::move(redir)) {}
-
-  /**
-   *
-   * @param arg
-   * @return
-   * if has error, return false
-   */
-  bool add(Value &&arg);
-
-  Value takeRedir() && { return std::move(this->redir); }
-};
-
 class RecursionGuard {
 private:
   ARState &state;

@@ -635,6 +635,16 @@ private:
   void removeTerminatedJobs();
 };
 
+/**
+ * for JobObject
+ * @param ref
+ * @param out
+ * append formatted string
+ * @return
+ * if out.size() reaches limit, trim out and return false
+ */
+bool formatJobDesc(StringRef ref, std::string &out);
+
 } // namespace arsh
 
 #endif // ARSH_JOB_H
