@@ -115,9 +115,9 @@
 #include <sys/ioctl.h>
 #include <unistd.h>
 
-#include "comp_candidates.h"
 #include "line_buffer.h"
 #include "line_editor.h"
+#include "pager.h"
 #include "vm.h"
 
 // ++++++++++ copied from linenoise.c ++++++++++++++
@@ -504,7 +504,8 @@ static std::pair<unsigned int, unsigned int> renderPrompt(const struct linenoise
 
 static std::pair<unsigned int, bool> renderLines(const struct linenoiseState &l, size_t promptCols,
                                                  ObserverPtr<const ANSIEscapeSeqMap> escapeSeqMap,
-                                                 ObserverPtr<CompletionPager> pager, std::string &out) {
+                                                 ObserverPtr<ArrayPager> pager,
+                                                 std::string &out) {
   size_t rows = 0;
   StringRef lineRef = l.buf.get();
   if (pager) {
@@ -539,7 +540,7 @@ static std::pair<unsigned int, bool> renderLines(const struct linenoiseState &l,
  * Rewrite the currently edited line accordingly to the buffer content,
  * cursor position, and number of columns of the terminal. */
 void LineEditorObject::refreshLine(struct linenoiseState &l, bool repaint,
-                                   ObserverPtr<CompletionPager> pager) {
+                                   ObserverPtr<ArrayPager> pager) {
   updateWinSize(l);
   if (pager) {
     pager->updateWinSize({.rows = l.rows, .cols = l.cols});
@@ -1113,8 +1114,8 @@ static size_t resolveEstimatedSuffix(const LineBuffer &buf, const ArrayObject &c
   return matched ? offset : buf.getCursor();
 }
 
-static LineEditorObject::CompStatus waitPagerAction(CompletionPager &pager, const KeyBindings &bindings,
-                                                    KeyCodeReader &reader) {
+static LineEditorObject::CompStatus
+waitPagerAction(ArrayPager &pager, const KeyBindings &bindings, KeyCodeReader &reader) {
   // read key code and update pager state
   if (reader.fetch() <= 0) {
     return LineEditorObject::CompStatus::ERROR;
@@ -1176,7 +1177,7 @@ LineEditorObject::completeLine(ARState &state, struct linenoiseState &ls, KeyCod
     return CompStatus::OK;
   } else {
     auto status = CompStatus::CONTINUE;
-    auto pager = CompletionPager::create(*candidates, ls.ps, {.rows = ls.rows, .cols = ls.cols});
+    auto pager = ArrayPager::create(*candidates, ls.ps, {.rows = ls.rows, .cols = ls.cols});
 
     /**
      * first, only show pager and wait next completion action.

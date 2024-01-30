@@ -473,6 +473,8 @@ constexpr size_t SYS_LIMIT_ARG_ENTRY_MAX = UINT16_MAX;
 constexpr size_t SYS_LIMIT_ATTR_NUM = 8;
 constexpr size_t SYS_LIMIT_ATTR_CHOICE_SIZE = 16;
 
+constexpr size_t SYS_LINE_RENDERER_TAB_WIDTH = 4;
+
 // helper macro definition
 #if 1
 

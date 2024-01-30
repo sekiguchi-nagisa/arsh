@@ -208,6 +208,11 @@ public:
 
   bool isCLIRecordType() const { return this->typeKind() == TypeKind::CLIRecord; }
 
+  bool isCollectionLike() const {
+    return this->isArrayType() || this->isMapType() || this->isTupleType() ||
+           this->isRecordOrDerived() || this->is(TYPE::RegexMatch) || this->is(TYPE::Candidates);
+  }
+
   /**
    * get super type of this type.
    * return null, if has no super type(ex. AnyType, VoidType).

@@ -60,8 +60,7 @@ namespace arsh {
   OP(Pipeline)                                                                                     \
   OP(Redir)                                                                                        \
   OP(LineEditor)                                                                                   \
-  OP(CompCandidate)                                                                                \
-  OP(CompCandidates)
+  OP(Candidate)
 
 /**
  * for LLVM-style RTTI

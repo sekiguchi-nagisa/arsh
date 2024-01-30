@@ -28,7 +28,7 @@ struct linenoiseState;
 namespace arsh {
 
 class LineBuffer;
-class CompletionPager;
+class ArrayPager;
 
 class LineEditorObject : public ObjectWithRtti<ObjectKind::LineEditor> {
 private:
@@ -149,7 +149,7 @@ private:
   void disableRawMode(int fd);
 
   void refreshLine(struct linenoiseState &l, bool repaint = true,
-                   ObserverPtr<CompletionPager> pager = nullptr);
+                   ObserverPtr<ArrayPager> pager = nullptr);
 
   ssize_t accept(ARState &state, struct linenoiseState &l);
 

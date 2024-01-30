@@ -17,12 +17,12 @@
 #include <memory>
 
 #include "arg_parser.h"
-#include "comp_candidates.h"
 #include "core.h"
 #include "line_editor.h"
 #include "misc/format.hpp"
 #include "misc/num_util.hpp"
 #include "ordered_map.h"
+#include "pager.h"
 #include "redir.h"
 #include "vm.h"
 
@@ -364,6 +364,12 @@ bool Value::opStr(StrBuilder &builder) const {
       return builder.add(builder.getState().typePool.get(this->getTypeID()).getNameRef()) &&
              builder.add(": ") && builder.add(ref);
     }
+    case ObjectKind::Candidate: {
+      auto &obj = typeAs<CandidateObject>(*this);
+      const auto candidate = obj.candidate();
+      const auto signature = obj.signature();
+      return builder.add(candidate) && builder.add("@") && builder.add(signature);
+    }
     default:
       break;
     }
@@ -423,6 +429,10 @@ bool Value::opInterp(StrBuilder &builder) const {
         TRY(e.opInterp(builder));
       }
       return true;
+    }
+    case ObjectKind::Candidate: {
+      const auto &obj = typeAs<CandidateObject>(*this);
+      return builder.add(obj.candidate()) && builder.add(" ") && builder.add(obj.signature());
     }
     default:
       break;
@@ -720,6 +730,11 @@ bool CmdArgsBuilder::add(Value &&arg) {
         TRY(this->add(Value(obj[i])));
       }
       return true;
+    }
+    case ObjectKind::Candidate: {
+      const auto &obj = typeAs<CandidateObject>(arg);
+      return this->add(Value::createStr(obj.candidate())) &&
+             this->add(Value::createStr(obj.signature()));
     }
     default:
       break;

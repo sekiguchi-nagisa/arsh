@@ -14,24 +14,23 @@
  * limitations under the License.
  */
 
-#ifndef ARSH_COMP_CANDIDATES_H
-#define ARSH_COMP_CANDIDATES_H
+#ifndef ARSH_PAGER_H
+#define ARSH_PAGER_H
 
-#include "line_editor.h"
 #include "object.h"
 
 namespace arsh {
 
 // for runtime code completion
 
-class CompCandidateObject : public ObjectWithRtti<ObjectKind::CompCandidate> {
+class CandidateObject : public ObjectWithRtti<ObjectKind::Candidate> {
 private:
   const unsigned int allocSize; // len(candidate) + len(signature)
   const unsigned int size;      // len(candidate)
 
   char payload[]; // candidate + signature
 
-  CompCandidateObject(StringRef cadidate, StringRef signature)
+  CandidateObject(StringRef cadidate, StringRef signature)
       : ObjectWithRtti(TYPE::String), allocSize(cadidate.size() + signature.size()),
         size(cadidate.size()) {
     memcpy(this->payload, cadidate.data(), cadidate.size());
@@ -39,13 +38,13 @@ private:
   }
 
 public:
-  static ObjPtr<CompCandidateObject> create(StringRef candidate, StringRef signature) {
+  static ObjPtr<CandidateObject> create(StringRef candidate, StringRef signature) {
     assert(candidate.size() <= INT32_MAX);
     assert(signature.size() <= INT32_MAX);
     const unsigned int allocSize = candidate.size() + signature.size();
-    void *ptr = malloc(sizeof(CompCandidateObject) + sizeof(char) * allocSize);
-    auto *obj = new (ptr) CompCandidateObject(candidate, signature);
-    return ObjPtr<CompCandidateObject>(obj);
+    void *ptr = malloc(sizeof(CandidateObject) + sizeof(char) * allocSize);
+    auto *obj = new (ptr) CandidateObject(candidate, signature);
+    return ObjPtr<CandidateObject>(obj);
   }
 
   static void operator delete(void *ptr) noexcept { // NOLINT
@@ -61,35 +60,13 @@ public:
   StringRef signature() const { return {this->payload + this->size, this->signatureSize()}; }
 };
 
-class CompCandidatesObject : public ObjectWithRtti<ObjectKind::CompCandidates> {
-private:
-  std::vector<Value> values;
-
-public:
-  static constexpr size_t MAX_SIZE = SYS_LIMIT_ARRAY_MAX;
-
-  CompCandidatesObject() : ObjectWithRtti(TYPE::Candidates) {}
-
-  const auto &getValues() const { return this->values; }
-
-  unsigned int size() const { return this->values.size(); }
-
-  /**
-   * \brief
-   * @param state
-   * @param candidate
-   * must be String or CompCandidate
-   * @return if has error, return false
-   */
-  [[nodiscard]] bool add(ARState &state, Value &&candidate);
-
-  [[nodiscard]] bool add(ARState &state, StringRef candidate, StringRef signature);
-};
+class LineRenderer;
+struct CharWidthProperties;
 
 /**
  * for completion candidates paging
  */
-class CompletionPager {
+class ArrayPager {
 public:
   struct WindowSize {
     unsigned int rows{24};
@@ -105,8 +82,8 @@ public:
     unsigned int tabs; // number of extra tab characters
 
     unsigned int itemLen() const {
-      return this->len + (LineRenderer::TAB_WIDTH - this->len % LineRenderer::TAB_WIDTH) +
-             this->tabs * LineRenderer::TAB_WIDTH;
+      return this->len + (SYS_LINE_RENDERER_TAB_WIDTH - this->len % SYS_LINE_RENDERER_TAB_WIDTH) +
+             this->tabs * SYS_LINE_RENDERER_TAB_WIDTH;
     }
   };
 
@@ -115,7 +92,7 @@ private:
   static constexpr unsigned int MAX_PANE_NUM = 4;
 
   const CharWidthProperties &ps;
-  const ArrayObject &obj; // must be [String]
+  const ArrayObject &obj; // must be [String] or Candidates
   WindowSize winSize{0, 0};
   const FlexBuffer<ItemEntry> items; // pre-computed item column size
   const unsigned int maxLenIndex;    // index of item with longest len
@@ -127,15 +104,15 @@ private:
   bool showCursor{true};             // if true, render cursor
   bool showPageNum{false};           // if true, render page number
 
-  CompletionPager(const CharWidthProperties &ps, const ArrayObject &obj,
-                  FlexBuffer<ItemEntry> &&items, unsigned int maxIndex, WindowSize winSize)
+  ArrayPager(const CharWidthProperties &ps, const ArrayObject &obj, FlexBuffer<ItemEntry> &&items,
+             unsigned int maxIndex, WindowSize winSize)
       : ps(ps), obj(obj), items(std::move(items)), maxLenIndex(maxIndex) {
     this->updateWinSize(winSize);
   }
 
 public:
-  static CompletionPager create(const ArrayObject &obj, const CharWidthProperties &ps,
-                                WindowSize winSize);
+  static ArrayPager create(const ArrayObject &obj, const CharWidthProperties &ps,
+                           WindowSize winSize);
 
   /**
    * update windows size.
@@ -274,4 +251,4 @@ public:
 
 } // namespace arsh
 
-#endif // ARSH_COMP_CANDIDATES_H
+#endif // ARSH_PAGER_H

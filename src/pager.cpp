@@ -14,36 +14,19 @@
  * limitations under the License.
  */
 
-#include "comp_candidates.h"
+#include "pager.h"
 #include "core.h"
+#include "line_renderer.h"
 #include "misc/format.hpp"
 
 namespace arsh {
-
-// ##################################
-// ##     CompCandidatesObject     ##
-// ##################################
-
-bool CompCandidatesObject::add(ARState &state, Value &&candidate) {
-  if (unlikely(this->size() == MAX_SIZE)) {
-    raiseError(state, TYPE::OutOfRangeError, "reach Candidates size limit");
-    return false;
-  }
-  this->values.push_back(std::move(candidate));
-  return true;
-}
-
-bool CompCandidatesObject::add(ARState &state, StringRef candidate, StringRef signature) {
-  Value v = CompCandidateObject::create(candidate, signature);
-  return this->add(state, std::move(v));
-}
 
 // ########################
 // ##     ArrayPager     ##
 // ########################
 
-CompletionPager CompletionPager::create(const ArrayObject &obj, const CharWidthProperties &ps,
-                                        WindowSize winSize) {
+ArrayPager ArrayPager::create(const ArrayObject &obj, const CharWidthProperties &ps,
+                              WindowSize winSize) {
   unsigned int maxLen = 0;
   unsigned int maxIndex = 0;
   FlexBuffer<ItemEntry> items;
@@ -75,7 +58,7 @@ CompletionPager CompletionPager::create(const ArrayObject &obj, const CharWidthP
   return {ps, obj, std::move(items), maxIndex, winSize};
 }
 
-void CompletionPager::updateWinSize(WindowSize size) {
+void ArrayPager::updateWinSize(WindowSize size) {
   if (this->getWinSize() == size) {
     return; // no update
   }
@@ -113,7 +96,7 @@ void CompletionPager::updateWinSize(WindowSize size) {
   }
 }
 
-static void renderItem(LineRenderer &renderer, StringRef ref, const CompletionPager::ItemEntry &e) {
+static void renderItem(LineRenderer &renderer, StringRef ref, const ArrayPager::ItemEntry &e) {
   renderer.renderLines(ref);
   renderer.renderLines("\t");
   for (unsigned int i = 0; i < e.tabs; i++) {
@@ -121,7 +104,7 @@ static void renderItem(LineRenderer &renderer, StringRef ref, const CompletionPa
   }
 }
 
-void CompletionPager::render(std::string &out) const {
+void ArrayPager::render(std::string &out) const {
   /**
    * resolve start index.
    * example,

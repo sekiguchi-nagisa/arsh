@@ -105,7 +105,7 @@ public:
     TRUNCATE,
   };
 
-  static constexpr unsigned int TAB_WIDTH = 4;
+  static constexpr unsigned int TAB_WIDTH = SYS_LINE_RENDERER_TAB_WIDTH;
 
 private:
   const CharWidthProperties &ps;
