@@ -54,6 +54,9 @@ void CandidatesWrapper::sortAndDedup(unsigned int beginOffset) {
 
 StringRef CandidatesWrapper::getCommonPrefixStr() const {
   const auto size = this->values().size();
+  if (size == 0) {
+    return "";
+  }
   if (size == 1) {
     return this->getCandidateAt(0);
   }
