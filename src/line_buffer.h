@@ -17,6 +17,7 @@
 #ifndef ARSH_LINE_BUFFER_H
 #define ARSH_LINE_BUFFER_H
 
+#include "constant.h"
 #include "misc/buffer.hpp"
 #include "misc/ring_buffer.hpp"
 #include "misc/string_ref.hpp"
@@ -336,6 +337,49 @@ private:
   bool deleteFromCursor(size_t size, std::string *capture, EditOp editOp);
 
   void trackChange(ChangeOp op, std::string &&delta, bool merge);
+};
+
+class KillRing {
+private:
+  static constexpr size_t INIT_SIZE = 15;
+
+  static_assert(INIT_SIZE <= SYS_LIMIT_KILL_RING_MAX);
+  static_assert(SYS_LIMIT_KILL_RING_MAX <= UINT32_MAX);
+
+  RingBuffer<std::string> buf;
+  unsigned int rotateIndex{0};
+
+public:
+  KillRing() : buf(INIT_SIZE) {}
+
+  const auto &get() const { return this->buf; }
+
+  void add(std::string &&value) {
+    if (!value.empty()) {
+      this->buf.push_back(std::move(value));
+    }
+  }
+
+  void reset() { this->rotateIndex = this->buf.size() - 1; }
+
+  explicit operator bool() const { return !this->buf.empty(); }
+
+  const std::string &getCurrent() const { return this->buf[this->rotateIndex]; }
+
+  void rotate() {
+    const unsigned int size = this->buf.size();
+    if (this->rotateIndex > 0 && this->rotateIndex < size) {
+      this->rotateIndex--;
+    } else {
+      this->rotateIndex = size - 1;
+    }
+  }
+
+  /**
+   * re-allocate internal ring buffer
+   * @param afterCap
+   */
+  void expand(unsigned int afterCap);
 };
 
 } // namespace arsh

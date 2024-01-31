@@ -301,4 +301,24 @@ void LineBuffer::trackChange(ChangeOp op, std::string &&delta, bool merge) {
   this->changeIndex = this->changes.size();
 }
 
+// ######################
+// ##     KillRing     ##
+// ######################
+
+void KillRing::expand(unsigned int afterCap) {
+  if (this->buf.allocSize() == RingBuffer<std::string>::alignAllocSize(afterCap)) {
+    return; // do nothing
+  }
+
+  RingBuffer<std::string> newBuf(afterCap);
+  while (!this->buf.empty()) {
+    newBuf.push_back(std::move(this->buf.front()));
+    this->buf.pop_front();
+  }
+  this->buf = std::move(newBuf);
+  if (*this) {
+    this->reset();
+  }
+}
+
 } // namespace arsh

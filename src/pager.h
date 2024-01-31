@@ -217,6 +217,49 @@ public:
 EditActionStatus waitPagerAction(ArrayPager &pager, const KeyBindings &bindings,
                                  KeyCodeReader &reader);
 
+class HistRotator {
+private:
+  static_assert(SYS_LIMIT_HIST_SIZE < SYS_LIMIT_ARRAY_MAX);
+  static_assert(SYS_LIMIT_HIST_SIZE < UINT32_MAX);
+
+  std::unordered_map<unsigned int, Value> oldEntries;
+  ObjPtr<ArrayObject> history;
+  int histIndex{0};
+  unsigned int maxSize{SYS_LIMIT_HIST_SIZE};
+
+public:
+  enum class Op {
+    PREV,
+    NEXT,
+  };
+
+  explicit HistRotator(ObjPtr<ArrayObject> history);
+
+  ~HistRotator() { this->revertAll(); }
+
+  void setMaxSize(unsigned int size) {
+    this->maxSize = std::min(size, static_cast<unsigned int>(SYS_LIMIT_HIST_SIZE));
+  }
+
+  unsigned int getMaxSize() const { return this->maxSize; }
+
+  void revertAll();
+
+  explicit operator bool() { return this->history && this->history->size() > 0; }
+
+  /**
+   * save current buffer and get next entry
+   * @param curBuf
+   * @param op
+   */
+  bool rotate(StringRef &curBuf, Op op);
+
+private:
+  void truncateUntilLimit(bool beforeAppend = false);
+
+  bool save(ssize_t index, StringRef curBuf);
+};
+
 } // namespace arsh
 
 #endif // ARSH_PAGER_H

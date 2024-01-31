@@ -1245,6 +1245,16 @@ bool LineEditorObject::kickHistSyncCallback(ARState &state, const LineBuffer &bu
   }
 }
 
+static ObjPtr<ArrayObject> toObj(const TypePool &pool, const KillRing &killRing) {
+  auto obj = toObjPtr<ArrayObject>(Value::create<ArrayObject>(pool.get(TYPE::StringArray)));
+  const auto &buf = killRing.get();
+  const unsigned int size = buf.size();
+  for (unsigned int i = 0; i < size; i++) {
+    obj->append(Value::createStr(buf[i])); // not check iterator invalidation
+  }
+  return obj;
+}
+
 bool LineEditorObject::kickCustomCallback(ARState &state, LineBuffer &buf, CustomActionType type,
                                           unsigned int index) {
   StringRef line;
@@ -1273,7 +1283,7 @@ bool LineEditorObject::kickCustomCallback(ARState &state, LineBuffer &buf, Custo
       return true; // do nothing
     }
     line = "";
-    optArg = this->killRing.toObj(state.typePool);
+    optArg = toObj(state.typePool, this->killRing);
     break;
   }
 

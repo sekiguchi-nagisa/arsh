@@ -20,14 +20,14 @@
 #include <termios.h>
 
 #include "keycode.h"
+#include "line_buffer.h"
 #include "line_renderer.h"
-#include "rotate.h"
+#include "object.h"
 
 struct linenoiseState;
 
 namespace arsh {
 
-class LineBuffer;
 class ArrayPager;
 
 class LineEditorObject : public ObjectWithRtti<ObjectKind::LineEditor> {

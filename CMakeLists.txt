@@ -243,7 +243,6 @@ set(ARSH_SRC
         src/highlighter_base.cpp
         src/line_renderer.cpp
         src/keycode.cpp
-        src/rotate.cpp
         src/ordered_map.cpp
         src/arg_parser_base.cpp
         src/arg_parser.cpp

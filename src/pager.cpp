@@ -191,4 +191,79 @@ EditActionStatus waitPagerAction(ArrayPager &pager, const KeyBindings &bindings,
   return EditActionStatus::CONTINUE;
 }
 
+// #########################
+// ##     HistRotator     ##
+// #########################
+
+HistRotator::HistRotator(ObjPtr<ArrayObject> history) : history(std::move(history)) {
+  if (this->history) {
+    this->truncateUntilLimit(true);
+    this->history->append(Value::createStr()); // not check iterator invalidation
+    this->history->lock(ArrayObject::LockType::HISTORY);
+  }
+}
+
+void HistRotator::revertAll() {
+  if (this->history) {
+    if (this->history->size() > 0) {
+      this->history->refValues().pop_back(); // not check iterator invalidation
+    }
+    this->truncateUntilLimit();
+    for (auto &e : this->oldEntries) { // revert modified entry
+      if (e.first < this->history->size()) {
+        this->history->refValues()[e.first] =
+            std::move(e.second); // not check iterator invalidation
+      }
+    }
+    this->history->unlock();
+    this->history = nullptr;
+  }
+}
+
+bool HistRotator::rotate(StringRef &curBuf, HistRotator::Op op) {
+  this->truncateUntilLimit();
+
+  const auto histSize = static_cast<ssize_t>(this->history->size());
+  const int newHistIndex = this->histIndex + (op == Op::PREV ? 1 : -1);
+  if (newHistIndex < 0) {
+    this->histIndex = 0;
+    return false;
+  } else if (newHistIndex >= histSize) {
+    this->histIndex = static_cast<int>(histSize) - 1;
+    return false;
+  } else {
+    ssize_t bufIndex = histSize - 1 - this->histIndex;
+    if (!this->save(bufIndex, curBuf)) { // save current buffer content to current history entry
+      this->histIndex = 0;
+      return false;
+    }
+    this->histIndex = newHistIndex;
+    bufIndex = histSize - 1 - this->histIndex;
+    curBuf = this->history->getValues()[bufIndex].asStrRef();
+    return true;
+  }
+}
+
+void HistRotator::truncateUntilLimit(bool beforeAppend) {
+  const unsigned int offset = beforeAppend ? 1 : 0;
+  if (this->history->size() + offset > this->getMaxSize()) {
+    unsigned int delSize = this->history->size() + offset - this->getMaxSize();
+    auto &values = this->history->refValues(); // not check iterator invalidation
+    values.erase(values.begin(), values.begin() + delSize);
+    assert(values.size() == this->getMaxSize() - offset);
+  }
+}
+
+bool HistRotator::save(ssize_t index, StringRef curBuf) {
+  if (index < static_cast<ssize_t>(this->history->size()) && index > -1) {
+    auto actualIndex = static_cast<unsigned int>(index);
+    auto org = this->history->getValues()[actualIndex];
+    this->oldEntries.emplace(actualIndex, std::move(org));
+    this->history->refValues()[actualIndex] =
+        Value::createStr(curBuf); // not check iterator invalidation
+    return true;
+  }
+  return false;
+}
+
 } // namespace arsh
