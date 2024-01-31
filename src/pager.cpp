@@ -25,14 +25,15 @@ namespace arsh {
 // ##     ArrayPager     ##
 // ########################
 
-ArrayPager ArrayPager::create(const ArrayObject &obj, const CharWidthProperties &ps,
+ArrayPager ArrayPager::create(CandidatesWrapper &&obj, const CharWidthProperties &ps,
                               WindowSize winSize) {
   unsigned int maxLen = 0;
   unsigned int maxIndex = 0;
   FlexBuffer<ItemEntry> items;
-  items.reserve(obj.size());
-  for (auto &e : obj.getValues()) {
-    const StringRef ref = e.asStrRef();
+  const unsigned int size = obj.size();
+  items.reserve(size);
+  for (unsigned int i = 0; i < size; i++) {
+    const StringRef ref = obj.getCandidateAt(i);
     LineRenderer renderer(ps, 0);
     renderer.setLineNumLimit(0); // ignore newline
     renderer.renderLines(ref);
@@ -55,7 +56,7 @@ ArrayPager ArrayPager::create(const ArrayObject &obj, const CharWidthProperties 
     assert(padLen % LineRenderer::TAB_WIDTH == 0);
     e.tabs = padLen / LineRenderer::TAB_WIDTH;
   }
-  return {ps, obj, std::move(items), maxIndex, winSize};
+  return {ps, std::move(obj), std::move(items), maxIndex, winSize};
 }
 
 void ArrayPager::updateWinSize(WindowSize size) {
@@ -138,7 +139,7 @@ void ArrayPager::render(std::string &out) const {
       if (actualIndex == this->index && this->showCursor) {
         renderer.renderWithANSI("\x1b[7m");
       }
-      auto ref = this->obj.getValues()[actualIndex].asStrRef();
+      const auto ref = this->obj.getCandidateAt(actualIndex);
       renderItem(renderer, ref, this->items[actualIndex]);
       if (actualIndex == this->index && this->showCursor) {
         renderer.renderWithANSI("\x1b[0m");

@@ -252,6 +252,7 @@ set(ARSH_SRC
         src/glob.cpp
         src/expand.cpp
         src/pager.cpp
+        src/candidates.cpp
         ${lexer_src}
         ${bind_src}
         ${embed_src})

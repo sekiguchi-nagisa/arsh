@@ -17,13 +17,12 @@
 #ifndef ARSH_PAGER_H
 #define ARSH_PAGER_H
 
-#include "constant.h"
+#include "candidates.h"
 #include "keycode.h"
 #include "misc/buffer.hpp"
 
 namespace arsh {
 
-class ArrayObject;
 class LineRenderer;
 struct CharWidthProperties;
 
@@ -56,7 +55,7 @@ private:
   static constexpr unsigned int MAX_PANE_NUM = 4;
 
   const CharWidthProperties &ps;
-  const ArrayObject &obj; // must be [String] or Candidates
+  const CandidatesWrapper obj; // must be [String] or Candidates
   WindowSize winSize{0, 0};
   const FlexBuffer<ItemEntry> items; // pre-computed item column size
   const unsigned int maxLenIndex;    // index of item with longest len
@@ -68,14 +67,14 @@ private:
   bool showCursor{true};             // if true, render cursor
   bool showPageNum{false};           // if true, render page number
 
-  ArrayPager(const CharWidthProperties &ps, const ArrayObject &obj, FlexBuffer<ItemEntry> &&items,
+  ArrayPager(const CharWidthProperties &ps, CandidatesWrapper &&obj, FlexBuffer<ItemEntry> &&items,
              unsigned int maxIndex, WindowSize winSize)
-      : ps(ps), obj(obj), items(std::move(items)), maxLenIndex(maxIndex) {
+      : ps(ps), obj(std::move(obj)), items(std::move(items)), maxLenIndex(maxIndex) {
     this->updateWinSize(winSize);
   }
 
 public:
-  static ArrayPager create(const ArrayObject &obj, const CharWidthProperties &ps,
+  static ArrayPager create(CandidatesWrapper &&obj, const CharWidthProperties &ps,
                            WindowSize winSize);
 
   /**
@@ -121,6 +120,8 @@ public:
   unsigned int getRenderedRows() const {
     return this->getActualRows() + (this->showPageNum ? 1 : 0);
   }
+
+  StringRef getCurCandidate() const { return this->obj.getCandidateAt(this->getIndex()); }
 
   /**
    * actual rendering function

@@ -1081,7 +1081,7 @@ static FILE *logfp = nullptr;
  * @return
  * token start cursor
  */
-static size_t resolveEstimatedSuffix(const LineBuffer &buf, const ArrayObject &candidates,
+static size_t resolveEstimatedSuffix(const LineBuffer &buf, const CandidatesWrapper &candidates,
                                      StringRef &inserting) {
   const size_t cursor = buf.getCursor();
   const auto prefix = candidates.getCommonPrefixStr();
@@ -1117,8 +1117,8 @@ EditActionStatus LineEditorObject::completeLine(ARState &state, struct linenoise
                                                 KeyCodeReader &reader) {
   reader.clear();
 
-  auto candidates = this->kickCompletionCallback(state, ls.buf.getToCursor());
-  if (!candidates || candidates->size() <= 1) {
+  auto candidates = CandidatesWrapper(this->kickCompletionCallback(state, ls.buf.getToCursor()));
+  if (!candidates || candidates.size() <= 1) {
     this->refreshLine(ls);
   }
   if (!candidates) {
@@ -1126,22 +1126,23 @@ EditActionStatus LineEditorObject::completeLine(ARState &state, struct linenoise
   }
 
   StringRef inserting;
-  const size_t offset = resolveEstimatedSuffix(ls.buf, *candidates, inserting);
-  if (candidates->size() > 0 && !inserting.empty()) {
+  const size_t offset = resolveEstimatedSuffix(ls.buf, candidates, inserting);
+  if (candidates.size() > 0 && !inserting.empty()) {
     if (ls.buf.insertToCursor(inserting)) {
       this->refreshLine(ls);
     } else {
       return EditActionStatus::ERROR;
     }
   }
-  if (const auto len = candidates->size(); len == 0) {
+  if (const auto len = candidates.size(); len == 0) {
     linenoiseBeep(ls.ofd);
     return EditActionStatus::OK;
   } else if (len == 1) {
     return EditActionStatus::OK;
   } else {
     auto status = EditActionStatus::CONTINUE;
-    auto pager = ArrayPager::create(*candidates, ls.ps, {.rows = ls.rows, .cols = ls.cols});
+    auto pager = ArrayPager::create(CandidatesWrapper(candidates), ls.ps,
+                                    {.rows = ls.rows, .cols = ls.cols});
 
     /**
      * first, only show pager and wait next completion action.
@@ -1172,7 +1173,7 @@ EditActionStatus LineEditorObject::completeLine(ARState &state, struct linenoise
       if (prevCanLen) {
         ls.buf.undo();
       }
-      const auto can = candidates->getValues()[pager.getIndex()].asStrRef();
+      const auto can = pager.getCurCandidate();
       assert(offset <= ls.buf.getCursor());
       size_t prefixLen = ls.buf.getCursor() - offset;
       prevCanLen = can.size() - prefixLen;

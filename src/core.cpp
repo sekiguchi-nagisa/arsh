@@ -20,6 +20,7 @@
 #include <cassert>
 #include <cstdarg>
 
+#include "candidates.h"
 #include "compiler.h"
 #include "logger.h"
 #include "misc/files.hpp"
@@ -305,7 +306,7 @@ bool RuntimeCancelToken::operator()() {
 class DefaultCompConsumer : public CompCandidateConsumer {
 private:
   ARState &state;
-  ObjPtr<ArrayObject> reply;
+  CandidatesWrapper reply;
   CompCandidateKind kind{CompCandidateKind::COMMAND_NAME};
   bool overflow{false};
 
@@ -319,7 +320,7 @@ public:
       return;
     }
     if (!this->overflow) {
-      if (!this->reply->append(this->state, Value::createStr(candidate.quote()))) {
+      if (!this->reply.add(this->state, Value::createStr(candidate.quote()))) {
         this->overflow = true;
         return;
       }
@@ -330,14 +331,8 @@ public:
   CompCandidateKind getKind() const { return this->kind; }
 
   ObjPtr<ArrayObject> finalize() && {
-    if (auto &values = this->reply->refValues(); values.size() > 1) {
-      this->reply->sortAsStrArray(); // not check iterator invalidation
-      auto iter = std::unique(values.begin(), values.end(), [](const Value &x, const Value &y) {
-        return x.asStrRef() == y.asStrRef();
-      });
-      values.erase(iter, values.end());
-    }
-    return std::move(this->reply);
+    this->reply.sortAndDedup(0);
+    return std::move(this->reply).take();
   }
 };
 
@@ -588,12 +583,11 @@ int doCodeCompletion(ARState &st, StringRef modDesc, StringRef source, bool inse
     errno = EINTR;
     return -1;
   } else {
-    size_t size = reply.size();
+    const size_t size = reply.size();
     assert(size <= ArrayObject::MAX_SIZE);
     if (insertSpace && needSpace(reply, candidateKind)) {
       assert(size == 1);
-      auto ref = reply.getValues()[0].asStrRef();
-      auto v = ref.toString();
+      auto v = CandidatesWrapper::toStrRef(reply.getValues()[0]).toString();
       v += " ";
       reply.refValues()[0] = Value::createStr(std::move(v)); // not check iterator invalidation
     }
