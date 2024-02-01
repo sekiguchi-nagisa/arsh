@@ -42,7 +42,7 @@ namespace arsh {
   OP(BACKGROUND_, "background") /* pseudo token class for background color */                      \
   OP(LINENO_, "lineno")         /* pseudo token class for line number */
 
-enum class HighlightTokenClass : unsigned int {
+enum class HighlightTokenClass : unsigned char {
 #define GEN_ENUM(E, S) E,
   EACH_HIGHLIGHT_TOKEN_CLASS(GEN_ENUM)
 #undef GEN_ENUM

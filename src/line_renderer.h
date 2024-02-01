@@ -29,7 +29,7 @@ namespace arsh {
   OP(EMOJI_FLAG_SEQ, "🇯🇵")                                                                         \
   OP(EMOJI_ZWJ_SEQ, "👩🏼‍🏭")
 
-enum class CharWidthProperty {
+enum class CharWidthProperty : unsigned char {
 #define GEN_ENUM(E, S) E,
   EACH_CHAR_WIDTH_PROPERTY(GEN_ENUM)
 #undef GEN_ENUM
@@ -100,7 +100,7 @@ public:
  */
 class LineRenderer {
 public:
-  enum class LineBreakOp {
+  enum class LineBreakOp : unsigned char {
     SOFT_WRAP,
     TRUNCATE,
   };

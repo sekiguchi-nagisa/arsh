@@ -22,7 +22,7 @@
 
 namespace arsh {
 
-enum class FrontEndOption {
+enum class FrontEndOption : unsigned char {
   PARSE_ONLY = 1 << 0,
   TOPLEVEL = 1 << 1,
   ERROR_RECOVERY = 1 << 2,
@@ -35,7 +35,7 @@ template <>
 struct allow_enum_bitop<FrontEndOption> : std::true_type {};
 
 struct FrontEndResult {
-  enum Kind {
+  enum Kind : unsigned char {
     IN_MODULE,
     ENTER_MODULE,
     EXIT_MODULE,

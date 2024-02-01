@@ -93,6 +93,7 @@ GraphemeBoundary<Bool>::getBreakProperty(int codePoint) {
 #define UNICODE_PROPERTY_RANGE PropertyInterval
 #define PROPERTY(E) BreakProperty::E
 #include "grapheme_break_property.in"
+
 #undef PROPERTY
 #undef UNICODE_PROPERTY_RANGE
 
@@ -125,6 +126,7 @@ GraphemeBoundary<Bool>::getInCBExtendOrLinker(int codePoint) {
 #define UNICODE_PROPERTY_RANGE PropertyInterval
 #define PROPERTY(E) BreakProperty::E
 #include "incb_property.in"
+
 #undef PROPERTY
 #undef UNICODE_PROPERTY_RANGE
 
@@ -204,7 +206,7 @@ private:
     bool r = false;
     const auto oldState = this->stream.saveState();
 
-    enum InCBState {
+    enum InCBState : unsigned char {
       Init,
       Pre_Extend,
       Linker,

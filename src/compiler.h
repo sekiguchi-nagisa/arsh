@@ -37,7 +37,7 @@ namespace arsh {
   C(Cyan, 36)                                                                                      \
   C(White, 37)
 
-enum class TermColor : unsigned int { // ansi color code
+enum class TermColor : unsigned char { // ansi color code
 #define GEN_ENUM(E, N) E,
   EACH_TERM_COLOR(GEN_ENUM)
 #undef GEN_ENUM

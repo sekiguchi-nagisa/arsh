@@ -41,7 +41,7 @@ public:
 
   ~FilePathCache();
 
-  enum SearchOp {
+  enum SearchOp : unsigned char {
     NON = 0u,
     USE_DEFAULT_PATH = 1u << 0u,
     DIRECT_SEARCH = 1u << 1u,

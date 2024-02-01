@@ -70,7 +70,7 @@ struct TriviaStore {
 
 class HereDocState {
 public:
-  enum class Attr : unsigned int {
+  enum class Attr : unsigned char {
     EXPAND = 1u << 0u,
     IGNORE_TAB = 1u << 1u,
   };

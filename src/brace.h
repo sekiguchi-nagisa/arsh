@@ -28,7 +28,7 @@ struct BraceRange {
   int64_t end{0};   // inclusive
   int64_t step{0};
   unsigned int digits{0}; // if 0, no-padding
-  enum class Kind : unsigned int {
+  enum class Kind : unsigned char {
     CHAR,
     INT,
 

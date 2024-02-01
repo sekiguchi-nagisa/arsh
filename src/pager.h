@@ -228,7 +228,7 @@ private:
   unsigned int maxSize{SYS_LIMIT_HIST_SIZE};
 
 public:
-  enum class Op {
+  enum class Op : unsigned char {
     PREV,
     NEXT,
   };

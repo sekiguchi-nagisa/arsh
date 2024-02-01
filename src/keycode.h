@@ -296,7 +296,7 @@ public:
 
   const PagerAction *findPagerAction(const std::string &keycode) const;
 
-  enum class AddStatus {
+  enum class AddStatus : unsigned char {
     OK,
     UNDEF,
     FORBID_BRACKET_START_CODE,
@@ -317,7 +317,7 @@ public:
    */
   AddStatus addBinding(StringRef caret, StringRef name);
 
-  enum class DefineError {
+  enum class DefineError : unsigned char {
     INVALID_NAME,
     INVALID_TYPE,
     DEFINED,

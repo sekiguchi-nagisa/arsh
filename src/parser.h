@@ -74,7 +74,7 @@ private:
 
   static constexpr unsigned int MAX_NESTING_DEPTH = 1024;
 
-  enum class ParseErrorKind {
+  enum class ParseErrorKind : unsigned char {
 #define GEN_ENUM(E, S) E,
     EACH_PARSE_ERROR_KIND(GEN_ENUM)
 #undef GEN_ENUM

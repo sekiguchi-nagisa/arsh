@@ -98,6 +98,8 @@ inline unsigned int parseBase(const char *&begin, const char *end) {
       case 'O':
         ++begin;
         return 8;
+      default:
+        break;
       }
     }
     return 8;

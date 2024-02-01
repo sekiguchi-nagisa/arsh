@@ -50,7 +50,7 @@ public:
     return *this;
   }
 
-  void swap(CodeGenError &o) {
+  void swap(CodeGenError &o) noexcept {
     std::swap(this->token, o.token);
     std::swap(this->kind, o.kind);
     std::swap(this->message, o.message);
