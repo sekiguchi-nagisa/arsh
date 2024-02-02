@@ -6,7 +6,7 @@ assert diff <(complete -A var) <(complete '$')
 assert diff <(complete -A var 'C') <(complete '$C')
 assert diff <(complete -A variable 'T') <(complete '$T')
 assert diff <(complete -A variable '') <(complete '$')
-assert complete -A var '$C' > /dev/null && $COMPREPLY.empty()   # not starts with '$'
+assert complete -A var '$C' > /dev/null && $COMPREPLY.size() == 0   # not starts with '$'
 
 ## env
 assert diff <(complete -A valid_env 'X') <(complete 'importenv X')
@@ -95,7 +95,7 @@ assert diff <(complete -A udc) <(for $e in $udc { echo $e; } | sort)
 assert diff <(complete -A udc 'h') <(for $e in $udc { echo $e; } | grep '^h'| sort)
 assert "$(complete -A udc 'e')".empty()
 assert "$(complete -A dyna 'zz')".empty()
-assert {complete -q -A cmd -- 'zzzzzzzzzaaaaaa'; $COMPREPLY; }.empty()
+assert {complete -q -A cmd -- 'zzzzzzzzzaaaaaa'; $COMPREPLY; }.size() == 0
 $DYNA_UDCS["zzzzzzzzzaaaaaa"] = (){}
 $DYNA_UDCS["zzzzzzzzzaaaaaa@@@"] = (){}
 assert diff <(complete -A cmd -- 'zzzzzzzzzaaaaaa') <(echo zzzzzzzzzaaaaaa && echo zzzzzzzzzaaaaaa@@@)
@@ -132,7 +132,7 @@ assert diff <(cd $SCRIPT_DIR/../ && complete -m ${$/\d+/.replace($mod as String,
             <(for $e in @(inlined{1,2,3,4}.ds) { echo $e; })
 
 ## options
-assert "$({ complete -q ';'; assert !$COMPREPLY.empty(); })".empty();
+assert "$({ complete -q ';'; assert $COMPREPLY.size() != 0; })".empty();
 assert complete -s 'var';
 assert $COMPREPLY.size() == 1 && $COMPREPLY[0] == 'var '
 
@@ -160,23 +160,23 @@ if $OSTYPE !~ $/cygwin/i && $OSTYPE !~ $/msys/ {
 }
 ### user-defined comp
 #### nospace
-$COMP_HOOK = function(m,s,c) => ['echo ']
+$COMP_HOOK = function(m,s,c) => new Candidates(['echo '])
 complete -s -- "echo " &> /dev/null;
 assert $COMPREPLY.size() == 1
 assert $COMPREPLY[0] == "echo "
 
-$COMP_HOOK = function(m,s,c) => ['echo \\ ']
+$COMP_HOOK = function(m,s,c) => new Candidates(['echo \\ '])
 complete -s -- "echo " &> /dev/null;
 assert $COMPREPLY.size() == 1
 assert $COMPREPLY[0] == 'echo \\ '
 
 #### space
-$COMP_HOOK = function(m,s,c) => ['echo\ ']
+$COMP_HOOK = function(m,s,c) => new Candidates(['echo\ '])
 complete -s -- "echo " &> /dev/null;
 assert $COMPREPLY.size() == 1
 assert $COMPREPLY[0] == 'echo\  ' : $COMPREPLY[0]
 
-$COMP_HOOK = function(m,s,c) => ['echo\\\\\ ']
+$COMP_HOOK = function(m,s,c) => new Candidates(['echo\\\\\ '])
 complete -s -- "echo " &> /dev/null;
 assert $COMPREPLY.size() == 1
 assert $COMPREPLY[0] == 'echo\\\\\  '

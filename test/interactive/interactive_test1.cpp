@@ -172,14 +172,14 @@ TEST_F(InteractiveTest, tab3) {
 
   ASSERT_NO_FATAL_FAILURE(this->changePrompt(">>> "));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
-      "$LINE_EDIT.setCompletion(function(m,s) => { ['@abc\\ -\\ @.csv']; })"));
+      "$LINE_EDIT.setCompletion(function(m,s) => new Candidates(['@abc\\ -\\ @.csv']))"));
   this->send("echo @\t");
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "echo @abc\\ -\\ @.csv"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("", "@abc - @.csv"));
 
   // insert unprintable
-  ASSERT_NO_FATAL_FAILURE(
-      this->sendLineAndExpect("$LINE_EDIT.setCompletion(function(m,s) => [$s + $'\\t\\x01'])"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
+      "$LINE_EDIT.setCompletion(function(m,s) => new Candidates([$s + $'\\t\\x01']))"));
   this->send("var a = 'A\t");
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "var a = 'A  ^A"));
   this->send("'\r");
@@ -883,8 +883,8 @@ TEST_F(InteractiveTest, undoRotate2) {
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
 
   // completion
-  ASSERT_NO_FATAL_FAILURE(
-      this->sendLineAndExpect("$LINE_EDIT.setCompletion(function(m,s)=> @(true tee touch))"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.setCompletion(function(m,s)=> new "
+                                                  "Candidates(@(true tee touch)))"));
   this->changePrompt("> ");
   this->send("()" LEFT "$t");
   ASSERT_NO_FATAL_FAILURE(this->expect("> ($t)"));

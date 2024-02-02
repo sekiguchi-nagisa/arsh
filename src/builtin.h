@@ -26,6 +26,7 @@
 #include <type_traits>
 
 #include "arg_parser.h"
+#include "candidates.h"
 #include "line_editor.h"
 #include "misc/files.hpp"
 #include "misc/num_util.hpp"
@@ -46,7 +47,7 @@
 #define SUPPRESS_WARNING(a) (void)a
 
 #define ARSH_METHOD static Value
-#define ARSH_METHOD_DECL Value
+#define ARSH_METHOD_DECL static Value
 
 /**
  *   //!bind: function <method name>($this : <receiver type>, $param1 : <type1>, $param2? : <type2>, ...) : <return type>
@@ -2230,7 +2231,7 @@ ARSH_METHOD edit_read(RuntimeContext &ctx) {
   }
 }
 
-//!bind: function setCompletion($this : LineEditor, $comp : Option<Func<Array<String>,[Module,String]>>) : Void
+//!bind: function setCompletion($this : LineEditor, $comp : Option<Func<Candidates,[Module,String]>>) : Void
 ARSH_METHOD edit_comp(RuntimeContext &ctx) {
   SUPPRESS_WARNING(edit_comp);
   auto &editor = typeAs<LineEditorObject>(LOCAL(0));
@@ -2529,6 +2530,37 @@ ARSH_METHOD job_status(RuntimeContext &ctx) {
   msg += std::to_string(index);
   raiseOutOfRangeError(ctx, std::move(msg));
   RET_ERROR;
+}
+
+// ########################
+// ##     Candidates     ##
+// ########################
+
+//!bind: function $OP_INIT($this : Candidates, $values: Option<Array<String>>) : Candidates
+ARSH_METHOD candidates_init(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(candidates_init);
+  CandidatesWrapper wrapper(ctx.typePool);
+  if (const auto v = LOCAL(1); !v.isInvalid()) {
+    wrapper.addAll(ctx, typeAs<ArrayObject>(v));
+  }
+  RET(std::move(wrapper).take());
+}
+
+//!bind: function size($this : Candidates) : Int
+ARSH_METHOD_DECL array_size(RuntimeContext &ctx);
+
+//!bind: function $OP_GET($this : Candidates, $index: Int) : String
+ARSH_METHOD_DECL array_get(RuntimeContext &ctx);
+
+//!bind: function add($this : Candidates, $value : String) : Candidates
+ARSH_METHOD candidates_add(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(candidates_add);
+  CandidatesWrapper wrapper(toObjPtr<ArrayObject>(LOCAL(0)));
+  auto candidate = LOCAL(1);
+  if (!wrapper.add(ctx, std::move(candidate), Value::createInvalid())) {
+    RET_ERROR;
+  }
+  RET(LOCAL(0));
 }
 
 } // namespace arsh

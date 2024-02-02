@@ -68,7 +68,7 @@ TypePool::TypePool() {
   this->initBuiltinType(TYPE::Command, "Command", false, TYPE::Any, info_CommandType());
   this->initBuiltinType(TYPE::LineEditor, "LineEditor", false, TYPE::Any, info_LineEditorType());
   this->initBuiltinType(TYPE::CLI, "CLI", true, TYPE::Any, info_CLIType());
-  this->initBuiltinType(TYPE::Candidates, "Candidates", false, TYPE::Any, info_Dummy());
+  this->initBuiltinType(TYPE::Candidates, "Candidates", false, TYPE::Any, info_CandidatesType());
 
   // initialize type template
   this->initTypeTemplate(this->arrayTemplate, TypeTemplate::Kind::Array, {&this->get(TYPE::Any)},

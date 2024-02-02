@@ -168,7 +168,7 @@ TEST_F(InteractiveTest, lineEditorRec) {
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
 
   const char *text = "var e = new LineEditor(); $e.setPrompt(function(p)=>{"
-                     "  $e.setCompletion(function(m, s) => $s.split(''));"
+                     "  $e.setCompletion(function(m, s) => new Candidates($s.split('')));"
                      "  $p; "
                      "})";
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(text));
@@ -292,8 +292,8 @@ InvalidOperationError: cannot modify array object during iteration
       this->expect(PROMPT + "for a in $hist { $LINE_EDIT.readLine(); }\n\n" + PROMPT, err));
 
   // modify history
-  ASSERT_NO_FATAL_FAILURE(
-      this->sendLineAndExpect("$LINE_EDIT.setCompletion(function(m, s) => $hist.add($s))"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
+      "$LINE_EDIT.setCompletion(function(m, s) => new Candidates($hist.add($s)))"));
   this->sendLine("$LINE_EDIT.readLine('> ')");
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "$LINE_EDIT.readLine('> ')\n> "));
   this->send("$T\t");
@@ -323,8 +323,8 @@ TEST_F(InteractiveTest, lineEditorComp1) {
   ASSERT_NO_FATAL_FAILURE(this->expect("\n>>> "));
 
   // insert single candidates with prefix
-  ASSERT_NO_FATAL_FAILURE(
-      this->sendLineAndExpect("$LINE_EDIT.setCompletion(function(s,m) => ['true'])"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
+      "$LINE_EDIT.setCompletion(function(s,m) => new Candidates(['true']))"));
   this->send("()" LEFT "$t\t");
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "($true)"));
   this->send("\r");
@@ -338,8 +338,8 @@ TEST_F(InteractiveTest, lineEditorComp1) {
 
   // insert unprintable (invalid, null,,)
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("var aa = new LineEditor()"));
-  ASSERT_NO_FATAL_FAILURE(
-      this->sendLineAndExpect("$aa.setCompletion(function(m,s) => [$s + $'\\t\\x00' + $'\\xFF'])"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
+      "$aa.setCompletion(function(m,s) => new Candidates([$s + $'\\t\\x00' + $'\\xFF']))"));
   const char *line = "var ret = $aa.readLine('> ')";
   this->sendLine(line);
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + line + "\n> "));
@@ -363,8 +363,8 @@ TEST_F(InteractiveTest, lineEditorComp2) {
   ASSERT_NO_FATAL_FAILURE(this->changePrompt(">>> "));
 
   // rotate candidates
-  ASSERT_NO_FATAL_FAILURE(
-      this->sendLineAndExpect("$LINE_EDIT.setCompletion(function(s,m) => @(true tee touch))"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
+      "$LINE_EDIT.setCompletion(function(s,m) => new Candidates( @(true tee touch)) )"));
   this->changePrompt("> ");
   this->send("()" LEFT "$t");
   ASSERT_NO_FATAL_FAILURE(this->expect("> ($t)"));
@@ -449,8 +449,9 @@ TEST_F(InteractiveTest, lineEditorComp3) {
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
   ASSERT_NO_FATAL_FAILURE(this->changePrompt("> "));
 
-  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
-      "$LINE_EDIT.setCompletion(function(s,m) => @(20230907_バイタル 20230907_ラベル))"));
+  ASSERT_NO_FATAL_FAILURE(
+      this->sendLineAndExpect("$LINE_EDIT.setCompletion(function(s,m) => new "
+                              "Candidates(@(20230907_バイタル 20230907_ラベル)))"));
   this->send("echo 20");
   ASSERT_NO_FATAL_FAILURE(this->expect("> echo 20"));
   {
@@ -478,7 +479,7 @@ TEST_F(InteractiveTest, lineEditorCompError) {
 
   // insert large item
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
-      "$LINE_EDIT.setCompletion(function(m,s)=> [$(seq 1 9999).join(' ')])"));
+      "$LINE_EDIT.setCompletion(function(m,s)=> new Candidates([$(seq 1 9999).join(' ')]))"));
 
   std::string err = format(R"([runtime error]
 SystemError: readLine failed, caused by `%s'
@@ -490,7 +491,7 @@ SystemError: readLine failed, caused by `%s'
 
   // rotate and insert large item
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
-      "$LINE_EDIT.setCompletion(function(m,s)=> ['2', $(seq 1 9999).join(' ')])"));
+      "$LINE_EDIT.setCompletion(function(m,s)=> new Candidates(['2', $(seq 1 9999).join(' ')]))"));
   this->send("12");
   ASSERT_NO_FATAL_FAILURE(this->expect("> 12"));
 

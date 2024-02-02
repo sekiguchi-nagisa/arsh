@@ -7,13 +7,19 @@ function assertArray($e : [String], $a : [String]) {
 
 function assertComp($s : String, $e : [String]) {
     complete $s > /dev/null
-    $assertArray($e, $COMPREPLY)
+    var values : [String]
+    let size = $COMPREPLY.size()
+    for(var i = 0; $i < $size; $i++) {
+        $values.add($COMPREPLY[$i])
+    }
+    $assertArray($e, $values)
 }
 
-function comp($ctx : Module, $words : [String], $cursor : Int) : [String] {
+function comp($ctx : Module, $words : [String], $cursor : Int) : Candidates {
     $COMPREPLY.add("hello worod!!")
-    return $cursor == $words.size() ?
+    $words = $cursor == $words.size() ?
                 $words.add($cursor as String) : $words
+    return new Candidates($words)
 }
 
 $COMP_HOOK = $comp
@@ -29,8 +35,8 @@ $assertComp('echo a:hoge', ['a:hoge', 'echo'])
 $assertComp('echo :hoge', [':hoge', 'echo'])
 
 # escape
-function comp2($ctx : Module, $words : [String], $cursor : Int) : [String] {
-    return ['\23', '&h', '']
+function comp2($ctx : Module, $words : [String], $cursor : Int) : Candidates {
+    return new Candidates(['\23', '&h', ''])
 }
 
 $COMP_HOOK = $comp2
@@ -43,8 +49,9 @@ complete -q 'echo ~'
 assert $COMPREPLY.size() > 1
 
 # error
-function comp3($ctx : Module, $words : [String], $cursor : Int) : [String] {
-    return $words.add(($cursor/0) as String)
+function comp3($ctx : Module, $words : [String], $cursor : Int) : Candidates {
+    $words = $words.add(($cursor/0) as String)
+    return new Candidates($words)
 }
 
 $COMP_HOOK = $comp3
@@ -88,7 +95,7 @@ $COMP_HOOK = function($ctx : Module, $words : [String], $c : Int) => {
 # call method on temporary module object
 ## fullname
 $COMP_HOOK = function($ctx : Module, $words : [String], $c : Int) => {
-    return [ $ctx._fullname("")! ]
+    return new Candidates([$ctx._fullname("")!])
 }
 $ex = 34
 try { $assertComp('echo ', [""]); } catch $e { $ex = $e; }
@@ -97,7 +104,7 @@ assert ($ex as InvalidOperationError).message() == "cannot call method on tempor
 
 ## scriptName
 $COMP_HOOK = function($ctx : Module, $words : [String], $c : Int) => {
-    return [ $ctx._scriptName() ]
+    return new Candidates([$ctx._scriptName()])
 }
 $ex = 34
 try { $assertComp('echo ', [""]); } catch $e { $ex = $e; }
@@ -106,7 +113,7 @@ assert ($ex as InvalidOperationError).message() == "cannot call method on tempor
 
 ## scriptDir
 $COMP_HOOK = function($ctx : Module, $words : [String], $c : Int) => {
-    return [ $ctx._scriptDir() ]
+    return new Candidates([$ctx._scriptDir()])
 }
 $ex = 34
 try { $assertComp('echo ', [""]); } catch $e { $ex = $e; }
@@ -116,7 +123,11 @@ assert ($ex as InvalidOperationError).message() == "cannot call method on tempor
 ## func
 $COMP_HOOK = function($ctx : Module, $words : [String], $c : Int) => {
     $ctx._func("echo hello")()!
-    return $words
+    var ret : Candidates
+    for a in $words {
+        $ret.add($a)
+    }
+    return $ret
 }
 $ex = 34
 try { $assertComp('echo ', [""]); } catch $e { $ex = $e; }
@@ -124,7 +135,7 @@ assert $ex is InvalidOperationError
 assert ($ex as InvalidOperationError).message() == "cannot call method within user-defined completer"
 
 ## mood
-var ccc = ['ABCD', ]
+var ccc = new Candidates(['ABCD'])
 $COMP_HOOK = function(ctx, words, c) => {
     return $ccc
 }

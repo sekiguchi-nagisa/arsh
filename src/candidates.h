@@ -73,7 +73,20 @@ public:
 
   bool add(ARState &state, Value &&value) { return this->obj->append(state, std::move(value)); }
 
-  bool add(ARState &state, StringRef candidate, StringRef signature);
+  bool addNew(ARState &state, StringRef candidate, StringRef signature) {
+    return this->add(state, CandidateObject::create(candidate, signature));
+  }
+
+  /**
+   * \brief
+   * @param state
+   * @param candidate
+   * must be String
+   * @param signature
+   * must be String or invalid
+   * @return
+   */
+  bool add(ARState &state, Value &&candidate, Value &&signature);
 
   /**
    * @param state

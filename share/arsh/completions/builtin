@@ -2,7 +2,7 @@
 
 source $SCRIPT_DIR/../modules/completion
 
-function _cmd($ctx : Module, $t : [String], $c : Int) : [String]? {
+function _cmd($ctx : Module, $t : [String], $c : Int) : Candidates? {
     if $t.size() == 1 || $c == 1{
         var actions = case $t[0] {
             'command' => ['-A', 'builtin', '-A', 'external']
@@ -34,13 +34,13 @@ _extract_sub() {
     }
 }
 
-function _shctl($ctx : Module, $t : [String], $c : Int) : [String] {
+function _shctl($ctx : Module, $t : [String], $c : Int) : Candidates {
     if $c == 1 {
         var p = ""
         if $c < $t.size() {
             $p = $t.peek()
         }
-        var ret : [String]
+        var ret : Candidates
         for line in <(help shctl | _extract_sub) {
             if $line.startsWith($p) {
                 $ret.add($line)
@@ -55,7 +55,7 @@ function _shctl($ctx : Module, $t : [String], $c : Int) : [String] {
         if $c < $t.size() {
             $p = $t.peek()
         }
-        var ret : [String]
+        var ret : Candidates
         for line in <(shctl set | cut -d ' ' -f 1) {
             if $line.startsWith($p) {
                 $ret.add($line)
@@ -63,18 +63,18 @@ function _shctl($ctx : Module, $t : [String], $c : Int) : [String] {
         }
         return $ret
     }
-    else => return new [String]()
+    else => return new Candidates()
     }
 }
 
 source $SCRIPT_DIR/../modules/fzf as _fzf
 
-function _kill($ctx : Module, $t : [String], $c : Int) : [String]? {
+function _kill($ctx : Module, $t : [String], $c : Int) : Candidates? {
     let size = $t.size()
     if $c < $size {
         var v = $t.peek()
         case $v {
-            '-' => return ['-l', '-s']
+            '-' => return new Candidates().add('-l').add('-s')
             else => if !$v.startsWith('-') {
                 if $t.size() > 2 {
                     if $t[-2] == '-s' {
@@ -94,11 +94,11 @@ function _kill($ctx : Module, $t : [String], $c : Int) : [String]? {
                 return $COMPREPLY
             }
             else => if !$v.startsWith('-')  {
-                return [ $_fzf.fzf_proc_select().join(' ') ]
+                return new Candidates().add($_fzf.fzf_proc_select().join(' '))
             }
         }
     }
-    return new [String]()
+    return new Candidates()
 }
 
 $compAdd("command", $_cmd)

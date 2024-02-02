@@ -27,8 +27,12 @@ namespace arsh {
 CandidatesWrapper::CandidatesWrapper(const TypePool &pool)
     : obj(toObjPtr<ArrayObject>(Value::create<ArrayObject>(pool.get(TYPE::Candidates)))) {}
 
-bool CandidatesWrapper::add(ARState &state, StringRef candidate, StringRef signature) {
-  return this->add(state, CandidateObject::create(candidate, signature));
+bool CandidatesWrapper::add(ARState &state, Value &&candidate, Value &&signature) {
+  assert(candidate.hasStrRef());
+  if (signature.isInvalid() || signature.asStrRef().empty()) {
+    return this->add(state, std::move(candidate));
+  }
+  return this->addNew(state, candidate.asStrRef(), signature.asStrRef());
 }
 
 bool CandidatesWrapper::addAll(ARState &state, const ArrayObject &o) {

@@ -40,7 +40,8 @@ namespace arsh {
   OP(Reader)                                                                                       \
   OP(Command)                                                                                      \
   OP(LineEditor)                                                                                   \
-  OP(CLI)
+  OP(CLI)                                                                                          \
+  OP(Candidates)
 
 // type template
 #define EACH_HANDLE_INFO_TYPE_TEMP(OP)                                                             \

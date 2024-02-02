@@ -2,11 +2,11 @@
 
 # for tab completion
 
-typedef Completer = (Module, [String], Int) -> [String]?
+typedef Completer = (Module, [String], Int) -> Candidates?
 
 let _compMap : [String : Completer]
 
-function _defaultHook(ctx : Module, words : [String], cursor : Int) : [String]? {
+function _defaultHook(ctx : Module, words : [String], cursor : Int) : Candidates? {
     if (command -v $words[0] &>> /dev/null) {
         var cmd = $words[0].basename()
         if ($OSTYPE == 'cygwin' || $OSTYPE == 'msys') && $cmd.endsWith(".exe") {
@@ -68,8 +68,8 @@ let _compdefMap : [
 #
 # $prefix starts with '-'
 #
-function _comp_opt(deflist : [_CompDef], prefix : String) : [String] {
-    var ret = new [String]()
+function _comp_opt(deflist : [_CompDef], prefix : String) : Candidates {
+    var ret : Candidates
     for def in $deflist {
         var opt = case $def.option.size() {
             0 => continue
@@ -93,7 +93,7 @@ function _comp_opt(deflist : [_CompDef], prefix : String) : [String] {
 # complete arguments of specified option
 # $opt is empty string or starts with '-'
 #
-function _comp_arg(ctx : Module, deflist: [_CompDef], opt : String, prefix : String) : [String]? {
+function _comp_arg(ctx : Module, deflist: [_CompDef], opt : String, prefix : String) : Candidates? {
     for def in $deflist {
         $opt == case $def.option.size() {
             0 => ""
@@ -104,7 +104,7 @@ function _comp_arg(ctx : Module, deflist: [_CompDef], opt : String, prefix : Str
         var arg = $def.arg
         return case $def.type {
             0 => {
-                var r : [String]
+                var r : Candidates
                 for a in $arg.split(" ") {
                     if $a.startsWith($prefix) {
                         $r.add($a)
@@ -113,7 +113,7 @@ function _comp_arg(ctx : Module, deflist: [_CompDef], opt : String, prefix : Str
                 $r
             }
             1 => {
-                var ret : [String]
+                var ret : Candidates
                 for line in <(call $BIN_NAME -c "$arg") {
                     if $line.startsWith($prefix) {
                         $ret.add($line)
@@ -167,7 +167,7 @@ var BASH_COMPLETION_PATH = "/usr/share/bash-completion/bash_completion"
 
 # Conceptually based on git-completion.tcsh 
 # (https://github.com/git/git/blob/master/contrib/completion/git-completion.tcsh)
-function _comp_wrap(file : String, target : String, words : [String], cursor : Int): [String]? {
+function _comp_wrap(file : String, target : String, words : [String], cursor : Int): Candidates? {
     test -f $file || return $none
     if !(test -f $BASH_COMPLETION_PATH) {
         $BASH_COMPLETION_PATH = 
@@ -204,7 +204,7 @@ function _comp_wrap(file : String, target : String, words : [String], cursor : I
     done
     '
 
-    var ret : [String]
+    var ret : Candidates
     bash -c $script bash $BASH_COMPLETION_PATH $file $target $cursor $words | for line in $STDIN {
         if test -d $line && $line[-1] != '/' && $line.contains('/') { # for directory
             $line += '/'
@@ -214,7 +214,7 @@ function _comp_wrap(file : String, target : String, words : [String], cursor : I
         }
         $ret.add($line)
     }
-    return $ret.empty() ? $none : $ret
+    return $ret.size() == 0 ? $none : $ret
 }
 
 # extract completion target (func, cmd). ex `complete -o default -F func cmd`
@@ -244,7 +244,7 @@ function _comp_autoload(cmd : String) : String? {
     return $none
 }
 
-function _from_compdef(ctx : Module, words : [String], cursor : Int) : [String]? {
+function _from_compdef(ctx : Module, words : [String], cursor : Int) : Candidates? {
     var cmd = $words[0]
     var deflist = $_compdefMap.get($cmd) ?? {
         $cmd = $_comp_autoload($cmd) ?? return $none
@@ -349,6 +349,6 @@ compdef() {
     $deflist.add(new _CompDef($opt, $argType, $arg))
 }
 
-function compDelegate(ctx : Module, words : [String], cursor : Int) : [String]? {
+function compDelegate(ctx : Module, words : [String], cursor : Int) : Candidates? {
     return $_defaultHook($ctx, $words, $cursor)
 }

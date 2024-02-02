@@ -35,7 +35,7 @@
 #    CHECK:   "result": {
 #    CHECK:     "contents": {
 #    CHECK:       "kind": "markdown",
-#    CHECK:       "value": "```arsh\u000alet COMPREPLY: [String]\u000a```"
+#    CHECK:       "value": "```arsh\u000alet COMPREPLY: Candidates\u000a```"
 #    CHECK:     },
 #    CHECK:     "range": {
 #    CHECK:       "end": {

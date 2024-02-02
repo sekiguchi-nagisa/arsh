@@ -325,7 +325,7 @@ function %OP_INIT(): LineEditor for LineEditor
 
 function readLine(p: String?): String? for LineEditor
 
-function setCompletion(comp: ((Module, String) -> [String])?): Void for LineEditor
+function setCompletion(comp: ((Module, String) -> Candidates)?): Void for LineEditor
 
 function setPrompt(prompt: ((String) -> String)?): Void for LineEditor
 
@@ -357,6 +357,17 @@ function parse(args: [String]): Int for CLI
 function parseOrExit(args: [String]): Int for CLI
 
 function usage(message: String?, verbose: Bool?): String for CLI
+```
+
+## Candidates type
+```
+function %OP_INIT(values: [String]?): Candidates for Candidates
+
+function size(): Int for Candidates
+
+function %OP_GET(index: Int): String for Candidates
+
+function add(value: String): Candidates for Candidates
 ```
 
 ## Array type

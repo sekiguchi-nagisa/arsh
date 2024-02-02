@@ -312,8 +312,7 @@ private:
 
 public:
   explicit DefaultCompConsumer(ARState &state)
-      : state(state), reply(toObjPtr<ArrayObject>(Value::create<ArrayObject>(
-                          this->state.typePool.get(TYPE::StringArray)))) {}
+      : state(state), reply(CandidatesWrapper(state.typePool)) {}
 
   void operator()(const CompCandidate &candidate) override {
     if (candidate.value.empty()) {

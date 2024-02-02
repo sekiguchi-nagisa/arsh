@@ -133,7 +133,7 @@ void bindBuiltins(Consumer &consumer, const SysConfig &config, TypePool &pool, N
    * maintain completion result.
    * must be Array_Object
    */
-  binder.bind("COMPREPLY", pool.get(TYPE::StringArray));
+  binder.bind("COMPREPLY", pool.get(TYPE::Candidates));
 
   /**
    * maintain directory stack

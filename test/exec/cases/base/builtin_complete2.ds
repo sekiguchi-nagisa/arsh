@@ -150,7 +150,7 @@ $assertArray(['abs', "toFloat"], $(complete '
     if let a = "fjeri".toInt() {
         var b = 45.0
         $b * $a.'))
-$assertArray(['abs', 'toFloat'], { complete '$$.' > /dev/null; $COMPREPLY; })
+$assertArray(['abs', 'toFloat'], $(complete '$$.' > /dev/null && printf "%s\n" $COMPREPLY ))
 $assertArray(['abs', 'toFloat'], $(complete 'var a = try { 34; } finally { return ; 34.'))
 $assertArray(['abs', 'toFloat'], $(complete 'function f($a: Int) { $a.'))
 $assertArray(['abs', 'toFloat'], $(complete 'var b = function ($a: Int) => $a.'))
@@ -229,7 +229,7 @@ assert $(complete 'ZZZ=12345 function() => $Z').empty()
 # assert $(complete '{ return 34.').empty()
 
 complete '#jerijf' > /dev/null
-assert $COMPREPLY.empty()
+assert $COMPREPLY.size() == 0
 
 complete '' > /dev/null
-assert $COMPREPLY.empty()
+assert $COMPREPLY.size() == 0

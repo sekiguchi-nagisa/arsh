@@ -24,7 +24,7 @@ function SIG_EXIT(s : Signal) {
 var TERM_HOOK : ((Int, Any) => Void)?
 
 # completer hook definition
-var COMP_HOOK : Func<[String]?, [Module, [String], Int]>?
+var COMP_HOOK : ((Module, [String], Int) -> Candidates?)?
 
 # line editor instance for repl
 let LINE_EDIT : LineEditor; $LINE_EDIT.config("lang-extension", $true)

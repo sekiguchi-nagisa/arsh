@@ -105,7 +105,7 @@ struct BindingConsumer {
 
   void operator()(const Handle &handle, const DSType &type) {
     auto value = Value::createDummy(type);
-    if (type.isArrayType()) {
+    if (type.isArrayType() || type.is(TYPE::Candidates)) {
       value = Value::create<ArrayObject>(type);
     } else if (type.isMapType()) {
       value = Value::create<OrderedMapObject>(type, this->state.getRng().next());

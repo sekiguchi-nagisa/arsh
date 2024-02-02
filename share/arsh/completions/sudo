@@ -2,7 +2,7 @@
 
 source $SCRIPT_DIR/../modules/completion
 
-function _sudo($ctx : Module, $t : [String], $c : Int) : [String]? {
+function _sudo($ctx : Module, $t : [String], $c : Int) : Candidates? {
     for(var i = 1; $i < $t.size(); $i++) {
         var v = $t[$i]
         case $v {
@@ -16,7 +16,7 @@ function _sudo($ctx : Module, $t : [String], $c : Int) : [String]? {
         }
     }
     if $c < $t.size() && $t.peek() == '-' {
-        return ['-A', '-b', '-E', '-H', '-n', '-P', '-S']
+        return new Candidates().add('-A').add('-b').add('-E').add('-H').add('-n').add('-P').add('-S')
     }
 
     var opt = ['-A', 'external']

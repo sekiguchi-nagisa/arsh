@@ -2,6 +2,15 @@
 
 ## [Unreleased]
 
+### Added
+
+#### Builtin
+
+- add ``Candidates`` type for completion
+    - ``size``: get size of candidates
+    - ``[]``: get candidate
+    - ``add``: add new candidate
+
 ### Changed
 
 #### Core
@@ -28,6 +37,10 @@
 
 #### Builtin
 
+- **Breaking Change**: change ``COMPREPLY`` type with ``Candidates``
+    - also change ``COMP_HOOK`` type with ``((Module, [String], Int) -> Candidates?)?``
+- **Breaking Change**: change ``LineEditor#setCompletion`` signature
+    - now accept ``((Module, String) -> Candidates)?``
 - ``Error`` type constructor now accept `0` status
 
 ## [0.32.1] - 2024-01-21
