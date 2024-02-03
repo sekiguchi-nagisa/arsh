@@ -31,6 +31,8 @@ struct CharWidthProperties;
  */
 class ArrayPager {
 public:
+  static constexpr size_t TAB_WIDTH = SYS_LINE_RENDERER_TAB_WIDTH;
+
   struct WindowSize {
     unsigned int rows{24};
     unsigned int cols{80};
@@ -41,12 +43,13 @@ public:
   };
 
   struct ItemEntry {
-    unsigned int len;  // actual item columns size
-    unsigned int tabs; // number of extra tab characters
+    unsigned int len;       // actual item columns size
+    unsigned short tabs;    // number of extra tab characters
+    unsigned char leftPad;  // for left padding size of signature
+    unsigned char rightPad; // for right padding size of candidate
 
     unsigned int itemLen() const {
-      return this->len + (SYS_LINE_RENDERER_TAB_WIDTH - this->len % SYS_LINE_RENDERER_TAB_WIDTH) +
-             this->tabs * SYS_LINE_RENDERER_TAB_WIDTH;
+      return this->len + (TAB_WIDTH - this->len % TAB_WIDTH) + this->tabs * TAB_WIDTH;
     }
   };
 

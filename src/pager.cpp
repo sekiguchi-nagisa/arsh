@@ -33,17 +33,33 @@ ArrayPager ArrayPager::create(CandidatesWrapper &&obj, const CharWidthProperties
   const unsigned int size = obj.size();
   items.reserve(size);
   for (unsigned int i = 0; i < size; i++) {
-    const StringRef ref = obj.getCandidateAt(i);
-    LineRenderer renderer(ps, 0);
-    renderer.setLineNumLimit(0); // ignore newline
-    renderer.renderLines(ref);
-    auto colLen = static_cast<unsigned int>(renderer.getTotalCols());
-    items.push_back(ItemEntry{
-        .len = colLen,
-        .tabs = 0,
-    });
-    if (colLen > maxLen) {
-      maxLen = colLen;
+    ItemEntry item{};
+
+    // compute candidate columns
+    {
+      LineRenderer renderer(ps, 0);
+      renderer.setLineNumLimit(0); // ignore newline
+      renderer.renderLines(obj.getCandidateAt(i));
+      item.len = renderer.getTotalCols();
+    }
+
+    // compute signature columns
+    if (const StringRef signature = obj.getSignatureAt(i); !signature.empty()) {
+      LineRenderer renderer(ps, 0);
+      renderer.setLineNumLimit(0); // ignore newline
+      renderer.renderLines("(");
+      renderer.renderLines(signature);
+      renderer.renderLines(")");
+
+      const size_t sigCols = renderer.getTotalCols();
+      item.leftPad = TAB_WIDTH - (sigCols % TAB_WIDTH);
+      item.rightPad = TAB_WIDTH - (item.len % TAB_WIDTH);
+      item.len += sigCols + item.leftPad + item.rightPad;
+    }
+
+    items.push_back(item);
+    if (item.len > maxLen) {
+      maxLen = item.len;
       maxIndex = items.size() - 1;
     }
   }
@@ -97,12 +113,30 @@ void ArrayPager::updateWinSize(WindowSize size) {
   }
 }
 
-static void renderItem(LineRenderer &renderer, StringRef ref, const ArrayPager::ItemEntry &e) {
-  renderer.renderLines(ref);
-  renderer.renderLines("\t");
-  for (unsigned int i = 0; i < e.tabs; i++) {
-    renderer.renderLines("\t");
+static void renderItem(LineRenderer &renderer, const StringRef can, const StringRef sig,
+                       const ArrayPager::ItemEntry &e) {
+  renderer.renderLines(can);
+  if (e.rightPad) {
+    std::string pad;
+    pad.resize(e.rightPad, ' ');
+    renderer.renderLines(pad);
   }
+  if (e.tabs) {
+    std::string tab;
+    tab.resize(e.tabs, '\t');
+    renderer.renderLines(tab);
+  }
+  if (e.leftPad) {
+    std::string pad;
+    pad.resize(e.leftPad, ' ');
+    renderer.renderLines(pad);
+  }
+  if (!sig.empty()) {
+    renderer.renderLines("(");
+    renderer.renderLines(sig); // FIXME: highlight
+    renderer.renderLines(")");
+  }
+  renderer.renderLines("\t");
 }
 
 void ArrayPager::render(std::string &out) const {
@@ -139,8 +173,8 @@ void ArrayPager::render(std::string &out) const {
       if (actualIndex == this->index && this->showCursor) {
         renderer.renderWithANSI("\x1b[7m");
       }
-      const auto ref = this->obj.getCandidateAt(actualIndex);
-      renderItem(renderer, ref, this->items[actualIndex]);
+      renderItem(renderer, this->obj.getCandidateAt(actualIndex),
+                 this->obj.getSignatureAt(actualIndex), this->items[actualIndex]);
       if (actualIndex == this->index && this->showCursor) {
         renderer.renderWithANSI("\x1b[0m");
       }

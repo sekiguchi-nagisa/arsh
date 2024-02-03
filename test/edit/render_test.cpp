@@ -441,6 +441,14 @@ public:
     append(obj, std::forward<T>(args)...);
     return toObjPtr<ArrayObject>(v);
   }
+
+  ObjPtr<ArrayObject> createWith(std::vector<std::pair<const char *, const char *>> &&args) const {
+    auto obj = CandidatesWrapper(this->pool).take();
+    for (auto &[can, sig] : args) {
+      obj->refValues().push_back(CandidateObject::create(can, sig));
+    }
+    return obj;
+  }
 };
 
 TEST_F(PagerTest, small1) { // less than pager length
@@ -865,10 +873,55 @@ TEST_F(PagerTest, truncate) {
   ASSERT_EQ(expect, out);
 }
 
+TEST_F(PagerTest, signature1) {
+  // single pane
+  auto array = this->createWith({
+      {"AAAAA", "regular file"},
+      {"BBBBB", "executable"},
+      {"CCCCC", "directory"},
+      {"DDD", "named pipe"},
+      {"EEEE", ""},
+  });
+  auto pager = ArrayPager::create(CandidatesWrapper(array), this->ps, {.rows = 24, .cols = 30});
+  ASSERT_EQ(1, pager.getPanes());
+  ASSERT_EQ(28, pager.getPaneLen());
+  pager.setShowCursor(false);
+
+  std::string out;
+  pager.render(out);
+  const char *expect = "AAAAA     (regular file)    \r\n"
+                       "BBBBB       (executable)    \r\n"
+                       "CCCCC        (directory)    \r\n"
+                       "DDD         (named pipe)    \r\n"
+                       "EEEE                        \r\n";
+  ASSERT_EQ(expect, out);
+}
+
+TEST_F(PagerTest, signature2) {
+  // multi pane
+  auto array = this->createWith({
+      {"AAAAA", "regular file"},
+      {"BBBBB", "executable"},
+      {"CCCCC", "directory"},
+      {"DDD", "named pipe"},
+      {"EEEE", ""},
+  });
+  auto pager = ArrayPager::create(CandidatesWrapper(array), this->ps, {.rows = 24, .cols = 60});
+  ASSERT_EQ(2, pager.getPanes());
+  ASSERT_EQ(28, pager.getPaneLen());
+  pager.setShowCursor(false);
+
+  std::string out;
+  pager.render(out);
+  const char *expect = "AAAAA     (regular file)    DDD         (named pipe)    \r\n"
+                       "BBBBB       (executable)    EEEE                        \r\n"
+                       "CCCCC        (directory)    \r\n";
+  ASSERT_EQ(expect, out);
+}
 
 TEST(HistRotatorTest, base) {
   auto value = Value::create<ArrayObject>(static_cast<unsigned int>(TYPE::StringArray),
-                                            std::vector<Value>());
+                                          std::vector<Value>());
   auto obj = toObjPtr<ArrayObject>(value);
   obj->append(Value::createStr("AAA"));
   obj->append(Value::createStr("BBB"));
@@ -983,7 +1036,7 @@ TEST(HistRotatorTest, base) {
 
 TEST(HistRotatorTest, broken1) {
   auto value = Value::create<ArrayObject>(static_cast<unsigned int>(TYPE::StringArray),
-                                            std::vector<Value>());
+                                          std::vector<Value>());
   auto obj = toObjPtr<ArrayObject>(value);
   obj->append(Value::createStr("AAA"));
   obj->append(Value::createStr("BBB"));
@@ -1030,7 +1083,7 @@ TEST(HistRotatorTest, broken1) {
 
 TEST(HistRotator, broken2) {
   auto value = Value::create<ArrayObject>(static_cast<unsigned int>(TYPE::StringArray),
-                                            std::vector<Value>());
+                                          std::vector<Value>());
   auto obj = toObjPtr<ArrayObject>(value);
   obj->append(Value::createStr("AAA"));
   obj->append(Value::createStr("BBB"));

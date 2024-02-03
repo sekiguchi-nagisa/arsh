@@ -11,6 +11,7 @@
     - ``[]``: get candidate
     - ``add``: add new candidate
     - ``addAll``: add candidates from other
+- completion candidates pager in ``LineEditor`` support signature
 
 ### Changed
 
