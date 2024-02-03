@@ -39,8 +39,9 @@ DEFINE_HIGHLIGHT_STYLE(monokai_dimmed) {
       {HighlightTokenClass::OPERATOR, OPERATOR}, {HighlightTokenClass::NUMBER, NUMBER},
       {HighlightTokenClass::REGEX, STRING},      {HighlightTokenClass::STRING, STRING},
       {HighlightTokenClass::COMMAND, FUNC},      {HighlightTokenClass::COMMAND_ARG, PARAM},
-      {HighlightTokenClass::REDIRECT, OPERATOR}, {HighlightTokenClass::VARIABLE, VAR},
-      {HighlightTokenClass::TYPE, TYPE},         {HighlightTokenClass::MEMBER, PARAM}, // FIXME:
+      {HighlightTokenClass::META, OPERATOR},     {HighlightTokenClass::REDIRECT, OPERATOR},
+      {HighlightTokenClass::VARIABLE, VAR},      {HighlightTokenClass::TYPE, TYPE},
+      {HighlightTokenClass::MEMBER, PARAM},      {HighlightTokenClass::ATTRIBUTE, KEYWORD},
       {HighlightTokenClass::FOREGROUND_, TEXT},  {HighlightTokenClass::BACKGROUND_, BG},
   };
 }

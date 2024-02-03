@@ -33,6 +33,7 @@ namespace arsh {
   OP(STRING, "string")                                                                             \
   OP(COMMAND, "command")                                                                           \
   OP(COMMAND_ARG, "command_arg")                                                                   \
+  OP(META, "meta")                                                                                 \
   OP(REDIRECT, "redirect")                                                                         \
   OP(VARIABLE, "variable")                                                                         \
   OP(TYPE, "type")                                                                                 \

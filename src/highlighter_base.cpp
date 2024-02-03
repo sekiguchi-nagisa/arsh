@@ -70,14 +70,17 @@ HighlightTokenClass toTokenClass(TokenKind kind) {
   case TokenKind::COMMAND:
     return HighlightTokenClass::COMMAND;
   case TokenKind::CMD_ARG_PART:
+    return HighlightTokenClass::COMMAND_ARG;
   case TokenKind::GLOB_ANY:
   case TokenKind::GLOB_ZERO_OR_MORE:
+  case TokenKind::GLOB_BRACKET_OPEN:
+  case TokenKind::GLOB_BRACKET_CLOSE:
   case TokenKind::BRACE_OPEN:
   case TokenKind::BRACE_SEP:
   case TokenKind::BRACE_CLOSE:
   case TokenKind::BRACE_CHAR_SEQ:
   case TokenKind::BRACE_INT_SEQ:
-    return HighlightTokenClass::COMMAND_ARG;
+    return HighlightTokenClass::META;
 #define GEN_CASE(E) case TokenKind::E:
     // clang-format off
   EACH_LA_redir(GEN_CASE)
