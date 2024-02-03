@@ -852,6 +852,55 @@ TEST_F(LineBufferTest, mergeDelete) {
   ASSERT_EQ("123\n456\n789", buffer.get().toString());
 }
 
+TEST_F(LineBufferTest, insertingSuffix) {
+  std::string storage;
+  storage.resize(32, '@');
+  LineBuffer buffer(storage.data(), storage.size());
+  ASSERT_EQ("", buffer.get().toString());
+
+  ASSERT_TRUE(buffer.insertToCursor("$(ll && ll"));
+  ASSERT_EQ(10, buffer.getCursor());
+
+  // match prefix
+  StringRef prefix = "llvm-";
+  ASSERT_EQ(8, buffer.resolveInsertingSuffix(prefix, true));
+  ASSERT_EQ("vm-", prefix.toString());
+  prefix = "llvm-";
+  ASSERT_EQ(8, buffer.resolveInsertingSuffix(prefix, false));
+  ASSERT_EQ("vm-", prefix.toString());
+
+  prefix = "l";
+  ASSERT_EQ(9, buffer.resolveInsertingSuffix(prefix, true));
+  ASSERT_EQ("", prefix.toString());
+  prefix = "l";
+  ASSERT_EQ(9, buffer.resolveInsertingSuffix(prefix, false));
+  ASSERT_EQ("", prefix.toString());
+
+  prefix = "";
+  ASSERT_EQ(10, buffer.resolveInsertingSuffix(prefix, true));
+  ASSERT_EQ("", prefix.toString());
+  prefix = "";
+  ASSERT_EQ(10, buffer.resolveInsertingSuffix(prefix, false));
+  ASSERT_EQ("", prefix.toString());
+
+  // unmatch prefix
+  prefix = "123";
+  ASSERT_EQ(10, buffer.resolveInsertingSuffix(prefix, true));
+  ASSERT_EQ("123", prefix.toString());
+  prefix = "123";
+  ASSERT_EQ(10, buffer.resolveInsertingSuffix(prefix, false));
+  ASSERT_EQ("", prefix.toString());
+
+  buffer.deleteAll();
+  buffer.insertToCursor("$(ll && ll ");
+  prefix = "llvm";
+  ASSERT_EQ(11, buffer.resolveInsertingSuffix(prefix, true));
+  ASSERT_EQ("llvm", prefix.toString());
+  prefix = "llvm";
+  ASSERT_EQ(11, buffer.resolveInsertingSuffix(prefix, false));
+  ASSERT_EQ("", prefix.toString());
+}
+
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

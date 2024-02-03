@@ -147,6 +147,13 @@ public:
     return {this->buf + interval.pos, interval.len};
   }
 
+  /**
+   * @param inserting
+   * @param single
+   * @return start pos of inserting prefix
+   */
+  size_t resolveInsertingSuffix(StringRef &inserting, bool single) const;
+
   // edit op
 
   /**

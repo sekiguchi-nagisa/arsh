@@ -100,6 +100,30 @@ unsigned int LineBuffer::findCurNewlineIndex() const {
   return iter - this->newlinePosList.begin();
 }
 
+size_t LineBuffer::resolveInsertingSuffix(StringRef &inserting, const bool single) const {
+  const StringRef prefix = inserting;
+  inserting = "";
+
+  // compute suffix
+  bool matched = false;
+  size_t offset = this->cursor - std::min<size_t>(this->cursor, prefix.size());
+  for (; offset < this->cursor; offset++) {
+    const auto suffix = this->get().substr(offset, this->cursor - offset);
+    if (prefix.startsWith(suffix)) {
+      matched = true;
+      break;
+    }
+  }
+
+  if (matched) {
+    size_t insertingSize = prefix.size() - (this->cursor - offset);
+    inserting = {prefix.data() + (prefix.size() - insertingSize), insertingSize};
+  } else if (single) {
+    inserting = prefix; // if candidate does not match previous token, use common candidate prefix
+  }
+  return matched ? offset : this->cursor;
+}
+
 bool LineBuffer::insertToCursor(const StringRef ref, const EditOp editOp) {
   assert(this->cursor <= this->usedSize);
   if (this->usedSize + ref.size() <= this->bufSize) {

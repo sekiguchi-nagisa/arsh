@@ -1060,59 +1060,6 @@ ssize_t LineEditorObject::readline(ARState &state, StringRef prompt, char *buf, 
   }
 }
 
-#if 0
-static FILE *logfp = nullptr;
-#define logprintf(fmt, ...)                                                                        \
-  do {                                                                                             \
-    if (logfp == nullptr) {                                                                        \
-      logfp = fopen("/dev/pts/4", "w");                                                            \
-    }                                                                                              \
-    fprintf(logfp, fmt, ##__VA_ARGS__);                                                            \
-  } while (0)
-#else
-#define logprintf(fmt, ...)
-#endif
-
-/**
- *
- * @param buf
- * @param candidates
- * @param inserting
- * @return
- * token start cursor
- */
-static size_t resolveEstimatedSuffix(const LineBuffer &buf, const CandidatesWrapper &candidates,
-                                     StringRef &inserting) {
-  const size_t cursor = buf.getCursor();
-  const auto prefix = candidates.getCommonPrefixStr();
-  inserting = "";
-
-  logprintf("#prefix: %s\n", prefix.toString().c_str());
-  logprintf("cursor: %ld\n", cursor);
-
-  // compute suffix
-  bool matched = false;
-  size_t offset = cursor - std::min(cursor, prefix.size());
-  for (; offset < cursor; offset++) {
-    auto suffix = buf.get().substr(offset, cursor - offset);
-    logprintf("curSuffix: %s\n", suffix.toString().c_str());
-    if (prefix.startsWith(suffix)) {
-      matched = true;
-      break;
-    }
-  }
-
-  logprintf("offset: %ld\n", offset);
-  if (matched) {
-    size_t insertingSize = prefix.size() - (cursor - offset);
-    inserting = {prefix.data() + (prefix.size() - insertingSize), insertingSize};
-    logprintf("inserting: %s\n", inserting.toString().c_str());
-  } else if (candidates.size() == 1) {
-    inserting = prefix; // if candidate does not match previous token, use common candidate prefix
-  }
-  return matched ? offset : buf.getCursor();
-}
-
 EditActionStatus LineEditorObject::completeLine(ARState &state, struct linenoiseState &ls,
                                                 KeyCodeReader &reader) {
   reader.clear();
@@ -1125,8 +1072,8 @@ EditActionStatus LineEditorObject::completeLine(ARState &state, struct linenoise
     return EditActionStatus::CANCEL;
   }
 
-  StringRef inserting;
-  const size_t offset = resolveEstimatedSuffix(ls.buf, candidates, inserting);
+  StringRef inserting = candidates.getCommonPrefixStr();
+  const size_t offset = ls.buf.resolveInsertingSuffix(inserting, candidates.size() == 1);
   if (candidates.size() > 0 && !inserting.empty()) {
     if (ls.buf.insertToCursor(inserting)) {
       this->refreshLine(ls);
