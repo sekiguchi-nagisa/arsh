@@ -2541,7 +2541,9 @@ ARSH_METHOD candidates_init(RuntimeContext &ctx) {
   SUPPRESS_WARNING(candidates_init);
   CandidatesWrapper wrapper(ctx.typePool);
   if (const auto v = LOCAL(1); !v.isInvalid()) {
-    wrapper.addAll(ctx, typeAs<ArrayObject>(v));
+    const bool r = wrapper.addAll(ctx, typeAs<ArrayObject>(v));
+    (void)r;
+    assert(r);
   }
   RET(std::move(wrapper).take());
 }
@@ -2550,14 +2552,32 @@ ARSH_METHOD candidates_init(RuntimeContext &ctx) {
 ARSH_METHOD_DECL array_size(RuntimeContext &ctx);
 
 //!bind: function $OP_GET($this : Candidates, $index: Int) : String
-ARSH_METHOD_DECL array_get(RuntimeContext &ctx);
+ARSH_METHOD candidates_get(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(candidates_get);
+  CandidatesWrapper wrapper(toObjPtr<ArrayObject>(LOCAL(0)));
+  const size_t size = wrapper.size();
+  const auto index = LOCAL(1).asInt();
+  const auto value = TRY(resolveIndex(ctx, index, size));
+  RET(Value::createStr(wrapper.getCandidateAt(value.index)));
+}
 
-//!bind: function add($this : Candidates, $value : String) : Candidates
+//!bind: function add($this : Candidates, $can : String, $sig : Option<String>) : Candidates
 ARSH_METHOD candidates_add(RuntimeContext &ctx) {
   SUPPRESS_WARNING(candidates_add);
   CandidatesWrapper wrapper(toObjPtr<ArrayObject>(LOCAL(0)));
   auto candidate = LOCAL(1);
-  if (!wrapper.add(ctx, std::move(candidate), Value::createInvalid())) {
+  auto signature = LOCAL(2);
+  if (!wrapper.add(ctx, std::move(candidate), std::move(signature))) {
+    RET_ERROR;
+  }
+  RET(LOCAL(0));
+}
+
+//!bind: function addAll($this: Candidates, $other: Candidates) : Candidates
+ARSH_METHOD candidates_addAll(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(candidates_addAll);
+  CandidatesWrapper wrapper(toObjPtr<ArrayObject>(LOCAL(0)));
+  if (!wrapper.addAll(ctx, typeAs<ArrayObject>(LOCAL(1)))) {
     RET_ERROR;
   }
   RET(LOCAL(0));

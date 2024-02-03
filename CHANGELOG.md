@@ -10,6 +10,7 @@
     - ``size``: get size of candidates
     - ``[]``: get candidate
     - ``add``: add new candidate
+    - ``addAll``: add candidates from other
 
 ### Changed
 

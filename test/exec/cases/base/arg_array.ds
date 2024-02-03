@@ -176,3 +176,11 @@ $args = @( $list )
 assert $args.size() == 2
 assert $args[0] == 'a b'
 assert $args[1] == 'cc'
+
+## Candidates
+var can = new Candidates(['aaa'])
+$can.add('bbb.txt', 'this is a regular file')
+$args = @($can)
+assert $args.size() == 2
+assert $args[0] == 'aaa'
+assert $args[1] == 'bbb.txt@this is a regular file'

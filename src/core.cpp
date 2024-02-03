@@ -318,12 +318,19 @@ public:
     if (candidate.value.empty()) {
       return;
     }
+    (*this)(Value::createStr(candidate.quote()), candidate.kind);
+  }
+
+  void operator()(Value &&candiate, const CompCandidateKind kind) {
+    if (CandidatesWrapper::toStrRef(candiate).empty()) {
+      return;
+    }
     if (!this->overflow) {
-      if (!this->reply.add(this->state, Value::createStr(candidate.quote()))) {
+      if (!this->reply.add(this->state, std::move(candiate))) {
         this->overflow = true;
         return;
       }
-      this->kind = candidate.kind;
+      this->kind = kind;
     }
   }
 
@@ -365,7 +372,7 @@ static Value createArgv(const TypePool &pool, const Lexer &lex, const CmdNode &c
 
 static int kickCompHook(ARState &state, unsigned int tempModIndex, const Lexer &lex,
                         const CmdNode &cmdNode, const std::string &word, bool tilde,
-                        CompCandidateConsumer &consumer) {
+                        DefaultCompConsumer &consumer) {
   auto hook = getBuiltinGlobal(state, VAR_COMP_HOOK);
   if (hook.isInvalid()) {
     errno = EINVAL;
@@ -396,11 +403,11 @@ static int kickCompHook(ARState &state, unsigned int tempModIndex, const Lexer &
     errno = EINVAL;
     return -1;
   }
-  unsigned int size = typeAs<ArrayObject>(ret).size();
+  CandidatesWrapper wrapper(toObjPtr<ArrayObject>(ret));
   for (auto &e : typeAs<ArrayObject>(ret).getValues()) {
-    consumer(e.asCStr(), CompCandidateKind::COMMAND_ARG_NO_QUOTE);
+    consumer(Value(e), CompCandidateKind::COMMAND_ARG_NO_QUOTE);
   }
-  return static_cast<int>(size);
+  return static_cast<int>(wrapper.size());
 }
 
 struct ResolvedTempMod {
@@ -478,8 +485,9 @@ static bool completeImpl(ARState &st, ResolvedTempMod resolvedMod, StringRef sou
                               st.sysConfig, st.typePool, st.logicalWorkingDir);
   codeCompleter.setUserDefinedComp([&st, resolvedMod](const Lexer &lex, const CmdNode &cmdNode,
                                                       const std::string &word, bool tilde,
-                                                      CompCandidateConsumer &consumer) {
-    return kickCompHook(st, resolvedMod.index, lex, cmdNode, word, tilde, consumer);
+                                                      CompCandidateConsumer &cc) {
+    return kickCompHook(st, resolvedMod.index, lex, cmdNode, word, tilde,
+                        static_cast<DefaultCompConsumer &>(cc));
   });
   codeCompleter.setDynaUdcComp([&st](const std::string &word, CompCandidateConsumer &consumer) {
     auto &dynaUdcs = typeAs<OrderedMapObject>(st.getGlobal(BuiltinVarOffset::DYNA_UDCS));
@@ -581,17 +589,16 @@ int doCodeCompletion(ARState &st, StringRef modDesc, StringRef source, bool inse
     ARState::clearPendingSignal(SIGINT);
     errno = EINTR;
     return -1;
-  } else {
-    const size_t size = reply.size();
-    assert(size <= ArrayObject::MAX_SIZE);
-    if (insertSpace && needSpace(reply, candidateKind)) {
-      assert(size == 1);
-      auto v = CandidatesWrapper::toStrRef(reply.getValues()[0]).toString();
-      v += " ";
-      reply.refValues()[0] = Value::createStr(std::move(v)); // not check iterator invalidation
-    }
-    return static_cast<int>(size);
   }
+  const size_t size = reply.size();
+  assert(size <= ArrayObject::MAX_SIZE);
+  if (insertSpace && needSpace(reply, candidateKind)) {
+    assert(size == 1);
+    auto v = CandidatesWrapper::toStrRef(reply.getValues()[0]).toString();
+    v += " ";
+    reply.refValues()[0] = Value::createStr(std::move(v)); // not check iterator invalidation
+  }
+  return static_cast<int>(size);
 }
 
 // ##########################

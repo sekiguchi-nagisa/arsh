@@ -15,6 +15,7 @@
  */
 
 #include "candidates.h"
+#include "core.h"
 #include "misc/unicode.hpp"
 #include "type_pool.h"
 
@@ -33,6 +34,16 @@ bool CandidatesWrapper::add(ARState &state, Value &&candidate, Value &&signature
     return this->add(state, std::move(candidate));
   }
   return this->addNew(state, candidate.asStrRef(), signature.asStrRef());
+}
+
+bool CandidatesWrapper::addNew(ARState &state, StringRef candidate, StringRef signature) {
+  if (likely(candidate.size() < CandidateObject::MAX_SIZE &&
+             signature.size() < CandidateObject::MAX_SIZE &&
+             candidate.size() + 1 <= CandidateObject::MAX_SIZE - signature.size())) {
+    return this->add(state, CandidateObject::create(candidate, signature));
+  }
+  raiseError(state, TYPE::OutOfRangeError, "sum of candidate and signature size reaches limit");
+  return false;
 }
 
 bool CandidatesWrapper::addAll(ARState &state, const ArrayObject &o) {

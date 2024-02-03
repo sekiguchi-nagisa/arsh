@@ -367,7 +367,9 @@ function size(): Int for Candidates
 
 function %OP_GET(index: Int): String for Candidates
 
-function add(value: String): Candidates for Candidates
+function add(can: String, sig: String?): Candidates for Candidates
+
+function addAll(other: Candidates): Candidates for Candidates
 ```
 
 ## Array type

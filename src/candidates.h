@@ -23,23 +23,26 @@ namespace arsh {
 
 class CandidateObject : public ObjectWithRtti<ObjectKind::Candidate> {
 private:
-  const unsigned int allocSize; // len(candidate) + len(signature)
-  const unsigned int size;      // len(candidate)
+  const unsigned int canSize; // len(candidate)
+  const unsigned int sigSize; // len(signature)
 
-  char payload[]; // candidate + signature
+  char payload[]; // candidate + '@' + signature
 
-  CandidateObject(StringRef cadidate, StringRef signature)
-      : ObjectWithRtti(TYPE::String), allocSize(cadidate.size() + signature.size()),
-        size(cadidate.size()) {
-    memcpy(this->payload, cadidate.data(), cadidate.size());
-    memcpy(this->payload + this->size, signature.data(), signature.size());
+  CandidateObject(const StringRef can, const StringRef sig)
+      : ObjectWithRtti(TYPE::String), canSize(can.size()), sigSize(sig.size()) {
+    memcpy(this->payload, can.data(), can.size());
+    this->payload[this->canSize] = '@';
+    memcpy(this->payload + this->canSize + 1, sig.data(), sig.size());
   }
 
 public:
-  static ObjPtr<CandidateObject> create(StringRef candidate, StringRef signature) {
-    assert(candidate.size() <= INT32_MAX);
-    assert(signature.size() <= INT32_MAX);
-    const unsigned int allocSize = candidate.size() + signature.size();
+  static constexpr size_t MAX_SIZE = SYS_LIMIT_STRING_MAX;
+
+  static ObjPtr<CandidateObject> create(const StringRef candidate, const StringRef signature) {
+    assert(candidate.size() <= MAX_SIZE);
+    assert(signature.size() <= MAX_SIZE);
+    assert(candidate.size() + 1 <= MAX_SIZE - signature.size());
+    const unsigned int allocSize = candidate.size() + signature.size() + 1;
     void *ptr = malloc(sizeof(CandidateObject) + sizeof(char) * allocSize);
     auto *obj = new (ptr) CandidateObject(candidate, signature);
     return ObjPtr<CandidateObject>(obj);
@@ -49,13 +52,17 @@ public:
     free(ptr);
   }
 
-  unsigned int candidateSize() const { return this->size; }
+  unsigned int candidateSize() const { return this->canSize; }
 
-  unsigned int signatureSize() const { return this->allocSize - this->size; }
+  unsigned int signatureSize() const { return this->sigSize; }
+
+  unsigned int allocSize() const { return this->canSize + 1 + this->sigSize; }
 
   StringRef candidate() const { return {this->payload, this->candidateSize()}; }
 
-  StringRef signature() const { return {this->payload + this->size, this->signatureSize()}; }
+  StringRef signature() const { return {this->payload + this->canSize + 1, this->signatureSize()}; }
+
+  StringRef underlying() const { return {this->payload, this->allocSize()}; }
 };
 
 class CandidatesWrapper {
@@ -73,12 +80,9 @@ public:
 
   bool add(ARState &state, Value &&value) { return this->obj->append(state, std::move(value)); }
 
-  bool addNew(ARState &state, StringRef candidate, StringRef signature) {
-    return this->add(state, CandidateObject::create(candidate, signature));
-  }
+  bool addNew(ARState &state, StringRef candidate, StringRef signature);
 
   /**
-   * \brief
    * @param state
    * @param candidate
    * must be String

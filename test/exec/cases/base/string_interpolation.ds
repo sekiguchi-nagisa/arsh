@@ -88,3 +88,16 @@ typedef List($a : String, $n : List?) {
 }
 var list = new List("a b", new List("cc", new List?()))
 assert "$list" == 'a b cc'
+
+## Candidates
+assert "${new Candidates([''])}" == ""
+assert "${new Candidates(['', 'a'])}" == " a"
+assert "${new Candidates(['', 'a', ''])}" == " a "
+var can = new Candidates()
+assert "$can" == ""
+$can.add('aaa', 'dummy')
+assert "$can" == 'aaa@dummy'
+$can.add('bbb', '')
+assert "$can" == 'aaa@dummy bbb'
+$can.add('ccc', 'help')
+assert "$can" == 'aaa@dummy bbb ccc@help'

@@ -1,0 +1,46 @@
+
+var can1 = new Candidates()
+assert $can1.size() == 0
+var ex = 34 as Any
+try { $can1[0]; } catch e { $ex = $e; }
+assert $ex is OutOfRangeError
+assert $can1 as String == '[]'
+
+$can1 = new Candidates(new [String]())
+assert $can1.size() == 0
+$ex = 34
+try { $can1[0]; } catch e { $ex = $e; }
+assert $ex is OutOfRangeError
+
+$can1 = new Candidates(['aaa'])
+assert $can1.size() == 1
+assert $can1[0] == 'aaa'
+assert $can1 as String == '[aaa]'
+
+$can1.add('bbb', 'dummy')
+assert $can1.size() == 2
+assert $can1[1] == 'bbb'
+assert "$can1" == 'aaa bbb@dummy'
+assert $can1 as String == '[aaa, bbb@dummy]'
+
+var can2 = new Candidates()
+$can2.add('ddd', 'help')
+$can2.addAll($can2)
+assert $can2.size() == 1   # do nothing
+assert $can2 as String == '[ddd@help]'
+
+$can2.addAll($can1)
+assert $can2.size() == 3
+assert $can2[0] == 'ddd'
+assert $can2[1] == 'aaa'
+assert $can2[2] == 'bbb'
+assert "$can2" == 'ddd@help aaa bbb@dummy'
+assert $can2 as String == '[ddd@help, aaa, bbb@dummy]'
+
+## too large candidates
+printf -v var "%*s" 2147483640 aa
+let large = $reply.remove('var')!
+$ex = 34
+try { $can2.add($large, $large); assert $false; } catch e { $ex = $e; }
+assert $ex is OutOfRangeError
+assert ($ex as OutOfRangeError).message() == 'sum of candidate and signature size reaches limit'

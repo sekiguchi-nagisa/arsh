@@ -367,9 +367,7 @@ bool Value::opStr(StrBuilder &builder) const {
     }
     case ObjectKind::Candidate: {
       auto &obj = typeAs<CandidateObject>(*this);
-      const auto candidate = obj.candidate();
-      const auto signature = obj.signature();
-      return builder.add(candidate) && builder.add("@") && builder.add(signature);
+      return builder.add(obj.underlying());
     }
     default:
       break;
@@ -430,10 +428,6 @@ bool Value::opInterp(StrBuilder &builder) const {
         TRY(e.opInterp(builder));
       }
       return true;
-    }
-    case ObjectKind::Candidate: {
-      const auto &obj = typeAs<CandidateObject>(*this);
-      return builder.add(obj.candidate()) && builder.add(" ") && builder.add(obj.signature());
     }
     default:
       break;
@@ -690,11 +684,6 @@ bool CmdArgsBuilder::add(Value &&arg) {
         TRY(this->add(Value(obj[i])));
       }
       return true;
-    }
-    case ObjectKind::Candidate: {
-      const auto &obj = typeAs<CandidateObject>(arg);
-      return this->add(Value::createStr(obj.candidate())) &&
-             this->add(Value::createStr(obj.signature()));
     }
     default:
       break;
