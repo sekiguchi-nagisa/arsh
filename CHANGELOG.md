@@ -11,7 +11,7 @@
     - ``[]``: get candidate
     - ``add``: add new candidate
     - ``addAll``: add candidates from other
-- completion candidates pager in ``LineEditor`` support signature
+- completion candidates pager in ``LineEditor`` show detail information of candidates(label or signature)
 
 ### Changed
 
@@ -24,7 +24,7 @@
             - single ``[`` and ``]`` are not recognized as bracket expression
         - also support character class such as ``alnum``, ``space``
     - always perform tilde expansion before glob expansion
-        - if ``failglob`` is disabled and glob expansion failed, return tide expanded string
+        - if ``failglob`` is disabled and glob expansion failed, return tilde expanded string
 - **Breaking Change**: now not preserve exit status during finally/defer block
     - now the following code is valid
       ```
@@ -32,7 +32,7 @@
       defer { $? = $old; }
       ```
 - **Breaking Change**: not reset exit status before call user-defined command due to posix shell compatibility
-- auto-unwrap option type expression in for-in
+- auto-unwrap option type expression in for-in expression
   ```
   for a in "123" as String? { echo $a; }
   ```
