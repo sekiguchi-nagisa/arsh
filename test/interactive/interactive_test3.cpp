@@ -442,6 +442,17 @@ TEST_F(InteractiveTest, disown2) {
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 0));
 }
 
+TEST_F(InteractiveTest, changeTCPGRPInChild) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+  std::string out = ": Job = %1\n" + PROMPT;
+  std::string err = format("[warn] retry readLine, caused by `%s'\n", strerror(EIO));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
+      "call $BIN_NAME -c 'shctl set monitor; ls > /dev/null;' &", out.c_str(), err.c_str()));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 0));
+}
+
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

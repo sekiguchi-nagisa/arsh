@@ -45,6 +45,12 @@
     - now accept ``((Module, String) -> Candidates)?``
 - ``Error`` type constructor now accept `0` status
 
+### Fixed
+
+- fix ``EIO`` handling in interactive mode
+    - retry ``ARState_readLine`` when `EIO` happened
+    - when call ``ARState_readLine``, always be foreground process
+
 ## [0.32.1] - 2024-01-21
 
 ### Fixed

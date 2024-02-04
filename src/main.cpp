@@ -211,6 +211,7 @@ static int exec_interactive(ARState *state, const char *rcpath) {
     return ret.second;
   }
 
+  unsigned int eioRetryCount = 0;
   int status = 0;
   while (true) {
     ARError e; // NOLINT
@@ -225,7 +226,13 @@ static int exec_interactive(ARState *state, const char *rcpath) {
     if (readSize < 0) {
       if (errno == EAGAIN) {
         continue;
-      } else if (errno != 0) {
+      }
+      if (errno != 0) {
+        if (errno == EIO && eioRetryCount < 2) {
+          eioRetryCount++; // workaround for EIO of pty read
+          fprintf(stderr, "[warn] retry readLine, caused by `%s'\n", strerror(EIO));
+          continue;
+        }
         fprintf(stderr, "[fatal] readLine failed, caused by `%s'\n", strerror(errno));
         return 1;
       }
@@ -240,6 +247,7 @@ static int exec_interactive(ARState *state, const char *rcpath) {
       readSize = static_cast<ssize_t>(size);
     }
 
+    eioRetryCount = 0;
     status = ARState_eval(state, nullptr, buf, static_cast<size_t>(readSize), &e);
     kind = e.kind;
     ARError_release(&e);

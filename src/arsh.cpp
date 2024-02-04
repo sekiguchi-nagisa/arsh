@@ -578,6 +578,11 @@ ssize_t ARState_readLine(ARState *st, char *buf, size_t bufSize, ARError *e) {
   if (e) {
     *e = initARError();
   }
+  /**
+   * always be (termianl) foreground process
+   * some background process may change termianl foreground setting
+   */
+  beForeground(getpid());
   auto &editor = typeAs<LineEditorObject>(getBuiltinGlobal(*st, VAR_LINE_EDIT));
   auto ret = editor.readline(*st, defaultPrompt(), buf, bufSize);
   if (errno == ENOMEM) {
