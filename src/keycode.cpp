@@ -116,14 +116,13 @@ ssize_t readWithTimeout(const int fd, char *buf, const size_t bufSize,
 }
 
 static ssize_t readBytes(int fd, char (&buf)[8]) {
-  ssize_t readSize =
-      readWithTimeout(fd, &buf[0], 1, {.retry = true, .timeoutMSec = -1}); // no-timeout
+  ssize_t readSize = readRetryWithTimeout(fd, &buf[0], 1, -1); // no-timeout
   if (readSize <= 0) {
     return readSize;
   }
   const unsigned int byteSize = UnicodeUtil::utf8ByteSize(buf[0]);
   for (unsigned int i = 1; i < byteSize; i++) {
-    if (ssize_t r = readWithTimeout(fd, &buf[i], 1, {.retry = true, .timeoutMSec = 100}); r <= 0) {
+    if (const ssize_t r = readRetryWithTimeout(fd, &buf[i], 1, 100); r <= 0) {
       if (r == -1) {
         return -1;
       }
@@ -136,8 +135,7 @@ static ssize_t readBytes(int fd, char (&buf)[8]) {
 
 #define READ_BYTE(b, bs)                                                                           \
   do {                                                                                             \
-    ssize_t r =                                                                                    \
-        readWithTimeout(this->fd, (b) + (bs), 1, {.retry = true, .timeoutMSec = this->timeout});   \
+    ssize_t r = readRetryWithTimeout(this->fd, (b) + (bs), 1, this->timeout);                      \
     if (r <= 0) {                                                                                  \
       if (r == -1) {                                                                               \
         return -1;                                                                                 \

@@ -52,6 +52,10 @@ struct ReadWithTimeoutParam {
  */
 ssize_t readWithTimeout(int fd, char *buf, size_t bufSize, ReadWithTimeoutParam param);
 
+inline ssize_t readRetryWithTimeout(int fd, char *buf, size_t bufSize, int timeoutMSec) {
+  return readWithTimeout(fd, buf, bufSize, {.retry = true, .timeoutMSec = timeoutMSec});
+}
+
 class KeyCodeReader {
 private:
   static constexpr int DEFAULT_READ_TIMEOUT_MSEC = 200;
@@ -98,9 +102,7 @@ public:
     bool noMem = false;
     while (true) {
       char buf;
-      if (ssize_t r =
-              readWithTimeout(this->fd, &buf, 1, {.retry = true, .timeoutMSec = this->timeout});
-          r <= 0) {
+      if (ssize_t r = readRetryWithTimeout(this->fd, &buf, 1, this->timeout); r <= 0) {
         if (r < 0) {
           if (r == -2) {
             errno = ETIME;
@@ -121,8 +123,7 @@ public:
         const char expect[] = {'[', '2', '0', '1', '~'};
         unsigned int count = 0;
         for (; count < std::size(expect); count++) {
-          if (ssize_t r = readWithTimeout(this->fd, seq + count + 1, 1,
-                                          {.retry = true, .timeoutMSec = this->timeout});
+          if (ssize_t r = readRetryWithTimeout(this->fd, seq + count + 1, 1, this->timeout);
               r <= 0) {
             if (r < 0) {
               if (r == -2) {
