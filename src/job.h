@@ -24,15 +24,7 @@
 
 namespace arsh {
 
-inline int beForeground(pid_t pid) {
-  errno = 0;
-  int ttyFd = open("/dev/tty", O_RDONLY);
-  int r = tcsetpgrp(ttyFd, getpgid(pid));
-  int old = errno;
-  close(ttyFd);
-  errno = old;
-  return r;
-}
+int beForeground(pid_t pid);
 
 #define EACH_WAIT_OP(OP)                                                                           \
   OP(BLOCKING)                                                                                     \

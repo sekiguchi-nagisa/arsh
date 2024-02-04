@@ -26,6 +26,16 @@
 
 namespace arsh {
 
+int beForeground(pid_t pid) {
+  errno = 0;
+  const int ttyFd = open("/dev/tty", O_RDONLY);
+  const int r = tcsetpgrp(ttyFd, getpgid(pid));
+  const int old = errno;
+  close(ttyFd);
+  errno = old;
+  return r;
+}
+
 Proc Proc::fork(ARState &st, pid_t pgid, const Proc::Op op) {
   SignalGuard guard;
 
