@@ -36,6 +36,9 @@
  * if timeout, return -2
  */
 static int waitForInputReady(int fd, int timeoutMSec) {
+  if (timeoutMSec < 0) {
+    return 0;
+  }
   fd_set fds;
   struct timeval tv {
     .tv_sec = timeoutMSec / 1000, .tv_usec = (timeoutMSec % 1000) * 1000,
@@ -65,6 +68,9 @@ static int waitForInputReady(int fd, int timeoutMSec) {
  * if timeout, return -2
  */
 static int waitForInputReady(int fd, int timeoutMSec) {
+  if (timeoutMSec < 0) {
+    return 0;
+  }
   struct pollfd fds[1];
   fds[0].fd = fd;
   fds[0].events = POLLIN;
