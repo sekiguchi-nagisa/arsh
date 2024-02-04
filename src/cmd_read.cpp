@@ -49,9 +49,18 @@ static bool readLine(ARState &state, int fd, const ArrayObject &argvObj, unsigne
   char ch;
   for (bool prevIsBackslash = false;;
        prevIsBackslash = backslash && ch == '\\' && !prevIsBackslash) {
-    do {
-      readSize = readWithTimeout(fd, &ch, 1, timeoutMSec);
-    } while (readSize < 0 && errno == EAGAIN);
+    while (true) {
+      readSize = readWithTimeout(fd, &ch, 1, {.retry = false, .timeoutMSec = timeoutMSec});
+      if (readSize < 0) {
+        if (errno == EAGAIN) {
+          continue;
+        }
+        if (errno == EINTR && !ARState::isInterrupted()) {
+          continue; // retry except for SIGINT
+        }
+      }
+      break;
+    }
     if (readSize <= 0) {
       break;
     }

@@ -34,18 +34,23 @@ inline bool isEscapeChar(int ch) { return ch == '\x1b'; }
 
 inline bool isCaretTarget(int ch) { return (ch >= '@' && ch <= '_') || ch == '?'; }
 
+struct ReadWithTimeoutParam {
+  bool retry;
+  int timeoutMSec;
+};
+
 /**
  *
  * @param fd
  * @param buf
  * @param bufSize
- * @param timeoutMSec
+ * @param param
  * @return
  * if timeout, return -2
  * if has error, return -1 and set errno
  * otherwise, return non-negative number
  */
-ssize_t readWithTimeout(int fd, char *buf, size_t bufSize, int timeoutMSec = -1);
+ssize_t readWithTimeout(int fd, char *buf, size_t bufSize, ReadWithTimeoutParam param);
 
 class KeyCodeReader {
 private:
@@ -93,7 +98,9 @@ public:
     bool noMem = false;
     while (true) {
       char buf;
-      if (ssize_t r = readWithTimeout(this->fd, &buf, 1, this->timeout); r <= 0) {
+      if (ssize_t r =
+              readWithTimeout(this->fd, &buf, 1, {.retry = true, .timeoutMSec = this->timeout});
+          r <= 0) {
         if (r < 0) {
           if (r == -2) {
             errno = ETIME;
@@ -114,7 +121,9 @@ public:
         const char expect[] = {'[', '2', '0', '1', '~'};
         unsigned int count = 0;
         for (; count < std::size(expect); count++) {
-          if (ssize_t r = readWithTimeout(this->fd, seq + count + 1, 1, this->timeout); r <= 0) {
+          if (ssize_t r = readWithTimeout(this->fd, seq + count + 1, 1,
+                                          {.retry = true, .timeoutMSec = this->timeout});
+              r <= 0) {
             if (r < 0) {
               if (r == -2) {
                 errno = ETIME;

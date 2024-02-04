@@ -36,9 +36,6 @@
  * if timeout, return -2
  */
 static int waitForInputReady(int fd, int timeoutMSec) {
-  if (timeoutMSec < 0) {
-    return 0;
-  }
   fd_set fds;
   struct timeval tv {
     .tv_sec = timeoutMSec / 1000, .tv_usec = (timeoutMSec % 1000) * 1000,
@@ -68,9 +65,6 @@ static int waitForInputReady(int fd, int timeoutMSec) {
  * if timeout, return -2
  */
 static int waitForInputReady(int fd, int timeoutMSec) {
-  if (timeoutMSec < 0) {
-    return 0;
-  }
   struct pollfd fds[1];
   fds[0].fd = fd;
   fds[0].events = POLLIN;
@@ -92,23 +86,38 @@ namespace arsh {
 // ##     KeyCodeReader     ##
 // ###########################
 
-ssize_t readWithTimeout(int fd, char *buf, size_t bufSize, int timeoutMSec) {
-  errno = 0;
-  int r = waitForInputReady(fd, timeoutMSec);
-  if (r != 0) {
-    return r;
+ssize_t readWithTimeout(const int fd, char *buf, const size_t bufSize,
+                        const ReadWithTimeoutParam param) {
+  while (true) {
+    errno = 0;
+    const int r = waitForInputReady(fd, param.timeoutMSec);
+    if (r != 0) {
+      if (r == -1 && param.retry && errno == EINTR) {
+        continue;
+      }
+      return r;
+    }
+    break;
   }
-  return read(fd, buf, bufSize);
+  while (true) {
+    errno = 0;
+    const ssize_t readSize = read(fd, buf, bufSize);
+    if (readSize < 0 && param.retry && (errno == EINTR || errno == EAGAIN)) {
+      continue;
+    }
+    return readSize;
+  }
 }
 
 static ssize_t readBytes(int fd, char (&buf)[8]) {
-  ssize_t readSize = readWithTimeout(fd, &buf[0], 1); // no-timeout
+  ssize_t readSize =
+      readWithTimeout(fd, &buf[0], 1, {.retry = true, .timeoutMSec = -1}); // no-timeout
   if (readSize <= 0) {
     return readSize;
   }
   const unsigned int byteSize = UnicodeUtil::utf8ByteSize(buf[0]);
   for (unsigned int i = 1; i < byteSize; i++) {
-    if (ssize_t r = readWithTimeout(fd, &buf[i], 1, 100); r <= 0) {
+    if (ssize_t r = readWithTimeout(fd, &buf[i], 1, {.retry = true, .timeoutMSec = 100}); r <= 0) {
       if (r == -1) {
         return -1;
       }
@@ -121,7 +130,8 @@ static ssize_t readBytes(int fd, char (&buf)[8]) {
 
 #define READ_BYTE(b, bs)                                                                           \
   do {                                                                                             \
-    ssize_t r = readWithTimeout(this->fd, (b) + (bs), 1, this->timeout);                           \
+    ssize_t r =                                                                                    \
+        readWithTimeout(this->fd, (b) + (bs), 1, {.retry = true, .timeoutMSec = this->timeout});   \
     if (r <= 0) {                                                                                  \
       if (r == -1) {                                                                               \
         return -1;                                                                                 \
