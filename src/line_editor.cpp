@@ -299,7 +299,9 @@ static void checkProperty(struct linenoiseState &l) {
     if (write(l.ofd, r, strlen(r)) == -1) {
       return;
     }
-    assert(pos > 0);
+    if (pos < 0) {
+      return;
+    }
     l.ps.setProperty(e.first, pos - 1);
   }
 }

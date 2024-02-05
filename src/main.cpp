@@ -228,9 +228,10 @@ static int exec_interactive(ARState *state, const char *rcpath) {
         continue;
       }
       if (errno != 0) {
-        if (errno == EIO && eioRetryCount < 2) {
-          eioRetryCount++; // workaround for EIO of pty read
+        if (errno == EIO && eioRetryCount < 2) { // workaround for EIO of pty read
           fprintf(stderr, "[warn] retry readLine, caused by `%s'\n", strerror(EIO));
+          usleep((1 << eioRetryCount) * 100000);
+          eioRetryCount++;
           continue;
         }
         fprintf(stderr, "[fatal] readLine failed, caused by `%s'\n", strerror(errno));
