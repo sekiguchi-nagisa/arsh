@@ -574,6 +574,7 @@ static const char *defaultPrompt() {
 ssize_t ARState_readLine(ARState *st, char *buf, size_t bufSize, ARError *e) {
   GUARD_NULL(st, 0);
   st->getCallStack().clearThrownObject();
+  st->jobTable.waitForAny();
   st->notifyCallback.showAndClear();
   if (e) {
     *e = initARError();
