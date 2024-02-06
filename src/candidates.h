@@ -118,6 +118,15 @@ public:
    */
   bool addAll(ARState &state, const ArrayObject &o);
 
+  void pop() {
+    this->obj->refValues().pop_back(); // not check iterator invalidation
+  }
+
+  void clearAndShrink() {
+    this->obj->refValues().clear(); // not check iterator invalidation
+    this->obj->refValues().shrink_to_fit();
+  }
+
   ObjPtr<ArrayObject> take() && { return std::move(this->obj); }
 
   void sortAndDedup(unsigned int beginOffset);
@@ -145,12 +154,12 @@ public:
    */
   StringRef getCommonPrefixStr() const;
 
+private:
   static StringRef toStrRef(const Value &v) {
     return v.isObject() && isa<CandidateObject>(v.get()) ? typeAs<CandidateObject>(v).candidate()
                                                          : v.asStrRef();
   }
 
-private:
   const std::vector<Value> &values() const { return this->obj->getValues(); }
 
   bool add(ARState &state, Value &&v) { return this->obj->append(state, std::move(v)); }

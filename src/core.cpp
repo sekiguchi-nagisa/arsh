@@ -571,11 +571,9 @@ int doCodeCompletion(ARState &st, StringRef modDesc, StringRef source, bool inse
   st.setGlobal(BuiltinVarOffset::COMPREPLY, std::move(consumer).finalize()); // override COMPREPLY
 
   // check space insertion
-  auto reply = toObjPtr<ArrayObject>(st.getGlobal(BuiltinVarOffset::COMPREPLY));
+  CandidatesWrapper wrapper(toObjPtr<ArrayObject>(st.getGlobal(BuiltinVarOffset::COMPREPLY)));
   if (!ret || ARState::isInterrupted() || st.hasError()) {
-    // if cancelled, force clear completion results (not check iterator invalidation)
-    reply->refValues().clear();
-    reply->refValues().shrink_to_fit();
+    wrapper.clearAndShrink(); // if cancelled, force clear completion results
     if (!st.hasError()) {
       raiseSystemError(st, EINTR, "code completion is cancelled");
     }
@@ -583,14 +581,13 @@ int doCodeCompletion(ARState &st, StringRef modDesc, StringRef source, bool inse
     errno = EINTR;
     return -1;
   }
-  const size_t size = reply->size();
+  const size_t size = wrapper.size();
   assert(size <= ArrayObject::MAX_SIZE);
-  CandidatesWrapper wrapper(reply);
   if (insertSpace && size == 1 && needSpace(wrapper.getCandidateAt(0), candidateKind)) {
     assert(size == 1);
     auto v = wrapper.getCandidateAt(0).toString();
     v += " ";
-    reply->refValues().pop_back(); // not check iterator invalidation
+    wrapper.pop();
     wrapper.addAsCandidate(st, Value::createStr(std::move(v)));
   }
   return static_cast<int>(size);
