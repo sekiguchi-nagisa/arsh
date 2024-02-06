@@ -204,7 +204,7 @@ static int getCursorPosition(int ifd, int ofd) {
   /* Read the response: ESC [ rows ; cols R */
   unsigned int i = 0;
   for (; i < sizeof(buf) - 1; i++) {
-    if (read(ifd, buf + i, 1) != 1) {
+    if (readRetryWithTimeout(ifd, buf + i, 1, 200) != 1) {
       break;
     }
     if (buf[i] == 'R') {
