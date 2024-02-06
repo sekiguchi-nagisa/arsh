@@ -1066,7 +1066,7 @@ EditActionStatus LineEditorObject::completeLine(ARState &state, struct linenoise
                                                 KeyCodeReader &reader) {
   reader.clear();
 
-  auto candidates = CandidatesWrapper(this->kickCompletionCallback(state, ls.buf.getToCursor()));
+  CandidatesWrapper candidates(this->kickCompletionCallback(state, ls.buf.getToCursor()));
   if (!candidates || candidates.size() <= 1) {
     this->refreshLine(ls);
   }

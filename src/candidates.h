@@ -65,24 +65,39 @@ public:
   StringRef underlying() const { return {this->payload, this->allocSize()}; }
 };
 
+enum class CandidateAttr : unsigned char {
+  NONE,
+  TYPE_SIGNATURE, // for variable/function/member
+};
+
 class CandidatesWrapper {
 private:
-  ObjPtr<ArrayObject> obj; // must be [String] or Candidates
+  ObjPtr<ArrayObject> obj; // must be Candidates
 
 public:
   explicit CandidatesWrapper(const TypePool &pool);
 
-  explicit CandidatesWrapper(const ObjPtr<ArrayObject> &obj) : obj(obj) {}
+  explicit CandidatesWrapper(const ObjPtr<ArrayObject> &obj) : obj(obj) {
+    assert(!this->obj || this->obj->getTypeID() == toUnderlying(TYPE::Candidates));
+  }
 
-  explicit CandidatesWrapper(ObjPtr<ArrayObject> &&obj) : obj(std::move(obj)) {}
+  explicit CandidatesWrapper(ObjPtr<ArrayObject> &&obj) : obj(std::move(obj)) {
+    assert(!this->obj || this->obj->getTypeID() == toUnderlying(TYPE::Candidates));
+  }
 
   explicit operator bool() const { return static_cast<bool>(this->obj); }
 
-  bool add(ARState &state, Value &&value) { return this->obj->append(state, std::move(value)); }
-
-  bool addNew(ARState &state, StringRef candidate, StringRef signature);
+  /**
+   * always ignore empty candidate
+   * @param state
+   * @param value
+   * must be String
+   * @return
+   */
+  bool addAsCandidate(ARState &state, const Value &value);
 
   /**
+   * for builtin method. always ignore empty candidate
    * @param state
    * @param candidate
    * must be String
@@ -90,12 +105,15 @@ public:
    * must be String or invalid
    * @return
    */
-  bool add(ARState &state, Value &&candidate, Value &&signature);
+  bool addNewCandidate(ARState &state, Value &&candidate, Value &&signature);
+
+  bool addNewCandidateWith(ARState &state, StringRef candidate, StringRef signature,
+                           CandidateAttr attr);
 
   /**
    * @param state
    * @param o
-   * must be [String] or Candidates
+   * must be Candidates
    * @return
    */
   bool addAll(ARState &state, const ArrayObject &o);
@@ -116,6 +134,10 @@ public:
                                                          : "";
   }
 
+  CandidateAttr getAttrAt(const unsigned int index) const {
+    return static_cast<CandidateAttr>(this->values()[index].getMetaData());
+  }
+
   /**
    * resolve common prefix string (valid utf-8)
    * @return
@@ -130,6 +152,8 @@ public:
 
 private:
   const std::vector<Value> &values() const { return this->obj->getValues(); }
+
+  bool add(ARState &state, Value &&v) { return this->obj->append(state, std::move(v)); }
 };
 
 } // namespace arsh

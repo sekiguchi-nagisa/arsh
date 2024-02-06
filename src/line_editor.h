@@ -70,7 +70,7 @@ private:
   ObjPtr<Object> promptCallback;
 
   /**
-   * must be `(Module, String) -> [String]` type
+   * must be `(Module, String) -> Candidates` type
    * may be null
    */
   ObjPtr<Object> completionCallback;

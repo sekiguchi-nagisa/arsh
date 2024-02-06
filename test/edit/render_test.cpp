@@ -6,6 +6,7 @@
 #include <object.h>
 #include <pager.h>
 #include <type_pool.h>
+#include <vm.h>
 
 using namespace arsh;
 
@@ -418,36 +419,41 @@ TEST_F(LineRendererTest, softwrap) {
   ASSERT_EQ("1234\r\n    \r\n@ ^M\r\n", out);
 }
 
-static void append(ArrayObject &) {}
-
-template <typename... T>
-static void append(ArrayObject &obj, const char *first, T &&...remain) {
-  obj.refValues().push_back(Value::createStr(first));
-  append(obj, std::forward<T>(remain)...);
-}
-
 class PagerTest : public ExpectOutput {
 protected:
-  TypePool pool;
+  ARState *state;
   CharWidthProperties ps;
 
 public:
-  PagerTest() { this->ps.replaceInvalid = true; }
-
-  template <typename... T>
-  ObjPtr<ArrayObject> create(T &&...args) const {
-    auto v = Value::create<ArrayObject>(this->pool.get(TYPE::StringArray));
-    auto &obj = typeAs<ArrayObject>(v);
-    append(obj, std::forward<T>(args)...);
-    return toObjPtr<ArrayObject>(v);
+  PagerTest() {
+    this->state = ARState_create();
+    this->ps.replaceInvalid = true;
   }
 
-  ObjPtr<ArrayObject> createWith(std::vector<std::pair<const char *, const char *>> &&args) const {
-    auto obj = CandidatesWrapper(this->pool).take();
+  ~PagerTest() { ARState_delete(&this->state); }
+
+  void append(CandidatesWrapper &) {}
+
+  template <typename... T>
+  void append(CandidatesWrapper &wrapper, const char *first, T &&...remain) {
+    wrapper.addAsCandidate(*this->state, Value::createStr(first));
+    append(wrapper, std::forward<T>(remain)...);
+  }
+
+  template <typename... T>
+  ObjPtr<ArrayObject> create(T &&...args) {
+    CandidatesWrapper wrapper(this->state->typePool);
+    this->append(wrapper, std::forward<T>(args)...);
+    return std::move(wrapper).take();
+  }
+
+  ObjPtr<ArrayObject> createWith(std::vector<std::pair<const char *, const char *>> &&args,
+                                 const CandidateAttr attr = CandidateAttr::NONE) {
+    CandidatesWrapper wrapper(this->state->typePool);
     for (auto &[can, sig] : args) {
-      obj->refValues().push_back(CandidateObject::create(can, sig));
+      wrapper.addNewCandidateWith(*this->state, can, sig, attr);
     }
-    return obj;
+    return std::move(wrapper).take();
   }
 };
 

@@ -2541,9 +2541,12 @@ ARSH_METHOD candidates_init(RuntimeContext &ctx) {
   SUPPRESS_WARNING(candidates_init);
   CandidatesWrapper wrapper(ctx.typePool);
   if (const auto v = LOCAL(1); !v.isInvalid()) {
-    const bool r = wrapper.addAll(ctx, typeAs<ArrayObject>(v));
-    (void)r;
-    assert(r);
+    const auto &values = typeAs<ArrayObject>(v).getValues();
+    for (auto &e : values) {
+      if (unlikely(!wrapper.addAsCandidate(ctx, e))) {
+        RET_ERROR;
+      }
+    }
   }
   RET(std::move(wrapper).take());
 }
@@ -2567,7 +2570,7 @@ ARSH_METHOD candidates_add(RuntimeContext &ctx) {
   CandidatesWrapper wrapper(toObjPtr<ArrayObject>(LOCAL(0)));
   auto candidate = LOCAL(1);
   auto signature = LOCAL(2);
-  if (!wrapper.add(ctx, std::move(candidate), std::move(signature))) {
+  if (!wrapper.addNewCandidate(ctx, std::move(candidate), std::move(signature))) {
     RET_ERROR;
   }
   RET(LOCAL(0));

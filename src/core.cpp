@@ -315,22 +315,21 @@ public:
       : state(state), reply(CandidatesWrapper(state.typePool)) {}
 
   void operator()(const CompCandidate &candidate) override {
-    if (candidate.value.empty()) {
-      return;
-    }
-    (*this)(Value::createStr(candidate.quote()), candidate.kind);
-  }
-
-  void operator()(Value &&candiate, const CompCandidateKind kind) {
-    if (CandidatesWrapper::toStrRef(candiate).empty()) {
-      return;
-    }
     if (!this->overflow) {
-      if (!this->reply.add(this->state, std::move(candiate))) {
+      if (!this->reply.addAsCandidate(this->state, Value::createStr(candidate.quote()))) {
         this->overflow = true;
         return;
       }
-      this->kind = kind;
+      this->kind = candidate.kind;
+    }
+  }
+
+  void addAll(const ArrayObject &o) {
+    if (!this->overflow) {
+      if (!this->reply.addAll(this->state, o)) {
+        this->overflow = true;
+      }
+      this->kind = CompCandidateKind::COMMAND_ARG_NO_QUOTE;
     }
   }
 
@@ -403,11 +402,9 @@ static int kickCompHook(ARState &state, unsigned int tempModIndex, const Lexer &
     errno = EINVAL;
     return -1;
   }
-  CandidatesWrapper wrapper(toObjPtr<ArrayObject>(ret));
-  for (auto &e : typeAs<ArrayObject>(ret).getValues()) {
-    consumer(Value(e), CompCandidateKind::COMMAND_ARG_NO_QUOTE);
-  }
-  return static_cast<int>(wrapper.size());
+  auto &obj = typeAs<ArrayObject>(ret);
+  consumer.addAll(obj);
+  return static_cast<int>(obj.size());
 }
 
 struct ResolvedTempMod {
@@ -522,12 +519,7 @@ static bool endsWithUnquoteSpace(StringRef ref) {
   return count % 2 == 0;
 }
 
-static bool needSpace(const ArrayObject &obj, CompCandidateKind kind) {
-  if (obj.size() != 1) {
-    return false; // do nothing
-  }
-
-  StringRef first = obj.getValues()[0].asStrRef();
+static bool needSpace(const StringRef first, CompCandidateKind kind) {
   switch (kind) {
   case CompCandidateKind::COMMAND_NAME:
     break;
@@ -537,7 +529,8 @@ static bool needSpace(const ArrayObject &obj, CompCandidateKind kind) {
   case CompCandidateKind::COMMAND_ARG_NO_QUOTE:
     if (first.back() == '/') {
       return false;
-    } else if (kind == CompCandidateKind::COMMAND_ARG_NO_QUOTE) {
+    }
+    if (kind == CompCandidateKind::COMMAND_ARG_NO_QUOTE) {
       return !endsWithUnquoteSpace(first);
     }
     break;
@@ -578,11 +571,11 @@ int doCodeCompletion(ARState &st, StringRef modDesc, StringRef source, bool inse
   st.setGlobal(BuiltinVarOffset::COMPREPLY, std::move(consumer).finalize()); // override COMPREPLY
 
   // check space insertion
-  auto &reply = typeAs<ArrayObject>(st.getGlobal(BuiltinVarOffset::COMPREPLY));
+  auto reply = toObjPtr<ArrayObject>(st.getGlobal(BuiltinVarOffset::COMPREPLY));
   if (!ret || ARState::isInterrupted() || st.hasError()) {
     // if cancelled, force clear completion results (not check iterator invalidation)
-    reply.refValues().clear();
-    reply.refValues().shrink_to_fit();
+    reply->refValues().clear();
+    reply->refValues().shrink_to_fit();
     if (!st.hasError()) {
       raiseSystemError(st, EINTR, "code completion is cancelled");
     }
@@ -590,13 +583,15 @@ int doCodeCompletion(ARState &st, StringRef modDesc, StringRef source, bool inse
     errno = EINTR;
     return -1;
   }
-  const size_t size = reply.size();
+  const size_t size = reply->size();
   assert(size <= ArrayObject::MAX_SIZE);
-  if (insertSpace && needSpace(reply, candidateKind)) {
+  CandidatesWrapper wrapper(reply);
+  if (insertSpace && size == 1 && needSpace(wrapper.getCandidateAt(0), candidateKind)) {
     assert(size == 1);
-    auto v = CandidatesWrapper::toStrRef(reply.getValues()[0]).toString();
+    auto v = wrapper.getCandidateAt(0).toString();
     v += " ";
-    reply.refValues()[0] = Value::createStr(std::move(v)); // not check iterator invalidation
+    reply->refValues().pop_back(); // not check iterator invalidation
+    wrapper.addAsCandidate(st, Value::createStr(std::move(v)));
   }
   return static_cast<int>(size);
 }

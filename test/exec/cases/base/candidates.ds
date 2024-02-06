@@ -12,6 +12,9 @@ $ex = 34
 try { $can1[0]; } catch e { $ex = $e; }
 assert $ex is OutOfRangeError
 
+$can1 = new Candidates([''])
+assert $can1.size() == 0  # ignore emoty string
+
 $can1 = new Candidates(['aaa'])
 assert $can1.size() == 1
 assert $can1[0] == 'aaa'
@@ -21,6 +24,13 @@ $can1.add('bbb', 'dummy')
 assert $can1.size() == 2
 assert $can1[1] == 'bbb'
 assert "$can1" == 'aaa bbb@dummy'
+assert $can1 as String == '[aaa, bbb@dummy]'
+
+$can1.add('')  # ignore empty string
+assert $can1.size() == 2
+assert $can1 as String == '[aaa, bbb@dummy]'
+$can1.add('', 'hello')  # ignore empty string
+assert $can1.size() == 2
 assert $can1 as String == '[aaa, bbb@dummy]'
 
 var can2 = new Candidates()

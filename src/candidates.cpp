@@ -28,25 +28,40 @@ namespace arsh {
 CandidatesWrapper::CandidatesWrapper(const TypePool &pool)
     : obj(toObjPtr<ArrayObject>(Value::create<ArrayObject>(pool.get(TYPE::Candidates)))) {}
 
-bool CandidatesWrapper::add(ARState &state, Value &&candidate, Value &&signature) {
-  assert(candidate.hasStrRef());
-  if (signature.isInvalid() || signature.asStrRef().empty()) {
-    return this->add(state, std::move(candidate));
+bool CandidatesWrapper::addAsCandidate(ARState &state, const Value &value) {
+  assert(value.hasStrRef());
+  if (value.asStrRef().empty()) {
+    return true;
   }
-  return this->addNew(state, candidate.asStrRef(), signature.asStrRef());
+  return this->add(state, value.withMetaData(toUnderlying(CandidateAttr::NONE)));
 }
 
-bool CandidatesWrapper::addNew(ARState &state, StringRef candidate, StringRef signature) {
+bool CandidatesWrapper::addNewCandidate(ARState &state, Value &&candidate, Value &&signature) {
+  assert(candidate.hasStrRef());
+  if (candidate.asStrRef().empty()) {
+    return true;
+  }
+  if (signature.isInvalid() || signature.asStrRef().empty()) {
+    return this->addAsCandidate(state, candidate);
+  }
+  return this->addNewCandidateWith(state, candidate.asStrRef(), signature.asStrRef(),
+                                   CandidateAttr::NONE);
+}
+
+bool CandidatesWrapper::addNewCandidateWith(ARState &state, StringRef candidate,
+                                            StringRef signature, const CandidateAttr attr) {
   if (likely(candidate.size() < CandidateObject::MAX_SIZE &&
              signature.size() < CandidateObject::MAX_SIZE &&
              candidate.size() + 1 <= CandidateObject::MAX_SIZE - signature.size())) {
-    return this->add(state, CandidateObject::create(candidate, signature));
+    const Value value = CandidateObject::create(candidate, signature);
+    return this->add(state, value.withMetaData(toUnderlying(attr)));
   }
   raiseError(state, TYPE::OutOfRangeError, "sum of candidate and signature size reaches limit");
   return false;
 }
 
 bool CandidatesWrapper::addAll(ARState &state, const ArrayObject &o) {
+  assert(o.getTypeID() == toUnderlying(TYPE::Candidates));
   if (this->obj.get() != std::addressof(o)) {
     const auto &values = o.getValues();
     for (auto &e : values) {

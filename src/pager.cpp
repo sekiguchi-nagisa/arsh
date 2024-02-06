@@ -66,11 +66,11 @@ ArrayPager ArrayPager::create(CandidatesWrapper &&obj, const CharWidthProperties
 
   // compute extra tabs
   const auto paneSize = items[maxIndex].itemLen();
-  assert(paneSize % LineRenderer::TAB_WIDTH == 0);
+  assert(paneSize % TAB_WIDTH == 0);
   for (auto &e : items) {
     auto padLen = paneSize - e.itemLen();
-    assert(padLen % LineRenderer::TAB_WIDTH == 0);
-    e.tabs = padLen / LineRenderer::TAB_WIDTH;
+    assert(padLen % TAB_WIDTH == 0);
+    e.tabs = padLen / TAB_WIDTH;
   }
   return {ps, std::move(obj), std::move(items), maxIndex, winSize};
 }
@@ -95,8 +95,8 @@ void ArrayPager::updateWinSize(WindowSize size) {
     this->curRow = this->rows - 1;
   }
   if (this->panes == 1) {
-    unsigned int colLimit = (this->winSize.cols / LineRenderer::TAB_WIDTH) *
-                            LineRenderer::TAB_WIDTH; // truncate to multiple of TAB_WIDTH
+    unsigned int colLimit =
+        (this->winSize.cols / TAB_WIDTH) * TAB_WIDTH; // truncate to multiple of TAB_WIDTH
     if (this->paneLen > colLimit) {
       this->paneLen = colLimit; // larger than window size
     }
