@@ -879,7 +879,7 @@ TEST_F(PagerTest, truncate) {
   ASSERT_EQ(expect, out);
 }
 
-TEST_F(PagerTest, signature1) {
+TEST_F(PagerTest, desc1) {
   // single pane
   auto array = this->createWith({
       {"AAAAA", "regular file"},
@@ -903,7 +903,7 @@ TEST_F(PagerTest, signature1) {
   ASSERT_EQ(expect, out);
 }
 
-TEST_F(PagerTest, signature2) {
+TEST_F(PagerTest, desc2) {
   // multi pane
   auto array = this->createWith({
       {"AAAAA", "regular file"},
@@ -922,6 +922,27 @@ TEST_F(PagerTest, signature2) {
   const char *expect = "AAAAA     (regular file)    DDD         (named pipe)    \r\n"
                        "BBBBB       (executable)    EEEE                        \r\n"
                        "CCCCC        (directory)    \r\n";
+  ASSERT_EQ(expect, out);
+}
+
+TEST_F(PagerTest, sig) {
+  auto array = this->createWith(
+      {
+          {"OSTYPE", ": String"},
+          {"PID", ": Int"},
+          {"COMP_HOOK", ": ((Module, [String], Int) -> Candidates?)?"},
+      },
+      CandidateAttr::TYPE_SIGNATURE);
+  auto pager = ArrayPager::create(CandidatesWrapper(array), this->ps, {.rows = 24, .cols = 80});
+  ASSERT_EQ(1, pager.getPanes());
+  ASSERT_EQ(56, pager.getPaneLen());
+  pager.setShowCursor(false);
+
+  std::string out;
+  pager.render(out);
+  const char *expect = "OSTYPE  : String                                        \r\n"
+                       "PID  : Int                                              \r\n"
+                       "COMP_HOOK  : ((Module, [String], Int) -> Candidates?)?  \r\n";
   ASSERT_EQ(expect, out);
 }
 

@@ -44,17 +44,25 @@ ArrayPager ArrayPager::create(CandidatesWrapper &&obj, const CharWidthProperties
     }
 
     // compute signature columns
-    if (const StringRef signature = obj.getDescriptionAt(i); !signature.empty()) {
-      LineRenderer renderer(ps, 0);
-      renderer.setLineNumLimit(0); // ignore newline
-      renderer.renderLines("(");
-      renderer.renderLines(signature);
-      renderer.renderLines(")");
+    if (const StringRef desc = obj.getDescriptionAt(i); !desc.empty()) {
+      if (obj.getAttrAt(i) == CandidateAttr::TYPE_SIGNATURE) {
+        LineRenderer renderer(ps, item.len);
+        renderer.setLineNumLimit(0); // ignore newline
+        renderer.renderLines("  ");
+        renderer.renderLines(desc);
+        item.len = renderer.getTotalCols();
+      } else {
+        LineRenderer renderer(ps, 0);
+        renderer.setLineNumLimit(0); // ignore newline
+        renderer.renderLines("(");
+        renderer.renderLines(desc);
+        renderer.renderLines(")");
 
-      const size_t sigCols = renderer.getTotalCols();
-      item.leftPad = TAB_WIDTH - (sigCols % TAB_WIDTH);
-      item.rightPad = TAB_WIDTH - (item.len % TAB_WIDTH);
-      item.len += sigCols + item.leftPad + item.rightPad;
+        const size_t sigCols = renderer.getTotalCols();
+        item.leftPad = TAB_WIDTH - (sigCols % TAB_WIDTH);
+        item.rightPad = TAB_WIDTH - (item.len % TAB_WIDTH);
+        item.len += sigCols + item.leftPad + item.rightPad;
+      }
     }
 
     items.push_back(item);
@@ -113,28 +121,40 @@ void ArrayPager::updateWinSize(WindowSize size) {
   }
 }
 
-static void renderItem(LineRenderer &renderer, const StringRef can, const StringRef sig,
-                       const ArrayPager::ItemEntry &e) {
+static void renderItem(LineRenderer &renderer, const StringRef can, const CandidateAttr attr,
+                       const StringRef desc, const ArrayPager::ItemEntry &e) {
   renderer.renderLines(can);
-  if (e.rightPad) {
-    std::string pad;
-    pad.resize(e.rightPad, ' ');
-    renderer.renderLines(pad);
-  }
-  if (e.tabs) {
-    std::string tab;
-    tab.resize(e.tabs, '\t');
-    renderer.renderLines(tab);
-  }
-  if (e.leftPad) {
-    std::string pad;
-    pad.resize(e.leftPad, ' ');
-    renderer.renderLines(pad);
-  }
-  if (!sig.empty()) {
-    renderer.renderLines("(");
-    renderer.renderLines(sig); // FIXME: highlight
-    renderer.renderLines(")");
+  if (attr == CandidateAttr::TYPE_SIGNATURE) {
+    if (!desc.empty()) {
+      renderer.renderLines("  ");
+      renderer.renderLines(desc);
+    }
+    if (e.tabs) {
+      std::string tab;
+      tab.resize(e.tabs, '\t');
+      renderer.renderLines(tab);
+    }
+  } else {
+    if (e.rightPad) {
+      std::string pad;
+      pad.resize(e.rightPad, ' ');
+      renderer.renderLines(pad);
+    }
+    if (e.tabs) {
+      std::string tab;
+      tab.resize(e.tabs, '\t');
+      renderer.renderLines(tab);
+    }
+    if (e.leftPad) {
+      std::string pad;
+      pad.resize(e.leftPad, ' ');
+      renderer.renderLines(pad);
+    }
+    if (!desc.empty()) { // FIXME: highlight
+      renderer.renderLines("(");
+      renderer.renderLines(desc);
+      renderer.renderLines(")");
+    }
   }
   renderer.renderLines("\t");
 }
@@ -173,7 +193,7 @@ void ArrayPager::render(std::string &out) const {
       if (actualIndex == this->index && this->showCursor) {
         renderer.renderWithANSI("\x1b[7m");
       }
-      renderItem(renderer, this->obj.getCandidateAt(actualIndex),
+      renderItem(renderer, this->obj.getCandidateAt(actualIndex), this->obj.getAttrAt(actualIndex),
                  this->obj.getDescriptionAt(actualIndex), this->items[actualIndex]);
       if (actualIndex == this->index && this->showCursor) {
         renderer.renderWithANSI("\x1b[0m");
