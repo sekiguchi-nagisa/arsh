@@ -44,7 +44,7 @@ ArrayPager ArrayPager::create(CandidatesWrapper &&obj, const CharWidthProperties
     }
 
     // compute signature columns
-    if (const StringRef signature = obj.getSignatureAt(i); !signature.empty()) {
+    if (const StringRef signature = obj.getDescriptionAt(i); !signature.empty()) {
       LineRenderer renderer(ps, 0);
       renderer.setLineNumLimit(0); // ignore newline
       renderer.renderLines("(");
@@ -174,7 +174,7 @@ void ArrayPager::render(std::string &out) const {
         renderer.renderWithANSI("\x1b[7m");
       }
       renderItem(renderer, this->obj.getCandidateAt(actualIndex),
-                 this->obj.getSignatureAt(actualIndex), this->items[actualIndex]);
+                 this->obj.getDescriptionAt(actualIndex), this->items[actualIndex]);
       if (actualIndex == this->index && this->showCursor) {
         renderer.renderWithANSI("\x1b[0m");
       }

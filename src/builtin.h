@@ -2564,13 +2564,13 @@ ARSH_METHOD candidates_get(RuntimeContext &ctx) {
   RET(Value::createStr(wrapper.getCandidateAt(value.index)));
 }
 
-//!bind: function add($this : Candidates, $can : String, $sig : Option<String>) : Candidates
+//!bind: function add($this : Candidates, $can : String, $desc : Option<String>) : Candidates
 ARSH_METHOD candidates_add(RuntimeContext &ctx) {
   SUPPRESS_WARNING(candidates_add);
   CandidatesWrapper wrapper(toObjPtr<ArrayObject>(LOCAL(0)));
   auto candidate = LOCAL(1);
-  auto signature = LOCAL(2);
-  if (!wrapper.addNewCandidate(ctx, std::move(candidate), std::move(signature))) {
+  auto description = LOCAL(2);
+  if (!wrapper.addNewCandidate(ctx, std::move(candidate), std::move(description))) {
     RET_ERROR;
   }
   RET(LOCAL(0));
