@@ -95,6 +95,8 @@ public:
    * @return
    */
   std::string quote() const;
+
+  std::string formatTypeSignature(TypePool &pool) const;
 };
 
 class CompCandidateConsumer {

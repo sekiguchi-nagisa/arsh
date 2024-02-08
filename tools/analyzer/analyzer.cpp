@@ -372,58 +372,14 @@ public:
 
   static Optional<CompletionItemLabelDetails> formatLabelDetail(TypePool &pool,
                                                                 const CompCandidate &candidate) {
-    const auto itemKind = toItemKind(candidate);
-    if (itemKind == CompletionItemKind::Variable) {
-      auto &type = pool.get(candidate.getHandle()->getTypeId());
-      std::string value;
-      formatVarSignature(type, value);
-      return CompletionItemLabelDetails{
-          .detail = std::move(value),
-          .description = {},
-      };
-    } else if (itemKind == CompletionItemKind::Function) {
-      assert(candidate.getHandle()->isFuncHandle());
-      auto &handle = cast<FuncHandle>(*candidate.getHandle());
-      auto &type = pool.get(handle.getTypeId());
-      assert(type.isFuncType());
-      std::string value;
-      formatFuncSignature(cast<FunctionType>(type), handle, value);
-      return CompletionItemLabelDetails{
-          .detail = std::move(value),
-          .description = {},
-      };
-    } else if (itemKind == CompletionItemKind::Field) {
-      auto &info = candidate.getFieldInfo();
-      auto &recvType = pool.get(info.recvTypeId);
-      auto &type = pool.get(info.typeId);
-      std::string value;
-      formatFieldSignature(recvType, type, value);
-      return CompletionItemLabelDetails{
-          .detail = std::move(value),
-          .description = {},
-      };
-    } else if (itemKind == CompletionItemKind::Method) {
-      std::string signature;
-      if (candidate.kind == CompCandidateKind::UNINIT_METHOD) {
-        auto &info = candidate.getNativeMethodInfo();
-        auto &recvType = pool.get(info.typeId);
-        auto handle = pool.allocNativeMethodHandle(recvType, info.methodIndex);
-        if (!handle) {
-          return {}; // normally unreachable
-        }
-        formatMethodSignature(recvType, *handle, signature);
-      } else {
-        auto *hd = candidate.getHandle();
-        assert(hd);
-        assert(hd->isMethodHandle());
-        formatMethodSignature(pool.get(hd->getTypeId()), *cast<MethodHandle>(hd), signature);
-      }
-      return CompletionItemLabelDetails{
-          .detail = std::move(signature),
-          .description = {},
-      };
+    std::string signature = candidate.formatTypeSignature(pool);
+    if (signature.empty()) {
+      return {};
     }
-    return {};
+    return CompletionItemLabelDetails{
+        .detail = std::move(signature),
+        .description = {},
+    };
   }
 
   void operator()(const CompCandidate &candidate) override {

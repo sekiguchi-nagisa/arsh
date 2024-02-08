@@ -20,6 +20,7 @@
 
 #include "cmd_desc.h"
 #include "complete.h"
+#include "format_signature.h"
 #include "frontend.h"
 #include "logger.h"
 #include "misc/edit_distance.hpp"
@@ -52,6 +53,50 @@ std::string CompCandidate::quote() const {
     quoteAsCmdOrShellArg(ref, ret, this->kind == CompCandidateKind::COMMAND_NAME);
   } else {
     ret += ref;
+  }
+  return ret;
+}
+
+std::string CompCandidate::formatTypeSignature(TypePool &pool) const {
+  std::string ret;
+  switch (this->kind) {
+  case CompCandidateKind::VAR:
+  case CompCandidateKind::VAR_IN_CMD_ARG:
+    if (this->getHandle()->isFuncHandle()) { // function
+      assert(this->getHandle()->isFuncHandle());
+      auto &handle = cast<FuncHandle>(*this->getHandle());
+      auto &type = pool.get(handle.getTypeId());
+      assert(type.isFuncType());
+      formatFuncSignature(cast<FunctionType>(type), handle, ret);
+    } else { // variable
+      auto &type = pool.get(this->getHandle()->getTypeId());
+      formatVarSignature(type, ret);
+    }
+    break;
+  case CompCandidateKind::FIELD: {
+    auto &info = this->getFieldInfo();
+    auto &recvType = pool.get(info.recvTypeId);
+    auto &type = pool.get(info.typeId);
+    formatFieldSignature(recvType, type, ret);
+    break;
+  }
+  case CompCandidateKind::METHOD: {
+    auto *hd = this->getHandle();
+    assert(hd);
+    assert(hd->isMethodHandle());
+    formatMethodSignature(pool.get(hd->getTypeId()), *cast<MethodHandle>(hd), ret);
+    break;
+  }
+  case CompCandidateKind::UNINIT_METHOD: {
+    auto &info = this->getNativeMethodInfo();
+    auto &recvType = pool.get(info.typeId);
+    if (auto handle = pool.allocNativeMethodHandle(recvType, info.methodIndex)) {
+      formatMethodSignature(recvType, *handle, ret);
+    }
+    break;
+  }
+  default:
+    break;
   }
   return ret;
 }
