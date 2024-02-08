@@ -252,6 +252,7 @@ set(ARSH_SRC
         src/expand.cpp
         src/pager.cpp
         src/candidates.cpp
+        src/format_signature.cpp
         ${lexer_src}
         ${bind_src}
         ${embed_src})

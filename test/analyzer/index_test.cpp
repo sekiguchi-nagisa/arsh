@@ -2,6 +2,7 @@
 #include "gtest/gtest.h"
 
 #include <config.h>
+#include <format_signature.h>
 
 #include "analyzer.h"
 #include "indexer.h"

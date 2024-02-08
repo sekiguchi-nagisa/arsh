@@ -67,7 +67,7 @@ constexpr bool splitter_requirement_v =
     std::is_same_v<bool, std::invoke_result_t<Func, StringRef, bool>>;
 
 template <typename Func, enable_when<splitter_requirement_v<Func>> = nullptr>
-inline bool splitByDelim(const StringRef ref, const char delim, Func func) {
+inline bool splitByDelim(const StringRef ref, const StringRef delim, Func func) {
   for (StringRef::size_type pos = 0; pos != StringRef::npos;) {
     auto retPos = ref.find(delim, pos);
     auto sub = ref.slice(pos, retPos);
@@ -75,13 +75,20 @@ inline bool splitByDelim(const StringRef ref, const char delim, Func func) {
     bool foundDelim = false;
     if (retPos != StringRef::npos) {
       foundDelim = true;
-      pos++;
+      pos += delim.size();
     }
     if (!func(sub, foundDelim)) {
       return false;
     }
   }
   return true;
+}
+
+template <typename Func, enable_when<splitter_requirement_v<Func>> = nullptr>
+inline bool splitByDelim(const StringRef ref, const char delim, Func func) {
+  char str[1];
+  str[0] = delim;
+  return splitByDelim(ref, StringRef(str, 1), func);
 }
 
 /**

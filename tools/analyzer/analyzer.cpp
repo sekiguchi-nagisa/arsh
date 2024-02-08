@@ -17,6 +17,7 @@
 #include <binder.h>
 #include <complete.h>
 #include <embed.h>
+#include <format_signature.h>
 #include <misc/files.hpp>
 #include <misc/format.hpp>
 
@@ -557,7 +558,7 @@ Optional<SignatureInformation> Analyzer::collectSignature(const SourcePtr &src,
       if (!signature.returnType->isUnresolved()) {
         if (StringRef name = signature.name; name == OP_INIT) {
           out += "typedef ";
-          out += normalizeTypeName(*signature.returnType);
+          normalizeTypeName(*signature.returnType, out);
           out += "()";
         } else {
           formatFuncSignature(*signature.returnType, signature.paramSize, signature.paramTypes, out,
@@ -580,7 +581,7 @@ Optional<SignatureInformation> Analyzer::collectSignature(const SourcePtr &src,
       const bool constructor = methodName == OP_INIT;
       if (constructor) {
         out += "typedef ";
-        out += normalizeTypeName(recvType);
+        normalizeTypeName(recvType, out);
       } else {
         out += "function ";
         out += methodName;

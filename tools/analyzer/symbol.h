@@ -20,43 +20,10 @@
 #include "index.h"
 #include "lsp.h"
 
-namespace arsh {
-class DSType;
-class FunctionType;
-class FuncHandle;
-class MethodHandle;
-} // namespace arsh
-
 namespace arsh::lsp {
 
 class SourceManager;
 class Source;
-
-std::string normalizeTypeName(const DSType &type);
-
-void formatVarSignature(const DSType &type, std::string &out);
-
-void formatFuncSignature(const FunctionType &funcType, const FuncHandle &handle, std::string &out,
-                         const std::function<void(StringRef)> &paramCallback = nullptr);
-
-void formatFuncSignature(const DSType &retType, unsigned int paramSize,
-                         const DSType *const *paramTypes, std::string &out,
-                         const std::function<void(StringRef)> &paramCallback = nullptr);
-
-void formatFieldSignature(const DSType &recvType, const DSType &type, std::string &out);
-
-void formatMethodSignature(const DSType &recvType, const MethodHandle &handle, std::string &out,
-                           bool constructor = false,
-                           const std::function<void(StringRef)> &paramCallback = nullptr);
-
-/**
- * for builtin method
- * @param funcInfo
- * @param packedParamType
- * @param out
- */
-void formatNativeMethodSignature(const NativeFuncInfo *funcInfo, StringRef packedParamType,
-                                 std::string &out);
 
 std::string generateHoverContent(const SourceManager &srcMan, const SymbolIndexes &indexes,
                                  const Source &src, const FindDeclResult &result,
