@@ -361,7 +361,7 @@ static ObjPtr<UnixFdObject> newFD(const ARState &st, int &fd) {
   }
   int v = fd;
   fd = -1;
-  setCloseOnExec(v, true);
+  remapFDCloseOnExec(v);
   return toObjPtr<UnixFdObject>(Value::create<UnixFdObject>(v));
 }
 
@@ -1250,7 +1250,7 @@ bool VM::callPipeline(ARState &state, Value &&desc, bool lastPipe, ForkKind fork
       auto jobEntry = JobObject::create(procSize, children, true, state.emptyFDObj,
                                         state.emptyFDObj, std::move(desc));
       state.jobTable.attach(jobEntry);
-      ::dup2(pipeFds[procIndex - 1][READ_PIPE], STDIN_FILENO);
+      dup2(pipeFds[procIndex - 1][READ_PIPE], STDIN_FILENO);
       closeAllPipe(pipeSize, pipeFds);
       state.stack.push(Value::create<PipelineObject>(state, std::move(jobEntry)));
     } else {

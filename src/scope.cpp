@@ -505,8 +505,8 @@ ModResult ModuleLoaderBase::loadImpl(const char *scriptDir, const char *modPath,
   /**
    * set O_NONBLOCK due to prevent named pipe blocking
    */
-  int fd = open(str.c_str(), O_RDONLY | O_NONBLOCK | O_CLOEXEC);
-  if (fd < 0) {
+  int fd = open(str.c_str(), O_RDONLY | O_NONBLOCK);
+  if (fd < 0 || !remapFDCloseOnExec(fd)) {
     LOG(TRACE_MODULE, "open failed: `%s'", strerror(errno));
     return ModLoadingError(errno);
   }
@@ -518,8 +518,7 @@ ModResult ModuleLoaderBase::loadImpl(const char *scriptDir, const char *modPath,
     LOG(TRACE_MODULE, "fstat failed: `%s'", strerror(old));
     return ModLoadingError(old);
   }
-  int s = checkFileType(st, option);
-  if (s) {
+  if (const int s = checkFileType(st, option)) {
     close(fd);
     LOG(TRACE_MODULE, "checkFileType failed: `%s'", strerror(s));
     return ModLoadingError(s);
