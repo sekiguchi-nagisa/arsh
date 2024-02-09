@@ -48,7 +48,7 @@ ArrayPager ArrayPager::create(CandidatesWrapper &&obj, const CharWidthProperties
       if (obj.getAttrAt(i) == CandidateAttr::TYPE_SIGNATURE) {
         LineRenderer renderer(ps, item.len);
         renderer.setLineNumLimit(0); // ignore newline
-        renderer.renderLines("  ");
+        renderer.renderLines(" ");
         renderer.renderLines(desc);
         item.len = renderer.getTotalCols();
       } else {
@@ -126,8 +126,10 @@ static void renderItem(LineRenderer &renderer, const StringRef can, const Candid
   renderer.renderLines(can);
   if (attr == CandidateAttr::TYPE_SIGNATURE) {
     if (!desc.empty()) {
-      renderer.renderLines("  ");
+      renderer.renderLines(" ");
+      renderer.renderWithANSI("\x1b[90m");
       renderer.renderLines(desc);
+      renderer.renderWithANSI("\x1b[0m");
     }
     if (e.tabs) {
       std::string tab;

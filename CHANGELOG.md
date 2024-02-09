@@ -11,7 +11,7 @@
     - ``[]``: get candidate
     - ``add``: add new candidate
     - ``addAll``: add candidates from other
-- completion candidates pager in ``LineEditor`` show detail information of candidates(label or signature)
+- completion candidates pager in ``LineEditor`` show description of candidate (label or signature)
 
 ### Changed
 
@@ -44,6 +44,8 @@
 - **Breaking Change**: change ``LineEditor#setCompletion`` signature
     - now accept ``((Module, String) -> Candidates)?``
 - ``Error`` type constructor now accept `0` status
+- builtin ``complete`` command put completion candidate description via ``-d`` option
+    - put type-signature of variable/field/function/method
 
 ### Fixed
 

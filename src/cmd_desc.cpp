@@ -53,11 +53,12 @@ static BuiltinCmdDesc table[] = {
      "    If -p option is specified, search command from default PATH.\n"
      "    If -V or -v option are specified, print description of COMMAND.\n"
      "    -V option shows more detailed information."},
-    {"complete", "[-A action] [-m descriptor] [-qs] line",
+    {"complete", "[-A action] [-m descriptor] [-dqs] line",
      "    Show completion candidates.\n"
      "    Options:\n"
+     "      -d    may put description of completion candidate\n"
      "      -q    does not show completion candidates\n"
-     "      -s    if completion candidate just one, put space to suffix\n"
+     "      -s    if completion candidate just one, may put space to suffix\n"
      "      -m    complete in specified module context\n"
      "      -A    show completion candidates via ACTION\n"
      "\n"

@@ -12,7 +12,7 @@ history -r $HISTFILE  # manually load history
 
 # completion setting
 $LINE_EDIT.setCompletion(function(m, s) => {
-    complete -m $m -q -s -- $s
+    complete -m $m -q -s -d -- $s
     $COMPREPLY
 })
 source $DATA_DIR/completions/*

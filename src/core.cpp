@@ -309,18 +309,30 @@ private:
   CandidatesWrapper reply;
   CompCandidateKind kind{CompCandidateKind::COMMAND_NAME};
   bool overflow{false};
+  const bool putDesc;
 
 public:
-  explicit DefaultCompConsumer(ARState &state)
-      : state(state), reply(CandidatesWrapper(state.typePool)) {}
+  DefaultCompConsumer(ARState &state, bool putDesc)
+      : state(state), reply(CandidatesWrapper(state.typePool)), putDesc(putDesc) {}
 
   void operator()(const CompCandidate &candidate) override {
-    if (!this->overflow) {
-      if (!this->reply.addAsCandidate(this->state, Value::createStr(candidate.quote()))) {
-        this->overflow = true;
+    if (this->overflow) {
+      return; // do nothing
+    }
+    this->kind = candidate.kind;
+    if (this->putDesc) {
+      std::string typeSig = candidate.formatTypeSignature(state.typePool);
+      if (!typeSig.empty()) {
+        if (!this->reply.addNewCandidateWith(this->state, candidate.value, typeSig,
+                                             CandidateAttr::TYPE_SIGNATURE)) {
+          this->overflow = true;
+        }
         return;
       }
-      this->kind = candidate.kind;
+    }
+    if (!this->reply.addAsCandidate(this->state, Value::createStr(candidate.quote()))) {
+      this->overflow = true;
+      return;
     }
   }
 
@@ -557,16 +569,16 @@ static bool needSpace(const StringRef first, CompCandidateKind kind) {
   return true;
 }
 
-int doCodeCompletion(ARState &st, StringRef modDesc, StringRef source, bool insertSpace,
-                     const CodeCompOp option) {
-  const auto resolvedMod = resolveTempModScope(st, modDesc, willKickFrontEnd(option));
+int doCodeCompletion(ARState &st, const StringRef modDesc, const DoCodeCompletionOption option,
+                     const StringRef source) {
+  const auto resolvedMod = resolveTempModScope(st, modDesc, willKickFrontEnd(option.op));
   if (!resolvedMod) {
     errno = EINVAL;
     return -1;
   }
 
-  DefaultCompConsumer consumer(st);
-  const bool ret = completeImpl(st, resolvedMod, source, option, consumer);
+  DefaultCompConsumer consumer(st, option.putDesc);
+  const bool ret = completeImpl(st, resolvedMod, source, option.op, consumer);
   const auto candidateKind = consumer.getKind();
   st.setGlobal(BuiltinVarOffset::COMPREPLY, std::move(consumer).finalize()); // override COMPREPLY
 
@@ -583,7 +595,7 @@ int doCodeCompletion(ARState &st, StringRef modDesc, StringRef source, bool inse
   }
   const size_t size = wrapper.size();
   assert(size <= ArrayObject::MAX_SIZE);
-  if (insertSpace && size == 1 && needSpace(wrapper.getCandidateAt(0), candidateKind)) {
+  if (option.insertSpace && size == 1 && needSpace(wrapper.getCandidateAt(0), candidateKind)) {
     assert(size == 1);
     auto v = wrapper.getCandidateAt(0).toString();
     v += " ";

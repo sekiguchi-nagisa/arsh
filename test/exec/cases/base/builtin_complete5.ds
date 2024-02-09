@@ -188,7 +188,7 @@ assert !complete -A
 assert $? == 1
 
 assert "$(complete -A hgorahe 2>&1)" == "${$SCRIPT_NAME.basename()}:190: complete: hgorahe: invalid action
-complete: complete [-A action] [-m descriptor] [-qs] line"
+complete: complete [-A action] [-m descriptor] [-dqs] line"
 assert !complete -A fjairfaj
 assert $? == 2
 
@@ -206,13 +206,13 @@ if (test -e /dev/full) {
 }
 
 ## help
-assert help complete | grep '^complete: complete \[-A action] \[-m descriptor] \[-qs] line'
+assert help complete | grep '^complete: complete \[-A action] \[-m descriptor] \[-dqs] line'
 assert $PIPESTATUS[0] == 0 && $PIPESTATUS[1] == 0
 
-assert complete -h| grep '^complete: complete \[-A action] \[-m descriptor] \[-qs] line'
+assert complete -h| grep '^complete: complete \[-A action] \[-m descriptor] \[-dqs] line'
 assert $PIPESTATUS[0] == 2 && $PIPESTATUS[1] == 0
 
-assert complete --help| grep '^complete: complete \[-A action] \[-m descriptor] \[-qs] line'
+assert complete --help| grep '^complete: complete \[-A action] \[-m descriptor] \[-dqs] line'
 assert $PIPESTATUS[0] == 2 && $PIPESTATUS[1] == 0
 
 true

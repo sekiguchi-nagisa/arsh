@@ -23,6 +23,7 @@
 
 #include <arsh/arsh.h>
 
+#include "candidates.h"
 #include "cmd_desc.h"
 #include "misc/files.hpp"
 #include "misc/num_util.hpp"
@@ -446,11 +447,10 @@ static StrRefMap<CodeCompOp> initCompActions() {
 static int builtin_complete(ARState &state, ArrayObject &argvObj) {
   static auto actionMap = initCompActions();
 
-  CodeCompOp compOp{};
+  DoCodeCompletionOption option{};
   bool show = true;
-  bool insertSpace = false;
   StringRef moduleDesc;
-  GetOptState optState(":A:m:qsh");
+  GetOptState optState(":A:m:dqsh");
   for (int opt; (opt = optState(argvObj)) != -1;) {
     switch (opt) {
     case 'A': {
@@ -459,7 +459,7 @@ static int builtin_complete(ARState &state, ArrayObject &argvObj) {
         ERROR(state, argvObj, "%s: invalid action", toPrintable(optState.optArg).c_str());
         return showUsage(argvObj);
       }
-      setFlag(compOp, iter->second);
+      setFlag(option.op, iter->second);
       break;
     }
     case 'm':
@@ -469,7 +469,10 @@ static int builtin_complete(ARState &state, ArrayObject &argvObj) {
       show = false;
       break;
     case 's':
-      insertSpace = true;
+      option.insertSpace = true;
+      break;
+    case 'd':
+      option.putDesc = true;
       break;
     case 'h':
       return showHelp(argvObj);
@@ -486,7 +489,7 @@ static int builtin_complete(ARState &state, ArrayObject &argvObj) {
     line = argvObj.getValues()[optState.index].asStrRef();
   }
 
-  if (doCodeCompletion(state, moduleDesc, line, insertSpace, compOp) < 0) {
+  if (doCodeCompletion(state, moduleDesc, option, line) < 0) {
     if (errno == EINVAL) {
       ERROR(state, argvObj, "%s: unrecognized module descriptor", toPrintable(moduleDesc).c_str());
     }
@@ -494,9 +497,11 @@ static int builtin_complete(ARState &state, ArrayObject &argvObj) {
   }
   if (show) {
     int errNum = 0;
-    const auto &ret = typeAs<ArrayObject>(state.getGlobal(BuiltinVarOffset::COMPREPLY));
-    for (const auto &e : ret.getValues()) {
-      errNum = writeLine(e.asStrRef(), stdout, false);
+    const CandidatesWrapper wrapper(
+        toObjPtr<ArrayObject>(state.getGlobal(BuiltinVarOffset::COMPREPLY)));
+    const unsigned int size = wrapper.size();
+    for (unsigned int i = 0; i < size; i++) {
+      errNum = writeLine(wrapper.getCandidateAt(i), stdout, false);
       if (errNum != 0) {
         break;
       }

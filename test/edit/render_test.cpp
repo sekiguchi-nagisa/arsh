@@ -940,9 +940,10 @@ TEST_F(PagerTest, sig) {
 
   std::string out;
   pager.render(out);
-  const char *expect = "OSTYPE  : String                                        \r\n"
-                       "PID  : Int                                              \r\n"
-                       "COMP_HOOK  : ((Module, [String], Int) -> Candidates?)?  \r\n";
+  const char *expect =
+      "OSTYPE \x1b[90m: String\x1b[0m                                         \r\n"
+      "PID \x1b[90m: Int\x1b[0m                                               \r\n"
+      "COMP_HOOK \x1b[90m: ((Module, [String], Int) -> Candidates?)?\x1b[0m   \r\n";
   ASSERT_EQ(expect, out);
 }
 

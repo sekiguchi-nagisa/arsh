@@ -138,22 +138,27 @@ public:
   bool operator()() override;
 };
 
+struct DoCodeCompletionOption {
+  CodeCompOp op;
+  bool insertSpace;
+  bool putDesc;
+};
+
 /**
  * perform completion in specified underlying module context.
  * during execution preserve exit status and IFS
  * @param st
  * @param modDesc
  * module descriptor for specifying completion context
- * @param source
- * @param insertSpace
  * @param option
+ * @param source
  * @return
  * if specify invalid module descriptor, return -1 and set EINVAL
  * if interrupted, return -1 and set EINTR
  * return size of completion result. (equivalent to size of $COMPREPLY)
  */
-int doCodeCompletion(ARState &st, StringRef modDesc, StringRef source, bool insertSpace,
-                     CodeCompOp option = {});
+int doCodeCompletion(ARState &st, StringRef modDesc, DoCodeCompletionOption option,
+                     StringRef source);
 
 class SignalVector {
 private:
@@ -209,8 +214,7 @@ Result<ObjPtr<FuncObject>, ObjPtr<ErrorObject>> loadExprAsFunc(ARState &state, S
  * @return
  * if not resolved, return empty string
  */
-std::string resolveFullCommandName(const ARState &state, const Value &name,
-                                   const ModType &modType);
+std::string resolveFullCommandName(const ARState &state, const Value &name, const ModType &modType);
 
 /**
  *
