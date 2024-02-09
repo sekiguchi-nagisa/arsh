@@ -122,19 +122,25 @@ void ArrayPager::updateWinSize(WindowSize size) {
 }
 
 static void renderItem(LineRenderer &renderer, const StringRef can, const CandidateAttr attr,
-                       const StringRef desc, const ArrayPager::ItemEntry &e) {
+                       const StringRef desc, const ArrayPager::ItemEntry &e, const bool selected) {
+  if (selected) {
+    renderer.renderWithANSI("\x1b[7m");
+  }
   renderer.renderLines(can);
   if (attr == CandidateAttr::TYPE_SIGNATURE) {
     if (!desc.empty()) {
       renderer.renderLines(" ");
       renderer.renderWithANSI("\x1b[90m");
       renderer.renderLines(desc);
-      renderer.renderWithANSI("\x1b[0m");
     }
     if (e.tabs) {
       std::string tab;
       tab.resize(e.tabs, '\t');
       renderer.renderLines(tab);
+    }
+    renderer.renderLines("\t");
+    if (!selected) {
+      renderer.renderWithANSI("\x1b[0m");
     }
   } else {
     if (e.rightPad) {
@@ -157,8 +163,11 @@ static void renderItem(LineRenderer &renderer, const StringRef can, const Candid
       renderer.renderLines(desc);
       renderer.renderLines(")");
     }
+    renderer.renderLines("\t");
   }
-  renderer.renderLines("\t");
+  if (selected) {
+    renderer.renderWithANSI("\x1b[0m");
+  }
 }
 
 void ArrayPager::render(std::string &out) const {
@@ -192,14 +201,9 @@ void ArrayPager::render(std::string &out) const {
       if (actualIndex >= this->items.size()) {
         break;
       }
-      if (actualIndex == this->index && this->showCursor) {
-        renderer.renderWithANSI("\x1b[7m");
-      }
+      const bool selected = actualIndex == this->index && this->showCursor;
       renderItem(renderer, this->obj.getCandidateAt(actualIndex), this->obj.getAttrAt(actualIndex),
-                 this->obj.getDescriptionAt(actualIndex), this->items[actualIndex]);
-      if (actualIndex == this->index && this->showCursor) {
-        renderer.renderWithANSI("\x1b[0m");
-      }
+                 this->obj.getDescriptionAt(actualIndex), this->items[actualIndex], selected);
     }
     renderer.setLineNumLimit(static_cast<size_t>(-1)); // re-enable newlines
     renderer.renderLines("\n");
