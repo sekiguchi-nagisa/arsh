@@ -153,6 +153,8 @@ std::pair<std::string, std::string> InteractiveShellBase::readAll() {
 
 void InteractiveShellBase::resetScreen() {
   auto [row, col] = this->handle.getWinSize();
+  assert(row != 0);
+  assert(col != 0);
   this->screen = Screen(Screen::Pos{.row = row, .col = col});
   this->screen.setEAW(arsh::AmbiguousCharWidth::FULL);
   this->screen.setReporter([&](std::string &&m) { this->send(m.c_str()); });

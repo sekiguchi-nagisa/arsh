@@ -32,6 +32,8 @@
 
 namespace process {
 
+void xcfmakesane(termios &term);
+
 struct WaitStatus {
   enum Kind : unsigned char {
     ERROR, // if error happened
@@ -236,13 +238,12 @@ struct IOConfig {
   unsigned short col{80};
 
   IOConfig(FDWrapper in, FDWrapper out, FDWrapper err) : in(in), out(out), err(err) {
+    xcfmakesane(this->term); // clear term setting (sane mode)
     cfmakeraw(&this->term);
   }
 
   IOConfig() : IOConfig(INHERIT, INHERIT, INHERIT) {}
 };
-
-void xcfmakesane(termios &term);
 
 class ProcBuilder {
 private:

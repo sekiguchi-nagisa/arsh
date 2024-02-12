@@ -376,6 +376,9 @@ static void openPTY(const IOConfig &config, int &masterFD, int &slaveFD) {
     if (fd == -1) {
       fatal_perror("open pty slave failed");
     }
+    /**
+     * set pty setting before call fork() due to prevent potential race condition
+     */
     setPTYSetting(fd, config);
     slaveFD = fd;
   }
