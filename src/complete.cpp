@@ -201,26 +201,6 @@ static void completeUDC(const NameScope &scope, const std::string &cmdPrefix,
     }                                                                                              \
   } while (false)
 
-template <typename T>
-static constexpr bool iterate_requirement_v =
-    std::is_same_v<bool, std::invoke_result_t<T, const std::string &>>;
-
-template <typename Func, enable_when<iterate_requirement_v<Func>> = nullptr>
-static bool iteratePathList(const char *value, Func func) {
-  const StringRef ref = value;
-  for (StringRef::size_type pos = 0;;) {
-    const auto ret = ref.find(':', pos);
-    std::string path;
-    path += ref.slice(pos, ret);
-    TRY(func(path));
-    if (ret == StringRef::npos) {
-      break;
-    }
-    pos = ret + 1;
-  }
-  return true;
-}
-
 static bool completeCmdName(const NameScope &scope, const std::string &cmdPrefix,
                             const CodeCompOp option, CompCandidateConsumer &consumer,
                             ObserverPtr<CancelToken> cancel) {
@@ -246,13 +226,13 @@ static bool completeCmdName(const NameScope &scope, const std::string &cmdPrefix
     if (pathEnv == nullptr) {
       return true;
     }
-    TRY(iteratePathList(pathEnv, [&](const std::string &path) {
-      DIR *dir = opendir(path.c_str());
-      if (dir == nullptr) {
+    TRY(splitByDelim(pathEnv, ':', [&](const StringRef ref, bool) {
+      std::string path = ref.toString();
+      auto dir = openDir(path.c_str());
+      if (!dir) {
         return true;
       }
-      auto cleanup = finally([dir] { closedir(dir); });
-      for (dirent *entry; (entry = readdir(dir)) != nullptr;) {
+      for (dirent *entry; (entry = readdir(dir.get())) != nullptr;) {
         if (cancel && cancel()) {
           return false;
         }
@@ -324,13 +304,11 @@ static bool completeFileName(const std::string &baseDir, StringRef prefix, const
     name = name.substr(s + 1);
   }
 
-  DIR *dir = opendir(targetDir.c_str());
-  if (dir == nullptr) {
+  auto dir = openDir(targetDir.c_str());
+  if (!dir) {
     return true;
   }
-
-  auto cleanup = finally([dir] { closedir(dir); });
-  for (dirent *entry; (entry = readdir(dir)) != nullptr;) {
+  for (dirent *entry; (entry = readdir(dir.get())) != nullptr;) {
     if (cancel && cancel()) {
       return false;
     }
@@ -347,7 +325,7 @@ static bool completeFileName(const std::string &baseDir, StringRef prefix, const
       }
       fullPath += entry->d_name;
 
-      if (isDirectory(dir, entry)) {
+      if (isDirectory(dir.get(), entry)) {
         fullPath += '/';
       } else {
         if (hasFlag(op, CodeCompOp::EXEC)) {

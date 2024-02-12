@@ -452,21 +452,6 @@ std::string Glob::resolveBaseDir(const char *&iter) const {
   return baseDir;
 }
 
-struct DirDeleter {
-  void operator()(DIR *dir) const {
-    if (dir) {
-      const int old = errno;
-      closedir(dir);
-      errno = old;
-    }
-  }
-};
-
-static std::unique_ptr<DIR, DirDeleter> openDir(const char *path) {
-  DIR *dir = opendir(path);
-  return std::unique_ptr<DIR, DirDeleter>(dir);
-}
-
 std::pair<Glob::Status, bool> Glob::match(const char *baseDir, const char *&iter,
                                           std::string *err) {
   const auto dir = openDir(baseDir);

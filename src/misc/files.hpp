@@ -210,16 +210,30 @@ inline int dupFDExactly(int fd) {
   return fcntl(fd, r ? F_DUPFD_CLOEXEC : F_DUPFD, RESERVED_FD_LIMIT);
 }
 
+struct DirDeleter {
+  void operator()(DIR *dir) const {
+    if (dir) {
+      const int old = errno;
+      closedir(dir);
+      errno = old;
+    }
+  }
+};
+
+inline std::unique_ptr<DIR, DirDeleter> openDir(const char *path) {
+  DIR *dir = opendir(path);
+  return std::unique_ptr<DIR, DirDeleter>(dir);
+}
+
 inline int getFileList(const char *dirPath, bool recursive, std::vector<std::string> &results) {
   for (std::list<std::string> dirList = {dirPath}; !dirList.empty();) {
     std::string path = std::move(dirList.front());
     dirList.pop_front();
-    DIR *dir = opendir(path.c_str());
-    if (dir == nullptr) {
+    auto dir = openDir(path.c_str());
+    if (!dir) {
       return errno;
     }
-
-    for (dirent *entry; (entry = readdir(dir)) != nullptr;) {
+    for (dirent *entry; (entry = readdir(dir.get())) != nullptr;) {
       if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
         continue;
       }
@@ -228,13 +242,12 @@ inline int getFileList(const char *dirPath, bool recursive, std::vector<std::str
         name += "/";
       }
       name += entry->d_name;
-      if (isDirectory(dir, entry) && recursive) {
+      if (isDirectory(dir.get(), entry) && recursive) {
         dirList.push_back(std::move(name));
       } else {
         results.push_back(std::move(name));
       }
     }
-    closedir(dir);
   }
   return 0;
 }
@@ -253,12 +266,12 @@ inline void removeDirWithRecursively(const char *currentDir) {
     return;
   }
 
-  DIR *dir = opendir(currentDir);
-  if (dir == nullptr) {
+  auto dir = openDir(currentDir);
+  if (!dir) {
     fatal_perror("cannot open dir: %s", currentDir);
   }
 
-  for (dirent *entry; (entry = readdir(dir)) != nullptr;) {
+  for (dirent *entry; (entry = readdir(dir.get())) != nullptr;) {
     if (strcmp(entry->d_name, ".") == 0 || strcmp(entry->d_name, "..") == 0) {
       continue;
     }
@@ -268,13 +281,12 @@ inline void removeDirWithRecursively(const char *currentDir) {
     }
     fullpath += entry->d_name;
     const char *name = fullpath.c_str();
-    if (isDirectory(dir, entry)) {
+    if (isDirectory(dir.get(), entry)) {
       removeDirWithRecursively(name);
     } else if (remove(name) < 0) {
       fatal_perror("cannot remove: %s", name);
     }
   }
-  closedir(dir);
 
   if (remove(currentDir) < 0) {
     fatal_perror("cannot remove: %s", currentDir);
@@ -300,7 +312,8 @@ public:
    * create temp file with content
    * @param name
    * if empty string, generate random name. after file creation, write full path to it.
-   * @param content
+   * @param data
+   * @param size
    * @return
    * opened file ptr with 'w+b' mode.
    */
