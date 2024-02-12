@@ -19,7 +19,7 @@ assert complete -d -- 'shct'
 assert $COMPREPLY.size() == 1
 $args = @($COMPREPLY)
 assert $args.size() == 1
-assert $args[0] == 'shctl@Builtin'
+assert $args[0] == 'shctl@builtin'
 
 fff1() {}
 $DYNA_UDCS['fff2'] = (){}
@@ -27,43 +27,43 @@ assert complete -d -- 'fff'
 assert $COMPREPLY.size() == 2
 $args = @($COMPREPLY)
 assert $args.size() == 2
-assert $args[0] == 'fff1@UserDefined'
-assert $args[1] == 'fff2@Dynamic'
+assert $args[0] == 'fff1@user-defined'
+assert $args[1] == 'fff2@dynamic'
 
 assert complete -d -- 'mkdir'
 assert $COMPREPLY.size() == 1
 $args = @($COMPREPLY)
 assert $args.size() == 1
-assert $args[0] == 'mkdir@Command'
+assert $args[0] == 'mkdir@command'
 
 ###  override existing command
 assert complete -d -- 'echo'
 assert $COMPREPLY.size() == 1
 $args = @($COMPREPLY)
 assert $args.size() == 1
-assert $args[0] == 'echo@Builtin'
+assert $args[0] == 'echo@builtin'
 
 assert complete -d -- '$DYNA_UDC["echo"] = (){}; echo'
 assert $COMPREPLY.size() == 1
 $args = @($COMPREPLY)
 assert $args.size() == 1
-assert $args[0] == 'echo@Builtin'
+assert $args[0] == 'echo@builtin'
 
 assert complete -d -- 'echo(){}; echo'
 assert $COMPREPLY.size() == 1
 $args = @($COMPREPLY)
 assert $args.size() == 1
-assert $args[0] == 'echo@UserDefined'
+assert $args[0] == 'echo@user-defined'
 
 $DYNA_UDCS["mkdir"] = (){}
 assert complete -d -- '; mkdir'
 assert $COMPREPLY.size() == 1
 $args = @($COMPREPLY)
 assert $args.size() == 1
-assert $args[0] == 'mkdir@Dynamic'
+assert $args[0] == 'mkdir@dynamic'
 
 assert complete -d -- 'mkdir(){}; mkdir'
 assert $COMPREPLY.size() == 1
 $args = @($COMPREPLY)
 assert $args.size() == 1
-assert $args[0] == 'mkdir@UserDefined'
+assert $args[0] == 'mkdir@user-defined'

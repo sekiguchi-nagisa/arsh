@@ -326,23 +326,23 @@ public:
         auto attr = CandidateAttr::NONE;
         switch (candidate.getCmdNameType()) {
         case CompCandidate::CmdNameType::UDC:
-          desc = "UserDefined";
+          desc = "user-defined";
           attr = CandidateAttr::CMD_UDC;
           break;
         case CompCandidate::CmdNameType::BUILTIN:
-          desc = "Builtin";
+          desc = "builtin";
           attr = CandidateAttr::CMD_BUILTIN;
           break;
         case CompCandidate::CmdNameType::DYNA_UDC:
-          desc = "Dynamic";
+          desc = "dynamic";
           attr = CandidateAttr::CMD_DYNA;
           break;
         case CompCandidate::CmdNameType::EXTERNAL:
-          desc = "Command";
+          desc = "command";
           attr = CandidateAttr::CMD_EXTERNAL;
           break;
         case CompCandidate::CmdNameType::DIR:
-          desc = "Directory";
+          desc = "directory";
           break;
         }
         this->overflow = !this->reply.addNewCandidateWith(this->state, candidate.value, desc, attr);
