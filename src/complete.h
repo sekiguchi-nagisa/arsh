@@ -48,6 +48,14 @@ enum class CompCandidateKind : unsigned char {
 
 class CompCandidate {
 public:
+  enum class CmdNameType : unsigned char {
+    UDC,
+    BUILTIN,
+    DYNA_UDC,
+    EXTERNAL,
+    DIR,
+  };
+
   const StringRef value;
   const CompCandidateKind kind;
   const int priority;
@@ -63,10 +71,11 @@ private:
       unsigned int typeId;
       unsigned int methodIndex;
     } nativeMethodHandleInfo;
+    CmdNameType cmdNameType;
   } meta{};
 
 public:
-  CompCandidate(StringRef v, CompCandidateKind k, int p) : value(v), kind(k), priority(p) {}
+  CompCandidate(StringRef v, CompCandidateKind k, int p = 0) : value(v), kind(k), priority(p) {}
 
   void setHandle(const Handle &handle) { this->meta.handle = &handle; }
 
@@ -89,6 +98,10 @@ public:
   }
 
   const auto &getNativeMethodInfo() const { return this->meta.nativeMethodHandleInfo; }
+
+  void setCmdNameType(CmdNameType t) { this->meta.cmdNameType = t; }
+
+  CmdNameType getCmdNameType() const { return this->meta.cmdNameType; }
 
   /**
    * quote as shell arg

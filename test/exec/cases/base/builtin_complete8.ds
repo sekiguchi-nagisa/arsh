@@ -1,6 +1,6 @@
 
 # for -d option (description)
-
+## type signature
 assert complete -d -- '$PID.'
 assert $COMPREPLY.size() == 2
 var args = @($COMPREPLY)
@@ -13,3 +13,57 @@ assert $COMPREPLY.size() == 1
 $args = @($COMPREPLY)
 assert $args.size() == 1
 assert $args[0] == 'OSTYPE@: String'
+
+## command description
+assert complete -d -- 'shct'
+assert $COMPREPLY.size() == 1
+$args = @($COMPREPLY)
+assert $args.size() == 1
+assert $args[0] == 'shctl@Builtin'
+
+fff1() {}
+$DYNA_UDCS['fff2'] = (){}
+assert complete -d -- 'fff'
+assert $COMPREPLY.size() == 2
+$args = @($COMPREPLY)
+assert $args.size() == 2
+assert $args[0] == 'fff1@UserDefined'
+assert $args[1] == 'fff2@Dynamic'
+
+assert complete -d -- 'mkdir'
+assert $COMPREPLY.size() == 1
+$args = @($COMPREPLY)
+assert $args.size() == 1
+assert $args[0] == 'mkdir@Command'
+
+###  override existing command
+assert complete -d -- 'echo'
+assert $COMPREPLY.size() == 1
+$args = @($COMPREPLY)
+assert $args.size() == 1
+assert $args[0] == 'echo@Builtin'
+
+assert complete -d -- '$DYNA_UDC["echo"] = (){}; echo'
+assert $COMPREPLY.size() == 1
+$args = @($COMPREPLY)
+assert $args.size() == 1
+assert $args[0] == 'echo@Builtin'
+
+assert complete -d -- 'echo(){}; echo'
+assert $COMPREPLY.size() == 1
+$args = @($COMPREPLY)
+assert $args.size() == 1
+assert $args[0] == 'echo@UserDefined'
+
+$DYNA_UDCS["mkdir"] = (){}
+assert complete -d -- '; mkdir'
+assert $COMPREPLY.size() == 1
+$args = @($COMPREPLY)
+assert $args.size() == 1
+assert $args[0] == 'mkdir@Dynamic'
+
+assert complete -d -- 'mkdir(){}; mkdir'
+assert $COMPREPLY.size() == 1
+$args = @($COMPREPLY)
+assert $args.size() == 1
+assert $args[0] == 'mkdir@UserDefined'

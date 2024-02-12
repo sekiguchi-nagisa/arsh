@@ -947,6 +947,17 @@ TEST_F(PagerTest, sig) {
   ASSERT_EQ(expect, out);
 }
 
+TEST_F(PagerTest, candidate) {
+  CandidatesWrapper wrapper(this->createWith({}));
+  ASSERT_EQ(0, wrapper.size());
+  wrapper.addNewCandidateWith(*this->state, "mkdir", "command", CandidateAttr::CMD_EXTERNAL);
+  wrapper.addNewCandidateWith(*this->state, "mkdir", "dynamic", CandidateAttr::CMD_DYNA);
+  ASSERT_EQ(2, wrapper.size());
+  wrapper.sortAndDedup(0);
+  ASSERT_EQ(1, wrapper.size());
+  ASSERT_EQ(CandidateAttr::CMD_DYNA, wrapper.getAttrAt(0));
+}
+
 TEST(HistRotatorTest, base) {
   auto value = Value::create<ArrayObject>(static_cast<unsigned int>(TYPE::StringArray),
                                           std::vector<Value>());

@@ -321,18 +321,43 @@ public:
     }
     this->kind = candidate.kind;
     if (this->putDesc) {
-      std::string typeSig = candidate.formatTypeSignature(state.typePool);
-      if (!typeSig.empty()) {
-        if (!this->reply.addNewCandidateWith(this->state, candidate.value, typeSig,
-                                             CandidateAttr::TYPE_SIGNATURE)) {
-          this->overflow = true;
+      if (this->kind == CompCandidateKind::COMMAND_NAME) {
+        const char *desc = "";
+        auto attr = CandidateAttr::NONE;
+        switch (candidate.getCmdNameType()) {
+        case CompCandidate::CmdNameType::UDC:
+          desc = "UserDefined";
+          attr = CandidateAttr::CMD_UDC;
+          break;
+        case CompCandidate::CmdNameType::BUILTIN:
+          desc = "Builtin";
+          attr = CandidateAttr::CMD_BUILTIN;
+          break;
+        case CompCandidate::CmdNameType::DYNA_UDC:
+          desc = "Dynamic";
+          attr = CandidateAttr::CMD_DYNA;
+          break;
+        case CompCandidate::CmdNameType::EXTERNAL:
+          desc = "Command";
+          attr = CandidateAttr::CMD_EXTERNAL;
+          break;
+        case CompCandidate::CmdNameType::DIR:
+          desc = "Directory";
+          break;
         }
+        this->overflow = !this->reply.addNewCandidateWith(this->state, candidate.value, desc, attr);
+        return;
+      }
+
+      const std::string typeSig = candidate.formatTypeSignature(this->state.typePool);
+      if (!typeSig.empty()) {
+        this->overflow = !this->reply.addNewCandidateWith(this->state, candidate.value, typeSig,
+                                                          CandidateAttr::TYPE_SIGNATURE);
         return;
       }
     }
     if (!this->reply.addAsCandidate(this->state, Value::createStr(candidate.quote()))) {
       this->overflow = true;
-      return;
     }
   }
 
@@ -504,9 +529,10 @@ static bool completeImpl(ARState &st, ResolvedTempMod resolvedMod, StringRef sou
       if (!e) {
         continue;
       }
-      auto name = e.getKey().asStrRef();
-      if (name.startsWith(word)) {
-        consumer(name, CompCandidateKind::COMMAND_NAME);
+      if (const auto name = e.getKey().asStrRef(); name.startsWith(word)) {
+        CompCandidate candidate(name, CompCandidateKind::COMMAND_NAME);
+        candidate.setCmdNameType(CompCandidate::CmdNameType::DYNA_UDC);
+        consumer(candidate);
       }
     }
   });

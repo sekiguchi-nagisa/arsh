@@ -67,9 +67,13 @@ public:
   StringRef underlying() const { return {this->payload, this->allocSize()}; }
 };
 
-enum class CandidateAttr : unsigned char {
-  NONE,
+enum class CandidateAttr : unsigned char { // not change enum order
+  CMD_UDC,
+  CMD_BUILTIN,
+  CMD_DYNA,
+  CMD_EXTERNAL,
   TYPE_SIGNATURE, // for variable/function/member
+  NONE,
 };
 
 class CandidatesWrapper {

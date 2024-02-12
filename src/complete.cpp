@@ -187,7 +187,9 @@ static void completeUDC(const NameScope &scope, const std::string &cmdPrefix,
     if (isCmdFullName(udc)) {
       udc.removeSuffix(strlen(CMD_SYMBOL_SUFFIX));
       if (udc.startsWith(cmdPrefix)) {
-        consumer(udc, CompCandidateKind::COMMAND_NAME);
+        CompCandidate candidate(udc, CompCandidateKind::COMMAND_NAME);
+        candidate.setCmdNameType(CompCandidate::CmdNameType::UDC);
+        consumer(candidate);
       }
     }
     return true;
@@ -215,7 +217,9 @@ static bool completeCmdName(const NameScope &scope, const std::string &cmdPrefix
     auto *cmdList = getBuiltinCmdDescList();
     for (unsigned int i = 0; i < bsize; i++) {
       if (StringRef builtin = cmdList[i].name; builtin.startsWith(cmdPrefix)) {
-        consumer(builtin, CompCandidateKind::COMMAND_NAME);
+        CompCandidate candidate(builtin, CompCandidateKind::COMMAND_NAME);
+        candidate.setCmdNameType(CompCandidate::CmdNameType::BUILTIN);
+        consumer(candidate);
       }
     }
   }
@@ -227,7 +231,7 @@ static bool completeCmdName(const NameScope &scope, const std::string &cmdPrefix
       return true;
     }
     TRY(splitByDelim(pathEnv, ':', [&](const StringRef ref, bool) {
-      std::string path = ref.toString();
+      const std::string path = ref.toString();
       auto dir = openDir(path.c_str());
       if (!dir) {
         return true;
@@ -245,7 +249,9 @@ static bool completeCmdName(const NameScope &scope, const std::string &cmdPrefix
           }
           fullPath += cmd.data();
           if (isExecutable(fullPath.c_str())) {
-            consumer(cmd, CompCandidateKind::COMMAND_NAME);
+            CompCandidate candidate(cmd, CompCandidateKind::COMMAND_NAME);
+            candidate.setCmdNameType(CompCandidate::CmdNameType::EXTERNAL);
+            consumer(candidate);
           }
         }
       }
@@ -419,7 +425,7 @@ void completeMember(const TypePool &pool, const NameScope &scope, const DSType &
   auto fieldWalker = [&](StringRef name, const Handle &handle) {
     if (name.startsWith(word) && isVarName(name)) {
       if (handle.isVisibleInMod(scope.modId, name)) {
-        CompCandidate candidate(name, CompCandidateKind::FIELD, 0);
+        CompCandidate candidate(name, CompCandidateKind::FIELD);
         candidate.setFieldInfo(recvType, handle);
         consumer(candidate);
       }
@@ -438,7 +444,7 @@ void completeMember(const TypePool &pool, const NameScope &scope, const DSType &
       for (const auto *t = &recvType; t != nullptr; t = t->getSuperType()) {
         if (type == *t) {
           name = trimMethodFullNameSuffix(name);
-          CompCandidate candidate(name, CompCandidateKind::METHOD, 0);
+          CompCandidate candidate(name, CompCandidateKind::METHOD);
           candidate.setHandle(handle);
           consumer(candidate);
           break;
@@ -458,7 +464,7 @@ void completeMember(const TypePool &pool, const NameScope &scope, const DSType &
         if (type == *t) {
           const auto init = static_cast<bool>(e.second);
           const auto kind = init ? CompCandidateKind::METHOD : CompCandidateKind::UNINIT_METHOD;
-          CompCandidate candidate(name, kind, 0);
+          CompCandidate candidate(name, kind);
           if (init) {
             candidate.setHandle(*e.second.handle());
           } else {
