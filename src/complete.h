@@ -53,7 +53,6 @@ public:
     BUILTIN,
     DYNA_UDC,
     EXTERNAL,
-    DIR,
   };
 
   const StringRef value;

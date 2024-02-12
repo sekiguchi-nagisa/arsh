@@ -341,9 +341,6 @@ public:
           desc = "command";
           attr = CandidateAttr::CMD_EXTERNAL;
           break;
-        case CompCandidate::CmdNameType::DIR:
-          desc = "directory";
-          break;
         }
         this->overflow = !this->reply.addNewCandidateWith(this->state, candidate.value, desc, attr);
         return;
