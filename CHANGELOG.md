@@ -46,6 +46,7 @@
 - ``Error`` type constructor now accept `0` status
 - builtin ``complete`` command put completion candidate description via ``-d`` option
     - put type-signature of variable/field/function/method
+    - put command type (user-defined, builtin, dynamic, external) in command name completion
 
 ### Fixed
 
