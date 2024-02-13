@@ -18,10 +18,6 @@
 #include <sys/ioctl.h>
 #include <sys/wait.h>
 
-#if !defined(__CYGWIN__)
-#include <sys/ttydefaults.h>
-#endif
-
 #include <chrono>
 #include <cstdlib>
 #include <thread>
@@ -253,95 +249,6 @@ static void loginPTY(int fd) {
   if (ioctl(fd, TIOCSCTTY, 0) == -1) {
     fatal_perror("failed");
   }
-}
-
-void xcfmakesane(termios &term) {
-  term.c_iflag = TTYDEF_IFLAG;
-  term.c_oflag = TTYDEF_OFLAG;
-  term.c_lflag = TTYDEF_LFLAG;
-  term.c_cflag = TTYDEF_CFLAG;
-  cfsetispeed(&term, TTYDEF_SPEED);
-  cfsetospeed(&term, TTYDEF_SPEED);
-
-  // set to default control characters
-  cc_t defchars[NCCS] = {0};
-#ifdef VDISCARD
-  defchars[VDISCARD] = CDISCARD;
-#endif
-
-#ifdef VDSUSP
-  defchars[VDSUSP] = CDSUSP;
-#endif
-
-#ifdef VEOF
-  defchars[VEOF] = CEOF;
-#endif
-
-#ifdef VEOL
-  defchars[VEOL] = CEOL;
-#endif
-
-#ifdef VEOL2
-  defchars[VEOL2] = CEOL;
-#endif
-
-#ifdef VERASE
-  defchars[VERASE] = CERASE;
-#endif
-
-#ifdef VINTR
-  defchars[VINTR] = CINTR;
-#endif
-
-#ifdef VKILL
-  defchars[VKILL] = CKILL;
-#endif
-
-#ifdef VLNEXT
-  defchars[VLNEXT] = CLNEXT;
-#endif
-
-#ifdef VMIN
-  defchars[VMIN] = CMIN;
-#endif
-
-#ifdef VQUIT
-  defchars[VQUIT] = CQUIT;
-#endif
-
-#ifdef VREPRINT
-  defchars[VREPRINT] = CREPRINT;
-#endif
-
-#ifdef VSTART
-  defchars[VSTART] = CSTART;
-#endif
-
-#ifdef VSTATUS
-  defchars[VSTATUS] = CSTATUS;
-#endif
-
-#ifdef VSTOP
-  defchars[VSTOP] = CSTOP;
-#endif
-
-#ifdef VSUSP
-  defchars[VSUSP] = CSUSP;
-#endif
-
-#ifdef VSWTCH
-  defchars[VSWTCH] = CSWTCH;
-#endif
-
-#ifdef VTIME
-  defchars[VTIME] = CTIME;
-#endif
-
-#ifdef VWERASE
-  defchars[VWERASE] = CWERASE;
-#endif
-
-  memcpy(term.c_cc, defchars, std::size(defchars) * sizeof(cc_t));
 }
 
 static void setPTYSetting(int fd, const IOConfig &config) {

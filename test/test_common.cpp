@@ -118,7 +118,7 @@ int Extractor::extract(const char *value) {
 
 void InteractiveBase::invokeImpl(const std::vector<std::string> &args, bool mergeErrToOut) {
   termios term; // NOLINT
-  xcfmakesane(term);
+  arsh::xcfmakesane(term);
   auto builder = ProcBuilder{this->binPath.c_str()}
                      .addArgs(args)
                      .setWorkingDir(this->workingDir.c_str())

@@ -17,7 +17,6 @@
 #ifndef ARSH_TOOLS_PROCESS_PROCESS_H
 #define ARSH_TOOLS_PROCESS_PROCESS_H
 
-#include <termios.h>
 #include <unistd.h>
 
 #include <csignal>
@@ -29,10 +28,9 @@
 
 #include <misc/enum_util.hpp>
 #include <misc/noncopyable.h>
+#include <misc/pty.hpp>
 
 namespace process {
-
-void xcfmakesane(termios &term);
 
 struct WaitStatus {
   enum Kind : unsigned char {
@@ -238,7 +236,7 @@ struct IOConfig {
   unsigned short col{80};
 
   IOConfig(FDWrapper in, FDWrapper out, FDWrapper err) : in(in), out(out), err(err) {
-    xcfmakesane(this->term); // clear term setting (sane mode)
+    arsh::xcfmakesane(this->term); // clear term setting (sane mode)
     cfmakeraw(&this->term);
   }
 

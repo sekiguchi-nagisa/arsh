@@ -143,7 +143,7 @@ TEST_F(ProcTest, pty4) {
   config.in = IOConfig::PTY;
   config.out = IOConfig::PTY;
   config.err = IOConfig::PIPE;
-  xcfmakesane(config.term);
+  arsh::xcfmakesane(config.term);
 
   // start with raw mode
   auto handle = ProcBuilder::spawn(config, [&] {

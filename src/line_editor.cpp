@@ -117,6 +117,7 @@
 
 #include "line_buffer.h"
 #include "line_editor.h"
+#include "misc/pty.hpp"
 #include "pager.h"
 #include "vm.h"
 
@@ -425,7 +426,7 @@ static void disableBracketPasteMode(int fd) {
 
 /* Raw mode: 1960 magic shit. */
 int LineEditorObject::enableRawMode(int fd) {
-  struct termios raw; // NOLINT
+  termios raw; // NOLINT
 
   if (!isatty(fd)) {
     goto fatal;
@@ -434,7 +435,7 @@ int LineEditorObject::enableRawMode(int fd) {
     goto fatal;
   }
 
-  raw = this->orgTermios; /* modify the original mode */
+  xcfmakesane(raw); /* modify the sane mode */
   /* input modes: no break, no CR to NL, no parity check, no strip char
    */
   raw.c_iflag &= ~(BRKINT | ICRNL | INPCK | ISTRIP);
