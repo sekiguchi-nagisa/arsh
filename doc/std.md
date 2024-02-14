@@ -333,7 +333,7 @@ function setHistory(hist: [String]?): Void for LineEditor
 
 function setHistSync(sync: ((String, [String]) -> Void)?): Void for LineEditor
 
-function bind(key: String, action: String): Void for LineEditor
+function bind(key: String, action: String?): Void for LineEditor
 
 function bindings(): [String : String] for LineEditor
 

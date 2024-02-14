@@ -60,6 +60,12 @@ try { $editor.bind("^[[D", "end-of-line"); } catch e { $ex = $e;}  # if action i
 assert ! ($ex is ArgumentError)  # change bindings
 assert $editor.bindings()["^[[D"] == "end-of-line"
 
+## remove bind
+$ex = 34
+try { $editor.bind("^[[D"); } catch e { $ex = $e;}  # if action is empty string, remove keybind
+assert ! ($ex is ArgumentError)  # change bindings
+assert ! $editor.bindings().get("^[[D")
+
 ## limit
 $ex = 45
 try {

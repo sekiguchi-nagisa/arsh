@@ -2283,14 +2283,14 @@ ARSH_METHOD edit_histSync(RuntimeContext &ctx) {
   RET_VOID;
 }
 
-//!bind: function bind($this : LineEditor, $key : String, $action : String) : Void
+//!bind: function bind($this : LineEditor, $key : String, $action : Option<String>) : Void
 ARSH_METHOD edit_bind(RuntimeContext &ctx) {
   SUPPRESS_WARNING(edit_bind);
   auto &editor = typeAs<LineEditorObject>(LOCAL(0));
   CHECK_EDITOR_LOCK(editor);
   auto key = LOCAL(1).asStrRef();
-  auto action = LOCAL(2).asStrRef();
-  editor.addKeyBind(ctx, key, action);
+  auto v = LOCAL(2);
+  editor.addKeyBind(ctx, key, v.isInvalid() ? "" : v.asStrRef());
   RET_VOID;
 }
 

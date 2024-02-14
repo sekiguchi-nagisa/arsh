@@ -47,6 +47,9 @@
 - builtin ``complete`` command put completion candidate description via ``-d`` option
     - put type-signature of variable/field/function/method
     - put command type (user-defined, builtin, dynamic, external) in command name completion
+- improve various ``LineEditor`` methods
+    - change ``bind`` method signature, now accept optional argument
+        - if specified ``None``, remove existing key-bind
 
 ### Fixed
 
