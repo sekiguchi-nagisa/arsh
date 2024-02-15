@@ -117,7 +117,7 @@ static bool isExprKeyword(TokenKind kind) {
 
 static void completeKeyword(const std::string &prefix, CodeCompOp option,
                             CompCandidateConsumer &consumer) {
-  const TokenKind table[] = {
+  constexpr TokenKind table[] = {
 #define GEN_ITEM(T) TokenKind::T,
       EACH_LA_statement(GEN_ITEM)
 #undef GEN_ITEM
@@ -319,37 +319,25 @@ static bool completeFileName(const std::string &baseDir, StringRef prefix, const
       return false;
     }
 
-    StringRef dname = entry->d_name;
-    if (dname.startsWith(name)) {
-      if (name.empty() && (dname == ".." || dname == ".")) {
+    std::string relative = entry->d_name;
+    if (StringRef(relative).startsWith(name)) {
+      if (name.empty() && (relative == ".." || relative == ".")) {
         continue;
       }
 
-      std::string fullPath(targetDir);
-      if (fullPath.back() != '/') {
-        fullPath += '/';
-      }
-      fullPath += entry->d_name;
-
       if (isDirectory(dir.get(), entry)) {
-        fullPath += '/';
+        relative += '/';
       } else {
         if (hasFlag(op, CodeCompOp::EXEC)) {
-          if (S_ISREG(getStMode(fullPath.c_str())) && access(fullPath.c_str(), X_OK) != 0) {
+          if (S_ISREG(getStModeAt(dirfd(dir.get()), entry->d_name)) &&
+              faccessat(dirfd(dir.get()), entry->d_name, X_OK, 0) != 0) {
             continue;
           }
         } else if (hasFlag(op, CodeCompOp::DIR) && !hasFlag(op, CodeCompOp::FILE)) {
           continue;
         }
       }
-
-      StringRef fileName = fullPath;
-      unsigned int len = strlen(entry->d_name);
-      if (fileName.back() == '/') {
-        len++;
-      }
-      fileName.removePrefix(fileName.size() - len);
-      consumer(fileName, hasFlag(op, CodeCompOp::EXEC) ? CompCandidateKind::COMMAND_NAME_PART
+      consumer(relative, hasFlag(op, CodeCompOp::EXEC) ? CompCandidateKind::COMMAND_NAME_PART
                                                        : CompCandidateKind::COMMAND_ARG);
     }
   }
