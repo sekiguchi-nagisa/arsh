@@ -171,14 +171,14 @@ FILE *lndebug_fp = nullptr;
 
 /* Return true if the terminal name is in the list of terminals we know are
  * not able to understand basic escape sequences. */
-static bool isUnsupportedTerm(int fd) {
-  auto tcpgid = tcgetpgrp(fd);
-  auto pgid = getpgrp();
+static bool isUnsupportedTerm(const int fd) {
+  const auto tcpgid = tcgetpgrp(fd);
+  const auto pgid = getpgrp();
   if (tcpgid == -1 || pgid == -1 || tcpgid != pgid) {
     return true;
   }
 
-  char *term = getenv("TERM");
+  const char *term = getenv("TERM");
   if (term == nullptr) {
     return false;
   }
@@ -269,8 +269,7 @@ static void linenoiseBeep(int fd) {
  * @return
  */
 static bool underMultiplexer() {
-  StringRef env = getenv("TERM");
-  if (env.contains("screen")) {
+  if (StringRef(getenv("TERM")).contains("screen")) {
     return true;
   }
   if (getenv("TMUX")) {
@@ -292,7 +291,7 @@ static void checkProperty(struct linenoiseState &l) {
     if (write(l.ofd, str, strlen(str)) == -1) {
       return;
     }
-    int pos = getCursorPosition(l.ifd, l.ofd);
+    const int pos = getCursorPosition(l.ifd, l.ofd);
     /**
      * restore pos and clear line
      */
@@ -350,7 +349,8 @@ static bool linenoiseEditDeleteNextWord(LineBuffer &buf, KillRing &killRing) {
 static bool linenoiseEditSwapChars(LineBuffer &buf) {
   if (buf.getCursor() == 0) { //  does not swap
     return false;
-  } else if (buf.getCursor() == buf.getUsedSize()) {
+  }
+  if (buf.getCursor() == buf.getUsedSize()) {
     buf.moveCursorToLeftByChar();
   }
   std::string cutStr;
@@ -368,7 +368,7 @@ static ssize_t linenoiseNoTTY(int inFd, char *buf, size_t bufLen) {
   size_t len = 0;
   while (true) {
     char data[64];
-    ssize_t readSize = read(inFd, data, std::size(data));
+    const ssize_t readSize = read(inFd, data, std::size(data));
     if (readSize == -1 && errno == EAGAIN) {
       continue;
     }
@@ -378,8 +378,7 @@ static ssize_t linenoiseNoTTY(int inFd, char *buf, size_t bufLen) {
     if (readSize < 0) {
       return -1;
     }
-    auto size = static_cast<size_t>(readSize);
-    if (len + size <= bufLen) {
+    if (const auto size = static_cast<size_t>(readSize); len + size <= bufLen) {
       memcpy(buf + len, data, size);
       len += size;
     } else {
@@ -400,7 +399,7 @@ namespace arsh {
 // ##############################
 
 LineEditorObject::LineEditorObject() : ObjectWithRtti(TYPE::LineEditor) {
-  if (int ttyFd = open("/dev/tty", O_RDWR | O_CLOEXEC); ttyFd > -1) {
+  if (const int ttyFd = open("/dev/tty", O_RDWR | O_CLOEXEC); ttyFd > -1) {
     this->inFd = ttyFd;
     remapFDCloseOnExec(this->inFd);
     this->outFd = this->inFd;
@@ -613,15 +612,15 @@ void LineEditorObject::refreshLine(struct linenoiseState &l, bool repaint,
 
   /* Go up till we reach the expected position. */
   if (rows - cursorRows > 0) {
-    lndebug("go-up %d", (int)rows - (int)cursorRows);
-    snprintf(seq, 64, "\x1b[%dA", (int)rows - (int)cursorRows);
+    lndebug("go-up %d", rows - static_cast<unsigned int>(cursorRows));
+    snprintf(seq, 64, "\x1b[%dA", rows - static_cast<unsigned int>(cursorRows));
     ab += seq;
   }
 
   /* Set column position, zero-based. */
   lndebug("set col %d", 1 + (int)cursorCols);
   if (cursorCols) {
-    snprintf(seq, 64, "\r\x1b[%dC", (int)cursorCols);
+    snprintf(seq, 64, "\r\x1b[%dC", static_cast<unsigned int>(cursorCols));
   } else {
     snprintf(seq, 64, "\r");
   }
