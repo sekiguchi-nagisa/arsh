@@ -233,6 +233,79 @@ TEST_F(KeyBindingTest, caret2) {
   ASSERT_EQ("^[^M", KeyBindings::toCaret("\x1b\r"));
 }
 
+TEST(CustomActionTest, base) {
+  CustomActionMap actionMap;
+
+  // add
+  auto *r = actionMap.add("AAA", CustomActionType::INSERT);
+  ASSERT_EQ(0, r->second.customActionIndex);
+  r = actionMap.add("BBB", CustomActionType::HIST_SELCT);
+  ASSERT_EQ(1, r->second.customActionIndex);
+  r = actionMap.add("CCC", CustomActionType::REPLACE_WHOLE);
+  ASSERT_EQ(2, r->second.customActionIndex);
+  r = actionMap.add("DDD", CustomActionType::INSERT);
+  ASSERT_EQ(3, r->second.customActionIndex);
+
+  ASSERT_EQ(4, actionMap.size());
+  ASSERT_EQ(0, actionMap.getEntries()[0].second.customActionIndex);
+  ASSERT_EQ(1, actionMap.getEntries()[1].second.customActionIndex);
+  ASSERT_EQ(2, actionMap.getEntries()[2].second.customActionIndex);
+  ASSERT_EQ(3, actionMap.getEntries()[3].second.customActionIndex);
+
+  // find
+  r = actionMap.find("");
+  ASSERT_FALSE(r);
+  r = actionMap.find("afref");
+  ASSERT_FALSE(r);
+  r = actionMap.find("AAA");
+  ASSERT_TRUE(r);
+  ASSERT_EQ(0, r->second.customActionIndex);
+
+  // find by index
+  r = actionMap.findByIndex(2222);
+  ASSERT_FALSE(r);
+  r = actionMap.findByIndex(0);
+  ASSERT_TRUE(r);
+  ASSERT_STREQ("AAA", r->first.get());
+  ASSERT_EQ(0, r->second.customActionIndex);
+
+  // remove
+  actionMap.remove("CCC");
+  ASSERT_EQ(3, actionMap.size());
+  ASSERT_EQ(0, actionMap.getEntries()[0].second.customActionIndex);
+  ASSERT_EQ(1, actionMap.getEntries()[1].second.customActionIndex);
+  ASSERT_EQ(3, actionMap.getEntries()[2].second.customActionIndex);
+
+  actionMap.remove("WWWW");
+  ASSERT_EQ(3, actionMap.size());
+
+  actionMap.remove("AAA");
+  ASSERT_EQ(2, actionMap.size());
+  ASSERT_EQ(1, actionMap.getEntries()[0].second.customActionIndex);
+  ASSERT_EQ(3, actionMap.getEntries()[1].second.customActionIndex);
+
+  // re-add
+  actionMap.add("EEE", CustomActionType::REPLACE_WHOLE_ACCEPT);
+  ASSERT_EQ(3, actionMap.size());
+  ASSERT_EQ(0, actionMap.getEntries()[0].second.customActionIndex);
+  ASSERT_STREQ("EEE", actionMap.getEntries()[0].first.get());
+  ASSERT_EQ(1, actionMap.getEntries()[1].second.customActionIndex);
+  ASSERT_STREQ("BBB", actionMap.getEntries()[1].first.get());
+  ASSERT_EQ(3, actionMap.getEntries()[2].second.customActionIndex);
+  ASSERT_STREQ("DDD", actionMap.getEntries()[2].first.get());
+
+  actionMap.add("FFF", CustomActionType::REPLACE_WHOLE);
+  ASSERT_EQ(4, actionMap.size());
+  ASSERT_EQ(0, actionMap.getEntries()[0].second.customActionIndex);
+  ASSERT_STREQ("EEE", actionMap.getEntries()[0].first.get());
+  ASSERT_EQ(1, actionMap.getEntries()[1].second.customActionIndex);
+  ASSERT_STREQ("BBB", actionMap.getEntries()[1].first.get());
+  ASSERT_EQ(2, actionMap.getEntries()[2].second.customActionIndex);
+  ASSERT_STREQ("FFF", actionMap.getEntries()[2].first.get());
+  ASSERT_EQ(3, actionMap.getEntries()[3].second.customActionIndex);
+  ASSERT_STREQ("DDD", actionMap.getEntries()[3].first.get());
+}
+
 TEST(KillRingTest, base) {
   KillRing killRing;
   killRing.expand(3);

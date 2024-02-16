@@ -202,14 +202,70 @@ const std::pair<CStrPtr, EditAction> *CustomActionMap::find(StringRef ref) const
   return nullptr;
 }
 
+static auto lookup(const std::vector<std::pair<CStrPtr, EditAction>> &entries,
+                   const std::pair<CStrPtr, EditAction> &key) {
+  return std::lower_bound(
+      entries.begin(), entries.end(), key,
+      [](const std::pair<CStrPtr, EditAction> &x, const std::pair<CStrPtr, EditAction> &y) {
+        return x.second.customActionIndex < y.second.customActionIndex;
+      });
+}
+
+const std::pair<CStrPtr, EditAction> *CustomActionMap::findByIndex(unsigned int index) const {
+  std::pair<CStrPtr, EditAction> dummy(nullptr, EditAction(CustomActionType::INSERT, index));
+  if (const auto iter = lookup(this->entries, dummy); iter != this->entries.end()) {
+    return iter.base();
+  }
+  return nullptr;
+}
+
+static unsigned int findFreshIndex(const std::vector<std::pair<CStrPtr, EditAction>> &entries) {
+  const unsigned int size = entries.size();
+  if (size == 0 || (entries[0].second.customActionIndex == 0 &&
+                    entries[size - 1].second.customActionIndex == size - 1)) { // fast path
+    return size;
+  }
+
+  // for sparse vector
+  unsigned int retIndex = size;
+  for (unsigned int i = 0; i < size; i++) {
+    retIndex = entries[i].second.customActionIndex;
+    if (i == retIndex) {
+      continue;
+    }
+    retIndex = i;
+    break;
+  }
+  return retIndex;
+}
+
 const std::pair<CStrPtr, EditAction> *CustomActionMap::add(StringRef name, CustomActionType type) {
-  auto index = static_cast<unsigned int>(this->entries.size());
-  auto entry = std::make_pair(CStrPtr(strdup(name.data())), EditAction(type, index));
-  if (auto pair = this->indexes.emplace(entry.first.get(), index); pair.second) {
+  const unsigned int actionIndex = findFreshIndex(this->entries);
+  auto entry = std::make_pair(CStrPtr(strdup(name.data())), EditAction(type, actionIndex));
+  if (!this->indexes.emplace(entry.first.get(), actionIndex).second) {
+    return nullptr; // already defined
+  }
+
+  auto iter = lookup(this->entries, entry);
+  if (iter == this->entries.end()) { // not found
     this->entries.push_back(std::move(entry));
     return &this->entries.back();
   }
-  return nullptr;
+  assert(iter->second.customActionIndex != actionIndex);
+  iter = this->entries.insert(iter, std::move(entry));
+  return iter.base();
+}
+
+void CustomActionMap::remove(StringRef ref) {
+  const auto iter = this->indexes.find(ref);
+  if (iter == this->indexes.end()) {
+    return;
+  }
+  std::pair<CStrPtr, EditAction> dummy(nullptr, EditAction(CustomActionType::INSERT, iter->second));
+  if (const auto i = lookup(this->entries, dummy); i != this->entries.end()) {
+    this->entries.erase(i);
+  }
+  this->indexes.erase(iter);
 }
 
 // ########################

@@ -251,9 +251,11 @@ public:
 
   const std::pair<CStrPtr, EditAction> *find(StringRef ref) const;
 
-  const auto &operator[](size_t index) const { return this->entries[index]; }
+  const std::pair<CStrPtr, EditAction> *findByIndex(unsigned int index) const;
 
   const std::pair<CStrPtr, EditAction> *add(StringRef name, CustomActionType type);
+
+  void remove(StringRef ref);
 };
 
 enum class PagerAction : unsigned char {
@@ -346,7 +348,7 @@ public:
       auto caret = toCaret(e.first);
       const char *action = toString(e.second.type);
       if (e.second.type == EditActionType::CUSTOM) {
-        action = this->customActions[e.second.customActionIndex].first.get();
+        action = this->customActions.findByIndex(e.second.customActionIndex)->first.get();
       }
       func(caret, action);
     }
