@@ -2309,14 +2309,17 @@ ARSH_METHOD edit_bindings(RuntimeContext &ctx) {
   RET(value);
 }
 
-//!bind: function action($this : LineEditor, $name : String, $type : String, $action : Func<Option<String>,[String, Option<Array<String>>]>) : Void
+//!bind: function action($this : LineEditor, $name : String, $type : String, $action : Option<Func<Option<String>,[String, Option<Array<String>>]>>) : Void
 ARSH_METHOD edit_action(RuntimeContext &ctx) {
   SUPPRESS_WARNING(edit_action);
   auto &editor = typeAs<LineEditorObject>(LOCAL(0));
   CHECK_EDITOR_LOCK(editor);
   auto name = LOCAL(1).asStrRef();
   auto type = LOCAL(2).asStrRef();
-  auto callback = LOCAL(3).toPtr();
+  ObjPtr<Object> callback;
+  if (!LOCAL(3).isInvalid()) {
+    callback = LOCAL(3).toPtr();
+  }
   editor.defineCustomAction(ctx, name, type, std::move(callback));
   RET_VOID;
 }

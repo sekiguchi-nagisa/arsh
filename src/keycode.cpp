@@ -256,16 +256,18 @@ const std::pair<CStrPtr, EditAction> *CustomActionMap::add(StringRef name, Custo
   return iter.base();
 }
 
-void CustomActionMap::remove(StringRef ref) {
+int CustomActionMap::remove(StringRef ref) {
   const auto iter = this->indexes.find(ref);
   if (iter == this->indexes.end()) {
-    return;
+    return -1;
   }
-  std::pair<CStrPtr, EditAction> dummy(nullptr, EditAction(CustomActionType::INSERT, iter->second));
+  const unsigned int removedIndex = iter->second;
+  this->indexes.erase(iter);
+  std::pair<CStrPtr, EditAction> dummy(nullptr, EditAction(CustomActionType::INSERT, removedIndex));
   if (const auto i = lookup(this->entries, dummy); i != this->entries.end()) {
     this->entries.erase(i);
   }
-  this->indexes.erase(iter);
+  return static_cast<int>(removedIndex);
 }
 
 // ########################

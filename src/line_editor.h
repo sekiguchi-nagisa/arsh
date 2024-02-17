@@ -88,10 +88,10 @@ private:
   ObjPtr<Object> histSyncCallback;
 
   /**
-   * for custom actions
+   * for custom actions (custom action index as meta data)
    * must be `(String, [String]?) -> String?' type
    */
-  std::vector<ObjPtr<Object>> customCallbacks;
+  std::vector<Value> customCallbacks;
 
 public:
   LineEditorObject();
@@ -165,6 +165,10 @@ private:
   ObjPtr<ArrayObject> kickCompletionCallback(ARState &state, StringRef line);
 
   bool kickHistSyncCallback(ARState &state, const LineBuffer &buf);
+
+  using custom_callback_iter = std::vector<Value>::const_iterator;
+
+  custom_callback_iter lookupCustomCallback(unsigned int index) const;
 
   /**
    *

@@ -255,7 +255,14 @@ public:
 
   const std::pair<CStrPtr, EditAction> *add(StringRef name, CustomActionType type);
 
-  void remove(StringRef ref);
+  /**
+   * remove custom action
+   * @param ref
+   * @return
+   * return removed custom action index.
+   * if not found, return -1
+   */
+  int remove(StringRef ref);
 };
 
 enum class PagerAction : unsigned char {
@@ -337,6 +344,8 @@ public:
   };
 
   Result<unsigned int, DefineError> defineCustomAction(StringRef name, StringRef type);
+
+  int removeCustomAction(StringRef name) { return this->customActions.remove(name); }
 
   template <typename Func>
   static constexpr bool binding_consumer_requirement_v =

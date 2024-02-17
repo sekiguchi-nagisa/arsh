@@ -1236,8 +1236,10 @@ bool LineEditorObject::kickCustomCallback(ARState &state, LineBuffer &buf, Custo
     break;
   }
 
-  auto ret = this->kickCallback(state, this->customCallbacks[index],
-                                makeArgs(Value::createStr(line), std::move(optArg)));
+  auto iter = this->lookupCustomCallback(index);
+  assert(iter != this->customCallbacks.end());
+  auto ret =
+      this->kickCallback(state, Value(*iter), makeArgs(Value::createStr(line), std::move(optArg)));
   if (state.hasError()) {
     return false;
   }

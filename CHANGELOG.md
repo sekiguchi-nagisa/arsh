@@ -50,6 +50,7 @@
 - improve various ``LineEditor`` methods
     - change ``bind`` method signature, now accept optional argument
         - if specified ``None``, remove existing key-bind
+    - now remove already defined custom action when pass ``None`` to ``action`` method
 
 ### Fixed
 

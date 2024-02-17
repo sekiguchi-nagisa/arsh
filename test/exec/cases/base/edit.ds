@@ -122,6 +122,16 @@ try { $editor.action('who', 'replace-whole-accept1', function(s, o)=> $s);  }
 catch e { $ex = $e; }
 assert ($ex as ArgumentError).message() == "unsupported custom action type: \`replace-whole-accept1'"
 
+## remove
+$editor.action("hraufhaaer", "replace-whole-accept") # do noting
+$editor.action("hraufhaaeraa", "replace-whole-accept11") # do nothing
+$editor.action("", "replace-whole-accept") # do noting
+$editor.action('backward-char', 'replace-whole-accept') # do nothing for builtin action
+assert $editor.actions().contains("backward-char")
+assert $editor.actions().contains("action1")
+$editor.action('action1', 'replace-whole-accept') 
+assert ! $editor.actions().contains("action1")
+
 ## limit
 $ex = 34
 try {

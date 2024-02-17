@@ -337,7 +337,7 @@ function bind(key: String, action: String?): Void for LineEditor
 
 function bindings(): [String : String] for LineEditor
 
-function action(name: String, type: String, action: (String, [String]?) -> String?): Void for LineEditor
+function action(name: String, type: String, action: ((String, [String]?) -> String?)?): Void for LineEditor
 
 function actions(): [String] for LineEditor
 

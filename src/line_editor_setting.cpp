@@ -65,12 +65,31 @@ bool LineEditorObject::addKeyBind(ARState &state, StringRef key, StringRef name)
   return true;
 }
 
+LineEditorObject::custom_callback_iter
+LineEditorObject::lookupCustomCallback(unsigned int index) const {
+  auto dummy = Value::createInvalid().withMetaData(index);
+  return std::lower_bound(
+      this->customCallbacks.begin(), this->customCallbacks.end(), dummy,
+      [](const Value &x, const Value &y) { return x.getMetaData() < y.getMetaData(); });
+}
+
 bool LineEditorObject::defineCustomAction(ARState &state, StringRef name, StringRef type,
                                           ObjPtr<Object> callback) {
+  if (!callback) {
+    if (int index = this->keyBindings.removeCustomAction(name); index != -1) {
+      auto iter = this->lookupCustomCallback(static_cast<unsigned int>(index));
+      this->customCallbacks.erase(iter);
+    }
+    return true;
+  }
   auto s = this->keyBindings.defineCustomAction(name, type);
   if (s) {
-    assert(this->customCallbacks.size() == s.asOk());
-    this->customCallbacks.push_back(std::move(callback));
+    auto entry = Value(callback).withMetaData(s.asOk());
+    if (auto iter = this->lookupCustomCallback(s.asOk()); iter != this->customCallbacks.end()) {
+      this->customCallbacks.insert(iter, std::move(entry));
+    } else {
+      this->customCallbacks.push_back(std::move(entry));
+    }
     return true;
   }
 
