@@ -271,7 +271,7 @@ class CodeCompletionContext;
 
 enum class TildeExpandStatus : unsigned char;
 
-struct GlobPattern;
+class GlobPatternWrapper;
 
 using SignatureHandler = std::function<void(const CallSignature &, unsigned int)>;
 
@@ -696,7 +696,8 @@ private:
   };
 
   bool concatAsGlobPattern(Token token, SourceListNode::path_iterator begin,
-                           SourceListNode::path_iterator end, GlobOp op, GlobPattern &pattern);
+                           SourceListNode::path_iterator end, GlobOp op,
+                           GlobPatternWrapper &pattern);
 
   /**
    *

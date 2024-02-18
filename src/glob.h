@@ -19,14 +19,50 @@
 
 #include <functional>
 
-#include "misc/flag_util.hpp"
 #include "misc/locale.hpp" // for macOS
-#include "misc/resource.hpp"
-#include "misc/string_ref.hpp"
 
 #include "cancel.h"
+#include "paths.h"
 
 namespace arsh {
+
+class GlobPatternWrapper {
+private:
+  std::string baseDir; // must be unescaped string
+  std::string pattern; // must be glob pattern
+
+public:
+  static GlobPatternWrapper create(std::string &&value);
+
+  const auto &getBaseDir() const { return this->baseDir; }
+
+  const auto &getPattern() const { return this->pattern; }
+
+  TildeExpandStatus expandTilde(DirStackProvider *provider) {
+    return arsh::expandTilde(this->baseDir, true, provider);
+  }
+
+  /**
+   * for error message
+   * @param maxSize
+   * @param out
+   */
+  bool join(size_t maxSize, std::string &out) const {
+    if (!this->baseDir.empty()) {
+      assert(this->baseDir.back() == '/');
+      if (!checkedAppend(this->baseDir, maxSize, out)) {
+        return false;
+      }
+    }
+    return checkedAppend(this->pattern, maxSize, out);
+  }
+
+  std::string join() const {
+    std::string out;
+    this->join(out.max_size(), out);
+    return out;
+  }
+};
 
 class Glob {
 public:
@@ -67,6 +103,9 @@ private:
 public:
   Glob(StringRef pattern, Option option, const char *baseDir = nullptr)
       : base(baseDir ? baseDir : ""), pattern(pattern), option(option) {}
+
+  Glob(const GlobPatternWrapper &wrapper, Option option)
+      : Glob(wrapper.getPattern(), option, wrapper.getBaseDir().c_str()) {}
 
   void setCancelToken(CancelToken &token) { this->cancel = makeObserver(token); }
 
@@ -244,33 +283,6 @@ private:
 };
 
 bool appendAndEscapeGlobMeta(StringRef ref, size_t maxSize, std::string &out);
-
-struct GlobPattern {
-  std::string baseDir; // must be unescaped string
-  std::string pattern; // must be glob pattern
-
-  /**
-   * for error message
-   * @param maxSize
-   * @param out
-   */
-  bool join(size_t maxSize, std::string &out) const {
-    if (!this->baseDir.empty()) {
-      if (checkedAppend(this->baseDir, maxSize, out)) {
-        if (out.back() != '/' && out.size() + 1 <= maxSize) {
-          out += '/';
-        }
-      }
-    }
-    return checkedAppend(this->pattern, maxSize, out);
-  }
-
-  std::string join() const {
-    std::string out;
-    this->join(out.max_size(), out);
-    return out;
-  }
-};
 
 } // namespace arsh
 

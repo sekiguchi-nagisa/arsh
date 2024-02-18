@@ -114,7 +114,8 @@ static void raiseGlobbingErrorWithNull(ARState &state, const std::string &patter
   raiseError(state, TYPE::GlobbingError, std::move(value));
 }
 
-static void raiseGlobbingError(ARState &state, const GlobPattern &pattern, std::string &&message) {
+static void raiseGlobbingError(ARState &state, const GlobPatternWrapper &pattern,
+                               std::string &&message) {
   std::string value = std::move(message);
   value += " `";
   pattern.join(StringObject::MAX_SIZE, value); // FIXME: check length
@@ -150,20 +151,16 @@ static Value concatPath(ARState &state, const Value *const constPool, const Valu
   return ret;
 }
 
-static Value joinAsPath(ARState &state, const GlobPattern &pattern) {
+static Value joinAsPath(ARState &state, const GlobPatternWrapper &pattern) {
   auto ret = Value::createStr();
-  if (!pattern.baseDir.empty()) {
-    if (!ret.appendAsStr(state, pattern.baseDir)) {
+  if (!pattern.getBaseDir().empty()) {
+    assert(pattern.getBaseDir().back() == '/');
+    if (!ret.appendAsStr(state, pattern.getBaseDir())) {
       return {};
-    }
-    if (pattern.baseDir.back() != '/') {
-      if (!ret.appendAsStr(state, StringRef("/"))) {
-        return {};
-      }
     }
   }
   std::string tmp;
-  const bool r = appendAsUnescaped(pattern.pattern, StringObject::MAX_SIZE, tmp);
+  const bool r = appendAsUnescaped(pattern.getPattern(), StringObject::MAX_SIZE, tmp);
   (void)r;
   assert(r);
   if (!ret.appendAsStr(state, tmp)) {
@@ -173,7 +170,7 @@ static Value joinAsPath(ARState &state, const GlobPattern &pattern) {
 }
 
 static bool concatAsGlobPattern(ARState &state, const Value *const constPool, const Value *begin,
-                                const Value *end, const bool tilde, GlobPattern &pattern) {
+                                const Value *end, const bool tilde, GlobPatternWrapper &pattern) {
   std::string out;
   for (; begin != end; ++begin) {
     if (auto &v = *begin; v.hasStrRef()) {
@@ -196,21 +193,14 @@ static bool concatAsGlobPattern(ARState &state, const Value *const constPool, co
   if (const StringRef ref = out; unlikely(ref.hasNullChar())) {
     raiseGlobbingErrorWithNull(state, out);
     return false;
-  } else {
-    StringRef tmp = ref;
-    pattern.baseDir = Glob::extractDirFromPattern(tmp);
-    if (tmp.begin() != ref.begin()) {
-      out.erase(0, tmp.begin() - ref.begin());
-    }
-    pattern.pattern = std::move(out);
-
-    if (tilde && !pattern.baseDir.empty()) {
-      DefaultDirStackProvider provider(state);
-      if (const auto s = expandTilde(pattern.baseDir, true, &provider);
-          s != TildeExpandStatus::OK && state.has(RuntimeOption::FAIL_TILDE)) {
-        raiseTildeError(state, provider, pattern.baseDir, s);
-        return false;
-      }
+  }
+  pattern = GlobPatternWrapper::create(std::move(out));
+  if (tilde && !pattern.getBaseDir().empty()) {
+    DefaultDirStackProvider provider(state);
+    if (const auto s = pattern.expandTilde(&provider);
+        s != TildeExpandStatus::OK && state.has(RuntimeOption::FAIL_TILDE)) {
+      raiseTildeError(state, provider, pattern.getBaseDir(), s);
+      return false;
     }
   }
   return true;
@@ -222,14 +212,14 @@ NOMEM:
 
 bool VM::addGlobbingPath(ARState &state, ArrayObject &argv, const Value *const begin,
                          const Value *const end, const bool tilde) {
-  GlobPattern pattern;
+  GlobPatternWrapper pattern;
   if (!concatAsGlobPattern(state, cast<CompiledCode>(state.stack.code())->getConstPool(), begin,
                            end, tilde, pattern)) {
     return false;
   }
-  if (pattern.baseDir.empty() && pattern.pattern.size() == 1 &&
-      pattern.pattern == "[") { // ignore '['
-    return argv.append(state, Value::createStr(pattern.pattern));
+  if (pattern.getBaseDir().empty() && pattern.getPattern().size() == 1 &&
+      pattern.getPattern() == "[") { // ignore '['
+    return argv.append(state, Value::createStr(pattern.getPattern()));
   }
 
   Glob::Option option{};
@@ -242,7 +232,7 @@ bool VM::addGlobbingPath(ARState &state, ArrayObject &argv, const Value *const b
 
   const unsigned int oldSize = argv.size();
   RuntimeCancelToken cancel;
-  Glob glob(pattern.pattern, option, pattern.baseDir.c_str());
+  Glob glob(pattern, option);
   glob.setCancelToken(cancel);
   glob.setConsumer([&argv, &state](std::string &&path) {
     return argv.append(state, Value::createStr(std::move(path)));

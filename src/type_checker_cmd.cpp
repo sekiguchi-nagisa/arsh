@@ -374,7 +374,7 @@ static bool isDirPattern(const StringRef ref) {
 
 bool TypeChecker::concatAsGlobPattern(const Token token, SourceListNode::path_iterator begin,
                                       SourceListNode::path_iterator end, const GlobOp op,
-                                      GlobPattern &pattern) {
+                                      GlobPatternWrapper &pattern) {
   std::string value;
   for (; begin != end; ++begin) {
     auto &e = **begin;
@@ -394,21 +394,14 @@ bool TypeChecker::concatAsGlobPattern(const Token token, SourceListNode::path_it
     this->reportError<NoGlobDir>(token, value.c_str());
     return false;
   }
-  const StringRef ref = value;
-  StringRef tmp = ref;
-  pattern.baseDir = Glob::extractDirFromPattern(tmp);
-  if (tmp.begin() != ref.begin()) {
-    value.erase(0, tmp.begin() - ref.begin());
-  }
-  pattern.pattern = std::move(value);
-
-  if (hasFlag(op, GlobOp::TILDE) && !pattern.baseDir.empty()) {
-    if (const auto s = expandTilde(pattern.baseDir, true, nullptr); s != TildeExpandStatus::OK) {
-      this->reportTildeExpansionError(token, pattern.baseDir, s);
+  pattern = GlobPatternWrapper::create(std::move(value));
+  if (hasFlag(op, GlobOp::TILDE) && !pattern.getBaseDir().empty()) {
+    if (const auto s = pattern.expandTilde(nullptr); s != TildeExpandStatus::OK) {
+      this->reportTildeExpansionError(token, pattern.getBaseDir(), s);
       return false;
     }
   }
-  if (pattern.baseDir.empty() || pattern.baseDir[0] != '/') {
+  if (pattern.getBaseDir().empty() || pattern.getBaseDir()[0] != '/') {
     this->reportError<NoRelativeGlob>(token, pattern.join().c_str());
     return false;
   }
@@ -467,15 +460,14 @@ bool TypeChecker::applyGlob(const Token token,
                             std::vector<std::shared_ptr<const std::string>> &results,
                             const SourceListNode::path_iterator begin,
                             const SourceListNode::path_iterator end, GlobOp op) {
-  GlobPattern pattern;
+  GlobPatternWrapper pattern;
   if (!this->concatAsGlobPattern(token, begin, end, op, pattern)) {
     return false;
   }
 
   const unsigned int oldSize = results.size();
   CancelToken dummy;
-  Glob glob(pattern.pattern, Glob::Option::FASTGLOB | Glob::Option::GLOB_LIMIT,
-            pattern.baseDir.c_str());
+  Glob glob(pattern, Glob::Option::FASTGLOB | Glob::Option::GLOB_LIMIT);
   glob.setCancelToken(dummy);
   glob.setConsumer([&results](std::string &&path) { return appendPath(results, std::move(path)); });
 

@@ -428,6 +428,7 @@ BREAK:
   iter = latestSep + 1;
   for (; !baseDir.empty() && baseDir.back() != '/'; baseDir.pop_back())
     ;
+  assert(!baseDir.empty() && baseDir.back() == '/');
   pattern = {iter, static_cast<size_t>(end - iter)};
   return baseDir;
 }
@@ -557,6 +558,18 @@ bool appendAndEscapeGlobMeta(const StringRef ref, const size_t maxSize, std::str
   }
   assert(start <= end);
   return checkedAppend(StringRef(start, end - start), maxSize, out);
+}
+
+GlobPatternWrapper GlobPatternWrapper::create(std::string &&value) {
+  GlobPatternWrapper pattern;
+  StringRef tmp = value;
+  const StringRef ref = tmp;
+  pattern.baseDir = Glob::extractDirFromPattern(tmp);
+  if (tmp.begin() != ref.begin()) {
+    value.erase(0, tmp.begin() - ref.begin());
+  }
+  pattern.pattern = std::move(value);
+  return pattern;
 }
 
 } // namespace arsh
