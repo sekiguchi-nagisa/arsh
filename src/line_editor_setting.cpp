@@ -74,7 +74,7 @@ LineEditorObject::lookupCustomCallback(unsigned int index) const {
 }
 
 bool LineEditorObject::defineCustomAction(ARState &state, StringRef name, StringRef type,
-                                          ObjPtr<Object> callback) {
+                                          ObjPtr<Object> &&callback) {
   if (!callback) {
     if (int index = this->keyBindings.removeCustomAction(name); index != -1) {
       auto iter = this->lookupCustomCallback(static_cast<unsigned int>(index));
@@ -84,7 +84,7 @@ bool LineEditorObject::defineCustomAction(ARState &state, StringRef name, String
   }
   auto s = this->keyBindings.defineCustomAction(name, type);
   if (s) {
-    auto entry = Value(callback).withMetaData(s.asOk());
+    auto entry = Value(std::move(callback)).withMetaData(s.asOk());
     if (auto iter = this->lookupCustomCallback(s.asOk()); iter != this->customCallbacks.end()) {
       this->customCallbacks.insert(iter, std::move(entry));
     } else {

@@ -128,7 +128,8 @@ public:
    */
   bool addKeyBind(ARState &state, StringRef key, StringRef name);
 
-  bool defineCustomAction(ARState &state, StringRef name, StringRef type, ObjPtr<Object> callback);
+  bool defineCustomAction(ARState &state, StringRef name, StringRef type,
+                          ObjPtr<Object> &&callback);
 
   const auto &getKeyBindings() const { return this->keyBindings; }
 

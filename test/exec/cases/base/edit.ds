@@ -128,9 +128,26 @@ $editor.action("hraufhaaeraa", "replace-whole-accept11") # do nothing
 $editor.action("", "replace-whole-accept") # do noting
 $editor.action('backward-char', 'replace-whole-accept') # do nothing for builtin action
 assert $editor.actions().contains("backward-char")
+
+$editor.action('action2', 'replace-whole', function(s,o)=> $s)
+$editor.action('action3', 'replace-line', function(s,o)=> $s)
+$editor.action('action4', 'insert', function(s,o)=> $s)
+
 assert $editor.actions().contains("action1")
-$editor.action('action1', 'replace-whole-accept') 
+assert $editor.actions().contains("action2")
+assert $editor.actions().contains("action3")
+assert $editor.actions().contains("action4")
+$editor.action('action1', 'replace-whole-accept')
+$editor.action('action3', 'replace-whole-accept')
 assert ! $editor.actions().contains("action1")
+assert ! $editor.actions().contains("action3")
+
+$editor.action('action5', 'hist-select', function(s,o) => $s)
+$editor.action('action6', 'kill-ring-select', function(s,o) => $s)
+assert $editor.actions().contains("action5")
+assert $editor.actions().contains("action6")
+assert $editor.actions().contains("action2")
+assert $editor.actions().contains("action4")
 
 ## limit
 $ex = 34

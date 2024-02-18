@@ -1485,6 +1485,9 @@ TEST_F(IndexTest, hoverBuiltin) {
   ASSERT_NO_FATAL_FAILURE(
       this->hover("''.slice(0)", Position{.line = 0, .character = 5},
                   "```arsh\nfunction slice(start: Int, stop: Int?): String for String\n```"));
+  ASSERT_NO_FATAL_FAILURE(
+      this->hover("[23:(12,(34,56,))].\nclear()", Position{.line = 1, .character = 2},
+                  "```arsh\nfunction clear(): Void for [Int : (Int, (Int, Int))]\n```"));
 }
 
 TEST_F(IndexTest, hoverMod) {
