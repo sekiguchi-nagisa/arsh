@@ -760,13 +760,11 @@ ssize_t LineEditorObject::editInRawMode(ARState &state, struct linenoiseState &l
 
     if (!reader.hasControlChar()) {
       auto &buf = reader.get();
-      bool merge = buf != " ";
-      if (l.buf.insertToCursor(buf, merge)) {
+      if (const bool merge = buf != " "; l.buf.insertToCursor(buf, merge)) {
         this->refreshLine(l);
         continue;
-      } else {
-        return -1;
       }
+      return -1;
     }
 
     // dispatch edit action
@@ -966,8 +964,7 @@ ssize_t LineEditorObject::editInRawMode(ARState &state, struct linenoiseState &l
     case EditActionType::INSERT_KEYCODE:
       if (reader.fetch() > 0) {
         auto &buf = reader.get();
-        bool merge = buf != " " && buf != "\n";
-        if (l.buf.insertToCursor(buf, merge)) {
+        if (const bool merge = buf != " " && buf != "\n"; l.buf.insertToCursor(buf, merge)) {
           this->refreshLine(l);
         } else {
           return -1;
@@ -978,7 +975,7 @@ ssize_t LineEditorObject::editInRawMode(ARState &state, struct linenoiseState &l
       l.buf.commitLastChange();
       bool r = reader.intoBracketedPasteMode(
           [&l](StringRef ref) { return l.buf.insertToCursor(ref, true); });
-      int old = errno;
+      const int old = errno;
       l.buf.commitLastChange();
       this->refreshLine(l); // always refresh line even if error
       if (!r) {
@@ -1057,9 +1054,8 @@ ssize_t LineEditorObject::readline(ARState &state, StringRef prompt, char *buf, 
       buf[len] = '\0';
     }
     return static_cast<ssize_t>(len);
-  } else {
-    return this->editLine(state, prompt, buf, bufLen);
   }
+  return this->editLine(state, prompt, buf, bufLen);
 }
 
 EditActionStatus LineEditorObject::completeLine(ARState &state, struct linenoiseState &ls,
@@ -1088,67 +1084,68 @@ EditActionStatus LineEditorObject::completeLine(ARState &state, struct linenoise
     return EditActionStatus::OK;
   } else if (len == 1) {
     return EditActionStatus::OK;
-  } else {
-    auto status = EditActionStatus::CONTINUE;
-    auto pager = ArrayPager::create(CandidatesWrapper(candidates), ls.ps,
-                                    {.rows = ls.rows, .cols = ls.cols});
-
-    /**
-     * first, only show pager and wait next completion action.
-     * if next action is not completion action, break paging
-     */
-    pager.setShowCursor(false);
-    this->refreshLine(ls, true, makeObserver(pager));
-    if (reader.fetch() <= 0) {
-      status = EditActionStatus::ERROR;
-      goto END;
-    }
-    if (!reader.hasControlChar()) {
-      status = EditActionStatus::OK;
-      goto END;
-    }
-    if (auto *action = this->keyBindings.findAction(reader.get());
-        !action || action->type != EditActionType::COMPLETE) {
-      status = EditActionStatus::OK;
-      goto END;
-    }
-
-    /**
-     * paging completion candidates
-     */
-    pager.setShowCursor(true);
-    for (size_t prevCanLen = 0; status == EditActionStatus::CONTINUE;) {
-      // render pager
-      if (prevCanLen) {
-        ls.buf.undo();
-      }
-      const auto can = pager.getCurCandidate();
-      assert(offset <= ls.buf.getCursor());
-      size_t prefixLen = ls.buf.getCursor() - offset;
-      prevCanLen = can.size() - prefixLen;
-      if (ls.buf.insertToCursor({can.data() + prefixLen, prevCanLen})) {
-        this->refreshLine(ls, true, makeObserver(pager));
-      } else {
-        status = EditActionStatus::ERROR;
-        break;
-      }
-      status = waitPagerAction(pager, this->keyBindings, reader);
-    }
-
-  END:
-    int old = errno;
-    this->refreshLine(ls); // clear pager
-    errno = old;
-    return status;
   }
+
+  // show candidates
+  auto status = EditActionStatus::CONTINUE;
+  auto pager =
+      ArrayPager::create(CandidatesWrapper(candidates), ls.ps, {.rows = ls.rows, .cols = ls.cols});
+
+  /**
+   * first, only show pager and wait next completion action.
+   * if next action is not completion action, break paging
+   */
+  pager.setShowCursor(false);
+  this->refreshLine(ls, true, makeObserver(pager));
+  if (reader.fetch() <= 0) {
+    status = EditActionStatus::ERROR;
+    goto END;
+  }
+  if (!reader.hasControlChar()) {
+    status = EditActionStatus::OK;
+    goto END;
+  }
+  if (auto *action = this->keyBindings.findAction(reader.get());
+      !action || action->type != EditActionType::COMPLETE) {
+    status = EditActionStatus::OK;
+    goto END;
+  }
+
+  /**
+   * paging completion candidates
+   */
+  pager.setShowCursor(true);
+  for (size_t prevCanLen = 0; status == EditActionStatus::CONTINUE;) {
+    // render pager
+    if (prevCanLen) {
+      ls.buf.undo();
+    }
+    const auto can = pager.getCurCandidate();
+    assert(offset <= ls.buf.getCursor());
+    size_t prefixLen = ls.buf.getCursor() - offset;
+    prevCanLen = can.size() - prefixLen;
+    if (ls.buf.insertToCursor({can.data() + prefixLen, prevCanLen})) {
+      this->refreshLine(ls, true, makeObserver(pager));
+    } else {
+      status = EditActionStatus::ERROR;
+      break;
+    }
+    status = waitPagerAction(pager, this->keyBindings, reader);
+  }
+
+END:
+  const int old = errno;
+  this->refreshLine(ls); // clear pager
+  errno = old;
+  return status;
 }
 
 Value LineEditorObject::kickCallback(ARState &state, Value &&callback, CallArgs &&callArgs) {
-  int errNum = errno;
+  const int errNum = errno;
   auto oldStatus = state.getGlobal(BuiltinVarOffset::EXIT_STATUS);
   auto oldIFS = state.getGlobal(BuiltinVarOffset::IFS);
 
-  bool restoreTTY = this->rawMode;
+  const bool restoreTTY = this->rawMode;
   if (restoreTTY) {
     this->disableRawMode(this->inFd);
   }
@@ -1174,7 +1171,7 @@ ObjPtr<ArrayObject> LineEditorObject::kickCompletionCallback(ARState &state, Str
   auto mod = state.getGlobal(modType->getIndex());
   auto args = makeArgs(std::move(mod), Value::createStr(line));
   Value callback = this->completionCallback;
-  auto ret = this->kickCallback(state, std::move(callback), std::move(args));
+  const auto ret = this->kickCallback(state, std::move(callback), std::move(args));
   if (state.hasError()) {
     return nullptr;
   }
@@ -1238,7 +1235,7 @@ bool LineEditorObject::kickCustomCallback(ARState &state, LineBuffer &buf, Custo
 
   auto iter = this->lookupCustomCallback(index);
   assert(iter != this->customCallbacks.end());
-  auto ret =
+  const auto ret =
       this->kickCallback(state, Value(*iter), makeArgs(Value::createStr(line), std::move(optArg)));
   if (state.hasError()) {
     return false;
@@ -1260,8 +1257,7 @@ bool LineEditorObject::kickCustomCallback(ARState &state, LineBuffer &buf, Custo
   case CustomActionType::KILL_RING_SELECT:
     break;
   }
-  auto ref = ret.asStrRef();
-  return buf.insertToCursor(ref);
+  return buf.insertToCursor(ret.asStrRef());
 }
 
 } // namespace arsh
