@@ -5,6 +5,7 @@ source $SCRIPT_DIR/../../_module4test/fullname.ds as f
 ## user-defined command
 assert $MODULE._fullname('say!!')! == $f._fullname('say!!')!
 assert $f.say_() == $MODULE._fullname('say!!')!
+assert $MODULE._fullname('say!!')! == $MODULE._fullname($MODULE._fullname('say!!')!)!
 
 var ret = $MODULE._fullname('say!!')!
 assert "$(call $ret 1 2)" == 'say!! 1 2'
@@ -15,6 +16,7 @@ assert "$(call $ret 1 2)" == 'say!! 1 2'
 ## module
 assert $MODULE._fullname('m')! == $'%mod3\x00m'
 assert $MODULE._fullname('m')! == $f._fullname('m')!
+assert $MODULE._fullname('m')! == $MODULE._fullname($MODULE._fullname('m')!)!
 
 # fullname arg0
 var arg0 : String?

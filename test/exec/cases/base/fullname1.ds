@@ -71,6 +71,7 @@ assert "$(command -V "$ret")" =~ $/builtin/
 $ret = $MODULE._fullname('env')!
 assert $ret == "/usr/bin/env"
 assert "$(command -V "$ret")" =~ $/is \/usr\/bin\/env/
+assert $MODULE._fullname('env')! == $MODULE._fullname('/usr/bin/env')!
 
 
 # not resolved

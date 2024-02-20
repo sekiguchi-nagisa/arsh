@@ -731,17 +731,21 @@ Result<ObjPtr<FuncObject>, ObjPtr<ErrorObject>> loadExprAsFunc(ARState &state, S
 
 std::string resolveFullCommandName(const ARState &state, const Value &name,
                                    const ModType &modType) {
-  CmdResolver resolver(CmdResolver::NO_FALLBACK, FilePathCache::DIRECT_SEARCH);
+  CmdResolver resolver(CmdResolver::NO_FALLBACK | CmdResolver::FROM_FQN_UDC,
+                       FilePathCache::DIRECT_SEARCH);
   auto cmd = resolver(state, name, &modType);
   const auto ref = name.asStrRef();
   switch (cmd.kind()) {
   case ResolvedCmd::USER_DEFINED:
   case ResolvedCmd::MODULE: {
+    if (ref.hasNullChar()) { // already fullname
+      return ref.toString();
+    }
     auto ret = state.typePool.getModTypeById(cmd.belongModId());
     assert(ret);
     std::string fullname = ret->getNameRef().toString();
     fullname += '\0';
-    fullname += ref.data();
+    fullname += ref;
     return fullname;
   }
   case ResolvedCmd::BUILTIN_S:
