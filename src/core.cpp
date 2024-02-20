@@ -749,12 +749,12 @@ std::string resolveFullCommandName(const ARState &state, const Value &name, cons
     setFlag(op, CmdResolver::NO_FALLBACK);
   }
   const auto cmd = CmdResolver(op, FilePathCache::DIRECT_SEARCH)(state, name, &modType);
-  const auto ref = name.asStrRef();
+  StringRef ref = name.asStrRef();
   switch (cmd.kind()) {
   case ResolvedCmd::USER_DEFINED:
   case ResolvedCmd::MODULE: {
-    if (ref.hasNullChar()) { // already fullname
-      return ref.toString();
+    if (const auto r = ref.find('\0'); r != StringRef::npos) { // already fullname
+      ref = ref.substr(r + 1);
     }
     auto *belongedModType = state.typePool.getModTypeById(cmd.belongModId());
     assert(belongedModType);
