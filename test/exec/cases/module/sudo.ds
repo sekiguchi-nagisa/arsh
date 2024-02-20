@@ -5,7 +5,7 @@ source ../../../../share/arsh/completions/printenv
 
 PATH=/usr/bin:/bin:
 
-sudo() {}   # workaround for sudo not installed env
+$DYNA_UDCS['sudo'] = () {}   # workaround for sudo not installed env
 
 assert complete 'sudo ' | grep '^mount$'
 assert complete 'sudo ' | grep '^halt$'

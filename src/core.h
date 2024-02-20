@@ -214,7 +214,8 @@ Result<ObjPtr<FuncObject>, ObjPtr<ErrorObject>> loadExprAsFunc(ARState &state, S
  * @return
  * if not resolved, return empty string
  */
-std::string resolveFullCommandName(const ARState &state, const Value &name, const ModType &modType);
+std::string resolveFullCommandName(const ARState &state, const Value &name, const ModType &modType,
+                                   bool udcOnly = false);
 
 /**
  *

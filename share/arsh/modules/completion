@@ -8,9 +8,12 @@ let _compMap : [String : Completer]
 
 function _defaultHook(ctx : Module, words : [String], cursor : Int) : Candidates? {
     if (command -v $words[0] &>> /dev/null) {
-        var cmd = $words[0].basename()
-        if ($OSTYPE == 'cygwin' || $OSTYPE == 'msys') && $cmd.endsWith(".exe") {
-            $cmd = $cmd.slice(0, -4)
+        var cmd = $words[0]
+        if !$cmd.contains($'\0') {
+            $cmd = $cmd.basename();
+            if ($OSTYPE == 'cygwin' || $OSTYPE == 'msys') && $cmd.endsWith(".exe") {
+                $cmd = $cmd.slice(0, -4)
+            }
         }
         $words[0] = $cmd
         var comp = $_compMap.get($cmd) ?? $_compMap.get("") ?? function(m, w, c) => $none
@@ -150,6 +153,7 @@ let _bash_completion_dirs = [
 ]
 
 function findBashCompScript(name : String) : String? {
+    $name.contains($'\0') && return $none
     for dir in $_bash_completion_dirs {
         var path = $dir + $name
         test -f $path && return $path

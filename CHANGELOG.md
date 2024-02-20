@@ -36,6 +36,7 @@
   ```
   for a in "123" as String? { echo $a; }
   ```
+- pass fully qualified command name to ``COMP_HOOK`` for user-defined command
 
 #### Builtin
 

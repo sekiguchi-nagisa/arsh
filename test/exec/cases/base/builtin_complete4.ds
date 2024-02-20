@@ -34,6 +34,25 @@ $assertComp('echo ~/', ['echo','~/'])
 $assertComp('echo a:hoge', ['a:hoge', 'echo'])
 $assertComp('echo :hoge', [':hoge', 'echo'])
 
+# for user-defined command
+var fullName = ""
+$COMP_HOOK = function(ctx, words, c) => {
+    $fullName = $words[0]
+    return new Candidates()
+}
+assert complete 'hogehoge '
+assert $COMPREPLY.size() == 0
+assert $fullName == 'hogehoge'  # before user-defined command definition, cannot resolve fullname
+assert ! $MODULE._fullname('hogehoge')
+
+hogehoge() {}
+
+assert complete 'hogehoge '
+assert $COMPREPLY.size() == 0
+assert $fullName.contains($'\0')
+assert $fullName == $MODULE._fullname('hogehoge')!  # after user-defined command definition, resolve fullname
+
+
 # escape
 function comp2($ctx : Module, $words : [String], $cursor : Int) : Candidates {
     return new Candidates(['\23', '&h', ''])

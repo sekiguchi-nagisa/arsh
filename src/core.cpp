@@ -375,12 +375,25 @@ public:
   }
 };
 
-static Value createArgv(const TypePool &pool, const Lexer &lex, const CmdNode &cmdNode,
-                        const std::string &word, bool tilde) {
+static Value getFullNameFromTempMod(const ARState &state, const unsigned int temModIndex,
+                                    const std::string &name) {
+  auto cmdName = Value::createStr(name);
+  const auto modId = state.tempModScope[temModIndex]->modId;
+  if (auto *modType = state.typePool.getModTypeById(modId)) {
+    auto retName = resolveFullCommandName(state, cmdName, *modType, true);
+    if (!retName.empty()) {
+      cmdName = Value::createStr(std::move(retName));
+    }
+  }
+  return cmdName;
+}
+
+static Value createArgv(const ARState &state, const Lexer &lex, const CmdNode &cmdNode,
+                        const unsigned int temModIndex, const std::string &word, bool tilde) {
   std::vector<Value> values;
 
   // add cmd
-  values.push_back(Value::createStr(cmdNode.getNameNode().getValue()));
+  values.push_back(getFullNameFromTempMod(state, temModIndex, cmdNode.getNameNode().getValue()));
 
   // add args
   for (auto &e : cmdNode.getArgNodes()) {
@@ -400,10 +413,10 @@ static Value createArgv(const TypePool &pool, const Lexer &lex, const CmdNode &c
     values.push_back(Value::createStr(std::move(actual)));
   }
 
-  return Value::create<ArrayObject>(pool.get(TYPE::StringArray), std::move(values));
+  return Value::create<ArrayObject>(state.typePool.get(TYPE::StringArray), std::move(values));
 }
 
-static int kickCompHook(ARState &state, unsigned int tempModIndex, const Lexer &lex,
+static int kickCompHook(ARState &state, const unsigned int tempModIndex, const Lexer &lex,
                         const CmdNode &cmdNode, const std::string &word, bool tilde,
                         DefaultCompConsumer &consumer) {
   auto hook = getBuiltinGlobal(state, VAR_COMP_HOOK);
@@ -414,7 +427,7 @@ static int kickCompHook(ARState &state, unsigned int tempModIndex, const Lexer &
 
   // prepare argument
   auto ctx = Value::createDummy(state.typePool.get(TYPE::Module), tempModIndex, 0);
-  auto argv = createArgv(state.typePool, lex, cmdNode, word, tilde);
+  auto argv = createArgv(state, lex, cmdNode, tempModIndex, word, tilde);
   unsigned int index = typeAs<ArrayObject>(argv).size();
   if (!word.empty()) {
     index--;
@@ -729,11 +742,13 @@ Result<ObjPtr<FuncObject>, ObjPtr<ErrorObject>> loadExprAsFunc(ARState &state, S
   return Err(error);
 }
 
-std::string resolveFullCommandName(const ARState &state, const Value &name,
-                                   const ModType &modType) {
-  CmdResolver resolver(CmdResolver::NO_FALLBACK | CmdResolver::FROM_FQN_UDC,
-                       FilePathCache::DIRECT_SEARCH);
-  auto cmd = resolver(state, name, &modType);
+std::string resolveFullCommandName(const ARState &state, const Value &name, const ModType &modType,
+                                   const bool udcOnly) {
+  auto op = CmdResolver::FROM_FQN_UDC;
+  if (!udcOnly) {
+    setFlag(op, CmdResolver::NO_FALLBACK);
+  }
+  const auto cmd = CmdResolver(op, FilePathCache::DIRECT_SEARCH)(state, name, &modType);
   const auto ref = name.asStrRef();
   switch (cmd.kind()) {
   case ResolvedCmd::USER_DEFINED:
@@ -741,9 +756,9 @@ std::string resolveFullCommandName(const ARState &state, const Value &name,
     if (ref.hasNullChar()) { // already fullname
       return ref.toString();
     }
-    auto ret = state.typePool.getModTypeById(cmd.belongModId());
-    assert(ret);
-    std::string fullname = ret->getNameRef().toString();
+    auto *belongedModType = state.typePool.getModTypeById(cmd.belongModId());
+    assert(belongedModType);
+    std::string fullname = belongedModType->getNameRef().toString();
     fullname += '\0';
     fullname += ref;
     return fullname;
