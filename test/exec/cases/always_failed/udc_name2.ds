@@ -1,0 +1,8 @@
+#$test($result = 'type', $errorKind = 'InvalidUDCName', $lineNum = 6, $chars = 1, $status = 1)
+
+root\ user\
+() {}
+
+home\/aaa() {  # cannot escape /
+   return 23
+}

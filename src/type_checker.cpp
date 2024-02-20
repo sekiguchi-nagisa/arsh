@@ -378,6 +378,10 @@ HandlePtr TypeChecker::addUdcEntry(const UserDefinedCmdNode &node) {
     this->reportError<ReservedCmd>(node, node.getCmdName().c_str());
     return nullptr;
   }
+  if (auto &name = node.getCmdName(); StringRef(name).contains('/')) {
+    this->reportError<InvalidUDCName>(node.getNameInfo().getToken());
+    return nullptr;
+  }
 
   const DSType *returnType = nullptr;
   if (!node.getReturnTypeNode()) {

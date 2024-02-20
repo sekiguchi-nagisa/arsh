@@ -1,0 +1,7 @@
+#$test($result = 'type', $errorKind = 'InvalidUDCName', $lineNum = 5, $chars = 1, $status = 1)
+
+~root() {}
+
+home/aaa() {
+   return 23
+}

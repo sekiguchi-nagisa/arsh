@@ -153,6 +153,7 @@ DEFINE_TCError(Unacceptable, "`%s' type expression is not allowed");
 DEFINE_TCError(UnacceptableType, "`%s' type is not allowed");
 DEFINE_TCError(DefinedCmd, "already defined command: `%s'");
 DEFINE_TCError(ReservedCmd, "cannot defined command: `%s', since it is reserved name");
+DEFINE_TCError(InvalidUDCName, "not allow `/' character in user-defined command name");
 DEFINE_TCError(ConflictSymbol, "at global import, cannot import %s defined in `%s' module\n"
                                "since same name symbol is already defined in this module");
 DEFINE_TCError(NotOpenMod, "cannot read module: `%s', caused by `%s'");
