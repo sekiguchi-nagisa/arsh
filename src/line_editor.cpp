@@ -446,7 +446,7 @@ int LineEditorObject::enableRawMode(int fd) {
   }
   /* output modes - disable post processing */
   //    raw.c_oflag &= ~(OPOST);
-  raw.c_oflag &= ~XTABS;
+  raw.c_oflag &= ~TAB3;
   /* control modes - set 8 bit chars */
   raw.c_cflag |= (CS8);
   raw.c_cflag &= ~HUPCL;
