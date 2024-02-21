@@ -425,7 +425,7 @@ static void disableBracketPasteMode(int fd) {
 
 /* Raw mode: 1960 magic shit. */
 int LineEditorObject::enableRawMode(int fd) {
-  termios raw; // NOLINT
+  termios raw{}; // NOLINT
 
   if (!isatty(fd)) {
     goto fatal;
@@ -437,7 +437,8 @@ int LineEditorObject::enableRawMode(int fd) {
   xcfmakesane(raw); /* modify the sane mode */
   /* input modes: no break, no CR to NL, no parity check, no strip char
    */
-  raw.c_iflag &= ~(BRKINT | ICRNL | INPCK | ISTRIP);
+  raw.c_iflag &= ~(BRKINT | ICRNL | INPCK | ISTRIP | IXANY | IMAXBEL);
+  raw.c_iflag |= IUTF8 | IXOFF;
   if (this->useFlowControl) {
     raw.c_iflag |= IXON;
   } else {
@@ -445,8 +446,10 @@ int LineEditorObject::enableRawMode(int fd) {
   }
   /* output modes - disable post processing */
   //    raw.c_oflag &= ~(OPOST);
+  raw.c_oflag &= ~XTABS;
   /* control modes - set 8 bit chars */
   raw.c_cflag |= (CS8);
+  raw.c_cflag &= ~HUPCL;
   /* local modes - choing off, canonical off, no extended functions,
    * no signal chars (^Z,^C) */
   raw.c_lflag &= ~(ECHO | ICANON | IEXTEN | ISIG);
@@ -454,6 +457,10 @@ int LineEditorObject::enableRawMode(int fd) {
    * We want read to return every single byte, without timeout. */
   raw.c_cc[VMIN] = 1;
   raw.c_cc[VTIME] = 0; /* 1 byte, no timer */
+
+  /* set speed */
+  cfsetispeed(&raw, EXTB);
+  cfsetospeed(&raw, EXTB);
 
   /* put terminal in raw mode after flushing */
   if (tcsetattr(fd, TCSAFLUSH, &raw) < 0) {
