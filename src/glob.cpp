@@ -380,7 +380,7 @@ Glob::Status Glob::invoke(std::string &&baseDir, const char *iter, std::string *
   this->statCount = 0;
   this->readdirCount = 0;
   std::pair<Status, bool> s;
-  for (; !(s = this->match(baseDir.c_str(), iter, err)).second; popDir(baseDir))
+  for (; !(s = this->match(baseDir, iter, err)).second; popDir(baseDir))
     ;
   if (s.first != Status::MATCH) {
     return s.first;
@@ -453,9 +453,9 @@ std::string Glob::resolveBaseDir(const char *&iter) const {
   return baseDir;
 }
 
-std::pair<Glob::Status, bool> Glob::match(const char *baseDir, const char *&iter,
+std::pair<Glob::Status, bool> Glob::match(const std::string &baseDir, const char *&iter,
                                           std::string *err) {
-  const auto dir = openDir(baseDir);
+  const auto dir = openDir(baseDir.c_str());
   if (!dir) {
     return {Status::MATCH, true};
   }
@@ -479,7 +479,7 @@ std::pair<Glob::Status, bool> Glob::match(const char *baseDir, const char *&iter
       return {Status::BAD_PATTERN, true};
     }
 
-    std::string name = strcmp(baseDir, ".") != 0 ? baseDir : "";
+    std::string name = baseDir != "." ? baseDir : "";
     if (!name.empty() && name.back() != '/') {
       name += '/';
     }
@@ -505,7 +505,7 @@ std::pair<Glob::Status, bool> Glob::match(const char *baseDir, const char *&iter
           return {Status::MATCH, false};
         }
         auto next = scanner.getIter();
-        auto s = this->match(name.c_str(), next, err);
+        auto s = this->match(name, next, err);
         if (!s.second) {
           iter = next;
           rewinddir(dir.get());

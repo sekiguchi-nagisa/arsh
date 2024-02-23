@@ -148,7 +148,7 @@ private:
    */
   std::string resolveBaseDir(const char *&iter) const;
 
-  std::pair<Status, bool> match(const char *baseDir, const char *&iter, std::string *err);
+  std::pair<Status, bool> match(const std::string &baseDir, const char *&iter, std::string *err);
 };
 
 template <>
