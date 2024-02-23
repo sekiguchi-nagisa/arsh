@@ -190,9 +190,11 @@ void TypeChecker::visitCmdArgNode(CmdArgNode &node) {
       }
     }
   }
-  assert(!node.getSegmentNodes().empty());
-  node.setType(node.getExpansionSize() > 0 ? this->typePool().get(TYPE::StringArray)
-                                           : node.getSegmentNodes()[0]->getType());
+  if (!node.hasExpansionError()) {
+    assert(!node.getSegmentNodes().empty());
+    node.setType(node.getExpansionSize() > 0 ? this->typePool().get(TYPE::StringArray)
+                                             : node.getSegmentNodes()[0]->getType());
+  }
 }
 
 void TypeChecker::visitArgArrayNode(ArgArrayNode &node) {
@@ -719,7 +721,9 @@ void TypeChecker::visitSourceListNode(SourceListNode &node) {
   }
   this->checkTypeExactly(node.getPathNode());
   auto &exprType = this->typePool().get(node.isExpansion() ? TYPE::StringArray : TYPE::String);
-  this->checkType(exprType, node.getPathNode());
+  if (this->checkType(exprType, node.getPathNode()).isUnresolved()) {
+    return;
+  }
 
   std::unique_ptr<CmdArgNode> constPathNode;
   const auto &pathNode = node.getPathNode();

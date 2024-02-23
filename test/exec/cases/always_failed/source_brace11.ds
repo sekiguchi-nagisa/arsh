@@ -1,0 +1,3 @@
+#$test($result = 'type', $lineNum = 3, $chars = 8, $errorKind = 'Required', $status = 1)
+
+source /./aaaaaaaaaaaaaa*//exit[{6..4..-1}../e{0}ex/*/*yy6* as ks
