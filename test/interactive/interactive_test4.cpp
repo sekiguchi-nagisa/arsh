@@ -141,7 +141,7 @@ TEST_F(InteractiveTest, lineEditorConfig1) {
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
   ASSERT_NO_FATAL_FAILURE(
-      this->sendLineAndExpect("assert $LINE_EDIT.config('flow-control') as Bool"));
+      this->sendLineAndExpect("assert $LINE_EDIT.configs()['flow-control'] as Bool"));
   termios setting{};
   ASSERT_TRUE(tcgetattr(this->handle.pty(), &setting) != -1);
   ASSERT_TRUE(hasFlag(setting.c_iflag, static_cast<tcflag_t>(IXON)));
@@ -150,7 +150,7 @@ TEST_F(InteractiveTest, lineEditorConfig1) {
   // disable flow control
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.config('flow-control', $false)"));
   ASSERT_NO_FATAL_FAILURE(
-      this->sendLineAndExpect("assert ! $LINE_EDIT.config('flow-control') as Bool"));
+      this->sendLineAndExpect("assert ! ($LINE_EDIT.configs()['flow-control'] as Bool)"));
   ASSERT_TRUE(tcgetattr(this->handle.pty(), &setting) != -1);
   ASSERT_FALSE(hasFlag(setting.c_iflag, static_cast<tcflag_t>(IXON)));
   ASSERT_TRUE(hasFlag(setting.c_iflag, static_cast<tcflag_t>(IXOFF)));
@@ -158,7 +158,8 @@ TEST_F(InteractiveTest, lineEditorConfig1) {
   // re-enable flow control
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.config('flow-control', $true)"));
   ASSERT_NO_FATAL_FAILURE(
-      this->sendLineAndExpect("assert $LINE_EDIT.config('flow-control') as Bool"));
+      this->sendLineAndExpect("assert $LINE_EDIT.configs()['flow-control'] as Bool"));
+  ASSERT_TRUE(tcgetattr(this->handle.pty(), &setting) != -1);
   ASSERT_TRUE(hasFlag(setting.c_iflag, static_cast<tcflag_t>(IXON)));
   ASSERT_TRUE(hasFlag(setting.c_iflag, static_cast<tcflag_t>(IXOFF)));
 
