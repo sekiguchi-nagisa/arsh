@@ -48,7 +48,7 @@ inline mode_t getStMode(const char *fileName) {
   return st.st_mode;
 }
 
-inline mode_t getStMode(int fd) {
+inline mode_t getStMode(const int fd) {
   struct stat st; // NOLINT
   if (fstat(fd, &st) != 0) {
     return 0;
@@ -56,9 +56,9 @@ inline mode_t getStMode(int fd) {
   return st.st_mode;
 }
 
-inline mode_t getStModeAt(int dirfd, const char *relative) {
+inline mode_t getStModeAt(const int dirfd, const char *relative, const int flag = 0) {
   struct stat st; // NOLINT
-  if (fstatat(dirfd, relative, &st, 0) != 0) {
+  if (fstatat(dirfd, relative, &st, flag) != 0) {
     return 0;
   }
   return st.st_mode;

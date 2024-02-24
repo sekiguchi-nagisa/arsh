@@ -44,11 +44,12 @@ namespace arsh {
   OP(FAIL_SIGPIPE, (1u << 5u), "failsigpipe")                                                      \
   OP(FAIL_TILDE, (1u << 6u), "failtilde")                                                          \
   OP(FASTGLOB, (1u << 7u), "fastglob")                                                             \
-  OP(HUP_EXIT, (1u << 8u), "huponexit")                                                            \
-  OP(MONITOR, (1u << 9u), "monitor")                                                               \
-  OP(NULLGLOB, (1u << 10u), "nullglob")                                                            \
-  OP(TRACE_EXIT, (1u << 11u), "traceonexit")                                                       \
-  OP(XTRACE, (1u << 12u), "xtrace")
+  OP(GLOBSTAR, (1u << 8u), "globstar")                                                             \
+  OP(HUP_EXIT, (1u << 9u), "huponexit")                                                            \
+  OP(MONITOR, (1u << 10u), "monitor")                                                              \
+  OP(NULLGLOB, (1u << 11u), "nullglob")                                                            \
+  OP(TRACE_EXIT, (1u << 12u), "traceonexit")                                                       \
+  OP(XTRACE, (1u << 13u), "xtrace")
 
 // set/unset via 'shctl' command
 enum class RuntimeOption : unsigned short {
@@ -100,15 +101,11 @@ public:
   const timestamp initTime; // for builtin printf command
 
 private:
-  RuntimeOption runtimeOption{RuntimeOption::HUP_EXIT | RuntimeOption::ASSERT |
-                              RuntimeOption::CLOBBER | RuntimeOption::FAIL_GLOB |
-                              RuntimeOption::FAIL_TILDE};
+  RuntimeOption runtimeOption{RuntimeOption::ASSERT | RuntimeOption::CLOBBER |
+                              RuntimeOption::FAIL_GLOB | RuntimeOption::FAIL_TILDE |
+                              RuntimeOption::HUP_EXIT};
 
 public:
-  const bool support_strftime_plus; // if support strftime '%+' specifier
-
-  bool isInteractive{false};
-
   ARExecMode execMode{AR_EXEC_MODE_NORMAL};
 
   struct DumpTarget {
@@ -129,6 +126,10 @@ public:
   unsigned int subshellLevel{0};
 
   unsigned int termHookIndex{0};
+
+  const bool support_strftime_plus; // if support strftime '%+' specifier
+
+  bool isInteractive{false};
 
   bool canHandleSignal{true};
 

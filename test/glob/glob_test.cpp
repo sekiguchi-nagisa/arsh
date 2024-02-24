@@ -23,9 +23,18 @@ static GlobPatternScanner::Status matchPatternRaw(const char *name, const char *
 
 static bool matchPattern(const char *name, const char *p, Glob::Option option = {}) {
   const auto s = matchPatternRaw(name, p, option);
-  return s != GlobPatternScanner::Status::UNMATCHED &&
-         s != GlobPatternScanner::Status::UNMATCHED_DOT &&
-         s != GlobPatternScanner::Status::BAD_PATTERN;
+  switch (s) {
+  case GlobPatternScanner::Status::DOT:
+  case GlobPatternScanner::Status::DOTDOT:
+  case GlobPatternScanner::Status::MATCHED:
+    return true;
+  case GlobPatternScanner::Status::UNMATCHED:
+  case GlobPatternScanner::Status::UNMATCHED_DOT:
+  case GlobPatternScanner::Status::UNMATCHED_DOT_PREFIX:
+  case GlobPatternScanner::Status::BAD_PATTERN:
+    break;
+  }
+  return false;
 }
 
 struct CharSetResult {

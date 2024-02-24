@@ -25,6 +25,8 @@
         - also support character class such as ``alnum``, ``space``
     - always perform tilde expansion before glob expansion
         - if ``failglob`` is disabled and glob expansion failed, return tilde expanded string
+    - experimental support recursive glob (a.k.a ``globstar``)
+        - enabled vis ``globstar`` runtime option
 - **Breaking Change**: now not preserve exit status during finally/defer block
     - now the following code is valid
       ```

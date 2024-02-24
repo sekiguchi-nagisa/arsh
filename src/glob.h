@@ -70,6 +70,7 @@ public:
     DOTGLOB = 1u << 0u,    // match file names start with '.'
     FASTGLOB = 1u << 1u,   // posix incompatible optimized search
     GLOB_LIMIT = 1u << 2u, // limit the number of readdir
+    GLOBSTAR = 1u << 3u,   // recognize '**' as recursive pattern
   };
 
   enum class Status : unsigned char {
@@ -141,14 +142,71 @@ private:
 
   const char *end() const { return this->pattern.end(); }
 
+  bool tryConsumeDoubleStars(const char *&iter) const {
+    unsigned int count = 0;
+    auto old = iter;
+    while (iter != this->end()) {
+      if (*iter == '*' && iter + 1 != this->end() && *(iter + 1) == '*') {
+        iter += 2;
+        count++;
+        old = iter;
+      } else {
+        break;
+      }
+      if (iter != this->end() && *iter == '/') {
+        iter++;
+        old = iter;
+        if (iter == this->end()) {
+          old = iter - 1;
+          break;
+        }
+      } else {
+        break;
+      }
+    }
+    iter = old;
+    return count > 0;
+  }
+
   /**
-   * \brief extract and resolve base dir
-   * \param iter
-   * \return
+   * extract and resolve base dir
+   * @param iter
+   * @return
    */
   std::string resolveBaseDir(const char *&iter) const;
 
   std::pair<Status, bool> match(const std::string &baseDir, const char *&iter, std::string *err);
+
+  bool addResult(std::string &&path) {
+    if (this->consumer && !this->consumer(std::move(path))) {
+      return false;
+    }
+    this->matchCount++;
+    return true;
+  }
+
+  /**
+   * recursively match glob (for globstar)
+   * @param baseDir
+   * @param iter
+   * @param err
+   * @return
+   */
+  Status matchRecursive(const std::string &baseDir, const char *iter, std::string *err) {
+    size_t offset = baseDir.size();
+    if (baseDir == ".") {
+      offset = 0;
+    } else if (!baseDir.empty() && baseDir.back() != '/') {
+      offset++;
+    }
+    return this->matchRecursive(baseDir, offset, iter, err);
+  }
+
+  Status matchRecursive(const std::string &baseDir, size_t targetOffset, const char *iter,
+                        std::string *err);
+
+  Status matchPath(const std::string &path, const char *relative, bool isDir, bool dotdot,
+                   const char *iter, std::string *err);
 };
 
 template <>
@@ -161,12 +219,13 @@ GlobCharClassOp lookupGlobCharClassOp(StringRef className);
 class GlobPatternScanner {
 public:
   enum class Status : unsigned char {
-    DOT,           // match '.'
-    DOTDOT,        // match '..'
-    MATCHED,       // match pattern
-    UNMATCHED,     // match failed
-    UNMATCHED_DOT, // match failed (dot prefix)
-    BAD_PATTERN,   // broken pattern syntax
+    DOT,                  // match '.'
+    DOTDOT,               // match '..'
+    MATCHED,              // match pattern
+    UNMATCHED,            // match failed
+    UNMATCHED_DOT,        // match failed ('.' or '..')
+    UNMATCHED_DOT_PREFIX, // match failed (start with '.')
+    BAD_PATTERN,          // broken pattern syntax
   };
 
 private:

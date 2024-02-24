@@ -229,6 +229,9 @@ bool VM::addGlobbingPath(ARState &state, ArrayObject &argv, const Value *const b
   if (state.has(RuntimeOption::FASTGLOB)) {
     setFlag(option, Glob::Option::FASTGLOB);
   }
+  if (state.has(RuntimeOption::GLOBSTAR)) {
+    setFlag(option, Glob::Option::GLOBSTAR);
+  }
 
   const unsigned int oldSize = argv.size();
   RuntimeCancelToken cancel;

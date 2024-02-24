@@ -37,13 +37,13 @@ GlobPatternScanner::Status GlobPatternScanner::match(const char *name, const Glo
       case 2:
         return Status::DOTDOT;
       default:
-        return Status::UNMATCHED;
+        return Status::UNMATCHED_DOT;
       }
     }
 
-    if (!this->isEndOrSep() && *this->iter != '.') {
+    if (this->isEndOrSep() || *this->iter != '.') {
       if (!hasFlag(option, Glob::Option::DOTGLOB)) {
-        return Status::UNMATCHED_DOT;
+        return Status::UNMATCHED_DOT_PREFIX;
       }
     }
   }
@@ -455,12 +455,16 @@ std::string Glob::resolveBaseDir(const char *&iter) const {
 
 std::pair<Glob::Status, bool> Glob::match(const std::string &baseDir, const char *&iter,
                                           std::string *err) {
+  if (hasFlag(this->option, Option::GLOBSTAR) && this->tryConsumeDoubleStars(iter)) {
+    return {this->matchRecursive(baseDir, iter, err), true};
+  }
+
   const auto dir = openDir(baseDir.c_str());
   if (!dir) {
     return {Status::MATCH, true};
   }
 
-  for (dirent *entry; (entry = readdir(dir.get())) != nullptr;) {
+  for (const dirent *entry; (entry = readdir(dir.get())) != nullptr;) {
     if (hasFlag(this->option, Option::GLOB_LIMIT) && this->readdirCount++ == READDIR_LIMIT) {
       return {Status::RESOURCE_LIMIT, true};
     }
@@ -471,12 +475,15 @@ std::pair<Glob::Status, bool> Glob::match(const std::string &baseDir, const char
 
     GlobPatternScanner scanner(iter, this->end());
     const auto ret = scanner.match(entry->d_name, this->option, err);
-    if (ret == GlobPatternScanner::Status::UNMATCHED ||
-        ret == GlobPatternScanner::Status::UNMATCHED_DOT) {
+    switch (ret) {
+    case GlobPatternScanner::Status::UNMATCHED:
+    case GlobPatternScanner::Status::UNMATCHED_DOT:
+    case GlobPatternScanner::Status::UNMATCHED_DOT_PREFIX:
       continue;
-    }
-    if (ret == GlobPatternScanner::Status::BAD_PATTERN) {
+    case GlobPatternScanner::Status::BAD_PATTERN:
       return {Status::BAD_PATTERN, true};
+    default:
+      break;
     }
 
     std::string name = baseDir != "." ? baseDir : "";
@@ -517,10 +524,9 @@ std::pair<Glob::Status, bool> Glob::match(const std::string &baseDir, const char
       }
     }
     if (scanner.isEnd()) {
-      if (this->consumer && !this->consumer(std::move(name))) {
+      if (!this->addResult(std::move(name))) {
         return {Status::LIMIT, true};
       }
-      this->matchCount++;
     }
 
     if (ret == GlobPatternScanner::Status::DOT || ret == GlobPatternScanner::Status::DOTDOT) {
@@ -528,6 +534,168 @@ std::pair<Glob::Status, bool> Glob::match(const std::string &baseDir, const char
     }
   }
   return {Status::MATCH, true};
+}
+
+enum class FileType : unsigned char {
+  OTHER,
+  DIR,
+  LINK,
+};
+
+static FileType getFileType(DIR *dir, const struct dirent *entry) {
+  if (entry->d_type == DT_LNK) {
+    return FileType::LINK;
+  }
+  if (entry->d_type == DT_DIR) {
+    return FileType::DIR;
+  }
+  if (entry->d_type == DT_UNKNOWN) {
+    const auto mode = getStModeAt(dirfd(dir), entry->d_name, AT_SYMLINK_NOFOLLOW);
+    if (S_ISLNK(mode)) {
+      return FileType::LINK;
+    }
+    if (S_ISDIR(mode)) {
+      return FileType::DIR;
+    }
+  }
+  return FileType::OTHER;
+}
+
+Glob::Status Glob::matchRecursive(const std::string &baseDir, const size_t targetOffset,
+                                  const char *iter, std::string *err) {
+  assert(!baseDir.empty());
+  const auto dir = openDir(baseDir.c_str());
+  if (!dir) {
+    return Status::MATCH;
+  }
+
+  std::string pathBuf = baseDir != "." ? baseDir : "";
+  if (!pathBuf.empty() && pathBuf.back() != '/') {
+    pathBuf += '/';
+  }
+  if (!pathBuf.empty() && pathBuf.size() == targetOffset && (iter == this->end() || *iter == '/')) {
+    if (!this->addResult(std::string(pathBuf))) { // add itself
+      return Status::LIMIT;
+    }
+  }
+  pathBuf.reserve(pathBuf.size() + 32);
+  const size_t orgBufSize = pathBuf.size();
+  for (const dirent *entry; (entry = readdir(dir.get())) != nullptr;) {
+    if (this->cancel && this->cancel()) {
+      return Status::CANCELED;
+    }
+
+    const StringRef name = entry->d_name;
+    if (name == "." /*|| name == ".."*/) {
+      continue;
+    }
+    const bool dotdot = name == ".." || name == ".";
+    if (name[0] == '.' && !dotdot && !hasFlag(this->option, Option::DOTGLOB) &&
+        (iter == this->end() || *iter != '.')) {
+      continue;
+    }
+    pathBuf.resize(orgBufSize); // trim
+    pathBuf += name;
+    const auto fileType = getFileType(dir.get(), entry);
+    const auto s = this->matchPath(pathBuf, pathBuf.c_str() + targetOffset,
+                                   fileType == FileType::DIR, dotdot, iter, err);
+    if (s == Status::NOMATCH) {
+      continue; // cur-off (ignore directory)
+    }
+    if (s != Status::MATCH) {
+      return s;
+    }
+
+    if (fileType == FileType::LINK) {
+      continue;
+    }
+    if (fileType == FileType::DIR) {
+      if (const auto s = this->matchRecursive(pathBuf, targetOffset, iter, err);
+          s != Status::MATCH) {
+        return s;
+      }
+    }
+  }
+  return Status::MATCH;
+}
+
+static std::string getFirstElementAndMoveChild(const char *&relative) {
+  std::string value;
+  while (*relative) {
+    const char ch = *relative++;
+    if (ch == '/') {
+      break;
+    }
+    value += ch;
+  }
+  return value;
+}
+
+Glob::Status Glob::matchPath(const std::string &path, const char *relative, const bool isDir,
+                             const bool dotdot, const char *iter, std::string *err) {
+  std::string out;
+  out.reserve(path.size());
+  out.append(path.c_str(), relative - path.c_str());
+  if ((iter == this->end() || *iter == '/') && !dotdot) {
+    if (!out.empty() && out.back() != '/') {
+      out += '/';
+    }
+    out += relative;
+    if (iter != this->end() && *iter == '/') {
+      out += '/';
+      ++iter;
+      if (!isDir) {
+        return Status::MATCH;
+      }
+    }
+    relative = "";
+  }
+
+  const char *const oldIter = iter;
+  const char *oldRelative = relative;
+  while (*relative) {
+    const char *cur = relative;
+    std::string name = getFirstElementAndMoveChild(cur);
+    GlobPatternScanner scanner(iter, this->end());
+    switch (scanner.match(name.c_str(), this->option, err)) {
+    case GlobPatternScanner::Status::MATCHED:
+    case GlobPatternScanner::Status::DOT:
+    case GlobPatternScanner::Status::DOTDOT:
+      break;
+    case GlobPatternScanner::Status::UNMATCHED_DOT_PREFIX:
+    case GlobPatternScanner::Status::UNMATCHED_DOT:
+      return Status::NOMATCH; // not match (cut-offf)
+    case GlobPatternScanner::Status::BAD_PATTERN:
+      return Status::BAD_PATTERN;
+    default:
+      iter = oldIter;
+      getFirstElementAndMoveChild(oldRelative);
+      relative = oldRelative;
+      out.clear(); // re-use re-allocated memory
+      out.append(path.c_str(), relative - path.c_str());
+      continue;
+    }
+    out += name;
+    while (true) {
+      if (scanner.consumeSeps() > 0) {
+        out += '/';
+      }
+      if (scanner.consumeDot()) {
+        out += '.';
+      } else {
+        break;
+      }
+    }
+    iter = scanner.getIter();
+    relative = cur;
+  }
+
+  if (iter == this->end()) {
+    if (!this->addResult(std::move(out))) {
+      return Status::LIMIT;
+    }
+  }
+  return Status::MATCH;
 }
 
 bool appendAndEscapeGlobMeta(const StringRef ref, const size_t maxSize, std::string &out) {
