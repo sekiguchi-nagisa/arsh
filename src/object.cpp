@@ -581,6 +581,29 @@ bool ArrayObject::append(ARState &state, Value &&obj) {
   return true;
 }
 
+struct StrArrayComp {
+  bool operator()(StringRef left, const Value &right) const { return left < right.asStrRef(); }
+
+  bool operator()(const Value &left, StringRef right) const { return left.asStrRef() < right; }
+};
+
+bool ArrayObject::appendAsUniqueStrArray(ARState &state, unsigned int offset, std::string &&value) {
+  if (unlikely(!this->checkIteratorInvalidation(state))) {
+    return false;
+  }
+  StringRef key = value;
+  const auto iter =
+      std::lower_bound(this->values.begin() + offset, this->values.end(), key, StrArrayComp());
+  if (iter == this->values.end() || iter->asStrRef() != key) { // add last
+    if (unlikely(this->size() == MAX_SIZE)) {
+      raiseError(state, TYPE::OutOfRangeError, "reach Array size limit");
+      return false;
+    }
+    this->values.insert(iter, Value::createStr(std::move(value)));
+  }
+  return true;
+}
+
 bool ArrayObject::checkIteratorInvalidation(ARState &state, const char *message) const {
   if (this->locking()) {
     std::string value = "cannot modify array object";
