@@ -231,6 +231,7 @@ bool VM::addGlobbingPath(ARState &state, ArrayObject &argv, const Value *const b
   }
   if (state.has(RuntimeOption::GLOBSTAR)) {
     setFlag(option, Glob::Option::GLOBSTAR);
+    unsetFlag(option, Glob::Option::FASTGLOB); // FIXME: enable fast glob in globstar mode
   }
 
   const unsigned int oldSize = argv.size();
