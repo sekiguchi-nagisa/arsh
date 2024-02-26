@@ -238,8 +238,8 @@ bool VM::addGlobbingPath(ARState &state, ArrayObject &argv, const Value *const b
   RuntimeCancelToken cancel;
   Glob glob(pattern, option);
   glob.setCancelToken(cancel);
-  glob.setConsumer([&argv, &state, &oldSize](std::string &&path) {
-    return argv.appendAsUniqueStrArray(state, oldSize, std::move(path));
+  glob.setConsumer([&argv, &state](std::string &&path) {
+    return argv.append(state, Value::createStr(std::move(path)));
   });
 
   std::string err;
@@ -247,6 +247,7 @@ bool VM::addGlobbingPath(ARState &state, ArrayObject &argv, const Value *const b
   case Glob::Status::MATCH:
   case Glob::Status::NOMATCH: {
     if (ret == Glob::Status::MATCH || state.has(RuntimeOption::NULLGLOB)) {
+      argv.sortAsStrArray(oldSize); // not check iterator invalidation
       return true;
     }
     if (state.has(RuntimeOption::FAIL_GLOB)) {

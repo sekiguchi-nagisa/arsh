@@ -854,17 +854,6 @@ public:
   [[nodiscard]] bool append(ARState &state, Value &&obj);
 
   /**
-   * for [String]
-   * append and check array size limit
-   * after append, remain elements (after offset) are sorted and unique
-   * @param state
-   * @param value
-   * @return
-   */
-  [[nodiscard]] bool appendAsUniqueStrArray(ARState &state, unsigned int offset,
-                                            std::string &&value);
-
-  /**
    *
    * @param state
    * @param name
