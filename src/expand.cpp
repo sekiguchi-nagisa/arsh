@@ -247,7 +247,7 @@ bool VM::addGlobbingPath(ARState &state, ArrayObject &argv, const Value *const b
   case Glob::Status::MATCH:
   case Glob::Status::NOMATCH: {
     if (ret == Glob::Status::MATCH || state.has(RuntimeOption::NULLGLOB)) {
-      argv.sortAsStrArray(oldSize); // not check iterator invalidation
+      argv.sortAndDedupAsStrArray(oldSize); // not check iterator invalidation
       return true;
     }
     if (state.has(RuntimeOption::FAIL_GLOB)) {

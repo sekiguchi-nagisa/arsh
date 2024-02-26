@@ -878,6 +878,14 @@ public:
     std::sort(this->values.begin() + beginOffset, this->values.end(),
               [](const Value &x, const Value &y) { return x.asStrRef() < y.asStrRef(); });
   }
+
+  void sortAndDedupAsStrArray(unsigned int beginOffset = 0) {
+    this->sortAsStrArray(beginOffset);
+    const auto iter =
+        std::unique(this->values.begin(), this->values.end(),
+                    [](const Value &x, const Value &y) { return x.asStrRef() < y.asStrRef(); });
+    this->values.erase(iter, this->values.end());
+  }
 };
 
 class ArrayIterObject : public ObjectWithRtti<ObjectKind::ArrayIter> {
