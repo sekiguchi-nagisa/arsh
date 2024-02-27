@@ -34,57 +34,109 @@ static std::vector<std::string> vec(T &&...args) {
   return {std::forward<T>(args)...};
 }
 
-TEST(GlobStarTest, globstar1) { // for globstar
+TEST(GlobStarTest, globstar1) { // without pattern
   ASSERT_EQ(doGlobStar("**"),
             vec("AAA", "bbb", "bbb/AA21", "bbb/b21", "bbb/b21/A321", "bbb/b21/D"));
   ASSERT_EQ(doGlobStar("**/**"),
             vec("AAA", "bbb", "bbb/AA21", "bbb/b21", "bbb/b21/A321", "bbb/b21/D"));
   ASSERT_EQ(doGlobStar("**/**/**"),
             vec("AAA", "bbb", "bbb/AA21", "bbb/b21", "bbb/b21/A321", "bbb/b21/D"));
+  ASSERT_EQ(doGlobStar("**////**////**"),
+            vec("AAA", "bbb", "bbb/AA21", "bbb/b21", "bbb/b21/A321", "bbb/b21/D"));
+
+  ASSERT_EQ(doGlobStar("**/"), vec("bbb/", "bbb/b21/"));
+  ASSERT_EQ(doGlobStar("**/**/"), vec("bbb/", "bbb/b21/"));
+  ASSERT_EQ(doGlobStar("**/**/**/"), vec("bbb/", "bbb/b21/"));
+  ASSERT_EQ(doGlobStar("**////"), vec("bbb/", "bbb/b21/"));
+  ASSERT_EQ(doGlobStar("**////**////**////"), vec("bbb/", "bbb/b21/"));
+
   ASSERT_EQ(doGlobStar("./**"), vec("./", "./AAA", "./bbb", "./bbb/AA21", "./bbb/b21",
                                     "./bbb/b21/A321", "./bbb/b21/D"));
-  ASSERT_EQ(doGlobStar("./**/"), vec("./", "./bbb/", "./bbb/b21/"));
   ASSERT_EQ(doGlobStar("./**/**"), vec("./", "./AAA", "./bbb", "./bbb/AA21", "./bbb/b21",
                                        "./bbb/b21/A321", "./bbb/b21/D"));
-  ASSERT_EQ(doGlobStar("./**/**/"), vec("./", "./bbb/", "./bbb/b21/"));
   ASSERT_EQ(doGlobStar("./**/**/**"), vec("./", "./AAA", "./bbb", "./bbb/AA21", "./bbb/b21",
                                           "./bbb/b21/A321", "./bbb/b21/D"));
-  // ASSERT_EQ(doGlobStar("**/**/**/./**"), vec(
-  ASSERT_EQ(doGlobStar("**/"), vec("bbb/", "bbb/b21/"));
+  ASSERT_EQ(doGlobStar("./**////**////**"), vec("./", "./AAA", "./bbb", "./bbb/AA21", "./bbb/b21",
+                                                "./bbb/b21/A321", "./bbb/b21/D"));
+
   ASSERT_EQ(doGlobStar("./**/"), vec("./", "./bbb/", "./bbb/b21/"));
+  ASSERT_EQ(doGlobStar("./**/**/"), vec("./", "./bbb/", "./bbb/b21/"));
+  ASSERT_EQ(doGlobStar("./**////"), vec("./", "./bbb/", "./bbb/b21/"));
+  ASSERT_EQ(doGlobStar("./**////**///////"), vec("./", "./bbb/", "./bbb/b21/"));
 }
 
-TEST(GlobStarTest, globstar2) { // for globstar
+TEST(GlobStarTest, globstar2) { // with pattern
+  ASSERT_EQ(doGlobStar("**/."), vec(".", "bbb/.", "bbb/b21/."));
+  ASSERT_EQ(doGlobStar("**/./."), vec("./.", "bbb/./.", "bbb/b21/./."));
+  ASSERT_EQ(doGlobStar("**/././."), vec("././.", "bbb/././.", "bbb/b21/././."));
+
   ASSERT_EQ(doGlobStar("**/*"),
             vec("AAA", "bbb", "bbb/AA21", "bbb/b21", "bbb/b21/A321", "bbb/b21/D"));
+  ASSERT_EQ(doGlobStar("**/b*"), vec("bbb", "bbb/b21"));
+  ASSERT_EQ(doGlobStar("**/b*/*"), vec("bbb/AA21", "bbb/b21", "bbb/b21/A321", "bbb/b21/D"));
+
   ASSERT_EQ(doGlobStar("./**/*"),
             vec("./AAA", "./bbb", "./bbb/AA21", "./bbb/b21", "./bbb/b21/A321", "./bbb/b21/D"));
   ASSERT_EQ(doGlobStar("./**/*/*"),
             vec("./bbb/AA21", "./bbb/b21", "./bbb/b21/A321", "./bbb/b21/D"));
   ASSERT_EQ(doGlobStar("./**/*/*/*"), vec("./bbb/b21/A321", "./bbb/b21/D"));
-  ASSERT_EQ(doGlobStar("**/b*"), vec("bbb", "bbb/b21"));
+
   ASSERT_EQ(doGlobStar("./**/A*"), vec("./AAA", "./bbb/AA21", "./bbb/b21/A321"));
+  ASSERT_EQ(doGlobStar("../**/dir/*"), vec("../dir/AAA", "../dir/bbb"));
+  ASSERT_EQ(doGlobStar("../**/dir/*"), vec("../dir/AAA", "../dir/bbb"));
 }
 
-TEST(GlobStarTest, globstar3) {
-  ASSERT_EQ(doGlobStar("**/b*/**"), vec("bbb/AA21", "bbb/b21", "bbb/b21/A321", "bbb/b21/D"));
+TEST(GlobStarTest, globstar3) { // multiple double stars
+  ASSERT_EQ(doGlobStar("**/./**"),
+            vec("./", "./AAA", "./bbb", "./bbb/AA21", "./bbb/b21", "./bbb/b21/A321", "./bbb/b21/D",
+                "bbb/./", "bbb/./AA21", "bbb/./b21", "bbb/./b21/A321", "bbb/./b21/D", "bbb/b21/./",
+                "bbb/b21/./A321", "bbb/b21/./D"));
+  ASSERT_EQ(doGlobStar("**/**/**/./**"),
+            vec("./", "./AAA", "./bbb", "./bbb/AA21", "./bbb/b21", "./bbb/b21/A321", "./bbb/b21/D",
+                "bbb/./", "bbb/./AA21", "bbb/./b21", "bbb/./b21/A321", "bbb/./b21/D", "bbb/b21/./",
+                "bbb/b21/./A321", "bbb/b21/./D"));
+  ASSERT_EQ(doGlobStar("**/./////**"),
+            vec("./", "./AAA", "./bbb", "./bbb/AA21", "./bbb/b21", "./bbb/b21/A321", "./bbb/b21/D",
+                "bbb/./", "bbb/./AA21", "bbb/./b21", "bbb/./b21/A321", "bbb/./b21/D", "bbb/b21/./",
+                "bbb/b21/./A321", "bbb/b21/./D"));
+
+  ASSERT_EQ(doGlobStar("**/b*/**"), vec("bbb/", "bbb/AA21", "bbb/b21", "bbb/b21/", "bbb/b21/A321",
+                                        "bbb/b21/A321", "bbb/b21/D", "bbb/b21/D"));
+  ASSERT_EQ(doGlobStar("**/b*/////**"),
+            vec("bbb/", "bbb/AA21", "bbb/b21", "bbb/b21/", "bbb/b21/A321", "bbb/b21/A321",
+                "bbb/b21/D", "bbb/b21/D"));
   ASSERT_EQ(doGlobStar("**/b*/././**"),
-            vec("bbb/././AA21", "bbb/././b21", "bbb/b21/././A321", "bbb/b21/././D"));
+            vec("bbb/././", "bbb/././AA21", "bbb/././b21", "bbb/././b21/A321", "bbb/././b21/D",
+                "bbb/b21/././", "bbb/b21/././A321", "bbb/b21/././D"));
+  ASSERT_EQ(doGlobStar("**/b*/**/**/**"),
+            vec("bbb/", "bbb/AA21", "bbb/b21", "bbb/b21/", "bbb/b21/A321", "bbb/b21/A321",
+                "bbb/b21/D", "bbb/b21/D"));
+
   ASSERT_EQ(doGlobStar("**/b*/../**"),
-            vec("bbb/../AAA", "bbb/../bbb", "bbb/b21/../AA21", "bbb/b21/../b21"));
-  ASSERT_EQ(doGlobStar("**/b*/../../**"),
-            vec("bbb/../../CMakeLists.txt", "bbb/../../dir", "bbb/../../glob_test.cpp",
-                "bbb/../../globstar_test.cpp", "bbb/b21/../../AAA", "bbb/b21/../../bbb"));
-  ASSERT_EQ(doGlobStar("**/b*/../*/../**"), vec("bbb/../bbb/../AAA", "bbb/../bbb/../bbb",
-                                                "bbb/b21/../b21/../AA21", "bbb/b21/../b21/../b21"));
-  ASSERT_EQ(doGlobStar("**/b*/../**/../**"),
-            vec("bbb/../bbb/../AAA", "bbb/../bbb/../bbb", "bbb/b21/../b21/../AA21",
-                "bbb/b21/../b21/../b21"));
-  ASSERT_EQ(doGlobStar("**/b*/../**/../**/../**"),
-            vec("bbb/../bbb/../bbb/../AAA", "bbb/../bbb/../bbb/../bbb",
-                "bbb/b21/../b21/../b21/../AA21", "bbb/b21/../b21/../b21/../b21"));
-  ASSERT_EQ(doGlobStar("../**/dir/*"), vec("../dir/AAA", "../dir/bbb"));
-  ASSERT_EQ(doGlobStar("../**/dir/*"), vec("../dir/AAA", "../dir/bbb"));
+            vec("bbb/../", "bbb/../AAA", "bbb/../bbb", "bbb/../bbb/AA21", "bbb/../bbb/b21",
+                "bbb/../bbb/b21/A321", "bbb/../bbb/b21/D", "bbb/b21/../", "bbb/b21/../AA21",
+                "bbb/b21/../b21", "bbb/b21/../b21/A321", "bbb/b21/../b21/D"));
+
+  ASSERT_EQ(doGlobStar("**/b*/../../dir/**"),
+            vec("bbb/../../dir/", "bbb/../../dir/AAA", "bbb/../../dir/bbb",
+                "bbb/../../dir/bbb/AA21", "bbb/../../dir/bbb/b21", "bbb/../../dir/bbb/b21/A321",
+                "bbb/../../dir/bbb/b21/D"));
+
+  ASSERT_EQ(doGlobStar("**/b*/../*/../**"),
+            vec("bbb/../bbb/../", "bbb/../bbb/../AAA", "bbb/../bbb/../bbb",
+                "bbb/../bbb/../bbb/AA21", "bbb/../bbb/../bbb/b21", "bbb/../bbb/../bbb/b21/A321",
+                "bbb/../bbb/../bbb/b21/D", "bbb/b21/../b21/../", "bbb/b21/../b21/../AA21",
+                "bbb/b21/../b21/../b21", "bbb/b21/../b21/../b21/A321", "bbb/b21/../b21/../b21/D"));
+
+  ASSERT_EQ(doGlobStar("**/b*/../**/../**/*r/**"),
+            vec("bbb/../../dir/", "bbb/../../dir/AAA", "bbb/../../dir/bbb",
+                "bbb/../../dir/bbb/AA21", "bbb/../../dir/bbb/b21", "bbb/../../dir/bbb/b21/A321",
+                "bbb/../../dir/bbb/b21/D"));
+
+  ASSERT_EQ(doGlobStar("**/b*/../**/../**/*r/**/**"),
+            vec("bbb/../../dir/", "bbb/../../dir/AAA", "bbb/../../dir/bbb",
+                "bbb/../../dir/bbb/AA21", "bbb/../../dir/bbb/b21", "bbb/../../dir/bbb/b21/A321",
+                "bbb/../../dir/bbb/b21/D"));
 }
 
 int main(int argc, char **argv) {
