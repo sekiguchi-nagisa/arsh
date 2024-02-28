@@ -44,6 +44,9 @@ TEST(GlobStarTest, globstar1) { // without pattern
   ASSERT_EQ(doGlobStar("**////**////**"),
             vec("AAA", "bbb", "bbb/AA21", "bbb/b21", "bbb/b21/A321", "bbb/b21/D"));
 
+  ASSERT_EQ(doGlobStar("**", Glob::Option::DOTGLOB),
+            vec("AAA", "bbb", "bbb/.hidden", "bbb/AA21", "bbb/b21", "bbb/b21/A321", "bbb/b21/D"));
+
   ASSERT_EQ(doGlobStar("**/"), vec("bbb/", "bbb/b21/"));
   ASSERT_EQ(doGlobStar("**/**/"), vec("bbb/", "bbb/b21/"));
   ASSERT_EQ(doGlobStar("**/**/**/"), vec("bbb/", "bbb/b21/"));
@@ -75,6 +78,9 @@ TEST(GlobStarTest, globstar2) { // with pattern
   ASSERT_EQ(doGlobStar("**/b*"), vec("bbb", "bbb/b21"));
   ASSERT_EQ(doGlobStar("**/b*/*"), vec("bbb/AA21", "bbb/b21", "bbb/b21/A321", "bbb/b21/D"));
 
+  ASSERT_EQ(doGlobStar("**/.*"), vec("bbb/.hidden"));
+  ASSERT_EQ(doGlobStar("**/*h*"), vec()); // not match .hidden
+
   ASSERT_EQ(doGlobStar("./**/*"),
             vec("./AAA", "./bbb", "./bbb/AA21", "./bbb/b21", "./bbb/b21/A321", "./bbb/b21/D"));
   ASSERT_EQ(doGlobStar("./**/*/*"),
@@ -99,6 +105,9 @@ TEST(GlobStarTest, globstar3) { // multiple double stars
             vec("./", "./AAA", "./bbb", "./bbb/AA21", "./bbb/b21", "./bbb/b21/A321", "./bbb/b21/D",
                 "bbb/./", "bbb/./AA21", "bbb/./b21", "bbb/./b21/A321", "bbb/./b21/D", "bbb/b21/./",
                 "bbb/b21/./A321", "bbb/b21/./D"));
+
+  ASSERT_EQ(doGlobStar("**/../**/.*"),
+            vec("../dir/bbb/.hidden", "bbb/../bbb/.hidden", "bbb/b21/../.hidden"));
 
   ASSERT_EQ(doGlobStar("**/b*/**"), vec("bbb/", "bbb/AA21", "bbb/b21", "bbb/b21/", "bbb/b21/A321",
                                         "bbb/b21/A321", "bbb/b21/D", "bbb/b21/D"));
