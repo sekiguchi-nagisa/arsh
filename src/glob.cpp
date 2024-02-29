@@ -464,7 +464,7 @@ std::pair<Glob::Status, bool> Glob::match(const std::string &baseDir, const char
     return {this->matchDoubleStar(baseDir, iter, err), true};
   }
 
-  const auto dir = openDir(baseDir.c_str());
+  auto dir = openDir(baseDir.c_str());
   if (!dir) {
     return {Status::MATCH, true};
   }
@@ -520,6 +520,10 @@ std::pair<Glob::Status, bool> Glob::match(const std::string &baseDir, const char
         auto s = this->match(name, next, allowEmptyPattern, err);
         if (!s.second) {
           iter = next;
+          if (hasFlag(this->option, Option::GLOBSTAR) && this->consumeDoubleStars(iter)) {
+            dir.reset();
+            return {this->matchDoubleStar(baseDir, iter, err), true};
+          }
           rewinddir(dir.get());
           continue;
         }
@@ -571,7 +575,10 @@ Glob::Status Glob::matchDoubleStar(const std::string &baseDir, const size_t targ
   assert(!baseDir.empty());
   {
     auto nextIter = iter;
-    auto s = this->match(baseDir, nextIter, true, err);
+    std::pair<Status, bool> s;
+    for (std::string nextBaseDir = baseDir;
+         !(s = this->match(nextBaseDir, nextIter, true, err)).second; popDir(nextBaseDir))
+      ;
     if (s.first != Status::MATCH) {
       return s.first;
     }

@@ -137,10 +137,18 @@ TEST(GlobStarTest, globstar3) { // multiple double stars
                 "bbb/../bbb/../bbb/b21/D", "bbb/b21/../b21/../", "bbb/b21/../b21/../AA21",
                 "bbb/b21/../b21/../b21", "bbb/b21/../b21/../b21/A321", "bbb/b21/../b21/../b21/D"));
 
+  ASSERT_EQ(doGlobStar("**/b*/../*/../**", Glob::Option::FASTGLOB),
+            vec("AAA", "bbb", "bbb/", "bbb/AA21", "bbb/AA21", "bbb/b21", "bbb/b21", "bbb/b21/A321",
+                "bbb/b21/A321", "bbb/b21/D", "bbb/b21/D"));
+
   ASSERT_EQ(doGlobStar("**/b*/../**/../**/*r/**"),
             vec("bbb/../../dir/", "bbb/../../dir/AAA", "bbb/../../dir/bbb",
                 "bbb/../../dir/bbb/AA21", "bbb/../../dir/bbb/b21", "bbb/../../dir/bbb/b21/A321",
                 "bbb/../../dir/bbb/b21/D"));
+
+  ASSERT_EQ(doGlobStar("**/b*/../**/../**/*r/**", Glob::Option::FASTGLOB),
+            vec("../dir/", "../dir/AAA", "../dir/bbb", "../dir/bbb/AA21", "../dir/bbb/b21",
+                "../dir/bbb/b21/A321", "../dir/bbb/b21/D"));
 
   ASSERT_EQ(doGlobStar("**/b*/../**/../**/*r/**/**"),
             vec("bbb/../../dir/", "bbb/../../dir/AAA", "bbb/../../dir/bbb",
