@@ -16,7 +16,9 @@
 
 #include <unistd.h>
 
+#include <chrono>
 #include <memory>
+#include <thread>
 
 #include "misc/flag_util.hpp"
 #include "misc/opt_parser.hpp"
@@ -230,7 +232,7 @@ static int exec_interactive(ARState *state, const char *rcpath) {
       if (errno != 0) {
         if (errno == EIO && eioRetryCount < 2) { // workaround for EIO of pty read
           fprintf(stderr, "[warn] retry readLine, caused by `%s'\n", strerror(EIO));
-          usleep((1 << eioRetryCount) * 100000);
+          std::this_thread::sleep_for(std::chrono::milliseconds((1 << eioRetryCount) * 100));
           eioRetryCount++;
           continue;
         }
