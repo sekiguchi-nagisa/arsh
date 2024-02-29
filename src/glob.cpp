@@ -601,10 +601,6 @@ Glob::Status Glob::matchDoubleStar(const std::string &baseDir, const size_t targ
   pathBuf.reserve(pathBuf.size() + 32);
   const size_t orgBufSize = pathBuf.size();
   for (const dirent *entry; (entry = readdir(dir.get())) != nullptr;) {
-    if (this->cancel && this->cancel()) {
-      return Status::CANCELED;
-    }
-
     const StringRef name = entry->d_name;
     if (name == "." || name == "..") {
       continue;
@@ -612,7 +608,7 @@ Glob::Status Glob::matchDoubleStar(const std::string &baseDir, const size_t targ
     if (getFileType(dir.get(), entry) == FileType::DIR) {
       pathBuf.resize(orgBufSize); // trim
       pathBuf += name;
-      auto s = this->matchDoubleStar(pathBuf, targetOffset, iter, err);
+      const auto s = this->matchDoubleStar(pathBuf, targetOffset, iter, err);
       if (s != Status::MATCH) {
         return s;
       }
