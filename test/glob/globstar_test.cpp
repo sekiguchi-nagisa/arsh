@@ -107,7 +107,7 @@ TEST(GlobStarTest, globstar3) { // multiple double stars
                 "bbb/b21/./A321", "bbb/b21/./D"));
 
   ASSERT_EQ(doGlobStar("**/../**/.*"),
-            vec("../dir/bbb/.hidden", "bbb/../bbb/.hidden", "bbb/b21/../.hidden"));
+            vec("../dir/bbb/.hidden", "../dir2/.bcd", "bbb/../bbb/.hidden", "bbb/b21/../.hidden"));
 
   ASSERT_EQ(doGlobStar("**/b*/**"), vec("bbb/", "bbb/AA21", "bbb/b21", "bbb/b21/", "bbb/b21/A321",
                                         "bbb/b21/A321", "bbb/b21/D", "bbb/b21/D"));
@@ -154,6 +154,27 @@ TEST(GlobStarTest, globstar3) { // multiple double stars
             vec("bbb/../../dir/", "bbb/../../dir/AAA", "bbb/../../dir/bbb",
                 "bbb/../../dir/bbb/AA21", "bbb/../../dir/bbb/b21", "bbb/../../dir/bbb/b21/A321",
                 "bbb/../../dir/bbb/b21/D"));
+}
+
+TEST(GlobStarTest, globstar4) { // symlink
+  ASSERT_EQ(doGlobStar("../dir2/*"), vec("../dir2/ABC", "../dir2/link"));
+  ASSERT_EQ(doGlobStar("../dir2/*", Glob::Option::DOTGLOB),
+            vec("../dir2/.bcd", "../dir2/ABC", "../dir2/link"));
+
+  ASSERT_EQ(doGlobStar("../dir2/*/*"), vec("../dir2/link/AAA", "../dir2/link/bbb"));
+  ASSERT_EQ(doGlobStar("../dir2/*/*", Glob::Option::DOTGLOB),
+            vec("../dir2/.bcd/A123", "../dir2/.bcd/b56", "../dir2/link/AAA", "../dir2/link/bbb"));
+
+  ASSERT_EQ(doGlobStar("../dir2/**"), vec("../dir2/", "../dir2/ABC", "../dir2/link"));
+  ASSERT_EQ(doGlobStar("../dir2/**", Glob::Option::DOTGLOB),
+            vec("../dir2/", "../dir2/.bcd", "../dir2/.bcd/A123", "../dir2/.bcd/b56",
+                "../dir2/.bcd/b56/DDD", "../dir2/ABC", "../dir2/link"));
+  ASSERT_EQ(doGlobStar("../dir2/**/**", Glob::Option::DOTGLOB),
+            vec("../dir2/", "../dir2/.bcd", "../dir2/.bcd/A123", "../dir2/.bcd/b56",
+                "../dir2/.bcd/b56/DDD", "../dir2/ABC", "../dir2/link"));
+  ASSERT_EQ(doGlobStar("../dir2/**/*", Glob::Option::DOTGLOB),
+            vec("../dir2/.bcd", "../dir2/.bcd/A123", "../dir2/.bcd/b56", "../dir2/.bcd/b56/DDD",
+                "../dir2/ABC", "../dir2/link"));
 }
 
 int main(int argc, char **argv) {

@@ -602,8 +602,11 @@ Glob::Status Glob::matchDoubleStar(const std::string &baseDir, const size_t targ
   const size_t orgBufSize = pathBuf.size();
   for (const dirent *entry; (entry = readdir(dir.get())) != nullptr;) {
     const StringRef name = entry->d_name;
-    if (name == "." || name == "..") {
-      continue;
+    if (name[0] == '.') {
+      if (name.size() == 1 || (name.size() == 2 && name[1] == '.') ||
+          !hasFlag(this->option, Option::DOTGLOB)) {
+        continue;
+      }
     }
     if (getFileType(dir.get(), entry) == FileType::DIR) {
       pathBuf.resize(orgBufSize); // trim
