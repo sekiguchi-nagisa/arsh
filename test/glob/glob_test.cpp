@@ -512,7 +512,7 @@ TEST_F(GlobTest, base_fullpath) {
   ASSERT_EQ(GLOB_TEST_WORK_DIR "/../dir/bbb/AA21", ret[0]);
   ASSERT_EQ(GLOB_TEST_WORK_DIR "/../dir/bbb/b21", ret[1]);
 
-  s = testGlobBase(GLOB_TEST_WORK_DIR, "..//d*///*//*");
+  s = testGlobBase(GLOB_TEST_WORK_DIR, "..//d*r///*//*");
   ASSERT_EQ(2, s);
   ASSERT_EQ(2, ret.size());
   ASSERT_EQ(GLOB_TEST_WORK_DIR "/../dir/bbb/AA21", ret[0]);
@@ -701,21 +701,22 @@ TEST_F(GlobTest, fast) {
   ASSERT_EQ("bbb/b21", ret[2]);
 
   s = testGlob("../*/", Glob::Option::FASTGLOB);
-  ASSERT_EQ(1, s);
-  ASSERT_EQ(1, ret.size());
+  ASSERT_EQ(2, s);
+  ASSERT_EQ(2, ret.size());
   ASSERT_EQ("../dir/", ret[0]);
+  ASSERT_EQ("../dir2/", ret[1]);
 
-  s = testGlob("*/../../d*", Glob::Option::FASTGLOB);
+  s = testGlob("*/../../*r", Glob::Option::FASTGLOB);
   ASSERT_EQ(1, s);
   ASSERT_EQ(1, ret.size());
   ASSERT_EQ("../dir", ret[0]);
 
-  s = testGlob("*/../../../g*/d*/", Glob::Option::FASTGLOB);
+  s = testGlob("*/../../../g*/d*r/", Glob::Option::FASTGLOB);
   ASSERT_EQ(1, s);
   ASSERT_EQ(1, ret.size());
   ASSERT_EQ("../../glob/dir/", ret[0]);
 
-  s = testGlob("*/../../../../t*/g*/d*", Glob::Option::FASTGLOB);
+  s = testGlob("*/../../../../t*/g*/*r", Glob::Option::FASTGLOB);
   ASSERT_EQ(1, s);
   ASSERT_EQ(1, ret.size());
   ASSERT_EQ("../../../test/glob/dir", ret[0]);
