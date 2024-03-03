@@ -279,6 +279,10 @@ private:
     }
   }
 
+  void emitFuncCallIns(const FunctionType &funcType) {
+    this->emitFuncCallIns(funcType.getParamSize(), !funcType.getReturnType().isVoidType());
+  }
+
   void emitNativeCallIns(unsigned char paramSize, unsigned short index, bool hasRet) {
     assert(index <= UINT8_MAX);
     this->emitValIns(OpCode::CALL_BUILTIN, paramSize, -1);

@@ -311,8 +311,30 @@ void TypeOpNode::dump(NodeDumper &dumper) const {
 // ##     ArgsNode     ##
 // ######################
 
+void ArgsNode::addNode(NameInfo &&name, std::unique_ptr<Node> &&node) {
+  assert(static_cast<bool>(name));
+  this->updateToken(name.getToken());
+  this->updateToken(node->getToken());
+  unsigned int offset = this->nodes.size();
+  this->namedEntries.emplace_back(std::move(name), offset);
+  this->nodes.push_back(std::move(node));
+}
+
+unsigned int ArgsNode::findNamedEntry(unsigned int argOffset) const {
+  const NamedArgEntry dummy(NameInfo(), argOffset);
+  const auto iter = std::lower_bound(
+      this->namedEntries.begin(), this->namedEntries.end(), dummy,
+      [](const NamedArgEntry &x, const NamedArgEntry &y) { return x.getOffset() < y.getOffset(); });
+  if (iter != this->namedEntries.end() && iter->getOffset() == argOffset) {
+    return iter - this->namedEntries.begin();
+  }
+  return this->namedEntries.size();
+}
+
 void ArgsNode::dump(NodeDumper &dumper) const {
-  DUMP(nodes); // FIXME:
+  DUMP(namedEntries);
+  DUMP(nodes);
+  DUMP(noneCount);
 }
 
 // #######################
@@ -1214,6 +1236,20 @@ void NodeDumper::dump(const char *fieldName, const NameInfo &info) {
   this->dumpToken(info.getToken());
   this->dump("name", info.getName());
   this->leaveIndent();
+}
+
+void NodeDumper::dump(const char *fieldName, const std::vector<NamedArgEntry> &entries) {
+  this->dumpNodesHead(fieldName);
+  for (auto &e : entries) {
+    this->indent();
+    this->append("- ");
+    this->enterIndent();
+    this->dump("name", e.getNameInfo());
+    this->dump("offset", e.getOffset());
+    this->dump("paramIndex", e.getParamIndex());
+    this->leaveIndent();
+  }
+  this->dumpNodesTail();
 }
 
 void NodeDumper::dump(const Node &node) {

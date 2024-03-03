@@ -1,0 +1,8 @@
+
+#$test($result = 'type', $lineNum = 8, $chars = 2, $errorKind = 'NotNamedCallable', $status = 1)
+
+function ff(a : Int, b : Int) : Int { return $a; }
+
+var gg = $ff as Any
+($gg as (Int,Int) -> Int)\
+ (3455, $b : 3456)

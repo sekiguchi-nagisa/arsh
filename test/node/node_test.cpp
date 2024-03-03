@@ -316,7 +316,9 @@ nodes:
         pos: 10
         size: 2
       type:
+      namedEntries:
       nodes:
+      noneCount: 0
     handle: null
     kind: "METHOD_CALL"
     attr: "DEFAULT"
@@ -466,6 +468,7 @@ nodes:
                 pos: 45
                 size: 13
               type:
+              namedEntries:
               nodes:
                 - nodeKind: StringExpr
                   token:
@@ -496,6 +499,7 @@ nodes:
                     size: 2
                   type:
                   nodes:
+              noneCount: 0
             handle: null
       baseIndex: 0
       varSize: 0
@@ -675,7 +679,9 @@ nodes:
           pos: 45
           size: 2
         type:
+        namedEntries:
         nodes:
+        noneCount: 0
       handle: null
       kind: "METHOD_CALL"
       attr: "DEFAULT"
@@ -1266,7 +1272,9 @@ nodes:
                   pos: 19
                   size: 2
                 type: "Void"
+                namedEntries:
                 nodes:
+                noneCount: 0
               handle: null
               kind: "FUNC_CALL"
               attr: "DEFAULT"

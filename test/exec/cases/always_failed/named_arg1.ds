@@ -1,0 +1,4 @@
+
+#$test($result = 'type', $lineNum = 4, $chars = 12, $errorKind = 'UnmatchParam', $status = 1)
+
+"254".chars($N : 3245)

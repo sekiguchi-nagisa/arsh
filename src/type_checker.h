@@ -567,6 +567,8 @@ private:
 
   void checkArgsNode(const CallSignature &callSignature, ArgsNode &node);
 
+  void checkNamedArgs(const CallSignature &callSignature, ArgsNode &node);
+
   // helper api for type cast
 
   /**

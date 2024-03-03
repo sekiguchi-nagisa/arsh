@@ -170,6 +170,12 @@ DEFINE_TCError(NothingCast, "explicit cast from `Nothing' type expression is not
 DEFINE_TCError(InvalidOptCast,
                "optional cast (`as?') only supports downcast, target type must be derived of `%s'");
 DEFINE_TCError(UnmatchParam, "number of parameters does not match, require `%d', but is `%d'");
+DEFINE_TCError(NotNamedCallable,
+               "named arguments are only supported in direct-function/method/constructor call");
+DEFINE_TCError(InvalidUnnamedArg, "not allow unnamed arguments after named arguments");
+DEFINE_TCError(UndefinedNamedArg, "undefined named argument: `%s'");
+DEFINE_TCError(RepeatedNamedArg, "named argument: `%s' is repeated");
+DEFINE_TCError(MissingNamedArg, "missing named argument: `%s'");
 DEFINE_TCError(RegexSyntax, "regex syntax error: `%s'");
 DEFINE_TCError(NoCommonSuper, "cannot resolve common super type from `%s'");
 DEFINE_TCError(ConcatParam, "concatenation of `%s' type expression is not allowed");

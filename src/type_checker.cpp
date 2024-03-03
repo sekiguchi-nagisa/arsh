@@ -589,32 +589,32 @@ static unsigned int getMinParamSize(const CallSignature &types) {
 
 void TypeChecker::checkArgsNode(const CallSignature &callSignature, ArgsNode &node) {
   const unsigned int argSize = node.getNodes().size();
-  const unsigned int paramSize = callSignature.paramSize;
-  const unsigned int minParamSize = getMinParamSize(callSignature);
+  if (node.hasNamedArgs()) {
+    this->checkNamedArgs(callSignature, node);
+  } else {
+    const unsigned int paramSize = callSignature.paramSize;
+    const unsigned int minParamSize = getMinParamSize(callSignature);
 
-  if (!callSignature.returnType->isUnresolved()) {
-    if (argSize < minParamSize || argSize > paramSize) {
-      this->reportError<UnmatchParam>(node, paramSize, argSize);
+    if (!callSignature.returnType->isUnresolved()) {
+      if (argSize < minParamSize || argSize > paramSize) {
+        this->reportError<UnmatchParam>(node, paramSize, argSize);
+      }
     }
-  }
-  const unsigned int maxSize = std::max(argSize, paramSize);
-  for (unsigned int i = 0; i < maxSize; i++) {
-    if (i < argSize && i < paramSize) {
-      this->checkType(*callSignature.paramTypes[i], *node.getNodes()[i]);
-    } else if (i < argSize) {
-      this->checkTypeAsExpr(*node.getNodes()[i]);
+    const unsigned int maxSize = std::max(argSize, paramSize);
+    for (unsigned int i = 0; i < maxSize; i++) {
+      if (i < argSize && i < paramSize) {
+        this->checkType(*callSignature.paramTypes[i], *node.getNodes()[i]);
+      } else if (i < argSize) {
+        this->checkTypeAsExpr(*node.getNodes()[i]);
+      }
     }
-  }
 
-  // add optional args
-  if (argSize >= minParamSize && argSize < paramSize) {
-    for (unsigned int i = argSize; i < paramSize; i++) {
-      auto *type = callSignature.paramTypes[i];
-      assert(type->isOptionType());
-      node.addNode(std::make_unique<NewNode>(cast<OptionType>(*type)));
+    // add optional args
+    if (argSize >= minParamSize && argSize < paramSize) {
+      node.setNoneCount(paramSize - argSize);
     }
+    this->checkTypeExactly(node);
   }
-  this->checkTypeExactly(node);
 
   if (this->signatureHandler && argSize > 0 && isa<CodeCompNode>(*node.getNodes()[argSize - 1])) {
     if (cast<CodeCompNode>(*node.getNodes()[argSize - 1]).getKind() ==
@@ -622,6 +622,98 @@ void TypeChecker::checkArgsNode(const CallSignature &callSignature, ArgsNode &no
       this->signatureHandler(callSignature, argSize - 1);
     }
   }
+}
+
+void TypeChecker::checkNamedArgs(const CallSignature &callSignature, ArgsNode &node) {
+  if (!callSignature.returnType->isUnresolved()) {
+    const unsigned int argSize = node.getNodes().size();
+    const unsigned int paramSize = callSignature.paramSize;
+    if (argSize > paramSize) {
+      this->reportError<UnmatchParam>(node, paramSize, argSize);
+    }
+  }
+
+  auto *hd = callSignature.handle;
+  StringRef packedParamNames;
+  if (hd && hd->isFuncHandle()) {
+    packedParamNames = cast<FuncHandle>(hd)->getPackedParamNames();
+  } else if (hd && hd->isMethodHandle()) {
+    packedParamNames = cast<MethodHandle>(hd)->getPackedParamNames();
+  } else {
+    this->reportError<NotNamedCallable>(node);
+  }
+  FlexBuffer<StringRef> paramNames;
+  if (!packedParamNames.empty()) {
+    splitByDelim(packedParamNames, ';', [&paramNames](const StringRef sub, bool) {
+      paramNames.push_back(sub);
+      return true;
+    });
+  }
+  StrRefMap<std::pair<unsigned int, bool>> paramMap;
+  for (unsigned int i = 0; i < paramNames.size(); i++) {
+    paramMap[paramNames[i]] = {i, false};
+  }
+
+  const unsigned int argSize = node.getNodes().size();
+  unsigned int index = 0;
+
+  // check type unnamed arguments
+  for (; index < argSize; index++) {
+    if (node.findNamedEntry(index) != node.getNamedEntries().size()) {
+      break;
+    }
+    if (index < paramNames.size()) {
+      auto iter = paramMap.find(paramNames[index]);
+      assert(iter != paramMap.end());
+      iter->second.second = true;
+      auto &paramType = *callSignature.paramTypes[iter->second.first];
+      this->checkType(paramType, *node.getNodes()[index]);
+    } else { // failed case
+      this->checkTypeAsExpr(*node.getNodes()[index]);
+    }
+  }
+
+  // check type named arguments
+  for (; index < argSize; index++) {
+    const auto namedEntryIndex = node.findNamedEntry(index);
+    int paramIndex = -1;
+    if (namedEntryIndex == node.getNamedEntries().size()) { //  not found named arg
+      this->reportError<InvalidUnnamedArg>(*node.getNodes()[index]);
+    } else {
+      auto &nameInfo = node.getNamedEntries()[namedEntryIndex].getNameInfo();
+      if (auto iter = paramMap.find(nameInfo.getName());
+          iter == paramMap.end()) { // FIXME: suggestion
+        this->reportError<UndefinedNamedArg>(nameInfo.getToken(), nameInfo.getName().c_str());
+      } else if (iter->second.second) {
+        this->reportError<RepeatedNamedArg>(nameInfo.getToken(), nameInfo.getName().c_str());
+      } else {
+        iter->second.second = true;
+        paramIndex = static_cast<int>(iter->second.first);
+      }
+    }
+
+    if (paramIndex > -1) {
+      auto &paramType = *callSignature.paramTypes[paramIndex];
+      this->checkType(paramType, *node.getNodes()[index]);
+      node.refNamedEntries()[namedEntryIndex].setParamIndex(static_cast<unsigned char>(paramIndex));
+    } else { // failed case
+      this->checkTypeAsExpr(*node.getNodes()[index]);
+    }
+  }
+
+  // check missing named arguments
+  for (unsigned int i = 0; i < paramNames.size(); i++) {
+    const auto iter = paramMap.find(paramNames[i]);
+    assert(iter != paramMap.end());
+    if (!iter->second.second && !callSignature.paramTypes[i]->isOptionType()) {
+      this->reportError<MissingNamedArg>(node, iter->first.toString().c_str());
+    }
+  }
+  if (const unsigned int namedArgStartOffset = node.getNamedEntries()[0].getOffset();
+      namedArgStartOffset < callSignature.paramSize) {
+    node.setNoneCount(callSignature.paramSize - namedArgStartOffset);
+  }
+  this->checkTypeExactly(node);
 }
 
 void TypeChecker::resolveCastOp(TypeOpNode &node, bool forceToString) {

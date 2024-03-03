@@ -619,6 +619,8 @@ private:
   std::string name;
 
 public:
+  NameInfo() : token({0, 0}) {}
+
   NameInfo(Token token, std::string &&name) : token(token), name(std::move(name)) {}
 
   NameInfo(Token token, const std::string &name) : NameInfo(token, std::string(name)) {}
@@ -689,6 +691,13 @@ public:
   void setExtraValue(unsigned int v) { this->extraValue = v; }
 
   unsigned int getExtraValue() const { return this->extraValue; }
+
+  NameInfo takeAsNameInfo() && {
+    return {
+        this->getToken(),
+        std::move(this->varName),
+    };
+  }
 
   void dump(NodeDumper &dumper) const override;
 };
@@ -820,9 +829,29 @@ public:
   void dump(NodeDumper &dumper) const override;
 };
 
+class NamedArgEntry {
+private:
+  NameInfo name;
+  unsigned int offset{0};
+  int paramIndex{-1}; // actual index of parameter
+
+public:
+  NamedArgEntry(NameInfo &&name, unsigned int offset) : name(std::move(name)), offset(offset) {}
+
+  const auto &getNameInfo() const { return this->name; }
+
+  unsigned int getOffset() const { return this->offset; }
+
+  int getParamIndex() const { return this->paramIndex; }
+
+  void setParamIndex(unsigned char index) { this->paramIndex = index; }
+};
+
 class ArgsNode : public WithRtti<Node, NodeKind::Args> {
 private:
+  std::vector<NamedArgEntry> namedEntries;
   std::vector<std::unique_ptr<Node>> nodes;
+  unsigned int noneCount{0}; // for optional/named arguments
 
 public:
   explicit ArgsNode(Token token) : WithRtti(token) {}
@@ -834,9 +863,29 @@ public:
     this->nodes.push_back(std::move(node));
   }
 
+  void addNode(NameInfo &&name, std::unique_ptr<Node> &&node);
+
   const std::vector<std::unique_ptr<Node>> &getNodes() const { return this->nodes; }
 
   std::vector<std::unique_ptr<Node>> &refNodes() { return this->nodes; }
+
+  const auto &getNamedEntries() const { return this->namedEntries; }
+
+  auto &refNamedEntries() { return this->namedEntries; }
+
+  /**
+   * find corresponding named argument entry by arg offset
+   * @param argOffset
+   * @return
+   * if not found, return namedEntries.size()
+   */
+  unsigned int findNamedEntry(unsigned int argOffset) const;
+
+  unsigned int getNoneCount() const { return this->noneCount; }
+
+  void setNoneCount(unsigned int c) { this->noneCount = c; }
+
+  bool hasNamedArgs() const { return !this->namedEntries.empty(); }
 
   void dump(NodeDumper &dumper) const override;
 };
@@ -3048,6 +3097,8 @@ public:
     }
     this->dumpNodesTail();
   }
+
+  void dump(const char *fieldName, const std::vector<NamedArgEntry> &entries);
 
   /**
    * dump node with indent

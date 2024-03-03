@@ -304,6 +304,7 @@ nodes:
                   pos: 36
                   size: 2
                 type: \"Void\"
+                namedEntries:
                 nodes:
                   - nodeKind: Var
                     token:
@@ -317,6 +318,7 @@ nodes:
                       attribute: \"\"
                     extraOp: \"NONE\"
                     extraValue: 0
+                noneCount: 0
               handle: \"9\"
               kind: \"METHOD_CALL\"
               attr: \"BINARY\"

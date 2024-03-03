@@ -1,0 +1,49 @@
+
+## function
+
+function ff(aa: Int?, bb: String?, cc: String?) : String {
+    var ret = ""
+    if $aa {
+        $ret += $aa!
+    } else {
+        $ret += "(invalid1)"
+    }
+    $ret += "+"
+    if $bb {
+        $ret += $bb!
+    } else {
+        $ret += "(invalid2)"
+    }
+    $ret += "+"
+    if $cc {
+        $ret += $cc!
+    } else {
+        $ret += "(invalid3)"
+    }
+    return $ret
+}
+
+assert $ff() == "(invalid1)+(invalid2)+(invalid3)"
+assert $ff($bb: "say") == "(invalid1)+say+(invalid3)"
+assert $ff($cc: "hey", $aa: 23) == "23+(invalid2)+hey"
+assert $ff(34, $cc : "!!!", $bb: "say") == "34+say+!!!"
+
+
+## method
+assert "FF".toInt(16)! == 255
+assert "FF".toInt($radix: 16)! == 255
+assert "1234".slice(0,2) == "12"
+assert "1234".slice($stop: 2, $start: 0) == "12"
+
+## constructor
+typedef AAA {
+    let aaa : Int
+    let bbb : Signal
+    let ccc : String
+}
+
+function str() : String for AAA {
+    return "${this.aaa}=${$this.bbb.name()}=${this.ccc}"
+}
+
+assert new AAA($bbb: $SIGTSTP, $ccc: '@@@', $aaa: 999).str() == "999=TSTP=@@@"

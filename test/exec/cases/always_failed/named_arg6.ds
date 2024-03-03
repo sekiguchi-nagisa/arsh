@@ -1,0 +1,6 @@
+
+#$test($result = 'type', $lineNum = 6, $chars = 15, $errorKind = 'RepeatedNamedArg', $status = 1)
+
+function ff(a : Int, b : Int) : Int { return $a; }
+
+$ff($a: 0000, $a : 345)

@@ -136,6 +136,10 @@ public:
     return this->operands[this->frame.stackTopIndex - offset];
   }
 
+  void storeByOffset(unsigned int offset, Value &&v) {
+    this->operands[this->frame.stackTopIndex - offset] = std::move(v);
+  }
+
   void push(const Value &value) { new (&this->operands[++this->frame.stackTopIndex]) Value(value); }
 
   void push(Value &&value) {

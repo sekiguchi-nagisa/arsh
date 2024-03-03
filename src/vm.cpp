@@ -1599,6 +1599,12 @@ bool VM::mainLoop(ARState &state) {
         state.stack.swap();
         vmnext;
       }
+      vmcase(STORE_BY_OFFSET) {
+        const unsigned int offset = consume8(state.stack.ip());
+        auto v = state.stack.pop();
+        state.stack.storeByOffset(offset, std::move(v));
+        vmnext;
+      }
       vmcase(CONCAT) vmcase(APPEND) {
         const bool selfConcat = op == OpCode::APPEND;
         auto right = state.stack.pop();

@@ -2191,6 +2191,14 @@ std::unique_ptr<Node> Parser::parse_backquoteLiteral() {
                                       StringNode::BACKQUOTE);
 }
 
+static bool mayBeNamedArgStart(const Node &node) {
+  if (!isa<VarNode>(node)) {
+    return false;
+  }
+  auto &varNode = cast<VarNode>(node);
+  return varNode.getExtraOp() == VarNode::NONE && isIdentifierStart(varNode.getVarName()[0]);
+}
+
 std::unique_ptr<ArgsNode> Parser::parse_arguments(Token first) {
   GUARD_DEEP_NESTING(guard);
 
@@ -2213,17 +2221,34 @@ std::unique_ptr<ArgsNode> Parser::parse_arguments(Token first) {
         E_DETAILED(ParseErrorKind::EXPR_RP, EACH_LA_expression(GEN_LA_ALTER) TokenKind::RP);
       }
       auto argNode = this->parse_expression();
-      bool incomplete = false;
       if (this->incompleteNode) {
-        incomplete = true;
         argNode = std::move(this->incompleteNode);
-      } else if (this->hasError()) {
-        return nullptr;
-      }
-      argsNode->addNode(std::move(argNode));
-      if (incomplete) {
+        argsNode->addNode(std::move(argNode));
         this->incompleteNode = std::move(argsNode);
         return nullptr;
+      }
+      if (this->hasError()) {
+        return nullptr;
+      }
+
+      if (CUR_KIND() == TokenKind::COLON && mayBeNamedArgStart(*argNode)) {
+        auto nameInfo = std::move(cast<VarNode>(*argNode)).takeAsNameInfo();
+        TRY(this->expectAndChangeMode(TokenKind::COLON, yycSTMT));
+        argNode = this->parse_expression();
+        bool incomplete = false;
+        if (this->incompleteNode) {
+          incomplete = true;
+          argNode = std::move(this->incompleteNode);
+        } else if (this->hasError()) {
+          return nullptr;
+        }
+        argsNode->addNode(std::move(nameInfo), std::move(argNode));
+        if (incomplete) {
+          this->incompleteNode = std::move(argsNode);
+          return nullptr;
+        }
+      } else {
+        argsNode->addNode(std::move(argNode));
       }
     } else {
       E_DETAILED(ParseErrorKind::EXPR_RP, EACH_LA_expression(GEN_LA_ALTER) TokenKind::RP);

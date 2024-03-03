@@ -1,0 +1,4 @@
+
+#$test($result = 'type', $lineNum = 4, $chars = 13, $errorKind = 'UndefinedNamedArg', $status = 1)
+
+"254".toInt($N : 3245)

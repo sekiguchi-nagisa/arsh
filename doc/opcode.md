@@ -46,6 +46,7 @@
 | DUP               |                                | value -> value value                         | duplicate top value                                             |
 | DUP2              |                                | value1 value2 -> value1 value2 value1 value2 | duplicate top two value                                         |
 | SWAP              |                                | value1 value2 -> value2 value1               | swap top two value                                              |
+| STORE_BY_OFFSET   | 1: offset                      | value1 ~ valueN valueN+1 -> value1 ~valueN   | store stack top value onto (top - offset)                       |
 | CONCAT            |                                | value1 value2 -> value3                      | concat string value1 and string value2                          |
 | APPEND            |                                | value1 value2 -> value1                      | append string value2 with string value1                         |
 | APPEND_ARRAY      |                                | value1 value2 -> value1                      | append value2 into value1                                       |

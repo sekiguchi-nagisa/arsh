@@ -797,8 +797,26 @@ void ByteCodeGenerator::visitBinaryOpNode(BinaryOpNode &node) {
 }
 
 void ByteCodeGenerator::visitArgsNode(ArgsNode &node) {
-  for (auto &e : node.getNodes()) {
-    this->visit(*e);
+  const unsigned int argSize = node.getNodes().size();
+  const unsigned int namedArgStartOffset =
+      node.hasNamedArgs() ? node.getNamedEntries()[0].getOffset() : argSize;
+  unsigned int index = 0;
+  for (; index < namedArgStartOffset; index++) {
+    this->visit(*node.getNodes()[index]);
+  }
+  const unsigned int noneCount = node.getNoneCount();
+  for (unsigned int i = 0; i < noneCount; i++) {
+    this->emit0byteIns(OpCode::PUSH_INVALID);
+  }
+  /**
+   * | expr | arg1 | arg2 | none | none | (arg4) | (arg3)
+   * => arg4:offset = 0, arg3:offset = 1
+   */
+  for (; index < argSize; index++) {
+    this->visit(*node.getNodes()[index]);
+    const unsigned int paramIndex =
+        node.getNamedEntries()[index - namedArgStartOffset].getParamIndex();
+    this->emit1byteIns(OpCode::STORE_BY_OFFSET, noneCount + namedArgStartOffset - paramIndex - 1);
   }
 }
 
@@ -823,8 +841,7 @@ void ByteCodeGenerator::visitApplyNode(ApplyNode &node) {
     this->visit(node.getExprNode());
     this->visit(node.getArgsNode());
     this->emitSourcePos(node.getActualPos());
-    const unsigned int paramSize = node.getArgsNode().getNodes().size();
-    this->emitFuncCallIns(paramSize, !node.getType().isVoidType());
+    this->emitFuncCallIns(cast<FunctionType>(node.getExprNode().getType()));
   }
 }
 

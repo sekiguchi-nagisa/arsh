@@ -4,6 +4,13 @@
 
 ### Added
 
+#### Core
+
+- support named arguments like the following
+  ```
+  "23345".toInt($radix: 10)
+  ```
+
 #### Builtin
 
 - add ``Candidates`` type for completion
