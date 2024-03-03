@@ -513,10 +513,10 @@ Optional<SignatureInformation> Analyzer::collectSignature(const SourcePtr &src,
     if (!signature.handle) {
       if (!signature.returnType->isUnresolved()) {
         if (StringRef name = signature.name; name == OP_INIT) {
-          out += "typedef ";
+          out += "typedef ";  // for Array, Map, Option constructor
           normalizeTypeName(*signature.returnType, out);
           out += "()";
-        } else {
+        } else {  // for indirect function call without variable name
           formatFuncSignature(*signature.returnType, signature.paramSize, signature.paramTypes, out,
                               callback);
         }
@@ -545,7 +545,7 @@ Optional<SignatureInformation> Analyzer::collectSignature(const SourcePtr &src,
       formatMethodSignature(recvType, *methodHandle, out, constructor, callback);
     } else if (!signature.returnType->isUnresolved()) {
       formatFuncSignature(*signature.returnType, signature.paramSize, signature.paramTypes, out,
-                          callback);
+                          callback);  // indirect function call with variable name
     }
 
     if (out.empty()) {
