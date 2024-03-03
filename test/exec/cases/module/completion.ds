@@ -3,6 +3,8 @@
 
 source ../../../../share/arsh/modules/completion
 
+$BASH_COMPLETION_PATH = $SCRIPT_NAME  ## force disable bash completion
+
 # no option
 assert compdef 2>&1 | grep 'usage: compdef'
 compdef &> /dev/null

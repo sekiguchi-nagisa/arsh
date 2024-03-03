@@ -209,7 +209,7 @@ function _comp_wrap(file : String, target : String, words : [String], cursor : I
     '
 
     var ret : Candidates
-    bash -c $script bash $BASH_COMPLETION_PATH $file $target $cursor $words | for line in $STDIN {
+    bash -c $script bash $BASH_COMPLETION_PATH $file $target $cursor $words 2> /dev/null| for line in $STDIN {
         if test -d $line && $line[-1] != '/' && $line.contains('/') { # for directory
             $line += '/'
         }
