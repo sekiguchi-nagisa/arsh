@@ -3,7 +3,7 @@ version: 2.1
 jobs:
   build-on-gcc:
     machine:
-      image: ubuntu-2004:202101-01
+      image: ubuntu-2204:2024.01.1
     resource_class: arm.medium
     steps:
       - checkout
@@ -13,7 +13,7 @@ jobs:
       - run: sh scripts/run_all_test.sh g++
   build-on-clang:
     machine:
-      image: ubuntu-2004:202101-01
+      image: ubuntu-2204:2024.01.1
     resource_class: arm.medium
     steps:
       - checkout
