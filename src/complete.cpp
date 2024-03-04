@@ -542,6 +542,18 @@ static void completeAttributeParam(const std::string &prefix, AttributeParamSet 
   });
 }
 
+static void completeParamName(const std::vector<std::string> &paramNames, StringRef word,
+                              CompCandidateConsumer &consumer) {
+  const unsigned int size = paramNames.size();
+  for (unsigned int i = 0; i < size; i++) {
+    if (StringRef ref = paramNames[i]; ref.startsWith(word)) {
+      const int priority = 90000000 + i;
+      CompCandidate candidate(paramNames[i], CompCandidateKind::VAR, priority);
+      consumer(candidate);
+    }
+  }
+}
+
 static bool hasCmdArg(const CmdNode &node) {
   for (auto &e : node.getArgNodes()) {
     if (e->is(NodeKind::CmdArg)) {
@@ -635,6 +647,9 @@ bool CodeCompleter::invoke(const CodeCompletionContext &ctx) {
   }
   if (ctx.has(CodeCompOp::ATTR_PARAM)) {
     completeAttributeParam(ctx.getCompWord(), ctx.getTargetAttrParams(), this->consumer);
+  }
+  if (ctx.has(CodeCompOp::PARAM)) {
+    completeParamName(ctx.getExtraWords(), ctx.getCompWord(), this->consumer);
   }
   if (ctx.has(CodeCompOp::HOOK)) {
     if (this->userDefinedComp) {
@@ -782,6 +797,16 @@ StringRef suggestSimilarMember(StringRef name, const TypePool &pool, const NameS
   SuggestionCollector collector(name);
   collector.setTargetMemberType(targetType);
   completeMember(pool, scope, recvType, "", collector);
+  if (collector.getScore() <= threshold) {
+    return collector.getTarget();
+  }
+  return "";
+}
+
+StringRef suggestSimilarParamName(StringRef name, const std::vector<std::string> &paramNames,
+                                  unsigned int threshold) {
+  SuggestionCollector collector(name);
+  completeParamName(paramNames, "", collector);
   if (collector.getScore() <= threshold) {
     return collector.getTarget();
   }

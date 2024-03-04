@@ -1,0 +1,11 @@
+# RUN: exec $cmd $self
+
+#    CHECKERR: [semantic error] undefined named argument: `bb', did you mean `begin' ?
+# CHECKERR_RE:  --> .+/output/suggest_named_arg2\.ds:11:15$
+#    CHECKERR: $ff($end: 45, $bb:3456)
+#    CHECKERR:               ^~~
+# STATUS: 1
+
+function ff(begin: Int, end: Int) : Int { return $begin + $end; }
+
+$ff($end: 45, $bb:3456)

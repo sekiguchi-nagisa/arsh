@@ -624,6 +624,20 @@ void TypeChecker::checkArgsNode(const CallSignature &callSignature, ArgsNode &no
   }
 }
 
+static std::vector<std::string>
+getUnfoundParamNames(const FlexBuffer<StringRef> &paramNames,
+                     const StrRefMap<std::pair<unsigned int, bool>> &paramMap) {
+  std::vector<std::string> values;
+  for (auto &e : paramNames) {
+    auto iter = paramMap.find(e);
+    assert(iter != paramMap.end());
+    if (!iter->second.second) {
+      values.push_back(e.toString());
+    }
+  }
+  return values;
+}
+
 void TypeChecker::checkNamedArgs(const CallSignature &callSignature, ArgsNode &node) {
   if (!callSignature.returnType->isUnresolved()) {
     const unsigned int argSize = node.getNodes().size();
@@ -681,9 +695,15 @@ void TypeChecker::checkNamedArgs(const CallSignature &callSignature, ArgsNode &n
       this->reportError<InvalidUnnamedArg>(*node.getNodes()[index]);
     } else {
       auto &nameInfo = node.getNamedEntries()[namedEntryIndex].getNameInfo();
-      if (auto iter = paramMap.find(nameInfo.getName());
-          iter == paramMap.end()) { // FIXME: suggestion
-        this->reportError<UndefinedNamedArg>(nameInfo.getToken(), nameInfo.getName().c_str());
+      if (auto iter = paramMap.find(nameInfo.getName()); iter == paramMap.end()) {
+        auto unfoundNames = getUnfoundParamNames(paramNames, paramMap);
+        const StringRef suggestion = suggestSimilarParamName(nameInfo.getName(), unfoundNames, 5);
+        std::string suffix;
+        if (!suggestion.empty()) {
+          addSuggestionSuffix(suffix, suggestion);
+        }
+        this->reportError<UndefinedNamedArg>(nameInfo.getToken(), nameInfo.getName().c_str(),
+                                             suffix.c_str());
       } else if (iter->second.second) {
         this->reportError<RepeatedNamedArg>(nameInfo.getToken(), nameInfo.getName().c_str());
       } else {

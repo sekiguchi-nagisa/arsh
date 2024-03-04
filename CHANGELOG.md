@@ -10,6 +10,7 @@
   ```
   "23345".toInt($radix: 10)
   ```
+    - also suggest possible parameter
 
 #### Builtin
 

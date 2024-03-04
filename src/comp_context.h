@@ -47,6 +47,7 @@ enum class CodeCompOp : unsigned int {
   HOOK = 1u << 21u,       /* for user-defined completion hook */
   ATTR = 1u << 22u,       /* complete attribute */
   ATTR_PARAM = 1u << 23u, /* complete attribute parameter */
+  PARAM = 1u << 24u,      /* complete parameter name */
   COMMAND = EXTERNAL | DYNA_UDC | BUILTIN | UDC,
 };
 

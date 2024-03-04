@@ -241,6 +241,9 @@ StringRef suggestSimilarMember(StringRef name, const TypePool &pool, const NameS
                                const DSType &recvType, SuggestMemberType targetType,
                                unsigned int threshold = 3);
 
+StringRef suggestSimilarParamName(StringRef name, const std::vector<std::string> &paramNames,
+                                  unsigned int threshold = 3);
+
 } // namespace arsh
 
 #endif // ARSH_COMPLETE_H

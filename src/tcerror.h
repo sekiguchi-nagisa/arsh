@@ -173,7 +173,7 @@ DEFINE_TCError(UnmatchParam, "number of parameters does not match, require `%d',
 DEFINE_TCError(NotNamedCallable,
                "named arguments are only supported in direct-function/method/constructor call");
 DEFINE_TCError(InvalidUnnamedArg, "not allow unnamed arguments after named arguments");
-DEFINE_TCError(UndefinedNamedArg, "undefined named argument: `%s'");
+DEFINE_TCError(UndefinedNamedArg, "undefined named argument: `%s'%s");
 DEFINE_TCError(RepeatedNamedArg, "named argument: `%s' is repeated");
 DEFINE_TCError(MissingNamedArg, "missing named argument: `%s'");
 DEFINE_TCError(RegexSyntax, "regex syntax error: `%s'");

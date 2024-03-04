@@ -1,0 +1,12 @@
+# RUN: exec $cmd $self
+
+#    CHECKERR: [semantic error] undefined named argument: `ra', did you mean `radix' ?
+# CHECKERR_RE:  --> .+/output/suggest_named_arg1\.ds:11:16$
+#    CHECKERR:     $AAA.toInt($ra: 10)
+#    CHECKERR:                ^~~
+# STATUS: 1
+
+{
+    var AAA = "2345"
+    $AAA.toInt($ra: 10)
+}
