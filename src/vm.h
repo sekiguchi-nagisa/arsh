@@ -103,7 +103,7 @@ public:
 private:
   RuntimeOption runtimeOption{RuntimeOption::ASSERT | RuntimeOption::CLOBBER |
                               RuntimeOption::FAIL_GLOB | RuntimeOption::FAIL_TILDE |
-                              RuntimeOption::HUP_EXIT};
+                              RuntimeOption::GLOBSTAR | RuntimeOption::HUP_EXIT};
 
 public:
   ARExecMode execMode{AR_EXEC_MODE_NORMAL};

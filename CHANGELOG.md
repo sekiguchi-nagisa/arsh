@@ -34,7 +34,7 @@
     - always perform tilde expansion before glob expansion
         - if ``failglob`` is disabled and glob expansion failed, return tilde expanded string
     - support recursive glob (a.k.a ``globstar``)
-        - enabled via ``globstar`` runtime option
+        - enabled via ``globstar`` runtime option (enabled by default)
 - **Breaking Change**: now not preserve exit status during finally/defer block
     - now the following code is valid
       ```

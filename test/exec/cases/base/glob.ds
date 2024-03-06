@@ -92,6 +92,15 @@ assert $(echo /[^@]*).sort().join(" ") == $(sh -c 'echo /[^@]*').sort().join(" "
 assert $(echo /[[:alnum:]]*).sort().join(" ") == $(sh -c 'echo /[[:alnum:]]*').sort().join(" ")
 assert $(echo ~/[a-z]*).sort().join(" ") == $(sh -c 'echo ~/[a-z]*').sort().join(" ")
 
+# globstar
+{
+    shctl set globstar
+    var a = @($SCRIPT_DIR/../**)
+    shctl unset globstar
+    var b = @($SCRIPT_DIR/../**)
+    assert $a.size() != $b.size()
+}
+
 # null glob
 shctl set nullglob
 $ex = 2
