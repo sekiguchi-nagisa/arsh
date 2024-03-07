@@ -2827,6 +2827,7 @@ public:
   enum Kind : unsigned int {
     VAR,            // complete variable names
     VAR_IN_CMD_ARG, // complete variable names (within command argument)
+    VAR_OR_PARAM,   // complete varibale names or param names
     MEMBER,         // complete members (field or method)
     TYPE,           // complete type name (maybe type alias)
     CALL_SIGNATURE, // complete function/method/constructor signature (for signature completion)

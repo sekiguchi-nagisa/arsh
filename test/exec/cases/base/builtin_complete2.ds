@@ -201,6 +201,10 @@ $assertArray(['AAA0', 'AAA1'], $(complete '
     typedef AAA1 = [String]
     typedef AAA0(param : AA'))
 
+# param
+$assertArray(['radix:'], $(complete '"".toInt($rad'))
+$assertArray(['start:', 'stop:'], $(complete '"".slice($st'))
+
 # subcommand
 $assertArray(["compdef",], $(complete "source $SCRIPT_DIR/../../../../share/arsh/modules/completion as CP; CP "))
 $assertArray(["compdef"], $(complete "source $SCRIPT_DIR/../../../../share/arsh/modules/completion as CP; CP c"))

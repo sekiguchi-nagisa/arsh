@@ -38,6 +38,7 @@ enum class CompCandidateKind : unsigned char {
   GROUP,
   VAR,
   VAR_IN_CMD_ARG,
+  PARAM,
   SIGNAL,
   FIELD,
   METHOD,

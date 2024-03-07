@@ -195,6 +195,12 @@ public:
     setFlag(this->compOp, param.stmt ? CodeCompOp::STMT_KW : CodeCompOp::EXPR_KW);
   }
 
+  void appendParamRequest(std::vector<std::string> &&params) {
+    assert(this->extraWords.empty());
+    this->extraWords = std::move(params);
+    setFlag(this->compOp, CodeCompOp::PARAM);
+  }
+
   void addCompHookRequest(const Lexer &lexer, std::unique_ptr<CmdNode> &&node) {
     this->lex = makeObserver(lexer);
     this->fallbackOp = this->compOp;

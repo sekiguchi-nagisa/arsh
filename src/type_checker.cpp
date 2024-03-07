@@ -587,6 +587,15 @@ static unsigned int getMinParamSize(const CallSignature &types) {
   return paramSize;
 }
 
+static bool hasCompInLastArg(const ArgsNode &node, CodeCompNode::Kind kind) {
+  if (!node.getNodes().empty()) {
+    if (isa<CodeCompNode>(*node.getNodes().back())) {
+      return cast<CodeCompNode>(*node.getNodes().back()).getKind() == kind;
+    }
+  }
+  return false;
+}
+
 void TypeChecker::checkArgsNode(const CallSignature &callSignature, ArgsNode &node) {
   const unsigned int argSize = node.getNodes().size();
   if (node.hasNamedArgs()) {
@@ -616,23 +625,24 @@ void TypeChecker::checkArgsNode(const CallSignature &callSignature, ArgsNode &no
     this->checkTypeExactly(node);
   }
 
-  if (this->signatureHandler && argSize > 0 && isa<CodeCompNode>(*node.getNodes()[argSize - 1])) {
-    if (cast<CodeCompNode>(*node.getNodes()[argSize - 1]).getKind() ==
-        CodeCompNode::Kind::CALL_SIGNATURE) {
-      this->signatureHandler(callSignature, argSize - 1);
-    }
+  if (this->signatureHandler && hasCompInLastArg(node, CodeCompNode::Kind::CALL_SIGNATURE)) {
+    this->signatureHandler(callSignature, argSize - 1);
   }
 }
 
 static std::vector<std::string>
 getUnfoundParamNames(const FlexBuffer<StringRef> &paramNames,
-                     const StrRefMap<std::pair<unsigned int, bool>> &paramMap) {
+                     const StrRefMap<std::pair<unsigned int, bool>> &paramMap, bool suffixColon) {
   std::vector<std::string> values;
   for (auto &e : paramNames) {
     auto iter = paramMap.find(e);
     assert(iter != paramMap.end());
     if (!iter->second.second) {
-      values.push_back(e.toString());
+      auto v = e.toString();
+      if (suffixColon) {
+        v += ':';
+      }
+      values.push_back(std::move(v));
     }
   }
   return values;
@@ -696,7 +706,7 @@ void TypeChecker::checkNamedArgs(const CallSignature &callSignature, ArgsNode &n
     } else {
       auto &nameInfo = node.getNamedEntries()[namedEntryIndex].getNameInfo();
       if (auto iter = paramMap.find(nameInfo.getName()); iter == paramMap.end()) {
-        auto unfoundNames = getUnfoundParamNames(paramNames, paramMap);
+        auto unfoundNames = getUnfoundParamNames(paramNames, paramMap, false);
         const StringRef suggestion = suggestSimilarParamName(nameInfo.getName(), unfoundNames, 5);
         std::string suffix;
         if (!suggestion.empty()) {
@@ -734,6 +744,11 @@ void TypeChecker::checkNamedArgs(const CallSignature &callSignature, ArgsNode &n
     node.setNoneCount(callSignature.paramSize - namedArgStartOffset);
   }
   this->checkTypeExactly(node);
+
+  if (!paramNames.empty() && hasCompInLastArg(node, CodeCompNode::Kind::VAR_OR_PARAM)) {
+    auto unfoundNames = getUnfoundParamNames(paramNames, paramMap, true);
+    this->compCtx->appendParamRequest(std::move(unfoundNames));
+  }
 }
 
 void TypeChecker::resolveCastOp(TypeOpNode &node, bool forceToString) {
@@ -2650,6 +2665,7 @@ void TypeChecker::visitCodeCompNode(CodeCompNode &node) {
   switch (node.getKind()) {
   case CodeCompNode::VAR:
   case CodeCompNode::VAR_IN_CMD_ARG:
+  case CodeCompNode::VAR_OR_PARAM:
     this->compCtx->addVarNameRequest(this->lexer.get().toName(node.getTypingToken()),
                                      node.getKind() == CodeCompNode::VAR_IN_CMD_ARG,
                                      this->curScope);

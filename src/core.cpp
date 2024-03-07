@@ -588,6 +588,7 @@ static bool needSpace(const StringRef first, CompCandidateKind kind) {
   case CompCandidateKind::GROUP:
     break;
   case CompCandidateKind::VAR:
+  case CompCandidateKind::PARAM:
     return false;
   case CompCandidateKind::VAR_IN_CMD_ARG:
     break;

@@ -1079,6 +1079,7 @@ void CodeCompNode::dump(NodeDumper &dumper) const {
 #define EACH_ENUM(OP)                                                                              \
   OP(VAR)                                                                                          \
   OP(VAR_IN_CMD_ARG)                                                                               \
+  OP(VAR_OR_PARAM)                                                                                 \
   OP(MEMBER)                                                                                       \
   OP(TYPE)                                                                                         \
   OP(CALL_SIGNATURE)                                                                               \

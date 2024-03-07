@@ -542,13 +542,13 @@ static void completeAttributeParam(const std::string &prefix, AttributeParamSet 
   });
 }
 
-static void completeParamName(const std::vector<std::string> &paramNames, StringRef word,
+static void completeParamName(const std::vector<std::string> &paramNames, const StringRef word,
                               CompCandidateConsumer &consumer) {
   const unsigned int size = paramNames.size();
   for (unsigned int i = 0; i < size; i++) {
     if (StringRef ref = paramNames[i]; ref.startsWith(word)) {
-      const int priority = 90000000 + i;
-      CompCandidate candidate(paramNames[i], CompCandidateKind::VAR, priority);
+      const int priority = 9000000 + i;
+      CompCandidate candidate(paramNames[i], CompCandidateKind::PARAM, priority);
       consumer(candidate);
     }
   }
