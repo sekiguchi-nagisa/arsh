@@ -28,12 +28,17 @@ namespace arsh {
 CandidatesWrapper::CandidatesWrapper(const TypePool &pool)
     : obj(toObjPtr<ArrayObject>(Value::create<ArrayObject>(pool.get(TYPE::Candidates)))) {}
 
+static Value withMeta(const Value &value, CandidateAttr attr, bool needSpace) {
+  const CandidatesWrapper::Meta m{.meta = {.attr = attr, .needSpace = needSpace}};
+  return value.withMetaData(m.value);
+}
+
 bool CandidatesWrapper::addAsCandidate(ARState &state, const Value &value) {
   assert(value.hasStrRef());
   if (value.asStrRef().empty()) {
     return true;
   }
-  return this->add(state, value.withMetaData(toUnderlying(CandidateAttr::NONE)));
+  return this->add(state, withMeta(value, CandidateAttr::NONE, true));
 }
 
 bool CandidatesWrapper::addNewCandidate(ARState &state, Value &&candidate, Value &&description) {
@@ -54,7 +59,7 @@ bool CandidatesWrapper::addNewCandidateWith(ARState &state, StringRef candidate,
              description.size() < CandidateObject::MAX_SIZE &&
              candidate.size() + 1 <= CandidateObject::MAX_SIZE - description.size())) {
     const Value value = CandidateObject::create(candidate, description);
-    return this->add(state, value.withMetaData(toUnderlying(attr)));
+    return this->add(state, withMeta(value, attr, true));
   }
   raiseError(state, TYPE::OutOfRangeError, "sum of candidate and signature size reaches limit");
   return false;

@@ -81,6 +81,16 @@ private:
   ObjPtr<ArrayObject> obj; // must be Candidates
 
 public:
+  union Meta {
+    struct {
+      CandidateAttr attr;
+      bool needSpace;
+    } meta;
+    unsigned int value;
+  };
+
+  static_assert(sizeof(Meta) == sizeof(unsigned int));
+
   explicit CandidatesWrapper(const TypePool &pool);
 
   explicit CandidatesWrapper(const ObjPtr<ArrayObject> &obj) : obj(obj) {
@@ -150,7 +160,13 @@ public:
   }
 
   CandidateAttr getAttrAt(const unsigned int index) const {
-    return static_cast<CandidateAttr>(this->values()[index].getMetaData());
+    const Meta m{.value = this->values()[index].getMetaData()};
+    return m.meta.attr;
+  }
+
+  bool needSpaceAt(const unsigned int index) const {
+    const Meta m{.value = this->values()[index].getMetaData()};
+    return m.meta.needSpace;
   }
 
   /**
