@@ -28,8 +28,8 @@ namespace arsh {
 CandidatesWrapper::CandidatesWrapper(const TypePool &pool)
     : obj(toObjPtr<ArrayObject>(Value::create<ArrayObject>(pool.get(TYPE::Candidates)))) {}
 
-static Value withMeta(const Value &value, CandidateAttr attr, bool needSpace) {
-  const CandidatesWrapper::Meta m{.meta = {.attr = attr, .needSpace = needSpace}};
+static Value withMeta(const Value &value, CandidateAttr attr) {
+  const CandidatesWrapper::Meta m{.attr = attr};
   return value.withMetaData(m.value);
 }
 
@@ -38,7 +38,7 @@ bool CandidatesWrapper::addAsCandidate(ARState &state, const Value &value) {
   if (value.asStrRef().empty()) {
     return true;
   }
-  return this->add(state, withMeta(value, CandidateAttr::NONE, true));
+  return this->add(state, withMeta(value, {CandidateAttr::Kind::NONE, true}));
 }
 
 bool CandidatesWrapper::addNewCandidate(ARState &state, Value &&candidate, Value &&description) {
@@ -50,16 +50,16 @@ bool CandidatesWrapper::addNewCandidate(ARState &state, Value &&candidate, Value
     return this->addAsCandidate(state, candidate);
   }
   return this->addNewCandidateWith(state, candidate.asStrRef(), description.asStrRef(),
-                                   CandidateAttr::NONE);
+                                   CandidateAttr::Kind::NONE);
 }
 
 bool CandidatesWrapper::addNewCandidateWith(ARState &state, StringRef candidate,
-                                            StringRef description, const CandidateAttr attr) {
+                                            StringRef description, const CandidateAttr::Kind kind) {
   if (likely(candidate.size() < CandidateObject::MAX_SIZE &&
              description.size() < CandidateObject::MAX_SIZE &&
              candidate.size() + 1 <= CandidateObject::MAX_SIZE - description.size())) {
     const Value value = CandidateObject::create(candidate, description);
-    return this->add(state, withMeta(value, attr, true));
+    return this->add(state, withMeta(value, {kind, true}));
   }
   raiseError(state, TYPE::OutOfRangeError, "sum of candidate and signature size reaches limit");
   return false;
@@ -85,7 +85,8 @@ void CandidatesWrapper::sortAndDedup(const unsigned int beginOffset) {
   std::sort(this->obj->refValues().begin() + beginOffset, this->obj->refValues().end(),
             [](const Value &x, const Value &y) {
               const int r = toStrRef(x).compare(toStrRef(y));
-              return r < 0 || (r == 0 && x.getMetaData() < y.getMetaData());
+              return r < 0 ||
+                     (r == 0 && toUnderlying(getAttr(x).kind) < toUnderlying(getAttr(y).kind));
             });
 
   // dedup

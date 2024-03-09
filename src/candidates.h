@@ -67,13 +67,17 @@ public:
   StringRef underlying() const { return {this->payload, this->allocSize()}; }
 };
 
-enum class CandidateAttr : unsigned char { // not change enum order
-  CMD_UDC,
-  CMD_BUILTIN,
-  CMD_DYNA,
-  CMD_EXTERNAL,
-  TYPE_SIGNATURE, // for variable/function/member
-  NONE,
+struct CandidateAttr {
+  enum class Kind : unsigned char { // not change enum order
+    CMD_UDC,
+    CMD_BUILTIN,
+    CMD_DYNA,
+    CMD_EXTERNAL,
+    TYPE_SIGNATURE, // for variable/function/member
+    NONE,
+  } kind;
+
+  bool needSpace;
 };
 
 class CandidatesWrapper {
@@ -82,10 +86,7 @@ private:
 
 public:
   union Meta {
-    struct {
-      CandidateAttr attr;
-      bool needSpace;
-    } meta;
+    CandidateAttr attr;
     unsigned int value;
   };
 
@@ -124,7 +125,7 @@ public:
   bool addNewCandidate(ARState &state, Value &&candidate, Value &&description);
 
   bool addNewCandidateWith(ARState &state, StringRef candidate, StringRef description,
-                           CandidateAttr attr);
+                           CandidateAttr::Kind kind);
 
   /**
    * @param state
@@ -159,15 +160,7 @@ public:
                                                          : "";
   }
 
-  CandidateAttr getAttrAt(const unsigned int index) const {
-    const Meta m{.value = this->values()[index].getMetaData()};
-    return m.meta.attr;
-  }
-
-  bool needSpaceAt(const unsigned int index) const {
-    const Meta m{.value = this->values()[index].getMetaData()};
-    return m.meta.needSpace;
-  }
+  CandidateAttr getAttrAt(const unsigned int index) const { return getAttr(this->values()[index]); }
 
   /**
    * resolve common prefix string (valid utf-8)
@@ -180,6 +173,11 @@ private:
   static StringRef toStrRef(const Value &v) {
     return v.isObject() && isa<CandidateObject>(v.get()) ? typeAs<CandidateObject>(v).candidate()
                                                          : v.asStrRef();
+  }
+
+  static CandidateAttr getAttr(const Value &v) {
+    const Meta m{.value = v.getMetaData()};
+    return m.attr;
   }
 
   const std::vector<Value> &values() const { return this->obj->getValues(); }

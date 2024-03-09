@@ -47,7 +47,7 @@ assert complete -d -- '$DYNA_UDC["echo"] = (){}; echo'
 assert $COMPREPLY.size() == 1
 $args = @($COMPREPLY)
 assert $args.size() == 1
-assert $args[0] == 'echo@builtin' : $args[0]
+assert $args[0] == 'echo@builtin'
 
 assert complete -d -- 'echo(){}; echo'
 assert $COMPREPLY.size() == 1

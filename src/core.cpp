@@ -323,33 +323,33 @@ public:
     if (this->putDesc) {
       if (this->kind == CompCandidateKind::COMMAND_NAME) {
         const char *desc = "";
-        auto attr = CandidateAttr::NONE;
+        auto kind = CandidateAttr::Kind::NONE;
         switch (candidate.getCmdNameType()) {
         case CompCandidate::CmdNameType::UDC:
           desc = "user-defined";
-          attr = CandidateAttr::CMD_UDC;
+          kind = CandidateAttr::Kind::CMD_UDC;
           break;
         case CompCandidate::CmdNameType::BUILTIN:
           desc = "builtin";
-          attr = CandidateAttr::CMD_BUILTIN;
+          kind = CandidateAttr::Kind::CMD_BUILTIN;
           break;
         case CompCandidate::CmdNameType::DYNA_UDC:
           desc = "dynamic";
-          attr = CandidateAttr::CMD_DYNA;
+          kind = CandidateAttr::Kind::CMD_DYNA;
           break;
         case CompCandidate::CmdNameType::EXTERNAL:
           desc = "command";
-          attr = CandidateAttr::CMD_EXTERNAL;
+          kind = CandidateAttr::Kind::CMD_EXTERNAL;
           break;
         }
-        this->overflow = !this->reply.addNewCandidateWith(this->state, candidate.value, desc, attr);
+        this->overflow = !this->reply.addNewCandidateWith(this->state, candidate.value, desc, kind);
         return;
       }
 
       const std::string typeSig = candidate.formatTypeSignature(this->state.typePool);
       if (!typeSig.empty()) {
         this->overflow = !this->reply.addNewCandidateWith(this->state, candidate.value, typeSig,
-                                                          CandidateAttr::TYPE_SIGNATURE);
+                                                          CandidateAttr::Kind::TYPE_SIGNATURE);
         return;
       }
     }

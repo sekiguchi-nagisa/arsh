@@ -45,7 +45,7 @@ ArrayPager ArrayPager::create(CandidatesWrapper &&obj, const CharWidthProperties
 
     // compute signature columns
     if (const StringRef desc = obj.getDescriptionAt(i); !desc.empty()) {
-      if (obj.getAttrAt(i) == CandidateAttr::TYPE_SIGNATURE) {
+      if (obj.getAttrAt(i).kind == CandidateAttr::Kind::TYPE_SIGNATURE) {
         LineRenderer renderer(ps, item.len);
         renderer.setLineNumLimit(0); // ignore newline
         renderer.renderLines(" ");
@@ -127,7 +127,7 @@ static void renderItem(LineRenderer &renderer, const StringRef can, const Candid
     renderer.renderWithANSI("\x1b[7m");
   }
   renderer.renderLines(can);
-  if (attr == CandidateAttr::TYPE_SIGNATURE) {
+  if (attr.kind == CandidateAttr::Kind::TYPE_SIGNATURE) {
     if (!desc.empty()) {
       renderer.renderWithANSI("\x1b[90m ");
       renderer.renderLines(desc);
