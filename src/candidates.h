@@ -109,9 +109,10 @@ public:
    * @param state
    * @param value
    * must be String
+   * @param needSpace
    * @return
    */
-  bool addAsCandidate(ARState &state, const Value &value);
+  bool addAsCandidate(ARState &state, const Value &value, bool needSpace);
 
   /**
    * for builtin method. always ignore empty candidate
@@ -125,7 +126,7 @@ public:
   bool addNewCandidate(ARState &state, Value &&candidate, Value &&description);
 
   bool addNewCandidateWith(ARState &state, StringRef candidate, StringRef description,
-                           CandidateAttr::Kind kind);
+                           CandidateAttr attr);
 
   /**
    * @param state

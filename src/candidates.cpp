@@ -33,12 +33,12 @@ static Value withMeta(const Value &value, CandidateAttr attr) {
   return value.withMetaData(m.value);
 }
 
-bool CandidatesWrapper::addAsCandidate(ARState &state, const Value &value) {
+bool CandidatesWrapper::addAsCandidate(ARState &state, const Value &value, bool needSpace) {
   assert(value.hasStrRef());
   if (value.asStrRef().empty()) {
     return true;
   }
-  return this->add(state, withMeta(value, {CandidateAttr::Kind::NONE, true}));
+  return this->add(state, withMeta(value, {CandidateAttr::Kind::NONE, needSpace}));
 }
 
 bool CandidatesWrapper::addNewCandidate(ARState &state, Value &&candidate, Value &&description) {
@@ -47,19 +47,19 @@ bool CandidatesWrapper::addNewCandidate(ARState &state, Value &&candidate, Value
     return true;
   }
   if (description.isInvalid() || description.asStrRef().empty()) {
-    return this->addAsCandidate(state, candidate);
+    return this->addAsCandidate(state, candidate, false);
   }
   return this->addNewCandidateWith(state, candidate.asStrRef(), description.asStrRef(),
-                                   CandidateAttr::Kind::NONE);
+                                   {CandidateAttr::Kind::NONE, false});
 }
 
 bool CandidatesWrapper::addNewCandidateWith(ARState &state, StringRef candidate,
-                                            StringRef description, const CandidateAttr::Kind kind) {
+                                            StringRef description, const CandidateAttr attr) {
   if (likely(candidate.size() < CandidateObject::MAX_SIZE &&
              description.size() < CandidateObject::MAX_SIZE &&
              candidate.size() + 1 <= CandidateObject::MAX_SIZE - description.size())) {
     const Value value = CandidateObject::create(candidate, description);
-    return this->add(state, withMeta(value, {kind, true}));
+    return this->add(state, withMeta(value, attr));
   }
   raiseError(state, TYPE::OutOfRangeError, "sum of candidate and signature size reaches limit");
   return false;

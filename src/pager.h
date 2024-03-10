@@ -126,6 +126,8 @@ public:
 
   StringRef getCurCandidate() const { return this->obj.getCandidateAt(this->getIndex()); }
 
+  CandidateAttr getCurCandidateAttr() const { return this->obj.getAttrAt(this->getIndex()); }
+
   /**
    * actual rendering function
    * @param out

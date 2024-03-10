@@ -1065,6 +1065,15 @@ ssize_t LineEditorObject::readline(ARState &state, StringRef prompt, char *buf, 
   return this->editLine(state, prompt, buf, bufLen);
 }
 
+static bool insertCandidate(LineBuffer &buf, const StringRef inserting, bool suffixSpace) {
+  buf.commitLastChange();
+  bool s = buf.insertToCursor(inserting, true);
+  if (s && suffixSpace) {
+    s = buf.insertToCursor(" ", true);
+  }
+  return s;
+}
+
 EditActionStatus LineEditorObject::completeLine(ARState &state, struct linenoiseState &ls,
                                                 KeyCodeReader &reader) {
   reader.clear();
@@ -1122,16 +1131,17 @@ EditActionStatus LineEditorObject::completeLine(ARState &state, struct linenoise
    * paging completion candidates
    */
   pager.setShowCursor(true);
-  for (size_t prevCanLen = 0; status == EditActionStatus::CONTINUE;) {
+  for (const unsigned int oldSize = ls.buf.getUsedSize(); status == EditActionStatus::CONTINUE;) {
     // render pager
-    if (prevCanLen) {
+    if (oldSize != ls.buf.getUsedSize()) {
       ls.buf.undo();
     }
     const auto can = pager.getCurCandidate();
+    const bool needSpace = pager.getCurCandidateAttr().needSpace;
     assert(offset <= ls.buf.getCursor());
     size_t prefixLen = ls.buf.getCursor() - offset;
-    prevCanLen = can.size() - prefixLen;
-    if (ls.buf.insertToCursor({can.data() + prefixLen, prevCanLen})) {
+    size_t prevCanLen = can.size() - prefixLen;
+    if (insertCandidate(ls.buf, {can.data() + prefixLen, prevCanLen}, needSpace)) {
       this->refreshLine(ls, true, makeObserver(pager));
     } else {
       status = EditActionStatus::ERROR;
@@ -1142,6 +1152,7 @@ EditActionStatus LineEditorObject::completeLine(ARState &state, struct linenoise
 
 END:
   const int old = errno;
+  ls.buf.commitLastChange();
   this->refreshLine(ls); // clear pager
   errno = old;
   return status;

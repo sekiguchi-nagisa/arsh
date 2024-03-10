@@ -303,6 +303,58 @@ bool RuntimeCancelToken::operator()() {
   return s;
 }
 
+static bool endsWithUnquoteSpace(StringRef ref) {
+  if (!ref.endsWith(" ")) {
+    return false;
+  }
+  ref.removeSuffix(1);
+  unsigned int count = 0;
+  while (ref.endsWith("\\")) {
+    count++;
+    ref.removeSuffix(1);
+  }
+  return count % 2 == 0;
+}
+
+static bool needSpace(const StringRef first, CompCandidateKind kind) {
+  switch (kind) {
+  case CompCandidateKind::COMMAND_NAME:
+    break;
+  case CompCandidateKind::COMMAND_NAME_PART:
+  case CompCandidateKind::COMMAND_ARG:
+  case CompCandidateKind::COMMAND_TILDE:
+  case CompCandidateKind::COMMAND_ARG_NO_QUOTE:
+    if (first.back() == '/') {
+      return false;
+    }
+    if (kind == CompCandidateKind::COMMAND_ARG_NO_QUOTE) {
+      return !endsWithUnquoteSpace(first);
+    }
+    break;
+  case CompCandidateKind::ENV_NAME:
+  case CompCandidateKind::VALID_ENV_NAME:
+  case CompCandidateKind::USER:
+  case CompCandidateKind::GROUP:
+    break;
+  case CompCandidateKind::VAR:
+  case CompCandidateKind::PARAM:
+    return false;
+  case CompCandidateKind::VAR_IN_CMD_ARG:
+    break;
+  case CompCandidateKind::SIGNAL:
+    break;
+  case CompCandidateKind::FIELD:
+  case CompCandidateKind::METHOD:
+  case CompCandidateKind::UNINIT_METHOD:
+    return false;
+  case CompCandidateKind::KEYWORD:
+    break;
+  case CompCandidateKind::TYPE:
+    return false;
+  }
+  return true;
+}
+
 class DefaultCompConsumer : public CompCandidateConsumer {
 private:
   ARState &state;
@@ -320,6 +372,7 @@ public:
       return; // do nothing
     }
     this->kind = candidate.kind;
+    const bool needSpace = arsh::needSpace(candidate.value, candidate.kind);
     if (this->putDesc) {
       if (this->kind == CompCandidateKind::COMMAND_NAME) {
         const char *desc = "";
@@ -342,18 +395,20 @@ public:
           kind = CandidateAttr::Kind::CMD_EXTERNAL;
           break;
         }
-        this->overflow = !this->reply.addNewCandidateWith(this->state, candidate.value, desc, kind);
+        const CandidateAttr attr{kind, needSpace};
+        this->overflow = !this->reply.addNewCandidateWith(this->state, candidate.value, desc, attr);
         return;
       }
 
       const std::string typeSig = candidate.formatTypeSignature(this->state.typePool);
       if (!typeSig.empty()) {
-        this->overflow = !this->reply.addNewCandidateWith(this->state, candidate.value, typeSig,
-                                                          CandidateAttr::Kind::TYPE_SIGNATURE);
+        const CandidateAttr attr{CandidateAttr::Kind::TYPE_SIGNATURE, needSpace};
+        this->overflow =
+            !this->reply.addNewCandidateWith(this->state, candidate.value, typeSig, attr);
         return;
       }
     }
-    if (!this->reply.addAsCandidate(this->state, Value::createStr(candidate.quote()))) {
+    if (!this->reply.addAsCandidate(this->state, Value::createStr(candidate.quote()), needSpace)) {
       this->overflow = true;
     }
   }
@@ -554,58 +609,6 @@ static bool completeImpl(ARState &st, ResolvedTempMod resolvedMod, StringRef sou
   return ret;
 }
 
-static bool endsWithUnquoteSpace(StringRef ref) {
-  if (!ref.endsWith(" ")) {
-    return false;
-  }
-  ref.removeSuffix(1);
-  unsigned int count = 0;
-  while (ref.endsWith("\\")) {
-    count++;
-    ref.removeSuffix(1);
-  }
-  return count % 2 == 0;
-}
-
-static bool needSpace(const StringRef first, CompCandidateKind kind) {
-  switch (kind) {
-  case CompCandidateKind::COMMAND_NAME:
-    break;
-  case CompCandidateKind::COMMAND_NAME_PART:
-  case CompCandidateKind::COMMAND_ARG:
-  case CompCandidateKind::COMMAND_TILDE:
-  case CompCandidateKind::COMMAND_ARG_NO_QUOTE:
-    if (first.back() == '/') {
-      return false;
-    }
-    if (kind == CompCandidateKind::COMMAND_ARG_NO_QUOTE) {
-      return !endsWithUnquoteSpace(first);
-    }
-    break;
-  case CompCandidateKind::ENV_NAME:
-  case CompCandidateKind::VALID_ENV_NAME:
-  case CompCandidateKind::USER:
-  case CompCandidateKind::GROUP:
-    break;
-  case CompCandidateKind::VAR:
-  case CompCandidateKind::PARAM:
-    return false;
-  case CompCandidateKind::VAR_IN_CMD_ARG:
-    break;
-  case CompCandidateKind::SIGNAL:
-    break;
-  case CompCandidateKind::FIELD:
-  case CompCandidateKind::METHOD:
-  case CompCandidateKind::UNINIT_METHOD:
-    return false;
-  case CompCandidateKind::KEYWORD:
-    break;
-  case CompCandidateKind::TYPE:
-    return false;
-  }
-  return true;
-}
-
 int doCodeCompletion(ARState &st, const StringRef modDesc, const DoCodeCompletionOption option,
                      const StringRef source) {
   const auto resolvedMod = resolveTempModScope(st, modDesc, willKickFrontEnd(option.op));
@@ -637,7 +640,7 @@ int doCodeCompletion(ARState &st, const StringRef modDesc, const DoCodeCompletio
     auto v = wrapper.getCandidateAt(0).toString();
     v += " ";
     wrapper.pop();
-    wrapper.addAsCandidate(st, Value::createStr(std::move(v)));
+    wrapper.addAsCandidate(st, Value::createStr(std::move(v)), false); // FIXME:
   }
   return static_cast<int>(size);
 }

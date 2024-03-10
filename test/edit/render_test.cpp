@@ -436,7 +436,7 @@ public:
 
   template <typename... T>
   void append(CandidatesWrapper &wrapper, const char *first, T &&...remain) {
-    wrapper.addAsCandidate(*this->state, Value::createStr(first));
+    wrapper.addAsCandidate(*this->state, Value::createStr(first), false);
     append(wrapper, std::forward<T>(remain)...);
   }
 
@@ -448,10 +448,10 @@ public:
   }
 
   ObjPtr<ArrayObject> createWith(std::vector<std::pair<const char *, const char *>> &&args,
-                                 const CandidateAttr::Kind kind = CandidateAttr::Kind::NONE) {
+                                 const CandidateAttr attr = {CandidateAttr::Kind::NONE, false}) {
     CandidatesWrapper wrapper(this->state->typePool);
     for (auto &[can, sig] : args) {
-      wrapper.addNewCandidateWith(*this->state, can, sig, kind);
+      wrapper.addNewCandidateWith(*this->state, can, sig, attr);
     }
     return std::move(wrapper).take();
   }
@@ -932,7 +932,7 @@ TEST_F(PagerTest, sig) {
           {"PID", ": Int"},
           {"COMP_HOOK", ": ((Module, [String], Int) -> Candidates?)?"},
       },
-      CandidateAttr::Kind::TYPE_SIGNATURE);
+      {CandidateAttr::Kind::TYPE_SIGNATURE, false});
   auto pager = ArrayPager::create(CandidatesWrapper(array), this->ps, {.rows = 24, .cols = 80});
   ASSERT_EQ(1, pager.getPanes());
   ASSERT_EQ(56, pager.getPaneLen());
@@ -950,8 +950,10 @@ TEST_F(PagerTest, sig) {
 TEST_F(PagerTest, candidate) {
   CandidatesWrapper wrapper(this->createWith({}));
   ASSERT_EQ(0, wrapper.size());
-  wrapper.addNewCandidateWith(*this->state, "mkdir", "command", CandidateAttr::Kind::CMD_EXTERNAL);
-  wrapper.addNewCandidateWith(*this->state, "mkdir", "dynamic", CandidateAttr::Kind::CMD_DYNA);
+  wrapper.addNewCandidateWith(*this->state, "mkdir", "command",
+                              {CandidateAttr::Kind::CMD_EXTERNAL, true});
+  wrapper.addNewCandidateWith(*this->state, "mkdir", "dynamic",
+                              {CandidateAttr::Kind::CMD_DYNA, true});
   ASSERT_EQ(2, wrapper.size());
   wrapper.sortAndDedup(0);
   ASSERT_EQ(1, wrapper.size());
