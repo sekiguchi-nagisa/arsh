@@ -134,7 +134,7 @@ assert diff <(cd $SCRIPT_DIR/../ && complete -m ${$/\d+/.replace($mod as String,
 ## options
 assert "$({ complete -q ';'; assert $COMPREPLY.size() != 0; })".empty();
 assert complete -s 'var';
-assert $COMPREPLY.size() == 1 && $COMPREPLY[0] == 'var '
+assert $COMPREPLY.size() == 1 && $COMPREPLY[0] == 'var'
 
 ## -s option
 ### variable
@@ -174,12 +174,12 @@ assert $COMPREPLY[0] == 'echo \\ '
 $COMP_HOOK = function(m,s,c) => new Candidates(['echo\ '])
 complete -s -- "echo " &> /dev/null;
 assert $COMPREPLY.size() == 1
-assert $COMPREPLY[0] == 'echo\  ' : $COMPREPLY[0]
+assert $COMPREPLY[0] == 'echo\ ' : $COMPREPLY[0]
 
 $COMP_HOOK = function(m,s,c) => new Candidates(['echo\\\\\ '])
 complete -s -- "echo " &> /dev/null;
 assert $COMPREPLY.size() == 1
-assert $COMPREPLY[0] == 'echo\\\\\  '
+assert $COMPREPLY[0] == 'echo\\\\\ '
 
 
 ## invalid

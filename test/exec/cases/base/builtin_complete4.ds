@@ -161,10 +161,10 @@ $COMP_HOOK = function(ctx, words, c) => {
 $ex = 34
 try {
     for(var i = 0; $i < 2; $i++) {
-        complete -s -- 'ls ';  # never modify callback return value
+        complete -- 'ls ';  # never modify callback return value
     }
 } catch e { $ex = $e; }
 assert $ex is Int
-assert $COMPREPLY[0] == 'ABCD '
+assert $COMPREPLY[0] == 'ABCD'
 
 true

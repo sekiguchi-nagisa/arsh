@@ -140,7 +140,6 @@ public:
 
 struct DoCodeCompletionOption {
   CodeCompOp op;
-  bool insertSpace;
   bool putDesc;
 };
 

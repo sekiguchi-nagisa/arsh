@@ -449,6 +449,7 @@ static int builtin_complete(ARState &state, ArrayObject &argvObj) {
 
   DoCodeCompletionOption option{};
   bool show = true;
+  bool insertSpace = false;
   StringRef moduleDesc;
   GetOptState optState(":A:m:dqsh");
   for (int opt; (opt = optState(argvObj)) != -1;) {
@@ -469,7 +470,7 @@ static int builtin_complete(ARState &state, ArrayObject &argvObj) {
       show = false;
       break;
     case 's':
-      option.insertSpace = true;
+      insertSpace = true;
       break;
     case 'd':
       option.putDesc = true;
@@ -497,11 +498,17 @@ static int builtin_complete(ARState &state, ArrayObject &argvObj) {
   }
   if (show) {
     int errNum = 0;
+    std::string out;
     const CandidatesWrapper wrapper(
         toObjPtr<ArrayObject>(state.getGlobal(BuiltinVarOffset::COMPREPLY)));
     const unsigned int size = wrapper.size();
     for (unsigned int i = 0; i < size; i++) {
-      errNum = writeLine(wrapper.getCandidateAt(i), stdout, false);
+      out.clear();
+      out += wrapper.getCandidateAt(i);
+      if (insertSpace && wrapper.getAttrAt(i).needSpace) {
+        out += ' ';
+      }
+      errNum = writeLine(out, stdout, false);
       if (errNum != 0) {
         break;
       }

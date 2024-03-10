@@ -58,7 +58,7 @@ static BuiltinCmdDesc table[] = {
      "    Options:\n"
      "      -d    may put description of completion candidate\n"
      "      -q    does not show completion candidates\n"
-     "      -s    if completion candidate just one, may put space to suffix\n"
+     "      -s    may put space to completion candidate suffix\n"
      "      -m    complete in specified module context\n"
      "      -A    show completion candidates via ACTION\n"
      "\n"

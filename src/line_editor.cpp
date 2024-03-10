@@ -1065,12 +1065,12 @@ ssize_t LineEditorObject::readline(ARState &state, StringRef prompt, char *buf, 
   return this->editLine(state, prompt, buf, bufLen);
 }
 
-static bool insertCandidate(LineBuffer &buf, const StringRef inserting, bool suffixSpace) {
-  buf.commitLastChange();
+static bool insertCandidate(LineBuffer &buf, const StringRef inserting, const bool suffixSpace) {
   bool s = buf.insertToCursor(inserting, true);
   if (s && suffixSpace) {
     s = buf.insertToCursor(" ", true);
   }
+  buf.commitLastChange();
   return s;
 }
 
@@ -1087,9 +1087,11 @@ EditActionStatus LineEditorObject::completeLine(ARState &state, struct linenoise
   }
 
   StringRef inserting = candidates.getCommonPrefixStr();
+  ls.buf.commitLastChange();
   const size_t offset = ls.buf.resolveInsertingSuffix(inserting, candidates.size() == 1);
-  if (candidates.size() > 0 && !inserting.empty()) {
-    if (ls.buf.insertToCursor(inserting)) {
+  if (const auto size = candidates.size(); size > 0) {
+    const bool needSpace = size == 1 && candidates.getAttrAt(0).needSpace;
+    if (insertCandidate(ls.buf, inserting, needSpace)) {
       this->refreshLine(ls);
     } else {
       return EditActionStatus::ERROR;
@@ -1152,7 +1154,6 @@ EditActionStatus LineEditorObject::completeLine(ARState &state, struct linenoise
 
 END:
   const int old = errno;
-  ls.buf.commitLastChange();
   this->refreshLine(ls); // clear pager
   errno = old;
   return status;

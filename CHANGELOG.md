@@ -55,6 +55,9 @@
     - also change ``COMP_HOOK`` type with ``((Module, [String], Int) -> Candidates?)?``
 - **Breaking Change**: change ``LineEditor#setCompletion`` signature
     - now accept ``((Module, String) -> Candidates)?``
+- **Breaking Change**: change builtin ``complete`` command ``-s`` option behavior
+    - not insert suffix space to candidates (but print space)
+    - print space even if multiple candidates
 - ``Error`` type constructor now accept `0` status
 - builtin ``complete`` command put completion candidate description via ``-d`` option
     - put type-signature of variable/field/function/method

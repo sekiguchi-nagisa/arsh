@@ -619,7 +619,6 @@ int doCodeCompletion(ARState &st, const StringRef modDesc, const DoCodeCompletio
 
   DefaultCompConsumer consumer(st, option.putDesc);
   const bool ret = completeImpl(st, resolvedMod, source, option.op, consumer);
-  const auto candidateKind = consumer.getKind();
   st.setGlobal(BuiltinVarOffset::COMPREPLY, std::move(consumer).finalize()); // override COMPREPLY
 
   // check space insertion
@@ -635,13 +634,6 @@ int doCodeCompletion(ARState &st, const StringRef modDesc, const DoCodeCompletio
   }
   const size_t size = wrapper.size();
   assert(size <= ArrayObject::MAX_SIZE);
-  if (option.insertSpace && size == 1 && needSpace(wrapper.getCandidateAt(0), candidateKind)) {
-    assert(size == 1);
-    auto v = wrapper.getCandidateAt(0).toString();
-    v += " ";
-    wrapper.pop();
-    wrapper.addAsCandidate(st, Value::createStr(std::move(v)), false); // FIXME:
-  }
   return static_cast<int>(size);
 }
 

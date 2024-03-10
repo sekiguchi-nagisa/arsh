@@ -161,6 +161,16 @@ TEST_F(InteractiveTest, tab2) {
   ASSERT_NO_FATAL_FAILURE(this->expectRegex(".+RC_VAR"));
   this->send("\r");
   ASSERT_NO_FATAL_FAILURE(this->expectRegex(".+: String = rc file.+"));
+
+  ASSERT_NO_FATAL_FAILURE(this->changePrompt("> "));
+  this->send("shct\t");
+  ASSERT_NO_FATAL_FAILURE(this->expect("> shctl "));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(""));
+
+  this->send("shctl\t");
+  ASSERT_NO_FATAL_FAILURE(this->expect("> shctl "));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(""));
+
   this->send(CTRL_D);
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
 }
