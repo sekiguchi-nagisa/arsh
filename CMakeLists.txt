@@ -202,8 +202,7 @@ set(BIN_NAME arsh)
 
 include_directories(src)
 include_directories(include)
-include_directories(/usr/local/include) # for osx Catalina
-include_directories(/opt/homebrew/include) # for mac m1
+include_directories(${PCRE2_INCLUDE_DIR})
 
 set(ARSH_SRC
         src/arsh.cpp
