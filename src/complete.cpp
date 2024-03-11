@@ -101,6 +101,60 @@ std::string CompCandidate::formatTypeSignature(TypePool &pool) const {
   return ret;
 }
 
+static bool endsWithUnquoteSpace(StringRef ref) {
+  if (!ref.endsWith(" ")) {
+    return false;
+  }
+  ref.removeSuffix(1);
+  unsigned int count = 0;
+  while (ref.endsWith("\\")) {
+    count++;
+    ref.removeSuffix(1);
+  }
+  return count % 2 == 0;
+}
+
+bool CompCandidate::needSuffixSpace(const StringRef value, const CompCandidateKind kind) {
+  if (value.empty()) {
+    return false;
+  }
+  switch (kind) {
+  case CompCandidateKind::COMMAND_NAME:
+    break;
+  case CompCandidateKind::COMMAND_NAME_PART:
+  case CompCandidateKind::COMMAND_ARG:
+  case CompCandidateKind::COMMAND_TILDE:
+  case CompCandidateKind::USER_SPECIFIED:
+    if (value.back() == '/') {
+      return false;
+    }
+    if (kind == CompCandidateKind::USER_SPECIFIED) {
+      return !endsWithUnquoteSpace(value);
+    }
+    break;
+  case CompCandidateKind::ENV_NAME:
+  case CompCandidateKind::VALID_ENV_NAME:
+  case CompCandidateKind::USER:
+  case CompCandidateKind::GROUP:
+    break;
+  case CompCandidateKind::VAR:
+  case CompCandidateKind::PARAM:
+    return false;
+  case CompCandidateKind::VAR_IN_CMD_ARG:
+  case CompCandidateKind::SIGNAL:
+    break;
+  case CompCandidateKind::FIELD:
+  case CompCandidateKind::METHOD:
+  case CompCandidateKind::UNINIT_METHOD:
+    return false;
+  case CompCandidateKind::KEYWORD:
+    break;
+  case CompCandidateKind::TYPE:
+    return false;
+  }
+  return true;
+}
+
 // ###########################
 // ##     CodeCompleter     ##
 // ###########################

@@ -303,63 +303,10 @@ bool RuntimeCancelToken::operator()() {
   return s;
 }
 
-static bool endsWithUnquoteSpace(StringRef ref) {
-  if (!ref.endsWith(" ")) {
-    return false;
-  }
-  ref.removeSuffix(1);
-  unsigned int count = 0;
-  while (ref.endsWith("\\")) {
-    count++;
-    ref.removeSuffix(1);
-  }
-  return count % 2 == 0;
-}
-
-static bool needSpace(const StringRef first, CompCandidateKind kind) {
-  switch (kind) {
-  case CompCandidateKind::COMMAND_NAME:
-    break;
-  case CompCandidateKind::COMMAND_NAME_PART:
-  case CompCandidateKind::COMMAND_ARG:
-  case CompCandidateKind::COMMAND_TILDE:
-  case CompCandidateKind::COMMAND_ARG_NO_QUOTE:
-    if (first.back() == '/') {
-      return false;
-    }
-    if (kind == CompCandidateKind::COMMAND_ARG_NO_QUOTE) {
-      return !endsWithUnquoteSpace(first);
-    }
-    break;
-  case CompCandidateKind::ENV_NAME:
-  case CompCandidateKind::VALID_ENV_NAME:
-  case CompCandidateKind::USER:
-  case CompCandidateKind::GROUP:
-    break;
-  case CompCandidateKind::VAR:
-  case CompCandidateKind::PARAM:
-    return false;
-  case CompCandidateKind::VAR_IN_CMD_ARG:
-    break;
-  case CompCandidateKind::SIGNAL:
-    break;
-  case CompCandidateKind::FIELD:
-  case CompCandidateKind::METHOD:
-  case CompCandidateKind::UNINIT_METHOD:
-    return false;
-  case CompCandidateKind::KEYWORD:
-    break;
-  case CompCandidateKind::TYPE:
-    return false;
-  }
-  return true;
-}
-
 class DefaultCompConsumer : public CompCandidateConsumer {
 private:
   ARState &state;
   CandidatesWrapper reply;
-  CompCandidateKind kind{CompCandidateKind::COMMAND_NAME};
   bool overflow{false};
   const bool putDesc;
 
@@ -371,10 +318,9 @@ public:
     if (this->overflow) {
       return; // do nothing
     }
-    this->kind = candidate.kind;
-    const bool needSpace = arsh::needSpace(candidate.value, candidate.kind);
+    const bool needSpace = candidate.needSuffixSpace();
     if (this->putDesc) {
-      if (this->kind == CompCandidateKind::COMMAND_NAME) {
+      if (candidate.kind == CompCandidateKind::COMMAND_NAME) {
         const char *desc = "";
         auto kind = CandidateAttr::Kind::NONE;
         switch (candidate.getCmdNameType()) {
@@ -418,11 +364,8 @@ public:
       if (!this->reply.addAll(this->state, o)) {
         this->overflow = true;
       }
-      this->kind = CompCandidateKind::COMMAND_ARG_NO_QUOTE;
     }
   }
-
-  CompCandidateKind getKind() const { return this->kind; }
 
   ObjPtr<ArrayObject> finalize() && {
     this->reply.sortAndDedup(0);

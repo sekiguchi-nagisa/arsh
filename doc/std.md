@@ -367,7 +367,9 @@ function size(): Int for Candidates
 
 function %OP_GET(index: Int): String for Candidates
 
-function add(can: String, desc: String?): Candidates for Candidates
+function hasSpace(index: Int): Bool for Candidates
+
+function add(can: String, desc: String?, space: Int?): Candidates for Candidates
 
 function addAll(other: Candidates): Candidates for Candidates
 ```

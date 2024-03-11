@@ -121,9 +121,10 @@ public:
    * must be String
    * @param description
    * must be String or invalid
+   * @param needSpace
    * @return
    */
-  bool addNewCandidate(ARState &state, Value &&candidate, Value &&description);
+  bool addNewCandidate(ARState &state, Value &&candidate, Value &&description, bool needSpace);
 
   bool addNewCandidateWith(ARState &state, StringRef candidate, StringRef description,
                            CandidateAttr attr);

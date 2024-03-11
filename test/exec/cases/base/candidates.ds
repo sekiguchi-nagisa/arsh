@@ -47,6 +47,29 @@ assert $can2[2] == 'bbb'
 assert "$can2" == 'ddd@help aaa bbb@dummy'
 assert $can2 as String == '[ddd@help, aaa, bbb@dummy]'
 
+## suffix space
+var can3 : Candidates
+$can3.add('echo ', $space: 0)  # always nospace
+assert ! $can3.hasSpace(0)
+$can3.add('echo ', $space: 1)  # always space
+assert $can3.hasSpace(1)
+$can3.add('echo ', $space: -1) # auto-detect (if suffix is space, not insert space)
+assert ! $can3.hasSpace(2)
+$can3.add('echo ')
+assert ! $can3.hasSpace(3)
+$can3.add('./')  # auto-detect (if suffix is /, not insert space even if escaped)
+assert ! $can3.hasSpace(4)
+$can3.add('.\/')  # auto-detect (if suffix is /, not insert space even if escaped)
+assert ! $can3.hasSpace(5)
+
+$can3 = new Candidates()
+$can3.add('echo\ ')  # escape last space
+assert $can3.hasSpace(0)
+$can3.add('echo \\ ')  # has last space
+assert ! $can3.hasSpace(1)
+$can3.add('echo\\\\\ ') # escape last space
+assert $can3.hasSpace(2)
+
 ## too large candidates
 printf -v var "%*s" 2147483640 aa
 let large = $reply.remove('var')!

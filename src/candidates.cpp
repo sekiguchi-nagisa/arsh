@@ -41,16 +41,17 @@ bool CandidatesWrapper::addAsCandidate(ARState &state, const Value &value, bool 
   return this->add(state, withMeta(value, {CandidateAttr::Kind::NONE, needSpace}));
 }
 
-bool CandidatesWrapper::addNewCandidate(ARState &state, Value &&candidate, Value &&description) {
+bool CandidatesWrapper::addNewCandidate(ARState &state, Value &&candidate, Value &&description,
+                                        bool needSpace) {
   assert(candidate.hasStrRef());
   if (candidate.asStrRef().empty()) {
     return true;
   }
   if (description.isInvalid() || description.asStrRef().empty()) {
-    return this->addAsCandidate(state, candidate, false);
+    return this->addAsCandidate(state, candidate, needSpace);
   }
   return this->addNewCandidateWith(state, candidate.asStrRef(), description.asStrRef(),
-                                   {CandidateAttr::Kind::NONE, false});
+                                   {CandidateAttr::Kind::NONE, needSpace});
 }
 
 bool CandidatesWrapper::addNewCandidateWith(ARState &state, StringRef candidate,

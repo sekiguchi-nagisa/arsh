@@ -216,7 +216,7 @@ function _comp_wrap(file : String, target : String, words : [String], cursor : I
         if (test -e $line) {  # FIXME: more precise quote requirement checking
             $line = $line.quote()
         }
-        $ret.add($line)
+        $ret.add($line, $space: 0)  # suppress automatic space insertion due to bash-completion control space insertion
     }
     return $ret.size() == 0 ? $none : $ret
 }

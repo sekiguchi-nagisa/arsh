@@ -136,27 +136,40 @@ assert "$({ complete -q ';'; assert $COMPREPLY.size() != 0; })".empty();
 assert complete -s 'var';
 assert $COMPREPLY.size() == 1 && $COMPREPLY[0] == 'var'
 
-## -s option
+## space insertion (-s option)
 ### variable
 assert diff <(complete -s '$OSTYP') <(echo 'OSTYPE')
+assert { complete -q '$OSTYP'; ! $COMPREPLY.hasSpace(0); } # not insert space after variable
 assert diff <(complete -s '"$OSTYP') <(echo 'OSTYPE')
-assert diff <(complete -s 'echo $OSTY') <(echo 'OSTYPE ')
+assert { complete -q '"$OSTYP'; ! $COMPREPLY.hasSpace(0); } # not insert space after variable in string
+assert diff <(complete -s 'echo $OSTY') <(echo 'OSTYPE ')  
+assert { complete -q 'echo $OSTY'; $COMPREPLY.hasSpace(0); } # insert space in command argument
 ### env
 assert diff <(complete -s 'importenv SHLVL') <(echo 'SHLVL ')
+assert { complete -q 'importenv SHLVL'; $COMPREPLY.hasSpace(0); }  # insert space after env name
 ### member
 assert diff <(complete -s '1234.ab') <(echo 'abs')
+assert { complete -q '1234.ab'; ! $COMPREPLY.hasSpace(0); } # not insert space after field or method
 assert diff <(complete -s '(34,)._0') <(echo '_0')
+assert { complete -q '(34,)._0'; ! $COMPREPLY.hasSpace(0); } # not insert space after field or method
 ### type
 assert diff <(complete -s '1234 as Stri') <(echo 'String')
+assert { complete -q '1234 as Stri'; ! $COMPREPLY.hasSpace(0); } # not insert space after type
 ### keyword
 assert diff <(complete -s 'whil') <(echo 'while ')
+assert { complete -q 'whil'; $COMPREPLY.hasSpace(0); } # insert space after keyword
 assert diff <(complete -s 'for aaa i') <(echo 'in ')
+assert { complete -q 'for aaa i'; $COMPREPLY.hasSpace(0); }
 ### file name
 assert diff <(complete -s '/bi') <(echo 'bin/')
+assert { complete -q '/bi'; !$COMPREPLY.hasSpace(0); } # not insert space after dir
 assert diff <(complete -s 'echo /bi') <(echo 'bin/')
+assert { complete -q  'echo /bi'; !$COMPREPLY.hasSpace(0); } # not insert space after dir even if command argument
 if $OSTYPE !~ $/cygwin/i && $OSTYPE !~ $/msys/ {
     assert diff <(complete -s '~roo') <(echo '~root/')
+    assert { complete -q  '~roo'; !$COMPREPLY.hasSpace(0); }
     assert diff <(complete -s 'echo ~roo') <(echo '~root/')
+    assert { complete -q  'echo ~roo'; !$COMPREPLY.hasSpace(0); }
 }
 ### user-defined comp
 #### nospace
@@ -183,22 +196,22 @@ assert $COMPREPLY[0] == 'echo\\\\\ '
 
 
 ## invalid
-assert "$(complete -A 2>&1)" == "${$SCRIPT_NAME.basename()}:186: complete: -A: option requires argument"
+assert "$(complete -A 2>&1)" == "${$SCRIPT_NAME.basename()}:199: complete: -A: option requires argument"
 assert !complete -A
 assert $? == 1
 
-assert "$(complete -A hgorahe 2>&1)" == "${$SCRIPT_NAME.basename()}:190: complete: hgorahe: invalid action
+assert "$(complete -A hgorahe 2>&1)" == "${$SCRIPT_NAME.basename()}:203: complete: hgorahe: invalid action
 complete: complete [-A action] [-m descriptor] [-dqs] line"
 assert !complete -A fjairfaj
 assert $? == 2
 
-assert "$(complete -m $MODULE$'\000' 2>&1)" == "${$SCRIPT_NAME.basename()}:195: complete: ${MODULE}\x00: unrecognized module descriptor"
+assert "$(complete -m $MODULE$'\000' 2>&1)" == "${$SCRIPT_NAME.basename()}:208: complete: ${MODULE}\x00: unrecognized module descriptor"
 assert "$(complete -m $MODULE"3q4324" 2>&1)" == 
-    "${$SCRIPT_NAME.basename()}:196: complete: ${MODULE}3q4324: unrecognized module descriptor"
+    "${$SCRIPT_NAME.basename()}:209: complete: ${MODULE}3q4324: unrecognized module descriptor"
 assert !complete -m ${MODULE}3q4324
 assert $? == 1
-assert "$(complete -m 'TMD(34)' 2>&1)" == "${$SCRIPT_NAME.basename()}:200: complete: TMD(34): unrecognized module descriptor"
-assert "$(complete -m 'TMD(hoge)' 2>&1)" == "${$SCRIPT_NAME.basename()}:201: complete: TMD(hoge): unrecognized module descriptor"
+assert "$(complete -m 'TMD(34)' 2>&1)" == "${$SCRIPT_NAME.basename()}:213: complete: TMD(34): unrecognized module descriptor"
+assert "$(complete -m 'TMD(hoge)' 2>&1)" == "${$SCRIPT_NAME.basename()}:214: complete: TMD(hoge): unrecognized module descriptor"
 
 if (test -e /dev/full) {
     assert "$(complete '$(' 2>&1 > /dev/full)" =~ $/: complete: io error:.+/

@@ -14,12 +14,21 @@
 
 #### Builtin
 
-- add ``Candidates`` type for completion
+- add ``Candidates`` type for completion candidate pager
     - ``size``: get size of candidates
     - ``[]``: get candidate
+    - ``hasSpace``: check if candidate need space
     - ``add``: add new candidate
+        - also specify additional description via ``desc`` parameter
+        - specify space insertion behavior after candidate insertion via ``space`` parameter
+            - if ``space`` is 0, not insert space
+            - if ``space`` is 1 or more, force insert space
+            - otherwise, automatically insert space if needed
     - ``addAll``: add candidates from other
-- completion candidates pager in ``LineEditor`` show description of candidate (label or signature)
+- improve completion candidates pager in ``LineEditor``
+    - show description of candidate like fish
+    - also show type signature style description
+    - insert space after candidate even if candidate rotation
 
 ### Changed
 

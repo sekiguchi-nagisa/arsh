@@ -2567,13 +2567,27 @@ ARSH_METHOD candidates_get(RuntimeContext &ctx) {
   RET(Value::createStr(wrapper.getCandidateAt(value.index)));
 }
 
-//!bind: function add($this : Candidates, $can : String, $desc : Option<String>) : Candidates
+//!bind: function hasSpace($this: Candidates, $index: Int) : Bool
+ARSH_METHOD candidates_space(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(candidates_space);
+  CandidatesWrapper wrapper(toObjPtr<ArrayObject>(LOCAL(0)));
+  const size_t size = wrapper.size();
+  const auto index = LOCAL(1).asInt();
+  const auto value = TRY(resolveIndex(ctx, index, size));
+  RET_BOOL(wrapper.getAttrAt(value.index).needSpace);
+}
+
+//!bind: function add($this : Candidates, $can : String, $desc : Option<String>, $space : Option<Int>) : Candidates
 ARSH_METHOD candidates_add(RuntimeContext &ctx) {
   SUPPRESS_WARNING(candidates_add);
   CandidatesWrapper wrapper(toObjPtr<ArrayObject>(LOCAL(0)));
   auto candidate = LOCAL(1);
   auto description = LOCAL(2);
-  if (!wrapper.addNewCandidate(ctx, std::move(candidate), std::move(description))) {
+  const auto num = LOCAL(3).isInvalid() ? -1 : LOCAL(3).asInt();
+  const bool needSpace = num < 0 ? CompCandidate::needSuffixSpace(candidate.asStrRef(),
+                                                                  CompCandidateKind::USER_SPECIFIED)
+                                 : num > 0;
+  if (!wrapper.addNewCandidate(ctx, std::move(candidate), std::move(description), needSpace)) {
     RET_ERROR;
   }
   RET(LOCAL(0));

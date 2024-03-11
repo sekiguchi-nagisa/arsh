@@ -31,7 +31,7 @@ enum class CompCandidateKind : unsigned char {
   COMMAND_NAME_PART,
   COMMAND_ARG,
   COMMAND_TILDE,
-  COMMAND_ARG_NO_QUOTE,
+  USER_SPECIFIED,
   ENV_NAME,
   VALID_ENV_NAME,
   USER,
@@ -110,6 +110,10 @@ public:
   std::string quote() const;
 
   std::string formatTypeSignature(TypePool &pool) const;
+
+  bool needSuffixSpace() const { return needSuffixSpace(this->value, this->kind); }
+
+  static bool needSuffixSpace(StringRef value, CompCandidateKind kind);
 };
 
 class CompCandidateConsumer {
