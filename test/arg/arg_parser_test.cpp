@@ -37,8 +37,9 @@ public:
   TypePool &typePool() { return this->state->typePool; }
 
   const CLIRecordType &createRecordType(const char *typeName, ArgEntriesBuilder &&builder,
-                                        CLIRecordType::Attr attr = CLIRecordType::Attr::VERBOSE) {
-    return ::createRecordType(this->typePool(), typeName, std::move(builder), ModId{1}, attr);
+                                        CLIRecordType::Attr attr = CLIRecordType::Attr::VERBOSE,
+                                        const char *desc = "") {
+    return ::createRecordType(this->typePool(), typeName, std::move(builder), ModId{1}, attr, desc);
   }
 };
 
@@ -107,7 +108,7 @@ Options:
   -o, --output arg
   -d                enable debug
   -h, --help        show this help message)";
-  std::string v = ArgParser::create("cmd1", recordType.getEntries()).formatUsage("", true);
+  std::string v = createArgParser("cmd1", recordType).formatUsage("", true);
   ASSERT_EQ(help, v);
 }
 
@@ -174,7 +175,7 @@ TEST_F(ArgParserTest, opt) {
 Options:
   -d[file], --dump[=file]
   -h, --help               show this help message)";
-  std::string v = ArgParser::create("cmd1", recordType.getEntries()).formatUsage("", true);
+  std::string v = createArgParser("cmd1", recordType).formatUsage("", true);
   ASSERT_EQ(help, v);
 }
 
@@ -366,7 +367,8 @@ TEST_F(ArgParserTest, help) {
     e.setAttr(ArgEntryAttr::POSITIONAL);
   });
 
-  auto &recordType = this->createRecordType("type1", std::move(builder));
+  auto &recordType = this->createRecordType(
+      "type1", std::move(builder), CLIRecordType::Attr::VERBOSE, "this is a sample command line");
 
   //
   auto out = toObjPtr<BaseObject>(Value::create<BaseObject>(recordType));
@@ -380,6 +382,8 @@ TEST_F(ArgParserTest, help) {
   ASSERT_EQ(0, error->getStatus());
 
   const char *err = R"(Usage: cmd11 [output]
+
+this is a sample command line
 
 Options:
   -h, --help  show this help message)";
@@ -398,6 +402,8 @@ Options:
 
   err = R"(invalid option: -A
 Usage: cmd11 [output]
+
+this is a sample command line
 
 Options:
   -h, --help  show this help message)";

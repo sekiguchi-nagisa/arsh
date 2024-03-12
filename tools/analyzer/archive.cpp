@@ -104,7 +104,9 @@ void Archiver::add(const DSType &type) {
         assert(ret && isa<ModType>(ret));
         this->writeModId(cast<ModType>(ret)->getModId());
         if (type.typeKind() == TypeKind::CLIRecord) {
-          this->writeEnum(cast<CLIRecordType>(type).getAttr());
+          auto &cli = cast<CLIRecordType>(type);
+          this->writeEnum(cli.getAttr());
+          this->writeStr(cli.getDesc());
         }
 
         auto &recordType = cast<RecordType>(type);
@@ -301,11 +303,14 @@ const DSType *Unarchiver::unpackType() {
     std::string name = this->readStr();
     auto modId = this->readModId();
     CLIRecordType::Attr attr{};
+    std::string desc;
     if (k == ArchiveType::CLI_RECORD) {
       attr = this->readEnum<CLIRecordType::Attr>();
+      desc = this->readStr();
     }
-    auto ret = k == ArchiveType::RECORD ? TRY(this->pool.createRecordType(name, modId))
-                                        : TRY(this->pool.createCLIRecordType(name, modId, attr));
+    auto ret = k == ArchiveType::RECORD
+                   ? TRY(this->pool.createRecordType(name, modId))
+                   : TRY(this->pool.createCLIRecordType(name, modId, attr, std::move(desc)));
     uint32_t size = this->read32();
     std::unordered_map<std::string, HandlePtr> handles;
     for (unsigned int i = 0; i < size; i++) {

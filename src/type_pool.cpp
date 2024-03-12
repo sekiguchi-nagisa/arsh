@@ -334,9 +334,9 @@ TypeOrError TypePool::createRecordType(const std::string &typeName, ModId belong
 }
 
 TypeOrError TypePool::createCLIRecordType(const std::string &typeName, ModId belongedModId,
-                                          CLIRecordType::Attr attr) {
+                                          CLIRecordType::Attr attr, std::string &&desc) {
   std::string name = toQualifiedTypeName(typeName, belongedModId);
-  auto *type = this->newType<CLIRecordType>(name, this->get(TYPE::CLI), attr);
+  auto *type = this->newType<CLIRecordType>(name, this->get(TYPE::CLI), attr, std::move(desc));
   if (type) {
     return Ok(type);
   } else {

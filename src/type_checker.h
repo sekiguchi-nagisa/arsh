@@ -607,7 +607,10 @@ private:
 
   void checkAttributes(const std::vector<std::unique_ptr<AttributeNode>> &attrNodes, bool field);
 
-  void checkFieldAttributes(const VarDeclNode &varDeclNode);
+  std::tuple<bool, CLIRecordType::Attr, StringRef>
+  postCheckConstructorAttribute(const FunctionNode &node);
+
+  void postCheckFieldAttributes(const VarDeclNode &varDeclNode);
 
   void resolveArgEntry(std::unordered_set<std::string> &foundOptionSet, unsigned int offset,
                        const AttributeNode &attrNode, const VarDeclNode &declNode,

@@ -83,6 +83,14 @@ void TypeChecker::visitAttributeNode(AttributeNode &node) {
     if (!constNode) {
       continue;
     }
+
+    if (*p == Attribute::Param::DESC) { // check desc (due to cli attribute param)
+      assert(isa<StringNode>(*constNode));
+      if (StringRef(cast<StringNode>(*constNode).getValue()).hasNullChar()) {
+        this->reportError<NullCharAttrParam>(*constNode, key.getName().c_str());
+        continue;
+      }
+    }
     constNodes.push_back(std::move(constNode));
   }
   node.setResolvedParamSet(paramSet);
@@ -132,7 +140,44 @@ static std::string concatTypeNames(const TypePool &pool, const std::vector<TYPE>
   return value;
 }
 
-void TypeChecker::checkFieldAttributes(const VarDeclNode &varDeclNode) {
+std::tuple<bool, CLIRecordType::Attr, StringRef>
+TypeChecker::postCheckConstructorAttribute(const FunctionNode &node) {
+  assert(node.isConstructor());
+  bool hasCliAttr = false;
+  CLIRecordType::Attr attr{};
+  StringRef desc;
+  for (auto &e : node.getAttrNodes()) {
+    if (e->getAttrKind() != AttributeKind::CLI) {
+      continue;
+    }
+    hasCliAttr = true;
+    if (const auto index = e->findValidAttrParamIndex(Attribute::Param::VERBOSE); index != -1) {
+      if (cast<NumberNode>(*e->getConstNodes()[index]).getAsBoolValue()) {
+        setFlag(attr, CLIRecordType::Attr::VERBOSE);
+      } else {
+        unsetFlag(attr, CLIRecordType::Attr::VERBOSE);
+      }
+    }
+    if (const auto index = e->findValidAttrParamIndex(Attribute::Param::TOPLEVEL); index != -1) {
+      if (cast<NumberNode>(*e->getConstNodes()[index]).getAsBoolValue()) {
+        setFlag(attr, CLIRecordType::Attr::TOPLEVEL);
+      } else {
+        unsetFlag(attr, CLIRecordType::Attr::TOPLEVEL);
+      }
+    }
+    if (const auto index = e->findValidAttrParamIndex(Attribute::Param::DESC); index != -1) {
+      auto &constNode = *e->getConstNodes()[index];
+      assert(isa<StringNode>(constNode));
+      desc = cast<StringNode>(constNode).getValue();
+    }
+  }
+  if (hasCliAttr && !node.getParamNodes().empty()) {
+    this->reportError<CLIInitParam>(node.getNameInfo().getToken());
+  }
+  return {hasCliAttr, attr, desc};
+}
+
+void TypeChecker::postCheckFieldAttributes(const VarDeclNode &varDeclNode) {
   const bool privateField = StringRef(varDeclNode.getVarName()).startsWith("_");
   const bool readOnlyField = varDeclNode.getKind() == VarDeclNode::LET;
 
@@ -257,6 +302,7 @@ void TypeChecker::resolveArgEntry(std::unordered_set<std::string> &foundOptionSe
     switch (*param) {
     case Attribute::Param::TOPLEVEL:
     case Attribute::Param::VERBOSE:
+    case Attribute::Param::DESC:
       continue; // unreachable
     case Attribute::Param::HELP: {
       StringRef ref = cast<StringNode>(constNode).getValue();

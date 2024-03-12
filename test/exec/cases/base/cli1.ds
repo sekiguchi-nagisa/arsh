@@ -27,7 +27,8 @@ Options:
   -h, --help  show this help message"
 
 ## Flag/Option
-[<CLI(verbose: $true)>]
+[<CLI(verbose: $true, desc: "this is a sample
+program")>]
 typedef BBB() {
   [<Flag(
       short: "d", long: "debug", 
@@ -54,6 +55,9 @@ assert (new BBB()) is CLI
 var bb = new BBB()
 $bb.setName('cmd2')
 assert $bb.usage() == "Usage: cmd2 [OPTIONS]
+
+this is a sample
+program
 
 Options:
   -d, --debug        enable debug mode

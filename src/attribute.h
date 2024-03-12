@@ -29,6 +29,7 @@
 #define EACH_ATTRIBUTE_PARAM(OP)                                                                   \
   OP(TOPLEVEL, "toplevel", TYPE::Bool)                                                             \
   OP(VERBOSE, "verbose", TYPE::Bool)                                                               \
+  OP(DESC, "desc", TYPE::String)                                                                   \
   OP(HELP, "help", TYPE::String)                                                                   \
   OP(SHORT, "short", TYPE::String)                                                                 \
   OP(LONG, "long", TYPE::String)                                                                   \

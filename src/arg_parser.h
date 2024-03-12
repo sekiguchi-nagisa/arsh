@@ -22,6 +22,10 @@
 
 namespace arsh {
 
+inline ArgParser createArgParser(StringRef cmdName, const CLIRecordType &type) {
+  return ArgParser::create(cmdName, type.getEntries(), type.getDesc());
+}
+
 class RequiredOptionSet {
 private:
   /**

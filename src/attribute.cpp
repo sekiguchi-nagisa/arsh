@@ -83,6 +83,7 @@ AttributeMap AttributeMap::create() {
                   {
                       Attribute::Param::TOPLEVEL,
                       Attribute::Param::VERBOSE,
+                      Attribute::Param::DESC,
                   },
                   {});
   defineAttribute(values, AttributeKind::FLAG, Attribute::Loc::FIELD,

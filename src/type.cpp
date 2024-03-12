@@ -226,8 +226,11 @@ HandlePtr RecordType::lookupField(const std::string &fieldName) const {
 // ##     CLIRecordType     ##
 // ###########################
 
-CLIRecordType::CLIRecordType(unsigned int id, StringRef ref, const DSType &superType, Attr attr)
-    : RecordType(TypeKind::CLIRecord, id, ref, superType) {
+// for not export ArgEntry definition to type.h
+
+CLIRecordType::CLIRecordType(unsigned int id, StringRef ref, const DSType &superType, Attr attr,
+                             std::string &&desc)
+    : RecordType(TypeKind::CLIRecord, id, ref, superType), desc(std::move(desc)) {
   this->setExtraAttr(toUnderlying(attr));
 }
 

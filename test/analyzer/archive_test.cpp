@@ -825,7 +825,7 @@ TEST_F(ArchiveTest, argEntry) {
         });
 
     auto &recordType = createRecordType(ctx.getPool(), "type1", std::move(builder), ctx.getModId(),
-                                        CLIRecordType::Attr::VERBOSE);
+                                        CLIRecordType::Attr::VERBOSE, "sample program");
     ASSERT_EQ(6, recordType.getEntries().size());
     auto ret = ctx.getScope()->defineTypeAlias(ctx.getPool(), "type1", recordType);
     ASSERT_TRUE(ret);
@@ -841,6 +841,7 @@ TEST_F(ArchiveTest, argEntry) {
   auto &entries = recordType.getEntries();
   ASSERT_EQ(6, entries.size());
   ASSERT_EQ(CLIRecordType::Attr::VERBOSE, recordType.getAttr());
+  ASSERT_EQ("sample program", recordType.getDesc());
 
   // -e --enable
   ASSERT_EQ(1, entries[0].getFieldOffset());

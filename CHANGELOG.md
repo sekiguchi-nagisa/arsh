@@ -57,6 +57,8 @@
   for a in "123" as String? { echo $a; }
   ```
 - pass fully qualified command name to ``COMP_HOOK`` for user-defined command
+- add ``desc`` parameter to ``CLI`` attribute
+    - now show command line description message
 
 #### Builtin
 

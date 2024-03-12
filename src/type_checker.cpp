@@ -2027,7 +2027,7 @@ void TypeChecker::checkTypeVarDecl(VarDeclNode &node, bool willBeField) {
 
     // check attribute type
     if (!node.getAttrNodes().empty()) {
-      this->checkFieldAttributes(node);
+      this->postCheckFieldAttributes(node);
     }
     break;
   }
@@ -2140,40 +2140,10 @@ void TypeChecker::registerRecordType(FunctionNode &node) {
   assert(node.isConstructor());
 
   // check CLI attribute
-  bool cli = false;
-  CLIRecordType::Attr attr{};
-  if (!node.getAttrNodes().empty()) {
-    for (auto &e : node.getAttrNodes()) {
-      if (e->getAttrKind() == AttributeKind::CLI) {
-        cli = true;
-        if (const auto index = e->findValidAttrParamIndex(Attribute::Param::VERBOSE); index != -1) {
-          if (cast<NumberNode>(*e->getConstNodes()[index]).getAsBoolValue()) {
-            setFlag(attr, CLIRecordType::Attr::VERBOSE);
-          } else {
-            unsetFlag(attr, CLIRecordType::Attr::VERBOSE);
-          }
-        }
-        if (const auto index = e->findValidAttrParamIndex(Attribute::Param::TOPLEVEL);
-            index != -1) {
-          if (cast<NumberNode>(*e->getConstNodes()[index]).getAsBoolValue()) {
-            setFlag(attr, CLIRecordType::Attr::TOPLEVEL);
-          } else {
-            unsetFlag(attr, CLIRecordType::Attr::TOPLEVEL);
-          }
-        }
-      } else {
-        cli = false;
-      }
-      break;
-    }
-  }
-  if (cli && !node.getParamNodes().empty()) {
-    cli = false;
-    this->reportError<CLIInitParam>(node.getNameInfo().getToken());
-  }
-
+  auto [cli, attr, desc] = this->postCheckConstructorAttribute(node);
   auto typeOrError =
-      cli ? this->typePool().createCLIRecordType(node.getFuncName(), this->curScope->modId, attr)
+      cli ? this->typePool().createCLIRecordType(node.getFuncName(), this->curScope->modId, attr,
+                                                 desc.toString())
           : this->typePool().createRecordType(node.getFuncName(), this->curScope->modId);
   if (typeOrError) {
     auto &recordType = *typeOrError.asOk();

@@ -689,10 +689,10 @@ static std::string generateConstructorInfo(const TypePool &pool, const FunctionN
   }
   value += "}";
   if (isa<CLIRecordType>(node.getResolvedType())) {
-    auto &entries = cast<CLIRecordType>(node.getResolvedType())->getEntries();
-    if (!entries.empty()) {
+    auto &type = cast<CLIRecordType>(*node.getResolvedType());
+    if (auto &entries = type.getEntries(); !entries.empty()) {
       value += "---"; // dummy
-      value += ArgParser::create("", entries).formatUsage("", true);
+      value += ArgParser::create("", entries, type.getDesc()).formatUsage("", true);
     }
   }
   return value;
@@ -790,10 +790,10 @@ void SymbolIndexer::visitUserDefinedCmdImpl(UserDefinedCmdNode &node, const Func
           } else {
             cliName = node.getCmdName();
           }
-          auto &entries = cast<CLIRecordType>(exprType).getEntries();
-          if (!entries.empty()) {
+          auto &cliType = cast<CLIRecordType>(exprType);
+          if (auto &entries = cliType.getEntries(); !entries.empty()) {
             hover += "---"; // dummy
-            hover += ArgParser::create(cliName, entries).formatUsage("", true);
+            hover += ArgParser::create(cliName, entries, cliType.getDesc()).formatUsage("", true);
           }
         }
       }

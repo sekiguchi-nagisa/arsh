@@ -174,6 +174,10 @@ std::string ArgParser::formatUsage(StringRef message, bool verbose) const {
       }
     }
     out += "\n\n";
+    if(!this->desc.empty()) {
+      out += this->desc;
+      out += "\n\n";
+    }
     this->formatOptions(out);
   } else {
     out += "See `";

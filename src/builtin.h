@@ -2406,8 +2406,7 @@ ARSH_METHOD cli_usage(RuntimeContext &ctx) {
   StringRef message = LOCAL(1).isInvalid() ? "" : LOCAL(1).asStrRef();
   bool verbose = LOCAL(2).isInvalid() ? true : LOCAL(2).asBool();
   auto &type = cast<CLIRecordType>(ctx.typePool.get(obj.getTypeID()));
-  auto value =
-      ArgParser::create(obj[0].asStrRef(), type.getEntries()).formatUsage(message, verbose);
+  auto value = createArgParser(obj[0].asStrRef(), type).formatUsage(message, verbose);
   RET(Value::createStr(std::move(value)));
 }
 

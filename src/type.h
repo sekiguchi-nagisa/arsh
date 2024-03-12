@@ -674,10 +674,14 @@ public:
 private:
   friend class TypePool;
 
+  std::string desc; // for description of cli
   std::vector<ArgEntry> entries;
 
 public:
-  CLIRecordType(unsigned int id, StringRef ref, const DSType &superType, Attr attr);
+  CLIRecordType(unsigned int id, StringRef ref, const DSType &superType, Attr attr,
+                std::string &&desc);
+
+  const auto &getDesc() const { return this->desc; }
 
   const auto &getEntries() const { return this->entries; }
 

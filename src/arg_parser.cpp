@@ -98,8 +98,7 @@ static bool checkRequireOrPositionalArgs(ARState &state, const ArgParser &parser
       StringRef arg = *begin;
       ++begin;
       if (e.isRemainArg() && out[e.getFieldOffset()].isInvalid()) {
-        out[e.getFieldOffset()] =
-            Value::create<ArrayObject>(state.typePool.get(TYPE::StringArray));
+        out[e.getFieldOffset()] = Value::create<ArrayObject>(state.typePool.get(TYPE::StringArray));
       }
       if (e.isRemainArg()) {
         auto &obj = typeAs<ArrayObject>(out[e.getFieldOffset()]);
@@ -130,9 +129,8 @@ static bool checkRequireOrPositionalArgs(ARState &state, const ArgParser &parser
 }
 
 CLIParseResult parseCommandLine(ARState &state, const ArrayObject &args, BaseObject &out) {
-  auto &type = state.typePool.get(out.getTypeID());
-  assert(isa<CLIRecordType>(type));
-  auto instance = ArgParser::create(out[0].asStrRef(), cast<CLIRecordType>(type).getEntries());
+  auto &type = cast<CLIRecordType>(state.typePool.get(out.getTypeID()));
+  auto instance = createArgParser(out[0].asStrRef(), type);
 
   const auto begin = StrArrayIter(args.getValues().begin());
   auto iter = begin;

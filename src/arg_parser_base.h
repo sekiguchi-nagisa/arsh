@@ -192,22 +192,23 @@ class ArgParser : public OptParser<ArgEntryIndex, ArgEntry> {
 private:
   using parser = OptParser<ArgEntryIndex, ArgEntry>;
 
-  StringRef cmdName;
+  const StringRef cmdName;
   const std::vector<ArgEntry> &entries;
+  const StringRef desc;
 
 public:
-  static ArgParser create(StringRef cmdName, const std::vector<ArgEntry> &entries) {
+  static ArgParser create(StringRef cmdName, const std::vector<ArgEntry> &entries, StringRef desc) {
     size_t index = 0;
     for (; index < entries.size(); index++) {
       if (!entries[index].isOption()) {
         break;
       }
     }
-    return {cmdName, entries, index};
+    return {cmdName, entries, index, desc};
   }
 
-  ArgParser(StringRef cmdName, const std::vector<ArgEntry> &entries, size_t size)
-      : OptParser(size, entries.data()), cmdName(cmdName), entries(entries) {}
+  ArgParser(StringRef cmdName, const std::vector<ArgEntry> &entries, size_t size, StringRef desc)
+      : OptParser(size, entries.data()), cmdName(cmdName), entries(entries), desc(desc) {}
 
   const auto &getEntries() const { return this->entries; }
 
