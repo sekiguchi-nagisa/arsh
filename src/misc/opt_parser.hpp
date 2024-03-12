@@ -263,11 +263,11 @@ public:
   template <typename Iter>
   OptParseResult<T> operator()(Iter &begin, Iter end);
 
-  void formatOptions(std::string &out) const;
+  bool formatOptions(std::string &out, size_t limit) const;
 
   std::string formatOptions() const {
     std::string value;
-    this->formatOptions(value);
+    this->formatOptions(value, value.max_size());
     return value;
   }
 
@@ -408,8 +408,15 @@ OptParseResult<T> OptParser<T, U>::matchShortOption(Iter &begin, Iter end) {
   return OptParseResult<T>::undef(shortName);
 }
 
+#define TRY_APPEND(S, O)                                                                           \
+  do {                                                                                             \
+    if (!checkedAppend(S, limit, O)) {                                                             \
+      return false;                                                                                \
+    }                                                                                              \
+  } while (false)
+
 template <typename T, typename U>
-void OptParser<T, U>::formatOptions(std::string &value) const {
+bool OptParser<T, U>::formatOptions(std::string &value, const size_t limit) const {
   unsigned int maxLenOfUsage = 0;
 
   // compute usage len
@@ -425,29 +432,34 @@ void OptParser<T, U>::formatOptions(std::string &value) const {
 
   // format option list message
   std::vector<StringRef> details;
-  value += "Options:";
+  TRY_APPEND("Options:", value);
   for (unsigned int i = 0; i < this->size; i++) {
     const auto &option = this->options[i];
-    value += "\n  ";
+    TRY_APPEND("\n  ", value);
     auto usage = option.getUsage();
-    value += usage;
+    TRY_APPEND(usage, value);
 
     option.splitDetails(details);
     if (!details.empty()) {
-      value.append(maxLenOfUsage - usage.size(), ' ');
+      std::string pad;
+      pad.resize(maxLenOfUsage - usage.size(), ' ');
+      TRY_APPEND(pad, value);
     }
     unsigned int count = 0;
     for (auto &detail : details) {
       if (count++ > 0) {
-        value += "\n";
-        value += spaces;
-        value += "  ";
+        TRY_APPEND('\n', value);
+        TRY_APPEND(spaces, value);
+        TRY_APPEND("  ", value);
       }
-      value += "  ";
-      value += detail;
+      TRY_APPEND("  ", value);
+      TRY_APPEND(detail, value);
     }
   }
+  return true;
 }
+
+#undef TRY_APPEND
 
 END_MISC_LIB_NAMESPACE_DECL
 

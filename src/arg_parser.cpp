@@ -49,6 +49,15 @@ static bool verboseUsage(const ARState &st, const BaseObject &out) {
   return hasFlag(cast<CLIRecordType>(type).getAttr(), CLIRecordType::Attr::VERBOSE);
 }
 
+static void raiseCLIUsage(ARState &state, const ArgParser &parser, const StringRef message,
+                          bool verbose, int status) {
+  if (auto ret = parser.formatUsage(message, verbose); ret.hasValue()) {
+    raiseError(state, TYPE::CLIError, std::move(ret.unwrap()), status);
+  } else {
+    raiseStringLimit(state);
+  }
+}
+
 static bool checkAndSetArg(ARState &state, const ArgParser &parser, const ArgEntry &entry,
                            StringRef arg, bool shortOpt, BaseObject &out) {
   int64_t v = 0;
@@ -61,8 +70,7 @@ static bool checkAndSetArg(ARState &state, const ArgParser &parser, const ArgEnt
     }
     return true;
   } else {
-    err = parser.formatUsage(err, verboseUsage(state, out));
-    raiseError(state, TYPE::CLIError, std::move(err), 1);
+    raiseCLIUsage(state, parser, err, verboseUsage(state, out), 1);
     return false;
   }
 }
@@ -88,8 +96,7 @@ static bool checkRequireOrPositionalArgs(ARState &state, const ArgParser &parser
         err += l;
       }
       err += " option";
-      err = parser.formatUsage(err, verbose);
-      raiseError(state, TYPE::CLIError, std::move(err), 1);
+      raiseCLIUsage(state, parser, err, verbose, 1);
       return false;
     }
 
@@ -120,8 +127,7 @@ static bool checkRequireOrPositionalArgs(ARState &state, const ArgParser &parser
       std::string err = "require `";
       err += e.getArgName();
       err += "' argument";
-      err = parser.formatUsage(err, verbose);
-      raiseError(state, TYPE::CLIError, std::move(err), 1);
+      raiseCLIUsage(state, parser, err, verbose, 1);
       return false;
     }
   }
@@ -174,13 +180,11 @@ CLIParseResult parseCommandLine(ARState &state, const ArrayObject &args, BaseObj
   }
   if (ret.isError()) {
     auto v = ret.formatError();
-    v = instance.formatUsage(v, verboseUsage(state, out));
-    raiseError(state, TYPE::CLIError, std::move(v), 2);
+    raiseCLIUsage(state, instance, v, verboseUsage(state, out), 2);
     goto END;
   }
   if (help) {
-    auto v = instance.formatUsage("", true);
-    raiseError(state, TYPE::CLIError, std::move(v), 0);
+    raiseCLIUsage(state, instance, "", true, 0);
     goto END;
   }
   assert(ret.isEnd());

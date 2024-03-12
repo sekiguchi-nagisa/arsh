@@ -278,7 +278,7 @@ static bool readAsStr(ARState &state, int fd, Value &ret) {
       break;
     }
     if (unlikely(!checkedAppend(StringRef(buf, readSize), StringObject::MAX_SIZE, str))) {
-      raiseError(state, TYPE::OutOfRangeError, ERROR_STRING_LIMIT);
+      raiseStringLimit(state);
       return false;
     }
   }
@@ -333,7 +333,7 @@ static bool readAsStrArray(ARState &state, int fd, Value &ret) {
         continue;
       }
       if (unlikely(str.size() == StringObject::MAX_SIZE)) {
-        raiseError(state, TYPE::OutOfRangeError, ERROR_STRING_LIMIT);
+        raiseStringLimit(state);
         return false;
       }
       str += ch;
@@ -1890,6 +1890,9 @@ bool VM::mainLoop(ARState &state) {
         auto &obj = typeAs<BaseObject>(value);
         auto &args = typeAs<ArrayObject>(state.stack.getLocal(UDC_PARAM_ARGV));
         if (!parseCommandLine(state, args, obj)) {
+          if (!state.typePool.get(state.stack.getThrownObject()->getTypeID()).is(TYPE::CLIError)) {
+            vmerror; // propagate other error
+          }
           auto error = state.stack.takeThrownObject();
           showCommandLineUsage(*error);
           TRY(returnFromUserDefinedCommand(state, error->getStatus()));

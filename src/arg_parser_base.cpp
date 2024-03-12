@@ -17,6 +17,7 @@
 #include <algorithm>
 
 #include "arg_parser_base.h"
+#include "constant.h"
 #include "misc/num_util.hpp"
 
 namespace arsh {
@@ -129,11 +130,20 @@ bool ArgEntry::checkArg(StringRef arg, bool shortOpt, int64_t &out, std::string 
 // ##     ArgParser     ##
 // #######################
 
-std::string ArgParser::formatUsage(StringRef message, bool verbose) const {
+#define TRY(E)                                                                                     \
+  do {                                                                                             \
+    if (unlikely(!(E))) {                                                                          \
+      goto ERROR;                                                                                  \
+    }                                                                                              \
+  } while (false)
+
+#define TRY_APPEND(S, O) TRY(checkedAppend(S, SYS_LIMIT_STRING_MAX, O))
+
+Optional<std::string> ArgParser::formatUsage(StringRef message, bool verbose) const {
   std::string out;
   if (!message.empty()) {
-    out += message;
-    out += '\n';
+    TRY_APPEND(message, out);
+    TRY_APPEND('\n', out);
   }
 
   if (verbose) {
@@ -142,49 +152,53 @@ std::string ArgParser::formatUsage(StringRef message, bool verbose) const {
     for (auto &e : this->entries) {
       if (e.isHelp()) {
         continue;
-      } else if (e.isOption()) {
+      }
+      if (e.isOption()) {
         optCount++;
       } else {
         argCount++;
       }
     }
 
-    out += "Usage: ";
-    out += this->cmdName;
+    TRY_APPEND("Usage: ", out);
+    TRY_APPEND(this->cmdName, out);
     if (optCount) {
-      out += " [OPTIONS]";
+      TRY_APPEND(" [OPTIONS]", out);
     }
 
     if (argCount) {
       for (auto &e : this->entries) {
         if (e.isPositional()) {
-          out += ' ';
+          TRY_APPEND(' ', out);
           if (!e.isRequire()) {
-            out += '[';
+            TRY_APPEND('[', out);
           }
           assert(!e.getArgName().empty());
-          out += e.getArgName();
+          TRY_APPEND(e.getArgName(), out);
           if (e.isRemainArg()) {
-            out += "...";
+            TRY_APPEND("...", out);
           }
           if (!e.isRequire()) {
-            out += ']';
+            TRY_APPEND(']', out);
           }
         }
       }
     }
-    out += "\n\n";
-    if(!this->desc.empty()) {
-      out += this->desc;
-      out += "\n\n";
+    TRY_APPEND("\n\n", out);
+    if (!this->desc.empty()) {
+      TRY_APPEND(this->desc, out);
+      TRY_APPEND("\n\n", out);
     }
-    this->formatOptions(out);
+    TRY(this->formatOptions(out, SYS_LIMIT_STRING_MAX));
   } else {
-    out += "See `";
-    out += this->cmdName;
-    out += " --help' for more information.";
+    TRY_APPEND("See `", out);
+    TRY_APPEND(this->cmdName, out);
+    TRY_APPEND(" --help' for more information.", out);
   }
   return out;
+
+ERROR:
+  return {};
 }
 
 } // namespace arsh

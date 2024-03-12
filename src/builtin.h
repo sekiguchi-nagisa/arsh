@@ -653,13 +653,6 @@ ARSH_METHOD string_width(RuntimeContext &ctx) {
   RET(Value::createInt(value));
 }
 
-/**
- * return always false.
- */
-static void raiseOutOfRangeError(RuntimeContext &ctx, std::string &&message) {
-  raiseError(ctx, TYPE::OutOfRangeError, std::move(message));
-}
-
 #define TRY(E)                                                                                     \
   ({                                                                                               \
     auto __value = E;                                                                              \
@@ -1086,7 +1079,7 @@ ARSH_METHOD string_quote(RuntimeContext &ctx) {
   auto ref = LOCAL(0).asStrRef();
   auto ret = quoteAsShellArg(ref);
   if (ret.size() > StringObject::MAX_SIZE) {
-    raiseOutOfRangeError(ctx, ERROR_STRING_LIMIT);
+    raiseStringLimit(ctx);
     RET_ERROR;
   }
   RET(Value::createStr(std::move(ret)));
@@ -2404,10 +2397,14 @@ ARSH_METHOD cli_usage(RuntimeContext &ctx) {
   SUPPRESS_WARNING(cli_usage);
   auto &obj = typeAs<BaseObject>(LOCAL(0));
   StringRef message = LOCAL(1).isInvalid() ? "" : LOCAL(1).asStrRef();
-  bool verbose = LOCAL(2).isInvalid() ? true : LOCAL(2).asBool();
+  const bool verbose = LOCAL(2).isInvalid() ? true : LOCAL(2).asBool();
   auto &type = cast<CLIRecordType>(ctx.typePool.get(obj.getTypeID()));
-  auto value = createArgParser(obj[0].asStrRef(), type).formatUsage(message, verbose);
-  RET(Value::createStr(std::move(value)));
+  const auto parser = createArgParser(obj[0].asStrRef(), type);
+  if (auto value = parser.formatUsage(message, verbose); value.hasValue()) {
+    RET(Value::createStr(std::move(value.unwrap())));
+  }
+  raiseStringLimit(ctx);
+  RET_ERROR;
 }
 
 // #################

@@ -170,6 +170,8 @@ TEST_F(StringRefTest, append) {
   ASSERT_EQ("", out);
 
   out = "12";
+  ASSERT_FALSE(checkedAppend('@', 0, out));
+  ASSERT_EQ("12", out);
   ASSERT_FALSE(checkedAppend("34", 0, out));
   ASSERT_EQ("12", out);
   ASSERT_FALSE(checkedAppend("34", 1, out));

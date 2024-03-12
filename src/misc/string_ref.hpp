@@ -221,6 +221,14 @@ inline bool checkedAppend(const StringRef ref, const size_t maxSize, std::string
   return false;
 }
 
+inline bool checkedAppend(char ch, const size_t maxSize, std::string &out) {
+  if (out.size() <= maxSize && 1 <= maxSize - out.size()) {
+    out += ch;
+    return true;
+  }
+  return false;
+}
+
 struct StrRefHash {
   std::size_t operator()(const StringRef &ref) const {
     return FNVHash::compute(ref.begin(), ref.end());

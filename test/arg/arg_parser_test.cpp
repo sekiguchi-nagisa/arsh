@@ -108,7 +108,7 @@ Options:
   -o, --output arg
   -d                enable debug
   -h, --help        show this help message)";
-  std::string v = createArgParser("cmd1", recordType).formatUsage("", true);
+  std::string v = createArgParser("cmd1", recordType).formatUsage("", true).unwrap();
   ASSERT_EQ(help, v);
 }
 
@@ -175,7 +175,7 @@ TEST_F(ArgParserTest, opt) {
 Options:
   -d[file], --dump[=file]
   -h, --help               show this help message)";
-  std::string v = createArgParser("cmd1", recordType).formatUsage("", true);
+  std::string v = createArgParser("cmd1", recordType).formatUsage("", true).unwrap();
   ASSERT_EQ(help, v);
 }
 

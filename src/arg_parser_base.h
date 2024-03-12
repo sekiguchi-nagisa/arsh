@@ -24,6 +24,7 @@
 #include "misc/enum_util.hpp"
 #include "misc/opt_parser.hpp"
 #include "misc/resource.hpp"
+#include "misc/result.hpp"
 
 namespace arsh {
 
@@ -212,7 +213,14 @@ public:
 
   const auto &getEntries() const { return this->entries; }
 
-  std::string formatUsage(StringRef message, bool verbose) const;
+  /**
+   *
+   * @param message
+   * @param verbose
+   * @return
+   * if string size reacheas limit, return invalid
+   */
+  Optional<std::string> formatUsage(StringRef message, bool verbose) const;
 };
 
 } // namespace arsh

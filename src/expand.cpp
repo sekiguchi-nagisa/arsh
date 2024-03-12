@@ -206,7 +206,7 @@ static bool concatAsGlobPattern(ARState &state, const Value *const constPool, co
   return true;
 
 NOMEM:
-  raiseError(state, TYPE::OutOfRangeError, ERROR_STRING_LIMIT);
+  raiseStringLimit(state);
   return false;
 }
 

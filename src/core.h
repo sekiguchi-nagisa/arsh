@@ -62,6 +62,12 @@ void raiseError(ARState &st, TYPE type, std::string &&message, int64_t status = 
 
 void raiseSystemError(ARState &st, int errorNum, std::string &&message);
 
+inline void raiseOutOfRangeError(ARState &st, std::string &&message) {
+  raiseError(st, TYPE::OutOfRangeError, std::move(message));
+}
+
+inline void raiseStringLimit(ARState &st) { raiseOutOfRangeError(st, ERROR_STRING_LIMIT); }
+
 /**
  * actual implementation of exit command
  * @param st
