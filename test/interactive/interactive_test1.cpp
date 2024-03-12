@@ -917,6 +917,33 @@ TEST_F(InteractiveTest, undoRotate2) {
     ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "($tee)\n" + PROMPT + "\n"));
   }
 
+  // completion with suffix space
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
+      "$LINE_EDIT.setCompletion(function(m, s) => { complete -m $m -q -d -- $s; $COMPREPLY;})"));
+  this->send("(echo )" LEFT "$SIGU");
+  ASSERT_NO_FATAL_FAILURE(this->expect("> (echo $SIGU)"));
+  {
+    auto cleanup = this->reuseScreen();
+
+    this->send("\t");
+    ASSERT_NO_FATAL_FAILURE(
+        this->expect("> (echo $SIGUSR)\nSIGUSR1 : Signal    SIGUSR2 : Signal    \n"));
+    this->send("\t");
+    ASSERT_NO_FATAL_FAILURE(
+        this->expect("> (echo $SIGUSR1 )\nSIGUSR1 : Signal    SIGUSR2 : Signal    \n"));
+    this->send("\t");
+    ASSERT_NO_FATAL_FAILURE(
+        this->expect("> (echo $SIGUSR2 )\nSIGUSR1 : Signal    SIGUSR2 : Signal    \n"));
+    this->send("\r");
+    ASSERT_NO_FATAL_FAILURE(this->expect("> (echo $SIGUSR2 )\n\n"));
+    this->send(CTRL_Z); // revert candidate insertion(include space),
+    ASSERT_NO_FATAL_FAILURE(this->expect("> (echo $SIGUSR)\n\n")); // still remain prefix
+    this->send(CTRL_Z);                                            // revert auto-inserted prefix
+    ASSERT_NO_FATAL_FAILURE(this->expect("> (echo $SIGU)\n\n"));
+    this->send(CTRL_C);
+    ASSERT_NO_FATAL_FAILURE(this->expect("> (echo $SIGU)\n> \n"));
+  }
+
   this->send(CTRL_D);
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
 }

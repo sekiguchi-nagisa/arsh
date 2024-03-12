@@ -2546,7 +2546,7 @@ ARSH_METHOD candidates_init(RuntimeContext &ctx) {
   if (const auto v = LOCAL(1); !v.isInvalid()) {
     const auto &values = typeAs<ArrayObject>(v).getValues();
     for (auto &e : values) {
-      if (unlikely(!wrapper.addAsCandidate(ctx, e, false))) {
+      if (unlikely(!wrapper.addAsCandidate(ctx, e, false))) { // not insert space
         RET_ERROR;
       }
     }
