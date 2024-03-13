@@ -733,20 +733,21 @@ static void raiseInvalidCmdError(ARState &state, StringRef ref) {
   raiseSystemError(state, EINVAL, std::move(message));
 }
 
-static Value toCmdDesc(char *const *argv) {
+static Value toCmdDesc(const ArrayObject &argvObj) {
   std::string value;
-  for (; *argv != nullptr; argv++) {
+  for (auto &e : argvObj.getValues()) {
     if (!value.empty()) {
-      value += " ";
+      value += ' ';
     }
-    if (!formatJobDesc(StringRef(*argv), value)) {
+    if (!formatJobDesc(e.asCStr(), value)) {
       break;
     }
   }
   return Value::createStr(std::move(value));
 }
 
-bool VM::forkAndExec(ARState &state, const char *filePath, char *const *argv, Value &&redirConfig) {
+bool VM::forkAndExec(ARState &state, const char *filePath, const ArrayObject &argvObj,
+                     Value &&redirConfig) {
   // setup self pipe
   int selfPipe[2];
   if (pipe(selfPipe) < 0) {
@@ -760,11 +761,11 @@ bool VM::forkAndExec(ARState &state, const char *filePath, char *const *argv, Va
   const auto procOp = resolveProcOp(state, ForkKind::NONE);
   auto proc = Proc::fork(state, pgid, procOp);
   if (proc.pid() == -1) {
-    raiseCmdError(state, argv[0], EAGAIN);
+    raiseCmdError(state, argvObj.getValues()[0].asCStr(), EAGAIN);
     return false;
   } else if (proc.pid() == 0) { // child
     close(selfPipe[READ_PIPE]);
-    xexecve(filePath, argv, nullptr);
+    xexecve(filePath, argvObj, nullptr);
 
     const int errNum = errno;
     const ssize_t r = write(selfPipe[WRITE_PIPE], &errNum, sizeof(int));
@@ -783,7 +784,7 @@ bool VM::forkAndExec(ARState &state, const char *filePath, char *const *argv, Va
     }
     close(selfPipe[READ_PIPE]);
     if (readSize > 0 && errNum == ENOENT) { // remove cached path
-      state.pathCache.removePath(argv[0]);
+      state.pathCache.removePath(argvObj.getValues()[0].asCStr());
     }
 
     // wait process or job termination
@@ -792,7 +793,7 @@ bool VM::forkAndExec(ARState &state, const char *filePath, char *const *argv, Va
     int errNum2 = errno;
     if (!proc.is(Proc::State::TERMINATED)) {
       const auto job = state.jobTable.attach(
-          JobObject::create(proc, state.emptyFDObj, state.emptyFDObj, toCmdDesc(argv)));
+          JobObject::create(proc, state.emptyFDObj, state.emptyFDObj, toCmdDesc(argvObj)));
       if (proc.is(Proc::State::STOPPED) && state.isJobControl()) {
         job->showInfo();
       }
@@ -804,7 +805,7 @@ bool VM::forkAndExec(ARState &state, const char *filePath, char *const *argv, Va
       errNum2 = errNum;
     }
     if (errNum2 != 0) {
-      raiseCmdError(state, argv[0], errNum2);
+      raiseCmdError(state, argvObj.getValues()[0].asCStr(), errNum2);
       return false;
     }
     pushExitStatus(state, status);
@@ -928,16 +929,8 @@ bool VM::callCommand(ARState &state, const ResolvedCmd &cmd, ObjPtr<ArrayObject>
                                          attr);
   }
   case ResolvedCmd::EXTERNAL: {
-    // create argv
-    const unsigned int size = array.getValues().size();
-    char *argv[size + 1];
-    for (unsigned int i = 0; i < size; i++) {
-      argv[i] = const_cast<char *>(array.getValues()[i].asCStr());
-    }
-    argv[size] = nullptr;
-
     if (hasFlag(attr, CmdCallAttr::NEED_FORK)) {
-      const bool ret = forkAndExec(state, cmd.filePath(), argv, std::move(redirConfig));
+      const bool ret = forkAndExec(state, cmd.filePath(), array, std::move(redirConfig));
       if (ret) {
         const int status = state.getMaskedExitStatus();
         if (!checkCmdExecError(state, attr, status)) {
@@ -946,8 +939,8 @@ bool VM::callCommand(ARState &state, const ResolvedCmd &cmd, ObjPtr<ArrayObject>
       }
       return ret;
     } else {
-      xexecve(cmd.filePath(), argv, nullptr);
-      raiseCmdError(state, argv[0], errno);
+      xexecve(cmd.filePath(), array, nullptr);
+      raiseCmdError(state, array.getValues()[0].asCStr(), errno);
       return false;
     }
   }
@@ -1115,7 +1108,7 @@ END:
   return BuiltinCmdResult::display(status);
 }
 
-int VM::builtinExec(ARState &state, const ArrayObject &argvObj, Value &&redir) {
+int VM::builtinExec(ARState &state, ArrayObject &argvObj, Value &&redir) {
   bool clearEnv = false;
   StringRef progName;
   GetOptState optState("hca:");
@@ -1148,20 +1141,20 @@ int VM::builtinExec(ARState &state, const ArrayObject &argvObj, Value &&redir) {
       return 1;
     }
 
-    char *argv2[argc - index + 1];
-    for (unsigned int i = index; i < argc; i++) {
-      argv2[i - index] = const_cast<char *>(argvObj.getValues()[i].asCStr());
+    /**
+     * preserve arg0 (searchPath result indidate orignal pointer)
+     */
+    const auto arg0 = argvObj.getValues()[index];
+    const char *filePath = state.pathCache.searchPath(arg0.asCStr(), FilePathCache::DIRECT_SEARCH);
+    if (progName.data() != nullptr) {                          // FIXME: check if has null
+      argvObj.refValues()[index] = Value::createStr(progName); // not check iterator invalidation
     }
-    argv2[argc - index] = nullptr;
-
-    const char *filePath = state.pathCache.searchPath(argv2[0], FilePathCache::DIRECT_SEARCH);
-    if (progName.data() != nullptr) {
-      argv2[0] = const_cast<char *>(progName.data());
-    }
+    const auto begin = argvObj.getValues().begin();
+    argvObj.refValues().erase(begin, begin + index); // not check iterator invalidation
 
     char *envp[] = {nullptr};
-    xexecve(filePath, argv2, clearEnv ? envp : nullptr);
-    PERROR(state, argvObj, "%s", argvObj.getValues()[index].asCStr());
+    xexecve(filePath, argvObj, clearEnv ? envp : nullptr);
+    PERROR(state, argvObj, "%s", argvObj.getValues()[0].asCStr());
     exit(1);
   }
   return 0;

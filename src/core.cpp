@@ -785,7 +785,7 @@ bool mergeSort(ARState &state, ArrayObject &arrayObj, const Value &compFunc) {
   return r;
 }
 
-int xexecve(const char *filePath, char *const *argv, char *const *envp) {
+int xexecve(const char *filePath, const ArrayObject &argvObj, char *const *envp) {
   if (filePath == nullptr) {
     errno = ENOENT;
     return -1;
@@ -800,28 +800,48 @@ int xexecve(const char *filePath, char *const *argv, char *const *envp) {
   LOG_EXPR(DUMP_EXEC, [&] {
     std::string str = filePath;
     str += ", [";
-    for (unsigned int i = 0; argv[i] != nullptr; i++) {
-      if (i > 0) {
+    unsigned int count = 0;
+    for (auto &e : argvObj.getValues()) {
+      if (count++ > 0) {
         str += ", ";
       }
-      str += argv[i];
+      str += e.asCStr();
     }
     str += "]";
     return str;
   });
 
+  // prepare argv
+  char **argv = nullptr;
+  char *stacked[10]; // for small number of arguments
+  void *ptr = nullptr;
+  const unsigned int allocSize = argvObj.size() + 2; // reserve sentienl and /bin/sh fallback
+  if (allocSize <= std::size(stacked)) {
+    argv = stacked;
+  } else {
+    ptr = malloc(sizeof(char *) * allocSize);
+    if (!ptr) {
+      return -1;
+    }
+    argv = static_cast<char **>(ptr);
+  }
+  for (unsigned int i = 0; i < allocSize - 2; i++) {
+    argv[i] = const_cast<char *>(argvObj.getValues()[i].asCStr());
+  }
+  argv[allocSize - 2] = nullptr;
+  argv[allocSize - 1] = nullptr;
+
   // execute external command
   int ret = execve(filePath, argv, envp);
+  int old = errno;
   if (errno == ENOEXEC) { // fallback to /bin/sh
-    unsigned int size = 0;
-    for (; argv[size]; size++)
-      ;
-    size++;
-    char *newArgv[size + 1];
-    newArgv[0] = const_cast<char *>("/bin/sh");
-    memcpy(newArgv + 1, argv, sizeof(char *) * size);
-    return execve(newArgv[0], newArgv, envp);
+    memmove(argv + 1, argv, sizeof(char *) * argvObj.size());
+    argv[0] = const_cast<char *>("/bin/sh");
+    ret = execve(argv[0], argv, envp);
+    old = errno;
   }
+  free(ptr);
+  errno = old;
   return ret;
 }
 

@@ -238,13 +238,13 @@ bool mergeSort(ARState &state, ArrayObject &arrayObj, const Value &compFunc);
  * @param filePath
  * if null, not execute and set ENOENT.
  * @param argv
- * not null
  * @param envp
  * may be null
  * @return
  * if success, not return.
+ * otherwise, set errno
  */
-int xexecve(const char *filePath, char *const *argv, char *const *envp);
+int xexecve(const char *filePath, const ArrayObject &argv, char *const *envp);
 
 class FakeModuleLoader : public ModuleLoaderBase {
 private:

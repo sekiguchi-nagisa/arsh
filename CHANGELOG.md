@@ -86,6 +86,7 @@
 - fix ``Module#_fullname`` method when pass valid fully qualified command name
 - fix expansion error check
 - add missing string size checking to ``CLI#usage`` method
+- fix segv when pass to long arguments to external command
 
 ## [0.32.1] - 2024-01-21
 

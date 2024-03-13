@@ -540,7 +540,7 @@ private:
 
   static bool forkAndEval(ARState &state, Value &&desc);
 
-  static bool forkAndExec(ARState &state, const char *filePath, char *const *argv,
+  static bool forkAndExec(ARState &state, const char *filePath, const ArrayObject &argvObj,
                           Value &&redirConfig);
 
   static bool prepareSubCommand(ARState &state, const ModType &modType,
@@ -580,7 +580,7 @@ private:
   static BuiltinCmdResult builtinCommand(ARState &state, ObjPtr<ArrayObject> &&argvObj,
                                          Value &&redir, CmdCallAttr attr);
 
-  static int builtinExec(ARState &state, const ArrayObject &argvObj, Value &&redir);
+  static int builtinExec(ARState &state, ArrayObject &argvObj, Value &&redir);
 
   static bool returnFromUserDefinedCommand(ARState &state, int64_t status);
 

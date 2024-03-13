@@ -1,0 +1,23 @@
+
+# too large arguments
+
+var ex = 34 as Any
+
+var args = new [String]()
+for(var i = 0; $i < 12000000; $i++) {
+    var v = $i as String
+    $v += "@@@@@@@@@@@@@@@@@@@@@@@@@"
+    $args.add($v)
+}
+
+try {
+    call $BIN_NAME -e printf "%s\n" $args > /dev/null
+    assert $false
+} catch e {
+    $ex = $e
+}
+var err = ($ex as SystemError).message()
+assert $err =~ $/execution error.+too long.*/
+
+
+true
