@@ -4,10 +4,14 @@ source expect.ds
 $expect("$(ds -e echo hello 2>&1)", 0, "hello")
 
 # invalid name
-assert !exec $'ps\x00'
+$(exec $'ps\x00')
 assert $? == 1
 assert "$(exec $'ps\x00' 2>&1)" == "${$SCRIPT_NAME.basename()}:9: exec: contains null characters: ps\x00"
 
+# invalid prognama (-a)
+$(exec -a $'ps\x00' ls)
+assert $? == 1
+assert "$(exec -a $'pps\x00' ls 2>&1)" == "${$SCRIPT_NAME.basename()}:14: exec: contains null characters: pps\x00"
 
 # not found builtin command
 $expect("$(ds -e hoghrere hello 2>&1)", 127, $'[runtime error]\nSystemError: execution error: hoghrere: command not found')

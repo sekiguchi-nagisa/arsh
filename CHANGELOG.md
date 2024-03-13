@@ -69,6 +69,7 @@
 - **Breaking Change**: change builtin ``complete`` command ``-s`` option behavior
     - not insert suffix space to candidates (but print space)
     - print space even if multiple candidates
+- **Breaking Change**: builtin ``exec`` command ``-a`` option now does not allow null characters
 - ``Error`` type constructor now accept `0` status
 - builtin ``complete`` command put completion candidate description via ``-d`` option
     - put type-signature of variable/field/function/method
@@ -86,7 +87,7 @@
 - fix ``Module#_fullname`` method when pass valid fully qualified command name
 - fix expansion error check
 - add missing string size checking to ``CLI#usage`` method
-- fix segv when pass to long arguments to external command
+- fix SEGV when pass to long arguments to external command
 
 ## [0.32.1] - 2024-01-21
 

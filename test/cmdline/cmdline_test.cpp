@@ -470,14 +470,18 @@ struct CmdlineTest2 : public CmdlineTest, public TempFileFactory {
 
 TEST_F(CmdlineTest2, exec) {
   auto fileName = this->createTempFile("run.sh", "echo hey: $0: $1 $2");
-  errno = 0;
   auto mode = getStMode(fileName.c_str());
   mode |= S_IXUSR | S_IXGRP | S_IXOTH;
-  chmod(fileName.c_str(), mode);
-  ASSERT_STREQ(strerror(0), strerror(errno));
+  const int s = chmod(fileName.c_str(), mode);
+  ASSERT_EQ(0, s);
 
+  // fallback to /bin/sh
   auto out = format("hey: %s: 11111 8888\n", fileName.c_str());
   auto cmd = format("%s 11111 8888", fileName.c_str());
+  ASSERT_NO_FATAL_FAILURE(this->expect(DS(cmd.c_str()), 0, out));
+
+  // fallback to /bin/sh (builtin exec)
+  cmd = format("exec %s 11111 8888", fileName.c_str());
   ASSERT_NO_FATAL_FAILURE(this->expect(DS(cmd.c_str()), 0, out));
 }
 

@@ -1146,7 +1146,12 @@ int VM::builtinExec(ARState &state, ArrayObject &argvObj, Value &&redir) {
      */
     const auto arg0 = argvObj.getValues()[index];
     const char *filePath = state.pathCache.searchPath(arg0.asCStr(), FilePathCache::DIRECT_SEARCH);
-    if (progName.data() != nullptr) {                          // FIXME: check if has null
+    if (progName.data() != nullptr) {
+      if (progName.hasNullChar()) {
+        const auto name = toPrintable(progName);
+        ERROR(state, argvObj, "contains null characters: %s", name.c_str());
+        return 1;
+      }
       argvObj.refValues()[index] = Value::createStr(progName); // not check iterator invalidation
     }
     const auto begin = argvObj.getValues().begin();
