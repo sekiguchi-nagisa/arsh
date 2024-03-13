@@ -101,9 +101,9 @@ assert prompt ''
 assert !prompt -g
 assert $? == 2
 
-assert prompt -h | grep 'usage: prompt \[-h\] \[--help\] \[prompt\]'
-assert prompt --help | grep 'usage: prompt \[-h\] \[--help\] \[prompt\]'
-assert prompt -g 2>&1 > /dev/null | grep 'usage: prompt \[-h\] \[--help\] \[prompt\]'
+assert prompt -h | grep 'Usage: prompt \[PROMPT\]'
+assert prompt --help | grep 'Usage: prompt \[PROMPT\]'
+assert prompt -g 2>&1 > /dev/null | grep 'Usage: prompt \[PROMPT\]'
 
 assert "$(prompt '\H')" == "$(uname -n)"
 assert "$(prompt -- -h)" == "-h"

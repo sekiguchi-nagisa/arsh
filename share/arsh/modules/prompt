@@ -116,11 +116,9 @@ function renderPrompt(p : String) : String {
     return $reply.remove($key)!
 }
 
-function _usage(fd : UnixFD, short : Boolean) : Int  {
-    echo >& $fd "usage: prompt [-h] [--help] [prompt]"
-    if $short { return 2; }
+[<CLI(verbose: $true, desc: "Interpret prompt as bash compatible way
 
-    echo >& $fd "Prompt Escape Sequence:
+Prompt Escape Sequence:
     \a      bell
     \d      date
     \D{fmt} interpret FMT as time format
@@ -146,25 +144,14 @@ function _usage(fd : UnixFD, short : Boolean) : Int  {
     \]      end of unprintable sequence
     \0nnn   N is octal number.  NNN can be 0 to 3 number
     \xnn    N is hex number.  NN can be 1 to 2 number"
-
-    return 2;
+)>]
+typedef _PromptParam() {
+    [<Arg>]
+    var prompt: String?
 }
 
-prompt() {
-    while($# > 0) {
-        case $1 {
-            '-h' | '--help' => return $_usage($STDOUT, $false); 
-            '--' => { $@.shift(); break; }
-            else => {
-                if $1.startsWith('-') {
-                    echo >& $STDERR prompt: $1: invalid option;
-                    return $_usage($STDERR, $true);
-                }
-                break
-            }
-        }
-    }
-    $1 :- return 0
-    printf -- "%s\n" $renderPrompt($1)
+prompt(p : _PromptParam) {
+    var v = $p.prompt ?? return 0
+    printf -- "%s\n" $renderPrompt($v)
     return 0
 }
