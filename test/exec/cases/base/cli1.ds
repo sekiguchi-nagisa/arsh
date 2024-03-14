@@ -153,14 +153,14 @@ var dd = new DDD()
 assert $dd.name() == $ARG0
 $dd.setName('example')
 assert $dd.name() == 'example'
-assert $dd.usage('error', $true) == "error
+assert $dd.usage('error', $true) == "example: error
 Usage: example [OPTIONS]
 
 Options:
   --aaa AAA
   -h, --help  show this help message"
 
-assert $dd.usage('error', $false) == "error
+assert $dd.usage('error', $false) == "example: error
 See \`example --help' for more information."
 
 $ex = 23
@@ -173,7 +173,7 @@ Options:
 
 $ex = 34
 try { $dd.parse(['-q']); } catch e { $ex = $e; }
-assert ($ex as CLIError).message() == "invalid option: -q
+assert ($ex as CLIError).message() == "example: invalid option: -q
 See \`example --help' for more information."
 
 [<CLI(toplevel: $true)>]
@@ -184,7 +184,7 @@ typedef EEE() {
 
 $ex = 34
 try { new EEE().parse(new [String]()); } catch e { $ex = $e; }
-assert ($ex as CLIError).message() == "require \`AAA' argument
+assert ($ex as CLIError).message() == "$ARG0: require \`AAA' argument
 See \`$ARG0 --help' for more information."
 
 

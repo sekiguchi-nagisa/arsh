@@ -142,6 +142,8 @@ bool ArgEntry::checkArg(StringRef arg, bool shortOpt, int64_t &out, std::string 
 Optional<std::string> ArgParser::formatUsage(StringRef message, bool verbose) const {
   std::string out;
   if (!message.empty()) {
+    TRY_APPEND(this->cmdName, out);
+    TRY_APPEND(": ", out);
     TRY_APPEND(message, out);
     TRY_APPEND('\n', out);
   }

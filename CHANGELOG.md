@@ -52,6 +52,7 @@
       ```
 - **Breaking Change**: not reset exit status before call user-defined command due to posix shell compatibility
 - **Breaking Change**: not allow ``/`` character in user-defined command name
+- **Breaking Change**: change cli error message. now print command name
 - auto-unwrap option type expression in for-in expression
   ```
   for a in "123" as String? { echo $a; }

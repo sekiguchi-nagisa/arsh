@@ -26,7 +26,7 @@ assert (new DDD()) is CLI
 var dd = new DDD()
 $dd.setName($'default\x00!!')
 assert $dd.name() == $'default\x00!!'
-assert $dd.usage("must be valid argument") == "must be valid argument
+assert $dd.usage("must be valid argument") == "${$'default\x00!!'}: must be valid argument
 Usage: default${$'\x00'}!!
 
 Options:
@@ -58,7 +58,7 @@ assert $? == 0
 
 ## error
 $r = "$(ff --ss 2>&1)"
-assert $r == "invalid option: --ss
+assert $r == "ff: invalid option: --ss
 Usage: ff [OPTIONS] AAA [BBB] CCC...
 
 Options:
@@ -67,7 +67,7 @@ Options:
 assert $? == 2
 
 $r = "$(ff sss 2>&1)"
-assert $r == "invalid argument: \`sss', must be decimal integer
+assert $r == "ff: invalid argument: \`sss', must be decimal integer
 Usage: ff [OPTIONS] AAA [BBB] CCC...
 
 Options:

@@ -108,7 +108,7 @@ INSTANTIATE_TEST_SUITE_P(LitecheckTest, LitecheckTest,
 struct LitecheckCLITest : public ExpectOutput {};
 
 TEST_F(LitecheckCLITest, option) {
-  const char *err = R"(require `FILE' argument
+  const char *err = R"(litecheck: require `FILE' argument
 Usage: litecheck [OPTIONS] FILE
 
 Options:
@@ -117,7 +117,7 @@ Options:
 )";
   ASSERT_NO_FATAL_FAILURE(this->expect(litecheck(), 1, "", err));
 
-  err = R"(file not found: `34'
+  err = R"(litecheck: file not found: `34'
 Usage: litecheck [OPTIONS] FILE
 
 Options:
@@ -126,7 +126,7 @@ Options:
 )";
   ASSERT_NO_FATAL_FAILURE(this->expect(litecheck("34"), 2, "", err));
 
-  err = R"(require regular file: .
+  err = R"(litecheck: require regular file: .
 Usage: litecheck [OPTIONS] FILE
 
 Options:
@@ -135,7 +135,7 @@ Options:
 )";
   ASSERT_NO_FATAL_FAILURE(this->expect(litecheck("."), 2, "", err));
 
-  err = R"(invalid option: -q
+  err = R"(litecheck: invalid option: -q
 Usage: litecheck [OPTIONS] FILE
 
 Options:
@@ -144,7 +144,7 @@ Options:
 )";
   ASSERT_NO_FATAL_FAILURE(this->expect(litecheck("-q"), 2, "", err));
 
-  err = R"(-b option needs argument
+  err = R"(litecheck: -b option needs argument
 Usage: litecheck [OPTIONS] FILE
 
 Options:
@@ -153,7 +153,7 @@ Options:
 )";
   ASSERT_NO_FATAL_FAILURE(this->expect(litecheck("-b"), 2, "", err));
 
-  err = R"(file not found: `123'
+  err = R"(litecheck: file not found: `123'
 Usage: litecheck [OPTIONS] FILE
 
 Options:
@@ -162,7 +162,7 @@ Options:
 )";
   ASSERT_NO_FATAL_FAILURE(this->expect(litecheck("-b", "123", LITECHECK_PATH), 2, "", err));
 
-  err = R"(must be executable: `.'
+  err = R"(litecheck: must be executable: `.'
 Usage: litecheck [OPTIONS] FILE
 
 Options:

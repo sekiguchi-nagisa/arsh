@@ -26,7 +26,7 @@ $aa.setName('cmd1')
 try { $aa.parse(["--call-limit=11"]); } catch e { $ex = $e;}
 assert $ex is CLIError
 assert ($ex as CLIError).status() == 1
-assert ($ex as CLIError).message() == "invalid argument: \`11' for --call-limit option, must be [-10, 10]
+assert ($ex as CLIError).message() == "cmd1: invalid argument: \`11' for --call-limit option, must be [-10, 10]
 Usage: cmd1 [OPTIONS]
 
 Options:
@@ -40,7 +40,7 @@ $aa.setName('cmd2')
 try { $aa.parse(["--call-limit=-11"]); } catch e { $ex = $e;}
 assert $ex is CLIError
 assert ($ex as CLIError).status() == 1
-assert ($ex as CLIError).message() == "invalid argument: \`-11' for --call-limit option, must be [-10, 10]
+assert ($ex as CLIError).message() == "cmd2: invalid argument: \`-11' for --call-limit option, must be [-10, 10]
 Usage: cmd2 [OPTIONS]
 
 Options:
@@ -59,7 +59,7 @@ $aa.setName('cmd3')
 try { $aa.parse(["-ldebuG"]); } catch e { $ex = $e; }
 assert $ex is CLIError
 assert ($ex as CLIError).status() == 1
-assert ($ex as CLIError).message() == "invalid argument: \`debuG' for -l option, must be {error, warn, info, debug}
+assert ($ex as CLIError).message() == "cmd3: invalid argument: \`debuG' for -l option, must be {error, warn, info, debug}
 Usage: cmd3 [OPTIONS]
 
 Options:
@@ -91,7 +91,7 @@ assert "$({
   $cli.setName($'cmd1\x00@@')
   $cli.parseOrExit(["--huga"])
   12/0  # always raise
-} with 2>&1)" == "invalid option: --huga
+} with 2>&1)" == "cmd1${$'\x00'}@@: invalid option: --huga
 Usage: cmd1${$'\x00'}@@ [OPTIONS]
 
 Options:
@@ -104,7 +104,7 @@ assert "$({
   var cli = new AAA()
   $cli.parseOrExit(["--call-limit"])
   12/0  # always raise
-} with 2>&1)" == "--call-limit option needs argument
+} with 2>&1)" == "$ARG0: --call-limit option needs argument
 Usage: $ARG0 [OPTIONS]
 
 Options:
@@ -133,7 +133,7 @@ assert "$({
   $cli.setName('cmd13')
   $cli.parseOrExit(["--call-limit=111"])
   12/0  # always raise
-} with 2>&1)" == "invalid argument: \`111' for --call-limit option, must be [-10, 10]
+} with 2>&1)" == "cmd13: invalid argument: \`111' for --call-limit option, must be [-10, 10]
 Usage: cmd13 [OPTIONS]
 
 Options:

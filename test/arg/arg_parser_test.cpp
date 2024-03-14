@@ -268,7 +268,7 @@ TEST_F(ArgParserTest, range) {
   auto error = state->getCallStack().takeThrownObject();
   ASSERT_EQ(1, error->getStatus());
 
-  const char *err = R"(invalid argument: `qq' for -t option, must be decimal integer
+  const char *err = R"(cmd1: invalid argument: `qq' for -t option, must be decimal integer
 Usage: cmd1 [OPTIONS] level
 
 Options:
@@ -289,7 +289,7 @@ Options:
   error = state->getCallStack().takeThrownObject();
   ASSERT_EQ(1, error->getStatus());
 
-  err = R"(invalid argument: `1001' for --time option, must be [0, 1000]
+  err = R"(cmd1: invalid argument: `1001' for --time option, must be [0, 1000]
 Usage: cmd1 [OPTIONS] level
 
 Options:
@@ -309,7 +309,7 @@ Options:
   ASSERT_EQ(1000, (*out)[1].asInt());
   error = state->getCallStack().takeThrownObject();
 
-  err = R"(invalid argument: `Info', must be {info, warn}
+  err = R"(cmd1: invalid argument: `Info', must be {info, warn}
 Usage: cmd1 [OPTIONS] level
 
 Options:
@@ -329,7 +329,7 @@ Options:
   error = state->getCallStack().takeThrownObject();
   ASSERT_EQ(1, error->getStatus());
 
-  err = R"(require -t or --time option
+  err = R"(cmd2: require -t or --time option
 Usage: cmd2 [OPTIONS] level
 
 Options:
@@ -350,7 +350,7 @@ Options:
   error = state->getCallStack().takeThrownObject();
   ASSERT_EQ(1, error->getStatus());
 
-  err = R"(require `level' argument
+  err = R"(cmd1: require `level' argument
 Usage: cmd1 [OPTIONS] level
 
 Options:
@@ -400,7 +400,7 @@ Options:
   error = state->getCallStack().takeThrownObject();
   ASSERT_EQ(2, error->getStatus());
 
-  err = R"(invalid option: -A
+  err = R"(cmd11: invalid option: -A
 Usage: cmd11 [output]
 
 this is a sample command line
@@ -446,7 +446,7 @@ Options:
   ASSERT_EQ(0, ret.index);
   error = state->getCallStack().takeThrownObject();
   ASSERT_EQ(2, error->getStatus());
-  err = R"(invalid option: -A
+  err = R"(cmd11: invalid option: -A
 See `cmd11 --help' for more information.)";
   ASSERT_EQ(err, error->getMessage().asStrRef().toString());
 }
@@ -480,7 +480,7 @@ TEST_F(ArgParserTest, shortUsage2) {
   ASSERT_EQ(0, ret.index);
   auto error = state->getCallStack().takeThrownObject();
   ASSERT_EQ(1, error->getStatus());
-  const char *err = R"(require -t option
+  const char *err = R"(cmd11: require -t option
 See `cmd11 --help' for more information.)";
   ASSERT_EQ(err, error->getMessage().asStrRef().toString());
 
@@ -494,7 +494,7 @@ See `cmd11 --help' for more information.)";
   ASSERT_EQ(2, ret.index);
   error = state->getCallStack().takeThrownObject();
   ASSERT_EQ(1, error->getStatus());
-  err = R"(require `output' argument
+  err = R"(cmd12: require `output' argument
 See `cmd12 --help' for more information.)";
   ASSERT_EQ(err, error->getMessage().asStrRef().toString());
 
@@ -508,7 +508,7 @@ See `cmd12 --help' for more information.)";
   ASSERT_EQ(1, ret.index);
   error = state->getCallStack().takeThrownObject();
   ASSERT_EQ(1, error->getStatus());
-  err = R"(invalid argument: `121111111' for -t option, must be [0, 1000]
+  err = R"(cmd22: invalid argument: `121111111' for -t option, must be [0, 1000]
 See `cmd22 --help' for more information.)";
   ASSERT_EQ(err, error->getMessage().asStrRef().toString());
 }
