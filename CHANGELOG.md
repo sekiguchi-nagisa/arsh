@@ -88,6 +88,7 @@
 - fix expansion error check
 - add missing string size checking to ``CLI#usage`` method
 - fix SEGV when pass to long arguments to external command
+- fix opened fd error checking of ``FD`` constructor
 
 ## [0.32.1] - 2024-01-21
 

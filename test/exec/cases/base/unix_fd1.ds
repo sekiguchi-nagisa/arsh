@@ -19,7 +19,7 @@ assert $fd
 assert $fd as Boolean
 
 $fd.close()
-assert $fd as String == "/dev/fd/-1" as String
+assert $fd as String == "/dev/fd/-1"
 assert ! $fd
 assert $false == $fd as Bool
 
@@ -79,7 +79,7 @@ try {
 } catch $e {
     $ex = $e
 }
-assert $ex is SystemError
+assert ($ex as SystemError).message() =~ $/No such file or directory/
 
 $ex = 23
 try {

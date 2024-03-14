@@ -2069,16 +2069,14 @@ ARSH_METHOD fd_init(RuntimeContext &ctx) {
 
   errno = 0;
   int fd = open(ref.data(), O_CREAT | O_RDWR, 0666);
-  remapFD(fd);
-  if (fd != -1) {
+  if (fd != -1 && remapFD(fd)) {
     RET(Value::create<UnixFdObject>(fd));
-  } else {
-    int e = errno;
-    std::string msg = "open failed: ";
-    msg += toPrintable(ref);
-    raiseSystemError(ctx, e, std::move(msg));
-    RET_ERROR;
   }
+  int e = errno;
+  std::string msg = "open failed: ";
+  msg += toPrintable(ref);
+  raiseSystemError(ctx, e, std::move(msg));
+  RET_ERROR;
 }
 
 //!bind: function close($this : FD) : Void
