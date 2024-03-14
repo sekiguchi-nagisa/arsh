@@ -80,6 +80,12 @@
         - if specified ``None``, remove existing key-bind
     - now remove already defined custom action when pass ``None`` to ``action`` method
 
+#### Module
+
+- replace manual command line argument parsing of the following user-defined command
+    - ``prompt`` command in ``prompt`` module
+    - ``history`` command in ``history`` module
+
 ### Fixed
 
 - fix ``EIO`` handling in interactive mode

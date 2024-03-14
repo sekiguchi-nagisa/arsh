@@ -10,8 +10,8 @@ assert $HISTFILE == "$DATA_HOME/arsh_history"
 history -x
 assert $? == 2
 
-assert "$(history -xz 2>&1)" == "history: -xz: invalid option
-usage: history [-h] [-c] [-d offset] or history -s ARGs or history -rw [file]"
+assert "$(history -xz 2>&1)" == "history: invalid option: -x
+See \`history --help' for more information."
 
 # append
 $HISTSIZE = 100
@@ -118,25 +118,29 @@ $assertEach(["a",
 # delete history, but missing number
 history -d 3 -d
 assert $? == 2
-assert "$(history -d 2>&1)" == "history: -d: option requires argument"
+assert "$(history -d 2>&1)" == "history: -d option needs argument
+See \`history --help' for more information."
 true
 
 # delete history, but invalid number
 history -d hoge
 assert $? == 1
-assert "$(history -d hoge 2>&1)" == "history: hoge: history offset out of range"
+assert "$(history -d hoge 2>&1)" == "history: invalid argument: \`hoge' for -d option, must be decimal integer
+See \`history --help' for more information."
 true
 
 # delete history, but out of range
 history -d 999999
 assert $? == 1
-assert "$(history -d 999999 2>&1)" == "history: 999999: history offset out of range"
+assert "$(history -d 999999 2>&1)" == "history: 999999: history offset out of range
+See \`history --help' for more information."
 true
 
 # delete history, but out of range
 history -d 0
 assert $? == 1
-assert "$(history -d 0 2>&1)" == "history: 0: history offset out of range"
+assert "$(history -d 0 2>&1)" == "history: 0: history offset out of range
+See \`history --help' for more information."
 true
 
 
@@ -159,7 +163,7 @@ $assertEach(["$prefix a",
 
 # load invalid file
 history -c
-history -r hfurehfurefewafzxc
+history -rhfurehfurefewafzxc
 $assertEach(new [String](), $(history))
 
 # load specified file
@@ -169,7 +173,7 @@ for $e in 'abcde' {
 }
 
 history -c
-history -r $fileName
+history -r$fileName
 $assertEach(["@@ a",
              "@@ b",
              "@@ c",
@@ -180,9 +184,9 @@ $assertEach(["@@ a",
 history -c
 echo -n > $fileName
 history -s hello history $prefix
-history -w $fileName
+history --write=$fileName
 history -c
-history -r $fileName
+history --read=$fileName
 assert $HISTORY.size() == 1
 assert $HISTORY[0] == "hello history $prefix"
 
@@ -202,5 +206,6 @@ assert $HISTORY[1] == "hello history $prefix 2"
 history -c
 history -w -r
 assert $? == 1
-assert "$(history -w -r 2>&1)" == "history: cannot use more than one of -rw"
+assert "$(history -w -r 2>&1)" == "history: cannot use more than one of -rw
+See \`history --help' for more information."
 true

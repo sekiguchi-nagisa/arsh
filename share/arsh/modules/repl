@@ -8,7 +8,7 @@ source $SCRIPT_DIR/repl_impl/history inlined
 
 # create DATA_HOME
 test -e $DATA_HOME || mkdir -p $DATA_HOME || true
-history -r $HISTFILE  # manually load history
+history -r  # manually load history
 
 # completion setting
 $LINE_EDIT.setCompletion(function(m, s) => {
