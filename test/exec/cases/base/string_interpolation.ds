@@ -75,16 +75,16 @@ assert "${[34:12, 900:45,-9: -99]}" == "34 12 900 45 -9 -99"
 assert "${(23,'a',(1,$false),[0,3])}" == '23 a 1 false 0 3'
 
 ## Record
-typedef AAA($a : Int, $b : String) {
-    var aaa = $a
-    var bbb = $b
+typedef AAA {
+    var aaa : Int
+    var bbb : String
 }
 assert "${new AAA(-90, 'hey')}" == '-90 hey'
 assert "${new AAA(-90, '')}" == '-90 '
 
-typedef List($a : String, $n : List?) {
-    let value = $a
-    let next = $n
+typedef List {
+    let value : String
+    let next : List?
 }
 var list = new List("a b", new List("cc", new List?()))
 assert "$list" == 'a b cc'
