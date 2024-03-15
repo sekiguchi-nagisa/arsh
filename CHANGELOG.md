@@ -59,7 +59,7 @@
   ```
 - pass fully qualified command name to ``COMP_HOOK`` for user-defined command
 - add ``desc`` parameter to ``CLI`` attribute
-    - now show command line description message
+    - now put command line description message
 
 #### Builtin
 
@@ -71,7 +71,7 @@
     - not insert suffix space to candidates (but print space)
     - print space even if multiple candidates
 - **Breaking Change**: builtin ``exec`` command ``-a`` option now does not allow null characters
-- ``Error`` type constructor now accept `0` status
+- ``Error`` type constructor now accept 0 status
 - builtin ``complete`` command put completion candidate description via ``-d`` option
     - put type-signature of variable/field/function/method
     - put command type (user-defined, builtin, dynamic, external) in command name completion
@@ -95,8 +95,8 @@
 - fix ``Module#_fullname`` method when pass valid fully qualified command name
 - fix expansion error check
 - add missing string size checking to ``CLI#usage`` method
-- fix SEGV when pass to long arguments to external command
-- fix opened fd error checking of ``FD`` constructor
+- fix SEGV when pass too long arguments to external command
+- fix error checking of ``FD`` constructor
 
 ## [0.32.1] - 2024-01-21
 
