@@ -85,6 +85,7 @@
 - replace manual command line argument parsing of the following user-defined command
     - ``prompt`` command in ``prompt`` module
     - ``history`` command in ``history`` module
+    - ``compdef`` command in ``completion`` module
 
 ### Fixed
 

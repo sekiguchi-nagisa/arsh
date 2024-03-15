@@ -6,22 +6,22 @@ source ../../../../share/arsh/modules/completion
 $BASH_COMPLETION_PATH = $SCRIPT_NAME  ## force disable bash completion
 
 # no option
-assert compdef 2>&1 | grep 'usage: compdef'
+assert compdef 2>&1 | grep 'compdef: require --cmd option'
 compdef &> /dev/null
-assert $? == 2
+assert $? == 1
 
 # -h
-assert compdef -h 2>&1 | grep 'usage: compdef'
+assert compdef -h 2>&1 | grep 'Usage: compdef \[OPTIONS\]'
 compdef &> /dev/null -h
 assert $? == 0
 
 # --help
-assert compdef --help 2>&1 | grep 'usage: compdef'
+assert compdef --help 2>&1 | grep 'Usage: compdef \[OPTIONS\]'
 compdef &> /dev/null --help
 assert $? == 0
 
 # invalid option
-assert compdef --he 2>&1 | grep 'usage: compdef'
+assert compdef --he 2>&1 | grep 'compdef: invalid option: --he'
 compdef &> /dev/null --he
 assert $? == 2
 
