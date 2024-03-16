@@ -77,34 +77,23 @@ public:
   }
 };
 
-class SigSet {
+class SigSet : protected StaticBitSet<uint64_t> {
 private:
-  static_assert(NSIG - 1 <= sizeof(uint64_t) * 8, "huge signal number");
-
-  uint64_t value{0};
+  static_assert(NSIG - 1 <= BIT_SIZE, "huge signal number");
 
   int pendingIndex{1};
 
 public:
-  void add(int sigNum) {
-    uint64_t f = static_cast<uint64_t>(1) << static_cast<unsigned int>(sigNum - 1);
-    setFlag(this->value, f);
-  }
+  void add(int sigNum) { StaticBitSet::add(static_cast<uint8_t>(sigNum - 1)); }
 
-  void del(int sigNum) {
-    uint64_t f = static_cast<uint64_t>(1) << static_cast<unsigned int>(sigNum - 1);
-    unsetFlag(this->value, f);
-  }
+  void del(int sigNum) { StaticBitSet::del(static_cast<uint8_t>(sigNum - 1)); }
 
-  bool has(int sigNum) const {
-    uint64_t f = static_cast<uint64_t>(1) << static_cast<unsigned int>(sigNum - 1);
-    return hasFlag(this->value, f);
-  }
+  bool has(int sigNum) const { return StaticBitSet::has(static_cast<uint8_t>(sigNum - 1)); }
 
-  bool empty() const { return this->value == 0; }
+  bool empty() const { return StaticBitSet::empty(); }
 
   void clear() {
-    this->value = 0;
+    StaticBitSet::clear();
     this->pendingIndex = 1;
   }
 

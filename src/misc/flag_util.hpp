@@ -17,18 +17,20 @@
 #ifndef MISC_LIB_FLAG_UTIL_H
 #define MISC_LIB_FLAG_UTIL_H
 
+#include <cstdint>
+
 #include "enum_util.hpp"
 
 BEGIN_MISC_LIB_NAMESPACE_DECL
 
-using flag8_set_t = unsigned char;
-using flag8_t = unsigned char;
+using flag8_set_t = uint8_t;
+using flag8_t = uint8_t;
 
-using flag16_set_t = unsigned short;
-using flag16_t = unsigned short;
+using flag16_set_t = uint16_t;
+using flag16_t = uint16_t;
 
-using flag32_set_t = unsigned int;
-using flag32_t = unsigned int;
+using flag32_set_t = uint32_t;
+using flag32_t = uint32_t;
 
 template <typename T>
 inline constexpr void setFlag(T &set, T flag) {
@@ -44,6 +46,36 @@ template <typename T>
 inline constexpr bool hasFlag(T set, T flag) {
   return (set & flag) == flag;
 }
+
+template <typename T, enable_when<std::is_unsigned_v<T> && sizeof(T) <= sizeof(uint64_t)> = nullptr>
+class StaticBitSet {
+private:
+  T value{0};
+
+public:
+  static constexpr size_t BIT_SIZE = sizeof(T) * 8;
+
+  static constexpr bool checkRange(uint8_t v) { return v < BIT_SIZE; }
+
+  void add(uint8_t v) {
+    const auto f = static_cast<T>(1) << v;
+    setFlag(this->value, f);
+  }
+
+  void del(uint8_t v) {
+    const auto f = static_cast<T>(1) << v;
+    unsetFlag(this->value, f);
+  }
+
+  bool has(uint8_t v) const {
+    const auto f = static_cast<T>(1) << v;
+    return hasFlag(this->value, f);
+  }
+
+  bool empty() const { return this->value == 0; }
+
+  void clear() { this->value = 0; }
+};
 
 END_MISC_LIB_NAMESPACE_DECL
 

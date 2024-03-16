@@ -115,23 +115,20 @@ public:
   const Attribute *lookup(StringRef name) const;
 };
 
-class AttributeParamSet {
-private:
-  static_assert(getNumOfAttributeParams() < 32);
-
-  unsigned int value{0};
-
+class AttributeParamSet : protected StaticBitSet<uint32_t> {
 public:
+  static_assert(getNumOfAttributeParams() < BIT_SIZE);
+
   void add(Attribute::Param p) {
-    unsigned int v = toUnderlying(p);
-    assert(v < 32);
-    setFlag(this->value, 1u << v);
+    const auto v = toUnderlying(p);
+    assert(checkRange(v));
+    StaticBitSet::add(v);
   }
 
   bool has(Attribute::Param p) const {
-    unsigned int v = toUnderlying(p);
-    assert(v < 32);
-    return hasFlag(this->value, 1u << v);
+    const auto v = toUnderlying(p);
+    assert(checkRange(v));
+    return StaticBitSet::has(v);
   }
 
   template <typename Walker>
