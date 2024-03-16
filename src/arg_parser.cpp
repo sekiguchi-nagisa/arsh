@@ -28,7 +28,7 @@ namespace arsh {
 RequiredOptionSet::RequiredOptionSet(const std::vector<ArgEntry> &entries) {
   const size_t size = entries.size();
   for (size_t i = 0; i < size; i++) {
-    if (auto &e = entries[i]; e.isRequire() || e.isPositional()) {
+    if (auto &e = entries[i]; e.isRequired() || e.isPositional()) {
       assert(i <= SYS_LIMIT_ARG_ENTRY_MAX);
       auto v = static_cast<unsigned short>(i);
       assert(this->values.empty() || this->values.back() < v);
@@ -82,7 +82,7 @@ static bool checkRequireOrPositionalArgs(ARState &state, const ArgParser &parser
   for (auto &i : requiredSet.getValues()) {
     auto &e = parser.getEntries()[i];
     if (!e.isPositional()) {
-      assert(e.isRequire());
+      assert(e.isRequired());
       std::string err = "require ";
       if (char s = e.getShortName(); s != 0) {
         err += '-';
@@ -123,7 +123,7 @@ static bool checkRequireOrPositionalArgs(ARState &state, const ArgParser &parser
           return false;
         }
       }
-    } else if (e.isRequire()) {
+    } else if (e.isRequired()) {
       std::string err = "require `";
       err += e.getArgName();
       err += "' argument";

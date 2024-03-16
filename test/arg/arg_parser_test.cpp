@@ -126,7 +126,7 @@ TEST_F(ArgParserTest, opt) {
       .add([](ArgEntry &e) {
         e.setParseOp(OptParseOp::NO_ARG);
         e.setArgName("src");
-        e.setAttr(ArgEntryAttr::POSITIONAL | ArgEntryAttr::REQUIRE);
+        e.setAttr(ArgEntryAttr::POSITIONAL | ArgEntryAttr::REQUIRED);
       })
       .add([](ArgEntry &e) {
         e.setParseOp(OptParseOp::NO_ARG);
@@ -232,7 +232,7 @@ TEST_F(ArgParserTest, range) {
         e.setLongName("time");
         e.setArgName("msec");
         e.setIntRange(0, 1000);
-        e.setAttr(ArgEntryAttr::REQUIRE);
+        e.setAttr(ArgEntryAttr::REQUIRED);
       })
       .addHelp()
       .add([](ArgEntry &e) {
@@ -240,7 +240,7 @@ TEST_F(ArgParserTest, range) {
         e.setArgName("level");
         e.addChoice(strdup("info"));
         e.addChoice(strdup("warn"));
-        e.setAttr(ArgEntryAttr::POSITIONAL | ArgEntryAttr::REQUIRE);
+        e.setAttr(ArgEntryAttr::POSITIONAL | ArgEntryAttr::REQUIRED);
       });
 
   auto &recordType = this->createRecordType("type1", std::move(builder));
@@ -459,13 +459,13 @@ TEST_F(ArgParserTest, shortUsage2) {
         e.setArgName("time");
         e.setShortName('t');
         e.setIntRange(0, 1000);
-        e.setAttr(ArgEntryAttr::REQUIRE);
+        e.setAttr(ArgEntryAttr::REQUIRED);
       })
       .addHelp()
       .add([](ArgEntry &e) {
         e.setParseOp(OptParseOp::NO_ARG);
         e.setArgName("output");
-        e.setAttr(ArgEntryAttr::POSITIONAL | ArgEntryAttr::REQUIRE);
+        e.setAttr(ArgEntryAttr::POSITIONAL | ArgEntryAttr::REQUIRED);
       });
 
   auto &recordType = this->createRecordType("type1", std::move(builder), CLIRecordType::Attr{});

@@ -29,7 +29,7 @@
 namespace arsh {
 
 enum class ArgEntryAttr : unsigned short {
-  REQUIRE = 1u << 0u,     // require option
+  REQUIRED = 1u << 0u,    // require option
   POSITIONAL = 1u << 1u,  // positional argument
   REMAIN = 1u << 2u,      // remain argument (last positional argument that accept string array)
   STORE_FALSE = 1u << 3u, // for flag options (no-arg option)
@@ -117,7 +117,7 @@ public:
 
   bool hasAttr(ArgEntryAttr a) const { return hasFlag(this->attr, a); }
 
-  bool isRequire() const { return this->hasAttr(ArgEntryAttr::REQUIRE); }
+  bool isRequired() const { return this->hasAttr(ArgEntryAttr::REQUIRED); }
 
   bool isPositional() const { return this->hasAttr(ArgEntryAttr::POSITIONAL); }
 

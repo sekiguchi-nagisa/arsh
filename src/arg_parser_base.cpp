@@ -172,7 +172,7 @@ Optional<std::string> ArgParser::formatUsage(StringRef message, bool verbose) co
       for (auto &e : this->entries) {
         if (e.isPositional()) {
           TRY_APPEND(' ', out);
-          if (!e.isRequire()) {
+          if (!e.isRequired()) {
             TRY_APPEND('[', out);
           }
           assert(!e.getArgName().empty());
@@ -180,7 +180,7 @@ Optional<std::string> ArgParser::formatUsage(StringRef message, bool verbose) co
           if (e.isRemainArg()) {
             TRY_APPEND("...", out);
           }
-          if (!e.isRequire()) {
+          if (!e.isRequired()) {
             TRY_APPEND(']', out);
           }
         }

@@ -343,9 +343,9 @@ void TypeChecker::resolveArgEntry(std::unordered_set<std::string> &foundOptionSe
     }
     case Attribute::Param::REQUIRED:
       if (cast<NumberNode>(constNode).getAsBoolValue()) {
-        setFlag(argEntryAttr, ArgEntryAttr::REQUIRE);
+        setFlag(argEntryAttr, ArgEntryAttr::REQUIRED);
       } else {
-        unsetFlag(argEntryAttr, ArgEntryAttr::REQUIRE);
+        unsetFlag(argEntryAttr, ArgEntryAttr::REQUIRED);
       }
       continue;
     case Attribute::Param::STORE:

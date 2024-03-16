@@ -804,7 +804,7 @@ TEST_F(ArchiveTest, argEntry) {
           e.setLongName("output");
           e.setArgName("target");
           e.setDefaultValue("/dev/stdout");
-          e.setAttr(ArgEntryAttr::REQUIRE);
+          e.setAttr(ArgEntryAttr::REQUIRED);
         })
         .add([](ArgEntry &e) {
           e.setParseOp(OptParseOp::HAS_ARG);
@@ -821,7 +821,7 @@ TEST_F(ArchiveTest, argEntry) {
         })
         .add([](ArgEntry &e) {
           e.setArgName("files");
-          e.setAttr(ArgEntryAttr::POSITIONAL | ArgEntryAttr::REMAIN | ArgEntryAttr::REQUIRE);
+          e.setAttr(ArgEntryAttr::POSITIONAL | ArgEntryAttr::REMAIN | ArgEntryAttr::REQUIRED);
         });
 
     auto &recordType = createRecordType(ctx.getPool(), "type1", std::move(builder), ctx.getModId(),
@@ -868,7 +868,7 @@ TEST_F(ArchiveTest, argEntry) {
   // -o --output
   ASSERT_EQ(2, entries[2].getFieldOffset());
   ASSERT_EQ(OptParseOp::OPT_ARG, entries[2].getParseOp());
-  ASSERT_EQ(ArgEntryAttr::REQUIRE, entries[2].getAttr());
+  ASSERT_EQ(ArgEntryAttr::REQUIRED, entries[2].getAttr());
   ASSERT_EQ('o', entries[2].getShortName());
   ASSERT_EQ("output", entries[2].getLongName());
   ASSERT_EQ("target", entries[2].getArgName());
@@ -912,7 +912,7 @@ TEST_F(ArchiveTest, argEntry) {
   // positional
   ASSERT_EQ(5, entries[5].getFieldOffset());
   ASSERT_EQ(OptParseOp::NO_ARG, entries[5].getParseOp());
-  ASSERT_EQ(ArgEntryAttr::POSITIONAL | ArgEntryAttr::REMAIN | ArgEntryAttr::REQUIRE,
+  ASSERT_EQ(ArgEntryAttr::POSITIONAL | ArgEntryAttr::REMAIN | ArgEntryAttr::REQUIRED,
             entries[5].getAttr());
   ASSERT_EQ('\0', entries[5].getShortName());
   ASSERT_TRUE(entries[5].getLongName().empty());
