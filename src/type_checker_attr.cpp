@@ -399,7 +399,7 @@ void TypeChecker::resolveArgEntry(std::unordered_set<std::string> &foundOptionSe
           this->reportError<ChoiceLimit>(constNode);
           return;
         }
-        std::unordered_set<StringRef, StrRefHash> choiceSet;
+        StrRefSet choiceSet;
         for (auto &e : arrayNode.getExprNodes()) { // FIXME: choice size limit
           StringRef ref = cast<StringNode>(*e).getValue();
           if (ref.hasNullChar()) {

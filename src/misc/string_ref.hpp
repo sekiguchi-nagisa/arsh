@@ -238,6 +238,8 @@ struct StrRefHash {
 template <typename T>
 using StrRefMap = std::unordered_map<StringRef, T, StrRefHash>;
 
+using StrRefSet = std::unordered_set<StringRef, StrRefHash>;
+
 END_MISC_LIB_NAMESPACE_DECL
 
 #endif // MISC_LIB_STRING_REF_HPP
