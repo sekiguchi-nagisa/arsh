@@ -44,6 +44,7 @@
         - if ``failglob`` is disabled and glob expansion failed, return tilde expanded string
     - support recursive glob (a.k.a ``globstar``)
         - enabled via ``globstar`` runtime option (enabled by default)
+    - now propagate ``opendir`` error, such as ``EMFILE``, ``ENFILE``, ``ENOMEM``
 - **Breaking Change**: now not preserve exit status during finally/defer block
     - now the following code is valid
       ```

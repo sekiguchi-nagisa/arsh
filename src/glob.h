@@ -93,6 +93,10 @@ private:
 
   unsigned int matchCount{0};
 
+  int callDepth{0};
+
+  int errNum{0}; // for RESOURCE_LIMIT status
+
   ObserverPtr<CancelToken> cancel;
 
   std::function<bool(std::string &&)> consumer;
@@ -111,6 +115,8 @@ public:
   void setCancelToken(CancelToken &token) { this->cancel = makeObserver(token); }
 
   unsigned int getMatchCount() const { return this->matchCount; }
+
+  int getErrNum() const { return this->errNum; }
 
   void setConsumer(std::function<bool(std::string &&)> &&func) { this->consumer = std::move(func); }
 

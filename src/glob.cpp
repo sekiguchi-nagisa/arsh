@@ -384,6 +384,8 @@ Glob::Status Glob::invoke(std::string &&baseDir, const char *iter, std::string *
   this->matchCount = 0;
   this->statCount = 0;
   this->readdirCount = 0;
+  this->callDepth = 0;
+  this->errNum = 0;
   std::pair<Status, bool> s;
   for (; !(s = this->match(baseDir, iter, false, err)).second; popDir(baseDir))
     ;
@@ -466,6 +468,10 @@ std::pair<Glob::Status, bool> Glob::match(const std::string &baseDir, const char
 
   auto dir = openDir(baseDir.c_str());
   if (!dir) {
+    if (errno == EMFILE || errno == ENFILE || errno == ENOMEM) {
+      this->errNum = errno;
+      return {Status::RESOURCE_LIMIT, true};
+    }
     return {Status::MATCH, true};
   }
 
@@ -586,6 +592,10 @@ Glob::Status Glob::matchDoubleStar(const std::string &baseDir, const size_t targ
 
   const auto dir = openDir(baseDir.c_str());
   if (!dir) {
+    if (errno == EMFILE || errno == ENFILE || errno == ENOMEM) {
+      this->errNum = errno;
+      return Status::RESOURCE_LIMIT;
+    }
     return Status::MATCH;
   }
 

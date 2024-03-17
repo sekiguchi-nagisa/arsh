@@ -464,6 +464,16 @@ TEST_F(CmdlineTest, locale) {
   }
 }
 
+TEST_F(CmdlineTest, globLimit) {
+  std::string err = format(R"([runtime error]
+SystemError: glob expansion failed, caused by `%s'
+    from (string):1 '<toplevel>()'
+)",
+                           strerror(EMFILE));
+  ASSERT_NO_FATAL_FAILURE(this->expect(
+      DS("ulimit -S -n 6; echo > /dev/null 2> /dev/null /**; echo hello"), 1, "", err));
+}
+
 struct CmdlineTest2 : public CmdlineTest, public TempFileFactory {
   CmdlineTest2() : INIT_TEMP_FILE_FACTORY(cmdline_test) {}
 };

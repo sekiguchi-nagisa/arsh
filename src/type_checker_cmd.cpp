@@ -485,9 +485,16 @@ bool TypeChecker::applyGlob(const Token token,
     }
     this->reportError<NoGlobMatch>(token, pattern.join().c_str());
     return false;
-  case Glob::Status::RESOURCE_LIMIT:
-    this->reportError<GlobResource>(token);
+  case Glob::Status::RESOURCE_LIMIT: {
+    std::string suffix;
+    if (glob.getErrNum() != 0) {
+      suffix = ", caused by `";
+      suffix += strerror(errno);
+      suffix += "'";
+    }
+    this->reportError<GlobResource>(token, suffix.c_str());
     return false;
+  }
   case Glob::Status::BAD_PATTERN:
     this->reportError<BadGlobPattern>(token, pattern.join().c_str(), err.c_str());
     return false;

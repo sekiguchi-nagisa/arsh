@@ -262,8 +262,9 @@ bool VM::addGlobbingPath(ARState &state, ArrayObject &argv, const Value *const b
   case Glob::Status::BAD_PATTERN:
     raiseGlobbingError(state, pattern, err + " in");
     return false;
-    //  case Glob::Status::RESOURCE_LIMIT:
-    //    return false; //FIXME:
+  case Glob::Status::RESOURCE_LIMIT:
+    raiseSystemError(state, glob.getErrNum(), "glob expansion failed");
+    return false;
   default:
     assert(ret == Glob::Status::LIMIT && state.hasError());
     return false;
