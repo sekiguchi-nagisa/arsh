@@ -16,6 +16,7 @@
 
 #include <dirent.h>
 
+#include "constant.h"
 #include "glob.h"
 #include "misc/files.hpp"
 #include "misc/unicode.hpp"
@@ -460,8 +461,24 @@ std::string Glob::resolveBaseDir(const char *&iter) const {
   return baseDir;
 }
 
+#define GUARD_DEEP_RECURSION(name)                                                                 \
+  const CallCounter name(this->callDepth);                                                         \
+  if (unlikely(this->callDepth >= DEPTH_LIMIT)) {                                                  \
+    return {Status::RECURSION_DEPTH_LIMIT, true};                                                  \
+  }                                                                                                \
+  static_cast<void>(name)
+
+#define GUARD_DEEP_RECURSION2(name)                                                                \
+  const CallCounter name(this->callDepth);                                                         \
+  if (unlikely(this->callDepth >= DEPTH_LIMIT)) {                                                  \
+    return Status::RECURSION_DEPTH_LIMIT;                                                          \
+  }                                                                                                \
+  static_cast<void>(name)
+
 std::pair<Glob::Status, bool> Glob::match(const std::string &baseDir, const char *&iter,
                                           bool allowEmptyPattern, std::string *err) {
+  GUARD_DEEP_RECURSION(guard);
+
   if (hasFlag(this->option, Option::GLOBSTAR) && this->consumeDoubleStars(iter)) {
     return {this->matchDoubleStar(baseDir, iter, err), true};
   }
@@ -578,6 +595,8 @@ static FileType getFileType(DIR *dir, const struct dirent *entry) {
 
 Glob::Status Glob::matchDoubleStar(const std::string &baseDir, const size_t targetOffset,
                                    const char *const iter, std::string *err) {
+  GUARD_DEEP_RECURSION2(guard);
+
   assert(!baseDir.empty());
   {
     auto nextIter = iter;

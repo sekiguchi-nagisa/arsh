@@ -485,7 +485,8 @@ bool TypeChecker::applyGlob(const Token token,
     }
     this->reportError<NoGlobMatch>(token, pattern.join().c_str());
     return false;
-  case Glob::Status::RESOURCE_LIMIT: {
+  case Glob::Status::RESOURCE_LIMIT:
+  case Glob::Status::RECURSION_DEPTH_LIMIT: {
     std::string suffix;
     if (glob.getErrNum() != 0) {
       suffix = ", caused by `";

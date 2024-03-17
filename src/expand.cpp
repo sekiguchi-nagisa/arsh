@@ -265,6 +265,9 @@ bool VM::addGlobbingPath(ARState &state, ArrayObject &argv, const Value *const b
   case Glob::Status::RESOURCE_LIMIT:
     raiseSystemError(state, glob.getErrNum(), "glob expansion failed");
     return false;
+  case Glob::Status::RECURSION_DEPTH_LIMIT:
+    raiseError(state, TYPE::StackOverflowError, "glob recursion depth reaches limit");
+    return false;
   default:
     assert(ret == Glob::Status::LIMIT && state.hasError());
     return false;

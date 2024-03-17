@@ -79,6 +79,7 @@ public:
     LIMIT,
     CANCELED,
     RESOURCE_LIMIT,
+    RECURSION_DEPTH_LIMIT,
     BAD_PATTERN,
   };
 
@@ -93,7 +94,7 @@ private:
 
   unsigned int matchCount{0};
 
-  int callDepth{0};
+  unsigned int callDepth{0};
 
   int errNum{0}; // for RESOURCE_LIMIT status
 
@@ -104,6 +105,8 @@ private:
   static constexpr unsigned int READDIR_LIMIT = 16 * 1024;
 
   static constexpr unsigned int STAT_LIMIT = 4096;
+
+  static constexpr unsigned int DEPTH_LIMIT = 2048;
 
 public:
   Glob(StringRef pattern, Option option, const char *baseDir = nullptr)
