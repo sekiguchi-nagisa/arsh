@@ -272,25 +272,25 @@ typedef _CompDefParam() {
     [<Option(required: $true, placeholder: "COMMAND", help: "set target command")>]
     var cmd = ''
 
-    [<Option(placeholder: "SHORT_OPTION", help: "set short option (single character argument)")>]
+    [<Option(placeholder: "SHORT_OPTION", xor: 0, help: "set short option (single character argument)")>]
     var short : String?
 
-    [<Option(placeholder: "LONG_OPTION", help: "set long option (two or more characters argument)")>]
+    [<Option(placeholder: "LONG_OPTION", xor: 0, help: "set long option (two or more characters argument)")>]
     var long: String?
 
-    [<Option(placeholder: "LIST", help: "generate candidates from LIST split by ' '")>]
+    [<Option(placeholder: "LIST", xor: 1, help: "generate candidates from LIST split by ' '")>]
     var arg_list: String?
 
-    [<Option(placeholder: "CMDLINE", help: "generate candidates from CMDLINE evaluation")>]
+    [<Option(placeholder: "CMDLINE", xor: 1, help: "generate candidates from CMDLINE evaluation")>]
     var arg_cmd: String?
 
-    [<Option(placeholder: "ACTION", help: "generate candidates from ACTION")>]
+    [<Option(placeholder: "ACTION", xor: 1, help: "generate candidates from ACTION")>]
     var arg_action: String?
 
-    [<Option(placeholder: "SCRIPT", help: "set bash completion script")>]
+    [<Option(placeholder: "SCRIPT", xor: 0, help: "set bash completion script")>]
     var comp_path: String?
 
-    [<Option(placeholder: "TARGET", help: "set bash completion function")>]
+    [<Option(placeholder: "TARGET", xor: 1, help: "set bash completion function")>]
     var comp_target: String?
 }
 

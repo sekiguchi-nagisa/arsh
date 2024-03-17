@@ -40,7 +40,8 @@
   OP(DEFAULT, "default", TYPE::String)                                                             \
   OP(PLACE_HOLDER, "placeholder", TYPE::String)                                                    \
   OP(RANGE, "range", TYPE::Void /* dummy type */)                                                  \
-  OP(CHOICE, "choice", TYPE::StringArray)
+  OP(CHOICE, "choice", TYPE::StringArray)                                                          \
+  OP(XOR, "xor", TYPE::Int)
 
 namespace arsh {
 

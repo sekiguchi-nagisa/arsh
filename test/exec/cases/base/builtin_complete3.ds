@@ -166,8 +166,8 @@ $assertArray(['>]'], $(complete '[< CLI '))
 $assertArray(['[<', 'let', 'typedef', 'var'], $(complete '[< CLI >] '))
 
 # complete attribute param
-$assertArray(['help', 'long', 'required', 'short', 'stop', 'store'], $(complete '[< Flag('))
-$assertArray(['help', 'long',  'short', 'stop', ], $(complete '
+$assertArray(['help', 'long', 'required', 'short', 'stop', 'store', 'xor'], $(complete '[< Flag('))
+$assertArray(['help', 'long',  'short', 'stop', 'xor'], $(complete '
 [< Flag(required: $true, store: $false, '))
 $assertArray(['short', 'stop', 'store'], $(complete '[< Flag(s'))
 $assertArray(["long"], $(complete '

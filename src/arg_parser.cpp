@@ -44,6 +44,35 @@ void RequiredOptionSet::del(unsigned char n) {
   }
 }
 
+// ############################
+// ##     XORArgGroupSet     ##
+// ############################
+
+std::pair<unsigned int, bool> XORArgGroupSet::add(Entry entry) {
+  bool r = false;
+  const auto iter =
+      std::lower_bound(this->values.begin(), this->values.end(), entry,
+                       [](const Entry &x, const Entry &y) { return x.groupId < y.groupId; });
+  if (iter == this->values.end() || iter->groupId != entry.groupId) {
+    this->values.insert(iter, entry);
+    r = true;
+  }
+  unsigned int index = iter - this->values.begin();
+  return {index, r};
+}
+
+bool XORArgGroupSet::has(int8_t groupId) const {
+  const Entry entry{
+      .index = 0,
+      .shortOp = false,
+      .groupId = static_cast<unsigned char>(groupId),
+  };
+  const auto iter =
+      std::lower_bound(this->values.begin(), this->values.end(), entry,
+                       [](const Entry &x, const Entry &y) { return x.groupId < y.groupId; });
+  return iter != this->values.end();
+}
+
 static bool verboseUsage(const ARState &st, const BaseObject &out) {
   auto &type = st.typePool.get(out.getTypeID());
   return hasFlag(cast<CLIRecordType>(type).getAttr(), CLIRecordType::Attr::VERBOSE);
@@ -75,14 +104,41 @@ static bool checkAndSetArg(ARState &state, const ArgParser &parser, const ArgEnt
   }
 }
 
+static bool checkXORGroup(ARState &state, const ArgParser &parser, const unsigned short entryIndex,
+                          const bool shortOpt, const BaseObject &out, XORArgGroupSet &set) {
+  const XORArgGroupSet::Entry xorEntry{
+      .index = entryIndex,
+      .shortOp = shortOpt,
+      .groupId = static_cast<unsigned char>(parser.getEntries()[entryIndex].getXORGroupId()),
+  };
+
+  if (const auto ret = set.add(xorEntry); !ret.second) {
+    auto &prev = set.getValues()[ret.first];
+    if (prev.index == entryIndex) { // itself
+      return true;
+    }
+    std::string err = parser.getEntries()[entryIndex].toOptName(shortOpt);
+    err += " option is not allowed after ";
+    err += parser.getEntries()[prev.index].toOptName(prev.shortOp);
+    err += " option";
+    raiseCLIUsage(state, parser, err, verboseUsage(state, out), 1);
+    return false;
+  }
+  return true;
+}
+
 static bool checkRequireOrPositionalArgs(ARState &state, const ArgParser &parser,
-                                         const RequiredOptionSet &requiredSet, StrArrayIter &begin,
+                                         const RequiredOptionSet &requiredSet,
+                                         const XORArgGroupSet &xorGroupSet, StrArrayIter &begin,
                                          const StrArrayIter end, BaseObject &out) {
   const bool verbose = verboseUsage(state, out);
   for (auto &i : requiredSet.getValues()) {
     auto &e = parser.getEntries()[i];
     if (!e.isPositional()) {
       assert(e.isRequired());
+      if (e.inXORGroup() && xorGroupSet.has(e.getXORGroupId())) {
+        continue;
+      }
       std::string err = "require ";
       if (char s = e.getShortName(); s != 0) {
         err += '-';
@@ -142,6 +198,7 @@ CLIParseResult parseCommandLine(ARState &state, const ArrayObject &args, BaseObj
   auto iter = begin;
   const auto end = StrArrayIter(args.getValues().end());
   RequiredOptionSet requiredSet(instance.getEntries());
+  XORArgGroupSet xorGroupSet;
   ArgParser::Result ret;
   bool help = false;
   bool status = false;
@@ -154,6 +211,11 @@ CLIParseResult parseCommandLine(ARState &state, const ArrayObject &args, BaseObj
     if (entry.isHelp()) {
       help = true;
       continue;
+    }
+    if (entry.inXORGroup()) {
+      if (!checkXORGroup(state, instance, entryIndex, ret.isShort(), out, xorGroupSet)) {
+        goto END;
+      }
     }
     switch (entry.getParseOp()) {
     case OptParseOp::NO_ARG: // set flag
@@ -188,7 +250,7 @@ CLIParseResult parseCommandLine(ARState &state, const ArrayObject &args, BaseObj
     goto END;
   }
   assert(ret.isEnd());
-  status = checkRequireOrPositionalArgs(state, instance, requiredSet, iter, end, out);
+  status = checkRequireOrPositionalArgs(state, instance, requiredSet, xorGroupSet, iter, end, out);
 
 END:
   return {

@@ -41,6 +41,25 @@ public:
   void del(unsigned char n);
 };
 
+class XORArgGroupSet {
+public:
+  struct Entry {
+    unsigned short index;
+    bool shortOp;
+    unsigned char groupId;
+  };
+
+private:
+  FlexBuffer<Entry> values;
+
+public:
+  const auto &getValues() const { return this->values; }
+
+  std::pair<unsigned int, bool> add(Entry entry);
+
+  bool has(int8_t groupId) const;
+};
+
 struct CLIParseResult {
   unsigned int index;
   bool status;

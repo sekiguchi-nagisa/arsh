@@ -23,23 +23,6 @@ function _error(s : String) {
     echo 1>&2 history: $s
 }
 
-function _usage(fd : UnixFD, short : Boolean) : Int {
-    echo >& $fd "usage: history [-h] [-c] [-d offset] or history -s ARGs or history -rw [file]"
-    $short && return 2;
-
-    echo >& $fd "Display or manipulate history list.
-    Options:
-        -c        clear the history list
-        -d offset delete the history entry at OFFSET
-        -h        show this help message
-        -s        append the Args to history as single entry
-
-        -r        read the history list from history file
-        -w        write the history list to history file"
-
-    return 2
-}
-
 [<CLI(desc: "Display or manipulate history list.")>]
 typedef _HistParam() {
     [<Flag(short: "c", help: "clear the history list", stop: $true)>]
@@ -51,11 +34,11 @@ typedef _HistParam() {
     [<Flag(short: 's', stop: $true, help: "append the remain ARGs to history as single entry")>]
     var append = $false
 
-    [<Option(short: 'r', long: "read", opt: $true, default: "", placeholder: "file", 
+    [<Option(short: 'r', long: "read", opt: $true, default: "", placeholder: "file", xor: 0,
             help: "read the history list from FILE")>]
     var load : String?
 
-    [<Option(short: "w", long: "write", opt: $true, default: "", placeholder: "file", 
+    [<Option(short: "w", long: "write", opt: $true, default: "", placeholder: "file", xor: 0,
             help: "write the history list to FILE")>]
     var save: String?
 
@@ -201,16 +184,10 @@ history(param : _HistParam) {
         $HISTORY.remove($offset - 1)
         return 0
     }
-    if $param.load || $param.save {
-        if($param.load && $param.save) {
-            echo 1>&2 ${$param.usage("cannot use more than one of -rw", $false)}
-            return 1
-        }
-        if let target = $param.load {
-            $_load($target)
-        } elif let target = $param.save {
-            $_save($target)
-        }
+    if let target = $param.load {
+        $_load($target)
+    } elif let target = $param.save {
+        $_save($target)
     }
     return 0
 }

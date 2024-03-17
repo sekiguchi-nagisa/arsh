@@ -60,6 +60,7 @@
 - pass fully qualified command name to ``COMP_HOOK`` for user-defined command
 - add ``desc`` parameter to ``CLI`` attribute
     - now put command line description message
+- add ``xor`` parameter to ``Flag``, ``Option`` attribute. now specify define exclusive options
 
 #### Builtin
 

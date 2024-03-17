@@ -55,6 +55,7 @@ public:
 private:
   unsigned char fieldOffset{0}; // corresponding field offset
   ArgEntryAttr attr{};
+  int8_t xorGroupId{-1};
   CheckerKind checkerKind{CheckerKind::NOP};
   std::string defaultValue; // for OptParseOp::OPT_ARG. may be null
 
@@ -78,8 +79,9 @@ public:
   ~ArgEntry();
 
   ArgEntry(ArgEntry &&o) noexcept // NOLINT
-      : OptParseOption(std::move(o)), fieldOffset(o.fieldOffset), attr(o.attr),
-        checkerKind(o.checkerKind), defaultValue(std::move(o.defaultValue)) {
+      : OptParseOption(std::move(static_cast<OptParseOption &>(o))), fieldOffset(o.fieldOffset),
+        attr(o.attr), xorGroupId(o.xorGroupId), checkerKind(o.checkerKind),
+        defaultValue(std::move(o.defaultValue)) {
     switch (this->checkerKind) {
     case CheckerKind::NOP:
       break;
@@ -148,6 +150,16 @@ public:
     return this->choice;
   }
 
+  void setXORGroupId(unsigned char id) {
+    if (id <= SYS_LIMIT_XOR_ARG_GROUP_NUM) {
+      this->xorGroupId = static_cast<int8_t>(id);
+    }
+  }
+
+  int8_t getXORGroupId() const { return this->xorGroupId; }
+
+  bool inXORGroup() const { return this->getXORGroupId() != -1; }
+
   CheckerKind getCheckerKind() const { return this->checkerKind; }
 
   void setShortName(char ch) { this->shortOptName = ch; }
@@ -157,6 +169,18 @@ public:
   void setLongName(const char *name) { this->longOptName = name; }
 
   const std::string &getLongName() const { return this->longOptName; }
+
+  std::string toOptName(bool shortOpt) const {
+    std::string value;
+    value += '-';
+    if (shortOpt) {
+      value += this->getShortName();
+    } else {
+      value += '-';
+      value += this->getLongName();
+    }
+    return value;
+  }
 
   void setDefaultValue(const char *v) { this->defaultValue = v; }
 

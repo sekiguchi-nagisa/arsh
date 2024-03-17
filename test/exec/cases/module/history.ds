@@ -206,6 +206,6 @@ assert $HISTORY[1] == "hello history $prefix 2"
 history -c
 history -w -r
 assert $? == 1
-assert "$(history -w -r 2>&1)" == "history: cannot use more than one of -rw
+assert "$(history -w -r 2>&1)" == "history: -r option is not allowed after -w option
 See \`history --help' for more information."
 true

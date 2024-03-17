@@ -1,0 +1,28 @@
+#$test($result = 'type', $lineNum = 13, $chars = 3, $errorKind = 'RequiredXORGroup', $status = 1)
+
+var ss = "s"
+
+[<
+  CLI >]
+typedef AAA() {
+  [<Option(xor:
+  0)>]
+  var a = ""
+
+  [<
+  Flag(xor: 23)>]
+  var b : Bool?
+
+  [<Flag(xor: 0)>]
+  var c = $false
+
+  [<Option(xor: 23, required: $true)>]
+  var d = ""
+
+    [<Option(xor: 23, required: $false)>]
+    var e = ""
+
+    [<
+    Option(xor: 2, required: $true)>]
+  var f = 34
+}

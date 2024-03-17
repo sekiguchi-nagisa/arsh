@@ -1,0 +1,10 @@
+#$test($result = 'type', $lineNum = 8, $chars = 17, $errorKind = 'XORGroupRange', $status = 1)
+
+var ss = "s"
+
+[<
+  CLI >]
+typedef AAA() {
+  [<Option(xor: 64)>]
+  var a = ""
+}

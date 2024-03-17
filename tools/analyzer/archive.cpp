@@ -169,6 +169,7 @@ void Archiver::add(const ArgEntry &entry) {
   this->write8(entry.getFieldOffset());
   this->writeEnum(entry.getParseOp());
   this->writeEnum(entry.getAttr());
+  this->write8(entry.getXORGroupId());
   this->writeEnum(entry.getCheckerKind());
   this->write8(entry.getShortName());
   this->writeStr(entry.getLongName());
@@ -366,6 +367,7 @@ std::pair<ArgEntry, bool> Unarchiver::unpackArgEntry() {
   ArgEntry entry(index, this->read8());
   entry.setParseOp(this->readEnum<OptParseOp>());
   entry.setAttr(this->readEnum<ArgEntryAttr>());
+  entry.setXORGroupId(this->read8());
   const auto kind = this->readEnum<ArgEntry::CheckerKind>();
   entry.setShortName(static_cast<char>(this->read8()));
   if (auto str = this->readStr(); !str.empty()) {

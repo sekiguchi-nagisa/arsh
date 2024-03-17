@@ -51,13 +51,7 @@ bool ArgEntry::checkArg(StringRef arg, bool shortOpt, int64_t &out, std::string 
   out = 0;
   std::string optName;
   if (this->checkerKind != CheckerKind::NOP && this->isOption()) {
-    if (shortOpt) {
-      optName += '-';
-      optName += this->getShortName();
-    } else {
-      optName += "--";
-      optName += this->getLongName();
-    }
+    optName = this->toOptName(shortOpt);
   }
   switch (this->checkerKind) {
   case CheckerKind::NOP:

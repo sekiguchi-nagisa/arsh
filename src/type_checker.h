@@ -272,6 +272,7 @@ class CodeCompletionContext;
 enum class TildeExpandStatus : unsigned char;
 
 class GlobPatternWrapper;
+class XORArgGroupSet;
 
 using SignatureHandler = std::function<void(const CallSignature &, unsigned int)>;
 
@@ -612,7 +613,15 @@ private:
 
   void postCheckFieldAttributes(const VarDeclNode &varDeclNode);
 
-  void resolveArgEntry(std::unordered_set<std::string> &foundOptionSet, unsigned int offset,
+  struct ResolveArgEntryParam {
+    std::unordered_set<std::string> foundOptionSet;
+    FlexBuffer<Token> tokens;
+    StaticBitSet<uint64_t> requiredXORGroupSet;
+
+    static_assert(StaticBitSet<uint64_t>::checkRange(SYS_LIMIT_XOR_ARG_GROUP_NUM));
+  };
+
+  void resolveArgEntry(ResolveArgEntryParam &resolveParam, unsigned int offset,
                        const AttributeNode &attrNode, const VarDeclNode &declNode,
                        std::vector<ArgEntry> &entries);
 

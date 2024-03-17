@@ -93,6 +93,7 @@ AttributeMap AttributeMap::create() {
                       Attribute::Param::REQUIRED,
                       Attribute::Param::STOP,
                       Attribute::Param::STORE,
+                      Attribute::Param::XOR,
                       Attribute::Param::HELP,
                   },
                   {TYPE::Bool});
@@ -107,6 +108,7 @@ AttributeMap AttributeMap::create() {
                       Attribute::Param::PLACE_HOLDER,
                       Attribute::Param::RANGE,
                       Attribute::Param::CHOICE,
+                      Attribute::Param::XOR,
                       Attribute::Param::HELP,
                   },
                   {TYPE::String, TYPE::Int});

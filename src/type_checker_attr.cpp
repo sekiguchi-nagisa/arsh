@@ -266,9 +266,9 @@ static std::string toArgName(const std::string &name) {
   return value;
 }
 
-void TypeChecker::resolveArgEntry(std::unordered_set<std::string> &foundOptionSet,
-                                  unsigned int offset, const AttributeNode &attrNode,
-                                  const VarDeclNode &declNode, std::vector<ArgEntry> &entries) {
+void TypeChecker::resolveArgEntry(ResolveArgEntryParam &resolveParam, const unsigned int offset,
+                                  const AttributeNode &attrNode, const VarDeclNode &declNode,
+                                  std::vector<ArgEntry> &entries) {
   ArgEntry entry(static_cast<ArgEntryIndex>(entries.size()),
                  declNode.getHandle()->getIndex() - offset);
   ArgEntryAttr argEntryAttr{};
@@ -319,7 +319,7 @@ void TypeChecker::resolveArgEntry(std::unordered_set<std::string> &foundOptionSe
         this->reportError<InvalidShortOpt>(constNode, optName.c_str());
         return;
       }
-      if (foundOptionSet.emplace(optName).second) {
+      if (resolveParam.foundOptionSet.emplace(optName).second) {
         entry.setShortName(optName[0]);
       } else { // already found
         this->reportError<DefinedOpt>(constNode, optName.c_str());
@@ -333,7 +333,7 @@ void TypeChecker::resolveArgEntry(std::unordered_set<std::string> &foundOptionSe
         this->reportError<InvalidLongOpt>(constNode, optName.c_str());
         return;
       }
-      if (foundOptionSet.emplace(optName).second) {
+      if (resolveParam.foundOptionSet.emplace(optName).second) {
         entry.setLongName(optName.c_str());
       } else { // already found
         this->reportError<DefinedOpt>(constNode, optName.c_str());
@@ -419,11 +419,21 @@ void TypeChecker::resolveArgEntry(std::unordered_set<std::string> &foundOptionSe
       }
       continue;
     }
+    case Attribute::Param::XOR: {
+      int64_t v = cast<NumberNode>(constNode).getIntValue();
+      if (v < 0 || static_cast<uint64_t>(v) > SYS_LIMIT_XOR_ARG_GROUP_NUM) {
+        this->reportError<XORGroupRange>(constNode);
+        return;
+      }
+      entry.setXORGroupId(static_cast<unsigned char>(v));
+      continue;
+    }
     }
   }
 
   // add default option/arg name
-  if (attrNode.getAttrKind() != AttributeKind::ARG && entry.getShortName() == '\0' &&
+  if (auto &foundOptionSet = resolveParam.foundOptionSet;
+      attrNode.getAttrKind() != AttributeKind::ARG && entry.getShortName() == '\0' &&
       entry.getLongName().empty()) {
     auto &varName = declNode.getVarName();
     auto optName = toLongOpt(varName);
@@ -449,19 +459,22 @@ void TypeChecker::resolveArgEntry(std::unordered_set<std::string> &foundOptionSe
         this->reportError<UnrecogArg>(token, entry.getArgName().c_str(), last.getArgName().c_str());
       }
       return;
-    } else {
-      if (isOptionOrBase(declNode.getExprNode()->getType(), TYPE::StringArray)) {
-        foundOptionSet.emplace("<remain>");
-        setFlag(argEntryAttr, ArgEntryAttr::REMAIN);
-      }
+    }
+    if (isOptionOrBase(declNode.getExprNode()->getType(), TYPE::StringArray)) {
+      foundOptionSet.emplace("<remain>");
+      setFlag(argEntryAttr, ArgEntryAttr::REMAIN);
     }
   }
   entry.setAttr(argEntryAttr);
   if (entry.getArgName().empty()) {
     entry.setArgName(toArgName(declNode.getVarName()).c_str());
   }
+  if (entry.inXORGroup() && entry.isRequired()) {
+    resolveParam.requiredXORGroupSet.add(entry.getXORGroupId());
+  }
 
   entries.push_back(std::move(entry));
+  resolveParam.tokens.push_back(attrNode.getAttrNameInfo().getToken());
 }
 
 template <typename Func>
@@ -487,23 +500,34 @@ static void iterateFieldAttribute(const FunctionNode &node, Func func) {
 std::vector<ArgEntry> TypeChecker::resolveArgEntries(const FunctionNode &node,
                                                      const unsigned int offset) {
   std::vector<ArgEntry> entries;
+  ResolveArgEntryParam param;
+  param.foundOptionSet = {"h", "help"};
 
   // check Flag/Option
-  std::unordered_set<std::string> foundOptionSet = {"h", "help"};
   iterateFieldAttribute(node, [&](const AttributeNode &attrNode, const VarDeclNode &declNode) {
     if (const auto kind = attrNode.getAttrKind();
         kind == AttributeKind::FLAG || kind == AttributeKind::OPTION) {
-      this->resolveArgEntry(foundOptionSet, offset, attrNode, declNode, entries);
+      this->resolveArgEntry(param, offset, attrNode, declNode, entries);
     }
   });
   entries.push_back(ArgEntry::newHelp(static_cast<ArgEntryIndex>(entries.size())));
+  param.tokens.push_back({0, 0}); // dummy
 
   // check Arg
   iterateFieldAttribute(node, [&](const AttributeNode &attrNode, const VarDeclNode &declNode) {
     if (attrNode.getAttrKind() == AttributeKind::ARG) {
-      this->resolveArgEntry(foundOptionSet, offset, attrNode, declNode, entries);
+      this->resolveArgEntry(param, offset, attrNode, declNode, entries);
     }
   });
+
+  // check xor group
+  const unsigned int size = entries.size();
+  for (unsigned int i = 0; i < size; i++) {
+    if (const auto &e = entries[i];
+        e.inXORGroup() && !e.isRequired() && param.requiredXORGroupSet.has(e.getXORGroupId())) {
+      this->reportError<RequiredXORGroup>(param.tokens[i], e.getXORGroupId());
+    }
+  }
   return entries;
 }
 

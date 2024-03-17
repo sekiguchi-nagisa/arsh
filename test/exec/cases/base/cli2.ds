@@ -67,6 +67,48 @@ Options:
   -l[LEVEL], --level[=LEVEL]
   -h, --help                  show this help message" : ($ex as CLIError).message()
 
+## xor
+[<CLI>]
+typedef BBB() {
+  [<Flag(xor: 0)>]
+  var aaa = $false
+
+  [<Flag(xor: 0)>]
+  var bbb = $false
+
+  [<Option(xor: 63, required: $true)>]
+  var count = 0
+
+  [<Option(required: $true, xor: 63, default: "/dev/stdout", opt: $true)>]
+  var dir : String?
+}
+var bb = new BBB()
+$bb.setName('cmd4')
+$ex = 45
+try { $bb.parse(['--count=12', '--aaa', '--dir']) } catch e { $ex = $e; }
+assert $ex is CLIError
+assert ($ex as CLIError).status() == 1
+assert ($ex as CLIError).message() == "cmd4: --dir option is not allowed after --count option
+See \`cmd4 --help' for more information."
+
+$ex = 45
+try { $bb.parse(['--count=12', '--bbb', '--count=999', '--aaa']) } catch e { $ex = $e; }
+assert $ex is CLIError
+assert ($ex as CLIError).status() == 1
+assert ($ex as CLIError).message() == "cmd4: --aaa option is not allowed after --bbb option
+See \`cmd4 --help' for more information."
+
+$bb = new BBB()
+$bb.setName('cmd5')
+$ex = 45
+try { $bb.parse(['--dir=12', '--aaa', '--dir']) } catch e { $ex = $e; }
+assert $ex is Int
+assert $bb.aaa
+assert !$bb.bbb
+assert $bb.count == 0
+assert $bb.dir! == '/dev/stdout'
+
+
 # auto-gen option/arg name
 [<CLI(verbose: $true)>]
 typedef _AAA() {

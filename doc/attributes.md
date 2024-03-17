@@ -15,6 +15,7 @@ only allowed for user-defied type definition
 |-----------|------------|--------------|-------------------------------------------------------------|
 | toplevel  | ``Bool``   | false        | set toplevel arg0 to cli name                               |
 | verbose   | ``Bool``   | false        | show detailed usage when encounter command line parse error |
+| desc      | ``String`` | empty string | set description message                                     |
 
 ### ``Flag`` attribute
 only allowed for field declaration that is ``Bool`` or ``Bool?`` type
@@ -26,6 +27,7 @@ only allowed for field declaration that is ``Bool`` or ``Bool?`` type
 | required  | ``Bool``   | false                                     | required or not                                               |
 | stop      | ``Bool``   | false                                     | stop option recognition                                       |
 | store     | ``Bool``   | true                                      | set value to field                                            |
+| xor       | ``Int``    | null                                      | set xor argument group number                                 |
 | help      | ``String`` | empty string                              | help message of this flag                                     |
 
 
@@ -43,6 +45,7 @@ only allowed for field declaration that is ``String``, ``String?``, ``Int`` or `
 | placeholder | ``String``    | equivalent to upper snake case field name | placeholder for argument                                      |
 | range       | ``(Int,Int)`` | null                                      | range of integer argument (inclusive, inclusive)              |
 | choice      | ``[String]``  | null                                      | valid choice of string argument                               |
+| xor         | ``Int``       | null                                      | set xor argument group number                                 |
 | help        | ``String``    | empty string                              | help message of this option                                   |
 
 
