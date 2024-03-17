@@ -460,6 +460,25 @@ TEST_F(InteractiveTest, moduleError4) {
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED, "\n"));
 }
 
+TEST_F(InteractiveTest, sourceGlobLimit) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("ulimit -S -n 5"));
+  std::string err =
+      format(R"([semantic error] not enough resources for glob expansion, caused by `%s'
+ --> (stdin):2:9
+source? /*//*//*/*//*/*//*/*/*//**/?!/*/*/*/*/s*/../*/../*
+        ^~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+)",
+             strerror(EMFILE));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
+      "source? /*//*//*/*//*/*//*/*/*//**/?!/*/*/*/*/s*/../*/../*", "", err.c_str()));
+
+  this->send(CTRL_D);
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
+}
+
 TEST_F(InteractiveTest, illegalcmd) {
   this->invoke("--quiet", "--norc");
 
