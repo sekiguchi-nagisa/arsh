@@ -171,11 +171,15 @@ public:
   static constexpr unsigned int MAX_FD_NUM = 9;
 
 private:
-  unsigned int backupFDSet{0}; // if corresponding bit is set, backup old fd
+  StaticBitSet<uint16_t> backupFDSet; // if corresponding bit is set, backup old fd
+
+  bool saved{false};
 
   int oldFds[MAX_FD_NUM + 1];
 
   std::vector<Entry> entries;
+
+  static_assert(decltype(backupFDSet)::checkRange(MAX_FD_NUM));
 
 public:
   NON_COPYABLE(RedirObject);
@@ -190,22 +194,26 @@ public:
 
   void addEntry(Value &&value, RedirOp op, int newFd);
 
-  void ignoreBackup() { this->backupFDSet = 0; }
+  void ignoreBackup() { this->backupFDSet.clear(); }
 
   bool redirect(ARState &state);
 
 private:
   void saveFDs() {
     for (unsigned int i = 0; i < std::size(this->oldFds); i++) {
-      if (this->backupFDSet & (1u << i)) {
+      if (this->backupFDSet.has(i)) {
         this->oldFds[i] = dupFDCloseOnExec(static_cast<int>(i));
       }
     }
+    this->saved = true;
   }
 
   void restoreFDs() {
+    if (!this->saved) {
+      return;
+    }
     for (unsigned int i = 0; i < std::size(this->oldFds); i++) {
-      if (this->backupFDSet & (1u << i)) {
+      if (this->backupFDSet.has(i)) {
         int oldFd = this->oldFds[i];
         int fd = static_cast<int>(i);
         if (oldFd < 0) {

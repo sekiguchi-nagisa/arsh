@@ -98,6 +98,7 @@
 - add missing string size checking to ``CLI#usage`` method
 - fix SEGV when pass too long arguments to external command
 - fix error checking of ``FD`` constructor
+- accidentally close file descriptor when throw error before redirection
 
 ## [0.32.1] - 2024-01-21
 

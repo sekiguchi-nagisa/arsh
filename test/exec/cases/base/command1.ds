@@ -63,6 +63,13 @@ assert($? != 0)
 ls hfreure 2>&1 | grep ls
 assert($? == 0)
 
+## error before actual redirection
+var ex = 34 as Any
+try { echo hello > /dev/null ${34/0}; } catch e { $ex = $e;}
+assert ($ex as ArithmeticError).message() == 'zero division'
+($ex as Error).show()
+assert "$(__puts -2 hey && echo hello)" == 'hello'
+
 
 # parameter expansion
 echo $true | grep true
@@ -197,7 +204,7 @@ world" == "$(echo hello && echo world)")  # and-list
 "$(exit 23)"
 assert($? == 23) # after substitution, update exit status
 
-var ex = 34 as Any
+$ex = 34 as Any
 try { assert "$(yes)".size() == 0; } catch e { $ex = $e; }
 assert $ex is OutOfRangeError
 

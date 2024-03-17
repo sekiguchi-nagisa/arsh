@@ -58,17 +58,17 @@ public:
   static constexpr bool checkRange(uint8_t v) { return v < BIT_SIZE; }
 
   void add(uint8_t v) {
-    const auto f = static_cast<T>(1) << v;
+    const auto f = static_cast<T>(static_cast<T>(1) << v);
     setFlag(this->value, f);
   }
 
   void del(uint8_t v) {
-    const auto f = static_cast<T>(1) << v;
+    const auto f = static_cast<T>(static_cast<T>(1) << v);
     unsetFlag(this->value, f);
   }
 
   bool has(uint8_t v) const {
-    const auto f = static_cast<T>(1) << v;
+    const auto f = static_cast<T>(static_cast<T>(1) << v);
     return hasFlag(this->value, f);
   }
 

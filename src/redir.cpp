@@ -146,10 +146,10 @@ static int redirectToFile(StringRef fileName, RedirOpenFlag openFlag, int newFd)
 void RedirObject::addEntry(Value &&value, RedirOp op, int newFd) {
   if (op == RedirOp::REDIR_OUT_ERR || op == RedirOp::APPEND_OUT_ERR ||
       op == RedirOp::CLOBBER_OUT_ERR) {
-    this->backupFDSet |= 1u << 1u;
-    this->backupFDSet |= 1u << 2u;
+    this->backupFDSet.add(STDOUT_FILENO);
+    this->backupFDSet.add(STDERR_FILENO);
   } else if (newFd >= 0 && static_cast<unsigned int>(newFd) <= MAX_FD_NUM) {
-    this->backupFDSet |= 1u << static_cast<unsigned int>(newFd);
+    this->backupFDSet.add(newFd);
   }
   assert(newFd < 0 || static_cast<unsigned int>(newFd) <= MAX_FD_NUM);
   this->entries.push_back(Entry{
@@ -226,7 +226,7 @@ bool RedirObject::redirect(ARState &state) {
   this->saveFDs();
   for (auto &entry : this->entries) {
     int r = redirectImpl(entry, state.has(RuntimeOption::CLOBBER));
-    if (this->backupFDSet > 0 && r != 0) {
+    if (!this->backupFDSet.empty() && r != 0) {
       std::string msg = ERROR_REDIR;
       if (entry.value) {
         if (entry.value.hasType(TYPE::String)) {
