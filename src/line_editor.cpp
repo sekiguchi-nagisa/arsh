@@ -459,6 +459,10 @@ int LineEditorObject::enableRawMode(int fd) {
   raw.c_cc[VTIME] = 0; /* 1 byte, no timer */
 
   /* set speed */
+#ifndef EXTB
+#define EXTB B38400
+#endif
+
   cfsetispeed(&raw, EXTB);
   cfsetospeed(&raw, EXTB);
 
