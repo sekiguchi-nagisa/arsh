@@ -575,7 +575,11 @@ void LineEditorObject::refreshLine(struct linenoiseState &l, bool repaint,
   /* cursor relative row. */
   const int relativeRows = static_cast<int>(l.oldRow);
   const int oldRows = static_cast<int>(l.maxRows);
-  std::string ab;
+
+  /*
+   * hide cursor during rendering due to suppress potential cursor flicker
+   */
+  std::string ab = "\x1b[?25l"; // hide cursor (from VT220 extension)
 
   lndebug("cols: %d, promptCols: %d, promptRows: %d, rows: %d", (int)l.cols, (int)promptCols,
           (int)promptRows, (int)rows);
@@ -636,6 +640,7 @@ void LineEditorObject::refreshLine(struct linenoiseState &l, bool repaint,
     snprintf(seq, 64, "\r");
   }
   ab += seq;
+  ab += "\x1b[?25h"; // show cursor (from VT220 extension)
 
   lndebug("\n");
   l.oldColPos = cursorCols;
