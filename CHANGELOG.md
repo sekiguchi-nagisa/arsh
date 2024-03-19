@@ -60,16 +60,17 @@
   for a in "123" as String? { echo $a; }
   ```
 - pass fully qualified command name to ``COMP_HOOK`` for user-defined command
-- add ``desc`` parameter to ``CLI`` attribute
-    - now put command line description message
-- add ``xor`` parameter to ``Flag``, ``Option`` attribute. now specify define exclusive options
+- improve declarative command line argument parsing
+    - add ``desc`` parameter to ``CLI`` attribute
+        - now put command line description message
+    - add ``xor`` parameter to ``Flag``, ``Option`` attribute. now define exclusive options
 
 #### Builtin
 
-- **Breaking Change**: change ``COMPREPLY`` type with ``Candidates``
-    - also change ``COMP_HOOK`` type with ``((Module, [String], Int) -> Candidates?)?``
-- **Breaking Change**: change ``LineEditor#setCompletion`` signature
-    - now accept ``((Module, String) -> Candidates)?``
+- **Breaking Change**: change type signature of ``COMPREPLY`` and related method
+    - change ``COMPREPLY`` type with ``Candidates``
+    - change ``COMP_HOOK`` type with ``((Module, [String], Int) -> Candidates?)?``
+    - change ``LineEditor#setCompletion`` parameter with ``((Module, String) -> Candidates)?``
 - **Breaking Change**: change builtin ``complete`` command ``-s`` option behavior
     - not insert suffix space to candidates (but print space)
     - print space even if multiple candidates
@@ -82,6 +83,7 @@
     - change ``bind`` method signature, now accept optional argument
         - if specified ``None``, remove existing key-bind
     - now remove already defined custom action when pass ``None`` to ``action`` method
+- hide cursor during line refresh due to suppress potential cursor flicker
 
 #### Module
 
