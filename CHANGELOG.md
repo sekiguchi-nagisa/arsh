@@ -91,6 +91,8 @@
     - ``prompt`` command in ``prompt`` module
     - ``history`` command in ``history`` module
     - ``compdef`` command in ``completion`` module
+- completion module supports bash-completion v2.12
+    - load compat script for old api
 
 ### Fixed
 

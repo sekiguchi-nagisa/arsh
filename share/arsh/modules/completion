@@ -143,6 +143,7 @@ let _bash_completion_paths = [
 ]
 
 var BASH_COMPLETION_PATH = "/usr/share/bash-completion/bash_completion"
+var BASH_COMPLETION_COMPAT = "/etc/bash_completion.d/000_bash_completion_compat.bash"
 
 # Conceptually based on git-completion.tcsh 
 # (https://github.com/git/git/blob/master/contrib/completion/git-completion.tcsh)
@@ -154,6 +155,9 @@ function _comp_wrap(file : String, target : String, words : [String], cursor : I
                 test -f $path && break $path
             } ?? return $none
     }
+    if !(test -f $BASH_COMPLETION_COMPAT) {
+        $BASH_COMPLETION_COMPAT = $findBashCompScript("000_bash_completion_compat.bash") ?? ""
+    }
 
     let script = '
     complete() { true; }   # ignore `complete` function
@@ -164,8 +168,9 @@ function _comp_wrap(file : String, target : String, words : [String], cursor : I
     bash_completion_path="$1"
     comp_script="$2"
     comp_func="$3"
-    COMP_CWORD="$4"
-    shift 4
+    bash_completion_compat="$4"
+    COMP_CWORD="$5"
+    shift 5
     COMP_WORDS=("$@")
     if [ ${#COMP_WORDS[@]} -eq $COMP_CWORD ]; then
         COMP_WORDS+=("")
@@ -175,6 +180,12 @@ function _comp_wrap(file : String, target : String, words : [String], cursor : I
 
     # load script and call completion function
     source "$bash_completion_path"
+    if [ "x${bash_completion_compat}" != x ]; then
+        source "$bash_completion_compat"   # for bash-completion v2.12
+        if ! declare -f _split_longopt &>> /dev/null && declare -f _comp__split_longopt &>> /dev/null; then
+            _comp_deprecate_func 2.12 _split_longopt _comp__split_longopt  # workaround for old completion script
+        fi
+    fi
     source "$comp_script"
     "$comp_func" "$(basename ${COMP_WORDS[0]})"
 
@@ -184,7 +195,8 @@ function _comp_wrap(file : String, target : String, words : [String], cursor : I
     '
 
     var ret : Candidates
-    bash -c $script bash $BASH_COMPLETION_PATH $file $target $cursor $words 2> /dev/null| for line in $STDIN {
+    bash -c $script bash \
+      $BASH_COMPLETION_PATH $file $target $BASH_COMPLETION_COMPAT $cursor $words | for line in $STDIN {
         if test -d $line && $line[-1] != '/' && $line.contains('/') { # for directory
             $line += '/'
         }
