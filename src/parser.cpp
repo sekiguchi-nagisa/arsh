@@ -966,7 +966,7 @@ std::unique_ptr<Node> Parser::parse_ifExpression(bool asElif) {
   TRY(this->expect(asElif ? TokenKind::ELIF : TokenKind::IF));
 
   std::unique_ptr<Node> condNode;
-  const bool ifLet = CUR_KIND() == TokenKind::LET;
+  const bool ifLet = CUR_KIND() == TokenKind::LET || CUR_KIND() == TokenKind::VAR;
   if (ifLet) {
     condNode = TRY(this->parse_variableDeclaration());
   } else {

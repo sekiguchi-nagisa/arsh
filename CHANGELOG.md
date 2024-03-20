@@ -180,6 +180,7 @@
   do-something 3>&1 1>&2 2>&3   # swap stdout and stderr
   exec 9>lockfile && flock -n 9 # flock with file descriptor number
   ```
+- allow ``if-var`` optional binding like ``if-let``
 
 #### Builtin
 

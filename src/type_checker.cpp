@@ -1388,7 +1388,8 @@ void TypeChecker::resolveIfLet(IfNode &node) {
   assert(isa<VarDeclNode>(condNode));
   auto &varDeclNode = cast<VarDeclNode>(condNode);
   varDeclNode.setType(this->typePool().get(TYPE::Void));
-  assert(varDeclNode.getKind() == VarDeclNode::LET);
+  const auto declKind = varDeclNode.getKind();
+  assert(declKind == VarDeclNode::LET || declKind == VarDeclNode::VAR);
   auto &exprNode = *varDeclNode.getExprNode();
   auto &exprType = this->checkTypeAsExpr(exprNode);
   if (!exprType.isOptionType()) {
@@ -1398,9 +1399,8 @@ void TypeChecker::resolveIfLet(IfNode &node) {
   node.setIfLetKind(IfNode::IfLetKind::UNWRAP);
   auto emptyNode = std::make_unique<EmptyNode>(varDeclNode.getNameInfo().getToken());
   emptyNode->setType(cast<OptionType>(exprType).getElementType());
-  auto decl =
-      std::make_unique<VarDeclNode>(varDeclNode.getPos(), NameInfo(varDeclNode.getNameInfo()),
-                                    std::move(emptyNode), VarDeclNode::Kind::LET);
+  auto decl = std::make_unique<VarDeclNode>(
+      varDeclNode.getPos(), NameInfo(varDeclNode.getNameInfo()), std::move(emptyNode), declKind);
   cast<BlockNode>(node.getThenNode()).insertNodeToFirst(std::move(decl));
 }
 

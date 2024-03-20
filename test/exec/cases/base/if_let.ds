@@ -2,7 +2,7 @@
 function bind(a : String) : String {
     return if let v = $a.toInt(10) {
         $v as String
-    } elif let v = $a.toFloat() {
+    } elif var v = $a.toFloat() {
         $v as String
     } else {
         "failed"
@@ -22,8 +22,9 @@ function typeName(a : Any) : String {
     } elif let v = $a as? Float {
         assert $a is Float
         "Float"
-    } elif let v = $a as? ArithmeticError {
+    } elif var v = $a as? ArithmeticError {
         assert $a is ArithmeticError
+        $v = new ArithmeticError('dummy')  # assign
         "ArithmeticError"
     } elif let v = $a as? Error {
         assert $a is Error
