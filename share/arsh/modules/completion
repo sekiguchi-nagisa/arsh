@@ -313,7 +313,10 @@ compdef(param : _CompDefParam) {
     }
     var argType : Int?
     var arg : String?
-    if let path = $param.comp_path {
+    if var path = $param.comp_path {
+        if !$path.contains('/') {  # if not full-path, resolve full-path
+            $path = $findBashCompScript($path) ?? return 1  # do nothing
+        }
         if let target = $param.comp_target {
             $argType = 3
             $opt = $path
