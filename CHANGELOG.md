@@ -105,6 +105,7 @@
 - fix SEGV when pass too long arguments to external command
 - fix error checking of ``FD`` constructor
 - accidentally close file descriptor when throw error before redirection
+- fix error checking of FD passing
 
 ## [0.32.1] - 2024-01-21
 

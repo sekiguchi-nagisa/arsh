@@ -655,7 +655,11 @@ bool CmdArgsBuilder::add(Value &&arg) {
       auto strObj = Value::createStr(arg.toString());
       bool r = this->argv->append(this->state, std::move(strObj));
       if (r) {
-        typeAs<UnixFdObject>(arg).closeOnExec(false);
+        assert(arg.get()->getRefcount() == 1);
+        if (!typeAs<UnixFdObject>(arg).closeOnExec(false)) {
+          raiseSystemError(this->state, errno, "failed to pass FD object to command arguments");
+          return false;
+        }
         typeAs<RedirObject>(this->redir).addEntry(std::move(arg), RedirOp::NOP, -1);
       }
       return r;

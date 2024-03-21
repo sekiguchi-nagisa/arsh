@@ -34,4 +34,12 @@ try {
 assert $ex is SystemError
 assert ($ex as SystemError).message() =~ $/failed to pass FD object to command arguments/
 
+
+$ex = 234
+try {
+    : ${{var a = $STDIN.dup(); $a.close(); $a;}}
+    assert false
+} catch e { $ex = $e;  }
+assert ($ex as SystemError).message() =~ $/failed to pass FD object to command arguments/
+
 true
