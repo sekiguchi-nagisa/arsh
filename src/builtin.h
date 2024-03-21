@@ -2069,7 +2069,7 @@ ARSH_METHOD fd_init(RuntimeContext &ctx) {
 
   errno = 0;
   int fd = open(ref.data(), O_CREAT | O_RDWR, 0666);
-  if (fd != -1 && remapFD(fd)) {
+  if (fd != -1 && remapFDCloseOnExec(fd)) {
     RET(Value::create<UnixFdObject>(fd));
   }
   int e = errno;
@@ -2096,7 +2096,7 @@ ARSH_METHOD fd_close(RuntimeContext &ctx) {
 ARSH_METHOD fd_dup(RuntimeContext &ctx) {
   SUPPRESS_WARNING(fd_dup);
   int fd = typeAs<UnixFdObject>(LOCAL(0)).getRawFd();
-  int newFd = dupFDExactly(fd);
+  int newFd = dupFDCloseOnExec(fd);
   if (unlikely(newFd < 0)) {
     int e = errno;
     raiseSystemError(ctx, e, std::to_string(fd));
@@ -2132,6 +2132,18 @@ ARSH_METHOD fd_unlock(RuntimeContext &ctx) {
     RET_ERROR;
   }
   RET(LOCAL(0));
+}
+
+//!bind: function cloexec($this: FD, $set: Option<Bool>) : Void
+ARSH_METHOD fd_cloexec(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(fd_cloexec);
+  auto &fdObj = typeAs<UnixFdObject>(LOCAL(0));
+  const bool set = LOCAL(1).isInvalid() ? true : LOCAL(1).asBool();
+  if (!fdObj.closeOnExec(set)) {
+    raiseSystemError(ctx, errno, "change of close-on-exec flag failed");
+    RET_ERROR;
+  }
+  RET_VOID;
 }
 
 //!bind: function $OP_BOOL($this : FD) : Bool

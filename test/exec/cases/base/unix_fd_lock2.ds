@@ -3,6 +3,7 @@
 assert command -V flock > /dev/null
 
 var this = new FD($SCRIPT_NAME)
+$this.cloexec($false)  # disabe close-on-exec flag
 
 flock -n ${$this.value()} || {
     echo already running

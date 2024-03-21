@@ -205,11 +205,6 @@ inline int dupFD(int fd) { return fcntl(fd, F_DUPFD, RESERVED_FD_LIMIT); }
 
 inline int dupFDCloseOnExec(int fd) { return fcntl(fd, F_DUPFD_CLOEXEC, RESERVED_FD_LIMIT); }
 
-inline int dupFDExactly(int fd) {
-  bool r = hasCloseOnExec(fd);
-  return fcntl(fd, r ? F_DUPFD_CLOEXEC : F_DUPFD, RESERVED_FD_LIMIT);
-}
-
 struct DirDeleter {
   void operator()(DIR *dir) const {
     if (dir) {

@@ -89,3 +89,36 @@ try {
 }
 assert $ex is ArgumentError
 assert ($ex as ArgumentError).message() == "file path contains null characters"
+
+## close-on-exec
+$fd = $STDIN.dup()
+flock -n ${$fd.value()}  # invalid fd (due to close-on-exec on)
+assert $? == 65
+assert "$(LANG=C flock -n ${$fd.value()} 2>&1)" =~ $/Bad file descriptor/
+
+$fd.cloexec($false)  # unset close-on-exec
+flock -n ${$fd.value()}  # valid fd (due to close-on-exec off)
+assert $? == 0
+
+$fd.cloexec()  # set close-on-exec
+flock -n ${$fd.value()}  # invalid fd (due to close-on-exec on)
+assert $? == 65
+assert "$(LANG=C flock -n ${$fd.value()} 2>&1)" =~ $/Bad file descriptor/
+
+$fd.cloexec($false)
+flock -n ${$fd.value()}  # valid fd (due to close-on-exec off)
+assert $? == 0
+
+$fd.cloexec($true)  # set close-on-exec
+flock -n ${$fd.value()}  # valid fd (due to close-on-exec off)
+assert $? == 65
+
+$ex = 34
+$fd.close()
+try {
+    $fd.cloexec()
+    assert false
+} catch e { $ex = $e; }
+assert ($ex as SystemError).message() == "change of close-on-exec flag failed, caused by \`Bad file descriptor'"
+
+true

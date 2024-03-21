@@ -75,6 +75,10 @@
     - not insert suffix space to candidates (but print space)
     - print space even if multiple candidates
 - **Breaking Change**: builtin ``exec`` command ``-a`` option now does not allow null characters
+- **Breaking Change**: newly created ``FD`` objects always have close-on-exec flag due to prevent fd leak
+    - except for ``STDIN``, ``STDOUT``, ``STDERR``
+    - ``FD#dup`` method always set close-on-exec flag
+    - when change close-on-exec flag, call ``FD#cloexec`` method
 - ``Error`` type constructor now accept 0 status
 - builtin ``complete`` command put completion candidate description via ``-d`` option
     - put type-signature of variable/field/function/method
