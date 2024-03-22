@@ -860,7 +860,7 @@ void EnvCtxObject::setAndSaveEnv(Value &&name, Value &&value) {
 // ##     ReaderObject     ##
 // ##########################
 
-bool ReaderObject::nextLine() {
+bool ReaderObject::nextLine(ARState &state) {
   if (!this->available) {
     return false;
   }
@@ -869,11 +869,15 @@ bool ReaderObject::nextLine() {
   while (true) {
     if (this->remainPos == this->usedSize) {
       const ssize_t readSize = read(this->fdObj->getRawFd(), this->buf, std::size(this->buf));
-      if (readSize == -1 && (errno == EINTR || errno == EAGAIN)) {
+      if (readSize == -1 && errno == EAGAIN) {
         continue;
       }
       if (readSize <= 0) {
         this->available = false;
+        if (readSize < 0) {
+          raiseSystemError(state, errno, "read failed");
+          return false;
+        }
         break;
       }
       this->remainPos = 0;
@@ -883,8 +887,11 @@ bool ReaderObject::nextLine() {
     // split by newline
     StringRef ref(this->buf + this->remainPos, this->usedSize - this->remainPos);
     for (StringRef::size_type pos = 0; pos != StringRef::npos;) {
-      auto ret = ref.find('\n', pos);
-      line += ref.slice(pos, ret);
+      const auto ret = ref.find('\n', pos);
+      if (!checkedAppend(ref.slice(pos, ret), StringObject::MAX_SIZE, line)) {
+        raiseStringLimit(state);
+        return false;
+      }
       pos = ret;
       if (ret != StringRef::npos) {
         this->value = Value::createStr(std::move(line));

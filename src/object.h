@@ -1383,7 +1383,7 @@ public:
     }
   }
 
-  bool nextLine();
+  bool nextLine(ARState &state);
 
   Value takeLine() { return std::move(this->value); }
 };

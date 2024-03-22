@@ -43,7 +43,7 @@ TEST_F(InteractiveTest, ctrlc1) {
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
 }
 
-TEST_F(InteractiveTest, ctrlc2) {
+TEST_F(InteractiveTest, cmd_ctrlc1) {
   this->invoke("--quiet", "--norc");
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
@@ -57,7 +57,7 @@ TEST_F(InteractiveTest, ctrlc2) {
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 128 + SIGINT));
 }
 
-TEST_F(InteractiveTest, ctrlc3) {
+TEST_F(InteractiveTest, cmd_ctrlc2) {
   this->invoke("--quiet", "--norc", "-i");
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
@@ -71,7 +71,7 @@ TEST_F(InteractiveTest, ctrlc3) {
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 128 + SIGINT));
 }
 
-TEST_F(InteractiveTest, ctrlc4) {
+TEST_F(InteractiveTest, read_ctrlc1) {
   this->invoke("--quiet", "--norc");
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
@@ -92,7 +92,7 @@ SystemError: %s
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 1));
 }
 
-TEST_F(InteractiveTest, ctrlc5) {
+TEST_F(InteractiveTest, read_ctrlc2) {
   this->invoke("--quiet", "--norc");
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
@@ -104,6 +104,24 @@ TEST_F(InteractiveTest, ctrlc5) {
   err += "\n";
   ASSERT_NO_FATAL_FAILURE(this->expect(promptAfterCtrlC(PROMPT), err));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 128 + SIGINT));
+}
+
+TEST_F(InteractiveTest, read_ctrlc3) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+  this->sendLine("for _ in <(cat) {}");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "for _ in <(cat) {}\n"));
+  std::this_thread::sleep_for(std::chrono::milliseconds(500));
+  this->send(CTRL_C);
+  std::string err = format(R"([runtime error]
+SystemError: read failed, caused by `%s'
+    from (stdin):1 '<toplevel>()'
+)",
+                           strerror(EINTR));
+  ASSERT_NO_FATAL_FAILURE(this->expect(promptAfterCtrlC(PROMPT), err));
+  this->send(CTRL_D);
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED, "\n"));
 }
 
 TEST_F(InteractiveTest, tab1) {

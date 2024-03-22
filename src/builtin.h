@@ -2175,9 +2175,9 @@ ARSH_METHOD fd_iter(RuntimeContext &ctx) {
 ARSH_METHOD reader_next(RuntimeContext &ctx) {
   SUPPRESS_WARNING(reader_next);
   auto &reader = typeAs<ReaderObject>(LOCAL(0));
-  if (reader.nextLine()) {
+  if (reader.nextLine(ctx)) {
     RET(reader.takeLine());
-  } else {
+  } else { // may have error
     RET_VOID;
   }
 }

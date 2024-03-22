@@ -28,7 +28,10 @@ assert $ret.size() == 0
 {
     var fd = <(echo -e '123\n456')
     sleep 0.5
-    for $e in $fd { if $fd { $fd.close(); }; $ret.add($e); }
+    var ex = 34 as Any
+    try { for $e in $fd { if $fd { $fd.close(); }; $ret.add($e); } } catch e { $ex = $e; }
+    assert $ex is SystemError
+    assert ($ex as SystemError).message() =~ $/read failed/
 }
 assert $ret.size() == 2 : "${$ret.size()}"   # closed, but still read all
 assert $ret[0] == '123'
@@ -58,3 +61,12 @@ $ex = 34
 diff \
     <(for(var i = 0; $i < 4096; $i++) { echo 0123456789abcdef; }) \
     <(for(var i = 0; $i < 4096; $i++) { echo 0123456789abcdef; } | for $e in $STDIN { echo $e; })
+
+## read error
+$ex = 34
+try {
+  var fd = <(for(var i = 0; $i < 99999; $i++) { printf "%*s" 999999999 $i; } );
+  for _ in $fd {}
+  assert false
+} catch e { $ex = $e; }
+assert $ex is OutOfRangeError

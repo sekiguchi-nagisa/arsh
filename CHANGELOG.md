@@ -89,6 +89,9 @@
         - if specified ``None``, remove existing key-bind
     - now remove already defined custom action when pass ``None`` to ``action`` method
 - hide cursor during line refresh due to suppress potential cursor flicker
+- improve internal error checking of ``FD`` iteration
+    - now report io error
+    - correctly check read string size limit
 
 #### Module
 
