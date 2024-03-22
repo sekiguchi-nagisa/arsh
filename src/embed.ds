@@ -3,7 +3,7 @@
 checkenv PATH || setenv PATH=/bin:/usr/bin:/usr/local/bin
 
 importenv HOME; importenv PATH; importenv PWD; importenv OLDPWD;
-importenv USER; importenv LOGNAME;
+importenv USER; importenv LOGNAME; var XTRACEFD = $STDERR
 
 typedef Boolean = Bool; typedef UnixFD = FD
 

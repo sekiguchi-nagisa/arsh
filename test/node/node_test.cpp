@@ -48,7 +48,7 @@ struct NodeDumpParam {
 
 class NodeDumpTest : public ::testing::TestWithParam<NodeDumpParam>, public TempFileFactory {
 protected:
-  static constexpr unsigned int GVAR_NUM = 50;
+  static constexpr unsigned int GVAR_NUM = 51;
 
   NodeDumpParam param;
 
@@ -926,7 +926,7 @@ nodes:
         size: 1
       name: "f"
     handle:
-      index: 50
+      index: 51
       kind: "VAR"
       attribute: "READ_ONLY | GLOBAL"
     paramNode: null
@@ -1167,7 +1167,7 @@ nodes:
     attrNodes:
     maxVarNum: 2
     handle:
-      index: 50
+      index: 51
       kind: "FUNC"
       attribute: "READ_ONLY | GLOBAL"
     resolvedType: "(Int, Int) -> Void"
@@ -1261,7 +1261,7 @@ nodes:
                 type: "() -> Void"
                 varName: "gg"
                 handle:
-                  index: 51
+                  index: 52
                   kind: "FUNC"
                   attribute: "READ_ONLY | GLOBAL"
                 extraOp: "NONE"
@@ -1300,7 +1300,7 @@ nodes:
         attrNodes:
         maxVarNum: 0
         handle:
-          index: 50
+          index: 51
           kind: "FUNC"
           attribute: "READ_ONLY | GLOBAL"
         resolvedType: "() -> Void"
@@ -1355,7 +1355,7 @@ nodes:
         attrNodes:
         maxVarNum: 0
         handle:
-          index: 51
+          index: 52
           kind: "FUNC"
           attribute: "READ_ONLY | GLOBAL"
         resolvedType: "() -> Void"

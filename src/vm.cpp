@@ -855,16 +855,18 @@ static void traceCmd(const ARState &state, const ArrayObject &argv) {
     value += e.toString();
   }
 
-  state.getCallStack().fillStackTrace([&value](StackTraceElement &&trace) {
-    fprintf(stderr, "+ %s:%d>%s\n", trace.getSourceName().c_str(), trace.getLineNum(),
-            value.c_str());
+  const int fd = typeAs<UnixFdObject>(getBuiltinGlobal(state, VAR_XTRACEFD)).getRawFd();
+  state.getCallStack().fillStackTrace([&value, &fd](StackTraceElement &&trace) {
+    dprintf(fd, "+ %s:%d>%s\n", trace.getSourceName().c_str(), trace.getLineNum(), value.c_str());
     value = "";
     return false; // print only once
   });
 
   if (!value.empty()) {
-    fprintf(stderr, "+%s\n", value.c_str());
+    dprintf(fd, "+%s\n", value.c_str());
   }
+  fsync(fd);
+  errno = 0; // ignore error
 }
 
 static bool checkCmdExecError(ARState &state, CmdCallAttr attr, int64_t status) {

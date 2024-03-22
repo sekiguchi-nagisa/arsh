@@ -66,6 +66,23 @@ assert "$(echo hello 2>&1 > /dev/null)" == "+ $SCRIPT_NAME:65> echo hello"
 shctl unset xtrace
 assert "$(echo hello 2>&1 > /dev/null)" == ""
 
+{
+    var tmp = "$(mktemp)"
+    assert test -f $tmp
+    $XTRACEFD = new FD($tmp)
+    shctl set xtrace
+    : helllo xtrace
+    shctl unset xtrace
+    assert "$(cat $tmp)" == 
+    "+ $SCRIPT_NAME:74> : helllo xtrace
++ $SCRIPT_NAME:75> shctl unset xtrace"
+    $XTRACEFD = $STDERR
+    defer {
+        rm $tmp
+    }
+}
+
+
 ## for `clobber` option
 assert shctl set | grep 'clobber *  on'
 var ex = 34 as Any
@@ -112,19 +129,19 @@ assert $oldOut == "$(shctl set)"
 
 ## invalid dump format
 assert "$(shctl set -r fjrafia 2>&1)" == 
-    "${$SCRIPT_NAME.basename()}:114: shctl: invalid option format: fjrafia" 
+    "${$SCRIPT_NAME.basename()}:131: shctl: invalid option format: fjrafia" 
 assert $? == 1
 
 assert "$(shctl set -r 'dotglob=off 222= nullglob=off' 2>&1)" == 
-        "${$SCRIPT_NAME.basename()}:118: shctl: invalid option format: 222=" 
+        "${$SCRIPT_NAME.basename()}:135: shctl: invalid option format: 222=" 
 assert $? == 1
 
 assert "$(shctl set -r dotglob=offf 2>&1)" == 
-    "${$SCRIPT_NAME.basename()}:122: shctl: invalid option format: dotglob=offf" 
+    "${$SCRIPT_NAME.basename()}:139: shctl: invalid option format: dotglob=offf" 
 assert $? == 1
 
 assert "$(shctl set -r fjrafia=off 2>&1)" == 
-    "${$SCRIPT_NAME.basename()}:126: shctl: unrecognized runtime option: fjrafia" 
+    "${$SCRIPT_NAME.basename()}:143: shctl: unrecognized runtime option: fjrafia" 
 assert $? == 1
 
 assert shctl set -s  2>&1 | grep -- '-s: invalid option'

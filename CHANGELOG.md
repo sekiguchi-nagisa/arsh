@@ -29,6 +29,7 @@
     - show description of candidate like fish
     - also show type signature style description
     - insert space after candidate even if candidate rotation
+- now specify ``xtrace`` option output via ``XTRACEFD`` variable
 
 ### Changed
 

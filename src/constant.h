@@ -87,14 +87,15 @@ constexpr const char *VAR_BIN_NAME = "BIN_NAME";
 constexpr const char *VAR_IFS = "IFS";
 constexpr const char *VAR_THIS = "this"; // for method receiver
 constexpr const char *VAR_ARGS = "ARGS";
+constexpr const char *VAR_XTRACEFD = "XTRACEFD";
 
 // used in constant expression
 constexpr const char *CVAR_SCRIPT_DIR = "SCRIPT_DIR";
 constexpr const char *CVAR_SCRIPT_NAME = "SCRIPT_NAME";
 constexpr const char *CVAR_ARG0 = "ARG0";
 
-constexpr const unsigned int CVAR_OFFSET_SCRIPT_NAME = 0;
-constexpr const unsigned int CVAR_OFFSET_SCRIPT_DIR = 1;
+constexpr unsigned int CVAR_OFFSET_SCRIPT_NAME = 0;
+constexpr unsigned int CVAR_OFFSET_SCRIPT_DIR = 1;
 
 // =====  magic method  =====
 
