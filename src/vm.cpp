@@ -851,8 +851,13 @@ bool VM::callCommand(ARState &state, CmdResolver resolver, ObjPtr<ArrayObject> &
 static void traceCmd(const ARState &state, const ArrayObject &argv) {
   std::string value;
   for (auto &e : argv.getValues()) {
-    value += " ";
-    value += e.toString();
+    value += ' ';
+    if (const StringRef ref = e.asStrRef(); !checkedAppend(ref, SYS_LIMIT_XTRACE_LINE_LEN, value)) {
+      value += ref.substr(0, SYS_LIMIT_XTRACE_LINE_LEN);
+      value.resize(SYS_LIMIT_XTRACE_LINE_LEN - 3);
+      value += "...";
+      break;
+    }
   }
 
   const int fd = typeAs<UnixFdObject>(getBuiltinGlobal(state, VAR_XTRACEFD)).getRawFd();

@@ -29,7 +29,6 @@
     - show description of candidate like fish
     - also show type signature style description
     - insert space after candidate even if candidate rotation
-- now specify ``xtrace`` option output via ``XTRACEFD`` variable
 
 ### Changed
 
@@ -89,6 +88,9 @@
         - if specified ``None``, remove existing key-bind
     - now remove already defined custom action when pass ``None`` to ``action`` method
 - hide cursor during line refresh due to suppress potential cursor flicker
+- improve ``xtrace`` option behavior
+    - now specify trace output via ``XTRACEFD`` variable
+    - truncate large too large command line
 - improve internal error checking of ``FD`` iteration
     - now report io error
     - correctly check read string size limit

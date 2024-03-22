@@ -71,10 +71,10 @@ assert "$(echo hello 2>&1 > /dev/null)" == ""
     assert test -f $tmp
     $XTRACEFD = new FD($tmp)
     shctl set xtrace
-    : helllo xtrace
+    : {1..999}
     shctl unset xtrace
     assert "$(cat $tmp)" == 
-    "+ $SCRIPT_NAME:74> : helllo xtrace
+    "+ $SCRIPT_NAME:74> : 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 16 17 18 19 20 21 22 23 24 25 26 27 28 29 30 31 32 33 34 35 36 37 38 39 40 41 42 43 44...
 + $SCRIPT_NAME:75> shctl unset xtrace"
     $XTRACEFD = $STDERR
     defer {
