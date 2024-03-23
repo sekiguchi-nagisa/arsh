@@ -2009,7 +2009,7 @@ ARSH_METHOD error_init(RuntimeContext &ctx) {
   auto &type = ctx.typePool.get(LOCAL(0).getTypeID());
   auto &v = LOCAL(2);
   const int64_t status = v.isInvalid() ? 1 : v.asInt();
-  RET(Value(ErrorObject::newError(ctx, type, LOCAL(1), status)));
+  RET(Value(ErrorObject::newError(ctx, type, EXTRACT_LOCAL(1), status)));
 }
 
 //!bind: function message($this : Error) : String

@@ -195,7 +195,9 @@ public:
   static_assert(MAX_SIZE <= SIZE_MAX);
 
   explicit StringObject(std::string &&value)
-      : ObjectWithRtti(TYPE::String), value(std::move(value)) {}
+      : ObjectWithRtti(TYPE::String), value(std::move(value)) {
+    assert(this->value.size() <= MAX_SIZE);
+  }
 
   explicit StringObject(StringRef ref) : StringObject(ref.toString()) {}
 
@@ -1050,11 +1052,6 @@ public:
   /**
    * create new Error_Object and create stack trace
    */
-  static ObjPtr<ErrorObject> newError(const ARState &state, const DSType &type,
-                                      const Value &message, int64_t status) {
-    return newError(state, type, Value(message), status);
-  }
-
   static ObjPtr<ErrorObject> newError(const ARState &state, const DSType &type, Value &&message,
                                       int64_t status);
 };

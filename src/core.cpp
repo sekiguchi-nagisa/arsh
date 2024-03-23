@@ -52,7 +52,7 @@ void reassignReplyVar(ARState &st) {
 }
 
 void raiseError(ARState &st, TYPE type, std::string &&message, int64_t status) {
-  assert(message.size() <= SYS_LIMIT_STRING_MAX);
+  message.resize(std::min(message.size(), SYS_LIMIT_STRING_MAX)); // truncate
   auto except = ErrorObject::newError(st, st.typePool.get(type),
                                       Value::createStr(std::move(message)), status);
   st.throwObject(std::move(except));
@@ -675,6 +675,7 @@ Result<ObjPtr<FuncObject>, ObjPtr<ErrorObject>> loadExprAsFunc(ARState &state, S
   if (errorConsumer.value.empty()) { // has no error, but empty code
     errorConsumer.value = "require expression";
   }
+  errorConsumer.value.resize(std::min(errorConsumer.value.size(), StringObject::MAX_SIZE));
   auto message = Value::createStr(std::move(errorConsumer.value));
   auto error =
       ErrorObject::newError(state, state.typePool.get(TYPE::ArgumentError), std::move(message), 1);
