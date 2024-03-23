@@ -231,7 +231,7 @@ void TypeChecker::visitRedirNode(RedirNode &node) {
     // check fd format
     const StringRef ref = node.getFdName();
     const auto pair = convertToDecimal<int32_t>(ref.begin(), ref.end());
-    if (pair && pair.value >= 0 && static_cast<unsigned int>(pair.value) < RESERVED_FD_LIMIT) {
+    if (pair && pair.value >= 0 && pair.value < RESERVED_FD_LIMIT) {
       node.setNewFd(pair.value);
     } else {
       this->reportError<RedirFdRange>(node, node.getFdName().c_str());
@@ -256,7 +256,7 @@ void TypeChecker::visitRedirNode(RedirNode &node) {
   case RedirOp::DUP_FD:
     if (!this->checkTypeExactly(argNode).is(TYPE::FD)) {
       const auto pair = toNumericCmdArg(argNode);
-      if (pair && pair.value >= 0 && static_cast<unsigned int>(pair.value) < RESERVED_FD_LIMIT) {
+      if (pair && pair.value >= 0 && pair.value < RESERVED_FD_LIMIT) {
         node.setTargetFd(pair.value);
       } else {
         this->reportError<NeedFd>(argNode);

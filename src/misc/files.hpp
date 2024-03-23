@@ -185,7 +185,7 @@ inline bool setFDFlag(int fd, int addFlag, bool set) {
   return fcntl(fd, F_SETFL, flag) != -1;
 }
 
-constexpr unsigned int RESERVED_FD_LIMIT = 10;
+constexpr int RESERVED_FD_LIMIT = 10;
 
 inline bool remapFD(int &fd) {
   int r = fcntl(fd, F_DUPFD, RESERVED_FD_LIMIT);

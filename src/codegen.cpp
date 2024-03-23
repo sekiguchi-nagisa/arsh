@@ -947,10 +947,8 @@ void ByteCodeGenerator::visitArgArrayNode(ArgArrayNode &node) {
 }
 
 void ByteCodeGenerator::visitRedirNode(RedirNode &node) {
-  if (const int newFd = node.getNewFd();
-      newFd >= 0 && static_cast<unsigned int>(newFd) < RESERVED_FD_LIMIT) {
-    if (const int targetFd = node.getTargetFd();
-        targetFd >= 0 && static_cast<unsigned int>(targetFd) < RESERVED_FD_LIMIT) {
+  if (const int newFd = node.getNewFd(); newFd >= 0 && newFd < RESERVED_FD_LIMIT) {
+    if (const int targetFd = node.getTargetFd(); targetFd >= 0 && targetFd < RESERVED_FD_LIMIT) {
       this->emitInt(targetFd);
     } else {
       this->generateCmdArg(node.getTargetNode());

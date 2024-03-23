@@ -152,10 +152,10 @@ void RedirObject::addEntry(Value &&value, RedirOp op, int newFd) {
       op == RedirOp::CLOBBER_OUT_ERR) {
     this->backupFDSet.add(STDOUT_FILENO);
     this->backupFDSet.add(STDERR_FILENO);
-  } else if (newFd >= 0 && static_cast<unsigned int>(newFd) <= MAX_FD_NUM) {
+  } else if (newFd >= 0 && newFd <= MAX_FD_NUM) {
     this->backupFDSet.add(newFd);
   }
-  assert(newFd < 0 || static_cast<unsigned int>(newFd) <= MAX_FD_NUM);
+  assert(newFd < 0 || newFd <= MAX_FD_NUM);
   this->entries.push_back(Entry{
       .value = std::move(value),
       .op = op,

@@ -168,7 +168,7 @@ public:
     int newFd; // ignore it when op is REDIR_OUT_ERR, APPEND_OUT_ERR or CLOBBER_OUT_ERR
   };
 
-  static constexpr unsigned int MAX_FD_NUM = 9;
+  static constexpr int MAX_FD_NUM = 9;
 
 private:
   StaticBitSet<uint16_t> backupFDSet; // if corresponding bit is set, backup old fd
