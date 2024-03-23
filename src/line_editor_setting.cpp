@@ -29,33 +29,33 @@ bool LineEditorObject::addKeyBind(ARState &state, StringRef key, StringRef name)
     break;
   case KeyBindings::AddStatus::UNDEF:
     message = "undefined edit action: `";
-    message += toPrintable(name);
-    message += "'";
+    appendAsPrintable(name, StringObject::MAX_SIZE - 1, message);
+    message += '\'';
     break;
   case KeyBindings::AddStatus::FORBID_BRACKET_START_CODE:
     message = "cannot change binding of bracket start code `";
     message += KeyBindings::toCaret(KeyBindings::BRACKET_START);
-    message += "'";
+    message += '\'';
     break;
   case KeyBindings::AddStatus::FORBID_BRACKET_ACTION:
     message = "cannot bind to `";
     message += toString(EditActionType::BRACKET_PASTE);
-    message += "'";
+    message += '\'';
     break;
   case KeyBindings::AddStatus::INVALID_START_CHAR:
     message = "keycode must start with control character: `";
-    message += toPrintable(key);
-    message += "'";
+    appendAsPrintable(key, StringObject::MAX_SIZE - 1, message);
+    message += '\'';
     break;
   case KeyBindings::AddStatus::INVALID_ASCII:
     message = "keycode must be ascii characters: `";
-    message += toPrintable(key);
-    message += "'";
+    appendAsPrintable(key, StringObject::MAX_SIZE - 1, message);
+    message += '\'';
     break;
   case KeyBindings::AddStatus::LIMIT:
     message = "number of key bindings reaches limit (up to ";
     message += std::to_string(SYS_LIMIT_KEY_BINDING_MAX);
-    message += ")";
+    message += ')';
     break;
   }
   if (!message.empty()) {
@@ -97,23 +97,23 @@ bool LineEditorObject::defineCustomAction(ARState &state, StringRef name, String
   switch (s.asErr()) {
   case KeyBindings::DefineError::INVALID_NAME:
     message += "invalid action name, must [a-zA-Z_-]: `";
-    message += toPrintable(name);
-    message += "'";
+    appendAsPrintable(name, StringObject::MAX_SIZE - 1, message);
+    message += '\'';
     break;
   case KeyBindings::DefineError::INVALID_TYPE:
     message += "unsupported custom action type: `";
-    message += toPrintable(type);
-    message += "'";
+    appendAsPrintable(type, StringObject::MAX_SIZE - 1, message);
+    message += '\'';
     break;
   case KeyBindings::DefineError::DEFINED:
     message += "already defined action: `";
     message += name;
-    message += "'";
+    message += '\'';
     break;
   case KeyBindings::DefineError::LIMIT:
     message += "number of custom actions reaches limit (up to ";
     message += std::to_string(SYS_LIMIT_CUSTOM_ACTION_MAX);
-    message += ")";
+    message += ')';
     break;
   }
   raiseError(state, TYPE::ArgumentError, std::move(message));
@@ -169,8 +169,8 @@ bool LineEditorObject::setConfig(ARState &state, StringRef name, const Value &va
   auto *config = toEditConfig(name);
   if (!config) {
     std::string message = "undefined config: `";
-    message += toPrintable(name);
-    message += "'";
+    appendAsPrintable(name, StringObject::MAX_SIZE - 1, message);
+    message += '\'';
     raiseError(state, TYPE::ArgumentError, std::move(message));
     return false;
   }

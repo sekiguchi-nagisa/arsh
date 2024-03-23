@@ -633,20 +633,31 @@ bool quoteAsCmdOrShellArg(const StringRef ref, std::string &out, bool asCmd) {
   return hexCount == 0;
 }
 
-std::string toPrintable(StringRef ref) {
-  auto old = errno;
-  std::string ret;
+std::string toPrintable(const StringRef ref) {
+  std::string out;
+  appendAsPrintable(ref, SYS_LIMIT_PRINTABLE_MAX, out);
+  return out;
+}
+
+void appendAsPrintable(StringRef ref, size_t maxSize, std::string &out) {
+  const auto old = errno;
   for (int ch : ref) { // for arm32/arm64
+    if (unlikely(out.size() >= maxSize)) {
+      if (maxSize >= 3) {
+        out.resize(maxSize - 3);
+        out += "...";
+      }
+      break;
+    }
     if ((ch >= 0 && ch < 32) || ch == 127) {
       char d[16];
       snprintf(d, std::size(d), "\\x%02x", ch);
-      ret += d;
+      out += d;
     } else {
-      ret += static_cast<char>(ch);
+      out += static_cast<char>(ch);
     }
   }
   errno = old;
-  return ret;
 }
 
 } // namespace arsh

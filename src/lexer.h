@@ -386,6 +386,19 @@ inline std::string quoteAsShellArg(StringRef ref) {
 /**
  * convert to printable string
  * @param ref
+ * @param maxSize
+ * @param out
+ * if reach maxSize, truncate and put '...'
+ */
+void appendAsPrintable(StringRef ref, size_t maxSize, std::string &out);
+
+inline void appendAsPrintable(const StringRef ref, std::string &out) {
+  appendAsPrintable(ref, out.max_size(), out);
+}
+
+/**
+ * convert to printable string
+ * @param ref
  * @return
  */
 std::string toPrintable(StringRef ref);

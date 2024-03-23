@@ -111,7 +111,7 @@ bool printErrorAt(const ARState &state, StringRef cmdName, int errNum, const cha
     out += ": ";
   }
   if (!cmdName.empty()) {
-    out += toPrintable(cmdName);
+    appendAsPrintable(cmdName, SYS_LIMIT_PRINTABLE_MAX, out);
     out += ": ";
   }
 

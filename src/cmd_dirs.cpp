@@ -96,7 +96,9 @@ int builtin_cd(ARState &state, ArrayObject &argvObj) {
 
   int errNum = 0;
   if (useOldpwd) {
-    if (printf("%s\n", toPrintable(dest).c_str()) < 0) {
+    std::string out;
+    appendAsPrintable(dest, out);
+    if (printf("%s\n", out.c_str()) < 0) {
       errNum = errno;
       goto END;
     }
@@ -127,8 +129,7 @@ static std::string formatDir(StringRef dir, const std::string &home) {
     dir.removePrefix(home.size());
     value += "~";
   }
-  value += dir;
-  value = toPrintable(value);
+  appendAsPrintable(dir, value);
   return value;
 }
 

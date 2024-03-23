@@ -303,7 +303,7 @@ private:
       const auto ret = convertToNum<int>(ref.begin(), ref.end(), 0);
       if (!ret) {
         this->error = "`";
-        this->error += toPrintable(ref);
+        appendAsPrintable(ref, SYS_LIMIT_PRINTABLE_MAX, this->error);
         this->error += "': invalid number, must be INT32";
         return false;
       }
@@ -316,7 +316,7 @@ private:
     const auto ret = convertToDecimal<int>(ref.begin(), ref.end());
     if (!ret) {
       this->error = "`";
-      this->error += toPrintable(ref);
+      appendAsPrintable(ref, SYS_LIMIT_PRINTABLE_MAX, this->error);
       this->error += "': invalid number, must be decimal INT32";
       return false;
     }
@@ -782,7 +782,7 @@ static bool interpretTimeFormat(StringBuf &out, const StringRef format, bool plu
       continue;
     default:
       error = "`";
-      error += toPrintable(format.slice(pos, pos + 1));
+      appendAsPrintable(format.slice(pos, pos + 1), SYS_LIMIT_PRINTABLE_MAX, error);
       error += "': invalid time conversion specifier";
       return false;
     }
@@ -937,7 +937,7 @@ ArrayObject::IterType FormatPrinter::operator()(ArrayObject::IterType begin,
       }
     default:
       this->error = "`";
-      this->error += toPrintable(this->format.slice(pos, pos + 1));
+      appendAsPrintable(this->format.slice(pos, pos + 1), SYS_LIMIT_PRINTABLE_MAX, this->error);
       this->error += "': invalid conversion specifier";
       return end;
     }
