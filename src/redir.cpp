@@ -211,11 +211,15 @@ static int redirectImpl(const RedirObject::Entry &entry, const bool overwrite) {
     }
     return 0;
   case RedirOp::DUP_FD: {
-    int fd = -1;
+    int fd;
     if (entry.value.isObject() && isa<UnixFdObject>(entry.value.get())) {
       fd = typeAs<UnixFdObject>(entry.value).getRawFd();
     } else if (entry.value.kind() == ValueKind::INT) {
       fd = static_cast<int>(entry.value.asInt());
+    } else {
+      assert(entry.value.isInvalid());
+      close(entry.newFd);
+      return 0;
     }
     if (dup2(fd, entry.newFd) < 0) {
       return errno;

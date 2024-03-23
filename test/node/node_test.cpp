@@ -594,7 +594,7 @@ nodes:
                             init: true
                             escaped: false
                             value: "34"
-                      targetFd: -1
+                      targetFd: -2
                       hereStart:
                         token:
                           pos: 0
@@ -655,7 +655,7 @@ nodes:
                             init: false
                             floatValue: 0.000000
                           handle: null
-                    targetFd: -1
+                    targetFd: -2
                     hereStart:
                       token:
                         pos: 0
@@ -1421,7 +1421,7 @@ nodes:
                     init: true
                     escaped: false
                     value: "this is a pen\n"
-          targetFd: -1
+          targetFd: -2
           hereStart:
             token:
               pos: 8

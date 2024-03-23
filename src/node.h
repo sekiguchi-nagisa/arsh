@@ -149,7 +149,7 @@ public:
     assert(openPos <= this->actual.pos);
     assert(this->actual.endPos() <= closeToken.endPos());
     this->token = {openPos, closeToken.endPos() - openPos};
-  };
+  }
 
   void setType(const DSType &t) { this->type = &t; }
 
@@ -1337,15 +1337,15 @@ class RedirNode : public WithRtti<Node, NodeKind::Redir> {
 private:
   std::string fdName;
   RedirOp op;
-  int newFd{-1};
-  int targetFd{-1};
+  int8_t newFd{-1};
+  int8_t targetFd{-2};
   std::unique_ptr<CmdArgNode> targetNode;
   NameInfo hereStart;
   Token hereEnd;
 
 public:
   RedirNode(TokenKind opKind, Token opToken, StringRef ref, std::unique_ptr<CmdArgNode> &&node)
-      : WithRtti(opToken), targetNode(std::move(node)), hereStart({0, 0}, "") {
+      : WithRtti(opToken), targetNode(std::move(node)) {
     auto pair = resolveRedirOp(opKind, ref);
     this->fdName = std::move(pair.first);
     this->op = pair.second;
@@ -1356,7 +1356,7 @@ public:
 
   const std::string &getFdName() const { return this->fdName; }
 
-  void setNewFd(int fd) { this->newFd = fd; }
+  void setNewFd(int8_t fd) { this->newFd = fd; }
 
   int getNewFd() const { return this->newFd; }
 
@@ -1364,7 +1364,7 @@ public:
 
   CmdArgNode &getTargetNode() { return *this->targetNode; }
 
-  void setTargetFd(int fd) { this->targetFd = fd; }
+  void setTargetFd(int8_t fd) { this->targetFd = fd; }
 
   int getTargetFd() const { return this->targetFd; }
 

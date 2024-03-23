@@ -1,5 +1,6 @@
+# not allow glob op in redirection target
 
-#$test($result = 'type', $lineNum = 5, $chars = 20, $errorKind = 'NeedFd', $status = 1)
+#$test($result = 'type', $lineNum = 6, $chars = 14, $errorKind = 'Required', $status = 1)
 
 
-echo fjriajf 000>& 111  # only allow 0,1,2
+echo hello > [

@@ -596,6 +596,32 @@ TEST_F(RedirectTest, fd) {
   ASSERT_NO_FATAL_FAILURE(this->expect(std::move(v), 0));
 }
 
+TEST_F(RedirectTest, fdClose) {
+  ASSERT_NO_FATAL_FAILURE(this->expect(CL(R"(
+assert test -e /dev/fd/0
+assert ! test -e /dev/fd/0 <& -
+assert test -e /dev/fd/0
+
+assert test -e /dev/fd/1
+assert ! test -e /dev/fd/1 >&-
+assert test -e /dev/fd/1
+
+assert test -e /dev/fd/2
+assert ! test -e /dev/fd/2 2>&-
+assert test -e /dev/fd/2
+
+assert ! test -e /dev/fd/8
+assert test -e /dev/fd/8 8<& 1
+assert ! test -e /dev/fd/8
+exec 8>&1
+assert test -e /dev/fd/8
+exec 8<&-
+assert ! test -e /dev/fd/8
+exec 8<&-  # close undefined fd (ignore error)
+)"),
+                                       0));
+}
+
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

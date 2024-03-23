@@ -207,23 +207,24 @@ void TypeChecker::visitArgArrayNode(ArgArrayNode &node) {
 }
 
 /**
- * only allow [0-9]+ format command argument
+ * only allow [0-9]+ or '-' format command argument
  * @param argNode
  * @return
  */
-static IntConversionResult<int32_t> toNumericCmdArg(const CmdArgNode &argNode) {
+static std::pair<int32_t, bool> toNumericCmdArg(const CmdArgNode &argNode) {
   if (argNode.getSegmentNodes().size() == 1 && isa<StringNode>(*argNode.getSegmentNodes()[0])) {
     auto &strNode = cast<StringNode>(*argNode.getSegmentNodes()[0]);
     if (strNode.getToken().size == strNode.getValue().size()) {
       const StringRef ref = strNode.getValue();
-      return convertToDecimal<int32_t>(ref.begin(), ref.end());
+      if (ref.size() == 1 && ref[0] == '-') {
+        return {-1, true};
+      }
+      if (auto ret = convertToDecimal<int32_t>(ref.begin(), ref.end()); ret && ret.value > -1) {
+        return {ret.value, true};
+      }
     }
   }
-  return {
-      .kind = IntConversionStatus::ILLEGAL_CHAR,
-      .consumedSize = 0,
-      .value = 0,
-  };
+  return {0, false};
 }
 
 void TypeChecker::visitRedirNode(RedirNode &node) {
@@ -232,7 +233,7 @@ void TypeChecker::visitRedirNode(RedirNode &node) {
     const StringRef ref = node.getFdName();
     const auto pair = convertToDecimal<int32_t>(ref.begin(), ref.end());
     if (pair && pair.value >= 0 && pair.value < RESERVED_FD_LIMIT) {
-      node.setNewFd(pair.value);
+      node.setNewFd(static_cast<int8_t>(pair.value));
     } else {
       this->reportError<RedirFdRange>(node, node.getFdName().c_str());
     }
@@ -255,9 +256,9 @@ void TypeChecker::visitRedirNode(RedirNode &node) {
     break;
   case RedirOp::DUP_FD:
     if (!this->checkTypeExactly(argNode).is(TYPE::FD)) {
-      const auto pair = toNumericCmdArg(argNode);
-      if (pair && pair.value >= 0 && pair.value < RESERVED_FD_LIMIT) {
-        node.setTargetFd(pair.value);
+      if (const auto [value, s] = toNumericCmdArg(argNode);
+          s && value >= -1 && value < RESERVED_FD_LIMIT) {
+        node.setTargetFd(static_cast<int8_t>(value));
       } else {
         this->reportError<NeedFd>(argNode);
       }

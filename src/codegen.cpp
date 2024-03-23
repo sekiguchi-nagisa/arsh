@@ -948,8 +948,12 @@ void ByteCodeGenerator::visitArgArrayNode(ArgArrayNode &node) {
 
 void ByteCodeGenerator::visitRedirNode(RedirNode &node) {
   if (const int newFd = node.getNewFd(); newFd >= 0 && newFd < RESERVED_FD_LIMIT) {
-    if (const int targetFd = node.getTargetFd(); targetFd >= 0 && targetFd < RESERVED_FD_LIMIT) {
-      this->emitInt(targetFd);
+    if (const int targetFd = node.getTargetFd(); targetFd >= -1 && targetFd < RESERVED_FD_LIMIT) {
+      if (targetFd < 0) {
+        this->emit0byteIns(OpCode::PUSH_INVALID);
+      } else {
+        this->emitInt(targetFd);
+      }
     } else {
       this->generateCmdArg(node.getTargetNode());
     }

@@ -3,4 +3,4 @@
 #$test($result = 'type', $lineNum = 6, $chars = 20, $errorKind = 'NeedFd', $status = 1)
 
 
-echo fjriajf 000>& "12"  # only allow 0,1,2
+echo fjriajf 000>& "12"

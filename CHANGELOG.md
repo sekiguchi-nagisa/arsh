@@ -66,6 +66,7 @@
     - add ``xor`` parameter to ``Flag``, ``Option`` attribute. now define exclusive options
 - support additional redirection op
     - ``<>``: open file descriptor with read-write mode
+    - ``<& -``, ``>& -``: close file descriptor
 
 #### Builtin
 

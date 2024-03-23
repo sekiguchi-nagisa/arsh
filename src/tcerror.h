@@ -194,8 +194,8 @@ DEFINE_TCError(NotInferParamUnmatch,
 DEFINE_TCError(NoBackquote, "back-quote command substitution is not allowed. use `$( )' instead");
 DEFINE_TCError(PosArgRange, "positional argument is out-of-range (up to INT32_MAX): `%s'");
 DEFINE_TCError(RedirFdRange, "specified file descriptor number: `%s', but only allow 0~9");
-DEFINE_TCError(NeedFd,
-               "`>&', `<&' redirection only allow decimal numbers (0~9) or `FD' type expression");
+DEFINE_TCError(NeedFd, "`>&', `<&' redirection only allow decimal numbers (0~9), "
+                       "`-' or `FD' type expression");
 DEFINE_TCError(FdArgArray,
                "cannot pass `FD' type expression to `@( )', if pass the string representation, "
                "explicitly use string interpolation");

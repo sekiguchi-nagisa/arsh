@@ -1,0 +1,7 @@
+# not allow String Array type in redirection target
+
+#$test($result = 'type', $lineNum = 7, $chars = 19, $errorKind = 'NeedFd', $status = 1)
+
+var a = 1
+
+echo fjriajf 000>&$a
