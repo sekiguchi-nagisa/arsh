@@ -205,10 +205,9 @@ public:
  * globally imported to fresh module-context
  * @return
  * compiled FuncObject.
- * if compilation failed, return ErrorObject
+ * if compilation failed, return null
  */
-Result<ObjPtr<FuncObject>, ObjPtr<ErrorObject>> loadExprAsFunc(ARState &state, StringRef expr,
-                                                               const ModType &modType);
+ObjPtr<FuncObject> loadExprAsFunc(ARState &state, StringRef expr, const ModType &modType);
 
 /**
  * resolve fully qualified command name

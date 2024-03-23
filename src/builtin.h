@@ -1414,16 +1414,13 @@ ARSH_METHOD module_func(RuntimeContext &ctx) {
   }
   assert(LOCAL(0).isObject());
   auto &type = ctx.typePool.get(LOCAL(0).getTypeID());
-  auto ref = LOCAL(1).asStrRef();
+  const auto ref = LOCAL(1).asStrRef();
   assert(type.isModType());
   auto &modType = cast<ModType>(type);
-  auto ret = loadExprAsFunc(ctx, ref, modType);
-  if (ret) {
-    RET(Value(ret.asOk()));
-  } else {
-    ctx.throwObject(std::move(ret).takeError());
-    RET_ERROR;
+  if (auto ret = loadExprAsFunc(ctx, ref, modType)) {
+    RET(ret);
   }
+  RET_ERROR;
 }
 
 //!bind: function _fullname($this : Module, $name : String) : Option<String>

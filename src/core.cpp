@@ -640,10 +640,14 @@ static ObjPtr<FuncObject> getFuncObj(const FuncObject &funcObject) {
  * globally imported to fresh module-context
  * @return
  * compiled FuncObject.
- * if compilation failed, return ErrorObject
+ * if compilation failed, return null
  */
-Result<ObjPtr<FuncObject>, ObjPtr<ErrorObject>> loadExprAsFunc(ARState &state, StringRef expr,
-                                                               const ModType &modType) {
+ObjPtr<FuncObject> loadExprAsFunc(ARState &state, StringRef expr, const ModType &modType) {
+  if (expr.size() > SYS_LIMIT_INPUT_SIZE) {
+    raiseError(state, TYPE::ArgumentError, "too large input");
+    return nullptr;
+  }
+
   // prepare
   auto scope = NameScope::reopen(state.typePool, *state.rootModScope, modType);
   CompileOption option = CompileOption::SINGLE_EXPR;
@@ -658,8 +662,7 @@ Result<ObjPtr<FuncObject>, ObjPtr<ErrorObject>> loadExprAsFunc(ARState &state, S
   StrErrorConsumer errorConsumer;
   Compiler compiler(moduleProvider, std::move(ctx), option, &dumpTarget, errorConsumer);
   ObjPtr<FuncObject> funcObj;
-  int ret = compiler(funcObj);
-  if (ret != 0) {
+  if (int ret = compiler(funcObj); ret != 0) {
     moduleProvider.discard(discardPoint);
   }
 
@@ -668,7 +671,7 @@ Result<ObjPtr<FuncObject>, ObjPtr<ErrorObject>> loadExprAsFunc(ARState &state, S
     funcObj = getFuncObj(*funcObj);
     if (funcObj) {
       assert(state.typePool.get(funcObj->getTypeID()).isFuncType());
-      return Ok(funcObj);
+      return funcObj;
     }
   }
 
@@ -676,10 +679,8 @@ Result<ObjPtr<FuncObject>, ObjPtr<ErrorObject>> loadExprAsFunc(ARState &state, S
     errorConsumer.value = "require expression";
   }
   errorConsumer.value.resize(std::min(errorConsumer.value.size(), StringObject::MAX_SIZE));
-  auto message = Value::createStr(std::move(errorConsumer.value));
-  auto error =
-      ErrorObject::newError(state, state.typePool.get(TYPE::ArgumentError), std::move(message), 1);
-  return Err(error);
+  raiseError(state, TYPE::ArgumentError, std::move(errorConsumer.value));
+  return nullptr;
 }
 
 std::string resolveFullCommandName(const ARState &state, const Value &name, const ModType &modType,
