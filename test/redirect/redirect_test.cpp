@@ -511,6 +511,44 @@ SystemError: io redirection failed: %s, caused by `%s'
   ASSERT_NO_FATAL_FAILURE(this->contentEq("hello\nworld1\nworld2\n!!\n"));
 }
 
+TEST_F(RedirectTest, readWrite) {
+  // open new file
+  ASSERT_NO_FATAL_FAILURE(
+      this->expect(CL(R"(
+assert ! test -e %s
+exec <>%s; echo hello world !! >&0
+IFS=$'\n' read
+assert $REPLY.empty()  ## read from already opened file
+
+exec 8<>%s  # open existing file
+assert test -e /dev/fd/8
+assert test -r /dev/fd/8
+assert test -w /dev/fd/8
+IFS=$'\n' read -u 8
+assert $REPLY == 'hello world !!'
+)",
+                      this->getTargetName(), this->getTargetName(), this->getTargetName()),
+                   0));
+  ASSERT_NO_FATAL_FAILURE(this->contentEq("hello world !!\n"));
+
+  // open existing file
+  ASSERT_NO_FATAL_FAILURE(
+      this->expect(CL(R"(
+assert test -e %s
+exec 7<>%s
+var fd = new FD('/dev/fd/7')
+echo @@@ >& $fd
+exec <>%s
+IFS=$'\n' read
+assert $REPLY == '@@@'
+IFS=$'\n' read
+assert $REPLY == 'o world !!'
+)",
+                      this->getTargetName(), this->getTargetName(), this->getTargetName()),
+                   0));
+  ASSERT_NO_FATAL_FAILURE(this->contentEq("@@@\no world !!\n"));
+}
+
 TEST_F(RedirectTest, fd) {
   ASSERT_NO_FATAL_FAILURE(
       this->expect(CL("var a = new UnixFD('%s'); echo -n 'hello ' >& $a;\n echo world 1>& $a",

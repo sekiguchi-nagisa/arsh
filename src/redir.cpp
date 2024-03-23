@@ -94,22 +94,23 @@ static int doIOHere(const StringRef &value, int newFd, bool insertNewline) {
   }
 }
 
-enum class RedirOpenFlag {
+enum class RedirOpenFlag : unsigned char {
   READ,
   WRITE,   // if file exists, error
   CLOBBER, // if file exists, truncate 0
   APPEND,
+  READ_WRITE,
 };
 
 /**
  *
  * @param fileName
  * @param openFlag
- * @param newFD
+ * @param newFd
  * @return
  * if failed, return non-zero value (errno)
  */
-static int redirectToFile(StringRef fileName, RedirOpenFlag openFlag, int newFd) {
+static int redirectToFile(const StringRef fileName, const RedirOpenFlag openFlag, const int newFd) {
   int flag = 0;
   switch (openFlag) {
   case RedirOpenFlag::READ:
@@ -123,6 +124,9 @@ static int redirectToFile(StringRef fileName, RedirOpenFlag openFlag, int newFd)
     break;
   case RedirOpenFlag::APPEND:
     flag = O_WRONLY | O_CREAT | O_APPEND;
+    break;
+  case RedirOpenFlag::READ_WRITE:
+    flag = O_RDWR | O_CREAT;
     break;
   }
 
@@ -159,7 +163,7 @@ void RedirObject::addEntry(Value &&value, RedirOp op, int newFd) {
   });
 }
 
-static RedirOpenFlag resolveOpenFlag(RedirOp op, bool overwrite) {
+static RedirOpenFlag resolveOpenFlag(const RedirOp op, const bool overwrite) {
   switch (op) {
   case RedirOp::REDIR_IN:
     return RedirOpenFlag::READ;
@@ -169,6 +173,8 @@ static RedirOpenFlag resolveOpenFlag(RedirOp op, bool overwrite) {
   case RedirOp::APPEND_OUT:
   case RedirOp::APPEND_OUT_ERR:
     return RedirOpenFlag::APPEND;
+  case RedirOp::REDIR_IN_OUT:
+    return RedirOpenFlag::READ_WRITE;
   case RedirOp::NOP:
   case RedirOp::DUP_FD:
   case RedirOp::HERE_DOC:
@@ -181,7 +187,7 @@ static RedirOpenFlag resolveOpenFlag(RedirOp op, bool overwrite) {
   return RedirOpenFlag::READ;
 }
 
-static int redirectImpl(const RedirObject::Entry &entry, bool overwrite) {
+static int redirectImpl(const RedirObject::Entry &entry, const bool overwrite) {
   switch (entry.op) {
   case RedirOp::NOP:
     break;
@@ -189,6 +195,7 @@ static int redirectImpl(const RedirObject::Entry &entry, bool overwrite) {
   case RedirOp::REDIR_OUT:
   case RedirOp::CLOBBER_OUT:
   case RedirOp::APPEND_OUT:
+  case RedirOp::REDIR_IN_OUT:
     return redirectToFile(entry.value.asStrRef(), resolveOpenFlag(entry.op, overwrite),
                           entry.newFd);
   case RedirOp::REDIR_OUT_ERR:

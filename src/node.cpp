@@ -479,6 +479,7 @@ void RedirNode::dump(NodeDumper &dumper) const {
   OP(RedirOp::REDIR_OUT_ERR)                                                                       \
   OP(RedirOp::CLOBBER_OUT_ERR)                                                                     \
   OP(RedirOp::APPEND_OUT_ERR)                                                                      \
+  OP(RedirOp::REDIR_IN_OUT)                                                                        \
   OP(RedirOp::DUP_FD)                                                                              \
   OP(RedirOp::HERE_DOC)                                                                            \
   OP(RedirOp::HERE_STR)

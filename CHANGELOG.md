@@ -64,6 +64,8 @@
     - add ``desc`` parameter to ``CLI`` attribute
         - now put command line description message
     - add ``xor`` parameter to ``Flag``, ``Option`` attribute. now define exclusive options
+- support additional redirection op
+    - ``<>``: open file descriptor with read-write mode
 
 #### Builtin
 
@@ -90,7 +92,7 @@
 - hide cursor during line refresh due to suppress potential cursor flicker
 - improve ``xtrace`` option behavior
     - now specify trace output via ``XTRACEFD`` variable
-    - truncate large too large command line
+    - truncate too large command line
 - improve internal error checking of ``FD`` iteration
     - now report io error
     - correctly check read string size limit

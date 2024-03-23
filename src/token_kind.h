@@ -172,6 +172,7 @@
   TOKEN(REDIR_OUT_ERR, "&>")                                                                       \
   TOKEN(REDIR_OUT_ERR_CLOBBER, "&>|")                                                              \
   TOKEN(REDIR_APPEND_OUT_ERR, "&>>")                                                               \
+  TOKEN(REDIR_IN_OUT, "<>")                                                                        \
   TOKEN(REDIR_DUP_IN, "<&")                                                                        \
   TOKEN(REDIR_DUP_OUT, ">&")                                                                       \
   TOKEN(REDIR_HERE_DOC, "<<")                                                                      \
@@ -338,6 +339,7 @@
   OP(REDIR_OUT_ERR)                                                                                \
   OP(REDIR_OUT_ERR_CLOBBER)                                                                        \
   OP(REDIR_APPEND_OUT_ERR)                                                                         \
+  OP(REDIR_IN_OUT)                                                                                 \
   OP(REDIR_DUP_IN)                                                                                 \
   OP(REDIR_DUP_OUT)                                                                                \
   OP(REDIR_HERE_DOC)                                                                               \

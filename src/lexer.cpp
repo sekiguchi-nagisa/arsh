@@ -144,10 +144,7 @@ TokenKind resolveAssignOp(TokenKind op) {
 std::pair<std::string, RedirOp> resolveRedirOp(TokenKind kind, StringRef ref) {
   unsigned int i = 0;
   for (; i < ref.size(); i++) {
-    char ch = ref[i];
-    if (ch >= '0' && ch <= '9') {
-      continue;
-    } else {
+    if (!isDigit(ref[i])) {
       break;
     }
   }
@@ -162,6 +159,7 @@ std::pair<std::string, RedirOp> resolveRedirOp(TokenKind kind, StringRef ref) {
   OP(REDIR_OUT_ERR, REDIR_OUT_ERR, 1)                                                              \
   OP(REDIR_OUT_ERR_CLOBBER, CLOBBER_OUT_ERR, 1)                                                    \
   OP(REDIR_APPEND_OUT_ERR, APPEND_OUT_ERR, 1)                                                      \
+  OP(REDIR_IN_OUT, REDIR_IN_OUT, 0)                                                                \
   OP(REDIR_DUP_IN, DUP_FD, 0)                                                                      \
   OP(REDIR_DUP_OUT, DUP_FD, 1)                                                                     \
   OP(REDIR_HERE_DOC, HERE_DOC, 0)                                                                  \
