@@ -74,6 +74,12 @@ $aa = @({~/})
 assert $aa.size() == 1
 assert $aa[0] == '{~/}'  # unexpand tilde
 
+assert "$(echo {,}~)" == "$(echo $HOME $HOME)"
+assert "$(echo {34,}~)" == "$(echo '34~' $HOME)"
+assert "$(echo {AAA=,}~)" == "$(echo AAA=$HOME $HOME)"
+assert "$(echo {AAA,a}=~)" == "$(echo AAA=$HOME a=)"
+
+
 ## glob
 assert "$(echo ./* ../*)" == "$(echo {.,..}/*)"
 assert "$(echo ./* ../*)" == "$(echo {./*,../*})"

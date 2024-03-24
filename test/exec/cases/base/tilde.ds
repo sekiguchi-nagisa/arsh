@@ -187,6 +187,9 @@ $ex = 34
 try { echo ~\if=~; } catch e { $ex = $e; }
 assert $ex is TildeError
 assert ($ex as TildeError).message() =~ $/~if=~/
+$ex = 456
+try { echo =~/; } catch e { $ex = $e; }
+assert $ex is TildeError
 
 assert "if=~" == "$(echo ${34}if=~)"
 assert "=~" == "$(echo \=~)"
