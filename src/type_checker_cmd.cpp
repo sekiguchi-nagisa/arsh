@@ -192,8 +192,9 @@ void TypeChecker::visitCmdArgNode(CmdArgNode &node) {
   }
   if (!node.hasExpansionError()) {
     assert(!node.getSegmentNodes().empty());
-    node.setType(node.getExpansionSize() > 0 ? this->typePool().get(TYPE::StringArray)
-                                             : node.getSegmentNodes()[0]->getType());
+    node.setType(node.isBraceExpansion() || node.isGlobExpansion()
+                     ? this->typePool().get(TYPE::StringArray)
+                     : node.getSegmentNodes()[0]->getType());
   }
 }
 
@@ -690,7 +691,7 @@ void TypeChecker::resolvePathList(SourceListNode &node) {
   auto end = node.getConstNodes().cend() - 1;
 
   std::vector<std::shared_ptr<const std::string>> results;
-  if (!node.isExpansion()) {
+  if (!node.isGlobOrBraceExpansion()) {
     std::string path = concat(begin, end);
     if (pathNode.isTilde()) {
       if (const auto s = expandTilde(path, true, nullptr); s != TildeExpandStatus::OK) {
@@ -728,7 +729,8 @@ void TypeChecker::visitSourceListNode(SourceListNode &node) {
     return;
   }
   this->checkTypeExactly(node.getPathNode());
-  auto &exprType = this->typePool().get(node.isExpansion() ? TYPE::StringArray : TYPE::String);
+  auto &exprType =
+      this->typePool().get(node.isGlobOrBraceExpansion() ? TYPE::StringArray : TYPE::String);
   if (this->checkType(exprType, node.getPathNode()).isUnresolved()) {
     return;
   }
