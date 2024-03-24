@@ -78,6 +78,7 @@ assert "$(echo {,}~)" == "$(echo $HOME $HOME)"
 assert "$(echo {34,}~)" == "$(echo '34~' $HOME)"
 assert "$(echo {AAA=,}~)" == "$(echo AAA=$HOME $HOME)"
 assert "$(echo {AAA,a}=~)" == "$(echo AAA=$HOME a=)"
+assert "$(echo --dump={,a}~)" == "$(echo --dump=$HOME --dump=a\~)"
 
 
 ## glob
