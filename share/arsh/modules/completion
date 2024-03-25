@@ -55,11 +55,12 @@ function _comp_opt(deflist : [_CompDef], prefix : String) : Candidates {
             else => '--' + $def.option
         }
         if $opt.startsWith($prefix) {
-            $ret.add($opt)
+            var long = $opt.startsWith('--') && $opt.endsWith('=')
+            $ret.add($opt, $space: $long ? 0 : -1)
         } elif $opt.startsWith("--") && $def.type != -1 {
             # opt -> --opt
             # prefix -> --opt=hoge
-            if $prefix.startsWith($opt) && $prefix.slice($opt.size()).startsWith('=') {
+            if $prefix.startsWith($opt) && ($prefix.slice($opt.size()).startsWith('=') || $opt.endsWith('=')) {
                 $ret.add($opt)
             }
         }
@@ -267,6 +268,10 @@ function _from_compdef(ctx : Module, words : [String], cursor : Int) : Candidate
                 var opt = $ret[0]
                 if $opt.startsWith("--") && $prev.startsWith($opt) {
                     # for `--opt=' style option
+                    if $opt.endsWith('=') {  # defined as `--long opt=' form
+                        $prev = $prev.slice($opt.size())
+                        return $_comp_arg($ctx, $deflist, $opt, $prev)
+                    }
                     if $prev.slice($opt.size()).startsWith('=') {
                         $prev = $prev.slice($opt.size() + 1)
                         return $_comp_arg($ctx, $deflist, $opt, $prev)

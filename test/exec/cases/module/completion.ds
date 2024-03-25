@@ -62,20 +62,23 @@ assert $(complete 'ps A').empty()
 compdef --cmd ls --long show --arg-cmd 'ls'
 compdef --cmd ls --long stop --arg-action signal
 compdef --cmd ls --long top
+compdef --cmd ls --long log= --arg-list 'error warn info'
 
-assert diff <(complete 'ls -') <(echo --show &&
- echo --stop && echo --top && echo -l \
-&& echo -q && echo -s)
+assert diff <(complete 'ls -') <(printf -- "%s\n"  --log= --show --stop --top -l -q -s )
 
-assert diff <(complete 'ls --') <(echo --show && echo --stop && echo --top)
+assert diff <(complete 'ls --') <(printf -- "%s\n"  --log= --show --stop --top)
 assert diff <(complete 'ls --sh') <(echo --show)
-assert diff <(complete 'ls --stop') <(echo --stop)
+assert diff <(complete 'ls --sto') <(echo --stop)
 assert diff <(complete 'ls --show ') <(ls)
 assert diff <(complete 'ls --show') <(echo --show)
 assert diff <(complete 'ls --stop ') <(complete -A signal)
 assert diff <(complete 'ls --stop T') <(complete -A signal T)
 assert diff <(complete 'ls --stop=') <(complete -A signal)
 assert diff <(complete 'ls --stop=T') <(complete -A signal T)
+assert diff <(complete 'ls --lo') <(echo --log=)
+assert { complete 'ls --lo' && $COMPREPLY.size() == 1 && ! $COMPREPLY.hasSpace(0); }
+assert diff <(complete 'ls --log=') <(printf "%s\n" error info warn)
+assert diff <(complete 'ls --log=e') <(printf "%s\n" error)
 assert diff <(complete 'ls --t') <(echo --top)
 assert $(complete 'ls --top=').empty()
 assert $(complete 'ls --top=./').empty()

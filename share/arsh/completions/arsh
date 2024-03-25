@@ -10,9 +10,9 @@ for $line in $STDIN {
     ($o == 'e' || $o.startsWith('dump')) && continue
     compdef --cmd arsh $k $o
 }
-compdef --cmd arsh --long dump-ast --arg-action file
-compdef --cmd arsh --long dump-untyped-ast --arg-action file
-compdef --cmd arsh --long dump-code --arg-action file
+compdef --cmd arsh --long dump-ast= --arg-action file
+compdef --cmd arsh --long dump-untyped-ast= --arg-action file
+compdef --cmd arsh --long dump-code= --arg-action file
 compdef --cmd arsh --short e --arg-action cmd
 
 ## arshd
@@ -27,7 +27,7 @@ compdef --cmd arshd --long wait-time
 ## dscolorize
 compdef --cmd dscolorize --long daemon
 compdef --cmd dscolorize --long html-full
-compdef --cmd dscolorize --long html-lineno
+compdef --cmd dscolorize --long html-lineno=
 compdef --cmd dscolorize --short h
 compdef --cmd dscolorize --short l
 compdef --cmd dscolorize --short o --arg-action file
