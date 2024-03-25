@@ -203,7 +203,8 @@ function _comp_wrap(file : String, target : String, words : [String], cursor : I
         if (test -e $line) {  # FIXME: more precise quote requirement checking
             $line = $line.quote()
         }
-        $ret.add($line, $space: 0)  # suppress automatic space insertion due to bash-completion control space insertion
+        var long = $line.startsWith('--') && $line.endsWith('=') # suppress automatic space insertion for `--long=`
+        $ret.add($line, $space: $long ? 0 : -1)
     }
     return $ret.size() == 0 ? $none : $ret
 }
