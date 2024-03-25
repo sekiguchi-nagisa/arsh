@@ -1,0 +1,65 @@
+
+source ../../../../share/arsh/modules/repl_impl/bind
+
+# -l option
+assert diff <(bind -l) <(for a in $LINE_EDIT.actions().sort() { echo $a; })
+
+# -p option
+var bindings: [(String,String)]
+for a in $LINE_EDIT.bindings() {
+    $bindings.add($a)
+}
+$bindings.sortWith(function(a,b) => $a._0 < $b._0)
+assert diff <(bind -p) <(for a in $bindings{ echo "\"${a._0}\": ${a._1}"; })
+
+# -q option
+assert "$(bind -q backward-word)" == '"^[[1;3D"
+"^[^[[D"
+"^[b"'
+assert "$(bind -q hogehoge)".empty()
+
+# add
+assert !(bind -p | grep '\^G')
+assert bind "^G" backward-word
+assert "$(bind -q backward-word)" == '"^G"
+"^[[1;3D"
+"^[^[[D"
+"^[b"'
+assert bind -p | grep '\^G'
+
+# -r option
+assert bind -r "^G"
+assert !(bind -p | grep '\^G')
+assert "$(bind -q backward-word)" == '"^[[1;3D"
+"^[^[[D"
+"^[b"'
+assert bind -r "^G"  # remove already removed keycode
+
+
+# invalid option
+assert "$(bind -W 2>&1)" == "bind: invalid option: -W
+See \`bind --help' for more information."
+assert $? == 2
+
+assert "$(bind -r 2>&1)" == "bind: -r option needs argument
+See \`bind --help' for more information."
+assert $? == 2
+
+assert "$(bind -pl 2>&1)" == "bind: -l option is not allowed after -p option
+See \`bind --help' for more information."
+assert $? == 1
+
+assert "$(bind ^G 2>&1)" == "bind: require ACTION argument after KEYCODE argument
+See \`bind --help' for more information."
+assert $? == 1
+
+assert "$(bind ^G "" 2>&1)" == "bind: ACTION argument must not be empty
+See \`bind --help' for more information."
+assert $? == 1
+
+
+# error
+assert "$(bind ^G hogehoge 2>&1)" == "bind: undefined edit action: \`fjerifrej'
+See \`bind --help' for more information."
+
+true

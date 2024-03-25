@@ -30,6 +30,11 @@
     - also show type signature style description
     - insert space after candidate even if candidate rotation
 
+#### Module
+
+- add ``bind`` command and module
+    - now set and display key-bind setting of ``LINE_EDIT``
+
 ### Changed
 
 #### Core
