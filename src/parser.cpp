@@ -1580,6 +1580,13 @@ std::unique_ptr<Node> Parser::parse_cmdArgSegImpl(CmdArgParseOpt opt) {
   GUARD_DEEP_NESTING(guard);
 
   switch (CUR_KIND()) {
+  case TokenKind::ASSIGN:
+  case TokenKind::TILDE: {
+    Token token = this->curToken;
+    const TokenKind kind = this->scan();
+    const ExpandMeta meta = kind == TokenKind::ASSIGN ? ExpandMeta::ASSIGN : ExpandMeta::TILDE;
+    return std::make_unique<WildCardNode>(token, meta);
+  }
   case TokenKind::GLOB_ANY:
   case TokenKind::GLOB_ZERO_OR_MORE:
   case TokenKind::GLOB_BRACKET_OPEN:

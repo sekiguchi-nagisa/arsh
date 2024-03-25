@@ -376,6 +376,9 @@ enum class ExpandMeta : unsigned char {
   BRACKET_OPEN,
   BRACKET_CLOSE,
 
+  TILDE,  // for tilde expansion
+  ASSIGN, // for magic equal substitution (AAA=~)
+
   BRACE_OPEN,
   BRACE_CLOSE,
   BRACE_SEP,
@@ -399,6 +402,10 @@ inline const char *toString(ExpandMeta meta) {
     return "?";
   case ExpandMeta::ZERO_OR_MORE:
     return "*";
+  case ExpandMeta::TILDE:
+    return "~";
+  case ExpandMeta::ASSIGN:
+    return "=";
   case ExpandMeta::BRACKET_OPEN:
     return "[";
   case ExpandMeta::BRACKET_CLOSE:
