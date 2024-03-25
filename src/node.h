@@ -1274,6 +1274,7 @@ class CmdArgNode : public WithRtti<Node, NodeKind::CmdArg> {
 private:
   unsigned int expansionSize{0};
   bool braceExpansion{false};
+  bool globExpansion{false};
   bool bracketExpr{false}; // for glob
   bool expansionError{false};
   std::vector<std::unique_ptr<Node>> segmentNodes; // at-least one element
@@ -1301,6 +1302,8 @@ public:
     return isa<StringNode>(*this->segmentNodes[i]) &&
            cast<StringNode>(*this->segmentNodes[i]).isTilde();
   }
+
+  bool isGlobExpansion() const { return this->globExpansion; }
 
   bool isBraceExpansion() const { return this->braceExpansion; }
 
@@ -1392,6 +1395,18 @@ public:
   bool isExpand() const { return this->expand; }
 
   void setExpand(bool set) { this->expand = set; }
+
+  bool isGlobMeta() const {
+    switch (this->meta) {
+    case ExpandMeta::ANY:
+    case ExpandMeta::ZERO_OR_MORE:
+    case ExpandMeta::BRACKET_OPEN:
+    case ExpandMeta::BRACE_CLOSE:
+      return true;
+    default:
+      return false;
+    }
+  }
 
   bool isBraceMeta() const {
     switch (this->meta) {
@@ -2795,8 +2810,9 @@ public:
 
   void setInlined(bool s) { this->inlined = s; }
 
-  bool isExpansion() const {
-    return this->getPathNode().getExpansionSize() > 0 && !this->getNameInfoPtr();
+  bool isGlobOrBraceExpansion() const {
+    return (this->getPathNode().isGlobExpansion() || this->getPathNode().isBraceExpansion()) &&
+           !this->getNameInfoPtr();
   }
 
   unsigned int getCurIndex() const { return this->curIndex; }

@@ -1,0 +1,83 @@
+#!/usr/bin/env arsh
+
+# for key bind setting
+
+[<CLI(desc: 'Set or display key bindings')>]
+typedef _BindParam() {
+    [<Flag(short: 'l', xor: 1, help: "list defined key actions")>]
+    var list = $false
+
+    [<Flag(short: 'p', xor: 1, help: 'list key bindings')>]
+    var print = $false
+
+    [<Option(short: 'q', xor: 1, placeholder: 'action', help: 'find key codes that bind to ACTION')>]
+    var query : String?
+
+    [<Option(short: 'r', xor: 1, placeholder: 'keycode', help: 'remove key binding to KEYCODE')>]
+    var remove : String?
+
+    [<Arg>]
+    var keycode : String?
+
+    [<Arg>]
+    var action: String?
+}
+
+bind(param : _BindParam) {
+    if $param.list {
+        for a in $LINE_EDIT.actions().sort() {
+            printf "%s\n" $a
+        }
+        return 0
+    }
+    if $param.print {
+        var bindings : [(String, String)]
+        for e in $LINE_EDIT.bindings() {
+            $bindings.add($e)
+        }
+        $bindings.sortWith(function(x, y) => $x._0 < $y._0)
+        for e in $bindings {
+            printf "\"%s\": %s\n" ${e._0} ${e._1}
+        }
+        return 0
+    }
+    if let action = $param.query {
+        var codes : [String]
+        for k,v in $LINE_EDIT.bindings() {
+            if $action == $v {
+                $codes.add($k)
+            }
+        }
+        for c in $codes.sort() {
+            printf "\"%s\"\n" $c
+        }
+        return 0
+    }
+    if let code = $param.remove {
+        try {
+            $LINE_EDIT.bind($code)
+        } catch e {
+            echo 1>&2 ${$param.usage($e.message(), $false)}
+            return 1
+        }
+        return 0
+    }
+    if let keycode = $param.keycode {
+        if !$param.action {
+            echo 1>&2 ${$param.usage("require ACTION argument after KEYCODE argument", $false)}
+            return 1
+        }
+        var action = $param.action!
+        if $action.empty() {
+            echo 1>&2 ${$param.usage("ACTION argument must not be empty", $false)}
+            return 1
+        }
+        try {
+            $LINE_EDIT.bind($keycode, $action)
+        } catch e {
+            echo 1>&2 ${$param.usage($e.message(), $false)}
+            return 1
+        }
+    }
+    return 0
+}

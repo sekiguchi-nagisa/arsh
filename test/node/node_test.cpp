@@ -583,6 +583,7 @@ nodes:
                         expansionSize: 0
                         expansionError: false
                         braceExpansion: false
+                        globExpansion: false
                         bracketExpr: false
                         segmentNodes:
                           - nodeKind: String
@@ -637,6 +638,7 @@ nodes:
                       expansionSize: 0
                       expansionError: false
                       braceExpansion: false
+                      globExpansion: false
                       bracketExpr: false
                       segmentNodes:
                         - nodeKind: Embed
@@ -999,6 +1001,7 @@ nodes:
           expansionSize: 0
           expansionError: false
           braceExpansion: false
+          globExpansion: false
           bracketExpr: false
           segmentNodes:
             - nodeKind: String
@@ -1047,6 +1050,7 @@ nodes:
           expansionSize: 1
           expansionError: false
           braceExpansion: false
+          globExpansion: true
           bracketExpr: false
           segmentNodes:
             - nodeKind: WildCard
@@ -1404,6 +1408,7 @@ nodes:
             expansionSize: 0
             expansionError: false
             braceExpansion: false
+            globExpansion: false
             bracketExpr: false
             segmentNodes:
               - nodeKind: StringExpr

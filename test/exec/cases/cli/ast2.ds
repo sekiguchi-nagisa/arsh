@@ -23,6 +23,7 @@ nodes:
       expansionSize: 0
       expansionError: false
       braceExpansion: false
+      globExpansion: false
       bracketExpr: false
       segmentNodes:
         - nodeKind: String

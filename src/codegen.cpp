@@ -911,7 +911,7 @@ void ByteCodeGenerator::visitCmdNode(CmdNode &node) {
 }
 
 void ByteCodeGenerator::visitCmdArgNode(CmdArgNode &node) {
-  if (node.getExpansionSize() > 0) {
+  if (node.isBraceExpansion() || node.isGlobExpansion()) {
     this->emitSourcePos(node.getPos());
     const unsigned int size = node.getSegmentNodes().size();
     unsigned int firstIndex = 0;

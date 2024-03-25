@@ -439,10 +439,14 @@ void CmdArgNode::addSegmentNode(std::unique_ptr<Node> &&node) {
       this->segmentNodes.push_back(std::move(tilde));
     }
   } else if (isa<WildCardNode>(*node)) {
-    if (auto &wild = cast<WildCardNode>(*node); wild.meta == ExpandMeta::BRACKET_OPEN) {
+    auto &wildNode = cast<WildCardNode>(*node);
+    if (wildNode.isExpand() && wildNode.isGlobMeta()) {
+      this->globExpansion = true;
+    }
+    if (wildNode.meta == ExpandMeta::BRACKET_OPEN) {
       this->bracketExpr = true;
-    } else if (wild.meta == ExpandMeta::BRACKET_CLOSE && this->hasBracketExpr()) {
-      wild.setExpand(true);
+    } else if (wildNode.meta == ExpandMeta::BRACKET_CLOSE && this->hasBracketExpr()) {
+      wildNode.setExpand(true);
     }
   }
   this->segmentNodes.push_back(std::move(node));
@@ -452,6 +456,7 @@ void CmdArgNode::dump(NodeDumper &dumper) const {
   DUMP(expansionSize);
   DUMP(expansionError);
   DUMP(braceExpansion);
+  DUMP(globExpansion);
   DUMP(bracketExpr);
   DUMP(segmentNodes);
 }
