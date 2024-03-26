@@ -595,7 +595,7 @@ private:
    */
   static bool callPipeline(ARState &state, Value &&desc, bool lastPipe, ForkKind forkKind);
 
-  static bool applyTildeExpansion(ARState &state, StringRef path);
+  static bool applyTildeExpansion(ARState &state, StringRef path, bool assign);
 
   static bool addGlobbingPath(ARState &state, ArrayObject &argv, const Value *begin,
                               const Value *end, bool tilde);

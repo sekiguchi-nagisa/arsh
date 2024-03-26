@@ -110,6 +110,7 @@ enum class TildeExpandStatus : unsigned char {
   INVALID_NUM,    // invalid number format
   OUT_OF_RANGE,   // out of range index
   HAS_NULL,
+  EMPTY_ASSIGN, // for '=~'
 };
 
 /**

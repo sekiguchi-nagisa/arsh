@@ -38,6 +38,8 @@ static const char *toMessagePrefix(TildeExpandStatus status) {
     return "directory stack index out of range, up to directory stack limit ";
   case TildeExpandStatus::HAS_NULL:
     return "expanded path contains null characters: ";
+  case TildeExpandStatus::EMPTY_ASSIGN:
+    return "left-hand side of `=~' is empty";
   }
   assert(false);
   return "";
@@ -56,7 +58,9 @@ static void raiseTildeError(ARState &state, const DirStackProvider &provider,
     str += std::to_string(provider.size());
     str += "): ";
   }
-  str += ref;
+  if (status != TildeExpandStatus::EMPTY_ASSIGN) {
+    str += ref;
+  }
   raiseError(state, TYPE::TildeError, std::move(str));
 }
 
@@ -89,15 +93,29 @@ public:
   }
 };
 
-bool VM::applyTildeExpansion(ARState &state, StringRef path) {
+bool VM::applyTildeExpansion(ARState &state, StringRef path, bool assign) {
   std::string str = path.toString();
   DefaultDirStackProvider dirStackProvider(state);
-  if (const auto s = expandTilde(str, true, &dirStackProvider);
-      s != TildeExpandStatus::OK && state.has(RuntimeOption::FAIL_TILDE)) {
+  TildeExpandStatus s;
+  if (assign && state.stack.peek().asStrRef() == "=") {
+    s = TildeExpandStatus::EMPTY_ASSIGN;
+  } else {
+    s = expandTilde(str, true, &dirStackProvider);
+  }
+  if (s != TildeExpandStatus::OK && state.has(RuntimeOption::FAIL_TILDE)) {
     raiseTildeError(state, dirStackProvider, str, s);
     return false;
   }
-  state.stack.push(Value::createStr(std::move(str)));
+  auto ret = Value::createStr(std::move(str));
+  if (assign) {
+    auto left = state.stack.pop();
+    const bool r = concatAsStr(state, left, ret, false);
+    if (r) {
+      state.stack.push(std::move(left));
+    }
+    return r;
+  }
+  state.stack.push(std::move(ret));
   return true;
 }
 

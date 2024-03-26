@@ -1883,9 +1883,10 @@ bool VM::mainLoop(ARState &state) {
         TRY(callPipeline(state, std::move(desc), lastPipe, kind));
         vmnext;
       }
-      vmcase(EXPAND_TILDE) {
+      vmcase(EXPAND_TILDE) vmcase(APPEND_TILDE) {
         const auto value = state.stack.pop();
-        if (!applyTildeExpansion(state, value.asStrRef())) {
+        const bool assign = op == OpCode::APPEND_TILDE;
+        if (!applyTildeExpansion(state, value.asStrRef(), assign)) {
           vmerror;
         }
         vmnext;

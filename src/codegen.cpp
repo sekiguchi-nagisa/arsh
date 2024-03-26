@@ -278,20 +278,24 @@ void ByteCodeGenerator::enterMultiFinally(unsigned int depth, unsigned int local
   }
 }
 
-static bool isTilde(const Node &node) {
-  return isExpandingWildCard(node) && cast<WildCardNode>(node).meta == ExpandMeta::TILDE;
+static bool isTilde(const CmdArgNode &node, unsigned int startIndex, unsigned int tildeCount) {
+  if (auto &e = *node.getSegmentNodes()[startIndex];
+      isExpandingWildCard(e) && cast<WildCardNode>(e).meta == ExpandMeta::TILDE) {
+    return tildeCount == 0 || node.isRightHandSide();
+  }
+  return false;
 }
 
 unsigned int ByteCodeGenerator::concatCmdArgSegment(const CmdArgNode &node, unsigned int startIndex,
                                                     unsigned int &tildeCount) {
   const unsigned int size = node.getSegmentNodes().size();
   const unsigned int baseIndex = startIndex;
-  const bool tilde = isTilde(*node.getSegmentNodes()[startIndex]);
+  const bool tilde = isTilde(node, baseIndex, tildeCount);
   for (; startIndex < size; startIndex++) {
-    auto &segNode = *node.getSegmentNodes()[startIndex];
-    if (startIndex - baseIndex > 0 && isTilde(segNode) && tildeCount == 0) { // break next tilde
-      break;
+    if (startIndex - baseIndex > 0 && isTilde(node, startIndex, tildeCount)) {
+      break; // break next tilde
     }
+    auto &segNode = *node.getSegmentNodes()[startIndex];
     if (isExpandingWildCard(segNode)) {
       if (auto &wildNode = cast<WildCardNode>(segNode);
           wildNode.meta == ExpandMeta::TILDE || wildNode.meta == ExpandMeta::ASSIGN) {
@@ -300,12 +304,13 @@ unsigned int ByteCodeGenerator::concatCmdArgSegment(const CmdArgNode &node, unsi
     }
     this->generateConcat(segNode, startIndex - baseIndex > 0);
   }
-  if (tilde && tildeCount == 0) {
+  if (tilde) {
     tildeCount++;
-    this->emit0byteIns(OpCode::EXPAND_TILDE);
   }
-  if (baseIndex > 0) {
-    this->emit0byteIns(OpCode::CONCAT);
+  if (baseIndex > 0) { // concat
+    this->emit0byteIns(tilde ? OpCode::APPEND_TILDE : OpCode::CONCAT);
+  } else if (tilde) {
+    this->emit0byteIns(OpCode::EXPAND_TILDE);
   }
   return startIndex;
 }

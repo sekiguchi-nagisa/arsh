@@ -165,7 +165,8 @@ void TypeChecker::checkTildeExpansion(CmdArgNode &node) {
       }
       if (auto &prevNode = *node.getSegmentNodes()[i - 1]; isExpandingWildCard(prevNode)) {
         if (auto &prevWildNode = cast<WildCardNode>(prevNode);
-            prevWildNode.isBraceMeta() || prevWildNode.meta == ExpandMeta::ASSIGN) {
+            prevWildNode.isBraceMeta() ||
+            (prevWildNode.meta == ExpandMeta::ASSIGN && !node.isRightHandSide())) {
           /**
            * consider the following cases
            *
@@ -177,8 +178,12 @@ void TypeChecker::checkTildeExpansion(CmdArgNode &node) {
            */
           continue;
         }
-      } else {
-        // FIXME: consider PATH:~ cases
+      } else if (node.isRightHandSide() && isa<StringNode>(prevNode)) { // for AAA:~/
+        auto &strNode = cast<StringNode>(prevNode);
+        if (strNode.getKind() == StringNode::CMD_ARG &&
+            StringRef(strNode.getValue()).endsWith(":")) {
+          continue;
+        }
       }
       wildNode.setExpand(false); // disable tilde expansion
       break;
@@ -508,6 +513,7 @@ void TypeChecker::reportTildeExpansionError(Token token, const std::string &path
   case TildeExpandStatus::INVALID_NUM:
   case TildeExpandStatus::OUT_OF_RANGE:
   case TildeExpandStatus::HAS_NULL:
+  case TildeExpandStatus::EMPTY_ASSIGN: // FIXME:
     break;
   }
   assert(false);

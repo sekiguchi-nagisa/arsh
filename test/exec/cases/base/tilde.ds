@@ -10,6 +10,7 @@ assert "\\=$HOME" == "$(echo \\=~)"
 assert($HOME + "/" == "$(echo ~/)")
 assert($HOME + "/hoge" == "$(echo ~/hoge)")
 assert "if=$HOME/AAA=~" == "$(echo if=~/AAA=~)"
+assert "if=$HOME" == "$(echo ${34}if=~)"
 $ex = 43 as Any
 try { echo ~g; } catch e { $ex = $e; }
 assert $ex is TildeError
@@ -181,6 +182,7 @@ assert ($ex as TildeError).message() ==
 ## no expand
 assert "$(echo :~)" == ':~'
 assert "$(echo \\:~)" == '\:~'
+assert "$(echo /home:~)" == '/home:~'
 assert "if=~" == "$(echo if\=~)"
 assert "if=\~" == "$(echo if=\\~)"
 $ex = 34
@@ -189,11 +191,11 @@ assert $ex is TildeError
 assert ($ex as TildeError).message() == 'no such user: ~if='
 $ex = 456
 try { echo =~/; } catch e { $ex = $e; }  # emtpy left handside is always TildeError
-assert $ex is TildeError
+assert ($ex as TildeError).message() == "left-hand side of \`=~' is empty"
+$ex = 456
+try { echo =~root; } catch e { $ex = $e; }  # emtpy left handside is always TildeError
+assert ($ex as TildeError).message() == "left-hand side of \`=~' is empty"
 
-assert "if=~" == "$(echo ${34}if=~)"
-assert "=~" == "$(echo \=~)"
-assert "=~" == "$(echo =~)"
 
 ## suppress tilde error
 shctl unset fail_tilde
@@ -207,7 +209,7 @@ assert $ex is Int
 shctl set fail_tilde
 $ex = 34
 try { echo ~jferif/*; } catch e { $ex = $e; }
-assert $ex is TildeError   # checl tilde expansion before glob
+assert $ex is TildeError   # check tilde expansion before glob
 
 shctl unset fail_tilde
 $ex = 34
