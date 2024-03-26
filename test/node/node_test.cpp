@@ -590,7 +590,7 @@ nodes:
                               pos: 14
                               size: 2
                             type:
-                            kind: "STRING"
+                            kind: "CMD_ARG"
                             init: true
                             escaped: false
                             value: "34"
@@ -1006,7 +1006,7 @@ nodes:
                 pos: 4
                 size: 4
               type:
-              kind: "STRING"
+              kind: "CMD_ARG"
               init: true
               escaped: false
               value: "1234"

@@ -454,7 +454,8 @@ class StringNode : public WithRtti<Node, NodeKind::String> {
 public:
   enum StringKind : unsigned char {
     STRING,
-    TILDE,
+    TILDE, // for command with tilde
+    CMD_ARG,
     BACKQUOTE,
   };
 

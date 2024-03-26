@@ -30,7 +30,7 @@ nodes:
             pos: 7
             size: ${len}
           type:
-          kind: \"STRING\"
+          kind: \"CMD_ARG\"
           init: true
           escaped: false
           value: \"$mod\"
@@ -160,7 +160,7 @@ nodes:
             pos: 7
             size: ${len}
           type: \"String\"
-          kind: \"STRING\"
+          kind: \"CMD_ARG\"
           init: true
           escaped: false
           value: \"$mod\"
@@ -170,7 +170,7 @@ nodes:
           pos: 7
           size: ${len}
         type: \"String\"
-        kind: \"STRING\"
+        kind: \"CMD_ARG\"
         init: true
         escaped: false
         value: \"$mod\"
