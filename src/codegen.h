@@ -443,12 +443,39 @@ private:
   void enterMultiFinally(unsigned int depth, unsigned int localOffset = 0,
                          unsigned int localSize = 0);
 
-  unsigned int concatCmdArgSegment(const CmdArgNode &node, unsigned int index);
+  /**
+   * concat cmd arg segments of tilde expansion unit
+   * @param node
+   * @param startIndex start index of tilde (WildCardNode.meta == Tilde)
+   * @return next start index of tilde
+   * @param tildeCount count of tilde expansion
+   * for suppress multiple expansion (ex. echo ~/root=~ AAA=~/BBB=~/root)
+   */
+  unsigned int concatCmdArgSegment(const CmdArgNode &node, unsigned int startIndex,
+                                   unsigned int &tildeCount);
 
+  /**
+   * gnerate code with tilde expansion unit
+   *
+   * consider the following cases
+   *
+   * ex1. echo ~/root
+   * => LOAD '~', LOAD '/root', CONCAT, EXPAND_TILDE
+   *
+   * ex2. AAA=~/root:~/
+   * => LOAD '~', LOAD '/root:', CONCAT, EXPAND_TILDE,
+   *    LOAD '~', CONCAT, LOAD '/', CONCAT, EXPAND_TILDE
+   *
+   * ex3. echo AAA=~/root
+   * => LOAD 'AAA', LOAD '=', CONCAT, LOAD '~', CONCAT, LOAD '/root', CONCAT, EXPAND_TILDE
+   * @param node
+   */
   void generateCmdArg(CmdArgNode &node) {
     this->emitSourcePos(node.getPos());
     const unsigned int size = node.getSegmentNodes().size();
-    for (unsigned int index = 0; index < size; index = this->concatCmdArgSegment(node, index))
+    unsigned int tildeCount = 0;
+    for (unsigned int index = 0; index < size;
+         index = this->concatCmdArgSegment(node, index, tildeCount))
       ;
   }
 

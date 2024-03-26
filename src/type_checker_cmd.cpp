@@ -142,8 +142,60 @@ void TypeChecker::checkBraceExpansion(CmdArgNode &node) {
   }
 }
 
+void TypeChecker::checkTildeExpansion(CmdArgNode &node) {
+  const unsigned int size = node.getSegmentNodes().size();
+  for (unsigned int i = 0; i < size; i++) {
+    if (auto &segNode = *node.getSegmentNodes()[i]; !isa<WildCardNode>(segNode)) {
+      if (i == 0) {
+        continue;
+      }
+      if (auto &prevNode = *node.getSegmentNodes()[i - 1];
+          isExpandingWildCard(prevNode) &&
+          cast<WildCardNode>(prevNode).meta == ExpandMeta::ASSIGN) {
+        cast<WildCardNode>(prevNode).setExpand(false); // disable expansion for mid '='
+      }
+      continue;
+    }
+
+    auto &wildNode = cast<WildCardNode>(*node.getSegmentNodes()[i]);
+    switch (wildNode.meta) {
+    case ExpandMeta::TILDE:
+      if (i == 0) { // echo ~/root
+        continue;
+      }
+      if (auto &prevNode = *node.getSegmentNodes()[i - 1]; isExpandingWildCard(prevNode)) {
+        if (auto &prevWildNode = cast<WildCardNode>(prevNode);
+            prevWildNode.isBraceMeta() || prevWildNode.meta == ExpandMeta::ASSIGN) {
+          /**
+           * consider the following cases
+           *
+           * echo {~,}/root
+           * echo {a,~}/root
+           * echo {,}~/root
+           * echo AAA=~
+           *
+           */
+          continue;
+        }
+      } else {
+        // FIXME: consider PATH:~ cases
+      }
+      wildNode.setExpand(false); // disable tilde expansion
+      break;
+    case ExpandMeta::ASSIGN:
+      if (i == size - 1) {
+        wildNode.setExpand(false); // disable expansion of last '=' (ex. echo AAA=  )
+      }
+      break;
+    default:
+      break;
+    }
+  }
+}
+
 void TypeChecker::checkExpansion(CmdArgNode &node) {
   this->checkBraceExpansion(node);
+  this->checkTildeExpansion(node);
 
   const unsigned int size = node.getSegmentNodes().size();
   unsigned int expansionSize = 0;

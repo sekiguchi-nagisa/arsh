@@ -739,6 +739,8 @@ private:
 
   void checkBraceExpansion(CmdArgNode &node);
 
+  void checkTildeExpansion(CmdArgNode &node);
+
   void checkExpansion(CmdArgNode &node);
 
   // visitor api
