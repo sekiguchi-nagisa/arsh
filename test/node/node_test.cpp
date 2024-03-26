@@ -581,10 +581,9 @@ nodes:
                           size: 2
                         type:
                         expansionSize: 0
+                        expansionAttr: ""
                         expansionError: false
-                        braceExpansion: false
-                        globExpansion: false
-                        bracketExpr: false
+                        rightHandSide: false
                         segmentNodes:
                           - nodeKind: String
                             token:
@@ -636,10 +635,9 @@ nodes:
                         size: 8
                       type:
                       expansionSize: 0
+                      expansionAttr: ""
                       expansionError: false
-                      braceExpansion: false
-                      globExpansion: false
-                      bracketExpr: false
+                      rightHandSide: false
                       segmentNodes:
                         - nodeKind: Embed
                           token:
@@ -999,10 +997,9 @@ nodes:
             size: 4
           type:
           expansionSize: 0
+          expansionAttr: ""
           expansionError: false
-          braceExpansion: false
-          globExpansion: false
-          bracketExpr: false
+          rightHandSide: true
           segmentNodes:
             - nodeKind: String
               token:
@@ -1048,10 +1045,9 @@ nodes:
             size: 1
           type: "[String]"
           expansionSize: 1
+          expansionAttr: "GLOB"
           expansionError: false
-          braceExpansion: false
-          globExpansion: true
-          bracketExpr: false
+          rightHandSide: false
           segmentNodes:
             - nodeKind: WildCard
               token:
@@ -1406,10 +1402,9 @@ nodes:
               size: 6
             type: "String"
             expansionSize: 0
+            expansionAttr: ""
             expansionError: false
-            braceExpansion: false
-            globExpansion: false
-            bracketExpr: false
+            rightHandSide: false
             segmentNodes:
               - nodeKind: StringExpr
                 token:

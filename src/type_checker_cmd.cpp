@@ -71,7 +71,7 @@ void TypeChecker::checkBraceExpansion(CmdArgNode &node) {
           if (stack.back().second) {
             cast<WildCardNode>(*segmentNodes[stack.back().first]).setExpand(true);
             wild.setExpand(true);
-            node.setBraceExpansion(true);
+            node.enableBraceExpansion();
           }
           stack.pop_back();
         }
@@ -84,7 +84,7 @@ void TypeChecker::checkBraceExpansion(CmdArgNode &node) {
         break;
       case ExpandMeta::BRACE_SEQ_OPEN:
       case ExpandMeta::BRACE_SEQ_CLOSE:
-        node.setBraceExpansion(true);
+        node.enableBraceExpansion();
         break;
       default:
         break;

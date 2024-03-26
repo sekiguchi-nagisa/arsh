@@ -1449,7 +1449,7 @@ std::unique_ptr<CmdArgNode> Parser::parse_cmdArg(CmdArgParseOpt opt) {
   GUARD_DEEP_NESTING(guard);
 
   assert(!hasFlag(opt, CmdArgParseOpt::FIRST));
-  auto node = std::make_unique<CmdArgNode>(this->curToken);
+  auto node = std::make_unique<CmdArgNode>(this->curToken, hasFlag(opt, CmdArgParseOpt::ASSIGN));
   TRY(this->parse_cmdArgSeg(*node, opt | CmdArgParseOpt::FIRST));
 
   while (!this->hasSpace() && !this->hasNewline() && lookahead_cmdArg_LP(CUR_KIND())) {

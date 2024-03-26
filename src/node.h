@@ -1272,17 +1272,21 @@ public:
  */
 class CmdArgNode : public WithRtti<Node, NodeKind::CmdArg> {
 private:
+  static constexpr uint8_t BRACE = 1u << 0u;
+  static constexpr uint8_t GLOB = 1u << 1u;
+  static constexpr uint8_t BRACKET = 1u << 2u;
+
   unsigned int expansionSize{0};
-  bool braceExpansion{false};
-  bool globExpansion{false};
-  bool bracketExpr{false}; // for glob
+  uint8_t expansionAttr{0};
   bool expansionError{false};
+  const bool rightHandSide;                        // for prefix assignment
   std::vector<std::unique_ptr<Node>> segmentNodes; // at-least one element
 
 public:
-  explicit CmdArgNode(Token token) : WithRtti(token) {}
+  CmdArgNode(Token token, bool rightHandSide) : WithRtti(token), rightHandSide(rightHandSide) {}
 
-  explicit CmdArgNode(std::unique_ptr<Node> &&segmentNode) : WithRtti(segmentNode->getToken()) {
+  explicit CmdArgNode(std::unique_ptr<Node> &&segmentNode)
+      : CmdArgNode(segmentNode->getToken(), false) {
     this->addSegmentNode(std::move(segmentNode));
   }
 
@@ -1296,6 +1300,8 @@ public:
 
   void dump(NodeDumper &dumper) const override;
 
+  bool isRightHandSide() const { return this->rightHandSide; }
+
   bool isTilde() const { return this->isTildeAt(0); }
 
   bool isTildeAt(unsigned int i) const {
@@ -1303,17 +1309,17 @@ public:
            cast<StringNode>(*this->segmentNodes[i]).isTilde();
   }
 
-  bool isGlobExpansion() const { return this->globExpansion; }
+  bool isGlobExpansion() const { return hasFlag(this->expansionAttr, GLOB); }
 
-  bool isBraceExpansion() const { return this->braceExpansion; }
+  bool isBraceExpansion() const { return hasFlag(this->expansionAttr, BRACE); }
 
-  void setBraceExpansion(bool set) { this->braceExpansion = set; }
+  void enableBraceExpansion() { setFlag(this->expansionAttr, BRACE); }
 
   unsigned int getExpansionSize() const { return this->expansionSize; }
 
   void setExpansionSize(unsigned int size) { this->expansionSize = size; }
 
-  bool hasBracketExpr() const { return this->bracketExpr; }
+  bool hasBracketExpr() const { return hasFlag(this->expansionAttr, BRACKET); }
 
   void setExpansionError(bool set) { this->expansionError = set; }
 
