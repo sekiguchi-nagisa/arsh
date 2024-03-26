@@ -441,10 +441,10 @@ void CmdArgNode::addSegmentNode(std::unique_ptr<Node> &&node) {
   } else if (isa<WildCardNode>(*node)) {
     auto &wildNode = cast<WildCardNode>(*node);
     if (wildNode.isExpand() && wildNode.isGlobMeta()) {
-      this->globExpansion = true;
+      setFlag(this->expansionAttr, GLOB);
     }
     if (wildNode.meta == ExpandMeta::BRACKET_OPEN) {
-      this->bracketExpr = true;
+      setFlag(this->expansionAttr, BRACKET);
     } else if (wildNode.meta == ExpandMeta::BRACKET_CLOSE && this->hasBracketExpr()) {
       wildNode.setExpand(true);
     }
@@ -454,10 +454,15 @@ void CmdArgNode::addSegmentNode(std::unique_ptr<Node> &&node) {
 
 void CmdArgNode::dump(NodeDumper &dumper) const {
   DUMP(expansionSize);
+#define EACH_FLAG(OP)                                                                              \
+  OP(BRACE)                                                                                        \
+  OP(GLOB)                                                                                         \
+  OP(BRACKET)
+
+  DUMP_BITSET(expansionAttr, EACH_FLAG);
+#undef EACH_FLAG
   DUMP(expansionError);
-  DUMP(braceExpansion);
-  DUMP(globExpansion);
-  DUMP(bracketExpr);
+  DUMP(rightHandSide);
   DUMP(segmentNodes);
 }
 

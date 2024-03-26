@@ -21,10 +21,9 @@ nodes:
         size: ${len}
       type:
       expansionSize: 0
+      expansionAttr: \"\"
       expansionError: false
-      braceExpansion: false
-      globExpansion: false
-      bracketExpr: false
+      rightHandSide: false
       segmentNodes:
         - nodeKind: String
           token:
@@ -152,10 +151,9 @@ nodes:
         size: ${len}
       type: \"String\"
       expansionSize: 0
+      expansionAttr: \"\"
       expansionError: false
-      braceExpansion: false
-      globExpansion: false
-      bracketExpr: false
+      rightHandSide: false
       segmentNodes:
         - nodeKind: String
           token:
