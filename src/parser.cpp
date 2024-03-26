@@ -1516,7 +1516,7 @@ std::unique_ptr<Node> Parser::parse_cmdArgSeg(CmdArgNode &argNode, CmdArgParseOp
     this->consume(); // always success
     if (hasFlag(opt, CmdArgParseOpt::ASSIGN)) {
       iteratePathList(*this->lexer, token, ':', [&](Token subToken, bool) {
-        auto kind = StringNode::STRING;
+        auto kind = StringNode::CMD_ARG;
         if (this->lexer->startsWith(subToken, '~') &&
             (subToken.pos > token.pos || hasFlag(opt, CmdArgParseOpt::FIRST))) {
           kind = StringNode::TILDE;
@@ -1532,17 +1532,17 @@ std::unique_ptr<Node> Parser::parse_cmdArgSeg(CmdArgNode &argNode, CmdArgParseOp
         prefixToken = subToken;
         return false;
       });
-      this->addCmdArgSeg(argNode, prefixToken, StringNode::STRING);
+      this->addCmdArgSeg(argNode, prefixToken, StringNode::CMD_ARG);
       if (prefixToken != token) { // prefix='if=', remain='path'
         const auto remainToken = token.sliceFrom(prefixToken.size);
-        auto kind = StringNode::STRING;
+        auto kind = StringNode::CMD_ARG;
         if (this->lexer->startsWith(remainToken, '~') && prefixToken.size > 1) {
           kind = StringNode::TILDE;
         }
         this->addCmdArgSeg(argNode, remainToken, kind);
       }
     } else {
-      auto kind = StringNode::STRING;
+      auto kind = StringNode::CMD_ARG;
       if (hasFlag(opt, CmdArgParseOpt::FIRST) || isBrace(prevKind)) {
         if (this->lexer->startsWith(token, '~')) {
           kind = StringNode::TILDE;

@@ -868,6 +868,7 @@ void TypeChecker::visitStringNode(StringNode &node) {
     }
     break;
   case StringNode::TILDE:
+  case StringNode::CMD_ARG:
     break;
   case StringNode::BACKQUOTE:
     this->reportError<NoBackquote>(node);

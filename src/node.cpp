@@ -163,6 +163,7 @@ void StringNode::dump(NodeDumper &dumper) const {
 #define EACH_ENUM(OP)                                                                              \
   OP(STRING)                                                                                       \
   OP(TILDE)                                                                                        \
+  OP(CMD_ARG)                                                                                      \
   OP(BACKQUOTE)
 
   DUMP_ENUM(kind, EACH_ENUM);
