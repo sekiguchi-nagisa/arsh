@@ -388,11 +388,6 @@ bool VM::applyBraceExpansion(ARState &state, ArrayObject &argv, const Value *beg
         i = iter->closeIndex;
         goto CONTINUE;
       }
-      case ExpandMeta::BRACE_TILDE:
-        if (usedSize) {
-          goto CONTINUE;
-        }
-        break;
       case ExpandMeta::BRACE_SEQ_OPEN: {
         i++;
         stack.push_back(ExpandState{

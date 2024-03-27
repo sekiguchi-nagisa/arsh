@@ -129,15 +129,6 @@ void TypeChecker::checkBraceExpansion(CmdArgNode &node) {
       default:
         break;
       }
-    } else if (isa<WildCardNode>(*e)) {
-      if (auto &wild = cast<WildCardNode>(*e); wild.meta == ExpandMeta::BRACE_TILDE) {
-        if (stack.empty()) {
-          assert(i + 1 < size && isa<StringNode>(*segmentNodes[i + 1]));
-          cast<StringNode>(*segmentNodes[i + 1]).unsetTilde();
-        } else {
-          wild.setExpand(true);
-        }
-      }
     }
   }
 }
@@ -520,7 +511,7 @@ void TypeChecker::reportTildeExpansionError(Token token, const std::string &path
 bool TypeChecker::applyGlob(const Token token,
                             std::vector<std::shared_ptr<const std::string>> &results,
                             const SourceListNode::path_iterator begin,
-                            const SourceListNode::path_iterator end, GlobOp op) {
+                            const SourceListNode::path_iterator end, const bool optional) {
   GlobPatternWrapper pattern;
   if (!this->concatAsGlobPattern(token, begin, end, pattern)) {
     return false;
@@ -534,7 +525,7 @@ bool TypeChecker::applyGlob(const Token token,
   switch (const auto ret = glob(&err); ret) {
   case Glob::Status::MATCH:
   case Glob::Status::NOMATCH:
-    if (ret == Glob::Status::MATCH || hasFlag(op, GlobOp::OPTIONAL)) {
+    if (ret == Glob::Status::MATCH || optional) {
       std::sort(results.begin() + oldSize, results.end(),
                 [](const std::shared_ptr<const std::string> &x,
                    const std::shared_ptr<const std::string> &y) { return *x < *y; });
@@ -595,7 +586,8 @@ static bool needGlob(SourceListNode::path_iterator begin, SourceListNode::path_i
 bool TypeChecker::applyBraceExpansion(const Token token,
                                       std::vector<std::shared_ptr<const std::string>> &results,
                                       const SourceListNode::path_iterator begin,
-                                      const SourceListNode::path_iterator end, const GlobOp op) {
+                                      const SourceListNode::path_iterator end,
+                                      const bool optional) {
   assert(begin <= end);
   const auto sentinel = std::make_unique<EmptyNode>();
   const unsigned int size = end - begin;
@@ -644,11 +636,6 @@ bool TypeChecker::applyBraceExpansion(const Token token,
         i = iter->closeIndex;
         goto CONTINUE;
       }
-      case ExpandMeta::BRACE_TILDE:
-        if (usedSize) {
-          goto CONTINUE;
-        }
-        break;
       case ExpandMeta::BRACE_SEQ_OPEN: {
         i++;
         stack.push_back(SrcExpandState{
@@ -688,7 +675,7 @@ bool TypeChecker::applyBraceExpansion(const Token token,
           this->reportError<ExpandRetLimit>(token);
           return false;
         }
-        if (!this->applyGlob(token, results, vbegin, vend, op)) {
+        if (!this->applyGlob(token, results, vbegin, vend, optional)) {
           return false;
         }
       } else {
@@ -759,16 +746,12 @@ void TypeChecker::resolvePathList(SourceListNode &node) {
     }
     results.push_back(std::make_shared<const std::string>(std::move(path)));
   } else {
-    GlobOp op{};
-    if (node.isOptional()) {
-      setFlag(op, GlobOp::OPTIONAL);
-    }
-
+    const bool optional = node.isOptional();
     bool status;
     if (pathNode.isBraceExpansion()) {
-      status = this->applyBraceExpansion(pathNode.getToken(), results, begin, end, op);
+      status = this->applyBraceExpansion(pathNode.getToken(), results, begin, end, optional);
     } else {
-      status = this->applyGlob(pathNode.getToken(), results, begin, end, op);
+      status = this->applyGlob(pathNode.getToken(), results, begin, end, optional);
     }
     if (!status) {
       return;

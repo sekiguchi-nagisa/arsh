@@ -461,7 +461,7 @@ public:
 
 private:
   std::string value;
-  StringKind kind;
+  const StringKind kind;
   bool init;
   bool escaped{false};
 
@@ -483,8 +483,6 @@ public:
   StringKind getKind() const { return this->kind; }
 
   bool isTilde() const { return this->getKind() == TILDE; }
-
-  void unsetTilde() { this->kind = STRING; }
 
   void dump(NodeDumper &dumper) const override;
 
