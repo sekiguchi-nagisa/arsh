@@ -431,9 +431,11 @@ static bool isDirPattern(const StringRef ref) {
 }
 
 bool TypeChecker::concatAsGlobPattern(const Token token, SourceListNode::path_iterator begin,
-                                      SourceListNode::path_iterator end, const GlobOp op,
+                                      SourceListNode::path_iterator end,
                                       GlobPatternWrapper &pattern) {
   std::string value;
+  const bool tilde = begin != end && isExpandingWildCard(**begin) &&
+                     cast<WildCardNode>(**begin).meta == ExpandMeta::TILDE;
   for (; begin != end; ++begin) {
     auto &e = **begin;
     assert(isa<StringNode>(e) || isa<WildCardNode>(e));
@@ -453,7 +455,7 @@ bool TypeChecker::concatAsGlobPattern(const Token token, SourceListNode::path_it
     return false;
   }
   pattern = GlobPatternWrapper::create(std::move(value));
-  if (hasFlag(op, GlobOp::TILDE) && !pattern.getBaseDir().empty()) {
+  if (tilde && !pattern.getBaseDir().empty()) {
     if (const auto s = pattern.expandTilde(nullptr); s != TildeExpandStatus::OK) {
       this->reportTildeExpansionError(token, pattern.getBaseDir(), s);
       return false;
@@ -520,7 +522,7 @@ bool TypeChecker::applyGlob(const Token token,
                             const SourceListNode::path_iterator begin,
                             const SourceListNode::path_iterator end, GlobOp op) {
   GlobPatternWrapper pattern;
-  if (!this->concatAsGlobPattern(token, begin, end, op, pattern)) {
+  if (!this->concatAsGlobPattern(token, begin, end, pattern)) {
     return false;
   }
 
@@ -576,9 +578,15 @@ struct SrcExpandState {
 
 static bool needGlob(SourceListNode::path_iterator begin, SourceListNode::path_iterator end) {
   for (; begin != end; ++begin) {
-    if (auto &v = **begin;
-        isExpandingWildCard(v) && cast<WildCardNode>(v).meta != ExpandMeta::BRACKET_CLOSE) {
-      return true;
+    if (auto &v = **begin; isExpandingWildCard(v)) {
+      switch (cast<WildCardNode>(v).meta) {
+      case ExpandMeta::ANY:
+      case ExpandMeta::ZERO_OR_MORE:
+      case ExpandMeta::BRACKET_OPEN:
+        return true;
+      default:
+        break;
+      }
     }
   }
   return false;
@@ -675,24 +683,19 @@ bool TypeChecker::applyBraceExpansion(const Token token,
 
       auto vbegin = values.begin();
       auto vend = vbegin + usedSize;
-      auto newOp = op;
-      if (!hasFlag(newOp, GlobOp::TILDE) && usedSize > 0 && isExpandingWildCard(**vbegin) &&
-          cast<WildCardNode>(*vbegin)->meta == ExpandMeta::BRACE_TILDE) {
-        setFlag(newOp, GlobOp::TILDE);
-        ++vbegin; // skip meta
-      }
-
       if (needGlob(vbegin, vend)) {
         if (++expandCount == getExpansionLimit()) {
           this->reportError<ExpandRetLimit>(token);
           return false;
         }
-        if (!this->applyGlob(token, results, vbegin, vend, newOp)) {
+        if (!this->applyGlob(token, results, vbegin, vend, op)) {
           return false;
         }
       } else {
         auto path = concat(vbegin, vend);
-        if (hasFlag(newOp, GlobOp::TILDE)) {
+        const bool tilde = vbegin != vend && isExpandingWildCard(**vbegin) &&
+                           cast<WildCardNode>(**vbegin).meta == ExpandMeta::TILDE;
+        if (tilde) {
           if (auto s = expandTilde(path, true, nullptr); s != TildeExpandStatus::OK) {
             this->reportTildeExpansionError(token, path, s);
             return false;

@@ -710,8 +710,7 @@ private:
   };
 
   bool concatAsGlobPattern(Token token, SourceListNode::path_iterator begin,
-                           SourceListNode::path_iterator end, GlobOp op,
-                           GlobPatternWrapper &pattern);
+                           SourceListNode::path_iterator end, GlobPatternWrapper &pattern);
 
   /**
    *
