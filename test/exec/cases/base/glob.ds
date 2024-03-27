@@ -185,6 +185,6 @@ assert $aa[0] == 'AAA=~/*'
 
 $aa = @(*/AA=~)
 assert $aa.size() == 1
-assert $aa[0] == '*/AA=~'
+assert $aa[0] == '*/AA=~'  # not perform tilde expansion if forward element is glob pattern
 
 true
