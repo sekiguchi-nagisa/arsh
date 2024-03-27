@@ -72,6 +72,8 @@ HighlightTokenClass toTokenClass(TokenKind kind) {
   case TokenKind::CMD_ARG_PART:
     return HighlightTokenClass::COMMAND_ARG;
   case TokenKind::TILDE:
+  case TokenKind::META_ASSIGN:
+  case TokenKind::META_COLON:
   case TokenKind::GLOB_ANY:
   case TokenKind::GLOB_ZERO_OR_MORE:
   case TokenKind::GLOB_BRACKET_OPEN:

@@ -159,6 +159,8 @@
   TOKEN(GLOB_ZERO_OR_MORE, "<glob *>")                                                             \
   TOKEN(GLOB_BRACKET_OPEN, "<glob [>")                                                             \
   TOKEN(GLOB_BRACKET_CLOSE, "<glob ]>")                                                            \
+  TOKEN(META_ASSIGN, "=")                                                                          \
+  TOKEN(META_COLON, ":")                                                                           \
   TOKEN(TILDE, "~")                                                                                \
   TOKEN(BRACE_OPEN, "{")                                                                           \
   TOKEN(BRACE_CLOSE, "}")                                                                          \
@@ -349,7 +351,8 @@
 
 #define EACH_LA_cmdArg(OP)                                                                         \
   OP(CMD_ARG_PART)                                                                                 \
-  OP(ASSIGN)                                                                                       \
+  OP(META_ASSIGN)                                                                                  \
+  OP(META_COLON)                                                                                   \
   OP(TILDE)                                                                                        \
   OP(BRACE_CHAR_SEQ)                                                                               \
   OP(BRACE_INT_SEQ)                                                                                \

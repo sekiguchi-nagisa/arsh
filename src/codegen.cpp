@@ -297,9 +297,14 @@ unsigned int ByteCodeGenerator::concatCmdArgSegment(const CmdArgNode &node, unsi
     }
     auto &segNode = *node.getSegmentNodes()[startIndex];
     if (isExpandingWildCard(segNode)) {
-      if (auto &wildNode = cast<WildCardNode>(segNode);
-          wildNode.meta == ExpandMeta::TILDE || wildNode.meta == ExpandMeta::ASSIGN) {
-        wildNode.setExpand(false); // emit '~', '='
+      switch (auto &wildNode = cast<WildCardNode>(segNode); wildNode.meta) {
+      case ExpandMeta::TILDE:
+      case ExpandMeta::ASSIGN:
+      case ExpandMeta::COLON:
+        wildNode.setExpand(false); // emit '~', '=', ':'
+        break;
+      default:
+        break;
       }
     }
     this->generateConcat(segNode, startIndex - baseIndex > 0);

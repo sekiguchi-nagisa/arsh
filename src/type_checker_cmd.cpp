@@ -149,10 +149,11 @@ void TypeChecker::checkTildeExpansion(CmdArgNode &node) {
       if (i == 0) {
         continue;
       }
-      if (auto &prevNode = *node.getSegmentNodes()[i - 1];
-          isExpandingWildCard(prevNode) &&
-          cast<WildCardNode>(prevNode).meta == ExpandMeta::ASSIGN) {
-        cast<WildCardNode>(prevNode).setExpand(false); // disable expansion for mid '='
+      if (auto &prevNode = *node.getSegmentNodes()[i - 1]; isExpandingWildCard(prevNode)) {
+        if (auto &wildNode = cast<WildCardNode>(prevNode);
+            wildNode.meta == ExpandMeta::ASSIGN || wildNode.meta == ExpandMeta::COLON) {
+          wildNode.setExpand(false); // disable expansion for mid '=', ':'
+        }
       }
       continue;
     }
@@ -165,8 +166,8 @@ void TypeChecker::checkTildeExpansion(CmdArgNode &node) {
       }
       if (auto &prevNode = *node.getSegmentNodes()[i - 1]; isExpandingWildCard(prevNode)) {
         if (auto &prevWildNode = cast<WildCardNode>(prevNode);
-            prevWildNode.isBraceMeta() ||
-            (prevWildNode.meta == ExpandMeta::ASSIGN && !node.isRightHandSide())) {
+            prevWildNode.isBraceMeta() || prevWildNode.meta == ExpandMeta::ASSIGN ||
+            prevWildNode.meta == ExpandMeta::COLON) {
           /**
            * consider the following cases
            *
@@ -174,22 +175,17 @@ void TypeChecker::checkTildeExpansion(CmdArgNode &node) {
            * echo {a,~}/root
            * echo {,}~/root
            * echo AAA=~
-           *
+           * AAA=$PATH:~
            */
-          continue;
-        }
-      } else if (node.isRightHandSide() && isa<StringNode>(prevNode)) { // for AAA:~/
-        auto &strNode = cast<StringNode>(prevNode);
-        if (strNode.getKind() == StringNode::CMD_ARG &&
-            StringRef(strNode.getValue()).endsWith(":")) {
           continue;
         }
       }
       wildNode.setExpand(false); // disable tilde expansion
       break;
     case ExpandMeta::ASSIGN:
-      if (i == size - 1) {
-        wildNode.setExpand(false); // disable expansion of last '=' (ex. echo AAA=  )
+    case ExpandMeta::COLON:
+      if (i == size - 1) { // disable expansion of last '=', ':' (ex. echo AAA=, AAA=$PATH: )
+        wildNode.setExpand(false);
       }
       break;
     default:
