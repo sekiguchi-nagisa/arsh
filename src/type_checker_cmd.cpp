@@ -760,9 +760,6 @@ void TypeChecker::resolvePathList(SourceListNode &node) {
     results.push_back(std::make_shared<const std::string>(std::move(path)));
   } else {
     GlobOp op{};
-    if (pathNode.isTilde()) {
-      setFlag(op, GlobOp::TILDE);
-    }
     if (node.isOptional()) {
       setFlag(op, GlobOp::OPTIONAL);
     }

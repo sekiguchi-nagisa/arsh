@@ -949,10 +949,7 @@ void ByteCodeGenerator::visitCmdArgNode(CmdArgNode &node) {
     }
     this->emit0byteIns(OpCode::PUSH_NULL); // sentinel
     assert(node.getExpansionSize() <= SYS_LIMIT_EXPANSION_FRAG_NUM);
-    ExpandOp op = node.isBraceExpansion() ? ExpandOp::BRACE : ExpandOp::GLOB;
-    if (node.isTilde()) {
-      setFlag(op, ExpandOp::TILDE);
-    }
+    const auto op = node.isBraceExpansion() ? ExpandOp::BRACE : ExpandOp::GLOB;
     this->emitExpandIns(node.getExpansionSize(), op);
   } else {
     this->generateCmdArg(node);

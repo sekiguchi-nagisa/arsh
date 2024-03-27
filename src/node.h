@@ -1303,13 +1303,6 @@ public:
 
   bool isRightHandSide() const { return this->rightHandSide; }
 
-  bool isTilde() const { return this->isTildeAt(0); }
-
-  bool isTildeAt(unsigned int i) const {
-    return isa<StringNode>(*this->segmentNodes[i]) &&
-           cast<StringNode>(*this->segmentNodes[i]).isTilde();
-  }
-
   bool isGlobExpansion() const { return hasFlag(this->expansionAttr, GLOB); }
 
   bool isBraceExpansion() const { return hasFlag(this->expansionAttr, BRACE); }
