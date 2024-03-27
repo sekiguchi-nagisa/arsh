@@ -747,7 +747,8 @@ void TypeChecker::resolvePathList(SourceListNode &node) {
   std::vector<std::shared_ptr<const std::string>> results;
   if (!node.isGlobOrBraceExpansion()) {
     std::string path = concat(begin, end);
-    if (pathNode.isTilde()) {
+    if (isExpandingWildCard(**begin) && cast<WildCardNode>(**begin).meta == ExpandMeta::TILDE) {
+      // in source statement, only allow prefix tilde
       if (const auto s = expandTilde(path, true, nullptr); s != TildeExpandStatus::OK) {
         this->reportTildeExpansionError(pathNode.getToken(), path, s);
         return;
