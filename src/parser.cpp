@@ -1463,17 +1463,6 @@ std::unique_ptr<CmdArgNode> Parser::parse_cmdArg(CmdArgParseOpt opt) {
   return node;
 }
 
-static bool isBrace(TokenKind kind) {
-  switch (kind) {
-  case TokenKind::BRACE_OPEN:
-  case TokenKind::BRACE_SEP:
-  case TokenKind::BRACE_CLOSE:
-    return true;
-  default:
-    return false;
-  }
-}
-
 static bool isHereDocStart(StringRef ref) {
   if (ref.size() > 2 && ref[0] == '\'' && ref.back() == '\'') {
     ref.removePrefix(1);
@@ -1512,44 +1501,14 @@ std::unique_ptr<Node> Parser::parse_cmdArgSeg(CmdArgNode &argNode, CmdArgParseOp
       }
       this->curKind = TokenKind::HERE_START;
     }
-    const auto prevKind = this->consumedKind;
-    this->consume(); // always success
-    if (hasFlag(opt, CmdArgParseOpt::ASSIGN)) {
-      iteratePathList(*this->lexer, token, ':', [&](Token subToken, bool) {
-        auto kind = StringNode::CMD_ARG;
-        if (this->lexer->startsWith(subToken, '~') &&
-            (subToken.pos > token.pos || hasFlag(opt, CmdArgParseOpt::FIRST))) {
-          kind = StringNode::TILDE;
-        }
-        this->addCmdArgSeg(argNode, subToken, kind);
-        return true;
-      });
-    } else if (hasFlag(opt, CmdArgParseOpt::FIRST) && !hasFlag(opt, CmdArgParseOpt::MODULE) &&
-               !hasFlag(opt, CmdArgParseOpt::REDIR) &&
-               !this->lexer->startsWith(token, '~')) { // for 'dd if=path' style argument
-      Token prefixToken = token;
-      iteratePathList(*this->lexer, token, '=', [&](Token subToken, bool) {
-        prefixToken = subToken;
-        return false;
-      });
-      this->addCmdArgSeg(argNode, prefixToken, StringNode::CMD_ARG);
-      if (prefixToken != token) { // prefix='if=', remain='path'
-        const auto remainToken = token.sliceFrom(prefixToken.size);
-        auto kind = StringNode::CMD_ARG;
-        if (this->lexer->startsWith(remainToken, '~') && prefixToken.size > 1) {
-          kind = StringNode::TILDE;
-        }
-        this->addCmdArgSeg(argNode, remainToken, kind);
-      }
-    } else {
-      auto kind = StringNode::CMD_ARG;
-      if (hasFlag(opt, CmdArgParseOpt::FIRST) || isBrace(prevKind)) {
-        if (this->lexer->startsWith(token, '~')) {
-          kind = StringNode::TILDE;
-        }
-      }
-      this->addCmdArgSeg(argNode, token, kind);
+    this->consume();                                 // always success
+    const bool unescape = !argNode.hasBracketExpr(); // if has bracket expr, not unescape
+    auto strNode = std::make_unique<StringNode>(token, this->lexer->toCmdArg(token, unescape),
+                                                StringNode::CMD_ARG);
+    if (!unescape) {
+      strNode->setEscaped(true);
     }
+    argNode.addSegmentNode(std::move(strNode));
     return nullptr;
   }
   case TokenKind::BRACE_CHAR_SEQ:
@@ -1580,7 +1539,6 @@ std::unique_ptr<Node> Parser::parse_cmdArgSegImpl(CmdArgParseOpt opt) {
   GUARD_DEEP_NESTING(guard);
 
   switch (CUR_KIND()) {
-
   case TokenKind::TILDE: {
     Token token = this->expect(TokenKind::TILDE);
     return std::make_unique<WildCardNode>(token, ExpandMeta::TILDE);
@@ -1593,8 +1551,8 @@ std::unique_ptr<Node> Parser::parse_cmdArgSegImpl(CmdArgParseOpt opt) {
     auto node = std::make_unique<WildCardNode>(token, meta);
     if (meta == ExpandMeta::COLON) {
       node->setExpand(hasFlag(opt, CmdArgParseOpt::ASSIGN));
-    } else {
-      node->setExpand(!hasFlag(opt, CmdArgParseOpt::ASSIGN));
+    } else if (hasFlag(opt, CmdArgParseOpt::REDIR) || hasFlag(opt, CmdArgParseOpt::MODULE)) {
+      node->setExpand(false);
     }
     return node;
   }
