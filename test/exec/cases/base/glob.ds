@@ -179,4 +179,8 @@ assert $aa[0] == "$HOME/*jfi[z-a]rea**[0-9]*"
 shctl set failglob nullglob
 assert @(\**"\\2").empty()
 
+$aa = @(AAA=~/*)
+assert $aa.size() == 1
+assert $aa[0] == 'AAA=~/*'
+
 true

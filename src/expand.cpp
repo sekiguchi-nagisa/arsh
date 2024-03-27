@@ -188,8 +188,10 @@ static Value joinAsPath(ARState &state, const GlobPatternWrapper &pattern) {
 }
 
 static bool concatAsGlobPattern(ARState &state, const Value *const constPool, const Value *begin,
-                                const Value *end, const bool tilde, GlobPatternWrapper &pattern) {
+                                const Value *end, GlobPatternWrapper &pattern) {
   std::string out;
+  const bool tilde = begin != end && begin->kind() == ValueKind::EXPAND_META &&
+                     begin->asExpandMeta().first == ExpandMeta::TILDE;
   for (; begin != end; ++begin) {
     if (auto &v = *begin; v.hasStrRef()) {
       if (!appendAndEscapeGlobMeta(v.asStrRef(), StringObject::MAX_SIZE, out)) {
@@ -229,10 +231,10 @@ NOMEM:
 }
 
 bool VM::addGlobbingPath(ARState &state, ArrayObject &argv, const Value *const begin,
-                         const Value *const end, const bool tilde) {
+                         const Value *const end) {
   GlobPatternWrapper pattern;
   if (!concatAsGlobPattern(state, cast<CompiledCode>(state.stack.code())->getConstPool(), begin,
-                           end, tilde, pattern)) {
+                           end, pattern)) {
     return false;
   }
   if (pattern.getBaseDir().empty() && pattern.getPattern().size() == 1 &&
@@ -307,9 +309,15 @@ struct ExpandState {
 
 static bool needGlob(const Value *begin, const Value *end) {
   for (; begin != end; ++begin) {
-    if (const auto &v = *begin;
-        v.kind() == ValueKind::EXPAND_META && v.asExpandMeta().first != ExpandMeta::BRACKET_CLOSE) {
-      return true;
+    if (const auto &v = *begin; v.kind() == ValueKind::EXPAND_META) {
+      switch (v.asExpandMeta().first) {
+      case ExpandMeta::ANY:
+      case ExpandMeta::ZERO_OR_MORE:
+      case ExpandMeta::BRACKET_OPEN:
+        return true;
+      default:
+        break;
+      }
     }
   }
   return false;
@@ -335,7 +343,7 @@ static bool tryUpdate(int64_t &cur, const BaseObject &obj) {
 }
 
 bool VM::applyBraceExpansion(ARState &state, ArrayObject &argv, const Value *begin,
-                             const Value *end, ExpandOp expandOp) {
+                             const Value *end) {
   const unsigned int size = end - begin;
   assert(size <= UINT8_MAX);
   FlexBuffer<ExpandState> stack;
@@ -424,15 +432,8 @@ bool VM::applyBraceExpansion(ARState &state, ArrayObject &argv, const Value *beg
 
       const auto *vbegin = values.get();
       const auto *vend = vbegin + usedSize;
-      bool tilde = hasFlag(expandOp, ExpandOp::TILDE);
-      if (!tilde && usedSize > 0 && vbegin->kind() == ValueKind::EXPAND_META &&
-          vbegin->asExpandMeta().first == ExpandMeta::BRACE_TILDE) {
-        tilde = true;
-        ++vbegin; // skip meta
-      }
-
       if (needGlob(vbegin, vend)) {
-        if (!addGlobbingPath(state, argv, vbegin, vend, tilde)) {
+        if (!addGlobbingPath(state, argv, vbegin, vend)) { // FIXME: =~
           return false;
         }
       } else {
@@ -441,7 +442,9 @@ bool VM::applyBraceExpansion(ARState &state, ArrayObject &argv, const Value *beg
         if (!path) {
           return false;
         }
-        if (tilde) {
+        const bool tilde = vbegin != vend && vbegin->kind() == ValueKind::EXPAND_META &&
+                           vbegin->asExpandMeta().first == ExpandMeta::TILDE;
+        if (tilde) { // FIXME: =~
           DefaultDirStackProvider dirStackProvider(state);
           std::string str = path.asStrRef().toString();
           if (const auto s = expandTilde(str, true, &dirStackProvider);
@@ -504,9 +507,9 @@ bool VM::addExpandingPath(ARState &state, const unsigned int size, ExpandOp expa
   const auto *end = &state.stack.peek();
   bool ret;
   if (hasFlag(expandOp, ExpandOp::BRACE)) {
-    ret = applyBraceExpansion(state, argv, begin, end, expandOp);
+    ret = applyBraceExpansion(state, argv, begin, end);
   } else {
-    ret = addGlobbingPath(state, argv, begin, end, hasFlag(expandOp, ExpandOp::TILDE));
+    ret = addGlobbingPath(state, argv, begin, end);
   }
 
   if (ret) { // pop operands
