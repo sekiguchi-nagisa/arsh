@@ -183,4 +183,8 @@ $aa = @(AAA=~/*)
 assert $aa.size() == 1
 assert $aa[0] == 'AAA=~/*'
 
+$aa = @(*/AA=~)
+assert $aa.size() == 1
+assert $aa[0] == '*/AA=~'
+
 true
