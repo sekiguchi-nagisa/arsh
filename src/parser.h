@@ -179,7 +179,26 @@ protected:
 
   bool inTypeNameCompletionPoint() const;
 
+  bool inFileNameCompletionPoint() const {
+    if (!this->inCompletionPoint()) {
+      return false;
+    }
+    switch (this->lexer->getCompTokenKind()) {
+    case TokenKind::EOS:
+    case TokenKind::CMD_ARG_PART:
+    case TokenKind::TILDE:
+    case TokenKind::META_ASSIGN:
+    case TokenKind::META_COLON:
+      return true;
+    default:
+      break;
+    }
+    return false;
+  }
+
   void tryCompleteFileNames(CmdArgParseOpt opt);
+
+  void tryCompleteFileNames(const CmdArgNode &cmdArgNode, CmdArgParseOpt opt);
 
   template <typename... Args>
   void makeCodeComp(Args &&...args) {
@@ -313,7 +332,13 @@ protected:
    */
   std::unique_ptr<Node> parse_cmdArgSeg(CmdArgNode &argNode, CmdArgParseOpt opt);
 
-  std::unique_ptr<Node> parse_cmdArgSegImpl(CmdArgParseOpt opt);
+  /**
+   *
+   * @param argNode for file name completion
+   * @param opt
+   * @return
+   */
+  std::unique_ptr<Node> parse_cmdArgSegImpl(const CmdArgNode &argNode, CmdArgParseOpt opt);
 
   std::unique_ptr<Node> parse_expressionImpl(unsigned int basePrecedence);
 

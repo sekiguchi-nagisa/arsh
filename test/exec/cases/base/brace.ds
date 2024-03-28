@@ -62,6 +62,7 @@ assert $aa[1] == $'AAb\x00QQQ'
 ## tilde
 assert "$(echo ~{,+,-,root,/}/hoge)" == "$(echo ~/hoge ~+/hoge ~-/hoge ~root/hoge ~//hoge)"
 assert "$(echo ~ ~ ~~ ~ a a~ a~ a~~ a a~)" == "$(echo {,a}{,~,}{,~})"
+assert "$(echo {AA=AA/,}AA=~/)" == "$(echo 'AA=AA/AA=~/' AA=$HOME/)"
 var ex = 34 as Any
 try { echo {,a}{,~,}{,~}; } catch e { $ex = $e; }
 assert ($ex as TildeError).message() =~ $/~~/

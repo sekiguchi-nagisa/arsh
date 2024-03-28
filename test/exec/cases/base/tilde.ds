@@ -183,8 +183,10 @@ assert ($ex as TildeError).message() ==
 assert "$(echo :~)" == ':~'
 assert "$(echo \\:~)" == '\:~'
 assert "$(echo /home:~)" == '/home:~'
+assert "$(AAA=bbb=~ echo $AAA)" == 'bbb=~'
 assert "if=~" == "$(echo if\=~)"
 assert "if=\~" == "$(echo if=\\~)"
+assert "$(echo AA=AA/AA=~/)" == "AA=AA/AA=~/"
 $ex = 34
 try { echo ~\if=~; } catch e { $ex = $e; }
 assert $ex is TildeError

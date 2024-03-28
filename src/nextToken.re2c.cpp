@@ -335,9 +335,9 @@ INIT:
     <HERE> HERE_BODY         { UPDATE_LN(); RET_HERE_BODY(STR_ELEMENT); }
 
     <CMD> CMD_ARG            { UPDATE_LN(); RET_OR_COMP(CMD_ARG_PART); }
-    <CMD> "="                { RET(META_ASSIGN); }
-    <CMD> ":"                { RET(META_COLON); }
-    <CMD> "~"                { RET(TILDE); }
+    <CMD> "="                { RET_OR_COMP(META_ASSIGN); }
+    <CMD> ":"                { RET_OR_COMP(META_COLON); }
+    <CMD> "~"                { RET_OR_COMP(TILDE); }
     <CMD> BRACE_CHAR_SEQ     { RET(BRACE_CHAR_SEQ); }
     <CMD> BRACE_INT_SEQ      { RET(BRACE_INT_SEQ); }
     <CMD> "?"                { RET(GLOB_ANY); }

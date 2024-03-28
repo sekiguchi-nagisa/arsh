@@ -299,6 +299,94 @@ static void iteratePathList(const Lexer &lex, const Token token, const char deli
   }
 }
 
+static bool mayBeFollowingTilde(TokenKind kind, CmdArgParseOpt opt) {
+  if (hasFlag(opt, CmdArgParseOpt::ASSIGN)) {
+    return kind == TokenKind::META_COLON;
+  }
+  if (!hasFlag(opt, CmdArgParseOpt::MODULE) && !hasFlag(opt, CmdArgParseOpt::REDIR)) {
+    return kind == TokenKind::META_ASSIGN;
+  }
+  return false;
+}
+
+static bool mayBeFollowingTilde(const CmdArgNode &cmdArgNode, unsigned int offset,
+                                CmdArgParseOpt opt) {
+  assert(offset < cmdArgNode.getSegmentNodes().size());
+  if (auto &node = *cmdArgNode.getSegmentNodes()[offset]; isExpandingWildCard(node)) {
+    const auto meta = cast<WildCardNode>(node).meta;
+    TokenKind kind = meta == ExpandMeta::COLON    ? TokenKind::META_COLON
+                     : meta == ExpandMeta::ASSIGN ? TokenKind::META_ASSIGN
+                                                  : TokenKind::CMD_ARG_PART;
+    if (offset == 0 && meta == ExpandMeta::ASSIGN) {
+      return false; // skil 'echo ='
+    }
+    for (unsigned int i = 0; i < offset; i++) {
+      if (auto &e = *cmdArgNode.getSegmentNodes()[i]; isExpandingWildCard(e)) {
+        if (auto m = cast<WildCardNode>(e).meta;
+            m != ExpandMeta::COLON && m != ExpandMeta::ASSIGN) {
+          return false;
+        }
+      }
+    }
+    return mayBeFollowingTilde(kind, opt);
+  }
+  return false;
+}
+
+void Parser::tryCompleteFileNames(const CmdArgNode &cmdArgNode, CmdArgParseOpt opt) {
+  const Token token = this->curToken;
+  const TokenKind compKind = this->lexer->getCompTokenKind();
+  auto op = hasFlag(opt, CmdArgParseOpt::MODULE) ? CodeCompOp::MODULE : CodeCompOp::FILE;
+  const unsigned int size = cmdArgNode.getSegmentNodes().size();
+  switch (compKind) {
+  case TokenKind::EOS:
+    if (size == 0) {
+      this->compCtx->addCompRequest(op, "");
+    }
+    break;
+  case TokenKind::CMD_ARG_PART:
+    if (size == 0 || mayBeFollowingTilde(cmdArgNode, size - 1, opt)) {
+      /**
+       * echo ./
+       * echo AA=./
+       * AAA=bbb:./
+       *
+       */
+      this->compCtx->addCompRequest(op, this->lexer->toCmdArg(token));
+    } else if (auto &last = *cmdArgNode.getSegmentNodes().back();
+               isExpandingWildCard(last) && cast<WildCardNode>(last).meta == ExpandMeta::TILDE) {
+      if (size == 1 || mayBeFollowingTilde(cmdArgNode, size - 2, opt)) {
+        /*
+         * echo ~/
+         * echo aaa=~/
+         * AAA=aaa:~/
+         */
+        auto value = this->lexer->toCmdArg(token);
+        value.insert(0, "~");
+        this->compCtx->addCompRequest(op | CodeCompOp::TILDE, std::move(value));
+      }
+    }
+    break;
+  case TokenKind::TILDE:
+    if (size == 0 || mayBeFollowingTilde(cmdArgNode, size - 1, opt)) {
+      this->compCtx->addCompRequest(op | CodeCompOp::TILDE, "~");
+    }
+    break;
+  case TokenKind::META_ASSIGN:
+    if (size != 0 && mayBeFollowingTilde(compKind, opt)) {
+      this->compCtx->addCompRequest(op, "");
+    }
+    break;
+  case TokenKind::META_COLON:
+    if (mayBeFollowingTilde(compKind, opt)) {
+      this->compCtx->addCompRequest(op, "");
+    }
+    break;
+  default:
+    break;
+  }
+}
+
 void Parser::tryCompleteFileNames(CmdArgParseOpt opt) {
   Token token = this->curToken;
   if (hasFlag(opt, CmdArgParseOpt::ASSIGN)) {
@@ -1528,14 +1616,14 @@ std::unique_ptr<Node> Parser::parse_cmdArgSeg(CmdArgNode &argNode, CmdArgParseOp
     return nullptr;
   }
   default: {
-    auto node = TRY(this->parse_cmdArgSegImpl(opt));
+    auto node = TRY(this->parse_cmdArgSegImpl(argNode, opt));
     argNode.addSegmentNode(std::move(node));
     return nullptr;
   }
   }
 }
 
-std::unique_ptr<Node> Parser::parse_cmdArgSegImpl(CmdArgParseOpt opt) {
+std::unique_ptr<Node> Parser::parse_cmdArgSegImpl(const CmdArgNode &argNode, CmdArgParseOpt opt) {
   GUARD_DEEP_NESTING(guard);
 
   switch (CUR_KIND()) {
@@ -1549,11 +1637,7 @@ std::unique_ptr<Node> Parser::parse_cmdArgSegImpl(CmdArgParseOpt opt) {
     const TokenKind kind = this->scan();
     const ExpandMeta meta = kind == TokenKind::META_ASSIGN ? ExpandMeta::ASSIGN : ExpandMeta::COLON;
     auto node = std::make_unique<WildCardNode>(token, meta);
-    if (meta == ExpandMeta::COLON) {
-      node->setExpand(hasFlag(opt, CmdArgParseOpt::ASSIGN));
-    } else if (hasFlag(opt, CmdArgParseOpt::REDIR) || hasFlag(opt, CmdArgParseOpt::MODULE)) {
-      node->setExpand(false);
-    }
+    node->setExpand(mayBeFollowingTilde(kind, opt));
     return node;
   }
   case TokenKind::GLOB_ANY:
@@ -1617,8 +1701,8 @@ std::unique_ptr<Node> Parser::parse_cmdArgSegImpl(CmdArgParseOpt opt) {
   default:
     if (this->inVarNameCompletionPoint()) {
       this->makeCodeComp(CodeCompNode::VAR_IN_CMD_ARG, nullptr, this->curToken);
-    } else if (this->inCompletionPointAt(TokenKind::CMD_ARG_PART)) {
-      this->tryCompleteFileNames(opt);
+    } else if (this->inFileNameCompletionPoint()) {
+      this->tryCompleteFileNames(argNode, opt);
     }
     E_DETAILED(hasFlag(opt, CmdArgParseOpt::MODULE)  ? ParseErrorKind::MOD_PATH
                : hasFlag(opt, CmdArgParseOpt::REDIR) ? ParseErrorKind::REDIR
