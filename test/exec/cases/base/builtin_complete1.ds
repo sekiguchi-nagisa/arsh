@@ -203,7 +203,7 @@ if $OSTYPE !~ $/cygwin/i  && $OSTYPE !~ $/msys/ {
 $assertArray(new [String](), $(complete 'echo \~root'))
 $assertArray(new [String](), $(complete 'echo if\=~/'))
 $assertArray(new [String](), $(complete 'echo if=\~/'))
-$assertArray($(file ~), $(complete 'echo ${23}if=~/'))
+$assertArray(new [String](), $(complete 'echo ${23}if=~/'))
 $assertArray(new [String](), $(complete 'echo ~/=~/'))
 $assertArray(new [String](), $(complete 'echo AA=AA/AA=~/'))
 $assertArray(new [String](), $(complete 'echo \=~'))
