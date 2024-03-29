@@ -117,6 +117,7 @@
         - load compat script for old api
     - not insert space after ``--long=`` option
     - fix ``--long=`` style long option completion
+- set ``RUNEWIDTH_EASTASIAN=1`` within fzf related function for supporting fzf 0.46.0 or later
 
 ### Fixed
 

@@ -10,7 +10,7 @@ function _fzf_select(q : String, list : [String], opts : String) : String? {
 
     var arg = ['-q', $q]
     if $q.empty() { $arg.clear(); }
-    var ret = "$(printf "%s\n" ${$list} | sort | uniq | FZF_DEFAULT_OPTS=$fzf_opt fzf $arg)"
+    var ret = "$(printf "%s\n" ${$list} | sort | uniq | FZF_DEFAULT_OPTS=$fzf_opt RUNEWIDTH_EASTASIAN=1 fzf $arg)"
     return $ret.empty() ? $none : $ret
 }
 
@@ -33,7 +33,7 @@ function _fzf_select_files(q : String, list : [String]?) : String? {
         -prune \
         -o -type f -print \
         -o -type d -print \
-        -o -type l -print 2>> /dev/null | cut -b3- | FZF_DEFAULT_OPTS=$fzf_opt fzf | 
+        -o -type l -print 2>> /dev/null | cut -b3- | FZF_DEFAULT_OPTS=$fzf_opt RUNEWIDTH_EASTASIAN=1 fzf | 
         for line in $STDIN {
             $ret += $line.quote()
             $ret += ' '
@@ -50,7 +50,7 @@ function _fzf_cd(q : String, list : [String]?) : String? {
 
     var line = "$(command find -L . -mindepth 1 \( -path '*/\\.*' -o -fstype 'sysfs' -o -fstype 'devfs' -o -fstype 'devtmpfs' -o -fstype 'proc' \) \
         -prune \
-        -o -type d -print 2>> /dev/null | cut -b3- | FZF_DEFAULT_OPTS=$fzf_opt fzf)"
+        -o -type d -print 2>> /dev/null | cut -b3- | FZF_DEFAULT_OPTS=$fzf_opt RUNEWIDTH_EASTASIAN=1 fzf)"
     if $line.empty() {
         return $none
     }
@@ -71,7 +71,7 @@ function fzf_proc_select() : [String] {
                   "-m --header-lines=1 --preview 'echo {}' --preview-window down:3:wrap --min-height 15"
     var ret : [String]
     (command ps -eo user,pid,ppid,start,time,command 2> /dev/null ||
-      command ps -eo user,pid,ppid,time,args) | FZF_DEFAULT_OPTS=$fzf_opt fzf | 
+      command ps -eo user,pid,ppid,time,args) | FZF_DEFAULT_OPTS=$fzf_opt RUNEWIDTH_EASTASIAN=1 fzf | 
       for line in $STDIN {
         var r = $/^[^ ]+[ ]+([0-9]+)/.match($line) ?? continue
         $ret.add($r.group(1)!)
