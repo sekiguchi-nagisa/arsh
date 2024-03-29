@@ -15,7 +15,7 @@ jobs:
         cc: [ g++-13, clang++-15 ]
         option: [ on, off ]
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
       - name: prepare
         run: |
           sudo apt update
