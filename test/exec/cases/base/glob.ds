@@ -175,6 +175,19 @@ $aa = @(~/*jfi[z-a]rea**${'[0-9]*'})
 assert $aa.size() == 1
 assert $aa[0] == "$HOME/*jfi[z-a]rea**[0-9]*"
 
+$aa = @(AAA=~/*)
+assert $aa.size() == 1
+assert $aa[0] == "AAA=$HOME/*"
+
+$aa = @(~/AAA=~/*)
+assert $aa.size() == 1
+assert $aa[0] == "$HOME/AAA=~/*"
+
+$aa = @(*/AA=~)
+assert $aa.size() == 1
+assert $aa[0] == '*/AA=~'  # not perform tilde expansion if forward element is glob pattern
+
+
 # fail glob and null glob
 shctl set failglob nullglob
 assert @(\**"\\2").empty()

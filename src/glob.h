@@ -19,10 +19,11 @@
 
 #include <functional>
 
-#include "misc/locale.hpp" // for macOS
-
 #include "cancel.h"
-#include "paths.h"
+#include "misc/flag_util.hpp"
+#include "misc/locale.hpp" // for macOS
+#include "misc/resource.hpp"
+#include "misc/string_ref.hpp"
 
 namespace arsh {
 
@@ -36,11 +37,13 @@ public:
 
   const auto &getBaseDir() const { return this->baseDir; }
 
-  const auto &getPattern() const { return this->pattern; }
+  /**
+   * fir tilde expansion
+   * @return
+   */
+  std::string &refBaseDir() { return this->baseDir; }
 
-  TildeExpandStatus expandTilde(DirStackProvider *provider) {
-    return arsh::expandTilde(this->baseDir, true, provider);
-  }
+  const auto &getPattern() const { return this->pattern; }
 
   /**
    * for error message

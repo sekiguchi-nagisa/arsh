@@ -278,23 +278,58 @@ void ByteCodeGenerator::enterMultiFinally(unsigned int depth, unsigned int local
   }
 }
 
-unsigned int ByteCodeGenerator::concatCmdArgSegment(const CmdArgNode &node, unsigned int index) {
-  const unsigned int size = node.getSegmentNodes().size();
-  const unsigned int baseIndex = index;
-  const bool tilde = node.isTildeAt(index);
-  for (; index < size; index++) {
-    if (index - baseIndex > 0 && node.isTildeAt(index)) {
-      break;
+static bool isTilde(const CmdArgNode &node, unsigned int startIndex,
+                    const ByteCodeGenerator::ConcatCmdArgParam param) {
+  if (auto &e = *node.getSegmentNodes()[startIndex]; isExpandingTilde(e)) {
+    if (node.isRightHandSide()) { // AA=$PATH:~/:~/
+      return true;
     }
-    this->generateConcat(*node.getSegmentNodes()[index], index - baseIndex > 0);
+    if (param.tildeCount == 0 && param.assignCount <= 1) { // echo ~/
+      /**
+       * echo ~/
+       * echo if=~
+       */
+      return true;
+    }
   }
-  if (tilde) {
+  return false;
+}
+
+unsigned int ByteCodeGenerator::concatCmdArgSegment(const CmdArgNode &node, unsigned int startIndex,
+                                                    ConcatCmdArgParam &param) {
+  const unsigned int size = node.getSegmentNodes().size();
+  const unsigned int baseIndex = startIndex;
+  const bool tilde = isTilde(node, baseIndex, param);
+  for (; startIndex < size; startIndex++) {
+    if (startIndex - baseIndex > 0 && isTilde(node, startIndex, param)) {
+      break; // break next tilde
+    }
+    auto &segNode = *node.getSegmentNodes()[startIndex];
+    if (isExpandingWildCard(segNode)) {
+      switch (auto &wildNode = cast<WildCardNode>(segNode); wildNode.meta) {
+      case ExpandMeta::TILDE:
+        param.tildeCount++;
+        wildNode.setExpand(false); // emit '~'
+        break;
+      case ExpandMeta::ASSIGN:
+        param.assignCount++;
+        wildNode.setExpand(false); // emit '='
+        break;
+      case ExpandMeta::COLON:
+        wildNode.setExpand(false); // emit ':'
+        break;
+      default:
+        break;
+      }
+    }
+    this->generateConcat(segNode, startIndex - baseIndex > 0);
+  }
+  if (baseIndex > 0) { // concat
+    this->emit0byteIns(tilde ? OpCode::APPEND_TILDE : OpCode::CONCAT);
+  } else if (tilde) {
     this->emit0byteIns(OpCode::EXPAND_TILDE);
   }
-  if (baseIndex > 0) {
-    this->emit0byteIns(OpCode::CONCAT);
-  }
-  return index;
+  return startIndex;
 }
 
 static Value toPipelineDesc(const Lexer &lexer, const PipelineNode &node) {
@@ -926,10 +961,7 @@ void ByteCodeGenerator::visitCmdArgNode(CmdArgNode &node) {
     }
     this->emit0byteIns(OpCode::PUSH_NULL); // sentinel
     assert(node.getExpansionSize() <= SYS_LIMIT_EXPANSION_FRAG_NUM);
-    ExpandOp op = node.isBraceExpansion() ? ExpandOp::BRACE : ExpandOp::GLOB;
-    if (node.isTilde()) {
-      setFlag(op, ExpandOp::TILDE);
-    }
+    const auto op = node.isBraceExpansion() ? ExpandOp::BRACE : ExpandOp::GLOB;
     this->emitExpandIns(node.getExpansionSize(), op);
   } else {
     this->generateCmdArg(node);

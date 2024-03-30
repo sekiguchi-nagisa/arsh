@@ -179,7 +179,7 @@ protected:
 
   bool inTypeNameCompletionPoint() const;
 
-  void tryCompleteFileNames(CmdArgParseOpt opt);
+  void resolveFileNameCompletionTarget(const CmdArgNode &cmdArgNode, CmdArgParseOpt opt);
 
   template <typename... Args>
   void makeCodeComp(Args &&...args) {
@@ -193,15 +193,6 @@ protected:
    */
   std::unique_ptr<VarNode> newVarNode(Token token) const {
     return std::make_unique<VarNode>(token, this->lexer->toName(token));
-  }
-
-  void addCmdArgSeg(CmdArgNode &cmdArgNode, Token token, StringNode::StringKind k) {
-    const bool unescape = !cmdArgNode.hasBracketExpr(); // if has bracket expr, not unescape
-    auto node = std::make_unique<StringNode>(token, this->lexer->toCmdArg(token, unescape), k);
-    if (!unescape) {
-      node->setEscaped(true);
-    }
-    cmdArgNode.addSegmentNode(std::move(node));
   }
 
   template <typename Func>
@@ -322,7 +313,13 @@ protected:
    */
   std::unique_ptr<Node> parse_cmdArgSeg(CmdArgNode &argNode, CmdArgParseOpt opt);
 
-  std::unique_ptr<Node> parse_cmdArgSegImpl(CmdArgParseOpt opt);
+  /**
+   *
+   * @param argNode for file name completion
+   * @param opt
+   * @return
+   */
+  std::unique_ptr<Node> parse_cmdArgSegImpl(const CmdArgNode &argNode, CmdArgParseOpt opt);
 
   std::unique_ptr<Node> parse_expressionImpl(unsigned int basePrecedence);
 

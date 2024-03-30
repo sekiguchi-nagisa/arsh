@@ -129,21 +129,64 @@ void TypeChecker::checkBraceExpansion(CmdArgNode &node) {
       default:
         break;
       }
-    } else if (isa<WildCardNode>(*e)) {
-      if (auto &wild = cast<WildCardNode>(*e); wild.meta == ExpandMeta::BRACE_TILDE) {
-        if (stack.empty()) {
-          assert(i + 1 < size && isa<StringNode>(*segmentNodes[i + 1]));
-          cast<StringNode>(*segmentNodes[i + 1]).unsetTilde();
-        } else {
-          wild.setExpand(true);
+    }
+  }
+}
+
+void TypeChecker::checkTildeExpansion(CmdArgNode &node) {
+  const unsigned int size = node.getSegmentNodes().size();
+  for (unsigned int i = 0; i < size; i++) {
+    if (auto &segNode = *node.getSegmentNodes()[i]; !isa<WildCardNode>(segNode)) {
+      if (i == 0) {
+        continue;
+      }
+      if (auto &prevNode = *node.getSegmentNodes()[i - 1]; isExpandingWildCard(prevNode)) {
+        if (auto &wildNode = cast<WildCardNode>(prevNode); wildNode.meta == ExpandMeta::COLON) {
+          wildNode.setExpand(false); // disable expansion for mid ':'
         }
       }
+      continue;
+    }
+
+    auto &wildNode = cast<WildCardNode>(*node.getSegmentNodes()[i]);
+    switch (wildNode.meta) {
+    case ExpandMeta::TILDE:
+      if (i == 0) { // echo ~/root
+        continue;
+      }
+      if (auto &prevNode = *node.getSegmentNodes()[i - 1]; isExpandingWildCard(prevNode)) {
+        if (auto &prevWildNode = cast<WildCardNode>(prevNode);
+            prevWildNode.isBraceMeta() || prevWildNode.meta == ExpandMeta::ASSIGN ||
+            prevWildNode.meta == ExpandMeta::COLON) {
+          /**
+           * consider the following cases
+           *
+           * echo {~,}/root
+           * echo {a,~}/root
+           * echo {,}~/root
+           * echo AAA=~
+           * AAA=$PATH:~
+           */
+          continue;
+        }
+      }
+      wildNode.setExpand(false); // disable tilde expansion
+      break;
+    case ExpandMeta::ASSIGN:
+    case ExpandMeta::COLON:
+      if (i == size - 1) { // disable expansion of last '=', ':' (ex. echo AAA=, AAA=$PATH: )
+        wildNode.setExpand(false);
+      }
+      break;
+    default:
+      break;
     }
   }
 }
 
 void TypeChecker::checkExpansion(CmdArgNode &node) {
   this->checkBraceExpansion(node);
+  this->checkTildeExpansion(node);
 
   const unsigned int size = node.getSegmentNodes().size();
   unsigned int expansionSize = 0;
@@ -378,9 +421,10 @@ static bool isDirPattern(const StringRef ref) {
 }
 
 bool TypeChecker::concatAsGlobPattern(const Token token, SourceListNode::path_iterator begin,
-                                      SourceListNode::path_iterator end, const GlobOp op,
+                                      SourceListNode::path_iterator end,
                                       GlobPatternWrapper &pattern) {
   std::string value;
+  const bool tilde = begin != end && isExpandingTilde(**begin);
   for (; begin != end; ++begin) {
     auto &e = **begin;
     assert(isa<StringNode>(e) || isa<WildCardNode>(e));
@@ -400,8 +444,9 @@ bool TypeChecker::concatAsGlobPattern(const Token token, SourceListNode::path_it
     return false;
   }
   pattern = GlobPatternWrapper::create(std::move(value));
-  if (hasFlag(op, GlobOp::TILDE) && !pattern.getBaseDir().empty()) {
-    if (const auto s = pattern.expandTilde(nullptr); s != TildeExpandStatus::OK) {
+  if (tilde && !pattern.getBaseDir().empty()) {
+    if (const auto s = expandTilde(pattern.refBaseDir(), true, nullptr);
+        s != TildeExpandStatus::OK) {
       this->reportTildeExpansionError(token, pattern.getBaseDir(), s);
       return false;
     }
@@ -456,6 +501,7 @@ void TypeChecker::reportTildeExpansionError(Token token, const std::string &path
   case TildeExpandStatus::INVALID_NUM:
   case TildeExpandStatus::OUT_OF_RANGE:
   case TildeExpandStatus::HAS_NULL:
+  case TildeExpandStatus::EMPTY_ASSIGN: // FIXME:
     break;
   }
   assert(false);
@@ -464,9 +510,9 @@ void TypeChecker::reportTildeExpansionError(Token token, const std::string &path
 bool TypeChecker::applyGlob(const Token token,
                             std::vector<std::shared_ptr<const std::string>> &results,
                             const SourceListNode::path_iterator begin,
-                            const SourceListNode::path_iterator end, GlobOp op) {
+                            const SourceListNode::path_iterator end, const bool optional) {
   GlobPatternWrapper pattern;
-  if (!this->concatAsGlobPattern(token, begin, end, op, pattern)) {
+  if (!this->concatAsGlobPattern(token, begin, end, pattern)) {
     return false;
   }
 
@@ -478,7 +524,7 @@ bool TypeChecker::applyGlob(const Token token,
   switch (const auto ret = glob(&err); ret) {
   case Glob::Status::MATCH:
   case Glob::Status::NOMATCH:
-    if (ret == Glob::Status::MATCH || hasFlag(op, GlobOp::OPTIONAL)) {
+    if (ret == Glob::Status::MATCH || optional) {
       std::sort(results.begin() + oldSize, results.end(),
                 [](const std::shared_ptr<const std::string> &x,
                    const std::shared_ptr<const std::string> &y) { return *x < *y; });
@@ -522,9 +568,15 @@ struct SrcExpandState {
 
 static bool needGlob(SourceListNode::path_iterator begin, SourceListNode::path_iterator end) {
   for (; begin != end; ++begin) {
-    if (auto &v = **begin;
-        isExpandingWildCard(v) && cast<WildCardNode>(v).meta != ExpandMeta::BRACKET_CLOSE) {
-      return true;
+    if (auto &v = **begin; isExpandingWildCard(v)) {
+      switch (cast<WildCardNode>(v).meta) {
+      case ExpandMeta::ANY:
+      case ExpandMeta::ZERO_OR_MORE:
+      case ExpandMeta::BRACKET_OPEN:
+        return true;
+      default:
+        break;
+      }
     }
   }
   return false;
@@ -533,7 +585,8 @@ static bool needGlob(SourceListNode::path_iterator begin, SourceListNode::path_i
 bool TypeChecker::applyBraceExpansion(const Token token,
                                       std::vector<std::shared_ptr<const std::string>> &results,
                                       const SourceListNode::path_iterator begin,
-                                      const SourceListNode::path_iterator end, const GlobOp op) {
+                                      const SourceListNode::path_iterator end,
+                                      const bool optional) {
   assert(begin <= end);
   const auto sentinel = std::make_unique<EmptyNode>();
   const unsigned int size = end - begin;
@@ -582,11 +635,6 @@ bool TypeChecker::applyBraceExpansion(const Token token,
         i = iter->closeIndex;
         goto CONTINUE;
       }
-      case ExpandMeta::BRACE_TILDE:
-        if (usedSize) {
-          goto CONTINUE;
-        }
-        break;
       case ExpandMeta::BRACE_SEQ_OPEN: {
         i++;
         stack.push_back(SrcExpandState{
@@ -621,24 +669,17 @@ bool TypeChecker::applyBraceExpansion(const Token token,
 
       auto vbegin = values.begin();
       auto vend = vbegin + usedSize;
-      auto newOp = op;
-      if (!hasFlag(newOp, GlobOp::TILDE) && usedSize > 0 && isExpandingWildCard(**vbegin) &&
-          cast<WildCardNode>(*vbegin)->meta == ExpandMeta::BRACE_TILDE) {
-        setFlag(newOp, GlobOp::TILDE);
-        ++vbegin; // skip meta
-      }
-
       if (needGlob(vbegin, vend)) {
         if (++expandCount == getExpansionLimit()) {
           this->reportError<ExpandRetLimit>(token);
           return false;
         }
-        if (!this->applyGlob(token, results, vbegin, vend, newOp)) {
+        if (!this->applyGlob(token, results, vbegin, vend, optional)) {
           return false;
         }
       } else {
         auto path = concat(vbegin, vend);
-        if (hasFlag(newOp, GlobOp::TILDE)) {
+        if (vbegin != vend && isExpandingTilde(**vbegin)) {
           if (auto s = expandTilde(path, true, nullptr); s != TildeExpandStatus::OK) {
             this->reportTildeExpansionError(token, path, s);
             return false;
@@ -693,7 +734,8 @@ void TypeChecker::resolvePathList(SourceListNode &node) {
   std::vector<std::shared_ptr<const std::string>> results;
   if (!node.isGlobOrBraceExpansion()) {
     std::string path = concat(begin, end);
-    if (pathNode.isTilde()) {
+    if (isExpandingTilde(**begin)) {
+      // in source statement, only allow prefix tilde
       if (const auto s = expandTilde(path, true, nullptr); s != TildeExpandStatus::OK) {
         this->reportTildeExpansionError(pathNode.getToken(), path, s);
         return;
@@ -701,19 +743,12 @@ void TypeChecker::resolvePathList(SourceListNode &node) {
     }
     results.push_back(std::make_shared<const std::string>(std::move(path)));
   } else {
-    GlobOp op{};
-    if (pathNode.isTilde()) {
-      setFlag(op, GlobOp::TILDE);
-    }
-    if (node.isOptional()) {
-      setFlag(op, GlobOp::OPTIONAL);
-    }
-
+    const bool optional = node.isOptional();
     bool status;
     if (pathNode.isBraceExpansion()) {
-      status = this->applyBraceExpansion(pathNode.getToken(), results, begin, end, op);
+      status = this->applyBraceExpansion(pathNode.getToken(), results, begin, end, optional);
     } else {
-      status = this->applyGlob(pathNode.getToken(), results, begin, end, op);
+      status = this->applyGlob(pathNode.getToken(), results, begin, end, optional);
     }
     if (!status) {
       return;

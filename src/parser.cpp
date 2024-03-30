@@ -274,83 +274,112 @@ bool Parser::inTypeNameCompletionPoint() const {
   return false;
 }
 
-template <typename Iterate>
-static constexpr bool iterate_requirement_v =
-    std::is_same_v<bool, std::invoke_result_t<Iterate, Token, bool>>;
-
-template <typename Func, enable_when<iterate_requirement_v<Func>> = nullptr>
-static void iteratePathList(const Lexer &lex, const Token token, const char delim, Func func) {
-  assert(delim != '\\');
-  const StringRef ref = lex.toStrRef(token);
-  const unsigned int size = ref.size();
-  unsigned int startPos = 0;
-  unsigned int pos = 0;
-  while (pos < size) {
-    const char ch = ref[pos++];
-    if (ch == '\\' && pos < size) {
-      pos++;
-    }
-    if (ch == delim || pos == size) {
-      if (Token sub = token.slice(startPos, pos); !func(sub, ch == delim)) {
-        return;
-      }
-      startPos = pos;
-    }
+static bool mayBeFollowingTilde(TokenKind kind, CmdArgParseOpt opt) {
+  if (hasFlag(opt, CmdArgParseOpt::ASSIGN)) {
+    return kind == TokenKind::META_COLON;
   }
+  if (!hasFlag(opt, CmdArgParseOpt::MODULE) && !hasFlag(opt, CmdArgParseOpt::REDIR)) {
+    return kind == TokenKind::META_ASSIGN;
+  }
+  return false;
 }
 
-void Parser::tryCompleteFileNames(CmdArgParseOpt opt) {
-  Token token = this->curToken;
-  if (hasFlag(opt, CmdArgParseOpt::ASSIGN)) {
-    bool lastSplit = false;
-    iteratePathList(*this->lexer, token, ':', [&token, &lastSplit](Token subToken, bool s) {
-      token = subToken;
-      lastSplit = s;
-      return true;
-    });
-    if (lastSplit) { // for `AAA=BBB:'
-      token = Token{token.endPos(), 0};
-    }
-    if (token.pos != this->curToken.pos || hasFlag(opt, CmdArgParseOpt::FIRST)) {
-      auto op = CodeCompOp::FILE;
-      if (this->lexer->startsWith(token, '~')) {
-        setFlag(op, CodeCompOp::TILDE);
+void Parser::resolveFileNameCompletionTarget(const CmdArgNode &cmdArgNode,
+                                             const CmdArgParseOpt opt) {
+  int firstTildeOffset = -1;
+  int firstAssignOffset = -1;
+  int lastColonOffset = -1;
+  int lastTildeOffset = -1;
+  int lastInvalidOffset = -1;
+  std::string word;
+  for (auto &e : cmdArgNode.getSegmentNodes()) {
+    if (isa<StringNode>(*e) && cast<StringNode>(*e).getKind() == StringNode::CMD_ARG) {
+      word += cast<StringNode>(*e).getValue();
+    } else if (isa<WildCardNode>(*e)) {
+      switch (const auto meta = cast<WildCardNode>(*e).meta) {
+      case ExpandMeta::TILDE:
+        lastTildeOffset = static_cast<int>(word.size());
+        if (firstTildeOffset == -1 && lastTildeOffset - 1 == firstAssignOffset) {
+          firstTildeOffset = lastTildeOffset;
+        }
+        word += toString(meta);
+        continue;
+      case ExpandMeta::ASSIGN:
+        if (firstAssignOffset == -1) {
+          firstAssignOffset = static_cast<int>(word.size());
+        }
+        word += toString(meta);
+        continue;
+      case ExpandMeta::COLON:
+        lastColonOffset = static_cast<int>(word.size());
+        word += toString(meta);
+        continue;
+      default:
+        return;
       }
-      this->compCtx->addCompRequest(op, this->lexer->toCmdArg(token));
+    } else {
+      lastInvalidOffset = static_cast<int>(word.size());
+      word += this->lexer->toTokenText(e->getToken());
     }
-  } else if (hasFlag(opt, CmdArgParseOpt::FIRST)) {
-    auto op = hasFlag(opt, CmdArgParseOpt::MODULE) ? CodeCompOp::MODULE : CodeCompOp::FILE;
-    if (this->lexer->startsWith(token, '~')) {
+  }
+  word += this->lexer->toCmdArg(this->curToken);
+
+  if (cmdArgNode.isRightHandSide()) {
+    if (lastColonOffset < lastInvalidOffset) {
+      return;
+    }
+  } else if (lastInvalidOffset != -1) {
+    return;
+  }
+
+  if (hasFlag(opt, CmdArgParseOpt::ASSIGN)) {
+    if (lastColonOffset != -1) {
+      /*
+       * extract last path element
+       *
+       * AAA=~root:bbb:./
+       * => AAA=./
+       */
+      unsigned int remainOffset = static_cast<unsigned int>(lastColonOffset) + 1;
+      if (lastTildeOffset != -1 && remainOffset == static_cast<unsigned int>(lastTildeOffset)) {
+        lastTildeOffset = 0;
+      }
+      word = StringRef(word).substr(remainOffset).toString();
+    }
+    auto op = CodeCompOp::FILE;
+    if (lastTildeOffset == 0) {
       setFlag(op, CodeCompOp::TILDE);
     }
-
-    if (hasFlag(opt, CmdArgParseOpt::REDIR) || hasFlag(opt, CmdArgParseOpt::MODULE) ||
-        hasFlag(op, CodeCompOp::TILDE)) {
-      this->compCtx->addCompRequest(op, this->lexer->toCmdArg(token));
-    } else {
-      assert(op == CodeCompOp::FILE);
-      Token prefixToken = token;
-      bool lastSplit = false;
-      iteratePathList(*this->lexer, token, '=', [&prefixToken, &lastSplit](Token subToken, bool s) {
-        prefixToken = subToken;
-        lastSplit = s;
-        return false;
-      });
-      auto compWord = this->lexer->toCmdArg(prefixToken);
-      if (token != prefixToken) { // for `echo if=./' or `echo if=~'
-        const auto remainToken = token.sliceFrom(prefixToken.size);
-        if (prefixToken.size > 1) { // ignore `echo =./', `echo =~'
-          if (this->lexer->startsWith(remainToken, '~')) {
-            setFlag(op, CodeCompOp::TILDE);
-          }
-          this->compCtx->setCompWordOffset(compWord.size());
-        }
-        compWord += this->lexer->toCmdArg(remainToken);
-      } else if (lastSplit && prefixToken.size > 1) { // for `echo AAA=' (except for `echo =')
-        this->compCtx->setCompWordOffset(compWord.size());
-      }
-      this->compCtx->addCompRequest(op, std::move(compWord));
+    this->compCtx->addCompRequest(op, std::move(word));
+  } else if (hasFlag(opt, CmdArgParseOpt::REDIR) || hasFlag(opt, CmdArgParseOpt::MODULE)) {
+    auto op = hasFlag(opt, CmdArgParseOpt::MODULE) ? CodeCompOp::MODULE : CodeCompOp::FILE;
+    if (firstTildeOffset == 0) {
+      setFlag(op, CodeCompOp::TILDE);
     }
+    this->compCtx->addCompRequest(op, std::move(word));
+  } else { // normal command argument
+    auto op = CodeCompOp::FILE;
+    if (firstTildeOffset == 0) {
+      setFlag(op, CodeCompOp::TILDE);
+      this->compCtx->addCompRequest(op, std::move(word));
+      return;
+    }
+    if (firstAssignOffset != -1) {
+      if (firstAssignOffset == 0) {
+        return; // skip 'echo =./'
+      }
+
+      /*
+       * echo if=./bbb=./  => echo ./bbb=./
+       * echo if=~/bbb=~/  => echo ~/bbb=~/
+       */
+      unsigned int remainOffset = static_cast<unsigned int>(firstAssignOffset) + 1;
+      if (firstTildeOffset != -1 && static_cast<unsigned int>(firstTildeOffset) == remainOffset) {
+        setFlag(op, CodeCompOp::TILDE);
+      }
+      this->compCtx->setCompWordOffset(remainOffset);
+    }
+    this->compCtx->addCompRequest(op, std::move(word));
   }
 }
 
@@ -1463,17 +1492,6 @@ std::unique_ptr<CmdArgNode> Parser::parse_cmdArg(CmdArgParseOpt opt) {
   return node;
 }
 
-static bool isBrace(TokenKind kind) {
-  switch (kind) {
-  case TokenKind::BRACE_OPEN:
-  case TokenKind::BRACE_SEP:
-  case TokenKind::BRACE_CLOSE:
-    return true;
-  default:
-    return false;
-  }
-}
-
 static bool isHereDocStart(StringRef ref) {
   if (ref.size() > 2 && ref[0] == '\'' && ref.back() == '\'') {
     ref.removePrefix(1);
@@ -1512,44 +1530,14 @@ std::unique_ptr<Node> Parser::parse_cmdArgSeg(CmdArgNode &argNode, CmdArgParseOp
       }
       this->curKind = TokenKind::HERE_START;
     }
-    const auto prevKind = this->consumedKind;
-    this->consume(); // always success
-    if (hasFlag(opt, CmdArgParseOpt::ASSIGN)) {
-      iteratePathList(*this->lexer, token, ':', [&](Token subToken, bool) {
-        auto kind = StringNode::CMD_ARG;
-        if (this->lexer->startsWith(subToken, '~') &&
-            (subToken.pos > token.pos || hasFlag(opt, CmdArgParseOpt::FIRST))) {
-          kind = StringNode::TILDE;
-        }
-        this->addCmdArgSeg(argNode, subToken, kind);
-        return true;
-      });
-    } else if (hasFlag(opt, CmdArgParseOpt::FIRST) && !hasFlag(opt, CmdArgParseOpt::MODULE) &&
-               !hasFlag(opt, CmdArgParseOpt::REDIR) &&
-               !this->lexer->startsWith(token, '~')) { // for 'dd if=path' style argument
-      Token prefixToken = token;
-      iteratePathList(*this->lexer, token, '=', [&](Token subToken, bool) {
-        prefixToken = subToken;
-        return false;
-      });
-      this->addCmdArgSeg(argNode, prefixToken, StringNode::CMD_ARG);
-      if (prefixToken != token) { // prefix='if=', remain='path'
-        const auto remainToken = token.sliceFrom(prefixToken.size);
-        auto kind = StringNode::CMD_ARG;
-        if (this->lexer->startsWith(remainToken, '~') && prefixToken.size > 1) {
-          kind = StringNode::TILDE;
-        }
-        this->addCmdArgSeg(argNode, remainToken, kind);
-      }
-    } else {
-      auto kind = StringNode::CMD_ARG;
-      if (hasFlag(opt, CmdArgParseOpt::FIRST) || isBrace(prevKind)) {
-        if (this->lexer->startsWith(token, '~')) {
-          kind = StringNode::TILDE;
-        }
-      }
-      this->addCmdArgSeg(argNode, token, kind);
+    this->consume();                                 // always success
+    const bool unescape = !argNode.hasBracketExpr(); // if has bracket expr, not unescape
+    auto strNode = std::make_unique<StringNode>(token, this->lexer->toCmdArg(token, unescape),
+                                                StringNode::CMD_ARG);
+    if (!unescape) {
+      strNode->setEscaped(true);
     }
+    argNode.addSegmentNode(std::move(strNode));
     return nullptr;
   }
   case TokenKind::BRACE_CHAR_SEQ:
@@ -1569,17 +1557,30 @@ std::unique_ptr<Node> Parser::parse_cmdArgSeg(CmdArgNode &argNode, CmdArgParseOp
     return nullptr;
   }
   default: {
-    auto node = TRY(this->parse_cmdArgSegImpl(opt));
+    auto node = TRY(this->parse_cmdArgSegImpl(argNode, opt));
     argNode.addSegmentNode(std::move(node));
     return nullptr;
   }
   }
 }
 
-std::unique_ptr<Node> Parser::parse_cmdArgSegImpl(CmdArgParseOpt opt) {
+std::unique_ptr<Node> Parser::parse_cmdArgSegImpl(const CmdArgNode &argNode, CmdArgParseOpt opt) {
   GUARD_DEEP_NESTING(guard);
 
   switch (CUR_KIND()) {
+  case TokenKind::TILDE: {
+    Token token = this->expect(TokenKind::TILDE);
+    return std::make_unique<WildCardNode>(token, ExpandMeta::TILDE);
+  }
+  case TokenKind::META_ASSIGN:
+  case TokenKind::META_COLON: {
+    Token token = this->curToken;
+    const TokenKind kind = this->scan();
+    const ExpandMeta meta = kind == TokenKind::META_ASSIGN ? ExpandMeta::ASSIGN : ExpandMeta::COLON;
+    auto node = std::make_unique<WildCardNode>(token, meta);
+    node->setExpand(mayBeFollowingTilde(kind, opt));
+    return node;
+  }
   case TokenKind::GLOB_ANY:
   case TokenKind::GLOB_ZERO_OR_MORE:
   case TokenKind::GLOB_BRACKET_OPEN:
@@ -1642,7 +1643,7 @@ std::unique_ptr<Node> Parser::parse_cmdArgSegImpl(CmdArgParseOpt opt) {
     if (this->inVarNameCompletionPoint()) {
       this->makeCodeComp(CodeCompNode::VAR_IN_CMD_ARG, nullptr, this->curToken);
     } else if (this->inCompletionPointAt(TokenKind::CMD_ARG_PART)) {
-      this->tryCompleteFileNames(opt);
+      this->resolveFileNameCompletionTarget(argNode, opt);
     }
     E_DETAILED(hasFlag(opt, CmdArgParseOpt::MODULE)  ? ParseErrorKind::MOD_PATH
                : hasFlag(opt, CmdArgParseOpt::REDIR) ? ParseErrorKind::REDIR

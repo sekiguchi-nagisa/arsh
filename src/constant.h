@@ -377,10 +377,14 @@ enum class ExpandMeta : unsigned char {
   BRACKET_OPEN,
   BRACKET_CLOSE,
 
+  TILDE,  // for tilde expansion
+  ASSIGN, // for magic equal substitution (AAA=~)
+  COLON,  // for AAA:~
+
   BRACE_OPEN,
   BRACE_CLOSE,
   BRACE_SEP,
-  BRACE_TILDE,
+
   BRACE_SEQ_OPEN,
   BRACE_SEQ_CLOSE,
 };
@@ -400,6 +404,12 @@ inline const char *toString(ExpandMeta meta) {
     return "?";
   case ExpandMeta::ZERO_OR_MORE:
     return "*";
+  case ExpandMeta::TILDE:
+    return "~";
+  case ExpandMeta::ASSIGN:
+    return "=";
+  case ExpandMeta::COLON:
+    return ":";
   case ExpandMeta::BRACKET_OPEN:
     return "[";
   case ExpandMeta::BRACKET_CLOSE:
@@ -412,8 +422,6 @@ inline const char *toString(ExpandMeta meta) {
     return "}";
   case ExpandMeta::BRACE_SEP:
     return ",";
-  case ExpandMeta::BRACE_TILDE:
-    return "";
   }
   return ""; // normally unreachable
 }

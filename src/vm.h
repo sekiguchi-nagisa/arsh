@@ -595,13 +595,13 @@ private:
    */
   static bool callPipeline(ARState &state, Value &&desc, bool lastPipe, ForkKind forkKind);
 
-  static bool applyTildeExpansion(ARState &state, StringRef path);
+  static bool applyTildeExpansion(ARState &state, StringRef path, bool assign);
 
   static bool addGlobbingPath(ARState &state, ArrayObject &argv, const Value *begin,
-                              const Value *end, bool tilde);
+                              const Value *end);
 
   static bool applyBraceExpansion(ARState &state, ArrayObject &argv, const Value *begin,
-                                  const Value *end, ExpandOp expandOp);
+                                  const Value *end);
 
   static bool addExpandingPath(ARState &state, unsigned int size, ExpandOp expandOp);
 

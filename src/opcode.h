@@ -114,6 +114,7 @@ namespace arsh {
   OP(PIPELINE_LP, -1, 0)                                                                           \
   OP(PIPELINE_ASYNC, -1, 0)                                                                        \
   OP(EXPAND_TILDE, 0, 0)                                                                           \
+  OP(APPEND_TILDE, 0, -1)                                                                          \
   OP(PARSE_CLI, 0, -1)                                                                             \
   OP(NEW_CMD, 0, 0)                                                                                \
   OP(ADD_CMD_ARG, 0, -1)                                                                           \

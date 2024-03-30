@@ -704,14 +704,8 @@ private:
    */
   std::unique_ptr<Node> evalConstant(const Node &node);
 
-  enum class GlobOp : unsigned char {
-    TILDE = 1u << 0u,
-    OPTIONAL = 1u << 1u,
-  };
-
   bool concatAsGlobPattern(Token token, SourceListNode::path_iterator begin,
-                           SourceListNode::path_iterator end, GlobOp op,
-                           GlobPatternWrapper &pattern);
+                           SourceListNode::path_iterator end, GlobPatternWrapper &pattern);
 
   /**
    *
@@ -720,15 +714,16 @@ private:
    * @param results
    * @param begin
    * @param end
-   * @param op
+   * @param optional
    * @return
    */
   bool applyGlob(Token token, std::vector<std::shared_ptr<const std::string>> &results,
-                 SourceListNode::path_iterator begin, SourceListNode::path_iterator end, GlobOp op);
+                 SourceListNode::path_iterator begin, SourceListNode::path_iterator end,
+                 bool optional);
 
   bool applyBraceExpansion(Token token, std::vector<std::shared_ptr<const std::string>> &results,
                            SourceListNode::path_iterator begin, SourceListNode::path_iterator end,
-                           GlobOp op);
+                           bool optional);
 
   /**
    * apply constant folding and generate source path list.
@@ -738,6 +733,8 @@ private:
   void resolvePathList(SourceListNode &node);
 
   void checkBraceExpansion(CmdArgNode &node);
+
+  void checkTildeExpansion(CmdArgNode &node);
 
   void checkExpansion(CmdArgNode &node);
 
@@ -794,9 +791,6 @@ private:
   void visitErrorNode(ErrorNode &node) override;
   void visitEmptyNode(EmptyNode &node) override;
 };
-
-template <>
-struct allow_enum_bitop<TypeChecker::GlobOp> : std::true_type {};
 
 template <>
 struct allow_enum_bitop<TypeChecker::FuncCheckOp> : std::true_type {};

@@ -1377,9 +1377,9 @@ TEST_F(LexerTest_Lv1, CMD_ARG3) {
   const char *text = "a2134:*\\:";
   this->initLexer(text);
   this->lexer->pushLexerMode(yycCMD);
-  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::CMD_ARG_PART, "a2134:", TokenKind::GLOB_ZERO_OR_MORE,
-                                 "*", TokenKind::CMD_ARG_PART, "\\:", TokenKind::NEW_LINE, "\n",
-                                 TokenKind::EOS, ""));
+  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::CMD_ARG_PART, "a2134", TokenKind::META_COLON, ":",
+                                 TokenKind::GLOB_ZERO_OR_MORE, "*", TokenKind::CMD_ARG_PART,
+                                 "\\:", TokenKind::NEW_LINE, "\n", TokenKind::EOS, ""));
 }
 
 TEST_F(LexerTest_Lv1, CMD_ARG4) {
@@ -1479,6 +1479,25 @@ TEST_F(LexerTest_Lv1, CMD_ARG15) {
                                  TokenKind::NEW_LINE, "\n", TokenKind::EOS, ""));
 }
 
+TEST_F(LexerTest_Lv1, tilde1) {
+  const char *text = "~/root";
+  this->initLexer(text);
+  this->lexer->pushLexerMode(yycCMD);
+  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::TILDE, "~", TokenKind::CMD_ARG_PART, "/root",
+                                 TokenKind::NEW_LINE, "\n", TokenKind::EOS, ""));
+}
+
+TEST_F(LexerTest_Lv1, tilde2) {
+  const char *text = "~/root=~/BBB=/:~";
+  this->initLexer(text);
+  this->lexer->pushLexerMode(yycCMD);
+  ASSERT_NO_FATAL_FAILURE(
+      EXPECT(TokenKind::TILDE, "~", TokenKind::CMD_ARG_PART, "/root", TokenKind::META_ASSIGN, "=",
+             TokenKind::TILDE, "~", TokenKind::CMD_ARG_PART, "/BBB", TokenKind::META_ASSIGN, "=",
+             TokenKind::CMD_ARG_PART, "/", TokenKind::META_COLON, ":", TokenKind::TILDE, "~",
+             TokenKind::NEW_LINE, "\n", TokenKind::EOS, ""));
+}
+
 TEST_F(LexerTest_Lv1, BRACE_SEQ1) {
   const char *text = "{0..9}";
   this->initLexer(text);
@@ -1528,7 +1547,7 @@ TEST_F(LexerTest_Lv1, ENV_ASSIGN2) {
 TEST_F(LexerTest_Lv1, ENV_ASSIGN3) {
   const char *text = "\\0==";
   this->initLexer(text);
-  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::ENV_ASSIGN, "\\0=", TokenKind::CMD_ARG_PART, "=",
+  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::ENV_ASSIGN, "\\0=", TokenKind::META_ASSIGN, "=",
                                  TokenKind::NEW_LINE, "\n", TokenKind::EOS, ""));
 }
 

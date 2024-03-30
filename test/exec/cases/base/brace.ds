@@ -61,10 +61,14 @@ assert $aa[1] == $'AAb\x00QQQ'
 
 ## tilde
 assert "$(echo ~{,+,-,root,/}/hoge)" == "$(echo ~/hoge ~+/hoge ~-/hoge ~root/hoge ~//hoge)"
-assert "$(echo ~ ~ ~~ ~ a a~ a~ a~~ a a~)" == "$(echo {,a}{,~,}{,~})"
+assert "$(echo {AA=AA/,}AA=~/)" == "$(echo 'AA=AA/AA=~/' AA=$HOME/)"
 var ex = 34 as Any
 try { echo {,a}{,~,}{,~}; } catch e { $ex = $e; }
 assert ($ex as TildeError).message() =~ $/~~/
+shctl unset fail_tilde
+assert "$(echo ~ ~ '~~' ~ a a~ a~ a~~ a a~)" == "$(echo {,a}{,~,}{,~})"
+shctl set fail_tilde
+
 
 $aa = @({,~,})
 assert $aa.size() == 1
@@ -73,6 +77,18 @@ assert $aa[0] == @(~)[0]
 $aa = @({~/})
 assert $aa.size() == 1
 assert $aa[0] == '{~/}'  # unexpand tilde
+
+assert "$(echo {,}~)" == "$(echo $HOME $HOME)"
+assert "$(echo {34,}~)" == "$(echo '34~' $HOME)"
+assert "$(echo {AAA=,}~)" == "$(echo AAA=$HOME $HOME)"
+assert "$(echo {AAA,a}=~)" == "$(echo AAA=$HOME a=$HOME)"
+assert "$(echo --dump={,a}~)" == "$(echo --dump=$HOME --dump=a\~)"
+$ex = 23
+try { var p = ""; echo ${p}={,~}; } catch e { $ex = $e; }
+assert ($ex as TildeError).message() == "left-hand side of \`=~' is empty"
+shctl unset fail_tilde
+assert "$(echo ${10}={,~})" == "= =~"
+shctl set fail_tilde
 
 ## glob
 assert "$(echo ./* ../*)" == "$(echo {.,..}/*)"

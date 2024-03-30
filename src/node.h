@@ -461,7 +461,7 @@ public:
 
 private:
   std::string value;
-  StringKind kind;
+  const StringKind kind;
   bool init;
   bool escaped{false};
 
@@ -483,8 +483,6 @@ public:
   StringKind getKind() const { return this->kind; }
 
   bool isTilde() const { return this->getKind() == TILDE; }
-
-  void unsetTilde() { this->kind = STRING; }
 
   void dump(NodeDumper &dumper) const override;
 
@@ -1303,13 +1301,6 @@ public:
 
   bool isRightHandSide() const { return this->rightHandSide; }
 
-  bool isTilde() const { return this->isTildeAt(0); }
-
-  bool isTildeAt(unsigned int i) const {
-    return isa<StringNode>(*this->segmentNodes[i]) &&
-           cast<StringNode>(*this->segmentNodes[i]).isTilde();
-  }
-
   bool isGlobExpansion() const { return hasFlag(this->expansionAttr, GLOB); }
 
   bool isBraceExpansion() const { return hasFlag(this->expansionAttr, BRACE); }
@@ -1435,6 +1426,10 @@ public:
 
 inline bool isExpandingWildCard(const Node &node) {
   return isa<WildCardNode>(node) && cast<WildCardNode>(node).isExpand();
+}
+
+inline bool isExpandingTilde(const Node &node) {
+  return isExpandingWildCard(node) && cast<WildCardNode>(node).meta == ExpandMeta::TILDE;
 }
 
 inline bool isEscapedStr(const Node &node) {

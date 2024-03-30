@@ -56,6 +56,9 @@
         - enabled via ``globstar`` runtime option (enabled by default)
     - now propagate ``opendir`` error, such as ``EMFILE``, ``ENFILE``, ``ENOMEM``
     - check glob recursion depth
+- **Breaking Change**: overhaul tilde expansion
+    - now correctly expand ``anything=~`` style tilde expansion combined with brace expansion
+    - now ``=~`` style expansion is runtime error (trow ``TildeError``)
 - **Breaking Change**: now not preserve exit status during finally/defer block
     - now the following code is valid
       ```

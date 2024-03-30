@@ -168,8 +168,8 @@ TokenKind Lexer::nextToken(Token &token) {
     CMD_CHAR           = "\\" [^\000] | [^ \t\n\\;='"`|&<>(){}$\000];
     CMD = CMD_START_CHAR CMD_CHAR*;
 
-    CMD_ARG_START_CHAR = "\\" [^\n\000] | [^ \t\n\\;'"`|&<>()$?*[\]{},#\000];
-    CMD_ARG_CHAR       = "\\" [^\000] | [^ \t\n\\;'"`|&<>()$?*[\]{},\000];
+    CMD_ARG_START_CHAR = "\\" [^\n\000] | [^ \t\n\\;=:~'"`|&<>()$?*[\]{},#\000];
+    CMD_ARG_CHAR       = "\\" [^\000] | [^ \t\n\\;=:~'"`|&<>()$?*[\]{},\000];
     CMD_ARG = CMD_ARG_START_CHAR CMD_ARG_CHAR*;
 
     ENV_ASSIGN = CMD "=";
@@ -335,6 +335,9 @@ INIT:
     <HERE> HERE_BODY         { UPDATE_LN(); RET_HERE_BODY(STR_ELEMENT); }
 
     <CMD> CMD_ARG            { UPDATE_LN(); RET_OR_COMP(CMD_ARG_PART); }
+    <CMD> "~"                { RET(TILDE); }
+    <CMD> "="                { RET(META_ASSIGN); }
+    <CMD> ":"                { RET(META_COLON); }
     <CMD> BRACE_CHAR_SEQ     { RET(BRACE_CHAR_SEQ); }
     <CMD> BRACE_INT_SEQ      { RET(BRACE_INT_SEQ); }
     <CMD> "?"                { RET(GLOB_ANY); }
