@@ -131,7 +131,7 @@ void bindBuiltins(Consumer &consumer, const SysConfig &config, TypePool &pool, N
 
   /**
    * for current east asian ambiguous character width setting
-   * only updatein line editor
+   * only updated in line editor
    */
   binder.bind("EAW", 1);
 

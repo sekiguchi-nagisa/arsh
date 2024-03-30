@@ -7,10 +7,11 @@ function _fzf_select(q : String, list : [String], opts : String) : String? {
 
     importenv FZF_DEFAULT_OPTS : ""
     var fzf_opt = "--height 40% --bind=ctrl-z:ignore $FZF_DEFAULT_OPTS --bind=ctrl-r:toggle-sort $opts +m"
+    let eaw = $EAW == 1 ? 0 : 1
 
     var arg = ['-q', $q]
     if $q.empty() { $arg.clear(); }
-    var ret = "$(printf "%s\n" ${$list} | sort | uniq | FZF_DEFAULT_OPTS=$fzf_opt RUNEWIDTH_EASTASIAN=1 fzf $arg)"
+    var ret = "$(printf "%s\n" ${$list} | sort | uniq | FZF_DEFAULT_OPTS=$fzf_opt RUNEWIDTH_EASTASIAN=$eaw fzf $arg)"
     return $ret.empty() ? $none : $ret
 }
 
@@ -27,13 +28,14 @@ function _fzf_select_files(q : String, list : [String]?) : String? {
     importenv FZF_DEFAULT_OPTS : ""
     importenv FZF_SELECT_FILES_OPTS : "--preview 'cat {}'"
     var fzf_opt = "--height 40% --bind=ctrl-z:ignore --reverse $FZF_DEFAULT_OPTS $FZF_SELECT_FILES_OPTS -m"
+    let eaw = $EAW == 1 ? 0 : 1
 
     var ret = ""
     command find -L . -mindepth 1 \( -path '*/\\.*' -o -fstype 'sysfs' -o -fstype 'devfs' -o -fstype 'devtmpfs' -o -fstype 'proc' \) \
         -prune \
         -o -type f -print \
         -o -type d -print \
-        -o -type l -print 2>> /dev/null | cut -b3- | FZF_DEFAULT_OPTS=$fzf_opt RUNEWIDTH_EASTASIAN=1 fzf | 
+        -o -type l -print 2>> /dev/null | cut -b3- | FZF_DEFAULT_OPTS=$fzf_opt RUNEWIDTH_EASTASIAN=$eaw fzf | 
         for line in $STDIN {
             $ret += $line.quote()
             $ret += ' '
@@ -47,10 +49,11 @@ function _fzf_cd(q : String, list : [String]?) : String? {
     importenv FZF_DEFAULT_OPTS : ""
     importenv FZF_CD_OPTS : ""
     var fzf_opt = "--height 40% --bind=ctrl-z:ignore --reverse $FZF_DEFAULT_OPTS $FZF_CD_OPTS +m"
+    let eaw = $EAW == 1 ? 0 : 1
 
     var line = "$(command find -L . -mindepth 1 \( -path '*/\\.*' -o -fstype 'sysfs' -o -fstype 'devfs' -o -fstype 'devtmpfs' -o -fstype 'proc' \) \
         -prune \
-        -o -type d -print 2>> /dev/null | cut -b3- | FZF_DEFAULT_OPTS=$fzf_opt RUNEWIDTH_EASTASIAN=1 fzf)"
+        -o -type d -print 2>> /dev/null | cut -b3- | FZF_DEFAULT_OPTS=$fzf_opt RUNEWIDTH_EASTASIAN=$eaw fzf)"
     if $line.empty() {
         return $none
     }
@@ -69,9 +72,10 @@ function fzf_proc_select() : [String] {
     importenv FZF_DEFAULT_OPTS : ""
     var fzf_opt = "--height 40% --bind=ctrl-z:ignore --reverse $FZF_DEFAULT_OPTS" + 
                   "-m --header-lines=1 --preview 'echo {}' --preview-window down:3:wrap --min-height 15"
+    let eaw = $EAW == 1 ? 0 : 1
     var ret : [String]
     (command ps -eo user,pid,ppid,start,time,command 2> /dev/null ||
-      command ps -eo user,pid,ppid,time,args) | FZF_DEFAULT_OPTS=$fzf_opt RUNEWIDTH_EASTASIAN=1 fzf | 
+      command ps -eo user,pid,ppid,time,args) | FZF_DEFAULT_OPTS=$fzf_opt RUNEWIDTH_EASTASIAN=$eaw fzf | 
       for line in $STDIN {
         var r = $/^[^ ]+[ ]+([0-9]+)/.match($line) ?? continue
         $ret.add($r.group(1)!)
