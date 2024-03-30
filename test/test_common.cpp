@@ -156,6 +156,6 @@ void InteractiveShellBase::resetScreen() {
   assert(row != 0);
   assert(col != 0);
   this->screen = Screen(Screen::Pos{.row = row, .col = col});
-  this->screen.setEAW(arsh::AmbiguousCharWidth::FULL);
+  this->screen.setEAW(this->eaw);
   this->screen.setReporter([&](std::string &&m) { this->send(m.c_str()); });
 }

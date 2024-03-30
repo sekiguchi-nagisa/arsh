@@ -39,6 +39,7 @@ enum class BuiltinVarOffset : unsigned char {
   RANDOM,      // RANDOM
   SECONDS,     // SECONDS
   IFS,         // IFS
+  EAW,         // EAW
   COMPREPLY,   // COMPREPLY
   DIRSTACK,    // DIRSTACK (for directory stack
   STDIN,       // STDIN

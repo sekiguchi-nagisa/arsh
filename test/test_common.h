@@ -209,9 +209,12 @@ protected:
   std::string prompt{"> "};
   Screen screen;
   bool resetBeforeRead{true};
+  arsh::AmbiguousCharWidth eaw{arsh::AmbiguousCharWidth::FULL};
 
 public:
-  InteractiveShellBase(const char *binPath, const char *dir) : InteractiveBase(binPath, dir) {}
+  InteractiveShellBase(const char *binPath, const char *dir) : InteractiveBase(binPath, dir) {
+    this->screen.setEAW(this->eaw);
+  }
 
   void setPrompt(const std::string &p) { this->prompt = p; }
 

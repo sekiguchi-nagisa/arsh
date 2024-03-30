@@ -757,6 +757,8 @@ ssize_t LineEditorObject::editInRawMode(ARState &state, struct linenoiseState &l
   if (this->eaw != 0) { // force set east asin width
     l.ps.eaw = this->eaw == 1 ? AmbiguousCharWidth::HALF : AmbiguousCharWidth::FULL;
   }
+  state.setGlobal(BuiltinVarOffset::EAW,
+                  Value::createInt(l.ps.eaw == AmbiguousCharWidth::HALF ? 1 : 2));
   this->refreshLine(l);
 
   KeyCodeReader reader(l.ifd);

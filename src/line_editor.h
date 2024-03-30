@@ -39,12 +39,12 @@ private:
 
   bool rawMode{false};
 
+  bool continueLine{false};
+
   /**
    * enable language specific features (syntax highlight, auto-line continuation)
    */
   bool langExtension{false};
-
-  bool continueLine{false};
 
   bool useBracketedPaste{true};
 

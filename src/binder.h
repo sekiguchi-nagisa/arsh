@@ -130,6 +130,12 @@ void bindBuiltins(Consumer &consumer, const SysConfig &config, TypePool &pool, N
   binder.bind("IFS", VAL_DEFAULT_IFS, HandleAttr());
 
   /**
+   * for current east asian ambiguous character width setting
+   * only updatein line editor
+   */
+  binder.bind("EAW", 1);
+
+  /**
    * maintain completion result.
    * must be Array_Object
    */

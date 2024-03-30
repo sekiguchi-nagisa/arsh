@@ -54,3 +54,6 @@ assert $SECONDS != $sec
 # BIN_NAME
 assert !$BIN_NAME.empty()
 assert test -e "$BIN_NAME"
+
+# EAW
+assert $EAW == 1

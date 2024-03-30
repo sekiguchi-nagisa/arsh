@@ -167,6 +167,39 @@ TEST_F(InteractiveTest, lineEditorConfig1) {
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
 }
 
+TEST_F(InteractiveTest, lineEditorEAW) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+
+  // auto-detect width
+  this->eaw = AmbiguousCharWidth::FULL;
+  ASSERT_NO_FATAL_FAILURE(
+      this->sendLineAndExpect("assert $LINE_EDIT.configs()['eaw'] as Int == 0"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $EAW == 2"));
+  this->eaw = AmbiguousCharWidth::HALF;
+  ASSERT_NO_FATAL_FAILURE(
+      this->sendLineAndExpect("assert $LINE_EDIT.configs()['eaw'] as Int == 0"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $EAW == 1"));
+
+  // force set width (EAW is 2, even if actual width is 1)
+  this->eaw = AmbiguousCharWidth::HALF;
+  ASSERT_NO_FATAL_FAILURE(
+      this->sendLineAndExpect("assert $LINE_EDIT.configs()['eaw'] as Int == 0"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.config('eaw', 2)"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $EAW == 2"));
+
+  // force set width (EAW is 1, even if actual width is 1)
+  this->eaw = AmbiguousCharWidth::FULL;
+  ASSERT_NO_FATAL_FAILURE(
+      this->sendLineAndExpect("assert $LINE_EDIT.configs()['eaw'] as Int == 2"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.config('eaw', 1)"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $EAW == 1"));
+
+  this->send(CTRL_D);
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
+}
+
 TEST_F(InteractiveTest, lineEditorBase) {
   this->invoke("--quiet", "--norc");
 

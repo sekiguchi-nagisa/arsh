@@ -29,6 +29,11 @@
     - show description of candidate like fish
     - also show type signature style description
     - insert space after candidate even if candidate rotation
+- add ``EAW`` variable for indicating current east asian ambiguous character width (1 or 2)
+    - initial value is 1
+    - updated via ``LineEditor#readLine`` method
+        - if ``LineEditor#config('eaw', 0)``, set auto-detected width
+        - otherwise, set specified width of ``LineEditor#config``
 
 #### Module
 
