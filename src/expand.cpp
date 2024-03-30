@@ -268,14 +268,8 @@ static bool concatAsGlobPattern(ARState &state, const Value *const constPool,
         prefix = out;
         out.clear();
       }
-      switch (meta) {
-      case ExpandMeta::ANY:
-      case ExpandMeta::ZERO_OR_MORE:
-      case ExpandMeta::BRACKET_OPEN:
+      if (isGlobStart(meta)) {
         globMeta = true;
-        break;
-      default:
-        break;
       }
     }
   }
@@ -386,13 +380,8 @@ struct ExpandState {
 static bool needGlob(const Value *begin, const Value *end) {
   for (; begin != end; ++begin) {
     if (const auto &v = *begin; v.kind() == ValueKind::EXPAND_META) {
-      switch (v.asExpandMeta().first) {
-      case ExpandMeta::ANY:
-      case ExpandMeta::ZERO_OR_MORE:
-      case ExpandMeta::BRACKET_OPEN:
+      if (isGlobStart(v.asExpandMeta().first)) {
         return true;
-      default:
-        break;
       }
     }
   }

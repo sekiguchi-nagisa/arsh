@@ -389,10 +389,20 @@ enum class ExpandMeta : unsigned char {
   BRACE_SEQ_CLOSE,
 };
 
+inline bool isGlobStart(ExpandMeta meta) {
+  switch (meta) {
+  case ExpandMeta::ANY:
+  case ExpandMeta::ZERO_OR_MORE:
+  case ExpandMeta::BRACKET_OPEN:
+    return true;
+  default:  // context dependent (only expand after BRACKET_OPEN)
+    return false;
+  }
+}
+
 enum class ExpandOp : unsigned char {
-  TILDE = 1u << 0u,
-  GLOB = 1u << 1u,
-  BRACE = 1u << 2u,
+  GLOB = 1u << 0u,
+  BRACE = 1u << 1u,
 };
 
 template <>

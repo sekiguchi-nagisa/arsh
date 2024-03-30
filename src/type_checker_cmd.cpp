@@ -569,13 +569,8 @@ struct SrcExpandState {
 static bool needGlob(SourceListNode::path_iterator begin, SourceListNode::path_iterator end) {
   for (; begin != end; ++begin) {
     if (auto &v = **begin; isExpandingWildCard(v)) {
-      switch (cast<WildCardNode>(v).meta) {
-      case ExpandMeta::ANY:
-      case ExpandMeta::ZERO_OR_MORE:
-      case ExpandMeta::BRACKET_OPEN:
+      if (isGlobStart(cast<WildCardNode>(v).meta)) {
         return true;
-      default:
-        break;
       }
     }
   }
