@@ -192,10 +192,10 @@ try { echo ~\if=~; } catch e { $ex = $e; }
 assert $ex is TildeError
 assert ($ex as TildeError).message() == 'no such user: ~if=~'
 $ex = 456
-try { echo =~/; } catch e { $ex = $e; }  # emtpy left handside is always TildeError
+try { echo =~/; } catch e { $ex = $e; }  # empty left-hand side is always TildeError
 assert ($ex as TildeError).message() == "left-hand side of \`=~' is empty"
 $ex = 456
-try { echo =~root; } catch e { $ex = $e; }  # emtpy left handside is always TildeError
+try { echo =~root; } catch e { $ex = $e; }  # empty left-hand side is always TildeError
 assert ($ex as TildeError).message() == "left-hand side of \`=~' is empty"
 
 

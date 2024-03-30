@@ -58,7 +58,7 @@
     - check glob recursion depth
 - **Breaking Change**: overhaul tilde expansion
     - now correctly expand ``anything=~`` style tilde expansion combined with brace expansion
-    - now ``=~`` style expansion is runtime error (trow ``TildeError``)
+    - now ``=~`` style expansion is runtime error (throw ``TildeError``)
 - **Breaking Change**: now not preserve exit status during finally/defer block
     - now the following code is valid
       ```
