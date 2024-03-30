@@ -36,16 +36,13 @@ enum class ParserOption : unsigned char {
 template <>
 struct allow_enum_bitop<ParserOption> : std::true_type {};
 
-enum class CmdArgParseOpt : unsigned int {
-  FIRST = 1u << 0u,
-  MODULE = 1u << 1u,
-  ASSIGN = 1u << 2u,
-  REDIR = 1u << 3u,
-  HERE_START = 1u << 4u,
+enum class CmdArgParseOpt : unsigned char {
+  ARG,
+  MODULE,
+  ASSIGN,
+  REDIR,
+  HERE_START,
 };
-
-template <>
-struct allow_enum_bitop<CmdArgParseOpt> : std::true_type {};
 
 using ParseError = ParseErrorBase<TokenKind>;
 
@@ -302,7 +299,7 @@ protected:
    */
   std::unique_ptr<Node> parse_hereDocBody();
 
-  std::unique_ptr<CmdArgNode> parse_cmdArg(CmdArgParseOpt opt = {});
+  std::unique_ptr<CmdArgNode> parse_cmdArg(CmdArgParseOpt opt = CmdArgParseOpt::ARG);
 
   /**
    * parse and add command argument segment

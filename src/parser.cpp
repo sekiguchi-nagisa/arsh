@@ -274,16 +274,6 @@ bool Parser::inTypeNameCompletionPoint() const {
   return false;
 }
 
-static bool mayBeFollowingTilde(TokenKind kind, CmdArgParseOpt opt) {
-  if (hasFlag(opt, CmdArgParseOpt::ASSIGN)) {
-    return kind == TokenKind::META_COLON;
-  }
-  if (!hasFlag(opt, CmdArgParseOpt::MODULE) && !hasFlag(opt, CmdArgParseOpt::REDIR)) {
-    return kind == TokenKind::META_ASSIGN;
-  }
-  return false;
-}
-
 void Parser::resolveFileNameCompletionTarget(const CmdArgNode &cmdArgNode,
                                              const CmdArgParseOpt opt) {
   int firstTildeOffset = -1;
@@ -332,32 +322,8 @@ void Parser::resolveFileNameCompletionTarget(const CmdArgNode &cmdArgNode,
     return;
   }
 
-  if (hasFlag(opt, CmdArgParseOpt::ASSIGN)) {
-    if (lastColonOffset != -1) {
-      /*
-       * extract last path element
-       *
-       * AAA=~root:bbb:./
-       * => AAA=./
-       */
-      unsigned int remainOffset = static_cast<unsigned int>(lastColonOffset) + 1;
-      if (lastTildeOffset != -1 && remainOffset == static_cast<unsigned int>(lastTildeOffset)) {
-        lastTildeOffset = 0;
-      }
-      word = StringRef(word).substr(remainOffset).toString();
-    }
-    auto op = CodeCompOp::FILE;
-    if (lastTildeOffset == 0) {
-      setFlag(op, CodeCompOp::TILDE);
-    }
-    this->compCtx->addCompRequest(op, std::move(word));
-  } else if (hasFlag(opt, CmdArgParseOpt::REDIR) || hasFlag(opt, CmdArgParseOpt::MODULE)) {
-    auto op = hasFlag(opt, CmdArgParseOpt::MODULE) ? CodeCompOp::MODULE : CodeCompOp::FILE;
-    if (firstTildeOffset == 0) {
-      setFlag(op, CodeCompOp::TILDE);
-    }
-    this->compCtx->addCompRequest(op, std::move(word));
-  } else { // normal command argument
+  switch (opt) {
+  case CmdArgParseOpt::ARG: {
     auto op = CodeCompOp::FILE;
     if (firstTildeOffset == 0) {
       setFlag(op, CodeCompOp::TILDE);
@@ -380,6 +346,40 @@ void Parser::resolveFileNameCompletionTarget(const CmdArgNode &cmdArgNode,
       this->compCtx->setCompWordOffset(remainOffset);
     }
     this->compCtx->addCompRequest(op, std::move(word));
+    break;
+  }
+  case CmdArgParseOpt::ASSIGN: {
+    if (lastColonOffset != -1) {
+      /*
+       * extract last path element
+       *
+       * AAA=~root:bbb:./
+       * => AAA=./
+       */
+      unsigned int remainOffset = static_cast<unsigned int>(lastColonOffset) + 1;
+      if (lastTildeOffset != -1 && remainOffset == static_cast<unsigned int>(lastTildeOffset)) {
+        lastTildeOffset = 0;
+      }
+      word = StringRef(word).substr(remainOffset).toString();
+    }
+    auto op = CodeCompOp::FILE;
+    if (lastTildeOffset == 0) {
+      setFlag(op, CodeCompOp::TILDE);
+    }
+    this->compCtx->addCompRequest(op, std::move(word));
+    break;
+  }
+  case CmdArgParseOpt::MODULE:
+  case CmdArgParseOpt::REDIR: {
+    auto op = opt == CmdArgParseOpt::MODULE ? CodeCompOp::MODULE : CodeCompOp::FILE;
+    if (firstTildeOffset == 0) {
+      setFlag(op, CodeCompOp::TILDE);
+    }
+    this->compCtx->addCompRequest(op, std::move(word));
+    break;
+  }
+  case CmdArgParseOpt::HERE_START:
+    break;
   }
 }
 
@@ -1325,7 +1325,7 @@ std::unique_ptr<RedirNode> Parser::parse_redirOption() {
             .kind = kind,
             .pos = token.pos,
         };
-        setFlag(parseOpt, CmdArgParseOpt::HERE_START);
+        parseOpt = CmdArgParseOpt::HERE_START;
       }
       auto node = std::make_unique<RedirNode>(kind, token, this->lexer->toStrRef(token),
                                               TRY(this->parse_cmdArg(parseOpt)));
@@ -1474,15 +1474,14 @@ static bool lookahead_cmdArg_LP(TokenKind kind) {
   }
 }
 
-std::unique_ptr<CmdArgNode> Parser::parse_cmdArg(CmdArgParseOpt opt) {
+std::unique_ptr<CmdArgNode> Parser::parse_cmdArg(const CmdArgParseOpt opt) {
   GUARD_DEEP_NESTING(guard);
 
-  assert(!hasFlag(opt, CmdArgParseOpt::FIRST));
-  auto node = std::make_unique<CmdArgNode>(this->curToken, hasFlag(opt, CmdArgParseOpt::ASSIGN));
-  TRY(this->parse_cmdArgSeg(*node, opt | CmdArgParseOpt::FIRST));
+  auto node = std::make_unique<CmdArgNode>(this->curToken, opt == CmdArgParseOpt::ASSIGN);
+  TRY(this->parse_cmdArgSeg(*node, opt));
 
   while (!this->hasSpace() && !this->hasNewline() && lookahead_cmdArg_LP(CUR_KIND())) {
-    if (hasFlag(opt, CmdArgParseOpt::HERE_START)) {
+    if (opt == CmdArgParseOpt::HERE_START) {
       this->createError(this->curKind, this->curToken, HERE_START_NEED_SPACE,
                         "require space after here doc start word");
       return nullptr;
@@ -1508,10 +1507,10 @@ static bool isHereDocStart(StringRef ref) {
   return count > 0;
 }
 
-std::unique_ptr<Node> Parser::parse_cmdArgSeg(CmdArgNode &argNode, CmdArgParseOpt opt) {
+std::unique_ptr<Node> Parser::parse_cmdArgSeg(CmdArgNode &argNode, const CmdArgParseOpt opt) {
   GUARD_DEEP_NESTING(guard);
 
-  if (hasFlag(opt, CmdArgParseOpt::HERE_START)) {
+  if (opt == CmdArgParseOpt::HERE_START) {
     if (CUR_KIND() != TokenKind::CMD_ARG_PART && CUR_KIND() != TokenKind::STRING_LITERAL) {
       this->reportHereDocStartError(this->curKind, this->curToken);
       return nullptr;
@@ -1521,7 +1520,7 @@ std::unique_ptr<Node> Parser::parse_cmdArgSeg(CmdArgNode &argNode, CmdArgParseOp
   switch (CUR_KIND()) {
   case TokenKind::CMD_ARG_PART: {
     const Token token = this->curToken;
-    if (hasFlag(opt, CmdArgParseOpt::HERE_START)) {
+    if (opt == CmdArgParseOpt::HERE_START) {
       if (isHereDocStart(this->lexer->toStrRef(token))) {
         this->lexer->setHereDocStart(this->hereOp.kind, token, this->hereOp.pos);
       } else {
@@ -1564,7 +1563,8 @@ std::unique_ptr<Node> Parser::parse_cmdArgSeg(CmdArgNode &argNode, CmdArgParseOp
   }
 }
 
-std::unique_ptr<Node> Parser::parse_cmdArgSegImpl(const CmdArgNode &argNode, CmdArgParseOpt opt) {
+std::unique_ptr<Node> Parser::parse_cmdArgSegImpl(const CmdArgNode &argNode,
+                                                  const CmdArgParseOpt opt) {
   GUARD_DEEP_NESTING(guard);
 
   switch (CUR_KIND()) {
@@ -1578,7 +1578,9 @@ std::unique_ptr<Node> Parser::parse_cmdArgSegImpl(const CmdArgNode &argNode, Cmd
     const TokenKind kind = this->scan();
     const ExpandMeta meta = kind == TokenKind::META_ASSIGN ? ExpandMeta::ASSIGN : ExpandMeta::COLON;
     auto node = std::make_unique<WildCardNode>(token, meta);
-    node->setExpand(mayBeFollowingTilde(kind, opt));
+    const bool shouldExpand = (opt == CmdArgParseOpt::ARG && meta == ExpandMeta::ASSIGN) ||
+                              (opt == CmdArgParseOpt::ASSIGN && meta == ExpandMeta::COLON);
+    node->setExpand(shouldExpand);
     return node;
   }
   case TokenKind::GLOB_ANY:
@@ -1626,7 +1628,7 @@ std::unique_ptr<Node> Parser::parse_cmdArgSegImpl(const CmdArgNode &argNode, Cmd
     return node;
   }
   case TokenKind::STRING_LITERAL:
-    return this->parse_stringLiteral(hasFlag(opt, CmdArgParseOpt::HERE_START));
+    return this->parse_stringLiteral(opt == CmdArgParseOpt::HERE_START);
   case TokenKind::OPEN_DQUOTE:
     return this->parse_stringExpression();
   case TokenKind::START_SUB_CMD:
@@ -1645,9 +1647,9 @@ std::unique_ptr<Node> Parser::parse_cmdArgSegImpl(const CmdArgNode &argNode, Cmd
     } else if (this->inCompletionPointAt(TokenKind::CMD_ARG_PART)) {
       this->resolveFileNameCompletionTarget(argNode, opt);
     }
-    E_DETAILED(hasFlag(opt, CmdArgParseOpt::MODULE)  ? ParseErrorKind::MOD_PATH
-               : hasFlag(opt, CmdArgParseOpt::REDIR) ? ParseErrorKind::REDIR
-                                                     : ParseErrorKind::CMD_ARG,
+    E_DETAILED(opt == CmdArgParseOpt::MODULE  ? ParseErrorKind::MOD_PATH
+               : opt == CmdArgParseOpt::REDIR ? ParseErrorKind::REDIR
+                                              : ParseErrorKind::CMD_ARG,
                EACH_LA_cmdArg(GEN_LA_ALTER));
   }
 }
