@@ -691,4 +691,18 @@ GlobPatternWrapper GlobPatternWrapper::create(std::string &&value) {
   return pattern;
 }
 
+void GlobPatternWrapper::join(size_t maxSize, std::string &out) const {
+  if (!this->baseDir.empty()) {
+    assert(this->baseDir.back() == '/');
+    if (out.size() < maxSize) {
+      size_t remain = maxSize - out.size();
+      out += StringRef(this->baseDir).substr(0, remain);
+    }
+  }
+  if (out.size() < maxSize) {
+    size_t remain = maxSize - out.size();
+    out += StringRef(this->pattern).substr(0, remain);
+  }
+}
+
 } // namespace arsh

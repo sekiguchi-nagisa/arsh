@@ -46,19 +46,11 @@ public:
   const auto &getPattern() const { return this->pattern; }
 
   /**
-   * for error message
+   * for error message (truncate largeer than maxSize)
    * @param maxSize
    * @param out
    */
-  bool join(size_t maxSize, std::string &out) const {
-    if (!this->baseDir.empty()) {
-      assert(this->baseDir.back() == '/');
-      if (!checkedAppend(this->baseDir, maxSize, out)) {
-        return false;
-      }
-    }
-    return checkedAppend(this->pattern, maxSize, out);
-  }
+  void join(size_t maxSize, std::string &out) const;
 
   std::string join() const {
     std::string out;

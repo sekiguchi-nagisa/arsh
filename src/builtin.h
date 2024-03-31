@@ -1024,7 +1024,7 @@ ARSH_METHOD string_realpath(RuntimeContext &ctx) {
   } else {
     int errNum = errno;
     std::string value = "cannot resolve realpath of `";
-    appendAsPrintable(ref, StringObject::MAX_SIZE - 1, value);
+    appendAsPrintable(ref, SYS_LIMIT_ERROR_MSG_MAX - 1, value);
     value += "'"; // no check size
     raiseSystemError(ctx, errNum, std::move(value));
     RET_ERROR;
@@ -1329,7 +1329,7 @@ ARSH_METHOD signals_get(RuntimeContext &ctx) {
   int sigNum = getSignalNum(key);
   if (sigNum < 0) {
     std::string msg = "undefined signal: ";
-    appendAsPrintable(key, StringObject::MAX_SIZE, msg);
+    appendAsPrintable(key, SYS_LIMIT_ERROR_MSG_MAX, msg);
     raiseError(ctx, TYPE::KeyNotFoundError, std::move(msg));
     RET_ERROR;
   }
@@ -2071,7 +2071,7 @@ ARSH_METHOD fd_init(RuntimeContext &ctx) {
   }
   int e = errno;
   std::string msg = "open failed: ";
-  appendAsPrintable(ref, StringObject::MAX_SIZE, msg);
+  appendAsPrintable(ref, SYS_LIMIT_ERROR_MSG_MAX, msg);
   raiseSystemError(ctx, e, std::move(msg));
   RET_ERROR;
 }

@@ -395,7 +395,7 @@ inline bool isGlobStart(ExpandMeta meta) {
   case ExpandMeta::ZERO_OR_MORE:
   case ExpandMeta::BRACKET_OPEN:
     return true;
-  default:  // context dependent (only expand after BRACKET_OPEN)
+  default: // context dependent (only expand after BRACKET_OPEN)
     return false;
   }
 }
@@ -483,6 +483,7 @@ constexpr size_t SYS_LIMIT_FUNC_DEPTH = 32;
 constexpr size_t SYS_LIMIT_UPVAR_NUM = UINT8_MAX;
 constexpr size_t SYS_LIMIT_JOB_DESC_LEN = 96;
 constexpr size_t SYS_LIMIT_XTRACE_LINE_LEN = 128;
+constexpr size_t SYS_LIMIT_ERROR_MSG_MAX = UINT16_MAX; // for interna error message
 constexpr size_t SYS_LIMIT_STRING_MAX = INT32_MAX;
 constexpr size_t SYS_LIMIT_ARRAY_MAX = INT32_MAX;
 constexpr size_t SYS_LIMIT_KEY_BINDING_MAX = UINT8_MAX;

@@ -244,7 +244,7 @@ bool RedirObject::redirect(ARState &state) {
           auto ref = entry.value.asStrRef();
           if (!ref.empty()) {
             msg += ": ";
-            appendAsPrintable(ref, StringObject::MAX_SIZE, msg);
+            appendAsPrintable(ref, SYS_LIMIT_ERROR_MSG_MAX, msg);
           }
         } else if (entry.value.hasType(TYPE::FD) || entry.value.hasType(TYPE::Int)) {
           msg += ": ";

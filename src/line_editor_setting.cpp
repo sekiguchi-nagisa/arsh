@@ -29,7 +29,7 @@ bool LineEditorObject::addKeyBind(ARState &state, StringRef key, StringRef name)
     break;
   case KeyBindings::AddStatus::UNDEF:
     message = "undefined edit action: `";
-    appendAsPrintable(name, StringObject::MAX_SIZE - 1, message);
+    appendAsPrintable(name, SYS_LIMIT_ERROR_MSG_MAX - 1, message);
     message += '\'';
     break;
   case KeyBindings::AddStatus::FORBID_BRACKET_START_CODE:
@@ -44,12 +44,12 @@ bool LineEditorObject::addKeyBind(ARState &state, StringRef key, StringRef name)
     break;
   case KeyBindings::AddStatus::INVALID_START_CHAR:
     message = "keycode must start with control character: `";
-    appendAsPrintable(key, StringObject::MAX_SIZE - 1, message);
+    appendAsPrintable(key, SYS_LIMIT_ERROR_MSG_MAX - 1, message);
     message += '\'';
     break;
   case KeyBindings::AddStatus::INVALID_ASCII:
     message = "keycode must be ascii characters: `";
-    appendAsPrintable(key, StringObject::MAX_SIZE - 1, message);
+    appendAsPrintable(key, SYS_LIMIT_ERROR_MSG_MAX - 1, message);
     message += '\'';
     break;
   case KeyBindings::AddStatus::LIMIT:
@@ -97,12 +97,12 @@ bool LineEditorObject::defineCustomAction(ARState &state, StringRef name, String
   switch (s.asErr()) {
   case KeyBindings::DefineError::INVALID_NAME:
     message += "invalid action name, must [a-zA-Z_-]: `";
-    appendAsPrintable(name, StringObject::MAX_SIZE - 1, message);
+    appendAsPrintable(name, SYS_LIMIT_ERROR_MSG_MAX - 1, message);
     message += '\'';
     break;
   case KeyBindings::DefineError::INVALID_TYPE:
     message += "unsupported custom action type: `";
-    appendAsPrintable(type, StringObject::MAX_SIZE - 1, message);
+    appendAsPrintable(type, SYS_LIMIT_ERROR_MSG_MAX - 1, message);
     message += '\'';
     break;
   case KeyBindings::DefineError::DEFINED:
@@ -169,7 +169,7 @@ bool LineEditorObject::setConfig(ARState &state, StringRef name, const Value &va
   auto *config = toEditConfig(name);
   if (!config) {
     std::string message = "undefined config: `";
-    appendAsPrintable(name, StringObject::MAX_SIZE - 1, message);
+    appendAsPrintable(name, SYS_LIMIT_ERROR_MSG_MAX - 1, message);
     message += '\'';
     raiseError(state, TYPE::ArgumentError, std::move(message));
     return false;

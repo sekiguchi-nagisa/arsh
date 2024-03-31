@@ -64,7 +64,7 @@ static void raiseTildeError(ARState &state, const DirStackProvider &provider,
     str += "): ";
   }
   if (status != TildeExpandStatus::EMPTY_ASSIGN) {
-    appendAsPrintable(ref, StringObject::MAX_SIZE, str);
+    appendAsPrintable(ref, SYS_LIMIT_ERROR_MSG_MAX, str);
   }
   raiseError(state, TYPE::TildeError, std::move(str));
 }
@@ -135,17 +135,7 @@ bool VM::applyTildeExpansion(ARState &state, StringRef path, bool assign) {
 static void raiseGlobbingErrorWithNull(ARState &state, const GlobPatternWrapper &wrapper) {
   auto pattern = wrapper.join();
   std::string value = "glob pattern has null characters `";
-  splitByDelim(pattern, '\0', [&value](StringRef ref, bool delim) {
-    if (!checkedAppend(ref, StringObject::MAX_SIZE - 1, value)) {
-      return false;
-    }
-    if (delim) {
-      if (!checkedAppend("\\x00", StringObject::MAX_SIZE - 1, value)) {
-        return false;
-      }
-    }
-    return true;
-  });
+  appendAsPrintable(pattern, SYS_LIMIT_ERROR_MSG_MAX - 1, value);
   value += "'";
   raiseError(state, TYPE::GlobbingError, std::move(value));
 }
@@ -154,7 +144,7 @@ static void raiseGlobbingError(ARState &state, const GlobPatternWrapper &pattern
                                std::string &&message) {
   std::string value = std::move(message);
   value += " `";
-  pattern.join(StringObject::MAX_SIZE - 1, value);
+  pattern.join(SYS_LIMIT_ERROR_MSG_MAX - 1, value); //FIXME:
   value += "'";
   raiseError(state, TYPE::GlobbingError, std::move(value));
 }

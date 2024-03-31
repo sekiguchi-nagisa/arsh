@@ -82,7 +82,7 @@
 - support additional redirection op
     - ``<>``: open file descriptor with read-write mode
     - ``<& -``, ``>& -``: close file descriptor
-- truncate large error message of internal error
+- truncate large error message of internal error (up to 65535 byte)
 
 #### Builtin
 
