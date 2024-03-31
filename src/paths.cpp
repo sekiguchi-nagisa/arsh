@@ -15,15 +15,12 @@
  */
 
 #include <pwd.h>
+#include <unistd.h>
 
 #include "constant.h"
 #include "misc/files.hpp"
 #include "misc/num_util.hpp"
 #include "paths.h"
-
-#ifndef LOGIN_NAME_MAX
-#define LOGIN_NAME_MAX 1024
-#endif
 
 namespace arsh {
 
@@ -271,7 +268,8 @@ TildeExpandStatus expandTilde(std::string &str, bool useHOME, DirStackProvider *
       expanded += ret;
     }
   } else { // expand user
-    if (prefix.size() >= LOGIN_NAME_MAX + 16) {
+    if (long nameMax = sysconf(_SC_LOGIN_NAME_MAX);
+        nameMax > -1 && prefix.size() >= static_cast<unsigned int>(nameMax) + 16) {
       return TildeExpandStatus::NO_USER; // for too large user name
     }
     auto tmpPath = prefix.toString();
