@@ -21,6 +21,10 @@
 #include "misc/num_util.hpp"
 #include "paths.h"
 
+#ifndef LOGIN_NAME_MAX
+#define LOGIN_NAME_MAX 1024
+#endif
+
 namespace arsh {
 
 // ###########################
