@@ -78,6 +78,7 @@
     - add ``desc`` parameter to ``CLI`` attribute
         - now put command line description message
     - add ``xor`` parameter to ``Flag``, ``Option`` attribute. now define exclusive options
+- allow ``if-var`` optional binding like ``if-let``
 - support additional redirection op
     - ``<>``: open file descriptor with read-write mode
     - ``<& -``, ``>& -``: close file descriptor
@@ -216,7 +217,6 @@
   do-something 3>&1 1>&2 2>&3   # swap stdout and stderr
   exec 9>lockfile && flock -n 9 # flock with file descriptor number
   ```
-- allow ``if-var`` optional binding like ``if-let``
 
 #### Builtin
 
