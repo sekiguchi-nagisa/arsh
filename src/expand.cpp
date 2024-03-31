@@ -286,7 +286,12 @@ static bool concatAsGlobPattern(ARState &state, const Value *const constPool,
 
   assert(!out.empty());
   pattern = GlobPatternWrapper::create(std::move(out));
-  if (tilde && !pattern.getBaseDir().empty()) {
+  if (tilde) {
+    if (pattern.getBaseDir().empty()) {
+      DefaultDirStackProvider provider(state); // for dummy
+      raiseTildeError(state, provider, pattern.getPattern(), TildeExpandStatus::NO_USER);
+      return {};
+    }
     assert(pattern.getBaseDir()[0] == '~');
     if (!expandTildeWithLeftHandSide(state, prefix, pattern.refBaseDir())) {
       return {};

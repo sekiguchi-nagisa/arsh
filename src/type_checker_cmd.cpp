@@ -444,10 +444,17 @@ bool TypeChecker::concatAsGlobPattern(const Token token, SourceListNode::path_it
     return false;
   }
   pattern = GlobPatternWrapper::create(std::move(value));
-  if (tilde && !pattern.getBaseDir().empty()) {
-    if (const auto s = expandTilde(pattern.refBaseDir(), true, nullptr);
-        s != TildeExpandStatus::OK) {
-      this->reportTildeExpansionError(token, pattern.getBaseDir(), s);
+  if (tilde) {
+    TildeExpandStatus status;
+    if (pattern.getBaseDir().empty()) {
+      status = TildeExpandStatus::NO_USER;
+    } else {
+      assert(pattern.getBaseDir()[0] == '~');
+      status = expandTilde(pattern.refBaseDir(), true, nullptr);
+    }
+    if (status != TildeExpandStatus::OK) {
+      auto &dir = pattern.getBaseDir();
+      this->reportTildeExpansionError(token, dir.empty() ? pattern.getPattern() : dir, status);
       return false;
     }
   }

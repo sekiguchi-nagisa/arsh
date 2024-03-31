@@ -2,9 +2,6 @@
 var ex = 34 as Any
 
 # if not match pattern, throw GlobbingError
-try { echo ~????????; } catch $e { $ex = $e; }
-assert $ex is GlobbingError
-
 $ex = 2
 try { echo "~/"*; } catch $e { $ex = $e; }
 assert $ex is GlobbingError
@@ -36,7 +33,7 @@ try {
         ~/fjarifja/*
     )
 } catch e { $ex = $e; }
-assert ($ex as GlobbingError).lineno() == 36
+assert ($ex as GlobbingError).lineno() == 33
 
 $ex = 2
 try { echo [[:aaa:]]*; } catch $e { $ex = $e; }
@@ -67,6 +64,14 @@ assert $ex is GlobbingError
 $ex = 34
 try { echo ~fjrei/*; } catch e { $ex = $e; }
 assert ($ex as TildeError).message() =~ $/~fjrei/
+
+$ex = 34
+try { echo ~????/????; } catch $e { $ex = $e; }
+assert ($ex as TildeError).message() == 'no such user: ~????'
+
+$ex = 34
+try { echo ~[a-z]*; } catch $e { $ex = $e; }
+assert ($ex as TildeError).message() == 'no such user: ~[a-z]*'
 
 assert $(echo *).sort().join(" ") == $(sh -c 'echo *').sort().join(" ")
 assert $(echo ~/*).sort().join(" ") == $(sh -c 'echo ~/*').sort().join(" ")
@@ -131,7 +136,7 @@ $aa = @(*\*\??)
 assert $aa.size() == 1
 assert $aa[0] == '**??'
 
-$aa = @(~[a-z]*)
+$aa = @(\~[a-z]*)
 assert $aa.size() == 1
 assert $aa[0] == '~[a-z]*'
 

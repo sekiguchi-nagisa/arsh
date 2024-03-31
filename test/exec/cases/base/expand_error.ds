@@ -7,32 +7,32 @@ let v = $reply.remove('var')!
 var ex = 34 as Any
 try {
   echo /../../../././././././$v/./* > /dev/null
-} catch e { $ex = $e; }
+} catch e { $ex = $e; echo 1>&2 failed at ${$e.lineno()}; }
 assert ($ex as OutOfRangeError).message() == 'reach String size limit'
 
 ## too large tilde
 $ex = 34
 try {
     echo > /dev/null ~+/12/$v
-} catch e { $ex = $e; }
+} catch e { $ex = $e; echo 1>&2 failed at ${$e.lineno()}; }
 assert ($ex as OutOfRangeError).message() == 'reach String size limit'
 
 $ex = 34
 try {
     echo > /dev/null ~$v/
-} catch e { $ex = $e; }
+} catch e { $ex = $e; echo 1>&2 failed at ${$e.lineno()}; }
 assert ($ex as TildeError).message().startsWith("no such user:")
 
 ## null char in tilde
 $ex = 34
 try {
     echo > /dev/null ~$v${$'\x00'}/
-} catch e { $ex = $e; }
+} catch e { $ex = $e; echo 1>&2 failed at ${$e.lineno()}; }
 assert ($ex as TildeError).message().startsWith("expanded path contains null characters:")
 
 ## null char in tilde glob
 $ex = 34
 try {
     echo > /dev/null ~root${$'\x00'}/*
-} catch e { $ex = $e; }
+} catch e { $ex = $e; echo 1>&2 failed at ${$e.lineno()}; }
 assert ($ex as TildeError).message() == "expanded path contains null characters: ~root\\x00"
