@@ -25,6 +25,7 @@ static const char *toMessagePrefix(TildeExpandStatus status) {
   switch (status) {
   case TildeExpandStatus::OK:
   case TildeExpandStatus::NO_TILDE:
+  case TildeExpandStatus::SIZE_LIMIT:
     break;
   case TildeExpandStatus::NO_USER:
     return "no such user: ";
@@ -48,6 +49,10 @@ static const char *toMessagePrefix(TildeExpandStatus status) {
 static void raiseTildeError(ARState &state, const DirStackProvider &provider,
                             const std::string &path, TildeExpandStatus status) {
   assert(status != TildeExpandStatus::OK);
+  if (status == TildeExpandStatus::SIZE_LIMIT) {
+    raiseStringLimit(state);
+    return;
+  }
   StringRef ref = path;
   if (const auto pos = ref.find("/"); pos != StringRef::npos) {
     ref = ref.substr(0, pos);
@@ -59,7 +64,7 @@ static void raiseTildeError(ARState &state, const DirStackProvider &provider,
     str += "): ";
   }
   if (status != TildeExpandStatus::EMPTY_ASSIGN) {
-    str += ref;
+    appendAsPrintable(ref, StringObject::MAX_SIZE, str);
   }
   raiseError(state, TYPE::TildeError, std::move(str));
 }
@@ -99,7 +104,7 @@ static bool expandTildeWithLeftHandSide(ARState &state, const StringRef left, st
   if (left == "=") {
     s = TildeExpandStatus::EMPTY_ASSIGN;
   } else {
-    s = expandTilde(path, true, &dirStackProvider);
+    s = expandTilde(path, true, &dirStackProvider, StringObject::MAX_SIZE);
   }
   if (s != TildeExpandStatus::OK && state.has(RuntimeOption::FAIL_TILDE)) {
     raiseTildeError(state, dirStackProvider, path, s);
@@ -127,12 +132,17 @@ bool VM::applyTildeExpansion(ARState &state, StringRef path, bool assign) {
   return true;
 }
 
-static void raiseGlobbingErrorWithNull(ARState &state, const std::string &pattern) {
+static void raiseGlobbingErrorWithNull(ARState &state, const GlobPatternWrapper &wrapper) {
+  auto pattern = wrapper.join();
   std::string value = "glob pattern has null characters `";
   splitByDelim(pattern, '\0', [&value](StringRef ref, bool delim) {
-    value += ref;
+    if (!checkedAppend(ref, StringObject::MAX_SIZE - 1, value)) {
+      return false;
+    }
     if (delim) {
-      value += "\\x00";
+      if (!checkedAppend("\\x00", StringObject::MAX_SIZE - 1, value)) {
+        return false;
+      }
     }
     return true;
   });
@@ -144,7 +154,7 @@ static void raiseGlobbingError(ARState &state, const GlobPatternWrapper &pattern
                                std::string &&message) {
   std::string value = std::move(message);
   value += " `";
-  pattern.join(StringObject::MAX_SIZE, value); // FIXME: check length
+  pattern.join(StringObject::MAX_SIZE - 1, value);
   value += "'";
   raiseError(state, TYPE::GlobbingError, std::move(value));
 }
@@ -273,12 +283,6 @@ static bool concatAsGlobPattern(ARState &state, const Value *const constPool,
       }
     }
   }
-  // check if glob path fragments have null character
-  if (unlikely(StringRef(out).hasNullChar() || StringRef(prefix).hasNullChar())) {
-    out.insert(0, prefix);
-    raiseGlobbingErrorWithNull(state, out);
-    return false;
-  }
 
   assert(!out.empty());
   pattern = GlobPatternWrapper::create(std::move(out));
@@ -293,6 +297,13 @@ static bool concatAsGlobPattern(ARState &state, const Value *const constPool,
     goto NOMEM;
   }
   pattern.refBaseDir().insert(0, prefix);
+
+  // check if glob path fragments have null character
+  if (unlikely(StringRef(pattern.getBaseDir()).hasNullChar() ||
+               StringRef(pattern.getPattern()).hasNullChar())) {
+    raiseGlobbingErrorWithNull(state, pattern);
+    return false;
+  }
   return true;
 
 NOMEM:

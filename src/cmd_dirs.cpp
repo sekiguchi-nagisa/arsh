@@ -145,7 +145,7 @@ static int printDirStack(const ArrayObject &dirStack, const char *cwd, const Pri
   std::string home;
   if (!hasFlag(dirOp, PrintDirOp::FULL_PATH)) {
     home = "~";
-    if (expandTilde(home, true, nullptr) != TildeExpandStatus::OK) {
+    if (expandTilde(home, true, nullptr, StringObject::MAX_SIZE) != TildeExpandStatus::OK) {
       return ENOENT;
     }
   }

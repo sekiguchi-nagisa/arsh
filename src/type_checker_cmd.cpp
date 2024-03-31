@@ -492,6 +492,7 @@ void TypeChecker::reportTildeExpansionError(Token token, const std::string &path
   case TildeExpandStatus::NO_TILDE:
     break;
   case TildeExpandStatus::NO_USER:
+  case TildeExpandStatus::SIZE_LIMIT: // FIXME: better error message
     this->reportError<TildeFail>(token, value.c_str());
     return;
   case TildeExpandStatus::NO_DIR_STACK:

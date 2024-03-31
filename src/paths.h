@@ -111,6 +111,7 @@ enum class TildeExpandStatus : unsigned char {
   OUT_OF_RANGE,   // out of range index
   HAS_NULL,
   EMPTY_ASSIGN, // for '=~'
+  SIZE_LIMIT,   // reach max string size
 };
 
 /**
@@ -120,10 +121,16 @@ enum class TildeExpandStatus : unsigned char {
  * if true, use `HOME' environmental variable for `~' expansion
  * @param provider
  * may be null
+ * @param maxSize
  * @return
  * if tilde expansion succeed, return OK
  */
-TildeExpandStatus expandTilde(std::string &str, bool useHOME, DirStackProvider *provider);
+TildeExpandStatus expandTilde(std::string &str, bool useHOME, DirStackProvider *provider,
+                              size_t maxSize);
+
+inline TildeExpandStatus expandTilde(std::string &str, bool useHOME, DirStackProvider *provider) {
+  return expandTilde(str, useHOME, provider, SIZE_MAX);
+}
 
 /**
  *

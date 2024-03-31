@@ -187,6 +187,9 @@ $aa = @(*/AA=~)
 assert $aa.size() == 1
 assert $aa[0] == '*/AA=~'  # not perform tilde expansion if forward element is glob pattern
 
+$aa = @(\**"\\2")
+assert $aa.size() == 1
+assert $aa[0] == '**\2'
 
 # fail glob and null glob
 shctl set failglob nullglob

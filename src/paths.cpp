@@ -183,20 +183,29 @@ std::string expandDots(const char *basePath, const char *path) {
   return str;
 }
 
-TildeExpandStatus expandTilde(std::string &str, bool useHOME, DirStackProvider *provider) {
+TildeExpandStatus expandTilde(std::string &str, bool useHOME, DirStackProvider *provider,
+                              size_t maxSize) {
   if (str.empty() || str.front() != '~') {
     return TildeExpandStatus::NO_TILDE;
   }
 
-  const char *path = str.c_str();
-  std::string expanded;
-  for (; *path != '/' && *path != '\0'; path++) {
-    expanded += *path;
+  StringRef path = str;
+  if (path.hasNullChar()) {
+    return TildeExpandStatus::HAS_NULL;
   }
-  StringRef prefix = expanded;
-  prefix.removePrefix(1);
+
+  StringRef prefix;
+  if (auto sepPos = path.find('/'); sepPos != StringRef::npos) {
+    prefix = path.slice(1, sepPos);
+    path = path.substr(sepPos);
+  } else {
+    prefix = path;
+    prefix.removePrefix(1);
+    path = "";
+  }
 
   // expand tilde
+  std::string expanded;
   if (prefix.empty()) { // ~
     const char *value = useHOME ? getenv(ENV_HOME) : nullptr;
     if (!value) { // use HOME, but HOME is not set, fallback to getpwuid(getuid())
@@ -255,10 +264,14 @@ TildeExpandStatus expandTilde(std::string &str, bool useHOME, DirStackProvider *
       } else if (ret.hasNullChar()) {
         return TildeExpandStatus::HAS_NULL;
       }
-      expanded.assign(ret.data(), ret.size());
+      expanded += ret;
     }
   } else { // expand user
-    if (struct passwd *pw = getpwnam(expanded.c_str() + 1); pw) {
+    if (prefix.size() >= LOGIN_NAME_MAX + 16) {
+      return TildeExpandStatus::NO_USER; // for too large user name
+    }
+    auto tmpPath = prefix.toString();
+    if (struct passwd *pw = getpwnam(tmpPath.c_str()); pw) {
       expanded = pw->pw_dir;
     } else {
       return TildeExpandStatus::NO_USER;
@@ -266,8 +279,8 @@ TildeExpandStatus expandTilde(std::string &str, bool useHOME, DirStackProvider *
   }
 
   // append rest
-  if (*path != '\0') {
-    expanded += path;
+  if (!checkedAppend(path, maxSize, expanded)) {
+    return TildeExpandStatus::SIZE_LIMIT;
   }
   std::swap(str, expanded);
   return TildeExpandStatus::OK;
