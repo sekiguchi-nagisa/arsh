@@ -13,7 +13,7 @@ assert ($ex as OutOfRangeError).message() == 'reach String size limit'
 ## too large tilde
 $ex = 34
 try {
-    echo > /dev/null ~/123/$v
+    echo > /dev/null ~+/12/$v
 } catch e { $ex = $e; }
 assert ($ex as OutOfRangeError).message() == 'reach String size limit'
 
