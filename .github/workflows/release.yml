@@ -13,8 +13,26 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-      - name: Build Packages
-        uses: ./tools/dockerfiles/cpack-rpm-build
+      - name: prepare
+        run: |
+          sudo apt update
+          sudo apt install language-pack-ja ninja-build \
+               g++-13 clang-15 lld lld-15 llvm-15 llvm-15-dev
+      - name: configure
+        run: |
+          mkdir build
+          cd build
+          cmake .. -G Ninja \
+                -DCMAKE_BUILD_TYPE=RELWITHDEBINFO \
+                -DUSE_LTO=on
+      - name: build
+        run: |
+          cd build
+          ninja
+      - name: test
+        run: |
+          cd build
+          ctest -j4 --output-on-failure
       - name: Release
         uses: softprops/action-gh-release@v1
         with:
