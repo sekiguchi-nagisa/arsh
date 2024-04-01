@@ -144,7 +144,7 @@ static void raiseGlobbingError(ARState &state, const GlobPatternWrapper &pattern
                                std::string &&message) {
   std::string value = std::move(message);
   value += " `";
-  pattern.join(SYS_LIMIT_ERROR_MSG_MAX - 1, value); //FIXME:
+  pattern.join(SYS_LIMIT_ERROR_MSG_MAX - 1, value); // FIXME:
   value += "'";
   raiseError(state, TYPE::GlobbingError, std::move(value));
 }
@@ -292,13 +292,6 @@ static bool concatAsGlobPattern(ARState &state, const Value *const constPool,
     goto NOMEM;
   }
   pattern.refBaseDir().insert(0, prefix);
-
-  // check if glob path fragments have null character
-  if (unlikely(StringRef(pattern.getBaseDir()).hasNullChar() ||
-               StringRef(pattern.getPattern()).hasNullChar())) {
-    raiseGlobbingErrorWithNull(state, pattern);
-    return false;
-  }
   return true;
 
 NOMEM:
@@ -327,6 +320,20 @@ bool VM::addGlobbingPath(ARState &state, ArrayObject &argv, const Value *const b
   }
   if (state.has(RuntimeOption::GLOBSTAR)) {
     setFlag(option, Glob::Option::GLOBSTAR);
+  }
+
+  // check if glob path fragments have null character
+  if (unlikely(StringRef(pattern.getBaseDir()).hasNullChar() ||
+               StringRef(pattern.getPattern()).hasNullChar())) {
+    if (state.has(RuntimeOption::NULLGLOB)) {
+      return true; // do nothing
+    }
+    if (state.has(RuntimeOption::FAIL_GLOB)) {
+      raiseGlobbingErrorWithNull(state, pattern);
+      return false;
+    }
+    auto path = joinAsPath(state, pattern);
+    return path && argv.append(state, std::move(path));
   }
 
   const unsigned int oldSize = argv.size();

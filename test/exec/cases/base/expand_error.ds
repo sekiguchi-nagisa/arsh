@@ -10,6 +10,12 @@ try {
 } catch e { $ex = $e; echo 1>&2 failed at ${$e.lineno()}; }
 assert ($ex as OutOfRangeError).message() == 'reach String size limit'
 
+$ex = 67
+try {
+  echo $v/[a-zA-Z]*/*/* > /dev/null
+} catch e { $ex = $e; echo 1>&2 failed at ${$e.lineno()}; }
+assert ($ex as OutOfRangeError).message() == 'reach String size limit'
+
 ## too large tilde
 $ex = 34
 try {

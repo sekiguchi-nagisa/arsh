@@ -52,6 +52,7 @@
         - also support character class such as ``alnum``, ``space``
     - always perform tilde expansion before glob expansion
         - if ``failglob`` is disabled and glob expansion failed, return tilde expanded string
+    - now suppress runtime error when having null characters via ``nullglob`` on or ``failglob`` off
     - support recursive glob (a.k.a ``globstar``)
         - enabled via ``globstar`` runtime option (enabled by default)
     - now propagate ``opendir`` error, such as ``EMFILE``, ``ENFILE``, ``ENOMEM``

@@ -196,8 +196,13 @@ $aa = @(\**"\\2")
 assert $aa.size() == 1
 assert $aa[0] == '**\2'
 
+$aa = @(*$'\x00'*)
+assert $aa.size() == 1
+assert $aa[0] == $'*\x00*'
+
 # fail glob and null glob
 shctl set failglob nullglob
 assert @(\**"\\2").empty()
+assert @(*$'\x00'*).empty()
 
 true
