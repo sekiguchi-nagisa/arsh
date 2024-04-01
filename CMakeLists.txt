@@ -21,7 +21,7 @@ include(GenLexer)
 #     project version      #
 #++++++++++++++++++++++++++#
 
-set(ARSH_STABLE_RELEASE off)
+set(ARSH_STABLE_RELEASE on)
 set(ARSH_VERSION ${PROJECT_VERSION})
 if (NOT ${ARSH_STABLE_RELEASE})
     set(ARSH_VERSION ${ARSH_VERSION}-unstable)
