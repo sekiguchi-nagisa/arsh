@@ -1,0 +1,11 @@
+# for erroneous expansion pattern (has null, too large)
+
+printf -v var "%*s" 2147483640 @
+let v = $reply.remove('var')!
+
+## too large glob
+var ex = 34 as Any
+try {
+  echo /../../../././././././$v/./* > /dev/null
+} catch e { $ex = $e; echo 1>&2 failed at ${$e.lineno()}; }
+assert ($ex as OutOfRangeError).message() == 'reach String size limit'

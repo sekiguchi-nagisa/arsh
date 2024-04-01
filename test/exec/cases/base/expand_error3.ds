@@ -3,15 +3,8 @@
 printf -v var "%*s" 2147483640 @
 let v = $reply.remove('var')!
 
-## too large glob
-var ex = 34 as Any
-try {
-  echo $v/[a-zA-Z]*/*/* > /dev/null
-} catch e { $ex = $e; echo 1>&2 failed at ${$e.lineno()}; }
-assert ($ex as OutOfRangeError).message() == 'reach String size limit'
-
 ## too large tilde
-$ex = 34
+var ex = 34 as Any
 try {
     echo > /dev/null ~+/12/$v
 } catch e { $ex = $e; echo 1>&2 failed at ${$e.lineno()}; }
