@@ -2116,7 +2116,7 @@ bool VM::mainLoop(ARState &state) {
       }
       vmcase(UNWRAP) {
         if (state.stack.peek().kind() == ValueKind::INVALID) {
-          raiseError(state, TYPE::UnwrappingError, "invalid value");
+          raiseError(state, TYPE::UnwrapError, "invalid value");
           vmerror;
         }
         vmnext;

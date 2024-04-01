@@ -84,6 +84,8 @@
     - ``<>``: open file descriptor with read-write mode
     - ``<& -``, ``>& -``: close file descriptor
 - truncate large error message of internal error (up to 65535 byte)
+- rename ``GlobbingError`` with ``GlobError`` (``GlobbingError`` is defined as type-alias for compatibility)
+- rename ``UnwrappingError`` with ``UnwrapError`` (``UnwrappingError`` is defined as type-alias for compatibility)
 
 #### Builtin
 

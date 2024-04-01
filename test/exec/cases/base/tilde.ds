@@ -218,7 +218,7 @@ assert $ex is TildeError   # check tilde expansion before glob
 shctl unset fail_tilde
 $ex = 34
 try { echo ~jferif/*; } catch e { $ex = $e; }
-assert $ex is GlobbingError   # ignore tilde expansion error, but still has error (glob)
+assert $ex is GlobError   # ignore tilde expansion error, but still has error (glob)
 
 shctl unset fail_tilde
 $ex = 34

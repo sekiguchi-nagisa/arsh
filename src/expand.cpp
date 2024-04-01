@@ -137,7 +137,7 @@ static void raiseGlobbingErrorWithNull(ARState &state, const GlobPatternWrapper 
   std::string value = "glob pattern has null characters `";
   appendAsPrintable(pattern, SYS_LIMIT_ERROR_MSG_MAX - 1, value);
   value += "'";
-  raiseError(state, TYPE::GlobbingError, std::move(value));
+  raiseError(state, TYPE::GlobError, std::move(value));
 }
 
 static void raiseGlobbingError(ARState &state, const GlobPatternWrapper &pattern,
@@ -146,7 +146,7 @@ static void raiseGlobbingError(ARState &state, const GlobPatternWrapper &pattern
   value += " `";
   pattern.join(SYS_LIMIT_ERROR_MSG_MAX - 1, value); // FIXME:
   value += "'";
-  raiseError(state, TYPE::GlobbingError, std::move(value));
+  raiseError(state, TYPE::GlobError, std::move(value));
 }
 
 struct TildeAssign {

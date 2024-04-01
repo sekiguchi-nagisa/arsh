@@ -5,7 +5,7 @@ checkenv PATH || setenv PATH=/bin:/usr/bin:/usr/local/bin
 importenv HOME; importenv PATH; importenv PWD; importenv OLDPWD;
 importenv USER; importenv LOGNAME; var XTRACEFD = $STDERR
 
-typedef Boolean = Bool; typedef UnixFD = FD
+typedef Boolean = Bool; typedef UnixFD = FD; typedef GlobbingError = GlobError; typedef UnwrappingError = UnwrapError;
 
 # dummy function for signal handler
 function SIG_DFL($s : Signal) {}

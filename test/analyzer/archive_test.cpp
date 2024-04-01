@@ -312,7 +312,7 @@ TEST_F(ArchiveTest, predefined) {
 
 TEST_F(ArchiveTest, array) {
   //
-  auto ret1 = this->pool().createArrayType(this->pool().get(TYPE::GlobbingError));
+  auto ret1 = this->pool().createArrayType(this->pool().get(TYPE::GlobError));
   ASSERT_TRUE(ret1);
   auto &type1 = *ret1.asOk();
   ASSERT_TRUE(type1.typeId() >= this->builtinIdOffset);
@@ -324,13 +324,13 @@ TEST_F(ArchiveTest, array) {
   ASSERT_TRUE(ret1);
   auto &type2 = *ret1.asOk();
   ASSERT_TRUE(type2.typeId() >= this->builtinIdOffset);
-  ASSERT_NO_FATAL_FAILURE(this->defineAndArchive("ccc", "[[GlobbingError]]"));
+  ASSERT_NO_FATAL_FAILURE(this->defineAndArchive("ccc", "[[GlobError]]"));
 }
 
 TEST_F(ArchiveTest, map) {
   //
-  auto ret1 = this->pool().createMapType(this->pool().get(TYPE::Signal),
-                                         this->pool().get(TYPE::GlobbingError));
+  auto ret1 =
+      this->pool().createMapType(this->pool().get(TYPE::Signal), this->pool().get(TYPE::GlobError));
   ASSERT_TRUE(ret1);
   auto &type1 = *ret1.asOk();
   ASSERT_TRUE(type1.typeId() >= this->builtinIdOffset);
@@ -373,11 +373,11 @@ TEST_F(ArchiveTest, tuple) {
 
 TEST_F(ArchiveTest, option) {
   //
-  auto ret1 = this->pool().createOptionType(this->pool().get(TYPE::UnwrappingError));
+  auto ret1 = this->pool().createOptionType(this->pool().get(TYPE::UnwrapError));
   ASSERT_TRUE(ret1);
   auto &type1 = *ret1.asOk();
   ASSERT_TRUE(type1.typeId() >= this->builtinIdOffset);
-  ASSERT_NO_FATAL_FAILURE(this->defineAndArchive("w1", "UnwrappingError?", HandleKind::TYPE_ALIAS));
+  ASSERT_NO_FATAL_FAILURE(this->defineAndArchive("w1", "UnwrapError?", HandleKind::TYPE_ALIAS));
 
   //
   ret1 = this->pool().createOptionType(type1);
@@ -431,7 +431,7 @@ TEST_F(ArchiveTest, mod2) {
   ASSERT_NO_FATAL_FAILURE(this->define("AAA", type1, HandleKind::VAR, HandleAttr::READ_ONLY));
 
   //
-  auto ret2 = this->pool().createOptionType(this->pool().get(TYPE::UnwrappingError));
+  auto ret2 = this->pool().createOptionType(this->pool().get(TYPE::UnwrapError));
   ASSERT_TRUE(ret2);
   auto &type2 = *ret2.asOk();
   ASSERT_NO_FATAL_FAILURE(
@@ -444,7 +444,7 @@ TEST_F(ArchiveTest, mod3) {
   {
     auto &modType3 = this->loadMod(false, [](AnalyzerContext &ctx) {
       auto ret1 = ctx.getPool().createMapType(ctx.getPool().get(TYPE::Signal),
-                                              ctx.getPool().get(TYPE::GlobbingError));
+                                              ctx.getPool().get(TYPE::GlobError));
       ASSERT_TRUE(ret1);
       auto &type1 = *ret1.asOk();
       ASSERT_NO_FATAL_FAILURE(define(ctx, "AAA", type1, HandleKind::ENV));
@@ -455,7 +455,7 @@ TEST_F(ArchiveTest, mod3) {
     ASSERT_EQ(1, modType3.getChildSize());
     ASSERT_TRUE(this->newPool().get(modType3.getChildAt(0).typeId()).isModType());
 
-    auto ret1 = this->pool().createArrayType(this->pool().get(TYPE::GlobbingError));
+    auto ret1 = this->pool().createArrayType(this->pool().get(TYPE::GlobError));
     ASSERT_TRUE(ret1);
     auto &type1 = *ret1.asOk();
     ASSERT_TRUE(type1.typeId() >= this->builtinIdOffset);
@@ -469,7 +469,7 @@ TEST_F(ArchiveTest, mod3) {
   auto &modType3 = *ret1;
   auto handle = modType3.lookup(this->newPool(), "AAA");
   ASSERT_TRUE(handle);
-  ASSERT_EQ(this->newPool().getType("[Signal : GlobbingError]")->typeId(), handle->getTypeId());
+  ASSERT_EQ(this->newPool().getType("[Signal : GlobError]")->typeId(), handle->getTypeId());
   ASSERT_EQ(toString(HandleKind::ENV), toString(handle->getKind()));
   ASSERT_EQ(toString(HandleAttr::GLOBAL), toString(handle->attr()));
   ASSERT_EQ(modType3.getModId(), handle->getModId());
@@ -495,7 +495,7 @@ TEST_F(ArchiveTest, mod3) {
 
   handle = modType1.lookup(this->newPool(), "aaa");
   ASSERT_TRUE(handle);
-  ASSERT_EQ(this->newPool().getType("[GlobbingError]")->typeId(), handle->getTypeId());
+  ASSERT_EQ(this->newPool().getType("[GlobError]")->typeId(), handle->getTypeId());
   ASSERT_EQ(toString(HandleAttr::GLOBAL), toString(handle->attr()));
   ASSERT_EQ(1, toUnderlying(handle->getModId()));
 }

@@ -1,31 +1,31 @@
 
 var ex = 34 as Any
 
-# if not match pattern, throw GlobbingError
+# if not match pattern, throw GlobError
 $ex = 2
 try { echo "~/"*; } catch $e { $ex = $e; }
-assert $ex is GlobbingError
+assert $ex is GlobError
 
 $ex = 2
 try { echo /"*"*; } catch $e { $ex = $e; }
-assert $ex is GlobbingError
+assert $ex is GlobError
 
 $ex = 2
 try { echo /'?'*; } catch $e { $ex = $e; }
-assert $ex is GlobbingError
+assert $ex is GlobError
 
 $ex = 2
 try { echo ?\**; } catch $e { $ex = $e; }
-assert $ex is GlobbingError
+assert $ex is GlobError
 
 $ex = 2
 try { echo '~/'*; } catch $e { $ex = $e; }
-assert $ex is GlobbingError
+assert $ex is GlobError
 
 $ex = 2
 try { echo *\*\??; } catch $e { $ex = $e; }
-assert $ex is GlobbingError
-assert ($ex as GlobbingError).message() == "no matches for glob pattern \`*\*\??'"
+assert $ex is GlobError
+assert ($ex as GlobError).message() == "no matches for glob pattern \`*\*\??'"
 
 $ex = 2
 try {
@@ -33,32 +33,32 @@ try {
         ~/fjarifja/*
     )
 } catch e { $ex = $e; }
-assert ($ex as GlobbingError).lineno() == 33
+assert ($ex as GlobError).lineno() == 33
 
 $ex = 2
 try { echo [[:aaa:]]*; } catch $e { $ex = $e; }
-assert $ex is GlobbingError
-assert ($ex as GlobbingError).message() == "undefined character class: aaa in \`[[:aaa:]]*'"
+assert $ex is GlobError
+assert ($ex as GlobError).message() == "undefined character class: aaa in \`[[:aaa:]]*'"
 
 $ex = 2
 try { echo [a-zA-Z; } catch $e { $ex = $e; }
-assert $ex is GlobbingError
-assert ($ex as GlobbingError).message() == "bracket expression must end with \`]' in \`[a-zA-Z'"
+assert $ex is GlobError
+assert ($ex as GlobError).message() == "bracket expression must end with \`]' in \`[a-zA-Z'"
 
 $ex = 2
 try { var m = '-'; echo [9${m}0]*; } catch $e { $ex = $e; }
-assert $ex is GlobbingError
-assert ($ex as GlobbingError).message() == "no matches for glob pattern \`[9\\-0]*'"
+assert $ex is GlobError
+assert ($ex as GlobError).message() == "no matches for glob pattern \`[9\\-0]*'"
 
 $ex = 2
 try { echo ~/*fjeirjf*${'[0-9]'}; } catch $e { $ex = $e; }
-assert ($ex as GlobbingError).message() == "no matches for glob pattern \`$HOME/*fjeirjf*\[0\-9\]'"
+assert ($ex as GlobError).message() == "no matches for glob pattern \`$HOME/*fjeirjf*\[0\-9\]'"
 
 
-# glob pattern have null characters, throw GlobbingError
+# glob pattern have null characters, throw GlobError
 $ex = 34
 try { echo *$'\x00'*; } catch $e { $ex = $e; }
-assert $ex is GlobbingError
+assert $ex is GlobError
 
 # tilde expansion failed before glob
 $ex = 34

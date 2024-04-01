@@ -37,7 +37,7 @@ try {
     assert $opt(-43)! == "hello"
 } catch $e {
     $in = $true
-    assert $e is UnwrappingError
+    assert $e is UnwrapError
 }
 assert $in
 
@@ -68,15 +68,15 @@ assert "${[3 as Int?]}" == '3'
 
 var ex = 34 as Any
 try { assert "${(2, $false, new Error?())}" == '2 false'; }  catch $e { $ex = $e}
-# assert $ex is UnwrappingError
+# assert $ex is UnwrapError
 
 assert "$(echo ${[$false as Boolean?]})" == 'false'
 $ex = 34
 try { echo ${['s' : new Float?()]}; }  catch $e { $ex = $e }
-assert !($ex is UnwrappingError)
+assert !($ex is UnwrapError)
 $ex = 43
 try { echo ${(new Float?(),)}; } catch $e { $ex = $e }
-assert !($ex is UnwrappingError)
+assert !($ex is UnwrapError)
 assert $ex as Int == 43
 
 # type

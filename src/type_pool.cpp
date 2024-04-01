@@ -106,8 +106,8 @@ TypePool::TypePool() {
   this->initErrorType(TYPE::RegexSyntaxError, "RegexSyntaxError");
   this->initErrorType(TYPE::RegexMatchError, "RegexMatchError");
   this->initErrorType(TYPE::TildeError, "TildeError");
-  this->initErrorType(TYPE::GlobbingError, "GlobbingError");
-  this->initErrorType(TYPE::UnwrappingError, "UnwrappingError");
+  this->initErrorType(TYPE::GlobError, "GlobError");
+  this->initErrorType(TYPE::UnwrapError, "UnwrapError");
   this->initErrorType(TYPE::IllegalAccessError, "IllegalAccessError");
   this->initErrorType(TYPE::InvalidOperationError, "InvalidOperationError");
   this->initErrorType(TYPE::ExecError, "ExecError");

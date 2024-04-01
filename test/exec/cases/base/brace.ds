@@ -109,4 +109,4 @@ assert ($ex as TildeError).message() =~ $/~hogesss/
 
 $ex = 34
 try { echo *{$'\x00',}; } catch $e { $ex = $e; }
-assert $ex is GlobbingError
+assert $ex is GlobError

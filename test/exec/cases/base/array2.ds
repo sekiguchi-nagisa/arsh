@@ -20,7 +20,7 @@ function rev2($x : Int?, $y : Int?) : Boolean {
 var b = [4 as Int?, new Int?(), -1 as Int?]
 var ex = 2 as Any
 try { $b.sortWith($rev2); assert $false; } catch $e { $ex = $e; }
-assert $ex is UnwrappingError
+assert $ex is UnwrapError
 
 
 var c = [3, -1, 2, 5, 1]
