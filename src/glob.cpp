@@ -650,6 +650,10 @@ Glob::Status Glob::matchDoubleStar(const std::string &baseDir, const size_t targ
 }
 
 bool appendAndEscapeGlobMeta(const StringRef ref, const size_t maxSize, std::string &out) {
+  if (!isAppendable(ref, maxSize, out)) {
+    return false; // fast path
+  }
+
   const char *const end = ref.end();
   const char *start = ref.begin();
 

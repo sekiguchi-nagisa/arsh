@@ -213,8 +213,16 @@ inline std::string &operator+=(std::string &str, StringRef ref) {
   return str.append(ref.data(), ref.size());
 }
 
+inline bool isAppendable(const size_t srcSize, const size_t maxSize, const std::string &out) {
+  return out.size() <= maxSize && srcSize <= maxSize - out.size();
+}
+
+inline bool isAppendable(const StringRef ref, const size_t maxSize, const std::string &out) {
+  return isAppendable(ref.size(), maxSize, out);
+}
+
 inline bool checkedAppend(const StringRef ref, const size_t maxSize, std::string &out) {
-  if (out.size() <= maxSize && ref.size() <= maxSize - out.size()) {
+  if (isAppendable(ref, maxSize, out)) {
     out += ref;
     return true;
   }
@@ -222,7 +230,7 @@ inline bool checkedAppend(const StringRef ref, const size_t maxSize, std::string
 }
 
 inline bool checkedAppend(char ch, const size_t maxSize, std::string &out) {
-  if (out.size() <= maxSize && 1 <= maxSize - out.size()) {
+  if (isAppendable(1, maxSize, out)) {
     out += ch;
     return true;
   }
