@@ -39,6 +39,7 @@ option(USE_LTO "enable Link Time Optimization" OFF)
 option(USE_EXTRA_TEST "enable system extra test cases" OFF)
 option(USE_PCRE "enable pcre2 support" ON)
 option(BUILD_SHARED_LIB "build shared library" OFF)
+option(USE_CTEST "enable CTest" ON)
 
 if ("${CMAKE_BUILD_TYPE}" STREQUAL "")
     set(CMAKE_BUILD_TYPE Release)
@@ -109,6 +110,7 @@ show_option(USE_LTO)
 show_option(USE_EXTRA_TEST)
 show_option(USE_PCRE)
 show_option(BUILD_SHARED_LIB)
+show_option(USE_CTEST)
 
 
 #+++++++++++++++++++++++++++#
@@ -331,8 +333,10 @@ install_symlink_bindir(${BIN_NAME} "ydsh")
 #     setup test     #
 #++++++++++++++++++++#
 
-enable_testing()
-add_subdirectory(test)
+if (USE_CTEST)
+    enable_testing()
+    add_subdirectory(test)
+endif ()
 
 
 #++++++++++++++++#
