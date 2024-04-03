@@ -13,8 +13,8 @@ include(GNUInstallDirs)
 include(CheckIPOSupported)
 include(Helper)
 include(DownloadProject)
-include(GetRE2C)
 include(GenLexer)
+include(GetRE2C)
 
 
 #++++++++++++++++++++++++++#
@@ -140,10 +140,13 @@ include_directories(${CMAKE_CURRENT_BINARY_DIR}/src)
 
 
 #+++++++++++++++++++#
-#     build re2c    #
+#     find re2c    #
 #+++++++++++++++++++#
 
-getRE2C()
+find_package(RE2C 2.0)
+if (NOT ${RE2C_FOUND})
+    getRE2C()
+endif ()
 
 
 #========================#
