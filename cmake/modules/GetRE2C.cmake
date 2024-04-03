@@ -26,7 +26,7 @@ macro(getRE2C)
     )
 
     set(RE2C_SRC "${re2c_SOURCE_DIR}")
-    set(RE2C_BIN "${re2c_BINARY_DIR}/re2c")
+    set(RE2C_EXECUTABLE "${re2c_BINARY_DIR}/re2c")
 
     if (BUILD_RE2C_WITH_CMAKE)
         execute_process(COMMAND ${CMAKE_COMMAND} -DCMAKE_CXX_FLAGS=-D_GNU_SOURCE -G "${CMAKE_GENERATOR}" ${RE2C_SRC} WORKING_DIRECTORY ${re2c_BINARY_DIR})
@@ -40,7 +40,10 @@ macro(getRE2C)
         execute_process(COMMAND make WORKING_DIRECTORY ${re2c_BINARY_DIR})
     endif ()
 
-    if (NOT EXISTS "${RE2C_BIN}")
+    if (EXISTS "${RE2C_EXECUTABLE}")
+        message(STATUS "complete build re2c in ${RE2C_EXECUTABLE}")
+    else ()
         message(FATAL_ERROR "re2c is not found")
     endif ()
+
 endmacro()
