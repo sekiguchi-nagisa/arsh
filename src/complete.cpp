@@ -237,12 +237,13 @@ static void completeGroupName(const std::string &prefix, CompCandidateConsumer &
 
 static void completeUDC(const NameScope &scope, const std::string &cmdPrefix,
                         CompCandidateConsumer &consumer) {
-  scope.walk([&](StringRef udc, const Handle &) {
+  scope.walk([&](StringRef udc, const Handle &handle) {
     if (isCmdFullName(udc)) {
       udc.removeSuffix(strlen(CMD_SYMBOL_SUFFIX));
       if (udc.startsWith(cmdPrefix)) {
         CompCandidate candidate(udc, CompCandidateKind::COMMAND_NAME);
-        candidate.setCmdNameType(CompCandidate::CmdNameType::UDC);
+        candidate.setCmdNameType(handle.is(HandleKind::UDC) ? CompCandidate::CmdNameType::UDC
+                                                            : CompCandidate::CmdNameType::MOD);
         consumer(candidate);
       }
     }

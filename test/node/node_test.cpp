@@ -927,7 +927,7 @@ nodes:
       name: "f"
     handle:
       index: 52
-      kind: "VAR"
+      kind: "UDC"
       attribute: "READ_ONLY | GLOBAL"
     paramNode: null
     returnTypeNode: null

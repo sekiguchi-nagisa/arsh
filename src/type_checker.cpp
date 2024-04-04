@@ -398,7 +398,7 @@ HandlePtr TypeChecker::addUdcEntry(const UserDefinedCmdNode &node) {
   }
 
   if (auto ret = this->curScope->defineHandle(toCmdFullName(node.getCmdName()), *type,
-                                              HandleAttr::READ_ONLY)) {
+                                              HandleKind::UDC, HandleAttr::READ_ONLY)) {
     return std::move(ret).take();
   } else {
     this->reportNameRegisterError(node.getToken(), ErrorSymbolKind::UDC, ret.asErr(),

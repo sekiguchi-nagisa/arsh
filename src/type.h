@@ -267,6 +267,7 @@ public:
   OP(NATIVE)      /* native method */                                                              \
   OP(METHOD)      /* user-defined method */                                                        \
   OP(CONSTRUCTOR) /* user-defined constructor */                                                   \
+  OP(UDC)         /* user-defined command */                                                       \
   OP(NAMED_MOD)   /* module holder (named imported) */                                             \
   OP(GLOBAL_MOD)  /* module holder (global imported) */                                            \
   OP(INLINED_MOD) /* module holder (inlined imported) */                                           \

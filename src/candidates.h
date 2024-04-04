@@ -69,6 +69,7 @@ public:
 
 struct CandidateAttr {
   enum class Kind : unsigned char { // not change enum order
+    CMD_MOD,
     CMD_UDC,
     CMD_BUILTIN,
     CMD_DYNA,

@@ -50,6 +50,7 @@ enum class CompCandidateKind : unsigned char {
 class CompCandidate {
 public:
   enum class CmdNameType : unsigned char {
+    MOD,
     UDC,
     BUILTIN,
     DYNA_UDC,

@@ -324,6 +324,10 @@ public:
         const char *desc = "";
         auto kind = CandidateAttr::Kind::NONE;
         switch (candidate.getCmdNameType()) {
+        case CompCandidate::CmdNameType::MOD:
+          desc = "module";
+          kind = CandidateAttr::Kind::CMD_UDC;
+          break;
         case CompCandidate::CmdNameType::UDC:
           desc = "user-defined";
           kind = CandidateAttr::Kind::CMD_UDC;

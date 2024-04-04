@@ -1,5 +1,13 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+#### Builtin
+
+- ``complete`` correctly recognize module (put ``module`` description instead of ``user-defined``)
+
 ## [0.33.1] - 2024-04-02
 
 - fix release github action
