@@ -2,7 +2,7 @@
 
 ## [0.33.1] - 2024-04-02
 
-- fix release github action
+- fix release GitHub action
 
 ## [0.33.0] - 2024-04-01
 
