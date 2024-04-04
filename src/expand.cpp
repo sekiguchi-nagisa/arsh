@@ -229,13 +229,12 @@ static Value joinAsPath(ARState &state, const GlobPatternWrapper &pattern) {
     }
   }
   std::string tmp;
-  const bool r = appendAsUnescaped(pattern.getPattern(), StringObject::MAX_SIZE, tmp);
-  (void)r;
-  assert(r);
-  if (!ret.appendAsStr(state, tmp)) {
-    return {};
+  tmp.reserve(pattern.getPattern().size());
+  if (const auto remain = StringObject::MAX_SIZE - ret.asStrRef().size();
+      appendAsUnescaped(pattern.getPattern(), remain, tmp) && ret.appendAsStr(state, tmp)) {
+    return ret;
   }
-  return ret;
+  return {};
 }
 
 static bool concatAsGlobPattern(ARState &state, const Value *const constPool,
