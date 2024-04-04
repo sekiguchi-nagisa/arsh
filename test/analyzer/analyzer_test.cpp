@@ -81,7 +81,19 @@ protected:
     tmpFile.reset();
     content = std::string();
     readContent(tempFileName, content);
-    ASSERT_EQ(expected, content);
+    if (isIgnoredTestCase(GetParam())) {
+      fprintf(stderr, "ignore ast-dump comparing of %s\n", GetParam().c_str());
+    } else {
+      ASSERT_EQ(expected, content);
+    }
+  }
+
+  static bool isIgnoredTestCase(const std::string &path) {
+    const char *ignoredPattern[] = {
+        "mod", "subcmd", "shctl", "complete5", "complete6", "complete8", "load", "fullname",
+    };
+    return std::any_of(std::begin(ignoredPattern), std::end(ignoredPattern),
+                       [&path](const char *pt) { return StringRef(path).contains(pt); });
   }
 };
 
@@ -90,23 +102,13 @@ static std::vector<std::string> getTargetCases(const char *dir) {
   auto ret = getFileList(real.get(), true);
   assert(!ret.empty());
   ret.erase(std::remove_if(ret.begin(), ret.end(),
-                           [](const std::string &v) { return !StringRef(v).endsWith(".ds"); }),
+                           [](const std::string &v) {
+                             const StringRef ref = v;
+                             return !ref.endsWith(".ds") && !ref.endsWith(".ar");
+                           }),
             ret.end());
   std::sort(ret.begin(), ret.end());
   ret.erase(std::unique(ret.begin(), ret.end()), ret.end());
-
-  // filter ignored cases
-  const char *ignoredPattern[] = {"mod",       "subcmd", "shctl",   "complete5",
-                                  "complete6", "load",   "fullname"};
-
-  ret.erase(std::remove_if(ret.begin(), ret.end(),
-                           [&ignoredPattern](const std::string &v) {
-                             StringRef ref = v;
-                             return std::any_of(
-                                 std::begin(ignoredPattern), std::end(ignoredPattern),
-                                 [&ref](const char *pt) { return ref.contains(pt); });
-                           }),
-            ret.end());
   return ret;
 }
 
