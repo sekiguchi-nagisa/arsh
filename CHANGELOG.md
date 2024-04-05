@@ -1,5 +1,10 @@
 # Changelog
 
+## [0.33.2] - 2024-04-xx
+
+- now can use local installed ``re2c`` (require v2.0.0 or later)
+- can disable CTest build
+
 ## [0.33.1] - 2024-04-02
 
 - fix release GitHub action
