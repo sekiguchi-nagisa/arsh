@@ -2,6 +2,7 @@
 [![Coverage Status](https://coveralls.io/repos/github/sekiguchi-nagisa/arsh/badge.svg?branch=master)](https://coveralls.io/github/sekiguchi-nagisa/arsh?branch=master)
 [![Actions Status](https://github.com/sekiguchi-nagisa/arsh/workflows/GitHub%20Actions/badge.svg)](https://github.com/sekiguchi-nagisa/arsh/actions)
 [![CircleCI](https://circleci.com/gh/sekiguchi-nagisa/arsh.svg?style=shield)](https://circleci.com/gh/sekiguchi-nagisa/arsh)
+[![build result](https://build.opensuse.org/projects/home:nsekiguchi/packages/arsh/badge.svg?type=percent)](https://build.opensuse.org/package/show/home:nsekiguchi/arsh)
 
 # arsh
 
