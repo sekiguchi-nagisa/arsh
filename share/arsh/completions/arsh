@@ -1,4 +1,3 @@
-#!/usr/bin/env arsh
 
 source $SCRIPT_DIR/../modules/completion
 
