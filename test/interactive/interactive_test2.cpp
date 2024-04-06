@@ -464,7 +464,7 @@ TEST_F(InteractiveTest, sourceGlobLimit) {
   this->invoke("--quiet", "--norc");
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
-  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("ulimit -S -n 7"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("ulimit -S -n 6"));
   std::string err =
       format(R"([semantic error] not enough resources for glob expansion, caused by `%s'
  --> (stdin):2:9
