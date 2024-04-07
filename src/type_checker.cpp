@@ -391,8 +391,12 @@ HandlePtr TypeChecker::addUdcEntry(const UserDefinedCmdNode &node) {
   }
   auto *type = &this->typePool().getUnresolvedType();
   if (returnType) {
-    auto ret =
-        this->typePool().createFuncType(*returnType, {&this->typePool().get(TYPE::StringArray)});
+    auto *paramType = &this->typePool().get(TYPE::StringArray);
+    if (const auto *typeNode = node.getParamTypeNode();
+        typeNode && !typeNode->isUntyped() && !typeNode->getType().isUnresolved()) {
+      paramType = &typeNode->getType();
+    }
+    auto ret = this->typePool().createFuncType(*returnType, {paramType});
     assert(ret);
     type = ret.asOk();
   }
@@ -2531,9 +2535,7 @@ void TypeChecker::checkTypeUserDefinedCmd(UserDefinedCmdNode &node, const FuncCh
           returnNode && returnNode->getType().isNothingType()) {
         this->reportError<InvalidUDCParam>(*node.getParamNode());
       }
-      auto &exprNode = *node.getParamNode()->getExprNode();
-      assert(isa<NewNode>(exprNode));
-      auto &typeNode = *cast<NewNode>(exprNode).getTargetTypeNode();
+      auto &typeNode = *node.getParamTypeNode();
       this->checkTypeAsSomeExpr(typeNode);
       if (!typeNode.getType().isCLIRecordType()) {
         this->reportError<InvalidUDCParamType>(typeNode, typeNode.getType().getName());

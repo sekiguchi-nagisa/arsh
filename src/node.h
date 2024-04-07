@@ -2642,6 +2642,13 @@ public:
 
   const auto &getParamNode() const { return this->paramNode; }
 
+  TypeNode *getParamTypeNode() const {
+    if (this->getParamNode()) {
+      return cast<NewNode>(this->getParamNode()->getExprNode())->getTargetTypeNode();
+    }
+    return nullptr;
+  }
+
   BlockNode &getBlockNode() const { return *this->blockNode; }
 
   const std::unique_ptr<TypeNode> &getReturnTypeNode() const { return this->returnTypeNode; }

@@ -18,6 +18,7 @@
 #include <grp.h>
 #include <pwd.h>
 
+#include "arg_parser_base.h"
 #include "cmd_desc.h"
 #include "complete.h"
 #include "format_signature.h"
@@ -647,6 +648,72 @@ static bool completeSubcommand(const TypePool &pool, const NameScope &scope, con
   return true;
 }
 
+static const CLIRecordType *resolveCLIType(const TypePool &pool, const Handle &handle) {
+  if (auto &type = pool.get(handle.getTypeId()); type.isFuncType()) {
+    if (auto &funcType = cast<FunctionType>(type);
+        funcType.getParamSize() == 1 && funcType.getParamTypeAt(0).isCLIRecordType()) {
+      return cast<CLIRecordType>(&funcType.getParamTypeAt(0));
+    }
+  }
+  return nullptr;
+}
+
+static bool completeCLIOption(const TypePool &pool, const NameScope &scope, const CmdNode &cmdNode,
+                              const std::string &word, CompCandidateConsumer &consumer) {
+  auto handle = scope.lookup(toCmdFullName(cmdNode.getNameNode().getValue()));
+  if (!handle) {
+    return false;
+  }
+  auto *cliType = resolveCLIType(pool, *handle.asOk());
+  if (!cliType) {
+    return false;
+  }
+
+  // complete Flag, Option
+  if (word.empty() || word[0] != '-') {
+    return false;
+  }
+  for (auto &e : cliType->getEntries()) {
+    if (!e.isOption()) {
+      continue;
+    }
+
+    // short option
+    if (e.getShortName()) {
+      std::string value;
+      value += '-';
+      value += e.getShortName();
+      if (StringRef(value).startsWith(word)) {
+        consumer(value, CompCandidateKind::COMMAND_ARG);
+      }
+    }
+    // long option
+    if (!e.getLongName().empty()) {
+      std::string value = "--";
+      value += e.getLongName();
+      if (e.getParseOp() == OptParseOp::OPT_ARG) {
+        value += '=';
+      }
+      if (StringRef(value).startsWith(word)) {
+        if (value.size() == word.size() && value.back() == '=') { // 'value == word' and '--long='
+          return false;
+        }
+        CompCandidate candidate(value, CompCandidateKind::COMMAND_ARG);
+        if (value.back() == '=') {
+          candidate.overrideSuffixSpace(CompCandidate::SuffixSpaceOverride::NO_SPACE);
+        }
+        consumer(candidate);
+      } else if (StringRef ref = word; ref.endsWith("=") && e.getParseOp() == OptParseOp::HAS_ARG) {
+        ref.removeSuffix(1);
+        if (ref == value) {
+          return false;
+        }
+      }
+    }
+  }
+  return true;
+}
+
 bool CodeCompleter::invoke(const CodeCompletionContext &ctx) {
   if (!ctx.hasCompRequest()) {
     return true; // do nothing
@@ -717,6 +784,10 @@ bool CodeCompleter::invoke(const CodeCompletionContext &ctx) {
       if (s > -1) {
         return true;
       }
+    }
+    if (completeCLIOption(this->pool, ctx.getScope(), *ctx.getCmdNode(), ctx.getCompWord(),
+                          this->consumer)) {
+      return true;
     }
     if (!completeSubcommand(this->pool, ctx.getScope(), *ctx.getCmdNode(), ctx.getCompWord(),
                             this->consumer)) {

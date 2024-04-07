@@ -57,8 +57,15 @@ public:
     EXTERNAL,
   };
 
+  enum class SuffixSpaceOverride : unsigned char {
+    DEFAULT,  // follow default behavior
+    SPACE,    // always need space
+    NO_SPACE, // always need no space
+  };
+
   const StringRef value;
   const CompCandidateKind kind;
+  SuffixSpaceOverride suffixSpaceOverride{SuffixSpaceOverride::DEFAULT};
   const int priority;
 
 private:
@@ -104,6 +111,10 @@ public:
 
   CmdNameType getCmdNameType() const { return this->meta.cmdNameType; }
 
+  void overrideSuffixSpace(SuffixSpaceOverride o) { this->suffixSpaceOverride = o; }
+
+  SuffixSpaceOverride getSuffixSpaceOverride() const { return this->suffixSpaceOverride; }
+
   /**
    * quote as shell arg
    * @return
@@ -112,7 +123,17 @@ public:
 
   std::string formatTypeSignature(TypePool &pool) const;
 
-  bool needSuffixSpace() const { return needSuffixSpace(this->value, this->kind); }
+  bool needSuffixSpace() const {
+    switch (this->suffixSpaceOverride) {
+    case SuffixSpaceOverride::DEFAULT:
+      break;
+    case SuffixSpaceOverride::SPACE:
+      return true;
+    case SuffixSpaceOverride::NO_SPACE:
+      return false;
+    }
+    return needSuffixSpace(this->value, this->kind);
+  }
 
   static bool needSuffixSpace(StringRef value, CompCandidateKind kind);
 };

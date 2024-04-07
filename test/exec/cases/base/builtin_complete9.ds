@@ -1,0 +1,85 @@
+
+# complete options defined by CLI attribute
+
+[<CLI>]
+typedef AAA() {
+    [<Option(opt: $true, short: 'd', long: 'dump')>]
+    var dump : String?
+
+    [<Flag(short: 'v', long: 'version')>]
+    var version : Bool?
+
+    [<Option(help: "")>]
+    var count : Int?
+}
+
+fff(p : AAA) { echo $p; }
+
+## complete options
+complete -s -- 'fff -'
+assert $COMPREPLY.size() == 7
+assert $COMPREPLY[0] == "--count"
+assert $COMPREPLY.hasSpace(0)
+assert $COMPREPLY[1] == "--dump="
+assert ! $COMPREPLY.hasSpace(1)
+assert $COMPREPLY[2] == "--help"
+assert $COMPREPLY.hasSpace(2)
+assert $COMPREPLY[3] == "--version"
+assert $COMPREPLY.hasSpace(3)
+assert $COMPREPLY[4] == "-d"
+assert $COMPREPLY.hasSpace(4)
+assert $COMPREPLY[5] == "-h"
+assert $COMPREPLY.hasSpace(5)
+assert $COMPREPLY[6] == "-v"
+assert $COMPREPLY.hasSpace(6)
+
+complete -s -- 'fff --'
+assert $COMPREPLY.size() == 4
+assert $COMPREPLY[0] == "--count"
+assert $COMPREPLY.hasSpace(0)
+assert $COMPREPLY[1] == "--dump="
+assert ! $COMPREPLY.hasSpace(1)
+assert $COMPREPLY[2] == "--help"
+assert $COMPREPLY.hasSpace(2)
+assert $COMPREPLY[3] == "--version"
+assert $COMPREPLY.hasSpace(3)
+
+complete -s -- 'fff --c'
+assert $COMPREPLY.size() == 1
+assert $COMPREPLY[0] == "--count"
+assert $COMPREPLY.hasSpace(0)
+
+complete -s -- 'fff --count'
+assert $COMPREPLY.size() == 1
+assert $COMPREPLY[0] == "--count"
+assert $COMPREPLY.hasSpace(0)
+
+complete -s -- 'fff --d'
+assert $COMPREPLY.size() == 1
+assert $COMPREPLY[0] == "--dump="
+assert ! $COMPREPLY.hasSpace(0)
+
+complete -s -- 'fff --dump'
+assert $COMPREPLY.size() == 1
+assert $COMPREPLY[0] == "--dump="
+assert ! $COMPREPLY.hasSpace(0)
+
+## complete file names after options
+assert diff <(complete -- 'fff --count ') <(complete -A file)
+assert diff <(complete -- 'fff --version ') <(complete -A file)
+assert diff <(complete -- 'fff --version ./') <(complete -A file './')
+assert diff <(complete -- 'fff --count=') <(complete -A file)
+assert diff <(complete -- 'fff --dump=') <(complete -A file)
+assert diff <(complete -- 'fff --fajjaiae ') <(complete -A file)  # complete file names after invalid option
+assert diff <(complete -- 'fff ') <(complete -A file) # complete file names if word is empty
+
+
+## not complete option (comp word must start with valid option name)
+complete -- 'fff -E'
+assert $COMPREPLY.size() == 0
+complete -- 'fff -E='
+assert $COMPREPLY.size() == 0
+complete -- 'fff --hoge'
+assert $COMPREPLY.size() == 0
+complete -- 'fff "--dum"'
+assert $COMPREPLY.size() == 0

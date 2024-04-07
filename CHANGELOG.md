@@ -6,7 +6,8 @@
 
 #### Builtin
 
-- ``complete`` correctly recognize module (put ``module`` description instead of ``user-defined``)
+- ``complete`` command correctly recognize module (put ``module`` description instead of ``user-defined``)
+- complete flags/options defined via ``Flag``, ``Option`` attribute
 
 ## [0.33.1] - 2024-04-02
 
