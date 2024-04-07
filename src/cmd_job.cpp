@@ -120,7 +120,7 @@ static bool killProcOrJob(const ARState &state, const ArrayObject &argvObj, Stri
 }
 
 // -s sig (pid | jobspec ...)
-// -l
+// -l, -L
 int builtin_kill(ARState &state, ArrayObject &argvObj) {
   int sigNum = SIGTERM;
   bool listing = false;
@@ -129,9 +129,10 @@ int builtin_kill(ARState &state, ArrayObject &argvObj) {
     return showUsage(argvObj);
   }
 
-  GetOptState optState(":ls:h");
+  GetOptState optState(":Lls:h");
   switch (const int opt = optState(argvObj); opt) {
   case 'l':
+  case 'L':
     listing = true;
     break;
   case 's':

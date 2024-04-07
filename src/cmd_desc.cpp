@@ -150,7 +150,8 @@ static BuiltinCmdDesc table[] = {
      "    If signal is not specified, then SIGTERM is assumed.\n"
      "    Options:\n"
      "      -s sig    send a signal.  SIG is a signal name or signal number\n"
-     "      -l        list the signal names"},
+     "      -l        list the signal names\n"
+     "      -L        equivalent to `-l'"},
     {"popd", "[+N | -N]",
      "    Remove an entry from directory stack and change current directory to\n"
      "    the stack top directory.\n"

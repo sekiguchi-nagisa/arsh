@@ -11,6 +11,7 @@
     - ``raise`` -> ``kill``
 - ``complete`` command correctly recognize module (put ``module`` description instead of ``user-defined``)
 - complete flags/options defined via ``Flag``, ``Option`` attribute
+- builtin ``kill`` command support ``-L`` (equivalent to ``-l`` option)
 
 #### Misc
 
