@@ -332,7 +332,7 @@ TEST_F(InteractiveTest, wait3) {
                                                   "(stdin):4: bg: no job control in this shell\n"));
 
   std::string err = format("^\\[1\\] \\+ [0-9]+ %s  while\\(true\\)\\{\\}\n", strsignal(SIGKILL));
-  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpectRegex("$j.raise($SIGKILL); wait $j", "", err));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpectRegex("$j.kill($SIGKILL); wait $j", "", err));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 137));
 }
 
@@ -348,7 +348,7 @@ TEST_F(InteractiveTest, wait4) {
                                                   "(stdin):4: jobs: %1: no such job\n"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("wait $j; assert $? == 127", "",
                                                   "(stdin):5: wait: %1: no such job\n"));
-  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$j.raise($SIGKILL); $j.wait()", ": Int = 137"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$j.kill($SIGKILL); $j.wait()", ": Int = 137"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 127));
 }
 
@@ -421,9 +421,9 @@ TEST_F(InteractiveTest, disown1) {
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("wait $j1; assert $? == 127", "",
                                                   "(stdin):9: wait: %1: no such job\n"));
   ASSERT_NO_FATAL_FAILURE(
-      this->sendLineAndExpect("$j1.raise($SIGKILL); $j1.wait()", ": Int = 137"));
+      this->sendLineAndExpect("$j1.kill($SIGKILL); $j1.wait()", ": Int = 137"));
   ASSERT_NO_FATAL_FAILURE(
-      this->sendLineAndExpect("$j2.raise($SIGTERM); $j2.wait()", ": Int = 143"));
+      this->sendLineAndExpect("$j2.kill($SIGTERM); $j2.wait()", ": Int = 143"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 127));
 }
 
@@ -438,7 +438,7 @@ TEST_F(InteractiveTest, disown2) {
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("disown; assert $? == 0"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("jobs"));
   ASSERT_NO_FATAL_FAILURE(
-      this->sendLineAndExpect("$j1.raise($SIGTERM); $j1.wait()", ": Int = 143"));
+      this->sendLineAndExpect("$j1.kill($SIGTERM); $j1.wait()", ": Int = 143"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 0));
 }
 

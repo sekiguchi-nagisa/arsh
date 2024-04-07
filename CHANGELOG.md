@@ -6,6 +6,9 @@
 
 #### Builtin
 
+- **Breaking Change**: rename some ``Job`` type methods with corresponding builtin commands
+    - ``detach`` -> ``disown``
+    - ``raise`` -> ``kill``
 - ``complete`` command correctly recognize module (put ``module`` description instead of ``user-defined``)
 - complete flags/options defined via ``Flag``, ``Option`` attribute
 

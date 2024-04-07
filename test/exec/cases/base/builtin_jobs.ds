@@ -20,15 +20,15 @@ assert $? == 1
 var j = while(true) { true; } & 
 
 defer {
-    $j.raise($SIGKILL)
+    $j.kill($SIGKILL)
 }
 
 assert "$(jobs)" == "[1] + Running  while(true) { true; }"
 
 ### disowned
-$j.detach()
+$j.disown()
 assert "$(jobs)".empty()
-$j.raise($SIGKILL)
+$j.kill($SIGKILL)
 assert $j.wait() == 128 + $SIGKILL.value()
 
 ### coproc
@@ -36,7 +36,7 @@ $j = coproc {
     while(true 1) {}
 }
 sleep 1
-$j.raise($SIGSTOP)
+$j.kill($SIGSTOP)
 sleep 0.5
 $j.poll(); $j.poll()
 
@@ -53,7 +53,7 @@ var j2 = while(true) {
 } & 
 
 defer {
-    $j2.raise($SIGKILL)
+    $j2.kill($SIGKILL)
 }
 
 var out = IFS=$'\n' $(jobs)
@@ -85,7 +85,7 @@ assert $out[0] == "[1] - ${$j.pid(0)!} Stopped  {\n    while(true 1) {}\n}"
 
 # -l option (pipeline)
 var j3 = while(true) {} | true &
-defer { $j3.raise($SIGKILL); }
+defer { $j3.kill($SIGKILL); }
 sleep 0.5
 $j3.poll()
 $out = IFS=$'\n' $(jobs -l $j3)

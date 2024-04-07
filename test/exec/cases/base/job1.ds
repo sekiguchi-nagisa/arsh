@@ -84,22 +84,22 @@ assert $j2.wait() == 0
 # signal
 $j = for(;;) { true; } &
 assert $j.poll()
-$j.raise($SIGSTOP)
+$j.kill($SIGSTOP)
 assert $j.poll()
 
-$j.raise($SIGCONT)
+$j.kill($SIGCONT)
 assert $j.poll()
-$j.raise($SIGTERM)
+$j.kill($SIGTERM)
 assert $j.wait() == $SIGTERM.value() + 128
 assert $j.status(0)! == $SIGTERM.value() + 128
 assert !$j.poll()
 
 ## coredump
 $j = for(;;) { true; } &
-$j.raise($SIGQUIT)
+$j.kill($SIGQUIT)
 assert $j.wait() == $SIGQUIT.value() + 128
 assert !$j.poll()
-$j.raise($SIGTERM)   # do nothing
+$j.kill($SIGTERM)   # do nothing
 
 # handle SIGCONT
 function handle($s : Signal) {
@@ -108,14 +108,14 @@ function handle($s : Signal) {
 }
 $j = { $SIG['cont'].trap($handle); for(;;) { true; } } &
 sleep 1
-$j.raise($SIGSTOP)
-$j.raise($SIGCONT)
+$j.kill($SIGSTOP)
+$j.kill($SIGCONT)
 assert $j.wait() == $SIGCONT.value()
 assert $j.status(0)! == $SIGCONT.value()
 
 # detach
 $j = coproc { sleep 1; false; }
-$j.detach()
+$j.disown()
 assert $j as String == '%1'   # after detaching, still maintains valid job id
 assert $j.wait() == 1
 assert $j as String == '%0'

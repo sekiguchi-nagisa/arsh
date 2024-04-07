@@ -228,9 +228,9 @@ function poll(): Bool for Job
 
 function wait(): Int for Job
 
-function raise(s: Signal): Void for Job
+function kill(s: Signal): Void for Job
 
-function detach(): Void for Job
+function disown(): Void for Job
 
 function size(): Int for Job
 

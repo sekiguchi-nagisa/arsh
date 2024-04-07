@@ -2471,18 +2471,18 @@ ARSH_METHOD job_wait(RuntimeContext &ctx) {
   RET(Value::createInt(s));
 }
 
-//!bind: function raise($this : Job, $s : Signal) : Void
-ARSH_METHOD job_raise(RuntimeContext &ctx) {
-  SUPPRESS_WARNING(job_raise);
+//!bind: function kill($this : Job, $s : Signal) : Void
+ARSH_METHOD job_kill(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(job_kill);
   auto &obj = typeAs<JobObject>(LOCAL(0));
   obj.send(LOCAL(1).asSig());
   ctx.jobTable.waitForAny(); // update state of killed processes
   RET_VOID;
 }
 
-//!bind: function detach($this : Job) : Void
-ARSH_METHOD job_detach(RuntimeContext &ctx) {
-  SUPPRESS_WARNING(job_detach);
+//!bind: function disown($this : Job) : Void
+ARSH_METHOD job_disown(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(job_disown);
   auto job = toObjPtr<JobObject>(LOCAL(0));
   job->disown();
   RET_VOID;

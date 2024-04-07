@@ -3,7 +3,7 @@
 assert ulimit -u 1
 var js = new [Job]()
 function f($s : Int, $a : Any) {
-    for $j in $js { $j.raise($SIGKILL); }
+    for $j in $js { $j.kill($SIGKILL); }
 }
 $TERM_HOOK = $f
 echo hello;
