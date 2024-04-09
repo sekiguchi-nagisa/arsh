@@ -218,7 +218,7 @@ ProcBuilder &ProcBuilder::addArgs(const std::vector<std::string> &values) {
 
 ProcHandle ProcBuilder::operator()() const {
   return spawn(this->config, [&] {
-    char *argv[this->args.size() + 1];
+    auto *argv = static_cast<char **>(malloc(sizeof(char *) * (this->args.size() + 1)));
     for (unsigned int i = 0; i < this->args.size(); i++) {
       argv[i] = const_cast<char *>(this->args[i].c_str());
     }
@@ -230,6 +230,7 @@ ProcHandle ProcBuilder::operator()() const {
       this->beforeExec();
     }
     execvp(argv[0], argv);
+    free(argv);
     return -errno;
   });
 }

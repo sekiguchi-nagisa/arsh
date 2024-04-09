@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 
 #include <misc/buffer.hpp>
+#include <misc/inlined_array.hpp>
 #include <misc/ring_buffer.hpp>
 
 using namespace arsh;
@@ -453,6 +454,57 @@ TEST(RingBuffer, pop) {
   ASSERT_EQ("97", *buffer[0]);
   ASSERT_EQ("98", *buffer[1]);
   ASSERT_EQ("99", *buffer[2]);
+}
+
+TEST(InlinedArray, trivial) {
+  {
+    InlinedArray<int[2], 5> values(5);
+    ASSERT_EQ(5, values.size());
+    ASSERT_FALSE(values.isAllocated());
+    values[0][0] = 99;
+    values[0][1] = 3;
+    ASSERT_EQ(99, values[0][0]);
+    ASSERT_EQ(3, values[0][1]);
+  }
+
+  {
+    InlinedArray<const char *, 3> values2(5);
+    ASSERT_EQ(5, values2.size());
+    ASSERT_TRUE(values2.isAllocated());
+    values2[3] = "hello";
+    values2[4] = "world";
+    ASSERT_STREQ("hello", values2[3]);
+    ASSERT_STREQ("world", values2[4]);
+  }
+}
+
+struct AAA {
+  const char *name{nullptr};
+  unsigned int value{99};
+
+  AAA() = default;
+};
+
+TEST(InlinedArray, trivialCopyable) {
+  {
+    InlinedArray<AAA, 7> values(5);
+    ASSERT_EQ(5, values.size());
+    ASSERT_FALSE(values.isAllocated());
+    for (unsigned int i = 0; i < values.size(); i++) {
+      ASSERT_EQ(99, values[0].value);
+      ASSERT_FALSE(values[0].name);
+    }
+  }
+
+  {
+    InlinedArray<AAA, 2> values2(5);
+    ASSERT_EQ(5, values2.size());
+    ASSERT_TRUE(values2.isAllocated());
+    for (unsigned int i = 0; i < values2.size(); i++) {
+      ASSERT_EQ(99, values2[0].value);
+      ASSERT_FALSE(values2[0].name);
+    }
+  }
 }
 
 int main(int argc, char **argv) {

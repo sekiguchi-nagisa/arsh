@@ -347,17 +347,14 @@ static bool isFloat(const char *str) {
 
 JSON JSONParser::parseNumber() {
   auto token = this->expect(JSONTokenKind::NUMBER); // always success
-  char data[token.size + 1];
-  auto ref = this->lexer->toStrRef(token);
-  memcpy(data, ref.data(), ref.size());
-  data[token.size] = '\0';
+  auto data = this->lexer->toTokenText(token);
 
-  if (isFloat(data)) {
-    if (auto ret = convertToDouble(data)) {
+  if (isFloat(data.c_str())) {
+    if (auto ret = convertToDouble(data.c_str())) {
       return ret.value;
     }
   } else {
-    if (auto ret = convertToDecimal<int64_t>(data)) {
+    if (auto ret = convertToDecimal<int64_t>(data.c_str())) {
       return static_cast<int64_t>(ret.value);
     }
   }

@@ -21,6 +21,7 @@
 
 #include "job.h"
 #include "misc/files.hpp"
+#include "misc/inlined_array.hpp"
 #include "object.h"
 
 namespace arsh {
@@ -70,6 +71,15 @@ inline void closeAllPipe(unsigned int size, pipe_t *pipefds) {
     tryToClose(pipefds[i]);
   }
 }
+
+class PipeList : public InlinedArray<pipe_t, 6> {
+public:
+  explicit PipeList(size_t size) : InlinedArray(size) {}
+
+  void initAll() { initAllPipe(this->size(), this->ptr()); }
+
+  void closeAll() { closeAllPipe(this->size(), this->ptr()); }
+};
 
 inline void redirInToNull() {
   int fd = open("/dev/null", O_RDONLY);

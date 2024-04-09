@@ -1199,11 +1199,11 @@ bool VM::callPipeline(ARState &state, Value &&desc, bool lastPipe, ForkKind fork
   assert(pipeSize > 0);
 
   PipeSet pipeSet(forkKind);
-  int pipeFds[pipeSize][2];
-  initAllPipe(pipeSize, pipeFds);
+  PipeList pipes(pipeSize);
+  pipes.initAll();
 
   // fork
-  Proc children[procSize];
+  InlinedArray<Proc, 6> children(procSize);
   const auto procOp = resolveProcOp(state, forkKind);
   auto procOpRemain = procOp;
   unsetFlag(procOpRemain, Proc::Op::FOREGROUND); // remain process already foreground
@@ -1231,19 +1231,19 @@ bool VM::callPipeline(ARState &state, Value &&desc, bool lastPipe, ForkKind fork
    */
   if (proc.pid() == 0) {  // child
     if (procIndex == 0) { // first process
-      ::dup2(pipeFds[procIndex][WRITE_PIPE], STDOUT_FILENO);
+      ::dup2(pipes[procIndex][WRITE_PIPE], STDOUT_FILENO);
       pipeSet.setupChildStdin(forkKind, jobCtrl);
     }
     if (procIndex > 0 && procIndex < pipeSize) { // other process.
-      ::dup2(pipeFds[procIndex - 1][READ_PIPE], STDIN_FILENO);
-      ::dup2(pipeFds[procIndex][WRITE_PIPE], STDOUT_FILENO);
+      ::dup2(pipes[procIndex - 1][READ_PIPE], STDIN_FILENO);
+      ::dup2(pipes[procIndex][WRITE_PIPE], STDOUT_FILENO);
     }
     if (procIndex == pipeSize && !lastPipe) { // last process
-      ::dup2(pipeFds[procIndex - 1][READ_PIPE], STDIN_FILENO);
+      ::dup2(pipes[procIndex - 1][READ_PIPE], STDIN_FILENO);
       pipeSet.setupChildStdout();
     }
     pipeSet.closeAll(); // FIXME: check error and force exit (not propagate error due to uncaught)
-    closeAllPipe(pipeSize, pipeFds);
+    pipes.closeAll();
 
     // set pc to next instruction
     state.stack.ip() += read16(state.stack.ip() + 1 + procIndex * 2) - 1;
@@ -1252,18 +1252,19 @@ bool VM::callPipeline(ARState &state, Value &&desc, bool lastPipe, ForkKind fork
       /**
        * in last pipe, save current stdin before call dup2
        */
-      auto jobEntry = JobObject::create(procSize, children, true, state.emptyFDObj,
+      auto jobEntry = JobObject::create(procSize, children.ptr(), true, state.emptyFDObj,
                                         state.emptyFDObj, std::move(desc));
       state.jobTable.attach(jobEntry);
-      dup2(pipeFds[procIndex - 1][READ_PIPE], STDIN_FILENO);
-      closeAllPipe(pipeSize, pipeFds);
+      dup2(pipes[procIndex - 1][READ_PIPE], STDIN_FILENO);
+      pipes.closeAll();
       state.stack.push(Value::create<PipelineObject>(state, std::move(jobEntry)));
     } else {
       tryToClose(pipeSet.in[READ_PIPE]);
       tryToClose(pipeSet.out[WRITE_PIPE]);
-      closeAllPipe(pipeSize, pipeFds);
+      pipes.closeAll();
       Value obj;
-      if (!attachAsyncJob(state, std::move(desc), procSize, children, forkKind, pipeSet, obj)) {
+      if (!attachAsyncJob(state, std::move(desc), procSize, children.ptr(), forkKind, pipeSet,
+                          obj)) {
         return false;
       }
       if (obj) {

@@ -55,8 +55,8 @@ public:
 private:
   static constexpr unsigned char SIGNALED_STATUS_OFFSET = 128;
 
-  pid_t pid_;
-  State state_;
+  pid_t pid_{-1};
+  State state_{State::TERMINATED};
 
   /**
    * enabled when `state' is TERMINATED.
@@ -70,7 +70,7 @@ private:
   explicit Proc(pid_t pid) : pid_(pid), state_(State::RUNNING) {}
 
 public:
-  Proc() : pid_(-1), state_(State::TERMINATED) {}
+  Proc() = default;
 
   pid_t pid() const { return this->pid_; }
 
