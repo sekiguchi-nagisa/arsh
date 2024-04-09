@@ -1,5 +1,5 @@
 
-source $SCRIPT_DIR/../modules/completion
+source $SCRIPT_DIR/../modules/completion.arsh
 
 function _sudo($ctx : Module, $t : [String], $c : Int) : Candidates? {
     for(var i = 1; $i < $t.size(); $i++) {

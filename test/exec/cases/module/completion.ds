@@ -1,7 +1,7 @@
 
 # test cases for completion module
 
-source ../../../../share/arsh/modules/completion
+source ../../../../share/arsh/modules/completion.arsh
 
 $BASH_COMPLETION_PATH = $SCRIPT_NAME  ## force disable bash completion
 

@@ -1,7 +1,7 @@
 
 # for external bash completion-aware scripts
 
-source $SCRIPT_DIR/../modules/completion
+source $SCRIPT_DIR/../modules/completion.arsh
 
 # explicitly specify non-standard completion path
 {

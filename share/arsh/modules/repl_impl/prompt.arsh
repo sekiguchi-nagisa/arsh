@@ -4,7 +4,7 @@ var PS1 = '\u@\h:\W> '
 
 var PROMPT_HOOK : ((String) -> String)?
 
-source $SCRIPT_DIR/../prompt inlined
+source $SCRIPT_DIR/../prompt.arsh inlined
 
 var PROMPT_RENDERER = $renderPrompt as typeof($renderPrompt)?
 

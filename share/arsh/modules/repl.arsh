@@ -1,0 +1,35 @@
+
+# load default prompt setting
+source $SCRIPT_DIR/repl_impl/prompt.arsh inlined
+
+# load default history setting
+source $SCRIPT_DIR/repl_impl/history.arsh inlined
+
+# load key-bind manipulation
+source $SCRIPT_DIR/repl_impl/bind.arsh inlined
+
+# create DATA_HOME
+test -e $DATA_HOME || mkdir -p $DATA_HOME || true
+history -r  # manually load history
+
+# completion setting
+$LINE_EDIT.setCompletion(function(m, s) => {
+    complete -m $m -q -s -d -- $s
+    $COMPREPLY
+})
+source $DATA_DIR/completions/*.arsh
+
+# ISDIR setting
+source $SCRIPT_DIR/cnf.arsh inlined
+$ISDIR_HOOK = function($s : String) => cd $s && pwd
+
+# syntax highlight color setting
+if(command -v dscolorize &>> /dev/null) {
+    var color = "$(dscolorize --dump -s monokai_dimmed -f term256 2>> /dev/null)"
+    if $? == 0 {
+        $LINE_EDIT.config('color', $color)
+    }
+}
+
+# enable fzf integration
+source $SCRIPT_DIR/fzf.arsh

@@ -1,0 +1,4 @@
+
+source $SCRIPT_DIR/../modules/completion.arsh
+
+compdef --cmd which --arg-action cmd

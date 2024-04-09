@@ -1,7 +1,7 @@
 
 # git completion for arsh
 
-source $SCRIPT_DIR/../modules/completion
+source $SCRIPT_DIR/../modules/completion.arsh
 
 function _lookup() : String {
     if($OSTYPE == "darwin") {

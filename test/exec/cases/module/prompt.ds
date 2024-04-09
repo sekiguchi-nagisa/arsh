@@ -1,6 +1,6 @@
 # for prompt string
 
-source ../../../../share/arsh/modules/prompt
+source ../../../../share/arsh/modules/prompt.arsh
 
 function dirname($s : String) : String {
     if $s.startsWith($HOME) {

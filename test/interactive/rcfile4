@@ -1,6 +1,6 @@
 # for interactive test
 # for promtp test
 
-source ../../share/arsh/modules/repl_impl/prompt inlined
+source ../../share/arsh/modules/repl_impl/prompt.arsh inlined
 
 $PS1= '\s-\v\$ '

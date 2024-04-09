@@ -13,6 +13,11 @@
 - complete flags/options defined via ``Flag``, ``Option`` attribute
 - builtin ``kill`` command support ``-L`` (equivalent to ``-l`` option)
 
+#### Module
+
+- **Breaking Change**: add ``.arsh`` file extension to std modules
+    - add symlink ``repl``, ``completion`` for compatibility
+
 #### Misc
 
 - install ``litecheck`` to ``${DATA_DIR/tools}`` by default

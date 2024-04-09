@@ -1,5 +1,5 @@
 
-source $SCRIPT_DIR/../modules/completion
+source $SCRIPT_DIR/../modules/completion.arsh
 
 function _cmd($ctx : Module, $t : [String], $c : Int) : Candidates? {
     if $t.size() == 1 || $c == 1{
@@ -66,7 +66,7 @@ function _shctl($ctx : Module, $t : [String], $c : Int) : Candidates {
     }
 }
 
-source $SCRIPT_DIR/../modules/fzf as _fzf
+source $SCRIPT_DIR/../modules/fzf.arsh as _fzf
 
 function _kill($ctx : Module, $t : [String], $c : Int) : Candidates? {
     let size = $t.size()

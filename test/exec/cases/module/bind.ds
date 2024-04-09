@@ -1,5 +1,5 @@
 
-source ../../../../share/arsh/modules/repl_impl/bind
+source ../../../../share/arsh/modules/repl_impl/bind.arsh
 
 # -l option
 assert diff <(bind -l) <(for a in $LINE_EDIT.actions().sort() { echo $a; })

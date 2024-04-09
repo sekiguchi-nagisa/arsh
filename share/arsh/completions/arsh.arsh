@@ -1,5 +1,5 @@
 
-source $SCRIPT_DIR/../modules/completion
+source $SCRIPT_DIR/../modules/completion.arsh
 
 ## arsh completion
 call $BIN_NAME --help | grep '  -' | cut -d ' ' -f 3 | cut -d '[' -f 1 |
