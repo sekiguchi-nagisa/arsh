@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.33.2] - 2024-04-xx
+## [0.33.2] - 2024-04-11
 
 - now can use local installed ``re2c`` (require v2.0.0 or later)
 - can disable CTest build
