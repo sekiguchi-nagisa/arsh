@@ -18,9 +18,11 @@
 - **Breaking Change**: add ``.arsh`` file extension to std modules
     - add symlink ``repl``, ``completion`` for compatibility
 
-#### Misc
+## [0.33.2] - 2024-04-11
 
-- install ``litecheck`` to ``${DATA_DIR/tools}`` by default
+- now can use local installed ``re2c`` (require v2.0.0 or later)
+- can disable CTest build
+- install ``litecheck`` to ``$DATA_DIR/tools`` by default
 
 ## [0.33.1] - 2024-04-02
 
