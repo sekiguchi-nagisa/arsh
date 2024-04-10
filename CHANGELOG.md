@@ -4,7 +4,7 @@
 
 - now can use local installed ``re2c`` (require v2.0.0 or later)
 - can disable CTest build
-- install ``litecheck`` to ``${DATA_DIR/tools}`` by default
+- install ``litecheck`` to ``$DATA_DIR/tools`` by default
 
 ## [0.33.1] - 2024-04-02
 
