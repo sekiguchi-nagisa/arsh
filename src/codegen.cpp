@@ -867,6 +867,9 @@ void ByteCodeGenerator::visitApplyNode(ApplyNode &node) {
       this->emitBranchIns(OpCode::IF_INVALID, this->peekLoopLabels().breakLabel);
     }
     this->visit(node.getArgsNode());
+    if (node.getAssertOp() != AssertOp::DEFAULT) {
+      this->emit0byteIns(OpCode::DUP2);
+    }
     this->emitSourcePos(node.getActualPos());
     this->emitMethodCallIns(*node.getHandle());
     if (node.getAttr() == ApplyNode::ITER_NEXT) {
@@ -1080,15 +1083,25 @@ void ByteCodeGenerator::visitForkNode(ForkNode &node) {
 
 void ByteCodeGenerator::visitAssertNode(AssertNode &node) {
   auto mergeLabel = makeLabel();
+  auto elseLabel = makeLabel();
   this->emitBranchIns(OpCode::ASSERT_ENABLED, mergeLabel);
 
   this->visit(node.getCondNode());
-  this->emitBranchIns(OpCode::BRANCH_NOT, mergeLabel);
+  this->emitBranchIns(OpCode::BRANCH_NOT, elseLabel);
 
   this->visit(node.getMessageNode());
   this->emitSourcePos(node.getCondNode().getPos());
-  this->emit0byteIns(OpCode::ASSERT_FAIL);
+  if (const auto op = node.resolveAssertOp(); op == AssertOp::DEFAULT) {
+    this->emit0byteIns(OpCode::ASSERT_FAIL);
+  } else {
+    this->emit1byteIns(OpCode::ASSERT_FAIL2, toUnderlying(op));
+  }
 
+  this->markLabel(elseLabel);
+  if (node.resolveAssertOp() != AssertOp::DEFAULT) {
+    this->emit0byteIns(OpCode::POP);
+    this->emit0byteIns(OpCode::POP);
+  }
   this->markLabel(mergeLabel);
 }
 

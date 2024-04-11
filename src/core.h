@@ -75,6 +75,12 @@ inline void raiseStringLimit(ARState &st) { raiseOutOfRangeError(st, ERROR_STRIN
  */
 void raiseShellExit(ARState &st, int64_t status);
 
+void raiseAssertFail(ARState &st, Value &&msg, AssertOp op, Value &&left, Value &&right);
+
+inline void raiseAssertFail(ARState &st, Value &&msg) {
+  raiseAssertFail(st, std::move(msg), AssertOp::DEFAULT, Value(), Value());
+}
+
 /**
  * print error message with current location (source:lineno)
  * emit newline

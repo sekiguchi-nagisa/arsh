@@ -13,8 +13,9 @@ assert test -x $BIN_NAME
 
 function expect($out : String, $es : Int, $eout : String) {
     let s = $?
-    assert $s == $es : "expect: $es, actual: $s"
-    assert $out == $eout : "${(
+    assert $s == $es
+    var c = $out == $eout
+    assert $c : "${(
         diff <(echo -n $eout) <(echo -n $out)
     )}"
     $? = 0
@@ -22,12 +23,8 @@ function expect($out : String, $es : Int, $eout : String) {
 
 function expectRegex($out : String, $es : Int, $eout : Regex) {
     let s = $?
-    assert $s == $es : "expect: $es, actual: $s"
-    assert $eout =~ $out : "
-expect regex: $eout
-
-actual: $out
-"
+    assert $s == $es
+    assert $eout =~ $out
     $? = 0
 }
 

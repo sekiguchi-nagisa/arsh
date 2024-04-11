@@ -33,6 +33,7 @@ namespace arsh {
   OP(HALT, 0, 0)                                                                                   \
   OP(ASSERT_ENABLED, 2, 0)                                                                         \
   OP(ASSERT_FAIL, 0, -1)                                                                           \
+  OP(ASSERT_FAIL2, 1, -3)                                                                          \
   OP(PRINT, 3, -1)                                                                                 \
   OP(INSTANCE_OF, 3, 0)                                                                            \
   OP(CHECK_CAST, 3, 0)                                                                             \

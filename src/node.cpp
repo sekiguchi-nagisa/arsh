@@ -376,6 +376,14 @@ void ApplyNode::dump(NodeDumper &dumper) const {
 
   DUMP_ENUM(attr, EACH_ENUM);
 #undef EACH_ENUM
+
+#define EACH_ENUM(OP)                                                                              \
+  OP(AssertOp::DEFAULT)                                                                            \
+  OP(AssertOp::EQ)                                                                                 \
+  OP(AssertOp::MATCH)
+
+  DUMP_ENUM(assertOp, EACH_ENUM);
+#undef EACH_ENUM
 }
 
 // #####################

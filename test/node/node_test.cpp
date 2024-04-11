@@ -322,6 +322,7 @@ nodes:
     handle: null
     kind: "METHOD_CALL"
     attr: "DEFAULT"
+    assertOp: "AssertOp::DEFAULT"
 )"},
 
     {DumpOp::untyped, R"(34+1)", 0, 0, R"(
@@ -685,6 +686,7 @@ nodes:
       handle: null
       kind: "METHOD_CALL"
       attr: "DEFAULT"
+      assertOp: "AssertOp::DEFAULT"
     messageNode:
       nodeKind: String
       token:
@@ -1278,6 +1280,7 @@ nodes:
               handle: null
               kind: "FUNC_CALL"
               attr: "DEFAULT"
+              assertOp: "AssertOp::DEFAULT"
             - nodeKind: Jump
               token:
                 pos: 0

@@ -1283,6 +1283,17 @@ void TypeChecker::visitForkNode(ForkNode &node) {
 void TypeChecker::visitAssertNode(AssertNode &node) {
   this->checkTypeWithCoercion(this->typePool().get(TYPE::Bool), node.refCondNode());
   this->checkType(this->typePool().get(TYPE::String), node.getMessageNode());
+  if (isa<BinaryOpNode>(node.getCondNode())) {
+    auto &binaryNode = cast<BinaryOpNode>(node.getCondNode());
+    if (isa<ApplyNode>(binaryNode.getOptNode())) {
+      auto &applyNode = cast<ApplyNode>(*binaryNode.getOptNode());
+      const auto opKind = binaryNode.getOp();
+      const auto op = opKind == TokenKind::EQ      ? AssertOp::EQ
+                      : opKind == TokenKind::MATCH ? AssertOp::MATCH
+                                                   : AssertOp::DEFAULT;
+      applyNode.setAssertOp(op);
+    }
+  }
   node.setType(this->typePool().get(TYPE::Void));
 }
 

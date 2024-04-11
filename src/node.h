@@ -894,13 +894,13 @@ public:
  */
 class ApplyNode : public WithRtti<Node, NodeKind::Apply> {
 public:
-  enum Kind : unsigned int {
+  enum Kind : unsigned char {
     UNRESOLVED,
     FUNC_CALL,
     METHOD_CALL,
   };
 
-  enum Attr : unsigned int {
+  enum Attr : unsigned char {
     DEFAULT,
     INDEX,
     UNARY,
@@ -923,6 +923,8 @@ private:
   Kind kind;
 
   Attr attr{DEFAULT};
+
+  AssertOp assertOp{AssertOp::DEFAULT}; // for assert
 
 public:
   ApplyNode(std::unique_ptr<Node> &&exprNode, std::unique_ptr<ArgsNode> &&argsNode,
@@ -1047,6 +1049,10 @@ public:
     auto second = std::move(node->argsNode->refNodes()[0]);
     return {std::move(first), std::move(second)};
   }
+
+  AssertOp getAssertOp() const { return this->assertOp; }
+
+  void setAssertOp(AssertOp op) { this->assertOp = op; }
 
   void dump(NodeDumper &dumper) const override;
 
@@ -1217,6 +1223,7 @@ private:
 
   /**
    * initial value is null
+   * may be ApplyNode
    */
   std::unique_ptr<Node> optNode;
 
@@ -1255,12 +1262,10 @@ public:
    */
   Node *getOptNode() const { return this->optNode.get(); }
 
-  void setOptNode(std::unique_ptr<Node> &&node) { this->optNode = std::move(node); }
-
   void createApplyNode() {
     auto applyNode = ApplyNode::newBinary(std::move(this->leftNode), this->op, this->opToken,
                                           std::move(this->rightNode));
-    this->setOptNode(std::move(applyNode));
+    this->optNode = std::move(applyNode);
   }
 
   void dump(NodeDumper &dumper) const override;
@@ -1687,6 +1692,16 @@ public:
   std::unique_ptr<Node> &refCondNode() { return this->condNode; }
 
   Node &getMessageNode() const { return *this->messageNode; }
+
+  AssertOp resolveAssertOp() const {
+    if (isa<BinaryOpNode>(*this->condNode)) {
+      if (const auto &binaryNode = cast<BinaryOpNode>(*this->condNode);
+          isa<ApplyNode>(binaryNode.getOptNode())) {
+        return cast<ApplyNode>(binaryNode.getOptNode())->getAssertOp();
+      }
+    }
+    return AssertOp::DEFAULT;
+  }
 
   void dump(NodeDumper &dumper) const override;
 };

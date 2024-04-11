@@ -4,6 +4,11 @@
 
 ### Changed
 
+#### Core
+
+- improve assertion error message of binary ``==`` and ``=~`` expression
+    - now show left hand-side, right hand-side expression value
+
 #### Builtin
 
 - **Breaking Change**: rename some ``Job`` type methods with corresponding builtin commands

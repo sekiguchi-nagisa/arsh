@@ -436,6 +436,12 @@ inline const char *toString(ExpandMeta meta) {
   return ""; // normally unreachable
 }
 
+enum class AssertOp : unsigned char {
+  DEFAULT,
+  EQ,    // ==
+  MATCH, // =~
+};
+
 struct ConstEntry {
   enum Kind : unsigned char {
     INT,

@@ -1373,8 +1373,15 @@ bool VM::mainLoop(ARState &state) {
       }
       vmcase(ASSERT_FAIL) {
         auto msg = state.stack.pop();
-        auto ref = msg.asStrRef();
-        raiseError(state, TYPE::AssertFail_, ref.toString());
+        raiseAssertFail(state, std::move(msg));
+        vmerror;
+      }
+      vmcase(ASSERT_FAIL2) {
+        const auto assertOp = static_cast<AssertOp>(consume8(state.stack.ip()));
+        auto msg = state.stack.pop();
+        auto right = state.stack.pop();
+        auto left = state.stack.pop();
+        raiseAssertFail(state, std::move(msg), assertOp, std::move(left), std::move(right));
         vmerror;
       }
       vmcase(PRINT) {

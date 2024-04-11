@@ -18,15 +18,32 @@ TEST_F(InteractiveTest, arg) {
       "assert $@[0] == 'hello'; assert $@[1] == 'world'; exit", 0, WaitStatus::EXITED));
 }
 
-TEST_F(InteractiveTest, assert) {
+TEST_F(InteractiveTest, assert1) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+
+  const char *e = R"([runtime error]
+Assertion Error: `(false)'
+    from (stdin):1 '<toplevel>()'
+)";
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("assert(false)", 1, WaitStatus::EXITED, "", e));
+}
+
+TEST_F(InteractiveTest, assert2) {
   this->invoke("--quiet", "--norc", "-s", "hello", "world");
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
 
-  const char *e = "[runtime error]\n"
-                  "Assertion Error: `(1 == 2)'\n"
-                  "    from (stdin):1 '<toplevel>()'\n";
-  ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("assert(1 == 2)", 1, WaitStatus::EXITED, "", e));
+  const char *e = R"([runtime error]
+Assertion Error: `($x == $y)'
+binary expression `<LHS> == <RHS>' is false
+  <LHS>: Int = 1
+  <RHS>: Int = 2
+    from (stdin):2 '<toplevel>()'
+)";
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("var x = 1; var y = 2;"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("assert($x == $y)", 1, WaitStatus::EXITED, "", e));
 }
 
 TEST_F(InteractiveTest, status) {

@@ -322,6 +322,7 @@ nodes:
               handle: \"9\"
               kind: \"METHOD_CALL\"
               attr: \"BINARY\"
+              assertOp: \"AssertOp::DEFAULT\"
           targetTypeNode: null
           opKind: \"TO_VOID\"
         - nodeKind: Jump

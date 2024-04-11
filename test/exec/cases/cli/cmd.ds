@@ -15,6 +15,9 @@ $expect("$(ds -c '#echo hello' 2>&1)", 0, '') # do nothing
 # assertion
 var msg = "[runtime error]
 Assertion Error: \`(12 == 4)'
+binary expression \`<LHS> == <RHS>' is false
+  <LHS>: Int = 12
+  <RHS>: Int = 4
     from (string):1 '<toplevel>()'"
 
 $expect("$(ds -c 'assert(12 == 4)' 2>&1)", 1, $msg)

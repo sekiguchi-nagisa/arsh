@@ -114,8 +114,8 @@ Line Number Table:
 Exception Table:
 
 DSCode: command f
-  code size: 42
-  max stack depth: 3
+  code size: 46
+  max stack depth: 5
   number of local variable: 6
 Code:
    0: PUSH_INT  23
@@ -129,14 +129,17 @@ Code:
   16: ENTER_FINALLY  22
   21: RETURN_UDC
   22: RECLAIM_LOCAL  5  1
-  25: ASSERT_ENABLED  16
+  25: ASSERT_ENABLED  20
   28: LOAD_LOCAL  4
   30: PUSH_INT  99
-  32: CALL_BUILTIN  2  %b_==
-  35: BRANCH_NOT  6
-  38: LOAD_CONST  0
-  40: ASSERT_FAIL
-  41: EXIT_FINALLY
+  32: DUP2
+  33: CALL_BUILTIN  2  %b_==
+  36: BRANCH_NOT  7
+  39: LOAD_CONST  0
+  41: ASSERT_FAIL2  1
+  43: POP
+  44: POP
+  45: EXIT_FINALLY
 Constant Pool:
   0: String \`\$a == 99'
 Line Number Table:

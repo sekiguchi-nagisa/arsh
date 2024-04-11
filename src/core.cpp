@@ -88,6 +88,35 @@ void raiseShellExit(ARState &st, int64_t status) {
   raiseError(st, TYPE::ShellExit_, std::move(str), s);
 }
 
+void raiseAssertFail(ARState &st, Value &&msg, const AssertOp op, Value &&left, Value &&right) {
+  switch (op) {
+  case AssertOp::DEFAULT:
+    break;
+  case AssertOp::EQ:
+  case AssertOp::MATCH: {
+    std::string value;
+    const StringRef ref = msg.asStrRef();
+    constexpr auto MAX_PRINTABLE = SYS_LIMIT_PRINTABLE_MAX >> 1;
+    value.append(ref.data(), std::min(ref.size(), MAX_PRINTABLE));
+    value += "\nbinary expression `<LHS> ";
+    value += op == AssertOp::EQ ? "==" : "=~";
+    value += " <RHS>' is false\n";
+    value += "  <LHS>: ";
+    value += st.typePool.get(left.getTypeID()).getNameRef();
+    value += " = ";
+    appendAsPrintable(left.toString(), MAX_PRINTABLE + value.size(), value);
+    value += "\n  <RHS>: ";
+    value += st.typePool.get(right.getTypeID()).getNameRef();
+    value += " = ";
+    appendAsPrintable(right.toString(), MAX_PRINTABLE + value.size(), value);
+    msg = Value::createStr(std::move(value));
+    break;
+  }
+  }
+  auto except = ErrorObject::newError(st, st.typePool.get(TYPE::AssertFail_), std::move(msg), 1);
+  st.throwObject(std::move(except));
+}
+
 bool printErrorAt(const ARState &state, StringRef cmdName, int errNum, const char *fmt, ...) {
   // get current frame
   std::string sourceName;
