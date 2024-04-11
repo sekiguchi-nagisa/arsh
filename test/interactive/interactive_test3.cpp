@@ -310,10 +310,10 @@ TEST_F(InteractiveTest, wait2) {
   this->invoke("--quiet", "--norc");
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
-  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("{ sleep 1; exit 45; } &", ": Job = %1"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("{ sleep 0.5; exit 45; } &", ": Job = %1"));
   std::this_thread::sleep_for(std::chrono::seconds(1));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpectRegex(
-      "1230 + 4", ": Int = 1234", "^\\[1\\] \\+ [0-9]+ Exit 45  \\{ sleep 1; exit 45; \\}\n"));
+      "1230 + 4", ": Int = 1234", "^\\[1\\] \\+ [0-9]+ Exit 45  \\{ sleep 0.5; exit 45; \\}\n"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 0));
 }
 
@@ -420,10 +420,8 @@ TEST_F(InteractiveTest, disown1) {
       this->sendLineAndExpect("disown %1", "", "(stdin):8: disown: %1: no such job\n"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("wait $j1; assert $? == 127", "",
                                                   "(stdin):9: wait: %1: no such job\n"));
-  ASSERT_NO_FATAL_FAILURE(
-      this->sendLineAndExpect("$j1.kill($SIGKILL); $j1.wait()", ": Int = 137"));
-  ASSERT_NO_FATAL_FAILURE(
-      this->sendLineAndExpect("$j2.kill($SIGTERM); $j2.wait()", ": Int = 143"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$j1.kill($SIGKILL); $j1.wait()", ": Int = 137"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$j2.kill($SIGTERM); $j2.wait()", ": Int = 143"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 127));
 }
 
@@ -437,8 +435,7 @@ TEST_F(InteractiveTest, disown2) {
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("jobs", "[1] + Running  while(true 1){}"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("disown; assert $? == 0"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("jobs"));
-  ASSERT_NO_FATAL_FAILURE(
-      this->sendLineAndExpect("$j1.kill($SIGTERM); $j1.wait()", ": Int = 143"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$j1.kill($SIGTERM); $j1.wait()", ": Int = 143"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 0));
 }
 
