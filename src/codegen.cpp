@@ -1499,7 +1499,7 @@ void ByteCodeGenerator::visitTryNode(TryNode &node) {
 
     auto &catchType = innerNode->getTypeNode().getType();
     this->catchException(beginLabel, endLabel, catchType, blockNode.getBaseIndex(),
-                         blockNode.getVarSize(), this->tryFinallyLabels().size());
+                         blockNode.getMaxVarSize(), this->tryFinallyLabels().size());
     this->visit(*catchNode, CmdCallCtx::AUTO);
     if (!catchNode->getType().isNothingType()) {
       if (hasFinally) {

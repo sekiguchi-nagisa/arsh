@@ -1,7 +1,7 @@
 
 source $SCRIPT_DIR/expect.ds
 
-## for defer code layput
+## for defer code layout
 
 var out = "### dump compiled code ###
 Source File: (string)
