@@ -1,0 +1,41 @@
+
+# for lastpipe
+shctl set errraise
+
+## raise in last-pipe (external)
+var ex = 345 as Any
+try {
+    ls | for a in $STDIN { sh -c 'exit 56'; echo $a; }
+} catch e { $ex = $e; }
+assert ($ex as ExecError).message() == "command exits with non-zero status: \`56'"
+
+assert $PIPESTATUS.size() == 2
+assert $PIPESTATUS[0] == 0
+assert $PIPESTATUS[1] == 56
+
+## raise in last-pipe (builtin)
+$ex = 45643652
+try {
+    ls | for a in $STDIN { sh -c 'exit 156'; echo $a; } | { false; }
+} catch e { $ex = $e; }
+assert ($ex as ExecError).message() == "command exits with non-zero status: \`1'"
+
+assert $PIPESTATUS.size() == 3
+assert $PIPESTATUS[0] == 0
+assert $PIPESTATUS[1] == 156
+assert $PIPESTATUS[2] == 1
+
+## raise in last-pipe (user-defined)
+ff() { return $1.toInt() ?? 99; }
+$ex = 45643652
+try {
+    ls | for a in $STDIN { ff 67; echo $a; } | { ff 145; }
+} catch e { $ex = $e; }
+assert ($ex as ExecError).message() == "command exits with non-zero status: \`145'"
+
+assert $PIPESTATUS.size() == 3
+assert $PIPESTATUS[0] == 0
+assert $PIPESTATUS[1] == 67
+assert $PIPESTATUS[2] == 145
+
+true

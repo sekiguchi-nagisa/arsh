@@ -11,8 +11,8 @@ function assertStatus($s : Int, $e : Any, $ln : Int) {
     var lineno = ($e as ExecError).lineno()
     var r = $/\d+/.match($m)
     var actual = $r!.group(0)!.toInt()!
-    assert $s == $actual : "mismatch status, expect: $s, actual: $actual"
-    assert $lineno == $ln : "mismatch lineno, expect: $ln, actual: $lineno"
+    assert $s == $actual
+    assert $lineno == $ln
 }
 
 
@@ -173,7 +173,7 @@ try {
 } catch $e { $ex = $e; }
 $assertStatus(167, $ex, 171)
 
-## backgorund pipeline
+## background pipeline
 var jj = { sh -c "exit 156"; true; } | false &
 assert $jj.wait() == 1
 assert $jj.status(0)! == 156
