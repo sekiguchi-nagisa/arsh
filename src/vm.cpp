@@ -913,10 +913,10 @@ bool VM::callCommand(ARState &state, const ResolvedCmd &cmd, ObjPtr<ArrayObject>
     if (state.hasError()) {
       return false;
     }
+    pushExitStatus(state, status); // set exit status before check ERR_RAISE
     if (!checkCmdExecError(state, attr, status)) {
       return false;
     }
-    pushExitStatus(state, status);
     return true;
   }
   case ResolvedCmd::MODULE:
@@ -1175,10 +1175,10 @@ int VM::builtinExec(ARState &state, ArrayObject &argvObj, Value &&redir) {
 bool VM::returnFromUserDefinedCommand(ARState &state, int64_t status) {
   const auto attr = static_cast<CmdCallAttr>(state.stack.getLocal(UDC_PARAM_ATTR).asNum());
   state.stack.unwind();
+  pushExitStatus(state, status); // set exit status before check ERR_RAISE
   if (!checkCmdExecError(state, attr, status)) {
     return false;
   }
-  pushExitStatus(state, status);
   assert(!state.stack.checkVMReturn());
   return true;
 }
