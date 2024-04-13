@@ -198,6 +198,17 @@ TEST_F(VMTest, deinit10) {
                  [&] { ASSERT_NO_FATAL_FAILURE(RefCount("@", 1)); }));
 }
 
+TEST_F(VMTest, deinit11) {
+  const char *code = R"(
+  try {
+    var a = 34
+    { var b = $@; $b.size()/0; }
+  } catch e { $RANDOM; }
+)";
+  ASSERT_NO_FATAL_FAILURE(this->eval(code, AR_ERROR_KIND_SUCCESS, OpCode::RAND,
+                                     [&] { ASSERT_NO_FATAL_FAILURE(RefCount("@", 1)); }));
+}
+
 TEST_F(VMTest, stacktop) {
   const char *text = R"(
 {

@@ -23,6 +23,10 @@
 - **Breaking Change**: add ``.arsh`` file extension to std modules
     - add symlink ``repl``, ``completion`` for compatibility
 
+### Fixed
+
+- bugfix code generation of catch block with nested blocks (fix potential resource leak)
+
 ## [0.33.2] - 2024-04-11
 
 - now can use local installed ``re2c`` (require v2.0.0 or later)

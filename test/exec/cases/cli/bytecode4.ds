@@ -65,3 +65,86 @@ Line Number Table:
 Exception Table:"
 
 $expect("$(ds --dump-code -n -c 'echo {-01..6..-2}')", 0, $out)
+
+
+## try-catch
+$out = "### dump compiled code ###
+Source File: (string)
+DSCode: top level
+  code size: 50
+  max stack depth: 4
+  number of local variable: 2
+  number of global variable: 52
+Code:
+   0: TRY_GUARD0
+   1: LOAD_GLOBAL  13
+   4: STORE_LOCAL  0
+   6: LOAD_CONST  2
+   8: PIPELINE_LP 2  6  12
+  14: LOAD_CONST  3
+  16: NEW_CMD
+  17: PUSH_NULL
+  18: CALL_CMD_NOFORK
+  19: HALT
+  20: STORE_LOCAL  1
+  22: PUSH_FALSE
+  23: RECLAIM_LOCAL  1  1
+  26: POP
+  27: PUSH_INT  34
+  29: STORE_LOCAL  1
+  31: RECLAIM_LOCAL  1  1
+  34: RECLAIM_LOCAL  0  1
+  37: JUMP_TRY  48
+  42: POP
+  43: GOTO  48
+  48: PUSH_INVALID
+  49: RETURN
+Constant Pool:
+  0: String (string)
+  1: String $(pwd)
+  2: String echo\x00\$false
+  3: String echo
+Line Number Table:
+  lineNum: 1, address:  1
+Exception Table:
+  begin: 14, end: 19, type: process guard%%, dest: 19, offset: 0, size: 0, level: 0
+  begin: 0, end: 37, type: Error, dest: 42, offset: 0, size: 2, level: 1"
+
+$expect("$(ds --dump-code -n -c 'try { var a = $STDIN; echo | $false; {var b = 34; } } catch _ {}')", 0, $out)
+
+
+$out = "### dump compiled code ###
+Source File: (string)
+DSCode: top level
+  code size: 36
+  max stack depth: 3
+  number of local variable: 2
+  number of global variable: 52
+Code:
+   0: TRY_GUARD0
+   1: LOAD_GLOBAL  13
+   4: STORE_LOCAL  0
+   6: NEW_REDIR
+   7: LOAD_CONST  2
+   9: ADD_REDIR_OP1  2
+  11: DO_REDIR
+  12: STORE_LOCAL  1
+  14: PUSH_INT  34
+  16: RECLAIM_LOCAL  1  1
+  19: RECLAIM_LOCAL  0  1
+  22: POP
+  23: JUMP_TRY  34
+  28: POP
+  29: GOTO  34
+  34: PUSH_INVALID
+  35: RETURN
+Constant Pool:
+  0: String (string)
+  1: String $(pwd)
+  2: String /dev/null
+Line Number Table:
+  lineNum: 1, address:  1
+Exception Table:
+  begin: 0, end: 23, type: Error, dest: 28, offset: 0, size: 2, level: 1"
+
+$expect("$(ds --dump-code -n -c 'try { var a = $STDIN; 34 with > /dev/null; } catch _ {}')", 0, $out)
