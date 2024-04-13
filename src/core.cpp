@@ -104,11 +104,13 @@ void raiseAssertFail(ARState &st, Value &&msg, const AssertOp op, Value &&left, 
     value += "  <LHS>: ";
     value += st.typePool.get(left.getTypeID()).getNameRef();
     value += " = ";
-    appendAsPrintable(left.toString(), MAX_PRINTABLE + value.size(), value);
+    appendAsPrintable(left.hasStrRef() ? left.asStrRef() : left.toString(),
+                      MAX_PRINTABLE + value.size(), value);
     value += "\n  <RHS>: ";
     value += st.typePool.get(right.getTypeID()).getNameRef();
     value += " = ";
-    appendAsPrintable(right.toString(), MAX_PRINTABLE + value.size(), value);
+    appendAsPrintable(right.hasStrRef() ? right.asStrRef() : right.toString(),
+                      MAX_PRINTABLE + value.size(), value);
     msg = Value::createStr(std::move(value));
     break;
   }
