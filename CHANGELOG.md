@@ -6,6 +6,7 @@
 
 #### Core
 
+- **Breaking Change**: in process substitution, internal job object no longer maintain created ``FD`` object
 - improve assertion error message of binary ``==`` and ``=~`` expression
     - now show left hand-side, right hand-side expression value
 

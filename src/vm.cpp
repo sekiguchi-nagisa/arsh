@@ -416,10 +416,12 @@ bool VM::attachAsyncJob(ARState &state, Value &&desc, unsigned int procSize, con
   case ForkKind::OUT_PIPE: {
     int &fd = forkKind == ForkKind::IN_PIPE ? pipeSet.in[WRITE_PIPE] : pipeSet.out[READ_PIPE];
     const auto fdObj = newFD(state, fd);
-    const auto entry = JobObject::create(
-        procSize, procs, false, forkKind == ForkKind::IN_PIPE ? fdObj : state.emptyFDObj,
-        forkKind == ForkKind::OUT_PIPE ? fdObj : state.emptyFDObj, std::move(desc));
-    state.jobTable.attach(entry, true);
+    /**
+     * job object does not maintain <(), >() file descriptor
+     */
+    const auto entry = JobObject::create(procSize, procs, false, state.emptyFDObj, state.emptyFDObj,
+                                         std::move(desc));
+    state.jobTable.attach(entry, true); // always disowned
     ret = fdObj;
     break;
   }
