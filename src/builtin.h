@@ -1853,10 +1853,12 @@ ARSH_METHOD array_next(RuntimeContext &ctx) {
 ARSH_METHOD map_get(RuntimeContext &ctx) {
   SUPPRESS_WARNING(map_get);
   auto &obj = typeAs<OrderedMapObject>(LOCAL(0));
-  auto retIndex = obj.lookup(LOCAL(1));
+  auto &key = LOCAL(1);
+  auto retIndex = obj.lookup(key);
   if (retIndex == -1) {
-    std::string msg("not found key: ");
-    msg += LOCAL(1).toString();
+    std::string msg = "not found key: ";
+    appendAsPrintable(key.hasStrRef() ? key.asStrRef() : key.toString(), SYS_LIMIT_ERROR_MSG_MAX,
+                      msg);
     raiseError(ctx, TYPE::KeyNotFoundError, std::move(msg));
     RET_ERROR;
   }
@@ -1932,10 +1934,12 @@ ARSH_METHOD map_swap(RuntimeContext &ctx) {
   auto &obj = typeAs<OrderedMapObject>(LOCAL(0));
   CHECK_ITER_INVALIDATION(obj);
   Value value = LOCAL(2);
-  auto retIndex = obj.lookup(LOCAL(1));
+  auto &key = LOCAL(1);
+  auto retIndex = obj.lookup(key);
   if (retIndex == -1) {
-    std::string msg("not found key: ");
-    msg += LOCAL(1).toString();
+    std::string msg = "not found key: ";
+    appendAsPrintable(key.hasStrRef() ? key.asStrRef() : key.toString(), SYS_LIMIT_ERROR_MSG_MAX,
+                      msg);
     raiseError(ctx, TYPE::KeyNotFoundError, std::move(msg));
     RET_ERROR;
   }

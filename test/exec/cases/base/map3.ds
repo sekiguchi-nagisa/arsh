@@ -1,0 +1,18 @@
+# too large key
+
+printf -v var "%*s" 2147483640 @
+let v = $reply.remove('var')!
+
+var ex = 34 as Any
+try {
+    assert $reply[$v] == 'hey'
+} catch e { $ex = $e; }
+assert ($ex as KeyNotFoundError).message().startsWith('not found key:     ')
+assert ($ex as KeyNotFoundError).message().size() < $v.size()
+
+
+$ex = 3425
+try {
+    $reply.swap($v, 'hey')
+} catch e { $ex = $e; }
+assert ($ex as KeyNotFoundError).message().startsWith('not found key:     ')
