@@ -378,7 +378,8 @@ void ByteCodeGenerator::generatePipeline(const PipelineNode &node, ForkKind fork
   this->markLabel(labels.back());
 
   if (lastPipe) { // generate last pipe
-    this->generateBlock(node.getBaseIndex(), 1, true, [&] {
+    const bool needReclaim = !node.getNodes().back()->getType().isNothingType();
+    this->generateBlock(node.getBaseIndex(), 1, needReclaim, [&] {
       this->emit1byteIns(OpCode::STORE_LOCAL, node.getBaseIndex());
       this->visit(*node.getNodes().back(), CmdCallCtx::AUTO);
     });
