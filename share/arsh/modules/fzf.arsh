@@ -4,6 +4,8 @@
 function _fzf_select(q : String, list : [String], opts : String) : String? {
     command -v fzf &>> /dev/null || return $none
 
+    let old = { shctl unset err-raise; shctl set -d; $REPLY; }
+    defer { shctl set -r $old; }
     importenv FZF_DEFAULT_OPTS : ""
     var fzf_opt = "--height 40% --bind=ctrl-z:ignore $FZF_DEFAULT_OPTS --bind=ctrl-r:toggle-sort $opts +m"
     let eaw = $EAW == 1 ? 0 : 1
@@ -24,6 +26,8 @@ function _fzf_search_hist(q : String, list : [String]?) : String? {
 function _fzf_select_files(q : String, list : [String]?) : String? {
     command -v fzf &>> /dev/null || return $none
 
+    let old = { shctl unset err-raise; shctl set -d; $REPLY; }
+    defer { shctl set -r $old; }
     importenv FZF_DEFAULT_OPTS : ""
     importenv FZF_SELECT_FILES_OPTS : "--preview 'cat {}'"
     var fzf_opt = "--height 40% --bind=ctrl-z:ignore --reverse $FZF_DEFAULT_OPTS $FZF_SELECT_FILES_OPTS -m"
@@ -45,6 +49,8 @@ function _fzf_select_files(q : String, list : [String]?) : String? {
 function _fzf_cd(q : String, list : [String]?) : String? {
     command -v fzf &>> /dev/null || return $none
 
+    let old = { shctl unset err-raise; shctl set -d; $REPLY; }
+    defer { shctl set -r $old; }
     importenv FZF_DEFAULT_OPTS : ""
     importenv FZF_CD_OPTS : ""
     var fzf_opt = "--height 40% --bind=ctrl-z:ignore --reverse $FZF_DEFAULT_OPTS $FZF_CD_OPTS +m"
@@ -68,6 +74,8 @@ function _fzf_select_killring(q : String, list : [String]?) : String? {
 function fzf_proc_select() : [String] {
     command -v fzf &>> /dev/null || return new [String]()
 
+    let old = { shctl unset err-raise; shctl set -d; $REPLY; }
+    defer { shctl set -r $old; }
     importenv FZF_DEFAULT_OPTS : ""
     var fzf_opt = "--height 40% --bind=ctrl-z:ignore --reverse $FZF_DEFAULT_OPTS" + 
                   "-m --header-lines=1 --preview 'echo {}' --preview-window down:3:wrap --min-height 15"
