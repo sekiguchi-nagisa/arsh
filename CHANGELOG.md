@@ -7,6 +7,7 @@
 #### Core
 
 - **Breaking Change**: in process substitution, internal job object no longer maintain created ``FD`` object
+- **Breaking Change**: ``break``, ``continue``, ``return`` expressions are no longer allowed in last-pipe
 - improve assertion error message of binary ``==`` and ``=~`` expression
     - now show left hand-side, right hand-side expression value
 

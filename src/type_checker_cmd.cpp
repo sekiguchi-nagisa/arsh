@@ -354,6 +354,7 @@ void TypeChecker::visitPipelineNode(PipelineNode &node) {
   }
 
   if (node.isLastPipe()) {
+    auto lastPipe = this->funcCtx->intoChild();
     auto scope = this->intoBlock();
     this->addEntry(node, node.toCtxName(), this->typePool().get(TYPE::Any), HandleAttr::READ_ONLY);
     node.setBaseIndex(this->curScope->getBaseIndex());

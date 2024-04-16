@@ -1,6 +1,6 @@
 # top level
 
-#$test($result = 'type', $lineNum = 6, $chars = 8, $errorKind = 'InsideFunc', $status = 1)
+#$test($result = 'type', $lineNum = 6, $chars = 8, $errorKind = 'InsideChild', $status = 1)
 
 
 ls | { return 34; }

@@ -1,0 +1,9 @@
+
+#$test($result = 'type', $lineNum = 6, $chars = 36, $errorKind = 'InsideChild', $status = 1)
+
+for(var i = 0; $i < 45; $i++) {
+    ls | { do { continue; } while($false);
+            var _ = (if (fjreif) { continue; } else { 34; })
+            $_.toFloat()
+} 
+}
