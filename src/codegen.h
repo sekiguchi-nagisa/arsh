@@ -136,9 +136,6 @@ struct CodeBuilder : public CodeEmitter<true> {
   FlexBuffer<LineNumEntry> lineNumEntries;
   std::vector<CatchBuilder> catchBuilders;
 
-  /**
-   * first is local offset, second is local size
-   */
   std::vector<std::pair<unsigned short, unsigned short>> localVars;
 
   /**

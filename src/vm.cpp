@@ -365,6 +365,43 @@ static ObjPtr<UnixFdObject> newFD(const ARState &st, int &fd) {
   return toObjPtr<UnixFdObject>(Value::create<UnixFdObject>(v));
 }
 
+static bool checkPipelineError(ARState &state, const JobObject &job, bool lastPipe) {
+  if (!state.has(RuntimeOption::ERR_RAISE)) {
+    return true;
+  }
+
+  const unsigned int lastIndex = job.getProcSize() - (lastPipe ? 0 : 1);
+  unsigned int index = 0;
+  int64_t exitStatus = 0;
+  for (; index < job.getProcSize(); index++) {
+    auto &proc = job.getProcs()[index];
+    if (exitStatus = proc.exitStatus(); exitStatus != 0) {
+      if (index < lastIndex && proc.signaled() && proc.asSigNum() == SIGPIPE) {
+        if (!state.has(RuntimeOption::FAIL_SIGPIPE)) {
+          continue;
+        }
+      }
+      goto ERROR;
+    }
+  }
+  if (lastPipe) {
+    exitStatus = state.getGlobal(BuiltinVarOffset::EXIT_STATUS).asInt();
+    if (exitStatus != 0) {
+      goto ERROR;
+    }
+  }
+  return true;
+
+ERROR:
+  std::string message = "pipeline has non-zero status: `";
+  message += std::to_string(exitStatus);
+  message += "' at ";
+  message += std::to_string(index + 1);
+  message += "th element";
+  raiseError(state, TYPE::ExecError, std::move(message), exitStatus);
+  return false;
+}
+
 bool VM::attachAsyncJob(ARState &state, Value &&desc, unsigned int procSize, const Proc *procs,
                         ForkKind forkKind, PipeSet &pipeSet, Value &ret) {
   switch (forkKind) {
@@ -390,23 +427,9 @@ bool VM::attachAsyncJob(ARState &state, Value &&desc, unsigned int procSize, con
       raiseSystemError(state, errNum, "wait failed");
       return false;
     }
-    if (forkKind == ForkKind::PIPE_FAIL && state.has(RuntimeOption::ERR_RAISE)) {
-      for (unsigned int index = 0; index < entry->getProcSize(); index++) {
-        auto &proc = entry->getProcs()[index];
-        if (const int s = proc.exitStatus(); s != 0) {
-          if (index < entry->getProcSize() - 1 && proc.signaled() && proc.asSigNum() == SIGPIPE) {
-            if (!state.has(RuntimeOption::FAIL_SIGPIPE)) {
-              continue;
-            }
-          }
-          std::string message = "pipeline has non-zero status: `";
-          message += std::to_string(s);
-          message += "' at ";
-          message += std::to_string(index + 1);
-          message += "th element";
-          raiseError(state, TYPE::ExecError, std::move(message), s);
-          return false;
-        }
+    if (forkKind == ForkKind::PIPE_FAIL) {
+      if (!checkPipelineError(state, *entry, false)) {
+        return false;
       }
     }
     ret = exitStatusToBool(status);
@@ -1873,6 +1896,15 @@ bool VM::mainLoop(ARState &state) {
         auto v1 = state.stack.pop();
         auto v2 = state.stack.pop();
         state.stack.push(Value::createBool(v1 != v2));
+        vmnext;
+      }
+      vmcase(SYNC_PIPESTATUS) {
+        const unsigned char index = consume8(state.stack.ip());
+        auto &pipeline = typeAs<PipelineObject>(state.stack.getLocal(index));
+        auto job = pipeline.syncStatusAndDispose();
+        if (job && !checkPipelineError(state, *job, true)) {
+          vmerror;
+        }
         vmnext;
       }
       vmcase(FORK) {

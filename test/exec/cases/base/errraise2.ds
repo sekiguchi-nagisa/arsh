@@ -155,7 +155,7 @@ try {
       false |
         { true; }
 } catch $e { $ex = $e; }
-assert $ex is Int   # if last-pipe, not check pipeline status
+$assertStatus(1, $ex, 156)
 assert $? == 0
 
 ## command sub with pipeline

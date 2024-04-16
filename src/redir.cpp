@@ -23,13 +23,18 @@
 
 namespace arsh {
 
-PipelineObject::~PipelineObject() {
+PipelineObject::~PipelineObject() { this->syncStatusAndDispose(); }
+
+Job PipelineObject::syncStatusAndDispose() {
+  if (!this->entry) {
+    return nullptr;
+  }
   /**
    * due to prevent write blocking of child processes, force to restore stdin before call wait.
    * in some situation, raise SIGPIPE in child processes.
    */
-  bool restored = this->entry->restoreStdin();
-  auto waitOp = state.isJobControl() ? WaitOp::BLOCK_UNTRACED : WaitOp ::BLOCKING;
+  const bool restored = this->entry->restoreStdin();
+  const auto waitOp = state.isJobControl() ? WaitOp::BLOCK_UNTRACED : WaitOp ::BLOCKING;
   this->state.jobTable.waitForJob(this->entry, waitOp);
   this->state.updatePipeStatus(this->entry->getProcSize(), this->entry->getProcs(), true);
 
@@ -38,6 +43,7 @@ PipelineObject::~PipelineObject() {
     LOG(DUMP_EXEC, "tryToBeForeground: %d, %s", ret, strerror(errno));
   }
   this->state.jobTable.waitForAny();
+  return std::move(this->entry);
 }
 
 RedirObject::~RedirObject() {

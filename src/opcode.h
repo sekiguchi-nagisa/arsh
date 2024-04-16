@@ -109,6 +109,7 @@ namespace arsh {
   OP(LOOKUP_HASH, 0, -2)                                                                           \
   OP(REF_EQ, 0, -1)                                                                                \
   OP(REF_NE, 0, -1)                                                                                \
+  OP(SYNC_PIPESTATUS, 1, 0)                                                                        \
   OP(FORK, 3, 0)                                                                                   \
   OP(PIPELINE, -1, 0)                                                                              \
   OP(PIPELINE_SILENT, -1, 0)                                                                       \

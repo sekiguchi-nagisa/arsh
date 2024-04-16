@@ -165,6 +165,8 @@ public:
       : ObjectWithRtti(TYPE::Void), state(state), entry(std::move(entry)) {}
 
   ~PipelineObject();
+
+  Job syncStatusAndDispose();
 };
 
 /**

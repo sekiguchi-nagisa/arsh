@@ -81,6 +81,7 @@
 | LOOKUP_HASH       |                                | hashmap key ->                               | jump to the offset from stack top hashmap                       |
 | REF_EQ            |                                | value1 value2 -> value                       | check referencial equality                                      |
 | REF_NE            |                                | value1 value2 -> value                       | check referencial un-equality                                   |
+| SYNC_PIPESTATUS   | 1: offset                      |                                              | update pipeline status and check error                          |
 | FORK              | 3: byte1 offset1 offset2       | desc -> value                                | evaluate code in child shell                                    |
 | PIPELINE          | 1: len 2: offset1 offset2 ...  | desc -> value                                | call pipeline                                                   |
 | PIPELINE_SILENT   | 1: len 2: offset1 offset2 ...  | desc -> value                                | call pipeline without status check                              |

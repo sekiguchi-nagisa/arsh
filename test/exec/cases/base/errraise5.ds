@@ -5,10 +5,13 @@ shctl set errraise
 ## raise in last-pipe (external)
 var ex = 345 as Any
 try {
-    ls | for a in $STDIN { sh -c 'exit 56'; echo $a; }
+    ls | for a in $STDIN { 
+        sh -c 'exit 56'; echo $a; }
 } catch e { $ex = $e; }
 assert ($ex as ExecError).message() == "command exits with non-zero status: \`56'"
+assert ($ex as ExecError).lineno() == 9
 
+assert $? == 0
 assert $PIPESTATUS.size() == 2
 assert $PIPESTATUS[0] == 0
 assert $PIPESTATUS[1] == 56
@@ -16,10 +19,14 @@ assert $PIPESTATUS[1] == 56
 ## raise in last-pipe (builtin)
 $ex = 45643652
 try {
-    ls | for a in $STDIN { sh -c 'exit 156'; echo $a; } | { false; }
+    ls | for a in $STDIN { 
+        sh -c 'exit 156'; echo $a; } | {
+             false; }
 } catch e { $ex = $e; }
 assert ($ex as ExecError).message() == "command exits with non-zero status: \`1'"
+assert ($ex as ExecError).lineno() == 24
 
+assert $? == 0
 assert $PIPESTATUS.size() == 3
 assert $PIPESTATUS[0] == 0
 assert $PIPESTATUS[1] == 156
@@ -29,13 +36,133 @@ assert $PIPESTATUS[2] == 1
 ff() { return $1.toInt() ?? 99; }
 $ex = 45643652
 try {
-    ls | for a in $STDIN { ff 67; echo $a; } | { ff 145; }
+    ls | for a in $STDIN { 
+        ff 67; echo $a; } | { 
+            ff 145; }
 } catch e { $ex = $e; }
 assert ($ex as ExecError).message() == "command exits with non-zero status: \`145'"
+assert ($ex as ExecError).lineno() == 41
 
+assert $? == 0
 assert $PIPESTATUS.size() == 3
 assert $PIPESTATUS[0] == 0
 assert $PIPESTATUS[1] == 67
 assert $PIPESTATUS[2] == 145
 
+## raise in last-pipe (exit status)
+$ex = 45643652
+try {
+    true | 
+        true | { 
+            $? = 
+            99; }
+} catch e { $ex = $e; }
+assert ($ex as ExecError).message() == "pipeline has non-zero status: \`99' at 3th element"
+assert ($ex as ExecError).lineno() == 57
+
+assert $? == 0
+assert $PIPESTATUS.size() == 3
+assert $PIPESTATUS[0] == 0
+assert $PIPESTATUS[1] == 0
+assert $PIPESTATUS[2] == 99
+
+$ex = 45643652
+try {
+    true | { for(var i = 0; $i < 10; $i++){  
+        $i == 6 && { 
+            $? = $i; 
+            break;} }
+                34+45
+        }
+} catch e { $ex = $e; }
+assert ($ex as ExecError).message() == "pipeline has non-zero status: \`6' at 2th element"
+assert ($ex as ExecError).lineno() == 75   # lineno of last-pipe error is last lineno of last-pipe
+
+assert $? == 0
+assert $PIPESTATUS.size() == 2
+assert $PIPESTATUS[0] == 0
+assert $PIPESTATUS[1] == 6
+
+$ex = 45643652
+try {
+    for(var i = 2; $i < 100; $i++) {
+        true | { 
+            $? = $i; }
+         break
+    }
+    $? = 100;
+} catch e { $ex = $e; }
+assert ($ex as ExecError).message() == "pipeline has non-zero status: \`2' at 2th element"
+assert ($ex as ExecError).lineno() == 90
+
+assert $? == 0
+assert $PIPESTATUS.size() == 2
+assert $PIPESTATUS[0] == 0
+assert $PIPESTATUS[1] == 2
+
+gg() {
+    true | {
+        {
+            $? = $1.toInt() ?? 0
+        }
+    }
+    return $?
+}
+$ex = 45643652
+try {
+    gg 199
+} catch e { $ex = $e; }
+assert ($ex as ExecError).message() == "pipeline has non-zero status: \`199' at 2th element"
+assert ($ex as ExecError).lineno() == 106
+
+assert $PIPESTATUS.size() == 2
+assert $PIPESTATUS[0] == 0
+assert $PIPESTATUS[1] == 199
+
+
+## raise due to mid exit status
+$ex = 345255
+try {
+    exit 149 | { true; }
+} catch e { $ex = $e; }
+assert ($ex as ExecError).message() == "pipeline has non-zero status: \`149' at 1th element"
+
+assert $? == 0
+assert $PIPESTATUS.size() == 2
+assert $PIPESTATUS[0] == 149
+assert $PIPESTATUS[1] == 0
+
+$ex = 345255
+try {
+    cat /dev/random | for(var i = 0; $i < 10; $i++){  $i == 6 && break; }
+} catch e { $e.show(); $ex = $e; }   # ignore mid SIGPIPE
+assert $ex is Int
+
+## PIPESTATUS with defer
+var old : [Int]?
+ggg() {
+    $old = $none
+    $PIPESTATUS.clear()
+    $? = 0
+    exit 88 | {
+        defer { $old = $PIPESTATUS.copy(); }
+        34/($1.toInt() ?? 0)
+    }
+    return 123
+}
+$ex = 111
+try { ggg 1; } catch e {$ex = $e; }
+assert ($ex as ExecError).message() == "pipeline has non-zero status: \`88' at 1th element"
+assert $PIPESTATUS.size() == 2
+assert $PIPESTATUS[0] == 88
+assert $PIPESTATUS[1] == 0
+assert $old!.size() == 0
+
+$ex = 111
+try { ggg 0; } catch e {$ex = $e; }
+assert ($ex as ArithmeticError).message() == 'zero division'
+assert $PIPESTATUS.size() == 2
+assert $PIPESTATUS[0] == 88
+assert $PIPESTATUS[1] == 0
+assert $old!.size() == 0
 true

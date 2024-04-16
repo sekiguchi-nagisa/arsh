@@ -198,7 +198,7 @@ $expect("$(ds -n --dump-code -c 'case "$PID" { "999" => sleep 8 & else => {} }')
 $out = "### dump compiled code ###
 Source File: (string)
 DSCode: top level
-  code size: 19
+  code size: 21
   max stack depth: 1
   number of local variable: 1
   number of global variable: 52
@@ -208,10 +208,11 @@ Code:
    8: HALT
    9: STORE_LOCAL  0
   11: PUSH_INT  23
-  13: RECLAIM_LOCAL  0  1
-  16: POP
-  17: PUSH_INVALID
-  18: RETURN
+  13: SYNC_PIPESTATUS  0
+  15: RECLAIM_LOCAL  0  1
+  18: POP
+  19: PUSH_INVALID
+  20: RETURN
 Constant Pool:
   0: String (string)
   1: String $(pwd)

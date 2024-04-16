@@ -71,7 +71,7 @@ $expect("$(ds --dump-code -n -c 'echo {-01..6..-2}')", 0, $out)
 $out = "### dump compiled code ###
 Source File: (string)
 DSCode: top level
-  code size: 50
+  code size: 52
   max stack depth: 4
   number of local variable: 2
   number of global variable: 52
@@ -88,17 +88,18 @@ Code:
   19: HALT
   20: STORE_LOCAL  1
   22: PUSH_FALSE
-  23: RECLAIM_LOCAL  1  1
-  26: POP
-  27: PUSH_INT  34
-  29: STORE_LOCAL  1
-  31: RECLAIM_LOCAL  1  1
-  34: RECLAIM_LOCAL  0  1
-  37: JUMP_TRY  48
-  42: POP
-  43: GOTO  48
-  48: PUSH_INVALID
-  49: RETURN
+  23: SYNC_PIPESTATUS  1
+  25: RECLAIM_LOCAL  1  1
+  28: POP
+  29: PUSH_INT  34
+  31: STORE_LOCAL  1
+  33: RECLAIM_LOCAL  1  1
+  36: RECLAIM_LOCAL  0  1
+  39: JUMP_TRY  50
+  44: POP
+  45: GOTO  50
+  50: PUSH_INVALID
+  51: RETURN
 Constant Pool:
   0: String (string)
   1: String $(pwd)
@@ -108,7 +109,7 @@ Line Number Table:
   lineNum: 1, address:  1
 Exception Table:
   begin: 14, end: 19, type: process guard%%, dest: 19, offset: 0, size: 0, level: 0
-  begin: 0, end: 37, type: Error, dest: 42, offset: 0, size: 2, level: 1"
+  begin: 0, end: 39, type: Error, dest: 44, offset: 0, size: 2, level: 1"
 
 $expect("$(ds --dump-code -n -c 'try { var a = $STDIN; echo | $false; {var b = 34; } } catch _ {}')", 0, $out)
 

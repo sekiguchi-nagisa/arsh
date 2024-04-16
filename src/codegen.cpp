@@ -382,6 +382,7 @@ void ByteCodeGenerator::generatePipeline(const PipelineNode &node, ForkKind fork
     this->generateBlock(node.getBaseIndex(), 1, needReclaim, [&] {
       this->emit1byteIns(OpCode::STORE_LOCAL, node.getBaseIndex());
       this->visit(*node.getNodes().back(), CmdCallCtx::AUTO);
+      this->emit1byteIns(OpCode::SYNC_PIPESTATUS, node.getBaseIndex());
     });
   }
 }
@@ -1405,7 +1406,7 @@ void ByteCodeGenerator::generateBreakContinue(JumpNode &node) {
   this->visit(node.getExprNode());
 
   // reclaim local and enter finally before jump
-  unsigned int blockIndex = this->curBuilder().loopLabels.back().blockIndex;
+  const unsigned int blockIndex = this->curBuilder().loopLabels.back().blockIndex;
   const unsigned int startOffset = this->curBuilder().localVars[blockIndex].first;
   const unsigned int stopOffset =
       this->curBuilder().localVars.back().first + this->curBuilder().localVars.back().second;
@@ -1575,6 +1576,7 @@ void ByteCodeGenerator::visitAttributeNode(AttributeNode &) {} // do nothing
 
 void ByteCodeGenerator::visitAssignNode(AssignNode &node) {
   auto &assignableNode = cast<AssignableNode>(node.getLeftNode());
+  this->emitSourcePos(node.getActualPos());
   unsigned int index = assignableNode.getIndex();
   if (node.isFieldAssign()) {
     auto &accessNode = cast<AccessNode>(node.getLeftNode());
