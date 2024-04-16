@@ -1233,15 +1233,15 @@ bool VM::callPipeline(ARState &state, Value &&desc, bool lastPipe, ForkKind fork
    */
   if (proc.pid() == 0) {  // child
     if (procIndex == 0) { // first process
-      ::dup2(pipes[procIndex][WRITE_PIPE], STDOUT_FILENO);
+      dup2(pipes[procIndex][WRITE_PIPE], STDOUT_FILENO);
       pipeSet.setupChildStdin(forkKind, jobCtrl);
     }
     if (procIndex > 0 && procIndex < pipeSize) { // other process.
-      ::dup2(pipes[procIndex - 1][READ_PIPE], STDIN_FILENO);
-      ::dup2(pipes[procIndex][WRITE_PIPE], STDOUT_FILENO);
+      dup2(pipes[procIndex - 1][READ_PIPE], STDIN_FILENO);
+      dup2(pipes[procIndex][WRITE_PIPE], STDOUT_FILENO);
     }
     if (procIndex == pipeSize && !lastPipe) { // last process
-      ::dup2(pipes[procIndex - 1][READ_PIPE], STDIN_FILENO);
+      dup2(pipes[procIndex - 1][READ_PIPE], STDIN_FILENO);
       pipeSet.setupChildStdout();
     }
     pipeSet.closeAll(); // FIXME: check error and force exit (not propagate error due to uncaught)
