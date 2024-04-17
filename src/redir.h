@@ -66,10 +66,20 @@ inline void initAllPipe(unsigned int size, pipe_t *pipes) {
   }
 }
 
+template <unsigned int N>
+void initAllPipe(pipe_t (&pipes)[N]) {
+  initAllPipe(N, pipes);
+}
+
 inline void closeAllPipe(unsigned int size, pipe_t *pipefds) {
   for (unsigned int i = 0; i < size; i++) {
     tryToClose(pipefds[i]);
   }
+}
+
+template <unsigned int N>
+void closeAllPipe(pipe_t (&pipes)[N]) {
+  closeAllPipe(N, pipes);
 }
 
 class PipeList : public InlinedArray<pipe_t, 6> {

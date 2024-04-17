@@ -57,7 +57,7 @@ RedirObject::~RedirObject() {
 
 static int doIOHere(const StringRef &value, int newFd, bool insertNewline) {
   pipe_t pipe[1];
-  initAllPipe(1, pipe);
+  initAllPipe(pipe);
 
   dup2(pipe[0][READ_PIPE], newFd);
 
@@ -71,7 +71,7 @@ static int doIOHere(const StringRef &value, int newFd, bool insertNewline) {
         errnum = errno;
       }
     }
-    closeAllPipe(1, pipe);
+    closeAllPipe(pipe);
     return errnum;
   } else {
     pid_t pid = fork();
@@ -94,7 +94,7 @@ static int doIOHere(const StringRef &value, int newFd, bool insertNewline) {
       }
       exit(0);
     }
-    closeAllPipe(1, pipe);
+    closeAllPipe(pipe);
     waitpid(pid, nullptr, 0);
     return 0;
   }
