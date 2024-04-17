@@ -23,6 +23,15 @@
 
 namespace arsh {
 
+bool Pipe::open() {
+#ifdef __APPLE__
+  return pipe(this->fds) == 0 && setCloseOnExec(this->fds[0], true) &&
+         setCloseOnExec(this->fds[1], true);
+#else
+  return pipe2(this->fds, O_CLOEXEC) == 0;
+#endif
+}
+
 PipelineObject::~PipelineObject() { this->syncStatusAndDispose(); }
 
 Job PipelineObject::syncStatusAndDispose() {
@@ -56,10 +65,10 @@ RedirObject::~RedirObject() {
 }
 
 static int doIOHere(const StringRef &value, int newFd, bool insertNewline) {
-  pipe_t pipe;
-  initAllPipe(pipe);
-
-  dup2(pipe[READ_PIPE], newFd);
+  Pipe pipe;
+  if (!pipe.open() || dup2(pipe[READ_PIPE], newFd) < 0) {
+    return errno;
+  }
 
   if (value.size() + (insertNewline ? 1 : 0) <= PIPE_BUF) {
     int errnum = 0;
@@ -71,7 +80,7 @@ static int doIOHere(const StringRef &value, int newFd, bool insertNewline) {
         errnum = errno;
       }
     }
-    closeAllPipe(pipe);
+    pipe.close();
     return errnum;
   } else {
     pid_t pid = fork();
@@ -81,9 +90,9 @@ static int doIOHere(const StringRef &value, int newFd, bool insertNewline) {
     if (pid == 0) {   // child
       pid = fork();   // double-fork (not wait IO-here process termination.)
       if (pid == 0) { // child
-        close(pipe[READ_PIPE]);
-        dup2(pipe[WRITE_PIPE], STDOUT_FILENO);
-        if (write(STDOUT_FILENO, value.data(), value.size()) < 0) {
+        pipe.close(READ_PIPE);
+        if (dup2(pipe[WRITE_PIPE], STDOUT_FILENO) < 0 ||
+            write(STDOUT_FILENO, value.data(), value.size()) < 0) {
           exit(1);
         }
         if (insertNewline) { // for here str (insert newline)
@@ -94,7 +103,7 @@ static int doIOHere(const StringRef &value, int newFd, bool insertNewline) {
       }
       exit(0);
     }
-    closeAllPipe(pipe);
+    pipe.close();
     waitpid(pid, nullptr, 0);
     return 0;
   }

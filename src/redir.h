@@ -26,8 +26,9 @@
 
 namespace arsh {
 
-constexpr unsigned int READ_PIPE = 0;
-constexpr unsigned int WRITE_PIPE = 1;
+enum class PipeAccessor : unsigned char {};
+constexpr auto READ_PIPE = PipeAccessor{0};
+constexpr auto WRITE_PIPE = PipeAccessor{1};
 
 inline void tryToDup(int srcFd, int targetFd) {
   if (srcFd > -1) {
@@ -35,64 +36,61 @@ inline void tryToDup(int srcFd, int targetFd) {
   }
 }
 
-inline void tryToClose(int fd) {
-  if (fd > -1) {
-    close(fd);
-  }
-}
+class Pipe {
+private:
+  int fds[2]{-1, -1};
 
-using pipe_t = int[2];
+public:
+  /**
+   * open pipe with CLOEXEC
+   * @return
+   * if has error, return false
+   */
+  bool open();
 
-inline void tryToClose(pipe_t &pipefds) {
-  tryToClose(pipefds[0]);
-  tryToClose(pipefds[1]);
-}
-
-inline void tryToPipe(pipe_t &pipefds, bool openPipe) {
-  if (openPipe) {
-    if (pipe(pipefds) < 0) {
-      perror("pipe creation failed\n");
-      exit(1); // FIXME: throw exception
+  bool tryToOpen(const bool shouldOpen) {
+    if (shouldOpen) {
+      return this->open();
     }
-  } else {
-    pipefds[0] = -1;
-    pipefds[1] = -1;
+    return true;
   }
-}
 
-inline void initAllPipe(unsigned int size, pipe_t *pipes) {
-  for (unsigned int i = 0; i < size; i++) {
-    tryToPipe(pipes[i], true);
+  int &operator[](PipeAccessor i) { return this->fds[toUnderlying(i)]; }
+
+  void close() {
+    this->close(READ_PIPE);
+    this->close(WRITE_PIPE);
   }
-}
 
-template <unsigned int N>
-void initAllPipe(pipe_t (&pipes)[N]) {
-  initAllPipe(N, pipes);
-}
+  void close(PipeAccessor i) { tryToClose(this->fds[toUnderlying(i)]); }
 
-inline void initAllPipe(pipe_t &pipe) { initAllPipe(1, &pipe); }
-
-inline void closeAllPipe(unsigned int size, pipe_t *pipefds) {
-  for (unsigned int i = 0; i < size; i++) {
-    tryToClose(pipefds[i]);
+private:
+  static void tryToClose(int &fd) {
+    if (fd > -1) {
+      ::close(fd);
+      fd = -1;
+    }
   }
-}
+};
 
-template <unsigned int N>
-void closeAllPipe(pipe_t (&pipes)[N]) {
-  closeAllPipe(N, pipes);
-}
-
-inline void closeAllPipe(pipe_t &pipe) { closeAllPipe(1, &pipe); }
-
-class PipeList : public InlinedArray<pipe_t, 6> {
+class PipeList : public InlinedArray<Pipe, 6> {
 public:
   explicit PipeList(size_t size) : InlinedArray(size) {}
 
-  void initAll() { initAllPipe(this->size(), this->ptr()); }
+  bool openAll() {
+    for (size_t i = 0; i < this->size(); i++) {
+      if (!(*this)[i].open()) {
+        return false;
+      }
+    }
+    return true;
+  }
 
-  void closeAll() { closeAllPipe(this->size(), this->ptr()); }
+  void closeAll() {
+    for (size_t i = 0; i < this->size(); i++) {
+      (*this)[i].close();
+    }
+  }
 };
 
 inline void redirInToNull() {
@@ -102,10 +100,10 @@ inline void redirInToNull() {
 }
 
 struct PipeSet {
-  pipe_t in{-1};
-  pipe_t out{-1};
+  Pipe in;
+  Pipe out;
 
-  explicit PipeSet(ForkKind kind) { // FIXME: error reporting
+  bool openAll(ForkKind kind) {
     bool useInPipe = false;
     bool useOutPipe = false;
 
@@ -130,8 +128,7 @@ struct PipeSet {
     case ForkKind::PIPE_FAIL:
       break;
     }
-    tryToPipe(this->in, useInPipe);
-    tryToPipe(this->out, useOutPipe);
+    return this->in.tryToOpen(useInPipe) && this->out.tryToOpen(useOutPipe);
   }
 
   /**
@@ -153,8 +150,8 @@ struct PipeSet {
    * call in parent and child
    */
   void closeAll() {
-    tryToClose(this->in);
-    tryToClose(this->out);
+    this->in.close();
+    this->out.close();
   }
 };
 

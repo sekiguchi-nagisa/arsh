@@ -526,14 +526,15 @@ bool VM::forkAndEval(ARState &state, Value &&desc) {
   const unsigned short offset = read16(state.stack.ip() + 1);
 
   // set in/out pipe
-  PipeSet pipeSet(forkKind);
+  PipeSet pipeSet;
+  pipeSet.openAll(forkKind); // FIXME: check errno
   const pid_t pgid = resolvePGID(state.isRootShell(), forkKind);
   const auto procOp = resolveProcOp(state, forkKind);
   const bool jobCtrl = state.isJobControl();
   auto proc = Proc::fork(state, pgid, procOp);
   if (proc.pid() > 0) { // parent process
-    tryToClose(pipeSet.in[READ_PIPE]);
-    tryToClose(pipeSet.out[WRITE_PIPE]);
+    pipeSet.in.close(READ_PIPE);
+    pipeSet.out.close(WRITE_PIPE);
 
     Value obj;
 
@@ -541,7 +542,7 @@ bool VM::forkAndEval(ARState &state, Value &&desc) {
     case ForkKind::STR:
     case ForkKind::ARRAY: { // always disable job control (so not change foreground process group)
       assert(!hasFlag(procOp, Proc::Op::JOB_CONTROL));
-      tryToClose(pipeSet.in[WRITE_PIPE]);
+      pipeSet.in.close(WRITE_PIPE);
       const bool ret = forkKind == ForkKind::STR
                            ? readAsStr(state, pipeSet.out[READ_PIPE], obj)
                            : readAsStrArray(state, pipeSet.out[READ_PIPE], obj);
@@ -549,7 +550,7 @@ bool VM::forkAndEval(ARState &state, Value &&desc) {
         /**
          * if read failed, not wait termination (always attach to job table)
          */
-        tryToClose(pipeSet.out[READ_PIPE]); // close read pipe after wait, due to prevent EPIPE
+        pipeSet.out.close(READ_PIPE); // close read pipe after wait, due to prevent EPIPE
         state.jobTable.attach(
             JobObject::create(proc, state.emptyFDObj, state.emptyFDObj, std::move(desc)));
 
@@ -563,7 +564,7 @@ bool VM::forkAndEval(ARState &state, Value &&desc) {
       const auto waitOp = jobCtrl ? WaitOp::BLOCK_UNTRACED : WaitOp::BLOCKING;
       const int status = proc.wait(waitOp); // wait exit
       const int errNum = errno;
-      tryToClose(pipeSet.out[READ_PIPE]); // close read pipe after wait, due to prevent EPIPE
+      pipeSet.out.close(READ_PIPE); // close read pipe after wait, due to prevent EPIPE
       if (!proc.is(Proc::State::TERMINATED)) {
         state.jobTable.attach(
             JobObject::create(proc, state.emptyFDObj, state.emptyFDObj, std::move(desc)));
@@ -774,23 +775,20 @@ static Value toCmdDesc(const ArrayObject &argvObj) {
 bool VM::forkAndExec(ARState &state, const char *filePath, const ArrayObject &argvObj,
                      Value &&redirConfig) {
   // setup self pipe
-  pipe_t selfPipe;
-  if (pipe(selfPipe) < 0) {
+  Pipe selfPipe;
+  if (!selfPipe.open()) {
     fatal_perror("pipe creation error");
-  }
-  if (!setCloseOnExec(selfPipe[WRITE_PIPE], true)) {
-    fatal_perror("fcntl error");
   }
 
   const pid_t pgid = resolvePGID(state.isRootShell(), ForkKind::NONE);
   const auto procOp = resolveProcOp(state, ForkKind::NONE);
   auto proc = Proc::fork(state, pgid, procOp);
   if (proc.pid() == -1) {
-    closeAllPipe(selfPipe);
+    selfPipe.close();
     raiseCmdError(state, argvObj.getValues()[0].asCStr(), EAGAIN);
     return false;
   } else if (proc.pid() == 0) { // child
-    close(selfPipe[READ_PIPE]);
+    selfPipe.close(READ_PIPE);
     xexecve(filePath, argvObj, nullptr);
 
     const int errNum = errno;
@@ -798,7 +796,7 @@ bool VM::forkAndExec(ARState &state, const char *filePath, const ArrayObject &ar
     (void)r; // FIXME:
     exit(-1);
   } else { // parent process
-    close(selfPipe[WRITE_PIPE]);
+    selfPipe.close(WRITE_PIPE);
     redirConfig = nullptr; // restore redirConfig
 
     ssize_t readSize;
@@ -808,7 +806,7 @@ bool VM::forkAndExec(ARState &state, const char *filePath, const ArrayObject &ar
         break;
       }
     }
-    close(selfPipe[READ_PIPE]);
+    selfPipe.close(READ_PIPE);
     if (readSize > 0 && errNum == ENOENT) { // remove cached path
       state.pathCache.removePath(argvObj.getValues()[0].asCStr());
     }
@@ -1224,9 +1222,10 @@ bool VM::callPipeline(ARState &state, Value &&desc, bool lastPipe, ForkKind fork
 
   assert(pipeSize > 0);
 
-  PipeSet pipeSet(forkKind);
+  PipeSet pipeSet;
+  pipeSet.openAll(forkKind); // FIXME: check errno
   PipeList pipes(pipeSize);
-  pipes.initAll();
+  pipes.openAll(); // FIXME: checl errno
 
   // fork
   InlinedArray<Proc, 6> children(procSize);
@@ -1285,8 +1284,8 @@ bool VM::callPipeline(ARState &state, Value &&desc, bool lastPipe, ForkKind fork
       pipes.closeAll();
       state.stack.push(Value::create<PipelineObject>(state, std::move(jobEntry)));
     } else {
-      tryToClose(pipeSet.in[READ_PIPE]);
-      tryToClose(pipeSet.out[WRITE_PIPE]);
+      pipeSet.in.close(READ_PIPE);
+      pipeSet.out.close(WRITE_PIPE);
       pipes.closeAll();
       Value obj;
       if (!attachAsyncJob(state, std::move(desc), procSize, children.ptr(), forkKind, pipeSet,
