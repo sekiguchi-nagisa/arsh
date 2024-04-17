@@ -30,6 +30,7 @@
 
 - bugfix code generation of catch block with nested blocks (fix potential resource leak)
 - correctly set ``PIPESTATUS`` when throw error from last-pipe
+- fix resource leak of file descriptor (self-pipe) when fork failed
 
 ## [0.33.2] - 2024-04-11
 
