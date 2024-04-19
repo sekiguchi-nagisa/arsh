@@ -72,13 +72,9 @@ static int doIOHere(const StringRef &value, int newFd, bool insertNewline) {
 
   if (value.size() + (insertNewline ? 1 : 0) <= PIPE_BUF) {
     int errnum = 0;
-    if (write(pipe[WRITE_PIPE], value.data(), sizeof(char) * value.size()) < 0) {
+    if (write(pipe[WRITE_PIPE], value.data(), value.size()) < 0 ||
+        write(pipe[WRITE_PIPE], "\n", insertNewline ? 1 : 0) < 0) {
       errnum = errno;
-    }
-    if (insertNewline) { // for here str (insert newline)
-      if (errnum == 0 && write(pipe[WRITE_PIPE], "\n", 1) < 0) {
-        errnum = errno;
-      }
     }
     pipe.close();
     return errnum;
