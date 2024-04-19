@@ -91,13 +91,9 @@ static int doIOHere(const StringRef &value, int newFd, bool insertNewline) {
       pid = fork();   // double-fork (not wait IO-here process termination.)
       if (pid == 0) { // child
         pipe.close(READ_PIPE);
-        if (dup2(pipe[WRITE_PIPE], STDOUT_FILENO) < 0 ||
-            write(STDOUT_FILENO, value.data(), value.size()) < 0) {
-          perror("IO here process failed");
-          exit(1);
-        }
-        if (insertNewline) { // for here str (insert newline)
-          if (write(STDOUT_FILENO, "\n", 1) < 0) {
+        if (write(pipe[WRITE_PIPE], value.data(), value.size()) < 0 ||
+            write(pipe[WRITE_PIPE], "\n", insertNewline ? 1 : 0) < 0) {
+          if (errno != EPIPE) { // ignore SIGPIPE (if reader process already terminated)
             perror("IO here process failed");
             exit(1);
           }
