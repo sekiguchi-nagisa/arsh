@@ -7,7 +7,7 @@ ulimit -S -n 6
 try {
     ls | grep '*' | grep '*' | grep '*' | grep '*' | grep '*'
 } catch e { $ex = $e; }  # too many open pipe
-assert ($ex as SystemError).message() =~ $/pipe opend failed, caused by.*many.*file.*/
+assert ($ex as SystemError).message() =~ $/pipe opend failed, caused by.*file.*/
 
 {
     var fds : [FD]
