@@ -1,0 +1,27 @@
+#$test($ignored = 'cygwin|msys')
+
+# set file descriptor limit
+var ex = 435 as Any
+
+ulimit -S -n 6
+try {
+    ls | grep '*' | grep '*' | grep '*' | grep '*' | grep '*'
+} catch e { $ex = $e; }  # too many open pipe
+assert ($ex as SystemError).message() =~ $/pipe opend failed, caused by.*many.*file.*/
+
+{
+    var fds : [FD]
+    for(var i = 0; $i < 10; $i++) {
+        $fds.add(try{ $STDIN.dup(); } catch _ { break; })
+    }  # open fd up to limit
+    if !$fds.empty() {
+        $fds.pop() # close one fd
+    }
+    $ex = 34
+    try {
+        echo &> /dev/null
+    } catch e { $ex = $e; }
+    assert ($ex as SystemError).message() =~ $/.*cannot save file descriptors, caused by.*argument.*/
+}
+
+true

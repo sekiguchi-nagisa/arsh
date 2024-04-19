@@ -11,6 +11,7 @@
 - **Breaking Change**: when ``err-raise`` option is enabled, check pipeline exit status even if last-pipe
 - improve assertion error message of binary ``==`` and ``=~`` expression
     - now show left hand-side, right hand-side expression value
+- improve internal error checking of ``dup2``, ``pipe`` system call, now propagate these errors as ``SystemError``
 
 #### Builtin
 

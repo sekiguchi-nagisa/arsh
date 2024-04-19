@@ -235,7 +235,7 @@ JobObject::JobObject(unsigned int size, const Proc *procs, bool saveStdin,
     this->procs[i] = procs[i];
   }
   if (saveStdin) {
-    this->oldStdin = dupFDCloseOnExec(STDIN_FILENO);
+    this->oldStdin = dupFDCloseOnExec(STDIN_FILENO); // FIXME: report error
     setFlag(this->meta, ATTR_LAST_PIPE);
   }
   if (pid_t pid = this->getValidPid(0); pid > -1 && pid == getpgid(pid)) {
@@ -355,7 +355,7 @@ std::string JobObject::formatInfo(JobInfoFormat fmt) const {
 
 bool JobObject::restoreStdin() {
   if (this->oldStdin > -1 && this->isControlled()) {
-    dup2(this->oldStdin, STDIN_FILENO);
+    dup2(this->oldStdin, STDIN_FILENO); // FIXME: report error
     close(this->oldStdin);
     this->oldStdin = -1;
     return true;

@@ -191,7 +191,6 @@ constexpr const char *ERROR_EXEC = "execution error: ";
 constexpr const char *ERROR_REDIR = "io redirection failed";
 constexpr const char *ERROR_UNDEF_ENV = "undefined environmental variable: ";
 constexpr const char *ERROR_SET_ENV = "not set environmental variable: ";
-constexpr const char *ERROR_READLINE = "readLine failed";
 
 // =====  error message  =====
 
@@ -199,6 +198,9 @@ constexpr const char *ERROR_CMD_SUB = "command substitution failed";
 constexpr const char *ERROR_STRING_LIMIT = "reach String size limit";
 constexpr const char *ERROR_MAP_LIMIT = "reach Map size limit";
 constexpr const char *ERROR_NULL_CHAR_PATH = "file path contains null characters";
+constexpr const char *ERROR_READLINE = "readLine failed";
+constexpr const char *ERROR_PIPE = "pipe opend failed";
+constexpr const char *ERROR_FD_SETUP = "file descriptor setup failed";
 
 // =====  generic type name  =====
 

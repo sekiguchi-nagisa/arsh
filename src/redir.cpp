@@ -93,10 +93,12 @@ static int doIOHere(const StringRef &value, int newFd, bool insertNewline) {
         pipe.close(READ_PIPE);
         if (dup2(pipe[WRITE_PIPE], STDOUT_FILENO) < 0 ||
             write(STDOUT_FILENO, value.data(), value.size()) < 0) {
+          perror("IO here process failed");
           exit(1);
         }
         if (insertNewline) { // for here str (insert newline)
           if (write(STDOUT_FILENO, "\n", 1) < 0) {
+            perror("IO here process failed");
             exit(1);
           }
         }
@@ -249,11 +251,18 @@ static int redirectImpl(const RedirObject::Entry &entry, const bool overwrite) {
 }
 
 bool RedirObject::redirect(ARState &state) {
-  this->saveFDs();
+  std::string msg;
+  int errNum = 0;
+  if (!this->saveFDs()) {
+    errNum = errno;
+    msg = ERROR_REDIR;
+    msg += ": cannot save file descriptors";
+    goto END;
+  }
   for (auto &entry : this->entries) {
-    int r = redirectImpl(entry, state.has(RuntimeOption::CLOBBER));
-    if (!this->backupFDSet.empty() && r != 0) {
-      std::string msg = ERROR_REDIR;
+    errNum = redirectImpl(entry, state.has(RuntimeOption::CLOBBER));
+    if (!this->backupFDSet.empty() && errNum != 0) {
+      msg = ERROR_REDIR;
       if (entry.value) {
         if (entry.value.hasType(TYPE::String)) {
           auto ref = entry.value.asStrRef();
@@ -268,9 +277,13 @@ bool RedirObject::redirect(ARState &state) {
           msg += std::to_string(rawFd);
         }
       }
-      raiseSystemError(state, r, std::move(msg));
-      return false;
+      goto END;
     }
+  }
+END:
+  if (errNum) {
+    raiseSystemError(state, errNum, std::move(msg));
+    return false;
   }
   return true;
 }

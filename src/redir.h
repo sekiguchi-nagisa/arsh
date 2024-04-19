@@ -30,10 +30,11 @@ enum class PipeAccessor : unsigned char {};
 constexpr auto READ_PIPE = PipeAccessor{0};
 constexpr auto WRITE_PIPE = PipeAccessor{1};
 
-inline void tryToDup(int srcFd, int targetFd) {
+[[nodiscard]] inline bool tryToDup(int srcFd, int targetFd) {
   if (srcFd > -1) {
-    dup2(srcFd, targetFd);
+    return dup2(srcFd, targetFd) > -1;
   }
+  return true;
 }
 
 class Pipe {
@@ -46,9 +47,9 @@ public:
    * @return
    * if has error, return false
    */
-  bool open();
+  [[nodiscard]] bool open();
 
-  bool tryToOpen(const bool shouldOpen) {
+  [[nodiscard]] bool tryToOpen(const bool shouldOpen) {
     if (shouldOpen) {
       return this->open();
     }
@@ -77,9 +78,12 @@ class PipeList : public InlinedArray<Pipe, 6> {
 public:
   explicit PipeList(size_t size) : InlinedArray(size) {}
 
-  bool openAll() {
+  [[nodiscard]] bool openAll() {
     for (size_t i = 0; i < this->size(); i++) {
       if (!(*this)[i].open()) {
+        const int old = errno;
+        this->closeAll();
+        errno = old;
         return false;
       }
     }
@@ -93,17 +97,11 @@ public:
   }
 };
 
-inline void redirInToNull() {
-  int fd = open("/dev/null", O_RDONLY);
-  dup2(fd, STDIN_FILENO);
-  close(fd);
-}
-
 struct PipeSet {
   Pipe in;
   Pipe out;
 
-  bool openAll(ForkKind kind) {
+  [[nodiscard]] bool openAll(ForkKind kind) {
     bool useInPipe = false;
     bool useOutPipe = false;
 
@@ -128,23 +126,38 @@ struct PipeSet {
     case ForkKind::PIPE_FAIL:
       break;
     }
-    return this->in.tryToOpen(useInPipe) && this->out.tryToOpen(useOutPipe);
-  }
-
-  /**
-   * only call once in child
-   */
-  void setupChildStdin(ForkKind forkKind, bool jobctl) {
-    tryToDup(this->in[READ_PIPE], STDIN_FILENO);
-    if ((forkKind == ForkKind::DISOWN || forkKind == ForkKind::JOB) && !jobctl) {
-      redirInToNull();
+    if (!this->in.tryToOpen(useInPipe) || !this->out.tryToOpen(useOutPipe)) {
+      const int old = errno;
+      this->closeAll();
+      errno = old;
+      return false;
     }
+    return true;
   }
 
   /**
    * only call once in child
    */
-  void setupChildStdout() { tryToDup(this->out[WRITE_PIPE], STDOUT_FILENO); }
+  [[nodiscard]] bool setupChildStdin(ForkKind forkKind, bool jobctl) {
+    if (!tryToDup(this->in[READ_PIPE], STDIN_FILENO)) {
+      return false;
+    }
+    if ((forkKind == ForkKind::DISOWN || forkKind == ForkKind::JOB) && !jobctl) {
+      // redirect stdin to null
+      int fd = open("/dev/null", O_RDONLY);
+      const bool s = fd > -1 && dup2(fd, STDIN_FILENO) > -1;
+      const int old = errno;
+      close(fd);
+      errno = old;
+      return s;
+    }
+    return true;
+  }
+
+  /**
+   * only call once in child
+   */
+  [[nodiscard]] bool setupChildStdout() { return tryToDup(this->out[WRITE_PIPE], STDOUT_FILENO); }
 
   /**
    * call in parent and child
@@ -222,13 +235,17 @@ public:
   bool redirect(ARState &state);
 
 private:
-  void saveFDs() {
+  [[nodiscard]] bool saveFDs() {
     for (unsigned int i = 0; i < std::size(this->oldFds); i++) {
       if (this->backupFDSet.has(i)) {
         this->oldFds[i] = dupFDCloseOnExec(static_cast<int>(i));
+        if (this->oldFds[i] < 0 && errno != EBADF) {
+          return false;
+        }
       }
     }
     this->saved = true;
+    return true;
   }
 
   void restoreFDs() {
@@ -242,7 +259,7 @@ private:
         if (oldFd < 0) {
           close(fd);
         } else {
-          dup2(oldFd, fd);
+          dup2(oldFd, fd); // FIXME: report error
         }
       }
     }

@@ -527,7 +527,10 @@ bool VM::forkAndEval(ARState &state, Value &&desc) {
 
   // set in/out pipe
   PipeSet pipeSet;
-  pipeSet.openAll(forkKind); // FIXME: check errno
+  if (!pipeSet.openAll(forkKind)) {
+    raiseSystemError(state, errno, ERROR_PIPE);
+    return false;
+  }
   const pid_t pgid = resolvePGID(state.isRootShell(), forkKind);
   const auto procOp = resolveProcOp(state, forkKind);
   const bool jobCtrl = state.isJobControl();
@@ -597,10 +600,17 @@ bool VM::forkAndEval(ARState &state, Value &&desc) {
 
     state.stack.ip() += offset - 1;
   } else if (proc.pid() == 0) { // child process
-    pipeSet.setupChildStdin(forkKind, jobCtrl);
-    pipeSet.setupChildStdout();
+    int errNum = 0;
+    const bool s = pipeSet.setupChildStdin(forkKind, jobCtrl) && pipeSet.setupChildStdout();
+    if (!s) {
+      errNum = errno;
+    }
     pipeSet.closeAll();
 
+    if (errNum != 0) {
+      raiseSystemError(state, errNum, ERROR_FD_SETUP);
+      return false;
+    }
     state.stack.ip() += 3;
   } else {
     raiseSystemError(state, EAGAIN, "fork failed");
@@ -777,7 +787,8 @@ bool VM::forkAndExec(ARState &state, const char *filePath, const ArrayObject &ar
   // setup self pipe
   Pipe selfPipe;
   if (!selfPipe.open()) {
-    fatal_perror("pipe creation error");
+    raiseSystemError(state, errno, ERROR_PIPE);
+    return false;
   }
 
   const pid_t pgid = resolvePGID(state.isRootShell(), ForkKind::NONE);
@@ -1223,9 +1234,11 @@ bool VM::callPipeline(ARState &state, Value &&desc, bool lastPipe, ForkKind fork
   assert(pipeSize > 0);
 
   PipeSet pipeSet;
-  pipeSet.openAll(forkKind); // FIXME: check errno
   PipeList pipes(pipeSize);
-  pipes.openAll(); // FIXME: checl errno
+  if (!pipeSet.openAll(forkKind) || !pipes.openAll()) {
+    raiseSystemError(state, errno, ERROR_PIPE);
+    return false;
+  }
 
   // fork
   InlinedArray<Proc, 6> children(procSize);
@@ -1254,24 +1267,34 @@ bool VM::callPipeline(ARState &state, Value &&desc, bool lastPipe, ForkKind fork
    * | PIPELINE | size: 1byte | br1(child): 2yte | ~  | brN(parent): 2byte |
    * +----------+-------------+------------------+    +--------------------+
    */
-  if (proc.pid() == 0) {  // child
+  if (proc.pid() == 0) { // child
+    int errNum = 0;
     if (procIndex == 0) { // first process
-      dup2(pipes[procIndex][WRITE_PIPE], STDOUT_FILENO);
-      pipeSet.setupChildStdin(forkKind, jobCtrl);
+      if (dup2(pipes[procIndex][WRITE_PIPE], STDOUT_FILENO) < 0 ||
+          !pipeSet.setupChildStdin(forkKind, jobCtrl)) {
+        errNum = errno;
+      }
+    } else if (procIndex > 0 && procIndex < pipeSize) { // other process.
+      if (dup2(pipes[procIndex - 1][READ_PIPE], STDIN_FILENO) < 0 ||
+          dup2(pipes[procIndex][WRITE_PIPE], STDOUT_FILENO) < 0) {
+        errNum = errno;
+      }
+    } else if (procIndex == pipeSize && !lastPipe) { // last process
+      if (dup2(pipes[procIndex - 1][READ_PIPE], STDIN_FILENO) < 0 || !pipeSet.setupChildStdout()) {
+        errNum = errno;
+      }
     }
-    if (procIndex > 0 && procIndex < pipeSize) { // other process.
-      dup2(pipes[procIndex - 1][READ_PIPE], STDIN_FILENO);
-      dup2(pipes[procIndex][WRITE_PIPE], STDOUT_FILENO);
-    }
-    if (procIndex == pipeSize && !lastPipe) { // last process
-      dup2(pipes[procIndex - 1][READ_PIPE], STDIN_FILENO);
-      pipeSet.setupChildStdout();
-    }
-    pipeSet.closeAll(); // FIXME: check error and force exit (not propagate error due to uncaught)
+    pipeSet.closeAll();
     pipes.closeAll();
+
+    if (errNum) {
+      raiseSystemError(state, errNum, ERROR_FD_SETUP);
+      return false;
+    }
 
     // set pc to next instruction
     state.stack.ip() += read16(state.stack.ip() + 1 + procIndex * 2) - 1;
+    return true;
   } else if (procIndex == procSize) { // parent (last pipeline)
     if (lastPipe) {
       /**
@@ -1280,8 +1303,15 @@ bool VM::callPipeline(ARState &state, Value &&desc, bool lastPipe, ForkKind fork
       auto jobEntry = JobObject::create(procSize, children.ptr(), true, state.emptyFDObj,
                                         state.emptyFDObj, std::move(desc));
       state.jobTable.attach(jobEntry);
-      dup2(pipes[procIndex - 1][READ_PIPE], STDIN_FILENO);
+      int errNum = 0;
+      if (dup2(pipes[procIndex - 1][READ_PIPE], STDIN_FILENO) < 0) {
+        errNum = errno;
+      }
       pipes.closeAll();
+      if (errNum) {
+        raiseSystemError(state, errNum, ERROR_FD_SETUP);
+        return false;
+      }
       state.stack.push(Value::create<PipelineObject>(state, std::move(jobEntry)));
     } else {
       pipeSet.in.close(READ_PIPE);
