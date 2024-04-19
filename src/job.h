@@ -37,9 +37,26 @@ enum class WaitOp : unsigned char {
 #undef GEN_ENUM
 };
 
+#define EACH_WAIT_RESULT_KIND(OP)                                                                  \
+  OP(EXITED)                                                                                       \
+  OP(SIGNALED)                                                                                     \
+  OP(STOPPED)                                                                                      \
+  OP(CONTINUED)                                                                                    \
+  OP(ERROR)
+
 struct WaitResult {
-  pid_t pid;
-  int status;
+  enum class Kind : unsigned char {
+#define GEN_ENUM(OP) OP,
+    EACH_WAIT_RESULT_KIND(GEN_ENUM)
+#undef GEN_ENUM
+  };
+
+  static constexpr unsigned char SIGNALED_STATUS_OFFSET = 128;
+
+  pid_t pid{-1};
+  Kind kind{Kind::EXITED};
+  unsigned char exitStatus{0};
+  bool coreDump{false};
 };
 
 WaitResult waitForProc(pid_t pid, WaitOp op);
@@ -53,8 +70,6 @@ public:
   };
 
 private:
-  static constexpr unsigned char SIGNALED_STATUS_OFFSET = 128;
-
   pid_t pid_{-1};
   State state_{State::TERMINATED};
 
@@ -84,7 +99,7 @@ public:
 
   int asSigNum() const {
     assert(this->signaled());
-    return this->exitStatus() - SIGNALED_STATUS_OFFSET;
+    return this->exitStatus() - WaitResult::SIGNALED_STATUS_OFFSET;
   }
 
   bool coreDump() const { return this->coreDump_; }

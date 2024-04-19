@@ -90,7 +90,28 @@ Proc Proc::fork(ARState &st, pid_t pgid, const Proc::Op op) {
   return Proc(pid);
 }
 
+static void setWaitResult(int status, WaitResult &ret) {
+  if (WIFEXITED(status)) {
+    ret.kind = WaitResult::Kind::EXITED;
+    ret.exitStatus = WEXITSTATUS(status);
+  } else if (WIFSIGNALED(status)) {
+    ret.kind = WaitResult::Kind::SIGNALED;
+    ret.exitStatus = WTERMSIG(status) + WaitResult::SIGNALED_STATUS_OFFSET;
+#ifdef WCOREDUMP
+    if (WCOREDUMP(status)) {
+      ret.coreDump = true;
+    }
+#endif
+  } else if (WIFSTOPPED(status)) {
+    ret.kind = WaitResult::Kind::STOPPED;
+    ret.exitStatus = WSTOPSIG(status) + WaitResult::SIGNALED_STATUS_OFFSET;
+  } else if (WIFCONTINUED(status)) {
+    ret.kind = WaitResult::Kind::CONTINUED;
+  }
+}
+
 // #ifdef USE_LOGGING
+
 static const char *toString(WaitOp op) {
   const char *str = nullptr;
   switch (op) {
@@ -103,6 +124,30 @@ static const char *toString(WaitOp op) {
   }
   return str;
 }
+
+static std::string toString(const WaitResult ret) {
+  const char *kinds[] = {
+#define GEN_STR(OP) #OP,
+      EACH_WAIT_RESULT_KIND(GEN_STR)
+#undef GEN_STR
+  };
+
+  std::string value = "pid=";
+  value += std::to_string(ret.pid);
+  value += ',';
+  if (ret.kind == WaitResult::Kind::ERROR) {
+    value += " errno=";
+    value += strerror(ret.exitStatus);
+  } else {
+    char data[64];
+    snprintf(data, std::size(data), " kind=%s, exitStatus=%d, coredump=%u",
+             kinds[toUnderlying(ret.kind)], static_cast<unsigned int>(ret.exitStatus),
+             ret.coreDump ? 1 : 0);
+    value += data;
+  }
+  return value;
+}
+
 // #endif
 
 WaitResult waitForProc(pid_t pid, WaitOp op) {
@@ -118,60 +163,25 @@ WaitResult waitForProc(pid_t pid, WaitOp op) {
     break;
   }
 
+  LOG(DUMP_WAIT, "waitpid(%d, %s)", pid, toString(op));
+
   int status = 0;
   errno = 0;
-
-  LOG_EXPR(DUMP_WAIT, [&] {
-    std::string str;
-    str = "waitpid(";
-    str += std::to_string(pid);
-    str += ", ";
-    str += toString(op);
-    str += ")";
-    return str;
-  });
-
-  int ret = waitpid(pid, &status, option);
-  int errNum = errno;
+  WaitResult ret;
+  ret.pid = waitpid(pid, &status, option);
+  const int errNum = errno;
+  if (ret.pid < 0) {
+    ret.kind = WaitResult::Kind::ERROR;
+    ret.exitStatus = errNum;
+  } else {
+    setWaitResult(status, ret);
+  }
 
   // dump waitpid status
-  LOG_EXPR(DUMP_WAIT, [&] {
-    std::string str = "ret = ";
-    str += std::to_string(ret);
-    if (ret > 0) {
-      str += "\nstate: ";
-      if (WIFEXITED(status)) {
-        str += "TERMINATED, kind: EXITED, status: ";
-        str += std::to_string(WEXITSTATUS(status));
-      } else if (WIFSIGNALED(status)) {
-        int sigNum = WTERMSIG(status);
-        str += "TERMINATED, kind: SIGNALED, status: ";
-        str += getSignalName(sigNum);
-        str += "(";
-        str += std::to_string(sigNum);
-        str += ")";
-      } else if (WIFSTOPPED(status)) {
-        int sigNum = WSTOPSIG(status);
-        str += "STOPPED, kind: STOPPED, status: ";
-        str += getSignalName(sigNum);
-        str += "(";
-        str += std::to_string(sigNum);
-        str += ")";
-      } else if (WIFCONTINUED(status)) {
-        str += "RUNNING, kind: CONTINUED";
-      }
-    } else if (ret < 0) {
-      str += "\nFAILED\n";
-      str += strerror(errNum);
-    }
-    return str;
-  });
+  LOG(DUMP_WAIT, "waitpid(%d, %s) = (%s)", pid, toString(op), toString(ret).c_str());
 
   errno = errNum; // NOLINT
-  return WaitResult{
-      .pid = ret,
-      .status = status,
-  };
+  return ret;
 }
 
 // ##################
@@ -184,25 +194,26 @@ bool Proc::updateState(WaitResult ret) {
     return false;
   }
 
-  int status = ret.status;
-  if (WIFEXITED(status)) {
+  switch (ret.kind) {
+  case WaitResult::Kind::EXITED:
     this->state_ = State::TERMINATED;
-    this->exitStatus_ = WEXITSTATUS(status);
-  } else if (WIFSIGNALED(status)) {
-    int sigNum = WTERMSIG(status);
+    this->exitStatus_ = ret.exitStatus;
+    break;
+  case WaitResult::Kind::SIGNALED:
     this->state_ = State::TERMINATED;
-    this->exitStatus_ = sigNum + SIGNALED_STATUS_OFFSET;
+    this->exitStatus_ = ret.exitStatus;
     this->signaled_ = true;
-#ifdef WCOREDUMP
-    if (WCOREDUMP(status)) {
-      this->coreDump_ = true;
-    }
-#endif
-  } else if (WIFSTOPPED(status)) {
+    this->coreDump_ = ret.coreDump;
+    break;
+  case WaitResult::Kind::STOPPED:
     this->state_ = State::STOPPED;
-    this->exitStatus_ = WSTOPSIG(status) + SIGNALED_STATUS_OFFSET;
-  } else if (WIFCONTINUED(status)) {
+    this->exitStatus_ = ret.exitStatus;
+    break;
+  case WaitResult::Kind::CONTINUED:
     this->state_ = State::RUNNING;
+    break;
+  case WaitResult::Kind::ERROR:
+    break; // unreachable
   }
   return true;
 }
@@ -490,7 +501,7 @@ void JobTable::waitForAny() {
   SignalGuard guard;
   ARState::clearPendingSignal(SIGCHLD);
 
-  for (WaitResult ret{}; (ret = waitForProc(-1, WaitOp::NONBLOCKING)).pid != 0;) {
+  for (WaitResult ret; (ret = waitForProc(-1, WaitOp::NONBLOCKING)).pid != 0;) {
     if (ret.pid == -1) {
       break;
     }
