@@ -254,7 +254,7 @@ public:
   static ObjPtr<JobObject> create(unsigned int size, const Proc *procs, bool saveStdin,
                                   ObjPtr<UnixFdObject> inObj, ObjPtr<UnixFdObject> outObj,
                                   Value &&desc) {
-    void *ptr = malloc(sizeof(JobObject) + sizeof(Proc) * size);
+    void *ptr = operator new(sizeof(JobObject) + sizeof(Proc) * size);
     auto *entry = new (ptr)
         JobObject(size, procs, saveStdin, std::move(inObj), std::move(outObj), std::move(desc));
     return ObjPtr<JobObject>(entry);
@@ -264,10 +264,6 @@ public:
                                   ObjPtr<UnixFdObject> outObj, Value &&desc) {
     Proc procs[1] = {proc};
     return create(1, procs, false, std::move(inObj), std::move(outObj), std::move(desc));
-  }
-
-  static void operator delete(void *ptr) noexcept { // NOLINT
-    free(ptr);
   }
 
   unsigned int getProcSize() const { return this->procSize; }

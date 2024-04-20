@@ -493,7 +493,7 @@ private:
 public:
   static FunctionType *create(unsigned int id, StringRef ref, const DSType &superType,
                               const DSType &returnType, std::vector<const DSType *> &&paramTypes) {
-    void *ptr = malloc(sizeof(FunctionType) + sizeof(DSType *) * paramTypes.size());
+    void *ptr = operator new(sizeof(FunctionType) + sizeof(DSType *) * paramTypes.size());
     return new (ptr) FunctionType(id, ref, superType, returnType, std::move(paramTypes));
   }
 
@@ -511,10 +511,6 @@ public:
   CallSignature toCallSignature(const char *name, const Handle *hd) const {
     return {this->returnType, this->getParamSize(),
             this->getParamSize() == 0 ? nullptr : &this->paramTypes[0], name, hd};
-  }
-
-  static void operator delete(void *ptr) noexcept { // NOLINT
-    free(ptr);
   }
 
   static bool classof(const DSType *type) { return type->isFuncType(); }
@@ -956,13 +952,9 @@ public:
     if (famSize) {
       famSize++; // reserve sentinel
     }
-    void *ptr = malloc(sizeof(FuncHandle) + sizeof(char) * famSize);
+    void *ptr = operator new(sizeof(FuncHandle) + sizeof(char) * famSize);
     auto *handle = new (ptr) FuncHandle(funcType, index, std::move(packed), modId);
     return std::unique_ptr<FuncHandle>(handle);
-  }
-
-  static void operator delete(void *ptr) noexcept { // NOLINT
-    free(ptr);
   }
 
   StringRef getPackedParamNames() const {
@@ -1021,14 +1013,10 @@ public:
 
   ~MethodHandle();
 
-  static void operator delete(void *ptr) noexcept { // NOLINT
-    free(ptr);
-  }
-
   static std::unique_ptr<MethodHandle>
   native(const DSType &recv, unsigned int index, const DSType &ret, unsigned char paramSize,
          const std::array<const DSType *, HandleInfoParamNumMax()> &paramTypes) {
-    void *ptr = malloc(sizeof(MethodHandle) + sizeof(uintptr_t) * paramSize);
+    void *ptr = operator new(sizeof(MethodHandle) + sizeof(uintptr_t) * paramSize);
     auto *handle =
         new (ptr) MethodHandle(recv, index, ret, paramSize, BUILTIN_MOD_ID, HandleKind::NATIVE);
     for (unsigned int i = 0; i < static_cast<unsigned int>(paramSize); i++) {

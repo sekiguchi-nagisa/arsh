@@ -43,13 +43,9 @@ public:
     assert(description.size() <= MAX_SIZE);
     assert(candidate.size() + 1 <= MAX_SIZE - description.size());
     const unsigned int allocSize = candidate.size() + description.size() + 1;
-    void *ptr = malloc(sizeof(CandidateObject) + sizeof(char) * allocSize);
+    void *ptr = operator new(sizeof(CandidateObject) + sizeof(char) * allocSize);
     auto *obj = new (ptr) CandidateObject(candidate, description);
     return ObjPtr<CandidateObject>(obj);
-  }
-
-  static void operator delete(void *ptr) noexcept { // NOLINT
-    free(ptr);
   }
 
   unsigned int candidateSize() const { return this->canSize; }

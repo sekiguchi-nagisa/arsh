@@ -939,7 +939,7 @@ private:
 
 public:
   static BaseObject *create(const DSType &type, unsigned int size) {
-    void *ptr = malloc(sizeof(BaseObject) + sizeof(RawValue) * size);
+    void *ptr = operator new(sizeof(BaseObject) + sizeof(RawValue) * size);
     return new (ptr) BaseObject(type, size);
   }
 
@@ -958,11 +958,6 @@ public:
 
   const Value &operator[](unsigned int index) const {
     return static_cast<const Value &>(this->fields[index]);
-  }
-
-  static void operator delete(void *ptr) noexcept {
-    // NOLINT
-    free(ptr);
   }
 
   unsigned int getFieldSize() const { return this->fieldSize; }
@@ -1286,7 +1281,7 @@ private:
 
 public:
   static ClosureObject *create(ObjPtr<FuncObject> func, unsigned int size, const Value *values) {
-    void *ptr = malloc(sizeof(ClosureObject) + sizeof(RawValue) * size);
+    void *ptr = operator new(sizeof(ClosureObject) + sizeof(RawValue) * size);
     auto *closure = new (ptr) ClosureObject(std::move(func), size);
     for (unsigned int i = 0; i < size; i++) {
       (*closure)[i] = values[i];
@@ -1302,11 +1297,6 @@ public:
 
   const Value &operator[](unsigned int index) const {
     return static_cast<const Value &>(this->upvars[index]);
-  }
-
-  static void operator delete(void *ptr) noexcept {
-    // NOLINT
-    free(ptr);
   }
 };
 
