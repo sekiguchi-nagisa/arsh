@@ -25,6 +25,7 @@
 #include <constant.h>
 #include <misc/fatal.h>
 #include <misc/files.hpp>
+#include <misc/inlined_array.hpp>
 #include <misc/unicode.hpp>
 
 #include "ansi.h"
@@ -218,7 +219,7 @@ ProcBuilder &ProcBuilder::addArgs(const std::vector<std::string> &values) {
 
 ProcHandle ProcBuilder::operator()() const {
   return spawn(this->config, [&] {
-    auto *argv = static_cast<char **>(malloc(sizeof(char *) * (this->args.size() + 1)));
+    arsh::InlinedArray<char *, 6> argv(this->args.size() + 1);
     for (unsigned int i = 0; i < this->args.size(); i++) {
       argv[i] = const_cast<char *>(this->args[i].c_str());
     }
@@ -229,8 +230,7 @@ ProcHandle ProcBuilder::operator()() const {
     if (this->beforeExec) {
       this->beforeExec();
     }
-    execvp(argv[0], argv);
-    free(argv);
+    execvp(argv[0], argv.ptr());
     return -errno;
   });
 }

@@ -17,7 +17,7 @@
 #ifndef MISC_LIB_INLINED_ARRAY_HPP
 #define MISC_LIB_INLINED_ARRAY_HPP
 
-#include <cstdlib>
+#include <memory>
 #include <type_traits>
 
 BEGIN_MISC_LIB_NAMESPACE_DECL
@@ -27,15 +27,25 @@ class InlinedArray {
 private:
   static_assert(std::is_standard_layout_v<T> && std::is_trivially_copyable_v<T>, "forbidden type");
 
-  const size_t size_;
+  struct Alloc : protected std::allocator<T> {
+    const size_t size;
+
+    explicit Alloc(size_t s) : size(s) {}
+
+    T *alloc() { return this->allocate(this->size); }
+
+    void dealloc(T *p) { this->deallocate(p, this->size); }
+  };
+
+  Alloc alloc_;
   T *ptr_;
   T data_[N];
 
 public:
-  explicit InlinedArray(size_t size) : size_(size) {
+  explicit InlinedArray(size_t size) : alloc_(size) {
     this->ptr_ = this->data_;
     if (this->isAllocated()) {
-      this->ptr_ = static_cast<T *>(malloc(sizeof(T) * this->size()));
+      this->ptr_ = this->alloc_.alloc();
     }
     if constexpr (!std::is_trivial_v<T>) {
       for (size_t i = 0; i < this->size(); i++) {
@@ -46,11 +56,11 @@ public:
 
   ~InlinedArray() {
     if (this->isAllocated()) {
-      free(this->ptr_);
+      this->alloc_.dealloc(this->ptr_);
     }
   }
 
-  size_t size() const { return this->size_; }
+  size_t size() const { return this->alloc_.size; }
 
   T *ptr() { return this->ptr_; }
 
