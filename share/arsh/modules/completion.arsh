@@ -205,6 +205,7 @@ function _comp_wrap(file : String, target : String, words : [String], cursor : I
         }
         var long = $line.startsWith('--') && $line.endsWith('=') # suppress automatic space insertion for `--long=`
         $ret.add($line, $space: $long ? 0 : -1)
+        $? = 0 # suppress error
     }
     return $ret.size() == 0 ? $none : $ret
 }
