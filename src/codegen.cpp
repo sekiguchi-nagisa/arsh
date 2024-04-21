@@ -382,7 +382,9 @@ void ByteCodeGenerator::generatePipeline(const PipelineNode &node, ForkKind fork
     this->generateBlock(node.getBaseIndex(), 1, needReclaim, [&] {
       this->emit1byteIns(OpCode::STORE_LOCAL, node.getBaseIndex());
       this->visit(*node.getNodes().back(), CmdCallCtx::AUTO);
-      this->emit1byteIns(OpCode::SYNC_PIPESTATUS, node.getBaseIndex());
+      if (needReclaim) {
+        this->emit1byteIns(OpCode::SYNC_PIPESTATUS, node.getBaseIndex());
+      }
     });
   }
 }
