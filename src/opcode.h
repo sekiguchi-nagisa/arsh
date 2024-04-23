@@ -50,8 +50,8 @@ namespace arsh {
   OP(PUSH_META, 2, 1)                                                                              \
   OP(PUSH_INVALID, 0, 1)                                                                           \
   OP(LOAD_CONST, 1, 1)                                                                             \
-  OP(LOAD_CONST_W, 2, 1)                                                                           \
-  OP(LOAD_CONST_T, 3, 1)                                                                           \
+  OP(LOAD_CONST2, 2, 1)                                                                            \
+  OP(LOAD_CONST4, 4, 1)                                                                            \
   OP(LOAD_GLOBAL, 2, 1)                                                                            \
   OP(STORE_GLOBAL, 2, -1)                                                                          \
   OP(LOAD_LOCAL, 1, 1)                                                                             \

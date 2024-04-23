@@ -314,7 +314,10 @@ private:
 
   unsigned int currentCodeOffset() const { return this->curBuilder().codeBuffer.size(); }
 
-  unsigned int emitConstant(Value &&value);
+  unsigned int emitConstant(Value &&value) {
+    this->curBuilder().constBuffer.append(std::move(value));
+    return this->curBuilder().constBuffer.getSize() - 1;
+  }
 
   void emitLdcIns(const Value &value) { this->emitLdcIns(Value(value)); }
 

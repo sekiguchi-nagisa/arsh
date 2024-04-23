@@ -22,8 +22,8 @@
 | PUSH_META         | 2: meta option                 | -> value                                     | push expansion meta character onto the stack                    |
 | PUSH_INVALID      |                                | -> value                                     | push the invalid onto the stack                                 |
 | LOAD_CONST        | 1: byte1                       | -> value                                     | load a constant from the constant pool                          |
-| LOAD_CONST_W      | 2: byte1 byte2                 | -> value                                     | load a constant from the constant pool                          |
-| LOAD_CONST_T      | 3: byte1 byte2 byte3           | -> value                                     | load a constant from the constant pool                          |
+| LOAD_CONST2       | 2: byte1 byte2                 | -> value                                     | load a constant from the constant pool                          |
+| LOAD_CONST4       | 4: byte1 byte2 byte3 byte4     | -> value                                     | load a constant from the constant pool                          |
 | LOAD_GLOBAL       | 2: byte1 byte2                 | -> value                                     | load a value from a global variable                             |
 | STORE_GLOBAL      | 2: byte1 byte2                 | value ->                                     | store a value to a global variable                              |
 | LOAD_LOCAL        | 1: byte1                       | -> value                                     | load a value from a local variable                              |

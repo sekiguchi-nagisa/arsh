@@ -120,15 +120,6 @@ void ByteCodeGenerator::emitIns(OpCode op) {
   }
 }
 
-unsigned int ByteCodeGenerator::emitConstant(Value &&value) {
-  this->curBuilder().constBuffer.append(std::move(value));
-  const unsigned int index = this->curBuilder().constBuffer.getSize() - 1;
-  if (index > 0xFFFFFF) {
-    fatal("const pool index is up to 24bit\n");
-  }
-  return index;
-}
-
 void ByteCodeGenerator::emitMethodCallIns(const MethodHandle &handle) {
   /**
    * in constructor call, dose not pass receiver
@@ -157,9 +148,9 @@ void ByteCodeGenerator::emitLdcIns(Value &&value) {
   if (index <= UINT8_MAX) {
     this->emit1byteIns(OpCode::LOAD_CONST, index);
   } else if (index <= UINT16_MAX) {
-    this->emit2byteIns(OpCode::LOAD_CONST_W, index);
+    this->emit2byteIns(OpCode::LOAD_CONST2, index);
   } else {
-    this->emit3byteIns(OpCode::LOAD_CONST_T, index);
+    this->emit4byteIns(OpCode::LOAD_CONST4, index);
   }
 }
 

@@ -1526,13 +1526,13 @@ bool VM::mainLoop(ARState &state) {
         state.stack.push(CONST_POOL(state)[index]);
         vmnext;
       }
-      vmcase(LOAD_CONST_W) {
+      vmcase(LOAD_CONST2) {
         unsigned short index = consume16(state.stack.ip());
         state.stack.push(CONST_POOL(state)[index]);
         vmnext;
       }
-      vmcase(LOAD_CONST_T) {
-        unsigned int index = consume24(state.stack.ip());
+      vmcase(LOAD_CONST4) {
+        unsigned int index = consume32(state.stack.ip());
         state.stack.push(CONST_POOL(state)[index]);
         vmnext;
       }
