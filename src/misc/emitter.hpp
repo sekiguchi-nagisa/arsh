@@ -173,20 +173,21 @@ struct CodeEmitter {
       for (auto &u : e.second) {
         const unsigned int targetIndex = u.targetIndex;
         if (u.baseIndex > location) {
-          fatal("base index: %u, label location: %u\n", u.baseIndex, location);
+          fprintf(stderr, "base index: %u, label location: %u\n", u.baseIndex, location);
+          return false;
         }
         const unsigned int offset = location - u.baseIndex;
         switch (u.offsetLen) {
         case LabelTarget::_8:
           if (offset > UINT8_MAX) {
-            //                        fatal("offset is greater than UINT8_MAX\n");
+            fprintf(stderr, "offset is greater than UINT8_MAX\n");
             return false;
           }
           this->emit8(targetIndex, offset);
           break;
         case LabelTarget::_16:
           if (offset > UINT16_MAX) {
-            //                        fatal("offset is greater than UINT16_MAX\n");
+            fprintf(stderr, "offset is greater than UINT16_MAX\n");
             return false;
           }
           this->emit16(targetIndex, offset);
