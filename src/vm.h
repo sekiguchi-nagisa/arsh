@@ -277,7 +277,7 @@ private:
   bool nullChar{false};
   ModId belongModId_; // if not belong to module (external, builtin, ect), indicate 0
   union {
-    const DSCode *udc_;
+    const ARCode *udc_;
     const ModType *modType_;
     builtin_command_t builtinCmd_;
     Object *cmdObj_;
@@ -365,7 +365,7 @@ public:
 
   ModId belongModId() const { return this->belongModId_; }
 
-  const DSCode &udc() const { return *this->udc_; }
+  const ARCode &udc() const { return *this->udc_; }
 
   const ModType &modType() const { return *this->modType_; }
 
@@ -452,7 +452,7 @@ private:
   }
 
   static bool windStackFrame(ARState &state, unsigned int stackTopOffset, unsigned int paramSize,
-                             const DSCode &code) {
+                             const ARCode &code) {
     const auto ret = state.stack.wind(stackTopOffset, paramSize, code);
     if (unlikely(!ret)) {
       raiseError(state, TYPE::StackOverflowError, "local stack size reaches limit");
@@ -461,20 +461,20 @@ private:
   }
 
   // runtime api
-  static bool instanceOf(const TypePool &pool, const Value &value, const DSType &targetType) {
+  static bool instanceOf(const TypePool &pool, const Value &value, const Type &targetType) {
     if (value.isInvalid()) {
       return targetType.isOptionType();
     }
     return targetType.isSameOrBaseTypeOf(pool.get(value.getTypeID()));
   }
 
-  static bool checkCast(ARState &state, const DSType &targetType);
+  static bool checkCast(ARState &state, const Type &targetType);
 
   static const char *loadEnv(ARState &state, bool hasDefault);
 
   static bool storeEnv(ARState &state);
 
-  static void pushNewObject(ARState &state, const DSType &type);
+  static void pushNewObject(ARState &state, const Type &type);
 
   /**
    * stack state in function apply    stack grow ===>
@@ -485,7 +485,7 @@ private:
    *                       | offset |   |        |
    */
   static bool prepareFuncCall(ARState &state, unsigned int paramSize) {
-    const DSCode *code;
+    const ARCode *code;
     auto *obj = state.stack.peekByOffset(paramSize).get();
     if (isa<FuncObject>(obj)) {
       code = &cast<FuncObject>(obj)->getCode();
@@ -531,7 +531,7 @@ private:
    * +-----------+---------------+--------------+
    *             |     offset    |
    */
-  static bool prepareUserDefinedCommandCall(ARState &state, const DSCode &code,
+  static bool prepareUserDefinedCommandCall(ARState &state, const ARCode &code,
                                             ObjPtr<ArrayObject> &&argvObj, Value &&redirConfig,
                                             CmdCallAttr attr);
 

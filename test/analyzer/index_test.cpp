@@ -1642,7 +1642,7 @@ TEST_F(IndexTest, docSymbol) {
   ASSERT_EQ(SymbolKind::Class, toSymbolKind(DeclSymbol::Kind::ERROR_TYPE_DEF));
 }
 
-static std::string resolvePackedParamType(const DSType &type) {
+static std::string resolvePackedParamType(const Type &type) {
   if (isa<ArrayType>(type)) {
     return cast<ArrayType>(type).getElementType().getNameRef().toString();
   } else if (isa<MapType>(type)) {

@@ -137,7 +137,7 @@ private:
     this->data += ref;
   }
 
-  void add(const DSType &type);
+  void add(const Type &type);
 
   void add(const std::string &name, const Handle &handle);
 
@@ -159,7 +159,7 @@ public:
   }
 
 private:
-  const DSType *unpackType();
+  const Type *unpackType();
 
   std::pair<std::string, HandlePtr> unpackHandle();
 

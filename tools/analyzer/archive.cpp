@@ -26,7 +26,7 @@ using namespace arsh;
 // ##     Archiver     ##
 // ######################
 
-void Archiver::add(const DSType &type) {
+void Archiver::add(const Type &type) {
   if (type.typeId() < this->builtinTypeIdCount && this->builtinTypeIdCount <= UINT8_MAX) {
     this->writeT(ArchiveType::PREDEFINED);
     this->write8(static_cast<uint8_t>(type.typeId()));
@@ -224,7 +224,7 @@ std::pair<std::string, HandlePtr> Unarchiver::unpackHandle() {
   unsigned int famSize = this->read8();
   if (famSize) { // method handle
     auto *returnType = TRY(this->unpackType());
-    std::vector<const DSType *> paramTypes;
+    std::vector<const Type *> paramTypes;
     for (unsigned int i = 0; i < famSize - 1; i++) {
       paramTypes.push_back(TRY(this->unpackType()));
     }
@@ -259,7 +259,7 @@ std::pair<std::string, HandlePtr> Unarchiver::unpackHandle() {
     std::forward<decltype(__v)>(__v);                                                              \
   })
 
-const DSType *Unarchiver::unpackType() {
+const Type *Unarchiver::unpackType() {
   const auto k = this->readT();
   switch (k) {
   case ArchiveType::PREDEFINED: {
@@ -279,7 +279,7 @@ const DSType *Unarchiver::unpackType() {
   }
   case ArchiveType::TUPLE: {
     uint8_t n = this->read8();
-    std::vector<const DSType *> types;
+    std::vector<const Type *> types;
     for (unsigned int i = 0; i < n; i++) {
       auto *type = TRY(this->unpackType());
       types.push_back(type);
@@ -341,7 +341,7 @@ const DSType *Unarchiver::unpackType() {
   }
   case ArchiveType::FUNC: {
     auto *retType = TRY(this->unpackType());
-    std::vector<const DSType *> types;
+    std::vector<const Type *> types;
     uint8_t n = this->read8();
     for (unsigned int i = 0; i < n; i++) {
       auto *type = TRY(this->unpackType());

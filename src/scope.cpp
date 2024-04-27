@@ -87,7 +87,7 @@ static bool definedInBuiltin(const NameScope &scope, const std::string &name) {
   return false;
 }
 
-NameRegisterResult NameScope::defineHandle(std::string &&name, const DSType &type, HandleKind k,
+NameRegisterResult NameScope::defineHandle(std::string &&name, const Type &type, HandleKind k,
                                            HandleAttr attr) {
   if (definedInBuiltin(*this, name)) {
     return Err(NameRegisterError::DEFINED);
@@ -106,7 +106,7 @@ NameRegisterResult NameScope::defineAlias(std::string &&name, const HandlePtr &h
 }
 
 NameRegisterResult NameScope::defineTypeAlias(const TypePool &pool, const std::string &name,
-                                              const DSType &type) {
+                                              const Type &type) {
   if (this->isGlobal()) {
     if (pool.getType(name) || pool.getTypeTemplate(name)) {
       return Err(NameRegisterError::DEFINED);
@@ -131,9 +131,9 @@ NameRegisterResult NameScope::defineNamedFunction(const std::string &name,
   return this->add(std::string(name), HandlePtr(handle.release()));
 }
 
-NameRegisterResult NameScope::defineMethod(const TypePool &pool, const DSType &recvType,
-                                           const std::string &name, const DSType &returnType,
-                                           const std::vector<const DSType *> &paramTypes,
+NameRegisterResult NameScope::defineMethod(const TypePool &pool, const Type &recvType,
+                                           const std::string &name, const Type &returnType,
+                                           const std::vector<const Type *> &paramTypes,
                                            PackedParamNames &&packed) {
   if (!this->isGlobal() || recvType.isNothingType() || recvType.isVoidType() ||
       recvType.isUnresolved()) {
@@ -363,7 +363,7 @@ Result<HandlePtr, NameLookupError> NameScope::lookupAndCaptureUpVar(const std::s
   return Err(NameLookupError::NOT_FOUND);
 }
 
-Result<HandlePtr, NameLookupError> NameScope::lookupField(const TypePool &pool, const DSType &recv,
+Result<HandlePtr, NameLookupError> NameScope::lookupField(const TypePool &pool, const Type &recv,
                                                           const std::string &fieldName) const {
   auto handle = recv.lookupField(pool, fieldName);
   if (handle) {
@@ -376,10 +376,10 @@ Result<HandlePtr, NameLookupError> NameScope::lookupField(const TypePool &pool, 
   return Err(NameLookupError::NOT_FOUND);
 }
 
-const MethodHandle *NameScope::lookupMethod(TypePool &pool, const DSType &recvType,
+const MethodHandle *NameScope::lookupMethod(TypePool &pool, const Type &recvType,
                                             const std::string &methodName) const {
   auto *globalScope = this->getGlobalScope();
-  for (const DSType *type = &recvType; type != nullptr; type = type->getSuperType()) {
+  for (const Type *type = &recvType; type != nullptr; type = type->getSuperType()) {
     std::string name = toMethodFullName(type->typeId(), methodName);
     if (auto handle = globalScope->find(name)) {
       assert(handle->isMethodHandle());

@@ -156,7 +156,7 @@ static const char *toString(EditConfig config) {
   return table[toUnderlying(config)];
 }
 
-static const DSType &toType(const TypePool &pool, EditConfig config) {
+static const Type &toType(const TypePool &pool, EditConfig config) {
   constexpr TYPE types[] = {
 #define GEN_TABLE(E, S, T) T,
       EACH_EDIT_CONFIG(GEN_TABLE)

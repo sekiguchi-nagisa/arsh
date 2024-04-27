@@ -137,7 +137,7 @@ public:
 
 private:
   unsigned int voidReturnCount{0};
-  const DSType *returnType{nullptr};
+  const Type *returnType{nullptr};
   FlexBuffer<JumpNode *> returnNodes;
 
   FlowContext flow;
@@ -149,7 +149,7 @@ private:
 public:
   FuncContext() = default;
 
-  explicit FuncContext(Kind k, const DSType *type, std::unique_ptr<FuncContext> &&parent)
+  explicit FuncContext(Kind k, const Type *type, std::unique_ptr<FuncContext> &&parent)
       : kind(k), depth(parent->depth + 1), returnType(type), parent(std::move(parent)) {}
 
   std::unique_ptr<FuncContext> takeParent() && { return std::move(this->parent); }
@@ -180,7 +180,7 @@ public:
    */
   const FlexBuffer<JumpNode *> &getReturnNodes() const { return this->returnNodes; }
 
-  const DSType *getReturnType() const { return this->returnType; }
+  const Type *getReturnType() const { return this->returnType; }
 
   unsigned int getVoidReturnCount() const { return this->voidReturnCount; }
 
@@ -302,7 +302,7 @@ protected:
 
   SignatureHandler signatureHandler;
 
-  FlexBuffer<const DSType *> requiredTypes;
+  FlexBuffer<const Type *> requiredTypes;
 
   AttributeMap attributeMap;
 
@@ -352,7 +352,7 @@ protected:
    * if node type is void type, throw exception.
    * return resolved type.
    */
-  const DSType &checkTypeAsExpr(Node &targetNode) {
+  const Type &checkTypeAsExpr(Node &targetNode) {
     return this->checkType(nullptr, targetNode, &this->typePool().get(TYPE::Void));
   }
 
@@ -361,7 +361,7 @@ protected:
    * @param targetNode
    * @return
    */
-  const DSType &checkTypeAsSomeExpr(Node &targetNode);
+  const Type &checkTypeAsSomeExpr(Node &targetNode);
 
   /**
    * check node type
@@ -369,7 +369,7 @@ protected:
    * if requiredType is not equivalent to node type, throw exception.
    * return resolved type.
    */
-  const DSType &checkType(const DSType &requiredType, Node &targetNode) {
+  const Type &checkType(const Type &requiredType, Node &targetNode) {
     return this->checkType(&requiredType, targetNode, nullptr);
   }
 
@@ -378,7 +378,7 @@ protected:
    * @param targetNode
    * @return
    */
-  const DSType &checkTypeExactly(Node &targetNode) {
+  const Type &checkTypeExactly(Node &targetNode) {
     return this->checkType(nullptr, targetNode, nullptr);
   }
 
@@ -392,8 +392,7 @@ protected:
    * and if unacceptableType is equivalent to node type, throw exception.
    * return resolved type.
    */
-  const DSType &checkType(const DSType *requiredType, Node &targetNode,
-                          const DSType *unacceptableType) {
+  const Type &checkType(const Type *requiredType, Node &targetNode, const Type *unacceptableType) {
     CoercionKind kind = CoercionKind::NOP;
     return this->checkType(requiredType, targetNode, unacceptableType, kind);
   }
@@ -401,26 +400,26 @@ protected:
   /**
    * root method of checkType
    */
-  const DSType &checkType(const DSType *requiredType, Node &targetNode,
-                          const DSType *unacceptableType, CoercionKind &kind);
+  const Type &checkType(const Type *requiredType, Node &targetNode, const Type *unacceptableType,
+                        CoercionKind &kind);
 
 private:
-  const DSType *toType(TypeNode &node);
+  const Type *toType(TypeNode &node);
 
-  const DSType *getRequiredType() const { return this->requiredTypes.back(); }
+  const Type *getRequiredType() const { return this->requiredTypes.back(); }
 
   void checkTypeWithCurrentScope(BlockNode &blockNode) {
     this->checkTypeWithCurrentScope(&this->typePool().get(TYPE::Void), blockNode);
   }
 
-  void checkTypeWithCurrentScope(const DSType *requiredType, BlockNode &blockNode);
+  void checkTypeWithCurrentScope(const Type *requiredType, BlockNode &blockNode);
 
   /**
    * after type checking, perform Bool or Void coercion
    * @param requiredType
    * @param targetNode
    */
-  void checkTypeWithCoercion(const DSType &requiredType, std::unique_ptr<Node> &targetNode);
+  void checkTypeWithCoercion(const Type &requiredType, std::unique_ptr<Node> &targetNode);
 
   void resolveToStringCoercion(std::unique_ptr<Node> &targetNode) {
     targetNode =
@@ -428,8 +427,8 @@ private:
     this->resolveCastOp(cast<TypeOpNode>(*targetNode), true);
   }
 
-  const DSType &resolveCoercionOfJumpValue(const FlexBuffer<JumpNode *> &jumpNodes,
-                                           bool optional = true);
+  const Type &resolveCoercionOfJumpValue(const FlexBuffer<JumpNode *> &jumpNodes,
+                                         bool optional = true);
 
   /**
    *
@@ -440,7 +439,7 @@ private:
    * @return
    * if can not add entry, return null
    */
-  HandlePtr addEntry(const Node &node, const std::string &symbolName, const DSType &type,
+  HandlePtr addEntry(const Node &node, const std::string &symbolName, const Type &type,
                      HandleAttr attribute) {
     return this->addEntry(node.getToken(), symbolName, type, HandleKind::VAR, attribute);
   }
@@ -451,7 +450,7 @@ private:
                           attr);
   }
 
-  HandlePtr addEntry(const NameInfo &info, const DSType &type, HandleAttr attribute) {
+  HandlePtr addEntry(const NameInfo &info, const Type &type, HandleAttr attribute) {
     return this->addEntry(info.getToken(), info.getName(), type, HandleKind::VAR, attribute);
   }
 
@@ -465,8 +464,8 @@ private:
    * @return
    * if can not add entry, return null
    */
-  HandlePtr addEntry(Token token, const std::string &symbolName, const DSType &type,
-                     HandleKind kind, HandleAttr attribute);
+  HandlePtr addEntry(Token token, const std::string &symbolName, const Type &type, HandleKind kind,
+                     HandleAttr attribute);
 
   /**
    *
@@ -514,7 +513,7 @@ private:
     return IntoBlock(makeObserver(this->curScope));
   }
 
-  auto intoFunc(const DSType *returnType, FuncContext::Kind k = FuncContext::FUNC) {
+  auto intoFunc(const Type *returnType, FuncContext::Kind k = FuncContext::FUNC) {
     this->curScope = this->curScope->enterScope(NameScope::FUNC);
     this->curScope = this->curScope->enterScope(NameScope::BLOCK);
     this->funcCtx = std::make_unique<FuncContext>(k, returnType, std::move(this->funcCtx));
@@ -655,7 +654,7 @@ private:
     CaseNode::Kind kind{CaseNode::MAP};
     bool elsePattern{false};
     std::unique_ptr<PatternMap> map;
-    const DSType *type{nullptr};
+    const Type *type{nullptr};
 
   public:
     bool hasElsePattern() const { return this->elsePattern; }
@@ -666,9 +665,9 @@ private:
 
     auto getKind() const { return this->kind; }
 
-    void setType(const DSType *t) { this->type = t; }
+    void setType(const Type *t) { this->type = t; }
 
-    const DSType *getType() const { return this->type; }
+    const Type *getType() const { return this->type; }
 
     /**
      * try to collect constant node.
@@ -692,8 +691,8 @@ private:
    *   if fallbackType is not null, return fallbackType.
    *   if fallbackType is null, return Nothing and report error
    */
-  const DSType &resolveCommonSuperType(const Node &node, std::vector<const DSType *> &&types,
-                                       const DSType *fallbackType);
+  const Type &resolveCommonSuperType(const Node &node, std::vector<const Type *> &&types,
+                                     const Type *fallbackType);
 
   /**
    * evaluate constant expression

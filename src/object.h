@@ -114,7 +114,7 @@ struct ObjectWithRtti : public Object {
 protected:
   static_assert(sizeof(Object) == 8);
 
-  explicit ObjectWithRtti(const DSType &type) : ObjectWithRtti(type.typeId()) {}
+  explicit ObjectWithRtti(const Type &type) : ObjectWithRtti(type.typeId()) {}
 
   explicit ObjectWithRtti(TYPE type) : ObjectWithRtti(toUnderlying(type)) {}
 
@@ -293,7 +293,7 @@ protected:
         int64_t i64;
         double f64;
         bool b;
-        const DSType *type; // not null
+        const Type *type; // not null
       };
     } value;
 
@@ -588,7 +588,7 @@ public:
     return ret;
   }
 
-  static Value createDummy(const DSType &type, unsigned int v1 = 0, unsigned int v2 = 0) {
+  static Value createDummy(const Type &type, unsigned int v1 = 0, unsigned int v2 = 0) {
     Value ret;
     ret.u32s.kind = ValueKind::DUMMY;
     ret.u32s.values[0] = static_cast<uint32_t>(type.typeId());
@@ -813,9 +813,9 @@ public:
 
   using IterType = std::vector<Value>::const_iterator;
 
-  explicit ArrayObject(const DSType &type) : ObjectWithRtti(type) {}
+  explicit ArrayObject(const Type &type) : ObjectWithRtti(type) {}
 
-  ArrayObject(const DSType &type, std::vector<Value> &&values)
+  ArrayObject(const Type &type, std::vector<Value> &&values)
       : ArrayObject(type.typeId(), std::move(values)) {}
 
   ArrayObject(unsigned int typeID, std::vector<Value> &&values)
@@ -931,14 +931,14 @@ private:
   unsigned int fieldSize;
   RawValue fields[];
 
-  BaseObject(const DSType &type, unsigned int size) : ObjectWithRtti(type), fieldSize(size) {
+  BaseObject(const Type &type, unsigned int size) : ObjectWithRtti(type), fieldSize(size) {
     for (unsigned int i = 0; i < this->fieldSize; i++) {
       new (&this->fields[i]) Value();
     }
   }
 
 public:
-  static BaseObject *create(const DSType &type, unsigned int size) {
+  static BaseObject *create(const Type &type, unsigned int size) {
     void *ptr = operator new(sizeof(BaseObject) + sizeof(RawValue) * size);
     return new (ptr) BaseObject(type, size);
   }
@@ -1015,7 +1015,7 @@ private:
   std::vector<StackTraceElement> stackTrace;
 
 public:
-  ErrorObject(const DSType &type, Value &&message, Value &&name, int64_t status,
+  ErrorObject(const Type &type, Value &&message, Value &&name, int64_t status,
               std::vector<StackTraceElement> &&stackTrace)
       : ObjectWithRtti(type), message(std::move(message)), name(std::move(name)), status(status),
         stackTrace(std::move(stackTrace)) {}
@@ -1047,7 +1047,7 @@ public:
   /**
    * create new Error_Object and create stack trace
    */
-  static ObjPtr<ErrorObject> newError(const ARState &state, const DSType &type, Value &&message,
+  static ObjPtr<ErrorObject> newError(const ARState &state, const Type &type, Value &&message,
                                       int64_t status);
 };
 
@@ -1058,7 +1058,7 @@ enum class CodeKind : unsigned char {
   NATIVE,
 };
 
-class DSCode {
+class ARCode {
 protected:
   struct Base {
     const CodeKind codeKind{CodeKind::NATIVE};
@@ -1073,9 +1073,9 @@ protected:
   } base;
 
 public:
-  DSCode() = default;
+  ARCode() = default;
 
-  DSCode(Base base) : base(base) {} // NOLINT
+  ARCode(Base base) : base(base) {} // NOLINT
 
   const unsigned char *getCode() const { return this->base.code; }
 
@@ -1090,7 +1090,7 @@ public:
   unsigned int getCodeSize() const { return this->base.size; }
 };
 
-class NativeCode : public DSCode {
+class NativeCode : public ARCode {
 public:
   using ArrayType = std::array<char, 8>;
 
@@ -1099,7 +1099,7 @@ private:
 
 public:
   NativeCode() noexcept
-      : DSCode({
+      : ARCode({
             .codeKind = CodeKind::NATIVE,
             .localVarNum = 4,
             .stackDepth = 4,
@@ -1127,7 +1127,7 @@ public:
     return *this;
   }
 
-  static bool classof(const DSCode *code) { return code->is(CodeKind::NATIVE); }
+  static bool classof(const ARCode *code) { return code->is(CodeKind::NATIVE); }
 
 private:
   void setCode() { this->base.code = reinterpret_cast<unsigned char *>(this->value.data()); }
@@ -1160,7 +1160,7 @@ struct ExceptionEntry {
   }
 };
 
-class CompiledCode : public DSCode {
+class CompiledCode : public ARCode {
 private:
   ModId belongedModId;
 
@@ -1192,15 +1192,15 @@ private:
 public:
   NON_COPYABLE(CompiledCode);
 
-  CompiledCode(const std::string &sourceName, ModId modId, const std::string &name, DSCode code,
+  CompiledCode(const std::string &sourceName, ModId modId, const std::string &name, ARCode code,
                Value *constPool, LineNumEntry *sourcePosEntries,
                ExceptionEntry *exceptionEntries) noexcept
-      : DSCode(code), belongedModId(modId), sourceName(strdup(sourceName.c_str())),
+      : ARCode(code), belongedModId(modId), sourceName(strdup(sourceName.c_str())),
         name(strdup(name.c_str())), constPool(constPool), lineNumEntries(sourcePosEntries),
         exceptionEntries(exceptionEntries) {}
 
   CompiledCode(CompiledCode &&c) noexcept
-      : DSCode(c), belongedModId(c.belongedModId), sourceName(c.sourceName), name(c.name),
+      : ARCode(c), belongedModId(c.belongedModId), sourceName(c.sourceName), name(c.name),
         constPool(c.constPool), lineNumEntries(c.lineNumEntries),
         exceptionEntries(c.exceptionEntries) {
     c.name = nullptr;
@@ -1211,7 +1211,7 @@ public:
     c.exceptionEntries = nullptr;
   }
 
-  CompiledCode() noexcept : DSCode() { this->base.code = nullptr; }
+  CompiledCode() noexcept : ARCode() { this->base.code = nullptr; }
 
   ~CompiledCode() {
     free(this->sourceName);
@@ -1251,7 +1251,7 @@ public:
 
   StackTraceElement toTraceElement(unsigned int index) const;
 
-  static bool classof(const DSCode *code) { return !code->is(CodeKind::NATIVE); }
+  static bool classof(const ARCode *code) { return !code->is(CodeKind::NATIVE); }
 };
 
 class FuncObject : public ObjectWithRtti<ObjectKind::Func> {
@@ -1259,7 +1259,7 @@ private:
   CompiledCode code;
 
 public:
-  FuncObject(const DSType &funcType, CompiledCode &&callable)
+  FuncObject(const Type &funcType, CompiledCode &&callable)
       : ObjectWithRtti(funcType), code(std::move(callable)) {}
 
   const CompiledCode &getCode() const { return this->code; }

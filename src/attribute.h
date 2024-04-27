@@ -101,7 +101,7 @@ constexpr unsigned int getNumOfAttributeParams() {
 
 const char *toString(Attribute::Param p);
 
-const DSType &getRequiredParamType(const TypePool &pool, Attribute::Param p);
+const Type &getRequiredParamType(const TypePool &pool, Attribute::Param p);
 
 class AttributeMap {
 private:

@@ -89,7 +89,7 @@ public:
 
   const Handle *getHandle() const { return this->meta.handle; }
 
-  void setFieldInfo(const DSType &recvType, const Handle &field) {
+  void setFieldInfo(const Type &recvType, const Handle &field) {
     this->meta.fieldInfo = {
         .recvTypeId = recvType.typeId(),
         .typeId = field.getTypeId(),
@@ -98,7 +98,7 @@ public:
 
   const auto &getFieldInfo() const { return this->meta.fieldInfo; }
 
-  void setNativeMethodInfo(const DSType &type, unsigned int methodIndex) {
+  void setNativeMethodInfo(const Type &type, unsigned int methodIndex) {
     this->meta.nativeMethodHandleInfo = {
         .typeId = type.typeId(),
         .methodIndex = methodIndex,
@@ -163,10 +163,10 @@ public:
 void completeVarName(const NameScope &scope, StringRef prefix, bool inCmdArg,
                      CompCandidateConsumer &consumer);
 
-void completeMember(const TypePool &pool, const NameScope &scope, const DSType &recvType,
+void completeMember(const TypePool &pool, const NameScope &scope, const Type &recvType,
                     StringRef word, CompCandidateConsumer &consumer);
 
-void completeType(const TypePool &pool, const NameScope &scope, const DSType *recvType,
+void completeType(const TypePool &pool, const NameScope &scope, const Type *recvType,
                   StringRef word, CompCandidateConsumer &consumer);
 
 /**
@@ -243,7 +243,7 @@ StringRef suggestSimilarVarName(StringRef name, const NameScope &scope, unsigned
  * if suggestion score (edit distance) is greater than threshold, return empty string
  */
 StringRef suggestSimilarType(StringRef name, const TypePool &pool, const NameScope &scope,
-                             const DSType *recvType, unsigned int threshold = 3);
+                             const Type *recvType, unsigned int threshold = 3);
 
 enum class SuggestMemberType : unsigned char {
   FIELD = 1u << 0u,
@@ -265,7 +265,7 @@ struct allow_enum_bitop<SuggestMemberType> : std::true_type {};
  * if suggestion score (edit distance) is greater than threshold, return empty string
  */
 StringRef suggestSimilarMember(StringRef name, const TypePool &pool, const NameScope &scope,
-                               const DSType &recvType, SuggestMemberType targetType,
+                               const Type &recvType, SuggestMemberType targetType,
                                unsigned int threshold = 3);
 
 StringRef suggestSimilarParamName(StringRef name, const std::vector<std::string> &paramNames,

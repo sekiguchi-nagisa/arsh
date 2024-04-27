@@ -24,32 +24,32 @@
 
 namespace arsh {
 
-class DSType;
+class Type;
 class FunctionType;
 class FuncHandle;
 class MethodHandle;
 struct NativeFuncInfo;
 
-void normalizeTypeName(const DSType &type, std::string &out);
+void normalizeTypeName(const Type &type, std::string &out);
 
-inline std::string normalizeTypeName(const DSType &type) {
+inline std::string normalizeTypeName(const Type &type) {
   std::string out;
   normalizeTypeName(type, out);
   return out;
 }
 
-void formatVarSignature(const DSType &type, std::string &out);
+void formatVarSignature(const Type &type, std::string &out);
 
 void formatFuncSignature(const FunctionType &funcType, const FuncHandle &handle, std::string &out,
                          const std::function<void(StringRef)> &paramCallback = nullptr);
 
-void formatFuncSignature(const DSType &retType, unsigned int paramSize,
-                         const DSType *const *paramTypes, std::string &out,
+void formatFuncSignature(const Type &retType, unsigned int paramSize, const Type *const *paramTypes,
+                         std::string &out,
                          const std::function<void(StringRef)> &paramCallback = nullptr);
 
-void formatFieldSignature(const DSType &recvType, const DSType &type, std::string &out);
+void formatFieldSignature(const Type &recvType, const Type &type, std::string &out);
 
-void formatMethodSignature(const DSType &recvType, const MethodHandle &handle, std::string &out,
+void formatMethodSignature(const Type &recvType, const MethodHandle &handle, std::string &out,
                            bool constructor = false,
                            const std::function<void(StringRef)> &paramCallback = nullptr);
 

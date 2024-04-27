@@ -79,7 +79,7 @@ const SymbolRef *IndexBuilder::lookup(const std::string &mangledName, DeclSymbol
   }
 }
 
-static std::string mangleSymbolName(const DSType *recv, DeclSymbol::Kind k,
+static std::string mangleSymbolName(const Type *recv, DeclSymbol::Kind k,
                                     const NameInfo &nameInfo) {
   if (!static_cast<bool>(nameInfo) || nameInfo.getToken().size == 0) {
     return "";
@@ -100,7 +100,7 @@ static std::string mangleSymbolName(const DSType *recv, DeclSymbol::Kind k,
   return DeclSymbol::mangle(recvTypeName, k, nameInfo.getName());
 }
 
-const DeclSymbol *IndexBuilder::addDecl(const NameInfo &info, const DSType &type, Token token,
+const DeclSymbol *IndexBuilder::addDecl(const NameInfo &info, const Type &type, Token token,
                                         DeclSymbol::Kind kind) {
   if (type.isUnresolved()) {
     return nullptr;
@@ -108,7 +108,7 @@ const DeclSymbol *IndexBuilder::addDecl(const NameInfo &info, const DSType &type
   return this->addDecl(info, kind, normalizeTypeName(type).c_str(), token);
 }
 
-const DeclSymbol *IndexBuilder::addDeclImpl(const DSType *recv, const NameInfo &info,
+const DeclSymbol *IndexBuilder::addDeclImpl(const Type *recv, const NameInfo &info,
                                             DeclSymbol::Kind kind, const char *hover, Token body,
                                             DeclInsertOp op) {
   DeclSymbol::Attr attr = {};
@@ -142,7 +142,7 @@ const DeclSymbol *IndexBuilder::addDeclImpl(const DSType *recv, const NameInfo &
   return nullptr;
 }
 
-const Symbol *IndexBuilder::addSymbolImpl(const DSType *recv, const NameInfo &nameInfo,
+const Symbol *IndexBuilder::addSymbolImpl(const Type *recv, const NameInfo &nameInfo,
                                           DeclSymbol::Kind kind, const Handle *handle) {
   std::string name = mangleSymbolName(recv, kind, nameInfo);
   auto *ref = this->lookup(name, kind, handle);
@@ -202,8 +202,8 @@ bool IndexBuilder::addThis(const NameInfo &info, const HandlePtr &handle) {
   }
 }
 
-const DeclSymbol *IndexBuilder::addMemberDecl(const DSType &recv, const NameInfo &nameInfo,
-                                              const DSType &type, DeclSymbol::Kind kind,
+const DeclSymbol *IndexBuilder::addMemberDecl(const Type &recv, const NameInfo &nameInfo,
+                                              const Type &type, DeclSymbol::Kind kind,
                                               Token token) {
   if (type.isUnresolved()) {
     return nullptr;
@@ -214,7 +214,7 @@ const DeclSymbol *IndexBuilder::addMemberDecl(const DSType &recv, const NameInfo
   return this->addMemberDecl(recv, nameInfo, kind, content.c_str(), token);
 }
 
-static std::string generateTupleInfo(const TypePool &pool, const DSType &recv,
+static std::string generateTupleInfo(const TypePool &pool, const Type &recv,
                                      const Handle &handle) {
   if (handle.isMethodHandle()) { // for builtin method
     auto &methodHandle = cast<MethodHandle>(handle);
@@ -235,9 +235,9 @@ static std::string generateTupleInfo(const TypePool &pool, const DSType &recv,
   }
 }
 
-bool IndexBuilder::addMember(const DSType &recv, const NameInfo &nameInfo, DeclSymbol::Kind kind,
+bool IndexBuilder::addMember(const Type &recv, const NameInfo &nameInfo, DeclSymbol::Kind kind,
                              const Handle &handle, Token token) {
-  const DSType *actualRecv = &recv;
+  const Type *actualRecv = &recv;
   if (recv.isModType() && !handle.isMethodHandle()) {
     actualRecv = nullptr;
   }
@@ -257,7 +257,7 @@ bool IndexBuilder::addMember(const DSType &recv, const NameInfo &nameInfo, DeclS
   return false;
 }
 
-bool IndexBuilder::addBuiltinMethod(const DSType &recvType, unsigned int methodIndex,
+bool IndexBuilder::addBuiltinMethod(const Type &recvType, unsigned int methodIndex,
                                     const NameInfo &nameInfo) {
   assert(isBuiltinMod(this->getModId()));
   if (recvType.typeKind() == TypeKind::Builtin) {
@@ -395,7 +395,7 @@ const Symbol *IndexBuilder::insertNewSymbol(Token token, const DeclBase *decl) {
   return &(*iter);
 }
 
-void IndexBuilder::addParamTypeInfo(Token token, const DSType &type) {
+void IndexBuilder::addParamTypeInfo(Token token, const Type &type) {
   if (!isa<ArrayType>(type) && !isa<MapType>(type)) {
     return;
   }
@@ -911,7 +911,7 @@ void SymbolIndexer::addBuiltinSymbols() {
   unsigned int offset = 0;
 
   // add builtin type/method (except for generic type)
-  const DSType *mapType = nullptr;
+  const Type *mapType = nullptr;
   for (auto &type : this->builder().getPool().getTypeTable()) {
     if (type->isMapType() && !mapType) {
       mapType = type;

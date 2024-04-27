@@ -6,7 +6,7 @@ var mod = "$SCRIPT_DIR/../../_module4test/throw.ds".realpath()
 
 var out = "### dump compiled code ###
 Source File: (string)
-DSCode: top level
+ARCode: top level
   code size: 11
   max stack depth: 2
   number of local variable: 0
@@ -28,7 +28,7 @@ Line Number Table:
 Exception Table:
 
 Source File: $mod
-DSCode: top level
+ARCode: top level
   code size: 7
   max stack depth: 1
   number of local variable: 0
@@ -45,7 +45,7 @@ Constant Pool:
 Line Number Table:
 Exception Table:
 
-DSCode: function hoge
+ARCode: function hoge
   code size: 10
   max stack depth: 2
   number of local variable: 1

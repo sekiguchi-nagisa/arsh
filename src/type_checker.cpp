@@ -29,7 +29,7 @@ namespace arsh {
 // ##     TypeChecker     ##
 // #########################
 
-const DSType *TypeChecker::toType(TypeNode &node) {
+const Type *TypeChecker::toType(TypeNode &node) {
   switch (node.typeKind) {
   case TypeNode::Base: {
     auto &typeNode = cast<BaseTypeNode>(node);
@@ -98,7 +98,7 @@ const DSType *TypeChecker::toType(TypeNode &node) {
       this->reportError<UndefinedGeneric>(typeNode.getTemplate()->getToken(), tempName.c_str());
       break;
     }
-    std::vector<const DSType *> elementTypes(size);
+    std::vector<const Type *> elementTypes(size);
     for (unsigned int i = 0; i < size; i++) {
       elementTypes[i] = &this->checkTypeExactly(*typeNode.getElementTypeNodes()[i]);
     }
@@ -117,7 +117,7 @@ const DSType *TypeChecker::toType(TypeNode &node) {
     auto &typeNode = cast<FuncTypeNode>(node);
     auto &returnType = this->checkTypeExactly(typeNode.getReturnTypeNode());
     unsigned int size = typeNode.getParamTypeNodes().size();
-    std::vector<const DSType *> paramTypes(size);
+    std::vector<const Type *> paramTypes(size);
     for (unsigned int i = 0; i < size; i++) {
       paramTypes[i] = &this->checkTypeExactly(*typeNode.getParamTypeNodes()[i]);
     }
@@ -139,8 +139,7 @@ const DSType *TypeChecker::toType(TypeNode &node) {
   return nullptr;
 }
 
-static bool checkCoercion(const TypePool &pool, const DSType &requiredType,
-                          const DSType &targetType) {
+static bool checkCoercion(const TypePool &pool, const Type &requiredType, const Type &targetType) {
   if (requiredType.isVoidType()) { // pop stack top
     return true;
   }
@@ -154,8 +153,8 @@ static bool checkCoercion(const TypePool &pool, const DSType &requiredType,
   return false;
 }
 
-const DSType &TypeChecker::checkType(const DSType *requiredType, Node &targetNode,
-                                     const DSType *unacceptableType, CoercionKind &kind) {
+const Type &TypeChecker::checkType(const Type *requiredType, Node &targetNode,
+                                   const Type *unacceptableType, CoercionKind &kind) {
   /**
    * if target node is expr node and type is null,
    * try type check.
@@ -213,7 +212,7 @@ const DSType &TypeChecker::checkType(const DSType *requiredType, Node &targetNod
   return targetNode.getType();
 }
 
-const DSType &TypeChecker::checkTypeAsSomeExpr(Node &targetNode) {
+const Type &TypeChecker::checkTypeAsSomeExpr(Node &targetNode) {
   auto &type = this->checkTypeAsExpr(targetNode);
   if (type.isNothingType()) {
     if (isa<TypeNode>(targetNode)) {
@@ -258,7 +257,7 @@ static void adjustDeferDropSize(BlockNode &blockNode) {
   lastDefer->setDropLocalSize(dropSize);
 }
 
-void TypeChecker::checkTypeWithCurrentScope(const DSType *requiredType, BlockNode &blockNode) {
+void TypeChecker::checkTypeWithCurrentScope(const Type *requiredType, BlockNode &blockNode) {
   auto *blockType = &this->typePool().get(TYPE::Void);
   FuncContext::IntoTry intoTry;
   for (auto iter = blockNode.refNodes().begin(); iter != blockNode.refNodes().end(); ++iter) {
@@ -307,7 +306,7 @@ void TypeChecker::checkTypeWithCurrentScope(const DSType *requiredType, BlockNod
   }
 }
 
-void TypeChecker::checkTypeWithCoercion(const DSType &requiredType,
+void TypeChecker::checkTypeWithCoercion(const Type &requiredType,
                                         std::unique_ptr<Node> &targetNode) {
   CoercionKind kind = CoercionKind::INVALID_COERCION;
   this->checkType(&requiredType, *targetNode, nullptr, kind);
@@ -317,13 +316,13 @@ void TypeChecker::checkTypeWithCoercion(const DSType &requiredType,
   }
 }
 
-const DSType &TypeChecker::resolveCoercionOfJumpValue(const FlexBuffer<JumpNode *> &jumpNodes,
-                                                      bool optional) {
+const Type &TypeChecker::resolveCoercionOfJumpValue(const FlexBuffer<JumpNode *> &jumpNodes,
+                                                    bool optional) {
   if (jumpNodes.empty()) {
     return this->typePool().get(TYPE::Void);
   }
 
-  std::vector<const DSType *> types(jumpNodes.size());
+  std::vector<const Type *> types(jumpNodes.size());
   for (unsigned int i = 0; i < jumpNodes.size(); i++) {
     types[i] = &jumpNodes[i]->getExprNode().getType();
   }
@@ -344,7 +343,7 @@ const DSType &TypeChecker::resolveCoercionOfJumpValue(const FlexBuffer<JumpNode 
   }
 }
 
-HandlePtr TypeChecker::addEntry(Token token, const std::string &symbolName, const DSType &type,
+HandlePtr TypeChecker::addEntry(Token token, const std::string &symbolName, const Type &type,
                                 HandleKind kind, HandleAttr attribute) {
   bool shadowing = false;
   if (this->allowWarning && !this->curScope->isGlobal() &&
@@ -383,7 +382,7 @@ HandlePtr TypeChecker::addUdcEntry(const UserDefinedCmdNode &node) {
     return nullptr;
   }
 
-  const DSType *returnType = nullptr;
+  const Type *returnType = nullptr;
   if (!node.getReturnTypeNode()) {
     returnType = &this->typePool().get(TYPE::Int);
   } else if (node.getReturnTypeNode()->getType().isNothingType()) {
@@ -932,7 +931,7 @@ void TypeChecker::visitMapNode(MapNode &node) {
 
 void TypeChecker::visitTupleNode(TupleNode &node) {
   const unsigned int size = node.getNodes().size();
-  std::vector<const DSType *> types(size);
+  std::vector<const Type *> types(size);
   for (unsigned int i = 0; i < size; i++) {
     types[i] = &this->checkTypeAsSomeExpr(*node.getNodes()[i]);
   }
@@ -1254,7 +1253,7 @@ void TypeChecker::visitForkNode(ForkNode &node) {
   auto child = this->funcCtx->intoChild();
   this->checkTypeExactly(node.getExprNode());
 
-  const DSType *type = nullptr;
+  const Type *type = nullptr;
   switch (node.getOpKind()) {
   case ForkKind::STR:
     type = &this->typePool().get(TYPE::String);
@@ -1438,7 +1437,7 @@ void TypeChecker::visitIfNode(IfNode &node) {
   }
 
   // resolve common type of if-elif-else chain
-  std::vector<const DSType *> types;
+  std::vector<const Type *> types;
   types.reserve(4);
   types.push_back(&node.getThenNode().getType());
 
@@ -1530,7 +1529,7 @@ void TypeChecker::visitCaseNode(CaseNode &node) {
 
   // resolve arm expr type
   const unsigned int size = node.getArmNodes().size();
-  std::vector<const DSType *> types(size);
+  std::vector<const Type *> types(size);
   for (unsigned int i = 0; i < size; i++) {
     types[i] = &this->checkTypeExactly(*node.getArmNodes()[i]);
   }
@@ -1604,9 +1603,8 @@ void TypeChecker::checkPatternType(ArmNode &node, PatternCollector &collector) {
   }
 }
 
-const DSType &TypeChecker::resolveCommonSuperType(const Node &node,
-                                                  std::vector<const DSType *> &&types,
-                                                  const DSType *fallbackType) {
+const Type &TypeChecker::resolveCommonSuperType(const Node &node, std::vector<const Type *> &&types,
+                                                const Type *fallbackType) {
   // remove Nothing? type
   bool hasOptNothing = false;
   for (auto iter = types.begin(); iter != types.end();) {
@@ -1618,7 +1616,7 @@ const DSType &TypeChecker::resolveCommonSuperType(const Node &node,
     }
   }
 
-  std::sort(types.begin(), types.end(), [](const DSType *x, const DSType *y) {
+  std::sort(types.begin(), types.end(), [](const Type *x, const Type *y) {
     /**
      *  require weak ordering (see. https://cpprefjp.github.io/reference/algorithm.html)
      */
@@ -1970,7 +1968,7 @@ void TypeChecker::visitTryNode(TryNode &node) {
   }
 
   // check type try block
-  const DSType *exprType;
+  const Type *exprType;
   {
     auto try1 = this->funcCtx->intoTry();
     exprType = &this->checkTypeExactly(node.getExprNode());
@@ -2198,7 +2196,7 @@ static PackedParamNames createPackedParamNames(const FunctionNode &node) {
 }
 
 void TypeChecker::registerFuncHandle(FunctionNode &node) {
-  std::vector<const DSType *> paramTypes(node.getParamNodes().size());
+  std::vector<const Type *> paramTypes(node.getParamNodes().size());
   for (unsigned int i = 0; i < node.getParamNodes().size(); i++) {
     paramTypes[i] = &node.getParamNodes()[i]->getExprNode()->getType();
   }
@@ -2271,7 +2269,7 @@ void TypeChecker::postprocessFunction(FunctionNode &node) {
   assert(!node.isConstructor());
   assert(this->curScope->parent->kind == NameScope::FUNC);
 
-  const DSType *returnType = nullptr;
+  const Type *returnType = nullptr;
   if (node.getReturnTypeNode()) {
     returnType = &node.getReturnTypeNode()->getType();
   }
@@ -2313,7 +2311,7 @@ void TypeChecker::postprocessFunction(FunctionNode &node) {
     auto &type = blockNode.getType().isNothingType() && this->funcCtx->getReturnNodes().empty()
                      ? this->typePool().get(TYPE::Nothing)
                      : this->resolveCoercionOfJumpValue(this->funcCtx->getReturnNodes(), false);
-    std::vector<const DSType *> paramTypes(node.getParamNodes().size());
+    std::vector<const Type *> paramTypes(node.getParamNodes().size());
     for (unsigned int i = 0; i < node.getParamNodes().size(); i++) {
       paramTypes[i] = &node.getParamNodes()[i]->getExprNode()->getType();
     }
@@ -2664,7 +2662,7 @@ void TypeChecker::visitCodeCompNode(CodeCompNode &node) {
     break;
   }
   case CodeCompNode::TYPE: {
-    const DSType *recvType = nullptr;
+    const Type *recvType = nullptr;
     if (node.getExprNode()) {
       recvType = &this->checkTypeExactly(*node.getExprNode());
     }

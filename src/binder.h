@@ -51,7 +51,7 @@ public:
     this->bind(varName, std::move(v), HandleKind::VAR, attr);
   }
 
-  void bind(const char *varName, const DSType &type) {
+  void bind(const char *varName, const Type &type) {
     auto handle = this->scope.defineHandle(varName, type, HandleAttr::READ_ONLY);
     assert(static_cast<bool>(handle));
     this->consumer(*handle.asOk(), type);

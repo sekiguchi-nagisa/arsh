@@ -128,7 +128,7 @@ TypePool::~TypePool() {
   }
 }
 
-DSType *TypePool::addType(DSType *type) {
+Type *TypePool::addType(Type *type) {
   assert(type != nullptr);
   auto pair = this->nameMap.emplace(type->getNameRef(), type->typeId());
   if (pair.second) {
@@ -142,7 +142,7 @@ DSType *TypePool::addType(DSType *type) {
   return nullptr;
 }
 
-const DSType *TypePool::getType(StringRef typeName) const { return this->get(typeName); }
+const Type *TypePool::getType(StringRef typeName) const { return this->get(typeName); }
 
 void TypePool::discard(const TypeDiscardPoint point) {
   for (unsigned int i = point.typeIdOffset; i < this->typeTable.size(); i++) {
@@ -186,7 +186,7 @@ const TypeTemplate *TypePool::getTypeTemplate(StringRef typeName) const {
 }
 
 TypeOrError TypePool::createReifiedType(const TypeTemplate &typeTemplate,
-                                        std::vector<const DSType *> &&elementTypes) {
+                                        std::vector<const Type *> &&elementTypes) {
   if (this->tupleTemplate == typeTemplate) {
     return this->createTupleType(std::move(elementTypes));
   }
@@ -249,7 +249,7 @@ createInvalidElementError(const TypeTemplate &t, unsigned int index, const char 
   return error;
 }
 
-TypeOrError TypePool::createOptionType(std::vector<const DSType *> &&elementTypes) {
+TypeOrError TypePool::createOptionType(std::vector<const Type *> &&elementTypes) {
   if (elementTypes.size() != 1) {
     unsigned int size = elementTypes.size();
     RAISE_TL_ERROR(UnmatchElement, this->optionTemplate.getName(), 1, size);
@@ -270,7 +270,7 @@ TypeOrError TypePool::createOptionType(std::vector<const DSType *> &&elementType
   return Ok(type);
 }
 
-TypeOrError TypePool::createTupleType(std::vector<const DSType *> &&elementTypes) {
+TypeOrError TypePool::createTupleType(std::vector<const Type *> &&elementTypes) {
   auto checked = checkElementTypes(this->tupleTemplate, elementTypes, SYS_LIMIT_TUPLE_NUM);
   if (!checked) {
     return checked;
@@ -291,8 +291,8 @@ TypeOrError TypePool::createTupleType(std::vector<const DSType *> &&elementTypes
   return Ok(type);
 }
 
-TypeOrError TypePool::createFuncType(const DSType &returnType,
-                                     std::vector<const DSType *> &&paramTypes) {
+TypeOrError TypePool::createFuncType(const Type &returnType,
+                                     std::vector<const Type *> &&paramTypes) {
   auto checked = checkElementTypes(this->funcTemplate, paramTypes, SYS_LIMIT_FUNC_PARAM_NUM);
   if (!checked) {
     return checked;
@@ -309,7 +309,7 @@ TypeOrError TypePool::createFuncType(const DSType &returnType,
   return Ok(type);
 }
 
-TypeOrError TypePool::createErrorType(const std::string &typeName, const DSType &superType,
+TypeOrError TypePool::createErrorType(const std::string &typeName, const Type &superType,
                                       ModId belongedModId) {
   if (!this->get(TYPE::Error).isSameOrBaseTypeOf(superType)) {
     RAISE_TL_ERROR(InvalidElement, superType.getName());
@@ -410,10 +410,10 @@ class TypeDecoder {
 private:
   TypePool &pool;
   const HandleInfo *cursor;
-  const std::vector<const DSType *> types;
+  const std::vector<const Type *> types;
 
 public:
-  TypeDecoder(TypePool &pool, const HandleInfo *pos, std::vector<const DSType *> &&types)
+  TypeDecoder(TypePool &pool, const HandleInfo *pos, std::vector<const Type *> &&types)
       : pool(pool), cursor(pos), types(std::move(types)) {}
 
   ~TypeDecoder() = default;
@@ -455,7 +455,7 @@ TypeOrError TypeDecoder::decode() {
     auto &t = this->pool.getArrayTemplate();
     unsigned int size = this->decodeNum();
     assert(size == 1);
-    std::vector<const DSType *> elementTypes(size);
+    std::vector<const Type *> elementTypes(size);
     elementTypes[0] = TRY(decode());
     return this->pool.createReifiedType(t, std::move(elementTypes));
   }
@@ -463,7 +463,7 @@ TypeOrError TypeDecoder::decode() {
     auto &t = this->pool.getMapTemplate();
     unsigned int size = this->decodeNum();
     assert(size == 2);
-    std::vector<const DSType *> elementTypes(size);
+    std::vector<const Type *> elementTypes(size);
     for (unsigned int i = 0; i < size; i++) {
       elementTypes[i] = TRY(this->decode());
     }
@@ -471,7 +471,7 @@ TypeOrError TypeDecoder::decode() {
   }
   case HandleInfo::Tuple: {
     unsigned int size = this->decodeNum();
-    std::vector<const DSType *> elementTypes(size);
+    std::vector<const Type *> elementTypes(size);
     for (unsigned int i = 0; i < size; i++) {
       elementTypes[i] = TRY(this->decode());
     }
@@ -481,14 +481,14 @@ TypeOrError TypeDecoder::decode() {
     auto &t = this->pool.getOptionTemplate();
     unsigned int size = this->decodeNum();
     assert(size == 1);
-    std::vector<const DSType *> elementTypes(size);
+    std::vector<const Type *> elementTypes(size);
     elementTypes[0] = TRY(this->decode());
     return this->pool.createReifiedType(t, std::move(elementTypes));
   }
   case HandleInfo::Func: {
     auto *retType = TRY(this->decode());
     unsigned int size = this->decodeNum();
-    std::vector<const DSType *> paramTypes(size);
+    std::vector<const Type *> paramTypes(size);
     for (unsigned int i = 0; i < size; i++) {
       paramTypes[i] = TRY(this->decode());
     }
@@ -509,7 +509,7 @@ TypeOrError TypeDecoder::decode() {
   case HandleInfo::T1:
     return Ok(this->types[1]);
   }
-  return Ok(static_cast<DSType *>(nullptr)); // normally unreachable due to suppress gcc warning
+  return Ok(static_cast<Type *>(nullptr)); // normally unreachable due to suppress gcc warning
 }
 
 #define TRY2(E)                                                                                    \
@@ -543,7 +543,7 @@ bool TypeDecoder::decodeConstraint() {
     std::move(value).take();                                                                       \
   })
 
-std::unique_ptr<MethodHandle> TypePool::allocNativeMethodHandle(const DSType &recv,
+std::unique_ptr<MethodHandle> TypePool::allocNativeMethodHandle(const Type &recv,
                                                                 unsigned int methodIndex) {
   auto types = recv.getTypeParams(*this);
   auto info = nativeFuncInfoTable()[methodIndex];
@@ -561,7 +561,7 @@ std::unique_ptr<MethodHandle> TypePool::allocNativeMethodHandle(const DSType &re
   auto *recvType = TRY2(decoder.decode());
   assert(*recvType == recv);
 
-  std::array<const DSType *, HandleInfoParamNumMax()> paramTypes{};
+  std::array<const Type *, HandleInfoParamNumMax()> paramTypes{};
   assert(actualParamSize < paramTypes.size());
   for (unsigned int i = 0; i < actualParamSize; i++) {
     paramTypes[i] = TRY2(decoder.decode());
@@ -569,7 +569,7 @@ std::unique_ptr<MethodHandle> TypePool::allocNativeMethodHandle(const DSType &re
   return MethodHandle::native(*recvType, methodIndex, *returnType, actualParamSize, paramTypes);
 }
 
-const MethodHandle *TypePool::lookupMethod(const DSType &recvType, const std::string &methodName) {
+const MethodHandle *TypePool::lookupMethod(const Type &recvType, const std::string &methodName) {
   for (auto *type = &recvType; type != nullptr; type = type->getSuperType()) {
     Key key(*type, methodName);
     auto iter = this->methodMap.find(key);
@@ -590,7 +590,7 @@ const MethodHandle *TypePool::lookupMethod(const DSType &recvType, const std::st
   return nullptr;
 }
 
-bool TypePool::hasMethod(const DSType &recvType, const std::string &methodName) const {
+bool TypePool::hasMethod(const Type &recvType, const std::string &methodName) const {
   for (auto *type = &recvType; type != nullptr; type = type->getSuperType()) {
     Key key(*type, methodName);
     auto iter = this->methodMap.find(key);
@@ -602,7 +602,7 @@ bool TypePool::hasMethod(const DSType &recvType, const std::string &methodName) 
 }
 
 std::string TypePool::toReifiedTypeName(const TypeTemplate &typeTemplate,
-                                        const std::vector<const DSType *> &elementTypes) const {
+                                        const std::vector<const Type *> &elementTypes) const {
   if (typeTemplate == this->getArrayTemplate()) {
     std::string str = "[";
     str += elementTypes[0]->getNameRef();
@@ -642,7 +642,7 @@ std::string TypePool::toReifiedTypeName(const TypeTemplate &typeTemplate,
   }
 }
 
-std::string TypePool::toTupleTypeName(const std::vector<const DSType *> &elementTypes) {
+std::string TypePool::toTupleTypeName(const std::vector<const Type *> &elementTypes) {
   std::string str = "(";
   for (unsigned int i = 0; i < elementTypes.size(); i++) {
     if (i > 0) {
@@ -657,8 +657,8 @@ std::string TypePool::toTupleTypeName(const std::vector<const DSType *> &element
   return str;
 }
 
-std::string TypePool::toFunctionTypeName(const DSType &returnType,
-                                         const std::vector<const DSType *> &paramTypes) {
+std::string TypePool::toFunctionTypeName(const Type &returnType,
+                                         const std::vector<const Type *> &paramTypes) {
   std::string funcTypeName = "(";
   for (unsigned int i = 0; i < paramTypes.size(); i++) {
     if (i > 0) {
@@ -672,7 +672,7 @@ std::string TypePool::toFunctionTypeName(const DSType &returnType,
 }
 
 TypeOrError TypePool::checkElementTypes(const TypeTemplate &t,
-                                        const std::vector<const DSType *> &elementTypes,
+                                        const std::vector<const Type *> &elementTypes,
                                         size_t limit) {
   if (elementTypes.size() > limit) {
     RAISE_TL_ERROR(ElementLimit);
@@ -684,11 +684,11 @@ TypeOrError TypePool::checkElementTypes(const TypeTemplate &t,
     }
     index++;
   }
-  return Ok(static_cast<DSType *>(nullptr));
+  return Ok(static_cast<Type *>(nullptr));
 }
 
 TypeOrError TypePool::checkElementTypes(const TypeTemplate &t,
-                                        const std::vector<const DSType *> &elementTypes) {
+                                        const std::vector<const Type *> &elementTypes) {
   assert(t.getElementTypeSize() != 0);
   const unsigned int size = elementTypes.size();
 
@@ -708,10 +708,10 @@ TypeOrError TypePool::checkElementTypes(const TypeTemplate &t,
     }
     return Err(createInvalidElementError(t, i, elementType->getName()));
   }
-  return Ok(static_cast<DSType *>(nullptr));
+  return Ok(static_cast<Type *>(nullptr));
 }
 
-void TypePool::initBuiltinType(TYPE t, const char *typeName, bool, const DSType *super,
+void TypePool::initBuiltinType(TYPE t, const char *typeName, bool, const Type *super,
                                native_type_info_t info) {
   // create and register type
   auto *type = this->newType<BuiltinType>(typeName, super, info);
@@ -722,7 +722,7 @@ void TypePool::initBuiltinType(TYPE t, const char *typeName, bool, const DSType 
 }
 
 void TypePool::initTypeTemplate(TypeTemplate &temp, TypeTemplate::Kind kind,
-                                std::vector<const DSType *> &&elementTypes,
+                                std::vector<const Type *> &&elementTypes,
                                 native_type_info_t info) {
   temp = TypeTemplate(kind, std::move(elementTypes), info);
   StringRef key = temp.getName();

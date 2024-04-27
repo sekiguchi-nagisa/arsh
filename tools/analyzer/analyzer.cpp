@@ -37,7 +37,7 @@ struct EmptyConsumer {
 
   void operator()(const Handle &, FILE *) {}
 
-  void operator()(const Handle &, const DSType &) {}
+  void operator()(const Handle &, const Type &) {}
 };
 
 static const ModType &createBuiltin(const SysConfig &config, TypePool &pool,

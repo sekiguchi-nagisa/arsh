@@ -243,7 +243,7 @@ public:
    * @param attr
    * @return
    */
-  NameRegisterResult defineHandle(std::string &&name, const DSType &type, HandleAttr attr) {
+  NameRegisterResult defineHandle(std::string &&name, const Type &type, HandleAttr attr) {
     return this->defineHandle(std::move(name), type, HandleKind::VAR, attr);
   }
 
@@ -255,24 +255,24 @@ public:
    * @param attr
    * @return
    */
-  NameRegisterResult defineHandle(std::string &&name, const DSType &type, HandleKind kind,
+  NameRegisterResult defineHandle(std::string &&name, const Type &type, HandleKind kind,
                                   HandleAttr attr);
 
   NameRegisterResult defineAlias(std::string &&name, const HandlePtr &handle);
 
   NameRegisterResult defineTypeAlias(const TypePool &pool, const std::string &name,
-                                     const DSType &type);
+                                     const Type &type);
 
   NameRegisterResult defineNamedFunction(const std::string &name, const FunctionType &funcType,
                                          PackedParamNames &&packed);
 
-  NameRegisterResult defineMethod(const TypePool &pool, const DSType &recvType,
-                                  const std::string &name, const DSType &returnType,
-                                  const std::vector<const DSType *> &paramTypes,
+  NameRegisterResult defineMethod(const TypePool &pool, const Type &recvType,
+                                  const std::string &name, const Type &returnType,
+                                  const std::vector<const Type *> &paramTypes,
                                   PackedParamNames &&packed);
 
   NameRegisterResult defineConstructor(const TypePool &pool, const RecordType &recvType,
-                                       const std::vector<const DSType *> &paramTypes,
+                                       const std::vector<const Type *> &paramTypes,
                                        PackedParamNames &&packed) {
     return this->defineMethod(pool, recvType, OP_INIT, recvType, paramTypes, std::move(packed));
   }
@@ -307,13 +307,13 @@ public:
    */
   Result<HandlePtr, NameLookupError> lookupAndCaptureUpVar(const std::string &name);
 
-  Result<HandlePtr, NameLookupError> lookupField(const TypePool &pool, const DSType &recv,
+  Result<HandlePtr, NameLookupError> lookupField(const TypePool &pool, const Type &recv,
                                                  const std::string &fieldName) const;
 
-  const MethodHandle *lookupMethod(TypePool &pool, const DSType &recvType,
+  const MethodHandle *lookupMethod(TypePool &pool, const Type &recvType,
                                    const std::string &methodName) const;
 
-  const MethodHandle *lookupConstructor(TypePool &pool, const DSType &recvType) const {
+  const MethodHandle *lookupConstructor(TypePool &pool, const Type &recvType) const {
     return this->lookupMethod(pool, recvType, OP_INIT);
   }
 
@@ -376,7 +376,7 @@ private:
    * @param attr
    * @return
    */
-  NameRegisterResult addNewHandle(std::string &&name, const DSType &type, HandleKind k,
+  NameRegisterResult addNewHandle(std::string &&name, const Type &type, HandleKind k,
                                   HandleAttr attr) {
     if (this->isGlobal()) {
       setFlag(attr, HandleAttr::GLOBAL);

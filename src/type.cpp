@@ -28,7 +28,7 @@ namespace arsh {
 // ##     DSType     ##
 // ####################
 
-void DSType::destroy() {
+void Type::destroy() {
   switch (this->typeKind()) {
 #define GEN_CASE(E)                                                                                \
   case TypeKind::E:                                                                                \
@@ -39,7 +39,7 @@ void DSType::destroy() {
   }
 }
 
-HandlePtr DSType::lookupField(const TypePool &pool, const std::string &fieldName) const {
+HandlePtr Type::lookupField(const TypePool &pool, const std::string &fieldName) const {
   switch (this->typeKind()) {
   case TypeKind::Tuple:
     return cast<TupleType>(this)->lookupField(fieldName);
@@ -53,7 +53,7 @@ HandlePtr DSType::lookupField(const TypePool &pool, const std::string &fieldName
   }
 }
 
-void DSType::walkField(const TypePool &pool,
+void Type::walkField(const TypePool &pool,
                        const std::function<bool(StringRef, const Handle &)> &walker) const {
   switch (this->typeKind()) {
   case TypeKind::Tuple:
@@ -97,8 +97,8 @@ void DSType::walkField(const TypePool &pool,
   }
 }
 
-std::vector<const DSType *> DSType::getTypeParams(const TypePool &pool) const {
-  std::vector<const DSType *> ret;
+std::vector<const Type *> Type::getTypeParams(const TypePool &pool) const {
+  std::vector<const Type *> ret;
   switch (this->typeKind()) {
   case TypeKind::Array: {
     auto &type = cast<ArrayType>(*this);
@@ -144,7 +144,7 @@ static bool isBaseTypeOf(const FunctionType &funcType1, const FunctionType &func
   return returnType1.isSameOrBaseTypeOf(returnType2) || returnType1.isVoidType();
 }
 
-bool DSType::isSameOrBaseTypeOf(const DSType &targetType) const {
+bool Type::isSameOrBaseTypeOf(const Type &targetType) const {
   if (*this == targetType) {
     return true;
   }
@@ -162,7 +162,7 @@ bool DSType::isSameOrBaseTypeOf(const DSType &targetType) const {
   return type != nullptr && this->isSameOrBaseTypeOf(*type);
 }
 
-ModId DSType::resolveBelongedModId() const {
+ModId Type::resolveBelongedModId() const {
   if (!this->isRecordOrDerived() && this->typeKind() != TypeKind::Error) {
     return BUILTIN_MOD_ID; // fast path
   }
@@ -185,7 +185,7 @@ ModId DSType::resolveBelongedModId() const {
 static std::string toTupleFieldName(unsigned int i) { return "_" + std::to_string(i); }
 
 TupleType::TupleType(unsigned int id, StringRef ref, native_type_info_t info,
-                     const DSType &superType, std::vector<const DSType *> &&types)
+                     const Type &superType, std::vector<const Type *> &&types)
     : BuiltinType(TypeKind::Tuple, id, ref, &superType, info) {
   const unsigned int size = types.size();
   for (unsigned int i = 0; i < size; i++) {
@@ -194,7 +194,7 @@ TupleType::TupleType(unsigned int id, StringRef ref, native_type_info_t info,
   }
 }
 
-const DSType &TupleType::getFieldTypeAt(const TypePool &pool, unsigned int i) const {
+const Type &TupleType::getFieldTypeAt(const TypePool &pool, unsigned int i) const {
   assert(i < this->getFieldSize());
   auto name = toTupleFieldName(i);
   auto handle = this->lookupField(name);
@@ -228,7 +228,7 @@ HandlePtr RecordType::lookupField(const std::string &fieldName) const {
 
 // for not export ArgEntry definition to type.h
 
-CLIRecordType::CLIRecordType(unsigned int id, StringRef ref, const DSType &superType, Attr attr,
+CLIRecordType::CLIRecordType(unsigned int id, StringRef ref, const Type &superType, Attr attr,
                              std::string &&desc)
     : RecordType(TypeKind::CLIRecord, id, ref, superType), desc(std::move(desc)) {
   this->setExtraAttr(toUnderlying(attr));
@@ -355,9 +355,9 @@ const char *TypeTemplate::getName() const {
 
 MethodHandle::~MethodHandle() { free(this->packedParamNames); }
 
-std::unique_ptr<MethodHandle> MethodHandle::create(const DSType &recv, unsigned int index,
-                                                   const DSType *ret,
-                                                   const std::vector<const DSType *> &params,
+std::unique_ptr<MethodHandle> MethodHandle::create(const Type &recv, unsigned int index,
+                                                   const Type *ret,
+                                                   const std::vector<const Type *> &params,
                                                    PackedParamNames &&packed, ModId modId) {
   const size_t paramSize = params.size();
   assert(paramSize <= SYS_LIMIT_METHOD_PARAM_NUM);

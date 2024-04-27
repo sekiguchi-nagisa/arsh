@@ -173,7 +173,7 @@ public:
 
   static constexpr double MAX_LOAD_FACTOR = 0.9;
 
-  OrderedMapObject(const DSType &type, uint64_t seed) : ObjectWithRtti(type), seed(seed) {}
+  OrderedMapObject(const Type &type, uint64_t seed) : ObjectWithRtti(type), seed(seed) {}
 
   unsigned int size() const { return this->bucketLen.size(); }
 

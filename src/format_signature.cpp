@@ -42,7 +42,7 @@ static void normalizeTypeName(StringRef typeName, std::string &out) {
   });
 }
 
-void normalizeTypeName(const DSType &type, std::string &out) {
+void normalizeTypeName(const Type &type, std::string &out) {
   if (type.typeKind() == TypeKind::Builtin) { // fast path
     out += type.getNameRef();
   } else {
@@ -62,7 +62,7 @@ static std::vector<StringRef> splitParamNames(StringRef packedParamNames) {
   return params;
 }
 
-void formatVarSignature(const DSType &type, std::string &out) {
+void formatVarSignature(const Type &type, std::string &out) {
   out += ": ";
   normalizeTypeName(type, out);
 }
@@ -88,8 +88,8 @@ void formatFuncSignature(const FunctionType &funcType, const FuncHandle &handle,
   normalizeTypeName(funcType.getReturnType(), out);
 }
 
-void formatFuncSignature(const DSType &retType, unsigned int paramSize,
-                         const DSType *const *paramTypes, std::string &out,
+void formatFuncSignature(const Type &retType, unsigned int paramSize,
+                         const Type *const *paramTypes, std::string &out,
                          const std::function<void(StringRef)> &paramCallback) {
   out += "(";
   for (unsigned int i = 0; i < paramSize; i++) {
@@ -109,14 +109,14 @@ void formatFuncSignature(const DSType &retType, unsigned int paramSize,
   normalizeTypeName(retType, out);
 }
 
-void formatFieldSignature(const DSType &recvType, const DSType &type, std::string &out) {
+void formatFieldSignature(const Type &recvType, const Type &type, std::string &out) {
   out += ": ";
   normalizeTypeName(type, out);
   out += " for ";
   normalizeTypeName(recvType, out);
 }
 
-void formatMethodSignature(const DSType &recvType, const MethodHandle &handle, std::string &out,
+void formatMethodSignature(const Type &recvType, const MethodHandle &handle, std::string &out,
                            bool constructor, const std::function<void(StringRef)> &paramCallback) {
   auto params = splitParamNames(handle.getPackedParamNames());
   assert(params.size() == handle.getParamSize());

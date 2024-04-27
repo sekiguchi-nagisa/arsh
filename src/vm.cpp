@@ -153,7 +153,7 @@ void ARState::updatePipeStatus(unsigned int size, const Proc *procs, bool mergeE
 
 namespace arsh {
 
-bool VM::checkCast(ARState &state, const DSType &targetType) {
+bool VM::checkCast(ARState &state, const Type &targetType) {
   if (!instanceOf(state.typePool, state.stack.peek(), targetType)) {
     auto &stackTopType = state.typePool.get(state.stack.pop().getTypeID());
     std::string str("cannot cast `");
@@ -212,7 +212,7 @@ bool VM::storeEnv(ARState &state) {
   return false;
 }
 
-void VM::pushNewObject(ARState &state, const DSType &type) {
+void VM::pushNewObject(ARState &state, const Type &type) {
   Value value;
   switch (type.typeKind()) {
   case TypeKind::Array:
@@ -235,7 +235,7 @@ void VM::pushNewObject(ARState &state, const DSType &type) {
   state.stack.push(std::move(value));
 }
 
-bool VM::prepareUserDefinedCommandCall(ARState &state, const DSCode &code,
+bool VM::prepareUserDefinedCommandCall(ARState &state, const ARCode &code,
                                        ObjPtr<ArrayObject> &&argvObj, Value &&redirConfig,
                                        const CmdCallAttr attr) {
   // set parameter
@@ -958,7 +958,7 @@ bool VM::callCommand(ARState &state, const ResolvedCmd &cmd, ObjPtr<ArrayObject>
     return prepareSubCommand(state, cmd.modType(), std::move(argvObj), std::move(redirConfig));
   case ResolvedCmd::CMD_OBJ: {
     auto *obj = cmd.cmdObj();
-    const DSCode *code = nullptr;
+    const ARCode *code = nullptr;
     if (isa<FuncObject>(obj)) {
       code = &cast<FuncObject>(obj)->getCode();
     } else {
@@ -2267,8 +2267,7 @@ bool VM::handleException(ARState &state) {
             }
           }
 
-          const DSType &occurredType =
-              state.typePool.get(state.stack.getThrownObject()->getTypeID());
+          const Type &occurredType = state.typePool.get(state.stack.getThrownObject()->getTypeID());
           if (!entryType.isSameOrBaseTypeOf(occurredType)) {
             continue;
           }

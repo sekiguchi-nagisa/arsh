@@ -5,7 +5,7 @@ source $SCRIPT_DIR/expect.ds
 
 var out = "### dump compiled code ###
 Source File: (string)
-DSCode: top level
+ARCode: top level
   code size: 20
   max stack depth: 6
   number of local variable: 0
@@ -37,7 +37,7 @@ $expect("$(ds --dump-code -n -c 'echo {1..5}')", 0, $out)
 
 $out = "### dump compiled code ###
 Source File: (string)
-DSCode: top level
+ARCode: top level
   code size: 20
   max stack depth: 6
   number of local variable: 0
@@ -70,7 +70,7 @@ $expect("$(ds --dump-code -n -c 'echo {-01..6..-2}')", 0, $out)
 ## try-catch
 $out = "### dump compiled code ###
 Source File: (string)
-DSCode: top level
+ARCode: top level
   code size: 52
   max stack depth: 4
   number of local variable: 2
@@ -116,7 +116,7 @@ $expect("$(ds --dump-code -n -c 'try { var a = $STDIN; echo | $false; {var b = 3
 
 $out = "### dump compiled code ###
 Source File: (string)
-DSCode: top level
+ARCode: top level
   code size: 36
   max stack depth: 3
   number of local variable: 2

@@ -64,7 +64,7 @@ CompiledCode CodeBuilder::build(const std::string &name) {
   }
 
   const unsigned int codeSize = this->codeBuffer.size();
-  DSCode code({
+  ARCode code({
       .codeKind = this->kind,
       .localVarNum = this->localVarNum,
       .stackDepth = static_cast<unsigned short>(this->maxStackDepth),
@@ -228,7 +228,7 @@ void ByteCodeGenerator::emitSourcePos(unsigned int pos) {
   }
 }
 
-void ByteCodeGenerator::catchException(const Label &begin, const Label &end, const DSType &type,
+void ByteCodeGenerator::catchException(const Label &begin, const Label &end, const Type &type,
                                        unsigned short localOffset, unsigned short localSize,
                                        unsigned int level) {
   if (begin->getIndex() == end->getIndex()) {
@@ -1281,7 +1281,7 @@ void ByteCodeGenerator::generateMapCase(CaseNode &node) {
   }
 
   // generate case arm
-  const DSType *prevType = nullptr;
+  const Type *prevType = nullptr;
   for (auto &armNode : node.getArmNodes()) {
     if (prevType != nullptr && !prevType->isNothingType()) {
       this->emitJumpIns(mergeLabel);
@@ -1879,7 +1879,7 @@ void ByteCodeDumper::dumpModule(const CompiledCode &code) {
 }
 
 void ByteCodeDumper::dumpCode(const CompiledCode &c) {
-  fputs("DSCode: ", this->fp);
+  fputs("ARCode: ", this->fp);
   switch (c.getKind()) {
   case CodeKind::TOPLEVEL:
     fputs("top level", this->fp);

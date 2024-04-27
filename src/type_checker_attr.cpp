@@ -19,7 +19,7 @@
 
 namespace arsh {
 
-static const DSType &createIntPairType(TypePool &pool) {
+static const Type &createIntPairType(TypePool &pool) {
   auto ret = pool.createTupleType({&pool.get(TYPE::Int), &pool.get(TYPE::Int)});
   return *ret.asOk();
 }
@@ -210,7 +210,7 @@ void TypeChecker::postCheckFieldAttributes(const VarDeclNode &varDeclNode) {
   }
 }
 
-static bool isOptionOrBase(const DSType &type, TYPE target) {
+static bool isOptionOrBase(const Type &type, TYPE target) {
   return type.is(target) ||
          (isa<OptionType>(type) && cast<OptionType>(type).getElementType().is(target));
 }

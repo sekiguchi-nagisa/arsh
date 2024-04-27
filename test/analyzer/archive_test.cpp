@@ -159,7 +159,7 @@ public:
     this->defineAndArchive(fieldName, *ret, kind, attr);
   }
 
-  void defineAndArchive(const char *fieldName, const DSType &orgType,
+  void defineAndArchive(const char *fieldName, const Type &orgType,
                         HandleKind kind = HandleKind::VAR, HandleAttr attr = {}) {
     ASSERT_TRUE(fieldName);
     ASSERT_TRUE(orgType.typeId() < this->pool().getDiscardPoint().typeIdOffset);
@@ -189,12 +189,12 @@ public:
     ASSERT_EQ(orgType.getNameRef(), newType.getNameRef());
   }
 
-  void define(const char *fieldName, const DSType &orgType, HandleKind kind = HandleKind::VAR,
+  void define(const char *fieldName, const Type &orgType, HandleKind kind = HandleKind::VAR,
               HandleAttr attr = {}) {
     define(*this->orgCtx, fieldName, orgType, kind, attr);
   }
 
-  static void define(AnalyzerContext &ctx, const char *fieldName, const DSType &type,
+  static void define(AnalyzerContext &ctx, const char *fieldName, const Type &type,
                      HandleKind kind = HandleKind::VAR, HandleAttr attr = {}) {
     ASSERT_TRUE(fieldName);
     ASSERT_TRUE(type.typeId() < ctx.getPool().getDiscardPoint().typeIdOffset);
@@ -350,7 +350,7 @@ TEST_F(ArchiveTest, map) {
 
 TEST_F(ArchiveTest, tuple) {
   //
-  std::vector<const DSType *> types;
+  std::vector<const Type *> types;
   types.push_back(&this->pool().get(TYPE::IllegalAccessError));
   types.push_back(&this->pool().get(TYPE::TypeCastError));
   types.push_back(&this->pool().get(TYPE::StringArray));
@@ -364,7 +364,7 @@ TEST_F(ArchiveTest, tuple) {
   //
   ret1 = this->pool().createMapType(this->pool().get(TYPE::Int), this->pool().get(TYPE::Int));
   ASSERT_TRUE(ret1);
-  types = std::vector<const DSType *>();
+  types = std::vector<const Type *>();
   types.push_back(ret1.asOk());
   ret1 = this->pool().createTupleType(std::move(types));
   ASSERT_TRUE(ret1);
@@ -398,7 +398,7 @@ TEST_F(ArchiveTest, option) {
 
 TEST_F(ArchiveTest, func) {
   //
-  std::vector<const DSType *> types;
+  std::vector<const Type *> types;
   auto ret1 = this->pool().createFuncType(this->pool().get(TYPE::Void), std::move(types));
   ASSERT_TRUE(ret1);
   auto &type1 = *ret1.asOk();
@@ -407,10 +407,10 @@ TEST_F(ArchiveTest, func) {
       this->defineAndArchive("e1", type1, HandleKind::VAR, HandleAttr::READ_ONLY));
 
   //
-  types = std::vector<const DSType *>();
+  types = std::vector<const Type *>();
   types.push_back(this->pool().getType("(Signal) -> Void"));
   types.push_back(&type1);
-  ret1 = this->pool().createTupleType(std::vector<const DSType *>(types));
+  ret1 = this->pool().createTupleType(std::vector<const Type *>(types));
   ASSERT_TRUE(ret1);
   types.push_back(ret1.asOk());
   ret1 = this->pool().createFuncType(this->pool().get(TYPE::Nothing), std::move(types));
@@ -424,7 +424,7 @@ TEST_F(ArchiveTest, mod1) { ASSERT_NO_FATAL_FAILURE(this->archiveMod()); }
 
 TEST_F(ArchiveTest, mod2) {
   //
-  std::vector<const DSType *> types;
+  std::vector<const Type *> types;
   auto ret1 = this->pool().createFuncType(this->pool().get(TYPE::Void), std::move(types));
   ASSERT_TRUE(ret1);
   auto &type1 = *ret1.asOk();

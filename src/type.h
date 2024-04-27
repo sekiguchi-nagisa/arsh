@@ -120,7 +120,7 @@ struct HandleRefCountOp;
 
 using HandlePtr = IntrusivePtr<Handle, HandleRefCountOp>;
 
-class DSType {
+class Type {
 protected:
   /**
    * |   8bit   | 24bit  |
@@ -147,17 +147,17 @@ protected:
   /**
    * if this type is Void or Any type, superType is null
    */
-  const DSType *superType;
+  const Type *superType;
 
-  NON_COPYABLE(DSType);
+  NON_COPYABLE(Type);
 
   /**
    * not directly call it.
    */
-  DSType(TypeKind k, unsigned int id, StringRef ref, const DSType *superType)
+  Type(TypeKind k, unsigned int id, StringRef ref, const Type *superType)
       : tag(toUnderlying(k) << 24 | id), name(strdup(ref.data())), superType(superType) {}
 
-  ~DSType() = default;
+  ~Type() = default;
 
 public:
   void destroy();
@@ -217,27 +217,27 @@ public:
    * get super type of this type.
    * return null, if has no super type(ex. AnyType, VoidType).
    */
-  const DSType *getSuperType() const { return this->superType; }
+  const Type *getSuperType() const { return this->superType; }
 
   HandlePtr lookupField(const TypePool &pool, const std::string &fieldName) const;
 
   void walkField(const TypePool &pool,
                  const std::function<bool(StringRef, const Handle &)> &walker) const;
 
-  std::vector<const DSType *> getTypeParams(const TypePool &pool) const;
+  std::vector<const Type *> getTypeParams(const TypePool &pool) const;
 
-  bool operator==(const DSType &type) const {
+  bool operator==(const Type &type) const {
     return reinterpret_cast<uintptr_t>(this) == reinterpret_cast<uintptr_t>(&type);
   }
 
-  bool operator!=(const DSType &type) const { return !(*this == type); }
+  bool operator!=(const Type &type) const { return !(*this == type); }
 
   /**
    * check inheritance of target type.
    * if this type is equivalent to target type or
    * the super type of target type, return true.
    */
-  bool isSameOrBaseTypeOf(const DSType &targetType) const;
+  bool isSameOrBaseTypeOf(const Type &targetType) const;
 
   /**
    *
@@ -340,7 +340,7 @@ public:
          ModId modId)
       : Handle(0, typeId, fieldIndex, kind, attribute, modId) {}
 
-  Handle(const DSType &fieldType, unsigned int fieldIndex, HandleKind kind, HandleAttr attribute,
+  Handle(const Type &fieldType, unsigned int fieldIndex, HandleKind kind, HandleAttr attribute,
          ModId modId = BUILTIN_MOD_ID)
       : Handle(fieldType.typeId(), fieldIndex, kind, attribute, modId) {}
 
@@ -411,17 +411,17 @@ struct HandleRefCountOp {
 };
 
 struct CallSignature {
-  const DSType *returnType{nullptr};
+  const Type *returnType{nullptr};
   unsigned int paramSize{0};
-  const DSType *const *paramTypes{nullptr};
+  const Type *const *paramTypes{nullptr};
   const char *name{nullptr};
   const Handle *handle{nullptr};
 
-  explicit CallSignature(const DSType &retType) : returnType(&retType) {}
+  explicit CallSignature(const Type &retType) : returnType(&retType) {}
 
-  CallSignature(const DSType &retType, const char *name) : returnType(&retType), name(name) {}
+  CallSignature(const Type &retType, const char *name) : returnType(&retType), name(name) {}
 
-  CallSignature(const DSType &ret, unsigned int size, const DSType *const *params, const char *name,
+  CallSignature(const Type &ret, unsigned int size, const Type *const *params, const char *name,
                 const Handle *hd)
       : returnType(&ret), paramSize(size), paramTypes(params), name(name), handle(hd) {}
 };
@@ -473,17 +473,17 @@ public:
   }
 };
 
-class FunctionType : public DSType {
+class FunctionType : public Type {
 private:
-  static_assert(sizeof(DSType) <= 24);
+  static_assert(sizeof(Type) <= 24);
 
-  const DSType &returnType;
+  const Type &returnType;
 
-  const DSType *paramTypes[];
+  const Type *paramTypes[];
 
-  FunctionType(unsigned int id, StringRef ref, const DSType &superType, const DSType &returnType,
-               std::vector<const DSType *> &&paramTypes)
-      : DSType(TypeKind::Function, id, ref, &superType), returnType(returnType) {
+  FunctionType(unsigned int id, StringRef ref, const Type &superType, const Type &returnType,
+               std::vector<const Type *> &&paramTypes)
+      : Type(TypeKind::Function, id, ref, &superType), returnType(returnType) {
     this->meta.u32 = paramTypes.size();
     for (unsigned int i = 0; i < paramTypes.size(); i++) {
       this->paramTypes[i] = paramTypes[i];
@@ -491,29 +491,29 @@ private:
   }
 
 public:
-  static FunctionType *create(unsigned int id, StringRef ref, const DSType &superType,
-                              const DSType &returnType, std::vector<const DSType *> &&paramTypes) {
-    void *ptr = operator new(sizeof(FunctionType) + sizeof(DSType *) * paramTypes.size());
+  static FunctionType *create(unsigned int id, StringRef ref, const Type &superType,
+                              const Type &returnType, std::vector<const Type *> &&paramTypes) {
+    void *ptr = operator new(sizeof(FunctionType) + sizeof(Type *) * paramTypes.size());
     return new (ptr) FunctionType(id, ref, superType, returnType, std::move(paramTypes));
   }
 
   ~FunctionType() = default;
 
-  const DSType &getReturnType() const { return this->returnType; }
+  const Type &getReturnType() const { return this->returnType; }
 
   /**
    * may be 0 if has no parameters
    */
   unsigned int getParamSize() const { return this->meta.u32; }
 
-  const DSType &getParamTypeAt(unsigned int index) const { return *this->paramTypes[index]; }
+  const Type &getParamTypeAt(unsigned int index) const { return *this->paramTypes[index]; }
 
   CallSignature toCallSignature(const char *name, const Handle *hd) const {
     return {this->returnType, this->getParamSize(),
             this->getParamSize() == 0 ? nullptr : &this->paramTypes[0], name, hd};
   }
 
-  static bool classof(const DSType *type) { return type->isFuncType(); }
+  static bool classof(const Type *type) { return type->isFuncType(); }
 };
 
 /**
@@ -521,55 +521,55 @@ public:
  * not support override. (if override method, must override Object's method)
  * so this->getFieldSize is equivalent to superType->getFieldSize() + infoSize
  */
-class BuiltinType : public DSType {
+class BuiltinType : public Type {
 protected:
-  BuiltinType(TypeKind k, unsigned int id, StringRef ref, const DSType *superType,
+  BuiltinType(TypeKind k, unsigned int id, StringRef ref, const Type *superType,
               native_type_info_t info)
-      : DSType(k, id, ref, superType) {
+      : Type(k, id, ref, superType) {
     this->meta.info = info;
   }
 
 public:
-  BuiltinType(unsigned int id, StringRef ref, const DSType *superType, native_type_info_t info)
+  BuiltinType(unsigned int id, StringRef ref, const Type *superType, native_type_info_t info)
       : BuiltinType(TypeKind::Builtin, id, ref, superType, info) {}
 
   ~BuiltinType() = default;
 
   native_type_info_t getNativeTypeInfo() const { return this->meta.info; }
 
-  static bool classof(const DSType *type) { return type->isBuiltinOrDerived(); }
+  static bool classof(const Type *type) { return type->isBuiltinOrDerived(); }
 };
 
 class ArrayType : public BuiltinType {
 private:
-  const DSType &elementType;
+  const Type &elementType;
 
 public:
-  ArrayType(unsigned int id, StringRef ref, native_type_info_t info, const DSType &superType,
-            const DSType &type)
+  ArrayType(unsigned int id, StringRef ref, native_type_info_t info, const Type &superType,
+            const Type &type)
       : BuiltinType(TypeKind::Array, id, ref, &superType, info), elementType(type) {}
 
-  const DSType &getElementType() const { return this->elementType; }
+  const Type &getElementType() const { return this->elementType; }
 
-  static bool classof(const DSType *type) { return type->isArrayType(); }
+  static bool classof(const Type *type) { return type->isArrayType(); }
 };
 
 class MapType : public BuiltinType {
 private:
-  const DSType &keyType;
-  const DSType &valueType;
+  const Type &keyType;
+  const Type &valueType;
 
 public:
-  MapType(unsigned int id, StringRef ref, native_type_info_t info, const DSType &superType,
-          const DSType &keyType, const DSType &valueType)
+  MapType(unsigned int id, StringRef ref, native_type_info_t info, const Type &superType,
+          const Type &keyType, const Type &valueType)
       : BuiltinType(TypeKind::Map, id, ref, &superType, info), keyType(keyType),
         valueType(valueType) {}
 
-  const DSType &getKeyType() const { return this->keyType; }
+  const Type &getKeyType() const { return this->keyType; }
 
-  const DSType &getValueType() const { return this->valueType; }
+  const Type &getValueType() const { return this->valueType; }
 
-  static bool classof(const DSType *type) { return type->isMapType(); }
+  static bool classof(const Type *type) { return type->isMapType(); }
 };
 
 class TupleType : public BuiltinType {
@@ -580,8 +580,8 @@ public:
   /**
    * superType is AnyType ot VariantType
    */
-  TupleType(unsigned int id, StringRef ref, native_type_info_t info, const DSType &superType,
-            std::vector<const DSType *> &&types);
+  TupleType(unsigned int id, StringRef ref, native_type_info_t info, const Type &superType,
+            std::vector<const Type *> &&types);
 
   const auto &getFieldHandleMap() const { return this->fieldHandleMap; }
 
@@ -592,33 +592,33 @@ public:
 
   HandlePtr lookupField(const std::string &fieldName) const;
 
-  const DSType &getFieldTypeAt(const TypePool &pool, unsigned int i) const;
+  const Type &getFieldTypeAt(const TypePool &pool, unsigned int i) const;
 
-  static bool classof(const DSType *type) { return type->isTupleType(); }
+  static bool classof(const Type *type) { return type->isTupleType(); }
 };
 
-class OptionType : public DSType {
+class OptionType : public Type {
 private:
-  const DSType &elementType;
+  const Type &elementType;
 
 public:
-  OptionType(unsigned int id, StringRef ref, const DSType &type)
-      : DSType(TypeKind::Option, id, ref, nullptr), elementType(type) {}
+  OptionType(unsigned int id, StringRef ref, const Type &type)
+      : Type(TypeKind::Option, id, ref, nullptr), elementType(type) {}
 
-  const DSType &getElementType() const { return this->elementType; }
+  const Type &getElementType() const { return this->elementType; }
 
-  static bool classof(const DSType *type) { return type->isOptionType(); }
+  static bool classof(const Type *type) { return type->isOptionType(); }
 };
 
-class ErrorType : public DSType {
+class ErrorType : public Type {
 public:
-  ErrorType(unsigned int id, StringRef ref, const DSType &superType)
-      : DSType(TypeKind::Error, id, ref, &superType) {}
+  ErrorType(unsigned int id, StringRef ref, const Type &superType)
+      : Type(TypeKind::Error, id, ref, &superType) {}
 
-  static bool classof(const DSType *type) { return type->typeKind() == TypeKind::Error; }
+  static bool classof(const Type *type) { return type->typeKind() == TypeKind::Error; }
 };
 
-class RecordType : public DSType {
+class RecordType : public Type {
 private:
   friend class TypePool;
 
@@ -628,8 +628,8 @@ private:
   std::unordered_map<std::string, HandlePtr> handleMap;
 
 protected:
-  RecordType(TypeKind k, unsigned int id, StringRef ref, const DSType &superType)
-      : DSType(k, id, ref, &superType) {
+  RecordType(TypeKind k, unsigned int id, StringRef ref, const Type &superType)
+      : Type(k, id, ref, &superType) {
     this->meta.u32 = 0;
   }
 
@@ -638,7 +638,7 @@ protected:
   unsigned char getExtraAttr() const { return this->meta.u16_u8.v2_2; }
 
 public:
-  RecordType(unsigned int id, StringRef ref, const DSType &superType)
+  RecordType(unsigned int id, StringRef ref, const Type &superType)
       : RecordType(TypeKind::Record, id, ref, superType) {}
 
   const auto &getHandleMap() const { return this->handleMap; }
@@ -649,7 +649,7 @@ public:
 
   HandlePtr lookupField(const std::string &fieldName) const;
 
-  static bool classof(const DSType *type) { return type->isRecordOrDerived(); }
+  static bool classof(const Type *type) { return type->isRecordOrDerived(); }
 
 protected:
   void finalize(unsigned char fieldSize, std::unordered_map<std::string, HandlePtr> &&handles) {
@@ -675,7 +675,7 @@ private:
   std::vector<ArgEntry> entries;
 
 public:
-  CLIRecordType(unsigned int id, StringRef ref, const DSType &superType, Attr attr,
+  CLIRecordType(unsigned int id, StringRef ref, const Type &superType, Attr attr,
                 std::string &&desc);
 
   const auto &getDesc() const { return this->desc; }
@@ -684,7 +684,7 @@ public:
 
   Attr getAttr() const { return static_cast<Attr>(this->getExtraAttr()); }
 
-  static bool classof(const DSType *type) { return type->isCLIRecordType(); }
+  static bool classof(const Type *type) { return type->isCLIRecordType(); }
 
 private:
   void finalizeArgEntries(std::vector<ArgEntry> &&args);
@@ -709,7 +709,7 @@ enum class ModAttr : unsigned char {
 template <>
 struct allow_enum_bitop<ModAttr> : std::true_type {};
 
-class ModType : public DSType {
+class ModType : public Type {
 public:
   friend class TypePool;
 
@@ -760,10 +760,10 @@ private:
   std::unordered_map<std::string, HandlePtr> handleMap;
 
 public:
-  ModType(unsigned int id, const DSType &superType, ModId modId,
+  ModType(unsigned int id, const Type &superType, ModId modId,
           std::unordered_map<std::string, HandlePtr> &&handles, FlexBuffer<Imported> &&children,
           unsigned int index, ModAttr attr)
-      : DSType(TypeKind::Mod, id, toModTypeName(modId), &superType) {
+      : Type(TypeKind::Mod, id, toModTypeName(modId), &superType) {
     this->meta.u16_2.v1 = toUnderlying(modId);
     this->meta.u16_2.v2 = 0;
     this->data.e3.values[0] = index;
@@ -833,7 +833,7 @@ public:
     return nullptr;
   }
 
-  static bool classof(const DSType *type) { return type->isModType(); }
+  static bool classof(const Type *type) { return type->isModType(); }
 
 private:
   HandlePtr find(const std::string &name) const {
@@ -877,7 +877,7 @@ private:
   }
 };
 
-template <typename T, typename... Arg, enable_when<std::is_base_of_v<DSType, T>> = nullptr>
+template <typename T, typename... Arg, enable_when<std::is_base_of_v<Type, T>> = nullptr>
 inline T *constructType(Arg &&...arg) {
   if constexpr (std::is_same_v<FunctionType, T>) {
     return T::create(std::forward<Arg>(arg)...);
@@ -898,7 +898,7 @@ public:
   };
 
 private:
-  std::vector<const DSType *> acceptableTypes;
+  std::vector<const Type *> acceptableTypes;
 
   Kind kind{};
 
@@ -907,7 +907,7 @@ private:
 public:
   TypeTemplate() = default;
 
-  TypeTemplate(Kind k, std::vector<const DSType *> &&elementTypes, native_type_info_t info)
+  TypeTemplate(Kind k, std::vector<const Type *> &&elementTypes, native_type_info_t info)
       : acceptableTypes(std::move(elementTypes)), kind(k), info(info) {}
 
   ~TypeTemplate() = default;
@@ -922,7 +922,7 @@ public:
 
   native_type_info_t getInfo() const { return this->info; }
 
-  const std::vector<const DSType *> &getAcceptableTypes() const { return this->acceptableTypes; }
+  const std::vector<const Type *> &getAcceptableTypes() const { return this->acceptableTypes; }
 };
 
 class FuncHandle : public Handle {
@@ -977,14 +977,14 @@ private:
 
   char *packedParamNames{nullptr}; // may be null (if native method handle, always null)
 
-  const DSType &returnType;
+  const Type &returnType;
 
   /**
    * not contains receiver type
    */
-  const DSType *paramTypes[];
+  const Type *paramTypes[];
 
-  MethodHandle(const DSType &recv, unsigned short index, const DSType &ret, unsigned char paramSize,
+  MethodHandle(const Type &recv, unsigned short index, const Type &ret, unsigned char paramSize,
                ModId modId, HandleKind hk)
       : Handle(paramSize + 1, recv.typeId(), index, hk, HandleAttr::GLOBAL | HandleAttr::READ_ONLY,
                modId),
@@ -1003,9 +1003,8 @@ private:
    * @param modId
    * @return
    */
-  static std::unique_ptr<MethodHandle> create(const DSType &recv, unsigned int index,
-                                              const DSType *ret,
-                                              const std::vector<const DSType *> &params,
+  static std::unique_ptr<MethodHandle> create(const Type &recv, unsigned int index, const Type *ret,
+                                              const std::vector<const Type *> &params,
                                               PackedParamNames &&packed, ModId modId);
 
 public:
@@ -1014,8 +1013,8 @@ public:
   ~MethodHandle();
 
   static std::unique_ptr<MethodHandle>
-  native(const DSType &recv, unsigned int index, const DSType &ret, unsigned char paramSize,
-         const std::array<const DSType *, HandleInfoParamNumMax()> &paramTypes) {
+  native(const Type &recv, unsigned int index, const Type &ret, unsigned char paramSize,
+         const std::array<const Type *, HandleInfoParamNumMax()> &paramTypes) {
     void *ptr = operator new(sizeof(MethodHandle) + sizeof(uintptr_t) * paramSize);
     auto *handle =
         new (ptr) MethodHandle(recv, index, ret, paramSize, BUILTIN_MOD_ID, HandleKind::NATIVE);
@@ -1025,9 +1024,8 @@ public:
     return std::unique_ptr<MethodHandle>(handle);
   }
 
-  static std::unique_ptr<MethodHandle> method(const DSType &recv, unsigned int index,
-                                              const DSType &ret,
-                                              const std::vector<const DSType *> &params,
+  static std::unique_ptr<MethodHandle> method(const Type &recv, unsigned int index, const Type &ret,
+                                              const std::vector<const Type *> &params,
                                               PackedParamNames &&packed, ModId modId) {
     return create(recv, index, &ret, params, std::move(packed), modId);
   }
@@ -1040,19 +1038,19 @@ public:
    * @param modId
    * @return
    */
-  static std::unique_ptr<MethodHandle> constructor(const DSType &recv, unsigned int index,
-                                                   const std::vector<const DSType *> &params,
+  static std::unique_ptr<MethodHandle> constructor(const Type &recv, unsigned int index,
+                                                   const std::vector<const Type *> &params,
                                                    PackedParamNames &&packed, ModId modId) {
     return create(recv, index, nullptr, params, std::move(packed), modId);
   }
 
-  const DSType &getReturnType() const { return this->returnType; }
+  const Type &getReturnType() const { return this->returnType; }
 
   unsigned int getRecvTypeId() const { return this->getTypeId(); }
 
   unsigned char getParamSize() const { return this->famSize() - 1; }
 
-  const DSType &getParamTypeAt(unsigned int index) const {
+  const Type &getParamTypeAt(unsigned int index) const {
     assert(index < this->getParamSize());
     return *this->paramTypes[index];
   }

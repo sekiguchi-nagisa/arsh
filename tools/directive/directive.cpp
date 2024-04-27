@@ -75,7 +75,7 @@ private:
   std::string sourceName;
   unsigned int varCount{0}; // for scope
   using AttributeHandler = std::function<void(Node &, Directive &)>;
-  using Handler = std::pair<const DSType *, AttributeHandler>;
+  using Handler = std::pair<const Type *, AttributeHandler>;
   std::unordered_map<std::string, Handler> handlerMap;
 
 public:
@@ -88,7 +88,7 @@ public:
   const TypeCheckError &getError() const { return this->getErrors().front(); }
 
 private:
-  void addHandler(const char *attributeName, const DSType &type, AttributeHandler &&handler);
+  void addHandler(const char *attributeName, const Type &type, AttributeHandler &&handler);
 
   void addHandler(const char *attributeName, TYPE type, AttributeHandler &&handler) {
     this->addHandler(attributeName, this->typePool().get(type), std::move(handler));
@@ -100,11 +100,11 @@ private:
   /**
    * if not found corresponding handler, return null.
    */
-  const std::pair<const DSType *, AttributeHandler> *lookupHandler(const std::string &name) const;
+  const std::pair<const Type *, AttributeHandler> *lookupHandler(const std::string &name) const;
 
   bool checkNode(NodeKind kind, const Node &node);
 
-  void setVarName(const char *name, const DSType &type);
+  void setVarName(const char *name, const Type &type);
 
   template <typename T>
   T *checkedCast(Node &node) {
@@ -118,7 +118,7 @@ private:
    * return always [String : String] type
    * @return
    */
-  const DSType &getMapType() {
+  const Type &getMapType() {
     return *this->typePool()
                 .createMapType(this->typePool().get(TYPE::String),
                                this->typePool().get(TYPE::String))
@@ -297,7 +297,7 @@ void DirectiveInitializer::operator()(ApplyNode &node, Directive &d) {
   }
 }
 
-void DirectiveInitializer::addHandler(const char *attributeName, const DSType &type,
+void DirectiveInitializer::addHandler(const char *attributeName, const Type &type,
                                       AttributeHandler &&handler) {
   auto pair = this->handlerMap.emplace(attributeName, std::make_pair(&type, std::move(handler)));
   if (!pair.second) {
@@ -366,7 +366,7 @@ int DirectiveInitializer::resolveKind(const StringNode &node) {
   return -1;
 }
 
-const std::pair<const DSType *, DirectiveInitializer::AttributeHandler> *
+const std::pair<const Type *, DirectiveInitializer::AttributeHandler> *
 DirectiveInitializer::lookupHandler(const std::string &name) const {
   auto iter = this->handlerMap.find(name);
   if (iter == this->handlerMap.end()) {
@@ -394,7 +394,7 @@ bool DirectiveInitializer::checkNode(NodeKind kind, const Node &node) {
   return true;
 }
 
-void DirectiveInitializer::setVarName(const char *name, const DSType &type) {
+void DirectiveInitializer::setVarName(const char *name, const Type &type) {
   this->curScope->defineHandle(name, type, HandleAttr());
 }
 

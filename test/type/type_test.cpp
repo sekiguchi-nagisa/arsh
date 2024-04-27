@@ -5,10 +5,10 @@
 
 using namespace arsh;
 
-struct Type {};
+struct TypeWrapper {};
 
 template <const char *&value>
-struct BaseType : Type {};
+struct BaseType : TypeWrapper {};
 
 #define DEFINE_TYPE(name)                                                                          \
   namespace __detail_type {                                                                        \
@@ -17,7 +17,7 @@ struct BaseType : Type {};
   using name##_t = BaseType<__detail_type::name##_v>
 
 template <const char *&value, unsigned int N, typename... P>
-struct TypeTemp : Type {
+struct TypeTemp : TypeWrapper {
   static_assert((N == 0 && sizeof...(P) > 0) || (N > 0 && sizeof...(P) == N), "mismatched size");
 };
 
@@ -29,7 +29,7 @@ struct TypeTemp : Type {
   using name##_t = TypeTemp<__detail_type::name##_v, size, T...>
 
 template <typename R, typename... P>
-struct Func_t : Type {};
+struct Func_t : TypeWrapper {};
 
 DEFINE_TYPE(Int);
 DEFINE_TYPE(String);
@@ -111,7 +111,7 @@ public:
     this->scope = this->loader.createGlobalScope(this->pool, "(root)", nullptr);
   }
 
-  virtual void assertTypeName(const char *typeName, const DSType &type) {
+  virtual void assertTypeName(const char *typeName, const Type &type) {
     std::string name(typeName);
     // assert type name
     ASSERT_EQ(name, type.getName());
@@ -122,7 +122,7 @@ public:
     ASSERT_TRUE(type == *ret);
   }
 
-  virtual void assertSuperType(const DSType &type, const DSType &superType) {
+  virtual void assertSuperType(const Type &type, const Type &superType) {
     auto *actualSuperType = type.getSuperType();
     ASSERT_TRUE(actualSuperType != nullptr);
     ASSERT_STREQ(actualSuperType->getName(), superType.getName());
@@ -142,7 +142,7 @@ public:
   }
 
   template <typename T>
-  const DSType &toType() {
+  const Type &toType() {
     auto t = TypeFactory<T>{}();
     auto node = this->checker(false, std::move(t), this->scope);
     assert(node->is(NodeKind::TypeOp));

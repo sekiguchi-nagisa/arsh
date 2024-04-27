@@ -463,7 +463,7 @@ static void completeExpected(const std::vector<std::string> &expected, const std
   }
 }
 
-void completeMember(const TypePool &pool, const NameScope &scope, const DSType &recvType,
+void completeMember(const TypePool &pool, const NameScope &scope, const Type &recvType,
                     const StringRef word, CompCandidateConsumer &consumer) {
   // complete field
   auto fieldWalker = [&](StringRef name, const Handle &handle) {
@@ -522,7 +522,7 @@ void completeMember(const TypePool &pool, const NameScope &scope, const DSType &
   }
 }
 
-void completeType(const TypePool &pool, const NameScope &scope, const DSType *recvType,
+void completeType(const TypePool &pool, const NameScope &scope, const Type *recvType,
                   const StringRef word, CompCandidateConsumer &consumer) {
   if (recvType) {
     auto fieldWalker = [&](StringRef name, const Handle &handle) {
@@ -902,7 +902,7 @@ StringRef suggestSimilarVarName(StringRef name, const NameScope &scope, unsigned
 }
 
 StringRef suggestSimilarType(StringRef name, const TypePool &pool, const NameScope &scope,
-                             const DSType *recvType, unsigned int threshold) {
+                             const Type *recvType, unsigned int threshold) {
   if (name.empty() || name == "_") {
     return "";
   }
@@ -915,7 +915,7 @@ StringRef suggestSimilarType(StringRef name, const TypePool &pool, const NameSco
 }
 
 StringRef suggestSimilarMember(StringRef name, const TypePool &pool, const NameScope &scope,
-                               const DSType &recvType, SuggestMemberType targetType,
+                               const Type &recvType, SuggestMemberType targetType,
                                unsigned int threshold) {
   if (name.empty() || name == "_") {
     return "";

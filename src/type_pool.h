@@ -26,7 +26,7 @@
 
 namespace arsh {
 
-using TypeOrError = Result<const DSType *, std::unique_ptr<TypeLookupError>>;
+using TypeOrError = Result<const Type *, std::unique_ptr<TypeLookupError>>;
 
 struct TypeDiscardPoint {
   unsigned int typeIdOffset;
@@ -39,7 +39,7 @@ public:
     unsigned int id;
     StringRef ref;
 
-    Key(const DSType &recv, StringRef ref) : id(recv.typeId()), ref(ref) {}
+    Key(const Type &recv, StringRef ref) : id(recv.typeId()), ref(ref) {}
 
     bool operator==(const Key &key) const { return this->id == key.id && this->ref == key.ref; }
   };
@@ -113,7 +113,7 @@ public:
 
 private:
   unsigned int methodIdCount{0};
-  FlexBuffer<DSType *> typeTable;
+  FlexBuffer<Type *> typeTable;
   StrRefMap<unsigned int> nameMap;
 
   // for reified type
@@ -140,16 +140,16 @@ public:
   TypePool();
   ~TypePool();
 
-  const DSType &get(TYPE t) const { return this->get(toUnderlying(t)); }
+  const Type &get(TYPE t) const { return this->get(toUnderlying(t)); }
 
-  const DSType &get(unsigned int index) const { return *this->typeTable[index]; }
+  const Type &get(unsigned int index) const { return *this->typeTable[index]; }
 
-  const DSType &getUnresolvedType() const { return this->get(TYPE::Unresolved_); }
+  const Type &getUnresolvedType() const { return this->get(TYPE::Unresolved_); }
 
   /**
    * return null, if has no type.
    */
-  const DSType *getType(StringRef typeName) const;
+  const Type *getType(StringRef typeName) const;
 
   const TypeTemplate &getArrayTemplate() const { return this->arrayTemplate; }
 
@@ -164,23 +164,23 @@ public:
   const auto &getTemplateMap() const { return this->templateMap; }
 
   TypeOrError createReifiedType(const TypeTemplate &typeTemplate,
-                                std::vector<const DSType *> &&elementTypes);
+                                std::vector<const Type *> &&elementTypes);
 
-  TypeOrError createArrayType(const DSType &elementType) {
+  TypeOrError createArrayType(const Type &elementType) {
     return this->createReifiedType(this->getArrayTemplate(), {&elementType});
   }
 
-  TypeOrError createMapType(const DSType &keyType, const DSType &valueType) {
+  TypeOrError createMapType(const Type &keyType, const Type &valueType) {
     return this->createReifiedType(this->getMapTemplate(), {&keyType, &valueType});
   }
 
-  TypeOrError createOptionType(const DSType &elementType) {
+  TypeOrError createOptionType(const Type &elementType) {
     return this->createOptionType({&elementType});
   }
 
-  TypeOrError createOptionType(std::vector<const DSType *> &&elementTypes);
+  TypeOrError createOptionType(std::vector<const Type *> &&elementTypes);
 
-  TypeOrError createTupleType(std::vector<const DSType *> &&elementTypes);
+  TypeOrError createTupleType(std::vector<const Type *> &&elementTypes);
 
   /**
    *
@@ -189,7 +189,7 @@ public:
    * @return
    * must be FunctionType
    */
-  TypeOrError createFuncType(const DSType &returnType, std::vector<const DSType *> &&paramTypes);
+  TypeOrError createFuncType(const Type &returnType, std::vector<const Type *> &&paramTypes);
 
   /**
    * create new error type.
@@ -199,7 +199,7 @@ public:
    * must be subtype of Error type
    * @return
    */
-  TypeOrError createErrorType(const std::string &typeName, const DSType &superType,
+  TypeOrError createErrorType(const std::string &typeName, const Type &superType,
                               ModId belongedModId);
 
   TypeOrError createRecordType(const std::string &typeName, ModId belongedModId);
@@ -226,7 +226,7 @@ public:
 
   const ModType *getModTypeById(ModId modId) const;
 
-  const MethodHandle *lookupMethod(const DSType &recvType, const std::string &methodName);
+  const MethodHandle *lookupMethod(const Type &recvType, const std::string &methodName);
 
   /**
    * instantiate native method handle from native method index
@@ -238,14 +238,14 @@ public:
    * if failed, return null
    * // FIXME: error reporting
    */
-  std::unique_ptr<MethodHandle> allocNativeMethodHandle(const DSType &recv,
+  std::unique_ptr<MethodHandle> allocNativeMethodHandle(const Type &recv,
                                                         unsigned int methodIndex);
 
-  bool hasMethod(const DSType &recvType, const std::string &methodName) const;
+  bool hasMethod(const Type &recvType, const std::string &methodName) const;
 
   const MethodMap &getMethodMap() const { return this->methodMap; }
 
-  const FlexBuffer<DSType *> &getTypeTable() const { return this->typeTable; }
+  const FlexBuffer<Type *> &getTypeTable() const { return this->typeTable; }
 
   TypeDiscardPoint getDiscardPoint() const {
     return TypeDiscardPoint{
@@ -257,7 +257,7 @@ public:
   void discard(TypeDiscardPoint point);
 
 private:
-  const DSType *get(StringRef typeName) const {
+  const Type *get(StringRef typeName) const {
     auto iter = this->nameMap.find(typeName);
     if (iter == this->nameMap.end()) {
       return nullptr;
@@ -265,7 +265,7 @@ private:
     return &this->get(iter->second);
   }
 
-  DSType *getMut(unsigned int typeId) const { return this->typeTable[typeId]; }
+  Type *getMut(unsigned int typeId) const { return this->typeTable[typeId]; }
 
   template <typename T, typename... A>
   T *newType(A &&...arg) {
@@ -280,22 +280,22 @@ private:
    * @return
    * if type is already defined, return null
    */
-  DSType *addType(DSType *type);
+  Type *addType(Type *type);
 
   /**
    * create reified type name
    * equivalent to toReifiedTypeName(typeTemplate->getName(), elementTypes)
    */
   std::string toReifiedTypeName(const TypeTemplate &typeTemplate,
-                                const std::vector<const DSType *> &elementTypes) const;
+                                const std::vector<const Type *> &elementTypes) const;
 
-  static std::string toTupleTypeName(const std::vector<const DSType *> &elementTypes);
+  static std::string toTupleTypeName(const std::vector<const Type *> &elementTypes);
 
   /**
    * create function type name
    */
-  static std::string toFunctionTypeName(const DSType &returnType,
-                                        const std::vector<const DSType *> &paramTypes);
+  static std::string toFunctionTypeName(const Type &returnType,
+                                        const std::vector<const Type *> &paramTypes);
 
   /**
    *
@@ -304,7 +304,7 @@ private:
    * if success, return null
    */
   static TypeOrError checkElementTypes(const TypeTemplate &t,
-                                       const std::vector<const DSType *> &elementTypes,
+                                       const std::vector<const Type *> &elementTypes,
                                        size_t limit);
 
   /**
@@ -315,7 +315,7 @@ private:
    * if success, return null
    */
   static TypeOrError checkElementTypes(const TypeTemplate &t,
-                                       const std::vector<const DSType *> &elementTypes);
+                                       const std::vector<const Type *> &elementTypes);
 
   void initBuiltinType(TYPE t, const char *typeName, bool extendible, native_type_info_t info) {
     this->initBuiltinType(t, typeName, extendible, nullptr, info);
@@ -326,11 +326,11 @@ private:
     this->initBuiltinType(t, typeName, extendible, &this->get(super), info);
   }
 
-  void initBuiltinType(TYPE t, const char *typeName, bool extendible, const DSType *super,
+  void initBuiltinType(TYPE t, const char *typeName, bool extendible, const Type *super,
                        native_type_info_t info);
 
   void initTypeTemplate(TypeTemplate &temp, TypeTemplate::Kind kind,
-                        std::vector<const DSType *> &&elementTypes, native_type_info_t info);
+                        std::vector<const Type *> &&elementTypes, native_type_info_t info);
 
   void initErrorType(TYPE t, const char *typeName);
 

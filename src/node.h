@@ -114,7 +114,7 @@ private:
   /**
    * initial value is null.
    */
-  const DSType *type{nullptr};
+  const Type *type{nullptr};
 
 protected:
   Node(NodeKind kind, Token token) : nodeKind(kind), token(token), actual(token) {}
@@ -151,12 +151,12 @@ public:
     this->token = {openPos, closeToken.endPos() - openPos};
   }
 
-  void setType(const DSType &t) { this->type = &t; }
+  void setType(const Type &t) { this->type = &t; }
 
   /**
    * must not call it before type checking
    */
-  const DSType &getType() const { return *this->type; }
+  const Type &getType() const { return *this->type; }
 
   bool isUntyped() const { return this->type == nullptr; }
 
@@ -791,7 +791,7 @@ public:
    * @return
    */
   static std::unique_ptr<TypeOpNode> newTypedCastNode(std::unique_ptr<Node> &&targetNode,
-                                                      const DSType &type) {
+                                                      const Type &type) {
     assert(!targetNode->isUntyped());
     auto castNode =
         std::make_unique<TypeOpNode>(std::move(targetNode), nullptr, TypeOpNode::NO_CAST);
@@ -2074,7 +2074,7 @@ public:
     return std::unique_ptr<JumpNode>(new JumpNode(token, RETURN, std::move(exprNode)));
   }
 
-  static std::unique_ptr<JumpNode> newReturnInit(const DSType &resolvedType, unsigned char offset,
+  static std::unique_ptr<JumpNode> newReturnInit(const Type &resolvedType, unsigned char offset,
                                                  unsigned char size) {
     std::unique_ptr<JumpNode> node(new JumpNode(Token{0, 0}, RETURN_INIT, nullptr));
     node->getExprNode().setType(resolvedType);
@@ -2419,12 +2419,12 @@ public:
   /**
    * add recv type of getterNode and setterNode
    */
-  void setRecvType(const DSType &type);
+  void setRecvType(const Type &type);
 
   /**
    * add index type of getterNode and setterNode.
    */
-  void setIndexType(const DSType &type);
+  void setIndexType(const Type &type);
 
   void dump(NodeDumper &dumper) const override;
 };
@@ -2517,7 +2517,7 @@ private:
    */
   HandlePtr handle;
 
-  const DSType *resolvedType{nullptr};
+  const Type *resolvedType{nullptr};
 
   /**
    * captured variables for local function
@@ -2588,14 +2588,14 @@ public:
 
   const HandlePtr &getHandle() const { return this->handle; }
 
-  void setResolvedType(const DSType &type) { this->resolvedType = &type; }
+  void setResolvedType(const Type &type) { this->resolvedType = &type; }
 
   /**
    *
    * @return
    * may be null.
    */
-  const DSType *getResolvedType() const { return this->resolvedType; }
+  const Type *getResolvedType() const { return this->resolvedType; }
 
   void addCapture(HandlePtr hd) { this->captures.push_back(std::move(hd)); }
 
@@ -3146,7 +3146,7 @@ public:
    */
   void dump(const char *fieldName, const Node &node);
 
-  void dump(const char *fieldName, const DSType &type);
+  void dump(const char *fieldName, const Type &type);
 
   void dump(const char *fieldName, TokenKind kind);
 

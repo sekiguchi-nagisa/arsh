@@ -5,7 +5,7 @@ source $SCRIPT_DIR/expect.ds
 
 var out = "### dump compiled code ###
 Source File: (string)
-DSCode: top level
+ARCode: top level
   code size: 38
   max stack depth: 4
   number of local variable: 1
@@ -47,7 +47,7 @@ $expect("$(ds --dump-code -c '{ var a = 23; defer { echo $a > /dev/null; }; }')"
 
 $out = "### dump compiled code ###
 Source File: (string)
-DSCode: top level
+ARCode: top level
   code size: 30
   max stack depth: 5
   number of local variable: 1
@@ -90,7 +90,7 @@ $expect("$(ds --dump-code -c '{ var a = 23; defer { echo $a > /dev/null; }; exit
 
 $out = "### dump compiled code ###
 Source File: (string)
-DSCode: top level
+ARCode: top level
   code size: 15
   max stack depth: 2
   number of local variable: 0
@@ -113,7 +113,7 @@ Line Number Table:
   lineNum: 1, address:  9
 Exception Table:
 
-DSCode: command f
+ARCode: command f
   code size: 46
   max stack depth: 5
   number of local variable: 6
@@ -152,7 +152,7 @@ $expect("$(ds --dump-code -c 'f() { var a = 23; defer { assert $a == 99; }; var 
 
 $out = "### dump compiled code ###
 Source File: (string)
-DSCode: top level
+ARCode: top level
   code size: 7
   max stack depth: 1
   number of local variable: 0
@@ -169,7 +169,7 @@ Constant Pool:
 Line Number Table:
 Exception Table:
 
-DSCode: function AAA
+ARCode: function AAA
   code size: 23
   max stack depth: 2
   number of local variable: 2

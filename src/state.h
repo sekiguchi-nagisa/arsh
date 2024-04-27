@@ -25,7 +25,7 @@ struct ControlFrame {
   /**
    * currently executed code
    */
-  const DSCode *code;
+  const ARCode *code;
 
   /**
    * indicate the index of currently evaluating op code.
@@ -299,7 +299,7 @@ public:
     }
   }
 
-  const DSCode *code() const { return this->frame.code; }
+  const ARCode *code() const { return this->frame.code; }
 
   const unsigned char *&ip() noexcept { return this->frame.ip; }
 
@@ -327,7 +327,7 @@ public:
    * @return
    * if current frames size is limit, return false.
    */
-  bool wind(unsigned int stackTopOffset, unsigned int paramSize, const DSCode &code);
+  bool wind(unsigned int stackTopOffset, unsigned int paramSize, const ARCode &code);
 
   void unwind();
 

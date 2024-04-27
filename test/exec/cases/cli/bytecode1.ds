@@ -3,7 +3,7 @@ source $SCRIPT_DIR/expect.ds
 
 var out = "### dump compiled code ###
 Source File: (string)
-DSCode: top level
+ARCode: top level
   code size: 13
   max stack depth: 1
   number of local variable: 0
@@ -28,7 +28,7 @@ $expect("$(ds --dump-code -c 'var a = 34; 34 as String')", 0, $out)
 
 $out = "### dump compiled code ###
 Source File: (string)
-DSCode: top level
+ARCode: top level
   code size: 30
   max stack depth: 3
   number of local variable: 0
@@ -57,7 +57,7 @@ Line Number Table:
 Exception Table:
   begin: 5, end: 23, type: pseudo top%%, dest: 23, offset: 0, size: 0, level: 1
 
-DSCode: function f
+ARCode: function f
   code size: 7
   max stack depth: 1
   number of local variable: 1
@@ -76,7 +76,7 @@ $expect("$(ds --dump-code -c $cmd)", 0, $out)
 
 $out = "### dump compiled code ###
 Source File: (string)
-DSCode: top level
+ARCode: top level
   code size: 46
   max stack depth: 2
   number of local variable: 2
@@ -114,7 +114,7 @@ $expect("$(ds --dump-code -c $cmd)", 0, $out)
 
 $out = "### dump compiled code ###
 Source File: (string)
-DSCode: top level
+ARCode: top level
   code size: 32
   max stack depth: 5
   number of local variable: 0
@@ -157,7 +157,7 @@ $expect("$(ds --dump-code -n -c 'echo hello | echo hello &')", 0, $out)
 
 $out = "### dump compiled code ###
 Source File: (string)
-DSCode: top level
+ARCode: top level
   code size: 37
   max stack depth: 4
   number of local variable: 0
@@ -197,7 +197,7 @@ $expect("$(ds -n --dump-code -c 'case "$PID" { "999" => sleep 8 & else => {} }')
 
 $out = "### dump compiled code ###
 Source File: (string)
-DSCode: top level
+ARCode: top level
   code size: 21
   max stack depth: 1
   number of local variable: 1
@@ -226,7 +226,7 @@ $expect("$(ds -n --dump-code -c '{;;}|23')", 0, $out)
 
 $out = "### dump compiled code ###
 Source File: (string)
-DSCode: top level
+ARCode: top level
   code size: 10
   max stack depth: 1
   number of local variable: 0
@@ -251,7 +251,7 @@ $expect("$(ds -n --dump-code -c '{;}&')", 0, $out)
 
 $out = "### dump compiled code ###
 Source File: (string)
-DSCode: top level
+ARCode: top level
   code size: 36
   max stack depth: 4
   number of local variable: 0

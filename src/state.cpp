@@ -18,7 +18,7 @@
 
 namespace arsh {
 
-bool VMState::wind(unsigned int stackTopOffset, unsigned int paramSize, const DSCode &code) {
+bool VMState::wind(unsigned int stackTopOffset, unsigned int paramSize, const ARCode &code) {
   const unsigned int maxVarSize = code.getLocalVarNum();
   const unsigned int localVarOffset = this->frame.stackTopIndex - paramSize + 1;
   const unsigned int operandSize = code.getStackDepth();

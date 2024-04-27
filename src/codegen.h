@@ -37,7 +37,7 @@ class CatchBuilder {
 private:
   Label begin; // inclusive
   Label end;   // exclusive
-  const DSType *type{nullptr};
+  const Type *type{nullptr};
   unsigned int address{0}; // start index of catch block.
   unsigned short localOffset{0};
   unsigned short localSize{0};
@@ -45,7 +45,7 @@ private:
 
 public:
   CatchBuilder() = default;
-  CatchBuilder(Label begin, Label end, const DSType &type, unsigned int address,
+  CatchBuilder(Label begin, Label end, const Type &type, unsigned int address,
                unsigned short localOffset, unsigned short localSize, unsigned int level)
       : begin(std::move(begin)), end(std::move(end)), type(&type), address(address),
         localOffset(localOffset), localSize(localSize), guardLevel(level) {}
@@ -307,7 +307,7 @@ private:
   /**
    * write instruction having type. (ex. PRINT).
    */
-  void emitTypeIns(OpCode op, const DSType &type) {
+  void emitTypeIns(OpCode op, const Type &type) {
     assert(isTypeOp(op));
     this->emit3byteIns(op, type.typeId());
   }
@@ -423,10 +423,10 @@ private:
    * @param level
    * try block guard level
    */
-  void catchException(const Label &begin, const Label &end, const DSType &type,
+  void catchException(const Label &begin, const Label &end, const Type &type,
                       unsigned short localOffset, unsigned short localSize, unsigned int level);
 
-  void guardChildProc(const Label &begin, const Label &end, const DSType &type) {
+  void guardChildProc(const Label &begin, const Label &end, const Type &type) {
     this->catchException(begin, end, type, 0, 0, 0);
   }
 

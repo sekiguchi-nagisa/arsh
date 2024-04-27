@@ -50,7 +50,7 @@ private:
      */
     std::unordered_map<std::string, SymbolRef> map;
 
-    const DSType *resolvedType{nullptr}; // for constructor
+    const Type *resolvedType{nullptr}; // for constructor
 
   public:
     const IntrusivePtr<ScopeEntry> parent;
@@ -60,7 +60,7 @@ private:
     const unsigned int scopeId;
 
     ScopeEntry(const IntrusivePtr<ScopeEntry> &parent, ScopeKind kind, unsigned int scopeId,
-               const DSType *type)
+               const Type *type)
         : resolvedType(type), parent(parent), kind(kind), scopeId(scopeId) {}
 
     explicit ScopeEntry(unsigned int scopeId)
@@ -79,7 +79,7 @@ private:
       return nullptr;
     }
 
-    const DSType *getResolvedType() const { return this->resolvedType; }
+    const Type *getResolvedType() const { return this->resolvedType; }
 
     /**
      * low-level api, normally unused
@@ -138,7 +138,7 @@ public:
 
   const ScopeEntry &curScope() const { return *this->scope; }
 
-  auto intoScope(ScopeKind kind, ScopeInterval interval, const DSType *type = nullptr) {
+  auto intoScope(ScopeKind kind, ScopeInterval interval, const Type *type = nullptr) {
     this->scope =
         IntrusivePtr<ScopeEntry>::create(this->scope, kind, this->scopeIntervals.size(), type);
     this->scopeIntervals.push_back(interval);
@@ -155,7 +155,7 @@ public:
     return this->curScope().findMethodScope() && varName == VAR_THIS && handle.getIndex() == 0;
   }
 
-  const DeclSymbol *addDecl(const NameInfo &info, const DSType &type, Token token,
+  const DeclSymbol *addDecl(const NameInfo &info, const Type &type, Token token,
                             DeclSymbol::Kind kind = DeclSymbol::Kind::VAR);
 
   const DeclSymbol *addDecl(const NameInfo &info, DeclSymbol::Kind kind, const char *hover,
@@ -171,7 +171,7 @@ public:
 
   bool addThis(const NameInfo &info, const HandlePtr &hd);
 
-  bool addMember(const DSType &recv, const NameInfo &nameInfo, DeclSymbol::Kind kind,
+  bool addMember(const Type &recv, const NameInfo &nameInfo, DeclSymbol::Kind kind,
                  const Handle &handle, Token token);
 
   bool addMember(const MethodHandle &handle, const NameInfo &nameInfo, Token token) {
@@ -179,10 +179,10 @@ public:
                            DeclSymbol::Kind::METHOD, handle, token);
   }
 
-  const DeclSymbol *addMemberDecl(const DSType &recv, const NameInfo &nameInfo, const DSType &type,
+  const DeclSymbol *addMemberDecl(const Type &recv, const NameInfo &nameInfo, const Type &type,
                                   DeclSymbol::Kind kind, Token token);
 
-  const DeclSymbol *addMemberDecl(const DSType &recv, const NameInfo &nameInfo,
+  const DeclSymbol *addMemberDecl(const Type &recv, const NameInfo &nameInfo,
                                   DeclSymbol::Kind kind, const char *info, Token token) {
     if (recv.isUnresolved()) {
       return nullptr;
@@ -190,7 +190,7 @@ public:
     return this->addDeclImpl(&recv, nameInfo, kind, info, token, DeclInsertOp::MEMBER);
   }
 
-  bool addBuiltinMethod(const DSType &recvType, unsigned int methodIndex, const NameInfo &nameInfo);
+  bool addBuiltinMethod(const Type &recvType, unsigned int methodIndex, const NameInfo &nameInfo);
 
   const DeclSymbol *findDecl(const Symbol &symbol) const;
 
@@ -224,10 +224,10 @@ private:
     NONE, // no scope check
   };
 
-  const DeclSymbol *addDeclImpl(const DSType *recv, const NameInfo &info, DeclSymbol::Kind kind,
+  const DeclSymbol *addDeclImpl(const Type *recv, const NameInfo &info, DeclSymbol::Kind kind,
                                 const char *hover, Token body, DeclInsertOp op);
 
-  const Symbol *addSymbolImpl(const DSType *recv, const NameInfo &nameInfo, DeclSymbol::Kind kind,
+  const Symbol *addSymbolImpl(const Type *recv, const NameInfo &nameInfo, DeclSymbol::Kind kind,
                               const Handle *handle);
 
   /**
@@ -256,7 +256,7 @@ private:
    * @param token
    * @param type
    */
-  void addParamTypeInfo(Token token, const DSType &type);
+  void addParamTypeInfo(Token token, const Type &type);
 };
 
 class SymbolIndexer : public NodePass {

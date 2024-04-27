@@ -103,7 +103,7 @@ struct BindingConsumer {
     this->state.setGlobal(handle.getIndex(), Value::create<UnixFdObject>(fd));
   }
 
-  void operator()(const Handle &handle, const DSType &type) {
+  void operator()(const Handle &handle, const Type &type) {
     auto value = Value::createDummy(type);
     if (type.isArrayType() || type.is(TYPE::Candidates)) {
       value = Value::create<ArrayObject>(type);

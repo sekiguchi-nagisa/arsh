@@ -89,7 +89,7 @@ private:
   /**
    * for member completion
    */
-  const DSType *recvType{nullptr};
+  const Type *recvType{nullptr};
 
   CodeCompOp compOp{};
 
@@ -156,13 +156,13 @@ public:
     this->addCompRequest(op, std::move(value));
   }
 
-  void addTypeNameRequest(std::string &&value, const DSType *type, NameScopePtr curScope) {
+  void addTypeNameRequest(std::string &&value, const Type *type, NameScopePtr curScope) {
     this->scope = std::move(curScope);
     this->recvType = type;
     this->addCompRequest(CodeCompOp::TYPE, std::move(value));
   }
 
-  void addMemberRequest(const DSType &type, std::string &&value) {
+  void addMemberRequest(const Type &type, std::string &&value) {
     this->compOp = CodeCompOp::MEMBER;
     this->recvType = &type;
     this->compWord = std::move(value);
@@ -230,7 +230,7 @@ public:
 
   const Lexer *getLexer() const { return this->lex.get(); }
 
-  const DSType *getRecvType() const { return this->recvType; }
+  const Type *getRecvType() const { return this->recvType; }
 
   const auto &getScriptDir() const { return this->scriptDir; }
 };

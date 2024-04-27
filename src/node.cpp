@@ -959,12 +959,12 @@ ElementSelfAssignNode::ElementSelfAssignNode(std::unique_ptr<ApplyNode> &&leftNo
                               std::make_unique<EmptyNode>());
 }
 
-void ElementSelfAssignNode::setRecvType(const DSType &type) {
+void ElementSelfAssignNode::setRecvType(const Type &type) {
   this->getterNode->getRecvNode().setType(type);
   this->setterNode->getRecvNode().setType(type);
 }
 
-void ElementSelfAssignNode::setIndexType(const DSType &type) {
+void ElementSelfAssignNode::setIndexType(const Type &type) {
   this->getterNode->getArgsNode().refNodes()[0]->setType(type);
   this->setterNode->getArgsNode().refNodes()[0]->setType(type);
 }
@@ -1213,7 +1213,7 @@ void NodeDumper::dump(const char *fieldName, const Node &node) {
   this->leaveIndent();
 }
 
-void NodeDumper::dump(const char *fieldName, const DSType &type) {
+void NodeDumper::dump(const char *fieldName, const Type &type) {
   this->dump(fieldName, type.getName());
 }
 

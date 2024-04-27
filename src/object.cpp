@@ -752,7 +752,7 @@ void ErrorObject::printStackTrace(const ARState &state, PrintOp op) const {
   fflush(stderr);
 }
 
-ObjPtr<ErrorObject> ErrorObject::newError(const ARState &state, const DSType &type, Value &&message,
+ObjPtr<ErrorObject> ErrorObject::newError(const ARState &state, const Type &type, Value &&message,
                                           int64_t status) {
   std::vector<StackTraceElement> traces;
   state.getCallStack().fillStackTrace([&traces](StackTraceElement &&e) {
