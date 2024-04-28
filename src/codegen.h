@@ -94,6 +94,11 @@ struct LoopState {
   unsigned int blockIndex;
 };
 
+struct LocalState {
+  unsigned short offset;
+  unsigned short size;
+};
+
 class ConstBuffer {
 private:
   std::unique_ptr<Value[]> values;
@@ -136,7 +141,7 @@ struct CodeBuilder : public CodeEmitter<true> {
   FlexBuffer<LineNumEntry> lineNumEntries;
   std::vector<CatchBuilder> catchBuilders;
 
-  std::vector<std::pair<unsigned short, unsigned short>> localVars;
+  std::vector<LocalState> localVars;
 
   /**
    * first is break label, second is continue label
@@ -380,7 +385,7 @@ private:
   template <typename Func>
   void generateBlock(unsigned short localOffset, unsigned short localSize, bool needReclaim,
                      Func func) {
-    this->curBuilder().localVars.emplace_back(localOffset, localSize);
+    this->curBuilder().localVars.push_back({.offset = localOffset, .size = localSize});
 
     func();
 

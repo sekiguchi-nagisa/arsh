@@ -1400,9 +1400,9 @@ void ByteCodeGenerator::generateBreakContinue(JumpNode &node) {
 
   // reclaim local and enter finally before jump
   const unsigned int blockIndex = this->curBuilder().loopLabels.back().blockIndex;
-  const unsigned int startOffset = this->curBuilder().localVars[blockIndex].first;
+  const unsigned int startOffset = this->curBuilder().localVars[blockIndex].offset;
   const unsigned int stopOffset =
-      this->curBuilder().localVars.back().first + this->curBuilder().localVars.back().second;
+      this->curBuilder().localVars.back().offset + this->curBuilder().localVars.back().size;
 
   assert(startOffset <= stopOffset);
   this->enterMultiFinally(node.getTryDepth(), startOffset, stopOffset - startOffset);
