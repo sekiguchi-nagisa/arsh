@@ -316,7 +316,7 @@ void TypeChecker::resolveArgEntry(ResolveArgEntryParam &resolveParam, const unsi
     case Attribute::Param::SHORT: {
       auto &optName = cast<StringNode>(constNode).getValue();
       if (optName.size() != 1 || !isLetter(optName[0])) {
-        this->reportError<InvalidShortOpt>(constNode, optName.c_str());
+        this->reportError<InvalidShortOpt>(constNode, toPrintable(optName).c_str());
         return;
       }
       if (resolveParam.foundOptionSet.emplace(optName).second) {
@@ -330,7 +330,7 @@ void TypeChecker::resolveArgEntry(ResolveArgEntryParam &resolveParam, const unsi
     case Attribute::Param::LONG: {
       auto &optName = cast<StringNode>(constNode).getValue();
       if (!isValidLongOpt(optName)) {
-        this->reportError<InvalidLongOpt>(constNode, optName.c_str());
+        this->reportError<InvalidLongOpt>(constNode, toPrintable(optName).c_str());
         return;
       }
       if (resolveParam.foundOptionSet.emplace(optName).second) {

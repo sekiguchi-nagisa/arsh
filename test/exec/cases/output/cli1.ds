@@ -1,0 +1,14 @@
+# RUN: exec $cmd $self
+
+[<CLI>]
+typedef AAA() {
+    [<Flag(short: $'aa\x00 bb')>]
+    var ff = $false
+}
+
+#    CHECKERR: [semantic error] invalid short option: `aa\x00 bb', must be single alphabet character
+# CHECKERR_RE:  --> .+/output/cli1\.ds:5:19$
+#    CHECKERR:     [<Flag(short: $'aa\x00 bb')>]
+#    CHECKERR:                   ^~~~~~~~~~~~
+
+# STATUS: 1

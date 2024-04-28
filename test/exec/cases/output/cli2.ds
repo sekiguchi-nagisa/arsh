@@ -1,0 +1,14 @@
+# RUN: exec $cmd $self
+
+[<CLI>]
+typedef AAA() {
+    [<Flag(long: $'aa\x00 bb')>]
+    var ff = $false
+}
+
+#    CHECKERR: [semantic error] invalid long option: `aa\x00 bb', must be follow `[a-zA-Z][a-zA-Z0-9-]*'
+# CHECKERR_RE:  --> .+/output/cli2\.ds:5:18$
+#    CHECKERR:     [<Flag(long: $'aa\x00 bb')>]
+#    CHECKERR:                  ^~~~~~~~~~~~
+
+# STATUS: 1
