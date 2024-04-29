@@ -1,9 +1,10 @@
 # Changelog
 
-## [0.33.3]
+## [0.33.3] - 2024-04-30
 
 - bugfix code generation of catch block with nested blocks (fix potential resource leak)
 - correctly set ``PIPESTATUS`` when throw error from last-pipe
+- preserve ``REPLY``, ``reply``, ``PIPESTATUS`` during ``LineEditor`` callback
 
 ## [0.33.2] - 2024-04-11
 

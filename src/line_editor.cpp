@@ -1174,6 +1174,9 @@ Value LineEditorObject::kickCallback(ARState &state, Value &&callback, CallArgs 
   const int errNum = errno;
   auto oldStatus = state.getGlobal(BuiltinVarOffset::EXIT_STATUS);
   auto oldIFS = state.getGlobal(BuiltinVarOffset::IFS);
+  auto oldREPLY = state.getGlobal(BuiltinVarOffset::REPLY);
+  auto oldReply = state.getGlobal(BuiltinVarOffset::REPLY_VAR);
+  auto oldPipe = state.getGlobal(BuiltinVarOffset::PIPESTATUS);
 
   const bool restoreTTY = this->rawMode;
   if (restoreTTY) {
@@ -1187,6 +1190,9 @@ Value LineEditorObject::kickCallback(ARState &state, Value &&callback, CallArgs 
   // restore state
   state.setGlobal(BuiltinVarOffset::EXIT_STATUS, std::move(oldStatus));
   state.setGlobal(BuiltinVarOffset::IFS, std::move(oldIFS));
+  state.setGlobal(BuiltinVarOffset::REPLY, std::move(oldREPLY));
+  state.setGlobal(BuiltinVarOffset::REPLY_VAR, std::move(oldReply));
+  state.setGlobal(BuiltinVarOffset::PIPESTATUS, std::move(oldPipe));
   errno = errNum;
   return ret;
 }

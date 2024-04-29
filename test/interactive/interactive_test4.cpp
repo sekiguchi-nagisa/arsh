@@ -225,6 +225,45 @@ TEST_F(InteractiveTest, lineEditorBase) {
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
 }
 
+// save/restore some global variables
+TEST_F(InteractiveTest, lineEditorGlobal) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $? == 0"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $IFS == $' \\t\\n'"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $REPLY == ''"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $reply.empty()"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $PIPESTATUS.empty()"));
+
+  // update globals
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$REPLY = $OSTYPE"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$reply['mactype'] = $MACHTYPE"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("exit 56 | exit 99"));
+
+  // set prompt callback
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.setPrompt(function(p) => {"
+                                                  "  $? = 222; $IFS='111'; $REPLY='@'; "
+                                                  "  printf -v var -- 'hey';"
+                                                  "  exit 123 | exit 67 | exit 5;"
+                                                  "  $p;"
+                                                  "})"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(""));
+
+  // preserve old value
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $? == 99"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $REPLY == $OSTYPE"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $reply.size() == 1"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $reply['mactype'] == $MACHTYPE"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $IFS == $' \\t\\n'"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $PIPESTATUS.size() == 2"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $PIPESTATUS[0] == 56"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $PIPESTATUS[1] == 99"));
+
+  this->send(CTRL_D);
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(99, WaitStatus::EXITED, "\n"));
+}
+
 // test recursive api call
 TEST_F(InteractiveTest, lineEditorRec) {
   this->invoke("--quiet", "--norc");
