@@ -194,6 +194,7 @@ function _comp_wrap(file : String, target : String, words : [String], cursor : I
     done
     '
 
+    $? = 0 # suppress error
     var ret : Candidates
     bash -c $script bash \
       $BASH_COMPLETION_PATH $file $target $BASH_COMPLETION_COMPAT $cursor $words | for line in $STDIN {
