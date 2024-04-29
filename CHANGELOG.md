@@ -9,6 +9,7 @@
 - **Breaking Change**: in process substitution, internal job object no longer maintain created ``FD`` object
 - **Breaking Change**: ``break``, ``continue``, ``return`` expressions are no longer allowed in last-pipe
 - **Breaking Change**: when ``err-raise`` option is enabled, check pipeline exit status even if last-pipe
+- **Breaking Change**: allow null characters in ``default`` param of ``Option`` attribute
 - improve assertion error message of binary ``==`` and ``=~`` expression
     - now show left hand-side, right hand-side expression value
 - improve internal error checking of ``dup2``, ``pipe`` system call, now propagate these errors as ``SystemError``

@@ -377,7 +377,7 @@ std::pair<ArgEntry, bool> Unarchiver::unpackArgEntry() {
     entry.setArgName(str.c_str());
   }
   if (auto str = this->readStr(); !str.empty()) {
-    entry.setDefaultValue(str.c_str());
+    entry.setDefaultValue(std::move(str));
   }
   if (auto str = this->readStr(); !str.empty()) {
     entry.setDetail(str.c_str());

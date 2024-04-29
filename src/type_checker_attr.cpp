@@ -368,7 +368,7 @@ void TypeChecker::resolveArgEntry(ResolveArgEntryParam &resolveParam, const unsi
       }
       continue;
     case Attribute::Param::DEFAULT:
-      entry.setDefaultValue(cast<StringNode>(constNode).getValue().c_str());
+      entry.setDefaultValue(std::string(cast<StringNode>(constNode).getValue()));
       continue;
     case Attribute::Param::PLACE_HOLDER:
       entry.setArgName(cast<StringNode>(constNode).getValue().c_str());

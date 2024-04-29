@@ -79,7 +79,7 @@ typedef BBB() {
   [<Option(xor: 63, required: $true)>]
   var count = 0
 
-  [<Option(required: $true, xor: 63, default: "/dev/stdout", opt: $true)>]
+  [<Option(required: $true, xor: 63, default: $'aaa\x00bbb', opt: $true)>]
   var dir : String?
 }
 var bb = new BBB()
@@ -106,7 +106,7 @@ assert $ex is Int
 assert $bb.aaa
 assert !$bb.bbb
 assert $bb.count == 0
-assert $bb.dir! == '/dev/stdout'
+assert $bb.dir! == $'aaa\x00bbb'
 
 
 # auto-gen option/arg name

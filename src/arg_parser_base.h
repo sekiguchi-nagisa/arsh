@@ -57,7 +57,7 @@ private:
   ArgEntryAttr attr{};
   int8_t xorGroupId{-1};
   CheckerKind checkerKind{CheckerKind::NOP};
-  std::string defaultValue; // for OptParseOp::OPT_ARG. may be null
+  std::string defaultValue; // for OptParseOp::OPT_ARG. may be empty
 
   using Choice = FlexBuffer<char *>;
 
@@ -182,7 +182,7 @@ public:
     return value;
   }
 
-  void setDefaultValue(const char *v) { this->defaultValue = v; }
+  void setDefaultValue(std::string &&v) { this->defaultValue = std::move(v); }
 
   const std::string &getDefaultValue() const { return this->defaultValue; }
 
