@@ -393,14 +393,14 @@ Options:
   out = toObjPtr<BaseObject>(Value::create<BaseObject>(recordType));
   fillWithInvalid(*out);
   (*out)[0] = Value::createStr("cmd11");
-  args = createArgs("-h", "-A");
+  args = createArgs("-h", "--A");
   ret = parseCommandLine(*this->state, *args, *out);
   ASSERT_FALSE(ret);
   ASSERT_EQ(1, ret.index);
   error = state->getCallStack().takeThrownObject();
   ASSERT_EQ(2, error->getStatus());
 
-  err = R"(cmd11: invalid option: -A
+  err = R"(cmd11: invalid option: --A
 Usage: cmd11 [output]
 
 this is a sample command line
@@ -441,6 +441,20 @@ Options:
   fillWithInvalid(*out);
   (*out)[0] = Value::createStr("cmd11");
   args = createArgs("-A");
+  ret = parseCommandLine(*this->state, *args, *out);
+  ASSERT_FALSE(ret);
+  ASSERT_EQ(0, ret.index);
+  error = state->getCallStack().takeThrownObject();
+  ASSERT_EQ(2, error->getStatus());
+  err = R"(cmd11: invalid option: -A
+See `cmd11 --help' for more information.)";
+  ASSERT_EQ(err, error->getMessage().asStrRef().toString());
+
+  // invalid option
+  out = toObjPtr<BaseObject>(Value::create<BaseObject>(recordType));
+  fillWithInvalid(*out);
+  (*out)[0] = Value::createStr("cmd11");
+  args = createArgs("-ABC");
   ret = parseCommandLine(*this->state, *args, *out);
   ASSERT_FALSE(ret);
   ASSERT_EQ(0, ret.index);

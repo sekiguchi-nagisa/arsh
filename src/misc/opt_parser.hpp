@@ -46,7 +46,7 @@ private:
   T opt;
 
   /**
-   * only available if status os OK/OK_ARG
+   * only available if status os OK/OK_ARG/UNDEF/NEED_ARG
    */
   bool shortOpt{true};
 
@@ -73,9 +73,17 @@ public:
 
   static OptParseResult okLong(T o, StringRef arg) { return {Status::OK_ARG, o, false, arg}; }
 
-  static OptParseResult undef(StringRef opt) { return {Status::UNDEF, T{}, opt}; }
+  static OptParseResult undefShort(StringRef opt) { return {Status::UNDEF, T{}, true, opt}; }
 
-  static OptParseResult needArg(T o, StringRef opt) { return {Status::NEED_ARG, o, opt}; }
+  static OptParseResult undefLong(StringRef opt) { return {Status::UNDEF, T{}, false, opt}; }
+
+  static OptParseResult needArgShort(T o, StringRef opt) {
+    return {Status::NEED_ARG, o, true, opt};
+  }
+
+  static OptParseResult needArgLong(T o, StringRef opt) {
+    return {Status::NEED_ARG, o, false, opt};
+  }
 
   explicit operator bool() const {
     return this->status == Status::OK || this->status == Status::OK_ARG;
@@ -96,7 +104,7 @@ public:
   bool isError() const { return this->status == Status::UNDEF || this->status == Status::NEED_ARG; }
 
   bool formatError(std::string &out) const {
-    std::string optName = this->value.size() == 1 ? "-" : "--";
+    std::string optName = this->isShort() ? "-" : "--";
     optName += this->value;
     switch (this->status) {
     case Status::UNDEF:
@@ -350,7 +358,7 @@ OptParseResult<T> OptParser<T, U>::matchLongOption(Iter &begin, Iter end) {
             ++begin;
             return OptParseResult<T>::okLong(option.kind, next);
           } else {
-            return OptParseResult<T>::needArg(option.kind, longName);
+            return OptParseResult<T>::needArgLong(option.kind, longName);
           }
         } else if (v[0] == '=') { // --long=arg
           v.removePrefix(1);
@@ -364,7 +372,7 @@ OptParseResult<T> OptParser<T, U>::matchLongOption(Iter &begin, Iter end) {
   }
   auto pos = longName.find('=');
   longName = longName.slice(0, pos);
-  return OptParseResult<T>::undef(longName);
+  return OptParseResult<T>::undefLong(longName);
 }
 
 template <typename T, typename U>
@@ -395,7 +403,7 @@ OptParseResult<T> OptParser<T, U>::matchShortOption(Iter &begin, Iter end) {
           ++begin;
           return OptParseResult<T>::okShort(option.kind, next);
         } else {
-          return OptParseResult<T>::needArg(option.kind, shortName);
+          return OptParseResult<T>::needArgShort(option.kind, shortName);
         }
       } else {
         StringRef next = this->remain;
@@ -405,7 +413,7 @@ OptParseResult<T> OptParser<T, U>::matchShortOption(Iter &begin, Iter end) {
       }
     }
   }
-  return OptParseResult<T>::undef(shortName);
+  return OptParseResult<T>::undefShort(shortName);
 }
 
 #define TRY_APPEND(S, O)                                                                           \

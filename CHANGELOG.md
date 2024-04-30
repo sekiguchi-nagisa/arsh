@@ -31,6 +31,7 @@
 ### Fixed
 
 - fix resource leak of file descriptor (self-pipe) when fork failed
+- fix error message of invalid option in cli parser
 
 ## [0.33.3] - 2024-04-30
 
