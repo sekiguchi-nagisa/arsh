@@ -1,0 +1,15 @@
+#$test($result = 'type', $lineNum = 13, $chars = 3, $errorKind = 'SubCmdAttrType', $status = 1)
+
+[<
+  CLI
+>]
+typedef AAA() {
+  [<SubCmd>]
+  var save : AAA
+
+  [<SubCmd>]
+  var load : AAA?
+
+  [<SubCmd>]
+  var dump : CLI?
+}

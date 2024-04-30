@@ -1,0 +1,17 @@
+#$test($result = 'type', $lineNum = 15, $chars = 16, $errorKind = 'DefinedSubCmd', $status = 1)
+
+[<CLI>]
+typedef BBB() {}
+
+[<
+  CLI
+>]
+typedef AAA() {
+  [<
+    SubCmd(name: 'save')>]
+  var save : BBB?
+
+  [<
+  SubCmd(name: 'save')>]
+  var save2 : BBB?
+}

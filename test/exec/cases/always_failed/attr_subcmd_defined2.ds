@@ -1,0 +1,22 @@
+#$test($result = 'type', $lineNum = 20, $chars = 3, $errorKind = 'DefinedAutoSubCmd', $status = 1)
+
+[<CLI>]
+typedef BBB() {}
+
+[<
+  CLI
+>]
+typedef AAA() {
+  [<
+    SubCmd(name: 'save', help
+    :
+     'save current state')>]
+  var save2122 : BBB?
+
+    [<Option(long: 'save')>]
+    var sss : Any?
+
+  [<
+  SubCmd()>]
+  var save : BBB?
+}

@@ -160,7 +160,7 @@ this is a pen
 ").empty()
 
 # complete attribute
-$assertArray(['Arg', 'CLI', 'Flag', 'Option'], $(complete '[< '))
+$assertArray(['Arg', 'CLI', 'Flag', 'Option', 'SubCmd'], $(complete '[< '))
 $assertArray(['Option'], $(complete '[< Op'))
 $assertArray(['>]'], $(complete '[< CLI '))
 $assertArray(['[<', 'let', 'typedef', 'var'], $(complete '[< CLI >] '))

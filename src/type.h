@@ -664,8 +664,9 @@ class ArgEntry;
 class CLIRecordType : public RecordType {
 public:
   enum class Attr : unsigned char {
-    VERBOSE = 1u << 0u,  // verbose usage message
-    TOPLEVEL = 1u << 1u, // default cli name is toplevel arg0
+    VERBOSE = 1u << 0u,    // verbose usage message
+    TOPLEVEL = 1u << 1u,   // default cli name is toplevel arg0
+    HAS_SUBCMD = 1u << 2u, // contains sub-commands
   };
 
 private:
@@ -687,6 +688,8 @@ public:
   static bool classof(const Type *type) { return type->isCLIRecordType(); }
 
 private:
+  void setAttr(Attr attr) { this->setExtraAttr(toUnderlying(attr)); }
+
   void finalizeArgEntries(std::vector<ArgEntry> &&args);
 };
 

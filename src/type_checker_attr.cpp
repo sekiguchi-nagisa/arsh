@@ -197,15 +197,28 @@ void TypeChecker::postCheckFieldAttributes(const VarDeclNode &varDeclNode) {
       break;
     }
 
+    bool subcmd = false;
     for (auto &t : attribute->getTypeIds()) {
-      if (fieldType.isSameOrBaseTypeOf(this->typePool().get(t))) {
+      if (auto &attrType = this->typePool().get(t); attrType.is(TYPE::CLI)) {
+        subcmd = true;
+        auto &type =
+            fieldType.isOptionType() ? cast<OptionType>(fieldType).getElementType() : fieldType;
+        if (type.isCLIRecordType()) {
+          e->setValidType(true);
+          break;
+        }
+      } else if (fieldType.isSameOrBaseTypeOf(attrType)) {
         e->setValidType(true);
         break;
       }
     }
     if (!e->isValidType()) {
-      auto value = concatTypeNames(this->typePool(), attribute->getTypeIds());
-      this->reportError<FieldAttrType>(*e, e->getAttrName().c_str(), value.c_str());
+      if (subcmd) {
+        this->reportError<SubCmdAttrType>(*e);
+      } else {
+        auto value = concatTypeNames(this->typePool(), attribute->getTypeIds());
+        this->reportError<FieldAttrType>(*e, e->getAttrName().c_str(), value.c_str());
+      }
     }
   }
 }
@@ -284,6 +297,10 @@ void TypeChecker::resolveArgEntry(ResolveArgEntryParam &resolveParam, const unsi
     break;
   case AttributeKind::ARG:
     setFlag(argEntryAttr, ArgEntryAttr::POSITIONAL);
+    resolveParam.argCount++;
+    break;
+  case AttributeKind::SUBCMD:
+    setFlag(argEntryAttr, ArgEntryAttr::SUBCMD);
     break;
   }
   if (isOptionOrBase(declNode.getExprNode()->getType(), TYPE::Int)) {
@@ -400,7 +417,7 @@ void TypeChecker::resolveArgEntry(ResolveArgEntryParam &resolveParam, const unsi
           return;
         }
         StrRefSet choiceSet;
-        for (auto &e : arrayNode.getExprNodes()) { // FIXME: choice size limit
+        for (auto &e : arrayNode.getExprNodes()) {
           StringRef ref = cast<StringNode>(*e).getValue();
           if (ref.hasNullChar()) {
             this->reportError<NullCharAttrParam>(*e, paramInfo.getName().c_str());
@@ -428,23 +445,44 @@ void TypeChecker::resolveArgEntry(ResolveArgEntryParam &resolveParam, const unsi
       entry.setXORGroupId(static_cast<unsigned char>(v));
       continue;
     }
+    case Attribute::Param::NAME: {
+      auto &cmdName = cast<StringNode>(constNode).getValue();
+      if (cmdName.empty() || cmdName[0] == '-' || StringRef(cmdName).hasNullChar()) {
+        this->reportError<InvalidSubCmd>(constNode, toPrintable(cmdName).c_str());
+        return;
+      }
+      if (resolveParam.foundSubCmdSet.emplace(cmdName).second) {
+        entry.setArgName(cmdName.c_str());
+      } else { // already found
+        this->reportError<DefinedSubCmd>(constNode, cmdName.c_str());
+        return;
+      }
+      continue;
+    }
     }
   }
 
-  // add default option/arg name
-  if (auto &foundOptionSet = resolveParam.foundOptionSet;
-      attrNode.getAttrKind() != AttributeKind::ARG && entry.getShortName() == '\0' &&
-      entry.getLongName().empty()) {
-    auto &varName = declNode.getVarName();
-    auto optName = toLongOpt(varName);
-    if (foundOptionSet.emplace(optName).second) {
-      entry.setLongName(optName.c_str());
-    } else { // already found
-      this->reportError<DefinedAutoOpt>(attrNode.getAttrNameInfo().getToken(), optName.c_str(),
-                                        varName.c_str());
-      return;
+  // add default option/arg/subcmd name
+  switch (attrNode.getAttrKind()) {
+  case AttributeKind::NONE:
+  case AttributeKind::CLI:
+    break;
+  case AttributeKind::FLAG:
+  case AttributeKind::OPTION:
+    if (entry.getShortName() == '\0' && entry.getLongName().empty()) {
+      auto &varName = declNode.getVarName();
+      auto optName = toLongOpt(varName);
+      if (resolveParam.foundOptionSet.emplace(optName).second) {
+        entry.setLongName(optName.c_str());
+      } else { // already found
+        this->reportError<DefinedAutoOpt>(attrNode.getAttrNameInfo().getToken(), optName.c_str(),
+                                          varName.c_str());
+        return;
+      }
     }
-  } else if (attrNode.getAttrKind() == AttributeKind::ARG) {
+    break;
+  case AttributeKind::ARG: {
+    auto &foundOptionSet = resolveParam.foundOptionSet;
     if (foundOptionSet.find("<remain>") != foundOptionSet.end()) { // already found remain arg
       Token token = attrNode.getAttrNameInfo().getToken();
       assert(!entries.empty());
@@ -464,6 +502,20 @@ void TypeChecker::resolveArgEntry(ResolveArgEntryParam &resolveParam, const unsi
       foundOptionSet.emplace("<remain>");
       setFlag(argEntryAttr, ArgEntryAttr::REMAIN);
     }
+    break;
+  }
+  case AttributeKind::SUBCMD:
+    if (entry.getArgName().empty()) {
+      auto &varName = declNode.getVarName();
+      if (resolveParam.foundSubCmdSet.emplace(varName).second) {
+        entry.setArgName(varName.c_str());
+      } else { // already found
+        this->reportError<DefinedAutoSubCmd>(attrNode.getAttrNameInfo().getToken(), varName.c_str(),
+                                             varName.c_str());
+        return;
+      }
+    }
+    break;
   }
   entry.setAttr(argEntryAttr);
   if (entry.getArgName().empty()) {
@@ -471,6 +523,12 @@ void TypeChecker::resolveArgEntry(ResolveArgEntryParam &resolveParam, const unsi
   }
   if (entry.inXORGroup() && entry.isRequired()) {
     resolveParam.requiredXORGroupSet.add(entry.getXORGroupId());
+  }
+  if (resolveParam.argCount > 0 && !resolveParam.foundSubCmdSet.empty()) {
+    if (attrNode.getAttrKind() == AttributeKind::ARG ||
+        attrNode.getAttrKind() == AttributeKind::SUBCMD) {
+      this->reportError<CombineArgSubCmd>(attrNode.getAttrNameInfo().getToken());
+    }
   }
 
   entries.push_back(std::move(entry));
@@ -513,9 +571,10 @@ std::vector<ArgEntry> TypeChecker::resolveArgEntries(const FunctionNode &node,
   entries.push_back(ArgEntry::newHelp(static_cast<ArgEntryIndex>(entries.size())));
   param.tokens.push_back({0, 0}); // dummy
 
-  // check Arg
+  // check Arg/SubCmd
   iterateFieldAttribute(node, [&](const AttributeNode &attrNode, const VarDeclNode &declNode) {
-    if (attrNode.getAttrKind() == AttributeKind::ARG) {
+    if (const auto kind = attrNode.getAttrKind();
+        kind == AttributeKind::ARG || kind == AttributeKind::SUBCMD) {
       this->resolveArgEntry(param, offset, attrNode, declNode, entries);
     }
   });

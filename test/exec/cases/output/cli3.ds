@@ -1,0 +1,14 @@
+# RUN: exec $cmd $self
+
+[<CLI>]
+typedef AAA() {
+    [< SubCmd (name: $'aa\x00 bb')>]
+    var ff : AAA?
+}
+
+#    CHECKERR: [semantic error] invalid sub-command: `aa\x00 bb', must not be start with '-' and has no null characters
+# CHECKERR_RE:  --> .+/output/cli3\.ds:5:22$
+#    CHECKERR:     [< SubCmd (name: $'aa\x00 bb')>]
+#    CHECKERR:                      ^~~~~~~~~~~~
+
+# STATUS: 1

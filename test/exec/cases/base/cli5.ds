@@ -1,0 +1,151 @@
+
+# for sub-commands
+
+[<CLI(desc: 'save current state to specified file', verbose: $true)>]
+typedef _Save() {
+    [<Flag(help: 'save verbose information')>]
+    var verbose = $false
+
+    [<Arg(required: $true)>]
+    var file : String?
+}
+
+[<CLI(desc: 'load state from specified file', verbose: $true)>]
+typedef _Load() {
+    [<Arg(required: $true)>]
+    var file : String?
+}
+
+[<CLI(desc: 'manipulate history')>]
+typedef _Hist() {
+    [<Flag(stop: $true, help: 'show version information')>]
+    var version = $false
+
+    [<SubCmd(help: 'save current history')>]
+    var save : _Save?
+
+    [<SubCmd(name: 'load', help: 'load history')>]
+    [<SubCmd(name: 'read', help: "equivalent to 'load'")>]
+    var load : _Load?
+}
+
+assert (new _Hist()) is CLI
+var hist1 = new _Hist()
+$hist1.setName('history')
+
+## usage
+var out = $hist1.usage('invalid command')
+assert diff <(cat <<< $out) <(cat << 'EOF'
+history: invalid command
+Usage: history [OPTIONS] [COMMAND]
+
+manipulate history
+
+Options:
+  --version   show version information
+  -h, --help  show this help message
+
+Commands:
+  save  save current history
+  load  load history
+  read  equivalent to 'load'
+EOF
+)
+
+## parse sub-command
+var r = $hist1.parse(['--version', 'save'])
+assert $r == 1
+assert $hist1.version
+assert !$hist1.save
+assert !$hist1.load
+
+$hist1 = new _Hist()
+$hist1.setName('history')
+$r = $hist1.parse(['--', 'load', 'save', 'hoge'])
+assert $r == 3
+assert !$hist1.version
+assert !$hist1.save
+assert $hist1.load
+assert $hist1.load!.file! == 'save'
+
+$hist1 = new _Hist()
+$hist1.setName('history')
+$r = $hist1.parse(['read', 'target'])
+assert $r == 2
+assert !$hist1.version
+assert !$hist1.save
+assert $hist1.load
+assert $hist1.load!.file! == 'target'
+
+$hist1 = new _Hist()
+$hist1.setName('history')
+$r = $hist1.parse(['save', '--verbose', 'hoge'])
+assert $r == 3
+assert !$hist1.version
+assert $hist1.save
+assert $hist1.save!.file! == 'hoge'
+assert $hist1.save!.verbose
+
+## sub-command usage
+$out = $hist1.save!.usage('hello world', $true)
+assert diff <(cat <<< $out) <(cat << 'EOF'
+history save: hello world
+Usage: history save [OPTIONS] FILE
+
+save current state to specified file
+
+Options:
+  --verbose   save verbose information
+  -h, --help  show this help message
+EOF
+)
+
+## sub-command help
+$hist1 = new _Hist()
+$hist1.setName('history')
+var ex  =34 as Any
+try { $hist1.parse(['save', '--help', 'hoge']); } catch e { $ex = $e; }
+assert $ex is CLIError
+assert ($ex as CLIError).status() == 0
+assert diff <(cat <<< ${($ex as CLIError).message()}) <(cat << 'EOF'
+Usage: history save [OPTIONS] FILE
+
+save current state to specified file
+
+Options:
+  --verbose   save verbose information
+  -h, --help  show this help message
+EOF
+)
+
+## sub-command error
+$hist1 = new _Hist()
+$hist1.setName('history')
+$ex  =34
+try { $hist1.parse(['save', '--h', 'hoge']); } catch e { $ex = $e; }
+assert $ex is CLIError
+assert ($ex as CLIError).status() == 2
+assert diff <(cat <<< ${($ex as CLIError).message()}) <(cat << 'EOF'
+history save: invalid option: --h
+Usage: history save [OPTIONS] FILE
+
+save current state to specified file
+
+Options:
+  --verbose   save verbose information
+  -h, --help  show this help message
+EOF
+)
+
+## undefined sub-command
+$hist1 = new _Hist()
+$hist1.setName('history')
+$ex  =34
+try { $hist1.parse(['append', '--h', 'hoge']); } catch e { $ex = $e; }
+assert $ex is CLIError
+assert ($ex as CLIError).status() == 2
+assert diff <(cat <<< ${($ex as CLIError).message()}) <(cat << 'EOF'
+history: unknown command: append
+See `history --help' for more information.
+EOF
+)

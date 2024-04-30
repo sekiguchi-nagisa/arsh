@@ -120,6 +120,14 @@ AttributeMap AttributeMap::create() {
                       Attribute::Param::CHOICE,
                   },
                   {TYPE::StringArray, TYPE::String, TYPE::Int});
+
+  defineAttribute(values, AttributeKind::SUBCMD, Attribute::Loc::FIELD,
+                  {
+                      Attribute::Param::NAME,
+                      Attribute::Param::HELP,
+                  },
+                  {TYPE::CLI});
+
   return AttributeMap(std::move(values));
 }
 

@@ -145,14 +145,17 @@ Optional<std::string> ArgParser::formatUsage(StringRef message, bool verbose) co
   if (verbose) {
     unsigned int optCount = 0;
     unsigned int argCount = 0;
+    unsigned int subCmdCount = 0;
     for (auto &e : this->entries) {
       if (e.isHelp()) {
         continue;
       }
       if (e.isOption()) {
         optCount++;
-      } else {
+      } else if (e.isPositional()) {
         argCount++;
+      } else if (e.isSubCmd()) {
+        subCmdCount++;
       }
     }
 
@@ -160,6 +163,9 @@ Optional<std::string> ArgParser::formatUsage(StringRef message, bool verbose) co
     TRY_APPEND(this->cmdName, out);
     if (optCount) {
       TRY_APPEND(" [OPTIONS]", out);
+    }
+    if (subCmdCount) {
+      TRY_APPEND(" [COMMAND]", out);
     }
 
     if (argCount) {
@@ -186,6 +192,10 @@ Optional<std::string> ArgParser::formatUsage(StringRef message, bool verbose) co
       TRY_APPEND("\n\n", out);
     }
     TRY(this->formatOptions(out, SYS_LIMIT_STRING_MAX));
+    if (subCmdCount) {
+      TRY_APPEND("\n\n", out);
+      TRY(this->formatSubCommands(out));
+    }
   } else {
     TRY_APPEND("See `", out);
     TRY_APPEND(this->cmdName, out);
@@ -195,6 +205,38 @@ Optional<std::string> ArgParser::formatUsage(StringRef message, bool verbose) co
 
 ERROR:
   return {};
+}
+
+bool ArgParser::formatSubCommands(std::string &value) const {
+  unsigned int maxLenOfUsage = 0;
+
+  // compute usage len
+  for (auto &e : this->entries) {
+    if (!e.isSubCmd()) {
+      continue;
+    }
+    if (const unsigned int len = e.getArgName().size(); len > maxLenOfUsage) {
+      maxLenOfUsage = len;
+    }
+  }
+  std::string spaces;
+  spaces.resize(maxLenOfUsage, ' ');
+
+  // format sub-command list message
+  std::vector<StringRef> details;
+  TRY_APPEND("Commands:", value);
+  for (auto &e : this->entries) {
+    if (!e.isSubCmd()) {
+      continue;
+    }
+    TRY_APPEND("\n  ", value);
+    TRY_APPEND(e.getArgName(), value);
+    TRY(formatDetail(value, SYS_LIMIT_STRING_MAX, e, e.getArgName().size(), spaces, details));
+  }
+  return true;
+
+ERROR:
+  return false;
 }
 
 } // namespace arsh

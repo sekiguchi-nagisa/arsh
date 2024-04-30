@@ -2,6 +2,12 @@
 
 ## [Unreleased]
 
+### Added
+
+#### Core
+
+- add ``SubCmd`` attribute for sub-command parsing
+
 ### Changed
 
 #### Core

@@ -239,6 +239,13 @@ DEFINE_TCError(AttrLimit, "number of attributes reaches limit");
 DEFINE_TCError(ChoiceLimit, "number of choice elements reaches limit");
 DEFINE_TCError(XORGroupRange, "xor group number must be 0~63");
 DEFINE_TCError(RequiredXORGroup, "xor group `%d' need `required' param");
+DEFINE_TCError(CombineArgSubCmd, "cannot combine `Arg' and `SubCmd' attributes");
+DEFINE_TCError(DefinedSubCmd, "already defined sub-command: `%s'");
+DEFINE_TCError(DefinedAutoSubCmd,
+               "already defined sub-command: `%s' (auto-generated from `%s' field)");
+DEFINE_TCError(InvalidSubCmd,
+               "invalid sub-command: `%s', must not be start with '-' and has no null characters");
+DEFINE_TCError(SubCmdAttrType, "`SubCmd' attribute is only given to CLI record type field");
 
 DEFINE_TCWarn(MeaninglessCast, "meaningless cast op");
 DEFINE_TCWarn(VarShadowing, "`%s' hides already defined name of outer scope");

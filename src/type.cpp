@@ -54,7 +54,7 @@ HandlePtr Type::lookupField(const TypePool &pool, const std::string &fieldName) 
 }
 
 void Type::walkField(const TypePool &pool,
-                       const std::function<bool(StringRef, const Handle &)> &walker) const {
+                     const std::function<bool(StringRef, const Handle &)> &walker) const {
   switch (this->typeKind()) {
   case TypeKind::Tuple:
     for (auto &e : cast<TupleType>(this)->getFieldHandleMap()) {
@@ -184,8 +184,8 @@ ModId Type::resolveBelongedModId() const {
 
 static std::string toTupleFieldName(unsigned int i) { return "_" + std::to_string(i); }
 
-TupleType::TupleType(unsigned int id, StringRef ref, native_type_info_t info,
-                     const Type &superType, std::vector<const Type *> &&types)
+TupleType::TupleType(unsigned int id, StringRef ref, native_type_info_t info, const Type &superType,
+                     std::vector<const Type *> &&types)
     : BuiltinType(TypeKind::Tuple, id, ref, &superType, info) {
   const unsigned int size = types.size();
   for (unsigned int i = 0; i < size; i++) {
@@ -231,11 +231,19 @@ HandlePtr RecordType::lookupField(const std::string &fieldName) const {
 CLIRecordType::CLIRecordType(unsigned int id, StringRef ref, const Type &superType, Attr attr,
                              std::string &&desc)
     : RecordType(TypeKind::CLIRecord, id, ref, superType), desc(std::move(desc)) {
-  this->setExtraAttr(toUnderlying(attr));
+  this->setAttr(attr);
 }
 
 void CLIRecordType::finalizeArgEntries(std::vector<ArgEntry> &&args) {
   this->entries = std::move(args);
+  for (auto &e : this->entries) {
+    if (e.isSubCmd()) {
+      auto attr = this->getAttr();
+      setFlag(attr, Attr::HAS_SUBCMD);
+      this->setAttr(attr);
+      break;
+    }
+  }
 }
 
 // #####################

@@ -289,6 +289,11 @@ private:
 
   template <typename Iter>
   OptParseResult<T> matchShortOption(Iter &begin, Iter end);
+
+protected:
+  static bool formatDetail(std::string &value, size_t limit, const Option &option,
+                           unsigned int usageSize, const std::string &spaces,
+                           std::vector<StringRef> &details);
 };
 
 template <typename T, size_t N>
@@ -445,24 +450,36 @@ bool OptParser<T, U>::formatOptions(std::string &value, const size_t limit) cons
     const auto &option = this->options[i];
     TRY_APPEND("\n  ", value);
     auto usage = option.getUsage();
+    if (usage.empty()) { // ignore non-option entry
+      continue;
+    }
     TRY_APPEND(usage, value);
+    if (!formatDetail(value, limit, option, usage.size(), spaces, details)) {
+      return false;
+    }
+  }
+  return true;
+}
 
-    option.splitDetails(details);
-    if (!details.empty()) {
-      std::string pad;
-      pad.resize(maxLenOfUsage - usage.size(), ' ');
-      TRY_APPEND(pad, value);
-    }
-    unsigned int count = 0;
-    for (auto &detail : details) {
-      if (count++ > 0) {
-        TRY_APPEND('\n', value);
-        TRY_APPEND(spaces, value);
-        TRY_APPEND("  ", value);
-      }
+template <typename T, typename U>
+bool OptParser<T, U>::formatDetail(std::string &value, size_t limit, const Option &option,
+                                   unsigned int usageSize, const std::string &spaces,
+                                   std::vector<StringRef> &details) {
+  option.splitDetails(details);
+  if (!details.empty()) {
+    std::string pad;
+    pad.resize(spaces.size() - usageSize, ' ');
+    TRY_APPEND(pad, value);
+  }
+  unsigned int count = 0;
+  for (auto &detail : details) {
+    if (count++ > 0) {
+      TRY_APPEND('\n', value);
+      TRY_APPEND(spaces, value);
       TRY_APPEND("  ", value);
-      TRY_APPEND(detail, value);
     }
+    TRY_APPEND("  ", value);
+    TRY_APPEND(detail, value);
   }
   return true;
 }

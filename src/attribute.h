@@ -24,7 +24,8 @@
   OP(CLI, "CLI")                                                                                   \
   OP(FLAG, "Flag")                                                                                 \
   OP(OPTION, "Option")                                                                             \
-  OP(ARG, "Arg")
+  OP(ARG, "Arg")                                                                                   \
+  OP(SUBCMD, "SubCmd")
 
 #define EACH_ATTRIBUTE_PARAM(OP)                                                                   \
   OP(TOPLEVEL, "toplevel", TYPE::Bool)                                                             \
@@ -41,7 +42,8 @@
   OP(PLACE_HOLDER, "placeholder", TYPE::String)                                                    \
   OP(RANGE, "range", TYPE::Void /* dummy type */)                                                  \
   OP(CHOICE, "choice", TYPE::StringArray)                                                          \
-  OP(XOR, "xor", TYPE::Int)
+  OP(XOR, "xor", TYPE::Int)                                                                        \
+  OP(NAME, "name", TYPE::String)
 
 namespace arsh {
 

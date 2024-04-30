@@ -34,6 +34,7 @@ enum class ArgEntryAttr : unsigned short {
   REMAIN = 1u << 2u,      // remain argument (last positional argument that accept string array)
   STORE_FALSE = 1u << 3u, // for flag options (no-arg option)
   STOP_OPTION = 1u << 4u, // stop option recognition (like --)
+  SUBCMD = 1u << 5u,      // sub-command
 };
 
 template <>
@@ -125,6 +126,10 @@ public:
 
   bool isRemainArg() const { return this->hasAttr(ArgEntryAttr::REMAIN); }
 
+  bool isSubCmd() const { return this->hasAttr(ArgEntryAttr::SUBCMD); }
+
+  bool isOption() const { return !this->isPositional() && !this->isSubCmd(); }
+
   void setIntRange(int64_t min, int64_t max) {
     this->destroyCheckerData();
     this->checkerKind = CheckerKind::INT;
@@ -194,8 +199,6 @@ public:
 
   const std::string &getDetail() const { return this->detail; }
 
-  bool isOption() const { return !this->isPositional(); }
-
   /**
    *
    * @param arg
@@ -235,6 +238,8 @@ public:
   ArgParser(StringRef cmdName, const std::vector<ArgEntry> &entries, size_t size, StringRef desc)
       : OptParser(size, entries.data()), cmdName(cmdName), entries(entries), desc(desc) {}
 
+  StringRef getCmdName() const { return this->cmdName; }
+
   const auto &getEntries() const { return this->entries; }
 
   /**
@@ -245,6 +250,9 @@ public:
    * if string size reacheas limit, return invalid
    */
   Optional<std::string> formatUsage(StringRef message, bool verbose) const;
+
+private:
+  bool formatSubCommands(std::string &value) const;
 };
 
 } // namespace arsh

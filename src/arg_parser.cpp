@@ -134,7 +134,7 @@ static bool checkRequireOrPositionalArgs(ARState &state, const ArgParser &parser
   const bool verbose = verboseUsage(state, out);
   for (auto &i : requiredSet.getValues()) {
     auto &e = parser.getEntries()[i];
-    if (!e.isPositional()) {
+    if (e.isOption()) {
       assert(e.isRequired());
       if (e.inXORGroup() && xorGroupSet.has(e.getXORGroupId())) {
         continue;
@@ -157,6 +157,9 @@ static bool checkRequireOrPositionalArgs(ARState &state, const ArgParser &parser
     }
 
     // set positional argument
+    if (!e.isPositional()) {
+      continue;
+    }
     if (begin != end) {
       StringRef arg = *begin;
       ++begin;
@@ -190,18 +193,25 @@ static bool checkRequireOrPositionalArgs(ARState &state, const ArgParser &parser
   return true;
 }
 
-CLIParseResult parseCommandLine(ARState &state, const ArrayObject &args, BaseObject &out) {
+static HandlePtr findFieldType(const RecordType &type, unsigned int fieldOffset) {
+  for (auto &e : type.getHandleMap()) {
+    if (e.second->is(HandleKind::VAR) && e.second->getIndex() == fieldOffset) {
+      return e.second;
+    }
+  }
+  return nullptr;
+}
+
+static BaseObject *parseCommandLineImpl(ARState &state, StrArrayIter &iter, const StrArrayIter end,
+                                        BaseObject &out) {
   auto &type = cast<CLIRecordType>(state.typePool.get(out.getTypeID()));
   auto instance = createArgParser(out[0].asStrRef(), type);
 
-  const auto begin = StrArrayIter(args.getValues().begin());
-  auto iter = begin;
-  const auto end = StrArrayIter(args.getValues().end());
   RequiredOptionSet requiredSet(instance.getEntries());
   XORArgGroupSet xorGroupSet;
   ArgParser::Result ret;
   bool help = false;
-  bool status = false;
+  bool stop = false;
 
   // parse and set options
   while ((ret = instance(iter, end))) {
@@ -214,7 +224,7 @@ CLIParseResult parseCommandLine(ARState &state, const ArrayObject &args, BaseObj
     }
     if (entry.inXORGroup()) {
       if (!checkXORGroup(state, instance, entryIndex, ret.isShort(), out, xorGroupSet)) {
-        goto END;
+        return nullptr;
       }
     }
     switch (entry.getParseOp()) {
@@ -231,11 +241,12 @@ CLIParseResult parseCommandLine(ARState &state, const ArrayObject &args, BaseObj
       }
       if (!checkAndSetArg(state, instance, entry, arg, ret.isShort(), out)) {
         --iter;
-        goto END;
+        return nullptr;
       }
       break;
     }
     if (entry.hasAttr(ArgEntryAttr::STOP_OPTION)) {
+      stop = true;
       ret = ArgParser::Result(); // end
       break;
     }
@@ -243,16 +254,66 @@ CLIParseResult parseCommandLine(ARState &state, const ArrayObject &args, BaseObj
   if (ret.isError()) {
     auto v = ret.formatError();
     raiseCLIUsage(state, instance, v, verboseUsage(state, out), 2);
-    goto END;
+    return nullptr;
   }
   if (help) {
     raiseCLIUsage(state, instance, "", true, 0);
-    goto END;
+    return nullptr;
   }
   assert(ret.isEnd());
-  status = checkRequireOrPositionalArgs(state, instance, requiredSet, xorGroupSet, iter, end, out);
+  if (!checkRequireOrPositionalArgs(state, instance, requiredSet, xorGroupSet, iter, end, out)) {
+    return nullptr;
+  }
+  // try parse sub-command
+  if (!stop && iter != end && hasFlag(type.getAttr(), CLIRecordType::Attr::HAS_SUBCMD)) {
+    for (auto &e : instance.getEntries()) {
+      if (!e.isSubCmd()) {
+        continue;
+      }
+      if (const StringRef arg = *iter; arg == e.getArgName()) {
+        ++iter;
+        const auto handle = findFieldType(type, e.getFieldOffset());
+        assert(handle);
+        auto &fieldType = state.typePool.get(handle->getTypeId());
+        assert(fieldType.isCLIRecordType() || fieldType.isOptionType());
+        auto &subCmdType = cast<CLIRecordType>(
+            fieldType.isOptionType() ? cast<OptionType>(fieldType).getElementType() : fieldType);
+        out[e.getFieldOffset()] = Value::create<BaseObject>(subCmdType);
+        auto *obj = &typeAs<BaseObject>(out[e.getFieldOffset()]);
+        auto name = Value::createStr(instance.getCmdName());
+        if (!name.appendAsStr(state, " ") || !name.appendAsStr(state, arg)) {
+          return nullptr;
+        }
+        (*obj)[0] = std::move(name);
+        return obj;
+      }
+    }
+    std::string err = "unknown command: ";
+    appendAsPrintable(*iter, SYS_LIMIT_STRING_MAX, err);
+    raiseCLIUsage(state, instance, err, verboseUsage(state, out), 2);
+    return nullptr;
+  }
+  return &out;
+}
 
-END:
+CLIParseResult parseCommandLine(ARState &state, const ArrayObject &args, BaseObject &out) {
+  auto iter = StrArrayIter(args.getValues().begin());
+  const auto begin = iter;
+  const auto end = StrArrayIter(args.getValues().end());
+  BaseObject *obj = &out;
+  bool status;
+  while (true) {
+    auto *ptr = parseCommandLineImpl(state, iter, end, *obj);
+    if (!ptr) {
+      status = false;
+      break;
+    }
+    if (ptr == obj) {
+      status = true;
+      break;
+    }
+    obj = ptr;
+  }
   return {
       .index = static_cast<unsigned int>(iter - begin),
       .status = status,

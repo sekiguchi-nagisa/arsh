@@ -1,0 +1,16 @@
+#$test($result = 'type', $lineNum = 14, $chars = 5, $errorKind = 'CombineArgSubCmd', $status = 1)
+
+[<CLI>]
+typedef BBB() {}
+
+[<
+  CLI
+>]
+typedef AAA() {
+  [<Arg>]
+  var remain : [String]?
+
+  [<
+    SubCmd>]
+  var save : BBB?
+}

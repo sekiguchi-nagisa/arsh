@@ -905,7 +905,8 @@ void AttributeNode::dump(NodeDumper &dumper) const {
   OP(AttributeKind::CLI)                                                                           \
   OP(AttributeKind::FLAG)                                                                          \
   OP(AttributeKind::OPTION)                                                                        \
-  OP(AttributeKind::ARG)
+  OP(AttributeKind::ARG)                                                                           \
+  OP(AttributeKind::SUBCMD)
 
   DUMP_ENUM(attrKind, EACH_ENUM);
 #undef EACH_ENUM

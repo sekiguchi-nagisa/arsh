@@ -45,6 +45,10 @@
 #    CHECK:     {
 #    CHECK:       "kind": 14,
 #    CHECK:       "label": "Option"
+#    CHECK:     },
+#    CHECK:     {
+#    CHECK:       "kind": 14,
+#    CHECK:       "label": "SubCmd"
 #    CHECK:     }
 #    CHECK:   ]
 

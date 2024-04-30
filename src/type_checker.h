@@ -614,8 +614,10 @@ private:
 
   struct ResolveArgEntryParam {
     std::unordered_set<std::string> foundOptionSet;
+    std::unordered_set<std::string> foundSubCmdSet;
     FlexBuffer<Token> tokens;
     StaticBitSet<uint64_t> requiredXORGroupSet;
+    unsigned int argCount{0};
 
     static_assert(StaticBitSet<uint64_t>::checkRange(SYS_LIMIT_XOR_ARG_GROUP_NUM));
   };
