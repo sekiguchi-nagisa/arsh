@@ -6,16 +6,18 @@
 
 #### Core
 
-- add ``SubCmd`` attribute for sub-command parsing
+- declarative command line argument parsers now support sub-commands
+    - define sub-commands via ``SubCmd`` attribute
 
 ### Changed
 
 #### Core
 
 - **Breaking Change**: in process substitution, internal job object no longer maintain created ``FD`` object
-- **Breaking Change**: ``break``, ``continue``, ``return`` expressions are no longer allowed in last-pipe
-- **Breaking Change**: when ``err-raise`` option is enabled, check pipeline exit status even if last-pipe
-- **Breaking Change**: allow null characters in ``default`` param of ``Option`` attribute
+- **Breaking Change**: change last-pipe semantics
+    - correctly check pipeline exit status and throw ``ExecError`` when ``errraise`` option is enabled
+    - ``break``, ``continue``, ``return`` expressions are no longer allowed in pipeline
+- **Breaking Change**: ``default`` param of ``Option`` attribute now accept null characters
 - improve assertion error message of binary ``==`` and ``=~`` expression
     - now show left hand-side, right hand-side expression value
 - improve internal error checking of ``dup2``, ``pipe`` system call, now propagate these errors as ``SystemError``
