@@ -202,6 +202,17 @@ static HandlePtr findFieldType(const RecordType &type, unsigned int fieldOffset)
   return nullptr;
 }
 
+static ObjPtr<BaseObject> createSubCmd(ARState &state, const StringRef base,
+                                       const CLIRecordType &type, const StringRef subCmd) {
+  auto name = Value::createStr(base);
+  if (!name.appendAsStr(state, " ") || !name.appendAsStr(state, subCmd)) {
+    return nullptr;
+  }
+  auto obj = toObjPtr<BaseObject>(Value::create<BaseObject>(type));
+  (*obj)[0] = std::move(name);
+  return obj;
+}
+
 static BaseObject *parseCommandLineImpl(ARState &state, StrArrayIter &iter, const StrArrayIter end,
                                         BaseObject &out) {
   auto &type = cast<CLIRecordType>(state.typePool.get(out.getTypeID()));
@@ -278,14 +289,11 @@ static BaseObject *parseCommandLineImpl(ARState &state, StrArrayIter &iter, cons
         assert(fieldType.isCLIRecordType() || fieldType.isOptionType());
         auto &subCmdType = cast<CLIRecordType>(
             fieldType.isOptionType() ? cast<OptionType>(fieldType).getElementType() : fieldType);
-        out[e.getFieldOffset()] = Value::create<BaseObject>(subCmdType);
-        auto *obj = &typeAs<BaseObject>(out[e.getFieldOffset()]);
-        auto name = Value::createStr(instance.getCmdName());
-        if (!name.appendAsStr(state, " ") || !name.appendAsStr(state, arg)) {
-          return nullptr;
+        const auto obj = createSubCmd(state, instance.getCmdName(), subCmdType, arg);
+        if (obj) {
+          out[e.getFieldOffset()] = obj;
         }
-        (*obj)[0] = std::move(name);
-        return obj;
+        return obj.get();
       }
     }
     std::string err = "unknown command: ";
