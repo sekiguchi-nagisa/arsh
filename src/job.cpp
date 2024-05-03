@@ -42,7 +42,8 @@ Proc Proc::fork(ARState &st, pid_t pgid, const Proc::Op op) {
   // flush standard stream due to prevent mixing io buffer
   flushStdFD();
 
-  if (st.jobTable.size() >= UINT16_MAX) {
+  if (st.jobTable.size() >= SYS_LIMIT_JOB_TABLE_SIZE ||
+      st.subshellLevel() >= static_cast<int>(SYS_LIMIT_SUBSHELL_LEVEL)) {
     errno = EAGAIN;
     return Proc(-1);
   }
