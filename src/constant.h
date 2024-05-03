@@ -41,11 +41,12 @@ enum class BuiltinVarOffset : unsigned char {
   IFS,         // IFS
   EAW,         // EAW
   COMPREPLY,   // COMPREPLY
-  DIRSTACK,    // DIRSTACK (for directory stack
+  DIRSTACK,    // DIRSTACK (for directory stack)
   STDIN,       // STDIN
   STDOUT,      // STDOUT
   STDERR,      // STDERR
   PIPESTATUS,  // PIPESTATUS
+  SUBSHELL,    // SUBSHELL (for subshell level)
   EXIT_STATUS, // ?
   ARGS,        // @
   ARGS_SIZE,   // # (dummy entry for completion)

@@ -18,7 +18,7 @@ function assertArray($x : Array<String>, $y : Array<String>) {
         'SIGILL', 'SIGINT', 'SIGKILL', 'SIGPIPE', 'SIGQUIT', 'SIGSEGV',
         'SIGSTOP', 'SIGTERM', 'SIGTSTP', 'SIGTTIN', 'SIGTTOU', 'SIGUSR1', 'SIGUSR2',
         'SIG_DFL', 'SIG_EXIT', 'SIG_IGN',
-        'STDERR', 'STDIN', 'STDOUT', 'TERM_HOOK',
+        'STDERR', 'STDIN', 'STDOUT', 'SUBSHELL', 'TERM_HOOK',
         'TRUE', 'True', 'UID',  'USER', 'VERSION', 'XTRACEFD',
         'assertArray', 'false', 'none', 'reply', 'true', 'types',
     ]

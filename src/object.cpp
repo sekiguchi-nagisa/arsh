@@ -704,14 +704,15 @@ bool CmdArgsBuilder::add(Value &&arg) {
 
 void ErrorObject::printStackTrace(const ARState &state, PrintOp op) const {
   // print header
+  const auto level = state.subshellLevel();
   switch (op) {
   case PrintOp::DEFAULT:
     break;
   case PrintOp::UNCAUGHT: {
     std::string header = "[runtime error";
-    if (state.subshellLevel) {
+    if (level) {
       header += " at subshell=";
-      header += std::to_string(state.subshellLevel);
+      header += std::to_string(level);
     }
     header += "]\n";
     fputs(header.c_str(), stderr);
@@ -719,9 +720,9 @@ void ErrorObject::printStackTrace(const ARState &state, PrintOp op) const {
   }
   case PrintOp::IGNORED: {
     std::string header = "[warning";
-    if (state.subshellLevel) {
+    if (level) {
       header += " at subshell=";
-      header += std::to_string(state.subshellLevel);
+      header += std::to_string(level);
     }
     header += "]\n";
     header += "the following exception within finally/defer block is ignored\n";

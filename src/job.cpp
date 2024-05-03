@@ -77,7 +77,7 @@ Proc Proc::fork(ARState &st, pid_t pgid, const Proc::Op op) {
     // no inherit parent process RNG (due to prevent duplicated random numbers)
     st.getRng() = childRng;
 
-    st.subshellLevel++;
+    st.incSubShellLevel();
   } else if (pid > 0) {
     if (hasFlag(op, Op::JOB_CONTROL)) {
       setpgid(pid, pgid);

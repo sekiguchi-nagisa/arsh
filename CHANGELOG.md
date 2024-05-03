@@ -9,6 +9,11 @@
 - declarative command line argument parsers now support sub-commands
     - define sub-commands via ``SubCmd`` attribute
 
+#### Builtin
+
+- add ``SUBSHELL`` variable for indicating subshell level
+    - initial value is 0. if enter subshell, increment level
+
 ### Changed
 
 #### Core

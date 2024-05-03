@@ -56,3 +56,8 @@ assert test -e "$BIN_NAME"
 
 # EAW
 assert $EAW == 1
+
+# SUBSHELL
+assert $SUBSHELL == 0
+assert "$(echo $SUBSHELL)" == '1'
+assert "$(echo $(echo $SUBSHELL))" == '2'

@@ -2311,14 +2311,14 @@ EvalRet VM::startEval(ARState &state, EvalOP op, ARError *dsError, Value &value)
     setSignalSetting(state);
   }
 
-  const unsigned int oldLevel = state.subshellLevel;
+  const auto oldLevel = state.subshellLevel();
 
   // run main loop
   const auto ret = mainLoop(state);
   /**
    * if return form subshell, subshellLevel is greater than old.
    */
-  const bool subshell = oldLevel != state.subshellLevel;
+  const bool subshell = oldLevel != state.subshellLevel();
   if (ret) {
     value = state.stack.pop();
   } else {

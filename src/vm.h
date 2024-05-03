@@ -119,12 +119,6 @@ public:
 
   unsigned int lineNum{1};
 
-  /**
-   * if 0, current shell is not sub-shell.
-   * otherwise current shell is sub-shell.
-   */
-  unsigned int subshellLevel{0};
-
   unsigned int termHookIndex{0};
 
   const bool support_strftime_plus; // if support strftime '%+' specifier
@@ -217,7 +211,14 @@ public:
 
   void updatePipeStatus(unsigned int size, const Proc *procs, bool mergeExitStatus);
 
-  bool isRootShell() const { return this->subshellLevel == 0; }
+  int64_t subshellLevel() const { return this->getGlobal(BuiltinVarOffset::SUBSHELL).asInt(); }
+
+  void incSubShellLevel() {
+    const auto level = this->subshellLevel() + 1;
+    this->setGlobal(BuiltinVarOffset::SUBSHELL, Value::createInt(level));
+  }
+
+  bool isRootShell() const { return this->subshellLevel() == 0; }
 
   bool isJobControl() const { return this->isRootShell() && this->has(RuntimeOption::MONITOR); }
 

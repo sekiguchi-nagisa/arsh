@@ -167,6 +167,8 @@ void bindBuiltins(Consumer &consumer, const SysConfig &config, TypePool &pool, N
    */
   binder.bind("PIPESTATUS", *pool.createArrayType(pool.get(TYPE::Int)).take());
 
+  binder.bind("SUBSHELL", 0);
+
   /**
    * contains exit status of most recent executed process. ($?)
    * must be Int_Object
