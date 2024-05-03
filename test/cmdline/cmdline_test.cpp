@@ -369,11 +369,6 @@ TEST_F(CmdlineTest, logger) {
 #define CL(...)                                                                                    \
   ProcBuilder { BIN_PATH, "-c", format(__VA_ARGS__).c_str() }
 
-TEST_F(CmdlineTest, pid) {
-  ASSERT_NO_FATAL_FAILURE(
-      this->expect(CL("%s --pid $PID --ppid $PPID | grep .", PID_CHECK_PATH), 0, "OK\n"));
-}
-
 #define DS(S) ds("-c", S)
 
 TEST_F(CmdlineTest, termHook) {

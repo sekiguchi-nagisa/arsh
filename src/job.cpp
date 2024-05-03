@@ -71,9 +71,8 @@ Proc Proc::fork(ARState &st, pid_t pgid, const Proc::Op op) {
     assert(st.termHookIndex != 0);
     st.setGlobal(st.termHookIndex, Value::createInvalid());
 
-    // update PID, PPID
+    // update PID
     st.setGlobal(BuiltinVarOffset::PID, Value::createInt(getpid()));
-    st.setGlobal(BuiltinVarOffset::PPID, Value::createInt(getppid()));
 
     // no inherit parent process RNG (due to prevent duplicated random numbers)
     st.getRng() = childRng;

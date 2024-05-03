@@ -27,6 +27,8 @@
 - **Breaking Change**: rename some ``Job`` type methods with corresponding builtin commands
     - ``detach`` -> ``disown``
     - ``raise`` -> ``kill``
+- **Breaking Change**: no longer update ``PPID`` in subshell for posix compatibility.
+    - now ``PPID`` always indicates same value
 - ``complete`` command correctly recognize module (put ``module`` description instead of ``user-defined``)
 - complete flags/options defined via ``Flag``, ``Option`` attribute
 - builtin ``kill`` command support ``-L`` (equivalent to ``-l`` option)

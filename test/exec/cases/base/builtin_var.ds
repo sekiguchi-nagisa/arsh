@@ -7,11 +7,10 @@ assert $PID != $PPID
 assert $PID is Int
 assert $PPID is Int
 
-child() {
-    return $$ != $PPID && $$ == $PID ? 0 : 1
-}
-
-assert child
+assert "$$" == "$(echo $$)"  # $$ is not changeed in subshell
+assert "$PPID" == "$(echo $PPID)" # PPID is not changed in subshell
+assert "$PID" != "$(echo $PID)"  # PID is changed in subshell
+assert "$({ assert $$ != $PID; })".empty()  # in subshell, $$ is not equivalent to PID
 
 
 # UID, EUID
