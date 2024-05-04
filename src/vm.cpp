@@ -1758,6 +1758,14 @@ bool VM::mainLoop(ARState &state) {
         CHECK_SIGNAL();
         vmnext;
       }
+      vmcase(CALL_BUILTIN2) {
+        unsigned int index = consume8(state.stack.ip());
+        Value ret = nativeFuncPtrTable()[index](state);
+        TRY(!state.hasError());
+        state.stack.push(std::move(ret));
+        CHECK_SIGNAL();
+        vmnext;
+      }
       vmcase(RETURN) {
         Value v = state.stack.pop();
         state.stack.unwind();
@@ -2366,7 +2374,9 @@ unsigned int VM::prepareArguments(VMState &state, Value &&recv, CallArgs &&args)
   // push arguments
   const unsigned int size = args.first;
   state.reserve(size + 1);
-  state.push(std::move(recv));
+  if (recv) {
+    state.push(std::move(recv));
+  }
   for (unsigned int i = 0; i < size; i++) {
     state.push(std::move(args.second[i]));
   }
@@ -2426,6 +2436,36 @@ Value VM::callFunction(ARState &state, Value &&funcObj, CallArgs &&args) {
     startEval(state, EvalOP::PROPAGATE, nullptr, ret);
   }
   if (cast<FunctionType>(type).getReturnType().isVoidType()) {
+    ret = Value(); // clear return value
+  }
+  return ret;
+}
+
+static NativeCode initBuiltinWrapper(unsigned char index) {
+  NativeCode::ArrayType code;
+  code[0] = static_cast<char>(OpCode::CALL_BUILTIN2);
+  code[1] = static_cast<char>(index);
+  code[2] = static_cast<char>(OpCode::RETURN);
+  return NativeCode(code);
+}
+
+Value VM::callMethod(ARState &state, const MethodHandle &handle, Value &&recv, CallArgs &&args) {
+  assert(handle.getParamSize() == args.first);
+
+  GUARD_RECURSION(state);
+
+  assert(handle.isConstructor() == !recv);
+  const unsigned int actualParamSize =
+      prepareArguments(state.stack, std::move(recv), std::move(args)) +
+      (handle.isConstructor() ? 0 : 1);
+
+  Value ret;
+  const NativeCode wrapper = initBuiltinWrapper(handle.isNative() ? handle.getIndex() : 0);
+  if (handle.isNative() ? windStackFrame(state, actualParamSize, actualParamSize, wrapper)
+                        : prepareMethodCall(state, handle.getIndex(), actualParamSize)) {
+    startEval(state, EvalOP::PROPAGATE, nullptr, ret);
+  }
+  if (handle.getReturnType().isVoidType()) {
     ret = Value(); // clear return value
   }
   return ret;

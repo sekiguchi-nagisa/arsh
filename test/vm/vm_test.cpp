@@ -327,6 +327,117 @@ complete 'echo '
   ASSERT_NO_FATAL_FAILURE(this->expect(output, 1, WaitStatus::EXITED, "", err));
 }
 
+TEST_F(VMTest, callFuncAPI) {
+  const char *src = R"(
+  function sum(a: Int, b : Int): Int { return $a + $b; }
+  function inc(a: (Int,)) {  $a._0++; }
+)";
+  ASSERT_NO_FATAL_FAILURE(this->eval(src));
+
+  // function with return
+  {
+    auto *modType = this->state->typePool.getModTypeById(ROOT_MOD_ID);
+    ASSERT_TRUE(modType);
+    auto handle = modType->lookup(this->state->typePool, "sum");
+    ASSERT_TRUE(handle);
+    auto func = this->state->getGlobal(handle->getIndex());
+    ASSERT_TRUE(func);
+    auto ret = VM::callFunction(*this->state, std::move(func),
+                                makeArgs(Value::createInt(99), Value::createInt(32)));
+    ASSERT_TRUE(ret);
+    ASSERT_EQ(99 + 32, ret.asInt());
+  }
+
+  // function no return
+  {
+    auto *modType = this->state->typePool.getModTypeById(ROOT_MOD_ID);
+    ASSERT_TRUE(modType);
+    auto handle = modType->lookup(this->state->typePool, "inc");
+    ASSERT_TRUE(handle);
+    auto func = this->state->getGlobal(handle->getIndex());
+    ASSERT_TRUE(func);
+
+    auto &funcType = this->state->typePool.get(handle->getTypeId());
+    ASSERT_TRUE(isa<FunctionType>(funcType));
+    auto &type = cast<FunctionType>(funcType).getParamTypeAt(0);
+    ASSERT_TRUE(type.isTupleType());
+    auto value = Value::create<BaseObject>(cast<TupleType>(type));
+    auto &obj = typeAs<BaseObject>(value);
+    obj[0] = Value::createInt(78);
+    auto ret = VM::callFunction(*this->state, std::move(func), makeArgs(Value(value)));
+    ASSERT_FALSE(ret); // void
+    ASSERT_EQ(79, obj[0].asInt());
+  }
+}
+
+TEST_F(VMTest, callMethodAPI) {
+  const char *src = R"(
+  typedef AAA {
+    var begin : Int
+    var end: Int
+  }
+  function dist(): Int for AAA { return $this.end - $this.begin; }
+  function swap() for AAA {
+    var tmp = $this.begin
+    $this.begin = $this.end
+    $this.end = $tmp
+  }
+)";
+  ASSERT_NO_FATAL_FAILURE(this->eval(src));
+
+  // native method
+  {
+    auto handle = this->state->typePool.lookupMethod(this->state->typePool.get(TYPE::Int), OP_ADD);
+    ASSERT_TRUE(handle);
+    auto ret =
+        VM::callMethod(*this->state, *handle, Value::createInt(45), makeArgs(Value::createInt(67)));
+    ASSERT_TRUE(ret);
+    ASSERT_EQ(45 + 67, ret.asInt());
+  }
+
+  // user-defined constructor
+  auto typeOrError = this->state->rootModScope->lookup(toTypeAliasFullName("AAA"));
+  ASSERT_TRUE(typeOrError);
+  auto &recordType = cast<RecordType>(this->state->typePool.get(typeOrError.asOk()->getTypeId()));
+  Value instance;
+  {
+    auto *handle = this->state->rootModScope->lookupConstructor(this->state->typePool, recordType);
+    ASSERT_TRUE(handle);
+    ASSERT_TRUE(handle->isConstructor());
+    auto ret = VM::callConstructor(*this->state, *handle,
+                                   makeArgs(Value::createInt(2), Value::createInt(23)));
+    ASSERT_TRUE(ret);
+    ASSERT_TRUE(ret.isObject());
+    ASSERT_TRUE(isa<BaseObject>(ret.get()));
+    ASSERT_EQ(2, typeAs<BaseObject>(ret)[0].asInt());
+    ASSERT_EQ(23, typeAs<BaseObject>(ret)[1].asInt());
+    instance = std::move(ret);
+  }
+
+  // user-defined method with return
+  {
+    auto *handle =
+        this->state->rootModScope->lookupMethod(this->state->typePool, recordType, "dist");
+    ASSERT_TRUE(handle);
+    ASSERT_TRUE(!handle->isNative());
+    auto ret = VM::callMethod(*this->state, *handle, Value(instance), makeArgs());
+    ASSERT_TRUE(ret);
+    ASSERT_EQ(21, ret.asInt());
+  }
+
+  // user-defined method no return
+  {
+    auto *handle =
+        this->state->rootModScope->lookupMethod(this->state->typePool, recordType, "swap");
+    ASSERT_TRUE(handle);
+    ASSERT_TRUE(!handle->isNative());
+    auto ret = VM::callMethod(*this->state, *handle, Value(instance), makeArgs());
+    ASSERT_FALSE(ret);
+    ASSERT_EQ(23, typeAs<BaseObject>(instance)[0].asInt());
+    ASSERT_EQ(2, typeAs<BaseObject>(instance)[1].asInt());
+  }
+}
+
 TEST(ProcTableTest, base) {
   ProcTable table;
   auto *e = table.addProc(12, 1, 1);

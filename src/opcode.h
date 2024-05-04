@@ -87,6 +87,7 @@ namespace arsh {
   OP(CALL_FUNC, 1, 0)                                                                              \
   OP(CALL_METHOD, 3, 0)                                                                            \
   OP(CALL_BUILTIN, 2, 0)                                                                           \
+  OP(CALL_BUILTIN2, 1, 1)                                                                          \
   OP(RETURN, 0, -1)                                                                                \
   OP(RETURN_UDC, 0, -1)                                                                            \
   OP(RETURN_SIG, 0, 0)                                                                             \

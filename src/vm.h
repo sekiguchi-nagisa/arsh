@@ -641,6 +641,13 @@ private:
    */
   static EvalRet startEval(ARState &state, EvalOP op, ARError *dsError, Value &value);
 
+  /**
+   *
+   * @param state
+   * @param recv may be null if user-defined constructor call
+   * @param args
+   * @return
+   */
   static unsigned int prepareArguments(VMState &state, Value &&recv,
                                        std::pair<unsigned int, std::array<Value, 3>> &&args);
 
@@ -676,9 +683,31 @@ public:
    * @param funcObj
    * @param args
    * @return
-   * return value of method (if no return value, return null).
+   * return value of function (if no return value, return null).
    */
   static Value callFunction(ARState &state, Value &&funcObj, CallArgs &&args);
+
+  /**
+   * call method (builtin or user-defined)
+   * @param state
+   * @param handle
+   * @param recv
+   * @param args
+   * @return return value of function (if no return value, return null).
+   */
+  static Value callMethod(ARState &state, const MethodHandle &handle, Value &&recv,
+                          CallArgs &&args);
+
+  /**
+   * for user-defined constructor call
+   * @param state
+   * @param handle must be constructor
+   * @param args
+   * @return
+   */
+  static Value callConstructor(ARState &state, const MethodHandle &handle, CallArgs &&args) {
+    return callMethod(state, handle, Value(), std::move(args));
+  }
 
   /**
    * print uncaught exception information. (not clear thrown object)

@@ -1098,6 +1098,8 @@ private:
   ArrayType value;
 
 public:
+  NON_COPYABLE(NativeCode);
+
   NativeCode() noexcept
       : ARCode({
             .codeKind = CodeKind::NATIVE,
@@ -1116,8 +1118,6 @@ public:
     this->value = o.value;
     this->setCode();
   }
-
-  NON_COPYABLE(NativeCode);
 
   NativeCode &operator=(NativeCode &&o) noexcept {
     if (this != std::addressof(o)) {
