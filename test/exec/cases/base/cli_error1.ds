@@ -1,0 +1,47 @@
+
+# too large usage
+
+[<CLI(desc: "this is sample", verbose: $true)>]
+typedef AAA() {
+  [<Option(help: 'specify count number', placeholder: 'num')>]
+  var count = 0;
+}
+
+fff(p : AAA) {
+  echo "count=${p.count}"
+}
+
+var ex = 34 as Any
+printf -v var -- "%-*s" 2147483640 --hoge
+let large = $reply.remove('var')!
+
+try {
+  $ex = 34
+  echo before usage
+  new AAA().usage($large, $false)
+} catch e {
+  $ex = $e
+}
+assert ($ex as OutOfRangeError).message() == 'reach String size limit'
+echo after usage
+
+try {
+  $ex = 34
+  echo before verbose usage
+  new AAA().usage($large, $false)
+} catch e {
+  $ex = $e
+}
+assert ($ex as OutOfRangeError).message() == 'reach String size limit'
+echo after verbose usage
+
+try {
+  $ex = 34
+  echo before cmd call
+  fff $large
+  assert $false
+} catch e {
+  $ex = $e
+}
+assert ($ex as OutOfRangeError).message() == 'reach String size limit'
+echo after cmd call

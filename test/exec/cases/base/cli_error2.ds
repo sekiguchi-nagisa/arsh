@@ -1,0 +1,57 @@
+
+# error in sub-command instantiation
+
+## too large sub-command name
+[<CLI(desc: "this is sample", verbose: $true)>]
+typedef AAA() {
+  [<Option(help: 'specify count number', placeholder: 'num')>]
+  var count = 0;
+}
+
+[<CLI>]
+typedef BBB() {
+  [<SubCmd(name: 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')>]
+  var list : AAA?
+}
+
+printf -v var -- "%-*s" 2147483640 --hoge
+var large = $reply.remove('var')!
+
+var bbb = new BBB()
+$bbb.setName($large)
+
+var ex = 34 as Any
+try {
+  var r = $bbb.parse(['aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'])
+  assert $r == 1
+} catch e {
+  $ex = $e
+}
+assert ($ex as OutOfRangeError).message() == 'reach String size limit'
+assert ! $bbb.list
+$large = "" # clear
+
+## error in sub-command constructor
+
+[<CLI>]
+typedef CCC() {
+   var ccc: CCC
+}
+
+[<CLI>]
+typedef DDD() {
+  [<SubCmd>]
+  var show : CCC?
+}
+
+$ex = 2345
+var ddd = new DDD()
+$ddd.setName('example')
+try {
+  var r = $ddd.parse(['show', '/dev/null'])
+  assert $r == 1
+} catch e {
+  $ex = $e
+}
+assert ($ex is StackOverflowError)
+assert ! $ddd.show
