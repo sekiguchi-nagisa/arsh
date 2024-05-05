@@ -375,14 +375,14 @@ static bool completeFileName(const std::string &baseDir, StringRef prefix, const
       return false;
     }
 
-    std::string relative = entry->d_name;
-    if (StringRef(relative).startsWith(name)) {
+    if (const StringRef relative = entry->d_name; relative.startsWith(name)) {
       if (name.empty() && (relative == ".." || relative == ".")) {
         continue;
       }
 
+      std::string value = relative.toString();
       if (isDirectory(dir.get(), entry)) {
-        relative += '/';
+        value += '/';
       } else {
         if (hasFlag(op, CodeCompOp::EXEC)) {
           if (S_ISREG(getStModeAt(dirfd(dir.get()), entry->d_name)) &&
@@ -393,8 +393,8 @@ static bool completeFileName(const std::string &baseDir, StringRef prefix, const
           continue;
         }
       }
-      consumer(relative, hasFlag(op, CodeCompOp::EXEC) ? CompCandidateKind::COMMAND_NAME_PART
-                                                       : CompCandidateKind::COMMAND_ARG);
+      consumer(value, hasFlag(op, CodeCompOp::EXEC) ? CompCandidateKind::COMMAND_NAME_PART
+                                                    : CompCandidateKind::COMMAND_ARG);
     }
   }
   return true;
