@@ -134,9 +134,12 @@ void setLocaleSetting();
 
 const ModType *getRuntimeModuleByLevel(const ARState &state, unsigned int callLevel);
 
-inline const ModType *getCurRuntimeModule(const ARState &state) {
-  return getRuntimeModuleByLevel(state, 0);
-}
+/**
+ *
+ * @param state
+ * @return if not resolve current module, return root module
+ */
+const ModType &getCurRuntimeModule(const ARState &state);
 
 class RuntimeCancelToken : public CancelToken {
 private:

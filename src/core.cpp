@@ -326,6 +326,15 @@ const ModType *getRuntimeModuleByLevel(const ARState &state, const unsigned int 
   return nullptr;
 }
 
+const ModType &getCurRuntimeModule(const ARState &state) {
+  if (auto *type = getRuntimeModuleByLevel(state, 0)) {
+    return *type;
+  }
+  auto *type = state.typePool.getModTypeById(ROOT_MOD_ID);
+  assert(type);
+  return *type;
+}
+
 bool RuntimeCancelToken::operator()() {
   bool s = ARState::isInterrupted();
   if (s && this->clearSignal) {
@@ -519,11 +528,7 @@ static ResolvedTempMod resolveTempModScope(ARState &state, StringRef desc, bool 
   } else {
     const ModType *modType = nullptr;
     if (desc.empty()) {
-      modType = getCurRuntimeModule(state);
-      if (!modType) {
-        modType = state.typePool.getModTypeById(ROOT_MOD_ID);
-        assert(modType);
-      }
+      modType = &getCurRuntimeModule(state);
     } else if (desc.startsWith(OBJ_MOD_PREFIX) && desc.endsWith(")")) {
       auto typeName = desc;
       typeName.removePrefix(strlen(OBJ_MOD_PREFIX));

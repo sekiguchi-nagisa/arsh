@@ -682,12 +682,9 @@ ResolvedCmd CmdResolver::operator()(const ARState &state, const Value &name,
       modType = cast<ModType>(ret);
       cmdName = ref.begin() + fqn + 1;
     } else if (!modType) {
-      modType = getCurRuntimeModule(state);
+      modType = &getCurRuntimeModule(state);
     }
-    if (!modType) {
-      modType = state.typePool.getModTypeById(ROOT_MOD_ID);
-      assert(modType);
-    }
+    assert(modType);
     if (ResolvedCmd cmd{}; lookupUdc(state, *modType, cmdName, hasNullChar, cmd)) {
       return cmd;
     }
@@ -987,13 +984,10 @@ bool VM::callCommand(ARState &state, const ResolvedCmd &cmd, ObjPtr<ArrayObject>
     }
   }
   case ResolvedCmd::FALLBACK: {
-    const auto *modType = getCurRuntimeModule(state);
-    if (!modType) {
-      modType = state.typePool.getModTypeById(ROOT_MOD_ID);
-    }
+    const auto &modType = getCurRuntimeModule(state);
     state.stack.reserve(3);
     state.stack.push(getBuiltinGlobal(state, VAR_CMD_FALLBACK));
-    state.stack.push(state.getGlobal(modType->getIndex()));
+    state.stack.push(state.getGlobal(modType.getIndex()));
     state.stack.push(argvObj);
     return prepareFuncCall(state, 2);
   }

@@ -1200,11 +1200,8 @@ Value LineEditorObject::kickCallback(ARState &state, Value &&callback, CallArgs 
 ObjPtr<ArrayObject> LineEditorObject::kickCompletionCallback(ARState &state, StringRef line) {
   assert(this->completionCallback);
 
-  const auto *modType = getCurRuntimeModule(state);
-  if (!modType) {
-    modType = state.typePool.getModTypeById(ROOT_MOD_ID);
-  }
-  auto mod = state.getGlobal(modType->getIndex());
+  const auto &modType = getCurRuntimeModule(state);
+  auto mod = state.getGlobal(modType.getIndex());
   auto args = makeArgs(std::move(mod), Value::createStr(line));
   Value callback = this->completionCallback;
   const auto ret = this->kickCallback(state, std::move(callback), std::move(args));
