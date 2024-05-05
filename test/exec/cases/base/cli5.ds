@@ -66,6 +66,7 @@ assert $r == 3
 assert !$hist1.version
 assert !$hist1.save
 assert $hist1.load
+assert $hist1.load!.name() == 'history load'
 assert $hist1.load!.file! == 'save'
 
 $hist1 = new _Hist()
@@ -75,16 +76,27 @@ assert $r == 2
 assert !$hist1.version
 assert !$hist1.save
 assert $hist1.load
+assert $hist1.load!.name() == 'history read'
 assert $hist1.load!.file! == 'target'
 
 $hist1 = new _Hist()
-$hist1.setName('history')
+$hist1.setName('history2')
 $r = $hist1.parse(['save', '--verbose', 'hoge'])
 assert $r == 3
 assert !$hist1.version
 assert $hist1.save
+assert $hist1.save!.name() == 'history2 save'
 assert $hist1.save!.file! == 'hoge'
 assert $hist1.save!.verbose
+
+$hist1 = new _Hist()
+$hist1.setName('history')
+$r = $hist1.parse(['save', 'hello'])
+assert $r == 2
+assert !$hist1.version
+assert $hist1.save
+assert $hist1.save!.file! == 'hello'
+assert ! $hist1.save!.verbose
 
 ## sub-command usage
 $out = $hist1.save!.usage('hello world', $true)

@@ -204,12 +204,23 @@ static HandlePtr findFieldType(const RecordType &type, unsigned int fieldOffset)
 
 static ObjPtr<BaseObject> createSubCmd(ARState &state, const StringRef base,
                                        const CLIRecordType &type, const StringRef subCmd) {
+  auto *modType = state.typePool.getModTypeById(type.resolveBelongedModId());
+  assert(modType);
+  auto *handle = modType->lookupVisibleSymbolAtModule(state.typePool,
+                                                      toMethodFullName(type.typeId(), OP_INIT));
+  assert(handle);
+  assert(handle->isMethodHandle());
+  auto instance = VM::callConstructor(state, cast<MethodHandle>(*handle), makeArgs());
+  if (state.hasError()) {
+    return nullptr;
+  }
+
   auto name = Value::createStr(base);
   if (!name.appendAsStr(state, " ") || !name.appendAsStr(state, subCmd)) {
     return nullptr;
   }
-  auto obj = toObjPtr<BaseObject>(Value::create<BaseObject>(type));
-  (*obj)[0] = std::move(name);
+  auto obj = toObjPtr<BaseObject>(instance);
+  (*obj)[0] = std::move(name); // overwrite cmd name
   return obj;
 }
 

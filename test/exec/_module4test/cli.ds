@@ -1,0 +1,30 @@
+
+[<CLI>]
+typedef _Dump() {
+    var count = 123
+
+    [<Arg()>]
+    var file = "/dev/stdout"
+}
+
+[<CLI>]
+typedef _Interval() {
+    [<Arg(required: $true)>]
+    var begin = 0
+
+    [<Arg(required: $true)>]
+    var end = 0
+}
+
+function dist(): Int for _Interval {
+    return $this.end - $this.begin
+}
+
+[<CLI>]
+typedef AAA() {
+    [<SubCmd(help: 'dump to file')>]
+    var dump : _Dump?
+
+    [<SubCmd(help: 'set interval')>]
+    var interval : _Interval?
+}

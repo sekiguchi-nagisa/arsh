@@ -89,9 +89,8 @@ protected:
   }
 
   static bool isIgnoredTestCase(const std::string &path) {
-    const char *ignoredPattern[] = {
-        "mod", "subcmd", "shctl", "complete5", "complete6", "complete8", "load", "fullname",
-    };
+    const char *ignoredPattern[] = {"mod",       "subcmd", "shctl",    "complete5", "complete6",
+                                    "complete8", "load",   "fullname", "cli6.ds"};
     return std::any_of(std::begin(ignoredPattern), std::end(ignoredPattern),
                        [&path](const char *pt) { return StringRef(path).contains(pt); });
   }
