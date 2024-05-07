@@ -84,7 +84,7 @@ bool LineEditorObject::defineCustomAction(ARState &state, StringRef name, String
   }
   auto s = this->keyBindings.defineCustomAction(name, type);
   if (s) {
-    auto entry = Value(std::move(callback)).withMetaData(s.asOk());
+    auto entry = Value(callback).withMetaData(s.asOk());
     if (auto iter = this->lookupCustomCallback(s.asOk()); iter != this->customCallbacks.end()) {
       this->customCallbacks.insert(iter, std::move(entry));
     } else {

@@ -385,7 +385,7 @@ void JobObject::send(int sigNum) const {
     return;
   }
   for (unsigned int i = 0; i < this->procSize; i++) {
-    this->procs[i].send(sigNum);
+    static_cast<void>(this->procs[i].send(sigNum));
   }
 }
 

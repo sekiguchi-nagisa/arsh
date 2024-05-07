@@ -279,7 +279,7 @@ int builtin_fg_bg(ARState &state, ArrayObject &argvObj) {
     } else if (job->isTerminated()) {
       job->lastProc().showSignal();
     }
-    state.tryToBeForeground();
+    static_cast<void>(state.tryToBeForeground());
     if (errNum != 0) {
       errno = errNum;
       PERROR(state, argvObj, "wait failed");
