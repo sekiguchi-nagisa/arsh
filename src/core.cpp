@@ -725,11 +725,11 @@ ObjPtr<FuncObject> loadExprAsFunc(ARState &state, StringRef expr, const ModType 
 
 std::string resolveFullCommandName(const ARState &state, const Value &name, const ModType &modType,
                                    const bool udcOnly) {
-  auto op = CmdResolver::FROM_FQN_UDC;
+  auto op = CmdResolver::Op::FROM_FQN_UDC;
   if (!udcOnly) {
-    setFlag(op, CmdResolver::NO_FALLBACK);
+    setFlag(op, CmdResolver::Op::NO_FALLBACK);
   }
-  const auto cmd = CmdResolver(op, FilePathCache::DIRECT_SEARCH)(state, name, &modType);
+  const auto cmd = CmdResolver(op, FilePathCache::SearchOp::DIRECT_SEARCH)(state, name, &modType);
   StringRef ref = name.asStrRef();
   switch (cmd.kind()) {
   case ResolvedCmd::USER_DEFINED:

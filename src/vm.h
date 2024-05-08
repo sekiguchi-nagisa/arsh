@@ -379,7 +379,7 @@ public:
 
 class CmdResolver {
 public:
-  enum ResolveOp : unsigned short {
+  enum class Op : unsigned short {
     FROM_UDC = 1u << 0u,
     FROM_BUILTIN = 1u << 1u,
     FROM_EXTERNAL = 1u << 2u,
@@ -395,13 +395,13 @@ public:
   };
 
 private:
-  ResolveOp resolveOp;
+  Op resolveOp;
   FilePathCache::SearchOp searchOp;
 
 public:
-  CmdResolver(ResolveOp mask, FilePathCache::SearchOp op) : resolveOp(mask), searchOp(op) {}
+  CmdResolver(Op mask, FilePathCache::SearchOp op) : resolveOp(mask), searchOp(op) {}
 
-  CmdResolver() : CmdResolver(ResolveOp::FROM_DEFAULT, FilePathCache::NON) {}
+  CmdResolver() : CmdResolver(Op::FROM_DEFAULT, FilePathCache::SearchOp::NON) {}
 
   ~CmdResolver() = default;
 
@@ -419,7 +419,7 @@ public:
 };
 
 template <>
-struct allow_enum_bitop<CmdResolver::ResolveOp> : std::true_type {};
+struct allow_enum_bitop<CmdResolver::Op> : std::true_type {};
 
 enum class CmdCallAttr : unsigned char {
   SET_VAR = 1u << 0u,

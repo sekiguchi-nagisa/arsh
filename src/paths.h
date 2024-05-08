@@ -41,7 +41,7 @@ public:
 
   ~FilePathCache();
 
-  enum SearchOp : unsigned char {
+  enum class SearchOp : unsigned char {
     NON = 0u,
     USE_DEFAULT_PATH = 1u << 0u,
     DIRECT_SEARCH = 1u << 1u,
@@ -51,7 +51,7 @@ public:
    * search file path by using PATH
    * if cannot resolve path (file not found), return null.
    */
-  const char *searchPath(const char *cmdName, SearchOp op = NON);
+  const char *searchPath(const char *cmdName, SearchOp op = SearchOp::NON);
 
   void removePath(const char *cmdName);
 

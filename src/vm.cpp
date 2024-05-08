@@ -670,8 +670,8 @@ ResolvedCmd CmdResolver::operator()(const ARState &state, const Value &name,
   const StringRef ref = name.asStrRef();
 
   // first, check user-defined command
-  if (hasFlag(this->resolveOp, FROM_UDC)) {
-    const auto fqn = hasFlag(this->resolveOp, FROM_FQN_UDC) ? ref.find('\0') : StringRef::npos;
+  if (hasFlag(this->resolveOp, Op::FROM_UDC)) {
+    const auto fqn = hasFlag(this->resolveOp, Op::FROM_FQN_UDC) ? ref.find('\0') : StringRef::npos;
     const char *cmdName = ref.data();
     const bool hasNullChar = fqn != StringRef::npos;
     if (hasNullChar) {
@@ -694,7 +694,7 @@ ResolvedCmd CmdResolver::operator()(const ARState &state, const Value &name,
   }
 
   // second, check builtin command
-  if (hasFlag(this->resolveOp, FROM_BUILTIN)) {
+  if (hasFlag(this->resolveOp, Op::FROM_BUILTIN)) {
     if (const builtin_command_t bcmd = lookupBuiltinCommand(ref); bcmd != nullptr) {
       return ResolvedCmd::fromBuiltin(bcmd);
     }
@@ -712,7 +712,7 @@ ResolvedCmd CmdResolver::operator()(const ARState &state, const Value &name,
   }
 
   // resolve dynamic registered user-defined command
-  if (hasFlag(this->resolveOp, FROM_DYNA_UDC)) {
+  if (hasFlag(this->resolveOp, Op::FROM_DYNA_UDC)) {
     auto &map = typeAs<OrderedMapObject>(state.getGlobal(BuiltinVarOffset::DYNA_UDCS));
     if (const auto retIndex = map.lookup(name); retIndex != -1) {
       auto *obj = map[retIndex].getValue().get();
@@ -723,12 +723,12 @@ ResolvedCmd CmdResolver::operator()(const ARState &state, const Value &name,
 
   // resolve external command path
   auto cmd = ResolvedCmd::fromExternal(nullptr);
-  if (hasFlag(this->resolveOp, FROM_EXTERNAL)) {
+  if (hasFlag(this->resolveOp, Op::FROM_EXTERNAL)) {
     const char *cmdName = ref.data();
     cmd = ResolvedCmd::fromExternal(state.pathCache.searchPath(cmdName, this->searchOp));
 
     // if command not found or directory, lookup CMD_FALLBACK
-    if (hasFlag(this->resolveOp, FROM_FALLBACK) &&
+    if (hasFlag(this->resolveOp, Op::FROM_FALLBACK) &&
         (cmd.filePath() == nullptr || S_ISDIR(getStMode(cmd.filePath())))) {
       if (getBuiltinGlobal(state, VAR_CMD_FALLBACK).isObject()) {
         return ResolvedCmd::fallback();
@@ -1053,8 +1053,9 @@ VM::BuiltinCmdResult VM::builtinCommand(ARState &state, ObjPtr<ArrayObject> &&ar
     auto &values = arrayObj.refValues();
     values.erase(values.begin(), values.begin() + index); // not check iterator invalidation
 
-    const auto resolve = CmdResolver(
-        CmdResolver::NO_UDC, useDefaultPath ? FilePathCache::USE_DEFAULT_PATH : FilePathCache::NON);
+    const auto resolve = CmdResolver(CmdResolver::Op::NO_UDC,
+                                     useDefaultPath ? FilePathCache::SearchOp::USE_DEFAULT_PATH
+                                                    : FilePathCache::SearchOp::NON);
     const bool r = callCommand(state, resolve, std::move(argvObj), std::move(redir), attr);
     return BuiltinCmdResult::call(r);
   }
@@ -1065,8 +1066,8 @@ VM::BuiltinCmdResult VM::builtinCommand(ARState &state, ObjPtr<ArrayObject> &&ar
   for (; index < argc; index++) {
     const auto &cmdName = arrayObj.getValues()[index];
     const auto ref = cmdName.asStrRef();
-    auto cmd = CmdResolver(CmdResolver::NO_FALLBACK | CmdResolver::FROM_FQN_UDC,
-                           FilePathCache::DIRECT_SEARCH)(state, cmdName);
+    auto cmd = CmdResolver(CmdResolver::Op::NO_FALLBACK | CmdResolver::Op::FROM_FQN_UDC,
+                           FilePathCache::SearchOp::DIRECT_SEARCH)(state, cmdName);
     switch (cmd.kind()) {
     case ResolvedCmd::USER_DEFINED:
     case ResolvedCmd::MODULE: {
@@ -1181,7 +1182,8 @@ int VM::builtinExec(ARState &state, ArrayObject &argvObj, Value &&redir) {
      * preserve arg0 (searchPath result indidate orignal pointer)
      */
     const auto arg0 = argvObj.getValues()[index];
-    const char *filePath = state.pathCache.searchPath(arg0.asCStr(), FilePathCache::DIRECT_SEARCH);
+    const char *filePath =
+        state.pathCache.searchPath(arg0.asCStr(), FilePathCache::SearchOp::DIRECT_SEARCH);
     if (progName.data() != nullptr) {
       if (progName.hasNullChar()) {
         const auto name = toPrintable(progName);
@@ -2022,7 +2024,8 @@ bool VM::mainLoop(ARState &state) {
         auto redir = state.stack.pop();
         auto argv = toObjPtr<ArrayObject>(state.stack.pop());
 
-        TRY(callCommand(state, CmdResolver(CmdResolver::NO_STATIC_UDC, FilePathCache::NON),
+        TRY(callCommand(state,
+                        CmdResolver(CmdResolver::Op::NO_STATIC_UDC, FilePathCache::SearchOp::NON),
                         std::move(argv), std::move(redir), attr));
         CHECK_SIGNAL();
         vmnext;
@@ -2090,9 +2093,10 @@ bool VM::mainLoop(ARState &state) {
 
         argv->takeFirst(); // not check iterator invalidation
         if (!argv->getValues().empty()) {
-          TRY(callCommand(state,
-                          CmdResolver(CmdResolver::FROM_DEFAULT_WITH_FQN, FilePathCache::NON),
-                          std::move(argv), std::move(redir), attr));
+          TRY(callCommand(
+              state,
+              CmdResolver(CmdResolver::Op::FROM_DEFAULT_WITH_FQN, FilePathCache::SearchOp::NON),
+              std::move(argv), std::move(redir), attr));
         } else {
           pushExitStatus(state, 0);
         }
