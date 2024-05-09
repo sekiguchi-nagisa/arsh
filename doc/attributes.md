@@ -7,6 +7,7 @@
 | ``Flag``      | field declaration            | define no-arg (flag) option                                   |
 | ``Option``    | field declaration            | define has-arg option                                         |
 | ``Arg``       | field declaration            | define positional argument                                    |
+| ``SubCmd``    | field declaration            | define sub-command                                            |
 
 ### ``CLI`` attribute
 only allowed for user-defied type definition
@@ -58,3 +59,12 @@ only allowed for field declaration that is ``String``, ``String?``, ``[String]``
 | placeholder | ``String``    | equivalent to upper snake case field name | placeholder for argument                                      |
 | range       | ``(Int,Int)`` | null                                      | range of integer argument (inclusive, inclusive)              |
 | choice      | ``[String]``  | null                                      | valid choice of string argument                               |
+
+
+### ``SubCmd`` attribute
+only allow for field declaration that is derived type of ``CLI`` type
+
+| **param** | **type**   | **default**         | **description**                  |
+|-----------|------------|---------------------|----------------------------------|
+| name      | ``String`` | equivalent to field | define sub-command name          |
+| help      | ``String`` | empty string        | help message of this sub-command |
