@@ -64,7 +64,7 @@ only allowed for field declaration that is ``String``, ``String?``, ``[String]``
 ### ``SubCmd`` attribute
 only allow for field declaration that is derived type of ``CLI`` type
 
-| **param** | **type**   | **default**         | **description**                  |
-|-----------|------------|---------------------|----------------------------------|
-| name      | ``String`` | equivalent to field | define sub-command name          |
-| help      | ``String`` | empty string        | help message of this sub-command |
+| **param** | **type**   | **default**              | **description**                  |
+|-----------|------------|--------------------------|----------------------------------|
+| name      | ``String`` | equivalent to field name | define sub-command name          |
+| help      | ``String`` | empty string             | help message of this sub-command |
