@@ -355,7 +355,7 @@ bool Lexer::escapedSingleToString(Token token, std::string &out) const {
   return true;
 }
 
-std::string Lexer::doubleElementToString(Token token) const {
+std::string Lexer::doubleElementToString(Token token, const bool skipDouble) const {
   assert(this->withinRange(token));
 
   std::string str;
@@ -368,6 +368,12 @@ std::string Lexer::doubleElementToString(Token token) const {
       char next = this->buf[++i];
       switch (next) {
       case '"':
+        if (skipDouble) {
+          i--;
+        } else {
+          ch = next;
+        }
+        break;
       case '$':
       case '`':
       case '\\':
@@ -415,7 +421,7 @@ std::string Lexer::toHereDocBody(Token token, HereDocState::Attr attr) const {
     }
   }
   if (hasFlag(attr, HereDocState::Attr::EXPAND)) {
-    return this->doubleElementToString(token);
+    return this->doubleElementToString(token, true);
   } else {
     return this->toTokenText(token);
   }

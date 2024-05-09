@@ -1,0 +1,10 @@
+# RUN: exec $cmd $self
+
+# CHECK: this is a pen \w \ \ ssss
+# STATUS: 0
+
+(cat << EOF
+this is a pen \w \ \\ \
+ssss
+EOF
+)

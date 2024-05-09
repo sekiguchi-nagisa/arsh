@@ -47,6 +47,7 @@
 
 - fix resource leak of file descriptor (self-pipe) when fork failed
 - fix error message of invalid option in cli parser
+- fix ``\"`` escape handling in here document (unlike double-quoted string, not remove backslash)
 
 ## [0.33.3] - 2024-04-30
 

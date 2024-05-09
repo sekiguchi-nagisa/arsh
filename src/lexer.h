@@ -241,7 +241,7 @@ public:
   /**
    * convert double quote string element token to string.
    */
-  std::string doubleElementToString(Token token) const;
+  std::string doubleElementToString(Token token, bool skipDouble = false) const;
 
   /**
    * convert token to command argument

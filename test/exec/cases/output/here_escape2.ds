@@ -1,0 +1,12 @@
+# RUN: exec $cmd $self
+
+# CHECK: this is a pen ${12} $OSTYPE $(ls true)
+# CHECK: \' \" ` $\(
+# STATUS: 0
+
+var a = ((
+cat << EOF
+this is a pen \${12} \$OSTYPE \$(ls $True)
+\' \" \` $\(
+EOF
+))
