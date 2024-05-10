@@ -193,15 +193,6 @@ static bool checkRequireOrPositionalArgs(ARState &state, const ArgParser &parser
   return true;
 }
 
-static HandlePtr findFieldType(const RecordType &type, unsigned int fieldOffset) {
-  for (auto &e : type.getHandleMap()) {
-    if (e.second->is(HandleKind::VAR) && e.second->getIndex() == fieldOffset) {
-      return e.second;
-    }
-  }
-  return nullptr;
-}
-
 static ObjPtr<BaseObject> createSubCmd(ARState &state, const StringRef base,
                                        const CLIRecordType &type, const StringRef subCmd) {
   auto *modType = state.typePool.getModTypeById(type.resolveBelongedModId());
@@ -288,24 +279,14 @@ static BaseObject *parseCommandLineImpl(ARState &state, StrArrayIter &iter, cons
   }
   // try parse sub-command
   if (!stop && iter != end && hasFlag(type.getAttr(), CLIRecordType::Attr::HAS_SUBCMD)) {
-    for (auto &e : instance.getEntries()) {
-      if (!e.isSubCmd()) {
-        continue;
+    const StringRef arg = *iter;
+    if (auto [subCmdType, fieldOffset] = type.findSubCmdInfo(state.typePool, arg); subCmdType) {
+      ++iter;
+      const auto obj = createSubCmd(state, instance.getCmdName(), *subCmdType, arg);
+      if (obj) {
+        out[fieldOffset] = obj;
       }
-      if (const StringRef arg = *iter; arg == e.getArgName()) {
-        ++iter;
-        const auto handle = findFieldType(type, e.getFieldOffset());
-        assert(handle);
-        auto &fieldType = state.typePool.get(handle->getTypeId());
-        assert(fieldType.isCLIRecordType() || fieldType.isOptionType());
-        auto &subCmdType = cast<CLIRecordType>(
-            fieldType.isOptionType() ? cast<OptionType>(fieldType).getElementType() : fieldType);
-        const auto obj = createSubCmd(state, instance.getCmdName(), subCmdType, arg);
-        if (obj) {
-          out[e.getFieldOffset()] = obj;
-        }
-        return obj.get();
-      }
+      return obj.get();
     }
     std::string err = "unknown command: ";
     appendAsPrintable(*iter, SYS_LIMIT_STRING_MAX, err);

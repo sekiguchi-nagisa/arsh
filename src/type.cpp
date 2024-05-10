@@ -234,6 +234,35 @@ CLIRecordType::CLIRecordType(unsigned int id, StringRef ref, const Type &superTy
   this->setAttr(attr);
 }
 
+static HandlePtr findFieldType(const RecordType &type, unsigned int fieldOffset) {
+  for (auto &e : type.getHandleMap()) {
+    if (e.second->is(HandleKind::VAR) && e.second->getIndex() == fieldOffset) {
+      return e.second;
+    }
+  }
+  return nullptr;
+}
+
+std::pair<const CLIRecordType *, unsigned int>
+CLIRecordType::findSubCmdInfo(const TypePool &pool, StringRef cmdName) const {
+  if (!hasFlag(this->getAttr(), Attr::HAS_SUBCMD)) {
+    return {nullptr, 0};
+  }
+  for (auto &e : this->entries) {
+    if (!e.isSubCmd() || cmdName != e.getArgName()) {
+      continue;
+    }
+    auto handle = findFieldType(*this, e.getFieldOffset());
+    assert(handle);
+    auto &fieldType = pool.get(handle->getTypeId());
+    assert(fieldType.isCLIRecordType() || fieldType.isOptionType());
+    auto *subCmdType = &cast<CLIRecordType>(
+        fieldType.isOptionType() ? cast<OptionType>(fieldType).getElementType() : fieldType);
+    return {subCmdType, e.getFieldOffset()};
+  }
+  return {nullptr, 0};
+}
+
 void CLIRecordType::finalizeArgEntries(std::vector<ArgEntry> &&args) {
   this->entries = std::move(args);
   for (auto &e : this->entries) {

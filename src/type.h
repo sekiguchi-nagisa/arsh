@@ -685,6 +685,9 @@ public:
 
   Attr getAttr() const { return static_cast<Attr>(this->getExtraAttr()); }
 
+  std::pair<const CLIRecordType *, unsigned int> findSubCmdInfo(const TypePool &pool,
+                                                                StringRef cmdName) const;
+
   static bool classof(const Type *type) { return type->isCLIRecordType(); }
 
 private:
