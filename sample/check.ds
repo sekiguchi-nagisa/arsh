@@ -10,7 +10,9 @@ for a in @($SCRIPT_DIR/*) {
 }
 
 ## check scripts
-for ss in @($SCRIPT_DIR/../scripts/*.ds) {
+shctl set nullglob
+for ss in @($SCRIPT_DIR/../{scripts,package}/*.{ds,arsh}) {
+    $ss = $ss.realpath()
     var r = call $BIN_NAME --compile-only $ss
     echo ${$r ? "[OK]" : "[NG]"} $ss
 }

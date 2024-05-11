@@ -1,0 +1,47 @@
+#!/usr/bin/env arsh
+
+error() : Nothing {
+    echo 1>&2 \[error\] $@
+    shctl set trace_on_exit
+    exit 1
+}
+
+gen_rpm_spec() {
+    var src = $1 :- error "require src"
+    var dest = $2 :- error "require dest"
+    var version = $3 :- error "require version"
+
+    var content = "$(cat $src)" :- error "$src: content is broken"
+    $content = "
+function(VERSION: String, dest: String) => {
+    cat << EOF > \$dest
+$content
+
+EOF
+}"
+    var func = $MODULE._func($content)()! as (String, String) -> Void
+    $func($version, $dest)
+}
+
+[<CLI(toplevel: $true)>]
+typedef _Param() {
+    [<Option(required: $true, short: "v", long: "version", help: "specify package version (such as 0.0.0)")>]
+    var version = ""
+
+    [<Arg(required: $true, placeholder: "target_dir")>]
+    var target  = ""
+}
+
+_main(param: _Param) {
+    shctl set errraise
+    $/^\d+\.\d+\.\d+$/ =~ $param.version || error "invalid version number: ${param.version}"
+    var dir = "${param.target}/arsh"
+    mkdir -p $dir
+    assert test -f $SCRIPT_DIR/rpm/arsh.spec.in
+    gen_rpm_spec $SCRIPT_DIR/rpm/arsh.spec.in $dir/arsh.spec ${param.version}
+    curl -Lf "https://github.com/sekiguchi-nagisa/arsh/archive/refs/tags/v${param.version}.tar.gz" \
+        > "$dir/arsh-${param.version}.tar.gz" 
+    cp $SCRIPT_DIR/../LICENSE $dir/
+}
+
+shctl is-sourced || _main $@

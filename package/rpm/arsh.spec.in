@@ -1,0 +1,96 @@
+#
+# spec file for package arsh
+#
+# Copyright (c) 2024 SUSE LLC
+# Copyright (c) 2024 Nagisa Sekiguchi <s dot nagisa dot xyz at gmail dot com>
+#
+# All modifications and additions to the file contributed by third parties
+# remain the property of their copyright owners, unless otherwise agreed
+# upon. The license for this file, and modifications and additions to the
+# file, is the same license as for the pristine package itself (unless the
+# license for the pristine package is not an Open Source License, in which
+# case the license is the MIT License). An "Open Source License" is a
+# license that conforms to the Open Source Definition (Version 1.9)
+# published by the Open Source Initiative.
+
+# Please submit bugfixes or comments via https://bugs.opensuse.org/
+#
+
+
+Summary:        A statically typed scripting language with shell-like features
+Name:           arsh
+
+Version:        ${VERSION}
+Release:        0.%{?dist}
+
+License:        Apache-2.0
+Group:          System/Shells
+URL:            https://github.com/sekiguchi-nagisa/arsh
+
+Source0:        %{name}-%{version}.tar.gz
+BuildRequires:  gcc-c++
+BuildRequires:  git
+BuildRequires:  pcre2-devel >= 10.30
+BuildRequires:  re2c >= 2.0
+BuildRoot:      %{_tmppath}/%{name}-%{version}-build
+Requires:       bash-completion
+Requires:       fzf
+
+%if 0%{?suse_version} || 0%{?is_opensuse}
+Requires:       libpcre2-8-0 >= 10.30
+%else
+Requires:       pcre2 >= 10.30
+%endif
+
+%if 0%{?rhel} && 0%{?rhel} < 8
+BuildRequires:  cmake3
+%else
+BuildRequires:  cmake
+%endif
+
+%description
+
+A statically typed scripting language with shell-like features.
+
+%if 0%{?suse_version} || 0%{?is_opensuse}
+%endif
+
+%prep
+%setup -q -n %{name}-%{version}
+
+%build
+%if 0%{?rhel} && 0%{?rhel} < 8
+%cmake3 -DUSE_CTEST=off -DCMAKE_BUILD_TYPE=RELWITHDEBINFO
+%else
+%cmake -DUSE_CTEST=off -DCMAKE_BUILD_TYPE=RELWITHDEBINFO
+%endif
+%if 0%{?cmake_build:1}
+%cmake_build
+%else
+make %{?_smp_mflags}
+%endif
+
+%install
+%if 0%{?cmake_install:1}
+%cmake_install
+%else
+%make_install
+%endif
+
+%files
+%defattr(0755,root,root)
+%{_bindir}/*
+%{_datadir}/arsh
+%{_datadir}/arsh/completions
+%{_datadir}/arsh/modules
+
+%defattr(0644,root,root)
+%{_datadir}/arsh/completions/*
+%{_datadir}/arsh/modules/*
+%if 0%{?suse_version} < 1500
+%doc LICENSE
+%else
+%license LICENSE
+%endif
+
+%changelog
