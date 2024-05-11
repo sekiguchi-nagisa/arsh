@@ -2,6 +2,24 @@
 # complete options defined by CLI attribute
 
 [<CLI>]
+typedef CCC() {
+    [<Arg>]
+    var target = ""
+}
+
+[<CLI>]
+typedef BBB() {
+    [<Flag(short: "v", long: "verbose")>]
+    var verbose = $false
+
+    [<Option(short: "c", long: "count")>]
+    var count = 0
+
+    [<SubCmd>]
+    var ccc : CCC?
+}
+
+[<CLI>]
 typedef AAA() {
     [<Option(opt: $true, short: 'd', long: 'dump')>]
     var dump : String?
@@ -11,6 +29,10 @@ typedef AAA() {
 
     [<Option(help: "")>]
     var count : Int?
+
+    [<SubCmd(name: "bbb1")>]
+    [<SubCmd(name: "bbb2")>]
+    var bbb : BBB?
 }
 
 fff(p : AAA) { echo $p; }
@@ -71,7 +93,13 @@ assert diff <(complete -- 'fff --version ./') <(complete -A file './')
 assert diff <(complete -- 'fff --count=') <(complete -A file)
 assert diff <(complete -- 'fff --dump=') <(complete -A file)
 assert diff <(complete -- 'fff --fajjaiae ') <(complete -A file)  # complete file names after invalid option
-assert diff <(complete -- 'fff ') <(complete -A file) # complete file names if word is empty
+
+## complete sub-command
+assert diff <(complete -- 'fff ') <(echo 'bbb1' && echo bbb2)
+assert diff <(complete -- 'fff b')  <(echo 'bbb1' && echo bbb2)
+assert diff <(complete -- 'fff bbb1 ')  <(echo 'ccc')
+assert diff <(complete -- 'fff bbb1 c')  <(echo 'ccc')
+assert diff <(complete -- 'fff bbb1 ccc ')  <(complete -A file)  # if word is empty and no sub-commands
 
 
 ## not complete option (comp word must start with valid option name)

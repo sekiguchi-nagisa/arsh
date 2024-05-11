@@ -658,22 +658,26 @@ static const CLIRecordType *resolveCLIType(const TypePool &pool, const Handle &h
   return nullptr;
 }
 
-static bool completeCLIOption(const TypePool &pool, const NameScope &scope, const CmdNode &cmdNode,
-                              const std::string &word, CompCandidateConsumer &consumer) {
-  auto handle = scope.lookup(toCmdFullName(cmdNode.getNameNode().getValue()));
-  if (!handle) {
-    return false;
-  }
-  auto *cliType = resolveCLIType(pool, *handle.asOk());
-  if (!cliType) {
+static bool completeCLIOption(const CLIRecordType &type, const std::string &word, bool firstArg,
+                              CompCandidateConsumer &consumer) {
+  if (word.empty() || word[0] != '-') {
+    if (hasFlag(type.getAttr(), CLIRecordType::Attr::HAS_SUBCMD) && firstArg) {
+      // complete sub-command
+      for (auto &e : type.getEntries()) {
+        if (!e.isSubCmd()) {
+          continue;
+        }
+        if (StringRef name(e.getArgName()); name.startsWith(word)) {
+          consumer(name, CompCandidateKind::COMMAND_ARG);
+        }
+      }
+      return true;
+    }
     return false;
   }
 
   // complete Flag, Option
-  if (word.empty() || word[0] != '-') {
-    return false;
-  }
-  for (auto &e : cliType->getEntries()) {
+  for (auto &e : type.getEntries()) {
     if (!e.isOption()) {
       continue;
     }
@@ -712,6 +716,40 @@ static bool completeCLIOption(const TypePool &pool, const NameScope &scope, cons
     }
   }
   return true;
+}
+
+static bool completeCLIOption(const TypePool &pool, const Lexer &lexer, const NameScope &scope,
+                              const CmdNode &cmdNode, const std::string &word,
+                              CompCandidateConsumer &consumer) {
+  auto handle = scope.lookup(toCmdFullName(cmdNode.getNameNode().getValue()));
+  if (!handle) {
+    return false;
+  }
+  auto *cliType = resolveCLIType(pool, *handle.asOk());
+  if (!cliType) {
+    return false;
+  }
+
+  int latestSubCmdIndex = -1;
+  const unsigned int size = cmdNode.getArgNodes().size();
+  for (unsigned int i = 0; i < size; i++) {
+    auto &e = cmdNode.getArgNodes()[i];
+    if (isa<RedirNode>(*e)) {
+      continue;
+    }
+    const StringRef ref = lexer.toStrRef(e->getToken());
+    if (ref.empty() || ref[0] == '-') {
+      break;
+    }
+    auto ret = cliType->findSubCmdInfo(pool, ref);
+    if (ret.first) {
+      cliType = ret.first;
+      latestSubCmdIndex = i;
+    }
+  }
+  const bool firstArg = size == 0 || (latestSubCmdIndex > -1 &&
+                                      static_cast<unsigned int>(latestSubCmdIndex) == size - 1);
+  return completeCLIOption(*cliType, word, firstArg, consumer);
 }
 
 bool CodeCompleter::invoke(const CodeCompletionContext &ctx) {
@@ -785,8 +823,8 @@ bool CodeCompleter::invoke(const CodeCompletionContext &ctx) {
         return true;
       }
     }
-    if (completeCLIOption(this->pool, ctx.getScope(), *ctx.getCmdNode(), ctx.getCompWord(),
-                          this->consumer)) {
+    if (completeCLIOption(this->pool, *ctx.getLexer(), ctx.getScope(), *ctx.getCmdNode(),
+                          ctx.getCompWord(), this->consumer)) {
       return true;
     }
     if (!completeSubcommand(this->pool, ctx.getScope(), *ctx.getCmdNode(), ctx.getCompWord(),
