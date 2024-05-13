@@ -8,19 +8,18 @@ on:
       - 'v*'
 
 jobs:
-  build_on_linux_ubuntu22_04_release_shared:
-    runs-on: ubuntu-22.04
+  build_on_linux_ubuntu24_04_release_shared:
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
-        cc: [ g++-13, clang++-15 ]
+        cc: [ g++-14, clang++-18 ]
         option: [ on, off ]
     steps:
       - uses: actions/checkout@v4
       - name: prepare
         run: |
           sudo apt update
-          sudo apt install language-pack-ja ninja-build \
-               g++-13 clang-15 lld lld-15 llvm-15 llvm-15-dev
+          sudo apt install language-pack-ja ninja-build
       - name: configure
         run: |
           mkdir build

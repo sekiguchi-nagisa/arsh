@@ -67,7 +67,7 @@ jobs:
     runs-on: ubuntu-22.04
     strategy:
       matrix:
-        cc: [ g++-9, g++-10, g++-11, g++-12, g++-13, g++14 ]
+        cc: [ g++-9, g++-10, g++-11, g++-12, g++-13 ]
     steps:
       - uses: actions/checkout@v4
       - name: prepare
@@ -94,7 +94,7 @@ jobs:
     runs-on: ubuntu-22.04
     strategy:
       matrix:
-        cc: [ clang++-11, clang++-12, clang++-13, clang++-14, clang++-15, clang++-16, clang++-17, clang++-18 ]
+        cc: [ clang++-11, clang++-12, clang++-13, clang++-14, clang++-15 ]
     steps:
       - uses: actions/checkout@v4
       - name: prepare
@@ -117,9 +117,63 @@ jobs:
           cd build
           ctest -j4 --output-on-failure
 
+  build_on_linux_ubuntu24_04_gcc:
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        cc: [ g++-14 ]
+    steps:
+      - uses: actions/checkout@v4
+      - name: prepare
+        run: |
+          sudo apt update
+          sudo apt install language-pack-ja ninja-build
+      - name: configure
+        run: |
+          mkdir build
+          cd build
+          cmake .. -G Ninja \
+                -DCMAKE_BUILD_TYPE=debug \
+                -DCMAKE_CXX_COMPILER=${{ matrix.cc }} \
+      - name: build
+        run: |
+          cd build
+          ninja
+      - name: test
+        run: |
+          cd build
+          ctest -j4 --output-on-failure
 
-  build_on_linux_ubuntu22_04_release:
-    runs-on: ubuntu-22.04
+  build_on_linux_ubuntu24_04_clang:
+    runs-on: ubuntu-24.04
+    strategy:
+      matrix:
+        cc: [ clang++-16, clang++-17, clang++-18 ]
+    steps:
+      - uses: actions/checkout@v4
+      - name: prepare
+        run: |
+          sudo apt update
+          sudo apt install language-pack-ja ninja-build
+      - name: configure
+        run: |
+          mkdir build
+          cd build
+          cmake .. -G Ninja \
+                -DCMAKE_BUILD_TYPE=debug \
+                -DCMAKE_CXX_COMPILER=${{ matrix.cc }} \
+      - name: build
+        run: |
+          cd build
+          ninja
+      - name: test
+        run: |
+          cd build
+          ctest -j4 --output-on-failure
+
+
+  build_on_linux_ubuntu24_04_release:
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
         cc: [ g++-14, clang++-18 ]
@@ -129,7 +183,7 @@ jobs:
       - name: prepare
         run: |
           sudo apt update
-          sudo apt install language-pack-ja ninja-build lld
+          sudo apt install language-pack-ja ninja-build lld lld-18
       - name: configure
         run: |
           mkdir build
@@ -148,7 +202,7 @@ jobs:
           ctest -j4 --output-on-failure
 
   build_on_linux_sanitizer:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     strategy:
       matrix:
         option: [ address, undefined ]
@@ -184,7 +238,7 @@ jobs:
           ctest -j4 --output-on-failure
 
   build_on_linux_fuzzing:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - name: Fix kernel mmap rnd bits
