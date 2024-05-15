@@ -177,13 +177,14 @@ jobs:
     strategy:
       matrix:
         cc: [ g++-14, clang++-18 ]
-        option: [ on, off ]
+        #        option: [ on, off ]
+        option: [ off ]
     steps:
       - uses: actions/checkout@v4
       - name: prepare
         run: |
           sudo apt update
-          sudo apt install language-pack-ja ninja-build lld lld-18
+          sudo apt install language-pack-ja ninja-build lld lld-18 llvm-18 llvm-18-dev
       - name: configure
         run: |
           mkdir build

@@ -133,8 +133,8 @@ assert diff <(cd $SCRIPT_DIR/../ && complete -m ${$/\d+/.replace($mod as String,
 
 ## options
 assert "$({ complete -q ';'; assert $COMPREPLY.size() != 0; })".empty();
-assert complete -s 'var';
-assert $COMPREPLY.size() == 1 && $COMPREPLY[0] == 'var'
+assert complete -s 'exportenv';
+assert $COMPREPLY.size() == 1; assert $COMPREPLY[0] == 'exportenv'
 
 ## space insertion (-s option)
 ### variable
@@ -161,9 +161,9 @@ assert { complete -q 'whil'; $COMPREPLY.hasSpace(0); } # insert space after keyw
 assert diff <(complete -s 'for aaa i') <(echo 'in ')
 assert { complete -q 'for aaa i'; $COMPREPLY.hasSpace(0); }
 ### file name
-assert diff <(complete -s '/bi') <(echo 'bin/')
-assert { complete -q '/bi'; !$COMPREPLY.hasSpace(0); } # not insert space after dir
-assert diff <(complete -s 'echo /bi') <(echo 'bin/')
+assert diff <(complete -s '/us') <(echo 'usr/')
+assert { complete -q '/us'; !$COMPREPLY.hasSpace(0); } # not insert space after dir
+assert diff <(complete -s 'echo /us') <(echo 'usr/')
 assert { complete -q  'echo /bi'; !$COMPREPLY.hasSpace(0); } # not insert space after dir even if command argument
 if $OSTYPE !~ $/cygwin/i && $OSTYPE !~ $/msys/ {
     assert diff <(complete -s '~roo') <(echo '~root/')
