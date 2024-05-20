@@ -216,7 +216,8 @@ constexpr const char *TYPE_FUNC = "Func";
 constexpr unsigned int UDC_PARAM_ATTR = 0;  // &&attr
 constexpr unsigned int UDC_PARAM_REDIR = 1; // &&redir
 constexpr unsigned int UDC_PARAM_ARGV = 2;  // @
-constexpr unsigned int UDC_PARAM_N = UDC_PARAM_ARGV + 1;
+constexpr unsigned int UDC_PARAM_ARG0 = 3;  // 0
+constexpr unsigned int UDC_PARAM_N = UDC_PARAM_ARG0;
 
 // =====  termination kind  =====
 

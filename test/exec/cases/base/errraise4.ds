@@ -7,21 +7,25 @@ var ex = 34 as Any
 try { command -W; } catch e { $ex = $e; }
 assert ($ex as ExecError).status() == 2
 assert ($ex as ExecError).lineno() == 7
+assert ($ex as ExecError).message() == "\`command' command exits with non-zero status: \`2'"
 
 $ex = 34
 try { command -V fjreifae; } catch e { $ex = $e; }
 assert ($ex as ExecError).status() == 1
-assert ($ex as ExecError).lineno() == 12
+assert ($ex as ExecError).lineno() == 13
+assert ($ex as ExecError).message() == "\`command' command exits with non-zero status: \`1'"
 
 ## exec
 $ex = 45
 try { exec -T; } catch e { $ex = $e; }
 assert ($ex as ExecError).status() == 2
-assert ($ex as ExecError).lineno() == 18
+assert ($ex as ExecError).lineno() == 20
+assert ($ex as ExecError).message() == "\`exec' command exits with non-zero status: \`2'"
 
 $ex = 45
 try { exec $'ls\x00'; } catch e { $ex = $e; }
 assert ($ex as ExecError).status() == 1
-assert ($ex as ExecError).lineno() == 23
+assert ($ex as ExecError).lineno() == 26
+assert ($ex as ExecError).message() == "\`exec' command exits with non-zero status: \`1'"
 
 true

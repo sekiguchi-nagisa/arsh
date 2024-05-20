@@ -906,9 +906,11 @@ static void traceCmd(const ARState &state, const ArrayObject &argv) {
   errno = 0; // ignore error
 }
 
-static bool checkCmdExecError(ARState &state, CmdCallAttr attr, int64_t status) {
+static bool checkCmdExecError(ARState &state, StringRef cmdName, CmdCallAttr attr, int64_t status) {
   if (status != 0 && hasFlag(attr, CmdCallAttr::RAISE) && state.has(RuntimeOption::ERR_RAISE)) {
-    std::string message = "command exits with non-zero status: `";
+    std::string message = "`";
+    appendAsPrintable(cmdName, SYS_LIMIT_ERROR_MSG_MAX, message);
+    message += "' command exits with non-zero status: `";
     message += std::to_string(status);
     message += "'";
     raiseError(state, TYPE::ExecError, std::move(message), status);
@@ -940,13 +942,14 @@ bool VM::callCommand(ARState &state, const ResolvedCmd &cmd, ObjPtr<ArrayObject>
                                          std::move(redirConfig), attr);
   case ResolvedCmd::BUILTIN: {
     errno = 0;
+    const auto cmdName = array.getValues()[0];
     const int status = cmd.builtinCmd()(state, array);
     flushStdFD();
     if (state.hasError()) {
       return false;
     }
     pushExitStatus(state, status); // set exit status before check ERR_RAISE
-    if (!checkCmdExecError(state, attr, status)) {
+    if (!checkCmdExecError(state, cmdName.asStrRef(), attr, status)) {
       return false;
     }
     return true;
@@ -972,7 +975,7 @@ bool VM::callCommand(ARState &state, const ResolvedCmd &cmd, ObjPtr<ArrayObject>
       const bool ret = forkAndExec(state, cmd.filePath(), array, std::move(redirConfig));
       if (ret) {
         const int status = state.getMaskedExitStatus();
-        if (!checkCmdExecError(state, attr, status)) {
+        if (!checkCmdExecError(state, array.getValues()[0].asStrRef(), attr, status)) {
           return false;
         }
       }
@@ -1205,9 +1208,10 @@ int VM::builtinExec(ARState &state, ArrayObject &argvObj, Value &&redir) {
 
 bool VM::returnFromUserDefinedCommand(ARState &state, int64_t status) {
   const auto attr = static_cast<CmdCallAttr>(state.stack.getLocal(UDC_PARAM_ATTR).asNum());
+  const auto arg0 = state.stack.getLocal(UDC_PARAM_ARG0);
   state.stack.unwind();
   pushExitStatus(state, status); // set exit status before check ERR_RAISE
-  if (!checkCmdExecError(state, attr, status)) {
+  if (!checkCmdExecError(state, arg0.asStrRef(), attr, status)) {
     return false;
   }
   assert(!state.stack.checkVMReturn());
@@ -2075,12 +2079,13 @@ bool VM::mainLoop(ARState &state) {
         auto attr = static_cast<CmdCallAttr>(v);
         Value redir = state.stack.getLocal(UDC_PARAM_REDIR);
         auto argv = toObjPtr<ArrayObject>(state.stack.getLocal(UDC_PARAM_ARGV));
+        const auto arg0 = argv->getValues()[0];
         const auto ret = builtinCommand(state, std::move(argv), std::move(redir), attr);
         flushStdFD();
         if (ret.kind == BuiltinCmdResult::CALL) {
           TRY(ret.r);
         } else {
-          TRY(checkCmdExecError(state, attr, ret.status));
+          TRY(checkCmdExecError(state, arg0.asStrRef(), attr, ret.status));
           pushExitStatus(state, ret.status);
         }
         vmnext;
@@ -2106,9 +2111,10 @@ bool VM::mainLoop(ARState &state) {
         auto v = state.stack.getLocal(UDC_PARAM_ATTR).asNum();
         const auto attr = static_cast<CmdCallAttr>(v);
         Value redir = state.stack.getLocal(UDC_PARAM_REDIR);
-        auto argv = state.stack.getLocal(UDC_PARAM_ARGV);
-        int status = builtinExec(state, typeAs<ArrayObject>(argv), std::move(redir));
-        TRY(checkCmdExecError(state, attr, status));
+        auto &argv = typeAs<ArrayObject>(state.stack.getLocal(UDC_PARAM_ARGV));
+        const auto arg0 = argv.getValues()[0];
+        int status = builtinExec(state, argv, std::move(redir));
+        TRY(checkCmdExecError(state, arg0.asStrRef(), attr, status));
         pushExitStatus(state, status);
         vmnext;
       }
@@ -2154,7 +2160,7 @@ bool VM::mainLoop(ARState &state) {
         Value arg0;
         if (frame) {
           unsigned int localOffset = frame->localVarOffset;
-          arg0 = state.stack.unsafeGetOperand(localOffset + UDC_PARAM_N);
+          arg0 = state.stack.unsafeGetOperand(localOffset + UDC_PARAM_ARG0);
         } else {
           arg0 = state.getGlobal(BuiltinVarOffset::POS_0);
         }

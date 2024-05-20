@@ -103,7 +103,7 @@ assert $({
 
 # CHECKERR: [warning at subshell=1]
 # CHECKERR: the following exception within finally/defer block is ignored
-# CHECKERR: ExecError: command exits with non-zero status: `1'
+# CHECKERR: ExecError: `false' command exits with non-zero status: `1'
 # CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except1\.ds:99 '<toplevel>\(\)'
 # CHECKERR_RE: ^$
 # CHECKERR: [runtime error at subshell=1]

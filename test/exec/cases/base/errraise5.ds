@@ -8,7 +8,7 @@ try {
     ls | for a in $STDIN { 
         sh -c 'exit 56'; echo $a; }
 } catch e { $ex = $e; }
-assert ($ex as ExecError).message() == "command exits with non-zero status: \`56'"
+assert ($ex as ExecError).message() == "\`sh' command exits with non-zero status: \`56'"
 assert ($ex as ExecError).lineno() == 9
 
 assert $? == 0
@@ -23,7 +23,7 @@ try {
         sh -c 'exit 156'; echo $a; } | {
              false; }
 } catch e { $ex = $e; }
-assert ($ex as ExecError).message() == "command exits with non-zero status: \`1'"
+assert ($ex as ExecError).message() == "\`false' command exits with non-zero status: \`1'"
 assert ($ex as ExecError).lineno() == 24
 
 assert $? == 0
@@ -40,7 +40,7 @@ try {
         ff 67; echo $a; } | { 
             ff 145; }
 } catch e { $ex = $e; }
-assert ($ex as ExecError).message() == "command exits with non-zero status: \`145'"
+assert ($ex as ExecError).message() == "\`ff' command exits with non-zero status: \`145'"
 assert ($ex as ExecError).lineno() == 41
 
 assert $? == 0
