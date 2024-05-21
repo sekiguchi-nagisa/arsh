@@ -292,8 +292,6 @@ static void openPTY(const IOConfig &config, int &masterFD, int &slaveFD) {
   }
 }
 
-static void setCLOEXEC(int fd) { fcntl(fd, F_SETFD, fcntl(fd, F_GETFD) | FD_CLOEXEC); }
-
 class StreamBuilder {
 private:
   const IOConfig config;
@@ -335,9 +333,9 @@ public:
       close(this->masterFD);
     }
 
-    setCLOEXEC(this->inputWriter());
-    setCLOEXEC(this->outputReader());
-    setCLOEXEC(this->errorReader());
+    arsh::setCloseOnExec(this->inputWriter(), true);
+    arsh::setCloseOnExec(this->outputReader(), true);
+    arsh::setCloseOnExec(this->errorReader(), true);
   }
 
   int findPTY() const {

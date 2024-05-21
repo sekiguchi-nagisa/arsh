@@ -115,7 +115,7 @@ uint32_t Value::getMetaData() const {
     union { // NOLINT
       char i8[4];
       uint32_t u32;
-    } conv;
+    } conv = {};
     memcpy(conv.i8, this->str.value + 11, 4);
     return conv.u32;
   }

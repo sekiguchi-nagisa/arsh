@@ -41,7 +41,7 @@ private:
   unsigned int whiteList{0};
 
 public:
-  enum Policy : unsigned int {
+  enum Policy : unsigned char {
 #define GEN_ENUM(E) E,
     EACH_LOGGING_POLICY(GEN_ENUM)
 #undef GEN_ENUM
