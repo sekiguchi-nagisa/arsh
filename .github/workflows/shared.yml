@@ -12,15 +12,14 @@ jobs:
     runs-on: ubuntu-24.04
     strategy:
       matrix:
-        cc: [ g++-14, clang++-18 ]
+        cc: [ g++-14, clang++-17 ]
         option: [ on, off ]
-    #        option: [ off ]
     steps:
       - uses: actions/checkout@v4
       - name: prepare
         run: |
           sudo apt update
-          sudo apt install language-pack-ja ninja-build lld lld-18 llvm-18 llvm-18-dev llvm-linker-tools
+          sudo apt install language-pack-ja ninja-build lld lld-17 llvm-17 llvm-17-dev llvm-17-linker-tools
       - name: configure
         run: |
           mkdir build
