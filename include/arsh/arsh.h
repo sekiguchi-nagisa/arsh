@@ -311,7 +311,7 @@ static inline int ARState_loadAndEval(ARState *st, const char *sourceName, ARErr
  * @return
  * exit status of executed command (0~255).
  * if command not found, return 1.
- * if st or argv is null, return -1
+ * if st or argv is null or too large, return -1
  */
 AR_PUBLIC_API(int) ARState_exec(ARState *st, char *const *argv);
 

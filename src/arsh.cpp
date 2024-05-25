@@ -219,8 +219,9 @@ int ARState_setArguments(ARState *st, char *const *args) {
   auto value = Value::create<ArrayObject>(st->typePool.get(TYPE::StringArray));
   if (args) {
     auto &argsObj = typeAs<ArrayObject>(value);
-    for (unsigned int i = 0; args[i] != nullptr; i++) {
-      if (!argsObj.append(*st, Value::createStr(args[i]))) {
+    for (; *args != nullptr; args++) {
+      if (const StringRef arg = *args;
+          arg.size() > SYS_LIMIT_STRING_MAX || !argsObj.append(*st, Value::createStr(arg))) {
         return -1;
       }
     }
@@ -447,7 +448,11 @@ int ARState_exec(ARState *st, char *const *argv) {
 
   std::vector<Value> values;
   for (; *argv != nullptr; argv++) {
-    values.push_back(Value::createStr(*argv));
+    const StringRef arg = *argv;
+    if (arg.size() > SYS_LIMIT_STRING_MAX || values.size() == SYS_LIMIT_ARRAY_MAX) {
+      return -1;
+    }
+    values.push_back(Value::createStr(arg));
   }
   VM::execCommand(*st, std::move(values), false);
   return st->getMaskedExitStatus();
