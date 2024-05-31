@@ -93,8 +93,12 @@ AR_PUBLIC_API(unsigned int) ARState_lineNum(const ARState *st);
  * if null, do nothing.
  * @param shellName
  * if null or too large string (greater than INT32_MAX), do nothing.
+ * @return
+ * if st is null, return always 0
+ * if st is not null correctly set name, return 0
+ * otherwise, return -1
  */
-AR_PUBLIC_API(void) ARState_setShellName(ARState *st, const char *shellName);
+AR_PUBLIC_API(int) ARState_setShellName(ARState *st, const char *shellName);
 
 /**
  * set arguments ($@).

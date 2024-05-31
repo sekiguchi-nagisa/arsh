@@ -255,21 +255,24 @@ TEST_F(APITest, shellName) {
   ASSERT_EQ(AR_ERROR_KIND_SUCCESS, e->kind);
   e = newError();
 
-  ARState_setShellName(this->state, "12345");
+  int r = ARState_setShellName(this->state, "12345");
   src = "assert $0 == '12345'";
   s = ARState_eval(this->state, "(string)", src, strlen(src), e.get());
   ASSERT_EQ(0, s);
   ASSERT_EQ(AR_ERROR_KIND_SUCCESS, e->kind);
+  ASSERT_EQ(0, r);
   e = newError();
 
-  ARState_setShellName(this->state, nullptr); // do nothing
+  r = ARState_setShellName(this->state, nullptr); // do nothing
   src = "assert $0 == '12345'";
   s = ARState_eval(this->state, "(string)", src, strlen(src), e.get());
   ASSERT_EQ(0, s);
   ASSERT_EQ(AR_ERROR_KIND_SUCCESS, e->kind);
+  ASSERT_EQ(-1, r);
   e = newError();
 
-  ARState_setShellName(nullptr, "ddd"); // do nothing
+  r = ARState_setShellName(nullptr, "ddd"); // do nothing
+  ASSERT_EQ(0, r);
 }
 
 TEST_F(APITest, arg) {
