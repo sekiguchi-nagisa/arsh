@@ -209,7 +209,9 @@ unsigned int ARState_lineNum(const ARState *st) {
 void ARState_setShellName(ARState *st, const char *shellName) {
   GUARD_NULL(st);
   if (shellName != nullptr) {
-    st->setGlobal(BuiltinVarOffset::POS_0, Value::createStr(shellName));
+    if (const StringRef ref = shellName; ref.size() <= SYS_LIMIT_STRING_MAX) {
+      st->setGlobal(BuiltinVarOffset::POS_0, Value::createStr(ref));
+    }
   }
 }
 
