@@ -42,6 +42,12 @@ function %OP_OR(target: Int): Int for Int
 
 function %OP_XOR(target: Int): Int for Int
 
+function %OP_LSHIFT(target: Int): Int for Int
+
+function %OP_RSHIFT(target: Int): Int for Int
+
+function %OP_URSHIFT(target: Int): Int for Int
+
 function abs(): Int for Int
 
 function %OP_TO_FLOAT(): Float for Int

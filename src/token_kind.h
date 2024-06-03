@@ -105,6 +105,9 @@
   TOKEN(AND, "and")                                                                                \
   TOKEN(OR, "or")                                                                                  \
   TOKEN(XOR, "xor")                                                                                \
+  TOKEN(LSHIFT, "<<")                                                                              \
+  TOKEN(RSHIFT, ">>")                                                                              \
+  TOKEN(URSHIFT, ">>>")                                                                            \
   TOKEN(COND_AND, "&&")                                                                            \
   TOKEN(COND_OR, "||")                                                                             \
   TOKEN(NULL_COALE, "??")                                                                          \
@@ -216,14 +219,17 @@
   OP(NULL_ASSIGN, 1, INFIX | RASSOC)
 
 #define EACH_OPERATOR(OP)                                                                          \
-  OP(IS, 17, INFIX)                                                                                \
-  OP(AS, 17, INFIX)                                                                                \
-  OP(AS_OPT, 17, INFIX)                                                                            \
-  OP(MUL, 16, INFIX)                                                                               \
-  OP(DIV, 16, INFIX)                                                                               \
-  OP(MOD, 16, INFIX)                                                                               \
-  OP(ADD, 15, INFIX)                                                                               \
-  OP(SUB, 15, INFIX)                                                                               \
+  OP(IS, 18, INFIX)                                                                                \
+  OP(AS, 18, INFIX)                                                                                \
+  OP(AS_OPT, 18, INFIX)                                                                            \
+  OP(MUL, 17, INFIX)                                                                               \
+  OP(DIV, 17, INFIX)                                                                               \
+  OP(MOD, 17, INFIX)                                                                               \
+  OP(ADD, 16, INFIX)                                                                               \
+  OP(SUB, 16, INFIX)                                                                               \
+  OP(LSHIFT, 15, INFIX)                                                                            \
+  OP(RSHIFT, 15, INFIX)                                                                            \
+  OP(URSHIFT, 15, INFIX)                                                                           \
   OP(AND, 14, INFIX)                                                                               \
   OP(XOR, 13, INFIX)                                                                               \
   OP(OR, 12, INFIX)                                                                                \

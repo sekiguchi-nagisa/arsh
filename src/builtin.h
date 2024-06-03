@@ -266,6 +266,30 @@ ARSH_METHOD int_2_int_xor(RuntimeContext &ctx) {
   RET(Value::createInt(left ^ right));
 }
 
+//!bind: function $OP_LSHIFT($this: Int, $target: Int): Int
+ARSH_METHOD int_2_int_lshift(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(int_2_int_lshift);
+  const auto left = LOCAL(0).asInt();
+  const auto right = LOCAL(1).asInt();
+  RET(Value::createInt(leftShift(left, right)));
+}
+
+//!bind: function $OP_RSHIFT($this: Int, $target: Int): Int
+ARSH_METHOD int_2_int_rshift(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(int_2_int_rshift);
+  const auto left = LOCAL(0).asInt();
+  const auto right = LOCAL(1).asInt();
+  RET(Value::createInt(rightShift(left, right)));
+}
+
+//!bind: function $OP_URSHIFT($this: Int, $target: Int): Int
+ARSH_METHOD int_2_int_urshift(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(int_2_int_urshift);
+  const auto left = LOCAL(0).asInt();
+  const auto right = LOCAL(1).asInt();
+  RET(Value::createInt(unsignedRightShift(left, right)));
+}
+
 //!bind: function abs($this : Int) : Int
 ARSH_METHOD int_abs(RuntimeContext &ctx) {
   SUPPRESS_WARNING(int_abs);

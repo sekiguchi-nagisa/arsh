@@ -280,6 +280,9 @@ INIT:
     <EXPR> "and"             { MODE(STMT); RET_OR_COMP_INFIX(AND); }
     <EXPR> "or"              { MODE(STMT); RET_OR_COMP_INFIX(OR); }
     <EXPR> "xor"             { MODE(STMT); RET_OR_COMP_INFIX(XOR); }
+    <EXPR> "<<"              { MODE(STMT); RET(LSHIFT); }
+    <EXPR> ">>"              { MODE(STMT); RET(RSHIFT); }
+    <EXPR> ">>>"             { MODE(STMT); RET(URSHIFT); }
     <EXPR,CMD> "&&"          { MODE(STMT); RET(COND_AND); }
     <EXPR,CMD> "||"          { MODE(STMT); RET(COND_OR); }
     <EXPR> "=~"              { MODE(STMT); RET(MATCH); }

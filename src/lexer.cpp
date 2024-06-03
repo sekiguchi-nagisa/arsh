@@ -107,6 +107,12 @@ const char *resolveBinaryOpName(TokenKind op) {
     return OP_OR;
   case TokenKind::XOR:
     return OP_XOR;
+  case TokenKind::LSHIFT:
+    return OP_LSHIFT;
+  case TokenKind::RSHIFT:
+    return OP_RSHIFT;
+  case TokenKind::URSHIFT:
+    return OP_URSHIFT;
   case TokenKind::MATCH:
     return OP_MATCH;
   case TokenKind::UNMATCH:

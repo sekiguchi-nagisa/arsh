@@ -8,6 +8,9 @@
 
 - declarative command line argument parsers now support sub-commands
     - define sub-commands via ``SubCmd`` attribute
+- add shift operators such as ``<<``, ``>>``, ``>>>``
+    - equivalent to java shift operators
+    - unlike other binary arithmetic operators, not check overflow
 
 #### Builtin
 

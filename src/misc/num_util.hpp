@@ -398,6 +398,69 @@ inline int compareByTotalOrder(double x, double y) {
   return xx < yy ? -1 : 1;
 }
 
+// for shift operator. shift operators follow java specification
+// see (https://docs.oracle.com/javase/specs/jls/se8/html/jls-15.html#jls-15.19)
+
+/**
+ * for '<<' operator
+ * @param left
+ * @param right
+ * @return
+ */
+inline int64_t leftShift(int64_t left, int64_t right) {
+  uint64_t v = static_cast<uint64_t>(right) & static_cast<uint64_t>(0x3f); // truncate to 0~63
+  v = static_cast<uint64_t>(1) << v;
+  right = static_cast<int64_t>(v);
+
+  int64_t ret;
+  if (smul_overflow(left, right, ret)) { // overflow
+    v = static_cast<uint64_t>(left) * v;
+    ret = static_cast<int64_t>(v);
+  }
+  return ret;
+}
+
+inline int64_t floorDiv(int64_t left, int64_t right) {
+  if (const auto v = static_cast<uint64_t>(left) ^ static_cast<uint64_t>(right);
+      static_cast<int64_t>(v) > 0) { // same sign
+    return left / right;
+  }
+  const lldiv_t ret = lldiv(left, right);
+  return ret.rem == 0 ? ret.quot : ret.quot - 1;
+}
+
+/**
+ * for '>>' operator
+ * @param left
+ * @param right
+ * @return
+ */
+inline int64_t rightShift(int64_t left, int64_t right) {
+  uint64_t v = static_cast<uint64_t>(right) & static_cast<uint64_t>(0x3f); // truncate to 0~63
+  if (left > 0) {
+    return left >> v;
+  }
+  if (v == 63) {
+    left = floorDiv(left, static_cast<uint64_t>(1) << 62);
+    v = 1;
+  }
+  v = static_cast<uint64_t>(1) << v;
+  right = static_cast<int64_t>(v);
+  return floorDiv(left, right);
+}
+
+/**
+ * for '>>>' operator
+ * @param left
+ * @param right
+ * @return
+ */
+inline int64_t unsignedRightShift(int64_t left, int64_t right) {
+  uint64_t v = static_cast<uint64_t>(right) & static_cast<uint64_t>(0x3f); // truncate to 0~63
+  v = static_cast<uint64_t>(left) >> v;
+  return static_cast<int64_t>(v);
+}
+
 END_MISC_LIB_NAMESPACE_DECL
 
 #endif // MISC_LIB_NUM_UTIL_HPP

@@ -1892,6 +1892,48 @@ TEST_F(LexerTest_Lv1, XOR4) {
   ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycEXPR));
 }
 
+TEST_F(LexerTest_Lv1, LSHIFT1) {
+  const char *text = "<<";
+  this->initLexer(text, yycEXPR);
+  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::LSHIFT, "<<", TokenKind::EOS, ""));
+}
+
+TEST_F(LexerTest_Lv1, LSHIFT2) {
+  const char *text = "<<";
+  this->initLexer(text);
+  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::INVALID, "<"));
+}
+
+TEST_F(LexerTest_Lv1, RSHIFT1) {
+  const char *text = ">>";
+  this->initLexer(text, yycEXPR);
+  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::RSHIFT, ">>", TokenKind::EOS, ""));
+}
+
+TEST_F(LexerTest_Lv1, RSHIFT2) {
+  const char *text = ">>";
+  this->initLexer(text);
+  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::INVALID, ">"));
+}
+
+TEST_F(LexerTest_Lv1, URSHIFT1) {
+  const char *text = ">>>";
+  this->initLexer(text, yycEXPR);
+  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::URSHIFT, ">>>", TokenKind::EOS, ""));
+}
+
+TEST_F(LexerTest_Lv1, URSHIFT2) {
+  const char *text = ">>>";
+  this->initLexer(text);
+  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::INVALID, ">"));
+}
+
+TEST_F(LexerTest_Lv1, URSHIFT3) {
+  const char *text = ">>>>";
+  this->initLexer(text, yycEXPR);
+  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::URSHIFT, ">>>", TokenKind::INVALID, ">"));
+}
+
 TEST_F(LexerTest_Lv1, COND_AND1) {
   const char *text = "&&";
   this->initLexer(text);
