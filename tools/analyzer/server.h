@@ -97,7 +97,7 @@ private:
   CmdCompKind cmdCompKind{CmdCompKind::default_};
   BinaryFlag cmdArgComp{BinaryFlag::disabled};
   BinaryFlag semanticHighlight{BinaryFlag::enabled};
-  BinaryFlag renameSupport{BinaryFlag::disabled};
+  BinaryFlag renameSupport{BinaryFlag::enabled};
   SupportedCapability supportedCapability{};
 
 public:
