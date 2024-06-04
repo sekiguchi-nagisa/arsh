@@ -234,6 +234,13 @@ TEST_F(PrecedenceTest, logical) {
   ASSERT_NO_FATAL_FAILURE(this->equals("((1 and 2) or (3 xor (4 + 3)))", "1 and 2 or 3 xor 4 + 3"));
 }
 
+TEST_F(PrecedenceTest, shift) {
+  ASSERT_NO_FATAL_FAILURE(this->equals("(1 and (2 >> 3))", "1 and 2 >> 3"));
+  ASSERT_NO_FATAL_FAILURE(this->equals("((1 and (2 << 3)) or 4)", "1 and 2 << 3 or 4"));
+  ASSERT_NO_FATAL_FAILURE(
+      this->equals("((1 or (2 << 3)) == (4 xor (5 >>> 6)))", "1 or 2 << 3 == 4 xor 5 >>> 6"));
+}
+
 TEST_F(PrecedenceTest, match) {
   ASSERT_NO_FATAL_FAILURE(this->equals("((((((((1 < 2) > 3) == 4) >= 5) !~ 6) <= 7) != 8) =~ 9)",
                                        "1 < 2 > 3 == 4 >= 5 !~ 6 <= 7 != 8 =~ 9"));
