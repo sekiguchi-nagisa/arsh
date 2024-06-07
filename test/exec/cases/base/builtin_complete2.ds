@@ -16,7 +16,7 @@ function assertArray($x : Array<String>, $y : Array<String>) {
         'RANDOM', 'REPLY', 'SCRIPT_DIR', 'SCRIPT_NAME', 'SECONDS', 'SIG',
         'SIGABRT', 'SIGALRM', 'SIGCHLD', 'SIGCONT', 'SIGFPE', 'SIGHUP',
         'SIGILL', 'SIGINT', 'SIGKILL', 'SIGPIPE', 'SIGQUIT', 'SIGSEGV',
-        'SIGSTOP', 'SIGTERM', 'SIGTSTP', 'SIGTTIN', 'SIGTTOU', 'SIGUSR1', 'SIGUSR2',
+        'SIGSTOP', 'SIGTERM', 'SIGTSTP', 'SIGTTIN', 'SIGTTOU', 'SIGUSR1', 'SIGUSR2', 'SIGWINCH',
         'SIG_DFL', 'SIG_EXIT', 'SIG_IGN',
         'STDERR', 'STDIN', 'STDOUT', 'SUBSHELL', 'TERM_HOOK',
         'TRUE', 'True', 'UID',  'USER', 'VERSION', 'XTRACEFD',

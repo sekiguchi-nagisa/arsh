@@ -16,6 +16,7 @@
 
 - add ``SUBSHELL`` variable for indicating subshell level
     - initial value is 0. if enter subshell, increment level
+- add ``SIGWINCH`` signal constant
 
 ### Changed
 

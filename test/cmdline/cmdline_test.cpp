@@ -448,6 +448,19 @@ TEST_F(CmdlineTest, signal) {
   ASSERT_NO_FATAL_FAILURE(this->expect(std::move(builder), 128 + SIGQUIT, "", str));
 }
 
+TEST_F(CmdlineTest, signalConst) {
+  const char *sigs[] = {
+      "SIGABRT", "SIGALRM", "SIGCHLD", "SIGCONT", "SIGFPE",  "SIGHUP",   "SIGILL",
+      "SIGINT",  "SIGKILL", "SIGPIPE", "SIGQUIT", "SIGSEGV", "SIGSTOP",  "SIGTERM",
+      "SIGTSTP", "SIGTTIN", "SIGTTOU", "SIGUSR1", "SIGUSR2", "SIGWINCH",
+  };
+  std::string text;
+  for (auto &sig : sigs) {
+    text += format("assert $%s == $SIG['%s']\n", sig, sig);
+  }
+  ASSERT_NO_FATAL_FAILURE(this->expect(DS(text.c_str()), 0));
+}
+
 TEST_F(CmdlineTest, execPath) {
   ASSERT_NO_FATAL_FAILURE(this->expect(DS("echo -n $BIN_NAME"), 0, BIN_PATH));
 }

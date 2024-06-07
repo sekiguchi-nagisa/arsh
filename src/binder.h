@@ -276,6 +276,7 @@ void bindBuiltins(Consumer &consumer, const SysConfig &config, TypePool &pool, N
       break;
     }
   }
+  binder.bindSmallConst("SIGWINCH", ConstEntry::SIG, SIGWINCH);
 
   // add alias
   {
