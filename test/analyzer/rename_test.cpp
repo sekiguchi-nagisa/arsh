@@ -926,6 +926,7 @@ eee() {}
 typedef TTT : Error
 function size() : Int for TTT { return 234; }
 function fff() {}
+typedef GGG() { var size = 34; }
 )");
 
   auto content = format(R"(
@@ -939,6 +940,7 @@ $EEE
 eee
 new TTT().size()
 $fff()
+new GGG().size
 )",
                         fileName.c_str());
   ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content.c_str(), 1));
@@ -955,6 +957,8 @@ $fff()
                                        {{2, "(5:9~5:13)"}, {1, "(9:10~9:14)"}}));
   ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 2, .line = 6, .character = 9}, "ggg",
                                        {{2, "(6:9~6:12)"}, {1, "(10:1~10:4)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 2, .line = 7, .character = 23}, "length",
+                                       {{2, "(7:20~7:24)"}, {1, "(11:10~11:14)"}}));
 
   // with conflict
   ASSERT_NO_FATAL_FAILURE(this->renameWithConflict(Request{.modId = 2, .line = 1, .character = 4},
@@ -978,6 +982,7 @@ eee() {}
 typedef TTT : Error
 function size() : Int for TTT { return 234; }
 function fff() {}
+typedef GGG() { var size = 34; }
 )");
 
   auto fileName2 = tempFileFactory.createTempFile("mod2.ds", format(R"(
@@ -996,6 +1001,7 @@ $EEE
 eee
 new TTT().size()
 $fff()
+new GGG().size
 )",
                         fileName2.c_str());
   ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content.c_str(), 1));
@@ -1012,6 +1018,8 @@ $fff()
                                        {{3, "(5:9~5:13)"}, {1, "(9:10~9:14)"}}));
   ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 3, .line = 6, .character = 9}, "ggg",
                                        {{3, "(6:9~6:12)"}, {1, "(10:1~10:4)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 3, .line = 7, .character = 23}, "length",
+                                       {{3, "(7:20~7:24)"}, {1, "(11:10~11:14)"}}));
 
   // with conflict
   ASSERT_NO_FATAL_FAILURE(this->renameWithConflict(Request{.modId = 3, .line = 1, .character = 4},
@@ -1035,6 +1043,7 @@ eee() {}
 typedef TTT : Error
 function size() : Int for TTT { return 234; }
 function fff() {}
+typedef GGG() { let size = 34; }
 )");
 
   auto content = format(R"(
@@ -1048,6 +1057,7 @@ $mod.EEE
 mod eee
 new mod.TTT().size()
 $mod.fff()
+new mod.GGG().size
 )",
                         fileName.c_str());
   ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content.c_str(), 1));
@@ -1086,6 +1096,9 @@ $mod.fff()
                                        {{2, "(6:9~6:12)"}, {1, "(10:5~10:8)"}}));
   ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 2, .line = 6, .character = 9}, "mod",
                                        {{2, "(6:9~6:12)"}, {1, "(10:5~10:8)"}}));
+
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 2, .line = 7, .character = 23}, "length",
+                                       {{2, "(7:20~7:24)"}, {1, "(11:14~11:18)"}}));
 }
 
 TEST_F(RenameTest, importModSymbol1) {
