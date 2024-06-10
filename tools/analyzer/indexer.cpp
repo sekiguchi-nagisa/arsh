@@ -29,7 +29,7 @@ namespace arsh::lsp {
 
 bool IndexBuilder::ScopeEntry::addDecl(const DeclSymbol &decl) {
   bool r1 = this->addDeclWithSpecifiedName(decl.getMangledName().toString(), decl);
-  if (decl.getKind() == DeclSymbol::Kind::MOD) {
+  if (decl.is(DeclSymbol::Kind::MOD)) {
     // register udc
     std::string name = DeclSymbol::mangle(DeclSymbol::Kind::CMD, decl.getMangledName());
     bool r2 = this->addDeclWithSpecifiedName(std::move(name), decl);
@@ -166,7 +166,7 @@ const Symbol *IndexBuilder::addSymbolImpl(const Type *recv, const NameInfo &name
     if (iter == this->foreign.end() || (*iter).getModId() != request.modId ||
         (*iter).getPos() != request.pos) { // not found, register foreign decl
       auto *ret = this->indexes.findDecl(request);
-      if (!ret || (!hasFlag(ret->getAttr(), DeclSymbol::Attr::GLOBAL | DeclSymbol::Attr::PUBLIC) &&
+      if (!ret || (!ret->has(DeclSymbol::Attr::GLOBAL | DeclSymbol::Attr::PUBLIC) &&
                    !isBuiltinMod(ref->getModId()))) {
         return nullptr;
       }
@@ -214,8 +214,7 @@ const DeclSymbol *IndexBuilder::addMemberDecl(const Type &recv, const NameInfo &
   return this->addMemberDecl(recv, nameInfo, kind, content.c_str(), token);
 }
 
-static std::string generateTupleInfo(const TypePool &pool, const Type &recv,
-                                     const Handle &handle) {
+static std::string generateTupleInfo(const TypePool &pool, const Type &recv, const Handle &handle) {
   if (handle.isMethodHandle()) { // for builtin method
     auto &methodHandle = cast<MethodHandle>(handle);
     assert(methodHandle.isNative());
@@ -482,7 +481,7 @@ void SymbolIndexer::visitCmdNode(CmdNode &node) {
   }
   if (auto nameInfo = getConstArg(node.getArgNodes()); symbol && nameInfo.hasValue()) {
     if (auto *decl = this->builder().findDecl(*symbol);
-        decl && decl->getKind() == DeclSymbol::Kind::MOD) { // resolve sub-command
+        decl && decl->is(DeclSymbol::Kind::MOD)) { // resolve sub-command
       auto ret = decl->getInfoAsModId();
       if (ret.second) {
         auto &type = *this->builder().getPool().getModTypeById(ret.first);

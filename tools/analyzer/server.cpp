@@ -140,8 +140,7 @@ LSPServer::resolvePosition(const TextDocumentPositionParams &params) {
 std::vector<Location> LSPServer::gotoDefinitionImpl(const SymbolRequest &request) const {
   std::vector<Location> values;
   findDeclaration(this->result.indexes, request, [&](const FindDeclResult &ret) {
-    if (isBuiltinMod(ret.decl.getModId()) ||
-        hasFlag(ret.decl.getAttr(), DeclSymbol::Attr::BUILTIN)) {
+    if (isBuiltinMod(ret.decl.getModId()) || ret.decl.has(DeclSymbol::Attr::BUILTIN)) {
       /**
        * ignore builtin module symbols and builtin type fields/methods
        */
@@ -797,8 +796,8 @@ Reply<std::vector<DocumentSymbol>> LSPServer::documentSymbol(const DocumentSymbo
     std::vector<DocumentSymbol> ret;
     if (auto index = this->result.indexes.find(resolved.asOk()->getSrcId())) {
       for (auto &decl : index->getDecls()) {
-        if (isBuiltinMod(decl.getModId()) || hasFlag(decl.getAttr(), DeclSymbol::Attr::BUILTIN) ||
-            !hasFlag(decl.getAttr(), DeclSymbol::Attr::GLOBAL)) {
+        if (isBuiltinMod(decl.getModId()) || decl.has(DeclSymbol::Attr::BUILTIN) ||
+            !decl.has(DeclSymbol::Attr::GLOBAL)) {
           continue;
         }
 

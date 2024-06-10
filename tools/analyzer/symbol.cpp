@@ -18,9 +18,9 @@
 
 #include <cmd_desc.h>
 #include <constant.h>
+#include <format_signature.h>
 #include <misc/format.hpp>
 #include <type.h>
-#include <format_signature.h>
 
 #include "source.h"
 #include "symbol.h"
@@ -64,7 +64,7 @@ std::string generateHoverContent(const SourceManager &srcMan, const SymbolIndexe
                                  const Source &src, const FindDeclResult &result, bool markup) {
   auto &decl = result.decl;
   StringRef packedParamTypes;
-  if (decl.getKind() == DeclSymbol::Kind::GENERIC_METHOD) {
+  if (decl.is(DeclSymbol::Kind::GENERIC_METHOD)) {
     if (auto index = indexes.find(src.getSrcId())) {
       auto *r = index->getPackedParamTypesMap().lookupByPos(result.request.getPos());
       if (r) {

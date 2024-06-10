@@ -179,6 +179,10 @@ public:
 
   Attr getAttr() const { return this->attr; }
 
+  bool is(Kind k) const { return this->getKind() == k; }
+
+  bool has(Attr a) const;
+
   unsigned int getScopeId() const { return this->scopeId; }
 
   StringRef getMangledName() const { return this->mangledName.get(); }

@@ -125,13 +125,13 @@ static bool isImportingIndex(const SymbolIndexes &indexes, const ModId targetMod
 
 static bool equalsName(const DeclSymbol &decl, const std::string &mangledNewDeclName,
                        const DeclSymbol &target) {
-  if (target.getKind() == DeclSymbol::Kind::MOD) {
+  if (target.is(DeclSymbol::Kind::MOD)) {
     switch (decl.getKind()) {
     case DeclSymbol::Kind::TYPE_ALIAS:
     case DeclSymbol::Kind::ERROR_TYPE_DEF:
     case DeclSymbol::Kind::CONSTRUCTOR:
     case DeclSymbol::Kind::CMD:
-      if (!hasFlag(decl.getAttr(), DeclSymbol::Attr::MEMBER)) {
+      if (!decl.has(DeclSymbol::Attr::MEMBER)) {
         auto name = target.toDemangledName();
         auto mangledName = DeclSymbol::mangle(decl.getKind(), name);
         if (mangledName == mangledNewDeclName) {
@@ -231,12 +231,12 @@ static bool checkNameConflict(const SymbolIndexes &indexes, const DeclSymbol &de
     mangledNewNames.push_back(std::move(mangledNewName));
 
     // for mod variable
-    if (decl.getKind() == DeclSymbol::Kind::MOD) {
+    if (decl.is(DeclSymbol::Kind::MOD)) {
       mangledNewNames.push_back(DeclSymbol::mangle(DeclSymbol::Kind::TYPE_ALIAS, newName));
       mangledNewNames.push_back(DeclSymbol::mangle(DeclSymbol::Kind::CMD, newName));
     }
     // for constructor
-    if (hasFlag(decl.getAttr(), DeclSymbol::Attr::MEMBER)) {
+    if (decl.has(DeclSymbol::Attr::MEMBER)) {
       mangledNewNames.push_back(DeclSymbol::mangle(decl.getKind(), newName));
     }
   }
@@ -260,7 +260,7 @@ static bool checkNameConflict(const SymbolIndexes &indexes, const DeclSymbol &de
         continue; // ignore private symbol
       }
       if (auto *r = importedIndex->findGlobal(mangledNewName)) {
-        if (hasFlag(decl.getAttr(), DeclSymbol::Attr::MEMBER)) { // check usage in constructor
+        if (decl.has(DeclSymbol::Attr::MEMBER)) { // check usage in constructor
           auto *foreign =
               declIndex->findForeignDecl(SymbolRequest{.modId = r->getModId(), .pos = r->getPos()});
           if (!foreign || !isUsedInScope(*foreign, declScope)) {
@@ -276,8 +276,8 @@ static bool checkNameConflict(const SymbolIndexes &indexes, const DeclSymbol &de
   }
 
   // check name conflict in this index
-  if (decl.getKind() == DeclSymbol::Kind::CMD ||
-      decl.getKind() == DeclSymbol::Kind::MOD) { // check already used external command names
+  if (decl.is(DeclSymbol::Kind::CMD) ||
+      decl.is(DeclSymbol::Kind::MOD)) { // check already used external command names
     const auto &set = declIndex->getExternalCmdSet();
     if (set.find(newName.toString()) != set.end()) {
       return false;
@@ -289,8 +289,8 @@ static bool checkNameConflict(const SymbolIndexes &indexes, const DeclSymbol &de
     if (!mayBeConflict(declScope, decl.toRef(), targetScope, target.toRef())) {
       continue;
     }
-    if (hasFlag(decl.getAttr(), DeclSymbol::Attr::MEMBER) &&
-        !hasFlag(target.getAttr(), DeclSymbol::Attr::MEMBER)) { // check usage in constructor
+    if (decl.has(DeclSymbol::Attr::MEMBER) &&
+        !target.has(DeclSymbol::Attr::MEMBER)) { // check usage in constructor
       if (!isUsedInScope(target, declScope)) {
         continue;
       }
@@ -301,7 +301,7 @@ static bool checkNameConflict(const SymbolIndexes &indexes, const DeclSymbol &de
   }
 
   // check name conflict in other indexes that importing this index
-  if (!hasFlag(decl.getAttr(), DeclSymbol::Attr::GLOBAL)) {
+  if (!decl.has(DeclSymbol::Attr::GLOBAL)) {
     return true;
   }
   for (const auto &index : indexes) {
@@ -336,8 +336,8 @@ RenameValidationStatus validateRename(const SymbolIndexes &indexes, SymbolReques
   }
   const auto &decl = resolved.unwrap().decl;
 
-  if (isBuiltinMod(decl.getModId()) || hasFlag(decl.getAttr(), DeclSymbol::Attr::BUILTIN) ||
-      decl.getKind() == DeclSymbol::Kind::THIS) {
+  if (isBuiltinMod(decl.getModId()) || decl.has(DeclSymbol::Attr::BUILTIN) ||
+      decl.is( DeclSymbol::Kind::THIS)) {
     return RenameValidationStatus::BUILTIN;
   }
 
@@ -347,8 +347,8 @@ RenameValidationStatus validateRename(const SymbolIndexes &indexes, SymbolReques
     return RenameValidationStatus::DO_NOTHING;
   }
   auto actualNewName = newName.toString();
-  assert(decl.getKind() != DeclSymbol::Kind::BUILTIN_CMD);
-  if (decl.getKind() == DeclSymbol::Kind::CMD) {
+  assert(!decl.is(DeclSymbol::Kind::BUILTIN_CMD));
+  if (decl.is(DeclSymbol::Kind::CMD)) {
     actualNewName = quoteCommandName(actualNewName);
     if (actualNewName.empty()) {
       return RenameValidationStatus::INVALID_NAME;
@@ -357,7 +357,7 @@ RenameValidationStatus validateRename(const SymbolIndexes &indexes, SymbolReques
     if (!isValidIdentifier(actualNewName)) {
       return RenameValidationStatus::INVALID_NAME;
     }
-    if (decl.getKind() == DeclSymbol::Kind::MOD) {
+    if (decl.is( DeclSymbol::Kind::MOD)) {
       if (isKeyword(actualNewName)) {
         return RenameValidationStatus::KEYWORD;
       }
@@ -384,7 +384,7 @@ Optional<FindDeclResult> resolveRenameLocation(const SymbolIndexes &indexes,
     decl = &r.decl;
     symbol = &r.request;
   });
-  if (decl == nullptr || decl->getKind() == DeclSymbol::Kind::HERE_START) {
+  if (decl == nullptr || decl->is(DeclSymbol::Kind::HERE_START)) {
     return {};
   }
   return FindDeclResult{

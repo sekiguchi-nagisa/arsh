@@ -40,6 +40,8 @@ void DeclBase::addRef(SymbolRef ref) {
 // ##     DeclSymbol     ##
 // ########################
 
+bool DeclSymbol::has(Attr a) const { return hasFlag(this->getAttr(), a); }
+
 std::pair<ModId, bool> DeclSymbol::getInfoAsModId() const {
   auto ref = this->getInfo();
   auto value = convertToDecimal<int>(ref.begin(), ref.end());
@@ -270,7 +272,7 @@ unsigned int findAllReferences(const SymbolIndexes &indexes, const DeclSymbol &d
                                bool ignoreBuiltin,
                                const std::function<void(const FindRefsResult &)> &consumer) {
   unsigned int count = 0;
-  if (hasFlag(decl.getAttr(), DeclSymbol::Attr::BUILTIN) && ignoreBuiltin) {
+  if (decl.has(DeclSymbol::Attr::BUILTIN) && ignoreBuiltin) {
     return 0;
   }
 
