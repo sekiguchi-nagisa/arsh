@@ -40,20 +40,19 @@ static std::unordered_set<StringRef, StrRefHash> initStatementKeywordSet() {
   return set;
 }
 
-static bool isKeyword(StringRef name) {
+static bool isKeyword(const StringRef name) {
   static const auto keywordSet = initStatementKeywordSet();
   return keywordSet.find(name) != keywordSet.end();
 }
 
-static std::string quoteCommandName(StringRef name) {
+static std::string quoteCommandName(const StringRef name) {
   if (isKeyword(name)) {
     std::string ret = "\\";
     ret += name;
     return ret;
   }
 
-  std::string ret;
-  if (quoteAsCmdOrShellArg(name, ret, true)) {
+  if (std::string ret; quoteAsCmdOrShellArg(name, ret, true)) {
     return ret;
   }
   return "";
@@ -195,6 +194,15 @@ static bool mayBeConflict(const ScopeInterval &declScope, const SymbolRef declRe
   return false;
 }
 
+static bool isUsedInScope(const DeclBase &decl, const ScopeInterval &scope) {
+  for (auto &ref : decl.getRefs()) {
+    if (scope.isIncluding(ref)) {
+      return true;
+    }
+  }
+  return false;
+}
+
 static bool checkNameConflict(const SymbolIndexes &indexes, const DeclSymbol &decl,
                               StringRef newName,
                               const std::function<void(const RenameResult &)> &consumer) {
@@ -205,10 +213,6 @@ static bool checkNameConflict(const SymbolIndexes &indexes, const DeclSymbol &de
   case DeclSymbol::Kind::EXPORT_ENV:
   case DeclSymbol::Kind::FUNC:
   case DeclSymbol::Kind::TYPE_ALIAS:
-    if (hasFlag(decl.getAttr(), DeclSymbol::Attr::MEMBER)) {
-      return false; // TODO: support field
-    }
-    break;
   case DeclSymbol::Kind::ERROR_TYPE_DEF:
   case DeclSymbol::Kind::CONSTRUCTOR:
   case DeclSymbol::Kind::METHOD:
@@ -231,6 +235,10 @@ static bool checkNameConflict(const SymbolIndexes &indexes, const DeclSymbol &de
       mangledNewNames.push_back(DeclSymbol::mangle(DeclSymbol::Kind::TYPE_ALIAS, newName));
       mangledNewNames.push_back(DeclSymbol::mangle(DeclSymbol::Kind::CMD, newName));
     }
+    // for constructor
+    if (hasFlag(decl.getAttr(), DeclSymbol::Attr::MEMBER)) {
+      mangledNewNames.push_back(DeclSymbol::mangle(decl.getKind(), newName));
+    }
   }
 
   const auto declIndex = indexes.find(decl.getModId());
@@ -239,8 +247,8 @@ static bool checkNameConflict(const SymbolIndexes &indexes, const DeclSymbol &de
   // check name conflict in global/inlined imported indexes (also include builtin index)
   auto importedIndexes = resolveGlobalImportedIndexes(indexes, declIndex);
   for (auto &[ref, importedIndex] : importedIndexes) {
+    const auto &declScope = declIndex->getScopes()[decl.getScopeId()];
     if (!isBuiltinMod(importedIndex->getModId())) {
-      const auto &declScope = declIndex->getScopes()[decl.getScopeId()];
       const auto &targetScope = declIndex->getScopes()[0]; // always global scope
       if (!mayBeConflict(declScope, decl.toRef(), targetScope, ref)) {
         continue;
@@ -252,6 +260,13 @@ static bool checkNameConflict(const SymbolIndexes &indexes, const DeclSymbol &de
         continue; // ignore private symbol
       }
       if (auto *r = importedIndex->findGlobal(mangledNewName)) {
+        if (hasFlag(decl.getAttr(), DeclSymbol::Attr::MEMBER)) { // check usage in constructor
+          auto *foreign =
+              declIndex->findForeignDecl(SymbolRequest{.modId = r->getModId(), .pos = r->getPos()});
+          if (!foreign || !isUsedInScope(*foreign, declScope)) {
+            continue;
+          }
+        }
         if (consumer) {
           consumer(Err(RenameConflict(*r)));
         }
@@ -268,11 +283,17 @@ static bool checkNameConflict(const SymbolIndexes &indexes, const DeclSymbol &de
       return false;
     }
   }
-  for (const auto &target : declIndex->getDecls()) { // FIXME: check constructor field
+  for (const auto &target : declIndex->getDecls()) {
     const auto &declScope = declIndex->getScopes()[decl.getScopeId()];
     const auto &targetScope = declIndex->getScopes()[target.getScopeId()];
     if (!mayBeConflict(declScope, decl.toRef(), targetScope, target.toRef())) {
       continue;
+    }
+    if (hasFlag(decl.getAttr(), DeclSymbol::Attr::MEMBER) &&
+        !hasFlag(target.getAttr(), DeclSymbol::Attr::MEMBER)) { // check usage in constructor
+      if (!isUsedInScope(target, declScope)) {
+        continue;
+      }
     }
     if (!checkMangledNames(decl, target, mangledNewNames, consumer)) {
       return false;
@@ -363,7 +384,7 @@ Optional<FindDeclResult> resolveRenameLocation(const SymbolIndexes &indexes,
     decl = &r.decl;
     symbol = &r.request;
   });
-  if ((decl == nullptr) || decl->getKind() == DeclSymbol::Kind::HERE_START) {
+  if (decl == nullptr || decl->getKind() == DeclSymbol::Kind::HERE_START) {
     return {};
   }
   return FindDeclResult{

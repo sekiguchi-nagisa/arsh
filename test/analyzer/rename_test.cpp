@@ -409,6 +409,77 @@ CCC=@@@ DDD=^^^^ {
                                        RenameValidationStatus::NAME_CONFLICT));
 }
 
+TEST_F(RenameTest, field1) {
+  const char *content = R"(  var dummy = "234"; var result = 345
+typedef AAA() {
+  var aaa = 345
+  let bbb = 99 + $result; 34 is Boolean
+  let ccc = { $aaa + $bbb + $PATH; }
+  typedef TYPE = typeof($ccc)
+}
+var aaa = new AAA()
+$aaa.aaa
+$aaa.bbb
+$aaa.ccc is AAA.TYPE
+)";
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, 1));
+
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 2, .character = 7}, "AAA",
+                                       {{1, "(2:6~2:9)"}, {1, "(4:15~4:18)"}, {1, "(8:5~8:8)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 3, .character = 6}, "DDDD",
+                                       {{1, "(3:6~3:9)"}, {1, "(4:22~4:25)"}, {1, "(9:5~9:8)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 4, .character = 7}, "EEEE",
+                                       {{1, "(4:6~4:9)"}, {1, "(5:25~5:28)"}, {1, "(10:5~10:8)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 5, .character = 12}, "Bool",
+                                       {{1, "(5:10~5:14)"}, {1, "(10:16~10:20)"}}));
+  ASSERT_NO_FATAL_FAILURE(
+      this->rename(Request{.modId = 1, .line = 2, .character = 7}, "OSTYPE",
+                   {{1, "(2:6~2:9)"},
+                    {1, "(4:15~4:18)"},
+                    {1, "(8:5~8:8)"}})); // rename to builtin variable names (allow shadowing)
+  ASSERT_NO_FATAL_FAILURE(
+      this->rename(Request{.modId = 1, .line = 2, .character = 7}, "dummy",
+                   {{1, "(2:6~2:9)"},
+                    {1, "(4:15~4:18)"},
+                    {1, "(8:5~8:8)"}})); // rename to global variable names (allow shadowing)
+
+  // with conflict
+  ASSERT_NO_FATAL_FAILURE(this->renameWithConflict(Request{.modId = 1, .line = 2, .character = 8},
+                                                   "bbb", {1, "(3:6~3:9)"}));
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 2, .character = 8}, "PATH",
+                                       RenameValidationStatus::NAME_CONFLICT));
+  ASSERT_NO_FATAL_FAILURE(this->renameWithConflict(Request{.modId = 1, .line = 3, .character = 8},
+                                                   "result", {1, "(0:25~0:31)"}));
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 5, .character = 11}, "Boolean",
+                                       RenameValidationStatus::NAME_CONFLICT));
+}
+
+TEST_F(RenameTest, field2) {
+  const char *content = R"(
+var dummy = "234";
+let result = 345
+typedef AAA {
+  var aaa: Int
+  let bbb: String
+}
+var aaa = new AAA(23, 'hello')
+$aaa.aaa
+$aaa.bbb
+)";
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, 1));
+
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 4, .character = 8}, "AAA",
+                                       {{1, "(4:6~4:9)"}, {1, "(8:5~8:8)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 5, .character = 8}, "dummy",
+                                       {{1, "(5:6~5:9)"}, {1, "(9:5~9:8)"}}));
+
+  // with conflict
+  ASSERT_NO_FATAL_FAILURE(this->renameWithConflict(Request{.modId = 1, .line = 4, .character = 8},
+                                                   "bbb", {1, "(5:6~5:9)"}));
+  ASSERT_NO_FATAL_FAILURE(this->renameWithConflict(Request{.modId = 1, .line = 5, .character = 8},
+                                                   "aaa", {1, "(4:6~4:9)"}));
+}
+
 TEST_F(RenameTest, type1) {
   const char *content = R"(
 typedef AAA = Int

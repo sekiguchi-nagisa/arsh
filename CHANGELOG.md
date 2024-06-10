@@ -42,6 +42,12 @@
 - complete flags/options/sub-commands defined via ``Flag``, ``Option``, ``SubCmd`` attribute
 - builtin ``kill`` command support ``-L`` (equivalent to ``-l`` option)
 
+#### LSP
+
+- improve ``textDocument/rename``
+    - now enabled by default
+    - support field rename
+
 #### Module
 
 - **Breaking Change**: add ``.arsh`` file extension to std modules

@@ -360,6 +360,11 @@ struct ScopeInterval {
   bool isIncluding(const ScopeInterval &o) const {
     return this->beginPos <= o.beginPos && o.endPos <= this->endPos;
   }
+
+  bool isIncluding(const SymbolRef symbol) const {
+    auto token = symbol.getToken();
+    return this->beginPos <= token.pos && token.endPos() <= this->endPos;
+  }
 };
 
 class PackedParamTypesMap {
