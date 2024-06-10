@@ -52,32 +52,32 @@ std::pair<ModId, bool> DeclSymbol::getInfoAsModId() const {
 std::string DeclSymbol::mangle(StringRef recvTypeName, Kind k, StringRef name) {
   std::string value;
   switch (k) {
-  case DeclSymbol::Kind::BUILTIN_CMD:
-  case DeclSymbol::Kind::CMD:
+  case Kind::BUILTIN_CMD:
+  case Kind::CMD:
     value = toCmdFullName(name);
     break;
-  case DeclSymbol::Kind::BUILTIN_TYPE:
-  case DeclSymbol::Kind::TYPE_ALIAS:
-  case DeclSymbol::Kind::ERROR_TYPE_DEF:
-  case DeclSymbol::Kind::CONSTRUCTOR:
+  case Kind::BUILTIN_TYPE:
+  case Kind::TYPE_ALIAS:
+  case Kind::ERROR_TYPE_DEF:
+  case Kind::CONSTRUCTOR:
     value = toTypeAliasFullName(name);
     break;
-  case DeclSymbol::Kind::METHOD:
-  case DeclSymbol::Kind::GENERIC_METHOD: {
+  case Kind::METHOD:
+  case Kind::GENERIC_METHOD: {
     value = name.toString();
     value += METHOD_SYMBOL_SUFFIX;
     break;
   }
-  case DeclSymbol::Kind::VAR:
-  case DeclSymbol::Kind::LET:
-  case DeclSymbol::Kind::EXPORT_ENV:
-  case DeclSymbol::Kind::IMPORT_ENV:
-  case DeclSymbol::Kind::THIS:
-  case DeclSymbol::Kind::CONST:
-  case DeclSymbol::Kind::FUNC:
-  case DeclSymbol::Kind::MOD:
-  case DeclSymbol::Kind::MOD_CONST:
-  case DeclSymbol::Kind::HERE_START:
+  case Kind::VAR:
+  case Kind::LET:
+  case Kind::EXPORT_ENV:
+  case Kind::IMPORT_ENV:
+  case Kind::THIS:
+  case Kind::CONST:
+  case Kind::FUNC:
+  case Kind::MOD:
+  case Kind::MOD_CONST:
+  case Kind::HERE_START:
     value = name.toString();
     break;
   }
@@ -100,30 +100,30 @@ std::pair<StringRef, StringRef> DeclSymbol::demangleWithRecv(Kind k, Attr a,
   }
 
   switch (k) {
-  case DeclSymbol::Kind::BUILTIN_CMD:
-  case DeclSymbol::Kind::CMD:
+  case Kind::BUILTIN_CMD:
+  case Kind::CMD:
     mangledName.removeSuffix(strlen(CMD_SYMBOL_SUFFIX));
     break;
-  case DeclSymbol::Kind::BUILTIN_TYPE:
-  case DeclSymbol::Kind::TYPE_ALIAS:
-  case DeclSymbol::Kind::ERROR_TYPE_DEF:
-  case DeclSymbol::Kind::CONSTRUCTOR:
+  case Kind::BUILTIN_TYPE:
+  case Kind::TYPE_ALIAS:
+  case Kind::ERROR_TYPE_DEF:
+  case Kind::CONSTRUCTOR:
     mangledName.removeSuffix(strlen(TYPE_ALIAS_SYMBOL_SUFFIX));
     break;
-  case DeclSymbol::Kind::METHOD:
-  case DeclSymbol::Kind::GENERIC_METHOD:
+  case Kind::METHOD:
+  case Kind::GENERIC_METHOD:
     mangledName.removeSuffix(strlen(METHOD_SYMBOL_SUFFIX));
     break;
-  case DeclSymbol::Kind::VAR:
-  case DeclSymbol::Kind::LET:
-  case DeclSymbol::Kind::EXPORT_ENV:
-  case DeclSymbol::Kind::IMPORT_ENV:
-  case DeclSymbol::Kind::THIS:
-  case DeclSymbol::Kind::CONST:
-  case DeclSymbol::Kind::FUNC:
-  case DeclSymbol::Kind::MOD:
-  case DeclSymbol::Kind::MOD_CONST:
-  case DeclSymbol::Kind::HERE_START:
+  case Kind::VAR:
+  case Kind::LET:
+  case Kind::EXPORT_ENV:
+  case Kind::IMPORT_ENV:
+  case Kind::THIS:
+  case Kind::CONST:
+  case Kind::FUNC:
+  case Kind::MOD:
+  case Kind::MOD_CONST:
+  case Kind::HERE_START:
     break;
   }
   return {recvTypeName, mangledName};

@@ -244,14 +244,14 @@ public:
 
   static const char *getVarDeclPrefix(Kind k) {
     switch (k) {
-    case DeclSymbol::Kind::VAR:
+    case Kind::VAR:
       return "var";
-    case DeclSymbol::Kind::LET:
-    case DeclSymbol::Kind::THIS:
+    case Kind::LET:
+    case Kind::THIS:
       return "let";
-    case DeclSymbol::Kind::EXPORT_ENV:
+    case Kind::EXPORT_ENV:
       return "exportenv";
-    case DeclSymbol::Kind::IMPORT_ENV:
+    case Kind::IMPORT_ENV:
       return "importenv";
     default:
       return "";
@@ -319,7 +319,7 @@ public:
 
 class IndexLink {
 public:
-  enum class ImportAttr {
+  enum class ImportAttr : unsigned char {
     GLOBAL = 1u << 0u,
     INLINED = 1u << 1u,
   };
