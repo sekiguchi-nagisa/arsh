@@ -72,8 +72,9 @@ std::string DeclSymbol::mangle(StringRef recvTypeName, Kind k, StringRef name) {
   }
   case Kind::VAR:
   case Kind::LET:
-  case Kind::EXPORT_ENV:
   case Kind::IMPORT_ENV:
+  case Kind::EXPORT_ENV:
+  case Kind::PREFIX_ENV:
   case Kind::THIS:
   case Kind::CONST:
   case Kind::FUNC:
@@ -118,8 +119,9 @@ std::pair<StringRef, StringRef> DeclSymbol::demangleWithRecv(Kind k, Attr a,
     break;
   case Kind::VAR:
   case Kind::LET:
-  case Kind::EXPORT_ENV:
   case Kind::IMPORT_ENV:
+  case Kind::EXPORT_ENV:
+  case Kind::PREFIX_ENV:
   case Kind::THIS:
   case Kind::CONST:
   case Kind::FUNC:

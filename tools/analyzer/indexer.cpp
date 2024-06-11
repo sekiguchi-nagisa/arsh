@@ -602,7 +602,7 @@ void SymbolIndexer::visitPrefixAssignNode(PrefixAssignNode &node) {
       auto &leftNode = cast<VarNode>(e->getLeftNode());
       NameInfo info(leftNode.getToken(), leftNode.getVarName());
       this->builder().addDecl(info, leftNode.getType(), e->getToken(),
-                              DeclSymbol::Kind::EXPORT_ENV);
+                              DeclSymbol::Kind::PREFIX_ENV);
     }
     this->visit(node.getExprNode());
   } else {

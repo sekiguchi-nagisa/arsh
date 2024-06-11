@@ -123,6 +123,7 @@ public:
     LET,
     IMPORT_ENV,
     EXPORT_ENV,
+    PREFIX_ENV, // for prefix env assignment (ENV=value)
     THIS,
     CONST,
     MOD_CONST,
@@ -254,6 +255,7 @@ public:
     case Kind::THIS:
       return "let";
     case Kind::EXPORT_ENV:
+    case Kind::PREFIX_ENV:
       return "exportenv";
     case Kind::IMPORT_ENV:
       return "importenv";

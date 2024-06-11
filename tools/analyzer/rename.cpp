@@ -211,6 +211,7 @@ static bool checkNameConflict(const SymbolIndexes &indexes, const DeclSymbol &de
   case DeclSymbol::Kind::LET:
   case DeclSymbol::Kind::IMPORT_ENV:
   case DeclSymbol::Kind::EXPORT_ENV:
+  case DeclSymbol::Kind::PREFIX_ENV:
   case DeclSymbol::Kind::FUNC:
   case DeclSymbol::Kind::TYPE_ALIAS:
   case DeclSymbol::Kind::ERROR_TYPE_DEF:
@@ -260,7 +261,8 @@ static bool checkNameConflict(const SymbolIndexes &indexes, const DeclSymbol &de
         continue; // ignore private symbol
       }
       if (auto *r = importedIndex->findGlobal(mangledNewName)) {
-        if (decl.has(DeclSymbol::Attr::MEMBER)) { // check usage in constructor
+        if (decl.has(DeclSymbol::Attr::MEMBER) ||    // check usage in constructor
+            decl.is(DeclSymbol::Kind::PREFIX_ENV)) { // allow shadowing of prefix assignment env
           auto *foreign =
               declIndex->findForeignDecl(SymbolRequest{.modId = r->getModId(), .pos = r->getPos()});
           if (!foreign || !isUsedInScope(*foreign, declScope)) {
@@ -293,6 +295,11 @@ static bool checkNameConflict(const SymbolIndexes &indexes, const DeclSymbol &de
         !target.has(DeclSymbol::Attr::MEMBER)) { // check usage in constructor
       if (!isUsedInScope(target, declScope)) {
         continue;
+      }
+    }
+    if (decl.is(DeclSymbol::Kind::PREFIX_ENV)) {
+      if (!isUsedInScope(target, declScope)) {
+        continue; // allow shadowing of prefix assignment env
       }
     }
     if (!checkMangledNames(decl, target, mangledNewNames, consumer)) {
@@ -337,7 +344,7 @@ RenameValidationStatus validateRename(const SymbolIndexes &indexes, SymbolReques
   const auto &decl = resolved.unwrap().decl;
 
   if (isBuiltinMod(decl.getModId()) || decl.has(DeclSymbol::Attr::BUILTIN) ||
-      decl.is( DeclSymbol::Kind::THIS)) {
+      decl.is(DeclSymbol::Kind::THIS)) {
     return RenameValidationStatus::BUILTIN;
   }
 
@@ -357,7 +364,7 @@ RenameValidationStatus validateRename(const SymbolIndexes &indexes, SymbolReques
     if (!isValidIdentifier(actualNewName)) {
       return RenameValidationStatus::INVALID_NAME;
     }
-    if (decl.is( DeclSymbol::Kind::MOD)) {
+    if (decl.is(DeclSymbol::Kind::MOD)) {
       if (isKeyword(actualNewName)) {
         return RenameValidationStatus::KEYWORD;
       }

@@ -382,10 +382,10 @@ fff($pp: Param) {
 
 TEST_F(RenameTest, env) {
   const char *content = R"(
-importenv AAA
+importenv AAA; importenv ZZZ
 exportenv BBB = $OSTYPE
 CCC=@@@ DDD=^^^^ {
-  echo $CCC
+  echo $CCC $PATH
   "$BBB"
   importenv DDD : \
   $AAA
@@ -401,11 +401,19 @@ CCC=@@@ DDD=^^^^ {
                                        {{1, "(3:0~3:3)"}, {1, "(4:8~4:11)"}}));
   ASSERT_NO_FATAL_FAILURE(
       this->rename(Request{.modId = 1, .line = 3, .character = 10}, "var", {{1, "(3:8~3:11)"}}));
+  ASSERT_NO_FATAL_FAILURE(
+      this->rename(Request{.modId = 1, .line = 3, .character = 10}, "IFS", {{1, "(3:8~3:11)"}}));
+  ASSERT_NO_FATAL_FAILURE(
+      this->rename(Request{.modId = 1, .line = 3, .character = 10}, "ZZZ", {{1, "(3:8~3:11)"}}));
 
   // with conflict
   ASSERT_NO_FATAL_FAILURE(this->renameWithConflict(Request{.modId = 1, .line = 1, .character = 12},
                                                    "DDD", {1, "(3:8~3:11)"}));
   ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 2, .character = 12}, "PATH",
+                                       RenameValidationStatus::NAME_CONFLICT));
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 3, .character = 10}, "PATH",
+                                       RenameValidationStatus::NAME_CONFLICT));
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 3, .character = 10}, "AAA",
                                        RenameValidationStatus::NAME_CONFLICT));
 }
 
