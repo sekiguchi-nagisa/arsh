@@ -43,6 +43,8 @@
 - ``complete`` command correctly recognize module (put ``module`` description instead of ``user-defined``)
 - complete flags/options/sub-commands defined via ``Flag``, ``Option``, ``SubCmd`` attribute
 - builtin ``kill`` command support ``-L`` (equivalent to ``-l`` option)
+- after call builtin ``exec``, decrement ``SHLVL``
+    - if ``SHLVL`` is unset or invalid number, reset to 0
 
 #### LSP
 

@@ -1198,9 +1198,35 @@ int VM::builtinExec(ARState &state, ArrayObject &argvObj, Value &&redir) {
     const auto begin = argvObj.getValues().begin();
     argvObj.refValues().erase(begin, begin + index); // not check iterator invalidation
 
+    // decrement SHLVL before call command
+    std::string oldSHLVL;
+    bool hasSHLVL = false;
+    if (!clearEnv) {
+      if (const char *v = getenv(ENV_SHLVL)) {
+        hasSHLVL = true;
+        oldSHLVL = v;
+      }
+      int64_t level = getShellLevel();
+      if (level > 0) {
+        level--;
+      } else {
+        level = 0;
+      }
+      setenv(ENV_SHLVL, std::to_string(level).c_str(), 1);
+    }
+
     char *envp[] = {nullptr};
     xexecve(filePath, argvObj, clearEnv ? envp : nullptr);
     raiseCmdError(state, argvObj.getValues()[0].asCStr(), errno);
+
+    // restore SHLVL
+    if (!clearEnv) {
+      if (hasSHLVL) {
+        setenv(ENV_SHLVL, oldSHLVL.c_str(), 1);
+      } else {
+        unsetenv(ENV_SHLVL);
+      }
+    }
     return 1;
   }
   return 0;

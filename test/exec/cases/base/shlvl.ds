@@ -22,3 +22,19 @@ assert "$(SHLVL=-1 call $BIN_NAME -e env | grep ^SHLVL=)" == "SHLVL=1"
 assert "$(SHLVL=-9223372036854775808 call $BIN_NAME -e env | grep ^SHLVL=)" == "SHLVL=1"
 assert "$(SHLVL=-9223372036854775807 call $BIN_NAME -e env | grep ^SHLVL=)" == "SHLVL=1"
 assert "$(SHLVL=-9223372036854775809 call $BIN_NAME -e env | grep ^SHLVL=)" == "SHLVL=1"  # out of range
+
+## decrement SHLVL after call exec
+assert "$(SHLVL=12 exec printenv SHLVL)" == "11"
+assert "$(SHLVL=0 exec printenv SHLVL)" == "0"
+assert "$(SHLVL=-23431212 exec printenv SHLVL)" == "0"
+assert "$(SHLVL=farejfiaj exec printenv SHLVL)" == "0"
+assert "$(SHLVL= exec printenv SHLVL)" == "0"
+assert "$(unsetenv SHLVL && exec printenv SHLVL)" == "0"
+
+## preserve SHLVL exec failed
+assert "$({
+  exportenv SHLVL = '10';
+  assert $SHLVL == '10'
+  try { exec jfiaejfeoa; } catch _ {}
+  echo $SHLVL
+})" == "10"
