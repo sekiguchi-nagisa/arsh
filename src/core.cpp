@@ -52,6 +52,7 @@ void reassignReplyVar(ARState &st) {
 }
 
 void raiseError(ARState &st, TYPE type, std::string &&message, int64_t status) {
+  assert(!st.hasError());
   message.resize(std::min(message.size(), SYS_LIMIT_ERROR_MSG_MAX)); // truncate
   auto except = ErrorObject::newError(st, st.typePool.get(type),
                                       Value::createStr(std::move(message)), status);

@@ -38,6 +38,8 @@
     - ``raise`` -> ``kill``
 - **Breaking Change**: no longer update ``PPID`` in subshell for posix compatibility.
     - now ``PPID`` always indicates same value
+- **Breaking Change**: builtin ``exec`` command now throw ``SystemError`` if command execution failed
+    - now do not exit shell itself
 - ``complete`` command correctly recognize module (put ``module`` description instead of ``user-defined``)
 - complete flags/options/sub-commands defined via ``Flag``, ``Option``, ``SubCmd`` attribute
 - builtin ``kill`` command support ``-L`` (equivalent to ``-l`` option)

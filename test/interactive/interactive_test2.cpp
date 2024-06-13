@@ -384,6 +384,22 @@ TEST_F(InteractiveTest, fallback) {
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
 }
 
+TEST_F(InteractiveTest, execFail) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+
+  const char *error = R"([runtime error]
+SystemError: execution error: hgoirahj: command not found
+    from (stdin):1 '<toplevel>()'
+)";
+
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("exec hgoirahj", "", error));
+
+  this->send(CTRL_D);
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(127, WaitStatus::EXITED, "\n"));
+}
+
 TEST_F(InteractiveTest, moduleError1) {
   this->invokeImpl({"--quiet", "--norc"}, true);
 

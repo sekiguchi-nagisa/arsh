@@ -1200,8 +1200,8 @@ int VM::builtinExec(ARState &state, ArrayObject &argvObj, Value &&redir) {
 
     char *envp[] = {nullptr};
     xexecve(filePath, argvObj, clearEnv ? envp : nullptr);
-    PERROR(state, argvObj, "%s", argvObj.getValues()[0].asCStr());
-    exit(1);
+    raiseCmdError(state, argvObj.getValues()[0].asCStr(), errno);
+    return 1;
   }
   return 0;
 }
@@ -2114,6 +2114,9 @@ bool VM::mainLoop(ARState &state) {
         auto &argv = typeAs<ArrayObject>(state.stack.getLocal(UDC_PARAM_ARGV));
         const auto arg0 = argv.getValues()[0];
         int status = builtinExec(state, argv, std::move(redir));
+        if (state.hasError()) {
+          vmerror;
+        }
         TRY(checkCmdExecError(state, arg0.asStrRef(), attr, status));
         pushExitStatus(state, status);
         vmnext;

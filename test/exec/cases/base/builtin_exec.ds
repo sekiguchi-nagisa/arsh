@@ -12,3 +12,23 @@ assert $PIPESTATUS[0] == 2 && $PIPESTATUS[1] == 0
 # invalid
 assert exec -q 2>&1 | grep ': exec: -q: invalid option'
 assert $PIPESTATUS[0] == 2 && $PIPESTATUS[1] == 0
+
+# invalid command (raise error)
+var ex = 34 as Any
+try { exec hogehoge; assert $false; } catch e { $ex = $e; }
+assert ($ex as SystemError).message() == 'execution error: hogehoge: command not found'
+assert ($ex as SystemError).status() == 127
+
+$ex = 2345
+try { exec /; } catch e { $ex = $e; }
+assert ($ex as SystemError).message() =~ $/execution error: \/:/
+assert ($ex as SystemError).status() == 126
+
+## preserve fd even if error
+assert ! test -e /dev/fd/9
+try { exec hogehoge 9<& $STDOUT; } catch e { $ex = $e; }
+assert ($ex as SystemError).message() == 'execution error: hogehoge: command not found'
+assert ($ex as SystemError).status() == 127
+assert test -e /dev/fd/9
+
+true
