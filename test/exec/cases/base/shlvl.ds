@@ -38,3 +38,25 @@ assert "$({
   try { exec jfiaejfeoa; } catch _ {}
   echo $SHLVL
 })" == "10"
+
+assert "$({
+  exportenv SHLVL = '';
+  assert $SHLVL == ''
+  try { exec jfiaejfeoa; } catch _ {}
+  printf "<%s>\n" $SHLVL
+})" == "<>"
+
+assert "$({
+  exportenv SHLVL = '-122';
+  try { exec jfiaejfeoa; } catch _ {}
+  printf "<%s>\n" $SHLVL
+})" == "<-122>"
+
+assert "$({
+  assert checkenv SHLVL
+  unsetenv SHLVL
+  assert ! checkenv SHLVL
+  try { exec jfiaejfeoa; } catch _ {}
+  assert ! checkenv SHLVL
+  echo undef
+})" == "undef"
