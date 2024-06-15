@@ -632,7 +632,7 @@ ModResult ModuleLoader::addNewModEntry(CStrPtr &&ptr) {
       this->indexMap.erase(key);
       return ModLoadingError(ModLoadingError::MOD_LIMIT);
     }
-    this->entries.emplace_back(std::move(ptr), ModEntry::create());
+    this->entries.emplace_back(std::move(ptr), ModEntry());
   } else { // already registered
     auto &e = this->entries[pair.first->second].second;
     if (e.isSealed()) {

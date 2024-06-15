@@ -363,7 +363,7 @@ private:
    * only called from addNew* api
    * @param name
    * @param handle
-   * @param asAlias
+   * @param op
    * if true, not increment internal variable index
    * @return
    */
@@ -427,7 +427,7 @@ public:
 
 using ModResult = Union<const char *, unsigned int, ModLoadingError>;
 
-enum class ModLoadOption {
+enum class ModLoadOption : unsigned char {
   IGNORE_NON_REG_FILE = 1u << 0u,
 };
 
@@ -479,15 +479,9 @@ private:
 
 class ModEntry {
 private:
-  unsigned int typeId;
+  unsigned int typeId{0};
 
 public:
-  static ModEntry create() {
-    ModEntry e; // NOLINT
-    e.typeId = 0;
-    return e;
-  }
-
   void setModType(const ModType &type) { this->typeId = type.typeId(); }
 
   /**
