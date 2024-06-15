@@ -522,20 +522,24 @@ CallSignature TypeChecker::resolveCallSignature(ApplyNode &node) {
 
     // first lookup method
     auto &recvType = this->checkTypeAsExpr(accessNode.getRecvNode());
-    if (auto *handle = this->curScope->lookupMethod(
-            this->typePool(),
-            node.getAttr() == ApplyNode::NEW_ITER && recvType.isOptionType()
-                ? cast<OptionType>(recvType).getElementType()
-                : recvType,
-            methodName)) {
+    const auto handleOrError = this->curScope->lookupMethod(
+        this->typePool(),
+        node.getAttr() == ApplyNode::NEW_ITER && recvType.isOptionType()
+            ? cast<OptionType>(recvType).getElementType()
+            : recvType,
+        methodName);
+    if (handleOrError) {
+      auto *handle = handleOrError.asOk();
       accessNode.setType(this->typePool().get(TYPE::Any));
       node.setKind(ApplyNode::METHOD_CALL);
       node.setHandle(handle);
       return handle->toCallSignature(methodName.c_str());
     }
-
-    // if method is not found, resolve field
-    if (!this->checkAccessNode(accessNode)) {
+    if (handleOrError.asErr() == NameLookupError::MOD_PRIVATE) {
+      this->reportError<PrivateMethod>(accessNode.getNameToken(), methodName.c_str(),
+                                       node.getRecvNode().getType().getName());
+    } else if (!this->checkAccessNode(accessNode)) { // if method is not found, resolve field
+      assert(handleOrError.asErr() == NameLookupError::NOT_FOUND);
       node.setType(this->typePool().getUnresolvedType());
       this->reportMethodLookupError(node.getAttr(), accessNode);
       return CallSignature(this->typePool().getUnresolvedType());

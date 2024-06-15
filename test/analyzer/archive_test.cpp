@@ -764,8 +764,9 @@ TEST_F(ArchiveTest, method2) {
   });
   (void)modType;
 
-  auto method = this->scope().lookupMethod(this->pool(), this->pool().get(TYPE::Int), "sum");
-  ASSERT_TRUE(method);
+  auto methodorError = this->scope().lookupMethod(this->pool(), this->pool().get(TYPE::Int), "sum");
+  ASSERT_TRUE(methodorError);
+  auto *method = methodorError.asOk();
   ASSERT_TRUE(method->isMethodHandle());
   ASSERT_EQ(1, method->getParamSize());
   ASSERT_EQ(this->pool().get(TYPE::Int), method->getParamTypeAt(0));
@@ -773,8 +774,8 @@ TEST_F(ArchiveTest, method2) {
   ASSERT_EQ(this->pool().get(TYPE::Int), method->getReturnType());
   ASSERT_EQ("target", method->getPackedParamNames().toString());
 
-  method = this->scope().lookupMethod(this->pool(), this->pool().get(TYPE::Int), "_value");
-  ASSERT_FALSE(method);
+  methodorError = this->scope().lookupMethod(this->pool(), this->pool().get(TYPE::Int), "_value");
+  ASSERT_FALSE(methodorError);
 }
 
 TEST_F(ArchiveTest, argEntry) {

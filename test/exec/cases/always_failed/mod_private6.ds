@@ -1,5 +1,6 @@
-#$test($result = 'type', $lineNum = 5, $chars = 4, $errorKind = 'UndefinedMethod', $status = 1, $fileName = '../always_failed/mod_private6.ds')
+#$test($result = 'type', $lineNum = 6, $chars = 16, $errorKind = 'PrivateMethod', $status = 1, $fileName = '../always_failed/mod_private6.ds')
 
 source ../../_module4test/method.ds
 
-34._factorial()   # currently report UndefinedMethod
+new BigInt(34).factorial()
+new BigInt(34)._factorial()

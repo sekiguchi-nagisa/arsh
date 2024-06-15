@@ -221,12 +221,11 @@ std::string NameScope::importForeignHandles(const TypePool &pool, const ModType 
       continue;
     }
     StringRef name = e.first;
-    if (name.startsWith("_")) {
+    if (name.startsWith("_") && !e.second->isMethodHandle()) { // not skip method handle
       continue;
     }
     const auto &handle = e.second;
-    auto ret = this->addNewForeignHandle(name.toString(), handle);
-    if (!ret) {
+    if (!this->addNewForeignHandle(name.toString(), handle)) {
       const char *suffix = "";
       std::string message;
       if (isCmdFullName(name)) {
@@ -248,7 +247,7 @@ std::string NameScope::importForeignHandles(const TypePool &pool, const ModType 
   }
 
   // resolve inlined imported symbols
-  unsigned int size = type.getChildSize();
+  const unsigned int size = type.getChildSize();
   for (unsigned int i = 0; i < size; i++) {
     auto child = type.getChildAt(i);
     if (child.isInlined()) {
@@ -376,19 +375,23 @@ Result<HandlePtr, NameLookupError> NameScope::lookupField(const TypePool &pool, 
   return Err(NameLookupError::NOT_FOUND);
 }
 
-const MethodHandle *NameScope::lookupMethod(TypePool &pool, const Type &recvType,
-                                            const std::string &methodName) const {
+Result<const MethodHandle *, NameLookupError>
+NameScope::lookupMethod(TypePool &pool, const Type &recvType, const std::string &methodName) const {
   auto *globalScope = this->getGlobalScope();
   for (const Type *type = &recvType; type != nullptr; type = type->getSuperType()) {
     std::string name = toMethodFullName(type->typeId(), methodName);
     if (auto handle = globalScope->find(name)) {
       assert(handle->isMethodHandle());
       if (handle->isVisibleInMod(this->modId, methodName)) {
-        return cast<MethodHandle>(handle.get());
+        return Ok(cast<MethodHandle>(handle.get()));
       }
+      return Err(NameLookupError::MOD_PRIVATE);
     }
   }
-  return pool.lookupMethod(recvType, methodName);
+  if (auto *handle = pool.lookupMethod(recvType, methodName)) {
+    return Ok(handle);
+  }
+  return Err(NameLookupError::NOT_FOUND);
 }
 
 void NameScope::discard(ScopeDiscardPoint discardPoint) {

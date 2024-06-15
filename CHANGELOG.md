@@ -30,6 +30,7 @@
 - improve assertion error message of binary ``==`` and ``=~`` expression
     - now show left hand-side, right hand-side expression value
 - improve internal error checking of ``dup2``, ``pipe`` system call, now propagate these errors as ``SystemError``
+- correctly report method lookup error of module private method
 
 #### Builtin
 

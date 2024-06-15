@@ -147,6 +147,7 @@ DEFINE_TCError(UndefinedUnary, "undefined unary op: `%s' for `%s' type");
 DEFINE_TCError(UndefinedBinary, "undefined binary op: `%s' for `%s' type");
 DEFINE_TCError(NotIterable, "cannot iterate `%s' type");
 DEFINE_TCError(PrivateField, "cannot access module private field: `%s'");
+DEFINE_TCError(PrivateMethod, "cannot call module private method: `%s' for `%s' type");
 DEFINE_TCError(OptParamExpand, "`%s' type expression is not allowed "
                                "within string interpolations and parameter expansions");
 DEFINE_TCError(Unacceptable, "`%s' type expression is not allowed");

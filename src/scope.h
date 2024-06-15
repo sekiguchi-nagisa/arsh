@@ -293,7 +293,6 @@ public:
   // for name lookup
   /**
    * lookup handle
-   * if found upper scope variable, set `BOXED` attribute and add to captures
    * @param name
    * @return
    */
@@ -310,11 +309,12 @@ public:
   Result<HandlePtr, NameLookupError> lookupField(const TypePool &pool, const Type &recv,
                                                  const std::string &fieldName) const;
 
-  const MethodHandle *lookupMethod(TypePool &pool, const Type &recvType,
-                                   const std::string &methodName) const;
+  Result<const MethodHandle *, NameLookupError> lookupMethod(TypePool &pool, const Type &recvType,
+                                                             const std::string &methodName) const;
 
   const MethodHandle *lookupConstructor(TypePool &pool, const Type &recvType) const {
-    return this->lookupMethod(pool, recvType, OP_INIT);
+    auto ret = this->lookupMethod(pool, recvType, OP_INIT);
+    return static_cast<bool>(ret) ? ret.asOk() : nullptr;
   }
 
   template <typename Walker>

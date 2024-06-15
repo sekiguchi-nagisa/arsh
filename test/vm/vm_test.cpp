@@ -416,9 +416,10 @@ TEST_F(VMTest, callMethodAPI) {
 
   // user-defined method with return
   {
-    auto *handle =
+    auto handleOrError =
         this->state->rootModScope->lookupMethod(this->state->typePool, recordType, "dist");
-    ASSERT_TRUE(handle);
+    ASSERT_TRUE(handleOrError);
+    auto *handle = handleOrError.asOk();
     ASSERT_TRUE(!handle->isNative());
     auto ret = VM::callMethod(*this->state, *handle, Value(instance), makeArgs());
     ASSERT_TRUE(ret);
@@ -427,9 +428,10 @@ TEST_F(VMTest, callMethodAPI) {
 
   // user-defined method no return
   {
-    auto *handle =
+    auto handleOrError =
         this->state->rootModScope->lookupMethod(this->state->typePool, recordType, "swap");
-    ASSERT_TRUE(handle);
+    ASSERT_TRUE(handleOrError);
+    auto *handle = handleOrError.asOk();
     ASSERT_TRUE(!handle->isNative());
     auto ret = VM::callMethod(*this->state, *handle, Value(instance), makeArgs());
     ASSERT_FALSE(ret);
