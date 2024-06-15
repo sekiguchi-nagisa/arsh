@@ -1235,10 +1235,6 @@ void NodeDumper::dump(const char *fieldName, const Handle &handle) {
   this->leaveIndent();
 }
 
-void NodeDumper::dump(const char *fieldName, const MethodHandle &handle) {
-  this->dump(fieldName, std::to_string(handle.getIndex()));
-}
-
 void NodeDumper::dump(const char *fieldName, const NameInfo &info) {
   // write field name
   this->writeName(fieldName);

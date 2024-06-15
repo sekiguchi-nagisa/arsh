@@ -319,7 +319,10 @@ nodes:
                     extraOp: \"NONE\"
                     extraValue: 0
                 noneCount: 0
-              handle: \"9\"
+              handle:
+                index: 9
+                kind: \"NATIVE\"
+                attribute: \"READ_ONLY | GLOBAL\"
               kind: \"METHOD_CALL\"
               attr: \"BINARY\"
               assertOp: \"AssertOp::DEFAULT\"

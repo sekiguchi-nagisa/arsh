@@ -3152,8 +3152,6 @@ public:
 
   void dump(const char *fieldName, const Handle &handle);
 
-  void dump(const char *fieldName, const MethodHandle &handle);
-
   void dump(const char *fieldName, const NameInfo &info);
 
   void dumpNull(const char *fieldName) { this->dumpRaw(fieldName, "null"); }
