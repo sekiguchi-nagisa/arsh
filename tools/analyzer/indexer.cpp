@@ -191,6 +191,17 @@ const Symbol *IndexBuilder::addCmd(const NameInfo &info, const HandlePtr &hd) {
   return symbol;
 }
 
+void IndexBuilder::addTypeInheritance(const Type &type) {
+  if (type.isRecordOrDerived() || type.typeKind() == TypeKind::Error) {
+    auto *baseType = type.getSuperType();
+    if (!baseType || baseType->is(TYPE::Any)) {
+      return;
+    }
+    this->inheritanceMap.emplace(TypeWrapper(type.getNameRef()),
+                                 TypeWrapper(baseType->getNameRef()));
+  }
+}
+
 bool IndexBuilder::addThis(const NameInfo &info, const HandlePtr &handle) {
   auto *methodScope = this->curScope().findMethodScope();
   assert(methodScope);
@@ -524,6 +535,10 @@ void SymbolIndexer::visitTypeDefNode(TypeDefNode &node) {
       this->visit(node.getTargetTypeNode());
       this->builder().addDecl(node.getNameInfo(), node.getTargetTypeNode().getType(),
                               node.getToken(), DeclSymbol::Kind::ERROR_TYPE_DEF);
+      if (auto &handle = node.getHandle()) {
+        auto &type = this->builder().getPool().get(handle->getTypeId());
+        this->builder().addTypeInheritance(type);
+      }
     }
     break;
   }
@@ -723,6 +738,9 @@ void SymbolIndexer::visitFunctionImpl(FunctionNode &node, const FuncVisitOp op) 
         auto value = generateConstructorInfo(this->builder().getPool(), node);
         this->builder().addDecl(node.getNameInfo(), DeclSymbol::Kind::CONSTRUCTOR, value.c_str(),
                                 node.getToken());
+        if (auto *type = node.getResolvedType()) {
+          this->builder().addTypeInheritance(*type);
+        }
       } else if (node.isMethod()) {
         auto value = generateFuncInfo(node);
         this->builder().addMemberDecl(node.getRecvTypeNode()->getType(), node.getNameInfo(),
@@ -926,6 +944,7 @@ void SymbolIndexer::addBuiltinSymbols() {
       auto &baseType = *type->getSuperType();
       this->builder().addDecl(nameInfo, baseType, nameInfo.getToken(),
                               DeclSymbol::Kind::ERROR_TYPE_DEF);
+      this->builder().addTypeInheritance(*type);
     } else {
       assert(isa<BuiltinType>(type));
       this->builder().addDecl(nameInfo, DeclSymbol::Kind::BUILTIN_TYPE, "", nameInfo.getToken());

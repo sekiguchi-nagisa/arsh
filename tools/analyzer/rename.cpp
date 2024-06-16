@@ -226,8 +226,7 @@ static bool checkNameConflict(const SymbolIndexes &indexes, const DeclSymbol &de
 
   std::vector<std::string> mangledNewNames;
   {
-    auto recvTypeName =
-        DeclSymbol::demangleWithRecv(decl.getKind(), decl.getAttr(), decl.getMangledName()).first;
+    auto recvTypeName = decl.toDemangledNameWithRecv().first;
     auto mangledNewName = DeclSymbol::mangle(recvTypeName, decl.getKind(), newName);
     mangledNewNames.push_back(std::move(mangledNewName));
 
@@ -329,6 +328,23 @@ static bool checkNameConflict(const SymbolIndexes &indexes, const DeclSymbol &de
           return false;
         }
       }
+    }
+  }
+
+  // check method override for user-defined method
+  if (decl.is(DeclSymbol::Kind::METHOD) && !decl.has(DeclSymbol::Attr::BUILTIN)) {
+    StringRef typeName = decl.toDemangledNameWithRecv().first;
+    auto *type = declIndex->findBaseType(typeName);
+    while (type) {
+      auto methodName = DeclSymbol::mangle(type->getValue(), DeclSymbol::Kind::METHOD, newName);
+      auto index = indexes.find(type->resolveBelongedModId());
+      if (auto *r = index->findGlobal(methodName)) { // hide base type method
+        if (consumer) {
+          consumer(Err(RenameConflict(*r)));
+        }
+        return false;
+      }
+      type = index->findBaseType(type->getValue());
     }
   }
   return true;

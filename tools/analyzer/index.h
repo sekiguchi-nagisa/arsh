@@ -203,6 +203,10 @@ public:
     return demangle(this->getKind(), this->getAttr(), this->getMangledName());
   }
 
+  std::pair<StringRef, StringRef> toDemangledNameWithRecv() const {
+    return demangleWithRecv(this->getKind(), this->getAttr(), this->getMangledName());
+  }
+
   struct Compare {
     bool operator()(const DeclSymbol &x, unsigned int y) const {
       return x.getToken().endPos() - 1 < y;
@@ -388,6 +392,35 @@ public:
   const std::string *lookupByPos(unsigned int pos) const;
 };
 
+class TypeWrapper {
+private:
+  std::string value;
+
+public:
+  /**
+   *
+   * @param name must be qualified type name
+   */
+  explicit TypeWrapper(StringRef name) : value(name.toString()) {}
+
+  const auto &getValue() const { return this->value; }
+
+  ModId resolveBelongedModId() const;
+
+  bool operator==(const TypeWrapper &o) const { return this->getValue() == o.getValue(); }
+
+  bool operator!=(const TypeWrapper &o) const { return !(*this == o); }
+
+  struct Hasher {
+    size_t operator()(const TypeWrapper &o) const { return std::hash<std::string>()(o.getValue()); }
+  };
+};
+
+/**
+ * (derived => base)
+ */
+using TypeInheritanceMap = std::unordered_map<TypeWrapper, TypeWrapper, TypeWrapper::Hasher>;
+
 class SymbolIndex;
 using SymbolIndexPtr = std::shared_ptr<const SymbolIndex>;
 
@@ -403,6 +436,7 @@ private:
   std::vector<ScopeInterval> scopes;
   PackedParamTypesMap packedParamTypesMap;        // for generic method hover
   std::unordered_set<std::string> externalCmdSet; // for user-defined command rename
+  TypeInheritanceMap inheritanceMap;              // for user-defined method rename
 
 public:
   SymbolIndex(ModId modId, int version, std::vector<DeclSymbol> &&decls,
@@ -410,11 +444,11 @@ public:
               std::unordered_map<std::string, SymbolRef> &&globals,
               std::vector<std::pair<SymbolRef, IndexLink>> &&links,
               std::vector<ScopeInterval> &&scopes, PackedParamTypesMap &&packedParamTypesMap,
-              std::unordered_set<std::string> &&externalCmdSet)
+              std::unordered_set<std::string> &&externalCmdSet, TypeInheritanceMap &&inheritanceMap)
       : modId(modId), version(version), decls(std::move(decls)), symbols(std::move(symbols)),
         foreignDecls(std::move(foreignDecls)), globals(std::move(globals)), links(std::move(links)),
         scopes(std::move(scopes)), packedParamTypesMap(std::move(packedParamTypesMap)),
-        externalCmdSet(std::move(externalCmdSet)) {}
+        externalCmdSet(std::move(externalCmdSet)), inheritanceMap(std::move(inheritanceMap)) {}
 
   ModId getModId() const { return this->modId; }
 
@@ -439,6 +473,10 @@ public:
   const auto &getPackedParamTypesMap() const { return this->packedParamTypesMap; }
 
   const auto &getExternalCmdSet() const { return this->externalCmdSet; }
+
+  const auto &getInheritanceMap() const { return this->inheritanceMap; }
+
+  const TypeWrapper *findBaseType(StringRef qualifiedTypeName) const;
 
   struct Compare {
     bool operator()(const SymbolIndexPtr &x, ModId id) const { return x->getModId() < id; }

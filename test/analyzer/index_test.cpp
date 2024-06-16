@@ -1683,6 +1683,58 @@ TEST_F(IndexTest, signature) {
   }
 }
 
+TEST_F(IndexTest, inheritance) {
+  unsigned short modId;
+  const char *content = R"(
+typedef APIError: ArithmeticError
+typedef APIError2 : APIError
+typedef AAA() {}
+[<CLI>]
+typedef BBB() {}
+)";
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 4, .symbolSize = 6}));
+
+  const auto builtinIndex = this->indexes.find(BUILTIN_MOD_ID);
+  ASSERT_TRUE(builtinIndex);
+  const auto index = this->indexes.find(static_cast<ModId>(modId));
+  ASSERT_TRUE(index);
+
+  {
+    auto *type = index->findBaseType(toQualifiedTypeName("APIError2", static_cast<ModId>(modId)));
+    ASSERT_TRUE(type);
+    ASSERT_EQ(toQualifiedTypeName("APIError", static_cast<ModId>(modId)), type->getValue());
+    ASSERT_EQ(static_cast<ModId>(modId), type->resolveBelongedModId());
+
+    type = index->findBaseType(toQualifiedTypeName("APIError", static_cast<ModId>(modId)));
+    ASSERT_TRUE(type);
+    ASSERT_EQ("ArithmeticError", type->getValue());
+    ASSERT_EQ(BUILTIN_MOD_ID, type->resolveBelongedModId());
+
+    type = builtinIndex->findBaseType("ArithmeticError");
+    ASSERT_TRUE(type);
+    ASSERT_EQ("Error", type->getValue());
+    ASSERT_EQ(BUILTIN_MOD_ID, type->resolveBelongedModId());
+
+    type = builtinIndex->findBaseType("Error");
+    ASSERT_FALSE(type);
+  }
+
+  {
+    auto *type = index->findBaseType(toQualifiedTypeName("AAA", static_cast<ModId>(modId)));
+    ASSERT_FALSE(type);
+  }
+
+  {
+    auto *type = index->findBaseType(toQualifiedTypeName("BBB", static_cast<ModId>(modId)));
+    ASSERT_TRUE(type);
+    ASSERT_EQ("CLI", type->getValue());
+    ASSERT_EQ(BUILTIN_MOD_ID, type->resolveBelongedModId());
+
+    type = builtinIndex->findBaseType("CLI");
+    ASSERT_FALSE(type);
+  }
+}
+
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

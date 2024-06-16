@@ -24,7 +24,7 @@
 
 namespace arsh::lsp {
 
-enum class ScopeKind {
+enum class ScopeKind : unsigned char {
   GLOBAL,
   FUNC,
   CONSTRUCTOR,
@@ -42,6 +42,7 @@ private:
   std::vector<ScopeInterval> scopeIntervals;
   PackedParamTypesMap packedParamTypesMap;
   std::unordered_set<std::string> externalCmdSet;
+  TypeInheritanceMap inheritanceMap;
 
   class ScopeEntry : public RefCount<ScopeEntry> {
   private:
@@ -131,7 +132,8 @@ public:
             std::move(this->links),
             std::move(this->scopeIntervals),
             std::move(this->packedParamTypesMap),
-            std::move(this->externalCmdSet)};
+            std::move(this->externalCmdSet),
+            std::move(this->inheritanceMap)};
   }
 
   const TypePool &getPool() const { return *this->pool; }
@@ -169,6 +171,8 @@ public:
 
   const Symbol *addCmd(const NameInfo &info, const HandlePtr &hd);
 
+  void addTypeInheritance(const Type &type);
+
   bool addThis(const NameInfo &info, const HandlePtr &hd);
 
   bool addMember(const Type &recv, const NameInfo &nameInfo, DeclSymbol::Kind kind,
@@ -182,8 +186,8 @@ public:
   const DeclSymbol *addMemberDecl(const Type &recv, const NameInfo &nameInfo, const Type &type,
                                   DeclSymbol::Kind kind, Token token);
 
-  const DeclSymbol *addMemberDecl(const Type &recv, const NameInfo &nameInfo,
-                                  DeclSymbol::Kind kind, const char *info, Token token) {
+  const DeclSymbol *addMemberDecl(const Type &recv, const NameInfo &nameInfo, DeclSymbol::Kind kind,
+                                  const char *info, Token token) {
     if (recv.isUnresolved()) {
       return nullptr;
     }
@@ -217,7 +221,7 @@ private:
   const SymbolRef *lookup(const std::string &mangledName, DeclSymbol::Kind kind,
                           const Handle *handle) const;
 
-  enum class DeclInsertOp {
+  enum class DeclInsertOp : unsigned char {
     NORMAL,
     BUILTIN,
     MEMBER,
@@ -300,7 +304,7 @@ private:
     this->visitEach(blockNode.getNodes());
   }
 
-  enum class FuncVisitOp : unsigned int {
+  enum class FuncVisitOp : unsigned char {
     VISIT_NAME = 1u << 0u,
     VISIT_BODY = 1u << 1u,
   };
@@ -316,11 +320,7 @@ private:
 
 } // namespace arsh::lsp
 
-namespace arsh {
-
 template <>
-struct allow_enum_bitop<lsp::SymbolIndexer::FuncVisitOp> : std::true_type {};
-
-} // namespace arsh
+struct arsh::allow_enum_bitop<arsh::lsp::SymbolIndexer::FuncVisitOp> : std::true_type {};
 
 #endif // ARSH_TOOLS_ANALYZER_INDEXER_H

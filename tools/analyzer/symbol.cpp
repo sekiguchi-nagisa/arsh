@@ -19,7 +19,6 @@
 #include <cmd_desc.h>
 #include <constant.h>
 #include <format_signature.h>
-#include <misc/format.hpp>
 #include <type.h>
 
 #include "source.h"

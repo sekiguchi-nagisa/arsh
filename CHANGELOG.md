@@ -52,6 +52,7 @@
 - improve ``textDocument/rename``
     - now enabled by default
     - support field rename
+    - now check method override
 
 #### Module
 

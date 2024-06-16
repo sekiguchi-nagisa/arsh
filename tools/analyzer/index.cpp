@@ -166,6 +166,19 @@ const std::string *PackedParamTypesMap::lookupByPos(unsigned int pos) const {
   return packed;
 }
 
+ModId TypeWrapper::resolveBelongedModId() const {
+  if (StringRef ref = this->getValue(); isQualifiedTypeName(ref)) {
+    auto retPos = ref.find('.');
+    assert(retPos != StringRef::npos);
+    ref = ref.slice(0, retPos);
+    ref.removePrefix(strlen(MOD_SYMBOL_PREFIX));
+    auto pair = convertToDecimal<uint32_t>(ref.begin(), ref.end());
+    assert(pair && pair.value <= SYS_LIMIT_MOD_ID);
+    return static_cast<ModId>(pair.value);
+  }
+  return BUILTIN_MOD_ID;
+}
+
 // #########################
 // ##     SymbolIndex     ##
 // #########################
@@ -210,6 +223,14 @@ const ForeignDecl *SymbolIndex::findForeignDecl(SymbolRequest request) const {
 const SymbolRef *SymbolIndex::findGlobal(const std::string &mangledName) const {
   auto iter = this->globals.find(mangledName);
   if (iter != this->globals.end()) {
+    return &iter->second;
+  }
+  return nullptr;
+}
+
+const TypeWrapper *SymbolIndex::findBaseType(StringRef qualifiedTypeName) const {
+  TypeWrapper type(qualifiedTypeName);
+  if (auto iter = this->inheritanceMap.find(type); iter != this->inheritanceMap.end()) {
     return &iter->second;
   }
   return nullptr;

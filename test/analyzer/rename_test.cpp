@@ -583,6 +583,31 @@ new BBB().get()
                                                    "size", {1, "(4:9~4:13)"}));
 }
 
+TEST_F(RenameTest, method2) {
+  const char *content = R"(
+typedef Error1 : Error
+typedef Error2 : Error1
+[<CLI>] typedef AAA() {}
+function get() for Error1 {}
+function take() for Error1 {}
+function get() for Error2{}
+function get() for AAA {}
+)";
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, 1));
+
+  // with conflict (override original methods)
+  ASSERT_NO_FATAL_FAILURE(
+      this->rename(Request{.modId = 1, .line = 4, .character = 10}, "message",
+                   RenameValidationStatus::NAME_CONFLICT)); // override builtin method
+  ASSERT_NO_FATAL_FAILURE(
+      this->renameWithConflict(Request{.modId = 1, .line = 6, .character = 10}, "take",
+                               {1, "(5:9~5:13)"})); // override user-defined method
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 6, .character = 10}, "show",
+                                       RenameValidationStatus::NAME_CONFLICT)); // override builtin
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 7, .character = 10}, "parse",
+                                       RenameValidationStatus::NAME_CONFLICT)); // override builtin
+}
+
 TEST_F(RenameTest, func) {
   const char *content = R"(
 function aaa() {
