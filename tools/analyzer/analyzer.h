@@ -174,7 +174,7 @@ public:
 
   ModuleArchivePtr analyze(const SourcePtr &src, AnalyzerAction &action);
 
-  enum class ExtraCompOp : unsigned int {
+  enum class ExtraCompOp : unsigned char {
     CMD_ARG_COMP = 1u << 0u,
     SIGNATURE = 1u << 1u,
   };
@@ -187,11 +187,7 @@ public:
 
 } // namespace arsh::lsp
 
-namespace arsh {
-
 template <>
-struct allow_enum_bitop<lsp::Analyzer::ExtraCompOp> : std::true_type {};
-
-} // namespace arsh
+struct arsh::allow_enum_bitop<arsh::lsp::Analyzer::ExtraCompOp> : std::true_type {};
 
 #endif // ARSH_TOOLS_ANALYZER_ANALYZER_H

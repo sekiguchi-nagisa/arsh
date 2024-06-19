@@ -240,11 +240,7 @@ public:
 
 } // namespace arsh::lsp
 
-namespace arsh {
-
 template <>
-struct allow_enum_bitop<lsp::SupportedCapability> : std::true_type {};
-
-} // namespace arsh
+struct arsh::allow_enum_bitop<arsh::lsp::SupportedCapability> : std::true_type {};
 
 #endif // ARSH_TOOLS_ANALYZER_SERVER_H

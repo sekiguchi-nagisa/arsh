@@ -17,7 +17,6 @@
 #ifndef ARSH_TOOLS_ANALYZER_REGISTRATION_H
 #define ARSH_TOOLS_ANALYZER_REGISTRATION_H
 
-#include <memory>
 #include <string>
 
 #include <misc/format.hpp>
@@ -51,7 +50,7 @@ public:
 
 class RegistrationMap {
 public:
-  enum class Capability {
+  enum class Capability : unsigned char {
 #define GEN_ENUM(E, S) E,
     EACH_REGISTRATION_CAPABILITY(GEN_ENUM)
 #undef GEN_ENUM

@@ -50,7 +50,7 @@ Registration RegistrationMap::registerCapability(IDGenerator &gen, Capability ca
 
   JSONSerializer serializer;
   switch (capability) {
-  case RegistrationMap::Capability::SEMANTIC_TOKENS: {
+  case Capability::SEMANTIC_TOKENS: {
     auto options = SemanticTokensRegistrationOptions::createDynamic();
     serializer(options);
     break;

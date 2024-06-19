@@ -154,7 +154,7 @@ Optional<unsigned int> toTokenPos(StringRef content, const Position &position);
  * @param range
  * @return
  */
-Optional<arsh::Token> toToken(StringRef content, const Range &range);
+Optional<Token> toToken(StringRef content, const Range &range);
 
 bool applyChange(std::string &content, const TextDocumentContentChangeEvent &change);
 

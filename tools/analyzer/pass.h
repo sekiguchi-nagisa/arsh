@@ -28,7 +28,7 @@ namespace arsh::lsp {
  * for common class for node traverse
  * if a node is untyped, not visit it
  */
-class NodePass : protected arsh::NodeVisitor {
+class NodePass : protected NodeVisitor {
 protected:
   int64_t visitingDepth{0};
 
