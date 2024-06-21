@@ -38,10 +38,10 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 ```
 
-## external/wyhash/wyhash.h
+## external/rapidhash/rapidhash.h
 
-This file is distributed under the Unlicense (http://unlicense.org/).
-This is copied from [wangyi-fudan/wyhash](https://github.com/wangyi-fudan/wyhash)
+This file is distributed under the BSD 2-Clause License (https://www.opensource.org/licenses/bsd-license.php).
+This is copied from [Nicoshev/rapidhash](https://github.com/Nicoshev/rapidhash)
 
 ## cmake/modules/DownloadProject.cmake, cmake/modules/DownloadProject.CMakeLists.cmake.in
 

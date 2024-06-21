@@ -15,7 +15,7 @@
  */
 
 #include "ordered_map.h"
-#include "../external/wyhash/wyhash.h"
+#include "../external/rapidhash/rapidhash.h"
 #include "core.h"
 #include "misc/num_util.hpp"
 #include "type_pool.h"
@@ -73,6 +73,12 @@ unsigned int OrderedMapEntries::compact() {
 // ##     OrderedMapObject     ##
 // ##############################
 
+static uint64_t simplehash(uint64_t value) {
+  uint64_t ret = UINT64_MAX;
+  rapid_mum(&value, &ret);
+  return ret;
+}
+
 static unsigned int hash(const Value &value, uint64_t seed) {
   bool isStr = false;
   uint64_t u64 = 0;
@@ -104,13 +110,13 @@ static unsigned int hash(const Value &value, uint64_t seed) {
     break;
   }
 
+  uint64_t hash;
   if (isStr) {
-    uint64_t hash = wyhash(ptr, size, seed, _wyp);
-    return static_cast<unsigned int>(hash);
+    hash = rapidhash_withSeed(ptr, size, seed);
   } else {
-    uint64_t hash = wy2u0k(u64, UINT64_MAX);
-    return static_cast<unsigned int>(hash);
+    hash = simplehash(u64);
   }
+  return static_cast<unsigned int>(hash);
 }
 
 std::pair<int, bool> OrderedMapObject::insert(const Value &key, Value &&value) {
