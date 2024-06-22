@@ -69,12 +69,15 @@ public:
   }
 };
 
-enum class SupportedCapability : unsigned int {
+enum class SupportedCapability : unsigned short {
   DIAG_VERSION = 1u << 0u,
   LABEL_DETAIL = 1u << 1u,
   WORKSPACE_CONFIG = 1u << 2u,
   SEMANTIC_TOKEN_REGISTRATION = 1u << 3u,
   PREPARE_RENAME = 1u << 4u,
+  RENAME_CHANGE_ANNOTATION = 1u << 5u,
+  CHANGE_ANNOTATION = 1u << 6u,
+  VERSIONED_DOCUMENT_CHANGE = 1u << 7u,
 };
 
 class LSPServer : public Handler {

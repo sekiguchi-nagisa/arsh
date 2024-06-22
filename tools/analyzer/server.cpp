@@ -255,7 +255,7 @@ Result<WorkspaceEdit, std::string> LSPServer::renameImpl(const SymbolRequest &re
 
   WorkspaceEdit workspaceEdit;
   if (!changes.empty()) {
-    workspaceEdit.init();
+    workspaceEdit.initAsTextEdit();
   }
   for (auto &e : changes) {
     auto src = this->result.srcMan->findById(static_cast<ModId>(e.first));
@@ -464,9 +464,12 @@ Reply<InitializeResult> LSPServer::initialize(const InitializeParams &params) {
       }
     }
     if (textDocument.rename.hasValue()) {
-      if (auto &rename = textDocument.rename.unwrap();
-          rename.prepareSupport.hasValue() && rename.prepareSupport.unwrap()) {
+      auto &rename = textDocument.rename.unwrap();
+      if (rename.prepareSupport.hasValue() && rename.prepareSupport.unwrap()) {
         setFlag(this->supportedCapability, SupportedCapability::PREPARE_RENAME);
+      }
+      if (rename.honorsChangeAnnotations.hasValue() && rename.honorsChangeAnnotations.unwrap()) {
+        setFlag(this->supportedCapability, SupportedCapability::RENAME_CHANGE_ANNOTATION);
       }
     }
   }
@@ -474,6 +477,15 @@ Reply<InitializeResult> LSPServer::initialize(const InitializeParams &params) {
     auto &workspace = params.capabilities.workspace.unwrap();
     if (workspace.configuration.hasValue() && workspace.configuration.unwrap()) {
       setFlag(this->supportedCapability, SupportedCapability::WORKSPACE_CONFIG);
+    }
+    if (workspace.workspaceEdit.hasValue()) {
+      auto &workspaceEdit = workspace.workspaceEdit.unwrap();
+      if (workspaceEdit.documentChanges.hasValue() && workspaceEdit.documentChanges.unwrap()) {
+        setFlag(this->supportedCapability, SupportedCapability::VERSIONED_DOCUMENT_CHANGE);
+      }
+      if (workspaceEdit.changeAnnotationSupport.hasValue()) {
+        setFlag(this->supportedCapability, SupportedCapability::CHANGE_ANNOTATION);
+      }
     }
   }
 

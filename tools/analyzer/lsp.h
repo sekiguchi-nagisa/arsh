@@ -325,10 +325,12 @@ struct CompletionClientCapabilities {
 
 struct RenameClientCapability {
   Optional<bool> prepareSupport;
+  Optional<bool> honorsChangeAnnotations;
 
   template <typename T>
   void jsonify(T &t) {
     JSONIFY(prepareSupport);
+    JSONIFY(honorsChangeAnnotations);
   }
 };
 
@@ -351,7 +353,28 @@ struct TextDocumentClientCapabilities {
   }
 };
 
+struct WorkspaceEditClientCapabilities {
+  struct ChangeAnnotationSupport {
+    Optional<bool> groupsOnLabel;
+
+    template <typename T>
+    void jsonify(T &t) {
+      JSONIFY(groupsOnLabel);
+    }
+  };
+
+  Optional<bool> documentChanges;
+  Optional<ChangeAnnotationSupport> changeAnnotationSupport;
+
+  template <typename T>
+  void jsonify(T &t) {
+    JSONIFY(documentChanges);
+    JSONIFY(changeAnnotationSupport);
+  }
+};
+
 struct WorkspaceClientCapability {
+  Optional<WorkspaceEditClientCapabilities> workspaceEdit;
   Optional<bool> configuration;
 
   template <typename T>
@@ -671,6 +694,16 @@ struct TextDocumentIdentifier {
 
 struct VersionedTextDocumentIdentifier : public TextDocumentIdentifier {
   int version;
+
+  template <typename T>
+  void jsonify(T &t) {
+    TextDocumentIdentifier::jsonify(t);
+    JSONIFY(version);
+  }
+};
+
+struct OptionalVersionedTextDocumentIdentifier : public TextDocumentIdentifier {
+  Union<int, std::nullptr_t> version;
 
   template <typename T>
   void jsonify(T &t) {
@@ -1238,17 +1271,58 @@ struct TextEdit {
   }
 };
 
+using ChangeAnnotationIdentifier = std::string;
+
+struct AnnotatedTextEdit : public TextEdit {
+  ChangeAnnotationIdentifier annotationId;
+
+  template <typename T>
+  void jsonify(T &t) {
+    TextEdit::jsonify(t);
+    JSONIFY(annotationId);
+  }
+};
+
+struct TextDocumentEdit {
+  OptionalVersionedTextDocumentIdentifier textDocument;
+  std::vector<Union<AnnotatedTextEdit, TextEdit>> edits;
+
+  template <typename T>
+  void jsonify(T &t) {
+    JSONIFY(textDocument);
+    JSONIFY(edits);
+  }
+};
+
+struct ChangeAnnotation {
+  std::string label;
+  Optional<bool> needsConfirmation;
+  Optional<std::string> description;
+
+  template <typename T>
+  void jsonify(T &t) {
+    JSONIFY(label);
+    JSONIFY(needsConfirmation);
+    JSONIFY(description);
+  }
+};
+
 struct WorkspaceEdit {
   using change_type = std::map<DocumentURI, std::vector<TextEdit>>;
+  using change_annotation_map = std::map<std::string, ChangeAnnotation>;
 
   Optional<change_type> changes;
+  Optional<std::vector<TextDocumentEdit>> documentChanges;
+  Optional<change_annotation_map> changeAnnotations;
 
   template <typename T>
   void jsonify(T &t) {
     JSONIFY(changes);
+    JSONIFY(documentChanges);
+    JSONIFY(changeAnnotations);
   }
 
-  void init() { this->changes = change_type(); }
+  void initAsTextEdit() { this->changes = change_type(); }
 
   /**
    * if insertion success, return true
