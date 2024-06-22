@@ -115,10 +115,13 @@ private:
 
   const SymbolIndexes &indexes;
 
+  const ObserverPtr<LoggerBase> logger;
+
 public:
-  IndexBuilder(SourcePtr src, std::shared_ptr<TypePool> pool, const SymbolIndexes &indexes)
+  IndexBuilder(SourcePtr src, std::shared_ptr<TypePool> pool, const SymbolIndexes &indexes,
+               ObserverPtr<LoggerBase> logger)
       : src(std::move(src)), scope(IntrusivePtr<ScopeEntry>::create(0)), pool(std::move(pool)),
-        indexes(indexes) {
+        indexes(indexes), logger(logger) {
     this->scopeIntervals.push_back({0, static_cast<unsigned int>(this->src->getContent().size())});
   }
 
@@ -268,12 +271,15 @@ private:
   const SysConfig &sysConfig;
   SymbolIndexes &indexes;
   std::vector<IndexBuilder> builders;
+  ObserverPtr<LoggerBase> logger;
 
 public:
   SymbolIndexer(const SysConfig &config, SymbolIndexes &indexes)
       : sysConfig(config), indexes(indexes) {}
 
   ~SymbolIndexer() override = default;
+
+  void setLogger(ObserverPtr<LoggerBase> o) { this->logger = o; }
 
   bool enterModule(const SourcePtr &src, const std::shared_ptr<TypePool> &pool) override;
   bool exitModule(const std::unique_ptr<Node> &node) override;

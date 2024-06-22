@@ -293,6 +293,7 @@ AnalyzerResult AnalyzerTask::doRebuild() {
 
   AnalyzerAction action;
   SymbolIndexer indexer(this->sysConfig, this->ret.indexes);
+  indexer.setLogger(makeObserver(this->logger.get()));
   ExtraChecker extraChecker(this->emitter);
   MultipleNodePass passes;
   passes.add(makeObserver(extraChecker));

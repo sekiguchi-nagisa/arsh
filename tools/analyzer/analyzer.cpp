@@ -198,7 +198,7 @@ ModResult Analyzer::addNewModEntry(CStrPtr &&ptr) {
   } else {
     src = this->srcMan.update(path, 0, "", SourceAttr::FROM_DISK); // dummy
     if (!src) {
-      fatal("module id reaches limit(%u)\n", MAX_MOD_NUM); // FIXME: propagate error
+      return ModLoadingError(ModLoadingError::MOD_LIMIT);
     }
     return src->getPath().c_str();
   }

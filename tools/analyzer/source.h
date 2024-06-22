@@ -37,8 +37,6 @@ struct arsh::allow_enum_bitop<arsh::lsp::SourceAttr> : std::true_type {};
 
 namespace arsh::lsp {
 
-struct TextDocumentContentChangeEvent;
-
 class Source {
 private:
   std::shared_ptr<const std::string> path;
