@@ -460,7 +460,9 @@ TEST(ClientTest, run) {
   ASSERT_EQ("Content-Length: 4\r\n\r\n1234", res.result.unwrap().asString());
 }
 
-static Source source(StringRef content) { return {"dummy", BUILTIN_MOD_ID, content.toString(), 0}; }
+static Source source(StringRef content) {
+  return {"dummy", BUILTIN_MOD_ID, content.toString(), 0, {}};
+}
 
 struct LocationTest : public ::testing::Test {
   static void checkPosition(const std::string &content, unsigned int pos,

@@ -22,8 +22,9 @@
 namespace arsh::lsp {
 
 Source::Source(std::shared_ptr<const std::string> path, ModId srcId, std::string &&content,
-               int version)
-    : path(std::move(path)), content(std::move(content)), srcId(srcId), version(version) {
+               int version, SourceAttr attr)
+    : path(std::move(path)), content(std::move(content)), srcId(srcId), attr(attr),
+      version(version) {
   if (this->content.empty() || this->content.back() != '\n') {
     this->content += '\n';
   }
@@ -115,7 +116,8 @@ SourcePtr SourceManager::find(StringRef path) const {
   return nullptr;
 }
 
-SourcePtr SourceManager::update(StringRef path, int version, std::string &&content) {
+SourcePtr SourceManager::update(StringRef path, int version, std::string &&content,
+                                SourceAttr attr) {
   auto iter = this->indexMap.find(path);
   if (iter != this->indexMap.end()) {
     unsigned int i = iter->second;
@@ -128,7 +130,7 @@ SourcePtr SourceManager::update(StringRef path, int version, std::string &&conte
     }
     unsigned int i = this->entries.size();
     auto src = std::make_shared<Source>(path.data(), ModId{static_cast<unsigned short>(id)},
-                                        std::move(content), version);
+                                        std::move(content), version, attr);
     auto &ret = this->entries.emplace_back(std::move(src));
     this->indexMap.emplace(ret->getPath(), i);
     return this->entries[i];
@@ -142,7 +144,8 @@ SourcePtr SourceManager::add(SourcePtr other) {
   if (auto src = this->find(other->getPath()); src == other) {
     return other;
   }
-  return this->update(other->getPath(), other->getVersion(), std::string(other->getContent()));
+  return this->update(other->getPath(), other->getVersion(), std::string(other->getContent()),
+                      other->getAttr());
 }
 
 std::string SourceManager::resolveURI(const uri::URI &uri) const {

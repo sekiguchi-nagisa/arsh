@@ -143,7 +143,8 @@ FrontEnd::ModuleProvider::Ret Analyzer::load(const char *scriptDir, const char *
     }
     const char *fullPath = get<const char *>(ret);
     auto src = this->srcMan.find(fullPath);
-    src = this->srcMan.update(fullPath, src->getVersion(), std::move(content));
+    src =
+        this->srcMan.update(fullPath, src->getVersion(), std::move(content), SourceAttr::FROM_DISK);
     auto &ctx = this->addNew(src);
     auto lex = createLexer(*src);
     return std::make_unique<FrontEnd::Context>(ctx->getPool(), std::move(lex), ctx->getScope());
@@ -195,7 +196,7 @@ ModResult Analyzer::addNewModEntry(CStrPtr &&ptr) {
     }
     return toUnderlying(src->getSrcId());
   } else {
-    src = this->srcMan.update(path, 0, ""); // dummy
+    src = this->srcMan.update(path, 0, "", SourceAttr::FROM_DISK); // dummy
     if (!src) {
       fatal("module id reaches limit(%u)\n", MAX_MOD_NUM); // FIXME: propagate error
     }
@@ -513,10 +514,10 @@ Optional<SignatureInformation> Analyzer::collectSignature(const SourcePtr &src,
     if (!signature.handle) {
       if (!signature.returnType->isUnresolved()) {
         if (StringRef name = signature.name; name == OP_INIT) {
-          out += "typedef ";  // for Array, Map, Option constructor
+          out += "typedef "; // for Array, Map, Option constructor
           normalizeTypeName(*signature.returnType, out);
           out += "()";
-        } else {  // for indirect function call without variable name
+        } else { // for indirect function call without variable name
           formatFuncSignature(*signature.returnType, signature.paramSize, signature.paramTypes, out,
                               callback);
         }
@@ -545,7 +546,7 @@ Optional<SignatureInformation> Analyzer::collectSignature(const SourcePtr &src,
       formatMethodSignature(recvType, *methodHandle, out, constructor, callback);
     } else if (!signature.returnType->isUnresolved()) {
       formatFuncSignature(*signature.returnType, signature.paramSize, signature.paramTypes, out,
-                          callback);  // indirect function call with variable name
+                          callback); // indirect function call with variable name
     }
 
     if (out.empty()) {

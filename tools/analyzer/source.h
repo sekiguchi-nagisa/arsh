@@ -26,6 +26,17 @@
 
 namespace arsh::lsp {
 
+enum class SourceAttr : unsigned char {
+  FROM_DISK = 1u << 0u, // loaded from disk (not opened in editor)
+};
+
+}
+
+template <>
+struct arsh::allow_enum_bitop<arsh::lsp::SourceAttr> : std::true_type {};
+
+namespace arsh::lsp {
+
 struct TextDocumentContentChangeEvent;
 
 class Source {
@@ -34,15 +45,18 @@ private:
   std::string content;
   LineNumTable lineNumTable;
   ModId srcId{0};
+  SourceAttr attr{};
   int version{0};
 
 public:
   Source() = default;
 
-  Source(std::shared_ptr<const std::string> path, ModId srcId, std::string &&content, int version);
+  Source(std::shared_ptr<const std::string> path, ModId srcId, std::string &&content, int version,
+         SourceAttr attr);
 
-  Source(const char *path, ModId srcId, std::string &&content, int version)
-      : Source(std::make_shared<const std::string>(path), srcId, std::move(content), version) {}
+  Source(const char *path, ModId srcId, std::string &&content, int version, SourceAttr attr)
+      : Source(std::make_shared<const std::string>(path), srcId, std::move(content), version,
+               attr) {}
 
   const std::string &getPath() const { return *this->path; }
 
@@ -76,8 +90,12 @@ public:
 
   ModId getSrcId() const { return this->srcId; }
 
+  SourceAttr getAttr() const { return this->attr; }
+
+  bool has(SourceAttr a) const { return hasFlag(this->getAttr(), a); }
+
   std::shared_ptr<Source> copyAndUpdate(int v, std::string &&c) const {
-    return std::make_shared<Source>(this->path, this->srcId, std::move(c), v);
+    return std::make_shared<Source>(this->path, this->srcId, std::move(c), v, this->attr);
   }
 };
 
@@ -117,10 +135,11 @@ public:
    * must be full-path
    * @param version
    * @param content
+   * @param attr
    * @return
    * if module id reaches limit, return null
    */
-  SourcePtr update(StringRef path, int version, std::string &&content);
+  SourcePtr update(StringRef path, int version, std::string &&content, SourceAttr attr = {});
 
   /**
    * add source from other source manager.
