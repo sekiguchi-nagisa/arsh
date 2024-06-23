@@ -221,15 +221,17 @@ Result<WorkspaceEdit, std::string> LSPServer::renameImpl(const SymbolRequest &re
   auto status = RenameValidationStatus::DO_NOTHING;
   bool publicToPrivate = false;
   if (this->renameSupport == BinaryFlag::enabled) {
-    status = validateRename(this->result.indexes, request, newName, [&](const RenameResult &ret) {
-      if (ret) {
-        auto &target = ret.asOk();
-        changes[target.symbol.getModId()].push_back(target.toTextEdit(*this->result.srcMan));
-        if (target.publicToPrivate && request.modId != target.symbol.getModId()) {
-          publicToPrivate = true;
-        }
-      }
-    });
+    status = validateRename(
+        this->result.indexes, request, newName,
+        [&](const DeclSymbol &decl, const RenameResult &ret) {
+          if (ret) {
+            auto &target = ret.asOk();
+            changes[target.symbol.getModId()].push_back(target.toTextEdit(*this->result.srcMan));
+            if (target.publicToPrivate && decl.getModId() != target.symbol.getModId()) {
+              publicToPrivate = true;
+            }
+          }
+        });
   }
   switch (status) {
   case RenameValidationStatus::CAN_RENAME:

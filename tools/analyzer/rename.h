@@ -53,9 +53,10 @@ struct RenameConflict {
 
 using RenameResult = Result<RenameTarget, RenameConflict>;
 
+using ValidateRenameConsumer = std::function<void(const DeclSymbol &, const RenameResult &)>;
+
 RenameValidationStatus validateRename(const SymbolIndexes &indexes, SymbolRequest request,
-                                      StringRef newName,
-                                      const std::function<void(const RenameResult &)> &consumer);
+                                      StringRef newName, const ValidateRenameConsumer &consumer);
 
 } // namespace arsh::lsp
 

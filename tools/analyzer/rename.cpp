@@ -148,11 +148,11 @@ static bool equalsName(const DeclSymbol &decl, const std::string &mangledNewDecl
 
 static bool checkMangledNames(const DeclSymbol &decl, const DeclSymbol &target,
                               const std::vector<std::string> &mangledNewNames,
-                              const std::function<void(const RenameResult &)> &consumer) {
+                              const ValidateRenameConsumer &consumer) {
   for (const auto &mangledNewName : mangledNewNames) {
     if (equalsName(decl, mangledNewName, target)) {
       if (consumer) {
-        consumer(Err(RenameConflict(target.toRef())));
+        consumer(decl, Err(RenameConflict(target.toRef())));
       }
       return false;
     }
@@ -204,8 +204,7 @@ static bool isUsedInScope(const DeclBase &decl, const ScopeInterval &scope) {
 }
 
 static bool checkNameConflict(const SymbolIndexes &indexes, const DeclSymbol &decl,
-                              StringRef newName,
-                              const std::function<void(const RenameResult &)> &consumer) {
+                              StringRef newName, const ValidateRenameConsumer &consumer) {
   switch (decl.getKind()) {
   case DeclSymbol::Kind::VAR:
   case DeclSymbol::Kind::LET:
@@ -269,7 +268,7 @@ static bool checkNameConflict(const SymbolIndexes &indexes, const DeclSymbol &de
           }
         }
         if (consumer) {
-          consumer(Err(RenameConflict(*r)));
+          consumer(decl, Err(RenameConflict(*r)));
         }
         return false;
       }
@@ -340,7 +339,7 @@ static bool checkNameConflict(const SymbolIndexes &indexes, const DeclSymbol &de
       auto index = indexes.find(type->resolveBelongedModId());
       if (auto *r = index->findGlobal(methodName)) { // hide base type method
         if (consumer) {
-          consumer(Err(RenameConflict(*r)));
+          consumer(decl, Err(RenameConflict(*r)));
         }
         return false;
       }
@@ -351,8 +350,7 @@ static bool checkNameConflict(const SymbolIndexes &indexes, const DeclSymbol &de
 }
 
 RenameValidationStatus validateRename(const SymbolIndexes &indexes, SymbolRequest request,
-                                      StringRef newName,
-                                      const std::function<void(const RenameResult &)> &consumer) {
+                                      StringRef newName, const ValidateRenameConsumer &consumer) {
   const auto resolved = resolveRenameLocation(indexes, request);
   if (!resolved.hasValue()) {
     return RenameValidationStatus::INVALID_SYMBOL;
@@ -394,7 +392,7 @@ RenameValidationStatus validateRename(const SymbolIndexes &indexes, SymbolReques
   if (consumer) {
     bool publicToPrivate = actualNewName[0] == '_' && declName[0] != '_';
     findAllReferences(indexes, decl, false, [&](const FindRefsResult &ret) {
-      consumer(Ok(RenameTarget(ret.symbol, actualNewName, publicToPrivate)));
+      consumer(decl, Ok(RenameTarget(ret.symbol, actualNewName, publicToPrivate)));
     });
   }
   return RenameValidationStatus::CAN_RENAME;

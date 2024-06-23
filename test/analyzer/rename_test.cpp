@@ -79,7 +79,7 @@ public:
   void renameWithConflict(Request req, const char *newName, Conflict &&expect) {
     arsh::Optional<Conflict> actual;
     this->renameImpl(req, newName, RenameValidationStatus::NAME_CONFLICT,
-                     [&](const RenameResult &ret) {
+                     [&](const DeclSymbol &, const RenameResult &ret) {
                        ASSERT_FALSE(ret);
                        auto &conflict = ret.asErr();
                        auto src = this->srcMan.findById(conflict.symbol.getModId());
@@ -102,7 +102,7 @@ public:
 
     std::vector<Result> actual;
     this->renameImpl(req, newName, RenameValidationStatus::CAN_RENAME,
-                     [&](const RenameResult &ret) {
+                     [&](const DeclSymbol &, const RenameResult &ret) {
                        ASSERT_TRUE(ret);
                        auto &target = ret.asOk();
                        auto edit = target.toTextEdit(this->srcMan);
@@ -121,7 +121,7 @@ public:
 
 private:
   void renameImpl(Request req, const char *newName, RenameValidationStatus status,
-                  const std::function<void(const RenameResult &)> &consumer) {
+                  const ValidateRenameConsumer &consumer) {
     auto src = this->srcMan.findById(req.getModId());
     ASSERT_TRUE(src);
     auto pos = toTokenPos(src->getContent(), req.toPosition());
