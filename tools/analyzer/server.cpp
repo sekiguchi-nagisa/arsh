@@ -219,11 +219,15 @@ Result<WorkspaceEdit, std::string> LSPServer::renameImpl(const SymbolRequest &re
                                                          const std::string &newName) const {
   std::unordered_map<ModId, std::vector<TextEdit>> changes;
   auto status = RenameValidationStatus::DO_NOTHING;
+  bool publicToPrivate = false;
   if (this->renameSupport == BinaryFlag::enabled) {
     status = validateRename(this->result.indexes, request, newName, [&](const RenameResult &ret) {
       if (ret) {
         auto &target = ret.asOk();
         changes[target.symbol.getModId()].push_back(target.toTextEdit(*this->result.srcMan));
+        if (target.publicToPrivate && request.modId != target.symbol.getModId()) {
+          publicToPrivate = true;
+        }
       }
     });
   }
@@ -258,6 +262,15 @@ Result<WorkspaceEdit, std::string> LSPServer::renameImpl(const SymbolRequest &re
     if (!changes.empty()) {
       workspaceEdit.initTextDocumentEdit();
     }
+    if (publicToPrivate) {
+      workspaceEdit.initChangeAnnotations();
+      workspaceEdit.changeAnnotations.unwrap().emplace(
+          "public-to-private", ChangeAnnotation{
+                                   .label = "",
+                                   .needsConfirmation = true,
+                                   .description = "rename public symbol to private",
+                               });
+    }
     for (auto &[modId, edits] : changes) {
       auto src = this->result.srcMan->findById(modId);
       assert(src);
@@ -268,7 +281,11 @@ Result<WorkspaceEdit, std::string> LSPServer::renameImpl(const SymbolRequest &re
         edit.textDocument.version = src->getVersion();
       }
       for (auto &e : edits) {
-        edit.edits.emplace_back(std::move(e));
+        if (publicToPrivate) {
+          edit.edits.emplace_back(AnnotatedTextEdit::from(std::move(e), "public-to-private"));
+        } else {
+          edit.edits.emplace_back(std::move(e));
+        }
       }
       workspaceEdit.documentChanges.unwrap().push_back(std::move(edit));
     }

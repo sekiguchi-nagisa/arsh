@@ -24,7 +24,7 @@ namespace arsh::lsp {
 
 Optional<FindDeclResult> resolveRenameLocation(const SymbolIndexes &indexes, SymbolRequest request);
 
-enum class RenameValidationStatus {
+enum class RenameValidationStatus : unsigned char {
   CAN_RENAME,
   DO_NOTHING, // not perform rename since new name is equivalent to old new
   INVALID_SYMBOL,
@@ -37,8 +37,10 @@ enum class RenameValidationStatus {
 struct RenameTarget {
   const SymbolRef symbol;  // rename target symbol
   const StringRef newName; // may be escaped (for user-defined command)
+  const bool publicToPrivate;
 
-  RenameTarget(SymbolRef symbol, StringRef newName) : symbol(symbol), newName(newName) {}
+  RenameTarget(SymbolRef symbol, StringRef newName, bool publicToPrivate)
+      : symbol(symbol), newName(newName), publicToPrivate(publicToPrivate) {}
 
   TextEdit toTextEdit(const SourceManager &srcMan) const;
 };

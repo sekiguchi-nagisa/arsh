@@ -53,6 +53,7 @@
     - now enabled by default
     - support field rename
     - now check method override
+    - ask for confirmation when rename public symbol to private
 
 #### Module
 

@@ -1,0 +1,113 @@
+# RUN: call $cmd --test $self
+
+{"id": 0, "jsonrpc": "2.0", "method": "initialize",
+ "params": {"capabilities": {"textDocument": {"rename": {"honorsChangeAnnotations": true}},
+                             "workspace": {"workspaceEdit": {"changeAnnotationSupport": {"groupsOnLabel": true}}}
+                             },
+            "rootUri": "file:///test", "processId": 46}}
+
+#    CHECK: {
+# CHECK_IF:     "capabilities": {
+# CHECK_IF: }
+
+<<<
+{"jsonrpc": "2.0", "method": "textDocument/didOpen",
+ "params": {
+    "textDocument": {"languageId": "arsh", "version": 1, "uri": "test:///test.ds",
+                     "text": "source $SCRIPT_DIR/mod1.ds;\nnew Interval(2,3)"}
+ }
+}
+
+# enable rename
+<<<
+{
+  "jsonrpc": "2.0",
+  "method": "workspace/didChangeConfiguration",
+  "params": {
+    "settings": {
+      "arshd": {
+        "rename": "enabled"
+      }
+    }
+  }
+}
+
+# rename public symbol to private
+
+<<<
+{"id": 1, "jsonrpc": "2.0", "method": "textDocument/rename",
+  "params": {
+    "newName": "_AAA",
+    "position": {
+      "character": 6,
+      "line": 1
+    },
+    "textDocument": { "uri": "test:///test.ds" }
+  }
+}
+
+# CHECK_IF:   "result": {
+#    CHECK:     "changeAnnotations": {
+#    CHECK:       "public-to-private": {
+#    CHECK:         "description": "rename public symbol to private",
+#    CHECK:         "label": "",
+#    CHECK:         "needsConfirmation": true
+#    CHECK:       }
+#    CHECK:     },
+#    CHECK:     "documentChanges": [
+#    CHECK:       {
+#    CHECK:         "edits": [
+#    CHECK:           {
+#    CHECK:             "annotationId": "public-to-private",
+#    CHECK:             "newText": "_AAA",
+#    CHECK:             "range": {
+#    CHECK:               "end": {
+#    CHECK:                 "character": 12,
+#    CHECK:                 "line": 1
+#    CHECK:               },
+#    CHECK:               "start": {
+#    CHECK:                 "character": 4,
+#    CHECK:                 "line": 1
+#    CHECK:               }
+#    CHECK:             }
+#    CHECK:           }
+#    CHECK:         ],
+#    CHECK:         "textDocument": {
+#    CHECK:           "uri": "test:///test.ds",
+#    CHECK:           "version": 1
+#    CHECK:         }
+#    CHECK:       },
+#    CHECK:       {
+#    CHECK:         "edits": [
+#    CHECK:           {
+#    CHECK:             "annotationId": "public-to-private",
+#    CHECK:             "newText": "_AAA",
+#    CHECK:             "range": {
+#    CHECK:               "end": {
+#    CHECK:                 "character": 16,
+#    CHECK:                 "line": 1
+#    CHECK:               },
+#    CHECK:               "start": {
+#    CHECK:                 "character": 8,
+#    CHECK:                 "line": 1
+#    CHECK:               }
+#    CHECK:             }
+#    CHECK:           }
+#    CHECK:         ],
+#    CHECK:         "textDocument": {
+#    CHECK:           "uri": "test:///mod1.ds",
+#    CHECK:           "version": null
+#    CHECK:         }
+#    CHECK:       }
+#    CHECK:     ]
+#    CHECK:   }
+
+<<<
+{"id": 4, "jsonrpc": "2.0", "method": "shutdown"}
+
+# CHECK_IF:   "result": null
+#    CHECK: }
+
+<<<
+{"jsonrpc": "2.0", "method": "exit"}
+# STATUS: 0

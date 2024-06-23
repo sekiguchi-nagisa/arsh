@@ -1282,6 +1282,14 @@ struct AnnotatedTextEdit : public TextEdit {
     TextEdit::jsonify(t);
     JSONIFY(annotationId);
   }
+
+  static AnnotatedTextEdit from(TextEdit &&edit, ChangeAnnotationIdentifier &&id) {
+    AnnotatedTextEdit anno{};
+    anno.annotationId = std::move(id);
+    anno.range = edit.range;
+    anno.newText = std::move(edit.newText);
+    return anno;
+  }
 };
 
 struct TextDocumentEdit {

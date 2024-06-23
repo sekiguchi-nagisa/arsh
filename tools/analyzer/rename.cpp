@@ -392,8 +392,9 @@ RenameValidationStatus validateRename(const SymbolIndexes &indexes, SymbolReques
   }
 
   if (consumer) {
+    bool publicToPrivate = actualNewName[0] == '_' && declName[0] != '_';
     findAllReferences(indexes, decl, false, [&](const FindRefsResult &ret) {
-      consumer(Ok(RenameTarget(ret.symbol, actualNewName)));
+      consumer(Ok(RenameTarget(ret.symbol, actualNewName, publicToPrivate)));
     });
   }
   return RenameValidationStatus::CAN_RENAME;
