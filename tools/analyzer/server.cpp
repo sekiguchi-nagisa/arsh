@@ -217,14 +217,13 @@ Union<Hover, std::nullptr_t> LSPServer::hoverImpl(const Source &src,
 
 Result<WorkspaceEdit, std::string> LSPServer::renameImpl(const SymbolRequest &request,
                                                          const std::string &newName) const {
-  std::unordered_map<unsigned int, std::vector<TextEdit>> changes;
+  std::unordered_map<ModId, std::vector<TextEdit>> changes;
   auto status = RenameValidationStatus::DO_NOTHING;
   if (this->renameSupport == BinaryFlag::enabled) {
     status = validateRename(this->result.indexes, request, newName, [&](const RenameResult &ret) {
       if (ret) {
         auto &target = ret.asOk();
-        changes[toUnderlying(target.symbol.getModId())].push_back(
-            target.toTextEdit(*this->result.srcMan));
+        changes[target.symbol.getModId()].push_back(target.toTextEdit(*this->result.srcMan));
       }
     });
   }
@@ -254,14 +253,35 @@ Result<WorkspaceEdit, std::string> LSPServer::renameImpl(const SymbolRequest &re
   }
 
   WorkspaceEdit workspaceEdit;
-  if (!changes.empty()) {
-    workspaceEdit.initAsTextEdit();
-  }
-  for (auto &e : changes) {
-    auto src = this->result.srcMan->findById(static_cast<ModId>(e.first));
-    assert(src);
-    auto uri = this->result.srcMan->toURI(src->getPath());
-    workspaceEdit.insert(uri, std::move(e.second));
+  if (hasFlag(this->supportedCapability, SupportedCapability::CHANGE_ANNOTATION) &&
+      hasFlag(this->supportedCapability, SupportedCapability::RENAME_CHANGE_ANNOTATION)) {
+    if (!changes.empty()) {
+      workspaceEdit.initTextDocumentEdit();
+    }
+    for (auto &[modId, edits] : changes) {
+      auto src = this->result.srcMan->findById(modId);
+      assert(src);
+      TextDocumentEdit edit;
+      edit.textDocument.version = nullptr;
+      edit.textDocument.uri = this->result.srcMan->toURI(src->getPath()).toString();
+      if (!src->has(SourceAttr::FROM_DISK)) {
+        edit.textDocument.version = src->getVersion();
+      }
+      for (auto &e : edits) {
+        edit.edits.emplace_back(std::move(e));
+      }
+      workspaceEdit.documentChanges.unwrap().push_back(std::move(edit));
+    }
+  } else {
+    if (!changes.empty()) {
+      workspaceEdit.initTextEdit();
+    }
+    for (auto &e : changes) {
+      auto src = this->result.srcMan->findById(e.first);
+      assert(src);
+      auto uri = this->result.srcMan->toURI(src->getPath());
+      workspaceEdit.insert(uri, std::move(e.second));
+    }
   }
   return Ok(std::move(workspaceEdit));
 }

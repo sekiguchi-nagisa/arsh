@@ -49,7 +49,7 @@ struct RenameConflict {
   explicit RenameConflict(SymbolRef symbol) : symbol(symbol) {}
 };
 
-using RenameResult = arsh::Result<RenameTarget, RenameConflict>;
+using RenameResult = Result<RenameTarget, RenameConflict>;
 
 RenameValidationStatus validateRename(const SymbolIndexes &indexes, SymbolRequest request,
                                       StringRef newName,

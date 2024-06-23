@@ -379,6 +379,7 @@ struct WorkspaceClientCapability {
 
   template <typename T>
   void jsonify(T &t) {
+    JSONIFY(workspaceEdit);
     JSONIFY(configuration);
   }
 };
@@ -1308,12 +1309,9 @@ struct ChangeAnnotation {
 };
 
 struct WorkspaceEdit {
-  using change_type = std::map<DocumentURI, std::vector<TextEdit>>;
-  using change_annotation_map = std::map<std::string, ChangeAnnotation>;
-
-  Optional<change_type> changes;
+  Optional<std::map<DocumentURI, std::vector<TextEdit>>> changes;
   Optional<std::vector<TextDocumentEdit>> documentChanges;
-  Optional<change_annotation_map> changeAnnotations;
+  Optional<std::map<std::string, ChangeAnnotation>> changeAnnotations;
 
   template <typename T>
   void jsonify(T &t) {
@@ -1322,7 +1320,13 @@ struct WorkspaceEdit {
     JSONIFY(changeAnnotations);
   }
 
-  void initAsTextEdit() { this->changes = change_type(); }
+  void initTextEdit() { this->changes = decltype(changes)::value_type(); }
+
+  void initTextDocumentEdit() { this->documentChanges = decltype(documentChanges)::value_type(); }
+
+  void initChangeAnnotations() {
+    this->changeAnnotations = decltype(changeAnnotations)::value_type();
+  }
 
   /**
    * if insertion success, return true

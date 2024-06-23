@@ -322,6 +322,8 @@ class OptionalBase : public Union<T> {
 public:
   using base_type = Union<T>;
 
+  using value_type = T;
+
   OptionalBase() noexcept : Union<T>() {}
 
   template <typename U>
