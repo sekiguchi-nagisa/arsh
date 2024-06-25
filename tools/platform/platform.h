@@ -30,7 +30,7 @@ namespace arsh::platform {
   OP(MSYS)      /* MSYS2 */                                                                        \
   OP(WSL)       /* Windows Subsystem for Linux */
 
-enum class PlatformType : unsigned int {
+enum class PlatformType : unsigned char {
 #define GEN_ENUM(E) E,
   EACH_PLATFORM_TYPE(GEN_ENUM)
 #undef GEN_ENUM
@@ -69,7 +69,7 @@ bool containPlatform(const std::string &text, PlatformType type);
   OP(ARM, "aarch32|a32")                                                                           \
   OP(AARCH64, "arm64|a64")
 
-enum class ArchType : unsigned int {
+enum class ArchType : unsigned char {
 #define GEN_ENUM(E, S) E,
   EACH_ARCH_TYPE(GEN_ENUM)
 #undef GEN_ENUM

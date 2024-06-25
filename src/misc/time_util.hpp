@@ -36,7 +36,7 @@ inline timespec timestampToTimespec(timestamp ts) {
   };
 }
 
-enum class ParseTimespecStatus {
+enum class ParseTimespecStatus : unsigned char {
   OK,
   INVALID_UNIX_TIME,
   INVALID_NANO_SEC,

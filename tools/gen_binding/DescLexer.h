@@ -44,7 +44,7 @@
   OP(SEMI_COLON) /* ; */                                                                           \
   OP(LBC)        /* { */
 
-enum class DescTokenKind : unsigned int {
+enum class DescTokenKind : unsigned char {
 #define GEN_ENUM(TOK) TOK,
   EACH_DESC_TOKEN(GEN_ENUM)
 #undef GEN_ENUM

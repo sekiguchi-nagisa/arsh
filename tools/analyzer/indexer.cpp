@@ -171,8 +171,8 @@ const Symbol *IndexBuilder::addSymbolImpl(const Type *recv, const NameInfo &name
     SymbolRequest request = {.modId = ref->getModId(), .pos = ref->getPos()};
     auto iter = std::lower_bound(this->foreign.begin(), this->foreign.end(), request,
                                  ForeignDecl::Compare());
-    if (iter == this->foreign.end() || (*iter).getModId() != request.modId ||
-        (*iter).getPos() != request.pos) { // not found, register foreign decl
+    if (iter == this->foreign.end() || iter->getModId() != request.modId ||
+        iter->getPos() != request.pos) { // not found, register foreign decl
       auto *ret = this->indexes.findDecl(request);
       if (!ret || (!ret->has(DeclSymbol::Attr::GLOBAL | DeclSymbol::Attr::PUBLIC) &&
                    !isBuiltinMod(ref->getModId()))) {
