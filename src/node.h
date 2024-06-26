@@ -1448,7 +1448,7 @@ private:
 public:
   BraceSeqNode(Token token, BraceRange::Kind k) : WithRtti(token) { this->range.kind = k; }
 
-  void setRange(BraceRange r) { this->range = r; }
+  void setRange(const BraceRange &r) { this->range = r; }
 
   const auto &getRange() const { return this->range; }
 

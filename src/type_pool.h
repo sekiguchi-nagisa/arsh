@@ -74,7 +74,7 @@ public:
 
     Value() : index_(0) {}
 
-    explicit Value(unsigned int index) : index_(index | TAG) {}
+    explicit Value(unsigned int index) : index_(static_cast<int64_t>(index | TAG)) {}
 
     /**
      *
@@ -197,6 +197,7 @@ public:
    * @param typeName
    * @param superType
    * must be subtype of Error type
+   * @param belongedModId
    * @return
    */
   TypeOrError createErrorType(const std::string &typeName, const Type &superType,
@@ -238,8 +239,7 @@ public:
    * if failed, return null
    * // FIXME: error reporting
    */
-  std::unique_ptr<MethodHandle> allocNativeMethodHandle(const Type &recv,
-                                                        unsigned int methodIndex);
+  std::unique_ptr<MethodHandle> allocNativeMethodHandle(const Type &recv, unsigned int methodIndex);
 
   bool hasMethod(const Type &recvType, const std::string &methodName) const;
 
@@ -298,14 +298,14 @@ private:
                                         const std::vector<const Type *> &paramTypes);
 
   /**
-   *
+   * @param t
    * @param elementTypes
+   * @param limit
    * @return
    * if success, return null
    */
   static TypeOrError checkElementTypes(const TypeTemplate &t,
-                                       const std::vector<const Type *> &elementTypes,
-                                       size_t limit);
+                                       const std::vector<const Type *> &elementTypes, size_t limit);
 
   /**
    *

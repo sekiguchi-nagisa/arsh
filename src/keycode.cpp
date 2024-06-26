@@ -147,7 +147,7 @@ static ssize_t readBytes(int fd, char (&buf)[8]) {
   } while (false)
 
 ssize_t KeyCodeReader::fetch() {
-  constexpr const char ESC = '\x1b';
+  constexpr char ESC = '\x1b';
   char buf[8];
   ssize_t readSize = readBytes(this->fd, buf);
   if (readSize <= 0) {

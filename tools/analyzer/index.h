@@ -542,14 +542,10 @@ inline bool findAllReferences(const SymbolIndexes &indexes, SymbolRequest reques
 
 } // namespace arsh::lsp
 
-namespace arsh {
+template <>
+struct arsh::allow_enum_bitop<arsh::lsp::DeclSymbol::Attr> : std::true_type {};
 
 template <>
-struct allow_enum_bitop<lsp::DeclSymbol::Attr> : std::true_type {};
-
-template <>
-struct allow_enum_bitop<lsp::IndexLink::ImportAttr> : std::true_type {};
-
-} // namespace arsh
+struct arsh::allow_enum_bitop<arsh::lsp::IndexLink::ImportAttr> : std::true_type {};
 
 #endif // ARSH_TOOLS_ANALYZER_INDEX_H

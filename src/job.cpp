@@ -36,7 +36,7 @@ int beForeground(pid_t pid) {
   return r;
 }
 
-Proc Proc::fork(ARState &st, pid_t pgid, const Proc::Op op) {
+Proc Proc::fork(ARState &st, pid_t pgid, const Op op) {
   SignalGuard guard;
 
   // flush standard stream due to prevent mixing io buffer
