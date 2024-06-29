@@ -879,7 +879,7 @@ void TypeChecker::visitStringNode(StringNode &node) {
     break;
   case StringNode::BACKQUOTE:
     this->reportError<NoBackquote>(node);
-    break;
+    return; // not set String type
   }
   node.setType(this->typePool().get(TYPE::String));
 }
