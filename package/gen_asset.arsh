@@ -34,7 +34,7 @@ typedef _Param() {
 
 _main(param: _Param) {
     shctl set errraise
-    $/^\d+\.\d+\.\d+$/ =~ $param.version || error "invalid version number: ${param.version}"
+    $/^\d+\.\d+\.\d+.*$/ =~ $param.version || error "invalid version number: ${param.version}"
     var dir = "${param.target}/arsh"
     mkdir -p $dir
     assert test -f $SCRIPT_DIR/rpm/arsh.spec.in
