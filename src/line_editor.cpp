@@ -1038,9 +1038,20 @@ ssize_t LineEditorObject::readline(ARState &state, StringRef prompt, char *buf, 
     return linenoiseNoTTY(this->inFd, buf, bufLen);
   }
 
+  state.incReadlineCallCount();
   this->lock = true;
   this->continueLine = false;
-  auto cleanup = finally([&] { this->lock = false; });
+  auto cleanup = finally([&] {
+    this->lock = false;
+    state.declReadlineCallCount();
+  });
+
+  // check call count (not allow recursive readline call)
+  if (state.getReadlineCallCount() > 1) {
+    raiseError(state, TYPE::InvalidOperationError, "cannot call readline recursively");
+    errno = EAGAIN;
+    return -1;
+  }
 
   // prepare prompt
   Value promptVal;

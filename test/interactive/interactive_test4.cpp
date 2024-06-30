@@ -303,6 +303,15 @@ TEST_F(InteractiveTest, lineEditorRec) {
          "assert $ex is InvalidOperationError";
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(text));
 
+  // recursive call readLine from other instance
+  text = "$ex = 34; $e.setPrompt(function(p)=>{"
+         "  $LINE_EDIT.readLine();"
+         "  $p; })";
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(text));
+  text = "try { $e.readLine(); assert false; } catch e { $ex = $e; }; "
+         "assert $ex is InvalidOperationError";
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(text));
+
   this->send(CTRL_D);
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
 }

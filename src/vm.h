@@ -101,6 +101,8 @@ public:
   const timestamp initTime; // for builtin printf command
 
 private:
+  short readlineCallCount{0};
+
   RuntimeOption runtimeOption{RuntimeOption::ASSERT | RuntimeOption::CLOBBER |
                               RuntimeOption::FAIL_GLOB | RuntimeOption::FAIL_TILDE |
                               RuntimeOption::GLOBSTAR | RuntimeOption::HUP_EXIT};
@@ -255,6 +257,12 @@ public:
   RuntimeOption getOption() const { return this->runtimeOption; }
 
   void setOption(RuntimeOption option) { this->runtimeOption = option; }
+
+  short getReadlineCallCount() const { return this->readlineCallCount; }
+
+  void incReadlineCallCount() { this->readlineCallCount++; }
+
+  void declReadlineCallCount() { this->readlineCallCount--; }
 };
 
 namespace arsh {

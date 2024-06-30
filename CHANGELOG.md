@@ -41,6 +41,9 @@
     - now ``PPID`` always indicates same value
 - **Breaking Change**: builtin ``exec`` command now throw ``SystemError`` if command execution failed
     - now do not exit shell itself
+- **Breaking Change**: not allow recursive ``LineEditor#readLine`` method call even if other instance
+    - due to prevent potential stack overflow
+    - now throw ``InvalidOperationError``
 - ``complete`` command correctly recognize module (put ``module`` description instead of ``user-defined``)
 - complete flags/options/sub-commands defined via ``Flag``, ``Option``, ``SubCmd`` attribute
 - builtin ``kill`` command support ``-L`` (equivalent to ``-l`` option)
