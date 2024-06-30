@@ -10,7 +10,7 @@
     - define sub-commands via ``SubCmd`` attribute
 - add shift operators such as ``<<``, ``>>``, ``>>>``
     - equivalent to java shift operators
-    - unlike other binary arithmetic operators, not check overflow
+    - unlike other arithmetic operators, not check overflow
 
 #### Builtin
 
@@ -61,7 +61,7 @@
 #### Module
 
 - **Breaking Change**: add ``.arsh`` file extension to std modules
-    - add symlink ``repl``, ``completion`` for compatibility
+    - add symlink ``repl``, ``completion``, ``prompt`` for compatibility
 
 ### Fixed
 
