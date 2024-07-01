@@ -1,0 +1,25 @@
+#!/usr/bin/env arsh
+
+## check binary
+assert command -v arsh
+assert command -v arshd
+assert command -v dscolorize
+echo $DATA_DIR/tools/litecheck
+assert test -x $DATA_DIR/tools/litecheck
+
+assert command -v fzf  # check dependency
+
+## check modules
+assert test -f $MODULE_DIR/repl
+assert test -f $MODULE_DIR/repl.arsh
+assert test -f $MODULE_DIR/repl_impl/prompt
+assert test -f $MODULE_DIR/repl_impl/prompt.arsh
+assert test -f $MODULE_DIR/completion
+assert test -f $MODULE_DIR/completion.arsh
+
+source repl inlined
+
+shctl module
+
+## check bash-completions
+assert "$(cd / && complete -- 'git check')" == 'checkout '
