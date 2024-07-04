@@ -225,7 +225,7 @@ std::string ANSIFormatter::dump() {
   for (auto &e : this->escapeSeqCache) {
     auto index = static_cast<unsigned int>(e.first);
     assert(index < getHighlightTokenEntries().size());
-    const char *name = getHighlightTokenEntries()[index].second;
+    const StringRef name = getHighlightTokenEntries()[index].second;
     if (!value.empty()) {
       value += " ";
     }

@@ -52,7 +52,7 @@ enum class HighlightTokenClass : unsigned char {
 HighlightTokenClass toTokenClass(TokenKind kind);
 
 using HighlightTokenEntries =
-    std::array<std::pair<HighlightTokenClass, const char *>,
+    std::array<std::pair<HighlightTokenClass, StringRef>,
                static_cast<unsigned int>(HighlightTokenClass::LINENO_) + 1>;
 
 const HighlightTokenEntries &getHighlightTokenEntries();

@@ -21,7 +21,7 @@
 
 namespace arsh::highlighter {
 
-enum class FormatterType {
+enum class FormatterType : unsigned char {
   NULL_,
   TERM_TRUECOLOR,
   TERM_256,

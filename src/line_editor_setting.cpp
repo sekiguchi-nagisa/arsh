@@ -253,13 +253,13 @@ Value LineEditorObject::getConfigs(ARState &state) const {
     case EditConfig::COLOR: {
       std::string code;
       auto &entries = getHighlightTokenEntries();
-      for (auto &entry : entries) {
-        if (auto iter = this->escapeSeqMap.getValues().find(entry.first);
+      for (auto &[cl, name] : entries) {
+        if (auto iter = this->escapeSeqMap.getValues().find(cl);
             iter != this->escapeSeqMap.getValues().end()) {
           if (!code.empty()) {
             code += " ";
           }
-          code += entry.second;
+          code += name;
           code += "=";
           code += iter->second;
         }
