@@ -364,7 +364,7 @@ void HTMLFormatter::initialize(StringRef newSource) {
   this->newlineCount = 0;
   if (hasFlag(this->formatOp, HTMLFormatOp::FULL)) {
     this->output << "<html>\n<body";
-    auto css = toCSSImpl(style.getBackground());
+    auto css = toCSSImpl(this->style.background);
     if (!css.empty()) {
       this->output << " style=\"" << css << "\"";
     }

@@ -155,51 +155,33 @@ struct StyleRule {
   [[nodiscard]] StyleRule synthesize(const ValidRule &valid) const;
 };
 
-class Style {
-private:
-  CStrPtr name;
+struct Style {
   StyleRule foreground;
   StyleRule background;
   std::unordered_map<HighlightTokenClass, StyleRule> rules;
 
-public:
-  Style(const char *name, StyleRule foreground, StyleRule background,
-        std::unordered_map<HighlightTokenClass, StyleRule> &&rules)
-      : name(CStrPtr(strdup(name))), foreground(foreground), background(background),
-        rules(std::move(rules)) {}
-
-  [[nodiscard]] const char *getName() const { return this->name.get(); }
-
-  const StyleRule &getForeground() const { return this->foreground; }
-
-  const StyleRule &getBackground() const { return this->background; }
-
-  [[nodiscard]] const auto &getRules() const { return this->rules; }
-
   const StyleRule *find(HighlightTokenClass tokenClass) const;
 
   const StyleRule &findOrDefault(HighlightTokenClass tokenClass) const {
-    if (auto rule = this->find(tokenClass)) {
+    if (auto *rule = this->find(tokenClass)) {
       return *rule;
-    } else {
-      return this->getForeground();
     }
+    return this->foreground;
   }
 };
 
 class StyleMap {
 private:
-  StrRefMap<Style> values;
+  std::unordered_map<std::string, Style> values;
 
 public:
   StyleMap();
 
-  bool add(Style &&style) {
-    StringRef name = style.getName();
+  bool add(const char *name, Style &&style) {
     return this->values.emplace(name, std::move(style)).second;
   }
 
-  [[nodiscard]] const Style *find(StringRef name) const;
+  [[nodiscard]] const Style *find(const std::string &name) const;
 
   const auto &getValues() const { return this->values; }
 

@@ -36,7 +36,7 @@ private:
 
   StringRef formatName{"ansi"};
 
-  StringRef styleName{DEFAULT_STYLE_NAME};
+  std::string styleName{DEFAULT_STYLE_NAME};
 
   StringRef lineno;
 
@@ -55,7 +55,7 @@ public:
 
   void setFormatName(StringRef name) { this->formatName = name; }
 
-  void setStyleName(StringRef name) { this->styleName = name; }
+  void setStyleName(StringRef name) { this->styleName = name.toString(); }
 
   void setLineno(StringRef num) { this->lineno = num; }
 

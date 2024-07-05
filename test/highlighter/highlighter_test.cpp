@@ -241,37 +241,30 @@ TEST_F(HighlightTest, style) {
 
   auto *style = styleMap.find("darcula");
   ASSERT_TRUE(style);
-  ASSERT_STREQ("darcula", style->getName());
   ASSERT_TRUE(style->find(HighlightTokenClass::KEYWORD));
 
   style = styleMap.find("null");
   ASSERT_TRUE(style);
-  ASSERT_STREQ("null", style->getName());
   ASSERT_FALSE(style->find(HighlightTokenClass::KEYWORD));
 
   style = styleMap.find("algol");
   ASSERT_TRUE(style);
-  ASSERT_STREQ("algol", style->getName());
   ASSERT_TRUE(style->find(HighlightTokenClass::KEYWORD));
 
   style = styleMap.find("monokai");
   ASSERT_TRUE(style);
-  ASSERT_STREQ("monokai", style->getName());
   ASSERT_TRUE(style->find(HighlightTokenClass::KEYWORD));
 
   style = styleMap.find("monokai_dimmed");
   ASSERT_TRUE(style);
-  ASSERT_STREQ("monokai_dimmed", style->getName());
   ASSERT_TRUE(style->find(HighlightTokenClass::KEYWORD));
 
   style = styleMap.find("colorful");
   ASSERT_TRUE(style);
-  ASSERT_STREQ("colorful", style->getName());
   ASSERT_TRUE(style->find(HighlightTokenClass::KEYWORD));
 
   style = styleMap.find("github");
   ASSERT_TRUE(style);
-  ASSERT_STREQ("github", style->getName());
   ASSERT_TRUE(style->find(HighlightTokenClass::KEYWORD));
 
   style = styleMap.find("not found ");

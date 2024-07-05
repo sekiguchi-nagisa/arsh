@@ -170,8 +170,8 @@ StyleRule StyleRule::synthesize(const ValidRule &valid) const {
 }
 
 const StyleRule *Style::find(HighlightTokenClass tokenClass) const {
-  auto iter = this->getRules().find(tokenClass);
-  if (iter != this->getRules().end()) {
+  auto iter = this->rules.find(tokenClass);
+  if (iter != this->rules.end()) {
     return &iter->second;
   }
   return nullptr;
@@ -193,7 +193,7 @@ StyleMap::StyleMap() {
   LOAD_HIGHLIGHT_STYLE(null);
 }
 
-const Style *StyleMap::find(StringRef name) const {
+const Style *StyleMap::find(const std::string &name) const {
   auto iter = this->values.find(name);
   if (iter != this->values.end()) {
     return &iter->second;
@@ -236,7 +236,11 @@ bool StyleMap::defineStyle(const char *name,
   }
   map.emplace(HighlightTokenClass::LINENO_, lineno);
 
-  return this->add(Style(name, foreground, background, std::move(map)));
+  return this->add(name, Style{
+                             .foreground = foreground,
+                             .background = background,
+                             .rules = std::move(map),
+                         });
 }
 
 } // namespace arsh::highlighter
