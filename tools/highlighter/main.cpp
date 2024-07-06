@@ -54,8 +54,8 @@ const OptParser<OptionSet>::Option options[] = {
     {OptionSet::HTML_LINENO_TABLE, 0, "html-lineno-table", OptParseOp::NO_ARG,
      "emit line number as table (for html formatter)"},
     {OptionSet::DUMP, 0, "dump", OptParseOp::NO_ARG, "dump ansi color code of theme"},
-    {OptionSet::CUSTOM_STYLE, 0, "custom-style", OptParseOp::HAS_ARG,
-     "set custom color style (name=color ...)"},
+    {OptionSet::CUSTOM_STYLE, 0, "custom-style", OptParseOp::HAS_ARG, "name=rule ...",
+     "set custom color style"},
     {OptionSet::HELP, 'h', "help", OptParseOp::NO_ARG, "show help message"},
 };
 

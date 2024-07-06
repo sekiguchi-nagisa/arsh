@@ -621,16 +621,16 @@ Formatters:
 TEST_F(ColorizeTest, help) {
   auto out = format(R"(usage: %s [option ...] [source file] or %s --dump [option ...]
 Options:
-  -o file              specify output file (default is stdout)
-  -f formatter         specify output formatter (default is `ansi' formatter)
-  -s style             specify highlighter color style (default is `darcula' style)
-  -l                   show supported formatters/styles
-  --html-full          generate self-contained html (for html formatter)
-  --html-lineno[=num]  emit line number starts with NUM (for html formatter)
-  --html-lineno-table  emit line number as table (for html formatter)
-  --dump               dump ansi color code of theme
-  --custom-style arg   set custom color style (name=color ...)
-  -h, --help           show help message
+  -o file                       specify output file (default is stdout)
+  -f formatter                  specify output formatter (default is `ansi' formatter)
+  -s style                      specify highlighter color style (default is `darcula' style)
+  -l                            show supported formatters/styles
+  --html-full                   generate self-contained html (for html formatter)
+  --html-lineno[=num]           emit line number starts with NUM (for html formatter)
+  --html-lineno-table           emit line number as table (for html formatter)
+  --dump                        dump ansi color code of theme
+  --custom-style name=rule ...  set custom color style
+  -h, --help                    show help message
 )",
                     HIGHLIGHTER_PATH, HIGHLIGHTER_PATH);
   ProcBuilder builder = {HIGHLIGHTER_PATH, "-h"};
@@ -640,16 +640,16 @@ Options:
 TEST_F(ColorizeTest, invalid1) {
   const char *out = R"(invalid option: -q
 Options:
-  -o file              specify output file (default is stdout)
-  -f formatter         specify output formatter (default is `ansi' formatter)
-  -s style             specify highlighter color style (default is `darcula' style)
-  -l                   show supported formatters/styles
-  --html-full          generate self-contained html (for html formatter)
-  --html-lineno[=num]  emit line number starts with NUM (for html formatter)
-  --html-lineno-table  emit line number as table (for html formatter)
-  --dump               dump ansi color code of theme
-  --custom-style arg   set custom color style (name=color ...)
-  -h, --help           show help message
+  -o file                       specify output file (default is stdout)
+  -f formatter                  specify output formatter (default is `ansi' formatter)
+  -s style                      specify highlighter color style (default is `darcula' style)
+  -l                            show supported formatters/styles
+  --html-full                   generate self-contained html (for html formatter)
+  --html-lineno[=num]           emit line number starts with NUM (for html formatter)
+  --html-lineno-table           emit line number as table (for html formatter)
+  --dump                        dump ansi color code of theme
+  --custom-style name=rule ...  set custom color style
+  -h, --help                    show help message
 )";
   ProcBuilder builder = {HIGHLIGHTER_PATH, "-q"};
   ASSERT_NO_FATAL_FAILURE(this->expect(std::move(builder), 1, "", out));
@@ -658,16 +658,16 @@ Options:
 TEST_F(ColorizeTest, invalid2) {
   const char *out = R"(-o option needs argument
 Options:
-  -o file              specify output file (default is stdout)
-  -f formatter         specify output formatter (default is `ansi' formatter)
-  -s style             specify highlighter color style (default is `darcula' style)
-  -l                   show supported formatters/styles
-  --html-full          generate self-contained html (for html formatter)
-  --html-lineno[=num]  emit line number starts with NUM (for html formatter)
-  --html-lineno-table  emit line number as table (for html formatter)
-  --dump               dump ansi color code of theme
-  --custom-style arg   set custom color style (name=color ...)
-  -h, --help           show help message
+  -o file                       specify output file (default is stdout)
+  -f formatter                  specify output formatter (default is `ansi' formatter)
+  -s style                      specify highlighter color style (default is `darcula' style)
+  -l                            show supported formatters/styles
+  --html-full                   generate self-contained html (for html formatter)
+  --html-lineno[=num]           emit line number starts with NUM (for html formatter)
+  --html-lineno-table           emit line number as table (for html formatter)
+  --dump                        dump ansi color code of theme
+  --custom-style name=rule ...  set custom color style
+  -h, --help                    show help message
 )";
   ProcBuilder builder = {HIGHLIGHTER_PATH, "-o"};
   ASSERT_NO_FATAL_FAILURE(this->expect(std::move(builder), 1, "", out));
