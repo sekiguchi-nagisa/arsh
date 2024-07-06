@@ -9,6 +9,12 @@
 - add ``--custom-style`` option to colorize
     - now modify existing color style
 
+### Changed
+
+#### API
+
+- after call ``ARState_readLine``, always clear ``O_NONBLOCK`` flag of stdin
+
 ## [0.34.0] - 2024-06-30
 
 ### Added
