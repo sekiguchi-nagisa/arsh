@@ -458,15 +458,20 @@ TEST_F(InteractiveTest, changeFDSetting) {
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
 
-  // change stdin to non-blocking
-  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("dd iflag=nonblock &>> /dev/null"));
+  std::string err = format("cat: -: %s\n", strerror(EAGAIN));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(HELPER_PATH " nonblock-in && LANG=C cat",
+                                                  ": Bool = false", err.c_str()));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $? == 1"));
 
-  // cat command blocking
+  // change stdin to non-blocking
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert " HELPER_PATH " nonblock-in"));
+
+  // cat command still blocking mode even if previous command change to non-blocking mode
   this->sendLine("cat");
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "cat\n"));
   std::this_thread::sleep_for(std::chrono::milliseconds(500));
   this->send(CTRL_C);
-  std::string err = strsignal(SIGINT);
+  err = strsignal(SIGINT);
   err += "\n";
   ASSERT_NO_FATAL_FAILURE(this->expect(promptAfterCtrlC(PROMPT), err));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 128 + SIGINT));

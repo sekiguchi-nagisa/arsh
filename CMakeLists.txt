@@ -275,6 +275,7 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/json)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/highlighter)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/analyzer)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/inspect)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/helper)
 
 
 set(CMAKE_MACOSX_RPATH ON)
