@@ -17,6 +17,10 @@ assert test -f $MODULE_DIR/repl_impl/prompt.arsh
 assert test -f $MODULE_DIR/completion
 assert test -f $MODULE_DIR/completion.arsh
 
+assert "$(shctl module repl 2>&1)" == "$(shctl module repl.arsh 2>&1)"
+assert "$(shctl module repl_impl/prompt 2>&1)" == "$(shctl module repl_impl/prompt.arsh 2>&1)"
+assert "$(shctl module completion 2>&1)" == "$(shctl module completion.arsh 2>&1)"
+
 source repl inlined
 
 shctl module
