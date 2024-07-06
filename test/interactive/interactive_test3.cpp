@@ -458,9 +458,9 @@ TEST_F(InteractiveTest, changeFDSetting) {
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
 
-  std::string err = format("cat: -: %s\n", strerror(EAGAIN));
-  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(HELPER_PATH " nonblock-in && LANG=C cat",
-                                                  ": Bool = false", err.c_str()));
+  std::string err = format("cat: .*: %s\n", strerror(EAGAIN));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpectRegex(HELPER_PATH " nonblock-in && LANG=C cat - ",
+                                                       ": Bool = false", err));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $? == 1"));
 
   // change stdin to non-blocking
