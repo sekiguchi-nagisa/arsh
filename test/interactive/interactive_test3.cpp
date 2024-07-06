@@ -453,6 +453,25 @@ TEST_F(InteractiveTest, changeTCPGRPInChild) {
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 0));
 }
 
+TEST_F(InteractiveTest, changeFDSetting) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+
+  // change stdin to non-blocking
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("dd iflag=nonblock &>> /dev/null"));
+
+  // cat command blocking
+  this->sendLine("cat");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "cat\n"));
+  std::this_thread::sleep_for(std::chrono::milliseconds(500));
+  this->send(CTRL_C);
+  std::string err = strsignal(SIGINT);
+  err += "\n";
+  ASSERT_NO_FATAL_FAILURE(this->expect(promptAfterCtrlC(PROMPT), err));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 128 + SIGINT));
+}
+
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

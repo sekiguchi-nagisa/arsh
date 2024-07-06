@@ -602,5 +602,12 @@ ssize_t ARState_readLine(ARState *st, char *buf, size_t bufSize, ARError *e) {
     st->getCallStack().clearThrownObject();
     errno = EAGAIN;
   }
+
+  /**
+   * after readline, STDIN should be blocking like other shells
+   */
+  const int old = errno;
+  setFDFlag(STDIN_FILENO, O_NONBLOCK, false);
+  errno = old;
   return ret;
 }
