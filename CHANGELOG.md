@@ -1,5 +1,14 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+#### Misc
+
+- add ``--custom-style`` option to colorize
+    - now modify existing color style
+
 ## [0.34.0] - 2024-06-30
 
 ### Added

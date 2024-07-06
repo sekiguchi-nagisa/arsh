@@ -38,6 +38,51 @@ FormatterFactory::FormatterFactory(const StyleMap &map) : styleMap(std::cref(map
   };
 }
 
+static const HighlightTokenClass *resolveTokenClass(StringRef name) {
+  for (auto &[cl, n] : getHighlightTokenEntries()) {
+    if (n == name) {
+      return &cl;
+    }
+  }
+  return nullptr;
+}
+
+static std::string applyStyleModification(const std::vector<StringRef> &customStyles,
+                                          Style &style) {
+  for (auto &e : customStyles) {
+    auto r = e.find('=');
+    if (r == StringRef::npos) {
+      return "must follow `class=rule' form";
+    }
+    auto name = e.slice(0, r);
+    auto *tokenClass = resolveTokenClass(name);
+    if (!tokenClass) {
+      std::string err = "undefined style class: ";
+      err += name;
+      return err;
+    }
+    auto rule = e.substr(r + 1);
+    StyleRule org;
+    try {
+      org = org.synthesize(ValidRule(std::string_view(rule.data(), rule.size())));
+    } catch (const RuleValidationError &err) {
+      return err.what();
+    }
+    switch (*tokenClass) {
+    case HighlightTokenClass::FOREGROUND_:
+      style.foreground = org;
+      break;
+    case HighlightTokenClass::BACKGROUND_:
+      style.background = org;
+      break;
+    default:
+      style.rules[*tokenClass] = org;
+      break;
+    }
+  }
+  return "";
+}
+
 Result<std::unique_ptr<Formatter>, std::string>
 FormatterFactory::create(std::ostream &stream) const {
   // resolve formatter
@@ -52,22 +97,31 @@ FormatterFactory::create(std::ostream &stream) const {
   });
 
   // resolve style
-  const Style *style = this->styleMap.get().find(this->styleName);
-  if (!style) {
+  Style style;
+  if (const Style *ptr = this->styleMap.get().find(this->styleName)) {
+    style = *ptr;
+  } else {
     std::string value = "unsupported style: ";
     value += this->styleName;
     return Err(std::move(value));
   }
 
+  // modify style
+  if (!this->customStyles.empty()) {
+    if (std::string err = applyStyleModification(this->customStyles, style); !err.empty()) {
+      return Err(std::move(err));
+    }
+  }
+
   switch (formatterType) {
   case FormatterType::NULL_:
-    return Ok(std::make_unique<NullFormatter>(*style, stream));
+    return Ok(std::make_unique<NullFormatter>(style, stream));
   case FormatterType::TERM_TRUECOLOR:
   case FormatterType::TERM_256: {
     TermColorCap colorCap = formatterType == FormatterType::TERM_TRUECOLOR
                                 ? TermColorCap::TRUE_COLOR
                                 : TermColorCap::INDEXED_256;
-    auto formatter = std::make_unique<ANSIFormatter>(*style, stream, colorCap);
+    auto formatter = std::make_unique<ANSIFormatter>(style, stream, colorCap);
     return Ok(std::move(formatter));
   }
   case FormatterType::HTML: {
@@ -88,7 +142,7 @@ FormatterFactory::create(std::ostream &stream) const {
         lineNumOffset = ret.value;
       }
     }
-    auto formatter = std::make_unique<HTMLFormatter>(*style, stream, formatOp, lineNumOffset);
+    auto formatter = std::make_unique<HTMLFormatter>(style, stream, formatOp, lineNumOffset);
     return Ok(std::move(formatter));
   }
   }

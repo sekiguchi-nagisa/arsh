@@ -117,7 +117,7 @@ TEST_F(EmitterTest, case2) {
 }
 
 struct HighlightTest : public ::testing::Test {
-  static void tokenize(FormatterFactory &factory, StringRef ref, std::ostream &output) {
+  static void tokenize(const FormatterFactory &factory, StringRef ref, std::ostream &output) {
     auto ret = factory.create(output);
     ASSERT_TRUE(ret);
     auto formatter = std::move(ret).take();
@@ -528,6 +528,61 @@ TEST_F(HighlightTest, htmlFormatter5) {
   ASSERT_EQ(expected, stream.str());
 }
 
+TEST_F(HighlightTest, customStyle) {
+  StyleMap styleMap;
+  std::stringstream stream;
+  FormatterFactory factory(styleMap);
+  factory.setCustomStyles({"farfafa"});
+  auto ret = factory.create(stream);
+  ASSERT_FALSE(ret);
+  ASSERT_EQ("must follow `class=rule' form", ret.asErr());
+
+  factory.setCustomStyles({"hogehoge=#123456"});
+  ret = factory.create(stream);
+  ASSERT_FALSE(ret);
+  ASSERT_EQ("undefined style class: hogehoge", ret.asErr());
+
+  factory.setCustomStyles({"=#123456"});
+  ret = factory.create(stream);
+  ASSERT_FALSE(ret);
+  ASSERT_EQ("undefined style class: ", ret.asErr());
+
+  factory.setCustomStyles({"regex=%%%"});
+  ret = factory.create(stream);
+  ASSERT_FALSE(ret);
+  ASSERT_EQ("invalid rule: %%%", ret.asErr());
+
+  factory.setCustomStyles({"regex=bg:123"});
+  ret = factory.create(stream);
+  ASSERT_FALSE(ret);
+  ASSERT_EQ("invalid rule: bg:123", ret.asErr());
+
+  factory.setCustomStyles({"regex=bg:#123  \n #123"});
+  ret = factory.create(stream);
+  ASSERT_FALSE(ret);
+  ASSERT_EQ("invalid rule: \n", ret.asErr());
+
+  factory.setCustomStyles({"comment=#"});
+  ret = factory.create(stream);
+  ASSERT_FALSE(ret);
+  ASSERT_EQ("invalid color code: ", ret.asErr());
+
+  factory.setCustomStyles({"number=#123 nounderline", "regex=  #1234&  "});
+  ret = factory.create(stream);
+  ASSERT_FALSE(ret);
+  ASSERT_EQ("invalid color code: 1234&", ret.asErr());
+
+  factory.setCustomStyles({"regex=  #123 bg:#@@@  "});
+  ret = factory.create(stream);
+  ASSERT_FALSE(ret);
+  ASSERT_EQ("invalid background color code: @@@", ret.asErr());
+
+  factory.setCustomStyles({"regex=  #123 nobold bg:#777  border: border:#12345  "});
+  ret = factory.create(stream);
+  ASSERT_FALSE(ret);
+  ASSERT_EQ("invalid border color code: 12345", ret.asErr());
+}
+
 class ColorizeTest : public ExpectOutput {
 public:
   using ExpectOutput::expect;
@@ -574,6 +629,7 @@ Options:
   --html-lineno[=num]  emit line number starts with NUM (for html formatter)
   --html-lineno-table  emit line number as table (for html formatter)
   --dump               dump ansi color code of theme
+  --custom-style arg   set custom color style (name=color ...)
   -h, --help           show help message
 )",
                     HIGHLIGHTER_PATH, HIGHLIGHTER_PATH);
@@ -592,6 +648,7 @@ Options:
   --html-lineno[=num]  emit line number starts with NUM (for html formatter)
   --html-lineno-table  emit line number as table (for html formatter)
   --dump               dump ansi color code of theme
+  --custom-style arg   set custom color style (name=color ...)
   -h, --help           show help message
 )";
   ProcBuilder builder = {HIGHLIGHTER_PATH, "-q"};
@@ -609,6 +666,7 @@ Options:
   --html-lineno[=num]  emit line number starts with NUM (for html formatter)
   --html-lineno-table  emit line number as table (for html formatter)
   --dump               dump ansi color code of theme
+  --custom-style arg   set custom color style (name=color ...)
   -h, --help           show help message
 )";
   ProcBuilder builder = {HIGHLIGHTER_PATH, "-o"};
@@ -622,7 +680,9 @@ TEST_F(ColorizeTest, cli1) {
   assert "$(echo '1234' | exec $colorize)" == $'\033[38;2;104;151;187m1234\033[0m'
   assert "$(echo '1234' | exec $colorize -f console)" == $'\033[38;2;104;151;187m1234\033[0m'
   assert "$(echo '1234' | exec $colorize -s darcula)" == $'\033[38;2;104;151;187m1234\033[0m'
+  assert "$(echo '1234 # comment' | exec $colorize --custom-style 'number=' 'comment=' -s darcula)" == '1234 # comment'
   assert "$(echo -n '1234' | exec $colorize -s null)" == $'1234'
+  assert "$(echo -n '1234' | exec $colorize --custom-style number='#aaa' -s null --custom-style number='#abc')" == $'\x1b[38;2;170;187;204m1234\x1b[0m'
   assert "$(echo '1234' | exec $colorize -s null
                                          -o /dev/stderr /dev/stdin 2>&1 > /dev/null)" == $'1234'
   assert "$(echo "'a'" | exec $colorize -s colorful -f term256)" ==

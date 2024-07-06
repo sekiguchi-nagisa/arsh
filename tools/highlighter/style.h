@@ -64,6 +64,12 @@ struct Color {
   std::string toString() const;
 };
 
+class RuleValidationError : public std::logic_error {
+public:
+  RuleValidationError(std::string_view message, std::string_view target)
+      : std::logic_error(std::string(message).append(": ").append(target)) {}
+};
+
 class ValidRule {
 private:
   std::string_view view;
@@ -124,20 +130,20 @@ private:
       if (startsWith(sub, "bg:#")) {
         sub.remove_prefix(std::string_view("bg:#").size());
         if (!checkColorCode(sub)) {
-          throw std::logic_error("background color code");
+          throw RuleValidationError("invalid background color code", sub);
         }
       } else if (startsWith(sub, "border:#")) {
         sub.remove_prefix(std::string_view("border:#").size());
         if (!checkColorCode(sub)) {
-          throw std::logic_error("border color code");
+          throw RuleValidationError("invalid border color code", sub);
         }
       } else if (startsWith(sub, "#")) {
         sub.remove_prefix(1);
         if (!checkColorCode(sub)) {
-          throw std::logic_error("color code");
+          throw RuleValidationError("invalid color code", sub);
         }
       } else {
-        throw std::logic_error("invalid rule");
+        throw RuleValidationError("invalid rule", sub);
       }
     }
     return value;

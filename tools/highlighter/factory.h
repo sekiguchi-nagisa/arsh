@@ -44,6 +44,8 @@ private:
 
   bool htmlTable{false};
 
+  std::vector<StringRef> customStyles;
+
 public:
   static constexpr const char *DEFAULT_STYLE_NAME = "darcula";
 
@@ -62,6 +64,8 @@ public:
   void setHTMLFull(bool set) { this->htmlFull = set; }
 
   void setHTMLTable(bool set) { this->htmlTable = set; }
+
+  void setCustomStyles(std::vector<StringRef> &&values) { this->customStyles = std::move(values); }
 
   Result<std::unique_ptr<Formatter>, std::string> create(std::ostream &stream) const;
 };

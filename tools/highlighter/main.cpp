@@ -36,6 +36,7 @@ enum class OptionSet : unsigned char {
   HTML_LINENO,
   HTML_LINENO_TABLE,
   DUMP,
+  CUSTOM_STYLE,
 };
 
 const OptParser<OptionSet>::Option options[] = {
@@ -53,6 +54,8 @@ const OptParser<OptionSet>::Option options[] = {
     {OptionSet::HTML_LINENO_TABLE, 0, "html-lineno-table", OptParseOp::NO_ARG,
      "emit line number as table (for html formatter)"},
     {OptionSet::DUMP, 0, "dump", OptParseOp::NO_ARG, "dump ansi color code of theme"},
+    {OptionSet::CUSTOM_STYLE, 0, "custom-style", OptParseOp::HAS_ARG,
+     "set custom color style (name=color ...)"},
     {OptionSet::HELP, 'h', "help", OptParseOp::NO_ARG, "show help message"},
 };
 
@@ -83,7 +86,8 @@ Optional<std::string> readAll(const char *sourceName) {
   return buf;
 }
 
-int colorize(FormatterFactory &factory, const char *sourceName, std::ostream &output, bool dump) {
+int colorize(const FormatterFactory &factory, const char *sourceName, std::ostream &output,
+             bool dump) {
   auto ret = factory.create(output);
   if (!ret) {
     std::cerr << ret.asErr() << '\n';
@@ -127,7 +131,7 @@ void showSupported(const FormatterFactory &factory, std::ostream &output) {
   // style
   std::vector<StringRef> names;
   for (auto &e : factory.getStyleMap().getValues()) {
-    names.push_back(e.first);
+    names.emplace_back(e.first);
   }
   std::sort(names.begin(), names.end());
   output << "Styles:" << '\n';
@@ -138,8 +142,8 @@ void showSupported(const FormatterFactory &factory, std::ostream &output) {
 
   // formatter
   std::unordered_map<FormatterType, std::vector<StringRef>> values;
-  for (auto &e : factory.getSupportedFormats()) {
-    values[e.second].emplace_back(e.first);
+  for (auto &[name, type] : factory.getSupportedFormats()) {
+    values[type].emplace_back(name);
   }
   output << "Formatters:" << '\n';
   for (unsigned int i = 0; i < values.size(); i++) {
@@ -171,6 +175,7 @@ int main(int argc, char **argv) {
   bool dump = false;
   StyleMap styleMap;
   FormatterFactory factory(styleMap);
+  std::vector<StringRef> customStyles;
   while ((result = parser(begin, end))) {
     switch (result.getOpt()) {
     case OptionSet::HELP:
@@ -201,6 +206,12 @@ int main(int argc, char **argv) {
     case OptionSet::DUMP:
       dump = true;
       break;
+    case OptionSet::CUSTOM_STYLE:
+      customStyles.push_back(result.getValue());
+      for (; begin != end && **begin != '-'; ++begin) {
+        customStyles.emplace_back(*begin);
+      }
+      break;
     }
   }
   if (result.isError() && !dump) {
@@ -217,6 +228,7 @@ int main(int argc, char **argv) {
   if (begin != end) {
     sourceName = *begin;
   }
+  factory.setCustomStyles(std::move(customStyles));
 
   std::ofstream output(outputFileName.toString());
   if (!output) {

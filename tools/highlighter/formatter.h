@@ -25,13 +25,13 @@ namespace arsh::highlighter {
 
 class Formatter : public TokenEmitter {
 protected:
-  const Style &style;
+  Style style;
   std::ostream &output;
   unsigned int curSrcPos{0};
 
 public:
-  Formatter(const Style &style, std::ostream &output)
-      : TokenEmitter(""), style(style), output(output) {}
+  Formatter(Style style, std::ostream &output)
+      : TokenEmitter(""), style(std::move(style)), output(output) {}
 
   void emit(HighlightTokenClass tokenClass, Token token) override;
 
@@ -69,7 +69,7 @@ public:
   void finalize() override;
 };
 
-enum class TermColorCap {
+enum class TermColorCap : unsigned char {
   TRUE_COLOR,
   INDEXED_256,
 };
@@ -118,7 +118,7 @@ public:
   std::string dump() override;
 };
 
-enum class HTMLFormatOp : unsigned int {
+enum class HTMLFormatOp : unsigned char {
   FULL = 1u << 0u,   // generate self-contained html (set background color)
   LINENO = 1u << 1u, // emit line number
   TABLE = 1u << 2u,  // emit as table (always combine LINENO option)
