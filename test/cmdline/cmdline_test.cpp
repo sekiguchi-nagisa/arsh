@@ -433,7 +433,8 @@ TEST_F(CmdlineTest, signal) {
   // background job (not report signal message)
   ASSERT_NO_FATAL_FAILURE(this->expect(DS("sh -c 'kill -s kill $$' & wait"), 128 + SIGKILL));
 
-  if (platform::platform() == platform::PlatformType::DARWIN) {
+  if (const auto type = platform::platform();
+      type == platform::PlatformType::DARWIN || platform::isCygwinOrMsys(type)) {
     return;
   }
 
@@ -473,6 +474,10 @@ TEST_F(CmdlineTest, locale) {
 }
 
 TEST_F(CmdlineTest, globLimit) {
+  if (platform::isCygwinOrMsys(platform::platform())) {
+    return; // skip since ulimit does not work in cygwin
+  }
+
   std::string err = format(R"([runtime error]
 SystemError: glob expansion failed, caused by `%s'
     from (string):1 '<toplevel>()'

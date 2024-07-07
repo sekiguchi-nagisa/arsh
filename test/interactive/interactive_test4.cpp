@@ -542,8 +542,12 @@ TEST_F(InteractiveTest, lineEditorComp2) {
     this->send("2"); // cancel and insert
     ASSERT_NO_FATAL_FAILURE(this->expect("> ;tee2\n\n"));
 
-    this->send("\t\t" UP);
+    this->send("\t");
     ASSERT_NO_FATAL_FAILURE(this->expect("> ;tee2\ntrue    tee     touch   \n"));
+    this->send("\t");
+    ASSERT_NO_FATAL_FAILURE(this->expect("> ;tee2true\ntrue    tee     touch   \n"));
+    this->send(UP);
+    ASSERT_NO_FATAL_FAILURE(this->expect("> ;tee2touch\ntrue    tee     touch   \n"));
     this->send(CTRL_W); // cancel and edit
     ASSERT_NO_FATAL_FAILURE(this->expect("> ;\n\n"));
     this->send(CTRL_W);

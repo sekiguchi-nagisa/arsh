@@ -454,6 +454,10 @@ TEST_F(InteractiveTest, changeTCPGRPInChild) {
 }
 
 TEST_F(InteractiveTest, changeFDSetting) {
+  if (platform::isCygwinOrMsys(platform::platform())) {
+    return; // skip since cygwin does not correctly set O_NONBLOCK
+  }
+
   this->invoke("--quiet", "--norc");
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));

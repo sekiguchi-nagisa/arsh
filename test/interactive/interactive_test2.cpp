@@ -494,10 +494,15 @@ TEST_F(InteractiveTest, moduleError4) {
 }
 
 TEST_F(InteractiveTest, sourceGlobLimit) {
+  if (isCygwinOrMsys(platform::platform())) {
+    return; // skip since ulimit -S -n does not work in cygwin
+  }
+
   this->invoke("--quiet", "--norc");
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
-  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("ulimit -S -n 6"));
+  ASSERT_NO_FATAL_FAILURE(
+      this->sendLineAndExpect("ulimit -S -n 6; assert \"$(ulimit -S -n)\" == '6'"));
   std::string err =
       format(R"([semantic error] not enough resources for glob expansion, caused by `%s'
  --> (stdin):2:9
