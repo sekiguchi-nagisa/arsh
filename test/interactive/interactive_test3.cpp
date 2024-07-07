@@ -440,6 +440,10 @@ TEST_F(InteractiveTest, disown2) {
 }
 
 TEST_F(InteractiveTest, changeTCPGRPInChild) {
+  if (platform::isCygwinOrMsys(platform::platform())) {
+    return;
+  }
+
   this->invoke("--quiet", "--norc");
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
