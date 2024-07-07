@@ -527,6 +527,7 @@ bool TypeChecker::applyGlob(const Token token,
 
   const unsigned int oldSize = results.size();
   Glob glob(pattern, Glob::Option::FASTGLOB | Glob::Option::GLOB_LIMIT);
+  glob.setCancelToken(this->cancelToken);
   glob.setConsumer([&results](std::string &&path) { return appendPath(results, std::move(path)); });
 
   std::string err;
@@ -541,12 +542,17 @@ bool TypeChecker::applyGlob(const Token token,
     }
     this->reportError<NoGlobMatch>(token, pattern.join().c_str());
     return false;
+  case Glob::Status::CANCELED:
   case Glob::Status::RESOURCE_LIMIT:
   case Glob::Status::RECURSION_DEPTH_LIMIT: {
+    int errNum = glob.getErrNum();
+    if (ret == Glob::Status::CANCELED) {
+      errNum = EINTR;
+    }
     std::string suffix;
     if (glob.getErrNum() != 0) {
       suffix = ", caused by `";
-      suffix += strerror(errno);
+      suffix += strerror(errNum);
       suffix += "'";
     }
     this->reportError<GlobResource>(token, suffix.c_str());
