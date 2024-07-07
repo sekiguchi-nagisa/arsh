@@ -11,6 +11,10 @@
 
 ### Changed
 
+#### Core
+
+- re-enable source glob cancellation for potential too slow filesystem
+
 #### API
 
 - after call ``ARState_readLine``, always clear ``O_NONBLOCK`` flag of stdin
