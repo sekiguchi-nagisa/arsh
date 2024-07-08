@@ -1102,7 +1102,7 @@ int builtin_printf(ARState &state, ArrayObject &argvObj) {
     }
   }
   if (fflush(stdout) == EOF) {
-    PERROR(state, argvObj, "io error");
+    PERROR(state, argvObj, "format failed");
     return 1;
   }
   return 0;
