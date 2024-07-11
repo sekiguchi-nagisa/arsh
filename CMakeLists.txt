@@ -193,9 +193,9 @@ add_custom_command(OUTPUT ${bind_header} ${bind_src}
 set(embed_src ${CMAKE_CURRENT_BINARY_DIR}/src/embed.h)
 add_custom_command(OUTPUT ${embed_src}
         COMMAND ${CMAKE_CURRENT_BINARY_DIR}/tools/src_to_str/src_to_str
-        -f ${CMAKE_CURRENT_SOURCE_DIR}/src/embed.ds
+        -f ${CMAKE_CURRENT_SOURCE_DIR}/src/embed.arsh
         -o ${embed_src} -v embed_script
-        MAIN_DEPENDENCY ${CMAKE_CURRENT_SOURCE_DIR}/src/embed.ds
+        MAIN_DEPENDENCY ${CMAKE_CURRENT_SOURCE_DIR}/src/embed.arsh
         DEPENDS src_to_str
 )
 
