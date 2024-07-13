@@ -749,8 +749,8 @@ public:
    */
   int match(ARState &state, StringRef ref, std::vector<Value> *out);
 
-  bool replace(StringRef target, StringRef replacement, std::string &output) {
-    return this->re.substitute(target, replacement, true, StringObject::MAX_SIZE, output) >= 0;
+  bool replace(StringRef target, StringRef replacement, std::string &output, bool global) {
+    return this->re.substitute(target, replacement, global, StringObject::MAX_SIZE, output) >= 0;
   }
 
   const PCRE &getRE() const { return this->re; }

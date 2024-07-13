@@ -15,6 +15,11 @@
 
 - re-enable source glob cancellation for potential too slow filesystem
 
+#### Builtin
+
+- add ``once`` param to ``String#replace`` and ``Regex#replace`` methods
+    - now only replace first occurrence of pattern
+
 #### API
 
 - after call ``ARState_readLine``, always clear ``O_NONBLOCK`` flag of stdin

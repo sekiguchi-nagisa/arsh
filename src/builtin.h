@@ -882,7 +882,7 @@ ARSH_METHOD string_split(RuntimeContext &ctx) {
   RET(results);
 }
 
-//!bind: function replace($this : String, $target : String, $rep : String) : String
+//!bind: function replace($this : String, $target : String, $rep : String, $once: Option<Bool>) : String
 ARSH_METHOD string_replace(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_replace);
 
@@ -891,8 +891,9 @@ ARSH_METHOD string_replace(RuntimeContext &ctx) {
     RET(LOCAL(0));
   }
 
-  auto thisStr = LOCAL(0).asStrRef();
-  auto repStr = LOCAL(2).asStrRef();
+  const auto thisStr = LOCAL(0).asStrRef();
+  const auto repStr = LOCAL(2).asStrRef();
+  const bool once = LOCAL(3).isInvalid() ? false : LOCAL(3).asBool();
   auto buf = Value::createStr();
 
   for (StringRef::size_type pos = 0; pos != StringRef::npos;) {
@@ -906,6 +907,12 @@ ARSH_METHOD string_replace(RuntimeContext &ctx) {
         RET_ERROR;
       }
       pos = ret + delimStr.size();
+      if (once) {
+        if (!buf.appendAsStr(ctx, thisStr.substr(pos))) {
+          RET_ERROR;
+        }
+        break;
+      }
     } else {
       pos = ret;
     }
@@ -1204,12 +1211,12 @@ ARSH_METHOD regex_match(RuntimeContext &ctx) {
   RET(ret);
 }
 
-//!bind: function replace($this: Regex, $target : String, $repl : String) : String
+//!bind: function replace($this: Regex, $target : String, $repl : String, $once: Option<Bool>) : String
 ARSH_METHOD regex_replace(RuntimeContext &ctx) {
   SUPPRESS_WARNING(regex_replace);
   auto &re = typeAs<RegexObject>(LOCAL(0));
-  std::string out;
-  if (re.replace(LOCAL(1).asStrRef(), LOCAL(2).asStrRef(), out)) {
+  const bool once = LOCAL(3).isInvalid() ? false : LOCAL(3).asBool();
+  if (std::string out; re.replace(LOCAL(1).asStrRef(), LOCAL(2).asStrRef(), out, !once)) {
     assert(out.size() <= StringObject::MAX_SIZE);
     RET(Value::createStr(std::move(out)));
   } else {

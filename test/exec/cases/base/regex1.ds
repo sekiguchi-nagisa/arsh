@@ -149,6 +149,12 @@ assert $/^hello$/.replace('hello ', "@") == 'hello '
 assert $/^hello$/.replace('hello', "@") == '@'
 assert $/(\d+)=(\d+)/.replace('12=34, a=1, 1=b, 56=78', '$2=$1') == "34=12, a=1, 1=b, 78=56"
 
+assert $/(\d+)/.replace('12a34ff56hh78', '$1=$1') == '12=12a34=34ff56=56hh78=78'
+assert $/(\d+)/.replace('12a34ff56hh78', '$1=$1', $false) == '12=12a34=34ff56=56hh78=78'
+assert $/(\d+)/.replace('12a34ff56hh78', '$1=$1', $true) == '12=12a34ff56hh78'
+assert $/(\d\df)/.replace('12a34ff56hh78', '$1=$1', $once:$true) == '12a34f=34ff56hh78'
+assert $/(\d\d\d)/.replace('12a34ff56hh78', '$1=$1', $once:$true) == '12a34ff56hh78'
+
 ## replace large string
 var large = "abcdefghijklmnopqrstuvwxyz"
 $large += $large

@@ -213,6 +213,12 @@ assert "".replace("a", "34") == ""
 assert "".replace("", "") == ""
 assert "".replace("", "hoge") == ""
 
+assert "a12bbb1234ccc12".replace('12', '@') == 'a@bbb@34ccc@'
+assert "a12bbb1234ccc12".replace('12', '@', $false) == 'a@bbb@34ccc@'
+assert "a12bbb1234ccc12".replace('12', '@', $true) == 'a@bbb1234ccc12'
+assert "a12bbb1234ccc12".replace('c12', '@', $once: $true) == 'a12bbb1234cc@'
+assert "a12bbb1234ccc12".replace('hogeo', '@', $once: $true) == 'a12bbb1234ccc12'
+
 var gca = "あ👨‍👨‍👦い🌏う90🇯🇵".chars()
 assert $gca.size() == 8
 assert $gca[0] == 'あ'

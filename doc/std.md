@@ -155,7 +155,7 @@ function contains(target: String): Bool for String
 
 function split(delim: String): [String] for String
 
-function replace(target: String, rep: String): String for String
+function replace(target: String, rep: String, once: Bool?): String for String
 
 function sanitize(repl: String?): String for String
 
@@ -266,7 +266,7 @@ function %OP_UNMATCH(target: String): Bool for Regex
 
 function match(target: String): RegexMatch? for Regex
 
-function replace(target: String, repl: String): String for Regex
+function replace(target: String, repl: String, once: Bool?): String for Regex
 ```
 
 ## RegexMatch type
