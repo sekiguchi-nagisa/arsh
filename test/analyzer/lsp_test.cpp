@@ -661,10 +661,9 @@ TEST_F(LocationTest, change) {
 }
 
 struct SemanticTokenTest : public ::testing::Test {
-  SemanticTokensLegend legend;
   SemanticTokenEncoder encoder;
 
-  SemanticTokenTest() : legend(SemanticTokensLegend::create()), encoder(this->legend) {}
+  SemanticTokenTest() : encoder(SemanticTokensLegend::create()) {}
 
   void testEncode(HighlightTokenClass tokenClass, SemanticTokenTypes type,
                   unsigned int modifiers) const {
@@ -722,7 +721,7 @@ TEST_F(SemanticTokenTest, encode) {
   this->testEncode(HighlightTokenClass::REGEX, SemanticTokenTypes::regexp_, 0);
   this->testEncode(HighlightTokenClass::STRING, SemanticTokenTypes::string_, 0);
   this->testEncode(HighlightTokenClass::COMMAND, SemanticTokenTypes::function_, 0);
-  this->testEncode(HighlightTokenClass::COMMAND_ARG, SemanticTokenTypes::commandArgument, 0);
+  this->testEncode(HighlightTokenClass::COMMAND_ARG, SemanticTokenTypes::commandArgument_, 0);
   this->testEncode(HighlightTokenClass::REDIRECT, SemanticTokenTypes::operator_, 0);
   this->testEncode(HighlightTokenClass::VARIABLE, SemanticTokenTypes::variable_, 0);
   this->testEncode(HighlightTokenClass::TYPE, SemanticTokenTypes::type_, 0);

@@ -100,9 +100,25 @@ const char *toString(SemanticTokenTypes type) {
     return V;
     EACH_SEMANTIC_TOKEN_TYPES(GEN_CASE)
 #undef GEN_CASE
+
+#define GEN_CASE(E, V, F)                                                                          \
+  case SemanticTokenTypes::E:                                                                      \
+    return V;
+    EACH_SEMANTIC_TOKEN_TYPES_EXTEND(GEN_CASE)
+#undef GEN_CASE
   default:
     return "";
   }
+}
+
+const ExtendSemanticTokenTypeList &getExtendSemanticTokenTypes() {
+  static ExtendSemanticTokenTypeList list = {
+#define GEN_TABLE(E, V, F)                                                                         \
+  ExtendSemanticTokenTypeEntry{SemanticTokenTypes::E, SemanticTokenTypes::F},
+      EACH_SEMANTIC_TOKEN_TYPES_EXTEND(GEN_TABLE)
+#undef GEN_TABLE
+  };
+  return list;
 }
 
 const char *toString(SemanticTokenModifiers modifier) {
@@ -152,6 +168,10 @@ SemanticTokensLegend SemanticTokensLegend::create() {
           {
 #define GEN_ENUM(E, V) SemanticTokenTypes::E,
               EACH_SEMANTIC_TOKEN_TYPES(GEN_ENUM)
+#undef GEN_ENUM
+
+#define GEN_ENUM(E, V, F) SemanticTokenTypes::E,
+                  EACH_SEMANTIC_TOKEN_TYPES_EXTEND(GEN_ENUM)
 #undef GEN_ENUM
           },
       .tokenModifiers =

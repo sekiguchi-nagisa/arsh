@@ -19,14 +19,15 @@
 
 namespace arsh::lsp {
 
-SemanticTokenEncoder::SemanticTokenEncoder(const SemanticTokensLegend &legend) {
+SemanticTokenEncoder::SemanticTokenEncoder(SemanticTokensLegend &&legend)
+    : legend(std::move(legend)) {
   unsigned int index = 0;
-  for (auto &e : legend.tokenTypes) {
+  for (auto &e : this->legend.tokenTypes) {
     this->tokenTypeToIds.emplace(e, index++);
   }
 
   index = 0;
-  for (auto &e : legend.tokenModifiers) {
+  for (auto &e : this->legend.tokenModifiers) {
     unsigned int v = 1 << index++;
     this->tokenModifierToIds.emplace(e, v);
   }
@@ -51,7 +52,7 @@ static Optional<SemanticTokenTypes> toTokenType(HighlightTokenClass tokenClass) 
   case HighlightTokenClass::COMMAND:
     return SemanticTokenTypes::function_;
   case HighlightTokenClass::COMMAND_ARG:
-    return SemanticTokenTypes::commandArgument;
+    return SemanticTokenTypes::commandArgument_;
   case HighlightTokenClass::META:
   case HighlightTokenClass::REDIRECT:
     return SemanticTokenTypes::operator_;

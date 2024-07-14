@@ -78,14 +78,8 @@ public:
     return false;
   }
 
-  /**
-   *
-   * @param gen
-   * @param capability
-   * @return
-   * if already registered, return empty struct (id is empty)
-   */
-  Registration registerCapability(IDGenerator &gen, Capability capability);
+  Registration registrSemanticTokensCapability(IDGenerator &gen,
+                                               const SemanticTokensLegend &legend);
 
   /**
    * @param capability

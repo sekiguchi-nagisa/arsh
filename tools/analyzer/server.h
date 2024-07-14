@@ -105,9 +105,8 @@ private:
 
 public:
   LSPServer(LoggerBase &logger, int inFd, int outFd, int time, uint64_t seed = 42)
-      : Handler(logger, seed), encoder(SemanticTokensLegend::create()), idGenerator(seed),
-        transport(logger, inFd, outFd), result(std::make_shared<SourceManager>()),
-        defaultDebounceTime(time) {
+      : Handler(logger, seed), idGenerator(seed), transport(logger, inFd, outFd),
+        result(std::make_shared<SourceManager>()), defaultDebounceTime(time) {
     this->bindAll();
   }
 

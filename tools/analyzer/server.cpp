@@ -470,6 +470,7 @@ Reply<InitializeResult> LSPServer::initialize(const InitializeParams &params) {
   this->init = true;
 
   // check client capability
+  auto semanticTokensLegend = SemanticTokensLegend::create();
   if (auto t = params.trace; t.hasValue()) {
     this->traceSetting = t.unwrap();
   }
@@ -528,18 +529,22 @@ Reply<InitializeResult> LSPServer::initialize(const InitializeParams &params) {
       }
     }
   }
+  this->encoder = SemanticTokenEncoder(std::move(semanticTokensLegend));
 
+  // generate server capability
   InitializeResult ret;
   ret.capabilities.completionProvider.completionItem.labelDetailsSupport =
       hasFlag(this->supportedCapability, SupportedCapability::LABEL_DETAIL);
   ret.capabilities.renameProvider.prepareProvider =
       hasFlag(this->supportedCapability, SupportedCapability::PREPARE_RENAME);
   if (hasFlag(this->supportedCapability, SupportedCapability::SEMANTIC_TOKEN_REGISTRATION)) {
-    auto options = SemanticTokensRegistrationOptions::createStatic(this->idGenerator("reg"));
+    auto options = SemanticTokensRegistrationOptions::createStatic(this->idGenerator("reg"),
+                                                                   this->encoder.getLegend());
     this->registrationMap.registerCapability(options);
     ret.capabilities.semanticTokensProvider = std::move(options);
   } else {
-    ret.capabilities.semanticTokensProvider = SemanticTokensOptions::create();
+    ret.capabilities.semanticTokensProvider =
+        SemanticTokensOptions::create(this->encoder.getLegend());
   }
   return ret;
 }
@@ -578,8 +583,8 @@ void LSPServer::loadConfigSetting(const ConfigSetting &setting) {
         if (hasFlag(this->supportedCapability, SupportedCapability::SEMANTIC_TOKEN_REGISTRATION) &&
             this->semanticHighlight != enabled) {
           if (enabled == BinaryFlag::enabled) {
-            auto registration = this->registrationMap.registerCapability(
-                this->idGenerator, RegistrationMap::Capability::SEMANTIC_TOKENS);
+            auto registration = this->registrationMap.registrSemanticTokensCapability(
+                this->idGenerator, this->encoder.getLegend());
             if (registration) {
               registrationParam.registrations.push_back(std::move(registration));
             }

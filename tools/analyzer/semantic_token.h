@@ -24,11 +24,16 @@ namespace arsh::lsp {
 
 class SemanticTokenEncoder {
 private:
+  SemanticTokensLegend legend;
   std::unordered_map<SemanticTokenTypes, unsigned int> tokenTypeToIds;
   std::unordered_map<SemanticTokenModifiers, unsigned int> tokenModifierToIds;
 
 public:
-  explicit SemanticTokenEncoder(const SemanticTokensLegend &legend);
+  SemanticTokenEncoder() = default;
+
+  explicit SemanticTokenEncoder(SemanticTokensLegend &&legend);
+
+  const auto &getLegend() const { return this->legend; }
 
   Optional<std::pair<unsigned int, unsigned int>> encode(HighlightTokenClass tokenClass) const;
 };

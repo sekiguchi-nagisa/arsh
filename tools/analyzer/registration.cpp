@@ -42,23 +42,18 @@ bool RegistrationMap::registerCapability(Capability capability, const std::strin
   return false;
 }
 
-Registration RegistrationMap::registerCapability(IDGenerator &gen, Capability capability) {
+Registration RegistrationMap::registrSemanticTokensCapability(IDGenerator &gen,
+                                                              const SemanticTokensLegend &legend) {
   auto id = gen("id");
-  if (!this->registerCapability(capability, id)) {
+  if (!this->registerCapability(Capability::SEMANTIC_TOKENS, id)) {
     return {};
   }
-
+  auto options = SemanticTokensRegistrationOptions::createDynamic(legend);
   JSONSerializer serializer;
-  switch (capability) {
-  case Capability::SEMANTIC_TOKENS: {
-    auto options = SemanticTokensRegistrationOptions::createDynamic();
-    serializer(options);
-    break;
-  }
-  }
+  serializer(options);
   return {
       .id = std::move(id),
-      .method = toString(capability),
+      .method = toString(Capability::SEMANTIC_TOKENS),
       .registerOptions = std::move(serializer).take(),
   };
 }

@@ -198,16 +198,40 @@ struct HoverClientCapabilities {
   OP(number_, "number")                                                                            \
   OP(regexp_, "regexp")                                                                            \
   OP(operator_, "operator")                                                                        \
-  OP(decorator_, "decorator")                                                                      \
-  OP(commandArgument, "commandArgument") /* extension */
+  OP(decorator_, "decorator")
+
+#define EACH_SEMANTIC_TOKEN_TYPES_EXTEND(OP) OP(commandArgument_, "commandArgument", parameter_)
 
 enum class SemanticTokenTypes : unsigned int {
 #define GEN_ENUM(E, V) E,
   EACH_SEMANTIC_TOKEN_TYPES(GEN_ENUM)
 #undef GEN_ENUM
+
+#define GEN_ENUM(E, V, F) E,
+      EACH_SEMANTIC_TOKEN_TYPES_EXTEND(GEN_ENUM)
+#undef GEN_ENUM
 };
 
 const char *toString(SemanticTokenTypes type);
+
+constexpr size_t numberOfExtendSemanticTokenTypes() {
+  constexpr SemanticTokenTypes table[] = {
+#define GEN_TABLE(E, V, F) SemanticTokenTypes::E,
+      EACH_SEMANTIC_TOKEN_TYPES_EXTEND(GEN_TABLE)
+#undef GEN_TABLE
+  };
+  return std::size(table);
+}
+
+struct ExtendSemanticTokenTypeEntry {
+  SemanticTokenTypes extend;
+  SemanticTokenTypes fallback;
+};
+
+using ExtendSemanticTokenTypeList =
+    std::array<ExtendSemanticTokenTypeEntry, numberOfExtendSemanticTokenTypes()>;
+
+const ExtendSemanticTokenTypeList &getExtendSemanticTokenTypes();
 
 template <typename T>
 void jsonify(T &t, SemanticTokenTypes &type) {
@@ -571,9 +595,9 @@ struct SemanticTokensOptions : public WorkDoneProgressOptions {
   SemanticTokensLegend legend;
   Optional<bool> full;
 
-  static SemanticTokensOptions create() {
+  static SemanticTokensOptions create(const SemanticTokensLegend &legend) {
     SemanticTokensOptions options;
-    options.legend = SemanticTokensLegend::create();
+    options.legend = legend;
     options.full = true;
     return options;
   }
@@ -589,15 +613,16 @@ struct SemanticTokensOptions : public WorkDoneProgressOptions {
 struct SemanticTokensRegistrationOptions : public TextDocumentRegistrationOptions,
                                            public SemanticTokensOptions,
                                            public StaticRegistrationOptions {
-  static SemanticTokensRegistrationOptions createStatic(std::string &&id) {
-    SemanticTokensRegistrationOptions options = createDynamic();
+  static SemanticTokensRegistrationOptions createStatic(std::string &&id,
+                                                        const SemanticTokensLegend &legend) {
+    SemanticTokensRegistrationOptions options = createDynamic(legend);
     options.id = std::move(id);
     return options;
   }
 
-  static SemanticTokensRegistrationOptions createDynamic() {
+  static SemanticTokensRegistrationOptions createDynamic(const SemanticTokensLegend &legend) {
     SemanticTokensRegistrationOptions options;
-    options.legend = SemanticTokensLegend::create();
+    options.legend = legend;
     options.full = true;
     return options;
   }
