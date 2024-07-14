@@ -7,8 +7,8 @@
 #### Misc
 
 - add ``--custom-style`` option to colorize
-    - now modify existing color style
-- adjust ``command_arg`` color of some color style
+    - now can modify existing color styles
+- adjust ``command_arg`` color of some color styles
 
 ### Changed
 
