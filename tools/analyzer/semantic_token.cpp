@@ -51,7 +51,7 @@ static Optional<SemanticTokenTypes> toTokenType(HighlightTokenClass tokenClass) 
   case HighlightTokenClass::COMMAND:
     return SemanticTokenTypes::function_;
   case HighlightTokenClass::COMMAND_ARG:
-    return SemanticTokenTypes::parameter_;
+    return SemanticTokenTypes::commandArgument;
   case HighlightTokenClass::META:
   case HighlightTokenClass::REDIRECT:
     return SemanticTokenTypes::operator_;

@@ -722,7 +722,7 @@ TEST_F(SemanticTokenTest, encode) {
   this->testEncode(HighlightTokenClass::REGEX, SemanticTokenTypes::regexp_, 0);
   this->testEncode(HighlightTokenClass::STRING, SemanticTokenTypes::string_, 0);
   this->testEncode(HighlightTokenClass::COMMAND, SemanticTokenTypes::function_, 0);
-  this->testEncode(HighlightTokenClass::COMMAND_ARG, SemanticTokenTypes::parameter_, 0);
+  this->testEncode(HighlightTokenClass::COMMAND_ARG, SemanticTokenTypes::commandArgument, 0);
   this->testEncode(HighlightTokenClass::REDIRECT, SemanticTokenTypes::operator_, 0);
   this->testEncode(HighlightTokenClass::VARIABLE, SemanticTokenTypes::variable_, 0);
   this->testEncode(HighlightTokenClass::TYPE, SemanticTokenTypes::type_, 0);

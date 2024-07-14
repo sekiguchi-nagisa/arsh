@@ -55,7 +55,8 @@
 # CHECK:             "number",
 # CHECK:             "regexp",
 # CHECK:             "operator",
-# CHECK:             "decorator"
+# CHECK:             "decorator",
+# CHECK:             "commandArgument"
 # CHECK:           ]
 # CHECK:         }
 # CHECK:       },

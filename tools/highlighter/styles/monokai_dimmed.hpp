@@ -30,6 +30,7 @@ DEFINE_HIGHLIGHT_STYLE(monokai_dimmed) {
   constexpr auto VAR = ValidRule("#6089B4");
   constexpr auto FUNC = ValidRule("#CE6700");
   constexpr auto PARAM = ValidRule("#6089B4");
+  constexpr auto ARG = ValidRule("#8080FF");
   constexpr auto TYPE = ValidRule("#9B0000");
   constexpr auto TEXT = ValidRule("#C5C8C6");
   constexpr auto BG = ValidRule("bg:#1E1E1E");
@@ -38,7 +39,7 @@ DEFINE_HIGHLIGHT_STYLE(monokai_dimmed) {
       {HighlightTokenClass::COMMENT, COMMENT},   {HighlightTokenClass::KEYWORD, KEYWORD},
       {HighlightTokenClass::OPERATOR, OPERATOR}, {HighlightTokenClass::NUMBER, NUMBER},
       {HighlightTokenClass::REGEX, STRING},      {HighlightTokenClass::STRING, STRING},
-      {HighlightTokenClass::COMMAND, FUNC},      {HighlightTokenClass::COMMAND_ARG, PARAM},
+      {HighlightTokenClass::COMMAND, FUNC},      {HighlightTokenClass::COMMAND_ARG, ARG},
       {HighlightTokenClass::META, OPERATOR},     {HighlightTokenClass::REDIRECT, OPERATOR},
       {HighlightTokenClass::VARIABLE, VAR},      {HighlightTokenClass::TYPE, TYPE},
       {HighlightTokenClass::MEMBER, PARAM},      {HighlightTokenClass::ATTRIBUTE, KEYWORD},

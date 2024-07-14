@@ -8,6 +8,7 @@
 
 - add ``--custom-style`` option to colorize
     - now modify existing color style
+- adjust ``command_arg`` color of some color style
 
 ### Changed
 
@@ -19,6 +20,10 @@
 
 - add ``once`` param to ``String#replace`` and ``Regex#replace`` methods
     - now only replace first occurrence of pattern
+
+#### LSP
+
+- add ``commandArgument`` semantic token type for better semantic highlight of command argument
 
 #### API
 

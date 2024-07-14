@@ -32,7 +32,7 @@
 #    CHECK:       0,
 #    CHECK:       5,
 #    CHECK:       5,
-#    CHECK:       2,
+#    CHECK:       16,
 #    CHECK:       0
 #    CHECK:     ]
 #    CHECK:   }

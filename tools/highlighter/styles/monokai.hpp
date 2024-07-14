@@ -32,12 +32,13 @@ DEFINE_HIGHLIGHT_STYLE(monokai) {
   constexpr auto TYPE = ValidRule("#A6E22E underline");
   constexpr auto TEXT = ValidRule("#F8F8F2");
   constexpr auto BG = ValidRule("bg:#272822");
+  constexpr auto ARG = ValidRule("#E6DB74");
 
   return {
       {HighlightTokenClass::COMMENT, COMMENT},  {HighlightTokenClass::KEYWORD, KEYWORD},
       {HighlightTokenClass::OPERATOR, KEYWORD}, {HighlightTokenClass::NUMBER, NUMBER},
       {HighlightTokenClass::REGEX, STRING},     {HighlightTokenClass::STRING, STRING},
-      {HighlightTokenClass::COMMAND, FUNC},     {HighlightTokenClass::COMMAND_ARG, PARAM},
+      {HighlightTokenClass::COMMAND, FUNC},     {HighlightTokenClass::COMMAND_ARG, ARG},
       {HighlightTokenClass::META, KEYWORD},     {HighlightTokenClass::REDIRECT, PARAM},
       {HighlightTokenClass::VARIABLE, VAR},     {HighlightTokenClass::TYPE, TYPE},
       {HighlightTokenClass::MEMBER, PARAM},     {HighlightTokenClass::ATTRIBUTE, KEYWORD},

@@ -198,7 +198,8 @@ struct HoverClientCapabilities {
   OP(number_, "number")                                                                            \
   OP(regexp_, "regexp")                                                                            \
   OP(operator_, "operator")                                                                        \
-  OP(decorator_, "decorator")
+  OP(decorator_, "decorator")                                                                      \
+  OP(commandArgument, "commandArgument") /* extension */
 
 enum class SemanticTokenTypes : unsigned int {
 #define GEN_ENUM(E, V) E,
