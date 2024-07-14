@@ -17,6 +17,8 @@
 #ifndef ARSH_TOOLS_ANALYZER_LSP_H
 #define ARSH_TOOLS_ANALYZER_LSP_H
 
+#include <array>
+
 #include <misc/logger_base.hpp>
 
 #include "../json/json.h"
