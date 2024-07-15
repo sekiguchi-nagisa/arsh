@@ -25,7 +25,6 @@
 
 - improve ``textDocument/semanticTokens``
     - add ``commandArgument`` semantic token type for better semantic highlight of command argument
-    - check client capability and now only emit client supported token types
 
 #### API
 

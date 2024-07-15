@@ -493,7 +493,7 @@ Reply<InitializeResult> LSPServer::initialize(const InitializeParams &params) {
           semanticTokens.dynamicRegistration.unwrap()) {
         setFlag(this->supportedCapability, SupportedCapability::SEMANTIC_TOKEN_REGISTRATION);
       }
-      fitLegendToClient(semanticTokensLegend, semanticTokens.tokenTypes);
+      // fitLegendToClient(semanticTokensLegend, semanticTokens.tokenTypes); // not check client
     }
     if (textDocument.completion.hasValue()) {
       if (auto &completion = textDocument.completion.unwrap();

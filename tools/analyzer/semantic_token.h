@@ -41,6 +41,11 @@ using ExtendSemanticTokenTypeList =
 
 const ExtendSemanticTokenTypeList &getExtendSemanticTokenTypes();
 
+/**
+ * currently not used
+ * @param legend
+ * @param clientTokenTypes
+ */
 void fitLegendToClient(SemanticTokensLegend &legend,
                        const std::vector<std::string> &clientTokenTypes);
 
