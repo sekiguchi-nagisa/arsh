@@ -12,6 +12,8 @@ let PRE_PROMPTS : [() -> Void]
 
 $LINE_EDIT.setPrompt(function(p) => {
     for hook in $PRE_PROMPTS {
+        let old = $?
+        defer { $? = $old; }
         try { $hook(); } catch e { $e.show(); }
     }
     try {
