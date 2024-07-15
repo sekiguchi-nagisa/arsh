@@ -19,6 +19,32 @@
 
 namespace arsh::lsp {
 
+const ExtendSemanticTokenTypeList &getExtendSemanticTokenTypes() {
+  static ExtendSemanticTokenTypeList list = {
+#define GEN_TABLE(E, V, F)                                                                         \
+  ExtendSemanticTokenTypeEntry{SemanticTokenTypes::E, SemanticTokenTypes::F},
+      EACH_SEMANTIC_TOKEN_TYPES_EXTEND(GEN_TABLE)
+#undef GEN_TABLE
+  };
+  return list;
+}
+
+void fitLegendToClient(SemanticTokensLegend &legend,
+                       const std::vector<std::string> &clientTokenTypes) {
+  StrRefSet clientTokenTypeSet;
+  for (auto &e : clientTokenTypes) {
+    clientTokenTypeSet.emplace(e);
+  }
+
+  for (auto iter = legend.tokenTypes.begin(); iter != legend.tokenTypes.end();) {
+    if (clientTokenTypeSet.find(toString(*iter)) != clientTokenTypeSet.end()) {
+      ++iter;
+    } else {
+      iter = legend.tokenTypes.erase(iter);
+    }
+  }
+}
+
 SemanticTokenEncoder::SemanticTokenEncoder(SemanticTokensLegend &&legend)
     : legend(std::move(legend)) {
   unsigned int index = 0;
@@ -30,6 +56,17 @@ SemanticTokenEncoder::SemanticTokenEncoder(SemanticTokensLegend &&legend)
   for (auto &e : this->legend.tokenModifiers) {
     unsigned int v = 1 << index++;
     this->tokenModifierToIds.emplace(e, v);
+  }
+
+  // add extend semantic token type fallback
+  auto &entries = getExtendSemanticTokenTypes();
+  for (auto &e : entries) {
+    if (this->tokenTypeToIds.find(e.extend) == this->tokenTypeToIds.end()) {
+      if (const auto iter = this->tokenTypeToIds.find(e.fallback);
+          iter != this->tokenTypeToIds.end()) { // if not found, add fallback type index
+        this->tokenTypeToIds.emplace(e.extend, iter->second);
+      }
+    }
   }
 }
 
@@ -74,9 +111,11 @@ static Optional<SemanticTokenTypes> toTokenType(HighlightTokenClass tokenClass) 
 
 Optional<std::pair<unsigned int, unsigned int>>
 SemanticTokenEncoder::encode(HighlightTokenClass tokenClass) const {
-  auto ret = toTokenType(tokenClass);
-  if (ret.hasValue()) {
-    return std::make_pair(this->tokenTypeToIds.find(ret.unwrap())->second, 0);
+  if (const auto ret = toTokenType(tokenClass); ret.hasValue()) {
+    if (const auto iter = this->tokenTypeToIds.find(ret.unwrap());
+        iter != this->tokenTypeToIds.end()) {
+      return std::make_pair(iter->second, 0); // modifier is always 0
+    }
   }
   return {};
 }

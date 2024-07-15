@@ -3,7 +3,11 @@
 {"id": 0, "jsonrpc": "2.0", "method": "initialize",
  "params": {
    "capabilities": {"textDocument": {"semanticTokens": {
-     "dynamicRegistration": true, "tokenTypes": ["string"], "tokenModifiers": [], "formats": []
+     "dynamicRegistration": true,
+     "tokenTypes": ["type", "struct", "parameter", "variable", "property", "function", "event",
+                    "method", "keyword", "modifier", "comment", "string",
+                    "number", "regexp", "operator", "decorator", "commandArgument"],
+     "tokenModifiers": [], "formats": []
    }}},
    "rootUri": "file:///test", "processId": 46
  }

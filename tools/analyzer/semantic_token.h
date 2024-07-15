@@ -22,6 +22,28 @@
 
 namespace arsh::lsp {
 
+constexpr size_t numberOfExtendSemanticTokenTypes() {
+  constexpr SemanticTokenTypes table[] = {
+#define GEN_TABLE(E, V, F) SemanticTokenTypes::E,
+      EACH_SEMANTIC_TOKEN_TYPES_EXTEND(GEN_TABLE)
+#undef GEN_TABLE
+  };
+  return std::size(table);
+}
+
+struct ExtendSemanticTokenTypeEntry {
+  SemanticTokenTypes extend;
+  SemanticTokenTypes fallback;
+};
+
+using ExtendSemanticTokenTypeList =
+    std::array<ExtendSemanticTokenTypeEntry, numberOfExtendSemanticTokenTypes()>;
+
+const ExtendSemanticTokenTypeList &getExtendSemanticTokenTypes();
+
+void fitLegendToClient(SemanticTokensLegend &legend,
+                       const std::vector<std::string> &clientTokenTypes);
+
 class SemanticTokenEncoder {
 private:
   SemanticTokensLegend legend;

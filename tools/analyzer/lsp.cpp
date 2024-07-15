@@ -111,16 +111,6 @@ const char *toString(SemanticTokenTypes type) {
   }
 }
 
-const ExtendSemanticTokenTypeList &getExtendSemanticTokenTypes() {
-  static ExtendSemanticTokenTypeList list = {
-#define GEN_TABLE(E, V, F)                                                                         \
-  ExtendSemanticTokenTypeEntry{SemanticTokenTypes::E, SemanticTokenTypes::F},
-      EACH_SEMANTIC_TOKEN_TYPES_EXTEND(GEN_TABLE)
-#undef GEN_TABLE
-  };
-  return list;
-}
-
 const char *toString(SemanticTokenModifiers modifier) {
   switch (modifier) {
 #define GEN_CASE(E, V)                                                                             \

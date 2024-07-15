@@ -78,6 +78,12 @@ public:
     return false;
   }
 
+  /**
+   *
+   * @param gen
+   * @param legend
+   * @return if already registered, return empty struct (id is empty)
+   */
   Registration registrSemanticTokensCapability(IDGenerator &gen,
                                                const SemanticTokensLegend &legend);
 

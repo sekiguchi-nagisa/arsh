@@ -487,13 +487,13 @@ Reply<InitializeResult> LSPServer::initialize(const InitializeParams &params) {
         this->markupKind = resolveMarkupKind(hover.contentFormat.unwrap());
       }
     }
-    if (textDocument.semanticTokens
-            .hasValue()) { // FIXME: check client supported semantic token options
+    if (textDocument.semanticTokens.hasValue()) {
       auto &semanticTokens = textDocument.semanticTokens.unwrap();
       if (semanticTokens.dynamicRegistration.hasValue() &&
           semanticTokens.dynamicRegistration.unwrap()) {
         setFlag(this->supportedCapability, SupportedCapability::SEMANTIC_TOKEN_REGISTRATION);
       }
+      fitLegendToClient(semanticTokensLegend, semanticTokens.tokenTypes);
     }
     if (textDocument.completion.hasValue()) {
       if (auto &completion = textDocument.completion.unwrap();

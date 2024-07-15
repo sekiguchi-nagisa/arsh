@@ -1,0 +1,142 @@
+# RUN: call $cmd --test $self
+
+{"id": 0, "jsonrpc": "2.0", "method": "initialize",
+ "params": {
+   "capabilities": {"textDocument": {"semanticTokens": {
+     "dynamicRegistration": true,
+     "tokenTypes": ["type", "struct", "parameter", "variable", "property", "function", "event",
+                    "method", "keyword", "modifier", "comment", "string",
+                    "number", "regexp", "operator", "decorator"],
+     "tokenModifiers": [], "formats": []
+   }}},
+   "rootUri": "file:///test", "processId": 46
+ }
+}
+
+# missing extend semantic token type
+
+#    CHECK: {
+# CHECK_IF:     "capabilities": {
+# CHECK_IF:       "semanticTokensProvider": {
+#    CHECK:         "full": true,
+#    CHECK:         "id": "reg-858b24f53709d312-9871734dc2c02298",
+# CHECK_IF: }
+
+<<<
+{
+  "jsonrpc": "2.0",
+  "method": "workspace/didChangeConfiguration",
+  "params": {
+    "settings": {
+      "arshd": {
+        "commandArgumentCompletion": "disabled",
+        "commandCompletion": "default",
+        "logLevel": "error",
+        "semanticHighlight": "disabled"
+      }
+    }
+  }
+}
+# disable semantic highlight
+
+
+# CHECK_IF:   "method": "client/unregisterCapability",
+#    CHECK:   "params": {
+#    CHECK:     "unregistrations": [
+#    CHECK:       {
+#    CHECK:         "id": "reg-858b24f53709d312-9871734dc2c02298",
+#    CHECK:         "method": "textDocument/semanticTokens"
+#    CHECK:       }
+#    CHECK:     ]
+#    CHECK:   }
+#    CHECK: }
+
+
+<<<
+{"jsonrpc": "2.0", "method": "textDocument/didOpen",
+ "params": {
+    "textDocument": {"languageId": "arsh", "version": 1, "uri": "file:///test/test.ds",
+                     "text": "echo hello 'world'"}
+ }
+}
+
+<<<
+{"id": 1, "jsonrpc": "2.0", "method": "textDocument/semanticTokens/full",
+  "params": {
+    "textDocument": { "uri": "file:///test/test.ds" }
+  }
+}
+
+# CHECK_IF:   "result": null
+
+<<<
+
+# re-enable semantic token
+
+{
+  "jsonrpc": "2.0",
+  "method": "workspace/didChangeConfiguration",
+  "params": {
+    "settings": {
+      "arshd": {
+        "semanticHighlight": "enabled"
+      }
+    }
+  }
+}
+
+# CHECK_IF:   "method": "client/registerCapability",
+#    CHECK:   "params": {
+#    CHECK:     "registrations": [
+#    CHECK:       {
+#    CHECK:         "id": "id-952179c794397917-899718e94854bc2d",
+#    CHECK:         "method": "textDocument/semanticTokens",
+#    CHECK:         "registerOptions": {
+#    CHECK:           "full": true,
+#    CHECK:           "legend": {
+#    CHECK:             "tokenModifiers": [
+# CHECK_IF:             "tokenTypes": [
+
+
+<<<
+{"id": 2, "jsonrpc": "2.0", "method": "textDocument/semanticTokens/full",
+  "params": {
+    "textDocument": { "uri": "file:///test/test.ds" }
+  }
+}
+
+# CHECK_IF:   "id": 2,
+#    CHECK:   "jsonrpc": "2.0",
+#    CHECK:   "result": {
+#    CHECK:     "data": [
+#    CHECK:       0,
+#    CHECK:       0,
+#    CHECK:       4,
+#    CHECK:       6,
+#    CHECK:       0,
+#    CHECK:       0,
+#    CHECK:       5,
+#    CHECK:       5,
+#    CHECK:       2,
+#    CHECK:       0,
+#    CHECK:       0,
+#    CHECK:       6,
+#    CHECK:       7,
+#    CHECK:       11,
+#    CHECK:       0
+#    CHECK:     ]
+#    CHECK:   }
+#    CHECK: }
+
+
+<<<
+{"id": 3, "jsonrpc": "2.0", "method": "shutdown"}
+
+# CHECK_IF:   "id": 3,
+#    CHECK:   "jsonrpc": "2.0",
+#    CHECK:   "result": null
+#    CHECK: }
+
+<<<
+{"jsonrpc": "2.0", "method": "exit"}
+# STATUS: 0

@@ -17,8 +17,6 @@
 #ifndef ARSH_TOOLS_ANALYZER_LSP_H
 #define ARSH_TOOLS_ANALYZER_LSP_H
 
-#include <array>
-
 #include <misc/logger_base.hpp>
 
 #include "../json/json.h"
@@ -216,25 +214,6 @@ enum class SemanticTokenTypes : unsigned int {
 
 const char *toString(SemanticTokenTypes type);
 
-constexpr size_t numberOfExtendSemanticTokenTypes() {
-  constexpr SemanticTokenTypes table[] = {
-#define GEN_TABLE(E, V, F) SemanticTokenTypes::E,
-      EACH_SEMANTIC_TOKEN_TYPES_EXTEND(GEN_TABLE)
-#undef GEN_TABLE
-  };
-  return std::size(table);
-}
-
-struct ExtendSemanticTokenTypeEntry {
-  SemanticTokenTypes extend;
-  SemanticTokenTypes fallback;
-};
-
-using ExtendSemanticTokenTypeList =
-    std::array<ExtendSemanticTokenTypeEntry, numberOfExtendSemanticTokenTypes()>;
-
-const ExtendSemanticTokenTypeList &getExtendSemanticTokenTypes();
-
 template <typename T>
 void jsonify(T &t, SemanticTokenTypes &type) {
   if constexpr (is_serialize_v<T>) {
@@ -314,8 +293,8 @@ struct SemanticTokensLegend {
 
 struct SemanticTokensClientCapabilities {
   Optional<bool> dynamicRegistration;
-  std::vector<SemanticTokenTypes> tokenTypes;
-  std::vector<SemanticTokenModifiers> tokenModifiers;
+  std::vector<std::string> tokenTypes;
+  std::vector<std::string> tokenModifiers;
   std::vector<TokenFormat> formats;
 
   template <typename T>
