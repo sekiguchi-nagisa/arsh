@@ -109,3 +109,30 @@ udc1() {}
 assert "$(command -V udc1)" == 'udc1 is a user-defined command'
 $DYNA_UDCS['udc1'] = (){}
 assert "$(command -V udc1)" == 'udc1 is a user-defined command'
+
+## command object equality
+function no_capture() : Command {
+  return () {
+    echo command: $0: $RANDOM
+    printf "<%s>\n" $@
+  }
+}
+
+assert $no_capture() == $no_capture()
+assert $no_capture() == $no_capture()
+assert $no_capture() == $no_capture()
+
+function capture(a: Int): Command {
+  return () {
+    echo command: $0: $RANDOM: $a
+    printf "<%s>\n" $@
+  }
+}
+
+assert $capture(0) != $capture(0)
+assert $capture(0) != $capture(1)
+assert $capture(1) != $capture(1)
+assert $capture(0) != $no_capture()
+var a = $capture(12)
+var b = $a
+assert $a == $b

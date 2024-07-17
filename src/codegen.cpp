@@ -802,7 +802,9 @@ void ByteCodeGenerator::visitBinaryOpNode(BinaryOpNode &node) {
 
     this->visit(*node.getRightNode(), CmdCallCtx::AUTO);
     this->markLabel(mergeLabel);
-  } else if (node.getLeftNode() && node.getLeftNode()->getType().isFuncType() &&
+  } else if (node.getLeftNode() &&
+             (node.getLeftNode()->getType().isFuncType() ||
+              node.getLeftNode()->getType().is(TYPE::Command)) &&
              (kind == TokenKind::EQ || kind == TokenKind::NE)) {
     this->visit(*node.getLeftNode());
     this->visit(*node.getRightNode());

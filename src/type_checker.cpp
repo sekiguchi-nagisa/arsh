@@ -1117,7 +1117,8 @@ void TypeChecker::visitBinaryOpNode(BinaryOpNode &node) {
   }
 
   // check referential equality of func object
-  if (leftType.isFuncType() && (node.getOp() == TokenKind::EQ || node.getOp() == TokenKind::NE)) {
+  if ((leftType.isFuncType() || leftType.is(TYPE::Command)) &&
+      (node.getOp() == TokenKind::EQ || node.getOp() == TokenKind::NE)) {
     this->checkType(leftType, *node.getRightNode());
     node.setType(this->typePool().get(TYPE::Bool));
     return;

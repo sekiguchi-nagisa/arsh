@@ -4,6 +4,10 @@
 
 ### Added
 
+#### Core
+
+- ``Command`` type support ``==``, ``!=`` operators like function
+
 #### Misc
 
 - add ``--custom-style`` option to colorize
