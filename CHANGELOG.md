@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.34.1] - 2024-07-22
+
+- broken newline handling of prefix env assignment parsing
+
 ## [0.34.0] - 2024-06-30
 
 ### Added

@@ -2491,7 +2491,7 @@ std::unique_ptr<PrefixAssignNode> Parser::parse_prefixAssign() {
     envDeclNodes.push_back(std::move(declNode));
 
     this->changeLexerModeToSTMT();
-  } while (CUR_KIND() == TokenKind::ENV_ASSIGN && !comp);
+  } while (CUR_KIND() == TokenKind::ENV_ASSIGN && !comp && !hasLineTerminator());
 
   std::unique_ptr<Node> exprNode;
   if (comp) {

@@ -30,3 +30,14 @@ var FUNC = function($s : Int) => $s
 assert '34' is typeof(
     (IFS=23 $FUNC(34)) as String
 )
+
+## newline handling
+(PATH=/bin
+HOME=/usr/bin {})
+
+PATH=/usr/bin
+PATH=/usr/bin {}
+
+PATH=/usr/local/bin    \
+
+    PATH=/usr/local/bin {}
