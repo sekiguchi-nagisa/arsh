@@ -116,15 +116,19 @@ assert $a
 assert $a!.count() == 2
 assert $a!.group(0)! == "hello world(!!"
 assert $a!.group(1)! == "world"
+assert $a!.start() == 0
+assert $a!.end() == 14
 
 assert ! $/hufure/.match("")
 
 assert $/a|(b)/.match('a')!.count() == 1
 
-$a = $/(a|(b))c/.match('ac')
+$a = $/(a|(b))c/.match('1あ234ac 567')
 assert $a!.count() == 2
 assert $a!.group(0)! == 'ac'
 assert $a!.group(1)! == 'a'
+assert $a!.start() == 7
+assert $a!.end() == 9
 
 $a = $/(a|(b))(c)()/.match('ac')
 assert $a!.count() == 5

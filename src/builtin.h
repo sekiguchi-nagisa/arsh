@@ -1199,16 +1199,14 @@ ARSH_METHOD regex_unmatch(RuntimeContext &ctx) {
 //!bind: function match($this: Regex, $target : String) : Option<RegexMatch>
 ARSH_METHOD regex_match(RuntimeContext &ctx) {
   SUPPRESS_WARNING(regex_match);
-  auto &re = typeAs<RegexObject>(LOCAL(0));
-  auto ref = LOCAL(1).asStrRef();
+  auto re = toObjPtr<RegexObject>(LOCAL(0));
+  const auto ref = LOCAL(1).asStrRef();
 
-  std::vector<Value> values;
-  const int count = TRY(re.match(ctx, ref, &values));
-  if (count == 0) {
-    RET(Value::createInvalid());
+  if (RegexObject::MatchResult result; TRY(re->match(ctx, ref, &result))) {
+    auto ret = Value::create<RegexMatchObject>(std::move(re), std::move(result));
+    RET(ret);
   }
-  auto ret = Value::create<RegexMatchObject>(toObjPtr<RegexObject>(LOCAL(0)), std::move(values));
-  RET(ret);
+  RET(Value::createInvalid());
 }
 
 //!bind: function replace($this: Regex, $target : String, $repl : String, $once: Option<Bool>) : String
@@ -1228,6 +1226,20 @@ ARSH_METHOD regex_replace(RuntimeContext &ctx) {
 // ########################
 // ##     RegexMatch     ##
 // ########################
+
+//!bind: function start($this : RegexMatch) : Int
+ARSH_METHOD match_start(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(match_start);
+  const auto &match = typeAs<RegexMatchObject>(LOCAL(0));
+  RET(Value::createInt(match.getStartOffset()));
+}
+
+//!bind: function end($this : RegexMatch) : Int
+ARSH_METHOD match_end(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(match_end);
+  const auto &match = typeAs<RegexMatchObject>(LOCAL(0));
+  RET(Value::createInt(match.getEndOffset()));
+}
 
 //!bind: function count($this : RegexMatch) : Int
 ARSH_METHOD match_count(RuntimeContext &ctx) {

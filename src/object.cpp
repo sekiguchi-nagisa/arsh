@@ -544,24 +544,29 @@ UnixFdObject::~UnixFdObject() {
 // ##     RegexObject     ##
 // #########################
 
-int RegexObject::match(ARState &state, StringRef ref, std::vector<Value> *out) {
+bool RegexObject::match(ARState &state, const StringRef ref, MatchResult *ret) {
+  assert(ref.size() <= StringObject::MAX_SIZE);
   std::string errorStr;
-  int matchCount = this->re.match(ref, errorStr);
+  const int matchCount = this->re.match(ref, errorStr);
   if (!errorStr.empty()) {
     raiseError(state, TYPE::RegexMatchError, std::move(errorStr));
   }
-  if (out && matchCount > 0) {
-    out->reserve(matchCount); // not check iterator invalidation
+  if (ret && matchCount > 0) {
+    ret->groups.reserve(matchCount); // not check iterator invalidation
     for (int i = 0; i < matchCount; i++) {
       PCRECapture capture; // NOLINT
-      bool set = this->re.getCaptureAt(i, capture);
+      const bool set = this->re.getCaptureAt(i, capture);
+      if (i == 0) {
+        ret->start = capture.begin;
+        ret->end = capture.end;
+      }
       auto v =
           set ? Value::createStr(ref.slice(capture.begin, capture.end)) : Value::createInvalid();
-      out->push_back(std::move(v)); // not check size
+      ret->groups.push_back(std::move(v)); // not check size
     }
-    ASSERT_ARRAY_SIZE(*out);
+    ASSERT_ARRAY_SIZE(ret->groups);
   }
-  return matchCount;
+  return matchCount > 0;
 }
 
 // ##########################

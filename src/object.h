@@ -734,20 +734,26 @@ private:
   PCRE re;
 
 public:
+  struct MatchResult {
+    std::vector<Value> groups; // must be String?
+    size_t start;              // start byte offset of match string
+    size_t end;                // end byte offset of match string
+  };
+
   explicit RegexObject(PCRE &&re) : ObjectWithRtti(TYPE::Regex), re(std::move(re)) {}
 
-  bool search(ARState &state, StringRef ref) { return this->match(state, ref, nullptr) > 0; }
+  bool search(ARState &state, StringRef ref) { return this->match(state, ref, nullptr); }
 
   /**
    * @param state
    * if has error, set error to state
    * @param ref
-   * @param out
+   * @param ret
    * may be null
    * @return
-   * if not matched, return negative number
+   * if not matched, return false
    */
-  int match(ARState &state, StringRef ref, std::vector<Value> *out);
+  bool match(ARState &state, StringRef ref, MatchResult *ret);
 
   bool replace(StringRef target, StringRef replacement, std::string &output, bool global) {
     return this->re.substitute(target, replacement, global, StringObject::MAX_SIZE, output) >= 0;
@@ -784,14 +790,22 @@ class RegexMatchObject : public ObjectWithRtti<ObjectKind::RegexMatch> {
 private:
   ObjPtr<RegexObject> reObj;
   std::vector<Value> groups;
+  unsigned int startOffset;
+  unsigned int endOffset;
 
 public:
-  RegexMatchObject(ObjPtr<RegexObject> &&reObj, std::vector<Value> &&groups)
-      : ObjectWithRtti(TYPE::RegexMatch), reObj(std::move(reObj)), groups(std::move(groups)) {}
+  RegexMatchObject(ObjPtr<RegexObject> &&reObj, RegexObject::MatchResult &&matchResults)
+      : ObjectWithRtti(TYPE::RegexMatch), reObj(std::move(reObj)),
+        groups(std::move(matchResults.groups)), startOffset(matchResults.start),
+        endOffset(matchResults.end) {}
 
   const auto &getRE() const { return this->reObj->getRE(); }
 
   const auto &getGroups() const { return this->groups; }
+
+  unsigned int getStartOffset() const { return this->startOffset; }
+
+  unsigned int getEndOffset() const { return this->endOffset; }
 };
 
 class ArrayObject : public ObjectWithRtti<ObjectKind::Array> {

@@ -271,6 +271,10 @@ function replace(target: String, repl: String, once: Bool?): String for Regex
 
 ## RegexMatch type
 ```
+function start(): Int for RegexMatch
+
+function end(): Int for RegexMatch
+
 function count(): Int for RegexMatch
 
 function group(index: Int): String? for RegexMatch
