@@ -830,11 +830,8 @@ EnvCtxObject::~EnvCtxObject() {
     } else {
       assert(name.hasStrRef());
       const char *envName = name.asCStr();
-      if (value.isInvalid()) { // unset
-        unsetenv(envName);
-      } else {
-        setenv(envName, value.asCStr(), 1);
-      }
+      // if invalid, pass null (unset)
+      setEnv(this->state.pathCache, envName, value.isInvalid() ? nullptr : value.asCStr());
     }
   }
 }
@@ -849,7 +846,7 @@ void EnvCtxObject::setAndSaveEnv(Value &&name, Value &&value) {
   this->envs.emplace_back(name, oldEnv ? Value::createStr(oldEnv) : Value::createInvalid());
 
   // overwrite env
-  setenv(envName, value.asCStr(), 1);
+  setEnv(this->state.pathCache, envName, value.asCStr());
 
   if (name.asStrRef() == VAR_IFS) { // if env name is IFS, also save and set IFS global variable
     // save old IFS

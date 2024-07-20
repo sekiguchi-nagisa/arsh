@@ -19,6 +19,7 @@
 #### Core
 
 - re-enable source glob cancellation for potential too slow filesystem
+- automatically clear file path cache after ``PATH`` modification like bash/zsh
 
 #### Builtin
 

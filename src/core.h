@@ -254,6 +254,22 @@ bool mergeSort(ARState &state, ArrayObject &arrayObj, const Value &compFunc);
  */
 int xexecve(const char *filePath, const ArrayObject &argv, char *const *envp);
 
+class FilePathCache;
+
+/**
+ * set/unset env. if env if PATH, clear pathCache
+ * always overwrite env
+ * @param pathCache
+ * @param name not null
+ * @param value if null, unset env
+ * @return if failed, return false and set errno
+ */
+bool setEnv(FilePathCache &pathCache, const char *name, const char *value);
+
+inline bool unsetEnv(FilePathCache &pathCache, const char *name) {
+  return setEnv(pathCache, name, nullptr);
+}
+
 class FakeModuleLoader : public ModuleLoaderBase {
 private:
   CStrPtr path;

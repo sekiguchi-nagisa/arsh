@@ -185,8 +185,9 @@ const char *VM::loadEnv(ARState &state, bool hasDefault) {
       raiseError(state, TYPE::IllegalAccessError, std::move(message));
       return nullptr;
     }
-    setenv(name, ref.data(), 1);
-    env = getenv(name);
+    if (setEnv(state.pathCache, name, ref.data())) {
+      env = getenv(name);
+    }
   }
 
   if (env == nullptr) {
@@ -203,7 +204,7 @@ bool VM::storeEnv(ARState &state) {
   const auto nameRef = name.asStrRef();
   const auto valueRef = value.asStrRef();
   assert(!nameRef.hasNullChar());
-  if (setenv(valueRef.hasNullChar() ? "" : nameRef.data(), valueRef.data(), 1) == 0) {
+  if (setEnv(state.pathCache, valueRef.hasNullChar() ? "" : nameRef.data(), valueRef.data())) {
     return true;
   }
   std::string str = ERROR_SET_ENV;

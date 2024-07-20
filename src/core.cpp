@@ -888,6 +888,17 @@ int xexecve(const char *filePath, const ArrayObject &argvObj, char *const *envp)
   return ret;
 }
 
+bool setEnv(FilePathCache &pathCache, const char *name, const char *value) {
+  if (StringRef(name) == ENV_PATH) {
+    pathCache.clear(); // if PATH is modified, clear file path cache like other shells
+  }
+  errno = 0;
+  if (value) {
+    return setenv(name, value, 1) == 0;
+  }
+  return unsetenv(name) == 0;
+}
+
 ModResult FakeModuleLoader::addNewModEntry(CStrPtr &&ptr) {
   this->path = std::move(ptr);
   return this->path.get();

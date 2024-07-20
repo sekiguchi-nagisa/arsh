@@ -581,7 +581,7 @@ static int builtin_setenv(ARState &st, ArrayObject &argvObj) {
     if (pos != StringRef::npos && pos != 0) {
       auto name = kv.substr(0, pos).toString();
       auto value = kv.substr(pos + 1);
-      if (setenv(name.c_str(), value.data(), 1) == 0) {
+      if (setEnv(st.pathCache, name.c_str(), value.data())) {
         continue;
       }
     }
@@ -604,7 +604,7 @@ static int builtin_unsetenv(ARState &st, ArrayObject &argvObj) {
   const unsigned int size = argvObj.size();
   for (unsigned int index = optState.index; index < size; index++) {
     auto envName = argvObj.getValues()[index].asStrRef();
-    if (unsetenv(envName.hasNullChar() ? "" : envName.data()) != 0) {
+    if (!unsetEnv(st.pathCache, envName.hasNullChar() ? "" : envName.data())) {
       PERROR(st, argvObj, "%s", toPrintable(envName).c_str());
       return 1;
     }

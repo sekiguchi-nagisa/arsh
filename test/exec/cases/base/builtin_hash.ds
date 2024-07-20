@@ -68,4 +68,48 @@ if (test -e /dev/full) {
     assert $? == 1
 }
 
+# auto clear hash via PATH modification
+## setenv/unset builtins
+hash ls ps mv wc
+setenv PATH=/usr/bin
+assert "$(hash)" == "hash: file path cache is empty"
+
+hash ls ps mv wc
+unsetenv PATH
+assert "$(hash)" == "hash: file path cache is empty"
+
+## env variable
+hash ls ps mv wc
+$PATH = "/usr/bin:/bin"
+assert "$(hash)" == "hash: file path cache is empty"
+
+{
+    unsetenv PATH
+    hash ls ps mv wc
+    importenv PATH : "/usr/bin:/bin"
+    assert "$(hash)" == "hash: file path cache is empty"
+}
+
+{
+    hash ls ps mv wc
+    exportenv PATH = "/usr/bin:/bin:/usr/local/bin"
+    assert "$(hash)" == "hash: file path cache is empty"
+}
+
+## temporary env
+hash ls ps mv wc
+assert "$(hash)" != "hash: file path cache is empty"
+assert PATH= "$(hash)" == "hash: file path cache is empty"
+
+hash ls ps mv wc
+PATH=/usr/bin:/bin:/usr/local/bin
+assert "$(hash)" == "hash: file path cache is empty"
+
+hash ls ps mv wc
+PATH=/usr/bin {
+    assert "$(hash)" == "hash: file path cache is empty"
+    hash ls ps mv wc
+}
+assert "$(hash)" == "hash: file path cache is empty"
+
 true
