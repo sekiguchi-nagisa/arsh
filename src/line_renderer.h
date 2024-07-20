@@ -121,14 +121,9 @@ private:
 
   size_t totalRows{0};
 
-  size_t lineNum{0};
-
   size_t maxCols{static_cast<size_t>(-1)};
 
-  /**
-   * if 0, ignore newline characters and not increment totalRows/lineNum
-   */
-  size_t lineNumLimit{static_cast<size_t>(-1)};
+  bool emitNewline{true}; // if false, not append newline (\n) and not increment totalRows
 
   LineBreakOp breakOp{LineBreakOp::SOFT_WRAP};
 
@@ -152,11 +147,11 @@ public:
 
   void setMaxCols(size_t limit) { this->maxCols = limit; }
 
-  void setLineNumLimit(size_t limit) { this->lineNumLimit = limit; }
-
   size_t getTotalCols() const { return this->totalCols; }
 
   size_t getTotalRows() const { return this->totalRows; }
+
+  void setEmitNewline(bool set) { this->emitNewline = set; }
 
   void setLineBreakOp(LineBreakOp op) { this->breakOp = op; }
 

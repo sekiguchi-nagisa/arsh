@@ -38,7 +38,7 @@ ArrayPager ArrayPager::create(CandidatesWrapper &&obj, const CharWidthProperties
     // compute candidate columns
     {
       LineRenderer renderer(ps, 0);
-      renderer.setLineNumLimit(0); // ignore newline
+      renderer.setEmitNewline(false); // ignore newlines
       renderer.renderLines(obj.getCandidateAt(i));
       item.len = renderer.getTotalCols();
     }
@@ -47,13 +47,13 @@ ArrayPager ArrayPager::create(CandidatesWrapper &&obj, const CharWidthProperties
     if (const StringRef desc = obj.getDescriptionAt(i); !desc.empty()) {
       if (obj.getAttrAt(i).kind == CandidateAttr::Kind::TYPE_SIGNATURE) {
         LineRenderer renderer(ps, item.len);
-        renderer.setLineNumLimit(0); // ignore newline
+        renderer.setEmitNewline(false); // ignore newlines
         renderer.renderLines(" ");
         renderer.renderLines(desc);
         item.len = renderer.getTotalCols();
       } else {
         LineRenderer renderer(ps, 0);
-        renderer.setLineNumLimit(0); // ignore newline
+        renderer.setEmitNewline(false); // ignore newlines
         renderer.renderLines("(");
         renderer.renderLines(desc);
         renderer.renderLines(")");
@@ -194,7 +194,7 @@ void ArrayPager::render(std::string &out) const {
     renderer.setLineBreakOp(LineRenderer::LineBreakOp::TRUNCATE);
   }
   for (unsigned int i = 0; i < actualRows; i++) {
-    renderer.setLineNumLimit(0);                     // ignore newlines
+    renderer.setEmitNewline(false);                  // ignore newlines
     for (unsigned int j = 0; j < this->panes; j++) { // render row
       const unsigned int actualIndex = startIndex + i + j * maxRowSize;
       if (actualIndex >= this->items.size()) {
@@ -204,7 +204,7 @@ void ArrayPager::render(std::string &out) const {
       renderItem(renderer, this->obj.getCandidateAt(actualIndex), this->obj.getAttrAt(actualIndex),
                  this->obj.getDescriptionAt(actualIndex), this->items[actualIndex], selected);
     }
-    renderer.setLineNumLimit(static_cast<size_t>(-1)); // re-enable newlines
+    renderer.setEmitNewline(true); // re-enable newline characters
     renderer.renderLines("\n");
   }
   if (this->showPageNum) {

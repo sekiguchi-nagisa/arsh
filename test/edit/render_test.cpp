@@ -19,7 +19,7 @@ static Len getCharLen(StringRef line, const CharWidthProperties &ps, unsigned in
   Len len{0, 0};
   iterateGraphemeUntil(line, 1, [&](const GraphemeCluster &grapheme) {
     LineRenderer renderer(ps, initCols);
-    renderer.setLineNumLimit(0);
+    renderer.setEmitNewline(false);
     renderer.renderLines(grapheme.getRef());
     len.byteSize = grapheme.getRef().size();
     len.colSize = renderer.getTotalCols() - initCols;
@@ -302,80 +302,13 @@ TEST_F(LineRendererTest, script) {
             renderScript("echo hello \\\n  !!", 2, makeObserver(seqMap)));
 }
 
-TEST_F(LineRendererTest, limit) {
+TEST_F(LineRendererTest, ignoreNewline) {
   CharWidthProperties ps;
   std::string out;
-  StringRef line = "111\r\n\r222\n333\n444\n555\n666";
-  {
-    LineRenderer renderer(ps, 0, out);
-    renderer.setLineNumLimit(2);
-    renderer.renderLines(line);
-    ASSERT_EQ(2, renderer.getTotalRows());
-    ASSERT_EQ(5, renderer.getTotalCols());
-  }
-  ASSERT_EQ("111^M\r\n^M222\r\n", out);
-
-  out.clear();
-  {
-    LineRenderer renderer(ps, 0, out); // no limit
-    renderer.renderLines(line);
-    ASSERT_EQ(5, renderer.getTotalRows());
-    ASSERT_EQ(3, renderer.getTotalCols());
-  }
-  ASSERT_EQ("111^M\r\n^M222\r\n333\r\n444\r\n555\r\n666", out);
-
-  out.clear();
-  line = "\x1b[40m111\n222\n33\x1b[40m3\n44\x1b[40m4\n555\n666";
-  {
-    LineRenderer renderer(ps, 0, out);
-    renderer.setLineNumLimit(3);
-    renderer.renderWithANSI(line);
-    ASSERT_EQ(3, renderer.getTotalRows());
-    ASSERT_EQ(3, renderer.getTotalCols());
-  }
-  ASSERT_EQ("\x1b[40m111\r\n222\r\n33\x1b[40m3\r\n", out);
-
-  out.clear();
-  line = "echo 111\necho 222\necho 333\necho 444";
-  {
-    ANSIEscapeSeqMap seqMap({
-        {HighlightTokenClass::COMMAND, "\x1b[30m"},
-        {HighlightTokenClass::COMMAND_ARG, "\x1b[40m"},
-    });
-    LineRenderer renderer(ps, 0, out, makeObserver(seqMap));
-    renderer.setLineNumLimit(2);
-    bool r = renderer.renderScript(line);
-    ASSERT_TRUE(r);
-    ASSERT_EQ(2, renderer.getTotalRows());
-    ASSERT_EQ(8, renderer.getTotalCols());
-  }
-  ASSERT_EQ("\x1b[30mecho\x1b[0m \x1b[40m111\x1b[0m\r\n\x1b[30mecho\x1b[0m \x1b[40m222\x1b[0m\r\n",
-            out);
-
-  out.clear();
-  line = "\necho 222\necho 333\necho 444";
-  {
-    ANSIEscapeSeqMap seqMap({
-        {HighlightTokenClass::COMMAND, "\x1b[30m"},
-        {HighlightTokenClass::COMMAND_ARG, "\x1b[40m"},
-        {HighlightTokenClass::NONE, "\x1b[50m"},
-    });
-    LineRenderer renderer(ps, 0, out, makeObserver(seqMap));
-    renderer.setLineNumLimit(2);
-    bool r = renderer.renderScript(line);
-    ASSERT_TRUE(r);
-    ASSERT_EQ(2, renderer.getTotalRows());
-    ASSERT_EQ(8, renderer.getTotalCols());
-  }
-  ASSERT_EQ("\x1b[50m\x1b[0m\r\n\x1b[50m\x1b[0m\x1b[30mecho\x1b[0m\x1b[50m "
-            "\x1b[0m\x1b[40m222\x1b[0m\x1b[50m\x1b[0m\r\n",
-            out);
-
-  out.clear();
-  line = "echo 111\necho 222\necho 333\necho 444";
+  StringRef line = "echo 111\necho 222\necho 333\necho 444";
   {
     LineRenderer renderer(ps, 2, out);
-    renderer.setLineNumLimit(0);
+    renderer.setEmitNewline(false);
     renderer.renderLines(line);
     ASSERT_EQ(0, renderer.getTotalRows());
     ASSERT_EQ(34, renderer.getTotalCols());
