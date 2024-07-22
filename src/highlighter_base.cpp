@@ -119,7 +119,7 @@ HighlightTokenClass toTokenClass(TokenKind kind) {
   default:
     break;
   }
-  return HighlightTokenClass::NONE;
+  return HighlightTokenClass::NONE_;
 }
 
 const HighlightTokenEntries &getHighlightTokenEntries() {
@@ -136,7 +136,7 @@ void TokenEmitter::operator()(Token token) {
   auto ref = this->source.substr(token.pos, token.size);
   auto tokenClass = HighlightTokenClass::COMMENT;
   if (ref[0] != '#') {
-    tokenClass = HighlightTokenClass::NONE;
+    tokenClass = HighlightTokenClass::NONE_;
   }
   this->emit(tokenClass, token);
 }

@@ -711,7 +711,7 @@ ccc"
 }
 
 TEST_F(SemanticTokenTest, encode) {
-  auto ret = this->encoder.encode(HighlightTokenClass::NONE);
+  auto ret = this->encoder.encode(HighlightTokenClass::NONE_);
   ASSERT_FALSE(ret.hasValue());
 
   this->testEncode(HighlightTokenClass::COMMENT, SemanticTokenTypes::comment_, 0);

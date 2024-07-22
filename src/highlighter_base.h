@@ -24,7 +24,7 @@
 namespace arsh {
 
 #define EACH_HIGHLIGHT_TOKEN_CLASS(OP)                                                             \
-  OP(NONE, "none")                                                                                 \
+  OP(NONE_, "none") /* pseudo token class for null color */                                        \
   OP(COMMENT, "comment")                                                                           \
   OP(KEYWORD, "keyword")                                                                           \
   OP(OPERATOR, "operator")                                                                         \

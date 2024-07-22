@@ -224,6 +224,7 @@ bool StyleMap::defineStyle(const char *name,
   std::unordered_map<HighlightTokenClass, StyleRule> map;
   for (auto &e : rules) {
     switch (e.first) {
+    case HighlightTokenClass::NONE_: // always ignore
     case HighlightTokenClass::FOREGROUND_:
     case HighlightTokenClass::BACKGROUND_:
     case HighlightTokenClass::LINENO_:

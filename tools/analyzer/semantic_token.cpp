@@ -74,7 +74,7 @@ static Optional<SemanticTokenTypes> toTokenType(HighlightTokenClass tokenClass) 
   switch (tokenClass) {
   case HighlightTokenClass::KEYWORD:
     return SemanticTokenTypes::keyword_;
-  case HighlightTokenClass::NONE:
+  case HighlightTokenClass::NONE_:
     break;
   case HighlightTokenClass::COMMENT:
     return SemanticTokenTypes::comment_;

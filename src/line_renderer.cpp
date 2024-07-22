@@ -117,7 +117,7 @@ ANSIEscapeSeqMap ANSIEscapeSeqMap::fromString(StringRef setting) {
     }
 
     for (auto &[cl, name] : getHighlightTokenEntries()) {
-      if (element == name) {
+      if (element == name && cl != HighlightTokenClass::NONE_) {
         values[cl] = escapeSeq.toString();
         break;
       }
@@ -178,7 +178,7 @@ void LineRenderer::renderWithANSI(StringRef prompt) {
   for (StringRef::size_type pos = 0; pos != StringRef::npos;) {
     auto r = prompt.find('\x1b', pos);
     auto sub = prompt.slice(pos, r);
-    if (!this->render(sub, HighlightTokenClass::NONE)) {
+    if (!this->render(sub, HighlightTokenClass::NONE_)) {
       return;
     }
     if (r != StringRef::npos) {
@@ -213,7 +213,7 @@ bool LineRenderer::renderScript(const StringRef source) {
   for (auto &e : tokens) {
     Token token = e.second;
     assert(curPos <= token.pos);
-    if (!this->render(source.slice(curPos, token.pos), HighlightTokenClass::NONE)) {
+    if (!this->render(source.slice(curPos, token.pos), HighlightTokenClass::NONE_)) {
       next = false;
       break;
     }
@@ -226,7 +226,7 @@ bool LineRenderer::renderScript(const StringRef source) {
   // render remain lines
   if (next && curPos < source.size()) {
     auto remain = source.substr(curPos);
-    this->render(remain, HighlightTokenClass::NONE);
+    this->render(remain, HighlightTokenClass::NONE_);
   }
 
   // line continuation checking
@@ -243,7 +243,7 @@ bool LineRenderer::renderScript(const StringRef source) {
     auto token = tokens.back().second;
     auto last = lex->toStrRef(token);
     switch (tokens.back().first) {
-    case HighlightTokenClass::NONE:
+    case HighlightTokenClass::NONE_:
       if (last.size() == 2 && last == "\\\n") {
         return false;
       }
@@ -262,7 +262,7 @@ bool LineRenderer::renderScript(const StringRef source) {
 }
 
 const std::string *LineRenderer::findColorCode(HighlightTokenClass tokenClass) const {
-  if (this->escapeSeqMap && tokenClass != HighlightTokenClass::NONE) {
+  if (this->escapeSeqMap && tokenClass != HighlightTokenClass::NONE_) {
     auto iter = this->escapeSeqMap->getValues().find(tokenClass);
     if (iter != this->escapeSeqMap->getValues().end()) {
       return &(iter->second);

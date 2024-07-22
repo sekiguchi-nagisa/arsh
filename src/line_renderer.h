@@ -172,7 +172,7 @@ public:
    */
   bool renderScript(StringRef source);
 
-  void renderLines(StringRef source) { this->render(source, HighlightTokenClass::NONE); }
+  void renderLines(StringRef source) { this->render(source, HighlightTokenClass::NONE_); }
 
 private:
   const std::string *findColorCode(HighlightTokenClass tokenClass) const;

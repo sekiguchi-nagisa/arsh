@@ -407,8 +407,8 @@ TEST(ColorEscapeTest, map) {
 
   auto seqMap = ANSIEscapeSeqMap::fromString(color);
   auto &values = seqMap.getValues();
-  ASSERT_EQ(17, values.size());
-  ASSERT_EQ(values.find(HighlightTokenClass::NONE)->second, "\x1b[38;2;212;212;212m");
+  ASSERT_EQ(16, values.size());
+  ASSERT_TRUE(values.find(HighlightTokenClass::NONE_) == values.end()); // always ignore NONE
   ASSERT_EQ(values.find(HighlightTokenClass::COMMENT)->second, "\x1b[38;2;128;128;128m");
   ASSERT_EQ(values.find(HighlightTokenClass::KEYWORD)->second, "\x1b[38;2;204;120;50m\x1b[1m");
   ASSERT_EQ(values.find(HighlightTokenClass::OPERATOR)->second, "\x1b[38;2;204;120;50m\x1b[1m");

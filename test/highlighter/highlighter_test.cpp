@@ -54,18 +54,18 @@ TEST_F(EmitterTest, case1) {
   compare(HighlightTokenClass::COMMAND, "echo", ret[0]);
   compare(HighlightTokenClass::COMMAND_ARG, "hello", ret[1]);
   compare(HighlightTokenClass::VARIABLE, "$@", ret[2]);
-  compare(HighlightTokenClass::NONE, "[", ret[3]);
+  compare(HighlightTokenClass::NONE_, "[", ret[3]);
   compare(HighlightTokenClass::NUMBER, "0", ret[4]);
-  compare(HighlightTokenClass::NONE, "]", ret[5]);
+  compare(HighlightTokenClass::NONE_, "]", ret[5]);
   compare(HighlightTokenClass::REDIRECT, "001>&", ret[6]);
   compare(HighlightTokenClass::COMMAND_ARG, "22", ret[7]);
   compare(HighlightTokenClass::COMMENT, "# this is a comment", ret[8]);
-  compare(HighlightTokenClass::NONE, "\n", ret[9]);
+  compare(HighlightTokenClass::NONE_, "\n", ret[9]);
 
   ret = lex("var a = 3.4");
   ASSERT_EQ(4, ret.size());
   compare(HighlightTokenClass::KEYWORD, "var", ret[0]);
-  compare(HighlightTokenClass::NONE, "a", ret[1]);
+  compare(HighlightTokenClass::NONE_, "a", ret[1]);
   compare(HighlightTokenClass::OPERATOR, "=", ret[2]);
   compare(HighlightTokenClass::NUMBER, "3.4", ret[3]);
 
@@ -85,28 +85,28 @@ TEST_F(EmitterTest, case1) {
 
   ret = lex("@($f(!$false))");
   ASSERT_EQ(7, ret.size());
-  compare(HighlightTokenClass::NONE, "@(", ret[0]);
+  compare(HighlightTokenClass::NONE_, "@(", ret[0]);
   compare(HighlightTokenClass::VARIABLE, "$f", ret[1]);
-  compare(HighlightTokenClass::NONE, "(", ret[2]);
+  compare(HighlightTokenClass::NONE_, "(", ret[2]);
   compare(HighlightTokenClass::OPERATOR, "!", ret[3]);
   compare(HighlightTokenClass::VARIABLE, "$false", ret[4]);
-  compare(HighlightTokenClass::NONE, ")", ret[5]);
-  compare(HighlightTokenClass::NONE, ")", ret[6]);
+  compare(HighlightTokenClass::NONE_, ")", ret[5]);
+  compare(HighlightTokenClass::NONE_, ")", ret[6]);
 
   ret = lex("coproc ls *");
   ASSERT_EQ(4, ret.size());
   compare(HighlightTokenClass::KEYWORD, "coproc", ret[0]);
   compare(HighlightTokenClass::COMMAND, "ls", ret[1]);
   compare(HighlightTokenClass::META, "*", ret[2]);
-  compare(HighlightTokenClass::NONE, "\n", ret[3]);
+  compare(HighlightTokenClass::NONE_, "\n", ret[3]);
 
   ret = lex("AAA=aa true");
   ASSERT_EQ(5, ret.size());
-  compare(HighlightTokenClass::NONE, "AAA", ret[0]);
+  compare(HighlightTokenClass::NONE_, "AAA", ret[0]);
   compare(HighlightTokenClass::OPERATOR, "=", ret[1]);
   compare(HighlightTokenClass::COMMAND_ARG, "aa", ret[2]);
   compare(HighlightTokenClass::COMMAND, "true", ret[3]);
-  compare(HighlightTokenClass::NONE, "\n", ret[4]);
+  compare(HighlightTokenClass::NONE_, "\n", ret[4]);
 }
 
 TEST_F(EmitterTest, case2) {
