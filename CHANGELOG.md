@@ -36,7 +36,7 @@
 
 - after call ``ARState_readLine``, always clear ``O_NONBLOCK`` flag of stdin
 
-### Fixed
+## [0.34.1] - 2024-07-22
 
 - broken newline handling of prefix env assignment parsing
 
