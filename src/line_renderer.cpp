@@ -262,7 +262,7 @@ bool LineRenderer::renderScript(const StringRef source) {
 }
 
 const std::string *LineRenderer::findColorCode(HighlightTokenClass tokenClass) const {
-  if (this->escapeSeqMap) {
+  if (this->escapeSeqMap && tokenClass != HighlightTokenClass::NONE) {
     auto iter = this->escapeSeqMap->getValues().find(tokenClass);
     if (iter != this->escapeSeqMap->getValues().end()) {
       return &(iter->second);

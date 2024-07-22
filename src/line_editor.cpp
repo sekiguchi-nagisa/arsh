@@ -518,14 +518,10 @@ static std::pair<unsigned int, unsigned int> renderPrompt(const struct linenoise
 static std::pair<unsigned int, bool> renderLines(const struct linenoiseState &l, size_t promptCols,
                                                  ObserverPtr<const ANSIEscapeSeqMap> escapeSeqMap,
                                                  ObserverPtr<ArrayPager> pager, std::string &out) {
-  size_t rows = 0;
   StringRef lineRef = l.buf.get();
   if (pager) {
     auto [pos, len] = l.buf.findCurLineInterval(true);
     lineRef = lineRef.substr(0, pos + len);
-    if (!lineRef.endsWith("\n")) {
-      rows++;
-    }
   }
 
   bool continueLine = false;
@@ -536,14 +532,14 @@ static std::pair<unsigned int, bool> renderLines(const struct linenoiseState &l,
   } else {
     renderer.renderLines(lineRef);
   }
-  rows += renderer.getTotalRows();
   if (pager) {
+    renderer.setInitCols(0);
     if (!lineRef.endsWith("\n")) {
-      out += "\r\n"; // force newline
+      renderer.renderLines("\n"); // force newline
     }
-    pager->render(out);
-    rows += pager->getRenderedRows();
+    pager->render(renderer);
   }
+  const size_t rows = renderer.getTotalRows();
   return {static_cast<unsigned int>(rows), continueLine};
 }
 

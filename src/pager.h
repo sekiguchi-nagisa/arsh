@@ -57,7 +57,6 @@ private:
   static constexpr unsigned int ROW_RATIO = 40;
   static constexpr unsigned int MAX_PANE_NUM = 4;
 
-  const CharWidthProperties &ps;
   const CandidatesWrapper obj; // must be [String] or Candidates
   WindowSize winSize{0, 0};
   const FlexBuffer<ItemEntry> items; // pre-computed item column size
@@ -70,9 +69,9 @@ private:
   bool showCursor{true};             // if true, render cursor
   bool showPageNum{false};           // if true, render page number
 
-  ArrayPager(const CharWidthProperties &ps, CandidatesWrapper &&obj, FlexBuffer<ItemEntry> &&items,
-             unsigned int maxIndex, WindowSize winSize)
-      : ps(ps), obj(std::move(obj)), items(std::move(items)), maxLenIndex(maxIndex) {
+  ArrayPager(CandidatesWrapper &&obj, FlexBuffer<ItemEntry> &&items, unsigned int maxIndex,
+             WindowSize winSize)
+      : obj(std::move(obj)), items(std::move(items)), maxLenIndex(maxIndex) {
     this->updateWinSize(winSize);
   }
 
@@ -130,10 +129,9 @@ public:
 
   /**
    * actual rendering function
-   * @param out
-   * append rendering result to it
+   * @param renderer
    */
-  void render(std::string &out) const;
+  void render(LineRenderer &renderer) const;
 
   // for pager api
   void moveCursorToForward() {

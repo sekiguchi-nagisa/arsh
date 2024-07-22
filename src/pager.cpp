@@ -80,7 +80,7 @@ ArrayPager ArrayPager::create(CandidatesWrapper &&obj, const CharWidthProperties
     assert(padLen % TAB_WIDTH == 0);
     e.tabs = padLen / TAB_WIDTH;
   }
-  return {ps, std::move(obj), std::move(items), maxIndex, winSize};
+  return {std::move(obj), std::move(items), maxIndex, winSize};
 }
 
 void ArrayPager::updateWinSize(WindowSize size) {
@@ -169,7 +169,7 @@ static void renderItem(LineRenderer &renderer, const StringRef can, const Candid
   }
 }
 
-void ArrayPager::render(std::string &out) const {
+void ArrayPager::render(LineRenderer &renderer) const {
   /**
    * resolve start index.
    * example,
@@ -188,7 +188,7 @@ void ArrayPager::render(std::string &out) const {
   startIndex -= this->curRow;
   const unsigned int actualRows = this->getActualRows();
 
-  LineRenderer renderer(this->ps, 0, out);
+  renderer.setInitCols(0);
   if (this->getPanes() == 1) {
     renderer.setMaxCols(this->getPaneLen());
     renderer.setLineBreakOp(LineRenderer::LineBreakOp::TRUNCATE);

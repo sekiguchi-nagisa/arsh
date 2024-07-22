@@ -115,7 +115,7 @@ private:
    */
   const ObserverPtr<const ANSIEscapeSeqMap> escapeSeqMap;
 
-  const size_t initCols;
+  size_t initCols;
 
   size_t totalCols{0};
 
@@ -144,6 +144,8 @@ public:
 
   LineRenderer(const CharWidthProperties &ps, size_t initCols)
       : LineRenderer(ps, initCols, nullptr, nullptr) {}
+
+  void setInitCols(size_t init) { this->initCols = init; }
 
   void setMaxCols(size_t limit) { this->maxCols = limit; }
 
