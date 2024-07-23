@@ -56,6 +56,7 @@ public:
 private:
   static constexpr unsigned int ROW_RATIO = 40;
   static constexpr unsigned int MAX_PANE_NUM = 4;
+  static constexpr unsigned int COL_MARGIN = 1;
 
   const CandidatesWrapper obj; // must be [String] or Candidates
   WindowSize winSize{0, 0};

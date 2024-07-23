@@ -93,7 +93,7 @@ void ArrayPager::updateWinSize(WindowSize size) {
     this->rows = 1;
   }
   this->paneLen = this->items[this->maxLenIndex].itemLen();
-  this->panes = this->winSize.cols / this->paneLen;
+  this->panes = (this->winSize.cols - COL_MARGIN) / this->paneLen;
   if (this->panes == 0) {
     this->panes = 1;
   } else if (this->panes > MAX_PANE_NUM) {
@@ -103,8 +103,8 @@ void ArrayPager::updateWinSize(WindowSize size) {
     this->curRow = this->rows - 1;
   }
   if (this->panes == 1) {
-    unsigned int colLimit =
-        (this->winSize.cols / TAB_WIDTH) * TAB_WIDTH; // truncate to multiple of TAB_WIDTH
+    // truncate to multiple of TAB_WIDTH
+    unsigned int colLimit = ((this->winSize.cols - COL_MARGIN) / TAB_WIDTH) * TAB_WIDTH;
     if (this->paneLen > colLimit) {
       this->paneLen = colLimit; // larger than window size
     }
