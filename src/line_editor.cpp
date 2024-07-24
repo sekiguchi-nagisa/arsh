@@ -505,29 +505,15 @@ static int preparePrompt(const struct linenoiseState &l) {
   return 0;
 }
 
-static std::pair<unsigned int, unsigned int> renderPrompt(const struct linenoiseState &l,
-                                                          std::string &out) {
-  LineRenderer renderer(l.ps, 0, out);
-  renderer.setMaxCols(l.cols);
-  renderer.renderWithANSI(l.prompt);
-  auto promptRows = static_cast<unsigned int>(renderer.getTotalRows());
-  auto promptCols = static_cast<unsigned int>(renderer.getTotalCols());
-  return {promptRows, promptCols};
-}
-
-static std::pair<unsigned int, bool> renderLines(const struct linenoiseState &l, size_t promptCols,
-                                                 ObserverPtr<const ANSIEscapeSeqMap> escapeSeqMap,
-                                                 ObserverPtr<ArrayPager> pager, std::string &out) {
-  StringRef lineRef = l.buf.get();
+static bool renderLines(const LineBuffer &buf, ObserverPtr<ArrayPager> pager,
+                        LineRenderer &renderer) {
+  StringRef lineRef = buf.get();
   if (pager) {
-    auto [pos, len] = l.buf.findCurLineInterval(true);
+    auto [pos, len] = buf.findCurLineInterval(true);
     lineRef = lineRef.substr(0, pos + len);
   }
-
   bool continueLine = false;
-  LineRenderer renderer(l.ps, promptCols, out, escapeSeqMap);
-  renderer.setMaxCols(l.cols);
-  if (escapeSeqMap) { // FIXME: cache previous rendered content
+  if (renderer.getEscapeSeqMap()) {
     continueLine = !renderer.renderScript(lineRef);
   } else {
     renderer.renderLines(lineRef);
@@ -539,8 +525,7 @@ static std::pair<unsigned int, bool> renderLines(const struct linenoiseState &l,
     }
     pager->render(renderer);
   }
-  const size_t rows = renderer.getTotalRows();
-  return {static_cast<unsigned int>(rows), continueLine};
+  return continueLine;
 }
 
 /* Multi line low level line refresh.
@@ -557,16 +542,24 @@ void LineEditorObject::refreshLine(struct linenoiseState &l, bool repaint,
     l.buf.syncNewlinePosList();
   }
 
-  /* render and compute prompt row/column length */
+  unsigned int promptRows;
+  unsigned int promptCols;
+  unsigned int rows;
   std::string lineBuf; // for rendered lines
-  auto [promptRows, promptCols] = renderPrompt(l, lineBuf);
+  {
+    /* render promot and compute prompt row/column length */
+    LineRenderer renderer(l.ps, 0, lineBuf,
+                          this->langExtension ? makeObserver(this->escapeSeqMap) : nullptr);
+    renderer.setMaxCols(l.cols);
+    renderer.renderWithANSI(l.prompt);
+    promptRows = static_cast<unsigned int>(renderer.getTotalRows());
+    promptCols = static_cast<unsigned int>(renderer.getTotalCols());
 
-  /* render and compute line row/columns length */
-  auto [rows, continueLine2] =
-      renderLines(l, promptCols, this->langExtension ? makeObserver(this->escapeSeqMap) : nullptr,
-                  pager, lineBuf);
-  rows += promptRows + 1;
-  this->continueLine = continueLine2;
+    /* render lines and compute lines row/columns length */
+    renderer.setInitCols(promptCols);
+    this->continueLine = renderLines(l.buf, pager, renderer);
+    rows = renderer.getTotalRows() + 1;
+  }
 
   /* cursor relative row. */
   const int relativeRows = static_cast<int>(l.oldRow);

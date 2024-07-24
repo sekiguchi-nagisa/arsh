@@ -157,6 +157,8 @@ public:
 
   void setLineBreakOp(LineBreakOp op) { this->breakOp = op; }
 
+  const ANSIEscapeSeqMap *getEscapeSeqMap() const { return this->escapeSeqMap.get(); }
+
   /**
    * render lines with color code (ansi escape sequence).
    * ansi escape sequences are not quoted
