@@ -48,7 +48,7 @@ private:
 
   bool useBracketedPaste{true};
 
-  bool useFlowControl{true};
+  bool useFlowControl{false}; // disbaled by default
 
   unsigned char eaw{0}; // must be 0-2. if 0, auto-detect east asian width
 
