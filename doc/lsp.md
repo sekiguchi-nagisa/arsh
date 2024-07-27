@@ -13,7 +13,7 @@
 | ``textDocument/signatureHelp``       | ✔️         |
 | ``textDocument/completion``          | ✔️         |
 | ``textDocument/publishDiagnostics``  | ✔️         |
-| ``textDocument/rename``              | ⛛          |
+| ``textDocument/rename``              | ✔️         |
 | ``textDocument/prepareRename``       | ✔️         |
 
 
@@ -51,10 +51,16 @@
 | type (named import)                   | ✔️             | ✔️                    | ✔️              | ✔️         |
 | type (user-defined type)              | ✔️             | ✔️                    | ✔️              | ✔️         |
 | field (tuple)                         | -              | ✔️ (same module only) | ✔️              | -          |
-| field (user-defined type)             | ✔️             | ✔️                    | ✔️              | ❌          |
+| field (user-defined type)             | ✔️             | ✔️                    | ✔️              | ✔️         |
 | method (builtin)                      | -              | ✔️                    | ✔️              | -          |
 | method (generic type)                 | -              | ✔️                    | ✔️              | -          |
 | method (user-defined)                 | ✔️             | ✔️                    | ✔️              | ✔️         |
+| named arg (function)                  | ❌              | ❌                     | ❌               | ❌          |
+| named arg (explicit constructor)      | ❌              | ❌                     | ❌               | ❌          |
+| named arg (implicit constructor)      | ❌              | ❌                     | ❌               | ❌          |
+| named arg (method)                    | ❌              | ❌                     | ❌               | ❌          |
+| named arg (builtin method)            | -              | ❌                     | ❌               | -          |
+| named arg (generic method)            | -              | ❌                     | ❌               | -          |
 | source (variable)                     | ✔️             | ✔️                    | ✔️              | ✔️         |
 | source (type alias)                   | ✔️             | ✔️                    | ✔️              | ✔️         |
 | source (command)                      | ✔️             | ✔️                    | ✔️              | ✔️         |
