@@ -127,6 +127,7 @@ public:
     THIS,
     CONST,
     MOD_CONST,
+    PARAM, // for named argument
     FUNC,
     CONSTRUCTOR,
     METHOD,
@@ -254,6 +255,7 @@ public:
   static const char *getVarDeclPrefix(Kind k) {
     switch (k) {
     case Kind::VAR:
+    case Kind::PARAM:
       return "var";
     case Kind::LET:
     case Kind::THIS:

@@ -120,10 +120,11 @@ const DeclSymbol *IndexBuilder::addDeclImpl(const Type *recv, const NameInfo &in
                                             DeclSymbol::Kind kind, const char *hover, Token body,
                                             DeclInsertOp op) {
   DeclSymbol::Attr attr = {};
-  if (this->scope->isGlobal() || this->scope->isConstructor() || op == DeclInsertOp::BUILTIN) {
+  if (this->scope->isGlobal() || this->scope->isConstructor() || op == DeclInsertOp::BUILTIN ||
+      op == DeclInsertOp::PARAM) {
     setFlag(attr, DeclSymbol::Attr::GLOBAL);
   }
-  if (info.getName()[0] != '_') {
+  if (info.getName()[0] != '_' || kind == DeclSymbol::Kind::PARAM) { // PARAM is always public
     setFlag(attr, DeclSymbol::Attr::PUBLIC);
   }
   if (recv) {
@@ -275,6 +276,43 @@ bool IndexBuilder::addMember(const Type &recv, const NameInfo &nameInfo, DeclSym
   return false;
 }
 
+std::string IndexBuilder::mangleParamName(StringRef funcName, const Handle &handle,
+                                          StringRef paramName) const {
+  std::string name = paramName.toString();
+  name += '+';
+  if (handle.isFuncHandle()) {
+    name += funcName;
+  } else {
+    assert(handle.isMethodHandle());
+    auto &methodHandle = cast<MethodHandle>(handle);
+    auto &recvType = this->getPool().get(methodHandle.getRecvTypeId());
+    if (!methodHandle.isConstructor()) {
+      name += funcName;
+    }
+    name += '@';
+    name += recvType.getNameRef();
+  }
+  return name;
+}
+
+const DeclSymbol *IndexBuilder::addParamDecl(const NameInfo &info, const Type &type, Token token,
+                                             StringRef funcName, const Handle &handle) {
+  if (type.isUnresolved()) {
+    return nullptr;
+  }
+  NameInfo newInfo(info.getToken(), mangleParamName(funcName, handle, info.getName()));
+  std::string hover = normalizeTypeName(type);
+  return this->addDeclImpl(nullptr, newInfo, DeclSymbol::Kind::PARAM, hover.c_str(), token,
+                           DeclInsertOp::PARAM);
+}
+
+const Symbol *IndexBuilder::addNamedArgSymbol(const NameInfo &nameInfo, const Handle &handle,
+                                              StringRef funcName) {
+  NameInfo newNameInfo(nameInfo.getToken(),
+                       this->mangleParamName(funcName, handle, nameInfo.getName()));
+  return this->addSymbol(nameInfo, DeclSymbol::Kind::PARAM, &handle);
+}
+
 bool IndexBuilder::addBuiltinMethod(const Type &recvType, unsigned int methodIndex,
                                     const NameInfo &nameInfo) {
   assert(isBuiltinMod(this->getModId()));
@@ -361,7 +399,8 @@ DeclSymbol *IndexBuilder::insertNewDecl(DeclSymbol::Kind k, DeclSymbol::Attr att
     }
     break;
   case DeclInsertOp::BUILTIN:
-  case DeclInsertOp::MEMBER: {
+  case DeclInsertOp::MEMBER:
+  case DeclInsertOp::PARAM: {
     ScopeEntry *global = this->scope.get();
     while (!global->isGlobal()) {
       global = global->parent.get();
@@ -371,6 +410,15 @@ DeclSymbol *IndexBuilder::insertNewDecl(DeclSymbol::Kind k, DeclSymbol::Attr att
        * for field/type-alias access from constructor
        */
       auto mangledName = DeclSymbol::mangle(decl.getKind(), decl.toDemangledName());
+      if (!this->scope->addDeclWithSpecifiedName(std::move(mangledName), decl)) {
+        return nullptr;
+      }
+    }
+    if (op == DeclInsertOp::PARAM && !this->scope->isGlobal()) {
+      /**
+       * for parameter access within function scope
+       */
+      auto mangledName = DeclSymbol::mangle(DeclSymbol::Kind::VAR, decl.toDemangledName());
       if (!this->scope->addDeclWithSpecifiedName(std::move(mangledName), decl)) {
         return nullptr;
       }
@@ -484,15 +532,49 @@ void SymbolIndexer::visitAccessNode(AccessNode &node) {
 }
 
 void SymbolIndexer::visitApplyNode(ApplyNode &node) {
+  const Handle *handle = nullptr;
+  StringRef funcName;
   if (node.isMethodCall() && node.getHandle()) {
     auto &accessNode = cast<AccessNode>(node.getExprNode());
     this->visit(accessNode.getRecvNode());
     auto &nameInfo = accessNode.getField();
     this->builder().addMember(*node.getHandle(), nameInfo, node.getToken());
+    handle = node.getHandle();
+    funcName = nameInfo.getName();
   } else if (node.isFuncCall()) {
     this->visit(node.getExprNode());
+    if (isa<VarNode>(node.getExprNode())) {
+      const auto &varNode = cast<VarNode>(node.getExprNode());
+      if (auto &hd = varNode.getHandle(); hd && hd->isFuncHandle()) {
+        handle = hd.get();
+        funcName = varNode.getVarName();
+      }
+    }
   }
-  this->visit(node.getArgsNode());
+  if (handle && node.getArgsNode().hasNamedArgs()) {
+    this->visitNamedArgsNode(node.getArgsNode(), *handle, funcName);
+  } else {
+    this->visit(node.getArgsNode());
+  }
+}
+
+void SymbolIndexer::visitNewNode(NewNode &node) {
+  this->visit(node.getTargetTypeNode());
+  if (node.getHandle() && node.getArgsNode().hasNamedArgs()) {
+    this->visitNamedArgsNode(node.getArgsNode(), *node.getHandle(), OP_INIT);
+  } else {
+    this->visit(node.getArgsNode());
+  }
+}
+
+void SymbolIndexer::visitNamedArgsNode(const ArgsNode &node, const Handle &handle,
+                                       StringRef funcName) {
+  for (auto &e : node.getNamedEntries()) {
+    this->builder().addNamedArgSymbol(e.getNameInfo(), handle, funcName);
+  }
+  for (auto &e : node.getNodes()) {
+    this->visit(*e);
+  }
 }
 
 void SymbolIndexer::visitCmdNode(CmdNode &node) {
@@ -789,8 +871,14 @@ void SymbolIndexer::visitFunctionImpl(FunctionNode &node, const FuncVisitOp op) 
         if (paramNode->getExprNode()->isUntyped()) {
           continue;
         }
-        this->builder().addDecl(paramNode->getNameInfo(), paramNode->getExprNode()->getType(),
-                                node.getToken());
+        if (node.getHandle()) {
+          this->builder().addParamDecl(paramNode->getNameInfo(),
+                                       paramNode->getExprNode()->getType(), node.getToken(),
+                                       node.getFuncName(), *node.getHandle());
+        } else {
+          this->builder().addDecl(paramNode->getNameInfo(), paramNode->getExprNode()->getType(),
+                                  node.getToken());
+        }
       }
     }
     this->visitBlockWithCurrentScope(node.getBlockNode());
@@ -938,7 +1026,7 @@ static DeclSymbol::Kind resolveDeclKind(const std::pair<std::string, HandlePtr> 
 void SymbolIndexer::addBuiltinSymbols() {
   unsigned int offset = 0;
 
-  // add builtin type/method (except for generic type)
+  // add builtin type (except for generic type)
   const Type *mapType = nullptr;
   for (auto &type : this->builder().getPool().getTypeTable()) {
     if (type->isMapType() && !mapType) {

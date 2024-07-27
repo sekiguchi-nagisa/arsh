@@ -47,3 +47,11 @@ function str() : String for AAA {
 }
 
 assert new AAA($bbb: $SIGTSTP, $ccc: '@@@', $aaa: 999).str() == "999=TSTP=@@@"
+
+typedef BBB(a111: Int, b222: Int) {
+    var aaa = $a111;
+    var bbb = $b222;
+    typedef Dist = Int
+}
+
+assert new BBB($b222: 34, $a111: 111).aaa == 111

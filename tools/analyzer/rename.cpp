@@ -218,6 +218,7 @@ static bool checkNameConflict(const SymbolIndexes &indexes, const DeclSymbol &de
   case DeclSymbol::Kind::METHOD:
   case DeclSymbol::Kind::CMD:
   case DeclSymbol::Kind::MOD:
+  case DeclSymbol::Kind::PARAM:
     break;
   default:
     return false; // TODO: support other symbols

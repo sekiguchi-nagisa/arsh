@@ -80,6 +80,7 @@ std::string DeclSymbol::mangle(StringRef recvTypeName, Kind k, StringRef name) {
   case Kind::FUNC:
   case Kind::MOD:
   case Kind::MOD_CONST:
+  case Kind::PARAM:
   case Kind::HERE_START:
     value = name.toString();
     break;
@@ -129,6 +130,12 @@ std::pair<StringRef, StringRef> DeclSymbol::demangleWithRecv(Kind k, Attr a,
   case Kind::MOD_CONST:
   case Kind::HERE_START:
     break;
+  case Kind::PARAM: {
+    auto r = mangledName.find('+');
+    assert(r != StringRef::npos);
+    mangledName = mangledName.substr(0, r);
+    break;
+  }
   }
   return {recvTypeName, mangledName};
 }

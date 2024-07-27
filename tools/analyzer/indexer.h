@@ -168,8 +168,12 @@ public:
     return this->addDeclImpl(nullptr, info, kind, hover, token, DeclInsertOp::NORMAL);
   }
 
+  const Symbol *addSymbol(const NameInfo &info, DeclSymbol::Kind kind, const Handle *handle) {
+    return this->addSymbolImpl(nullptr, info, kind, handle);
+  }
+
   const Symbol *addSymbol(const NameInfo &info, DeclSymbol::Kind kind, const HandlePtr &hd) {
-    return this->addSymbolImpl(nullptr, info, kind, hd.get());
+    return this->addSymbol(info, kind, hd.get());
   }
 
   const Symbol *addCmd(const NameInfo &info, const HandlePtr &hd);
@@ -196,6 +200,23 @@ public:
     }
     return this->addDeclImpl(&recv, nameInfo, kind, info, token, DeclInsertOp::MEMBER);
   }
+
+  std::string mangleParamName(StringRef funcName, const Handle &handle, StringRef paramName) const;
+
+  /**
+   *
+   * @param info
+   * @param type
+   * @param token
+   * @param funcName
+   * @param handle
+   * @return
+   */
+  const DeclSymbol *addParamDecl(const NameInfo &info, const Type &type, Token token,
+                                 StringRef funcName, const Handle &handle);
+
+  const Symbol *addNamedArgSymbol(const NameInfo &nameInfo, const Handle &handle,
+                                  StringRef funcName);
 
   bool addBuiltinMethod(const Type &recvType, unsigned int methodIndex, const NameInfo &nameInfo);
 
@@ -228,6 +249,7 @@ private:
     NORMAL,
     BUILTIN,
     MEMBER,
+    PARAM,
     NONE, // no scope check
   };
 
@@ -291,6 +313,7 @@ protected:
   void visitVarNode(VarNode &node) override;
   void visitAccessNode(AccessNode &node) override;
   void visitApplyNode(ApplyNode &node) override;
+  void visitNewNode(NewNode &node) override;
   void visitCmdNode(CmdNode &node) override;
   void visitRedirNode(RedirNode &node) override;
   void visitBlockNode(BlockNode &node) override;
@@ -318,6 +341,8 @@ private:
   void visitFunctionImpl(FunctionNode &node, FuncVisitOp op);
 
   void visitUserDefinedCmdImpl(UserDefinedCmdNode &node, FuncVisitOp op);
+
+  void visitNamedArgsNode(const ArgsNode &node, const Handle &handle, StringRef funcName);
 
   IndexBuilder &builder() { return this->builders.back(); }
 
