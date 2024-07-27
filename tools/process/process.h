@@ -148,15 +148,22 @@ public:
 
   bool hasPty() const { return this->pty() > -1; }
 
+  struct WinSize {
+    unsigned short row;
+    unsigned short col;
+  };
+
   /**
    * get windows size of pty()
    * represents {row, col}
    * @return
    * if not pty, return {0,0}
    */
-  std::pair<unsigned short, unsigned short> getWinSize() const;
+  WinSize getWinSize() const;
 
-  enum class WaitOp { BLOCKING, BLOCK_UNTRACED, NONBLOCKING };
+  bool setWinSize(WinSize size);
+
+  enum class WaitOp : unsigned char { BLOCKING, BLOCK_UNTRACED, NONBLOCKING };
 
   /**
    * wait process termination

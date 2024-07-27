@@ -58,16 +58,29 @@ ProcHandle::~ProcHandle() {
   this->wait();
 }
 
-std::pair<unsigned short, unsigned short> ProcHandle::getWinSize() const {
-  std::pair<unsigned short, unsigned short> ret{0, 0};
+ProcHandle::WinSize ProcHandle::getWinSize() const {
+  WinSize ret{0, 0};
   if (this->hasPty()) {
     winsize ws{};
     if (ioctl(this->pty(), TIOCGWINSZ, &ws) == 0) {
-      ret.first = ws.ws_row;
-      ret.second = ws.ws_col;
+      ret.row = ws.ws_row;
+      ret.col = ws.ws_col;
     }
   }
   return ret;
+}
+
+bool ProcHandle::setWinSize(WinSize size) {
+  if (!this->hasPty()) {
+    return false;
+  }
+  winsize ws{};
+  ws.ws_row = size.row;
+  ws.ws_col = size.col;
+  if (ioctl(this->pty(), TIOCSWINSZ, &ws) == -1) {
+    return false;
+  }
+  return true;
 }
 
 static int toOption(ProcHandle::WaitOp op) {

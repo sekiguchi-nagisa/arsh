@@ -165,6 +165,35 @@ TEST_F(ProcTest, pty4) {
   }
 }
 
+TEST_F(ProcTest, ptyWinSize) {
+  IOConfig config;
+  config.in = IOConfig::PTY;
+  config.out = IOConfig::PTY;
+  config.err = IOConfig::PIPE;
+
+  auto handle = ProcBuilder::spawn(config, [&] {
+    while (true) {
+      std::this_thread::sleep_for(std::chrono::seconds(1));
+    }
+    return 0;
+  });
+
+  // default winsize
+  auto winsize = handle.getWinSize();
+  ASSERT_EQ(80, winsize.col);
+  ASSERT_EQ(24, winsize.row);
+
+  // change winsize
+  ASSERT_TRUE(handle.setWinSize({.row = 50, .col = 200}));
+  winsize = handle.getWinSize();
+  ASSERT_EQ(200, winsize.col);
+  ASSERT_EQ(50, winsize.row);
+
+  handle.kill(SIGINT);
+  auto ret2 = handle.waitAndGetResult(false);
+  ASSERT_NO_FATAL_FAILURE(this->expect(ret2, SIGINT, WaitStatus::SIGNALED));
+}
+
 TEST_F(ProcTest, timeout) {
   IOConfig config;
   auto handle = ProcBuilder::spawn(config, [] {
