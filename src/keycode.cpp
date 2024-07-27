@@ -528,9 +528,8 @@ Result<unsigned int, KeyBindings::DefineError> KeyBindings::defineCustomAction(S
   for (auto &e : name) {
     if (isLetterOrDigit(e) || e == '-' || e == '_') {
       continue;
-    } else {
-      return Err(DefineError::INVALID_NAME);
     }
+    return Err(DefineError::INVALID_NAME);
   }
 
   // check action type
@@ -556,6 +555,24 @@ Result<unsigned int, KeyBindings::DefineError> KeyBindings::defineCustomAction(S
   auto *ret = this->customActions.add(name, customActionType);
   assert(ret);
   return Ok(ret->second.customActionIndex);
+}
+
+int KeyBindings::removeCustomAction(StringRef name) {
+  const int removedIndex = this->customActions.remove(name);
+  if (removedIndex < 0) {
+    return removedIndex;
+  }
+
+  // remove corresponding key-binding
+  for (auto iter = this->values.begin(); iter != this->values.end();) {
+    if (iter->second.type == EditActionType::CUSTOM &&
+        iter->second.customActionIndex == static_cast<unsigned int>(removedIndex)) {
+      iter = this->values.erase(iter);
+    } else {
+      ++iter;
+    }
+  }
+  return removedIndex;
 }
 
 } // namespace arsh

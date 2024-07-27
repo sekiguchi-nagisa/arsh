@@ -345,7 +345,7 @@ public:
 
   Result<unsigned int, DefineError> defineCustomAction(StringRef name, StringRef type);
 
-  int removeCustomAction(StringRef name) { return this->customActions.remove(name); }
+  int removeCustomAction(StringRef name);
 
   template <typename Func>
   static constexpr bool binding_consumer_requirement_v =

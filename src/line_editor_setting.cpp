@@ -76,8 +76,9 @@ LineEditorObject::lookupCustomCallback(unsigned int index) const {
 bool LineEditorObject::defineCustomAction(ARState &state, StringRef name, StringRef type,
                                           ObjPtr<Object> &&callback) {
   if (!callback) {
-    if (int index = this->keyBindings.removeCustomAction(name); index != -1) {
+    if (int index = this->keyBindings.removeCustomAction(name); index > -1) {
       auto iter = this->lookupCustomCallback(static_cast<unsigned int>(index));
+      assert(iter != this->customCallbacks.end());
       this->customCallbacks.erase(iter);
     }
     return true;

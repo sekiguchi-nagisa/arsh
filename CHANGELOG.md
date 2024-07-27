@@ -37,6 +37,11 @@
 
 - after call ``ARState_readLine``, always clear ``O_NONBLOCK`` flag of stdin
 
+### Fixed
+
+- bugfix ``LineEditor#action`` method when remove custom action
+    - now correctly remove key-bindings that bound to removed custom action
+
 ## [0.34.1] - 2024-07-22
 
 - broken newline handling of prefix env assignment parsing
