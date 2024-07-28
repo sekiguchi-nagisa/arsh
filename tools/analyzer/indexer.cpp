@@ -310,7 +310,7 @@ const Symbol *IndexBuilder::addNamedArgSymbol(const NameInfo &nameInfo, const Ha
                                               StringRef funcName) {
   NameInfo newNameInfo(nameInfo.getToken(),
                        this->mangleParamName(funcName, handle, nameInfo.getName()));
-  return this->addSymbol(nameInfo, DeclSymbol::Kind::PARAM, &handle);
+  return this->addSymbol(newNameInfo, DeclSymbol::Kind::PARAM, &handle);
 }
 
 bool IndexBuilder::addBuiltinMethod(const Type &recvType, unsigned int methodIndex,

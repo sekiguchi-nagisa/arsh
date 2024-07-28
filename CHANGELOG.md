@@ -32,6 +32,8 @@
 
 - improve ``textDocument/semanticTokens``
     - add ``commandArgument`` semantic token type for better semantic highlight of command argument
+- support named arguments
+    - support ``textDocument/definition``, ``textDocument/references``, ``textDocument/hover``
 
 #### API
 

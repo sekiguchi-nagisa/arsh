@@ -426,6 +426,125 @@ new [typeof(new StrArray())]()
                       {modId, "(2:16~2:24)"}})); // new StrArray()
 }
 
+TEST_F(IndexTest, namedArgFunc) {
+  unsigned short modId;
+  const char *content = R"E(
+function fff(aa: Int, _bb: String) : String{
+  return $aa + {
+  $_bb; }
+}
+$fff($_bb: "ew45", $aa: 12)
+)E";
+
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 3, .symbolSize = 11}));
+
+  // definition
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 1, .character = 14}}, {{modId, "(1:13~1:15)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 2, .character = 11}}, {{modId, "(1:13~1:15)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 5, .character = 19}}, {{modId, "(1:13~1:15)"}}));
+
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 1, .character = 24}}, {{modId, "(1:22~1:25)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 3, .character = 5}}, {{modId, "(1:22~1:25)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 5, .character = 6}}, {{modId, "(1:22~1:25)"}}));
+
+  // references
+  ASSERT_NO_FATAL_FAILURE(
+      this->findRefs(Request{.modId = modId, .position = {.line = 2, .character = 9}},
+                     {
+                         {modId, "(1:13~1:15)"}, // itself
+                         {modId, "(2:9~2:12)"},  // $aa
+                         {modId, "(5:19~5:22)"}, // $aa:
+                     }));
+  ASSERT_NO_FATAL_FAILURE(
+      this->findRefs(Request{.modId = modId, .position = {.line = 5, .character = 7}},
+                     {
+                         {modId, "(1:22~1:25)"}, // itself
+                         {modId, "(3:2~3:6)"},   // $_bb
+                         {modId, "(5:5~5:9)"},   // $_bb:
+                     }));
+}
+
+TEST_F(IndexTest, namedArgMethod) {
+  unsigned short modId;
+  const char *content = R"E(
+typedef AAA: Error
+function format(value: String): String for AAA {
+  return $this.name() + ": " +
+  $value
+}
+new AAA('').format(
+$value: 'hey')
+)E";
+
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 4, .symbolSize = 13}));
+
+  // definition
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 4, .character = 5}}, {{modId, "(2:16~2:21)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 7, .character = 2}}, {{modId, "(2:16~2:21)"}}));
+
+  // references
+  ASSERT_NO_FATAL_FAILURE(
+      this->findRefs(Request{.modId = modId, .position = {.line = 7, .character = 4}},
+                     {
+                         {modId, "(2:16~2:21)"}, // itself
+                         {modId, "(4:2~4:8)"},   // $value
+                         {modId, "(7:0~7:6)"},   // $value:
+                     }));
+}
+
+TEST_F(IndexTest, namedArgExplictConstructor) {
+  unsigned short modId;
+  const char *content = R"E(
+typedef Interval(aaa:Int, bbb:Int) {
+  let begin = $aaa
+  let end = $bbb
+}
+new Interval($bbb: 34, $aaa: 2)
+)E";
+
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 5, .symbolSize = 12}));
+
+  // definition
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 5, .character = 26}}, {{modId, "(1:17~1:20)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 2, .character = 16}}, {{modId, "(1:17~1:20)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 1, .character = 18}}, {{modId, "(1:17~1:20)"}}));
+
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 1, .character = 28}}, {{modId, "(1:26~1:29)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 3, .character = 13}}, {{modId, "(1:26~1:29)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 5, .character = 13}}, {{modId, "(1:26~1:29)"}}));
+
+  // references
+  ASSERT_NO_FATAL_FAILURE(
+      this->findRefs(Request{.modId = modId, .position = {.line = 5, .character = 25}},
+                     {
+                         {modId, "(1:17~1:20)"}, // itself
+                         {modId, "(2:14~2:18)"}, // $aaa
+                         {modId, "(5:23~5:27)"}, // $aaa:
+                     }));
+
+  ASSERT_NO_FATAL_FAILURE(
+      this->findRefs(Request{.modId = modId, .position = {.line = 5, .character = 14}},
+                     {
+                         {modId, "(1:26~1:29)"}, // itself
+                         {modId, "(3:12~3:16)"}, // $bbb
+                         {modId, "(5:13~5:17)"}, // $bbb:
+                     }));
+}
+
 TEST_F(IndexTest, globalImport) {
   TempFileFactory tempFileFactory("arsh_index");
   auto fileName = tempFileFactory.createTempFile("mod.ds",
@@ -1370,6 +1489,10 @@ TEST_F(IndexTest, hover) {
       this->hover("export-env ZZZ = 'hoge'\n$ZZZ", 1, "```arsh\nexportenv ZZZ: String\n```"));
   ASSERT_NO_FATAL_FAILURE(this->hover("function hoge($s : Int) {}\n$hoge", 1,
                                       "```arsh\nfunction hoge(s: Int): Void\n```"));
+  ASSERT_NO_FATAL_FAILURE(
+      this->hover("function hoge($ss : Int) {\n$ss; }", 1, "```arsh\nvar ss: Int\n```"));
+  ASSERT_NO_FATAL_FAILURE(this->hover("function hoge($_sss : Int) {}\n$hoge(\n$_sss: 34)", 2,
+                                      "```arsh\nvar _sss: Int\n```"));
 
   // user-defined command
   ASSERT_NO_FATAL_FAILURE(this->hover("hoge(){}\nhoge", 1, "```arsh\nhoge(): Bool\n```"));
@@ -1407,6 +1530,10 @@ typedef Interval(s: Int) {
   ASSERT_NO_FATAL_FAILURE(this->hover("typedef AAA() { typedef Type = Int; 34 is \nType; }",
                                       Position{.line = 1, .character = 3},
                                       "```arsh\ntypedef Type = Int for AAA\n```"));
+  ASSERT_NO_FATAL_FAILURE(
+      this->hover("typedef AAA($_sss : Int) {\n$_sss; }", 1, "```arsh\nvar _sss: Int\n```"));
+  ASSERT_NO_FATAL_FAILURE(this->hover("typedef AAA($_sss : Int) {};\nnew AAA(\n$_sss: 111)", 2,
+                                      "```arsh\nvar _sss: Int\n```"));
 
   // user-defined type with implicit constructor
   ASSERT_NO_FATAL_FAILURE(this->hover("typedef Interval { var n : Int; let next : Interval?; "
@@ -1435,6 +1562,15 @@ typedef Interval(n: Int, next: Interval?) {
   ASSERT_NO_FATAL_FAILURE(this->hover("function value():Int for String { \nreturn $this.size(); }",
                                       Position{.line = 1, .character = 8},
                                       "```arsh\nlet this: String\n```"));
+
+  ASSERT_NO_FATAL_FAILURE(this->hover("typedef AppError : Error; \n"
+                                      "function size(aaa: Int): Int for AppError { return\n$aaa; }",
+                                      2, "```arsh\nvar aaa: Int\n```"));
+  ASSERT_NO_FATAL_FAILURE(
+      this->hover("typedef AppError : Error; \n"
+                  "function size(aaa: Int?, $bbb: Int?): Int for AppError { return $aaa!; }\n"
+                  "new AppError('').size(\n$bbb:333)",
+                  3, "```arsh\nvar bbb: Int?\n```"));
 
   // here doc
   ASSERT_NO_FATAL_FAILURE(this->hover(R"(cat << EOF
