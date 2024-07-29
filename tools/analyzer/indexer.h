@@ -215,10 +215,32 @@ public:
   const DeclSymbol *addParamDecl(const NameInfo &info, const Type &type, Token token,
                                  StringRef funcName, const Handle &handle);
 
+  const DeclSymbol *addParamDeclImpl(const NameInfo &info, const std::string &paramType,
+                                     Token token) {
+    return this->addDeclImpl(nullptr, info, DeclSymbol::Kind::PARAM, paramType.c_str(), token,
+                             DeclInsertOp::PARAM);
+  }
+
   const Symbol *addNamedArgSymbol(const NameInfo &nameInfo, const Handle &handle,
                                   StringRef funcName);
 
-  bool addBuiltinMethod(const Type &recvType, unsigned int methodIndex, const NameInfo &nameInfo);
+  class DummyTokenGenerator {
+  private:
+    unsigned int offset{0};
+
+  public:
+    Token next() {
+      unsigned int pos = this->offset;
+      this->offset += 5;
+      return {
+          .pos = pos,
+          .size = 1,
+      };
+    }
+  };
+
+  bool addBuiltinMethod(const Type &recvType, unsigned int methodIndex,
+                        DummyTokenGenerator &tokenGen, StringRef name);
 
   const DeclSymbol *findDecl(const Symbol &symbol) const;
 

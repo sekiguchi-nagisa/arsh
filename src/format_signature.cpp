@@ -310,7 +310,7 @@ std::string Decoder::decodeType() {
 }
 
 void formatNativeMethodSignature(const NativeFuncInfo *funcInfo, StringRef packedParamType,
-                                 std::string &out) {
+                                 std::string &out, const std::function<void(StringRef)> &paramCallback) {
   auto params = splitParamNames(funcInfo->params);
   auto paramTypes = splitParamNames(packedParamType);
   Decoder decoder(funcInfo->handleInfo, paramTypes);
@@ -329,9 +329,13 @@ void formatNativeMethodSignature(const NativeFuncInfo *funcInfo, StringRef packe
     if (i > 0) {
       out += ", ";
     }
+    const size_t offset = out.size();
     out += params[i];
     out += ": ";
     normalizeTypeName(decoder.decodeType(), out);
+    if(paramCallback) {
+      paramCallback(StringRef(out.c_str() + offset));
+    }
   }
   out += ")";
   if (StringRef(funcInfo->funcName) != OP_INIT) { // method

@@ -58,9 +58,11 @@ void formatMethodSignature(const Type &recvType, const MethodHandle &handle, std
  * @param funcInfo
  * @param packedParamType
  * @param out
+ * @param paramCallback
  */
 void formatNativeMethodSignature(const NativeFuncInfo *funcInfo, StringRef packedParamType,
-                                 std::string &out);
+                                 std::string &out,
+                                 const std::function<void(StringRef)> &paramCallback = nullptr);
 
 } // namespace arsh
 
