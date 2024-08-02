@@ -1176,9 +1176,11 @@ var j = {
      $SIGSTOP.kill($PID)
      exit 99
 } &
+sleep 0.5
 assert $j.wait() == 128 + $SIGSTOP.value()
 assert $j.poll()
 assert { bg; $?; } == 0
+sleep 0.5
 var r = $j.wait()
 assert $r == 99 : $r as String
         true
@@ -1192,9 +1194,11 @@ var j = {
      $SIGSTOP.kill($PID)
      exit 99
 } &
+sleep 0.5
 assert $j.wait() == 128 + $SIGSTOP.value()
 assert $j.poll()
 assert { bg %1 %2; $?; } == 1
+sleep 0.5
 var r = $j.wait()
 assert $r == 99 : $r as String
 true
