@@ -1,0 +1,10 @@
+
+# dummy rc file
+
+let RC_LOADED = $true
+
+assert shctl is-interactive >> /dev/null
+assert shctl set | grep 'monitor  *on' >> /dev/null
+
+
+true

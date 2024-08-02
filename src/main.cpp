@@ -204,15 +204,7 @@ static std::pair<ARErrorKind, int> loadRC(ARState *state, const char *rcfile) {
   return {kind, ret};
 }
 
-static int exec_interactive(ARState *state, const char *rcpath) {
-  unsigned int option = AR_OPTION_JOB_CONTROL | AR_OPTION_INTERACTIVE;
-  ARState_setOption(state, option);
-
-  auto ret = loadRC(state, rcpath);
-  if (ret.first != AR_ERROR_KIND_SUCCESS) {
-    return ret.second;
-  }
-
+static int exec_interactive(ARState *state) {
   unsigned int eioRetryCount = 0;
   int status = 0;
   while (true) {
@@ -380,6 +372,16 @@ INIT:
     invocationKind = InvocationKind::FROM_STDIN;
   }
 
+  // for interactive mode
+  const bool useReadline = invocationKind == InvocationKind::FROM_STDIN && isatty(STDIN_FILENO);
+  if (forceInteractive || useReadline) {
+    ARState_setOption(state.get(), AR_OPTION_JOB_CONTROL | AR_OPTION_INTERACTIVE);
+    const auto [kind, status] = loadRC(state.get(), rcfile);
+    if (kind != AR_ERROR_KIND_SUCCESS) {
+      return status;
+    }
+  }
+
   // execute
   switch (invocationKind) {
   case InvocationKind::FROM_FILE: {
@@ -392,11 +394,11 @@ INIT:
     ARState_setShellName(state.get(), argv[0]);
     ARState_setArguments(state.get(), shellArgs);
 
-    if (isatty(STDIN_FILENO) || forceInteractive) {
+    if (useReadline) {
       if (!quiet) {
         fprintf(stdout, "%s\n%s\n", version(), ARState_copyright());
       }
-      return exec_interactive(state.get(), rcfile);
+      return exec_interactive(state.get());
     } else {
       return apply(ARState_loadAndEval, state, "/dev/stdin");
     }

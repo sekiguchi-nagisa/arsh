@@ -8,7 +8,7 @@ $(exec $'ps\x00')
 assert $? == 1
 assert "$(exec $'ps\x00' 2>&1)" == "${$SCRIPT_NAME.basename()}:9: exec: contains null characters: ps\x00"
 
-# invalid prognama (-a)
+# invalid prog name (-a)
 $(exec -a $'ps\x00' ls)
 assert $? == 1
 assert "$(exec -a $'pps\x00' ls 2>&1)" == "${$SCRIPT_NAME.basename()}:14: exec: contains null characters: pps\x00"

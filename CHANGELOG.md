@@ -39,6 +39,12 @@
 
 - after call ``ARState_readLine``, always clear ``O_NONBLOCK`` flag of stdin
 
+#### Misc
+
+- **Breaking Change**: change ``-i`` option behavior like bash
+    - always run interactive mode (rcfile load, job control, is-interactive), but execute specified input
+    - now ``-i -c string`` execute ``string`` with rcfile loading
+
 ### Fixed
 
 - bugfix ``LineEditor#action`` method when remove custom action

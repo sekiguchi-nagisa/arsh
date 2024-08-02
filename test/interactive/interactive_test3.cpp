@@ -278,7 +278,7 @@ TEST_F(InteractiveTest, cmdsub_interactive) {
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
 
   // launch new arsh with force interactive
-  const char *line = "var aa = $(call $BIN_NAME -i --quiet --norc < /dev/null)";
+  const char *line = "var aa = $(call $BIN_NAME -i --quiet --norc)";
   this->sendLine(line);
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + line + "\n" + PROMPT));
 

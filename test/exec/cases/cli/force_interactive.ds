@@ -1,0 +1,28 @@
+
+source expect.ds
+
+var rcfile = "$SCRIPT_DIR/rcfile"
+
+## with file
+$expect("$(ds --rcfile $rcfile <(echo 'shctl set | grep monitor'))", 0, "monitor      off")
+$expect("$(ds --rcfile $rcfile <(echo 'shctl is-interactive'))", 1, "")
+$expect("$(ds --rcfile $rcfile -i <(echo 'shctl set | grep monitor'))", 0, "monitor      on")
+$expect("$(ds --rcfile $rcfile -i <(echo 'shctl is-interactive'))", 0, "")
+
+## -c string
+$expect("$(ds --rcfile $rcfile -c 'shctl set | grep monitor')", 0, "monitor      off")
+$expect("$(ds --rcfile $rcfile -c  'shctl is-interactive')", 1, "")
+$expect("$(ds --rcfile $rcfile -i -c 'shctl set | grep monitor')", 0, "monitor      on")
+$expect("$(ds --rcfile $rcfile -i -c 'shctl is-interactive && $RC_LOADED')", 0, ": Bool = true")
+
+## pipe
+$expect("$(ds --rcfile $rcfile <<< 'shctl set | grep monitor')", 0, "monitor      off")
+$expect("$(ds --rcfile $rcfile <<< 'shctl is-interactive')", 1, "")
+$expect("$(ds --rcfile $rcfile -i <<< 'shctl set | grep monitor')", 0, "monitor      on")
+$expect("$(ds --rcfile $rcfile -i <<< 'shctl is-interactive #&& $RC_LOADED')", 0, "")
+
+## exec
+$expect("$(ds --rcfile $rcfile -e shctl set | grep 'monitor')", 0, "monitor      off")
+$expect("$(ds --rcfile $rcfile -e shctl is-interactive)", 1, "")
+$expect("$(ds --rcfile $rcfile -i -e shctl set | grep monitor)", 0, "monitor      on")
+$expect("$(ds --rcfile $rcfile -i -e shctl is-interactive)", 0, "")
