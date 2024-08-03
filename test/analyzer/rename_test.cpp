@@ -673,6 +673,52 @@ ggg && ps
                                        RenameValidationStatus::NAME_CONFLICT)); // external
 }
 
+TEST_F(RenameTest, namedArg1) {
+  const char *content = R"(
+function ff(aa: Int): Int { return $aa + { var bbb=234; $bbb; }; }
+typedef Interval(bb: Int, ee: Int) {
+  let begin = $bb
+  let end = $ee
+}
+function dist(other: Interval): Int for Interval {
+  return ($other.end - this.end) + { var value = 34; $value } +
+          $other.begin - $this.begin
+}
+
+$ff($aa: 124)
+new Interval($bb: 0, $ee: 100).dist(
+  $other: new Interval($ee: 800, $bb: 2))
+)";
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, 1));
+
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 1, .character = 36}, "ddd",
+                                       {
+                                           {1, "(1:12~1:14)"},
+                                           {1, "(1:36~1:38)"},
+                                           {1, "(11:5~11:7)"},
+                                       }));
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 2, .character = 27}, "dist",
+                                       {
+                                           {1, "(2:26~2:28)"},
+                                           {1, "(4:13~4:15)"},
+                                           {1, "(12:22~12:24)"},
+                                           {1, "(13:24~13:26)"},
+                                       }));
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 6, .character = 17}, "AAAA",
+                                       {
+                                           {1, "(6:14~6:19)"},
+                                           {1, "(7:11~7:16)"},
+                                           {1, "(8:11~8:16)"},
+                                           {1, "(13:3~13:8)"},
+                                       }));
+
+  // with conflict
+  ASSERT_NO_FATAL_FAILURE(this->renameWithConflict(Request{.modId = 1, .line = 1, .character = 37},
+                                                   "bbb", {1, "(1:47~1:50)"}));
+  ASSERT_NO_FATAL_FAILURE(this->renameWithConflict(Request{.modId = 1, .line = 6, .character = 16},
+                                                   "value", {1, "(7:41~7:46)"}));
+}
+
 TEST_F(RenameTest, source1) {
   arsh::TempFileFactory tempFileFactory("arsh_rename");
   auto fileName = tempFileFactory.createTempFile("mod.ds", "");

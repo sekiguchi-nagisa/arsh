@@ -55,10 +55,10 @@
 | method (builtin)                      | -              | ✔️                    | ✔️              | -          |
 | method (generic type)                 | -              | ✔️                    | ✔️              | -          |
 | method (user-defined)                 | ✔️             | ✔️                    | ✔️              | ✔️         |
-| named arg (function)                  | ✔️             | ✔️                    | ✔️              | ❌          |
-| named arg (explicit constructor)      | ✔️             | ✔️                    | ✔️              | ❌          |
+| named arg (function)                  | ✔️             | ✔️                    | ✔️              | ✔️         |
+| named arg (explicit constructor)      | ✔️             | ✔️                    | ✔️              | ✔️         |
 | named arg (implicit constructor)      | ❌              | ❌                     | ❌               | ❌          |
-| named arg (method)                    | ✔️             | ✔️                    | ✔️              | ❌          |
+| named arg (method)                    | ✔️             | ✔️                    | ✔️              | ✔️         |
 | named arg (builtin method)            | -              | ✔️                    | ✔️              | -          |
 | named arg (generic method)            | -              | ❌                     | ❌               | -          |
 | source (variable)                     | ✔️             | ✔️                    | ✔️              | ✔️         |
