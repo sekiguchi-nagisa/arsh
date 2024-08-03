@@ -677,7 +677,7 @@ TEST_F(RenameTest, namedArg1) {
   const char *content = R"(
 function ff(aa: Int): Int { return $aa + { var bbb=234; $bbb; }; }
 typedef Interval(bb: Int, ee: Int) {
-  let begin = $bb
+  let begin = $bb; typedef dist = Int
   let end = $ee
 }
 function dist(other: Interval): Int for Interval {
@@ -715,6 +715,8 @@ new Interval($bb: 0, $ee: 100).dist(
   // with conflict
   ASSERT_NO_FATAL_FAILURE(this->renameWithConflict(Request{.modId = 1, .line = 1, .character = 37},
                                                    "bbb", {1, "(1:47~1:50)"}));
+  ASSERT_NO_FATAL_FAILURE(this->renameWithConflict(Request{.modId = 1, .line = 2, .character = 18},
+                                                   "begin", {1, "(3:6~3:11)"}));
   ASSERT_NO_FATAL_FAILURE(this->renameWithConflict(Request{.modId = 1, .line = 6, .character = 16},
                                                    "value", {1, "(7:41~7:46)"}));
 }

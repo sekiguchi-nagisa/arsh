@@ -143,6 +143,10 @@ static bool equalsName(const DeclSymbol &decl, const std::string &mangledNewDecl
       break;
     }
   }
+  if (target.has(DeclSymbol::Attr::MEMBER) && decl.is(DeclSymbol::Kind::PARAM)) {
+    return DeclSymbol::isVarName(target.getKind()) &&
+           target.toDemangledName() == mangledNewDeclName;
+  }
   return target != decl && target.getMangledName() == mangledNewDeclName;
 }
 
