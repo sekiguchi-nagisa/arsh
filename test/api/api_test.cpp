@@ -1206,7 +1206,7 @@ true
   result = EXEC(str);
   ASSERT_NO_FATAL_FAILURE(this->expect(result, 0, WaitStatus::EXITED,
                                        "[1]  {\\n     $SIGSTOP.kill($PID)\\n     exit 99\\n}",
-                                       "(string):8: bg: %2: no such job"));
+                                       "(string):9: bg: %2: no such job"));
 }
 
 int main(int argc, char **argv) {
