@@ -249,9 +249,8 @@ private:
   void formatError(int errNum) {
     this->error = "format failed";
     if (errNum != 0) {
-      this->error += ", caused by `";
+      this->error += ": ";
       this->error += strerror(errNum);
-      this->error += "'";
     }
   }
 
@@ -822,9 +821,8 @@ bool FormatPrinter::appendAsTimeFormat(FormatFlag flags, int width, int precisio
   errno = 0;
   if (!localtime_r(&targetTime.tv_sec, &tm)) {
     int e = errno;
-    this->error = "localtime_r failed, caused by `";
+    this->error = "localtime_r failed: ";
     this->error += strerror(e);
-    this->error += "'";
     return false;
   }
 

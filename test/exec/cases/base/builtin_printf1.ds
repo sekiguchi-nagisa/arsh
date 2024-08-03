@@ -45,8 +45,8 @@ assert "$(printf $'%\x00' 34 2>&1)" ==
 
 ## io error
 if (test -e /dev/full) {
-    assert "$(printf '%9999s' hello 2>&1 > /dev/full)" =~ $/: printf: format failed, .+/
-    assert "$(printf '%9999d' 12 2>&1 > /dev/full)" =~ $/: printf: format failed, .+/
+    assert "$(printf '%9999s' hello 2>&1 > /dev/full)" =~ $/: printf: format failed: .+/
+    assert "$(printf '%9999d' 12 2>&1 > /dev/full)" =~ $/: printf: format failed: .+/
 }
 
 ## just print

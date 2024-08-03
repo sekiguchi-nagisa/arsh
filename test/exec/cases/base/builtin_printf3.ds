@@ -11,6 +11,6 @@ assert "$(printf -v var '%#*x' -2147483648 9999 2>&1)" ==
 #     $/arsh: printf: format failed, caused by .+memory.*/
 
 assert "$(printf -v va '%212374823s%2123741823d' a 2>&1)" =~
-    $/: printf: format failed, caused by .+memory.*/
+    $/: printf: format failed: .+memory.*/
 
 true
