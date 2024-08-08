@@ -17,7 +17,10 @@
 #ifndef MISC_LIB_PTY_HPP
 #define MISC_LIB_PTY_HPP
 
+#include <sys/ioctl.h>
 #include <termios.h>
+
+#include <utility>
 
 #if !defined(__CYGWIN__)
 #include <sys/ttydefaults.h>
@@ -112,6 +115,23 @@ inline void xcfmakesane(termios &term) {
 #endif
 
   memcpy(term.c_cc, defchars, std::size(defchars) * sizeof(cc_t));
+}
+
+struct WinSize {
+  unsigned short rows{24};
+  unsigned short cols{80};
+};
+
+inline std::pair<WinSize, bool> getWinSize(int fd) {
+  std::pair<WinSize, bool> ret{{}, false};
+  struct winsize ws; // NOLINT
+  errno = 0;
+  if (ioctl(fd, TIOCGWINSZ, &ws) == 0) {
+    ret.second = true;
+    ret.first.rows = ws.ws_row;
+    ret.first.cols = ws.ws_col;
+  }
+  return ret;
 }
 
 END_MISC_LIB_NAMESPACE_DECL

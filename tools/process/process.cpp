@@ -60,12 +60,8 @@ ProcHandle::~ProcHandle() {
 
 ProcHandle::WinSize ProcHandle::getWinSize() const {
   WinSize ret{0, 0};
-  if (this->hasPty()) {
-    winsize ws{};
-    if (ioctl(this->pty(), TIOCGWINSZ, &ws) == 0) {
-      ret.row = ws.ws_row;
-      ret.col = ws.ws_col;
-    }
+  if (auto [s, b] = arsh::getWinSize(this->pty()); b) {
+    ret = s;
   }
   return ret;
 }
@@ -75,8 +71,8 @@ bool ProcHandle::setWinSize(WinSize size) {
     return false;
   }
   winsize ws{};
-  ws.ws_row = size.row;
-  ws.ws_col = size.col;
+  ws.ws_row = size.rows;
+  ws.ws_col = size.cols;
   if (ioctl(this->pty(), TIOCSWINSZ, &ws) == -1) {
     return false;
   }

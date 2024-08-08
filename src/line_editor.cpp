@@ -112,7 +112,6 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
-#include <sys/ioctl.h>
 #include <unistd.h>
 
 #include "line_buffer.h"
@@ -224,29 +223,10 @@ static int getCursorPosition(int ifd, int ofd) {
   return cols;
 }
 
-struct WinSize {
-  unsigned int rows{24};
-  unsigned int cols{80};
-};
-
-static WinSize getWinSize(int fd) {
-  WinSize size;
-  struct winsize ws; // NOLINT
-  if (ioctl(fd, TIOCGWINSZ, &ws) == 0) {
-    if (ws.ws_row) {
-      size.rows = ws.ws_row;
-    }
-    if (ws.ws_col) {
-      size.cols = ws.ws_col;
-    }
-  }
-  return size;
-}
-
 static void updateWinSize(struct linenoiseState &ls) {
   auto ret = getWinSize(ls.ifd);
-  ls.rows = ret.rows;
-  ls.cols = ret.cols;
+  ls.rows = ret.first.rows;
+  ls.cols = ret.first.cols;
 }
 
 /* Clear the screen. Used to handle ctrl+l */

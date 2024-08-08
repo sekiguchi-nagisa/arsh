@@ -148,10 +148,7 @@ public:
 
   bool hasPty() const { return this->pty() > -1; }
 
-  struct WinSize {
-    unsigned short row;
-    unsigned short col;
-  };
+  using WinSize = arsh::WinSize;
 
   /**
    * get windows size of pty()

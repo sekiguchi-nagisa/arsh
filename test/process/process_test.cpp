@@ -180,14 +180,14 @@ TEST_F(ProcTest, ptyWinSize) {
 
   // default winsize
   auto winsize = handle.getWinSize();
-  ASSERT_EQ(80, winsize.col);
-  ASSERT_EQ(24, winsize.row);
+  ASSERT_EQ(80, winsize.cols);
+  ASSERT_EQ(24, winsize.rows);
 
   // change winsize
-  ASSERT_TRUE(handle.setWinSize({.row = 50, .col = 200}));
+  ASSERT_TRUE(handle.setWinSize({.rows = 50, .cols = 200}));
   winsize = handle.getWinSize();
-  ASSERT_EQ(200, winsize.col);
-  ASSERT_EQ(50, winsize.row);
+  ASSERT_EQ(200, winsize.cols);
+  ASSERT_EQ(50, winsize.rows);
 
   handle.kill(SIGINT);
   auto ret2 = handle.waitAndGetResult(false);
