@@ -400,6 +400,26 @@ SystemError: execution error: hgoirahj: command not found
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(127, WaitStatus::EXITED, "\n"));
 }
 
+TEST_F(InteractiveTest, winSize) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+  const auto size = this->handle.getWinSize();
+  std::string out = format("LINES=%d\nCOLUMNS=%d", size.rows, size.cols);
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("shctl winsize", out.c_str()));
+  std::string src = format("assert $LINES == %d; assert $COLUMNS == %d", size.rows, size.cols);
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(src.c_str()));
+
+  if (platform::isLinux(platform::platform())) {
+    std::string err = format("(stdin):3: shctl: io error: %s\n", strerror(ENOSPC));
+    ASSERT_NO_FATAL_FAILURE(
+        this->sendLineAndExpect("shctl winsize > /dev/full; true", "", err.c_str()));
+  }
+
+  this->send(CTRL_D);
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
+}
+
 TEST_F(InteractiveTest, moduleError1) {
   this->invokeImpl({"--quiet", "--norc"}, true);
 
