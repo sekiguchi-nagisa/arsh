@@ -202,7 +202,8 @@ static BuiltinCmdDesc table[] = {
      "          -d              dump current runtime options to REPLY.\n"
      "          -r <dump>       restore runtime option from <dump>.\n"
      "      unset OPTION ...    unset/disable/off runtime option.\n"
-     "      info                show configuration (also get via 'reply' variable)."},
+     "      info                show configuration (also get via 'reply' variable).\n"
+     "      winsize             get and update LINES/COLUMNS."},
     {"test", "[expr]",
      "    Unary or Binary expressions.\n"
      "    If expression is true, return 0\n"

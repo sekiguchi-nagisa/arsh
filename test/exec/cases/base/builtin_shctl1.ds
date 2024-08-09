@@ -90,6 +90,22 @@ if (test -e /dev/full) {
     assert $? == 1
 }
 
+# winsize
+{
+    let lines = "$(tput lines)".toInt()!
+    let cols = "$(tput cols)".toInt()!
+    printf -v var "LINES=%d\nCOLUMNS=%d" $lines $cols
+    assert "$(shctl winsize)" == $reply.remove('var')!
+    assert shctl winsize
+    assert $lines == $LINES
+    assert $cols == $COLUMNS
+}
+
+if (test -e /dev/full) {
+    assert "$(shctl winsize 2>&1 > /dev/full)" =~ $/shctl: io error: .+/
+    assert $? == 1
+}
+
 # invalid optiopn
 assert shctl -s 2>&1 | grep ': shctl: -s: invalid option'
 assert shctl -s 2>&1 | grep 'shctl: shctl \[subcommand]'

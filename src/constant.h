@@ -47,6 +47,8 @@ enum class BuiltinVarOffset : unsigned char {
   STDERR,      // STDERR
   PIPESTATUS,  // PIPESTATUS
   SUBSHELL,    // SUBSHELL (for subshell level)
+  LINES,       // LINES
+  COLUMNS,     // COLUMNS
   EXIT_STATUS, // ?
   ARGS,        // @
   ARGS_SIZE,   // # (dummy entry for completion)

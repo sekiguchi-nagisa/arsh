@@ -8,6 +8,11 @@
 
 - ``Command`` type support ``==``, ``!=`` operators like function
 
+#### Builtin
+
+- add ``LINES``, ``COLUMNS`` builtin variables for indicating terminal window size
+    - update theme via ``shctl winsize`` sub-command
+
 #### Misc
 
 - add ``--custom-style`` option to colorize

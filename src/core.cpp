@@ -25,6 +25,7 @@
 #include "logger.h"
 #include "misc/files.hpp"
 #include "misc/num_util.hpp"
+#include "misc/pty.hpp"
 #include "node.h"
 #include "vm.h"
 
@@ -49,6 +50,27 @@ void reassignReplyVar(ARState &st) {
   } else { // reuse existing object
     obj.clear();
   }
+}
+
+bool syncWinSize(ARState &st, int ttyFd, WinSize &size) {
+  int tmpFd = -1;
+  if (ttyFd < 0) {
+    tmpFd = open("/dev/tty", O_RDWR);
+    ttyFd = tmpFd;
+  }
+  errno = 0;
+  const auto [s, b] = getWinSize(ttyFd);
+  const int old = errno;
+  if (b) {
+    size = s;
+    st.setGlobal(BuiltinVarOffset::LINES, Value::createInt(s.rows));
+    st.setGlobal(BuiltinVarOffset::COLUMNS, Value::createInt(s.cols));
+  }
+  if (tmpFd > -1) {
+    close(tmpFd);
+  }
+  errno = old;
+  return b;
 }
 
 void raiseError(ARState &st, TYPE type, std::string &&message, int64_t status) {

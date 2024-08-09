@@ -169,6 +169,10 @@ void bindBuiltins(Consumer &consumer, const SysConfig &config, TypePool &pool, N
 
   binder.bind("SUBSHELL", 0);
 
+  binder.bind("LINES", 0);
+
+  binder.bind("COLUMNS", 0);
+
   /**
    * contains exit status of most recent executed process. ($?)
    * must be Int_Object

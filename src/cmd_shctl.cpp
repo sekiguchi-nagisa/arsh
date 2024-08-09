@@ -15,6 +15,7 @@
  */
 
 #include "cmd.h"
+#include "misc/pty.hpp"
 #include "ordered_map.h"
 #include "vm.h"
 
@@ -329,6 +330,19 @@ static int showInfo(ARState &state, const ArrayObject &argvObj) {
   return 0;
 }
 
+static int checkWinSize(ARState &state, const ArrayObject &argvObj) {
+  if (WinSize size; syncWinSize(state, -1, size)) {
+    int errNum = 0;
+    if (printf("LINES=%d\nCOLUMNS=%d\n", size.rows, size.cols) < 0) {
+      errNum = errno;
+    }
+    CHECK_STDOUT_ERROR(state, argvObj, errNum);
+    return 0;
+  }
+  PERROR(state, argvObj, "");
+  return 1;
+}
+
 int builtin_shctl(ARState &state, ArrayObject &argvObj) {
   GetOptState optState("h");
   for (int opt; (opt = optState(argvObj)) != -1;) {
@@ -357,6 +371,8 @@ int builtin_shctl(ARState &state, ArrayObject &argvObj) {
       return showModule(state, argvObj, index + 1);
     } else if (ref == "info") {
       return showInfo(state, argvObj);
+    } else if (ref == "winsize") {
+      return checkWinSize(state, argvObj);
     } else {
       ERROR(state, argvObj, "undefined subcommand: %s", toPrintable(ref).c_str());
       return 2;

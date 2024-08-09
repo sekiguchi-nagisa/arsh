@@ -32,6 +32,8 @@ struct ARState;
 namespace arsh {
 
 struct VMHook {
+  virtual ~VMHook() = default;
+
   /**
    * hook for vm fetch event
    * @param st
@@ -50,6 +52,10 @@ struct VMHook {
 const Value &getBuiltinGlobal(const ARState &st, const char *varName);
 
 void reassignReplyVar(ARState &st);
+
+struct WinSize;
+
+bool syncWinSize(ARState &st, int ttyFd, WinSize &size);
 
 /**
  * raise Error Object and update exit status

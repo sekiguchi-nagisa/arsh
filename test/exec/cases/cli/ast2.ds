@@ -41,7 +41,7 @@ nodes:
     curIndex: 0
     pathList:
 maxVarNum: 0
-maxGVarNum: 53"
+maxGVarNum: 55"
 
 $expect("$(ds --parse-only --dump-untyped-ast -c "source $mod")", 0, $out)
 
