@@ -92,8 +92,8 @@ if (test -e /dev/full) {
 
 # winsize
 {
-    let lines = "$(tput lines)".toInt()!
-    let cols = "$(tput cols)".toInt()!
+    let lines = "$(tput -T xterm lines)".toInt()!
+    let cols = "$(tput -T xterm cols)".toInt()!
     printf -v var "LINES=%d\nCOLUMNS=%d" $lines $cols
     assert "$(shctl winsize)" == $reply.remove('var')!
     assert shctl winsize
