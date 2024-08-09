@@ -339,7 +339,7 @@ static int checkWinSize(ARState &state, const ArrayObject &argvObj) {
     CHECK_STDOUT_ERROR(state, argvObj, errNum);
     return 0;
   }
-  PERROR(state, argvObj, "");
+  PERROR(state, argvObj, "get pty window size failed");
   return 1;
 }
 
