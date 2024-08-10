@@ -411,7 +411,7 @@ TEST_F(InteractiveTest, winSize) {
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(src.c_str()));
 
   if (platform::isLinux(platform::platform())) {
-    std::string err = format("(stdin):3: shctl: io error: %s\n", strerror(ENOSPC));
+    std::string err = format("(stdin):3: shctl winsize: io error: %s\n", strerror(ENOSPC));
     ASSERT_NO_FATAL_FAILURE(
         this->sendLineAndExpect("shctl winsize > /dev/full; true", "", err.c_str()));
   }

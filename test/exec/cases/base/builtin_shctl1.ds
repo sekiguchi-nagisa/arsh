@@ -43,7 +43,7 @@ shctl function
 assert $? == 1
 
 if (test -e /dev/full) {
-    assert "$(shctl function 2>&1 > /dev/full)" =~ $/shctl: io error: .+/
+    assert "$(shctl function 2>&1 > /dev/full)" =~ $/shctl function: io error: .+/
     assert $? == 1
 }
 
@@ -54,7 +54,7 @@ assert $? == 1
 assert shctl backtrace
 
 if (test -e /dev/full) {
-    assert "$(shctl backtrace 2>&1 > /dev/full)" =~ $/shctl: io error: .+/
+    assert "$(shctl backtrace 2>&1 > /dev/full)" =~ $/shctl backtrace: io error: .+/
     assert $? == 1
 }
 
@@ -86,7 +86,7 @@ assert $reply["MODULE_DIR"] == $MODULE_DIR
 assert $reply["DATA_DIR"] == $DATA_DIR
 
 if (test -e /dev/full) {
-    assert "$(shctl info 2>&1 > /dev/full)" =~ $/shctl: io error: .+/
+    assert "$(shctl info 2>&1 > /dev/full)" =~ $/shctl info: io error: .+/
     assert $? == 1
 }
 
