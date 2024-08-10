@@ -410,8 +410,12 @@ TEST_F(InteractiveTest, winSize) {
   std::string src = format("assert $LINES == %d; assert $COLUMNS == %d", size.rows, size.cols);
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(src.c_str()));
 
+  // change winsize
+  this->handle.setWinSize({.rows = 100, .cols = 100});
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $LINES == 100; assert $COLUMNS == 100"));
+
   if (platform::isLinux(platform::platform())) {
-    std::string err = format("(stdin):3: shctl winsize: io error: %s\n", strerror(ENOSPC));
+    std::string err = format("(stdin):4: shctl winsize: io error: %s\n", strerror(ENOSPC));
     ASSERT_NO_FATAL_FAILURE(
         this->sendLineAndExpect("shctl winsize > /dev/full; true", "", err.c_str()));
   }

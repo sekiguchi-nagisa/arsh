@@ -2252,7 +2252,7 @@ ARSH_METHOD cmd_call(RuntimeContext &ctx) {
 //!bind: function $OP_INIT($this : LineEditor) : LineEditor
 ARSH_METHOD edit_init(RuntimeContext &ctx) {
   SUPPRESS_WARNING(edit_init);
-  auto ret = Value::create<LineEditorObject>();
+  auto ret = Value::create<LineEditorObject>(ctx);
   (void)ctx;
   RET(ret);
 }

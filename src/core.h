@@ -55,7 +55,7 @@ void reassignReplyVar(ARState &st);
 
 struct WinSize;
 
-bool syncWinSize(ARState &st, int ttyFd, WinSize &size);
+bool syncWinSize(ARState &st, int ttyFd, WinSize *size);
 
 /**
  * raise Error Object and update exit status

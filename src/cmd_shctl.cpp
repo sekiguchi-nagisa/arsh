@@ -333,7 +333,7 @@ static int showInfo(ARState &state, const ArrayObject &argvObj, StringRef subCmd
 }
 
 static int checkWinSize(ARState &state, const ArrayObject &argvObj, StringRef subCmd) {
-  if (WinSize size; syncWinSize(state, -1, size)) {
+  if (WinSize size; syncWinSize(state, -1, &size)) {
     int errNum = 0;
     if (printf("LINES=%d\nCOLUMNS=%d\n", size.rows, size.cols) < 0) {
       errNum = errno;

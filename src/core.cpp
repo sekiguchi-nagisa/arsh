@@ -52,7 +52,7 @@ void reassignReplyVar(ARState &st) {
   }
 }
 
-bool syncWinSize(ARState &st, int ttyFd, WinSize &size) {
+bool syncWinSize(ARState &st, int ttyFd, WinSize *size) {
   int tmpFd = -1;
   if (ttyFd < 0) {
     tmpFd = open("/dev/tty", O_RDWR);
@@ -62,7 +62,9 @@ bool syncWinSize(ARState &st, int ttyFd, WinSize &size) {
   const auto [s, b] = getWinSize(ttyFd);
   const int old = errno;
   if (b) {
-    size = s;
+    if (size) {
+      *size = s;
+    }
     st.setGlobal(BuiltinVarOffset::LINES, Value::createInt(s.rows));
     st.setGlobal(BuiltinVarOffset::COLUMNS, Value::createInt(s.cols));
   }

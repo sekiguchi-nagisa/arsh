@@ -11,7 +11,8 @@
 #### Builtin
 
 - add ``LINES``, ``COLUMNS`` builtin variables for indicating terminal window size
-    - update theme via ``shctl winsize`` sub-command
+    - manually update theme via ``shctl winsize`` sub-command
+    - also updated via ``LineEditor#readLine`` method
 
 #### Misc
 

@@ -94,7 +94,7 @@ private:
   std::vector<Value> customCallbacks;
 
 public:
-  LineEditorObject();
+  LineEditorObject(ARState &state);
 
   ~LineEditorObject();
 
@@ -142,7 +142,7 @@ private:
 
   void disableRawMode(int fd);
 
-  void refreshLine(struct linenoiseState &l, bool repaint = true,
+  void refreshLine(ARState &state, struct linenoiseState &l, bool repaint = true,
                    ObserverPtr<ArrayPager> pager = nullptr);
 
   ssize_t accept(ARState &state, struct linenoiseState &l);
