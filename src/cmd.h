@@ -83,19 +83,22 @@ inline int maskExitStatus(int64_t status) {
 
 } // namespace arsh
 
-#define ERROR(ctx, obj, fmt, ...)                                                                  \
-  printErrorAt(ctx, obj.getValues()[0].asStrRef(), 0, fmt, ##__VA_ARGS__)
+#define ERROR2(ctx, obj, sub, fmt, ...) printErrorAt(ctx, obj, sub, 0, fmt, ##__VA_ARGS__)
 
-#define PERROR(ctx, obj, fmt, ...)                                                                 \
-  printErrorAt(ctx, obj.getValues()[0].asStrRef(), errno, fmt, ##__VA_ARGS__)
+#define PERROR2(ctx, obj, sub, fmt, ...) printErrorAt(ctx, obj, sub, errno, fmt, ##__VA_ARGS__)
 
-#define CHECK_STDOUT_ERROR(ctx, obj, errNum)                                                       \
+#define ERROR(ctx, obj, fmt, ...) ERROR2(ctx, obj, "", fmt, ##__VA_ARGS__)
+#define PERROR(ctx, obj, fmt, ...) PERROR2(ctx, obj, "", fmt, ##__VA_ARGS__)
+
+#define CHECK_STDOUT_ERROR2(ctx, obj, sub, errNum)                                                 \
   do {                                                                                             \
     errno = (errNum);                                                                              \
     if (errno != 0 || fflush(stdout) == EOF) {                                                     \
-      PERROR(ctx, obj, "io error");                                                                \
+      PERROR2(ctx, obj, sub, "io error");                                                          \
       return 1;                                                                                    \
     }                                                                                              \
   } while (false)
+
+#define CHECK_STDOUT_ERROR(ctx, obj, errNum) CHECK_STDOUT_ERROR2(ctx, obj, "", errNum)
 
 #endif // ARSH_CMD_H

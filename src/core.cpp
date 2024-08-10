@@ -142,7 +142,8 @@ void raiseAssertFail(ARState &st, Value &&msg, const AssertOp op, Value &&left, 
   st.throwObject(std::move(except));
 }
 
-bool printErrorAt(const ARState &state, StringRef cmdName, int errNum, const char *fmt, ...) {
+bool printErrorAt(const ARState &state, const ArrayObject &argvObj, StringRef sub, int errNum,
+                  const char *fmt, ...) {
   // get current frame
   std::string sourceName;
   unsigned int lineNum = 0;
@@ -164,8 +165,12 @@ bool printErrorAt(const ARState &state, StringRef cmdName, int errNum, const cha
     out += std::to_string(lineNum);
     out += ": ";
   }
-  if (!cmdName.empty()) {
+  if (const StringRef cmdName = argvObj.getValues()[0].asStrRef(); !cmdName.empty()) {
     appendAsPrintable(cmdName, SYS_LIMIT_PRINTABLE_MAX, out);
+    if (!sub.empty()) {
+      out += " ";
+      appendAsPrintable(sub, SYS_LIMIT_PRINTABLE_MAX, out);
+    }
     out += ": ";
   }
 

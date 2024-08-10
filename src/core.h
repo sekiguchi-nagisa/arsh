@@ -91,15 +91,16 @@ inline void raiseAssertFail(ARState &st, Value &&msg) {
  * print error message with current location (source:lineno)
  * emit newline
  * @param state
- * @param cmdName
+ * @param argvObj
+ * @param sub for sub-command. normally empty string
  * @param errNum
  * may be 0
  * @param fmt
  * @param ...
  * @return
  */
-bool printErrorAt(const ARState &state, StringRef cmdName, int errNum, const char *fmt, ...)
-    __attribute__((format(printf, 4, 5)));
+bool printErrorAt(const ARState &state, const ArrayObject &argvObj, StringRef sub, int errNum,
+                  const char *fmt, ...) __attribute__((format(printf, 5, 6)));
 
 /**
  * get and set signal handler.
