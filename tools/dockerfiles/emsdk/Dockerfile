@@ -1,5 +1,5 @@
-FROM emscripten/emsdk:3.1.32
-RUN apt update && apt install -y sudo cmake git language-pack-ja ninja-build
+FROM emscripten/emsdk:3.1.64
+RUN apt update && apt install -y sudo cmake git language-pack-ja ninja-build re2c
 RUN useradd -m tux
 RUN groupadd -g 2001 admin && usermod -G admin tux  && echo '%admin ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
 

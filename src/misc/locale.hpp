@@ -18,8 +18,8 @@
 #define MISC_LIB_LOCALE_HPP
 
 #include <clocale>
-#include <new>
 #include <utility>
+#include <memory>
 
 #ifdef __APPLE__
 #include <xlocale.h>
