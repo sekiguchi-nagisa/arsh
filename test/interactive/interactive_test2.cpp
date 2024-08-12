@@ -425,6 +425,10 @@ TEST_F(InteractiveTest, winSize1) {
 }
 
 TEST_F(InteractiveTest, winSize2) {
+  if (!platform::isLinux(platform::platform())) {
+    return;
+  }
+
   this->invoke("--quiet", "--norc");
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
