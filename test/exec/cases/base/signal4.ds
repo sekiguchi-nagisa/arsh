@@ -53,3 +53,12 @@ $SIG['kill'].trap($SIG_IGN)
 assert $SIG['KILL'].trap() == $SIG_DFL
 $SIG['kIlL'].trap($f)
 assert $SIG['siGKiLl'].trap() == $SIG_DFL
+
+# SIGWINCH
+$SIGWINCH.trap($SIG_IGN)
+assert $SIGWINCH.trap() == $SIG_DFL
+var winch = function(s: Signal) => {}
+assert $SIGWINCH.trap($winch) == $SIG_DFL
+assert $SIGWINCH.trap() == $winch
+assert $SIGWINCH.trap($SIG_IGN) == $winch
+assert $SIGWINCH.trap() == $SIG_DFL

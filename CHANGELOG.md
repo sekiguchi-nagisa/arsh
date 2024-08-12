@@ -13,6 +13,7 @@
 - add ``LINES``, ``COLUMNS`` builtin variables for indicating terminal window size
     - manually update theme via ``shctl winsize`` sub-command
     - also updated via ``LineEditor#readLine`` method
+    - when receive ``SIGWINCH``, automatically updated
 
 #### Misc
 
@@ -30,6 +31,7 @@
 #### Builtin
 
 - **Breaking Change**: disable software flow control by default like fish
+- **Breaking Change**: do not ignore ``SIGWINCH``
 - add ``once`` param to ``String#replace`` and ``Regex#replace`` methods
     - now only replace first occurrence of pattern
 - add ``start``, ``end`` method to ``RegexMatch`` type. now get offsets of match string

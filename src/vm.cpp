@@ -2253,6 +2253,9 @@ bool VM::mainLoop(ARState &state) {
     if (ARState::pendingSigSet.has(SIGCHLD)) {
       state.jobTable.waitForAny();
     }
+    if (ARState::pendingSigSet.has(SIGWINCH)) {
+      syncWinSize(state, -1, nullptr);
+    }
     if (state.canHandleSignal && ARState::hasSignals()) {
       SignalGuard guard;
       int sigNum = ARState::popPendingSignal();

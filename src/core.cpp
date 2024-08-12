@@ -235,7 +235,7 @@ static struct sigaction newSigaction(int sigNum) {
   return action;
 }
 
-static ObjPtr<Object> installUnblock(ARState &st, int sigNum, ObjPtr<Object> handler) {
+static ObjPtr<Object> installUnblock(ARState &st, const int sigNum, ObjPtr<Object> handler) {
   auto DFL_handler = getBuiltinGlobal(st, VAR_SIG_DFL).toPtr();
   auto IGN_handler = getBuiltinGlobal(st, VAR_SIG_IGN).toPtr();
 
@@ -245,7 +245,7 @@ static ObjPtr<Object> installUnblock(ARState &st, int sigNum, ObjPtr<Object> han
   // set actual signal handler
   struct sigaction oldAction {};
   struct sigaction newAction = newSigaction(sigNum);
-  struct sigaction *action = nullptr;
+  const struct sigaction *action = nullptr;
   if (handler && !isUnhandledSignal(sigNum)) {
     if (handler == DFL_handler) {
       newAction.sa_handler = SIG_DFL;
@@ -254,6 +254,9 @@ static ObjPtr<Object> installUnblock(ARState &st, int sigNum, ObjPtr<Object> han
       newAction.sa_handler = SIG_IGN;
       handler = nullptr;
     } else {
+      newAction.sa_handler = signalHandler;
+    }
+    if (sigNum == SIGWINCH) { // always set handler
       newAction.sa_handler = signalHandler;
     }
     action = &newAction;
@@ -305,20 +308,32 @@ void setJobControlSignalSetting(ARState &st, bool set) {
 void setSignalSetting(ARState &state) {
   SignalGuard guard;
 
+  SigSet set;
   for (auto &e : state.sigVector.getData()) {
     int sigNum = e.first;
+    set.add(sigNum);
     assert(!isUnhandledSignal(sigNum));
     auto action = newSigaction(sigNum);
     action.sa_handler = signalHandler;
     sigaction(sigNum, &action, nullptr);
   }
-  auto action = newSigaction(SIGCHLD);
-  action.sa_handler = signalHandler;
-  sigaction(SIGCHLD, &action, nullptr);
+  {
+    auto action = newSigaction(SIGCHLD);
+    action.sa_handler = signalHandler;
+    sigaction(SIGCHLD, &action, nullptr);
+  }
+  if (const int sig = SIGWINCH; !set.has(sig)) {
+    auto action = newSigaction(sig);
+    action.sa_handler = signalHandler;
+    sigaction(sig, &action, nullptr);
+  }
 }
 
 void resetSignalSettingUnblock(ARState &state) {
   for (auto &e : state.sigVector.getData()) {
+    if (e.first == SIGWINCH) {
+      continue;
+    }
     struct sigaction action {};
     action.sa_handler = SIG_DFL;
     sigaction(e.first, &action, nullptr);

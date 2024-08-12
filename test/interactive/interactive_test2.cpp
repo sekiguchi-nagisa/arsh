@@ -400,7 +400,7 @@ SystemError: execution error: hgoirahj: command not found
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(127, WaitStatus::EXITED, "\n"));
 }
 
-TEST_F(InteractiveTest, winSize) {
+TEST_F(InteractiveTest, winSize1) {
   this->invoke("--quiet", "--norc");
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
@@ -419,6 +419,31 @@ TEST_F(InteractiveTest, winSize) {
     ASSERT_NO_FATAL_FAILURE(
         this->sendLineAndExpect("shctl winsize > /dev/full; true", "", err.c_str()));
   }
+
+  this->send(CTRL_D);
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
+}
+
+TEST_F(InteractiveTest, winSize2) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+
+  {
+    const auto size = this->handle.getWinSize();
+    ASSERT_NE(100, size.rows);
+    ASSERT_NE(300, size.cols);
+  }
+
+  // change winsize
+  std::string line = "call $BIN_NAME -c 'for(var i = 0; $i < 5; $i++) { sleep 0.5; }; true; assert "
+                     "$LINES == 100; assert "
+                     "$COLUMNS == 300; echo $LINES;'";
+  this->sendLine(line.c_str());
+  std::this_thread::sleep_for(std::chrono::milliseconds(300));
+  this->handle.setWinSize({.rows = 100, .cols = 300});
+  std::this_thread::sleep_for(std::chrono::seconds(3));
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + line + "\n100\n" + PROMPT));
 
   this->send(CTRL_D);
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
