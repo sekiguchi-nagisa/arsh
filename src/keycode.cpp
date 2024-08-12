@@ -40,12 +40,13 @@ static int waitForInputReady(int fd, int timeoutMSec, const sigset_t *mask) {
     return 0;
   }
   fd_set fds;
-  struct timeval tv {
-    .tv_sec = timeoutMSec / 1000, .tv_usec = (timeoutMSec % 1000) * 1000,
+  const timespec timespec = {
+      .tv_sec = timeoutMSec / 1000,
+      .tv_nsec = static_cast<long>(timeoutMSec) % 1000 * 1000 * 1000,
   };
   FD_ZERO(&fds);
   FD_SET(fd, &fds);
-  int ret = pselect(fd + 1, &fds, nullptr, nullptr, &tv, mask);
+  int ret = pselect(fd + 1, &fds, nullptr, nullptr, timeoutMSec < 0 ? nullptr : &timespec, mask);
   if (ret <= 0) {
     if (ret == 0) {
       return -2;
