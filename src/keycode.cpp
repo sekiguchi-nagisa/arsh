@@ -23,40 +23,8 @@
 #include "misc/format.hpp"
 #include "misc/unicode.hpp"
 
-#ifdef __APPLE__
+#ifdef __linux__
 
-/**
- * for macOS.
- * macOS poll is completely broken for pty
- * @param fd
- * @param timeoutMSec
- * @return
- * if input is ready, return 0
- * if has error, return -1 and set errno
- * if timeout, return -2
- */
-static int waitForInputReady(int fd, int timeoutMSec, const sigset_t *mask) {
-  if (timeoutMSec < 0 && !mask) {
-    return 0;
-  }
-  fd_set fds;
-  const timespec timespec = {
-      .tv_sec = timeoutMSec / 1000,
-      .tv_nsec = static_cast<long>(timeoutMSec) % 1000 * 1000 * 1000,
-  };
-  FD_ZERO(&fds);
-  FD_SET(fd, &fds);
-  int ret = pselect(fd + 1, &fds, nullptr, nullptr, timeoutMSec < 0 ? nullptr : &timespec, mask);
-  if (ret <= 0) {
-    if (ret == 0) {
-      return -2;
-    }
-    return -1;
-  }
-  return 0;
-}
-
-#else
 #include <poll.h>
 
 /**
@@ -81,6 +49,41 @@ static int waitForInputReady(int fd, int timeoutMSec, const sigset_t *mask) {
       .tv_nsec = static_cast<long>(timeoutMSec) % 1000 * 1000 * 1000,
   };
   int ret = ppoll(fds, std::size(fds), timeoutMSec < 0 ? nullptr : &timespec, mask);
+  if (ret <= 0) {
+    if (ret == 0) {
+      return -2;
+    }
+    return -1;
+  }
+  return 0;
+}
+
+#else
+
+#include <sys/select.h>
+
+/**
+ * for macOS.
+ * macOS poll is completely broken for pty
+ * @param fd
+ * @param timeoutMSec
+ * @return
+ * if input is ready, return 0
+ * if has error, return -1 and set errno
+ * if timeout, return -2
+ */
+static int waitForInputReady(int fd, int timeoutMSec, const sigset_t *mask) {
+  if (timeoutMSec < 0 && !mask) {
+    return 0;
+  }
+  fd_set fds;
+  const timespec timespec = {
+      .tv_sec = timeoutMSec / 1000,
+      .tv_nsec = static_cast<long>(timeoutMSec) % 1000 * 1000 * 1000,
+  };
+  FD_ZERO(&fds);
+  FD_SET(fd, &fds);
+  int ret = pselect(fd + 1, &fds, nullptr, nullptr, timeoutMSec < 0 ? nullptr : &timespec, mask);
   if (ret <= 0) {
     if (ret == 0) {
       return -2;
