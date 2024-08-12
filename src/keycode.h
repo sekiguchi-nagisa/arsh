@@ -17,6 +17,7 @@
 #ifndef ARSH_KEYCODE_H
 #define ARSH_KEYCODE_H
 
+#include <csignal>
 #include <functional>
 #include <unordered_map>
 #include <vector>
@@ -37,6 +38,7 @@ inline bool isCaretTarget(int ch) { return (ch >= '@' && ch <= '_') || ch == '?'
 struct ReadWithTimeoutParam {
   bool retry;
   int timeoutMSec;
+  const sigset_t *interruptSet; // if not null, only interrupt by specified signals
 };
 
 /**
@@ -50,10 +52,15 @@ struct ReadWithTimeoutParam {
  * if has error, return -1 and set errno
  * otherwise, return non-negative number
  */
-ssize_t readWithTimeout(int fd, char *buf, size_t bufSize, ReadWithTimeoutParam param);
+ssize_t readWithTimeout(int fd, char *buf, size_t bufSize, const ReadWithTimeoutParam &param);
 
 inline ssize_t readRetryWithTimeout(int fd, char *buf, size_t bufSize, int timeoutMSec) {
-  return readWithTimeout(fd, buf, bufSize, {.retry = true, .timeoutMSec = timeoutMSec});
+  const ReadWithTimeoutParam param = {
+      .retry = true,
+      .timeoutMSec = timeoutMSec,
+      .interruptSet = nullptr,
+  };
+  return readWithTimeout(fd, buf, bufSize, param);
 }
 
 class KeyCodeReader {

@@ -50,7 +50,12 @@ static bool readLine(ARState &state, int fd, const ArrayObject &argvObj, unsigne
   for (bool prevIsBackslash = false;;
        prevIsBackslash = backslash && ch == '\\' && !prevIsBackslash) {
     while (true) {
-      readSize = readWithTimeout(fd, &ch, 1, {.retry = false, .timeoutMSec = timeoutMSec});
+      const ReadWithTimeoutParam param = {
+          .retry = false,
+          .timeoutMSec = timeoutMSec,
+          .interruptSet = nullptr,
+      };
+      readSize = readWithTimeout(fd, &ch, 1, param);
       if (readSize < 0) {
         if (errno == EAGAIN) {
           continue;

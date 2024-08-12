@@ -35,8 +35,8 @@
  * if has error, return -1 and set errno
  * if timeout, return -2
  */
-static int waitForInputReady(int fd, int timeoutMSec) {
-  if (timeoutMSec < 0) {
+static int waitForInputReady(int fd, int timeoutMSec, const sigset_t *mask) {
+  if (timeoutMSec < 0 && !mask) {
     return 0;
   }
   fd_set fds;
@@ -45,7 +45,7 @@ static int waitForInputReady(int fd, int timeoutMSec) {
   };
   FD_ZERO(&fds);
   FD_SET(fd, &fds);
-  int ret = select(fd + 1, &fds, nullptr, nullptr, &tv);
+  int ret = pselect(fd + 1, &fds, nullptr, nullptr, &tv, mask);
   if (ret <= 0) {
     if (ret == 0) {
       return -2;
@@ -62,19 +62,24 @@ static int waitForInputReady(int fd, int timeoutMSec) {
  *
  * @param fd
  * @param timeoutMSec
+ * @param mask
  * @return
  * if input is ready, return 0
  * if has error, return -1 and set errno
  * if timeout, return -2
  */
-static int waitForInputReady(int fd, int timeoutMSec) {
-  if (timeoutMSec < 0) {
+static int waitForInputReady(int fd, int timeoutMSec, const sigset_t *mask) {
+  if (timeoutMSec < 0 && !mask) {
     return 0;
   }
   struct pollfd fds[1];
   fds[0].fd = fd;
   fds[0].events = POLLIN;
-  int ret = poll(fds, std::size(fds), timeoutMSec);
+  const timespec timespec = {
+      .tv_sec = timeoutMSec / 1000,
+      .tv_nsec = static_cast<long>(timeoutMSec) % 1000 * 1000 * 1000,
+  };
+  int ret = ppoll(fds, std::size(fds), timeoutMSec < 0 ? nullptr : &timespec, mask);
   if (ret <= 0) {
     if (ret == 0) {
       return -2;
@@ -93,10 +98,10 @@ namespace arsh {
 // ###########################
 
 ssize_t readWithTimeout(const int fd, char *buf, const size_t bufSize,
-                        const ReadWithTimeoutParam param) {
+                        const ReadWithTimeoutParam &param) {
   while (true) {
     errno = 0;
-    const int r = waitForInputReady(fd, param.timeoutMSec);
+    const int r = waitForInputReady(fd, param.timeoutMSec, param.interruptSet);
     if (r != 0) {
       if (r == -1 && param.retry && errno == EINTR) {
         continue;
