@@ -15,9 +15,9 @@
  */
 
 #include "pager.h"
-#include "core.h"
 #include "line_renderer.h"
 #include "misc/format.hpp"
+#include "vm.h"
 
 namespace arsh {
 
@@ -218,7 +218,12 @@ void ArrayPager::render(LineRenderer &renderer) const {
 EditActionStatus waitPagerAction(ArrayPager &pager, const KeyBindings &bindings,
                                  KeyCodeReader &reader) {
   // read key code and update pager state
-  if (reader.fetch() <= 0) {
+  if (ssize_t r = reader.fetch(); r <= 0) {
+    if (r == -1 && errno == EINTR && ARState::hasSignal(SIGWINCH)) {
+      ARState::clearPendingSignal(SIGWINCH);
+      errno = 0;
+      return EditActionStatus::CONTINUE;
+    }
     return EditActionStatus::ERROR;
   }
   if (!reader.hasControlChar()) {

@@ -2250,10 +2250,10 @@ bool VM::mainLoop(ARState &state) {
 
   SIGNAL: {
     assert(ARState::hasSignals());
-    if (ARState::pendingSigSet.has(SIGCHLD)) {
+    if (ARState::hasSignal(SIGCHLD)) {
       state.jobTable.waitForAny();
     }
-    if (ARState::pendingSigSet.has(SIGWINCH)) {
+    if (ARState::hasSignal(SIGWINCH)) {
       syncWinSize(state, -1, nullptr);
     }
     if (state.canHandleSignal && ARState::hasSignals()) {

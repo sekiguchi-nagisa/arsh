@@ -711,6 +711,15 @@ ssize_t LineEditorObject::editLine(ARState &state, StringRef prompt, char *buf, 
   return count;
 }
 
+static bool needRefresh() {
+  if (errno == EINTR && ARState::hasSignal(SIGWINCH)) {
+    ARState::clearPendingSignal(SIGWINCH);
+    errno = 0;
+    return true;
+  }
+  return false;
+}
+
 ssize_t LineEditorObject::editInRawMode(ARState &state, struct linenoiseState &l) {
   /* The latest history entry is always our current buffer, that
    * initially is just an empty string. */
@@ -733,6 +742,10 @@ ssize_t LineEditorObject::editInRawMode(ARState &state, struct linenoiseState &l
   while (true) {
     if (ssize_t r = reader.fetch(); r <= 0) {
       if (r == -1) {
+        if (needRefresh()) {
+          this->refreshLine(state, l);
+          continue;
+        }
         return -1;
       }
       return static_cast<ssize_t>(l.buf.getUsedSize());
@@ -948,13 +961,17 @@ ssize_t LineEditorObject::editInRawMode(ARState &state, struct linenoiseState &l
       }
       break;
     case EditActionType::INSERT_KEYCODE:
-      if (reader.fetch() > 0) {
+    REDO_INSERT_KEYCODE:
+      if (ssize_t r = reader.fetch(); r > 0) {
         auto &buf = reader.get();
         if (const bool merge = buf != " " && buf != "\n"; l.buf.insertToCursor(buf, merge)) {
           this->refreshLine(state, l);
         } else {
           return -1;
         }
+      } else if (r < -1 && needRefresh()) {
+        this->refreshLine(state, l);
+        goto REDO_INSERT_KEYCODE;
       }
       break;
     case EditActionType::BRACKET_PASTE: {
@@ -1104,8 +1121,13 @@ EditActionStatus LineEditorObject::completeLine(ARState &state, struct linenoise
    * if next action is not completion action, break paging
    */
   pager.setShowCursor(false);
+
+FIRST_DRAW:
   this->refreshLine(state, ls, true, makeObserver(pager));
-  if (reader.fetch() <= 0) {
+  if (ssize_t r = reader.fetch(); r <= 0) {
+    if (r == -1 && needRefresh()) {
+      goto FIRST_DRAW;
+    }
     status = EditActionStatus::ERROR;
     goto END;
   }

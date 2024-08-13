@@ -22,6 +22,7 @@
 #include "keycode.h"
 #include "misc/format.hpp"
 #include "misc/unicode.hpp"
+#include "signals.h"
 
 #ifdef __linux__
 
@@ -38,9 +39,6 @@
  * if timeout, return -2
  */
 static int waitForInputReady(int fd, int timeoutMSec, const sigset_t *mask) {
-  if (timeoutMSec < 0 && !mask) {
-    return 0;
-  }
   struct pollfd fds[1];
   fds[0].fd = fd;
   fds[0].events = POLLIN;
@@ -73,9 +71,6 @@ static int waitForInputReady(int fd, int timeoutMSec, const sigset_t *mask) {
  * if timeout, return -2
  */
 static int waitForInputReady(int fd, int timeoutMSec, const sigset_t *mask) {
-  if (timeoutMSec < 0 && !mask) {
-    return 0;
-  }
   fd_set fds;
   const timespec timespec = {
       .tv_sec = timeoutMSec / 1000,
@@ -102,17 +97,19 @@ namespace arsh {
 // ###########################
 
 ssize_t readWithTimeout(const int fd, char *buf, const size_t bufSize,
-                        const ReadWithTimeoutParam &param) {
-  while (true) {
-    errno = 0;
-    const int r = waitForInputReady(fd, param.timeoutMSec, param.interruptSet);
-    if (r != 0) {
-      if (r == -1 && param.retry && errno == EINTR) {
-        continue;
+                        const ReadWithTimeoutParam param) {
+  if (param.timeoutMSec > -1) {
+    while (true) {
+      errno = 0;
+      const int r = waitForInputReady(fd, param.timeoutMSec, nullptr);
+      if (r != 0) {
+        if (r == -1 && param.retry && errno == EINTR) {
+          continue;
+        }
+        return r;
       }
-      return r;
+      break;
     }
-    break;
   }
   while (true) {
     errno = 0;
@@ -124,7 +121,7 @@ ssize_t readWithTimeout(const int fd, char *buf, const size_t bufSize,
   }
 }
 
-static ssize_t readBytes(int fd, char (&buf)[8]) {
+static ssize_t readCodePoint(int fd, char (&buf)[8]) {
   ssize_t readSize = readRetryWithTimeout(fd, &buf[0], 1, -1); // no-timeout
   if (readSize <= 0) {
     return readSize;
@@ -156,9 +153,19 @@ static ssize_t readBytes(int fd, char (&buf)[8]) {
   } while (false)
 
 ssize_t KeyCodeReader::fetch() {
+  {
+    sigset_t set;
+    sigfillset(&set);
+    sigdelset(&set, SIGWINCH);
+    errno = 0;
+    if (waitForInputReady(this->fd, -1, &set) == -1) {
+      return -1;
+    }
+  }
+
   constexpr char ESC = '\x1b';
   char buf[8];
-  ssize_t readSize = readBytes(this->fd, buf);
+  ssize_t readSize = readCodePoint(this->fd, buf);
   if (readSize <= 0) {
     return readSize;
   }

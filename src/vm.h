@@ -166,7 +166,9 @@ public:
     }
   }
 
-  static bool isInterrupted() { return pendingSigSet.has(SIGINT); }
+  static bool hasSignal(int sigNum) { return pendingSigSet.has(sigNum); }
+
+  static bool isInterrupted() { return hasSignal(SIGINT); }
 
   static bool hasSignals() { return !pendingSigSet.empty(); }
 
