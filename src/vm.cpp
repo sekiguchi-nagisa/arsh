@@ -2253,12 +2253,12 @@ bool VM::mainLoop(ARState &state) {
     if (ARState::hasSignal(SIGCHLD)) {
       state.jobTable.waitForAny();
     }
-    if (ARState::hasSignal(SIGWINCH)) {
-      syncWinSize(state, -1, nullptr);
-    }
     if (state.canHandleSignal && ARState::hasSignals()) {
       SignalGuard guard;
       int sigNum = ARState::popPendingSignal();
+      if(sigNum == SIGWINCH) {
+        syncWinSize(state, -1, nullptr);
+      }
       if (auto handler = state.sigVector.lookup(sigNum); handler != nullptr) {
         state.canHandleSignal = false;
         if (!kickSignalHandler(state, sigNum, handler)) {
