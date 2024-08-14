@@ -197,11 +197,11 @@ std::vector<int> getUniqueSignalList() {
   return ret;
 }
 
-// ####################
-// ##     SigSet     ##
-// ####################
+// ##########################
+// ##     AtomicSigSet     ##
+// ##########################
 
-int SigSet::popPendingSig() {
+int AtomicSigSet::popPendingSig() {
   assert(!this->empty());
   int sigNum;
   do {

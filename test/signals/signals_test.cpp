@@ -134,7 +134,7 @@ TEST(Signal, base) {
 TEST(Signal, sigset) {
   using namespace arsh;
 
-  SigSet set;
+  AtomicSigSet set;
 
   ASSERT_TRUE(set.empty());
   set.add(SIGHUP);

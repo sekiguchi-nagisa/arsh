@@ -114,7 +114,7 @@ bool printErrorAt(const ARState &state, const ArrayObject &argvObj, StringRef su
  */
 ObjPtr<Object> installSignalHandler(ARState &st, int sigNum, ObjPtr<Object> handler);
 
-void installSignalHandler(ARState &st, SigSet sigSet, const ObjPtr<Object> &handler);
+void installSignalHandler(ARState &st, AtomicSigSet &sigSet, const ObjPtr<Object> &handler);
 
 /**
  * if set is true, ignore some signals.

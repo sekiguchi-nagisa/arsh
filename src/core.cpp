@@ -279,7 +279,7 @@ ObjPtr<Object> installSignalHandler(ARState &st, int sigNum, ObjPtr<Object> hand
   return installUnblock(st, sigNum, std::move(handler));
 }
 
-void installSignalHandler(ARState &st, SigSet sigSet, const ObjPtr<Object> &handler) {
+void installSignalHandler(ARState &st, AtomicSigSet &sigSet, const ObjPtr<Object> &handler) {
   SignalGuard guard;
   while (!sigSet.empty()) {
     int sigNum = sigSet.popPendingSig();
@@ -308,7 +308,7 @@ void setJobControlSignalSetting(ARState &st, bool set) {
 void setSignalSetting(ARState &state) {
   SignalGuard guard;
 
-  SigSet set;
+  AtomicSigSet set;
   for (auto &e : state.sigVector.getData()) {
     int sigNum = e.first;
     set.add(sigNum);

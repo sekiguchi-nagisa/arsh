@@ -33,7 +33,7 @@
 // ##     ARState     ##
 // #####################
 
-SigSet ARState::pendingSigSet;
+AtomicSigSet ARState::pendingSigSet;
 
 /**
  * if environmental variable SHLVL dose not exist, set 0.

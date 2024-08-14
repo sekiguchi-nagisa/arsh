@@ -1839,7 +1839,7 @@ ARSH_METHOD array_trap(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_trap);
   auto &arrayObj = typeAs<ArrayObject>(LOCAL(0));
   auto handler = LOCAL(1).toPtr();
-  SigSet set;
+  AtomicSigSet set;
   for (auto &e : arrayObj.getValues()) {
     set.add(e.asSig());
   }

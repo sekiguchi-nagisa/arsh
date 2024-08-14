@@ -149,7 +149,7 @@ private:
   L64X128MixRNG rng;
 
 public:
-  static SigSet pendingSigSet;
+  static AtomicSigSet pendingSigSet;
 
   static int popPendingSignal() { return pendingSigSet.popPendingSig(); }
 
