@@ -490,8 +490,8 @@ void Screen::resize(Pos pos) {
   }
   this->maxRows = pos.row;
   this->maxCols = pos.col;
-  this->row = std::min(this->maxRows, this->row);
-  this->col = std::min(this->maxCols, this->col);
+  this->row = std::min(this->maxRows - 1, this->row);
+  this->col = std::min(this->maxCols - 1, this->col);
   this->maxUsedRows = std::min(this->maxUsedRows, this->maxRows);
 }
 

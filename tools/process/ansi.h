@@ -115,6 +115,10 @@ public:
    */
   void setCursor() { this->setCursor(Pos{1, 1}); }
 
+  /**
+   * get 1-based cursor
+   * @return
+   */
   Pos getCursor() const {
     return {
         .row = this->row + 1,

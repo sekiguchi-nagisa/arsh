@@ -289,6 +289,25 @@ TEST(ANSITest, width) {
   ASSERT_EQ("\x1b[1;4R", rep);
 }
 
+TEST(ANSITest, resize) {
+  Screen screen;
+  screen.setCursor({.row = 20, .col = 20});
+  ASSERT_EQ(20, screen.getCursor().row);
+  ASSERT_EQ(20, screen.getCursor().col);
+
+  screen.resize({.row = 21, .col = 21});
+  ASSERT_EQ(20, screen.getCursor().row);
+  ASSERT_EQ(20, screen.getCursor().col);
+
+  screen.resize({.row = 20, .col = 20});
+  ASSERT_EQ(20, screen.getCursor().row);
+  ASSERT_EQ(20, screen.getCursor().col);
+
+  screen.resize({.row = 19, .col = 19});
+  ASSERT_EQ(19, screen.getCursor().row);
+  ASSERT_EQ(19, screen.getCursor().col);
+}
+
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
