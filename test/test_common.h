@@ -126,8 +126,8 @@ struct ExpectOutput : public ::testing::Test {
 
 class InteractiveBase : public ExpectOutput {
 protected:
-  static constexpr unsigned int MAX_WIN_ROW = 24;
-  static constexpr unsigned int MAX_WIN_COL = 200;
+  static constexpr unsigned int DEFAULT_WIN_ROW = 24;
+  static constexpr unsigned int DEFAULT_WIN_COL = 200;
 
   int timeout{80};
 
@@ -212,7 +212,8 @@ protected:
   arsh::AmbiguousCharWidth eaw{arsh::AmbiguousCharWidth::FULL};
 
 public:
-  InteractiveShellBase(const char *binPath, const char *dir) : InteractiveBase(binPath, dir) {
+  InteractiveShellBase(const char *binPath, const char *dir)
+      : InteractiveBase(binPath, dir), screen({.row = DEFAULT_WIN_ROW, .col = DEFAULT_WIN_COL}) {
     this->screen.setEAW(this->eaw);
   }
 
@@ -282,6 +283,12 @@ protected:
   auto reuseScreen() {
     this->resetBeforeRead = false;
     return arsh::finally([&] { this->resetBeforeRead = true; });
+  }
+
+  void changeWinSize(arsh::WinSize winSize) {
+    if (this->handle.setWinSize(winSize)) {
+      this->screen.resize({.row = winSize.rows, .col = winSize.cols});
+    }
   }
 };
 

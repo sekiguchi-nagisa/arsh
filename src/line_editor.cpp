@@ -969,7 +969,7 @@ ssize_t LineEditorObject::editInRawMode(ARState &state, struct linenoiseState &l
         } else {
           return -1;
         }
-      } else if (r < -1 && needRefresh()) {
+      } else if (r == -1 && needRefresh()) {
         this->refreshLine(state, l);
         goto REDO_INSERT_KEYCODE;
       }

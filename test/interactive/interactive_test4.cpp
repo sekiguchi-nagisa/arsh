@@ -657,6 +657,39 @@ TEST_F(InteractiveTest, lineEditorTTY) {
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
 }
 
+TEST_F(InteractiveTest, lineEditorWindowChange1) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+  ASSERT_NO_FATAL_FAILURE(this->changePrompt("> "));
+
+  this->send("abcdefghijklmnopqrstuvwxyz123456789");
+  ASSERT_NO_FATAL_FAILURE(this->expect("> abcdefghijklmnopqrstuvwxyz123456789"));
+  {
+    auto cleanup = this->reuseScreen();
+    this->changeWinSize({.rows = 20, .cols = 10});
+    ASSERT_NO_FATAL_FAILURE(this->expect("> abcdefgh\n"
+                                         "ijklmnopqr\n"
+                                         "stuvwxyz12\n"
+                                         "3456789"));
+    this->changeWinSize({.rows = 20, .cols = 20});
+    ASSERT_NO_FATAL_FAILURE(this->expect("> abcdefghijklmnopqr\n"
+                                         "stuvwxyz123456789\n\n"));
+    this->send(CTRL_V);
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+    this->changeWinSize({.rows = 20, .cols = 30});
+    ASSERT_NO_FATAL_FAILURE(this->expect("> abcdefghijklmnopqrstuvwxyz12\n3456789\n\n"));
+    this->send(CTRL_A);
+    ASSERT_NO_FATAL_FAILURE(this->expect("> abcdefghijklmnopqrstuvwxyz12\n3456789^A\n\n"));
+
+    this->send(CTRL_C);
+    ASSERT_NO_FATAL_FAILURE(this->expect("> abcdefghijklmnopqrstuvwxyz12\n3456789^A\n> \n"));
+  }
+
+  this->send(CTRL_D);
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
+}
+
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

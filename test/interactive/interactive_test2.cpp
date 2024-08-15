@@ -411,7 +411,7 @@ TEST_F(InteractiveTest, winSize1) {
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(src.c_str()));
 
   // change winsize
-  this->handle.setWinSize({.rows = 100, .cols = 100});
+  this->changeWinSize({.rows = 100, .cols = 100});
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $LINES == 100; assert $COLUMNS == 100"));
 
   if (platform::isLinux(platform::platform())) {
@@ -445,7 +445,7 @@ TEST_F(InteractiveTest, winSize2) {
                      "$COLUMNS == 300; echo $LINES;'";
   this->sendLine(line.c_str());
   std::this_thread::sleep_for(std::chrono::milliseconds(300));
-  this->handle.setWinSize({.rows = 100, .cols = 300});
+  this->changeWinSize({.rows = 100, .cols = 300});
   std::this_thread::sleep_for(std::chrono::seconds(3));
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + line + "\n100\n" + PROMPT));
 

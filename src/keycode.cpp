@@ -22,7 +22,6 @@
 #include "keycode.h"
 #include "misc/format.hpp"
 #include "misc/unicode.hpp"
-#include "signals.h"
 
 #ifdef __linux__
 

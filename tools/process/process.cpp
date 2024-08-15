@@ -271,8 +271,8 @@ static void setPTYSetting(int fd, const IOConfig &config) {
   }
 
   winsize ws{};
-  ws.ws_row = config.row;
-  ws.ws_col = config.col;
+  ws.ws_row = config.winSize.rows;
+  ws.ws_col = config.winSize.cols;
   if (ioctl(fd, TIOCSWINSZ, &ws) == -1) {
     fatal_perror("failed");
   }
@@ -475,6 +475,25 @@ void ProcBuilder::syncEnv() const {
 // ####################
 // ##     Screen     ##
 // ####################
+
+Screen::Screen(Pos pos) : LexerBase("<screen>"), maxRows(pos.row), maxCols(pos.col) {
+  this->bufs.resize(this->maxRows);
+  for (auto &buf : this->bufs) {
+    buf.resize(this->maxCols, '\0');
+  }
+}
+
+void Screen::resize(Pos pos) {
+  this->bufs.resize(pos.row);
+  for (auto &buf : this->bufs) {
+    buf.resize(pos.col, '\0');
+  }
+  this->maxRows = pos.row;
+  this->maxCols = pos.col;
+  this->row = std::min(this->maxRows, this->row);
+  this->col = std::min(this->maxCols, this->col);
+  this->maxUsedRows = std::min(this->maxUsedRows, this->maxRows);
+}
 
 void Screen::addChar(int ch) {
   switch (ch) {

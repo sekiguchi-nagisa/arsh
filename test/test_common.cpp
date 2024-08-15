@@ -125,7 +125,7 @@ void InteractiveBase::invokeImpl(const std::vector<std::string> &args, bool merg
                      .setIn(IOConfig::PTY)
                      .setOut(IOConfig::PTY)
                      .setErr(mergeErrToOut ? IOConfig::PTY : IOConfig::PIPE)
-                     .setWinSize(MAX_WIN_ROW, MAX_WIN_COL)
+                     .setWinSize({.rows = DEFAULT_WIN_ROW, .cols = DEFAULT_WIN_COL})
                      .setTerm(term);
   for (auto &e : this->envMap) {
     builder.addEnv(e.first.c_str(), e.second.c_str());
@@ -152,10 +152,10 @@ std::pair<std::string, std::string> InteractiveShellBase::readAll() {
 }
 
 void InteractiveShellBase::resetScreen() {
-  auto [row, col] = this->handle.getWinSize();
-  assert(row != 0);
-  assert(col != 0);
-  this->screen = Screen(Screen::Pos{.row = row, .col = col});
+  const auto winSize = this->handle.getWinSize();
+  assert(winSize.rows != 0);
+  assert(winSize.cols != 0);
+  this->screen = Screen({.row = winSize.rows, .col = winSize.cols});
   this->screen.setEAW(this->eaw);
   this->screen.setReporter([&](std::string &&m) { this->send(m.c_str()); });
 }

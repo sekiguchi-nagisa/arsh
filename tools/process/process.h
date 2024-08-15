@@ -235,9 +235,7 @@ struct IOConfig {
   FDWrapper err;
 
   termios term{};
-
-  unsigned short row{24};
-  unsigned short col{80};
+  arsh::WinSize winSize;
 
   IOConfig(FDWrapper in, FDWrapper out, FDWrapper err) : in(in), out(out), err(err) {
     arsh::xcfmakesane(this->term); // clear term setting (sane mode)
@@ -313,9 +311,8 @@ public:
     return *this;
   }
 
-  ProcBuilder &setWinSize(unsigned short row, unsigned short col) {
-    this->config.row = row;
-    this->config.col = col;
+  ProcBuilder &setWinSize(arsh::WinSize winSize) {
+    this->config.winSize = winSize;
     return *this;
   }
 

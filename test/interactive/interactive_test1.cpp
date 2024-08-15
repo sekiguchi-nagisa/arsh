@@ -756,7 +756,7 @@ SystemError: readLine failed, caused by `%s'
   this->send(in.c_str());
   std::this_thread::sleep_for(std::chrono::milliseconds(500));
   ASSERT_NO_FATAL_FAILURE(
-      this->expect(formatInput(PROMPT, largeInput, MAX_WIN_COL) + "\n" + PROMPT, err));
+      this->expect(formatInput(PROMPT, largeInput, DEFAULT_WIN_COL) + "\n" + PROMPT, err));
 
   this->send(CTRL_D);
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED, "\n"));

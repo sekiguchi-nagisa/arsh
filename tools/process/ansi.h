@@ -66,19 +66,15 @@ public:
     static Pos defaultSize() { return {24, 80}; }
   };
 
-  explicit Screen(Pos pos) : LexerBase("<screen>"), maxRows(pos.row), maxCols(pos.col) {
-    this->bufs.reserve(this->maxRows);
-    for (unsigned int i = 0; i < this->maxRows; i++) {
-      this->bufs.emplace_back();
-      this->bufs.back().insert(this->bufs.back().end(), this->maxCols, '\0');
-    }
-  }
+  explicit Screen(Pos pos);
 
   Screen() : Screen(Pos::defaultSize()) {}
 
   void setReporter(std::function<void(std::string &&)> func) { this->reporter = std::move(func); }
 
   void setEAW(arsh::AmbiguousCharWidth v) { this->eaw = v; }
+
+  void resize(Pos pos);
 
   /**
    * entry point
