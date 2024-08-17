@@ -526,7 +526,7 @@ void LineEditorObject::refreshLine(ARState &state, struct linenoiseState &l, boo
   unsigned int rows;
   std::string lineBuf; // for rendered lines
   {
-    /* render promot and compute prompt row/column length */
+    /* render prompt and compute prompt row/column length */
     LineRenderer renderer(l.ps, 0, lineBuf,
                           this->langExtension ? makeObserver(this->escapeSeqMap) : nullptr);
     renderer.setMaxCols(l.cols);

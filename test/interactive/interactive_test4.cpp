@@ -734,8 +734,19 @@ TEST_F(InteractiveTest, lineEditorResize2) {
                                          "00002   00005   00008   \n"
                                          "00003   00006   00009   \n\n\n"));
 
+    this->changeWinSize({.rows = 2, .cols = 35});
+    ASSERT_NO_FATAL_FAILURE(this->expect("> 00001\n"));
+
+    this->send("\t");
+    ASSERT_NO_FATAL_FAILURE(this->expect("> 00002\n"));
+
+    this->changeWinSize({.rows = 4, .cols = 35});
+    ASSERT_NO_FATAL_FAILURE(this->expect("> 00002\n"
+                                         "00002   00005   00008   \n"
+                                         "rows 2-2/3\n"));
+
     this->send(CTRL_C);
-    ASSERT_NO_FATAL_FAILURE(this->expect("> 00001\n> \n\n\n\n\n"));
+    ASSERT_NO_FATAL_FAILURE(this->expect("> 00002\n> \n\n"));
   }
 
   this->send(CTRL_D);

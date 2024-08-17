@@ -67,8 +67,9 @@ private:
   unsigned int panes{0};             // number of pager pane
   unsigned int index{0};             // index of currently selected item
   unsigned int curRow{0};            // row of currently selected item (related to rows)
+  bool showPager{true};              // if true, render pager
   bool showCursor{true};             // if true, render cursor
-  bool showPageNum{false};           // if true, render page number
+  bool showRowNum{false};            // if true, render row number
 
   ArrayPager(CandidatesWrapper &&obj, FlexBuffer<ItemEntry> &&items, unsigned int maxIndex,
              WindowSize winSize)
@@ -121,7 +122,7 @@ public:
   unsigned int getActualRows() const { return std::min(this->getLogicalRows(), this->getRows()); }
 
   unsigned int getRenderedRows() const {
-    return this->getActualRows() + (this->showPageNum ? 1 : 0);
+    return this->showPager ? this->getActualRows() + (this->showRowNum ? 1 : 0) : 0;
   }
 
   StringRef getCurCandidate() const { return this->obj.getCandidateAt(this->getIndex()); }
@@ -249,7 +250,7 @@ public:
 
   void revertAll();
 
-  explicit operator bool() { return this->history && this->history->size() > 0; }
+  explicit operator bool() const { return this->history && this->history->size() > 0; }
 
   /**
    * save current buffer and get next entry

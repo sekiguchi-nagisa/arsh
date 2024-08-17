@@ -87,10 +87,12 @@ void ArrayPager::updateWinSize(WindowSize size) {
   if (this->getWinSize() == size) {
     return; // no update
   }
+  this->showPager = true;
   this->winSize = size;
   this->rows = (this->winSize.rows * ROW_RATIO) / 100;
   if (this->rows == 0) {
     this->rows = 1;
+    this->showPager = false;
   }
   this->paneLen = this->items[this->maxLenIndex].itemLen();
   this->panes = (this->winSize.cols - COL_MARGIN) / this->paneLen;
@@ -109,14 +111,14 @@ void ArrayPager::updateWinSize(WindowSize size) {
       this->paneLen = colLimit; // larger than window size
     }
   }
-  this->showPageNum = false;
+  this->showRowNum = false;
   if (this->getActualRows() + 1 <= this->winSize.rows &&
       this->getLogicalRows() > this->getActualRows()) {
     // rows 23-111/111
     unsigned int footerSize =
         static_cast<unsigned int>(strlen("rows ")) + countDigits(this->getLogicalRows()) * 3 + 2;
     if (footerSize < this->panes * this->paneLen) {
-      this->showPageNum = true;
+      this->showRowNum = true;
     }
   }
 }
@@ -170,6 +172,10 @@ static void renderItem(LineRenderer &renderer, const StringRef can, const Candid
 }
 
 void ArrayPager::render(LineRenderer &renderer) const {
+  if (!this->showPager) {
+    return;
+  }
+
   /**
    * resolve start index.
    * example,
@@ -207,7 +213,7 @@ void ArrayPager::render(LineRenderer &renderer) const {
     renderer.setEmitNewline(true); // re-enable newline characters
     renderer.renderLines("\n");
   }
-  if (this->showPageNum) {
+  if (this->showRowNum) {
     char footer[64];
     snprintf(footer, std::size(footer), "\x1b[7mrows %d-%d/%d\x1b[0m\n", startIndex + 1,
              startIndex + actualRows, this->getLogicalRows());

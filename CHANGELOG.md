@@ -36,7 +36,9 @@
     - now only replace first occurrence of pattern
 - add ``start``, ``end`` method to ``RegexMatch`` type. now get offsets of match string
 - improve error message of builtin ``shctl`` command. now show subcommand name
-- in ``LineEditor#readLine``, automatically refresh line when receive ``SIGWINCH``
+- improve resize handling of ``LineEditor#readLine`` method
+    - automatically refresh line when receive ``SIGWINCH``
+    - hide completion pager if row size is too small
 
 #### LSP
 
