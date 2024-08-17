@@ -657,7 +657,7 @@ TEST_F(InteractiveTest, lineEditorTTY) {
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
 }
 
-TEST_F(InteractiveTest, lineEditorWindowChange1) {
+TEST_F(InteractiveTest, lineEditorResize1) {
   this->invoke("--quiet", "--norc");
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
@@ -684,6 +684,58 @@ TEST_F(InteractiveTest, lineEditorWindowChange1) {
 
     this->send(CTRL_C);
     ASSERT_NO_FATAL_FAILURE(this->expect("> abcdefghijklmnopqrstuvwxyz12\n3456789^A\n> \n"));
+  }
+
+  this->send(CTRL_D);
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
+}
+
+TEST_F(InteractiveTest, lineEditorResize2) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+  ASSERT_NO_FATAL_FAILURE(this->changePrompt("> "));
+
+  ASSERT_NO_FATAL_FAILURE(
+      this->sendLineAndExpect("var can = $(for l in $(seq 1 10) { printf '%0*d\\n' 5 $l; })"));
+  ASSERT_NO_FATAL_FAILURE(
+      this->sendLineAndExpect("$LINE_EDIT.setCompletion(function(s,m) => new Candidates($can))"));
+  this->changeWinSize({.rows = 80, .cols = 20});
+
+  this->send("0");
+  ASSERT_NO_FATAL_FAILURE(this->expect("> 0"));
+  {
+    auto cleanup = this->reuseScreen();
+    this->send("\t");
+    ASSERT_NO_FATAL_FAILURE(this->expect("> 000\n"
+                                         "00001   00006   \n"
+                                         "00002   00007   \n"
+                                         "00003   00008   \n"
+                                         "00004   00009   \n"
+                                         "00005   00010   \n"));
+
+    this->changeWinSize({.rows = 80, .cols = 31});
+    ASSERT_NO_FATAL_FAILURE(this->expect("> 000\n"
+                                         "00001   00005   00009   \n"
+                                         "00002   00006   00010   \n"
+                                         "00003   00007   \n"
+                                         "00004   00008   \n\n"));
+
+    this->send("\t");
+    ASSERT_NO_FATAL_FAILURE(this->expect("> 00001\n"
+                                         "00001   00005   00009   \n"
+                                         "00002   00006   00010   \n"
+                                         "00003   00007   \n"
+                                         "00004   00008   \n\n"));
+
+    this->changeWinSize({.rows = 80, .cols = 35});
+    ASSERT_NO_FATAL_FAILURE(this->expect("> 00001\n"
+                                         "00001   00004   00007   00010   \n"
+                                         "00002   00005   00008   \n"
+                                         "00003   00006   00009   \n\n\n"));
+
+    this->send(CTRL_C);
+    ASSERT_NO_FATAL_FAILURE(this->expect("> 00001\n> \n\n\n\n\n"));
   }
 
   this->send(CTRL_D);
