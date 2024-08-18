@@ -136,7 +136,7 @@ struct linenoiseState {
   unsigned int rows;          /* Number of rows in terminal. */
   unsigned int cols;          /* Number of columns in terminal. */
   unsigned int oldCursorRows; /* Previous refresh cursor rows (relative to initial rows). */
-  unsigned int maxRows;       /* Maximum num of rows used so far (multiline mode) */
+  unsigned int oldRows;       /* Previous refresh line rows (relative to initial rows) */
   CharWidthProperties ps;
   bool rotating;
   unsigned int yankedSize;
@@ -155,9 +155,9 @@ FILE *lndebug_fp = nullptr;
       lndebug_fp = fopen("/dev/pts/2", "a");                                                       \
     }                                                                                              \
     fprintf(lndebug_fp,                                                                            \
-            "\n[len=%d, pos=%d, oldCursorRows=%d] rows: %d, maxRows: %d, oldmax: %d\n",            \
+            "\n[len=%d, pos=%d, oldCursorRows=%d] rows: %d, oldRows: %d, oldmax: %d\n",            \
             (int)l.buf.getUsedSize(), (int)l.buf.getCursor(), (int)l.oldCursorRows, (int)rows,     \
-            (int)l.maxRows, oldRows);                                                              \
+            (int)l.oldRows, oldRows);                                                              \
     fprintf(lndebug_fp, ", " __VA_ARGS__);                                                         \
     fflush(lndebug_fp);                                                                            \
   } while (0)
@@ -541,7 +541,7 @@ void LineEditorObject::refreshLine(ARState &state, struct linenoiseState &l, boo
 
   /* cursor relative row. */
   const int oldCursorRows = static_cast<int>(l.oldCursorRows);
-  const int oldRows = static_cast<int>(l.maxRows);
+  const int oldRows = static_cast<int>(l.oldRows);
 
   /*
    * hide cursor during rendering due to suppress potential cursor flicker
@@ -550,11 +550,6 @@ void LineEditorObject::refreshLine(ARState &state, struct linenoiseState &l, boo
 
   lndebug("cols: %d, promptCols: %d, promptRows: %d, rows: %d", (int)l.cols, (int)promptCols,
           (int)promptRows, (int)rows);
-
-  /* Update maxRows if needed. */
-  if (rows > l.maxRows) {
-    l.maxRows = rows;
-  }
 
   /* First step: clear all the lines used before. To do so start by
    * going to the last row. */
@@ -611,6 +606,7 @@ void LineEditorObject::refreshLine(ARState &state, struct linenoiseState &l, boo
 
   lndebug("\n");
   l.oldCursorRows = cursorRows;
+  l.oldRows = rows;
 
   if (write(l.ofd, ab.c_str(), ab.size()) == -1) {
   } /* Can't recover from write error. */
@@ -685,7 +681,7 @@ ssize_t LineEditorObject::editLine(ARState &state, StringRef prompt, char *buf, 
       .rows = 24,
       .cols = 80,
       .oldCursorRows = 0,
-      .maxRows = 0,
+      .oldRows = 0,
       .ps = {},
       .rotating = false,
       .yankedSize = 0,
