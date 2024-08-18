@@ -129,15 +129,14 @@ static const char *unsupported_term[] = {"dumb", "cons25", "emacs", nullptr};
  * We pass this state to functions implementing specific editing
  * functionalities. */
 struct linenoiseState {
-  int ifd;                /* Terminal stdin file descriptor. */
-  int ofd;                /* Terminal stdout file descriptor. */
-  LineBuffer buf;         /* Edited line buffer. */
-  StringRef prompt;       /* Prompt to display. */
-  unsigned int oldColPos; /* Previous refresh cursor column position. */
-  unsigned int oldRow;    /* Previous refresh cursor row position. */
-  unsigned int rows;      /* Number of rows in terminal. */
-  unsigned int cols;      /* Number of columns in terminal. */
-  unsigned int maxRows;   /* Maximum num of rows used so far (multiline mode) */
+  int ifd;              /* Terminal stdin file descriptor. */
+  int ofd;              /* Terminal stdout file descriptor. */
+  LineBuffer buf;       /* Edited line buffer. */
+  StringRef prompt;     /* Prompt to display. */
+  unsigned int oldRow;  /* Previous refresh cursor row position. */
+  unsigned int rows;    /* Number of rows in terminal. */
+  unsigned int cols;    /* Number of columns in terminal. */
+  unsigned int maxRows; /* Maximum num of rows used so far (multiline mode) */
   CharWidthProperties ps;
   bool rotating;
   unsigned int yankedSize;
@@ -155,10 +154,9 @@ FILE *lndebug_fp = nullptr;
     if (lndebug_fp == nullptr) {                                                                   \
       lndebug_fp = fopen("/dev/pts/2", "a");                                                       \
     }                                                                                              \
-    fprintf(lndebug_fp,                                                                            \
-            "\n[len=%d, pos=%d, oldcolpos=%d, oldrow=%d] rows: %d, maxRows: %d, oldmax: %d\n",     \
-            (int)l.buf.getUsedSize(), (int)l.buf.getCursor(), (int)l.oldColPos, (int)l.oldRow,     \
-            (int)rows, (int)l.maxRows, oldRows);                                                   \
+    fprintf(lndebug_fp, "\n[len=%d, pos=%d, oldrow=%d] rows: %d, maxRows: %d, oldmax: %d\n",       \
+            (int)l.buf.getUsedSize(), (int)l.buf.getCursor(), (int)l.oldRow, (int)rows,            \
+            (int)l.maxRows, oldRows);                                                              \
     fprintf(lndebug_fp, ", " __VA_ARGS__);                                                         \
     fflush(lndebug_fp);                                                                            \
   } while (0)
@@ -611,7 +609,6 @@ void LineEditorObject::refreshLine(ARState &state, struct linenoiseState &l, boo
   ab += "\x1b[?25h"; // show cursor (from VT220 extension)
 
   lndebug("\n");
-  l.oldColPos = cursorCols;
   l.oldRow = cursorRows;
 
   if (write(l.ofd, ab.c_str(), ab.size()) == -1) {
@@ -684,7 +681,6 @@ ssize_t LineEditorObject::editLine(ARState &state, StringRef prompt, char *buf, 
       .ofd = this->outFd,
       .buf = LineBuffer(buf, bufSize),
       .prompt = prompt,
-      .oldColPos = 0,
       .oldRow = 0,
       .rows = 24,
       .cols = 80,
