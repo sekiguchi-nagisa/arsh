@@ -140,10 +140,12 @@ struct linenoiseState {
   CharWidthProperties ps;
   bool rotating;
   unsigned int yankedSize;
-};
 
-enum KEY_ACTION {
-  ESC = 27, /* Escape */
+  int dump(FILE *fp) const {
+    return fprintf(fp, "[(cols,rows)=(%d, %d), len=%d, pos=%d, oldCursorRows=%d, oldRows=%d]",
+                   this->cols, this->rows, this->buf.getUsedSize(), this->buf.getCursor(),
+                   this->oldCursorRows, this->oldRows);
+  }
 };
 
 /* Debugging macro. */
@@ -154,11 +156,10 @@ FILE *lndebug_fp = nullptr;
     if (lndebug_fp == nullptr) {                                                                   \
       lndebug_fp = fopen("/dev/pts/2", "a");                                                       \
     }                                                                                              \
-    fprintf(lndebug_fp,                                                                            \
-            "\n[len=%d, pos=%d, oldCursorRows=%d] rows: %d, oldRows: %d, oldmax: %d\n",            \
-            (int)l.buf.getUsedSize(), (int)l.buf.getCursor(), (int)l.oldCursorRows, (int)rows,     \
-            (int)l.oldRows, oldRows);                                                              \
-    fprintf(lndebug_fp, ", " __VA_ARGS__);                                                         \
+    l.dump(lndebug_fp);                                                                            \
+    fprintf(lndebug_fp, " rows=%d\n", (int)rows);                                                  \
+    fprintf(lndebug_fp, "  => " __VA_ARGS__);                                                      \
+    fputc('\n', lndebug_fp);                                                                       \
     fflush(lndebug_fp);                                                                            \
   } while (0)
 #else
@@ -213,7 +214,7 @@ static int getCursorPosition(int ifd, int ofd) {
   buf[i] = '\0';
 
   /* Parse it. */
-  if (buf[0] != ESC || buf[1] != '[') {
+  if (constexpr int ESC = 27; buf[0] != ESC || buf[1] != '[') {
     return -1;
   }
   if (sscanf(buf + 2, "%d;%d", &rows, &cols) != 2) {
