@@ -2263,10 +2263,12 @@ ARSH_METHOD edit_read(RuntimeContext &ctx) {
   auto &editor = typeAs<LineEditorObject>(LOCAL(0));
   CHECK_EDITOR_LOCK(editor);
   auto &p = LOCAL(1);
-  char buf[4096];
-  auto readSize = editor.readline(ctx, p.isInvalid() ? "> " : p.asStrRef(), buf, std::size(buf));
+  std::string buf;
+  buf.resize(4096);
+  auto readSize = editor.readline(ctx, p.isInvalid() ? "> " : p.asStrRef(), buf.data(), buf.size());
   if (readSize > -1) {
-    auto ret = Value::createStr(StringRef(buf, static_cast<size_t>(readSize)));
+    buf.resize(readSize);
+    auto ret = Value::createStr(std::move(buf));
     RET(ret);
   } else if (ctx.hasError()) {
     RET_ERROR;
