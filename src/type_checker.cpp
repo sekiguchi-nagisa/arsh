@@ -568,7 +568,7 @@ CallSignature TypeChecker::resolveCallSignature(ApplyNode &node) {
 bool TypeChecker::checkAccessNode(AccessNode &node) {
   auto &recvType = this->checkTypeAsExpr(node.getRecvNode());
   if (auto ret = this->curScope->lookupField(this->typePool(), recvType, node.getFieldName())) {
-    const auto handle = ret.asOk();
+    const auto &handle = ret.asOk();
     node.setHandle(handle);
     node.setType(this->typePool().get(handle->getTypeId()));
     return true;
@@ -993,7 +993,7 @@ void TypeChecker::visitVarNode(VarNode &node) {
       if (pair.value == 0) { // $0
         auto ret = this->curScope->lookupAndCaptureUpVar("0");
         assert(ret);
-        const auto handle = ret.asOk();
+        const auto &handle = ret.asOk();
         node.setHandle(handle);
         node.setType(this->typePool().get(handle->getTypeId()));
       } else {
@@ -2320,8 +2320,7 @@ void TypeChecker::postprocessFunction(FunctionNode &node) {
     for (unsigned int i = 0; i < node.getParamNodes().size(); i++) {
       paramTypes[i] = &node.getParamNodes()[i]->getExprNode()->getType();
     }
-    auto typeOrError = this->typePool().createFuncType(type, std::move(paramTypes));
-    if (typeOrError) {
+    if (auto typeOrError = this->typePool().createFuncType(type, std::move(paramTypes))) {
       funcType = cast<FunctionType>(std::move(typeOrError).take());
       node.setResolvedType(*funcType);
     } else {

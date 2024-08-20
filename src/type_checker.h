@@ -322,8 +322,6 @@ public:
 
   void setTypePool(TypePool &p) { this->pool = p; }
 
-  TypePool &typePool() { return this->pool; }
-
   void setLexer(const Lexer &lex) { this->lexer = lex; }
 
   void setCodeCompletionHandler(ObserverPtr<CodeCompletionContext> handler) {
@@ -345,6 +343,8 @@ public:
   bool hasError() const { return !this->errors.empty(); }
 
 protected:
+  TypePool &typePool() const { return this->pool; }
+
   // base type check entry point
 
   /**
@@ -594,7 +594,7 @@ private:
 
   void inferParamTypes(FunctionNode &node);
 
-  enum class FuncCheckOp : unsigned int {
+  enum class FuncCheckOp : unsigned char {
     REGISTER_NAME = 1u << 0u,
     CHECK_BODY = 1u << 1u,
   };
