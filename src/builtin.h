@@ -2268,6 +2268,7 @@ ARSH_METHOD edit_read(RuntimeContext &ctx) {
   auto readSize = editor.readline(ctx, p.isInvalid() ? "> " : p.asStrRef(), buf.data(), buf.size());
   if (readSize > -1) {
     buf.resize(readSize);
+    buf.shrink_to_fit();
     auto ret = Value::createStr(std::move(buf));
     RET(ret);
   } else if (ctx.hasError()) {
