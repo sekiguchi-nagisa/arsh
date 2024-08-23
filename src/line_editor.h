@@ -20,15 +20,12 @@
 #include <termios.h>
 
 #include "keycode.h"
-#include "line_buffer.h"
-#include "line_renderer.h"
 #include "object.h"
+#include "renderer.h"
 
 struct linenoiseState;
 
 namespace arsh {
-
-class ArrayPager;
 
 class LineEditorObject : public ObjectWithRtti<ObjectKind::LineEditor> {
 private:
@@ -48,7 +45,7 @@ private:
 
   bool useBracketedPaste{true};
 
-  bool useFlowControl{false}; // disbaled by default
+  bool useFlowControl{false}; // disabled by default
 
   unsigned char eaw{0}; // must be 0-2. if 0, auto-detect east asian width
 

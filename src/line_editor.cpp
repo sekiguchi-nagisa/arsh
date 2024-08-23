@@ -157,7 +157,7 @@ FILE *lndebug_fp = nullptr;
       lndebug_fp = fopen("/dev/pts/2", "a");                                                       \
     }                                                                                              \
     l.dump(lndebug_fp);                                                                            \
-    fprintf(lndebug_fp, " rows=%d\n", (int)rows);                                                  \
+    fputc('\n', lndebug_fp);                                                                       \
     fprintf(lndebug_fp, "  => " __VA_ARGS__);                                                      \
     fputc('\n', lndebug_fp);                                                                       \
     fflush(lndebug_fp);                                                                            \
@@ -480,29 +480,6 @@ static int preparePrompt(const struct linenoiseState &l) {
   return 0;
 }
 
-static bool renderLines(const LineBuffer &buf, ObserverPtr<ArrayPager> pager,
-                        LineRenderer &renderer) {
-  StringRef lineRef = buf.get();
-  if (pager) {
-    auto [pos, len] = buf.findCurLineInterval(true);
-    lineRef = lineRef.substr(0, pos + len);
-  }
-  bool continueLine = false;
-  if (renderer.getEscapeSeqMap()) {
-    continueLine = !renderer.renderScript(lineRef);
-  } else {
-    renderer.renderLines(lineRef);
-  }
-  if (pager) {
-    renderer.setInitCols(0);
-    if (!lineRef.endsWith("\n")) {
-      renderer.renderLines("\n"); // force newline
-    }
-    pager->render(renderer);
-  }
-  return continueLine;
-}
-
 /* Multi line low level line refresh.
  *
  * Rewrite the currently edited line accordingly to the buffer content,
@@ -521,24 +498,9 @@ void LineEditorObject::refreshLine(ARState &state, struct linenoiseState &l, boo
     l.buf.syncNewlinePosList();
   }
 
-  unsigned int promptRows;
-  unsigned int promptCols;
-  unsigned int rows;
-  std::string lineBuf; // for rendered lines
-  {
-    /* render prompt and compute prompt row/column length */
-    LineRenderer renderer(l.ps, 0, lineBuf,
-                          this->langExtension ? makeObserver(this->escapeSeqMap) : nullptr);
-    renderer.setMaxCols(l.cols);
-    renderer.renderWithANSI(l.prompt);
-    promptRows = static_cast<unsigned int>(renderer.getTotalRows());
-    promptCols = static_cast<unsigned int>(renderer.getTotalCols());
-
-    /* render lines and compute lines row/columns length */
-    renderer.setInitCols(promptCols);
-    this->continueLine = renderLines(l.buf, pager, renderer);
-    rows = renderer.getTotalRows() + 1;
-  }
+  auto ret = doRendering(l.ps, l.prompt, l.buf, pager,
+                         this->langExtension ? makeObserver(this->escapeSeqMap) : nullptr, l.cols);
+  this->continueLine = ret.continueLine;
 
   /* cursor relative row. */
   const int oldCursorRows = static_cast<int>(l.oldCursorRows);
@@ -548,9 +510,6 @@ void LineEditorObject::refreshLine(ARState &state, struct linenoiseState &l, boo
    * hide cursor during rendering due to suppress potential cursor flicker
    */
   std::string ab = "\x1b[?25l"; // hide cursor (from VT220 extension)
-
-  lndebug("cols: %d, promptCols: %d, promptRows: %d, rows: %d", (int)l.cols, (int)promptCols,
-          (int)promptRows, (int)rows);
 
   /* First step: clear all the lines used before. To do so start by
    * going to the last row. */
@@ -572,33 +531,20 @@ void LineEditorObject::refreshLine(ARState &state, struct linenoiseState &l, boo
   ab += "\r\x1b[0K";
 
   /* set escape sequence */
-  lineBuf.insert(0, ab);
-  ab = std::move(lineBuf);
-
-  /* get cursor row/column length */
-  size_t cursorCols = 0;
-  size_t cursorRows = promptRows + 1;
-  {
-    auto ref = l.buf.getToCursor();
-    LineRenderer renderer(l.ps, promptCols);
-    renderer.setMaxCols(l.cols);
-    renderer.renderLines(ref);
-    cursorCols = renderer.getTotalCols();
-    cursorRows += renderer.getTotalRows();
-  }
-  lndebug("cursor: cursorCols: %zu, cursorRows: %zu", cursorCols, cursorRows);
+  ret.renderedLines.insert(0, ab);
+  ab = std::move(ret.renderedLines);
 
   /* Go up till we reach the expected position. */
-  if (rows - cursorRows > 0) {
-    lndebug("go-up %d", rows - static_cast<unsigned int>(cursorRows));
-    snprintf(seq, 64, "\x1b[%dA", rows - static_cast<unsigned int>(cursorRows));
+  if (const auto dist = static_cast<unsigned int>(ret.renderedRows - ret.cursorRows); dist > 0) {
+    lndebug("go-up %d", dist);
+    snprintf(seq, 64, "\x1b[%dA", dist);
     ab += seq;
   }
 
   /* Set column position, zero-based. */
-  lndebug("set col %d", 1 + (int)cursorCols);
-  if (cursorCols) {
-    snprintf(seq, 64, "\r\x1b[%dC", static_cast<unsigned int>(cursorCols));
+  lndebug("set col %d", 1 + static_cast<unsigned int>(ret.cursorCols));
+  if (ret.cursorCols) {
+    snprintf(seq, 64, "\r\x1b[%dC", static_cast<unsigned int>(ret.cursorCols));
   } else {
     snprintf(seq, 64, "\r");
   }
@@ -606,8 +552,8 @@ void LineEditorObject::refreshLine(ARState &state, struct linenoiseState &l, boo
   ab += "\x1b[?25h"; // show cursor (from VT220 extension)
 
   lndebug("\n");
-  l.oldCursorRows = cursorRows;
-  l.oldRows = rows;
+  l.oldCursorRows = ret.cursorRows;
+  l.oldRows = ret.renderedRows;
 
   if (write(l.ofd, ab.c_str(), ab.size()) == -1) {
   } /* Can't recover from write error. */
