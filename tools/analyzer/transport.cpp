@@ -78,7 +78,8 @@ ssize_t LSPTransport::send(size_t size, const char *data) {
     return -1;
   }
   errno = 0;
-  if (fsync(this->outputFd) != 0 && errno != EINVAL) { // ignore EINVAL for pipe, socket
+  if (fsync(this->outputFd) != 0 && errno != EINVAL &&
+      errno != ENOTSUP) { // ignore EINVAL/ENOTSUP for pipe, socket
     return -1;
   }
   return static_cast<ssize_t>(size);
