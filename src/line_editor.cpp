@@ -818,14 +818,12 @@ ssize_t LineEditorObject::editInRawMode(ARState &state, struct linenoiseState &l
       }
       break;
     case EditActionType::BEGINNING_OF_BUF: /* go to the start of the buffer */
-      if (l.buf.getCursor() != 0) {
-        l.buf.setCursor(0);
+      if (l.buf.moveCursorToStartOfBuf()) {
         this->refreshLine(state, l, false);
       }
       break;
     case EditActionType::END_OF_BUF: /* go to the end of the buffer */
-      if (l.buf.getCursor() != l.buf.getUsedSize()) {
-        l.buf.setCursor(l.buf.getUsedSize());
+      if (l.buf.moveCursorToEndOfBuf()) {
         this->refreshLine(state, l, false);
       }
       break;

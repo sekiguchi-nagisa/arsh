@@ -88,6 +88,10 @@ public:
 
   unsigned int getCursor() const { return this->cursor; }
 
+  /**
+   * unsafe api. not directly use
+   * @param v
+   */
   void setCursor(unsigned int v) { this->cursor = std::min(v, this->getUsedSize()); }
 
   unsigned int getUsedSize() const { return this->usedSize; }
@@ -299,6 +303,22 @@ public:
     }
     if (this->getCursor() != newCursor) {
       this->cursor = newCursor;
+      return true;
+    }
+    return false;
+  }
+
+  bool moveCursorToStartOfBuf() {
+    if (this->getCursor() != 0) {
+      this->cursor = 0;
+      return true;
+    }
+    return false;
+  }
+
+  bool moveCursorToEndOfBuf() {
+    if (this->getCursor() != this->getUsedSize()) {
+      this->cursor = this->getUsedSize();
       return true;
     }
     return false;
