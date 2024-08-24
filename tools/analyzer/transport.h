@@ -26,7 +26,7 @@ using namespace json;
 class LSPTransport : public rpc::Transport {
 private:
   int inputFd;
-  FilePtr output;
+  int outputFd;
 
 public:
   LSPTransport(LoggerBase &logger, int inFd, int outFd);
@@ -35,7 +35,7 @@ public:
 
   int getInputFd() const { return this->inputFd; }
 
-  const FilePtr &getOutput() const { return this->output; }
+  int getOutputFd() const { return this->outputFd; }
 
   ssize_t send(size_t size, const char *data) override;
 

@@ -15,6 +15,7 @@
  */
 
 #include <poll.h>
+#include <sys/uio.h>
 
 #include <constant.h>
 #include <misc/num_util.hpp>
@@ -28,7 +29,7 @@ namespace arsh::lsp {
     this->logger.get().enabled(L) && (this->logger.get())(L, __VA_ARGS__);                         \
   } while (false)
 
-static constexpr const char HEADER_LENGTH[] = "Content-Length: ";
+static constexpr char HEADER_LENGTH[] = "Content-Length: ";
 
 // ##########################
 // ##     LSPTransport     ##
@@ -40,14 +41,16 @@ LSPTransport::LSPTransport(LoggerBase &logger, int inFd, int outFd) : rpc::Trans
   }
   this->inputFd = inFd;
 
-  auto file = createFilePtr(fdopen, outFd, "w");
-  if (!file) {
+  if (outFd < 0) {
     fatal_perror("broken output");
   }
-  this->output = std::move(file);
+  this->outputFd = outFd;
 }
 
-LSPTransport::~LSPTransport() { close(this->inputFd); }
+LSPTransport::~LSPTransport() {
+  close(this->inputFd);
+  close(this->outputFd);
+}
 
 ssize_t LSPTransport::send(size_t size, const char *data) {
   if (size == 0 || data == nullptr) {
@@ -59,18 +62,23 @@ ssize_t LSPTransport::send(size_t size, const char *data) {
     return -1;
   }
 
-  std::string buf;
-  buf.reserve(size + 64);
-  buf += HEADER_LENGTH;
-  buf += std::to_string(size);
-  buf += "\r\n\r\n";
-  buf.append(data, size);
-  size_t bufSize = buf.size();
-  size_t writeSize = fwrite(buf.c_str(), sizeof(char), buf.size(), this->output.get());
-  if (writeSize < bufSize) {
+  // header
+  std::string header;
+  header.reserve(64);
+  header += HEADER_LENGTH;
+  header += std::to_string(size);
+  header += "\r\n\r\n";
+
+  const iovec vec[] = {
+      {.iov_base = header.data(), .iov_len = header.size()},
+      {.iov_base = const_cast<char *>(data), .iov_len = size},
+  };
+  if (const ssize_t writeSize = writev(this->outputFd, vec, std::size(vec));
+      writeSize < static_cast<ssize_t>(size + header.size())) {
     return -1;
   }
-  if (fflush(this->output.get()) != 0) {
+  errno = 0;
+  if (fsync(this->outputFd) != 0 && errno != EINVAL) { // ignore EINVAL for pipe, socket
     return -1;
   }
   return static_cast<ssize_t>(size);
