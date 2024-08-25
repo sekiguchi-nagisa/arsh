@@ -60,7 +60,7 @@ public:
   StringRefBase(const std::string &value) noexcept // NOLINT
       : ptr_(value.c_str()), size_(value.size()) {}
 
-  size_type size() const { return this->size_; }
+  constexpr size_type size() const { return this->size_; }
 
   bool empty() const { return this->size() == 0; }
 

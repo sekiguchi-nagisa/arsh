@@ -17,6 +17,7 @@
 #include <unistd.h>
 
 #include <cassert>
+#include <csignal>
 
 #include "constant.h"
 #include "keycode.h"

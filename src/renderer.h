@@ -29,12 +29,23 @@ struct RenderingResult {
   size_t renderedRows{0};
   size_t cursorRows{0};
   size_t cursorCols{0};
+  unsigned int cursorLineNum{0};
   bool continueLine{false};
 };
 
 RenderingResult doRendering(const CharWidthProperties &ps, StringRef prompt, const LineBuffer &buf,
                             ObserverPtr<const ArrayPager> pager,
                             ObserverPtr<const ANSIEscapeSeqMap> escapeSeqMap, unsigned int maxCols);
+
+struct FitToWinSizeParams {
+  size_t winRows;
+  unsigned int oldCursorLineNum;
+  bool showPager;
+  bool scrolling;
+  size_t scrollRows;
+};
+
+void fitToWinSize(const FitToWinSizeParams &params, RenderingResult &result);
 
 } // namespace arsh
 

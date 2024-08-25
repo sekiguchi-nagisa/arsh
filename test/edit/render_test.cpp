@@ -2,9 +2,11 @@
 
 #include "../test_common.h"
 
+#include <line_buffer.h>
 #include <line_renderer.h>
 #include <object.h>
 #include <pager.h>
+#include <renderer.h>
 #include <type_pool.h>
 #include <vm.h>
 
@@ -1067,6 +1069,326 @@ TEST(HistRotator, broken2) {
   rotate.revertAll();
   ASSERT_EQ(1, obj->size());
   ASSERT_EQ("EEE", obj->getValues()[0].asStrRef().toString());
+}
+
+class ScrollTest : public ExpectOutput {
+protected:
+  const CharWidthProperties ps;
+  WinSize winSize;
+  std::string buf;
+  bool scrollingMode{false};
+  unsigned int scrollRows{0};
+  unsigned int oldCursorLineNum{0};
+
+public:
+  ScrollTest() { this->buf.resize(4096, '\0'); }
+
+  void reset() {
+    this->winSize = WinSize{};
+    this->scrollingMode = false;
+    this->scrollRows = 0;
+    this->oldCursorLineNum = 1;
+    this->buf.clear();
+    this->buf.resize(4096, '\0');
+  }
+
+  void setRows(unsigned int rows) { this->winSize.rows = rows; }
+
+  LineBuffer newBuffer() { return {this->buf.data(), this->buf.size()}; }
+
+  RenderingResult render(LineBuffer &buf,
+                         const ObserverPtr<const ArrayPager> pager = nullptr) const {
+    buf.syncNewlinePosList();
+    return doRendering(this->ps, "> ", buf, pager, nullptr, this->winSize.cols);
+  }
+
+  void fit(RenderingResult &result, bool showPager = false) {
+    const FitToWinSizeParams params = {
+        .winRows = this->winSize.rows,
+        .oldCursorLineNum = this->oldCursorLineNum,
+        .showPager = showPager,
+        .scrolling = this->scrollingMode,
+        .scrollRows = this->scrollRows,
+    };
+    fitToWinSize(params, result);
+    this->scrollingMode = true;
+    this->oldCursorLineNum = result.cursorLineNum;
+    this->scrollRows = result.cursorRows;
+  }
+};
+
+TEST_F(ScrollTest, base) {
+  const char *lines = "01\n02\n03\n04\n05\n06\n07\n08\n09\n10\n11\n12";
+  auto lineBuf = newBuffer();
+  lineBuf.insertToCursor(lines);
+  this->setRows(5);
+
+  {
+    auto ret = render(lineBuf);
+    ASSERT_EQ(12, ret.renderedRows);
+    ASSERT_EQ(12, ret.cursorRows);
+    ASSERT_GE(ret.renderedRows, this->winSize.rows);
+    ASSERT_EQ(12, ret.cursorLineNum);
+
+    this->fit(ret);
+    ASSERT_EQ(5, ret.renderedRows);
+    ASSERT_EQ(5, ret.cursorRows);
+    ASSERT_EQ("  08\r\n  09\r\n  10\r\n  11\r\n  12", ret.renderedLines);
+  }
+
+  // move cursor (but not up/down)
+  {
+    lineBuf.moveCursorToStartOfLine();
+    ASSERT_EQ(lineBuf.getUsedSize() - 2, lineBuf.getCursor());
+    auto ret = render(lineBuf);
+    this->fit(ret);
+    ASSERT_EQ(5, ret.renderedRows);
+    ASSERT_EQ(5, ret.cursorRows);
+    ASSERT_EQ("  08\r\n  09\r\n  10\r\n  11\r\n  12", ret.renderedLines);
+  }
+
+  // move cursor up
+  {
+    lineBuf.moveCursorUpDown(true);
+    auto ret = render(lineBuf);
+    this->fit(ret);
+    ASSERT_EQ(5, ret.renderedRows);
+    ASSERT_EQ(4, ret.cursorRows);
+    ASSERT_EQ("  08\r\n  09\r\n  10\r\n  11\r\n  12", ret.renderedLines);
+  }
+
+  // move cursor up * 3
+  {
+    lineBuf.moveCursorUpDown(true);
+    lineBuf.moveCursorUpDown(true);
+    lineBuf.moveCursorUpDown(true);
+    auto ret = render(lineBuf);
+    this->fit(ret);
+    ASSERT_EQ(5, ret.renderedRows);
+    ASSERT_EQ(1, ret.cursorRows);
+    ASSERT_EQ("  08\r\n  09\r\n  10\r\n  11\r\n  12", ret.renderedLines);
+  }
+
+  // move cursor (but not up/down)
+  {
+    lineBuf.moveCursorToEndOfLine();
+    auto ret = render(lineBuf);
+    this->fit(ret);
+    ASSERT_EQ(5, ret.renderedRows);
+    ASSERT_EQ(1, ret.cursorRows);
+    ASSERT_EQ("  08\r\n  09\r\n  10\r\n  11\r\n  12", ret.renderedLines);
+  }
+
+  // move cursor up (scroll up)
+  {
+    lineBuf.moveCursorUpDown(true);
+    auto ret = render(lineBuf);
+    this->fit(ret);
+    ASSERT_EQ(5, ret.renderedRows);
+    ASSERT_EQ(1, ret.cursorRows);
+    ASSERT_EQ("  07\r\n  08\r\n  09\r\n  10\r\n  11", ret.renderedLines);
+  }
+
+  // move cursor up (scroll up)
+  {
+    lineBuf.moveCursorUpDown(true);
+    auto ret = render(lineBuf);
+    this->fit(ret);
+    ASSERT_EQ(5, ret.renderedRows);
+    ASSERT_EQ(1, ret.cursorRows);
+    ASSERT_EQ("  06\r\n  07\r\n  08\r\n  09\r\n  10", ret.renderedLines);
+  }
+
+  // move cursor down (not scroll down)
+  {
+    lineBuf.moveCursorUpDown(false);
+    auto ret = render(lineBuf);
+    this->fit(ret);
+    ASSERT_EQ(5, ret.renderedRows);
+    ASSERT_EQ(2, ret.cursorRows);
+    ASSERT_EQ("  06\r\n  07\r\n  08\r\n  09\r\n  10", ret.renderedLines);
+  }
+
+  // move cursor begin
+  {
+    lineBuf.moveCursorToStartOfBuf();
+    ASSERT_EQ(0, lineBuf.getCursor());
+    auto ret = render(lineBuf);
+    this->fit(ret);
+    ASSERT_EQ(5, ret.renderedRows);
+    ASSERT_EQ(1, ret.cursorRows);
+    ASSERT_EQ("> 01\r\n  02\r\n  03\r\n  04\r\n  05", ret.renderedLines);
+  }
+
+  // move cursor down * 6 (scroll down)
+  {
+    for (unsigned int i = 0; i < 6; i++) {
+      lineBuf.moveCursorUpDown(false);
+    }
+    auto ret = render(lineBuf);
+    this->fit(ret);
+    ASSERT_EQ(5, ret.renderedRows);
+    ASSERT_EQ(5, ret.cursorRows);
+    ASSERT_EQ("  03\r\n  04\r\n  05\r\n  06\r\n  07", ret.renderedLines);
+  }
+
+  // move cursor end
+  {
+    lineBuf.moveCursorToEndOfBuf();
+    ASSERT_EQ(lineBuf.getUsedSize(), lineBuf.getCursor());
+    auto ret = render(lineBuf);
+    this->fit(ret);
+    ASSERT_EQ(5, ret.renderedRows);
+    ASSERT_EQ(5, ret.cursorRows);
+    ASSERT_EQ("  08\r\n  09\r\n  10\r\n  11\r\n  12", ret.renderedLines);
+  }
+}
+
+TEST_F(ScrollTest, expandRows1) {
+  const char *lines = "01\n02\n03\n04\n05\n06\n07\n08\n09\n10\n11\n12";
+  auto lineBuf = newBuffer();
+  lineBuf.insertToCursor(lines);
+  lineBuf.syncNewlinePosList();
+  lineBuf.moveCursorUpDown(true);
+  lineBuf.moveCursorUpDown(true);
+  this->setRows(5);
+
+  {
+    auto ret = render(lineBuf);
+    ASSERT_EQ(12, ret.renderedRows);
+    ASSERT_EQ(10, ret.cursorRows);
+    ASSERT_GE(ret.renderedRows, this->winSize.rows);
+    ASSERT_EQ(10, ret.cursorLineNum);
+
+    this->fit(ret);
+    ASSERT_EQ(5, ret.renderedRows);
+    ASSERT_EQ(3, ret.cursorRows);
+    ASSERT_EQ("  08\r\n  09\r\n  10\r\n  11\r\n  12", ret.renderedLines);
+  }
+
+  // expand rows
+  {
+    this->setRows(7);
+    auto ret = render(lineBuf);
+    this->fit(ret);
+    ASSERT_EQ(7, ret.renderedRows);
+    ASSERT_EQ(5, ret.cursorRows);
+    ASSERT_EQ("  06\r\n  07\r\n  08\r\n  09\r\n  10\r\n  11\r\n  12", ret.renderedLines);
+  }
+
+  // remove line
+  {
+    lineBuf.deleteLineToCursor(true, nullptr);
+    lineBuf.deletePrevChar(nullptr);
+    auto ret = render(lineBuf);
+    this->fit(ret);
+    ASSERT_EQ(7, ret.renderedRows);
+    ASSERT_EQ(5, ret.cursorRows);
+    ASSERT_EQ("  05\r\n  06\r\n  07\r\n  08\r\n  09\r\n  11\r\n  12", ret.renderedLines);
+  }
+
+  // remove lines
+  {
+    for (unsigned int i = 0; i < 4; i++) {
+      lineBuf.deleteLineToCursor(true, nullptr);
+      lineBuf.deletePrevChar(nullptr);
+    }
+    auto ret = render(lineBuf);
+    this->fit(ret);
+    ASSERT_EQ(7, ret.renderedRows);
+    ASSERT_EQ(5, ret.cursorRows);
+    ASSERT_EQ("> 01\r\n  02\r\n  03\r\n  04\r\n  05\r\n  11\r\n  12", ret.renderedLines);
+  }
+
+  // remove line (shrink scroll window)
+  {
+    lineBuf.deleteLineToCursor(true, nullptr);
+    lineBuf.deletePrevChar(nullptr);
+    auto ret = render(lineBuf);
+    this->fit(ret);
+    ASSERT_EQ(6, ret.renderedRows);
+    ASSERT_EQ(4, ret.cursorRows);
+    ASSERT_EQ("> 01\r\n  02\r\n  03\r\n  04\r\n  11\r\n  12", ret.renderedLines);
+  }
+}
+
+TEST_F(ScrollTest, expandRows2) {
+  const char *lines = "01\n02\n03\n04\n05\n06\n07\n08\n09\n10\n11\n12\n13";
+  auto lineBuf = newBuffer();
+  lineBuf.insertToCursor(lines);
+  lineBuf.syncNewlinePosList();
+  for (unsigned int i = 0; i < 5; i++) {
+    lineBuf.moveCursorUpDown(true);
+  }
+  this->setRows(4);
+
+  {
+    auto ret = render(lineBuf);
+    ASSERT_EQ(13, ret.renderedRows);
+    ASSERT_EQ(8, ret.cursorRows);
+    ASSERT_GE(ret.renderedRows, this->winSize.rows);
+    ASSERT_EQ(8, ret.cursorLineNum);
+
+    this->fit(ret);
+    ASSERT_EQ(4, ret.renderedRows);
+    ASSERT_EQ(4, ret.cursorRows);
+    ASSERT_EQ("  05\r\n  06\r\n  07\r\n  08", ret.renderedLines);
+  }
+
+  {
+    this->setRows(20);
+    auto ret = render(lineBuf);
+    this->fit(ret);
+    ASSERT_EQ(13, ret.renderedRows);
+    ASSERT_EQ(8, ret.cursorRows);
+    ASSERT_EQ("> 01\r\n  02\r\n  03\r\n  04\r\n  05\r\n  06\r\n"
+              "  07\r\n  08\r\n  09\r\n  10\r\n  11\r\n  12\r\n  13",
+              ret.renderedLines);
+  }
+}
+
+TEST_F(ScrollTest, shrinkRows) {
+  const char *lines = "01\n02\n03\n04\n05\n06\n07\n08\n09\n10\n11\n12";
+  auto lineBuf = newBuffer();
+  lineBuf.insertToCursor(lines);
+  lineBuf.syncNewlinePosList();
+  lineBuf.moveCursorToStartOfBuf();
+  lineBuf.moveCursorUpDown(false);
+  this->winSize.rows = 5;
+
+  {
+    auto ret = render(lineBuf);
+    ASSERT_EQ(12, ret.renderedRows);
+    ASSERT_EQ(2, ret.cursorRows);
+    ASSERT_GE(ret.renderedRows, this->winSize.rows);
+    ASSERT_EQ(2, ret.cursorLineNum);
+
+    this->fit(ret);
+    ASSERT_EQ(5, ret.renderedRows);
+    ASSERT_EQ(2, ret.cursorRows);
+    ASSERT_EQ("> 01\r\n  02\r\n  03\r\n  04\r\n  05", ret.renderedLines);
+  }
+
+  // shrink rows
+  {
+    this->setRows(3);
+    auto ret = render(lineBuf);
+    this->fit(ret);
+    ASSERT_EQ(3, ret.renderedRows);
+    ASSERT_EQ(2, ret.cursorRows);
+    ASSERT_EQ("> 01\r\n  02\r\n  03", ret.renderedLines);
+  }
+
+  // down * 2
+  {
+    lineBuf.moveCursorUpDown(false);
+    lineBuf.moveCursorUpDown(false);
+    auto ret = render(lineBuf);
+    this->fit(ret);
+    ASSERT_EQ(3, ret.renderedRows);
+    ASSERT_EQ(3, ret.cursorRows);
+    ASSERT_EQ("  02\r\n  03\r\n  04", ret.renderedLines);
+  }
 }
 
 int main(int argc, char **argv) {

@@ -17,7 +17,6 @@
 #ifndef ARSH_KEYCODE_H
 #define ARSH_KEYCODE_H
 
-#include <csignal>
 #include <functional>
 #include <unordered_map>
 #include <vector>

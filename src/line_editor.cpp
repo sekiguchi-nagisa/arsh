@@ -140,6 +140,9 @@ struct linenoiseState {
   CharWidthProperties ps;
   bool rotating;
   unsigned int yankedSize;
+  bool scrolling;
+  unsigned int scrollRows;
+  unsigned int oldCursorLineNum;
 
   int dump(FILE *fp) const {
     return fprintf(fp, "[(cols,rows)=(%d, %d), len=%d, pos=%d, oldCursorRows=%d, oldRows=%d]",
@@ -501,6 +504,8 @@ void LineEditorObject::refreshLine(ARState &state, struct linenoiseState &l, boo
   auto ret = doRendering(l.ps, l.prompt, l.buf, pager,
                          this->langExtension ? makeObserver(this->escapeSeqMap) : nullptr, l.cols);
   this->continueLine = ret.continueLine;
+  lndebug("renderedRows: %zu, cursor(rows,cols)=(%zu,%zu)", ret.renderedRows, ret.cursorRows,
+          ret.cursorCols);
 
   /* cursor relative row. */
   const int oldCursorRows = static_cast<int>(l.oldCursorRows);
@@ -530,6 +535,26 @@ void LineEditorObject::refreshLine(ARState &state, struct linenoiseState &l, boo
   lndebug("clear");
   ab += "\r\x1b[0K";
 
+  /* adjust too long rendered lines */
+  if (l.scrolling || ret.renderedRows > l.rows) {
+    lndebug("scrolling mode: renderedRows: %zu, scrolling: %s", ret.renderedRows,
+            l.scrolling ? "true" : "false");
+    const FitToWinSizeParams params = {
+        .winRows = l.rows,
+        .oldCursorLineNum = l.oldCursorLineNum,
+        .showPager = static_cast<bool>(pager),
+        .scrolling = l.scrolling,
+        .scrollRows = l.scrollRows,
+    };
+    fitToWinSize(params, ret);
+    if (!l.scrolling) { // force insert newline before scrolling mode
+      ret.renderedLines.insert(0, "\r\n");
+    }
+    l.scrolling = true;
+    l.scrollRows = ret.cursorRows;
+    lndebug("adjust renderedRows: %zu. cursorRows: %zu", ret.renderedRows, ret.cursorRows);
+  }
+
   /* set escape sequence */
   ret.renderedLines.insert(0, ab);
   ab = std::move(ret.renderedLines);
@@ -554,6 +579,7 @@ void LineEditorObject::refreshLine(ARState &state, struct linenoiseState &l, boo
   lndebug("\n");
   l.oldCursorRows = ret.cursorRows;
   l.oldRows = ret.renderedRows;
+  l.oldCursorLineNum = ret.cursorLineNum;
 
   if (write(l.ofd, ab.c_str(), ab.size()) == -1) {
   } /* Can't recover from write error. */
@@ -632,6 +658,9 @@ ssize_t LineEditorObject::editLine(ARState &state, StringRef prompt, char *buf, 
       .ps = {},
       .rotating = false,
       .yankedSize = 0,
+      .scrolling = false,
+      .scrollRows = 0,
+      .oldCursorLineNum = 1,
   };
 
   l.ps.replaceInvalid = true;

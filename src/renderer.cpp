@@ -72,7 +72,80 @@ RenderingResult doRendering(const CharWidthProperties &ps, StringRef prompt, con
     result.cursorRows = promptRows + 1 + renderer.getTotalRows();
   }
 
+  result.cursorLineNum = buf.findCurLineNum();
   return result;
+}
+
+static StringRef::size_type findNthPos(const StringRef ref, const unsigned int N,
+                                       const StringRef delim) {
+  StringRef::size_type pos = 0;
+  StringRef::size_type retPos = StringRef::npos;
+  for (unsigned int count = 0; count < N; count++) {
+    auto r = ref.find(delim, pos);
+    if (r == StringRef::npos) {
+      break;
+    }
+    pos = r + delim.size();
+    retPos = r;
+  }
+  return retPos;
+}
+
+void fitToWinSize(const FitToWinSizeParams &params, RenderingResult &result) {
+  constexpr StringRef NL = "\r\n";
+
+  if (result.renderedRows <= params.winRows) {
+    return;
+  }
+
+  // update scrollRows
+  size_t scrollRows = params.scrollRows;
+  if (params.scrolling) {
+    if (params.oldCursorLineNum <= result.cursorLineNum) { // cursor down
+      scrollRows += result.cursorLineNum - params.oldCursorLineNum;
+    } else { // cursor up
+      if (const auto diff = params.oldCursorLineNum - result.cursorLineNum; diff < scrollRows) {
+        scrollRows -= diff;
+      } else {
+        scrollRows = 1;
+      }
+    }
+    scrollRows = std::min(scrollRows, params.winRows);
+  } else if (const auto diff = result.renderedRows - result.cursorRows; diff < params.winRows) {
+    scrollRows = params.winRows - diff;
+  } else if (result.cursorRows < params.winRows) {
+    scrollRows = result.cursorRows;
+  } else {
+    scrollRows = params.winRows;
+  }
+
+  /**
+   * |-- (org) rendered rows -----------------------|
+   * |-- (org) cursor rows ---------|
+   *        |-- window rows ---------------|
+   *        |-- scroll rows --------|
+   */
+
+  // remove upper rows of window
+  size_t eraseRows = result.cursorRows > scrollRows ? result.cursorRows - scrollRows : 0;
+  if (result.renderedRows - eraseRows < params.winRows && !params.showPager) {
+    auto delta = params.winRows - (result.renderedRows - eraseRows);
+    eraseRows -= delta;
+    scrollRows += delta;
+  }
+  result.renderedRows -= eraseRows;
+  if (auto r = findNthPos(result.renderedLines, eraseRows, NL); r != StringRef::npos) {
+    result.renderedLines.erase(0, r + NL.size());
+  }
+
+  // remove lower rows of window
+  if (result.renderedRows > params.winRows) {
+    if (auto r = findNthPos(result.renderedLines, params.winRows, NL); r != StringRef::npos) {
+      result.renderedLines.erase(result.renderedLines.begin() + r, result.renderedLines.end());
+    }
+    result.renderedRows = params.winRows;
+  }
+  result.cursorRows = scrollRows;
 }
 
 } // namespace arsh

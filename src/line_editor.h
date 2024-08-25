@@ -91,7 +91,7 @@ private:
   std::vector<Value> customCallbacks;
 
 public:
-  LineEditorObject(ARState &state);
+  explicit LineEditorObject(ARState &state);
 
   ~LineEditorObject();
 

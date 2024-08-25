@@ -139,6 +139,8 @@ public:
    */
   unsigned int findCurNewlineIndex() const;
 
+  unsigned int findCurLineNum() const { return this->findCurNewlineIndex() + 1; }
+
   /**
    * get current line
    * @param wholeLine

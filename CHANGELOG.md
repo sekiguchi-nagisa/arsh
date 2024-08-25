@@ -14,6 +14,7 @@
     - manually update theme via ``shctl winsize`` sub-command
     - also updated via ``LineEditor#readLine`` method
     - when receive ``SIGWINCH``, automatically updated
+- in ``LineEditor#readLine``, scroll lines when input rows is larger than window rows
 
 #### Misc
 
