@@ -129,14 +129,14 @@ static const char *unsupported_term[] = {"dumb", "cons25", "emacs", nullptr};
  * We pass this state to functions implementing specific editing
  * functionalities. */
 struct linenoiseState {
-  int ifd;                    /* Terminal stdin file descriptor. */
-  int ofd;                    /* Terminal stdout file descriptor. */
-  LineBuffer buf;             /* Edited line buffer. */
-  StringRef prompt;           /* Prompt to display. */
-  unsigned int rows;          /* Number of rows in terminal. */
-  unsigned int cols;          /* Number of columns in terminal. */
-  unsigned int oldCursorRows; /* Previous refresh cursor rows (relative to initial rows). */
-  unsigned int oldRows;       /* Previous refresh line rows (relative to initial rows) */
+  int ifd;                      /* Terminal stdin file descriptor. */
+  int ofd;                      /* Terminal stdout file descriptor. */
+  LineBuffer buf;               /* Edited line buffer. */
+  StringRef prompt;             /* Prompt to display. */
+  unsigned int rows;            /* Number of rows in terminal. */
+  unsigned int cols;            /* Number of columns in terminal. */
+  unsigned int oldCursorRows;   /* Previous refresh cursor rows (relative to initial rows). */
+  unsigned int oldRenderedRows; /* Previous refresh rendered rows (relative to initial rows) */
   CharWidthProperties ps;
   bool rotating;
   unsigned int yankedSize;
@@ -145,9 +145,10 @@ struct linenoiseState {
   unsigned int oldCursorLineNum;
 
   int dump(FILE *fp) const {
-    return fprintf(fp, "[(cols,rows)=(%d, %d), len=%d, pos=%d, oldCursorRows=%d, oldRows=%d]",
+    return fprintf(fp,
+                   "[(cols,rows)=(%u, %u), len=%u, pos=%u, oldCursorRows=%u, oldRenderedRows=%u]",
                    this->cols, this->rows, this->buf.getUsedSize(), this->buf.getCursor(),
-                   this->oldCursorRows, this->oldRows);
+                   this->oldCursorRows, this->oldRenderedRows);
   }
 };
 
@@ -509,7 +510,7 @@ void LineEditorObject::refreshLine(ARState &state, struct linenoiseState &l, boo
 
   /* cursor relative row. */
   const int oldCursorRows = static_cast<int>(l.oldCursorRows);
-  const int oldRows = static_cast<int>(l.oldRows);
+  const int oldRenderedRows = static_cast<int>(l.oldRenderedRows);
 
   /*
    * hide cursor during rendering due to suppress potential cursor flicker
@@ -519,14 +520,14 @@ void LineEditorObject::refreshLine(ARState &state, struct linenoiseState &l, boo
   /* First step: clear all the lines used before. To do so start by
    * going to the last row. */
   char seq[64];
-  if (oldRows - oldCursorRows > 0) {
-    lndebug("go down %d", oldRows - oldCursorRows);
-    snprintf(seq, 64, "\x1b[%dB", oldRows - oldCursorRows);
+  if (oldRenderedRows - oldCursorRows > 0) {
+    lndebug("go down %u", oldRenderedRows - oldCursorRows);
+    snprintf(seq, 64, "\x1b[%uB", oldRenderedRows - oldCursorRows);
     ab += seq;
   }
 
   /* Now for every row clear it, go up. */
-  for (int j = 0; j < oldRows - 1; j++) {
+  for (int j = 0; j < oldRenderedRows - 1; j++) {
     lndebug("clear+up");
     ab += "\r\x1b[0K\x1b[1A";
   }
@@ -561,15 +562,15 @@ void LineEditorObject::refreshLine(ARState &state, struct linenoiseState &l, boo
 
   /* Go up till we reach the expected position. */
   if (const auto dist = static_cast<unsigned int>(ret.renderedRows - ret.cursorRows); dist > 0) {
-    lndebug("go-up %d", dist);
+    lndebug("go-up %u", dist);
     snprintf(seq, 64, "\x1b[%dA", dist);
     ab += seq;
   }
 
   /* Set column position, zero-based. */
-  lndebug("set col %d", 1 + static_cast<unsigned int>(ret.cursorCols));
+  lndebug("set col %u", 1 + static_cast<unsigned int>(ret.cursorCols));
   if (ret.cursorCols) {
-    snprintf(seq, 64, "\r\x1b[%dC", static_cast<unsigned int>(ret.cursorCols));
+    snprintf(seq, 64, "\r\x1b[%uC", static_cast<unsigned int>(ret.cursorCols));
   } else {
     snprintf(seq, 64, "\r");
   }
@@ -578,7 +579,7 @@ void LineEditorObject::refreshLine(ARState &state, struct linenoiseState &l, boo
 
   lndebug("\n");
   l.oldCursorRows = ret.cursorRows;
-  l.oldRows = ret.renderedRows;
+  l.oldRenderedRows = ret.renderedRows;
   l.oldCursorLineNum = ret.cursorLineNum;
 
   if (write(l.ofd, ab.c_str(), ab.size()) == -1) {
@@ -654,7 +655,7 @@ ssize_t LineEditorObject::editLine(ARState &state, StringRef prompt, char *buf, 
       .rows = 24,
       .cols = 80,
       .oldCursorRows = 0,
-      .oldRows = 0,
+      .oldRenderedRows = 0,
       .ps = {},
       .rotating = false,
       .yankedSize = 0,
