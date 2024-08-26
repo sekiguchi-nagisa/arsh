@@ -142,7 +142,7 @@ struct linenoiseState {
   unsigned int yankedSize;
   bool scrolling;
   unsigned int scrollRows;
-  unsigned int oldCursorLineNum;
+  unsigned int oldActualCursorRows;
 
   int dump(FILE *fp) const {
     return fprintf(fp,
@@ -505,6 +505,7 @@ void LineEditorObject::refreshLine(ARState &state, struct linenoiseState &l, boo
   auto ret = doRendering(l.ps, l.prompt, l.buf, pager,
                          this->langExtension ? makeObserver(this->escapeSeqMap) : nullptr, l.cols);
   this->continueLine = ret.continueLine;
+  const unsigned int actualCursorRows = ret.cursorRows;
   lndebug("renderedRows: %zu, cursor(rows,cols)=(%zu,%zu)", ret.renderedRows, ret.cursorRows,
           ret.cursorCols);
 
@@ -542,7 +543,7 @@ void LineEditorObject::refreshLine(ARState &state, struct linenoiseState &l, boo
             l.scrolling ? "true" : "false");
     const FitToWinSizeParams params = {
         .winRows = l.rows,
-        .oldCursorLineNum = l.oldCursorLineNum,
+        .oldCursorRows = l.oldActualCursorRows,
         .showPager = static_cast<bool>(pager),
         .scrolling = l.scrolling,
         .scrollRows = l.scrollRows,
@@ -580,7 +581,7 @@ void LineEditorObject::refreshLine(ARState &state, struct linenoiseState &l, boo
   lndebug("\n");
   l.oldCursorRows = ret.cursorRows;
   l.oldRenderedRows = ret.renderedRows;
-  l.oldCursorLineNum = ret.cursorLineNum;
+  l.oldActualCursorRows = actualCursorRows;
 
   if (write(l.ofd, ab.c_str(), ab.size()) == -1) {
   } /* Can't recover from write error. */
@@ -661,7 +662,7 @@ ssize_t LineEditorObject::editLine(ARState &state, StringRef prompt, char *buf, 
       .yankedSize = 0,
       .scrolling = false,
       .scrollRows = 0,
-      .oldCursorLineNum = 1,
+      .oldActualCursorRows = 1,
   };
 
   l.ps.replaceInvalid = true;

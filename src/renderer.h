@@ -29,7 +29,6 @@ struct RenderingResult {
   size_t renderedRows{0};
   size_t cursorRows{0};
   size_t cursorCols{0};
-  unsigned int cursorLineNum{0};
   bool continueLine{false};
 };
 
@@ -39,7 +38,7 @@ RenderingResult doRendering(const CharWidthProperties &ps, StringRef prompt, con
 
 struct FitToWinSizeParams {
   size_t winRows;
-  unsigned int oldCursorLineNum;
+  unsigned int oldCursorRows;
   bool showPager;
   bool scrolling;
   size_t scrollRows;

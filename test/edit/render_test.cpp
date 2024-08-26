@@ -1078,7 +1078,7 @@ protected:
   std::string buf;
   bool scrollingMode{false};
   unsigned int scrollRows{0};
-  unsigned int oldCursorLineNum{0};
+  unsigned int oldActualCursorRows{0};
 
 public:
   ScrollTest() { this->buf.resize(4096, '\0'); }
@@ -1087,12 +1087,14 @@ public:
     this->winSize = WinSize{};
     this->scrollingMode = false;
     this->scrollRows = 0;
-    this->oldCursorLineNum = 1;
+    this->oldActualCursorRows = 0;
     this->buf.clear();
     this->buf.resize(4096, '\0');
   }
 
-  void setRows(unsigned int rows) { this->winSize.rows = rows; }
+  void setRows(unsigned short rows) { this->winSize.rows = rows; }
+
+  void setCols(unsigned short cols) { this->winSize.cols = cols; }
 
   LineBuffer newBuffer() { return {this->buf.data(), this->buf.size()}; }
 
@@ -1103,16 +1105,17 @@ public:
   }
 
   void fit(RenderingResult &result, bool showPager = false) {
+    const unsigned int actualCursorRows = result.cursorRows;
     const FitToWinSizeParams params = {
         .winRows = this->winSize.rows,
-        .oldCursorLineNum = this->oldCursorLineNum,
+        .oldCursorRows = this->oldActualCursorRows,
         .showPager = showPager,
         .scrolling = this->scrollingMode,
         .scrollRows = this->scrollRows,
     };
     fitToWinSize(params, result);
     this->scrollingMode = true;
-    this->oldCursorLineNum = result.cursorLineNum;
+    this->oldActualCursorRows = actualCursorRows;
     this->scrollRows = result.cursorRows;
   }
 };
@@ -1128,7 +1131,6 @@ TEST_F(ScrollTest, base) {
     ASSERT_EQ(12, ret.renderedRows);
     ASSERT_EQ(12, ret.cursorRows);
     ASSERT_GE(ret.renderedRows, this->winSize.rows);
-    ASSERT_EQ(12, ret.cursorLineNum);
 
     this->fit(ret);
     ASSERT_EQ(5, ret.renderedRows);
@@ -1258,7 +1260,6 @@ TEST_F(ScrollTest, expandRows1) {
     ASSERT_EQ(12, ret.renderedRows);
     ASSERT_EQ(10, ret.cursorRows);
     ASSERT_GE(ret.renderedRows, this->winSize.rows);
-    ASSERT_EQ(10, ret.cursorLineNum);
 
     this->fit(ret);
     ASSERT_EQ(5, ret.renderedRows);
@@ -1327,7 +1328,6 @@ TEST_F(ScrollTest, expandRows2) {
     ASSERT_EQ(13, ret.renderedRows);
     ASSERT_EQ(8, ret.cursorRows);
     ASSERT_GE(ret.renderedRows, this->winSize.rows);
-    ASSERT_EQ(8, ret.cursorLineNum);
 
     this->fit(ret);
     ASSERT_EQ(4, ret.renderedRows);
@@ -1354,14 +1354,13 @@ TEST_F(ScrollTest, shrinkRows) {
   lineBuf.syncNewlinePosList();
   lineBuf.moveCursorToStartOfBuf();
   lineBuf.moveCursorUpDown(false);
-  this->winSize.rows = 5;
+  this->setRows(5);
 
   {
     auto ret = render(lineBuf);
     ASSERT_EQ(12, ret.renderedRows);
     ASSERT_EQ(2, ret.cursorRows);
     ASSERT_GE(ret.renderedRows, this->winSize.rows);
-    ASSERT_EQ(2, ret.cursorLineNum);
 
     this->fit(ret);
     ASSERT_EQ(5, ret.renderedRows);
@@ -1388,6 +1387,55 @@ TEST_F(ScrollTest, shrinkRows) {
     ASSERT_EQ(3, ret.renderedRows);
     ASSERT_EQ(3, ret.cursorRows);
     ASSERT_EQ("  02\r\n  03\r\n  04", ret.renderedLines);
+  }
+}
+
+TEST_F(ScrollTest, softwrap) {
+  const char *lines = "011111\n022222\n033333\n044444\n055555\n"
+                      "066666\n077777\n088888\n099999\n100000";
+  auto lineBuf = newBuffer();
+  lineBuf.insertToCursor(lines);
+  lineBuf.syncNewlinePosList();
+  this->setRows(5);
+  this->setCols(5);
+
+  {
+    auto ret = render(lineBuf);
+    ASSERT_EQ(20, ret.renderedRows);
+    ASSERT_EQ(20, ret.cursorRows);
+    ASSERT_GE(ret.renderedRows, this->winSize.rows);
+    this->fit(ret);
+    ASSERT_EQ(5, ret.renderedRows);
+    ASSERT_EQ(5, ret.cursorRows);
+    ASSERT_EQ("888\r\n  099\r\n999\r\n  100\r\n000", ret.renderedLines);
+  }
+
+  // move cursor left
+  {
+    for (unsigned int i = 0; i < 5; i++) {
+      lineBuf.moveCursorToLeftByChar();
+    }
+    auto ret = render(lineBuf);
+    ASSERT_EQ(20, ret.renderedRows);
+    ASSERT_EQ(19, ret.cursorRows);
+    ASSERT_GE(ret.renderedRows, this->winSize.rows);
+    this->fit(ret);
+    ASSERT_EQ(5, ret.renderedRows);
+    ASSERT_EQ(4, ret.cursorRows);
+    ASSERT_EQ("888\r\n  099\r\n999\r\n  100\r\n000", ret.renderedLines);
+  }
+
+  // move cursor up
+  {
+    lineBuf.moveCursorUpDown(true);
+    auto ret = render(lineBuf);
+    ASSERT_EQ(20, ret.renderedRows);
+    ASSERT_EQ(17, ret.cursorRows);
+    ASSERT_GE(ret.renderedRows, this->winSize.rows);
+    this->fit(ret);
+    ASSERT_EQ(5, ret.renderedRows);
+    ASSERT_EQ(2, ret.cursorRows);
+    ASSERT_EQ("888\r\n  099\r\n999\r\n  100\r\n000", ret.renderedLines);
   }
 }
 

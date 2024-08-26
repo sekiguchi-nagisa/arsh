@@ -71,8 +71,6 @@ RenderingResult doRendering(const CharWidthProperties &ps, StringRef prompt, con
     result.cursorCols = renderer.getTotalCols();
     result.cursorRows = promptRows + 1 + renderer.getTotalRows();
   }
-
-  result.cursorLineNum = buf.findCurLineNum();
   return result;
 }
 
@@ -101,10 +99,10 @@ void fitToWinSize(const FitToWinSizeParams &params, RenderingResult &result) {
   // update scrollRows
   size_t scrollRows = params.scrollRows;
   if (params.scrolling) {
-    if (params.oldCursorLineNum <= result.cursorLineNum) { // cursor down
-      scrollRows += result.cursorLineNum - params.oldCursorLineNum;
+    if (params.oldCursorRows <= result.cursorRows) { // cursor down
+      scrollRows += result.cursorRows - params.oldCursorRows;
     } else { // cursor up
-      if (const auto diff = params.oldCursorLineNum - result.cursorLineNum; diff < scrollRows) {
+      if (const auto diff = params.oldCursorRows - result.cursorRows; diff < scrollRows) {
         scrollRows -= diff;
       } else {
         scrollRows = 1;
