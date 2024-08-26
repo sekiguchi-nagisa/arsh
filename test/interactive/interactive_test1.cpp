@@ -667,17 +667,17 @@ TEST_F(InteractiveTest, bracketPaste1) {
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
   ASSERT_NO_FATAL_FAILURE(this->changePrompt(">>> "));
-  this->send(ESC_("[200~1234") ESC_("[201~"));
+  this->paste("1234");
   this->send("\r");
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "1234\n: Int = 1234\n" + PROMPT));
 
   // bracket paste with escape
-  this->send(ESC_("[200~assert '2\x1b[23m'.size() == 6") ESC_("[201~"));
+  this->paste("assert '2\x1b[23m'.size() == 6");
   this->send("\r");
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "assert '2^[[23m'.size() == 6\n" + PROMPT));
 
   // edit
-  this->send(ESC_("[200~\t@\ta") ESC_("[201~"));
+  this->paste("\t@\ta");
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "    @   a"));
   this->send(CTRL_A "var a = '" RIGHT RIGHT RIGHT "b" CTRL_E "'\r");
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "var a = '   @   ba'\n" + PROMPT));
@@ -685,7 +685,7 @@ TEST_F(InteractiveTest, bracketPaste1) {
 
   // paste with newlines
   ASSERT_NO_FATAL_FAILURE(this->changePrompt("> "));
-  this->send(ESC_("[200~") "echo aaa\recho bbb\necho ccc" ESC_("[201~"));
+  this->paste("echo aaa\recho bbb\necho ccc");
   ASSERT_NO_FATAL_FAILURE(this->expect("> echo aaa\n  echo bbb\n  echo ccc"));
 
   {
@@ -707,7 +707,7 @@ TEST_F(InteractiveTest, bracketPaste2) {
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + line + "\n> "));
 
   // bracket paste with invalid utf8
-  this->send(ESC_("[200~\xFF\xFE") ESC_("[201~"));
+  this->paste("\xFF\xFE");
   this->send("\r");
   ASSERT_NO_FATAL_FAILURE(this->expect("> ��\n" + PROMPT));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$a!.quote()", ": String = $'\\xff'$'\\xfe'"));
@@ -742,18 +742,15 @@ TEST_F(InteractiveTest, bracketPasteError1) {
   std::string largeInput;
   largeInput.resize(4095, '@');
 
-  std::string in;
-  in += ESC_("[200~");
-  in += largeInput;
+  std::string in = largeInput;
   in += "#";
-  in += ESC_("[201~");
 
   std::string err = format(R"([runtime error]
 SystemError: readLine failed, caused by `%s'
 )",
                            strerror(ENOMEM));
 
-  this->send(in.c_str());
+  this->paste(in);
   std::this_thread::sleep_for(std::chrono::milliseconds(500));
   ASSERT_NO_FATAL_FAILURE(
       this->expect(formatInput(PROMPT, largeInput, DEFAULT_WIN_COL) + "\n" + PROMPT, err));
@@ -772,7 +769,7 @@ TEST_F(InteractiveTest, bracketPasteError2) {
   std::string err = format(R"([fatal] readLine failed, caused by `%s'
 )",
                            strerror(ETIME));
-  this->send(ESC_("[200~") "hello world!!");
+  this->send(ESC_("[200~") "hello world!!");                   // unclosed bracket paste
   std::this_thread::sleep_for(std::chrono::milliseconds(300)); // wait read timeout
   ASSERT_NO_FATAL_FAILURE(
       this->waitAndExpect(1, WaitStatus::EXITED, PROMPT + "hello world!!\n", err));

@@ -165,8 +165,8 @@ public:
 
   void addEnv(const char *name, const char *value) { this->envMap.emplace(name, value); }
 
-  void send(const char *str) {
-    int r = write(this->handle.in(), str, strlen(str));
+  void send(arsh::StringRef ref) {
+    int r = write(this->handle.in(), ref.data(), ref.size());
     (void)r;
     fsync(this->handle.in());
   }
@@ -274,6 +274,18 @@ public:
     eout += "\n";
     eout += out;
     ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(status, type, eout, err));
+  }
+
+  /**
+   * for bracketed paste
+   * @param data
+   */
+  void paste(arsh::StringRef data) {
+    std::string str;
+    str += "\x1b[200~";
+    str += data;
+    str += "\x1b[201~";
+    this->send(str);
   }
 
 private:
