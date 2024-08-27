@@ -133,15 +133,14 @@ struct linenoiseState {
   int ofd;                      /* Terminal stdout file descriptor. */
   LineBuffer buf;               /* Edited line buffer. */
   StringRef prompt;             /* Prompt to display. */
-  unsigned int rows;            /* Number of rows in terminal. */
-  unsigned int cols;            /* Number of columns in terminal. */
+  unsigned short rows;          /* Number of rows in terminal. */
+  unsigned short cols;          /* Number of columns in terminal. */
   unsigned int oldCursorRows;   /* Previous refresh cursor rows (relative to initial rows). */
   unsigned int oldRenderedRows; /* Previous refresh rendered rows (relative to initial rows) */
   CharWidthProperties ps;
   bool rotating;
   unsigned int yankedSize;
   bool scrolling;
-  unsigned int scrollRows;
   unsigned int oldActualCursorRows;
 
   int dump(FILE *fp) const {
@@ -509,10 +508,6 @@ void LineEditorObject::refreshLine(ARState &state, struct linenoiseState &l, boo
   lndebug("renderedRows: %zu, cursor(rows,cols)=(%zu,%zu)", ret.renderedRows, ret.cursorRows,
           ret.cursorCols);
 
-  /* cursor relative row. */
-  const int oldCursorRows = static_cast<int>(l.oldCursorRows);
-  const int oldRenderedRows = static_cast<int>(l.oldRenderedRows);
-
   /*
    * hide cursor during rendering due to suppress potential cursor flicker
    */
@@ -521,14 +516,15 @@ void LineEditorObject::refreshLine(ARState &state, struct linenoiseState &l, boo
   /* First step: clear all the lines used before. To do so start by
    * going to the last row. */
   char seq[64];
-  if (oldRenderedRows - oldCursorRows > 0) {
-    lndebug("go down %u", oldRenderedRows - oldCursorRows);
-    snprintf(seq, 64, "\x1b[%uB", oldRenderedRows - oldCursorRows);
+  if (l.oldRenderedRows > l.oldCursorRows) {
+    const auto diff = l.oldRenderedRows - l.oldCursorRows;
+    lndebug("go down %u", diff);
+    snprintf(seq, 64, "\x1b[%uB", diff);
     ab += seq;
   }
 
   /* Now for every row clear it, go up. */
-  for (int j = 0; j < oldRenderedRows - 1; j++) {
+  for (int j = 0; j < static_cast<int>(l.oldRenderedRows) - 1; j++) {
     lndebug("clear+up");
     ab += "\r\x1b[0K\x1b[1A";
   }
@@ -546,14 +542,13 @@ void LineEditorObject::refreshLine(ARState &state, struct linenoiseState &l, boo
         .oldCursorRows = l.oldActualCursorRows,
         .showPager = static_cast<bool>(pager),
         .scrolling = l.scrolling,
-        .scrollRows = l.scrollRows,
+        .scrollRows = l.oldCursorRows,
     };
     fitToWinSize(params, ret);
     if (!l.scrolling) { // force insert newline before scrolling mode
       ret.renderedLines.insert(0, "\r\n");
     }
     l.scrolling = true;
-    l.scrollRows = ret.cursorRows;
     lndebug("adjust renderedRows: %zu. cursorRows: %zu", ret.renderedRows, ret.cursorRows);
   }
 
@@ -661,7 +656,6 @@ ssize_t LineEditorObject::editLine(ARState &state, StringRef prompt, char *buf, 
       .rotating = false,
       .yankedSize = 0,
       .scrolling = false,
-      .scrollRows = 0,
       .oldActualCursorRows = 1,
   };
 

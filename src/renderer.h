@@ -37,11 +37,11 @@ RenderingResult doRendering(const CharWidthProperties &ps, StringRef prompt, con
                             ObserverPtr<const ANSIEscapeSeqMap> escapeSeqMap, unsigned int maxCols);
 
 struct FitToWinSizeParams {
-  size_t winRows;
+  unsigned int winRows;
   unsigned int oldCursorRows;
   bool showPager;
   bool scrolling;
-  size_t scrollRows;
+  unsigned int scrollRows;
 };
 
 void fitToWinSize(const FitToWinSizeParams &params, RenderingResult &result);

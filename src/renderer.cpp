@@ -97,7 +97,7 @@ void fitToWinSize(const FitToWinSizeParams &params, RenderingResult &result) {
   }
 
   // update scrollRows
-  size_t scrollRows = params.scrollRows;
+  unsigned int scrollRows = params.scrollRows;
   if (params.scrolling) {
     if (params.oldCursorRows <= result.cursorRows) { // cursor down
       scrollRows += result.cursorRows - params.oldCursorRows;
