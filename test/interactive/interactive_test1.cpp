@@ -346,7 +346,7 @@ TEST_F(InteractiveTest, mlEdit3) { // clean line
     this->send("'@@@@\r");
     ASSERT_NO_FATAL_FAILURE(this->expect("> echo hello\nhello\n> '@@@@\n  "));
     this->send(CTRL_L);
-    ASSERT_NO_FATAL_FAILURE(this->expect("> '@@@@\n  \n\n"));
+    ASSERT_NO_FATAL_FAILURE(this->expect("> '@@@@\n  "));
     this->send("'\r");
     ASSERT_NO_FATAL_FAILURE(this->expect("> '@@@@\n  '\n: String = @@@@\n\n> "));
   }

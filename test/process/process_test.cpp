@@ -244,8 +244,8 @@ TEST(ANSITest, base) {
   screen.setReporter([&](std::string &&m) { rep = std::move(m); });
   line = "abcdef\x1b[2J\x1b[6n0";
   screen.interpret(line.c_str(), line.size());
-  ASSERT_EQ("      0", screen.toString());
-  ASSERT_EQ("\x1b[1;7R", rep);
+  ASSERT_EQ("0", screen.toString());
+  ASSERT_EQ("\x1b[1;1R", rep);
 
   rep = "";
   screen = Screen();
