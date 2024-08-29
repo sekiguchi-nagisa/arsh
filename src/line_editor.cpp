@@ -544,11 +544,7 @@ void LineEditorObject::refreshLine(ARState &state, struct linenoiseState &l, boo
         .scrolling = l.scrolling,
         .scrollRows = l.oldCursorRows,
     };
-    fitToWinSize(params, ret);
-    if (!l.scrolling) { // force insert newline before scrolling mode
-      ret.renderedLines.insert(0, "\r\n");
-    }
-    l.scrolling = true;
+    l.scrolling = fitToWinSize(params, ret);
     lndebug("adjust renderedRows: %zu. cursorRows: %zu", ret.renderedRows, ret.cursorRows);
   }
 
@@ -665,13 +661,17 @@ ssize_t LineEditorObject::editLine(ARState &state, StringRef prompt, char *buf, 
   const int errNum = errno;
   if (count == -1 && errNum != 0) {
     l.buf.clearNewlinePosList(); // force move cursor to end (force enter single line mode)
-    if (l.buf.moveCursorToEndOfLine()) {
+    if (l.scrolling) {
+      linenoiseClearScreen(l.ifd);
+    } else if (l.buf.moveCursorToEndOfLine()) {
       this->refreshLine(state, l, false);
     }
   }
   this->disableRawMode(this->inFd);
-  ssize_t r = write(this->outFd, "\n", 1);
-  UNUSED(r);
+  if (!l.scrolling) {
+    ssize_t r = write(this->outFd, "\n", 1);
+    UNUSED(r);
+  }
   errno = errNum;
   return count;
 }

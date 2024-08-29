@@ -44,7 +44,14 @@ struct FitToWinSizeParams {
   unsigned int scrollRows;
 };
 
-void fitToWinSize(const FitToWinSizeParams &params, RenderingResult &result);
+/**
+ *
+ * @param params
+ * @param result
+ * @return
+ * if resize rendered lines, return true
+ */
+bool fitToWinSize(const FitToWinSizeParams &params, RenderingResult &result);
 
 } // namespace arsh
 

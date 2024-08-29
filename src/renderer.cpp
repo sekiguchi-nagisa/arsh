@@ -89,11 +89,11 @@ static StringRef::size_type findNthPos(const StringRef ref, const unsigned int N
   return retPos;
 }
 
-void fitToWinSize(const FitToWinSizeParams &params, RenderingResult &result) {
+bool fitToWinSize(const FitToWinSizeParams &params, RenderingResult &result) {
   constexpr StringRef NL = "\r\n";
 
   if (result.renderedRows <= params.winRows) {
-    return;
+    return false;
   }
 
   // update scrollRows
@@ -144,6 +144,7 @@ void fitToWinSize(const FitToWinSizeParams &params, RenderingResult &result) {
     result.renderedRows = params.winRows;
   }
   result.cursorRows = scrollRows;
+  return true;
 }
 
 } // namespace arsh

@@ -1104,7 +1104,7 @@ public:
     return doRendering(this->ps, "> ", buf, pager, nullptr, this->winSize.cols);
   }
 
-  void fit(RenderingResult &result, bool showPager = false) {
+  bool fit(RenderingResult &result, bool showPager = false) {
     const unsigned int actualCursorRows = result.cursorRows;
     const FitToWinSizeParams params = {
         .winRows = this->winSize.rows,
@@ -1113,10 +1113,11 @@ public:
         .scrolling = this->scrollingMode,
         .scrollRows = this->scrollRows,
     };
-    fitToWinSize(params, result);
+    const bool r = fitToWinSize(params, result);
     this->scrollingMode = true;
     this->oldActualCursorRows = actualCursorRows;
     this->scrollRows = result.cursorRows;
+    return r;
   }
 };
 
@@ -1132,7 +1133,7 @@ TEST_F(ScrollTest, base) {
     ASSERT_EQ(12, ret.cursorRows);
     ASSERT_GE(ret.renderedRows, this->winSize.rows);
 
-    this->fit(ret);
+    ASSERT_TRUE(this->fit(ret));
     ASSERT_EQ(5, ret.renderedRows);
     ASSERT_EQ(5, ret.cursorRows);
     ASSERT_EQ("  08\r\n  09\r\n  10\r\n  11\r\n  12", ret.renderedLines);
@@ -1143,7 +1144,7 @@ TEST_F(ScrollTest, base) {
     lineBuf.moveCursorToStartOfLine();
     ASSERT_EQ(lineBuf.getUsedSize() - 2, lineBuf.getCursor());
     auto ret = render(lineBuf);
-    this->fit(ret);
+    ASSERT_TRUE(this->fit(ret));
     ASSERT_EQ(5, ret.renderedRows);
     ASSERT_EQ(5, ret.cursorRows);
     ASSERT_EQ("  08\r\n  09\r\n  10\r\n  11\r\n  12", ret.renderedLines);
@@ -1153,7 +1154,7 @@ TEST_F(ScrollTest, base) {
   {
     lineBuf.moveCursorUpDown(true);
     auto ret = render(lineBuf);
-    this->fit(ret);
+    ASSERT_TRUE(this->fit(ret));
     ASSERT_EQ(5, ret.renderedRows);
     ASSERT_EQ(4, ret.cursorRows);
     ASSERT_EQ("  08\r\n  09\r\n  10\r\n  11\r\n  12", ret.renderedLines);
@@ -1165,7 +1166,7 @@ TEST_F(ScrollTest, base) {
     lineBuf.moveCursorUpDown(true);
     lineBuf.moveCursorUpDown(true);
     auto ret = render(lineBuf);
-    this->fit(ret);
+    ASSERT_TRUE(this->fit(ret));
     ASSERT_EQ(5, ret.renderedRows);
     ASSERT_EQ(1, ret.cursorRows);
     ASSERT_EQ("  08\r\n  09\r\n  10\r\n  11\r\n  12", ret.renderedLines);
@@ -1175,7 +1176,7 @@ TEST_F(ScrollTest, base) {
   {
     lineBuf.moveCursorToEndOfLine();
     auto ret = render(lineBuf);
-    this->fit(ret);
+    ASSERT_TRUE(this->fit(ret));
     ASSERT_EQ(5, ret.renderedRows);
     ASSERT_EQ(1, ret.cursorRows);
     ASSERT_EQ("  08\r\n  09\r\n  10\r\n  11\r\n  12", ret.renderedLines);
@@ -1185,7 +1186,7 @@ TEST_F(ScrollTest, base) {
   {
     lineBuf.moveCursorUpDown(true);
     auto ret = render(lineBuf);
-    this->fit(ret);
+    ASSERT_TRUE(this->fit(ret));
     ASSERT_EQ(5, ret.renderedRows);
     ASSERT_EQ(1, ret.cursorRows);
     ASSERT_EQ("  07\r\n  08\r\n  09\r\n  10\r\n  11", ret.renderedLines);
@@ -1195,7 +1196,7 @@ TEST_F(ScrollTest, base) {
   {
     lineBuf.moveCursorUpDown(true);
     auto ret = render(lineBuf);
-    this->fit(ret);
+    ASSERT_TRUE(this->fit(ret));
     ASSERT_EQ(5, ret.renderedRows);
     ASSERT_EQ(1, ret.cursorRows);
     ASSERT_EQ("  06\r\n  07\r\n  08\r\n  09\r\n  10", ret.renderedLines);
@@ -1205,7 +1206,7 @@ TEST_F(ScrollTest, base) {
   {
     lineBuf.moveCursorUpDown(false);
     auto ret = render(lineBuf);
-    this->fit(ret);
+    ASSERT_TRUE(this->fit(ret));
     ASSERT_EQ(5, ret.renderedRows);
     ASSERT_EQ(2, ret.cursorRows);
     ASSERT_EQ("  06\r\n  07\r\n  08\r\n  09\r\n  10", ret.renderedLines);
@@ -1216,7 +1217,7 @@ TEST_F(ScrollTest, base) {
     lineBuf.moveCursorToStartOfBuf();
     ASSERT_EQ(0, lineBuf.getCursor());
     auto ret = render(lineBuf);
-    this->fit(ret);
+    ASSERT_TRUE(this->fit(ret));
     ASSERT_EQ(5, ret.renderedRows);
     ASSERT_EQ(1, ret.cursorRows);
     ASSERT_EQ("> 01\r\n  02\r\n  03\r\n  04\r\n  05", ret.renderedLines);
@@ -1228,7 +1229,7 @@ TEST_F(ScrollTest, base) {
       lineBuf.moveCursorUpDown(false);
     }
     auto ret = render(lineBuf);
-    this->fit(ret);
+    ASSERT_TRUE(this->fit(ret));
     ASSERT_EQ(5, ret.renderedRows);
     ASSERT_EQ(5, ret.cursorRows);
     ASSERT_EQ("  03\r\n  04\r\n  05\r\n  06\r\n  07", ret.renderedLines);
@@ -1239,7 +1240,7 @@ TEST_F(ScrollTest, base) {
     lineBuf.moveCursorToEndOfBuf();
     ASSERT_EQ(lineBuf.getUsedSize(), lineBuf.getCursor());
     auto ret = render(lineBuf);
-    this->fit(ret);
+    ASSERT_TRUE(this->fit(ret));
     ASSERT_EQ(5, ret.renderedRows);
     ASSERT_EQ(5, ret.cursorRows);
     ASSERT_EQ("  08\r\n  09\r\n  10\r\n  11\r\n  12", ret.renderedLines);
@@ -1261,7 +1262,7 @@ TEST_F(ScrollTest, expandRows1) {
     ASSERT_EQ(10, ret.cursorRows);
     ASSERT_GE(ret.renderedRows, this->winSize.rows);
 
-    this->fit(ret);
+    ASSERT_TRUE(this->fit(ret));
     ASSERT_EQ(5, ret.renderedRows);
     ASSERT_EQ(3, ret.cursorRows);
     ASSERT_EQ("  08\r\n  09\r\n  10\r\n  11\r\n  12", ret.renderedLines);
@@ -1271,7 +1272,7 @@ TEST_F(ScrollTest, expandRows1) {
   {
     this->setRows(7);
     auto ret = render(lineBuf);
-    this->fit(ret);
+    ASSERT_TRUE(this->fit(ret));
     ASSERT_EQ(7, ret.renderedRows);
     ASSERT_EQ(5, ret.cursorRows);
     ASSERT_EQ("  06\r\n  07\r\n  08\r\n  09\r\n  10\r\n  11\r\n  12", ret.renderedLines);
@@ -1282,7 +1283,7 @@ TEST_F(ScrollTest, expandRows1) {
     lineBuf.deleteLineToCursor(true, nullptr);
     lineBuf.deletePrevChar(nullptr);
     auto ret = render(lineBuf);
-    this->fit(ret);
+    ASSERT_TRUE(this->fit(ret));
     ASSERT_EQ(7, ret.renderedRows);
     ASSERT_EQ(5, ret.cursorRows);
     ASSERT_EQ("  05\r\n  06\r\n  07\r\n  08\r\n  09\r\n  11\r\n  12", ret.renderedLines);
@@ -1295,7 +1296,7 @@ TEST_F(ScrollTest, expandRows1) {
       lineBuf.deletePrevChar(nullptr);
     }
     auto ret = render(lineBuf);
-    this->fit(ret);
+    ASSERT_FALSE(this->fit(ret));
     ASSERT_EQ(7, ret.renderedRows);
     ASSERT_EQ(5, ret.cursorRows);
     ASSERT_EQ("> 01\r\n  02\r\n  03\r\n  04\r\n  05\r\n  11\r\n  12", ret.renderedLines);
@@ -1306,7 +1307,7 @@ TEST_F(ScrollTest, expandRows1) {
     lineBuf.deleteLineToCursor(true, nullptr);
     lineBuf.deletePrevChar(nullptr);
     auto ret = render(lineBuf);
-    this->fit(ret);
+    ASSERT_FALSE(this->fit(ret));
     ASSERT_EQ(6, ret.renderedRows);
     ASSERT_EQ(4, ret.cursorRows);
     ASSERT_EQ("> 01\r\n  02\r\n  03\r\n  04\r\n  11\r\n  12", ret.renderedLines);
@@ -1329,7 +1330,7 @@ TEST_F(ScrollTest, expandRows2) {
     ASSERT_EQ(8, ret.cursorRows);
     ASSERT_GE(ret.renderedRows, this->winSize.rows);
 
-    this->fit(ret);
+    ASSERT_TRUE(this->fit(ret));
     ASSERT_EQ(4, ret.renderedRows);
     ASSERT_EQ(4, ret.cursorRows);
     ASSERT_EQ("  05\r\n  06\r\n  07\r\n  08", ret.renderedLines);
@@ -1338,7 +1339,7 @@ TEST_F(ScrollTest, expandRows2) {
   {
     this->setRows(20);
     auto ret = render(lineBuf);
-    this->fit(ret);
+    ASSERT_FALSE(this->fit(ret));
     ASSERT_EQ(13, ret.renderedRows);
     ASSERT_EQ(8, ret.cursorRows);
     ASSERT_EQ("> 01\r\n  02\r\n  03\r\n  04\r\n  05\r\n  06\r\n"
@@ -1362,7 +1363,7 @@ TEST_F(ScrollTest, shrinkRows) {
     ASSERT_EQ(2, ret.cursorRows);
     ASSERT_GE(ret.renderedRows, this->winSize.rows);
 
-    this->fit(ret);
+    ASSERT_TRUE(this->fit(ret));
     ASSERT_EQ(5, ret.renderedRows);
     ASSERT_EQ(2, ret.cursorRows);
     ASSERT_EQ("> 01\r\n  02\r\n  03\r\n  04\r\n  05", ret.renderedLines);
@@ -1372,7 +1373,7 @@ TEST_F(ScrollTest, shrinkRows) {
   {
     this->setRows(3);
     auto ret = render(lineBuf);
-    this->fit(ret);
+    ASSERT_TRUE(this->fit(ret));
     ASSERT_EQ(3, ret.renderedRows);
     ASSERT_EQ(2, ret.cursorRows);
     ASSERT_EQ("> 01\r\n  02\r\n  03", ret.renderedLines);
@@ -1383,7 +1384,7 @@ TEST_F(ScrollTest, shrinkRows) {
     lineBuf.moveCursorUpDown(false);
     lineBuf.moveCursorUpDown(false);
     auto ret = render(lineBuf);
-    this->fit(ret);
+    ASSERT_TRUE(this->fit(ret));
     ASSERT_EQ(3, ret.renderedRows);
     ASSERT_EQ(3, ret.cursorRows);
     ASSERT_EQ("  02\r\n  03\r\n  04", ret.renderedLines);
@@ -1404,7 +1405,7 @@ TEST_F(ScrollTest, softwrap) {
     ASSERT_EQ(20, ret.renderedRows);
     ASSERT_EQ(20, ret.cursorRows);
     ASSERT_GE(ret.renderedRows, this->winSize.rows);
-    this->fit(ret);
+    ASSERT_TRUE(this->fit(ret));
     ASSERT_EQ(5, ret.renderedRows);
     ASSERT_EQ(5, ret.cursorRows);
     ASSERT_EQ("888\r\n  099\r\n999\r\n  100\r\n000", ret.renderedLines);
@@ -1419,7 +1420,7 @@ TEST_F(ScrollTest, softwrap) {
     ASSERT_EQ(20, ret.renderedRows);
     ASSERT_EQ(19, ret.cursorRows);
     ASSERT_GE(ret.renderedRows, this->winSize.rows);
-    this->fit(ret);
+    ASSERT_TRUE(this->fit(ret));
     ASSERT_EQ(5, ret.renderedRows);
     ASSERT_EQ(4, ret.cursorRows);
     ASSERT_EQ("888\r\n  099\r\n999\r\n  100\r\n000", ret.renderedLines);
@@ -1432,7 +1433,7 @@ TEST_F(ScrollTest, softwrap) {
     ASSERT_EQ(20, ret.renderedRows);
     ASSERT_EQ(17, ret.cursorRows);
     ASSERT_GE(ret.renderedRows, this->winSize.rows);
-    this->fit(ret);
+    ASSERT_TRUE(this->fit(ret));
     ASSERT_EQ(5, ret.renderedRows);
     ASSERT_EQ(2, ret.cursorRows);
     ASSERT_EQ("888\r\n  099\r\n999\r\n  100\r\n000", ret.renderedLines);
