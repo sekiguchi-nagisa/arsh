@@ -1488,9 +1488,9 @@ TEST_F(ScrollTest, pager) {
     ASSERT_EQ(6, ret.cursorRows);
     ASSERT_EQ("  055555\r\n  066666\r\n  077777\r\n  088888\r\n  099999\r\n  100000\r\n"
               "AAAAA     (regular file)    DDD         (named pipe)    \r\n"
-          "BBBBB       (executable)    EEEE                        \r\n"
-          "\x1b[7mrows 1-2/3\x1b[0m\r\n",
-          ret.renderedLines);
+              "BBBBB       (executable)    EEEE                        \r\n"
+              "\x1b[7mrows 1-2/3\x1b[0m\r\n",
+              ret.renderedLines);
   }
 }
 
