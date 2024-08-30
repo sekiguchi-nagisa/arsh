@@ -753,6 +753,32 @@ TEST_F(InteractiveTest, lineEditorResize2) {
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
 }
 
+TEST_F(InteractiveTest, lineEditorScroll) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+  ASSERT_NO_FATAL_FAILURE(this->changePrompt("> "));
+
+  this->paste("11111\n22222\n33333\n44444\n55555\n66666\n77777\n88888\n99999");
+  ASSERT_NO_FATAL_FAILURE(this->expect("> 11111\n  22222\n  33333\n  44444\n  55555\n"
+                                       "  66666\n  77777\n  88888\n  99999"));
+  {
+    auto cleanup = this->reuseScreen();
+    this->changeWinSize({.rows = 5, .cols = 40});
+
+    ASSERT_NO_FATAL_FAILURE(this->expect("  55555\n  66666\n  77777\n  88888\n  99999"));
+
+    this->send(ESC_("<"));
+    ASSERT_NO_FATAL_FAILURE(this->expect("> 11111\n  22222\n  33333\n  44444\n  55555"));
+
+    this->send(CTRL_C);
+    ASSERT_NO_FATAL_FAILURE(this->expect("> "));
+  }
+
+  this->send(CTRL_D);
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
+}
+
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
