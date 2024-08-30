@@ -129,25 +129,18 @@ static const char *unsupported_term[] = {"dumb", "cons25", "emacs", nullptr};
  * We pass this state to functions implementing specific editing
  * functionalities. */
 struct linenoiseState {
-  int ifd;                      /* Terminal stdin file descriptor. */
-  int ofd;                      /* Terminal stdout file descriptor. */
   LineBuffer buf;               /* Edited line buffer. */
   StringRef prompt;             /* Prompt to display. */
-  unsigned short rows;          /* Number of rows in terminal. */
-  unsigned short cols;          /* Number of columns in terminal. */
   unsigned int oldCursorRows;   /* Previous refresh cursor rows (relative to initial rows). */
   unsigned int oldRenderedRows; /* Previous refresh rendered rows (relative to initial rows) */
-  CharWidthProperties ps;
-  bool rotating;
-  unsigned int yankedSize;
-  bool scrolling;
   unsigned int oldActualCursorRows;
+  CharWidthProperties ps;
+  bool scrolling;
 
   int dump(FILE *fp) const {
-    return fprintf(fp,
-                   "[(cols,rows)=(%u, %u), len=%u, pos=%u, oldCursorRows=%u, oldRenderedRows=%u]",
-                   this->cols, this->rows, this->buf.getUsedSize(), this->buf.getCursor(),
-                   this->oldCursorRows, this->oldRenderedRows);
+    return fprintf(fp, "[len=%u, pos=%u, oldCursorRows=%u, oldRenderedRows=%u]",
+                   this->buf.getUsedSize(), this->buf.getCursor(), this->oldCursorRows,
+                   this->oldRenderedRows);
   }
 };
 
@@ -255,7 +248,7 @@ static bool underMultiplexer() {
   return false;
 }
 
-static void checkProperty(struct linenoiseState &l) {
+static void checkProperty(CharWidthProperties &ps, int inFd, int outFd) {
   if (underMultiplexer()) {
     /**
      * if run under terminal multiplexer (screen/tmux), disable character width checking
@@ -265,21 +258,21 @@ static void checkProperty(struct linenoiseState &l) {
 
   for (auto &e : getCharWidthPropertyList()) {
     const char *str = e.second;
-    if (write(l.ofd, str, strlen(str)) == -1) {
+    if (write(outFd, str, strlen(str)) == -1) {
       return;
     }
-    const int pos = getCursorPosition(l.ifd, l.ofd);
+    const int pos = getCursorPosition(inFd, outFd);
     /**
      * restore pos and clear line
      */
     const char *r = "\r\x1b[2K";
-    if (write(l.ofd, r, strlen(r)) == -1) {
+    if (write(outFd, r, strlen(r)) == -1) {
       return;
     }
     if (pos < 0) {
       return;
     }
-    l.ps.setProperty(e.first, pos - 1);
+    ps.setProperty(e.first, pos - 1);
   }
 }
 
@@ -473,10 +466,10 @@ void LineEditorObject::disableRawMode(int fd) {
  * if current cursor is not head of line. write % symbol like zsh
  * @param l
  */
-static int preparePrompt(const struct linenoiseState &l) {
-  if (getCursorPosition(l.ifd, l.ofd) > 1) {
+static int preparePrompt(int inFd, int outFd) {
+  if (getCursorPosition(inFd, outFd) > 1) {
     const char *s = "\x1b[7m%\x1b[0m\r\n";
-    if (write(l.ofd, s, strlen(s)) == -1) {
+    if (write(outFd, s, strlen(s)) == -1) {
       return -1;
     }
   }
@@ -489,22 +482,22 @@ static int preparePrompt(const struct linenoiseState &l) {
  * cursor position, and number of columns of the terminal. */
 void LineEditorObject::refreshLine(ARState &state, struct linenoiseState &l, bool repaint,
                                    ObserverPtr<ArrayPager> pager) {
-  if (WinSize size; syncWinSize(state, l.ifd, &size)) {
-    l.rows = size.rows;
-    l.cols = size.cols;
-  }
+  WinSize winSize;
+  syncWinSize(state, this->inFd, &winSize);
 
   if (pager) {
-    pager->updateWinSize({.rows = l.rows, .cols = l.cols});
+    pager->updateWinSize({.rows = winSize.rows, .cols = winSize.cols});
   }
   if (repaint) {
     l.buf.syncNewlinePosList();
   }
 
-  auto ret = doRendering(l.ps, l.prompt, l.buf, pager,
-                         this->langExtension ? makeObserver(this->escapeSeqMap) : nullptr, l.cols);
+  auto ret =
+      doRendering(l.ps, l.prompt, l.buf, pager,
+                  this->langExtension ? makeObserver(this->escapeSeqMap) : nullptr, winSize.cols);
   this->continueLine = ret.continueLine;
   const unsigned int actualCursorRows = ret.cursorRows;
+  lndebug("(rows,cols)=(%u, %u)", winSize.rows, winSize.cols);
   lndebug("renderedRows: %zu, cursor(rows,cols)=(%zu,%zu)", ret.renderedRows, ret.cursorRows,
           ret.cursorCols);
 
@@ -534,11 +527,11 @@ void LineEditorObject::refreshLine(ARState &state, struct linenoiseState &l, boo
   ab += "\r\x1b[0K";
 
   /* adjust too long rendered lines */
-  if (l.scrolling || ret.renderedRows > l.rows) {
+  if (l.scrolling || ret.renderedRows > winSize.rows) {
     lndebug("scrolling mode: renderedRows: %zu, scrolling: %s", ret.renderedRows,
             l.scrolling ? "true" : "false");
     const FitToWinSizeParams params = {
-        .winRows = l.rows,
+        .winRows = winSize.rows,
         .oldCursorRows = l.oldActualCursorRows,
         .showPager = static_cast<bool>(pager),
         .scrolling = l.scrolling,
@@ -574,7 +567,7 @@ void LineEditorObject::refreshLine(ARState &state, struct linenoiseState &l, boo
   l.oldRenderedRows = ret.renderedRows;
   l.oldActualCursorRows = actualCursorRows;
 
-  if (write(l.ofd, ab.c_str(), ab.size()) == -1) {
+  if (write(this->outFd, ab.c_str(), ab.size()) == -1) {
   } /* Can't recover from write error. */
 }
 
@@ -614,13 +607,13 @@ static bool rotateHistory(HistRotator &histRotate, bool continueRotate, LineBuff
   return buf.insertToCursor(curBuf);
 }
 
-static bool rotateHistoryOrUpDown(HistRotator &histRotate, struct linenoiseState &l,
+static bool rotateHistoryOrUpDown(HistRotator &histRotate, LineBuffer &buf, bool &rotating,
                                   HistRotator::Op op, bool continueRotate) {
-  if (l.buf.isSingleLine() || continueRotate) {
-    l.rotating = rotateHistory(histRotate, continueRotate, l.buf, op, false);
-    return l.rotating;
+  if (buf.isSingleLine() || continueRotate) {
+    rotating = rotateHistory(histRotate, continueRotate, buf, op, false);
+    return rotating;
   } else {
-    return l.buf.moveCursorUpDown(op == HistRotator::Op::PREV);
+    return buf.moveCursorUpDown(op == HistRotator::Op::PREV);
   }
 }
 
@@ -640,19 +633,13 @@ ssize_t LineEditorObject::editLine(ARState &state, StringRef prompt, char *buf, 
   /* Populate the linenoise state that we pass to functions implementing
    * specific editing functionalities. */
   struct linenoiseState l = {
-      .ifd = this->inFd,
-      .ofd = this->outFd,
       .buf = LineBuffer(buf, bufSize),
       .prompt = prompt,
-      .rows = 24,
-      .cols = 80,
       .oldCursorRows = 0,
       .oldRenderedRows = 0,
-      .ps = {},
-      .rotating = false,
-      .yankedSize = 0,
-      .scrolling = false,
       .oldActualCursorRows = 1,
+      .ps = {},
+      .scrolling = false,
   };
 
   l.ps.replaceInvalid = true;
@@ -662,7 +649,7 @@ ssize_t LineEditorObject::editLine(ARState &state, StringRef prompt, char *buf, 
   if (count == -1 && errNum != 0) {
     l.buf.clearNewlinePosList(); // force move cursor to end (force enter single line mode)
     if (l.scrolling) {
-      linenoiseClearScreen(l.ifd);
+      linenoiseClearScreen(this->inFd);
     } else if (l.buf.moveCursorToEndOfLine()) {
       this->refreshLine(state, l, false);
     }
@@ -694,8 +681,8 @@ ssize_t LineEditorObject::editInRawMode(ARState &state, struct linenoiseState &l
   }
   HistRotator histRotate(this->history);
 
-  preparePrompt(l);
-  checkProperty(l);
+  preparePrompt(this->inFd, this->outFd);
+  checkProperty(l.ps, this->inFd, this->outFd);
   if (this->eaw != 0) { // force set east asin width
     l.ps.eaw = this->eaw == 1 ? AmbiguousCharWidth::HALF : AmbiguousCharWidth::FULL;
   }
@@ -703,7 +690,9 @@ ssize_t LineEditorObject::editInRawMode(ARState &state, struct linenoiseState &l
                   Value::createInt(l.ps.eaw == AmbiguousCharWidth::HALF ? 1 : 2));
   this->refreshLine(state, l);
 
-  KeyCodeReader reader(l.ifd);
+  bool rotating = false;
+  unsigned int yankedSize = 0;
+  KeyCodeReader reader(this->inFd);
   while (true) {
     if (ssize_t r = reader.fetch(); r <= 0) {
       if (r == -1) {
@@ -717,10 +706,10 @@ ssize_t LineEditorObject::editInRawMode(ARState &state, struct linenoiseState &l
     }
 
   NO_FETCH:
-    const bool prevRotating = l.rotating;
-    l.rotating = false;
-    const unsigned int prevYankedSize = l.yankedSize;
-    l.yankedSize = 0;
+    const bool prevRotating = rotating;
+    rotating = false;
+    const unsigned int prevYankedSize = yankedSize;
+    yankedSize = 0;
 
     if (!reader.hasControlChar()) {
       auto &buf = reader.get();
@@ -808,7 +797,7 @@ ssize_t LineEditorObject::editInRawMode(ARState &state, struct linenoiseState &l
       auto op = action->type == EditActionType::PREV_HISTORY ? HistRotator::Op::PREV
                                                              : HistRotator::Op::NEXT;
       if (rotateHistory(histRotate, prevRotating, l.buf, op, true)) {
-        l.rotating = true;
+        rotating = true;
         this->refreshLine(state, l);
       }
       break;
@@ -817,7 +806,7 @@ ssize_t LineEditorObject::editInRawMode(ARState &state, struct linenoiseState &l
     case EditActionType::DOWN_OR_HISTORY: {
       auto op = action->type == EditActionType::UP_OR_HISTORY ? HistRotator::Op::PREV
                                                               : HistRotator::Op::NEXT;
-      if (rotateHistoryOrUpDown(histRotate, l, op, prevRotating)) {
+      if (rotateHistoryOrUpDown(histRotate, l.buf, rotating, op, prevRotating)) {
         this->refreshLine(state, l);
       }
       break;
@@ -853,7 +842,7 @@ ssize_t LineEditorObject::editInRawMode(ARState &state, struct linenoiseState &l
       }
       break;
     case EditActionType::CLEAR_SCREEN:
-      linenoiseClearScreen(l.ofd);
+      linenoiseClearScreen(this->outFd);
       this->refreshLine(state, l);
       break;
     case EditActionType::BACKWARD_KILL_WORD:
@@ -888,7 +877,7 @@ ssize_t LineEditorObject::editInRawMode(ARState &state, struct linenoiseState &l
         this->killRing.reset();
         StringRef line = this->killRing.getCurrent();
         if (!line.empty()) {
-          l.yankedSize = line.size();
+          yankedSize = line.size();
           if (l.buf.insertToCursor(line)) {
             this->refreshLine(state, l);
           } else {
@@ -904,7 +893,7 @@ ssize_t LineEditorObject::editInRawMode(ARState &state, struct linenoiseState &l
         this->killRing.rotate();
         StringRef line = this->killRing.getCurrent();
         if (!line.empty()) {
-          l.yankedSize = line.size();
+          yankedSize = line.size();
           if (l.buf.insertToCursor(line)) {
             this->refreshLine(state, l);
           } else {
@@ -1068,7 +1057,7 @@ EditActionStatus LineEditorObject::completeLine(ARState &state, struct linenoise
     }
   }
   if (const auto len = candidates.size(); len == 0) {
-    linenoiseBeep(ls.ofd);
+    linenoiseBeep(this->outFd);
     return EditActionStatus::OK;
   } else if (len == 1) {
     return EditActionStatus::OK;
@@ -1076,8 +1065,7 @@ EditActionStatus LineEditorObject::completeLine(ARState &state, struct linenoise
 
   // show candidates
   auto status = EditActionStatus::CONTINUE;
-  auto pager =
-      ArrayPager::create(CandidatesWrapper(candidates), ls.ps, {.rows = ls.rows, .cols = ls.cols});
+  auto pager = ArrayPager::create(CandidatesWrapper(candidates), ls.ps, {});
 
   /**
    * first, only show pager and wait next completion action.
