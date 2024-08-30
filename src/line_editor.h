@@ -23,8 +23,6 @@
 #include "object.h"
 #include "renderer.h"
 
-struct linenoiseState;
-
 namespace arsh {
 
 class LineEditorObject : public ObjectWithRtti<ObjectKind::LineEditor> {
@@ -139,24 +137,22 @@ private:
 
   void disableRawMode(int fd);
 
-  void refreshLine(ARState &state, struct linenoiseState &l, bool repaint = true,
+  void refreshLine(ARState &state, RenderingContext &ctx, bool repaint = true,
                    ObserverPtr<ArrayPager> pager = nullptr);
 
-  ssize_t accept(ARState &state, struct linenoiseState &l);
+  ssize_t accept(ARState &state, RenderingContext &ctx);
 
   /**
    * entry point of actual line edit function
    * @param state
-   * @param buf
-   * @param bufSize
-   * @param prompt
+   * @param ctx
    * @return
    */
-  ssize_t editLine(ARState &state, StringRef prompt, char *buf, size_t bufSize);
+  ssize_t editLine(ARState &state, RenderingContext &ctx);
 
-  ssize_t editInRawMode(ARState &state, struct linenoiseState &l);
+  ssize_t editInRawMode(ARState &state, RenderingContext &ctx);
 
-  EditActionStatus completeLine(ARState &state, struct linenoiseState &ls, KeyCodeReader &reader);
+  EditActionStatus completeLine(ARState &state, RenderingContext &ctx, KeyCodeReader &reader);
 
   Value kickCallback(ARState &state, Value &&callback, CallArgs &&callArgs);
 

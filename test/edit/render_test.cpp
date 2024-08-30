@@ -1075,54 +1075,36 @@ class ScrollTest : public PagerTest {
 protected:
   WinSize winSize;
   std::string buf;
-  bool scrollingMode{false};
-  unsigned int scrollRows{0};
-  unsigned int oldActualCursorRows{0};
+  RenderingContext ctx;
 
 public:
-  ScrollTest() { this->buf.resize(4096, '\0'); }
-
-  void reset() {
-    this->winSize = WinSize{};
-    this->scrollingMode = false;
-    this->scrollRows = 0;
-    this->oldActualCursorRows = 0;
-    this->buf.clear();
-    this->buf.resize(4096, '\0');
-  }
+  ScrollTest() : buf(4096, '\0'), ctx(this->buf.data(), this->buf.size(), "> ") {}
 
   void setRows(unsigned short rows) { this->winSize.rows = rows; }
 
   void setCols(unsigned short cols) { this->winSize.cols = cols; }
 
-  LineBuffer newBuffer() { return {this->buf.data(), this->buf.size()}; }
+  LineBuffer &getLineBuffer() { return this->ctx.buf; }
 
   RenderingResult render(LineBuffer &buf,
                          const ObserverPtr<const ArrayPager> pager = nullptr) const {
     buf.syncNewlinePosList();
-    return doRendering(this->ps, "> ", buf, pager, nullptr, this->winSize.cols);
+    return doRendering(this->ctx, pager, nullptr, this->winSize.cols);
   }
 
   bool fit(RenderingResult &result, bool showPager = false) {
     const unsigned int actualCursorRows = result.cursorRows;
-    const FitToWinSizeParams params = {
-        .winRows = this->winSize.rows,
-        .oldCursorRows = this->oldActualCursorRows,
-        .showPager = showPager,
-        .scrolling = this->scrollingMode,
-        .scrollRows = this->scrollRows,
-    };
-    const bool r = fitToWinSize(params, result);
-    this->scrollingMode = true;
-    this->oldActualCursorRows = actualCursorRows;
-    this->scrollRows = result.cursorRows;
+    const bool r = fitToWinSize(ctx, showPager, this->winSize.rows, result);
+    this->ctx.scrolling = r;
+    this->ctx.oldActualCursorRows = actualCursorRows;
+    this->ctx.oldCursorRows = result.cursorRows;
     return r;
   }
 };
 
 TEST_F(ScrollTest, base) {
   const char *lines = "01\n02\n03\n04\n05\n06\n07\n08\n09\n10\n11\n12";
-  auto lineBuf = newBuffer();
+  auto &lineBuf = getLineBuffer();
   lineBuf.insertToCursor(lines);
   this->setRows(5);
 
@@ -1248,7 +1230,7 @@ TEST_F(ScrollTest, base) {
 
 TEST_F(ScrollTest, expandRows1) {
   const char *lines = "01\n02\n03\n04\n05\n06\n07\n08\n09\n10\n11\n12";
-  auto lineBuf = newBuffer();
+  auto &lineBuf = getLineBuffer();
   lineBuf.insertToCursor(lines);
   lineBuf.syncNewlinePosList();
   lineBuf.moveCursorUpDown(true);
@@ -1315,7 +1297,7 @@ TEST_F(ScrollTest, expandRows1) {
 
 TEST_F(ScrollTest, expandRows2) {
   const char *lines = "01\n02\n03\n04\n05\n06\n07\n08\n09\n10\n11\n12\n13";
-  auto lineBuf = newBuffer();
+  auto &lineBuf = getLineBuffer();
   lineBuf.insertToCursor(lines);
   lineBuf.syncNewlinePosList();
   for (unsigned int i = 0; i < 5; i++) {
@@ -1349,7 +1331,7 @@ TEST_F(ScrollTest, expandRows2) {
 
 TEST_F(ScrollTest, shrinkRows) {
   const char *lines = "01\n02\n03\n04\n05\n06\n07\n08\n09\n10\n11\n12";
-  auto lineBuf = newBuffer();
+  auto &lineBuf = getLineBuffer();
   lineBuf.insertToCursor(lines);
   lineBuf.syncNewlinePosList();
   lineBuf.moveCursorToStartOfBuf();
@@ -1393,7 +1375,7 @@ TEST_F(ScrollTest, shrinkRows) {
 TEST_F(ScrollTest, softwrap) {
   const char *lines = "011111\n022222\n033333\n044444\n055555\n"
                       "066666\n077777\n088888\n099999\n100000";
-  auto lineBuf = newBuffer();
+  auto &lineBuf = getLineBuffer();
   lineBuf.insertToCursor(lines);
   lineBuf.syncNewlinePosList();
   this->setRows(5);
@@ -1442,7 +1424,7 @@ TEST_F(ScrollTest, softwrap) {
 TEST_F(ScrollTest, pager) {
   const char *lines = "011111\n022222\n033333\n044444\n055555\n"
                       "066666\n077777\n088888\n099999\n100000";
-  auto lineBuf = newBuffer();
+  auto &lineBuf = getLineBuffer();
   lineBuf.insertToCursor(lines);
   lineBuf.syncNewlinePosList();
   this->setRows(5);

@@ -42,8 +42,7 @@ static bool renderLines(const LineBuffer &buf, ObserverPtr<const ArrayPager> pag
   return continueLine;
 }
 
-RenderingResult doRendering(const CharWidthProperties &ps, StringRef prompt, const LineBuffer &buf,
-                            ObserverPtr<const ArrayPager> pager,
+RenderingResult doRendering(const RenderingContext &ctx, ObserverPtr<const ArrayPager> pager,
                             ObserverPtr<const ANSIEscapeSeqMap> escapeSeqMap,
                             unsigned int maxCols) {
   size_t promptRows;
@@ -51,23 +50,23 @@ RenderingResult doRendering(const CharWidthProperties &ps, StringRef prompt, con
   RenderingResult result;
   {
     // render prompt and compute prompt row/column length
-    LineRenderer renderer(ps, 0, result.renderedLines, escapeSeqMap);
+    LineRenderer renderer(ctx.ps, 0, result.renderedLines, escapeSeqMap);
     renderer.setMaxCols(maxCols);
-    renderer.renderWithANSI(prompt);
+    renderer.renderWithANSI(ctx.prompt);
     promptRows = renderer.getTotalRows();
     promptCols = renderer.getTotalCols();
 
     // render lines and compute lines row/columns length
     renderer.setInitCols(promptCols);
-    result.continueLine = renderLines(buf, pager, renderer);
+    result.continueLine = renderLines(ctx.buf, pager, renderer);
     result.renderedRows = renderer.getTotalRows() + 1;
   }
 
   // get cursor row/column length
   {
-    LineRenderer renderer(ps, promptCols);
+    LineRenderer renderer(ctx.ps, promptCols);
     renderer.setMaxCols(maxCols);
-    renderer.renderLines(buf.getToCursor());
+    renderer.renderLines(ctx.buf.getToCursor());
     result.cursorCols = renderer.getTotalCols();
     result.cursorRows = promptRows + 1 + renderer.getTotalRows();
   }
@@ -89,32 +88,33 @@ static StringRef::size_type findNthPos(const StringRef ref, const unsigned int N
   return retPos;
 }
 
-bool fitToWinSize(const FitToWinSizeParams &params, RenderingResult &result) {
+bool fitToWinSize(const RenderingContext &ctx, const bool showPager, const unsigned int winRows,
+                  RenderingResult &result) {
   constexpr StringRef NL = "\r\n";
 
-  if (result.renderedRows <= params.winRows) {
+  if (result.renderedRows <= winRows) {
     return false;
   }
 
   // update scrollRows
-  unsigned int scrollRows = params.scrollRows;
-  if (params.scrolling) {
-    if (params.oldCursorRows <= result.cursorRows) { // cursor down
-      scrollRows += result.cursorRows - params.oldCursorRows;
+  unsigned int scrollRows = ctx.oldCursorRows;
+  if (ctx.scrolling) {
+    if (ctx.oldActualCursorRows <= result.cursorRows) { // cursor down
+      scrollRows += result.cursorRows - ctx.oldActualCursorRows;
     } else { // cursor up
-      if (const auto diff = params.oldCursorRows - result.cursorRows; diff < scrollRows) {
+      if (const auto diff = ctx.oldActualCursorRows - result.cursorRows; diff < scrollRows) {
         scrollRows -= diff;
       } else {
         scrollRows = 1;
       }
     }
-    scrollRows = std::min(scrollRows, params.winRows);
-  } else if (const auto diff = result.renderedRows - result.cursorRows; diff < params.winRows) {
-    scrollRows = params.winRows - diff;
-  } else if (result.cursorRows < params.winRows) {
+    scrollRows = std::min(scrollRows, winRows);
+  } else if (const auto diff = result.renderedRows - result.cursorRows; diff < winRows) {
+    scrollRows = winRows - diff;
+  } else if (result.cursorRows < winRows) {
     scrollRows = result.cursorRows;
   } else {
-    scrollRows = params.winRows;
+    scrollRows = winRows;
   }
 
   /**
@@ -126,11 +126,11 @@ bool fitToWinSize(const FitToWinSizeParams &params, RenderingResult &result) {
 
   // remove upper rows of window
   size_t eraseRows = result.cursorRows > scrollRows ? result.cursorRows - scrollRows : 0;
-  if (params.showPager) {
-    eraseRows = result.renderedRows - params.winRows;
+  if (showPager) {
+    eraseRows = result.renderedRows - winRows;
     scrollRows = result.cursorRows - eraseRows;
-  } else if (result.renderedRows - eraseRows < params.winRows) {
-    auto delta = params.winRows - (result.renderedRows - eraseRows);
+  } else if (result.renderedRows - eraseRows < winRows) {
+    auto delta = winRows - (result.renderedRows - eraseRows);
     eraseRows -= delta;
     scrollRows += delta;
   }
@@ -140,11 +140,11 @@ bool fitToWinSize(const FitToWinSizeParams &params, RenderingResult &result) {
   }
 
   // remove lower rows of window
-  if (result.renderedRows > params.winRows) {
-    if (auto r = findNthPos(result.renderedLines, params.winRows, NL); r != StringRef::npos) {
+  if (result.renderedRows > winRows) {
+    if (auto r = findNthPos(result.renderedLines, winRows, NL); r != StringRef::npos) {
       result.renderedLines.erase(result.renderedLines.begin() + r, result.renderedLines.end());
     }
-    result.renderedRows = params.winRows;
+    result.renderedRows = winRows;
   }
   result.cursorRows = scrollRows;
   return true;

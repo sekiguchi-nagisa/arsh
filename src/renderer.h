@@ -32,26 +32,34 @@ struct RenderingResult {
   bool continueLine{false};
 };
 
-RenderingResult doRendering(const CharWidthProperties &ps, StringRef prompt, const LineBuffer &buf,
-                            ObserverPtr<const ArrayPager> pager,
-                            ObserverPtr<const ANSIEscapeSeqMap> escapeSeqMap, unsigned int maxCols);
+struct RenderingContext {
+  LineBuffer buf;
+  const StringRef prompt;
+  unsigned int oldCursorRows{0};   // previous refresh cursor rows (relative to initial rows)
+  unsigned int oldRenderedRows{0}; // previous refresh rendered rows (relative to initial rows)
+  unsigned int oldActualCursorRows{0};
+  CharWidthProperties ps;
+  bool scrolling{false};
 
-struct FitToWinSizeParams {
-  unsigned int winRows;
-  unsigned int oldCursorRows;
-  bool showPager;
-  bool scrolling;
-  unsigned int scrollRows;
+  RenderingContext(char *data, size_t len, StringRef prompt) : buf(data, len), prompt(prompt) {
+    this->ps.replaceInvalid = true;
+  }
 };
+
+RenderingResult doRendering(const RenderingContext &ctx, ObserverPtr<const ArrayPager> pager,
+                            ObserverPtr<const ANSIEscapeSeqMap> escapeSeqMap, unsigned int maxCols);
 
 /**
  *
- * @param params
+ * @param ctx
+ * @param showPager
+ * @param winRows
  * @param result
  * @return
  * if resize rendered lines, return true
  */
-bool fitToWinSize(const FitToWinSizeParams &params, RenderingResult &result);
+bool fitToWinSize(const RenderingContext &ctx, bool showPager, unsigned int winRows,
+                  RenderingResult &result);
 
 } // namespace arsh
 
