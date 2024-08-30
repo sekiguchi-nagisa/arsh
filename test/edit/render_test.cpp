@@ -1071,9 +1071,8 @@ TEST(HistRotator, broken2) {
   ASSERT_EQ("EEE", obj->getValues()[0].asStrRef().toString());
 }
 
-class ScrollTest : public ExpectOutput {
+class ScrollTest : public PagerTest {
 protected:
-  const CharWidthProperties ps;
   WinSize winSize;
   std::string buf;
   bool scrollingMode{false};
@@ -1437,6 +1436,61 @@ TEST_F(ScrollTest, softwrap) {
     ASSERT_EQ(5, ret.renderedRows);
     ASSERT_EQ(2, ret.cursorRows);
     ASSERT_EQ("888\r\n  099\r\n999\r\n  100\r\n000", ret.renderedLines);
+  }
+}
+
+TEST_F(ScrollTest, pager) {
+  const char *lines = "011111\n022222\n033333\n044444\n055555\n"
+                      "066666\n077777\n088888\n099999\n100000";
+  auto lineBuf = newBuffer();
+  lineBuf.insertToCursor(lines);
+  lineBuf.syncNewlinePosList();
+  this->setRows(5);
+
+  auto array = this->createWith({
+      {"AAAAA", "regular file"},
+      {"BBBBB", "executable"},
+      {"CCCCC", "directory"},
+      {"DDD", "named pipe"},
+      {"EEEE", ""},
+  });
+  auto pager = ArrayPager::create(CandidatesWrapper(array), this->ps,
+                                  {.rows = this->winSize.rows, .cols = this->winSize.cols});
+  ASSERT_EQ(2, pager.getPanes());
+  ASSERT_EQ(28, pager.getPaneLen());
+  ASSERT_EQ(3, pager.getRenderedRows());
+  pager.setShowCursor(false);
+
+  {
+    auto ret = render(lineBuf, makeObserver(pager));
+    ASSERT_EQ(14, ret.renderedRows);
+    ASSERT_EQ(10, ret.cursorRows);
+    ASSERT_GE(ret.renderedRows, this->winSize.rows);
+    ASSERT_TRUE(this->fit(ret, true));
+    ASSERT_EQ(5, ret.renderedRows);
+    ASSERT_EQ(1, ret.cursorRows);
+    ASSERT_EQ("  100000\r\n"
+              "AAAAA     (regular file)    DDD         (named pipe)    \r\n"
+              "BBBBB       (executable)    EEEE                        \r\n"
+              "\x1b[7mrows 1-2/3\x1b[0m\r\n",
+              ret.renderedLines);
+  }
+
+  // resize
+  {
+    this->setRows(10);
+    auto ret = render(lineBuf, makeObserver(pager));
+    ASSERT_EQ(14, ret.renderedRows);
+    ASSERT_EQ(10, ret.cursorRows);
+    ASSERT_GE(ret.renderedRows, this->winSize.rows);
+    ASSERT_TRUE(this->fit(ret, true));
+    ASSERT_EQ(10, ret.renderedRows);
+    ASSERT_EQ(6, ret.cursorRows);
+    ASSERT_EQ("  055555\r\n  066666\r\n  077777\r\n  088888\r\n  099999\r\n  100000\r\n"
+              "AAAAA     (regular file)    DDD         (named pipe)    \r\n"
+          "BBBBB       (executable)    EEEE                        \r\n"
+          "\x1b[7mrows 1-2/3\x1b[0m\r\n",
+          ret.renderedLines);
   }
 }
 

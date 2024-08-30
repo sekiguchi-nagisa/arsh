@@ -126,7 +126,10 @@ bool fitToWinSize(const FitToWinSizeParams &params, RenderingResult &result) {
 
   // remove upper rows of window
   size_t eraseRows = result.cursorRows > scrollRows ? result.cursorRows - scrollRows : 0;
-  if (result.renderedRows - eraseRows < params.winRows && !params.showPager) {
+  if (params.showPager) {
+    eraseRows = result.renderedRows - params.winRows;
+    scrollRows = result.cursorRows - eraseRows;
+  } else if (result.renderedRows - eraseRows < params.winRows) {
     auto delta = params.winRows - (result.renderedRows - eraseRows);
     eraseRows -= delta;
     scrollRows += delta;
