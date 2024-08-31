@@ -239,6 +239,14 @@ TEST(ANSITest, base) {
   screen.interpret(line.c_str(), line.size());
   ASSERT_EQ("", screen.toString());
 
+  unsigned int bellCount = 0;
+  screen = Screen();
+  screen.setBellCallback([&bellCount] { bellCount++; });
+  line = "\a12\a3";
+  screen.interpret(line.c_str(), line.size());
+  ASSERT_EQ("123", screen.toString());
+  ASSERT_EQ(2, bellCount);
+
   std::string rep;
   screen = Screen();
   screen.setReporter([&](std::string &&m) { rep = std::move(m); });

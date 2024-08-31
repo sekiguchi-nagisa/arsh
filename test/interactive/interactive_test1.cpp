@@ -189,6 +189,13 @@ TEST_F(InteractiveTest, tab2) {
   ASSERT_NO_FATAL_FAILURE(this->expect("> shctl "));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(""));
 
+  unsigned int bellCount = 0;
+  this->setBellCallback([&bellCount] { bellCount++; });
+  this->send("12345\t");
+  ASSERT_NO_FATAL_FAILURE(this->expect("> 12345"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("", ": Int = 12345"));
+  ASSERT_EQ(1, bellCount);
+
   this->send(CTRL_D);
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
 }

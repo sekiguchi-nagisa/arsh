@@ -513,6 +513,11 @@ void Screen::addChar(int ch) {
   case '\t':
     this->setChar('\t');
     break;
+  case '\a':
+    if (this->bellCallback) {
+      this->bellCallback();
+    }
+    break;
   case 127:
     this->setChar('\0');
     break;

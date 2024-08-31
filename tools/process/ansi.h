@@ -45,6 +45,8 @@ private:
 
   std::function<void(std::string &&)> reporter;
 
+  std::function<void()> bellCallback; // for bell character
+
   arsh::AmbiguousCharWidth eaw{arsh::AmbiguousCharWidth::HALF};
 
   unsigned char yych{0};
@@ -71,6 +73,10 @@ public:
   Screen() : Screen(Pos::defaultSize()) {}
 
   void setReporter(std::function<void(std::string &&)> func) { this->reporter = std::move(func); }
+
+  void setBellCallback(std::function<void()> &&callback) {
+    this->bellCallback = std::move(callback);
+  }
 
   void setEAW(arsh::AmbiguousCharWidth v) { this->eaw = v; }
 

@@ -207,9 +207,12 @@ public:
 class InteractiveShellBase : public InteractiveBase {
 protected:
   std::string prompt{"> "};
-  Screen screen;
   bool resetBeforeRead{true};
   arsh::AmbiguousCharWidth eaw{arsh::AmbiguousCharWidth::FULL};
+
+private:
+  std::function<void()> bellCallback;
+  Screen screen;
 
 public:
   InteractiveShellBase(const char *binPath, const char *dir)
@@ -218,6 +221,10 @@ public:
   }
 
   void setPrompt(const std::string &p) { this->prompt = p; }
+
+  void setBellCallback(std::function<void()> &&callback) {
+    this->bellCallback = std::move(callback);
+  }
 
   std::pair<std::string, std::string> readAll() override;
 

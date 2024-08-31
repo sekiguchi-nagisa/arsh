@@ -158,4 +158,5 @@ void InteractiveShellBase::resetScreen() {
   this->screen = Screen({.row = winSize.rows, .col = winSize.cols});
   this->screen.setEAW(this->eaw);
   this->screen.setReporter([&](std::string &&m) { this->send(m.c_str()); });
+  this->screen.setBellCallback(std::function(this->bellCallback));
 }
