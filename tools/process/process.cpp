@@ -573,8 +573,6 @@ void Screen::clear() {
       ch = '\0';
     }
   }
-  this->row = 0;
-  this->col = 0;
   this->maxUsedRows = 1;
 }
 
