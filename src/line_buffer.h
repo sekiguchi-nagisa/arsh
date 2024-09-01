@@ -84,8 +84,6 @@ public:
 
   void syncNewlinePosList();
 
-  void clearNewlinePosList() { this->newlinePosList.clear(); }
-
   unsigned int getCursor() const { return this->cursor; }
 
   /**

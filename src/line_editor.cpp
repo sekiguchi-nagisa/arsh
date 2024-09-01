@@ -544,8 +544,7 @@ void LineEditorObject::refreshLine(ARState &state, RenderingContext &ctx, bool r
 
 ssize_t LineEditorObject::accept(ARState &state, RenderingContext &ctx) {
   this->kickHistSyncCallback(state, ctx.buf);
-  ctx.buf.clearNewlinePosList(); // force move cursor to end (force enter single line mode)
-  if (ctx.buf.moveCursorToEndOfLine()) {
+  if (ctx.buf.moveCursorToEndOfBuf()) {
     this->refreshLine(state, ctx, false);
   }
   if (state.hasError()) {
@@ -604,10 +603,9 @@ ssize_t LineEditorObject::editLine(ARState &state, RenderingContext &ctx) {
   const ssize_t count = this->editInRawMode(state, ctx);
   const int errNum = errno;
   if (count == -1 && errNum != 0) {
-    ctx.buf.clearNewlinePosList(); // force move cursor to end (force enter single line mode)
     if (ctx.scrolling) {
       linenoiseClearScreen(this->inFd);
-    } else if (ctx.buf.moveCursorToEndOfLine()) {
+    } else if (ctx.buf.moveCursorToEndOfBuf()) {
       this->refreshLine(state, ctx, false);
     }
   }
