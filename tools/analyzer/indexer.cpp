@@ -561,6 +561,12 @@ void SymbolIndexer::visitApplyNode(ApplyNode &node) {
         handle = hd.get();
         funcName = varNode.getVarName();
       }
+    } else if (isa<AccessNode>(node.getExprNode())) {
+      const auto &accessNode = cast<AccessNode>(node.getExprNode());
+      if (auto &hd = accessNode.getHandle(); hd && hd->isFuncHandle()) {
+        handle = hd.get();
+        funcName = accessNode.getFieldName();
+      }
     }
   }
   if (handle && node.getArgsNode().hasNamedArgs()) {

@@ -55,3 +55,7 @@ typedef BBB(a111: Int, b222: Int) {
 }
 
 assert new BBB($b222: 34, $a111: 111).aaa == 111
+
+source ../../_module4test/module3.ds as mod
+
+$mod.test($cond:$false, $f:function()=>"")   # named arg from named import

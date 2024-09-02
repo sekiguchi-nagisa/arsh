@@ -557,6 +557,10 @@ CallSignature TypeChecker::resolveCallSignature(ApplyNode &node) {
       const auto &varNode = cast<VarNode>(exprNode);
       ptr = varNode.getHandle().get();
       name = varNode.getVarName().c_str();
+    } else if (isa<AccessNode>(exprNode)) {
+      const auto &accessNode = cast<AccessNode>(exprNode);
+      ptr = accessNode.getHandle().get();
+      name = accessNode.getFieldName().c_str();
     }
     callableTypes = cast<FunctionType>(type).toCallSignature(name, ptr);
   } else {

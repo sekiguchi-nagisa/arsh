@@ -62,6 +62,7 @@
 
 - bugfix ``LineEditor#action`` method when remove custom action
     - now correctly remove key-bindings that bound to removed custom action
+- fix named argument of named imported function
 
 ## [0.34.1] - 2024-07-22
 
