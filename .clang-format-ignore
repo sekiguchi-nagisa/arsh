@@ -1,1 +1,4 @@
-external/*
+external
+.github
+.circleci
+doc
