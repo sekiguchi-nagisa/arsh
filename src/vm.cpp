@@ -816,7 +816,7 @@ bool VM::forkAndExec(ARState &state, const char *filePath, const ArrayObject &ar
       }
     }
     selfPipe.close(READ_PIPE);
-    if (readSize > 0 && errNum == ENOENT) { // remove cached path
+    if (readSize > 0) { // remove cached path
       state.pathCache.removePath(argvObj.getValues()[0].asCStr());
     }
 
@@ -1219,6 +1219,7 @@ int VM::builtinExec(ARState &state, ArrayObject &argvObj, Value &&redir) {
     char *envp[] = {nullptr};
     xexecve(filePath, argvObj, clearEnv ? envp : nullptr);
     raiseCmdError(state, argvObj.getValues()[0].asCStr(), errno);
+    state.pathCache.removePath(argvObj.getValues()[0].asCStr()); // always remove entry
 
     // restore SHLVL
     if (!clearEnv) {
