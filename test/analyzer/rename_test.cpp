@@ -1138,9 +1138,9 @@ var EEE = 34
 { var WWW : Int? }
 eee() {}
 typedef TTT : Error
-function size() : Int for TTT { return 234; }
-function fff() {}
-typedef GGG() { let size = 34; }
+function size(_aaa:Int) : Int for TTT { return 234; }
+function fff(bbb:Int) {}
+typedef GGG(ccc:Int) { let size = 34; }
 )");
 
   auto content = format(R"(
@@ -1152,9 +1152,9 @@ source %s as mod
 { var FFF = 34; }
 $mod.EEE
 mod eee
-new mod.TTT().size()
-$mod.fff()
-new mod.GGG().size
+new mod.TTT().size($_aaa: 12)
+$mod.fff($bbb: -222)
+new mod.GGG($ccc:0).size
 )",
                         fileName.c_str());
   ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content.c_str(), 1));
@@ -1177,11 +1177,11 @@ new mod.GGG().size
 
   // rename type field access via mod
   ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 2, .line = 4, .character = 9}, "UUU",
-                                       {{2, "(4:8~4:11)"}, {2, "(5:26~5:29)"}, {1, "(9:8~9:11)"}}));
+                                       {{2, "(4:8~4:11)"}, {2, "(5:34~5:37)"}, {1, "(9:8~9:11)"}}));
   ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 2, .line = 4, .character = 9}, "DDD",
-                                       {{2, "(4:8~4:11)"}, {2, "(5:26~5:29)"}, {1, "(9:8~9:11)"}}));
+                                       {{2, "(4:8~4:11)"}, {2, "(5:34~5:37)"}, {1, "(9:8~9:11)"}}));
   ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 2, .line = 4, .character = 9}, "mod",
-                                       {{2, "(4:8~4:11)"}, {2, "(5:26~5:29)"}, {1, "(9:8~9:11)"}}));
+                                       {{2, "(4:8~4:11)"}, {2, "(5:34~5:37)"}, {1, "(9:8~9:11)"}}));
 
   ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 2, .line = 5, .character = 9}, "empty",
                                        {{2, "(5:9~5:13)"}, {1, "(9:14~9:18)"}}));
@@ -1194,8 +1194,16 @@ new mod.GGG().size
   ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 2, .line = 6, .character = 9}, "mod",
                                        {{2, "(6:9~6:12)"}, {1, "(10:5~10:8)"}}));
 
-  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 2, .line = 7, .character = 23}, "length",
-                                       {{2, "(7:20~7:24)"}, {1, "(11:14~11:18)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 2, .line = 7, .character = 29}, "length",
+                                       {{2, "(7:27~7:31)"}, {1, "(11:20~11:24)"}}));
+
+  // rename named argument
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 2, .line = 5, .character = 17}, "mod",
+                                       {{2, "(5:14~5:18)"}, {1, "(9:20~9:24)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 2, .line = 6, .character = 13}, "WWW",
+                                       {{2, "(6:13~6:16)"}, {1, "(10:10~10:13)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 2, .line = 7, .character = 14}, "GGG",
+                                       {{2, "(7:12~7:15)"}, {1, "(11:13~11:16)"}}));
 }
 
 TEST_F(RenameTest, importModSymbol1) {
