@@ -30,6 +30,7 @@
 - automatically clear file path cache after ``PATH`` modification like bash/zsh
 - remove file path cache entry if command execution failed regardless of errno
     - also remove entry if builtin exec command failed
+- support unicode 16.0
 
 #### Builtin
 
