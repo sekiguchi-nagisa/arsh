@@ -16,6 +16,7 @@
 
 #include <memory>
 
+#include "../external/dragonbox/simple_dragonbox.h"
 #include "arg_parser.h"
 #include "candidates.h"
 #include "core.h"
@@ -122,6 +123,23 @@ uint32_t Value::getMetaData() const {
   return this->value.meta;
 }
 
+static std::string toString(double value) {
+  if (std::isnan(value)) {
+    return "NaN";
+  }
+  if (std::isinf(value)) {
+    return value > 0 ? "Infinity" : "-Infinity";
+  }
+  if (value == 0.0) {
+    return std::signbit(value) ? "-0.0" : "0.0";
+  }
+
+  auto [significand, exponent, sign] = jkj::simple_dragonbox::to_decimal(
+      value, jkj::simple_dragonbox::policy::cache::compact,
+      jkj::simple_dragonbox::policy::binary_to_decimal_rounding::to_even);
+  return Decimal{.significand = significand, .exponent = exponent, .sign = sign}.toString();
+}
+
 std::string Value::toString() const {
   switch (this->kind()) {
   case ValueKind::NUMBER:
@@ -156,13 +174,7 @@ std::string Value::toString() const {
     return std::to_string(this->asInt());
   case ValueKind::FLOAT: {
     double d = this->asFloat();
-    if (std::isnan(d)) {
-      return "NaN";
-    }
-    if (std::isinf(d)) {
-      return d > 0 ? "Infinity" : "-Infinity";
-    }
-    return std::to_string(d);
+    return ::toString(d);
   }
   default:
     if (this->hasStrRef()) {

@@ -16,6 +16,7 @@ assert($c == -23.456789)
 assert($d == 3.0540)
 assert 3.12e+0 == 3.12e+00
 assert 3.12e0 == 3.12e+00
+assert 0.1+0.2 != 0.3
 
 # float to float op
 assert(3.14 == + 3.14)
@@ -141,12 +142,24 @@ assert -92233720368547758090.0 as Int == -1 -9223372036854775807
 
 # to Float
 assert($f as Float is Float)
-assert($f as Float as String == '65535.923400')
+assert($f as Float as String == '65535.9234')
 
 # to String
+assert 0.1 as String == "0.1"
+assert 0.0001 as String == "0.0001"
+assert 0.00001 as String == "1e-5"
+assert -1234.0 as String == "-1234.0"
+assert -123400000.0 as String == "-123400000.0"
+assert -1234000000.0 as String == "-1234000000.0"
+assert -12340000000.0 as String == "-1234e+7"
 assert $nan as String == "NaN"
 assert (-$inf) as String == '-Infinity'
 assert $inf as String == 'Infinity'
+
+var dd = 0.1+0.2
+assert $dd != 0.3
+assert $dd as String != '0.3'
+assert ($dd as String).toFloat()! == $dd
 
 # compare
 assert $nan.compare($nan) == 0

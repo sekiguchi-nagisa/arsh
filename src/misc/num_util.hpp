@@ -256,7 +256,7 @@ inline IntConversionResult<T> parseInteger(const char *&begin, const char *end, 
  * @param begin
  * @param end
  * @param base
- * if 0, auto detect radix
+ * if 0, auto-detect radix
  *   if starts with '0x', '0X', parse as hex number
  *   if starts with '0', '0o', '0O', parse as octal number
  * if 8, parse as octal number

@@ -170,6 +170,41 @@ inline bool isValidIdentifier(const StringRef value) {
   return true;
 }
 
+struct Decimal {
+  uint64_t significand;
+  int exponent;
+  bool sign;
+
+  std::string toString() const {
+    std::string ret;
+    ret += std::to_string(this->significand);
+    if (this->exponent >= 0) {
+      if (this->exponent <= 6) {
+        ret.append(this->exponent, '0');
+        ret += ".0";
+      } else {
+        ret += "e+";
+        ret += std::to_string(this->exponent);
+      }
+    } else {
+      const unsigned int count = ret.size();
+      if (const unsigned int exp = std::abs(this->exponent); count > exp) {
+        ret.insert(ret.end() - exp, '.');
+      } else if (count <= exp && exp - count <= 3) {
+        ret.insert(0, exp - count, '0');
+        ret.insert(0, "0.");
+      } else {
+        ret += 'e';
+        ret += std::to_string(this->exponent);
+      }
+    }
+    if (this->sign) {
+      ret.insert(0, "-");
+    }
+    return ret;
+  }
+};
+
 END_MISC_LIB_NAMESPACE_DECL
 
 #endif // MISC_LIB_FORMAT_HPP

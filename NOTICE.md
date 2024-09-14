@@ -43,6 +43,12 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 This file is distributed under the BSD 2-Clause License (https://www.opensource.org/licenses/bsd-license.php).
 This is copied from [Nicoshev/rapidhash](https://github.com/Nicoshev/rapidhash)
 
+### external/dragonbox/simple_dragonbox.h
+
+This file is distributed under the Apache License Version 2.0 with LLVM
+Exceptions (https://llvm.org/LICENSE.txt).
+This is copied from [jk-jeon/dragonbox](https://github.com/jk-jeon/dragonbox)
+
 ## cmake/modules/DownloadProject.cmake, cmake/modules/DownloadProject.CMakeLists.cmake.in
 
 These files are distributed under MIT License.

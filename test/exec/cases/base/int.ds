@@ -141,11 +141,11 @@ $i64 = 1030792151049
 assert($i64 is Int)
 
 assert($i64 as Float is Float)
-assert($i64 as Float as String == '1030792151049.000000')
-assert($i64.toFloat() as String == '1030792151049.000000')
+assert($i64 as Float as String == '1030792151049.0')
+assert($i64.toFloat() as String == '1030792151049.0')
 $i64 = 7865
-assert($i64 as Float as String == '7865.000000')
-assert($i64.toFloat() as String == '7865.000000')
+assert($i64 as Float as String == '7865.0')
+assert($i64.toFloat() as String == '7865.0')
 $i64 = -12344
-assert($i64 as Float as String == '-12344.000000')
-assert($i64.toFloat() as String == '-12344.000000')
+assert($i64 as Float as String == '-12344.0')
+assert($i64.toFloat() as String == '-12344.0')

@@ -995,6 +995,61 @@ TEST(ShiftOpTest, unsignedRight) {
   }
 }
 
+TEST(DecimalTest, base) {
+  ASSERT_EQ("1.0", (Decimal{1, 0, false}).toString());
+  ASSERT_EQ("-1.0", (Decimal{1, 0, true}).toString());
+
+  ASSERT_EQ("12345.0", (Decimal{12345, 0, false}).toString());
+  ASSERT_EQ("123450.0", (Decimal{12345, 1, false}).toString());
+  ASSERT_EQ("123450.0", (Decimal{12345, 1, false}).toString());
+  ASSERT_EQ("1234500.0", (Decimal{12345, 2, false}).toString());
+  ASSERT_EQ("12345000.0", (Decimal{12345, 3, false}).toString());
+  ASSERT_EQ("123450000.0", (Decimal{12345, 4, false}).toString());
+  ASSERT_EQ("1234500000.0", (Decimal{12345, 5, false}).toString());
+  ASSERT_EQ("12345000000.0", (Decimal{12345, 6, false}).toString());
+  ASSERT_EQ("12345e+7", (Decimal{12345, 7, false}).toString());
+  ASSERT_EQ("12345e+8", (Decimal{12345, 8, false}).toString());
+  ASSERT_EQ("12345e+9", (Decimal{12345, 9, false}).toString());
+  ASSERT_EQ("12345e+10", (Decimal{12345, 10, false}).toString());
+
+  ASSERT_EQ("-12345.0", (Decimal{12345, 0, true}).toString());
+  ASSERT_EQ("-123450.0", (Decimal{12345, 1, true}).toString());
+  ASSERT_EQ("-123450.0", (Decimal{12345, 1, true}).toString());
+  ASSERT_EQ("-1234500.0", (Decimal{12345, 2, true}).toString());
+  ASSERT_EQ("-12345000.0", (Decimal{12345, 3, true}).toString());
+  ASSERT_EQ("-123450000.0", (Decimal{12345, 4, true}).toString());
+  ASSERT_EQ("-1234500000.0", (Decimal{12345, 5, true}).toString());
+  ASSERT_EQ("-12345000000.0", (Decimal{12345, 6, true}).toString());
+  ASSERT_EQ("-12345e+7", (Decimal{12345, 7, true}).toString());
+  ASSERT_EQ("-12345e+8", (Decimal{12345, 8, true}).toString());
+  ASSERT_EQ("-12345e+9", (Decimal{12345, 9, true}).toString());
+  ASSERT_EQ("-12345e+10", (Decimal{12345, 10, true}).toString());
+
+  ASSERT_EQ("1234.5", (Decimal{12345, -1, false}).toString());
+  ASSERT_EQ("123.45", (Decimal{12345, -2, false}).toString());
+  ASSERT_EQ("12.345", (Decimal{12345, -3, false}).toString());
+  ASSERT_EQ("1.2345", (Decimal{12345, -4, false}).toString());
+  ASSERT_EQ("0.12345", (Decimal{12345, -5, false}).toString());
+  ASSERT_EQ("0.012345", (Decimal{12345, -6, false}).toString());
+  ASSERT_EQ("0.0012345", (Decimal{12345, -7, false}).toString());
+  ASSERT_EQ("0.00012345", (Decimal{12345, -8, false}).toString());
+  ASSERT_EQ("12345e-9", (Decimal{12345, -9, false}).toString());
+  ASSERT_EQ("12345e-10", (Decimal{12345, -10, false}).toString());
+  ASSERT_EQ("12345e-11", (Decimal{12345, -11, false}).toString());
+
+  ASSERT_EQ("-1234.5", (Decimal{12345, -1, true}).toString());
+  ASSERT_EQ("-123.45", (Decimal{12345, -2, true}).toString());
+  ASSERT_EQ("-12.345", (Decimal{12345, -3, true}).toString());
+  ASSERT_EQ("-1.2345", (Decimal{12345, -4, true}).toString());
+  ASSERT_EQ("-0.12345", (Decimal{12345, -5, true}).toString());
+  ASSERT_EQ("-0.012345", (Decimal{12345, -6, true}).toString());
+  ASSERT_EQ("-0.0012345", (Decimal{12345, -7, true}).toString());
+  ASSERT_EQ("-0.00012345", (Decimal{12345, -8, true}).toString());
+  ASSERT_EQ("-12345e-9", (Decimal{12345, -9, true}).toString());
+  ASSERT_EQ("-12345e-10", (Decimal{12345, -10, true}).toString());
+  ASSERT_EQ("-12345e-11", (Decimal{12345, -11, true}).toString());
+}
+
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
