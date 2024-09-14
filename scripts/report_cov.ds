@@ -48,7 +48,7 @@ if $/([0-9]+)\.([0-9]+)/.match("$(lcov --version)")!.group(1)!.toInt()! > 1{
 
 lcov $OPT $TOOL --directory . --capture --output-file ${OUTPUT}.info
 lcov $OPT --remove ${OUTPUT}.info \
-    '*test/*' '*fuzzing/*' \
+    '*test/*' '*fuzzing/*' '*external/*'\
     '*-src/*' '/usr/include/*' '*v1/*' \
     '*.re2c.cpp' '*nextToken.cpp' '*tools/json/lexer.cpp' '*tools/uri/uri_parser.cpp' \
     '*tools/process/ansi.cpp' \
