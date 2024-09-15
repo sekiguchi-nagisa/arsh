@@ -32,7 +32,7 @@
 - remove file path cache entry if command execution failed regardless of errno
     - also remove entry if builtin exec command failed
 - support unicode 16.0
-- change string representation of Float value
+- change string representation of Float value. now generate correctly rounded, shortest length string
     - now satisfy the following assertion
       ```
       var d = 0.1+0.2
