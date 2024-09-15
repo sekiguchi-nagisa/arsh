@@ -377,7 +377,7 @@ INIT:
   if (forceInteractive || useReadline) {
     ARState_setOption(state.get(), AR_OPTION_JOB_CONTROL | AR_OPTION_INTERACTIVE);
     const auto [kind, status] = loadRC(state.get(), rcfile);
-    if (kind != AR_ERROR_KIND_SUCCESS) {
+    if (kind != AR_ERROR_KIND_SUCCESS && !useReadline) {
       return status;
     }
   }

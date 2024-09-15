@@ -138,7 +138,9 @@ TEST_F(InteractiveTest, rc1) {
 
 TEST_F(InteractiveTest, rc2) {
   this->invoke("--quiet", "--rcfile", INTERACTIVE_TEST_WORK_DIR "/rcfile2");
-  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(10, WaitStatus::EXITED));
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+  this->send(CTRL_D);
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(10, WaitStatus::EXITED, "\n"));
 }
 
 TEST_F(InteractiveTest, rc3) {
@@ -153,8 +155,9 @@ TEST_F(InteractiveTest, rc3) {
 
 TEST_F(InteractiveTest, rc4) {
   this->invoke("--quiet", "--rcfile", ".");
-  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED, "",
-                                              "arsh: cannot load file: ., by `Is a directory'\n"));
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT, "arsh: cannot load file: ., by `Is a directory'\n"));
+  this->send(CTRL_D);
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
 }
 
 TEST_F(InteractiveTest, rc5) {

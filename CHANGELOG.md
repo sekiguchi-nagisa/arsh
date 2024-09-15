@@ -67,7 +67,9 @@
 
 - **Breaking Change**: change ``-i`` option behavior like bash
     - always run interactive mode (rcfile load, job control, is-interactive), but execute specified input
-    - now ``-i -c string`` execute ``string`` with rcfile loading
+    - now ``-i -c <string>`` execute ``<string>`` with rcfile loading
+        - ``-ci <string>`` notation is not supported since `-c` option recognize `i` as an argument
+    - after rcfile loading, continue read-and-eval even if error (also exit, assertion failure)
 
 ### Fixed
 
