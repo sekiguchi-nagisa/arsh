@@ -129,6 +129,8 @@ function size(): Int for String
 
 function empty(): Bool for String
 
+function ifEmpty(default: String?): String? for String
+
 function count(): Int for String
 
 function chars(): [String] for String

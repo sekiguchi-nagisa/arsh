@@ -392,6 +392,13 @@ $c = ''
 assert $c :- $getstr() == 'check empty'
 assert $icount == 1
 
+# ifEmpty
+assert $'あ'.ifEmpty('aa')! == $'あ'
+assert $'\0'.ifEmpty('aa')! == $'\0'
+assert "".ifEmpty('aa')! == 'aa'
+assert "".ifEmpty('')! == ''
+assert ! "".ifEmpty()
+
 # case
 assert "AbcDEf".lower() == "abcdef"
 assert "AbcDEf".upper() == "ABCDEF"

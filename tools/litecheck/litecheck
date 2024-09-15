@@ -99,7 +99,7 @@ function _parse_directives(path : String) : [String: [Directive]] {
                 $_error($ln, "invalid directive format, must be start with \`$prefix '")
             }
             $line = $line.slice(1) # skip first ' '
-            $line :- $_error($ln, "invalid directive format, need non-emtpy string")
+            $line.ifEmpty() ?? $_error($ln, "invalid directive format, need non-emtpy string")
 
             var key = $type
             if $type == $CHECK || $type.startsWith("CHECK_") {
@@ -277,8 +277,8 @@ function _run_and_check(map : [String : [Directive]]) : Int {
     }
 
     assert command -v mktemp > /dev/null
-    let outPath = "$(mktemp)" :- _error "mktemp failed"
-    let errPath = "$(mktemp)" :- _error "mktemp failed"
+    let outPath = "$(mktemp)".ifEmpty() ?? _error "mktemp failed"
+    let errPath = "$(mktemp)".ifEmpty() ?? _error "mktemp failed"
 
     defer {
         rm -f $outPath

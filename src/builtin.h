@@ -604,6 +604,15 @@ ARSH_METHOD string_empty(RuntimeContext &ctx) {
   RET_BOOL(empty);
 }
 
+//!bind: function ifEmpty($this : String, $default: Option<String>) : Option<String>
+ARSH_METHOD string_ifEmpty(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(string_ifEmpty);
+  if (LOCAL(0).asStrRef().empty()) {
+    RET(EXTRACT_LOCAL(1));
+  }
+  RET(EXTRACT_LOCAL(0));
+}
+
 //!bind: function count($this : String) : Int
 ARSH_METHOD string_count(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_count);
