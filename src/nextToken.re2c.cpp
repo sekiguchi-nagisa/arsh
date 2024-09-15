@@ -287,6 +287,7 @@ INIT:
     <EXPR,CMD> "||"          { MODE(STMT); RET(COND_OR); }
     <EXPR> "=~"              { MODE(STMT); RET(MATCH); }
     <EXPR> "!~"              { MODE(STMT); RET(UNMATCH); }
+    <EXPR> ":-"              { MODE(STMT); RET(STR_CHECK); }
     <EXPR> "?"               { MODE(STMT); RET(TERNARY); }
     <EXPR> "??"              { MODE(STMT); RET(NULL_COALE); }
     <EXPR,CMD> "|"           { MODE(STMT); RET(PIPE); }
@@ -301,6 +302,7 @@ INIT:
     <EXPR> "*="              { MODE(STMT); RET(MUL_ASSIGN); }
     <EXPR> "/="              { MODE(STMT); RET(DIV_ASSIGN); }
     <EXPR> "%="              { MODE(STMT); RET(MOD_ASSIGN); }
+    <EXPR> ":="              { MODE(STMT); RET(STR_ASSIGN); }
     <EXPR> "??="             { MODE(STMT); RET(NULL_ASSIGN); }
     <EXPR> ("=>" | "->")     { MODE(STMT); RET(CASE_ARM); }
 

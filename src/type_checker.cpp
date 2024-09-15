@@ -1093,6 +1093,13 @@ void TypeChecker::visitBinaryOpNode(BinaryOpNode &node) {
     return;
   }
 
+  if (node.getOp() == TokenKind::STR_CHECK) {
+    this->checkType(this->typePool().get(TYPE::String), *node.getLeftNode());
+    this->checkType(this->typePool().get(TYPE::String), *node.getRightNode());
+    node.setType(this->typePool().get(TYPE::String));
+    return;
+  }
+
   if (node.getOp() == TokenKind::NULL_COALE) {
     auto &leftType = this->checkTypeAsExpr(*node.getLeftNode());
     if (leftType.isOptionType()) {

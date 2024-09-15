@@ -778,6 +778,22 @@ void ByteCodeGenerator::visitBinaryOpNode(BinaryOpNode &node) {
     }
 
     this->markLabel(mergeLabel);
+  } else if (kind == TokenKind::STR_CHECK) {
+    auto mergeLabel = makeLabel();
+
+    this->visit(*node.getLeftNode());
+    this->emit0byteIns(OpCode::DUP);
+    auto *handle = this->typePool.lookupMethod(this->typePool.get(TYPE::String), "empty");
+    assert(handle != nullptr);
+    this->emitMethodCallIns(*handle);
+
+    // check left is empty
+    this->emitBranchIns(mergeLabel);
+    // if left is empty eval right
+    this->emit0byteIns(OpCode::POP);
+    this->visit(*node.getRightNode(), CmdCallCtx::AUTO);
+
+    this->markLabel(mergeLabel);
   } else if (kind == TokenKind::NULL_COALE) {
     auto mergeLabel = makeLabel();
 

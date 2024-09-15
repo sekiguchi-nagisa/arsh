@@ -7,7 +7,7 @@ usage() : Nothing {
 }
 
 test() {
-    var p = $1.ifEmpty() ?? usage require non-empty argument
+    var p = $1 :- usage require non-empty argument
     echo $p
 }
 

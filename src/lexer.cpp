@@ -138,6 +138,8 @@ TokenKind resolveAssignOp(TokenKind op) {
     return TokenKind::DIV;
   case TokenKind::MOD_ASSIGN:
     return TokenKind::MOD;
+  case TokenKind::STR_ASSIGN:
+    return TokenKind::STR_CHECK;
   case TokenKind::NULL_ASSIGN:
     return TokenKind::NULL_COALE;
   default:

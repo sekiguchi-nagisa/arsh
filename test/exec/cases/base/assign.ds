@@ -24,6 +24,19 @@ $s += 'l'
 $s += '##' + $s
 assert $s == '0123456789abcdefghijkl##0123456789abcdefghijkl'
 
+var icount = 0;
+function getstr() : String {
+    $icount++;
+    return "check empty and assign"
+}
+$s := $getstr()
+assert $icount == 0
+assert $s == '0123456789abcdefghijkl##0123456789abcdefghijkl'
+$s = ''
+$s := $getstr()
+assert $icount == 1
+assert $s == 'check empty and assign'
+
 var b = '23'.toInt()
 $b ??= 0
 assert $b! == 23
@@ -51,6 +64,10 @@ assert $b! == 100
     assert($s == 'ab')
     $s = ''
     assert $s.empty()
+
+    $s := $getstr()
+    assert $s == 'check empty and assign'
+    assert $icount == 2
 
     var b1 = '23.3'.toFloat()
     $b1 ??= 3.14
@@ -81,6 +98,10 @@ $t2._0 += "abcd"
 assert $t2._0 == "abcd"
 $t2._0 = ''
 assert $t2._0.empty()
+
+$t2._0 := $getstr()
+assert $t2._0 == 'check empty and assign'
+assert $icount == 3
 
 var t3 = ('~hfore'.toInt(),)
 $t3._0 ??= 888
@@ -113,6 +134,15 @@ assert $i2[0] == "1234"
 $i2[0] += -5 + $i2[0]
 assert $i2[0] == "1234-51234"
 
+$i2[0] := $getstr()
+assert $i2[0] == "1234-51234"
+assert $icount == 3
+
+$i2[0] = ''
+$i2[0] := $getstr()
+assert $i2[0] == "check empty and assign"
+assert $icount == 4
+
 var i3 = [new Int?()]
 $i3[0] ??= 12
 assert $i3[0]! == 12
@@ -121,6 +151,10 @@ assert $i3[0]! == 12
 
 # env
 export-env ABCD = ""
+$ABCD := $getstr()
+assert $ABCD == 'check empty and assign'
+assert $icount == 5
+
 var ex = 34 as Any
 try {
     $ABCD = $'hello\x00'
