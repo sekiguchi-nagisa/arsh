@@ -40,7 +40,7 @@ $ret.clear()
 
 ## error from read callback
 function raise($s : String) {
-    $s :- throw new InvalidOperationError("must not be empty")
+    $s.ifEmpty() ?? throw new InvalidOperationError("must not be empty")
     $ret.add($s)
 }
 

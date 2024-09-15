@@ -7,11 +7,11 @@ error() : Nothing {
 }
 
 gen_rpm_spec() {
-    var src = $1 :- error "require src"
-    var dest = $2 :- error "require dest"
-    var version = $3 :- error "require version"
+    var src = $1.ifEmpty() ?? error "require src"
+    var dest = $2.ifEmpty() ?? error "require dest"
+    var version = $3.ifEmpty() ?? error "require version"
 
-    var content = "$(cat $src)" :- error "$src: content is broken"
+    var content = "$(cat $src)".ifEmpty() ?? error "$src: content is broken"
     $content = "
 function(VERSION: String, dest: String) => {
     cat << EOF > \$dest
