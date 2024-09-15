@@ -43,6 +43,7 @@
 
 - **Breaking Change**: disable software flow control by default like fish
 - **Breaking Change**: do not ignore ``SIGWINCH``
+- **Breaking Change**: remove ``CLI#parseOrExit`` method due to unused
 - add ``once`` param to ``String#replace`` and ``Regex#replace`` methods
     - now only replace first occurrence of pattern
 - add ``start``, ``end`` method to ``RegexMatch`` type. now get offsets of match string

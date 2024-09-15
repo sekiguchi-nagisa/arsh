@@ -2438,24 +2438,8 @@ ARSH_METHOD cli_parse(RuntimeContext &ctx) {
   auto &args = typeAs<ArrayObject>(LOCAL(1));
   if (auto ret = parseCommandLine(ctx, args, obj)) {
     RET(Value::createInt(ret.index));
-  } else {
-    RET_ERROR;
   }
-}
-
-//!bind: function parseOrExit($this : CLI, $args: Array<String>) : Int
-ARSH_METHOD cli_parseOrExit(RuntimeContext &ctx) {
-  SUPPRESS_WARNING(cli_parseOrExit);
-  auto &obj = typeAs<BaseObject>(LOCAL(0));
-  auto &args = typeAs<ArrayObject>(LOCAL(1));
-  if (auto ret = parseCommandLine(ctx, args, obj)) {
-    RET(Value::createInt(ret.index));
-  } else {
-    auto error = ctx.getCallStack().takeThrownObject();
-    showCommandLineUsage(*error);
-    raiseShellExit(ctx, error->getStatus());
-    RET_ERROR;
-  }
+  RET_ERROR;
 }
 
 //!bind: function usage($this : CLI, $message : Option<String>, $verbose : Option<Bool>) : String

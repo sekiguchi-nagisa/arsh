@@ -13,11 +13,11 @@ typedef AAA() {
 
 ## range
 var aa = new AAA()
-assert $aa.parseOrExit(["--call-limit=10", "rest", "reset2"]) == 1
+assert $aa.parse(["--call-limit=10", "rest", "reset2"]) == 1
 assert $aa.Call_Limit == 10
 
 $aa = new AAA()
-assert $aa.parseOrExit(["--call-limit", "-10"]) == 2
+assert $aa.parse(["--call-limit", "-10"]) == 2
 assert $aa.Call_Limit == -10
 
 var ex = 34 as Any
@@ -124,64 +124,5 @@ Options:
   --camel-case CAMEL_CASE
   --upper0-c1-amel0-case UPPER0_C1_AMEL0_CASE
   -h, --help                                   show this help message" : new _AAA().usage()
-
-
-# parseOrExit
-## usage
-assert "$({
-  var cli = new AAA()
-  $cli.setName($'cmd1\x00@@')
-  $cli.parseOrExit(["--huga"])
-  12/0  # always raise
-} with 2>&1)" == "cmd1${$'\x00'}@@: invalid option: --huga
-Usage: cmd1${$'\x00'}@@ [OPTIONS]
-
-Options:
-  --call-limit CALL_LIMIT     count
-  -l[LEVEL], --level[=LEVEL]
-  -h, --help                  show this help message"
-assert $? == 2
-
-assert "$({
-  var cli = new AAA()
-  $cli.parseOrExit(["--call-limit"])
-  12/0  # always raise
-} with 2>&1)" == "$ARG0: --call-limit option needs argument
-Usage: $ARG0 [OPTIONS]
-
-Options:
-  --call-limit CALL_LIMIT     count
-  -l[LEVEL], --level[=LEVEL]
-  -h, --help                  show this help message"
-assert $? == 2
-
-## help
-assert "$({
-  var cli = new AAA()
-  $cli.setName('cmd12')
-  $cli.parseOrExit(["--help"])
-  12/0  # always raise
-} with 2>&1)" == "Usage: cmd12 [OPTIONS]
-
-Options:
-  --call-limit CALL_LIMIT     count
-  -l[LEVEL], --level[=LEVEL]
-  -h, --help                  show this help message"
-assert $? == 0
-
-## invalid
-assert "$({
-  var cli = new AAA()
-  $cli.setName('cmd13')
-  $cli.parseOrExit(["--call-limit=111"])
-  12/0  # always raise
-} with 2>&1)" == "cmd13: invalid argument: \`111' for --call-limit option, must be [-10, 10]
-Usage: cmd13 [OPTIONS]
-
-Options:
-  --call-limit CALL_LIMIT     count
-  -l[LEVEL], --level[=LEVEL]
-  -h, --help                  show this help message"
-assert $? == 1
 
 true

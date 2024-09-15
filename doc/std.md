@@ -368,8 +368,6 @@ function setName(arg0: String): Void for CLI
 
 function parse(args: [String]): Int for CLI
 
-function parseOrExit(args: [String]): Int for CLI
-
 function usage(message: String?, verbose: Bool?): String for CLI
 ```
 
