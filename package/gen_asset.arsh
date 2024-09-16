@@ -24,7 +24,7 @@ EOF
 }
 
 [<CLI(toplevel: $true)>]
-typedef _Param() {
+type _Param() {
     [<Option(required: $true, short: "v", long: "version", help: "specify package version (such as 0.0.0)")>]
     var version = ""
 

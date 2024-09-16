@@ -95,7 +95,7 @@ $assertArray($({complete -A cmd 'va'; echo 'var'; } | sort | uniq ), $(complete 
 $assertArray($({complete -A cmd 'var'; echo 'var'; } | sort | uniq ), $(complete 'var'))
 $assertArray(["while", "while15"], $(complete 'whil'))
 $assertArray(["while", "while15"], $(complete 'while'))
-$assertArray(["typed16", "typedef"], $(complete 'typed'))
+$assertArray(["type", "typed16"], $(complete 'type'))
 
 # compelte infix keyword
 $assertArray(['in'], $(complete 'for $a i'))
@@ -163,7 +163,7 @@ this is a pen
 $assertArray(['Arg', 'CLI', 'Flag', 'Option', 'SubCmd'], $(complete '[< '))
 $assertArray(['Option'], $(complete '[< Op'))
 $assertArray(['>]'], $(complete '[< CLI '))
-$assertArray(['[<', 'let', 'typedef', 'var'], $(complete '[< CLI >] '))
+$assertArray(['[<', 'let', 'type', 'var'], $(complete '[< CLI >] '))
 
 # complete attribute param
 $assertArray(['help', 'long', 'required', 'short', 'stop', 'store', 'xor'], $(complete '[< Flag('))

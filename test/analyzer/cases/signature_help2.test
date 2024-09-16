@@ -41,7 +41,7 @@
 #    CHECK:     "signatures": [
 #    CHECK:       {
 #    CHECK:         "activeParameter": 0,
-#    CHECK:         "label": "typedef AAA(a: Int)",
+#    CHECK:         "label": "type AAA(a: Int)",
 #    CHECK:         "parameters": [
 #    CHECK:           {
 #    CHECK:             "label": "a: Int"
@@ -70,7 +70,7 @@
 #    CHECK:     "activeSignature": 0,
 #    CHECK:     "signatures": [
 #    CHECK:       {
-#    CHECK:         "label": "typedef AAA(a: Int)",
+#    CHECK:         "label": "type AAA(a: Int)",
 #    CHECK:         "parameters": []
 #    CHECK:       }
 #    CHECK:     ]

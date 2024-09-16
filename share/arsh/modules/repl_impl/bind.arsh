@@ -2,7 +2,7 @@
 # for key bind setting
 
 [<CLI(desc: 'Set or display key bindings')>]
-typedef _BindParam() {
+type _BindParam() {
     [<Flag(short: 'l', xor: 1, help: "list defined key actions")>]
     var list = $false
 

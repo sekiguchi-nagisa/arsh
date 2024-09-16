@@ -60,7 +60,7 @@ function _parse_num(v : String) : Int? {
     return $r
 }
 
-typedef Directive(t : String, l : String, n : Int) {
+type Directive(t : String, l : String, n : Int) {
     let type = $t   # directive type (RUN, CHECK, CHECKERR, STATUS, REQUIRES)
     assert !$l.empty()
     let line = case $type {
@@ -306,7 +306,7 @@ function _run_and_check(map : [String : [Directive]]) : Int {
 }
 
 [<CLI(verbose: $true)>]
-typedef Param() {
+type Param() {
     [<Option(short: 'b', help: 'target executable file')>]
     var bin : String?
 

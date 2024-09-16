@@ -514,7 +514,7 @@ Optional<SignatureInformation> Analyzer::collectSignature(const SourcePtr &src,
     if (!signature.handle) {
       if (!signature.returnType->isUnresolved()) {
         if (StringRef name = signature.name; name == OP_INIT) {
-          out += "typedef "; // for Array, Map, Option constructor
+          out += "type "; // for Array, Map, Option constructor
           normalizeTypeName(*signature.returnType, out);
           out += "()";
         } else { // for indirect function call without variable name
@@ -537,7 +537,7 @@ Optional<SignatureInformation> Analyzer::collectSignature(const SourcePtr &src,
       auto &recvType = ctx->getPool().get(methodHandle->getTypeId());
       const bool constructor = methodName == OP_INIT;
       if (constructor) {
-        out += "typedef ";
+        out += "type ";
         normalizeTypeName(recvType, out);
       } else {
         out += "function ";

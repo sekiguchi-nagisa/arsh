@@ -771,7 +771,7 @@ std::unique_ptr<Node> Parser::parse_statementImpl() {
     }
     return node;
   }
-  case TokenKind::TYPEDEF:
+  case TokenKind::TYPE:
     return this->parse_typedef();
   case TokenKind::ATTR_OPEN:
     return this->parse_attributes();
@@ -829,7 +829,7 @@ std::unique_ptr<Node> Parser::parse_statementEnd(bool onlyLineEnd) {
 std::unique_ptr<Node> Parser::parse_typedef() {
   GUARD_DEEP_NESTING(guard);
 
-  assert(CUR_KIND() == TokenKind::TYPEDEF);
+  assert(CUR_KIND() == TokenKind::TYPE);
   const unsigned int startPos = START_POS();
   this->consume(); // TYPEDEF
   auto nameInfo = TRY(this->expectName(TokenKind::IDENTIFIER, &Lexer::toTokenText));
@@ -2575,11 +2575,11 @@ std::unique_ptr<Node> Parser::parse_attributes() {
   case TokenKind::LET:
     node = TRY(this->parse_variableDeclaration());
     break;
-  case TokenKind::TYPEDEF:
+  case TokenKind::TYPE:
     node = TRY(this->parse_typedef());
     break;
   default:
-    E_ALTER_OR_COMP(TokenKind::VAR, TokenKind::LET, TokenKind::TYPEDEF, TokenKind::ATTR_OPEN);
+    E_ALTER_OR_COMP(TokenKind::VAR, TokenKind::LET, TokenKind::TYPE, TokenKind::ATTR_OPEN);
   }
 
   switch (node->getNodeKind()) {

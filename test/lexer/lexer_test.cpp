@@ -350,7 +350,14 @@ TEST_F(LexerTest_Lv1, alias_tok) {
 TEST_F(LexerTest_Lv1, typedef_tok) {
   const char *text = "typedef";
   this->initLexer(text);
-  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::TYPEDEF, text, TokenKind::EOS, ""));
+  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::TYPE, text, TokenKind::EOS, ""));
+  ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycNAME));
+}
+
+TEST_F(LexerTest_Lv1, type_tok) {
+  const char *text = "type";
+  this->initLexer(text);
+  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::TYPE, text, TokenKind::EOS, ""));
   ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycNAME));
 }
 

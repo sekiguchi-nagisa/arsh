@@ -123,7 +123,7 @@ std::string generateHoverContent(const SourceManager &srcMan, const SymbolIndexe
     break;
   }
   case DeclSymbol::Kind::CONSTRUCTOR: {
-    content += "typedef ";
+    content += "type ";
     content += name;
     formatCommandLineUsage(decl.getInfo(), markup, content);
     break;
@@ -159,14 +159,14 @@ std::string generateHoverContent(const SourceManager &srcMan, const SymbolIndexe
     return "";
   }
   case DeclSymbol::Kind::TYPE_ALIAS: {
-    content += "typedef ";
+    content += "type ";
     content += name;
     content += " = ";
     content += decl.getInfo();
     break;
   }
   case DeclSymbol::Kind::ERROR_TYPE_DEF: {
-    content += "typedef ";
+    content += "type ";
     content += name;
     content += ": ";
     content += decl.getInfo();

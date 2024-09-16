@@ -43,7 +43,7 @@ HighlightTokenClass toTokenClass(TokenKind kind) {
   case TokenKind::SOURCE_OPT:
   case TokenKind::TRY:
   case TokenKind::THROW:
-  case TokenKind::TYPEDEF:
+  case TokenKind::TYPE:
   case TokenKind::VAR:
   case TokenKind::WHILE:
   case TokenKind::TYPEOF:

@@ -88,7 +88,7 @@ __cmd() {
 
                             'assert', 'defer',
                            'exportenv', 'importenv',
-                           'let', 'source', 'source?', 'typedef',
+                           'let', 'source', 'source?','type',
                            'var', ';'])
     }
 }

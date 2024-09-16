@@ -225,7 +225,8 @@ INIT:
     <STMT> "try"             { RET_OR_COMP(TRY); }
     <STMT> "throw"           { RET_OR_COMP(THROW); }
     <STMT> "time"            { RET_OR_COMP(TIME); }
-    <STMT> "typedef"         { MODE(NAME); RET_OR_COMP(TYPEDEF); }
+    <STMT> "typedef"         { MODE(NAME); RET_OR_COMP(TYPE); }
+    <STMT> "type"            { MODE(NAME); RET_OR_COMP(TYPE); }
     <STMT> "var"             { MODE(NAME); RET_OR_COMP(VAR); }
     <STMT,EXPR> "while"      { MODE(STMT); RET_OR_COMP(WHILE); }
 

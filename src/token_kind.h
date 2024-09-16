@@ -52,7 +52,7 @@
   TOKEN(TRY, "try")                                                                                \
   TOKEN(THROW, "throw")                                                                            \
   TOKEN(TIME, "time")                                                                              \
-  TOKEN(TYPEDEF, "typedef")                                                                        \
+  TOKEN(TYPE, "type")                                                                              \
   TOKEN(VAR, "var")                                                                                \
   TOKEN(WHILE, "while")                                                                            \
   /* unary op */                                                                                   \
@@ -328,7 +328,7 @@
   OP(IMPORT_ENV)                                                                                   \
   OP(SOURCE)                                                                                       \
   OP(SOURCE_OPT)                                                                                   \
-  OP(TYPEDEF)                                                                                      \
+  OP(TYPE)                                                                                         \
   OP(ATTR_OPEN)                                                                                    \
   OP(LINE_END)                                                                                     \
   EACH_LA_varDecl(OP) EACH_LA_expression(OP)

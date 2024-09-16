@@ -23,7 +23,7 @@ function _error(s : String) {
 }
 
 [<CLI(desc: "Display or manipulate history list.")>]
-typedef _HistParam() {
+type _HistParam() {
     [<Flag(short: "c", help: "clear the history list", stop: $true)>]
     var clear = $false
 

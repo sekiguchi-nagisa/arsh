@@ -144,7 +144,7 @@ Prompt Escape Sequence:
     \0nnn   N is octal number.  NNN can be 0 to 3 number
     \xnn    N is hex number.  NN can be 1 to 2 number"
 )>]
-typedef _PromptParam() {
+type _PromptParam() {
     [<Arg>]
     var prompt: String?
 }

@@ -7,6 +7,8 @@
 #### Core
 
 - ``Command`` type support ``==``, ``!=`` operators like function
+- add ``type`` keyword. now define type by using ``type`` keyword instead of ``typedef``
+    - ``typedef`` keyword is still used for type definition
 
 #### Builtin
 

@@ -804,7 +804,7 @@ static std::string generateConstructorInfo(const TypePool &pool, const FunctionN
     } else if (isa<TypeDefNode>(*e)) {
       auto &defNode = cast<TypeDefNode>(*e);
       if (defNode.getDefKind() == TypeDefNode::ALIAS) {
-        value += "    typedef ";
+        value += "    type ";
         value += defNode.getName();
         value += " = ";
         normalizeTypeName(defNode.getTargetTypeNode().getType(), value);

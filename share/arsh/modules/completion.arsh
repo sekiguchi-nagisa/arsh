@@ -1,7 +1,7 @@
 
 # for tab completion
 
-typedef Completer = (Module, [String], Int) -> Candidates?
+type Completer = (Module, [String], Int) -> Candidates?
 
 let _compMap : [String : Completer]
 
@@ -30,7 +30,7 @@ function compAdd(cmd : String, comp : Completer) : Completer? {
 
 # for completion helper
 
-typedef _CompDef(o : String?, t : Int?, a : String?) {
+type _CompDef(o : String?, t : Int?, a : String?) {
     let option = $o ?? ""   # option (length 0: empty, 1: short, 2<=: long, other)
     let type = $t ?? -1     # arg type (-1: empty, 0: list, 1: cmdline, 2: action, 3: comp)
     let arg = $a ?? ""      # argument
@@ -287,7 +287,7 @@ function _from_compdef(ctx : Module, words : [String], cursor : Int) : Candidate
 }
 
 [<CLI()>]
-typedef _CompDefParam() {
+type _CompDefParam() {
     [<Option(required: $true, placeholder: "COMMAND", help: "set target command")>]
     var cmd = ''
 

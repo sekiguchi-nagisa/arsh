@@ -1598,10 +1598,9 @@ TEST_F(IndexTest, hover) {
 
   // user-defined error type
   ASSERT_NO_FATAL_FAILURE(this->hover("typedef App : OutOfRangeError\n34 is\nApp", 2,
-                                      "```arsh\ntypedef App: OutOfRangeError\n```"));
-  ASSERT_NO_FATAL_FAILURE(
-      this->hover("typedef AppError : Error; typedef API : AppError\n34 is\nAPI", 2,
-                  "```arsh\ntypedef API: AppError\n```"));
+                                      "```arsh\ntype App: OutOfRangeError\n```"));
+  ASSERT_NO_FATAL_FAILURE(this->hover("type AppError : Error; type API : AppError\n34 is\nAPI", 2,
+                                      "```arsh\ntype API: AppError\n```"));
 
   // user-defined type with explicit constructor
   ASSERT_NO_FATAL_FAILURE(
@@ -1610,7 +1609,7 @@ TEST_F(IndexTest, hover) {
   ASSERT_NO_FATAL_FAILURE(this->hover("typedef Interval(s : Int) { var n = $s; let value = new "
                                       "Interval?(); }\nvar a = new Interval();",
                                       Position{.line = 1, .character = 15}, R"(```arsh
-typedef Interval(s: Int) {
+type Interval(s: Int) {
     var n: Int
     let value: Interval?
 }
@@ -1623,20 +1622,20 @@ typedef Interval(s: Int) {
                                       "```arsh\nvar begin: Int for AAA\n```"));
   ASSERT_NO_FATAL_FAILURE(this->hover("typedef AAA() { typedef Type = Int; }\n23 is AAA.\nType",
                                       Position{.line = 2, .character = 3},
-                                      "```arsh\ntypedef Type = Int for AAA\n```"));
+                                      "```arsh\ntype Type = Int for AAA\n```"));
   ASSERT_NO_FATAL_FAILURE(this->hover("typedef AAA() { typedef Type = Int; 34 is \nType; }",
                                       Position{.line = 1, .character = 3},
-                                      "```arsh\ntypedef Type = Int for AAA\n```"));
+                                      "```arsh\ntype Type = Int for AAA\n```"));
   ASSERT_NO_FATAL_FAILURE(
       this->hover("typedef AAA($_sss : Int) {\n$_sss; }", 1, "```arsh\nvar _sss: Int\n```"));
   ASSERT_NO_FATAL_FAILURE(this->hover("typedef AAA($_sss : Int) {};\nnew AAA(\n$_sss: 111)", 2,
                                       "```arsh\nvar _sss: Int\n```"));
 
   // user-defined type with implicit constructor
-  ASSERT_NO_FATAL_FAILURE(this->hover("typedef Interval { var n : Int; let next : Interval?; "
+  ASSERT_NO_FATAL_FAILURE(this->hover("type Interval { var n : Int; let next : Interval?; "
                                       "}\nvar aaaa = new Interval(2, $none);",
                                       Position{.line = 1, .character = 20}, R"(```arsh
-typedef Interval(n: Int, next: Interval?) {
+type Interval(n: Int, next: Interval?) {
     var n: Int
     let next: Interval?
 }
@@ -1687,7 +1686,7 @@ TEST_F(IndexTest, hoverBuiltin) {
   ASSERT_NO_FATAL_FAILURE(this->hover("34 is\nInt", 1, ""));
   ASSERT_NO_FATAL_FAILURE(this->hover("34 is\nError", 1, ""));
   ASSERT_NO_FATAL_FAILURE(
-      this->hover("34 is\nArithmeticError", 1, "```arsh\ntypedef ArithmeticError: Error\n```"));
+      this->hover("34 is\nArithmeticError", 1, "```arsh\ntype ArithmeticError: Error\n```"));
 
   // builtin variable or type alias
   ASSERT_NO_FATAL_FAILURE(this->hover("$?", 0, "```arsh\nvar ?: Int\n```"));
@@ -1695,8 +1694,7 @@ TEST_F(IndexTest, hoverBuiltin) {
   ASSERT_NO_FATAL_FAILURE(this->hover("$VERSION", 0,
                                       "```arsh\nconst VERSION = '" X_INFO_VERSION_CORE "'"
                                       "\n```"));
-  ASSERT_NO_FATAL_FAILURE(
-      this->hover("$true is\nBoolean", 1, "```arsh\ntypedef Boolean = Bool\n```"));
+  ASSERT_NO_FATAL_FAILURE(this->hover("$true is\nBoolean", 1, "```arsh\ntype Boolean = Bool\n```"));
   ASSERT_NO_FATAL_FAILURE(
       this->hover("$SCRIPT_NAME", 0, "```arsh\nconst SCRIPT_NAME = '/dummy_8'\n```"));
   ASSERT_NO_FATAL_FAILURE(this->hover("$SCRIPT_DIR", 0, "```arsh\nconst SCRIPT_DIR = '/'\n```"));
@@ -1782,7 +1780,7 @@ new AAA()
 )";
 
   const char *out = R"(```arsh
-typedef AAA() {
+type AAA() {
     var %name: String
     var s: Bool
     var output: String?
@@ -1841,7 +1839,7 @@ Options:
 
 TEST_F(IndexTest, hoverUsage3) {
   const char *src = R"([<CLI(toplevel: $true)>]
-typedef Param() {}
+type Param() {}
 fff($p : Param) { echo $p; }
 fff
 )";

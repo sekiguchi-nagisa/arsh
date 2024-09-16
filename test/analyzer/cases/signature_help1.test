@@ -134,7 +134,7 @@
 #    CHECK:     "signatures": [
 #    CHECK:       {
 #    CHECK:         "activeParameter": 0,
-#    CHECK:         "label": "typedef Error(message: String, status: Int?)",
+#    CHECK:         "label": "type Error(message: String, status: Int?)",
 #    CHECK:         "parameters": [
 #    CHECK:           {
 #    CHECK:             "label": "message: String"
@@ -168,7 +168,7 @@
 #    CHECK:     "signatures": [
 #    CHECK:       {
 #    CHECK:         "activeParameter": 1,
-#    CHECK:         "label": "typedef Error(message: String, status: Int?)",
+#    CHECK:         "label": "type Error(message: String, status: Int?)",
 #    CHECK:         "parameters": [
 #    CHECK:           {
 #    CHECK:             "label": "message: String"
@@ -200,7 +200,7 @@
 #    CHECK:     "activeSignature": 0,
 #    CHECK:     "signatures": [
 #    CHECK:       {
-#    CHECK:         "label": "typedef Error(message: String, status: Int?)",
+#    CHECK:         "label": "type Error(message: String, status: Int?)",
 #    CHECK:         "parameters": []
 #    CHECK:       }
 #    CHECK:     ]
@@ -228,7 +228,7 @@
 #    CHECK:     "activeSignature": 0,
 #    CHECK:     "signatures": [
 #    CHECK:       {
-#    CHECK:         "label": "typedef [String]()",
+#    CHECK:         "label": "type [String]()",
 #    CHECK:         "parameters": []
 #    CHECK:       }
 #    CHECK:     ]
