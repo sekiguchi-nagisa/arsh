@@ -31,6 +31,7 @@
   TOKEN(BREAK, "break")                                                                            \
   TOKEN(CASE, "case")                                                                              \
   TOKEN(CATCH, "catch")                                                                            \
+  TOKEN(CONST, "const")                                                                            \
   TOKEN(CONTINUE, "continue")                                                                      \
   TOKEN(COPROC, "coproc")                                                                          \
   TOKEN(DEFER, "defer")                                                                            \

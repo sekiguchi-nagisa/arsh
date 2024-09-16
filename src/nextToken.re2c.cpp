@@ -202,6 +202,7 @@ INIT:
     <STMT> "break"           { RET_OR_COMP(BREAK); }
     <STMT> "case"            { RET_OR_COMP(CASE); }
     <EXPR> "catch"           { MODE(PARAM); RET_OR_COMP_INFIX(CATCH); }
+    <STMT> "const"           { RET(CONST); }
     <STMT> "continue"        { RET_OR_COMP(CONTINUE); }
     <STMT> "coproc"          { RET_OR_COMP(COPROC); }
     <STMT> "defer"           { RET_OR_COMP(DEFER); }
