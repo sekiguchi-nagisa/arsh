@@ -1,11 +1,11 @@
 # builtin variable definition (not call external command, sub-shell)
 
-checkenv PATH || setenv PATH=/bin:/usr/bin:/usr/local/bin
+importenv PATH : "/bin:/usr/bin:/usr/local/bin";
 
-importenv HOME; importenv PATH; importenv PWD; importenv OLDPWD;
+importenv HOME; importenv PWD; importenv OLDPWD;
 importenv USER; importenv LOGNAME; var XTRACEFD = $STDERR
 
-typedef Boolean = Bool; typedef UnixFD = FD; typedef GlobbingError = GlobError; typedef UnwrappingError = UnwrapError;
+type Boolean = Bool; type UnixFD = FD; type GlobbingError = GlobError; type UnwrappingError = UnwrapError;
 
 # dummy function for signal handler
 function SIG_DFL($s : Signal) {}
