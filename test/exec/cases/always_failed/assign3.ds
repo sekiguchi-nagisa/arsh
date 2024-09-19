@@ -1,5 +1,5 @@
-
 #$test($result = 'type', $lineNum = 5, $chars = 9, $errorKind = 'Unacceptable', $status = 1)
 
-var a = 'hejuu'
-var b = ($a := 'heyu')
+function f() {}
+
+var a = $f()

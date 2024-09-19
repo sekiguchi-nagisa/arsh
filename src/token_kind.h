@@ -114,7 +114,6 @@
   TOKEN(NULL_COALE, "??")                                                                          \
   TOKEN(MATCH, "=~")                                                                               \
   TOKEN(UNMATCH, "!~")                                                                             \
-  TOKEN(STR_CHECK, ":-")                                                                           \
   /* ternary op */                                                                                 \
   TOKEN(TERNARY, "?")                                                                              \
   /* suffix op */                                                                                  \
@@ -128,7 +127,6 @@
   TOKEN(MUL_ASSIGN, "*=")                                                                          \
   TOKEN(DIV_ASSIGN, "/=")                                                                          \
   TOKEN(MOD_ASSIGN, "%=")                                                                          \
-  TOKEN(STR_ASSIGN, ":=")                                                                          \
   TOKEN(NULL_ASSIGN, "?"                                                                           \
                      "?=") /* suppress -Wtrigraphs */                                              \
   /* for case expression */                                                                        \
@@ -216,7 +214,6 @@
   OP(MUL_ASSIGN, 1, INFIX | RASSOC)                                                                \
   OP(DIV_ASSIGN, 1, INFIX | RASSOC)                                                                \
   OP(MOD_ASSIGN, 1, INFIX | RASSOC)                                                                \
-  OP(STR_ASSIGN, 1, INFIX | RASSOC)                                                                \
   OP(NULL_ASSIGN, 1, INFIX | RASSOC)
 
 #define EACH_OPERATOR(OP)                                                                          \
@@ -243,7 +240,6 @@
   OP(NE, 10, INFIX)                                                                                \
   OP(MATCH, 10, INFIX)                                                                             \
   OP(UNMATCH, 10, INFIX)                                                                           \
-  OP(STR_CHECK, 10, INFIX)                                                                         \
   OP(WITH, 9, INFIX)                                                                               \
   OP(ENV_ASSIGN, 8, PREFIX)                                                                        \
   OP(PIPE, 7, INFIX)                                                                               \

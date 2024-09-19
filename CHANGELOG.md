@@ -30,6 +30,8 @@
 
 #### Core
 
+- **Breaking Change**: remove ``:-``, ``:=`` operators due to potential syntax ambiguity (``: -``)
+    - use ``String#ifEmpty`` instead
 - re-enable source glob cancellation for potential too slow filesystem
 - automatically clear file path cache after ``PATH`` modification like bash/zsh
 - remove file path cache entry if command execution failed regardless of errno
