@@ -247,12 +247,12 @@ public:
    * @param message
    * @param verbose
    * @return
-   * if string size reacheas limit, return invalid
+   * if string size reaches limit, return invalid
    */
   Optional<std::string> formatUsage(StringRef message, bool verbose) const;
 
 private:
-  bool formatSubCommands(std::string &value) const;
+  bool formatPositionalOrSubCommands(std::string &value, bool isPositional) const;
 };
 
 } // namespace arsh

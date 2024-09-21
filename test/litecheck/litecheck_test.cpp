@@ -111,6 +111,9 @@ TEST_F(LitecheckCLITest, option) {
   const char *err = R"(litecheck: require `FILE' argument
 Usage: litecheck [OPTIONS] FILE
 
+Arguments:
+  <FILE>  target test script (must include litecheck directives)
+
 Options:
   -b BIN      target executable file
   -h, --help  show this help message
@@ -119,6 +122,9 @@ Options:
 
   err = R"(litecheck: file not found: `34'
 Usage: litecheck [OPTIONS] FILE
+
+Arguments:
+  <FILE>  target test script (must include litecheck directives)
 
 Options:
   -b BIN      target executable file
@@ -129,6 +135,9 @@ Options:
   err = R"(litecheck: require regular file: .
 Usage: litecheck [OPTIONS] FILE
 
+Arguments:
+  <FILE>  target test script (must include litecheck directives)
+
 Options:
   -b BIN      target executable file
   -h, --help  show this help message
@@ -137,6 +146,9 @@ Options:
 
   err = R"(litecheck: invalid option: -q
 Usage: litecheck [OPTIONS] FILE
+
+Arguments:
+  <FILE>  target test script (must include litecheck directives)
 
 Options:
   -b BIN      target executable file
@@ -147,6 +159,9 @@ Options:
   err = R"(litecheck: -b option needs argument
 Usage: litecheck [OPTIONS] FILE
 
+Arguments:
+  <FILE>  target test script (must include litecheck directives)
+
 Options:
   -b BIN      target executable file
   -h, --help  show this help message
@@ -156,6 +171,9 @@ Options:
   err = R"(litecheck: file not found: `123'
 Usage: litecheck [OPTIONS] FILE
 
+Arguments:
+  <FILE>  target test script (must include litecheck directives)
+
 Options:
   -b BIN      target executable file
   -h, --help  show this help message
@@ -164,6 +182,9 @@ Options:
 
   err = R"(litecheck: must be executable: `.'
 Usage: litecheck [OPTIONS] FILE
+
+Arguments:
+  <FILE>  target test script (must include litecheck directives)
 
 Options:
   -b BIN      target executable file

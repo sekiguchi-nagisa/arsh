@@ -118,6 +118,7 @@ AttributeMap AttributeMap::create() {
                       Attribute::Param::PLACE_HOLDER,
                       Attribute::Param::RANGE,
                       Attribute::Param::CHOICE,
+                      Attribute::Param::HELP,
                   },
                   {TYPE::StringArray, TYPE::String, TYPE::Int});
 

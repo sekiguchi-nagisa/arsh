@@ -53,13 +53,13 @@ only allowed for field declaration that is ``String``, ``String?``, ``Int`` or `
 ### ``Arg`` attribute
 only allowed for field declaration that is ``String``, ``String?``, ``[String]``, ``[String]?``, ``Int`` or ``Int?`` type
 
-| **param**   | **type**      | **default**                               | **description**                                               |
-|-------------|---------------|-------------------------------------------|---------------------------------------------------------------|
-| required    | ``Bool``      | false                                     | required or not                                               |
-| placeholder | ``String``    | equivalent to upper snake case field name | placeholder for argument                                      |
-| range       | ``(Int,Int)`` | null                                      | range of integer argument (inclusive, inclusive)              |
-| choice      | ``[String]``  | null                                      | valid choice of string argument                               |
-
+| **param**   | **type**      | **default**                               | **description**                                  |
+|-------------|---------------|-------------------------------------------|--------------------------------------------------|
+| required    | ``Bool``      | false                                     | required or not                                  |
+| placeholder | ``String``    | equivalent to upper snake case field name | placeholder for argument                         |
+| range       | ``(Int,Int)`` | null                                      | range of integer argument (inclusive, inclusive) |
+| choice      | ``[String]``  | null                                      | valid choice of string argument                  |
+| help        | ``String``    | empty string                              | help message of this positional argument         |
 
 ### ``SubCmd`` attribute
 only allow for field declaration that is derived type of ``CLI`` type

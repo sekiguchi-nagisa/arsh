@@ -100,7 +100,7 @@ assert $bb.version
 ## Arg
 [<CLI(verbose: $true)>]
 typedef CCC() {
-  [<Arg(required: $true, range:(120,-10))>]
+  [<Arg(required: $true, range:(120,-10), help:$'specify \'aaa\'\ndefault is stdout')>]
   var aaa : Int?
 
   [<Arg>]
@@ -120,6 +120,10 @@ assert (new CCC()) is CLI
 var cc = new CCC()
 $cc.setName("cmd3")
 assert $cc.usage() == "Usage: cmd3 [OPTIONS] AAA [BBB] CCC...
+
+Arguments:
+  <AAA>  specify 'aaa'
+         default is stdout
 
 Options:
   -d, --debug     enable debug mode

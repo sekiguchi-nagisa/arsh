@@ -146,6 +146,7 @@ Optional<std::string> ArgParser::formatUsage(StringRef message, bool verbose) co
     unsigned int optCount = 0;
     unsigned int argCount = 0;
     unsigned int subCmdCount = 0;
+    bool showArgList = false;
     for (auto &e : this->entries) {
       if (e.isHelp()) {
         continue;
@@ -154,6 +155,9 @@ Optional<std::string> ArgParser::formatUsage(StringRef message, bool verbose) co
         optCount++;
       } else if (e.isPositional()) {
         argCount++;
+        if (!e.getDetail().empty()) {
+          showArgList = true;
+        }
       } else if (e.isSubCmd()) {
         subCmdCount++;
       }
@@ -191,10 +195,14 @@ Optional<std::string> ArgParser::formatUsage(StringRef message, bool verbose) co
       TRY_APPEND(this->desc, out);
       TRY_APPEND("\n\n", out);
     }
+    if (showArgList) {
+      TRY(this->formatPositionalOrSubCommands(out, true));
+      TRY_APPEND("\n\n", out);
+    }
     TRY(this->formatOptions(out, SYS_LIMIT_STRING_MAX));
     if (subCmdCount) {
       TRY_APPEND("\n\n", out);
-      TRY(this->formatSubCommands(out));
+      TRY(this->formatPositionalOrSubCommands(out, false));
     }
   } else {
     TRY_APPEND("See `", out);
@@ -207,31 +215,51 @@ ERROR:
   return {};
 }
 
-bool ArgParser::formatSubCommands(std::string &value) const {
+bool ArgParser::formatPositionalOrSubCommands(std::string &value, const bool isPositional) const {
   unsigned int maxLenOfUsage = 0;
+  const unsigned int argNamePad = isPositional ? 2 : 0;
 
   // compute usage len
   for (auto &e : this->entries) {
-    if (!e.isSubCmd()) {
-      continue;
+    if (isPositional) {
+      if (!e.isPositional() || e.getDetail().empty()) {
+        continue;
+      }
+    } else {
+      if (!e.isSubCmd()) {
+        continue;
+      }
     }
-    if (const unsigned int len = e.getArgName().size(); len > maxLenOfUsage) {
+    if (const unsigned int len = e.getArgName().size() + argNamePad; len > maxLenOfUsage) {
       maxLenOfUsage = len;
     }
   }
   std::string spaces;
   spaces.resize(maxLenOfUsage, ' ');
 
-  // format sub-command list message
+  // format positional arguments / sub-command list message
   std::vector<StringRef> details;
-  TRY_APPEND("Commands:", value);
+  TRY_APPEND(isPositional ? "Arguments:" : "Commands:", value);
   for (auto &e : this->entries) {
-    if (!e.isSubCmd()) {
-      continue;
+    if (isPositional) {
+      if (!e.isPositional() || e.getDetail().empty()) {
+        continue;
+      }
+    } else {
+      if (!e.isSubCmd()) {
+        continue;
+      }
     }
     TRY_APPEND("\n  ", value);
+    if (isPositional) {
+      TRY_APPEND('<', value);
+    }
     TRY_APPEND(e.getArgName(), value);
-    TRY(formatDetail(value, SYS_LIMIT_STRING_MAX, e, e.getArgName().size(), spaces, details));
+    if (isPositional) {
+      TRY_APPEND('>', value);
+    }
+    TRY(formatDetail(value, SYS_LIMIT_STRING_MAX, e, e.getArgName().size() + argNamePad, spaces,
+                     details));
   }
   return true;
 

@@ -28,7 +28,7 @@ type _Param() {
     [<Option(required: $true, short: "v", long: "version", help: "specify package version (such as 0.0.0)")>]
     var version = ""
 
-    [<Arg(required: $true, placeholder: "target_dir")>]
+    [<Arg(required: $true, placeholder: "output", help:'output directory of generated asset')>]
     var target  = ""
 }
 

@@ -310,7 +310,7 @@ type Param() {
     [<Option(short: 'b', help: 'target executable file')>]
     var bin : String?
 
-    [<Arg(required: $true)>]
+    [<Arg(required: $true, help: "target test script (must include litecheck directives)")>]
     var file = ""
 }
 
