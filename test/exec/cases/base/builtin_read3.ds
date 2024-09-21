@@ -23,14 +23,14 @@ echo -n hello | {
 # no splitting
 # terminate newline
 echo -e -n '   hello\n  world   \t   \n' | {
-    read -u /dev/fd/0; assert($REPLY == "hello");
-    read; assert($REPLY == "world")
+    read -u /dev/fd/0; assert($REPLY == "   hello");
+    read; assert($REPLY == $'  world   \t   ')
 }
 
 # no splitting
-# if not specified separator, use IFS
+# if not specified separator, use IFS (not remove spaces if use REPLY)
 echo -e -n '  \t  hello world \t  \t  \n' | {
-    read; assert($REPLY == "hello world");
+    read; assert($REPLY == $'  \t  hello world \t  \t  ');
     assert($reply.empty())
 }
 
@@ -52,9 +52,14 @@ echo -en '1hello1world \n' | {
 
 # no splitting
 # specify multiple separator
+# ignroe IFS if use REPLY
+echo -en '  1hello1world1 \n' | {
+    read -f " 1"; assert $REPLY == $'  1hello1world1 '
+}
+
 # if separator contains spaces, ignore first and last spaces
 echo -en '  1hello1world1 \n' | {
-    read -f " 1"; assert $REPLY == "1hello1world1"
+    read -f " 1" AAA; assert $reply['AAA'] == "1hello1world1"
 }
 
 # splitting
@@ -186,7 +191,7 @@ echo -ne '   hello\\ world  \n' | {
 
 # raw mode
 echo -ne '   hello\\\nworld  \n' | {
-    read -r; assert($REPLY == "hello\\")
+    read -r; assert($REPLY == "   hello\\")
 }
 
 # raw mode
@@ -202,9 +207,19 @@ echo $'   hello world\nthis is a pen' | {
     assert $reply['AAA'] == $'hello world\nthis is'
 }
 
+echo $'   hello world\nthis is \\a pen' | {
+    read -d 'ahlw' AAA; assert $? == 1
+    assert $reply['AAA'] == $'hello world\nthis is  pen'
+}
+
 echo $'   hello world\nthis is a pen ' | {
     read -d '' AAA; assert $? == 1
     assert $reply['AAA'] == $'hello world\nthis is a pen'
+}
+
+echo $'   hello world\nthis is a pen ' | {
+    read -d ''; assert $? == 1
+    assert $REPLY == $'   hello world\nthis is a pen \n'
 }
 
 true

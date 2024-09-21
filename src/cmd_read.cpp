@@ -69,7 +69,7 @@ static bool readLine(ARState &state, const ArrayObject &argvObj, unsigned int of
   reassignReplyVar(state);
 
   auto &mapObj = typeAs<OrderedMapObject>(state.getGlobal(BuiltinVarOffset::REPLY_VAR));
-  const unsigned int size = argvObj.getValues().size();
+  const unsigned int size = argvObj.size();
   unsigned int index = offset;
   const unsigned int varSize = size - index; // if zero, store line to REPLY
   std::string strBuf;
@@ -223,6 +223,9 @@ int builtin_read(ARState &state, ArrayObject &argvObj) {
     param.timeoutMSec = -1; // ignore timeout if not tty
   }
 
+  if (argvObj.size() - optState.index == 0) {
+    param.ifs = ""; // if no var name (store to REPLY), not perform field splitting
+  }
   bool ret = readLine(state, argvObj, optState.index, param);
 
   // restore tty setting

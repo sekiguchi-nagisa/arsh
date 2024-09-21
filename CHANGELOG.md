@@ -50,6 +50,10 @@
 - **Breaking Change**: disable software flow control by default like fish
 - **Breaking Change**: do not ignore ``SIGWINCH``
 - **Breaking Change**: remove ``CLI#parseOrExit`` method due to unused
+- **Breaking Change**: overhaul builtin read command
+    - fix help message
+    - not perform field splitting (not remove surrounding spaces) when store to ``REPLY``
+    - add ``-d`` option for specifying input delimiter
 - add ``once`` param to ``String#replace`` and ``Regex#replace`` methods
     - now only replace first occurrence of pattern
 - add ``start``, ``end`` method to ``RegexMatch`` type. now get offsets of match string
@@ -57,9 +61,6 @@
 - improve resize handling of ``LineEditor#readLine`` method
     - automatically refresh line when receive ``SIGWINCH``
     - hide completion pager if row size is too small
-- improve builtin read command
-    - fix help message
-    - add ``-d`` option for specifying input delimiter
 
 #### LSP
 
