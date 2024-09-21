@@ -32,8 +32,37 @@ static bool setToReplyMap(ARState &state, OrderedMapObject &mapObj, const ArrayO
   return static_cast<bool>(ret);
 }
 
-static bool readLine(ARState &state, int fd, const ArrayObject &argvObj, unsigned int offset,
-                     StringRef ifs, int timeoutMSec, bool backslash) {
+struct ReadLineParam {
+  int fd{STDIN_FILENO}; // for input
+  int timeoutMSec{-1};
+  bool backslash{true};
+  char delim{'\n'};
+  StringRef ifs;
+};
+
+static int readByteWithRetryExceptSIGINT(const ReadLineParam &param, char &ch) {
+  int readSize;
+  while (true) {
+    readSize = static_cast<int>(
+        readWithTimeout(param.fd, &ch, 1, {.retry = false, .timeoutMSec = param.timeoutMSec}));
+    if (readSize < 0) {
+      if (readSize == -2) { // timeout
+        errno = 0;
+      }
+      if (errno == EAGAIN) {
+        continue;
+      }
+      if (errno == EINTR && !ARState::isInterrupted()) {
+        continue; // retry except for SIGINT
+      }
+    }
+    break;
+  }
+  return readSize;
+}
+
+static bool readLine(ARState &state, const ArrayObject &argvObj, unsigned int offset,
+                     const ReadLineParam &param) {
   // clear REPL/reply before read
   errno = 0;
   state.setGlobal(BuiltinVarOffset::REPLY, Value::createStr());
@@ -45,37 +74,25 @@ static bool readLine(ARState &state, int fd, const ArrayObject &argvObj, unsigne
   const unsigned int varSize = size - index; // if zero, store line to REPLY
   std::string strBuf;
   unsigned int skipCount = 1;
-  ssize_t readSize;
+  int readSize;
   char ch;
   for (bool prevIsBackslash = false;;
-       prevIsBackslash = backslash && ch == '\\' && !prevIsBackslash) {
-    while (true) {
-      readSize = readWithTimeout(fd, &ch, 1, {.retry = false, .timeoutMSec = timeoutMSec});
-      if (readSize < 0) {
-        if (errno == EAGAIN) {
-          continue;
-        }
-        if (errno == EINTR && !ARState::isInterrupted()) {
-          continue; // retry except for SIGINT
-        }
-      }
-      break;
-    }
-    if (readSize <= 0) {
+       prevIsBackslash = param.backslash && ch == '\\' && !prevIsBackslash) {
+    if (readSize = readByteWithRetryExceptSIGINT(param, ch); readSize <= 0) {
       break;
     }
 
-    if (ch == '\n') {
+    if (ch == param.delim) {
       if (prevIsBackslash) {
         continue;
       }
       break;
     }
-    if (ch == '\\' && !prevIsBackslash && backslash) {
+    if (ch == '\\' && !prevIsBackslash && param.backslash) {
       continue;
     }
 
-    bool fieldSep = matchFieldSep(ifs, ch) && !prevIsBackslash;
+    const bool fieldSep = matchFieldSep(param.ifs, ch) && !prevIsBackslash;
     if (fieldSep && skipCount > 0) {
       if (isSpace(ch)) {
         continue;
@@ -104,7 +121,7 @@ static bool readLine(ARState &state, int fd, const ArrayObject &argvObj, unsigne
   const int oldErrno = errno;
 
   // remove last spaces
-  if (!strBuf.empty() && hasSpace(ifs)) { // check if field separator has spaces
+  if (!strBuf.empty() && hasSpace(param.ifs)) { // check if field separator has spaces
     while (!strBuf.empty() && isSpace(strBuf.back())) {
       strBuf.pop_back();
     }
@@ -126,31 +143,32 @@ static bool readLine(ARState &state, int fd, const ArrayObject &argvObj, unsigne
 
 int builtin_read(ARState &state, ArrayObject &argvObj) {
   StringRef prompt;
-  StringRef ifs = state.getGlobal(BuiltinVarOffset::IFS).asStrRef();
-  bool backslash = true;
   bool noEcho = false;
-  int fd = STDIN_FILENO;
-  int timeout = -1;
+  ReadLineParam param{};
+  param.ifs = state.getGlobal(BuiltinVarOffset::IFS).asStrRef();
 
-  GetOptState optState(":rp:f:su:t:h");
+  GetOptState optState(":rp:d:f:su:t:h");
   for (int opt; (opt = optState(argvObj)) != -1;) {
     switch (opt) {
+    case 'd':
+      param.delim = optState.optArg.empty() ? '\0' : optState.optArg[0];
+      break;
     case 'p':
       prompt = optState.optArg;
       break;
     case 'f':
-      ifs = optState.optArg;
+      param.ifs = optState.optArg;
       break;
     case 'r':
-      backslash = false;
+      param.backslash = false;
       break;
     case 's':
       noEcho = true;
       break;
     case 'u': {
       StringRef value = optState.optArg;
-      fd = parseFD(value);
-      if (fd < 0) {
+      param.fd = parseFD(value);
+      if (param.fd < 0) {
         ERROR(state, argvObj, "%s: invalid file descriptor", toPrintable(value).c_str());
         return 1;
       }
@@ -163,7 +181,7 @@ int builtin_read(ARState &state, ArrayObject &argvObj) {
         if (t > -1 && t <= INT32_MAX) {
           t *= 1000;
           if (t > -1 && t <= INT32_MAX) {
-            timeout = static_cast<int>(t);
+            param.timeoutMSec = static_cast<int>(t);
             break;
           }
         }
@@ -182,7 +200,7 @@ int builtin_read(ARState &state, ArrayObject &argvObj) {
     }
   }
 
-  const bool isTTY = isatty(fd) != 0;
+  const bool isTTY = isatty(param.fd) != 0;
 
   // show prompt
   if (isTTY) {
@@ -194,27 +212,27 @@ int builtin_read(ARState &state, ArrayObject &argvObj) {
   struct termios oldTTY {};
   if (noEcho && isTTY) {
     struct termios tty {};
-    tcgetattr(fd, &tty);
+    tcgetattr(param.fd, &tty);
     oldTTY = tty;
     tty.c_lflag &= ~(ECHO | ECHOK | ECHONL);
-    tcsetattr(fd, TCSANOW, &tty);
+    tcsetattr(param.fd, TCSANOW, &tty);
   }
 
   // read line
   if (!isTTY) {
-    timeout = -1; // ignore timeout if not tty
+    param.timeoutMSec = -1; // ignore timeout if not tty
   }
 
-  bool ret = readLine(state, fd, argvObj, optState.index, ifs, timeout, backslash);
+  bool ret = readLine(state, argvObj, optState.index, param);
 
   // restore tty setting
   if (noEcho && isTTY) {
-    tcsetattr(fd, TCSANOW, &oldTTY);
+    tcsetattr(param.fd, TCSANOW, &oldTTY);
   }
 
   // report error
   if (!ret && errno != 0) {
-    PERROR(state, argvObj, "%d", fd);
+    PERROR(state, argvObj, "%d", param.fd);
   }
   return ret ? 0 : 1;
 }

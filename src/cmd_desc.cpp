@@ -178,15 +178,16 @@ static BuiltinCmdDesc table[] = {
      "    If -L specified, print logical working directory.\n"
      "    If -P specified, print physical working directory\n"
      "    (without symbolic link).  Default is -L."},
-    {"read", "[-r] [-p prompt] [-f ifs] [-u fd] [-t timeout] [name ...]",
+    {"read", "[-r] [-p prompt] [-f ifs] [-u fd] [-t timeout] [-d delim] [name ...]",
      "    Read from standard input.\n"
      "    Options:\n"
-     "      -r         disable backslash escape\n"
-     "      -p prompt  specify prompt string\n"
+     "      -d delim   use first byte of DELIM as input terminator"
      "      -f ifs     use specified field separator instead of IFS\n"
+     "      -p prompt  specify prompt string\n"
+     "      -r         disable backslash escape\n"
      "      -s         disable echo back\n"
-     "      -u fd      read from specified file descriptor\n"
-     "      -t timeout set timeout second (only available if input fd is a tty)"},
+     "      -t timeout set timeout second (only available if input fd is a tty)\n"
+     "      -u fd      read from specified file descriptor"},
     {"setenv", "[name=env ...]", "    Set environmental variables."},
     {"shctl", "[subcommand]",
      "    Query and set runtime information\n"

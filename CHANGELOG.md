@@ -57,6 +57,9 @@
 - improve resize handling of ``LineEditor#readLine`` method
     - automatically refresh line when receive ``SIGWINCH``
     - hide completion pager if row size is too small
+- improve builtin read command
+    - fix help message
+    - add ``-d`` option for specifying input delimiter
 
 #### LSP
 

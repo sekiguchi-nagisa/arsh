@@ -34,10 +34,20 @@ echo -e -n '  \t  hello world \t  \t  \n' | {
     assert($reply.empty())
 }
 
+# if not specified separator, use IFS with name
+echo -e -n '  \t  hello world \t  \t  \n' | {
+    read BBB; assert($reply['BBB'] == "hello world");
+}
+
 # no splitting
 # specify separator
 echo -en '1hello1world \n' | {
     read -f 1; assert($REPLY == "1hello1world ")
+}
+
+# specify separator with name
+echo -en '1hello1world \n' | {
+    read -f 1 AAA; assert($reply['AAA'] == "1hello1world ")
 }
 
 # no splitting
@@ -185,3 +195,16 @@ echo -ne '   hello\\1world  \n' | {
     assert $reply["a"] == "hello\\"
     assert $reply["b"] == "world"
 }
+
+# delim
+echo $'   hello world\nthis is a pen' | {
+    read -d 'ahlw' AAA; assert $? == 0
+    assert $reply['AAA'] == $'hello world\nthis is'
+}
+
+echo $'   hello world\nthis is a pen ' | {
+    read -d '' AAA; assert $? == 1
+    assert $reply['AAA'] == $'hello world\nthis is a pen'
+}
+
+true

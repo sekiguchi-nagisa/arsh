@@ -26,7 +26,7 @@ assert $? == 2
 assert "$(read -q 2>&1)" ==
 "\
 ${$SCRIPT_NAME.basename()}:26: read: -q: invalid option
-read: read [-r] [-p prompt] [-f ifs] [-u fd] [-t timeout] [name ...]\
+read: read [-r] [-p prompt] [-f ifs] [-u fd] [-t timeout] [-d delim] [name ...]\
 "
 
 read -p
@@ -38,17 +38,17 @@ assert $? == 2
 assert "$(read -q 2>&1)" ==
 "\
 ${$SCRIPT_NAME.basename()}:38: read: -q: invalid option
-read: read [-r] [-p prompt] [-f ifs] [-u fd] [-t timeout] [name ...]\
+read: read [-r] [-p prompt] [-f ifs] [-u fd] [-t timeout] [-d delim] [name ...]\
 "
 
 # help
-assert help read | grep '^read: read \[-r] \[-p prompt] \[-f ifs] \[-u fd] \[-t timeout] \[name ...]'
+assert help read | grep '^read: read \[-r] \[-p prompt] \[-f ifs] \[-u fd] \[-t timeout] \[-d delim] \[name ...]'
 assert $PIPESTATUS[0] == 0 && $PIPESTATUS[1] == 0
 
-assert read -h| grep '^read: read \[-r] \[-p prompt] \[-f ifs] \[-u fd] \[-t timeout] \[name ...]'
+assert read -h| grep '^read: read \[-r] \[-p prompt] \[-f ifs] \[-u fd] \[-t timeout] \[-d delim] \[name ...]'
 assert $PIPESTATUS[0] == 2 && $PIPESTATUS[1] == 0
 
-assert read --help| grep '^read: read \[-r] \[-p prompt] \[-f ifs] \[-u fd] \[-t timeout] \[name ...]'
+assert read --help| grep '^read: read \[-r] \[-p prompt] \[-f ifs] \[-u fd] \[-t timeout] \[-d delim] \[name ...]'
 assert $PIPESTATUS[0] == 2 && $PIPESTATUS[1] == 0
 
 true
