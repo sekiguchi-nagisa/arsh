@@ -50,9 +50,9 @@ enum class BuiltinVarOffset : unsigned char {
   LINES,       // LINES
   COLUMNS,     // COLUMNS
   EXIT_STATUS, // ?
-  ARGS,        // @
+  ARGS,        // @, ARGS
   ARGS_SIZE,   // # (dummy entry for completion)
-  POS_0,       // 0 (for script name)
+  ARG0,        // 0, ARG0 (for script name)
   SHELL_PID,   // $
   PID,         // PID (current process)
   PPID,        // PPID
@@ -62,9 +62,9 @@ inline unsigned int toIndex(BuiltinVarOffset offset) { return toUnderlying(offse
 
 enum class ModId : unsigned short {};
 
-constexpr ModId BUILTIN_MOD_ID = ModId{0};
+constexpr auto BUILTIN_MOD_ID = ModId{0};
 
-constexpr ModId ROOT_MOD_ID = ModId{1};
+constexpr auto ROOT_MOD_ID = ModId{1};
 
 inline bool isBuiltinMod(ModId id) { return id == BUILTIN_MOD_ID; }
 

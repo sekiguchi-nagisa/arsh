@@ -595,7 +595,7 @@ public:
 class TupleNode : public WithRtti<Node, NodeKind::Tuple> {
 private:
   /**
-   * at least one nodes
+   * at least one node
    */
   std::vector<std::unique_ptr<Node>> nodes;
 
@@ -1368,7 +1368,7 @@ public:
 
   RedirOp getRedirOp() const { return this->op; }
 
-  CmdArgNode &getTargetNode() { return *this->targetNode; }
+  CmdArgNode &getTargetNode() const { return *this->targetNode; }
 
   void setTargetFd(int8_t fd) { this->targetFd = fd; }
 
@@ -1380,7 +1380,7 @@ public:
 
   void setHereEnd(Token token) { this->hereEnd = token; }
 
-  Token getHereEnd() { return this->hereEnd; }
+  Token getHereEnd() const { return this->hereEnd; }
 
   void dump(NodeDumper &dumper) const override;
 };
@@ -2867,7 +2867,7 @@ public:
   enum Kind : unsigned int {
     VAR,            // complete variable names
     VAR_IN_CMD_ARG, // complete variable names (within command argument)
-    VAR_OR_PARAM,   // complete varibale names or param names
+    VAR_OR_PARAM,   // complete variable names or param names
     MEMBER,         // complete members (field or method)
     TYPE,           // complete type name (maybe type alias)
     CALL_SIGNATURE, // complete function/method/constructor signature (for signature completion)

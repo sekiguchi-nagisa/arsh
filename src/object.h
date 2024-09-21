@@ -517,7 +517,7 @@ public:
   Value withMetaData(uint32_t metaData) const;
 
   /**
-   * get meta data.
+   * get metadata.
    * only called for value from withMetaData()
    * @return
    */
@@ -533,7 +533,7 @@ public:
    * OP_STR method implementation
    * @param builder
    * @return
-   * if has error, return false
+   * if it has error, return false
    */
   bool opStr(StrBuilder &builder) const;
 
@@ -541,7 +541,7 @@ public:
    * OP_INTERP method implementation. write result to 'toStrBuf'
    * @param builder
    * @return
-   * if has error, return false
+   * if it has error, return false
    */
   bool opInterp(StrBuilder &builder) const;
 
@@ -563,7 +563,7 @@ public:
   /**
    * force mutate string.
    * @param state
-   * if has error, set error to state
+   * if it has error, set error to state
    * @param value
    * @return
    * if new size is greater than limit, return false
@@ -656,7 +656,7 @@ public:
 
   /**
    * create String from grapheme cluster.
-   * if has invalid code points, replace theme with 'unicode replacement char'
+   * if it has invalid code points, replace theme with 'Unicode replacement char'
    * @param ret
    * @return
    */
@@ -746,7 +746,7 @@ public:
 
   /**
    * @param state
-   * if has error, set error to state
+   * if it has error, set error to state
    * @param ref
    * @param ret
    * may be null
@@ -779,7 +779,7 @@ public:
    *
    * @param arg
    * @return
-   * if has error, return false
+   * if it has error, return false
    */
   bool add(Value &&arg);
 
@@ -1176,7 +1176,7 @@ struct ExceptionEntry {
 
 class CompiledCode : public ARCode {
 private:
-  ModId belongedModId;
+  ModId belongedModId{};
 
   /**
    * must not be null

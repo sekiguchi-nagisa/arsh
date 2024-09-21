@@ -210,7 +210,7 @@ int ARState_setShellName(ARState *st, const char *shellName) {
   GUARD_NULL(st, 0);
   if (shellName != nullptr) {
     if (const StringRef ref = shellName; ref.size() <= SYS_LIMIT_STRING_MAX) {
-      st->setGlobal(BuiltinVarOffset::POS_0, Value::createStr(ref));
+      st->setGlobal(BuiltinVarOffset::ARG0, Value::createStr(ref));
       return 0;
     }
   }

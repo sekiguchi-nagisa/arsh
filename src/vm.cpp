@@ -2193,7 +2193,7 @@ bool VM::mainLoop(ARState &state) {
           unsigned int localOffset = frame->localVarOffset;
           arg0 = state.stack.unsafeGetOperand(localOffset + UDC_PARAM_ARG0);
         } else {
-          arg0 = state.getGlobal(BuiltinVarOffset::POS_0);
+          arg0 = state.getGlobal(BuiltinVarOffset::ARG0);
         }
         state.stack.push(std::move(arg0));
         vmnext;
