@@ -42,7 +42,7 @@ static int64_t getShellLevel() {
   const char *shlvl = getenv(ENV_SHLVL);
   int64_t level = 0;
   if (shlvl != nullptr) {
-    const auto pair = convertToDecimal<int64_t>(shlvl);
+    const auto pair = convertToNum10<int64_t>(shlvl);
     if (pair && pair.value > -1) {
       level = pair.value;
     }

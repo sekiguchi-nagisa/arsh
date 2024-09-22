@@ -59,7 +59,7 @@ static IntConversionResult<unsigned int> parseNum(const std::string &line) {
   std::smatch match;
   if (matchSectionEnd(line, match) && match.length(2) > 0) {
     auto value = match.str(2);
-    return convertToDecimal<unsigned int>(value.c_str());
+    return convertToNum10<unsigned int>(value.c_str());
   }
   return {
       .kind = IntConversionStatus::ILLEGAL_CHAR,

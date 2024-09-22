@@ -554,7 +554,7 @@ static ResolvedTempMod resolveTempModScope(ARState &state, StringRef desc, bool 
     auto id = desc;
     id.removePrefix(strlen(OBJ_TEMP_MOD_PREFIX));
     id.removeSuffix(1);
-    auto pair = convertToDecimal<unsigned int>(id.begin(), id.end());
+    auto pair = convertToNum10<unsigned int>(id.begin(), id.end());
     if (!pair || pair.value >= state.tempModScope.size()) {
       return {};
     }

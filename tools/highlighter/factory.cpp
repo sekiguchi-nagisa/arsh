@@ -137,7 +137,7 @@ FormatterFactory::create(std::ostream &stream) const {
     }
     unsigned int lineNumOffset = 1;
     if (!this->lineno.empty()) {
-      auto ret = convertToDecimal<unsigned int>(this->lineno.begin(), this->lineno.end());
+      auto ret = convertToNum10<unsigned int>(this->lineno.begin(), this->lineno.end());
       if (ret && ret.value > 0) {
         lineNumOffset = ret.value;
       }

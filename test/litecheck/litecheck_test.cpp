@@ -69,7 +69,7 @@ struct LitecheckTest : public ::testing::TestWithParam<std::string> {
       ASSERT_TRUE(pos != StringRef::npos);
       auto num = ref.substr(pos + 1).toString();
       ASSERT_FALSE(num.empty());
-      auto pair = convertToDecimal<int>(num.c_str());
+      auto pair = convertToNum10<int>(num.c_str());
       ASSERT_TRUE(pair);
       ASSERT_TRUE(pair.value >= 0);
       pair.value;

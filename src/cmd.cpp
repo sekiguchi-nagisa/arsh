@@ -172,7 +172,7 @@ int parseFD(StringRef value) {
   if (value.startsWith("/dev/fd/")) {
     value.removePrefix(strlen("/dev/fd/"));
   }
-  const auto ret = convertToDecimal<int32_t>(value.begin(), value.end());
+  const auto ret = convertToNum10<int32_t>(value.begin(), value.end());
   if (!ret || ret.value < 0) {
     return -1;
   }
@@ -259,7 +259,7 @@ static int parseExitStatus(const ARState &state, const ArrayObject &argvObj, uns
   int64_t ret = state.getGlobal(BuiltinVarOffset::EXIT_STATUS).asInt();
   if (index < argvObj.size() && index > 0) {
     const auto value = argvObj.getValues()[index].asStrRef();
-    const auto pair = convertToDecimal<int64_t>(value.begin(), value.end());
+    const auto pair = convertToNum10<int64_t>(value.begin(), value.end());
     if (pair) {
       ret = pair.value;
     }
@@ -717,7 +717,7 @@ static bool parseUlimitOpt(StringRef ref, unsigned int index, UlimitOptEntry &en
     return true;
   }
 
-  const auto pair = convertToDecimal<underlying_t>(str);
+  const auto pair = convertToNum10<underlying_t>(str);
   if (!pair) {
     return false;
   }

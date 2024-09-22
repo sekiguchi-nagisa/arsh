@@ -131,7 +131,7 @@ std::string generateHoverContent(const SourceManager &srcMan, const SymbolIndexe
   case DeclSymbol::Kind::GENERIC_METHOD: {
     content += "function ";
     content += name;
-    auto ret = convertToDecimal<unsigned int>(decl.getInfo().begin(), decl.getInfo().end());
+    auto ret = convertToNum10<unsigned int>(decl.getInfo().begin(), decl.getInfo().end());
     assert(ret);
     formatNativeMethodSignature(&nativeFuncInfoTable()[ret.value], packedParamTypes, content);
     break;

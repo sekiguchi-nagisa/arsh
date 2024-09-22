@@ -263,7 +263,7 @@ static std::pair<int32_t, bool> toNumericCmdArg(const CmdArgNode &argNode) {
       if (ref.size() == 1 && ref[0] == '-') {
         return {-1, true};
       }
-      if (auto ret = convertToDecimal<int32_t>(ref.begin(), ref.end()); ret && ret.value > -1) {
+      if (auto ret = convertToNum10<int32_t>(ref.begin(), ref.end()); ret && ret.value > -1) {
         return {ret.value, true};
       }
     }
@@ -275,7 +275,7 @@ void TypeChecker::visitRedirNode(RedirNode &node) {
   {
     // check fd format
     const StringRef ref = node.getFdName();
-    const auto pair = convertToDecimal<int32_t>(ref.begin(), ref.end());
+    const auto pair = convertToNum10<int32_t>(ref.begin(), ref.end());
     if (pair && pair.value >= 0 && pair.value < RESERVED_FD_LIMIT) {
       node.setNewFd(static_cast<int8_t>(pair.value));
     } else {

@@ -48,7 +48,7 @@ static BraceInt toBraceInt(StringRef ref) {
 
   bool ok = false;
   int64_t value = 0;
-  auto ret = convertToDecimal<uint64_t>(ref.begin(), ref.end());
+  auto ret = convertToNum10<uint64_t>(ref.begin(), ref.end());
   if (ret) {
     if (negate) {
       if (ret.value < LIMIT) {

@@ -992,7 +992,7 @@ void TypeChecker::visitVarNode(VarNode &node) {
   }
   case VarNode::POSITIONAL_ARG: { // $0, $1 ...
     const StringRef ref = node.getVarName();
-    if (const auto pair = convertToDecimal<uint32_t>(ref.begin(), ref.end());
+    if (const auto pair = convertToNum10<uint32_t>(ref.begin(), ref.end());
         pair && pair.value <= SYS_LIMIT_ARRAY_MAX) {
       if (pair.value == 0) { // $0
         auto ret = this->curScope->lookupAndCaptureUpVar("0");

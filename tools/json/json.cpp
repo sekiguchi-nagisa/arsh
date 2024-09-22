@@ -354,7 +354,7 @@ JSON JSONParser::parseNumber() {
       return ret.value;
     }
   } else {
-    if (auto ret = convertToDecimal<int64_t>(data.c_str())) {
+    if (auto ret = convertToNum10<int64_t>(data.c_str())) {
       return static_cast<int64_t>(ret.value);
     }
   }

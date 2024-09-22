@@ -93,7 +93,7 @@ static bool isContentLength(const std::string &line) {
 static int parseContentLength(const std::string &line) {
   const char *ptr = line.c_str();
   ptr += std::size(HEADER_LENGTH) - 1;
-  auto ret = convertToDecimal<int32_t>(ptr);
+  auto ret = convertToNum10<int32_t>(ptr);
   if (ret && ret.value >= 0) {
     return ret.value;
   }

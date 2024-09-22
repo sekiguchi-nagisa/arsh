@@ -142,11 +142,11 @@ static PCREVersion getVersion() {
   StringRef vv1 = ref.slice(0, pos);
   StringRef vv2 = ref.slice(pos + 1, ref.size());
 
-  auto pair = convertToDecimal<unsigned int>(vv1.begin(), vv1.end());
+  auto pair = convertToNum10<unsigned int>(vv1.begin(), vv1.end());
   assert(pair);
   unsigned int major = pair.value;
 
-  pair = convertToDecimal<unsigned int>(vv2.begin(), vv2.end());
+  pair = convertToNum10<unsigned int>(vv2.begin(), vv2.end());
   assert(pair);
   unsigned int minor = pair.value;
 

@@ -22,7 +22,7 @@ namespace arsh {
 
 // job control related builtin commands
 
-static auto toInt32(StringRef str) { return convertToDecimal<int32_t>(str.begin(), str.end()); }
+static auto toInt32(StringRef str) { return convertToNum10<int32_t>(str.begin(), str.end()); }
 
 static int toSigNum(StringRef str) {
   if (!str.empty() && isDecimal(*str.data())) {

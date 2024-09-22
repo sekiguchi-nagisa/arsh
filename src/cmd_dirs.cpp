@@ -254,7 +254,7 @@ int builtin_pushd_popd(ARState &state, ArrayObject &argvObj) {
   if (optState.index < argvObj.size()) {
     dest = argvObj.getValues()[optState.index].asStrRef();
     if (dest.startsWith("+") || dest.startsWith("-")) {
-      const auto pair = convertToDecimal<uint64_t>(dest.begin() + 1, dest.end());
+      const auto pair = convertToNum10<uint64_t>(dest.begin() + 1, dest.end());
       if (!pair) {
         ERROR(state, argvObj, "%s: invalid number", toPrintable(dest).c_str());
         return 1;

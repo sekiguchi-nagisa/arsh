@@ -273,13 +273,13 @@ inline IntConversionResult<T> convertToNum(const char *begin, const char *end, u
 }
 
 template <typename T, enable_when<std::is_integral_v<T>> = nullptr>
-inline IntConversionResult<T> convertToDecimal(const char *begin, const char *end) {
+inline IntConversionResult<T> convertToNum10(const char *begin, const char *end) {
   return convertToNum<T>(begin, end, 10);
 }
 
 template <typename T, enable_when<std::is_integral_v<T>> = nullptr>
-inline IntConversionResult<T> convertToDecimal(const char *str) {
-  return convertToDecimal<T>(str, str + strlen(str));
+inline IntConversionResult<T> convertToNum10(const char *str) {
+  return convertToNum10<T>(str, str + strlen(str));
 }
 
 struct DoubleConversionResult {

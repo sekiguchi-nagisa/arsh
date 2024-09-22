@@ -181,7 +181,7 @@ int builtin_read(ARState &state, ArrayObject &argvObj) {
       break;
     }
     case 't': {
-      auto ret = convertToDecimal<int64_t>(optState.optArg.begin(), optState.optArg.end());
+      auto ret = convertToNum10<int64_t>(optState.optArg.begin(), optState.optArg.end());
       int64_t t = ret.value;
       if (ret) {
         if (t > -1 && t <= INT32_MAX) {

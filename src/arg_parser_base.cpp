@@ -58,7 +58,7 @@ bool ArgEntry::checkArg(StringRef arg, bool shortOpt, int64_t &out, std::string 
     break;
   case CheckerKind::INT: {
     assert(this->intRange.min <= this->intRange.max);
-    auto ret = convertToDecimal<int64_t>(arg.begin(), arg.end());
+    auto ret = convertToNum10<int64_t>(arg.begin(), arg.end());
     if (!ret) {
       err += "invalid argument: `";
       err += arg;

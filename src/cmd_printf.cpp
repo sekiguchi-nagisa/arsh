@@ -312,7 +312,7 @@ private:
   }
 
   bool parseDecimal(StringRef ref, int &value) {
-    const auto ret = convertToDecimal<int>(ref.begin(), ref.end());
+    const auto ret = convertToNum10<int>(ref.begin(), ref.end());
     if (!ret) {
       this->error = "`";
       appendAsPrintable(ref, SYS_LIMIT_PRINTABLE_MAX, this->error);

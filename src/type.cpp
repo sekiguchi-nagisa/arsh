@@ -171,7 +171,7 @@ ModId Type::resolveBelongedModId() const {
     assert(index != StringRef::npos);
     auto modTypeName = ref.slice(0, index);
     modTypeName.removePrefix(strlen(MOD_SYMBOL_PREFIX));
-    auto pair = convertToDecimal<uint32_t>(modTypeName.begin(), modTypeName.end());
+    auto pair = convertToNum10<uint32_t>(modTypeName.begin(), modTypeName.end());
     assert(pair && pair.value <= SYS_LIMIT_MOD_ID);
     return static_cast<ModId>(pair.value);
   }

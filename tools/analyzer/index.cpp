@@ -44,7 +44,7 @@ bool DeclSymbol::has(Attr a) const { return hasFlag(this->getAttr(), a); }
 
 std::pair<ModId, bool> DeclSymbol::getInfoAsModId() const {
   auto ref = this->getInfo();
-  auto value = convertToDecimal<int>(ref.begin(), ref.end());
+  auto value = convertToNum10<int>(ref.begin(), ref.end());
   if (value && value.value <= UINT16_MAX && value.value >= 0) {
     return {ModId{static_cast<unsigned short>(value.value)}, true};
   }
@@ -179,7 +179,7 @@ ModId TypeWrapper::resolveBelongedModId() const {
     assert(retPos != StringRef::npos);
     ref = ref.slice(0, retPos);
     ref.removePrefix(strlen(MOD_SYMBOL_PREFIX));
-    auto pair = convertToDecimal<uint32_t>(ref.begin(), ref.end());
+    auto pair = convertToNum10<uint32_t>(ref.begin(), ref.end());
     assert(pair && pair.value <= SYS_LIMIT_MOD_ID);
     return static_cast<ModId>(pair.value);
   }

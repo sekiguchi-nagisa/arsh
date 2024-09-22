@@ -309,14 +309,14 @@ static int eval3ArgsExpr(const ARState &st, const ArrayObject &argvObj, const St
 #define GEN_CASE(E, S, O) case BinaryOp::E:
     EACH_BINARY_STR_COMP_OP(GEN_CASE) { return compareStr(left, op, right) ? 0 : 1; }
     EACH_BINARY_INT_COMP_OP(GEN_CASE) {
-      auto pair = convertToDecimal<int64_t>(left.begin(), left.end());
+      auto pair = convertToNum10<int64_t>(left.begin(), left.end());
       const int64_t n1 = pair.value;
       if (!pair) {
         ERROR(st, argvObj, "%s: must be integer", toPrintable(left).c_str());
         return 2;
       }
 
-      pair = convertToDecimal<int64_t>(right.begin(), right.end());
+      pair = convertToNum10<int64_t>(right.begin(), right.end());
       const int64_t n2 = pair.value;
       if (!pair) {
         ERROR(st, argvObj, "%s: must be integer", toPrintable(right).c_str());
