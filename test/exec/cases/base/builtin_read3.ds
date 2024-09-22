@@ -209,7 +209,12 @@ echo $'   hello world\nthis is a pen' | {
 
 echo $'   hello world\nthis is \\a pen' | {
     read -d 'ahlw' AAA; assert $? == 1
-    assert $reply['AAA'] == $'hello world\nthis is  pen'
+    assert $reply['AAA'] == $'hello world\nthis is a pen'
+}
+
+echo $'   hello world\\\nthis is \\a pen' | {
+    read -d 'ahlw' AAA; assert $? == 1
+    assert $reply['AAA'] == 'hello worldthis is a pen'
 }
 
 echo $'   hello world\nthis is a pen ' | {

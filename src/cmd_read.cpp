@@ -84,9 +84,15 @@ static bool readLine(ARState &state, const ArrayObject &argvObj, unsigned int of
 
     if (ch == param.delim) {
       if (prevIsBackslash) {
+        if (ch != '\n') {
+          strBuf += ch;
+        }
         continue;
       }
       break;
+    }
+    if (ch == '\n' && prevIsBackslash) {
+      continue; // skip escaped newline
     }
     if (ch == '\\' && !prevIsBackslash && param.backslash) {
       continue;
@@ -115,7 +121,7 @@ static bool readLine(ARState &state, const ArrayObject &argvObj, unsigned int of
       raiseStringLimit(state);
       return false;
     }
-    strBuf += static_cast<char>(ch);
+    strBuf += ch;
   }
 
   const int oldErrno = errno;

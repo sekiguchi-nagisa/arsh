@@ -54,6 +54,7 @@
     - fix help message
     - not perform field splitting (not remove surrounding spaces) when store to ``REPLY``
     - add ``-d`` option for specifying input delimiter
+    - fix backslash escape handling. now skip newline
 - add ``once`` param to ``String#replace`` and ``Regex#replace`` methods
     - now only replace first occurrence of pattern
 - add ``start``, ``end`` method to ``RegexMatch`` type. now get offsets of match string
