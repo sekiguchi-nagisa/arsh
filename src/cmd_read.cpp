@@ -24,11 +24,12 @@
 
 namespace arsh {
 
-static bool setToReplyMap(ARState &state, OrderedMapObject &mapObj, const ArrayObject &argvObj,
-                          unsigned int index, std::string &&buf) {
+static bool setToReplyMap(ARState &state, const ArrayObject &argvObj, unsigned int index,
+                          std::string &&buf) {
   auto varObj = argvObj.getValues()[index];
   auto valueObj = Value::createStr(std::move(buf));
-  auto ret = mapObj.put(state, std::move(varObj), std::move(valueObj));
+  const auto ret = typeAs<OrderedMapObject>(state.getGlobal(BuiltinVarOffset::REPLY_VAR))
+                       .put(state, std::move(varObj), std::move(valueObj));
   return static_cast<bool>(ret);
 }
 
@@ -37,6 +38,8 @@ struct ReadLineParam {
   int timeoutMSec{-1};
   bool backslash{true};
   char delim{'\n'};
+  bool ignoreDelim{false};
+  int nbytes{-1};
   StringRef ifs;
 };
 
@@ -61,40 +64,44 @@ static int readByteWithRetryExceptSIGINT(const ReadLineParam &param, char &ch) {
   return readSize;
 }
 
-static bool readLine(ARState &state, const ArrayObject &argvObj, unsigned int offset,
+static bool readLine(ARState &state, const ArrayObject &argvObj, unsigned int index,
                      const ReadLineParam &param) {
   // clear REPL/reply before read
-  errno = 0;
   state.setGlobal(BuiltinVarOffset::REPLY, Value::createStr());
   reassignReplyVar(state);
 
-  auto &mapObj = typeAs<OrderedMapObject>(state.getGlobal(BuiltinVarOffset::REPLY_VAR));
   const unsigned int size = argvObj.size();
-  unsigned int index = offset;
-  const unsigned int varSize = size - index; // if zero, store line to REPLY
+  const bool useReply = size - index == 0;
   std::string strBuf;
   unsigned int skipCount = 1;
-  int readSize;
+  int lastReadSize = 0;
+  unsigned int readCount = 0;
   char ch;
-  for (bool prevIsBackslash = false;;
+  for (bool prevIsBackslash = false;
+       param.nbytes < 0 || readCount < static_cast<unsigned int>(param.nbytes);
        prevIsBackslash = param.backslash && ch == '\\' && !prevIsBackslash) {
-    if (readSize = readByteWithRetryExceptSIGINT(param, ch); readSize <= 0) {
+    if (lastReadSize = readByteWithRetryExceptSIGINT(param, ch); lastReadSize <= 0) {
       break;
     }
+    readCount++;
 
-    if (ch == param.delim) {
+    if (ch == param.delim && !param.ignoreDelim) {
       if (prevIsBackslash) {
         if (ch != '\n') {
           strBuf += ch;
+        } else {
+          readCount--;
         }
         continue;
       }
       break;
     }
     if (ch == '\n' && prevIsBackslash) {
+      readCount--;
       continue; // skip escaped newline
     }
     if (ch == '\\' && !prevIsBackslash && param.backslash) {
+      readCount--;
       continue;
     }
 
@@ -109,7 +116,7 @@ static bool readLine(ARState &state, const ArrayObject &argvObj, unsigned int of
     }
     skipCount = 0;
     if (fieldSep && index < size - 1) {
-      if (unlikely(!setToReplyMap(state, mapObj, argvObj, index, std::move(strBuf)))) {
+      if (unlikely(!setToReplyMap(state, argvObj, index, std::move(strBuf)))) {
         return false;
       }
       strBuf = "";
@@ -133,18 +140,18 @@ static bool readLine(ARState &state, const ArrayObject &argvObj, unsigned int of
     }
   }
 
-  if (varSize == 0) {
+  if (useReply) {
     state.setGlobal(BuiltinVarOffset::REPLY, Value::createStr(std::move(strBuf)));
   } else {
     for (; index < size; index++) { // set rest variable
-      if (unlikely(!setToReplyMap(state, mapObj, argvObj, index, std::move(strBuf)))) {
+      if (unlikely(!setToReplyMap(state, argvObj, index, std::move(strBuf)))) {
         return false;
       }
       strBuf = "";
     }
   }
   errno = oldErrno;
-  return readSize == 1;
+  return lastReadSize == 1;
 }
 
 int builtin_read(ARState &state, ArrayObject &argvObj) {
@@ -153,7 +160,7 @@ int builtin_read(ARState &state, ArrayObject &argvObj) {
   ReadLineParam param{};
   param.ifs = state.getGlobal(BuiltinVarOffset::IFS).asStrRef();
 
-  GetOptState optState(":rp:d:f:su:t:h");
+  GetOptState optState(":rp:d:f:su:t:n:N:h");
   for (int opt; (opt = optState(argvObj)) != -1;) {
     switch (opt) {
     case 'd':
@@ -196,6 +203,17 @@ int builtin_read(ARState &state, ArrayObject &argvObj) {
             toPrintable(optState.optArg).c_str());
       return 1;
     }
+    case 'n':
+    case 'N': {
+      auto ret = convertToNum10<int32_t>(optState.optArg.begin(), optState.optArg.end());
+      if (ret && ret.value > -1) {
+        param.nbytes = ret.value;
+        param.ignoreDelim = opt == 'N';
+        break;
+      }
+      ERROR(state, argvObj, "%s: must be positive int32", toPrintable(optState.optArg).c_str());
+      return 1;
+    }
     case 'h':
       return showHelp(argvObj);
     case ':':
@@ -229,7 +247,7 @@ int builtin_read(ARState &state, ArrayObject &argvObj) {
     param.timeoutMSec = -1; // ignore timeout if not tty
   }
 
-  if (argvObj.size() - optState.index == 0) {
+  if (argvObj.size() - optState.index == 0 || param.ignoreDelim) {
     param.ifs = ""; // if no var name (store to REPLY), not perform field splitting
   }
   bool ret = readLine(state, argvObj, optState.index, param);

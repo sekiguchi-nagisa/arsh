@@ -227,4 +227,66 @@ echo $'   hello world\nthis is a pen ' | {
     assert $REPLY == $'   hello world\nthis is a pen \n'
 }
 
+# -n
+echo '123456789' | {
+    read -n 5;
+    assert $REPLY == '12345'
+}
+
+echo '123456789' | {
+    read -n 5 -d 3;
+    assert $REPLY == '12'
+}
+
+echo '12\3456789' | {
+    read -n 5 -d 3;
+    assert $REPLY == '12345'
+}
+
+echo '12\3456789' | {
+    read -n 5 -d 3 -r;
+    assert $REPLY == '12\'
+}
+
+echo $'12345\\\na cdefghijklmnopqr' | {
+    read -n 10 AAA BBB;
+    assert $reply['AAA'] == '12345a'
+    assert $reply['BBB'] == 'cde'
+}
+
+echo $'\\\\12345\\\na cdefghijklmnopqr' | {
+    read -n 00;
+    assert $REPLY == ''
+}
+
+# -N
+echo $'12\\345\\\na  bcdefghijklmnopqr' | {
+    read -N 10 AAA BBB;
+    assert $reply['AAA'] == '12345a  bc'
+    assert $reply['BBB'] == ''
+}
+
+echo $'12\\345\\\na  bcdefghijklmnopqr' | {
+    read -N 10 -r AAA BBB;
+    assert $reply['AAA'] == $'12\\345\\\na '
+    assert $reply['BBB'] == ''
+}
+
+echo $'12345\\a  bcdefghijklmnopqr' | {
+    read -d a -N 10 AAA BBB
+    assert $reply['AAA'] == '12345a  bc'
+    assert $reply['BBB'] == ''
+}
+
+echo $'12345\\a  bcdefghijklmnopqr' | {
+    read -d a -N 10 -r AAA BBB
+    assert $reply['AAA'] == '12345\a  b'
+    assert $reply['BBB'] == ''
+}
+
+echo $'\\\\12345\\\na cdefghijklmnopqr' | {
+    read -N 0000;
+    assert $REPLY == ''
+}
+
 true
