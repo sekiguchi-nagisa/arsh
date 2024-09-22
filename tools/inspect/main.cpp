@@ -89,12 +89,12 @@ static void showPGroup(std::ostream &stream) {
 }
 
 static void showSignals(std::ostream &stream) {
-  auto lists = getUniqueSignalList();
+  auto lists = toSortedUniqueSignalEntries();
   stream << "+++++  signal handler setting  +++++" << '\n';
   for (auto &e : lists) {
-    stream << format << getSignalName(e) << " => ";
+    stream << format << e.name << " => ";
     struct sigaction action {};
-    sigaction(e, nullptr, &action);
+    sigaction(e.sigNum, nullptr, &action);
     if (action.sa_handler == SIG_DFL) {
       stream << "SIG_DFL";
     } else if (action.sa_handler == SIG_IGN) {

@@ -206,9 +206,9 @@ static void completeEnvName(const std::string &namePrefix, CompCandidateConsumer
 }
 
 static void completeSigName(const std::string &prefix, CompCandidateConsumer &consumer) {
-  auto *list = getSignalList();
-  for (unsigned int i = 0; list[i].name != nullptr; i++) {
-    if (StringRef sigName = list[i].name; sigName.startsWith(prefix)) {
+  const auto range = getSignalEntryRange();
+  for (auto &e : range) {
+    if (StringRef sigName = e.name; sigName.startsWith(prefix)) {
       consumer(sigName, CompCandidateKind::SIGNAL);
     }
   }

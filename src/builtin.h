@@ -1299,9 +1299,9 @@ ARSH_METHOD match_names(RuntimeContext &ctx) {
 //!bind: function name($this : Signal) : String
 ARSH_METHOD signal_name(RuntimeContext &ctx) {
   SUPPRESS_WARNING(signal_name);
-  const char *name = getSignalName(LOCAL(0).asSig());
-  assert(name != nullptr);
-  RET(Value::createStr(name));
+  auto *e = findSignalEntryByNum(LOCAL(0).asSig());
+  assert(e);
+  RET(Value::createStr(e->name));
 }
 
 //!bind: function value($this : Signal) : Int
@@ -1334,13 +1334,13 @@ ARSH_METHOD signal_kill(RuntimeContext &ctx) {
     ctx.jobTable.waitForAny();
     RET_VOID;
   }
-  int num = errno;
+  const int errNum = errno;
   std::string str = "failed to send ";
-  str += getSignalName(sigNum);
+  str += findSignalEntryByNum(sigNum)->name;
   str += " to pid(";
   str += std::to_string(static_cast<pid_t>(pid));
   str += ")";
-  raiseSystemError(ctx, num, std::move(str));
+  raiseSystemError(ctx, errNum, std::move(str));
   RET_ERROR;
 }
 
@@ -1378,25 +1378,25 @@ ARSH_METHOD signal_ne(RuntimeContext &ctx) {
 ARSH_METHOD signals_get(RuntimeContext &ctx) {
   SUPPRESS_WARNING(signals_get);
   auto key = LOCAL(1).asStrRef();
-  int sigNum = getSignalNum(key);
-  if (sigNum < 0) {
+  auto *e = findSignalEntryByName(key);
+  if (!e) {
     std::string msg = "undefined signal: ";
     appendAsPrintable(key, SYS_LIMIT_ERROR_MSG_MAX, msg);
     raiseError(ctx, TYPE::KeyNotFoundError, std::move(msg));
     RET_ERROR;
   }
-  RET(Value::createSig(sigNum));
+  RET(Value::createSig(e->sigNum));
 }
 
 //!bind: function get($this : Signals, $key : String) : Option<Signal>
 ARSH_METHOD signals_signal(RuntimeContext &ctx) {
   SUPPRESS_WARNING(signals_signal);
   auto key = LOCAL(1).asStrRef();
-  int sigNum = getSignalNum(key);
-  if (sigNum < 0) {
+  auto *e = findSignalEntryByName(key);
+  if (!e) {
     RET(Value::createInvalid());
   }
-  RET(Value::createSig(sigNum));
+  RET(Value::createSig(e->sigNum));
 }
 
 //!bind: function list($this : Signals) : Array<Signal>
@@ -1408,8 +1408,9 @@ ARSH_METHOD signals_list(RuntimeContext &ctx) {
   auto type = std::move(ret).take();
   auto v = Value::create<ArrayObject>(*type);
   auto &array = typeAs<ArrayObject>(v);
-  for (auto &e : getUniqueSignalList()) {
-    array.append(Value::createSig(e)); // not check iterator invalidation
+  auto list = toSortedUniqueSignalEntries();
+  for (auto &e : list) {
+    array.append(Value::createSig(e.sigNum)); // not check iterator invalidation
   }
   ASSERT_ARRAY_SIZE(array);
   RET(v);

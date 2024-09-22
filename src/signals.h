@@ -22,44 +22,46 @@
 #include <csignal>
 #include <vector>
 
-#include "misc/flag_util.hpp"
 #include "misc/string_ref.hpp"
 
 namespace arsh {
 
-struct SignalPair {
+struct SignalEntry {
+  enum class Kind : unsigned char {
+    POSIX_1_1990,
+    POSIX_1_2001,
+    OTHER,
+  };
+
   const char *name;
+  Kind kind;
   int sigNum;
+
+  bool operator<(const SignalEntry &o) const {
+    return this->sigNum < o.sigNum || (this->sigNum == o.sigNum && this->kind < o.kind);
+  }
 };
 
-/**
- * real time signal is not supported
- * @return
- * terminated with sentinel {nullptr, -1}
- */
-const SignalPair *getSignalList();
+class SignalEntryRange {
+private:
+  const SignalEntry *begin_;
+  const SignalEntry *end_;
 
-/**
- *
- * @param name
- * @return
- * if invalid signal name, return -1
- */
-int getSignalNum(StringRef name);
+public:
+  constexpr SignalEntryRange(const SignalEntry *b, const SignalEntry *e) : begin_(b), end_(e) {}
 
-/**
- *
- * @param sigNum
- * @return
- * if invalid signal number, return null
- */
-const char *getSignalName(int sigNum);
+  constexpr const SignalEntry *begin() const { return this->begin_; }
 
-/**
- * get sorted unique signal list
- * @return
- */
-std::vector<int> getUniqueSignalList();
+  constexpr const SignalEntry *end() const { return this->end_; }
+};
+
+SignalEntryRange getSignalEntryRange();
+
+const SignalEntry *findSignalEntryByName(StringRef name);
+
+const SignalEntry *findSignalEntryByNum(int sigNum);
+
+std::vector<SignalEntry> toSortedUniqueSignalEntries();
 
 class SignalGuard {
 private:

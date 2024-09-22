@@ -58,20 +58,21 @@ struct SigEntry {
 static std::string formatEntry(const SigEntry &e) { return format(e.name.c_str(), e.num); }
 
 static std::vector<std::string> toSignalList(const std::string &str) {
-  unsigned int invalidCount = 0;
+  int invalidCount = 0;
   std::vector<SigEntry> entries;
   for (auto &e : split(str)) {
     auto v = normalize(e);
     if (v.empty() || !std::isalpha(v[0]) || isRT(v)) {
       continue;
     }
-    int num = arsh::getSignalNum(v.c_str());
-    if (num < 0) {
+    auto *entry = arsh::findSignalEntryByName(v);
+    int num;
+    if (entry) {
+      num = entry->sigNum;
+      v = arsh::findSignalEntryByNum(entry->sigNum)->name; // resolve actual name
+    } else {
       invalidCount++;
       num = -invalidCount;
-    }
-    if (num > -1) {
-      v = arsh::getSignalName(num);
     }
     entries.push_back({.name = std::move(v), .num = num});
   }
@@ -87,8 +88,9 @@ static std::vector<std::string> toSignalList(const std::string &str) {
 
 static std::vector<std::string> getSignalList() {
   std::vector<std::string> values;
-  for (auto &e : arsh::getUniqueSignalList()) {
-    values.push_back(format(arsh::getSignalName(e), e));
+  auto list = arsh::toSortedUniqueSignalEntries();
+  for (auto &e : list) {
+    values.push_back(format(e.name, e.sigNum));
   }
   return values;
 }
@@ -117,18 +119,18 @@ TEST(Signal, all) {
 TEST(Signal, base) {
   using namespace arsh;
 
-  ASSERT_EQ(SIGQUIT, getSignalNum("quit"));
-  ASSERT_EQ(SIGQUIT, getSignalNum("Sigquit"));
-  ASSERT_EQ(SIGTSTP, getSignalNum("tStP"));
-  ASSERT_EQ(SIGTSTP, getSignalNum("SigTStp"));
-  ASSERT_EQ(-1, getSignalNum("HOGED"));
+  ASSERT_EQ(SIGQUIT, findSignalEntryByName("quit")->sigNum);
+  ASSERT_EQ(SIGQUIT, findSignalEntryByName("Sigquit")->sigNum);
+  ASSERT_EQ(SIGTSTP, findSignalEntryByName("tStP")->sigNum);
+  ASSERT_EQ(SIGTSTP, findSignalEntryByName("SigTStp")->sigNum);
+  ASSERT_EQ(nullptr, findSignalEntryByName("HOGED"));
 
   char b[] = "INT\0";
-  ASSERT_EQ(-1, getSignalNum(StringRef(b, std::size(b) - 1)));
+  ASSERT_EQ(nullptr, findSignalEntryByName(StringRef(b, std::size(b) - 1)));
 
-  ASSERT_STREQ("USR1", getSignalName(SIGUSR1));
-  ASSERT_STREQ("SEGV", getSignalName(SIGSEGV));
-  ASSERT_EQ(nullptr, getSignalName(-12));
+  ASSERT_STREQ("USR1", findSignalEntryByNum(SIGUSR1)->name);
+  ASSERT_STREQ("SEGV", findSignalEntryByNum(SIGSEGV)->name);
+  ASSERT_EQ(nullptr, findSignalEntryByNum(-12));
 }
 
 TEST(Signal, sigset) {

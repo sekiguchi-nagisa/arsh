@@ -270,14 +270,15 @@ void bindBuiltins(Consumer &consumer, const SysConfig &config, TypePool &pool, N
   binder.bindSmallConst("none", ConstEntry::Kind::NONE, 0);
 
   // signal constants (POSIX.1-1990 standard)
-  auto *signalPairs = getSignalList();
-  for (unsigned int i = 0; signalPairs[i].name; i++) {
-    auto &pair = signalPairs[i];
-    std::string name = "SIG";
-    name += pair.name;
-    binder.bindSmallConst(std::move(name), ConstEntry::Kind::SIG, pair.sigNum);
-    if (pair.sigNum == SIGTTOU) {
-      break;
+  {
+    const auto range = getSignalEntryRange();
+    for (auto &e : range) {
+      if (e.kind != SignalEntry::Kind::POSIX_1_1990) {
+        continue;
+      }
+      std::string name = "SIG";
+      name += e.name;
+      binder.bindSmallConst(std::move(name), ConstEntry::Kind::SIG, e.sigNum);
     }
   }
   binder.bindSmallConst("SIGWINCH", ConstEntry::SIG, SIGWINCH);

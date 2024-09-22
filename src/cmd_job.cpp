@@ -24,36 +24,35 @@ namespace arsh {
 
 static auto toInt32(StringRef str) { return convertToNum10<int32_t>(str.begin(), str.end()); }
 
-static int toSigNum(StringRef str) {
-  if (!str.empty() && isDecimal(*str.data())) {
-    const auto pair = toInt32(str);
-    if (!pair) {
-      return -1;
+static const SignalEntry *findSig(StringRef ref) {
+  if (!ref.empty() && isDecimal(ref[0])) {
+    const auto ret = toInt32(ref);
+    if (!ret) {
+      return nullptr;
     }
-    auto sigList = getUniqueSignalList();
-    return std::binary_search(sigList.begin(), sigList.end(), pair.value) ? pair.value : -1;
+    return findSignalEntryByNum(ret.value);
   }
-  return getSignalNum(str);
+  return findSignalEntryByName(ref);
 }
 
 static bool printNumOrName(StringRef str, int &errNum) {
   std::string value;
   if (!str.empty() && isDecimal(*str.data())) {
-    const auto pair = toInt32(str);
-    if (!pair) {
+    const auto ret = toInt32(str);
+    if (!ret) {
       return false;
     }
-    const char *name = getSignalName(pair.value);
-    if (name == nullptr) {
+    auto *e = findSignalEntryByNum(ret.value);
+    if (e == nullptr) {
       return false;
     }
-    value = name;
+    value = e->name;
   } else {
-    const int sigNum = getSignalNum(str);
-    if (sigNum < 0) {
+    auto *e = findSignalEntryByName(str);
+    if (!e) {
       return false;
     }
-    value = std::to_string(sigNum);
+    value = std::to_string(e->sigNum);
   }
   errno = 0;
   if (printf("%s\n", value.c_str()) < 0 || fflush(stdout) == EOF) {
@@ -141,8 +140,9 @@ int builtin_kill(ARState &state, ArrayObject &argvObj) {
     if (opt == '?') { // skip prefix '-', ex. -9
       sigStr = argvObj.getValues()[optState.index++].asStrRef().substr(1);
     }
-    sigNum = toSigNum(sigStr);
-    if (sigNum == -1) {
+    if (auto *e = findSig(sigStr)) {
+      sigNum = e->sigNum;
+    } else {
       ERROR(state, argvObj, "%s: invalid signal specification", toPrintable(sigStr).c_str());
       return 1;
     }
@@ -162,13 +162,13 @@ int builtin_kill(ARState &state, ArrayObject &argvObj) {
 
   if (begin == end) {
     if (listing) {
-      const auto sigList = getUniqueSignalList();
+      const auto sigList = toSortedUniqueSignalEntries();
       const unsigned int size = sigList.size();
       int errNum = 0;
       for (unsigned int i = 0; i < size; i++) {
         const char suffix = (i % 5 == 4 || i == size - 1) ? '\n' : '\t';
         errno = 0;
-        if (printf("%2d) SIG%s%c", sigList[i], getSignalName(sigList[i]), suffix) < 0) {
+        if (printf("%2d) SIG%s%c", sigList[i].sigNum, sigList[i].name, suffix) < 0) {
           errNum = errno;
           break;
         }
