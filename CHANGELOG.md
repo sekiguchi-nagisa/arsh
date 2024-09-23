@@ -12,7 +12,7 @@
 - add ``const`` keyword for future usage
 - support real-time signal
     - get real-time signal value by ``RTMIN+N``, ``RTMAX-N``
-    - builtin kill command can list and send rea-time signal
+    - builtin kill command can list and send real-time signals
     - ``Signal#trap`` support real-time signals (but do not guarantee delivery priority)
 
 #### Builtin
@@ -51,7 +51,7 @@
 
 #### Builtin
 
-- **Breaking Change**: disable software flow control by default like fish
+- **Breaking Change**: in ``LineEditor``, disable software flow control by default like fish
 - **Breaking Change**: do not ignore ``SIGWINCH``
 - **Breaking Change**: remove ``CLI#parseOrExit`` method due to unused
 - **Breaking Change**: overhaul builtin read command
