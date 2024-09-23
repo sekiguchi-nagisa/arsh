@@ -10,6 +10,10 @@
 - add ``type`` keyword. now define type by using ``type`` keyword instead of ``typedef``
     - ``typedef`` keyword is still used for type definition
 - add ``const`` keyword for future usage
+- support real-time signal
+    - get real-time signal value by ``RTMIN+N``, ``RTMAX-N``
+    - builtin kill command can list and send rea-time signal
+    - ``Signal#trap`` support real-time signals (but do not guarantee delivery priority)
 
 #### Builtin
 

@@ -1,0 +1,104 @@
+#$test($ignored = 'darwin')
+
+# for real-time signal (macOS do not support it)
+
+## Signal type
+let rtmin = $SIG['RtMIn']
+let rtmax = $SIG['rTMax']
+
+assert $rtmin.value() <= $rtmax.value()
+assert $rtmin.name() == 'RTMIN'
+assert $rtmax.name() == 'RTMAX'
+
+## list
+var list = $SIG.list()
+let rtminIndex = $list.indexOf($rtmin)
+assert $rtminIndex != -1
+$list = $list.slice($rtminIndex)
+assert !$list.empty()
+
+for rt in $list {
+    assert $rt.name().startsWith('RTM')
+    assert ! $rt.message().empty()
+}
+
+## name
+let thres = ($rtmin.value() + $rtmax.value()) / 2
+var expected : [String]
+for(var i = $rtmin.value(); $i <= $rtmax.value(); $i++) {
+    if $i == $rtmin.value() {
+        $expected.add('RTMIN')
+    } elif $i > $rtmin.value() && $i <= $thres {
+        $expected.add("RTMIN+${$i - $rtmin.value()}")
+    } elif $i == $rtmax.value() {
+        $expected.add('RTMAX')
+    } elif $i > $thres && $i < $rtmax.value() {
+        $expected.add("RTMAX-${$rtmax.value() - $i}")
+    } else {
+        assert $false
+    }
+}
+{
+    var actual: [String]
+    for s in $list {
+        $actual.add($s.name())
+    }
+    assert $expected.join('\n') == $actual.join('\n')
+}
+
+## lookup
+for(var i = 0; $i+$rtmin.value() <= $rtmax.value(); $i++) {
+    assert $SIG["SIgRTmIN+$i"].value() == $rtmin.value()+$i
+    assert $SIG["rTmIN+$i"].value() == $rtmin.value()+$i
+}
+
+for(var i = 0; $rtmax.value()-$i >= $rtmin.value(); $i++) {
+    assert $SIG["sIGrTMax-$i"].value() == $rtmax.value()-$i
+    assert $SIG["rTMaX-$i"].value() == $rtmax.value()-$i
+}
+
+assert ! $SIG.get("rtmin0")
+assert ! $SIG.get("rtmax0")
+assert ! $SIG.get("rtmin1")
+assert ! $SIG.get("rtmin-1000")
+assert ! $SIG.get("rtmin-fara")
+assert ! $SIG.get("rtmAx-1000")
+assert ! $SIG.get("rtmAx-0x1")
+
+
+## kill
+for e in IFS=$'\t\n' $(kill -l) {
+    $e.contains('SIGRTM') || continue
+    var ss = $e.split(') ')
+    var n = $ss[0].replace(' ', '').toInt()!
+    var s = $ss[1]
+    assert $s.startsWith('SIG')
+    assert $SIG[$s].value() == $n
+    assert $SIG[$s].name() == $s.slice(3)
+}
+
+{
+    var j = while($true){ sleep 100; } &
+    kill -s RTMIN+1 $j
+    assert $j.wait() == $SIG['RTMIN+1'].value() + 128
+
+    $j = while($true){ sleep 100; } &
+    $j.kill($SIG['RTMAX-1'])
+    assert $j.wait() == $SIG['RTMAX-1'].value() + 128
+}
+
+## trap
+{
+    var j = {
+        $SIG['RTMAX'].trap(function(s)=>{
+            exit 99
+        })
+        while(true) { true; }
+    } &
+    sleep 0.5
+    kill -s $rtmax $j
+    assert $j.wait() == 99
+}
+
+## complete
+assert $expected.copy().sort().join('\n') == $(complete -A signal RTM).join('\n')
