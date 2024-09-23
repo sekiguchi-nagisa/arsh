@@ -17,6 +17,7 @@
 #ifndef ARSH_SIGNAL_LIST_H
 #define ARSH_SIGNAL_LIST_H
 
+#include <array>
 #include <atomic>
 #include <cerrno>
 #include <csignal>
@@ -26,36 +27,71 @@
 
 namespace arsh {
 
-struct SignalEntry {
+class SignalEntry {
+public:
+  static constexpr unsigned int MAX_ABBR_NAME = 10;
+
+  using NameBuf = std::array<char, MAX_ABBR_NAME + 1>;
+
   enum class Kind : unsigned char {
     POSIX_1_1990,
     POSIX_1_2001,
     OTHER,
+    REAL_TIME,
   };
 
-  const char *name;
-  Kind kind;
-  int sigNum;
+private:
+  NameBuf name{}; // abbreviate signal name (INT).
+  Kind kind{};
+  int sigNum{-1};
 
-  bool operator<(const SignalEntry &o) const {
-    return this->sigNum < o.sigNum || (this->sigNum == o.sigNum && this->kind < o.kind);
+public:
+  constexpr SignalEntry() = default;
+
+  constexpr SignalEntry(NameBuf name, Kind kind, int sigNum)
+      : name(name), kind(kind), sigNum(sigNum) {}
+
+  const char *getAbbrName() const { return this->name.data(); }
+
+  int getSigNum() const { return this->sigNum; }
+
+  Kind getKind() const { return this->kind; }
+
+  bool isRealTime() const { return this->getKind() == Kind::REAL_TIME; }
+
+  explicit operator bool() const { return this->getSigNum() > 0; }
+
+  std::string toFullName() const {
+    std::string value = "SIG";
+    value += this->getAbbrName();
+    return value;
   }
 };
 
 class SignalEntryRange {
 private:
-  const SignalEntry *begin_;
-  const SignalEntry *end_;
+  const SignalEntry *ptr_{nullptr};
+  size_t size_{0};
 
 public:
-  constexpr SignalEntryRange(const SignalEntry *b, const SignalEntry *e) : begin_(b), end_(e) {}
+  SignalEntryRange(const SignalEntry *ptr, size_t size) : ptr_(ptr), size_(size) {}
 
-  constexpr const SignalEntry *begin() const { return this->begin_; }
+  const SignalEntry *begin() const { return this->ptr_; }
 
-  constexpr const SignalEntry *end() const { return this->end_; }
+  const SignalEntry *end() const { return this->ptr_ + this->size_; }
+
+  size_t size() const { return this->size_; }
+
+  bool empty() const { return this->size() == 0; }
+
+  const SignalEntry &front() const { return *this->begin(); }
+
+  const SignalEntry &back() const { return this->ptr_[this->size() - 1]; }
 };
 
-SignalEntryRange getSignalEntryRange();
+SignalEntryRange getStandardSignalEntries();
+
+SignalEntryRange getRealTimeSignalEntries();
 
 const SignalEntry *findSignalEntryByName(StringRef name);
 

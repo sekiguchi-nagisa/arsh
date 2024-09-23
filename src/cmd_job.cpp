@@ -46,13 +46,13 @@ static bool printNumOrName(StringRef str, int &errNum) {
     if (e == nullptr) {
       return false;
     }
-    value = e->name;
+    value = e->getAbbrName();
   } else {
     auto *e = findSignalEntryByName(str);
     if (!e) {
       return false;
     }
-    value = std::to_string(e->sigNum);
+    value = std::to_string(e->getSigNum());
   }
   errno = 0;
   if (printf("%s\n", value.c_str()) < 0 || fflush(stdout) == EOF) {
@@ -141,7 +141,7 @@ int builtin_kill(ARState &state, ArrayObject &argvObj) {
       sigStr = argvObj.getValues()[optState.index++].asStrRef().substr(1);
     }
     if (auto *e = findSig(sigStr)) {
-      sigNum = e->sigNum;
+      sigNum = e->getSigNum();
     } else {
       ERROR(state, argvObj, "%s: invalid signal specification", toPrintable(sigStr).c_str());
       return 1;
@@ -168,7 +168,8 @@ int builtin_kill(ARState &state, ArrayObject &argvObj) {
       for (unsigned int i = 0; i < size; i++) {
         const char suffix = (i % 5 == 4 || i == size - 1) ? '\n' : '\t';
         errno = 0;
-        if (printf("%2d) SIG%s%c", sigList[i].sigNum, sigList[i].name, suffix) < 0) {
+        if (printf("%2d) %s%c", sigList[i].getSigNum(), sigList[i].toFullName().c_str(), suffix) <
+            0) {
           errNum = errno;
           break;
         }

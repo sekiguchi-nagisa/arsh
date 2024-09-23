@@ -92,9 +92,9 @@ static void showSignals(std::ostream &stream) {
   auto lists = toSortedUniqueSignalEntries();
   stream << "+++++  signal handler setting  +++++" << '\n';
   for (auto &e : lists) {
-    stream << format << e.name << " => ";
+    stream << format << e.getAbbrName() << " => ";
     struct sigaction action {};
-    sigaction(e.sigNum, nullptr, &action);
+    sigaction(e.getSigNum(), nullptr, &action);
     if (action.sa_handler == SIG_DFL) {
       stream << "SIG_DFL";
     } else if (action.sa_handler == SIG_IGN) {

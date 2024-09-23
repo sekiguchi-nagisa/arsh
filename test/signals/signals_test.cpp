@@ -25,16 +25,10 @@ static std::vector<std::string> split(const std::string &str) {
   return bufs;
 }
 
-static bool startsWith(const char *s1, const char *s2) {
-  return s1 != nullptr && s2 != nullptr && strstr(s1, s2) == s1;
-}
-
-static bool isRT(const std::string &str) { return startsWith(str.c_str(), "RT"); }
-
 static std::string normalize(const std::string &str) {
   std::string ret = str;
   std::transform(str.begin(), str.end(), ret.begin(), ::toupper);
-  if (startsWith(ret.c_str(), "SIG")) {
+  if (arsh::StringRef(ret).startsWith("SIG")) {
     ret = ret.substr(3);
   }
   return ret;
@@ -62,14 +56,14 @@ static std::vector<std::string> toSignalList(const std::string &str) {
   std::vector<SigEntry> entries;
   for (auto &e : split(str)) {
     auto v = normalize(e);
-    if (v.empty() || !std::isalpha(v[0]) || isRT(v)) {
+    if (v.empty() || !std::isalpha(v[0]) || arsh::StringRef(v).startsWith("RT")) {
       continue;
     }
     auto *entry = arsh::findSignalEntryByName(v);
     int num;
     if (entry) {
-      num = entry->sigNum;
-      v = arsh::findSignalEntryByNum(entry->sigNum)->name; // resolve actual name
+      num = entry->getSigNum();
+      v = arsh::findSignalEntryByNum(entry->getSigNum())->getAbbrName(); // resolve actual name
     } else {
       invalidCount++;
       num = -invalidCount;
@@ -90,7 +84,10 @@ static std::vector<std::string> getSignalList() {
   std::vector<std::string> values;
   auto list = arsh::toSortedUniqueSignalEntries();
   for (auto &e : list) {
-    values.push_back(format(e.name, e.sigNum));
+    if (e.isRealTime()) {
+      continue;
+    }
+    values.push_back(format(e.getAbbrName(), e.getSigNum()));
   }
   return values;
 }
@@ -119,18 +116,19 @@ TEST(Signal, all) {
 TEST(Signal, base) {
   using namespace arsh;
 
-  ASSERT_EQ(SIGQUIT, findSignalEntryByName("quit")->sigNum);
-  ASSERT_EQ(SIGQUIT, findSignalEntryByName("Sigquit")->sigNum);
-  ASSERT_EQ(SIGTSTP, findSignalEntryByName("tStP")->sigNum);
-  ASSERT_EQ(SIGTSTP, findSignalEntryByName("SigTStp")->sigNum);
+  ASSERT_EQ(SIGQUIT, findSignalEntryByName("quit")->getSigNum());
+  ASSERT_EQ(SIGQUIT, findSignalEntryByName("Sigquit")->getSigNum());
+  ASSERT_EQ(SIGTSTP, findSignalEntryByName("tStP")->getSigNum());
+  ASSERT_EQ(SIGTSTP, findSignalEntryByName("SigTStp")->getSigNum());
   ASSERT_EQ(nullptr, findSignalEntryByName("HOGED"));
 
   char b[] = "INT\0";
   ASSERT_EQ(nullptr, findSignalEntryByName(StringRef(b, std::size(b) - 1)));
 
-  ASSERT_STREQ("USR1", findSignalEntryByNum(SIGUSR1)->name);
-  ASSERT_STREQ("SEGV", findSignalEntryByNum(SIGSEGV)->name);
+  ASSERT_STREQ("USR1", findSignalEntryByNum(SIGUSR1)->getAbbrName());
+  ASSERT_STREQ("SEGV", findSignalEntryByNum(SIGSEGV)->getAbbrName());
   ASSERT_EQ(nullptr, findSignalEntryByNum(-12));
+  ASSERT_EQ("SIGUSR2", findSignalEntryByNum(SIGUSR2)->toFullName());
 }
 
 TEST(Signal, sigset) {

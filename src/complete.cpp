@@ -206,10 +206,15 @@ static void completeEnvName(const std::string &namePrefix, CompCandidateConsumer
 }
 
 static void completeSigName(const std::string &prefix, CompCandidateConsumer &consumer) {
-  const auto range = getSignalEntryRange();
-  for (auto &e : range) {
-    if (StringRef sigName = e.name; sigName.startsWith(prefix)) {
-      consumer(sigName, CompCandidateKind::SIGNAL);
+  const SignalEntryRange ranges[] = {
+      getStandardSignalEntries(),
+      getRealTimeSignalEntries(),
+  };
+  for (auto &range : ranges) {
+    for (auto &e : range) {
+      if (StringRef sigName = e.getAbbrName(); sigName.startsWith(prefix)) {
+        consumer(sigName, CompCandidateKind::SIGNAL);
+      }
     }
   }
 }

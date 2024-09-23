@@ -16,14 +16,31 @@
 
 #include <algorithm>
 
+#include "misc/num_util.hpp"
 #include "signals.h"
 
 namespace arsh {
 
+template <unsigned int N>
+constexpr auto toNameBuf(const char (&data)[N]) {
+  constexpr unsigned int SIZE = SignalEntry::NameBuf().max_size();
+  static_assert(N <= SIZE);
+
+  SignalEntry::NameBuf buf{};
+  unsigned int i = 0;
+  for (; i < N; i++) {
+    buf[i] = data[i];
+  }
+  for (; i < SIZE; i++) {
+    buf[i] = '\0';
+  }
+  return buf;
+}
+
 static constexpr SignalEntry signalEntries[] = {
 // clang-format off
   // POSIX.1-1990 standard
-#define SIG_(E) {#E, SignalEntry::Kind::POSIX_1_1990, SIG## E},
+#define SIG_(E) {toNameBuf(#E), SignalEntry::Kind::POSIX_1_1990, SIG## E},
 #ifdef SIGHUP
   SIG_(HUP)
 #endif
@@ -83,8 +100,8 @@ static constexpr SignalEntry signalEntries[] = {
 #endif
 #undef SIG_
 
-// SUSv2 and POSIX.1-2001 standard
-#define SIG_(E) {#E, SignalEntry::Kind::POSIX_1_2001, SIG## E},
+  // SUSv2 and POSIX.1-2001 standard
+#define SIG_(E) {toNameBuf(#E), SignalEntry::Kind::POSIX_1_2001, SIG## E},
 #ifdef SIGBUS
   SIG_(BUS)
 #endif
@@ -114,8 +131,8 @@ static constexpr SignalEntry signalEntries[] = {
 #endif
 #undef SIG_
 
-// other
-#define SIG_(E) {#E, SignalEntry::Kind::OTHER, SIG## E},
+  // other
+#define SIG_(E) {toNameBuf(#E), SignalEntry::Kind::OTHER, SIG## E},
 #ifdef SIGIOT
   SIG_(IOT)
 #endif
@@ -150,8 +167,72 @@ static constexpr SignalEntry signalEntries[] = {
     // clang-format on
 };
 
-SignalEntryRange getSignalEntryRange() {
-  return {signalEntries, signalEntries + std::size(signalEntries)};
+SignalEntryRange getStandardSignalEntries() { return {signalEntries, std::size(signalEntries)}; }
+
+static std::vector<SignalEntry> initRealTimeSignalEntries() {
+  std::vector<SignalEntry> values;
+
+#if defined(SIGRTMIN) && defined(SIGRTMAX)
+  const int min = SIGRTMIN;
+  const int max = SIGRTMAX;
+  values.reserve(max - min + 1);
+  for (int sigNum = min; sigNum <= max; sigNum++) {
+    auto buf = SignalEntry::NameBuf();
+    int diff;
+    const char *prefix;
+    if (sigNum <= min + (max - min) / 2) {
+      diff = sigNum - min;
+      prefix = "MIN+";
+    } else {
+      diff = max - sigNum;
+      prefix = "MAX-";
+    }
+    const int s = snprintf(buf.data(), buf.size(), "RT%s%d", prefix, diff);
+    if (diff == 0) { // remove suffix '-0'/'+0'
+      buf[s - 1] = '\0';
+      buf[s - 2] = '\0';
+    }
+    values.emplace_back(buf, SignalEntry::Kind::REAL_TIME, sigNum);
+  }
+#endif
+
+  return values;
+}
+
+SignalEntryRange getRealTimeSignalEntries() {
+  static const auto entries = initRealTimeSignalEntries();
+  return {entries.data(), entries.size()};
+}
+
+static auto toInt32(const StringRef ref) { return convertToNum10<int>(ref.begin(), ref.end()); }
+
+static int parseRTSigName(StringRef ref) {
+  int rtSig = -1;
+  if (const auto range = getRealTimeSignalEntries(); !range.empty() && ref.startsWith("RT")) {
+    ref.removePrefix(2);
+    const int min = range.front().getSigNum();
+    const int max = range.back().getSigNum();
+    if (ref.startsWith("MIN")) {
+      ref.removePrefix(3);
+      if (ref.empty()) {
+        rtSig = min;
+      } else if (ref[0] == '+') {
+        if (const auto ret = toInt32(ref); ret && ret.value >= 0 && ret.value <= max - min) {
+          rtSig = min + ret.value;
+        }
+      }
+    } else if (ref.startsWith("MAX")) {
+      ref.removePrefix(3);
+      if (ref.empty()) {
+        rtSig = max;
+      } else if (ref[0] == '-') {
+        if (const auto ret = toInt32(ref); ret && ret.value <= 0 && ret.value + max >= min) {
+          rtSig = max + ret.value;
+        }
+      }
+    }
+  }
+  return rtSig;
 }
 
 const SignalEntry *findSignalEntryByName(StringRef ref) {
@@ -161,15 +242,27 @@ const SignalEntry *findSignalEntryByName(StringRef ref) {
 
   std::string name = ref.toString();
   std::transform(name.begin(), name.end(), name.begin(), ::toupper);
-  StringRef nameRef = name;
+  ref = name;
 
-  if (nameRef.startsWith("SIG")) {
-    nameRef.removePrefix(3);
+  if (ref.startsWith("SIG")) {
+    ref.removePrefix(3);
+  }
+  if (ref.empty()) {
+    return nullptr;
   }
 
-  const auto range = getSignalEntryRange();
+  if (const int rtSig = parseRTSigName(ref); rtSig > -1) {
+    const auto range = getRealTimeSignalEntries();
+    for (auto &e : range) {
+      if (rtSig == e.getSigNum()) {
+        return &e;
+      }
+    }
+  }
+
+  const auto range = getStandardSignalEntries();
   for (auto &e : range) {
-    if (nameRef == e.name) {
+    if (ref == e.getAbbrName()) {
       return &e;
     }
   }
@@ -177,9 +270,15 @@ const SignalEntry *findSignalEntryByName(StringRef ref) {
 }
 
 const SignalEntry *findSignalEntryByNum(int sigNum) {
-  const auto range = getSignalEntryRange();
+  auto range = getStandardSignalEntries();
   for (auto &e : range) {
-    if (sigNum == e.sigNum) {
+    if (sigNum == e.getSigNum()) {
+      return &e;
+    }
+  }
+  range = getRealTimeSignalEntries();
+  for (auto &e : range) {
+    if (sigNum == e.getSigNum()) {
       return &e;
     }
   }
@@ -187,12 +286,20 @@ const SignalEntry *findSignalEntryByNum(int sigNum) {
 }
 
 std::vector<SignalEntry> toSortedUniqueSignalEntries() {
-  const auto range = getSignalEntryRange();
-  std::vector<SignalEntry> values(range.begin(), range.end());
-  std::sort(values.begin(), values.end());
-  auto iter =
-      std::unique(values.begin(), values.end(),
-                  [](const SignalEntry &x, const SignalEntry &y) { return x.sigNum == y.sigNum; });
+  std::vector<SignalEntry> values(NSIG);
+  const SignalEntryRange ranges[] = {
+      getStandardSignalEntries(),
+      getRealTimeSignalEntries(),
+  };
+  for (auto &range : ranges) {
+    for (auto &e : range) {
+      if (!static_cast<bool>(values[e.getSigNum()])) {
+        values[e.getSigNum()] = e;
+      }
+    }
+  }
+  const auto iter = std::remove_if(values.begin(), values.end(),
+                                   [](const SignalEntry &e) { return !static_cast<bool>(e); });
   values.erase(iter, values.end());
   return values;
 }

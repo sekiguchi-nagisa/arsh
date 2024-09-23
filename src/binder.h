@@ -271,17 +271,13 @@ void bindBuiltins(Consumer &consumer, const SysConfig &config, TypePool &pool, N
 
   // signal constants (POSIX.1-1990 standard)
   {
-    const auto range = getSignalEntryRange();
+    const auto range = getStandardSignalEntries();
     for (auto &e : range) {
-      if (e.kind != SignalEntry::Kind::POSIX_1_1990) {
-        continue;
+      if (e.getKind() == SignalEntry::Kind::POSIX_1_1990 || e.getSigNum() == SIGWINCH) {
+        binder.bindSmallConst(e.toFullName(), ConstEntry::Kind::SIG, e.getSigNum());
       }
-      std::string name = "SIG";
-      name += e.name;
-      binder.bindSmallConst(std::move(name), ConstEntry::Kind::SIG, e.sigNum);
     }
   }
-  binder.bindSmallConst("SIGWINCH", ConstEntry::SIG, SIGWINCH);
 
   // add alias
   {
