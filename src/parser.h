@@ -81,6 +81,7 @@ private:
   static constexpr const char *INVALID_HERE_START = "InvalidHereStart";
   static constexpr const char *HERE_START_NEED_SPACE = "HereStartNeedSpace";
   static constexpr const char *START_INTERP_NUM_NEED_SPACE = "InterpNumNeedSpace";
+  static constexpr const char *START_INTERP_CMD_NEED_SPACE = "InterpCmdNeedSpace";
 
   ObserverPtr<CodeCompletionContext> compCtx;
 

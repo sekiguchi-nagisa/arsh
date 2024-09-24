@@ -2372,15 +2372,21 @@ std::unique_ptr<Node> Parser::parse_interpolation(EmbedNode::Kind kind) {
     bool mayNeedSpace = false;
     const Token oldToken = this->curToken;
     const TokenKind oldKind = this->curKind;
-    if (oldKind == TokenKind::INT_LITERAL || oldKind == TokenKind::FLOAT_LITERAL) {
+    if (oldKind == TokenKind::INT_LITERAL || oldKind == TokenKind::FLOAT_LITERAL ||
+        oldKind == TokenKind::COMMAND) {
       if (!this->hasSpace() && !this->hasNewline()) {
         mayNeedSpace = true;
+        if (oldKind == TokenKind::COMMAND) {
+          this->createError(oldKind, oldToken, START_INTERP_CMD_NEED_SPACE,
+                            "require space between `${' and command due to syntax ambiguity");
+          return nullptr;
+        }
       }
     }
     auto node = TRY(this->parse_expression());
     if (mayNeedSpace && isa<NumberNode>(*node)) {
       this->createError(oldKind, oldToken, START_INTERP_NUM_NEED_SPACE,
-                        "require space between `${' and number");
+                        "require space between `${' and number literal due to syntax ambiguity");
       return nullptr;
     }
     auto endToken = TRY(this->expect(TokenKind::RBC));

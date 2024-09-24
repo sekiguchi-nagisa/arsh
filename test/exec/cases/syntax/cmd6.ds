@@ -1,0 +1,5 @@
+#$test($result = 'parse', $lineNum = 4, $chars = 3, $errorKind = 'InterpCmdNeedSpace', $status = 1)
+
+echo "hello
+${ls/hoge&&true}
+"
