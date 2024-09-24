@@ -1,4 +1,4 @@
 
-#$test($result = 'parse', $lineNum = 4, $chars = 12, $errorKind = 'InterpCmdNeedSpace', $status = 1)
+#$test($result = 'parse', $lineNum = 4, $chars = 8, $errorKind = 'InterpCmdNeedSpace', $status = 1)
 
 echo ${@._0}  # recognized as command
