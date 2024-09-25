@@ -1483,8 +1483,8 @@ bool VM::mainLoop(ARState &state) {
         vmnext;
       }
       vmcase(INSTANCE_OF) {
-        unsigned int v = consume24(state.stack.ip());
-        auto &targetType = state.typePool.get(v);
+        auto dummy = state.stack.pop();
+        auto &targetType = state.typePool.get(dummy.getTypeID());
         auto value = state.stack.pop();
         bool ret = instanceOf(state.typePool, value, targetType);
         state.stack.push(Value::createBool(ret));
@@ -1502,6 +1502,12 @@ bool VM::mainLoop(ARState &state) {
           state.stack.popNoReturn();
           state.stack.push(Value::createInvalid());
         }
+        vmnext;
+      }
+      vmcase(PUSH_TYPE) {
+        unsigned int v = consume24(state.stack.ip());
+        const auto &targetType = state.typePool.get(v);
+        state.stack.push(Value::createDummy(targetType));
         vmnext;
       }
       vmcase(PUSH_NULL) {

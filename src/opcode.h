@@ -35,9 +35,10 @@ namespace arsh {
   OP(ASSERT_FAIL, 0, -1)                                                                           \
   OP(ASSERT_FAIL2, 1, -3)                                                                          \
   OP(PRINT, 3, -1)                                                                                 \
-  OP(INSTANCE_OF, 3, 0)                                                                            \
+  OP(INSTANCE_OF, 0, -1)                                                                           \
   OP(CHECK_CAST, 3, 0)                                                                             \
   OP(CHECK_CAST_OPT, 3, 0)                                                                         \
+  OP(PUSH_TYPE, 3, 1)                                                                              \
   OP(PUSH_NULL, 0, 1)                                                                              \
   OP(PUSH_TRUE, 0, 1)                                                                              \
   OP(PUSH_FALSE, 0, 1)                                                                             \

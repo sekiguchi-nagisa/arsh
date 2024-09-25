@@ -7,9 +7,10 @@
 | ASSERT_FAIL       |                                | value ->                                     | throw AssertionError                                            |
 | ASSERT_FAIL2      | 1: op                          | left right value ->                          | throw AssertionError with LSH, RHS                              |
 | PRINT             | 3: byte1 ~ byte3               | value ->                                     | print specified type and value on top of the stack              |
-| INSTANCE_OF       | 3: byte1 ~ byte3               | value -> value                               | check if a value is instance of a specified type                |
+| INSTANCE_OF       |                                | value type -> value                          | check if a value is instance of a specified type                |
 | CHECK_CAST        | 3: byte1 ~ byte3               | value -> value                               | check if a value is instance of a specified type                |
 | CHECK_CAST_OPT    | 3: byte1 ~ byte3               | value -> value                               | check if a value is instance of a specified type                |
+| PUSH_TYPE         | 3: byte1 ~ byte3               | -> type                                      | push type (dummy object) onto the stack                         |
 | PUSH_NULL         |                                | -> value                                     | push the null value onto the stack                              |
 | PUSH_TRUE         |                                | -> value                                     | push the true value onto the stack                              |
 | PUSH_FALSE        |                                | -> value                                     | push the false value onto the stack                             |

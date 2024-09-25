@@ -58,13 +58,14 @@ Exception Table:
   begin: 5, end: 23, type: pseudo top%%, dest: 23, offset: 0, size: 0, level: 1
 
 ARCode: function f
-  code size: 7
-  max stack depth: 1
+  code size: 8
+  max stack depth: 2
   number of local variable: 1
 Code:
   0: LOAD_LOCAL  0
-  2: INSTANCE_OF  [Int]
-  6: RETURN
+  2: PUSH_TYPE  [Int]
+  6: INSTANCE_OF
+  7: RETURN
 Constant Pool:
 Line Number Table:
   lineNum: 1, address: 0
