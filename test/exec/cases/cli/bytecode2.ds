@@ -108,7 +108,7 @@ Code:
 Constant Pool:
   0: String (string)
   1: String $(pwd)
-  2: Command command(f)
+  2: Command command(f%mod1)
 Line Number Table:
   lineNum: 1, address:  9
 Exception Table:
@@ -165,7 +165,7 @@ Code:
 Constant Pool:
   0: String (string)
   1: String $(pwd)
-  2: %mod1.AAA function(AAA)
+  2: %mod1.AAA function(AAA%mod1)
 Line Number Table:
 Exception Table:
 

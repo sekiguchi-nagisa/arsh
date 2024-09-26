@@ -239,7 +239,8 @@ std::string Value::toString() const {
   case ObjectKind::Func: {
     auto &obj = typeAs<FuncObject>(*this);
     std::string str;
-    switch (obj.getCode().getKind()) {
+    const auto kind = obj.getCode().getKind();
+    switch (kind) {
     case CodeKind::TOPLEVEL:
       str += OBJ_MOD_PREFIX;
       break;
@@ -253,6 +254,11 @@ std::string Value::toString() const {
       break;
     }
     str += obj.getCode().getName();
+    if (auto modId = obj.getCode().getBelongedModId();
+        !isBuiltinMod(modId) &&
+        (kind == CodeKind::FUNCTION || kind == CodeKind::USER_DEFINED_CMD)) {
+      str += toModTypeName(modId);
+    }
     str += ")";
     return str;
   }
