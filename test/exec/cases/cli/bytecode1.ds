@@ -51,7 +51,7 @@ Code:
 Constant Pool:
   0: String (string)
   1: String $(pwd)
-  2: (Any) -> Bool function(f%mod1)
+  2: (Any) -> Bool function(%mod1.f)
 Line Number Table:
   lineNum: 1, address:  6
 Exception Table:

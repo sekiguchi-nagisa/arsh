@@ -136,3 +136,5 @@ udc1'
 ## string representation
 assert ({var a = 34; function() => echo $a; } as String).startsWith("closure(0x")
 assert ({var a = 34; function() => echo $a; } as String).endsWith(")")
+assert ({function() => {}; } as String).startsWith("function(0x")
+assert ({function() => {}; } as String).endsWith(")")

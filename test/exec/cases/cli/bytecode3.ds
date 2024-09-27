@@ -41,7 +41,7 @@ Code:
 Constant Pool:
   0: String $mod
   1: String $(dirname $mod)
-  2: (Int) -> Void function(hoge%mod2)
+  2: (Int) -> Void function(%mod2.hoge)
 Line Number Table:
 Exception Table:
 

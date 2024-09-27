@@ -136,3 +136,9 @@ assert $capture(0) != $no_capture()
 var a = $capture(12)
 var b = $a
 assert $a == $b
+
+## string representation
+assert ((){} as String).startsWith('command(0x')
+assert ((){} as String).endsWith(')')
+assert {var aaa = 34; (){ echo $aaa; } as String}.startsWith('closure(0x')
+assert {var aaa = 34; (){ echo $aaa; } as String}.endsWith(')')

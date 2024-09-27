@@ -49,6 +49,7 @@
       assert "$d".toFloat()! == $d
       ```
 - add ``help`` attribute param to ``Arg`` attribute. now specify detail message of positional argument
+- change string representation of function/command. now generate uniq name (include module id)
 
 #### Builtin
 

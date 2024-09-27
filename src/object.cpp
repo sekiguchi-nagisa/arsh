@@ -253,11 +253,18 @@ std::string Value::toString() const {
     default:
       break;
     }
-    str += obj.getCode().getName();
-    if (auto modId = obj.getCode().getBelongedModId();
-        !isBuiltinMod(modId) &&
-        (kind == CodeKind::FUNCTION || kind == CodeKind::USER_DEFINED_CMD)) {
-      str += toModTypeName(modId);
+    const auto modId = obj.getCode().getBelongedModId();
+    if (const char *name = obj.getCode().getName(); name[0]) {
+      if (!isBuiltinMod(modId) &&
+          (kind == CodeKind::FUNCTION || kind == CodeKind::USER_DEFINED_CMD)) {
+        str += toModTypeName(modId);
+        str += '.';
+      }
+      str += name;
+    } else {
+      char buf[32]; // hex of 64bit pointer is up to 16 chars
+      snprintf(buf, std::size(buf), "0x%zx", reinterpret_cast<uintptr_t>(&obj));
+      str += buf;
     }
     str += ")";
     return str;
