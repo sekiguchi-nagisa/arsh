@@ -793,6 +793,9 @@ void ByteCodeGenerator::visitBinaryOpNode(BinaryOpNode &node) {
              (kind == TokenKind::EQ || kind == TokenKind::NE)) {
     this->visit(*node.getLeftNode());
     this->visit(*node.getRightNode());
+    if (node.getAssertOp() == AssertOp::EQ) {
+      this->emit0byteIns(OpCode::DUP2);
+    }
     if (kind == TokenKind::EQ) {
       this->emit0byteIns(OpCode::REF_EQ);
     } else {

@@ -1293,6 +1293,8 @@ void TypeChecker::visitAssertNode(AssertNode &node) {
                       : opKind == TokenKind::MATCH ? AssertOp::MATCH
                                                    : AssertOp::DEFAULT;
       applyNode.setAssertOp(op);
+    } else if (binaryNode.getOp() == TokenKind::EQ) {
+      binaryNode.setAssertOp(AssertOp::EQ);
     }
   }
   node.setType(this->typePool().get(TYPE::Void));

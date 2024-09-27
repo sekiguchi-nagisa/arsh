@@ -42,3 +42,12 @@ binary expression \`<LHS> == <RHS>' is false
     from (string):1 '<toplevel>()'"
 
 $expect("$(ds -c 'assert 34 == 43' 2>&1)", 1, $msg)
+
+$msg = "[runtime error]
+Assertion Error: \`\$SIG_DFL == \$SIG_IGN'
+binary expression \`<LHS> == <RHS>' is false
+  <LHS>: (Signal) -> Void = function(SIG_DFL)
+  <RHS>: (Signal) -> Void = function(SIG_IGN)
+    from (string):1 '<toplevel>()'"
+
+$expect("$(ds -c 'assert $SIG_DFL == $SIG_IGN' 2>&1)", 1, $msg)
