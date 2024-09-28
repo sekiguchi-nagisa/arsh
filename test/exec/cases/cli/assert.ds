@@ -18,13 +18,23 @@ $expect("$(ds -c $cmd 2>&1)", 1, $msg)
 
 # assert with message (power assert)
 $msg = "[runtime error]
-Assertion Error: \`\$OSTYPE =~ $/mac/'
+Assertion Error: failed
 binary expression \`<LHS> =~ <RHS>' is false
   <LHS>: String = $OSTYPE
   <RHS>: Regex = mac
     from (string):1 '<toplevel>()'"
 
-$expect("$(ds -c 'assert $OSTYPE =~ $/mac/' 2>&1)", 1, $msg)
+$expect("$(ds -c 'assert $OSTYPE =~ $/mac/ : "failed"' 2>&1)", 1, $msg)
+
+$msg = "[runtime error]
+Assertion Error: not Error type
+binary expression \`<EXPR> is <TYPE>' is false
+  <EXPR>: Int
+  <TYPE>: Error
+    from (string):1 '<toplevel>()'"
+
+$expect("$(ds -c 'assert 23 is Error : "not Error type"' 2>&1)", 1, $msg)
+
 
 # assert without message
 $msg = "[runtime error]
@@ -51,3 +61,12 @@ binary expression \`<LHS> == <RHS>' is false
     from (string):1 '<toplevel>()'"
 
 $expect("$(ds -c 'assert $SIG_DFL == $SIG_IGN' 2>&1)", 1, $msg)
+
+$msg = "[runtime error]
+Assertion Error: \`(\"\") as Any is Float'
+binary expression \`<EXPR> is <TYPE>' is false
+  <EXPR>: String
+  <TYPE>: Float
+    from (string):1 '<toplevel>()'"
+
+$expect("$(ds -c 'assert ("") as Any is Float' 2>&1)", 1, $msg)

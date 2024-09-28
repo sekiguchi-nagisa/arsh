@@ -775,6 +775,8 @@ private:
 
   OpKind opKind;
 
+  AssertOp assertOp{AssertOp::DEFAULT};
+
 public:
   TypeOpNode(std::unique_ptr<Node> &&exprNode, std::unique_ptr<TypeNode> &&type, OpKind init)
       : WithRtti(exprNode->getToken()), exprNode(std::move(exprNode)),
@@ -820,6 +822,10 @@ public:
   void setOpKind(OpKind op) { this->opKind = op; }
 
   OpKind getOpKind() const { return this->opKind; }
+
+  void setAssertOp(AssertOp op) { this->assertOp = op; }
+
+  AssertOp getAssertOp() const { return this->assertOp; }
 
   bool isCastOp() const { return toUnderlying(this->opKind) <= toUnderlying(PRINT); }
 
@@ -1706,6 +1712,9 @@ public:
         return cast<ApplyNode>(binaryNode.getOptNode())->getAssertOp();
       }
       return binaryNode.getAssertOp();
+    }
+    if (isa<TypeOpNode>(*this->condNode)) {
+      return cast<TypeOpNode>(*this->condNode).getAssertOp();
     }
     return AssertOp::DEFAULT;
   }
@@ -3160,6 +3169,8 @@ public:
   void dump(const char *fieldName, const Handle &handle);
 
   void dump(const char *fieldName, const NameInfo &info);
+
+  void dump(const char *fieldName, AssertOp op);
 
   void dumpNull(const char *fieldName) { this->dumpRaw(fieldName, "null"); }
 

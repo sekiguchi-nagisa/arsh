@@ -306,6 +306,8 @@ void TypeOpNode::dump(NodeDumper &dumper) const {
 
   DUMP_ENUM(opKind, EACH_ENUM);
 #undef EACH_ENUM
+
+  DUMP(assertOp);
 }
 
 // ######################
@@ -377,13 +379,7 @@ void ApplyNode::dump(NodeDumper &dumper) const {
   DUMP_ENUM(attr, EACH_ENUM);
 #undef EACH_ENUM
 
-#define EACH_ENUM(OP)                                                                              \
-  OP(AssertOp::DEFAULT)                                                                            \
-  OP(AssertOp::EQ)                                                                                 \
-  OP(AssertOp::MATCH)
-
-  DUMP_ENUM(assertOp, EACH_ENUM);
-#undef EACH_ENUM
+  DUMP(assertOp);
 }
 
 // #####################
@@ -430,6 +426,7 @@ void BinaryOpNode::dump(NodeDumper &dumper) const {
   DUMP_PTR(leftNode);
   DUMP_PTR(rightNode);
   DUMP(op);
+  DUMP(assertOp);
   DUMP_PTR(optNode);
 }
 
@@ -1261,6 +1258,8 @@ void NodeDumper::dump(const char *fieldName, const std::vector<NamedArgEntry> &e
   }
   this->dumpNodesTail();
 }
+
+void NodeDumper::dump(const char *fieldName, AssertOp op) { this->dump(fieldName, toString(op)); }
 
 void NodeDumper::dump(const Node &node) {
   this->indent();

@@ -1296,6 +1296,11 @@ void TypeChecker::visitAssertNode(AssertNode &node) {
     } else if (binaryNode.getOp() == TokenKind::EQ) {
       binaryNode.setAssertOp(AssertOp::EQ);
     }
+  } else if (isa<TypeOpNode>(node.getCondNode())) {
+    if (auto &typeOpNode = cast<TypeOpNode>(node.getCondNode());
+        typeOpNode.isInstanceOfOp() && typeOpNode.getOpKind() != TypeOpNode::ALWAYS_TRUE) {
+      typeOpNode.setAssertOp(AssertOp::IS);
+    }
   }
   node.setType(this->typePool().get(TYPE::Void));
 }

@@ -450,7 +450,22 @@ enum class AssertOp : unsigned char {
   DEFAULT,
   EQ,    // ==
   MATCH, // =~
+  IS,    // is
 };
+
+inline const char *toString(AssertOp op) {
+  switch (op) {
+  case AssertOp::DEFAULT:
+    return "DEFAULT";
+  case AssertOp::EQ:
+    return "EQ";
+  case AssertOp::MATCH:
+    return "MATCH";
+  case AssertOp::IS:
+    return "IS";
+  }
+  return "";
+}
 
 struct ConstEntry {
   enum Kind : unsigned char {

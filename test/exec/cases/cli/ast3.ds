@@ -121,6 +121,7 @@ nodes:
             extraOp: \"NONE\"
             extraValue: 0
           op: \"/\"
+          assertOp: \"DEFAULT\"
           optNode: null
       baseIndex: 0
       varSize: 0
@@ -270,6 +271,7 @@ nodes:
             leftNode: null
             rightNode: null
             op: \"/\"
+            assertOp: \"DEFAULT\"
             optNode:
               nodeKind: Apply
               token:
@@ -325,9 +327,10 @@ nodes:
                 attribute: \"READ_ONLY | GLOBAL\"
               kind: \"METHOD_CALL\"
               attr: \"BINARY\"
-              assertOp: \"AssertOp::DEFAULT\"
+              assertOp: \"DEFAULT\"
           targetTypeNode: null
           opKind: \"TO_VOID\"
+          assertOp: \"DEFAULT\"
         - nodeKind: Jump
           token:
             pos: 0

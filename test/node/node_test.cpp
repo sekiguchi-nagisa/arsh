@@ -158,6 +158,7 @@ nodes:
           value: "hello"
     targetTypeNode: null
     opKind: "TO_VOID"
+    assertOp: "DEFAULT"
 )"},
 
     {DumpOp::untyped, R"(try { var a = 'false'; } catch $e {} finally {1; })", 1, 0, R"(
@@ -322,7 +323,7 @@ nodes:
     handle: null
     kind: "METHOD_CALL"
     attr: "DEFAULT"
-    assertOp: "AssertOp::DEFAULT"
+    assertOp: "DEFAULT"
 )"},
 
     {DumpOp::untyped, R"(34+1)", 0, 0, R"(
@@ -351,6 +352,7 @@ nodes:
       init: false
       intValue: 0
     op: "+"
+    assertOp: "DEFAULT"
     optNode: null
 )"},
     {DumpOp::untyped, R"($true && $false && $true)", 0, 0, R"(
@@ -387,6 +389,7 @@ nodes:
         extraOp: "NONE"
         extraValue: 0
       op: "&&"
+      assertOp: "DEFAULT"
       optNode: null
     rightNode:
       nodeKind: Var
@@ -399,6 +402,7 @@ nodes:
       extraOp: "NONE"
       extraValue: 0
     op: "&&"
+    assertOp: "DEFAULT"
     optNode: null
 )"},
 
@@ -686,7 +690,7 @@ nodes:
       handle: null
       kind: "METHOD_CALL"
       attr: "DEFAULT"
-      assertOp: "AssertOp::DEFAULT"
+      assertOp: "DEFAULT"
     messageNode:
       nodeKind: String
       token:
@@ -779,6 +783,7 @@ nodes:
                 intValue: 34
           targetTypeNode: null
           opKind: "TO_VOID"
+          assertOp: "DEFAULT"
       - nodeKind: Arm
         token:
           pos: 35
@@ -809,6 +814,7 @@ nodes:
                 intValue: 34
           targetTypeNode: null
           opKind: "TO_VOID"
+          assertOp: "DEFAULT"
     caseKind: "MAP"
 )EOF"},
 
@@ -1064,6 +1070,7 @@ nodes:
       handle: null
     targetTypeNode: null
     opKind: "TO_VOID"
+    assertOp: "DEFAULT"
 )"},
 
     {DumpOp::typed, R"(function f($a : Int, $b : Int) {})", 0, 1, R"(
@@ -1211,6 +1218,7 @@ nodes:
       baseIndex: 0
     targetTypeNode: null
     opKind: "TO_VOID"
+    assertOp: "DEFAULT"
 )"},
 
     {DumpOp::typed, R"(function ff() { $gg(); }; function gg() {})", 0, 2, R"(
@@ -1280,7 +1288,7 @@ nodes:
               handle: null
               kind: "FUNC_CALL"
               attr: "DEFAULT"
-              assertOp: "AssertOp::DEFAULT"
+              assertOp: "DEFAULT"
             - nodeKind: Jump
               token:
                 pos: 0
@@ -1436,6 +1444,7 @@ nodes:
       handle: null
     targetTypeNode: null
     opKind: "TO_VOID"
+    assertOp: "DEFAULT"
 )EOF"},
     {DumpOp::untyped, R"([<CLI>] typedef AAA(){})", 0, 1, R"(
 nodes:

@@ -732,7 +732,11 @@ void ByteCodeGenerator::visitTypeOpNode(TypeOpNode &node) {
     break;
   }
   case TypeOpNode::ALWAYS_FALSE:
-    this->emit0byteIns(OpCode::POP);
+    if (node.getAssertOp() == AssertOp::IS) {
+      this->emitTypeIns(OpCode::PUSH_TYPE, node.getTargetTypeNode()->getType());
+    } else {
+      this->emit0byteIns(OpCode::POP);
+    }
     this->emit0byteIns(OpCode::PUSH_FALSE);
     break;
   case TypeOpNode::ALWAYS_TRUE:
@@ -741,6 +745,9 @@ void ByteCodeGenerator::visitTypeOpNode(TypeOpNode &node) {
     break;
   case TypeOpNode::INSTANCEOF:
     this->emitTypeIns(OpCode::PUSH_TYPE, node.getTargetTypeNode()->getType());
+    if (node.getAssertOp() == AssertOp::IS) {
+      this->emit0byteIns(OpCode::DUP2);
+    }
     this->emit0byteIns(OpCode::INSTANCE_OF);
     break;
   }
@@ -1076,14 +1083,15 @@ void ByteCodeGenerator::visitAssertNode(AssertNode &node) {
 
   this->visit(node.getMessageNode());
   this->emitSourcePos(node.getCondNode().getPos());
-  if (const auto op = node.resolveAssertOp(); op == AssertOp::DEFAULT) {
+  const auto assertOp = node.resolveAssertOp();
+  if (assertOp == AssertOp::DEFAULT) {
     this->emit0byteIns(OpCode::ASSERT_FAIL);
   } else {
-    this->emit1byteIns(OpCode::ASSERT_FAIL2, toUnderlying(op));
+    this->emit1byteIns(OpCode::ASSERT_FAIL2, toUnderlying(assertOp));
   }
 
   this->markLabel(elseLabel);
-  if (node.resolveAssertOp() != AssertOp::DEFAULT) {
+  if (assertOp != AssertOp::DEFAULT) {
     this->emit0byteIns(OpCode::POP);
     this->emit0byteIns(OpCode::POP);
   }

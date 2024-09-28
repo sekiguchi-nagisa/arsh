@@ -51,6 +51,7 @@
 - add ``help`` attribute param to ``Arg`` attribute. now specify detail message of positional argument
 - change string representation of function/command. now generate uniq name (include module id)
 - fix assertion error message of function/command equality check (``==``)
+- improve assertion error message of ``is`` expression. now show expr type and target type
 
 #### Builtin
 
