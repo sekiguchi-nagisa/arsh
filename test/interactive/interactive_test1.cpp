@@ -723,22 +723,6 @@ TEST_F(InteractiveTest, bracketPaste2) {
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
 }
 
-static std::string formatInput(StringRef prompt, StringRef input, const unsigned int maxCol) {
-  std::string ret;
-  ret += prompt;
-
-  unsigned int cols = prompt.size();
-  for (auto ch : input) {
-    if (cols == maxCol) {
-      cols = 0;
-      ret += "\n";
-    }
-    ret += ch;
-    cols++;
-  }
-  return ret;
-}
-
 TEST_F(InteractiveTest, bracketPasteError1) {
   this->invoke("--quiet", "--norc");
 
@@ -747,7 +731,7 @@ TEST_F(InteractiveTest, bracketPasteError1) {
 
   // too large paste input
   std::string largeInput;
-  largeInput.resize(4095, '@');
+  largeInput.resize(SYS_LIMIT_READLINE_INPUT_SIZE + 1, '@');
 
   std::string in = largeInput;
   in += "#";
@@ -759,8 +743,7 @@ SystemError: readLine failed, caused by `%s'
 
   this->paste(in);
   std::this_thread::sleep_for(std::chrono::milliseconds(500));
-  ASSERT_NO_FATAL_FAILURE(
-      this->expect(formatInput(PROMPT, largeInput, DEFAULT_WIN_COL) + "\n" + PROMPT, err));
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT, err)); // in scrolling mode
 
   this->send(CTRL_D);
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED, "\n"));

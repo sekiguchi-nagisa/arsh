@@ -207,10 +207,11 @@ static std::pair<ARErrorKind, int> loadRC(ARState *state, const char *rcfile) {
 static int exec_interactive(ARState *state) {
   unsigned int eioRetryCount = 0;
   int status = 0;
+  std::string buf;
+  buf.resize(UINT16_MAX >> 2);
   while (true) {
     ARError e; // NOLINT
-    char buf[4096];
-    auto readSize = ARState_readLine(state, buf, std::size(buf), &e);
+    auto readSize = ARState_readLine(state, buf.data(), buf.size(), &e);
     auto kind = e.kind;
     ARError_release(&e);
     if (kind == AR_ERROR_KIND_EXIT || kind == AR_ERROR_KIND_ASSERTION_ERROR) {
@@ -236,14 +237,14 @@ static int exec_interactive(ARState *state) {
       }
       const char *str = "exit";
       auto size = strlen(str);
-      assert(size + 1 <= std::size(buf));
-      memcpy(buf, str, size);
+      assert(size + 1 <= buf.size());
+      memcpy(buf.data(), str, size);
       buf[size] = '\0';
       readSize = static_cast<ssize_t>(size);
     }
 
     eioRetryCount = 0;
-    status = ARState_eval(state, nullptr, buf, static_cast<size_t>(readSize), &e);
+    status = ARState_eval(state, nullptr, buf.data(), static_cast<size_t>(readSize), &e);
     kind = e.kind;
     ARError_release(&e);
     if (kind == AR_ERROR_KIND_EXIT || kind == AR_ERROR_KIND_ASSERTION_ERROR) {

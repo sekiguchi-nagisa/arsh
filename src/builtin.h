@@ -2274,7 +2274,7 @@ ARSH_METHOD edit_read(RuntimeContext &ctx) {
   CHECK_EDITOR_LOCK(editor);
   auto &p = LOCAL(1);
   std::string buf;
-  buf.resize(4096);
+  buf.resize(SYS_LIMIT_READLINE_INPUT_SIZE);
   auto readSize = editor.readline(ctx, p.isInvalid() ? "> " : p.asStrRef(), buf.data(), buf.size());
   if (readSize > -1) {
     buf.resize(readSize);
