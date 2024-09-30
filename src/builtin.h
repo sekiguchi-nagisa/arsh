@@ -2497,7 +2497,7 @@ ARSH_METHOD job_poll(RuntimeContext &ctx) {
   SUPPRESS_WARNING(job_poll);
   auto job = toObjPtr<JobObject>(LOCAL(0));
   ctx.jobTable.waitForJob(job, WaitOp::NONBLOCKING);
-  RET_BOOL(job->isRunning());
+  RET_BOOL(job->isAvailable());
 }
 
 //!bind: function wait($this : Job) : Int
@@ -2519,8 +2519,14 @@ ARSH_METHOD job_wait(RuntimeContext &ctx) {
 ARSH_METHOD job_kill(RuntimeContext &ctx) {
   SUPPRESS_WARNING(job_kill);
   auto &obj = typeAs<JobObject>(LOCAL(0));
-  obj.send(LOCAL(1).asSig());
+  const bool r = obj.send(LOCAL(1).asSig());
+  if (!r) {
+    raiseSystemError(ctx, errno, "signal sending failed");
+  }
   ctx.jobTable.waitForAny(); // update state of killed processes
+  if (!r) {
+    RET_ERROR;
+  }
   RET_VOID;
 }
 
@@ -2547,7 +2553,7 @@ ARSH_METHOD job_pid(RuntimeContext &ctx) {
 
   if (index > -1 && static_cast<size_t>(index) < job.getProcSize()) {
     int pid = job.getValidPid(index);
-    if (pid < 0 || !job.isRunning()) {
+    if (pid < 0 || !job.isAvailable()) {
       RET(Value::createInvalid());
     }
     RET(Value::createInt(pid));

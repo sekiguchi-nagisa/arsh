@@ -654,10 +654,10 @@ TEST_F(JobTableTest, waitJob) {
   ASSERT_EQ(0, this->jobTable().getProcTable().viableProcSize());
 
   auto job1 = this->newAttachedJob([] { return 23; });
-  ASSERT_TRUE(job1->isRunning());
+  ASSERT_TRUE(job1->isAvailable());
   int s = this->jobTable().waitForJob(job1, WaitOp::BLOCK_UNTRACED);
   ASSERT_EQ(23, s);
-  ASSERT_FALSE(job1->isRunning());
+  ASSERT_FALSE(job1->isAvailable());
   ASSERT_EQ(0, this->jobTable().size());
   ASSERT_EQ(0, this->jobTable().getProcTable().viableProcSize());
 }

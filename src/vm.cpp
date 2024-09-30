@@ -415,7 +415,7 @@ bool VM::attachAsyncJob(ARState &state, Value &&desc, unsigned int procSize, con
     const int status = entry->wait(waitOp);
     const int errNum = errno;
     state.updatePipeStatus(entry->getProcSize(), entry->getProcs(), false);
-    if (entry->isRunning()) {
+    if (entry->isAvailable()) {
       const auto job = state.jobTable.attach(entry);
       if (job->getProcs()[0].is(Proc::State::STOPPED) && state.isJobControl()) {
         job->showInfo();

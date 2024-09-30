@@ -111,7 +111,10 @@ static bool killProcOrJob(const ARState &state, const ArrayObject &argvObj, Stri
       return false;
     }
   } else if (is<Job>(target)) {
-    get<Job>(target)->send(sigNum);
+    if (!get<Job>(target)->send(sigNum)) {
+      PERROR(state, argvObj, "%s", toPrintable(arg).c_str());
+      return false;
+    }
   } else {
     return false;
   }
@@ -260,7 +263,7 @@ int builtin_fg_bg(ARState &state, ArrayObject &argvObj) {
       setFlag(fmt, JobInfoFormat::JOB_ID);
     }
     job->showInfo(stdout, fmt);
-    job->send(SIGCONT);
+    static_cast<void>(job->send(SIGCONT));
     state.jobTable.waitForAny();
   } else {
     ERROR(state, argvObj, "%s: no such job", toPrintable(arg).c_str());
@@ -274,7 +277,7 @@ int builtin_fg_bg(ARState &state, ArrayObject &argvObj) {
     const int s =
         state.jobTable.waitForJob(job, WaitOp::BLOCK_UNTRACED, true); // FIXME: check root shell
     const int errNum = errno;
-    if (job->isRunning()) {
+    if (job->isAvailable()) {
       state.jobTable.setCurrentJob(job);
       job->showInfo();
     } else if (job->isTerminated()) {
@@ -294,7 +297,7 @@ int builtin_fg_bg(ARState &state, ArrayObject &argvObj) {
     job = tryToGetJob(state.jobTable, arg, false);
     if (job) {
       job->showInfo(stdout, JobInfoFormat::JOB_ID | JobInfoFormat::DESC);
-      job->send(SIGCONT);
+      static_cast<void>(job->send(SIGCONT));
     } else {
       ERROR(state, argvObj, "%s: no such job", toPrintable(arg).c_str());
       ret = 1;
@@ -354,7 +357,7 @@ int builtin_wait(ARState &state, ArrayObject &argvObj) {
   if (breakNext) {
     do {
       for (const auto &target : targets) {
-        if (!target.first->isRunning()) {
+        if (!target.first->isAvailable()) {
           return target.first->exitStatus();
         }
       }

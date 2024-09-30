@@ -196,7 +196,7 @@ public:
   static_assert(std::is_standard_layout_v<Proc>, "failed");
 
   enum class State : unsigned char {
-    RUNNING,
+    AVAILABLE,    // running or stopped job
     TERMINATED,   // already terminated
     UNCONTROLLED, // job is not created its own parent process
   };
@@ -232,7 +232,7 @@ private:
    * upper 4bit is attribute
    * lower 4bit is job state
    */
-  unsigned char meta{static_cast<unsigned char>(State::RUNNING)};
+  unsigned char meta{static_cast<unsigned char>(State::AVAILABLE)};
 
   unsigned char procSize;
 
@@ -272,7 +272,7 @@ public:
 
   bool is(State st) const { return this->state() == st; }
 
-  bool isRunning() const { return this->is(State::RUNNING); }
+  bool isAvailable() const { return this->is(State::AVAILABLE); }
 
   bool isTerminated() const { return this->is(State::TERMINATED); }
 
@@ -338,11 +338,13 @@ public:
    * send signal to all processes.
    * if jos is process group leader, send signal to process group
    * @param sigNum
+   * @return
+   * if failed, return false and set errno
    */
-  void send(int sigNum) const;
+  bool send(int sigNum) const;
 
   void updateState() {
-    if (this->isRunning()) {
+    if (this->isAvailable()) {
       unsigned int c = 0;
       for (unsigned int i = 0; i < this->getProcSize(); i++) {
         if (this->getProcs()[i].is(Proc::State::TERMINATED)) {
@@ -555,7 +557,7 @@ public:
    * must be already attached job (still available and owned)
    */
   void setCurrentJob(Job job) {
-    if (job->getJobID() != 0 && job->isRunning() && !job->isDisowned() &&
+    if (job->getJobID() != 0 && job->isAvailable() && !job->isDisowned() &&
         this->curPrevJobs.cur != job) {
       if (auto &cur = this->curPrevJobs.cur; cur && cur->isDisowned()) {
         cur = nullptr;
@@ -593,7 +595,7 @@ public:
   void send(int sigNum) const {
     for (auto &job : this->jobs) {
       if (!job->isDisowned()) {
-        job->send(sigNum);
+        static_cast<void>(job->send(sigNum));
       }
     }
   }

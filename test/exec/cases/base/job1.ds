@@ -99,7 +99,14 @@ $j = for(;;) { true; } &
 $j.kill($SIGQUIT)
 assert $j.wait() == $SIGQUIT.value() + 128
 assert !$j.poll()
-$j.kill($SIGTERM)   # do nothing
+
+$ex = 34
+try {
+    $j.kill($SIGTERM)   # do nothing
+} catch e {
+    $ex = $e
+}
+assert ($ex as SystemError).message().startsWith('signal sending failed')
 
 # handle SIGCONT
 function handle($s : Signal) {

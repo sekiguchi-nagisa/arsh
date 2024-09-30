@@ -113,6 +113,8 @@ assert "$(kill %hoge 2>&1)" == "${$SCRIPT_NAME.basename()}:112: kill: %hoge: arg
 assert { kill %hoge; $?; } == 1
 
 $j = for(;;) { true; } &
+assert "$(kill -9 $j 2>&1)".startsWith("${$SCRIPT_NAME.basename()}:116: kill: $j: ")  # not kill parent process job
+assert $? == 1
 assert { kill -9 $j; $?; } == 0
 assert $j.wait() == 128 + $SIGKILL.value()
 

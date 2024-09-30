@@ -64,6 +64,8 @@
     - support ``-d`` option for specifying input delimiter
     - fix backslash escape handling. now skip newline
     - support ``-n``, ``-N`` options like bash
+- **Breaking Change**: raise ``SystemError`` when call ``Job#kill`` method to terminated/uncontrolled job
+- improve error checking of builtin ``kill`` command when send signal to uncontrolled job
 - add ``once`` param to ``String#replace`` and ``Regex#replace`` methods
     - now only replace first occurrence of pattern
 - add ``start``, ``end`` method to ``RegexMatch`` type. now get offsets of match string

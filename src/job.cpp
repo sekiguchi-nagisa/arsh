@@ -374,19 +374,22 @@ bool JobObject::restoreStdin() {
   return false;
 }
 
-void JobObject::send(int sigNum) const {
-  if (!this->isRunning()) {
-    return;
+bool JobObject::send(int sigNum) const {
+  if (!this->isAvailable()) {
+    errno = ESRCH;
+    return false;
   }
 
   if (this->isGrouped()) {
     pid_t pgid = this->getProcs()[0].pid(); // first process pid is equivalent to pgid
-    kill(-pgid, sigNum);
-    return;
+    return kill(-pgid, sigNum) == 0;
   }
   for (unsigned int i = 0; i < this->procSize; i++) {
-    static_cast<void>(this->procs[i].send(sigNum));
+    if (this->procs[i].send(sigNum) != 0) {
+      return false;
+    }
   }
+  return true;
 }
 
 int JobObject::wait(WaitOp op) {
@@ -397,7 +400,7 @@ int JobObject::wait(WaitOp op) {
 
   errno = 0;
   int lastStatus = 0;
-  if (this->isRunning()) {
+  if (this->isAvailable()) {
     for (unsigned short i = 0; i < this->procSize; i++) {
       auto &proc = this->procs[i];
       lastStatus = proc.wait(op, i == this->procSize - 1);
@@ -407,7 +410,7 @@ int JobObject::wait(WaitOp op) {
     }
     this->updateState();
   }
-  if (!this->isRunning()) {
+  if (!this->isAvailable()) {
     return this->exitStatus();
   }
   return lastStatus;
@@ -482,7 +485,7 @@ void ProcTable::batchedRemove() {
 // ######################
 
 Job JobTable::attach(Job job, bool disowned) {
-  if (job->getJobID() == 0 && job->isRunning()) { // not attached
+  if (job->getJobID() == 0 && job->isAvailable()) { // not attached
     assert(!job->isDisowned());
     auto ret = this->findEmptyEntry();
     this->jobs.insert(this->jobs.begin() + ret, job);
@@ -562,7 +565,7 @@ static const Proc *findLastStopped(const Job &job) {
 
 int JobTable::waitForJob(const Job &job, WaitOp op, bool suppressNotify) {
   LOG(DUMP_WAIT, "@@enter op: %s", toString(op));
-  if (job && !job->isRunning()) {
+  if (job && !job->isAvailable()) {
     return job->wait(op);
   }
   if (op == WaitOp::BLOCK_UNTRACED) {
@@ -679,7 +682,7 @@ void JobTable::removeTerminatedJobs() {
 
   unsigned int removedIndex;
   for (removedIndex = 0; removedIndex < this->jobs.size(); removedIndex++) {
-    if (!this->jobs[removedIndex]->isRunning()) {
+    if (!this->jobs[removedIndex]->isAvailable()) {
       break;
     }
   }
@@ -688,8 +691,8 @@ void JobTable::removeTerminatedJobs() {
   }
 
   for (unsigned int i = removedIndex + 1; i < this->jobs.size(); i++) {
-    if (this->jobs[i]->isRunning()) {
-      assert(!this->jobs[removedIndex]->isRunning());
+    if (this->jobs[i]->isAvailable()) {
+      assert(!this->jobs[removedIndex]->isAvailable());
       std::swap(this->jobs[i], this->jobs[removedIndex]);
       removedIndex++;
     }
