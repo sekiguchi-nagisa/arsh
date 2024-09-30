@@ -23,16 +23,16 @@ compdef --cmd arshd --long test --arg-action file
 compdef --cmd arshd --long test-open --arg-action file
 compdef --cmd arshd --long wait-time
 
-## dscolorize
-compdef --cmd dscolorize --long daemon
-compdef --cmd dscolorize --long html-full
-compdef --cmd dscolorize --long html-lineno=
-compdef --cmd dscolorize --short h
-compdef --cmd dscolorize --short l
-compdef --cmd dscolorize --short o --arg-action file
+## arcolorize
+compdef --cmd arcolorize --long daemon
+compdef --cmd arcolorize --long html-full
+compdef --cmd arcolorize --long html-lineno=
+compdef --cmd arcolorize --short h
+compdef --cmd arcolorize --short l
+compdef --cmd arcolorize --short o --arg-action file
 
-if (command -v dscolorize &>> /dev/null) {
-    var lines = IFS=$'\n' $(dscolorize -l)
+if (command -v arcolorize &>> /dev/null) {
+    var lines = IFS=$'\n' $(arcolorize -l)
     let size = $lines.size()
     var i = 0
     if $i < $size && $lines[$i] == 'Styles:' {
@@ -45,7 +45,7 @@ if (command -v dscolorize &>> /dev/null) {
             if !$list.empty() { $list += " "; }
             $list += $line
         }
-        compdef --cmd dscolorize --short s --arg-list "$list"
+        compdef --cmd arcolorize --short s --arg-list "$list"
     }
     if $i < $size && $lines[$i] == 'Formatters:' {
         var list = ""
@@ -57,7 +57,7 @@ if (command -v dscolorize &>> /dev/null) {
             if !$list.empty() { $list += " "; }
             $list += $line
         }
-        compdef --cmd dscolorize --short f --arg-list "$list"
+        compdef --cmd arcolorize --short f --arg-list "$list"
     }
 }
 $PIPESTATUS.clear()

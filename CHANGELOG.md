@@ -90,6 +90,8 @@
     - now ``-i -c <string>`` execute ``<string>`` with rcfile loading
         - ``-ci <string>`` notation is not supported since `-c` option recognize `i` as an argument
     - after rcfile loading, continue read-and-eval even if error (also exit, assertion failure)
+- **Breaking Change**: rename ``dscolorize`` with ``arcolorize``
+    - ``dscolorize`` is installed as symlink
 
 ### Fixed
 

@@ -24,8 +24,8 @@ source $SCRIPT_DIR/cnf.arsh inlined
 $ISDIR_HOOK = function($s : String) => cd $s && pwd
 
 # syntax highlight color setting
-if(command -v dscolorize &>> /dev/null) {
-    var color = "$(dscolorize --dump -s monokai_dimmed -f term256 2>> /dev/null)"
+if(command -v arcolorize &>> /dev/null) {
+    var color = "$(arcolorize --dump -s monokai_dimmed -f term256 2>> /dev/null)"
     if $? == 0 {
         $LINE_EDIT.config('color', $color)
     }
