@@ -1,21 +1,45 @@
 #!/usr/bin/env arsh
 
+## helper
+check_file() {
+    if(test -f $1) {
+        echo found: $1
+        return 0
+    } else {
+        echo 1>&2 not found: $1
+        return 1
+    }
+}
+
+shctl set errraise
+
+## version
+var ss = $VERSION.split('.')
+let major = $ss[0].toInt()!
+let minor = $ss[1].toInt()!
+let patch = $ss[2].toInt()!
+echo $VERSION
+
 ## check binary
-assert command -v arsh
-assert command -v arshd
-assert command -v dscolorize
-echo $DATA_DIR/tools/litecheck
+assert command -V arsh
+assert command -V arshd
+if $major >= 0 && $minor >= 35 {
+    assert command -V arcolorize
+} else {
+    assert command -V dscolorize
+}
+assert check_file $DATA_DIR/tools/litecheck
 assert test -x $DATA_DIR/tools/litecheck
 
-assert command -v fzf  # check dependency
+assert command -V fzf  # check dependency
 
 ## check modules
-assert test -f $MODULE_DIR/repl
-assert test -f $MODULE_DIR/repl.arsh
-assert test -f $MODULE_DIR/repl_impl/prompt
-assert test -f $MODULE_DIR/repl_impl/prompt.arsh
-assert test -f $MODULE_DIR/completion
-assert test -f $MODULE_DIR/completion.arsh
+assert check_file $MODULE_DIR/repl
+assert check_file $MODULE_DIR/repl.arsh
+assert check_file $MODULE_DIR/repl_impl/prompt
+assert check_file $MODULE_DIR/repl_impl/prompt.arsh
+assert check_file $MODULE_DIR/completion
+assert check_file $MODULE_DIR/completion.arsh
 
 assert "$(shctl module repl 2>&1)" == "$(shctl module repl.arsh 2>&1)"
 assert "$(shctl module repl_impl/prompt 2>&1)" == "$(shctl module repl_impl/prompt.arsh 2>&1)"
