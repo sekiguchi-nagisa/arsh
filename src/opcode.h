@@ -56,6 +56,7 @@ namespace arsh {
   OP(LOAD_GLOBAL, 2, 1)                                                                            \
   OP(STORE_GLOBAL, 2, -1)                                                                          \
   OP(LOAD_LOCAL, 1, 1)                                                                             \
+  OP(LOAD_LOCAL2, 1, 2)                                                                            \
   OP(STORE_LOCAL, 1, -1)                                                                           \
   OP(LOAD_FIELD, 2, 0)                                                                             \
   OP(STORE_FIELD, 2, -2)                                                                           \

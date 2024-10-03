@@ -28,6 +28,7 @@
 | LOAD_GLOBAL       | 2: byte1 byte2                 | -> value                                     | load a value from a global variable                             |
 | STORE_GLOBAL      | 2: byte1 byte2                 | value ->                                     | store a value to a global variable                              |
 | LOAD_LOCAL        | 1: byte1                       | -> value                                     | load a value from a local variable                              |
+| LOAD_LOCAL2       | 1: byte1                       | -> value1 value2                             | load two values from a local variable1 and 2                    |
 | STORE_LOCAL       | 1: byte1                       | value ->                                     | store a value to a local variable                               |
 | LOAD_FIELD        | 2: byte1 byte2                 | value -> value                               | load a value from a instance field                              |
 | STORE_FIELD       | 2: byte1 byte2                 | value1 value2 ->                             | store a value into a instance field                             |
