@@ -296,11 +296,11 @@ static BaseObject *parseCommandLineImpl(ARState &state, StrArrayIter &iter, cons
   return &out;
 }
 
-CLIParseResult parseCommandLine(ARState &state, const ArrayObject &args, BaseObject &out) {
-  auto iter = StrArrayIter(args.getValues().begin());
+CLIParseResult parseCommandLine(ARState &state, ObjPtr<ArrayObject> args, ObjPtr<BaseObject> out) {
+  auto iter = StrArrayIter(args->getValues().begin());
   const auto begin = iter;
-  const auto end = StrArrayIter(args.getValues().end());
-  BaseObject *obj = &out;
+  const auto end = StrArrayIter(args->getValues().end());
+  BaseObject *obj = out.get();
   bool status;
   while (true) {
     auto *ptr = parseCommandLineImpl(state, iter, end, *obj);

@@ -1735,10 +1735,10 @@ ARSH_METHOD array_sort(RuntimeContext &ctx) {
 //!bind: function sortWith($this : Array<T0>, $comp : Func<Bool, [T0, T0]>) : Array<T0>
 ARSH_METHOD array_sortWith(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_sortWith);
-  auto &obj = typeAs<ArrayObject>(LOCAL(0));
-  CHECK_ITER_INVALIDATION(obj);
-  auto &comp = LOCAL(1);
-  if (mergeSort(ctx, obj, comp)) {
+  auto obj = toObjPtr<ArrayObject>(LOCAL(0));
+  CHECK_ITER_INVALIDATION(*obj);
+  auto comp = LOCAL(1);
+  if (mergeSort(ctx, std::move(obj), std::move(comp))) {
     RET(LOCAL(0));
   } else {
     RET_ERROR;
@@ -2270,12 +2270,13 @@ ARSH_METHOD edit_init(RuntimeContext &ctx) {
 //!bind: function readLine($this : LineEditor, $p : Option<String>) : Option<String>
 ARSH_METHOD edit_read(RuntimeContext &ctx) {
   SUPPRESS_WARNING(edit_read);
-  auto &editor = typeAs<LineEditorObject>(LOCAL(0));
-  CHECK_EDITOR_LOCK(editor);
+  auto editor = toObjPtr<LineEditorObject>(LOCAL(0)); // take object
+  CHECK_EDITOR_LOCK(*editor);
   auto &p = LOCAL(1);
   std::string buf;
   buf.resize(SYS_LIMIT_READLINE_INPUT_SIZE);
-  auto readSize = editor.readline(ctx, p.isInvalid() ? "> " : p.asStrRef(), buf.data(), buf.size());
+  auto readSize =
+      editor->readline(ctx, p.isInvalid() ? "> " : p.asStrRef(), buf.data(), buf.size());
   if (readSize > -1) {
     buf.resize(readSize);
     buf.shrink_to_fit();
@@ -2435,9 +2436,9 @@ ARSH_METHOD cli_set(RuntimeContext &ctx) {
 //!bind: function parse($this : CLI, $args : Array<String>) : Int
 ARSH_METHOD cli_parse(RuntimeContext &ctx) {
   SUPPRESS_WARNING(cli_parse);
-  auto &obj = typeAs<BaseObject>(LOCAL(0));
-  auto &args = typeAs<ArrayObject>(LOCAL(1));
-  if (auto ret = parseCommandLine(ctx, args, obj)) {
+  auto obj = toObjPtr<BaseObject>(LOCAL(0));
+  auto args = toObjPtr<ArrayObject>(LOCAL(1));
+  if (auto ret = parseCommandLine(ctx, std::move(args), std::move(obj))) {
     RET(Value::createInt(ret.index));
   }
   RET_ERROR;

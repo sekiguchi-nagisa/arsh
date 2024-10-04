@@ -238,7 +238,7 @@ std::string resolveFullCommandName(const ARState &state, const Value &name, cons
                                    bool udcOnly = false);
 
 /**
- *
+ * may recursively call interpreter
  * @param state
  * @param arrayObj
  * @param compFunc
@@ -246,7 +246,7 @@ std::string resolveFullCommandName(const ARState &state, const Value &name, cons
  * @return
  * if has error, return false
  */
-bool mergeSort(ARState &state, ArrayObject &arrayObj, const Value &compFunc);
+bool mergeSort(ARState &state, ObjPtr<ArrayObject> arrayObj, Value &&compFunc);
 
 /**
  *

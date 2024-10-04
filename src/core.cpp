@@ -877,12 +877,12 @@ static bool mergeSortImpl(ARState &state, ArrayObject &arrayObj, Value *buf, con
          merge(state, arrayObj, buf, compFunc, left, mid, right);
 }
 
-bool mergeSort(ARState &state, ArrayObject &arrayObj, const Value &compFunc) {
-  auto buf = std::make_unique<Value[]>(arrayObj.size());
-  assert(!arrayObj.locking());
-  arrayObj.lock(ArrayObject::LockType::SORT_WITH);
-  bool r = mergeSortImpl(state, arrayObj, buf.get(), compFunc, 0, arrayObj.size());
-  arrayObj.unlock();
+bool mergeSort(ARState &state, ObjPtr<ArrayObject> arrayObj, Value &&compFunc) {
+  auto buf = std::make_unique<Value[]>(arrayObj->size());
+  assert(!arrayObj->locking());
+  arrayObj->lock(ArrayObject::LockType::SORT_WITH);
+  bool r = mergeSortImpl(state, *arrayObj, buf.get(), compFunc, 0, arrayObj->size());
+  arrayObj->unlock();
   return r;
 }
 
