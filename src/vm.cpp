@@ -1375,8 +1375,7 @@ static NativeCode initSignalTrampoline() noexcept {
   code[1] = 1;
   code[2] = static_cast<char>(OpCode::CALL_FUNC);
   code[3] = 1;
-  code[4] = static_cast<char>(OpCode::RESTORE_STATUS);
-  code[5] = static_cast<char>(OpCode::RETURN_SIG);
+  code[4] = static_cast<char>(OpCode::RETURN_SIG);
   return NativeCode(code);
 }
 
@@ -1822,15 +1821,12 @@ bool VM::mainLoop(ARState &state) {
         vmnext;
       }
       vmcase(RETURN_SIG) {
+        auto v = state.stack.getLocal(0); // old exit status
         state.canHandleSignal = true;
+        state.setGlobal(BuiltinVarOffset::EXIT_STATUS, std::move(v));
         state.stack.unwind();
         assert(!state.stack.checkVMReturn());
         CHECK_SIGNAL();
-        vmnext;
-      }
-      vmcase(RESTORE_STATUS) {
-        auto v = state.stack.getLocal(0);
-        state.setGlobal(BuiltinVarOffset::EXIT_STATUS, std::move(v));
         vmnext;
       }
       vmcase(BRANCH) {
