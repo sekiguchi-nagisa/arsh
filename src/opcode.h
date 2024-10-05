@@ -93,6 +93,7 @@ namespace arsh {
   OP(RETURN, 0, -1)                                                                                \
   OP(RETURN_UDC, 0, -1)                                                                            \
   OP(RETURN_SIG, 0, 0)                                                                             \
+  OP(RESTORE_STATUS, 0, 0)                                                                         \
   OP(BRANCH, 2, -1)                                                                                \
   OP(BRANCH_NOT, 2, -1)                                                                            \
   OP(IF_INVALID, 2, 0)                                                                             \

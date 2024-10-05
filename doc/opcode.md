@@ -65,6 +65,7 @@
 | RETURN            |                                | value -> [empty]                             | return value from callable                                      |
 | RETURN_UDC        |                                | value -> [empty]                             | return from user-defined command                                |
 | RETURN_SIG        |                                | [no change]                                  | return from signal handler                                      |
+| RESTORE_STATUS    |                                | [no change]                                  | load LOCAL(0) and store to exit status                          |
 | BRANCH            | 2: offset1 offset2             | value ->                                     | if value is false, branch to instruction at offset              |
 | BRANCH_NOT        | 2: offset1 offset2             | value ->                                     | if value is not false, branch to instruction at offset          | 
 | IF_INVALID        | 2: offset1 offset2             | value -> / [no change]                       | if stack top is invalid, branch to instruction at offset        |
