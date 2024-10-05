@@ -93,13 +93,6 @@ public:
 
   ~LineEditorObject();
 
-  /**
-   * may recursively call interpreter
-   * @param state
-   * @param prompt
-   * @param buf
-   * @param bufLen
-   */
   ssize_t readline(ARState &state, StringRef prompt, char *buf, size_t bufLen);
 
   bool locked() const { return this->lock; }

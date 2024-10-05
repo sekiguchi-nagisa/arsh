@@ -2010,9 +2010,10 @@ bool VM::mainLoop(ARState &state) {
         vmnext;
       }
       vmcase(PARSE_CLI) {
-        auto obj = toObjPtr<BaseObject>(state.stack.pop());
-        auto args = toObjPtr<ArrayObject>(state.stack.getLocal(UDC_PARAM_ARGV));
-        if (!parseCommandLine(state, std::move(args), std::move(obj))) {
+        auto value = state.stack.pop();
+        auto &obj = typeAs<BaseObject>(value);
+        auto &args = typeAs<ArrayObject>(state.stack.getLocal(UDC_PARAM_ARGV));
+        if (!parseCommandLine(state, args, obj)) {
           if (!state.typePool.get(state.stack.getThrownObject()->getTypeID()).is(TYPE::CLIError)) {
             vmerror; // propagate other error
           }

@@ -68,14 +68,14 @@ struct CLIParseResult {
 };
 
 /**
- * may recursively call interpreter
+ *
  * @param state
  * @param args
  * @param out
  * must be CLIRecordType
  * @return
  */
-CLIParseResult parseCommandLine(ARState &state, ObjPtr<ArrayObject> args, ObjPtr<BaseObject> out);
+CLIParseResult parseCommandLine(ARState &state, const ArrayObject &args, BaseObject &out);
 
 inline void showCommandLineUsage(const ErrorObject &obj) {
   FILE *fp = obj.getStatus() == 0 ? stdout : stderr;
