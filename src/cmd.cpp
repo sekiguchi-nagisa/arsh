@@ -112,7 +112,7 @@ static auto initBuiltinMap() {
  * return null, if not found builtin command.
  */
 builtin_command_t lookupBuiltinCommand(StringRef commandName) {
-  static auto builtinMap = initBuiltinMap();
+  static const auto builtinMap = initBuiltinMap();
 
   const auto iter = builtinMap.find(commandName);
   if (iter == builtinMap.end()) {
@@ -445,7 +445,7 @@ static StrRefMap<CodeCompOp> initCompActions() {
 }
 
 static int builtin_complete(ARState &state, ArrayObject &argvObj) {
-  static auto actionMap = initCompActions();
+  static const auto actionMap = initCompActions();
 
   DoCodeCompletionOption option{};
   bool show = true;

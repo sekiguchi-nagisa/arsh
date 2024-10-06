@@ -372,7 +372,7 @@ static auto initDeniedNameList() {
 }
 
 HandlePtr TypeChecker::addUdcEntry(const UserDefinedCmdNode &node) {
-  static auto deniedList = initDeniedNameList();
+  static const auto deniedList = initDeniedNameList();
   if (deniedList.find(node.getCmdName()) != deniedList.end()) {
     this->reportError<ReservedCmd>(node, node.getCmdName().c_str());
     return nullptr;

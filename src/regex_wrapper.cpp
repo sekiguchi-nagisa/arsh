@@ -102,7 +102,7 @@ PCRE PCRE::compile(StringRef pattern, PCRECompileFlag flag, std::string &errorSt
   }
 
 #ifdef USE_PCRE
-  static auto compileCtx = createCompileCtx();
+  static const auto compileCtx = createCompileCtx();
 
   uint32_t option = toRegexFlag(flag);
   option |= PCRE2_ALT_BSUX | PCRE2_MATCH_UNSET_BACKREF | PCRE2_UTF | PCRE2_UCP;

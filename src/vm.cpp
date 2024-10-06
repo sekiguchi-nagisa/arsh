@@ -51,7 +51,7 @@ static int64_t getShellLevel() {
 }
 
 static int64_t originalShellLevel() {
-  static auto level = getShellLevel();
+  static const auto level = getShellLevel();
   return level;
 }
 
@@ -1379,7 +1379,7 @@ static NativeCode initSignalTrampoline() noexcept {
   return NativeCode(code);
 }
 
-static auto signalTrampoline = initSignalTrampoline();
+static const auto signalTrampoline = initSignalTrampoline();
 
 bool VM::kickSignalHandler(ARState &state, int sigNum, Value &&func) {
   state.stack.reserve(3);
@@ -2458,7 +2458,7 @@ static NativeCode initCmdTrampoline() noexcept {
 Value VM::execCommand(ARState &state, std::vector<Value> &&argv, bool propagate) {
   GUARD_RECURSION(state);
 
-  static auto cmdTrampoline = initCmdTrampoline();
+  static const auto cmdTrampoline = initCmdTrampoline();
 
   const auto op = propagate ? EvalOP::PROPAGATE : EvalOP{};
   Value ret;
