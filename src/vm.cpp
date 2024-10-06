@@ -2417,8 +2417,6 @@ bool VM::callToplevel(ARState &state, const ObjPtr<FuncObject> &func, ARError *d
 }
 
 unsigned int VM::prepareArguments(VMState &state, Value &&recv, CallArgs &&args) {
-  state.clearThrownObject();
-
   // push arguments
   const unsigned int size = args.first;
   state.reserve(size + 1);

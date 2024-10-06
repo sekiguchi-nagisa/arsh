@@ -458,6 +458,7 @@ int ARState_exec(ARState *st, char *const *argv) {
     }
     values.push_back(Value::createStr(arg));
   }
+  st->getCallStack().clearThrownObject();
   VM::execCommand(*st, std::move(values), false);
   return st->getMaskedExitStatus();
 }
