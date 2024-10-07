@@ -30,7 +30,8 @@ namespace arsh {
  *    if negative number, decrease stack top index
  */
 #define OPCODE_LIST(OP)                                                                            \
-  OP(HALT, 0, 0)                                                                                   \
+  OP(SUBSHELL_EXIT, 0, 0)                                                                          \
+  OP(TERM_HOOK, 0, 0)                                                                              \
   OP(ASSERT_ENABLED, 2, 0)                                                                         \
   OP(ASSERT_FAIL, 0, -1)                                                                           \
   OP(ASSERT_FAIL2, 1, -3)                                                                          \
@@ -93,6 +94,7 @@ namespace arsh {
   OP(RETURN, 0, -1)                                                                                \
   OP(RETURN_UDC, 0, -1)                                                                            \
   OP(RETURN_SIG, 0, 0)                                                                             \
+  OP(RETURN_TERM, 0, 0)                                                                            \
   OP(BRANCH, 2, -1)                                                                                \
   OP(BRANCH_NOT, 2, -1)                                                                            \
   OP(IF_INVALID, 2, 0)                                                                             \

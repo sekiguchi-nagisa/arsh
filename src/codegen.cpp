@@ -357,14 +357,16 @@ void ByteCodeGenerator::generatePipeline(const PipelineNode &node, ForkKind fork
   this->markLabel(begin);
   for (unsigned int i = 0; i < size; i++) {
     if (i > 0) {
-      this->emit0byteIns(OpCode::HALT);
+      this->emit0byteIns(OpCode::TERM_HOOK);
+      this->emit0byteIns(OpCode::SUBSHELL_EXIT);
     }
     this->markLabel(labels[i]);
     this->visit(*node.getNodes()[i], CmdCallCtx::STMT);
   }
   this->markLabel(end);
   this->guardChildProc(begin, end, this->typePool.get(TYPE::ProcGuard_));
-  this->emit0byteIns(OpCode::HALT);
+  this->emit0byteIns(OpCode::TERM_HOOK);
+  this->emit0byteIns(OpCode::SUBSHELL_EXIT);
 
   this->markLabel(labels.back());
 
@@ -1068,7 +1070,8 @@ void ByteCodeGenerator::visitForkNode(ForkNode &node) {
     this->markLabel(endLabel);
 
     this->guardChildProc(beginLabel, endLabel, this->typePool.get(TYPE::ProcGuard_));
-    this->emit0byteIns(OpCode::HALT);
+    this->emit0byteIns(OpCode::TERM_HOOK);
+    this->emit0byteIns(OpCode::SUBSHELL_EXIT);
     this->markLabel(mergeLabel);
   }
 }

@@ -1390,6 +1390,43 @@ bool VM::kickSignalHandler(ARState &state, int sigNum, Value &&func) {
   return windStackFrame(state, 3, 3, signalTrampoline);
 }
 
+static NativeCode initTermHookTrampoline() {
+  NativeCode::ArrayType code;
+  code[0] = static_cast<char>(OpCode::LOAD_LOCAL);
+  code[1] = 1;
+  code[2] = static_cast<char>(OpCode::LOAD_LOCAL2);
+  code[3] = 2;
+  code[4] = static_cast<char>(OpCode::CALL_FUNC);
+  code[5] = 2;
+  code[6] = static_cast<char>(OpCode::RETURN_TERM);
+  return NativeCode(code);
+}
+
+static const auto termHookTrampoline = initTermHookTrampoline();
+
+bool VM::kickTermHook(ARState &state, Value &&func) {
+  auto except = state.stack.takeThrownObject();
+  int termKind = TERM_ON_EXIT;
+  if (except) {
+    auto &type = state.typePool.get(except->getTypeID());
+    if (type.is(TYPE::AssertFail_)) {
+      termKind = TERM_ON_ASSERT;
+    } else if (!type.is(TYPE::ShellExit_)) {
+      termKind = TERM_ON_ERR;
+    }
+  }
+
+  auto oldExitStatus = state.getGlobal(BuiltinVarOffset::EXIT_STATUS);
+  state.canHandleSignal = false;
+  state.stack.reserve(4);
+  state.stack.push(oldExitStatus);
+  state.stack.push(std::move(func)); // (Int, Any) -> Void
+  state.stack.push(Value::createInt(termKind));
+  state.stack.push(termKind == TERM_ON_ERR ? except : oldExitStatus);
+
+  return windStackFrame(state, 4, 4, termHookTrampoline);
+}
+
 void VM::kickVMHook(ARState &state) {
   assert(state.hook);
   const auto op = static_cast<OpCode>(*state.stack.ip());
@@ -1442,7 +1479,19 @@ bool VM::mainLoop(ARState &state) {
 
     // dispatch instruction
     vmdispatch(op) {
-      vmcase(HALT) { return true; }
+      vmcase(SUBSHELL_EXIT) {
+        assert(state.subshellLevel());
+        exit(state.getMaskedExitStatus());
+      }
+      vmcase(TERM_HOOK) {
+        assert(state.subshellLevel());
+        handleUncaughtException(state, nullptr);
+        if (auto funcObj = state.getGlobal(state.termHookIndex);
+            funcObj.kind() != ValueKind::INVALID) {
+          TRY(kickTermHook(state, std::move(funcObj)));
+        }
+        vmnext;
+      }
       vmcase(ASSERT_ENABLED) {
         unsigned short offset = read16(state.stack.ip());
         if (state.has(RuntimeOption::ASSERT)) {
@@ -1827,6 +1876,17 @@ bool VM::mainLoop(ARState &state) {
         state.stack.unwind();
         assert(!state.stack.checkVMReturn());
         CHECK_SIGNAL();
+        vmnext;
+      }
+      vmcase(RETURN_TERM) {
+        auto v = state.stack.getLocal(0); // old exit status
+        state.stack.unwind();
+        handleUncaughtException(state, nullptr);
+        state.setGlobal(BuiltinVarOffset::EXIT_STATUS, std::move(v));
+        state.stack.push(Value::createInvalid()); // push void
+        if (state.stack.checkVMReturn()) {
+          return true;
+        }
         vmnext;
       }
       vmcase(BRANCH) {
@@ -2328,15 +2388,15 @@ bool VM::handleException(ARState &state) {
             continue;
           }
 
+          state.stack.updateIPByOffset(entry.dest);
           if (entryType.is(TYPE::ProcGuard_)) {
             /**
              * when exception entry indicate exception guard of sub-shell,
              * immediately break interpreter
              * (due to prevent signal handler interrupt and to load thrown object to stack)
              */
-            return false;
+            return true;
           }
-          state.stack.updateIPByOffset(entry.dest);
           state.stack.clearOperandsUntilGuard(StackGuardType::TRY, entry.guardLevel);
           state.stack.reclaimLocals(entry.localOffset, entry.localSize);
           if (entryType.is(TYPE::Root_)) { // finally block
@@ -2350,6 +2410,8 @@ bool VM::handleException(ARState &state) {
       }
     } else if (state.stack.code() == &signalTrampoline) { // within signal trampoline
       state.canHandleSignal = true;
+    } else if (state.stack.code() == &termHookTrampoline) {
+      return true; // not propagate exception from termination handler
     }
 
     auto &entries = state.stack.getFinallyEntries();
@@ -2367,28 +2429,16 @@ EvalRet VM::startEval(ARState &state, EvalOP op, ARError *dsError, Value &value)
     setSignalSetting(state);
   }
 
-  const auto oldLevel = state.subshellLevel();
-
   // run main loop
   const auto ret = mainLoop(state);
-  /**
-   * if return form subshell, subshellLevel is greater than old.
-   */
-  const bool subshell = oldLevel != state.subshellLevel();
   if (ret) {
     value = state.stack.pop();
   } else {
-    if (!subshell && hasFlag(op, EvalOP::PROPAGATE)) {
+    if (hasFlag(op, EvalOP::PROPAGATE)) {
       return EvalRet::HAS_ERROR;
     }
   }
-
-  // handle uncaught exception and termination handler
   handleUncaughtException(state, dsError);
-  if (subshell) {
-    callTermHook(state);
-    exit(state.getMaskedExitStatus());
-  }
   return ret ? EvalRet::SUCCESS : EvalRet::HANDLED_ERROR;
 }
 
@@ -2568,37 +2618,16 @@ ARErrorKind VM::handleUncaughtException(ARState &state, ARError *dsError) {
 }
 
 bool VM::callTermHook(ARState &state) {
-  auto except = state.stack.takeThrownObject();
-  assert(state.termHookIndex != 0);
+  RecursionGuard guard(state);
+
   auto funcObj = state.getGlobal(state.termHookIndex);
   if (funcObj.kind() == ValueKind::INVALID) {
     return false;
   }
-
-  int termKind = TERM_ON_EXIT;
-  if (except) {
-    auto &type = state.typePool.get(except->getTypeID());
-    if (type.is(TYPE::AssertFail_)) {
-      termKind = TERM_ON_ASSERT;
-    } else if (!type.is(TYPE::ShellExit_)) {
-      termKind = TERM_ON_ERR;
-    }
+  if (kickTermHook(state, std::move(funcObj))) {
+    Value ret;
+    startEval(state, EvalOP::PROPAGATE, nullptr, ret);
   }
-
-  auto oldExitStatus = state.getGlobal(BuiltinVarOffset::EXIT_STATUS);
-  auto args =
-      makeArgs(Value::createInt(termKind), termKind == TERM_ON_ERR ? except : oldExitStatus);
-
-  state.canHandleSignal = false;
-  VM::callFunction(state, std::move(funcObj), std::move(args)); // ignore exception
-  state.stack.clearThrownObject();
-
-  // restore old value
-  state.setGlobal(BuiltinVarOffset::EXIT_STATUS, std::move(oldExitStatus));
-  state.canHandleSignal = true;
-
-  // clear TERM_HOOK
-  state.setGlobal(state.termHookIndex, Value::createInvalid());
   return true;
 }
 

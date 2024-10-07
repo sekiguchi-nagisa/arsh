@@ -9,7 +9,7 @@ using BreakPointHandler = std::function<void()>;
 
 class VMInspector : public VMHook {
 private:
-  OpCode breakOp{OpCode::HALT};
+  OpCode breakOp{OpCode::SUBSHELL_EXIT};
   BreakPointHandler handler;
   bool called{true};
 

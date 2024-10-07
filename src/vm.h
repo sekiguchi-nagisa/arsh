@@ -618,6 +618,8 @@ private:
 
   static bool kickSignalHandler(ARState &state, int sigNum, Value &&func);
 
+  static bool kickTermHook(ARState &state, Value &&func);
+
   static void kickVMHook(ARState &state);
 
   /**

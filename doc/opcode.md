@@ -2,7 +2,8 @@
 
 | **Mnemonic**      | **Other bytes**                | **Stack (before -> after)**                  | **Description**                                                 |
 |-------------------|--------------------------------|----------------------------------------------|-----------------------------------------------------------------|
-| HALT              |                                | [no change]                                  | stop evaluation of interpreter immediately                      |
+| SUBSHELL_EXIT     |                                | [terminate]                                  | terminate subshell                                              |
+| TERM_HOOK         |                                |                                              | call termination handler                                        |
 | ASSERT_ENABLED    | 2: offset1 offset2             | [no change]                                  | check if assertion enabled                                      |
 | ASSERT_FAIL       |                                | value ->                                     | throw AssertionError                                            |
 | ASSERT_FAIL2      | 1: op                          | left right value ->                          | throw AssertionError with LSH, RHS                              |
@@ -65,6 +66,7 @@
 | RETURN            |                                | value -> [empty]                             | return value from callable                                      |
 | RETURN_UDC        |                                | value -> [empty]                             | return from user-defined command                                |
 | RETURN_SIG        |                                | [no change]                                  | return from signal handler                                      |
+| RETURN_TERM       |                                | [no change]                                  | return from termination handler                                 |
 | BRANCH            | 2: offset1 offset2             | value ->                                     | if value is false, branch to instruction at offset              |
 | BRANCH_NOT        | 2: offset1 offset2             | value ->                                     | if value is not false, branch to instruction at offset          | 
 | IF_INVALID        | 2: offset1 offset2             | value -> / [no change]                       | if stack top is invalid, branch to instruction at offset        |

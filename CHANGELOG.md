@@ -1,5 +1,13 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+#### Core
+
+- overhaul termination handler invocation
+
 ## [0.35.0] - 2024-10-01
 
 ### Added
