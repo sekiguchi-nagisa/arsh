@@ -2422,7 +2422,7 @@ bool VM::handleException(ARState &state) {
   return false;
 }
 
-EvalRet VM::startEval(ARState &state, EvalOP op, ARError *dsError, Value &value) {
+Value VM::startEval(ARState &state, EvalOP op, ARError *dsError) {
   assert(state.stack.recDepth() > 0);
   if (state.stack.recDepth() == 1) {
     setLocaleSetting();
@@ -2430,19 +2430,17 @@ EvalRet VM::startEval(ARState &state, EvalOP op, ARError *dsError, Value &value)
   }
 
   // run main loop
-  const auto ret = mainLoop(state);
-  if (ret) {
+  Value value;
+  if (mainLoop(state)) {
     value = state.stack.pop();
-  } else {
-    if (hasFlag(op, EvalOP::PROPAGATE)) {
-      return EvalRet::HAS_ERROR;
-    }
   }
-  handleUncaughtException(state, dsError);
-  return ret ? EvalRet::SUCCESS : EvalRet::HANDLED_ERROR;
+  if (!hasFlag(op, EvalOP::PROPAGATE)) {
+    handleUncaughtException(state, dsError);
+  }
+  return value;
 }
 
-bool VM::callToplevel(ARState &state, const ObjPtr<FuncObject> &func, ARError *dsError) {
+void VM::callToplevel(ARState &state, const ObjPtr<FuncObject> &func, ARError *dsError) {
   assert(state.stack.recDepth() == 0);
 
   // set module to global
@@ -2460,13 +2458,10 @@ bool VM::callToplevel(ARState &state, const ObjPtr<FuncObject> &func, ARError *d
   RecursionGuard guard(state);
   state.stack.wind(0, 0, func->getCode());
 
-  Value ret;
-  const auto s = startEval(state, EvalOP{}, dsError, ret);
-  assert(s != EvalRet::HAS_ERROR);
-  return s == EvalRet::SUCCESS;
+  startEval(state, EvalOP{}, dsError);
 }
 
-unsigned int VM::prepareArguments(VMState &state, Value &&recv, CallArgs &&args) {
+static unsigned int prepareArguments(VMState &state, Value &&recv, CallArgs &&args) {
   // push arguments
   const unsigned int size = args.first;
   state.reserve(size + 1);
@@ -2505,17 +2500,16 @@ static NativeCode initCmdTrampoline() noexcept {
   return NativeCode(code);
 }
 
-Value VM::execCommand(ARState &state, std::vector<Value> &&argv, bool propagate) {
+Value VM::execCommand(ARState &state, std::vector<Value> &&argv) {
   GUARD_RECURSION(state);
 
   static const auto cmdTrampoline = initCmdTrampoline();
 
-  const auto op = propagate ? EvalOP::PROPAGATE : EvalOP{};
   Value ret;
   auto obj = Value::create<ArrayObject>(state.typePool.get(TYPE::StringArray), std::move(argv));
   prepareArguments(state.stack, std::move(obj), {0, {}});
   if (windStackFrame(state, 1, 1, cmdTrampoline)) {
-    startEval(state, op, nullptr, ret);
+    ret = startEval(state, EvalOP{}, nullptr);
   }
   return ret;
 }
@@ -2529,7 +2523,7 @@ Value VM::callFunction(ARState &state, Value &&funcObj, CallArgs &&args) {
   Value ret;
   if (prepareFuncCall(state, size)) {
     assert(type.isFuncType());
-    startEval(state, EvalOP::PROPAGATE, nullptr, ret);
+    ret = startEval(state, EvalOP::PROPAGATE, nullptr);
   }
   if (cast<FunctionType>(type).getReturnType().isVoidType()) {
     ret = Value(); // clear return value
@@ -2559,7 +2553,7 @@ Value VM::callMethod(ARState &state, const MethodHandle &handle, Value &&recv, C
   const NativeCode wrapper = initBuiltinWrapper(handle.isNative() ? handle.getIndex() : 0);
   if (handle.isNative() ? windStackFrame(state, actualParamSize, actualParamSize, wrapper)
                         : prepareMethodCall(state, handle.getIndex(), actualParamSize)) {
-    startEval(state, EvalOP::PROPAGATE, nullptr, ret);
+    ret = startEval(state, EvalOP::PROPAGATE, nullptr);
   }
   if (handle.getReturnType().isVoidType()) {
     ret = Value(); // clear return value
@@ -2617,18 +2611,15 @@ ARErrorKind VM::handleUncaughtException(ARState &state, ARError *dsError) {
   return kind;
 }
 
-bool VM::callTermHook(ARState &state) {
-  RecursionGuard guard(state);
+void VM::callTermHook(ARState &state) {
+  assert(state.stack.recDepth() == 0);
 
-  auto funcObj = state.getGlobal(state.termHookIndex);
-  if (funcObj.kind() == ValueKind::INVALID) {
-    return false;
+  RecursionGuard guard(state);
+  if (auto funcObj = state.getGlobal(state.termHookIndex); funcObj.kind() != ValueKind::INVALID) {
+    if (kickTermHook(state, std::move(funcObj))) { // always success
+      startEval(state, EvalOP::PROPAGATE, nullptr);
+    }
   }
-  if (kickTermHook(state, std::move(funcObj))) {
-    Value ret;
-    startEval(state, EvalOP::PROPAGATE, nullptr, ret);
-  }
-  return true;
 }
 
 } // namespace arsh

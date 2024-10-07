@@ -62,12 +62,6 @@ enum class EvalOP : unsigned char {
   PROPAGATE = 1u << 0u, // propagate uncaught exception to caller (except for subshell).
 };
 
-enum class EvalRet : unsigned char {
-  SUCCESS,       // normal termination
-  HAS_ERROR,     // still has uncaught error
-  HANDLED_ERROR, // already handled uncaught error
-};
-
 template <>
 struct allow_enum_bitop<RuntimeOption> : std::true_type {};
 
@@ -645,23 +639,11 @@ private:
    * @param op
    * @param dsError
    * if not null, set error info
-   * @param value
-   * if has return value, set to this
    * @return
    * if has error or not value, return null
    * otherwise, return value
    */
-  static EvalRet startEval(ARState &state, EvalOP op, ARError *dsError, Value &value);
-
-  /**
-   *
-   * @param state
-   * @param recv may be null if user-defined constructor call
-   * @param args
-   * @return
-   */
-  static unsigned int prepareArguments(VMState &state, Value &&recv,
-                                       std::pair<unsigned int, std::array<Value, 3>> &&args);
+  static Value startEval(ARState &state, EvalOP op, ARError *dsError);
 
 public:
   // entry point
@@ -672,23 +654,19 @@ public:
    * must be toplevel compiled function.
    * @param dsError
    * if not null, set error information
-   * @return
-   * if had uncaught exception, return false.
    */
-  static bool callToplevel(ARState &state, const ObjPtr<FuncObject> &func, ARError *dsError);
+  static void callToplevel(ARState &state, const ObjPtr<FuncObject> &func, ARError *dsError);
 
   /**
    * execute command.
    * @param state
    * @param argv
    * Value must be String_Object
-   * @param propagate
-   * if true, not handle uncaught exception
    * @return
    * if exit status is 0, return true.
    * otherwise, return false
    */
-  static Value execCommand(ARState &state, std::vector<Value> &&argv, bool propagate);
+  static Value execCommand(ARState &state, std::vector<Value> &&argv);
 
   /**
    * @param state
@@ -735,11 +713,8 @@ public:
    * call user-defined termination handler specified by TERM_HOOK.
    * after call TERM_HOOK, clear thrown object and TERM_HOOK
    * @param state
-   * @return
-   * if call term hook, return true.
-   * if not call (not found hook), return false
    */
-  static bool callTermHook(ARState &state);
+  static void callTermHook(ARState &state);
 };
 
 } // namespace arsh
