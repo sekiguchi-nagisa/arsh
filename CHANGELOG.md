@@ -7,6 +7,7 @@
 #### Core
 
 - overhaul termination handler invocation
+- send ``SIGHUP`` to manged jobs before process termination (even if subshell)
 
 ## [0.35.0] - 2024-10-01
 

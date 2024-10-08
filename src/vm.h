@@ -711,10 +711,10 @@ public:
 
   /**
    * call user-defined termination handler specified by TERM_HOOK.
-   * after call TERM_HOOK, clear thrown object and TERM_HOOK
+   * after call TERM_HOOK, send SIGHUP to manged jobs
    * @param state
    */
-  static void callTermHook(ARState &state);
+  static void prepareTermination(ARState &state);
 };
 
 } // namespace arsh

@@ -185,7 +185,7 @@ ARState *ARState_createWithMode(ARExecMode mode) {
 
 void ARState_delete(ARState **st) {
   if (st != nullptr) {
-    VM::callTermHook(**st);
+    VM::prepareTermination(**st);
     delete (*st);
     *st = nullptr;
   }

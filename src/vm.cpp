@@ -1481,6 +1481,9 @@ bool VM::mainLoop(ARState &state) {
     vmdispatch(op) {
       vmcase(SUBSHELL_EXIT) {
         assert(state.subshellLevel());
+        if (state.has(RuntimeOption::HUP_EXIT)) {
+          state.jobTable.send(SIGHUP);
+        }
         exit(state.getMaskedExitStatus());
       }
       vmcase(TERM_HOOK) {
@@ -2611,7 +2614,7 @@ ARErrorKind VM::handleUncaughtException(ARState &state, ARError *dsError) {
   return kind;
 }
 
-void VM::callTermHook(ARState &state) {
+void VM::prepareTermination(ARState &state) {
   assert(state.stack.recDepth() == 0);
 
   RecursionGuard guard(state);
@@ -2619,6 +2622,10 @@ void VM::callTermHook(ARState &state) {
     if (kickTermHook(state, std::move(funcObj))) { // always success
       startEval(state, EvalOP::PROPAGATE, nullptr);
     }
+  }
+
+  if (state.has(RuntimeOption::HUP_EXIT)) {
+    state.jobTable.send(SIGHUP);
   }
 }
 

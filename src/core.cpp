@@ -104,9 +104,6 @@ void raiseSystemError(ARState &st, int errorNum, std::string &&message) {
 }
 
 void raiseShellExit(ARState &st, int64_t status) {
-  if (st.has(RuntimeOption::HUP_EXIT)) {
-    st.jobTable.send(SIGHUP);
-  }
   int s = maskExitStatus(status);
   std::string str = "terminated by exit ";
   str += std::to_string(s);
