@@ -110,10 +110,8 @@ TypePool::TypePool() {
   this->initErrorType(TYPE::CLIError, "CLIError");
   this->initErrorType(TYPE::ArgumentError, "ArgumentError");
 
-  // init internal status type
-  this->initBuiltinType(TYPE::InternalStatus_, "internal status%%", TYPE::Throwable, info_Dummy());
-  this->initBuiltinType(TYPE::ShellExit_, "Shell Exit", TYPE::InternalStatus_, info_Dummy());
-  this->initBuiltinType(TYPE::AssertFail_, "Assertion Error", TYPE::InternalStatus_, info_Dummy());
+  this->initErrorType(TYPE::ShellExit_, "ShellExit", TYPE::Throwable);
+  this->initErrorType(TYPE::AssertFail_, "AssertionFailed", TYPE::Throwable);
 }
 
 TypePool::~TypePool() {

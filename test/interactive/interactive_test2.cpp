@@ -24,7 +24,7 @@ TEST_F(InteractiveTest, assert1) {
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
 
   const char *e = R"([runtime error]
-Assertion Error: `(false)'
+AssertionFailed: `(false)'
     from (stdin):1 '<toplevel>()'
 )";
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("assert(false)", 1, WaitStatus::EXITED, "", e));
@@ -36,7 +36,7 @@ TEST_F(InteractiveTest, assert2) {
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
 
   const char *e = R"([runtime error]
-Assertion Error: `($x == $y)'
+AssertionFailed: `($x == $y)'
 binary expression `<LHS> == <RHS>' is false
   <LHS>: Int = 1
   <RHS>: Int = 2
@@ -229,7 +229,7 @@ TEST_F(InteractiveTest, termHook3) {
       "function f($s : Int, $a : Any) { echo atexit: $s, $a; }; $TERM_HOOK=$f;"));
 
   const char *estr = R"([runtime error]
-Assertion Error: `false'
+AssertionFailed: `false'
     from (stdin):2 '<toplevel>()'
 )";
   std::string err = format("atexit: %d, 1\n", TERM_ON_ASSERT);

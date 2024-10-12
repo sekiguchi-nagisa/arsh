@@ -111,7 +111,7 @@ TEST_F(InteractiveTest, customActionError2) {
   this->send("echo" CTRL_V);
 
   const char *err = R"([runtime error]
-Shell Exit: terminated by exit 199
+ShellExit: terminated by exit 199
     from (stdin):1 'function ()'
 )";
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "echo\n", err));
@@ -129,7 +129,7 @@ TEST_F(InteractiveTest, customActionError3) {
   this->send("echo" CTRL_V);
 
   const char *err = R"([runtime error]
-Assertion Error: `$false'
+AssertionFailed: `$false'
     from (stdin):1 'function ()'
 )";
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "echo\n", err));

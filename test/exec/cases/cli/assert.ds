@@ -11,14 +11,14 @@ var cmd = "assert
     \"hello assertion\""
 
 var msg = "[runtime error]
-Assertion Error: hello assertion
+AssertionFailed: hello assertion
     from (string):2 '<toplevel>()'"
 
 $expect("$(ds -c $cmd 2>&1)", 1, $msg)
 
 # assert with message (power assert)
 $msg = "[runtime error]
-Assertion Error: failed
+AssertionFailed: failed
 binary expression \`<LHS> =~ <RHS>' is false
   <LHS>: String = $OSTYPE
   <RHS>: Regex = mac
@@ -27,7 +27,7 @@ binary expression \`<LHS> =~ <RHS>' is false
 $expect("$(ds -c 'assert $OSTYPE =~ $/mac/ : "failed"' 2>&1)", 1, $msg)
 
 $msg = "[runtime error]
-Assertion Error: not Error type
+AssertionFailed: not Error type
 binary expression \`<EXPR> is <TYPE>' is false
   <EXPR>: Int
   <TYPE>: Error
@@ -38,14 +38,14 @@ $expect("$(ds -c 'assert 23 is Error : "not Error type"' 2>&1)", 1, $msg)
 
 # assert without message
 $msg = "[runtime error]
-Assertion Error: \`\$false'
+AssertionFailed: \`\$false'
     from (string):1 '<toplevel>()'"
 
 $expect("$(ds -c 'assert $false' 2>&1)", 1, $msg)
 
 # assert without message (power assert)
 $msg = "[runtime error]
-Assertion Error: \`34 == 43'
+AssertionFailed: \`34 == 43'
 binary expression \`<LHS> == <RHS>' is false
   <LHS>: Int = 34
   <RHS>: Int = 43
@@ -54,7 +54,7 @@ binary expression \`<LHS> == <RHS>' is false
 $expect("$(ds -c 'assert 34 == 43' 2>&1)", 1, $msg)
 
 $msg = "[runtime error]
-Assertion Error: \`\$SIG_DFL == \$SIG_IGN'
+AssertionFailed: \`\$SIG_DFL == \$SIG_IGN'
 binary expression \`<LHS> == <RHS>' is false
   <LHS>: (Signal) -> Void = function(SIG_DFL)
   <RHS>: (Signal) -> Void = function(SIG_IGN)
@@ -63,7 +63,7 @@ binary expression \`<LHS> == <RHS>' is false
 $expect("$(ds -c 'assert $SIG_DFL == $SIG_IGN' 2>&1)", 1, $msg)
 
 $msg = "[runtime error]
-Assertion Error: \`(\"\") as Any is Float'
+AssertionFailed: \`(\"\") as Any is Float'
 binary expression \`<EXPR> is <TYPE>' is false
   <EXPR>: String
   <TYPE>: Float

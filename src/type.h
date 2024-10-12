@@ -87,11 +87,6 @@ enum class TYPE : unsigned int {
   CLIError,
   ArgumentError,
 
-  /**
-   * for internal status reporting.
-   * they are pseudo type, so must not use it from shell
-   */
-  InternalStatus_, // base type
   ShellExit_,
   AssertFail_,
 };

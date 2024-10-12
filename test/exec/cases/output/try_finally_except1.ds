@@ -64,7 +64,7 @@ assert $ex is SystemError
 
 # CHECKERR: [warning]
 # CHECKERR: the following exception within finally/defer block is ignored
-# CHECKERR: Shell Exit: terminated by exit 0
+# CHECKERR: ShellExit: terminated by exit 0
 # CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except1\.ds:54 'function \(\)'
 # CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except1\.ds:54 'function f\(\)'
 # CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except1\.ds:59 '<toplevel>\(\)'
@@ -87,7 +87,7 @@ assert $ex is TildeError
 
 # CHECKERR: [warning]
 # CHECKERR: the following exception within finally/defer block is ignored
-# CHECKERR: Assertion Error: `$false'
+# CHECKERR: AssertionFailed: `$false'
 # CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except1\.ds:77 'function ff\(\)'
 # CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except1\.ds:82 '<toplevel>\(\)'
 # CHECKERR_RE: ^$

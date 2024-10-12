@@ -676,7 +676,7 @@ TEST_F(APITest, scriptDir) {
   ASSERT_EQ(1, output.status.value);
   ASSERT_EQ("", output.out);
   ASSERT_EQ(R"([runtime error]
-Assertion Error: `$test1()'
+AssertionFailed: `$test1()'
     from (string):17 '<toplevel>()')",
             output.err);
 
@@ -692,7 +692,7 @@ Assertion Error: `$test1()'
   ASSERT_EQ(1, output.status.value);
   ASSERT_EQ("", output.out);
   ASSERT_EQ(R"([runtime error]
-Assertion Error: `$test2()'
+AssertionFailed: `$test2()'
     from (string):17 '<toplevel>()')",
             output.err);
 
@@ -708,7 +708,7 @@ Assertion Error: `$test2()'
   ASSERT_EQ(1, output.status.value);
   ASSERT_EQ("", output.out);
   ASSERT_EQ(R"([runtime error]
-Assertion Error: `$check($MODULE._scriptDir())'
+AssertionFailed: `$check($MODULE._scriptDir())'
     from (string):17 '<toplevel>()')",
             output.err);
 
@@ -724,7 +724,7 @@ Assertion Error: `$check($MODULE._scriptDir())'
   ASSERT_EQ(1, output.status.value);
   ASSERT_EQ("", output.out);
   ASSERT_EQ(R"([runtime error]
-Assertion Error: `$check($SCRIPT_DIR)'
+AssertionFailed: `$check($SCRIPT_DIR)'
     from (string):17 '<toplevel>()')",
             output.err);
 }

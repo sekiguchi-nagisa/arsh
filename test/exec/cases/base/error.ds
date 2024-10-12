@@ -39,3 +39,13 @@ assert($e is Error)
 assert($e.name() == "TypeCastError")
 assert $e.lineno() == 36
 assert $e.status() == 0
+
+
+## throwable
+assert new Error('') is Throwable
+assert new AssertionFailed('') is Throwable
+assert !(new AssertionFailed('') is Error)
+assert !(new AssertionFailed('') is ShellExit)
+assert new ShellExit('') is Throwable
+assert !(new ShellExit('') is Error)
+assert !(new ShellExit('') is AssertionFailed)

@@ -305,11 +305,11 @@ SystemError: execution error: hoge: command not found
 
 [warning]
 the following exception within finally/defer block is ignored
-Shell Exit: terminated by exit 34
+ShellExit: terminated by exit 34
     from (string):3 '<toplevel>()'
 
 [runtime error]
-Assertion Error: `$false'
+AssertionFailed: `$false'
     from (string):10 '<toplevel>()'
 )";
 
@@ -406,7 +406,7 @@ ArithmeticError: zero division
         assert false
 )";
   e = R"([runtime error]
-Assertion Error: `false'
+AssertionFailed: `false'
     from (string):7 '<toplevel>()'
 )";
   ASSERT_NO_FATAL_FAILURE(this->expect(DS(src), 1, "receive error: 4: 1\n", e));

@@ -28,6 +28,6 @@ $? = 111
 # CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except2\.ds:6 '<toplevel>\(\)'
 # CHECKERR_RE: ^$
 # CHECKERR: [runtime error]
-# CHECKERR: Shell Exit: terminated by exit 166
+# CHECKERR: ShellExit: terminated by exit 166
 # CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except2\.ds:15 'function \(\)'
 # CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except2\.ds:15 '<toplevel>\(\)'
