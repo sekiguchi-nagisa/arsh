@@ -31,7 +31,7 @@ Currently, under heavy development. Language specification is subject to change 
 ### Tested Compiler
 
 * gcc (7, 8, 9, 10, 11, 12, 13, 14)
-* clang (6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18)
+* clang (7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18)
 
 ### Other Tested platform
 
