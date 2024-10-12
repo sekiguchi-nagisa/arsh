@@ -29,41 +29,41 @@ TypePool::TypePool() {
   /**
    * for type error
    */
-  this->initBuiltinType(TYPE::Unresolved_, "<unresolved>", false, info_Dummy());
+  this->initBuiltinType(TYPE::Unresolved_, "<unresolved>", info_Dummy());
 
   /**
    * pseudo base type
    */
-  this->initBuiltinType(TYPE::ProcGuard_, "process guard%%", false, info_Dummy());
+  this->initBuiltinType(TYPE::ProcGuard_, "process guard%%", info_Dummy());
 
-  this->initBuiltinType(TYPE::Any, "Any", true, TYPE::ProcGuard_, info_AnyType());
-  this->initBuiltinType(TYPE::Void, "Void", false, info_Dummy());
-  this->initBuiltinType(TYPE::Nothing, "Nothing", false, info_Dummy());
+  this->initBuiltinType(TYPE::Any, "Any", TYPE::ProcGuard_, info_AnyType());
+  this->initBuiltinType(TYPE::Void, "Void", info_Dummy());
+  this->initBuiltinType(TYPE::Nothing, "Nothing", info_Dummy());
 
   /**
    * hidden from script.
    */
-  this->initBuiltinType(TYPE::Value_, "Value%%", true, TYPE::Any, info_Dummy());
+  this->initBuiltinType(TYPE::Value_, "Value%%", TYPE::Any, info_Dummy());
 
-  this->initBuiltinType(TYPE::Int, "Int", false, TYPE::Value_, info_IntType());
-  this->initBuiltinType(TYPE::Float, "Float", false, TYPE::Value_, info_FloatType());
-  this->initBuiltinType(TYPE::Bool, "Bool", false, TYPE::Value_, info_BoolType());
-  this->initBuiltinType(TYPE::String, "String", false, TYPE::Value_, info_StringType());
+  this->initBuiltinType(TYPE::Int, "Int", TYPE::Value_, info_IntType());
+  this->initBuiltinType(TYPE::Float, "Float", TYPE::Value_, info_FloatType());
+  this->initBuiltinType(TYPE::Bool, "Bool", TYPE::Value_, info_BoolType());
+  this->initBuiltinType(TYPE::String, "String", TYPE::Value_, info_StringType());
 
-  this->initBuiltinType(TYPE::Regex, "Regex", false, TYPE::Any, info_RegexType());
-  this->initBuiltinType(TYPE::RegexMatch, "RegexMatch", false, TYPE::Any, info_RegexMatchType());
-  this->initBuiltinType(TYPE::Signal, "Signal", false, TYPE::Value_, info_SignalType());
-  this->initBuiltinType(TYPE::Signals, "Signals", false, TYPE::Any, info_SignalsType());
-  this->initBuiltinType(TYPE::Throwable, "Throwable", true, TYPE::Any, info_ThrowableType());
-  this->initBuiltinType(TYPE::Job, "Job", false, TYPE::Any, info_JobType());
-  this->initBuiltinType(TYPE::Module, "Module", false, TYPE::Any, info_ModuleType());
-  this->initBuiltinType(TYPE::StringIter, "StringIter%%", false, TYPE::Any, info_StringIterType());
-  this->initBuiltinType(TYPE::FD, "FD", false, TYPE::Any, info_FDType());
-  this->initBuiltinType(TYPE::Reader, "Reader%%", false, TYPE::Any, info_ReaderType());
-  this->initBuiltinType(TYPE::Command, "Command", false, TYPE::Any, info_CommandType());
-  this->initBuiltinType(TYPE::LineEditor, "LineEditor", false, TYPE::Any, info_LineEditorType());
-  this->initBuiltinType(TYPE::CLI, "CLI", true, TYPE::Any, info_CLIType());
-  this->initBuiltinType(TYPE::Candidates, "Candidates", false, TYPE::Any, info_CandidatesType());
+  this->initBuiltinType(TYPE::Regex, "Regex", TYPE::Any, info_RegexType());
+  this->initBuiltinType(TYPE::RegexMatch, "RegexMatch", TYPE::Any, info_RegexMatchType());
+  this->initBuiltinType(TYPE::Signal, "Signal", TYPE::Value_, info_SignalType());
+  this->initBuiltinType(TYPE::Signals, "Signals", TYPE::Any, info_SignalsType());
+  this->initBuiltinType(TYPE::Throwable, "Throwable", TYPE::Any, info_ThrowableType());
+  this->initBuiltinType(TYPE::Job, "Job", TYPE::Any, info_JobType());
+  this->initBuiltinType(TYPE::Module, "Module", TYPE::Any, info_ModuleType());
+  this->initBuiltinType(TYPE::StringIter, "StringIter%%", TYPE::Any, info_StringIterType());
+  this->initBuiltinType(TYPE::FD, "FD", TYPE::Any, info_FDType());
+  this->initBuiltinType(TYPE::Reader, "Reader%%", TYPE::Any, info_ReaderType());
+  this->initBuiltinType(TYPE::Command, "Command", TYPE::Any, info_CommandType());
+  this->initBuiltinType(TYPE::LineEditor, "LineEditor", TYPE::Any, info_LineEditorType());
+  this->initBuiltinType(TYPE::CLI, "CLI", TYPE::Any, info_CLIType());
+  this->initBuiltinType(TYPE::Candidates, "Candidates", TYPE::Any, info_CandidatesType());
 
   // initialize type template
   this->initTypeTemplate(this->arrayTemplate, TypeTemplate::Kind::Array, {&this->get(TYPE::Any)},
@@ -111,11 +111,9 @@ TypePool::TypePool() {
   this->initErrorType(TYPE::ArgumentError, "ArgumentError");
 
   // init internal status type
-  this->initBuiltinType(TYPE::InternalStatus_, "internal status%%", false, TYPE::Throwable,
-                        info_Dummy());
-  this->initBuiltinType(TYPE::ShellExit_, "Shell Exit", false, TYPE::InternalStatus_, info_Dummy());
-  this->initBuiltinType(TYPE::AssertFail_, "Assertion Error", false, TYPE::InternalStatus_,
-                        info_Dummy());
+  this->initBuiltinType(TYPE::InternalStatus_, "internal status%%", TYPE::Throwable, info_Dummy());
+  this->initBuiltinType(TYPE::ShellExit_, "Shell Exit", TYPE::InternalStatus_, info_Dummy());
+  this->initBuiltinType(TYPE::AssertFail_, "Assertion Error", TYPE::InternalStatus_, info_Dummy());
 }
 
 TypePool::~TypePool() {
@@ -707,7 +705,7 @@ TypeOrError TypePool::checkElementTypes(const TypeTemplate &t,
   return Ok(static_cast<Type *>(nullptr));
 }
 
-void TypePool::initBuiltinType(TYPE t, const char *typeName, bool, const Type *super,
+void TypePool::initBuiltinType(TYPE t, const char *typeName, const Type *super,
                                native_type_info_t info) {
   // create and register type
   auto *type = this->newType<BuiltinType>(typeName, super, info);

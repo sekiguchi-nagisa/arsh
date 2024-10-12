@@ -317,17 +317,15 @@ private:
   static TypeOrError checkElementTypes(const TypeTemplate &t,
                                        const std::vector<const Type *> &elementTypes);
 
-  void initBuiltinType(TYPE t, const char *typeName, bool extendible, native_type_info_t info) {
-    this->initBuiltinType(t, typeName, extendible, nullptr, info);
+  void initBuiltinType(TYPE t, const char *typeName, native_type_info_t info) {
+    this->initBuiltinType(t, typeName, nullptr, info);
   }
 
-  void initBuiltinType(TYPE t, const char *typeName, bool extendible, TYPE super,
-                       native_type_info_t info) {
-    this->initBuiltinType(t, typeName, extendible, &this->get(super), info);
+  void initBuiltinType(TYPE t, const char *typeName, TYPE super, native_type_info_t info) {
+    this->initBuiltinType(t, typeName, &this->get(super), info);
   }
 
-  void initBuiltinType(TYPE t, const char *typeName, bool extendible, const Type *super,
-                       native_type_info_t info);
+  void initBuiltinType(TYPE t, const char *typeName, const Type *super, native_type_info_t info);
 
   void initTypeTemplate(TypeTemplate &temp, TypeTemplate::Kind kind,
                         std::vector<const Type *> &&elementTypes, native_type_info_t info);
