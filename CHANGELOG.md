@@ -2,6 +2,13 @@
 
 ## [Unreleased]
 
+### Added
+
+#### Core
+
+- add ``Throwable`` type for base type of ``Error``
+    - regardless of its name, ``Throwable`` object is not thrown (still only throw ``Error`` or derived)
+
 ### Changed
 
 #### Core

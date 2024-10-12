@@ -173,7 +173,7 @@ var types = [
     'Func', 'GlobError','GlobbingError', 'IllegalAccessError', 'Int', 'InvalidOperationError', 'Job', 'KeyNotFoundError', 
     'LineEditor', "Map", 'Module', 'Nothing', 'Option',
     'OutOfRangeError', 'Regex', 'RegexMatch', 'RegexMatchError', 'RegexSyntaxError', 'Signal', 'Signals',
-    'StackOverflowError', 'String', 'SystemError',  'TildeError', 'Tuple', 'TypeCastError',
+    'StackOverflowError', 'String', 'SystemError', 'Throwable', 'TildeError', 'Tuple', 'TypeCastError',
     'UnixFD', 'UnwrapError','UnwrappingError', 'Void', 'typeof',
 ]
 

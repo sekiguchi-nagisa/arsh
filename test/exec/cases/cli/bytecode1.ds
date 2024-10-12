@@ -55,7 +55,7 @@ Constant Pool:
 Line Number Table:
   lineNum: 1, address:  6
 Exception Table:
-  begin: 5, end: 23, type: pseudo top%%, dest: 23, offset: 0, size: 0, level: 1
+  begin: 5, end: 23, type: Throwable, dest: 23, offset: 0, size: 0, level: 1
 
 ARCode: function f
   code size: 8

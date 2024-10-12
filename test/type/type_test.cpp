@@ -187,7 +187,7 @@ TEST_F(TypeTest, superType) {
   ASSERT_TRUE(this->toType<Option_t<String_t>>().getSuperType() == nullptr);
 
   ASSERT_NO_FATAL_FAILURE(
-      this->assertSuperType(this->pool.get(TYPE::Any), this->pool.get(TYPE::Root_)));
+      this->assertSuperType(this->pool.get(TYPE::Any), this->pool.get(TYPE::ProcGuard_)));
   ASSERT_NO_FATAL_FAILURE(
       this->assertSuperType(this->pool.get(TYPE::Value_), this->pool.get(TYPE::Any)));
 
@@ -211,7 +211,9 @@ TEST_F(TypeTest, superType) {
   ASSERT_NO_FATAL_FAILURE(
       this->assertSuperType(this->pool.get(TYPE::StringArray), this->pool.get(TYPE::Any)));
   ASSERT_NO_FATAL_FAILURE(
-      this->assertSuperType(this->pool.get(TYPE::Error), this->pool.get(TYPE::Any)));
+      this->assertSuperType(this->pool.get(TYPE::Throwable), this->pool.get(TYPE::Any)));
+  ASSERT_NO_FATAL_FAILURE(
+      this->assertSuperType(this->pool.get(TYPE::Error), this->pool.get(TYPE::Throwable)));
   ASSERT_NO_FATAL_FAILURE(
       this->assertSuperType(this->pool.get(TYPE::ArithmeticError), this->pool.get(TYPE::Error)));
   ASSERT_NO_FATAL_FAILURE(

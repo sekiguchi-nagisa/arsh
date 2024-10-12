@@ -1160,7 +1160,7 @@ void ByteCodeGenerator::visitTypeDefNode(TypeDefNode &) {} // do nothing
 void ByteCodeGenerator::visitDeferNode(DeferNode &node) {
   auto &e = this->tryFinallyLabels().back();
   this->markLabel(e.finallyLabel);
-  this->catchException(e.beginLabel, e.endLabel, this->typePool.get(TYPE::Root_), e.localOffset,
+  this->catchException(e.beginLabel, e.endLabel, this->typePool.get(TYPE::Throwable), e.localOffset,
                        e.localSize, this->tryFinallyLabels().size());
   if (node.getDropLocalSize()) {
     this->emit2byteIns(OpCode::RECLAIM_LOCAL, node.getDropLocalOffset(), node.getDropLocalSize());

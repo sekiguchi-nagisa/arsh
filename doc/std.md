@@ -207,21 +207,21 @@ function %OP_NOT(): Bool for FD
 function %OP_ITER(): Reader for FD
 ```
 
-## Error type
+## Throwable type
 ```
-function %OP_INIT(message: String, status: Int?): Error for Error
+function %OP_INIT(message: String, status: Int?): Throwable for Throwable
 
-function message(): String for Error
+function message(): String for Throwable
 
-function show(): Void for Error
+function show(): Void for Throwable
 
-function name(): String for Error
+function name(): String for Throwable
 
-function status(): Int for Error
+function status(): Int for Throwable
 
-function lineno(): Int for Error
+function lineno(): Int for Throwable
 
-function source(): String for Error
+function source(): String for Throwable
 ```
 
 ## Job type

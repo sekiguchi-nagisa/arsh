@@ -2053,11 +2053,11 @@ ARSH_METHOD map_next(RuntimeContext &ctx) {
   }
 }
 
-// ###################
-// ##     Error     ##
-// ###################
+// #######################
+// ##     Throwable     ##
+// #######################
 
-//!bind: function $OP_INIT($this : Error, $message : String, $status : Option<Int>) : Error
+//!bind: function $OP_INIT($this : Throwable, $message : String, $status : Option<Int>) : Throwable
 ARSH_METHOD error_init(RuntimeContext &ctx) {
   SUPPRESS_WARNING(error_init);
   auto &type = ctx.typePool.get(LOCAL(0).getTypeID());
@@ -2066,33 +2066,33 @@ ARSH_METHOD error_init(RuntimeContext &ctx) {
   RET(Value(ErrorObject::newError(ctx, type, EXTRACT_LOCAL(1), status)));
 }
 
-//!bind: function message($this : Error) : String
+//!bind: function message($this : Throwable) : String
 ARSH_METHOD error_message(RuntimeContext &ctx) {
   SUPPRESS_WARNING(error_message);
   RET(typeAs<ErrorObject>(LOCAL(0)).getMessage());
 }
 
-//!bind: function show($this : Error) : Void
+//!bind: function show($this : Throwable) : Void
 ARSH_METHOD error_show(RuntimeContext &ctx) {
   SUPPRESS_WARNING(error_show);
   typeAs<ErrorObject>(LOCAL(0)).printStackTrace(ctx);
   RET_VOID;
 }
 
-//!bind: function name($this : Error) : String
+//!bind: function name($this : Throwable) : String
 ARSH_METHOD error_name(RuntimeContext &ctx) {
   SUPPRESS_WARNING(error_name);
   RET(typeAs<ErrorObject>(LOCAL(0)).getName());
 }
 
-//!bind: function status($this : Error) : Int
+//!bind: function status($this : Throwable) : Int
 ARSH_METHOD error_status(RuntimeContext &ctx) {
   SUPPRESS_WARNING(error_status);
   auto status = typeAs<ErrorObject>(LOCAL(0)).getStatus();
   RET(Value::createInt(status));
 }
 
-//!bind: function lineno($this : Error) : Int
+//!bind: function lineno($this : Throwable) : Int
 ARSH_METHOD error_lineno(RuntimeContext &ctx) {
   SUPPRESS_WARNING(error_lineno);
   auto &stackTraces = typeAs<ErrorObject>(LOCAL(0)).getStackTrace();
@@ -2100,7 +2100,7 @@ ARSH_METHOD error_lineno(RuntimeContext &ctx) {
   RET(Value::createInt(lineNum));
 }
 
-//!bind: function source($this : Error) : String
+//!bind: function source($this : Throwable) : String
 ARSH_METHOD error_source(RuntimeContext &ctx) {
   SUPPRESS_WARNING(error_source);
   auto &stackTraces = typeAs<ErrorObject>(LOCAL(0)).getStackTrace();

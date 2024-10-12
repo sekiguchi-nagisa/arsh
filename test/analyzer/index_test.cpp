@@ -1684,7 +1684,7 @@ EOF)",
 TEST_F(IndexTest, hoverBuiltin) {
   // builtin type
   ASSERT_NO_FATAL_FAILURE(this->hover("34 is\nInt", 1, ""));
-  ASSERT_NO_FATAL_FAILURE(this->hover("34 is\nError", 1, ""));
+  ASSERT_NO_FATAL_FAILURE(this->hover("34 is\nError", 1, "```arsh\ntype Error: Throwable\n```"));
   ASSERT_NO_FATAL_FAILURE(
       this->hover("34 is\nArithmeticError", 1, "```arsh\ntype ArithmeticError: Error\n```"));
 
@@ -1949,6 +1949,11 @@ typedef BBB() {}
     ASSERT_EQ(BUILTIN_MOD_ID, type->resolveBelongedModId());
 
     type = builtinIndex->findBaseType("Error");
+    ASSERT_TRUE(type);
+    ASSERT_EQ("Throwable", type->getValue());
+    ASSERT_EQ(BUILTIN_MOD_ID, type->resolveBelongedModId());
+
+    type = builtinIndex->findBaseType("Throwable");
     ASSERT_FALSE(type);
   }
 

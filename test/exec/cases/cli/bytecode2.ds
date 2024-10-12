@@ -39,7 +39,7 @@ Constant Pool:
 Line Number Table:
   lineNum: 1, address: 19
 Exception Table:
-  begin: 4, end: 15, type: pseudo top%%, dest: 15, offset: 0, size: 0, level: 1"
+  begin: 4, end: 15, type: Throwable, dest: 15, offset: 0, size: 0, level: 1"
 
 # last defer statement is simplified to block statement
 $expect("$(ds --dump-code -c '{ var a = 23; defer { echo $a > /dev/null; }; }')", 0, $out)
@@ -83,7 +83,7 @@ Constant Pool:
 Line Number Table:
   lineNum: 1, address:  9
 Exception Table:
-  begin: 4, end: 10, type: pseudo top%%, dest: 10, offset: 0, size: 0, level: 1"
+  begin: 4, end: 10, type: Throwable, dest: 10, offset: 0, size: 0, level: 1"
 
 $expect("$(ds --dump-code -c '{ var a = 23; defer { echo $a > /dev/null; }; exit; }')", 0, $out)
 
@@ -145,7 +145,7 @@ Constant Pool:
 Line Number Table:
   lineNum: 1, address:  9
 Exception Table:
-  begin: 4, end: 22, type: pseudo top%%, dest: 22, offset: 0, size: 0, level: 1"
+  begin: 4, end: 22, type: Throwable, dest: 22, offset: 0, size: 0, level: 1"
 
 $expect("$(ds --dump-code -c 'f() { var a = 23; defer { assert $a == 99; }; var b = 99;$a = $b; }; f')", 0, $out)
 
@@ -188,6 +188,6 @@ Constant Pool:
 Line Number Table:
   lineNum: 1, address:  0
 Exception Table:
-  begin: 4, end: 18, type: pseudo top%%, dest: 18, offset: 0, size: 0, level: 1"
+  begin: 4, end: 18, type: Throwable, dest: 18, offset: 0, size: 0, level: 1"
 
 $expect("$(ds --dump-code -c 'typedef AAA($a : Int) { var v = $a; defer { $a = 34; } }')", 0, $out)

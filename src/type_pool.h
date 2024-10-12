@@ -332,7 +332,7 @@ private:
   void initTypeTemplate(TypeTemplate &temp, TypeTemplate::Kind kind,
                         std::vector<const Type *> &&elementTypes, native_type_info_t info);
 
-  void initErrorType(TYPE t, const char *typeName);
+  void initErrorType(TYPE t, const char *typeName, TYPE super = TYPE::Error);
 
   void registerHandle(const BuiltinType &recv, const char *name, unsigned int index);
 

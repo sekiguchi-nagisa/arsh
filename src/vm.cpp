@@ -2402,7 +2402,7 @@ bool VM::handleException(ARState &state) {
           }
           state.stack.clearOperandsUntilGuard(StackGuardType::TRY, entry.guardLevel);
           state.stack.reclaimLocals(entry.localOffset, entry.localSize);
-          if (entryType.is(TYPE::Root_)) { // finally block
+          if (entryType.is(TYPE::Throwable)) { // finally block
             state.stack.enterFinally(entry.dest);
           } else { // catch block
             state.stack.loadThrownObject();

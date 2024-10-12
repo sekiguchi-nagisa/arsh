@@ -36,12 +36,7 @@ TypePool::TypePool() {
    */
   this->initBuiltinType(TYPE::ProcGuard_, "process guard%%", false, info_Dummy());
 
-  /**
-   * pseudo base type
-   */
-  this->initBuiltinType(TYPE::Root_, "pseudo top%%", false, TYPE::ProcGuard_, info_Dummy());
-
-  this->initBuiltinType(TYPE::Any, "Any", true, TYPE::Root_, info_AnyType());
+  this->initBuiltinType(TYPE::Any, "Any", true, TYPE::ProcGuard_, info_AnyType());
   this->initBuiltinType(TYPE::Void, "Void", false, info_Dummy());
   this->initBuiltinType(TYPE::Nothing, "Nothing", false, info_Dummy());
 
@@ -59,7 +54,7 @@ TypePool::TypePool() {
   this->initBuiltinType(TYPE::RegexMatch, "RegexMatch", false, TYPE::Any, info_RegexMatchType());
   this->initBuiltinType(TYPE::Signal, "Signal", false, TYPE::Value_, info_SignalType());
   this->initBuiltinType(TYPE::Signals, "Signals", false, TYPE::Any, info_SignalsType());
-  this->initBuiltinType(TYPE::Error, "Error", true, TYPE::Any, info_ErrorType());
+  this->initBuiltinType(TYPE::Throwable, "Throwable", true, TYPE::Any, info_ThrowableType());
   this->initBuiltinType(TYPE::Job, "Job", false, TYPE::Any, info_JobType());
   this->initBuiltinType(TYPE::Module, "Module", false, TYPE::Any, info_ModuleType());
   this->initBuiltinType(TYPE::StringIter, "StringIter%%", false, TYPE::Any, info_StringIterType());
@@ -97,6 +92,7 @@ TypePool::TypePool() {
   }
 
   // init some error type
+  this->initErrorType(TYPE::Error, "Error", TYPE::Throwable);
   this->initErrorType(TYPE::ArithmeticError, "ArithmeticError");
   this->initErrorType(TYPE::OutOfRangeError, "OutOfRangeError");
   this->initErrorType(TYPE::KeyNotFoundError, "KeyNotFoundError");
@@ -115,7 +111,7 @@ TypePool::TypePool() {
   this->initErrorType(TYPE::ArgumentError, "ArgumentError");
 
   // init internal status type
-  this->initBuiltinType(TYPE::InternalStatus_, "internal status%%", false, TYPE::Root_,
+  this->initBuiltinType(TYPE::InternalStatus_, "internal status%%", false, TYPE::Throwable,
                         info_Dummy());
   this->initBuiltinType(TYPE::ShellExit_, "Shell Exit", false, TYPE::InternalStatus_, info_Dummy());
   this->initBuiltinType(TYPE::AssertFail_, "Assertion Error", false, TYPE::InternalStatus_,
@@ -722,15 +718,14 @@ void TypePool::initBuiltinType(TYPE t, const char *typeName, bool, const Type *s
 }
 
 void TypePool::initTypeTemplate(TypeTemplate &temp, TypeTemplate::Kind kind,
-                                std::vector<const Type *> &&elementTypes,
-                                native_type_info_t info) {
+                                std::vector<const Type *> &&elementTypes, native_type_info_t info) {
   temp = TypeTemplate(kind, std::move(elementTypes), info);
   StringRef key = temp.getName();
   this->templateMap.emplace(key, &temp);
 }
 
-void TypePool::initErrorType(TYPE t, const char *typeName) {
-  auto *type = this->newType<ErrorType>(typeName, this->get(TYPE::Error));
+void TypePool::initErrorType(TYPE t, const char *typeName, TYPE super) {
+  auto *type = this->newType<ErrorType>(typeName, this->get(super));
   assert(type);
   (void)type;
   (void)t;

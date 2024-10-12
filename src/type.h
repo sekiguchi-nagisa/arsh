@@ -40,7 +40,6 @@ namespace arsh {
 enum class TYPE : unsigned int {
   Unresolved_, // for type error
   ProcGuard_,  // for guard parent code execution from child process
-  Root_,       // pseudo top type of all throwable type(except for option types)
 
   Any,
   Void,
@@ -57,7 +56,7 @@ enum class TYPE : unsigned int {
   RegexMatch,
   Signal,
   Signals,
-  Error,
+  Throwable,
   Job,
   Module,
   StringIter,
@@ -70,6 +69,7 @@ enum class TYPE : unsigned int {
   StringArray, // for command argument
   OptNothing,  // for dummy invalid value
 
+  Error,
   ArithmeticError,
   OutOfRangeError,
   KeyNotFoundError,

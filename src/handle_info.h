@@ -29,7 +29,7 @@ namespace arsh {
   OP(Bool)                                                                                         \
   OP(String)                                                                                       \
   OP(FD)                                                                                           \
-  OP(Error)                                                                                        \
+  OP(Throwable)                                                                                    \
   OP(Job)                                                                                          \
   OP(StringIter)                                                                                   \
   OP(Regex)                                                                                        \
