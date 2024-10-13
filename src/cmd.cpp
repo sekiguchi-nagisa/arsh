@@ -272,17 +272,17 @@ static int builtin_exit(ARState &state, ArrayObject &argvObj) {
   for (int opt; (opt = optState(argvObj)) != -1;) {
     if (opt == 'h') {
       return showHelp(argvObj);
-    } else {
-      goto END;
     }
+    break;
   }
 
-END:
   const int ret = parseExitStatus(state, argvObj, optState.index);
   if (argvObj.getValues()[0].asStrRef() == "_exit") {
     exit(ret);
   }
-  raiseShellExit(state, ret);
+  std::string str = "terminated by exit ";
+  str += std::to_string(ret);
+  raiseError(state, TYPE::ShellExit_, std::move(str), ret);
   return ret;
 }
 

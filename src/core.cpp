@@ -103,13 +103,6 @@ void raiseSystemError(ARState &st, int errorNum, std::string &&message) {
   raiseError(st, TYPE::SystemError, std::move(str));
 }
 
-void raiseShellExit(ARState &st, int64_t status) {
-  int s = maskExitStatus(status);
-  std::string str = "terminated by exit ";
-  str += std::to_string(s);
-  raiseError(st, TYPE::ShellExit_, std::move(str), s);
-}
-
 void raiseAssertFail(ARState &st, Value &&msg, const AssertOp op, Value &&left, Value &&right) {
   constexpr auto MAX_PRINTABLE = SYS_LIMIT_PRINTABLE_MAX >> 1;
   std::string value;

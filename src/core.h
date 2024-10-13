@@ -74,13 +74,6 @@ inline void raiseOutOfRangeError(ARState &st, std::string &&message) {
 
 inline void raiseStringLimit(ARState &st) { raiseOutOfRangeError(st, ERROR_STRING_LIMIT); }
 
-/**
- * actual implementation of exit command
- * @param st
- * @param status
- */
-void raiseShellExit(ARState &st, int64_t status);
-
 void raiseAssertFail(ARState &st, Value &&msg, AssertOp op, Value &&left, Value &&right);
 
 inline void raiseAssertFail(ARState &st, Value &&msg) {
