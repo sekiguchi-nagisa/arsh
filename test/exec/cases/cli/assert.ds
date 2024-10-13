@@ -70,3 +70,12 @@ binary expression \`<EXPR> is <TYPE>' is false
     from (string):1 '<toplevel>()'"
 
 $expect("$(ds -c 'assert ("") as Any is Float' 2>&1)", 1, $msg)
+
+$msg = "[runtime error]
+AssertionFailed: \`\"faf\".toFloat() is Float'
+binary expression \`<EXPR> is <TYPE>' is false
+  <EXPR>: (invalid)
+  <TYPE>: Float
+    from (string):1 '<toplevel>()'"
+
+$expect("$(ds -c 'assert "faf".toFloat() is Float' 2>&1)", 1, $msg)

@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.35.1] - 2024-10-19
+
+- bugfix power assert ``is`` when expr is invalid value
+
 ## [0.35.0] - 2024-10-01
 
 ### Added
