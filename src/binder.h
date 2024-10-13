@@ -147,21 +147,6 @@ void bindBuiltins(Consumer &consumer, const SysConfig &config, TypePool &pool, N
   binder.bind("DIRSTACK", pool.get(TYPE::StringArray));
 
   /**
-   * must be UnixFD_Object
-   */
-  binder.bind("STDIN", stdin);
-
-  /**
-   * must be UnixFD_Object
-   */
-  binder.bind("STDOUT", stdout);
-
-  /**
-   * must be UnixFD_Object
-   */
-  binder.bind("STDERR", stderr);
-
-  /**
    * contains latest executed pipeline status.
    * must be Array_Object
    */
@@ -197,12 +182,6 @@ void bindBuiltins(Consumer &consumer, const SysConfig &config, TypePool &pool, N
   binder.bind(CVAR_ARG0, "arsh");
 
   /**
-   * process id of root shell. ($$)
-   * must be Int
-   */
-  binder.bind("$", getpid());
-
-  /**
    * process id of current process.
    * must be Int
    */
@@ -213,6 +192,12 @@ void bindBuiltins(Consumer &consumer, const SysConfig &config, TypePool &pool, N
    * must be Int
    */
   binder.bind("PPID", getppid());
+
+  /**
+   * process id of root shell. ($$)
+   * must be Int
+   */
+  binder.bind("$", getpid());
 
   // set builtin variables
 
@@ -227,6 +212,21 @@ void bindBuiltins(Consumer &consumer, const SysConfig &config, TypePool &pool, N
    * must be Int
    */
   binder.bind("EUID", geteuid());
+
+  /**
+   * must be UnixFD_Object
+   */
+  binder.bind("STDIN", stdin);
+
+  /**
+   * must be UnixFD_Object
+   */
+  binder.bind("STDOUT", stdout);
+
+  /**
+   * must be UnixFD_Object
+   */
+  binder.bind("STDERR", stderr);
 
   /**
    * dummy object for signal handler setting

@@ -963,7 +963,7 @@ nodes:
             type: "Int"
             varName: "?"
             handle:
-              index: 20
+              index: 17
               kind: "VAR"
               attribute: "GLOBAL"
             extraOp: "NONE"

@@ -42,9 +42,6 @@ enum class BuiltinVarOffset : unsigned char {
   EAW,         // EAW
   COMPREPLY,   // COMPREPLY
   DIRSTACK,    // DIRSTACK (for directory stack)
-  STDIN,       // STDIN
-  STDOUT,      // STDOUT
-  STDERR,      // STDERR
   PIPESTATUS,  // PIPESTATUS
   SUBSHELL,    // SUBSHELL (for subshell level)
   LINES,       // LINES
@@ -53,9 +50,7 @@ enum class BuiltinVarOffset : unsigned char {
   ARGS,        // @, ARGS
   ARGS_SIZE,   // # (dummy entry for completion)
   ARG0,        // 0, ARG0 (for script name)
-  SHELL_PID,   // $
   PID,         // PID (current process)
-  PPID,        // PPID
 };
 
 inline unsigned int toIndex(BuiltinVarOffset offset) { return toUnderlying(offset); }
