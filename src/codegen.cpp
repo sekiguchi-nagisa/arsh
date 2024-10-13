@@ -602,22 +602,25 @@ void ByteCodeGenerator::visitVarNode(VarNode &node) {
       break;
     }
   } else {
+    const auto index = node.getIndex();
     if (node.hasAttr(HandleAttr::GLOBAL)) {
-      if (node.getIndex() == toIndex(BuiltinVarOffset::MODULE)) {
+      if (index == toIndex(BuiltinVarOffset::MODULE)) {
         this->emit0byteIns(OpCode::LOAD_CUR_MOD);
-      } else if (node.getIndex() == toIndex(BuiltinVarOffset::RANDOM)) {
+      } else if (index == toIndex(BuiltinVarOffset::RANDOM)) {
         this->emit0byteIns(OpCode::RAND);
-      } else if (node.getIndex() == toIndex(BuiltinVarOffset::SECONDS)) {
+      } else if (index == toIndex(BuiltinVarOffset::SECONDS)) {
         this->emit0byteIns(OpCode::GET_SECOND);
+      } else if (index == toIndex(BuiltinVarOffset::THROWN)) {
+        this->emit0byteIns(OpCode::LOAD_CUR_THROWN);
       } else {
-        this->emit2byteIns(OpCode::LOAD_GLOBAL, node.getIndex());
+        this->emit2byteIns(OpCode::LOAD_GLOBAL, index);
       }
     } else if (node.hasAttr(HandleAttr::UPVAR)) {
-      this->emit1byteIns(OpCode::LOAD_UPVAR, node.getIndex());
+      this->emit1byteIns(OpCode::LOAD_UPVAR, index);
     } else if (node.hasAttr(HandleAttr::BOXED)) {
-      this->emit1byteIns(OpCode::LOAD_BOXED, node.getIndex());
+      this->emit1byteIns(OpCode::LOAD_BOXED, index);
     } else {
-      this->emit1byteIns(OpCode::LOAD_LOCAL, node.getIndex());
+      this->emit1byteIns(OpCode::LOAD_LOCAL, index);
     }
   }
 

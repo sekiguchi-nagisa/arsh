@@ -12,6 +12,7 @@
     - add ``Throwable`` type for common base type of ``Error``, ``AssertionFailed`` and ``ShellExit``
         - now only throw ``Throwable`` type or its derived instance
         - not allow instantiation of ``Throwable`` type
+    - add builtin ``THROWN`` variable for indicating currently thrown object
 
 ### Changed
 

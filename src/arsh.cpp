@@ -109,6 +109,8 @@ struct BindingConsumer {
       value = Value::create<ArrayObject>(type);
     } else if (type.isMapType()) {
       value = Value::create<OrderedMapObject>(type, this->state.getRng().next());
+    } else if (type.isOptionType()) {
+      value = Value::createInvalid();
     }
     this->state.setGlobal(handle.getIndex(), std::move(value));
   }

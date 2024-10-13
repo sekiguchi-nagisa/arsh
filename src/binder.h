@@ -124,6 +124,11 @@ void bindBuiltins(Consumer &consumer, const SysConfig &config, TypePool &pool, N
   binder.bind("SECONDS", 0, HandleAttr());
 
   /**
+   * dummy object for currently thrown object
+   */
+  binder.bind("THROWN", *pool.createOptionType(pool.get(TYPE::Throwable)).take());
+
+  /**
    * for internal field splitting.
    * must be String_Object.
    */
@@ -169,11 +174,6 @@ void bindBuiltins(Consumer &consumer, const SysConfig &config, TypePool &pool, N
    * must be Array_Object
    */
   binder.bind(VAR_ARGS, pool.get(TYPE::StringArray));
-
-  /**
-   * dummy object for completion. actually not used
-   */
-  binder.bind("#", 0);
 
   /**
    * represent shell or shell script name.
@@ -284,6 +284,11 @@ void bindBuiltins(Consumer &consumer, const SysConfig &config, TypePool &pool, N
     auto ret = scope.lookup(VAR_ARGS);
     assert(ret);
     scope.defineAlias("@", ret.asOk());
+  }
+  {
+    auto ret = scope.lookup("?"); // for Int object
+    assert(ret);
+    scope.defineAlias("#", ret.asOk()); // dummy for completion (must Int)
   }
   {
     auto ret = scope.lookup(CVAR_ARG0);

@@ -2271,6 +2271,18 @@ bool VM::mainLoop(ARState &state) {
         state.stack.push(std::move(arg0));
         vmnext;
       }
+      vmcase(LOAD_CUR_THROWN) {
+        auto value = Value::createInvalid();
+        const auto end = state.stack.getFinallyEntries().crend();
+        for (auto iter = state.stack.getFinallyEntries().crbegin(); iter != end; ++iter) {
+          if (auto &e = *iter; e.hasError()) {
+            value = e.asError();
+            break;
+          }
+        }
+        state.stack.push(std::move(value));
+        vmnext;
+      }
       vmcase(RAND) {
         state.stack.push(Value::createInt(state.getRng().nextInt64()));
         vmnext;

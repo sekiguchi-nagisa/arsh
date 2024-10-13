@@ -38,6 +38,7 @@ enum class BuiltinVarOffset : unsigned char {
   MODULE,      // MODULE
   RANDOM,      // RANDOM
   SECONDS,     // SECONDS
+  THROWN,      // THROWN
   IFS,         // IFS
   EAW,         // EAW
   COMPREPLY,   // COMPREPLY
@@ -48,7 +49,6 @@ enum class BuiltinVarOffset : unsigned char {
   COLUMNS,     // COLUMNS
   EXIT_STATUS, // ?
   ARGS,        // @, ARGS
-  ARGS_SIZE,   // # (dummy entry for completion)
   ARG0,        // 0, ARG0 (for script name)
   PID,         // PID (current process)
 };

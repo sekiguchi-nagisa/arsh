@@ -1,0 +1,44 @@
+# RUN: exec $cmd --trace-exit $self
+# STATUS: 56
+
+function ff() {
+    assert ! $THROWN
+    defer {
+        echo in ff: ${$THROWN!.name()} is thrown at ${$THROWN!.lineno()}
+    }
+    exit 56
+}
+
+defer {
+    assert $THROWN is ShellExit
+    echo in defer: ${$THROWN!.name()} is thrown at ${$THROWN!.lineno()}
+}
+
+try {
+    $ff()
+} finally {
+    if let e = $THROWN as? ShellExit {
+        echo ${$e.name()} is thrown at ${$e.lineno()}
+    }
+    defer {
+        if let e = $THROWN as? OutOfRangeError {
+            echo ${$e.name()} is thrown at ${$e.lineno()}
+        }
+    }
+    $THROWN!.message()[999]
+}
+
+# CHECK: in ff: ShellExit is thrown at 9
+# CHECK: ShellExit is thrown at 9
+# CHECK: OutOfRangeError is thrown at 28
+# CHECK: in defer: ShellExit is thrown at 9
+
+# CHECKERR: [warning]
+# CHECKERR: the following exception within finally/defer block is ignored
+# CHECKERR: OutOfRangeError: size is 21, but index is 999
+# CHECKERR_RE:     from .+/test/exec/cases/output/thrown2\.ds:28 '<toplevel>\(\)'
+# CHECKERR_RE: ^$
+# CHECKERR: [runtime error]
+# CHECKERR: ShellExit: terminated by exit 56
+# CHECKERR_RE:     from .+/test/exec/cases/output/thrown2\.ds:9 'function ff\(\)'
+# CHECKERR_RE:     from .+/test/exec/cases/output/thrown2\.ds:18 '<toplevel>\(\)'

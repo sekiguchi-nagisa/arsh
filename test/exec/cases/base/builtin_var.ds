@@ -61,3 +61,22 @@ assert $EAW == 1
 assert $SUBSHELL == 0
 assert "$(echo $SUBSHELL)" == '1'
 assert "$(echo $(echo $SUBSHELL))" == '2'
+
+# THROWN
+assert $THROWN is Throwable?
+assert !$THROWN
+
+var ex = 235 as Any?
+try {
+    try {
+        "2345"[100]
+    } finally {
+        $ex = $THROWN
+    }
+} catch e {
+    assert $e is OutOfRangeError
+    assert $ex is OutOfRangeError
+    assert ! $THROWN
+}
+assert $ex is OutOfRangeError
+assert ($ex! as OutOfRangeError).lineno() == 72

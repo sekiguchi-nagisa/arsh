@@ -1,0 +1,28 @@
+# RUN: exec $cmd --trace-exit $self
+# STATUS: 1
+
+try {
+    34/0
+} finally {
+    if let e = $THROWN as? ArithmeticError {
+        echo ${$e.name()} is thrown at ${$e.lineno()}
+    }
+    defer {
+        if let e = $THROWN as? AssertionFailed {
+            echo ${$e.name()} is thrown at ${$e.lineno()}
+        }
+    }
+    assert ! $THROWN
+}
+
+# CHECK: ArithmeticError is thrown at 5
+# CHECK: AssertionFailed is thrown at 15
+
+# CHECKERR: [warning]
+# CHECKERR: the following exception within finally/defer block is ignored
+# CHECKERR: AssertionFailed: `! $THROWN'
+# CHECKERR_RE:     from .+/test/exec/cases/output/thrown1\.ds:15 '<toplevel>\(\)'
+# CHECKERR_RE: ^$
+# CHECKERR: [runtime error]
+# CHECKERR: ArithmeticError: zero division
+# CHECKERR_RE:     from .+/test/exec/cases/output/thrown1\.ds:5 '<toplevel>\(\)'

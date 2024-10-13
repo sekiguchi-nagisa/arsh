@@ -44,6 +44,11 @@
 #    CHECK:       "kind": 6,
 #    CHECK:       "label": "TERM_HOOK",
 #    CHECK:       "sortText": "1"
+#    CHECK:     },
+#    CHECK:     {
+#    CHECK:       "kind": 6,
+#    CHECK:       "label": "THROWN",
+#    CHECK:       "sortText": "2"
 #    CHECK:     }
 #    CHECK:   ]
 
