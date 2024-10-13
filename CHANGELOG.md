@@ -21,6 +21,10 @@
 - overhaul termination handler invocation
 - send ``SIGHUP`` to manged jobs before process termination (even if subshell)
 
+### Fixed
+
+- bugfix power assert ``is`` when expr is invalid value
+
 ## [0.35.0] - 2024-10-01
 
 ### Added

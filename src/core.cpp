@@ -133,12 +133,16 @@ void raiseAssertFail(ARState &st, Value &&msg, const AssertOp op, Value &&left, 
     break;
   }
   case AssertOp::IS: {
-    auto &exprType = st.typePool.get(left.getTypeID());
-    auto &targetType = st.typePool.get(right.getTypeID());
     value += "\nbinary expression `<EXPR> is <TYPE>' is false\n";
     value += "  <EXPR>: ";
-    appendAsPrintable(exprType.getNameRef(), MAX_PRINTABLE + value.size(), value);
+    if (left.isInvalid()) {
+      value += "(invalid)";
+    } else {
+      auto &exprType = st.typePool.get(left.getTypeID());
+      appendAsPrintable(exprType.getNameRef(), MAX_PRINTABLE + value.size(), value);
+    }
     value += "\n  <TYPE>: ";
+    auto &targetType = st.typePool.get(right.getTypeID());
     appendAsPrintable(targetType.getNameRef(), MAX_PRINTABLE + value.size(), value);
     msg = Value::createStr(std::move(value));
     break;
