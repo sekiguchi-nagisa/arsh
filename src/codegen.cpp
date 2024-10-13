@@ -588,9 +588,6 @@ void ByteCodeGenerator::visitVarNode(VarNode &node) {
   } else if (node.getHandle()->is(HandleKind::SMALL_CONST)) {
     ConstEntry entry(node.getIndex());
     switch (entry.data.k) {
-    case ConstEntry::INT:
-      this->emit1byteIns(OpCode::PUSH_INT, entry.data.v);
-      break;
     case ConstEntry::BOOL:
       this->emit0byteIns(entry.data.v ? OpCode::PUSH_TRUE : OpCode::PUSH_FALSE);
       break;

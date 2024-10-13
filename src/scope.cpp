@@ -167,9 +167,6 @@ NameRegisterResult NameScope::defineConst(std::string &&name, ConstEntry entry) 
 
   TYPE typeId = TYPE::Any;
   switch (entry.data.k) {
-  case ConstEntry::INT:
-    typeId = TYPE::Int;
-    break;
   case ConstEntry::BOOL:
     typeId = TYPE::Bool;
     break;

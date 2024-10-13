@@ -244,9 +244,6 @@ SymbolKind toSymbolKind(DeclSymbol::Kind kind) {
 std::string toString(ConstEntry entry) {
   std::string value;
   switch (entry.data.k) {
-  case ConstEntry::INT:
-    value += std::to_string(static_cast<unsigned int>(entry.data.v));
-    break;
   case ConstEntry::BOOL:
     value += entry.data.v ? "true" : "false";
     break;

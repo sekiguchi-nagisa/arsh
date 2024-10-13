@@ -1829,9 +1829,6 @@ std::unique_ptr<Node> TypeChecker::evalConstant(const Node &node) {
       std::unique_ptr<Node> constNode;
       auto v = static_cast<unsigned int>(entry.data.v);
       switch (entry.data.k) {
-      case ConstEntry::Kind::INT:
-        constNode = NumberNode::newInt(token, static_cast<int64_t>(v));
-        break;
       case ConstEntry::Kind::BOOL:
         constNode = NumberNode::newBool(token, v != 0);
         break;

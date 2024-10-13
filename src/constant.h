@@ -458,7 +458,6 @@ inline const char *toString(AssertOp op) {
 
 struct ConstEntry {
   enum Kind : unsigned char {
-    INT,
     BOOL,
     SIG,
     NONE,
