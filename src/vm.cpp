@@ -2138,8 +2138,12 @@ bool VM::mainLoop(ARState &state) {
         auto redir = state.stack.pop();
         auto argv = toObjPtr<ArrayObject>(state.stack.pop());
 
-        TRY(callCommand(state, CmdResolver(), std::move(argv), std::move(redir),
-                        CmdCallAttr::NEED_FORK));
+        if (argv->size()) {
+          TRY(callCommand(state, CmdResolver(), std::move(argv), std::move(redir),
+                          CmdCallAttr::NEED_FORK));
+        } else {
+          pushExitStatus(state, 0);
+        }
         CHECK_SIGNAL();
         vmnext;
       }
@@ -2182,7 +2186,7 @@ bool VM::mainLoop(ARState &state) {
         auto argv = toObjPtr<ArrayObject>(state.stack.getLocal(UDC_PARAM_ARGV));
 
         argv->takeFirst(); // not check iterator invalidation
-        if (!argv->getValues().empty()) {
+        if (argv->size()) {
           TRY(callCommand(
               state,
               CmdResolver(CmdResolver::Op::FROM_DEFAULT_WITH_FQN, FilePathCache::SearchOp::NON),
@@ -2499,16 +2503,15 @@ static NativeCode initCmdTrampoline() noexcept {
   return NativeCode(code);
 }
 
-Value VM::execCommand(ARState &state, std::vector<Value> &&argv) {
+Value VM::callCommand(ARState &state, ObjPtr<ArrayObject> &&argv) {
   GUARD_RECURSION(state);
 
   static const auto cmdTrampoline = initCmdTrampoline();
 
   Value ret;
-  auto obj = Value::create<ArrayObject>(state.typePool.get(TYPE::StringArray), std::move(argv));
-  prepareArguments(state.stack, std::move(obj), {0, {}});
+  prepareArguments(state.stack, argv, {0, {}});
   if (windStackFrame(state, 1, 1, cmdTrampoline)) {
-    ret = startEval(state, EvalOP{}, nullptr);
+    ret = startEval(state, EvalOP::PROPAGATE, nullptr);
   }
   return ret;
 }
@@ -2560,9 +2563,9 @@ Value VM::callMethod(ARState &state, const MethodHandle &handle, Value &&recv, C
   return ret;
 }
 
-ARErrorKind VM::handleUncaughtException(ARState &state, ARError *dsError) {
+void VM::handleUncaughtException(ARState &state, ARError *dsError) {
   if (!state.hasError()) {
-    return AR_ERROR_KIND_SUCCESS;
+    return;
   }
 
   auto except = state.stack.takeThrownObject();
@@ -2573,25 +2576,6 @@ ARErrorKind VM::handleUncaughtException(ARState &state, ARError *dsError) {
   } else if (errorType.is(TYPE::AssertFail_)) {
     kind = AR_ERROR_KIND_ASSERTION_ERROR;
   }
-  switch (kind) {
-  case AR_ERROR_KIND_RUNTIME_ERROR:
-  case AR_ERROR_KIND_ASSERTION_ERROR:
-  case AR_ERROR_KIND_EXIT:
-    state.setExitStatus(except->getStatus());
-    break;
-  default:
-    break;
-  }
-
-  // get error line number
-  unsigned int errorLineNum = 0;
-  std::string sourceName;
-  if (state.typePool.get(TYPE::Error).isSameOrBaseTypeOf(errorType) ||
-      kind != AR_ERROR_KIND_RUNTIME_ERROR) {
-    auto &trace = except->getStackTrace();
-    errorLineNum = getOccurredLineNum(trace);
-    sourceName = getOccurredSourceName(trace);
-  }
 
   // print error message
   if (kind == AR_ERROR_KIND_RUNTIME_ERROR || kind == AR_ERROR_KIND_ASSERTION_ERROR ||
@@ -2600,13 +2584,17 @@ ARErrorKind VM::handleUncaughtException(ARState &state, ARError *dsError) {
   }
 
   if (dsError != nullptr) {
+    auto &trace = except->getStackTrace();
+    const unsigned int errorLineNum = getOccurredLineNum(trace);
+    const char *sourceName = getOccurredSourceName(trace);
+
     *dsError = {.kind = kind,
-                .fileName = sourceName.empty() ? nullptr : strdup(sourceName.c_str()),
+                .fileName = *sourceName ? strdup(sourceName) : nullptr,
                 .lineNum = errorLineNum,
                 .chars = 0,
                 .name = strdup(kind == AR_ERROR_KIND_RUNTIME_ERROR ? errorType.getName() : "")};
   }
-  return kind;
+  state.setExitStatus(except->getStatus());
 }
 
 void VM::prepareTermination(ARState &state) {
@@ -2615,7 +2603,7 @@ void VM::prepareTermination(ARState &state) {
   RecursionGuard guard(state);
   if (auto funcObj = state.getGlobal(state.termHookIndex); funcObj.kind() != ValueKind::INVALID) {
     if (kickTermHook(state, std::move(funcObj))) { // always success
-      startEval(state, EvalOP::PROPAGATE, nullptr);
+      startEval(state, EvalOP{}, nullptr);
     }
   }
 

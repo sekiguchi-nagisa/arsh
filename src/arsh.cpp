@@ -226,10 +226,11 @@ int ARState_setArguments(ARState *st, char *const *args) {
   if (args) {
     auto &argsObj = typeAs<ArrayObject>(value);
     for (; *args != nullptr; args++) {
-      if (const StringRef arg = *args;
-          arg.size() > SYS_LIMIT_STRING_MAX || !argsObj.append(*st, Value::createStr(arg))) {
+      const StringRef arg = *args;
+      if (arg.size() > SYS_LIMIT_STRING_MAX || argsObj.size() == SYS_LIMIT_ARRAY_MAX) {
         return -1;
       }
+      argsObj.append(Value::createStr(arg));
     }
   }
   st->setGlobal(BuiltinVarOffset::ARGS, std::move(value));
@@ -452,16 +453,16 @@ int ARState_exec(ARState *st, char *const *argv) {
   GUARD_TRUE(st->execMode != AR_EXEC_MODE_NORMAL, 0);
   GUARD_NULL(argv, -1);
 
-  std::vector<Value> values;
+  auto obj = toObjPtr<ArrayObject>(Value::create<ArrayObject>(st->typePool.get(TYPE::StringArray)));
   for (; *argv != nullptr; argv++) {
     const StringRef arg = *argv;
-    if (arg.size() > SYS_LIMIT_STRING_MAX || values.size() == SYS_LIMIT_ARRAY_MAX) {
+    if (arg.size() > SYS_LIMIT_STRING_MAX || obj->size() == SYS_LIMIT_ARRAY_MAX) {
       return -1;
     }
-    values.push_back(Value::createStr(arg));
+    obj->append(Value::createStr(arg));
   }
-  st->getCallStack().clearThrownObject();
-  VM::execCommand(*st, std::move(values));
+  VM::callCommand(*st, std::move(obj));
+  VM::handleUncaughtException(*st, nullptr);
   return st->getMaskedExitStatus();
 }
 
@@ -585,7 +586,6 @@ static const char *defaultPrompt() {
 
 ssize_t ARState_readLine(ARState *st, char *buf, size_t bufSize, ARError *e) {
   GUARD_NULL(st, 0);
-  st->getCallStack().clearThrownObject();
   st->notifyCallback.showAndClear();
   if (e) {
     *e = initARError();

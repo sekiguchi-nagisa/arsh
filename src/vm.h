@@ -661,12 +661,11 @@ public:
    * execute command.
    * @param state
    * @param argv
-   * Value must be String_Object
    * @return
-   * if exit status is 0, return true.
-   * otherwise, return false
+   * if exit status is 0, return 'true'.
+   * otherwise, return 'false'
    */
-  static Value execCommand(ARState &state, std::vector<Value> &&argv);
+  static Value callCommand(ARState &state, ObjPtr<ArrayObject> &&argv);
 
   /**
    * @param state
@@ -704,10 +703,8 @@ public:
    * @param state
    * @param dsError
    * if not null, set error information
-   * @return
-   * if except is null, return always AR_ERROR_KIND_SUCCESS and not set error info
    */
-  static ARErrorKind handleUncaughtException(ARState &state, ARError *dsError);
+  static void handleUncaughtException(ARState &state, ARError *dsError);
 
   /**
    * call user-defined termination handler specified by TERM_HOOK.

@@ -58,6 +58,13 @@ TEST(BuiltinExecTest, case4) {
   ASSERT_EQ(-1, ret);
 }
 
+TEST(BuiltinExecTest, case5) {
+  ARState *state = ARState_create();
+  auto cleanup = arsh::finally([&] { ARState_delete(&state); });
+  int ret = ARState_exec(state, make_argv(nullptr).data()); // empty argv
+  ASSERT_EQ(0, ret);
+}
+
 TEST(BuiltinExecTest, shctl) {
   ARState *state = ARState_create();
   auto cleanup = arsh::finally([&] { ARState_delete(&state); });
@@ -620,9 +627,7 @@ TEST_F(APITest, cmdfallback) {
   ASSERT_EQ(0, r);
   ASSERT_EQ(AR_ERROR_KIND_SUCCESS, e->kind);
   e = newError();
-
-  const char *argv[] = {"jfirejfoaei", nullptr};
-  r = ARState_exec(this->state, (char **)argv);
+  r = ARState_exec(this->state, make_argv("jfirejfoaei").data());
   ASSERT_EQ(99, r);
 }
 

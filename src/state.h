@@ -206,11 +206,6 @@ public:
 
   void loadThrownObject() { this->push(this->takeThrownObject()); }
 
-  void clearThrownObject() {
-    this->thrown.reset();
-    this->finallyEntries.clear();
-  }
-
   const auto &getFinallyEntries() const { return this->finallyEntries; }
 
   void enterFinally(unsigned int finallyAddr, unsigned int retAddr) {
