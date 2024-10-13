@@ -88,7 +88,7 @@ GraphemeBoundary<Bool>::getBreakProperty(int codePoint) {
     return BreakProperty::Control; // invalid code points are always grapheme boundary
   }
 
-  using PropertyInterval = std::tuple<int, int, BreakProperty>;
+  using PropertyInterval = CodePointPropertyInterval<BreakProperty>;
 
 #define UNICODE_PROPERTY_RANGE PropertyInterval
 #define PROPERTY(E) BreakProperty::E
@@ -97,18 +97,12 @@ GraphemeBoundary<Bool>::getBreakProperty(int codePoint) {
 #undef PROPERTY
 #undef UNICODE_PROPERTY_RANGE
 
-  struct Comp {
-    bool operator()(const PropertyInterval &l, int r) const { return std::get<1>(l) < r; }
-
-    bool operator()(int l, const PropertyInterval &r) const { return l < std::get<0>(r); }
-  };
-
   auto iter = std::lower_bound(std::begin(grapheme_break_property_table),
-                               std::end(grapheme_break_property_table), codePoint, Comp());
+                               std::end(grapheme_break_property_table), codePoint,
+                               typename PropertyInterval::Comp());
   if (iter != std::end(grapheme_break_property_table)) {
-    auto &interval = *iter;
-    if (codePoint >= std::get<0>(interval) && codePoint <= std::get<1>(interval)) {
-      return std::get<2>(interval);
+    if (auto &interval = *iter; interval.contains(codePoint)) {
+      return interval.property();
     }
   }
   return BreakProperty::Any;
@@ -121,7 +115,7 @@ GraphemeBoundary<Bool>::getInCBExtendOrLinker(int codePoint) {
     return BreakProperty::Any; // invalid code points are always grapheme boundary
   }
 
-  using PropertyInterval = std::tuple<int, int, BreakProperty>;
+  using PropertyInterval = CodePointPropertyInterval<BreakProperty>;
 
 #define UNICODE_PROPERTY_RANGE PropertyInterval
 #define PROPERTY(E) BreakProperty::E
@@ -130,18 +124,11 @@ GraphemeBoundary<Bool>::getInCBExtendOrLinker(int codePoint) {
 #undef PROPERTY
 #undef UNICODE_PROPERTY_RANGE
 
-  struct Comp {
-    bool operator()(const PropertyInterval &l, int r) const { return std::get<1>(l) < r; }
-
-    bool operator()(int l, const PropertyInterval &r) const { return l < std::get<0>(r); }
-  };
-
   auto iter = std::lower_bound(std::begin(incb_property_table), std::end(incb_property_table),
-                               codePoint, Comp());
+                               codePoint, typename PropertyInterval::Comp());
   if (iter != std::end(incb_property_table)) {
-    auto &interval = *iter;
-    if (codePoint >= std::get<0>(interval) && codePoint <= std::get<1>(interval)) {
-      return std::get<2>(interval);
+    if (auto &interval = *iter; interval.contains(codePoint)) {
+      return interval.property();
     }
   }
   return BreakProperty::Any;
@@ -389,13 +376,6 @@ public:
 
   bool hasNext() const { return this->charBegin != this->getStream().end; }
 
-  /**
-   * get grapheme cluster
-   * @param result
-   * set scanned grapheme cluster info to result
-   * @return
-   * if reach eof, return false
-   */
   GraphemeCluster next() {
     bool invalid = false;
     if (this->getProperty() != BreakProperty::SOT && this->hasNext() && this->getCodePoint() < 0) {

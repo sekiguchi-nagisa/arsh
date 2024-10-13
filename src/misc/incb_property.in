@@ -5,7 +5,7 @@
 */
 
 // clang-format off
-static const UNICODE_PROPERTY_RANGE incb_property_table[] = {
+static constexpr UNICODE_PROPERTY_RANGE incb_property_table[] = {
     { 0x0300, 0x036F, PROPERTY(InCB_Extend) },
     { 0x0483, 0x0489, PROPERTY(InCB_Extend) },
     { 0x0591, 0x05BD, PROPERTY(InCB_Extend) },

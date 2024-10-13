@@ -111,7 +111,7 @@ $ranges = $minimize($ranges)
     echo "*/"
     echo
     echo // clang-format off
-    echo "static const UNICODE_PROPERTY_RANGE incb_property_table[] = {"
+    echo "static constexpr UNICODE_PROPERTY_RANGE incb_property_table[] = {"
 } with >> $out
 
 for $r in $ranges {

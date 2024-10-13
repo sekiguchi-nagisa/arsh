@@ -73,26 +73,21 @@ typename WordBoundary<Bool>::BreakProperty WordBoundary<Bool>::getBreakProperty(
     return BreakProperty::Newline; // invalid code points are always word boundary
   }
 
-  using PropertyInterval = std::tuple<int, int, BreakProperty>;
+  using PropertyInterval = CodePointPropertyInterval<BreakProperty>;
 
 #define UNICODE_PROPERTY_RANGE PropertyInterval
 #define PROPERTY(E) BreakProperty::E
 #include "word_break_property.in"
+
 #undef PROPERTY
 #undef UNICODE_PROPERTY_RANGE
 
-  struct Comp {
-    bool operator()(const PropertyInterval &l, int r) const { return std::get<1>(l) < r; }
-
-    bool operator()(int l, const PropertyInterval &r) const { return l < std::get<0>(r); }
-  };
-
-  auto iter = std::lower_bound(std::begin(word_break_property_table),
-                               std::end(word_break_property_table), codePoint, Comp());
+  auto iter =
+      std::lower_bound(std::begin(word_break_property_table), std::end(word_break_property_table),
+                       codePoint, typename PropertyInterval::Comp());
   if (iter != std::end(word_break_property_table)) {
-    auto &interval = *iter;
-    if (codePoint >= std::get<0>(interval) && codePoint <= std::get<1>(interval)) {
-      return std::get<2>(interval);
+    if (auto &interval = *iter; interval.contains(codePoint)) {
+      return interval.property();
     }
   }
   return BreakProperty::Any;

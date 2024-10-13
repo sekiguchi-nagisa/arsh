@@ -16,7 +16,7 @@ write() {
 function table($n : String, $v : typeof([""])) {
     write "#ifdef USE_${$n.upper()}"
     write
-    write -n "static const UNICODE_INTERVAL $n[] = {"
+    write -n "static constexpr UNICODE_INTERVAL $n[] = {"
     var i = 0
     for $e in $v {
         if($i % 4 == 0) { write -n -e "\n   "; }

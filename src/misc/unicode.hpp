@@ -315,6 +315,7 @@ bool UnicodeUtil<T>::isCombiningChar(int codePoint) {
 #define USE_ZERO_WIDTH_TABLE
 #define UNICODE_INTERVAL CodeInterval
 #include "unicode_width.in"
+
   return searchFrom(zero_width_table, codePoint);
 #undef UNICODE_INTERVAL
 #undef USE_ZERO_WIDTH_TABLE
@@ -325,6 +326,7 @@ bool UnicodeUtil<T>::isWideChar(int codePoint) {
 #define USE_TWO_WIDTH_TABLE
 #define UNICODE_INTERVAL CodeInterval
 #include "unicode_width.in"
+
   return searchFrom(two_width_table, codePoint);
 #undef UNICODE_INTERVAL
 #undef USE_TWO_WIDTH_TABLE
@@ -335,6 +337,7 @@ bool UnicodeUtil<T>::isAmbiguousChar(int codePoint) {
 #define USE_AMBIGUOUS_WIDTH_TABLE
 #define UNICODE_INTERVAL CodeInterval
 #include "unicode_width.in"
+
   return searchFrom(ambiguous_width_table, codePoint);
 #undef UNICODE_INTERVAL
 #undef USE_AMBIGUOUS_WIDTH_TABLE
@@ -436,6 +439,38 @@ public:
     unsigned int cc = this->value & 0xFFFFFF;
     return cc == 0xFFFFFF ? -1 : static_cast<int>(cc);
   }
+};
+
+template <typename T>
+class CodePointPropertyInterval {
+private:
+  static_assert(sizeof(T) <= sizeof(uint16_t));
+
+  /**
+   * | property (16bit) | inclusive first (24bit) | inclusive last (24bit) |
+   */
+  uint64_t data;
+
+public:
+  constexpr CodePointPropertyInterval(int first, int last, T p)
+      : data(static_cast<uint64_t>(p) << 48 | static_cast<uint64_t>(first) << 24 |
+             static_cast<uint64_t>(last)) {}
+
+  constexpr int first() const { return static_cast<int>(this->data >> 24 & 0xFFFFFF); }
+
+  constexpr int last() const { return static_cast<int>(this->data & 0xFFFFFF); }
+
+  constexpr T property() const { return static_cast<T>(static_cast<uint16_t>(this->data >> 48)); }
+
+  bool contains(int codePoint) const {
+    return codePoint >= this->first() && codePoint <= this->last();
+  }
+
+  struct Comp {
+    bool operator()(CodePointPropertyInterval l, int r) const { return l.last() < r; }
+
+    bool operator()(int l, CodePointPropertyInterval r) const { return l < r.first(); }
+  };
 };
 
 END_MISC_LIB_NAMESPACE_DECL

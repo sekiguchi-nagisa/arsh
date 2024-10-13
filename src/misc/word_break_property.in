@@ -7,7 +7,7 @@
 */
 
 // clang-format off
-static const UNICODE_PROPERTY_RANGE word_break_property_table[] = {
+static constexpr UNICODE_PROPERTY_RANGE word_break_property_table[] = {
     { 0x000A, 0x000A, PROPERTY(LF) },
     { 0x000B, 0x000C, PROPERTY(Newline) },
     { 0x000D, 0x000D, PROPERTY(CR) },
