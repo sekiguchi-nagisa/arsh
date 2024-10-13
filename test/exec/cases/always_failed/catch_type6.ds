@@ -1,0 +1,6 @@
+#$test($result = 'type', $lineNum = 6, $chars = 4, $errorKind = 'InvalidCatchType', $status = 1)
+
+try {
+ assert '235'.empty()
+ } catch e
+ : AssertionFailed {  }

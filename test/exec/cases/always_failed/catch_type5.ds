@@ -1,0 +1,5 @@
+#$test($result = 'type', $lineNum = 5, $chars = 14, $errorKind = 'InvalidCatchType', $status = 1)
+
+try {
+ throw new ShellExit('')
+ } catch $e: ShellExit {  }

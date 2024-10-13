@@ -1,6 +1,0 @@
-#$test($result = 'type', $lineNum = 6, $chars = 11, $errorKind = 'UndefinedField', $status = 1)
-
-typedef AAA($sss : Int) {}
-
-var a = new AAA(34)
-assert $a.sss == 34

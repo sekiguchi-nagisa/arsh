@@ -7,9 +7,11 @@
 #### Core
 
 - overhaul exception handling
-    - add ``Throwable`` type for base type of ``Error``
-        - regardless of its name, ``Throwable`` object is not thrown (still only throw ``Error`` or derived)
     - add ``AssertionFailed``, ``ShellExit`` type
+        - unlike ``Error`` type, not catch these type objects
+    - add ``Throwable`` type for common base type of ``Error``, ``AssertionFailed`` and ``ShellExit``
+        - now only throw ``Throwable`` type or its derived instance
+        - not allow instantiation of ``Throwable`` type
 
 ### Changed
 

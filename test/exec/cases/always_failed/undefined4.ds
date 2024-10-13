@@ -1,3 +1,6 @@
-#$test($result = 'type', $lineNum = 3, $chars = 5, $errorKind = 'UndefinedInit', $status = 1)
+#$test($result = 'type', $lineNum = 6, $chars = 11, $errorKind = 'UndefinedField', $status = 1)
 
-new Int()       # undefined constructor
+typedef AAA($sss : Int) {}
+
+var a = new AAA(34)
+assert $a.sss == 34

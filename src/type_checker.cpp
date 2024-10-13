@@ -1173,14 +1173,14 @@ void TypeChecker::visitNewNode(NewNode &node) {
   CallSignature callSignature(this->typePool().getUnresolvedType());
   if (type.isOptionType() || type.isArrayType() || type.isMapType()) {
     callSignature = CallSignature(type, OP_INIT);
+  } else if (auto *handle = this->curScope->lookupConstructor(this->typePool(), type);
+             handle && !type.is(TYPE::Throwable)) { // not allow Throwable object instantiation
+    callSignature = handle->toCallSignature(OP_INIT);
+    node.setHandle(handle);
   } else {
-    if (auto *handle = this->curScope->lookupConstructor(this->typePool(), type)) {
-      callSignature = handle->toCallSignature(OP_INIT);
-      node.setHandle(handle);
-    } else {
-      this->reportError<UndefinedInit>(*node.getTargetTypeNode(), type.getName());
-    }
+    this->reportError<UndefinedInit>(*node.getTargetTypeNode(), type.getName());
   }
+
   this->checkArgsNode(callSignature, node.getArgsNode());
   node.setType(type);
 }
@@ -1939,7 +1939,7 @@ void TypeChecker::visitJumpNode(JumpNode &node) {
     if (this->funcCtx->finallyLevel() > this->funcCtx->childLevel()) {
       this->reportError<InsideFinally>(node.getActualToken());
     }
-    this->checkType(this->typePool().get(TYPE::Error), node.getExprNode());
+    this->checkType(this->typePool().get(TYPE::Throwable), node.getExprNode());
     break;
   case JumpNode::RETURN:
   case JumpNode::RETURN_INIT: // normally unreachable

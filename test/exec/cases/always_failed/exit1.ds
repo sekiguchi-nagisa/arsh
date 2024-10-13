@@ -1,0 +1,16 @@
+# raise ShellExit
+
+#$test($result = 'exit', $lineNum = 10, $status = 123)
+
+defer {
+ assert $false
+}
+
+try {
+  throw new ShellExit('manual exit', 123)
+} catch e {
+  echo failed
+  assert false
+} finally {
+  call exit 2
+}

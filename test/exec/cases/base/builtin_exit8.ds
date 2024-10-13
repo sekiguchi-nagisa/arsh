@@ -1,6 +1,6 @@
 
-#$test($result = 'exit', $status = 1, $lineNum = 6)
+#$test($result = 'exit', $status = 200, $lineNum = 6)
 
-false
+$? = 200
 
 call exit

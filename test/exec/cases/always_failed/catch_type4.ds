@@ -1,0 +1,5 @@
+#$test($result = 'type', $lineNum = 5, $chars = 15, $errorKind = 'InvalidCatchType', $status = 1)
+
+try {
+ throw new Error('')
+ } catch $e : Throwable {  }

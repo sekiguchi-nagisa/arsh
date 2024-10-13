@@ -1,5 +1,0 @@
-#$test($result = 'type', $lineNum = 3, $chars = 9, $errorKind = 'Unacceptable', $status = 1)
-
-var a = try {
-    34
-} catch $e {  }
