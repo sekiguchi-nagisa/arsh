@@ -718,7 +718,7 @@ nodes:
       type: "Signal"
       varName: "SIGINT"
       handle:
-        index: 514
+        index: 513
         kind: "SMALL_CONST"
         attribute: "READ_ONLY | GLOBAL"
       extraOp: "NONE"
@@ -737,7 +737,7 @@ nodes:
             type: "Signal"
             varName: "SIGINT"
             handle:
-              index: 514
+              index: 513
               kind: "SMALL_CONST"
               attribute: "READ_ONLY | GLOBAL"
             extraOp: "NONE"
@@ -881,7 +881,7 @@ nodes:
       type: "Bool"
       varName: "false"
       handle:
-        index: 1
+        index: 0
         kind: "SMALL_CONST"
         attribute: "READ_ONLY | GLOBAL"
       extraOp: "NONE"
