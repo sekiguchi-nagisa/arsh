@@ -1,8 +1,8 @@
 
-#$test($out = $'receive: 1: 0\n')
+#$test($out = $'receive: 0\n')
 
-function f($s : Int, $a : Any) {
-    echo receive: $s: $a
+function f() {
+    echo receive: $?
 }
 
 $TERM_HOOK = $f

@@ -1753,10 +1753,6 @@ TEST_F(IndexTest, hoverConst) {
   ASSERT_NO_FATAL_FAILURE(this->hover("$False", 0, "```arsh\nconst False = false\n```"));
   ASSERT_NO_FATAL_FAILURE(this->hover("$false", 0, "```arsh\nconst false = false\n```"));
 
-  ASSERT_NO_FATAL_FAILURE(this->hover("$ON_ASSERT", 0, "```arsh\nconst ON_ASSERT = 4\n```"));
-  ASSERT_NO_FATAL_FAILURE(this->hover("$ON_ERR", 0, "```arsh\nconst ON_ERR = 2\n```"));
-  ASSERT_NO_FATAL_FAILURE(this->hover("$ON_EXIT", 0, "```arsh\nconst ON_EXIT = 1\n```"));
-
   ASSERT_NO_FATAL_FAILURE(this->hover("$SIGHUP", 0, "```arsh\nconst SIGHUP = signal(1)\n```"));
   ASSERT_NO_FATAL_FAILURE(this->hover("$SIGKILL", 0, "```arsh\nconst SIGKILL = signal(9)\n```"));
 }

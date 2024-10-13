@@ -1,8 +1,8 @@
 
-#$test($result = 'ASSERT', $status = 1, $lineNum = 11, $out = $'receive error: 4: 1\n')
+#$test($result = 'ASSERT', $status = 1, $lineNum = 11, $out = $'receive error: 1\n')
 
-function f($s : Int, $a : Any) {
-    echo receive error: $s: $a
+function f() {
+    echo receive error: $?
     assert false    # disallow nested exit
 }
 

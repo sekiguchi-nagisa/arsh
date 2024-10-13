@@ -245,12 +245,6 @@ void bindBuiltins(Consumer &consumer, const SysConfig &config, TypePool &pool, N
 #undef GEN_BIND
 
   // define small constants
-  /**
-   * must be int
-   */
-  binder.bindSmallConst("ON_EXIT", ConstEntry::Kind::INT, TERM_ON_EXIT);
-  binder.bindSmallConst("ON_ERR", ConstEntry::Kind::INT, TERM_ON_ERR);
-  binder.bindSmallConst("ON_ASSERT", ConstEntry::Kind::INT, TERM_ON_ASSERT);
 
   /**
    * must be bool

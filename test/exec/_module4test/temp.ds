@@ -5,7 +5,7 @@ source ../../../share/arsh/modules/atexit.arsh
 
 let _TEMPS = new [String]()
 
-$atexit(function(s, e) => {
+$atexit(function() => {
     for $e in $_TEMPS {
         rm -rf $e
     }

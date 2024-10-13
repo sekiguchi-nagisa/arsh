@@ -26,18 +26,3 @@ assert $f($DATA_HOME)! == "$DATA_HOME-12"
 assert $f("$DATA_HOME/modules")! == "$MODULE_HOME-17"
 assert $f($CONFIG_HOME)! == "${CONFIG_HOME}-19"
 assert !$f("hello")
-
-
-function ff($a : Int) : String? {
-    return case $a {
-        $ON_ASSERT => return "ON_ASSERT"
-        $ON_ERR => return "ON_ERR"
-        $ON_EXIT => return "ON_EXIT"
-        else => return $none
-    }
-}
-
-assert !$ff(12)
-assert $ff(1)! == "ON_EXIT"
-assert $ff(2)! == "ON_ERR"
-assert $ff(4)! == "ON_ASSERT"

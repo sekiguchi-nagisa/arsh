@@ -220,12 +220,6 @@ constexpr unsigned int UDC_PARAM_ARGV = 2;  // @
 constexpr unsigned int UDC_PARAM_ARG0 = 3;  // 0
 constexpr unsigned int UDC_PARAM_N = UDC_PARAM_ARG0;
 
-// =====  termination kind  =====
-
-constexpr unsigned int TERM_ON_EXIT = 1u << 0u;
-constexpr unsigned int TERM_ON_ERR = 1u << 1u;
-constexpr unsigned int TERM_ON_ASSERT = 1u << 2u;
-
 // =====  for symbol lookup =====
 constexpr const char *CMD_SYMBOL_SUFFIX = "%c";
 constexpr const char *TYPE_ALIAS_SYMBOL_SUFFIX = "%t";

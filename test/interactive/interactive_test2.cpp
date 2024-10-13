@@ -202,13 +202,12 @@ TEST_F(InteractiveTest, termHook1) {
   this->invoke("--quiet", "--norc");
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
-  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
-      "function f($s : Int, $a : Any) { echo atexit: $s, $a; }; $TERM_HOOK=$f;"));
+  ASSERT_NO_FATAL_FAILURE(
+      this->sendLineAndExpect("function f() { echo atexit: $?; }; $TERM_HOOK=$f;"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("false"));
 
   this->send(CTRL_D); // automatically insert 'exit'
-  std::string err = format("\natexit: %d, 1\n", TERM_ON_EXIT);
-  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED, err));
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED, "\natexit: 1\n"));
 }
 
 TEST_F(InteractiveTest, termHook2) {
@@ -216,33 +215,31 @@ TEST_F(InteractiveTest, termHook2) {
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
-      "function f($s : Int, $a : Any) { echo atexit: $s, $a; }; $TERM_HOOK=$f;"));
-  std::string err = format("atexit: %d, 56\n", TERM_ON_EXIT);
-  ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit 56", 56, WaitStatus::EXITED, err.c_str()));
+      "function f() { echo atexit: $?; assert !$THROWN; }; $TERM_HOOK=$f;"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit 56", 56, WaitStatus::EXITED, "atexit: 56\n"));
 }
 
 TEST_F(InteractiveTest, termHook3) {
   this->invoke("--quiet", "--norc");
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
-  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
-      "function f($s : Int, $a : Any) { echo atexit: $s, $a; }; $TERM_HOOK=$f;"));
+  ASSERT_NO_FATAL_FAILURE(
+      this->sendLineAndExpect("function f() { echo atexit: $?; }; $TERM_HOOK=$f;"));
 
   const char *estr = R"([runtime error]
 AssertionFailed: `false'
     from (stdin):2 '<toplevel>()'
 )";
-  std::string err = format("atexit: %d, 1\n", TERM_ON_ASSERT);
   ASSERT_NO_FATAL_FAILURE(
-      this->sendLineAndWait("assert false", 1, WaitStatus::EXITED, err.c_str(), estr));
+      this->sendLineAndWait("assert false", 1, WaitStatus::EXITED, "atexit: 1\n", estr));
 }
 
 TEST_F(InteractiveTest, termHook4) {
   this->invoke("--quiet", "--norc");
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
-  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
-      "function f($s : Int, $a : Any) { echo atexit: $s, $a; }; $TERM_HOOK=$f;"));
+  ASSERT_NO_FATAL_FAILURE(
+      this->sendLineAndExpect("function f() { echo atexit: $?; }; $TERM_HOOK=$f;"));
 
   const char *estr = R"([runtime error]
 ArithmeticError: zero division
@@ -252,8 +249,7 @@ ArithmeticError: zero division
       this->sendLineAndExpect("34 / 0", "", estr)); // call term hook in interactive mode
 
   this->send(CTRL_D); // automatically insert 'exit'
-  std::string err = format("\natexit: %d, 1\n", TERM_ON_EXIT);
-  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED, err));
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED, "\natexit: 1\n"));
 }
 
 TEST_F(InteractiveTest, skip) {

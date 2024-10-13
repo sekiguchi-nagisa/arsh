@@ -21,7 +21,7 @@ function SIG_EXIT(s : Signal) {
 }
 
 # termination hook definition
-var TERM_HOOK : ((Int, Any) => Void)?
+var TERM_HOOK : (() => Void)?
 
 # completer hook definition
 var COMP_HOOK : ((Module, [String], Int) -> Candidates?)?

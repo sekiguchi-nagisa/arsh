@@ -371,47 +371,6 @@ TEST_F(CmdlineTest, logger) {
 
 #define DS(S) ds("-c", S)
 
-TEST_F(CmdlineTest, termHook) {
-  const char *src = R"(
-        function f($k : Int, $a : Any) {
-            echo receive error: $k: $a
-        }
-        $TERM_HOOK = $f
-
-        exit 45
-)";
-  ASSERT_NO_FATAL_FAILURE(this->expect(DS(src), 45, "receive error: 1: 45\n"));
-
-  src = R"(
-        function f($k : Int, $a : Any) {
-            echo receive error: $k: $a
-        }
-        $TERM_HOOK = $f
-
-        45 / 0
-)";
-  const char *e = R"([runtime error]
-ArithmeticError: zero division
-    from (string):7 '<toplevel>()'
-)";
-  ASSERT_NO_FATAL_FAILURE(
-      this->expect(DS(src), 1, "receive error: 2: ArithmeticError: zero division\n", e));
-
-  src = R"(
-        function f($k : Int, $a : Any) {
-            echo receive error: $k: $a
-        }
-        $TERM_HOOK = $f
-
-        assert false
-)";
-  e = R"([runtime error]
-AssertionFailed: `false'
-    from (string):7 '<toplevel>()'
-)";
-  ASSERT_NO_FATAL_FAILURE(this->expect(DS(src), 1, "receive error: 4: 1\n", e));
-}
-
 TEST_F(CmdlineTest, signal) {
   // simple command
   std::string str = strsignal(SIGKILL);

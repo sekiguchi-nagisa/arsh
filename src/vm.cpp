@@ -1394,37 +1394,21 @@ static NativeCode initTermHookTrampoline() {
   NativeCode::ArrayType code;
   code[0] = static_cast<char>(OpCode::LOAD_LOCAL);
   code[1] = 1;
-  code[2] = static_cast<char>(OpCode::LOAD_LOCAL2);
-  code[3] = 2;
-  code[4] = static_cast<char>(OpCode::CALL_FUNC);
-  code[5] = 2;
-  code[6] = static_cast<char>(OpCode::RETURN_TERM);
+  code[2] = static_cast<char>(OpCode::CALL_FUNC);
+  code[3] = 0;
+  code[4] = static_cast<char>(OpCode::RETURN_TERM);
   return NativeCode(code);
 }
 
 static const auto termHookTrampoline = initTermHookTrampoline();
 
 bool VM::kickTermHook(ARState &state, Value &&func) {
-  auto except = state.stack.takeThrownObject();
-  int termKind = TERM_ON_EXIT;
-  if (except) {
-    auto &type = state.typePool.get(except->getTypeID());
-    if (type.is(TYPE::AssertFail_)) {
-      termKind = TERM_ON_ASSERT;
-    } else if (!type.is(TYPE::ShellExit_)) {
-      termKind = TERM_ON_ERR;
-    }
-  }
-
-  auto oldExitStatus = state.getGlobal(BuiltinVarOffset::EXIT_STATUS);
   state.canHandleSignal = false;
-  state.stack.reserve(4);
-  state.stack.push(oldExitStatus);
-  state.stack.push(std::move(func)); // (Int, Any) -> Void
-  state.stack.push(Value::createInt(termKind));
-  state.stack.push(termKind == TERM_ON_ERR ? except : oldExitStatus);
+  state.stack.reserve(2);
+  state.stack.push(state.getGlobal(BuiltinVarOffset::EXIT_STATUS));
+  state.stack.push(std::move(func)); // () -> Void
 
-  return windStackFrame(state, 4, 4, termHookTrampoline);
+  return windStackFrame(state, 2, 2, termHookTrampoline);
 }
 
 void VM::kickVMHook(ARState &state) {
@@ -2622,7 +2606,6 @@ ARErrorKind VM::handleUncaughtException(ARState &state, ARError *dsError) {
                 .chars = 0,
                 .name = strdup(kind == AR_ERROR_KIND_RUNTIME_ERROR ? errorType.getName() : "")};
   }
-  state.stack.setErrorObj(std::move(except)); // restore thrown object
   return kind;
 }
 

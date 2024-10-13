@@ -602,7 +602,6 @@ ssize_t ARState_readLine(ARState *st, char *buf, size_t bufSize, ARError *e) {
   }
   if (st->hasError()) {
     VM::handleUncaughtException(*st, e);
-    st->getCallStack().clearThrownObject();
     errno = EAGAIN;
   }
 

@@ -1,8 +1,8 @@
 
-#$test($out = $'receive: 1: 0\n')
+#$test($out = $'receive: 0\n')
 
-function f($s : Int, $a : Any) {
-    echo receive: $s: $a
+function f() {
+    echo receive: $?
 }
 
 $TERM_HOOK = $f
@@ -10,18 +10,18 @@ $TERM_HOOK = $f
 assert "$(echo hello)" == "hello"   # reset termination hook in child
 
 # hook in child
-function g($s : Int, $a : Any) {
-    echo recv$s
+function g() {
+    echo recv: $?
 }
 
 assert "$({
     $TERM_HOOK = $g; 34 / 0;
-})" == "recv2"
+})" == "recv: 1"
 
 assert "$({
     $TERM_HOOK = $g; assert false;
-})" == "recv4"
+})" == "recv: 1"
 
 assert "$({
     $TERM_HOOK = $g; true;
-})" == "recv1"
+})" == "recv: 0"

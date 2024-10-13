@@ -1,24 +1,21 @@
 
-let _TERM_HOOKS : [(Int, typeof($TERM_HOOK!))]
+let _TERM_HOOKS : [typeof($TERM_HOOK!)]
 
-function _defaultHook(s : Int, e : Any) {
-    for p in $_TERM_HOOKS {
-        if ($p._0 and $s) > 0 {
-            try {
-                $p._1($s, $e)
-            } catch e {
-                $e.show()
-            }
+function _defaultHook() {
+    for hook in $_TERM_HOOKS {
+        try {
+            $hook()
+        } catch e {
+            $e.show()
         }
     }
 }
 
-function atexit(h : typeof($TERM_HOOK!), s : Int?) {
+function atexit(h : typeof($TERM_HOOK!)) {
     if !$TERM_HOOK || $TERM_HOOK! != $_defaultHook {
         $_TERM_HOOKS.clear()
     }
     $TERM_HOOK = $_defaultHook
     $h == $_defaultHook && return
-    var t = $s ?? $ON_ASSERT or $ON_ERR or $ON_EXIT
-    $_TERM_HOOKS.add(($t, $h))
+    $_TERM_HOOKS.add($h)
 }

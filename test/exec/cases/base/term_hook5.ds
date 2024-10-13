@@ -1,9 +1,11 @@
 
-#$test($result = 'assert', $status = 1, $lineNum = 16, $out = $'receive error: 4: 1\n')
+#$test($result = 'assert', $status = 1, $lineNum = 18, $out = $'receive error: 1\n')
 
-function f($s : Int, $a : Any) {
+function f() {
+    var s = $?
     $SIGTERM.kill($$)    # disallow signal handler in termination hook
-    echo receive error: $s: $a
+    true
+    echo receive error: $s
 }
 
 function g($s : Signal) {

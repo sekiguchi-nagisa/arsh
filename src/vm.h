@@ -700,7 +700,7 @@ public:
   }
 
   /**
-   * print uncaught exception information. (not clear thrown object)
+   * print uncaught exception information. (clear thrown object)
    * @param state
    * @param dsError
    * if not null, set error information

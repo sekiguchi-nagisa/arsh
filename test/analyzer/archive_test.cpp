@@ -399,7 +399,7 @@ TEST_F(ArchiveTest, option) {
 TEST_F(ArchiveTest, func) {
   //
   std::vector<const Type *> types;
-  auto ret1 = this->pool().createFuncType(this->pool().get(TYPE::Void), std::move(types));
+  auto ret1 = this->pool().createFuncType(this->pool().get(TYPE::OptNothing), std::move(types));
   ASSERT_TRUE(ret1);
   auto &type1 = *ret1.asOk();
   ASSERT_TRUE(type1.typeId() >= this->builtinIdOffset);

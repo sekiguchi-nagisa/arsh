@@ -1,0 +1,54 @@
+
+source $SCRIPT_DIR/expect.ds
+
+## at exit
+$expect("$(ds -c '
+$TERM_HOOK = function() => {
+  assert ! $THROWN
+  echo at exit: $?
+}
+defer { assert !$THROWN; }
+$? = 45
+' 2>&1)", 45, "at exit: 45")
+
+$expect("$(ds -c '
+$TERM_HOOK = function() => {
+  assert ! $THROWN
+  echo at exit: $?
+}
+defer { assert $THROWN is ShellExit; }
+exit 67
+' 2>&1)", 67, "at exit: 67")
+
+## at assert
+$expect("$(ds -c '
+$TERM_HOOK = function() => {
+  assert ! $THROWN
+  echo at assert: $?
+}
+defer { assert $THROWN is AssertionFailed; }
+ff() { assert $? == 0; }
+false
+ff
+' 2>&1)", 1, "[runtime error]
+AssertionFailed: \`\$? == 0'
+binary expression \`<LHS> == <RHS>' is false
+  <LHS>: Int = 1
+  <RHS>: Int = 0
+    from (string):7 'command ff()'
+    from (string):9 '<toplevel>()'
+at assert: 1")
+
+
+## at error
+$expect("$(ds -c '
+$TERM_HOOK = function() => {
+  assert ! $THROWN
+  echo at error: $?
+}
+defer { assert $THROWN is OutOfRangeError; }
+throw new OutOfRangeError("error", 123)
+' 2>&1)", 123, "[runtime error]
+OutOfRangeError: error
+    from (string):7 '<toplevel>()'
+at error: 123")

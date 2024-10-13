@@ -1,11 +1,11 @@
 
-#$test($result = 'throw', $errorKind = 'Error', $status = 1, $lineNum = 11, $out = $'receive error: 2: Error: de\n')
+#$test($result = 'throw', $errorKind = 'Error', $status = 88, $lineNum = 11, $out = $'receive error: 88\n')
 
-function f($s : Int, $a : Any) {
-    echo receive error: $s: $a
+function f() {
+    echo receive error: $?
     assert false    # disallow nested exit
 }
 
 $TERM_HOOK = $f
 
-throw new Error("de")
+throw new Error("de", 88)
