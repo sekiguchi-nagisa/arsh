@@ -1371,11 +1371,13 @@ bool VM::callPipeline(ARState &state, Value &&desc, bool lastPipe, ForkKind fork
 
 static NativeCode initSignalTrampoline() noexcept {
   NativeCode::ArrayType code;
-  code[0] = static_cast<char>(OpCode::LOAD_LOCAL2);
+  code[0] = static_cast<char>(OpCode::LOAD_LOCAL);
   code[1] = 1;
-  code[2] = static_cast<char>(OpCode::CALL_FUNC);
-  code[3] = 1;
-  code[4] = static_cast<char>(OpCode::RETURN_SIG);
+  code[2] = static_cast<char>(OpCode::LOAD_LOCAL);
+  code[3] = 2;
+  code[4] = static_cast<char>(OpCode::CALL_FUNC);
+  code[5] = 1;
+  code[6] = static_cast<char>(OpCode::RETURN_SIG);
   return NativeCode(code);
 }
 
@@ -1623,12 +1625,6 @@ bool VM::mainLoop(ARState &state) {
       vmcase(LOAD_LOCAL) {
         unsigned char index = consume8(state.stack.ip());
         state.stack.loadLocal(index);
-        vmnext;
-      }
-      vmcase(LOAD_LOCAL2) {
-        unsigned char index = consume8(state.stack.ip());
-        state.stack.loadLocal(index);
-        state.stack.loadLocal(index + 1);
         vmnext;
       }
       vmcase(STORE_LOCAL) {
