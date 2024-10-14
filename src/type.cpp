@@ -333,7 +333,7 @@ TypeCheckError createTCErrorImpl(const Node &node, const char *kind, const char 
 }
 
 const char *toString(HandleKind kind) {
-  const char *table[] = {
+  constexpr const char *table[] = {
 #define GEN_STR(E) #E,
       EACH_HANDLE_KIND(GEN_STR)
 #undef GEN_STR
@@ -342,7 +342,7 @@ const char *toString(HandleKind kind) {
 }
 
 std::string toString(HandleAttr attr) {
-  const char *table[] = {
+  constexpr const char *table[] = {
 #define GEN_STR(E, V) #E,
       EACH_HANDLE_ATTR(GEN_STR)
 #undef GEN_STR

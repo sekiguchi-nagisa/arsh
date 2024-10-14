@@ -396,7 +396,7 @@ void Parser::reportNoViableAlterError(unsigned int size, const TokenKind *alters
 
 void Parser::reportDetailedError(ParseErrorKind kind, unsigned int size, const TokenKind *alters,
                                  const char *messageSuffix) {
-  struct ERROR {
+  constexpr struct ERROR {
     const char *kind;
     const char *message;
   } table[] = {

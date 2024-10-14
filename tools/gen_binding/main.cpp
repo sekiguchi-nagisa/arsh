@@ -1027,7 +1027,7 @@ void genHeaderFile(const char *fileName, const std::vector<TypeBind *> &binds) {
   OUT("\n");
 
   // generate NativeFuncInfo table
-  OUT("static NativeFuncInfo infoTable[] = {\n");
+  OUT("static constexpr NativeFuncInfo infoTable[] = {\n");
   OUT("    {nullptr, nullptr, {}},\n");
   for (TypeBind *bind : binds) {
     for (Element *e : bind->funcElements) {
@@ -1085,7 +1085,7 @@ void genSourceFile(const char *fileName, const std::vector<TypeBind *> &binds) {
   OUT("\n");
 
   // generate NativeFuncPtrTable
-  OUT("static native_func_t ptrTable[] = {\n");
+  OUT("static constexpr native_func_t ptrTable[] = {\n");
   OUT("    nullptr,\n");
   for (TypeBind *bind : binds) {
     for (Element *e : bind->funcElements) {

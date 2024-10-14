@@ -149,7 +149,7 @@ static const EditConfig *toEditConfig(StringRef name) {
 }
 
 static const char *toString(EditConfig config) {
-  const char *table[] = {
+  constexpr const char *table[] = {
 #define GEN_TABLE(E, S, T) S,
       EACH_EDIT_CONFIG(GEN_TABLE)
 #undef GEN_TABLE

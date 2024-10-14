@@ -51,7 +51,7 @@ static int printFuncName(const ARState &state, const ArrayObject &argvObj, Strin
 
 static constexpr struct {
   RuntimeOption option;
-  const char *name;
+  const char name[14];
 } runtimeOptions[] = {
 #define GEN_OPT(E, V, N) {RuntimeOption::E, N},
     EACH_RUNTIME_OPTION(GEN_OPT)

@@ -1274,7 +1274,7 @@ void NodeDumper::indent() {
 }
 
 static const char *toString(NodeKind kind) {
-  const char *table[] = {
+  constexpr const char *table[] = {
 #define GEN_STR(E) #E,
       EACH_NODE_KIND(GEN_STR)
 #undef GEN_STR

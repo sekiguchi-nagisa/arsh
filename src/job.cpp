@@ -126,7 +126,7 @@ static const char *toString(WaitOp op) {
 }
 
 static std::string toString(const WaitResult ret) {
-  const char *kinds[] = {
+  constexpr const char *kinds[] = {
 #define GEN_STR(OP) #OP,
       EACH_WAIT_RESULT_KIND(GEN_STR)
 #undef GEN_STR

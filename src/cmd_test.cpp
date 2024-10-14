@@ -54,7 +54,7 @@ enum class UnaryFileOp : unsigned char {
 };
 
 static UnaryFileOp resolveFileOp(const char ch) {
-  const struct {
+  constexpr struct {
     char s;
     UnaryFileOp op;
   } table[] = {{'e', UnaryFileOp::IS_EXIST},   // alias for '-a'
@@ -217,7 +217,7 @@ enum class BinaryOp : unsigned char {
 };
 
 static BinaryOp resolveBinaryOp(StringRef opStr) {
-  const struct {
+  constexpr struct {
     const char *k;
     BinaryOp op;
   } table[] = {{"=", BinaryOp::STR_EQ}, // alias for '=='

@@ -24,7 +24,7 @@
 namespace arsh {
 
 const char *toString(TokenKind kind) {
-  const char *table[] = {
+  constexpr const char *table[] = {
 #define GEN_NAME(ENUM, STR) STR,
       EACH_TOKEN(GEN_NAME)
 #undef GEN_NAME

@@ -20,7 +20,7 @@
 namespace arsh {
 
 const char *toString(AttributeKind k) {
-  const char *table[] = {
+  constexpr const char *table[] = {
 #define GEN_STR(E, S) S,
       EACH_ATTRIBUTE_KIND(GEN_STR)
 #undef GEN_STR
@@ -29,7 +29,7 @@ const char *toString(AttributeKind k) {
 }
 
 const char *toString(Attribute::Param p) {
-  const char *table[] = {
+  constexpr const char *table[] = {
 #define GEN_STR(E, S, T) S,
       EACH_ATTRIBUTE_PARAM(GEN_STR)
 #undef GEN_STR

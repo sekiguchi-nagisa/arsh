@@ -22,7 +22,7 @@
 
 namespace arsh {
 
-static BuiltinCmdDesc table[] = {
+static constexpr BuiltinCmdDesc table[] = {
     {":", "", "    Null command.  Always success (exit status is 0)."},
     {"__gets", "", "    Read standard input and write to standard output."},
     {"__puts", "[-1 arg1] [-2 arg2]",

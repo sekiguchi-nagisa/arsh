@@ -41,7 +41,7 @@ void Object::destroy() {
 }
 
 const char *toString(ObjectKind kind) {
-  const char *table[] = {
+  constexpr const char *table[] = {
 #define GEN_STR(E) #E,
       EACH_OBJECT_KIND(GEN_STR)
 #undef GEN_STR

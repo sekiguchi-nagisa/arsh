@@ -351,7 +351,7 @@ std::string KeyBindings::toCaret(StringRef value) {
 KeyBindings::KeyBindings() {
   // define edit action
   constexpr struct {
-    const char *key;
+    const char key[7];
     EditActionType type;
   } entries[] = {
       // control character
@@ -415,7 +415,7 @@ KeyBindings::KeyBindings() {
 
   // define pager action
   constexpr struct {
-    const char *key;
+    const char key[7];
     PagerAction action;
   } pagers[] = {
       {ENTER_, PagerAction::SELECT},
@@ -466,7 +466,7 @@ const PagerAction *KeyBindings::findPagerAction(const std::string &keycode) cons
 }
 
 const char *toString(EditActionType action) {
-  const char *table[] = {
+  constexpr const char *table[] = {
 #define GEN_TABLE(E, S) S,
       EACH_EDIT_ACTION_TYPE(GEN_TABLE)
 #undef GEN_TABLE
@@ -475,7 +475,7 @@ const char *toString(EditActionType action) {
 }
 
 const StrRefMap<EditActionType> &KeyBindings::getEditActionTypes() {
-  static StrRefMap<EditActionType> actions = {
+  static const StrRefMap<EditActionType> actions = {
 #define GEN_ENTRY(E, S) {S, EditActionType::E},
       EACH_EDIT_ACTION_TYPE(GEN_ENTRY)
 #undef GEN_ENTRY
@@ -484,7 +484,7 @@ const StrRefMap<EditActionType> &KeyBindings::getEditActionTypes() {
 }
 
 const StrRefMap<CustomActionType> &KeyBindings::getCustomActionTypes() {
-  static StrRefMap<CustomActionType> types = {
+  static const StrRefMap<CustomActionType> types = {
 #define GEN_ENTRY(E, S) {S, CustomActionType::E},
       EACH_CUSTOM_ACTION_TYPE(GEN_ENTRY)
 #undef GEN_ENTRY

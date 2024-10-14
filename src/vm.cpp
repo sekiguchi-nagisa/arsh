@@ -700,7 +700,7 @@ ResolvedCmd CmdResolver::operator()(const ARState &state, const Value &name,
       return ResolvedCmd::fromBuiltin(bcmd);
     }
 
-    static std::pair<const char *, NativeCode> sb[] = {
+    static const std::pair<const char *, NativeCode> sb[] = {
         {"command", initCode(OpCode::BUILTIN_CMD)},
         {"call", initCode(OpCode::BUILTIN_CALL)},
         {"exec", initCode(OpCode::BUILTIN_EXEC)},
