@@ -457,7 +457,7 @@ std::unordered_map<std::string, std::pair<unsigned int, HandleInfo>> initTypeMap
 }
 
 std::unique_ptr<ReifiedTypeToken> ReifiedTypeToken::newReifiedTypeToken(const std::string &name) {
-  static auto typeMap = initTypeMap();
+  static const auto typeMap = initTypeMap();
   auto iter = typeMap.find(name);
   if (iter == typeMap.end()) {
     ErrorReporter::instance()("unsupported type template: %s", name.c_str());

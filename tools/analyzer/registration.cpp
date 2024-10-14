@@ -23,7 +23,7 @@
 namespace arsh::lsp {
 
 static const char *toString(RegistrationMap::Capability capability) {
-  const char *table[] = {
+  constexpr const char *table[] = {
 #define GEN_TABLE(E, S) S,
       EACH_REGISTRATION_CAPABILITY(GEN_TABLE)
 #undef GEN_TABLE

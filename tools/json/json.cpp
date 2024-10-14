@@ -246,7 +246,7 @@ std::string JSON::serialize(unsigned int tab) const {
 }
 
 const char *toString(JSONTokenKind kind) {
-  const char *table[] = {
+  constexpr const char *table[] = {
 #define GEN_STR(T, S) S,
       EACH_JSON_TOKEN(GEN_STR)
 #undef GEN_STR

@@ -31,7 +31,7 @@ static bool reSearch(const char *reStr, const std::string &value) {
 }
 
 const char *toString(PlatformType c) {
-  const char *table[] = {
+  constexpr const char *table[] = {
 #define GEN_STR(E) #E,
       EACH_PLATFORM_TYPE(GEN_STR)
 #undef GEN_STR
@@ -78,7 +78,7 @@ static PlatformType detectImpl() {
 }
 
 PlatformType platform() {
-  static auto p = detectImpl();
+  static const auto p = detectImpl();
   return p;
 }
 
@@ -87,7 +87,7 @@ bool containPlatform(const std::string &text, PlatformType type) {
 }
 
 const char *toString(ArchType c) {
-  const char *table[] = {
+  constexpr const char *table[] = {
 #define GEN_STR(E, S) #E,
       EACH_ARCH_TYPE(GEN_STR)
 #undef GEN_STR
@@ -96,7 +96,7 @@ const char *toString(ArchType c) {
 }
 
 static ArchType archImpl() {
-  ArchType types[] = {
+  constexpr ArchType types[] = {
 #define GEN_ENUM(E, S) ArchType::E,
       EACH_ARCH_TYPE(GEN_ENUM)
 #undef GEN_ENUM
@@ -110,12 +110,12 @@ static ArchType archImpl() {
 }
 
 ArchType arch() {
-  static auto a = archImpl();
+  static const auto a = archImpl();
   return a;
 }
 
 bool containArch(const std::string &text, ArchType type) {
-  const char *table[] = {
+  constexpr const char *table[] = {
 #define GEN_STR(E, S) #E "|" S,
       EACH_ARCH_TYPE(GEN_STR)
 #undef GEN_STR

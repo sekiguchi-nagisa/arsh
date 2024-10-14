@@ -32,7 +32,7 @@ const char *toString(TraceValue setting) {
 
 bool toEnum(const char *str, TraceValue &setting) {
   StringRef ref = str;
-  TraceValue settings[] = {
+  constexpr TraceValue settings[] = {
 #define GEN_ENUM(E) TraceValue::E,
       EACH_TRACE_VALUE(GEN_ENUM)
 #undef GEN_ENUM
@@ -78,7 +78,7 @@ const char *toString(MarkupKind kind) {
 
 bool toEnum(const char *str, MarkupKind &kind) {
   StringRef ref = str;
-  MarkupKind kinds[] = {
+  constexpr MarkupKind kinds[] = {
 #define GEN_ENUM(E, V) MarkupKind::E,
       EACH_MARKUP_KIND(GEN_ENUM)
 #undef GEN_ENUM
@@ -137,7 +137,7 @@ const char *toString(TokenFormat format) {
 
 bool toEnum(const char *str, TokenFormat &format) {
   StringRef ref = str;
-  TokenFormat formats[] = {
+  constexpr TokenFormat formats[] = {
 #define GEN_ENUM(E, V) TokenFormat::E,
       EACH_TOKEN_FORMAT(GEN_ENUM)
 #undef GEN_ENUM
@@ -186,7 +186,7 @@ const char *toString(CmdCompKind kind) {
 }
 bool toEnum(const char *str, CmdCompKind &kind) {
   StringRef ref = str;
-  CmdCompKind kinds[] = {
+  constexpr CmdCompKind kinds[] = {
 #define GEN_ENUM(E, V) CmdCompKind::E,
       EACH_COMMAND_COMPLETION_KIND(GEN_ENUM)
 #undef GEN_ENUM
@@ -215,7 +215,7 @@ const char *toString(BinaryFlag kind) {
 
 bool toEnum(const char *str, BinaryFlag &kind) {
   StringRef ref = str;
-  BinaryFlag flags[] = {
+  constexpr BinaryFlag flags[] = {
 #define GEN_ENUM(E, V) BinaryFlag::E,
       EACH_BINARY_FLAG(GEN_ENUM)
 #undef GEN_ENUM
@@ -235,8 +235,9 @@ bool toEnum(const char *str, BinaryFlag &kind) {
 namespace arsh {
 
 bool toEnum(const char *str, LogLevel &level) {
-  LogLevel levels[] = {LogLevel::DEBUG, LogLevel::INFO, LogLevel::WARNING, LogLevel::ERROR,
-                       LogLevel::FATAL};
+  constexpr LogLevel levels[] = {
+      LogLevel::DEBUG, LogLevel::INFO, LogLevel::WARNING, LogLevel::ERROR, LogLevel::FATAL,
+  };
   for (auto &l : levels) {
     const char *ls = toString(l);
     if (strcasecmp(ls, str) == 0) {

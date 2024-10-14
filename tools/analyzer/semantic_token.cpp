@@ -20,7 +20,7 @@
 namespace arsh::lsp {
 
 const ExtendSemanticTokenTypeList &getExtendSemanticTokenTypes() {
-  static ExtendSemanticTokenTypeList list = {
+  static constexpr ExtendSemanticTokenTypeList list = {
 #define GEN_TABLE(E, V, F)                                                                         \
   ExtendSemanticTokenTypeEntry{SemanticTokenTypes::E, SemanticTokenTypes::F},
       EACH_SEMANTIC_TOKEN_TYPES_EXTEND(GEN_TABLE)

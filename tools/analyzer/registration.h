@@ -57,7 +57,7 @@ public:
   };
 
   static constexpr unsigned int sizeOfCapability() {
-    Capability table[] = {
+    constexpr Capability table[] = {
 #define GEN_TABLE(E, S) Capability::E,
         EACH_REGISTRATION_CAPABILITY(GEN_TABLE)
 #undef GEN_TABLE

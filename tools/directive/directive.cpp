@@ -376,7 +376,7 @@ DirectiveInitializer::lookupHandler(const std::string &name) const {
 }
 
 bool DirectiveInitializer::checkNode(NodeKind kind, const Node &node) {
-  const char *table[] = {
+  constexpr const char *table[] = {
 #define GEN_STR(K) #K,
       EACH_NODE_KIND(GEN_STR)
 #undef GEN_STR

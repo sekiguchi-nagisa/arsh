@@ -549,7 +549,7 @@ Reply<InitializeResult> LSPServer::initialize(const InitializeParams &params) {
   return ret;
 }
 
-static const char *configSections[] = {
+static constexpr const char *configSections[] = {
 #define GEN_TABLE(N, T) "arshd." #N,
     EACH_CONFIG_SETTING(GEN_TABLE)
 #undef GEN_TABLE
