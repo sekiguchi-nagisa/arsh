@@ -747,14 +747,19 @@ void ErrorObject::printStackTrace(const ARState &state, PrintOp op) const {
     fputs(header.c_str(), stderr);
     break;
   }
-  case PrintOp::IGNORED: {
+  case PrintOp::IGNORED:
+  case PrintOp::IGNORED_TERM: {
     std::string header = "[warning";
     if (level) {
       header += " at subshell=";
       header += std::to_string(level);
     }
     header += "]\n";
-    header += "the following exception within finally/defer block is ignored\n";
+    if (op == PrintOp::IGNORED) {
+      header += "the following exception within finally/defer block is ignored\n";
+    } else {
+      header += "the following exception within termination handler is ignored\n";
+    }
     fputs(header.c_str(), stderr);
     break;
   }

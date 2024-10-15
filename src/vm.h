@@ -703,8 +703,9 @@ public:
    * @param state
    * @param dsError
    * if not null, set error information
+   * @param inTermHook
    */
-  static void handleUncaughtException(ARState &state, ARError *dsError);
+  static void handleUncaughtException(ARState &state, ARError *dsError, bool inTermHook = false);
 
   /**
    * call user-defined termination handler specified by TERM_HOOK.

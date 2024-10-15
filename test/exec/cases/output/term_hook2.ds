@@ -1,0 +1,24 @@
+# RUN: exec $cmd $self
+# STATUS: 4
+
+$TERM_HOOK = function() => {
+    "$({
+        $TERM_HOOK = function() => { exit 100; }
+        23/0
+    })"[34];
+}
+
+$? = 4
+
+# CHECKERR: [runtime error at subshell=1]
+# CHECKERR: ArithmeticError: zero division
+# CHECKERR_RE:     from .+/test/exec/cases/output/term_hook2\.ds:7 'function \(\)'
+# CHECKERR: [warning at subshell=1]
+# CHECKERR: the following exception within termination handler is ignored
+# CHECKERR: ShellExit: terminated by exit 100
+# CHECKERR_RE:     from .+/test/exec/cases/output/term_hook2\.ds:6 'function \(\)'
+# CHECKERR_RE:     from .+/test/exec/cases/output/term_hook2\.ds:7 'function \(\)'
+# CHECKERR: [warning]
+# CHECKERR: the following exception within termination handler is ignored
+# CHECKERR: OutOfRangeError: size is 0, but index is 34
+# CHECKERR_RE:     from .+/test/exec/cases/output/term_hook2\.ds:5 'function \(\)'

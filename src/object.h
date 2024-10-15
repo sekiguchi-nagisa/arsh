@@ -1041,12 +1041,10 @@ public:
   int64_t getStatus() const { return this->status; }
 
   enum class PrintOp : unsigned char {
-    DEFAULT,
-    // only print stack trace
-    UNCAUGHT,
-    // show uncaught exception message header
-    IGNORED,
-    // show ignored exception message header
+    DEFAULT,      // only print stack trace
+    UNCAUGHT,     // show uncaught exception message header
+    IGNORED,      // show ignored exception message header
+    IGNORED_TERM, // show ignore exception (from termination handler) message header
   };
 
   /**

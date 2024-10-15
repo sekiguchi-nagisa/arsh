@@ -1,0 +1,27 @@
+# RUN: exec $cmd --trace-exit $self
+# STATUS: 188
+
+$TERM_HOOK = function() => {
+    "$({
+        $TERM_HOOK = function() => { assert $false; }
+        23/0
+    })"[34];
+}
+
+exit 188
+
+# CHECKERR: [runtime error]
+# CHECKERR: ShellExit: terminated by exit 188
+# CHECKERR_RE:     from .+/test/exec/cases/output/term_hook1\.ds:11 '<toplevel>\(\)'
+# CHECKERR: [runtime error at subshell=1]
+# CHECKERR: ArithmeticError: zero division
+# CHECKERR_RE:     from .+/test/exec/cases/output/term_hook1\.ds:7 'function \(\)'
+# CHECKERR: [warning at subshell=1]
+# CHECKERR: the following exception within termination handler is ignored
+# CHECKERR: AssertionFailed: `$false'
+# CHECKERR_RE:     from .+/test/exec/cases/output/term_hook1\.ds:6 'function \(\)'
+# CHECKERR_RE:     from .+/test/exec/cases/output/term_hook1\.ds:7 'function \(\)'
+# CHECKERR: [warning]
+# CHECKERR: the following exception within termination handler is ignored
+# CHECKERR: OutOfRangeError: size is 0, but index is 34
+# CHECKERR_RE:     from .+/test/exec/cases/output/term_hook1\.ds:5 'function \(\)'

@@ -1864,7 +1864,7 @@ bool VM::mainLoop(ARState &state) {
       vmcase(RETURN_TERM) {
         auto v = state.stack.getLocal(0); // old exit status
         state.stack.unwind();
-        handleUncaughtException(state, nullptr);
+        handleUncaughtException(state, nullptr, true);
         state.setGlobal(BuiltinVarOffset::EXIT_STATUS, std::move(v));
         state.stack.push(Value::createInvalid()); // push void
         if (state.stack.checkVMReturn()) {
@@ -2559,7 +2559,7 @@ Value VM::callMethod(ARState &state, const MethodHandle &handle, Value &&recv, C
   return ret;
 }
 
-void VM::handleUncaughtException(ARState &state, ARError *dsError) {
+void VM::handleUncaughtException(ARState &state, ARError *dsError, bool inTermHook) {
   if (!state.hasError()) {
     return;
   }
@@ -2575,8 +2575,9 @@ void VM::handleUncaughtException(ARState &state, ARError *dsError) {
 
   // print error message
   if (kind == AR_ERROR_KIND_RUNTIME_ERROR || kind == AR_ERROR_KIND_ASSERTION_ERROR ||
-      state.has(RuntimeOption::TRACE_EXIT)) {
-    except->printStackTrace(state, ErrorObject::PrintOp::UNCAUGHT);
+      state.has(RuntimeOption::TRACE_EXIT) || inTermHook) {
+    except->printStackTrace(state, inTermHook ? ErrorObject::PrintOp::IGNORED_TERM
+                                              : ErrorObject::PrintOp::UNCAUGHT);
   }
 
   if (dsError != nullptr) {
