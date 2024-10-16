@@ -24,7 +24,7 @@
 #include "misc/detect.hpp"
 #include "misc/resource.hpp"
 #include "misc/result.hpp"
-#include "misc/string_ref.hpp"
+#include "signals.h"
 
 namespace arsh {
 
@@ -83,11 +83,18 @@ public:
 
   /**
    * fetch code
+   * @param watchSigSet
    * @return
    * size of read
    * if read failed, return -1
    */
-  ssize_t fetch();
+  ssize_t fetch(AtomicSigSet &&watchSigSet);
+
+  ssize_t fetch() {
+    AtomicSigSet set;
+    set.add(SIGWINCH);
+    return this->fetch(std::move(set));
+  }
 
   template <typename Func>
   static constexpr bool consumer_requirement_v =

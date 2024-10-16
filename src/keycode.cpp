@@ -152,11 +152,14 @@ static ssize_t readCodePoint(int fd, char (&buf)[8]) {
     }                                                                                              \
   } while (false)
 
-ssize_t KeyCodeReader::fetch() {
+ssize_t KeyCodeReader::fetch(AtomicSigSet &&watchSigSet) {
   {
     sigset_t set;
     sigfillset(&set);
-    sigdelset(&set, SIGWINCH);
+    while (!watchSigSet.empty()) {
+      const int sigNum = watchSigSet.popPendingSig();
+      sigdelset(&set, sigNum);
+    }
     errno = 0;
     if (waitForInputReady(this->fd, -1, &set) == -1) {
       return -1;
