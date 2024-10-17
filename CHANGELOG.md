@@ -28,6 +28,10 @@
 - now interrupt ``LineEditor#readLine`` method when receive signals
     - also call signal handler
 
+#### Module
+
+- in ``repl.arsh`` module, set ``SIG_EXIT`` handler to ``SIGHUP`` for logout
+
 ### Fixed
 
 - bugfix power assert ``is`` when expr is invalid value

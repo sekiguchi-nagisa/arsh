@@ -33,3 +33,6 @@ if(command -v arcolorize &>> /dev/null) {
 
 # enable fzf integration
 source $SCRIPT_DIR/fzf.arsh
+
+# handle SIGHUP (for termination handler invocation at logout)
+$SIGHUP.trap($SIG_EXIT)
