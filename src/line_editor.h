@@ -175,6 +175,13 @@ private:
    */
   bool kickCustomCallback(ARState &state, LineBuffer &buf, CustomActionType type,
                           unsigned int index);
+
+  /**
+   * @param state
+   * @return
+   * if need refresh, return true. otherwise, return false
+   */
+  bool handleSignals(ARState &state);
 };
 
 } // namespace arsh

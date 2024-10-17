@@ -127,6 +127,10 @@ private:
   static_assert(decltype(set)::is_always_lock_free);
 
 public:
+  AtomicSigSet() = default;
+
+  AtomicSigSet(AtomicSigSet &&o) noexcept : set(o.value()), pendingIndex(o.pendingIndex) {}
+
   void add(int sigNum) {
     const underlying_t v = static_cast<underlying_t>(1) << static_cast<underlying_t>(sigNum - 1);
     this->set.fetch_or(v);

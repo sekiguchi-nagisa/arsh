@@ -23,6 +23,11 @@
     - also remove ``ON_ASSERT``, ``ON_ERR``, ``ON_EXIT`` constants
 - send ``SIGHUP`` to manged jobs before process termination (even if subshell)
 
+#### Builtin
+
+- now interrupt ``LineEditor#readLine`` method when receive signals
+    - also call signal handler
+
 ### Fixed
 
 - bugfix power assert ``is`` when expr is invalid value

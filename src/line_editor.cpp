@@ -618,13 +618,13 @@ ssize_t LineEditorObject::editLine(ARState &state, RenderingContext &ctx) {
   return count;
 }
 
-static bool needRefresh() {
-  if (errno == EINTR && ARState::hasSignal(SIGWINCH)) {
-    ARState::clearPendingSignal(SIGWINCH);
-    errno = 0;
-    return true;
+static AtomicSigSet toSigSet(const SignalVector &sigVector) {
+  AtomicSigSet sigSet;
+  for (auto &e : sigVector.getData()) {
+    sigSet.add(e.first);
   }
-  return false;
+  sigSet.add(SIGWINCH);
+  return sigSet;
 }
 
 ssize_t LineEditorObject::editInRawMode(ARState &state, RenderingContext &ctx) {
@@ -649,11 +649,17 @@ ssize_t LineEditorObject::editInRawMode(ARState &state, RenderingContext &ctx) {
   unsigned int yankedSize = 0;
   KeyCodeReader reader(this->inFd);
   while (true) {
-    if (ssize_t r = reader.fetch(); r <= 0) {
+    if (ssize_t r = reader.fetch(toSigSet(state.sigVector)); r <= 0) {
       if (r == -1) {
-        if (needRefresh()) {
-          this->refreshLine(state, ctx);
-          continue;
+        if (errno == EINTR) {
+          if (this->handleSignals(state)) {
+            this->refreshLine(state, ctx);
+            continue;
+          }
+          if (state.hasError()) {
+            errno = EAGAIN;
+            return -1;
+          }
         }
         return -1;
       }
@@ -869,16 +875,24 @@ ssize_t LineEditorObject::editInRawMode(ARState &state, RenderingContext &ctx) {
       break;
     case EditActionType::INSERT_KEYCODE:
     REDO_INSERT_KEYCODE:
-      if (ssize_t r = reader.fetch(); r > 0) {
+      if (ssize_t r = reader.fetch(toSigSet(state.sigVector)); r > 0) {
         auto &buf = reader.get();
         if (const bool merge = buf != " " && buf != "\n"; ctx.buf.insertToCursor(buf, merge)) {
           this->refreshLine(state, ctx);
         } else {
           return -1;
         }
-      } else if (r == -1 && needRefresh()) {
-        this->refreshLine(state, ctx);
-        goto REDO_INSERT_KEYCODE;
+      } else if (r == -1) {
+        if (errno == EINTR) {
+          if (this->handleSignals(state)) {
+            this->refreshLine(state, ctx);
+            goto REDO_INSERT_KEYCODE;
+          }
+          if (state.hasError()) {
+            errno = EAGAIN;
+          }
+        }
+        return -1;
       }
       break;
     case EditActionType::BRACKET_PASTE: {
@@ -1031,9 +1045,14 @@ EditActionStatus LineEditorObject::completeLine(ARState &state, RenderingContext
 
 FIRST_DRAW:
   this->refreshLine(state, ctx, true, makeObserver(pager));
-  if (ssize_t r = reader.fetch(); r <= 0) {
-    if (r == -1 && needRefresh()) {
-      goto FIRST_DRAW;
+  if (ssize_t r = reader.fetch(toSigSet(state.sigVector)); r <= 0) {
+    if (r == -1 && errno == EINTR) {
+      if (this->handleSignals(state)) {
+        goto FIRST_DRAW;
+      }
+      if (state.hasError()) {
+        return EditActionStatus::CANCEL;
+      }
     }
     status = EditActionStatus::ERROR;
     goto END;
@@ -1069,6 +1088,11 @@ FIRST_DRAW:
       break;
     }
     status = waitPagerAction(pager, this->keyBindings, reader);
+    if (status == EditActionStatus::ERROR && errno == EINTR) {
+      if (this->handleSignals(state)) {
+        status = EditActionStatus::CONTINUE;
+      }
+    }
   }
 
 END:
@@ -1199,6 +1223,26 @@ bool LineEditorObject::kickCustomCallback(ARState &state, LineBuffer &buf, Custo
     break;
   }
   return buf.insertToCursor(ret.asStrRef());
+}
+
+bool LineEditorObject::handleSignals(ARState &state) {
+  errno = 0; // clear EINTR
+  if (ARState::hasSignal(SIGWINCH)) {
+    if (!state.sigVector.lookup(SIGWINCH)) {
+      ARState::clearPendingSignal(SIGWINCH);
+      if (!ARState::hasSignals()) { // if received signal is only SIGWINCH, just refresh.
+        return true;
+      }
+    }
+  }
+
+  auto func = getBuiltinGlobal(state, VAR_SIG_IGN); // dummy function
+  auto args = makeArgs(Value::createSig(SIGHUP));   // dummy
+  /**
+   * implicitly call signal handler via dummy function call
+   */
+  this->kickCallback(state, std::move(func), std::move(args));
+  return !state.hasError();
 }
 
 } // namespace arsh
