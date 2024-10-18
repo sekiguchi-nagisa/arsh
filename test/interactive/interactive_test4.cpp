@@ -779,6 +779,92 @@ TEST_F(InteractiveTest, lineEditorScroll) {
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
 }
 
+TEST_F(InteractiveTest, lineEditorInterrupt1) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+  ASSERT_NO_FATAL_FAILURE(this->changePrompt("> "));
+
+  ASSERT_NO_FATAL_FAILURE(
+      this->sendLineAndExpect("$SIGHUP.trap(function(s) => { echo ${$s.name()}; exit 200; })",
+                              ": (Signal) -> Void = function(SIG_DFL)"));
+
+  this->handle.kill(SIGHUP);
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(200, WaitStatus::EXITED, "HUP\n\n"));
+}
+
+TEST_F(InteractiveTest, lineEditorInterrupt2) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+  ASSERT_NO_FATAL_FAILURE(this->changePrompt("> "));
+
+  ASSERT_NO_FATAL_FAILURE(
+      this->sendLineAndExpect("$SIGWINCH.trap(function(s) => { echo ${$s.name()}; exit 210; })",
+                              ": (Signal) -> Void = function(SIG_DFL)"));
+
+  this->send(CTRL_V);
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  this->handle.kill(SIGWINCH);
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(210, WaitStatus::EXITED, "WINCH\n\n"));
+}
+
+TEST_F(InteractiveTest, lineEditorInterrupt3) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+  ASSERT_NO_FATAL_FAILURE(this->changePrompt("> "));
+
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
+      "$LINE_EDIT.setCompletion(function(m,s) => { new Candidates(['AAA', 'AAB']); })"));
+  ASSERT_NO_FATAL_FAILURE(
+      this->sendLineAndExpect("$SIGWINCH.trap(function(s) => { echo ${$s.name()}; exit 210; })",
+                              ": (Signal) -> Void = function(SIG_DFL)"));
+
+  this->send("A");
+  ASSERT_NO_FATAL_FAILURE(this->expect("> A"));
+  {
+    auto cleanup = this->reuseScreen();
+    this->send("\t");
+    ASSERT_NO_FATAL_FAILURE(this->expect("> AA\nAAA AAB \n"));
+    this->handle.kill(SIGWINCH);
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  }
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(210, WaitStatus::EXITED, "WINCH\n> AA\n\n"));
+}
+
+TEST_F(InteractiveTest, lineEditorInterrupt4) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+  ASSERT_NO_FATAL_FAILURE(this->changePrompt("> "));
+
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
+      "$LINE_EDIT.setCompletion(function(m,s) => { new Candidates(['AAA', 'AAB']); })"));
+  ASSERT_NO_FATAL_FAILURE(
+      this->sendLineAndExpect("$SIGWINCH.trap(function(s) => { echo ${$s.name()}; exit 210; })",
+                              ": (Signal) -> Void = function(SIG_DFL)"));
+
+  this->send("A");
+  ASSERT_NO_FATAL_FAILURE(this->expect("> A"));
+  {
+    auto cleanup = this->reuseScreen();
+    this->send("\t");
+    ASSERT_NO_FATAL_FAILURE(this->expect("> AA\nAAA AAB \n"));
+    this->send("\t");
+    ASSERT_NO_FATAL_FAILURE(this->expect("> AAA\nAAA AAB \n"));
+    this->send("\t");
+    ASSERT_NO_FATAL_FAILURE(this->expect("> AAB\nAAA AAB \n"));
+    this->handle.kill(SIGWINCH);
+    std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  }
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(210, WaitStatus::EXITED, "WINCH\n> AAB\n\n"));
+}
+
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

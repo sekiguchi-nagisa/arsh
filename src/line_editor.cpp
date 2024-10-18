@@ -1051,7 +1051,8 @@ FIRST_DRAW:
         goto FIRST_DRAW;
       }
       if (state.hasError()) {
-        return EditActionStatus::CANCEL;
+        status = EditActionStatus::CANCEL;
+        goto END;
       }
     }
     status = EditActionStatus::ERROR;
@@ -1088,9 +1089,12 @@ FIRST_DRAW:
       break;
     }
     status = waitPagerAction(pager, this->keyBindings, reader);
-    if (status == EditActionStatus::ERROR && errno == EINTR) {
+    if (status == EditActionStatus::CANCEL && errno == EINTR) {
       if (this->handleSignals(state)) {
         status = EditActionStatus::CONTINUE;
+      }
+      if (state.hasError()) {
+        break;
       }
     }
   }
