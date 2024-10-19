@@ -527,7 +527,6 @@ void LineEditorObject::refreshLine(ARState &state, RenderingContext &ctx, bool r
 
   lndebug("\n");
   ctx.oldCursorRows = ret.cursorRows;
-  ctx.oldRenderedRows = ret.renderedRows;
   ctx.oldActualCursorRows = actualCursorRows;
 
   if (write(this->outFd, ab.c_str(), ab.size()) == -1) {

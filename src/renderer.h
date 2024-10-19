@@ -35,8 +35,7 @@ struct RenderingResult {
 struct RenderingContext {
   LineBuffer buf;
   const StringRef prompt;
-  unsigned int oldCursorRows{0};   // previous refresh cursor rows (relative to initial rows)
-  unsigned int oldRenderedRows{0}; // previous refresh rendered rows (relative to initial rows)
+  unsigned int oldCursorRows{0}; // previous refresh cursor rows (relative to initial rows)
   unsigned int oldActualCursorRows{0};
   CharWidthProperties ps;
   bool scrolling{false};
