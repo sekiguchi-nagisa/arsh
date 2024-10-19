@@ -148,16 +148,15 @@ TEST_F(ProcTest, pty4) {
   // start with raw mode
   auto handle = ProcBuilder::spawn(config, [&] {
     while (true) {
-      std::this_thread::sleep_for(std::chrono::milliseconds(100));
+      std::this_thread::sleep_for(std::chrono::seconds(100));
     }
     return 0;
   });
-  std::this_thread::sleep_for(std::chrono::seconds(1));
+  std::this_thread::sleep_for(std::chrono::milliseconds(500));
   std::string str = "\x03"; // CTRL-C
   auto r = write(handle.in(), str.c_str(), str.size());
   (void)r;
   fsync(handle.in());
-  std::this_thread::sleep_for(std::chrono::seconds(1));
   auto ret2 = handle.waitAndGetResult(false);
   if (arsh::platform::isWindows(arsh::platform::platform())) {
     this->expect(ret2, SIGINT, WaitStatus::SIGNALED);
