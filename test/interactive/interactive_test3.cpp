@@ -280,6 +280,7 @@ TEST_F(InteractiveTest, cmdsub_interactive) {
   // launch new arsh with force interactive
   const char *line = "var aa = $(call $BIN_NAME -i --quiet --norc)";
   this->sendLine(line);
+  std::this_thread::sleep_for(std::chrono::milliseconds(200));
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + line + "\n" + PROMPT));
 
   line = "echo hello world";
@@ -371,11 +372,13 @@ TEST_F(InteractiveTest, bg1) {
   ASSERT_NO_FATAL_FAILURE(this->expect("false\n" + PROMPT));
 
   // disable monitor option
-  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("call $BIN_NAME -c 'read &'"));
-  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $? == 0"));
-  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("call $BIN_NAME -c 'read | __gets &'"));
-  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $? == 0"));
-
+  {
+    auto cleanup = this->withTimeout(400);
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("call $BIN_NAME -c 'read &'"));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $? == 0"));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("call $BIN_NAME -c 'read | __gets &'"));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $? == 0"));
+  }
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 0));
 }
 
@@ -395,10 +398,13 @@ TEST_F(InteractiveTest, bg2) {
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $? == 1"));
 
   // disable monitor option
-  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("call $BIN_NAME -c 'read &!'"));
-  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $? == 0"));
-  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("call $BIN_NAME -c 'read | __gets &|'"));
-  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $? == 0"));
+  {
+    auto cleanup = this->withTimeout(400);
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("call $BIN_NAME -c 'read &!'"));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $? == 0"));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("call $BIN_NAME -c 'read | __gets &|'"));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $? == 0"));
+  }
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 0));
 }
 
