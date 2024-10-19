@@ -20,6 +20,7 @@
 #include <misc/opt_parser.hpp>
 
 #include "factory.h"
+#include <sample.h>
 
 namespace {
 
@@ -37,6 +38,7 @@ enum class OptionSet : unsigned char {
   HTML_LINENO_TABLE,
   DUMP,
   CUSTOM_STYLE,
+  SAMPLE,
 };
 
 const OptParser<OptionSet>::Option options[] = {
@@ -56,6 +58,7 @@ const OptParser<OptionSet>::Option options[] = {
     {OptionSet::DUMP, 0, "dump", OptParseOp::NO_ARG, "dump ansi color code of theme"},
     {OptionSet::CUSTOM_STYLE, 0, "custom-style", OptParseOp::HAS_ARG, "name=rule ...",
      "set custom color style"},
+    {OptionSet::SAMPLE, 0, "sample", OptParseOp::NO_ARG, "use embedded sample code as input"},
     {OptionSet::HELP, 'h', "help", OptParseOp::NO_ARG, "show help message"},
 };
 
@@ -67,6 +70,11 @@ void usage(std::ostream &stream, char **argv) {
 
 Optional<std::string> readAll(const char *sourceName) {
   std::string buf;
+  if (!sourceName) {
+    buf = highlight_sample;
+    return buf;
+  }
+
   auto file = createFilePtr(fopen, sourceName, "rb");
   if (!file) {
     std::cerr << "cannot open file: " << sourceName << ", by `" << strerror(errno) << "'" << '\n'
@@ -173,6 +181,7 @@ int main(int argc, char **argv) {
   StringRef outputFileName = "/dev/stdout";
   bool listing = false;
   bool dump = false;
+  bool useSample = false;
   StyleMap styleMap;
   FormatterFactory factory(styleMap);
   std::vector<StringRef> customStyles;
@@ -212,6 +221,9 @@ int main(int argc, char **argv) {
         customStyles.emplace_back(*begin);
       }
       break;
+    case OptionSet::SAMPLE:
+      useSample = true;
+      break;
     }
   }
   if (result.isError() && !dump) {
@@ -224,9 +236,12 @@ int main(int argc, char **argv) {
     return 0;
   }
 
+  // read content
   const char *sourceName = "/dev/stdin";
   if (begin != end) {
     sourceName = *begin;
+  } else if (useSample) {
+    sourceName = nullptr;
   }
   factory.setCustomStyles(std::move(customStyles));
 

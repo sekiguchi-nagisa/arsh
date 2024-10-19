@@ -14,6 +14,10 @@
         - not allow instantiation of ``Throwable`` type
     - add builtin ``THROWN`` variable for indicating currently thrown object
 
+#### Misc
+
+- add ``--sample`` option to ``arcolorize``. now use embedded sample code as input
+
 ### Changed
 
 #### Core

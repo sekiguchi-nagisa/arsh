@@ -630,6 +630,7 @@ Options:
   --html-lineno-table           emit line number as table (for html formatter)
   --dump                        dump ansi color code of theme
   --custom-style name=rule ...  set custom color style
+  --sample                      use embedded sample code as input
   -h, --help                    show help message
 )",
                     HIGHLIGHTER_PATH, HIGHLIGHTER_PATH);
@@ -649,6 +650,7 @@ Options:
   --html-lineno-table           emit line number as table (for html formatter)
   --dump                        dump ansi color code of theme
   --custom-style name=rule ...  set custom color style
+  --sample                      use embedded sample code as input
   -h, --help                    show help message
 )";
   ProcBuilder builder = {HIGHLIGHTER_PATH, "-q"};
@@ -667,6 +669,7 @@ Options:
   --html-lineno-table           emit line number as table (for html formatter)
   --dump                        dump ansi color code of theme
   --custom-style name=rule ...  set custom color style
+  --sample                      use embedded sample code as input
   -h, --help                    show help message
 )";
   ProcBuilder builder = {HIGHLIGHTER_PATH, "-o"};
@@ -726,6 +729,18 @@ TEST_F(ColorizeTest, cli2) {
     exec $colorize -f html --html-lineno=10 --html-lineno-table | grep '11' > /dev/null
   assert (echo 1234 && echo 4321) |
     exec $colorize -f html --html-lineno=10 --html-lineno-table | grep -v '>10</span>' > /dev/null
+
+)EOF",
+                       HIGHLIGHTER_PATH);
+  ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", source.c_str()), 0));
+}
+
+TEST_F(ColorizeTest, cli3) {
+  auto source = format(R"EOF(
+  var colorize = @(%s)[0]
+
+  assert exec $colorize --sample | grep 'rpm/arsh.spec.in' > /dev/null
+  assert exec $colorize --sample -f html | grep 'rpm/arsh.spec.in' > /dev/null
 
 )EOF",
                        HIGHLIGHTER_PATH);

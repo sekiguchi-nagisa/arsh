@@ -27,6 +27,10 @@ compdef --cmd arshd --long wait-time
 compdef --cmd arcolorize --long daemon
 compdef --cmd arcolorize --long html-full
 compdef --cmd arcolorize --long html-lineno=
+compdef --cmd arcolorize --long html-lineno-table
+compdef --cmd arcolorize --long dump
+compdef --cmd arcolorize --long custom-style
+compdef --cmd arcolorize --long sample
 compdef --cmd arcolorize --short h
 compdef --cmd arcolorize --short l
 compdef --cmd arcolorize --short o --arg-action file

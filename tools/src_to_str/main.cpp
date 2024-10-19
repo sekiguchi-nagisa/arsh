@@ -27,13 +27,14 @@ enum class OptionKind : unsigned char {
   VAR_NAME,
   FILE_NAME,
   OUTPUT,
+  NO_SKIP,
 };
 
 static const OptParser<OptionKind>::Option options[] = {
     {OptionKind::VAR_NAME, 'v', "", OptParseOp::HAS_ARG, "specify generated variable name"},
     {OptionKind::FILE_NAME, 'f', "", OptParseOp::HAS_ARG, "specify target file name"},
     {OptionKind::OUTPUT, 'o', "output", OptParseOp::HAS_ARG, "specify output header file name"},
-};
+    {OptionKind::NO_SKIP, 'n', "no-skip", OptParseOp::NO_ARG, "not skip empty lines and comments"}};
 
 static std::string escape(const std::string &line) {
   std::string out;
@@ -73,6 +74,7 @@ int main(int argc, char **argv) {
   StringRef varName;
   StringRef targetFileName;
   StringRef outputFileName;
+  bool skip = true;
 
   auto begin = argv + 1;
   auto end = argv + argc;
@@ -87,6 +89,9 @@ int main(int argc, char **argv) {
       break;
     case OptionKind::OUTPUT:
       outputFileName = result.getValue();
+      break;
+    case OptionKind::NO_SKIP:
+      skip = false;
       break;
     }
   }
@@ -133,7 +138,7 @@ int main(int argc, char **argv) {
   fprintf(fp, "static const char *%s = \"\"\n", varName.toString().c_str());
   while (std::getline(input, line)) {
     // skip empty line and comment
-    if (line.empty() || line[0] == '#') {
+    if (skip && (line.empty() || line[0] == '#')) {
       continue;
     }
 
