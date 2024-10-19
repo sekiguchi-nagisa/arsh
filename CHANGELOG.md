@@ -32,7 +32,7 @@
 
 - in ``repl.arsh`` module, set ``SIG_EXIT`` handler to ``SIGHUP`` for logout
 
-### Fixed
+## [0.35.1] - 2024-10-19
 
 - bugfix power assert ``is`` when expr is invalid value
 - fix unexpectedly appeared garbage lines in KDE ``yakuake`` terminal
