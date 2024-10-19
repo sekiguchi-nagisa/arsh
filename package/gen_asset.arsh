@@ -21,6 +21,7 @@ EOF
 }"
     var func = $MODULE._func($content)()! as (String, String) -> Void
     $func($version, $dest)
+    return 0
 }
 
 [<CLI(toplevel: $true)>]
@@ -37,6 +38,7 @@ _main(param: _Param) {
     $/^\d+\.\d+\.\d+.*$/ =~ $param.version || error "invalid version number: ${param.version}"
     var dir = "${param.target}/arsh"
     mkdir -p $dir
+    shctl set nullglob && rm $dir/*.tar.gz  # try remove old archives
     assert test -f $SCRIPT_DIR/rpm/arsh.spec.in
     gen_rpm_spec $SCRIPT_DIR/rpm/arsh.spec.in $dir/arsh.spec ${param.version}
     curl -Lf "https://github.com/sekiguchi-nagisa/arsh/archive/refs/tags/v${param.version}.tar.gz" \
