@@ -40,15 +40,14 @@
   "params": {
     "settings": {
       "arshd": {
-        "commandArgumentCompletion": null,
-        "commandCompletion": "default",
+        "fileNameCompletion": null,
         "logLevel": "warning"
       }
     }
   }
 }
 
-# CHECKERR_RE_IF: .+ <warning> \[\d+\] field: `commandArgumentCompletion' is invalid type
+# CHECKERR_RE_IF: .+ <warning> \[\d+\] field: `fileNameCompletion' is invalid type
 
 <<<
 {"id": 2, "jsonrpc": "2.0", "method": "textDocument/completion",

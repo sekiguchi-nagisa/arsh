@@ -40,14 +40,13 @@
   "params": {
     "settings": {
       "arshd": {
-        "commandArgumentCompletion": "enabled",
-        "commandCompletion": "default",
+        "fileNameCompletion": "enabled",
         "logLevel": "error"
       }
     }
   }
 }
-# enable command argument completion
+# enable command argument completion (include filename)
 
 <<<
 {"id": 2, "jsonrpc": "2.0", "method": "textDocument/completion",
@@ -62,8 +61,6 @@
 # CHECK_IF:   "id": 2,
 #    CHECK:   "jsonrpc": "2.0",
 #    CHECK:   "result": [
-#    CHECK:     {
-# CHECK_IF:     }
 # CHECK_IF:   ]
 
 

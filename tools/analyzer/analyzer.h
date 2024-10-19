@@ -175,11 +175,11 @@ public:
   ModuleArchivePtr analyze(const SourcePtr &src, AnalyzerAction &action);
 
   enum class ExtraCompOp : unsigned char {
-    CMD_ARG_COMP = 1u << 0u,
+    FILE_NAME = 1u << 0u,
     SIGNATURE = 1u << 1u,
   };
 
-  std::vector<CompletionItem> complete(const SourcePtr &src, unsigned int offset, CmdCompKind ckind,
+  std::vector<CompletionItem> complete(const SourcePtr &src, unsigned int offset,
                                        ExtraCompOp extraOp);
 
   Optional<SignatureInformation> collectSignature(const SourcePtr &src, unsigned int offset);

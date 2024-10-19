@@ -1271,7 +1271,7 @@ std::unique_ptr<Node> Parser::parse_command() {
         auto argNode = this->parse_cmdArg();
         if (this->hasError()) {
           if (this->inCompletionPoint() && hasFlag(this->compCtx->getCompOp(), CodeCompOp::FILE)) {
-            this->compCtx->addCompHookRequest(*this->lexer, std::move(node));
+            this->compCtx->addCmdArgRequest(*this->lexer, std::move(node));
           }
           return nullptr;
         }

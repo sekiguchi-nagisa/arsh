@@ -97,8 +97,7 @@ private:
   bool willExit{false};
   TraceValue traceSetting{TraceValue::off};
   MarkupKind markupKind{MarkupKind::PlainText};
-  CmdCompKind cmdCompKind{CmdCompKind::default_};
-  BinaryFlag cmdArgComp{BinaryFlag::disabled};
+  BinaryFlag fileNameComp{BinaryFlag::disabled}; // complete filename (also external command)
   BinaryFlag semanticHighlight{BinaryFlag::enabled};
   BinaryFlag renameSupport{BinaryFlag::enabled};
   SupportedCapability supportedCapability{};

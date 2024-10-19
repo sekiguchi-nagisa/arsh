@@ -441,7 +441,7 @@ static std::string toDirName(const std::string &fullPath) {
 }
 
 std::vector<CompletionItem> Analyzer::complete(const SourcePtr &src, unsigned int offset,
-                                               CmdCompKind ckind, ExtraCompOp extraOp) {
+                                               ExtraCompOp extraOp) {
   this->reset();
 
   std::string workDir = toDirName(src->getPath());
@@ -452,20 +452,9 @@ std::vector<CompletionItem> Analyzer::complete(const SourcePtr &src, unsigned in
                               this->sysConfig, ptr->getPool(), workDir);
 
   // set completion options
-  CodeCompOp ignoredOp{};
-  switch (ckind) {
-  case CmdCompKind::disabled_:
-    ignoredOp = CodeCompOp::COMMAND | CodeCompOp::FILE | CodeCompOp::EXEC;
-    break;
-  case CmdCompKind::default_:
-    ignoredOp = CodeCompOp::EXTERNAL | CodeCompOp::FILE | CodeCompOp::EXEC;
-    break;
-  case CmdCompKind::all_:
-    break; // allow all
-  }
-  if (!hasFlag(extraOp, ExtraCompOp::CMD_ARG_COMP)) {
-    setFlag(ignoredOp, CodeCompOp::HOOK); // disable command arguments completion
-  }
+  const CodeCompOp ignoredOp = hasFlag(extraOp, ExtraCompOp::FILE_NAME)
+                                   ? CodeCompOp{} // allow all completions (may complete file name)
+                                   : CodeCompOp::EXTERNAL | CodeCompOp::FILE | CodeCompOp::EXEC;
   collector.setLabelDetail(hasFlag(extraOp, ExtraCompOp::SIGNATURE));
 
   // do code completion

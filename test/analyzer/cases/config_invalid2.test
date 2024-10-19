@@ -21,10 +21,7 @@
 #    CHECK:         "section": "arshd.logLevel"
 #    CHECK:       },
 #    CHECK:       {
-#    CHECK:         "section": "arshd.commandCompletion"
-#    CHECK:       },
-#    CHECK:       {
-#    CHECK:         "section": "arshd.commandArgumentCompletion"
+#    CHECK:         "section": "arshd.fileNameCompletion"
 #    CHECK:       },
 #    CHECK:       {
 #    CHECK:         "section": "arshd.semanticHighlight"
@@ -42,7 +39,6 @@
   "jsonrpc": "2.0",
   "result": [
     "debug",
-    "default",
     "disabled",
     "enabled",
     2135325

@@ -23,31 +23,31 @@
 namespace arsh {
 
 enum class CodeCompOp : unsigned int {
-  FILE = 1u << 0u,        /* complete file names (including directory) */
-  DIR = 1u << 1u,         /* complete directory names (directory only) */
-  EXEC = 1u << 2u,        /* complete executable file names (including directory) */
-  TILDE = 1u << 3u,       /* perform tilde expansion before completions */
-  EXTERNAL = 1u << 4u,    /* complete external command names */
-  DYNA_UDC = 1u << 5u,    /* complete dynamically registered command names */
-  BUILTIN = 1u << 6u,     /* complete builtin command names */
-  UDC = 1u << 7u,         /* complete user-defined command names */
-  VAR = 1u << 8u,         /* complete global variable names (not start with $) */
-  ENV = 1u << 9u,         /* complete environmental variable names */
-  VALID_ENV = 1u << 10u,  /* complete environmental variable names (valid name only) */
-  SIGNAL = 1u << 11u,     /* complete signal names (not start with SIG) */
-  USER = 1u << 12u,       /* complete usernames */
-  GROUP = 1u << 13u,      /* complete group names */
-  MODULE = 1u << 14u,     /* complete module path */
-  STMT_KW = 1u << 15u,    /* complete statement keyword */
-  EXPR_KW = 1u << 16u,    /* complete expr keyword */
-  EXPECT = 1u << 17u,     /* complete expected token */
-  MEMBER = 1u << 18u,     /* complete member (field/method) */
-  TYPE = 1u << 19u,       /* complete type name */
-  CMD_ARG = 1u << 20u,    /* for command argument */
-  HOOK = 1u << 21u,       /* for user-defined completion hook */
-  ATTR = 1u << 22u,       /* complete attribute */
-  ATTR_PARAM = 1u << 23u, /* complete attribute parameter */
-  PARAM = 1u << 24u,      /* complete parameter name */
+  FILE = 1u << 0u,           /* complete file names (including directory) */
+  DIR = 1u << 1u,            /* complete directory names (directory only) */
+  EXEC = 1u << 2u,           /* complete executable file names (including directory) */
+  TILDE = 1u << 3u,          /* perform tilde expansion before completions */
+  EXTERNAL = 1u << 4u,       /* complete external command names */
+  DYNA_UDC = 1u << 5u,       /* complete dynamically registered command names */
+  BUILTIN = 1u << 6u,        /* complete builtin command names */
+  UDC = 1u << 7u,            /* complete user-defined command names */
+  VAR = 1u << 8u,            /* complete variable names (not start with $) */
+  VAR_IN_CMD_ARG = 1u << 9u, /* complete variable names (not start with $) */
+  ENV = 1u << 10u,           /* complete environmental variable names */
+  VALID_ENV = 1u << 11u,     /* complete environmental variable names (valid name only) */
+  SIGNAL = 1u << 12u,        /* complete signal names (not start with SIG) */
+  USER = 1u << 13u,          /* complete usernames */
+  GROUP = 1u << 14u,         /* complete group names */
+  MODULE = 1u << 15u,        /* complete module path */
+  STMT_KW = 1u << 16u,       /* complete statement keyword */
+  EXPR_KW = 1u << 17u,       /* complete expr keyword */
+  EXPECT = 1u << 18u,        /* complete expected token */
+  MEMBER = 1u << 19u,        /* complete member (field/method) */
+  TYPE = 1u << 20u,          /* complete type name */
+  CMD_ARG = 1u << 21u,       /* complete command argument */
+  ATTR = 1u << 22u,          /* complete attribute */
+  ATTR_PARAM = 1u << 23u,    /* complete attribute parameter */
+  PARAM = 1u << 24u,         /* complete parameter name */
   COMMAND = EXTERNAL | DYNA_UDC | BUILTIN | UDC,
 };
 
@@ -94,7 +94,8 @@ private:
   CodeCompOp compOp{};
 
   /**
-   * when result of COMP_HOOK is empty, fallback to file name completion
+   * for CMD_ARG op
+   * when result of CMD_ARG is empty, fallback to file name completion
    */
   CodeCompOp fallbackOp{};
 
@@ -120,7 +121,10 @@ public:
 
   void setCompWordOffset(unsigned int offset) { this->compWordOffset = offset; }
 
-  void ignore(CodeCompOp ignored) { unsetFlag(this->compOp, ignored); }
+  void ignore(CodeCompOp ignored) {
+    unsetFlag(this->compOp, ignored);
+    unsetFlag(this->fallbackOp, ignored);
+  }
 
   void addExpectedTokenRequest(std::string &&prefix, TokenKind kind) {
     TokenKind kinds[] = {kind};
@@ -149,11 +153,7 @@ public:
 
   void addVarNameRequest(std::string &&value, bool inCmdArg, NameScopePtr curScope) {
     this->scope = std::move(curScope);
-    auto op = CodeCompOp::VAR;
-    if (inCmdArg) {
-      setFlag(op, CodeCompOp::CMD_ARG);
-    }
-    this->addCompRequest(op, std::move(value));
+    this->addCompRequest(inCmdArg ? CodeCompOp::VAR_IN_CMD_ARG : CodeCompOp::VAR, std::move(value));
   }
 
   void addTypeNameRequest(std::string &&value, const Type *type, NameScopePtr curScope) {
@@ -201,10 +201,10 @@ public:
     setFlag(this->compOp, CodeCompOp::PARAM);
   }
 
-  void addCompHookRequest(const Lexer &lexer, std::unique_ptr<CmdNode> &&node) {
+  void addCmdArgRequest(const Lexer &lexer, std::unique_ptr<CmdNode> &&node) {
     this->lex = makeObserver(lexer);
     this->fallbackOp = this->compOp;
-    this->compOp = CodeCompOp::HOOK;
+    this->compOp = CodeCompOp::CMD_ARG;
     this->cmdNode = std::move(node);
   }
 

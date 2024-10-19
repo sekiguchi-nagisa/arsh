@@ -216,6 +216,11 @@ public:
                   CodeCompOp option);
 
 private:
+  /**
+   * @param ctx
+   * @return
+   * if cancelled (interrupted by signal or has error), return false
+   */
   bool invoke(const CodeCompletionContext &ctx);
 };
 

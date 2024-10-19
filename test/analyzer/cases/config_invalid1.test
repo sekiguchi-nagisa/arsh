@@ -21,10 +21,7 @@
 #    CHECK:         "section": "arshd.logLevel"
 #    CHECK:       },
 #    CHECK:       {
-#    CHECK:         "section": "arshd.commandCompletion"
-#    CHECK:       },
-#    CHECK:       {
-#    CHECK:         "section": "arshd.commandArgumentCompletion"
+#    CHECK:         "section": "arshd.fileNameCompletion"
 #    CHECK:       },
 #    CHECK:       {
 #    CHECK:         "section": "arshd.semanticHighlight"
@@ -42,13 +39,12 @@
   "jsonrpc": "2.0",
   "result": [
     "debug",
-    "default",
     "disabled",
     "enabled"
   ]
 }
 
-# CHECKERR_RE_IF: ^.+ <error> .+ broken response of 'workspace/configuration', expect: 5 items, but actual is: 4
+# CHECKERR_RE_IF: ^.+ <error> .+ broken response of 'workspace/configuration', expect: 4 items, but actual is: 3
 
 <<<
 {"id": 2, "jsonrpc": "2.0", "method": "shutdown"}

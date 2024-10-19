@@ -21,10 +21,7 @@
 #    CHECK:         "section": "arshd.logLevel"
 #    CHECK:       },
 #    CHECK:       {
-#    CHECK:         "section": "arshd.commandCompletion"
-#    CHECK:       },
-#    CHECK:       {
-#    CHECK:         "section": "arshd.commandArgumentCompletion"
+#    CHECK:         "section": "arshd.fileNameCompletion"
 #    CHECK:       },
 #    CHECK:       {
 #    CHECK:         "section": "arshd.semanticHighlight"

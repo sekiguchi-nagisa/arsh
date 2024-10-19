@@ -572,10 +572,8 @@ void LSPServer::loadConfigSetting(const ConfigSetting &setting) {
   RegistrationParam registrationParam;
   UnregistrationParam unregistrationParam;
 
-  getOrShowError(this->logger, setting.commandCompletion, "commandCompletion",
-                 [&](CmdCompKind kind) { this->cmdCompKind = kind; });
-  getOrShowError(this->logger, setting.commandArgumentCompletion, "commandArgumentCompletion",
-                 [&](BinaryFlag enabled) { this->cmdArgComp = enabled; });
+  getOrShowError(this->logger, setting.fileNameCompletion, "fileNameCompletion",
+                 [&](BinaryFlag enabled) { this->fileNameComp = enabled; });
   getOrShowError(this->logger, setting.logLevel, "logLevel",
                  [&](LogLevel level) { this->logger.get().setSeverity(level); });
   getOrShowError(
@@ -785,13 +783,13 @@ Reply<std::vector<CompletionItem>> LSPServer::complete(const CompletionParams &p
     copiedArchives.revert({src->getSrcId()});
     Analyzer analyzer(this->sysConfig, *copiedSrcMan, copiedArchives);
     Analyzer::ExtraCompOp extraCompOp{};
-    if (this->cmdArgComp == BinaryFlag::enabled) {
-      setFlag(extraCompOp, Analyzer::ExtraCompOp::CMD_ARG_COMP);
+    if (this->fileNameComp == BinaryFlag::enabled) {
+      setFlag(extraCompOp, Analyzer::ExtraCompOp::FILE_NAME);
     }
     if (hasFlag(this->supportedCapability, SupportedCapability::LABEL_DETAIL)) {
       setFlag(extraCompOp, Analyzer::ExtraCompOp::SIGNATURE);
     }
-    return analyzer.complete(src, pos, this->cmdCompKind, extraCompOp);
+    return analyzer.complete(src, pos, extraCompOp);
   } else {
     return newError(ErrorCode::InvalidParams, std::string(resolved.asErr().get()));
   }

@@ -21,10 +21,7 @@
 #    CHECK:         "section": "arshd.logLevel"
 #    CHECK:       },
 #    CHECK:       {
-#    CHECK:         "section": "arshd.commandCompletion"
-#    CHECK:       },
-#    CHECK:       {
-#    CHECK:         "section": "arshd.commandArgumentCompletion"
+#    CHECK:         "section": "arshd.fileNameCompletion"
 #    CHECK:       },
 #    CHECK:       {
 #    CHECK:         "section": "arshd.semanticHighlight"
@@ -42,7 +39,6 @@
   "jsonrpc": "2.0",
   "result": [
     "debug",
-    "default",
     "disabled",
     "enabled",
     "enabled"
@@ -51,8 +47,7 @@
 
 # CHECKERR_RE_IF: ^.+ <debug> .+ response of 'workspace/configuration':
 #       CHECKERR: {
-#       CHECKERR:   "arshd.commandArgumentCompletion": "disabled",
-#       CHECKERR:   "arshd.commandCompletion": "default",
+#       CHECKERR:   "arshd.fileNameCompletion": "disabled",
 #       CHECKERR:   "arshd.logLevel": "debug",
 #       CHECKERR:   "arshd.rename": "enabled",
 #       CHECKERR:   "arshd.semanticHighlight": "enabled"

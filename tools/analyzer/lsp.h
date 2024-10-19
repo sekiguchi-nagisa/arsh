@@ -988,33 +988,6 @@ struct CompletionItem {
   }
 };
 
-#define EACH_COMMAND_COMPLETION_KIND(OP)                                                           \
-  OP(disabled_, "disabled")                                                                        \
-  OP(default_, "default")                                                                          \
-  OP(all_, "all")
-
-enum class CmdCompKind : unsigned char {
-#define GEN_ENUM(E, V) E,
-  EACH_COMMAND_COMPLETION_KIND(GEN_ENUM)
-#undef GEN_ENUM
-};
-
-const char *toString(CmdCompKind kind);
-
-bool toEnum(const char *str, CmdCompKind &kind);
-
-template <typename T>
-void jsonify(T &t, CmdCompKind &kind) {
-  if constexpr (is_serialize_v<T>) {
-    std::string value = toString(kind);
-    t(value);
-  } else if constexpr (is_deserialize_v<T>) {
-    std::string value;
-    t(value);
-    t.hasError() || toEnum(value.c_str(), kind);
-  }
-}
-
 #define EACH_BINARY_FLAG(OP)                                                                       \
   OP(enabled, "enabled")                                                                           \
   OP(disabled, "disabled")
@@ -1043,8 +1016,7 @@ void jsonify(T &t, BinaryFlag &kind) {
 
 #define EACH_CONFIG_SETTING(OP)                                                                    \
   OP(logLevel, LogLevel)                                                                           \
-  OP(commandCompletion, CmdCompKind)                                                               \
-  OP(commandArgumentCompletion, BinaryFlag)                                                        \
+  OP(fileNameCompletion, BinaryFlag)                                                               \
   OP(semanticHighlight, BinaryFlag)                                                                \
   OP(rename, BinaryFlag)
 

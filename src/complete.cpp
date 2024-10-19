@@ -793,8 +793,8 @@ bool CodeCompleter::invoke(const CodeCompletionContext &ctx) {
   if (ctx.has(CodeCompOp::STMT_KW) || ctx.has(CodeCompOp::EXPR_KW)) {
     completeKeyword(ctx.getCompWord(), ctx.getCompOp(), this->consumer);
   }
-  if (ctx.has(CodeCompOp::VAR)) {
-    const bool inCmdArg = ctx.has(CodeCompOp::CMD_ARG);
+  if (ctx.has(CodeCompOp::VAR) || ctx.has(CodeCompOp::VAR_IN_CMD_ARG)) {
+    const bool inCmdArg = ctx.has(CodeCompOp::VAR_IN_CMD_ARG);
     completeVarName(ctx.getScope(), ctx.getCompWord(), inCmdArg, this->consumer);
   }
   if (ctx.has(CodeCompOp::EXPECT)) {
@@ -816,7 +816,7 @@ bool CodeCompleter::invoke(const CodeCompletionContext &ctx) {
   if (ctx.has(CodeCompOp::PARAM)) {
     completeParamName(ctx.getExtraWords(), ctx.getCompWord(), this->consumer);
   }
-  if (ctx.has(CodeCompOp::HOOK)) {
+  if (ctx.has(CodeCompOp::CMD_ARG)) {
     if (this->userDefinedComp) {
       const int s =
           this->userDefinedComp(*ctx.getLexer(), *ctx.getCmdNode(), ctx.getCompWord(),
@@ -832,11 +832,13 @@ bool CodeCompleter::invoke(const CodeCompletionContext &ctx) {
                           ctx.getCompWord(), this->consumer)) {
       return true;
     }
-    if (!completeSubcommand(this->pool, ctx.getScope(), *ctx.getCmdNode(), ctx.getCompWord(),
-                            this->consumer)) {
+    if (completeSubcommand(this->pool, ctx.getScope(), *ctx.getCmdNode(), ctx.getCompWord(),
+                           this->consumer)) {
+      return true;
+    }
+    if (const auto op = ctx.getFallbackOp(); hasFlag(op, CodeCompOp::FILE)) {
       const auto prefix = StringRef(ctx.getCompWord()).substr(ctx.getCompWordOffset());
-      TRY(completeFileName(this->logicalWorkingDir, prefix, ctx.getFallbackOp(), this->consumer,
-                           this->cancel));
+      TRY(completeFileName(this->logicalWorkingDir, prefix, op, this->consumer, this->cancel));
     }
   }
   return true;

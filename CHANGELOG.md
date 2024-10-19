@@ -32,6 +32,13 @@
 - now interrupt ``LineEditor#readLine`` method when receive signals
     - also call signal handler
 
+#### LSP
+
+- **Breaking Change**: change command/command-argument completion option handling
+    - remove ``arshd.commandCompletion``, ``arshd.commandArgumentCompletion`` options
+    - now always enable command/command-argument completions except for filename (also external command)
+    - add ``arshd.fileNameCompletion`` option for control filename completion
+
 #### Module
 
 - in ``repl.arsh`` module, set ``SIG_EXIT`` handler to ``SIGHUP`` for logout
