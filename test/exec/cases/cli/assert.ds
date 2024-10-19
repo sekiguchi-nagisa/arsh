@@ -72,7 +72,7 @@ binary expression \`<EXPR> is <TYPE>' is false
 $expect("$(ds -c 'assert ("") as Any is Float' 2>&1)", 1, $msg)
 
 $msg = "[runtime error]
-AssertionFailed: \`\"faf\".toFloat() is Float'
+Assertion Error: \`\"faf\".toFloat() is Float'
 binary expression \`<EXPR> is <TYPE>' is false
   <EXPR>: (invalid)
   <TYPE>: Float
