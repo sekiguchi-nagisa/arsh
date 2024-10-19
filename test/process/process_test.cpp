@@ -235,6 +235,11 @@ TEST(ANSITest, base) {
   ASSERT_EQ("abc0", screen.toString());
 
   screen = Screen();
+  line = "1\r\n2\r\n3\r\n\x1b[2A\x1b[0J";
+  screen.interpret(line.c_str(), line.size());
+  ASSERT_EQ("1\n2", screen.toString());
+
+  screen = Screen();
   line = "abcdef\x1b[2J";
   screen.interpret(line.c_str(), line.size());
   ASSERT_EQ("", screen.toString());

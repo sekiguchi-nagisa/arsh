@@ -487,25 +487,17 @@ void LineEditorObject::refreshLine(ARState &state, RenderingContext &ctx, bool r
    */
   std::string ab = "\x1b[?25l"; // hide cursor (from VT220 extension)
 
-  /* First step: clear all the lines used before. To do so start by
-   * going to the last row. */
+  /* move cursor original position and clear screen */
   char seq[64];
-  if (ctx.oldRenderedRows > ctx.oldCursorRows) {
-    const auto diff = ctx.oldRenderedRows - ctx.oldCursorRows;
-    lndebug("go down %u", diff);
-    snprintf(seq, std::size(seq), "\x1b[%uB", diff);
+  if (ctx.oldCursorRows > 1) { // set cursor original row position
+    const auto diff = ctx.oldCursorRows - 1;
+    lndebug("go up cursor: %u", diff);
+    snprintf(seq, std::size(seq), "\x1b[%uA", diff);
     ab += seq;
   }
-
-  /* Now for every row clear it, go up. */
-  for (int j = 0; j < static_cast<int>(ctx.oldRenderedRows) - 1; j++) {
-    lndebug("clear+up %d", j);
-    ab += "\r\x1b[0K\x1b[1A";
-  }
-
-  /* Clean the top line. */
+  /* Clean the top and bellow lines. */
   lndebug("clear");
-  ab += "\r\x1b[0K";
+  ab += "\r\x1b[0K\x1b[0J";
 
   /* adjust too long rendered lines */
   lndebug("scrolling: %s", ctx.scrolling ? "true" : "false");

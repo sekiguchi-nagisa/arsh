@@ -103,6 +103,8 @@ INIT:
                                               NEXT(); }
     "\x1b[" DECIMAL (";" DECIMAL)* "m"      { NEXT(); }
     "\x1b[H"                                { this->setCursor(); NEXT(); }
+    "\x1b[J"                                { this->clearFromDown(); NEXT(); }
+    "\x1b[0J"                               { this->clearFromDown(); NEXT(); }
     "\x1b[2J"                               { this->clear(); NEXT(); }
     "\x1b[0K"                               { this->clearLineFrom(); NEXT(); }
     "\x1b[2K"                               { this->clearLine(); NEXT(); }

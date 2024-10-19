@@ -498,7 +498,7 @@ TEST_F(InteractiveTest, lineEditorComp2) {
     ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "($true)\ntrue    tee     touch   \n"));
 
     this->send("\r");
-    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "($true)\n\n"));
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "($true)"));
     this->send("\r");
     ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "($true)\n: Bool = true\n" + PROMPT));
   }
@@ -512,19 +512,19 @@ TEST_F(InteractiveTest, lineEditorComp2) {
     this->send("\t");
     ASSERT_NO_FATAL_FAILURE(this->expect("> '$t'\ntrue    tee     touch   \n"));
     this->send("@"); // cancel and insert
-    ASSERT_NO_FATAL_FAILURE(this->expect("> '$t@'\n\n"));
+    ASSERT_NO_FATAL_FAILURE(this->expect("> '$t@'"));
 
     this->send("\t");
     ASSERT_NO_FATAL_FAILURE(this->expect("> '$t@'\ntrue    tee     touch   \n"));
     this->send(CTRL_W); // cancel and edit
-    ASSERT_NO_FATAL_FAILURE(this->expect("> '$t'\n\n"));
+    ASSERT_NO_FATAL_FAILURE(this->expect("> '$t'"));
 
     this->send("%\t");
     ASSERT_NO_FATAL_FAILURE(this->expect("> '$t%'\ntrue    tee     touch   \n"));
     this->send("\t");
     ASSERT_NO_FATAL_FAILURE(this->expect("> '$t%true'\ntrue    tee     touch   \n"));
     this->send(CTRL_C); // cancel comp
-    ASSERT_NO_FATAL_FAILURE(this->expect("> '$t%true'\n> \n"));
+    ASSERT_NO_FATAL_FAILURE(this->expect("> '$t%true'\n> "));
   }
 
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(""));
@@ -540,7 +540,7 @@ TEST_F(InteractiveTest, lineEditorComp2) {
     this->send(UP UP);
     ASSERT_NO_FATAL_FAILURE(this->expect("> ;tee\ntrue    tee     touch   \n"));
     this->send("2"); // cancel and insert
-    ASSERT_NO_FATAL_FAILURE(this->expect("> ;tee2\n\n"));
+    ASSERT_NO_FATAL_FAILURE(this->expect("> ;tee2"));
 
     this->send("\t");
     ASSERT_NO_FATAL_FAILURE(this->expect("> ;tee2\ntrue    tee     touch   \n"));
@@ -549,9 +549,9 @@ TEST_F(InteractiveTest, lineEditorComp2) {
     this->send(UP);
     ASSERT_NO_FATAL_FAILURE(this->expect("> ;tee2touch\ntrue    tee     touch   \n"));
     this->send(CTRL_W); // cancel and edit
-    ASSERT_NO_FATAL_FAILURE(this->expect("> ;\n\n"));
+    ASSERT_NO_FATAL_FAILURE(this->expect("> ;"));
     this->send(CTRL_W);
-    ASSERT_NO_FATAL_FAILURE(this->expect("> \n\n"));
+    ASSERT_NO_FATAL_FAILURE(this->expect("> "));
   }
 
   this->send(CTRL_D);
@@ -580,7 +580,7 @@ TEST_F(InteractiveTest, lineEditorComp3) {
     ASSERT_NO_FATAL_FAILURE(
         this->expect("> echo 20230907_バイタル\n20230907_バイタル   20230907_ラベル     \n"));
     this->send(CTRL_C);
-    ASSERT_NO_FATAL_FAILURE(this->expect("> echo 20230907_バイタル\n> \n"));
+    ASSERT_NO_FATAL_FAILURE(this->expect("> echo 20230907_バイタル\n> "));
   }
 
   this->send(CTRL_D);
@@ -634,7 +634,7 @@ SystemError: readLine failed, caused by `%s'
                      "51 52 53 54 55 56 57 58 59 60 61 62 63 64 65 66 67 68 6\n"));
 
     this->send("\t");
-    ASSERT_NO_FATAL_FAILURE(this->expect("> 12\n> \n\n", err));
+    ASSERT_NO_FATAL_FAILURE(this->expect("> 12\n> ", err));
   }
 
   this->send(CTRL_D);
@@ -674,16 +674,16 @@ TEST_F(InteractiveTest, lineEditorResize1) {
                                          "3456789"));
     this->changeWinSize({.rows = 20, .cols = 20});
     ASSERT_NO_FATAL_FAILURE(this->expect("> abcdefghijklmnopqr\n"
-                                         "stuvwxyz123456789\n\n"));
+                                         "stuvwxyz123456789"));
     this->send(CTRL_V);
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
     this->changeWinSize({.rows = 20, .cols = 30});
-    ASSERT_NO_FATAL_FAILURE(this->expect("> abcdefghijklmnopqrstuvwxyz12\n3456789\n\n"));
+    ASSERT_NO_FATAL_FAILURE(this->expect("> abcdefghijklmnopqrstuvwxyz12\n3456789"));
     this->send(CTRL_A);
-    ASSERT_NO_FATAL_FAILURE(this->expect("> abcdefghijklmnopqrstuvwxyz12\n3456789^A\n\n"));
+    ASSERT_NO_FATAL_FAILURE(this->expect("> abcdefghijklmnopqrstuvwxyz12\n3456789^A"));
 
     this->send(CTRL_C);
-    ASSERT_NO_FATAL_FAILURE(this->expect("> abcdefghijklmnopqrstuvwxyz12\n3456789^A\n> \n"));
+    ASSERT_NO_FATAL_FAILURE(this->expect("> abcdefghijklmnopqrstuvwxyz12\n3456789^A\n> "));
   }
 
   this->send(CTRL_D);
@@ -719,20 +719,20 @@ TEST_F(InteractiveTest, lineEditorResize2) {
                                          "00001   00005   00009   \n"
                                          "00002   00006   00010   \n"
                                          "00003   00007   \n"
-                                         "00004   00008   \n\n"));
+                                         "00004   00008   \n"));
 
     this->send("\t");
     ASSERT_NO_FATAL_FAILURE(this->expect("> 00001\n"
                                          "00001   00005   00009   \n"
                                          "00002   00006   00010   \n"
                                          "00003   00007   \n"
-                                         "00004   00008   \n\n"));
+                                         "00004   00008   \n"));
 
     this->changeWinSize({.rows = 80, .cols = 35});
     ASSERT_NO_FATAL_FAILURE(this->expect("> 00001\n"
                                          "00001   00004   00007   00010   \n"
                                          "00002   00005   00008   \n"
-                                         "00003   00006   00009   \n\n\n"));
+                                         "00003   00006   00009   \n"));
 
     this->changeWinSize({.rows = 2, .cols = 35});
     ASSERT_NO_FATAL_FAILURE(this->expect("> 00001\n"));
@@ -746,7 +746,7 @@ TEST_F(InteractiveTest, lineEditorResize2) {
                                          "rows 2-2/3\n"));
 
     this->send(CTRL_C);
-    ASSERT_NO_FATAL_FAILURE(this->expect("> 00002\n> \n\n"));
+    ASSERT_NO_FATAL_FAILURE(this->expect("> 00002\n> "));
   }
 
   this->send(CTRL_D);
