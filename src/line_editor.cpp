@@ -172,7 +172,7 @@ static int getCursorPosition(int ifd, int ofd) {
   int cols, rows;
 
   /* Report cursor location */
-  if (write(ofd, "\x1b[6n", 4) != 4) {
+  if (constexpr char data[] = "\x1b[6n"; write(ofd, data, std::size(data) - 1) != 4) {
     return -1;
   }
 
@@ -200,7 +200,7 @@ static int getCursorPosition(int ifd, int ofd) {
 
 /* Clear the screen. Used to handle ctrl+l */
 static void linenoiseClearScreen(int fd) {
-  if (write(fd, "\x1b[H\x1b[2J", 7) <= 0) {
+  if (constexpr char data[] = "\x1b[H\x1b[2J"; write(fd, data, std::size(data) - 1) <= 0) {
     /* nothing to do, just to avoid warning. */
   }
 }
@@ -208,7 +208,8 @@ static void linenoiseClearScreen(int fd) {
 /* Beep, used for completion when there is nothing to complete or when all
  * the choices were already shown. */
 static void linenoiseBeep(int fd) {
-  ssize_t r = write(fd, "\x07", strlen("\x07"));
+  constexpr char data[] = "\x07";
+  ssize_t r = write(fd, data, std::size(data) - 1);
   UNUSED(r);
   fsync(fd);
 }
@@ -244,8 +245,7 @@ static void checkProperty(CharWidthProperties &ps, int inFd, int outFd) {
     /**
      * restore pos and clear line
      */
-    const char *r = "\r\x1b[2K";
-    if (write(outFd, r, strlen(r)) == -1) {
+    if (constexpr char r[] = "\r\x1b[2K"; write(outFd, r, std::size(r) - 1) == -1) {
       return;
     }
     if (pos < 0) {
@@ -602,7 +602,8 @@ ssize_t LineEditorObject::editLine(ARState &state, RenderingContext &ctx) {
   }
   this->disableRawMode(this->inFd);
   if (!ctx.scrolling) {
-    ssize_t r = write(this->outFd, "\n", 1);
+    constexpr char data[] = "\n";
+    ssize_t r = write(this->outFd, data, std::size(data) - 1);
     UNUSED(r);
   }
   errno = errNum;
@@ -906,7 +907,8 @@ ssize_t LineEditorObject::editInRawMode(ARState &state, RenderingContext &ctx) {
       if (r && action->customActionType == CustomActionType::REPLACE_WHOLE_ACCEPT) {
         histRotate.revertAll();
         return this->accept(state, ctx);
-      } else if (state.hasError()) {
+      }
+      if (state.hasError()) {
         errno = EAGAIN;
         return -1;
       }
