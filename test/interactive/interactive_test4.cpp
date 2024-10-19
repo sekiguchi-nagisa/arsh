@@ -834,7 +834,7 @@ TEST_F(InteractiveTest, lineEditorInterrupt3) {
     this->handle.kill(SIGWINCH);
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
   }
-  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(210, WaitStatus::EXITED, "WINCH\n> AA\n\n"));
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(210, WaitStatus::EXITED, "WINCH\n> AA\n"));
 }
 
 TEST_F(InteractiveTest, lineEditorInterrupt4) {
@@ -862,7 +862,7 @@ TEST_F(InteractiveTest, lineEditorInterrupt4) {
     this->handle.kill(SIGWINCH);
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
   }
-  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(210, WaitStatus::EXITED, "WINCH\n> AAB\n\n"));
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(210, WaitStatus::EXITED, "WINCH\n> AAB\n"));
 }
 
 int main(int argc, char **argv) {
