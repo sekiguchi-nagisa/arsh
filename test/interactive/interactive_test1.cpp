@@ -139,7 +139,7 @@ TEST_F(InteractiveTest, tab1) {
     this->send("\t");
     ASSERT_NO_FATAL_FAILURE(this->expect("> $FALSE\nFALSE   False   \n"));
     this->send("\t\r");
-    ASSERT_NO_FATAL_FAILURE(this->expect("> $False\n\n"));
+    ASSERT_NO_FATAL_FAILURE(this->expect("> $False"));
     this->send("\r");
     ASSERT_NO_FATAL_FAILURE(this->expect("> $False\n: Bool = false\n> "));
   }
@@ -159,7 +159,7 @@ TEST_F(InteractiveTest, tab1) {
     this->send("\t");
     ASSERT_NO_FATAL_FAILURE(this->expect("> $SIGUSR1.\nSIGUSR1 SIGUSR2 \n"));
     this->send("\r");
-    ASSERT_NO_FATAL_FAILURE(this->expect("> $SIGUSR1.\n  name()\n"));
+    ASSERT_NO_FATAL_FAILURE(this->expect("> $SIGUSR1.\n  name()"));
     this->send("\r");
     ASSERT_NO_FATAL_FAILURE(this->expect("> $SIGUSR1.\n  name()\n: String = USR1\n> "));
   }
@@ -330,7 +330,7 @@ TEST_F(InteractiveTest, mlEdit2) { // edit op in multi-line mode
     this->send("$true" ESC_("b") CTRL_K "NONE" ESC_("<") CTRL_K);
     ASSERT_NO_FATAL_FAILURE(this->expect("> \n  $NONE"));
     this->send(DOWN CTRL_H);
-    ASSERT_NO_FATAL_FAILURE(this->expect("> $NONE\n"));
+    ASSERT_NO_FATAL_FAILURE(this->expect("> $NONE"));
     this->send("\r");
     ASSERT_NO_FATAL_FAILURE(this->expect("> $NONE\n: Nothing? = (invalid)\n> "));
   }
@@ -914,13 +914,13 @@ TEST_F(InteractiveTest, undoRotate2) {
     this->send("\t");
     ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "($tee)\ntrue    tee     touch   \n"));
     this->send("\r");
-    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "($tee)\n\n"));
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "($tee)"));
     this->send(CTRL_Z);
-    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "($t)\n\n"));
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "($t)"));
     this->send(ESC_("/"));
-    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "($tee)\n\n"));
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "($tee)"));
     this->send(CTRL_C);
-    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "($tee)\n" + PROMPT + "\n"));
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "($tee)\n" + PROMPT));
   }
 
   // completion with suffix space
@@ -941,13 +941,13 @@ TEST_F(InteractiveTest, undoRotate2) {
     ASSERT_NO_FATAL_FAILURE(
         this->expect("> (echo $SIGUSR2 )\nSIGUSR1 : Signal    SIGUSR2 : Signal    \n"));
     this->send("\r");
-    ASSERT_NO_FATAL_FAILURE(this->expect("> (echo $SIGUSR2 )\n\n"));
+    ASSERT_NO_FATAL_FAILURE(this->expect("> (echo $SIGUSR2 )"));
     this->send(CTRL_Z); // revert candidate insertion(include space),
-    ASSERT_NO_FATAL_FAILURE(this->expect("> (echo $SIGUSR)\n\n")); // still remain prefix
-    this->send(CTRL_Z);                                            // revert auto-inserted prefix
-    ASSERT_NO_FATAL_FAILURE(this->expect("> (echo $SIGU)\n\n"));
+    ASSERT_NO_FATAL_FAILURE(this->expect("> (echo $SIGUSR)")); // still remain prefix
+    this->send(CTRL_Z);                                        // revert auto-inserted prefix
+    ASSERT_NO_FATAL_FAILURE(this->expect("> (echo $SIGU)"));
     this->send(CTRL_C);
-    ASSERT_NO_FATAL_FAILURE(this->expect("> (echo $SIGU)\n> \n"));
+    ASSERT_NO_FATAL_FAILURE(this->expect("> (echo $SIGU)\n> "));
   }
 
   this->send(CTRL_D);

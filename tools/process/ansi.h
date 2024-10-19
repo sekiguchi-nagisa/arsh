@@ -137,6 +137,8 @@ public:
   // clear screen ops
   void clear();
 
+  void clearFromDown();
+
   /**
    * clear line from current cursor.
    */

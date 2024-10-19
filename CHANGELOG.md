@@ -3,6 +3,8 @@
 ## [0.35.1] - 2024-10-19
 
 - bugfix power assert ``is`` when expr is invalid value
+- fix unexpectedly appeared garbage lines in KDE ``yakuake`` terminal
+    - now correctly clear lines by using ``\x1b[0J`` sequence
 
 ## [0.35.0] - 2024-10-01
 

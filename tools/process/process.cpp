@@ -576,6 +576,18 @@ void Screen::clear() {
   this->maxUsedRows = 1;
 }
 
+void Screen::clearFromDown() {
+  const auto end = this->bufs.end();
+  for (auto iter = this->bufs.begin() + this->row + 1; iter != end; ++iter) {
+    auto &buf = *iter;
+    const auto size = buf.size();
+    buf.clear();
+    buf.resize(size, '\0');
+  }
+  this->maxUsedRows = 1;
+  this->updateMaxUsedRows();
+}
+
 void Screen::clearLineFrom() {
   auto &buf = this->bufs[this->row];
   for (unsigned int i = this->col; i < buf.size(); i++) {
