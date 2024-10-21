@@ -129,7 +129,7 @@ static bool readData(unsigned int index, int fd, const ProcHandle::ReadCallback 
   return readSize > 0;
 }
 
-void ProcHandle::readAll(int timeout, const ReadCallback &readCallback) const {
+void ProcHandle::readAll(int timeoutMSec, const ReadCallback &readCallback) const {
   struct pollfd pollfds[2]{};
   pollfds[0].fd = this->out();
   pollfds[0].events = POLLIN;
@@ -138,7 +138,7 @@ void ProcHandle::readAll(int timeout, const ReadCallback &readCallback) const {
 
   while (true) {
     constexpr unsigned int pollfdSize = std::size(pollfds);
-    int ret = poll(pollfds, pollfdSize, timeout);
+    int ret = poll(pollfds, pollfdSize, timeoutMSec);
     if (ret <= 0) {
       if (ret == -1 && (errno == EINTR || errno == EAGAIN)) {
         continue;

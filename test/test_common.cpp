@@ -141,7 +141,7 @@ std::pair<std::string, std::string> InteractiveShellBase::readAll() {
     this->resetScreen();
   }
   std::string err;
-  this->handle.readAll(this->timeout, [&](unsigned int index, const char *buf, unsigned int size) {
+  this->handle.readAll(this->timeoutMSec, [&](unsigned int index, const char *buf, unsigned int size) {
     if (index == 0) {
       this->screen.interpret(buf, size);
     } else {

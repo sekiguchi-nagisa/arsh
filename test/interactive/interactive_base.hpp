@@ -65,7 +65,7 @@ inline std::string initPrompt() {
 
 struct InteractiveTest : public InteractiveShellBase {
   InteractiveTest() : InteractiveShellBase(BIN_PATH, INTERACTIVE_TEST_WORK_DIR) {
-    this->timeout = 120;
+    this->timeoutMSec = 120;
     this->setPrompt(initPrompt());
   }
 

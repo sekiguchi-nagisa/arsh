@@ -238,37 +238,40 @@ TEST_F(InteractiveTest, cmdsub_ctrlz2) {
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
 
-  // launch new arsh (new process group)
-  this->sendLine("call $BIN_NAME --quiet --norc");
-  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "call $BIN_NAME --quiet --norc\n" + PROMPT));
+  {
+    auto cleanup = this->withTimeout(400);
 
-  const char *line = "var a = $(while(true){})";
-  this->sendLine(line);
-  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + line + "\n"));
-  std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    // launch new arsh (new process group)
+    this->sendLine("call $BIN_NAME --quiet --norc");
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "call $BIN_NAME --quiet --norc\n" + PROMPT));
 
-  // send CTRL_Z, but not stopped (due to ignore SIGTSTP)
-  this->send(CTRL_Z);
-  ASSERT_NO_FATAL_FAILURE(this->expect(ctrlZChar()));
-  std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    const char *line = "var a = $(while(true){})";
+    this->sendLine(line);
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + line + "\n"));
 
-  // send 'echo hello', but still wait output (not stopped)
-  this->sendLine("echo hello");
-  ASSERT_NO_FATAL_FAILURE(this->expect("echo hello\n"));
+    // send CTRL_Z, but not stopped (due to ignore SIGTSTP)
+    this->send(CTRL_Z);
+    ASSERT_NO_FATAL_FAILURE(this->expect(ctrlZChar()));
 
-  // send CTRL_C and terminated
-  this->send(CTRL_C);
+    // send 'echo hello', but still wait output (not stopped)
+    this->sendLine("echo hello");
+    ASSERT_NO_FATAL_FAILURE(this->expect("echo hello\n"));
 
-  std::string err = format(R"([runtime error]
+    // send CTRL_C and terminated
+    this->send(CTRL_C);
+
+    std::string err = format(R"([runtime error]
 SystemError: command substitution failed, caused by `%s'
     from (stdin):1 '<toplevel>()'
 )",
-                           strerror(EINTR));
-  ASSERT_NO_FATAL_FAILURE(this->expect(promptAfterCtrlC(PROMPT), err));
-  err = format("^\\[1\\] \\+ [0-9]+ %s  while\\(true\\)\\{\\}\n", strsignal(SIGINT));
-  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpectRegex("2", ": Int = 2", err));
-  this->send(CTRL_D);
-  ASSERT_NO_FATAL_FAILURE(this->expect("\n" + PROMPT));
+                             strerror(EINTR));
+    ASSERT_NO_FATAL_FAILURE(this->expect(promptAfterCtrlC(PROMPT), err));
+    err = format("^\\[1\\] \\+ [0-9]+ %s  while\\(true\\)\\{\\}\n", strsignal(SIGINT));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpectRegex("2", ": Int = 2", err));
+    this->send(CTRL_D);
+    ASSERT_NO_FATAL_FAILURE(this->expect("\n" + PROMPT));
+  }
+
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 1));
 }
 
@@ -472,9 +475,13 @@ TEST_F(InteractiveTest, changeFDSetting) {
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
 
-  std::string err = format("cat: .*: %s\n", strerror(EAGAIN));
-  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpectRegex(HELPER_PATH " nonblock-in && LANG=C cat - ",
-                                                       ": Bool = false", err));
+  {
+    auto cleanup = this->withTimeout(400);
+
+    std::string err = format("cat: .*: %s\n", strerror(EAGAIN));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpectRegex(
+        HELPER_PATH " nonblock-in && LANG=C cat - ", ": Bool = false", err));
+  }
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $? == 1"));
 
   // change stdin to non-blocking
@@ -485,7 +492,7 @@ TEST_F(InteractiveTest, changeFDSetting) {
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "cat\n"));
   std::this_thread::sleep_for(std::chrono::milliseconds(500));
   this->send(CTRL_C);
-  err = strsignal(SIGINT);
+  std::string err = strsignal(SIGINT);
   err += "\n";
   ASSERT_NO_FATAL_FAILURE(this->expect(promptAfterCtrlC(PROMPT), err));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 128 + SIGINT));

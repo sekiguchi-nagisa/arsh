@@ -129,7 +129,7 @@ protected:
   static constexpr unsigned int DEFAULT_WIN_ROW = 24;
   static constexpr unsigned int DEFAULT_WIN_COL = 200;
 
-  int timeout{80};
+  int timeoutMSec{80};
 
   ProcHandle handle;
 
@@ -172,13 +172,13 @@ public:
   }
 
   virtual std::pair<std::string, std::string> readAll() {
-    return this->handle.readAll(this->timeout);
+    return this->handle.readAll(this->timeoutMSec);
   }
 
-  auto withTimeout(int time) {
-    auto old = this->timeout;
-    this->timeout = time;
-    return arsh::finally([&, old] { this->timeout = old; });
+  auto withTimeout(int msec) {
+    auto old = this->timeoutMSec;
+    this->timeoutMSec = msec;
+    return arsh::finally([&, old] { this->timeoutMSec = old; });
   }
 
   void expectRegex(const std::string &out = "", const std::string &err = "") {
