@@ -1,16 +1,6 @@
 
 let _TERM_HOOKS : [typeof($TERM_HOOK!)]
 
-function _defaultHook() {
-    for hook in $_TERM_HOOKS {
-        try {
-            $hook()
-        } catch e {
-            $e.show()
-        }
-    }
-}
-
 function atexit(h : typeof($TERM_HOOK!)) {
     $_TERM_HOOKS.add($h)
     $TERM_HOOK = function() => {
