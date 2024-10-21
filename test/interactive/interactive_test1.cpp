@@ -496,7 +496,7 @@ TEST_F(InteractiveTest, killRing2) { // resize kill-ring
 
 TEST_F(InteractiveTest, history1) {
 #ifdef CODE_COVERAGE
-  this->timeout = 500;
+  this->timeoutMSec = 500;
 #endif
 
   this->invoke("--quiet", "--rcfile", INTERACTIVE_TEST_WORK_DIR "/rcfile3");
@@ -532,7 +532,7 @@ TEST_F(InteractiveTest, history1) {
 
 TEST_F(InteractiveTest, history2) {
 #ifdef CODE_COVERAGE
-  this->timeout = 500;
+  this->timeoutMSec = 500;
 #endif
 
   this->invoke("--quiet", "--rcfile", INTERACTIVE_TEST_WORK_DIR "/rcfile3");
@@ -565,7 +565,7 @@ TEST_F(InteractiveTest, history2) {
 
 TEST_F(InteractiveTest, history3) {
 #ifdef CODE_COVERAGE
-  this->timeout = 500;
+  this->timeoutMSec = 500;
 #endif
 
   this->invoke("--quiet", "--rcfile", INTERACTIVE_TEST_WORK_DIR "/rcfile3");
@@ -603,7 +603,7 @@ TEST_F(InteractiveTest, history3) {
 
 TEST_F(InteractiveTest, history4) {
 #ifdef CODE_COVERAGE
-  this->timeout = 500;
+  this->timeoutMSec = 500;
 #endif
 
   this->invoke("--quiet", "--rcfile", INTERACTIVE_TEST_WORK_DIR "/rcfile3");
