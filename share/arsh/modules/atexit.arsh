@@ -12,10 +12,15 @@ function _defaultHook() {
 }
 
 function atexit(h : typeof($TERM_HOOK!)) {
-    if !$TERM_HOOK || $TERM_HOOK! != $_defaultHook {
+    $_TERM_HOOKS.add($h)
+    $TERM_HOOK = function() => {
+        for hook in $_TERM_HOOKS.reverse() {
+            try {
+                $hook()
+            } catch e {
+                $e.show()
+            }
+        }
         $_TERM_HOOKS.clear()
     }
-    $TERM_HOOK = $_defaultHook
-    $h == $_defaultHook && return
-    $_TERM_HOOKS.add($h)
 }

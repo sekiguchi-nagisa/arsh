@@ -42,6 +42,8 @@
 #### Module
 
 - in ``repl.arsh`` module, set ``SIG_EXIT`` handler to ``SIGHUP`` for logout
+- **Breaking Change**: in ``atexit.arsh`` module, change interface of ``atexit`` function corresponding to ``TERM_HOOK``
+- change termination handler invocation order of ``atexit`` function. now reverse order of registration
 
 ## [0.35.1] - 2024-10-19
 

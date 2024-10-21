@@ -1,0 +1,24 @@
+# RUN: exec $cmd $self
+# STATUS: 0
+
+# for atexit module
+
+source ../../../../share/arsh/modules/atexit.arsh
+
+$atexit(function()=> echo atexit: 0)
+
+$atexit(function() => {
+    echo atexit: 1
+    $atexit(function()=> echo atexit: 3)
+})
+
+$atexit(function() => echo atexit: 2)
+
+# CHECK: atexit: 2
+# CHECK: atexit: 1
+# CHECK: atexit: 0
+
+# CHECKERR: InvalidOperationError: cannot modify array object during iteration
+# CHECKERR_RE:     from .+/share/arsh/modules/atexit\.arsh:15 'function atexit\(\)'
+# CHECKERR_RE:     from .+/test/exec/cases/output/term_hook3\.ds:12 'function \(\)'
+# CHECKERR_RE:     from .+/share/arsh/modules/atexit\.arsh:19 'function \(\)'
