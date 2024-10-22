@@ -25,6 +25,7 @@
 - **Breaking Change**: overhaul ``TERM_HOOK`` invocation
     - change ``TERM_HOOK`` interface, now do not pass extra information (exit status, termination kind)
     - also remove ``ON_ASSERT``, ``ON_ERR``, ``ON_EXIT`` constants
+    - now allow signal handler invocation
 - send ``SIGHUP`` to manged jobs before process termination (even if subshell)
 
 #### Builtin

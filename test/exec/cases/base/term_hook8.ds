@@ -1,9 +1,9 @@
 
-#$test($result = 'EXIT', $status = 100, $lineNum = 13, $out = $'receive error: 100\n')
+#$test($result = 'EXIT', $status = 100, $lineNum = 13, $out = $'')
 
 function f() {
     var s = $?
-    $SIGTERM.kill($$)
+    $SIGTERM.kill($$)  # handle signal even if term hook
     echo receive error: $s
 }
 

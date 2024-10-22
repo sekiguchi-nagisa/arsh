@@ -1405,7 +1405,6 @@ static NativeCode initTermHookTrampoline() {
 static const auto termHookTrampoline = initTermHookTrampoline();
 
 bool VM::kickTermHook(ARState &state, Value &&func) {
-  state.canHandleSignal = false;
   state.stack.reserve(2);
   state.stack.push(state.getGlobal(BuiltinVarOffset::EXIT_STATUS));
   state.stack.push(std::move(func)); // () -> Void
@@ -2330,11 +2329,10 @@ bool VM::mainLoop(ARState &state) {
         syncWinSize(state, -1, nullptr);
       }
       if (auto handler = state.sigVector.lookup(sigNum); handler != nullptr) {
-        state.canHandleSignal = false;
         if (!kickSignalHandler(state, sigNum, handler)) {
-          state.canHandleSignal = true;
           vmerror;
         }
+        state.canHandleSignal = false; // disable signal handling in signal trampoline
       }
     }
     vmnext;
