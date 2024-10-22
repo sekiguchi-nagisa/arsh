@@ -453,7 +453,7 @@ TEST_F(InteractiveTest, winSize2) {
 }
 
 TEST_F(InteractiveTest, moduleError1) {
-  this->invokeImpl({"--quiet", "--norc"}, true);
+  this->invokeImpl({"--quiet", "--norc"}, 200, true);
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
 
