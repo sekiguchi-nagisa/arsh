@@ -147,21 +147,20 @@ public:
   template <typename... T>
   void invoke(T &&...args) {
     std::vector<std::string> values = {std::forward<T>(args)...};
-    this->invokeImpl(values);
-    auto sleepTime = std::chrono::milliseconds(100);
+    int sleepTimeMSec = 100;
     switch (arsh::platform::platform()) {
     case arsh::platform::PlatformType::DARWIN:
     case arsh::platform::PlatformType::CYGWIN:
     case arsh::platform::PlatformType::MSYS:
-      sleepTime = std::chrono::milliseconds(200);
+      sleepTimeMSec = 200;
       break;
     default:
       break;
     }
-    std::this_thread::sleep_for(sleepTime);
+    this->invokeImpl(values, sleepTimeMSec);
   }
 
-  void invokeImpl(const std::vector<std::string> &args, bool mergeErrToOut = false);
+  void invokeImpl(const std::vector<std::string> &args, int sleepMSec = 200, bool mergeErrToOut = false);
 
   void addEnv(const char *name, const char *value) { this->envMap.emplace(name, value); }
 

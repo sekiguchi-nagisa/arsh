@@ -128,7 +128,7 @@ TEST_F(InteractiveTest, standardInput) {
 }
 
 TEST_F(InteractiveTest, rc1) {
-  this->invoke("--quiet", "--rcfile", INTERACTIVE_TEST_WORK_DIR "/rcfile1");
+  this->invokeImpl({"--quiet", "--rcfile", INTERACTIVE_TEST_WORK_DIR "/rcfile1"}, 400);
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $IS_REPL"));
@@ -137,14 +137,14 @@ TEST_F(InteractiveTest, rc1) {
 }
 
 TEST_F(InteractiveTest, rc2) {
-  this->invoke("--quiet", "--rcfile", INTERACTIVE_TEST_WORK_DIR "/rcfile2");
+  this->invokeImpl({"--quiet", "--rcfile", INTERACTIVE_TEST_WORK_DIR "/rcfile2"}, 400);
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
   this->send(CTRL_D);
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(10, WaitStatus::EXITED, "\n"));
 }
 
 TEST_F(InteractiveTest, rc3) {
-  this->invoke("--quiet", "--rcfile", INTERACTIVE_TEST_WORK_DIR "/faiurehfianf325d");
+  this->invokeImpl({"--quiet", "--rcfile", INTERACTIVE_TEST_WORK_DIR "/faiurehfianf325d"}, 400);
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $? == 0"));
@@ -154,14 +154,14 @@ TEST_F(InteractiveTest, rc3) {
 }
 
 TEST_F(InteractiveTest, rc4) {
-  this->invoke("--quiet", "--rcfile", ".");
+  this->invokeImpl({"--quiet", "--rcfile", "."}, 400);
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT, "arsh: cannot load file: ., by `Is a directory'\n"));
   this->send(CTRL_D);
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
 }
 
 TEST_F(InteractiveTest, rc5) {
-  this->invoke("--quiet", "--rcfile", INTERACTIVE_TEST_WORK_DIR "/rcfile1");
+  this->invokeImpl({"--quiet", "--rcfile", INTERACTIVE_TEST_WORK_DIR "/rcfile1"}, 400);
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("var a = $(shctl module)"));
@@ -176,7 +176,7 @@ TEST_F(InteractiveTest, rc5) {
 }
 
 TEST_F(InteractiveTest, rc6) {
-  this->invoke("--quiet", "--rcfile", INTERACTIVE_TEST_WORK_DIR "/rcfile1");
+  this->invokeImpl({"--quiet", "--rcfile", INTERACTIVE_TEST_WORK_DIR "/rcfile1"}, 400);
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $IS_REPL"));
@@ -189,7 +189,7 @@ TEST_F(InteractiveTest, rc6) {
 
 TEST_F(InteractiveTest, rc7) {
   this->addEnv("XDG_CONFIG_HOME", INTERACTIVE_TEST_WORK_DIR);
-  this->invoke("--quiet");
+  this->invokeImpl({"--quiet"}, 400);
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(

@@ -116,7 +116,8 @@ int Extractor::extract(const char *value) {
 // ##     InteractiveBase     ##
 // #############################
 
-void InteractiveBase::invokeImpl(const std::vector<std::string> &args, bool mergeErrToOut) {
+void InteractiveBase::invokeImpl(const std::vector<std::string> &args, int sleepMSec,
+                                 bool mergeErrToOut) {
   termios term; // NOLINT
   arsh::xcfmakesane(term);
   auto builder = ProcBuilder{this->binPath.c_str()}
@@ -134,6 +135,7 @@ void InteractiveBase::invokeImpl(const std::vector<std::string> &args, bool merg
   if (mergeErrToOut) {
     this->handle.closeErr();
   }
+  std::this_thread::sleep_for(std::chrono::milliseconds(sleepMSec));
 }
 
 std::pair<std::string, std::string> InteractiveShellBase::readAll() {
@@ -141,13 +143,14 @@ std::pair<std::string, std::string> InteractiveShellBase::readAll() {
     this->resetScreen();
   }
   std::string err;
-  this->handle.readAll(this->timeoutMSec, [&](unsigned int index, const char *buf, unsigned int size) {
-    if (index == 0) {
-      this->screen.interpret(buf, size);
-    } else {
-      err.append(buf, size);
-    }
-  });
+  this->handle.readAll(this->timeoutMSec,
+                       [&](unsigned int index, const char *buf, unsigned int size) {
+                         if (index == 0) {
+                           this->screen.interpret(buf, size);
+                         } else {
+                           err.append(buf, size);
+                         }
+                       });
   return {this->screen.toString(), std::move(err)};
 }
 
