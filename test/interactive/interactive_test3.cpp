@@ -283,7 +283,7 @@ TEST_F(InteractiveTest, cmdsub_interactive) {
   // launch new arsh with force interactive
   const char *line = "var aa = $(call $BIN_NAME -i --quiet --norc)";
   this->sendLine(line);
-  std::this_thread::sleep_for(std::chrono::milliseconds(200));
+  std::this_thread::sleep_for(std::chrono::milliseconds(400));
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + line + "\n" + PROMPT));
 
   line = "echo hello world";
