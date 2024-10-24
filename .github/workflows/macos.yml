@@ -76,3 +76,26 @@ jobs:
         run: |
           cd build
           ctest -j4 --output-on-failure
+
+  build_on_mac_15:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: prepare
+        run: brew install ninja
+      - name: configure
+        run: |
+          export SDKROOT="$(xcrun --sdk macosx --show-sdk-path)"
+          mkdir build
+          cd build
+          cmake .. -G Ninja -DUSE_EXTRA_TEST=on
+      - name: build
+        run: |
+          cd build
+          ninja
+          sudo ninja install
+          ./arsh ../scripts/copy_mod4extra.ds
+      - name: test
+        run: |
+          cd build
+          ctest -j4 --output-on-failure
