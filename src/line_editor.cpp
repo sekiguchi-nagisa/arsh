@@ -601,11 +601,9 @@ ssize_t LineEditorObject::editLine(ARState &state, RenderingContext &ctx) {
     }
   }
   this->disableRawMode(this->inFd);
-  if (!ctx.scrolling) {
-    constexpr char data[] = "\n";
-    ssize_t r = write(this->outFd, data, std::size(data) - 1);
-    UNUSED(r);
-  }
+  constexpr char data[] = "\n";
+  ssize_t r = write(this->outFd, data, std::size(data) - 1);
+  UNUSED(r);
   errno = errNum;
   return count;
 }
