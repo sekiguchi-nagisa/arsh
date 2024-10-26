@@ -593,17 +593,21 @@ ssize_t LineEditorObject::editLine(ARState &state, RenderingContext &ctx) {
 
   const ssize_t count = this->editInRawMode(state, ctx);
   const int errNum = errno;
+  bool putNewline = true;
   if (count == -1 && errNum != 0) {
     if (ctx.scrolling) {
       linenoiseClearScreen(this->inFd);
+      putNewline = false;
     } else if (ctx.buf.moveCursorToEndOfBuf()) {
       this->refreshLine(state, ctx, false);
     }
   }
   this->disableRawMode(this->inFd);
-  constexpr char data[] = "\n";
-  ssize_t r = write(this->outFd, data, std::size(data) - 1);
-  UNUSED(r);
+  if (putNewline) {
+    constexpr char data[] = "\n";
+    ssize_t r = write(this->outFd, data, std::size(data) - 1);
+    UNUSED(r);
+  }
   errno = errNum;
   return count;
 }
