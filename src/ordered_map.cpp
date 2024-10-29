@@ -22,6 +22,76 @@
 
 namespace arsh {
 
+// ###########################
+// ##     OrderedMapKey     ##
+// ###########################
+
+bool OrderedMapKey::equals(const Value &other) const {
+  if (is<StringRef>(this->value)) {
+    assert(other.hasStrRef());
+    return get<StringRef>(this->value) == other.asStrRef();
+  }
+  assert(is<std::reference_wrapper<const Value>>(this->value));
+  auto &v = get<std::reference_wrapper<const Value>>(this->value).get();
+  return v.equals(other);
+}
+
+static uint64_t simpleHash(uint64_t value) {
+  uint64_t ret = UINT64_MAX;
+  rapid_mum(&value, &ret);
+  return ret;
+}
+
+unsigned int OrderedMapKey::hash(uint64_t seed) const {
+  bool isStr = false;
+  uint64_t u64 = 0;
+  const void *ptr = nullptr;
+  size_t size = 0;
+
+  if (is<StringRef>(this->value)) {
+    auto &ref = get<StringRef>(this->value);
+    ptr = ref.data();
+    size = ref.size();
+    isStr = true;
+  } else {
+    assert(is<std::reference_wrapper<const Value>>(this->value));
+    auto &v = get<std::reference_wrapper<const Value>>(this->value).get();
+    switch (v.kind()) {
+    case ValueKind::BOOL:
+      u64 = v.asBool() ? 1 : 0;
+      break;
+    case ValueKind::SIG:
+      u64 = v.asSig();
+      break;
+    case ValueKind::INT:
+      u64 = v.asInt();
+      break;
+    case ValueKind::FLOAT:
+      u64 = doubleToBits(v.asFloat());
+      break;
+    default:
+      if (v.hasStrRef()) {
+        auto ref = v.asStrRef();
+        ptr = ref.data();
+        size = ref.size();
+        isStr = true;
+      } else {
+        assert(v.isObject());
+        u64 = static_cast<int64_t>(reinterpret_cast<uintptr_t>(v.get()));
+      }
+      break;
+    }
+  }
+
+  uint64_t hash;
+  if (isStr) {
+    hash = rapidhash_withSeed(ptr, size, seed);
+  } else {
+    hash = simpleHash(u64);
+  }
+  return static_cast<unsigned int>(hash);
+}
+
 // ###############################
 // ##     OrderedMapEntries     ##
 // ###############################
@@ -73,59 +143,13 @@ unsigned int OrderedMapEntries::compact() {
 // ##     OrderedMapObject     ##
 // ##############################
 
-static uint64_t simplehash(uint64_t value) {
-  uint64_t ret = UINT64_MAX;
-  rapid_mum(&value, &ret);
-  return ret;
-}
-
-static unsigned int hash(const Value &value, uint64_t seed) {
-  bool isStr = false;
-  uint64_t u64 = 0;
-  const void *ptr = nullptr;
-  size_t size = 0;
-  switch (value.kind()) {
-  case ValueKind::BOOL:
-    u64 = value.asBool() ? 1 : 0;
-    break;
-  case ValueKind::SIG:
-    u64 = value.asSig();
-    break;
-  case ValueKind::INT:
-    u64 = value.asInt();
-    break;
-  case ValueKind::FLOAT:
-    u64 = doubleToBits(value.asFloat());
-    break;
-  default:
-    if (value.hasStrRef()) {
-      auto ref = value.asStrRef();
-      ptr = ref.data();
-      size = ref.size();
-      isStr = true;
-    } else {
-      assert(value.isObject());
-      u64 = static_cast<int64_t>(reinterpret_cast<uintptr_t>(value.get()));
-    }
-    break;
-  }
-
-  uint64_t hash;
-  if (isStr) {
-    hash = rapidhash_withSeed(ptr, size, seed);
-  } else {
-    hash = simplehash(u64);
-  }
-  return static_cast<unsigned int>(hash);
-}
-
 std::pair<int, bool> OrderedMapObject::insert(const Value &key, Value &&value) {
   if (unlikely(!this->buckets)) {
     this->buckets = std::make_unique<Bucket[]>(this->bucketLen.capacity());
   }
 
   ProbeState state; // NOLINT
-  if (this->probeBuckets(key, state)) {
+  if (this->probeBuckets(OrderedMapKey(key), state)) {
     int index = this->buckets[state.bucketIndex].entryIndex;
     assert(index != -1);
     return {index, false};
@@ -192,7 +216,7 @@ OrderedMapEntries::Entry OrderedMapObject::remove(const Value &key) {
   }
 
   ProbeState state; // NOLINT
-  if (!this->probeBuckets(key, state)) {
+  if (!this->probeBuckets(OrderedMapKey(key), state)) {
     return {};
   }
 
@@ -228,13 +252,8 @@ void OrderedMapObject::clear() {
   this->entries.clear();
 }
 
-bool OrderedMapObject::probeBuckets(const Value &key, ProbeState &state) const {
-  const auto keyHash = hash(key, this->seed);
-  return this->probeBuckets(key, keyHash, state);
-}
-
-bool OrderedMapObject::probeBuckets(const Value &key, unsigned int keyHash,
-                                    ProbeState &state) const {
+bool OrderedMapObject::probeBuckets(const OrderedMapKey &key, ProbeState &state) const {
+  const unsigned int keyHash = key.hash(this->seed);
   unsigned int bucketIndex = this->bucketLen.toBucketIndex(keyHash);
   int dist = 0;
   bool found = false;

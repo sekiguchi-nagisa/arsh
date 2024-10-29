@@ -666,10 +666,8 @@ static bool lookupUdc(const ARState &state, const ModType &modType, const char *
   return false;
 }
 
-ResolvedCmd CmdResolver::operator()(const ARState &state, const Value &name,
+ResolvedCmd CmdResolver::operator()(const ARState &state, const StringRef ref,
                                     const ModType *modType) const {
-  const StringRef ref = name.asStrRef();
-
   // first, check user-defined command
   if (hasFlag(this->resolveOp, Op::FROM_UDC)) {
     const auto fqn = hasFlag(this->resolveOp, Op::FROM_FQN_UDC) ? ref.find('\0') : StringRef::npos;
@@ -715,7 +713,7 @@ ResolvedCmd CmdResolver::operator()(const ARState &state, const Value &name,
   // resolve dynamic registered user-defined command
   if (hasFlag(this->resolveOp, Op::FROM_DYNA_UDC)) {
     auto &map = typeAs<OrderedMapObject>(state.getGlobal(BuiltinVarOffset::DYNA_UDCS));
-    if (const auto retIndex = map.lookup(name); retIndex != -1) {
+    if (const auto retIndex = map.lookup(OrderedMapKey(ref)); retIndex != -1) {
       auto *obj = map[retIndex].getValue().get();
       assert(isa<FuncObject>(*obj) || isa<ClosureObject>(*obj));
       return ResolvedCmd::fromCmdObj(obj);
@@ -877,7 +875,7 @@ bool VM::prepareSubCommand(ARState &state, const ModType &modType, ObjPtr<ArrayO
 
 bool VM::callCommand(ARState &state, CmdResolver resolver, ObjPtr<ArrayObject> &&argvObj,
                      Value &&redirConfig, CmdCallAttr attr) {
-  const auto cmd = resolver(state, argvObj->getValues()[0]);
+  const auto cmd = resolver(state, argvObj->getValues()[0].asStrRef());
   return callCommand(state, cmd, std::move(argvObj), std::move(redirConfig), attr);
 }
 
@@ -1068,10 +1066,9 @@ VM::BuiltinCmdResult VM::builtinCommand(ARState &state, ObjPtr<ArrayObject> &&ar
   unsigned int successCount = 0;
   int errNum = 0;
   for (; index < argc; index++) {
-    const auto &cmdName = arrayObj.getValues()[index];
-    const auto ref = cmdName.asStrRef();
+    const auto ref = arrayObj.getValues()[index].asStrRef();
     auto cmd = CmdResolver(CmdResolver::Op::NO_FALLBACK | CmdResolver::Op::FROM_FQN_UDC,
-                           FilePathCache::SearchOp::DIRECT_SEARCH)(state, cmdName);
+                           FilePathCache::SearchOp::DIRECT_SEARCH)(state, ref);
     switch (cmd.kind()) {
     case ResolvedCmd::USER_DEFINED:
     case ResolvedCmd::MODULE: {

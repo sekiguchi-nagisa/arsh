@@ -1482,7 +1482,7 @@ ARSH_METHOD module_fullname(RuntimeContext &ctx) {
 
   CHECK_MOD_LAYOUT(LOCAL(0));
   auto &type = ctx.typePool.get(LOCAL(0).getTypeID());
-  auto &cmdName = LOCAL(1);
+  auto cmdName = LOCAL(1).asStrRef();
   assert(type.isModType());
   auto &modType = cast<ModType>(type);
   auto path = resolveFullCommandName(ctx, cmdName, modType);

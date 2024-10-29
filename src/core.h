@@ -221,13 +221,12 @@ ObjPtr<FuncObject> loadExprAsFunc(ARState &state, StringRef expr, const ModType 
 /**
  * resolve fully qualified command name
  * @param state
- * @param name
- * must be String
+ * @param ref
  * @param modType
  * @return
  * if not resolved, return empty string
  */
-std::string resolveFullCommandName(const ARState &state, const Value &name, const ModType &modType,
+std::string resolveFullCommandName(const ARState &state, StringRef ref, const ModType &modType,
                                    bool udcOnly = false);
 
 /**

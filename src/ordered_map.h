@@ -21,6 +21,20 @@
 
 namespace arsh {
 
+class OrderedMapKey {
+private:
+  Union<std::reference_wrapper<const Value>, StringRef> value;
+
+public:
+  explicit OrderedMapKey(StringRef key) : value(key) {}
+
+  explicit OrderedMapKey(const Value &key) : value(std::cref(key)) {}
+
+  bool equals(const Value &other) const;
+
+  unsigned int hash(uint64_t seed) const;
+};
+
 class OrderedMapEntries {
 public:
   class Entry {
@@ -207,7 +221,7 @@ public:
    * if not found, return -1.
    * otherwise, return entry index
    */
-  int lookup(const Value &key) const {
+  int lookup(const OrderedMapKey &key) const {
     if (this->bucketLen.size() == 0) {
       return -1;
     }
@@ -217,6 +231,8 @@ public:
     }
     return this->buckets[state.bucketIndex].entryIndex;
   }
+
+  int lookup(const Value &key) const { return this->lookup(OrderedMapKey(key)); }
 
   /**
    * remove existing entry
@@ -257,9 +273,7 @@ private:
     int dist;
   };
 
-  bool probeBuckets(const Value &key, ProbeState &state) const;
-
-  bool probeBuckets(const Value &key, unsigned int keyHash, ProbeState &state) const;
+  bool probeBuckets(const OrderedMapKey &key, ProbeState &state) const;
 
   void insertEntryIndex(unsigned int entryIndex, const ProbeState &state);
 

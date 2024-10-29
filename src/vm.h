@@ -412,13 +412,12 @@ public:
   /**
    *
    * @param state
-   * @param cmdName
-   * must be String
+   * @param ref
    * @param modType
    * if specified USE_FQN, always ignore
    * @return
    */
-  ResolvedCmd operator()(const ARState &state, const Value &cmdName,
+  ResolvedCmd operator()(const ARState &state, StringRef ref,
                          const ModType *modType = nullptr) const;
 };
 

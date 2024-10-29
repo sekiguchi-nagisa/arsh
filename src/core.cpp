@@ -472,13 +472,16 @@ public:
 
 static Value getFullNameFromTempMod(const ARState &state, const unsigned int temModIndex,
                                     const std::string &name) {
-  auto cmdName = Value::createStr(name);
+  Value cmdName;
   const auto modId = state.tempModScope[temModIndex]->modId;
   if (auto *modType = state.typePool.getModTypeById(modId)) {
-    auto retName = resolveFullCommandName(state, cmdName, *modType, true);
+    auto retName = resolveFullCommandName(state, name, *modType, true);
     if (!retName.empty()) {
       cmdName = Value::createStr(std::move(retName));
     }
+  }
+  if (!cmdName) {
+    cmdName = Value::createStr(name);
   }
   return cmdName;
 }
@@ -776,14 +779,13 @@ ObjPtr<FuncObject> loadExprAsFunc(ARState &state, StringRef expr, const ModType 
   return nullptr;
 }
 
-std::string resolveFullCommandName(const ARState &state, const Value &name, const ModType &modType,
+std::string resolveFullCommandName(const ARState &state, StringRef ref, const ModType &modType,
                                    const bool udcOnly) {
   auto op = CmdResolver::Op::FROM_FQN_UDC;
   if (!udcOnly) {
     setFlag(op, CmdResolver::Op::NO_FALLBACK);
   }
-  const auto cmd = CmdResolver(op, FilePathCache::SearchOp::DIRECT_SEARCH)(state, name, &modType);
-  StringRef ref = name.asStrRef();
+  const auto cmd = CmdResolver(op, FilePathCache::SearchOp::DIRECT_SEARCH)(state, ref, &modType);
   switch (cmd.kind()) {
   case ResolvedCmd::USER_DEFINED:
   case ResolvedCmd::MODULE: {
