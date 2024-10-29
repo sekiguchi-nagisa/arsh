@@ -34,6 +34,7 @@ DEFINE_HIGHLIGHT_STYLE(monokai_dimmed) {
   constexpr auto TYPE = ValidRule("#9B0000");
   constexpr auto TEXT = ValidRule("#C5C8C6");
   constexpr auto BG = ValidRule("bg:#1E1E1E");
+  constexpr auto ERR = ValidRule("#f44747");
 
   return {
       {HighlightTokenClass::COMMENT, COMMENT},   {HighlightTokenClass::KEYWORD, KEYWORD},
@@ -44,6 +45,7 @@ DEFINE_HIGHLIGHT_STYLE(monokai_dimmed) {
       {HighlightTokenClass::VARIABLE, VAR},      {HighlightTokenClass::TYPE, TYPE},
       {HighlightTokenClass::MEMBER, PARAM},      {HighlightTokenClass::ATTRIBUTE, KEYWORD},
       {HighlightTokenClass::FOREGROUND_, TEXT},  {HighlightTokenClass::BACKGROUND_, BG},
+      {HighlightTokenClass::ERROR_, ERR},
   };
 }
 

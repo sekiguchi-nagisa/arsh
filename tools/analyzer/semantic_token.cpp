@@ -101,6 +101,7 @@ static Optional<SemanticTokenTypes> toTokenType(HighlightTokenClass tokenClass) 
     return SemanticTokenTypes::property_;
   case HighlightTokenClass::ATTRIBUTE:
     return SemanticTokenTypes::decorator_;
+  case HighlightTokenClass::ERROR_:
   case HighlightTokenClass::FOREGROUND_:
   case HighlightTokenClass::BACKGROUND_:
   case HighlightTokenClass::LINENO_:

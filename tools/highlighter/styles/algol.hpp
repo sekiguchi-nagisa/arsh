@@ -27,11 +27,13 @@ DEFINE_HIGHLIGHT_STYLE(algol) {
   constexpr auto STRING = ValidRule(" italic #666");
   constexpr auto VAR = ValidRule("bold italic #666");
   constexpr auto BG = ValidRule("bg:#ffffff");
+  constexpr auto ERR = ValidRule("border:#ff0000");
 
   return {
       {HighlightTokenClass::COMMENT, COMMENT}, {HighlightTokenClass::KEYWORD, KEYWORD},
       {HighlightTokenClass::STRING, STRING},   {HighlightTokenClass::VARIABLE, VAR},
       {HighlightTokenClass::TYPE, VAR},        {HighlightTokenClass::BACKGROUND_, BG},
+      {HighlightTokenClass::ERROR_, ERR},
   };
 }
 

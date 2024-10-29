@@ -33,6 +33,7 @@ DEFINE_HIGHLIGHT_STYLE(colorful) {
   constexpr auto NUMBER = ValidRule("bold #60E");
   constexpr auto TYPE = ValidRule("bold #B06");
   constexpr auto BG = ValidRule("bg:#ffffff");
+  constexpr auto ERR = ValidRule("#F00 bg:#FAA");
 
   return {
       {HighlightTokenClass::COMMENT, COMMENT},   {HighlightTokenClass::KEYWORD, KEYWORD},
@@ -41,6 +42,7 @@ DEFINE_HIGHLIGHT_STYLE(colorful) {
       {HighlightTokenClass::COMMAND, FUNC},      {HighlightTokenClass::REDIRECT, OPERATOR},
       {HighlightTokenClass::VARIABLE, VAR},      {HighlightTokenClass::TYPE, TYPE},
       {HighlightTokenClass::FOREGROUND_, TEXT},  {HighlightTokenClass::BACKGROUND_, BG},
+      {HighlightTokenClass::ERROR_, ERR},
   };
 }
 

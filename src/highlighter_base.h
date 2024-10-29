@@ -39,6 +39,7 @@ namespace arsh {
   OP(TYPE, "type")                                                                                 \
   OP(MEMBER, "member")                                                                             \
   OP(ATTRIBUTE, "attribute")                                                                       \
+  OP(ERROR_, "error")           /* pseudo token class for error */                                 \
   OP(FOREGROUND_, "foreground") /* pseudo token class for foreground (text) color */               \
   OP(BACKGROUND_, "background") /* pseudo token class for background color */                      \
   OP(LINENO_, "lineno")         /* pseudo token class for line number */
