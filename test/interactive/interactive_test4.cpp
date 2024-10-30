@@ -613,6 +613,7 @@ SystemError: readLine failed, caused by `%s'
 
   {
     auto cleanup = this->reuseScreen();
+    auto cleanup2 = this->withTimeout(300);
     this->send("\t");
     ASSERT_NO_FATAL_FAILURE(
         this->expect("> 12\n"

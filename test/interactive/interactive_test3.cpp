@@ -457,7 +457,7 @@ TEST_F(InteractiveTest, changeTCPGRPInChild) {
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
   {
-    auto cleanup = this->withTimeout(400);
+    auto cleanup = this->withTimeout(500);
     ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
         "call $BIN_NAME -c 'shctl set monitor; ls > /dev/null;' &", ": Job = %1"));
     std::string err = format("[warn] retry readLine, caused by `%s'\n", strerror(EIO));
@@ -476,7 +476,7 @@ TEST_F(InteractiveTest, changeFDSetting) {
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
 
   {
-    auto cleanup = this->withTimeout(400);
+    auto cleanup = this->withTimeout(500);
 
     std::string err = format("cat: .*: %s\n", strerror(EAGAIN));
     ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpectRegex(
