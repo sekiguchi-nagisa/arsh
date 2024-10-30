@@ -816,6 +816,36 @@ std::string resolveFullCommandName(const ARState &state, StringRef ref, const Mo
   return "";
 }
 
+bool checkExistenceOfPathLikeLiteral(const ARState &state, StringRef literal) {
+  const bool tilde = !literal.empty() && literal[0] == '~';
+  std::string path = unquoteCmdArgLiteral(literal, true);
+  if (tilde) {
+    expandTilde(path, true, nullptr);
+  }
+  if (path == "." || path == "..") {
+    return true;
+  }
+  const auto &modType = getCurRuntimeModule(state);
+  const auto cmd = CmdResolver(CmdResolver::Op::NO_FALLBACK,
+                               FilePathCache::SearchOp::DIRECT_SEARCH)(state, path, &modType);
+  switch (cmd.kind()) {
+  case ResolvedCmd::USER_DEFINED:
+  case ResolvedCmd::MODULE:
+  case ResolvedCmd::BUILTIN_S:
+  case ResolvedCmd::BUILTIN:
+  case ResolvedCmd::CMD_OBJ:
+    return true;
+  case ResolvedCmd::EXTERNAL:
+    return cmd.filePath() != nullptr &&
+           (isExecutable(cmd.filePath()) || S_ISDIR(getStMode(cmd.filePath())));
+  case ResolvedCmd::FALLBACK:
+  case ResolvedCmd::INVALID:
+  case ResolvedCmd::ILLEGAL_UDC:
+    break;
+  }
+  return false;
+}
+
 static bool compare(ARState &state, const Value &x, const Value &y, const Value &compFunc) {
   auto ret = VM::callFunction(state, Value(compFunc), makeArgs(x, y));
   if (state.hasError()) {

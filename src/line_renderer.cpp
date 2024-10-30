@@ -200,25 +200,46 @@ void LineRenderer::renderWithANSI(StringRef prompt) {
   }
 }
 
-bool LineRenderer::renderScript(const StringRef source) {
+static bool nextIsLP(const StringRef source,
+                     const std::vector<std::pair<HighlightTokenClass, Token>> &tokens,
+                     unsigned int curIndex) {
+  if (curIndex + 1 < tokens.size()) {
+    const auto next = tokens[curIndex + 1].second;
+    return source.substr(next.pos, next.size) == "(";
+  }
+  return false;
+}
+
+bool LineRenderer::renderScript(const StringRef source,
+                                const std::function<bool(StringRef)> &errorCmdChecker) {
   // for syntax highlight
   TokenEmitterImpl tokenEmitter(source);
   auto error = tokenEmitter.tokenizeAndEmit();
   auto lex = tokenEmitter.getLexerPtr();
-  auto tokens = std::move(tokenEmitter).take();
+  const auto tokens = std::move(tokenEmitter).take();
 
   // render lines with highlight
   bool next = true;
   unsigned int curPos = 0;
-  for (auto &e : tokens) {
-    Token token = e.second;
+  const bool supportErrorHighlight =
+      errorCmdChecker && this->findColorCode(HighlightTokenClass::ERROR_);
+  for (unsigned int i = 0; i < tokens.size(); i++) {
+    Token token = tokens[i].second;
     assert(curPos <= token.pos);
     if (!this->render(source.slice(curPos, token.pos), HighlightTokenClass::NONE_)) {
       next = false;
       break;
     }
     curPos = token.endPos();
-    if (!this->render(source.substr(token.pos, token.size), e.first)) {
+    const StringRef ref = source.substr(token.pos, token.size);
+    HighlightTokenClass tokenClass = tokens[i].first;
+    if (supportErrorHighlight && tokenClass == HighlightTokenClass::COMMAND &&
+        !nextIsLP(source, tokens, i)) {
+      if (!errorCmdChecker(ref)) {
+        tokenClass = HighlightTokenClass::ERROR_;
+      }
+    }
+    if (!this->render(ref, tokenClass)) {
       next = false;
       break;
     }

@@ -230,6 +230,16 @@ std::string resolveFullCommandName(const ARState &state, StringRef ref, const Mo
                                    bool udcOnly = false);
 
 /**
+ * check if command/file path exist after unquote/tilde expansion
+ * @param state
+ * @param literal
+ * must be command/command-argument literal
+ * @return
+ * if command/path exists, return true
+ */
+bool checkExistenceOfPathLikeLiteral(const ARState &state, StringRef literal);
+
+/**
  *
  * @param state
  * @param arrayObj

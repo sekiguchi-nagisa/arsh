@@ -1078,7 +1078,7 @@ protected:
   RenderingContext ctx;
 
 public:
-  ScrollTest() : buf(4096, '\0'), ctx(this->buf.data(), this->buf.size(), "> ") {}
+  ScrollTest() : buf(4096, '\0'), ctx(this->buf.data(), this->buf.size(), "> ", nullptr) {}
 
   void setRows(unsigned short rows) { this->winSize.rows = rows; }
 

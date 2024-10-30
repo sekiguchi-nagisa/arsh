@@ -39,8 +39,11 @@ struct RenderingContext {
   unsigned int oldActualCursorRows{0};
   CharWidthProperties ps;
   bool scrolling{false};
+  std::function<bool(StringRef)> errorCmdChecker;
 
-  RenderingContext(char *data, size_t len, StringRef prompt) : buf(data, len), prompt(prompt) {
+  RenderingContext(char *data, size_t len, StringRef prompt,
+                   std::function<bool(StringRef)> &&errorCmdChecker)
+      : buf(data, len), prompt(prompt), errorCmdChecker(std::move(errorCmdChecker)) {
     this->ps.replaceInvalid = true;
   }
 };

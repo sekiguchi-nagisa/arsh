@@ -395,29 +395,6 @@ std::string Lexer::doubleElementToString(Token token, const bool skipDouble) con
   return str;
 }
 
-std::string Lexer::toCmdArg(Token token, bool unescape) const {
-  assert(this->withinRange(token));
-
-  std::string str;
-  str.reserve(token.size);
-
-  for (unsigned int i = 0; i < token.size; i++) {
-    char ch = this->buf[token.pos + i];
-    if (ch == '\\') {
-      const char next = this->buf[token.pos + ++i];
-      if (next == '\n') {
-        continue;
-      }
-      ch = next;
-      if (!unescape) { // for glob bracket expression
-        str += '\\';
-      }
-    }
-    str += ch;
-  }
-  return str;
-}
-
 std::string Lexer::toHereDocBody(Token token, HereDocState::Attr attr) const {
   if (hasFlag(attr, HereDocState::Attr::IGNORE_TAB)) {
     while (token.size > 0 && this->startsWith(token, '\t')) {
@@ -668,6 +645,27 @@ void appendAsPrintable(StringRef ref, size_t maxSize, std::string &out) {
     }
   }
   errno = old;
+}
+
+std::string unquoteCmdArgLiteral(const StringRef ref, bool unescape) {
+  std::string str;
+  str.reserve(ref.size());
+
+  for (StringRef::size_type i = 0; i < ref.size(); i++) {
+    char ch = ref[i];
+    if (ch == '\\' && i + 1 < ref.size()) {
+      const char next = ref[++i];
+      if (next == '\n') {
+        continue;
+      }
+      ch = next;
+      if (!unescape) { // for glob bracket expression
+        str += '\\';
+      }
+    }
+    str += ch;
+  }
+  return str;
 }
 
 } // namespace arsh

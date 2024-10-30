@@ -14,6 +14,12 @@
         - not allow instantiation of ``Throwable`` type
     - add builtin ``THROWN`` variable for indicating currently thrown object
 
+#### Builtin
+
+- support error highlight of line editor
+    - highlight not-found command or not-found file path
+    - specify error color by ``error`` class
+
 #### Misc
 
 - add ``--sample`` option to ``arcolorize``. now use embedded sample code as input
@@ -42,8 +48,8 @@
 
 #### Module
 
-- in ``repl.arsh`` module, set ``SIG_EXIT`` handler to ``SIGHUP`` for logout
 - **Breaking Change**: in ``atexit.arsh`` module, change interface of ``atexit`` function corresponding to ``TERM_HOOK``
+- in ``repl.arsh`` module, set ``SIG_EXIT`` handler to ``SIGHUP`` for logout
 - change termination handler invocation order of ``atexit`` function. now reverse order of registration
 
 ## [0.35.1] - 2024-10-19

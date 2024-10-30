@@ -20,7 +20,8 @@
 namespace arsh {
 
 static bool renderLines(const LineBuffer &buf, ObserverPtr<const ArrayPager> pager,
-                        LineRenderer &renderer) {
+                        LineRenderer &renderer,
+                        const std::function<bool(StringRef)> &errorCmdChecker) {
   StringRef lineRef = buf.get();
   if (pager) {
     auto [pos, len] = buf.findCurLineInterval(true);
@@ -28,7 +29,7 @@ static bool renderLines(const LineBuffer &buf, ObserverPtr<const ArrayPager> pag
   }
   bool continueLine = false;
   if (renderer.getEscapeSeqMap()) {
-    continueLine = !renderer.renderScript(lineRef);
+    continueLine = !renderer.renderScript(lineRef, errorCmdChecker);
   } else {
     renderer.renderLines(lineRef);
   }
@@ -58,7 +59,7 @@ RenderingResult doRendering(const RenderingContext &ctx, ObserverPtr<const Array
 
     // render lines and compute lines row/columns length
     renderer.setInitCols(promptCols);
-    result.continueLine = renderLines(ctx.buf, pager, renderer);
+    result.continueLine = renderLines(ctx.buf, pager, renderer, ctx.errorCmdChecker);
     result.renderedRows = renderer.getTotalRows() + 1;
   }
 

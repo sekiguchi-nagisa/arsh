@@ -105,6 +105,15 @@ public:
 template <>
 struct allow_enum_bitop<HereDocState::Attr> : std::true_type {};
 
+/**
+ * unquote command/command-argument literal
+ * @param ref
+ * @param unescape
+ * normally true
+ * @return
+ */
+std::string unquoteCmdArgLiteral(StringRef ref, bool unescape);
+
 class Lexer : public LexerBase, public RefCount<Lexer> {
 private:
   static_assert(sizeof(LexerMode) == sizeof(unsigned int));
@@ -249,7 +258,9 @@ public:
    * @param unescape
    * normally true
    */
-  std::string toCmdArg(Token token, bool unescape = true) const;
+  std::string toCmdArg(Token token, bool unescape = true) {
+    return unquoteCmdArgLiteral(this->toStrRef(token), unescape);
+  }
 
   std::string toHereDocBody(Token token, HereDocState::Attr attr) const;
 
