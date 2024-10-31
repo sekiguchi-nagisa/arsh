@@ -985,16 +985,8 @@ ssize_t LineEditorObject::readline(ARState &state, StringRef prompt, char *buf, 
     }
     return static_cast<ssize_t>(len);
   }
-  std::unordered_map<std::string, bool> cmdExistenceMap;
-  RenderingContext ctx(buf, bufLen, prompt, [&cmdExistenceMap, &state](StringRef ref) {
-    std::string key = ref.toString(); // not contains null characters
-    auto iter = cmdExistenceMap.find(key);
-    if (iter == cmdExistenceMap.end()) {
-      bool r = checkExistenceOfPathLikeLiteral(state, ref);
-      iter = cmdExistenceMap.emplace(std::move(key), r).first;
-    }
-    return iter->second;
-  });
+  PathLikeChecker pathLikeChecker(state);
+  RenderingContext ctx(buf, bufLen, prompt, std::ref(pathLikeChecker));
   return this->editLine(state, ctx);
 }
 

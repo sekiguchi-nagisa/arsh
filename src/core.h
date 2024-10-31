@@ -229,15 +229,23 @@ ObjPtr<FuncObject> loadExprAsFunc(ARState &state, StringRef expr, const ModType 
 std::string resolveFullCommandName(const ARState &state, StringRef ref, const ModType &modType,
                                    bool udcOnly = false);
 
-/**
- * check if command/file path exist after unquote/tilde expansion
- * @param state
- * @param literal
- * must be command/command-argument literal
- * @return
- * if command/path exists, return true
- */
-bool checkExistenceOfPathLikeLiteral(const ARState &state, StringRef literal);
+class PathLikeChecker {
+private:
+  const ARState &state;
+  std::unordered_map<std::string, bool> cache;
+
+public:
+  explicit PathLikeChecker(const ARState &state) : state(state) {}
+
+  /**
+   * check if command/file path exist after unquote/tilde expansion
+   * @param literal
+   * must be command/command-argument literal
+   * @return
+   * if command/path exists, return true
+   */
+  bool operator()(StringRef literal);
+};
 
 /**
  *

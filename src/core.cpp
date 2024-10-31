@@ -816,7 +816,7 @@ std::string resolveFullCommandName(const ARState &state, StringRef ref, const Mo
   return "";
 }
 
-bool checkExistenceOfPathLikeLiteral(const ARState &state, StringRef literal) {
+static bool checkExistenceOfPathLikeLiteral(const ARState &state, StringRef literal) {
   const bool tilde = !literal.empty() && literal[0] == '~';
   std::string path = unquoteCmdArgLiteral(literal, true);
   if (tilde) {
@@ -844,6 +844,16 @@ bool checkExistenceOfPathLikeLiteral(const ARState &state, StringRef literal) {
     break;
   }
   return false;
+}
+
+bool PathLikeChecker::operator()(const StringRef literal) {
+  std::string key = literal.toString(); // not contains null characters
+  auto iter = this->cache.find(key);
+  if (iter == this->cache.end()) {
+    bool r = checkExistenceOfPathLikeLiteral(state, literal);
+    iter = this->cache.emplace(std::move(key), r).first;
+  }
+  return iter->second;
 }
 
 static bool compare(ARState &state, const Value &x, const Value &y, const Value &compFunc) {

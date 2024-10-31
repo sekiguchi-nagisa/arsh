@@ -7,7 +7,6 @@
 #include <object.h>
 #include <pager.h>
 #include <renderer.h>
-#include <type_pool.h>
 #include <vm.h>
 
 using namespace arsh;
@@ -1474,6 +1473,49 @@ TEST_F(ScrollTest, pager) {
               "\x1b[7mrows 1-2/3\x1b[0m\r\n",
               ret.renderedLines);
   }
+}
+
+struct Deleter {
+  void operator()(ARState *state) const { ARState_delete(&state); }
+};
+
+using ARStateHandle = std::unique_ptr<ARState, Deleter>;
+
+TEST(ErrorHighlightTest, path) {
+  auto state = ARStateHandle(ARState_create());
+  PathLikeChecker checker(*state);
+
+  ASSERT_FALSE(checker(""));
+  ASSERT_FALSE(checker("fjaeirfj fjaeirjfa127419234"));
+  ASSERT_FALSE(checker("fjaeirfj fjaeirjfa127419234"));
+  ASSERT_TRUE(checker("."));
+  ASSERT_TRUE(checker(".."));
+  ASSERT_TRUE(checker("./././././"));
+  ASSERT_TRUE(checker("../../..///////"));
+  ASSERT_FALSE(checker("..."));
+  ASSERT_TRUE(checker("ps"));
+  ASSERT_TRUE(checker("shctl"));
+  ASSERT_TRUE(checker("/usr/bin/env"));
+  ASSERT_FALSE(checker("/fjirfa/fjaeirj/23453"));
+  ASSERT_FALSE(checker("/fjirfa/fjaeirj/23453")); // use cache
+}
+
+TEST(ErrorHighlightTest, base) {
+  auto state = ARStateHandle(ARState_create());
+  ANSIEscapeSeqMap seqMap({
+      {HighlightTokenClass::COMMAND, "\x1b[30m"},
+      {HighlightTokenClass::COMMAND_ARG, "\x1b[40m"},
+      {HighlightTokenClass::ERROR_, "\x1b[50m"},
+  });
+
+  std::string buf;
+  buf.resize(16);
+  PathLikeChecker checker(*state);
+  RenderingContext ctx(buf.data(), buf.size(), "> ", std::ref(checker));
+
+  ctx.buf.insertToCursor("slsss -la");
+  auto ret = doRendering(ctx, nullptr, makeObserver(seqMap), 100);
+  ASSERT_EQ("> \x1b[50mslsss\x1b[0m \x1b[40m-la\x1b[0m", ret.renderedLines);
 }
 
 int main(int argc, char **argv) {
