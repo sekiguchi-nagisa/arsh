@@ -164,7 +164,10 @@ TEST_F(InteractiveTest, rc5) {
   this->invokeImpl({"--quiet", "--rcfile", INTERACTIVE_TEST_WORK_DIR "/rcfile1"}, 400);
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
-  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("var a = $(shctl module)"));
+  {
+    auto cleanup = this->withTimeout(200);
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("var a = $(shctl module)"));
+  }
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $a.size() == 3: $a.size() as String"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $a[0] == '(builtin)'"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $a[1] == '(root)'"));

@@ -4,23 +4,27 @@ TEST_F(InteractiveTest, expand_ctrlc1) {
   this->invoke("--quiet", "--norc");
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
-  this->sendLine("echo "
-                 "{/*/../*/../*/../*/../*/../*/../*/../*/../*,/*/../*/../*/../*/../*/../*/../*/../"
-                 "*/../*,/*/../*/../*/../*/../*/../*/../*/../*/../*}");
-  ASSERT_NO_FATAL_FAILURE(
-      this->expect(PROMPT + "echo "
-                            "{/*/../*/../*/../*/../*/../*/../*/../*/../*,/*/../*/../*/../*/../*/../"
-                            "*/../*/../*/../*,/*/../*/../*/../*/../*/../*/../*/../*/../*}\n"));
-  std::this_thread::sleep_for(std::chrono::milliseconds(500));
-  this->send(CTRL_C);
+  {
+    auto cleanup = this->withTimeout(300);
+    this->sendLine(
+        "echo "
+        "{/*/../*/../*/../*/../*/../*/../*/../*/../*,/*/../*/../*/../*/../*/../*/../*/../"
+        "*/../*,/*/../*/../*/../*/../*/../*/../*/../*/../*}");
+    ASSERT_NO_FATAL_FAILURE(this->expect(
+        PROMPT + "echo "
+                 "{/*/../*/../*/../*/../*/../*/../*/../*/../*,/*/../*/../*/../*/../*/../"
+                 "*/../*/../*/../*,/*/../*/../*/../*/../*/../*/../*/../*/../*}\n"));
+    std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    this->send(CTRL_C);
 
-  std::string err = format(R"([runtime error]
+    std::string err = format(R"([runtime error]
 SystemError: glob expansion is canceled, caused by `%s'
     from (stdin):1 '<toplevel>()'
 )",
-                           strerror(EINTR));
+                             strerror(EINTR));
 
-  ASSERT_NO_FATAL_FAILURE(this->expect(promptAfterCtrlC(PROMPT), err));
+    ASSERT_NO_FATAL_FAILURE(this->expect(promptAfterCtrlC(PROMPT), err));
+  }
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 1));
 }
 
@@ -47,23 +51,27 @@ TEST_F(InteractiveTest, expand_ctrlc3) {
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("shctl set NULL_GLOB"));
-  this->sendLine("echo "
-                 "{/*/../*/../*/../*/../*/../*/../*/../*/../*,/*/../*/../*/../*/../*/../*/../*/../"
-                 "*/../*,/*/../*/../*/../*/../*/../*/../*/../*/../*}");
-  ASSERT_NO_FATAL_FAILURE(
-      this->expect(PROMPT + "echo "
-                            "{/*/../*/../*/../*/../*/../*/../*/../*/../*,/*/../*/../*/../*/../*/../"
-                            "*/../*/../*/../*,/*/../*/../*/../*/../*/../*/../*/../*/../*}\n"));
-  std::this_thread::sleep_for(std::chrono::milliseconds(500));
-  this->send(CTRL_C);
+  {
+    auto cleanup = this->withTimeout(300);
+    this->sendLine(
+        "echo "
+        "{/*/../*/../*/../*/../*/../*/../*/../*/../*,/*/../*/../*/../*/../*/../*/../*/../"
+        "*/../*,/*/../*/../*/../*/../*/../*/../*/../*/../*}");
+    ASSERT_NO_FATAL_FAILURE(this->expect(
+        PROMPT + "echo "
+                 "{/*/../*/../*/../*/../*/../*/../*/../*/../*,/*/../*/../*/../*/../*/../"
+                 "*/../*/../*/../*,/*/../*/../*/../*/../*/../*/../*/../*/../*}\n"));
+    std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    this->send(CTRL_C);
 
-  std::string err = format(R"([runtime error]
+    std::string err = format(R"([runtime error]
 SystemError: glob expansion is canceled, caused by `%s'
     from (stdin):2 '<toplevel>()'
 )",
-                           strerror(EINTR));
+                             strerror(EINTR));
 
-  ASSERT_NO_FATAL_FAILURE(this->expect(promptAfterCtrlC(PROMPT), err));
+    ASSERT_NO_FATAL_FAILURE(this->expect(promptAfterCtrlC(PROMPT), err));
+  }
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 1));
 }
 
@@ -72,18 +80,21 @@ TEST_F(InteractiveTest, wait_ctrlc1) {
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("var j = while(true){} &"));
-  this->sendLine("$j.wait()");
-  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "$j.wait()\n"));
-  std::this_thread::sleep_for(std::chrono::milliseconds(500));
-  this->send(CTRL_C);
+  {
+    auto cleanup = this->withTimeout(300);
+    this->sendLine("$j.wait()");
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "$j.wait()\n"));
+    std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    this->send(CTRL_C);
 
-  std::string err = format(R"([runtime error]
+    std::string err = format(R"([runtime error]
 SystemError: wait failed, caused by `%s'
     from (stdin):2 '<toplevel>()'
 )",
-                           strerror(EINTR));
+                             strerror(EINTR));
 
-  ASSERT_NO_FATAL_FAILURE(this->expect(promptAfterCtrlC(PROMPT), err));
+    ASSERT_NO_FATAL_FAILURE(this->expect(promptAfterCtrlC(PROMPT), err));
+  }
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 1));
 }
 
@@ -92,14 +103,17 @@ TEST_F(InteractiveTest, wait_ctrlc2) {
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("while(true){} &", ": Job = %1"));
-  this->sendLine("fg");
-  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "fg\nwhile(true){}\n"));
-  std::this_thread::sleep_for(std::chrono::milliseconds(500));
-  this->send(CTRL_C);
+  {
+    auto cleanup = this->withTimeout(300);
+    this->sendLine("fg");
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "fg\nwhile(true){}\n"));
+    std::this_thread::sleep_for(std::chrono::milliseconds(200));
+    this->send(CTRL_C);
 
-  std::string err = strsignal(SIGINT);
-  err += "\n";
-  ASSERT_NO_FATAL_FAILURE(this->expect(promptAfterCtrlC(PROMPT), err));
+    std::string err = strsignal(SIGINT);
+    err += "\n";
+    ASSERT_NO_FATAL_FAILURE(this->expect(promptAfterCtrlC(PROMPT), err));
+  }
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 128 + SIGINT));
 }
 
