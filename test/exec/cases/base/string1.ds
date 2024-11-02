@@ -298,7 +298,7 @@ assert $words[5] == $'\u0E33'
 assert $invalid.sanitize() == $'\x24\u0E33'
 assert $invalid.sanitize("") == $'\x24\u0E33'
 assert $invalid.sanitize($'\uFFFD') == $'\uFFFD\x24\uFFFD\uFFFD\uFFFD\u0E33'
-assert ($'@@\x00' + $invalid + $'\x00#\x00\x00').sanitize() == $'@@\x24\u0E33#'
+assert ($'@@\x00' + $invalid + $'\x00#\x00\x00').sanitize() == $'@@\x00\x24\u0E33\x00#\x00\x00'  # not replace null
 
 # toInt
 assert("-2147483648".toInt()! == -1 - 2147483647)

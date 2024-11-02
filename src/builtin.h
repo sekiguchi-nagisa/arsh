@@ -942,7 +942,7 @@ ARSH_METHOD string_sanitize(RuntimeContext &ctx) {
   for (const auto end = ref.end(); begin != end;) {
     int codePoint = 0;
     unsigned int byteSize = UnicodeUtil::utf8ToCodePoint(begin, end, codePoint);
-    if (byteSize == 0 || codePoint == 0) { // replace invalid utf8 byte or nul char
+    if (byteSize == 0) { // replace invalid utf8 bytes
       if (!ret.appendAsStr(ctx, StringRef(old, begin - old)) || !ret.appendAsStr(ctx, repl)) {
         RET_ERROR;
       }
