@@ -228,6 +228,12 @@ static bool underMultiplexer() {
   return false;
 }
 
+/**
+ * must call before initial line refresh
+ * @param ps
+ * @param inFd
+ * @param outFd
+ */
 static void checkProperty(CharWidthProperties &ps, int inFd, int outFd) {
   if (underMultiplexer()) {
     /**
@@ -236,22 +242,17 @@ static void checkProperty(CharWidthProperties &ps, int inFd, int outFd) {
     return;
   }
 
+  int lastPos = 1;
   for (auto &e : getCharWidthPropertyList()) {
-    const char *str = e.second;
-    if (write(outFd, str, strlen(str)) == -1) {
-      return;
+    if (const char *str = e.second; write(outFd, str, strlen(str)) == -1) {
+      break;
     }
     const int pos = getCursorPosition(inFd, outFd);
-    /**
-     * restore pos and clear line
-     */
-    if (constexpr char r[] = "\r\x1b[2K"; write(outFd, r, std::size(r) - 1) == -1) {
-      return;
-    }
     if (pos < 0) {
-      return;
+      break;
     }
-    ps.setProperty(e.first, pos - 1);
+    ps.setProperty(e.first, pos - lastPos);
+    lastPos = pos;
   }
 }
 
