@@ -127,7 +127,8 @@ bool LineEditorObject::defineCustomAction(ARState &state, StringRef name, String
   OP(EAW, "eaw", TYPE::Int)                                                                        \
   OP(USE_FLOW_CONTROL, "flow-control", TYPE::Bool)                                                 \
   OP(KILL_RING_SIZE, "killring-size", TYPE::Int)                                                   \
-  OP(LANG_EXTENSION, "lang-extension", TYPE::Bool)
+  OP(LANG_EXTENSION, "lang-extension", TYPE::Bool)                                                 \
+  OP(SEMANTIC_PROMPT, "semantic-prompt", TYPE::Bool)
 
 enum class EditConfig : unsigned char {
 #define GEN_ENUM(E, S, T) E,
@@ -207,16 +208,19 @@ bool LineEditorObject::setConfig(ARState &state, StringRef name, const Value &va
     }
     return true;
   case EditConfig::USE_BRACKETED_PASTE:
-    this->useBracketedPaste = value.asBool();
+    this->setFeature(LineEditorFeature::BRACKETED_PASTE, value.asBool());
     return true;
   case EditConfig::USE_FLOW_CONTROL:
-    this->useFlowControl = value.asBool();
+    this->setFeature(LineEditorFeature::FLOW_CONTROL, value.asBool());
     return true;
   case EditConfig::COLOR:
     this->setColor(value.asStrRef());
     return true;
   case EditConfig::LANG_EXTENSION:
-    this->langExtension = value.asBool();
+    this->setFeature(LineEditorFeature::LANG_EXTENSION, value.asBool());
+    return true;
+  case EditConfig::SEMANTIC_PROMPT:
+    this->setFeature(LineEditorFeature::SEMANTIC_PROMPT, value.asBool());
     return true;
   }
   raiseError(state, TYPE::ArgumentError, std::move(message));
@@ -246,10 +250,10 @@ Value LineEditorObject::getConfigs(ARState &state) const {
       value = Value::createInt(this->eaw);
       break;
     case EditConfig::USE_BRACKETED_PASTE:
-      value = Value::createBool(this->useBracketedPaste);
+      value = Value::createBool(this->hasFeature(LineEditorFeature::BRACKETED_PASTE));
       break;
     case EditConfig::USE_FLOW_CONTROL:
-      value = Value::createBool(this->useFlowControl);
+      value = Value::createBool(this->hasFeature(LineEditorFeature::FLOW_CONTROL));
       break;
     case EditConfig::COLOR: {
       std::string code;
@@ -269,7 +273,10 @@ Value LineEditorObject::getConfigs(ARState &state) const {
       break;
     }
     case EditConfig::LANG_EXTENSION:
-      value = Value::createBool(this->langExtension);
+      value = Value::createBool(this->hasFeature(LineEditorFeature::LANG_EXTENSION));
+      break;
+    case EditConfig::SEMANTIC_PROMPT:
+      value = Value::createBool(this->hasFeature(LineEditorFeature::SEMANTIC_PROMPT));
       break;
     }
     map.insert(key, std::move(value));

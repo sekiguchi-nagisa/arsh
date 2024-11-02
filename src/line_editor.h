@@ -25,6 +25,16 @@
 
 namespace arsh {
 
+enum class LineEditorFeature : unsigned char {
+  LANG_EXTENSION = 1u << 0u, // syntax highlight, auto-line continuation
+  BRACKETED_PASTE = 1u << 1u,
+  FLOW_CONTROL = 1u << 2u,
+  SEMANTIC_PROMPT = 1u << 3u, // OSC133 (shell integration/semantic prompt)
+};
+
+template <>
+struct allow_enum_bitop<LineEditorFeature> : std::true_type {};
+
 class LineEditorObject : public ObjectWithRtti<ObjectKind::LineEditor> {
 private:
   int inFd;
@@ -36,16 +46,9 @@ private:
 
   bool continueLine{false};
 
-  /**
-   * enable language specific features (syntax highlight, auto-line continuation)
-   */
-  bool langExtension{false};
-
-  bool useBracketedPaste{true};
-
-  bool useFlowControl{false}; // disabled by default
-
   unsigned char eaw{0}; // must be 0-2. if 0, auto-detect east asian width
+
+  LineEditorFeature features{LineEditorFeature::BRACKETED_PASTE};
 
   ANSIEscapeSeqMap escapeSeqMap;
 
@@ -83,7 +86,7 @@ private:
   ObjPtr<Object> histSyncCallback;
 
   /**
-   * for custom actions (custom action index as meta data)
+   * for custom actions (custom action index as meta-data)
    * must be `(String, [String]?) -> String?' type
    */
   std::vector<Value> customCallbacks;
@@ -133,6 +136,16 @@ public:
   Value getConfigs(ARState &state) const;
 
 private:
+  void setFeature(LineEditorFeature f, bool set) {
+    if (set) {
+      setFlag(this->features, f);
+    } else {
+      unsetFlag(this->features, f);
+    }
+  }
+
+  bool hasFeature(LineEditorFeature f) const { return hasFlag(this->features, f); }
+
   int enableRawMode(int fd);
 
   void disableRawMode(int fd);

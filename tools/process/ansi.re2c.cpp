@@ -113,6 +113,10 @@ INIT:
     "\x1b[?2004l"                           { NEXT(); }
     "\x1b[?" [0-9]+ "h"                     { NEXT(); }
     "\x1b[?" [0-9]+ "l"                     { NEXT(); }
+    "\x1b]133;A\x1b\\"                      { this->addFTCS(FTCS::PROMPT); NEXT(); }
+    "\x1b]133;B\x1b\\"                      { this->addFTCS(FTCS::COMMAND_START); NEXT(); }
+    "\x1b]133;C\x1b\\"                      { this->addFTCS(FTCS::COMMAND_EXECUTED); NEXT(); }
+    "\x1b]133;D" (";" DECIMAL)? "\x1b\\"    { this->addFTCS(FTCS::COMMAND_FINISHED); NEXT(); }
 
     [^]                                     { this->addCodePoint(start, cursor); NEXT(); }
     *                                       { RET(Result::INVALID); }

@@ -390,7 +390,7 @@ int LineEditorObject::enableRawMode(int fd) {
    */
   raw.c_iflag &= ~(BRKINT | ICRNL | INPCK | ISTRIP | IXANY | IMAXBEL);
   raw.c_iflag |= IUTF8 | IXOFF;
-  if (this->useFlowControl) {
+  if (this->hasFeature(LineEditorFeature::FLOW_CONTROL)) {
     raw.c_iflag |= IXON;
   } else {
     raw.c_iflag &= ~IXON;
@@ -422,7 +422,7 @@ int LineEditorObject::enableRawMode(int fd) {
     goto fatal;
   }
   this->rawMode = true;
-  if (this->useBracketedPaste) {
+  if (this->hasFeature(LineEditorFeature::BRACKETED_PASTE)) {
     enableBracketPasteMode(fd);
   } else {
     disableBracketPasteMode(fd);
@@ -472,8 +472,11 @@ void LineEditorObject::refreshLine(ARState &state, RenderingContext &ctx, bool r
     ctx.buf.syncNewlinePosList();
   }
 
-  auto ret = doRendering(
-      ctx, pager, this->langExtension ? makeObserver(this->escapeSeqMap) : nullptr, winSize.cols);
+  auto ret = doRendering(ctx, pager,
+                         this->hasFeature(LineEditorFeature::LANG_EXTENSION)
+                             ? makeObserver(this->escapeSeqMap)
+                             : nullptr,
+                         winSize.cols);
   this->continueLine = ret.continueLine;
   const unsigned int actualCursorRows = ret.cursorRows;
 
@@ -539,7 +542,8 @@ ssize_t LineEditorObject::accept(ARState &state, RenderingContext &ctx) {
     errno = EAGAIN;
     return -1;
   }
-  if (ctx.buf.moveCursorToEndOfBuf()) {
+  if (ctx.buf.moveCursorToEndOfBuf() || this->hasFeature(LineEditorFeature::SEMANTIC_PROMPT)) {
+    ctx.semanticPrompt = this->hasFeature(LineEditorFeature::SEMANTIC_PROMPT);
     this->refreshLine(state, ctx, false);
   }
   return static_cast<ssize_t>(ctx.buf.getUsedSize());
@@ -598,7 +602,9 @@ ssize_t LineEditorObject::editLine(ARState &state, RenderingContext &ctx) {
     if (ctx.scrolling) {
       linenoiseClearScreen(this->inFd);
       putNewline = false;
-    } else if (ctx.buf.moveCursorToEndOfBuf()) {
+    } else if (ctx.buf.moveCursorToEndOfBuf() ||
+               this->hasFeature(LineEditorFeature::SEMANTIC_PROMPT)) {
+      ctx.semanticPrompt = this->hasFeature(LineEditorFeature::SEMANTIC_PROMPT);
       this->refreshLine(state, ctx, false);
     }
   }
@@ -637,6 +643,7 @@ ssize_t LineEditorObject::editInRawMode(ARState &state, RenderingContext &ctx) {
   }
   state.setGlobal(BuiltinVarOffset::EAW,
                   Value::createInt(ctx.ps.eaw == AmbiguousCharWidth::HALF ? 1 : 2));
+  ctx.prevExitStatus = static_cast<unsigned char>(state.getMaskedExitStatus());
   this->refreshLine(state, ctx);
 
   bool rotating = false;

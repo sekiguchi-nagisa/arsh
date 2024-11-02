@@ -68,6 +68,13 @@ public:
     static Pos defaultSize() { return {24, 80}; }
   };
 
+  enum class FTCS : unsigned char { // for semantic prompt
+    PROMPT,
+    COMMAND_START,
+    COMMAND_EXECUTED,
+    COMMAND_FINISHED,
+  };
+
   explicit Screen(Pos pos);
 
   Screen() : Screen(Pos::defaultSize()) {}
@@ -183,6 +190,10 @@ public:
       this->row = this->maxRows - 1;
     }
     this->updateMaxUsedRows();
+  }
+
+  void addFTCS(FTCS c) {
+    static_cast<void>(c); // do nothing, TODO: add marker
   }
 
   std::string toString() const;

@@ -43,6 +43,8 @@ static bool renderLines(const LineBuffer &buf, ObserverPtr<const ArrayPager> pag
   return continueLine;
 }
 
+#define OSC133_(O) "\x1b]133;" O "\x1b\\"
+
 RenderingResult doRendering(const RenderingContext &ctx, ObserverPtr<const ArrayPager> pager,
                             ObserverPtr<const ANSIEscapeSeqMap> escapeSeqMap,
                             unsigned int maxCols) {
@@ -51,6 +53,12 @@ RenderingResult doRendering(const RenderingContext &ctx, ObserverPtr<const Array
   RenderingResult result;
   {
     // render prompt and compute prompt row/column length
+    if (ctx.semanticPrompt) {
+      char data[64];
+      snprintf(data, std::size(data), "\x1b]133;D;%d\x1b\\" OSC133_("A"),
+               static_cast<int>(ctx.prevExitStatus));
+      result.renderedLines += data;
+    }
     LineRenderer renderer(ctx.ps, 0, result.renderedLines, escapeSeqMap);
     renderer.setMaxCols(maxCols);
     renderer.renderWithANSI(ctx.prompt);
@@ -58,9 +66,15 @@ RenderingResult doRendering(const RenderingContext &ctx, ObserverPtr<const Array
     promptCols = renderer.getTotalCols();
 
     // render lines and compute lines row/columns length
+    if (ctx.semanticPrompt) {
+      result.renderedLines += OSC133_("B");
+    }
     renderer.setInitCols(promptCols);
     result.continueLine = renderLines(ctx.buf, pager, renderer, ctx.errorCmdChecker);
     result.renderedRows = renderer.getTotalRows() + 1;
+    if (ctx.semanticPrompt) {
+      result.renderedLines += OSC133_("C");
+    }
   }
 
   // get cursor row/column length

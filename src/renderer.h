@@ -39,6 +39,8 @@ struct RenderingContext {
   unsigned int oldActualCursorRows{0};
   CharWidthProperties ps;
   bool scrolling{false};
+  bool semanticPrompt{false};
+  unsigned char prevExitStatus{0}; // for semantic prompt
   std::function<bool(StringRef)> errorCmdChecker;
 
   RenderingContext(char *data, size_t len, StringRef prompt,
