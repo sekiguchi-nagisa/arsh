@@ -535,13 +535,12 @@ void LineEditorObject::refreshLine(ARState &state, RenderingContext &ctx, bool r
 }
 
 ssize_t LineEditorObject::accept(ARState &state, RenderingContext &ctx) {
-  this->kickHistSyncCallback(state, ctx.buf);
-  if (ctx.buf.moveCursorToEndOfBuf()) {
-    this->refreshLine(state, ctx, false);
-  }
-  if (state.hasError()) {
+  if (!this->kickHistSyncCallback(state, ctx.buf)) {
     errno = EAGAIN;
     return -1;
+  }
+  if (ctx.buf.moveCursorToEndOfBuf()) {
+    this->refreshLine(state, ctx, false);
   }
   return static_cast<ssize_t>(ctx.buf.getUsedSize());
 }
@@ -1152,9 +1151,8 @@ bool LineEditorObject::kickHistSyncCallback(ARState &state, const LineBuffer &bu
     this->kickCallback(state, this->histSyncCallback,
                        makeArgs(Value::createStr(buf.get()), this->history));
     return !state.hasError();
-  } else {
-    return this->history->append(state, Value::createStr(buf.get()));
   }
+  return this->history->append(state, Value::createStr(buf.get()));
 }
 
 static ObjPtr<ArrayObject> toObj(const TypePool &pool, const KillRing &killRing) {
