@@ -126,7 +126,8 @@ struct UnicodeUtil {
    */
   static int utf16ToCodePoint(unsigned short high, unsigned short low) {
     if (isHighSurrogate(high) && isLowSurrogate(low)) {
-      return (static_cast<unsigned int>(high - 0xD800) << 10) + (low - 0xDC00) + 0x10000;
+      return static_cast<int>((static_cast<unsigned int>(high - 0xD800) << 10) +
+                              static_cast<unsigned int>(low - 0xDC00) + 0x10000);
     }
     return -1;
   }
@@ -245,19 +246,19 @@ unsigned int UnicodeUtil<T>::utf8ToCodePoint(const char *begin0, const char *end
     codePoint = static_cast<unsigned char>(begin[0]);
     break;
   case 2:
-    codePoint = (static_cast<unsigned int>(begin[0] & 0x1F) << 6) |
-                (static_cast<unsigned int>(begin[1] & 0x3F));
+    codePoint = static_cast<int>((static_cast<unsigned int>(begin[0] & 0x1F) << 6) |
+                                 static_cast<unsigned int>(begin[1] & 0x3F));
     break;
   case 3:
-    codePoint = (static_cast<unsigned int>(begin[0] & 0x0F) << 12) |
-                (static_cast<unsigned int>(begin[1] & 0x3F) << 6) |
-                (static_cast<unsigned int>(begin[2] & 0x3F));
+    codePoint = static_cast<int>((static_cast<unsigned int>(begin[0] & 0x0F) << 12) |
+                                 (static_cast<unsigned int>(begin[1] & 0x3F) << 6) |
+                                 static_cast<unsigned int>(begin[2] & 0x3F));
     break;
   case 4:
-    codePoint = (static_cast<unsigned int>(begin[0] & 0x07) << 18) |
-                (static_cast<unsigned int>(begin[1] & 0x3F) << 12) |
-                (static_cast<unsigned int>(begin[2] & 0x3F) << 6) |
-                (static_cast<unsigned int>(begin[3] & 0x3F));
+    codePoint = static_cast<int>((static_cast<unsigned int>(begin[0] & 0x07) << 18) |
+                                 (static_cast<unsigned int>(begin[1] & 0x3F) << 12) |
+                                 (static_cast<unsigned int>(begin[2] & 0x3F) << 6) |
+                                 static_cast<unsigned int>(begin[3] & 0x3F));
     break;
   default:
     codePoint = -1;
@@ -273,22 +274,22 @@ unsigned int UnicodeUtil<T>::codePointToUtf8(int codePoint, char *const buf) {
   }
 
   if (codePoint <= 0x7F) { // 0xxxxxxx
-    buf[0] = codePoint;
+    buf[0] = static_cast<char>(codePoint);
     return 1;
   } else if (codePoint <= 0x7FF) { // 110xxxxx 10xxxxxx
-    buf[0] = 0xC0 | (codePoint >> 6);
-    buf[1] = 0x80 | (codePoint & 0x3F);
+    buf[0] = static_cast<char>(0xC0 | (codePoint >> 6));
+    buf[1] = static_cast<char>(0x80 | (codePoint & 0x3F));
     return 2;
   } else if (codePoint <= 0xFFFF) { // 1110xxxx 10xxxxxx 10xxxxxx
-    buf[0] = 0xE0 | (codePoint >> 12);
-    buf[1] = 0x80 | ((codePoint >> 6) & 0x3F);
-    buf[2] = 0x80 | (codePoint & 0x3F);
+    buf[0] = static_cast<char>(0xE0 | (codePoint >> 12));
+    buf[1] = static_cast<char>(0x80 | ((codePoint >> 6) & 0x3F));
+    buf[2] = static_cast<char>(0x80 | (codePoint & 0x3F));
     return 3;
   } else if (codePoint <= 0x10FFFF) { // 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
-    buf[0] = 0xF0 | (codePoint >> 18);
-    buf[1] = 0x80 | ((codePoint >> 12) & 0x3F);
-    buf[2] = 0x80 | ((codePoint >> 6) & 0x3F);
-    buf[3] = 0x80 | (codePoint & 0x3F);
+    buf[0] = static_cast<char>(0xF0 | (codePoint >> 18));
+    buf[1] = static_cast<char>(0x80 | ((codePoint >> 12) & 0x3F));
+    buf[2] = static_cast<char>(0x80 | ((codePoint >> 6) & 0x3F));
+    buf[3] = static_cast<char>(0x80 | (codePoint & 0x3F));
     return 4;
   }
   return 0;
