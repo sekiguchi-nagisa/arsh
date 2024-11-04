@@ -905,7 +905,23 @@ ARSH_METHOD string_replace(RuntimeContext &ctx) {
   const bool once = LOCAL(3).isInvalid() ? false : LOCAL(3).asBool();
   auto buf = Value::createStr();
 
-  for (StringRef::size_type pos = 0; pos != StringRef::npos;) {
+  StringRef::size_type pos = 0;
+  if (auto ret = thisStr.find(delimStr); ret != StringRef::npos) {
+    if (!buf.appendAsStr(ctx, thisStr.slice(pos, ret)) || !buf.appendAsStr(ctx, repStr)) {
+      RET_ERROR;
+    }
+    pos = ret + delimStr.size();
+    if (once) {
+      if (!buf.appendAsStr(ctx, thisStr.substr(pos))) {
+        RET_ERROR;
+      }
+      pos = StringRef::npos;
+    }
+  } else { // no delim
+    RET(LOCAL(0));
+  }
+
+  while (pos != StringRef::npos) {
     auto ret = thisStr.find(delimStr, pos);
     auto value = thisStr.slice(pos, ret);
     if (!buf.appendAsStr(ctx, value)) {
@@ -916,12 +932,6 @@ ARSH_METHOD string_replace(RuntimeContext &ctx) {
         RET_ERROR;
       }
       pos = ret + delimStr.size();
-      if (once) {
-        if (!buf.appendAsStr(ctx, thisStr.substr(pos))) {
-          RET_ERROR;
-        }
-        break;
-      }
     } else {
       pos = ret;
     }
