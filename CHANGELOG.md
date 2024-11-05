@@ -19,6 +19,8 @@
 - support error highlight of line editor
     - highlight not-found command or not-found file path
     - specify error color by ``error`` class
+- support OSC133 (shell integration/semantic prompt)
+    - enable via ``semantic-prompt`` config
 
 #### Misc
 
@@ -36,8 +38,7 @@
 
 #### Builtin
 
-**Breaking Change**: ``String#sanitize`` method no longer replace null characters
-
+- **Breaking Change**: ``String#sanitize`` method no longer replace null characters
 - now interrupt ``LineEditor#readLine`` method when receive signals
     - also call signal handler
 
