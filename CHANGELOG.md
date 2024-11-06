@@ -499,7 +499,7 @@
         - ``named``: get group by name
         - ``names``: get names of named group
 - ``LineEditor#readLine`` method correctly report out-of-memory error
-- ``shctl info`` sub-command show unicode version
+- ``shctl info`` sub-command show Unicode version
 - check io error in builtin ``command``
 - builtin ``test`` command support more than 3 arguments
     - also support ``!``, ``( )``,``-o``, ``-a`` expressions
@@ -1166,7 +1166,7 @@
 - add ``String#sanitize`` method
     - replace invalid utf8 bytes and null characters
 - add ``String#words`` method
-    - split string with words (follow unicode word boundary)
+    - split string with words (follow Unicode word boundary)
 - add the following regex flag check methods
     - ``isMultiLine``
     - ``isCaseless``
@@ -1266,7 +1266,7 @@
 
 - adjust space insertion behavior after inserting completion item
 - ``CTRL-W`` op (delete previous word) is now unicode-aware
-    - follow unicode word boundary
+    - follow Unicode word boundary
 - support ``M-b``, ``M-f``, ``M-d``
 
 #### Module
@@ -1511,7 +1511,7 @@
 - potential operand stack corruption when use ``break`` or ``continue`` expression within call arguments
 - return status of ``DSState_loadModule`` api when detect symbol conflicts
 - negative number or out-of-range number handling of ``SHLVL`` in startup time
-- out-of-range unicode handling in dollar string and echo command
+- out-of-range Unicode handling in dollar string and echo command
 - broken code generation of finally-block within nested try-loop
 - broken invisible character escaping of command arguments
 

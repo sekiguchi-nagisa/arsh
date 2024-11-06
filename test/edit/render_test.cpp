@@ -364,14 +364,14 @@ public:
     this->ps.replaceInvalid = true;
   }
 
-  ~PagerTest() { ARState_delete(&this->state); }
+  ~PagerTest() override { ARState_delete(&this->state); }
 
   void append(CandidatesWrapper &) {}
 
   template <typename... T>
   void append(CandidatesWrapper &wrapper, const char *first, T &&...remain) {
     wrapper.addAsCandidate(*this->state, Value::createStr(first), false);
-    append(wrapper, std::forward<T>(remain)...);
+    this->append(wrapper, std::forward<T>(remain)...);
   }
 
   template <typename... T>
@@ -519,8 +519,7 @@ TEST_F(PagerTest, small3) { // less than pager length
    * CCCCC
    */
   const char *expect = "\x1b[7mAAAAA   \x1b[0mDDDDD   \r\nBBBBB   EEEEE   \r\nCCCCC   \r\n";
-  std::string out;
-  out = this->render(pager);
+  std::string out = this->render(pager);
   ASSERT_EQ(expect, out);
 
   // prev
@@ -777,8 +776,7 @@ TEST_F(PagerTest, truncate) {
   ASSERT_EQ(8, pager.getPaneLen());
   pager.setShowCursor(false);
 
-  std::string out;
-  out = this->render(pager);
+  std::string out = this->render(pager);
   const char *expect = "@@@     \r\nABCD1234\r\nABCD987.\r\nABCDEあ.\r\n123456  \r\n12345...\r\n";
   ASSERT_EQ(expect, out);
 }
@@ -797,8 +795,7 @@ TEST_F(PagerTest, desc1) {
   ASSERT_EQ(28, pager.getPaneLen());
   pager.setShowCursor(false);
 
-  std::string out;
-  out = this->render(pager);
+  std::string out = this->render(pager);
   const char *expect = "AAAAA     (regular file)    \r\n"
                        "BBBBB       (executable)    \r\n"
                        "CCCCC        (directory)    \r\n"
@@ -821,8 +818,7 @@ TEST_F(PagerTest, desc2) {
   ASSERT_EQ(28, pager.getPaneLen());
   pager.setShowCursor(false);
 
-  std::string out;
-  out = this->render(pager);
+  std::string out = this->render(pager);
   const char *expect = "AAAAA     (regular file)    DDD         (named pipe)    \r\n"
                        "BBBBB       (executable)    EEEE                        \r\n"
                        "CCCCC        (directory)    \r\n";
@@ -842,8 +838,7 @@ TEST_F(PagerTest, sig) {
   ASSERT_EQ(56, pager.getPaneLen());
   pager.setShowCursor(false);
 
-  std::string out;
-  out = this->render(pager);
+  std::string out = this->render(pager);
   const char *expect =
       "OSTYPE\x1b[90m : String                                         \x1b[0m\r\n"
       "PID\x1b[90m : Int                                               \x1b[0m\r\n"
