@@ -18,9 +18,10 @@
 
 - support error highlight of line editor
     - highlight not-found command or not-found file path
-    - specify error color by ``error`` class
+    - specify error color by ``error`` token class
 - support OSC133 (shell integration/semantic prompt)
     - enable via ``semantic-prompt`` config
+- add ``String#validate`` method for utf8 validation
 
 #### Misc
 

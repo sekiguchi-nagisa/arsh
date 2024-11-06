@@ -159,6 +159,8 @@ function split(delim: String): [String] for String
 
 function replace(target: String, rep: String, once: Bool?): String for String
 
+function validate(): Bool for String
+
 function sanitize(repl: String?): String for String
 
 function toInt(radix: Int?): Int? for String

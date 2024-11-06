@@ -294,6 +294,13 @@ assert $words[3] == $'\uFFFD'
 assert $words[4] == $'\uFFFD'
 assert $words[5] == $'\u0E33'
 
+## validate
+assert ''.validate()
+assert $'\x00'.validate()
+assert ! $invalid.validate()
+assert 'あいうえお'.validate()
+assert $'\uFFFD'.validate()
+
 ## sanitize
 assert $invalid.sanitize() == $'\x24\u0E33'
 assert $invalid.sanitize("") == $'\x24\u0E33'

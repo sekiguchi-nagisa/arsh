@@ -939,6 +939,22 @@ ARSH_METHOD string_replace(RuntimeContext &ctx) {
   RET(buf);
 }
 
+//!bind: function validate($this: String): Bool
+ARSH_METHOD string_validate(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(string_validate);
+  const auto ref = LOCAL(0).asStrRef();
+  const auto begin = ref.begin();
+  auto iter = begin;
+  for (const auto end = ref.end(); iter != end;) {
+    if (unsigned int byteSize = UnicodeUtil::utf8ValidateChar(iter, end); byteSize != 0) {
+      iter += byteSize;
+    } else {
+      RET_BOOL(false);
+    }
+  }
+  RET_BOOL(true);
+}
+
 //!bind: function sanitize($this : String, $repl : Option<String>) : String
 ARSH_METHOD string_sanitize(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_sanitize);
