@@ -1498,6 +1498,92 @@ TEST_F(ScrollTest, pager) {
   }
 }
 
+TEST_F(ScrollTest, semanticPrompt1) {
+  const char *lines = "011111\n022222\n033333\n044444\n055555\n"
+                      "066666\n077777\n088888\n099999\n100000";
+  auto &lineBuf = getLineBuffer();
+  lineBuf.insertToCursor(lines);
+  lineBuf.syncNewlinePosList();
+  this->setRows(5);
+  this->setCols(10);
+  this->ctx.semanticPrompt = true;
+
+  // remove lower rows
+  {
+    lineBuf.moveCursorToStartOfBuf();
+    auto ret = render();
+    this->fit(ret, false);
+    ASSERT_EQ(1, ret.promptRows);
+    ASSERT_EQ("\x1b]133;D;0\x1b\\\x1b]133;A\x1b\\> \x1b]133;B\x1b\\011111\r\n"
+              "  022222\r\n"
+              "  033333\r\n"
+              "  044444\r\n"
+              "  055555\x1b]133;C\x1b\\",
+              ret.renderedLines);
+  }
+
+  // remove upper rows
+  {
+    lineBuf.moveCursorToEndOfBuf();
+    this->ctx.prevExitStatus = 12;
+    auto ret = render();
+    this->fit(ret, false);
+    ASSERT_EQ(1, ret.promptRows);
+    ASSERT_EQ("\x1b]133;D;12\x1b\\\x1b]133;A\x1b\\\x1b]133;B\x1b\\  066666\r\n"
+              "  077777\r\n"
+              "  088888\r\n"
+              "  099999\r\n"
+              "  100000\x1b]133;C\x1b\\",
+              ret.renderedLines);
+  }
+
+  // remove upper and lower rows
+  {
+    for (unsigned int i = 0; i < 7; i++) {
+      lineBuf.moveCursorUpDown(true);
+    }
+    auto ret = render();
+    this->fit(ret, false);
+    ASSERT_EQ(1, ret.promptRows);
+    ASSERT_EQ("\x1b]133;D;12\x1b\\\x1b]133;A\x1b\\\x1b]133;B\x1b\\  033333\r\n"
+              "  044444\r\n"
+              "  055555\r\n"
+              "  066666\r\n"
+              "  077777\x1b]133;C\x1b\\",
+              ret.renderedLines);
+  }
+}
+
+TEST_F(ScrollTest, semanticPrompt2) {
+  const char *lines = "011111\n022222\n033333\n044444\n055555\n"
+                      "066666\n077777\n088888\n099999\n100000";
+  auto &lineBuf = getLineBuffer();
+  lineBuf.insertToCursor(lines);
+  lineBuf.syncNewlinePosList();
+  this->setRows(5);
+  this->setCols(10);
+  this->ctx.semanticPrompt = true;
+  const_cast<StringRef &>(this->ctx.prompt) = "1>\n2>\n3>\n> ";
+
+  // remove upper rows (trim prompt)
+  {
+    lineBuf.moveCursorToStartOfBuf();
+    lineBuf.moveCursorUpDown(false);
+    lineBuf.moveCursorUpDown(false);
+    auto ret = render();
+    ASSERT_EQ(4, ret.promptRows);
+    ASSERT_EQ(6, ret.cursorRows);
+    this->fit(ret, false);
+    ASSERT_EQ(3, ret.promptRows);
+    ASSERT_EQ("\x1b]133;D;0\x1b\\\x1b]133;A\x1b\\2>\r\n"
+              "3>\r\n"
+              "> \x1b]133;B\x1b\\011111\r\n"
+              "  022222\r\n"
+              "  033333\x1b]133;C\x1b\\",
+              ret.renderedLines);
+  }
+}
+
 struct Deleter {
   void operator()(ARState *state) const { ARState_delete(&state); }
 };
