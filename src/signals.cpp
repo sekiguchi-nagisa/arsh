@@ -161,7 +161,9 @@ static std::vector<SignalEntry> initRealTimeSignalEntries() {
   const int max = SIGRTMAX;
   values.reserve(max - min + 1);
   for (int sigNum = min; sigNum <= max; sigNum++) {
-    SignalEntry entry{.abbrName = "", .kind = SignalEntry::Kind::REAL_TIME, .sigNum = sigNum};
+    SignalEntry entry{};
+    entry.kind = SignalEntry::Kind::REAL_TIME;
+    entry.sigNum = sigNum;
     int diff;
     const char *prefix;
     if (sigNum <= min + (max - min) / 2) {
