@@ -21,26 +21,10 @@
 
 namespace arsh {
 
-template <unsigned int N>
-constexpr auto toNameBuf(const char (&data)[N]) {
-  constexpr unsigned int SIZE = SignalEntry::NameBuf().max_size();
-  static_assert(N <= SIZE);
-
-  SignalEntry::NameBuf buf{};
-  unsigned int i = 0;
-  for (; i < N; i++) {
-    buf[i] = data[i];
-  }
-  for (; i < SIZE; i++) {
-    buf[i] = '\0';
-  }
-  return buf;
-}
-
 static constexpr SignalEntry signalEntries[] = {
 // clang-format off
   // POSIX.1-1990 standard
-#define SIG_(E) {toNameBuf(#E), SignalEntry::Kind::POSIX_1_1990, SIG## E},
+#define SIG_(E) {#E, SignalEntry::Kind::POSIX_1_1990, SIG## E},
 #ifdef SIGHUP
   SIG_(HUP)
 #endif
@@ -101,7 +85,7 @@ static constexpr SignalEntry signalEntries[] = {
 #undef SIG_
 
   // SUSv2 and POSIX.1-2001 standard
-#define SIG_(E) {toNameBuf(#E), SignalEntry::Kind::POSIX_1_2001, SIG## E},
+#define SIG_(E) {#E, SignalEntry::Kind::POSIX_1_2001, SIG## E},
 #ifdef SIGBUS
   SIG_(BUS)
 #endif
@@ -132,7 +116,7 @@ static constexpr SignalEntry signalEntries[] = {
 #undef SIG_
 
   // other
-#define SIG_(E) {toNameBuf(#E), SignalEntry::Kind::OTHER, SIG## E},
+#define SIG_(E) {#E, SignalEntry::Kind::OTHER, SIG## E},
 #ifdef SIGIOT
   SIG_(IOT)
 #endif
@@ -177,7 +161,7 @@ static std::vector<SignalEntry> initRealTimeSignalEntries() {
   const int max = SIGRTMAX;
   values.reserve(max - min + 1);
   for (int sigNum = min; sigNum <= max; sigNum++) {
-    auto buf = SignalEntry::NameBuf();
+    SignalEntry entry{.abbrName = "", .kind = SignalEntry::Kind::REAL_TIME, .sigNum = sigNum};
     int diff;
     const char *prefix;
     if (sigNum <= min + (max - min) / 2) {
@@ -187,12 +171,12 @@ static std::vector<SignalEntry> initRealTimeSignalEntries() {
       diff = max - sigNum;
       prefix = "MAX-";
     }
-    const int s = snprintf(buf.data(), buf.size(), "RT%s%d", prefix, diff);
+    const int s = snprintf(entry.abbrName, std::size(entry.abbrName), "RT%s%d", prefix, diff);
     if (diff == 0) { // remove suffix '-0'/'+0'
-      buf[s - 1] = '\0';
-      buf[s - 2] = '\0';
+      entry.abbrName[s - 1] = '\0';
+      entry.abbrName[s - 2] = '\0';
     }
-    values.emplace_back(buf, SignalEntry::Kind::REAL_TIME, sigNum);
+    values.push_back(entry);
   }
 #endif
 
@@ -210,8 +194,8 @@ static int parseRTSigName(StringRef ref) {
   int rtSig = -1;
   if (const auto range = getRealTimeSignalEntries(); !range.empty() && ref.startsWith("RT")) {
     ref.removePrefix(2);
-    const int min = range.front().getSigNum();
-    const int max = range.back().getSigNum();
+    const int min = range.front().sigNum;
+    const int max = range.back().sigNum;
     if (ref.startsWith("MIN")) {
       ref.removePrefix(3);
       if (ref.empty()) {
@@ -254,7 +238,7 @@ const SignalEntry *findSignalEntryByName(StringRef ref) {
   if (const int rtSig = parseRTSigName(ref); rtSig > -1) {
     const auto range = getRealTimeSignalEntries();
     for (auto &e : range) {
-      if (rtSig == e.getSigNum()) {
+      if (rtSig == e.sigNum) {
         return &e;
       }
     }
@@ -262,7 +246,7 @@ const SignalEntry *findSignalEntryByName(StringRef ref) {
 
   const auto range = getStandardSignalEntries();
   for (auto &e : range) {
-    if (ref == e.getAbbrName()) {
+    if (ref == e.abbrName) {
       return &e;
     }
   }
@@ -272,13 +256,13 @@ const SignalEntry *findSignalEntryByName(StringRef ref) {
 const SignalEntry *findSignalEntryByNum(int sigNum) {
   auto range = getStandardSignalEntries();
   for (auto &e : range) {
-    if (sigNum == e.getSigNum()) {
+    if (sigNum == e.sigNum) {
       return &e;
     }
   }
   range = getRealTimeSignalEntries();
   for (auto &e : range) {
-    if (sigNum == e.getSigNum()) {
+    if (sigNum == e.sigNum) {
       return &e;
     }
   }
@@ -293,8 +277,8 @@ std::vector<SignalEntry> toSortedUniqueSignalEntries() {
   };
   for (auto &range : ranges) {
     for (auto &e : range) {
-      if (!static_cast<bool>(values[e.getSigNum()])) {
-        values[e.getSigNum()] = e;
+      if (!static_cast<bool>(values[e.sigNum])) {
+        values[e.sigNum] = e;
       }
     }
   }

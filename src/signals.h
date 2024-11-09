@@ -17,7 +17,6 @@
 #ifndef ARSH_SIGNAL_LIST_H
 #define ARSH_SIGNAL_LIST_H
 
-#include <array>
 #include <atomic>
 #include <cerrno>
 #include <csignal>
@@ -27,12 +26,7 @@
 
 namespace arsh {
 
-class SignalEntry {
-public:
-  static constexpr unsigned int MAX_ABBR_NAME = 10;
-
-  using NameBuf = std::array<char, MAX_ABBR_NAME + 1>;
-
+struct SignalEntry {
   enum class Kind : unsigned char {
     POSIX_1_1990,
     POSIX_1_2001,
@@ -40,30 +34,17 @@ public:
     REAL_TIME,
   };
 
-private:
-  NameBuf name{}; // abbreviate signal name (INT).
+  char abbrName[11]; // abbreviate signal name (INT).
   Kind kind{};
   int sigNum{-1};
 
-public:
-  constexpr SignalEntry() = default;
+  bool isRealTime() const { return this->kind == Kind::REAL_TIME; }
 
-  constexpr SignalEntry(NameBuf name, Kind kind, int sigNum)
-      : name(name), kind(kind), sigNum(sigNum) {}
-
-  const char *getAbbrName() const { return this->name.data(); }
-
-  int getSigNum() const { return this->sigNum; }
-
-  Kind getKind() const { return this->kind; }
-
-  bool isRealTime() const { return this->getKind() == Kind::REAL_TIME; }
-
-  explicit operator bool() const { return this->getSigNum() > 0; }
+  explicit operator bool() const { return this->sigNum > 0; }
 
   std::string toFullName() const {
     std::string value = "SIG";
-    value += this->getAbbrName();
+    value += this->abbrName;
     return value;
   }
 };

@@ -1327,7 +1327,7 @@ ARSH_METHOD signal_name(RuntimeContext &ctx) {
   SUPPRESS_WARNING(signal_name);
   auto *e = findSignalEntryByNum(LOCAL(0).asSig());
   assert(e);
-  RET(Value::createStr(e->getAbbrName()));
+  RET(Value::createStr(e->abbrName));
 }
 
 //!bind: function value($this : Signal) : Int
@@ -1362,7 +1362,7 @@ ARSH_METHOD signal_kill(RuntimeContext &ctx) {
   }
   const int errNum = errno;
   std::string str = "failed to send ";
-  str += findSignalEntryByNum(sigNum)->getAbbrName();
+  str += findSignalEntryByNum(sigNum)->abbrName;
   str += " to pid(";
   str += std::to_string(static_cast<pid_t>(pid));
   str += ")";
@@ -1411,7 +1411,7 @@ ARSH_METHOD signals_get(RuntimeContext &ctx) {
     raiseError(ctx, TYPE::KeyNotFoundError, std::move(msg));
     RET_ERROR;
   }
-  RET(Value::createSig(e->getSigNum()));
+  RET(Value::createSig(e->sigNum));
 }
 
 //!bind: function get($this : Signals, $key : String) : Option<Signal>
@@ -1422,7 +1422,7 @@ ARSH_METHOD signals_signal(RuntimeContext &ctx) {
   if (!e) {
     RET(Value::createInvalid());
   }
-  RET(Value::createSig(e->getSigNum()));
+  RET(Value::createSig(e->sigNum));
 }
 
 //!bind: function list($this : Signals) : Array<Signal>
@@ -1436,7 +1436,7 @@ ARSH_METHOD signals_list(RuntimeContext &ctx) {
   auto &array = typeAs<ArrayObject>(v);
   auto list = toSortedUniqueSignalEntries();
   for (auto &e : list) {
-    array.append(Value::createSig(e.getSigNum())); // not check iterator invalidation
+    array.append(Value::createSig(e.sigNum)); // not check iterator invalidation
   }
   ASSERT_ARRAY_SIZE(array);
   RET(v);

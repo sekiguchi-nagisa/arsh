@@ -212,7 +212,7 @@ static void completeSigName(const std::string &prefix, CompCandidateConsumer &co
   };
   for (auto &range : ranges) {
     for (auto &e : range) {
-      if (StringRef sigName = e.getAbbrName(); sigName.startsWith(prefix)) {
+      if (StringRef sigName = e.abbrName; sigName.startsWith(prefix)) {
         consumer(sigName, CompCandidateKind::SIGNAL);
       }
     }

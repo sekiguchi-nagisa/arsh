@@ -267,8 +267,8 @@ void bindBuiltins(Consumer &consumer, const SysConfig &config, TypePool &pool, N
   {
     const auto range = getStandardSignalEntries();
     for (auto &e : range) {
-      if (e.getKind() == SignalEntry::Kind::POSIX_1_1990 || e.getSigNum() == SIGWINCH) {
-        binder.bindSmallConst(e.toFullName(), ConstEntry::Kind::SIG, e.getSigNum());
+      if (e.kind == SignalEntry::Kind::POSIX_1_1990 || e.sigNum == SIGWINCH) {
+        binder.bindSmallConst(e.toFullName(), ConstEntry::Kind::SIG, e.sigNum);
       }
     }
   }

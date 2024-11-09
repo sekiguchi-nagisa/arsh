@@ -62,8 +62,8 @@ static std::vector<std::string> toSignalList(const std::string &str) {
     auto *entry = arsh::findSignalEntryByName(v);
     int num;
     if (entry) {
-      num = entry->getSigNum();
-      v = arsh::findSignalEntryByNum(entry->getSigNum())->getAbbrName(); // resolve actual name
+      num = entry->sigNum;
+      v = arsh::findSignalEntryByNum(entry->sigNum)->abbrName; // resolve actual name
     } else {
       invalidCount++;
       num = -invalidCount;
@@ -87,7 +87,7 @@ static std::vector<std::string> getSignalList() {
     if (e.isRealTime()) {
       continue;
     }
-    values.push_back(format(e.getAbbrName(), e.getSigNum()));
+    values.push_back(format(e.abbrName, e.sigNum));
   }
   return values;
 }
@@ -116,17 +116,17 @@ TEST(Signal, all) {
 TEST(Signal, base) {
   using namespace arsh;
 
-  ASSERT_EQ(SIGQUIT, findSignalEntryByName("quit")->getSigNum());
-  ASSERT_EQ(SIGQUIT, findSignalEntryByName("Sigquit")->getSigNum());
-  ASSERT_EQ(SIGTSTP, findSignalEntryByName("tStP")->getSigNum());
-  ASSERT_EQ(SIGTSTP, findSignalEntryByName("SigTStp")->getSigNum());
+  ASSERT_EQ(SIGQUIT, findSignalEntryByName("quit")->sigNum);
+  ASSERT_EQ(SIGQUIT, findSignalEntryByName("Sigquit")->sigNum);
+  ASSERT_EQ(SIGTSTP, findSignalEntryByName("tStP")->sigNum);
+  ASSERT_EQ(SIGTSTP, findSignalEntryByName("SigTStp")->sigNum);
   ASSERT_EQ(nullptr, findSignalEntryByName("HOGED"));
 
   char b[] = "INT\0";
   ASSERT_EQ(nullptr, findSignalEntryByName(StringRef(b, std::size(b) - 1)));
 
-  ASSERT_STREQ("USR1", findSignalEntryByNum(SIGUSR1)->getAbbrName());
-  ASSERT_STREQ("SEGV", findSignalEntryByNum(SIGSEGV)->getAbbrName());
+  ASSERT_STREQ("USR1", findSignalEntryByNum(SIGUSR1)->abbrName);
+  ASSERT_STREQ("SEGV", findSignalEntryByNum(SIGSEGV)->abbrName);
   ASSERT_EQ(nullptr, findSignalEntryByNum(-12));
   ASSERT_EQ("SIGUSR2", findSignalEntryByNum(SIGUSR2)->toFullName());
 }
