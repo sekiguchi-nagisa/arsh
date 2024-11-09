@@ -353,6 +353,35 @@ TEST_F(LineRendererTest, softwrap) {
   ASSERT_EQ("1234\r\n    \r\n@ ^M\r\n", out);
 }
 
+TEST(RendererTest, semanticPrompt) {
+  std::string str;
+  str.resize(1024);
+  RenderingContext ctx(str.data(), str.size(), "1>\n2>\n>> ", nullptr);
+  ctx.semanticPrompt = true;
+  ctx.buf.insertToCursor("1111\n2222\n3333");
+
+  {
+    auto ret = doRendering(ctx, nullptr, nullptr, 80);
+    std::string expect = "\x1b]133;D;0\x1b\\\x1b]133;A\x1b\\1>\r\n"
+                         "2>\r\n"
+                         ">> \x1b]133;B\x1b\\1111\r\n"
+                         "   2222\r\n"
+                         "   3333\x1b]133;C\x1b\\";
+    ASSERT_EQ(expect, ret.renderedLines);
+  }
+
+  {
+    ctx.prevExitStatus = 123;
+    auto ret = doRendering(ctx, nullptr, nullptr, 80);
+    std::string expect = "\x1b]133;D;123\x1b\\\x1b]133;A\x1b\\1>\r\n"
+                         "2>\r\n"
+                         ">> \x1b]133;B\x1b\\1111\r\n"
+                         "   2222\r\n"
+                         "   3333\x1b]133;C\x1b\\";
+    ASSERT_EQ(expect, ret.renderedLines);
+  }
+}
+
 class PagerTest : public ExpectOutput {
 protected:
   ARState *state;
