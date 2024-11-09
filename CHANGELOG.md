@@ -22,6 +22,7 @@
 - support OSC133 (shell integration/semantic prompt)
     - enable via ``semantic-prompt`` config
 - add ``String#validate`` method for utf8 validation
+- add ``String#foldCase`` method for Unicode-aware case folding
 
 #### Misc
 

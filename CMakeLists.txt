@@ -260,6 +260,7 @@ set(ARSH_SRC
         src/candidates.cpp
         src/format_signature.cpp
         src/renderer.cpp
+        src/case_fold.cpp
         ${lexer_src}
         ${bind_src}
         ${embed_src})

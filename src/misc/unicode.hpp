@@ -93,7 +93,7 @@ struct UnicodeUtil {
   /**
    *
    * @param codePoint
-   * must be unicode code point
+   * must be Unicode code point
    * @param buf
    * at least 4byte
    * @return

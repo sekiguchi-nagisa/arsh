@@ -260,7 +260,7 @@ assert "あ".width(1) == 2
 assert "あ".width(2) == 2
 
 ## broken encoded string
-var invalid = $'\xC2\x24\xE0\xA4\xC2\xE0\xB8\xB3'
+let invalid = $'\xC2\x24\xE0\xA4\xC2\xE0\xB8\xB3'
 assert $invalid.count() == 6
 $gca = $invalid.chars()
 assert $gca.size() == 6
@@ -397,6 +397,33 @@ assert ! "".ifEmpty()
 # case
 assert "AbcDEf".lower() == "abcdef"
 assert "AbcDEf".upper() == "ABCDEF"
+
+assert "0AbcDEf".foldCase() == '0abcdef'
+assert "0AbcDEfG".foldCase() == '0abcdefg'
+assert "0AbcDEfG".foldCase($full:$true) == '0abcdefg'
+assert 'あああ'.foldCase() == 'あああ'
+assert ''.foldCase() == ''
+assert $'\x00'.foldCase() == $'\x00'
+assert $'\u1fcc\u1fD3'.foldCase() == $'\u1fc3\u0390'
+assert $'\u1fcc\u1fD3'.foldCase($full:$false) == $'\u1fc3\u0390'
+assert $'\u1fcc\u1fD3@'.foldCase($full:$true) == $'\u03b7\u03b9\u03b9\u0308\u0301@'
+assert $'\u0049'.foldCase() == $'\u0069'
+assert $'\u0049'.foldCase($full:$true) == $'\u0069'
+assert $'\u0049'.foldCase($turkic:$false) == $'\u0069'
+assert $'\u0049'.foldCase($turkic:$true) == $'\u0131'
+assert $'\u0049'.foldCase($turkic:$true, $full:$true) == $'\u0131'
+assert $'\u0130'.foldCase() == $'\u0130'
+assert $'#A\u0130'.foldCase($full:$true) == $'#a\u0069\u0307'
+assert $'\u0130'.foldCase($turkic:$false) == $'\u0130'
+assert $'\u0130'.foldCase($turkic:$true) == $'\u0069'
+assert $'\u0130'.foldCase($turkic:$true, $full:$true) == $'\u0069'
+assert $'\U10400'.foldCase() == $'\U10428'
+
+# assert ''
+$ex = 234
+try { $invalid.foldCase(); } catch e{ $ex = $e; }
+assert $ex is InvalidOperationError
+assert ($ex as InvalidOperationError).message() == 'must be UTF-8 encoded'
 
 # string cast
 assert(("fre" + 3.14) is String)

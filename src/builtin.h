@@ -27,6 +27,7 @@
 
 #include "arg_parser.h"
 #include "candidates.h"
+#include "case_fold.h"
 #include "line_editor.h"
 #include "misc/files.hpp"
 #include "misc/num_util.hpp"
@@ -34,6 +35,7 @@
 #include "ordered_map.h"
 #include "signals.h"
 #include "vm.h"
+
 #include <arsh/arsh.h>
 
 // helper macro
@@ -1136,6 +1138,67 @@ ARSH_METHOD string_upper(RuntimeContext &ctx) {
   auto ret = Value::createStr(LOCAL(0).asStrRef());
   auto ref = ret.asStrRef();
   std::transform(ref.begin(), ref.end(), const_cast<char *>(ref.begin()), ::toupper);
+  RET(ret);
+}
+
+//!bind: function foldCase($this: String, $full: Option<Bool>, $turkic: Option<Bool>): String
+ARSH_METHOD string_foldCase(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(string_foldCase);
+  const auto ref = LOCAL(0).asStrRef();
+  auto &full = LOCAL(1);
+  auto &turkic = LOCAL(2);
+  CaseFoldOp op{};
+  if (!full.isInvalid() && full.asBool()) {
+    setFlag(op, CaseFoldOp::FULL_FOLD);
+  }
+  if (!turkic.isInvalid() && turkic.asBool()) {
+    setFlag(op, CaseFoldOp::TURKIC);
+  }
+
+  auto ret = Value::createStr();
+  auto old = ref.begin();
+  auto iter = old;
+  for (const auto end = ref.end(); iter != end;) {
+    int codePoint = 0;
+    const unsigned int byteSize = UnicodeUtil::utf8ToCodePoint(iter, end, codePoint);
+    if (byteSize) {
+      auto foldResult = doCaseFolding(codePoint, op);
+      if (foldResult.equals(codePoint)) {
+        iter += byteSize;
+        continue;
+      }
+
+      char buf[4 * (CaseFoldingResult::FULL_FOLD_ENTRY_SIZE + 1)];
+      unsigned int usedSize = 0;
+      if (foldResult.isFullFolding()) {
+        auto &data = foldResult.getFullFolding();
+        for (auto &e : data) {
+          if (e == 0) {
+            break;
+          }
+          usedSize += UnicodeUtil::codePointToUtf8(e, buf + usedSize);
+        }
+      } else {
+        usedSize += UnicodeUtil::codePointToUtf8(foldResult.getSimpleFolding(), buf + usedSize);
+      }
+      if (!ret.appendAsStr(ctx, StringRef(old, iter - old)) ||
+          !ret.appendAsStr(ctx, StringRef(buf, usedSize))) {
+        RET_ERROR;
+      }
+      iter += byteSize;
+      old = iter;
+    } else {
+      raiseError(ctx, TYPE::InvalidOperationError, "must be UTF-8 encoded");
+      RET_ERROR;
+    }
+  }
+
+  if (old == ref.begin()) {
+    RET(LOCAL(0));
+  }
+  if (!ret.appendAsStr(ctx, StringRef(old, iter - old))) {
+    RET_ERROR;
+  }
   RET(ret);
 }
 

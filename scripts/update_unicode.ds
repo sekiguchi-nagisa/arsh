@@ -8,14 +8,17 @@ call $BIN_NAME $SCRIPT_DIR/gen_unicode_version.ds $src/misc/unicode_version.in
 echo try update $src/misc/unicode_width.in
 call $BIN_NAME $SCRIPT_DIR/gen_unicode_width_table.ds $src/misc/unicode_width.in
 
-echo try update $src/grapheme_break_property.in
+echo try update $src/misc/grapheme_break_property.in
 call $BIN_NAME $SCRIPT_DIR/gen_grapheme_break_property.ds $src/misc/grapheme_break_property.in
 
-echo try update $src/incb_property.in
+echo try update $src/misc/incb_property.in
 call $BIN_NAME $SCRIPT_DIR/gen_incb_property.ds $src/misc/incb_property.in
 
-echo try update $src/word_break_property.in
+echo try update $src/misc/word_break_property.in
 call $BIN_NAME $SCRIPT_DIR/gen_word_break_property.ds $src/misc/word_break_property.in
+
+echo try update $src/misc/case_fold.in
+call $BIN_NAME $SCRIPT_DIR/gen_case_fold.arsh $src/misc/case_fold.in
 
 ## for test case
 var test = "$SCRIPT_DIR/../test"
