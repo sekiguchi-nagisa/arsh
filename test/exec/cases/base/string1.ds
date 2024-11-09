@@ -418,6 +418,7 @@ assert $'\u0130'.foldCase($turkic:$false) == $'\u0130'
 assert $'\u0130'.foldCase($turkic:$true) == $'\u0069'
 assert $'\u0130'.foldCase($turkic:$true, $full:$true) == $'\u0069'
 assert $'\U10400'.foldCase() == $'\U10428'
+assert $'\U10500'.foldCase() == $'\U10500'
 
 # assert ''
 $ex = 234
