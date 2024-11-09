@@ -17,6 +17,8 @@
 #ifndef ARSH_CMD_DESC_H
 #define ARSH_CMD_DESC_H
 
+#include "misc/array_ref.hpp"
+
 namespace arsh {
 
 struct BuiltinCmdDesc {
@@ -25,9 +27,7 @@ struct BuiltinCmdDesc {
   const char *detail;
 };
 
-unsigned int getBuiltinCmdSize();
-
-const BuiltinCmdDesc *getBuiltinCmdDescList();
+ArrayRef<BuiltinCmdDesc> getBuiltinCmdDescRange();
 
 } // namespace arsh
 

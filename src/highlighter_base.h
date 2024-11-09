@@ -17,8 +17,7 @@
 #ifndef ARSH_HIGHLIGHTER_BASE_H
 #define ARSH_HIGHLIGHTER_BASE_H
 
-#include <array>
-
+#include "misc/array_ref.hpp"
 #include "parser.h"
 
 namespace arsh {
@@ -52,11 +51,9 @@ enum class HighlightTokenClass : unsigned char {
 
 HighlightTokenClass toTokenClass(TokenKind kind);
 
-using HighlightTokenEntries =
-    std::array<std::pair<HighlightTokenClass, StringRef>,
-               static_cast<unsigned int>(HighlightTokenClass::LINENO_) + 1>;
+using HighlightTokenRange = ArrayRef<std::pair<HighlightTokenClass, StringRef>>;
 
-const HighlightTokenEntries &getHighlightTokenEntries();
+HighlightTokenRange getHighlightTokenRange();
 
 class TokenEmitter : public TriviaStore, public TokenTracker {
 protected:

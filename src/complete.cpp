@@ -274,10 +274,9 @@ static bool completeCmdName(const NameScope &scope, const std::string &cmdPrefix
 
   // complete builtin command
   if (hasFlag(option, CodeCompOp::BUILTIN)) {
-    const unsigned int bsize = getBuiltinCmdSize();
-    auto *cmdList = getBuiltinCmdDescList();
-    for (unsigned int i = 0; i < bsize; i++) {
-      if (StringRef builtin = cmdList[i].name; builtin.startsWith(cmdPrefix)) {
+    const auto range = getBuiltinCmdDescRange();
+    for (auto &e : range) {
+      if (StringRef builtin = e.name; builtin.startsWith(cmdPrefix)) {
         CompCandidate candidate(builtin, CompCandidateKind::COMMAND_NAME);
         candidate.setCmdNameType(CompCandidate::CmdNameType::BUILTIN);
         consumer(candidate);

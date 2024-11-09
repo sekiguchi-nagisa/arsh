@@ -17,6 +17,7 @@
 #include <algorithm>
 
 #include "case_fold.h"
+#include "misc/array_ref.hpp"
 #include "misc/unicode.hpp"
 
 namespace arsh {
@@ -38,25 +39,7 @@ using CaseMappingFullFoldEntry = uint16_t[CaseFoldingResult::FULL_FOLD_ENTRY_SIZ
 #undef CASE_FOLD_F_ENTRY
 #undef CASE_FOLD_T_ENTRY
 
-class CaseMappingRange {
-private:
-  const CaseMappingShortEntry *ptr_{nullptr};
-  size_t size_{0};
-
-public:
-  CaseMappingRange() = default;
-
-  template <size_t N>
-  explicit CaseMappingRange(const std::pair<uint16_t, uint16_t> (&data)[N])
-      : CaseMappingRange(data, N) {}
-
-  CaseMappingRange(const std::pair<uint16_t, uint16_t> *ptr, size_t size)
-      : ptr_(ptr), size_(size) {}
-
-  const CaseMappingShortEntry *begin() const { return this->ptr_; }
-
-  const CaseMappingShortEntry *end() const { return this->ptr_ + this->size_; }
-};
+using CaseMappingRange = ArrayRef<CaseMappingShortEntry>;
 
 struct CompareShortEntry {
   bool operator()(const CaseMappingShortEntry &x, uint16_t y) const { return x.first < y; }

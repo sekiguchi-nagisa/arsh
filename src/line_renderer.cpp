@@ -116,7 +116,7 @@ ANSIEscapeSeqMap ANSIEscapeSeqMap::fromString(StringRef setting) {
       continue; // skip invalid color sequence
     }
 
-    for (auto &[cl, name] : getHighlightTokenEntries()) {
+    for (auto &[cl, name] : getHighlightTokenRange()) {
       if (element == name && cl != HighlightTokenClass::NONE_) {
         values[cl] = escapeSeq.toString();
         break;

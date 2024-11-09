@@ -122,14 +122,13 @@ HighlightTokenClass toTokenClass(TokenKind kind) {
   return HighlightTokenClass::NONE_;
 }
 
-const HighlightTokenEntries &getHighlightTokenEntries() {
-  static constexpr HighlightTokenEntries entries = {{
+static constexpr HighlightTokenRange::value_type highlightTokenTable[] = {
 #define GEN_TABLE(E, S) {HighlightTokenClass::E, S},
-      EACH_HIGHLIGHT_TOKEN_CLASS(GEN_TABLE)
+    EACH_HIGHLIGHT_TOKEN_CLASS(GEN_TABLE)
 #undef GEN_TABLE
-  }};
-  return entries;
-}
+};
+
+HighlightTokenRange getHighlightTokenRange() { return HighlightTokenRange(highlightTokenTable); }
 
 void TokenEmitter::operator()(Token token) {
   assert(token.size > 0);

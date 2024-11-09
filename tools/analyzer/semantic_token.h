@@ -19,27 +19,18 @@
 
 #include "source.h"
 #include <highlighter_base.h>
+#include <misc/array_ref.hpp>
 
 namespace arsh::lsp {
-
-constexpr size_t numberOfExtendSemanticTokenTypes() {
-  constexpr SemanticTokenTypes table[] = {
-#define GEN_TABLE(E, V, F) SemanticTokenTypes::E,
-      EACH_SEMANTIC_TOKEN_TYPES_EXTEND(GEN_TABLE)
-#undef GEN_TABLE
-  };
-  return std::size(table);
-}
 
 struct ExtendSemanticTokenTypeEntry {
   SemanticTokenTypes extend;
   SemanticTokenTypes fallback;
 };
 
-using ExtendSemanticTokenTypeList =
-    std::array<ExtendSemanticTokenTypeEntry, numberOfExtendSemanticTokenTypes()>;
+using ExtendSemanticTokenTypeRange = ArrayRef<ExtendSemanticTokenTypeEntry>;
 
-const ExtendSemanticTokenTypeList &getExtendSemanticTokenTypes();
+ExtendSemanticTokenTypeRange getExtendSemanticTokenTypeRange();
 
 /**
  * currently not used

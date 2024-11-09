@@ -27,12 +27,10 @@
 namespace arsh::lsp {
 
 static const BuiltinCmdDesc *findCmdDesc(const char *name) {
-  unsigned int size = getBuiltinCmdSize();
-  auto *cmdList = getBuiltinCmdDescList();
-  for (unsigned int i = 0; i < size; i++) {
-    StringRef cmdName = name;
-    if (cmdName == cmdList[i].name) {
-      return cmdList + i;
+  const auto range = getBuiltinCmdDescRange();
+  for (auto &e : range) {
+    if (StringRef(name) == e.name) {
+      return &e;
     }
   }
   return nullptr;

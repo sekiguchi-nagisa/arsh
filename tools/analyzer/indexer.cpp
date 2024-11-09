@@ -1134,10 +1134,9 @@ void SymbolIndexer::addBuiltinSymbols() {
   }
 
   // add builtin command
-  unsigned int size = getBuiltinCmdSize();
-  auto *cmdList = getBuiltinCmdDescList();
-  for (unsigned int i = 0; i < size; i++) {
-    NameInfo nameInfo(tokenGen.next(), cmdList[i].name);
+  const auto range = getBuiltinCmdDescRange();
+  for (auto &e : range) {
+    NameInfo nameInfo(tokenGen.next(), e.name);
     this->builder().addDecl(nameInfo, DeclSymbol::Kind::BUILTIN_CMD, "", nameInfo.getToken());
   }
 }

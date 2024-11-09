@@ -134,13 +134,12 @@ int GetOptState::operator()(const ArrayObject &obj) {
  */
 static bool printUsage(FILE *fp, StringRef prefix, bool isShortHelp = true) {
   bool matched = false;
-  const unsigned int size = getBuiltinCmdSize();
-  auto *cmdList = getBuiltinCmdDescList();
-  for (unsigned int i = 0; i < size; i++) {
-    if (const char *cmdName = cmdList[i].name; StringRef(cmdName).startsWith(prefix)) {
-      fprintf(fp, "%s: %s %s\n", cmdName, cmdName, cmdList[i].usage);
+  const auto range = getBuiltinCmdDescRange();
+  for (auto &e : range) {
+    if (const char *cmdName = e.name; StringRef(cmdName).startsWith(prefix)) {
+      fprintf(fp, "%s: %s %s\n", cmdName, cmdName, e.usage);
       if (!isShortHelp) {
-        fprintf(fp, "%s\n", cmdList[i].detail);
+        fprintf(fp, "%s\n", e.detail);
       }
       matched = true;
     }
@@ -180,10 +179,9 @@ int parseFD(StringRef value) {
 }
 
 static void printAllUsage(FILE *fp) {
-  const unsigned int size = getBuiltinCmdSize();
-  auto *cmdList = getBuiltinCmdDescList();
-  for (unsigned int i = 0; i < size; i++) {
-    fprintf(fp, "%s %s\n", cmdList[i].name, cmdList[i].usage);
+  const auto range = getBuiltinCmdDescRange();
+  for (auto &e : range) {
+    fprintf(fp, "%s %s\n", e.name, e.usage);
   }
 }
 

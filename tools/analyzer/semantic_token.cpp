@@ -19,14 +19,15 @@
 
 namespace arsh::lsp {
 
-const ExtendSemanticTokenTypeList &getExtendSemanticTokenTypes() {
-  static constexpr ExtendSemanticTokenTypeList list = {
+static constexpr ExtendSemanticTokenTypeEntry extendSemanticTokenTypes[] = {
 #define GEN_TABLE(E, V, F)                                                                         \
   ExtendSemanticTokenTypeEntry{SemanticTokenTypes::E, SemanticTokenTypes::F},
-      EACH_SEMANTIC_TOKEN_TYPES_EXTEND(GEN_TABLE)
+    EACH_SEMANTIC_TOKEN_TYPES_EXTEND(GEN_TABLE)
 #undef GEN_TABLE
-  };
-  return list;
+};
+
+ExtendSemanticTokenTypeRange getExtendSemanticTokenTypeRange() {
+  return ExtendSemanticTokenTypeRange(extendSemanticTokenTypes);
 }
 
 void fitLegendToClient(SemanticTokensLegend &legend,
@@ -59,8 +60,7 @@ SemanticTokenEncoder::SemanticTokenEncoder(SemanticTokensLegend &&legend)
   }
 
   // add extend semantic token type fallback
-  auto &entries = getExtendSemanticTokenTypes();
-  for (auto &e : entries) {
+  for (auto &e : getExtendSemanticTokenTypeRange()) {
     if (this->tokenTypeToIds.find(e.extend) == this->tokenTypeToIds.end()) {
       if (const auto iter = this->tokenTypeToIds.find(e.fallback);
           iter != this->tokenTypeToIds.end()) { // if not found, add fallback type index

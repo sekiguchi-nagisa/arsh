@@ -151,7 +151,7 @@ static constexpr SignalEntry signalEntries[] = {
     // clang-format on
 };
 
-SignalEntryRange getStandardSignalEntries() { return {signalEntries, std::size(signalEntries)}; }
+SignalEntryRange getStandardSignalEntries() { return SignalEntryRange(signalEntries); }
 
 static std::vector<SignalEntry> initRealTimeSignalEntries() {
   std::vector<SignalEntry> values;

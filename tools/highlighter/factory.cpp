@@ -39,7 +39,7 @@ FormatterFactory::FormatterFactory(const StyleMap &map) : styleMap(std::cref(map
 }
 
 static const HighlightTokenClass *resolveTokenClass(StringRef name) {
-  for (auto &[cl, n] : getHighlightTokenEntries()) {
+  for (auto &[cl, n] : getHighlightTokenRange()) {
     if (n == name && cl != HighlightTokenClass::NONE_) {
       return &cl;
     }

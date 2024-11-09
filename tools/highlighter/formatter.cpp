@@ -218,14 +218,14 @@ void ANSIFormatter::finalize() {
 
 std::string ANSIFormatter::dump() {
   // fill escape sequence cache
-  for (auto &e : getHighlightTokenEntries()) {
+  for (auto &e : getHighlightTokenRange()) {
     this->toEscapeSeq(e.first);
   }
   std::string value;
   for (auto &e : this->escapeSeqCache) {
     auto index = static_cast<unsigned int>(e.first);
-    assert(index < getHighlightTokenEntries().size());
-    const StringRef name = getHighlightTokenEntries()[index].second;
+    assert(index < getHighlightTokenRange().size());
+    const StringRef name = getHighlightTokenRange()[index].second;
     if (!value.empty()) {
       value += " ";
     }

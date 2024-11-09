@@ -22,6 +22,7 @@
 #include <csignal>
 #include <vector>
 
+#include "misc/array_ref.hpp"
 #include "misc/string_ref.hpp"
 
 namespace arsh {
@@ -49,26 +50,7 @@ struct SignalEntry {
   }
 };
 
-class SignalEntryRange {
-private:
-  const SignalEntry *ptr_{nullptr};
-  size_t size_{0};
-
-public:
-  SignalEntryRange(const SignalEntry *ptr, size_t size) : ptr_(ptr), size_(size) {}
-
-  const SignalEntry *begin() const { return this->ptr_; }
-
-  const SignalEntry *end() const { return this->ptr_ + this->size_; }
-
-  size_t size() const { return this->size_; }
-
-  bool empty() const { return this->size() == 0; }
-
-  const SignalEntry &front() const { return *this->begin(); }
-
-  const SignalEntry &back() const { return this->ptr_[this->size() - 1]; }
-};
+using SignalEntryRange = ArrayRef<SignalEntry>;
 
 SignalEntryRange getStandardSignalEntries();
 

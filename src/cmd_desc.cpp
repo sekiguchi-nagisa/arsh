@@ -296,8 +296,6 @@ static constexpr BuiltinCmdDesc table[] = {
      "    the exit status is 127."},
 };
 
-unsigned int getBuiltinCmdSize() { return std::size(table); }
-
-const BuiltinCmdDesc *getBuiltinCmdDescList() { return table; }
+ArrayRef<BuiltinCmdDesc> getBuiltinCmdDescRange() { return ArrayRef(table); }
 
 } // namespace arsh

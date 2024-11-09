@@ -257,8 +257,8 @@ Value LineEditorObject::getConfigs(ARState &state) const {
       break;
     case EditConfig::COLOR: {
       std::string code;
-      auto &entries = getHighlightTokenEntries();
-      for (auto &[cl, name] : entries) {
+      auto range = getHighlightTokenRange();
+      for (auto &[cl, name] : range) {
         if (auto iter = this->escapeSeqMap.getValues().find(cl);
             iter != this->escapeSeqMap.getValues().end()) {
           if (!code.empty()) {
