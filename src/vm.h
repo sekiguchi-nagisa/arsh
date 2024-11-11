@@ -58,6 +58,13 @@ enum class RuntimeOption : unsigned short {
 #undef GEN_ENUM
 };
 
+struct RuntimeOptionEntry {
+  const RuntimeOption option;
+  const char name[14];
+};
+
+ArrayRef<RuntimeOptionEntry> getRuntimeOptionEntries();
+
 enum class EvalOP : unsigned char {
   PROPAGATE = 1u << 0u, // propagate uncaught exception to caller (except for subshell).
 };

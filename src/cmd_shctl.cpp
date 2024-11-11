@@ -49,14 +49,13 @@ static int printFuncName(const ARState &state, const ArrayObject &argvObj, Strin
   return name != nullptr ? 0 : 1;
 }
 
-static constexpr struct {
-  RuntimeOption option;
-  const char name[14];
-} runtimeOptions[] = {
+static constexpr RuntimeOptionEntry runtimeOptionEntries[] = {
 #define GEN_OPT(E, V, N) {RuntimeOption::E, N},
     EACH_RUNTIME_OPTION(GEN_OPT)
 #undef GEN_OPT
 };
+
+ArrayRef<RuntimeOptionEntry> getRuntimeOptionEntries() { return ArrayRef(runtimeOptionEntries); }
 
 static RuntimeOption recognizeRuntimeOption(StringRef name) {
   // normalize option name (remove _ -, lower-case)
@@ -73,7 +72,7 @@ static RuntimeOption recognizeRuntimeOption(StringRef name) {
     }
   }
 
-  for (auto &e : runtimeOptions) {
+  for (auto &e : runtimeOptionEntries) {
     if (optName == e.name) {
       return e.option;
     }
@@ -83,7 +82,7 @@ static RuntimeOption recognizeRuntimeOption(StringRef name) {
 
 static unsigned int computeMaxOptionNameSize() {
   unsigned int maxSize = 0;
-  for (auto &e : runtimeOptions) {
+  for (auto &e : runtimeOptionEntries) {
     unsigned int size = strlen(e.name) + 2;
     if (size > maxSize) {
       maxSize = size;
@@ -94,7 +93,7 @@ static unsigned int computeMaxOptionNameSize() {
 
 static int showOptions(const ARState &state) {
   const unsigned int maxNameSize = computeMaxOptionNameSize();
-  for (auto &e : runtimeOptions) {
+  for (auto &e : runtimeOptionEntries) {
     errno = 0;
     if (printf("%-*s%s\n", static_cast<int>(maxNameSize), e.name,
                state.has(e.option) ? "on" : "off") < 0) {
@@ -183,7 +182,7 @@ static int setOption(ARState &state, const ArrayObject &argvObj, const unsigned 
 
   if (dump) {
     std::string value;
-    for (auto &e : runtimeOptions) {
+    for (auto &e : runtimeOptionEntries) {
       value += e.name;
       value += "=";
       value += state.has(e.option) ? "on" : "off";
@@ -345,6 +344,23 @@ static int checkWinSize(ARState &state, const ArrayObject &argvObj, StringRef su
   return 1;
 }
 
+static constexpr SHCTLSubCmdEntry subCmdEntries[] = {
+#define GEN_OPT(E, V) {SHCTLSubCmdEntry::Kind::E, V},
+    EACH_SHCTL_SUBCMD(GEN_OPT)
+#undef GEN_OPT
+};
+
+ArrayRef<SHCTLSubCmdEntry> getSHCTLSubCmdEntries() { return ArrayRef(subCmdEntries); }
+
+static const SHCTLSubCmdEntry *lookupSubCmd(StringRef subCmd) {
+  for (auto &e : subCmdEntries) {
+    if (subCmd == e.name) {
+      return &e;
+    }
+  }
+  return nullptr;
+}
+
 int builtin_shctl(ARState &state, ArrayObject &argvObj) {
   GetOptState optState("h");
   for (int opt; (opt = optState(argvObj)) != -1;) {
@@ -357,27 +373,29 @@ int builtin_shctl(ARState &state, ArrayObject &argvObj) {
 
   if (unsigned int index = optState.index; index < argvObj.size()) {
     auto subCmd = argvObj.getValues()[index].asStrRef();
-    if (subCmd == "backtrace") {
-      return printBacktrace(state, argvObj, subCmd);
-    } else if (subCmd == "is-sourced") {
-      return isSourced(state.getCallStack());
-    } else if (subCmd == "is-interactive") {
-      return state.isInteractive ? 0 : 1;
-    } else if (subCmd == "function") {
-      return printFuncName(state, argvObj, subCmd);
-    } else if (subCmd == "set") {
-      return setOption(state, argvObj, index + 1, true);
-    } else if (subCmd == "unset") {
-      return setOption(state, argvObj, index + 1, false);
-    } else if (subCmd == "module") {
-      return showModule(state, argvObj, index + 1, subCmd);
-    } else if (subCmd == "info") {
-      return showInfo(state, argvObj, subCmd);
-    } else if (subCmd == "winsize") {
-      return checkWinSize(state, argvObj, subCmd);
-    } else {
+    auto *entry = lookupSubCmd(subCmd);
+    if (!entry) {
       ERROR(state, argvObj, "undefined subcommand: %s", toPrintable(subCmd).c_str());
       return 2;
+    }
+    switch (entry->kind) {
+    case SHCTLSubCmdEntry::Kind::INTERACTIVE:
+      return state.isInteractive ? 0 : 1;
+    case SHCTLSubCmdEntry::Kind::SOURCED:
+      return isSourced(state.getCallStack());
+    case SHCTLSubCmdEntry::Kind::BACKTRACE:
+      return printBacktrace(state, argvObj, subCmd);
+    case SHCTLSubCmdEntry::Kind::FUNCTION:
+      return printFuncName(state, argvObj, subCmd);
+    case SHCTLSubCmdEntry::Kind::MODULE:
+      return showModule(state, argvObj, index + 1, subCmd);
+    case SHCTLSubCmdEntry::Kind::SET:
+    case SHCTLSubCmdEntry::Kind::UNSET:
+      return setOption(state, argvObj, index + 1, entry->kind == SHCTLSubCmdEntry::Kind::SET);
+    case SHCTLSubCmdEntry::Kind::INFO:
+      return showInfo(state, argvObj, subCmd);
+    case SHCTLSubCmdEntry::Kind::WINSIZE:
+      return checkWinSize(state, argvObj, subCmd);
     }
   }
   return 0;
