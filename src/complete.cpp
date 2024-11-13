@@ -19,6 +19,7 @@
 #include <pwd.h>
 
 #include "arg_parser_base.h"
+#include "cmd.h"
 #include "cmd_desc.h"
 #include "complete.h"
 #include "format_signature.h"
@@ -29,6 +30,7 @@
 #include "misc/format.hpp"
 #include "paths.h"
 #include "signals.h"
+#include "vm.h"
 
 extern char **environ; // NOLINT
 
@@ -607,63 +609,49 @@ static void completeParamName(const std::vector<std::string> &paramNames, const 
   const unsigned int size = paramNames.size();
   for (unsigned int i = 0; i < size; i++) {
     if (StringRef ref = paramNames[i]; ref.startsWith(word)) {
-      const int priority = 9000000 + i;
+      const auto priority = static_cast<int>(9000000 + i);
       CompCandidate candidate(paramNames[i], CompCandidateKind::PARAM, priority);
       consumer(candidate);
     }
   }
 }
 
-static bool hasCmdArg(const CmdNode &node) {
+static const CmdArgNode *findFirstCmdArg(const CmdNode &node) {
   for (auto &e : node.getArgNodes()) {
     if (e->is(NodeKind::CmdArg)) {
-      return true;
-    }
-  }
-  return false;
-}
-
-static bool completeSubcommand(const TypePool &pool, const NameScope &scope, const CmdNode &cmdNode,
-                               const std::string &word, CompCandidateConsumer &consumer) {
-  if (hasCmdArg(cmdNode)) {
-    return false;
-  }
-
-  const std::string cmdName = toCmdFullName(cmdNode.getNameNode().getValue());
-  auto handle = scope.lookup(cmdName);
-  if (!handle) {
-    return false;
-  }
-
-  auto &type = pool.get(handle.asOk()->getTypeId());
-  if (!type.isModType()) {
-    return false;
-  }
-  auto fieldWalker = [&](StringRef name, const Handle &) {
-    if (name.startsWith(word) && isCmdFullName(name)) {
-      if (!name.startsWith("_")) {
-        name.removeSuffix(strlen(CMD_SYMBOL_SUFFIX));
-        consumer(name, CompCandidateKind::COMMAND_ARG);
-      }
-    }
-    return true;
-  };
-  type.walkField(pool, fieldWalker);
-  return true;
-}
-
-static const CLIRecordType *resolveCLIType(const TypePool &pool, const Handle &handle) {
-  if (auto &type = pool.get(handle.getTypeId()); type.isFuncType()) {
-    if (auto &funcType = cast<FunctionType>(type);
-        funcType.getParamSize() == 1 && funcType.getParamTypeAt(0).isCLIRecordType()) {
-      return cast<CLIRecordType>(&funcType.getParamTypeAt(0));
+      return cast<CmdArgNode>(e.get());
     }
   }
   return nullptr;
 }
 
-static bool completeCLIOption(const CLIRecordType &type, const std::string &word, bool firstArg,
-                              CompCandidateConsumer &consumer) {
+static bool completeBuiltinOption(const CmdNode &cmdNode, const Lexer &lexer,
+                                  const std::string &word, CompCandidateConsumer &consumer) {
+  if (cmdNode.getNameNode().getValue() != "shctl") {
+    return false;
+  }
+
+  if (auto *firstArgNode = findFirstCmdArg(cmdNode)) {
+    const auto ref = lexer.toStrRef(firstArgNode->getToken());
+    if (ref == "set" || ref == "unset") {
+      for (auto &e : getRuntimeOptionEntries()) {
+        if (StringRef name = e.name; name.startsWith(word)) {
+          consumer(name, CompCandidateKind::COMMAND_ARG);
+        }
+      }
+    }
+  } else { // only complete shctl sub-commands
+    for (auto &e : getSHCTLSubCmdEntries()) {
+      if (StringRef name = e.name; name.startsWith(word)) {
+        consumer(name, CompCandidateKind::COMMAND_ARG);
+      }
+    }
+  }
+  return true;
+}
+
+static bool completeCLIOptionImpl(const CLIRecordType &type, const std::string &word, bool firstArg,
+                                  CompCandidateConsumer &consumer) {
   if (word.empty() || word[0] != '-') {
     if (hasFlag(type.getAttr(), CLIRecordType::Attr::HAS_SUBCMD) && firstArg) {
       // complete sub-command
@@ -722,18 +710,10 @@ static bool completeCLIOption(const CLIRecordType &type, const std::string &word
   return true;
 }
 
-static bool completeCLIOption(const TypePool &pool, const Lexer &lexer, const NameScope &scope,
+static bool completeCLIOption(const TypePool &pool, const Lexer &lexer, const CLIRecordType &type,
                               const CmdNode &cmdNode, const std::string &word,
                               CompCandidateConsumer &consumer) {
-  auto handle = scope.lookup(toCmdFullName(cmdNode.getNameNode().getValue()));
-  if (!handle) {
-    return false;
-  }
-  auto *cliType = resolveCLIType(pool, *handle.asOk());
-  if (!cliType) {
-    return false;
-  }
-
+  const auto *cliType = &type;
   int latestSubCmdIndex = -1;
   const unsigned int size = cmdNode.getArgNodes().size();
   for (unsigned int i = 0; i < size; i++) {
@@ -748,12 +728,53 @@ static bool completeCLIOption(const TypePool &pool, const Lexer &lexer, const Na
     auto ret = cliType->findSubCmdInfo(pool, ref);
     if (ret.first) {
       cliType = ret.first;
-      latestSubCmdIndex = i;
+      latestSubCmdIndex = static_cast<int>(i);
     }
   }
   const bool firstArg = size == 0 || (latestSubCmdIndex > -1 &&
                                       static_cast<unsigned int>(latestSubCmdIndex) == size - 1);
-  return completeCLIOption(*cliType, word, firstArg, consumer);
+  return completeCLIOptionImpl(*cliType, word, firstArg, consumer);
+}
+
+static const CLIRecordType *resolveCLIType(const Type &type) {
+  if (type.isFuncType()) {
+    if (auto &funcType = cast<FunctionType>(type);
+        funcType.getParamSize() == 1 && funcType.getParamTypeAt(0).isCLIRecordType()) {
+      return cast<CLIRecordType>(&funcType.getParamTypeAt(0));
+    }
+  }
+  return nullptr;
+}
+
+static bool hasCmdArg(const CmdNode &node) { return findFirstCmdArg(node); }
+
+static bool completeSubCmdOrCLIOption(const TypePool &pool, const Lexer &lexer,
+                                      const NameScope &scope, const CmdNode &cmdNode,
+                                      const std::string &word, CompCandidateConsumer &consumer) {
+  auto handle = scope.lookup(toCmdFullName(cmdNode.getNameNode().getValue()));
+  if (!handle) { // try complete builtin command options
+    return completeBuiltinOption(cmdNode, lexer, word, consumer);
+  }
+  auto &type = pool.get(handle.asOk()->getTypeId());
+  if (const auto *cliType = resolveCLIType(type)) { // CLI
+    return completeCLIOption(pool, lexer, *cliType, cmdNode, word, consumer);
+  }
+
+  // sub-command (no-additional arguments)
+  if (!type.isModType() || hasCmdArg(cmdNode)) {
+    return false;
+  }
+  auto fieldWalker = [&](StringRef name, const Handle &) {
+    if (name.startsWith(word) && isCmdFullName(name)) {
+      if (!name.startsWith("_")) {
+        name.removeSuffix(strlen(CMD_SYMBOL_SUFFIX));
+        consumer(name, CompCandidateKind::COMMAND_ARG);
+      }
+    }
+    return true;
+  };
+  type.walkField(pool, fieldWalker);
+  return true;
 }
 
 bool CodeCompleter::invoke(const CodeCompletionContext &ctx) {
@@ -827,12 +848,8 @@ bool CodeCompleter::invoke(const CodeCompletionContext &ctx) {
         return true;
       }
     }
-    if (completeCLIOption(this->pool, *ctx.getLexer(), ctx.getScope(), *ctx.getCmdNode(),
-                          ctx.getCompWord(), this->consumer)) {
-      return true;
-    }
-    if (completeSubcommand(this->pool, ctx.getScope(), *ctx.getCmdNode(), ctx.getCompWord(),
-                           this->consumer)) {
+    if (completeSubCmdOrCLIOption(this->pool, *ctx.getLexer(), ctx.getScope(), *ctx.getCmdNode(),
+                                  ctx.getCompWord(), this->consumer)) {
       return true;
     }
     if (const auto op = ctx.getFallbackOp(); hasFlag(op, CodeCompOp::FILE)) {

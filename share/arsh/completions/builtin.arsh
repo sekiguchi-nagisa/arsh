@@ -24,48 +24,6 @@ function _cmd($ctx : Module, $t : [String], $c : Int) : Candidates? {
     }
 }
 
-_extract_sub() {
-    for $line in $STDIN {
-        var matched = $/^      ([-a-z]+) +.+/.match($line)
-        if let m = $matched {
-            echo ${$m.group(1)!}
-        }
-    }
-}
-
-function _shctl($ctx : Module, $t : [String], $c : Int) : Candidates {
-    if $c == 1 {
-        var p = ""
-        if $c < $t.size() {
-            $p = $t.peek()
-        }
-        var ret : Candidates
-        for line in <(help shctl | _extract_sub) {
-            if $line.startsWith($p) {
-                $ret.add($line)
-            }
-        }
-        return $ret
-    }
-    assert $t.size() > 1
-    case $t[1] {
-    'set'|'unset' => {
-        var p = ""
-        if $c < $t.size() {
-            $p = $t.peek()
-        }
-        var ret : Candidates
-        for line in <(shctl set | cut -d ' ' -f 1) {
-            if $line.startsWith($p) {
-                $ret.add($line)
-            }
-        }
-        return $ret
-    }
-    else => return new Candidates()
-    }
-}
-
 source $SCRIPT_DIR/../modules/fzf.arsh as _fzf
 
 function _kill($ctx : Module, $t : [String], $c : Int) : Candidates? {
@@ -103,7 +61,6 @@ function _kill($ctx : Module, $t : [String], $c : Int) : Candidates? {
 $compAdd("command", $_cmd)
 $compAdd("call", $_cmd)
 $compAdd("exec", $_cmd)
-$compAdd('shctl', $_shctl)
 $compAdd('kill', $_kill)
 
 

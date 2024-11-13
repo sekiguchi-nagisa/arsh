@@ -43,6 +43,7 @@
 - **Breaking Change**: ``String#sanitize`` method no longer replace null characters
 - now interrupt ``LineEditor#readLine`` method when receive signals
     - also call signal handler
+- natively complete builtin `shctl` command sub-commands/options. now no longer need completion script
 
 #### LSP
 
