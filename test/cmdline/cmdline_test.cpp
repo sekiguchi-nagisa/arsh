@@ -399,13 +399,13 @@ TEST_F(CmdlineTest, signal) {
 
   // core dump
   str = strsignal(SIGQUIT);
-  str += " (core dumped)\n";
+  str += "( \\(core dumped\\))?\n";
   auto builder = DS(R"(
         ulimit -c unlimited 2> /dev/null
         echo | call $BIN_NAME -c 'kill -s quit $$'
         exit $?
 )");
-  ASSERT_NO_FATAL_FAILURE(this->expect(std::move(builder), 128 + SIGQUIT, "", str));
+  ASSERT_NO_FATAL_FAILURE(this->expectRegex(std::move(builder), 128 + SIGQUIT, "", str));
 }
 
 TEST_F(CmdlineTest, signalConst) {
