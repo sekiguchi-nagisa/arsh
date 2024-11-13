@@ -74,7 +74,7 @@ endif ()
 set(SANITIZER "" CACHE STRING "which sanitizer to use")
 
 if (NOT ("${SANITIZER}" STREQUAL ""))
-    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O1 -fsanitize=${SANITIZER} -fno-omit-frame-pointer")
+    set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -O1 -fsanitize=${SANITIZER} -fno-omit-frame-pointer -fno-optimize-sibling-calls")
 else ()
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -fvisibility=hidden -fvisibility-inlines-hidden")
 endif ()
