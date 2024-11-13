@@ -492,6 +492,8 @@ public:
     return new (ptr) FunctionType(id, ref, superType, returnType, std::move(paramTypes));
   }
 
+  void operator delete(void *ptr) { ::operator delete(ptr); }
+
   ~FunctionType() = default;
 
   const Type &getReturnType() const { return this->returnType; }
@@ -958,6 +960,8 @@ public:
     return std::unique_ptr<FuncHandle>(handle);
   }
 
+  void operator delete(void *ptr) { ::operator delete(ptr); }
+
   StringRef getPackedParamNames() const {
     StringRef ref;
     if (this->hasParams()) {
@@ -1044,6 +1048,8 @@ public:
                                                    PackedParamNames &&packed, ModId modId) {
     return create(recv, index, nullptr, params, std::move(packed), modId);
   }
+
+  void operator delete(void *ptr) { ::operator delete(ptr); }
 
   const Type &getReturnType() const { return this->returnType; }
 

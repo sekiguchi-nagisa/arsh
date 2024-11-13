@@ -48,6 +48,8 @@ public:
     return ObjPtr<CandidateObject>(obj);
   }
 
+  void operator delete(void *ptr) { ::operator delete(ptr); }
+
   unsigned int candidateSize() const { return this->canSize; }
 
   unsigned int descriptionSize() const { return this->descSize; }

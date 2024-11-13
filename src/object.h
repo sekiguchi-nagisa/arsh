@@ -957,6 +957,8 @@ public:
     return new (ptr) BaseObject(type, size);
   }
 
+  void operator delete(void *ptr) { ::operator delete(ptr); }
+
   /**
    * for tuple object construction
    * @param type
@@ -1302,6 +1304,8 @@ public:
   }
 
   ~ClosureObject();
+
+  void operator delete(void *ptr) { ::operator delete(ptr); }
 
   const FuncObject &getFuncObj() const { return *this->func; }
 

@@ -266,6 +266,8 @@ public:
     return create(1, procs, false, std::move(inObj), std::move(outObj), std::move(desc));
   }
 
+  void operator delete(void *ptr) { ::operator delete(ptr); }
+
   unsigned int getProcSize() const { return this->procSize; }
 
   State state() const { return static_cast<State>(STATE_MASK & this->meta); }
