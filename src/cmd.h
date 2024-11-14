@@ -82,30 +82,6 @@ inline int maskExitStatus(int64_t status) {
   return static_cast<int>(static_cast<uint64_t>(status) & 0xFF);
 }
 
-#define EACH_SHCTL_SUBCMD(OP)                                                                      \
-  OP(INTERACTIVE, "is-interactive")                                                                \
-  OP(SOURCED, "is-sourced")                                                                        \
-  OP(BACKTRACE, "backtrace")                                                                       \
-  OP(FUNCTION, "function")                                                                         \
-  OP(MODULE, "module")                                                                             \
-  OP(SET, "set")                                                                                   \
-  OP(UNSET, "unset")                                                                               \
-  OP(INFO, "info")                                                                                 \
-  OP(WINSIZE, "winsize")
-
-struct SHCTLSubCmdEntry {
-  enum class Kind : unsigned char {
-#define GEN_ENUM(O, S) O,
-    EACH_SHCTL_SUBCMD(GEN_ENUM)
-#undef GEN_ENUM
-  };
-
-  const Kind kind;
-  const char name[15];
-};
-
-ArrayRef<SHCTLSubCmdEntry> getSHCTLSubCmdEntries();
-
 } // namespace arsh
 
 #define ERROR2(ctx, obj, sub, fmt, ...) printErrorAt(ctx, obj, sub, 0, fmt, ##__VA_ARGS__)

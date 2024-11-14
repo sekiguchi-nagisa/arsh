@@ -298,4 +298,20 @@ static constexpr BuiltinCmdDesc table[] = {
 
 ArrayRef<BuiltinCmdDesc> getBuiltinCmdDescRange() { return ArrayRef(table); }
 
+static constexpr SHCTLSubCmdEntry subCmdEntries[] = {
+#define GEN_OPT(E, V) {SHCTLSubCmdEntry::Kind::E, V},
+    EACH_SHCTL_SUBCMD(GEN_OPT)
+#undef GEN_OPT
+};
+
+ArrayRef<SHCTLSubCmdEntry> getSHCTLSubCmdEntries() { return ArrayRef(subCmdEntries); }
+
+static constexpr RuntimeOptionEntry runtimeOptionEntries[] = {
+#define GEN_OPT(E, V, N) {RuntimeOption::E, N},
+    EACH_RUNTIME_OPTION(GEN_OPT)
+#undef GEN_OPT
+};
+
+ArrayRef<RuntimeOptionEntry> getRuntimeOptionEntries() { return ArrayRef(runtimeOptionEntries); }
+
 } // namespace arsh

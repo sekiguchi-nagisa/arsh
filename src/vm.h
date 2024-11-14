@@ -22,6 +22,7 @@
 #include <arsh/arsh.h>
 
 #include "cmd.h"
+#include "cmd_desc.h"
 #include "core.h"
 #include "job.h"
 #include "misc/noncopyable.h"
@@ -34,36 +35,6 @@
 #include "sysconfig.h"
 
 namespace arsh {
-
-#define EACH_RUNTIME_OPTION(OP)                                                                    \
-  OP(ASSERT, (1u << 0u), "assert")                                                                 \
-  OP(CLOBBER, (1u << 1u), "clobber")                                                               \
-  OP(DOTGLOB, (1u << 2u), "dotglob")                                                               \
-  OP(ERR_RAISE, (1u << 3u), "errraise")                                                            \
-  OP(FAIL_GLOB, (1u << 4u), "failglob")                                                            \
-  OP(FAIL_SIGPIPE, (1u << 5u), "failsigpipe")                                                      \
-  OP(FAIL_TILDE, (1u << 6u), "failtilde")                                                          \
-  OP(FASTGLOB, (1u << 7u), "fastglob")                                                             \
-  OP(GLOBSTAR, (1u << 8u), "globstar")                                                             \
-  OP(HUP_EXIT, (1u << 9u), "huponexit")                                                            \
-  OP(MONITOR, (1u << 10u), "monitor")                                                              \
-  OP(NULLGLOB, (1u << 11u), "nullglob")                                                            \
-  OP(TRACE_EXIT, (1u << 12u), "traceonexit")                                                       \
-  OP(XTRACE, (1u << 13u), "xtrace")
-
-// set/unset via 'shctl' command
-enum class RuntimeOption : unsigned short {
-#define GEN_ENUM(E, V, N) E = (V),
-  EACH_RUNTIME_OPTION(GEN_ENUM)
-#undef GEN_ENUM
-};
-
-struct RuntimeOptionEntry {
-  const RuntimeOption option;
-  const char name[14];
-};
-
-ArrayRef<RuntimeOptionEntry> getRuntimeOptionEntries();
 
 enum class EvalOP : unsigned char {
   PROPAGATE = 1u << 0u, // propagate uncaught exception to caller (except for subshell).

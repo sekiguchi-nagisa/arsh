@@ -19,7 +19,6 @@
 #include <pwd.h>
 
 #include "arg_parser_base.h"
-#include "cmd.h"
 #include "cmd_desc.h"
 #include "complete.h"
 #include "format_signature.h"
@@ -30,7 +29,6 @@
 #include "misc/format.hpp"
 #include "paths.h"
 #include "signals.h"
-#include "vm.h"
 
 extern char **environ; // NOLINT
 

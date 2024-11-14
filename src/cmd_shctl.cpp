@@ -15,6 +15,7 @@
  */
 
 #include "cmd.h"
+#include "cmd_desc.h"
 #include "misc/pty.hpp"
 #include "ordered_map.h"
 #include "vm.h"
@@ -49,14 +50,6 @@ static int printFuncName(const ARState &state, const ArrayObject &argvObj, Strin
   return name != nullptr ? 0 : 1;
 }
 
-static constexpr RuntimeOptionEntry runtimeOptionEntries[] = {
-#define GEN_OPT(E, V, N) {RuntimeOption::E, N},
-    EACH_RUNTIME_OPTION(GEN_OPT)
-#undef GEN_OPT
-};
-
-ArrayRef<RuntimeOptionEntry> getRuntimeOptionEntries() { return ArrayRef(runtimeOptionEntries); }
-
 static RuntimeOption recognizeRuntimeOption(StringRef name) {
   // normalize option name (remove _ -, lower-case)
   std::string optName;
@@ -72,7 +65,7 @@ static RuntimeOption recognizeRuntimeOption(StringRef name) {
     }
   }
 
-  for (auto &e : runtimeOptionEntries) {
+  for (auto &e : getRuntimeOptionEntries()) {
     if (optName == e.name) {
       return e.option;
     }
@@ -82,7 +75,7 @@ static RuntimeOption recognizeRuntimeOption(StringRef name) {
 
 static unsigned int computeMaxOptionNameSize() {
   unsigned int maxSize = 0;
-  for (auto &e : runtimeOptionEntries) {
+  for (auto &e : getRuntimeOptionEntries()) {
     unsigned int size = strlen(e.name) + 2;
     if (size > maxSize) {
       maxSize = size;
@@ -93,7 +86,7 @@ static unsigned int computeMaxOptionNameSize() {
 
 static int showOptions(const ARState &state) {
   const unsigned int maxNameSize = computeMaxOptionNameSize();
-  for (auto &e : runtimeOptionEntries) {
+  for (auto &e : getRuntimeOptionEntries()) {
     errno = 0;
     if (printf("%-*s%s\n", static_cast<int>(maxNameSize), e.name,
                state.has(e.option) ? "on" : "off") < 0) {
@@ -182,7 +175,7 @@ static int setOption(ARState &state, const ArrayObject &argvObj, const unsigned 
 
   if (dump) {
     std::string value;
-    for (auto &e : runtimeOptionEntries) {
+    for (auto &e : getRuntimeOptionEntries()) {
       value += e.name;
       value += "=";
       value += state.has(e.option) ? "on" : "off";
@@ -344,16 +337,8 @@ static int checkWinSize(ARState &state, const ArrayObject &argvObj, StringRef su
   return 1;
 }
 
-static constexpr SHCTLSubCmdEntry subCmdEntries[] = {
-#define GEN_OPT(E, V) {SHCTLSubCmdEntry::Kind::E, V},
-    EACH_SHCTL_SUBCMD(GEN_OPT)
-#undef GEN_OPT
-};
-
-ArrayRef<SHCTLSubCmdEntry> getSHCTLSubCmdEntries() { return ArrayRef(subCmdEntries); }
-
 static const SHCTLSubCmdEntry *lookupSubCmd(StringRef subCmd) {
-  for (auto &e : subCmdEntries) {
+  for (auto &e : getSHCTLSubCmdEntries()) {
     if (subCmd == e.name) {
       return &e;
     }
