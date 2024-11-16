@@ -154,6 +154,15 @@ TEST_P(AnalyzerTest, base) {
 INSTANTIATE_TEST_SUITE_P(AnalyzerTest, AnalyzerTest,
                          ::testing::ValuesIn(getSortedFileList(ANALYZER_TEST_DIR)));
 
+TEST(AnalyzerBinaryCheckTest, base) { // not contains VM* symbols
+  auto cmd = format("assert !(nm %s | grep VM); ", ANALYZER_PATH);
+  auto result = ProcBuilder{BIN_PATH, "-c", cmd.c_str()}.execAndGetResult();
+  ASSERT_EQ("", result.out);
+  ASSERT_EQ("", result.err);
+  ASSERT_EQ(WaitStatus::EXITED, result.status.kind);
+  ASSERT_EQ(1, result.status.value);
+}
+
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
