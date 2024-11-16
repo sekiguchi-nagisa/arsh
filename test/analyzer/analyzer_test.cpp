@@ -156,9 +156,9 @@ INSTANTIATE_TEST_SUITE_P(AnalyzerTest, AnalyzerTest,
 
 TEST(AnalyzerBinaryCheckTest, base) { // not contains VM* symbols
   const char *pattern = "VMState";
-  auto cmd = format("assert (nm $BIN_NAME | grep %s > /dev/null)\n"
+  auto cmd = format("assert (nm %s | grep 'LSP' > /dev/null)\n"
                     "assert !(nm %s | grep %s);",
-                    pattern, ANALYZER_PATH, pattern);
+                    ANALYZER_PATH, ANALYZER_PATH, pattern);
   auto result = ProcBuilder{BIN_PATH, "-c", cmd.c_str()}.execAndGetResult();
   ASSERT_EQ("", result.out);
   ASSERT_EQ("", result.err);
