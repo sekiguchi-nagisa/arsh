@@ -609,6 +609,8 @@ void ByteCodeGenerator::visitVarNode(VarNode &node) {
         this->emit0byteIns(OpCode::GET_SECOND);
       } else if (index == toIndex(BuiltinVarOffset::THROWN)) {
         this->emit0byteIns(OpCode::LOAD_CUR_THROWN);
+      } else if (index == toIndex(BuiltinVarOffset::EXIT_STATUS)) {
+        this->emit0byteIns(OpCode::LOAD_STATUS);
       } else {
         this->emit2byteIns(OpCode::LOAD_GLOBAL, index);
       }

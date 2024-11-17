@@ -2263,6 +2263,11 @@ bool VM::mainLoop(ARState &state) {
         state.stack.push(std::move(value));
         vmnext;
       }
+      vmcase(LOAD_STATUS) {
+        auto v = state.getGlobal(BuiltinVarOffset::EXIT_STATUS);
+        state.stack.push(std::move(v));
+        vmnext;
+      }
       vmcase(RAND) {
         state.stack.push(Value::createInt(state.getRng().nextInt64()));
         vmnext;

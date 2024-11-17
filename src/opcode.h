@@ -144,6 +144,7 @@ namespace arsh {
   OP(LOAD_CUR_MOD, 0, 1)                                                                           \
   OP(LOAD_CUR_ARG0, 0, 1)                                                                          \
   OP(LOAD_CUR_THROWN, 0, 1)                                                                        \
+  OP(LOAD_STATUS, 0, 1)                                                                            \
   OP(RAND, 0, 1)                                                                                   \
   OP(GET_SECOND, 0, 1)                                                                             \
   OP(SET_SECOND, 0, -1)                                                                            \
