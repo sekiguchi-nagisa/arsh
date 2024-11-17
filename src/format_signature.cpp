@@ -88,9 +88,8 @@ void formatFuncSignature(const FunctionType &funcType, const FuncHandle &handle,
   normalizeTypeName(funcType.getReturnType(), out);
 }
 
-void formatFuncSignature(const Type &retType, unsigned int paramSize,
-                         const Type *const *paramTypes, std::string &out,
-                         const std::function<void(StringRef)> &paramCallback) {
+void formatFuncSignature(const Type &retType, unsigned int paramSize, const Type *const *paramTypes,
+                         std::string &out, const std::function<void(StringRef)> &paramCallback) {
   out += "(";
   for (unsigned int i = 0; i < paramSize; i++) {
     if (i > 0) {
@@ -212,8 +211,7 @@ static const char *toStringPrimitive(HandleInfo info) {
 }
 
 std::string Decoder::decodeType() {
-  const auto info = *(this->ptr++);
-  switch (info) {
+  switch (const auto info = *(this->ptr++); info) {
 #define GEN_CASE(E) case HandleInfo::E:
     EACH_HANDLE_INFO_TYPE(GEN_CASE)
 #undef GEN_CASE
@@ -310,7 +308,8 @@ std::string Decoder::decodeType() {
 }
 
 void formatNativeMethodSignature(const NativeFuncInfo *funcInfo, StringRef packedParamType,
-                                 std::string &out, const std::function<void(StringRef)> &paramCallback) {
+                                 std::string &out,
+                                 const std::function<void(StringRef)> &paramCallback) {
   auto params = splitParamNames(funcInfo->params);
   auto paramTypes = splitParamNames(packedParamType);
   Decoder decoder(funcInfo->handleInfo, paramTypes);
@@ -333,7 +332,7 @@ void formatNativeMethodSignature(const NativeFuncInfo *funcInfo, StringRef packe
     out += params[i];
     out += ": ";
     normalizeTypeName(decoder.decodeType(), out);
-    if(paramCallback) {
+    if (paramCallback) {
       paramCallback(StringRef(out.c_str() + offset));
     }
   }

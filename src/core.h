@@ -121,7 +121,7 @@ void setJobControlSignalSetting(ARState &st, bool set);
  * also set SIGCHLD handler.
  * @param st
  */
-void setSignalSetting(ARState &st);
+void setSignalSetting(const ARState &st);
 
 /**
  * clear installed signal handlers and set to SIG_DFL (except for SIGCHLD).

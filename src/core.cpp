@@ -313,7 +313,7 @@ void setJobControlSignalSetting(ARState &st, bool set) {
   installUnblock(st, SIGTTOU, handle);
 }
 
-void setSignalSetting(ARState &state) {
+void setSignalSetting(const ARState &state) {
   SignalGuard guard;
 
   AtomicSigSet set;
@@ -330,7 +330,7 @@ void setSignalSetting(ARState &state) {
     action.sa_handler = signalHandler;
     sigaction(SIGCHLD, &action, nullptr);
   }
-  if (const int sig = SIGWINCH; !set.has(sig)) {
+  if (constexpr int sig = SIGWINCH; !set.has(sig)) {
     auto action = newSigaction(sig);
     action.sa_handler = signalHandler;
     sigaction(sig, &action, nullptr);
@@ -728,16 +728,6 @@ static ObjPtr<FuncObject> getFuncObj(const FuncObject &funcObject) {
   return nullptr;
 }
 
-/**
- * compile string as function
- * @param state
- * @param expr
- * @param modType
- * globally imported to fresh module-context
- * @return
- * compiled FuncObject.
- * if compilation failed, return null
- */
 ObjPtr<FuncObject> compileAsFunc(ARState &state, StringRef expr, const ModType &modType,
                                  bool singleExpr) {
   if (expr.size() > SYS_LIMIT_INPUT_SIZE) {
