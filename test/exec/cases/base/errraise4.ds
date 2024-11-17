@@ -32,6 +32,6 @@ assert ($ex as ExecError).message() == "\`exec' command exits with non-zero stat
 $ex = 45
 try { eval '$?=23;'; } catch e { $ex = $e; }
 assert ($ex as ExecError).status() == 23
-assert ($ex as ExecError).message() == "\`exec' command exits with non-zero status: \`23'"
+assert ($ex as ExecError).message() == "\`eval' command exits with non-zero status: \`23'"
 
 true
