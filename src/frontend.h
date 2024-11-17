@@ -29,6 +29,7 @@ enum class FrontEndOption : unsigned char {
   SINGLE_EXPR = 1 << 3,
   REPORT_WARN = 1 << 4,
   COLLECT_SIGNATURE = 1u << 5,
+  IMPLICIT_BLOCK = 1 << 6,
 };
 
 template <>

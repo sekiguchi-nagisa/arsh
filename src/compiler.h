@@ -65,7 +65,6 @@ public:
    * @param error
    * @param fp
    * may be null
-   * @param close
    */
   DefaultErrorConsumer(ARError *error, FILE *fp);
 
@@ -106,12 +105,13 @@ private:
   void printErrorLine(std::string &out, const Lexer &lexer, Token token) const;
 };
 
-enum class CompileOption : unsigned short {
-  LOAD_TO_ROOT = 1u << 1u,
-  PARSE_ONLY = 1u << 2u,
-  CHECK_ONLY = 1u << 3u,
-  PRINT_TOPLEVEL = 1u << 4u,
-  SINGLE_EXPR = 1u << 5u,
+enum class CompileOption : unsigned char {
+  LOAD_TO_ROOT = 1u << 0u,
+  PARSE_ONLY = 1u << 1u,
+  CHECK_ONLY = 1u << 2u,
+  PRINT_TOPLEVEL = 1u << 3u,
+  SINGLE_EXPR = 1u << 4u,
+  IMPLICIT_BLOCK = 1u << 5u,
 };
 
 template <>
@@ -127,6 +127,9 @@ inline FrontEndOption toOption(CompileOption option) {
   }
   if (hasFlag(option, CompileOption::SINGLE_EXPR)) {
     setFlag(op, FrontEndOption::SINGLE_EXPR);
+  }
+  if (hasFlag(option, CompileOption::IMPLICIT_BLOCK)) {
+    setFlag(op, FrontEndOption::IMPLICIT_BLOCK);
   }
   return op;
 }

@@ -628,6 +628,14 @@ static NativeCode initCode(OpCode op) {
   return NativeCode(code);
 }
 
+static NativeCode initBuiltinEval() {
+  NativeCode::ArrayType code;
+  code[0] = static_cast<char>(OpCode::BUILTIN_EVAL);
+  code[1] = static_cast<char>(OpCode::LOAD_STATUS);
+  code[2] = static_cast<char>(OpCode::RETURN_UDC);
+  return NativeCode(code);
+}
+
 static ResolvedCmd lookupUdcFromIndex(const ARState &state, const ModId modId,
                                       const unsigned int index, const bool nullChar = false) {
   const FuncObject *udcObj = nullptr;
@@ -699,8 +707,9 @@ ResolvedCmd CmdResolver::operator()(const ARState &state, const StringRef ref,
     }
 
     static const std::pair<const char *, NativeCode> sb[] = {
-        {"command", initCode(OpCode::BUILTIN_CMD)},
         {"call", initCode(OpCode::BUILTIN_CALL)},
+        {"command", initCode(OpCode::BUILTIN_CMD)},
+        {"eval", initBuiltinEval()},
         {"exec", initCode(OpCode::BUILTIN_EXEC)},
     };
     for (auto &[name, code] : sb) {
@@ -1231,6 +1240,41 @@ int VM::builtinExec(ARState &state, ArrayObject &argvObj, Value &&redir) {
   return 0;
 }
 
+#define TRY(E)                                                                                     \
+  do {                                                                                             \
+    if (unlikely(!(E))) {                                                                          \
+      return false;                                                                                \
+    }                                                                                              \
+  } while (false)
+
+bool VM::builtinEval(ARState &state, ArrayObject &argvObj) {
+  state.stack.setLocal(UDC_PARAM_ARGV + 1, argvObj.takeFirst()); // not check iterator invalidation
+  const unsigned int size = argvObj.size();
+  if (size == 0) {
+    state.setExitStatus(0);
+    return true;
+  }
+  Value src;
+  if (size == 1) {
+    src = argvObj.getValues()[0];
+  } else {
+    StrBuilder builder(state);
+    for (unsigned int i = 0; i < size; i++) {
+      if (i > 0) {
+        TRY(builder.add(" "));
+      }
+      TRY(builder.add(argvObj.getValues()[i].asStrRef()));
+    }
+    src = std::move(builder).take();
+  }
+  auto &modType = getCurRuntimeModule(state);
+  if (auto func = compileAsFunc(state, src.asStrRef(), modType, false)) {
+    state.stack.push(func);
+    return prepareFuncCall(state, 0);
+  }
+  return false;
+}
+
 bool VM::returnFromUserDefinedCommand(ARState &state, int64_t status) {
   const auto attr = static_cast<CmdCallAttr>(state.stack.getLocal(UDC_PARAM_ATTR).asNum());
   const auto arg0 = state.stack.getLocal(UDC_PARAM_ARG0);
@@ -1431,6 +1475,7 @@ const native_func_t *nativeFuncPtrTable();
 #define vmnext continue
 #define vmerror goto EXCEPT
 
+#undef TRY
 #define TRY(E)                                                                                     \
   do {                                                                                             \
     if (unlikely(!(E))) {                                                                          \
@@ -2200,6 +2245,11 @@ bool VM::mainLoop(ARState &state) {
         }
         TRY(checkCmdExecError(state, arg0.asStrRef(), attr, status));
         pushExitStatus(state, status);
+        vmnext;
+      }
+      vmcase(BUILTIN_EVAL) {
+        auto argv = toObjPtr<ArrayObject>(state.stack.getLocal(UDC_PARAM_ARGV));
+        TRY(builtinEval(state, *argv));
         vmnext;
       }
       vmcase(NEW_REDIR) {

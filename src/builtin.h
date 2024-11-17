@@ -1559,7 +1559,7 @@ ARSH_METHOD module_func(RuntimeContext &ctx) {
   const auto ref = LOCAL(1).asStrRef();
   assert(type.isModType());
   auto &modType = cast<ModType>(type);
-  if (auto ret = loadExprAsFunc(ctx, ref, modType)) {
+  if (auto ret = compileAsFunc(ctx, ref, modType, true)) {
     RET(ret);
   }
   RET_ERROR;

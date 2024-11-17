@@ -23,6 +23,7 @@
     - enable via ``semantic-prompt`` config
 - add ``String#validate`` method for utf8 validation
 - add ``String#foldCase`` method for Unicode-aware case folding
+- re-enable builtin ``eval`` command. evaluate string within implicit function scope
 
 #### Misc
 

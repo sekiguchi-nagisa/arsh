@@ -38,7 +38,6 @@ static int builtin_gets(ARState &state, ArrayObject &argvObj);
 static int builtin_puts(ARState &state, ArrayObject &argvObj);
 static int builtin_check_env(ARState &state, ArrayObject &argvObj);
 static int builtin_complete(ARState &state, ArrayObject &argvObj);
-static int builtin_eval(ARState &state, ArrayObject &argvObj);
 static int builtin_exit(ARState &state, ArrayObject &argvObj);
 static int builtin_false(ARState &state, ArrayObject &argvObj);
 static int builtin_getenv(ARState &state, ArrayObject &argvObj);
@@ -83,7 +82,6 @@ static auto initBuiltinMap() {
       {"dirs", builtin_dirs},
       {"disown", builtin_disown},
       {"echo", builtin_echo},
-      {"eval", builtin_eval},
       {"exit", builtin_exit},
       {"false", builtin_false},
       {"fg", builtin_fg_bg},
@@ -246,11 +244,6 @@ static int builtin_check_env(ARState &st, ArrayObject &argvObj) {
     }
   }
   return 0;
-}
-
-static int builtin_eval(ARState &st, ArrayObject &argvObj) {
-  ERROR(st, argvObj, "currently does not support eval command");
-  return 1;
 }
 
 static int parseExitStatus(const ARState &state, const ArrayObject &argvObj, unsigned int index) {

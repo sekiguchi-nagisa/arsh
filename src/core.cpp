@@ -738,7 +738,8 @@ static ObjPtr<FuncObject> getFuncObj(const FuncObject &funcObject) {
  * compiled FuncObject.
  * if compilation failed, return null
  */
-ObjPtr<FuncObject> loadExprAsFunc(ARState &state, StringRef expr, const ModType &modType) {
+ObjPtr<FuncObject> compileAsFunc(ARState &state, StringRef expr, const ModType &modType,
+                                 bool singleExpr) {
   if (expr.size() > SYS_LIMIT_INPUT_SIZE) {
     raiseError(state, TYPE::ArgumentError, "too large input");
     return nullptr;
@@ -746,7 +747,7 @@ ObjPtr<FuncObject> loadExprAsFunc(ARState &state, StringRef expr, const ModType 
 
   // prepare
   auto scope = NameScope::reopen(state.typePool, *state.rootModScope, modType);
-  CompileOption option = CompileOption::SINGLE_EXPR;
+  CompileOption option = singleExpr ? CompileOption::SINGLE_EXPR : CompileOption::IMPLICIT_BLOCK;
   DefaultModuleProvider moduleProvider(state.modLoader, state.typePool, scope,
                                        std::make_unique<RuntimeCancelToken>());
   auto discardPoint = moduleProvider.getCurrentDiscardPoint();
@@ -952,7 +953,7 @@ int xexecve(const char *filePath, const ArrayObject &argvObj, char *const *envp)
   char **argv = nullptr;
   char *stacked[10]; // for small number of arguments
   void *ptr = nullptr;
-  const unsigned int allocSize = argvObj.size() + 2; // reserve sentienl and /bin/sh fallback
+  const unsigned int allocSize = argvObj.size() + 2; // reserve sentinel and /bin/sh fallback
   if (allocSize <= std::size(stacked)) {
     argv = stacked;
   } else {

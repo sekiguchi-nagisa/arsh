@@ -107,6 +107,7 @@
 | BUILTIN_CMD       |                                | -> value                                     | call builtin command command                                    |
 | BUILTIN_CALL      |                                | -> value                                     | call builtin call command                                       |
 | BUILTIN_EXEC      |                                | -> value / [terminate]                       | call builtin exec command                                       |
+| BUILTIN_EVAL      |                                |                                              | call builtin eval command                                       |
 | NEW_REDIR         |                                | -> value                                     | create new RedireConfig                                         |
 | ADD_REDIR_OP      | 1: byte1 1: fd                 | redir value -> redir                         | add stack top value as redirection src and target               |
 | ADD_REDIR_OP0     | 1: byte1                       | redir value -> redir                         | add stack top value as redirection src (for stdin)              |

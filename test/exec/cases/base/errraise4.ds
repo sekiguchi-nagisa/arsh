@@ -28,4 +28,10 @@ assert ($ex as ExecError).status() == 1
 assert ($ex as ExecError).lineno() == 26
 assert ($ex as ExecError).message() == "\`exec' command exits with non-zero status: \`1'"
 
+## eval
+$ex = 45
+try { eval '$?=23;'; } catch e { $ex = $e; }
+assert ($ex as ExecError).status() == 23
+assert ($ex as ExecError).message() == "\`exec' command exits with non-zero status: \`23'"
+
 true

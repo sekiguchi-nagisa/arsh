@@ -564,6 +564,8 @@ private:
 
   static int builtinExec(ARState &state, ArrayObject &argvObj, Value &&redir);
 
+  static bool builtinEval(ARState &state, ArrayObject &argvObj);
+
   static bool returnFromUserDefinedCommand(ARState &state, int64_t status);
 
   /**

@@ -135,6 +135,7 @@ namespace arsh {
   OP(BUILTIN_CMD, 0, 1)                                                                            \
   OP(BUILTIN_CALL, 0, 1)                                                                           \
   OP(BUILTIN_EXEC, 0, 1)                                                                           \
+  OP(BUILTIN_EVAL, 0, 0)                                                                           \
   OP(NEW_REDIR, 0, 1)                                                                              \
   OP(ADD_REDIR_OP, 2, -1)                                                                          \
   OP(ADD_REDIR_OP0, 1, -1)                                                                         \

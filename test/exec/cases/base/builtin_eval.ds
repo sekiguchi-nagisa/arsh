@@ -1,6 +1,35 @@
 
-assert "$(eval 2>&1)" =~ $/currently does not support eval command/
+## no-arg
+$? = 12
+eval
+assert $? == 0
 
-assert $? == 1
+## arg
+assert "$(eval echo hello)" == 'hello'
+assert "$(eval 'echo "hello ' 'world"')" == 'hello  world'
+assert "$(eval 'return')" == ''  # allow return expression due to function
 
-true
+
+## syntax/semantic error
+var ex = 34 as Any
+try { eval '34/'; } catch e { $ex = $e; }
+assert $ex is ArgumentError
+assert ($ex as ArgumentError).message() =~ $/\[syntax error\] expected expression/
+assert ($ex as ArgumentError).source() == $SCRIPT_NAME
+assert ($ex as ArgumentError).lineno() == 15
+
+$ex = 34 as Any
+try { eval 'ff() {}'; } catch e { $ex = $e; }
+assert $ex is ArgumentError
+assert ($ex as ArgumentError).message() =~ $/\[semantic error\] user-defined command definition is only available in top-level/
+assert ($ex as ArgumentError).source() == $SCRIPT_NAME
+assert ($ex as ArgumentError).lineno() == 22
+
+## runtime error
+$ex = 34
+try { eval \
+   '23/0'; } catch e { $ex = $e;}
+assert $ex is ArithmeticError
+assert ($ex as ArithmeticError).message() == 'zero division'
+assert ($ex as ArithmeticError).source() != $SCRIPT_NAME  # runtime error location is not equivalent to SCRIPT_NAME
+assert ($ex as ArithmeticError).lineno() == 1 

@@ -154,6 +154,14 @@ std::vector<std::unique_ptr<Node>> Parser::operator()() {
   if (nodes.empty()) {
     nodes.push_back(std::make_unique<EmptyNode>()); // dummy
   }
+  if (hasFlag(this->option, ParserOption::IMPLICIT_BLOCK)) {
+    unsigned int pos = nodes[0]->getPos();
+    auto funcNode = std::make_unique<FunctionNode>(pos, NameInfo({pos, 0}, ""));
+    funcNode->setReturnTypeNode(newVoidTypeNode());
+    funcNode->setFuncBody(std::make_unique<BlockNode>(pos, std::move(nodes)));
+    nodes = std::vector<std::unique_ptr<Node>>();
+    nodes.push_back(std::move(funcNode));
+  }
   return nodes;
 }
 

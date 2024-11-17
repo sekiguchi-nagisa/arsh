@@ -1733,6 +1733,13 @@ private:
 public:
   explicit BlockNode(unsigned int startPos) : WithRtti({startPos, 1}) {}
 
+  explicit BlockNode(unsigned int startPos, std::vector<std::unique_ptr<Node>> &&nodes)
+      : WithRtti({startPos, 1}), nodes(std::move(nodes)) {
+    if (!this->nodes.empty()) {
+      this->updateToken(this->nodes.back()->getToken());
+    }
+  }
+
   void addNode(std::unique_ptr<Node> &&node) {
     this->updateToken(node->getToken());
     this->nodes.push_back(std::move(node));

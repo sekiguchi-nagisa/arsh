@@ -60,6 +60,9 @@ bool FrontEnd::tryToParse() {
     if (hasFlag(this->option, FrontEndOption::COLLECT_SIGNATURE)) {
       setFlag(parserOption, ParserOption::COLLECT_SIGNATURE);
     }
+    if (hasFlag(this->option, FrontEndOption::IMPLICIT_BLOCK)) {
+      setFlag(parserOption, ParserOption::IMPLICIT_BLOCK);
+    }
     ObserverPtr<CodeCompletionContext> handler;
     if (this->contexts.size() == 1) { // code completion is disabled in sourced scripts
       handler = this->checker.getCodeCompletionHandler();

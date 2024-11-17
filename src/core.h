@@ -212,11 +212,14 @@ public:
  * @param expr
  * @param modType
  * globally imported to fresh module-context
+ * @param singleExpr
+ * if true, compile as single expression
  * @return
  * compiled FuncObject.
  * if compilation failed, return null
  */
-ObjPtr<FuncObject> loadExprAsFunc(ARState &state, StringRef expr, const ModType &modType);
+ObjPtr<FuncObject> compileAsFunc(ARState &state, StringRef expr, const ModType &modType,
+                                 bool singleExpr);
 
 /**
  * resolve fully qualified command name

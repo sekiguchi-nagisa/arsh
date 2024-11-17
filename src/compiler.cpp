@@ -264,7 +264,8 @@ int Compiler::operator()(ObjPtr<FuncObject> &func) {
     if (this->frontEnd.isPrevTypeNothing()) {
       this->frontEnd.getContext().back()->scope->updateModAttr(ModAttr::UNREACHABLE);
     }
-    auto &modType = hasFlag(this->compileOption, CompileOption::SINGLE_EXPR)
+    auto &modType = hasFlag(this->compileOption, CompileOption::SINGLE_EXPR) ||
+                            hasFlag(this->compileOption, CompileOption::IMPLICIT_BLOCK)
                         ? this->provider().getPool().getBuiltinModType()
                         : this->provider().newModTypeFromCurContext(this->frontEnd.getContext());
     if (!this->frontEndOnly()) {
