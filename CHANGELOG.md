@@ -59,6 +59,10 @@
 - in ``repl.arsh`` module, set ``SIG_EXIT`` handler to ``SIGHUP`` for logout
 - change termination handler invocation order of ``atexit`` function. now reverse order of registration
 
+### Fixed
+
+- fix executable file checking in filename completion
+
 ## [0.35.1] - 2024-10-19
 
 - bugfix power assert ``is`` when expr is invalid value

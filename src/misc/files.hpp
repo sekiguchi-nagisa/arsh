@@ -75,6 +75,11 @@ inline bool isExecutable(const char *fileName) {
   return S_ISREG(getStMode(fileName)) && access(fileName, X_OK) == 0;
 }
 
+inline bool isExecutable(DIR *dir, const struct dirent *entry) {
+  const int fd = dirfd(dir);
+  return S_ISREG(getStModeAt(fd, entry->d_name)) && faccessat(fd, entry->d_name, X_OK, 0) == 0;
+}
+
 inline bool isDirectory(DIR *dir, const struct dirent *entry) {
   if (entry->d_type == DT_DIR) {
     return true;

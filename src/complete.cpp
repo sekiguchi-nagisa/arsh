@@ -389,8 +389,7 @@ static bool completeFileName(const std::string &baseDir, StringRef prefix, const
         value += '/';
       } else {
         if (hasFlag(op, CodeCompOp::EXEC)) {
-          if (S_ISREG(getStModeAt(dirfd(dir.get()), entry->d_name)) &&
-              faccessat(dirfd(dir.get()), entry->d_name, X_OK, 0) != 0) {
+          if (!isExecutable(dir.get(), entry)) {
             continue;
           }
         } else if (hasFlag(op, CodeCompOp::DIR) && !hasFlag(op, CodeCompOp::FILE)) {
