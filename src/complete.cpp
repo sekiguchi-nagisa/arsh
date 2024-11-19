@@ -300,19 +300,11 @@ static bool completeCmdName(const NameScope &scope, const std::string &cmdPrefix
         if (cancel && cancel()) {
           return false;
         }
-
-        StringRef cmd = entry->d_name;
-        if (cmd.startsWith(cmdPrefix)) {
-          std::string fullPath = path;
-          if (fullPath.back() != '/') {
-            fullPath += '/';
-          }
-          fullPath += cmd.data();
-          if (isExecutable(fullPath.c_str())) {
-            CompCandidate candidate(cmd, CompCandidateKind::COMMAND_NAME);
-            candidate.setCmdNameType(CompCandidate::CmdNameType::EXTERNAL);
-            consumer(candidate);
-          }
+        if (StringRef cmd = entry->d_name;
+            cmd.startsWith(cmdPrefix) && isExecutable(dir.get(), entry)) {
+          CompCandidate candidate(cmd, CompCandidateKind::COMMAND_NAME);
+          candidate.setCmdNameType(CompCandidate::CmdNameType::EXTERNAL);
+          consumer(candidate);
         }
       }
       return true;
