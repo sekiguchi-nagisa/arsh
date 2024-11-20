@@ -154,11 +154,7 @@ __file() {
             echo ${$escape2($a)}/
         } else {
             if($@.size() > 1) {
-                if(test -f $name) {
-                    if(test -x $name) {} else {
-                        continue
-                    }
-                }
+                !(test -f $name && test -x $name) && continue
             }
             echo ${$escape2($a)}
         }
