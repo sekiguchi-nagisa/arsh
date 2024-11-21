@@ -20,7 +20,7 @@ macro(getRE2C)
     download_project(
             PROJ re2c
             GIT_REPOSITORY https://github.com/skvadrik/re2c.git
-            GIT_TAG 3.1
+            GIT_TAG 4.0
             GIT_PROGRESS 1
             ${UPDATE_DISCONNECTED_IF_AVAILABLE}
     )
