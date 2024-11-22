@@ -436,7 +436,7 @@ bool FormatPrinter::appendAsStr(FormatFlag flags, int width, int precision, char
   assert(StringRef("csbq").contains(conversion));
   StringRef ref;
   if (begin != end) {
-    ref = (*begin++).asStrRef();
+    ref = (begin++)->asStrRef();
   }
   const bool leftAdjust = hasFlag(flags, FormatFlag::LEFT_ADJUST);
   switch (conversion) {
@@ -488,7 +488,7 @@ bool FormatPrinter::appendAsInt(FormatFlag flags, int width, int precision, char
 
   int64_t v = 0;
   if (begin != end) {
-    auto ref = (*begin++).asStrRef();
+    auto ref = (begin++)->asStrRef();
     auto pair = convertToNum<int64_t>(ref.begin(), ref.end(), 0);
     if (pair) {
       v = pair.value; // FIXME: error reporting
@@ -508,11 +508,10 @@ bool FormatPrinter::appendAsFloat(FormatFlag flags, int width, int precision, ch
 
   double v = 0.0;
   if (begin != end) {
-    auto ref = (*begin++).asStrRef();
+    const auto ref = (begin++)->asStrRef();
     bool fail = true;
     if (!ref.hasNullChar()) {
-      auto ret = convertToDouble(ref.data(), false);
-      if (ret) {
+      if (const auto ret = convertToDouble(ref.data(), false)) {
         fail = false;
         v = ret.value;
       } // FIXME: error reporting
@@ -794,7 +793,7 @@ bool FormatPrinter::appendAsTimeFormat(FormatFlag flags, int width, int precisio
                                        ArrayObject::IterType endIter) {
   timespec targetTime{};
   if (begin != endIter) {
-    auto ref = (*begin++).asStrRef();
+    auto ref = (begin++)->asStrRef();
     auto s = parseUnixTimeWithNanoSec(ref.begin(), ref.end(), targetTime);
     switch (s) {
     case ParseTimespecStatus::OK:
@@ -816,7 +815,7 @@ bool FormatPrinter::appendAsTimeFormat(FormatFlag flags, int width, int precisio
     targetTime = timestampToTimespec(this->curTimestamp);
   }
 
-  struct tm tm {};
+  struct tm tm{};
   tzset();
   errno = 0;
   if (!localtime_r(&targetTime.tv_sec, &tm)) {

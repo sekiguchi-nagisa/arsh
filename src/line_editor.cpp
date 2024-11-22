@@ -444,7 +444,8 @@ void LineEditorObject::disableRawMode(int fd) {
 
 /**
  * if current cursor is not head of line. write % symbol like zsh
- * @param l
+ * @param inFd
+ * @param outFd
  */
 static int preparePrompt(int inFd, int outFd) {
   if (getCursorPosition(inFd, outFd) > 1) {

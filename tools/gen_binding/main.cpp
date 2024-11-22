@@ -34,7 +34,7 @@ using namespace arsh;
 HandleInfo fromNum(unsigned int num) {
   // check range
   if (num < 9) {
-    auto info = (HandleInfo)(num + static_cast<int>(HandleInfo::P_N0));
+    auto info = static_cast<HandleInfo>(num + static_cast<int>(HandleInfo::P_N0));
     switch (info) {
 #define GEN_CASE(ENUM) case HandleInfo::ENUM:
       EACH_HANDLE_INFO_NUM(GEN_CASE)
