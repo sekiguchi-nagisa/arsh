@@ -829,11 +829,11 @@ static std::string generateConstructorInfo(const TypePool &pool, const FunctionN
 static ScopeKind getScopeKind(const FunctionNode &node) {
   if (node.isConstructor()) {
     return ScopeKind::CONSTRUCTOR;
-  } else if (node.isMethod()) {
-    return ScopeKind::METHOD;
-  } else {
-    return ScopeKind::FUNC;
   }
+  if (node.isMethod()) {
+    return ScopeKind::METHOD;
+  }
+  return ScopeKind::FUNC;
 }
 
 void SymbolIndexer::visitFunctionImpl(FunctionNode &node, const FuncVisitOp op) {
@@ -1019,26 +1019,26 @@ static DeclSymbol::Kind resolveDeclKind(const std::pair<std::string, HandlePtr> 
   if (isTypeAliasFullName(entry.first)) {
     assert(entry.second->is(HandleKind::TYPE_ALIAS));
     return DeclSymbol::Kind::TYPE_ALIAS;
-  } else if (isCmdFullName(entry.first)) {
-    return DeclSymbol::Kind::CMD;
-  } else {
-    switch (entry.second->getKind()) {
-    case HandleKind::ENV:
-      return DeclSymbol::Kind::IMPORT_ENV;
-    case HandleKind::MOD_CONST:
-      return DeclSymbol::Kind::MOD_CONST;
-    case HandleKind::SYS_CONST:
-    case HandleKind::SMALL_CONST:
-      return DeclSymbol::Kind::CONST;
-    default:
-      break;
-    }
-
-    if (entry.second->has(HandleAttr::READ_ONLY)) {
-      return DeclSymbol::Kind::LET;
-    }
-    return DeclSymbol::Kind::VAR;
   }
+  if (isCmdFullName(entry.first)) {
+    return DeclSymbol::Kind::CMD;
+  }
+  switch (entry.second->getKind()) {
+  case HandleKind::ENV:
+    return DeclSymbol::Kind::IMPORT_ENV;
+  case HandleKind::MOD_CONST:
+    return DeclSymbol::Kind::MOD_CONST;
+  case HandleKind::SYS_CONST:
+  case HandleKind::SMALL_CONST:
+    return DeclSymbol::Kind::CONST;
+  default:
+    break;
+  }
+
+  if (entry.second->has(HandleAttr::READ_ONLY)) {
+    return DeclSymbol::Kind::LET;
+  }
+  return DeclSymbol::Kind::VAR;
 }
 
 void SymbolIndexer::addBuiltinSymbols() {
@@ -1074,7 +1074,7 @@ void SymbolIndexer::addBuiltinSymbols() {
   }
   // builtin method
   for (auto &e : this->builder().getPool().getMethodMap()) {
-    StringRef name = e.first.ref;
+    const StringRef name = e.first.ref;
     if (isMagicMethodName(name)) {
       continue;
     }

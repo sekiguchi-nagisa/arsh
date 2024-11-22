@@ -291,11 +291,10 @@ HandlePtr ModType::lookupImpl(const TypePool &pool, const std::string &name,
   if (name.empty() || name[0] == '_') {
     return nullptr;
   }
-  unsigned int size = this->getChildSize();
+  const unsigned int size = this->getChildSize();
   for (unsigned int i = 0; i < size; i++) {
     auto child = this->getChildAt(i);
-    bool target = searchGlobal ? child.isGlobal() : child.isInlined();
-    if (target) {
+    if (searchGlobal ? child.isGlobal() : child.isInlined()) {
       auto &type = pool.get(child.typeId());
       assert(type.isModType());
       if (auto handle = cast<ModType>(type).find(name)) {

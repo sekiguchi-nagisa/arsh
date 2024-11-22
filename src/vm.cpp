@@ -36,7 +36,7 @@
 AtomicSigSet ARState::pendingSigSet;
 
 /**
- * if environmental variable SHLVL dose not exist, set 0.
+ * if environmental variable SHLVL does not exist, set 0.
  */
 static int64_t getShellLevel() {
   const char *shlvl = getenv(ENV_SHLVL);
@@ -106,7 +106,7 @@ static void initEnv() {
 
 static bool check_strftime_plus(timestamp ts) {
   const auto time = timestampToTimespec(ts);
-  struct tm tm {};
+  struct tm tm{};
   if (gmtime_r(&time.tv_sec, &tm)) {
     char buf[64];
     const auto s = strftime_l(buf, std::size(buf), "%+", &tm, POSIX_LOCALE_C.get());
