@@ -37,6 +37,8 @@
     - change ``TERM_HOOK`` interface, now do not pass extra information (exit status, termination kind)
     - also remove ``ON_ASSERT``, ``ON_ERR``, ``ON_EXIT`` constants
     - now allow signal handler invocation
+- **Breaking Change**: the jobs created from process substitution are now maintained in job table
+    - job related builtin commands now recognize these jobs
 - send ``SIGHUP`` to manged jobs before process termination (even if subshell)
 
 #### Builtin
