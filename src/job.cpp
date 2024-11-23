@@ -714,6 +714,38 @@ void JobTable::removeTerminatedJobs() {
   }
 }
 
+static auto toInt32(StringRef ref) { return convertToNum10<int32_t>(ref.begin(), ref.end()); }
+
+JobLookupResult JobTable::lookup(StringRef key, bool allowProc) const {
+  if (key.empty()) {
+    goto INVALID;
+  }
+  if (key[0] == '%') { // may be job-spec
+    key.removePrefix(1);
+    const auto ret = toInt32(key);
+    if (!ret) {
+      goto INVALID;
+    }
+    if (auto job = this->find(static_cast<unsigned int>(ret.value))) {
+      return JobLookupResult(std::move(job));
+    }
+    return JobLookupResult({.type = JobLookupResult::ErrorType::NO_JOB, .value = ret.value});
+  }
+  if (allowProc && isDecimal(key[0])) { // may be pid
+    const auto ret = toInt32(key);
+    if (!ret || ret.value < 0) {
+      goto INVALID;
+    }
+    if (auto *entry = this->getProcTable().findProc(static_cast<pid_t>(ret.value))) {
+      return JobLookupResult(entry);
+    }
+    return JobLookupResult({.type = JobLookupResult::ErrorType::NO_PROC, .value = ret.value});
+  }
+
+INVALID:
+  return JobLookupResult({JobLookupResult::ErrorType::INVALID, 0});
+}
+
 bool formatJobDesc(const StringRef ref, std::string &out) {
   return splitByDelim(ref, '\n', [&out](StringRef sub, bool newline) {
     out += sub;

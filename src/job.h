@@ -482,6 +482,42 @@ public:
   }
 };
 
+class JobLookupResult {
+public:
+  enum class ErrorType : unsigned char {
+    NO_JOB,  // valid job-spec format, but no such job
+    NO_PROC, // valid pid format, but no such process
+    INVALID, // invalid job-spec or pid format
+  };
+
+  struct Error {
+    ErrorType type;
+    int value;
+  };
+
+private:
+  Union<Job, const ProcTable::Entry *, Error> value;
+
+public:
+  explicit JobLookupResult(Job &&job) : value(std::move(job)) {}
+
+  explicit JobLookupResult(const ProcTable::Entry *entry) : value(entry) {}
+
+  explicit JobLookupResult(Error e) : value(e) {}
+
+  bool isJob() const { return is<Job>(this->value); }
+
+  bool isProc() const { return is<const ProcTable::Entry *>(this->value); }
+
+  bool isError() const { return is<Error>(this->value); }
+
+  const Job &asJob() const { return get<Job>(this->value); }
+
+  const ProcTable::Entry &asProc() const { return *get<const ProcTable::Entry *>(this->value); }
+
+  Error asError() const { return get<Error>(this->value); }
+};
+
 class JobTable {
 public:
   struct CurPrevJobs {
@@ -610,6 +646,15 @@ public:
   ConstEntryIter end() const { return this->jobs.end(); }
 
   const ProcTable &getProcTable() const { return this->procTable; }
+
+  /**
+   * @param key
+   * must be job-spec or pid
+   * @param allowProc
+   * if true, also lookup process
+   * @return
+   */
+  JobLookupResult lookup(StringRef key, bool allowProc) const;
 
 private:
   /**
