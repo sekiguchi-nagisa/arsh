@@ -62,7 +62,7 @@ static bool printNumOrName(StringRef str, int &errNum) {
   return true;
 }
 
-static JobLookupResult resolveProcOrJob(const ARState &state, const ArrayObject &argvObj,
+static JobLookupResult resolveProcOrJob(ARState &state, const ArrayObject &argvObj,
                                         const StringRef arg, const bool allowNoChild) {
   auto ret = state.jobTable.lookup(arg, true);
   if (ret.isError()) {
@@ -83,8 +83,7 @@ static JobLookupResult resolveProcOrJob(const ARState &state, const ArrayObject 
   return ret;
 }
 
-static bool killProcOrJob(const ARState &state, const ArrayObject &argvObj, StringRef arg,
-                          int sigNum) {
+static bool killProcOrJob(ARState &state, const ArrayObject &argvObj, StringRef arg, int sigNum) {
   const auto target = resolveProcOrJob(state, argvObj, arg, true);
   if (target.isProc() ||
       (target.isError() && target.asError().type == JobLookupResult::ErrorType::NO_PROC)) {
@@ -219,7 +218,7 @@ int builtin_fg_bg(ARState &state, ArrayObject &argvObj) {
     job = state.jobTable.syncAndGetCurPrevJobs().cur;
   } else {
     arg = argvObj.getValues()[index].asStrRef();
-    const auto ret = state.jobTable.lookup(arg, false);
+    const auto ret = state.jobTable.lookup(arg);
     job = ret.isJob() ? ret.asJob() : nullptr;
   }
 
@@ -263,7 +262,7 @@ int builtin_fg_bg(ARState &state, ArrayObject &argvObj) {
   // process remain arguments
   for (unsigned int i = index + 1; i < size; i++) {
     arg = argvObj.getValues()[i].asStrRef();
-    if (const auto target = state.jobTable.lookup(arg, false); target.isJob()) {
+    if (const auto target = state.jobTable.lookup(arg); target.isJob()) {
       target.asJob()->showInfo(stdout, JobInfoFormat::JOB_ID | JobInfoFormat::DESC);
       static_cast<void>(target.asJob()->send(SIGCONT));
     } else {
@@ -431,7 +430,7 @@ int builtin_jobs(ARState &state, ArrayObject &argvObj) {
   bool hasError = false;
   for (unsigned int i = optState.index; i < argvObj.size(); i++) {
     const auto ref = argvObj.getValues()[i].asStrRef();
-    auto ret = state.jobTable.lookup(ref, false);
+    auto ret = state.jobTable.lookup(ref);
     if (!ret.isJob()) {
       ERROR(state, argvObj, "%s: no such job", toPrintable(ref).c_str());
       hasError = true;
@@ -463,7 +462,7 @@ int builtin_disown(ARState &state, ArrayObject &argvObj) {
   }
   for (unsigned int i = optState.index; i < argvObj.size(); i++) {
     const auto ref = argvObj.getValues()[i].asStrRef();
-    auto ret = state.jobTable.lookup(ref, false);
+    auto ret = state.jobTable.lookup(ref);
     if (!ret.isJob()) {
       ERROR(state, argvObj, "%s: no such job", toPrintable(ref).c_str());
       return 1;

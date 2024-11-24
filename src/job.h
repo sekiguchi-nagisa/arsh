@@ -654,7 +654,7 @@ public:
    * if true, also lookup process
    * @return
    */
-  JobLookupResult lookup(StringRef key, bool allowProc) const;
+  JobLookupResult lookup(StringRef key, bool allowProc = false);
 
 private:
   /**

@@ -530,6 +530,18 @@ TEST_F(JobTableTest, attach) {
   });
   auto job6 = newJob();
 
+  {
+    auto j = jobTable.lookup("%%");
+    ASSERT_TRUE(j.isError());
+    ASSERT_EQ(JobLookupResult::ErrorType::NO_JOB, j.asError().type);
+    ASSERT_EQ(0, j.asError().value);
+
+    j = jobTable.lookup("%-");
+    ASSERT_TRUE(j.isError());
+    ASSERT_EQ(JobLookupResult::ErrorType::NO_JOB, j.asError().type);
+    ASSERT_EQ(0, j.asError().value);
+  }
+
   jobTable.attach(job1);
   ASSERT_EQ(1u, job1->getJobID());
   {
@@ -552,6 +564,45 @@ TEST_F(JobTableTest, attach) {
     auto &e = jobTable.syncAndGetCurPrevJobs();
     ASSERT_EQ(job3, e.cur);
     ASSERT_EQ(job2, e.prev);
+  }
+
+  // job lookup api
+  {
+    auto j = jobTable.lookup("");
+    ASSERT_TRUE(j.isError());
+    ASSERT_EQ(JobLookupResult::ErrorType::INVALID, j.asError().type);
+    ASSERT_EQ(0, j.asError().value);
+
+    j = jobTable.lookup("%");
+    ASSERT_TRUE(j.isError());
+    ASSERT_EQ(JobLookupResult::ErrorType::INVALID, j.asError().type);
+    ASSERT_EQ(0, j.asError().value);
+
+    j = jobTable.lookup("fjriae");
+    ASSERT_TRUE(j.isError());
+    ASSERT_EQ(JobLookupResult::ErrorType::INVALID, j.asError().type);
+    ASSERT_EQ(0, j.asError().value);
+
+    j = jobTable.lookup("%1000");
+    ASSERT_TRUE(j.isError());
+    ASSERT_EQ(JobLookupResult::ErrorType::NO_JOB, j.asError().type);
+    ASSERT_EQ(1000, j.asError().value);
+
+    j = jobTable.lookup("%%");
+    ASSERT_TRUE(j.isJob());
+    ASSERT_EQ(3, j.asJob()->getJobID());
+
+    j = jobTable.lookup("%+");
+    ASSERT_TRUE(j.isJob());
+    ASSERT_EQ(3, j.asJob()->getJobID());
+
+    j = jobTable.lookup("%-");
+    ASSERT_TRUE(j.isJob());
+    ASSERT_EQ(2, j.asJob()->getJobID());
+
+    j = jobTable.lookup("%2");
+    ASSERT_TRUE(j.isJob());
+    ASSERT_EQ(2, j.asJob()->getJobID());
   }
 
   jobTable.attach(job4);

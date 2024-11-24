@@ -716,12 +716,25 @@ void JobTable::removeTerminatedJobs() {
 
 static auto toInt32(StringRef ref) { return convertToNum10<int32_t>(ref.begin(), ref.end()); }
 
-JobLookupResult JobTable::lookup(StringRef key, bool allowProc) const {
+JobLookupResult JobTable::lookup(StringRef key, bool allowProc) {
   if (key.empty()) {
     goto INVALID;
   }
   if (key[0] == '%') { // may be job-spec
     key.removePrefix(1);
+    if (key.size() == 1) {
+      if (const char ch = key[0]; ch == '%' || ch == '+' || ch == '-') {
+        auto &e = this->syncAndGetCurPrevJobs();
+        if (ch == '-') { // prev
+          if (e.prev) {
+            return JobLookupResult(Job(e.prev));
+          }
+        } else if (e.cur) {
+          return JobLookupResult(Job(e.cur));
+        }
+        return JobLookupResult({.type = JobLookupResult::ErrorType::NO_JOB, .value = 0});
+      }
+    }
     const auto ret = toInt32(key);
     if (!ret) {
       goto INVALID;

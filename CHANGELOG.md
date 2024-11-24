@@ -47,6 +47,9 @@
 - now interrupt ``LineEditor#readLine`` method when receive signals
     - also call signal handler
 - natively complete builtin `shctl` command sub-commands/options. now no longer need completion script
+- improve job-spec parsing
+    - support ``%%``, ``%+``, ``%-`` format
+    - drop support ``N`` format due to posix compatibility
 
 #### LSP
 
