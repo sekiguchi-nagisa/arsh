@@ -56,6 +56,7 @@ TypePool::TypePool() {
   this->initBuiltinType(TYPE::Signals, "Signals", TYPE::Any, info_SignalsType());
   this->initBuiltinType(TYPE::Throwable, "Throwable", TYPE::Any, info_ThrowableType());
   this->initBuiltinType(TYPE::Job, "Job", TYPE::Any, info_JobType());
+  this->initBuiltinType(TYPE::Jobs, "Jobs", TYPE::Any, info_JobsType());
   this->initBuiltinType(TYPE::Module, "Module", TYPE::Any, info_ModuleType());
   this->initBuiltinType(TYPE::StringIter, "StringIter%%", TYPE::Any, info_StringIterType());
   this->initBuiltinType(TYPE::FD, "FD", TYPE::Any, info_FDType());

@@ -24,6 +24,9 @@
 - add ``String#validate`` method for utf8 validation
 - add ``String#foldCase`` method for Unicode-aware case folding
 - re-enable builtin ``eval`` command. evaluate string within implicit function scope
+- add ``Jobs`` type and related method for inspecting job table
+    - ``Jobs#get``, ``Jobs#[]``: lookup ``Job`` object by job-spec
+    - ``Jobs#count``: count available jobs
 
 #### Misc
 

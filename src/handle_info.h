@@ -31,6 +31,7 @@ namespace arsh {
   OP(FD)                                                                                           \
   OP(Throwable)                                                                                    \
   OP(Job)                                                                                          \
+  OP(Jobs)                                                                                         \
   OP(StringIter)                                                                                   \
   OP(Regex)                                                                                        \
   OP(RegexMatch)                                                                                   \

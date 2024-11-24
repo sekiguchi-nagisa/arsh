@@ -1,0 +1,37 @@
+
+assert $JOB is Jobs
+
+## empty job table
+assert $JOB.count() == 0
+var ex = 34 as Any
+try { $JOB['%%']; } catch e { $ex = $e; }
+assert $ex is KeyNotFoundError
+assert ($ex as KeyNotFoundError).message() == 'no such job: %%'
+assert ! $JOB.get('%%')
+
+## not empty
+var j = while(true) { sleep 100;} &
+assert $JOB.count() == 1
+assert $JOB['%%'].pid(0)! == $j.pid(0)!
+while(true) { sleep 200;} &
+assert $JOB.count() == 2
+while(true) { sleep 300;} &
+assert $JOB.count() == 3
+assert $JOB.get('%1')!.pid(0)! == $j.pid(0)!
+
+$j.disown()
+assert $JOB.count() == 2
+assert ! $JOB.get('%1')
+
+$j.kill($SIGKILL)
+assert $j.wait() == 128 + $SIGKILL.value()
+
+assert $JOB.count() == 2
+assert ! $JOB.get('%1')
+$JOB['%2'].kill($SIGKILL)
+$JOB['%3'].kill($SIGKILL)
+
+wait
+
+assert $JOB.count() == 0
+true

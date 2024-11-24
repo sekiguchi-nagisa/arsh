@@ -2677,6 +2677,46 @@ ARSH_METHOD job_status(RuntimeContext &ctx) {
   RET_ERROR;
 }
 
+// ##################
+// ##     Jobs     ##
+// ##################
+
+//!bind: function $OP_GET($this: Jobs, $key: String): Job
+ARSH_METHOD jobs_get(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(jobs_get);
+  const auto key = LOCAL(1).asStrRef();
+  if (const auto ret = ctx.jobTable.lookup(key); ret.isJob()) {
+    RET(ret.asJob());
+  }
+  std::string msg = "no such job: ";
+  appendAsPrintable(key, SYS_LIMIT_ERROR_MSG_MAX, msg);
+  raiseError(ctx, TYPE::KeyNotFoundError, std::move(msg));
+  RET_ERROR;
+}
+
+//!bind: function get($this: Jobs, $key: String): Option<Job>
+ARSH_METHOD jobs_get2(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(jobs_get2);
+  const auto key = LOCAL(1).asStrRef();
+  if (const auto ret = ctx.jobTable.lookup(key); ret.isJob()) {
+    RET(ret.asJob());
+  }
+  RET(Value::createInvalid());
+}
+
+//!bind: function count($this: Jobs): Int
+ARSH_METHOD jobs_count(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(jobs_count);
+  ctx.jobTable.waitForAny();
+  unsigned int count = 0;
+  for (auto &e : ctx.jobTable) {
+    if (e->isAvailable() && !e->isDisowned()) {
+      count++;
+    }
+  }
+  RET(Value::createInt(count));
+}
+
 // ########################
 // ##     Candidates     ##
 // ########################

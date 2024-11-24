@@ -7,10 +7,10 @@ ARCode: top level
   code size: 13
   max stack depth: 1
   number of local variable: 0
-  number of global variable: 56
+  number of global variable: 57
 Code:
    0: PUSH_INT  34
-   2: STORE_GLOBAL  55
+   2: STORE_GLOBAL  56
    5: PUSH_INT  34
    7: CALL_BUILTIN  1  %str
   10: POP
@@ -32,12 +32,12 @@ ARCode: top level
   code size: 30
   max stack depth: 3
   number of local variable: 0
-  number of global variable: 56
+  number of global variable: 57
 Code:
    0: LOAD_CONST  2
-   2: STORE_GLOBAL  55
+   2: STORE_GLOBAL  56
    5: TRY_GUARD0
-   6: LOAD_GLOBAL  55
+   6: LOAD_GLOBAL  56
    9: PUSH_INT  1
   11: CALL_FUNC  1
   13: ENTER_FINALLY  23
@@ -81,7 +81,7 @@ ARCode: top level
   code size: 46
   max stack depth: 2
   number of local variable: 2
-  number of global variable: 55
+  number of global variable: 56
 Code:
    0: PUSH_INT  0
    2: STORE_LOCAL  0
@@ -119,7 +119,7 @@ ARCode: top level
   code size: 34
   max stack depth: 5
   number of local variable: 0
-  number of global variable: 55
+  number of global variable: 56
 Code:
    0: LOAD_CONST  2
    2: PIPELINE_ASYNC 6 3  8  18  28
@@ -164,7 +164,7 @@ ARCode: top level
   code size: 38
   max stack depth: 4
   number of local variable: 0
-  number of global variable: 55
+  number of global variable: 56
 Code:
    0: LOAD_CONST  2
    2: LOAD_GLOBAL  21
@@ -205,7 +205,7 @@ ARCode: top level
   code size: 22
   max stack depth: 1
   number of local variable: 1
-  number of global variable: 55
+  number of global variable: 56
 Code:
    0: LOAD_CONST  2
    2: PIPELINE_LP 2  6  8
@@ -235,7 +235,7 @@ ARCode: top level
   code size: 11
   max stack depth: 1
   number of local variable: 0
-  number of global variable: 55
+  number of global variable: 56
 Code:
    0: LOAD_CONST  2
    2: FORK  6  6
@@ -261,7 +261,7 @@ ARCode: top level
   code size: 36
   max stack depth: 4
   number of local variable: 0
-  number of global variable: 55
+  number of global variable: 56
 Code:
    0: LOAD_CONST  2
    2: NEW_CMD

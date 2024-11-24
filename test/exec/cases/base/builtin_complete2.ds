@@ -10,7 +10,7 @@ function assertArray($x : Array<String>, $y : Array<String>) {
     var gvars = [
         '#', '$', '0', '?', '@', 'ARG0', 'ARGS', 'BIN_NAME',
         'CMD_FALLBACK', 'COLUMNS', 'COMPREPLY', 'COMP_HOOK', 'CONFIG_HOME', 'DATA_DIR', 'DATA_HOME',
-        'DIRSTACK', 'DYNA_UDCS', 'EAW', 'EUID', 'FALSE', 'False', 'HOME', 'IFS', 'LINES', 'LINE_EDIT', 'LOGNAME', 
+        'DIRSTACK', 'DYNA_UDCS', 'EAW', 'EUID', 'FALSE', 'False', 'HOME', 'IFS', 'JOB', 'LINES', 'LINE_EDIT', 'LOGNAME', 
         'MACHTYPE', 'MODULE', 'MODULE_DIR', 'MODULE_HOME', 'NONE', 'None', 'OLDPWD',
         'OSTYPE', 'PATH', 'PID', 'PIPESTATUS', 'PPID', 'PWD',
         'RANDOM', 'REPLY', 'SCRIPT_DIR', 'SCRIPT_NAME', 'SECONDS', 'SIG',
@@ -172,7 +172,7 @@ var types = [
     'Any',  "ArgumentError", 'ArithmeticError', "Array", 'AssertionFailed', 'Bool', 'Boolean',
     'CLI', 'CLIError', 'Candidates', 'Command', 'Error', 'ExecError', "FD", 'Float',
     'Func', 'GlobError','GlobbingError', 'IllegalAccessError', 'Int', 'InvalidOperationError', 
-    'Job', 'KeyNotFoundError', 'LineEditor', "Map", 'Module', 'Nothing', 'Option',
+    'Job', 'Jobs', 'KeyNotFoundError', 'LineEditor', "Map", 'Module', 'Nothing', 'Option',
     'OutOfRangeError', 'Regex', 'RegexMatch', 'RegexMatchError', 'RegexSyntaxError', 'ShellExit', 'Signal', 'Signals',
     'StackOverflowError', 'String', 'SystemError', 'Throwable', 'TildeError', 'Tuple', 'TypeCastError',
     'UnixFD', 'UnwrapError','UnwrappingError', 'Void', 'typeof',

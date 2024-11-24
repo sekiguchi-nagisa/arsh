@@ -10,11 +10,11 @@ ARCode: top level
   code size: 11
   max stack depth: 2
   number of local variable: 0
-  number of global variable: 57
+  number of global variable: 58
 Code:
    0: LOAD_CONST  2
    2: DUP
-   3: STORE_GLOBAL  55
+   3: STORE_GLOBAL  56
    6: CALL_FUNC  0
    8: POP
    9: PUSH_INVALID
@@ -32,10 +32,10 @@ ARCode: top level
   code size: 7
   max stack depth: 1
   number of local variable: 0
-  number of global variable: 57
+  number of global variable: 58
 Code:
   0: LOAD_CONST  2
-  2: STORE_GLOBAL  56
+  2: STORE_GLOBAL  57
   5: PUSH_INVALID
   6: RETURN
 Constant Pool:

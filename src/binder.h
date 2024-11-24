@@ -234,6 +234,8 @@ void bindBuiltins(Consumer &consumer, const SysConfig &config, TypePool &pool, N
    */
   binder.bind("SIG", pool.get(TYPE::Signals));
 
+  binder.bind("JOB", pool.get(TYPE::Jobs));
+
   /**
    * must be StringObject
    */

@@ -251,6 +251,15 @@ function pid(index: Int): Int? for Job
 function status(index: Int): Int? for Job
 ```
 
+## Jobs type
+```
+function %OP_GET(key: String): Job for Jobs
+
+function get(key: String): Job? for Jobs
+
+function count(): Int for Jobs
+```
+
 ## StringIter type
 ```
 function %OP_NEXT(): String for StringIter
