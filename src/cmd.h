@@ -19,7 +19,7 @@
 
 #include <algorithm>
 
-#include "misc/array_ref.hpp"
+#include "format_util.h"
 #include "misc/opt.hpp"
 #include "misc/string_ref.hpp"
 

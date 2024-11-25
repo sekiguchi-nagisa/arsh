@@ -15,6 +15,7 @@
  */
 
 #include "codegen.h"
+#include "format_util.h"
 #include "misc/format.hpp"
 #include "redir.h"
 #include "type_pool.h"

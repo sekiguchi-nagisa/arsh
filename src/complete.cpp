@@ -22,6 +22,7 @@
 #include "cmd_desc.h"
 #include "complete.h"
 #include "format_signature.h"
+#include "format_util.h"
 #include "frontend.h"
 #include "logger.h"
 #include "misc/edit_distance.hpp"

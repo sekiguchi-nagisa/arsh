@@ -15,7 +15,7 @@
  */
 
 #include "compiler.h"
-#include "misc/format.hpp"
+#include "format_util.h"
 
 namespace arsh {
 

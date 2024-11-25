@@ -28,6 +28,7 @@
 #include "arg_parser.h"
 #include "candidates.h"
 #include "case_fold.h"
+#include "format_util.h"
 #include "line_editor.h"
 #include "misc/files.hpp"
 #include "misc/num_util.hpp"

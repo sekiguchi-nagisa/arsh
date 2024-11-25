@@ -15,7 +15,7 @@
  */
 
 #include "node.h"
-#include "misc/format.hpp"
+#include "format_util.h"
 #include "misc/num_util.hpp"
 #include "scope.h"
 

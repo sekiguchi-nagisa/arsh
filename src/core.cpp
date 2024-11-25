@@ -18,7 +18,6 @@
 
 #include <algorithm>
 #include <cassert>
-#include <cstdarg>
 
 #include "candidates.h"
 #include "compiler.h"
@@ -186,14 +185,9 @@ bool printErrorAt(const ARState &state, const ArrayObject &argvObj, StringRef su
 
   va_list arg;
   va_start(arg, fmt);
-  char *str = nullptr;
-  if (vasprintf(&str, fmt, arg) == -1) {
-    fatal_perror("");
-  }
+  vformatTo(out, fmt, arg);
   va_end(arg);
 
-  out += str;
-  free(str);
   if (errNum) {
     out += ": ";
     out += strerror(errNum);
@@ -235,7 +229,7 @@ static bool isUnhandledSignal(int sigNum) {
 static void signalHandler(int sigNum) { ARState::pendingSigSet.add(sigNum); }
 
 static struct sigaction newSigaction(int sigNum) {
-  struct sigaction action {};
+  struct sigaction action{};
   if (sigNum != SIGINT) { // always restart system call except for SIGINT
     action.sa_flags = SA_RESTART;
   }
@@ -251,7 +245,7 @@ static ObjPtr<Object> installUnblock(ARState &st, const int sigNum, ObjPtr<Objec
   auto oldHandler = st.sigVector.lookup(sigNum);
 
   // set actual signal handler
-  struct sigaction oldAction {};
+  struct sigaction oldAction{};
   struct sigaction newAction = newSigaction(sigNum);
   const struct sigaction *action = nullptr;
   if (handler && !isUnhandledSignal(sigNum)) {
@@ -342,7 +336,7 @@ void resetSignalSettingUnblock(ARState &state) {
     if (e.first == SIGWINCH) {
       continue;
     }
-    struct sigaction action {};
+    struct sigaction action{};
     action.sa_handler = SIG_DFL;
     sigaction(e.first, &action, nullptr);
   }

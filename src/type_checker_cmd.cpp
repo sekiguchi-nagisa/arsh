@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include "format_util.h"
 #include "glob.h"
 #include "misc/files.hpp"
 #include "misc/num_util.hpp"

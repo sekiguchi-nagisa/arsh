@@ -19,7 +19,7 @@
 
 #include <string>
 
-#include <misc/format.hpp>
+#include <format_util.h>
 #include <misc/split_random.hpp>
 
 #include "lsp.h"

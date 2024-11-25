@@ -20,26 +20,9 @@
 #include <cstdarg>
 
 #include "detect.hpp"
-#include "fatal.h"
 #include "string_ref.hpp"
 
 BEGIN_MISC_LIB_NAMESPACE_DECL
-
-inline void formatTo(std::string &, const char *, ...) __attribute__((format(printf, 2, 3)));
-
-inline void formatTo(std::string &out, const char *fmt, ...) {
-  va_list arg;
-
-  va_start(arg, fmt);
-  char *str = nullptr;
-  if (vasprintf(&str, fmt, arg) == -1) {
-    fatal_perror("");
-  }
-  va_end(arg);
-
-  out += str;
-  free(str);
-}
 
 inline unsigned int countDigits(uint64_t n) {
   unsigned int c;

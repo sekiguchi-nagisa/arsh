@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#include <format_util.h>
 #include <lexer.h>
 #include <misc/format.hpp>
 

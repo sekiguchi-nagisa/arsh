@@ -15,6 +15,7 @@
  */
 
 #include "arg_parser_base.h"
+#include "format_util.h"
 #include "type_checker.h"
 
 namespace arsh {

@@ -16,8 +16,6 @@
 
 #include "jsonrpc.h"
 
-#include <misc/format.hpp>
-
 namespace arsh::rpc {
 
 std::string Error::toString() const {
@@ -118,11 +116,11 @@ CallbackMap::Entry CallbackMap::take(const std::string &id) {
 }
 
 std::string CallbackMap::generateId() {
-  std::string ret;
   auto v1 = static_cast<uintmax_t>(this->rng.next());
   auto v2 = static_cast<uintmax_t>(this->rng.next());
-  formatTo(ret, "id-%jx-%jX", v1, v2);
-  return ret;
+  char data[128];
+  snprintf(data, std::size(data), "id-%jx-%jX", v1, v2);
+  return std::string(data);
 }
 
 // #######################

@@ -374,61 +374,6 @@ struct EscapeSeqResult {
  */
 EscapeSeqResult parseEscapeSeq(const char *begin, const char *end, bool needOctalPrefix);
 
-/**
- * quote string that can be reused in command name or command argument.
- * unlike lexer definition, if contains unprintable characters or invalid utf8 sequence,
- * convert to hex notation even if command name (asCmd is true)
- * @param ref
- * @param out
- * @param asCmd
- * quote as command name
- * @return
- * if contains unprintable characters or invalid utf8 sequences, return false
- * otherwise, return true
- */
-bool quoteAsCmdOrShellArg(StringRef ref, std::string &out, bool asCmd);
-
-inline std::string quoteAsShellArg(StringRef ref) {
-  std::string ret;
-  quoteAsCmdOrShellArg(ref, ret, false);
-  return ret;
-}
-
-/**
- * convert to printable string
- * @param ref
- * @param maxSize
- * @param out
- * if reach maxSize, truncate and put '...'
- */
-void appendAsPrintable(StringRef ref, size_t maxSize, std::string &out);
-
-inline void appendAsPrintable(const StringRef ref, std::string &out) {
-  appendAsPrintable(ref, out.max_size(), out);
-}
-
-/**
- * convert to printable string
- * @param ref
- * @return
- */
-std::string toPrintable(StringRef ref);
-
-inline bool appendAsUnescaped(const StringRef value, const size_t maxSize, std::string &out) {
-  const auto size = value.size();
-  for (StringRef::size_type i = 0; i < size; i++) {
-    char ch = value[i];
-    if (ch == '\\' && i + 1 < size) {
-      ch = value[++i];
-    }
-    if (out.size() == maxSize) {
-      return false;
-    }
-    out += ch;
-  }
-  return true;
-}
-
 } // namespace arsh
 
 #endif // ARSH_LEXER_H
