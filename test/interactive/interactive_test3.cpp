@@ -313,23 +313,6 @@ TEST_F(InteractiveTest, cmdsub_interactive) {
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 0));
 }
 
-TEST_F(InteractiveTest, procsub_job) {
-  this->invoke("--quiet", "--norc");
-
-  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
-  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("var jj = >(__gets)"));
-  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("jobs", "[1] + Running  __gets"));
-  this->sendLine("fg");
-  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "fg\n__gets\n"));
-  std::this_thread::sleep_for(std::chrono::milliseconds(500));
-  this->send(CTRL_C);
-
-  std::string err = strsignal(SIGINT);
-  err += "\n";
-  ASSERT_NO_FATAL_FAILURE(this->expect(promptAfterCtrlC(PROMPT), err));
-  ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 128 + SIGINT));
-}
-
 TEST_F(InteractiveTest, wait1) {
   this->invoke("--quiet", "--norc");
 

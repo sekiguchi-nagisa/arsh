@@ -445,7 +445,7 @@ bool VM::attachAsyncJob(ARState &state, Value &&desc, unsigned int procSize, con
      */
     const auto entry = JobObject::create(procSize, procs, false, state.emptyFDObj, state.emptyFDObj,
                                          std::move(desc));
-    state.jobTable.attach(entry); // maintain process substitution job
+    state.jobTable.attach(entry, true); // always disowned
     ret = fdObj;
     break;
   }
