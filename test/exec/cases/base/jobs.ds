@@ -10,12 +10,12 @@ assert ($ex as KeyNotFoundError).message() == 'no such job: %%'
 assert ! $JOB.get('%%')
 
 ## not empty
-var j = while(true) { sleep 100;} &
+var j = while(true) { sleep 1;} &
 assert $JOB.count() == 1
 assert $JOB['%%'].pid(0)! == $j.pid(0)!
-while(true) { sleep 200;} &
+while(true) { sleep 1;} &
 assert $JOB.count() == 2
-while(true) { sleep 300;} &
+while(true) { sleep 1;} &
 assert $JOB.count() == 3
 assert $JOB.get('%1')!.pid(0)! == $j.pid(0)!
 
