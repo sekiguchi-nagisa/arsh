@@ -1,10 +1,31 @@
 
+# <()
 var f = <(echo -e 'hello\naaa' | sort)
 assert $f is UnixFD
+assert $f is ProcSubst
 assert $f is typeof(>(echo -e 'hello\naaa' | sort))
+assert ! $f.job()[0]
+assert ! $f.job()[1]
+
 assert "$(cat $f)" == "aaa
 hello"
+assert ! $f.job().poll()
+assert $f.job().wait() == 0
 
 assert "$(cat <(echo world!))" == "world!"
 
 assert diff ${[ <(ls), <(ls) ]}
+
+# >()
+$f = >(__gets)
+assert $f is UnixFD
+assert $f is FD
+assert $f is ProcSubst
+
+assert ! $f.job()[0]
+assert ! $f.job()[1]
+
+assert $f.job().poll()
+$f.job().kill($SIGTERM)
+assert $f.job().wait() == 128 + $SIGTERM.value()
+assert ! $f.job().poll()

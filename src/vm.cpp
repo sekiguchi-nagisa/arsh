@@ -366,6 +366,16 @@ static ObjPtr<UnixFdObject> newFD(const ARState &st, int &fd) {
   return toObjPtr<UnixFdObject>(Value::create<UnixFdObject>(v));
 }
 
+static Value newProcSubst(const ARState &st, int &fd, Job &&job) {
+  if (fd < 0) {
+    return st.emptyFDObj;
+  }
+  int v = fd;
+  fd = -1;
+  remapFDCloseOnExec(v);
+  return Value::create<UnixFdObject>(v, std::move(job));
+}
+
 static bool checkPipelineError(ARState &state, const JobObject &job, bool lastPipe) {
   if (!state.has(RuntimeOption::ERR_RAISE)) {
     return true;
@@ -438,15 +448,16 @@ bool VM::attachAsyncJob(ARState &state, Value &&desc, unsigned int procSize, con
   }
   case ForkKind::IN_PIPE:
   case ForkKind::OUT_PIPE: {
-    int &fd = forkKind == ForkKind::IN_PIPE ? pipeSet.in[WRITE_PIPE] : pipeSet.out[READ_PIPE];
-    const auto fdObj = newFD(state, fd);
     /**
      * job object does not maintain <(), >() file descriptor
      */
-    const auto entry = JobObject::create(procSize, procs, false, state.emptyFDObj, state.emptyFDObj,
-                                         std::move(desc));
+    auto entry = JobObject::create(procSize, procs, false, state.emptyFDObj, state.emptyFDObj,
+                                   std::move(desc));
     state.jobTable.attach(entry, true); // always disowned
-    ret = fdObj;
+
+    // create process substitution wrapper
+    int &fd = forkKind == ForkKind::IN_PIPE ? pipeSet.in[WRITE_PIPE] : pipeSet.out[READ_PIPE];
+    ret = newProcSubst(state, fd, std::move(entry));
     break;
   }
   case ForkKind::COPROC:

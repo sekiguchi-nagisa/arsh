@@ -211,6 +211,11 @@ function %OP_NOT(): Bool for FD
 function %OP_ITER(): Reader for FD
 ```
 
+## ProcSubst type
+```
+function job(): Job for ProcSubst
+```
+
 ## Throwable type
 ```
 function %OP_INIT(message: String, status: Int?): Throwable for Throwable

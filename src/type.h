@@ -61,7 +61,8 @@ enum class TYPE : unsigned int {
   Jobs,
   Module,
   StringIter,
-  FD, // for Unix file descriptor
+  FD,        // for Unix file descriptor
+  ProcSubst, // for process substitution specific file descriptor
   Reader,
   Command,
   LineEditor,

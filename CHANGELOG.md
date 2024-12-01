@@ -13,6 +13,9 @@
         - now only throw ``Throwable`` type or its derived instance
         - not allow instantiation of ``Throwable`` type
     - add builtin ``THROWN`` variable for indicating currently thrown object
+- now get underlying job object of process substitution
+    - add ``ProcSubst`` type for indicating process substitution (``ProcSubst`` is derived type of ``FD``)
+    - get underlying job object via ``ProcSubst#job`` method
 
 #### Builtin
 

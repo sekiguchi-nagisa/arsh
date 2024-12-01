@@ -1265,7 +1265,7 @@ void TypeChecker::visitForkNode(ForkNode &node) {
     break;
   case ForkKind::IN_PIPE:
   case ForkKind::OUT_PIPE:
-    type = &this->typePool().get(TYPE::FD);
+    type = &this->typePool().get(TYPE::ProcSubst);
     break;
   case ForkKind::JOB:
   case ForkKind::COPROC:

@@ -216,8 +216,8 @@ void TypeChecker::visitCmdArgNode(CmdArgNode &node) {
   for (auto &exprNode : node.getSegmentNodes()) {
     this->checkTypeAsExpr(*exprNode);
     assert(exprNode->getType().is(TYPE::String) || exprNode->getType().is(TYPE::StringArray) ||
-           exprNode->getType().is(TYPE::FD) || exprNode->getType().isNothingType() ||
-           exprNode->getType().isUnresolved());
+           this->typePool().get(TYPE::FD).isSameOrBaseTypeOf(exprNode->getType()) ||
+           exprNode->getType().isNothingType() || exprNode->getType().isUnresolved());
   }
   this->checkExpansion(node);
 
@@ -225,7 +225,8 @@ void TypeChecker::visitCmdArgNode(CmdArgNode &node) {
   if (node.getSegmentNodes().size() > 1) {
     for (auto &exprNode : node.getSegmentNodes()) {
       auto *exprType = &exprNode->getType();
-      if (exprType->is(TYPE::StringArray) || exprType->is(TYPE::FD)) {
+      if (exprType->is(TYPE::StringArray) ||
+          this->typePool().get(TYPE::FD).isSameOrBaseTypeOf(*exprType)) {
         if (isa<EmbedNode>(*exprNode)) {
           exprType = &cast<EmbedNode>(*exprNode).getExprNode().getType();
         }
@@ -244,7 +245,7 @@ void TypeChecker::visitCmdArgNode(CmdArgNode &node) {
 
 void TypeChecker::visitArgArrayNode(ArgArrayNode &node) {
   for (auto &argNode : node.getCmdArgNodes()) {
-    if (this->checkTypeAsExpr(*argNode).is(TYPE::FD)) {
+    if (this->typePool().get(TYPE::FD).isSameOrBaseTypeOf(this->checkTypeAsExpr(*argNode))) {
       this->reportError<FdArgArray>(*argNode);
     }
   }
@@ -300,7 +301,7 @@ void TypeChecker::visitRedirNode(RedirNode &node) {
     this->checkType(this->typePool().get(TYPE::String), argNode);
     break;
   case RedirOp::DUP_FD:
-    if (!this->checkTypeExactly(argNode).is(TYPE::FD)) {
+    if (!this->typePool().get(TYPE::FD).isSameOrBaseTypeOf(this->checkTypeExactly(argNode))) {
       if (const auto [value, s] = toNumericCmdArg(argNode);
           s && value >= -1 && value < RESERVED_FD_LIMIT) {
         node.setTargetFd(static_cast<int8_t>(value));

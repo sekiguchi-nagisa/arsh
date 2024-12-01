@@ -559,9 +559,19 @@ Value Value::createStr(const GraphemeCluster &ret) {
 // ##     UnixFD_Object     ##
 // ###########################
 
+UnixFdObject *UnixFdObject::create(int fd, ObjPtr<JobObject> &&job) {
+  void *ptr = operator new(sizeof(UnixFdObject) + sizeof(RawValue));
+  auto *obj = new (ptr) UnixFdObject(fd, true);
+  new (&obj->data[0]) Value(job);
+  return obj;
+}
+
 UnixFdObject::~UnixFdObject() {
   if (this->fd > STDERR_FILENO) {
     close(this->fd); // do not close standard io file descriptor
+  }
+  if (this->hasJob) {
+    static_cast<Value &>(this->data[0]).~Value();
   }
 }
 
@@ -997,9 +1007,9 @@ TimerObject::~TimerObject() {
 
   // get diff
   auto realDiff = real - this->realTime;
-  struct timeval userTimeDiff {};
+  struct timeval userTimeDiff{};
   timersub(&curTime.user, &this->userSysTime.user, &userTimeDiff);
-  struct timeval systemTimeDiff {};
+  struct timeval systemTimeDiff{};
   timersub(&curTime.sys, &this->userSysTime.sys, &systemTimeDiff);
 
   // show time

@@ -2311,6 +2311,13 @@ ARSH_METHOD fd_iter(RuntimeContext &ctx) {
   RET(Value::create<ReaderObject>(toObjPtr<UnixFdObject>(v)));
 }
 
+//!bind: function job($this : ProcSubst) : Job
+ARSH_METHOD procSub_job(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(procSub_job);
+  const auto &obj = typeAs<UnixFdObject>(LOCAL(0));
+  RET(obj.getJob());
+}
+
 // ####################
 // ##     Reader     ##
 // ####################

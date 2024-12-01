@@ -145,47 +145,6 @@ struct ObjectRefCount {
 template <typename T>
 using ObjPtr = IntrusivePtr<T, ObjectRefCount>;
 
-class UnixFdObject : public ObjectWithRtti<ObjectKind::UnixFd> {
-private:
-  int fd;
-
-public:
-  explicit UnixFdObject(int fd) : ObjectWithRtti(TYPE::FD), fd(fd) {}
-
-  ~UnixFdObject();
-
-  int tryToClose(bool forceClose) {
-    if (!forceClose && this->fd < 0) {
-      return 0;
-    }
-    const int s = close(this->fd);
-    this->fd = -1;
-    return s;
-  }
-
-  /**
-   * try to set close-on-exec flag to file descriptor.
-   * if fd is STDIN, STDOUT or STDERR, not set flag.
-   * @param set
-   * if true, try to set close-on-exec
-   * if false, try to unset close-on-exec
-   * @return
-   * if internal file descriptor is invalid, return false
-   */
-  bool closeOnExec(bool set) const {
-    if (this->fd < 0) {
-      errno = EBADF;
-      return false;
-    }
-    if (this->fd > STDERR_FILENO) {
-      return setCloseOnExec(this->fd, set);
-    }
-    return true;
-  }
-
-  int getRawFd() const { return this->fd; }
-};
-
 class StringObject : public ObjectWithRtti<ObjectKind::String> {
 private:
   std::string value;
@@ -726,6 +685,80 @@ public:
 };
 
 inline Value exitStatusToBool(int64_t s) { return Value::createBool(s == 0); }
+
+class JobObject;
+
+class UnixFdObject : public ObjectWithRtti<ObjectKind::UnixFd> {
+private:
+  int fd;
+  const bool hasJob;
+  RawValue data[]; // for Job
+
+  UnixFdObject(int fd, bool hasJob)
+      : ObjectWithRtti(hasJob ? TYPE::ProcSubst : TYPE::FD), fd(fd), hasJob(hasJob) {}
+
+public:
+  static UnixFdObject *create(int fd) {
+    void *ptr = operator new(sizeof(UnixFdObject));
+    return new (ptr) UnixFdObject(fd, false);
+  }
+
+  /*
+   * @param fd
+   * @param job
+   * must not be null
+   * @return
+   */
+  static UnixFdObject *create(int fd, ObjPtr<JobObject> &&job);
+
+  void operator delete(void *ptr) { ::operator delete(ptr); }
+
+  ~UnixFdObject();
+
+  int tryToClose(bool forceClose) {
+    if (!forceClose && this->fd < 0) {
+      return 0;
+    }
+    const int s = close(this->fd);
+    this->fd = -1;
+    return s;
+  }
+
+  /**
+   * try to set close-on-exec flag to file descriptor.
+   * if fd is STDIN, STDOUT or STDERR, not set flag.
+   * @param set
+   * if true, try to set close-on-exec
+   * if false, try to unset close-on-exec
+   * @return
+   * if internal file descriptor is invalid, return false
+   */
+  bool closeOnExec(bool set) const {
+    if (this->fd < 0) {
+      errno = EBADF;
+      return false;
+    }
+    if (this->fd > STDERR_FILENO) {
+      return setCloseOnExec(this->fd, set);
+    }
+    return true;
+  }
+
+  int getRawFd() const { return this->fd; }
+
+  /**
+   * @return must be JobObject
+   */
+  const Value &getJob() const {
+    assert(this->hasJob);
+    return static_cast<const Value &>(this->data[0]);
+  }
+};
+
+template <typename... Arg>
+struct ObjectConstructor<UnixFdObject, Arg...> {
+  static Object *construct(Arg &&...arg) { return UnixFdObject::create(std::forward<Arg>(arg)...); }
+};
 
 class RegexObject : public ObjectWithRtti<ObjectKind::Regex> {
 private:

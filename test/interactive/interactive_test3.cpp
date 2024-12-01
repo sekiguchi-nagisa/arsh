@@ -313,6 +313,20 @@ TEST_F(InteractiveTest, cmdsub_interactive) {
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 0));
 }
 
+TEST_F(InteractiveTest, procsub_job) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+  ASSERT_NO_FATAL_FAILURE(
+      this->sendLineAndExpect("var aa = >(__gets); assert ($aa as String).startsWith('/dev/fd/')"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert ! $JOB.get($aa.job() as String)"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("jobs"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$aa.job().kill($SIGTERM)"));
+  std::string out = format(": Int = %d", 128 + SIGTERM);
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$aa.job().wait()", out.c_str()));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 0));
+}
+
 TEST_F(InteractiveTest, wait1) {
   this->invoke("--quiet", "--norc");
 

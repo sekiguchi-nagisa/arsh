@@ -262,10 +262,13 @@ bool RedirObject::redirect(ARState &state) {
             msg += ": ";
             appendAsPrintable(ref, SYS_LIMIT_ERROR_MSG_MAX, msg);
           }
-        } else if (entry.value.hasType(TYPE::FD) || entry.value.hasType(TYPE::Int)) {
+        } else if (auto &entryType = state.typePool.get(entry.value.getTypeID());
+                   state.typePool.get(TYPE::FD).isSameOrBaseTypeOf(entryType) ||
+                   entry.value.hasType(TYPE::Int)) {
           msg += ": ";
-          int rawFd = entry.value.hasType(TYPE::FD) ? typeAs<UnixFdObject>(entry.value).getRawFd()
-                                                    : static_cast<int>(entry.value.asInt());
+          const int rawFd = entry.value.hasType(TYPE::Int)
+                                ? static_cast<int>(entry.value.asInt())
+                                : typeAs<UnixFdObject>(entry.value).getRawFd();
           msg += std::to_string(rawFd);
         }
       }

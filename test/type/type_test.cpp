@@ -207,6 +207,8 @@ TEST_F(TypeTest, superType) {
       this->assertSuperType(this->pool.get(TYPE::String), this->pool.get(TYPE::Value_)));
   ASSERT_NO_FATAL_FAILURE(
       this->assertSuperType(this->pool.get(TYPE::FD), this->pool.get(TYPE::Any)));
+  ASSERT_NO_FATAL_FAILURE(
+      this->assertSuperType(this->pool.get(TYPE::ProcSubst), this->pool.get(TYPE::FD)));
 
   ASSERT_NO_FATAL_FAILURE(
       this->assertSuperType(this->pool.get(TYPE::StringArray), this->pool.get(TYPE::Any)));

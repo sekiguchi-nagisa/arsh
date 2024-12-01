@@ -60,6 +60,7 @@ TypePool::TypePool() {
   this->initBuiltinType(TYPE::Module, "Module", TYPE::Any, info_ModuleType());
   this->initBuiltinType(TYPE::StringIter, "StringIter%%", TYPE::Any, info_StringIterType());
   this->initBuiltinType(TYPE::FD, "FD", TYPE::Any, info_FDType());
+  this->initBuiltinType(TYPE::ProcSubst, "ProcSubst", TYPE::FD, info_ProcSubstType());
   this->initBuiltinType(TYPE::Reader, "Reader%%", TYPE::Any, info_ReaderType());
   this->initBuiltinType(TYPE::Command, "Command", TYPE::Any, info_CommandType());
   this->initBuiltinType(TYPE::LineEditor, "LineEditor", TYPE::Any, info_LineEditorType());
@@ -563,6 +564,7 @@ std::unique_ptr<MethodHandle> TypePool::allocNativeMethodHandle(const Type &recv
 }
 
 const MethodHandle *TypePool::lookupMethod(const Type &recvType, const std::string &methodName) {
+  const bool isInit = methodName == OP_INIT;
   for (auto *type = &recvType; type != nullptr; type = type->getSuperType()) {
     Key key(*type, methodName);
     auto iter = this->methodMap.find(key);
@@ -578,6 +580,9 @@ const MethodHandle *TypePool::lookupMethod(const Type &recvType, const std::stri
         iter->second = Value(commitId, handle.release());
       }
       return iter->second.handle();
+    }
+    if (!type->isRecordOrDerived() && type->typeKind() != TypeKind::Error && isInit) {
+      break;
     }
   }
   return nullptr;

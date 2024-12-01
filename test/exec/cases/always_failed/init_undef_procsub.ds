@@ -1,0 +1,5 @@
+#$test($result = 'type', $lineNum = 5, $chars = 5, $errorKind = 'UndefinedInit', $status = 1)
+
+new UnixFD('')
+new FD("")
+new ProcSubst("")

@@ -29,6 +29,7 @@ namespace arsh {
   OP(Bool)                                                                                         \
   OP(String)                                                                                       \
   OP(FD)                                                                                           \
+  OP(ProcSubst)                                                                                    \
   OP(Throwable)                                                                                    \
   OP(Job)                                                                                          \
   OP(Jobs)                                                                                         \
