@@ -510,7 +510,7 @@ public:
   const char *asCStr() const { return this->asStrRef().data(); }
 
   /**
-   * create new value with meta data
+   * create new value with meta-data
    * @param metaData
    * @return
    */
@@ -727,8 +727,6 @@ public:
 
 inline Value exitStatusToBool(int64_t s) { return Value::createBool(s == 0); }
 
-class ArrayObject;
-
 class RegexObject : public ObjectWithRtti<ObjectKind::Regex> {
 private:
   PCRE re;
@@ -762,28 +760,6 @@ public:
   const PCRE &getRE() const { return this->re; }
 
   const char *getStr() const { return this->re.getPattern(); }
-};
-
-// for command argument construction
-class CmdArgsBuilder {
-private:
-  ARState &state;
-  ObjPtr<ArrayObject> argv;
-  Value redir; // may be null, invalid, RedirObject
-
-public:
-  explicit CmdArgsBuilder(ARState &state, ObjPtr<ArrayObject> argv, Value &&redir)
-      : state(state), argv(std::move(argv)), redir(std::move(redir)) {}
-
-  /**
-   *
-   * @param arg
-   * @return
-   * if it has error, return false
-   */
-  bool add(Value &&arg);
-
-  Value takeRedir() && { return std::move(this->redir); }
 };
 
 class RegexMatchObject : public ObjectWithRtti<ObjectKind::RegexMatch> {
@@ -939,6 +915,28 @@ struct StrArrayIter {
 };
 
 #define ASSERT_ARRAY_SIZE(obj) assert((obj).size() <= ArrayObject::MAX_SIZE)
+
+// for command argument construction
+class CmdArgsBuilder {
+private:
+  ARState &state;
+  ObjPtr<ArrayObject> argv;
+  Value redir; // may be null, invalid, RedirObject
+
+public:
+  explicit CmdArgsBuilder(ARState &state, ObjPtr<ArrayObject> argv, Value &&redir)
+      : state(state), argv(std::move(argv)), redir(std::move(redir)) {}
+
+  /**
+   *
+   * @param arg
+   * @return
+   * if it has error, return false
+   */
+  bool add(Value &&arg);
+
+  Value takeRedir() && { return std::move(this->redir); }
+};
 
 class BaseObject : public ObjectWithRtti<ObjectKind::Base> {
 private:
@@ -1392,8 +1390,8 @@ public:
 };
 
 struct UserSysTime {
-  struct timeval user {};
-  struct timeval sys {};
+  struct timeval user{};
+  struct timeval sys{};
 };
 
 class TimerObject : public ObjectWithRtti<ObjectKind::Timer> {
