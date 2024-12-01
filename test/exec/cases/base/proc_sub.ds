@@ -9,8 +9,8 @@ assert ! $f.job()[1]
 
 assert "$(cat $f)" == "aaa
 hello"
-assert ! $f.job().poll()
 assert $f.job().wait() == 0
+assert ! $f.job().poll()
 
 assert "$(cat <(echo world!))" == "world!"
 
