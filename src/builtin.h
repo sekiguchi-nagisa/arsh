@@ -2239,14 +2239,13 @@ ARSH_METHOD fd_close(RuntimeContext &ctx) {
 //!bind: function dup($this : FD) : FD
 ARSH_METHOD fd_dup(RuntimeContext &ctx) {
   SUPPRESS_WARNING(fd_dup);
-  int fd = typeAs<UnixFdObject>(LOCAL(0)).getRawFd();
-  int newFd = dupFDCloseOnExec(fd);
-  if (unlikely(newFd < 0)) {
-    int e = errno;
-    raiseSystemError(ctx, e, std::to_string(fd));
-    RET_ERROR;
+  auto &obj = typeAs<UnixFdObject>(LOCAL(0));
+  if (auto ret = obj.dupWithCloseOnExec()) {
+    RET(ret);
   }
-  RET(Value::create<UnixFdObject>(newFd));
+  const int e = errno;
+  raiseSystemError(ctx, e, std::to_string(obj.getRawFd()));
+  RET_ERROR;
 }
 
 //!bind: function value($this : FD) : Int

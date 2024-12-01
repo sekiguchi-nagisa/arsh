@@ -575,6 +575,14 @@ UnixFdObject::~UnixFdObject() {
   }
 }
 
+ObjPtr<UnixFdObject> UnixFdObject::dupWithCloseOnExec() const {
+  const int newFd = dupFDCloseOnExec(this->fd);
+  if (newFd < 0) {
+    return nullptr;
+  }
+  return ObjPtr<UnixFdObject>(create(newFd));
+}
+
 // #########################
 // ##     RegexObject     ##
 // #########################
@@ -684,8 +692,8 @@ bool CmdArgsBuilder::add(Value &&arg) {
       }
 
       if (arg.get()->getRefcount() > 1) {
-        if (int newFd = dupFD(typeAs<UnixFdObject>(arg).getRawFd()); newFd > -1) {
-          arg = Value::create<UnixFdObject>(newFd);
+        if (auto ret = typeAs<UnixFdObject>(arg).dupWithCloseOnExec()) {
+          arg = ret;
         } else {
           raiseSystemError(this->state, errno, "failed to pass FD object to command arguments");
           return false;

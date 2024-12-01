@@ -753,6 +753,13 @@ public:
     assert(this->hasJob);
     return static_cast<const Value &>(this->data[0]);
   }
+
+  /**
+   * duplicate underlying file descriptor with close-on-exec=on
+   * @return
+   * if failed, set errno and return null
+   */
+  ObjPtr<UnixFdObject> dupWithCloseOnExec() const;
 };
 
 template <typename... Arg>
