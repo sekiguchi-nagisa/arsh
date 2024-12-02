@@ -64,17 +64,17 @@ std::vector<SignalEntry> toSortedUniqueSignalEntries();
 
 class SignalGuard {
 private:
-  sigset_t maskset;
+  sigset_t maskSet;
 
 public:
   SignalGuard() {
-    sigfillset(&this->maskset);
-    sigprocmask(SIG_BLOCK, &this->maskset, nullptr);
+    sigfillset(&this->maskSet);
+    sigprocmask(SIG_BLOCK, &this->maskSet, nullptr);
   }
 
   ~SignalGuard() {
     int e = errno;
-    sigprocmask(SIG_UNBLOCK, &this->maskset, nullptr);
+    sigprocmask(SIG_UNBLOCK, &this->maskSet, nullptr);
     errno = e;
   }
 };

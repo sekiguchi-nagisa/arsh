@@ -93,7 +93,7 @@ static void showSignals(std::ostream &stream) {
   stream << "+++++  signal handler setting  +++++" << '\n';
   for (auto &e : lists) {
     stream << format << e.abbrName << " => ";
-    struct sigaction action {};
+    struct sigaction action{};
     sigaction(e.sigNum, nullptr, &action);
     if (action.sa_handler == SIG_DFL) {
       stream << "SIG_DFL";
@@ -116,11 +116,24 @@ static void showPlat(std::ostream &stream) {
   stream << '\n';
 }
 
+static void showSigMask(std::ostream &stream) {
+  stream << "+++++  signal mask (blocked signals)  +++++" << '\n';
+  sigset_t maskSet;
+  sigprocmask(SIG_SETMASK, nullptr, &maskSet);
+  for (auto &e : getStandardSignalEntries()) {
+    if (sigismember(&maskSet, e.sigNum)) {
+      stream << e.abbrName << '\n';
+    }
+  }
+  stream << '\n';
+}
+
 static void showInfo(std::ostream &stream) {
   showPlat(stream);
   showPIDs(stream);
   showPGroup(stream);
   showSignals(stream);
+  showSigMask(stream);
 }
 
 int main(int argc, char **argv) {
