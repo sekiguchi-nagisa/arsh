@@ -55,6 +55,7 @@ TypePool::TypePool() {
   this->initBuiltinType(TYPE::Signal, "Signal", TYPE::Value_, info_SignalType());
   this->initBuiltinType(TYPE::Signals, "Signals", TYPE::Any, info_SignalsType());
   this->initBuiltinType(TYPE::Throwable, "Throwable", TYPE::Any, info_ThrowableType());
+  this->initBuiltinType(TYPE::Error, "Error", TYPE::Throwable, info_ErrorType());
   this->initBuiltinType(TYPE::Job, "Job", TYPE::Any, info_JobType());
   this->initBuiltinType(TYPE::Jobs, "Jobs", TYPE::Any, info_JobsType());
   this->initBuiltinType(TYPE::Module, "Module", TYPE::Any, info_ModuleType());
@@ -94,7 +95,6 @@ TypePool::TypePool() {
   }
 
   // init some error type
-  this->initErrorType(TYPE::Error, "Error", TYPE::Throwable);
   this->initErrorType(TYPE::ArithmeticError, "ArithmeticError");
   this->initErrorType(TYPE::OutOfRangeError, "OutOfRangeError");
   this->initErrorType(TYPE::KeyNotFoundError, "KeyNotFoundError");

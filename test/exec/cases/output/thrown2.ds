@@ -18,6 +18,8 @@ try {
     $ff()
 } finally {
     if let e = $THROWN as? ShellExit {
+        assert $e is Throwable
+        assert !($e is Error)
         echo ${$e.name()} is thrown at ${$e.lineno()}
     }
     defer {
@@ -30,13 +32,13 @@ try {
 
 # CHECK: in ff: ShellExit is thrown at 9
 # CHECK: ShellExit is thrown at 9
-# CHECK: OutOfRangeError is thrown at 28
+# CHECK: OutOfRangeError is thrown at 30
 # CHECK: in defer: ShellExit is thrown at 9
 
 # CHECKERR: [warning]
 # CHECKERR: the following exception within finally/defer block is ignored
 # CHECKERR: OutOfRangeError: size is 21, but index is 999
-# CHECKERR_RE:     from .+/test/exec/cases/output/thrown2\.ds:28 '<toplevel>\(\)'
+# CHECKERR_RE:     from .+/test/exec/cases/output/thrown2\.ds:30 '<toplevel>\(\)'
 # CHECKERR_RE: ^$
 # CHECKERR: [runtime error]
 # CHECKERR: ShellExit: terminated by exit 56

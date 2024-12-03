@@ -1684,7 +1684,9 @@ EOF)",
 TEST_F(IndexTest, hoverBuiltin) {
   // builtin type
   ASSERT_NO_FATAL_FAILURE(this->hover("34 is\nInt", 1, ""));
-  ASSERT_NO_FATAL_FAILURE(this->hover("34 is\nError", 1, "```arsh\ntype Error: Throwable\n```"));
+  ASSERT_NO_FATAL_FAILURE(this->hover("34 is\nError", 1, ""));
+  ASSERT_NO_FATAL_FAILURE(this->hover("34 is\nShellExit", 1, ""));
+  ASSERT_NO_FATAL_FAILURE(this->hover("34 is\nAssertionFailed", 1, ""));
   ASSERT_NO_FATAL_FAILURE(
       this->hover("34 is\nArithmeticError", 1, "```arsh\ntype ArithmeticError: Error\n```"));
 
@@ -1696,7 +1698,7 @@ TEST_F(IndexTest, hoverBuiltin) {
                                       "\n```"));
   ASSERT_NO_FATAL_FAILURE(this->hover("$true is\nBoolean", 1, "```arsh\ntype Boolean = Bool\n```"));
   ASSERT_NO_FATAL_FAILURE(
-      this->hover("$SCRIPT_NAME", 0, "```arsh\nconst SCRIPT_NAME = '/dummy_8'\n```"));
+      this->hover("$SCRIPT_NAME", 0, "```arsh\nconst SCRIPT_NAME = '/dummy_10'\n```"));
   ASSERT_NO_FATAL_FAILURE(this->hover("$SCRIPT_DIR", 0, "```arsh\nconst SCRIPT_DIR = '/'\n```"));
 
   // builtin command

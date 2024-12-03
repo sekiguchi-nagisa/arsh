@@ -1,6 +1,6 @@
 #$test($result = 'type', $lineNum = 6, $chars = 5, $errorKind = 'UndefinedInit', $status = 1)
 
 new Error('')
-new ShellExit('', 23)
-new AssertionFailed('')
-new Throwable('')       # Throwable constructor is not defined
+#new ShellExit('', 23)
+#new AssertionFailed('')
+new Throwable('')

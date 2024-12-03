@@ -7,7 +7,7 @@ defer {
 }
 
 try {
-  throw new ShellExit('manual exit', 123)
+  exit 123
 } catch e {
   echo failed
   assert false

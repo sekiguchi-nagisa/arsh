@@ -218,8 +218,6 @@ function job(): Job for ProcSubst
 
 ## Throwable type
 ```
-function %OP_INIT(message: String, status: Int?): Throwable for Throwable
-
 function message(): String for Throwable
 
 function show(): Void for Throwable
@@ -231,6 +229,11 @@ function status(): Int for Throwable
 function lineno(): Int for Throwable
 
 function source(): String for Throwable
+```
+
+## Error type
+```
+function %OP_INIT(message: String, status: Int?): Error for Error
 ```
 
 ## Job type

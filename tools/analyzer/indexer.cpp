@@ -201,7 +201,7 @@ const Symbol *IndexBuilder::addCmd(const NameInfo &info, const HandlePtr &hd) {
 }
 
 void IndexBuilder::addTypeInheritance(const Type &type) {
-  if (type.isRecordOrDerived() || type.typeKind() == TypeKind::Error) {
+  if (type.isRecordOrDerived() || type.typeKind() == TypeKind::Error || type.is(TYPE::Error)) {
     auto *baseType = type.getSuperType();
     if (!baseType || baseType->is(TYPE::Any)) {
       return;
@@ -1057,10 +1057,16 @@ void SymbolIndexer::addBuiltinSymbols() {
       continue;
     }
     NameInfo nameInfo(tokenGen.next(), type->getNameRef().toString());
-    if (isa<ErrorType>(type)) {
-      auto &baseType = *type->getSuperType();
-      this->builder().addDecl(nameInfo, baseType, nameInfo.getToken(),
-                              DeclSymbol::Kind::ERROR_TYPE_DEF);
+    if (!type->is(TYPE::Throwable) && !type->is(TYPE::Nothing) &&
+        this->builder().getPool().get(TYPE::Throwable).isSameOrBaseTypeOf(*type)) {
+      if (!type->is(TYPE::Error) &&
+          this->builder().getPool().get(TYPE::Error).isSameOrBaseTypeOf(*type)) {
+        auto &baseType = *type->getSuperType();
+        this->builder().addDecl(nameInfo, baseType, nameInfo.getToken(),
+                                DeclSymbol::Kind::ERROR_TYPE_DEF);
+      } else {
+        this->builder().addDecl(nameInfo, DeclSymbol::Kind::BUILTIN_TYPE, "", nameInfo.getToken());
+      }
       this->builder().addTypeInheritance(*type);
     } else {
       assert(isa<BuiltinType>(type));

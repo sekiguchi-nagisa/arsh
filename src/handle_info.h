@@ -31,6 +31,7 @@ namespace arsh {
   OP(FD)                                                                                           \
   OP(ProcSubst)                                                                                    \
   OP(Throwable)                                                                                    \
+  OP(Error)                                                                                        \
   OP(Job)                                                                                          \
   OP(Jobs)                                                                                         \
   OP(StringIter)                                                                                   \

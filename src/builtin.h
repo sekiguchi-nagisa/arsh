@@ -2147,7 +2147,7 @@ ARSH_METHOD map_next(RuntimeContext &ctx) {
 // ##     Throwable     ##
 // #######################
 
-//!bind: function $OP_INIT($this : Throwable, $message : String, $status : Option<Int>) : Throwable
+//!bind: function $OP_INIT($this : Error, $message : String, $status : Option<Int>) : Error
 ARSH_METHOD error_init(RuntimeContext &ctx) {
   SUPPRESS_WARNING(error_init);
   auto &type = ctx.typePool.get(LOCAL(0).getTypeID());

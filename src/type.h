@@ -57,6 +57,7 @@ enum class TYPE : unsigned int {
   Signal,
   Signals,
   Throwable,
+  Error,
   Job,
   Jobs,
   Module,
@@ -71,7 +72,6 @@ enum class TYPE : unsigned int {
   StringArray, // for command argument
   OptNothing,  // for dummy invalid value
 
-  Error,
   ArithmeticError,
   OutOfRangeError,
   KeyNotFoundError,

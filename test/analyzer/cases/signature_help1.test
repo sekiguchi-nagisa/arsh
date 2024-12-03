@@ -134,7 +134,7 @@
 #    CHECK:     "signatures": [
 #    CHECK:       {
 #    CHECK:         "activeParameter": 0,
-#    CHECK:         "label": "type Throwable(message: String, status: Int?)",
+#    CHECK:         "label": "type Error(message: String, status: Int?)",
 #    CHECK:         "parameters": [
 #    CHECK:           {
 #    CHECK:             "label": "message: String"
@@ -168,7 +168,7 @@
 #    CHECK:     "signatures": [
 #    CHECK:       {
 #    CHECK:         "activeParameter": 1,
-#    CHECK:         "label": "type Throwable(message: String, status: Int?)",
+#    CHECK:         "label": "type Error(message: String, status: Int?)",
 #    CHECK:         "parameters": [
 #    CHECK:           {
 #    CHECK:             "label": "message: String"
@@ -200,7 +200,7 @@
 #    CHECK:     "activeSignature": 0,
 #    CHECK:     "signatures": [
 #    CHECK:       {
-#    CHECK:         "label": "type Throwable(message: String, status: Int?)",
+#    CHECK:         "label": "type Error(message: String, status: Int?)",
 #    CHECK:         "parameters": []
 #    CHECK:       }
 #    CHECK:     ]
