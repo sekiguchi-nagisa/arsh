@@ -1057,10 +1057,8 @@ void SymbolIndexer::addBuiltinSymbols() {
       continue;
     }
     NameInfo nameInfo(tokenGen.next(), type->getNameRef().toString());
-    if (!type->is(TYPE::Throwable) && !type->is(TYPE::Nothing) &&
-        this->builder().getPool().get(TYPE::Throwable).isSameOrBaseTypeOf(*type)) {
-      if (!type->is(TYPE::Error) &&
-          this->builder().getPool().get(TYPE::Error).isSameOrBaseTypeOf(*type)) {
+    if (type->is(TYPE::Error) || isa<ErrorType>(type)) {
+      if (isa<ErrorType>(type)) {
         auto &baseType = *type->getSuperType();
         this->builder().addDecl(nameInfo, baseType, nameInfo.getToken(),
                                 DeclSymbol::Kind::ERROR_TYPE_DEF);

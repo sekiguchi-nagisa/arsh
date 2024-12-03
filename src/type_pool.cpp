@@ -112,8 +112,8 @@ TypePool::TypePool() {
   this->initErrorType(TYPE::CLIError, "CLIError");
   this->initErrorType(TYPE::ArgumentError, "ArgumentError");
 
-  this->initErrorType(TYPE::ShellExit_, "ShellExit", TYPE::Throwable);
-  this->initErrorType(TYPE::AssertFail_, "AssertionFailed", TYPE::Throwable);
+  this->initBuiltinType(TYPE::ShellExit_, "ShellExit", TYPE::Throwable, info_Dummy());
+  this->initBuiltinType(TYPE::AssertFail_, "AssertionFailed", TYPE::Throwable, info_Dummy());
 }
 
 TypePool::~TypePool() {
@@ -726,8 +726,8 @@ void TypePool::initTypeTemplate(TypeTemplate &temp, TypeTemplate::Kind kind,
   this->templateMap.emplace(key, &temp);
 }
 
-void TypePool::initErrorType(TYPE t, const char *typeName, TYPE super) {
-  auto *type = this->newType<ErrorType>(typeName, this->get(super));
+void TypePool::initErrorType(TYPE t, const char *typeName) {
+  auto *type = this->newType<ErrorType>(typeName, this->get(TYPE::Error));
   assert(type);
   (void)type;
   (void)t;
