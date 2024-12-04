@@ -190,7 +190,7 @@ function quote(): String for String
 
 ## FD type
 ```
-function %OP_INIT(path: String): FD for FD
+type FD(path: String)
 
 function close(): Void for FD
 
@@ -233,7 +233,7 @@ function source(): String for Throwable
 
 ## Error type
 ```
-function %OP_INIT(message: String, status: Int?): Error for Error
+type Error(message: String, status: Int?)
 ```
 
 ## Job type
@@ -275,7 +275,7 @@ function %OP_NEXT(): String for StringIter
 
 ## Regex type
 ```
-function %OP_INIT(str: String, flag: String?): Regex for Regex
+type Regex(str: String, flag: String?)
 
 function isCaseless(): Bool for Regex
 
@@ -356,7 +356,7 @@ function call(argv: [String]): Bool for Command
 
 ## LineEditor type
 ```
-function %OP_INIT(): LineEditor for LineEditor
+type LineEditor()
 
 function readLine(p: String?): String? for LineEditor
 
@@ -394,7 +394,7 @@ function usage(message: String?, verbose: Bool?): String for CLI
 
 ## Candidates type
 ```
-function %OP_INIT(values: [String]?): Candidates for Candidates
+type Candidates(values: [String]?)
 
 function size(): Int for Candidates
 

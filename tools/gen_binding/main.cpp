@@ -34,8 +34,7 @@ using namespace arsh;
 HandleInfo fromNum(unsigned int num) {
   // check range
   if (num < 9) {
-    auto info = static_cast<HandleInfo>(num + static_cast<int>(HandleInfo::P_N0));
-    switch (info) {
+    switch (const auto info = static_cast<HandleInfo>(num + static_cast<int>(HandleInfo::P_N0))) {
 #define GEN_CASE(ENUM) case HandleInfo::ENUM:
       EACH_HANDLE_INFO_NUM(GEN_CASE)
 #undef GEN_CASE
@@ -124,12 +123,15 @@ private:
 };
 
 HandleInfoMap::HandleInfoMap() {
-#define REGISTER(ENUM) this->registerName(HandleInfo::ENUM, #ENUM);
-  EACH_HANDLE_INFO_TYPE(REGISTER)
-  EACH_HANDLE_INFO_PTYPE(REGISTER)
-  EACH_HANDLE_INFO_TYPE_TEMP(REGISTER)
-  EACH_HANDLE_INFO_FUNC_TYPE(REGISTER)
-#undef REGISTER
+  constexpr std::pair<HandleInfo, const char *> table[] = {
+#define GEN_TABLE(E) {HandleInfo::E, #E},
+      EACH_HANDLE_INFO_TYPE(GEN_TABLE) EACH_HANDLE_INFO_PTYPE(GEN_TABLE)
+          EACH_HANDLE_INFO_TYPE_TEMP(GEN_TABLE) EACH_HANDLE_INFO_FUNC_TYPE(GEN_TABLE)
+#undef GEN_TABLE
+  };
+  for (auto [e, s] : table) {
+    this->registerName(e, s);
+  }
 }
 
 HandleInfoMap &HandleInfoMap::getInstance() {
@@ -519,9 +521,6 @@ using TypeConstraint = std::pair<std::unique_ptr<TypeToken>, std::unique_ptr<Typ
 
 class Element {
 protected:
-  /**
-   * if this element is constructor, it is empty string
-   */
   std::string funcName;
 
   /**
@@ -636,12 +635,18 @@ public:
   }
 
   std::string toString() const {
+    const bool isInit = this->op && this->funcName == "OP_INIT";
     std::string str;
-    str += "function ";
-    if (this->op) {
-      str += "%";
+    if (isInit) {
+      str += "type ";
+      str += this->returnType->toString();
+    } else {
+      str += "function ";
+      if (this->op) {
+        str += "%";
+      }
+      str += this->funcName;
     }
-    str += this->funcName;
 
     str += "(";
     for (unsigned int i = 0; i < this->paramNames.size(); i++) {
@@ -652,8 +657,12 @@ public:
       str += ": ";
       str += this->paramTypes[i]->toString();
     }
-    str += "): ";
-    str += this->returnType->toString();
+    if (isInit) {
+      str += ")";
+    } else {
+      str += "): ";
+      str += this->returnType->toString();
+    }
 
     if (!this->constraints.empty()) {
       str += " where ";
@@ -666,8 +675,10 @@ public:
         str += this->constraints[i].second->toString();
       }
     }
-    str += " for ";
-    this->ownerType->toString(str);
+    if (!isInit) {
+      str += " for ";
+      this->ownerType->toString(str);
+    }
     return str;
   }
 };
