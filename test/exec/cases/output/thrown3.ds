@@ -1,0 +1,66 @@
+# RUN: exec $cmd --trace-exit $self
+# STATUS: 1
+
+function throw(e: Throwable?) {
+    if let a = $e as? ShellExit {
+        echo rethrow ${$a.name()}
+        throw $a
+    } elif let a = $e as? AssertionFailed {
+                echo rethrow ${$a.name()}
+        throw $a
+    } else {
+        echo nothrow
+    }
+}
+
+
+defer {
+    defer {
+        $throw($THROWN)
+    }
+    command 'exit'
+}
+
+defer {
+    defer {
+        $throw($THROWN)
+    }
+
+    assert $THROWN is ShellExit
+}
+
+23/0
+
+# CHECK: rethrow AssertionFailed
+# CHECK: rethrow ShellExit
+
+# CHECKERR: [warning]
+# CHECKERR: the following exception within finally/defer block is ignored
+# CHECKERR: AssertionFailed: `$THROWN is ShellExit'
+# CHECKERR: binary expression `<EXPR> is <TYPE>' is false
+# CHECKERR:   <EXPR>: ArithmeticError
+# CHECKERR:   <TYPE>: ShellExit
+# CHECKERR_RE:     from .+/test/exec/cases/output/thrown3\.ds:29 '<toplevel>\(\)'
+# CHECKERR_RE: ^$
+# CHECKERR: [warning]
+# CHECKERR: the following exception within finally/defer block is ignored
+# CHECKERR: ShellExit: terminated by exit 0
+# CHECKERR_RE:     from .+/test/exec/cases/output/thrown3\.ds:21 '<toplevel>\(\)'
+# CHECKERR_RE: ^$
+# CHECKERR: [warning]
+# CHECKERR: the following exception within finally/defer block is ignored
+# CHECKERR: ShellExit: terminated by exit 0
+# CHECKERR_RE:     from .+/test/exec/cases/output/thrown3\.ds:21 '<toplevel>\(\)'
+# CHECKERR_RE: ^$
+# CHECKERR: [warning]
+# CHECKERR: the following exception within finally/defer block is ignored
+# CHECKERR: AssertionFailed: `$THROWN is ShellExit'
+# CHECKERR: binary expression `<EXPR> is <TYPE>' is false
+# CHECKERR:   <EXPR>: ArithmeticError
+# CHECKERR:   <TYPE>: ShellExit
+# CHECKERR_RE:     from .+/test/exec/cases/output/thrown3\.ds:29 '<toplevel>\(\)'
+# CHECKERR_RE: ^$
+# CHECKERR: [runtime error]
+# CHECKERR: ArithmeticError: zero division
+# CHECKERR_RE:     from .+/test/exec/cases/output/thrown3\.ds:32 '<toplevel>\(\)'
+
