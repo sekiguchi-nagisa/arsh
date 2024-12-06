@@ -2037,7 +2037,7 @@ bool VM::mainLoop(ARState &state) {
       vmcase(EXIT_FINALLY) {
         auto entry = state.stack.exitFinally();
         if (entry.hasError()) {
-          state.stack.setErrorObj(entry.asError());
+          state.stack.setThrownObject(entry.asError());
           vmerror;
         }
         state.stack.updateIPByOffset(entry.asRetAddr());
@@ -2415,7 +2415,7 @@ void VM::rethrowFromFinally(ARState &state) {
       entry.hasError()) { // ignore current exception and rethrow
     const auto curError = state.stack.takeThrownObject();
     curError->printStackTrace(state, ErrorObject::PrintOp::IGNORED);
-    state.stack.setErrorObj(entry.asError());
+    state.stack.setThrownObject(entry.asError());
   }
 }
 

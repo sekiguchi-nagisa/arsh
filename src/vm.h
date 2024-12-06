@@ -152,7 +152,7 @@ public:
 
   bool hasError() const { return this->stack.hasError(); }
 
-  void throwObject(ObjPtr<ErrorObject> &&except) { this->stack.setErrorObj(std::move(except)); }
+  void throwObject(ObjPtr<ErrorObject> &&except) { this->stack.setThrownObject(std::move(except)); }
 
   // variable manipulation
   void setGlobal(unsigned int index, const Value &obj) { this->setGlobal(index, Value(obj)); }

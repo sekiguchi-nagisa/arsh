@@ -467,7 +467,7 @@ private:
                                    ConcatCmdArgParam &param);
 
   /**
-   * gnerate code with tilde expansion unit
+   * generate code with tilde expansion unit
    *
    * consider the following cases
    *

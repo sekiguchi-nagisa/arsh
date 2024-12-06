@@ -194,7 +194,7 @@ public:
   // for exception handling
   const auto &getThrownObject() const { return this->thrown; }
 
-  void setErrorObj(ObjPtr<ErrorObject> &&obj) { this->thrown = std::move(obj); }
+  void setThrownObject(ObjPtr<ErrorObject> &&obj) { this->thrown = std::move(obj); }
 
   ObjPtr<ErrorObject> takeThrownObject() {
     ObjPtr<ErrorObject> tmp;
