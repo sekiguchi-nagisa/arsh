@@ -56,6 +56,7 @@ Line Number Table:
   lineNum: 1, address:  6
 Exception Table:
   begin: 5, end: 23, type: Throwable, dest: 23, offset: 0, size: 0, level: 1
+  begin: 23, end: 26, type: process guard%%, dest: 26, offset: 0, size: 0, level: 0
 
 ARCode: function f
   code size: 8

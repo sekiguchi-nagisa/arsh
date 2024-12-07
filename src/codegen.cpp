@@ -1161,14 +1161,27 @@ void ByteCodeGenerator::visitBlockNode(BlockNode &node) {
 void ByteCodeGenerator::visitTypeDefNode(TypeDefNode &) {} // do nothing
 
 void ByteCodeGenerator::visitDeferNode(DeferNode &node) {
-  auto &e = this->tryFinallyLabels().back();
-  this->markLabel(e.finallyLabel);
-  this->catchException(e.beginLabel, e.endLabel, this->typePool.get(TYPE::Throwable), e.localOffset,
-                       e.localSize, this->tryFinallyLabels().size());
+  // prepare
+  {
+    auto &e = this->tryFinallyLabels().back();
+    this->markLabel(e.finallyLabel);
+    this->catchException(e.beginLabel, e.endLabel, this->typePool.get(TYPE::Throwable),
+                         e.localOffset, e.localSize, this->tryFinallyLabels().size());
+  }
   if (node.getDropLocalSize()) {
     this->emit2byteIns(OpCode::RECLAIM_LOCAL, node.getDropLocalOffset(), node.getDropLocalSize());
   }
+
+  // generate defer/finally body
+  auto beginLabel = makeLabel();
+  auto endLabel = makeLabel();
+  this->markLabel(beginLabel);
   this->visit(node.getBlockNode(), CmdCallCtx::STMT);
+  this->markLabel(endLabel);
+  /*
+   * always catch all exceptions from defer/finally
+   */
+  this->guardChildProc(beginLabel, endLabel, this->typePool.get(TYPE::ProcGuard_));
   this->emit0byteIns(OpCode::EXIT_FINALLY);
 }
 

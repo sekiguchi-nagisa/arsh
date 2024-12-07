@@ -60,24 +60,16 @@ struct ControlFrame {
 
 class FinallyEntry {
 private:
-  unsigned int addr;  // finally block start address
-  unsigned int depth; // control frame depth
-  Value errorOrAddr;  // Error or return address of try block
+  Value errorOrAddr; // Error or return address of try block
 
 public:
-  FinallyEntry(unsigned int addr, unsigned int depth, ObjPtr<ErrorObject> &&error)
-      : addr(addr), depth(depth), errorOrAddr(error) {}
+  explicit FinallyEntry(ObjPtr<ErrorObject> &&error) : errorOrAddr(error) {}
 
-  FinallyEntry(unsigned int addr, unsigned int depth, unsigned int retAddr)
-      : addr(addr), depth(depth), errorOrAddr(Value::createNum(retAddr)) {}
+  explicit FinallyEntry(unsigned int retAddr) : errorOrAddr(Value::createNum(retAddr)) {}
 
   bool hasError() const {
     return this->errorOrAddr.isObject() && isa<ErrorObject>(this->errorOrAddr.get());
   }
-
-  unsigned int getAddr() const { return this->addr; }
-
-  unsigned int getDepth() const { return this->depth; }
 
   ObjPtr<ErrorObject> asError() const { return toObjPtr<ErrorObject>(this->errorOrAddr); }
 
@@ -208,14 +200,9 @@ public:
 
   const auto &getFinallyEntries() const { return this->finallyEntries; }
 
-  void enterFinally(unsigned int finallyAddr, unsigned int retAddr) {
-    this->finallyEntries.emplace_back(finallyAddr, this->getFrames().size(), retAddr);
-  }
+  void enterFinally(unsigned int retAddr) { this->finallyEntries.emplace_back(retAddr); }
 
-  void enterFinally(unsigned int finallyAddr) {
-    this->finallyEntries.emplace_back(finallyAddr, this->getFrames().size(),
-                                      this->takeThrownObject());
-  }
+  void enterFinally() { this->finallyEntries.emplace_back(this->takeThrownObject()); }
 
   FinallyEntry exitFinally() {
     assert(!this->finallyEntries.empty());

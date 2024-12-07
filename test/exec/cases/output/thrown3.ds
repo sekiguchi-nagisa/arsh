@@ -44,21 +44,21 @@ defer {
 # CHECKERR_RE: ^$
 # CHECKERR: [warning]
 # CHECKERR: the following exception within finally/defer block is ignored
-# CHECKERR: ShellExit: terminated by exit 0
-# CHECKERR_RE:     from .+/test/exec/cases/output/thrown3\.ds:21 '<toplevel>\(\)'
-# CHECKERR_RE: ^$
-# CHECKERR: [warning]
-# CHECKERR: the following exception within finally/defer block is ignored
-# CHECKERR: ShellExit: terminated by exit 0
-# CHECKERR_RE:     from .+/test/exec/cases/output/thrown3\.ds:21 '<toplevel>\(\)'
-# CHECKERR_RE: ^$
-# CHECKERR: [warning]
-# CHECKERR: the following exception within finally/defer block is ignored
 # CHECKERR: AssertionFailed: `$THROWN is ShellExit'
 # CHECKERR: binary expression `<EXPR> is <TYPE>' is false
 # CHECKERR:   <EXPR>: ArithmeticError
 # CHECKERR:   <TYPE>: ShellExit
 # CHECKERR_RE:     from .+/test/exec/cases/output/thrown3\.ds:29 '<toplevel>\(\)'
+# CHECKERR_RE: ^$
+# CHECKERR: [warning]
+# CHECKERR: the following exception within finally/defer block is ignored
+# CHECKERR: ShellExit: terminated by exit 0
+# CHECKERR_RE:     from .+/test/exec/cases/output/thrown3\.ds:21 '<toplevel>\(\)'
+# CHECKERR_RE: ^$
+# CHECKERR: [warning]
+# CHECKERR: the following exception within finally/defer block is ignored
+# CHECKERR: ShellExit: terminated by exit 0
+# CHECKERR_RE:     from .+/test/exec/cases/output/thrown3\.ds:21 '<toplevel>\(\)'
 # CHECKERR_RE: ^$
 # CHECKERR: [runtime error]
 # CHECKERR: ArithmeticError: zero division

@@ -71,6 +71,7 @@
 ### Fixed
 
 - fix executable file checking in filename completion
+- fix ignored exception handling when throw from finally
 
 ## [0.35.1] - 2024-10-19
 

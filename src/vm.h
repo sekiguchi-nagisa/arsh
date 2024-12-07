@@ -602,8 +602,6 @@ private:
    */
   static bool mainLoop(ARState &state);
 
-  static void rethrowFromFinally(ARState &state);
-
   /**
    * if found exception handler, return true.
    * otherwise return false.

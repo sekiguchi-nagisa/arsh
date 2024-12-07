@@ -2031,13 +2031,19 @@ bool VM::mainLoop(ARState &state) {
         unsigned int index = read32(state.stack.ip());
         const unsigned int savedIndex = state.stack.getFrame().getIPOffset() + 4;
         state.stack.updateIPByOffset(index);
-        state.stack.enterFinally(index, savedIndex);
+        state.stack.enterFinally(savedIndex);
         vmnext;
       }
       vmcase(EXIT_FINALLY) {
         auto entry = state.stack.exitFinally();
         if (entry.hasError()) {
+          if (state.hasError()) {
+            auto e = state.stack.takeThrownObject();
+            e->printStackTrace(state, ErrorObject::PrintOp::IGNORED);
+          }
           state.stack.setThrownObject(entry.asError());
+        }
+        if (state.hasError()) {
           vmerror;
         }
         state.stack.updateIPByOffset(entry.asRetAddr());
@@ -2410,15 +2416,6 @@ bool VM::mainLoop(ARState &state) {
   }
 }
 
-void VM::rethrowFromFinally(ARState &state) {
-  if (const auto entry = state.stack.exitFinally();
-      entry.hasError()) { // ignore current exception and rethrow
-    const auto curError = state.stack.takeThrownObject();
-    curError->printStackTrace(state, ErrorObject::PrintOp::IGNORED);
-    state.stack.setThrownObject(entry.asError());
-  }
-}
-
 bool VM::handleException(ARState &state) {
   if (unlikely(state.hook != nullptr)) {
     state.hook->vmThrowHook(state);
@@ -2434,15 +2431,6 @@ bool VM::handleException(ARState &state) {
         const ExceptionEntry &entry = cc->getExceptionEntries()[i];
         auto &entryType = state.typePool.get(entry.typeId);
         if (occurredPC >= entry.begin && occurredPC < entry.end) {
-          // check finally
-          if (auto &entries = state.stack.getFinallyEntries();
-              !entries.empty() && entries.back().getDepth() == state.stack.getFrames().size()) {
-            auto &cur = entries.back();
-            if (entry.begin < cur.getAddr()) {
-              rethrowFromFinally(state);
-            }
-          }
-
           const Type &occurredType = state.typePool.get(state.stack.getThrownObject()->getTypeID());
           if (!entryType.isSameOrBaseTypeOf(occurredType)) {
             continue;
@@ -2460,7 +2448,7 @@ bool VM::handleException(ARState &state) {
           state.stack.clearOperandsUntilGuard(StackGuardType::TRY, entry.guardLevel);
           state.stack.reclaimLocals(entry.localOffset, entry.localSize);
           if (entryType.is(TYPE::Throwable)) { // finally block
-            state.stack.enterFinally(entry.dest);
+            state.stack.enterFinally();
           } else { // catch block
             state.stack.loadThrownObject();
             state.setExitStatus(0); // clear exit status when enter catch block
@@ -2472,11 +2460,6 @@ bool VM::handleException(ARState &state) {
       state.canHandleSignal = true;
     } else if (state.stack.code() == &termHookTrampoline) {
       return true; // not propagate exception from termination handler
-    }
-
-    auto &entries = state.stack.getFinallyEntries();
-    while (!entries.empty() && entries.back().getDepth() == state.stack.getFrames().size()) {
-      rethrowFromFinally(state);
     }
   }
   return false;
