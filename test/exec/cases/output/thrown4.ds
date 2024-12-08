@@ -1,0 +1,19 @@
+# RUN: exec $cmd --trace-exit $self
+# STATUS: 1
+try {
+    echo "thrown: ${[$THROWN]}"
+    [23][1000]
+} finally {
+    defer {
+        echo "thrown: ${[$THROWN]}"
+    }
+    echo "thrown: ${[$THROWN]}"
+}
+
+# CHECK_RE: ^thrown: $
+# CHECK: thrown: OutOfRangeError: size is 1, but index is 1000
+# CHECK_RE: ^thrown: $
+
+# CHECKERR: [runtime error]
+# CHECKERR: OutOfRangeError: size is 1, but index is 1000
+# CHECKERR_RE:    from .+/test/exec/cases/output/thrown4\.ds:5 '<toplevel>\(\)'

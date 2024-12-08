@@ -2320,11 +2320,9 @@ bool VM::mainLoop(ARState &state) {
       }
       vmcase(LOAD_CUR_THROWN) {
         auto value = Value::createInvalid();
-        const auto end = state.stack.getFinallyEntries().crend();
-        for (auto iter = state.stack.getFinallyEntries().crbegin(); iter != end; ++iter) {
-          if (auto &e = *iter; e.hasError()) {
+        if (!state.stack.getFinallyEntries().empty()) {
+          if (auto &e = state.stack.getFinallyEntries().back(); e.hasError()) {
             value = e.asError();
-            break;
           }
         }
         state.stack.push(std::move(value));
