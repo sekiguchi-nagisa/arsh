@@ -783,7 +783,7 @@ void ErrorObject::printStackTrace(const ARState &state, PrintOp op) const {
   }
   }
 
-  // print message (suppress error)
+  // print message (ignore error)
   {
     auto ref = state.typePool.get(this->getTypeID()).getNameRef();
     fwrite(ref.data(), sizeof(char), ref.size(), stderr);
