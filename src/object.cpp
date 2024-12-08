@@ -805,6 +805,18 @@ void ErrorObject::printStackTrace(const ARState &state, PrintOp op) const {
   fflush(stderr);
 }
 
+ObjPtr<ErrorObject> ErrorObject::addSuppressed(ObjPtr<ErrorObject> &&except) {
+  ObjPtr<ErrorObject> oldest;
+  if (reinterpret_cast<uintptr_t>(this) != reinterpret_cast<uintptr_t>(except.get())) {
+    if (this->suppressed.size() == SYS_LIMIT_SUPPRESSED_EXCEPT_MAX) {
+      oldest = std::move(this->suppressed[0]);
+      this->suppressed.erase(this->suppressed.begin());
+    }
+    this->suppressed.push_back(std::move(except));
+  }
+  return oldest;
+}
+
 ObjPtr<ErrorObject> ErrorObject::newError(const ARState &state, const Type &type, Value &&message,
                                           int64_t status) {
   std::vector<StackTraceElement> traces;

@@ -2198,6 +2198,19 @@ ARSH_METHOD error_source(RuntimeContext &ctx) {
   RET(Value::createStr(source));
 }
 
+//!bind: function suppressed($this: Throwable): Array<Throwable>
+ARSH_METHOD error_suppressed(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(error_suppressed);
+  auto &suppressed = typeAs<ErrorObject>(LOCAL(0)).getSuppressed();
+  auto typeOrError = ctx.typePool.createArrayType(ctx.typePool.get(TYPE::Throwable));
+  assert(typeOrError);
+  std::vector<Value> values(suppressed.size());
+  for (unsigned int i = 0; i < suppressed.size(); i++) {
+    values[i] = suppressed[i];
+  }
+  RET(Value::create<ArrayObject>(*typeOrError.asOk(), std::move(values)));
+}
+
 // ################
 // ##     FD     ##
 // ################

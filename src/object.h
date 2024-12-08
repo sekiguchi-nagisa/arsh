@@ -1067,6 +1067,7 @@ private:
   Value name;
   int64_t status;
   std::vector<StackTraceElement> stackTrace;
+  std::vector<ObjPtr<ErrorObject>> suppressed;
 
 public:
   ErrorObject(const Type &type, Value &&message, Value &&name, int64_t status,
@@ -1095,6 +1096,14 @@ public:
   void printStackTrace(const ARState &ctx, PrintOp op = PrintOp::DEFAULT) const;
 
   const std::vector<StackTraceElement> &getStackTrace() const { return this->stackTrace; }
+
+  /**
+   * @param
+   * @return if suppressed except size reaches limit, remove and return oldest entry
+   */
+  ObjPtr<ErrorObject> addSuppressed(ObjPtr<ErrorObject> &&except);
+
+  const auto &getSuppressed() const { return this->suppressed; }
 
   /**
    * create new Error_Object and create stack trace
