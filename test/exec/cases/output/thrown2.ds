@@ -1,4 +1,4 @@
-# RUN: exec $cmd --trace-exit $self
+# RUN: exec $cmd $self
 # STATUS: 56
 
 function ff() {
@@ -30,17 +30,17 @@ try {
     $THROWN!.message()[999]
 }
 
+# show ShellExit having suppressed exceptions even if trace-exit=off 
+
 # CHECK: in ff: ShellExit is thrown at 9
 # CHECK: ShellExit is thrown at 9
 # CHECK: OutOfRangeError is thrown at 30
 # CHECK: in defer: ShellExit is thrown at 9
 
-# CHECKERR: [warning]
-# CHECKERR: the following exception within finally/defer block is ignored
-# CHECKERR: OutOfRangeError: size is 21, but index is 999
-# CHECKERR_RE:     from .+/test/exec/cases/output/thrown2\.ds:30 '<toplevel>\(\)'
-# CHECKERR_RE: ^$
 # CHECKERR: [runtime error]
 # CHECKERR: ShellExit: terminated by exit 56
 # CHECKERR_RE:     from .+/test/exec/cases/output/thrown2\.ds:9 'function ff\(\)'
 # CHECKERR_RE:     from .+/test/exec/cases/output/thrown2\.ds:18 '<toplevel>\(\)'
+# CHECKERR: [note] the following exceptions are suppressed
+# CHECKERR: OutOfRangeError: size is 21, but index is 999
+# CHECKERR_RE:     from .+/test/exec/cases/output/thrown2\.ds:30 '<toplevel>\(\)'

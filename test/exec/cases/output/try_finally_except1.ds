@@ -17,13 +17,9 @@ try {
     $ex = $e
 }
 assert($ex is ArithmeticError)
-
-# CHECKERR: [warning]
-# CHECKERR: the following exception within finally/defer block is ignored
-# CHECKERR: OutOfRangeError: size is 1, but index is 34
-# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except1\.ds:9 'function h\(\)'
-# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except1\.ds:15 '<toplevel>\(\)'
-# CHECKERR_RE: ^$
+assert ($ex as Error).suppressed().size() == 1
+assert ($ex as Error).suppressed()[0] is OutOfRangeError
+assert ($ex as Error).suppressed()[0].lineno() == 9
 
 var count = 0
 function g() {
@@ -46,6 +42,7 @@ try {
 }
 assert $ex is ArithmeticError
 assert $count == 1
+assert ($ex as ArithmeticError).suppressed().empty()
 
 function f() {
     try {
@@ -61,14 +58,9 @@ try {
     $ex = $e
 }
 assert $ex is SystemError
-
-# CHECKERR: [warning]
-# CHECKERR: the following exception within finally/defer block is ignored
-# CHECKERR: ShellExit: terminated by exit 0
-# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except1\.ds:54 'function \(\)'
-# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except1\.ds:54 'function f\(\)'
-# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except1\.ds:59 '<toplevel>\(\)'
-# CHECKERR_RE: ^$
+assert ($ex as SystemError).suppressed().size() == 1
+assert ($ex as SystemError).suppressed()[0] is ShellExit
+assert ($ex as SystemError).suppressed()[0].lineno() == 51
 
 function ff() {
         try {
@@ -84,13 +76,9 @@ try {
     $ex = $e
 }
 assert $ex is TildeError
-
-# CHECKERR: [warning]
-# CHECKERR: the following exception within finally/defer block is ignored
-# CHECKERR: AssertionFailed: `$false'
-# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except1\.ds:77 'function ff\(\)'
-# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except1\.ds:82 '<toplevel>\(\)'
-# CHECKERR_RE: ^$
+assert ($ex as Error).suppressed().size() == 1
+assert ($ex as Error).suppressed()[0] is AssertionFailed
+assert ($ex as Error).suppressed()[0].lineno() == 69
 
 # ignore in subshell
 assert $({
@@ -101,11 +89,9 @@ assert $({
     /fejfar/fejir
 }).empty()
 
-# CHECKERR: [warning at subshell=1]
-# CHECKERR: the following exception within finally/defer block is ignored
-# CHECKERR: ExecError: `false' command exits with non-zero status: `1'
-# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except1\.ds:99 '<toplevel>\(\)'
-# CHECKERR_RE: ^$
 # CHECKERR: [runtime error at subshell=1]
 # CHECKERR: SystemError: execution error: /fejfar/fejir: command not found
-# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except1\.ds:101 '<toplevel>\(\)'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except1\.ds:89 '<toplevel>\(\)'
+# CHECKERR: [note] the following exceptions are suppressed
+# CHECKERR: ExecError: `false' command exits with non-zero status: `1'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except1\.ds:87 '<toplevel>\(\)'

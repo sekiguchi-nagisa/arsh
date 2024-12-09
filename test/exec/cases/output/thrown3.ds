@@ -13,6 +13,12 @@ function throw(e: Throwable?) {
     }
 }
 
+defer { ## check suppressed error
+    $THROWN!.suppressed().clear()  # not affect underlying data
+    assert $THROWN!.suppressed().size() == 2
+    assert $THROWN!.suppressed()[0].suppressed().empty()
+    assert $THROWN!.suppressed()[1].suppressed().empty()
+}
 
 defer {
     defer {
@@ -34,33 +40,14 @@ defer {
 # CHECK: rethrow AssertionFailed
 # CHECK: rethrow ShellExit
 
-# CHECKERR: [warning]
-# CHECKERR: the following exception within finally/defer block is ignored
-# CHECKERR: AssertionFailed: `$THROWN is ShellExit'
-# CHECKERR: binary expression `<EXPR> is <TYPE>' is false
-# CHECKERR:   <EXPR>: ArithmeticError
-# CHECKERR:   <TYPE>: ShellExit
-# CHECKERR_RE:     from .+/test/exec/cases/output/thrown3\.ds:29 '<toplevel>\(\)'
-# CHECKERR_RE: ^$
-# CHECKERR: [warning]
-# CHECKERR: the following exception within finally/defer block is ignored
-# CHECKERR: AssertionFailed: `$THROWN is ShellExit'
-# CHECKERR: binary expression `<EXPR> is <TYPE>' is false
-# CHECKERR:   <EXPR>: ArithmeticError
-# CHECKERR:   <TYPE>: ShellExit
-# CHECKERR_RE:     from .+/test/exec/cases/output/thrown3\.ds:29 '<toplevel>\(\)'
-# CHECKERR_RE: ^$
-# CHECKERR: [warning]
-# CHECKERR: the following exception within finally/defer block is ignored
-# CHECKERR: ShellExit: terminated by exit 0
-# CHECKERR_RE:     from .+/test/exec/cases/output/thrown3\.ds:21 '<toplevel>\(\)'
-# CHECKERR_RE: ^$
-# CHECKERR: [warning]
-# CHECKERR: the following exception within finally/defer block is ignored
-# CHECKERR: ShellExit: terminated by exit 0
-# CHECKERR_RE:     from .+/test/exec/cases/output/thrown3\.ds:21 '<toplevel>\(\)'
-# CHECKERR_RE: ^$
 # CHECKERR: [runtime error]
 # CHECKERR: ArithmeticError: zero division
-# CHECKERR_RE:     from .+/test/exec/cases/output/thrown3\.ds:32 '<toplevel>\(\)'
-
+# CHECKERR_RE:     from .+/test/exec/cases/output/thrown3\.ds:38 '<toplevel>\(\)'
+# CHECKERR: [note] the following exceptions are suppressed
+# CHECKERR: AssertionFailed: `$THROWN is ShellExit'
+# CHECKERR: binary expression `<EXPR> is <TYPE>' is false
+# CHECKERR:   <EXPR>: ArithmeticError
+# CHECKERR:   <TYPE>: ShellExit
+# CHECKERR_RE:     from .+/test/exec/cases/output/thrown3\.ds:35 '<toplevel>\(\)'
+# CHECKERR: ShellExit: terminated by exit 0
+# CHECKERR_RE:     from .+/test/exec/cases/output/thrown3\.ds:27 '<toplevel>\(\)'

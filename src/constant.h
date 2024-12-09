@@ -505,6 +505,7 @@ constexpr size_t SYS_LIMIT_XTRACE_LINE_LEN = 128;
 constexpr size_t SYS_LIMIT_JOB_TABLE_SIZE = UINT16_MAX;
 constexpr size_t SYS_LIMIT_SUBSHELL_LEVEL = 1024;
 constexpr size_t SYS_LIMIT_ERROR_MSG_MAX = UINT16_MAX; // for internal error message
+constexpr size_t SYS_LIMIT_SUPPRESSED_EXCEPT_MAX = UINT8_MAX;
 constexpr size_t SYS_LIMIT_STRING_MAX = INT32_MAX;
 constexpr size_t SYS_LIMIT_ARRAY_MAX = INT32_MAX;
 constexpr size_t SYS_LIMIT_KEY_BINDING_MAX = UINT8_MAX;

@@ -43,6 +43,8 @@
     - change ``TERM_HOOK`` interface, now do not pass extra information (exit status, termination kind)
     - also remove ``ON_ASSERT``, ``ON_ERR``, ``ON_EXIT`` constants
     - now allow signal handler invocation
+- **Breaking Change**: now not ignore exceptions from finally/defer block even if currently thrown
+    - maintain these exceptions and get theme via ``Throwable#suppressed`` method
 - send ``SIGHUP`` to manged jobs before process termination (even if subshell)
 
 #### Builtin

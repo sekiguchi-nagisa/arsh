@@ -17,17 +17,12 @@ defer {
 
 $? = 111
 
-# CHECKERR: [warning]
-# CHECKERR: the following exception within finally/defer block is ignored
-# CHECKERR: KeyNotFoundError: not found key: hello
-# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except2\.ds:11 '<toplevel>\(\)'
-# CHECKERR_RE: ^$
-# CHECKERR: [warning]
-# CHECKERR: the following exception within finally/defer block is ignored
-# CHECKERR: ArithmeticError: zero division
-# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except2\.ds:6 '<toplevel>\(\)'
-# CHECKERR_RE: ^$
 # CHECKERR: [runtime error]
 # CHECKERR: ShellExit: terminated by exit 166
 # CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except2\.ds:15 'function \(\)'
 # CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except2\.ds:15 '<toplevel>\(\)'
+# CHECKERR: [note] the following exceptions are suppressed
+# CHECKERR: KeyNotFoundError: not found key: hello
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except2\.ds:11 '<toplevel>\(\)'
+# CHECKERR: ArithmeticError: zero division
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except2\.ds:6 '<toplevel>\(\)'

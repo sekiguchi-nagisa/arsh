@@ -20,11 +20,9 @@ try {
 # CHECK: ArithmeticError is thrown at 5
 # CHECK: AssertionFailed is thrown at 17
 
-# CHECKERR: [warning]
-# CHECKERR: the following exception within finally/defer block is ignored
-# CHECKERR: AssertionFailed: `! $THROWN'
-# CHECKERR_RE:     from .+/test/exec/cases/output/thrown1\.ds:17 '<toplevel>\(\)'
-# CHECKERR_RE: ^$
 # CHECKERR: [runtime error]
 # CHECKERR: ArithmeticError: zero division
 # CHECKERR_RE:     from .+/test/exec/cases/output/thrown1\.ds:5 '<toplevel>\(\)'
+# CHECKERR: [note] the following exceptions are suppressed
+# CHECKERR: AssertionFailed: `! $THROWN'
+# CHECKERR_RE:     from .+/test/exec/cases/output/thrown1\.ds:17 '<toplevel>\(\)'

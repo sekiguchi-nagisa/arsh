@@ -297,20 +297,15 @@ TEST_F(CmdlineTest, marker4) {
   }
 }
 
-TEST_F(CmdlineTest, except) {
-  const char *msg = R"([warning]
-the following exception within finally/defer block is ignored
-SystemError: execution error: hoge: command not found
-    from (string):7 '<toplevel>()'
-
-[warning]
-the following exception within finally/defer block is ignored
-ShellExit: terminated by exit 34
-    from (string):3 '<toplevel>()'
-
-[runtime error]
+TEST_F(CmdlineTest, except1) {
+  const char *msg = R"([runtime error]
 AssertionFailed: `$false'
     from (string):10 '<toplevel>()'
+[note] the following exceptions are suppressed
+SystemError: execution error: hoge: command not found
+    from (string):7 '<toplevel>()'
+ShellExit: terminated by exit 34
+    from (string):3 '<toplevel>()'
 )";
 
   const char *script = R"(
@@ -320,6 +315,29 @@ defer {
 
 defer {
   hoge
+}
+
+assert $false
+)";
+  ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", script), 1, "", msg));
+}
+
+TEST_F(CmdlineTest, except2) { // suppress its self
+  const char *msg = R"([runtime error]
+AssertionFailed: `$false'
+    from (string):10 '<toplevel>()'
+[note] the following exceptions are suppressed
+ShellExit: terminated by exit 34
+    from (string):3 '<toplevel>()'
+)";
+
+  const char *script = R"(
+defer {
+  call exit 34
+}
+
+defer {
+  (function() => { if $true { throw $THROWN!;} })()
 }
 
 assert $false

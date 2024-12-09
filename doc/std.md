@@ -229,6 +229,8 @@ function status(): Int for Throwable
 function lineno(): Int for Throwable
 
 function source(): String for Throwable
+
+function suppressed(): [Throwable] for Throwable
 ```
 
 ## Error type

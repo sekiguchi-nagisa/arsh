@@ -2038,8 +2038,9 @@ bool VM::mainLoop(ARState &state) {
         auto entry = state.stack.exitFinally();
         if (entry.hasError()) {
           if (state.hasError()) {
-            auto e = state.stack.takeThrownObject();
-            e->printStackTrace(state, ErrorObject::PrintOp::IGNORED);
+            if (auto e = entry.asError()->addSuppressed(state.stack.takeThrownObject())) {
+              e->printStackTrace(state, ErrorObject::PrintOp::IGNORED);
+            }
           }
           state.stack.setThrownObject(entry.asError());
         }
@@ -2617,7 +2618,7 @@ void VM::handleUncaughtException(ARState &state, ARError *dsError, bool inTermHo
 
   // print error message
   if (kind == AR_ERROR_KIND_RUNTIME_ERROR || kind == AR_ERROR_KIND_ASSERTION_ERROR ||
-      state.has(RuntimeOption::TRACE_EXIT) || inTermHook) {
+      state.has(RuntimeOption::TRACE_EXIT) || inTermHook || !except->getSuppressed().empty()) {
     except->printStackTrace(state, inTermHook ? ErrorObject::PrintOp::IGNORED_TERM
                                               : ErrorObject::PrintOp::UNCAUGHT);
   }

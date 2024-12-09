@@ -749,6 +749,23 @@ bool CmdArgsBuilder::add(Value &&arg) {
 // ##     Error_Object     ##
 // ##########################
 
+static void printMessage(FILE *fp, const ErrorObject &obj) {
+  auto ref = obj.getName().asStrRef();
+  fwrite(ref.data(), sizeof(char), ref.size(), fp);
+  ref = ": ";
+  fwrite(ref.data(), sizeof(char), ref.size(), fp);
+  ref = obj.getMessage().asStrRef();
+  fwrite(ref.data(), sizeof(char), ref.size(), fp);
+  fputc('\n', fp);
+}
+
+static void printStackTraceImpl(FILE *fp, const std::vector<StackTraceElement> &stackTrace) {
+  for (auto &s : stackTrace) {
+    fprintf(fp, "    from %s:%d '%s()'\n", s.getSourceName().c_str(), s.getLineNum(),
+            s.getCallerName().c_str());
+  }
+}
+
 void ErrorObject::printStackTrace(const ARState &state, PrintOp op) const {
   // print header
   const auto level = state.subshellLevel();
@@ -782,27 +799,33 @@ void ErrorObject::printStackTrace(const ARState &state, PrintOp op) const {
     break;
   }
   }
+  printMessage(stderr, *this); // FIXME: check io error ?
+  printStackTraceImpl(stderr, this->stackTrace);
 
-  // print message (suppress error)
-  {
-    auto ref = state.typePool.get(this->getTypeID()).getNameRef();
-    fwrite(ref.data(), sizeof(char), ref.size(), stderr);
-    ref = ": ";
-    fwrite(ref.data(), sizeof(char), ref.size(), stderr);
-    ref = this->message.asStrRef();
-    fwrite(ref.data(), sizeof(char), ref.size(), stderr);
-    fputc('\n', stderr);
-  }
-
-  // print stack trace
-  for (auto &s : this->stackTrace) {
-    fprintf(stderr, "    from %s:%d '%s()'\n", s.getSourceName().c_str(), s.getLineNum(),
-            s.getCallerName().c_str());
+  // show suppressed exceptions
+  if (!this->suppressed.empty()) {
+    fputs("[note] the following exceptions are suppressed\n", stderr);
+    for (auto &e : this->suppressed) {
+      printMessage(stderr, *e);
+      printStackTraceImpl(stderr, e->getStackTrace());
+    }
   }
   if (op == PrintOp::IGNORED) {
     fputs("\n", stderr);
   }
   fflush(stderr);
+}
+
+ObjPtr<ErrorObject> ErrorObject::addSuppressed(ObjPtr<ErrorObject> &&except) {
+  ObjPtr<ErrorObject> oldest;
+  if (reinterpret_cast<uintptr_t>(this) != reinterpret_cast<uintptr_t>(except.get())) {
+    if (this->suppressed.size() == SYS_LIMIT_SUPPRESSED_EXCEPT_MAX) {
+      oldest = std::move(this->suppressed[0]);
+      this->suppressed.erase(this->suppressed.begin());
+    }
+    this->suppressed.push_back(std::move(except));
+  }
+  return oldest;
 }
 
 ObjPtr<ErrorObject> ErrorObject::newError(const ARState &state, const Type &type, Value &&message,
