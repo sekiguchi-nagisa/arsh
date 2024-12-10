@@ -1,0 +1,787 @@
+# RUN: exec $cmd $self
+# STATUS: 1
+
+defer { assert false 000; }
+defer { assert false 001; }
+defer { assert false 002; }
+defer { assert false 003; }
+defer { assert false 004; }
+defer { assert false 005; }
+defer { assert false 006; }
+defer { assert false 007; }
+defer { assert false 008; }
+defer { assert false 009; }
+defer { assert false 010; }
+defer { assert false 011; }
+defer { assert false 012; }
+defer { assert false 013; }
+defer { assert false 014; }
+defer { assert false 015; }
+defer { assert false 016; }
+defer { assert false 017; }
+defer { assert false 018; }
+defer { assert false 019; }
+defer { assert false 020; }
+defer { assert false 021; }
+defer { assert false 022; }
+defer { assert false 023; }
+defer { assert false 024; }
+defer { assert false 025; }
+defer { assert false 026; }
+defer { assert false 027; }
+defer { assert false 028; }
+defer { assert false 029; }
+defer { assert false 030; }
+defer { assert false 031; }
+defer { assert false 032; }
+defer { assert false 033; }
+defer { assert false 034; }
+defer { assert false 035; }
+defer { assert false 036; }
+defer { assert false 037; }
+defer { assert false 038; }
+defer { assert false 039; }
+defer { assert false 040; }
+defer { assert false 041; }
+defer { assert false 042; }
+defer { assert false 043; }
+defer { assert false 044; }
+defer { assert false 045; }
+defer { assert false 046; }
+defer { assert false 047; }
+defer { assert false 048; }
+defer { assert false 049; }
+defer { assert false 050; }
+defer { assert false 051; }
+defer { assert false 052; }
+defer { assert false 053; }
+defer { assert false 054; }
+defer { assert false 055; }
+defer { assert false 056; }
+defer { assert false 057; }
+defer { assert false 058; }
+defer { assert false 059; }
+defer { assert false 060; }
+defer { assert false 061; }
+defer { assert false 062; }
+defer { assert false 063; }
+defer { assert false 064; }
+defer { assert false 065; }
+defer { assert false 066; }
+defer { assert false 067; }
+defer { assert false 068; }
+defer { assert false 069; }
+defer { assert false 070; }
+defer { assert false 071; }
+defer { assert false 072; }
+defer { assert false 073; }
+defer { assert false 074; }
+defer { assert false 075; }
+defer { assert false 076; }
+defer { assert false 077; }
+defer { assert false 078; }
+defer { assert false 079; }
+defer { assert false 080; }
+defer { assert false 081; }
+defer { assert false 082; }
+defer { assert false 083; }
+defer { assert false 084; }
+defer { assert false 085; }
+defer { assert false 086; }
+defer { assert false 087; }
+defer { assert false 088; }
+defer { assert false 089; }
+defer { assert false 090; }
+defer { assert false 091; }
+defer { assert false 092; }
+defer { assert false 093; }
+defer { assert false 094; }
+defer { assert false 095; }
+defer { assert false 096; }
+defer { assert false 097; }
+defer { assert false 098; }
+defer { assert false 099; }
+defer { assert false 100; }
+defer { assert false 101; }
+defer { assert false 102; }
+defer { assert false 103; }
+defer { assert false 104; }
+defer { assert false 105; }
+defer { assert false 106; }
+defer { assert false 107; }
+defer { assert false 108; }
+defer { assert false 109; }
+defer { assert false 110; }
+defer { assert false 111; }
+defer { assert false 112; }
+defer { assert false 113; }
+defer { assert false 114; }
+defer { assert false 115; }
+defer { assert false 116; }
+defer { assert false 117; }
+defer { assert false 118; }
+defer { assert false 119; }
+defer { assert false 120; }
+defer { assert false 121; }
+defer { assert false 122; }
+defer { assert false 123; }
+defer { assert false 124; }
+defer { assert false 125; }
+defer { assert false 126; }
+defer { assert false 127; }
+defer { assert false 128; }
+defer { assert false 129; }
+defer { assert false 130; }
+defer { assert false 131; }
+defer { assert false 132; }
+defer { assert false 133; }
+defer { assert false 134; }
+defer { assert false 135; }
+defer { assert false 136; }
+defer { assert false 137; }
+defer { assert false 138; }
+defer { assert false 139; }
+defer { assert false 140; }
+defer { assert false 141; }
+defer { assert false 142; }
+defer { assert false 143; }
+defer { assert false 144; }
+defer { assert false 145; }
+defer { assert false 146; }
+defer { assert false 147; }
+defer { assert false 148; }
+defer { assert false 149; }
+defer { assert false 150; }
+defer { assert false 151; }
+defer { assert false 152; }
+defer { assert false 153; }
+defer { assert false 154; }
+defer { assert false 155; }
+defer { assert false 156; }
+defer { assert false 157; }
+defer { assert false 158; }
+defer { assert false 159; }
+defer { assert false 160; }
+defer { assert false 161; }
+defer { assert false 162; }
+defer { assert false 163; }
+defer { assert false 164; }
+defer { assert false 165; }
+defer { assert false 166; }
+defer { assert false 167; }
+defer { assert false 168; }
+defer { assert false 169; }
+defer { assert false 170; }
+defer { assert false 171; }
+defer { assert false 172; }
+defer { assert false 173; }
+defer { assert false 174; }
+defer { assert false 175; }
+defer { assert false 176; }
+defer { assert false 177; }
+defer { assert false 178; }
+defer { assert false 179; }
+defer { assert false 180; }
+defer { assert false 181; }
+defer { assert false 182; }
+defer { assert false 183; }
+defer { assert false 184; }
+defer { assert false 185; }
+defer { assert false 186; }
+defer { assert false 187; }
+defer { assert false 188; }
+defer { assert false 189; }
+defer { assert false 190; }
+defer { assert false 191; }
+defer { assert false 192; }
+defer { assert false 193; }
+defer { assert false 194; }
+defer { assert false 195; }
+defer { assert false 196; }
+defer { assert false 197; }
+defer { assert false 198; }
+defer { assert false 199; }
+defer { assert false 200; }
+defer { assert false 201; }
+defer { assert false 202; }
+defer { assert false 203; }
+defer { assert false 204; }
+defer { assert false 205; }
+defer { assert false 206; }
+defer { assert false 207; }
+defer { assert false 208; }
+defer { assert false 209; }
+defer { assert false 210; }
+defer { assert false 211; }
+defer { assert false 212; }
+defer { assert false 213; }
+defer { assert false 214; }
+defer { assert false 215; }
+defer { assert false 216; }
+defer { assert false 217; }
+defer { assert false 218; }
+defer { assert false 219; }
+defer { assert false 220; }
+defer { assert false 221; }
+defer { assert false 222; }
+defer { assert false 223; }
+defer { assert false 224; }
+defer { assert false 225; }
+defer { assert false 226; }
+defer { assert false 227; }
+defer { assert false 228; }
+defer { assert false 229; }
+defer { assert false 230; }
+defer { assert false 231; }
+defer { assert false 232; }
+defer { assert false 233; }
+defer { assert false 234; }
+defer { assert false 235; }
+defer { assert false 236; }
+defer { assert false 237; }
+defer { assert false 238; }
+defer { assert false 239; }
+defer { assert false 240; }
+defer { assert false 241; }
+defer { assert false 242; }
+defer { assert false 243; }
+defer { assert false 244; }
+defer { assert false 245; }
+defer { assert false 246; }
+defer { assert false 247; }
+defer { assert false 248; }
+defer { assert false 249; }
+defer { assert false 250; }
+defer { assert false 251; }
+defer { assert false 252; }
+defer { assert false 253; }
+defer { assert false 254; }
+defer { assert false 255; }
+defer { assert false 256; }
+
+45/0
+
+#    CHECKERR: [warning]
+#    CHECKERR: the following exception within finally/defer block is ignored
+#    CHECKERR: AssertionFailed: `false 256'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:260 '<toplevel>\(\)'
+# CHECKERR_RE: ^$
+#    CHECKERR: [warning]
+#    CHECKERR: the following exception within finally/defer block is ignored
+#    CHECKERR: AssertionFailed: `false 255'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:259 '<toplevel>\(\)'
+# CHECKERR_RE: ^$
+#    CHECKERR: [runtime error]
+#    CHECKERR: ArithmeticError: zero division
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:262 '<toplevel>\(\)'
+#    CHECKERR: [note] the following exceptions are suppressed
+#    CHECKERR: AssertionFailed: `false 254'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:258 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 253'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:257 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 252'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:256 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 251'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:255 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 250'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:254 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 249'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:253 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 248'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:252 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 247'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:251 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 246'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:250 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 245'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:249 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 244'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:248 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 243'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:247 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 242'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:246 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 241'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:245 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 240'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:244 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 239'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:243 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 238'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:242 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 237'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:241 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 236'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:240 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 235'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:239 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 234'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:238 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 233'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:237 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 232'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:236 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 231'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:235 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 230'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:234 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 229'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:233 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 228'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:232 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 227'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:231 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 226'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:230 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 225'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:229 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 224'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:228 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 223'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:227 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 222'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:226 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 221'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:225 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 220'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:224 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 219'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:223 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 218'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:222 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 217'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:221 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 216'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:220 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 215'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:219 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 214'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:218 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 213'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:217 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 212'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:216 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 211'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:215 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 210'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:214 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 209'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:213 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 208'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:212 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 207'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:211 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 206'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:210 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 205'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:209 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 204'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:208 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 203'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:207 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 202'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:206 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 201'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:205 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 200'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:204 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 199'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:203 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 198'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:202 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 197'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:201 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 196'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:200 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 195'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:199 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 194'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:198 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 193'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:197 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 192'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:196 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 191'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:195 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 190'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:194 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 189'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:193 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 188'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:192 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 187'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:191 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 186'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:190 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 185'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:189 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 184'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:188 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 183'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:187 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 182'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:186 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 181'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:185 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 180'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:184 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 179'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:183 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 178'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:182 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 177'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:181 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 176'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:180 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 175'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:179 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 174'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:178 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 173'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:177 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 172'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:176 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 171'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:175 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 170'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:174 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 169'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:173 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 168'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:172 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 167'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:171 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 166'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:170 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 165'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:169 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 164'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:168 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 163'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:167 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 162'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:166 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 161'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:165 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 160'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:164 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 159'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:163 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 158'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:162 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 157'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:161 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 156'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:160 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 155'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:159 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 154'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:158 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 153'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:157 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 152'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:156 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 151'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:155 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 150'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:154 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 149'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:153 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 148'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:152 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 147'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:151 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 146'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:150 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 145'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:149 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 144'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:148 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 143'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:147 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 142'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:146 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 141'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:145 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 140'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:144 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 139'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:143 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 138'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:142 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 137'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:141 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 136'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:140 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 135'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:139 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 134'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:138 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 133'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:137 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 132'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:136 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 131'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:135 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 130'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:134 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 129'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:133 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 128'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:132 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 127'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:131 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 126'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:130 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 125'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:129 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 124'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:128 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 123'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:127 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 122'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:126 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 121'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:125 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 120'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:124 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 119'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:123 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 118'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:122 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 117'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:121 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 116'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:120 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 115'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:119 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 114'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:118 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 113'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:117 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 112'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:116 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 111'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:115 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 110'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:114 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 109'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:113 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 108'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:112 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 107'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:111 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 106'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:110 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 105'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:109 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 104'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:108 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 103'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:107 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 102'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:106 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 101'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:105 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 100'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:104 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 099'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:103 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 098'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:102 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 097'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:101 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 096'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:100 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 095'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:99 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 094'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:98 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 093'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:97 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 092'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:96 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 091'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:95 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 090'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:94 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 089'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:93 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 088'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:92 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 087'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:91 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 086'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:90 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 085'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:89 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 084'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:88 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 083'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:87 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 082'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:86 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 081'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:85 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 080'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:84 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 079'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:83 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 078'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:82 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 077'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:81 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 076'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:80 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 075'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:79 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 074'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:78 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 073'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:77 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 072'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:76 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 071'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:75 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 070'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:74 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 069'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:73 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 068'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:72 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 067'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:71 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 066'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:70 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 065'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:69 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 064'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:68 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 063'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:67 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 062'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:66 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 061'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:65 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 060'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:64 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 059'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:63 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 058'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:62 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 057'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:61 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 056'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:60 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 055'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:59 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 054'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:58 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 053'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:57 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 052'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:56 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 051'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:55 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 050'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:54 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 049'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:53 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 048'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:52 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 047'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:51 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 046'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:50 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 045'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:49 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 044'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:48 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 043'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:47 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 042'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:46 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 041'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:45 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 040'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:44 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 039'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:43 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 038'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:42 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 037'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:41 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 036'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:40 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 035'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:39 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 034'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:38 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 033'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:37 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 032'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:36 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 031'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:35 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 030'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:34 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 029'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:33 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 028'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:32 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 027'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:31 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 026'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:30 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 025'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:29 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 024'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:28 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 023'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:27 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 022'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:26 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 021'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:25 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 020'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:24 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 019'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:23 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 018'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:22 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 017'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:21 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 016'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:20 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 015'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:19 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 014'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:18 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 013'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:17 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 012'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:16 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 011'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:15 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 010'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:14 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 009'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:13 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 008'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:12 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 007'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:11 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 006'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:10 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 005'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:9 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 004'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:8 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 003'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:7 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 002'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:6 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 001'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:5 '<toplevel>\(\)'
+#    CHECKERR: AssertionFailed: `false 000'
+# CHECKERR_RE:     from .+/test/exec/cases/output/try_finally_except3\.ds:4 '<toplevel>\(\)'
