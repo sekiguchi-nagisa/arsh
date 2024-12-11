@@ -148,6 +148,8 @@ struct CodeBuilder : public CodeEmitter<true> {
    */
   std::vector<LoopState> loopLabels;
 
+  std::vector<Label> forInBreakLabels;
+
   std::vector<TryFinallyState> tryFinallyLabels;
 
   std::vector<std::unique_ptr<DeferNode>> toplevelDeferNodes;
@@ -352,7 +354,10 @@ private:
 
   void popLoopLabels() { this->curBuilder().loopLabels.pop_back(); }
 
-  const LoopState &peekLoopLabels() const { return this->curBuilder().loopLabels.back(); }
+  const LoopState &peekLoopLabels() const {
+    assert(!this->curBuilder().loopLabels.empty());
+    return this->curBuilder().loopLabels.back();
+  }
 
   /**
    *

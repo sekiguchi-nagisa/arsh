@@ -74,6 +74,7 @@
 
 - fix executable file checking in filename completion
 - fix ignored exception handling when throw from finally
+- fix code generation of for-in expression
 
 ## [0.35.1] - 2024-10-19
 

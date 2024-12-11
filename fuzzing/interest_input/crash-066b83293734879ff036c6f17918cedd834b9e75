@@ -1,0 +1,35 @@
+var i = 0;
+let count = 5;
+
+do {
+	if($i == $count) {
+	i = 0;
+let count = 5;
+
+do {
+	if($i == $count) {
+		break;
+	}
+	$i = $i + 1
+} while($true);
+
+assert($i == $count)
+
+
+	let a = 23
+do {
+	$i = $i + 1
+} while $i <	break;
+	}
+	$i = $i + 1
+} while($true);
+
+assert($i == $count)
+
+
+	let a = 23
+do {
+	$i = $i + 1
+} while $i < $a
+
+assert($i == 23)

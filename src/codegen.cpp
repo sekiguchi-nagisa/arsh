@@ -861,7 +861,7 @@ void ByteCodeGenerator::visitApplyNode(ApplyNode &node) {
   } else if (node.isMethodCall()) {
     this->visit(node.getRecvNode());
     if (node.getAttr() == ApplyNode::NEW_ITER && node.getRecvNode().getType().isOptionType()) {
-      this->emitBranchIns(OpCode::IF_INVALID, this->peekLoopLabels().breakLabel);
+      this->emitBranchIns(OpCode::IF_INVALID, this->curBuilder().forInBreakLabels.back());
     }
     this->visit(node.getArgsNode());
     if (node.getAssertOp() != AssertOp::DEFAULT) {
@@ -1205,10 +1205,11 @@ void ByteCodeGenerator::visitLoopNode(LoopNode &node) {
     auto breakLabel = makeLabel();
     auto continueLabel = makeLabel();
     auto breakWithValueLabel = makeLabel();
-    this->pushLoopLabels(breakLabel, continueLabel, breakWithValueLabel);
 
     this->emitSourcePos(node.getPos());
+    this->curBuilder().forInBreakLabels.push_back(breakLabel);
     this->visit(node.getInitNode());
+    this->curBuilder().forInBreakLabels.pop_back();
     if (!isEmptyCode(node.getIterNode())) {
       this->emitJumpIns(initLabel);
     }
@@ -1227,16 +1228,15 @@ void ByteCodeGenerator::visitLoopNode(LoopNode &node) {
 
     this->markLabel(startLabel);
     this->emit0byteIns(OpCode::LOOP_GUARD);
+    this->pushLoopLabels(breakLabel, continueLabel, breakWithValueLabel);
     this->visit(node.getBlockNode(), CmdCallCtx::STMT);
+    this->popLoopLabels();
 
     this->markLabel(breakLabel);
     if (!node.getType().isVoidType()) {
       this->emit0byteIns(OpCode::PUSH_INVALID);
       this->markLabel(breakWithValueLabel);
     }
-
-    // pop loop label
-    this->popLoopLabels();
   });
 }
 
