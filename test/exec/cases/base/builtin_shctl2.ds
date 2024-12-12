@@ -102,13 +102,13 @@ shctl unset clobber
 assert shctl set | grep 'clobber *  off'
 $ex = 34
 try { echo hello > /dev/null; } catch e { $ex = $e; }
-assert $ex is SystemError
+assert $ex is Int  # redirection to non-regular file succeed even if clobber=off
 $ex = 34
 try { echo hello >| /dev/null; } catch e { $ex = $e; }
 assert $ex is Int
 $ex = 34
 try { echo hello &> /dev/null; } catch e { $ex = $e; }
-assert $ex is SystemError
+assert $ex is Int  # redirection to non-regular file succeed even if clobber=off
 $ex = 34
 try { echo hello &>| /dev/null; } catch e { $ex = $e; }
 assert $ex is Int

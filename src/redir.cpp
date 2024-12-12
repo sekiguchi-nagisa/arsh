@@ -71,13 +71,13 @@ static int doIOHere(const StringRef &value, int newFd, bool insertNewline) {
   }
 
   if (value.size() + (insertNewline ? 1 : 0) <= PIPE_BUF) {
-    int errnum = 0;
+    int errNum = 0;
     if (write(pipe[WRITE_PIPE], value.data(), value.size()) < 0 ||
         write(pipe[WRITE_PIPE], "\n", insertNewline ? 1 : 0) < 0) {
-      errnum = errno;
+      errNum = errno;
     }
     pipe.close();
-    return errnum;
+    return errNum;
   } else {
     pid_t pid = fork();
     if (pid < 0) {
@@ -110,6 +110,29 @@ enum class RedirOpenFlag : unsigned char {
   APPEND,
   READ_WRITE,
 };
+
+static int tryToOpenNonRegularFile(const int errNum, const char *fileName) {
+  switch (errNum) {
+  case EMFILE:
+  case ENFILE:
+    if (S_ISREG(getStMode(fileName))) {
+      return -EEXIST;
+    }
+    break;
+  case EEXIST:
+    if (const int fd = open(fileName, O_WRONLY); fd < 0) {
+      return errno;
+    } else if (S_ISREG(getStMode(fd))) {
+      close(fd);
+      return -EEXIST;
+    } else {
+      return fd;
+    }
+  default:
+    break;
+  }
+  return -errNum;
+}
 
 /**
  *
@@ -144,6 +167,12 @@ static int redirectToFile(const StringRef fileName, const RedirOpenFlag openFlag
   }
 
   int fd = open(fileName.data(), flag, 0666);
+  if (openFlag == RedirOpenFlag::WRITE && fd < 0) {
+    fd = tryToOpenNonRegularFile(errno, fileName.data());
+    if (fd < 0) {
+      errno = -fd;
+    }
+  }
   if (fd < 0) {
     return errno;
   }

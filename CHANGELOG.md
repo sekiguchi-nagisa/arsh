@@ -45,6 +45,8 @@
     - now allow signal handler invocation
 - **Breaking Change**: now not ignore exceptions from finally/defer block even if currently thrown
     - maintain these exceptions and get theme via ``Throwable#suppressed`` method
+- **Breaking Change**: output redirection to existing non-regular file is no longer error if ``clobber`` option is unset
+    - like bash/zsh
 - send ``SIGHUP`` to manged jobs before process termination (even if subshell)
 
 #### Builtin
