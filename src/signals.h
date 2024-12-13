@@ -81,7 +81,7 @@ public:
 
 class AtomicSigSet {
 private:
-  std::atomic_uint64_t set{0};
+  volatile std::atomic_uint64_t set{0};
   int pendingIndex{1};
 
   using underlying_t = uint64_t;
@@ -96,12 +96,12 @@ public:
 
   void add(int sigNum) {
     const underlying_t v = static_cast<underlying_t>(1) << static_cast<underlying_t>(sigNum - 1);
-    this->set.fetch_or(v);
+    this->set.fetch_or(v, std::memory_order_release);
   }
 
   void del(int sigNum) {
     const underlying_t v = static_cast<underlying_t>(1) << static_cast<underlying_t>(sigNum - 1);
-    this->set.fetch_and(~v);
+    this->set.fetch_and(~v, std::memory_order_release);
   }
 
   bool has(int sigNum) const {
@@ -109,7 +109,7 @@ public:
     return this->value() & v;
   }
 
-  underlying_t value() const { return this->set.load(); }
+  underlying_t value() const { return this->set.load(std::memory_order_acquire); }
 
   bool empty() const { return this->value() == 0; }
 
