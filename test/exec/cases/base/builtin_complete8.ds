@@ -36,6 +36,14 @@ $args = @($COMPREPLY)
 assert $args.size() == 1
 assert $args[0] == 'mkdir@command'
 
+\9999() {}
+assert complete -d -A cmd '999'
+assert $COMPREPLY.size() == 1
+assert $COMPREPLY[0] == '\9999'
+$args = @($COMPREPLY)
+assert $args.size() == 1
+assert $args[0] == '\9999@user-defined'
+
 ###  override existing command
 assert complete -d -- 'echo'
 assert $COMPREPLY.size() == 1

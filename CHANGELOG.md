@@ -551,6 +551,7 @@
 - fix ``errraise`` option handling in builtin ``command``, ``exec``
 - fix ``-g`` unary op behavior of builtin test command
 - glob expansion does not match pattern having empty string fragments
+- bugfix quotation of command name completion candidates having description
 
 ## [0.31.0] - 2023-09-30
 

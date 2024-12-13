@@ -433,7 +433,8 @@ public:
           break;
         }
         const CandidateAttr attr{kind, needSpace};
-        this->overflow = !this->reply.addNewCandidateWith(this->state, candidate.value, desc, attr);
+        this->overflow =
+            !this->reply.addNewCandidateWith(this->state, candidate.quote(), desc, attr);
         return;
       }
 
