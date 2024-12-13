@@ -77,6 +77,7 @@
 - fix executable file checking in filename completion
 - fix ignored exception handling when throw from finally
 - fix code generation of for-in expression
+- bugfix quotation of command name completion candidates having description
 
 ## [0.35.1] - 2024-10-19
 
@@ -125,7 +126,7 @@
 - automatically clear file path cache after ``PATH`` modification like bash/zsh
 - remove file path cache entry if command execution failed regardless of errno
     - also remove entry if builtin exec command failed
-- support unicode 16.0
+- support Unicode 16.0
 - change string representation of Float value. now generate correctly rounded, shortest length string
     - now satisfy the following assertion
       ```
@@ -327,7 +328,7 @@
     - always perform tilde expansion before glob expansion
         - if ``failglob`` is disabled and glob expansion failed, return tilde expanded string
     - now suppress runtime error when having null characters via ``nullglob`` on or ``failglob`` off
-    - support recursive glob (a.k.a ``globstar``)
+    - support recursive glob (a.k.a. ``globstar``)
         - enabled via ``globstar`` runtime option (enabled by default)
     - now propagate ``opendir`` error, such as ``EMFILE``, ``ENFILE``, ``ENOMEM``
     - check glob recursion depth
@@ -551,7 +552,6 @@
 - fix ``errraise`` option handling in builtin ``command``, ``exec``
 - fix ``-g`` unary op behavior of builtin test command
 - glob expansion does not match pattern having empty string fragments
-- bugfix quotation of command name completion candidates having description
 
 ## [0.31.0] - 2023-09-30
 
@@ -1765,7 +1765,7 @@
 - change minimum required compiler version for gnu++17 support
     - gcc 7
     - clang 6
-- update re2c to 2.1.1
+- update `re2c` to 2.1.1
 - reactivate ydshd installation
 
 ### Fixed
