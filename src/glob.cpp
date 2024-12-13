@@ -56,7 +56,7 @@ GlobPatternScanner::Status GlobPatternScanner::match(const char *name, const Glo
 
   const char *oldName = nullptr;
   auto oldIter = this->end;
-  const char *const endName = name + strlen(name);
+  const char *endName = nullptr;
   while (*name) {
     if (!this->isEndOrSep()) {
       char ch = *this->iter;
@@ -64,6 +64,9 @@ GlobPatternScanner::Status GlobPatternScanner::match(const char *name, const Glo
       case '?':
       case '[': {
         int codePoint = 0;
+        if (!endName) {
+          endName = name + strlen(name);
+        }
         if (const unsigned int byteSize = UnicodeUtil::utf8ToCodePoint(name, endName, codePoint)) {
           name += byteSize;
         } else { // invalid byte
