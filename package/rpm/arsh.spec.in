@@ -27,7 +27,7 @@ License:        Apache-2.0
 Group:          System/Shells
 URL:            https://github.com/sekiguchi-nagisa/arsh
 
-Source0:        %{name}-%{version}.tar.gz
+Source0:        %{name}-%{version}.orig.tar.gz
 BuildRequires:  gcc-c++
 BuildRequires:  git
 BuildRequires:  pcre2-devel >= 10.30

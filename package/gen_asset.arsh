@@ -42,7 +42,7 @@ _main(param: _Param) {
     assert test -f $SCRIPT_DIR/rpm/arsh.spec.in
     gen_rpm_spec $SCRIPT_DIR/rpm/arsh.spec.in $dir/arsh.spec ${param.version}
     curl -Lf "https://github.com/sekiguchi-nagisa/arsh/archive/refs/tags/v${param.version}.tar.gz" \
-        > "$dir/arsh-${param.version}.tar.gz" 
+        > "$dir/arsh-${param.version}.orig.tar.gz" 
     cp $SCRIPT_DIR/../LICENSE $dir/
 }
 
