@@ -41,7 +41,10 @@ _main(param: _Param) {
     let src_targz = "$dir/arsh-${param.version}.orig.tar.gz"
     mkdir -p $dir
     shctl set nullglob
-    for p in @($dir/*.tar.gz) { rm $p; }  # try remove old archives
+    for p in @($dir/*.tar.gz $dir/*.dsc) {
+        echo remove old: $p
+        rm $p;
+    }  # try remove old files
     curl -Lf "https://github.com/sekiguchi-nagisa/arsh/archive/refs/tags/v${param.version}.tar.gz" > $src_targz 
 
     ## for RPM
