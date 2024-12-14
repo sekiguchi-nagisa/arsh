@@ -60,9 +60,9 @@ A statically typed scripting language with shell-like features.
 
 %build
 %if 0%{?rhel} && 0%{?rhel} < 8
-%cmake3 -DUSE_CTEST=off -DCMAKE_BUILD_TYPE=RELWITHDEBINFO
+%cmake3 -DUSE_CTEST=off
 %else
-%cmake -DUSE_CTEST=off -DCMAKE_BUILD_TYPE=RELWITHDEBINFO
+%cmake -DUSE_CTEST=off
 %endif
 %if 0%{?cmake_build:1}
 %cmake_build

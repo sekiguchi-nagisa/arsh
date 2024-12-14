@@ -6,21 +6,22 @@ error() : Nothing {
     exit 1
 }
 
-gen_rpm_spec() {
+gen_from_template() {
     var src = $1.ifEmpty() ?? error "require src"
     var dest = $2.ifEmpty() ?? error "require dest"
     var version = $3.ifEmpty() ?? error "require version"
+    var src_targz = $4.ifEmpty() ?? error "require src_targz"
 
     var content = "$(cat $src)".ifEmpty() ?? error "$src: content is broken"
     $content = "
-function(VERSION: String, dest: String) => {
-    cat << EOF > \$dest
+function(VERSION: String, SRC_TARGZ: String, _dest: String) => {
+    cat << EOF > \$_dest
 $content
 
 EOF
 }"
-    var func = $MODULE._func($content)()! as (String, String) -> Void
-    $func($version, $dest)
+    var func = $MODULE._func($content)()! as (String, String, String) -> Void
+    $func($version, $src_targz, $dest)
     return 0
 }
 
@@ -36,14 +37,23 @@ type _Param() {
 _main(param: _Param) {
     shctl set errraise
     $/^\d+\.\d+\.\d+.*$/ =~ $param.version || error "invalid version number: ${param.version}"
-    var dir = "${param.target}/arsh"
+    let dir = "${param.target}/arsh"
+    let src_targz = "$dir/arsh-${param.version}.orig.tar.gz"
     mkdir -p $dir
-    shctl set nullglob && rm $dir/*.tar.gz  # try remove old archives
+    shctl set nullglob
+    for p in @($dir/*.tar.gz) { rm $p; }  # try remove old archives
+    curl -Lf "https://github.com/sekiguchi-nagisa/arsh/archive/refs/tags/v${param.version}.tar.gz" > $src_targz 
+
+    ## for RPM
     assert test -f $SCRIPT_DIR/rpm/arsh.spec.in
-    gen_rpm_spec $SCRIPT_DIR/rpm/arsh.spec.in $dir/arsh.spec ${param.version}
-    curl -Lf "https://github.com/sekiguchi-nagisa/arsh/archive/refs/tags/v${param.version}.tar.gz" \
-        > "$dir/arsh-${param.version}.orig.tar.gz" 
+    gen_from_template $SCRIPT_DIR/rpm/arsh.spec.in $dir/arsh.spec ${param.version} $src_targz
     cp $SCRIPT_DIR/../LICENSE $dir/
+
+    ## for DEB
+    cp $SCRIPT_DIR/deb/debian.control $dir/
+    cp $SCRIPT_DIR/deb/debian.rules $dir/
+    gen_from_template $SCRIPT_DIR/deb/arsh.dsc.in $dir/arsh_${param.version}.dsc ${param.version} $src_targz
+    gen_from_template $SCRIPT_DIR/deb/debian.changelog.in $dir/debian.changelog ${param.version} $src_targz
 }
 
 shctl is-sourced || _main $@

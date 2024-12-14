@@ -1,0 +1,10 @@
+Source: arsh
+Section: sectionName
+Priority: optional
+Maintainer: Nagisa Sekicuhi <s.nagisa.xyz@gmail.com>
+Build-Depends: debhelper (>= 10), debhelper-compat (= 10), libpcre2-dev (>= 10.30), re2c (>= 2.0), cmake, python3, git
+
+Package: arsh
+Architecture: any
+Depends: ${shlibs:Depends}, libpcre2-8-0 (>= 10.30), fzf, bash-completion
+Description: A statically typed scripting language with shell-like features

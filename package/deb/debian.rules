@@ -1,0 +1,76 @@
+#!/usr/bin/make -f
+# See debhelper(7) (uncomment to enable)
+# output every command that modifies files on the build system.
+#DH_VERBOSE = 1
+
+# see FEATURE AREAS in dpkg-buildflags(1)
+#export DEB_BUILD_MAINT_OPTIONS = hardening=+all
+
+# see ENVIRONMENT in dpkg-buildflags(1)
+# package maintainers to append CFLAGS
+#export DEB_CFLAGS_MAINT_APPEND  = -Wall -pedantic
+# package maintainers to append LDFLAGS
+#export DEB_LDFLAGS_MAINT_APPEND = -Wl,--as-needed
+
+%:
+	dh $@
+
+# Extracted from Debian Maintainer Guide:
+#
+# You may need to run dh_* commands invoked via the new dh with added arguments,
+# or to run additional commands with them, or to skip them. For such cases, you
+# create an override_dh_foo target with its rule in the rules file defining an
+# override_dh_foo target for the dh_foo command you want to change. It basically
+# says run me instead.
+# 
+# Please note that the dh_auto_* commands tend to do more than what has been
+# discussed in this (over)simplified explanation to take care of all the corner
+# cases. It is a bad idea to use override_dh_* targets to substitute simplified
+# equivalent commands (except for the override_dh_auto_clean target) since it
+# may bypass such smart debhelper features.
+# 
+# So, for instance, if you want to store system configuration data in the
+# /etc/gentoo directory instead of the usual /etc directory for the recent
+# gentoo package using Autotools, you can override the default --sysconfig=/etc
+# argument given by the dh_auto_configure command to the ./configure command by
+# the following:
+#
+override_dh_auto_configure:
+	dh_auto_configure --buildsystem=cmake -- -DUSE_CTEST=off
+# 
+# The arguments given after -- are appended to the default arguments of the
+# auto-executed program to override them. Using the dh_auto_configure command is
+# better than directly invoking the ./configure command here since it will only
+# override the --sysconfig argument and retain any other, benign arguments to
+# the ./configure command.
+# 
+# If the Makefile in the source for gentoo requires you to specify build as its
+# target to build it [52], you create an override_dh_auto_build target to enable
+# this.
+# 
+#override_dh_auto_build:
+#	dh_auto_build -- build
+# 
+# This ensures $(MAKE) is run with all the default arguments given by the
+# dh_auto_build command plus the build argument.
+# 
+# If the Makefile in the source for gentoo requires you to specify the
+# packageclean target to clean it for the Debian package instead of using
+# distclean or clean targets, you can create an override_dh_auto_clean target to
+# enable it.
+# 
+# override_dh_auto_clean:
+#	$(MAKE) packageclean
+# 
+# If the Makefile in the source for gentoo contains a test target which you do
+# not want to run for the Debian package building process, you can use an empty
+# override_dh_auto_test target to skip it.
+# 
+# override_dh_auto_test:
+# 
+# If gentoo has an unusual upstream changelog file called FIXES,
+# dh_installchangelogs will not install that file by default. The
+# dh_installchangelogs command requires FIXES as its argument to install it.
+# 
+# override_dh_installchangelogs:
+#	dh_installchangelogs FIXES
