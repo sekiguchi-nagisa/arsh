@@ -2,7 +2,7 @@ Format: 1.0
 Source: arsh
 Version: ${VERSION}
 Binary: arsh
-Maintainer: Nagisa Sekicuhi <s.nagisa.xyz@gmail.com>
+Maintainer: Nagisa Sekiguchi <s.nagisa.xyz@gmail.com>
 Architecture: any
 Build-Depends: debhelper (>= 10), debhelper-compat (= 10), libpcre2-dev (>= 10.30), re2c (>= 2.0), cmake, python3, git
 Files:

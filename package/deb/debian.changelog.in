@@ -2,4 +2,4 @@ arsh (${VERSION}) stable; urgency=medium
 
   * Release ${VERSION}
   See https://github.com/sekiguchi-nagisa/arsh/releases/tag/v${VERSION} for details.
- -- Nagisa Sekicuhi <s.nagisa.xyz@gmail.com> $(LANG=C printf "%(%a, %d %b %Y %T %z)T")
+ -- Nagisa Sekiguchi <s.nagisa.xyz@gmail.com> $(LANG=C printf "%(%a, %d %b %Y %T %z)T")
