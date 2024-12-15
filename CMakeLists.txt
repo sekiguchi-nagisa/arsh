@@ -120,6 +120,9 @@ show_option(USE_CTEST)
 
 find_package(Threads REQUIRED)
 
+check_program(git)
+
+
 #++++++++++++++++++++++#
 #     find libpcre     #
 #++++++++++++++++++++++#
