@@ -111,29 +111,6 @@ enum class RedirOpenFlag : unsigned char {
   READ_WRITE,
 };
 
-static int tryToOpenNonRegularFile(const int errNum, const char *fileName) {
-  switch (errNum) {
-  case EMFILE:
-  case ENFILE:
-    if (S_ISREG(getStMode(fileName))) {
-      return -EEXIST;
-    }
-    break;
-  case EEXIST:
-    if (const int fd = open(fileName, O_WRONLY); fd < 0) {
-      return errno;
-    } else if (S_ISREG(getStMode(fd))) {
-      close(fd);
-      return -EEXIST;
-    } else {
-      return fd;
-    }
-  default:
-    break;
-  }
-  return -errNum;
-}
-
 /**
  *
  * @param fileName
@@ -167,10 +144,11 @@ static int redirectToFile(const StringRef fileName, const RedirOpenFlag openFlag
   }
 
   int fd = open(fileName.data(), flag, 0666);
-  if (openFlag == RedirOpenFlag::WRITE && fd < 0) {
-    fd = tryToOpenNonRegularFile(errno, fileName.data());
-    if (fd < 0) {
-      errno = -fd;
+  if (openFlag == RedirOpenFlag::WRITE && fd < 0 && errno == EEXIST) {
+    fd = open(fileName.data(), O_WRONLY, 0666);
+    if (fd > -1 && S_ISREG(getStMode(fd))) { // only allow non-regular file
+      close(fd);
+      return EEXIST;
     }
   }
   if (fd < 0) {
