@@ -49,6 +49,8 @@ Currently, under heavy development. Language specification is subject to change 
 
 1. build and install
 
+* install from source
+
 ```sh
 $ git clone https://github.com/sekiguchi-nagisa/arsh.git
 $ cd arsh && mkdir build && cd build
@@ -56,6 +58,12 @@ $ cmake ..    # default install dir is /usr/local/bin
 $ make -j4
 $ sudo make install
 ```
+
+* [install from package](https://software.opensuse.org//download.html?project=home%3Ansekiguchi&package=arsh)
+    * Debian
+    * Ubuntu
+    * Fedora
+    * openSuse
 
 2. run in interactive mode
 
