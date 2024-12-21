@@ -260,10 +260,11 @@ inline TypeCheckError createTCError(const Node &node, Arg &&...arg) {
   return createTCErrorImpl(node, T::kind, T::value, std::forward<Arg>(arg)...);
 }
 
-inline void addSuggestionSuffix(std::string &value, StringRef suggestion) {
-  value += ", did you mean `";
-  value += suggestion;
-  value += "' ?";
+inline void formatSuggestionSuffix(std::string &suggestion) {
+  if (!suggestion.empty()) {
+    suggestion.insert(0, ", did you mean `");
+    suggestion += "' ?";
+  }
 }
 
 } // namespace arsh

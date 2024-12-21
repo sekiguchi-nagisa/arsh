@@ -57,15 +57,9 @@ public:
     EXTERNAL,
   };
 
-  enum class SuffixSpaceOverride : unsigned char {
-    DEFAULT,  // follow default behavior
-    SPACE,    // always need space
-    NO_SPACE, // always need no space
-  };
-
-  const StringRef value;
+  std::string value;
   const CompCandidateKind kind;
-  SuffixSpaceOverride suffixSpaceOverride{SuffixSpaceOverride::DEFAULT};
+  bool suffixSpace;
   const int priority;
 
 private:
@@ -83,7 +77,7 @@ private:
   } meta{};
 
 public:
-  CompCandidate(StringRef v, CompCandidateKind k, int p = 0) : value(v), kind(k), priority(p) {}
+  CompCandidate(StringRef v, CompCandidateKind k, int p = 0);
 
   void setHandle(const Handle &handle) { this->meta.handle = &handle; }
 
@@ -111,29 +105,11 @@ public:
 
   CmdNameType getCmdNameType() const { return this->meta.cmdNameType; }
 
-  void overrideSuffixSpace(SuffixSpaceOverride o) { this->suffixSpaceOverride = o; }
-
-  SuffixSpaceOverride getSuffixSpaceOverride() const { return this->suffixSpaceOverride; }
-
-  /**
-   * quote as shell arg
-   * @return
-   */
-  std::string quote() const;
+  void overrideSuffixSpace(bool space) { this->suffixSpace = space; }
 
   std::string formatTypeSignature(TypePool &pool) const;
 
-  bool needSuffixSpace() const {
-    switch (this->suffixSpaceOverride) {
-    case SuffixSpaceOverride::DEFAULT:
-      break;
-    case SuffixSpaceOverride::SPACE:
-      return true;
-    case SuffixSpaceOverride::NO_SPACE:
-      return false;
-    }
-    return needSuffixSpace(this->value, this->kind);
-  }
+  bool needSuffixSpace() const { return this->suffixSpace; }
 
   static bool needSuffixSpace(StringRef value, CompCandidateKind kind);
 };
@@ -145,11 +121,10 @@ public:
   void operator()(StringRef ref, CompCandidateKind kind) { (*this)(ref, kind, 0); }
 
   void operator()(StringRef ref, CompCandidateKind kind, int priority) {
-    CompCandidate candidate(ref, kind, priority);
-    (*this)(candidate);
+    (*this)(CompCandidate(ref, kind, priority));
   }
 
-  virtual void operator()(const CompCandidate &candidate) = 0;
+  virtual void operator()(CompCandidate &&candidate) = 0;
 };
 
 /**
@@ -234,7 +209,8 @@ private:
  * @return
  * if suggestion score (edit distance) is greater than threshold, return empty string
  */
-StringRef suggestSimilarVarName(StringRef name, const NameScope &scope, unsigned int threshold = 3);
+std::string suggestSimilarVarName(StringRef name, const NameScope &scope,
+                                  unsigned int threshold = 3);
 
 /**
  * get similar type name from scope and type pool
@@ -247,8 +223,8 @@ StringRef suggestSimilarVarName(StringRef name, const NameScope &scope, unsigned
  * @return
  * if suggestion score (edit distance) is greater than threshold, return empty string
  */
-StringRef suggestSimilarType(StringRef name, const TypePool &pool, const NameScope &scope,
-                             const Type *recvType, unsigned int threshold = 3);
+std::string suggestSimilarType(StringRef name, const TypePool &pool, const NameScope &scope,
+                               const Type *recvType, unsigned int threshold = 3);
 
 enum class SuggestMemberType : unsigned char {
   FIELD = 1u << 0u,
@@ -269,12 +245,12 @@ struct allow_enum_bitop<SuggestMemberType> : std::true_type {};
  * @return
  * if suggestion score (edit distance) is greater than threshold, return empty string
  */
-StringRef suggestSimilarMember(StringRef name, const TypePool &pool, const NameScope &scope,
-                               const Type &recvType, SuggestMemberType targetType,
-                               unsigned int threshold = 3);
+std::string suggestSimilarMember(StringRef name, const TypePool &pool, const NameScope &scope,
+                                 const Type &recvType, SuggestMemberType targetType,
+                                 unsigned int threshold = 3);
 
-StringRef suggestSimilarParamName(StringRef name, const std::vector<std::string> &paramNames,
-                                  unsigned int threshold = 3);
+std::string suggestSimilarParamName(StringRef name, const std::vector<std::string> &paramNames,
+                                    unsigned int threshold = 3);
 
 } // namespace arsh
 

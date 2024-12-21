@@ -383,7 +383,7 @@ public:
     };
   }
 
-  void operator()(const CompCandidate &candidate) override {
+  void operator()(CompCandidate &&candidate) override {
     if (candidate.value.empty()) {
       return;
     }
@@ -392,7 +392,7 @@ public:
       details = formatLabelDetail(*this->pool, candidate);
     }
     this->items.push_back(CompletionItem{
-        .label = candidate.quote(),
+        .label = std::move(candidate.value),
         .labelDetails = std::move(details),
         .kind = toItemKind(candidate),
         .sortText = {},

@@ -401,7 +401,7 @@ public:
   DefaultCompConsumer(ARState &state, bool putDesc)
       : state(state), reply(CandidatesWrapper(state.typePool)), putDesc(putDesc) {}
 
-  void operator()(const CompCandidate &candidate) override {
+  void operator()(CompCandidate &&candidate) override {
     if (this->overflow) {
       return; // do nothing
     }
@@ -433,8 +433,7 @@ public:
           break;
         }
         const CandidateAttr attr{kind, needSpace};
-        this->overflow =
-            !this->reply.addNewCandidateWith(this->state, candidate.quote(), desc, attr);
+        this->overflow = !this->reply.addNewCandidateWith(this->state, candidate.value, desc, attr);
         return;
       }
 
@@ -446,7 +445,8 @@ public:
         return;
       }
     }
-    if (!this->reply.addAsCandidate(this->state, Value::createStr(candidate.quote()), needSpace)) {
+    if (!this->reply.addAsCandidate(this->state, Value::createStr(std::move(candidate.value)),
+                                    needSpace)) {
       this->overflow = true;
     }
   }
@@ -631,7 +631,7 @@ static bool completeImpl(ARState &st, ResolvedTempMod resolvedMod, StringRef sou
       if (const auto name = e.getKey().asStrRef(); name.startsWith(word)) {
         CompCandidate candidate(name, CompCandidateKind::COMMAND_NAME);
         candidate.setCmdNameType(CompCandidate::CmdNameType::DYNA_UDC);
-        consumer(candidate);
+        consumer(std::move(candidate));
       }
     }
   });

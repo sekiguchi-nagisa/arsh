@@ -37,26 +37,20 @@ namespace arsh {
 
 // for input completion
 
-static bool mayBeQuoted(CompCandidateKind kind) {
-  switch (kind) {
+CompCandidate::CompCandidate(StringRef v, CompCandidateKind k, int p)
+    : kind(k), suffixSpace(needSuffixSpace(v, k)), priority(p) {
+  assert(!v.empty());
+  switch (this->kind) {
   case CompCandidateKind::COMMAND_NAME:
   case CompCandidateKind::COMMAND_NAME_PART:
   case CompCandidateKind::COMMAND_ARG:
   case CompCandidateKind::ENV_NAME:
-    return true;
+    quoteAsCmdOrShellArg(v, this->value, this->kind == CompCandidateKind::COMMAND_NAME);
+    break;
   default:
-    return false;
+    this->value += v;
+    break;
   }
-}
-
-std::string CompCandidate::quote() const {
-  std::string ret;
-  if (const StringRef ref = this->value; mayBeQuoted(this->kind) && !ref.empty()) {
-    quoteAsCmdOrShellArg(ref, ret, this->kind == CompCandidateKind::COMMAND_NAME);
-  } else {
-    ret += ref;
-  }
-  return ret;
 }
 
 std::string CompCandidate::formatTypeSignature(TypePool &pool) const {
@@ -251,7 +245,7 @@ static void completeUDC(const NameScope &scope, const std::string &cmdPrefix,
         CompCandidate candidate(udc, CompCandidateKind::COMMAND_NAME);
         candidate.setCmdNameType(handle.is(HandleKind::UDC) ? CompCandidate::CmdNameType::UDC
                                                             : CompCandidate::CmdNameType::MOD);
-        consumer(candidate);
+        consumer(std::move(candidate));
       }
     }
     return true;
@@ -280,7 +274,7 @@ static bool completeCmdName(const NameScope &scope, const std::string &cmdPrefix
       if (StringRef builtin = e.name; builtin.startsWith(cmdPrefix)) {
         CompCandidate candidate(builtin, CompCandidateKind::COMMAND_NAME);
         candidate.setCmdNameType(CompCandidate::CmdNameType::BUILTIN);
-        consumer(candidate);
+        consumer(std::move(candidate));
       }
     }
   }
@@ -305,7 +299,7 @@ static bool completeCmdName(const NameScope &scope, const std::string &cmdPrefix
             cmd.startsWith(cmdPrefix) && isExecutable(dir.get(), entry)) {
           CompCandidate candidate(cmd, CompCandidateKind::COMMAND_NAME);
           candidate.setCmdNameType(CompCandidate::CmdNameType::EXTERNAL);
-          consumer(candidate);
+          consumer(std::move(candidate));
         }
       }
       return true;
@@ -439,7 +433,7 @@ void completeVarName(const NameScope &scope, const StringRef prefix, bool inCmdA
         const auto kind = inCmdArg ? CompCandidateKind::VAR_IN_CMD_ARG : CompCandidateKind::VAR;
         CompCandidate candidate(varName, kind, priority);
         candidate.setHandle(handle);
-        consumer(candidate);
+        consumer(std::move(candidate));
       }
     }
     if (cur->isFunc()) {
@@ -467,7 +461,7 @@ void completeMember(const TypePool &pool, const NameScope &scope, const Type &re
       if (handle.isVisibleInMod(scope.modId, name)) {
         CompCandidate candidate(name, CompCandidateKind::FIELD);
         candidate.setFieldInfo(recvType, handle);
-        consumer(candidate);
+        consumer(std::move(candidate));
       }
     }
     return true;
@@ -486,7 +480,7 @@ void completeMember(const TypePool &pool, const NameScope &scope, const Type &re
           name = trimMethodFullNameSuffix(name);
           CompCandidate candidate(name, CompCandidateKind::METHOD);
           candidate.setHandle(handle);
-          consumer(candidate);
+          consumer(std::move(candidate));
           break;
         }
       }
@@ -510,7 +504,7 @@ void completeMember(const TypePool &pool, const NameScope &scope, const Type &re
           } else {
             candidate.setNativeMethodInfo(type, e.second.index());
           }
-          consumer(candidate);
+          consumer(std::move(candidate));
           break;
         }
       }
@@ -600,8 +594,7 @@ static void completeParamName(const std::vector<std::string> &paramNames, const 
   for (unsigned int i = 0; i < size; i++) {
     if (StringRef ref = paramNames[i]; ref.startsWith(word)) {
       const auto priority = static_cast<int>(9000000 + i);
-      CompCandidate candidate(paramNames[i], CompCandidateKind::PARAM, priority);
-      consumer(candidate);
+      consumer(paramNames[i], CompCandidateKind::PARAM, priority);
     }
   }
 }
@@ -686,9 +679,9 @@ static bool completeCLIOptionImpl(const CLIRecordType &type, const std::string &
         }
         CompCandidate candidate(value, CompCandidateKind::COMMAND_ARG);
         if (value.back() == '=') {
-          candidate.overrideSuffixSpace(CompCandidate::SuffixSpaceOverride::NO_SPACE);
+          candidate.overrideSuffixSpace(false);
         }
-        consumer(candidate);
+        consumer(std::move(candidate));
       } else if (StringRef ref = word; ref.endsWith("=") && e.getParseOp() == OptParseOp::HAS_ARG) {
         ref.removeSuffix(1);
         if (ref == value) {
@@ -893,7 +886,7 @@ class SuggestionCollector : public CompCandidateConsumer {
 private:
   EditDistance editDistance;
   const StringRef src;
-  StringRef target;
+  std::string target;
   unsigned int score{UINT32_MAX};
   ObserverPtr<const SuggestMemberType> targetMemberType;
 
@@ -904,11 +897,11 @@ public:
     this->targetMemberType = makeObserver(memberType);
   }
 
-  StringRef getTarget() const { return this->target; }
+  std::string take() && { return std::move(this->target); }
 
   unsigned int getScore() const { return this->score; }
 
-  void operator()(const CompCandidate &candidate) override {
+  void operator()(CompCandidate &&candidate) override {
     if (this->targetMemberType) {
       const auto targetType = *this->targetMemberType;
       if (candidate.kind == CompCandidateKind::FIELD &&
@@ -922,7 +915,7 @@ public:
       }
     }
 
-    const auto ref = candidate.value;
+    const StringRef ref = candidate.value;
     if (this->src[0] != ref[0]) {
       return;
     }
@@ -935,39 +928,39 @@ public:
     const auto dist = this->editDistance(this->src, ref);
     if (dist < this->score) {
       this->score = dist;
-      this->target = ref;
+      this->target = std::move(candidate.value);
     }
   }
 };
 
-StringRef suggestSimilarVarName(StringRef name, const NameScope &scope, unsigned int threshold) {
+std::string suggestSimilarVarName(StringRef name, const NameScope &scope, unsigned int threshold) {
   if (name.empty() || name == "_") {
     return "";
   }
   SuggestionCollector collector(name);
   completeVarName(scope, "", false, collector);
   if (collector.getScore() <= threshold) {
-    return collector.getTarget();
+    return std::move(collector).take();
   }
   return "";
 }
 
-StringRef suggestSimilarType(StringRef name, const TypePool &pool, const NameScope &scope,
-                             const Type *recvType, unsigned int threshold) {
+std::string suggestSimilarType(StringRef name, const TypePool &pool, const NameScope &scope,
+                               const Type *recvType, unsigned int threshold) {
   if (name.empty() || name == "_") {
     return "";
   }
   SuggestionCollector collector(name);
   completeType(pool, scope, recvType, "", collector);
   if (collector.getScore() <= threshold) {
-    return collector.getTarget();
+    return std::move(collector).take();
   }
   return "";
 }
 
-StringRef suggestSimilarMember(StringRef name, const TypePool &pool, const NameScope &scope,
-                               const Type &recvType, SuggestMemberType targetType,
-                               unsigned int threshold) {
+std::string suggestSimilarMember(StringRef name, const TypePool &pool, const NameScope &scope,
+                                 const Type &recvType, SuggestMemberType targetType,
+                                 unsigned int threshold) {
   if (name.empty() || name == "_") {
     return "";
   }
@@ -975,17 +968,17 @@ StringRef suggestSimilarMember(StringRef name, const TypePool &pool, const NameS
   collector.setTargetMemberType(targetType);
   completeMember(pool, scope, recvType, "", collector);
   if (collector.getScore() <= threshold) {
-    return collector.getTarget();
+    return std::move(collector).take();
   }
   return "";
 }
 
-StringRef suggestSimilarParamName(StringRef name, const std::vector<std::string> &paramNames,
-                                  unsigned int threshold) {
+std::string suggestSimilarParamName(StringRef name, const std::vector<std::string> &paramNames,
+                                    unsigned int threshold) {
   SuggestionCollector collector(name);
   completeParamName(paramNames, "", collector);
   if (collector.getScore() <= threshold) {
-    return collector.getTarget();
+    return std::move(collector).take();
   }
   return "";
 }
