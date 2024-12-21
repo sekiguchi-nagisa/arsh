@@ -2,7 +2,9 @@
 
 var bin = $@.shift()
 
-import-env FUZZ_JOBS : "$(nproc)"
+let default = ("$(nproc)".toInt() ?? 4) / 2
+
+import-env FUZZ_JOBS : "$default"
 
 var N = $FUZZ_JOBS.toInt() ?? 4
 
