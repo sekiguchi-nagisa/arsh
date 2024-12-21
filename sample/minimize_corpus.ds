@@ -19,7 +19,7 @@ test -e $NEW_DIR && usage "$NEW_DIR" is alreays exists
 
 mkdir $NEW_DIR
 
-ARSH_SUPPRESS_COMPILE_ERROR=on call $BIN -merge=1 -jobs=8 -workers=8 \
+ARSH_SUPPRESS_COMPILE_ERROR=on call $BIN -merge=1 -jobs="$(nproc)" -workers="$(nproc)" \
   -rss_limit_mb=8192 $NEW_DIR $ORG_DIR && {
     echo move $NEW_DIR to $ORG_DIR
     rm -rf $ORG_DIR

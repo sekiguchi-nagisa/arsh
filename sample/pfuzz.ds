@@ -2,7 +2,7 @@
 
 var bin = $@.shift()
 
-import-env FUZZ_JOBS : "4"
+import-env FUZZ_JOBS : "$(nproc)"
 
 var N = $FUZZ_JOBS.toInt() ?? 4
 
