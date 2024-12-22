@@ -35,18 +35,55 @@ extern char **environ; // NOLINT
 
 namespace arsh {
 
+void CodeCompletionContext::addCmdOrKeywordRequest(const Lexer &lexer, Token wordToken,
+                                                   bool inStmt) {
+  // add command request
+  std::string value = lexer.toCmdArg(wordToken);
+  const bool isDir = strchr(value.c_str(), '/') != nullptr;
+  const bool mayBeKeyword = wordToken.size == value.size();
+  if (const bool tilde = lexer.startsWith(wordToken, '~'); tilde || isDir) {
+    auto op = CodeCompOp::EXEC;
+    if (tilde) {
+      setFlag(op, CodeCompOp::TILDE);
+    }
+    this->addCompRequest(op, std::move(value));
+  } else {
+    this->addCompRequest(CodeCompOp::COMMAND, std::move(value));
+  }
+
+  // add keyword request
+  if (mayBeKeyword) {
+    setFlag(this->compOp, inStmt ? CodeCompOp::STMT_KW : CodeCompOp::EXPR_KW);
+  }
+  this->lex = makeObserver(lexer);
+  this->compWordToken = wordToken;
+}
+
 // for input completion
 
-CompCandidate::CompCandidate(StringRef v, CompCandidateKind k, int p)
+CompCandidate::CompCandidate(const QuoteParam *param, StringRef v, CompCandidateKind k, int p)
     : kind(k), suffixSpace(needSuffixSpace(v, k)), priority(p) {
   assert(!v.empty());
   switch (this->kind) {
   case CompCandidateKind::COMMAND_NAME:
   case CompCandidateKind::COMMAND_NAME_PART:
   case CompCandidateKind::COMMAND_ARG:
-  case CompCandidateKind::ENV_NAME:
-    quoteAsCmdOrShellArg(v, this->value, this->kind == CompCandidateKind::COMMAND_NAME);
+  case CompCandidateKind::COMMAND_TILDE:
+  case CompCandidateKind::ENV_NAME: {
+    const bool trimPrefix = param && !param->compWordToken.empty();
+    if (trimPrefix) {
+      assert(param->compWord.size() <= v.size());
+      this->value += param->compWordToken;
+      v.removePrefix(param->compWord.size());
+    }
+    if (this->kind != CompCandidateKind::COMMAND_TILDE) {
+      quoteAsCmdOrShellArg(v, this->value,
+                           this->kind == CompCandidateKind::COMMAND_NAME && !trimPrefix);
+    } else {
+      this->value += v;
+    }
     break;
+  }
   default:
     this->value += v;
     break;
@@ -236,13 +273,14 @@ static void completeGroupName(const std::string &prefix, CompCandidateConsumer &
   endgrent();
 }
 
-static void completeUDC(const NameScope &scope, const std::string &cmdPrefix,
-                        CompCandidateConsumer &consumer) {
+static void completeUDC(const StringRef compWordToken, const NameScope &scope,
+                        const std::string &cmdPrefix, CompCandidateConsumer &consumer) {
   scope.walk([&](StringRef udc, const Handle &handle) {
     if (isCmdFullName(udc)) {
       udc.removeSuffix(strlen(CMD_SYMBOL_SUFFIX));
       if (udc.startsWith(cmdPrefix)) {
-        CompCandidate candidate(udc, CompCandidateKind::COMMAND_NAME);
+        CompCandidate candidate({.compWordToken = compWordToken, .compWord = cmdPrefix}, udc,
+                                CompCandidateKind::COMMAND_NAME);
         candidate.setCmdNameType(handle.is(HandleKind::UDC) ? CompCandidate::CmdNameType::UDC
                                                             : CompCandidate::CmdNameType::MOD);
         consumer(std::move(candidate));
@@ -259,12 +297,12 @@ static void completeUDC(const NameScope &scope, const std::string &cmdPrefix,
     }                                                                                              \
   } while (false)
 
-static bool completeCmdName(const NameScope &scope, const std::string &cmdPrefix,
-                            const CodeCompOp option, CompCandidateConsumer &consumer,
-                            ObserverPtr<CancelToken> cancel) {
+static bool completeCmdName(const StringRef compWordToken, const NameScope &scope,
+                            const std::string &cmdPrefix, const CodeCompOp option,
+                            CompCandidateConsumer &consumer, ObserverPtr<CancelToken> cancel) {
   // complete user-defined command
   if (hasFlag(option, CodeCompOp::UDC)) {
-    completeUDC(scope, cmdPrefix, consumer);
+    completeUDC(compWordToken, scope, cmdPrefix, consumer);
   }
 
   // complete builtin command
@@ -272,7 +310,8 @@ static bool completeCmdName(const NameScope &scope, const std::string &cmdPrefix
     const auto range = getBuiltinCmdDescRange();
     for (auto &e : range) {
       if (StringRef builtin = e.name; builtin.startsWith(cmdPrefix)) {
-        CompCandidate candidate(builtin, CompCandidateKind::COMMAND_NAME);
+        CompCandidate candidate({.compWordToken = compWordToken, .compWord = cmdPrefix}, builtin,
+                                CompCandidateKind::COMMAND_NAME);
         candidate.setCmdNameType(CompCandidate::CmdNameType::BUILTIN);
         consumer(std::move(candidate));
       }
@@ -297,7 +336,8 @@ static bool completeCmdName(const NameScope &scope, const std::string &cmdPrefix
         }
         if (StringRef cmd = entry->d_name;
             cmd.startsWith(cmdPrefix) && isExecutable(dir.get(), entry)) {
-          CompCandidate candidate(cmd, CompCandidateKind::COMMAND_NAME);
+          CompCandidate candidate({.compWordToken = compWordToken, .compWord = cmdPrefix}, cmd,
+                                  CompCandidateKind::COMMAND_NAME);
           candidate.setCmdNameType(CompCandidate::CmdNameType::EXTERNAL);
           consumer(std::move(candidate));
         }
@@ -308,8 +348,9 @@ static bool completeCmdName(const NameScope &scope, const std::string &cmdPrefix
   return true;
 }
 
-static bool completeFileName(const std::string &baseDir, StringRef prefix, const CodeCompOp op,
-                             CompCandidateConsumer &consumer, ObserverPtr<CancelToken> cancel) {
+static bool completeFileName(StringRef compWordToken, const std::string &baseDir, StringRef prefix,
+                             const CodeCompOp op, CompCandidateConsumer &consumer,
+                             ObserverPtr<CancelToken> cancel) {
   const auto s = prefix.lastIndexOf("/");
 
   // complete tilde
@@ -323,7 +364,8 @@ static bool completeFileName(const std::string &baseDir, StringRef prefix, const
         std::string name("~");
         name += entry->pw_name;
         name += '/';
-        consumer(name, CompCandidateKind::COMMAND_TILDE);
+        consumer(CompCandidate({.compWordToken = compWordToken, .compWord = prefix}, name,
+                               CompCandidateKind::COMMAND_TILDE));
       }
     }
     endpwent();
@@ -390,26 +432,26 @@ static bool completeFileName(const std::string &baseDir, StringRef prefix, const
   return true;
 }
 
-static bool completeModule(const SysConfig &config, const std::string &scriptDir,
-                           const std::string &prefix, bool tilde, CompCandidateConsumer &consumer,
-                           ObserverPtr<CancelToken> cancel) {
+static bool completeModule(const SysConfig &config, const StringRef compWordToken,
+                           const std::string &scriptDir, const std::string &prefix, bool tilde,
+                           CompCandidateConsumer &consumer, ObserverPtr<CancelToken> cancel) {
   CodeCompOp op{};
   if (tilde) {
     op = CodeCompOp::TILDE;
   }
 
   // complete from SCRIPT_DIR
-  TRY(completeFileName(scriptDir, prefix, op, consumer, cancel));
+  TRY(completeFileName(compWordToken, scriptDir, prefix, op, consumer, cancel));
 
   if (!prefix.empty() && prefix[0] == '/') {
     return true;
   }
 
   // complete from local module dir
-  TRY(completeFileName(config.getModuleHome(), prefix, op, consumer, cancel));
+  TRY(completeFileName(compWordToken, config.getModuleHome(), prefix, op, consumer, cancel));
 
   // complete from system module dir
-  return completeFileName(config.getModuleDir(), prefix, op, consumer, cancel);
+  return completeFileName(compWordToken, config.getModuleDir(), prefix, op, consumer, cancel);
 }
 
 void completeVarName(const NameScope &scope, const StringRef prefix, bool inCmdArg,
@@ -772,8 +814,12 @@ bool CodeCompleter::invoke(const CodeCompletionContext &ctx) {
     completeSigName(ctx.getCompWord(), this->consumer);
   }
   if (ctx.has(CodeCompOp::EXTERNAL) || ctx.has(CodeCompOp::UDC) || ctx.has(CodeCompOp::BUILTIN)) {
-    TRY(completeCmdName(ctx.getScope(), ctx.getCompWord(), ctx.getCompOp(), this->consumer,
-                        this->cancel));
+    StringRef compWordToken;
+    if (ctx.getLexer()) {
+      compWordToken = ctx.getLexer()->toStrRef(ctx.getCompWordToken());
+    }
+    TRY(completeCmdName(compWordToken, ctx.getScope(), ctx.getCompWord(), ctx.getCompOp(),
+                        this->consumer, this->cancel));
   }
   if (ctx.has(CodeCompOp::DYNA_UDC) && this->dynaUdcComp) {
     this->dynaUdcComp(ctx.getCompWord(), this->consumer);
@@ -786,11 +832,19 @@ bool CodeCompleter::invoke(const CodeCompletionContext &ctx) {
   }
   if (ctx.has(CodeCompOp::FILE) || ctx.has(CodeCompOp::EXEC) || ctx.has(CodeCompOp::DIR)) {
     const auto prefix = StringRef(ctx.getCompWord()).substr(ctx.getCompWordOffset());
-    TRY(completeFileName(this->logicalWorkingDir, prefix, ctx.getCompOp(), this->consumer,
-                         this->cancel));
+    StringRef compWordToken;
+    if (ctx.getLexer()) {
+      compWordToken = ctx.getLexer()->toStrRef(ctx.getCompWordToken());
+    }
+    TRY(completeFileName(compWordToken, this->logicalWorkingDir, prefix, ctx.getCompOp(),
+                         this->consumer, this->cancel));
   }
   if (ctx.has(CodeCompOp::MODULE)) {
-    TRY(completeModule(this->config, ctx.getScriptDir(), ctx.getCompWord(),
+    StringRef compWordToken;
+    if (ctx.getLexer()) {
+      compWordToken = ctx.getLexer()->toStrRef(ctx.getCompWordToken());
+    }
+    TRY(completeModule(this->config, compWordToken, ctx.getScriptDir(), ctx.getCompWord(),
                        ctx.has(CodeCompOp::TILDE), consumer, this->cancel));
   }
   if (ctx.has(CodeCompOp::STMT_KW) || ctx.has(CodeCompOp::EXPR_KW)) {
@@ -837,7 +891,12 @@ bool CodeCompleter::invoke(const CodeCompletionContext &ctx) {
     }
     if (const auto op = ctx.getFallbackOp(); hasFlag(op, CodeCompOp::FILE)) {
       const auto prefix = StringRef(ctx.getCompWord()).substr(ctx.getCompWordOffset());
-      TRY(completeFileName(this->logicalWorkingDir, prefix, op, this->consumer, this->cancel));
+      StringRef compWordToken;
+      if (ctx.getLexer()) {
+        compWordToken = ctx.getLexer()->toStrRef(ctx.getCompWordToken());
+      }
+      TRY(completeFileName(compWordToken, this->logicalWorkingDir, prefix, op, this->consumer,
+                           this->cancel));
     }
   }
   return true;

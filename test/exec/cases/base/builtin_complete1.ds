@@ -138,6 +138,12 @@ $assertArray($(cmd /bin /usr/bin --expr), $comp('34 or ', '/bin:/usr/bin'))
 $assertArray($(cmd /bin /usr/bin --expr), $comp('34 xor ', '/bin:/usr/bin'))
 $assertArray($(cmd /bin /usr/bin --expr), $comp('for $a in ', '/bin:/usr/bin'))
 $assertArray($(cmd /bin /usr/bin --expr), $comp('if $true {} elif ', '/bin:/usr/bin'))
+$assertArray(['\sh\ctl'], $comp('\sh\c', '/bin:/usr/bin'))  # escaped
+$assertArray(['\_\_cmd', '\_\_file', '\_\_gets', '\_\_puts'], $comp('\_\_', '/bin:/usr/bin'))  # escaped
+$assertArray(['s\o\rt'], $comp('s\o\r', '/bin:/usr/bin'))  # escaped
+if $OSTYPE !~ $/cygwin/i  && $OSTYPE !~ $/msys/ {
+  ##$assertArray(['~\ro\ot/'], $(complete '~\ro\o'))  # escaped  FIXME:
+}
 
 # complete file name
 __file() {
@@ -195,6 +201,7 @@ $assertArray($(file ~), $(complete 'echo 23\\=~/'))
 if $OSTYPE !~ $/cygwin/i  && $OSTYPE !~ $/msys/ {
     assert "~$(cat /etc/passwd | grep ^root | cut -d : -f 1)/" == "$(complete 'echo ~' | grep '~root')"
     assert "~$(cat /etc/passwd | grep ^root | cut -d : -f 1)/" == "$(complete '~' | grep '~root')"
+    #$assertArray(['~\ro\ot/'], $(complete '@(${45 + 45} ~\ro\o'))  FIXME
 }
 $assertArray(new [String](), $(complete 'echo \~root'))
 $assertArray(new [String](), $(complete 'echo if\=~/'))

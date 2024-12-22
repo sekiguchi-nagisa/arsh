@@ -2100,11 +2100,7 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
         this->makeCodeComp(CodeCompNode::VAR, nullptr, this->curToken);
       } else if (!this->inCompletionPointAt(TokenKind::EOS) ||
                  this->consumedKind != TokenKind::EOS) {
-        CodeCompletionContext::CmdOrKeywordParam param = {
-            .stmt = this->inStmtCompCtx,
-            .tilde = this->lexer->startsWith(this->curToken, '~'),
-        };
-        this->compCtx->addCmdOrKeywordRequest(this->lexer->toCmdArg(this->curToken), param);
+        this->compCtx->addCmdOrKeywordRequest(*this->lexer, this->curToken, this->inStmtCompCtx);
       }
     }
     E_DETAILED(ParseErrorKind::EXPR, EACH_LA_primary(GEN_LA_ALTER));

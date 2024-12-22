@@ -66,6 +66,8 @@ private:
 
   const std::string &scriptDir; // for module completion
 
+  Token compWordToken;
+
   /**
    * current completion word
    */
@@ -173,27 +175,7 @@ public:
     this->addCompRequest(CodeCompOp::ATTR_PARAM, std::move(value));
   }
 
-  struct CmdOrKeywordParam {
-    bool stmt{false};
-    bool tilde{false};
-  };
-
-  void addCmdOrKeywordRequest(std::string &&value, const CmdOrKeywordParam param) {
-    // add command request
-    bool isDir = strchr(value.c_str(), '/') != nullptr;
-    if (param.tilde || isDir) {
-      CodeCompOp op = CodeCompOp::EXEC;
-      if (param.tilde) {
-        setFlag(op, CodeCompOp::TILDE);
-      }
-      this->addCompRequest(op, std::move(value));
-    } else {
-      this->addCompRequest(CodeCompOp::COMMAND, std::move(value));
-    }
-
-    // add keyword request
-    setFlag(this->compOp, param.stmt ? CodeCompOp::STMT_KW : CodeCompOp::EXPR_KW);
-  }
+  void addCmdOrKeywordRequest(const Lexer &lexer, Token wordToken, bool inStmt);
 
   void appendParamRequest(std::vector<std::string> &&params) {
     assert(this->extraWords.empty());
@@ -233,6 +215,8 @@ public:
   const Type *getRecvType() const { return this->recvType; }
 
   const auto &getScriptDir() const { return this->scriptDir; }
+
+  Token getCompWordToken() const { return this->compWordToken; }
 };
 
 } // namespace arsh

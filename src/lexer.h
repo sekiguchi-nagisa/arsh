@@ -258,7 +258,7 @@ public:
    * @param unescape
    * normally true
    */
-  std::string toCmdArg(Token token, bool unescape = true) {
+  std::string toCmdArg(Token token, bool unescape = true) const {
     return unquoteCmdArgLiteral(this->toStrRef(token), unescape);
   }
 

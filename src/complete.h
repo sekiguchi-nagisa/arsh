@@ -57,6 +57,11 @@ public:
     EXTERNAL,
   };
 
+  struct QuoteParam {
+    StringRef compWordToken;
+    StringRef compWord;
+  };
+
   std::string value;
   const CompCandidateKind kind;
   bool suffixSpace;
@@ -76,8 +81,13 @@ private:
     CmdNameType cmdNameType;
   } meta{};
 
+  CompCandidate(const QuoteParam *param, StringRef v, CompCandidateKind kind, int priority);
+
 public:
-  CompCandidate(StringRef v, CompCandidateKind k, int p = 0);
+  CompCandidate(StringRef v, CompCandidateKind k, int p = 0) : CompCandidate(nullptr, v, k, p) {}
+
+  CompCandidate(const QuoteParam &param, StringRef v, CompCandidateKind kind)
+      : CompCandidate(&param, v, kind, 0) {}
 
   void setHandle(const Handle &handle) { this->meta.handle = &handle; }
 
@@ -118,9 +128,7 @@ class CompCandidateConsumer {
 public:
   virtual ~CompCandidateConsumer() = default;
 
-  void operator()(StringRef ref, CompCandidateKind kind) { (*this)(ref, kind, 0); }
-
-  void operator()(StringRef ref, CompCandidateKind kind, int priority) {
+  void operator()(StringRef ref, CompCandidateKind kind, int priority = 0) {
     (*this)(CompCandidate(ref, kind, priority));
   }
 
