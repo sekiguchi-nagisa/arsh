@@ -58,6 +58,7 @@
 - improve job-spec parsing
     - support ``%%``, ``%+``, ``%-`` format
     - drop support ``N`` format due to posix compatibility
+- improve backslash escape handling of builtin complete command. now correctly escape completion candidates
 
 #### LSP
 

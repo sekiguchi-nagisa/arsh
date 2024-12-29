@@ -141,8 +141,10 @@ $assertArray($(cmd /bin /usr/bin --expr), $comp('if $true {} elif ', '/bin:/usr/
 $assertArray(['\sh\ctl'], $comp('\sh\c', '/bin:/usr/bin'))  # escaped
 $assertArray(['\_\_cmd', '\_\_file', '\_\_gets', '\_\_puts'], $comp('\_\_', '/bin:/usr/bin'))  # escaped
 $assertArray(['s\o\rt'], $comp('s\o\r', '/bin:/usr/bin'))  # escaped
+$assertArray(['b\in/'], $comp('/usr/b\i', '/bin:/usr/bin')) # escaped
+$assertArray(['s\o\rt'], $comp('/usr/b\in/s\o\r', '/bin:/usr/bin')) # escaped
 if $OSTYPE !~ $/cygwin/i  && $OSTYPE !~ $/msys/ {
-  ##$assertArray(['~\ro\ot/'], $(complete '~\ro\o'))  # escaped  FIXME:
+  $assertArray(['~\ro\ot/'], $(complete '~\ro\o'))  # escaped
 }
 
 # complete file name
@@ -183,6 +185,8 @@ $assertArray($(file '.' 1), $(complete './'))
 $assertArray($(file '.'), $(complete 'echo '))
 $assertArray($(file '.'), $(complete 'echo hoge '))
 $assertArray($(file '.'), $(complete 'echo hoge 34 '))
+$assertArray($(file '.' | for line in $STDIN { printf "\\%s\n" $line; }), $(complete 'echo hoge 34 ./\')) # escaped
+$assertArray(['b\in/'], $(complete 'echo hoge 34 /\usr/b\i'))  # escaped
 $assertArray($(file '.'), $(complete 'echo hoge 34='))
 $assertArray($(file '.'), $(complete 'echo hoge 34=./'))
 $assertArray($(file '.'), $(complete 'echo hoge \\=./'))
@@ -195,13 +199,15 @@ $assertArray($(ls -pa . | grep '^\.' | sort | uniq), $(complete 'echo .'))
 $assertArray($(file '/' | grep '^b'), $(complete 'echo /b'))
 $assertArray($(file '/' | grep '^b'), $(complete 'echo if=/b'))
 $assertArray($(file '/usr/bin'), $(complete 'echo > /usr/bin/'))
+$assertArray(['b\in/'], $(complete 'echo > /us\r\/b\i'))  # escaped
 $assertArray($(file ~), $(complete 'echo 23 ~/'))
 $assertArray($(file ~), $(complete 'echo 23=~/'))
 $assertArray($(file ~), $(complete 'echo 23\\=~/'))
 if $OSTYPE !~ $/cygwin/i  && $OSTYPE !~ $/msys/ {
     assert "~$(cat /etc/passwd | grep ^root | cut -d : -f 1)/" == "$(complete 'echo ~' | grep '~root')"
     assert "~$(cat /etc/passwd | grep ^root | cut -d : -f 1)/" == "$(complete '~' | grep '~root')"
-    #$assertArray(['~\ro\ot/'], $(complete '@(${45 + 45} ~\ro\o'))  FIXME
+    $assertArray(['~\ro\ot/'], $(complete '@(${45 + 45} ~\ro\o'))  # escaped
+    $assertArray(['~\ro\ot/'], $(complete 'AAA=~\ro\o'))  # escaped
 }
 $assertArray(new [String](), $(complete 'echo \~root'))
 $assertArray(new [String](), $(complete 'echo if\=~/'))
@@ -237,6 +243,10 @@ $assertArray($(file '/usr/bin'), $(complete 'AAA=${3434}:/usr/bin/'))
 $assertArray($(file ~/), $(complete 'AAA=hoge\\:~/'))
 $assertArray($(file ~/), $(complete 'AAA=~/'))
 $assertArray($(file ~/), $(complete 'AAA=${1234}:~/'))
+$assertArray(['\b\in/'], $(complete 'AAA=${1234}:\/u\sr\/\b\i'))  # escaped
+if $OSTYPE !~ $/cygwin/i  && $OSTYPE !~ $/msys/ {
+    $assertArray(['~\ro\ot/'], $(complete 'AAA=sss:~\ro\o'))  # escaped
+}
 $assertArray($(file '.'), $(complete '@('))
 $assertArray($(file '/usr/bin'), $(complete '@(34 /usr/bin/'))
 $assertArray($(file ~/), $(complete '@(${45 + 45} ~/'))

@@ -108,6 +108,12 @@ private:
   unsigned int compWordOffset{0};
 
   /**
+   * for file name completion with tilde expansion like the following case
+   *  `dd if=~/'
+   */
+  unsigned int compWordTokenOffset{0};
+
+  /**
    * for attribute parameter completion
    */
   AttributeParamSet targetAttrParams;
@@ -121,7 +127,16 @@ public:
     this->compWord = std::move(word);
   }
 
+  void addCompRequest(const Lexer &lexer, CodeCompOp op, Token wordToken, std::string &&word) {
+    this->compOp = op;
+    this->compWord = std::move(word);
+    this->compWordToken = wordToken;
+    this->lex = makeObserver(lexer);
+  }
+
   void setCompWordOffset(unsigned int offset) { this->compWordOffset = offset; }
+
+  void setCompWordTokenOffset(unsigned int offset) { this->compWordTokenOffset = offset; }
 
   void ignore(CodeCompOp ignored) {
     unsetFlag(this->compOp, ignored);
@@ -199,6 +214,8 @@ public:
   const auto &getCompWord() const { return this->compWord; }
 
   unsigned int getCompWordOffset() const { return this->compWordOffset; }
+
+  unsigned int getCompWordTokenOffset() const { return this->compWordTokenOffset; }
 
   const auto &getScope() const { return *this->scope; }
 

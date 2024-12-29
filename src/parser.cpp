@@ -282,6 +282,13 @@ bool Parser::inTypeNameCompletionPoint() const {
   return false;
 }
 
+static Token appendToken(Token base, Token target) {
+  if (target.size) {
+    base.size = target.endPos() - base.pos;
+  }
+  return base;
+}
+
 void Parser::resolveFileNameCompletionTarget(const CmdArgNode &cmdArgNode,
                                              const CmdArgParseOpt opt) {
   int firstTildeOffset = -1;
@@ -289,7 +296,13 @@ void Parser::resolveFileNameCompletionTarget(const CmdArgNode &cmdArgNode,
   int lastColonOffset = -1;
   int lastTildeOffset = -1;
   int lastInvalidOffset = -1;
+  unsigned int firstAssignTokenOffset = 0;
+  unsigned int lastColoTokenOffset = 0;
   std::string word;
+  Token wordToken = cmdArgNode.getSegmentNodes().empty()
+                        ? this->curToken
+                        : cmdArgNode.getSegmentNodes()[0]->getToken();
+  wordToken.size = 0;
   for (auto &e : cmdArgNode.getSegmentNodes()) {
     if (isa<StringNode>(*e) && cast<StringNode>(*e).getKind() == StringNode::CMD_ARG) {
       word += cast<StringNode>(*e).getValue();
@@ -301,17 +314,19 @@ void Parser::resolveFileNameCompletionTarget(const CmdArgNode &cmdArgNode,
           firstTildeOffset = lastTildeOffset;
         }
         word += toString(meta);
-        continue;
+        break;
       case ExpandMeta::ASSIGN:
         if (firstAssignOffset == -1) {
           firstAssignOffset = static_cast<int>(word.size());
+          firstAssignTokenOffset = wordToken.size;
         }
         word += toString(meta);
-        continue;
+        break;
       case ExpandMeta::COLON:
         lastColonOffset = static_cast<int>(word.size());
+        lastColoTokenOffset = wordToken.size;
         word += toString(meta);
-        continue;
+        break;
       default:
         return;
       }
@@ -319,8 +334,13 @@ void Parser::resolveFileNameCompletionTarget(const CmdArgNode &cmdArgNode,
       lastInvalidOffset = static_cast<int>(word.size());
       word += this->lexer->toTokenText(e->getToken());
     }
+    wordToken = appendToken(wordToken, e->getToken());
   }
   word += this->lexer->toCmdArg(this->curToken);
+  wordToken = appendToken(wordToken, this->curToken);
+  if (wordToken.size > 1 && this->lexer->toStrRef(wordToken).back() == '\n') {
+    wordToken.size--; // trim last newline
+  }
 
   if (cmdArgNode.isRightHandSide()) {
     if (lastColonOffset < lastInvalidOffset) {
@@ -335,7 +355,7 @@ void Parser::resolveFileNameCompletionTarget(const CmdArgNode &cmdArgNode,
     auto op = CodeCompOp::FILE;
     if (firstTildeOffset == 0) {
       setFlag(op, CodeCompOp::TILDE);
-      this->compCtx->addCompRequest(op, std::move(word));
+      this->compCtx->addCompRequest(*this->lexer, op, wordToken, std::move(word));
       return;
     }
     if (firstAssignOffset != -1) {
@@ -347,13 +367,14 @@ void Parser::resolveFileNameCompletionTarget(const CmdArgNode &cmdArgNode,
        * echo if=./bbb=./  => echo ./bbb=./
        * echo if=~/bbb=~/  => echo ~/bbb=~/
        */
-      unsigned int remainOffset = static_cast<unsigned int>(firstAssignOffset) + 1;
+      const auto remainOffset = static_cast<unsigned int>(firstAssignOffset) + 1;
       if (firstTildeOffset != -1 && static_cast<unsigned int>(firstTildeOffset) == remainOffset) {
         setFlag(op, CodeCompOp::TILDE);
       }
       this->compCtx->setCompWordOffset(remainOffset);
+      this->compCtx->setCompWordTokenOffset(firstAssignTokenOffset + 1);
     }
-    this->compCtx->addCompRequest(op, std::move(word));
+    this->compCtx->addCompRequest(*this->lexer, op, wordToken, std::move(word));
     break;
   }
   case CmdArgParseOpt::ASSIGN: {
@@ -364,17 +385,18 @@ void Parser::resolveFileNameCompletionTarget(const CmdArgNode &cmdArgNode,
        * AAA=~root:bbb:./
        * => AAA=./
        */
-      unsigned int remainOffset = static_cast<unsigned int>(lastColonOffset) + 1;
+      const auto remainOffset = static_cast<unsigned int>(lastColonOffset) + 1;
       if (lastTildeOffset != -1 && remainOffset == static_cast<unsigned int>(lastTildeOffset)) {
         lastTildeOffset = 0;
       }
       word = StringRef(word).substr(remainOffset).toString();
+      wordToken = wordToken.sliceFrom(lastColoTokenOffset + 1);
     }
     auto op = CodeCompOp::FILE;
     if (lastTildeOffset == 0) {
       setFlag(op, CodeCompOp::TILDE);
     }
-    this->compCtx->addCompRequest(op, std::move(word));
+    this->compCtx->addCompRequest(*this->lexer, op, wordToken, std::move(word));
     break;
   }
   case CmdArgParseOpt::MODULE:
@@ -383,7 +405,7 @@ void Parser::resolveFileNameCompletionTarget(const CmdArgNode &cmdArgNode,
     if (firstTildeOffset == 0) {
       setFlag(op, CodeCompOp::TILDE);
     }
-    this->compCtx->addCompRequest(op, std::move(word));
+    this->compCtx->addCompRequest(*this->lexer, op, wordToken, std::move(word));
     break;
   }
   case CmdArgParseOpt::HERE_START:
