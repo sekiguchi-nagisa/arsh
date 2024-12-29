@@ -179,13 +179,33 @@ files() {
     } | sort | uniq
 }
 
+function map(aa: [String], func: (String)->String) : [String] {
+    var ret: [String]
+    for e in $aa {
+        $ret.add($func($e))
+    }
+    return $ret
+}
+
+function assertArray2(expect: [String], actual: Candidates) {
+    var aa: [String]
+    let s = $actual.size()
+    for(var i = 0; $i < $s; $i++) {
+        $aa.add($actual[$i])
+    }
+    $assertArray($expect, $aa)
+}
+
 $assertArray($(file '/bin' 1), $(complete '/bin/'))
 $assertArray($(file '/usr/bin/' 1), $(complete '/usr/bin/'))
 $assertArray($(file '.' 1), $(complete './'))
+$assertArray($(file '.' 1 | for line in $STDIN { echo "\\$line"; }), $(complete './\')) # escaped
+$assertArray2($map($(file '.' 1), function(s)=> $'\\\n' + $s), {complete ${'./\' + $'\n'} &>> /dev/null; $COMPREPLY;}) # escaped
 $assertArray($(file '.'), $(complete 'echo '))
 $assertArray($(file '.'), $(complete 'echo hoge '))
 $assertArray($(file '.'), $(complete 'echo hoge 34 '))
 $assertArray($(file '.' | for line in $STDIN { printf "\\%s\n" $line; }), $(complete 'echo hoge 34 ./\')) # escaped
+$assertArray2($map($(file '.'), function(s)=> $'\\\n' + $s), {complete ${'echo hoge 34 ./\' + $'\n'} &>>/dev/null; $COMPREPLY;}) # escaped
 $assertArray(['b\in/'], $(complete 'echo hoge 34 /\usr/b\i'))  # escaped
 $assertArray($(file '.'), $(complete 'echo hoge 34='))
 $assertArray($(file '.'), $(complete 'echo hoge 34=./'))

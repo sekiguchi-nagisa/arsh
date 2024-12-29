@@ -55,6 +55,9 @@ void CodeCompletionContext::addCmdOrKeywordRequest(const Lexer &lexer, Token wor
   if (mayBeKeyword) {
     setFlag(this->compOp, inStmt ? CodeCompOp::STMT_KW : CodeCompOp::EXPR_KW);
   }
+  if (wordToken.size && lexer.toStrRef(wordToken).back() == '\n' && lexer.isLastNewlineInserted()) {
+    wordToken.size--;
+  }
   this->lex = makeObserver(lexer);
   this->compWordToken = wordToken;
 }

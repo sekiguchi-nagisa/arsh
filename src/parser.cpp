@@ -338,7 +338,8 @@ void Parser::resolveFileNameCompletionTarget(const CmdArgNode &cmdArgNode,
   }
   word += this->lexer->toCmdArg(this->curToken);
   wordToken = appendToken(wordToken, this->curToken);
-  if (wordToken.size > 1 && this->lexer->toStrRef(wordToken).back() == '\n') {
+  if (wordToken.size && this->lexer->toStrRef(wordToken).back() == '\n' &&
+      this->lexer->isLastNewlineInserted()) {
     wordToken.size--; // trim last newline
   }
 

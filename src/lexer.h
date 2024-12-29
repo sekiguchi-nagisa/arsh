@@ -214,7 +214,11 @@ public:
 
   bool isComplete() const { return this->complete; }
 
-  bool inCompletionPoint() const { return this->complete && this->cursor + 1 == this->limit; }
+  bool inCompletionPoint() const {
+    return this->complete &&
+           (this->cursor + 1 == this->limit /* typical case*/
+            || this->cursor == this->limit /* for command/command-argument end with \\\n */);
+  }
 
   TokenKind getCompTokenKind() const { return this->compTokenKind; }
 

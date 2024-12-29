@@ -73,7 +73,7 @@ public:
 namespace detail {
 
 /**
- * base lexer for re2c
+ * base lexer for `re2c`
  */
 template <bool T>
 class LexerBase {
@@ -109,6 +109,8 @@ protected:
    */
   const char *ctxMarker{nullptr};
 
+  bool lastNewlineInserted{false};
+
   LexerBase() = default;
 
   ~LexerBase() = default;
@@ -143,6 +145,7 @@ public:
     this->buf = std::move(buffer);
     if (this->buf.empty() || this->buf.back() != '\n') {
       this->buf += '\n';
+      this->lastNewlineInserted = true;
     }
     this->buf += '\0';
     this->cursor = this->buf.data();
@@ -187,6 +190,8 @@ public:
   bool isEnd() const { return this->cursor - 1 == this->limit; }
 
   bool withinRange(Token token) const { return token.pos + token.size <= this->getUsedSize(); }
+
+  bool isLastNewlineInserted() const { return this->lastNewlineInserted; }
 
   StringRef toStrRef(Token token) const {
     assert(this->withinRange(token));
@@ -390,6 +395,7 @@ void LexerBase<T>::appendToBuf(const char *data, unsigned int size, bool isEnd) 
   this->buf.append(data, size);
   if (isEnd && (this->buf.empty() || this->buf.back() != '\n')) {
     this->buf += '\n';
+    this->lastNewlineInserted = true;
   }
   this->buf += '\0';
 
