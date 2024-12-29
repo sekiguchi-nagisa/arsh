@@ -8,6 +8,11 @@ assert $args.size() == 2
 assert $args[0] == 'abs@(): Int for Int'
 assert $args[1] == 'toFloat@(): Float for Int'
 
+assert complete -d -- '$COMPREPLY.s'
+$args = @($COMPREPLY)
+assert $args.size() == 1
+assert $args[0] == 'size@(): Int for Candidates'
+
 assert complete -d -- '$OSTY'
 assert $COMPREPLY.size() == 1
 $args = @($COMPREPLY)

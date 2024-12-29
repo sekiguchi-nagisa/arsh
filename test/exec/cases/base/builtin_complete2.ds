@@ -46,6 +46,11 @@ function assertArray($x : Array<String>, $y : Array<String>) {
     $assertArray($gvars2, $(complete '$f($P'))
     $assertArray($gvars, $(complete 'cat << EOF
     $'))
+    $assertArray($gvars2, $(complete '$true ? $P'))
+    $assertArray($gvars2, $(complete '$true ? 2345 : $P'))
+    $assertArray($gvars2, $(complete '"".slice($P'))
+    $assertArray($gvars2, $(complete '"".slice($start:$P'))
+    $assertArray($gvars2, $(complete 'function ff(aa:Int){}; echo $ff(12, $P'))
 
     # scope
     var gvar3 = [
@@ -136,6 +141,7 @@ $assertArray([ "B", 'BB'], $(complete 'typedef AAA($a : Int){ var _A = 34; let B
 $assertArray(['B', 'BB'], $(complete 'typedef AAA{ var B : Int; let BB : String; }; new AAA(1, "34").B'))
 assert $(complete 'typedef AAA($a: Int) { var v = $a; new AAA(45).').empty()
 
+$assertArray(["ifEmpty", "indexOf"], $(complete '$SCRIPT_NAME.i'))
 $assertArray(["sort", "sortWith"], $(complete '$@.so'))
 $assertArray(["sortWith"], $(complete '[[34],[67]].so'))
 $assertArray(["BASH_COMPLETION_COMPAT", "BASH_COMPLETION_PATH",
@@ -154,6 +160,7 @@ $assertArray(['abs', 'toFloat'], $(complete '$$.' > /dev/null && printf "%s\n" $
 $assertArray(['abs', 'toFloat'], $(complete 'var a = try { 34; } finally { return ; 34.'))
 $assertArray(['abs', 'toFloat'], $(complete 'function f($a: Int) { $a.'))
 $assertArray(['abs', 'toFloat'], $(complete 'var b = function ($a: Int) => $a.'))
+$assertArray(['abs', 'toFloat'], $(complete 'function ff(a:Int,b:Int) {}; $ff(34,1234.'))
 $assertArray(['abs', 'toFloat'], $(complete 'typedef AAA($a : Int) { var b = $a.'))
 $assertArray(['show', 'source', 'ss', 'ssum', 'status', 'suppressed'], $(complete ' typedef ANY : Error; typedef INT : ANY
     function ss() : String for ANY { return "$this"; }  # also complete super type method
@@ -202,10 +209,12 @@ $assertArray(["Dist"], $(complete "source $SCRIPT_DIR/../../_module4test/inlined
 $assertArray(['AAA0', 'AAA1'], $(complete '
     typedef AAA1 = [String]
     typedef AAA0(param : AA'))
+$assertArray(['StackOverflowError', 'String'], $(complete 'type AAA { var aaa : St'))
 
 # param
 $assertArray(['radix:'], $(complete '"".toInt($rad'))
 $assertArray(['start:', 'stop:'], $(complete '"".slice($st'))
+$assertArray(['xxx:'], $(complete 'function fff(xxx:Int):Int{ return $xxx;}; echo $fff($xx'))
 
 # subcommand
 $assertArray(["compdef",], $(complete "source $SCRIPT_DIR/../../../../share/arsh/modules/completion.arsh as CP; CP "))

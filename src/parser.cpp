@@ -951,7 +951,7 @@ std::unique_ptr<Node> Parser::parse_typedef() {
         TRY(this->parse_statementEnd());
         node->addParamNode(pos, readOnly, std::move(param), std::move(type));
       } else {
-        E_ALTER(TokenKind::VAR, TokenKind::LET, TokenKind::RBC);
+        E_ALTER_OR_COMP(TokenKind::VAR, TokenKind::LET, TokenKind::RBC);
       }
     }
     this->expect(TokenKind::RBC); // always success
