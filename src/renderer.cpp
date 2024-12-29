@@ -35,9 +35,7 @@ static bool renderLines(const LineBuffer &buf, ObserverPtr<const ArrayPager> pag
   }
   if (pager) {
     renderer.setInitCols(0);
-    if (!lineRef.endsWith("\n")) {
-      renderer.renderLines("\n"); // force newline
-    }
+    renderer.renderLines("\n"); // force newline
     pager->render(renderer);
   }
   return continueLine;

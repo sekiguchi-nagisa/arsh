@@ -558,8 +558,45 @@ TEST_F(InteractiveTest, lineEditorComp2) {
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
 }
 
-// insert common prefix with multi-bytes char
+// completion candidate rotation without common prefix
 TEST_F(InteractiveTest, lineEditorComp3) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+
+  ASSERT_NO_FATAL_FAILURE(this->changePrompt("> "));
+
+  // rotate candidates
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
+      "$LINE_EDIT.setCompletion(function(s,m) => new Candidates( @(aaaa bbb ccc)) )"));
+  this->send(";");
+  ASSERT_NO_FATAL_FAILURE(this->expect("> ;"));
+  {
+    auto cleanup = this->reuseScreen();
+
+    this->send(ALT_ENTER);
+    ASSERT_NO_FATAL_FAILURE(this->expect("> ;\n  "));
+    this->send("\t");
+    ASSERT_NO_FATAL_FAILURE(this->expect("> ;\n  \naaaa    bbb     ccc     \n"));
+
+    this->send("\t");
+    ASSERT_NO_FATAL_FAILURE(this->expect("> ;\n  aaaa\naaaa    bbb     ccc     \n"));
+    this->send("\r");
+    ASSERT_NO_FATAL_FAILURE(this->expect("> ;\n  aaaa"));
+    this->send("\r");
+    const char *err = R"([runtime error]
+SystemError: execution error: aaaa: command not found
+    from (stdin):4 '<toplevel>()'
+)";
+    ASSERT_NO_FATAL_FAILURE(this->expect("> ;\n  aaaa\n> ", err));
+  }
+
+  this->send(CTRL_D);
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(127, WaitStatus::EXITED, "\n"));
+}
+
+// insert common prefix with multi-bytes char
+TEST_F(InteractiveTest, lineEditorComp4) {
   this->invoke("--quiet", "--norc");
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
