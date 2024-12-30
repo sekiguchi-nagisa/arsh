@@ -35,26 +35,31 @@ static FuzzPolicy getFuzzPolicy() {
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   static auto policy = getFuzzPolicy();
 
-  auto *state = ARState_createWithMode(AR_EXEC_MODE_COMPILE_ONLY);
   switch (policy) {
   case FuzzPolicy::EVAL: {
+    auto *state = ARState_createWithMode(AR_EXEC_MODE_COMPILE_ONLY);
     ARError dsError;
     ARState_eval(state, "<dummy>", (const char *)data, size, &dsError);
     ARError_release(&dsError);
+    ARState_delete(&state);
     break;
   }
   case FuzzPolicy::COMPLETE: {
+    auto *state = ARState_create();  // kick completion
     std::string buf((const char *)data, size);
     const char *argv[] = {
         "complete",
         "-q",
+        "-d",
+        "-s",
         "--",
         buf.c_str(),
+        nullptr,
     };
     ARState_exec(state, (char **)argv);
+    ARState_delete(&state);
     break;
   }
   }
-  ARState_delete(&state);
   return 0;
 }

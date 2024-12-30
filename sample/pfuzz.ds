@@ -8,6 +8,7 @@ import-env FUZZ_JOBS : "$default"
 
 var N = $FUZZ_JOBS.toInt() ?? 4
 
+# ARSH_FUZZ_POLICY  comp: do-completion, eval: default mode (compile-only)
 
 ARSH_SUPPRESS_COMPILE_ERROR=on ARSH_SUPPRESS_MOD_LOADING=on \
      exec $bin -jobs=$N -workers=$N -rss_limit_mb=81920 $@
