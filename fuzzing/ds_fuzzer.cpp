@@ -6,6 +6,7 @@
 #include <string>
 
 #include <arsh/arsh.h>
+#include <misc/format.hpp>
 
 enum class FuzzPolicy {
   EVAL, // default
@@ -45,8 +46,15 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
     break;
   }
   case FuzzPolicy::COMPLETE: {
+    using namespace arsh;
     auto *state = ARState_create();  // kick completion
-    std::string buf((const char *)data, size);
+    std::string buf;
+    StringRef ref((const char *)data, size);
+    splitByDelim(ref, '\0', [&buf](StringRef sub, bool){
+      buf += sub;
+      return true;
+    });
+
     const char *argv[] = {
         "complete",
         "-q",
