@@ -902,7 +902,7 @@ static bool mergeSortImpl(ARState &state, ArrayObject &arrayObj, Value *buf, con
 bool mergeSort(ARState &state, ArrayObject &arrayObj, const Value &compFunc) {
   auto buf = std::make_unique<Value[]>(arrayObj.size());
   assert(!arrayObj.locking());
-  arrayObj.lock(ArrayObject::LockType::SORT_WITH);
+  arrayObj.lock(ArrayObject::LockType::SORT_BY);
   bool r = mergeSortImpl(state, arrayObj, buf.get(), compFunc, 0, arrayObj.size());
   arrayObj.unlock();
   return r;

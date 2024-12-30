@@ -643,8 +643,8 @@ bool ArrayObject::checkIteratorInvalidation(ARState &state, const char *message)
     case LockType::ITER:
       value += " during iteration";
       break;
-    case LockType::SORT_WITH:
-      value += " during sortWith method";
+    case LockType::SORT_BY:
+      value += " during sortBy method";
       break;
     case LockType::HISTORY:
       value += " during line editing";

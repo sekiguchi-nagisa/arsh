@@ -103,7 +103,7 @@ cat ./emoji-data.txt | for(var count = 0; read -f $'\n'; $count++) {
     echo $REPLY
 } with > ./trimed_emoji-data.txt
 
-$ranges.sortWith($rangeComp)
+$ranges.sortBy($rangeComp)
 $ranges = $minimize($ranges)
 
 # final output

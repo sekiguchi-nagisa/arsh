@@ -447,7 +447,7 @@ function reverse(): [T0] for [T0]
 
 function sort(): [T0] where T0 : Value_ for [T0]
 
-function sortWith(comp: (T0, T0) -> Bool): [T0] for [T0]
+function sortBy(comp: (T0, T0) -> Bool): [T0] for [T0]
 
 function join(delim: String?): String for [T0]
 

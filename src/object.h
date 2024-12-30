@@ -829,7 +829,7 @@ public:
   enum class LockType : unsigned char {
     NONE,
     ITER,
-    SORT_WITH,
+    SORT_BY,
     HISTORY,
   };
 

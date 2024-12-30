@@ -142,8 +142,8 @@ $assertArray(['B', 'BB'], $(complete 'typedef AAA{ var B : Int; let BB : String;
 assert $(complete 'typedef AAA($a: Int) { var v = $a; new AAA(45).').empty()
 
 $assertArray(["ifEmpty", "indexOf"], $(complete '$SCRIPT_NAME.i'))
-$assertArray(["sort", "sortWith"], $(complete '$@.so'))
-$assertArray(["sortWith"], $(complete '[[34],[67]].so'))
+$assertArray(["sort", "sortBy"], $(complete '$@.so'))
+$assertArray(["sortBy"], $(complete '[[34],[67]].so'))
 $assertArray(["BASH_COMPLETION_COMPAT", "BASH_COMPLETION_PATH",
               '_fullname', '_func', '_scriptDir', '_scriptName',
                "compAdd", 'compDelegate', 'extractCompTarget', 'findBashCompScript'],

@@ -119,11 +119,11 @@ assert !$T.empty()
 function comp(x: Entry, y: Entry): Bool {
     return $x.code < $y.code
 }
-$shortC.sortWith($comp)
-$longC.sortWith($comp)
-$S.sortWith($comp)
-$F.sortWith($comp)
-$T.sortWith($comp)
+$shortC.sortBy($comp)
+$longC.sortBy($comp)
+$S.sortBy($comp)
+$F.sortBy($comp)
+$T.sortBy($comp)
 
 function emitTable(entries: [Entry], name: String) {
     echo

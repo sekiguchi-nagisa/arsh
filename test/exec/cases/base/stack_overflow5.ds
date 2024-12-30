@@ -1,7 +1,7 @@
 #$test($status = 0)
 
 function comp($a : [Int], $b : [Int]) : Bool {
-    echo ${[$a, $b].sortWith($comp)}
+    echo ${[$a, $b].sortBy($comp)}
     return $true
 }
 
@@ -15,5 +15,5 @@ for (var i = 0; $i < 100; $i++) {
 }
 
 var ex : Any?
-try { $a.sortWith($comp); assert $false; } catch $e { $ex = $e; }
+try { $a.sortBy($comp); assert $false; } catch $e { $ex = $e; }
 assert $ex! is StackOverflowError

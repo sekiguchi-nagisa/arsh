@@ -130,12 +130,12 @@ try {
 assert $ex is InvalidOperationError
 assert ($ex as Error).lineno() == 127
 
-## sortWith
+## sortBy
 $ex = 234
 try {
     for a in $array {
         $array.join('+')
-        $array.sortWith(function(a, b) => $a + $RANDOM < $b + $RANDOM)
+        $array.sortBy(function(a, b) => $a + $RANDOM < $b + $RANDOM)
     }
 } catch e { $ex = $e; }
 assert $ex is InvalidOperationError

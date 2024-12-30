@@ -34,7 +34,7 @@ bind(param : _BindParam) {
         for e in $LINE_EDIT.bindings() {
             $bindings.add($e)
         }
-        $bindings.sortWith(function(x, y) => $x._0 < $y._0)
+        $bindings.sortBy(function(x, y) => $x._0 < $y._0)
         for e in $bindings {
             printf "\"%s\": %s\n" ${e._0} ${e._1}
         }

@@ -103,7 +103,7 @@ cat ./DerivedCoreProperties.txt | for(var count = 0; read -f $'\n'; $count++) {
     echo $REPLY
 } with > ./trimed_DerivedCoreProperties.txt
 
-$ranges.sortWith(function (x,y) => $x.compare($y))
+$ranges.sortBy(function (x,y) => $x.compare($y))
 $ranges = $minimize($ranges)
 
 # final output
