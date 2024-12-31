@@ -19,6 +19,7 @@
 #include <cerrno>
 #include <cstdlib>
 #include <ctime>
+#include <random>
 
 #include "arg_parser.h"
 #include "logger.h"
@@ -121,7 +122,8 @@ ARState::ARState()
     : modLoader(this->sysConfig),
       emptyFDObj(toObjPtr<UnixFdObject>(Value::create<UnixFdObject>(-1))),
       initTime(getCurrentTimestamp()), support_strftime_plus(check_strftime_plus(this->initTime)),
-      baseTime(this->initTime), rng(this->baseTime.time_since_epoch().count()) {
+      baseTime(this->initTime), rng(this->baseTime.time_since_epoch().count(),
+                                    std::random_device()(), 42, reinterpret_cast<uintptr_t>(this)) {
   // init envs
   initEnv();
   const char *pwd = getenv(ENV_PWD);
