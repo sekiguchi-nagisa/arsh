@@ -55,6 +55,7 @@ _main(param: _Param) {
     ## for DEB
     cp $SCRIPT_DIR/deb/debian.control $dir/
     cp $SCRIPT_DIR/deb/debian.rules $dir/
+    cp $SCRIPT_DIR/../LICENSE $dir/debian.copyright
     gen_from_template $SCRIPT_DIR/deb/arsh.dsc.in $dir/arsh_${param.version}.dsc ${param.version} $src_targz
     gen_from_template $SCRIPT_DIR/deb/debian.changelog.in $dir/debian.changelog ${param.version} $src_targz
 }
