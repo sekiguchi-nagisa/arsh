@@ -50,12 +50,13 @@ _main(param: _Param) {
     ## for RPM
     assert test -f $SCRIPT_DIR/rpm/arsh.spec.in
     gen_from_template $SCRIPT_DIR/rpm/arsh.spec.in $dir/arsh.spec ${param.version} $src_targz
-    cp $SCRIPT_DIR/../LICENSE $dir/
 
     ## for DEB
     cp $SCRIPT_DIR/deb/debian.control $dir/
     cp $SCRIPT_DIR/deb/debian.rules $dir/
-    cp $SCRIPT_DIR/../LICENSE $dir/debian.copyright
+    pushd $dir && tar -zxvf ${$src_targz.basename()} && 
+        cp ./arsh-${param.version}/LICENSE ./debian.copyright && 
+        rm -rf ./arsh-${param.version} && popd
     gen_from_template $SCRIPT_DIR/deb/arsh.dsc.in $dir/arsh_${param.version}.dsc ${param.version} $src_targz
     gen_from_template $SCRIPT_DIR/deb/debian.changelog.in $dir/debian.changelog ${param.version} $src_targz
 }
