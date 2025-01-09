@@ -37,28 +37,33 @@ type _Param() {
 _main(param: _Param) {
     shctl set errraise
     $/^\d+\.\d+\.\d+.*$/ =~ $param.version || error "invalid version number: ${param.version}"
-    let dir = "${param.target}/arsh"
-    let src_targz = "$dir/arsh-${param.version}.orig.tar.gz"
+    let dir = "${param.target}/arsh".realpath()
+    let src = "$dir/arsh-${param.version}"
+    let src_targz = "${src}.orig.tar.gz"
     mkdir -p $dir
     shctl set nullglob
-    for p in @($dir/*.tar.gz $dir/*.dsc) {
+
+    ## try remove old files
+    for p in @($dir/*.tar.gz $dir/*.dsc $dir/arsh*) {
         echo remove old: $p
-        rm $p;
-    }  # try remove old files
+        rm -rf $p;
+    }
+
+    ## download source
     curl -Lf "https://github.com/sekiguchi-nagisa/arsh/archive/refs/tags/v${param.version}.tar.gz" > $src_targz 
+    pushd $dir
+    tar -zxvf ${$src_targz.basename()}
+    defer { rm -rf $src; }
 
     ## for RPM
-    assert test -f $SCRIPT_DIR/rpm/arsh.spec.in
-    gen_from_template $SCRIPT_DIR/rpm/arsh.spec.in $dir/arsh.spec ${param.version} $src_targz
+    gen_from_template $src/package/rpm/arsh.spec.in $dir/arsh.spec ${param.version} $src_targz
 
     ## for DEB
-    cp $SCRIPT_DIR/deb/debian.control $dir/
-    cp $SCRIPT_DIR/deb/debian.rules $dir/
-    pushd $dir && tar -zxvf ${$src_targz.basename()} && 
-        cp ./arsh-${param.version}/LICENSE ./debian.copyright && 
-        rm -rf ./arsh-${param.version} && popd
-    gen_from_template $SCRIPT_DIR/deb/arsh.dsc.in $dir/arsh_${param.version}.dsc ${param.version} $src_targz
-    gen_from_template $SCRIPT_DIR/deb/debian.changelog.in $dir/debian.changelog ${param.version} $src_targz
+    cp $src/package/deb/debian.control $dir/
+    cp $src/package/deb/debian.rules $dir/
+    cp $src/LICENSE $dir/debian.copyright
+    gen_from_template $src/package/deb/arsh.dsc.in $dir/arsh_${param.version}.dsc ${param.version} $src_targz
+    gen_from_template $src/package/deb/debian.changelog.in $dir/debian.changelog ${param.version} $src_targz
 }
 
 shctl is-sourced || _main $@
