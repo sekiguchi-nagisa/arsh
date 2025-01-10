@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.36.1] - 20250-01-10
+
+- simplify license file
+- fix package asset
+- fix initial seed of internal random number generator
+
 ## [0.36.0] - 2024-12-30
 
 ### Added
