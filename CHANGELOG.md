@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.36.1] - 20250-01-10
+## [0.36.1] - 2025-01-10
 
 - simplify license file
 - fix package asset
