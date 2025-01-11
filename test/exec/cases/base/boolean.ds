@@ -17,3 +17,9 @@ assert(! $false)
 assert($true is Boolean)
 assert($false is Boolean)
 assert($a is Any)
+
+## compare
+assert $true.compare($true) == 0
+assert $false.compare($false) == 0
+assert $true.compare($false) > 0
+assert $false.compare($true) < 0

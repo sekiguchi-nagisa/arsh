@@ -29,3 +29,6 @@ assert $SIG.list()[0] is Signal
 
 assert ($SIG as String).startsWith('Object(')
 
+## compare
+assert $SIGINT.compare($SIGINT) == 0
+assert $SIGINT.compare($SIGTERM) != 0

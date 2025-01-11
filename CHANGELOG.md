@@ -7,6 +7,8 @@
 #### Builtin
 
 - add ``Array#searchSorted`` method
+- expose internal three-way comparison api used by ``Array#sort`` method
+    - add ``Int#compare``, ``Bool#compare``, ``Signal#compare``, ``String#compare`` methods like ``Float#compare``
 
 ## [0.36.1] - 2025-01-10
 

@@ -86,6 +86,13 @@ ARSH_METHOD to_interp(RuntimeContext &ctx) {
   RET(std::move(builder).take());
 }
 
+ARSH_METHOD compare_value(RuntimeContext &ctx) { // T.compare(T)
+  SUPPRESS_WARNING(compare_value);
+  auto &x = LOCAL(0);
+  auto &y = LOCAL(1);
+  RET(Value::createInt(x.compare(y)));
+}
+
 // ###################
 // ##     Int     ##
 // ###################
@@ -312,6 +319,9 @@ ARSH_METHOD int_toFloat(RuntimeContext &ctx) {
   RET(Value::createFloat(d));
 }
 
+//!bind: function compare($this : Int, $target : Int) : Int
+ARSH_METHOD_DECL compare_value(RuntimeContext &ctx);
+
 // ###################
 // ##     Float     ##
 // ###################
@@ -510,13 +520,7 @@ ARSH_METHOD float_toInt(RuntimeContext &ctx) {
 }
 
 //!bind: function compare($this : Float, $target : Float) : Int
-ARSH_METHOD float_compare(RuntimeContext &ctx) {
-  SUPPRESS_WARNING(float_compare);
-  double x = LOCAL(0).asFloat();
-  double y = LOCAL(1).asFloat();
-  int ret = compareByTotalOrder(x, y);
-  RET(Value::createInt(ret));
-}
+ARSH_METHOD_DECL compare_value(RuntimeContext &ctx);
 
 // ##################
 // ##     Bool     ##
@@ -539,6 +543,9 @@ ARSH_METHOD boolean_ne(RuntimeContext &ctx) {
   SUPPRESS_WARNING(boolean_ne);
   RET_BOOL(LOCAL(0).asBool() != LOCAL(1).asBool());
 }
+
+//!bind: function compare($this : Bool, $target : Bool) : Int
+ARSH_METHOD_DECL compare_value(RuntimeContext &ctx);
 
 // ####################
 // ##     String     ##
@@ -1018,6 +1025,9 @@ ARSH_METHOD string_toFloat(RuntimeContext &ctx) {
   RET(Value::createInvalid());
 }
 
+//!bind: function compare($this : String, $target : String) : Int
+ARSH_METHOD_DECL compare_value(RuntimeContext &ctx);
+
 static Utf8GraphemeScanner asGraphemeScanner(StringRef ref, const uint32_t (&values)[3]) {
   const char *charBegin = ref.begin() + values[0];
   const char *cur = ref.begin() + values[1];
@@ -1459,6 +1469,9 @@ ARSH_METHOD signal_ne(RuntimeContext &ctx) {
   SUPPRESS_WARNING(signal_ne);
   RET_BOOL(LOCAL(0).asSig() != LOCAL(1).asSig());
 }
+
+//!bind: function compare($this : Signal, $target : Signal) : Int
+ARSH_METHOD_DECL compare_value(RuntimeContext &ctx);
 
 // #####################
 // ##     Signals     ##

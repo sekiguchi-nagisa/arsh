@@ -430,3 +430,8 @@ assert ($ex as InvalidOperationError).message() == 'must be UTF-8 encoded'
 assert(("fre" + 3.14) is String)
 assert("hey" + $true == 'heytrue')
 assert("" + $False == "false")
+
+## compare
+assert "AA".compare("AA") == 0
+assert "AA".compare("AB") < 0
+assert "AB".compare("AA") > 0

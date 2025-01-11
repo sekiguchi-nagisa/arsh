@@ -149,3 +149,11 @@ assert($i64.toFloat() as String == '7865.0')
 $i64 = -12344
 assert($i64 as Float as String == '-12344.0')
 assert($i64.toFloat() as String == '-12344.0')
+
+# compare
+assert 1.compare(1) == 0
+assert 1.compare(0) > 0
+assert 1.compare(2) < 0
+assert (-1).compare(-1) == 0
+assert (-1).compare(0) < 0
+assert (-1).compare(-2) > 0

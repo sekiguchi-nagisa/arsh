@@ -51,6 +51,8 @@ function %OP_URSHIFT(target: Int): Int for Int
 function abs(): Int for Int
 
 function %OP_TO_FLOAT(): Float for Int
+
+function compare(target: Int): Int for Int
 ```
 
 ## Float type
@@ -109,6 +111,8 @@ function %OP_NOT(): Bool for Bool
 function %OP_EQ(target: Bool): Bool for Bool
 
 function %OP_NE(target: Bool): Bool for Bool
+
+function compare(target: Bool): Int for Bool
 ```
 
 ## String type
@@ -166,6 +170,8 @@ function sanitize(repl: String?): String for String
 function toInt(radix: Int?): Int? for String
 
 function toFloat(): Float? for String
+
+function compare(target: String): Int for String
 
 function %OP_ITER(): StringIter for String
 
@@ -324,6 +330,8 @@ function trap(handler: ((Signal) -> Void)?): (Signal) -> Void for Signal
 function %OP_EQ(target: Signal): Bool for Signal
 
 function %OP_NE(target: Signal): Bool for Signal
+
+function compare(target: Signal): Int for Signal
 ```
 
 ## Signals type
