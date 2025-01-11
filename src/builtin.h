@@ -1835,6 +1835,20 @@ ARSH_METHOD array_sortBy(RuntimeContext &ctx) {
   }
 }
 
+//!bind: function searchSorted($this: Array<T0>, $value: T0): Int
+ARSH_METHOD array_search(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(array_search);
+  auto &values = typeAs<ArrayObject>(LOCAL(0)).getValues();
+  auto &v = LOCAL(1);
+  auto iter = std::lower_bound(values.begin(), values.end(), v,
+                               [](const Value &x, const Value &y) { return x.compare(y) < 0; });
+  int64_t retIndex = iter - values.begin();
+  if (iter == values.end() || iter->compare(v) != 0) { // not found
+    retIndex = -retIndex - 1;
+  }
+  RET(Value::createInt(retIndex));
+}
+
 //!bind: function join($this : Array<T0>, $delim : Option<String>) : String
 ARSH_METHOD array_join(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_join);

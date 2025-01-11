@@ -76,3 +76,19 @@ assert $aa.join(" ") == '1 4 5 6 8'
 
 $aa.removeRange(-699)  # 0
 assert $aa.size() == 0
+
+# searchSorted
+var ii = [1,3,6,14]
+for r in [
+        (-199, -1), (0, -1), (1, 0), 
+        (2, -2), (3,1), (4,-3), (5, -3), 
+        (6,2), (7,-4), (8,-4), (13, -4), 
+        (14, 3), (15, -5), (100, -5)] {
+    var index = $ii.searchSorted($r._0)
+    assert $r._1 == $index: "at ${$r as String}"
+    if $index < 0 {
+        var tmp = $ii.copy()
+        $tmp.insert(-($index + 1), $r._0)
+        assert -($index + 1) == $tmp.searchSorted($r._0) : "at ${$r as String}"
+    }
+}

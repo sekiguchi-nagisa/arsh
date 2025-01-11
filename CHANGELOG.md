@@ -1,5 +1,13 @@
 # Changelog
 
+## [Unreleased]
+
+### Added
+
+#### Builtin
+
+- add ``Array#searchSorted`` method
+
 ## [0.36.1] - 2025-01-10
 
 - simplify license file
