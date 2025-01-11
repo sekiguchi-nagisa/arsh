@@ -10,6 +10,12 @@
 - expose internal three-way comparison api used by ``Array#sort`` method
     - add ``Int#compare``, ``Bool#compare``, ``Signal#compare``, ``String#compare`` methods like ``Float#compare``
 
+### Changed
+
+#### Builtin
+
+- change comparator interface of ``Array#sortBy`` method. now use three-way comparison
+
 ## [0.36.1] - 2025-01-10
 
 - simplify license file

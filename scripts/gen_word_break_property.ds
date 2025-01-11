@@ -29,8 +29,8 @@ typedef Range = (
     String  # property string
 )
 
-function rangeComp($x : Range, $y : Range) : Boolean {
-    return $x._1 < $y._0
+function rangeComp($x : Range, $y : Range) : Int {
+    return $x._1.compare($y._0)
 }
 
 function parse($line : String) : Range {

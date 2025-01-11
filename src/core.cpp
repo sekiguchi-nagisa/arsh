@@ -842,13 +842,13 @@ bool PathLikeChecker::operator()(const StringRef literal) {
   return iter->second;
 }
 
-static bool compare(ARState &state, const Value &x, const Value &y, const Value &compFunc) {
+static int64_t compare(ARState &state, const Value &x, const Value &y, const Value &compFunc) {
   auto ret = VM::callFunction(state, Value(compFunc), makeArgs(x, y));
   if (state.hasError()) {
-    return false;
+    return -100;
   }
-  assert(ret.hasType(TYPE::Bool));
-  return ret.asBool();
+  assert(ret.hasType(TYPE::Int));
+  return ret.asInt();
 }
 
 static bool merge(ARState &state, ArrayObject &arrayObj, Value *buf, const Value &compFunc,
@@ -860,11 +860,11 @@ static bool merge(ARState &state, ArrayObject &arrayObj, Value *buf, const Value
   while (i < mid && j < right) {
     auto &x = arrayObj.getValues()[i];
     auto &y = arrayObj.getValues()[j];
-    bool ret = !compare(state, y, x, compFunc);
+    const int64_t ret = compare(state, x, y, compFunc);
     if (state.hasError()) {
       return false;
     }
-    if (ret) {
+    if (ret <= 0) {
       buf[k++] = x;
       i++;
     } else {

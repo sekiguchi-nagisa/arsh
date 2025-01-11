@@ -32,8 +32,8 @@ typedef Range {
     let property : String   # property string
 }
 
-function compare(o : Range) : Bool for Range {
-    return $this.end < $o.begin
+function compare(o : Range) : Int for Range {
+    return $this.end.compare($o.begin)
 }
 
 function try_merge(o : Range) : Range? for Range {

@@ -116,8 +116,8 @@ assert !$F.empty()
 assert !$T.empty()
 
 ## generate code
-function comp(x: Entry, y: Entry): Bool {
-    return $x.code < $y.code
+function comp(x: Entry, y: Entry): Int {
+    return $x.code.compare($y.code)
 }
 $shortC.sortBy($comp)
 $longC.sortBy($comp)

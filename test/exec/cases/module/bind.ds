@@ -9,7 +9,7 @@ var bindings: [(String,String)]
 for a in $LINE_EDIT.bindings() {
     $bindings.add($a)
 }
-$bindings.sortBy(function(a,b) => $a._0 < $b._0)
+$bindings.sortBy(function(a,b) => $a._0.compare($b._0))
 assert diff <(bind -p) <(for a in $bindings{ echo "\"${a._0}\": ${a._1}"; })
 
 # -q option

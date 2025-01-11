@@ -1835,7 +1835,7 @@ ARSH_METHOD array_sort(RuntimeContext &ctx) {
   RET(LOCAL(0));
 }
 
-//!bind: function sortBy($this : Array<T0>, $comp : Func<Bool, [T0, T0]>) : Array<T0>
+//!bind: function sortBy($this : Array<T0>, $comp : Func<Int, [T0, T0]>) : Array<T0>
 ARSH_METHOD array_sortBy(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_sortBy);
   auto &obj = typeAs<ArrayObject>(LOCAL(0));

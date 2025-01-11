@@ -1,8 +1,8 @@
 #$test($status = 0)
 
-function comp($a : [Int], $b : [Int]) : Bool {
+function comp($a : [Int], $b : [Int]) : Int {
     echo ${[$a, $b].sortBy($comp)}
-    return $true
+    return -1
 }
 
 var a = [[234]]

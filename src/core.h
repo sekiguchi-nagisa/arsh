@@ -255,7 +255,7 @@ public:
  * @param state
  * @param arrayObj
  * @param compFunc
- * must be FuncObject
+ * must be (T,T) -> Int
  * @return
  * if has error, return false
  */

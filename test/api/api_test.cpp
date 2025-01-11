@@ -462,7 +462,7 @@ TEST_F(APITest, status) {
 }
 
 TEST_F(APITest, abort) {
-  std::string src = "function f( $a : String, $b : String) : Int { exit 54; }";
+  std::string src = "function f( $a : String, $b : String) : Bool { exit 54; }";
   auto e = newError();
   int s = ARState_eval(this->state, nullptr, src.c_str(), src.size(), e.get());
   ASSERT_EQ(0, s);
@@ -480,7 +480,7 @@ TEST_F(APITest, abort) {
   ASSERT_EQ(1, s);
   ASSERT_EQ(AR_ERROR_KIND_TYPE_ERROR, e->kind);
 
-  src = R"(function g( $a : String, $b : String) : Boolean { exit 54; })";
+  src = R"(function g( $a : String, $b : String) : Int { exit 54; })";
   e = newError();
   s = ARState_eval(this->state, nullptr, src.c_str(), src.size(), e.get());
   ASSERT_EQ(0, s);

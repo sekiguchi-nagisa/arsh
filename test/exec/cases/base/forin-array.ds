@@ -135,7 +135,7 @@ $ex = 234
 try {
     for a in $array {
         $array.join('+')
-        $array.sortBy(function(a, b) => $a + $RANDOM < $b + $RANDOM)
+        $array.sortBy(function(a, b) => ($a + $RANDOM).compare($b + $RANDOM))
     }
 } catch e { $ex = $e; }
 assert $ex is InvalidOperationError
