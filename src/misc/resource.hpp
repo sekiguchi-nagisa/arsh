@@ -261,7 +261,7 @@ public:
 };
 
 template <typename Func>
-inline auto finally(Func &&func) {
+[[nodiscard]] inline auto finally(Func &&func) {
   return Finally<Func>(std::forward<Func>(func));
 }
 

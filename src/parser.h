@@ -136,7 +136,7 @@ protected:
    */
   Token expectAndChangeMode(TokenKind kind, LexerCond cond, bool fetchNext = true);
 
-  auto inIgnorableNLCtx(bool skip = true) {
+  [[nodiscard]] auto inIgnorableNLCtx(bool skip = true) {
     this->ignorableNewlines.push_back(skip);
     return finally([&] { this->ignorableNewlines.pop_back(); });
   }

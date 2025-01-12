@@ -143,14 +143,14 @@ public:
 
   const ScopeEntry &curScope() const { return *this->scope; }
 
-  auto intoScope(ScopeKind kind, ScopeInterval interval, const Type *type = nullptr) {
+  [[nodiscard]] auto intoScope(ScopeKind kind, ScopeInterval interval, const Type *type = nullptr) {
     this->scope =
         IntrusivePtr<ScopeEntry>::create(this->scope, kind, this->scopeIntervals.size(), type);
     this->scopeIntervals.push_back(interval);
     return finally([&] { this->scope = this->scope->parent; });
   }
 
-  auto intoScope(ScopeKind kind, Token token) {
+  [[nodiscard]] auto intoScope(ScopeKind kind, Token token) {
     return this->intoScope(kind, ScopeInterval::create(token));
   }
 

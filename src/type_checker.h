@@ -213,7 +213,7 @@ public:
    */
   unsigned int childLevel() const { return this->flow.childLevel(); }
 
-  auto intoLoop() {
+  [[nodiscard]] auto intoLoop() {
     this->flow.enterLoop();
     this->breakGathers.emplace_back();
     return finally([&] {
@@ -222,7 +222,7 @@ public:
     });
   }
 
-  auto intoChild() {
+  [[nodiscard]] auto intoChild() {
     this->flow.enterChild();
     return finally([&] { this->flow.leave(); });
   }
@@ -259,9 +259,9 @@ public:
     explicit operator bool() const { return static_cast<bool>(this->flow); }
   };
 
-  IntoTry intoTry() { return IntoTry(this->flow); }
+  [[nodiscard]] IntoTry intoTry() { return IntoTry(this->flow); }
 
-  auto intoFinally() {
+  [[nodiscard]] auto intoFinally() {
     this->flow.enterFinally();
     return finally([&] { this->flow.leave(); });
   }
@@ -508,12 +508,12 @@ private:
     }
   };
 
-  IntoBlock intoBlock() {
+  [[nodiscard]] IntoBlock intoBlock() {
     this->curScope = this->curScope->enterScope(NameScope::BLOCK);
     return IntoBlock(makeObserver(this->curScope));
   }
 
-  auto intoFunc(const Type *returnType, FuncContext::Kind k = FuncContext::FUNC) {
+  [[nodiscard]] auto intoFunc(const Type *returnType, FuncContext::Kind k = FuncContext::FUNC) {
     this->curScope = this->curScope->enterScope(NameScope::FUNC);
     this->curScope = this->curScope->enterScope(NameScope::BLOCK);
     this->funcCtx = std::make_unique<FuncContext>(k, returnType, std::move(this->funcCtx));
