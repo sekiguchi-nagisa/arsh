@@ -77,18 +77,47 @@ assert $aa.join(" ") == '1 4 5 6 8'
 $aa.removeRange(-699)  # 0
 assert $aa.size() == 0
 
-# searchSorted
+# searchSorted / searchSortedBy
 var ii = [1,3,6,14]
 for r in [
         (-199, -1), (0, -1), (1, 0), 
         (2, -2), (3,1), (4,-3), (5, -3), 
         (6,2), (7,-4), (8,-4), (13, -4), 
         (14, 3), (15, -5), (100, -5)] {
-    var index = $ii.searchSorted($r._0)
-    assert $r._1 == $index: "at ${$r as String}"
-    if $index < 0 {
-        var tmp = $ii.copy()
-        $tmp.insert(-($index + 1), $r._0)
-        assert -($index + 1) == $tmp.searchSorted($r._0) : "at ${$r as String}"
+    for(var i = 0; $i < 2; $i++) {
+        var index = $i == 0 ? $ii.searchSorted($r._0) : $ii.searchSortedBy($r._0, function(x,y) => $x.compare($y))
+        assert $r._1 == $index: "at ${$r as String}"
+        if $index < 0 {
+            var tmp = $ii.copy()
+            $tmp.insert(-($index + 1), $r._0)
+            assert -($index + 1) == $tmp.searchSorted($r._0) : "at ${$r as String}, ${$tmp as String}"
+        }
     }
 }
+assert (new [Int]()).searchSorted(1234) == -1
+assert [3,3,3,3].searchSorted(0) == -1
+assert [3].searchSorted(3) == 0
+assert [3,3].searchSorted(3) == 0 # first occurred index
+assert [3,3,3].searchSorted(3) == 0 # first occurred index
+assert [3,3,3,3].searchSorted(3) == 0 # first occurred index
+assert [3,3,3,3,3].searchSorted(3) == 0 # first occurred index
+
+assert (new [Int]()).searchSortedBy(1234, function(x,y)=>$x.compare($y)) == -1
+assert [3,3,3,3].searchSortedBy(0, function(x,y)=>$x.compare($y)) == -1
+assert [3].searchSortedBy(3, function(x,y)=>$x.compare($y)) == 0
+assert [3,3].searchSortedBy(3, function(x,y)=>$x.compare($y)) == 0 # first occurred index
+assert [3,3,3].searchSortedBy(3, function(x,y)=>$x.compare($y)) == 0 # first occurred index
+assert [3,3,3,3].searchSortedBy(3, function(x,y)=>$x.compare($y)) == 0 # first occurred index
+assert [3,3,3,3,3].searchSortedBy(3, function(x,y)=>$x.compare($y)) == 0 # first occurred index
+
+$ex = 23
+try {  $(seq 1 100).searchSortedBy('80', function(x,y) => $x.size()/($x.size()-$y.size())); } catch e { $ex = $e; }
+assert $ex is ArithmeticError
+
+$ex = 23
+try {
+    var aaa = $(seq 1 200);
+    var r = $aaa.searchSortedBy('88', function(x,y) => { $aaa.clear(); $x.compare($y); })
+    assert $r == 100000
+} catch e { $ex = $e; }
+assert ($ex as InvalidOperationError).message() == 'cannot modify array object during searchSortedBy method'

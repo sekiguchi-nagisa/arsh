@@ -6,7 +6,7 @@
 
 #### Builtin
 
-- add ``Array#searchSorted`` method
+- add ``Array#searchSorted``, ``Array#searchSortedBy`` method
 - expose internal three-way comparison api used by ``Array#sort`` method
     - add ``Int#compare``, ``Bool#compare``, ``Signal#compare``, ``String#compare`` methods like ``Float#compare``
 
@@ -14,7 +14,7 @@
 
 #### Builtin
 
-- change comparator interface of ``Array#sortBy`` method. now use three-way comparison
+- **Breaking Change**: change comparator interface of ``Array#sortBy`` method. now use three-way comparison
 
 ## [0.36.1] - 2025-01-10
 

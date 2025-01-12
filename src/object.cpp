@@ -646,6 +646,9 @@ bool ArrayObject::checkIteratorInvalidation(ARState &state, const char *message)
     case LockType::SORT_BY:
       value += " during sortBy method";
       break;
+    case LockType::SEARCH_SORTED_BY:
+      value += " during searchSortedBy method";
+      break;
     case LockType::HISTORY:
       value += " during line editing";
       break;

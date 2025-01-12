@@ -842,15 +842,6 @@ bool PathLikeChecker::operator()(const StringRef literal) {
   return iter->second;
 }
 
-static int64_t compare(ARState &state, const Value &x, const Value &y, const Value &compFunc) {
-  auto ret = VM::callFunction(state, Value(compFunc), makeArgs(x, y));
-  if (state.hasError()) {
-    return -100;
-  }
-  assert(ret.hasType(TYPE::Int));
-  return ret.asInt();
-}
-
 static bool merge(ARState &state, ArrayObject &arrayObj, Value *buf, const Value &compFunc,
                   size_t left, size_t mid, size_t right) {
   size_t i = left;
@@ -860,10 +851,12 @@ static bool merge(ARState &state, ArrayObject &arrayObj, Value *buf, const Value
   while (i < mid && j < right) {
     auto &x = arrayObj.getValues()[i];
     auto &y = arrayObj.getValues()[j];
-    const int64_t ret = compare(state, x, y, compFunc);
+    auto v = VM::callFunction(state, Value(compFunc), makeArgs(x, y));
     if (state.hasError()) {
       return false;
     }
+    assert(v.hasType(TYPE::Int));
+    const int64_t ret = v.asInt();
     if (ret <= 0) {
       buf[k++] = x;
       i++;
@@ -906,6 +899,46 @@ bool mergeSort(ARState &state, ArrayObject &arrayObj, const Value &compFunc) {
   bool r = mergeSortImpl(state, arrayObj, buf.get(), compFunc, 0, arrayObj.size());
   arrayObj.unlock();
   return r;
+}
+
+static int64_t compare(ARState &state, const Value &x, const Value &y, const Value &compFunc) {
+  if (compFunc) {
+    auto v = VM::callFunction(state, Value(compFunc), makeArgs(x, y));
+    if (state.hasError()) {
+      return -static_cast<int64_t>(ArrayObject::MAX_SIZE);
+    }
+    assert(v.hasType(TYPE::Int));
+    return v.asInt();
+  }
+  return x.compare(y);
+}
+
+int64_t searchSorted(ARState &state, const Value &value, ArrayObject &arrayObj,
+                     const Value &compFunc) {
+  arrayObj.lock(ArrayObject::LockType::SEARCH_SORTED_BY);
+  auto cleanup = finally([&arrayObj] { arrayObj.unlock(); });
+
+  int64_t first = 0;
+  for (auto size = static_cast<int64_t>(arrayObj.size()); size;) {
+    const int64_t halfSize = size / 2;
+    const int64_t mid = first + halfSize;
+    auto &midValue = arrayObj.getValues()[mid];
+    const int64_t ret = compare(state, midValue, value, compFunc);
+    if (state.hasError()) {
+      return ret;
+    }
+    if (ret < 0) {
+      size -= halfSize + 1;
+      first = mid + 1;
+    } else {
+      size = halfSize;
+    }
+  }
+  if (first == static_cast<int64_t>(arrayObj.size()) ||
+      compare(state, value, arrayObj.getValues()[first], compFunc) != 0) {
+    return -first - 1;
+  }
+  return first;
 }
 
 int xexecve(const char *filePath, const ArrayObject &argvObj, char *const *envp) {

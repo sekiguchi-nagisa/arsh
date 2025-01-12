@@ -830,6 +830,7 @@ public:
     NONE,
     ITER,
     SORT_BY,
+    SEARCH_SORTED_BY,
     HISTORY,
   };
 

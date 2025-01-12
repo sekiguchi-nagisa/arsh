@@ -262,6 +262,18 @@ public:
 bool mergeSort(ARState &state, ArrayObject &arrayObj, const Value &compFunc);
 
 /**
+ * based on lower_bound
+ * @param state
+ * @param value
+ * @param arrayObj
+ * @param compFunc
+ * may be null
+ * @return
+ */
+int64_t searchSorted(ARState &state, const Value &value, ArrayObject &arrayObj,
+                     const Value &compFunc);
+
+/**
  *
  * @param filePath
  * if null, not execute and set ENOENT.

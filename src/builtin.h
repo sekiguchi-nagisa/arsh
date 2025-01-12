@@ -1851,13 +1851,21 @@ ARSH_METHOD array_sortBy(RuntimeContext &ctx) {
 //!bind: function searchSorted($this: Array<T0>, $value: T0): Int
 ARSH_METHOD array_search(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_search);
-  auto &values = typeAs<ArrayObject>(LOCAL(0)).getValues();
-  auto &v = LOCAL(1);
-  auto iter = std::lower_bound(values.begin(), values.end(), v,
-                               [](const Value &x, const Value &y) { return x.compare(y) < 0; });
-  int64_t retIndex = iter - values.begin();
-  if (iter == values.end() || iter->compare(v) != 0) { // not found
-    retIndex = -retIndex - 1;
+  auto &obj = typeAs<ArrayObject>(LOCAL(0));
+  auto &value = LOCAL(1);
+  const auto retIndex = searchSorted(ctx, value, obj, nullptr);
+  RET(Value::createInt(retIndex));
+}
+
+//!bind: function searchSortedBy($this: Array<T0>, $value: T0, $comp : Func<Int, [T0, T0]>): Int
+ARSH_METHOD array_searchBy(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(array_searchBy);
+  auto &obj = typeAs<ArrayObject>(LOCAL(0));
+  auto &value = LOCAL(1);
+  auto &compFunc = LOCAL(2);
+  const int64_t retIndex = searchSorted(ctx, value, obj, compFunc);
+  if (ctx.hasError()) {
+    RET_ERROR;
   }
   RET(Value::createInt(retIndex));
 }
