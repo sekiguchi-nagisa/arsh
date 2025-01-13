@@ -17,8 +17,6 @@
 #ifndef MISC_LIB_WORD_HPP
 #define MISC_LIB_WORD_HPP
 
-#include <tuple>
-
 #include "string_ref.hpp"
 #include "unicode.hpp"
 
@@ -56,8 +54,6 @@ public:
     ExtendNumLet,
     WSegSpace,
 
-    Extended_Pictographic,
-
     WSegSpace_EFZ,        // for WB3d, WB4
     AHLetter_Mid_NumLetQ, // for WB6, WB7. AHLetter * (MidLetter|MidNumLetQ)
     Hebrew_Letter_DQ,     // for WB7c. Hebrew_Letter * Double_Quote
@@ -65,6 +61,8 @@ public:
   };
 
   static BreakProperty getBreakProperty(int codePoint);
+
+  static bool isExtendedPictographic(int codePoint);
 };
 
 template <bool Bool>
@@ -77,8 +75,10 @@ typename WordBoundary<Bool>::BreakProperty WordBoundary<Bool>::getBreakProperty(
 
 #define UNICODE_PROPERTY_RANGE PropertyInterval
 #define PROPERTY(E) BreakProperty::E
+#define USE_WORD_BREAK_PROPERTY
 #include "word_break_property.in"
 
+#undef USE_WORD_BREAK_PROPERTY
 #undef PROPERTY
 #undef UNICODE_PROPERTY_RANGE
 
@@ -91,6 +91,34 @@ typename WordBoundary<Bool>::BreakProperty WordBoundary<Bool>::getBreakProperty(
     }
   }
   return BreakProperty::Any;
+}
+
+template <bool Bool>
+bool WordBoundary<Bool>::isExtendedPictographic(int codePoint) {
+  enum EmojiProperty : unsigned char {
+    Extended_Pictographic,
+  };
+
+  using PropertyInterval = CodePointPropertyInterval<EmojiProperty>;
+
+#define UNICODE_PROPERTY_RANGE PropertyInterval
+#define PROPERTY(E) EmojiProperty::E
+#define USE_EMOJI_PROPERTY
+#include "word_break_property.in"
+
+#undef USE_EMOJI_PROPERTY
+#undef PROPERTY
+#undef UNICODE_PROPERTY_RANGE
+
+  auto iter = std::lower_bound(std::begin(emoji_property_table), std::end(emoji_property_table),
+                               codePoint, typename PropertyInterval::Comp());
+  if (iter != std::end(emoji_property_table)) {
+    if (auto &interval = *iter; interval.contains(codePoint) &&
+                                interval.property() == EmojiProperty::Extended_Pictographic) {
+      return true;
+    }
+  }
+  return false;
 }
 
 } // namespace detail
@@ -153,13 +181,14 @@ bool WordScanner<Stream>::scanBoundary() {
   if (!this->stream) {
     return true;
   }
-  const auto after = this->nextProperty();
+  const int codePoint = this->stream.nextCodePoint();
+  const auto after = WordBoundary::getBreakProperty(codePoint);
   const auto before = this->state;
   this->state = after;
   const bool prevZWJ = this->zwj;
   this->zwj = after == WordBoundary::BreakProperty::ZWJ;
 
-  if (prevZWJ && after == WordBoundary::BreakProperty::Extended_Pictographic) {
+  if (prevZWJ && WordBoundary::isExtendedPictographic(codePoint)) {
     return false; // WB3c
   }
 

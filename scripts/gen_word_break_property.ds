@@ -48,7 +48,19 @@ function parse($line : String) : Range {
     )
 }
 
+function validate($ranges : [Range]) {
+    var prev : Range?
+    for r in $ranges {
+        if $prev {
+            assert $prev!._0 < $r._0: "prev:${$prev!}, cur:${$r}"
+            assert $prev!._1 < $r._1: "prev:${$prev!}, cur:${$r}"
+        }
+        $prev = $r
+    }
+}
+
 function minimize($ranges : [Range]) : [Range] {
+    $validate($ranges)
     var ret : [Range]
     for $r in $ranges {
         if $ret.empty() {
@@ -64,6 +76,7 @@ function minimize($ranges : [Range]) : [Range] {
         }
         $ret.add($r)
     }
+    $validate($ret)
     return $ret
 }
 
@@ -89,7 +102,11 @@ cat ./WordBreakProperty.txt | for(var count = 0; read -f $'\n'; $count++) {
     echo $REPLY
 } with > ./trimed_WordBreakProperty.txt
 
+$ranges.sortBy($rangeComp)
+$ranges = $minimize($ranges)
+
 # emoji-data.txt
+var ranges2: [Range]
 cat ./emoji-data.txt | for(var count = 0; read -f $'\n'; $count++) {
     if $count < 2 {
         echo $REPLY >> $out
@@ -99,18 +116,20 @@ cat ./emoji-data.txt | for(var count = 0; read -f $'\n'; $count++) {
     if $REPLY.startsWith('#') || $REPLY.empty() || $REPLY.indexOf("Extended_Pictographic") == -1 {
         continue
     }
-    try { $ranges.add($parse($REPLY)); } catch $e : Error { $e.show(); echo 1>&2 $count $REPLY; }
+    try { $ranges2.add($parse($REPLY)); } catch $e : Error { $e.show(); echo 1>&2 $count $REPLY; }
     echo $REPLY
 } with > ./trimed_emoji-data.txt
 
-$ranges.sortBy($rangeComp)
-$ranges = $minimize($ranges)
+$ranges2.sortBy($rangeComp)
+$ranges2 = $minimize($ranges2)
 
 # final output
 {
     echo "*/"
     echo
     echo // clang-format off
+    echo "#ifdef USE_WORD_BREAK_PROPERTY"
+    echo
     echo "static constexpr UNICODE_PROPERTY_RANGE word_break_property_table[] = {"
 } with >> $out
 
@@ -118,4 +137,26 @@ for $r in $ranges {
     echo "    { ${$r._2}, ${$r._3}, PROPERTY(${$r._4}) },"
 } with >> $out
 
-echo -e "};" >> $out
+{
+    echo -e "};"
+    echo
+    echo "#endif"
+} with >> $out
+
+
+{
+    echo
+    echo "#ifdef USE_EMOJI_PROPERTY"
+    echo
+    echo "static constexpr UNICODE_PROPERTY_RANGE emoji_property_table[] = {"
+} with >> $out
+
+for $r in $ranges2 {
+    echo "    { ${$r._2}, ${$r._3} },"
+} with >> $out
+
+{
+echo -e "};"
+echo
+echo "#endif"
+} with >> $out

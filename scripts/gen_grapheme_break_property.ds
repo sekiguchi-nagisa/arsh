@@ -84,7 +84,19 @@ function parse_incb($line : String) : Range {
     return $ret
 }
 
+function validate(ranges: [Range]) {
+    var prev : Range?
+    for r in $ranges {
+        if $prev {
+            assert $prev!.begin < $r.begin
+            assert $prev!.end < $r.end
+        }
+        $prev = $r
+    }
+}
+
 function minimize($ranges : [Range]) : [Range] {
+    $validate($ranges)
     var ret : [Range]
     for $r in $ranges {
         if $ret.empty() {
@@ -98,6 +110,7 @@ function minimize($ranges : [Range]) : [Range] {
         }
         $ret.add($r)
     }
+    $validate($ranges)
     return $ret
 }
 

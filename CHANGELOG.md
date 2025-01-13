@@ -16,6 +16,10 @@
 
 - **Breaking Change**: change comparator interface of ``Array#sortBy`` method. now use three-way comparison
 
+### Fixed
+
+- bugfix ExtendedPictographic handling of Unicode word segmentation
+
 ## [0.36.1] - 2025-01-10
 
 - simplify license file
