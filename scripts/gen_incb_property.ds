@@ -88,7 +88,7 @@ function minimize($ranges : [Range]) : [Range] {
         }
         $ret.add($r)
     }
-    $validate($ranges)
+    $validate($ret)
     return $ret
 }
 

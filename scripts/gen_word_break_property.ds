@@ -152,7 +152,7 @@ for $r in $ranges {
 } with >> $out
 
 for $r in $ranges2 {
-    echo "    { ${$r._2}, ${$r._3} },"
+    echo "    { ${$r._2}, ${$r._3}, PROPERTY(${$r._4}) },"
 } with >> $out
 
 {
