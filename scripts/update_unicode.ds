@@ -2,6 +2,8 @@
 
 var src = "$SCRIPT_DIR/../src".realpath()
 
+mkdir unicode-temp && cd unicode-temp
+
 echo try update $src/misc/unicode_version.in
 call $BIN_NAME $SCRIPT_DIR/gen_unicode_version.ds $src/misc/unicode_version.in
 
