@@ -128,7 +128,6 @@ DEFINE_TCError(Constant, "must be constant expression");
 DEFINE_TCError(NegativeIntMin, "negative value of INT64_MIN is not allowed");
 DEFINE_TCError(DupPattern, "duplicated pattern");
 DEFINE_TCError(NeedPattern, "case expression requires at least one pattern");
-DEFINE_TCError(NeedDefault, "case expression requires default pattern `else => <expr>'");
 DEFINE_TCError(DefinedSymbol, "already defined symbol: `%s'");
 DEFINE_TCError(DefinedTypeAlias, "already defined type: `%s'");
 DEFINE_TCError(DefinedMethod, "already defined method: `%s' for `%s' type");

@@ -12,6 +12,10 @@
 
 ### Changed
 
+#### Core
+
+- ``else`` pattern in case expression is no longer needed if ``Void`` type expression
+
 #### Builtin
 
 - **Breaking Change**: change comparator interface of ``Array#sortBy`` method. now use three-way comparison

@@ -1525,6 +1525,9 @@ void TypeChecker::visitCaseNode(CaseNode &node) {
   for (unsigned int i = 0; i < size; i++) {
     types[i] = &this->checkTypeExactly(*node.getArmNodes()[i]);
   }
+  if (!collector.hasElsePattern()) { // if no else pattern, always void type
+    types.push_back(&this->typePool().get(TYPE::Void));
+  }
   auto &type =
       this->resolveCommonSuperType(node, std::move(types), &this->typePool().get(TYPE::Void));
 
@@ -1533,10 +1536,7 @@ void TypeChecker::visitCaseNode(CaseNode &node) {
     this->checkTypeWithCoercion(type, armNode->refActionNode());
     armNode->setType(type);
   }
-
-  if (!type.isVoidType() && !collector.hasElsePattern()) {
-    this->reportError<NeedDefault>(node);
-  }
+  assert(collector.hasElsePattern() || type.isVoidType());
   node.setType(type);
 }
 
