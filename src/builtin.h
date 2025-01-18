@@ -2811,7 +2811,7 @@ ARSH_METHOD candidates_space(RuntimeContext &ctx) {
   const size_t size = wrapper.size();
   const auto index = LOCAL(1).asInt();
   const auto value = TRY(resolveIndex(ctx, index, size));
-  RET_BOOL(wrapper.getAttrAt(value.index).needSpace);
+  RET_BOOL(wrapper.getAttrAt(value.index).suffix == CandidateAttr::Suffix::SPACE);
 }
 
 //!bind: function add($this : Candidates, $can : String, $desc : Option<String>, $space : Option<Int>) : Candidates

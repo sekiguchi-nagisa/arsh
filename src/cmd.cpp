@@ -496,7 +496,7 @@ static int builtin_complete(ARState &state, ArrayObject &argvObj) {
     for (unsigned int i = 0; i < size; i++) {
       out.clear();
       out += wrapper.getCandidateAt(i);
-      if (insertSpace && wrapper.getAttrAt(i).needSpace) {
+      if (insertSpace && wrapper.getAttrAt(i).suffix == CandidateAttr::Suffix::SPACE) {
         out += ' ';
       }
       errNum = writeLine(out, stdout, false);

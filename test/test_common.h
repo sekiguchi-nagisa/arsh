@@ -160,7 +160,8 @@ public:
     this->invokeImpl(values, sleepTimeMSec);
   }
 
-  void invokeImpl(const std::vector<std::string> &args, int sleepMSec = 200, bool mergeErrToOut = false);
+  void invokeImpl(const std::vector<std::string> &args, int sleepMSec = 200,
+                  bool mergeErrToOut = false);
 
   void addEnv(const char *name, const char *value) { this->envMap.emplace(name, value); }
 
@@ -174,7 +175,7 @@ public:
     return this->handle.readAll(this->timeoutMSec);
   }
 
-  auto withTimeout(int msec) {
+  [[nodiscard]] auto withTimeout(int msec) {
     auto old = this->timeoutMSec;
     this->timeoutMSec = msec;
     return arsh::finally([&, old] { this->timeoutMSec = old; });
@@ -298,7 +299,7 @@ private:
   void resetScreen();
 
 protected:
-  auto reuseScreen() {
+  [[nodiscard]] auto reuseScreen() {
     this->resetBeforeRead = false;
     return arsh::finally([&] { this->resetBeforeRead = true; });
   }

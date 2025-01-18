@@ -439,7 +439,15 @@ public:
 
       const std::string typeSig = candidate.formatTypeSignature(this->state.typePool);
       if (!typeSig.empty()) {
-        const CandidateAttr attr{CandidateAttr::Kind::TYPE_SIGNATURE, needSpace};
+        auto suffix = CandidateAttr::Suffix::NONE;
+        if (needSpace) {
+          suffix = CandidateAttr::Suffix::SPACE;
+        } else if (candidate.kind == CompCandidateKind::METHOD ||
+                   candidate.kind == CompCandidateKind::UNINIT_METHOD) {
+          suffix = StringRef(typeSig).startsWith("()") ? CandidateAttr::Suffix::PAREN_PAIR
+                                                       : CandidateAttr::Suffix::PAREN;
+        }
+        const CandidateAttr attr{CandidateAttr::Kind::TYPE_SIGNATURE, suffix};
         this->overflow =
             !this->reply.addNewCandidateWith(this->state, candidate.value, typeSig, attr);
         return;

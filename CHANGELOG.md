@@ -15,6 +15,7 @@
 #### Builtin
 
 - **Breaking Change**: change comparator interface of ``Array#sortBy`` method. now use three-way comparison
+- automatically insert ``(``, ``()`` after completing method name
 
 ### Fixed
 

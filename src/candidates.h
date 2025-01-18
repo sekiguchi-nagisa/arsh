@@ -76,7 +76,17 @@ struct CandidateAttr {
     NONE,
   } kind;
 
-  bool needSpace;
+  enum class Suffix : unsigned char {
+    NONE,       // do nothing
+    SPACE,      // insert space
+    PAREN,      // insert parenthesis `(`
+    PAREN_PAIR, // insert parenthesis pair `()`
+  } suffix;
+
+  CandidateAttr(Kind k, bool needSpace)
+      : kind(k), suffix(needSpace ? Suffix::SPACE : Suffix::NONE) {}
+
+  CandidateAttr(Kind k, Suffix s) : kind(k), suffix(s) {}
 };
 
 class CandidatesWrapper {

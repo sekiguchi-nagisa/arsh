@@ -624,6 +624,43 @@ TEST_F(InteractiveTest, lineEditorComp4) {
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
 }
 
+// test suffix insertion of `(`, `()`
+TEST_F(InteractiveTest, lineEditorCompSuffix) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
+      "$LINE_EDIT.setCompletion(function(m, s) => { complete -m $m -q -s -d -- $s; $COMPREPLY;})"));
+  ASSERT_NO_FATAL_FAILURE(this->changePrompt("> "));
+
+  this->send("1234.\t");
+  ASSERT_NO_FATAL_FAILURE(this->expect("> 1234.\n"
+                                       "abs (): Int for Int                 "
+                                       "compare (target: Int): Int for Int  "
+                                       "toFloat (): Float for Int           \n"));
+
+  {
+    auto cleanup = this->reuseScreen();
+    this->send("\t");
+    ASSERT_NO_FATAL_FAILURE(this->expect("> 1234.abs()\n"
+                                         "abs (): Int for Int                 "
+                                         "compare (target: Int): Int for Int  "
+                                         "toFloat (): Float for Int           \n"));
+
+    this->send("\t");
+    ASSERT_NO_FATAL_FAILURE(this->expect("> 1234.compare(\n"
+                                         "abs (): Int for Int                 "
+                                         "compare (target: Int): Int for Int  "
+                                         "toFloat (): Float for Int           \n"));
+
+    this->send(CTRL_C);
+    ASSERT_NO_FATAL_FAILURE(this->expect("> 1234.compare(\n> "));
+  }
+
+  this->send(CTRL_D);
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
+}
+
 TEST_F(InteractiveTest, lineEditorCompError) {
   this->invoke("--quiet", "--norc");
 

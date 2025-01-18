@@ -998,10 +998,27 @@ ssize_t LineEditorObject::readline(ARState &state, StringRef prompt, char *buf, 
   return this->editLine(state, ctx);
 }
 
-static bool insertCandidate(LineBuffer &buf, const StringRef inserting, const bool suffixSpace) {
+static bool insertCandidate(LineBuffer &buf, const StringRef inserting,
+                            const CandidateAttr::Suffix suffix) {
   bool s = buf.insertToCursor(inserting, true);
-  if (s && suffixSpace) {
-    s = buf.insertToCursor(" ", true);
+  if (s) {
+    StringRef suffixChar;
+    switch (suffix) {
+    case CandidateAttr::Suffix::NONE:
+      break;
+    case CandidateAttr::Suffix::SPACE:
+      suffixChar = " ";
+      break;
+    case CandidateAttr::Suffix::PAREN:
+      suffixChar = "(";
+      break;
+    case CandidateAttr::Suffix::PAREN_PAIR:
+      suffixChar = "()";
+      break;
+    }
+    if (!suffixChar.empty()) {
+      s = buf.insertToCursor(suffixChar, true);
+    }
   }
   buf.commitLastChange();
   return s;
@@ -1023,8 +1040,8 @@ EditActionStatus LineEditorObject::completeLine(ARState &state, RenderingContext
   ctx.buf.commitLastChange();
   const size_t offset = ctx.buf.resolveInsertingSuffix(inserting, candidates.size() == 1);
   if (const auto size = candidates.size(); size > 0) {
-    const bool needSpace = size == 1 && candidates.getAttrAt(0).needSpace;
-    if (insertCandidate(ctx.buf, inserting, needSpace)) {
+    const auto suffix = size == 1 ? candidates.getAttrAt(0).suffix : CandidateAttr::Suffix::NONE;
+    if (insertCandidate(ctx.buf, inserting, suffix)) {
       this->refreshLine(state, ctx);
     } else {
       return EditActionStatus::ERROR;
@@ -1082,11 +1099,11 @@ FIRST_DRAW:
       ctx.buf.undo();
     }
     const auto can = pager.getCurCandidate();
-    const bool needSpace = pager.getCurCandidateAttr().needSpace;
+    const auto suffix = pager.getCurCandidateAttr().suffix;
     assert(offset <= ctx.buf.getCursor());
     size_t prefixLen = ctx.buf.getCursor() - offset;
     size_t prevCanLen = can.size() - prefixLen;
-    if (insertCandidate(ctx.buf, {can.data() + prefixLen, prevCanLen}, needSpace)) {
+    if (insertCandidate(ctx.buf, {can.data() + prefixLen, prevCanLen}, suffix)) {
       this->refreshLine(state, ctx, true, makeObserver(pager));
     } else {
       status = EditActionStatus::ERROR;
