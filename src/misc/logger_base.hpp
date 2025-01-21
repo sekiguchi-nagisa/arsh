@@ -29,10 +29,10 @@
 
 BEGIN_MISC_LIB_NAMESPACE_DECL
 
-enum class LogLevel : unsigned int { DEBUG, INFO, WARNING, ERROR, FATAL, NONE };
+enum class LogLevel : unsigned char { DEBUG, INFO, WARNING, ERROR, FATAL, NONE };
 
 inline const char *toString(LogLevel level) {
-  const char *str[] = {"debug", "info", "warning", "error", "fatal", "none"};
+  constexpr const char *str[] = {"debug", "info", "warning", "error", "fatal", "none"};
   return str[static_cast<unsigned int>(level)];
 }
 
@@ -115,7 +115,7 @@ void LoggerBase<T>::log(LogLevel level, const char *fmt, va_list list) {
 
   const auto now = timestampToTimespec(getCurrentTimestamp());
   tzset();
-  struct tm local {};
+  struct tm local{};
   if (localtime_r(&now.tv_sec, &local)) {
     char buf[32];
     strftime(buf, std::size(buf), "%F %T", &local);

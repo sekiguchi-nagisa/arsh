@@ -137,7 +137,7 @@ ssize_t LSPTransport::recvSize() {
       break;
     }
     if (isContentLength(header)) {
-      LOG(LogLevel::INFO, "%s", header.c_str());
+      LOG(LogLevel::DEBUG, "%s", header.c_str());
       if (size > 0) {
         LOG(LogLevel::WARNING, "previous read message length: %d", size);
       }
