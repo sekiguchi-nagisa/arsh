@@ -123,7 +123,7 @@ struct TransportTest : public ::testing::Test {
   TransportTest()
       : transport(this->logger, dupFD(fileno(createFilePtr(tmpfile).get())),
                   dupFD(fileno(createFilePtr(tmpfile).get()))) {
-    this->logger.setSeverity(LogLevel::INFO);
+    this->logger.setSeverity(LogLevel::DEBUG);
     this->logger.setAppender(createFilePtr(tmpfile));
   }
 

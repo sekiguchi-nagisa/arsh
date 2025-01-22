@@ -881,7 +881,6 @@ LSPServer::signatureHelp(const SignatureHelpParams &params) {
   LOG(LogLevel::INFO, "signature help at: %s:%s", params.textDocument.uri.c_str(),
       params.position.toString().c_str());
   if (auto resolved = this->resolvePosition(params)) {
-
     auto &src = resolved.asOk().first;
     auto pos = resolved.asOk().second.pos;
     auto [copiedSrcMan, copiedArchives] = this->snapshot();
