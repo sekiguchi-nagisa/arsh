@@ -8,7 +8,8 @@
 
 - add ``Array#searchSorted``, ``Array#searchSortedBy`` method
 - expose internal three-way comparison api used by ``Array#sort`` method
-    - add ``Int#compare``, ``Bool#compare``, ``Signal#compare``, ``String#compare`` methods like ``Float#compare``
+    - add ``Int#compare``, ``Bool#compare``, ``Signal#compare``, ``String#compare`` methods like
+      ``Float#compare``
 
 ### Changed
 
@@ -18,7 +19,10 @@
 
 #### Builtin
 
-- **Breaking Change**: change comparator interface of ``Array#sortBy`` method. now use three-way comparison
+- **Breaking Change**: change comparator interface of ``Array#sortBy`` method. now use three-way
+  comparison
+- **Breaking Change**: change parameter name of some builtin methods
+    - ``String#slice``, ``Job#kill``, ``Array#addAll``, ``Map#addAll``
 - automatically insert ``(``, ``()`` after completing method name
 
 #### LSP
@@ -44,12 +48,14 @@
 - overhaul exception handling
     - add ``AssertionFailed``, ``ShellExit`` type
         - unlike ``Error`` type, not catch these type objects
-    - add ``Throwable`` type for common base type of ``Error``, ``AssertionFailed`` and ``ShellExit``
+    - add ``Throwable`` type for common base type of ``Error``, ``AssertionFailed`` and
+      ``ShellExit``
         - now only throw ``Throwable`` type or its derived instance
         - not allow instantiation of ``Throwable`` type
     - add builtin ``THROWN`` variable for indicating currently thrown object
 - now get underlying job object of process substitution
-    - add ``ProcSubst`` type for indicating process substitution (``ProcSubst`` is derived type of ``FD``)
+    - add ``ProcSubst`` type for indicating process substitution (``ProcSubst`` is derived type of
+      ``FD``)
     - get underlying job object via ``ProcSubst#job`` method
 
 #### Builtin
@@ -75,12 +81,14 @@
 #### Core
 
 - **Breaking Change**: overhaul ``TERM_HOOK`` invocation
-    - change ``TERM_HOOK`` interface, now do not pass extra information (exit status, termination kind)
+    - change ``TERM_HOOK`` interface, now do not pass extra information (exit status, termination
+      kind)
     - also remove ``ON_ASSERT``, ``ON_ERR``, ``ON_EXIT`` constants
     - now allow signal handler invocation
 - **Breaking Change**: now not ignore exceptions from finally/defer block even if currently thrown
     - maintain these exceptions and get theme via ``Throwable#suppressed`` method
-- **Breaking Change**: output redirection to existing non-regular file is no longer error if ``clobber`` option is unset
+- **Breaking Change**: output redirection to existing non-regular file is no longer error if
+  ``clobber`` option is unset
     - like bash/zsh
 - send ``SIGHUP`` to manged jobs before process termination (even if subshell)
 
@@ -90,24 +98,29 @@
 - **Breaking Change**: rename ``Array#sortWith`` method with ``Array#sortBy``
 - now interrupt ``LineEditor#readLine`` method when receive signals
     - also call signal handler
-- natively complete builtin `shctl` command sub-commands/options. now no longer need completion script
+- natively complete builtin `shctl` command sub-commands/options. now no longer need completion
+  script
 - improve job-spec parsing
     - support ``%%``, ``%+``, ``%-`` format
     - drop support ``N`` format due to posix compatibility
-- improve backslash escape handling of builtin complete command. now correctly escape completion candidates
+- improve backslash escape handling of builtin complete command. now correctly escape completion
+  candidates
 
 #### LSP
 
 - **Breaking Change**: change command/command-argument completion option handling
     - remove ``arshd.commandCompletion``, ``arshd.commandArgumentCompletion`` options
-    - now always enable command/command-argument completions except for filename (also external command)
+    - now always enable command/command-argument completions except for filename (also external
+      command)
     - add ``arshd.fileNameCompletion`` option for control filename completion
 
 #### Module
 
-- **Breaking Change**: in ``atexit.arsh`` module, change interface of ``atexit`` function corresponding to ``TERM_HOOK``
+- **Breaking Change**: in ``atexit.arsh`` module, change interface of ``atexit`` function
+  corresponding to ``TERM_HOOK``
 - in ``repl.arsh`` module, set ``SIG_EXIT`` handler to ``SIGHUP`` for logout
-- change termination handler invocation order of ``atexit`` function. now reverse order of registration
+- change termination handler invocation order of ``atexit`` function. now reverse order of
+  registration
 
 ### Fixed
 
@@ -164,13 +177,15 @@
 - remove file path cache entry if command execution failed regardless of errno
     - also remove entry if builtin exec command failed
 - support Unicode 16.0
-- change string representation of Float value. now generate correctly rounded, shortest length string
+- change string representation of Float value. now generate correctly rounded, shortest length
+  string
     - now satisfy the following assertion
       ```
       var d = 0.1+0.2
       assert "$d".toFloat()! == $d
       ```
-- add ``help`` attribute param to ``Arg`` attribute. now specify detail message of positional argument
+- add ``help`` attribute param to ``Arg`` attribute. now specify detail message of positional
+  argument
 - change string representation of function/command. now generate uniq name (include module id)
 - fix assertion error message of function/command equality check (``==``)
 - improve assertion error message of ``is`` expression. now show expr type and target type
@@ -186,7 +201,8 @@
     - support ``-d`` option for specifying input delimiter
     - fix backslash escape handling. now skip newline
     - support ``-n``, ``-N`` options like bash
-- **Breaking Change**: raise ``SystemError`` when call ``Job#kill`` method to terminated/uncontrolled job
+- **Breaking Change**: raise ``SystemError`` when call ``Job#kill`` method to
+  terminated/uncontrolled job
 - improve error checking of builtin ``kill`` command when send signal to uncontrolled job
 - add ``once`` param to ``String#replace`` and ``Regex#replace`` methods
     - now only replace first occurrence of pattern
@@ -201,7 +217,8 @@
 - improve ``textDocument/semanticTokens``
     - add ``commandArgument`` semantic token type for better semantic highlight of command argument
 - support named arguments
-    - support ``textDocument/definition``, ``textDocument/references``, ``textDocument/hover``, ``textDpcument/rename``
+    - support ``textDocument/definition``, ``textDocument/references``, ``textDocument/hover``,
+      ``textDpcument/rename``
 
 #### API
 
@@ -210,7 +227,8 @@
 #### Misc
 
 - **Breaking Change**: change ``-i`` option behavior like bash
-    - always run interactive mode (rcfile load, job control, is-interactive), but execute specified input
+    - always run interactive mode (rcfile load, job control, is-interactive), but execute specified
+      input
     - now ``-i -c <string>`` execute ``<string>`` with rcfile loading
         - ``-ci <string>`` notation is not supported since `-c` option recognize `i` as an argument
     - after rcfile loading, continue read-and-eval even if error (also exit, assertion failure)
@@ -249,14 +267,17 @@
 
 #### Core
 
-- **Breaking Change**: in process substitution, internal job object no longer maintain created ``FD`` object
+- **Breaking Change**: in process substitution, internal job object no longer maintain created
+  ``FD`` object
 - **Breaking Change**: change last-pipe semantics
-    - correctly check pipeline exit status and throw ``ExecError`` when ``errraise`` option is enabled
+    - correctly check pipeline exit status and throw ``ExecError`` when ``errraise`` option is
+      enabled
     - ``break``, ``continue``, ``return`` expressions are no longer allowed in pipeline
 - **Breaking Change**: ``default`` param of ``Option`` attribute now accept null characters
 - improve assertion error message of binary ``==`` and ``=~`` expression
     - now show left hand-side, right hand-side expression value
-- improve internal error checking of ``dup2``, ``pipe`` system call, now propagate these errors as ``SystemError``
+- improve internal error checking of ``dup2``, ``pipe`` system call, now propagate these errors as
+  ``SystemError``
 - correctly report method lookup error of module private method
 
 #### Builtin
@@ -266,12 +287,15 @@
     - ``raise`` -> ``kill``
 - **Breaking Change**: no longer update ``PPID`` in subshell for posix compatibility.
     - now ``PPID`` always indicates same value
-- **Breaking Change**: builtin ``exec`` command now throw ``SystemError`` if command execution failed
+- **Breaking Change**: builtin ``exec`` command now throw ``SystemError`` if command execution
+  failed
     - now do not exit shell itself
-- **Breaking Change**: not allow recursive ``LineEditor#readLine`` method call even if other instance
+- **Breaking Change**: not allow recursive ``LineEditor#readLine`` method call even if other
+  instance
     - due to prevent potential stack overflow
     - now throw ``InvalidOperationError``
-- ``complete`` command correctly recognize module (put ``module`` description instead of ``user-defined``)
+- ``complete`` command correctly recognize module (put ``module`` description instead of
+  ``user-defined``)
 - complete flags/options/sub-commands defined via ``Flag``, ``Option``, ``SubCmd`` attribute
 - builtin ``kill`` command support ``-L`` (equivalent to ``-l`` option)
 - after call builtin ``exec``, decrement ``SHLVL``
@@ -378,7 +402,8 @@
       let old = $?
       defer { $? = $old; }
       ```
-- **Breaking Change**: not reset exit status before call user-defined command due to posix shell compatibility
+- **Breaking Change**: not reset exit status before call user-defined command due to posix shell
+  compatibility
 - **Breaking Change**: not allow ``/`` character in user-defined command name
 - **Breaking Change**: change cli error message. now print command name
 - **Breaking Change**: now max input size is 1GB
@@ -396,8 +421,10 @@
     - ``<>``: open file descriptor with read-write mode
     - ``<& -``, ``>& -``: close file descriptor
 - truncate large error message of internal error (up to 65535 byte)
-- rename ``GlobbingError`` with ``GlobError`` (``GlobbingError`` is defined as type-alias for compatibility)
-- rename ``UnwrappingError`` with ``UnwrapError`` (``UnwrappingError`` is defined as type-alias for compatibility)
+- rename ``GlobbingError`` with ``GlobError`` (``GlobbingError`` is defined as type-alias for
+  compatibility)
+- rename ``UnwrappingError`` with ``UnwrapError`` (``UnwrappingError`` is defined as type-alias for
+  compatibility)
 
 #### Builtin
 
@@ -409,7 +436,8 @@
     - not insert suffix space to candidates (but print space)
     - print space even if multiple candidates
 - **Breaking Change**: builtin ``exec`` command ``-a`` option now does not allow null characters
-- **Breaking Change**: newly created ``FD`` objects always have close-on-exec flag due to prevent fd leak
+- **Breaking Change**: newly created ``FD`` objects always have close-on-exec flag due to prevent fd
+  leak
     - except for ``STDIN``, ``STDOUT``, ``STDERR``
     - ``FD#dup`` method always set close-on-exec flag
     - when change close-on-exec flag, call ``FD#cloexec`` method
@@ -441,7 +469,8 @@
         - load compat script for old api
     - not insert space after ``--long=`` option
     - fix ``--long=`` style long option completion
-- in ``fzf`` module, set ``RUNEWIDTH_EASTASIAN`` environmental variable for supporting fzf 0.46.0 or later
+- in ``fzf`` module, set ``RUNEWIDTH_EASTASIAN`` environmental variable for supporting fzf 0.46.0 or
+  later
 
 ### Fixed
 
@@ -521,7 +550,8 @@
     - now ``${345 }``, ``${3.14}`` notations are syntax error
 - **Breaking Change**: change to-string of collection having invalid value
     - now emit ``(invalid)`` instead of throwing ``UnwrappingError``
-- **Breaking Change**: not overwrite the following environmental variables at startup time for compatibility with other
+- **Breaking Change**: not overwrite the following environmental variables at startup time for
+  compatibility with other
   shells
     - ``HOME``, ``LOGNAME``, ``USER``
     - some command manually set theme and affect own child process behavior (ex. sudo)
@@ -627,8 +657,10 @@
 - add ``CLI`` type and related methods
     - ``name``: get command name of ``CLI`` instance
     - ``setName``: set command name
-    - ``parse``: parse command line argument and store result. if reach parse error, raise ``CLIError``
-    - ``parseOrExit``: parse command line argument and store result. if reach parse error, exit shell
+    - ``parse``: parse command line argument and store result. if reach parse error, raise
+      ``CLIError``
+    - ``parseOrExit``: parse command line argument and store result. if reach parse error, exit
+      shell
     - ``usage``: get usage message
 - add ``ArgumentError`` for unacceptable argument
 - add ``String#basename``, ``String#dirname`` methods
@@ -647,14 +679,16 @@
 
 - **Breaking Change**: change disowned background job semantics
     - now do not redirect stdin to /dev/null if job control is enabled
-- **Breaking Change**: restrict the number of traversed directories in glob expansion of source statement
+- **Breaking Change**: restrict the number of traversed directories in glob expansion of source
+  statement
     - glob cancellation is no longer needed
 - **Breaking Change**: change module directory structure
     - ``MODULE_HOME`` indicates ``XDG_DATA_HOME/modules``
     - ``MODULE_DIR`` indicates ``DATA_DIR/modules``
     - completion script directory indicates ``DATA_DIR/completions``
 - **Breaking Change**: not allow override of generic base type in global scope
-- **Breaking Change**: when call fullname command, ``$0`` indicate actual command name (not contain null characters)
+- **Breaking Change**: when call fullname command, ``$0`` indicate actual command name (not contain
+  null characters)
 - **Breaking Change**: when pass FD object to argument array (``@( )``), throw ``ArgumentError``
 - **Breaking Change**: not allow ``Nothing?`` expression in case pattern
 - improve error message of type lookup errors
@@ -780,7 +814,8 @@
 - **Breaking Change**: do not allow ``FD`` type expression in ``@( )``
 - adjust error message layout and colors
 - improve semantic error messages
-    - show ``did you mean ?`` suggestions for undefined variable, undefined field/method, undefined type
+    - show ``did you mean ?`` suggestions for undefined variable, undefined field/method, undefined
+      type
     - catch type
     - Option type within string interpolation / parameter expansion
     - unwrap op
@@ -795,11 +830,14 @@
 
 #### Builtin
 
-- **Breaking Change**: change ``OSTYPE`` definition, now ``OSTYPE`` is not equivalent to uname result
+- **Breaking Change**: change ``OSTYPE`` definition, now ``OSTYPE`` is not equivalent to uname
+  result
     - ``linux``, ``darwin``, ``cygwin``, ``emscripten``
 - **Breaking Change**: change return value of ``Map#remove`` method, now returns removed value
-- **Breaking Change**: in user-defined completer, escape prefix tilde of last arguments if no tilde expansion
-- ``LineEditor#readLine`` method shows row numbers in completion pager if actual rows are larger than rendered rows
+- **Breaking Change**: in user-defined completer, escape prefix tilde of last arguments if no tilde
+  expansion
+- ``LineEditor#readLine`` method shows row numbers in completion pager if actual rows are larger
+  than rendered rows
 - check read string length in builtin ``read`` command
 - check iterator invalidation of ``reply`` variable within some builtin commands
     - ``printf``, ``read``, ``shctl info``
@@ -898,7 +936,8 @@
 
 #### Core
 
-- **Breaking Change**: in interactive mode or ``-c`` mode without shell-name, toplevel ``$0`` indicates ``argv[0]``
+- **Breaking Change**: in interactive mode or ``-c`` mode without shell-name, toplevel ``$0``
+  indicates ``argv[0]``
 - **Breaking Change**: unbalanced brace expansions are semantic error
 - **Breaking Change**: change some token format errors with semantic errors
 - **Breaking Change**: overhaul runtime/compile-time tilde expansion
@@ -921,7 +960,8 @@
 - **Breaking Change**: rename builtin ``eval`` command with ``call``
     - ``eval`` is still builtin command for future usage
 - **Breaking Change**: invalid utf8 bytes are always grapheme/word boundary
-- **Breaking Change**: in finally/defer block, do not ignore exceptions that can be caught within finally/defer block
+- **Breaking Change**: in finally/defer block, do not ignore exceptions that can be caught within
+  finally/defer block
 - show stack trace of ignored exceptions within finally/defer block
 - improve some semantic error messages
 - allow ``Nothing?`` type
@@ -929,7 +969,8 @@
 
 #### Builtin
 
-- **Breaking Change**: change default key action of ``alt-left``, ``alt-right`` with ``backward-word``
+- **Breaking Change**: change default key action of ``alt-left``, ``alt-right`` with
+  ``backward-word``
   and ``forward-word``
 - **Breaking Change**: now builtin commands support `-h`/`--help` options
     - except for `:`, `call`, `echo`, `eval`, `false`, `test`, `true`
@@ -1009,7 +1050,8 @@
       ```
 - introduce dynamic registered user-defined commands
     - before lookup external command, lookup ``Command`` object from builtin ``DYNA_UDCS`` variable
-        - builtin ``command`` command checks existence of dynamic registered commands, but does not call theme (
+        - builtin ``command`` command checks existence of dynamic registered commands, but does not
+          call theme (
           builtin ``eval`` command can call these commands)
         - ``Module#_fullname`` method also supports theme
     - also complete dynamic registered command names
@@ -1067,8 +1109,10 @@
     - now syntactically accept back-quote literal, but always report semantic error
     - now does not allow back-quote characters without escape within double-quoted string literal
 - **Breaking Change**: change internal implementation of ``SCRIPT_DIR``, ``SCRIPT_NAME``
-    - now ``SCRIPT_DIR`` and ``SCRIPT_NAME`` are always equivalent to ``Module#_scriptDir`` and ``Module#_scriptName``
-    - in interactive mode, after change CWD, compile-time ``SCRIPT_DIR`` and run-time ``SCRIPT_DIR`` are different
+    - now ``SCRIPT_DIR`` and ``SCRIPT_NAME`` are always equivalent to ``Module#_scriptDir`` and
+      ``Module#_scriptName``
+    - in interactive mode, after change CWD, compile-time ``SCRIPT_DIR`` and run-time ``SCRIPT_DIR``
+      are different
         - run-time ``SCRIPT_DIR`` always indicates latest compile-time ``SCRIPT_DIR``
 - **Breaking Change**: now does not ignore empty string in command arguments
   ```
@@ -1115,7 +1159,8 @@
       assert ($o ? $o : 0) == 34
       assert $o && $o == 45
       ```
-- **Breaking Change**: ``errraise`` option ignore SIGPIPE failure in left hand-side of pipe by default
+- **Breaking Change**: ``errraise`` option ignore SIGPIPE failure in left hand-side of pipe by
+  default
     - if check SIGPIPE failure, set ``failsigpipe`` option
 - **Breaking Change**: does not skip newline after command except for skippable newline context
     - now following code is syntax error
@@ -1237,7 +1282,8 @@
 #### API
 
 - add the following line edit op
-    - ``DS_EDIT_NEXT_CHAR_LEN``, ``DS_EDIT_PREV_CHAR_LEN``: for unicode-aware character length counting
+    - ``DS_EDIT_NEXT_CHAR_LEN``, ``DS_EDIT_PREV_CHAR_LEN``: for unicode-aware character length
+      counting
     - ``DS_EDIT_NEXT_WORD_LEN``, ``DS_EDIT_PREV_WORD_LEN``: for unicode-aware word length counting
     - ``DS_EDIT_HIGHLIGHT``: for syntax highlighting
 - add ``DSState_showNotification`` api for job termination notification
@@ -1286,7 +1332,8 @@
     - add ``Signals#[]``, ``Signals#get`` methods for get corresponding signal
         - if corresponding signal is not found, ``Signals#[]`` method throws``KeyNotFoundError``
     - add ``Signal#trap`` method for get and set signal handler corresponding to signal
-- **Breaking Change**: replace invalid utf8 byte with replacement character (U+FFFD) in the following
+- **Breaking Change**: replace invalid utf8 byte with replacement character (U+FFFD) in the
+  following
   String methods
     - ``charAt``
     - ``chars``
@@ -1296,15 +1343,18 @@
     - use slice method instead
 - **Breaking Change**: ``Regex#replace`` method internally use ``pcre2_substitute`` api
     - now expand meta characters during replacement
-- **Breaking Change**: ``Regex`` methods throw ``RegexMatchError`` instead of ``InvalidOperationError``
-- **Breaking Change**: change ``String#toInt`` method behavior with other programming languages such golang, java
+- **Breaking Change**: ``Regex`` methods throw ``RegexMatchError`` instead of
+  ``InvalidOperationError``
+- **Breaking Change**: change ``String#toInt`` method behavior with other programming languages such
+  golang, java
     - now ``'0xFFFFFFFFFFFFFFFF'.toInt()`` is out-of-range
 - **Breaking Change**: rename ``isNan`` method with ``isNaN`` in ``Float`` type
 - now some builtin variables are constants
     - ``ON_ASSERT``, ``ON_ERR``, ``ON_EXIT``
     - ``TRUE``, ``True``, ``true``
     - ``FALSE``, ``False``, ``false``
-- for optional argument, change last parameter type with Option type in the following builtin methods
+- for optional argument, change last parameter type with Option type in the following builtin
+  methods
     - ``Regex#init``
     - ``String#slice``
     - ``Array#slice``
@@ -1408,7 +1458,8 @@
 #### Builtin
 
 - **Breaking Change**: remove ``Array#forEach`` method due to unused
-- **Breaking Change**: throw ``InvalidOperationError`` when call ``Module#_func`` method within user-defined completer
+- **Breaking Change**: throw ``InvalidOperationError`` when call ``Module#_func`` method within
+  user-defined completer
 - **Breaking Change**: change error message of ``SystemError``
 - **Breaking Change**: remove ``shctl show`` sub-command
     - now use ``shctl set`` sub-command instead
@@ -1487,7 +1538,8 @@
   ```
 - when call uninitialized method/constructor, throw ``IllegalAccessError``
 - add ``defer`` statement
-    - like swift, ``defer`` statement evaluated in end of scope (block, function, user-defined command)
+    - like swift, ``defer`` statement evaluated in end of scope (block, function, user-defined
+      command)
     - preserve exit status during the evaluation of defer statement
 
 #### Builtin
@@ -1539,7 +1591,8 @@
 
 #### Builtin
 
-- **Breaking Change**: change all method name of ``Module`` type due to prevent potential name conflict
+- **Breaking Change**: change all method name of ``Module`` type due to prevent potential name
+  conflict
     - ``fullname`` to ``_fullname``
     - ``func`` to ``_func``
     - ``scriptDir`` to ``_scriptDir``
@@ -1560,7 +1613,8 @@
 ### Fixed
 
 - type error reporting of tuple/func type creation if size of these elements reaches limit
-- ``textDocument/Hover``, ``textDocument/definition`` and ``textDocument/references`` do not work in large files
+- ``textDocument/Hover``, ``textDocument/definition`` and ``textDocument/references`` do not work in
+  large files
 - broken code generation of named imported env variables
 - broken parameter expansion of ``[UnixFD]`` type. previously the following code is failed
   ```
@@ -1568,7 +1622,8 @@
   ```
 - cannot define type alias for ``Void``, ``Nothing``
 - error line marker of ``assert`` statement
-- potential operand stack corruption when use ``break`` or ``continue`` expression within call arguments
+- potential operand stack corruption when use ``break`` or ``continue`` expression within call
+  arguments
 - return status of ``DSState_loadModule`` api when detect symbol conflicts
 - negative number or out-of-range number handling of ``SHLVL`` in startup time
 - out-of-range Unicode handling in dollar string and echo command
@@ -1750,7 +1805,8 @@
 
 - infix keyword parsing in the following
     - `in`, `as`, `is`, `and`, `or`, `xor`, `with`, `elif`
-- in completion, ignore keywords/commands starting with identifier if previous token is the following
+- in completion, ignore keywords/commands starting with identifier if previous token is the
+  following
     - `in`, `and`, `or`, `xor`, `elif`
 - do not complete if previous token is a comment
 - error message of for-expression
@@ -1958,11 +2014,13 @@
 
 - **Breaking Change**: use ``typedef`` keyword for type alias definition
     - ``alias`` keyword is still reserved keyword for future usage
-- **Breaking Change**: when access undefined environmental variable, throw ``IllegalAccessError`` instead
+- **Breaking Change**: when access undefined environmental variable, throw ``IllegalAccessError``
+  instead
   of ``SystemError``
 - **Breaking Change**: evaluate script within separate module context
 - **Breaking Change**: after runtime error, not discard symbol state
-- **Breaking Change**: when modifying map object during iteration, always throw ``InvalidOperationError``
+- **Breaking Change**: when modifying map object during iteration, always throw
+  ``InvalidOperationError``
 - **Breaking Change**: eliminate implicit tilde expansion like the follow
     - external command name completion
     - external command file path search
@@ -2019,7 +2077,8 @@
 - introduce ``fastglob`` option
     - breaking traditional glob behavior, but takes more efficient directory search strategy
 - module aware user-defined command lookup
-    - command starting with ``_`` will be private command. private command is only called from its own module
+    - command starting with ``_`` will be private command. private command is only called from its
+      own module
     - in named import, call command defined in module as sub-command
 
 #### Builtin
@@ -2066,7 +2125,8 @@
 
 #### Core
 
-- **Breaking Change**: perform regex syntax checking in type-checker. now regex syntax error is semantic error
+- **Breaking Change**: perform regex syntax checking in type-checker. now regex syntax error is
+  semantic error
 - **Breaking Change**: not ignore previously raised exception in finally block
 - **Breaking Change**: also enter finally block in exit or assertion failure
 - **Breaking Change**: change install directory structure
@@ -2198,14 +2258,16 @@
     - change ``PWD`` / ``OLDPWD`` update rules at startup
         - if ``PWD`` is not set / not full path / not existing directory, set ``PWD`` to cwd
         - if cwd is removed, set ``PWD`` to ``.``
-        - if ``OLDPWD`` is not set / not full path / not existing directory, set ``OLDPWD`` to ``PWD``
+        - if ``OLDPWD`` is not set / not full path / not existing directory, set ``OLDPWD`` to
+          ``PWD``
     - always set valid value to ``HOME``, ``LOGNAME``, ``USER``
 - tilde expansion behavior
     - ``~+``, ``~-`` is not expanded when ``PWD`` / ``OLDPWD`` is invalid
     - use ``HOME`` env in ``~`` if env is set
 - source statement does not allow null characters
 - when specified ``--parse-only`` option, not perform module loading
-- does not always handle/ignore ``SIGBUS``, ``SIGSEGV``, ``SIGILL``, ``SIGFPE`` signals due to undefined behavior
+- does not always handle/ignore ``SIGBUS``, ``SIGSEGV``, ``SIGILL``, ``SIGFPE`` signals due to
+  undefined behavior
 - operator precedence of ``throw`` expression
 
 #### Misc

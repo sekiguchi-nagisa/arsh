@@ -213,7 +213,7 @@ $assertArray(['StackOverflowError', 'String'], $(complete 'type AAA { var aaa : 
 
 # param
 $assertArray(['radix:'], $(complete '"".toInt($rad'))
-$assertArray(['start:', 'stop:'], $(complete '"".slice($st'))
+$assertArray(['from:'], $(complete '[""].slice($fro'))
 $assertArray(['xxx:'], $(complete 'function fff(xxx:Int):Int{ return $xxx;}; echo $fff($xx'))
 
 # subcommand

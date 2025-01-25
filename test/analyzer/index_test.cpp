@@ -503,24 +503,24 @@ $value: 'hey')
 TEST_F(IndexTest, namedArgBuiltinMethod) {
   unsigned short modId;
   const char *content = R"E(
-"234".slice($stop:444, $start: 2222)
-"2345".slice($start:345, $stop: 333)
+"234".slice($to:444, $from: 2222)
+"2345".slice($from:345, $to: 333)
 )E";
 
   ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 0, .symbolSize = 6}));
 
   // references
   ASSERT_NO_FATAL_FAILURE(
-      this->findRefs(Request{.modId = modId, .position = {.line = 1, .character = 26}},
+      this->findRefs(Request{.modId = modId, .position = {.line = 1, .character = 25}},
                      {
-                         {modId, "(1:23~1:29)"}, // $start: 2222
-                         {modId, "(2:13~2:19)"}, // $start:345
+                         {modId, "(1:21~1:26)"}, // $from: 2222
+                         {modId, "(2:13~2:18)"}, // $from:345
                      }));
   ASSERT_NO_FATAL_FAILURE(
       this->findRefs(Request{.modId = modId, .position = {.line = 2, .character = 26}},
                      {
-                         {modId, "(1:12~1:17)"}, // $stop:444
-                         {modId, "(2:25~2:30)"}, // $stop: 333
+                         {modId, "(1:12~1:15)"}, // $to:444
+                         {modId, "(2:24~2:27)"}, // $to: 333
                      }));
 }
 
@@ -1717,12 +1717,11 @@ TEST_F(IndexTest, hoverBuiltin) {
                                       "```arsh\nfunction size(): Int for [Int]\n```"));
   ASSERT_NO_FATAL_FAILURE(
       this->hover("''.slice(0)", Position{.line = 0, .character = 5},
-                  "```arsh\nfunction slice(start: Int, stop: Int?): String for String\n```"));
+                  "```arsh\nfunction slice(from: Int, to: Int?): String for String\n```"));
   ASSERT_NO_FATAL_FAILURE(
       this->hover("[23:(12,(34,56,))].\nclear()", Position{.line = 1, .character = 2},
                   "```arsh\nfunction clear(): Void for [Int : (Int, (Int, Int))]\n```"));
-  ASSERT_NO_FATAL_FAILURE(
-      this->hover("'2345'.slice(\n$start:2345)", 1, "```arsh\nvar start: Int\n```"));
+  ASSERT_NO_FATAL_FAILURE(this->hover("'2345'.slice(\n$to:2345)", 1, "```arsh\nvar to: Int?\n```"));
   ASSERT_NO_FATAL_FAILURE(
       this->hover("[1234].slice(\n$from:2345)", 1, "```arsh\nvar from: Int\n```"));
   ASSERT_NO_FATAL_FAILURE(

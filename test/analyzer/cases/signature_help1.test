@@ -39,13 +39,13 @@
 #    CHECK:     "signatures": [
 #    CHECK:       {
 #    CHECK:         "activeParameter": 0,
-#    CHECK:         "label": "function slice(start: Int, stop: Int?): String for String",
+#    CHECK:         "label": "function slice(from: Int, to: Int?): String for String",
 #    CHECK:         "parameters": [
 #    CHECK:           {
-#    CHECK:             "label": "start: Int"
+#    CHECK:             "label": "from: Int"
 #    CHECK:           },
 #    CHECK:           {
-#    CHECK:             "label": "stop: Int?"
+#    CHECK:             "label": "to: Int?"
 #    CHECK:           }
 #    CHECK:         ]
 #    CHECK:       }
@@ -73,13 +73,13 @@
 #    CHECK:     "signatures": [
 #    CHECK:       {
 #    CHECK:         "activeParameter": 1,
-#    CHECK:         "label": "function slice(start: Int, stop: Int?): String for String",
+#    CHECK:         "label": "function slice(from: Int, to: Int?): String for String",
 #    CHECK:         "parameters": [
 #    CHECK:           {
-#    CHECK:             "label": "start: Int"
+#    CHECK:             "label": "from: Int"
 #    CHECK:           },
 #    CHECK:           {
-#    CHECK:             "label": "stop: Int?"
+#    CHECK:             "label": "to: Int?"
 #    CHECK:           }
 #    CHECK:         ]
 #    CHECK:       }
@@ -105,7 +105,7 @@
 #    CHECK:     "activeSignature": 0,
 #    CHECK:     "signatures": [
 #    CHECK:       {
-#    CHECK:         "label": "function slice(start: Int, stop: Int?): String for String",
+#    CHECK:         "label": "function slice(from: Int, to: Int?): String for String",
 #    CHECK:         "parameters": []
 #    CHECK:       }
 #    CHECK:     ]

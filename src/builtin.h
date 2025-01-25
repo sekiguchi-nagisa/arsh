@@ -820,7 +820,7 @@ static auto slice(const T &obj, int64_t startIndex, int64_t stopIndex) {
   return sliceImpl(obj, start, stop);
 }
 
-//!bind: function slice($this : String, $start : Int, $stop : Option<Int>) : String
+//!bind: function slice($this : String, $from : Int, $to : Option<Int>) : String
 ARSH_METHOD string_slice(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_slice);
   auto ref = LOCAL(0).asStrRef();
@@ -1771,7 +1771,7 @@ ARSH_METHOD array_add(RuntimeContext &ctx) {
   RET(LOCAL(0));
 }
 
-//!bind: function addAll($this : Array<T0>, $value : Array<T0>) : Array<T0>
+//!bind: function addAll($this : Array<T0>, $other : Array<T0>) : Array<T0>
 ARSH_METHOD array_addAll(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_addAll);
   auto &obj = typeAs<ArrayObject>(LOCAL(0));
@@ -1848,7 +1848,7 @@ ARSH_METHOD array_sortBy(RuntimeContext &ctx) {
   }
 }
 
-//!bind: function searchSorted($this: Array<T0>, $value: T0): Int
+//!bind: function searchSorted($this: Array<T0>, $target: T0): Int
 ARSH_METHOD array_search(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_search);
   auto &obj = typeAs<ArrayObject>(LOCAL(0));
@@ -1857,7 +1857,7 @@ ARSH_METHOD array_search(RuntimeContext &ctx) {
   RET(Value::createInt(retIndex));
 }
 
-//!bind: function searchSortedBy($this: Array<T0>, $value: T0, $comp : Func<Int, [T0, T0]>): Int
+//!bind: function searchSortedBy($this: Array<T0>, $target: T0, $comp : Func<Int, [T0, T0]>): Int
 ARSH_METHOD array_searchBy(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_searchBy);
   auto &obj = typeAs<ArrayObject>(LOCAL(0));
@@ -2125,7 +2125,7 @@ ARSH_METHOD map_swap(RuntimeContext &ctx) {
   RET(value);
 }
 
-//!bind: function addAll($this : Map<T0, T1>, $value : Map<T0, T1>) : Map<T0, T1>
+//!bind: function addAll($this : Map<T0, T1>, $other : Map<T0, T1>) : Map<T0, T1>
 ARSH_METHOD map_addAll(RuntimeContext &ctx) {
   SUPPRESS_WARNING(map_addAll);
   auto &obj = typeAs<OrderedMapObject>(LOCAL(0));
@@ -2659,7 +2659,7 @@ ARSH_METHOD job_wait(RuntimeContext &ctx) {
   RET(Value::createInt(s));
 }
 
-//!bind: function kill($this : Job, $s : Signal) : Void
+//!bind: function kill($this : Job, $signal : Signal) : Void
 ARSH_METHOD job_kill(RuntimeContext &ctx) {
   SUPPRESS_WARNING(job_kill);
   auto &obj = typeAs<JobObject>(LOCAL(0));

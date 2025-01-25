@@ -147,7 +147,7 @@ function %OP_GET(index: Int): String for String
 
 function charAt(index: Int): String for String
 
-function slice(start: Int, stop: Int?): String for String
+function slice(from: Int, to: Int?): String for String
 
 function startsWith(target: String): Bool for String
 
@@ -256,7 +256,7 @@ function poll(): Bool for Job
 
 function wait(): Int for Job
 
-function kill(s: Signal): Void for Job
+function kill(signal: Signal): Void for Job
 
 function disown(): Void for Job
 
@@ -443,7 +443,7 @@ function insert(index: Int, value: T0): Void for [T0]
 
 function add(value: T0): [T0] for [T0]
 
-function addAll(value: [T0]): [T0] for [T0]
+function addAll(other: [T0]): [T0] for [T0]
 
 function swap(index: Int, value: T0): T0 for [T0]
 
@@ -457,9 +457,9 @@ function sort(): [T0] where T0 : Value_ for [T0]
 
 function sortBy(comp: (T0, T0) -> Int): [T0] for [T0]
 
-function searchSorted(value: T0): Int for [T0]
+function searchSorted(target: T0): Int for [T0]
 
-function searchSortedBy(value: T0, comp: (T0, T0) -> Int): Int for [T0]
+function searchSortedBy(target: T0, comp: (T0, T0) -> Int): Int for [T0]
 
 function join(delim: String?): String for [T0]
 
@@ -502,7 +502,7 @@ function remove(key: T0): T1? for [T0 : T1]
 
 function swap(key: T0, value: T1): T1 for [T0 : T1]
 
-function addAll(value: [T0 : T1]): [T0 : T1] for [T0 : T1]
+function addAll(other: [T0 : T1]): [T0 : T1] for [T0 : T1]
 
 function copy(): [T0 : T1] for [T0 : T1]
 
