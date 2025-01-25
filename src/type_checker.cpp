@@ -672,7 +672,7 @@ void TypeChecker::checkNamedArgs(const CallSignature &callSignature, ArgsNode &n
   }
   FlexBuffer<StringRef> paramNames;
   if (!packedParamNames.empty()) {
-    splitByDelim(packedParamNames, ';', [&paramNames](const StringRef sub, bool) {
+    iteratePackedParamNames(packedParamNames, [&paramNames](const StringRef sub, bool) {
       paramNames.push_back(sub);
       return true;
     });

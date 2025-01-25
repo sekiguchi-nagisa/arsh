@@ -53,7 +53,7 @@ void normalizeTypeName(const Type &type, std::string &out) {
 static std::vector<StringRef> splitParamNames(StringRef packedParamNames) {
   std::vector<StringRef> params;
   params.reserve(4);
-  splitByDelim(packedParamNames, ';', [&params](StringRef p, bool) {
+  iteratePackedParamNames(packedParamNames, [&params](StringRef p, bool) {
     if (!p.empty()) {
       params.push_back(p);
     }

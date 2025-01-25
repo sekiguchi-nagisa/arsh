@@ -30,10 +30,10 @@
 #include "handle_info.h"
 #include "misc/buffer.hpp"
 #include "misc/flag_util.hpp"
+#include "misc/format.hpp"
 #include "misc/noncopyable.h"
 #include "misc/resource.hpp"
 #include "misc/rtti.hpp"
-#include "misc/string_ref.hpp"
 
 namespace arsh {
 
@@ -423,7 +423,7 @@ struct CallSignature {
       : returnType(&ret), paramSize(size), paramTypes(params), name(name), handle(hd) {}
 };
 
-class PackedParamNames {
+class PackedParamNames { // follow `Param0;Param1` form
 private:
   CStrPtr value; // may be null (if no param)
   size_t len{0}; // not include sentinel (equivalent to strlen(value.get()))
@@ -469,6 +469,11 @@ public:
     return ret;
   }
 };
+
+template <typename Func, enable_when<splitter_requirement_v<Func>> = nullptr>
+bool iteratePackedParamNames(const StringRef packedParamNames, Func func) {
+  return splitByDelim(packedParamNames, ';', func);
+}
 
 class FunctionType : public Type {
 private:
