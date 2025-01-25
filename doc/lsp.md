@@ -60,7 +60,7 @@
 | named arg (implicit constructor)      | ❌              | ❌                     | ❌               | ❌          |
 | named arg (method)                    | ✔️             | ✔️                    | ✔️              | ✔️         |
 | named arg (builtin method)            | -              | ✔️                    | ✔️              | -          |
-| named arg (generic method)            | -              | ❌                     | ✔️              | -          |
+| named arg (generic method)            | -              | ✔️                    | ✔️              | -          |
 | source (variable)                     | ✔️             | ✔️                    | ✔️              | ✔️         |
 | source (type alias)                   | ✔️             | ✔️                    | ✔️              | ✔️         |
 | source (command)                      | ✔️             | ✔️                    | ✔️              | ✔️         |

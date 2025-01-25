@@ -505,9 +505,11 @@ TEST_F(IndexTest, namedArgBuiltinMethod) {
   const char *content = R"E(
 "234".slice($to:444, $from: 2222)
 "2345".slice($from:345, $to: 333)
+[234].slice($to:444, $from: 2222)
+['ss'].slice($from:345, $to: 333)
 )E";
 
-  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 0, .symbolSize = 6}));
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 0, .symbolSize = 12}));
 
   // references
   ASSERT_NO_FATAL_FAILURE(
@@ -521,6 +523,18 @@ TEST_F(IndexTest, namedArgBuiltinMethod) {
                      {
                          {modId, "(1:12~1:15)"}, // $to:444
                          {modId, "(2:24~2:27)"}, // $to: 333
+                     }));
+  ASSERT_NO_FATAL_FAILURE(
+      this->findRefs(Request{.modId = modId, .position = {.line = 3, .character = 25}},
+                     {
+                         {modId, "(3:21~3:26)"}, // $from: 2222
+                         {modId, "(4:13~4:18)"}, // $from:345
+                     }));
+  ASSERT_NO_FATAL_FAILURE(
+      this->findRefs(Request{.modId = modId, .position = {.line = 4, .character = 26}},
+                     {
+                         {modId, "(3:12~3:15)"}, // $to:444
+                         {modId, "(4:24~4:27)"}, // $to: 333
                      }));
 }
 

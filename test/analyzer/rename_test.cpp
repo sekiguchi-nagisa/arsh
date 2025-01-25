@@ -721,6 +721,24 @@ new Interval($bb: 0, $ee: 100).dist(
                                                    "value", {1, "(7:41~7:46)"}));
 }
 
+TEST_F(RenameTest, namedArg2) { // for builtin method
+  const char *content = R"(
+"234".slice($to:444, $from: 2222)
+"2345".slice($from:345, $to: 333)
+[234].slice($to:444, $from: 2222)
+['ss'].slice($from:345, $to: 333)
+)";
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, 1));
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 1, .character = 24}, "start",
+                                       RenameValidationStatus::BUILTIN));
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 2, .character = 16}, "start",
+                                       RenameValidationStatus::BUILTIN));
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 2, .character = 14}, "start",
+                                       RenameValidationStatus::BUILTIN));
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 4, .character = 25}, "start",
+                                       RenameValidationStatus::BUILTIN));
+}
+
 TEST_F(RenameTest, source1) {
   arsh::TempFileFactory tempFileFactory("arsh_rename");
   auto fileName = tempFileFactory.createTempFile("mod.ds", "");
