@@ -124,7 +124,8 @@ const DeclSymbol *IndexBuilder::addDeclImpl(const Type *recv, const NameInfo &in
       op == DeclInsertOp::PARAM) {
     setFlag(attr, DeclSymbol::Attr::GLOBAL);
   }
-  if (info.getName()[0] != '_' || kind == DeclSymbol::Kind::PARAM) { // PARAM is always public
+  if (info.getName()[0] != '_' || kind == DeclSymbol::Kind::PARAM ||
+      kind == DeclSymbol::Kind::GENERIC_METHOD_PARAM) { // PARAM is always public
     setFlag(attr, DeclSymbol::Attr::PUBLIC);
   }
   if (recv) {
@@ -283,7 +284,13 @@ static std::string mangleParamNameImpl(StringRef funcName, const Type *recvType,
   name += funcName;
   if (recvType) {
     name += '@';
-    name += recvType->getNameRef();
+    if (isa<ArrayType>(recvType)) {
+      name += "[]";
+    } else if (isa<MapType>(recvType)) {
+      name += "[:]";
+    } else {
+      name += recvType->getNameRef();
+    }
   }
   return name;
 }
@@ -315,7 +322,14 @@ const Symbol *IndexBuilder::addNamedArgSymbol(const NameInfo &nameInfo, const Ha
                                               StringRef funcName) {
   NameInfo newNameInfo(nameInfo.getToken(),
                        this->mangleParamName(funcName, handle, nameInfo.getName()));
-  return this->addSymbol(newNameInfo, DeclSymbol::Kind::PARAM, &handle);
+  auto *ret = this->addSymbol(newNameInfo, DeclSymbol::Kind::PARAM, &handle);
+  if (ret) {
+    if (handle.isMethodHandle() && cast<MethodHandle>(handle).isNative()) {
+      auto &recv = this->getPool().get(handle.getTypeId());
+      this->addParamTypeInfo(nameInfo.getToken(), recv);
+    }
+  }
+  return ret;
 }
 
 bool IndexBuilder::addBuiltinMethod(const Type &recvType, unsigned int methodIndex,
@@ -336,6 +350,18 @@ bool IndexBuilder::addBuiltinMethod(const Type &recvType, unsigned int methodInd
                              nameInfo.getToken(), DeclInsertOp::BUILTIN);
   } else if (isa<ArrayType>(recvType) || isa<MapType>(recvType)) {
     auto content = std::to_string(methodIndex);
+    unsigned int paramIndex = 0;
+    iteratePackedParamNames(
+        nativeFuncInfoTable()[methodIndex].params, [&](StringRef paramName, bool) {
+          std::string cc = content;
+          cc += ":";
+          cc += std::to_string(paramIndex);
+          NameInfo newNameInfo(tokenGen.next(), mangleParamNameImpl(name, &recvType, paramName));
+          this->addDeclImpl(nullptr, newNameInfo, DeclSymbol::Kind::GENERIC_METHOD_PARAM,
+                            cc.c_str(), newNameInfo.getToken(), DeclInsertOp::PARAM);
+          paramIndex++;
+          return true;
+        });
     return this->addDeclImpl(&recvType, nameInfo, DeclSymbol::Kind::GENERIC_METHOD, content.c_str(),
                              nameInfo.getToken(), DeclInsertOp::BUILTIN);
   }

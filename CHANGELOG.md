@@ -21,6 +21,10 @@
 - **Breaking Change**: change comparator interface of ``Array#sortBy`` method. now use three-way comparison
 - automatically insert ``(``, ``()`` after completing method name
 
+#### LSP
+
+- support indexing of generic method's named argument
+
 ### Fixed
 
 - bugfix ExtendedPictographic handling of Unicode word segmentation

@@ -127,7 +127,8 @@ public:
     THIS,
     CONST,
     MOD_CONST,
-    PARAM, // for named argument
+    PARAM,                // for named argument
+    GENERIC_METHOD_PARAM, // for named argument of generic method
     FUNC,
     CONSTRUCTOR,
     METHOD,
@@ -256,6 +257,7 @@ public:
     switch (k) {
     case Kind::VAR:
     case Kind::PARAM:
+    case Kind::GENERIC_METHOD_PARAM:
       return "var";
     case Kind::LET:
     case Kind::THIS:

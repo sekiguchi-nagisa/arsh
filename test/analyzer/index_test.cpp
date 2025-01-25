@@ -1723,6 +1723,12 @@ TEST_F(IndexTest, hoverBuiltin) {
                   "```arsh\nfunction clear(): Void for [Int : (Int, (Int, Int))]\n```"));
   ASSERT_NO_FATAL_FAILURE(
       this->hover("'2345'.slice(\n$start:2345)", 1, "```arsh\nvar start: Int\n```"));
+  ASSERT_NO_FATAL_FAILURE(
+      this->hover("[1234].slice(\n$from:2345)", 1, "```arsh\nvar from: Int\n```"));
+  ASSERT_NO_FATAL_FAILURE(
+      this->hover("[1234].slice(\n$to:345,$from:2345)", 1, "```arsh\nvar to: Int?\n```"));
+  ASSERT_NO_FATAL_FAILURE(
+      this->hover("['23':1234].remove(\n$key:'2')", 1, "```arsh\nvar key: String\n```"));
 }
 
 TEST_F(IndexTest, hoverMod) {

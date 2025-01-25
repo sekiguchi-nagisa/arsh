@@ -61,10 +61,10 @@ std::string generateHoverContent(const SourceManager &srcMan, const SymbolIndexe
                                  const Source &src, const FindDeclResult &result, bool markup) {
   auto &decl = result.decl;
   StringRef packedParamTypes;
-  if (decl.is(DeclSymbol::Kind::GENERIC_METHOD)) {
+  if (decl.is(DeclSymbol::Kind::GENERIC_METHOD) ||
+      decl.is(DeclSymbol::Kind::GENERIC_METHOD_PARAM)) {
     if (auto index = indexes.find(src.getSrcId())) {
-      auto *r = index->getPackedParamTypesMap().lookupByPos(result.request.getPos());
-      if (r) {
+      if (auto *r = index->getPackedParamTypesMap().lookupByPos(result.request.getPos())) {
         packedParamTypes = *r;
       }
     }
@@ -85,6 +85,31 @@ std::string generateHoverContent(const SourceManager &srcMan, const SymbolIndexe
     content += name;
     content += ": ";
     content += decl.getInfo();
+    break;
+  }
+  case DeclSymbol::Kind::GENERIC_METHOD_PARAM: {
+    const auto pos = decl.getInfo().find(':'); // follow `methodIndex:paramIndex` form
+    auto ref = decl.getInfo().slice(0, pos);   // extract methodIndex str
+    auto ret = convertToNum10<unsigned int>(ref.begin(), ref.end());
+    assert(ret);
+    const unsigned int methodIndex = ret.value;
+    ref = decl.getInfo().substr(pos + 1); // extract paramIndex str
+    ret = convertToNum10<unsigned int>(ref.begin(), ref.end());
+    assert(ret);
+    const unsigned int paramIndex = ret.value;
+    unsigned int paramCount = 0;
+    std::string dummy;
+    std::string param;
+    formatNativeMethodSignature(&nativeFuncInfoTable()[methodIndex], packedParamTypes, dummy,
+                                [&](const StringRef p) {
+                                  if (paramIndex == paramCount++) {
+                                    param = p.toString();
+                                  }
+                                });
+    assert(!param.empty());
+    content += DeclSymbol::getVarDeclPrefix(decl.getKind());
+    content += " ";
+    content += param;
     break;
   }
   case DeclSymbol::Kind::CONST: {
@@ -204,6 +229,7 @@ SymbolKind toSymbolKind(DeclSymbol::Kind kind) {
   case DeclSymbol::Kind::PREFIX_ENV:
   case DeclSymbol::Kind::THIS:
   case DeclSymbol::Kind::PARAM:
+  case DeclSymbol::Kind::GENERIC_METHOD_PARAM:
     symbolKind = SymbolKind::Variable;
     break;
   case DeclSymbol::Kind::CONST:
