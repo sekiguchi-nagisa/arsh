@@ -147,7 +147,7 @@ function %OP_GET(index: Int): String for String
 
 function charAt(index: Int): String for String
 
-function slice(from: Int, to: Int?): String for String
+function slice(start: Int, end: Int?): String for String
 
 function startsWith(target: String): Bool for String
 
@@ -447,7 +447,7 @@ function addAll(other: [T0]): [T0] for [T0]
 
 function swap(index: Int, value: T0): T0 for [T0]
 
-function slice(from: Int, to: Int?): [T0] for [T0]
+function slice(start: Int, end: Int?): [T0] for [T0]
 
 function copy(): [T0] for [T0]
 

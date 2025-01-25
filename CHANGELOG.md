@@ -22,7 +22,7 @@
 - **Breaking Change**: change comparator interface of ``Array#sortBy`` method. now use three-way
   comparison
 - **Breaking Change**: change parameter name of some builtin methods
-    - ``String#slice``, ``Job#kill``, ``Array#addAll``, ``Map#addAll``
+    - ``String#slice``, ``Array#slice``, ``Job#kill``, ``Array#addAll``, ``Map#addAll``
 - automatically insert ``(``, ``()`` after completing method name
 
 #### LSP

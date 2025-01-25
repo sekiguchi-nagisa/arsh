@@ -820,7 +820,7 @@ static auto slice(const T &obj, int64_t startIndex, int64_t stopIndex) {
   return sliceImpl(obj, start, stop);
 }
 
-//!bind: function slice($this : String, $from : Int, $to : Option<Int>) : String
+//!bind: function slice($this : String, $start : Int, $end : Option<Int>) : String
 ARSH_METHOD string_slice(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_slice);
   auto ref = LOCAL(0).asStrRef();
@@ -1798,7 +1798,7 @@ ARSH_METHOD array_swap(RuntimeContext &ctx) {
   RET(value);
 }
 
-//!bind: function slice($this : Array<T0>, $from : Int, $to : Option<Int>) : Array<T0>
+//!bind: function slice($this : Array<T0>, $start : Int, $end : Option<Int>) : Array<T0>
 ARSH_METHOD array_slice(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_slice);
   auto &obj = typeAs<ArrayObject>(LOCAL(0));

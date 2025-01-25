@@ -33,7 +33,7 @@ assert $ff(34, $cc : "!!!", $bb: "say") == "34+say+!!!"
 assert "FF".toInt(16)! == 255
 assert "FF".toInt($radix: 16)! == 255
 assert "1234".slice(0,2) == "12"
-assert "1234".slice($to: 2, $from: 0) == "12"
+assert "1234".slice($end: 2, $start: 0) == "12"
 
 ## constructor
 typedef AAA {
