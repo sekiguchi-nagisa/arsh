@@ -368,7 +368,7 @@ function call(argv: [String]): Bool for Command
 ```
 type LineEditor()
 
-function readLine(p: String?): String? for LineEditor
+function readLine(prompt: String?): String? for LineEditor
 
 function setCompletion(comp: ((Module, String) -> Candidates)?): Void for LineEditor
 
@@ -427,7 +427,7 @@ function %OP_SET(index: Int, value: T0): Void for [T0]
 
 function remove(index: Int): T0 for [T0]
 
-function removeRange(from: Int, to: Int?): Void for [T0]
+function removeRange(start: Int, end: Int?): Void for [T0]
 
 function peek(): T0 for [T0]
 
