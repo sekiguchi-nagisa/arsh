@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-#include <cstring>
 #include <utility>
 
 #include <uri.h>

@@ -83,7 +83,7 @@ public:
                        Lexer &lex);
   ~DirectiveInitializer() override = default;
 
-  void operator()(ApplyNode &node, Directive &d);
+  void operator()(ApplyNode &applyNode, Directive &directive);
 
   const TypeCheckError &getError() const { return this->getErrors().front(); }
 
@@ -167,11 +167,11 @@ static bool isIgnoredUser(const std::string &text) {
   return text.find('#') != std::string::npos && getuid() == 0;
 }
 
-void DirectiveInitializer::operator()(ApplyNode &node, Directive &d) {
-  if (!checkDirectiveName(node)) {
+void DirectiveInitializer::operator()(ApplyNode &applyNode, Directive &directive) {
+  if (!checkDirectiveName(applyNode)) {
     std::string str("unsupported directive: ");
-    str += cast<VarNode>(node.getExprNode()).getVarName(); // NOLINT
-    return this->createError(node, str);
+    str += cast<VarNode>(applyNode.getExprNode()).getVarName(); // NOLINT
+    return this->createError(applyNode, str);
   }
 
   this->addHandler("status", TYPE::Int, [&](Node &node, Directive &d) {
@@ -264,7 +264,7 @@ void DirectiveInitializer::operator()(ApplyNode &node, Directive &d) {
   });
 
   std::unordered_set<std::string> foundAttrSet;
-  for (auto &attrNode : node.getArgsNode().getNodes()) {
+  for (auto &attrNode : applyNode.getArgsNode().getNodes()) {
     auto *assignNode = TRY(this->checkedCast<AssignNode>(*attrNode));
     auto &attrName = TRY(this->checkedCast<VarNode>(assignNode->getLeftNode()))->getVarName();
     auto *pair = this->lookupHandler(attrName);
@@ -289,7 +289,7 @@ void DirectiveInitializer::operator()(ApplyNode &node, Directive &d) {
     }
 
     // invoke handler
-    (pair->second)(assignNode->getRightNode(), d);
+    (pair->second)(assignNode->getRightNode(), directive);
     if (this->hasError()) {
       return;
     }

@@ -87,13 +87,12 @@ public:
   }
 
   [[noreturn]] void operator()(const char *fmt, ...) const __attribute__((format(printf, 2, 3))) {
-    const unsigned int size = 512;
-    char buf[size]; // error message must be under-size.
+    char buf[512]; // error message must be under-size.
 
     // format message
     va_list args;
     va_start(args, fmt);
-    vsnprintf(buf, size, fmt, args);
+    vsnprintf(buf, std::size(buf), fmt, args);
     va_end(args);
 
     std::cerr << this->fileName << ":" << this->lineNum << ": [error] " << buf << '\n';
@@ -116,7 +115,7 @@ public:
 
   const char *getName(HandleInfo info) const;
 
-  HandleInfo getInfo(const std::string &name);
+  HandleInfo getInfo(const std::string &name) const;
 
 private:
   void registerName(HandleInfo info, const char *name);
@@ -148,7 +147,7 @@ const char *HandleInfoMap::getName(HandleInfo info) const {
   fatal("not found handle info: %s\n", toTypeInfoName(info));
 }
 
-HandleInfo HandleInfoMap::getInfo(const std::string &name) {
+HandleInfo HandleInfoMap::getInfo(const std::string &name) const {
   auto iter = this->name2InfoMap.find(name);
   if (iter == this->name2InfoMap.end()) {
     ErrorReporter::instance()("not found type name: %s", name.c_str());
@@ -173,7 +172,7 @@ public:
 
   void add(HandleInfo info) { this->infos.push_back(info); }
 
-  std::string toString() {
+  std::string toString() const {
     std::string str("{");
     unsigned int size = this->infos.size();
     for (unsigned int i = 0; i < size; i++) {
@@ -324,17 +323,17 @@ bool HandleInfoSerializer::verifyHandleInfo(const std::vector<HandleInfo> &infos
 struct TypeToken {
   virtual ~TypeToken() = default;
 
-  virtual void serialize(HandleInfoSerializer &s) = 0;
+  virtual void serialize(HandleInfoSerializer &s) const = 0;
 
-  virtual bool isType(HandleInfo info) = 0;
+  virtual bool isType(HandleInfo info) const = 0;
 
-  std::string toString() {
+  std::string toString() const {
     std::string str;
     this->toString(str);
     return str;
   }
 
-  virtual void toString(std::string &str) = 0;
+  virtual void toString(std::string &str) const = 0;
 };
 
 class CommonTypeToken : public TypeToken {
@@ -349,13 +348,13 @@ public:
 
   ~CommonTypeToken() override = default;
 
-  void serialize(HandleInfoSerializer &s) override { s.add(this->info); }
+  void serialize(HandleInfoSerializer &s) const override { s.add(this->info); }
 
-  bool isType(HandleInfo i) override { return this->info == i; }
+  bool isType(HandleInfo i) const override { return this->info == i; }
 
   static std::unique_ptr<CommonTypeToken> newTypeToken(const std::string &name);
 
-  void toString(std::string &str) override {
+  void toString(std::string &str) const override {
     str += HandleInfoMap::getInstance().getName(this->info);
   }
 };
@@ -384,13 +383,13 @@ public:
 
   void addElement(std::unique_ptr<TypeToken> &&type) { this->elements.push_back(std::move(type)); }
 
-  void serialize(HandleInfoSerializer &s) override;
+  void serialize(HandleInfoSerializer &s) const override;
 
-  bool isType(HandleInfo info) override { return this->typeTemp->isType(info); }
+  bool isType(HandleInfo info) const override { return this->typeTemp->isType(info); }
 
   static std::unique_ptr<ReifiedTypeToken> newReifiedTypeToken(const std::string &name);
 
-  void toString(std::string &str) override {
+  void toString(std::string &str) const override {
     if (this->typeTemp->isType(HandleInfo::Array)) {
       assert(this->elements.size() == 1);
       str += "[";
@@ -431,7 +430,7 @@ public:
   }
 };
 
-void ReifiedTypeToken::serialize(HandleInfoSerializer &s) {
+void ReifiedTypeToken::serialize(HandleInfoSerializer &s) const {
   // check element size
   unsigned int elementSize = this->elements.size();
   if (this->requiredSize > 0) {
@@ -487,11 +486,11 @@ public:
     this->paramTypes.push_back(std::move(type));
   }
 
-  void serialize(HandleInfoSerializer &s) override;
+  void serialize(HandleInfoSerializer &s) const override;
 
-  bool isType(HandleInfo info) override { return this->typeTemp->isType(info); }
+  bool isType(HandleInfo info) const override { return this->typeTemp->isType(info); }
 
-  void toString(std::string &str) override {
+  void toString(std::string &str) const override {
     str += "(";
     for (unsigned int i = 0; i < this->paramTypes.size(); i++) {
       if (i > 0) {
@@ -504,7 +503,7 @@ public:
   }
 };
 
-void FuncTypeToken::serialize(HandleInfoSerializer &s) {
+void FuncTypeToken::serialize(HandleInfoSerializer &s) const {
   this->typeTemp->serialize(s);
   this->returnType->serialize(s);
   s.add(fromNum(this->paramTypes.size()));
@@ -825,7 +824,7 @@ std::unique_ptr<Element> Parser::parse_descriptor(const std::string &line) {
   case DescTokenKind::FUNC:
     return this->parse_funcDesc();
   default:
-    const DescTokenKind alters[] = {
+    constexpr DescTokenKind alters[] = {
         DescTokenKind::FUNC,
     };
     this->reportNoViableAlterError(alters);
@@ -851,7 +850,7 @@ std::unique_ptr<Element> Parser::parse_funcDesc() {
     break;
   }
   default: {
-    const DescTokenKind alters[] = {
+    constexpr DescTokenKind alters[] = {
         DescTokenKind::IDENTIFIER,
         DescTokenKind::VAR_NAME,
     };
