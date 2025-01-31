@@ -893,7 +893,7 @@ std::unique_ptr<Element> Parser::parse_params(std::unique_ptr<Element> &&element
     element->addParam(this->toName(token), std::move(type));
   } while (CUR_KIND() == DescTokenKind::COMMA);
 
-  return element;
+  return std::move(element);
 }
 
 bool isFunc(const std::string &str) { return str == TYPE_FUNC; }
