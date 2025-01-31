@@ -682,8 +682,6 @@ public:
   }
 };
 
-using ParseError = arsh::ParseErrorBase<DescTokenKind>;
-
 #define CUR_KIND() (this->curKind)
 
 #define TRY(expr)                                                                                  \
@@ -701,7 +699,7 @@ public:
 
   ~Parser() = default;
 
-  std::vector<std::unique_ptr<Element>> operator()(const char *fileName);
+  std::vector<std::shared_ptr<Element>> operator()(const char *fileName);
 
 private:
   static bool isDescriptor(const std::string &line);
@@ -728,7 +726,7 @@ private:
    * @return
    * always null
    */
-  std::unique_ptr<Element> parse_params(std::unique_ptr<Element> &element);
+  std::unique_ptr<Element> parse_params(std::unique_ptr<Element> &&element);
 
   std::unique_ptr<TypeToken> parse_type();
 
@@ -743,7 +741,7 @@ private:
                                           std::unique_ptr<Element> &element);
 };
 
-std::vector<std::unique_ptr<Element>> Parser::operator()(const char *fileName) {
+std::vector<std::shared_ptr<Element>> Parser::operator()(const char *fileName) {
   std::ifstream input(fileName);
   if (!input) {
     fatal("cannot open file: %s\n", fileName);
@@ -753,7 +751,7 @@ std::vector<std::unique_ptr<Element>> Parser::operator()(const char *fileName) {
   std::string line;
   bool foundDesc = false;
 
-  std::vector<std::unique_ptr<Element>> elements;
+  std::vector<std::shared_ptr<Element>> elements;
   std::unique_ptr<Element> element;
   while (std::getline(input, line)) {
     lineNum++;
@@ -861,7 +859,7 @@ std::unique_ptr<Element> Parser::parse_funcDesc() {
 
   // parse parameter decl
   TRY(this->expect(DescTokenKind::LP));
-  TRY(this->parse_params(element));
+  element = TRY(this->parse_params(std::move(element)));
   TRY(this->expect(DescTokenKind::RP));
 
   TRY(this->expect(DescTokenKind::COLON));
@@ -881,7 +879,7 @@ std::unique_ptr<Element> Parser::parse_funcDesc() {
   return element;
 }
 
-std::unique_ptr<Element> Parser::parse_params(std::unique_ptr<Element> &element) {
+std::unique_ptr<Element> Parser::parse_params(std::unique_ptr<Element> &&element) {
   int count = 0;
   do {
     if (count++ > 0) {
@@ -895,7 +893,7 @@ std::unique_ptr<Element> Parser::parse_params(std::unique_ptr<Element> &element)
     element->addParam(this->toName(token), std::move(type));
   } while (CUR_KIND() == DescTokenKind::COMMA);
 
-  return nullptr;
+  return element;
 }
 
 bool isFunc(const std::string &str) { return str == TYPE_FUNC; }
@@ -983,7 +981,7 @@ struct TypeBind {
   HandleInfo info;
   std::string name;
 
-  std::vector<Element *> funcElements;
+  std::vector<std::shared_ptr<Element>> funcElements;
 
   explicit TypeBind(HandleInfo info)
       : info(info), name(HandleInfoMap::getInstance().getName(info)) {}
@@ -991,20 +989,20 @@ struct TypeBind {
   ~TypeBind() = default;
 };
 
-std::vector<TypeBind *> genTypeBinds(std::vector<std::unique_ptr<Element>> &elements) {
-  std::vector<TypeBind *> binds;
-#define GEN_BIND(ENUM) binds.push_back(new TypeBind(HandleInfo::ENUM));
-  EACH_HANDLE_INFO_TYPE(GEN_BIND)
-  EACH_HANDLE_INFO_TYPE_TEMP(GEN_BIND)
-  EACH_HANDLE_INFO_FUNC_TYPE(GEN_BIND)
+std::vector<TypeBind> genTypeBinds(const std::vector<std::shared_ptr<Element>> &elements) {
+  std::vector<TypeBind> binds = {
+#define GEN_BIND(ENUM) TypeBind(HandleInfo::ENUM),
+      EACH_HANDLE_INFO_TYPE(GEN_BIND) EACH_HANDLE_INFO_TYPE_TEMP(GEN_BIND)
+          EACH_HANDLE_INFO_FUNC_TYPE(GEN_BIND)
 #undef GEN_BIND
+  };
 
-  for (const std::unique_ptr<Element> &element : elements) {
+  for (const auto &element : elements) {
     bool matched = false;
-    for (TypeBind *bind : binds) {
-      if (element->isOwnerType(bind->info)) {
+    for (auto &bind : binds) {
+      if (element->isOwnerType(bind.info)) {
         matched = true;
-        bind->funcElements.push_back(element.get());
+        bind.funcElements.push_back(element);
         break;
       }
     }
@@ -1016,11 +1014,11 @@ std::vector<TypeBind *> genTypeBinds(std::vector<std::unique_ptr<Element>> &elem
 }
 
 bool isDisallowType(HandleInfo info) {
-  const HandleInfo list[] = {HandleInfo::Void, HandleInfo::Value_};
+  constexpr HandleInfo list[] = {HandleInfo::Void, HandleInfo::Value_};
   return std::any_of(std::begin(list), std::end(list), [&](auto &e) { return e == info; });
 }
 
-void genHeaderFile(const char *fileName, const std::vector<TypeBind *> &binds) {
+void genHeaderFile(const char *fileName, const std::vector<TypeBind> &binds) {
   FILE *fp = fopen(fileName, "w");
   if (fp == nullptr) {
     fatal("cannot open output file: %s\n", fileName);
@@ -1039,8 +1037,8 @@ void genHeaderFile(const char *fileName, const std::vector<TypeBind *> &binds) {
   // generate NativeFuncInfo table
   OUT("static constexpr NativeFuncInfo infoTable[] = {\n");
   OUT("    {nullptr, nullptr, {}},\n");
-  for (TypeBind *bind : binds) {
-    for (Element *e : bind->funcElements) {
+  for (auto &bind : binds) {
+    for (auto &e : bind.funcElements) {
       OUT("    %s,\n", e->emit().c_str());
     }
   }
@@ -1059,16 +1057,16 @@ void genHeaderFile(const char *fileName, const std::vector<TypeBind *> &binds) {
   unsigned int offsetCount = 1;
 
   // generate each native_type_info_t
-  for (TypeBind *bind : binds) {
-    if (isDisallowType(bind->info)) {
+  for (auto &bind : binds) {
+    if (isDisallowType(bind.info)) {
       continue; // skip Void due to having no elements.
     }
 
-    unsigned int methodSize = bind->funcElements.size();
+    const unsigned int methodSize = bind.funcElements.size();
 
-    OUT("static native_type_info_t info_%sType() {\n", bind->name.c_str());
+    OUT("static native_type_info_t info_%sType() {\n", bind.name.c_str());
     OUT("    return { .offset = %u, .methodSize = %u };\n",
-        bind->funcElements.empty() ? 0 : offsetCount, methodSize);
+        bind.funcElements.empty() ? 0 : offsetCount, methodSize);
     OUT("}\n");
     OUT("\n");
 
@@ -1081,7 +1079,7 @@ void genHeaderFile(const char *fileName, const std::vector<TypeBind *> &binds) {
   fclose(fp);
 }
 
-void genSourceFile(const char *fileName, const std::vector<TypeBind *> &binds) {
+void genSourceFile(const char *fileName, const std::vector<TypeBind> &binds) {
   FILE *fp = fopen(fileName, "w");
   if (fp == nullptr) {
     fatal("cannot open output file: %s\n", fileName);
@@ -1097,8 +1095,8 @@ void genSourceFile(const char *fileName, const std::vector<TypeBind *> &binds) {
   // generate NativeFuncPtrTable
   OUT("static constexpr native_func_t ptrTable[] = {\n");
   OUT("    nullptr,\n");
-  for (TypeBind *bind : binds) {
-    for (Element *e : bind->funcElements) {
+  for (auto &bind : binds) {
+    for (auto &e : bind.funcElements) {
       OUT("    %s,\n", e->getActualFuncName());
     }
   }
@@ -1114,12 +1112,12 @@ void genSourceFile(const char *fileName, const std::vector<TypeBind *> &binds) {
 }
 
 void gencode(const char *headerFileName, const char *outFileName,
-             const std::vector<TypeBind *> &binds) {
+             const std::vector<TypeBind> &binds) {
   genHeaderFile(headerFileName, binds);
   genSourceFile(outFileName, binds);
 }
 
-void gendoc(const char *outFileName, const std::vector<TypeBind *> &binds) {
+void gendoc(const char *outFileName, const std::vector<TypeBind> &binds) {
   FILE *fp = fopen(outFileName, "w");
   if (fp == nullptr) {
     fatal("cannot open output file: %s\n", outFileName);
@@ -1127,14 +1125,14 @@ void gendoc(const char *outFileName, const std::vector<TypeBind *> &binds) {
 
   OUT("# Standard Library Interface Definition\n");
   for (auto &bind : binds) {
-    if (bind->funcElements.empty()) {
+    if (bind.funcElements.empty()) {
       continue;
     }
 
-    OUT("## %s type\n", bind->name.c_str());
+    OUT("## %s type\n", bind.name.c_str());
     OUT("```");
 
-    for (auto &e : bind->funcElements) {
+    for (auto &e : bind.funcElements) {
       OUT("\n");
       OUT("%s\n", e->toString().c_str());
     }
@@ -1211,7 +1209,7 @@ int main(int argc, char **argv) {
   const char *outputFileName = *(++begin);
 
   auto elements = Parser()(inputFileName);
-  std::vector<TypeBind *> binds(genTypeBinds(elements));
+  auto binds = genTypeBinds(elements);
 
   if (doc) {
     gendoc(outputFileName, binds);
