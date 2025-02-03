@@ -312,8 +312,9 @@ static bool checkNameConflict(const SymbolIndexes &indexes, const DeclSymbol &de
   }
 
   // check name conflict in other indexes that importing this index
-  if (!decl.has(DeclSymbol::Attr::GLOBAL) || decl.is(DeclSymbol::Kind::PARAM)) {
-    return true; // ignore named arg, named imported symbols
+  if (!decl.has(DeclSymbol::Attr::GLOBAL) || decl.is(DeclSymbol::Kind::PARAM) ||
+      (!decl.is(DeclSymbol::Kind::METHOD) && decl.has(DeclSymbol::Attr::MEMBER))) {
+    return true; // ignore named arg, named imported symbols, field
   }
   for (const auto &index : indexes) {
     if (index->getModId() == decl.getModId()) {
