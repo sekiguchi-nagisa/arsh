@@ -86,12 +86,13 @@ private:
      * low-level api, normally unused
      * @param name
      * must be proper mangled name
-     * @param decl
+     * @param declRef
+     * for DeclSymbol
      * @return
      * if successfully insert, return true
      */
-    bool addDeclWithSpecifiedName(std::string &&name, const DeclSymbol &decl) {
-      return this->map.emplace(std::move(name), decl.toRef()).second;
+    bool addDeclWithSpecifiedName(std::string &&name, SymbolRef declRef) {
+      return this->map.emplace(std::move(name), declRef).second;
     }
 
     bool addDecl(const DeclSymbol &decl);
@@ -265,11 +266,11 @@ public:
    *
    * @param alias
    * must be porper mangled name
-   * @param decl
+   * @param declRef
    * @return
    */
-  bool addAliasToCurScope(std::string &&alias, const DeclSymbol &decl) {
-    return this->scope->addDeclWithSpecifiedName(std::move(alias), decl);
+  bool addAliasToCurScope(std::string &&alias, SymbolRef declRef) {
+    return this->scope->addDeclWithSpecifiedName(std::move(alias), declRef);
   }
 
 private:

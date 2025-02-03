@@ -36,15 +36,15 @@ namespace arsh::lsp {
   } while (false)
 
 bool IndexBuilder::ScopeEntry::addDecl(const DeclSymbol &decl) {
-  bool r1 = this->addDeclWithSpecifiedName(decl.getMangledName().toString(), decl);
+  bool r1 = this->addDeclWithSpecifiedName(decl.getMangledName().toString(), decl.toRef());
   if (decl.is(DeclSymbol::Kind::MOD)) {
     // register udc
     std::string name = DeclSymbol::mangle(DeclSymbol::Kind::CMD, decl.getMangledName());
-    bool r2 = this->addDeclWithSpecifiedName(std::move(name), decl);
+    bool r2 = this->addDeclWithSpecifiedName(std::move(name), decl.toRef());
 
     // register type alias
     name = DeclSymbol::mangle(DeclSymbol::Kind::TYPE_ALIAS, decl.getMangledName());
-    bool r3 = this->addDeclWithSpecifiedName(std::move(name), decl);
+    bool r3 = this->addDeclWithSpecifiedName(std::move(name), decl.toRef());
     r1 = r1 && r2 && r3;
   }
   return r1;
@@ -637,7 +637,7 @@ void SymbolIndexer::visitTypeDefNode(TypeDefNode &node) {
           node.getTargetTypeNode().getType(), DeclSymbol::Kind::TYPE_ALIAS, node.getToken());
       if (decl) { // for type-alias access within constructor scope
         auto mangledName = DeclSymbol::mangle(DeclSymbol::Kind::TYPE_ALIAS, node.getName());
-        this->builder().addAliasToCurScope(std::move(mangledName), *decl);
+        this->builder().addAliasToCurScope(std::move(mangledName), decl->toRef());
       }
     } else {
       this->builder().addDecl(node.getNameInfo(), node.getTargetTypeNode().getType(),
@@ -717,7 +717,7 @@ void SymbolIndexer::visitVarDeclNode(VarDeclNode &node) {
                                                  fromVarDeclKind(node.getKind()), node.getToken());
       if (decl) { // for parameter access within constructor scope
         auto mangledName = DeclSymbol::mangle(fromVarDeclKind(node.getKind()), node.getVarName());
-        this->builder().addAliasToCurScope(std::move(mangledName), *decl);
+        this->builder().addAliasToCurScope(std::move(mangledName), decl->toRef());
       }
     }
   } else {
@@ -902,7 +902,7 @@ void SymbolIndexer::visitFunctionImpl(FunctionNode &node, const FuncVisitOp op) 
               node.getFuncName(), *node.getHandle());
           if (decl) { // for parameter access within function scope
             auto mangledName = DeclSymbol::mangle(DeclSymbol::Kind::VAR, paramNode->getVarName());
-            this->builder().addAliasToCurScope(std::move(mangledName), *decl);
+            this->builder().addAliasToCurScope(std::move(mangledName), decl->toRef());
           }
         } else {
           this->builder().addDecl(paramNode->getNameInfo(), paramNode->getExprNode()->getType(),
