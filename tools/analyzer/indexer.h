@@ -261,6 +261,17 @@ public:
 
   void addHereDocStartEnd(const NameInfo &start, Token end);
 
+  /**
+   *
+   * @param alias
+   * must be porper mangled name
+   * @param decl
+   * @return
+   */
+  bool addAliasToCurScope(std::string &&alias, const DeclSymbol &decl) {
+    return this->scope->addDeclWithSpecifiedName(std::move(alias), decl);
+  }
+
 private:
   ModId getModId() const { return this->src->getSrcId(); }
 

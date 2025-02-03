@@ -409,15 +409,6 @@ void IndexBuilder::addHereDocStartEnd(const NameInfo &start, Token end) {
   }
 }
 
-static bool isMemberDecl(const DeclSymbol &decl) {
-  auto kind = decl.getKind();
-  if (kind == DeclSymbol::Kind::TYPE_ALIAS) {
-    return true;
-  }
-  StringRef prefix = DeclSymbol::getVarDeclPrefix(kind);
-  return !prefix.empty();
-}
-
 DeclSymbol *IndexBuilder::insertNewDecl(DeclSymbol::Kind k, DeclSymbol::Attr attr,
                                         DeclSymbol::Name &&name, const char *info, Token body,
                                         DeclInsertOp op) {
@@ -442,24 +433,6 @@ DeclSymbol *IndexBuilder::insertNewDecl(DeclSymbol::Kind k, DeclSymbol::Attr att
     ScopeEntry *global = this->scope.get();
     while (!global->isGlobal()) {
       global = global->parent.get();
-    }
-    if (op == DeclInsertOp::MEMBER && !this->scope->isGlobal() && isMemberDecl(decl)) {
-      /**
-       * for field/type-alias access from constructor
-       */
-      auto mangledName = DeclSymbol::mangle(decl.getKind(), decl.toDemangledName());
-      if (!this->scope->addDeclWithSpecifiedName(std::move(mangledName), decl)) {
-        return nullptr;
-      }
-    }
-    if (op == DeclInsertOp::PARAM && !this->scope->isGlobal()) {
-      /**
-       * for parameter access within function scope
-       */
-      auto mangledName = DeclSymbol::mangle(DeclSymbol::Kind::VAR, decl.toDemangledName());
-      if (!this->scope->addDeclWithSpecifiedName(std::move(mangledName), decl)) {
-        return nullptr;
-      }
     }
     if (!global->addDecl(decl)) {
       return nullptr;
@@ -659,9 +632,13 @@ void SymbolIndexer::visitTypeDefNode(TypeDefNode &node) {
   case TypeDefNode::ALIAS:
     this->visit(node.getTargetTypeNode());
     if (this->builder().curScope().isConstructor()) {
-      this->builder().addMemberDecl(*this->builder().curScope().getResolvedType(),
-                                    node.getNameInfo(), node.getTargetTypeNode().getType(),
-                                    DeclSymbol::Kind::TYPE_ALIAS, node.getToken());
+      auto *decl = this->builder().addMemberDecl(
+          *this->builder().curScope().getResolvedType(), node.getNameInfo(),
+          node.getTargetTypeNode().getType(), DeclSymbol::Kind::TYPE_ALIAS, node.getToken());
+      if (decl) { // for type-alias access within constructor scope
+        auto mangledName = DeclSymbol::mangle(DeclSymbol::Kind::TYPE_ALIAS, node.getName());
+        this->builder().addAliasToCurScope(std::move(mangledName), *decl);
+      }
     } else {
       this->builder().addDecl(node.getNameInfo(), node.getTargetTypeNode().getType(),
                               node.getToken(), DeclSymbol::Kind::TYPE_ALIAS);
@@ -736,8 +713,12 @@ void SymbolIndexer::visitVarDeclNode(VarDeclNode &node) {
                                   : this->builder().getPool().get(TYPE::String);
   if (this->builder().curScope().isConstructor()) {
     if (auto *resolved = this->builder().curScope().getResolvedType()) {
-      this->builder().addMemberDecl(*resolved, node.getNameInfo(), type,
-                                    fromVarDeclKind(node.getKind()), node.getToken());
+      auto *decl = this->builder().addMemberDecl(*resolved, node.getNameInfo(), type,
+                                                 fromVarDeclKind(node.getKind()), node.getToken());
+      if (decl) { // for parameter access within constructor scope
+        auto mangledName = DeclSymbol::mangle(fromVarDeclKind(node.getKind()), node.getVarName());
+        this->builder().addAliasToCurScope(std::move(mangledName), *decl);
+      }
     }
   } else {
     this->builder().addDecl(node.getNameInfo(), type, node.getToken(),
@@ -916,9 +897,13 @@ void SymbolIndexer::visitFunctionImpl(FunctionNode &node, const FuncVisitOp op) 
           continue;
         }
         if (node.getHandle()) {
-          this->builder().addParamDecl(paramNode->getNameInfo(),
-                                       paramNode->getExprNode()->getType(), node.getToken(),
-                                       node.getFuncName(), *node.getHandle());
+          auto *decl = this->builder().addParamDecl(
+              paramNode->getNameInfo(), paramNode->getExprNode()->getType(), node.getToken(),
+              node.getFuncName(), *node.getHandle());
+          if (decl) { // for parameter access within function scope
+            auto mangledName = DeclSymbol::mangle(DeclSymbol::Kind::VAR, paramNode->getVarName());
+            this->builder().addAliasToCurScope(std::move(mangledName), *decl);
+          }
         } else {
           this->builder().addDecl(paramNode->getNameInfo(), paramNode->getExprNode()->getType(),
                                   node.getToken());
