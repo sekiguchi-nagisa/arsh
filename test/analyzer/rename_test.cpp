@@ -739,6 +739,39 @@ TEST_F(RenameTest, namedArg2) { // for builtin method
                                        RenameValidationStatus::BUILTIN));
 }
 
+TEST_F(RenameTest, namedArg3) { // for implicit constructor
+  const char *content = R"(
+type Interval {
+  let begin : Int
+  let end : Int
+}
+function dist(): Int for Interval {
+  return $this.begin + $this.end
+}
+var aa = new Interval($begin:12, $end: 67)
+$aa.begin + $aa.dist()
+)";
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, 1));
+
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 8, .character = 25}, "aa",
+                                       {
+                                           {1, "(2:6~2:11)"},
+                                           {1, "(6:15~6:20)"},
+                                           {1, "(8:23~8:28)"},
+                                           {1, "(9:4~9:9)"},
+                                       }));
+  ASSERT_NO_FATAL_FAILURE(this->rename(Request{.modId = 1, .line = 6, .character = 31}, "OSTYPE",
+                                       {
+                                           {1, "(3:6~3:9)"},
+                                           {1, "(6:29~6:32)"},
+                                           {1, "(8:34~8:37)"},
+                                       }));
+
+  // with conflict
+  // ASSERT_NO_FATAL_FAILURE(this->renameWithConflict(Request{.modId = 1, .line = 6, .character = 31},
+  //                                                  "dist", {1, "(5:9~5:13)"}));
+}
+
 TEST_F(RenameTest, source1) {
   arsh::TempFileFactory tempFileFactory("arsh_rename");
   auto fileName = tempFileFactory.createTempFile("mod.ds", "");

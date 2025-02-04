@@ -28,7 +28,9 @@
 
 #### LSP
 
-- support indexing of generic method's named argument
+- improve indexing of named argument
+    - support generic method's named argument
+    - support implicit constructor's named argument
 
 ### Fixed
 

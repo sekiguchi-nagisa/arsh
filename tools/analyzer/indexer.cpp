@@ -876,8 +876,13 @@ void SymbolIndexer::visitFunctionImpl(FunctionNode &node, const FuncVisitOp op) 
     if (node.kind == FunctionNode::IMPLICIT_CONSTRUCTOR) {
       for (auto &e : node.getParamNodes()) {
         if (auto *resolved = this->builder().curScope().getResolvedType()) {
-          this->builder().addMemberDecl(*resolved, e->getNameInfo(), e->getExprNode()->getType(),
-                                        fromVarDeclKind(e->getKind()), e->getToken());
+          auto *decl = this->builder().addMemberDecl(*resolved, e->getNameInfo(),
+                                                     e->getExprNode()->getType(),
+                                                     fromVarDeclKind(e->getKind()), e->getToken());
+          if (decl) { // for named arguments
+            auto mangledName = mangleParamNameImpl(OP_INIT, resolved, e->getVarName());
+            this->builder().addAliasToGlobal(std::move(mangledName), decl->toRef());
+          }
         }
       }
     } else {

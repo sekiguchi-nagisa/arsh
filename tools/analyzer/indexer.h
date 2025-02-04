@@ -273,6 +273,14 @@ public:
     return this->scope->addDeclWithSpecifiedName(std::move(alias), declRef);
   }
 
+  bool addAliasToGlobal(std::string &&alias, SymbolRef declRef) {
+    auto *cur = this->scope.get();
+    while (!cur->isGlobal()) {
+      cur = cur->parent.get();
+    }
+    return cur->addDeclWithSpecifiedName(std::move(alias), declRef);
+  }
+
 private:
   ModId getModId() const { return this->src->getSrcId(); }
 

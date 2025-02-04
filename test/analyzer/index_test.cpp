@@ -583,6 +583,55 @@ new Interval($bbb: 34, $aaa: 2)
                      }));
 }
 
+TEST_F(IndexTest, namedArgImplicitConstructor) {
+  unsigned short modId;
+  const char *content = R"E(
+typedef Interval {
+  let begin : Int
+  let end : Int
+}
+var aa = new Interval($end: 34, $begin: 2)
+new Interval($begin:34, $end: 2345)
+$aa.begin +
+$aa.end
+)E";
+
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 4, .symbolSize = 16}));
+
+  // definition
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 5, .character = 36}}, {{modId, "(2:6~2:11)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 6, .character = 16}}, {{modId, "(2:6~2:11)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 7, .character = 8}}, {{modId, "(2:6~2:11)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 5, .character = 23}}, {{modId, "(3:6~3:9)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 6, .character = 25}}, {{modId, "(3:6~3:9)"}}));
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 8, .character = 6}}, {{modId, "(3:6~3:9)"}}));
+
+  // references
+  ASSERT_NO_FATAL_FAILURE(
+      this->findRefs(Request{.modId = modId, .position = {.line = 2, .character = 8}},
+                     {
+                         {modId, "(2:6~2:11)"},  // itself
+                         {modId, "(5:32~5:38)"}, // $begin: 2
+                         {modId, "(6:13~6:19)"}, // $begin:34
+                         {modId, "(7:4~7:9)"},   // $aa.begin
+                     }));
+
+  ASSERT_NO_FATAL_FAILURE(
+      this->findRefs(Request{.modId = modId, .position = {.line = 3, .character = 8}},
+                     {
+                         {modId, "(3:6~3:9)"},   // itself
+                         {modId, "(5:22~5:26)"}, // $end: 34
+                         {modId, "(6:24~6:28)"}, // $end: 2345
+                         {modId, "(8:4~8:7)"},   // $aa.end
+                     }));
+}
+
 TEST_F(IndexTest, globalImport) {
   TempFileFactory tempFileFactory("arsh_index");
   auto fileName = tempFileFactory.createTempFile("mod.ds",
@@ -1661,6 +1710,10 @@ type Interval(n: Int, next: Interval?) {
   ASSERT_NO_FATAL_FAILURE(this->hover(
       "typedef Interval() { var value = new Interval?(); }; var aaa = new [[Interval]]();\n$aaa",
       Position{.line = 1, .character = 2}, "```arsh\nvar aaa: [[Interval]]\n```"));
+  ASSERT_NO_FATAL_FAILURE(this->hover("type Interval { var n:Int; let next: Interval?; }\n"
+                                      "new Interval(\n$next: $None, $n: 1234)",
+                                      Position{.line = 2, .character = 2},
+                                      "```arsh\nlet next: Interval? for Interval\n```"));
 
   // user-defined method
   ASSERT_NO_FATAL_FAILURE(this->hover("typedef INT(a : Int) { var v = $a; }\n"
