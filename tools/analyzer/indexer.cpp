@@ -36,18 +36,7 @@ namespace arsh::lsp {
   } while (false)
 
 bool IndexBuilder::ScopeEntry::addDecl(const DeclSymbol &decl) {
-  bool r1 = this->addDeclWithSpecifiedName(decl.getMangledName().toString(), decl.toRef());
-  if (decl.is(DeclSymbol::Kind::MOD)) {
-    // register udc
-    std::string name = DeclSymbol::mangle(DeclSymbol::Kind::CMD, decl.getMangledName());
-    bool r2 = this->addDeclWithSpecifiedName(std::move(name), decl.toRef());
-
-    // register type alias
-    name = DeclSymbol::mangle(DeclSymbol::Kind::TYPE_ALIAS, decl.getMangledName());
-    bool r3 = this->addDeclWithSpecifiedName(std::move(name), decl.toRef());
-    r1 = r1 && r2 && r3;
-  }
-  return r1;
+  return this->addDeclWithSpecifiedName(decl.getMangledName().toString(), decl.toRef());
 }
 
 static bool isTupleField(const std::string &mangledName, DeclSymbol::Kind kind,
@@ -997,9 +986,15 @@ void SymbolIndexer::visitSourceNode(SourceNode &node) {
   }
   if (node.getNameInfo()) {
     assert(node.getSrcIndex() == 0);
-    this->builder().addDecl(*node.getNameInfo(), DeclSymbol::Kind::MOD,
-                            std::to_string(toUnderlying(node.getModType().getModId())).c_str(),
-                            node.getToken());
+    auto *decl = this->builder().addDecl(
+        *node.getNameInfo(), DeclSymbol::Kind::MOD,
+        std::to_string(toUnderlying(node.getModType().getModId())).c_str(), node.getToken());
+    if (decl) {
+      std::string name = DeclSymbol::mangle(DeclSymbol::Kind::CMD, node.getNameInfo()->getName());
+      this->builder().addAliasToCurScope(std::move(name), decl->toRef());
+      name = DeclSymbol::mangle(DeclSymbol::Kind::TYPE_ALIAS, node.getNameInfo()->getName());
+      this->builder().addAliasToCurScope(std::move(name), decl->toRef());
+    }
   }
   this->builder().addLink(node.getPathToken(), node.getModType().getModId(),
                           node.getImportedModKind(), node.getPathName());
