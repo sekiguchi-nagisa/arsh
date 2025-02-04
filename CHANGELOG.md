@@ -6,7 +6,7 @@
 
 #### Builtin
 
-- add ``Array#searchSorted``, ``Array#searchSortedBy`` method
+- add ``Array#searchSorted``, ``Array#searchSortedBy`` methods
 - expose internal three-way comparison api used by ``Array#sort`` method
     - add ``Int#compare``, ``Bool#compare``, ``Signal#compare``, ``String#compare`` methods like
       ``Float#compare``
@@ -24,7 +24,7 @@
 - **Breaking Change**: change parameter name of some builtin methods
     - ``String#slice``, ``Array#slice``, ``Job#kill``, ``Array#addAll``, ``Map#addAll``,
     - ``Array#removeRange``, ``LineEditor#readLine``
-- automatically insert ``(``, ``()`` after completing method name
+- automatically insert ``(``, ``()`` after completing method names
 
 #### LSP
 
