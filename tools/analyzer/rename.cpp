@@ -240,9 +240,17 @@ static bool checkNameConflict(const SymbolIndexes &indexes, const DeclSymbol &de
       mangledNewNames.push_back(DeclSymbol::mangle(DeclSymbol::Kind::TYPE_ALIAS, newName));
       mangledNewNames.push_back(DeclSymbol::mangle(DeclSymbol::Kind::CMD, newName));
     }
-    // for constructor
+    // for constructor/method
     if (decl.has(DeclSymbol::Attr::MEMBER)) {
-      mangledNewNames.push_back(DeclSymbol::mangle(decl.getKind(), newName));
+      if (decl.is(DeclSymbol::Kind::METHOD)) {
+        mangledNewNames.push_back(DeclSymbol::mangle(recvTypeName, DeclSymbol::Kind::VAR, newName));
+      } else {
+        mangledNewNames.push_back(DeclSymbol::mangle(decl.getKind(), newName));
+        if (!decl.is(DeclSymbol::Kind::TYPE_ALIAS)) {
+          mangledNewNames.push_back(
+              DeclSymbol::mangle(recvTypeName, DeclSymbol::Kind::METHOD, newName));
+        }
+      }
     }
   }
 
@@ -292,7 +300,10 @@ static bool checkNameConflict(const SymbolIndexes &indexes, const DeclSymbol &de
   for (const auto &target : declIndex->getDecls()) {
     const auto &declScope = declIndex->getScopes()[decl.getScopeId()];
     const auto &targetScope = declIndex->getScopes()[target.getScopeId()];
-    if (!mayBeConflict(declScope, decl.toRef(), targetScope, target.toRef())) {
+    if ((decl.is(DeclSymbol::Kind::METHOD) && target.isFieldVar()) ||
+        (decl.isFieldVar() && target.is(DeclSymbol::Kind::METHOD))) {
+      // not check scope
+    } else if (!mayBeConflict(declScope, decl.toRef(), targetScope, target.toRef())) {
       continue;
     }
     if (decl.has(DeclSymbol::Attr::MEMBER) &&

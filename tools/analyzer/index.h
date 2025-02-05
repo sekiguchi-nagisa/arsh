@@ -186,6 +186,18 @@ public:
 
   bool has(Attr a) const;
 
+  bool isFieldVar() const {
+    switch (this->getKind()) {
+    case Kind::VAR:
+    case Kind::LET:
+    case Kind::IMPORT_ENV:
+    case Kind::EXPORT_ENV:
+      return this->has(Attr::MEMBER);
+    default:
+      return false;
+    }
+  }
+
   unsigned int getScopeId() const { return this->scopeId; }
 
   StringRef getMangledName() const { return this->mangledName.get(); }

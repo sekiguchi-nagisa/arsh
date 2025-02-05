@@ -35,6 +35,7 @@
 ### Fixed
 
 - bugfix ExtendedPictographic handling of Unicode word segmentation
+- check field and method name conflict in ``textDocument/rename``
 
 ## [0.36.1] - 2025-01-10
 

@@ -473,6 +473,7 @@ typedef AAA {
 var aaa = new AAA(23, 'hello')
 $aaa.aaa
 $aaa.bbb
+function show() for AAA {}
 )";
   ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, 1));
 
@@ -486,6 +487,10 @@ $aaa.bbb
                                                    "bbb", {1, "(5:6~5:9)"}));
   ASSERT_NO_FATAL_FAILURE(this->renameWithConflict(Request{.modId = 1, .line = 5, .character = 8},
                                                    "aaa", {1, "(4:6~4:9)"}));
+  ASSERT_NO_FATAL_FAILURE(this->renameWithConflict(Request{.modId = 1, .line = 5, .character = 8},
+                                                   "show", {1, "(10:9~10:13)"}));
+  ASSERT_NO_FATAL_FAILURE(this->renameWithConflict(Request{.modId = 1, .line = 10, .character = 11},
+                                                   "bbb", {1, "(5:6~5:9)"}));
 }
 
 TEST_F(RenameTest, type1) {
@@ -768,8 +773,10 @@ $aa.begin + $aa.dist()
                                        }));
 
   // with conflict
-  // ASSERT_NO_FATAL_FAILURE(this->renameWithConflict(Request{.modId = 1, .line = 6, .character = 31},
-  //                                                  "dist", {1, "(5:9~5:13)"}));
+  ASSERT_NO_FATAL_FAILURE(this->renameWithConflict(Request{.modId = 1, .line = 6, .character = 31},
+                                                   "dist", {1, "(5:9~5:13)"}));
+  ASSERT_NO_FATAL_FAILURE(this->renameWithConflict(Request{.modId = 1, .line = 5, .character = 11},
+                                                   "begin", {1, "(2:6~2:11)"}));
 }
 
 TEST_F(RenameTest, source1) {
