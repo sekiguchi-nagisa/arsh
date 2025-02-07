@@ -7,7 +7,7 @@ var HISTFILESIZE = 1000
 var HISTIGNORE = $/^history/ as Regex?
 let HISTORY : [String]
 
-let _HISTLIMIT = 8192
+let _HISTLIMIT = 65535 # UINT16_MAX
 
 function _sync() {
     if $HISTSIZE > $_HISTLIMIT {
