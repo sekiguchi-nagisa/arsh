@@ -31,6 +31,7 @@
 - improve indexing of named argument
     - support generic method's named argument
     - support implicit constructor's named argument
+    - support backward reference
 
 ### Fixed
 

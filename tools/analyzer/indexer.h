@@ -202,8 +202,6 @@ public:
     return this->addDeclImpl(&recv, nameInfo, kind, info, token, DeclInsertOp::MEMBER);
   }
 
-  std::string mangleParamName(StringRef funcName, const Handle &handle, StringRef paramName) const;
-
   /**
    *
    * @param info
@@ -215,12 +213,6 @@ public:
    */
   const DeclSymbol *addParamDecl(const NameInfo &info, const Type &type, Token token,
                                  StringRef funcName, const Handle &handle);
-
-  const DeclSymbol *addParamDeclImpl(const NameInfo &info, const std::string &paramType,
-                                     Token token) {
-    return this->addDeclImpl(nullptr, info, DeclSymbol::Kind::PARAM, paramType.c_str(), token,
-                             DeclInsertOp::PARAM);
-  }
 
   const Symbol *addNamedArgSymbol(const NameInfo &nameInfo, const Handle &handle,
                                   StringRef funcName);
@@ -244,6 +236,14 @@ public:
                         DummyTokenGenerator &tokenGen, StringRef name);
 
   const DeclSymbol *findDecl(const Symbol &symbol) const;
+
+  /**
+   * only lookup own decl (not lookup foreign decl)
+   * normally unused
+   * @param pos
+   * @return
+   */
+  DeclSymbol *findDeclMut(unsigned int pos);
 
   void addLink(Token token, ModId targetModId, ImportedModKind modKind, const std::string &link) {
     auto ref = SymbolRef::create(token, targetModId);
@@ -282,6 +282,8 @@ public:
   }
 
 private:
+  std::string mangleParamName(StringRef funcName, const Handle &handle, StringRef paramName) const;
+
   ModId getModId() const { return this->src->getSrcId(); }
 
   const SymbolRef *lookup(const std::string &mangledName, DeclSymbol::Kind kind,
@@ -291,7 +293,6 @@ private:
     NORMAL,
     BUILTIN,
     MEMBER,
-    PARAM,
     NONE, // no scope check
   };
 

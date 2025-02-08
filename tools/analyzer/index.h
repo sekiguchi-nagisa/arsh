@@ -200,6 +200,12 @@ public:
 
   unsigned int getScopeId() const { return this->scopeId; }
 
+  /**
+   * normally unused
+   * @param id
+   */
+  void overrideScopeId(unsigned int id) { this->scopeId = id; }
+
   StringRef getMangledName() const { return this->mangledName.get(); }
 
   StringRef getInfo() const { return this->info.get(); }

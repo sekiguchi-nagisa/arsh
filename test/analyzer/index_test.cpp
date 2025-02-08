@@ -1506,6 +1506,33 @@ TEST_F(IndexTest, backrefUDC) {
                       {modId, "(2:4~2:7)"}}));
 }
 
+TEST_F(IndexTest, backrefNamedArg) {
+  unsigned short modId;
+  const char *content = R"E(
+  type AAA {
+    let begin: Int
+    let end: Int
+    var next: AAA?
+  }
+  function append(begin:Int, end:Int) for AAA {
+    $this.next = new AAA($begin:$begin, $end:$double($v:$end))
+  }
+  function double($v:Int): Int { return $v*2; }
+)E";
+
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 10, .symbolSize = 27}));
+
+  // definition
+  ASSERT_NO_FATAL_FAILURE(this->findDecl(
+      Request{.modId = modId, .position = {.line = 7, .character = 49}}, {{modId, "(9:11~9:17)"}}));
+
+  // reference
+  ASSERT_NO_FATAL_FAILURE(
+      this->findRefs(Request{.modId = modId, .position = {.line = 7, .character = 48}},
+                     {{modId, "(9:11~9:17)"},    // itself
+                      {modId, "(7:45~7:52)"}})); // $double($v:$end)
+}
+
 TEST_F(IndexTest, hereDoc) {
   unsigned short modId;
   const char *content = R"E(

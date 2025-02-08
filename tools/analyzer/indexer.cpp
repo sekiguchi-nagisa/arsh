@@ -109,8 +109,7 @@ const DeclSymbol *IndexBuilder::addDeclImpl(const Type *recv, const NameInfo &in
                                             DeclSymbol::Kind kind, const char *hover, Token body,
                                             DeclInsertOp op) {
   DeclSymbol::Attr attr = {};
-  if (this->scope->isGlobal() || this->scope->isConstructor() || op == DeclInsertOp::BUILTIN ||
-      op == DeclInsertOp::PARAM) {
+  if (this->scope->isGlobal() || this->scope->isConstructor() || op == DeclInsertOp::BUILTIN) {
     setFlag(attr, DeclSymbol::Attr::GLOBAL);
   }
   if (info.getName()[0] != '_' || kind == DeclSymbol::Kind::PARAM ||
@@ -299,12 +298,13 @@ std::string IndexBuilder::mangleParamName(StringRef funcName, const Handle &hand
 
 const DeclSymbol *IndexBuilder::addParamDecl(const NameInfo &info, const Type &type, Token token,
                                              StringRef funcName, const Handle &handle) {
+  assert(this->isGlobal());
   if (type.isUnresolved()) {
     return nullptr;
   }
-  NameInfo newInfo(info.getToken(), mangleParamName(funcName, handle, info.getName()));
+  NameInfo newInfo(info.getToken(), this->mangleParamName(funcName, handle, info.getName()));
   std::string hover = normalizeTypeName(type);
-  return this->addParamDeclImpl(newInfo, hover, token);
+  return this->addDecl(newInfo, DeclSymbol::Kind::PARAM, hover.c_str(), token);
 }
 
 const Symbol *IndexBuilder::addNamedArgSymbol(const NameInfo &nameInfo, const Handle &handle,
@@ -324,6 +324,7 @@ const Symbol *IndexBuilder::addNamedArgSymbol(const NameInfo &nameInfo, const Ha
 bool IndexBuilder::addBuiltinMethod(const Type &recvType, unsigned int methodIndex,
                                     DummyTokenGenerator &tokenGen, StringRef name) {
   assert(isBuiltinMod(this->getModId()));
+  assert(this->isGlobal());
   const NameInfo nameInfo(tokenGen.next(), name.toString());
   if (recvType.typeKind() == TypeKind::Builtin) {
     std::string content;
@@ -333,7 +334,8 @@ bool IndexBuilder::addBuiltinMethod(const Type &recvType, unsigned int methodInd
       auto paramName = ref.substr(0, r);
       auto paramType = ref.substr(r + 2).toString();
       NameInfo newNameInfo(tokenGen.next(), mangleParamNameImpl(name, &recvType, paramName));
-      this->addParamDeclImpl(newNameInfo, paramType, newNameInfo.getToken());
+      this->addDecl(newNameInfo, DeclSymbol::Kind::PARAM, paramType.c_str(),
+                    newNameInfo.getToken());
     });
     return this->addDeclImpl(&recvType, nameInfo, DeclSymbol::Kind::METHOD, content.c_str(),
                              nameInfo.getToken(), DeclInsertOp::BUILTIN);
@@ -346,8 +348,8 @@ bool IndexBuilder::addBuiltinMethod(const Type &recvType, unsigned int methodInd
           cc += ":";
           cc += std::to_string(paramIndex);
           NameInfo newNameInfo(tokenGen.next(), mangleParamNameImpl(name, &recvType, paramName));
-          this->addDeclImpl(nullptr, newNameInfo, DeclSymbol::Kind::GENERIC_METHOD_PARAM,
-                            cc.c_str(), newNameInfo.getToken(), DeclInsertOp::PARAM);
+          this->addDecl(newNameInfo, DeclSymbol::Kind::GENERIC_METHOD_PARAM, cc.c_str(),
+                        newNameInfo.getToken());
           paramIndex++;
           return true;
         });
@@ -372,6 +374,14 @@ const DeclSymbol *IndexBuilder::findDecl(const Symbol &symbol) const {
     });
     return index;
   }
+}
+
+DeclSymbol *IndexBuilder::findDeclMut(const unsigned int pos) {
+  auto iter = std::lower_bound(this->decls.begin(), this->decls.end(), pos, DeclSymbol::Compare());
+  if (iter != this->decls.end() && iter->getPos() == pos) {
+    return &(*iter);
+  }
+  return nullptr;
 }
 
 void IndexBuilder::addHereDocStartEnd(const NameInfo &start, Token end) {
@@ -417,8 +427,7 @@ DeclSymbol *IndexBuilder::insertNewDecl(DeclSymbol::Kind k, DeclSymbol::Attr att
     }
     break;
   case DeclInsertOp::BUILTIN:
-  case DeclInsertOp::MEMBER:
-  case DeclInsertOp::PARAM: {
+  case DeclInsertOp::MEMBER: {
     ScopeEntry *global = this->scope.get();
     while (!global->isGlobal()) {
       global = global->parent.get();
@@ -863,6 +872,20 @@ void SymbolIndexer::visitFunctionImpl(FunctionNode &node, const FuncVisitOp op) 
     }
     this->visit(node.getReturnTypeNode());
     this->visit(node.getRecvTypeNode());
+
+    // register param names for named-function/method/constructor
+    if (node.getHandle()) {
+      if (node.kind != FunctionNode::IMPLICIT_CONSTRUCTOR) {
+        for (auto &paramNode : node.getParamNodes()) {
+          if (paramNode->getExprNode()->isUntyped()) {
+            continue;
+          }
+          this->builder().addParamDecl(paramNode->getNameInfo(),
+                                       paramNode->getExprNode()->getType(), node.getToken(),
+                                       node.getFuncName(), *node.getHandle());
+        }
+      }
+    }
   }
 
   if (hasFlag(op, FuncVisitOp::VISIT_BODY)) {
@@ -874,8 +897,8 @@ void SymbolIndexer::visitFunctionImpl(FunctionNode &node, const FuncVisitOp op) 
                                           node.isMethod() ? &node.getRecvTypeNode()->getType()
                                                           : node.getResolvedType());
     if (node.kind == FunctionNode::IMPLICIT_CONSTRUCTOR) {
-      for (auto &e : node.getParamNodes()) {
-        if (auto *resolved = this->builder().curScope().getResolvedType()) {
+      if (auto *resolved = this->builder().curScope().getResolvedType()) {
+        for (auto &e : node.getParamNodes()) {
           auto *decl = this->builder().addMemberDecl(*resolved, e->getNameInfo(),
                                                      e->getExprNode()->getType(),
                                                      fromVarDeclKind(e->getKind()), e->getToken());
@@ -891,10 +914,9 @@ void SymbolIndexer::visitFunctionImpl(FunctionNode &node, const FuncVisitOp op) 
           continue;
         }
         if (node.getHandle()) {
-          auto *decl = this->builder().addParamDecl(
-              paramNode->getNameInfo(), paramNode->getExprNode()->getType(), node.getToken(),
-              node.getFuncName(), *node.getHandle());
-          if (decl) { // for parameter access within function scope
+          if (auto *decl = this->builder().findDeclMut(paramNode->getNameInfo().getToken().pos)) {
+            // for parameter access within function scope
+            decl->overrideScopeId(this->builder().curScope().scopeId); // use current scopeId
             auto mangledName = DeclSymbol::mangle(DeclSymbol::Kind::VAR, paramNode->getVarName());
             this->builder().addAliasToCurScope(std::move(mangledName), decl->toRef());
           }
