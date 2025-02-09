@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
+#ifndef ARSH_TOOLS_ANALYZER_WORKER_H
+#define ARSH_TOOLS_ANALYZER_WORKER_H
+
 #include <functional>
 #include <future>
 #include <queue>
 #include <thread>
-
-#ifndef ARSH_TOOLS_ANALYZER_WORKER_H
-#define ARSH_TOOLS_ANALYZER_WORKER_H
 
 namespace arsh::lsp {
 
