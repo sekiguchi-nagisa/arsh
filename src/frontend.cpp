@@ -303,7 +303,7 @@ DefaultModuleProvider::load(const char *scriptDir, const char *modPath, ModLoadO
   }
 }
 
-const SysConfig &DefaultModuleProvider::getSysConfig() const { return this->loader.getSysConfig(); }
+const SysConfig &DefaultModuleProvider::getSysConfig() const { return this->loader.sysConfig; }
 
 std::reference_wrapper<CancelToken> DefaultModuleProvider::getCancelToken() const {
   return std::ref(*this->cancelToken);

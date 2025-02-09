@@ -436,16 +436,14 @@ struct allow_enum_bitop<ModLoadOption> : std::true_type {};
 
 class ModuleLoaderBase {
 protected:
-  const SysConfig &sysConfig;
-
   explicit ModuleLoaderBase(const SysConfig &conf) : sysConfig(conf) {}
 
 public:
   static constexpr unsigned int MAX_MOD_NUM = SYS_LIMIT_MOD_ID;
 
-  virtual ~ModuleLoaderBase() = default;
+  const SysConfig &sysConfig;
 
-  const SysConfig &getSysConfig() const { return this->sysConfig; }
+  virtual ~ModuleLoaderBase() = default;
 
   /**
    * resolve module path or module type
