@@ -476,6 +476,14 @@ TEST(RingBuffer, pop) {
   ASSERT_EQ("98", *buffer[0]);
 }
 
+TEST(RingBuffer, capacity) {
+  ASSERT_EQ(2, RingBuffer<unsigned int>::alignAllocSize(0));
+  ASSERT_EQ(2, RingBuffer<unsigned int>::alignAllocSize(1));
+  ASSERT_EQ(4, RingBuffer<unsigned int>::alignAllocSize(2));
+  ASSERT_EQ(4, RingBuffer<unsigned int>::alignAllocSize(3));
+  ASSERT_EQ(8, RingBuffer<unsigned int>::alignAllocSize(4));
+}
+
 TEST(InlinedArray, trivial) {
   {
     InlinedArray<int[2], 5> values(5);
