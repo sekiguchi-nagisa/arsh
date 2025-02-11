@@ -33,7 +33,7 @@ public:
   Formatter(Style style, std::ostream &output)
       : TokenEmitter(""), style(std::move(style)), output(output) {}
 
-  void emit(HighlightTokenClass tokenClass, Token token) override;
+  void emit(TokenKind kind, Token token) override;
 
   virtual void initialize(StringRef newSource);
 

@@ -23,7 +23,9 @@
 #define EACH_TOKEN(TOKEN)                                                                          \
   TOKEN(INVALID, "<Invalid>")                                                                      \
   TOKEN(EOS, "<EOS>")                                                                              \
-  TOKEN(COMPLETION, "<completion>") /* for code completion */                                      \
+  TOKEN(COMPLETION, "<Completion>") /* for code completion */                                      \
+  TOKEN(COMMENT, "<Comment>")       /* trivia (line comment) */                                    \
+  TOKEN(ESCAPED_NL, "<EscapedNL>")  /* trivia (escaped newline) */                                 \
   /* token kind definition. */                                                                     \
   /* reserved key word. */                                                                         \
   TOKEN(ALIAS, "alias")                                                                            \

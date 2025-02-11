@@ -109,7 +109,7 @@ public:
   SemanticTokens take() && { return std::move(this->tokens); }
 
 private:
-  void emit(HighlightTokenClass tokenClass, Token token) override;
+  void emit(TokenKind kind, Token token) override;
 };
 
 } // namespace arsh::lsp

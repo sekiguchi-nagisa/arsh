@@ -25,8 +25,9 @@ public:
   auto take() && { return std::move(this->tokens); }
 
 private:
-  void emit(HighlightTokenClass tokenClass, Token token) override {
-    this->tokens.emplace_back(tokenClass, this->source.substr(token.pos, token.size).toString());
+  void emit(TokenKind kind, Token token) override {
+    this->tokens.emplace_back(toTokenClass(kind),
+                              this->source.substr(token.pos, token.size).toString());
   }
 };
 

@@ -155,8 +155,8 @@ TokenDelta getTokenDelta(const Range &prev, const Range &cur) {
   return tokenDelta;
 }
 
-void SemanticTokenEmitter::emit(HighlightTokenClass tokenClass, Token token) {
-  auto typePair = this->encoder.encode(tokenClass);
+void SemanticTokenEmitter::emit(TokenKind kind, Token token) {
+  auto typePair = this->encoder.encode(toTokenClass(kind));
   if (!typePair.hasValue()) {
     return;
   }

@@ -169,8 +169,8 @@ public:
   std::vector<std::pair<HighlightTokenClass, Token>> take() && { return std::move(this->tokens); }
 
 private:
-  void emit(HighlightTokenClass tokenClass, Token token) override {
-    this->tokens.emplace_back(tokenClass, token);
+  void emit(TokenKind kind, Token token) override {
+    this->tokens.emplace_back(toTokenClass(kind), token);
   }
 };
 

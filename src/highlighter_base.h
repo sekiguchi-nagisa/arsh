@@ -74,7 +74,7 @@ public:
   /**
    * for comment
    * @param token
-   * must be represent comment
+   * must represent comment
    */
   void operator()(Token token) override;
 
@@ -87,10 +87,10 @@ public:
 private:
   /**
    * actual token emit function
-   * @param tokenClass
+   * @param kind
    * @param token
    */
-  virtual void emit(HighlightTokenClass tokenClass, Token token) = 0;
+  virtual void emit(TokenKind kind, Token token) = 0;
 };
 
 } // namespace arsh

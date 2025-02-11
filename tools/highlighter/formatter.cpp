@@ -24,8 +24,9 @@ namespace arsh::highlighter {
 // ##     Formatter     ##
 // #######################
 
-void Formatter::emit(HighlightTokenClass tokenClass, Token token) {
+void Formatter::emit(TokenKind kind, Token token) {
   assert(this->curSrcPos <= token.pos);
+  HighlightTokenClass tokenClass = toTokenClass(kind);
   this->drawTrivia(this->source.slice(this->curSrcPos, token.pos));
   this->curSrcPos = token.endPos();
   this->draw(this->source.substr(token.pos, token.size), &tokenClass);

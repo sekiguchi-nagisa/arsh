@@ -20,6 +20,8 @@ namespace arsh {
 
 HighlightTokenClass toTokenClass(TokenKind kind) {
   switch (kind) {
+  case TokenKind::COMMENT:
+    return HighlightTokenClass::COMMENT;
   case TokenKind::ALIAS:
   case TokenKind::ASSERT:
   case TokenKind::BREAK:
@@ -133,11 +135,11 @@ HighlightTokenRange getHighlightTokenRange() { return HighlightTokenRange(highli
 void TokenEmitter::operator()(Token token) {
   assert(token.size > 0);
   auto ref = this->source.substr(token.pos, token.size);
-  auto tokenClass = HighlightTokenClass::COMMENT;
+  auto kind = TokenKind::COMMENT;
   if (ref[0] != '#') {
-    tokenClass = HighlightTokenClass::NONE_;
+    kind = TokenKind::ESCAPED_NL;
   }
-  this->emit(tokenClass, token);
+  this->emit(kind, token);
 }
 
 void TokenEmitter::operator()(TokenKind kind, Token token) {
@@ -163,11 +165,11 @@ void TokenEmitter::operator()(TokenKind kind, Token token) {
     }
   }
   if (token.size > 0) {
-    this->emit(toTokenClass(kind), token);
+    this->emit(kind, token);
   }
   if (suffix != TokenKind::EOS) {
     unsigned int pos = token.endPos();
-    this->emit(toTokenClass(suffix), Token{.pos = pos, .size = 1});
+    this->emit(suffix, Token{.pos = pos, .size = 1});
   }
 }
 
