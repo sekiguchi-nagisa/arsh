@@ -413,21 +413,26 @@ TEST(RingBuffer, base1) {
   ASSERT_EQ(1, buffer.capacity());
   buffer.push_back(std::make_unique<std::string>("hello"));
   ASSERT_EQ(1, buffer.size());
+  ASSERT_TRUE(buffer.full());
   ASSERT_EQ("hello", *buffer.back());
   ASSERT_EQ("hello", *buffer.front());
 
   buffer.push_back(std::make_unique<std::string>("AAA"));
   ASSERT_EQ(1, buffer.size());
+  ASSERT_TRUE(buffer.full());
   ASSERT_EQ("AAA", *buffer.back());
   ASSERT_EQ("AAA", *buffer.front());
   buffer.pop_front();
   ASSERT_TRUE(buffer.empty());
 
   buffer.push_back(std::make_unique<std::string>("BBB"));
+  ASSERT_EQ(1, buffer.size());
+  ASSERT_TRUE(buffer.full());
   ASSERT_EQ("BBB", *buffer.back());
   ASSERT_EQ("BBB", *buffer.front());
   buffer.pop_back();
   ASSERT_TRUE(buffer.empty());
+  ASSERT_FALSE(buffer.full());
 }
 
 TEST(RingBuffer, base2) {
@@ -448,12 +453,27 @@ TEST(RingBuffer, pop) {
     buffer.push_back(std::make_unique<std::string>(std::to_string(i)));
   }
   ASSERT_EQ(3, buffer.size());
+  ASSERT_EQ(3, buffer.capacity());
+  ASSERT_TRUE(buffer.full());
   ASSERT_EQ("99", *buffer.back());
   ASSERT_EQ("97", *buffer.front());
 
   ASSERT_EQ("97", *buffer[0]);
   ASSERT_EQ("98", *buffer[1]);
   ASSERT_EQ("99", *buffer[2]);
+
+  buffer.pop_front();
+  ASSERT_FALSE(buffer.full());
+  ASSERT_EQ(2, buffer.size());
+  ASSERT_EQ(3, buffer.capacity());
+  ASSERT_EQ("98", *buffer[0]);
+  ASSERT_EQ("99", *buffer[1]);
+
+  buffer.pop_back();
+  ASSERT_FALSE(buffer.full());
+  ASSERT_EQ(1, buffer.size());
+  ASSERT_EQ(3, buffer.capacity());
+  ASSERT_EQ("98", *buffer[0]);
 }
 
 TEST(InlinedArray, trivial) {
