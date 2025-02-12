@@ -71,7 +71,7 @@ struct Request {
 
   /**
    * each param must be validated
-   * @param i
+   * @param id
    * @param method
    * @param params
    */
@@ -207,20 +207,6 @@ public:
    */
   void reply(JSON &&id, Error &&error);
 
-  enum class Status : unsigned char {
-    DISPATCHED,
-    ERROR,
-    TIMEOUT,
-  };
-
-  /**
-   *
-   * @param handler
-   * @return
-   * return false if received message is invalid
-   */
-  Status dispatch(Handler &handler, int timeout = -1);
-
   // raw level message send/recv api. not directly use them.
 
   /**
@@ -315,6 +301,21 @@ public:
   explicit Handler(LoggerBase &logger) : Handler(logger, 42) {}
 
   virtual ~Handler() = default;
+
+  enum class Status : unsigned char {
+    DISPATCHED,
+    ERROR,
+    TIMEOUT,
+  };
+
+  /**
+   *
+   * @param transport
+   * @param timeout
+   * @return
+   * return false if received message is invalid
+   */
+  Status dispatch(Transport &transport, int timeout = -1);
 
   virtual ReplyImpl onCall(const std::string &name, JSON &&param);
 

@@ -155,11 +155,15 @@ void Transport::reply(JSON &&id, Error &&error) {
   this->send(str.size(), str.c_str());
 }
 
-Transport::Status Transport::dispatch(Handler &handler, int timeout) {
-  if (!this->poll(timeout)) {
+// #####################
+// ##     Handler     ##
+// #####################
+
+Handler::Status Handler::dispatch(Transport &transport, int timeout) {
+  if (!transport.poll(timeout)) {
     return Status::TIMEOUT;
   }
-  ssize_t dataSize = this->recvSize();
+  ssize_t dataSize = transport.recvSize();
   if (dataSize < 0) {
     LOG(LogLevel::WARNING, "may be broken or empty message");
     return Status::ERROR;
@@ -172,7 +176,7 @@ Transport::Status Transport::dispatch(Handler &handler, int timeout) {
     char data[256];
     constexpr ssize_t bufSize = std::size(data);
     ssize_t needSize = remainSize < bufSize ? remainSize : bufSize;
-    ssize_t recvSize = this->recv(needSize, data);
+    ssize_t recvSize = transport.recv(needSize, data);
     if (recvSize < 0) {
       LOG(LogLevel::ERROR, "message receiving failed");
       return Status::ERROR;
@@ -185,30 +189,26 @@ Transport::Status Transport::dispatch(Handler &handler, int timeout) {
   if (is<Error>(msg)) {
     auto &error = get<Error>(msg);
     LOG(LogLevel::WARNING, "invalid message => %s", error.toString().c_str());
-    this->reply(nullptr, std::move(error));
+    transport.reply(nullptr, std::move(error));
   } else if (is<Request>(msg)) {
     auto &req = get<Request>(msg);
     if (req.isCall()) {
       auto id = std::move(req.id);
-      auto ret = handler.onCall(req.method, std::move(req.params));
+      auto ret = this->onCall(req.method, std::move(req.params));
       if (ret) {
-        this->reply(std::move(id), std::move(ret).take());
+        transport.reply(std::move(id), std::move(ret).take());
       } else {
-        this->reply(std::move(id), std::move(ret).takeError());
+        transport.reply(std::move(id), std::move(ret).takeError());
       }
     } else {
-      handler.onNotify(req.method, std::move(req.params));
+      this->onNotify(req.method, std::move(req.params));
     }
   } else {
     assert(is<Response>(msg));
-    handler.onResponse(std::move(get<Response>(msg)));
+    this->onResponse(std::move(get<Response>(msg)));
   }
   return Status::DISPATCHED;
 }
-
-// #####################
-// ##     Handler     ##
-// #####################
 
 ReplyImpl Handler::onCall(const std::string &name, JSON &&param) {
   auto iter = this->callMap.find(name);

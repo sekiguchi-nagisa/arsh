@@ -1003,16 +1003,16 @@ protected:
   }
 
   bool dispatch() {
-    return this->transport.dispatch(this->handler) == rpc::Transport::Status::DISPATCHED;
+    return this->handler.dispatch(this->transport) == rpc::Handler::Status::DISPATCHED;
   }
 
   const std::string &response() const { return this->transport.outStr; }
 
-  void assertResponse(rpc::Response &&res) {
+  void assertResponse(rpc::Response &&res) const {
     ASSERT_EQ(res.toJSON().serialize(), this->response());
   }
 
-  void parseResponse(JSON &value) {
+  void parseResponse(JSON &value) const {
     JSONParser parser(this->response().c_str());
     auto ret = parser();
     ASSERT_FALSE(parser.hasError());

@@ -67,13 +67,13 @@ void LSPServer::bindAll() {
 
 void LSPServer::run() {
   while (true) {
-    auto s = this->transport.dispatch(*this, this->timeout);
-    if (s == Transport::Status::TIMEOUT) {
+    auto s = this->dispatch(this->transport, this->timeout);
+    if (s == Status::TIMEOUT) {
       LOG(LogLevel::INFO, "tryRebuild due to timeout...");
       if (!this->tryRebuild()) {
         LOG(LogLevel::INFO, "rebuild is not performed");
       }
-    } else if (s == Transport::Status::ERROR) {
+    } else if (s == Status::ERROR) {
       break;
     }
   }
