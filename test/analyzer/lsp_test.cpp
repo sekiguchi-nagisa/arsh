@@ -729,7 +729,7 @@ TEST_F(SemanticTokenTest, encode) {
 }
 
 TEST(WorkerTest, base) {
-  BackgroundWorker worker;
+  SingleBackgroundWorker worker;
   auto ret1 = worker.addTask([] {
     std::string value;
     for (unsigned int i = 0; i < 10; i++) {

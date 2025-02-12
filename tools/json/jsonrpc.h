@@ -180,8 +180,6 @@ private:
   std::string generateId();
 };
 
-class Handler;
-
 class Transport {
 protected:
   std::reference_wrapper<LoggerBase> logger;
@@ -317,9 +315,9 @@ public:
    */
   Status dispatch(Transport &transport, int timeout = -1);
 
-  virtual ReplyImpl onCall(const std::string &name, JSON &&param);
+  virtual void onCall(Transport &transport, Request &&req);
 
-  virtual void onNotify(const std::string &name, JSON &&param);
+  virtual void onNotify(Request &&req);
 
   virtual void onResponse(Response &&res);
 
@@ -411,6 +409,8 @@ public:
   }
 
 protected:
+  ReplyImpl onCallImpl(const std::string &name, JSON &&param);
+
   ReplyImpl requestValidationError(const std::string &name, const ValidationError &e);
 
   void notificationValidationError(const std::string &name, const ValidationError &e);

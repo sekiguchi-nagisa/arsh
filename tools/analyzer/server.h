@@ -87,8 +87,9 @@ private:
   IDGenerator idGenerator;
   RegistrationMap registrationMap;
   LSPTransport transport;
+  SingleBackgroundWorker rpcHandlerWorker;
   AnalyzerResult result;
-  BackgroundWorker worker;
+  SingleBackgroundWorker worker;
   std::future<AnalyzerResult> futureResult;
   std::shared_ptr<CancelPoint> cancelPoint;
   const int defaultDebounceTime;
@@ -111,7 +112,11 @@ public:
 
   void setTestWorkDir(std::string &&dir) { this->result.srcMan->setTestWorkDir(std::move(dir)); }
 
-  ReplyImpl onCall(const std::string &name, JSON &&param) override;
+  void onCall(Transport &transport, Request &&req) override;
+
+  void onNotify(Request &&req) override;
+
+  void onResponse(Response &&res) override;
 
   /**
    * normally not return

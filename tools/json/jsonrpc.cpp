@@ -193,15 +193,9 @@ Handler::Status Handler::dispatch(Transport &transport, int timeout) {
   } else if (is<Request>(msg)) {
     auto &req = get<Request>(msg);
     if (req.isCall()) {
-      auto id = std::move(req.id);
-      auto ret = this->onCall(req.method, std::move(req.params));
-      if (ret) {
-        transport.reply(std::move(id), std::move(ret).take());
-      } else {
-        transport.reply(std::move(id), std::move(ret).takeError());
-      }
+      this->onCall(transport, std::move(req));
     } else {
-      this->onNotify(req.method, std::move(req.params));
+      this->onNotify(std::move(req));
     }
   } else {
     assert(is<Response>(msg));
@@ -210,7 +204,15 @@ Handler::Status Handler::dispatch(Transport &transport, int timeout) {
   return Status::DISPATCHED;
 }
 
-ReplyImpl Handler::onCall(const std::string &name, JSON &&param) {
+void Handler::onCall(Transport &transport, Request &&req) {
+  if (auto ret = this->onCallImpl(req.method, std::move(req.params))) {
+    transport.reply(std::move(req.id), std::move(ret).take());
+  } else {
+    transport.reply(std::move(req.id), std::move(ret).takeError());
+  }
+}
+
+ReplyImpl Handler::onCallImpl(const std::string &name, JSON &&param) {
   auto iter = this->callMap.find(name);
   if (iter == this->callMap.end()) {
     std::string str = "undefined method: ";
@@ -222,14 +224,14 @@ ReplyImpl Handler::onCall(const std::string &name, JSON &&param) {
   return iter->second(std::move(param));
 }
 
-void Handler::onNotify(const std::string &name, JSON &&param) {
-  auto iter = this->notificationMap.find(name);
+void Handler::onNotify(Request &&req) {
+  auto iter = this->notificationMap.find(req.method);
   if (iter == this->notificationMap.end()) {
-    LOG(LogLevel::ERROR, "undefined notification: %s", name.c_str());
+    LOG(LogLevel::ERROR, "undefined notification: %s", req.method.c_str());
     return;
   }
-  LOG(LogLevel::INFO, "onNotify: %s", name.c_str());
-  iter->second(std::move(param));
+  LOG(LogLevel::INFO, "onNotify: %s", req.method.c_str());
+  iter->second(std::move(req.params));
 }
 
 void Handler::onResponse(Response &&res) {

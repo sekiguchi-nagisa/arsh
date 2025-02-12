@@ -34,12 +34,25 @@ namespace arsh::lsp {
 
 #define LOG(L, ...) LLOG(this->logger.get(), L, __VA_ARGS__)
 
-ReplyImpl LSPServer::onCall(const std::string &name, JSON &&param) {
-  if (!this->init && name != "initialize") {
+void LSPServer::onCall(Transport &, Request &&req) {
+  if (!this->init && req.method != "initialize") {
     LOG(LogLevel::ERROR, "must be initialized");
-    return newError(LSPErrorCode::ServerNotInitialized, "server not initialized!!");
+    this->transport.reply(std::move(req.id),
+                          Error(LSPErrorCode::ServerNotInitialized, "server not initialized!!"));
+    return;
   }
-  return Handler::onCall(name, std::move(param));
+  this->rpcHandlerWorker.addNoreturnTask(
+      [this, q = std::move(req)]() mutable { Handler::onCall(this->transport, std::move(q)); });
+}
+
+void LSPServer::onNotify(Request &&req) {
+  this->rpcHandlerWorker.addNoreturnTask(
+      [this, q = std::move(req)]() mutable { Handler::onNotify(std::move(q)); });
+}
+
+void LSPServer::onResponse(Response &&res) {
+  this->rpcHandlerWorker.addNoreturnTask(
+      [this, r = std::move(res)]() mutable { Handler::onResponse(std::move(r)); });
 }
 
 void LSPServer::bindAll() {

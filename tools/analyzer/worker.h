@@ -24,7 +24,7 @@
 
 namespace arsh::lsp {
 
-class BackgroundWorker {
+class SingleBackgroundWorker {
 private:
   std::thread workerThread;
   std::queue<std::function<void()>> tasks;
@@ -33,9 +33,9 @@ private:
   bool stop{false};
 
 public:
-  BackgroundWorker();
+  SingleBackgroundWorker();
 
-  ~BackgroundWorker();
+  ~SingleBackgroundWorker();
 
   template <typename Func, typename... Arg>
   std::future<std::invoke_result_t<Func, Arg...>> addTask(Func &&func, Arg &&...arg) {
@@ -50,6 +50,8 @@ public:
     }
     return future;
   }
+
+  void addNoreturnTask(std::function<void()> &&task) { this->addTaskImpl(std::move(task)); }
 
 private:
   bool addTaskImpl(std::function<void()> &&task);

@@ -18,11 +18,11 @@
 
 namespace arsh::lsp {
 
-// ##############################
-// ##     BackgroundWorker     ##
-// ##############################
+// ####################################
+// ##     SingleBackgroundWorker     ##
+// ####################################
 
-BackgroundWorker::BackgroundWorker() {
+SingleBackgroundWorker::SingleBackgroundWorker() {
   this->workerThread = std::thread([&] {
     while (true) {
       std::function<void()> task;
@@ -40,7 +40,7 @@ BackgroundWorker::BackgroundWorker() {
   });
 }
 
-BackgroundWorker::~BackgroundWorker() {
+SingleBackgroundWorker::~SingleBackgroundWorker() {
   {
     std::unique_lock<std::mutex> lock(this->mutex);
     this->stop = true;
@@ -49,7 +49,7 @@ BackgroundWorker::~BackgroundWorker() {
   this->workerThread.join();
 }
 
-bool BackgroundWorker::addTaskImpl(std::function<void()> &&task) {
+bool SingleBackgroundWorker::addTaskImpl(std::function<void()> &&task) {
   {
     std::unique_lock<std::mutex> lock(this->mutex);
     if (this->stop) {
