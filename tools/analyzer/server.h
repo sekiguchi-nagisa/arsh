@@ -88,12 +88,13 @@ private:
   RegistrationMap registrationMap;
   LSPTransport transport;
   SingleBackgroundWorker rpcHandlerWorker;
+  std::mutex rebuildMutex;
   AnalyzerResult result;
-  SingleBackgroundWorker worker;
+  SingleBackgroundWorker analyzerWorker;
   std::future<AnalyzerResult> futureResult;
   std::shared_ptr<CancelPoint> cancelPoint;
   const int defaultDebounceTime;
-  int timeout{defaultDebounceTime};
+  std::atomic_int timeout{defaultDebounceTime};
   bool init{false};
   bool willExit{false};
   TraceValue traceSetting{TraceValue::off};

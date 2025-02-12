@@ -80,7 +80,7 @@ void LSPServer::bindAll() {
 
 void LSPServer::run() {
   while (true) {
-    auto s = this->dispatch(this->transport, this->timeout);
+    auto s = this->dispatch(this->transport, this->timeout.load());
     if (s == Status::TIMEOUT) {
       LOG(LogLevel::INFO, "tryRebuild due to timeout...");
       if (!this->tryRebuild()) {
@@ -398,6 +398,7 @@ AnalyzerResult AnalyzerTask::doRebuild() {
 }
 
 bool LSPServer::tryRebuild() {
+  std::unique_lock lock(this->rebuildMutex);
   if (this->result.modifiedSrcIds.empty()) {
     this->timeout = -1;
     return false;
@@ -435,7 +436,7 @@ bool LSPServer::tryRebuild() {
     };
   });
   this->futureResult =
-      this->worker.addTask([p = std::move(param)]() mutable { return p.doRebuild(); });
+      this->analyzerWorker.addTask([p = std::move(param)]() mutable { return p.doRebuild(); });
   return true;
 }
 
@@ -445,8 +446,11 @@ void LSPServer::updateSource(StringRef path, int newVersion, std::string &&newCo
     LOG(LogLevel::ERROR, "reach opened file limit");
     return;
   }
-  this->timeout = this->defaultDebounceTime;
-  this->result.modifiedSrcIds.emplace(src->getSrcId());
+  {
+    std::unique_lock lock(this->rebuildMutex);
+    this->timeout = this->defaultDebounceTime;
+    this->result.modifiedSrcIds.emplace(src->getSrcId());
+  }
 }
 
 void LSPServer::syncResult() {
