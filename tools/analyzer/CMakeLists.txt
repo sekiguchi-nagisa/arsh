@@ -22,6 +22,7 @@ add_library(arshd_static STATIC
         pass.cpp
         extra_checker.cpp
         registration.cpp
+        context.cpp
 )
 target_link_libraries(arshd_static arsh_static jsonrpc uri directive)
 

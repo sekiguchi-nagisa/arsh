@@ -448,6 +448,15 @@ struct WorkDoneProgressParams {
   }
 };
 
+struct CancelParams {
+  Union<int, std::string> id;
+
+  template <typename T>
+  void jsonify(T &t) {
+    JSONIFY(id);
+  }
+};
+
 struct InitializeParams : public WorkDoneProgressParams {
   Union<int, std::nullptr_t> processId{nullptr};
   Optional<Union<std::string, std::nullptr_t>> rootPath; // optional

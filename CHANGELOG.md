@@ -11,6 +11,10 @@
     - add ``Int#compare``, ``Bool#compare``, ``Signal#compare``, ``String#compare`` methods like
       ``Float#compare``
 
+#### LSP
+
+- support ``$/cancelRequest/`` for request cancellation
+
 ### Changed
 
 #### Core

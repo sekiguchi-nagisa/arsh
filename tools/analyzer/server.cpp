@@ -41,11 +41,26 @@ void LSPServer::onCall(Transport &, Request &&req) {
                           Error(LSPErrorCode::ServerNotInitialized, "server not initialized!!"));
     return;
   }
+  auto context = this->contextMan.addNew(req.id);
   this->rpcHandlerWorker.addNoreturnTask(
-      [this, q = std::move(req)]() mutable { Handler::onCall(this->transport, std::move(q)); });
+      [this, ctx = std::move(context), q = std::move(req)]() mutable {
+        if (ctx->getCancelPoint()->isCanceled()) {
+          LOG(LogLevel::INFO, "do cancel: request id=%s", toStringCancelId(q.id).c_str());
+          this->transport.reply(std::move(q.id.unwrap()),
+                                Error(LSPErrorCode::RequestCancelled, "cancelled"));
+        } else {
+          this->currentCtx = std::move(ctx);
+          Handler::onCall(this->transport, std::move(q));
+        }
+        this->currentCtx = nullptr;
+      });
 }
 
 void LSPServer::onNotify(Request &&req) {
+  if (req.method == "$/cancelRequest") {
+    Handler::onNotify(std::move(req)); // cancelRequest bypass rpcHandlerWorker
+    return;
+  }
   this->rpcHandlerWorker.addNoreturnTask(
       [this, q = std::move(req)]() mutable { Handler::onNotify(std::move(q)); });
 }
@@ -60,6 +75,7 @@ void LSPServer::bindAll() {
   this->bind("exit", &LSPServer::exit);
   this->bind("initialize", &LSPServer::initialize);
   this->bind("initialized", &LSPServer::initialized);
+  this->bind("$/cancelRequest", &LSPServer::tryCancel);
   this->bind("$/setTrace", &LSPServer::setTrace);
   this->bind("textDocument/didOpen", &LSPServer::didOpenTextDocument);
   this->bind("textDocument/didClose", &LSPServer::didCloseTextDocument);
@@ -687,6 +703,13 @@ void LSPServer::exit() {
   int s = this->willExit ? 0 : 1;
   LOG(LogLevel::INFO, "exit server: %d", s);
   std::exit(s); // always success
+}
+
+// only called from main thread (must be thread safe)
+void LSPServer::tryCancel(const CancelParams &param) {
+  auto id = cancelIdToJSON(param.id);
+  LOG(LogLevel::INFO, "try cancel: request id=%s", toStringCancelId(id).c_str());
+  this->contextMan.cancel(id);
 }
 
 void LSPServer::setTrace(const SetTraceParams &param) {

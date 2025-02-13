@@ -17,13 +17,12 @@
 #ifndef ARSH_TOOLS_ANALYZER_ANALYZER_H
 #define ARSH_TOOLS_ANALYZER_ANALYZER_H
 
-#include <atomic>
-
 #include <frontend.h>
 #include <scope.h>
 #include <type_pool.h>
 
 #include "archive.h"
+#include "context.h"
 #include "lsp.h"
 #include "pass.h"
 #include "source.h"
@@ -83,18 +82,6 @@ struct AnalyzerAction {
   ObserverPtr<DiagnosticEmitter> emitter;
   ObserverPtr<NodeDumper> dumper;
   ObserverPtr<NodePass> pass;
-};
-
-class CancelPoint : public CancelToken {
-private:
-  std::atomic<bool> value{false};
-
-public:
-  void cancel() { this->value.store(true); }
-
-  bool isCanceled() const { return this->value.load(); }
-
-  bool operator()() override { return this->isCanceled(); }
 };
 
 class AnalyzerContext {

@@ -103,6 +103,8 @@ private:
   BinaryFlag semanticHighlight{BinaryFlag::enabled};
   BinaryFlag renameSupport{BinaryFlag::enabled};
   SupportedCapability supportedCapability{};
+  ContextManager contextMan;
+  std::shared_ptr<Context> currentCtx; // only available within rpc worker
 
 public:
   LSPServer(LoggerBase &logger, int inFd, int outFd, int time, uint64_t seed = 42)
@@ -198,6 +200,8 @@ public:
   Reply<void> shutdown();
 
   void exit();
+
+  void tryCancel(const CancelParams &param); // only called from main thread
 
   void setTrace(const SetTraceParams &param);
 
