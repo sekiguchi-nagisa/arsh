@@ -171,7 +171,7 @@ private:
   const std::string &logicalWorkingDir;
   UserDefinedComp userDefinedComp;
   DynaUdcComp dynaUdcComp;
-  ObserverPtr<CancelToken> cancel;
+  ObserverPtr<const CancelToken> cancel;
 
 public:
   CodeCompleter(CompCandidateConsumer &consumer, ObserverPtr<FrontEnd::ModuleProvider> provider,
@@ -183,7 +183,7 @@ public:
 
   void setDynaUdcComp(DynaUdcComp &&comp) { this->dynaUdcComp = std::move(comp); }
 
-  void setCancel(CancelToken &c) { this->cancel = makeObserver(c); }
+  void setCancel(const CancelToken &c) { this->cancel = makeObserver(c); }
 
   /**
    * if module provider is specified, parse 'ref' and complete candidates (except for 'option')

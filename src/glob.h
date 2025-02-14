@@ -93,7 +93,7 @@ private:
 
   int errNum{0}; // for RESOURCE_LIMIT status
 
-  ObserverPtr<CancelToken> cancel;
+  ObserverPtr<const CancelToken> cancel;
 
   std::function<bool(std::string &&)> consumer;
 
@@ -110,7 +110,7 @@ public:
   Glob(const GlobPatternWrapper &wrapper, Option option)
       : Glob(wrapper.getPattern(), option, wrapper.getBaseDir().c_str()) {}
 
-  void setCancelToken(CancelToken &token) { this->cancel = makeObserver(token); }
+  void setCancelToken(const CancelToken &token) { this->cancel = makeObserver(token); }
 
   unsigned int getMatchCount() const { return this->matchCount; }
 

@@ -500,7 +500,7 @@ std::pair<Glob::Status, bool> Glob::match(const std::string &baseDir, const char
       return {Status::RESOURCE_LIMIT, true};
     }
 
-    if (this->cancel && this->cancel()) {
+    if (this->cancel && this->cancel->isCanceled()) {
       return {Status::CANCELED, true};
     }
 

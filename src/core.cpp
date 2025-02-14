@@ -382,8 +382,8 @@ const ModType &getCurRuntimeModule(const ARState &state) {
   return *type;
 }
 
-bool RuntimeCancelToken::operator()() {
-  bool s = ARState::isInterrupted();
+bool RuntimeCancelToken::isCanceled() const {
+  const bool s = ARState::isInterrupted();
   if (s && this->clearSignal) {
     ARState::clearPendingSignal(SIGINT);
   }

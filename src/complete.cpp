@@ -302,7 +302,8 @@ static void completeUDC(const StringRef compWordToken, const NameScope &scope,
 
 static bool completeCmdName(const StringRef compWordToken, const NameScope &scope,
                             const std::string &cmdPrefix, const CodeCompOp option,
-                            CompCandidateConsumer &consumer, ObserverPtr<CancelToken> cancel) {
+                            CompCandidateConsumer &consumer,
+                            ObserverPtr<const CancelToken> cancel) {
   // complete user-defined command
   if (hasFlag(option, CodeCompOp::UDC)) {
     completeUDC(compWordToken, scope, cmdPrefix, consumer);
@@ -334,7 +335,7 @@ static bool completeCmdName(const StringRef compWordToken, const NameScope &scop
         return true;
       }
       for (dirent *entry; (entry = readdir(dir.get())) != nullptr;) {
-        if (cancel && cancel()) {
+        if (cancel && cancel->isCanceled()) {
           return false;
         }
         if (StringRef cmd = entry->d_name;
@@ -353,7 +354,8 @@ static bool completeCmdName(const StringRef compWordToken, const NameScope &scop
 
 static bool completeFileName(StringRef compWordToken, const std::string &baseDir,
                              const StringRef prefix, const CodeCompOp op,
-                             CompCandidateConsumer &consumer, ObserverPtr<CancelToken> cancel) {
+                             CompCandidateConsumer &consumer,
+                             ObserverPtr<const CancelToken> cancel) {
   const auto dirSepIndex = prefix.lastIndexOf("/");
 
   // complete tilde
@@ -411,7 +413,7 @@ static bool completeFileName(StringRef compWordToken, const std::string &baseDir
     return true;
   }
   for (dirent *entry; (entry = readdir(dir.get())) != nullptr;) {
-    if (cancel && cancel()) {
+    if (cancel && cancel->isCanceled()) {
       return false;
     }
 
@@ -445,7 +447,7 @@ static bool completeFileName(StringRef compWordToken, const std::string &baseDir
 
 static bool completeModule(const SysConfig &config, const StringRef compWordToken,
                            const std::string &scriptDir, const std::string &prefix, bool tilde,
-                           CompCandidateConsumer &consumer, ObserverPtr<CancelToken> cancel) {
+                           CompCandidateConsumer &consumer, ObserverPtr<const CancelToken> cancel) {
   CodeCompOp op{};
   if (tilde) {
     op = CodeCompOp::TILDE;

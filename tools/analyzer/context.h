@@ -35,9 +35,7 @@ private:
 public:
   void cancel() { this->value.store(true); }
 
-  bool isCanceled() const { return this->value.load(); }
-
-  bool operator()() override { return this->isCanceled(); }
+  bool isCanceled() const override { return this->value.load(); }
 };
 
 class Context {

@@ -737,7 +737,7 @@ TEST_F(GlobTest, fail) {
 }
 
 struct AlwaysCancel : CancelToken {
-  bool operator()() override { return true; }
+  bool isCanceled() const override { return true; }
 };
 
 TEST_F(GlobTest, cancel) {

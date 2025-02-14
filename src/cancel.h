@@ -25,7 +25,7 @@ struct CancelToken {
    * @return
    * if canceled, return true
    */
-  virtual bool operator()() { return false; }
+  virtual bool isCanceled() const { return false; }
 };
 
 #endif // ARSH_CANCEL_H

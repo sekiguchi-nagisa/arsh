@@ -150,7 +150,7 @@ public:
 
   explicit RuntimeCancelToken(bool clear) : clearSignal(clear) {}
 
-  bool operator()() override;
+  bool isCanceled() const override;
 };
 
 struct DoCodeCompletionOption {
