@@ -29,11 +29,13 @@ private:
   std::thread workerThread;
   std::queue<std::function<void()>> tasks;
   std::mutex mutex;
-  std::condition_variable condition;
+  std::condition_variable enqCond;
+  std::condition_variable deqCond;
+  const unsigned int taskLimit;
   bool stop{false};
 
 public:
-  SingleBackgroundWorker();
+  explicit SingleBackgroundWorker(unsigned int taskLimit = UINT16_MAX);
 
   ~SingleBackgroundWorker();
 

@@ -22,18 +22,20 @@ namespace arsh::lsp {
 // ##     SingleBackgroundWorker     ##
 // ####################################
 
-SingleBackgroundWorker::SingleBackgroundWorker() {
+SingleBackgroundWorker::SingleBackgroundWorker(unsigned int taskLimit)
+    : taskLimit(std::max<unsigned int>(taskLimit, 1)) {
   this->workerThread = std::thread([&] {
     while (true) {
       std::function<void()> task;
       {
         std::unique_lock<std::mutex> lock(this->mutex);
-        this->condition.wait(lock, [&] { return this->stop || !this->tasks.empty(); });
+        this->deqCond.wait(lock, [&] { return this->stop || !this->tasks.empty(); });
         if (this->stop && this->tasks.empty()) {
           return;
         }
         task = std::move(this->tasks.front());
         this->tasks.pop();
+        this->enqCond.notify_all();
       }
       task();
     }
@@ -45,19 +47,19 @@ SingleBackgroundWorker::~SingleBackgroundWorker() {
     std::unique_lock<std::mutex> lock(this->mutex);
     this->stop = true;
   }
-  this->condition.notify_all();
+  this->deqCond.notify_all();
+  this->enqCond.notify_all();
   this->workerThread.join();
 }
 
 bool SingleBackgroundWorker::addTaskImpl(std::function<void()> &&task) {
-  {
-    std::unique_lock<std::mutex> lock(this->mutex);
-    if (this->stop) {
-      return false;
-    }
-    tasks.push(std::move(task));
+  std::unique_lock<std::mutex> lock(this->mutex);
+  if (this->stop) {
+    return false;
   }
-  this->condition.notify_one();
+  this->enqCond.wait(lock, [&] { return this->tasks.size() < this->taskLimit; });
+  this->tasks.push(std::move(task));
+  this->deqCond.notify_all();
   return true;
 }
 
