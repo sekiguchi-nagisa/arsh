@@ -95,17 +95,38 @@ public:
 
   void requestSourceChange(const DidChangeTextDocumentParams &params);
 
+  void requestForceRebuild();
+
   template <typename Reader>
-  static constexpr bool reader_requirement_v =
-      std::is_same_v<void, std::invoke_result_t<Reader, const State &>>;
+  static constexpr bool reader_requirement_v = std::is_invocable_v<Reader, const State &>;
 
   template <typename Reader, enable_when<reader_requirement_v<Reader>> = nullptr>
-  void readCurrentStateWith(Reader reader) {
+  auto fetchStateWith(Reader reader) -> std::invoke_result_t<Reader, const State &> {
     std::shared_lock lock(this->mutex); // reader lock
-    reader(this->state);
+    if constexpr (std::is_void_v<std::invoke_result_t<Reader, const State &>>) {
+      reader(this->state);
+      return;
+    } else {
+      return reader(this->state);
+    }
   }
 
-  void waitForAnalyzerFinished();
+  template <typename Reader, enable_when<reader_requirement_v<Reader>> = nullptr>
+  auto waitStateWith(Reader reader) -> std::invoke_result_t<Reader, const State &> {
+    this->requestForceRebuild();
+    std::unique_lock lock(this->mutex); // writer lock
+    this->finishCond.wait(lock, [&] { return this->status == Status::FINISHED; });
+    if constexpr (std::is_void_v<std::invoke_result_t<Reader, const State &>>) {
+      reader(this->state);
+      return;
+    } else {
+      return reader(this->state);
+    }
+  }
+
+  void waitForAnalyzerFinished() {
+    this->waitStateWith([](const State &) {}); // do nothing, just wait
+  }
 
 private:
   void requestSourceUpdateUnsafe(StringRef path, int newVersion, std::string &&newContent);

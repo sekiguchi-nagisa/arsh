@@ -16,7 +16,6 @@
 
 #include <format_util.h>
 
-#include "analyzer.h"
 #include "analyzer_worker.h"
 #include "extra_checker.h"
 #include "indexer.h"
@@ -38,12 +37,8 @@ namespace arsh::lsp {
 
 #define READER_LOCK(LOCK) std::shared_lock<std::shared_mutex> LOCK(this->mutex)
 
-static bool shouldRebuild(const AnalyzerWorker::Status s, const std::unordered_set<ModId> &srcIds,
-                          const timestamp reqTimestamp,
-                          const std::chrono::milliseconds debounceTime) {
-  const auto elapsed =
-      std::chrono::duration_cast<std::chrono::minutes>(getCurrentTimestamp() - reqTimestamp);
-  return s == AnalyzerWorker::Status::PENDING && !srcIds.empty() && elapsed >= debounceTime;
+static bool mayRebuild(const AnalyzerWorker::Status s, const std::unordered_set<ModId> &srcIds) {
+  return s == AnalyzerWorker::Status::PENDING && !srcIds.empty();
 }
 
 AnalyzerWorker::AnalyzerWorker(std::reference_wrapper<LoggerBase> logger,
@@ -56,13 +51,24 @@ AnalyzerWorker::AnalyzerWorker(std::reference_wrapper<LoggerBase> logger,
       std::unique_ptr<Task> task;
       {
         WRITER_LOCK(lock);
-        this->requestCond.wait(lock, [&] {
-          return this->status == Status::DISPOSED ||
-                 shouldRebuild(this->status, this->state.modifiedSrcIds, this->lastRequestTimestamp,
-                               this->debounceTime);
-        });
-        if (this->status == Status::DISPOSED) {
-          return;
+        for (unsigned int i = 0;; i++) {
+          auto time = this->debounceTime + std::chrono::milliseconds(1 << i);
+          const bool r = this->requestCond.wait_for(lock, time, [&] {
+            return this->status == Status::DISPOSED ||
+                   mayRebuild(this->status, this->state.modifiedSrcIds);
+          });
+          if (r) {
+            if (this->status == Status::DISPOSED) {
+              return;
+            }
+            if (const auto elapsed = std::chrono::duration_cast<std::chrono::minutes>(
+                    getCurrentTimestamp() - this->lastRequestTimestamp);
+                elapsed < this->debounceTime) {
+              i = 0;
+              continue;
+            }
+            break;
+          }
         }
 
         // prepare rebuild
@@ -150,9 +156,13 @@ void AnalyzerWorker::requestSourceUpdateUnsafe(StringRef path, int newVersion,
   }
 }
 
-void AnalyzerWorker::waitForAnalyzerFinished() {
+void AnalyzerWorker::requestForceRebuild() {
   WRITER_LOCK(lock);
-  this->finishCond.wait(lock, [&] { return this->status == Status::FINISHED; });
+  this->lastRequestTimestamp = timestamp{};
+  if (this->status == Status::FINISHED) {
+    this->status = Status::PENDING;
+  }
+  this->requestCond.notify_all();
 }
 
 Result<SourcePtr, std::string> resolveSource(LoggerBase &logger, const SourceManager &srcMan,
