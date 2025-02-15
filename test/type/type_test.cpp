@@ -107,7 +107,7 @@ public:
 public:
   TypeTest()
       : loader(this->sysConfig),
-        checker(this->sysConfig, std::ref(this->cancelToken), this->pool, false, this->lex) {
+        checker(this->sysConfig, std::cref(this->cancelToken), this->pool, false, this->lex) {
     this->scope = this->loader.createGlobalScope(this->pool, "(root)", nullptr);
   }
 
