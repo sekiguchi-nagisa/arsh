@@ -118,16 +118,16 @@ class Analyzer : protected FrontEnd::ModuleProvider, protected ModuleLoaderBase 
 private:
   SourceManager &srcMan;
   ModuleArchives &archives;
-  std::shared_ptr<CancelPoint> cancelPoint;
+  ObserverPtr<const CancelToken> cancelToken;
   std::vector<AnalyzerContextPtr> ctxs;
   ObserverPtr<LoggerBase> logger;
 
 public:
   Analyzer(const SysConfig &config, SourceManager &src, ModuleArchives &archives,
-           std::shared_ptr<CancelPoint> cancelPoint = nullptr,
+           ObserverPtr<const CancelToken> cancelToken = nullptr,
            ObserverPtr<LoggerBase> logger = nullptr)
       : ModuleLoaderBase(config), srcMan(src), archives(archives),
-        cancelPoint(std::move(cancelPoint)), logger(logger) {}
+        cancelToken(std::move(cancelToken)), logger(logger) {}
 
   ~Analyzer() override = default;
 
@@ -143,7 +143,7 @@ protected:
 
   const SysConfig &getSysConfig() const override;
 
-  std::reference_wrapper<CancelToken> getCancelToken() const override;
+  std::reference_wrapper<const CancelToken> getCancelToken() const override;
 
 private:
   const AnalyzerContextPtr &addNew(const SourcePtr &src);
@@ -166,8 +166,8 @@ public:
     SIGNATURE = 1u << 1u,
   };
 
-  std::vector<CompletionItem> complete(const SourcePtr &src, unsigned int offset,
-                                       ExtraCompOp extraOp);
+  Optional<std::vector<CompletionItem>> complete(const SourcePtr &src, unsigned int offset,
+                                                 ExtraCompOp extraOp);
 
   Optional<SignatureInformation> collectSignature(const SourcePtr &src, unsigned int offset);
 };

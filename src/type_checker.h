@@ -280,7 +280,7 @@ class TypeChecker : protected NodeVisitor {
 protected:
   const SysConfig &config;
 
-  std::reference_wrapper<CancelToken> cancelToken; // for future usage
+  std::reference_wrapper<const CancelToken> cancelToken; // for future usage
 
   std::reference_wrapper<TypePool> pool;
 
@@ -309,7 +309,7 @@ protected:
   std::vector<TypeCheckError> errors;
 
 public:
-  TypeChecker(const SysConfig &config, std::reference_wrapper<CancelToken> cancelToken,
+  TypeChecker(const SysConfig &config, std::reference_wrapper<const CancelToken> cancelToken,
               TypePool &pool, bool toplevelPrinting, const Lexer &lex)
       : config(config), cancelToken(cancelToken), pool(pool), toplevelPrinting(toplevelPrinting),
         funcCtx(std::make_unique<FuncContext>()), lexer(lex), attributeMap(AttributeMap::create()) {

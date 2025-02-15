@@ -167,13 +167,13 @@ FrontEnd::ModuleProvider::Ret Analyzer::load(const char *scriptDir, const char *
 
 const SysConfig &Analyzer::getSysConfig() const { return this->sysConfig; }
 
-std::reference_wrapper<CancelToken> Analyzer::getCancelToken() const {
-  static CancelToken cancelToken;
+std::reference_wrapper<const CancelToken> Analyzer::getCancelToken() const {
+  static CancelToken dummy;
 
-  if (this->cancelPoint) {
-    return std::ref(static_cast<CancelToken &>(*this->cancelPoint));
+  if (this->cancelToken) {
+    return std::ref(*this->cancelToken);
   } else {
-    return std::ref(cancelToken);
+    return std::ref(dummy);
   }
 }
 
@@ -223,7 +223,7 @@ ModuleArchivePtr Analyzer::analyze(const SourcePtr &src, AnalyzerAction &action)
   // run front end
   frontEnd.setupASTDump();
   while (frontEnd) {
-    if (this->cancelPoint && this->cancelPoint->isCanceled()) {
+    if (this->cancelToken && this->cancelToken->isCanceled()) {
       return nullptr;
     }
     auto ret = frontEnd();
@@ -440,8 +440,8 @@ static std::string toDirName(const std::string &fullPath) {
   return ref.empty() ? "/" : ref.toString();
 }
 
-std::vector<CompletionItem> Analyzer::complete(const SourcePtr &src, unsigned int offset,
-                                               ExtraCompOp extraOp) {
+Optional<std::vector<CompletionItem>> Analyzer::complete(const SourcePtr &src, unsigned int offset,
+                                                         ExtraCompOp extraOp) {
   this->reset();
 
   std::string workDir = toDirName(src->getPath());
@@ -460,7 +460,9 @@ std::vector<CompletionItem> Analyzer::complete(const SourcePtr &src, unsigned in
   // do code completion
   StringRef source = src->getContent();
   source = source.substr(0, offset);
-  codeCompleter(ptr->getScope(), src->getPath(), source, ignoredOp);
+  if (!codeCompleter(ptr->getScope(), src->getPath(), source, ignoredOp)) {
+    return {};
+  }
   return std::move(collector).finalize();
 }
 

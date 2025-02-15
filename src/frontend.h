@@ -108,7 +108,7 @@ public:
 
     virtual const SysConfig &getSysConfig() const = 0;
 
-    virtual std::reference_wrapper<CancelToken> getCancelToken() const = 0;
+    virtual std::reference_wrapper<const CancelToken> getCancelToken() const = 0;
   };
 
 private:
@@ -252,7 +252,7 @@ public:
 
   const SysConfig &getSysConfig() const override;
 
-  std::reference_wrapper<CancelToken> getCancelToken() const override;
+  std::reference_wrapper<const CancelToken> getCancelToken() const override;
 
   TypePool &getPool() { return this->pool; }
 

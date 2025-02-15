@@ -370,8 +370,8 @@ AnalyzerResult AnalyzerTask::doRebuild() {
   action.pass = makeObserver(passes);
 
   // rebuild
-  Analyzer analyzer(this->sysConfig, *this->ret.srcMan, this->ret.archives, this->cancelPoint,
-                    makeObserver(this->logger.get()));
+  Analyzer analyzer(this->sysConfig, *this->ret.srcMan, this->ret.archives,
+                    makeObserver(*this->cancelPoint), makeObserver(this->logger.get()));
   for (auto &e : this->ret.modifiedSrcIds) {
     if (this->ret.archives.find(e)) {
       continue;
@@ -821,7 +821,8 @@ Reply<std::vector<CompletionItem>> LSPServer::complete(const CompletionParams &p
     auto pos = resolved.asOk().second.pos;
     auto [copiedSrcMan, copiedArchives] = this->snapshot();
     copiedArchives.revert({src->getSrcId()});
-    Analyzer analyzer(this->sysConfig, *copiedSrcMan, copiedArchives);
+    Analyzer analyzer(this->sysConfig, *copiedSrcMan, copiedArchives,
+                      this->currentCtx->getCancelPoint());
     Analyzer::ExtraCompOp extraCompOp{};
     if (this->fileNameComp == BinaryFlag::enabled) {
       setFlag(extraCompOp, Analyzer::ExtraCompOp::FILE_NAME);
@@ -829,7 +830,11 @@ Reply<std::vector<CompletionItem>> LSPServer::complete(const CompletionParams &p
     if (hasFlag(this->supportedCapability, SupportedCapability::LABEL_DETAIL)) {
       setFlag(extraCompOp, Analyzer::ExtraCompOp::SIGNATURE);
     }
-    return analyzer.complete(src, pos, extraCompOp);
+    if (auto ret = analyzer.complete(src, pos, extraCompOp); ret.hasValue()) {
+      auto v = std::move(ret).unwrap();
+      return v;
+    }
+    return newError(LSPErrorCode::RequestCancelled, "completion cancelled");
   } else {
     return newError(ErrorCode::InvalidParams, std::string(resolved.asErr().get()));
   }
@@ -925,7 +930,8 @@ LSPServer::signatureHelp(const SignatureHelpParams &params) {
     auto pos = resolved.asOk().second.pos;
     auto [copiedSrcMan, copiedArchives] = this->snapshot();
     copiedArchives.revert({src->getSrcId()});
-    Analyzer analyzer(this->sysConfig, *copiedSrcMan, copiedArchives);
+    Analyzer analyzer(this->sysConfig, *copiedSrcMan, copiedArchives,
+                      this->currentCtx->getCancelPoint());
     Union<SignatureHelp, std::nullptr_t> ret = nullptr;
     auto info = analyzer.collectSignature(src, pos);
     if (info.hasValue()) {
