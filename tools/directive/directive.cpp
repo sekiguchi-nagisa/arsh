@@ -150,9 +150,9 @@ static bool checkDirectiveName(ApplyNode &node) {
   return exprNode.getVarName() == "test";
 }
 
-static std::reference_wrapper<CancelToken> getCancelToken() {
+static std::reference_wrapper<const CancelToken> getCancelToken() {
   static CancelToken cancelToken;
-  return std::ref(cancelToken);
+  return std::cref(cancelToken);
 }
 
 DirectiveInitializer::DirectiveInitializer(const char *sourceName, const SysConfig &sysConfig,
