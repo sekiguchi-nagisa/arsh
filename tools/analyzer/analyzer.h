@@ -109,6 +109,11 @@ public:
 
   unsigned int getTypeIdOffset() const { return this->typeDiscardPoint.typeIdOffset; }
 
+  /**
+   *
+   * @param archives
+   * @return not null
+   */
   ModuleArchivePtr buildArchive(ModuleArchives &archives) &&;
 };
 
@@ -159,6 +164,13 @@ private:
 public:
   void reset() { this->ctxs.clear(); }
 
+  /**
+   *
+   * @param src
+   * @param action
+   * @return
+   * if canceled, return null
+   */
   ModuleArchivePtr analyze(const SourcePtr &src, AnalyzerAction &action);
 
   enum class ExtraCompOp : unsigned char {

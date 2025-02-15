@@ -23,6 +23,7 @@ add_library(arshd_static STATIC
         extra_checker.cpp
         registration.cpp
         context.cpp
+        analyzer_worker.cpp
 )
 target_link_libraries(arshd_static arsh_static jsonrpc uri directive)
 

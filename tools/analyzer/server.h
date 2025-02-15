@@ -19,6 +19,7 @@
 
 #include "../json/jsonrpc.h"
 #include "analyzer.h"
+#include "analyzer_worker.h"
 #include "index.h"
 #include "lsp.h"
 #include "registration.h"
