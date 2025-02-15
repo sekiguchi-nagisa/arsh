@@ -80,7 +80,7 @@ private:
   const std::chrono::milliseconds debounceTime;
   const SysConfig sysConfig;
   DiagnosticCallback diagnosticCallback;
-  std::chrono::high_resolution_clock::time_point lastRequestTime;
+  timestamp lastRequestTimestamp;
   State state;
 
 public:

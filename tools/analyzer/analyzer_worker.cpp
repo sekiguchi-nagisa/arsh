@@ -38,10 +38,8 @@ namespace arsh::lsp {
 
 #define READER_LOCK(LOCK) std::shared_lock<std::shared_mutex> LOCK(this->mutex)
 
-static auto getTimestamp() { return std::chrono::high_resolution_clock::now(); }
-
 static bool shouldRebuild(const AnalyzerWorker::Status s, const std::unordered_set<ModId> &srcIds,
-                          const std::chrono::high_resolution_clock::time_point reqTimestamp,
+                          const timestamp reqTimestamp,
                           const std::chrono::milliseconds debounceTime) {
   const auto elapsed =
       std::chrono::duration_cast<std::chrono::minutes>(getCurrentTimestamp() - reqTimestamp);
@@ -60,7 +58,7 @@ AnalyzerWorker::AnalyzerWorker(std::reference_wrapper<LoggerBase> logger,
         WRITER_LOCK(lock);
         this->requestCond.wait(lock, [&] {
           return this->status == Status::DISPOSED ||
-                 shouldRebuild(this->status, this->state.modifiedSrcIds, this->lastRequestTime,
+                 shouldRebuild(this->status, this->state.modifiedSrcIds, this->lastRequestTimestamp,
                                this->debounceTime);
         });
         if (this->status == Status::DISPOSED) {
@@ -142,7 +140,7 @@ void AnalyzerWorker::requestSourceUpdateUnsafe(StringRef path, int newVersion,
                                                std::string &&newContent) {
   if (auto src = this->state.srcMan->update(path, newVersion, std::move(newContent))) {
     this->state.modifiedSrcIds.emplace(src->getSrcId());
-    this->lastRequestTime = getTimestamp();
+    this->lastRequestTimestamp = getCurrentTimestamp();
     if (this->status == Status::FINISHED) {
       this->status = Status::PENDING;
     }
