@@ -171,9 +171,9 @@ std::reference_wrapper<const CancelToken> Analyzer::getCancelToken() const {
   static CancelToken dummy;
 
   if (this->cancelToken) {
-    return std::ref(*this->cancelToken);
+    return std::cref(*this->cancelToken);
   } else {
-    return std::ref(dummy);
+    return std::cref(dummy);
   }
 }
 
