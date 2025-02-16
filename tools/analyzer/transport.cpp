@@ -155,21 +155,4 @@ ssize_t LSPTransport::recvSize() {
 
 ssize_t LSPTransport::recv(size_t size, char *data) { return read(this->inputFd, data, size); }
 
-bool LSPTransport::poll(int timeout) {
-  struct pollfd pollfd[1]{};
-  pollfd[0].fd = this->inputFd;
-  pollfd[0].events = POLLIN;
-  while (true) {
-    LOG(LogLevel::DEBUG, "poll: %d", timeout);
-    int ret = ::poll(pollfd, 1, timeout);
-    if (ret == 0) {
-      return false;
-    } else if (ret == -1 && errno == EINTR) {
-      continue;
-    }
-    break;
-  }
-  return true;
-}
-
 } // namespace arsh::lsp

@@ -235,15 +235,6 @@ public:
    * received size
    */
   virtual ssize_t recv(size_t size, char *data) = 0;
-
-  /**
-   *
-   * @param timeout
-   * if -1, no limit
-   * @return
-   * if timeout, return false
-   */
-  virtual bool poll(int timeout) = 0;
 };
 
 using ReplyImpl = Result<JSON, Error>;
@@ -303,17 +294,15 @@ public:
   enum class Status : unsigned char {
     DISPATCHED,
     ERROR,
-    TIMEOUT,
   };
 
   /**
    *
    * @param transport
-   * @param timeout
    * @return
    * return false if received message is invalid
    */
-  Status dispatch(Transport &transport, int timeout = -1);
+  Status dispatch(Transport &transport);
 
   virtual void onCall(Transport &transport, Request &&req);
 

@@ -1,4 +1,4 @@
-# RUN: call $cmd --test $self
+# RUN: call $cmd --test $self --debounce-time 500
 
 {"id": 0, "jsonrpc": "2.0", "method": "initialize",
  "params": {"capabilities": {}, "rootUri": "file:///test", "processId": 46}}
@@ -35,7 +35,7 @@
   }
 }
 
-<<<
+<<< 550
 {"jsonrpc": "2.0", "method": "textDocument/didOpen",
  "params": {
     "textDocument": {"languageId": "arsh", "version": 1, "uri": "file:///test/test2.ds",
@@ -52,7 +52,7 @@
 #    CHECK:   "params": {
 #    CHECK:     "diagnostics": [],
 
-<<<
+<<< 550
 {"id": 2, "jsonrpc": "2.0", "method": "shutdown"}
 
 # CHECK_IF:   "result": null

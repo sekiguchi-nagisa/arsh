@@ -40,6 +40,8 @@ struct OpenTest : public ::testing::TestWithParam<std::string> {
     auto file = createFilePtr(fopen, "/dev/null", "w");
     auto result = ProcBuilder{ANALYZER_PATH, "--test-open"}
                       .addArg(GetParam())
+                      .addArg("--debounce-time")
+                      .addArg(std::to_string(0))
                       .addArg("--wait-time")
                       .addArg(std::to_string(waitTime))
                       .setOut(fileno(file.get()))

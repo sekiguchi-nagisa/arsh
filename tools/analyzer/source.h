@@ -106,9 +106,8 @@ private:
   StrRefMap<unsigned int> indexMap; // full-path to index mapping
 
 public:
-  void setTestWorkDir(std::string &&dir) {
-    this->testWorkDir = std::make_shared<const std::string>(std::move(dir));
-  }
+  explicit SourceManager(const std::string &dir = "")
+      : testWorkDir(dir.empty() ? nullptr : std::make_shared<const std::string>(dir)) {}
 
   const auto &getTestWorkDir() const { return this->testWorkDir; }
 

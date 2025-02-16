@@ -102,7 +102,7 @@ static DriverOptions parseOptions(int argc, char **argv) {
     exit(1);
   }
   if (debounceTime) {
-    auto pair = convertToNum10<int>(debounceTime);
+    auto pair = convertToNum10<unsigned int>(debounceTime);
     if (!pair) {
       fprintf(stderr, "require valid number (0~): %s\n", debounceTime);
       exit(1);

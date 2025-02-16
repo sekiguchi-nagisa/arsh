@@ -37,15 +37,11 @@ namespace arsh::lsp {
 
 #define READER_LOCK(LOCK) std::shared_lock<std::shared_mutex> LOCK(this->mutex)
 
-static bool mayRebuild(const AnalyzerWorker::Status s, const std::unordered_set<ModId> &srcIds) {
-  return s == AnalyzerWorker::Status::PENDING && !srcIds.empty();
-}
-
 AnalyzerWorker::AnalyzerWorker(std::reference_wrapper<LoggerBase> logger,
                                DiagnosticCallback &&callback, bool diagSupportVersion,
-                               std::chrono::milliseconds debounceTime)
+                               const std::string &testDir, std::chrono::milliseconds debounceTime)
     : logger(logger), diagSupportVersion(diagSupportVersion), debounceTime(debounceTime),
-      diagnosticCallback(std::move(callback)) {
+      diagnosticCallback(std::move(callback)), state(State::create(testDir)) {
   this->workerThread = std::thread([&] {
     while (true) {
       std::unique_ptr<Task> task;
@@ -55,13 +51,13 @@ AnalyzerWorker::AnalyzerWorker(std::reference_wrapper<LoggerBase> logger,
           auto time = this->debounceTime + std::chrono::milliseconds(1 << i);
           const bool r = this->requestCond.wait_for(lock, time, [&] {
             return this->status == Status::DISPOSED ||
-                   mayRebuild(this->status, this->state.modifiedSrcIds);
+                   (this->status == Status::PENDING && !this->state.modifiedSrcIds.empty());
           });
           if (r) {
             if (this->status == Status::DISPOSED) {
               return;
             }
-            if (const auto elapsed = std::chrono::duration_cast<std::chrono::minutes>(
+            if (const auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
                     getCurrentTimestamp() - this->lastRequestTimestamp);
                 elapsed < this->debounceTime) {
               i = 0;
@@ -120,8 +116,10 @@ void AnalyzerWorker::requestSourceOpen(const DidOpenTextDocumentParams &params) 
     if (auto fullPath = this->state.srcMan->resolveURI(uri); !fullPath.empty()) {
       this->requestSourceUpdateUnsafe(fullPath, params.textDocument.version,
                                       std::string(params.textDocument.text));
+      return;
     }
   }
+  LOG(LogLevel::ERROR, "broken uri: %s", params.textDocument.uri.c_str());
 }
 
 void AnalyzerWorker::requestSourceChange(const DidChangeTextDocumentParams &params) {
@@ -142,6 +140,22 @@ void AnalyzerWorker::requestSourceChange(const DidChangeTextDocumentParams &para
   this->requestSourceUpdateUnsafe(src->getPath(), params.textDocument.version, std::move(content));
 }
 
+void AnalyzerWorker::requestSourceClose(const DidCloseTextDocumentParams &params) {
+  this->waitForAnalyzerFinished();
+  WRITER_LOCK(lock);
+  if (auto resolved = resolveSource(this->logger, *this->state.srcMan, params.textDocument)) {
+    auto &src = resolved.asOk();
+    /**
+     * only close unused module.
+     * remove archive and index, but source is still existing
+     */
+    if (this->state.archives.removeIfUnused(src->getSrcId())) { // TODO: non-blocking close
+      LOG(LogLevel::INFO, "do close textDocument: %s", src->getPath().c_str());
+      this->state.indexes.remove(src->getSrcId());
+    }
+  }
+}
+
 void AnalyzerWorker::requestSourceUpdateUnsafe(StringRef path, int newVersion,
                                                std::string &&newContent) {
   if (auto src = this->state.srcMan->update(path, newVersion, std::move(newContent))) {
@@ -158,11 +172,13 @@ void AnalyzerWorker::requestSourceUpdateUnsafe(StringRef path, int newVersion,
 
 void AnalyzerWorker::requestForceRebuild() {
   WRITER_LOCK(lock);
-  this->lastRequestTimestamp = timestamp{};
-  if (this->status == Status::FINISHED) {
-    this->status = Status::PENDING;
+  LOG(LogLevel::INFO, "at requestForceRebuild: %s", toString(this->status));
+  if (this->status == Status::PENDING) {
+    this->lastRequestTimestamp = timestamp{};
+    this->requestCond.notify_all();
+    LOG(LogLevel::INFO, "try force rebuild for pending requests: %d",
+        static_cast<unsigned int>(this->state.modifiedSrcIds.size()));
   }
-  this->requestCond.notify_all();
 }
 
 Result<SourcePtr, std::string> resolveSource(LoggerBase &logger, const SourceManager &srcMan,
@@ -213,6 +229,20 @@ resolvePosition(LoggerBase &logger, const SourceManager &srcMan,
   return Ok(std::make_pair(std::move(src), req.unwrap()));
 }
 
+const char *toString(AnalyzerWorker::Status s) {
+  switch (s) {
+  case AnalyzerWorker::Status::FINISHED:
+    return "finished";
+  case AnalyzerWorker::Status::PENDING:
+    return "pending";
+  case AnalyzerWorker::Status::RUNNING:
+    return "running";
+  case AnalyzerWorker::Status::DISPOSED:
+    return "disposed";
+  }
+  return "";
+}
+
 void AnalyzerWorker::State::mergeSources(const State &other) {
   for (auto &id : other.modifiedSrcIds) {
     auto src = other.srcMan->findById(id);
@@ -223,7 +253,8 @@ void AnalyzerWorker::State::mergeSources(const State &other) {
 }
 
 void AnalyzerWorker::Task::run() {
-  LOG(LogLevel::INFO, "rebuild started");
+  LOG(LogLevel::INFO, "rebuild started for %d sources",
+      static_cast<unsigned int>(this->state.modifiedSrcIds.size()));
 
   // prepare
   {

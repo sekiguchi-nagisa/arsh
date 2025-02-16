@@ -31,7 +31,8 @@ struct SimpleDriver : public Driver {
 
 Result<std::unique_ptr<Driver>, std::string> createDriver(const DriverOptions &options) {
   if (options.testInput) {
-    auto input = loadInputScript(options.testInput, options.open, options.waitTime);
+    auto input =
+        loadInputScript(options.testInput, options.open, options.waitTime + options.debounceTime);
     if (!input) {
       return Err(std::move(input).takeError());
     }
@@ -73,10 +74,8 @@ int run(const DriverOptions &opts, char **const argv, Driver &driver) {
     showInfo(argv, logger);
     const bool testMode = options.testInput && !options.open;
     uint64_t seed = testMode ? 42 : getCurrentTimestamp().time_since_epoch().count();
-    LSPServer server(logger, dupFD(STDIN_FILENO), dupFD(STDOUT_FILENO), options.debounceTime, seed);
-    if (testMode) {
-      server.setTestWorkDir(getBaseDir(options.testInput));
-    }
+    LSPServer server(logger, dupFD(STDIN_FILENO), dupFD(STDOUT_FILENO), options.debounceTime,
+                     testMode ? getBaseDir(options.testInput) : "", seed);
     server.run();
     return 1;
   });

@@ -23,7 +23,7 @@
  }
 }
 
-<<<
+<<< 200
 {"id": 1, "jsonrpc": "2.0", "method": "textDocument/completion",
   "params": {
     "context": { "triggerKind": 1 },

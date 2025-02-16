@@ -24,11 +24,12 @@
 
 namespace arsh::lsp {
 
-#define DEFAULT_DEBOUNCE_TIME 800
+// for help message (do not replace this macro)
+#define DEFAULT_DEBOUNCE_TIME 200
 
 struct DriverOptions {
   LogLevel level{LogLevel::WARNING};
-  int debounceTime{DEFAULT_DEBOUNCE_TIME};
+  unsigned int debounceTime{DEFAULT_DEBOUNCE_TIME};
   unsigned int waitTime{10};
   bool lsp{true};
   bool open{false};

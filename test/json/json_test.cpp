@@ -984,8 +984,6 @@ struct StringTransport : public rpc::Transport {
   }
 
   ssize_t recvSize() override { return this->inStr.size(); }
-
-  bool poll(int) override { return true; }
 };
 
 class RPCTest : public ::testing::Test {

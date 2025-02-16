@@ -35,41 +35,6 @@ struct LSPLogger : public LoggerBase {
   LSPLogger() : LoggerBase("ARSHD") {}
 };
 
-class AnalyzerResult {
-public:
-  std::shared_ptr<SourceManager> srcMan;
-  ModuleArchives archives;
-  SymbolIndexes indexes;
-  std::unordered_set<ModId> modifiedSrcIds;
-
-  NON_COPYABLE(AnalyzerResult);
-
-private:
-  AnalyzerResult(std::shared_ptr<SourceManager> srcMan, ModuleArchives archives,
-                 SymbolIndexes indexes, std::unordered_set<ModId> modifiedSrcIds)
-      : srcMan(std::move(srcMan)), archives(std::move(archives)), indexes(std::move(indexes)),
-        modifiedSrcIds(std::move(modifiedSrcIds)) {}
-
-public:
-  explicit AnalyzerResult(std::shared_ptr<SourceManager> srcMan) : srcMan(std::move(srcMan)) {}
-
-  AnalyzerResult(AnalyzerResult &&o) noexcept
-      : srcMan(std::move(o.srcMan)), archives(std::move(o.archives)), indexes(std::move(o.indexes)),
-        modifiedSrcIds(std::move(o.modifiedSrcIds)) {}
-
-  AnalyzerResult &operator=(AnalyzerResult &&o) noexcept {
-    if (this != std::addressof(o)) {
-      this->~AnalyzerResult();
-      new (this) AnalyzerResult(std::move(o));
-    }
-    return *this;
-  }
-
-  AnalyzerResult deepCopy() const {
-    return {this->srcMan->copy(), this->archives, this->indexes, this->modifiedSrcIds};
-  }
-};
-
 enum class SupportedCapability : unsigned short {
   DIAG_VERSION = 1u << 0u,
   LABEL_DETAIL = 1u << 1u,
@@ -83,19 +48,14 @@ enum class SupportedCapability : unsigned short {
 
 class LSPServer : public Handler {
 private:
-  const SysConfig sysConfig;
   SemanticTokenEncoder encoder;
   IDGenerator idGenerator;
   RegistrationMap registrationMap;
   LSPTransport transport;
   SingleBackgroundWorker rpcHandlerWorker;
-  std::mutex rebuildMutex;
-  AnalyzerResult result;
-  SingleBackgroundWorker analyzerWorker;
-  std::future<AnalyzerResult> futureResult;
-  std::shared_ptr<CancelPoint> cancelPoint;
-  const int defaultDebounceTime;
-  std::atomic_int timeout{defaultDebounceTime};
+  const std::string testDir;
+  std::unique_ptr<AnalyzerWorker> worker;
+  const unsigned int defaultDebounceTime;
   bool init{false};
   bool willExit{false};
   TraceValue traceSetting{TraceValue::off};
@@ -108,13 +68,12 @@ private:
   std::shared_ptr<Context> currentCtx; // only available within rpc worker
 
 public:
-  LSPServer(LoggerBase &logger, int inFd, int outFd, int time, uint64_t seed = 42)
+  LSPServer(LoggerBase &logger, int inFd, int outFd, unsigned int time, const std::string &testDir,
+            uint64_t seed = 42)
       : Handler(logger, seed), idGenerator(seed), transport(logger, inFd, outFd),
-        rpcHandlerWorker(16), result(std::make_shared<SourceManager>()), defaultDebounceTime(time) {
+        rpcHandlerWorker(16), testDir(testDir), defaultDebounceTime(time) {
     this->bindAll();
   }
-
-  void setTestWorkDir(std::string &&dir) { this->result.srcMan->setTestWorkDir(std::move(dir)); }
 
   void onCall(Transport &transport, Request &&req) override;
 
@@ -163,33 +122,24 @@ private:
     Handler::notify(this->transport, name, param);
   }
 
-  Result<SourcePtr, CStrPtr> resolveSource(const TextDocumentIdentifier &doc);
+  static std::vector<Location> gotoDefinitionImpl(const AnalyzerWorker::State &state,
+                                                  const SymbolRequest &request);
 
-  Result<std::pair<SourcePtr, SymbolRequest>, CStrPtr>
-  resolvePosition(const TextDocumentPositionParams &params);
+  static std::vector<Location> findReferenceImpl(const AnalyzerWorker::State &state,
+                                                 const SymbolRequest &request);
 
-  std::vector<Location> gotoDefinitionImpl(const SymbolRequest &request) const;
+  static std::vector<DocumentHighlight> documentHighlightImpl(const AnalyzerWorker::State &state,
+                                                              const SymbolRequest &request);
 
-  std::vector<Location> findReferenceImpl(const SymbolRequest &request) const;
+  static Union<Hover, std::nullptr_t> hoverImpl(const AnalyzerWorker::State &state,
+                                                MarkupKind markupKind, const Source &src,
+                                                const SymbolRequest &request);
 
-  std::vector<DocumentHighlight> documentHighlightImpl(const SymbolRequest &request) const;
-
-  Union<Hover, std::nullptr_t> hoverImpl(const Source &src, const SymbolRequest &request) const;
-
-  Result<WorkspaceEdit, std::string> renameImpl(const SymbolRequest &request,
-                                                const std::string &newName) const;
+  static Result<WorkspaceEdit, std::string>
+  renameImpl(const AnalyzerWorker::State &state, SupportedCapability capability, bool supportRename,
+             const SymbolRequest &request, const std::string &newName);
 
   void loadConfigSetting(const ConfigSetting &setting);
-
-  DiagnosticEmitter newDiagnosticEmitter(std::shared_ptr<SourceManager> srcMan);
-
-  bool tryRebuild();
-
-  void updateSource(StringRef path, int newVersion, std::string &&newContent);
-
-  void syncResult();
-
-  std::pair<std::shared_ptr<SourceManager>, ModuleArchives> snapshot() const;
 
 public:
   // RPC method definitions

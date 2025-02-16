@@ -42,8 +42,6 @@ public:
   ssize_t recvSize() override;
 
   ssize_t recv(size_t size, char *data) override;
-
-  bool poll(int timeout) override;
 };
 
 } // namespace arsh::lsp

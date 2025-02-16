@@ -225,7 +225,7 @@ struct ServerTest : public InteractiveBase {
       LSPLogger logger;
       logger.setSeverity(LogLevel::INFO);
       logger.setAppender(std::move(this->logFile));
-      LSPServer server(logger, dupFD(STDIN_FILENO), dupFD(STDOUT_FILENO), 100);
+      LSPServer server(logger, dupFD(STDIN_FILENO), dupFD(STDOUT_FILENO), 100, "");
       server.run();
       return 1;
     });

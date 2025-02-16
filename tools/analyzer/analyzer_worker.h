@@ -34,6 +34,13 @@ public:
     SymbolIndexes indexes;
     std::unordered_set<ModId> modifiedSrcIds;
 
+    static State create(const std::string &testDir) {
+      return {.srcMan = std::make_shared<SourceManager>(testDir),
+              .archives = {},
+              .indexes = {},
+              .modifiedSrcIds = {}};
+    }
+
     State deepCopy() const {
       return {.srcMan = this->srcMan->copy(),
               .archives = this->archives,
@@ -85,7 +92,8 @@ private:
 
 public:
   AnalyzerWorker(std::reference_wrapper<LoggerBase> logger, DiagnosticCallback &&callback,
-                 bool diagSupportVersion, std::chrono::milliseconds debounceTime);
+                 bool diagSupportVersion, const std::string &testDir,
+                 std::chrono::milliseconds debounceTime);
 
   ~AnalyzerWorker();
 
@@ -94,6 +102,8 @@ public:
   void requestSourceOpen(const DidOpenTextDocumentParams &params);
 
   void requestSourceChange(const DidChangeTextDocumentParams &params);
+
+  void requestSourceClose(const DidCloseTextDocumentParams &params);
 
   void requestForceRebuild();
 
@@ -114,7 +124,7 @@ public:
   template <typename Reader, enable_when<reader_requirement_v<Reader>> = nullptr>
   auto waitStateWith(Reader reader) -> std::invoke_result_t<Reader, const State &> {
     this->requestForceRebuild();
-    std::unique_lock lock(this->mutex); // writer lock
+    std::shared_lock lock(this->mutex); // reader lock
     this->finishCond.wait(lock, [&] { return this->status == Status::FINISHED; });
     if constexpr (std::is_void_v<std::invoke_result_t<Reader, const State &>>) {
       reader(this->state);
@@ -138,6 +148,8 @@ Result<SourcePtr, std::string> resolveSource(LoggerBase &logger, const SourceMan
 Result<std::pair<SourcePtr, SymbolRequest>, std::string>
 resolvePosition(LoggerBase &logger, const SourceManager &srcMan,
                 const TextDocumentPositionParams &params);
+
+const char *toString(AnalyzerWorker::Status s);
 
 } // namespace arsh::lsp
 

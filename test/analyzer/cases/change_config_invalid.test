@@ -19,7 +19,7 @@
 #    CHECK:   "params": {
 #    CHECK:     "diagnostics": [],
 
-<<<
+<<< 200
 {"id": 1, "jsonrpc": "2.0", "method": "textDocument/completion",
   "params": {
     "context": { "triggerCharacter": ".", "triggerKind": 1 },

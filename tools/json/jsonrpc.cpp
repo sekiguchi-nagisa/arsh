@@ -159,10 +159,7 @@ void Transport::reply(JSON &&id, Error &&error) {
 // ##     Handler     ##
 // #####################
 
-Handler::Status Handler::dispatch(Transport &transport, int timeout) {
-  if (!transport.poll(timeout)) {
-    return Status::TIMEOUT;
-  }
+Handler::Status Handler::dispatch(Transport &transport) {
   ssize_t dataSize = transport.recvSize();
   if (dataSize < 0) {
     LOG(LogLevel::WARNING, "may be broken or empty message");
