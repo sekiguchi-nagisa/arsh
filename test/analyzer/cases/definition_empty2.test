@@ -1,4 +1,4 @@
-# RUN: call $cmd --test $self
+# RUN: call $cmd --test $self --debounce-time 10
 
 {"id": 0, "jsonrpc": "2.0", "method": "initialize",
  "params": {"capabilities": {}, "rootUri": "file:///test", "processId": 46}}
@@ -28,7 +28,7 @@
 
 # CHECK_IF:   "result": []
 
-<<<
+<<< 50
 {"id": 2, "jsonrpc": "2.0", "method": "shutdown"}
 
 # CHECK_IF:   "result": null

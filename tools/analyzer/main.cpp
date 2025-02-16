@@ -42,7 +42,8 @@ static const OptParser<OptionKind>::Option optOptions[] = {
      "enable language server features (default)"},
     {OptionKind::DEBOUNCE_TIME, 0, "debounce-time", OptParseOp::HAS_ARG, "msec",
      "time deadline of re-build (ms). default is " STR(DEFAULT_DEBOUNCE_TIME)},
-    {OptionKind::TEST, 0, "test", OptParseOp::HAS_ARG, "file", "run in test mode"},
+    {OptionKind::TEST, 0, "test", OptParseOp::HAS_ARG, "file",
+     "run in test mode (also set debounce-time=5)"},
     {OptionKind::TEST_OPEN, 0, "test-open", OptParseOp::HAS_ARG, "file",
      "run in test mode (explicitly open specified file)"},
     {OptionKind::WAIT_TIME, 0, "wait-time", OptParseOp::HAS_ARG, "msec",
@@ -84,6 +85,7 @@ static DriverOptions parseOptions(int argc, char **argv) {
     case OptionKind::TEST:
       options.open = false;
       options.testInput = result.getValue().data();
+      options.debounceTime = 5;
       break;
     case OptionKind::TEST_OPEN:
       options.open = true;
