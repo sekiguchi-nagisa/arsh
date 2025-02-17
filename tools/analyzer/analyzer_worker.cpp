@@ -98,7 +98,7 @@ AnalyzerWorker::AnalyzerWorker(std::reference_wrapper<LoggerBase> logger,
           // kick callback
           const unsigned int size = this->finishedCallbacks.size();
           for (unsigned int i = 0; !this->finishedCallbacks.empty(); i++) {
-            LOG(LogLevel::INFO, "kick pending callback: %d of %d", i, size);
+            LOG(LogLevel::INFO, "kick pending callback: %d of %d", i + 1, size);
             this->finishedCallbacks.front()(this->state);
             this->finishedCallbacks.pop();
           }

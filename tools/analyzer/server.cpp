@@ -601,7 +601,7 @@ Reply<std::vector<CompletionItem>> LSPServer::complete(const CompletionParams &p
   LOG(LogLevel::INFO, "completion at: %s:%s", params.textDocument.uri.c_str(),
       params.position.toString().c_str());
   auto [copiedSrcMan, copiedArchives] = this->worker->fetchStateWith(
-      [&](const AnalyzerWorker::State &state) { return snapshot(state); });
+      [](const AnalyzerWorker::State &state) { return snapshot(state); });
   if (auto resolved = lsp::resolvePosition(this->logger, *copiedSrcMan, params)) {
     auto &src = resolved.asOk().first;
     auto pos = resolved.asOk().second.pos;
@@ -720,7 +720,7 @@ LSPServer::signatureHelp(const SignatureHelpParams &params) {
   LOG(LogLevel::INFO, "signature help at: %s:%s", params.textDocument.uri.c_str(),
       params.position.toString().c_str());
   auto [copiedSrcMan, copiedArchives] = this->worker->fetchStateWith(
-      [&](const AnalyzerWorker::State &state) { return snapshot(state); });
+      [](const AnalyzerWorker::State &state) { return snapshot(state); });
   if (auto resolved = resolvePosition(this->logger, *copiedSrcMan, params)) {
     auto &src = resolved.asOk().first;
     auto pos = resolved.asOk().second.pos;
