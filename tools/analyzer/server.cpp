@@ -42,15 +42,19 @@ void LSPServer::onCall(Transport &, Request &&req) {
       this->transport.reply(std::move(q.id.unwrap()),
                             Error(LSPErrorCode::ServerNotInitialized, "server not initialized!!"));
     } else if (ctx->getCancelPoint()->isCanceled()) {
-      LOG(LogLevel::INFO, "do cancel: request id=%s", toStringCancelId(q.id).c_str());
-      this->transport.reply(std::move(q.id.unwrap()),
-                            Error(LSPErrorCode::RequestCancelled, "cancelled"));
+      this->replyCancelError(std::move(q.id.unwrap()));
     } else {
       this->currentCtx = std::move(ctx);
       Handler::onCall(this->transport, std::move(q));
     }
     this->currentCtx = nullptr;
   });
+}
+
+void LSPServer::reply(Transport &transport, JSON &&id, ReplyImpl &&ret) {
+  if (ret || ret.asErr().code != LSPErrorCode::NONBlock) {
+    Handler::reply(transport, std::move(id), std::move(ret));
+  }
 }
 
 void LSPServer::onNotify(Request &&req) {
@@ -65,6 +69,11 @@ void LSPServer::onNotify(Request &&req) {
 void LSPServer::onResponse(Response &&res) {
   this->rpcHandlerWorker.addNoreturnTask(
       [this, r = std::move(res)]() mutable { Handler::onResponse(std::move(r)); });
+}
+
+void LSPServer::replyCancelError(JSON &&id) {
+  LOG(LogLevel::INFO, "do cancel: request id=%s", toStringCancelId(id).c_str());
+  this->transport.reply(std::move(id), Error(LSPErrorCode::RequestCancelled, "cancelled"));
 }
 
 void LSPServer::bindAll() {
@@ -646,9 +655,10 @@ LSPServer::semanticToken(const SemanticTokensParams &params) {
 
 Reply<std::vector<DocumentLink>> LSPServer::documentLink(const DocumentLinkParams &params) {
   LOG(LogLevel::INFO, "document link at: %s", params.textDocument.uri.c_str());
-  return this->worker->waitStateWith(
-      [&](const AnalyzerWorker::State &state) -> Reply<std::vector<DocumentLink>> {
-        if (auto resolved = lsp::resolveSource(this->logger, *state.srcMan, params.textDocument)) {
+  return this->setAnalyzerFinishedCallback(
+      [this, p = params](const AnalyzerWorker::State &state) -> Reply<std::vector<DocumentLink>> {
+        LOG(LogLevel::INFO, "kick document link at: %s", p.textDocument.uri.c_str());
+        if (auto resolved = lsp::resolveSource(this->logger, *state.srcMan, p.textDocument)) {
           std::vector<DocumentLink> ret;
           if (auto index = state.indexes.find(resolved.asOk()->getSrcId())) {
             for (auto &e : index->getLinks()) {
@@ -672,9 +682,10 @@ Reply<std::vector<DocumentLink>> LSPServer::documentLink(const DocumentLinkParam
 
 Reply<std::vector<DocumentSymbol>> LSPServer::documentSymbol(const DocumentSymbolParams &params) {
   LOG(LogLevel::INFO, "document symbol at: %s", params.textDocument.uri.c_str());
-  return this->worker->waitStateWith(
-      [&](const AnalyzerWorker::State &state) -> Reply<std::vector<DocumentSymbol>> {
-        if (auto resolved = lsp::resolveSource(this->logger, *state.srcMan, params.textDocument)) {
+  return this->setAnalyzerFinishedCallback(
+      [this, p = params](const AnalyzerWorker::State &state) -> Reply<std::vector<DocumentSymbol>> {
+        LOG(LogLevel::INFO, "kick document symbol at: %s", p.textDocument.uri.c_str());
+        if (auto resolved = lsp::resolveSource(this->logger, *state.srcMan, p.textDocument)) {
           std::vector<DocumentSymbol> ret;
           if (auto index = state.indexes.find(resolved.asOk()->getSrcId())) {
             for (auto &decl : index->getDecls()) {

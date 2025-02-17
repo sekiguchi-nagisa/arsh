@@ -34,7 +34,7 @@ enum ErrorCode : int {
   InvalidRequest = -32600,
   MethodNotFound = -32601,
   InvalidParams = -32602,
-  InternalError = -32603
+  InternalError = -32603,
 };
 
 struct Error {
@@ -399,6 +399,8 @@ public:
 
 protected:
   ReplyImpl onCallImpl(const std::string &name, JSON &&param);
+
+  virtual void reply(Transport &transport, JSON &&id, ReplyImpl &&ret);
 
   ReplyImpl requestValidationError(const std::string &name, const ValidationError &e);
 

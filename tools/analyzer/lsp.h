@@ -48,6 +48,9 @@ enum LSPErrorCode : int {
   ContentModified = -32801,
   RequestCancelled = -32800,
   LSPReservedErrorRangeEnd = -32800,
+
+  // dummy code for non-blocking method
+  NONBlock = -99999,
 };
 
 #define JSONIFY(m) t(#m, m)

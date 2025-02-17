@@ -18,6 +18,7 @@
 #define ARSH_TOOLS_ANALYZER_ANALYZER_WORKER_H
 
 #include <condition_variable>
+#include <queue>
 #include <shared_mutex>
 #include <thread>
 
@@ -89,6 +90,7 @@ private:
   DiagnosticCallback diagnosticCallback;
   timestamp lastRequestTimestamp;
   State state;
+  std::queue<std::function<void(const State &)>> finishedCallbacks;
 
 public:
   AnalyzerWorker(std::reference_wrapper<LoggerBase> logger, DiagnosticCallback &&callback,
@@ -134,11 +136,13 @@ public:
     }
   }
 
+  void asyncStateWith(std::function<void(const State &)> &&callback);
+
+private:
   void waitForAnalyzerFinished() {
     this->waitStateWith([](const State &) {}); // do nothing, just wait
   }
 
-private:
   void requestSourceUpdateUnsafe(StringRef path, int newVersion, std::string &&newContent);
 };
 

@@ -76,6 +76,8 @@ AnalyzerWorker::AnalyzerWorker(std::reference_wrapper<LoggerBase> logger,
                                   this->diagSupportVersion);
         task = std::make_unique<Task>(this->logger, this->sysConfig, std::move(newState),
                                       std::move(emitter), std::make_shared<CancelPoint>());
+        LOG(LogLevel::INFO, "prepare rebuild for %d sources",
+            static_cast<unsigned int>(task->state.modifiedSrcIds.size()));
       }
 
       do {
@@ -91,6 +93,15 @@ AnalyzerWorker::AnalyzerWorker(std::reference_wrapper<LoggerBase> logger,
           this->status = Status::FINISHED;
           this->finishCond.notify_all();
           task = nullptr;
+          LOG(LogLevel::INFO, "rebuild all finished");
+
+          // kick callback
+          const unsigned int size = this->finishedCallbacks.size();
+          for (unsigned int i = 0; !this->finishedCallbacks.empty(); i++) {
+            LOG(LogLevel::INFO, "kick pending callback: %d of %d", i, size);
+            this->finishedCallbacks.front()(this->state);
+            this->finishedCallbacks.pop();
+          }
         } else {
           this->status = Status::RUNNING;
         }
@@ -178,6 +189,19 @@ void AnalyzerWorker::requestForceRebuild() {
     this->requestCond.notify_all();
     LOG(LogLevel::INFO, "try force rebuild for pending requests: %d",
         static_cast<unsigned int>(this->state.modifiedSrcIds.size()));
+  }
+}
+
+void AnalyzerWorker::asyncStateWith(std::function<void(const State &)> &&callback) {
+  WRITER_LOCK(lock);
+  if (callback) {
+    if (this->status == Status::FINISHED) { // kick callback
+      LOG(LogLevel::INFO, "immediately kick callback");
+      callback(this->state);
+    } else {
+      LOG(LogLevel::INFO, "put on callback due to: %s", toString(this->status));
+      this->finishedCallbacks.push(std::move(callback));
+    }
   }
 }
 

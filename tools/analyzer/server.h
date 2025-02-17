@@ -122,6 +122,22 @@ private:
     Handler::notify(this->transport, name, param);
   }
 
+  void replyCancelError(JSON &&id);
+
+  template <typename Func, enable_when<AnalyzerWorker::reader_requirement_v<Func>> = nullptr>
+  ErrHolder<Error> setAnalyzerFinishedCallback(Func func) {
+    this->worker->asyncStateWith(
+        [this, func, ctx = this->currentCtx](const AnalyzerWorker::State &state) {
+          if (ctx->getCancelPoint()->isCanceled()) {
+            this->replyCancelError(JSON(ctx->getId()));
+          } else {
+            ReplyImpl ret = func(state);
+            this->reply(this->transport, JSON(ctx->getId()), std::move(ret));
+          }
+        });
+    return newError(LSPErrorCode::NONBlock, "");
+  }
+
   static std::vector<Location> gotoDefinitionImpl(const AnalyzerWorker::State &state,
                                                   const SymbolRequest &request);
 
@@ -140,6 +156,9 @@ private:
              const SymbolRequest &request, const std::string &newName);
 
   void loadConfigSetting(const ConfigSetting &setting);
+
+protected:
+  void reply(Transport &transport, JSON &&id, ReplyImpl &&ret) override;
 
 public:
   // RPC method definitions

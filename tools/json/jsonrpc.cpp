@@ -202,11 +202,8 @@ Handler::Status Handler::dispatch(Transport &transport) {
 }
 
 void Handler::onCall(Transport &transport, Request &&req) {
-  if (auto ret = this->onCallImpl(req.method, std::move(req.params))) {
-    transport.reply(std::move(req.id), std::move(ret).take());
-  } else {
-    transport.reply(std::move(req.id), std::move(ret).takeError());
-  }
+  auto ret = this->onCallImpl(req.method, std::move(req.params));
+  this->reply(transport, std::move(req.id.unwrap()), std::move(ret));
 }
 
 ReplyImpl Handler::onCallImpl(const std::string &name, JSON &&param) {
@@ -219,6 +216,14 @@ ReplyImpl Handler::onCallImpl(const std::string &name, JSON &&param) {
   }
   LOG(LogLevel::INFO, "onCall: %s", name.c_str());
   return iter->second(std::move(param));
+}
+
+void Handler::reply(Transport &transport, JSON &&id, ReplyImpl &&ret) {
+  if (ret) {
+    transport.reply(std::move(id), std::move(ret).take());
+  } else {
+    transport.reply(std::move(id), std::move(ret).takeError());
+  }
 }
 
 void Handler::onNotify(Request &&req) {
