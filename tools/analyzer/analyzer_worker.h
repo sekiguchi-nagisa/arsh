@@ -92,6 +92,9 @@ private:
   State state;
   std::queue<std::function<void(const State &)>> finishedCallbacks;
 
+  static constexpr unsigned int MAX_PENDING_CHANGED_SOURCES = 8;
+  static constexpr unsigned int MAX_PENDING_CALLBACKS = 8;
+
 public:
   AnalyzerWorker(std::reference_wrapper<LoggerBase> logger, DiagnosticCallback &&callback,
                  bool diagSupportVersion, const std::string &testDir,

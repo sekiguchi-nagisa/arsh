@@ -59,7 +59,8 @@ AnalyzerWorker::AnalyzerWorker(std::reference_wrapper<LoggerBase> logger,
             }
             if (const auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
                     getCurrentTimestamp() - this->lastRequestTimestamp);
-                elapsed < this->debounceTime) {
+                elapsed < this->debounceTime &&
+                this->state.modifiedSrcIds.size() < MAX_PENDING_CHANGED_SOURCES) {
               i = 0;
               continue;
             }
@@ -195,11 +196,13 @@ void AnalyzerWorker::requestForceRebuild() {
 void AnalyzerWorker::asyncStateWith(std::function<void(const State &)> &&callback) {
   WRITER_LOCK(lock);
   if (callback) {
+    this->finishCond.wait(lock,
+                          [&] { return this->finishedCallbacks.size() < MAX_PENDING_CALLBACKS; });
     if (this->status == Status::FINISHED) { // kick callback
       LOG(LogLevel::INFO, "immediately kick callback");
       callback(this->state);
     } else {
-      LOG(LogLevel::INFO, "put on callback due to: %s", toString(this->status));
+      LOG(LogLevel::INFO, "put callback due to: %s", toString(this->status));
       this->finishedCallbacks.push(std::move(callback));
     }
   }
