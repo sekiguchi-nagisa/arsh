@@ -194,17 +194,24 @@ void AnalyzerWorker::requestForceRebuild() {
 }
 
 void AnalyzerWorker::asyncStateWith(std::function<void(const State &)> &&callback) {
-  WRITER_LOCK(lock);
   if (callback) {
-    this->finishCond.wait(lock,
-                          [&] { return this->finishedCallbacks.size() < MAX_PENDING_CALLBACKS; });
-    if (this->status == Status::FINISHED) { // kick callback
-      LOG(LogLevel::INFO, "immediately kick callback");
-      callback(this->state);
-    } else {
-      LOG(LogLevel::INFO, "put callback due to: %s", toString(this->status));
-      this->finishedCallbacks.push(std::move(callback));
+    {
+      WRITER_LOCK(lock);
+      if (this->status == Status::FINISHED) { // kick callback
+        LOG(LogLevel::INFO, "immediately kick callback");
+        callback(this->state);
+      } else if (this->finishedCallbacks.size() < MAX_PENDING_CALLBACKS) {
+        LOG(LogLevel::INFO, "put callback due to: %s", toString(this->status));
+        this->finishedCallbacks.push(std::move(callback));
+      } else {
+        goto FALLBACKL;
+      }
+      return;
     }
+  FALLBACKL: {
+    LOG(LogLevel::INFO, "number of pending callback reaches limit");
+    this->waitStateWith(callback);
+  }
   }
 }
 
