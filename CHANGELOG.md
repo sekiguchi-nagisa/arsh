@@ -36,6 +36,9 @@
     - support generic method's named argument
     - support implicit constructor's named argument
     - support backward reference
+- overhaul analyzer worker
+    - now correctly debounce rebuild
+    - change some methods to non-blocking
 
 ### Fixed
 
