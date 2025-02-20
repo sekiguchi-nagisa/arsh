@@ -219,13 +219,15 @@ std::string generateHoverContent(const SourceManager &srcMan, const SymbolIndexe
   return content;
 }
 
-SymbolKind toSymbolKind(DeclSymbol::Kind kind) {
+SymbolKind toSymbolKind(DeclSymbol::Kind kind, DeclSymbol::Attr attr) {
   SymbolKind symbolKind = SymbolKind::File;
   switch (kind) {
   case DeclSymbol::Kind::VAR:
   case DeclSymbol::Kind::LET:
   case DeclSymbol::Kind::IMPORT_ENV:
   case DeclSymbol::Kind::EXPORT_ENV:
+    symbolKind = hasFlag(attr, DeclSymbol::Attr::MEMBER) ? SymbolKind::Field : SymbolKind::Variable;
+    break;
   case DeclSymbol::Kind::PREFIX_ENV:
   case DeclSymbol::Kind::THIS:
   case DeclSymbol::Kind::PARAM:
@@ -240,7 +242,7 @@ SymbolKind toSymbolKind(DeclSymbol::Kind kind) {
     symbolKind = SymbolKind::Function;
     break;
   case DeclSymbol::Kind::CONSTRUCTOR:
-    symbolKind = SymbolKind::Constructor; // FIXME:
+    symbolKind = SymbolKind::Constructor;
     break;
   case DeclSymbol::Kind::METHOD:
   case DeclSymbol::Kind::GENERIC_METHOD:
@@ -281,6 +283,54 @@ std::string toString(ConstEntry entry) {
     break;
   }
   return value;
+}
+
+static bool isIgnoredDocSymbol(const DeclSymbol &decl) {
+  return isBuiltinMod(decl.getModId()) || decl.has(DeclSymbol::Attr::BUILTIN) ||
+         decl.is(DeclSymbol::Kind::THIS) || decl.is(DeclSymbol::Kind::HERE_START);
+}
+
+static DocumentSymbol toDocSymbol(const Source &src, const DeclSymbol &decl) {
+  auto selectionRange = src.toRange(decl.getToken());
+  auto range = src.toRange(decl.getBody());
+  auto name = decl.toDemangledName();
+  assert(selectionRange.hasValue());
+  assert(range.hasValue());
+  return {
+      .name = std::move(name),
+      .detail = {}, // FIXME:
+      .kind = toSymbolKind(decl.getKind()),
+      .range = range.unwrap(),
+      .selectionRange = selectionRange.unwrap(),
+      .children = {},
+  };
+}
+
+std::vector<DocumentSymbol> generateDocumentSymbols(const SymbolIndexes &indexes,
+                                                    const Source &src) {
+  std::vector<DocumentSymbol> ret;
+  if (auto index = indexes.find(src.getSrcId())) {
+    Token funcBody;
+    for (auto &decl : index->getDecls()) {
+      if (isIgnoredDocSymbol(decl)) {
+        continue;
+      }
+      auto doc = toDocSymbol(src, decl);
+      if (funcBody.size && decl.getToken().endPos() < funcBody.endPos()) { // within func
+        ret.back().children.unwrap().push_back(std::move(doc));
+        continue;
+      }
+      if (doc.kind == SymbolKind::Function || doc.kind == SymbolKind::Method ||
+          doc.kind == SymbolKind::Constructor) {
+        funcBody = decl.getBody();
+        doc.children = std::vector<DocumentSymbol>{};
+      } else {
+        funcBody = {0, 0};
+      }
+      ret.push_back(std::move(doc));
+    }
+  }
+  return ret;
 }
 
 } // namespace arsh::lsp

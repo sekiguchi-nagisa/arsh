@@ -1173,6 +1173,7 @@ struct DocumentSymbol {
   SymbolKind kind;
   Range range;
   Range selectionRange;
+  Optional<std::vector<DocumentSymbol>> children;
 
   template <typename T>
   void jsonify(T &t) {
@@ -1181,6 +1182,7 @@ struct DocumentSymbol {
     JSONIFY(kind);
     JSONIFY(range);
     JSONIFY(selectionRange);
+    JSONIFY(children);
   }
 };
 

@@ -686,29 +686,7 @@ Reply<std::vector<DocumentSymbol>> LSPServer::documentSymbol(const DocumentSymbo
       [this, p = params](const AnalyzerWorker::State &state) -> Reply<std::vector<DocumentSymbol>> {
         LOG(LogLevel::INFO, "kick document symbol at: %s", p.textDocument.uri.c_str());
         if (auto resolved = lsp::resolveSource(this->logger, *state.srcMan, p.textDocument)) {
-          std::vector<DocumentSymbol> ret;
-          if (auto index = state.indexes.find(resolved.asOk()->getSrcId())) {
-            for (auto &decl : index->getDecls()) {
-              if (isBuiltinMod(decl.getModId()) || decl.has(DeclSymbol::Attr::BUILTIN) ||
-                  !decl.has(DeclSymbol::Attr::GLOBAL)) {
-                continue;
-              }
-
-              auto selectionRange = resolved.asOk()->toRange(decl.getToken());
-              auto range = resolved.asOk()->toRange(decl.getBody());
-              auto name = decl.toDemangledName();
-              assert(selectionRange.hasValue());
-              assert(range.hasValue());
-              ret.push_back(DocumentSymbol{
-                  .name = std::move(name),
-                  .detail = {}, // FIXME:
-                  .kind = toSymbolKind(decl.getKind()),
-                  .range = range.unwrap(),
-                  .selectionRange = selectionRange.unwrap(),
-              });
-            }
-          }
-          return ret;
+          return generateDocumentSymbols(state.indexes, *resolved.asOk());
         } else {
           return newError(ErrorCode::InvalidParams, std::move(resolved).takeError());
         }

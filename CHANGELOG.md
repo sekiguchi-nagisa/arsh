@@ -39,6 +39,8 @@
 - overhaul analyzer worker
     - now correctly debounce rebuild
     - change some methods to non-blocking
+- improve ``textDocument/documentSymbol``
+    - support children and local variables
 
 ### Fixed
 

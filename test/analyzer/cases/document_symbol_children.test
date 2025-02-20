@@ -1,0 +1,187 @@
+# RUN: call $cmd --test $self
+
+{"id": 0, "jsonrpc": "2.0", "method": "initialize",
+ "params": {"capabilities": {}, "rootUri": "file:///test", "processId": 46}}
+
+#    CHECK: {
+# CHECK_IF:     "capabilities": {
+# CHECK_IF: }
+
+<<<
+{"jsonrpc": "2.0", "method": "textDocument/didOpen",
+ "params": {
+    "textDocument": {"languageId": "arsh", "version": 1, "uri": "test:///test.ds",
+    "text": "type AAA (aa: Int){ var vvv = 34; }\nfunction sum(a:Int) for AAA { return $this.vvv+$a; }\nlet ccc=1234"
+    }
+ }
+}
+
+<<<
+{"id": 1, "jsonrpc": "2.0", "method": "textDocument/documentSymbol",
+  "params": {
+    "textDocument": { "uri": "test:///test.ds" }
+  }
+}
+
+# CHECK_IF:   "id": 1,
+#    CHECK:   "jsonrpc": "2.0",
+#    CHECK:   "result": [
+#    CHECK:     {
+#    CHECK:       "children": [
+#    CHECK:         {
+#    CHECK:           "kind": 13,
+#    CHECK:           "name": "aa",
+#    CHECK:           "range": {
+#    CHECK:             "end": {
+#    CHECK:               "character": 35,
+#    CHECK:               "line": 0
+#    CHECK:             },
+#    CHECK:             "start": {
+#    CHECK:               "character": 0,
+#    CHECK:               "line": 0
+#    CHECK:             }
+#    CHECK:           },
+#    CHECK:           "selectionRange": {
+#    CHECK:             "end": {
+#    CHECK:               "character": 12,
+#    CHECK:               "line": 0
+#    CHECK:             },
+#    CHECK:             "start": {
+#    CHECK:               "character": 10,
+#    CHECK:               "line": 0
+#    CHECK:             }
+#    CHECK:           }
+#    CHECK:         },
+#    CHECK:         {
+#    CHECK:           "kind": 13,
+#    CHECK:           "name": "vvv",
+#    CHECK:           "range": {
+#    CHECK:             "end": {
+#    CHECK:               "character": 32,
+#    CHECK:               "line": 0
+#    CHECK:             },
+#    CHECK:             "start": {
+#    CHECK:               "character": 20,
+#    CHECK:               "line": 0
+#    CHECK:             }
+#    CHECK:           },
+#    CHECK:           "selectionRange": {
+#    CHECK:             "end": {
+#    CHECK:               "character": 27,
+#    CHECK:               "line": 0
+#    CHECK:             },
+#    CHECK:             "start": {
+#    CHECK:               "character": 24,
+#    CHECK:               "line": 0
+#    CHECK:             }
+#    CHECK:           }
+#    CHECK:         }
+#    CHECK:       ],
+#    CHECK:       "kind": 9,
+#    CHECK:       "name": "AAA",
+#    CHECK:       "range": {
+#    CHECK:         "end": {
+#    CHECK:           "character": 35,
+#    CHECK:           "line": 0
+#    CHECK:         },
+#    CHECK:         "start": {
+#    CHECK:           "character": 0,
+#    CHECK:           "line": 0
+#    CHECK:         }
+#    CHECK:       },
+#    CHECK:       "selectionRange": {
+#    CHECK:         "end": {
+#    CHECK:           "character": 8,
+#    CHECK:           "line": 0
+#    CHECK:         },
+#    CHECK:         "start": {
+#    CHECK:           "character": 5,
+#    CHECK:           "line": 0
+#    CHECK:         }
+#    CHECK:       }
+#    CHECK:     },
+#    CHECK:     {
+#    CHECK:       "children": [
+#    CHECK:         {
+#    CHECK:           "kind": 13,
+#    CHECK:           "name": "a",
+#    CHECK:           "range": {
+#    CHECK:             "end": {
+#    CHECK:               "character": 52,
+#    CHECK:               "line": 1
+#    CHECK:             },
+#    CHECK:             "start": {
+#    CHECK:               "character": 0,
+#    CHECK:               "line": 1
+#    CHECK:             }
+#    CHECK:           },
+#    CHECK:           "selectionRange": {
+#    CHECK:             "end": {
+#    CHECK:               "character": 14,
+#    CHECK:               "line": 1
+#    CHECK:             },
+#    CHECK:             "start": {
+#    CHECK:               "character": 13,
+#    CHECK:               "line": 1
+#    CHECK:             }
+#    CHECK:           }
+#    CHECK:         }
+#    CHECK:       ],
+#    CHECK:       "kind": 6,
+#    CHECK:       "name": "sum",
+#    CHECK:       "range": {
+#    CHECK:         "end": {
+#    CHECK:           "character": 52,
+#    CHECK:           "line": 1
+#    CHECK:         },
+#    CHECK:         "start": {
+#    CHECK:           "character": 0,
+#    CHECK:           "line": 1
+#    CHECK:         }
+#    CHECK:       },
+#    CHECK:       "selectionRange": {
+#    CHECK:         "end": {
+#    CHECK:           "character": 12,
+#    CHECK:           "line": 1
+#    CHECK:         },
+#    CHECK:         "start": {
+#    CHECK:           "character": 9,
+#    CHECK:           "line": 1
+#    CHECK:         }
+#    CHECK:       }
+#    CHECK:     },
+#    CHECK:     {
+#    CHECK:       "kind": 13,
+#    CHECK:       "name": "ccc",
+#    CHECK:       "range": {
+#    CHECK:         "end": {
+#    CHECK:           "character": 12,
+#    CHECK:           "line": 2
+#    CHECK:         },
+#    CHECK:         "start": {
+#    CHECK:           "character": 0,
+#    CHECK:           "line": 2
+#    CHECK:         }
+#    CHECK:       },
+#    CHECK:       "selectionRange": {
+#    CHECK:         "end": {
+#    CHECK:           "character": 7,
+#    CHECK:           "line": 2
+#    CHECK:         },
+#    CHECK:         "start": {
+#    CHECK:           "character": 4,
+#    CHECK:           "line": 2
+#    CHECK:         }
+#    CHECK:       }
+#    CHECK:     }
+#    CHECK:   ]
+
+<<<
+{"id": 2, "jsonrpc": "2.0", "method": "shutdown"}
+
+# CHECK_IF:   "result": null
+#    CHECK: }
+
+<<<
+{"jsonrpc": "2.0", "method": "exit"}
+# STATUS: 0

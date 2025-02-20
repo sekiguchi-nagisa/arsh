@@ -29,9 +29,17 @@ std::string generateHoverContent(const SourceManager &srcMan, const SymbolIndexe
                                  const Source &src, const FindDeclResult &result,
                                  bool markup = true);
 
-SymbolKind toSymbolKind(DeclSymbol::Kind kind);
+SymbolKind toSymbolKind(DeclSymbol::Kind kind, DeclSymbol::Attr attr = {});
 
 std::string toString(ConstEntry entry);
+
+/**
+ * @param indexes
+ * @param src
+ * @return
+ */
+std::vector<DocumentSymbol> generateDocumentSymbols(const SymbolIndexes &indexes,
+                                                    const Source &src);
 
 } // namespace arsh::lsp
 

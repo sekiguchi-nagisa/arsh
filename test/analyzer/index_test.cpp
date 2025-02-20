@@ -1962,6 +1962,12 @@ TEST_F(IndexTest, docSymbol) {
   ASSERT_EQ(SymbolKind::Variable, toSymbolKind(DeclSymbol::Kind::IMPORT_ENV));
   ASSERT_EQ(SymbolKind::Variable, toSymbolKind(DeclSymbol::Kind::EXPORT_ENV));
   ASSERT_EQ(SymbolKind::Variable, toSymbolKind(DeclSymbol::Kind::MOD));
+  ASSERT_EQ(SymbolKind::Field, toSymbolKind(DeclSymbol::Kind::VAR, DeclSymbol::Attr::MEMBER));
+  ASSERT_EQ(SymbolKind::Field, toSymbolKind(DeclSymbol::Kind::LET, DeclSymbol::Attr::MEMBER));
+  ASSERT_EQ(SymbolKind::Field,
+            toSymbolKind(DeclSymbol::Kind::IMPORT_ENV, DeclSymbol::Attr::MEMBER));
+  ASSERT_EQ(SymbolKind::Field,
+            toSymbolKind(DeclSymbol::Kind::EXPORT_ENV, DeclSymbol::Attr::MEMBER));
   ASSERT_EQ(SymbolKind::Constant, toSymbolKind(DeclSymbol::Kind::CONST));
   ASSERT_EQ(SymbolKind::Constant, toSymbolKind(DeclSymbol::Kind::MOD_CONST));
   ASSERT_EQ(SymbolKind::Function, toSymbolKind(DeclSymbol::Kind::FUNC));
@@ -1971,6 +1977,7 @@ TEST_F(IndexTest, docSymbol) {
   ASSERT_EQ(SymbolKind::Constructor, toSymbolKind(DeclSymbol::Kind::CONSTRUCTOR));
   ASSERT_EQ(SymbolKind::Class, toSymbolKind(DeclSymbol::Kind::TYPE_ALIAS));
   ASSERT_EQ(SymbolKind::Class, toSymbolKind(DeclSymbol::Kind::ERROR_TYPE_DEF));
+  ASSERT_EQ(SymbolKind::String, toSymbolKind(DeclSymbol::Kind::HERE_START)); // normally unused
 }
 
 static std::string resolvePackedParamType(const Type &type) {

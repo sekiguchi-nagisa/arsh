@@ -49,6 +49,30 @@
 #    CHECK:           "line": 0
 #    CHECK:         }
 #    CHECK:       }
+#    CHECK:     },
+#    CHECK:     {
+#    CHECK:       "kind": 13,
+#    CHECK:       "name": "vvv",
+#    CHECK:       "range": {
+#    CHECK:         "end": {
+#    CHECK:           "character": 30,
+#    CHECK:           "line": 0
+#    CHECK:         },
+#    CHECK:         "start": {
+#    CHECK:           "character": 18,
+#    CHECK:           "line": 0
+#    CHECK:         }
+#    CHECK:       },
+#    CHECK:       "selectionRange": {
+#    CHECK:         "end": {
+#    CHECK:           "character": 25,
+#    CHECK:           "line": 0
+#    CHECK:         },
+#    CHECK:         "start": {
+#    CHECK:           "character": 22,
+#    CHECK:           "line": 0
+#    CHECK:         }
+#    CHECK:       }
 #    CHECK:     }
 #    CHECK:   ]
 
