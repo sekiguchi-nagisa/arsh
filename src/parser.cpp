@@ -954,8 +954,9 @@ std::unique_ptr<Node> Parser::parse_typedef() {
         E_ALTER_OR_COMP(TokenKind::VAR, TokenKind::LET, TokenKind::RBC);
       }
     }
-    this->expect(TokenKind::RBC); // always success
+    auto rbcToken = this->expect(TokenKind::RBC); // always success
     node->setFuncBody(std::make_unique<BlockNode>(lbcToken.pos));
+    node->updateToken(rbcToken);
     return node;
   }
   default:

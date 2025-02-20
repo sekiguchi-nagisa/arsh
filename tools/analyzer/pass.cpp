@@ -214,13 +214,15 @@ void NodePass::visitPrefixAssignNode(PrefixAssignNode &node) {
 
 void NodePass::visitFunctionNode(FunctionNode &node) {
   this->visitEach(node.getParamNodes());
-  this->visit(node.getRecvTypeNode());
   this->visit(node.getReturnTypeNode());
+  this->visit(node.getRecvTypeNode());
   this->visit(node.getBlockNode());
 }
 
 void NodePass::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
   this->visit(node.getReturnTypeNode());
+  this->visit(node.getParamNode());
+  this->visit(node.getParamTypeNode());
   this->visit(node.getBlockNode());
 }
 

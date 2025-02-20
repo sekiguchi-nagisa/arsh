@@ -299,7 +299,7 @@ static DocumentSymbol toDocSymbol(const Source &src, const DeclSymbol &decl) {
   return {
       .name = std::move(name),
       .detail = {}, // FIXME:
-      .kind = toSymbolKind(decl.getKind()),
+      .kind = toSymbolKind(decl.getKind(), decl.getAttr()),
       .range = range.unwrap(),
       .selectionRange = selectionRange.unwrap(),
       .children = {},

@@ -53,7 +53,7 @@
 #    CHECK:           }
 #    CHECK:         },
 #    CHECK:         {
-#    CHECK:           "kind": 13,
+#    CHECK:           "kind": 8,
 #    CHECK:           "name": "vvv",
 #    CHECK:           "range": {
 #    CHECK:             "end": {

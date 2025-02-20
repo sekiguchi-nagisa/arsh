@@ -939,6 +939,8 @@ void SymbolIndexer::visitUserDefinedCmdImpl(UserDefinedCmdNode &node, const Func
     if (!this->isTopLevel() && !node.isAnonymousCmd()) {
       return;
     }
+    this->visit(node.getParamTypeNode());
+    this->visit(node.getReturnTypeNode());
     if (node.getHandle()) {
       std::string hover = this->builder().getPool().get(TYPE::Bool).getNameRef().toString();
       if (node.getReturnTypeNode() && node.getReturnTypeNode()->getType().isNothingType()) {

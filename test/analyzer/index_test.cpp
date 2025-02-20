@@ -1956,7 +1956,7 @@ Options:
   ASSERT_NO_FATAL_FAILURE(this->hover(src, {3, 2}, out));
 }
 
-TEST_F(IndexTest, docSymbol) {
+TEST_F(IndexTest, docSymbol1) {
   ASSERT_EQ(SymbolKind::Variable, toSymbolKind(DeclSymbol::Kind::VAR));
   ASSERT_EQ(SymbolKind::Variable, toSymbolKind(DeclSymbol::Kind::LET));
   ASSERT_EQ(SymbolKind::Variable, toSymbolKind(DeclSymbol::Kind::IMPORT_ENV));
@@ -1978,6 +1978,75 @@ TEST_F(IndexTest, docSymbol) {
   ASSERT_EQ(SymbolKind::Class, toSymbolKind(DeclSymbol::Kind::TYPE_ALIAS));
   ASSERT_EQ(SymbolKind::Class, toSymbolKind(DeclSymbol::Kind::ERROR_TYPE_DEF));
   ASSERT_EQ(SymbolKind::String, toSymbolKind(DeclSymbol::Kind::HERE_START)); // normally unused
+}
+
+TEST_F(IndexTest, docSymbol2) {
+  unsigned short modId;
+  const char *content = R"(
+importenv ZZZ : $HOME
+function ggg(aaa:Int) {
+  var bbb = 2345; return $aaa + $bbb
+}
+type Interval {
+  let begin: Int
+  let end: Int
+ }
+function dist(): Int for Interval {
+  return $this.end - $this.begin
+}
+error(): Nothing {
+  var msg = $@.join('');
+  throw new Error("$msg")
+}
+)";
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId, {.declSize = 11, .symbolSize = 27}));
+  auto src = this->srcMan.findById(ModId{modId});
+  ASSERT_TRUE(src);
+  auto values = generateDocumentSymbols(this->indexes, *src);
+  ASSERT_EQ(5, values.size());
+
+  ASSERT_EQ("ZZZ", values[0].name);
+  ASSERT_EQ(SymbolKind::Variable, values[0].kind);
+  ASSERT_EQ("(1:10~1:13)", values[0].selectionRange.toString());
+  ASSERT_EQ("(1:0~1:21)", values[0].range.toString());
+
+  ASSERT_EQ("ggg", values[1].name);
+  ASSERT_EQ(SymbolKind::Function, values[1].kind);
+  ASSERT_EQ("(2:9~2:12)", values[1].selectionRange.toString());
+  ASSERT_EQ("(2:0~4:1)", values[1].range.toString());
+  ASSERT_TRUE(values[1].children.hasValue());
+  ASSERT_EQ(2, values[1].children.unwrap().size());
+  ASSERT_EQ("aaa", values[1].children.unwrap()[0].name);
+  ASSERT_EQ(SymbolKind::Variable, values[1].children.unwrap()[0].kind);
+  ASSERT_EQ("bbb", values[1].children.unwrap()[1].name);
+  ASSERT_EQ(SymbolKind::Variable, values[1].children.unwrap()[1].kind);
+
+  ASSERT_EQ("Interval", values[2].name);
+  ASSERT_EQ(SymbolKind::Constructor, values[2].kind);
+  ASSERT_EQ("(5:5~5:13)", values[2].selectionRange.toString());
+  ASSERT_EQ("(5:0~8:2)", values[2].range.toString());
+  ASSERT_TRUE(values[2].children.hasValue());
+  ASSERT_EQ(2, values[2].children.unwrap().size());
+  ASSERT_EQ("begin", values[2].children.unwrap()[0].name);
+  ASSERT_EQ(SymbolKind::Field, values[2].children.unwrap()[0].kind);
+  ASSERT_EQ("end", values[2].children.unwrap()[1].name);
+  ASSERT_EQ(SymbolKind::Field, values[2].children.unwrap()[1].kind);
+
+  ASSERT_EQ("dist", values[3].name);
+  ASSERT_EQ(SymbolKind::Method, values[3].kind);
+  ASSERT_EQ("(9:9~9:13)", values[3].selectionRange.toString());
+  ASSERT_EQ("(9:0~11:1)", values[3].range.toString());
+  ASSERT_TRUE(values[3].children.hasValue());
+  ASSERT_EQ(0, values[3].children.unwrap().size());
+
+  ASSERT_EQ("error", values[4].name);
+  ASSERT_EQ(SymbolKind::Function, values[4].kind);
+  ASSERT_EQ("(12:0~12:5)", values[4].selectionRange.toString());
+  ASSERT_EQ("(12:0~15:1)", values[4].range.toString());
+  ASSERT_TRUE(values[4].children.hasValue());
+  ASSERT_EQ(1, values[4].children.unwrap().size());
+  ASSERT_EQ("msg", values[4].children.unwrap()[0].name);
+  ASSERT_EQ(SymbolKind::Variable, values[4].children.unwrap()[0].kind);
 }
 
 static std::string resolvePackedParamType(const Type &type) {
