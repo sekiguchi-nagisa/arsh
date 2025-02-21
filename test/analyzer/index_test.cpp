@@ -2059,6 +2059,50 @@ error(): Nothing {
   ASSERT_EQ("String", values[4].children.unwrap()[0].detail);
 }
 
+TEST_F(IndexTest, docSymbol3) {
+  TempFileFactory tempFileFactory("arsh_index");
+  auto fileName = tempFileFactory.createTempFile("mod.ds",
+                                                 R"(
+  var aaa = 2133421
+)");
+
+  unsigned short modId;
+  auto content = format(R"(source %s \
+as mod
+type Str = String
+type APIError: Error
+)",
+                        fileName.c_str());
+  ASSERT_NO_FATAL_FAILURE(
+      this->doAnalyze(content.c_str(), modId, {.declSize = 3, .symbolSize = 5}));
+  ASSERT_EQ(1, modId);
+
+  auto src = this->srcMan.findById(ModId{modId});
+  ASSERT_TRUE(src);
+  auto values = generateDocumentSymbols(this->indexes, *src);
+  ASSERT_EQ(3, values.size());
+
+  ASSERT_EQ("mod", values[0].name);
+  ASSERT_EQ(SymbolKind::Variable, values[0].kind);
+  ASSERT_EQ("%mod2", values[0].detail);
+  ASSERT_EQ("(1:3~1:6)", values[0].selectionRange.toString());
+  ASSERT_FALSE(values[0].children.hasValue());
+
+  ASSERT_EQ("Str", values[1].name);
+  ASSERT_EQ(SymbolKind::Class, values[1].kind);
+  ASSERT_EQ("String", values[1].detail);
+  ASSERT_EQ("(2:5~2:8)", values[1].selectionRange.toString());
+  ASSERT_EQ("(2:0~2:17)", values[1].range.toString());
+  ASSERT_FALSE(values[1].children.hasValue());
+
+  ASSERT_EQ("APIError", values[2].name);
+  ASSERT_EQ(SymbolKind::Class, values[2].kind);
+  ASSERT_EQ("", values[2].detail);
+  ASSERT_EQ("(3:5~3:13)", values[2].selectionRange.toString());
+  ASSERT_EQ("(3:0~3:20)", values[2].range.toString());
+  ASSERT_FALSE(values[2].children.hasValue());
+}
+
 static std::string resolvePackedParamType(const Type &type) {
   if (isa<ArrayType>(type)) {
     return cast<ArrayType>(type).getElementType().getNameRef().toString();
