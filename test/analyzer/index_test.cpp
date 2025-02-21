@@ -2007,33 +2007,41 @@ error(): Nothing {
 
   ASSERT_EQ("ZZZ", values[0].name);
   ASSERT_EQ(SymbolKind::Variable, values[0].kind);
+  ASSERT_EQ("String", values[0].detail);
   ASSERT_EQ("(1:10~1:13)", values[0].selectionRange.toString());
   ASSERT_EQ("(1:0~1:21)", values[0].range.toString());
 
   ASSERT_EQ("ggg", values[1].name);
   ASSERT_EQ(SymbolKind::Function, values[1].kind);
+  ASSERT_EQ("(aaa: Int): Void", values[1].detail);
   ASSERT_EQ("(2:9~2:12)", values[1].selectionRange.toString());
   ASSERT_EQ("(2:0~4:1)", values[1].range.toString());
   ASSERT_TRUE(values[1].children.hasValue());
   ASSERT_EQ(2, values[1].children.unwrap().size());
   ASSERT_EQ("aaa", values[1].children.unwrap()[0].name);
   ASSERT_EQ(SymbolKind::Variable, values[1].children.unwrap()[0].kind);
+  ASSERT_EQ("Int", values[1].children.unwrap()[0].detail);
   ASSERT_EQ("bbb", values[1].children.unwrap()[1].name);
   ASSERT_EQ(SymbolKind::Variable, values[1].children.unwrap()[1].kind);
+  ASSERT_EQ("Int", values[1].children.unwrap()[1].detail);
 
   ASSERT_EQ("Interval", values[2].name);
   ASSERT_EQ(SymbolKind::Constructor, values[2].kind);
+  ASSERT_EQ("(begin: Int, end: Int)", values[2].detail);
   ASSERT_EQ("(5:5~5:13)", values[2].selectionRange.toString());
   ASSERT_EQ("(5:0~8:2)", values[2].range.toString());
   ASSERT_TRUE(values[2].children.hasValue());
   ASSERT_EQ(2, values[2].children.unwrap().size());
   ASSERT_EQ("begin", values[2].children.unwrap()[0].name);
   ASSERT_EQ(SymbolKind::Field, values[2].children.unwrap()[0].kind);
+  ASSERT_EQ("Int for Interval", values[2].children.unwrap()[0].detail);
   ASSERT_EQ("end", values[2].children.unwrap()[1].name);
   ASSERT_EQ(SymbolKind::Field, values[2].children.unwrap()[1].kind);
+  ASSERT_EQ("Int for Interval", values[2].children.unwrap()[1].detail);
 
   ASSERT_EQ("dist", values[3].name);
   ASSERT_EQ(SymbolKind::Method, values[3].kind);
+  ASSERT_EQ("(): Int for Interval", values[3].detail);
   ASSERT_EQ("(9:9~9:13)", values[3].selectionRange.toString());
   ASSERT_EQ("(9:0~11:1)", values[3].range.toString());
   ASSERT_TRUE(values[3].children.hasValue());
@@ -2041,12 +2049,14 @@ error(): Nothing {
 
   ASSERT_EQ("error", values[4].name);
   ASSERT_EQ(SymbolKind::Function, values[4].kind);
+  ASSERT_EQ("(): Nothing", values[4].detail);
   ASSERT_EQ("(12:0~12:5)", values[4].selectionRange.toString());
   ASSERT_EQ("(12:0~15:1)", values[4].range.toString());
   ASSERT_TRUE(values[4].children.hasValue());
   ASSERT_EQ(1, values[4].children.unwrap().size());
   ASSERT_EQ("msg", values[4].children.unwrap()[0].name);
   ASSERT_EQ(SymbolKind::Variable, values[4].children.unwrap()[0].kind);
+  ASSERT_EQ("String", values[4].children.unwrap()[0].detail);
 }
 
 static std::string resolvePackedParamType(const Type &type) {

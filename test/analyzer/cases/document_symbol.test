@@ -27,6 +27,7 @@
 #    CHECK:   "jsonrpc": "2.0",
 #    CHECK:   "result": [
 #    CHECK:     {
+#    CHECK:       "detail": "Int",
 #    CHECK:       "kind": 13,
 #    CHECK:       "name": "aaa",
 #    CHECK:       "range": {
@@ -51,6 +52,7 @@
 #    CHECK:       }
 #    CHECK:     },
 #    CHECK:     {
+#    CHECK:       "detail": "Int",
 #    CHECK:       "kind": 13,
 #    CHECK:       "name": "vvv",
 #    CHECK:       "range": {

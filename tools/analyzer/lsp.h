@@ -1169,7 +1169,7 @@ enum class SymbolKind : unsigned int {
 
 struct DocumentSymbol {
   std::string name;
-  Optional<std::string> detail;
+  std::string detail;
   SymbolKind kind;
   Range range;
   Range selectionRange;

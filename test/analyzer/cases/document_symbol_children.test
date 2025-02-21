@@ -11,7 +11,7 @@
 {"jsonrpc": "2.0", "method": "textDocument/didOpen",
  "params": {
     "textDocument": {"languageId": "arsh", "version": 1, "uri": "test:///test.ds",
-    "text": "type AAA (aa: Int){ var vvv = 34; }\nfunction sum(a:Int) for AAA { return $this.vvv+$a; }\nlet ccc=1234"
+    "text": "type AAA (aa: Int){ var vvv = 34; }\nfunction sum(a:Int) for AAA { return $this.vvv+$a; }\nlet ccc='23'"
     }
  }
 }
@@ -29,6 +29,7 @@
 #    CHECK:     {
 #    CHECK:       "children": [
 #    CHECK:         {
+#    CHECK:           "detail": "Int",
 #    CHECK:           "kind": 13,
 #    CHECK:           "name": "aa",
 #    CHECK:           "range": {
@@ -53,6 +54,7 @@
 #    CHECK:           }
 #    CHECK:         },
 #    CHECK:         {
+#    CHECK:           "detail": "Int for AAA",
 #    CHECK:           "kind": 8,
 #    CHECK:           "name": "vvv",
 #    CHECK:           "range": {
@@ -77,6 +79,7 @@
 #    CHECK:           }
 #    CHECK:         }
 #    CHECK:       ],
+#    CHECK:       "detail": "(aa: Int)",
 #    CHECK:       "kind": 9,
 #    CHECK:       "name": "AAA",
 #    CHECK:       "range": {
@@ -103,6 +106,7 @@
 #    CHECK:     {
 #    CHECK:       "children": [
 #    CHECK:         {
+#    CHECK:           "detail": "Int",
 #    CHECK:           "kind": 13,
 #    CHECK:           "name": "a",
 #    CHECK:           "range": {
@@ -127,6 +131,7 @@
 #    CHECK:           }
 #    CHECK:         }
 #    CHECK:       ],
+#    CHECK:       "detail": "(a: Int): Void for AAA",
 #    CHECK:       "kind": 6,
 #    CHECK:       "name": "sum",
 #    CHECK:       "range": {
@@ -151,6 +156,7 @@
 #    CHECK:       }
 #    CHECK:     },
 #    CHECK:     {
+#    CHECK:       "detail": "String",
 #    CHECK:       "kind": 13,
 #    CHECK:       "name": "ccc",
 #    CHECK:       "range": {

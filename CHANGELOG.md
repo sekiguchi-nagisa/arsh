@@ -41,6 +41,7 @@
     - change some methods to non-blocking
 - improve ``textDocument/documentSymbol``
     - support children and local variables
+    - support detail
 
 ### Fixed
 

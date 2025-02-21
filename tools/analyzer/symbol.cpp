@@ -290,6 +290,55 @@ static bool isIgnoredDocSymbol(const DeclSymbol &decl) {
          decl.is(DeclSymbol::Kind::THIS) || decl.is(DeclSymbol::Kind::HERE_START);
 }
 
+static std::string toDocSymbolDetail(const DeclSymbol &decl) {
+  switch (decl.getKind()) {
+  case DeclSymbol::Kind::VAR:
+  case DeclSymbol::Kind::LET:
+  case DeclSymbol::Kind::IMPORT_ENV:
+  case DeclSymbol::Kind::EXPORT_ENV:
+  case DeclSymbol::Kind::PREFIX_ENV:
+  case DeclSymbol::Kind::THIS:
+  case DeclSymbol::Kind::CONST:
+  case DeclSymbol::Kind::MOD_CONST:
+  case DeclSymbol::Kind::PARAM:
+  case DeclSymbol::Kind::GENERIC_METHOD_PARAM:
+  case DeclSymbol::Kind::FUNC:
+  case DeclSymbol::Kind::METHOD:
+  case DeclSymbol::Kind::GENERIC_METHOD:
+  case DeclSymbol::Kind::TYPE_ALIAS:
+    return decl.getInfo().toString();
+  case DeclSymbol::Kind::CONSTRUCTOR: {
+    auto info = decl.getInfo();
+    auto pos = info.find(" {");
+    if (pos != StringRef::npos) {
+      info = info.slice(0, pos);
+    }
+    return info.toString();
+  }
+  case DeclSymbol::Kind::CMD: {
+    auto info = decl.getInfo();
+    auto pos = info.find("---");
+    if (pos != StringRef::npos) {
+      info = info.slice(0, pos);
+    }
+    std::string value = "(): ";
+    value += info;
+    return value;
+  }
+  case DeclSymbol::Kind::BUILTIN_CMD:
+  case DeclSymbol::Kind::BUILTIN_TYPE:
+  case DeclSymbol::Kind::HERE_START:
+  case DeclSymbol::Kind::ERROR_TYPE_DEF:
+    break;
+  case DeclSymbol::Kind::MOD: {
+    auto ret = decl.getInfoAsModId();
+    assert(ret.second);
+    return toModTypeName(ret.first);
+  }
+  }
+  return "";
+}
+
 static DocumentSymbol toDocSymbol(const Source &src, const DeclSymbol &decl) {
   auto selectionRange = src.toRange(decl.getToken());
   auto range = src.toRange(decl.getBody());
@@ -298,7 +347,7 @@ static DocumentSymbol toDocSymbol(const Source &src, const DeclSymbol &decl) {
   assert(range.hasValue());
   return {
       .name = std::move(name),
-      .detail = {}, // FIXME:
+      .detail = toDocSymbolDetail(decl),
       .kind = toSymbolKind(decl.getKind(), decl.getAttr()),
       .range = range.unwrap(),
       .selectionRange = selectionRange.unwrap(),
