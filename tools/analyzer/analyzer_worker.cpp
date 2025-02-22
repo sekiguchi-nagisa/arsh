@@ -43,18 +43,18 @@ AnalyzerWorker::AnalyzerWorker(std::reference_wrapper<LoggerBase> logger,
     : logger(logger), diagSupportVersion(diagSupportVersion), debounceTime(debounceTime),
       diagnosticCallback(std::move(callback)), state(State::create(testDir)) {
   this->workerThread = std::thread([&] {
-    while (true) {
+    while (!this->stop) {
       std::unique_ptr<Task> task;
       {
         WRITER_LOCK(lock);
         for (unsigned int i = 0;; i++) {
           auto time = this->debounceTime + std::chrono::milliseconds(1 << i);
           const bool r = this->requestCond.wait_for(lock, time, [&] {
-            return this->status == Status::DISPOSED ||
+            return this->stop ||
                    (this->status == Status::PENDING && !this->state.modifiedSrcIds.empty());
           });
           if (r) {
-            if (this->status == Status::DISPOSED) {
+            if (this->stop) {
               return;
             }
             if (const auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
@@ -81,7 +81,7 @@ AnalyzerWorker::AnalyzerWorker(std::reference_wrapper<LoggerBase> logger,
       }
 
       decltype(this->finishedCallbacks) tmpCallbacks;
-      while (true) {
+      while (!this->stop) {
         // do rebuild
         task->run();
 
@@ -110,7 +110,7 @@ AnalyzerWorker::AnalyzerWorker(std::reference_wrapper<LoggerBase> logger,
       }
 
       // kick callback
-      {
+      if (!this->stop) {
         READER_LOCK(lock);
         const unsigned int size = tmpCallbacks.size();
         for (unsigned int i = 0; i < size; i++) {
@@ -125,7 +125,7 @@ AnalyzerWorker::AnalyzerWorker(std::reference_wrapper<LoggerBase> logger,
 AnalyzerWorker::~AnalyzerWorker() {
   {
     WRITER_LOCK(lock);
-    this->status = Status::DISPOSED;
+    this->stop = true;
   }
   this->finishCond.notify_all();
   this->requestCond.notify_all();
@@ -283,8 +283,6 @@ const char *toString(AnalyzerWorker::Status s) {
     return "pending";
   case AnalyzerWorker::Status::RUNNING:
     return "running";
-  case AnalyzerWorker::Status::DISPOSED:
-    return "disposed";
   }
   return "";
 }

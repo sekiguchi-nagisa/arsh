@@ -73,7 +73,6 @@ public:
     FINISHED, // waiting request (analyze already finished)
     PENDING,  // pending request
     RUNNING,  // analyzer running
-    DISPOSED, // worker thread disposed
   };
 
 private:
@@ -89,6 +88,7 @@ private:
   std::condition_variable_any finishCond;
 
   // mutable shared states
+  std::atomic_bool stop{false};
   Status status{Status::FINISHED};
   timestamp lastRequestTimestamp;
   State state;

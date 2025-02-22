@@ -499,6 +499,7 @@ void LSPServer::initialized(const InitializedParams &) {
 Reply<void> LSPServer::shutdown() {
   LOG(LogLevel::INFO, "try to shutdown ....");
   this->willExit = true;
+  this->worker = nullptr; // force shutdown worker thread
   return nullptr;
 }
 
