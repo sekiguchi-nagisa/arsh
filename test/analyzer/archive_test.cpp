@@ -38,6 +38,54 @@ TEST(SourceTest, base) {
   ASSERT_EQ(2, toUnderlying(src->getSrcId()));
 }
 
+TEST(SourceTest, remove) {
+  SourceManager srcMan;
+  ASSERT_FALSE(srcMan.remove(ModId{0}));
+  ASSERT_FALSE(srcMan.remove(ModId{1}));
+
+  auto src = srcMan.update("/dummy1", 10, "hello11");
+  ASSERT_TRUE(src);
+  ASSERT_EQ(ModId{1}, src->getSrcId());
+
+  src = srcMan.update("/dummy2", 10, "hello22");
+  ASSERT_TRUE(src);
+  ASSERT_EQ(ModId{2}, src->getSrcId());
+
+  src = srcMan.update("/dummy3", 10, "hello33");
+  ASSERT_TRUE(src);
+  ASSERT_EQ(ModId{3}, src->getSrcId());
+
+  // remove and re-assign
+  auto removed = srcMan.remove(ModId{1});
+  ASSERT_TRUE(removed);
+  ASSERT_EQ("/dummy1", removed->getPath());
+  ASSERT_EQ(ModId{1}, removed->getSrcId());
+  src = srcMan.findById(ModId{1});
+  ASSERT_FALSE(src);
+
+  src = srcMan.update("/dummy4", 10, "hello44");
+  ASSERT_TRUE(src);
+  ASSERT_EQ(ModId{1}, src->getSrcId());
+  src = srcMan.findById(ModId{1});
+  ASSERT_TRUE(src);
+  ASSERT_EQ("hello44\n", src->getContent());
+
+  // remove last and re-assign
+  removed = srcMan.remove(ModId{3});
+  ASSERT_TRUE(removed);
+  ASSERT_EQ("/dummy3", removed->getPath());
+  ASSERT_EQ(ModId{3}, removed->getSrcId());
+  src = srcMan.findById(ModId{3});
+  ASSERT_FALSE(src);
+
+  src = srcMan.update("/dummy5", 10, "hello55");
+  ASSERT_TRUE(src);
+  ASSERT_EQ(ModId{3}, src->getSrcId());
+  src = srcMan.findById(ModId{3});
+  ASSERT_TRUE(src);
+  ASSERT_EQ("hello55\n", src->getContent());
+}
+
 struct ArchiveBuilder {
   ModId id;
   std::vector<ArchiveBuilder> children;

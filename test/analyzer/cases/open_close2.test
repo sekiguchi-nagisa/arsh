@@ -1,4 +1,4 @@
-# RUN: call $cmd --test $self --debounce-time 100 --log debug
+# RUN: call $cmd --test $self --debounce-time 10 --log debug
 
 {"id": 0, "jsonrpc": "2.0", "method": "initialize",
  "params": {"capabilities": {}, "rootUri": "file:///test", "processId": 46}}
@@ -28,9 +28,9 @@
 {"jsonrpc": "2.0", "method": "textDocument/didClose",
   "params": { "textDocument": { "uri": "file:///test/test.ds" } } }
 
-# CHECKERR_RE_IF: ^.+ <info> .+ do close textDocument: /test/test\.ds
+# CHECKERR_RE_IF: ^.+ <info> .+ immediately close textDocument: /test/test\.ds
 
-<<< 120
+<<<
 {"id": 2, "jsonrpc": "2.0", "method": "shutdown"}
 
 # CHECK_IF: {

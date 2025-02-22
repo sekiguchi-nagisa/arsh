@@ -103,7 +103,8 @@ class SourceManager {
 private:
   std::shared_ptr<const std::string> testWorkDir; // for testing. normally null
   std::vector<SourcePtr> entries;
-  StrRefMap<unsigned int> indexMap; // full-path to index mapping
+  StrRefMap<unsigned int> indexMap;                // full-path to index mapping
+  std::unordered_set<unsigned int> unusedIndexSet; // for removed entries
 
 public:
   explicit SourceManager(const std::string &dir = "")
@@ -146,6 +147,14 @@ public:
    * newly added source
    */
   SourcePtr add(SourcePtr other);
+
+  /**
+   *
+   * @param id
+   * @return
+   * if correctly removed, return removed src
+   */
+  SourcePtr remove(ModId id);
 
   std::shared_ptr<SourceManager> copy() const { return std::make_shared<SourceManager>(*this); }
 

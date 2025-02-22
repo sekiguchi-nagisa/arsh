@@ -100,14 +100,8 @@ AnalyzerWorker::AnalyzerWorker(std::reference_wrapper<LoggerBase> logger,
 
           // try close source
           for (auto &srcId : this->closingSrcIds) {
-            /**
-             * only close unused module.
-             * remove archive and index, but source is still existing
-             */
-            if (this->state.archives.removeIfUnused(srcId)) {
-              const auto src = this->state.srcMan->findById(srcId);
-              LOG(LogLevel::INFO, "do close textDocument: %s", src->getPath().c_str());
-              this->state.indexes.remove(srcId);
+            if (const auto removed = this->state.remove(srcId)) {
+              LOG(LogLevel::INFO, "close pending textDocument: %s", removed->getPath().c_str());
             }
           }
           this->closingSrcIds.clear();
@@ -172,7 +166,13 @@ void AnalyzerWorker::requestSourceChange(const DidChangeTextDocumentParams &para
 void AnalyzerWorker::requestSourceClose(const DidCloseTextDocumentParams &params) {
   WRITER_LOCK(lock);
   if (auto resolved = resolveSource(this->logger, *this->state.srcMan, params.textDocument)) {
-    this->closingSrcIds.emplace(resolved.asOk()->getSrcId());
+    if (this->status == Status::FINISHED) {
+      if (const auto removed = this->state.remove(resolved.asOk()->getSrcId())) {
+        LOG(LogLevel::INFO, "immediately close textDocument: %s", removed->getPath().c_str());
+      }
+    } else {
+      this->closingSrcIds.emplace(resolved.asOk()->getSrcId());
+    }
   }
 }
 
@@ -296,6 +296,14 @@ void AnalyzerWorker::State::mergeSources(const State &other) {
     assert(src);
     this->modifiedSrcIds.emplace(src->getSrcId());
   }
+}
+
+SourcePtr AnalyzerWorker::State::remove(ModId targetId) {
+  if (this->archives.removeIfUnused(targetId)) {
+    this->indexes.remove(targetId);
+    return this->srcMan->remove(targetId);
+  }
+  return nullptr;
 }
 
 void AnalyzerWorker::Task::run() {

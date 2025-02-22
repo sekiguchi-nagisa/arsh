@@ -118,17 +118,26 @@ SourcePtr SourceManager::find(StringRef path) const {
 
 SourcePtr SourceManager::update(StringRef path, int version, std::string &&content,
                                 SourceAttr attr) {
-  auto iter = this->indexMap.find(path);
-  if (iter != this->indexMap.end()) {
+  if (auto iter = this->indexMap.find(path); iter != this->indexMap.end()) {
     unsigned int i = iter->second;
     this->entries[i] = this->entries[i]->copyAndUpdate(version, std::move(content));
+    return this->entries[i];
+  } else if (!this->unusedIndexSet.empty()) { // re-assign to unused entry
+    auto unusedIter = this->unusedIndexSet.begin();
+    unsigned int i = *unusedIter;
+    this->unusedIndexSet.erase(unusedIter);
+    auto id = static_cast<unsigned short>(i + 1);
+    assert(!this->entries[i]);
+    this->entries[i] =
+        std::make_shared<Source>(path.data(), ModId{id}, std::move(content), version, attr);
+    this->indexMap.emplace(this->entries[i]->getPath(), i);
     return this->entries[i];
   } else {
     unsigned int id = this->entries.size() + 1;
     if (id == SYS_LIMIT_MOD_ID) {
       return nullptr;
     }
-    unsigned int i = this->entries.size();
+    unsigned int i = id - 1;
     auto src = std::make_shared<Source>(path.data(), ModId{static_cast<unsigned short>(id)},
                                         std::move(content), version, attr);
     auto &ret = this->entries.emplace_back(std::move(src));
@@ -146,6 +155,21 @@ SourcePtr SourceManager::add(SourcePtr other) {
   }
   return this->update(other->getPath(), other->getVersion(), std::string(other->getContent()),
                       other->getAttr());
+}
+SourcePtr SourceManager::remove(ModId id) {
+  if (auto v = toUnderlying(id); v > 0 && static_cast<unsigned int>(v - 1) < this->entries.size()) {
+    const unsigned int index = v - 1;
+    SourcePtr tmp;
+    this->entries[index].swap(tmp);
+    if (index == this->entries.size() - 1) { // remove last entry
+      this->entries.pop_back();
+    } else {
+      this->unusedIndexSet.emplace(index);
+    }
+    this->indexMap.erase(tmp->getPath());
+    return tmp;
+  }
+  return nullptr;
 }
 
 std::string SourceManager::resolveURI(const uri::URI &uri) const {

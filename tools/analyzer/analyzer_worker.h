@@ -49,6 +49,8 @@ public:
     }
 
     void mergeSources(const State &other);
+
+    SourcePtr remove(ModId targetId);
   };
 
   struct Task {
