@@ -47,7 +47,7 @@ private:
   std::vector<Context> contexts;
 
 public:
-  DiagnosticEmitter(std::shared_ptr<SourceManager> &&srcMan, DiagnosticCallback &&callback,
+  DiagnosticEmitter(std::shared_ptr<SourceManager> &&srcMan, DiagnosticCallback callback,
                     bool supportVersion)
       : srcMan(std::move(srcMan)), callback(std::move(callback)), supportVersion(supportVersion) {}
 

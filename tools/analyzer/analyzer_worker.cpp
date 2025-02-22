@@ -72,8 +72,7 @@ AnalyzerWorker::AnalyzerWorker(std::reference_wrapper<LoggerBase> logger,
         this->status = Status::RUNNING;
         auto newState = this->state.deepCopy();
         this->state.modifiedSrcIds.clear();
-        DiagnosticEmitter emitter(std::shared_ptr(newState.srcMan),
-                                  DiagnosticCallback(this->diagnosticCallback),
+        DiagnosticEmitter emitter(std::shared_ptr(newState.srcMan), this->diagnosticCallback,
                                   this->diagSupportVersion);
         task = std::make_unique<Task>(this->logger, this->sysConfig, std::move(newState),
                                       std::move(emitter), std::make_shared<CancelPoint>());
@@ -105,10 +104,9 @@ AnalyzerWorker::AnalyzerWorker(std::reference_wrapper<LoggerBase> logger,
       {
         READER_LOCK(lock);
         const unsigned int size = tmpCallbacks.size();
-        for (unsigned int i = 0; !tmpCallbacks.empty(); i++) {
+        for (unsigned int i = 0; i < size; i++) {
           LOG(LogLevel::INFO, "kick pending callback: %d of %d", i + 1, size);
-          tmpCallbacks.front()(task->state);
-          tmpCallbacks.pop();
+          tmpCallbacks[i](task->state);
         }
       }
     }
@@ -213,7 +211,7 @@ void AnalyzerWorker::asyncStateWith(std::function<void(const State &)> &&callbac
     if (this->status != Status::FINISHED &&
         this->finishedCallbacks.size() < MAX_PENDING_CALLBACKS) {
       LOG(LogLevel::INFO, "put callback due to: %s", toString(this->status));
-      this->finishedCallbacks.push(std::move(callback));
+      this->finishedCallbacks.push_back(std::move(callback));
       return;
     }
   }

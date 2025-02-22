@@ -18,7 +18,6 @@
 #define ARSH_TOOLS_ANALYZER_ANALYZER_WORKER_H
 
 #include <condition_variable>
-#include <queue>
 #include <shared_mutex>
 #include <thread>
 
@@ -77,20 +76,21 @@ public:
 
 private:
   const std::reference_wrapper<LoggerBase> logger;
+  const SysConfig sysConfig;
+  const bool diagSupportVersion;
+  const std::chrono::milliseconds debounceTime;
+  const DiagnosticCallback diagnosticCallback;
 
   std::thread workerThread;
   std::shared_mutex mutex;
   std::condition_variable_any requestCond;
   std::condition_variable_any finishCond;
-  Status status{Status::FINISHED};
 
-  const bool diagSupportVersion;
-  const std::chrono::milliseconds debounceTime;
-  const SysConfig sysConfig;
-  DiagnosticCallback diagnosticCallback;
+  // mutable shared states
+  Status status{Status::FINISHED};
   timestamp lastRequestTimestamp;
   State state;
-  std::queue<std::function<void(const State &)>> finishedCallbacks;
+  std::vector<std::function<void(const State &)>> finishedCallbacks;
 
   static constexpr unsigned int MAX_PENDING_CHANGED_SOURCES = 8;
   static constexpr unsigned int MAX_PENDING_CALLBACKS = 8;
