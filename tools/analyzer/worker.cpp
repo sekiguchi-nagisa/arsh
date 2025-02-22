@@ -24,7 +24,7 @@ namespace arsh::lsp {
 
 SingleBackgroundWorker::SingleBackgroundWorker(unsigned int taskLimit)
     : taskLimit(std::max<unsigned int>(taskLimit, 1)) {
-  this->workerThread = std::thread([&] {
+  this->workerThread = std::thread([this] {
     while (true) {
       std::function<void()> task;
       {
@@ -57,7 +57,7 @@ bool SingleBackgroundWorker::addTaskImpl(std::function<void()> &&task) {
   if (this->stop) {
     return false;
   }
-  this->enqCond.wait(lock, [&] { return this->tasks.size() < this->taskLimit; });
+  this->enqCond.wait(lock, [this] { return this->tasks.size() < this->taskLimit; });
   this->tasks.push(std::move(task));
   this->deqCond.notify_all();
   return true;

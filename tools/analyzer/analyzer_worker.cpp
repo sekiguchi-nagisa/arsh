@@ -42,14 +42,14 @@ AnalyzerWorker::AnalyzerWorker(std::reference_wrapper<LoggerBase> logger,
                                const std::string &testDir, std::chrono::milliseconds debounceTime)
     : logger(logger), diagSupportVersion(diagSupportVersion), debounceTime(debounceTime),
       diagnosticCallback(std::move(callback)), state(State::create(testDir)) {
-  this->workerThread = std::thread([&] {
+  this->workerThread = std::thread([this] {
     while (!this->stop) {
       std::unique_ptr<Task> task;
       {
         WRITER_LOCK(lock);
         for (unsigned int i = 0;; i++) {
           auto time = this->debounceTime + std::chrono::milliseconds(1 << i);
-          const bool r = this->requestCond.wait_for(lock, time, [&] {
+          const bool r = this->requestCond.wait_for(lock, time, [this] {
             return this->stop ||
                    (this->status == Status::PENDING && !this->state.modifiedSrcIds.empty());
           });
