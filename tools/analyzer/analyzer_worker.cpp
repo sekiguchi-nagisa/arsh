@@ -81,7 +81,8 @@ AnalyzerWorker::AnalyzerWorker(std::reference_wrapper<LoggerBase> logger,
             static_cast<unsigned int>(task->state.modifiedSrcIds.size()));
       }
 
-      do {
+      decltype(this->finishedCallbacks) tmpCallbacks;
+      while (true) {
         // do rebuild
         task->run();
 
@@ -92,21 +93,24 @@ AnalyzerWorker::AnalyzerWorker(std::reference_wrapper<LoggerBase> logger,
         this->state.modifiedSrcIds.clear();
         if (task->state.modifiedSrcIds.empty()) {
           this->status = Status::FINISHED;
+          tmpCallbacks.swap(this->finishedCallbacks);
           this->finishCond.notify_all();
-          task = nullptr;
           LOG(LogLevel::INFO, "rebuild all finished");
-
-          // kick callback
-          const unsigned int size = this->finishedCallbacks.size();
-          for (unsigned int i = 0; !this->finishedCallbacks.empty(); i++) {
-            LOG(LogLevel::INFO, "kick pending callback: %d of %d", i + 1, size);
-            this->finishedCallbacks.front()(this->state);
-            this->finishedCallbacks.pop();
-          }
-        } else {
-          this->status = Status::RUNNING;
+          break;
         }
-      } while (task);
+        this->status = Status::RUNNING;
+      }
+
+      // kick callback
+      {
+        READER_LOCK(lock);
+        const unsigned int size = tmpCallbacks.size();
+        for (unsigned int i = 0; !tmpCallbacks.empty(); i++) {
+          LOG(LogLevel::INFO, "kick pending callback: %d of %d", i + 1, size);
+          tmpCallbacks.front()(task->state);
+          tmpCallbacks.pop();
+        }
+      }
     }
   });
 }
@@ -194,25 +198,28 @@ void AnalyzerWorker::requestForceRebuild() {
 }
 
 void AnalyzerWorker::asyncStateWith(std::function<void(const State &)> &&callback) {
-  if (callback) {
-    {
-      WRITER_LOCK(lock);
-      if (this->status == Status::FINISHED) { // kick callback
-        LOG(LogLevel::INFO, "immediately kick callback");
-        callback(this->state);
-      } else if (this->finishedCallbacks.size() < MAX_PENDING_CALLBACKS) {
-        LOG(LogLevel::INFO, "put callback due to: %s", toString(this->status));
-        this->finishedCallbacks.push(std::move(callback));
-      } else {
-        goto FALLBACK;
-      }
+  assert(callback);
+  {
+    READER_LOCK(lock);
+    if (this->status == Status::FINISHED) { // kick callback
+      LOG(LogLevel::INFO, "immediately kick callback");
+      callback(this->state);
       return;
     }
-  FALLBACK: {
-    LOG(LogLevel::INFO, "number of pending callback reaches limit");
-    this->waitStateWith(callback);
   }
+
+  {
+    WRITER_LOCK(lock);
+    if (this->status != Status::FINISHED &&
+        this->finishedCallbacks.size() < MAX_PENDING_CALLBACKS) {
+      LOG(LogLevel::INFO, "put callback due to: %s", toString(this->status));
+      this->finishedCallbacks.push(std::move(callback));
+      return;
+    }
   }
+
+  LOG(LogLevel::INFO, "number of pending callback reaches limit");
+  this->waitStateWith(callback);
 }
 
 Result<SourcePtr, std::string> resolveSource(LoggerBase &logger, const SourceManager &srcMan,

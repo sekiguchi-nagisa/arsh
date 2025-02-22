@@ -139,6 +139,11 @@ public:
     }
   }
 
+  /**
+   *
+   * @param callback
+   * not null
+   */
   void asyncStateWith(std::function<void(const State &)> &&callback);
 
 private:
