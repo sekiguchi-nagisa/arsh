@@ -90,14 +90,29 @@ AnalyzerWorker::AnalyzerWorker(std::reference_wrapper<LoggerBase> logger,
         task->state.mergeSources(this->state);
         this->state = task->state;
         this->state.modifiedSrcIds.clear();
-        if (task->state.modifiedSrcIds.empty()) {
+        if (!task->state.modifiedSrcIds.empty()) {
+          this->status = Status::RUNNING;
+        } else {
           this->status = Status::FINISHED;
           tmpCallbacks.swap(this->finishedCallbacks);
           this->finishCond.notify_all();
           LOG(LogLevel::INFO, "rebuild all finished");
+
+          // try close source
+          for (auto &srcId : this->closingSrcIds) {
+            /**
+             * only close unused module.
+             * remove archive and index, but source is still existing
+             */
+            if (this->state.archives.removeIfUnused(srcId)) {
+              const auto src = this->state.srcMan->findById(srcId);
+              LOG(LogLevel::INFO, "do close textDocument: %s", src->getPath().c_str());
+              this->state.indexes.remove(srcId);
+            }
+          }
+          this->closingSrcIds.clear();
           break;
         }
-        this->status = Status::RUNNING;
       }
 
       // kick callback
@@ -155,18 +170,9 @@ void AnalyzerWorker::requestSourceChange(const DidChangeTextDocumentParams &para
 }
 
 void AnalyzerWorker::requestSourceClose(const DidCloseTextDocumentParams &params) {
-  this->waitForAnalyzerFinished();
   WRITER_LOCK(lock);
   if (auto resolved = resolveSource(this->logger, *this->state.srcMan, params.textDocument)) {
-    auto &src = resolved.asOk();
-    /**
-     * only close unused module.
-     * remove archive and index, but source is still existing
-     */
-    if (this->state.archives.removeIfUnused(src->getSrcId())) { // TODO: non-blocking close
-      LOG(LogLevel::INFO, "do close textDocument: %s", src->getPath().c_str());
-      this->state.indexes.remove(src->getSrcId());
-    }
+    this->closingSrcIds.emplace(resolved.asOk()->getSrcId());
   }
 }
 
@@ -174,6 +180,7 @@ void AnalyzerWorker::requestSourceUpdateUnsafe(StringRef path, int newVersion,
                                                std::string &&newContent) {
   if (auto src = this->state.srcMan->update(path, newVersion, std::move(newContent))) {
     this->state.modifiedSrcIds.emplace(src->getSrcId());
+    this->closingSrcIds.erase(src->getSrcId()); // clear pending close requests
     this->lastRequestTimestamp = getCurrentTimestamp();
     if (this->status == Status::FINISHED) {
       this->status = Status::PENDING;

@@ -91,6 +91,7 @@ private:
   timestamp lastRequestTimestamp;
   State state;
   std::vector<std::function<void(const State &)>> finishedCallbacks;
+  std::unordered_set<ModId> closingSrcIds;
 
   static constexpr unsigned int MAX_PENDING_CHANGED_SOURCES = 8;
   static constexpr unsigned int MAX_PENDING_CALLBACKS = 8;
