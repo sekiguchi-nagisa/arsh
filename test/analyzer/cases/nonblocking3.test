@@ -1,0 +1,100 @@
+# RUN: call $cmd --test $self --log info --debounce-time 1500
+
+{"id": 0, "jsonrpc": "2.0", "method": "initialize",
+ "params": {"capabilities": {}, "rootUri": "file:///test", "processId": 46}}
+
+#    CHECK: {
+# CHECK_IF:     "capabilities": {
+# CHECK_IF: }
+
+<<<
+{"jsonrpc": "2.0", "method": "textDocument/didOpen",
+ "params": {
+    "textDocument": {"languageId": "arsh", "version": 1, "uri": "test:///test.ds",
+    "text": "echo hello"
+    }
+ }
+}
+
+<<<
+{"id": 1, "jsonrpc": "2.0", "method": "textDocument/documentLink",
+  "params": {
+    "textDocument": { "uri": "test:///test.ds" }
+  }
+}
+
+<<<
+{"id": 2, "jsonrpc": "2.0", "method": "textDocument/documentLink",
+  "params": {
+    "textDocument": { "uri": "test:///test.ds" }
+  }
+}
+
+<<<
+{"id": 3, "jsonrpc": "2.0", "method": "textDocument/documentLink",
+  "params": {
+    "textDocument": { "uri": "test:///test.ds" }
+  }
+}
+
+<<<
+{"id": 4, "jsonrpc": "2.0", "method": "textDocument/documentLink",
+  "params": {
+    "textDocument": { "uri": "test:///test.ds" }
+  }
+}
+
+<<<
+{"id": 5, "jsonrpc": "2.0", "method": "textDocument/documentLink",
+  "params": {
+    "textDocument": { "uri": "test:///test.ds" }
+  }
+}
+
+<<<
+{"id": 6, "jsonrpc": "2.0", "method": "textDocument/documentLink",
+  "params": {
+    "textDocument": { "uri": "test:///test.ds" }
+  }
+}
+
+<<<
+{"id": 7, "jsonrpc": "2.0", "method": "textDocument/documentLink",
+  "params": {
+    "textDocument": { "uri": "test:///test.ds" }
+  }
+}
+
+<<<
+{"id": 8, "jsonrpc": "2.0", "method": "textDocument/documentLink",
+  "params": {
+    "textDocument": { "uri": "test:///test.ds" }
+  }
+}
+
+<<<
+{"id": 9, "jsonrpc": "2.0", "method": "textDocument/documentLink",
+  "params": {
+    "textDocument": { "uri": "test:///test.ds" }
+  }
+}
+
+# CHECK_IF:   "id": 8,
+#    CHECK:   "jsonrpc": "2.0",
+#    CHECK:   "result": []
+
+# CHECKERR_RE_IF: ^.+ <info> .+ put callback due to: pending
+
+<<< 1500
+{"id": 20, "jsonrpc": "2.0", "method": "shutdown"}
+
+# CHECK_IF:   "result": null
+#    CHECK: }
+
+# CHECKERR_RE_IF: ^.+ <info> .+ number of pending callback reaches limit
+#    CHECKERR_RE: ^.+ <info> .+ at requestForceRebuild: pending
+#    CHECKERR_RE: ^.+ <info> .+ try force rebuild for pending requests: 1
+
+<<<
+{"jsonrpc": "2.0", "method": "exit"}
+# STATUS: 0

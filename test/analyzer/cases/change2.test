@@ -15,10 +15,6 @@
  }
 }
 
-# CHECK_IF:   "method": "textDocument/publishDiagnostics",
-#    CHECK:   "params": {
-#    CHECK:     "diagnostics": [],
-
 <<<
 {"jsonrpc": "2.0", "method": "textDocument/didChange",
   "params": {

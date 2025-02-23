@@ -46,8 +46,8 @@ AnalyzerWorker::AnalyzerWorker(std::reference_wrapper<LoggerBase> logger,
     while (!this->stop) {
       std::unique_ptr<Task> task;
       {
-        WRITER_LOCK(lock);
         for (unsigned int i = 0;; i++) {
+          READER_LOCK(lock);
           auto time = this->debounceTime + std::chrono::milliseconds(1 << i);
           const bool r = this->requestCond.wait_for(lock, time, [this] {
             return this->stop ||
@@ -69,6 +69,7 @@ AnalyzerWorker::AnalyzerWorker(std::reference_wrapper<LoggerBase> logger,
         }
 
         // prepare rebuild
+        WRITER_LOCK(lock);
         this->status = Status::RUNNING;
         auto newState = this->state.deepCopy();
         this->state.modifiedSrcIds.clear();
@@ -111,7 +112,6 @@ AnalyzerWorker::AnalyzerWorker(std::reference_wrapper<LoggerBase> logger,
 
       // kick callback
       if (!this->stop) {
-        READER_LOCK(lock);
         const unsigned int size = tmpCallbacks.size();
         for (unsigned int i = 0; i < size; i++) {
           LOG(LogLevel::INFO, "kick pending callback: %d of %d", i + 1, size);
@@ -123,10 +123,7 @@ AnalyzerWorker::AnalyzerWorker(std::reference_wrapper<LoggerBase> logger,
 }
 
 AnalyzerWorker::~AnalyzerWorker() {
-  {
-    WRITER_LOCK(lock);
-    this->stop = true;
-  }
+  this->stop = true;
   this->finishCond.notify_all();
   this->requestCond.notify_all();
   this->workerThread.join();

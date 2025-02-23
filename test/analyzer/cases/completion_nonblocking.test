@@ -1,0 +1,169 @@
+# RUN: call $cmd --test $self --debounce-time 300
+
+{"id": 0, "jsonrpc": "2.0", "method": "initialize",
+ "params": {
+   "capabilities": {"textDocument": {"completion": {"completionItem": {"labelDetailsSupport": true}}}},
+   "rootUri": "file:///test", "processId": 46
+ }
+}
+
+#    CHECK: {
+# CHECK_IF:     "capabilities": {
+# CHECK_IF:       "completionProvider": {
+#    CHECK:         "completionItem": {
+#    CHECK:           "labelDetailsSupport": true
+# CHECK_IF: }
+
+<<<
+{"jsonrpc": "2.0", "method": "textDocument/didOpen",
+ "params": {
+    "textDocument": {"languageId": "arsh", "version": 1, "uri": "file:///test/test.ds",
+    "text": "var ZA=$false;{var Z1=3;var Z2=3;var Z3=3;{var Z4=1;var Z5=2;{var Z6=1;var Z7=0;var Z8=9;var Z9=9;var Z10=9;var ZAA=8;\n$Z"
+    }
+ }
+}
+
+<<<
+{"id": 1, "jsonrpc": "2.0", "method": "textDocument/completion",
+  "params": {
+    "context": { "triggerKind": 1 },
+    "position": { "character": 2, "line": 1 },
+    "textDocument": { "uri": "file:///test/test.ds" }
+  }
+}
+
+# complete variable name with priority
+
+# CHECK_IF:   "id": 1,
+#    CHECK:   "jsonrpc": "2.0",
+#    CHECK:   "result": [
+#    CHECK:     {
+#    CHECK:       "kind": 6,
+#    CHECK:       "label": "ZAA",
+#    CHECK:       "labelDetails": {
+#    CHECK:         "detail": ": Int"
+#    CHECK:       },
+#    CHECK:       "sortText": "00"
+#    CHECK:     },
+#    CHECK:     {
+#    CHECK:       "kind": 6,
+#    CHECK:       "label": "Z10",
+#    CHECK:       "labelDetails": {
+#    CHECK:         "detail": ": Int"
+#    CHECK:       },
+#    CHECK:       "sortText": "01"
+#    CHECK:     },
+#    CHECK:     {
+#    CHECK:       "kind": 6,
+#    CHECK:       "label": "Z9",
+#    CHECK:       "labelDetails": {
+#    CHECK:         "detail": ": Int"
+#    CHECK:       },
+#    CHECK:       "sortText": "02"
+#    CHECK:     },
+#    CHECK:     {
+#    CHECK:       "kind": 6,
+#    CHECK:       "label": "Z8",
+#    CHECK:       "labelDetails": {
+#    CHECK:         "detail": ": Int"
+#    CHECK:       },
+#    CHECK:       "sortText": "03"
+#    CHECK:     },
+#    CHECK:     {
+#    CHECK:       "kind": 6,
+#    CHECK:       "label": "Z7",
+#    CHECK:       "labelDetails": {
+#    CHECK:         "detail": ": Int"
+#    CHECK:       },
+#    CHECK:       "sortText": "04"
+#    CHECK:     },
+#    CHECK:     {
+#    CHECK:       "kind": 6,
+#    CHECK:       "label": "Z6",
+#    CHECK:       "labelDetails": {
+#    CHECK:         "detail": ": Int"
+#    CHECK:       },
+#    CHECK:       "sortText": "05"
+#    CHECK:     },
+#    CHECK:     {
+#    CHECK:       "kind": 6,
+#    CHECK:       "label": "Z5",
+#    CHECK:       "labelDetails": {
+#    CHECK:         "detail": ": Int"
+#    CHECK:       },
+#    CHECK:       "sortText": "06"
+#    CHECK:     },
+#    CHECK:     {
+#    CHECK:       "kind": 6,
+#    CHECK:       "label": "Z4",
+#    CHECK:       "labelDetails": {
+#    CHECK:         "detail": ": Int"
+#    CHECK:       },
+#    CHECK:       "sortText": "07"
+#    CHECK:     },
+#    CHECK:     {
+#    CHECK:       "kind": 6,
+#    CHECK:       "label": "Z3",
+#    CHECK:       "labelDetails": {
+#    CHECK:         "detail": ": Int"
+#    CHECK:       },
+#    CHECK:       "sortText": "08"
+#    CHECK:     },
+#    CHECK:     {
+#    CHECK:       "kind": 6,
+#    CHECK:       "label": "Z2",
+#    CHECK:       "labelDetails": {
+#    CHECK:         "detail": ": Int"
+#    CHECK:       },
+#    CHECK:       "sortText": "09"
+#    CHECK:     },
+#    CHECK:     {
+#    CHECK:       "kind": 6,
+#    CHECK:       "label": "Z1",
+#    CHECK:       "labelDetails": {
+#    CHECK:         "detail": ": Int"
+#    CHECK:       },
+#    CHECK:       "sortText": "10"
+#    CHECK:     },
+#    CHECK:     {
+#    CHECK:       "kind": 6,
+#    CHECK:       "label": "ZA",
+#    CHECK:       "labelDetails": {
+#    CHECK:         "detail": ": Bool"
+#    CHECK:       },
+#    CHECK:       "sortText": "11"
+#    CHECK:     }
+#    CHECK:   ]
+
+<<< 300
+{"id": 3, "jsonrpc": "2.0", "method": "shutdown"}
+
+# CHECK_IF:   "method": "textDocument/publishDiagnostics",
+#    CHECK:   "params": {
+#    CHECK:     "diagnostics": [
+#    CHECK:       {
+#    CHECK:         "code": "syntax error: STMT",
+#    CHECK:         "message": "expected statement",
+#    CHECK:         "range": {
+#    CHECK:           "end": {
+#    CHECK:             "character": 2,
+#    CHECK:             "line": 1
+#    CHECK:           },
+#    CHECK:           "start": {
+#    CHECK:             "character": 2,
+#    CHECK:             "line": 1
+#    CHECK:           }
+#    CHECK:         },
+#    CHECK:         "severity": 1
+#    CHECK:       }
+#    CHECK:     ],
+#    CHECK:     "uri": "file:///test/test.ds"
+
+# CHECK_IF:   "id": 3,
+#    CHECK:   "jsonrpc": "2.0",
+#    CHECK:   "result": null
+#    CHECK: }
+
+<<<
+{"jsonrpc": "2.0", "method": "exit"}
+# STATUS: 0

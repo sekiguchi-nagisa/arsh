@@ -1,0 +1,42 @@
+# RUN: call $cmd --test $self --log info --debounce-time 100
+
+{"id": 0, "jsonrpc": "2.0", "method": "initialize",
+ "params": {"capabilities": {}, "rootUri": "file:///test", "processId": 46}}
+
+#    CHECK: {
+# CHECK_IF:     "capabilities": {
+# CHECK_IF: }
+
+<<<
+{"jsonrpc": "2.0", "method": "textDocument/didOpen",
+ "params": {
+    "textDocument": {"languageId": "arsh", "version": 1, "uri": "test:///test.ds",
+    "text": "echo hello"
+    }
+ }
+}
+
+<<<
+{"id": 1, "jsonrpc": "2.0", "method": "textDocument/documentLink",
+  "params": {
+    "textDocument": { "uri": "test:///test.ds" }
+  }
+}
+
+# CHECK_IF:   "id": 1,
+#    CHECK:   "jsonrpc": "2.0",
+#    CHECK:   "result": []
+
+# CHECKERR_RE_IF: ^.+ <info> .+ put callback due to: pending
+
+<<< 150
+{"id": 2, "jsonrpc": "2.0", "method": "shutdown"}
+
+# CHECK_IF:   "result": null
+#    CHECK: }
+
+# CHECKERR_RE_IF: ^.+ <info> .+ kick pending callback: 1 of 1
+
+<<<
+{"jsonrpc": "2.0", "method": "exit"}
+# STATUS: 0
