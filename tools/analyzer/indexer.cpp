@@ -408,6 +408,20 @@ void IndexBuilder::addHereDocStartEnd(const NameInfo &start, Token end) {
   }
 }
 
+static std::string formatSymbol(const Source &src, StringRef name, Token token) {
+  std::string value;
+  if (!name.empty()) {
+    value += name;
+    value += '=';
+  }
+  if (auto range = src.toRange(token); range.hasValue()) {
+    value += range.unwrap().toString();
+  } else {
+    value += toString(token);
+  }
+  return value;
+}
+
 DeclSymbol *IndexBuilder::insertNewDecl(DeclSymbol::Kind k, DeclSymbol::Attr attr,
                                         DeclSymbol::Name &&name, const char *info, Token body,
                                         DeclInsertOp op) {
@@ -444,8 +458,10 @@ DeclSymbol *IndexBuilder::insertNewDecl(DeclSymbol::Kind k, DeclSymbol::Attr att
   auto iter = std::lower_bound(this->decls.begin(), this->decls.end(), decl.getPos(),
                                DeclSymbol::Compare());
   if (iter != this->decls.end() && iter->getPos() == decl.getPos()) {
-    LOG(LogLevel::ERROR, "try to add token: %s, but already added: %s\n",
-        toString(decl.getToken()).c_str(), toString(iter->getToken()).c_str());
+    LOG(LogLevel::ERROR, "at %s, try to add decl: %s, but already added: %s",
+        this->src->getPath().c_str(),
+        formatSymbol(*this->src, decl.getMangledName(), decl.getToken()).c_str(),
+        formatSymbol(*this->src, iter->getMangledName(), iter->getToken()).c_str());
     return nullptr;
   }
   iter = this->decls.insert(iter, std::move(decl));
@@ -464,8 +480,9 @@ const Symbol *IndexBuilder::insertNewSymbol(Token token, const DeclBase *decl) {
   auto iter = std::lower_bound(this->symbols.begin(), this->symbols.end(), symbol.getPos(),
                                Symbol::Compare());
   if (iter != this->symbols.end() && iter->getPos() == symbol.getPos()) {
-    LOG(LogLevel::ERROR, "try to add token: %s, but already added: %s\n",
-        toString(symbol.getToken()).c_str(), toString(iter->getToken()).c_str());
+    LOG(LogLevel::ERROR, "at %s, try to add symbol: %s, but already added: %s",
+        this->src->getPath().c_str(), formatSymbol(*this->src, "", symbol.getToken()).c_str(),
+        formatSymbol(*this->src, "", iter->getToken()).c_str());
     return nullptr;
   }
   iter = this->symbols.insert(iter, symbol);
@@ -479,7 +496,8 @@ void IndexBuilder::addParamTypeInfo(Token token, const Type &type) {
   auto symbolRef = SymbolRef::create(token, this->getModId());
   if (symbolRef.hasValue()) {
     if (!this->packedParamTypesMap.addSymbol(symbolRef.unwrap(), type.typeId())) {
-      LOG(LogLevel::ERROR, "try to add token: %s, but already added\n", toString(token).c_str());
+      LOG(LogLevel::ERROR, "at %s, try to add packed param types: %s, but already added",
+          this->src->getPath().c_str(), formatSymbol(*this->src, "", token).c_str());
       return;
     }
     if (!this->packedParamTypesMap.lookupByTypeId(type.typeId())) {
