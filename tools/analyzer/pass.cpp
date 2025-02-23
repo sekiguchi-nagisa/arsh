@@ -220,9 +220,8 @@ void NodePass::visitFunctionNode(FunctionNode &node) {
 }
 
 void NodePass::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
-  this->visit(node.getReturnTypeNode());
   this->visit(node.getParamNode());
-  this->visit(node.getParamTypeNode());
+  this->visit(node.getReturnTypeNode());
   this->visit(node.getBlockNode());
 }
 
