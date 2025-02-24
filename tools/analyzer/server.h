@@ -171,6 +171,8 @@ public:
 
   void exit();
 
+  void sleep(const SleepParam &param);
+
   void tryCancel(const CancelParams &param); // only called from main thread
 
   void setTrace(const SetTraceParams &param);

@@ -460,6 +460,15 @@ struct CancelParams {
   }
 };
 
+struct SleepParam {
+  unsigned int msec;
+
+  template <typename T>
+  void jsonify(T &t) {
+    JSONIFY(msec);
+  }
+};
+
 struct InitializeParams : public WorkDoneProgressParams {
   Union<int, std::nullptr_t> processId{nullptr};
   Optional<Union<std::string, std::nullptr_t>> rootPath; // optional
