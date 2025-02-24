@@ -150,10 +150,6 @@ public:
   void asyncStateWith(std::function<void(const State &)> &&callback);
 
 private:
-  void waitForAnalyzerFinished() {
-    this->waitStateWith([](const State &) {}); // do nothing, just wait
-  }
-
   void requestSourceUpdateUnsafe(StringRef path, int newVersion, std::string &&newContent);
 };
 

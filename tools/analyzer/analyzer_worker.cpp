@@ -45,29 +45,28 @@ AnalyzerWorker::AnalyzerWorker(std::reference_wrapper<LoggerBase> logger,
   this->workerThread = std::thread([this] {
     while (!this->stop) {
       std::unique_ptr<Task> task;
-      {
-        for (unsigned int i = 0;; i++) {
-          READER_LOCK(lock);
-          auto time = this->debounceTime + std::chrono::milliseconds(1 << i);
-          const bool r = this->requestCond.wait_for(lock, time, [this] {
-            return this->stop ||
-                   (this->status == Status::PENDING && !this->state.modifiedSrcIds.empty());
-          });
-          if (r) {
-            if (this->stop) {
-              return;
-            }
-            if (const auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
-                    getCurrentTimestamp() - this->lastRequestTimestamp);
-                elapsed < this->debounceTime &&
-                this->state.modifiedSrcIds.size() < MAX_PENDING_CHANGED_SOURCES) {
-              i = 0;
-              continue;
-            }
-            break;
+      for (unsigned int i = 0;; i++) {
+        READER_LOCK(lock);
+        auto time = this->debounceTime + std::chrono::milliseconds(1 << i);
+        const bool r = this->requestCond.wait_for(lock, time, [this] {
+          return this->stop ||
+                 (this->status == Status::PENDING && !this->state.modifiedSrcIds.empty());
+        });
+        if (r) {
+          if (this->stop) {
+            return;
           }
+          if (const auto elapsed = std::chrono::duration_cast<std::chrono::milliseconds>(
+                  getCurrentTimestamp() - this->lastRequestTimestamp);
+              elapsed < this->debounceTime &&
+              this->state.modifiedSrcIds.size() < MAX_PENDING_CHANGED_SOURCES) {
+            i = 0;
+            continue;
+          }
+          break;
         }
-
+      }
+      {
         // prepare rebuild
         WRITER_LOCK(lock);
         this->status = Status::RUNNING;
