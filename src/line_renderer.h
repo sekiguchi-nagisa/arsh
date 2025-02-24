@@ -121,7 +121,9 @@ private:
 
   size_t totalRows{0};
 
-  size_t maxCols{static_cast<size_t>(-1)};
+  size_t maxTotalCols{0};
+
+  size_t colLimit{static_cast<size_t>(-1)};
 
   bool emitNewline{true}; // if false, not append newline (\n) and not increment totalRows
 
@@ -147,11 +149,13 @@ public:
 
   void setInitCols(size_t init) { this->initCols = init; }
 
-  void setMaxCols(size_t limit) { this->maxCols = limit; }
+  void setColLimit(size_t limit) { this->colLimit = limit; }
 
   size_t getTotalCols() const { return this->totalCols; }
 
   size_t getTotalRows() const { return this->totalRows; }
+
+  size_t getMaxTotalCols() const { return std::max(this->maxTotalCols, this->totalCols); }
 
   void setEmitNewline(bool set) { this->emitNewline = set; }
 
@@ -210,13 +214,15 @@ private:
         *this->output += *color;
       }
     }
+    this->maxTotalCols = std::max(this->maxTotalCols, this->colLimit);
   }
 
   void handleTruncate(char pad) {
     if (this->output) {
-      this->output->append(this->maxCols - this->totalCols, pad);
+      this->output->append(this->colLimit - this->totalCols, pad);
     }
-    this->totalCols = this->maxCols;
+    this->totalCols = this->colLimit;
+    this->maxTotalCols = std::max(this->maxTotalCols, this->colLimit);
   }
 };
 

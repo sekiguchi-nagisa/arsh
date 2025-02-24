@@ -29,6 +29,7 @@
     - ``String#slice``, ``Array#slice``, ``Job#kill``, ``Array#addAll``, ``Map#addAll``,
     - ``Array#removeRange``, ``LineEditor#readLine``
 - automatically insert ``(``, ``()`` after completing method names
+- in ``LineEditor``, fix screen corruption when shrink window cols
 
 #### LSP
 

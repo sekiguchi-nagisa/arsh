@@ -196,7 +196,7 @@ void ArrayPager::render(LineRenderer &renderer) const {
 
   renderer.setInitCols(0);
   if (this->getPanes() == 1) {
-    renderer.setMaxCols(this->getPaneLen());
+    renderer.setColLimit(this->getPaneLen());
     renderer.setLineBreakOp(LineRenderer::LineBreakOp::TRUNCATE);
   }
   for (unsigned int i = 0; i < actualRows; i++) {

@@ -323,7 +323,7 @@ TEST_F(LineRendererTest, softwrap) {
   StringRef line = "\t1234567890";
   {
     LineRenderer renderer(ps, 2, out);
-    renderer.setMaxCols(5);
+    renderer.setColLimit(5);
     renderer.renderLines(line);
     ASSERT_EQ(2, renderer.getTotalRows());
     ASSERT_EQ(4, renderer.getTotalCols());
@@ -334,7 +334,7 @@ TEST_F(LineRendererTest, softwrap) {
   line = "\t1234567890あab\r\n@";
   {
     LineRenderer renderer(ps, 3, out);
-    renderer.setMaxCols(5);
+    renderer.setColLimit(5);
     renderer.renderLines(line);
     ASSERT_EQ(5, renderer.getTotalRows());
     ASSERT_EQ(4, renderer.getTotalCols());
@@ -345,7 +345,7 @@ TEST_F(LineRendererTest, softwrap) {
   line = "1234\t@ \r";
   {
     LineRenderer renderer(ps, 0, out);
-    renderer.setMaxCols(4);
+    renderer.setColLimit(4);
     renderer.renderLines(line);
     ASSERT_EQ(3, renderer.getTotalRows());
     ASSERT_EQ(0, renderer.getTotalCols());
@@ -1120,6 +1120,7 @@ public:
     this->ctx.scrolling = r;
     this->ctx.oldActualCursorRows = actualCursorRows;
     this->ctx.oldCursorRows = result.cursorRows;
+    this->ctx.oldRenderedCols = result.renderedCols;
     return r;
   }
 };
@@ -1135,6 +1136,7 @@ TEST_F(ScrollTest, base) {
     ASSERT_EQ(12, ret.renderedRows);
     ASSERT_EQ(12, ret.cursorRows);
     ASSERT_GE(ret.renderedRows, this->winSize.rows);
+    ASSERT_EQ(4, ret.renderedCols);
 
     ASSERT_TRUE(this->fit(ret));
     ASSERT_EQ(5, ret.renderedRows);
@@ -1408,6 +1410,7 @@ TEST_F(ScrollTest, softwrap) {
     ASSERT_EQ(20, ret.renderedRows);
     ASSERT_EQ(20, ret.cursorRows);
     ASSERT_GE(ret.renderedRows, this->winSize.rows);
+    ASSERT_EQ(5, ret.renderedCols);
     ASSERT_TRUE(this->fit(ret));
     ASSERT_EQ(5, ret.renderedRows);
     ASSERT_EQ(5, ret.cursorRows);

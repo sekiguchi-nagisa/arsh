@@ -336,6 +336,7 @@ bool LineRenderer::render(StringRef ref, HighlightTokenClass tokenClass) {
         if (this->output) {
           this->output->append(this->initCols, ' ');
         }
+        this->maxTotalCols = std::max(this->maxTotalCols, this->totalCols);
         this->totalCols = this->initCols;
       }
       if (colorCode && this->output) {
@@ -345,7 +346,7 @@ bool LineRenderer::render(StringRef ref, HighlightTokenClass tokenClass) {
       return this->renderControlChar(grapheme.getRef()[0], colorCode);
     } else {
       unsigned int width = getGraphemeWidth(this->ps, grapheme);
-      if (this->totalCols + width > this->maxCols) { // line break
+      if (this->totalCols + width > this->colLimit) { // line break
         switch (this->breakOp) {
         case LineBreakOp::SOFT_WRAP:
           this->handleSoftWrap(colorCode);
@@ -363,7 +364,7 @@ bool LineRenderer::render(StringRef ref, HighlightTokenClass tokenClass) {
         }
       }
       this->totalCols += width;
-      if (this->totalCols == this->maxCols && this->breakOp == LineBreakOp::SOFT_WRAP) {
+      if (this->totalCols == this->colLimit && this->breakOp == LineBreakOp::SOFT_WRAP) {
         this->handleSoftWrap(colorCode);
       }
     }
@@ -379,7 +380,7 @@ bool LineRenderer::renderControlChar(int codePoint, const std::string *color) {
   assert(isControlChar(codePoint));
   if (codePoint == '\t') {
     unsigned int colLen = TAB_WIDTH - this->totalCols % TAB_WIDTH;
-    if (this->totalCols + colLen > this->maxCols) { // line break
+    if (this->totalCols + colLen > this->colLimit) { // line break
       switch (this->breakOp) {
       case LineBreakOp::SOFT_WRAP:
         this->handleSoftWrap(color);
@@ -394,11 +395,11 @@ bool LineRenderer::renderControlChar(int codePoint, const std::string *color) {
       this->output->append(colLen, ' ');
     }
     this->totalCols += colLen;
-    if (this->totalCols == this->maxCols && this->breakOp == LineBreakOp::SOFT_WRAP) {
+    if (this->totalCols == this->colLimit && this->breakOp == LineBreakOp::SOFT_WRAP) {
       this->handleSoftWrap(color);
     }
   } else if (codePoint != '\n') {
-    if (this->totalCols + 2 > this->maxCols) { // line break
+    if (this->totalCols + 2 > this->colLimit) { // line break
       switch (this->breakOp) {
       case LineBreakOp::SOFT_WRAP:
         this->handleSoftWrap(color);
@@ -416,7 +417,7 @@ bool LineRenderer::renderControlChar(int codePoint, const std::string *color) {
       *this->output += static_cast<char>(static_cast<int>(v));
     }
     this->totalCols += 2;
-    if (this->totalCols == this->maxCols && this->breakOp == LineBreakOp::SOFT_WRAP) {
+    if (this->totalCols == this->colLimit && this->breakOp == LineBreakOp::SOFT_WRAP) {
       this->handleSoftWrap(color);
     }
   }

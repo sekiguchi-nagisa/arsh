@@ -494,15 +494,19 @@ void LineEditorObject::refreshLine(ARState &state, RenderingContext &ctx, bool r
 
   /* move cursor original position and clear screen */
   char seq[64];
-  if (ctx.oldCursorRows > 1) { // set cursor original row position
-    const auto diff = ctx.oldCursorRows - 1;
-    lndebug("go up cursor: %u", diff);
-    snprintf(seq, std::size(seq), "\x1b[%uA", diff);
-    ab += seq;
+  if (ctx.oldRenderedCols > winSize.cols) { // clear screen due to screen corruption
+    ab += "\x1b[H\x1b[2J";
+  } else {
+    if (ctx.oldCursorRows > 1) { // set cursor original row position
+      const auto diff = ctx.oldCursorRows - 1;
+      lndebug("go up cursor: %u", diff);
+      snprintf(seq, std::size(seq), "\x1b[%uA", diff);
+      ab += seq;
+    }
+    /* Clean the top and bellow lines. */
+    lndebug("clear");
+    ab += "\r\x1b[0K\x1b[0J";
   }
-  /* Clean the top and bellow lines. */
-  lndebug("clear");
-  ab += "\r\x1b[0K\x1b[0J";
 
   /* adjust too long rendered lines */
   lndebug("scrolling: %s", ctx.scrolling ? "true" : "false");
@@ -533,6 +537,7 @@ void LineEditorObject::refreshLine(ARState &state, RenderingContext &ctx, bool r
   lndebug("\n");
   ctx.oldCursorRows = ret.cursorRows;
   ctx.oldActualCursorRows = actualCursorRows;
+  ctx.oldRenderedCols = ret.renderedCols;
 
   if (write(this->outFd, ab.c_str(), ab.size()) == -1) {
   } /* Can't recover from write error. */

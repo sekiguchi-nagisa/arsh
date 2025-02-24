@@ -27,6 +27,7 @@ class ArrayPager;
 struct RenderingResult {
   std::string renderedLines;
   size_t renderedRows{0};
+  size_t renderedCols{0};
   size_t cursorRows{0};
   size_t cursorCols{0};
   unsigned int promptRows{0};
@@ -38,6 +39,7 @@ struct RenderingContext {
   const StringRef prompt;
   unsigned int oldCursorRows{0}; // previous refresh cursor rows (relative to initial rows)
   unsigned int oldActualCursorRows{0};
+  unsigned int oldRenderedCols{0};
   CharWidthProperties ps;
   bool scrolling{false};
   bool semanticPrompt{false};

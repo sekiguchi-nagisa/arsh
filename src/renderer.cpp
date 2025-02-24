@@ -61,7 +61,7 @@ RenderingResult doRendering(const RenderingContext &ctx, ObserverPtr<const Array
       result.renderedLines += data;
     }
     LineRenderer renderer(ctx.ps, 0, result.renderedLines, escapeSeqMap);
-    renderer.setMaxCols(maxCols);
+    renderer.setColLimit(maxCols);
     renderer.renderWithANSI(ctx.prompt);
     promptRows = renderer.getTotalRows();
     promptCols = renderer.getTotalCols();
@@ -73,6 +73,7 @@ RenderingResult doRendering(const RenderingContext &ctx, ObserverPtr<const Array
     renderer.setInitCols(promptCols);
     result.continueLine = renderLines(ctx.buf, pager, renderer, ctx.errorCmdChecker);
     result.renderedRows = renderer.getTotalRows() + 1;
+    result.renderedCols = renderer.getMaxTotalCols();
     result.promptRows = static_cast<unsigned int>(promptRows + 1);
     if (ctx.semanticPrompt) {
       result.renderedLines += OSC133_("C");
@@ -82,7 +83,7 @@ RenderingResult doRendering(const RenderingContext &ctx, ObserverPtr<const Array
   // get cursor row/column length
   {
     LineRenderer renderer(ctx.ps, promptCols);
-    renderer.setMaxCols(maxCols);
+    renderer.setColLimit(maxCols);
     renderer.renderLines(ctx.buf.getToCursor());
     result.cursorCols = renderer.getTotalCols();
     result.cursorRows = promptRows + 1 + renderer.getTotalRows();
