@@ -2,10 +2,14 @@
 
 {"id": 0, "jsonrpc": "2.0", "method": "shutdown"}
 
-# CHECK: {
-# CHECK:   "code": -32002,
-# CHECK:   "message": "server not initialized!!"
-# CHECK: }
+# CHECK_IF:   "error": {
+#    CHECK:     "code": -32002,
+#    CHECK:     "message": "server not initialized!!"
+#    CHECK:   },
+#    CHECK:   "id": 0,
+#    CHECK:   "jsonrpc": "2.0"
+#    CHECK: }
+
 <<<
 
 {"id": 1, "jsonrpc": "2.0", "method": "initialize",

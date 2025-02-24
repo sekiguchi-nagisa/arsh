@@ -63,10 +63,13 @@
   }
 }
 
-# CHECK_IF:   "code": -32803,
-#    CHECK:   "message": "invalid new name: sss-234234"
+# CHECK_IF:   "error": {
+#    CHECK:     "code": -32803,
+#    CHECK:     "message": "invalid new name: sss-234234"
+#    CHECK:   },
+#    CHECK:   "id": 2,
+#    CHECK:   "jsonrpc": "2.0"
 #    CHECK: }
-
 
 ## rename failed since name conflict
 
@@ -82,10 +85,13 @@
   }
 }
 
-# CHECK_IF:   "code": -32803,
-#    CHECK:   "message": "OSTYPE is already exists in current scope"
+# CHECK_IF:   "error": {
+#    CHECK:     "code": -32803,
+#    CHECK:     "message": "OSTYPE is already exists in current scope"
+#    CHECK:   },
+#    CHECK:   "id": 3,
+#    CHECK:   "jsonrpc": "2.0"
 #    CHECK: }
-
 
 <<<
 {"id": 10, "jsonrpc": "2.0", "method": "shutdown"}

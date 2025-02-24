@@ -27,8 +27,12 @@
   }
 }
 
-# CHECK_IF:   "code": -32602,
-#    CHECK:   "message": "broken uri: test.ds not found"
+# CHECK_IF:   "error": {
+#    CHECK:     "code": -32602,
+#    CHECK:     "message": "broken uri: test.ds not found"
+#    CHECK:   },
+#    CHECK:   "id": 1,
+#    CHECK:   "jsonrpc": "2.0"
 #    CHECK: }
 
 <<<
