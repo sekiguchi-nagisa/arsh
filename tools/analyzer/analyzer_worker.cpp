@@ -220,7 +220,7 @@ void AnalyzerWorker::asyncStateWith(std::function<void(const State &)> &&callbac
   }
 
   LOG(LogLevel::INFO, "number of pending callback reaches limit");
-  this->waitStateWith(callback);
+  this->waitStateWith(std::move(callback));
 }
 
 Result<SourcePtr, std::string> resolveSource(LoggerBase &logger, const SourceManager &srcMan,

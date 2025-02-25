@@ -119,7 +119,7 @@ public:
   static constexpr bool reader_requirement_v = std::is_invocable_v<Reader, const State &>;
 
   template <typename Reader, enable_when<reader_requirement_v<Reader>> = nullptr>
-  auto fetchStateWith(Reader reader) -> std::invoke_result_t<Reader, const State &> {
+  auto fetchStateWith(Reader &&reader) -> std::invoke_result_t<Reader, const State &> {
     std::shared_lock lock(this->mutex); // reader lock
     if constexpr (std::is_void_v<std::invoke_result_t<Reader, const State &>>) {
       reader(this->state);
@@ -130,7 +130,7 @@ public:
   }
 
   template <typename Reader, enable_when<reader_requirement_v<Reader>> = nullptr>
-  auto waitStateWith(Reader reader) -> std::invoke_result_t<Reader, const State &> {
+  auto waitStateWith(Reader &&reader) -> std::invoke_result_t<Reader, const State &> {
     this->requestForceRebuild();
     std::shared_lock lock(this->mutex); // reader lock
     this->finishCond.wait(lock, [&] { return this->status == Status::FINISHED; });
