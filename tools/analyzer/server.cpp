@@ -73,7 +73,7 @@ void LSPServer::onResponse(Response &&res) {
 
 void LSPServer::replyCancelError(JSON &&id) {
   LOG(LogLevel::INFO, "do cancel: request id=%s", toStringCancelId(id).c_str());
-  this->transport.reply(std::move(id), Error(LSPErrorCode::RequestCancelled, "cancelled"));
+  this->transport.reply(std::move(id), Error(LSPErrorCode::RequestCancelled, "canceled"));
 }
 
 void LSPServer::bindAll() {
@@ -98,6 +98,11 @@ void LSPServer::bindAll() {
   this->bind("textDocument/rename", &LSPServer::rename);
   this->bind("textDocument/prepareRename", &LSPServer::prepareRename);
   this->bind("workspace/didChangeConfiguration", &LSPServer::didChangeConfiguration);
+
+  // for testing
+  if (!this->testDir.empty()) {
+    this->bind("$/sleep", &LSPServer::sleep);
+  }
 }
 
 void LSPServer::run() {
@@ -507,6 +512,11 @@ void LSPServer::exit() {
   int s = this->willExit ? 0 : 1;
   LOG(LogLevel::INFO, "exit server: %d", s);
   std::exit(s); // always success
+}
+
+void LSPServer::sleep(const SleepParam &param) { // dummy notification for testing
+  const auto time = std::chrono::milliseconds{param.msec};
+  std::this_thread::sleep_for(time);
 }
 
 // only called from main thread (must be thread safe)

@@ -257,7 +257,7 @@ rpc::Message Client::recv() {
   ssize_t dataSize = this->transport.recvSize();
   if (dataSize < 0) {
     std::string error = ERROR_BROKEN_OR_EMPTY;
-    return rpc::Error(rpc::ErrorCode::InternalError, std::move(error));
+    return rpc::Response(nullptr, rpc::Error(rpc::ErrorCode::InternalError, std::move(error)));
   }
 
   ByteBuffer buf;
@@ -268,7 +268,7 @@ rpc::Message Client::recv() {
     ssize_t recvSize = this->transport.recv(needSize, data);
     if (recvSize < 0) {
       std::string error = "message receiving failed";
-      return rpc::Error(rpc::ErrorCode::InternalError, std::move(error));
+      return rpc::Response(nullptr, rpc::Error(rpc::ErrorCode::InternalError, std::move(error)));
     }
     buf.append(data, static_cast<unsigned int>(recvSize));
     remainSize -= recvSize;
@@ -343,14 +343,7 @@ int TestClientServerDriver::run(const DriverOptions &options,
   Client client(logger, dupFD(proc.out()), dupFD(proc.in()));
   std::vector<PublishDiagnosticsParams> receivedDiagnostics;
   client.setReplyCallback([&logger, &options, &receivedDiagnostics](rpc::Message &&msg) -> bool {
-    if (is<rpc::Error>(msg)) {
-      auto &error = get<rpc::Error>(msg);
-      if (Client::isBrokenOrEmpty(error)) {
-        logger(LogLevel::INFO, "%s", error.toString().c_str());
-        return false;
-      }
-      prettyPrint(error.toJSON());
-    } else if (is<rpc::Request>(msg)) {
+    if (is<rpc::Request>(msg)) {
       auto &req = get<rpc::Request>(msg);
       prettyPrint(req.toJSON());
       if (options.open && req.method == "textDocument/publishDiagnostics") {
@@ -358,6 +351,12 @@ int TestClientServerDriver::run(const DriverOptions &options,
       }
     } else if (is<rpc::Response>(msg)) {
       auto &res = get<rpc::Response>(msg);
+      if (!res) {
+        if (const auto &error = res.error.unwrap(); Client::isBrokenOrEmpty(error)) {
+          logger(LogLevel::INFO, "%s", error.toString().c_str());
+          return false;
+        }
+      }
       prettyPrint(res.toJSON());
     } else {
       fatal("broken\n");

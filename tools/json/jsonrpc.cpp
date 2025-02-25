@@ -54,7 +54,7 @@ Message MessageParser::operator()() {
   // parse
   auto ret = JSONParser::operator()();
   if (this->hasError()) {
-    return Error(ErrorCode::ParseError, "Parse error", this->formatError());
+    return Response(nullptr, Error(ErrorCode::ParseError, "Parse error", this->formatError()));
   }
 
   LOG(LogLevel::DEBUG, "received message:\n%s", ret.serialize(2).c_str());
@@ -62,28 +62,30 @@ Message MessageParser::operator()() {
   JSONDeserializer deserializer(std::move(ret));
   deserializer(value);
   if (deserializer.hasError()) {
-    return Error(ErrorCode::InvalidRequest, "Invalid Request",
-                 deserializer.getValidationError().formatError());
+    return Response(nullptr, Error(ErrorCode::InvalidRequest, "Invalid Request",
+                                   deserializer.getValidationError().formatError()));
   }
 
   if (is<Request>(value)) {
     auto &req = get<Request>(value);
     if (req.id.hasValue() && !req.id.unwrap().isString() && !req.id.unwrap().isNumber() &&
         !req.id.unwrap().isNull()) {
-      return Error(ErrorCode::InvalidRequest, "Invalid Request", "id must be null|string|number");
+      return Response(nullptr, Error(ErrorCode::InvalidRequest, "Invalid Request",
+                                     "id must be null|string|number"));
     }
     if (req.params.hasValue() && !req.params.unwrap().isNull() && !req.params.unwrap().isObject() &&
         !req.params.unwrap().isArray()) {
-      return Error(ErrorCode::InvalidRequest, "Invalid Request", "param must be array|object");
+      return Response(nullptr, Error(ErrorCode::InvalidRequest, "Invalid Request",
+                                     "param must be array|object"));
     }
     return std::move(req);
   } else if (is<Response>(value)) {
     auto &res = get<Response>(value);
-    if (!static_cast<bool>(res)) {
-      return std::move(res.error.unwrap());
-    }
-    if (!res.id.isString() && !res.id.isNumber()) {
-      return Error(ErrorCode::InvalidRequest, "Invalid Request", "id must be string|number");
+    if (static_cast<bool>(res)) {
+      if (!res.id.isString() && !res.id.isNumber()) {
+        return Response(nullptr, Error(ErrorCode::InvalidRequest, "Invalid Request",
+                                       "id must be string|number"));
+      }
     }
     return std::move(res);
   } else {
@@ -183,11 +185,7 @@ Handler::Status Handler::dispatch(Transport &transport) {
   }
 
   auto msg = MessageParser(this->logger, std::move(buf))();
-  if (is<Error>(msg)) {
-    auto &error = get<Error>(msg);
-    LOG(LogLevel::WARNING, "invalid message => %s", error.toString().c_str());
-    transport.reply(nullptr, std::move(error));
-  } else if (is<Request>(msg)) {
+  if (is<Request>(msg)) {
     auto &req = get<Request>(msg);
     if (req.isCall()) {
       this->onCall(transport, std::move(req));
@@ -196,7 +194,13 @@ Handler::Status Handler::dispatch(Transport &transport) {
     }
   } else {
     assert(is<Response>(msg));
-    this->onResponse(std::move(get<Response>(msg)));
+    if (auto &res = get<Response>(msg)) {
+      this->onResponse(std::move(res));
+    } else {
+      auto &error = res.error.unwrap();
+      LOG(LogLevel::WARNING, "invalid message => %s", error.toString().c_str());
+      transport.reply(nullptr, std::move(error));
+    }
   }
   return Status::DISPATCHED;
 }

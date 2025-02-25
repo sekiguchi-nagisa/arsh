@@ -31,8 +31,12 @@
   }
 }
 
-# CHECK_IF:   "code": -32602,
-#    CHECK:   "message": "broken position at: test:///test.ds:0:-23"
+# CHECK_IF:   "error": {
+#    CHECK:     "code": -32602,
+#    CHECK:     "message": "broken position at: test:///test.ds:0:-23"
+#    CHECK:   },
+#    CHECK:   "id": 1,
+#    CHECK:   "jsonrpc": "2.0"
 #    CHECK: }
 
 <<<

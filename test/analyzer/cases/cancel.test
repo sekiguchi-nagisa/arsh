@@ -1,4 +1,4 @@
-# RUN: call $cmd --test $self
+# RUN: call $cmd --test $self --log info
 
 {"id": 0, "jsonrpc": "2.0", "method": "initialize",
  "params": {"capabilities": {}, "rootUri": "file:///test", "processId": 46}}
@@ -11,7 +11,14 @@
 {"jsonrpc": "2.0", "method": "textDocument/didOpen",
  "params": {
     "textDocument": {"languageId": "arsh", "version": 1, "uri": "file:///test/test.ds",
-                     "text": "var ZZZ = $false; { var ZAAA = 34; var ZE22 = 23; var Z000 = 23;\n$Z"}
+                     "text": "var ZZZ = $false; { var ZAAA = 34; var ZE22 = 23; var Z000 = 23;"}
+ }
+}
+
+<<<
+{"jsonrpc": "2.0", "method": "$/sleep",
+ "params": {
+    "msec": 200
  }
 }
 
@@ -24,13 +31,33 @@
   }
 }
 
+<<<
+{"jsonrpc": "2.0", "method": "$/cancelRequest",
+ "params": {
+    "id": 1
+ }
+}
+
 # CHECK_IF:   "error": {
-#    CHECK:     "code": -32602,
-#    CHECK:     "message": "broken textDocument: file:///test/test/hoge.ds"
+#    CHECK:     "code": -32800,
+#    CHECK:     "message": "canceled"
 #    CHECK:   },
 #    CHECK:   "id": 1,
 #    CHECK:   "jsonrpc": "2.0"
 #    CHECK: }
+
+# CHECKERR_RE_IF: ^.+ <info> .+ try cancel: request id=1
+
+# CHECKERR_RE_IF: ^.+ <info> .+ do cancel: request id=1
+
+
+## invalid cancel
+<<<
+{"jsonrpc": "2.0", "method": "$/cancelRequest",
+ "params": {
+    "id": "nothing"
+ }
+}
 
 <<<
 {"id": 2, "jsonrpc": "2.0", "method": "shutdown"}

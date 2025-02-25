@@ -4,10 +4,13 @@
 {"id": 0, "jsonrpc": "2.0", "method": "initialize",
  "params": {"capabilities": {}, "rootUri": "file:///test", "processId": true}}
 
-# CHECK: {
-# CHECK:   "code": -32602,
-# CHECK:   "message": "require `null', but is `bool'"
-# CHECK: }
+# CHECK_IF:   "error": {
+#    CHECK:     "code": -32602,
+#    CHECK:     "message": "require `null', but is `bool'"
+#    CHECK:   },
+#    CHECK:   "id": 0,
+#    CHECK:   "jsonrpc": "2.0"
+#    CHECK: }
 
 <<<
 # STATUS: 137

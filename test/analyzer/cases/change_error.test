@@ -27,7 +27,9 @@
 #    CHECK:   "params": {
 #    CHECK:     "diagnostics": [],
 
----
+# CHECKERR_RE_IF: ^.+ <error> .+ broken textDocument: file:///test/not-found
+
+--- 50
 {"id": 2, "jsonrpc": "2.0", "method": "shutdown"}
 
 # CHECK_IF:   "result": null

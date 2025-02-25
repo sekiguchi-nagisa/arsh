@@ -15,7 +15,9 @@
  }
 }
 
----
+# CHECKERR_RE_IF: ^.+ <error> .+ broken uri: hoge hohge
+
+--- 50
 {"id": 2, "jsonrpc": "2.0", "method": "shutdown"}
 
 # CHECK_IF: {

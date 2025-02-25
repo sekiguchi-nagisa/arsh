@@ -43,8 +43,12 @@
   }
 }
 
-# CHECK_IF:   "code": -32602,
-#    CHECK:   "message": "broken position at: file:///test/test.ds:-23:3"
+# CHECK_IF:   "error": {
+#    CHECK:     "code": -32602,
+#    CHECK:     "message": "broken position at: file:///test/test.ds:-23:3"
+#    CHECK:   },
+#    CHECK:   "id": 1,
+#    CHECK:   "jsonrpc": "2.0"
 #    CHECK: }
 
 
@@ -62,10 +66,13 @@
   }
 }
 
-# CHECK_IF:   "code": -32803,
-#    CHECK:   "message": "cannot perform rename since builtin symbol"
+# CHECK_IF:   "error": {
+#    CHECK:     "code": -32803,
+#    CHECK:     "message": "cannot perform rename since builtin symbol"
+#    CHECK:   },
+#    CHECK:   "id": 2,
+#    CHECK:   "jsonrpc": "2.0"
 #    CHECK: }
-
 
 # rename failed since no symbol
 
@@ -81,10 +88,13 @@
   }
 }
 
-# CHECK_IF:   "code": -32803,
-#    CHECK:   "message": "rename target must be symbol"
+# CHECK_IF:   "error": {
+#    CHECK:     "code": -32803,
+#    CHECK:     "message": "rename target must be symbol"
+#    CHECK:   },
+#    CHECK:   "id": 3,
+#    CHECK:   "jsonrpc": "2.0"
 #    CHECK: }
-
 
 <<<
 {"id": 5, "jsonrpc": "2.0", "method": "shutdown"}

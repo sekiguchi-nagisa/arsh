@@ -106,7 +106,7 @@ struct Request {
 struct Response {
   std::string jsonrpc{"2.0"};
 
-  JSON id; // number|string
+  JSON id; // number|string|null
   Optional<JSON> result;
   Optional<Error> error;
 
@@ -129,7 +129,7 @@ struct Response {
   JSON toJSON();
 };
 
-using Message = Union<Request, Response, Error>;
+using Message = Union<Request, Response>;
 
 class MessageParser : public JSONParser {
 private:

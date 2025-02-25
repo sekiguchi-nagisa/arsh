@@ -902,16 +902,18 @@ TEST(ReqTest, parse) {
   std::string text = "}{";
   buf.append(text.c_str(), text.size());
   auto msg = MessageParser(SingleNullLogger::instance(), std::move(buf))();
-  ASSERT_TRUE(is<Error>(msg));
-  ASSERT_EQ(rpc::ParseError, get<Error>(msg).code);
+  ASSERT_TRUE(is<Response>(msg));
+  ASSERT_FALSE(get<Response>(msg));
+  ASSERT_EQ(rpc::ParseError, get<Response>(msg).error.unwrap().code);
 
   // semantic error
   text = R"({ "hoge" : "de" })";
   buf = ByteBuffer();
   buf.append(text.c_str(), text.size());
   msg = MessageParser(SingleNullLogger::instance(), std::move(buf))();
-  ASSERT_TRUE(is<Error>(msg));
-  ASSERT_EQ(rpc::InvalidRequest, get<Error>(msg).code);
+  ASSERT_TRUE(is<Response>(msg));
+  ASSERT_FALSE(get<Response>(msg));
+  ASSERT_EQ(rpc::InvalidRequest, get<Response>(msg).error.unwrap().code);
 
   // request
   text = rpc::Request("AAA", "hey", array(false, true)).toJSON().serialize(0);
@@ -956,7 +958,8 @@ TEST(ReqTest, parse) {
   buf = ByteBuffer();
   buf.append(text.c_str(), text.size());
   msg = MessageParser(SingleNullLogger::instance(), std::move(buf))();
-  ASSERT_TRUE(is<Error>(msg));
+  ASSERT_TRUE(is<Response>(msg));
+  ASSERT_FALSE(get<Response>(msg));
 }
 
 struct StringTransport : public rpc::Transport {
