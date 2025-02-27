@@ -70,6 +70,7 @@ private:
   bool showPager{true};              // if true, render pager
   bool showCursor{true};             // if true, render cursor
   bool showRowNum{false};            // if true, render row number
+  bool showDesc{true};               // if true, render description/signature
 
   ArrayPager(CandidatesWrapper &&obj, FlexBuffer<ItemEntry> &&items, unsigned int maxIndex,
              WindowSize winSize)

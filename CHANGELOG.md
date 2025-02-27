@@ -30,6 +30,7 @@
     - ``Array#removeRange``, ``LineEditor#readLine``
 - automatically insert ``(``, ``()`` after completing method names
 - in ``LineEditor``, fix screen corruption when shrink window cols
+- hide description/signature of completion pager if columns size is smaller than item size
 
 #### LSP
 

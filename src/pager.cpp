@@ -88,6 +88,7 @@ void ArrayPager::updateWinSize(WindowSize size) {
     return; // no update
   }
   this->showPager = true;
+  this->showDesc = true;
   this->winSize = size;
   this->rows = (this->winSize.rows * ROW_RATIO) / 100;
   if (this->rows == 0) {
@@ -109,6 +110,7 @@ void ArrayPager::updateWinSize(WindowSize size) {
     unsigned int colLimit = ((this->winSize.cols - COL_MARGIN) / TAB_WIDTH) * TAB_WIDTH;
     if (this->paneLen > colLimit) {
       this->paneLen = colLimit; // larger than window size
+      this->showDesc = false;
     }
   }
   this->showRowNum = false;
@@ -123,13 +125,14 @@ void ArrayPager::updateWinSize(WindowSize size) {
   }
 }
 
-static void renderItem(LineRenderer &renderer, const StringRef can, const CandidateAttr attr,
-                       const StringRef desc, const ArrayPager::ItemEntry &e, const bool selected) {
+static void renderItem(LineRenderer &renderer, const bool showDesc, const StringRef can,
+                       const CandidateAttr attr, const StringRef desc,
+                       const ArrayPager::ItemEntry &e, const bool selected) {
   if (selected) {
     renderer.renderWithANSI("\x1b[7m");
   }
   renderer.renderLines(can);
-  if (attr.kind == CandidateAttr::Kind::TYPE_SIGNATURE) {
+  if (attr.kind == CandidateAttr::Kind::TYPE_SIGNATURE && showDesc) {
     if (!desc.empty()) {
       renderer.renderWithANSI("\x1b[90m ");
       renderer.renderLines(desc);
@@ -143,7 +146,7 @@ static void renderItem(LineRenderer &renderer, const StringRef can, const Candid
     if (!selected) {
       renderer.renderWithANSI("\x1b[0m");
     }
-  } else {
+  } else { // with or without description
     if (e.rightPad) {
       std::string pad;
       pad.resize(e.rightPad, ' ');
@@ -160,9 +163,15 @@ static void renderItem(LineRenderer &renderer, const StringRef can, const Candid
       renderer.renderLines(pad);
     }
     if (!desc.empty()) { // FIXME: highlight
-      renderer.renderLines("(");
-      renderer.renderLines(desc);
-      renderer.renderLines(")");
+      if (showDesc) {
+        renderer.renderLines("(");
+        renderer.renderLines(desc);
+        renderer.renderLines(")");
+      } else {
+        std::string tab;
+        tab.resize(e.itemLen(), '\t'); // force fill pane
+        renderer.renderLines(tab);
+      }
     }
     renderer.renderLines("\t");
   }
@@ -207,8 +216,9 @@ void ArrayPager::render(LineRenderer &renderer) const {
         break;
       }
       const bool selected = actualIndex == this->index && this->showCursor;
-      renderItem(renderer, this->obj.getCandidateAt(actualIndex), this->obj.getAttrAt(actualIndex),
-                 this->obj.getDescriptionAt(actualIndex), this->items[actualIndex], selected);
+      renderItem(renderer, this->showDesc, this->obj.getCandidateAt(actualIndex),
+                 this->obj.getAttrAt(actualIndex), this->obj.getDescriptionAt(actualIndex),
+                 this->items[actualIndex], selected);
     }
     renderer.setEmitNewline(true); // re-enable newline characters
     renderer.renderLines("\n");

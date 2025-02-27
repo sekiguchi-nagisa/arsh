@@ -852,6 +852,18 @@ TEST_F(PagerTest, desc2) {
                        "BBBBB       (executable)    EEEE                        \r\n"
                        "CCCCC        (directory)    \r\n";
   ASSERT_EQ(expect, out);
+
+  // shrink (hide description)
+  pager.updateWinSize({.rows = 24, .cols = 9});
+  ASSERT_EQ(1, pager.getPanes());
+  ASSERT_EQ(8, pager.getPaneLen());
+  out = this->render(pager);
+  expect = "AAAAA   \r\n"
+           "BBBBB   \r\n"
+           "CCCCC   \r\n"
+           "DDD     \r\n"
+           "EEEE    \r\n";
+  ASSERT_EQ(expect, out);
 }
 
 TEST_F(PagerTest, sig) {
@@ -872,6 +884,16 @@ TEST_F(PagerTest, sig) {
       "OSTYPE\x1b[90m : String                                         \x1b[0m\r\n"
       "PID\x1b[90m : Int                                               \x1b[0m\r\n"
       "COMP_HOOK\x1b[90m : ((Module, [String], Int) -> Candidates?)?   \x1b[0m\r\n";
+  ASSERT_EQ(expect, out);
+
+  // shrink (hide signature)
+  pager.updateWinSize({.rows = 24, .cols = 14});
+  ASSERT_EQ(1, pager.getPanes());
+  ASSERT_EQ(12, pager.getPaneLen());
+  out = this->render(pager);
+  expect = "OSTYPE      \r\n"
+           "PID         \r\n"
+           "COMP_HOOK   \r\n";
   ASSERT_EQ(expect, out);
 }
 
