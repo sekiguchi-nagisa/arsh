@@ -127,17 +127,19 @@ public:
   }
 
   SymbolIndex build() && {
-    return {this->src->getSrcId(),
-            this->src->getVersion(),
-            std::move(this->decls),
-            std::move(this->symbols),
-            std::move(this->foreign),
-            std::move(*this->scope).take(),
-            std::move(this->links),
-            std::move(this->scopeIntervals),
-            std::move(this->packedParamTypesMap),
-            std::move(this->externalCmdSet),
-            std::move(this->inheritanceMap)};
+    return {
+        .modId = this->src->getSrcId(),
+        .version = this->src->getVersion(),
+        .decls = std::move(this->decls),
+        .symbols = std::move(this->symbols),
+        .foreignDecls = std::move(this->foreign),
+        .globals = std::move(*this->scope).take(),
+        .links = std::move(this->links),
+        .scopes = std::move(this->scopeIntervals),
+        .packedParamTypesMap = std::move(this->packedParamTypesMap),
+        .externalCmdSet = std::move(this->externalCmdSet),
+        .inheritanceMap = std::move(this->inheritanceMap),
+    };
   }
 
   const TypePool &getPool() const { return *this->pool; }

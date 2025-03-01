@@ -443,11 +443,10 @@ public:
  */
 using TypeInheritanceMap = std::unordered_map<TypeWrapper, TypeWrapper, TypeWrapper::Hasher>;
 
-class SymbolIndex;
+struct SymbolIndex;
 using SymbolIndexPtr = std::shared_ptr<const SymbolIndex>;
 
-class SymbolIndex {
-private:
+struct SymbolIndex {
   ModId modId;
   int version;
   std::vector<DeclSymbol> decls;
@@ -460,22 +459,6 @@ private:
   std::unordered_set<std::string> externalCmdSet; // for user-defined command rename
   TypeInheritanceMap inheritanceMap;              // for user-defined method rename
 
-public:
-  SymbolIndex(ModId modId, int version, std::vector<DeclSymbol> &&decls,
-              std::vector<Symbol> &&symbols, std::vector<ForeignDecl> &&foreignDecls,
-              std::unordered_map<std::string, SymbolRef> &&globals,
-              std::vector<std::pair<SymbolRef, IndexLink>> &&links,
-              std::vector<ScopeInterval> &&scopes, PackedParamTypesMap &&packedParamTypesMap,
-              std::unordered_set<std::string> &&externalCmdSet, TypeInheritanceMap &&inheritanceMap)
-      : modId(modId), version(version), decls(std::move(decls)), symbols(std::move(symbols)),
-        foreignDecls(std::move(foreignDecls)), globals(std::move(globals)), links(std::move(links)),
-        scopes(std::move(scopes)), packedParamTypesMap(std::move(packedParamTypesMap)),
-        externalCmdSet(std::move(externalCmdSet)), inheritanceMap(std::move(inheritanceMap)) {}
-
-  ModId getModId() const { return this->modId; }
-
-  int getVersion() const { return this->version; }
-
   const DeclSymbol *findDecl(unsigned int pos) const;
 
   const Symbol *findSymbol(unsigned int pos) const;
@@ -484,29 +467,15 @@ public:
 
   const SymbolRef *findGlobal(const std::string &mangledName) const;
 
-  const std::vector<DeclSymbol> &getDecls() const { return this->decls; }
-
-  const std::vector<Symbol> &getSymbols() const { return this->symbols; }
-
-  const auto &getLinks() const { return this->links; }
-
-  const auto &getScopes() const { return this->scopes; }
-
-  const auto &getPackedParamTypesMap() const { return this->packedParamTypesMap; }
-
-  const auto &getExternalCmdSet() const { return this->externalCmdSet; }
-
-  const auto &getInheritanceMap() const { return this->inheritanceMap; }
-
   const TypeWrapper *findBaseType(StringRef qualifiedTypeName) const;
 
   struct Compare {
-    bool operator()(const SymbolIndexPtr &x, ModId id) const { return x->getModId() < id; }
+    bool operator()(const SymbolIndexPtr &x, ModId id) const { return x->modId < id; }
 
-    bool operator()(ModId id, const SymbolIndexPtr &y) const { return id < y->getModId(); }
+    bool operator()(ModId id, const SymbolIndexPtr &y) const { return id < y->modId; }
 
     bool operator()(const SymbolIndexPtr &x, const SymbolIndexPtr &y) const {
-      return x->getModId() < y->getModId();
+      return x->modId < y->modId;
     }
   };
 };

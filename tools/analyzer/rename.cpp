@@ -63,7 +63,7 @@ static void
 resolveInlinedImportedIndexes(const SymbolIndexes &indexes, const SymbolIndexPtr &thisIndex,
                               const SymbolRef ref, std::unordered_set<ModId> &foundModSet,
                               std::vector<std::pair<SymbolRef, SymbolIndexPtr>> &results) {
-  for (const auto &pair : thisIndex->getLinks()) {
+  for (const auto &pair : thisIndex->links) {
     const auto attr = pair.second.getImportAttr();
     if (!hasFlag(attr, IndexLink::ImportAttr::INLINED)) {
       continue;
@@ -83,7 +83,7 @@ static std::vector<std::pair<SymbolRef, SymbolIndexPtr>>
 resolveGlobalImportedIndexes(const SymbolIndexes &indexes, const SymbolIndexPtr &thisIndex) {
   std::vector<std::pair<SymbolRef, SymbolIndexPtr>> results;
   results.emplace_back(SymbolRef(0, 0, BUILTIN_MOD_ID), indexes.find(BUILTIN_MOD_ID));
-  for (const auto &pair : thisIndex->getLinks()) {
+  for (const auto &pair : thisIndex->links) {
     const auto attr = pair.second.getImportAttr();
     if (!hasFlag(attr, IndexLink::ImportAttr::GLOBAL)) {
       continue;
@@ -98,7 +98,7 @@ resolveGlobalImportedIndexes(const SymbolIndexes &indexes, const SymbolIndexPtr 
 
 static bool isInlinedImportingIndex(const SymbolIndexes &indexes, const ModId targetModId,
                                     const SymbolIndexPtr &index) {
-  for (const auto &e : index->getLinks()) {
+  for (const auto &e : index->links) {
     if (!hasFlag(e.second.getImportAttr(), IndexLink::ImportAttr::INLINED)) {
       continue;
     }
@@ -260,16 +260,16 @@ static bool checkNameConflict(const SymbolIndexes &indexes, const DeclSymbol &de
   // check name conflict in global/inlined imported indexes (also include builtin index)
   auto importedIndexes = resolveGlobalImportedIndexes(indexes, declIndex);
   for (auto &[ref, importedIndex] : importedIndexes) {
-    const auto &declScope = declIndex->getScopes()[decl.getScopeId()];
-    if (!isBuiltinMod(importedIndex->getModId())) {
-      const auto &targetScope = declIndex->getScopes()[0]; // always global scope
+    const auto &declScope = declIndex->scopes[decl.getScopeId()];
+    if (!isBuiltinMod(importedIndex->modId)) {
+      const auto &targetScope = declIndex->scopes[0]; // always global scope
       if (!mayBeConflict(declScope, decl.toRef(), targetScope, ref)) {
         continue;
       }
     }
 
     for (auto &mangledNewName : mangledNewNames) {
-      if (!isBuiltinMod(importedIndex->getModId()) && mangledNewName[0] == '_') {
+      if (!isBuiltinMod(importedIndex->modId) && mangledNewName[0] == '_') {
         continue; // ignore private symbol
       }
       if (auto *r = importedIndex->findGlobal(mangledNewName)) {
@@ -292,14 +292,14 @@ static bool checkNameConflict(const SymbolIndexes &indexes, const DeclSymbol &de
   // check name conflict in this index
   if (decl.is(DeclSymbol::Kind::CMD) ||
       decl.is(DeclSymbol::Kind::MOD)) { // check already used external command names
-    const auto &set = declIndex->getExternalCmdSet();
+    const auto &set = declIndex->externalCmdSet;
     if (set.find(newName.toString()) != set.end()) {
       return false;
     }
   }
-  for (const auto &target : declIndex->getDecls()) {
-    const auto &declScope = declIndex->getScopes()[decl.getScopeId()];
-    const auto &targetScope = declIndex->getScopes()[target.getScopeId()];
+  for (const auto &target : declIndex->decls) {
+    const auto &declScope = declIndex->scopes[decl.getScopeId()];
+    const auto &targetScope = declIndex->scopes[target.getScopeId()];
     if ((decl.is(DeclSymbol::Kind::METHOD) && target.isFieldVar()) ||
         (decl.isFieldVar() && target.is(DeclSymbol::Kind::METHOD))) {
       // not check scope
@@ -327,16 +327,16 @@ static bool checkNameConflict(const SymbolIndexes &indexes, const DeclSymbol &de
     return true; // ignore named arg, named imported symbols, field
   }
   for (const auto &index : indexes) {
-    if (index->getModId() == decl.getModId()) {
+    if (index->modId == decl.getModId()) {
       continue; // ignore this index
     }
-    for (const auto &e : index->getLinks()) {
+    for (const auto &e : index->links) {
       if (!isImportingIndex(indexes, decl.getModId(), e.second)) {
         continue;
       }
-      for (const auto &target : index->getDecls()) {
-        const auto &declScope = index->getScopes()[0]; // always global scope
-        const auto &targetScope = index->getScopes()[target.getScopeId()];
+      for (const auto &target : index->decls) {
+        const auto &declScope = index->scopes[0]; // always global scope
+        const auto &targetScope = index->scopes[target.getScopeId()];
         if (!mayBeConflict(declScope, e.first, targetScope, target.toRef())) {
           continue;
         }

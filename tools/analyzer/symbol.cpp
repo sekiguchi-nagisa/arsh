@@ -64,7 +64,7 @@ std::string generateHoverContent(const SourceManager &srcMan, const SymbolIndexe
   if (decl.is(DeclSymbol::Kind::GENERIC_METHOD) ||
       decl.is(DeclSymbol::Kind::GENERIC_METHOD_PARAM)) {
     if (auto index = indexes.find(src.getSrcId())) {
-      if (auto *r = index->getPackedParamTypesMap().lookupByPos(result.request.getPos())) {
+      if (auto *r = index->packedParamTypesMap.lookupByPos(result.request.getPos())) {
         packedParamTypes = *r;
       }
     }
@@ -360,7 +360,7 @@ std::vector<DocumentSymbol> generateDocumentSymbols(const SymbolIndexes &indexes
   std::vector<DocumentSymbol> ret;
   if (auto index = indexes.find(src.getSrcId())) {
     Token funcBody;
-    for (auto &decl : index->getDecls()) {
+    for (auto &decl : index->decls) {
       if (isIgnoredDocSymbol(decl)) {
         continue;
       }

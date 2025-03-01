@@ -252,7 +252,7 @@ const TypeWrapper *SymbolIndex::findBaseType(StringRef qualifiedTypeName) const 
 void SymbolIndexes::add(SymbolIndexPtr index) {
   auto iter =
       std::lower_bound(this->indexes.begin(), this->indexes.end(), index, SymbolIndex::Compare());
-  if (iter != this->indexes.end() && (*iter)->getModId() == index->getModId()) {
+  if (iter != this->indexes.end() && (*iter)->modId == index->modId) {
     *iter = std::move(index); // update
   } else {
     this->indexes.insert(iter, std::move(index));
@@ -263,7 +263,7 @@ SymbolIndexPtr SymbolIndexes::find(ModId modId) const {
   auto iter =
       std::lower_bound(this->indexes.begin(), this->indexes.end(), modId, SymbolIndex::Compare());
   if (iter != this->indexes.end()) {
-    if (auto ret = *iter; ret->getModId() == modId) {
+    if (auto ret = *iter; ret->modId == modId) {
       return ret;
     }
   }
@@ -336,7 +336,7 @@ unsigned int findAllReferences(const SymbolIndexes &indexes, const DeclSymbol &d
       .pos = decl.getPos(),
   };
   for (const auto &index : indexes) {
-    if (index->getModId() == request.modId) {
+    if (index->modId == request.modId) {
       continue;
     }
     if (const auto *foreign = index->findForeignDecl(request)) {

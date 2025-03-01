@@ -672,7 +672,7 @@ Reply<std::vector<DocumentLink>> LSPServer::documentLink(const DocumentLinkParam
         if (auto resolved = lsp::resolveSource(this->logger, *state.srcMan, p.textDocument)) {
           std::vector<DocumentLink> ret;
           if (auto index = state.indexes.find(resolved.asOk()->getSrcId())) {
-            for (auto &e : index->getLinks()) {
+            for (auto &e : index->links) {
               auto range = resolved.asOk()->toRange(e.first.getToken());
               assert(range.hasValue());
               auto src = state.srcMan->findById(e.first.getModId());

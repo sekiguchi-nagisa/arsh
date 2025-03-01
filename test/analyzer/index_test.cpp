@@ -69,8 +69,8 @@ public:
     ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId));
     auto index = this->indexes.find(ModId{modId});
     ASSERT_TRUE(index);
-    ASSERT_EQ(size.declSize, index->getDecls().size());
-    ASSERT_EQ(size.symbolSize, index->getSymbols().size());
+    ASSERT_EQ(size.declSize, index->decls.size());
+    ASSERT_EQ(size.symbolSize, index->symbols.size());
   }
 
   void findDecl(const Request &req, const std::vector<Loc> &expected) {
@@ -255,7 +255,7 @@ function assertArray(
   // scope
   auto index = this->indexes.find(static_cast<ModId>(modId));
   ASSERT_TRUE(index);
-  auto &scopes = index->getScopes();
+  auto &scopes = index->scopes;
   ASSERT_EQ(4, scopes.size());
   for (unsigned int i = 0; i < scopes.size() - 1; i++) {
     auto &cur = scopes[i];
