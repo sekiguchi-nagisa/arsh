@@ -214,6 +214,18 @@ const Symbol *SymbolIndex::findSymbol(unsigned int pos) const {
   return nullptr;
 }
 
+const ForeignDecl *SymbolIndex::findForeignDecl(ModId modId, const std::string &mangledName) const {
+  auto key = std::make_pair(modId, mangledName);
+  if (auto iter = this->foreignNames.find(key); iter != this->foreignNames.end()) {
+    const SymbolRequest request{
+        .modId = iter->second.getModId(),
+        .pos = iter->second.getPos(),
+    };
+    return this->findForeignDecl(request);
+  }
+  return nullptr;
+}
+
 const ForeignDecl *SymbolIndex::findForeignDecl(SymbolRequest request) const {
   auto iter = std::lower_bound(this->foreignDecls.begin(), this->foreignDecls.end(), request,
                                ForeignDecl::Compare());
@@ -278,23 +290,46 @@ void SymbolIndexes::remove(ModId id) {
   }
 }
 
+static const DeclSymbol *findDeclFromForeignIndex(const SymbolIndexes &indexes,
+                                                  const ForeignDecl &foreign) {
+  if (auto index = indexes.find(foreign.getModId())) {
+    if (auto *ref = index->findGlobal(foreign.getMangledName())) {
+      return index->findDecl(ref->getPos());
+    }
+  }
+  return nullptr;
+}
+
 bool findDeclaration(const SymbolIndexes &indexes, SymbolRequest request,
                      const std::function<void(const FindDeclResult &)> &consumer) {
   if (auto index = indexes.find(request.modId)) {
     if (const auto *symbol = index->findSymbol(request.pos)) {
-      const auto *decl =
-          indexes.findDecl({.modId = symbol->getDeclModId(), .pos = symbol->getDeclPos()});
-      if (!decl) {
-        return false;
+      if (symbol->getDeclModId() == index->modId) { // find own decl
+        if (const auto *decl = index->findDecl(symbol->getDeclPos())) {
+          if (consumer) {
+            FindDeclResult ret = {
+                .decl = *decl,
+                .request = *symbol,
+            };
+            consumer(ret);
+          }
+          return true;
+        }
+      } else {
+        request = {.modId = symbol->getDeclModId(), .pos = symbol->getDeclPos()};
+        if (const auto *foreign = index->findForeignDecl(request)) { // find from foreign decl
+          if (auto *decl = findDeclFromForeignIndex(indexes, *foreign)) {
+            if (consumer) {
+              FindDeclResult ret = {
+                  .decl = *decl,
+                  .request = *symbol,
+              };
+              consumer(ret);
+            }
+            return true;
+          }
+        }
       }
-      if (consumer) {
-        FindDeclResult ret = {
-            .decl = *decl,
-            .request = *symbol,
-        };
-        consumer(ret);
-      }
-      return true;
     }
   }
   return false;
@@ -331,15 +366,13 @@ unsigned int findAllReferences(const SymbolIndexes &indexes, const DeclSymbol &d
   }
 
   // search foreign ref
-  const SymbolRequest request{
-      .modId = decl.getModId(),
-      .pos = decl.getPos(),
-  };
+  const auto modId = decl.getModId();
+  const auto mangledName = decl.getMangledName().toString();
   for (const auto &index : indexes) {
-    if (index->modId == request.modId) {
+    if (index->modId == modId) {
       continue;
     }
-    if (const auto *foreign = index->findForeignDecl(request)) {
+    if (const auto *foreign = index->findForeignDecl(modId, mangledName)) {
       for (const auto &e : foreign->getRefs()) {
         count++;
         if (consumer) {

@@ -33,9 +33,9 @@ namespace arsh::lsp {
 
 class SymbolRef {
 private:
-  unsigned int pos;
-  unsigned short size;
-  ModId modId;
+  unsigned int pos{0};
+  unsigned short size{0};
+  ModId modId{0};
 
 public:
   static Optional<SymbolRef> create(Token token, ModId modId) {
@@ -44,6 +44,8 @@ public:
     }
     return SymbolRef(token.pos, static_cast<unsigned short>(token.size), modId);
   }
+
+  SymbolRef() = default;
 
   SymbolRef(unsigned int pos, unsigned short size, ModId modId)
       : pos(pos), size(size), modId(modId) {}
@@ -331,11 +333,15 @@ public:
 };
 
 class ForeignDecl : public DeclBase {
-public:
-  explicit ForeignDecl(SymbolRef declRef)
-      : DeclBase(declRef.getPos(), declRef.getSize(), declRef.getModId()) {}
+private:
+  std::string mangledName; // mangle name for original decl
 
-  explicit ForeignDecl(const DeclSymbol &decl) : ForeignDecl(decl.toRef()) {}
+public:
+  explicit ForeignDecl(const DeclSymbol &decl)
+      : DeclBase(decl.getPos(), decl.getSize(), decl.getModId()),
+        mangledName(decl.getMangledName().toString()) {}
+
+  const std::string &getMangledName() const { return this->mangledName; }
 
   struct Compare {
     bool operator()(const ForeignDecl &x, const SymbolRequest &y) const {
@@ -347,7 +353,32 @@ public:
       return x.modId < y.getModId() || (!(y.getModId() < x.modId) && x.pos < y.getPos());
     }
   };
+
+  struct NameHasher {
+    size_t operator()(const std::pair<ModId, std::string> &value) const {
+      static_assert(std::is_same_v<uint16_t, std::underlying_type_t<ModId>>);
+      auto hash = FNVHash::FNV_offset_basis;
+      for (auto &ch : value.second) {
+        FNVHash::update(hash, static_cast<uint8_t>(ch));
+      }
+      union {
+        ModId modId;
+        uint8_t data[2];
+      } v = {.modId = value.first};
+      for (auto &e : v.data) {
+        FNVHash::update(hash, e);
+      }
+      return hash;
+    }
+  };
 };
+
+/**
+ * mangled name to actual foreign decl mapping
+ * foreign deck may have multiple names due to alias
+ */
+using ForeignDeclNameMap =
+    std::unordered_map<std::pair<ModId, std::string>, SymbolRef, ForeignDecl::NameHasher>;
 
 class IndexLink {
 public:
@@ -452,6 +483,7 @@ struct SymbolIndex {
   std::vector<DeclSymbol> decls;
   std::vector<Symbol> symbols;
   std::vector<ForeignDecl> foreignDecls;
+  ForeignDeclNameMap foreignNames;
   std::unordered_map<std::string, SymbolRef> globals; // for global decl reference
   std::vector<std::pair<SymbolRef, IndexLink>> links; // for importing module
   std::vector<ScopeInterval> scopes;
@@ -463,7 +495,14 @@ struct SymbolIndex {
 
   const Symbol *findSymbol(unsigned int pos) const;
 
+  /**
+   * normally unused
+   * @param request
+   * @return
+   */
   const ForeignDecl *findForeignDecl(SymbolRequest request) const;
+
+  const ForeignDecl *findForeignDecl(ModId modId, const std::string &mangledName) const;
 
   const SymbolRef *findGlobal(const std::string &mangledName) const;
 

@@ -169,6 +169,10 @@ const Symbol *IndexBuilder::addSymbolImpl(const Type *recv, const NameInfo &name
         return nullptr;
       }
       iter = this->foreign.insert(iter, ForeignDecl(*ret));
+      if (name != iter->getMangledName()) { // add original mangled name
+        this->foreignNames[std::make_pair(ret->getModId(), iter->getMangledName())] = iter->toRef();
+      }
+      this->foreignNames[std::make_pair(ret->getModId(), std::move(name))] = iter->toRef();
     }
     decl = &*iter;
   }

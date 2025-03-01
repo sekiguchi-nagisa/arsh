@@ -38,6 +38,7 @@ private:
   std::vector<DeclSymbol> decls;
   std::vector<Symbol> symbols;
   std::vector<ForeignDecl> foreign;
+  ForeignDeclNameMap foreignNames;
   std::vector<std::pair<SymbolRef, IndexLink>> links;
   std::vector<ScopeInterval> scopeIntervals;
   PackedParamTypesMap packedParamTypesMap;
@@ -133,6 +134,7 @@ public:
         .decls = std::move(this->decls),
         .symbols = std::move(this->symbols),
         .foreignDecls = std::move(this->foreign),
+        .foreignNames = std::move(this->foreignNames),
         .globals = std::move(*this->scope).take(),
         .links = std::move(this->links),
         .scopes = std::move(this->scopeIntervals),

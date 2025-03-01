@@ -275,8 +275,7 @@ static bool checkNameConflict(const SymbolIndexes &indexes, const DeclSymbol &de
       if (auto *r = importedIndex->findGlobal(mangledNewName)) {
         if (decl.has(DeclSymbol::Attr::MEMBER) ||    // check usage in constructor
             decl.is(DeclSymbol::Kind::PREFIX_ENV)) { // allow shadowing of prefix assignment env
-          auto *foreign =
-              declIndex->findForeignDecl(SymbolRequest{.modId = r->getModId(), .pos = r->getPos()});
+          auto *foreign = declIndex->findForeignDecl(importedIndex->modId, mangledNewName);
           if (!foreign || !isUsedInScope(*foreign, declScope)) {
             continue;
           }
