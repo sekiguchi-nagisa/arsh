@@ -213,7 +213,7 @@ function _comp_wrap(file : String, target : String, words : [String], cursor : I
 
 # extract completion target (func, cmd). ex `complete -o default -F func cmd`
 # if found, return (func, cmd)
-function extractCompTarget(path : String) : (String, String)? {
+function extractCompTarget(path : String, target_cmd: String?) : (String, String)? {
     var func : String?
     var cmd : String?
 
@@ -222,6 +222,11 @@ function extractCompTarget(path : String) : (String, String)? {
         if let r = $rr {
             $func = $r.group(2) ?? continue
             $cmd = $r.group(3) ?? continue
+            if let tc = $target_cmd {
+                if $tc != $cmd! {
+                    continue
+                }
+            }
             break
         }
     } with < $path
@@ -231,7 +236,7 @@ function extractCompTarget(path : String) : (String, String)? {
 # for lazy loading bash completion script
 function _comp_autoload(cmd : String) : String? {
     var path = $findBashCompScript($cmd) ?? return $none
-    var target = $extractCompTarget($path)
+    var target = $extractCompTarget($path, $cmd)
     if let tt = $target {
         call compdef --cmd $cmd --comp-path $cmd --comp-target ${tt._0} && return $cmd
     }
