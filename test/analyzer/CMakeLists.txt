@@ -55,6 +55,14 @@ add_executable(${TEST_NAME}
 target_link_libraries(${TEST_NAME} gtest gtest_main arshd_static highlighter test_common)
 add_test(${TEST_NAME} ${TEST_NAME})
 
+set(TEST_NAME index_ref_test)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+add_executable(${TEST_NAME}
+        index_ref_test.cpp
+)
+target_link_libraries(${TEST_NAME} gtest gtest_main arshd_static test_common)
+add_test(${TEST_NAME} ${TEST_NAME})
+
 
 #=====================#
 #     rename_test     #

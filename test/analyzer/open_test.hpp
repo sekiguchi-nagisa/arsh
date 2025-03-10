@@ -1,4 +1,7 @@
 
+#ifndef ARSH_TEST_ANALYZER_OPEN_TEST_HPP
+#define ARSH_TEST_ANALYZER_OPEN_TEST_HPP
+
 #include "../test_common.h"
 
 #ifndef ANALYZER_TEST_DIR
@@ -8,9 +11,6 @@
 #ifndef ANALYZER_PATH
 #error require ANALYZ_PATH
 #endif
-
-#ifndef ARSH_OPEN_TEST_HPP
-#define ARSH_OPEN_TEST_HPP
 
 using namespace arsh;
 
@@ -67,4 +67,4 @@ inline std::vector<std::string> getSortedFileList(const char *dir, const char *i
   return ret;
 }
 
-#endif // ARSH_OPEN_TEST_HPP
+#endif // ARSH_TEST_ANALYZER_OPEN_TEST_HPP
