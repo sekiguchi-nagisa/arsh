@@ -138,6 +138,14 @@ private:
     return newError(LSPErrorCode::NONBlock, "");
   }
 
+  std::pair<std::shared_ptr<SourceManager>, ModuleArchives> snapshot() {
+    return this->worker->fetchStateWith(
+        [](const AnalyzerWorker::State &state)
+            -> std::pair<std::shared_ptr<SourceManager>, ModuleArchives> {
+          return {state.srcMan->copy(), state.archives};
+        });
+  }
+
   static std::vector<Location> gotoDefinitionImpl(const AnalyzerWorker::State &state,
                                                   const SymbolRequest &request);
 

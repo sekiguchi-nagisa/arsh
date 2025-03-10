@@ -553,7 +553,7 @@ Reply<std::vector<Location>> LSPServer::gotoDefinition(const DefinitionParams &p
       params.position.toString().c_str());
   return this->worker->waitStateWith(
       [&](const AnalyzerWorker::State &state) -> Reply<std::vector<Location>> {
-        if (auto resolved = lsp::resolvePosition(this->logger, *state.srcMan, params)) {
+        if (auto resolved = resolvePosition(this->logger, *state.srcMan, params)) {
           return gotoDefinitionImpl(state, resolved.asOk().second);
         } else {
           return newError(ErrorCode::InvalidParams, std::move(resolved).takeError());
@@ -566,7 +566,7 @@ Reply<std::vector<Location>> LSPServer::findReference(const ReferenceParams &par
       params.position.toString().c_str());
   return this->worker->waitStateWith(
       [&](const AnalyzerWorker::State &state) -> Reply<std::vector<Location>> {
-        if (auto resolved = lsp::resolvePosition(this->logger, *state.srcMan, params)) {
+        if (auto resolved = resolvePosition(this->logger, *state.srcMan, params)) {
           return findReferenceImpl(state, resolved.asOk().second);
         } else {
           return newError(ErrorCode::InvalidParams, std::move(resolved).takeError());
@@ -580,7 +580,7 @@ LSPServer::documentHighlight(const DocumentHighlightParams &params) {
       params.position.toString().c_str());
   return this->worker->waitStateWith(
       [&](const AnalyzerWorker::State &state) -> Reply<std::vector<DocumentHighlight>> {
-        if (auto resolved = lsp::resolvePosition(this->logger, *state.srcMan, params)) {
+        if (auto resolved = resolvePosition(this->logger, *state.srcMan, params)) {
           return documentHighlightImpl(state, resolved.asOk().second);
         } else {
           return newError(ErrorCode::InvalidParams, std::move(resolved).takeError());
@@ -593,7 +593,7 @@ Reply<Union<Hover, std::nullptr_t>> LSPServer::hover(const HoverParams &params) 
       params.position.toString().c_str());
   return this->worker->waitStateWith(
       [&](const AnalyzerWorker::State &state) -> Reply<Union<Hover, std::nullptr_t>> {
-        if (auto resolved = lsp::resolvePosition(this->logger, *state.srcMan, params)) {
+        if (auto resolved = resolvePosition(this->logger, *state.srcMan, params)) {
           auto &src = *resolved.asOk().first;
           auto &request = resolved.asOk().second;
           return hoverImpl(state, this->markupKind, src, request);
@@ -603,17 +603,11 @@ Reply<Union<Hover, std::nullptr_t>> LSPServer::hover(const HoverParams &params) 
       });
 }
 
-static std::pair<std::shared_ptr<SourceManager>, ModuleArchives>
-snapshot(const AnalyzerWorker::State &state) {
-  return {state.srcMan->copy(), state.archives};
-}
-
 Reply<std::vector<CompletionItem>> LSPServer::complete(const CompletionParams &params) {
   LOG(LogLevel::INFO, "completion at: %s:%s", params.textDocument.uri.c_str(),
       params.position.toString().c_str());
-  auto [copiedSrcMan, copiedArchives] = this->worker->fetchStateWith(
-      [](const AnalyzerWorker::State &state) { return snapshot(state); });
-  if (auto resolved = lsp::resolvePosition(this->logger, *copiedSrcMan, params)) {
+  auto [copiedSrcMan, copiedArchives] = this->snapshot();
+  if (auto resolved = resolvePosition(this->logger, *copiedSrcMan, params)) {
     auto &src = resolved.asOk().first;
     auto pos = resolved.asOk().second.pos;
     copiedArchives.revert({src->getSrcId()});
@@ -649,7 +643,7 @@ LSPServer::semanticToken(const SemanticTokensParams &params) {
   LOG(LogLevel::INFO, "semantic token at: %s", params.textDocument.uri.c_str());
   return this->worker->fetchStateWith(
       [&](const AnalyzerWorker::State &state) -> Reply<Union<SemanticTokens, std::nullptr_t>> {
-        if (auto resolved = lsp::resolveSource(this->logger, *state.srcMan, params.textDocument)) {
+        if (auto resolved = resolveSource(this->logger, *state.srcMan, params.textDocument)) {
           Union<SemanticTokens, std::nullptr_t> ret = nullptr;
           if (this->semanticHighlight == BinaryFlag::enabled) {
             auto &src = *resolved.asOk();
@@ -669,7 +663,7 @@ Reply<std::vector<DocumentLink>> LSPServer::documentLink(const DocumentLinkParam
   return this->setAnalyzerFinishedCallback(
       [this, p = params](const AnalyzerWorker::State &state) -> Reply<std::vector<DocumentLink>> {
         LOG(LogLevel::INFO, "kick document link at: %s", p.textDocument.uri.c_str());
-        if (auto resolved = lsp::resolveSource(this->logger, *state.srcMan, p.textDocument)) {
+        if (auto resolved = resolveSource(this->logger, *state.srcMan, p.textDocument)) {
           std::vector<DocumentLink> ret;
           if (auto index = state.indexes.find(resolved.asOk()->getSrcId())) {
             for (auto &e : index->links) {
@@ -696,7 +690,7 @@ Reply<std::vector<DocumentSymbol>> LSPServer::documentSymbol(const DocumentSymbo
   return this->setAnalyzerFinishedCallback(
       [this, p = params](const AnalyzerWorker::State &state) -> Reply<std::vector<DocumentSymbol>> {
         LOG(LogLevel::INFO, "kick document symbol at: %s", p.textDocument.uri.c_str());
-        if (auto resolved = lsp::resolveSource(this->logger, *state.srcMan, p.textDocument)) {
+        if (auto resolved = resolveSource(this->logger, *state.srcMan, p.textDocument)) {
           return generateDocumentSymbols(state.indexes, *resolved.asOk());
         } else {
           return newError(ErrorCode::InvalidParams, std::move(resolved).takeError());
@@ -708,8 +702,7 @@ Reply<Union<SignatureHelp, std::nullptr_t>>
 LSPServer::signatureHelp(const SignatureHelpParams &params) {
   LOG(LogLevel::INFO, "signature help at: %s:%s", params.textDocument.uri.c_str(),
       params.position.toString().c_str());
-  auto [copiedSrcMan, copiedArchives] = this->worker->fetchStateWith(
-      [](const AnalyzerWorker::State &state) { return snapshot(state); });
+  auto [copiedSrcMan, copiedArchives] = this->snapshot();
   if (auto resolved = resolvePosition(this->logger, *copiedSrcMan, params)) {
     auto &src = resolved.asOk().first;
     auto pos = resolved.asOk().second.pos;
@@ -736,7 +729,7 @@ Reply<WorkspaceEdit> LSPServer::rename(const RenameParams &params) {
       params.position.toString().c_str());
   return this->worker->waitStateWith(
       [&](const AnalyzerWorker::State &state) -> Reply<WorkspaceEdit> {
-        if (auto resolved = lsp::resolvePosition(this->logger, *state.srcMan, params)) {
+        if (auto resolved = resolvePosition(this->logger, *state.srcMan, params)) {
           auto &request = resolved.asOk().second;
           auto ret =
               renameImpl(state, this->supportedCapability,
@@ -757,7 +750,7 @@ LSPServer::prepareRename(const PrepareRenameParams &params) {
       params.position.toString().c_str());
   return this->worker->waitStateWith(
       [&](const AnalyzerWorker::State &state) -> Reply<Union<PrepareRename, std::nullptr_t>> {
-        if (auto resolved = lsp::resolvePosition(this->logger, *state.srcMan, params)) {
+        if (auto resolved = resolvePosition(this->logger, *state.srcMan, params)) {
           auto renameLocation = resolveRenameLocation(state.indexes, resolved.asOk().second);
           Union<PrepareRename, std::nullptr_t> ret = nullptr;
           if (renameLocation.hasValue()) {
