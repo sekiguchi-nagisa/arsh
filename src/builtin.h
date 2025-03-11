@@ -2125,9 +2125,9 @@ ARSH_METHOD map_swap(RuntimeContext &ctx) {
   RET(value);
 }
 
-//!bind: function addAll($this : Map<T0, T1>, $other : Map<T0, T1>) : Map<T0, T1>
-ARSH_METHOD map_addAll(RuntimeContext &ctx) {
-  SUPPRESS_WARNING(map_addAll);
+//!bind: function putAll($this : Map<T0, T1>, $other : Map<T0, T1>) : Map<T0, T1>
+ARSH_METHOD map_putAll(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(map_putAll);
   auto &obj = typeAs<OrderedMapObject>(LOCAL(0));
   auto &value = typeAs<OrderedMapObject>(LOCAL(1));
   if (&obj != &value) {

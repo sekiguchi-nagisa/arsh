@@ -26,8 +26,9 @@
 - **Breaking Change**: change comparator interface of ``Array#sortBy`` method. now use three-way
   comparison
 - **Breaking Change**: change parameter name of some builtin methods
-    - ``String#slice``, ``Array#slice``, ``Job#kill``, ``Array#addAll``, ``Map#addAll``,
+    - ``String#slice``, ``Array#slice``, ``Job#kill``, ``Array#addAll``,
     - ``Array#removeRange``, ``LineEditor#readLine``
+- **Breaking Change**: rename ``Map#addAll`` method with ``Map#putAll``
 - automatically insert ``(``, ``()`` after completing method names
 - in ``LineEditor``, fix screen corruption when shrink window cols
 - hide description/signature of completion pager if columns size is smaller than item size

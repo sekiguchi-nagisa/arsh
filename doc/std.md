@@ -502,7 +502,7 @@ function remove(key: T0): T1? for [T0 : T1]
 
 function swap(key: T0, value: T1): T1 for [T0 : T1]
 
-function addAll(other: [T0 : T1]): [T0 : T1] for [T0 : T1]
+function putAll(other: [T0 : T1]): [T0 : T1] for [T0 : T1]
 
 function copy(): [T0 : T1] for [T0 : T1]
 

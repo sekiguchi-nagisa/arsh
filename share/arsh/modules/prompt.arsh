@@ -62,7 +62,7 @@ function renderPrompt(p : String) : String {
     let old_reply = $reply.copy()
     defer {
         $reply.clear()
-        $reply.addAll($old_reply) # restore reply
+        $reply.putAll($old_reply) # restore reply
     }
 
     var ret = ""
