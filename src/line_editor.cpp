@@ -1041,6 +1041,7 @@ EditActionStatus LineEditorObject::completeLine(ARState &state, RenderingContext
     return EditActionStatus::CANCEL;
   }
 
+  unsigned int undoCount = 0;
   StringRef inserting = candidates.getCommonPrefixStr();
   ctx.buf.commitLastChange();
   const size_t offset = ctx.buf.resolveInsertingSuffix(inserting, candidates.size() == 1);
@@ -1050,6 +1051,9 @@ EditActionStatus LineEditorObject::completeLine(ARState &state, RenderingContext
       this->refreshLine(state, ctx);
     } else {
       return EditActionStatus::ERROR;
+    }
+    if (!inserting.empty()) {
+      undoCount++;
     }
   }
   if (const auto len = candidates.size(); len == 0) {
@@ -1098,6 +1102,7 @@ FIRST_DRAW:
    * paging completion candidates
    */
   pager.setShowCursor(true);
+  undoCount++;
   for (const unsigned int oldSize = ctx.buf.getUsedSize(); status == EditActionStatus::CONTINUE;) {
     // render pager
     if (oldSize != ctx.buf.getUsedSize()) {
@@ -1115,6 +1120,14 @@ FIRST_DRAW:
       break;
     }
     status = waitPagerAction(pager, this->keyBindings, reader);
+    if (status == EditActionStatus::REVERT) {
+      status = EditActionStatus::OK;
+      while (undoCount > 0) {
+        ctx.buf.undo();
+        undoCount--;
+      }
+      goto END;
+    }
     if (status == EditActionStatus::CANCEL && errno == EINTR) {
       if (this->handleSignals(state)) {
         status = EditActionStatus::CONTINUE;

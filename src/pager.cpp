@@ -253,6 +253,8 @@ EditActionStatus waitPagerAction(ArrayPager &pager, const KeyBindings &bindings,
     return EditActionStatus::OK;
   case PagerAction::CANCEL:
     return EditActionStatus::CANCEL;
+  case PagerAction::ESCAPE:
+    return EditActionStatus::REVERT;
   case PagerAction::PREV:
     pager.moveCursorToForward();
     break;

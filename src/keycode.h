@@ -244,6 +244,7 @@ enum class EditActionStatus : unsigned char {
   ERROR,    // interval error during edit action
   CANCEL,   // cancel edit action
   CONTINUE, // continue completion candidates paging
+  REVERT,   // revert previous edit op
 };
 
 class CustomActionMap {
@@ -275,6 +276,7 @@ public:
 enum class PagerAction : unsigned char {
   SELECT,
   CANCEL,
+  ESCAPE,
   PREV,
   NEXT,
   LEFT,
