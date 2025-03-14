@@ -954,6 +954,61 @@ TEST_F(InteractiveTest, undoRotate2) {
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
 }
 
+TEST_F(InteractiveTest, undoRotate3) { // ESC
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+
+  // insert common prefix
+  this->changePrompt("> ");
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
+      "$LINE_EDIT.setCompletion(function(m, s) => { complete -m $m -q -d -- $s; $COMPREPLY;})"));
+  this->send("(echo )" LEFT "$SIGU");
+  ASSERT_NO_FATAL_FAILURE(this->expect("> (echo $SIGU)"));
+  {
+    auto cleanup = this->reuseScreen();
+
+    this->send("\t");
+    ASSERT_NO_FATAL_FAILURE(
+        this->expect("> (echo $SIGUSR)\nSIGUSR1 : Signal    SIGUSR2 : Signal    \n"));
+    this->send("\t");
+    ASSERT_NO_FATAL_FAILURE(
+        this->expect("> (echo $SIGUSR1 )\nSIGUSR1 : Signal    SIGUSR2 : Signal    \n"));
+    this->send("\t");
+    ASSERT_NO_FATAL_FAILURE(
+        this->expect("> (echo $SIGUSR2 )\nSIGUSR1 : Signal    SIGUSR2 : Signal    \n"));
+    this->send("\x1b");
+    std::this_thread::sleep_for(std::chrono::milliseconds(250));
+    ASSERT_NO_FATAL_FAILURE(this->expect("> (echo $SIGU)"));
+
+    this->send(CTRL_C);
+    ASSERT_NO_FATAL_FAILURE(this->expect("> (echo $SIGU)\n> "));
+  }
+
+  // no insert common prefix
+  this->send("$SIGS");
+  ASSERT_NO_FATAL_FAILURE(this->expect("> $SIGS"));
+  {
+    auto cleanup = this->reuseScreen();
+
+    this->send("\t");
+    ASSERT_NO_FATAL_FAILURE(this->expect("> $SIGS\nSIGSEGV : Signal    SIGSTOP : Signal    \n"));
+    this->send("\t");
+    ASSERT_NO_FATAL_FAILURE(this->expect("> $SIGSEGV\nSIGSEGV : Signal    SIGSTOP : Signal    \n"));
+    this->send("\t");
+    ASSERT_NO_FATAL_FAILURE(this->expect("> $SIGSTOP\nSIGSEGV : Signal    SIGSTOP : Signal    \n"));
+    this->send("\x1b");
+    std::this_thread::sleep_for(std::chrono::milliseconds(250));
+    ASSERT_NO_FATAL_FAILURE(this->expect("> $SIGS"));
+
+    this->send(CTRL_C);
+    ASSERT_NO_FATAL_FAILURE(this->expect("> $SIGS\n> "));
+  }
+
+  this->send(CTRL_D);
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
+}
+
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

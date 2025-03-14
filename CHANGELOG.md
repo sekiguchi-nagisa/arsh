@@ -30,8 +30,10 @@
     - ``Array#removeRange``, ``LineEditor#readLine``
 - **Breaking Change**: rename ``Map#addAll`` method with ``Map#putAll``
 - automatically insert ``(``, ``()`` after completing method names
-- in ``LineEditor``, fix screen corruption when shrink window cols
-- hide description/signature of completion pager if columns size is smaller than item size
+- various ``LineEditor`` improvements
+    - fix screen corruption when shrink window cols
+    - hide description/signature of completion pager if columns size is smaller than item size
+    - undo completion candidate insertion via ``ESC`` key
 
 #### LSP
 
