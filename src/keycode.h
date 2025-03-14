@@ -57,9 +57,10 @@ inline ssize_t readRetryWithTimeout(int fd, char *buf, size_t bufSize, int timeo
 }
 
 class KeyCodeReader {
-private:
-  static constexpr int DEFAULT_READ_TIMEOUT_MSEC = 200;
+public:
+  static constexpr int DEFAULT_READ_TIMEOUT_MSEC = 100;
 
+private:
   int fd{-1};
   int timeout{DEFAULT_READ_TIMEOUT_MSEC};
   std::string keycode; // single utf8 character or escape sequence

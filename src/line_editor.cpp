@@ -904,8 +904,11 @@ ssize_t LineEditorObject::editInRawMode(ARState &state, RenderingContext &ctx) {
       break;
     case EditActionType::BRACKET_PASTE: {
       ctx.buf.commitLastChange();
+      const auto oldTimeout = reader.getTimeout();
+      reader.setTimeout(KeyCodeReader::DEFAULT_READ_TIMEOUT_MSEC * 2);
       bool r = reader.intoBracketedPasteMode(
           [&ctx](StringRef ref) { return ctx.buf.insertToCursor(ref, true); });
+      reader.setTimeout(oldTimeout);
       const int old = errno;
       ctx.buf.commitLastChange();
       this->refreshLine(state, ctx); // always refresh line even if error
