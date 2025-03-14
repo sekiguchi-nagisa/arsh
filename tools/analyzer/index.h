@@ -33,9 +33,9 @@ namespace arsh::lsp {
 
 class SymbolRef {
 private:
-  unsigned int pos{0};
-  unsigned short size{0};
-  ModId modId{0};
+  unsigned int pos;
+  unsigned short size;
+  ModId modId;
 
 public:
   static Optional<SymbolRef> create(Token token, ModId modId) {
