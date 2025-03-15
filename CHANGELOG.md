@@ -13,7 +13,7 @@
 
 #### LSP
 
-- support ``$/cancelRequest/`` for request cancellation
+- support ``$/cancelRequest`` for request cancellation
 
 ### Changed
 
