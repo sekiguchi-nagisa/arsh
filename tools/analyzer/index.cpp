@@ -282,12 +282,14 @@ SymbolIndexPtr SymbolIndexes::find(ModId modId) const {
   return nullptr;
 }
 
-void SymbolIndexes::remove(ModId id) {
+bool SymbolIndexes::remove(ModId id) {
   auto iter =
       std::lower_bound(this->indexes.begin(), this->indexes.end(), id, SymbolIndex::Compare());
   if (iter != this->indexes.end()) {
     this->indexes.erase(iter);
+    return true;
   }
+  return false;
 }
 
 static const DeclSymbol *findDeclFromForeignIndex(const SymbolIndexes &indexes,

@@ -51,17 +51,22 @@ protected:
   unsigned int idCount{0};
 
 public:
+  auto analyze(const SourcePtr &src) {
+    AnalyzerAction action;
+    SymbolIndexer indexer(this->sysConfig, this->indexes);
+    action.pass.reset(&indexer);
+    Analyzer analyzer(this->sysConfig, this->srcMan, this->archives);
+    return analyzer.analyze(src, action);
+  }
+
   void doAnalyze(const char *content, unsigned short &modId) {
     std::string path = "/dummy_";
     path += std::to_string(++this->idCount);
     auto src = this->srcMan.update(path, 0, content);
     ASSERT_TRUE(src);
-    AnalyzerAction action;
-    SymbolIndexer indexer(this->sysConfig, this->indexes);
-    action.pass.reset(&indexer);
-    Analyzer analyzer(this->sysConfig, this->srcMan, this->archives);
-    auto ret = analyzer.analyze(src, action);
+    auto ret = this->analyze(src);
     ASSERT_TRUE(ret);
+    ASSERT_EQ(ret->getModId(), src->getSrcId());
     modId = toUnderlying(ret->getModId());
   }
 
@@ -71,6 +76,37 @@ public:
     ASSERT_TRUE(index);
     ASSERT_EQ(size.declSize, index->decls.size());
     ASSERT_EQ(size.symbolSize, index->symbols.size());
+  }
+
+  void putHeaderPaddingAndRebuildImpl(SourcePtr &&src, const unsigned int lineCount) {
+    // modify original source (put empty header)
+    ASSERT_TRUE(lineCount > 0);
+    auto newContent = src->getContent();
+    for (unsigned int i = 0; i < lineCount; i++) {
+      newContent.insert(0, "\n");
+    }
+    const auto modId = src->getSrcId();
+    src = this->srcMan.update(src->getPath(), src->getVersion() + 1, std::move(newContent));
+    ASSERT_TRUE(src);
+    ASSERT_TRUE(this->indexes.remove(modId));
+
+    // rebuild
+    auto ret = this->analyze(src);
+    ASSERT_TRUE(ret);
+    ASSERT_EQ(ret->getModId(), modId);
+    ASSERT_TRUE(this->indexes.find(modId));
+  }
+
+  void putHeaderPaddingAndRebuild(const char *fileName, const unsigned int lineCount) {
+    auto src = this->srcMan.find(fileName);
+    ASSERT_TRUE(src);
+    this->putHeaderPaddingAndRebuildImpl(std::move(src), lineCount);
+  }
+
+  void putHeaderPaddingAndRebuild(unsigned short modId, const unsigned int lineCount) {
+    auto src = this->srcMan.findById(ModId{modId});
+    ASSERT_TRUE(src);
+    this->putHeaderPaddingAndRebuildImpl(std::move(src), lineCount);
   }
 
   void findDecl(const Request &req, const std::vector<Loc> &expected) {

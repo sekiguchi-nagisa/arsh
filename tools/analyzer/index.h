@@ -528,7 +528,13 @@ public:
 
   SymbolIndexPtr find(ModId modId) const;
 
-  void remove(ModId id);
+  /**
+   *
+   * @param id
+   * @return
+   * if removed, return true
+   */
+  bool remove(ModId id);
 
   const DeclSymbol *findDecl(SymbolRequest req) const {
     if (auto index = this->find(req.modId)) {
