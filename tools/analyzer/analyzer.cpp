@@ -89,9 +89,8 @@ ModuleArchivePtr AnalyzerContext::buildArchive(ModuleArchives &archives) && {
     imported.emplace_back(e.kind(), std::move(archive));
   }
 
-  auto archive =
-      std::make_shared<ModuleArchive>(modType.getModId(), this->getSrc()->getVersion(),
-                                      modType.getAttr(), std::move(handles), std::move(imported));
+  auto archive = std::make_shared<ModuleArchive>(modType.getModId(), modType.getAttr(),
+                                                 std::move(handles), std::move(imported));
   archives.add(archive);
   return archive;
 }
@@ -115,10 +114,10 @@ std::unique_ptr<FrontEnd::Context> Analyzer::newContext(LexerPtr lexer) {
 
 const ModType &
 Analyzer::newModTypeFromCurContext(const std::vector<std::unique_ptr<FrontEnd::Context>> &) {
+  const auto version = this->ctxs.back()->getSrc()->getVersion();
   auto archive = std::move(*this->current()).buildArchive(this->archives);
   this->ctxs.pop_back();
-  LOG(LogLevel::INFO, "exit module: id=%d, version=%d", toUnderlying(archive->getModId()),
-      archive->getVersion());
+  LOG(LogLevel::INFO, "exit module: id=%d, version=%d", toUnderlying(archive->getModId()), version);
   auto *modType = loadFromArchive(this->current()->getPool(), *archive);
   assert(modType);
   return *modType;

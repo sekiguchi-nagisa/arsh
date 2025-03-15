@@ -219,11 +219,10 @@ private:
 
 class ModuleArchive;
 
-using ModuleArchivePtr = std::shared_ptr<ModuleArchive>;
+using ModuleArchivePtr = std::shared_ptr<const ModuleArchive>;
 
 class ModuleArchive {
 private:
-  const int version{0};
   const ModId modId{0};
   const ModAttr attr{};
   std::vector<Archive> handles;
@@ -232,12 +231,9 @@ private:
 public:
   ModuleArchive() = default;
 
-  ModuleArchive(ModId modId, int version, ModAttr attr, std::vector<Archive> &&handles,
+  ModuleArchive(ModId modId, ModAttr attr, std::vector<Archive> &&handles,
                 std::vector<std::pair<ImportedModKind, ModuleArchivePtr>> imported)
-      : version(version), modId(modId), attr(attr), handles(std::move(handles)),
-        imported(std::move(imported)) {}
-
-  int getVersion() const { return this->version; }
+      : modId(modId), attr(attr), handles(std::move(handles)), imported(std::move(imported)) {}
 
   ModId getModId() const { return this->modId; }
 
