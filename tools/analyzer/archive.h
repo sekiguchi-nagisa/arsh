@@ -72,6 +72,92 @@ public:
   std::pair<std::string, HandlePtr> unpack(TypePool &pool) const;
 };
 
+class ModuleArchive;
+
+using ModuleArchivePtr = std::shared_ptr<const ModuleArchive>;
+
+class ModuleArchive {
+private:
+  const ModId modId{0};
+  const ModAttr attr{};
+  std::vector<Archive> handles;
+  std::vector<std::pair<ImportedModKind, ModuleArchivePtr>> imported;
+
+public:
+  ModuleArchive() = default;
+
+  ModuleArchive(ModId modId, ModAttr attr, std::vector<Archive> &&handles,
+                std::vector<std::pair<ImportedModKind, ModuleArchivePtr>> imported)
+      : modId(modId), attr(attr), handles(std::move(handles)), imported(std::move(imported)) {}
+
+  ModId getModId() const { return this->modId; }
+
+  ModAttr getModAttr() const { return this->attr; }
+
+  const auto &getHandles() const { return this->handles; }
+
+  const auto &getImported() const { return this->imported; }
+
+  bool isEmpty() const { return toUnderlying(this->getModId()) == 0; }
+
+  std::vector<ModuleArchivePtr> getDepsByTopologicalOrder() const;
+
+  Optional<std::unordered_map<std::string, HandlePtr>> unpack(TypePool &pool) const;
+};
+
+class ModuleArchives {
+private:
+  std::vector<std::pair<ModId, ModuleArchivePtr>> values;
+
+  using iterator_type = std::vector<std::pair<ModId, ModuleArchivePtr>>::iterator;
+
+  static const ModuleArchivePtr EMPTY_ARCHIVE;
+
+public:
+  /**
+   *
+   * @param modId
+   * @return
+   * return null if not found
+   */
+  ModuleArchivePtr find(ModId modId) const;
+
+  void reserve(ModId modId) { this->reserveImpl(modId); }
+
+  /**
+   *
+   * @param archive
+   * must not be null
+   */
+  void add(const ModuleArchivePtr &archive) {
+    assert(archive);
+    auto iter = this->reserveImpl(archive->getModId());
+    iter->second = archive;
+  }
+
+  void revert(std::unordered_set<ModId> &&revertingModIdSet);
+
+  /**
+   * completely remove specified archive if unused (not imported from other archives)
+   * @param id
+   * @return
+   * if unused, return true
+   */
+  bool removeIfUnused(ModId id);
+
+  Optional<ModId> getFirstRevertedModId() const {
+    for (auto &e : this->values) {
+      if (!e.second) {
+        return e.first;
+      }
+    }
+    return {};
+  }
+
+private:
+  iterator_type reserveImpl(ModId modId);
+};
+
 class Archiver {
 private:
   const TypePool &pool;
@@ -93,6 +179,8 @@ public:
     std::swap(ret, this->data);
     return Archive(std::move(ret));
   }
+
+  const TypePool &getPool() const { return this->pool; }
 
 private:
   template <unsigned int N>
@@ -143,6 +231,9 @@ private:
 
   void add(const ArgEntry &entry);
 };
+
+ModuleArchivePtr buildArchive(Archiver &&archiver, const ModType &modType,
+                              ModuleArchives &archives);
 
 class Unarchiver {
 private:
@@ -217,93 +308,7 @@ private:
   }
 };
 
-class ModuleArchive;
-
-using ModuleArchivePtr = std::shared_ptr<const ModuleArchive>;
-
-class ModuleArchive {
-private:
-  const ModId modId{0};
-  const ModAttr attr{};
-  std::vector<Archive> handles;
-  std::vector<std::pair<ImportedModKind, ModuleArchivePtr>> imported;
-
-public:
-  ModuleArchive() = default;
-
-  ModuleArchive(ModId modId, ModAttr attr, std::vector<Archive> &&handles,
-                std::vector<std::pair<ImportedModKind, ModuleArchivePtr>> imported)
-      : modId(modId), attr(attr), handles(std::move(handles)), imported(std::move(imported)) {}
-
-  ModId getModId() const { return this->modId; }
-
-  ModAttr getModAttr() const { return this->attr; }
-
-  const auto &getHandles() const { return this->handles; }
-
-  const auto &getImported() const { return this->imported; }
-
-  bool isEmpty() const { return toUnderlying(this->getModId()) == 0; }
-
-  std::vector<ModuleArchivePtr> getDepsByTopologicalOrder() const;
-
-  Optional<std::unordered_map<std::string, HandlePtr>> unpack(TypePool &pool) const;
-};
-
 const ModType *loadFromArchive(TypePool &pool, const ModuleArchive &archive);
-
-class ModuleArchives {
-private:
-  std::vector<std::pair<ModId, ModuleArchivePtr>> values;
-
-  using iterator_type = std::vector<std::pair<ModId, ModuleArchivePtr>>::iterator;
-
-  static const ModuleArchivePtr EMPTY_ARCHIVE;
-
-public:
-  /**
-   *
-   * @param modId
-   * @return
-   * return null if not found
-   */
-  ModuleArchivePtr find(ModId modId) const;
-
-  void reserve(ModId modId) { this->reserveImpl(modId); }
-
-  /**
-   *
-   * @param archive
-   * must not be null
-   */
-  void add(const ModuleArchivePtr &archive) {
-    assert(archive);
-    auto iter = this->reserveImpl(archive->getModId());
-    iter->second = archive;
-  }
-
-  void revert(std::unordered_set<ModId> &&revertingModIdSet);
-
-  /**
-   * completely remove specified archive if unused (not imported from other archives)
-   * @param id
-   * @return
-   * if unused, return true
-   */
-  bool removeIfUnused(ModId id);
-
-  Optional<ModId> getFirstRevertedModId() const {
-    for (auto &e : this->values) {
-      if (!e.second) {
-        return e.first;
-      }
-    }
-    return {};
-  }
-
-private:
-  iterator_type reserveImpl(ModId modId);
-};
 
 } // namespace arsh::lsp
 

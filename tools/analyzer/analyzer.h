@@ -114,7 +114,11 @@ public:
    * @param archives
    * @return not null
    */
-  ModuleArchivePtr buildArchive(ModuleArchives &archives) &&;
+  ModuleArchivePtr buildArchive(ModuleArchives &archives) && {
+    auto &modType = this->getScope()->toModType(this->getPool());
+    Archiver archiver(this->getPool(), this->typeDiscardPoint.typeIdOffset);
+    return lsp::buildArchive(std::move(archiver), modType, archives);
+  }
 };
 
 using AnalyzerContextPtr = std::unique_ptr<AnalyzerContext>;

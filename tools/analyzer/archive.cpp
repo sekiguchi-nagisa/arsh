@@ -511,6 +511,34 @@ const ModType *loadFromArchive(TypePool &pool, const ModuleArchive &archive) {
   return load(pool, archive);
 }
 
+ModuleArchivePtr buildArchive(Archiver &&archiver, const ModType &modType,
+                              ModuleArchives &archives) {
+  // pack handles
+  std::vector<Archive> handles;
+  for (auto &e : modType.getHandleMap()) {
+    handles.push_back(archiver.pack(e.first, *e.second));
+  }
+
+  // resolve imported modules
+  std::vector<std::pair<ImportedModKind, ModuleArchivePtr>> imported;
+  unsigned int size = modType.getChildSize();
+  for (unsigned int i = 0; i < size; i++) {
+    auto e = modType.getChildAt(i);
+    auto &type = cast<ModType>(archiver.getPool().get(e.typeId()));
+    if (isBuiltinMod(type.getModId())) { // skip builtin module
+      continue;
+    }
+    auto archive = archives.find(type.getModId());
+    assert(archive);
+    imported.emplace_back(e.kind(), std::move(archive));
+  }
+
+  auto archive = std::make_shared<ModuleArchive>(modType.getModId(), modType.getAttr(),
+                                                 std::move(handles), std::move(imported));
+  archives.add(archive);
+  return archive;
+}
+
 // ############################
 // ##     ModuleArchives     ##
 // ############################
