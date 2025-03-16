@@ -421,13 +421,15 @@ ModuleArchive::ModuleArchive(ModId modId, ModAttr attr, std::vector<Archive> &&h
     struct {
       ImportedModKind k;
       ModId id;
+      uint64_t hash;
     } mod;
-    char buf[4];
+    char buf[16];
   };
   for (const auto &[k, p] : this->imported) {
     ModData data{}; // force init
     data.mod.k = k;
     data.mod.id = p->getModId();
+    data.mod.hash = p->getHash();
     hasher.update(data.buf, std::size(data.buf));
   }
   this->hash = std::move(hasher).digest();
