@@ -142,6 +142,28 @@ public:
   Message operator()(); // TODO: currently only support single request (not support batch-request)
 };
 
+class IDGenerator {
+private:
+  L64X128MixRNG rng;
+
+public:
+  explicit IDGenerator(uint64_t seed) : rng(seed) {}
+
+  std::string operator()(const char *prefix) {
+    std::string value;
+    if (prefix && *prefix) {
+      value += prefix;
+      value += '-';
+    }
+    const auto v1 = static_cast<uintmax_t>(this->rng.next());
+    const auto v2 = static_cast<uintmax_t>(this->rng.next());
+    char data[128];
+    const ssize_t s = snprintf(data, std::size(data), "%jx-%jX", v1, v2);
+    value.append(data, s);
+    return value;
+  }
+};
+
 using ResponseCallback = std::function<void(Response &&)>;
 
 class CallbackMap {
@@ -149,11 +171,11 @@ private:
   using Entry = std::pair<std::string, ResponseCallback>;
 
   std::mutex mutex;
-  L64X128MixRNG rng;
+  IDGenerator idGen;
   std::unordered_map<std::string, Entry> map;
 
 public:
-  explicit CallbackMap(uint64_t seed) : rng(seed) {}
+  explicit CallbackMap(uint64_t seed) : idGen(seed) {}
 
   /**
    *
@@ -171,13 +193,6 @@ public:
    * if not found corresponding entry, return empty entry.
    */
   Entry take(const std::string &id);
-
-private:
-  /**
-   * not thread safe. take lock before call it
-   * @return
-   */
-  std::string generateId();
 };
 
 class Transport {

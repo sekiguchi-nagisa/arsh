@@ -98,7 +98,7 @@ std::string CallbackMap::add(const std::string &methodName, ResponseCallback &&c
   std::string id;
   Entry entry = {methodName, std::move(callback)};
   while (true) {
-    id = this->generateId();
+    id = this->idGen("id");
     if (this->map.try_emplace(id, std::move(entry)).second) {
       break;
     }
@@ -115,14 +115,6 @@ CallbackMap::Entry CallbackMap::take(const std::string &id) {
     return entry;
   }
   return {"", ResponseCallback()};
-}
-
-std::string CallbackMap::generateId() {
-  auto v1 = static_cast<uintmax_t>(this->rng.next());
-  auto v2 = static_cast<uintmax_t>(this->rng.next());
-  char data[128];
-  snprintf(data, std::size(data), "id-%jx-%jX", v1, v2);
-  return std::string(data);
 }
 
 // #######################

@@ -17,7 +17,7 @@
 # CHECK_IF:     "capabilities": {
 # CHECK_IF:       "semanticTokensProvider": {
 #    CHECK:         "full": true,
-#    CHECK:         "id": "reg-858b24f53709d312-9871734dc2c02298",
+#    CHECK:         "id": "reg-858b24f53709d312-9871734DC2C02298",
 # CHECK_IF: }
 
 <<<
@@ -42,7 +42,7 @@
 #    CHECK:   "params": {
 #    CHECK:     "unregistrations": [
 #    CHECK:       {
-#    CHECK:         "id": "reg-858b24f53709d312-9871734dc2c02298",
+#    CHECK:         "id": "reg-858b24f53709d312-9871734DC2C02298",
 #    CHECK:         "method": "textDocument/semanticTokens"
 #    CHECK:       }
 #    CHECK:     ]
@@ -87,7 +87,7 @@
 #    CHECK:   "params": {
 #    CHECK:     "registrations": [
 #    CHECK:       {
-#    CHECK:         "id": "id-952179c794397917-899718e94854bc2d",
+#    CHECK:         "id": "id-952179c794397917-899718E94854BC2D",
 #    CHECK:         "method": "textDocument/semanticTokens",
 #    CHECK:         "registerOptions": {
 #    CHECK:           "full": true,

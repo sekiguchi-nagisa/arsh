@@ -19,32 +19,9 @@
 
 #include <string>
 
-#include <format_util.h>
-#include <misc/split_random.hpp>
-
 #include "lsp.h"
 
 namespace arsh::lsp {
-
-class IDGenerator {
-private:
-  L64X128MixRNG rng;
-
-public:
-  explicit IDGenerator(uint64_t seed) : rng(seed) {}
-
-  std::string operator()(const char *prefix) {
-    std::string value;
-    if (prefix) {
-      value += prefix;
-      value += '-';
-    }
-    auto v1 = static_cast<uintmax_t>(this->rng.next());
-    auto v2 = static_cast<uintmax_t>(this->rng.next());
-    formatTo(value, "%jx-%jx", v1, v2);
-    return value;
-  }
-};
 
 #define EACH_REGISTRATION_CAPABILITY(OP) OP(SEMANTIC_TOKENS, "textDocument/semanticTokens")
 
@@ -80,12 +57,12 @@ public:
 
   /**
    *
-   * @param gen
+   * @param id
    * @param legend
    * @return if already registered, return empty struct (id is empty)
    */
-  Registration registrSemanticTokensCapability(IDGenerator &gen,
-                                               const SemanticTokensLegend &legend);
+  Registration registerSemanticTokensCapability(std::string &&id,
+                                                const SemanticTokensLegend &legend);
 
   /**
    * @param capability

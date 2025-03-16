@@ -42,9 +42,8 @@ bool RegistrationMap::registerCapability(Capability capability, const std::strin
   return false;
 }
 
-Registration RegistrationMap::registrSemanticTokensCapability(IDGenerator &gen,
-                                                              const SemanticTokensLegend &legend) {
-  auto id = gen("id");
+Registration RegistrationMap::registerSemanticTokensCapability(std::string &&id,
+                                                               const SemanticTokensLegend &legend) {
   if (!this->registerCapability(Capability::SEMANTIC_TOKENS, id)) {
     return {};
   }

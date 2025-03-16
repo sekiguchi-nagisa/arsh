@@ -422,8 +422,8 @@ void LSPServer::loadConfigSetting(const ConfigSetting &setting) {
         if (hasFlag(this->supportedCapability, SupportedCapability::SEMANTIC_TOKEN_REGISTRATION) &&
             this->semanticHighlight != enabled) {
           if (enabled == BinaryFlag::enabled) {
-            auto registration = this->registrationMap.registrSemanticTokensCapability(
-                this->idGenerator, this->encoder.getLegend());
+            auto registration = this->registrationMap.registerSemanticTokensCapability(
+                this->idGenerator("id"), this->encoder.getLegend());
             if (registration) {
               registrationParam.registrations.push_back(std::move(registration));
             }
