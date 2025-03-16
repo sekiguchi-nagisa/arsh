@@ -56,7 +56,7 @@ private:
   const std::string testDir;
   std::unique_ptr<AnalyzerWorker> worker;
   const uint64_t seed;
-  const unsigned int defaultDebounceTime;
+  const std::chrono::milliseconds defaultDebounceTime;
   bool init{false};
   bool willExit{false};
   TraceValue traceSetting{TraceValue::off};
@@ -69,7 +69,7 @@ private:
   std::shared_ptr<Context> currentCtx; // only available within rpc worker
 
 public:
-  LSPServer(LoggerBase &logger, int inFd, int outFd, unsigned int time, const std::string &testDir,
+  LSPServer(LoggerBase &logger, int inFd, int outFd, std::chrono::milliseconds time, const std::string &testDir,
             uint64_t seed = 42)
       : Handler(logger, seed), idGenerator(seed), transport(logger, inFd, outFd),
         rpcHandlerWorker(16), testDir(testDir), seed(seed), defaultDebounceTime(time) {

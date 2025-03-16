@@ -29,8 +29,8 @@ namespace arsh::lsp {
 
 struct DriverOptions {
   LogLevel level{LogLevel::WARNING};
-  unsigned int debounceTime{DEFAULT_DEBOUNCE_TIME};
-  unsigned int waitTime{10};
+  std::chrono::milliseconds debounceTime{DEFAULT_DEBOUNCE_TIME};
+  std::chrono::milliseconds waitTime{10};
   bool lsp{true};
   bool open{false};
   const char *testInput{nullptr};

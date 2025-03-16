@@ -209,6 +209,8 @@ TEST_F(TransportTest, case9) {
   ASSERT_THAT(this->readLog(), ::testing::MatchesRegex(".+Content-Length: 0.+"));
 }
 
+using namespace std::chrono;
+
 struct ServerTest : public InteractiveBase {
   FilePtr logFile;
   int count{0};
@@ -225,7 +227,7 @@ struct ServerTest : public InteractiveBase {
       LSPLogger logger;
       logger.setSeverity(LogLevel::INFO);
       logger.setAppender(std::move(this->logFile));
-      LSPServer server(logger, dupFD(STDIN_FILENO), dupFD(STDOUT_FILENO), 100, "");
+      LSPServer server(logger, dupFD(STDIN_FILENO), dupFD(STDOUT_FILENO), 100ms, "");
       server.run();
       return 1;
     });
@@ -337,11 +339,11 @@ false
   auto &req = ret.asOk().req;
   ASSERT_EQ(3, req.size());
   ASSERT_EQ(1234, req[0].request.asLong());
-  ASSERT_EQ(0, req[0].msec);
+  ASSERT_EQ(0ms, req[0].msec);
   ASSERT_EQ(true, req[1].request["aaa"].asBool());
-  ASSERT_EQ(12345, req[1].msec);
+  ASSERT_EQ(12345ms, req[1].msec);
   ASSERT_EQ(false, req[2].request.asBool());
-  ASSERT_EQ(0, req[2].msec);
+  ASSERT_EQ(0ms, req[2].msec);
 }
 
 TEST(ClientTest, parse2) {

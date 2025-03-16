@@ -85,7 +85,7 @@ static DriverOptions parseOptions(int argc, char **argv) {
     case OptionKind::TEST:
       options.open = false;
       options.testInput = result.getValue().data();
-      options.debounceTime = 5;
+      options.debounceTime = std::chrono::milliseconds{5};
       break;
     case OptionKind::TEST_OPEN:
       options.open = true;
@@ -109,7 +109,7 @@ static DriverOptions parseOptions(int argc, char **argv) {
       fprintf(stderr, "require valid number (0~): %s\n", debounceTime);
       exit(1);
     }
-    options.debounceTime = pair.value;
+    options.debounceTime = std::chrono::milliseconds{pair.value};
   }
   if (waitTime) {
     auto pair = convertToNum10<unsigned int>(waitTime);
@@ -117,7 +117,7 @@ static DriverOptions parseOptions(int argc, char **argv) {
       fprintf(stderr, "require valid number (0~): %s\n", waitTime);
       exit(1);
     }
-    options.waitTime = pair.value;
+    options.waitTime = std::chrono::milliseconds{pair.value};
   }
   return options;
 }

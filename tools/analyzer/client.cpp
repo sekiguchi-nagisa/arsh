@@ -68,8 +68,10 @@ static IntConversionResult<unsigned int> parseNum(const std::string &line) {
   };
 }
 
+using namespace std::chrono;
+
 static ClientInput loadWholeFile(const std::string &fileName, std::istream &input,
-                                 unsigned int waitTime) {
+                                 std::chrono::milliseconds waitTime) {
   ClientInput clientInput = {
       .fileName = getRealpath(fileName.c_str()).get(),
       .req = {},
@@ -91,7 +93,7 @@ static ClientInput loadWholeFile(const std::string &fileName, std::istream &inpu
     serializer(params);
 
     clientInput.req.emplace_back(
-        rpc::Request(id, "initialize", std::move(serializer).take()).toJSON(), 0);
+        rpc::Request(id, "initialize", std::move(serializer).take()).toJSON(), 0ms);
   }
 
   // send 'textDocument/didOpen' notification
@@ -105,8 +107,8 @@ static ClientInput loadWholeFile(const std::string &fileName, std::istream &inpu
     DidOpenTextDocumentParams params;
     std::string value = getRealpath(fileName.c_str()).get();
     auto uri = uri::URI::fromPath("file", std::move(value)).toString();
-    if (content.size() > static_cast<size_t>(1024 * 1024) && waitTime < 2000) {
-      waitTime = 2000;
+    if (content.size() > static_cast<size_t>(1024 * 1024) && waitTime < 2000ms) {
+      waitTime = 2000ms;
     }
 
     params.textDocument = TextDocumentItem{
@@ -124,16 +126,16 @@ static ClientInput loadWholeFile(const std::string &fileName, std::istream &inpu
   }
 
   // send 'shutdown' request
-  clientInput.req.emplace_back(rpc::Request(++id, "shutdown", JSON()).toJSON(), 10);
+  clientInput.req.emplace_back(rpc::Request(++id, "shutdown", JSON()).toJSON(), 10ms);
 
   // send 'exit' notification
-  clientInput.req.emplace_back(rpc::Request("exit", JSON()).toJSON(), 10);
+  clientInput.req.emplace_back(rpc::Request("exit", JSON()).toJSON(), 10ms);
 
   return clientInput;
 }
 
 Result<ClientInput, std::string> loadInputScript(const std::string &fileName, bool open,
-                                                 unsigned int waitTime) {
+                                                 std::chrono::milliseconds waitTime) {
   std::ifstream input(fileName);
   if (!input) {
     std::string error = "cannot read: ";
@@ -167,7 +169,7 @@ Result<ClientInput, std::string> loadInputScript(const std::string &fileName, bo
         continue;
       }
       auto pair = parseNum(line);
-      unsigned int n = pair ? pair.value : 0;
+      auto n = pair ? milliseconds{pair.value} : 0ms;
       requests.emplace_back(std::move(ret).take(), n);
     } else {
       content += line;
@@ -179,7 +181,7 @@ Result<ClientInput, std::string> loadInputScript(const std::string &fileName, bo
     if (!ret) {
       return Err(std::move(ret).takeError());
     }
-    requests.emplace_back(std::move(ret).take(), 0);
+    requests.emplace_back(std::move(ret).take(), 0ms);
   }
   return Ok(ClientInput{.fileName = fileName, .req = std::move(requests), .directive = {}});
 }
@@ -224,8 +226,8 @@ void Client::run(const ClientInput &input) {
     if (!this->send(req.request)) {
       this->transport.getLogger()(LogLevel::FATAL, "request sending failed: `%s'", strerror(errno));
     }
-    if (req.msec > 0) {
-      std::this_thread::sleep_for(std::chrono::milliseconds(req.msec));
+    if (req.msec > 0ms) {
+      std::this_thread::sleep_for(req.msec);
     }
     int timeout = index == size - 1 ? 200 : 50;
     while (waitReply(this->transport.getInputFd(), timeout)) {

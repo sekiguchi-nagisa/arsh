@@ -29,9 +29,9 @@ namespace arsh::lsp {
 
 struct ClientRequest {
   JSON request;
-  unsigned int msec{0};
+  std::chrono::milliseconds msec{0};
 
-  ClientRequest(JSON &&j, unsigned int n) : request(std::move(j)), msec(n) {}
+  ClientRequest(JSON &&j, std::chrono::milliseconds n) : request(std::move(j)), msec(n) {}
 };
 
 struct ClientInput {
@@ -40,8 +40,9 @@ struct ClientInput {
   Optional<directive::Directive> directive;
 };
 
-Result<ClientInput, std::string> loadInputScript(const std::string &fileName, bool open = false,
-                                                 unsigned int waitTime = 10);
+Result<ClientInput, std::string>
+loadInputScript(const std::string &fileName, bool open = false,
+                std::chrono::milliseconds waitTime = std::chrono::milliseconds{10});
 
 struct ClientLogger : public LoggerBase {
   ClientLogger() : LoggerBase("ARSHD_CLIENT") {}
