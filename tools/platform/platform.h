@@ -24,10 +24,11 @@ namespace arsh::platform {
 #define EACH_PLATFORM_TYPE(OP)                                                                     \
   OP(UNKNOWN) /* unknown platform */                                                               \
   OP(LINUX)   /* linux */                                                                          \
-  OP(DARWIN)  /* MacOSX */                                                                         \
+  OP(DARWIN)  /* macOS */                                                                          \
   OP(CYGWIN)  /* Cygwin */                                                                         \
   OP(MSYS)    /* MSYS2 */                                                                          \
-  OP(WSL)     /* Windows Subsystem for Linux */
+  OP(WSL1)    /* Windows Subsystem for Linux 1 */                                                  \
+  OP(WSL2)    /* Windows Subsystem for Linux 2 */
 
 enum class PlatformType : unsigned char {
 #define GEN_ENUM(E) E,
@@ -35,14 +36,20 @@ enum class PlatformType : unsigned char {
 #undef GEN_ENUM
 };
 
-inline bool isLinux(PlatformType type) { return type == PlatformType::LINUX; }
+inline bool isLinux(const PlatformType type) {
+  return type == PlatformType::LINUX || type == PlatformType::WSL2;
+}
 
-inline bool isCygwinOrMsys(PlatformType type) {
+inline bool isCygwinOrMsys(const PlatformType type) {
   return type == PlatformType::CYGWIN || type == PlatformType::MSYS;
 }
 
-inline bool isWindows(PlatformType type) {
-  return type == PlatformType::WSL || isCygwinOrMsys(type);
+inline bool isFakeUnix(const PlatformType type) {
+  return type == PlatformType::WSL1 || isCygwinOrMsys(type);
+}
+
+inline bool isWindows(const PlatformType type) {
+  return type == PlatformType::WSL2 || isFakeUnix(type);
 }
 
 const char *toString(PlatformType c);
@@ -61,10 +68,11 @@ bool containPlatform(const std::string &text, PlatformType type);
 
 #define EACH_ARCH_TYPE(OP)                                                                         \
   OP(UNKNOWN, "unknown")                                                                           \
-  OP(X86_64, "x64|amd64|x86-64")                                                                   \
-  OP(X86, "i386|i486|i586|i686")                                                                   \
-  OP(ARM, "aarch32|a32")                                                                           \
-  OP(AARCH64, "arm64|a64")
+  OP(X86_64, "x86_64|x64|amd64|x86-64")                                                            \
+  OP(X86, "x86|i386|i486|i586|i686")                                                               \
+  OP(ARM, "arm|aarch32|a32")                                                                       \
+  OP(AARCH64, "aarch64|arm64|a64")                                                                 \
+  OP(EMSCRIPTEN, "emscripten")
 
 enum class ArchType : unsigned char {
 #define GEN_ENUM(E, S) E,

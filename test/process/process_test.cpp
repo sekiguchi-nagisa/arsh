@@ -158,7 +158,7 @@ TEST_F(ProcTest, pty4) {
   (void)r;
   fsync(handle.in());
   auto ret2 = handle.waitAndGetResult(false);
-  if (arsh::platform::isWindows(arsh::platform::platform())) {
+  if (arsh::platform::isFakeUnix(arsh::platform::platform())) {
     this->expect(ret2, SIGINT, WaitStatus::SIGNALED);
   } else {
     this->expect(ret2, SIGINT, WaitStatus::SIGNALED, "^C");

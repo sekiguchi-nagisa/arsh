@@ -39,16 +39,18 @@ const char *toString(PlatformType c) {
   return table[toUnderlying(c)];
 }
 
-static PlatformType detectImpl() {
+static PlatformType detectPlatform() {
   struct utsname name{};
   if (uname(&name) == -1) {
     return PlatformType::UNKNOWN;
   }
 
-  const StringRef buildOS = BUILD_OS;
+  constexpr StringRef buildOS = BUILD_OS;
   if (buildOS == "linux") {
-    if (reSearch("microsoft", name.release)) {
-      return PlatformType::WSL;
+    if (const StringRef release = name.release; release.contains("Microsoft")) {
+      return PlatformType::WSL1;
+    } else if (release.contains("microsoft-standard")) {
+      return PlatformType::WSL2;
     }
     return PlatformType::LINUX;
   } else if (buildOS == "darwin") {
@@ -62,7 +64,7 @@ static PlatformType detectImpl() {
 }
 
 PlatformType platform() {
-  static const auto p = detectImpl();
+  static const auto p = detectPlatform();
   return p;
 }
 
@@ -79,28 +81,32 @@ const char *toString(ArchType c) {
   return table[toUnderlying(c)];
 }
 
-static ArchType archImpl() {
-  constexpr ArchType types[] = {
-#define GEN_ENUM(E, S) ArchType::E,
+static constexpr ArchType detectArch() {
+  constexpr struct {
+    ArchType type;
+    std::string_view pattern;
+  } table[] = {
+#define GEN_ENUM(E, S) {ArchType::E, S},
       EACH_ARCH_TYPE(GEN_ENUM)
 #undef GEN_ENUM
   };
-  for (auto &type : types) {
-    if (containArch(BUILD_ARCH, type)) {
-      return type;
+  for (const auto &[t, p] : table) {
+    if (p.find(BUILD_ARCH) != std::string_view::npos) {
+      return t;
     }
   }
   return ArchType::UNKNOWN;
 }
 
 ArchType arch() {
-  static const auto a = archImpl();
+  static constexpr auto a = detectArch();
+  static_assert(a != ArchType::UNKNOWN);
   return a;
 }
 
 bool containArch(const std::string &text, ArchType type) {
   constexpr const char *table[] = {
-#define GEN_STR(E, S) #E "|" S,
+#define GEN_STR(E, S) S,
       EACH_ARCH_TYPE(GEN_STR)
 #undef GEN_STR
   };
