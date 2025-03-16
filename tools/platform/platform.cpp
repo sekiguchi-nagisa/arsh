@@ -82,17 +82,14 @@ const char *toString(ArchType c) {
 }
 
 static constexpr ArchType detectArch() {
-  constexpr struct {
-    ArchType type;
-    std::string_view pattern;
-  } table[] = {
+  constexpr std::pair<ArchType, std::string_view> table[] = {
 #define GEN_ENUM(E, S) {ArchType::E, S},
       EACH_ARCH_TYPE(GEN_ENUM)
 #undef GEN_ENUM
   };
-  for (const auto &[t, p] : table) {
-    if (p.find(BUILD_ARCH) != std::string_view::npos) {
-      return t;
+  for (const auto &e : table) {
+    if (e.second.find(BUILD_ARCH) != std::string_view::npos) {
+      return e.first;
     }
   }
   return ArchType::UNKNOWN;
