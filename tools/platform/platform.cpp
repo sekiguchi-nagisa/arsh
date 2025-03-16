@@ -83,7 +83,7 @@ const char *toString(ArchType c) {
 
 static constexpr ArchType detectArch() {
   constexpr std::pair<ArchType, std::string_view> table[] = {
-#define GEN_ENUM(E, S) {ArchType::E, S},
+#define GEN_ENUM(E, S) {ArchType::ARCH_##E, S},
       EACH_ARCH_TYPE(GEN_ENUM)
 #undef GEN_ENUM
   };
@@ -92,12 +92,12 @@ static constexpr ArchType detectArch() {
       return e.first;
     }
   }
-  return ArchType::UNKNOWN;
+  return ArchType::ARCH_UNKNOWN;
 }
 
 ArchType arch() {
   static constexpr auto a = detectArch();
-  static_assert(a != ArchType::UNKNOWN);
+  static_assert(a != ArchType::ARCH_UNKNOWN);
   return a;
 }
 

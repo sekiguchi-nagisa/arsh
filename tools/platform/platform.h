@@ -75,7 +75,7 @@ bool containPlatform(const std::string &text, PlatformType type);
   OP(EMSCRIPTEN, "emscripten")
 
 enum class ArchType : unsigned char {
-#define GEN_ENUM(E, S) E,
+#define GEN_ENUM(E, S) ARCH_##E,
   EACH_ARCH_TYPE(GEN_ENUM)
 #undef GEN_ENUM
 };
