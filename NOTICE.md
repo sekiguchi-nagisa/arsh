@@ -40,7 +40,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ## external/rapidhash/rapidhash.h
 
-This file is distributed under the BSD 2-Clause License (https://www.opensource.org/licenses/bsd-license.php).
+This file is distributed under the BSD 2-Clause
+License (https://www.opensource.org/licenses/bsd-license.php).
 This is copied from [Nicoshev/rapidhash](https://github.com/Nicoshev/rapidhash)
 
 ### external/dragonbox/simple_dragonbox.h
@@ -48,6 +49,12 @@ This is copied from [Nicoshev/rapidhash](https://github.com/Nicoshev/rapidhash)
 This file is distributed under the Apache License Version 2.0 with LLVM
 Exceptions (https://llvm.org/LICENSE.txt).
 This is copied from [jk-jeon/dragonbox](https://github.com/jk-jeon/dragonbox)
+
+## external/xxHash/xxhash.h
+
+This file is distributed under the BSD 2-Clause
+License (https://www.opensource.org/licenses/bsd-license.php).
+This is copied from [Cyan4973/xxHash](https://github.com/Cyan4973/xxHash)
 
 ## cmake/modules/DownloadProject.cmake, cmake/modules/DownloadProject.CMakeLists.cmake.in
 

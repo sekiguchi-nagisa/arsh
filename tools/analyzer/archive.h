@@ -80,6 +80,7 @@ class ModuleArchive {
 private:
   const ModId modId{0};
   const ModAttr attr{};
+  uint64_t hash{0};
   std::vector<Archive> handles;
   std::vector<std::pair<ImportedModKind, ModuleArchivePtr>> imported;
 
@@ -87,18 +88,25 @@ public:
   ModuleArchive() = default;
 
   ModuleArchive(ModId modId, ModAttr attr, std::vector<Archive> &&handles,
-                std::vector<std::pair<ImportedModKind, ModuleArchivePtr>> imported)
-      : modId(modId), attr(attr), handles(std::move(handles)), imported(std::move(imported)) {}
+                std::vector<std::pair<ImportedModKind, ModuleArchivePtr>> imported);
 
   ModId getModId() const { return this->modId; }
 
   ModAttr getModAttr() const { return this->attr; }
+
+  uint64_t getHash() const { return this->hash; }
 
   const auto &getHandles() const { return this->handles; }
 
   const auto &getImported() const { return this->imported; }
 
   bool isEmpty() const { return toUnderlying(this->getModId()) == 0; }
+
+  bool equalsDigest(const ModuleArchive &other) const {
+    return this->getHash() == other.getHash() &&
+           this->getHandles().size() == other.getHandles().size() &&
+           this->getImported().size() == other.getImported().size();
+  }
 
   std::vector<ModuleArchivePtr> getDepsByTopologicalOrder() const;
 

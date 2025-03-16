@@ -17,6 +17,7 @@
 #include <type_pool.h>
 
 #include "archive.h"
+#include "hasher.h"
 
 namespace arsh::lsp {
 
@@ -402,6 +403,34 @@ std::pair<ArgEntry, bool> Unarchiver::unpackArgEntry() {
   }
   return {std::move(entry), true};
 }
+// ###########################
+// ##     ModuleArchive     ##
+// ###########################
+
+ModuleArchive::ModuleArchive(ModId modId, ModAttr attr, std::vector<Archive> &&handles,
+                             std::vector<std::pair<ImportedModKind, ModuleArchivePtr>> imported)
+    : modId(modId), attr(attr), handles(std::move(handles)), imported(std::move(imported)) {
+  // compute hash
+  XXHasher hasher(42);
+  for (auto &e : this->handles) {
+    hasher.update(e.getData().c_str(), e.getData().size());
+  }
+
+  union ModData {
+    struct {
+      ImportedModKind k;
+      ModId id;
+    } mod;
+    char buf[4];
+  };
+  for (const auto &[k, p] : this->imported) {
+    ModData data{}; // force init
+    data.mod.k = k;
+    data.mod.id = p->getModId();
+    hasher.update(data.buf, std::size(data.buf));
+  }
+  this->hash = std::move(hasher).digest();
+}
 
 Optional<std::unordered_map<std::string, HandlePtr>> ModuleArchive::unpack(TypePool &pool) const {
   std::unordered_map<std::string, HandlePtr> handleMap;
@@ -569,6 +598,9 @@ ModuleArchivePtr buildArchive(Archiver &&archiver, const ModType &modType,
     assert(archive);
     imported.emplace_back(e.kind(), std::move(archive));
   }
+  std::sort(imported.begin(), imported.end(), [](const auto &x, const auto &y) {
+    return x.second->getModId() < y.second->getModId();
+  });
 
   auto archive = std::make_shared<ModuleArchive>(modType.getModId(), modType.getAttr(),
                                                  std::move(handleArchives), std::move(imported));
