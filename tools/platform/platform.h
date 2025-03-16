@@ -22,13 +22,12 @@ namespace arsh::platform {
 // for platform detection
 
 #define EACH_PLATFORM_TYPE(OP)                                                                     \
-  OP(UNKNOWN)   /* unknown platform */                                                             \
-  OP(LINUX)     /* linux (not container) */                                                        \
-  OP(CONTAINER) /* linux container (docker/LXC) */                                                 \
-  OP(DARWIN)    /* MacOSX */                                                                       \
-  OP(CYGWIN)    /* Cygwin */                                                                       \
-  OP(MSYS)      /* MSYS2 */                                                                        \
-  OP(WSL)       /* Windows Subsystem for Linux */
+  OP(UNKNOWN) /* unknown platform */                                                               \
+  OP(LINUX)   /* linux */                                                                          \
+  OP(DARWIN)  /* MacOSX */                                                                         \
+  OP(CYGWIN)  /* Cygwin */                                                                         \
+  OP(MSYS)    /* MSYS2 */                                                                          \
+  OP(WSL)     /* Windows Subsystem for Linux */
 
 enum class PlatformType : unsigned char {
 #define GEN_ENUM(E) E,
@@ -36,9 +35,7 @@ enum class PlatformType : unsigned char {
 #undef GEN_ENUM
 };
 
-inline bool isLinux(PlatformType type) {
-  return type == PlatformType::LINUX || type == PlatformType::CONTAINER;
-}
+inline bool isLinux(PlatformType type) { return type == PlatformType::LINUX; }
 
 inline bool isCygwinOrMsys(PlatformType type) {
   return type == PlatformType::CYGWIN || type == PlatformType::MSYS;

@@ -39,21 +39,8 @@ const char *toString(PlatformType c) {
   return table[toUnderlying(c)];
 }
 
-static bool detectContainer() {
-  std::ifstream stream("/proc/self/cgroup");
-  if (!stream) {
-    return false;
-  }
-  for (std::string line; std::getline(stream, line);) {
-    if (reSearch("docker|lxc|containerd", line)) {
-      return true;
-    }
-  }
-  return false;
-}
-
 static PlatformType detectImpl() {
-  struct utsname name {};
+  struct utsname name{};
   if (uname(&name) == -1) {
     return PlatformType::UNKNOWN;
   }
@@ -62,9 +49,6 @@ static PlatformType detectImpl() {
   if (buildOS == "linux") {
     if (reSearch("microsoft", name.release)) {
       return PlatformType::WSL;
-    }
-    if (detectContainer()) {
-      return PlatformType::CONTAINER;
     }
     return PlatformType::LINUX;
   } else if (buildOS == "darwin") {
