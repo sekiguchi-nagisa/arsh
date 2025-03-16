@@ -69,7 +69,7 @@ void Archiver::add(const Type &type) {
       this->writeT(ArchiveType::OPTION);
       this->add(cast<OptionType>(type).getElementType());
       break;
-    case TypeKind::Error: // for user-defined error type
+    case TypeKind::DerivedError: // for user-defined error type
       if (auto iter = this->udTypeSet.find(type.typeId());
           iter != this->udTypeSet.end()) { // already found, write type name
         this->writeT(ArchiveType::CACHED);

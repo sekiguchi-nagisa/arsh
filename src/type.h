@@ -100,7 +100,7 @@ enum class TYPE : unsigned int {
   OP(Map)                                                                                          \
   OP(Tuple)                                                                                        \
   OP(Option)                                                                                       \
-  OP(Error)                                                                                        \
+  OP(DerivedError)                                                                                 \
   OP(Record)                                                                                       \
   OP(CLIRecord)                                                                                    \
   OP(Mod)
@@ -202,6 +202,8 @@ public:
   bool isOptionType() const { return this->typeKind() == TypeKind::Option; }
 
   bool isModType() const { return this->typeKind() == TypeKind::Mod; }
+
+  bool isDerivedErrorType() const { return this->typeKind() == TypeKind::DerivedError; }
 
   bool isCLIRecordType() const { return this->typeKind() == TypeKind::CLIRecord; }
 
@@ -614,12 +616,12 @@ public:
   static bool classof(const Type *type) { return type->isOptionType(); }
 };
 
-class ErrorType : public Type {
+class DerivedErrorType : public Type {
 public:
-  ErrorType(unsigned int id, StringRef ref, const Type &superType)
-      : Type(TypeKind::Error, id, ref, &superType) {}
+  DerivedErrorType(unsigned int id, StringRef ref, const Type &superType)
+      : Type(TypeKind::DerivedError, id, ref, &superType) {}
 
-  static bool classof(const Type *type) { return type->typeKind() == TypeKind::Error; }
+  static bool classof(const Type *type) { return type->isDerivedErrorType(); }
 };
 
 class RecordType : public Type {

@@ -193,7 +193,7 @@ const Symbol *IndexBuilder::addCmd(const NameInfo &info, const HandlePtr &hd) {
 }
 
 void IndexBuilder::addTypeInheritance(const Type &type) {
-  if (type.isRecordOrDerived() || type.typeKind() == TypeKind::Error || type.is(TYPE::Error)) {
+  if (type.isRecordOrDerived() || type.isDerivedErrorType() || type.is(TYPE::Error)) {
     auto *baseType = type.getSuperType();
     if (!baseType || baseType->is(TYPE::Any)) {
       return;
@@ -1105,15 +1105,15 @@ void SymbolIndexer::addBuiltinSymbols() {
     if (type->isMapType() && !mapType) {
       mapType = type;
     }
-    if (type->typeKind() != TypeKind::Builtin && type->typeKind() != TypeKind::Error) {
+    if (type->typeKind() != TypeKind::Builtin && !type->isDerivedErrorType()) {
       continue;
     }
     if (type->isUnresolved()) {
       continue;
     }
     NameInfo nameInfo(tokenGen.next(), type->getNameRef().toString());
-    if (type->is(TYPE::Error) || isa<ErrorType>(type)) {
-      if (isa<ErrorType>(type)) {
+    if (type->is(TYPE::Error) || isa<DerivedErrorType>(type)) {
+      if (isa<DerivedErrorType>(type)) {
         auto &baseType = *type->getSuperType();
         this->builder().addDecl(nameInfo, baseType, nameInfo.getToken(),
                                 DeclSymbol::Kind::ERROR_TYPE_DEF);

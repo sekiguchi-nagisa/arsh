@@ -95,22 +95,22 @@ TypePool::TypePool() {
   }
 
   // init some error type
-  this->initErrorType(TYPE::ArithmeticError, "ArithmeticError");
-  this->initErrorType(TYPE::OutOfRangeError, "OutOfRangeError");
-  this->initErrorType(TYPE::KeyNotFoundError, "KeyNotFoundError");
-  this->initErrorType(TYPE::TypeCastError, "TypeCastError");
-  this->initErrorType(TYPE::SystemError, "SystemError");
-  this->initErrorType(TYPE::StackOverflowError, "StackOverflowError");
-  this->initErrorType(TYPE::RegexSyntaxError, "RegexSyntaxError");
-  this->initErrorType(TYPE::RegexMatchError, "RegexMatchError");
-  this->initErrorType(TYPE::TildeError, "TildeError");
-  this->initErrorType(TYPE::GlobError, "GlobError");
-  this->initErrorType(TYPE::UnwrapError, "UnwrapError");
-  this->initErrorType(TYPE::IllegalAccessError, "IllegalAccessError");
-  this->initErrorType(TYPE::InvalidOperationError, "InvalidOperationError");
-  this->initErrorType(TYPE::ExecError, "ExecError");
-  this->initErrorType(TYPE::CLIError, "CLIError");
-  this->initErrorType(TYPE::ArgumentError, "ArgumentError");
+  this->initDerivedErrorType(TYPE::ArithmeticError, "ArithmeticError");
+  this->initDerivedErrorType(TYPE::OutOfRangeError, "OutOfRangeError");
+  this->initDerivedErrorType(TYPE::KeyNotFoundError, "KeyNotFoundError");
+  this->initDerivedErrorType(TYPE::TypeCastError, "TypeCastError");
+  this->initDerivedErrorType(TYPE::SystemError, "SystemError");
+  this->initDerivedErrorType(TYPE::StackOverflowError, "StackOverflowError");
+  this->initDerivedErrorType(TYPE::RegexSyntaxError, "RegexSyntaxError");
+  this->initDerivedErrorType(TYPE::RegexMatchError, "RegexMatchError");
+  this->initDerivedErrorType(TYPE::TildeError, "TildeError");
+  this->initDerivedErrorType(TYPE::GlobError, "GlobError");
+  this->initDerivedErrorType(TYPE::UnwrapError, "UnwrapError");
+  this->initDerivedErrorType(TYPE::IllegalAccessError, "IllegalAccessError");
+  this->initDerivedErrorType(TYPE::InvalidOperationError, "InvalidOperationError");
+  this->initDerivedErrorType(TYPE::ExecError, "ExecError");
+  this->initDerivedErrorType(TYPE::CLIError, "CLIError");
+  this->initDerivedErrorType(TYPE::ArgumentError, "ArgumentError");
 
   this->initBuiltinType(TYPE::ShellExit_, "ShellExit", TYPE::Throwable, info_Dummy());
   this->initBuiltinType(TYPE::AssertFail_, "AssertionFailed", TYPE::Throwable, info_Dummy());
@@ -309,7 +309,7 @@ TypeOrError TypePool::createErrorType(const std::string &typeName, const Type &s
     RAISE_TL_ERROR(InvalidElement, superType.getName());
   }
   std::string name = toQualifiedTypeName(typeName, belongedModId);
-  auto *type = this->newType<ErrorType>(name, superType);
+  auto *type = this->newType<DerivedErrorType>(name, superType);
   if (type) {
     return Ok(type);
   } else {
@@ -581,7 +581,7 @@ const MethodHandle *TypePool::lookupMethod(const Type &recvType, const std::stri
       }
       return iter->second.handle();
     }
-    if (!type->isRecordOrDerived() && type->typeKind() != TypeKind::Error && isInit) {
+    if (!type->isRecordOrDerived() && !type->isDerivedErrorType() && isInit) {
       break;
     }
   }
@@ -726,8 +726,8 @@ void TypePool::initTypeTemplate(TypeTemplate &temp, TypeTemplate::Kind kind,
   this->templateMap.emplace(key, &temp);
 }
 
-void TypePool::initErrorType(TYPE t, const char *typeName) {
-  auto *type = this->newType<ErrorType>(typeName, this->get(TYPE::Error));
+void TypePool::initDerivedErrorType(TYPE t, const char *typeName) {
+  auto *type = this->newType<DerivedErrorType>(typeName, this->get(TYPE::Error));
   assert(type);
   (void)type;
   (void)t;

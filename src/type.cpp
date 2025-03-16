@@ -163,7 +163,7 @@ bool Type::isSameOrBaseTypeOf(const Type &targetType) const {
 }
 
 ModId Type::resolveBelongedModId() const {
-  if (!this->isRecordOrDerived() && this->typeKind() != TypeKind::Error) {
+  if (!this->isRecordOrDerived() && !this->isDerivedErrorType()) {
     return BUILTIN_MOD_ID; // fast path
   }
   if (auto ref = this->getNameRef(); isQualifiedTypeName(this->getNameRef())) {
