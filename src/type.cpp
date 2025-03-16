@@ -166,7 +166,7 @@ ModId Type::resolveBelongedModId() const {
   if (!this->isRecordOrDerived() && !this->isDerivedErrorType()) {
     return BUILTIN_MOD_ID; // fast path
   }
-  if (auto ref = this->getNameRef(); isQualifiedTypeName(this->getNameRef())) {
+  if (const auto ref = this->getNameRef(); isQualifiedTypeName(ref)) {
     auto index = ref.find('.');
     assert(index != StringRef::npos);
     auto modTypeName = ref.slice(0, index);

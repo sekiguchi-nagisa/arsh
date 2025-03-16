@@ -133,14 +133,13 @@ void Archiver::add(const Type &type) {
   }
 }
 
-void Archiver::add(const std::string &name, const Handle &handle) {
+void Archiver::add(StringRef name, const Handle &handle) {
   assert(!handle.is(HandleKind::NATIVE));
-  StringRef ref = name;
   if (handle.isMethodHandle()) {
-    assert(isMethodFullName(ref));
-    ref = trimMethodFullNameSuffix(ref);
+    assert(isMethodFullName(name));
+    name = trimMethodFullNameSuffix(name);
   }
-  this->writeStr(ref);
+  this->writeStr(name);
   this->write32(handle.getIndex());
   this->writeEnum(handle.getKind());
   this->writeEnum(handle.attr());
@@ -513,15 +512,53 @@ const ModType *loadFromArchive(TypePool &pool, const ModuleArchive &archive) {
 
 ModuleArchivePtr buildArchive(Archiver &&archiver, const ModType &modType,
                               ModuleArchives &archives) {
+  // collect handles
+  std::vector<std::pair<StringRef, HandlePtr>> udErrors; // for user-defined error type definition
+  std::vector<std::pair<StringRef, HandlePtr>> udTypes;  // for user-defined record type definition
+  std::vector<std::pair<StringRef, HandlePtr>> handles;  // other handles
+  for (const auto &[name, handle] : modType.getHandleMap()) {
+    if (handle->isMethodHandle() && cast<MethodHandle>(*handle).isConstructor()) { // record
+      udTypes.emplace_back(name, handle);
+      continue;
+    }
+    if (auto &type = archiver.getPool().get(handle->getTypeId());
+        handle->is(HandleKind::TYPE_ALIAS) && type.isDerivedErrorType()) {
+      if (const auto modId = type.resolveBelongedModId(); !isBuiltinMod(modId)) {
+        if (toQualifiedTypeName(name, modId) == type.getNameRef()) { // user-defined error def
+          udErrors.emplace_back(name, handle);
+          continue;
+        }
+      }
+    }
+    handles.emplace_back(name, handle);
+  }
+
+  // sort by declaration order
+  std::sort(udErrors.begin(), udErrors.end(), [](const auto &x, const auto &y) {
+    return x.second->getTypeId() < y.second->getTypeId();
+  });
+  std::sort(udTypes.begin(), udTypes.end(), [](const auto &x, const auto &y) {
+    return x.second->getTypeId() < y.second->getTypeId();
+  });
+  std::sort(handles.begin(), handles.end(), [](const auto &x, const auto &y) {
+    return x.first < y.first; // sort by name
+  });
+
   // pack handles
-  std::vector<Archive> handles;
-  for (auto &e : modType.getHandleMap()) {
-    handles.push_back(archiver.pack(e.first, *e.second));
+  std::vector<Archive> handleArchives;
+  for (auto &[name, handle] : udErrors) {
+    handleArchives.push_back(archiver.pack(name, *handle));
+  }
+  for (auto &[name, handle] : udTypes) {
+    handleArchives.push_back(archiver.pack(name, *handle));
+  }
+  for (auto &[name, handle] : handles) {
+    handleArchives.push_back(archiver.pack(name, *handle));
   }
 
   // resolve imported modules
   std::vector<std::pair<ImportedModKind, ModuleArchivePtr>> imported;
-  unsigned int size = modType.getChildSize();
+  const unsigned int size = modType.getChildSize();
   for (unsigned int i = 0; i < size; i++) {
     auto e = modType.getChildAt(i);
     auto &type = cast<ModType>(archiver.getPool().get(e.typeId()));
@@ -534,7 +571,7 @@ ModuleArchivePtr buildArchive(Archiver &&archiver, const ModType &modType,
   }
 
   auto archive = std::make_shared<ModuleArchive>(modType.getModId(), modType.getAttr(),
-                                                 std::move(handles), std::move(imported));
+                                                 std::move(handleArchives), std::move(imported));
   archives.add(archive);
   return archive;
 }

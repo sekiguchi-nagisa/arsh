@@ -172,7 +172,7 @@ private:
 public:
   Archiver(const TypePool &pool, unsigned int idCount) : pool(pool), builtinTypeIdCount(idCount) {}
 
-  Archive pack(const std::string &name, const Handle &handle) {
+  Archive pack(StringRef name, const Handle &handle) {
     this->data = "";
     this->add(name, handle);
     std::string ret;
@@ -227,7 +227,7 @@ private:
 
   void add(const Type &type);
 
-  void add(const std::string &name, const Handle &handle);
+  void add(StringRef name, const Handle &handle);
 
   void add(const ArgEntry &entry);
 };
