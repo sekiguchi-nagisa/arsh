@@ -81,23 +81,22 @@ const char *toString(ArchType c) {
   return table[toUnderlying(c)];
 }
 
-static constexpr ArchType detectArch() {
-  constexpr std::pair<ArchType, std::string_view> table[] = {
+static ArchType detectArch() {
+  constexpr std::pair<ArchType, StringRef> table[] = {
 #define GEN_ENUM(E, S) {ArchType::ARCH_##E, S},
       EACH_ARCH_TYPE(GEN_ENUM)
 #undef GEN_ENUM
   };
-  for (const auto &e : table) {
-    if (e.second.find(BUILD_ARCH) != std::string_view::npos) {
-      return e.first;
+  for (const auto &[t, p] : table) {
+    if (p.contains(BUILD_ARCH)) {
+      return t;
     }
   }
   return ArchType::ARCH_UNKNOWN;
 }
 
 ArchType arch() {
-  static constexpr auto a = detectArch();
-  static_assert(a != ArchType::ARCH_UNKNOWN);
+  static const auto a = detectArch();
   return a;
 }
 
