@@ -408,10 +408,11 @@ std::pair<ArgEntry, bool> Unarchiver::unpackArgEntry() {
 // ###########################
 
 ModuleArchive::ModuleArchive(ModId modId, ModAttr attr, std::vector<Archive> &&handles,
-                             std::vector<std::pair<ImportedModKind, ModuleArchivePtr>> imported)
+                             std::vector<std::pair<ImportedModKind, ModuleArchivePtr>> &&imported,
+                             uint64_t seed)
     : modId(modId), attr(attr), handles(std::move(handles)), imported(std::move(imported)) {
   // compute hash
-  XXHasher hasher(42);
+  XXHasher hasher(seed);
   for (auto &e : this->handles) {
     hasher.update(e.getData().c_str(), e.getData().size());
   }
@@ -603,7 +604,8 @@ ModuleArchivePtr buildArchive(Archiver &&archiver, const ModType &modType,
   });
 
   auto archive = std::make_shared<ModuleArchive>(modType.getModId(), modType.getAttr(),
-                                                 std::move(handleArchives), std::move(imported));
+                                                 std::move(handleArchives), std::move(imported),
+                                                 archives.getSeed());
   archives.add(archive);
   return archive;
 }

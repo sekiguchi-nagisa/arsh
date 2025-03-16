@@ -34,9 +34,9 @@ public:
     SymbolIndexes indexes;
     std::unordered_set<ModId> modifiedSrcIds;
 
-    static State create(const std::string &testDir) {
+    static State create(const std::string &testDir, uint64_t seed) {
       return {.srcMan = std::make_shared<SourceManager>(testDir),
-              .archives = {},
+              .archives = ModuleArchives(seed),
               .indexes = {},
               .modifiedSrcIds = {}};
     }
@@ -100,7 +100,7 @@ private:
 
 public:
   AnalyzerWorker(std::reference_wrapper<LoggerBase> logger, DiagnosticCallback &&callback,
-                 bool diagSupportVersion, const std::string &testDir,
+                 bool diagSupportVersion, const std::string &testDir, uint64_t seed,
                  std::chrono::milliseconds debounceTime);
 
   ~AnalyzerWorker();

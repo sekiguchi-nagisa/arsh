@@ -39,9 +39,10 @@ namespace arsh::lsp {
 
 AnalyzerWorker::AnalyzerWorker(std::reference_wrapper<LoggerBase> logger,
                                DiagnosticCallback &&callback, bool diagSupportVersion,
-                               const std::string &testDir, std::chrono::milliseconds debounceTime)
+                               const std::string &testDir, uint64_t seed,
+                               std::chrono::milliseconds debounceTime)
     : logger(logger), diagSupportVersion(diagSupportVersion), debounceTime(debounceTime),
-      diagnosticCallback(std::move(callback)), state(State::create(testDir)) {
+      diagnosticCallback(std::move(callback)), state(State::create(testDir, seed)) {
   this->workerThread = std::thread([this] {
     while (!this->stop) {
       std::unique_ptr<Task> task;
@@ -88,7 +89,8 @@ AnalyzerWorker::AnalyzerWorker(std::reference_wrapper<LoggerBase> logger,
         // merge result
         WRITER_LOCK(lock);
         task->state.mergeSources(this->state);
-        this->state = task->state;
+        this->state.~State();
+        new (&this->state) State(task->state);
         this->state.modifiedSrcIds.clear();
         if (!task->state.modifiedSrcIds.empty()) {
           this->status = Status::RUNNING;

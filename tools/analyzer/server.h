@@ -55,6 +55,7 @@ private:
   SingleBackgroundWorker rpcHandlerWorker;
   const std::string testDir;
   std::unique_ptr<AnalyzerWorker> worker;
+  const uint64_t seed;
   const unsigned int defaultDebounceTime;
   bool init{false};
   bool willExit{false};
@@ -71,7 +72,7 @@ public:
   LSPServer(LoggerBase &logger, int inFd, int outFd, unsigned int time, const std::string &testDir,
             uint64_t seed = 42)
       : Handler(logger, seed), idGenerator(seed), transport(logger, inFd, outFd),
-        rpcHandlerWorker(16), testDir(testDir), defaultDebounceTime(time) {
+        rpcHandlerWorker(16), testDir(testDir), seed(seed), defaultDebounceTime(time) {
     this->bindAll();
   }
 

@@ -370,7 +370,7 @@ Reply<InitializeResult> LSPServer::initialize(const InitializeParams &params) {
       this->logger,
       [this](PublishDiagnosticsParams &&p) { this->publishDiagnostics(std::move(p)); },
       hasFlag(this->supportedCapability, SupportedCapability::DIAG_VERSION), this->testDir,
-      std::chrono::milliseconds{this->defaultDebounceTime});
+      this->seed, std::chrono::milliseconds{this->defaultDebounceTime});
 
   // generate server capability
   InitializeResult ret;

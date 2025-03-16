@@ -88,7 +88,12 @@ public:
   ModuleArchive() = default;
 
   ModuleArchive(ModId modId, ModAttr attr, std::vector<Archive> &&handles,
-                std::vector<std::pair<ImportedModKind, ModuleArchivePtr>> imported);
+                std::vector<std::pair<ImportedModKind, ModuleArchivePtr>> &&imported)
+      : ModuleArchive(modId, attr, std::move(handles), std::move(imported), 42) {}
+
+  ModuleArchive(ModId modId, ModAttr attr, std::vector<Archive> &&handles,
+                std::vector<std::pair<ImportedModKind, ModuleArchivePtr>> &&imported,
+                uint64_t seed);
 
   ModId getModId() const { return this->modId; }
 
@@ -115,6 +120,7 @@ public:
 
 class ModuleArchives {
 private:
+  const uint64_t seed{0};
   std::vector<std::pair<ModId, ModuleArchivePtr>> values;
 
   using iterator_type = std::vector<std::pair<ModId, ModuleArchivePtr>>::iterator;
@@ -122,6 +128,12 @@ private:
   static const ModuleArchivePtr EMPTY_ARCHIVE;
 
 public:
+  ModuleArchives() = default;
+
+  explicit ModuleArchives(uint64_t seed) : seed(seed) {}
+
+  uint64_t getSeed() const { return this->seed; }
+
   /**
    *
    * @param modId
