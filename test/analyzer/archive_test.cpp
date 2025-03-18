@@ -2,6 +2,7 @@
 #include "gtest/gtest.h"
 
 #include "../arg_parser_helper.hpp"
+#include "index_test.hpp"
 
 #include "analyzer.h"
 #include "archive.h"
@@ -1065,6 +1066,116 @@ TEST(ArchivesTest, revert2) {
   ASSERT_FALSE(archives.find(t3->getModId()));
   ASSERT_FALSE(archives.find(t4->getModId()));
   ASSERT_FALSE(archives.find(t5->getModId()));
+}
+
+class ArchiveHashTest : public IndexTest {
+public:
+  void doAnalyze(const char *content, ModId &modId) {
+    unsigned short tmp;
+    IndexTest::doAnalyze(content, tmp);
+    modId = ModId{tmp};
+  }
+
+  void updateSource(ModId modId, const char *newContent) {
+    auto src = this->srcMan.findById(modId);
+    src = this->srcMan.update(src->getPath(), src->getVersion() + 1, newContent);
+    ASSERT_TRUE(src);
+    ASSERT_TRUE(this->indexes.remove(modId));
+    ASSERT_TRUE(this->archives.removeIfUnused(modId));
+
+    // rebuild
+    auto ret = this->analyze(src);
+    ASSERT_TRUE(ret);
+    ASSERT_EQ(ret->getModId(), modId);
+    ASSERT_TRUE(this->indexes.find(modId));
+  }
+};
+
+TEST_F(ArchiveHashTest, base) {
+  ModId modId;
+  const char *content = R"E(
+var AAA = 2345
+
+
+  typedef Interval(aaa:Int, bbb:Int) {
+  let begin = $aaa
+  let end = $bbb
+}
+new Interval($bbb: 34, $aaa: 2)
+)E";
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId));
+
+  auto archive1 = this->archives.find(modId);
+  ASSERT_TRUE(archive1);
+
+  // remove spaces
+  content = R"E(
+var AAA = 2345
+typedef Interval(aaa:Int, bbb:Int) {
+  let begin = $aaa
+  let end = $bbb
+}
+new Interval($bbb: 34, $aaa: 2)
+)E";
+  ASSERT_NO_FATAL_FAILURE(this->updateSource(modId, content));
+  auto archive2 = this->archives.find(modId);
+  ASSERT_TRUE(archive2);
+  ASSERT_EQ(archive1->getModId(), archive2->getModId());
+  ASSERT_EQ(archive1->getHash(), archive2->getHash());
+  ASSERT_TRUE(archive1->equalsDigest(*archive2));
+
+  // change remain expression
+  content = R"E(
+var AAA = 2345
+typedef Interval(aaa:Int, bbb:Int) {
+  let begin = $aaa
+  let end = $bbb
+}
+new Interval($bbb: 34, $aaa: 2).begin + 23455432 + [$false].size()
+ls -la
+)E";
+  ASSERT_NO_FATAL_FAILURE(this->updateSource(modId, content));
+  archive2 = this->archives.find(modId);
+  ASSERT_TRUE(archive2);
+  ASSERT_EQ(archive1->getModId(), archive2->getModId());
+  ASSERT_EQ(archive1->getHash(), archive2->getHash());
+  ASSERT_TRUE(archive1->equalsDigest(*archive2));
+
+  // add private (hash is modified due to global symbol addition)
+  content = R"E(
+  var AAA = 2345
+  typedef Interval(aaa:Int, bbb:Int) {
+    let begin = $aaa
+    let end = $bbb
+  }
+
+  function _sum(a: Int, bb: Int): Int {
+    return [$a + $bb][0]
+  }
+
+  )E";
+  ASSERT_NO_FATAL_FAILURE(this->updateSource(modId, content));
+  archive2 = this->archives.find(modId);
+  ASSERT_TRUE(archive2);
+  ASSERT_EQ(archive1->getModId(), archive2->getModId());
+  ASSERT_NE(archive1->getHash(), archive2->getHash());
+  ASSERT_FALSE(archive1->equalsDigest(*archive2));
+
+  //   // reorder symbol (global)
+  //   content = R"E(
+  //   typedef Interval(aaa:Int, bbb:Int) {
+  //     let begin = $aaa
+  //     let end = $bbb
+  //   }
+  //
+  //   var AAA = 2345
+  //   )E";
+  //   ASSERT_NO_FATAL_FAILURE(this->updateSource(modId, content));
+  //   archive2 = this->archives.find(modId);
+  //   ASSERT_TRUE(archive2);
+  //   ASSERT_EQ(archive1->getModId(), archive2->getModId());
+  //   ASSERT_EQ(archive1->getHash(), archive2->getHash());
+  //   ASSERT_TRUE(archive1->equalsDigest(*archive2));
 }
 
 int main(int argc, char **argv) {
