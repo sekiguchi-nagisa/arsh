@@ -42,6 +42,7 @@ private:
   std::shared_ptr<const std::string> path;
   std::string content;
   LineNumTable lineNumTable;
+  uint64_t hash{0};
   ModId srcId{0};
   SourceAttr attr{};
   int version{0};
@@ -49,11 +50,12 @@ private:
 public:
   Source() = default;
 
-  Source(std::shared_ptr<const std::string> path, ModId srcId, std::string &&content, int version,
-         SourceAttr attr);
+  Source(uint64_t seed, std::shared_ptr<const std::string> path, ModId srcId, std::string &&content,
+         int version, SourceAttr attr);
 
-  Source(const char *path, ModId srcId, std::string &&content, int version, SourceAttr attr)
-      : Source(std::make_shared<const std::string>(path), srcId, std::move(content), version,
+  Source(uint64_t seed, const char *path, ModId srcId, std::string &&content, int version,
+         SourceAttr attr)
+      : Source(seed, std::make_shared<const std::string>(path), srcId, std::move(content), version,
                attr) {}
 
   const std::string &getPath() const { return *this->path; }
@@ -64,6 +66,8 @@ public:
    * always ends with newline
    */
   const std::string &getContent() const { return this->content; }
+
+  uint64_t getHash() const { return this->hash; }
 
   Token stripAppliedNameSigil(Token token) const;
 
@@ -92,8 +96,8 @@ public:
 
   bool has(SourceAttr a) const { return hasFlag(this->getAttr(), a); }
 
-  std::shared_ptr<Source> copyAndUpdate(int v, std::string &&c) const {
-    return std::make_shared<Source>(this->path, this->srcId, std::move(c), v, this->attr);
+  std::shared_ptr<Source> copyAndUpdate(uint64_t seed, std::string &&c, int v) const {
+    return std::make_shared<Source>(seed, this->path, this->srcId, std::move(c), v, this->attr);
   }
 };
 
@@ -101,14 +105,15 @@ using SourcePtr = std::shared_ptr<Source>;
 
 class SourceManager {
 private:
+  const uint64_t seed;
   std::shared_ptr<const std::string> testWorkDir; // for testing. normally null
   std::vector<SourcePtr> entries;
   StrRefMap<unsigned int> indexMap;                // full-path to index mapping
   std::unordered_set<unsigned int> unusedIndexSet; // for removed entries
 
 public:
-  explicit SourceManager(const std::string &dir = "")
-      : testWorkDir(dir.empty() ? nullptr : std::make_shared<const std::string>(dir)) {}
+  explicit SourceManager(uint64_t seed = 42, const std::string &dir = "")
+      : seed(seed), testWorkDir(dir.empty() ? nullptr : std::make_shared<const std::string>(dir)) {}
 
   const auto &getTestWorkDir() const { return this->testWorkDir; }
 
