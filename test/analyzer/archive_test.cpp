@@ -1106,9 +1106,7 @@ new Interval($bbb: 34, $aaa: 2)
   ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId));
 
   auto archive1 = this->archives.find(modId);
-  auto src1 = this->srcMan.findById(modId);
   ASSERT_TRUE(archive1);
-  ASSERT_TRUE(src1);
 
   // remove spaces
   content = R"E(
@@ -1121,10 +1119,7 @@ new Interval($bbb: 34, $aaa: 2)
 )E";
   ASSERT_NO_FATAL_FAILURE(this->updateSource(modId, content));
   auto archive2 = this->archives.find(modId);
-  auto src2 = this->srcMan.findById(modId);
   ASSERT_TRUE(archive2);
-  ASSERT_TRUE(src2);
-  ASSERT_NE(src1->getHash(), src2->getHash());
   ASSERT_EQ(archive1->getModId(), archive2->getModId());
   ASSERT_EQ(archive1->getHash(), archive2->getHash());
   ASSERT_TRUE(archive1->equalsDigest(*archive2));
@@ -1141,9 +1136,7 @@ ls -la
 )E";
   ASSERT_NO_FATAL_FAILURE(this->updateSource(modId, content));
   archive2 = this->archives.find(modId);
-  src2 = this->srcMan.findById(modId);
   ASSERT_TRUE(archive2);
-  ASSERT_NE(src1->getHash(), src2->getHash());
   ASSERT_EQ(archive1->getModId(), archive2->getModId());
   ASSERT_EQ(archive1->getHash(), archive2->getHash());
   ASSERT_TRUE(archive1->equalsDigest(*archive2));
@@ -1163,9 +1156,7 @@ ls -la
   )E";
   ASSERT_NO_FATAL_FAILURE(this->updateSource(modId, content));
   archive2 = this->archives.find(modId);
-  src2 = this->srcMan.findById(modId);
   ASSERT_TRUE(archive2);
-  ASSERT_NE(src1->getHash(), src2->getHash());
   ASSERT_EQ(archive1->getModId(), archive2->getModId());
   ASSERT_NE(archive1->getHash(), archive2->getHash());
   ASSERT_FALSE(archive1->equalsDigest(*archive2));
@@ -1180,9 +1171,7 @@ ls -la
   )E";
   ASSERT_NO_FATAL_FAILURE(this->updateSource(modId, content));
   archive2 = this->archives.find(modId);
-  src2 = this->srcMan.findById(modId);
   ASSERT_TRUE(archive2);
-  ASSERT_NE(src1->getHash(), src2->getHash());
   ASSERT_EQ(archive1->getModId(), archive2->getModId());
   ASSERT_NE(archive1->getHash(), archive2->getHash());
   ASSERT_FALSE(archive1->equalsDigest(*archive2));
@@ -1204,9 +1193,7 @@ new Interval($bbb: 34, $aaa: 2)
   ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId));
 
   auto archive1 = this->archives.find(modId);
-  auto src1 = this->srcMan.findById(modId);
   ASSERT_TRUE(archive1);
-  ASSERT_TRUE(src1);
 
   // reorder type alias within field
   content = R"E(
@@ -1223,10 +1210,7 @@ new Interval($bbb: 34, $aaa: 2)
 )E";
   ASSERT_NO_FATAL_FAILURE(this->updateSource(modId, content));
   auto archive2 = this->archives.find(modId);
-  auto src2 = this->srcMan.findById(modId);
   ASSERT_TRUE(archive2);
-  ASSERT_TRUE(src2);
-  ASSERT_NE(src1->getHash(), src2->getHash());
   ASSERT_EQ(archive1->getModId(), archive2->getModId());
   ASSERT_EQ(archive1->getHash(), archive2->getHash());
   ASSERT_TRUE(archive1->equalsDigest(*archive2));
@@ -1247,9 +1231,7 @@ new Interval($bbb: 34, $aaa: 2)
 )E";
   ASSERT_NO_FATAL_FAILURE(this->updateSource(modId, content));
   archive2 = this->archives.find(modId);
-  src2 = this->srcMan.findById(modId);
   ASSERT_TRUE(archive2);
-  ASSERT_NE(src1->getHash(), src2->getHash());
   ASSERT_EQ(archive1->getModId(), archive2->getModId());
   ASSERT_EQ(archive1->getHash(), archive2->getHash());
   ASSERT_TRUE(archive1->equalsDigest(*archive2));

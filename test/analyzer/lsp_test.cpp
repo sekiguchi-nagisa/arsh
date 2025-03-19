@@ -464,7 +464,7 @@ TEST(ClientTest, run) {
 }
 
 static Source source(StringRef content) {
-  return {42, "dummy", BUILTIN_MOD_ID, content.toString(), 0, {}};
+  return {"dummy", BUILTIN_MOD_ID, content.toString(), 0, {}};
 }
 
 struct LocationTest : public ::testing::Test {

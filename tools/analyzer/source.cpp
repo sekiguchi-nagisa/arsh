@@ -17,13 +17,12 @@
 #include <constant.h>
 #include <misc/unicode.hpp>
 
-#include "hasher.h"
 #include "source.h"
 
 namespace arsh::lsp {
 
-Source::Source(uint64_t seed, std::shared_ptr<const std::string> path, ModId srcId,
-               std::string &&content, int version, SourceAttr attr)
+Source::Source(std::shared_ptr<const std::string> path, ModId srcId, std::string &&content,
+               int version, SourceAttr attr)
     : path(std::move(path)), content(std::move(content)), srcId(srcId), attr(attr),
       version(version) {
   if (this->content.empty() || this->content.back() != '\n') {
@@ -35,11 +34,6 @@ Source::Source(uint64_t seed, std::shared_ptr<const std::string> path, ModId src
   for (StringRef::size_type pos = 0; (pos = ref.find('\n', pos)) != StringRef::npos; pos++) {
     this->lineNumTable.addNewlinePos(pos);
   }
-
-  // content hash
-  XXHasher hasher(seed);
-  hasher.update(this->content.c_str(), this->content.size());
-  this->hash = std::move(hasher).digest();
 }
 
 Token Source::stripAppliedNameSigil(Token token) const {
@@ -126,7 +120,7 @@ SourcePtr SourceManager::update(StringRef path, int version, std::string &&conte
                                 SourceAttr attr) {
   if (auto iter = this->indexMap.find(path); iter != this->indexMap.end()) {
     unsigned int i = iter->second;
-    this->entries[i] = this->entries[i]->copyAndUpdate(this->seed, std::move(content), version);
+    this->entries[i] = this->entries[i]->copyAndUpdate(version, std::move(content));
     return this->entries[i];
   } else if (!this->unusedIndexSet.empty()) { // re-assign to unused entry
     auto unusedIter = this->unusedIndexSet.begin();
@@ -134,8 +128,8 @@ SourcePtr SourceManager::update(StringRef path, int version, std::string &&conte
     this->unusedIndexSet.erase(unusedIter);
     auto id = static_cast<unsigned short>(i + 1);
     assert(!this->entries[i]);
-    this->entries[i] = std::make_shared<Source>(this->seed, path.data(), ModId{id},
-                                                std::move(content), version, attr);
+    this->entries[i] =
+        std::make_shared<Source>(path.data(), ModId{id}, std::move(content), version, attr);
     this->indexMap.emplace(this->entries[i]->getPath(), i);
     return this->entries[i];
   } else {
@@ -144,9 +138,8 @@ SourcePtr SourceManager::update(StringRef path, int version, std::string &&conte
       return nullptr;
     }
     unsigned int i = id - 1;
-    auto src =
-        std::make_shared<Source>(this->seed, path.data(), ModId{static_cast<unsigned short>(id)},
-                                 std::move(content), version, attr);
+    auto src = std::make_shared<Source>(path.data(), ModId{static_cast<unsigned short>(id)},
+                                        std::move(content), version, attr);
     auto &ret = this->entries.emplace_back(std::move(src));
     this->indexMap.emplace(ret->getPath(), i);
     return this->entries[i];
