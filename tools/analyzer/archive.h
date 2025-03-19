@@ -47,8 +47,8 @@ private:
 
   /**
    * string name
-   * uint32 commitID
    * uint32 index
+   * uint16 kind
    * uint16 attribute
    * uint16 modID
    *

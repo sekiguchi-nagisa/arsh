@@ -1161,21 +1161,80 @@ ls -la
   ASSERT_NE(archive1->getHash(), archive2->getHash());
   ASSERT_FALSE(archive1->equalsDigest(*archive2));
 
-  //   // reorder symbol (global)
-  //   content = R"E(
-  //   typedef Interval(aaa:Int, bbb:Int) {
-  //     let begin = $aaa
-  //     let end = $bbb
-  //   }
-  //
-  //   var AAA = 2345
-  //   )E";
-  //   ASSERT_NO_FATAL_FAILURE(this->updateSource(modId, content));
-  //   archive2 = this->archives.find(modId);
-  //   ASSERT_TRUE(archive2);
-  //   ASSERT_EQ(archive1->getModId(), archive2->getModId());
-  //   ASSERT_EQ(archive1->getHash(), archive2->getHash());
-  //   ASSERT_TRUE(archive1->equalsDigest(*archive2));
+  // reorder symbol (hash is modified due to global symbol reordering) //TODO: order independent?
+  content = R"E(
+  typedef Interval(aaa:Int, bbb:Int) {
+    let begin = $aaa
+    let end = $bbb
+  }
+  var AAA = 2345
+  )E";
+  ASSERT_NO_FATAL_FAILURE(this->updateSource(modId, content));
+  archive2 = this->archives.find(modId);
+  ASSERT_TRUE(archive2);
+  ASSERT_EQ(archive1->getModId(), archive2->getModId());
+  ASSERT_NE(archive1->getHash(), archive2->getHash());
+  ASSERT_FALSE(archive1->equalsDigest(*archive2));
+}
+
+TEST_F(ArchiveHashTest, field) {
+  ModId modId;
+  const char *content = R"E(
+var AAA = 2345
+
+typedef Interval(aaa:Int, bbb:Int) {
+  let begin = $aaa
+  type INT = Int
+  let end = $bbb
+  type FLOAT = Float
+}
+new Interval($bbb: 34, $aaa: 2)
+)E";
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content, modId));
+
+  auto archive1 = this->archives.find(modId);
+  ASSERT_TRUE(archive1);
+
+  // reorder type alias within field
+  content = R"E(
+var AAA = 2345
+
+typedef Interval(aaa:Int, bbb:Int) {
+  let begin = $aaa
+  let end = $bbb
+  type FLOAT = Float
+
+  type INT = Int
+}
+new Interval($bbb: 34, $aaa: 2)
+)E";
+  ASSERT_NO_FATAL_FAILURE(this->updateSource(modId, content));
+  auto archive2 = this->archives.find(modId);
+  ASSERT_TRUE(archive2);
+  ASSERT_EQ(archive1->getModId(), archive2->getModId());
+  ASSERT_EQ(archive1->getHash(), archive2->getHash());
+  ASSERT_TRUE(archive1->equalsDigest(*archive2));
+
+  // modify constructor
+  content = R"E(
+var AAA = 2345
+
+typedef Interval(aaa:Int, bbb:Int) {
+  type INT = Int
+  let begin = $aaa
+  let end = $bbb
+
+  {   ls -la $begin $end; var aaa = 2345;}
+  type FLOAT = Float
+}
+new Interval($bbb: 34, $aaa: 2)
+)E";
+  ASSERT_NO_FATAL_FAILURE(this->updateSource(modId, content));
+  archive2 = this->archives.find(modId);
+  ASSERT_TRUE(archive2);
+  ASSERT_EQ(archive1->getModId(), archive2->getModId());
+  ASSERT_EQ(archive1->getHash(), archive2->getHash());
+  ASSERT_TRUE(archive1->equalsDigest(*archive2));
 }
 
 int main(int argc, char **argv) {

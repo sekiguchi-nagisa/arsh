@@ -112,8 +112,20 @@ void Archiver::add(const Type &type) {
 
         auto &recordType = cast<RecordType>(type);
         this->write32(recordType.getHandleMap().size());
-        for (auto &e : recordType.getHandleMap()) {
-          this->add(e.first, *e.second);
+
+        // pack handles by defined order
+        std::vector<std::pair<StringRef, HandlePtr>> handles;
+        handles.reserve(recordType.getHandleMap().size());
+        for (const auto &[name, hd] : recordType.getHandleMap()) {
+          handles.emplace_back(name, hd);
+        }
+        std::sort(handles.begin(), handles.end(), [](const auto &x, const auto &y) {
+          auto xIndex = x.second->getIndex();
+          auto yIndex = y.second->getIndex();
+          return xIndex < yIndex || (xIndex == yIndex && x.first < y.first);
+        });
+        for (auto &[name, hd] : handles) {
+          this->add(name, *hd);
         }
 
         if (type.typeKind() == TypeKind::CLIRecord) {
