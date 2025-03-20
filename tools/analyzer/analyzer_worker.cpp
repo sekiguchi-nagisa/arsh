@@ -136,7 +136,7 @@ void AnalyzerWorker::requestSourceOpen(const DidOpenTextDocumentParams &params) 
   if (auto uri = uri::URI::parse(params.textDocument.uri)) {
     if (auto fullPath = this->state.srcMan->resolveURI(uri); !fullPath.empty()) {
       this->requestSourceUpdateUnsafe(fullPath, params.textDocument.version,
-                                      std::string(params.textDocument.text));
+                                      std::string(params.textDocument.text), true);
       return;
     }
   }
@@ -158,7 +158,8 @@ void AnalyzerWorker::requestSourceChange(const DidChangeTextDocumentParams &para
       return;
     }
   }
-  this->requestSourceUpdateUnsafe(src->getPath(), params.textDocument.version, std::move(content));
+  this->requestSourceUpdateUnsafe(src->getPath(), params.textDocument.version, std::move(content),
+                                  false);
 }
 
 void AnalyzerWorker::requestSourceClose(const DidCloseTextDocumentParams &params) {
@@ -175,10 +176,18 @@ void AnalyzerWorker::requestSourceClose(const DidCloseTextDocumentParams &params
 }
 
 void AnalyzerWorker::requestSourceUpdateUnsafe(StringRef path, int newVersion,
-                                               std::string &&newContent) {
+                                               std::string &&newContent, bool open) {
+  SourcePtr prevOpened;
+  if (open) {
+    prevOpened = this->state.srcMan->find(path);
+  }
   if (auto src = this->state.srcMan->update(path, newVersion, std::move(newContent))) {
-    this->state.modifiedSrcIds.emplace(src->getSrcId());
     this->closingSrcIds.erase(src->getSrcId()); // clear pending close requests
+    if (prevOpened && prevOpened->getContent() == src->getContent()) { // no modification
+      LOG(LogLevel::INFO, "not update source due to no modification: %s", src->getPath().c_str());
+      return;
+    }
+    this->state.modifiedSrcIds.emplace(src->getSrcId());
     this->lastRequestTimestamp = getCurrentTimestamp();
     if (this->status == Status::FINISHED) {
       this->status = Status::PENDING;
