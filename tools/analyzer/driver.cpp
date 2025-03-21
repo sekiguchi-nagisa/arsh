@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <random>
+
 #include <misc/files.hpp>
 #include <misc/time_util.hpp>
 
@@ -73,7 +75,7 @@ int run(const DriverOptions &opts, char **const argv, Driver &driver) {
     logger.setAppender(FilePtr(stderr));
     showInfo(argv, logger);
     const bool testMode = options.testInput && !options.open;
-    uint64_t seed = testMode ? 42 : getCurrentTimestamp().time_since_epoch().count();
+    uint64_t seed = testMode ? 42 : std::random_device()();
     LSPServer server(logger, dupFD(STDIN_FILENO), dupFD(STDOUT_FILENO), options.debounceTime,
                      testMode ? getBaseDir(options.testInput) : "", seed);
     server.run();
