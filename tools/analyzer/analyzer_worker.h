@@ -35,7 +35,7 @@ public:
     std::unordered_set<ModId> modifiedSrcIds;
 
     static State create(const std::string &testDir, uint64_t seed) {
-      return {.srcMan = std::make_shared<SourceManager>(testDir),
+      return {.srcMan = std::make_shared<SourceManager>(seed, testDir),
               .archives = ModuleArchives(seed),
               .indexes = {},
               .modifiedSrcIds = {}};

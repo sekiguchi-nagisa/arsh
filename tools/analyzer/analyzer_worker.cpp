@@ -183,7 +183,7 @@ void AnalyzerWorker::requestSourceUpdateUnsafe(StringRef path, int newVersion,
   }
   if (auto src = this->state.srcMan->update(path, newVersion, std::move(newContent))) {
     this->closingSrcIds.erase(src->getSrcId()); // clear pending close requests
-    if (prevOpened && prevOpened->getContent() == src->getContent()) { // no modification
+    if (prevOpened && prevOpened->equalsDigest(*src)) {
       LOG(LogLevel::INFO, "not update source due to no modification: %s", src->getPath().c_str());
       return;
     }

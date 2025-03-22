@@ -78,6 +78,7 @@ using ModuleArchivePtr = std::shared_ptr<const ModuleArchive>;
 
 class ModuleArchive {
 private:
+  const uint64_t srcHash{0}; // indicate original source. not affect content hash
   const ModId modId{0};
   const ModAttr attr{};
   uint64_t hash{0};
@@ -87,13 +88,15 @@ private:
 public:
   ModuleArchive() = default;
 
-  ModuleArchive(ModId modId, ModAttr attr, std::vector<Archive> &&handles,
+  ModuleArchive(uint64_t srcHash, ModId modId, ModAttr attr, std::vector<Archive> &&handles,
                 std::vector<std::pair<ImportedModKind, ModuleArchivePtr>> &&imported)
-      : ModuleArchive(modId, attr, std::move(handles), std::move(imported), 42) {}
+      : ModuleArchive(srcHash, modId, attr, std::move(handles), std::move(imported), 42) {}
 
-  ModuleArchive(ModId modId, ModAttr attr, std::vector<Archive> &&handles,
+  ModuleArchive(uint64_t srcHash, ModId modId, ModAttr attr, std::vector<Archive> &&handles,
                 std::vector<std::pair<ImportedModKind, ModuleArchivePtr>> &&imported,
                 uint64_t seed);
+
+  uint64_t getSrcHash() const { return this->srcHash; }
 
   ModId getModId() const { return this->modId; }
 
@@ -252,7 +255,7 @@ private:
   void add(const ArgEntry &entry);
 };
 
-ModuleArchivePtr buildArchive(Archiver &&archiver, const ModType &modType,
+ModuleArchivePtr buildArchive(Archiver &&archiver, uint64_t srcHash, const ModType &modType,
                               ModuleArchives &archives);
 
 class Unarchiver {

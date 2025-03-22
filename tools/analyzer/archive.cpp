@@ -419,10 +419,12 @@ std::pair<ArgEntry, bool> Unarchiver::unpackArgEntry() {
 // ##     ModuleArchive     ##
 // ###########################
 
-ModuleArchive::ModuleArchive(ModId modId, ModAttr attr, std::vector<Archive> &&handles,
+ModuleArchive::ModuleArchive(uint64_t srcHash, ModId modId, ModAttr attr,
+                             std::vector<Archive> &&handles,
                              std::vector<std::pair<ImportedModKind, ModuleArchivePtr>> &&imported,
                              uint64_t seed)
-    : modId(modId), attr(attr), handles(std::move(handles)), imported(std::move(imported)) {
+    : srcHash(srcHash), modId(modId), attr(attr), handles(std::move(handles)),
+      imported(std::move(imported)) {
   // compute hash
   XXHasher hasher(seed);
   for (auto &e : this->handles) {
@@ -554,7 +556,7 @@ const ModType *loadFromArchive(TypePool &pool, const ModuleArchive &archive) {
   return load(pool, archive);
 }
 
-ModuleArchivePtr buildArchive(Archiver &&archiver, const ModType &modType,
+ModuleArchivePtr buildArchive(Archiver &&archiver, uint64_t srcHash, const ModType &modType,
                               ModuleArchives &archives) {
   // collect handles
   std::vector<std::pair<StringRef, HandlePtr>> udErrors; // for user-defined error type definition
@@ -590,6 +592,7 @@ ModuleArchivePtr buildArchive(Archiver &&archiver, const ModType &modType,
 
   // pack handles
   std::vector<Archive> handleArchives;
+  handleArchives.reserve(udErrors.size() + udTypes.size() + handles.size());
   for (auto &[name, handle] : udErrors) {
     handleArchives.push_back(archiver.pack(name, *handle));
   }
@@ -617,7 +620,7 @@ ModuleArchivePtr buildArchive(Archiver &&archiver, const ModType &modType,
     return x.second->getModId() < y.second->getModId();
   });
 
-  auto archive = std::make_shared<ModuleArchive>(modType.getModId(), modType.getAttr(),
+  auto archive = std::make_shared<ModuleArchive>(srcHash, modType.getModId(), modType.getAttr(),
                                                  std::move(handleArchives), std::move(imported),
                                                  archives.getSeed());
   archives.add(archive);
