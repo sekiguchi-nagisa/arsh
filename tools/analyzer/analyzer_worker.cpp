@@ -136,7 +136,7 @@ void AnalyzerWorker::requestSourceOpen(const DidOpenTextDocumentParams &params) 
   if (auto uri = uri::URI::parse(params.textDocument.uri)) {
     if (auto fullPath = this->state.srcMan->resolveURI(uri); !fullPath.empty()) {
       this->requestSourceUpdateUnsafe(fullPath, params.textDocument.version,
-                                      std::string(params.textDocument.text), true);
+                                      std::string(params.textDocument.text));
       return;
     }
   }
@@ -158,8 +158,7 @@ void AnalyzerWorker::requestSourceChange(const DidChangeTextDocumentParams &para
       return;
     }
   }
-  this->requestSourceUpdateUnsafe(src->getPath(), params.textDocument.version, std::move(content),
-                                  false);
+  this->requestSourceUpdateUnsafe(src->getPath(), params.textDocument.version, std::move(content));
 }
 
 void AnalyzerWorker::requestSourceClose(const DidCloseTextDocumentParams &params) {
@@ -176,11 +175,8 @@ void AnalyzerWorker::requestSourceClose(const DidCloseTextDocumentParams &params
 }
 
 void AnalyzerWorker::requestSourceUpdateUnsafe(StringRef path, int newVersion,
-                                               std::string &&newContent, bool open) {
-  SourcePtr prevOpened;
-  if (open) {
-    prevOpened = this->state.srcMan->find(path);
-  }
+                                               std::string &&newContent) {
+  SourcePtr prevOpened = this->state.srcMan->find(path);
   if (auto src = this->state.srcMan->update(path, newVersion, std::move(newContent))) {
     this->closingSrcIds.erase(src->getSrcId()); // clear pending close requests
     if (prevOpened && prevOpened->equalsDigest(*src)) {

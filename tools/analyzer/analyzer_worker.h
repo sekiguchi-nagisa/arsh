@@ -150,8 +150,7 @@ public:
   void asyncStateWith(std::function<void(const State &)> &&callback);
 
 private:
-  void requestSourceUpdateUnsafe(StringRef path, int newVersion, std::string &&newContent,
-                                 bool open);
+  void requestSourceUpdateUnsafe(StringRef path, int newVersion, std::string &&newContent);
 };
 
 Result<SourcePtr, std::string> resolveSource(LoggerBase &logger, const SourceManager &srcMan,
