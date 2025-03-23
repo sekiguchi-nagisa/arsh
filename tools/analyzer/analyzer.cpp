@@ -89,7 +89,7 @@ Analyzer::newModTypeFromCurContext(const std::vector<std::unique_ptr<FrontEnd::C
   auto archive = std::move(*this->current()).buildArchive(this->archives);
   this->ctxs.pop_back();
   LOG(LogLevel::INFO, "exit module: id=%d, version=%d", toUnderlying(archive->getModId()), version);
-  auto *modType = loadFromArchive(this->current()->getPool(), *archive);
+  auto *modType = loadFromArchive(this->archives, this->current()->getPool(), *archive);
   assert(modType);
   return *modType;
 }
@@ -124,7 +124,7 @@ FrontEnd::ModuleProvider::Ret Analyzer::load(const char *scriptDir, const char *
     auto src = this->srcMan.findById(id);
     assert(src);
     if (auto archive = this->archives.find(src->getSrcId()); archive) {
-      auto *modType = loadFromArchive(this->current()->getPool(), *archive);
+      auto *modType = loadFromArchive(this->archives, this->current()->getPool(), *archive);
       assert(modType);
       return modType;
     } else { // re-parse

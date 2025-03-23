@@ -91,15 +91,19 @@ struct ArchiveBuilder {
   ModId id;
   std::vector<ArchiveBuilder> children;
 
-  ModuleArchivePtr build() const {
+  ModuleArchivePtr build(ModuleArchives &archives) const {
     std::vector<Archive> handles;
-    std::vector<std::pair<ImportedModKind, ModuleArchivePtr>> imported;
+    std::vector<ModuleArchive::Imported> imported;
     imported.reserve(this->children.size());
     for (auto &e : this->children) {
-      imported.emplace_back(ImportedModKind::GLOBAL, e.build());
+      auto child = e.build(archives);
+      imported.emplace_back(ModuleArchive::Imported::create(ImportedModKind::GLOBAL,
+                                                            child->getModId(), child->getHash()));
     }
-    return std::make_shared<ModuleArchive>(this->id, ModAttr{}, std::move(handles),
-                                           std::move(imported));
+    auto ret = std::make_shared<ModuleArchive>(this->id, ModAttr{}, std::move(handles),
+                                               std::move(imported));
+    archives.add(ret);
+    return ret;
   }
 };
 
@@ -112,12 +116,13 @@ ArchiveBuilder tree(T &&...args) {
 }
 
 TEST(DependentTest, deps1) {
+  ModuleArchives archives;
   auto t = tree<1>(tree<2>(tree<5>(tree<7>()), tree<6>()), tree<3>(tree<4>()));
-  auto archive = t.build();
+  auto archive = t.build(archives);
   ASSERT_EQ(2, archive->getImported().size());
-  ASSERT_EQ(2, toUnderlying(archive->getImported()[0].second->getModId()));
-  ASSERT_EQ(3, toUnderlying(archive->getImported()[1].second->getModId()));
-  auto deps = archive->getDepsByTopologicalOrder();
+  ASSERT_EQ(2, toUnderlying(archive->getImported()[0].modId));
+  ASSERT_EQ(3, toUnderlying(archive->getImported()[1].modId));
+  auto deps = archive->getDepsByTopologicalOrder(archives);
   ASSERT_EQ(6, deps.size());
   ASSERT_EQ(7, toUnderlying(deps[0]->getModId()));
   ASSERT_EQ(5, toUnderlying(deps[1]->getModId()));
@@ -128,14 +133,15 @@ TEST(DependentTest, deps1) {
 }
 
 TEST(DependentTest, deps2) {
+  ModuleArchives archives;
   auto t1 = tree<1>(tree<2>(), tree<3>(tree<4>()));
   auto t2 = tree<5>(tree<2>(), t1, tree<6>(tree<4>()), tree<3>(tree<4>()));
   auto t3 = tree<7>(t2, t1);
-  auto archive = t3.build();
+  auto archive = t3.build(archives);
   ASSERT_EQ(2, archive->getImported().size());
-  ASSERT_EQ(5, toUnderlying(archive->getImported()[0].second->getModId()));
-  ASSERT_EQ(1, toUnderlying(archive->getImported()[1].second->getModId()));
-  auto deps = archive->getDepsByTopologicalOrder();
+  ASSERT_EQ(5, toUnderlying(archive->getImported()[0].modId));
+  ASSERT_EQ(1, toUnderlying(archive->getImported()[1].modId));
+  auto deps = archive->getDepsByTopologicalOrder(archives);
   ASSERT_EQ(6, deps.size());
   ASSERT_EQ(2, toUnderlying(deps[0]->getModId()));
   ASSERT_EQ(4, toUnderlying(deps[1]->getModId()));
@@ -146,10 +152,11 @@ TEST(DependentTest, deps2) {
 }
 
 TEST(DependentTest, deps3) {
+  ModuleArchives archives;
   auto t = tree<1>();
-  auto archive = t.build();
+  auto archive = t.build(archives);
   ASSERT_EQ(0, archive->getImported().size());
-  auto deps = archive->getDepsByTopologicalOrder();
+  auto deps = archive->getDepsByTopologicalOrder(archives);
   ASSERT_EQ(0, deps.size());
 }
 
@@ -278,7 +285,7 @@ public:
     auto ctx = newctx(this->sysConfig, this->srcMan, this->archives);
     func(*ctx);
     auto archive = std::move(*ctx).buildArchive(this->archives);
-    auto *type = loadFromArchive(parent.getPool(), *archive);
+    auto *type = loadFromArchive(this->archives, parent.getPool(), *archive);
     assert(type);
     auto importOp = ImportedModKind{};
     if (global) {
@@ -298,7 +305,7 @@ public:
     ASSERT_TRUE(orgModType);
 
     // deserialize
-    auto *newModType = loadFromArchive(this->newCtx->getPool(), *archive);
+    auto *newModType = loadFromArchive(this->archives, this->newCtx->getPool(), *archive);
     ASSERT_TRUE(newModType);
 
     // compare
@@ -979,7 +986,7 @@ struct Builder {
   template <typename... Args>
   ModuleArchivePtr operator()(const char *path, Args &&...args) {
     std::vector<Archive> handles;
-    std::vector<std::pair<ImportedModKind, ModuleArchivePtr>> deps;
+    std::vector<ModuleArchive::Imported> deps;
     build(deps, std::forward<Args>(args)...);
     auto src = this->srcMan.update(path, 0, "");
     auto archive = std::make_shared<ModuleArchive>(src->getSrcId(), ModAttr{}, std::move(handles),
@@ -990,13 +997,14 @@ struct Builder {
 
 private:
   template <typename... Args>
-  static void build(std::vector<std::pair<ImportedModKind, ModuleArchivePtr>> &deps,
-                    const ModuleArchivePtr &archive, Args &&...args) {
-    deps.emplace_back(ImportedModKind::GLOBAL, archive);
+  static void build(std::vector<ModuleArchive::Imported> &deps, const ModuleArchivePtr &archive,
+                    Args &&...args) {
+    deps.emplace_back(ModuleArchive::Imported::create(ImportedModKind::GLOBAL, archive->getModId(),
+                                                      archive->getHash()));
     build(deps, std::forward<Args>(args)...);
   }
 
-  static void build(std::vector<std::pair<ImportedModKind, ModuleArchivePtr>> &) {}
+  static void build(std::vector<ModuleArchive::Imported> &) {}
 };
 
 TEST(ArchivesTest, revert1) {

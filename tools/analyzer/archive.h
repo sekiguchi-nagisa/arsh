@@ -73,31 +73,43 @@ public:
 };
 
 class ModuleArchive;
+class ModuleArchives;
 
 using ModuleArchivePtr = std::shared_ptr<const ModuleArchive>;
 
 class ModuleArchive {
+public:
+  struct Imported {
+    uint8_t dummy;
+    ImportedModKind kind;
+    ModId modId;
+    uint32_t hash;
+
+    static Imported create(const ImportedModKind kind, const ModId modId, const uint64_t hash) {
+      return {.dummy = 0, .kind = kind, .modId = modId, .hash = static_cast<uint32_t>(hash)};
+    }
+  };
+
 private:
   const ModId modId{0};
   const ModAttr attr{};
   uint64_t hash{0};
   std::vector<Archive> handles;
-  std::vector<std::pair<ImportedModKind, ModuleArchivePtr>> imported;
+  std::vector<Imported> imported;
 
 public:
   ModuleArchive() = default;
 
   ModuleArchive(ModId modId, ModAttr attr, std::vector<Archive> &&handles,
-                std::vector<std::pair<ImportedModKind, ModuleArchivePtr>> &&imported)
+                std::vector<Imported> &&imported)
       : ModuleArchive(modId, attr, std::move(handles), std::move(imported), 42) {}
 
   ModuleArchive(ModId modId, ModAttr attr, std::vector<Archive> &&handles,
-                std::vector<std::pair<ImportedModKind, ModuleArchivePtr>> &&imported,
-                uint64_t seed);
+                std::vector<Imported> &&imported, uint64_t seed);
 
-  ModId getModId() const { return this->modId; }
+  ModId getModId() const { return this->modId; } // NOLINT
 
-  ModAttr getModAttr() const { return this->attr; }
+  ModAttr getModAttr() const { return this->attr; } // NOLINT
 
   uint64_t getHash() const { return this->hash; }
 
@@ -113,7 +125,7 @@ public:
            this->getImported().size() == other.getImported().size();
   }
 
-  std::vector<ModuleArchivePtr> getDepsByTopologicalOrder() const;
+  std::vector<ModuleArchivePtr> getDepsByTopologicalOrder(const ModuleArchives &archives) const;
 
   Optional<std::unordered_map<std::string, HandlePtr>> unpack(TypePool &pool) const;
 };
@@ -328,7 +340,8 @@ private:
   }
 };
 
-const ModType *loadFromArchive(TypePool &pool, const ModuleArchive &archive);
+const ModType *loadFromArchive(const ModuleArchives &archives, TypePool &pool,
+                               const ModuleArchive &archive);
 
 } // namespace arsh::lsp
 

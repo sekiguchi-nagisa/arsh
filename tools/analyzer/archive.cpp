@@ -420,8 +420,7 @@ std::pair<ArgEntry, bool> Unarchiver::unpackArgEntry() {
 // ###########################
 
 ModuleArchive::ModuleArchive(ModId modId, ModAttr attr, std::vector<Archive> &&handles,
-                             std::vector<std::pair<ImportedModKind, ModuleArchivePtr>> &&imported,
-                             uint64_t seed)
+                             std::vector<Imported> &&imported, uint64_t seed)
     : modId(modId), attr(attr), handles(std::move(handles)), imported(std::move(imported)) {
   // compute hash
   XXHasher hasher(seed);
@@ -429,19 +428,12 @@ ModuleArchive::ModuleArchive(ModId modId, ModAttr attr, std::vector<Archive> &&h
     hasher.update(e.getData().c_str(), e.getData().size());
   }
 
-  union ModData {
-    struct {
-      ImportedModKind k;
-      ModId id;
-      uint64_t hash;
-    } mod;
-    char buf[16];
-  };
-  for (const auto &[k, p] : this->imported) {
-    ModData data{}; // force init
-    data.mod.k = k;
-    data.mod.id = p->getModId();
-    data.mod.hash = p->getHash();
+  static_assert(sizeof(Imported) == sizeof(uint64_t));
+  for (const auto &e : this->imported) {
+    union {
+      Imported imported;
+      char buf[sizeof(Imported)];
+    } data = {.imported = e};
     hasher.update(data.buf, std::size(data.buf));
   }
   this->hash = std::move(hasher).digest();
@@ -473,44 +465,52 @@ static void tryInsertByAscendingOrder(std::vector<ModuleArchivePtr> &targets,
   }
 }
 
-static void resolveTargets(std::vector<ModuleArchivePtr> &targets,
+static void resolveTargets(const ModuleArchives &archives, std::vector<ModuleArchivePtr> &targets,
                            const ModuleArchivePtr &archive) {
   tryInsertByAscendingOrder(targets, archive);
   for (auto &e : archive->getImported()) {
-    resolveTargets(targets, e.second);
+    auto child = archives.find(e.modId);
+    assert(child);
+    resolveTargets(archives, targets, child);
   }
 }
 
-static void visit(std::vector<ModuleArchivePtr> &ret, std::vector<bool> &used,
-                  const ModuleArchivePtr &archive) {
+static void visit(const ModuleArchives &archives, std::vector<ModuleArchivePtr> &ret,
+                  std::vector<bool> &used, const ModuleArchivePtr &archive) {
   if (used[toUnderlying(archive->getModId())]) {
     return;
   }
   used[toUnderlying(archive->getModId())] = true;
   for (auto &e : archive->getImported()) {
-    visit(ret, used, e.second);
+    auto child = archives.find(e.modId);
+    assert(child);
+    visit(archives, ret, used, child);
   }
   ret.push_back(archive);
 }
 
-static std::vector<ModuleArchivePtr> topologicalSort(const std::vector<ModuleArchivePtr> &targets) {
+static std::vector<ModuleArchivePtr> topologicalSort(const ModuleArchives &archives,
+                                                     const std::vector<ModuleArchivePtr> &targets) {
   std::vector<ModuleArchivePtr> ret;
   if (targets.empty()) {
     return ret;
   }
   std::vector<bool> used(toUnderlying(targets.back()->getModId()) + 1, false);
   for (auto &e : targets) {
-    visit(ret, used, e);
+    visit(archives, ret, used, e);
   }
   return ret;
 }
 
-std::vector<ModuleArchivePtr> ModuleArchive::getDepsByTopologicalOrder() const {
+std::vector<ModuleArchivePtr>
+ModuleArchive::getDepsByTopologicalOrder(const ModuleArchives &archives) const {
   std::vector<ModuleArchivePtr> targets;
   for (auto &e : this->imported) {
-    resolveTargets(targets, e.second);
+    auto child = archives.find(e.modId);
+    assert(child);
+    resolveTargets(archives, targets, child);
   }
-  return topologicalSort(targets);
+  return topologicalSort(archives, targets);
 }
 
 static const ModType *getModType(const TypePool &pool, ModId modId) {
@@ -529,9 +529,9 @@ static const ModType *load(TypePool &pool, const ModuleArchive &archive) {
   children.push_back(builtin.toModEntry(ImportedModKind::GLOBAL));
 
   for (auto &child : archive.getImported()) {
-    auto type = pool.getModTypeById(child.second->getModId());
+    auto type = pool.getModTypeById(child.modId);
     assert(type);
-    auto e = type->toModEntry(child.first);
+    auto e = type->toModEntry(child.kind);
     children.push_back(e);
   }
 
@@ -544,11 +544,12 @@ static const ModType *load(TypePool &pool, const ModuleArchive &archive) {
                              archive.getModAttr());
 }
 
-const ModType *loadFromArchive(TypePool &pool, const ModuleArchive &archive) {
+const ModType *loadFromArchive(const ModuleArchives &archives, TypePool &pool,
+                               const ModuleArchive &archive) {
   if (const ModType *type = getModType(pool, archive.getModId())) {
     return type;
   }
-  for (auto &dep : archive.getDepsByTopologicalOrder()) {
+  for (auto &dep : archive.getDepsByTopologicalOrder(archives)) {
     TRY(load(pool, *dep));
   }
   return load(pool, archive);
@@ -602,7 +603,7 @@ ModuleArchivePtr buildArchive(Archiver &&archiver, const ModType &modType,
   }
 
   // resolve imported modules
-  std::vector<std::pair<ImportedModKind, ModuleArchivePtr>> imported;
+  std::vector<ModuleArchive::Imported> imported;
   const unsigned int size = modType.getChildSize();
   for (unsigned int i = 0; i < size; i++) {
     auto e = modType.getChildAt(i);
@@ -612,11 +613,11 @@ ModuleArchivePtr buildArchive(Archiver &&archiver, const ModType &modType,
     }
     auto archive = archives.find(type.getModId());
     assert(archive);
-    imported.emplace_back(e.kind(), std::move(archive));
+    imported.push_back(
+        ModuleArchive::Imported::create(e.kind(), archive->getModId(), archive->getHash()));
   }
-  std::sort(imported.begin(), imported.end(), [](const auto &x, const auto &y) {
-    return x.second->getModId() < y.second->getModId();
-  });
+  std::sort(imported.begin(), imported.end(),
+            [](const auto &x, const auto &y) { return x.modId < y.modId; });
 
   auto archive = std::make_shared<ModuleArchive>(modType.getModId(), modType.getAttr(),
                                                  std::move(handleArchives), std::move(imported),
@@ -661,16 +662,16 @@ ModuleArchives::iterator_type ModuleArchives::reserveImpl(ModId modId) {
   }
 }
 
-static bool isRevertedArchive(std::unordered_set<ModId> &revertingModIdSet,
+static bool isRevertedArchive(const ModuleArchives &archives,
+                              std::unordered_set<ModId> &revertingModIdSet,
                               const ModuleArchive &archive) {
   const auto modId = archive.getModId();
-  auto iter = revertingModIdSet.find(modId);
-  if (iter != revertingModIdSet.end()) {
+  if (revertingModIdSet.find(modId) != revertingModIdSet.end()) {
     return true;
   }
   for (auto &e : archive.getImported()) {
-    assert(e.second);
-    if (isRevertedArchive(revertingModIdSet, *e.second)) {
+    auto child = archives.find(e.modId);
+    if (!child || isRevertedArchive(archives, revertingModIdSet, *child)) {
       revertingModIdSet.emplace(modId);
       return true;
     }
@@ -680,19 +681,18 @@ static bool isRevertedArchive(std::unordered_set<ModId> &revertingModIdSet,
 
 void ModuleArchives::revert(std::unordered_set<ModId> &&revertingModIdSet) {
   for (auto &e : this->values) {
-    if (e.second && isRevertedArchive(revertingModIdSet, *e.second)) {
+    if (e.second && isRevertedArchive(*this, revertingModIdSet, *e.second)) {
       e.second = nullptr;
     }
   }
 }
 
-static bool isImported(const ModuleArchive &archive, ModId id) {
+static bool isImported(const ModuleArchives &archives, const ModuleArchive &archive, ModId id) {
   for (auto &e : archive.getImported()) {
-    assert(e.second);
-    if (e.second->getModId() == id) {
+    if (e.modId == id) {
       return true;
     }
-    if (isImported(*e.second, id)) {
+    if (auto child = archives.find(e.modId); isImported(archives, *child, id)) {
       return true;
     }
   }
@@ -701,7 +701,7 @@ static bool isImported(const ModuleArchive &archive, ModId id) {
 
 bool ModuleArchives::removeIfUnused(ModId id) {
   for (auto &e : this->values) {
-    if (e.second && isImported(*e.second, id)) {
+    if (e.second && isImported(*this, *e.second, id)) {
       return false;
     }
   }
