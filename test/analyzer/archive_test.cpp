@@ -98,7 +98,7 @@ struct ArchiveBuilder {
     for (auto &e : this->children) {
       imported.emplace_back(ImportedModKind::GLOBAL, e.build());
     }
-    return std::make_shared<ModuleArchive>(0, this->id, ModAttr{}, std::move(handles),
+    return std::make_shared<ModuleArchive>(this->id, ModAttr{}, std::move(handles),
                                            std::move(imported));
   }
 };
@@ -982,8 +982,8 @@ struct Builder {
     std::vector<std::pair<ImportedModKind, ModuleArchivePtr>> deps;
     build(deps, std::forward<Args>(args)...);
     auto src = this->srcMan.update(path, 0, "");
-    auto archive = std::make_shared<ModuleArchive>(src->getHash(), src->getSrcId(), ModAttr{},
-                                                   std::move(handles), std::move(deps));
+    auto archive = std::make_shared<ModuleArchive>(src->getSrcId(), ModAttr{}, std::move(handles),
+                                                   std::move(deps));
     this->archives.add(archive);
     return archive;
   }
@@ -1087,7 +1087,6 @@ public:
     auto ret = this->analyze(src);
     ASSERT_TRUE(ret);
     ASSERT_EQ(ret->getModId(), modId);
-    ASSERT_EQ(ret->getSrcHash(), src->getHash());
     ASSERT_TRUE(this->indexes.find(modId));
   }
 };
@@ -1128,7 +1127,6 @@ new Interval($bbb: 34, $aaa: 2)
   ASSERT_EQ(archive1->getModId(), archive2->getModId());
   ASSERT_EQ(archive1->getHash(), archive2->getHash());
   ASSERT_TRUE(archive1->equalsDigest(*archive2));
-  ASSERT_NE(archive1->getSrcHash(), archive2->getSrcHash());
 
   // change remain expression
   content = R"E(
@@ -1147,7 +1145,6 @@ ls -la
   ASSERT_EQ(archive1->getModId(), archive2->getModId());
   ASSERT_EQ(archive1->getHash(), archive2->getHash());
   ASSERT_TRUE(archive1->equalsDigest(*archive2));
-  ASSERT_NE(archive1->getSrcHash(), archive2->getSrcHash());
 
   // add private (hash is modified due to global symbol addition)
   content = R"E(
@@ -1169,7 +1166,6 @@ ls -la
   ASSERT_EQ(archive1->getModId(), archive2->getModId());
   ASSERT_NE(archive1->getHash(), archive2->getHash());
   ASSERT_FALSE(archive1->equalsDigest(*archive2));
-  ASSERT_NE(archive1->getSrcHash(), archive2->getSrcHash());
 
   // reorder symbol (hash is modified due to global symbol reordering) //TODO: order independent?
   content = R"E(
@@ -1186,7 +1182,6 @@ ls -la
   ASSERT_EQ(archive1->getModId(), archive2->getModId());
   ASSERT_NE(archive1->getHash(), archive2->getHash());
   ASSERT_FALSE(archive1->equalsDigest(*archive2));
-  ASSERT_NE(archive1->getSrcHash(), archive2->getSrcHash());
 }
 
 TEST_F(ArchiveHashTest, field) {
@@ -1230,7 +1225,6 @@ new Interval($bbb: 34, $aaa: 2)
   ASSERT_EQ(archive1->getModId(), archive2->getModId());
   ASSERT_EQ(archive1->getHash(), archive2->getHash());
   ASSERT_TRUE(archive1->equalsDigest(*archive2));
-  ASSERT_NE(archive1->getSrcHash(), archive2->getSrcHash());
 
   // modify constructor
   content = R"E(
@@ -1253,7 +1247,6 @@ new Interval($bbb: 34, $aaa: 2)
   ASSERT_EQ(archive1->getModId(), archive2->getModId());
   ASSERT_EQ(archive1->getHash(), archive2->getHash());
   ASSERT_TRUE(archive1->equalsDigest(*archive2));
-  ASSERT_NE(archive1->getSrcHash(), archive2->getSrcHash());
 }
 
 int main(int argc, char **argv) {

@@ -117,7 +117,7 @@ public:
   ModuleArchivePtr buildArchive(ModuleArchives &archives) && {
     auto &modType = this->getScope()->toModType(this->getPool());
     Archiver archiver(this->getPool(), this->typeDiscardPoint.typeIdOffset);
-    return lsp::buildArchive(std::move(archiver), this->getSrc()->getHash(), modType, archives);
+    return lsp::buildArchive(std::move(archiver), modType, archives);
   }
 };
 
