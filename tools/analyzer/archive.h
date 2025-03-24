@@ -111,6 +111,8 @@ public:
 
   ModAttr getModAttr() const { return this->attr; } // NOLINT
 
+  bool hasAttr(const ModAttr a) const { return hasFlag(this->getModAttr(), a); }
+
   uint64_t getHash() const { return this->hash; }
 
   const auto &getHandles() const { return this->handles; }
