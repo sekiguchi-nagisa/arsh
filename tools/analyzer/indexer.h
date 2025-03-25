@@ -130,7 +130,7 @@ public:
   SymbolIndex build() && {
     return {
         .modId = this->src->getSrcId(),
-        .version = this->src->getVersion(),
+        .srcHash = this->src->getHash(),
         .decls = std::move(this->decls),
         .symbols = std::move(this->symbols),
         .foreignDecls = std::move(this->foreign),

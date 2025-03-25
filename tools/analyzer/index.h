@@ -479,7 +479,7 @@ using SymbolIndexPtr = std::shared_ptr<const SymbolIndex>;
 
 struct SymbolIndex {
   ModId modId;
-  int version;
+  uint64_t srcHash;
   std::vector<DeclSymbol> decls;
   std::vector<Symbol> symbols;
   std::vector<ForeignDecl> foreignDecls;
