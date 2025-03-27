@@ -595,6 +595,13 @@ void Screen::clearLineFrom() {
   }
 }
 
+void Screen::clearLineTo() {
+  auto &buf = this->bufs[this->row];
+  for (unsigned int i = 0; i <= this->col; i++) {
+    buf[i] = '\0';
+  }
+}
+
 void Screen::clearLine() {
   for (auto &ch : this->bufs[this->row]) {
     ch = '\0';

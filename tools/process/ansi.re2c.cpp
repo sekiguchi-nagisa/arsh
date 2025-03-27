@@ -107,6 +107,7 @@ INIT:
     "\x1b[0J"                               { this->clearFromDown(); NEXT(); }
     "\x1b[2J"                               { this->clear(); NEXT(); }
     "\x1b[0K"                               { this->clearLineFrom(); NEXT(); }
+    "\x1b[1K"                               { this->clearLineTo(); NEXT(); }
     "\x1b[2K"                               { this->clearLine(); NEXT(); }
     "\x1b[6n"                               { this->reportPos(); NEXT(); }
     "\x1b[?2004h"                           { NEXT(); }

@@ -151,6 +151,11 @@ public:
    */
   void clearLineFrom();
 
+  /**
+   * clear line to current cursor
+   */
+  void clearLineTo();
+
   void clearLine();
 
   // move cursor ops
