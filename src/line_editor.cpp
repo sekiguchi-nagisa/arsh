@@ -167,12 +167,12 @@ static bool isUnsupportedTerm(const int fd) {
 /* Use the ESC [6n escape sequence to query the horizontal cursor position
  * and return it. On error -1 is returned, on success the position of the
  * cursor. */
-static int getCursorPosition(int ifd, int ofd, bool reportCursor) {
+static int getCursorPosition(int ifd, int ofd, bool queryCursor) {
   char buf[32];
   int cols, rows;
 
   /* Report cursor location */
-  if (reportCursor) {
+  if (queryCursor) {
     if (constexpr char data[] = "\x1b[6n"; write(ofd, data, std::size(data) - 1) != 4) {
       return -1;
     }
@@ -247,8 +247,8 @@ static void checkProperty(CharWidthProperties &ps, int inFd, int outFd) {
   int lastPos = 1;
   for (auto &e : getCharWidthPropertyList()) {
     char buf[32];
-    const int s = snprintf(buf, std::size(buf), "%s\x1b[1K\x1b[6n", e.second);
-    if (s < 0 || write(outFd, buf, s) == -1) {
+    const int s = snprintf(buf, std::size(buf), "\x1b[?25l%s\x1b[1K\x1b[6n", e.second);
+    if (s < 0 || write(outFd, buf, s) == -1) { // hide cursor and clear line immediately
       break;
     }
     const int pos = getCursorPosition(inFd, outFd, false);
