@@ -167,13 +167,15 @@ static bool isUnsupportedTerm(const int fd) {
 /* Use the ESC [6n escape sequence to query the horizontal cursor position
  * and return it. On error -1 is returned, on success the position of the
  * cursor. */
-static int getCursorPosition(int ifd, int ofd) {
+static int getCursorPosition(int ifd, int ofd, bool reportCursor) {
   char buf[32];
   int cols, rows;
 
   /* Report cursor location */
-  if (constexpr char data[] = "\x1b[6n"; write(ofd, data, std::size(data) - 1) != 4) {
-    return -1;
+  if (reportCursor) {
+    if (constexpr char data[] = "\x1b[6n"; write(ofd, data, std::size(data) - 1) != 4) {
+      return -1;
+    }
   }
 
   /* Read the response: ESC [ rows ; cols R */
@@ -244,10 +246,12 @@ static void checkProperty(CharWidthProperties &ps, int inFd, int outFd) {
 
   int lastPos = 1;
   for (auto &e : getCharWidthPropertyList()) {
-    if (const char *str = e.second; write(outFd, str, strlen(str)) == -1) {
+    char buf[32];
+    const int s = snprintf(buf, std::size(buf), "%s\x1b[1K\x1b[6n", e.second);
+    if (s < 0 || write(outFd, buf, s) == -1) {
       break;
     }
-    const int pos = getCursorPosition(inFd, outFd);
+    const int pos = getCursorPosition(inFd, outFd, false);
     if (pos < 0) {
       break;
     }
@@ -448,7 +452,7 @@ void LineEditorObject::disableRawMode(int fd) {
  * @param outFd
  */
 static int preparePrompt(int inFd, int outFd) {
-  if (getCursorPosition(inFd, outFd) > 1) {
+  if (getCursorPosition(inFd, outFd, true) > 1) {
     const char *s = "\x1b[7m%\x1b[0m\r\n";
     if (write(outFd, s, strlen(s)) == -1) {
       return -1;
