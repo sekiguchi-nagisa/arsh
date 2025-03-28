@@ -159,12 +159,6 @@ private:
 
   const AnalyzerContextPtr &current() const { return this->ctxs.back(); }
 
-  void unwind() { // FIXME: future may be removed
-    while (this->ctxs.size() > 1) {
-      this->ctxs.pop_back();
-    }
-  }
-
 public:
   void reset() { this->ctxs.clear(); }
 

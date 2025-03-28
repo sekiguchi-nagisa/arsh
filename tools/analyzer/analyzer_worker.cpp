@@ -315,11 +315,6 @@ void AnalyzerWorker::Task::run() {
       static_cast<unsigned int>(this->state.modifiedSrcIds.size()));
 
   // prepare
-  {
-    auto tmp(this->state.modifiedSrcIds);
-    this->state.archives.revert(std::move(tmp));
-  }
-
   AnalyzerAction action;
   SymbolIndexer indexer(this->sysConfig, this->state.indexes);
   indexer.setLogger(makeObserver(this->logger.get()));
@@ -330,21 +325,35 @@ void AnalyzerWorker::Task::run() {
   action.emitter.reset(&this->emitter);
   action.pass = makeObserver(passes);
 
-  // rebuild
   Analyzer analyzer(this->sysConfig, *this->state.srcMan, this->state.archives,
                     makeObserver(*this->cancelPoint), makeObserver(this->logger.get()));
+
+  // rebuild
+  if (this->state.modifiedSrcIds.size() == 1) { // fast path
+    const ModId modId = *this->state.modifiedSrcIds.begin();
+    const auto oldArchive = this->state.archives.find(modId);
+    this->state.modifiedSrcIds.clear();
+    const auto ret = this->doAnalyze(analyzer, modId, action, "modified");
+    if (ret) {
+      if (!oldArchive || ret->equalsDigest(*oldArchive)) {
+        LOG(LogLevel::INFO, "digest of archive: id=%d has not changed", toUnderlying(modId));
+        return;
+      }
+    }
+    this->state.archives.revert({modId});
+    if (ret) {
+      this->state.archives.add(ret);
+    }
+    LOG(LogLevel::INFO, "digest of archive: id=%d has changed, fallback to slow path",
+        toUnderlying(modId));
+  } else {
+    this->state.archives.revert(std::unordered_set(this->state.modifiedSrcIds));
+  }
   for (auto &e : this->state.modifiedSrcIds) {
     if (this->state.archives.find(e)) {
-      continue;
+      continue; // already analyzed
     }
-    auto src = this->state.srcMan->findById(e);
-    assert(src);
-    LOG(LogLevel::INFO, "analyze modified src: id=%d, version=%d, path=%s",
-        toUnderlying(src->getSrcId()), src->getVersion(), src->getPath().c_str());
-    auto r = analyzer.analyze(src, action);
-    LOG(LogLevel::INFO, "analyze %s: id=%d, version=%d, path=%s", r ? "finished" : "canceled",
-        toUnderlying(src->getSrcId()), src->getVersion(), src->getPath().c_str());
-    if (!r) {
+    if (!this->doAnalyze(analyzer, e, action, "modified")) {
       break;
     }
   }
@@ -354,14 +363,7 @@ void AnalyzerWorker::Task::run() {
     if (!targetId.hasValue()) {
       break;
     }
-    auto src = this->state.srcMan->findById(targetId.unwrap());
-    assert(src);
-    LOG(LogLevel::INFO, "analyze revered src: id=%d, version=%d, path=%s",
-        toUnderlying(src->getSrcId()), src->getVersion(), src->getPath().c_str());
-    auto r = analyzer.analyze(src, action);
-    LOG(LogLevel::INFO, "analyze %s: id=%d, version=%d, path=%s", r ? "finished" : "canceled",
-        toUnderlying(src->getSrcId()), src->getVersion(), src->getPath().c_str());
-    if (!r) {
+    if (!this->doAnalyze(analyzer, targetId.unwrap(), action, "reverted")) {
       break;
     }
   }
@@ -371,6 +373,19 @@ void AnalyzerWorker::Task::run() {
     this->state.modifiedSrcIds.clear();
     LOG(LogLevel::INFO, "rebuild finished");
   }
+}
+
+ModuleArchivePtr AnalyzerWorker::Task::doAnalyze(Analyzer &analyzer, ModId modId,
+                                                 AnalyzerAction &action,
+                                                 const char *message) const {
+  auto src = this->state.srcMan->findById(modId);
+  assert(src);
+  LOG(LogLevel::INFO, "analyze %s src: id=%d, version=%d, path=%s", message,
+      toUnderlying(src->getSrcId()), src->getVersion(), src->getPath().c_str());
+  auto r = analyzer.analyze(src, action);
+  LOG(LogLevel::INFO, "analyze %s: id=%d, version=%d, path=%s", r ? "finished" : "canceled",
+      toUnderlying(src->getSrcId()), src->getVersion(), src->getPath().c_str());
+  return r;
 }
 
 } // namespace arsh::lsp

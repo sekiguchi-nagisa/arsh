@@ -424,6 +424,18 @@ ModuleArchive::ModuleArchive(ModId modId, ModAttr attr, std::vector<Archive> &&h
     : modId(modId), attr(attr), handles(std::move(handles)), imported(std::move(imported)) {
   // compute hash
   XXHasher hasher(seed);
+
+  const union {
+    struct {
+      ModId modId;
+      ModAttr attr;
+      uint8_t dummy;
+    } pack;
+    char buf[sizeof(pack)];
+  } meta = {.pack = {.modId = this->modId, .attr = this->attr, .dummy = 0}};
+  static_assert(sizeof(meta) == sizeof(uint32_t));
+  hasher.update(meta.buf, std::size(meta.buf));
+
   for (auto &e : this->handles) {
     hasher.update(e.getData().c_str(), e.getData().size());
   }
@@ -680,9 +692,11 @@ static bool isRevertedArchive(const ModuleArchives &archives,
 }
 
 void ModuleArchives::revert(std::unordered_set<ModId> &&revertingModIdSet) {
-  for (auto &e : this->values) {
-    if (e.second && isRevertedArchive(*this, revertingModIdSet, *e.second)) {
-      e.second = nullptr;
+  if (!revertingModIdSet.empty()) {
+    for (auto &e : this->values) {
+      if (e.second && isRevertedArchive(*this, revertingModIdSet, *e.second)) {
+        e.second = nullptr;
+      }
     }
   }
 }

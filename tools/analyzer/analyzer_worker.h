@@ -67,6 +67,10 @@ public:
           cancelPoint(std::move(cancelPoint)) {}
 
     void run();
+
+  private:
+    ModuleArchivePtr doAnalyze(Analyzer &analyzer, ModId modId, AnalyzerAction &action,
+                               const char *message) const;
   };
 
   enum class Status : unsigned char {
