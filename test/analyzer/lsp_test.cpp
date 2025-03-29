@@ -3,7 +3,6 @@
 #include "client.h"
 #include "lsp.h"
 #include "server.h"
-#include "worker.h"
 
 using namespace arsh;
 using namespace lsp;
@@ -729,36 +728,6 @@ TEST_F(SemanticTokenTest, encode) {
   this->testEncode(HighlightTokenClass::VARIABLE, SemanticTokenTypes::variable_, 0);
   this->testEncode(HighlightTokenClass::TYPE, SemanticTokenTypes::type_, 0);
   this->testEncode(HighlightTokenClass::MEMBER, SemanticTokenTypes::property_, 0);
-}
-
-TEST(WorkerTest, base) {
-  SingleBackgroundWorker worker;
-  auto ret1 = worker.addTask([] {
-    std::string value;
-    for (unsigned int i = 0; i < 10; i++) {
-      if (!value.empty()) {
-        value += "_";
-      }
-      value += std::to_string(i);
-    }
-    return value;
-  });
-
-  auto ret2 = worker.addTask(
-      [](unsigned int offset) {
-        std::string value;
-        for (unsigned int i = offset; i < 20; i++) {
-          if (!value.empty()) {
-            value += ".";
-          }
-          value += std::to_string(i);
-        }
-        return value;
-      },
-      10);
-
-  ASSERT_EQ("10.11.12.13.14.15.16.17.18.19", ret2.get());
-  ASSERT_EQ("0_1_2_3_4_5_6_7_8_9", ret1.get());
 }
 
 int main(int argc, char **argv) {

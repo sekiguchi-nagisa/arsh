@@ -132,6 +132,16 @@ TEST(SourceTest, merge) {
   ASSERT_EQ("/dummy5-1", srcMan1.findById(ModId{5})->getPath());
   ASSERT_EQ("/dummy5-2", srcMan2->findById(ModId{5})->getPath());
   ASSERT_EQ("/dummy5-2", srcMan1.findById(ModId{7})->getPath());
+
+  // merge and overwrite
+  src = srcMan2->update("/dummy2", 1, "dummy2!!");
+  ASSERT_EQ("dummy2!!\n", src->getContent());
+  ASSERT_EQ(1, src->getVersion());
+  src = srcMan1.add(src);
+  ASSERT_EQ("dummy2!!\n", src->getContent());
+  ASSERT_EQ(1, src->getVersion());
+  ASSERT_EQ(ModId{2}, src->getSrcId());
+  ASSERT_EQ("dummy2!!\n", srcMan1.findById(ModId{2})->getContent());
 }
 
 struct ArchiveBuilder {

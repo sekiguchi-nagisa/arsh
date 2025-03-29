@@ -11,6 +11,19 @@ target_link_libraries(${TEST_NAME} gtest gtest_main arshd_static jsonrpc highlig
 add_test(${TEST_NAME} ${TEST_NAME})
 
 
+#=====================#
+#     worker_test     #
+#=====================#
+
+set(TEST_NAME worker_test)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR})
+add_executable(${TEST_NAME}
+        worker_test.cpp
+)
+target_link_libraries(${TEST_NAME} gtest gtest_main arshd_static test_common)
+add_test(${TEST_NAME} ${TEST_NAME})
+
+
 #=======================#
 #     analyzer_test     #
 #=======================#

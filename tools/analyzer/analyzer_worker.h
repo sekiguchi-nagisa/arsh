@@ -50,6 +50,19 @@ public:
 
     void mergeSources(const State &other);
 
+    /**
+     *
+     * @param path
+     * @param newVersion
+     * @param newContent
+     * @return
+     * if successfully update, return {new src, status}
+     *   if source hash has not changed, status is false
+     * if error, return {nullptr, false}
+     */
+    std::pair<SourcePtr, bool> updateSource(StringRef path, int newVersion,
+                                            std::string &&newContent);
+
     SourcePtr remove(ModId targetId);
   };
 
@@ -154,7 +167,7 @@ public:
   void asyncStateWith(std::function<void(const State &)> &&callback);
 
 private:
-  void requestSourceUpdateUnsafe(StringRef path, int newVersion, std::string &&newContent);
+  void requestSourceUpdateUnsafe(const std::string &path, int newVersion, std::string &&newContent);
 };
 
 Result<SourcePtr, std::string> resolveSource(LoggerBase &logger, const SourceManager &srcMan,

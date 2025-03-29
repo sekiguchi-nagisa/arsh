@@ -174,24 +174,19 @@ void AnalyzerWorker::requestSourceClose(const DidCloseTextDocumentParams &params
   }
 }
 
-void AnalyzerWorker::requestSourceUpdateUnsafe(StringRef path, int newVersion,
+void AnalyzerWorker::requestSourceUpdateUnsafe(const std::string &path, int newVersion,
                                                std::string &&newContent) {
-  SourcePtr prevOpened = this->state.srcMan->find(path);
-  if (auto src = this->state.srcMan->update(path, newVersion, std::move(newContent))) {
+  if (auto [src, s] = this->state.updateSource(path, newVersion, std::move(newContent)); src) {
     this->closingSrcIds.erase(src->getSrcId()); // clear pending close requests
-    if (prevOpened && prevOpened->equalsDigest(*src)) {
-      if (const auto archive = this->state.archives.find(src->getSrcId());
-          archive && !archive->hasAttr(ModAttr::HAS_ERRORS)) {
-        LOG(LogLevel::INFO, "not update source due to no modification: %s", src->getPath().c_str());
-        return;
+    if (s) {
+      this->lastRequestTimestamp = getCurrentTimestamp();
+      if (this->status == Status::FINISHED) {
+        this->status = Status::PENDING;
       }
+      this->requestCond.notify_all();
+    } else {
+      LOG(LogLevel::INFO, "not update source due to no modification: %s", path.c_str());
     }
-    this->state.modifiedSrcIds.emplace(src->getSrcId());
-    this->lastRequestTimestamp = getCurrentTimestamp();
-    if (this->status == Status::FINISHED) {
-      this->status = Status::PENDING;
-    }
-    this->requestCond.notify_all();
   } else {
     LOG(LogLevel::ERROR, "reach opened file limit");
   }
@@ -294,12 +289,27 @@ const char *toString(AnalyzerWorker::Status s) {
 }
 
 void AnalyzerWorker::State::mergeSources(const State &other) {
-  for (auto &id : other.modifiedSrcIds) {
-    auto src = other.srcMan->findById(id);
-    src = this->srcMan->add(src);
-    assert(src);
-    this->modifiedSrcIds.emplace(src->getSrcId());
+  if (this != &other) {
+    for (auto &id : other.modifiedSrcIds) {
+      auto src = other.srcMan->findById(id);
+      src = this->srcMan->add(src);
+      assert(src);
+      this->modifiedSrcIds.emplace(src->getSrcId());
+    }
   }
+}
+
+std::pair<SourcePtr, bool> AnalyzerWorker::State::updateSource(StringRef path, int newVersion,
+                                                               std::string &&newContent) {
+  SourcePtr prevOpened = this->srcMan->find(path);
+  if (auto src = this->srcMan->update(path, newVersion, std::move(newContent))) {
+    if (prevOpened && prevOpened->equalsDigest(*src)) {
+      return {std::move(src), false}; // source modification does not affect rebuild decision
+    }
+    this->modifiedSrcIds.emplace(src->getSrcId());
+    return {std::move(src), true};
+  }
+  return {nullptr, false};
 }
 
 SourcePtr AnalyzerWorker::State::remove(ModId targetId) {
