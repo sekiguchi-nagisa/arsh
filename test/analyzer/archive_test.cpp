@@ -87,6 +87,53 @@ TEST(SourceTest, remove) {
   ASSERT_EQ("hello55\n", src->getContent());
 }
 
+TEST(SourceTest, merge) {
+  SourceManager srcMan1;
+  auto src = srcMan1.update("/dummy1", 0, "dummy1");
+  ASSERT_EQ(ModId{1}, src->getSrcId());
+  src = srcMan1.update("/dummy2", 0, "dummy2");
+  ASSERT_EQ(ModId{2}, src->getSrcId());
+  src = srcMan1.update("/dummy3", 0, "dummy3");
+  ASSERT_EQ(ModId{3}, src->getSrcId());
+
+  auto srcMan2 = srcMan1.copy();
+  src = srcMan2->update("/dummy4-2", 0, "dummy4-2");
+  ASSERT_EQ(ModId{4}, src->getSrcId());
+  src = srcMan2->update("/dummy5-2", 0, "dummy5-2");
+  ASSERT_EQ(ModId{5}, src->getSrcId());
+
+  src = srcMan1.update("/dummy4-1", 0, "dummy4-1");
+  ASSERT_EQ(ModId{4}, src->getSrcId());
+  src = srcMan1.update("/dummy5-1", 0, "dummy5-1");
+  ASSERT_EQ(ModId{5}, src->getSrcId());
+
+  // merge
+  ASSERT_FALSE(srcMan1.add(nullptr));
+  src = srcMan1.add(src);
+  ASSERT_EQ(ModId{5}, src->getSrcId());
+  ASSERT_EQ("/dummy5-1", src->getPath());
+
+  src = srcMan2->findById(ModId{4});
+  ASSERT_EQ("/dummy4-2", src->getPath());
+  src = srcMan1.add(src);
+  ASSERT_EQ(ModId{6}, src->getSrcId()); // re-assign modId
+  ASSERT_EQ("/dummy4-2", src->getPath());
+  ASSERT_EQ("dummy4-2\n", src->getContent());
+  ASSERT_EQ("/dummy4-1", srcMan1.findById(ModId{4})->getPath());
+  ASSERT_EQ("/dummy4-2", srcMan2->findById(ModId{4})->getPath());
+  ASSERT_EQ("/dummy4-2", srcMan1.findById(ModId{6})->getPath());
+
+  src = srcMan2->findById(ModId{5});
+  ASSERT_EQ("/dummy5-2", src->getPath());
+  src = srcMan1.add(src);
+  ASSERT_EQ(ModId{7}, src->getSrcId()); // re-assign modId
+  ASSERT_EQ("/dummy5-2", src->getPath());
+  ASSERT_EQ("dummy5-2\n", src->getContent());
+  ASSERT_EQ("/dummy5-1", srcMan1.findById(ModId{5})->getPath());
+  ASSERT_EQ("/dummy5-2", srcMan2->findById(ModId{5})->getPath());
+  ASSERT_EQ("/dummy5-2", srcMan1.findById(ModId{7})->getPath());
+}
+
 struct ArchiveBuilder {
   ModId id;
   std::vector<ArchiveBuilder> children;
