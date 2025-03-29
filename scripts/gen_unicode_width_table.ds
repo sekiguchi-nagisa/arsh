@@ -63,8 +63,8 @@ write // clang-format off
 write ""
 
 $IFS = $'\n'
-$table("zero_width_table", $(./uniset/uniset --32 cat:Me,Mn,Cf + U+1160..U+11FF - U+00AD))
-$table("two_width_table", $(./uniset/uniset --32 eaw:F,W - cat:Me,Mn,Cf))
-$table("ambiguous_width_table", $(./uniset/uniset --32 eaw:A - cat:Me,Mn,Cf))
+$table("zero_width_table", $(./uniset/uniset --32 'cat:Me,Mn,Cf + U+1160..U+11FF - U+00AD'))
+$table("two_width_table", $(./uniset/uniset --32 'eaw:F,W - cat:Me,Mn,Cf'))
+$table("ambiguous_width_table", $(./uniset/uniset --32 'eaw:A - cat:Me,Mn,Cf'))
 
 echo code generation success
