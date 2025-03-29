@@ -1086,10 +1086,22 @@ public:
 
   void updateSource(ModId modId, const char *newContent) {
     auto src = this->srcMan.findById(modId);
+    this->updateSource(std::move(src), newContent);
+  }
+
+  void updateSource(StringRef path, const char *newContent) {
+    auto src = this->srcMan.find(path);
+    this->updateSource(std::move(src), newContent);
+  }
+
+private:
+  void updateSource(SourcePtr &&src, const char *newContent) {
+    ASSERT_TRUE(src);
+    const ModId modId = src->getSrcId();
     src = this->srcMan.update(src->getPath(), src->getVersion() + 1, newContent);
     ASSERT_TRUE(src);
     ASSERT_TRUE(this->indexes.remove(modId));
-    ASSERT_TRUE(this->archives.removeIfUnused(modId));
+    this->archives.revert({modId});
 
     // rebuild
     auto ret = this->analyze(src);
@@ -1255,6 +1267,126 @@ new Interval($bbb: 34, $aaa: 2)
   ASSERT_EQ(archive1->getModId(), archive2->getModId());
   ASSERT_EQ(archive1->getHash(), archive2->getHash());
   ASSERT_TRUE(archive1->equalsDigest(*archive2));
+}
+
+TEST_F(ArchiveHashTest, load) {
+  TempFileFactory tempFileFactory("arsh_archive");
+  auto fileName = tempFileFactory.createTempFile("mod.ds",
+                                                 R"(
+typedef FFF(bb:String?) { typedef GGG = Error; }
+function HHH(cc: Int?) for FFF {}
+type III { let begin: Int; let end: Int; }
+)");
+
+  ModId modId;
+  auto content = format(R"(
+source %s
+new FFF.GGG('34')
+new FFF($bb:'').HHH($cc:22)
+new III($end:12, $begin:11).end
+)",
+                        fileName.c_str());
+
+  ASSERT_NO_FATAL_FAILURE(this->doAnalyze(content.c_str(), modId));
+
+  auto archive1 = this->archives.find(modId);
+  auto archiveImported1 = this->archives.find(this->srcMan.find(fileName)->getSrcId());
+  auto src1 = this->srcMan.findById(modId);
+  ASSERT_TRUE(archive1);
+  ASSERT_TRUE(src1);
+  ASSERT_EQ(ModAttr{}, archive1->getModAttr());
+
+  // modify imported module (digest has not changed)
+  content = R"(
+typedef FFF(bb:String?) { typedef GGG = Error; }
+function HHH(cc: Int?) for FFF { var aaa = $cc; }
+type III { let begin: Int; let end: Int; }
+)";
+  ASSERT_NO_FATAL_FAILURE(this->updateSource(fileName, content.c_str()));
+  content = format(R"(
+source %s
+new FFF.GGG('34')
+
+new FFF($bb:'').HHH($cc:22)
+new III($end:12, $begin:11).end
+)",
+                   fileName.c_str());
+  ASSERT_NO_FATAL_FAILURE(this->updateSource(modId, content.c_str()));
+
+  auto archive2 = this->archives.find(modId);
+  auto archiveImported2 = this->archives.find(this->srcMan.find(fileName)->getSrcId());
+  auto src2 = this->srcMan.findById(modId);
+  ASSERT_TRUE(archive2);
+  ASSERT_TRUE(src2);
+  ASSERT_EQ(archive2->getModId(), archive1->getModId());
+  ASSERT_EQ(archive2->getHash(), archive1->getHash());
+  ASSERT_EQ(archiveImported2->getHash(), archiveImported1->getHash());
+
+  // change import type
+  content = format(R"(
+source %s inlined
+new FFF.GGG('34')
+
+new FFF($bb:'').HHH($cc:22)
+new III($end:12, $begin:11).end
+)",
+                   fileName.c_str());
+  ASSERT_NO_FATAL_FAILURE(this->updateSource(modId, content.c_str()));
+
+  archive2 = this->archives.find(modId);
+  src2 = this->srcMan.findById(modId);
+  ASSERT_TRUE(archive2);
+  ASSERT_TRUE(src2);
+  ASSERT_EQ(archive2->getModId(), archive1->getModId());
+  ASSERT_NE(archive2->getHash(), archive1->getHash());
+  ASSERT_EQ(archiveImported2->getHash(), archiveImported1->getHash());
+
+  // has error (global symbol signatures have not changed)
+  content = format(R"(
+source %s
+new FFF.GGG('34')
+new FFF($bb:'').HHH($cc:22)
+new III($end:12, $begin:11).end
+2345/ ""
+)",
+                   fileName.c_str());
+  ASSERT_NO_FATAL_FAILURE(this->updateSource(modId, content.c_str()));
+
+  archive2 = this->archives.find(modId);
+  archiveImported2 = this->archives.find(this->srcMan.find(fileName)->getSrcId());
+  src2 = this->srcMan.findById(modId);
+  ASSERT_TRUE(archive2);
+  ASSERT_TRUE(src2);
+  ASSERT_EQ(archive2->getModId(), archive1->getModId());
+  ASSERT_NE(archive2->getHash(), archive1->getHash());
+  ASSERT_EQ(archiveImported2->getHash(), archiveImported1->getHash());
+
+  // modify imported module (digest has changed)
+  content = R"(
+typedef FFF(bb:String?) { typedef GGG = Error; }
+function HHH(cc: Int?) for FFF { var aaa = $cc; }
+type III { let begin: Int; let end: Int; }
+var AAA = 2345
+)";
+  ASSERT_NO_FATAL_FAILURE(this->updateSource(fileName, content.c_str()));
+  content = format(R"(
+source %s
+new FFF.GGG('34')
+
+new FFF($bb:'').HHH($cc:22)
+new III($end:12, $begin:11).end
+)",
+                   fileName.c_str());
+  ASSERT_NO_FATAL_FAILURE(this->updateSource(modId, content.c_str()));
+
+  archive2 = this->archives.find(modId);
+  archiveImported2 = this->archives.find(this->srcMan.find(fileName)->getSrcId());
+  src2 = this->srcMan.findById(modId);
+  ASSERT_TRUE(archive2);
+  ASSERT_TRUE(src2);
+  ASSERT_EQ(archive2->getModId(), archive1->getModId());
+  ASSERT_NE(archive2->getHash(), archive1->getHash());
+  ASSERT_NE(archiveImported2->getHash(), archiveImported1->getHash());
 }
 
 int main(int argc, char **argv) {
