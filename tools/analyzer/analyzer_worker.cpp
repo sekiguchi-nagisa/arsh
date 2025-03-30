@@ -346,7 +346,8 @@ void AnalyzerWorker::Task::run() {
     const auto ret = this->doAnalyze(analyzer, modId, action, "modified");
     if (ret) {
       if (!oldArchive || ret->equalsDigest(*oldArchive)) {
-        LOG(LogLevel::INFO, "digest of archive: id=%d has not changed", toUnderlying(modId));
+        LOG(LogLevel::INFO, "digest of archive: id=%d has not changed, rebuild finished",
+            toUnderlying(modId));
         return;
       }
     }
@@ -359,13 +360,13 @@ void AnalyzerWorker::Task::run() {
   } else {
     this->state.archives.revert(std::unordered_set(this->state.modifiedSrcIds));
   }
-  for (auto &e : this->state.modifiedSrcIds) {
-    if (this->state.archives.find(e)) {
-      continue; // already analyzed
+  for (auto iter = this->state.modifiedSrcIds.begin(); iter != this->state.modifiedSrcIds.end();) {
+    if (!this->state.archives.find(*iter)) { // analyze non-rebuilt source
+      if (!this->doAnalyze(analyzer, *iter, action, "modified")) {
+        break;
+      }
     }
-    if (!this->doAnalyze(analyzer, e, action, "modified")) {
-      break;
-    }
+    iter = this->state.modifiedSrcIds.erase(iter);
   }
 
   while (!this->cancelPoint->isCanceled()) {

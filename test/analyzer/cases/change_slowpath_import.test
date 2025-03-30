@@ -1,0 +1,69 @@
+# RUN: call $cmd --test $self --debounce-time 500 --log info
+
+{"id": 0, "jsonrpc": "2.0", "method": "initialize",
+ "params": {"capabilities": {}, "rootUri": "file:///test", "processId": 46}}
+
+#    CHECK: {
+# CHECK_IF:     "capabilities": {
+# CHECK_IF: }
+
+<<<
+{"jsonrpc": "2.0", "method": "textDocument/didOpen",
+ "params": {
+    "textDocument": {"languageId": "arsh", "version": 1, "uri": "test:///test.ds",
+                     "text": "source $SCRIPT_DIR/mod_inlined.ds;"}
+ }
+}
+
+# CHECKERR_RE_IF: ^.+ <info> .+ prepare rebuild for 1 sources
+#    CHECKERR_RE: ^.+ <info> .+ rebuild started for 1 sources
+#    CHECKERR_RE: ^.+ <info> .+ analyze modified src: id=1, version=1, path=/.+/test\.ds
+#    CHECKERR_RE: ^.+ <info> .+ enter module: id=1, version=1, path=/.+/test\.ds
+#    CHECKERR_RE: ^.+ <info> .+ enter module: id=2, version=0, path=/.+/mod_inlined\.ds
+#    CHECKERR_RE: ^.+ <info> .+ enter module: id=3, version=0, path=/.+/mod1\.ds
+# CHECKERR_RE_IF: ^.+ <info> .+ digest of archive: id=1 has not changed, rebuild finished
+
+
+# change and revert all dependent modules
+<<< 500
+{"jsonrpc": "2.0", "method": "textDocument/didChange",
+  "params": {
+    "contentChanges": [ { "text": "echo hello" } ],
+    "textDocument": { "uri": "test:///mod1.ds", "version": 2 }
+  }
+}
+
+# CHECKERR_RE_IF: ^.+ <info> .+ rebuild started for 1 sources
+#    CHECKERR_RE: ^.+ <info> .+ analyze modified src: id=3, version=2, path=/.+/mod1\.ds
+# CHECKERR_RE_IF: ^.+ <info> .+ digest of archive: id=3 has changed, fallback to slow path
+#    CHECKERR_RE: ^.+ <info> .+ analyze reverted src: id=1, version=1, path=/.+/test\.ds
+#    CHECKERR_RE: ^.+ <info> .+ enter module: id=1, version=1, path=/.+/test\.ds
+#    CHECKERR_RE: ^.+ <info> .+ enter module: id=2, version=0, path=/.+/mod_inlined\.ds
+
+# CHECKERR_RE_IF: ^.+ <info> .+ analyze finished: id=1, version=1, path=/.+/test\.ds
+#    CHECKERR_RE: ^.+ <info> .+ rebuild finished
+#    CHECKERR_RE: ^.+ <info> .+ rebuild all finished
+
+
+# change, but not revert all dependent modules
+<<< 500
+{"jsonrpc": "2.0", "method": "textDocument/didChange",
+  "params": {
+    "contentChanges": [ { "text": "echo hello !!!" } ],
+    "textDocument": { "uri": "test:///mod1.ds", "version": 3 }
+  }
+}
+
+# CHECKERR_RE_IF: ^.+ <info> .+ rebuild started for 1 sources
+#    CHECKERR_RE: ^.+ <info> .+ analyze modified src: id=3, version=3, path=/.+/mod1\.ds
+# CHECKERR_RE_IF: ^.+ <info> .+ digest of archive: id=3 has not changed, rebuild finished
+
+<<< 500
+{"id": 2, "jsonrpc": "2.0", "method": "shutdown"}
+
+# CHECK_IF:   "result": null
+#    CHECK: }
+
+<<<
+{"jsonrpc": "2.0", "method": "exit"}
+# STATUS: 0

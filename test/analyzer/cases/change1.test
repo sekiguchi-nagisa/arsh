@@ -1,4 +1,4 @@
-# RUN: call $cmd --test $self --debounce-time 5
+# RUN: call $cmd --test $self --debounce-time 5 --log info
 
 {"id": 0, "jsonrpc": "2.0", "method": "initialize",
  "params": {"capabilities": {}, "rootUri": "file:///test", "processId": 46}}
@@ -48,6 +48,15 @@
 # CHECK_IF:   "method": "textDocument/publishDiagnostics",
 #    CHECK:   "params": {
 #    CHECK:     "diagnostics": [],
+
+# CHECKERR_RE_IF: ^.+ <info> .+ rebuild started for 1 sources
+# CHECKERR_RE_IF: ^.+ <info> .+ analyze modified src: id=1, version=1, path=/test/test\.ds
+# CHECKERR_RE_IF: ^.+ <info> .+ digest of archive: id=1 has not changed, rebuild finished
+
+# CHECKERR_RE_IF: ^.+ <info> .+ rebuild started for 1 sources
+# CHECKERR_RE_IF: ^.+ <info> .+ analyze modified src: id=1, version=2, path=/test/test\.ds
+# CHECKERR_RE_IF: ^.+ <info> .+ digest of archive: id=1 has changed, fallback to slow path
+#    CHECKERR_RE: ^.+ <info> .+ rebuild finished
 
 <<<
 {"id": 2, "jsonrpc": "2.0", "method": "shutdown"}
