@@ -31,4 +31,3 @@ target_link_libraries(${HIGHLIGHTER} highlighter arsh_static)
 
 install(TARGETS ${HIGHLIGHTER}
         RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
-install_symlink_bindir(${HIGHLIGHTER} "dscolorize")
