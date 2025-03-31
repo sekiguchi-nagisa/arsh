@@ -457,7 +457,7 @@ function sort(): [T0] where T0 : Value_ for [T0]
 
 function sortBy(comp: (T0, T0) -> Int): [T0] for [T0]
 
-function searchSorted(target: T0): Int for [T0]
+function searchSorted(target: T0): Int where T0 : Value_ for [T0]
 
 function searchSortedBy(target: T0, comp: (T0, T0) -> Int): Int for [T0]
 

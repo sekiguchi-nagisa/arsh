@@ -1848,7 +1848,7 @@ ARSH_METHOD array_sortBy(RuntimeContext &ctx) {
   }
 }
 
-//!bind: function searchSorted($this: Array<T0>, $target: T0): Int
+//!bind: function searchSorted($this: Array<T0>, $target: T0): Int where T0 : Value_
 ARSH_METHOD array_search(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_search);
   auto &obj = typeAs<ArrayObject>(LOCAL(0));
