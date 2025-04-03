@@ -60,7 +60,7 @@ assert diff <(complete -A module '/') <(cd ~/ && complete 'source /')
 assert diff <(complete -A tilde -A module '~/') <(cd ~/ && complete 'source ~/')
 
 ## keyword
-let stmt = ['new', '"', '$(', '>(', '<(', '@(', '(', '[', '[<', '{',
+let stmt = ['new', '"', '$(', '>(', '<(','&(', '@(', '(', '[', '[<', '{',
             'do', 'for', 'if', 'case', 'try', 'while', 'function',
             'break', 'continue', 'return', 'time',
             '!', '+', '-', 'throw', 'coproc',
@@ -69,7 +69,7 @@ let stmt = ['new', '"', '$(', '>(', '<(', '@(', '(', '[', '[<', '{',
             'exportenv', 'importenv',
             'let', 'source', 'source?', 'var', ';']
 
-let expr = ['new', '"', '$(', '>(', '<(', '@(', '(', '[', '{',
+let expr = ['new', '"', '$(', '>(', '<(','&(', '@(', '(', '[', '{',
             'do', 'for', 'if', 'case', 'try', 'while', 'function',
             'break', 'continue', 'return', 'time',
             '!', '+', '-', 'throw', 'coproc']

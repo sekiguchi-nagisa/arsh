@@ -1253,12 +1253,14 @@ void TypeChecker::visitForkNode(ForkNode &node) {
   case ForkKind::JOB:
   case ForkKind::COPROC:
   case ForkKind::DISOWN:
-  case ForkKind::NONE:      // unreachable
-  case ForkKind::PIPE_FAIL: // unreachable
     if (node.getExprNode().getType().is(TYPE::Job)) {
       this->reportError<NestedJob>(node.getExprNode());
     }
     type = &this->typePool().get(TYPE::Job);
+    break;
+  case ForkKind::NONE:
+  case ForkKind::PIPE_FAIL: // unreachable
+    type = &this->typePool().get(TYPE::Bool);
     break;
   }
   node.setType(*type);

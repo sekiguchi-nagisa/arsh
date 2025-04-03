@@ -1654,6 +1654,10 @@ public:
     return std::make_unique<ForkNode>(token, ForkKind::COPROC, std::move(exprNode), end);
   }
 
+  static auto newSubshell(unsigned int pos, std::unique_ptr<Node> &&exprNode, Token token) {
+    return std::make_unique<ForkNode>(Token{pos, 1}, ForkKind::NONE, std::move(exprNode), token);
+  }
+
   ~ForkNode() override = default;
 
   ForkKind getOpKind() const { return this->opKind; }
@@ -1671,10 +1675,12 @@ public:
     }
   }
 
-  bool isCmdSub() const {
+  bool isCmdSubOrSubShell() const {
     switch (this->opKind) {
     case ForkKind::STR:
     case ForkKind::ARRAY:
+    case ForkKind::NONE:
+    case ForkKind::PIPE_FAIL:
       return true;
     default:
       return false;

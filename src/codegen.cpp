@@ -1058,7 +1058,7 @@ static Value toForkDesc(const Lexer &lexer, const ForkNode &node) {
 }
 
 void ByteCodeGenerator::visitForkNode(ForkNode &node) {
-  if (isa<PipelineNode>(node.getExprNode()) && !node.isCmdSub()) {
+  if (isa<PipelineNode>(node.getExprNode()) && !node.isCmdSubOrSubShell()) {
     this->generatePipeline(cast<PipelineNode>(node.getExprNode()), node.getOpKind());
   } else {
     auto beginLabel = makeLabel();
@@ -1067,7 +1067,11 @@ void ByteCodeGenerator::visitForkNode(ForkNode &node) {
 
     this->emitSourcePos(node.getActualPos());
     this->emitLdcIns(toForkDesc(*this->curBuilder().lexer, node));
-    this->emitForkIns(node.getOpKind(), mergeLabel);
+    auto forkKind = node.getOpKind();
+    if (forkKind == ForkKind::NONE && this->inStmtCtx()) { // for subshell
+      forkKind = ForkKind::PIPE_FAIL;
+    }
+    this->emitForkIns(forkKind, mergeLabel);
     this->markLabel(beginLabel);
     this->visit(node.getExprNode(), CmdCallCtx::STMT);
     this->markLabel(endLabel);

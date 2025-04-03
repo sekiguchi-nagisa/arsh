@@ -245,6 +245,7 @@ INIT:
     <STMT> "$("              { MODE(EXPR); PUSH_MODE_SKIP_NL_HERE(STMT); RET(START_SUB_CMD); }
     <STMT> ">("              { MODE(EXPR); PUSH_MODE_SKIP_NL(STMT); RET(START_IN_SUB); }
     <STMT> "<("              { MODE(EXPR); PUSH_MODE_SKIP_NL(STMT); RET(START_OUT_SUB); }
+    <STMT> "&("              { MODE(EXPR); PUSH_MODE_SKIP_NL(STMT); RET(START_SUBSHELL); }
     <STMT> "@("              { MODE(EXPR); PUSH_MODE_SKIP_NL(CMD); RET(AT_PAREN); }
 
     <STMT> "$"               { if(this->inCompletionPoint()) { RET_OR_COMP(APPLIED_NAME); }

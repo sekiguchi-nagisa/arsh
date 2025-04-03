@@ -134,6 +134,9 @@ ARState::ARState()
 }
 
 void ARState::updatePipeStatus(unsigned int size, const Proc *procs, bool mergeExitStatus) {
+  if (size == 1 && !mergeExitStatus) {
+    return; // do nothing for subshell
+  }
   if (auto &obj = typeAs<ArrayObject>(this->getGlobal(BuiltinVarOffset::PIPESTATUS));
       obj.getRefcount() > 1) {
     auto &type = this->typePool.get(obj.getTypeID());
@@ -378,16 +381,17 @@ static Value newProcSubst(const ARState &st, int &fd, Job &&job) {
   return Value::create<UnixFdObject>(v, std::move(job));
 }
 
-static bool checkPipelineError(ARState &state, const JobObject &job, bool lastPipe) {
+static bool checkPipelineError(ARState &state, const unsigned int procSize, const Proc *const procs,
+                               bool lastPipe) {
   if (!state.has(RuntimeOption::ERR_RAISE)) {
     return true;
   }
 
-  const unsigned int lastIndex = job.getProcSize() - (lastPipe ? 0 : 1);
+  const unsigned int lastIndex = procSize - (lastPipe ? 0 : 1);
   unsigned int index = 0;
   int64_t exitStatus = 0;
-  for (; index < job.getProcSize(); index++) {
-    auto &proc = job.getProcs()[index];
+  for (; index < procSize; index++) {
+    auto &proc = procs[index];
     if (exitStatus = proc.exitStatus(); exitStatus != 0) {
       if (index < lastIndex && proc.signaled() && proc.asSigNum() == SIGPIPE) {
         if (!state.has(RuntimeOption::FAIL_SIGPIPE)) {
@@ -406,13 +410,24 @@ static bool checkPipelineError(ARState &state, const JobObject &job, bool lastPi
   return true;
 
 ERROR:
-  std::string message = "pipeline has non-zero status: `";
-  message += std::to_string(exitStatus);
-  message += "' at ";
-  message += std::to_string(index + 1);
-  message += "th element";
+  std::string message;
+  if (procSize == 1 && !lastPipe) { // subshell
+    message = "child process exits with non-zero status: `";
+    message += std::to_string(exitStatus);
+    message += "'";
+  } else {
+    message = "pipeline has non-zero status: `";
+    message += std::to_string(exitStatus);
+    message += "' at ";
+    message += std::to_string(index + 1);
+    message += "th element";
+  }
   raiseError(state, TYPE::ExecError, std::move(message), exitStatus);
   return false;
+}
+
+static bool checkPipelineError(ARState &state, const JobObject &job, bool lastPipe) {
+  return checkPipelineError(state, job.getProcSize(), job.getProcs(), lastPipe);
 }
 
 bool VM::attachAsyncJob(ARState &state, Value &&desc, unsigned int procSize, const Proc *procs,
@@ -590,11 +605,7 @@ bool VM::forkAndEval(ARState &state, Value &&desc) {
         raiseSystemError(state, errNum, "wait failed");
         return false;
       }
-      if (status != 0 && state.has(RuntimeOption::ERR_RAISE)) {
-        std::string message = "child process exits with non-zero status: `";
-        message += std::to_string(status);
-        message += "'";
-        raiseError(state, TYPE::ExecError, std::move(message), status);
+      if (!checkPipelineError(state, 1, &proc, false)) {
         return false;
       }
       state.setExitStatus(status);

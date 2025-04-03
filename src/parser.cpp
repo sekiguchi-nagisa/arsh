@@ -1998,6 +1998,14 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
   case TokenKind::START_IN_SUB:
   case TokenKind::START_OUT_SUB:
     return this->parse_procSubstitution();
+  case TokenKind::START_SUBSHELL: {
+    auto ctx = this->inIgnorableNLCtx();
+    const unsigned int pos = START_POS();
+    this->consume(); // START_SUBSHELL
+    auto exprNode = TRY(this->parse_expression());
+    const Token closeToken = TRY(this->expect(TokenKind::RP));
+    return ForkNode::newSubshell(pos, std::move(exprNode), closeToken);
+  }
   case TokenKind::AT_PAREN:
     return this->parse_cmdArgArray();
   case TokenKind::LP: { // group, tuple or anonymous command
