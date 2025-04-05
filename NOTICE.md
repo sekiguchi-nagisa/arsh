@@ -44,7 +44,7 @@ This file is distributed under the BSD 2-Clause
 License (https://www.opensource.org/licenses/bsd-license.php).
 This is copied from [Nicoshev/rapidhash](https://github.com/Nicoshev/rapidhash)
 
-### external/dragonbox/simple_dragonbox.h
+## external/dragonbox/simple_dragonbox.h
 
 This file is distributed under the Apache License Version 2.0 with LLVM
 Exceptions (https://llvm.org/LICENSE.txt).
