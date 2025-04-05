@@ -13,10 +13,8 @@ Currently, under heavy development. Language specification is subject to change 
 ## Build Requirement
 
 * Linux x86-64
-* cmake 3.8 or later
+* cmake 3.15 or later
 * git (for fetching external projects)
-* autotools, libtool (for building `re2c`)
-    * if cmake 3.12 or later, no longer need theme
 * Python 3.7 or later (for building `re2c`)
 * make/ninja
 * gcc/clang (need gnu++17 support)
