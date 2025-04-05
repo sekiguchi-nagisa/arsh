@@ -9,7 +9,7 @@ jobs:
       - checkout
       - run: uname -a
       - run: sudo apt update
-      - run: sudo apt install -y g++ cmake language-pack-ja ninja-build libpcre2-8-0 libpcre2-dev systemd-sysv
+      - run: sudo apt install -y g++ cmake language-pack-ja ninja-build libpcre2-8-0 libpcre2-dev
       - run: sh scripts/run_all_test.sh g++
   build-on-clang:
     machine:
@@ -19,7 +19,7 @@ jobs:
       - checkout
       - run: uname -a
       - run: sudo apt update
-      - run: sudo apt install -y g++ clang cmake language-pack-ja ninja-build libpcre2-8-0 libpcre2-dev systemd-sysv
+      - run: sudo apt install -y g++ clang cmake language-pack-ja ninja-build libpcre2-8-0 libpcre2-dev
       - run: sh scripts/run_all_test.sh clang++
 workflows:
   build:
