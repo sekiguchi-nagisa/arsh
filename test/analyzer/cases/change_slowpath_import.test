@@ -21,8 +21,8 @@
 #    CHECKERR_RE: ^.+ <info> .+ enter module: id=1, version=1, path=/.+/test\.ds
 #    CHECKERR_RE: ^.+ <info> .+ enter module: id=2, version=0, path=/.+/mod_inlined\.ds
 #    CHECKERR_RE: ^.+ <info> .+ enter module: id=3, version=0, path=/.+/mod1\.ds
-# CHECKERR_RE_IF: ^.+ <info> .+ digest of archive: id=1 has not changed, rebuild finished
-
+# CHECKERR_RE_IF: ^.+ <info> .+ digest of archive: id=1 has not changed
+#    CHECKERR_RE: ^.+ <info> .+ rebuild finished
 
 # change and revert all dependent modules
 <<< 500
@@ -56,7 +56,8 @@
 
 # CHECKERR_RE_IF: ^.+ <info> .+ rebuild started for 1 sources
 #    CHECKERR_RE: ^.+ <info> .+ analyze modified src: id=3, version=3, path=/.+/mod1\.ds
-# CHECKERR_RE_IF: ^.+ <info> .+ digest of archive: id=3 has not changed, rebuild finished
+# CHECKERR_RE_IF: ^.+ <info> .+ digest of archive: id=3 has not changed
+#    CHECKERR_RE: ^.+ <info> .+ rebuild finished
 
 <<< 500
 {"id": 2, "jsonrpc": "2.0", "method": "shutdown"}

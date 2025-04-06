@@ -51,7 +51,8 @@
 
 # CHECKERR_RE_IF: ^.+ <info> .+ rebuild started for 1 sources
 # CHECKERR_RE_IF: ^.+ <info> .+ analyze modified src: id=1, version=1, path=/test/test\.ds
-# CHECKERR_RE_IF: ^.+ <info> .+ digest of archive: id=1 has not changed, rebuild finished
+# CHECKERR_RE_IF: ^.+ <info> .+ digest of archive: id=1 has not changed
+#    CHECKERR_RE: ^.+ <info> .+ rebuild finished
 
 # CHECKERR_RE_IF: ^.+ <info> .+ rebuild started for 1 sources
 # CHECKERR_RE_IF: ^.+ <info> .+ analyze modified src: id=1, version=2, path=/test/test\.ds

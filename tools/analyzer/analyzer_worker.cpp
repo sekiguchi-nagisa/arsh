@@ -346,9 +346,8 @@ void AnalyzerWorker::Task::run() {
     const auto ret = this->doAnalyze(analyzer, modId, action, "modified");
     if (ret) {
       if (!oldArchive || ret->equalsDigest(*oldArchive)) {
-        LOG(LogLevel::INFO, "digest of archive: id=%d has not changed, rebuild finished",
-            toUnderlying(modId));
-        return;
+        LOG(LogLevel::INFO, "digest of archive: id=%d has not changed", toUnderlying(modId));
+        goto REMAIN;
       }
     }
     this->state.archives.revert({modId});
@@ -369,6 +368,7 @@ void AnalyzerWorker::Task::run() {
     iter = this->state.modifiedSrcIds.erase(iter);
   }
 
+REMAIN:
   while (!this->cancelPoint->isCanceled()) {
     auto targetId = this->state.archives.getFirstRevertedModId();
     if (!targetId.hasValue()) {
