@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+#### Core
+
+- add subshell syntax ``&( )``
+
 ## [0.37.0] - 2025-03-31
 
 ### Added

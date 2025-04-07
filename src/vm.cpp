@@ -601,6 +601,7 @@ bool VM::forkAndEval(ARState &state, Value &&desc) {
         state.jobTable.attach(
             JobObject::create(proc, state.emptyFDObj, state.emptyFDObj, std::move(desc)));
       }
+      state.setExitStatus(status);
       if (status < 0) {
         raiseSystemError(state, errNum, "wait failed");
         return false;
@@ -608,7 +609,6 @@ bool VM::forkAndEval(ARState &state, Value &&desc) {
       if (!checkPipelineError(state, 1, &proc, false)) {
         return false;
       }
-      state.setExitStatus(status);
       break;
     }
     default:

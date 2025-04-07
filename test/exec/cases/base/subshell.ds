@@ -1,0 +1,46 @@
+
+assert &(2345) is Bool
+assert &({;}) is Bool
+
+$? = 0
+var s = &(true)
+assert $s
+assert $? == 0
+
+$s = &(false)
+assert ! $s
+assert $? == 1
+
+$s = &(exit 67)
+assert !$s
+assert $? == 67
+
+$s = &(2345)
+assert !$s
+assert $? == 67  # prev exit status
+
+$? = 0
+$s = &(2345)
+assert $s
+assert $? == 0
+
+# pipe
+assert $PIPESTATUS.empty()
+$s = &(exit 56 | exit 78)
+assert ! $s
+assert $? == 78
+assert $PIPESTATUS.empty()
+
+$s = &(exit 67 | 12)
+assert ! $s
+assert $? == 78
+
+# modify within subshell
+var c = 0
+&({ $c++; assert $c == 1; })
+assert $c == 0
+
+var old = $PID
+&({ assert $PID != $old; })
+
+true

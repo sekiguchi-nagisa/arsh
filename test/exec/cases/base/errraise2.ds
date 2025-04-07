@@ -179,4 +179,20 @@ assert $jj.wait() == 1
 assert $jj.status(0)! == 156
 assert $jj.status(1)! == 1
 
+## subshell
+$ex = 12
+try {
+    var _ = &(false)
+    &(exit 123)
+} catch e { $ex = $e; }
+$assertStatus(123, $ex, 186)
+
+$ex = 12
+try {
+     &(false) || true
+    &(sh -c 'exit 12')
+} catch e { $ex = $e; }
+$assertStatus(12, $ex, 193)
+assert ($ex as ExecError).message() == "child process exits with non-zero status: \`12'"
+
 true

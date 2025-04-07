@@ -806,6 +806,15 @@ TEST_F(LexerTest_Lv1, outSub2) {
   ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycCMD));
 }
 
+TEST_F(LexerTest_Lv1, subshell) {
+  const char *text = "&(";
+  this->initLexer(text);
+  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::START_SUBSHELL, text, TokenKind::EOS, ""));
+  ASSERT_NO_FATAL_FAILURE(this->assertLexerMode({yycSTMT, true}));
+  this->lexer->popLexerMode();
+  ASSERT_NO_FATAL_FAILURE(this->assertLexerMode(yycEXPR));
+}
+
 TEST_F(LexerTest_Lv1, atparen) {
   const char *text = "@(12\n";
   this->initLexer(text);

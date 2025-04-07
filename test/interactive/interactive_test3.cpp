@@ -215,6 +215,65 @@ TEST_F(InteractiveTest, ctrlz3) {
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 128 + SIGINT));
 }
 
+TEST_F(InteractiveTest, subshell_ctrlz1) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+  this->sendLine("var a = &(while(true){})");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "var a = &(while(true){})\n"));
+  std::this_thread::sleep_for(std::chrono::milliseconds(300));
+  this->send(CTRL_Z);
+  ASSERT_NO_FATAL_FAILURE(this->expect(promptAfterCtrlZ(PROMPT), "[1] + Stopped  while(true){}\n"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$a", ": Bool = false"));
+  ASSERT_NO_FATAL_FAILURE(
+      this->sendLineAndExpect("$?", format(": Int = %d", 128 + SIGTSTP).c_str()));
+
+  // send CTRL_C, but already stopped.
+  this->send(CTRL_C);
+  ASSERT_NO_FATAL_FAILURE(this->expect("\n" + PROMPT));
+
+  // resume and kill
+  this->sendLine("fg");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "fg\nwhile(true){}\n"));
+  std::this_thread::sleep_for(std::chrono::milliseconds(400));
+  this->send(CTRL_C);
+
+  std::string err = strsignal(SIGINT);
+  err += "\n";
+  ASSERT_NO_FATAL_FAILURE(this->expect(promptAfterCtrlC(PROMPT), err));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 128 + SIGINT));
+}
+
+TEST_F(InteractiveTest, subshell_ctrlz2) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+  this->sendLine("var s = &(while(true){} | while(true){ ; })");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "var s = &(while(true){} | while(true){ ; })\n"));
+  std::this_thread::sleep_for(std::chrono::milliseconds(500));
+  this->send(CTRL_Z);
+  ASSERT_NO_FATAL_FAILURE(
+      this->expect(promptAfterCtrlZ(PROMPT), "[1] + Stopped  while(true){} | while(true){ ; }\n"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$s", ": Bool = false"));
+  ASSERT_NO_FATAL_FAILURE(
+      this->sendLineAndExpect("$?", format(": Int = %d", 128 + SIGTSTP).c_str()));
+
+  // send CTRL_C, but already stopped.
+  this->send(CTRL_C);
+  ASSERT_NO_FATAL_FAILURE(this->expect("\n" + PROMPT));
+
+  // resume and kill
+  this->sendLine("fg");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "fg\nwhile(true){} | while(true){ ; }\n"));
+  std::this_thread::sleep_for(std::chrono::milliseconds(400));
+  this->send(CTRL_C);
+
+  std::string err = strsignal(SIGINT);
+  err += "\n";
+  ASSERT_NO_FATAL_FAILURE(this->expect(promptAfterCtrlC(PROMPT), err));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 128 + SIGINT));
+}
+
 TEST_F(InteractiveTest, cmdsub_ctrlz1) {
   this->invoke("--quiet", "--norc");
 
