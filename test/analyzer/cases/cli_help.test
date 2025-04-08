@@ -4,7 +4,7 @@
 # CHECK: Options:
 # CHECK:   --log level           specify log level (debug, info, warning, error, fatal). default is `warning'
 # CHECK:   --language-server     enable language server features (default)
-# CHECK:   --debounce-time msec  time deadline of re-build (ms). default is 200
+# CHECK:   --debounce-time msec  time deadline of re-build (ms). default is 150
 # CHECK:   --test file           run in test mode (also set debounce-time=5)
 # CHECK:   --test-open file      run in test mode (explicitly open specified file)
 # CHECK:   --wait-time msec      specify wait time (ms) for test-open mode, default is 10

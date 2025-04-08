@@ -5,7 +5,7 @@
 # CHECKERR: Options:
 # CHECKERR:   --log level           specify log level (debug, info, warning, error, fatal). default is `warning'
 # CHECKERR:   --language-server     enable language server features (default)
-# CHECKERR:   --debounce-time msec  time deadline of re-build (ms). default is 200
+# CHECKERR:   --debounce-time msec  time deadline of re-build (ms). default is 150
 # CHECKERR:   --test file           run in test mode (also set debounce-time=5)
 # CHECKERR:   --test-open file      run in test mode (explicitly open specified file)
 # CHECKERR:   --wait-time msec      specify wait time (ms) for test-open mode, default is 10

@@ -25,7 +25,7 @@
 namespace arsh::lsp {
 
 // for help message (do not replace this macro)
-#define DEFAULT_DEBOUNCE_TIME 200
+#define DEFAULT_DEBOUNCE_TIME 150
 
 struct DriverOptions {
   LogLevel level{LogLevel::WARNING};
