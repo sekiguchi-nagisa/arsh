@@ -228,6 +228,8 @@ TEST_F(PrecedenceTest, asis) {
 TEST_F(PrecedenceTest, arith) {
   ASSERT_NO_FATAL_FAILURE(this->equals("(((1 / 2) * 3) % 4)", "1 / 2 * 3 % 4"));
   ASSERT_NO_FATAL_FAILURE(this->equals("((1 + (2 * 3)) - 4)", "1 + 2 * 3 - 4"));
+  ASSERT_NO_FATAL_FAILURE(this->equals("((1 + 2) + 3)", "1 + 2 + 3"));
+  ASSERT_NO_FATAL_FAILURE(this->equals("((100 / 2) * 2)", "100 / 2 * 2"));
 }
 
 TEST_F(PrecedenceTest, logical) {
