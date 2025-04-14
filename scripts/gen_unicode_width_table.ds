@@ -35,8 +35,9 @@ test -d $work_dir || mkdir $work_dir
 
 cd $work_dir
 
-test -f UnicodeData.txt ||
-    curl http://www.unicode.org/Public/UCD/latest/ucd/UnicodeData.txt -o ./UnicodeData.txt
+test -f DerivedGeneralCategory.txt ||
+    curl http://www.unicode.org/Public/UCD/latest/ucd/extracted/DerivedGeneralCategory.txt \
+        -o ./DerivedGeneralCategory.txt
 
 test -f EastAsianWidth.txt ||
     curl http://www.unicode.org/Public/UCD/latest/ucd/EastAsianWidth.txt -o ./EastAsianWidth.txt
