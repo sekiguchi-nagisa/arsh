@@ -355,6 +355,22 @@ TEST_F(InteractiveTest, procSubstitution) {
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
 }
 
+TEST_F(InteractiveTest, subshell) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("&(echo hello && echo 1>&2 world)",
+                                                  "hello\n: Bool = true", "world\n"));
+
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert \"$PIPESTATUS\" == ''"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
+      "echo ZZZ | &(IFS=$'\\n' read && echo '<'$REPLY'>')", "<ZZZ>\n: Bool = true"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert \"$PIPESTATUS\" == '0 0'"));
+
+  this->send(CTRL_D);
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
+}
+
 TEST_F(InteractiveTest, pipestatus) {
   this->invoke("--quiet", "--norc");
 

@@ -49,7 +49,8 @@ inline std::vector<std::string> getSortedFileList(const char *dir,
                                  return true;
                                }
                              }
-                             return !StringRef(v).endsWith(".ds");
+                             const StringRef ref = v;
+                             return !ref.endsWith(".ds") && !ref.endsWith(".arsh");
                            }),
             ret.end());
   std::sort(ret.begin(), ret.end());

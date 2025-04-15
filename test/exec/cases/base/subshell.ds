@@ -43,4 +43,7 @@ assert $c == 0
 var old = $PID
 &({ assert $PID != $old; })
 
+assert $SUBSHELL == 0
+assert &({ $? = 0; assert $SUBSHELL == 1; })
+
 true

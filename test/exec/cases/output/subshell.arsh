@@ -1,0 +1,13 @@
+# RUN: exec $cmd $self
+
+&(sh -c 'echo hello external!!')  # external command
+&(echo hello builtin) # builtin
+
+ff() { echo -n 'hello '; sh -c 'echo udc'; }
+&(ff)  # external
+
+# CHECK: hello external!!
+# CHECK: hello builtin
+# CHECK: hello udc
+
+# STATUS: 0
