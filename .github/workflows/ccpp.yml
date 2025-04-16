@@ -8,61 +8,6 @@ on:
       - 'v*'
 
 jobs:
-  build_on_linux_ubuntu20_04_gcc:
-    runs-on: ubuntu-20.04
-    strategy:
-      matrix:
-        cc: [ g++-7, g++-8 ]
-    steps:
-      - uses: actions/checkout@v4
-      - name: prepare
-        run: |
-          sudo apt update
-          sudo apt install language-pack-ja ninja-build g++-7 g++-8 g++
-      - name: configure
-        run: |
-          mkdir build
-          cd build
-          cmake .. -G Ninja \
-                -DCMAKE_BUILD_TYPE=debug \
-                -DCMAKE_CXX_COMPILER=${{ matrix.cc }} \
-      - name: build
-        run: |
-          cd build
-          ninja
-      - name: test
-        run: |
-          cd build
-          ctest -j4 --output-on-failure
-
-  build_on_linux_ubuntu20_04_clang:
-    runs-on: ubuntu-20.04
-    strategy:
-      matrix:
-        cc: [ clang++-7, clang++-8, clang++-9, clang++-10 ]
-    steps:
-      - uses: actions/checkout@v4
-      - name: prepare
-        run: |
-          sudo apt update
-          sudo apt install language-pack-ja ninja-build \
-               clang-7 clang-8 clang-9 clang-10
-      - name: configure
-        run: |
-          mkdir build
-          cd build
-          cmake .. -G Ninja \
-                -DCMAKE_BUILD_TYPE=debug \
-                -DCMAKE_CXX_COMPILER=${{ matrix.cc }} \
-      - name: build
-        run: |
-          cd build
-          ninja
-      - name: test
-        run: |
-          cd build
-          ctest -j4 --output-on-failure
-
   build_on_linux_ubuntu22_04_gcc:
     runs-on: ubuntu-22.04
     strategy:
@@ -148,13 +93,13 @@ jobs:
     runs-on: ubuntu-24.04
     strategy:
       matrix:
-        cc: [ clang++-16, clang++-17, clang++-18 ]
+        cc: [ clang++-16, clang++-17, clang++-18 clang++-19 ]
     steps:
       - uses: actions/checkout@v4
       - name: prepare
         run: |
           sudo apt update
-          sudo apt install language-pack-ja ninja-build
+          sudo apt install language-pack-ja ninja-build clang-19
       - name: configure
         run: |
           mkdir build
@@ -176,14 +121,14 @@ jobs:
     runs-on: ubuntu-24.04
     strategy:
       matrix:
-        cc: [ g++-14, clang++-17 ]
+        cc: [ g++-14, clang++-19 ]
         option: [ on, off ]
     steps:
       - uses: actions/checkout@v4
       - name: prepare
         run: |
           sudo apt update
-          sudo apt install language-pack-ja ninja-build lld lld-17 llvm-17 llvm-17-dev llvm-17-linker-tools
+          sudo apt install language-pack-ja ninja-build lld lld-19 llvm-19 llvm-19-dev llvm-19-linker-tools
       - name: configure
         run: |
           mkdir build
@@ -208,22 +153,17 @@ jobs:
         option: [ address, undefined ]
     steps:
       - uses: actions/checkout@v4
-      - name: Fix kernel mmap rnd bits
-        # Asan in llvm 14 provided in ubuntu 22.04 is incompatible with
-        # high-entropy ASLR in much newer kernels that GitHub runners are
-        # using leading to random crashes: https://reviews.llvm.org/D148280
-        run: sudo sysctl vm.mmap_rnd_bits=28
       - name: prepare
         run: |
           sudo apt update
-          sudo apt install language-pack-ja ninja-build
+          sudo apt install language-pack-ja ninja-build clang-19
       - name: configure
         run: |
           mkdir build
           cd build
           cmake .. -G Ninja \
                 -DCMAKE_BUILD_TYPE=debug \
-                -DCMAKE_CXX_COMPILER=clang++-18 \
+                -DCMAKE_CXX_COMPILER=clang++-19 \
                 -DSANITIZER=${{ matrix.option }} \
                 -DUSE_EXTRA_TEST=on
       - name: build
@@ -241,11 +181,6 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
-      - name: Fix kernel mmap rnd bits
-        # Asan in llvm 14 provided in ubuntu 22.04 is incompatible with
-        # high-entropy ASLR in much newer kernels that GitHub runners are
-        # using leading to random crashes: https://reviews.llvm.org/D148280
-        run: sudo sysctl vm.mmap_rnd_bits=28
       - name: prepare
         run: |
           sudo apt update
@@ -274,7 +209,7 @@ jobs:
   #        uses: ./tools/dockerfiles/ubuntu-bionic-x86
 
   build_on_alpine:
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
       - name: build and test
