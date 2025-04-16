@@ -93,7 +93,7 @@ jobs:
     runs-on: ubuntu-24.04
     strategy:
       matrix:
-        cc: [ clang++-16, clang++-17, clang++-18 clang++-19 ]
+        cc: [ clang++-16, clang++-17, clang++-18, clang++-19 ]
     steps:
       - uses: actions/checkout@v4
       - name: prepare
