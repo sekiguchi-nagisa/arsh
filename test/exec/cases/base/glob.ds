@@ -95,7 +95,11 @@ assert $(echo /[a-zA-Z]*).sort().join(" ") == $(sh -c 'echo /[a-zA-Z]*').sort().
 assert $(echo /[!@]*).sort().join(" ") == $(sh -c 'echo /[!@]*').sort().join(" ")
 assert $(echo /[^@]*).sort().join(" ") == $(echo /[!@]*).sort().join(" ") 
 assert $(echo /[[:alnum:]]*).sort().join(" ") == $(sh -c 'echo /[[:alnum:]]*').sort().join(" ")
-assert $(echo ~/[a-z]*).sort().join(" ") == $(sh -c 'echo ~/[a-z]*').sort().join(" ")
+if $OSTYPE == 'darwin' && "$(sh -c 'echo ~/[a-z]*')" == "$(sh -c 'echo ~/[a-zA-Z]*')" { # for workaround for macOS 15 github action
+    echo skip '`echo ~/[a-z]*`' for workaround # normally unrechable
+} else {
+    assert $(echo ~/[a-z]*).sort().join(" ") == $(sh -c 'echo ~/[a-z]*').sort().join(" ")  
+}
 
 # globstar
 {
