@@ -43,8 +43,13 @@ test -f EastAsianWidth.txt ||
     curl http://www.unicode.org/Public/UCD/latest/ucd/EastAsianWidth.txt -o ./EastAsianWidth.txt
 
 # TODO: get guniset binary from github
+var version = "0.1.0"
+
 test -e guniset || 
-    cp ~/workspace/guniset/guniset ./guniset
+    curl -L \
+        https://github.com/sekiguchi-nagisa/guniset/releases/download/v${version}/guniset-$version-$OSTYPE-$MACHTYPE \
+        > ./guniset
+chmod +x ./guniset
 
 ## generate code
 echo generate file: $out
