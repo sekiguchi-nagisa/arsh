@@ -128,7 +128,7 @@ jobs:
       - name: prepare
         run: |
           sudo apt update
-          sudo apt install language-pack-ja ninja-build lld clang-19　lld-19 llvm-19 llvm-19-dev llvm-19-linker-tools
+          sudo apt install language-pack-ja ninja-build lld clang-19 lld-19 llvm-19 llvm-19-dev llvm-19-linker-tools
       - name: configure
         run: |
           mkdir build
