@@ -295,57 +295,43 @@ unsigned int UnicodeUtil<T>::codePointToUtf8(int codePoint, char *const buf) {
   return 0;
 }
 
-using CodeInterval = std::pair<int, int>;
+using CodeInterval32 = std::pair<uint32_t, uint32_t>;
 
-inline bool searchFrom(const CodeInterval *begin, const CodeInterval *end, int code) {
+inline bool searchFrom32(const CodeInterval32 *begin, const CodeInterval32 *end, uint32_t code) {
   struct Comparator {
-    bool operator()(const CodeInterval &l, int r) const { return l.second < r; }
+    bool operator()(const CodeInterval32 &l, uint32_t r) const { return l.second < r; }
 
-    bool operator()(int l, const CodeInterval &r) const { return l < r.first; }
+    bool operator()(uint32_t l, const CodeInterval32 &r) const { return l < r.first; }
   };
   return std::binary_search(begin, end, code, Comparator());
 }
 
-template <unsigned int N>
-inline bool searchFrom(const CodeInterval (&table)[N], int code) {
-  return searchFrom(table, table + N, code);
+using CodeInterval16 = std::pair<uint16_t, uint16_t>;
+
+inline bool searchFrom16(const CodeInterval16 *begin, const CodeInterval16 *end, uint16_t code) {
+  struct Comparator {
+    bool operator()(const CodeInterval16 &l, uint16_t r) const { return l.second < r; }
+
+    bool operator()(uint16_t l, const CodeInterval16 &r) const { return l < r.first; }
+  };
+  return std::binary_search(begin, end, code, Comparator());
 }
 
-template <bool T>
-bool UnicodeUtil<T>::isCombiningChar(int codePoint) {
-#define USE_ZERO_WIDTH_TABLE
-#define UNICODE_INTERVAL CodeInterval
-#include "unicode_width.in"
-
-  return searchFrom(zero_width_table, codePoint);
-#undef UNICODE_INTERVAL
-#undef USE_ZERO_WIDTH_TABLE
-}
-
-template <bool T>
-bool UnicodeUtil<T>::isWideChar(int codePoint) {
-#define USE_TWO_WIDTH_TABLE
-#define UNICODE_INTERVAL CodeInterval
-#include "unicode_width.in"
-
-  return searchFrom(two_width_table, codePoint);
-#undef UNICODE_INTERVAL
-#undef USE_TWO_WIDTH_TABLE
-}
-
-template <bool T>
-bool UnicodeUtil<T>::isAmbiguousChar(int codePoint) {
-#define USE_AMBIGUOUS_WIDTH_TABLE
-#define UNICODE_INTERVAL CodeInterval
-#include "unicode_width.in"
-
-  return searchFrom(ambiguous_width_table, codePoint);
-#undef UNICODE_INTERVAL
-#undef USE_AMBIGUOUS_WIDTH_TABLE
+template <unsigned int N, unsigned int M>
+bool searchFrom(const CodeInterval16 (&table16)[N], const CodeInterval32 (&table32)[M],
+                uint32_t code) {
+  if (code <= UINT16_MAX) {
+    return searchFrom16(std::begin(table16), std::end(table16), static_cast<uint16_t>(code));
+  }
+  return searchFrom32(std::begin(table32), std::end(table32), code);
 }
 
 template <bool T>
 int UnicodeUtil<T>::width(int codePoint, AmbiguousCharWidth ambiguousCharWidth) {
+#define UNICODE_INTERVAL_16 CodeInterval16
+#define UNICODE_INTERVAL_32 CodeInterval32
+#include "unicode_width.in"
+
   if (codePoint < 0) {
     return -3;
   }
@@ -362,12 +348,13 @@ int UnicodeUtil<T>::width(int codePoint, AmbiguousCharWidth ambiguousCharWidth) 
   }
 
   // search zero-width (combining) character
-  if (isCombiningChar(codePoint)) {
+  if (searchFrom(zero_width_table_16, zero_width_table_32, codePoint)) {
     return -2;
   }
 
   // search ambiguous width character
-  if (ambiguousCharWidth == AmbiguousCharWidth::FULL && isAmbiguousChar(codePoint)) {
+  if (ambiguousCharWidth == AmbiguousCharWidth::FULL &&
+      searchFrom(ambiguous_width_table_16, ambiguous_width_table_32, codePoint)) {
     return 2;
   }
 
@@ -376,10 +363,12 @@ int UnicodeUtil<T>::width(int codePoint, AmbiguousCharWidth ambiguousCharWidth) 
     return 1;
   }
 
-  if (isWideChar(codePoint)) {
+  if (searchFrom(two_width_table_16, two_width_table_32, codePoint)) {
     return 2;
   }
 
+#undef UNICODE_INTERVAL_16
+#undef UNICODE_INTERVAL_32
   return 1;
 }
 

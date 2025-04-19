@@ -404,6 +404,7 @@ bool Value::opInterp(StrBuilder &builder) const {
   GUARD_RECURSION(builder.getState());
 
   if (this->isObject()) {
+    static_assert(sizeof(std::pair<uint16_t, uint16_t>) == sizeof(uint32_t));
     switch (this->get()->getKind()) {
     case ObjectKind::RegexMatch:
     case ObjectKind::Array: {
