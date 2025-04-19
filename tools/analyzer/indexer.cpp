@@ -331,8 +331,7 @@ bool IndexBuilder::addBuiltinMethod(const Type &recvType, unsigned int methodInd
   const NameInfo nameInfo(tokenGen.next(), name.toString());
   if (recvType.typeKind() == TypeKind::Builtin) {
     std::string content;
-    auto info = &nativeFuncInfoTable()[methodIndex];
-    formatNativeMethodSignature(info, "T0;T1", content, [&](StringRef ref) {
+    formatNativeMethodSignature(methodIndex, "T0;T1", content, [&](StringRef ref) {
       auto r = ref.find(": ");
       auto paramName = ref.substr(0, r);
       auto paramType = ref.substr(r + 2).toString();

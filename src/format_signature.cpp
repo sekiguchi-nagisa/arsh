@@ -307,9 +307,10 @@ std::string Decoder::decodeType() {
   return ""; // normally unreachable due to suppress gcc warning
 }
 
-void formatNativeMethodSignature(const NativeFuncInfo *funcInfo, StringRef packedParamType,
+void formatNativeMethodSignature(unsigned int nativeMethodIndex, StringRef packedParamType,
                                  std::string &out,
                                  const std::function<void(StringRef)> &paramCallback) {
+  const auto *funcInfo = &nativeFuncInfoTable()[nativeMethodIndex];
   auto params = splitParamNames(funcInfo->params);
   auto paramTypes = splitParamNames(packedParamType);
   Decoder decoder(funcInfo->handleInfo, paramTypes);

@@ -330,7 +330,7 @@ public:
     case CompCandidateKind::FIELD:
       return CompletionItemKind::Field;
     case CompCandidateKind::METHOD:
-    case CompCandidateKind::UNINIT_METHOD:
+    case CompCandidateKind::NATIVE_METHOD:
       return CompletionItemKind::Method;
     case CompCandidateKind::KEYWORD:
       return CompletionItemKind::Keyword;

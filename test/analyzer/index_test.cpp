@@ -474,8 +474,7 @@ TEST_F(IndexTest, signature) {
 
     std::string actual = "function ";
     actual += key.ref;
-    formatNativeMethodSignature(&nativeFuncInfoTable()[index], resolvePackedParamType(type),
-                                actual);
+    formatNativeMethodSignature(index, resolvePackedParamType(type), actual);
 
     ASSERT_EQ(expect, actual);
   }

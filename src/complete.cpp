@@ -93,7 +93,7 @@ CompCandidate::CompCandidate(const QuoteParam *param, StringRef v, CompCandidate
   }
 }
 
-std::string CompCandidate::formatTypeSignature(TypePool &pool) const {
+std::string CompCandidate::formatTypeSignature(const TypePool &pool) const {
   std::string ret;
   switch (this->kind) {
   case CompCandidateKind::VAR:
@@ -123,12 +123,18 @@ std::string CompCandidate::formatTypeSignature(TypePool &pool) const {
     formatMethodSignature(pool.get(hd->getTypeId()), *cast<MethodHandle>(hd), ret);
     break;
   }
-  case CompCandidateKind::UNINIT_METHOD: {
+  case CompCandidateKind::NATIVE_METHOD: {
     auto &info = this->getNativeMethodInfo();
     auto &recvType = pool.get(info.typeId);
-    if (auto handle = pool.allocNativeMethodHandle(recvType, info.methodIndex)) {
-      formatMethodSignature(recvType, *handle, ret);
+    auto typeParams = recvType.getTypeParams(pool);
+    std::string packedParamTypes;
+    for (auto &p : typeParams) {
+      if (!packedParamTypes.empty()) {
+        packedParamTypes += ';';
+      }
+      packedParamTypes += p->getNameRef();
     }
+    formatNativeMethodSignature(info.methodIndex, packedParamTypes, ret);
     break;
   }
   default:
@@ -181,7 +187,7 @@ bool CompCandidate::needSuffixSpace(const StringRef value, const CompCandidateKi
     break;
   case CompCandidateKind::FIELD:
   case CompCandidateKind::METHOD:
-  case CompCandidateKind::UNINIT_METHOD:
+  case CompCandidateKind::NATIVE_METHOD:
     return false;
   case CompCandidateKind::KEYWORD:
     break;
@@ -551,14 +557,9 @@ void completeMember(const TypePool &pool, const NameScope &scope, const Type &re
     if (name.startsWith(word) && !isMagicMethodName(name)) {
       for (const auto *t = &recvType; t != nullptr; t = t->getSuperType()) {
         if (type == *t) {
-          const auto init = static_cast<bool>(e.second);
-          const auto kind = init ? CompCandidateKind::METHOD : CompCandidateKind::UNINIT_METHOD;
-          CompCandidate candidate(name, kind);
-          if (init) {
-            candidate.setHandle(*e.second.handle());
-          } else {
-            candidate.setNativeMethodInfo(type, e.second.index());
-          }
+          unsigned int methodIndex = e.second ? e.second.handle()->getIndex() : e.second.index();
+          CompCandidate candidate(name, CompCandidateKind::NATIVE_METHOD);
+          candidate.setNativeMethodInfo(recvType, methodIndex);
           consumer(std::move(candidate));
           break;
         }
@@ -983,7 +984,7 @@ public:
         return;
       }
       if ((candidate.kind == CompCandidateKind::METHOD ||
-           candidate.kind == CompCandidateKind::UNINIT_METHOD) &&
+           candidate.kind == CompCandidateKind::NATIVE_METHOD) &&
           !hasFlag(targetType, SuggestMemberType::METHOD)) {
         return;
       }

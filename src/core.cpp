@@ -443,7 +443,7 @@ public:
         if (needSpace) {
           suffix = CandidateAttr::Suffix::SPACE;
         } else if (candidate.kind == CompCandidateKind::METHOD ||
-                   candidate.kind == CompCandidateKind::UNINIT_METHOD) {
+                   candidate.kind == CompCandidateKind::NATIVE_METHOD) {
           suffix = StringRef(typeSig).startsWith("()") ? CandidateAttr::Suffix::PAREN_PAIR
                                                        : CandidateAttr::Suffix::PAREN;
         }

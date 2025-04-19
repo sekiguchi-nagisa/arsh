@@ -42,7 +42,7 @@ enum class CompCandidateKind : unsigned char {
   SIGNAL,
   FIELD,
   METHOD,
-  UNINIT_METHOD, // for uninitialized native method handle
+  NATIVE_METHOD,
   KEYWORD,
   TYPE,
 };
@@ -117,7 +117,7 @@ public:
 
   void overrideSuffixSpace(bool space) { this->suffixSpace = space; }
 
-  std::string formatTypeSignature(TypePool &pool) const;
+  std::string formatTypeSignature(const TypePool &pool) const;
 
   bool needSuffixSpace() const { return this->suffixSpace; }
 

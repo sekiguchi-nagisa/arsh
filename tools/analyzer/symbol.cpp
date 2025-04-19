@@ -100,12 +100,11 @@ std::string generateHoverContent(const SourceManager &srcMan, const SymbolIndexe
     unsigned int paramCount = 0;
     std::string dummy;
     std::string param;
-    formatNativeMethodSignature(&nativeFuncInfoTable()[methodIndex], packedParamTypes, dummy,
-                                [&](const StringRef p) {
-                                  if (paramIndex == paramCount++) {
-                                    param = p.toString();
-                                  }
-                                });
+    formatNativeMethodSignature(methodIndex, packedParamTypes, dummy, [&](const StringRef p) {
+      if (paramIndex == paramCount++) {
+        param = p.toString();
+      }
+    });
     assert(!param.empty());
     content += DeclSymbol::getVarDeclPrefix(decl.getKind());
     content += " ";
@@ -156,7 +155,7 @@ std::string generateHoverContent(const SourceManager &srcMan, const SymbolIndexe
     content += name;
     auto ret = convertToNum10<unsigned int>(decl.getInfo().begin(), decl.getInfo().end());
     assert(ret);
-    formatNativeMethodSignature(&nativeFuncInfoTable()[ret.value], packedParamTypes, content);
+    formatNativeMethodSignature(ret.value, packedParamTypes, content);
     break;
   }
   case DeclSymbol::Kind::BUILTIN_CMD: {

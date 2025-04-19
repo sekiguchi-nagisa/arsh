@@ -55,12 +55,13 @@ void formatMethodSignature(const Type &recvType, const MethodHandle &handle, std
 
 /**
  * for builtin method
- * @param funcInfo
+ * @param nativeMethodIndex
  * @param packedParamType
+ * must follow `T0:T1` notation
  * @param out
  * @param paramCallback
  */
-void formatNativeMethodSignature(const NativeFuncInfo *funcInfo, StringRef packedParamType,
+void formatNativeMethodSignature(unsigned int nativeMethodIndex, StringRef packedParamType,
                                  std::string &out,
                                  const std::function<void(StringRef)> &paramCallback = nullptr);
 
