@@ -187,13 +187,10 @@ public:
 
   bool addThis(const NameInfo &info, const HandlePtr &hd);
 
-  bool addMember(const Type &recv, const NameInfo &nameInfo, DeclSymbol::Kind kind,
-                 const Handle &handle, Token token);
+  bool addField(const Type &recv, const NameInfo &nameInfo, DeclSymbol::Kind kind,
+                const Handle &handle, Token token);
 
-  bool addMember(const MethodHandle &handle, const NameInfo &nameInfo, Token token) {
-    return this->addMember(this->getPool().get(handle.getRecvTypeId()), nameInfo,
-                           DeclSymbol::Kind::METHOD, handle, token);
-  }
+  bool addMethod(const MethodHandle &handle, const NameInfo &nameInfo);
 
   const DeclSymbol *addMemberDecl(const Type &recv, const NameInfo &nameInfo, const Type &type,
                                   DeclSymbol::Kind kind, Token token);

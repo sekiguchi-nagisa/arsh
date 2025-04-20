@@ -246,17 +246,13 @@ static std::string generateTupleInfo(const TypePool &pool, const Type &recv, con
   }
 }
 
-bool IndexBuilder::addMember(const Type &recv, const NameInfo &nameInfo, DeclSymbol::Kind kind,
-                             const Handle &handle, Token token) {
-  const Type *actualRecv = &recv;
-  if (recv.isModType() && !handle.isMethodHandle()) {
-    actualRecv = nullptr;
+bool IndexBuilder::addField(const Type &recv, const NameInfo &nameInfo, DeclSymbol::Kind kind,
+                            const Handle &handle, Token token) {
+  assert(!handle.isMethodHandle());
+  if (recv.isModType()) { // module field access
+    return this->addSymbol(nameInfo, kind, &handle);
   }
-
-  if (this->addSymbolImpl(actualRecv, nameInfo, kind, &handle)) {
-    if (handle.isMethodHandle() && cast<MethodHandle>(handle).isNative()) {
-      this->addParamTypeInfo(nameInfo.getToken(), recv);
-    }
+  if (this->addSymbolImpl(&recv, nameInfo, kind, &handle)) {
     return true;
   }
   if (recv.isTupleType()) { // tuple field
@@ -264,6 +260,17 @@ bool IndexBuilder::addMember(const Type &recv, const NameInfo &nameInfo, DeclSym
     if (this->addDeclImpl(&recv, nameInfo, kind, hover.c_str(), token, DeclInsertOp::BUILTIN)) {
       return true;
     }
+  }
+  return false;
+}
+
+bool IndexBuilder::addMethod(const MethodHandle &handle, const NameInfo &nameInfo) {
+  auto &recv = this->getPool().get(handle.getRecvTypeId());
+  if (this->addSymbolImpl(&recv, nameInfo, DeclSymbol::Kind::METHOD, &handle)) {
+    if (handle.isNative()) {
+      this->addParamTypeInfo(nameInfo.getToken(), recv);
+    }
+    return true;
   }
   return false;
 }
@@ -533,8 +540,8 @@ void SymbolIndexer::visitQualified(QualifiedTypeNode &node) {
   this->visit(node.getRecvTypeNode());
   if (!node.isUntyped() && !node.getType().isUnresolved()) {
     NameInfo info(node.getNameTypeNode().getToken(), node.getNameTypeNode().getTokenText());
-    this->builder().addMember(node.getRecvTypeNode().getType(), info, DeclSymbol::Kind::TYPE_ALIAS,
-                              *node.getNameTypeNode().getHandle(), node.getToken());
+    this->builder().addField(node.getRecvTypeNode().getType(), info, DeclSymbol::Kind::TYPE_ALIAS,
+                             *node.getNameTypeNode().getHandle(), node.getToken());
   }
 }
 
@@ -555,8 +562,8 @@ void SymbolIndexer::visitAccessNode(AccessNode &node) {
   assert(!node.isUntyped());
   if (node.getHandle()) {
     auto &info = node.getField();
-    this->builder().addMember(node.getRecvNode().getType(), info, DeclSymbol::Kind::VAR,
-                              *node.getHandle(), node.getToken());
+    this->builder().addField(node.getRecvNode().getType(), info, DeclSymbol::Kind::VAR,
+                             *node.getHandle(), node.getToken());
   }
 }
 
@@ -567,7 +574,7 @@ void SymbolIndexer::visitApplyNode(ApplyNode &node) {
     auto &accessNode = cast<AccessNode>(node.getExprNode());
     this->visit(accessNode.getRecvNode());
     auto &nameInfo = accessNode.getField();
-    this->builder().addMember(*node.getHandle(), nameInfo, node.getToken());
+    this->builder().addMethod(*node.getHandle(), nameInfo);
     handle = node.getHandle();
     funcName = nameInfo.getName();
   } else if (node.isFuncCall()) {
