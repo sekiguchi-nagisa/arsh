@@ -1479,18 +1479,6 @@ ARSH_METHOD signal_trap(RuntimeContext &ctx) {
   RET(old);
 }
 
-//!bind: function $OP_EQ($this : Signal, $target : Signal) : Bool
-ARSH_METHOD signal_eq(RuntimeContext &ctx) {
-  SUPPRESS_WARNING(signal_eq);
-  RET_BOOL(LOCAL(0).asSig() == LOCAL(1).asSig());
-}
-
-//!bind: function $OP_NE($this : Signal, $target : Signal) : Bool
-ARSH_METHOD signal_ne(RuntimeContext &ctx) {
-  SUPPRESS_WARNING(signal_ne);
-  RET_BOOL(LOCAL(0).asSig() != LOCAL(1).asSig());
-}
-
 // #####################
 // ##     Signals     ##
 // #####################
