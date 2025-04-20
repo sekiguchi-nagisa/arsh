@@ -8,6 +8,21 @@
 
 - add subshell syntax ``&( )``
 
+#### Builtin
+
+- add ``Eq_``, ``Ord_`` type
+    - ``Eq_`` type has ``==``, ``!=``, ``equals`` methods.
+        - ``equals`` method is total order unlike ``==``
+    - ``Ord_`` type has ``compare`` method for total order comparison
+
+### Changed
+
+#### Builtin
+
+- change type constraint of some builtin method
+    - ``Array#sort``, ``Array#searchSorted`` require ``Ord_`` type
+    - ``Array#indexOf``, ``Array#lastIndexOf``, ``Array#contains`` require ``Eq_`` type
+
 ## [0.37.0] - 2025-03-31
 
 ### Added

@@ -457,21 +457,21 @@ function copy(): [T0] for [T0]
 
 function reverse(): [T0] for [T0]
 
-function sort(): [T0] where T0 : Value_ for [T0]
+function sort(): [T0] where T0 : Ord_ for [T0]
 
 function sortBy(comp: (T0, T0) -> Int): [T0] for [T0]
 
-function searchSorted(target: T0): Int where T0 : Value_ for [T0]
+function searchSorted(target: T0): Int where T0 : Ord_ for [T0]
 
 function searchSortedBy(target: T0, comp: (T0, T0) -> Int): Int for [T0]
 
 function join(delim: String?): String for [T0]
 
-function indexOf(target: T0, index: Int?): Int where T0 : Value_ for [T0]
+function indexOf(target: T0, index: Int?): Int where T0 : Eq_ for [T0]
 
-function lastIndexOf(target: T0): Int where T0 : Value_ for [T0]
+function lastIndexOf(target: T0): Int where T0 : Eq_ for [T0]
 
-function contains(target: T0): Bool where T0 : Value_ for [T0]
+function contains(target: T0): Bool where T0 : Eq_ for [T0]
 
 function trap(handler: (Signal) -> Void): Void where T0 : Signal for [T0]
 

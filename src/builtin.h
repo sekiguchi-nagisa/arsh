@@ -1843,7 +1843,7 @@ ARSH_METHOD array_reverse(RuntimeContext &ctx) {
   RET(LOCAL(0));
 }
 
-//!bind: function sort($this : Array<T0>) : Array<T0> where T0 : Value_
+//!bind: function sort($this : Array<T0>) : Array<T0> where T0 : Ord_
 ARSH_METHOD array_sort(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_sort);
   auto &obj = typeAs<ArrayObject>(LOCAL(0));
@@ -1866,7 +1866,7 @@ ARSH_METHOD array_sortBy(RuntimeContext &ctx) {
   }
 }
 
-//!bind: function searchSorted($this: Array<T0>, $target: T0): Int where T0 : Value_
+//!bind: function searchSorted($this: Array<T0>, $target: T0): Int where T0 : Ord_
 ARSH_METHOD array_search(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_search);
   auto &obj = typeAs<ArrayObject>(LOCAL(0));
@@ -1933,7 +1933,7 @@ ARSH_METHOD array_map(RuntimeContext &ctx) {
   RET(ret);
 }*/
 
-//!bind: function indexOf($this : Array<T0>, $target : T0, $index : Option<Int>) : Int where T0 : Value_
+//!bind: function indexOf($this : Array<T0>, $target : T0, $index : Option<Int>) : Int where T0 : Eq_
 ARSH_METHOD array_indexOf(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_indexOf);
   auto &arrayObj = typeAs<ArrayObject>(LOCAL(0));
@@ -1953,7 +1953,7 @@ ARSH_METHOD array_indexOf(RuntimeContext &ctx) {
   RET(Value::createInt(index));
 }
 
-//!bind: function lastIndexOf($this : Array<T0>, $target : T0) : Int where T0 : Value_
+//!bind: function lastIndexOf($this : Array<T0>, $target : T0) : Int where T0 : Eq_
 ARSH_METHOD array_lastIndexOf(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_lastIndexOf);
   auto &arrayObj = typeAs<ArrayObject>(LOCAL(0));
@@ -1970,7 +1970,7 @@ ARSH_METHOD array_lastIndexOf(RuntimeContext &ctx) {
   RET(Value::createInt(index));
 }
 
-//!bind: function contains($this : Array<T0>, $target : T0) : Bool where T0 : Value_
+//!bind: function contains($this : Array<T0>, $target : T0) : Bool where T0 : Eq_
 ARSH_METHOD array_contains(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_contains);
   auto &arrayObj = typeAs<ArrayObject>(LOCAL(0));
