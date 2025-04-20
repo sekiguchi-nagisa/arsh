@@ -493,18 +493,19 @@ Optional<SignatureInformation> Analyzer::collectSignature(const SourcePtr &src,
       }
       formatFuncSignature(cast<FunctionType>(type), *funcHandle, out, callback);
     } else if (signature.handle->isMethodHandle()) {
-      String methodName = signature.name;
+      const StringRef methodName = signature.name;
       auto *methodHandle = cast<MethodHandle>(signature.handle);
-      auto &recvType = ctx->getPool().get(methodHandle->getTypeId());
-      const bool constructor = methodName == OP_INIT;
-      if (constructor) {
+      const Type *recvType = nullptr;
+      if (methodName == OP_INIT) {
         out += "type ";
-        normalizeTypeName(recvType, out);
+        normalizeTypeName(*signature.recvType, out);
       } else {
         out += "function ";
         out += methodName;
+        recvType = methodHandle->isEqOrOrdMethod() ? signature.recvType
+                                                   : &ctx->getPool().get(methodHandle->getTypeId());
       }
-      formatMethodSignature(recvType, *methodHandle, out, constructor, callback);
+      formatMethodSignature(recvType, *methodHandle, out, callback);
     } else if (!signature.returnType->isUnresolved()) {
       formatFuncSignature(*signature.returnType, signature.paramSize, signature.paramTypes, out,
                           callback); // indirect function call with variable name

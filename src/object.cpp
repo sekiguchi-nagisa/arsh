@@ -404,7 +404,6 @@ bool Value::opInterp(StrBuilder &builder) const {
   GUARD_RECURSION(builder.getState());
 
   if (this->isObject()) {
-    static_assert(sizeof(std::pair<uint16_t, uint16_t>) == sizeof(uint32_t));
     switch (this->get()->getKind()) {
     case ObjectKind::RegexMatch:
     case ObjectKind::Array: {
@@ -461,12 +460,10 @@ bool Value::opInterp(StrBuilder &builder) const {
   return this->opStr(builder);
 }
 
-bool Value::equals(const Value &o) const {
+bool Value::equals(const Value &o, const bool partial) const {
   // for String
   if (this->hasStrRef() && o.hasStrRef()) {
-    auto left = this->asStrRef();
-    auto right = o.asStrRef();
-    return left == right;
+    return this->asStrRef() == o.asStrRef();
   }
 
   if (this->kind() != o.kind()) {
@@ -482,6 +479,9 @@ bool Value::equals(const Value &o) const {
   case ValueKind::INT:
     return this->asInt() == o.asInt();
   case ValueKind::FLOAT:
+    if (partial) {
+      return this->asFloat() == o.asFloat();
+    }
     return compareByTotalOrder(this->asFloat(), o.asFloat()) == 0;
   default:
     assert(this->kind() == ValueKind::OBJECT);

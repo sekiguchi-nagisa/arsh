@@ -86,16 +86,49 @@ ARSH_METHOD to_interp(RuntimeContext &ctx) {
   RET(std::move(builder).take());
 }
 
-ARSH_METHOD compare_value(RuntimeContext &ctx) { // T.compare(T)
-  SUPPRESS_WARNING(compare_value);
+// ##################
+// ##     Eq%%     ##
+// ##################
+
+//!bind: function $OP_EQ($this: Eq_, $target: Eq_): Bool
+ARSH_METHOD eq_eq(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(eq_eq);
+  auto &left = LOCAL(0);
+  auto &right = LOCAL(1);
+  RET_BOOL(left.equals(right, true));
+}
+
+//!bind: function $OP_NE($this: Eq_, $target: Eq_): Bool
+ARSH_METHOD eq_ne(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(eq_eq);
+  auto &left = LOCAL(0);
+  auto &right = LOCAL(1);
+  RET_BOOL(!left.equals(right, true));
+}
+
+//!bind: function equals($this: Eq_, $target: Eq_): Bool
+ARSH_METHOD eq_equals(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(eq_eq);
+  auto &left = LOCAL(0);
+  auto &right = LOCAL(1);
+  RET_BOOL(left.equals(right));
+}
+
+// ###################
+// ##     Ord%%     ##
+// ###################
+
+//!bind: function compare($this: Ord_, $target: Ord_): Int
+ARSH_METHOD ord_compare(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(ord_compare);
   auto &x = LOCAL(0);
   auto &y = LOCAL(1);
   RET(Value::createInt(x.compare(y)));
 }
 
-// ###################
+// #################
 // ##     Int     ##
-// ###################
+// #################
 
 // =====  unary op  =====
 
@@ -319,9 +352,6 @@ ARSH_METHOD int_toFloat(RuntimeContext &ctx) {
   RET(Value::createFloat(d));
 }
 
-//!bind: function compare($this : Int, $target : Int) : Int
-ARSH_METHOD_DECL compare_value(RuntimeContext &ctx);
-
 // ###################
 // ##     Float     ##
 // ###################
@@ -519,9 +549,6 @@ ARSH_METHOD float_toInt(RuntimeContext &ctx) {
   RET(Value::createInt(v));
 }
 
-//!bind: function compare($this : Float, $target : Float) : Int
-ARSH_METHOD_DECL compare_value(RuntimeContext &ctx);
-
 // ##################
 // ##     Bool     ##
 // ##################
@@ -543,9 +570,6 @@ ARSH_METHOD boolean_ne(RuntimeContext &ctx) {
   SUPPRESS_WARNING(boolean_ne);
   RET_BOOL(LOCAL(0).asBool() != LOCAL(1).asBool());
 }
-
-//!bind: function compare($this : Bool, $target : Bool) : Int
-ARSH_METHOD_DECL compare_value(RuntimeContext &ctx);
 
 // ####################
 // ##     String     ##
@@ -1025,9 +1049,6 @@ ARSH_METHOD string_toFloat(RuntimeContext &ctx) {
   RET(Value::createInvalid());
 }
 
-//!bind: function compare($this : String, $target : String) : Int
-ARSH_METHOD_DECL compare_value(RuntimeContext &ctx);
-
 static Utf8GraphemeScanner asGraphemeScanner(StringRef ref, const uint32_t (&values)[3]) {
   const char *charBegin = ref.begin() + values[0];
   const char *cur = ref.begin() + values[1];
@@ -1469,9 +1490,6 @@ ARSH_METHOD signal_ne(RuntimeContext &ctx) {
   SUPPRESS_WARNING(signal_ne);
   RET_BOOL(LOCAL(0).asSig() != LOCAL(1).asSig());
 }
-
-//!bind: function compare($this : Signal, $target : Signal) : Int
-ARSH_METHOD_DECL compare_value(RuntimeContext &ctx);
 
 // #####################
 // ##     Signals     ##

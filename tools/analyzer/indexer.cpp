@@ -264,11 +264,16 @@ bool IndexBuilder::addField(const Type &recv, const NameInfo &nameInfo, DeclSymb
   return false;
 }
 
-bool IndexBuilder::addMethod(const MethodHandle &handle, const NameInfo &nameInfo) {
-  auto &recv = this->getPool().get(handle.getRecvTypeId());
-  if (this->addSymbolImpl(&recv, nameInfo, DeclSymbol::Kind::METHOD, &handle)) {
+bool IndexBuilder::addMethod(const Type &recv, const MethodHandle &handle,
+                             const NameInfo &nameInfo) {
+  auto &actualRecv = this->getPool().get(handle.getRecvTypeId());
+  if (this->addSymbolImpl(&actualRecv, nameInfo, DeclSymbol::Kind::METHOD, &handle)) {
     if (handle.isNative()) {
-      this->addParamTypeInfo(nameInfo.getToken(), recv);
+      const Type *type = &actualRecv;
+      if (handle.isEqOrOrdMethod()) {
+        type = &recv;
+      }
+      this->addParamTypeInfo(nameInfo.getToken(), *type, handle);
     }
     return true;
   }
@@ -317,15 +322,19 @@ const DeclSymbol *IndexBuilder::addParamDecl(const NameInfo &info, const Type &t
   return this->addDecl(newInfo, DeclSymbol::Kind::PARAM, hover.c_str(), token);
 }
 
-const Symbol *IndexBuilder::addNamedArgSymbol(const NameInfo &nameInfo, const Handle &handle,
-                                              StringRef funcName) {
+const Symbol *IndexBuilder::addNamedArgSymbol(const Type *recv, const NameInfo &nameInfo,
+                                              const Handle &handle, StringRef funcName) {
   NameInfo newNameInfo(nameInfo.getToken(),
                        this->mangleParamName(funcName, handle, nameInfo.getName()));
   auto *ret = this->addSymbol(newNameInfo, DeclSymbol::Kind::PARAM, &handle);
   if (ret) {
     if (handle.isMethodHandle() && cast<MethodHandle>(handle).isNative()) {
-      auto &recv = this->getPool().get(handle.getTypeId());
-      this->addParamTypeInfo(nameInfo.getToken(), recv);
+      auto &methodHandle = cast<MethodHandle>(handle);
+      const Type *type = &this->getPool().get(methodHandle.getRecvTypeId());
+      if (recv && methodHandle.isEqOrOrdMethod()) {
+        type = recv;
+      }
+      this->addParamTypeInfo(nameInfo.getToken(), *type, methodHandle);
     }
   }
   return ret;
@@ -336,19 +345,7 @@ bool IndexBuilder::addBuiltinMethod(const Type &recvType, unsigned int methodInd
   assert(isBuiltinMod(this->getModId()));
   assert(this->isGlobal());
   const NameInfo nameInfo(tokenGen.next(), name.toString());
-  if (recvType.typeKind() == TypeKind::Builtin) {
-    std::string content;
-    formatNativeMethodSignature(methodIndex, "T0;T1", content, [&](StringRef ref) {
-      auto r = ref.find(": ");
-      auto paramName = ref.substr(0, r);
-      auto paramType = ref.substr(r + 2).toString();
-      NameInfo newNameInfo(tokenGen.next(), mangleParamNameImpl(name, &recvType, paramName));
-      this->addDecl(newNameInfo, DeclSymbol::Kind::PARAM, paramType.c_str(),
-                    newNameInfo.getToken());
-    });
-    return this->addDeclImpl(&recvType, nameInfo, DeclSymbol::Kind::METHOD, content.c_str(),
-                             nameInfo.getToken(), DeclInsertOp::BUILTIN);
-  } else if (isa<ArrayType>(recvType) || isa<MapType>(recvType)) {
+  if (isa<ArrayType>(recvType) || isa<MapType>(recvType) || isEqOrOrdTypeMethod(methodIndex)) {
     auto content = std::to_string(methodIndex);
     unsigned int paramIndex = 0;
     iteratePackedParamNames(
@@ -363,6 +360,19 @@ bool IndexBuilder::addBuiltinMethod(const Type &recvType, unsigned int methodInd
           return true;
         });
     return this->addDeclImpl(&recvType, nameInfo, DeclSymbol::Kind::GENERIC_METHOD, content.c_str(),
+                             nameInfo.getToken(), DeclInsertOp::BUILTIN);
+  }
+  if (recvType.typeKind() == TypeKind::Builtin) {
+    std::string content;
+    formatNativeMethodSignature(methodIndex, "", content, [&](StringRef ref) {
+      auto r = ref.find(": ");
+      auto paramName = ref.substr(0, r);
+      auto paramType = ref.substr(r + 2).toString();
+      NameInfo newNameInfo(tokenGen.next(), mangleParamNameImpl(name, &recvType, paramName));
+      this->addDecl(newNameInfo, DeclSymbol::Kind::PARAM, paramType.c_str(),
+                    newNameInfo.getToken());
+    });
+    return this->addDeclImpl(&recvType, nameInfo, DeclSymbol::Kind::METHOD, content.c_str(),
                              nameInfo.getToken(), DeclInsertOp::BUILTIN);
   }
   return false;
@@ -498,29 +508,31 @@ const Symbol *IndexBuilder::insertNewSymbol(Token token, const DeclBase *decl) {
   return &(*iter);
 }
 
-void IndexBuilder::addParamTypeInfo(Token token, const Type &type) {
-  if (!isa<ArrayType>(type) && !isa<MapType>(type)) {
+void IndexBuilder::addParamTypeInfo(Token token, const Type &recvType, const MethodHandle &handle) {
+  if (!isa<ArrayType>(recvType) && !isa<MapType>(recvType) && !handle.isEqOrOrdMethod()) {
     return;
   }
   auto symbolRef = SymbolRef::create(token, this->getModId());
   if (symbolRef.hasValue()) {
-    if (!this->packedParamTypesMap.addSymbol(symbolRef.unwrap(), type.typeId())) {
+    if (!this->packedParamTypesMap.addSymbol(symbolRef.unwrap(), recvType.typeId())) {
       LOG(LogLevel::ERROR, "at %s, try to add packed param types: %s, but already added",
           this->src->getPath().c_str(), formatSymbol(*this->src, "", token).c_str());
       return;
     }
-    if (!this->packedParamTypesMap.lookupByTypeId(type.typeId())) {
+    if (!this->packedParamTypesMap.lookupByTypeId(recvType.typeId())) {
       std::string packed;
-      if (isa<ArrayType>(type)) {
-        packed += cast<ArrayType>(type).getElementType().getNameRef();
+      if (handle.isEqOrOrdMethod()) {
+        packed += recvType.getNameRef();
+      } else if (isa<ArrayType>(recvType)) {
+        packed += cast<ArrayType>(recvType).getElementType().getNameRef();
       } else {
-        assert(isa<MapType>(type));
-        auto &mapType = cast<MapType>(type);
+        assert(isa<MapType>(recvType));
+        auto &mapType = cast<MapType>(recvType);
         packed += mapType.getKeyType().getNameRef();
         packed += ";";
         packed += mapType.getValueType().getNameRef();
       }
-      bool s = this->packedParamTypesMap.addPackedParamTypes(type.typeId(), std::move(packed));
+      bool s = this->packedParamTypesMap.addPackedParamTypes(recvType.typeId(), std::move(packed));
       assert(s);
       (void)s;
     }
@@ -574,7 +586,7 @@ void SymbolIndexer::visitApplyNode(ApplyNode &node) {
     auto &accessNode = cast<AccessNode>(node.getExprNode());
     this->visit(accessNode.getRecvNode());
     auto &nameInfo = accessNode.getField();
-    this->builder().addMethod(*node.getHandle(), nameInfo);
+    this->builder().addMethod(node.getRecvNode().getType(), *node.getHandle(), nameInfo);
     handle = node.getHandle();
     funcName = nameInfo.getName();
   } else if (node.isFuncCall()) {
@@ -594,7 +606,11 @@ void SymbolIndexer::visitApplyNode(ApplyNode &node) {
     }
   }
   if (handle && node.getArgsNode().hasNamedArgs()) {
-    this->visitNamedArgsNode(node.getArgsNode(), *handle, funcName);
+    const Type *recv = nullptr;
+    if (handle->isMethodHandle()) {
+      recv = &node.getRecvNode().getType();
+    }
+    this->visitNamedArgsNode(recv, node.getArgsNode(), *handle, funcName);
   } else {
     this->visit(node.getArgsNode());
   }
@@ -603,16 +619,17 @@ void SymbolIndexer::visitApplyNode(ApplyNode &node) {
 void SymbolIndexer::visitNewNode(NewNode &node) {
   this->visit(node.getTargetTypeNode());
   if (node.getHandle() && node.getArgsNode().hasNamedArgs()) {
-    this->visitNamedArgsNode(node.getArgsNode(), *node.getHandle(), OP_INIT);
+    this->visitNamedArgsNode(&node.getTargetTypeNode()->getType(), node.getArgsNode(),
+                             *node.getHandle(), OP_INIT);
   } else {
     this->visit(node.getArgsNode());
   }
 }
 
-void SymbolIndexer::visitNamedArgsNode(const ArgsNode &node, const Handle &handle,
+void SymbolIndexer::visitNamedArgsNode(const Type *recv, const ArgsNode &node, const Handle &handle,
                                        StringRef funcName) {
   for (auto &e : node.getNamedEntries()) {
-    this->builder().addNamedArgSymbol(e.getNameInfo(), handle, funcName);
+    this->builder().addNamedArgSymbol(recv, e.getNameInfo(), handle, funcName);
   }
   for (auto &e : node.getNodes()) {
     this->visit(*e);

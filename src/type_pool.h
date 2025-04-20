@@ -237,7 +237,7 @@ public:
    * must be valid method handle index of receiver type
    * @return
    * if failed, return null
-   * // FIXME: error reporting
+   * // TODO: error reporting
    */
   std::unique_ptr<MethodHandle> allocNativeMethodHandle(const Type &recv, unsigned int methodIndex);
 

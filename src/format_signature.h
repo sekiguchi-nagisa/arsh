@@ -49,9 +49,21 @@ void formatFuncSignature(const Type &retType, unsigned int paramSize, const Type
 
 void formatFieldSignature(const Type &recvType, const Type &type, std::string &out);
 
-void formatMethodSignature(const Type &recvType, const MethodHandle &handle, std::string &out,
-                           bool constructor = false,
-                           const std::function<void(StringRef)> &paramCallback = nullptr);
+/**
+ *
+ * @param recvType may be null if indicate constructor
+ * @param handle
+ * @param out
+ * @param paramCallback
+ */
+void formatMethodSignature(const Type *recvType, const MethodHandle &handle, std::string &out,
+                           const std::function<void(StringRef)> &paramCallback);
+
+inline void formatMethodSignature(const Type &recvType, const MethodHandle &handle,
+                                  std::string &out,
+                                  const std::function<void(StringRef)> &paramCallback = nullptr) {
+  return formatMethodSignature(&recvType, handle, out, paramCallback);
+}
 
 /**
  * for builtin method

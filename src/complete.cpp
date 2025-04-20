@@ -126,13 +126,17 @@ std::string CompCandidate::formatTypeSignature(const TypePool &pool) const {
   case CompCandidateKind::NATIVE_METHOD: {
     auto &info = this->getNativeMethodInfo();
     auto &recvType = pool.get(info.typeId);
-    auto typeParams = recvType.getTypeParams(pool);
     std::string packedParamTypes;
-    for (auto &p : typeParams) {
-      if (!packedParamTypes.empty()) {
-        packedParamTypes += ';';
+    if (isEqOrOrdTypeMethod(info.methodIndex)) {
+      packedParamTypes += recvType.getNameRef();
+    } else {
+      auto typeParams = recvType.getTypeParams(pool);
+      for (auto &p : typeParams) {
+        if (!packedParamTypes.empty()) {
+          packedParamTypes += ';';
+        }
+        packedParamTypes += p->getNameRef();
       }
-      packedParamTypes += p->getNameRef();
     }
     formatNativeMethodSignature(info.methodIndex, packedParamTypes, ret);
     break;

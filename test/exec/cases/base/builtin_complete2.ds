@@ -152,23 +152,23 @@ $assertArray([ '_fullname', "_func", '_scriptDir', '_scriptName', "hello", "hey"
              $(complete "source $SCRIPT_DIR/../../_module4test/inlined2.ds as mod; \$mod."))
 $assertArray([ 'begin', 'end'], $(complete "source $SCRIPT_DIR/../../_module4test/module1.ds; new Interval(0,23)."))
 $assertArray([ 'begin', 'end'], $(complete "source $SCRIPT_DIR/../../_module4test/module1.ds as mod; new mod.Interval(0,23)."))
-$assertArray(['abs', "compare", "toFloat"], $(complete '
+$assertArray(['abs', "compare", "equals", "toFloat"], $(complete '
     if let a = "fjeri".toInt() {
         var b = 45.0
         $b * $a.'))
-$assertArray(['abs', "compare", 'toFloat'], $(complete '$$.' > /dev/null && printf "%s\n" $COMPREPLY ))
-$assertArray(['abs', "compare", 'toFloat'], $(complete 'var a = try { 34; } finally { return ; 34.'))
-$assertArray(['abs', "compare", 'toFloat'], $(complete 'function f($a: Int) { $a.'))
-$assertArray(['abs', "compare", 'toFloat'], $(complete 'var b = function ($a: Int) => $a.'))
-$assertArray(['abs', "compare", 'toFloat'], $(complete 'function ff(a:Int,b:Int) {}; $ff(34,1234.'))
-$assertArray(['abs', "compare", 'toFloat'], $(complete 'typedef AAA($a : Int) { var b = $a.'))
+$assertArray(['abs', "compare", "equals", 'toFloat'], $(complete '$$.' > /dev/null && printf "%s\n" $COMPREPLY ))
+$assertArray(['abs', "compare", "equals", 'toFloat'], $(complete 'var a = try { 34; } finally { return ; 34.'))
+$assertArray(['abs', "compare", "equals", 'toFloat'], $(complete 'function f($a: Int) { $a.'))
+$assertArray(['abs', "compare", "equals", 'toFloat'], $(complete 'var b = function ($a: Int) => $a.'))
+$assertArray(['abs', "compare", "equals", 'toFloat'], $(complete 'function ff(a:Int,b:Int) {}; $ff(34,1234.'))
+$assertArray(['abs', "compare", "equals", 'toFloat'], $(complete 'typedef AAA($a : Int) { var b = $a.'))
 $assertArray(['show', 'source', 'ss', 'ssum', 'status', 'suppressed'], $(complete ' typedef ANY : Error; typedef INT : ANY
     function ss() : String for ANY { return "$this"; }  # also complete super type method
     function ssum($a : Int) : String for INT { 
         return $this as String + $a
     }
     hoge() { new INT().s'))
-$assertArray(['abs', "compare", 'toFloat'], $(complete 'let aa = "ss".toInt(); if let aaa = $aa { $aaa.'))
+$assertArray(['abs', "compare", "equals", 'toFloat'], $(complete 'let aa = "ss".toInt(); if let aaa = $aa { $aaa.'))
 $assertArray(['parse',], $(complete '
 [<CLI>] typedef Param() {}
 hoge(p : Param) { $p.p'))

@@ -352,7 +352,6 @@ nodes:
       init: false
       intValue: 0
     op: "+"
-    assertOp: "DEFAULT"
     optNode: null
 )"},
     {DumpOp::untyped, R"($true && $false && $true)", 0, 0, R"(
@@ -389,7 +388,6 @@ nodes:
         extraOp: "NONE"
         extraValue: 0
       op: "&&"
-      assertOp: "DEFAULT"
       optNode: null
     rightNode:
       nodeKind: Var
@@ -402,7 +400,6 @@ nodes:
       extraOp: "NONE"
       extraValue: 0
     op: "&&"
-    assertOp: "DEFAULT"
     optNode: null
 )"},
 

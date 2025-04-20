@@ -45,6 +45,8 @@ enum class TYPE : unsigned int {
   Void,
   Nothing,
 
+  Eq_,    // for equality (==, !=, equals)
+  Ord_,   // for comparable (compare)
   Value_, // super type of value type(int, float, bool, string). not directly use it.
 
   Int,
@@ -411,6 +413,7 @@ struct HandleRefCountOp {
 
 struct CallSignature {
   const Type *returnType{nullptr};
+  const Type *recvType{nullptr};
   unsigned int paramSize{0};
   const Type *const *paramTypes{nullptr};
   const char *name{nullptr};
@@ -420,9 +423,10 @@ struct CallSignature {
 
   CallSignature(const Type &retType, const char *name) : returnType(&retType), name(name) {}
 
-  CallSignature(const Type &ret, unsigned int size, const Type *const *params, const char *name,
-                const Handle *hd)
-      : returnType(&ret), paramSize(size), paramTypes(params), name(name), handle(hd) {}
+  CallSignature(const Type &ret, const Type *recvType, unsigned int size, const Type *const *params,
+                const char *name, const Handle *hd)
+      : returnType(&ret), recvType(recvType), paramSize(size), paramTypes(params), name(name),
+        handle(hd) {}
 };
 
 class PackedParamNames { // follow `Param0;Param1` form
@@ -474,7 +478,7 @@ public:
 
 template <typename Func, enable_when<splitter_requirement_v<Func>> = nullptr>
 bool iteratePackedParamNames(const StringRef packedParamNames, Func func) {
-  return splitByDelim(packedParamNames, ';', func);
+  return packedParamNames.empty() || splitByDelim(packedParamNames, ';', func);
 }
 
 class FunctionType : public Type {
@@ -515,8 +519,12 @@ public:
   const Type &getParamTypeAt(unsigned int index) const { return *this->paramTypes[index]; }
 
   CallSignature toCallSignature(const char *name, const Handle *hd) const {
-    return {this->returnType, this->getParamSize(),
-            this->getParamSize() == 0 ? nullptr : &this->paramTypes[0], name, hd};
+    return {this->returnType,
+            nullptr,
+            this->getParamSize(),
+            this->getParamSize() == 0 ? nullptr : &this->paramTypes[0],
+            name,
+            hd};
   }
 
   static bool classof(const Type *type) { return type->isFuncType(); }
@@ -1075,9 +1083,15 @@ public:
 
   bool isConstructor() const { return this->is(HandleKind::CONSTRUCTOR); }
 
-  CallSignature toCallSignature(const char *name) const {
-    return {this->returnType, this->getParamSize(),
-            this->getParamSize() == 0 ? nullptr : &this->paramTypes[0], name, this};
+  bool isEqOrOrdMethod() const { return this->isNative() && isEqOrOrdTypeMethod(this->getIndex()); }
+
+  CallSignature toCallSignature(const Type *recvType, const char *name) const {
+    return {this->returnType,
+            recvType,
+            this->getParamSize(),
+            this->getParamSize() == 0 ? nullptr : &this->paramTypes[0],
+            name,
+            this};
   }
 
   /**

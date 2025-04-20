@@ -2077,18 +2077,6 @@ bool VM::mainLoop(ARState &state) {
         }
         vmnext;
       }
-      vmcase(REF_EQ) {
-        auto v1 = state.stack.pop();
-        auto v2 = state.stack.pop();
-        state.stack.push(Value::createBool(v1 == v2));
-        vmnext;
-      }
-      vmcase(REF_NE) {
-        auto v1 = state.stack.pop();
-        auto v2 = state.stack.pop();
-        state.stack.push(Value::createBool(v1 != v2));
-        vmnext;
-      }
       vmcase(SYNC_PIPESTATUS) {
         const unsigned char index = consume8(state.stack.ip());
         auto &pipeline = typeAs<PipelineObject>(state.stack.getLocal(index));

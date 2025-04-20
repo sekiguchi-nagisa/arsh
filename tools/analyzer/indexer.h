@@ -190,7 +190,7 @@ public:
   bool addField(const Type &recv, const NameInfo &nameInfo, DeclSymbol::Kind kind,
                 const Handle &handle, Token token);
 
-  bool addMethod(const MethodHandle &handle, const NameInfo &nameInfo);
+  bool addMethod(const Type &recv, const MethodHandle &handle, const NameInfo &nameInfo);
 
   const DeclSymbol *addMemberDecl(const Type &recv, const NameInfo &nameInfo, const Type &type,
                                   DeclSymbol::Kind kind, Token token);
@@ -215,7 +215,7 @@ public:
   const DeclSymbol *addParamDecl(const NameInfo &info, const Type &type, Token token,
                                  StringRef funcName, const Handle &handle);
 
-  const Symbol *addNamedArgSymbol(const NameInfo &nameInfo, const Handle &handle,
+  const Symbol *addNamedArgSymbol(const Type *recv, const NameInfo &nameInfo, const Handle &handle,
                                   StringRef funcName);
 
   class DummyTokenGenerator {
@@ -327,9 +327,10 @@ private:
   /**
    * for generic method
    * @param token
-   * @param type
+   * @param recvType
+   * @param handle
    */
-  void addParamTypeInfo(Token token, const Type &type);
+  void addParamTypeInfo(Token token, const Type &recvType, const MethodHandle &handle);
 };
 
 class SymbolIndexer : public NodePass {
@@ -386,7 +387,8 @@ private:
 
   void visitUserDefinedCmdImpl(UserDefinedCmdNode &node, FuncVisitOp op);
 
-  void visitNamedArgsNode(const ArgsNode &node, const Handle &handle, StringRef funcName);
+  void visitNamedArgsNode(const Type *recv, const ArgsNode &node, const Handle &handle,
+                          StringRef funcName);
 
   IndexBuilder &builder() { return this->builders.back(); }
 

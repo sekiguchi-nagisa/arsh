@@ -153,6 +153,14 @@ TEST_F(IndexTest, hoverBuiltin) {
       this->hover("[23:(12,(34,56,))].\nclear()", Position{.line = 1, .character = 2},
                   "```arsh\nfunction clear(): Void for [Int : (Int, (Int, Int))]\n```"));
   ASSERT_NO_FATAL_FAILURE(
+      this->hover("''.equals('')", Position{.line = 0, .character = 5},
+                  "```arsh\nfunction equals(target: String): Bool for String\n```"));
+  ASSERT_NO_FATAL_FAILURE(
+      this->hover("''.compare('')", Position{.line = 0, .character = 5},
+                  "```arsh\nfunction compare(target: String): Int for String\n```"));
+
+  // builtin named param
+  ASSERT_NO_FATAL_FAILURE(
       this->hover("'2345'.slice(\n$end:2345)", 1, "```arsh\nvar end: Int?\n```"));
   ASSERT_NO_FATAL_FAILURE(
       this->hover("[1234].slice(\n$start:2345)", 1, "```arsh\nvar start: Int\n```"));
@@ -160,6 +168,8 @@ TEST_F(IndexTest, hoverBuiltin) {
       this->hover("[1234].slice(\n$end:345,$start:2345)", 1, "```arsh\nvar end: Int?\n```"));
   ASSERT_NO_FATAL_FAILURE(
       this->hover("['23':1234].remove(\n$key:'2')", 1, "```arsh\nvar key: String\n```"));
+  ASSERT_NO_FATAL_FAILURE(
+      this->hover("''.compare(\n$target:'2345')", 1, "```arsh\nvar target: String\n```"));
 }
 
 TEST_F(IndexTest, hoverMod) {
@@ -470,7 +480,7 @@ TEST_F(IndexTest, signature) {
     ASSERT_TRUE(handle);
     std::string expect = "function ";
     expect += key.ref;
-    formatMethodSignature(type, *handle, expect, key.ref == OP_INIT);
+    formatMethodSignature(key.ref == OP_INIT ? nullptr : &type, *handle, expect, nullptr);
 
     std::string actual = "function ";
     actual += key.ref;

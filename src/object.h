@@ -397,10 +397,6 @@ public:
 
   ObjPtr<Object> toPtr() const { return ObjPtr<Object>(this->get()); }
 
-  bool operator==(const Value &v) const noexcept { return this->equals(v); }
-
-  bool operator!=(const Value &v) const noexcept { return !this->equals(v); }
-
   explicit operator bool() const noexcept { return this->kind() != ValueKind::EMPTY; }
 
   /**
@@ -505,12 +501,16 @@ public:
   bool opInterp(StrBuilder &builder) const;
 
   /**
-   * for HashMap
+   * for HashMap (total order)
+   * @param o
+   * @param partial
+   * if true, check partial equality
+   * @return
    */
-  bool equals(const Value &o) const;
+  bool equals(const Value &o, bool partial = false) const;
 
   /**
-   * three-way compare for Array#sort
+   * three-way compare for Array#sort (total order)
    * @param o
    * @return
    * if this < o, return negative number

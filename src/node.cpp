@@ -426,7 +426,6 @@ void BinaryOpNode::dump(NodeDumper &dumper) const {
   DUMP_PTR(leftNode);
   DUMP_PTR(rightNode);
   DUMP(op);
-  DUMP(assertOp);
   DUMP_PTR(optNode);
 }
 

@@ -637,6 +637,7 @@ TEST_F(InteractiveTest, lineEditorCompSuffix) {
   ASSERT_NO_FATAL_FAILURE(this->expect("> 1234.\n"
                                        "abs (): Int for Int                 "
                                        "compare (target: Int): Int for Int  "
+                                       "equals (target: Int): Bool for Int  "
                                        "toFloat (): Float for Int           \n"));
 
   {
@@ -645,12 +646,14 @@ TEST_F(InteractiveTest, lineEditorCompSuffix) {
     ASSERT_NO_FATAL_FAILURE(this->expect("> 1234.abs()\n"
                                          "abs (): Int for Int                 "
                                          "compare (target: Int): Int for Int  "
+                                         "equals (target: Int): Bool for Int  "
                                          "toFloat (): Float for Int           \n"));
 
     this->send("\t");
     ASSERT_NO_FATAL_FAILURE(this->expect("> 1234.compare(\n"
                                          "abs (): Int for Int                 "
                                          "compare (target: Int): Int for Int  "
+                                         "equals (target: Int): Bool for Int  "
                                          "toFloat (): Float for Int           \n"));
 
     this->send(CTRL_C);

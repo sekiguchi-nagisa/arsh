@@ -1223,8 +1223,6 @@ private:
    */
   std::unique_ptr<Node> rightNode;
 
-  AssertOp assertOp{AssertOp::DEFAULT}; // for '==', '!=' (function/command)
-
   TokenKind op;
 
   Token opToken;
@@ -1260,10 +1258,6 @@ public:
   Node *getRightNode() const { return this->rightNode.get(); }
 
   std::unique_ptr<Node> &refRightNode() { return this->rightNode; }
-
-  void setAssertOp(AssertOp o) { this->assertOp = o; }
-
-  AssertOp getAssertOp() const { return this->assertOp; }
 
   TokenKind getOp() const { return this->op; }
 
@@ -1717,9 +1711,7 @@ public:
       if (isa<ApplyNode>(binaryNode.getOptNode())) {
         return cast<ApplyNode>(binaryNode.getOptNode())->getAssertOp();
       }
-      return binaryNode.getAssertOp();
-    }
-    if (isa<TypeOpNode>(*this->condNode)) {
+    } else if (isa<TypeOpNode>(*this->condNode)) {
       return cast<TypeOpNode>(*this->condNode).getAssertOp();
     }
     return AssertOp::DEFAULT;

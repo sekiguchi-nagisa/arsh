@@ -43,7 +43,9 @@ TypePool::TypePool() {
   /**
    * hidden from script.
    */
-  this->initBuiltinType(TYPE::Value_, "Value%%", TYPE::Any, info_Dummy());
+  this->initBuiltinType(TYPE::Eq_, "%Eq_", TYPE::Any, info_Eq_Type());
+  this->initBuiltinType(TYPE::Ord_, "%Ord_", TYPE::Eq_, info_Ord_Type());
+  this->initBuiltinType(TYPE::Value_, "%Value_", TYPE::Ord_, info_Dummy());
 
   this->initBuiltinType(TYPE::Int, "Int", TYPE::Value_, info_IntType());
   this->initBuiltinType(TYPE::Float, "Float", TYPE::Value_, info_FloatType());
@@ -59,11 +61,11 @@ TypePool::TypePool() {
   this->initBuiltinType(TYPE::Job, "Job", TYPE::Any, info_JobType());
   this->initBuiltinType(TYPE::Jobs, "Jobs", TYPE::Any, info_JobsType());
   this->initBuiltinType(TYPE::Module, "Module", TYPE::Any, info_ModuleType());
-  this->initBuiltinType(TYPE::StringIter, "StringIter%%", TYPE::Any, info_StringIterType());
+  this->initBuiltinType(TYPE::StringIter, "%StringIter", TYPE::Any, info_StringIterType());
   this->initBuiltinType(TYPE::FD, "FD", TYPE::Any, info_FDType());
   this->initBuiltinType(TYPE::ProcSubst, "ProcSubst", TYPE::FD, info_ProcSubstType());
-  this->initBuiltinType(TYPE::Reader, "Reader%%", TYPE::Any, info_ReaderType());
-  this->initBuiltinType(TYPE::Command, "Command", TYPE::Any, info_CommandType());
+  this->initBuiltinType(TYPE::Reader, "%Reader", TYPE::Any, info_ReaderType());
+  this->initBuiltinType(TYPE::Command, "Command", TYPE::Eq_, info_CommandType());
   this->initBuiltinType(TYPE::LineEditor, "LineEditor", TYPE::Any, info_LineEditorType());
   this->initBuiltinType(TYPE::CLI, "CLI", TYPE::Any, info_CLIType());
   this->initBuiltinType(TYPE::Candidates, "Candidates", TYPE::Any, info_CandidatesType());
@@ -295,7 +297,7 @@ TypeOrError TypePool::createFuncType(const Type &returnType,
   std::string typeName(toFunctionTypeName(returnType, paramTypes));
   auto *type = this->get(typeName);
   if (type == nullptr) {
-    type = this->newType<FunctionType>(typeName, this->get(TYPE::Any), returnType,
+    type = this->newType<FunctionType>(typeName, this->get(TYPE::Eq_), returnType,
                                        std::move(paramTypes));
     assert(type);
   }
@@ -754,6 +756,11 @@ void TypePool::registerHandles(const BuiltinType &type) {
     unsigned int methodIndex = info.getActualMethodIndex(i);
     this->registerHandle(type, funcInfo->funcName, methodIndex);
   }
+}
+
+bool isEqOrOrdTypeMethod(unsigned int nativeMethodIndex) {
+  return info_Eq_Type().hasMethod(nativeMethodIndex) ||
+         info_Ord_Type().hasMethod(nativeMethodIndex);
 }
 
 } // namespace arsh

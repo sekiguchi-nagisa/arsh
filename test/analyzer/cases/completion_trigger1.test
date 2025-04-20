@@ -49,6 +49,13 @@
 #    CHECK:     },
 #    CHECK:     {
 #    CHECK:       "kind": 2,
+#    CHECK:       "label": "equals",
+#    CHECK:       "labelDetails": {
+#    CHECK:         "detail": "(target: Int): Bool for Int"
+#    CHECK:       }
+#    CHECK:     },
+#    CHECK:     {
+#    CHECK:       "kind": 2,
 #    CHECK:       "label": "toFloat",
 #    CHECK:       "labelDetails": {
 #    CHECK:         "detail": "(): Float for Int"

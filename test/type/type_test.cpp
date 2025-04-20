@@ -189,7 +189,11 @@ TEST_F(TypeTest, superType) {
   ASSERT_NO_FATAL_FAILURE(
       this->assertSuperType(this->pool.get(TYPE::Any), this->pool.get(TYPE::ProcGuard_)));
   ASSERT_NO_FATAL_FAILURE(
-      this->assertSuperType(this->pool.get(TYPE::Value_), this->pool.get(TYPE::Any)));
+      this->assertSuperType(this->pool.get(TYPE::Value_), this->pool.get(TYPE::Ord_)));
+  ASSERT_NO_FATAL_FAILURE(
+      this->assertSuperType(this->pool.get(TYPE::Ord_), this->pool.get(TYPE::Eq_)));
+  ASSERT_NO_FATAL_FAILURE(
+      this->assertSuperType(this->pool.get(TYPE::Eq_), this->pool.get(TYPE::Any)));
 
   ASSERT_NO_FATAL_FAILURE(
       this->assertSuperType(this->pool.get(TYPE::Int), this->pool.get(TYPE::Value_)));
@@ -230,6 +234,8 @@ TEST_F(TypeTest, superType) {
       this->assertSuperType(this->pool.get(TYPE::Regex), this->pool.get(TYPE::Any)));
   ASSERT_NO_FATAL_FAILURE(
       this->assertSuperType(this->pool.get(TYPE::RegexSyntaxError), this->pool.get(TYPE::Error)));
+  ASSERT_NO_FATAL_FAILURE(
+      this->assertSuperType(this->pool.get(TYPE::Command), this->pool.get(TYPE::Eq_)));
 }
 
 TEST_F(TypeTest, templateName) {
@@ -256,9 +262,9 @@ TEST_F(TypeTest, typeToken) {
       this->assertSuperType(this->toType<Tuple_t<Error_t>>(), this->pool.get(TYPE::Any)));
 
   ASSERT_NO_FATAL_FAILURE(
-      this->assertSuperType(this->toType<Func_t<Void_t>>(), this->pool.get(TYPE::Any)));
+      this->assertSuperType(this->toType<Func_t<Void_t>>(), this->pool.get(TYPE::Eq_)));
   ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->toType<Func_t<String_t, Int_t, Float_t>>(),
-                                                this->pool.get(TYPE::Any)));
+                                                this->pool.get(TYPE::Eq_)));
 }
 
 TEST_F(TypeTest, api) {

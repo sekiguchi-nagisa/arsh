@@ -115,8 +115,12 @@ void formatFieldSignature(const Type &recvType, const Type &type, std::string &o
   normalizeTypeName(recvType, out);
 }
 
-void formatMethodSignature(const Type &recvType, const MethodHandle &handle, std::string &out,
-                           bool constructor, const std::function<void(StringRef)> &paramCallback) {
+void formatMethodSignature(const Type *recvType, const MethodHandle &handle, std::string &out,
+                           const std::function<void(StringRef)> &paramCallback) {
+  if (recvType && handle.isEqOrOrdMethod()) {
+    formatNativeMethodSignature(handle.getIndex(), recvType->getNameRef(), out, paramCallback);
+    return;
+  }
   auto params = splitParamNames(handle.getPackedParamNames());
   assert(params.size() == handle.getParamSize());
   out += "(";
@@ -133,29 +137,29 @@ void formatMethodSignature(const Type &recvType, const MethodHandle &handle, std
     }
   }
   out += ")";
-  if (!constructor) {
+  if (recvType) {
     out += ": ";
     normalizeTypeName(handle.getReturnType(), out);
     out += " for ";
-    normalizeTypeName(recvType, out);
+    normalizeTypeName(*recvType, out);
   }
 }
 
 class Decoder {
 private:
   const HandleInfo *ptr;
-  const std::vector<StringRef> &paramTypes;
+  const std::vector<StringRef> paramTypes;
 
 public:
-  Decoder(const HandleInfo *ptr, const std::vector<StringRef> &types)
-      : ptr(ptr), paramTypes(types) {}
+  Decoder(const HandleInfo *ptr, std::vector<StringRef> &&types)
+      : ptr(ptr), paramTypes(std::move(types)) {}
 
   unsigned int decodeNum() {
     return static_cast<unsigned int>(static_cast<int>(*(this->ptr++)) -
                                      static_cast<int>(HandleInfo::P_N0));
   }
 
-  std::string decodeType();
+  std::string decodeType(bool replaceIface);
 
   /**
    * consume constraint part
@@ -163,8 +167,8 @@ public:
   void decodeConstraint() {
     unsigned int size = this->decodeNum();
     for (unsigned int i = 0; i < size; i++) {
-      this->decodeType();
-      this->decodeType();
+      this->decodeType(false);
+      this->decodeType(false);
     }
   }
 };
@@ -197,41 +201,35 @@ static bool isFuncType(StringRef ref) {
   return false;
 }
 
-static const char *toStringPrimitive(HandleInfo info) {
-  switch (info) {
+std::string Decoder::decodeType(bool replaceIface) {
+  switch (const auto info = *(this->ptr++); info) {
 #define GEN_CASE(E)                                                                                \
   case HandleInfo::E:                                                                              \
     return #E;
-    EACH_HANDLE_INFO_TYPE(GEN_CASE)
+    EACH_HANDLE_INFO_TYPE_PUBLIC(GEN_CASE)
 #undef GEN_CASE
-  default:
-    break;
-  }
-  return "";
-}
 
-std::string Decoder::decodeType() {
-  switch (const auto info = *(this->ptr++); info) {
-#define GEN_CASE(E) case HandleInfo::E:
-    EACH_HANDLE_INFO_TYPE(GEN_CASE)
+#define GEN_CASE(E)                                                                                \
+  case HandleInfo::E:                                                                              \
+    return "%" #E;
+    EACH_HANDLE_INFO_TYPE_HIDDEN(GEN_CASE)
 #undef GEN_CASE
-    {
-      StringRef v = toStringPrimitive(info);
-      if (v == "Reader") {
-        v = "Reader%%";
-      } else if (v == "Value_") {
-        v = "Value%%";
-      } else if (v == "StringIter") {
-        v = "StringIter%%";
-      }
-      return v.toString();
-    }
+
+#define GEN_CASE(E)                                                                                \
+  case HandleInfo::E:                                                                              \
+    if (replaceIface) {                                                                            \
+      return this->paramTypes[0].toString();                                                       \
+    }                                                                                              \
+    return "%" #E;
+    EACH_HANDLE_INFO_TYPE_HIDDEN_IFACE(GEN_CASE)
+#undef GEN_CASE
+
   case HandleInfo::Array: {
     unsigned int size = this->decodeNum();
     (void)size;
     assert(size == 1);
     std::string out = "[";
-    out += this->decodeType();
+    out += this->decodeType(replaceIface);
     out += "]";
     return out;
   }
@@ -240,9 +238,9 @@ std::string Decoder::decodeType() {
     (void)size;
     assert(size == 2);
     std::string out = "[";
-    out += this->decodeType();
+    out += this->decodeType(replaceIface);
     out += " : ";
-    out += this->decodeType();
+    out += this->decodeType(replaceIface);
     out += "]";
     return out;
   }
@@ -251,14 +249,14 @@ std::string Decoder::decodeType() {
     assert(size > 0);
     std::string out = "(";
     if (size == 1) {
-      out += this->decodeType();
+      out += this->decodeType(replaceIface);
       out += ",";
     } else {
       for (unsigned int i = 0; i < size; i++) {
         if (i > 0) {
           out += ", ";
         }
-        out += this->decodeType();
+        out += this->decodeType(replaceIface);
       }
     }
     out += ")";
@@ -268,7 +266,7 @@ std::string Decoder::decodeType() {
     unsigned int size = this->decodeNum();
     (void)size;
     assert(size == 1);
-    std::string out = this->decodeType();
+    std::string out = this->decodeType(replaceIface);
     if (isFuncType(out)) {
       out.insert(0, "(") += ")";
     }
@@ -276,14 +274,14 @@ std::string Decoder::decodeType() {
     return out;
   }
   case HandleInfo::Func: {
-    std::string ret = this->decodeType();
+    std::string ret = this->decodeType(replaceIface);
     unsigned int size = this->decodeNum();
     std::string out = "(";
     for (unsigned int i = 0; i < size; i++) {
       if (i > 0) {
         out += ", ";
       }
-      out += this->decodeType();
+      out += this->decodeType(replaceIface);
     }
     out += ") -> ";
     out += ret;
@@ -310,19 +308,19 @@ std::string Decoder::decodeType() {
 void formatNativeMethodSignature(unsigned int nativeMethodIndex, StringRef packedParamType,
                                  std::string &out,
                                  const std::function<void(StringRef)> &paramCallback) {
+  const bool eqOrOrd = !packedParamType.empty() && isEqOrOrdTypeMethod(nativeMethodIndex);
   const auto *funcInfo = &nativeFuncInfoTable()[nativeMethodIndex];
-  auto params = splitParamNames(funcInfo->params);
-  auto paramTypes = splitParamNames(packedParamType);
-  Decoder decoder(funcInfo->handleInfo, paramTypes);
+  const auto params = splitParamNames(funcInfo->params);
+  Decoder decoder(funcInfo->handleInfo, splitParamNames(packedParamType));
 
   decoder.decodeConstraint(); // ignore constraint
 
-  auto returnTypeName = decoder.decodeType();
+  auto returnTypeName = decoder.decodeType(eqOrOrd);
   unsigned int paramSize = decoder.decodeNum();
   assert(paramSize > 0);
   paramSize--; // ignore receiver
   assert(paramSize == params.size());
-  auto recvTypeName = decoder.decodeType();
+  auto recvTypeName = decoder.decodeType(eqOrOrd);
 
   out += "(";
   for (unsigned int i = 0; i < paramSize; i++) {
@@ -332,7 +330,7 @@ void formatNativeMethodSignature(unsigned int nativeMethodIndex, StringRef packe
     const size_t offset = out.size();
     out += params[i];
     out += ": ";
-    normalizeTypeName(decoder.decodeType(), out);
+    normalizeTypeName(decoder.decodeType(eqOrOrd), out);
     if (paramCallback) {
       paramCallback(StringRef(out.c_str() + offset));
     }

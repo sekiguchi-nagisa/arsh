@@ -526,7 +526,7 @@ CallSignature TypeChecker::resolveCallSignature(ApplyNode &node) {
       accessNode.setType(this->typePool().get(TYPE::Any));
       node.setKind(ApplyNode::METHOD_CALL);
       node.setHandle(handle);
-      return handle->toCallSignature(methodName.c_str());
+      return handle->toCallSignature(&recvType, methodName.c_str());
     }
     if (handleOrError.asErr() == NameLookupError::MOD_PRIVATE) {
       this->reportError<PrivateMethod>(accessNode.getNameToken(), methodName.c_str(),
@@ -600,7 +600,16 @@ static bool hasCompInLastArg(const ArgsNode &node, CodeCompNode::Kind kind) {
   return false;
 }
 
+static bool isEqOrOrdMethod(const CallSignature &callSignature) {
+  auto *handle = callSignature.handle;
+  if (handle && handle->isMethodHandle()) {
+    return cast<MethodHandle>(handle)->isEqOrOrdMethod();
+  }
+  return false;
+}
+
 void TypeChecker::checkArgsNode(const CallSignature &callSignature, ArgsNode &node) {
+  const bool eqOrOrd = callSignature.recvType && isEqOrOrdMethod(callSignature);
   const unsigned int argSize = node.getNodes().size();
   if (node.hasNamedArgs()) {
     this->checkNamedArgs(callSignature, node);
@@ -617,6 +626,9 @@ void TypeChecker::checkArgsNode(const CallSignature &callSignature, ArgsNode &no
     for (unsigned int i = 0; i < maxSize; i++) {
       if (i < argSize && i < paramSize) {
         this->checkType(*callSignature.paramTypes[i], *node.getNodes()[i]);
+        if (eqOrOrd && i == 0) { // for T.compare(T)
+          this->checkType(*callSignature.recvType, *node.getNodes()[i]);
+        }
       } else if (i < argSize) {
         this->checkTypeAsExpr(*node.getNodes()[i]);
       }
@@ -671,12 +683,10 @@ void TypeChecker::checkNamedArgs(const CallSignature &callSignature, ArgsNode &n
     this->reportError<NotNamedCallable>(node);
   }
   FlexBuffer<StringRef> paramNames;
-  if (!packedParamNames.empty()) {
-    iteratePackedParamNames(packedParamNames, [&paramNames](const StringRef sub, bool) {
-      paramNames.push_back(sub);
-      return true;
-    });
-  }
+  iteratePackedParamNames(packedParamNames, [&paramNames](const StringRef sub, bool) {
+    paramNames.push_back(sub);
+    return true;
+  });
   StrRefMap<std::pair<unsigned int, bool>> paramMap;
   for (unsigned int i = 0; i < paramNames.size(); i++) {
     paramMap[paramNames[i]] = {i, false};
@@ -1097,14 +1107,6 @@ void TypeChecker::visitBinaryOpNode(BinaryOpNode &node) {
     return;
   }
 
-  // check referential equality of func object
-  if ((leftType.isFuncType() || leftType.is(TYPE::Command)) &&
-      (node.getOp() == TokenKind::EQ || node.getOp() == TokenKind::NE)) {
-    this->checkType(leftType, *node.getRightNode());
-    node.setType(this->typePool().get(TYPE::Bool));
-    return;
-  }
-
   // string concatenation
   if (node.getOp() == TokenKind::ADD && (leftType.is(TYPE::String) || rightType.is(TYPE::String))) {
     if (!leftType.is(TYPE::String)) {
@@ -1158,7 +1160,7 @@ void TypeChecker::visitNewNode(NewNode &node) {
   if (type.isOptionType() || type.isArrayType() || type.isMapType()) {
     callSignature = CallSignature(type, OP_INIT);
   } else if (auto *handle = this->curScope->lookupConstructor(this->typePool(), type)) {
-    callSignature = handle->toCallSignature(OP_INIT);
+    callSignature = handle->toCallSignature(&type, OP_INIT);
     node.setHandle(handle);
   } else {
     this->reportError<UndefinedInit>(*node.getTargetTypeNode(), type.getName());
@@ -1278,8 +1280,6 @@ void TypeChecker::visitAssertNode(AssertNode &node) {
                       : opKind == TokenKind::MATCH ? AssertOp::MATCH
                                                    : AssertOp::DEFAULT;
       applyNode.setAssertOp(op);
-    } else if (binaryNode.getOp() == TokenKind::EQ) {
-      binaryNode.setAssertOp(AssertOp::EQ);
     }
   } else if (isa<TypeOpNode>(node.getCondNode())) {
     if (auto &typeOpNode = cast<TypeOpNode>(node.getCondNode());

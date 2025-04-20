@@ -1,4 +1,18 @@
 # Standard Library Interface Definition
+## Eq_ type
+```
+function %OP_EQ(target: Eq_): Bool for Eq_
+
+function %OP_NE(target: Eq_): Bool for Eq_
+
+function equals(target: Eq_): Bool for Eq_
+```
+
+## Ord_ type
+```
+function compare(target: Ord_): Int for Ord_
+```
+
 ## Any type
 ```
 function %OP_STR(): String for Any
@@ -51,8 +65,6 @@ function %OP_URSHIFT(target: Int): Int for Int
 function abs(): Int for Int
 
 function %OP_TO_FLOAT(): Float for Int
-
-function compare(target: Int): Int for Int
 ```
 
 ## Float type
@@ -100,8 +112,6 @@ function ceil(): Float for Float
 function abs(): Float for Float
 
 function %OP_TO_INT(): Int for Float
-
-function compare(target: Float): Int for Float
 ```
 
 ## Bool type
@@ -111,8 +121,6 @@ function %OP_NOT(): Bool for Bool
 function %OP_EQ(target: Bool): Bool for Bool
 
 function %OP_NE(target: Bool): Bool for Bool
-
-function compare(target: Bool): Int for Bool
 ```
 
 ## String type
@@ -170,8 +178,6 @@ function sanitize(repl: String?): String for String
 function toInt(radix: Int?): Int? for String
 
 function toFloat(): Float? for String
-
-function compare(target: String): Int for String
 
 function %OP_ITER(): StringIter for String
 
@@ -276,11 +282,6 @@ function get(key: String): Job? for Jobs
 function count(): Int for Jobs
 ```
 
-## StringIter type
-```
-function %OP_NEXT(): String for StringIter
-```
-
 ## Regex type
 ```
 type Regex(str: String, flag: String?)
@@ -330,8 +331,6 @@ function trap(handler: ((Signal) -> Void)?): (Signal) -> Void for Signal
 function %OP_EQ(target: Signal): Bool for Signal
 
 function %OP_NE(target: Signal): Bool for Signal
-
-function compare(target: Signal): Int for Signal
 ```
 
 ## Signals type
@@ -352,11 +351,6 @@ function _scriptDir(): String for Module
 function _func(expr: String): () -> Any? for Module
 
 function _fullname(name: String): String? for Module
-```
-
-## Reader type
-```
-function %OP_NEXT(): String for Reader
 ```
 
 ## Command type
@@ -415,6 +409,16 @@ function hasSpace(index: Int): Bool for Candidates
 function add(can: String, desc: String?, space: Int?): Candidates for Candidates
 
 function addAll(other: Candidates): Candidates for Candidates
+```
+
+## StringIter type
+```
+function %OP_NEXT(): String for StringIter
+```
+
+## Reader type
+```
+function %OP_NEXT(): String for Reader
 ```
 
 ## Array type

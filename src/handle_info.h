@@ -20,10 +20,9 @@
 namespace arsh {
 
 // builtin type
-#define EACH_HANDLE_INFO_TYPE(OP)                                                                  \
+#define EACH_HANDLE_INFO_TYPE_PUBLIC(OP)                                                           \
   OP(Void)                                                                                         \
   OP(Any)                                                                                          \
-  OP(Value_)                                                                                       \
   OP(Int)                                                                                          \
   OP(Float)                                                                                        \
   OP(Bool)                                                                                         \
@@ -34,17 +33,29 @@ namespace arsh {
   OP(Error)                                                                                        \
   OP(Job)                                                                                          \
   OP(Jobs)                                                                                         \
-  OP(StringIter)                                                                                   \
   OP(Regex)                                                                                        \
   OP(RegexMatch)                                                                                   \
   OP(Signal)                                                                                       \
   OP(Signals)                                                                                      \
   OP(Module)                                                                                       \
-  OP(Reader)                                                                                       \
   OP(Command)                                                                                      \
   OP(LineEditor)                                                                                   \
   OP(CLI)                                                                                          \
   OP(Candidates)
+
+#define EACH_HANDLE_INFO_TYPE_HIDDEN(OP)                                                           \
+  OP(StringIter)                                                                                   \
+  OP(Reader)
+
+#define EACH_HANDLE_INFO_TYPE_HIDDEN_IFACE(OP)                                                     \
+  OP(Eq_)                                                                                          \
+  OP(Ord_)                                                                                         \
+  OP(Value_)
+
+#define EACH_HANDLE_INFO_TYPE(OP)                                                                  \
+  EACH_HANDLE_INFO_TYPE_HIDDEN_IFACE(OP)                                                           \
+  EACH_HANDLE_INFO_TYPE_PUBLIC(OP)                                                                 \
+  EACH_HANDLE_INFO_TYPE_HIDDEN(OP)
 
 // type template
 #define EACH_HANDLE_INFO_TYPE_TEMP(OP)                                                             \
@@ -134,7 +145,15 @@ struct native_type_info_t {
   }
 
   bool operator!=(native_type_info_t info) const { return !(*this == info); }
+
+  bool hasMethod(unsigned int nativeMethodIndex) const {
+    const unsigned int begin = this->getActualMethodIndex(0);
+    const unsigned int end = this->getActualMethodIndex(this->methodSize);
+    return nativeMethodIndex >= begin && nativeMethodIndex < end;
+  }
 };
+
+bool isEqOrOrdTypeMethod(unsigned int nativeMethodIndex);
 
 } // namespace arsh
 
