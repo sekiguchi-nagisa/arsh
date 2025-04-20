@@ -327,10 +327,6 @@ function message(): String for Signal
 function kill(pid: Int): Void for Signal
 
 function trap(handler: ((Signal) -> Void)?): (Signal) -> Void for Signal
-
-function %OP_EQ(target: Signal): Bool for Signal
-
-function %OP_NE(target: Signal): Bool for Signal
 ```
 
 ## Signals type
