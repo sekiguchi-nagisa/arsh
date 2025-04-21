@@ -83,28 +83,17 @@ void CandidatesWrapper::sortAndDedup(const unsigned int beginOffset) {
   if (beginOffset >= this->size() || this->size() - beginOffset == 1) {
     return;
   }
-  std::sort(this->obj->refValues().begin() + beginOffset, this->obj->refValues().end(),
-            [](const Value &x, const Value &y) {
-              const int r = toStrRef(x).compare(toStrRef(y));
-              return r < 0 ||
-                     (r == 0 && toUnderlying(getAttr(x).kind) < toUnderlying(getAttr(y).kind));
-            });
+  auto &refValues = this->obj->refValues();
+  std::sort(refValues.begin() + beginOffset, refValues.end(), [](const Value &x, const Value &y) {
+    const int r = toStrRef(x).compare(toStrRef(y));
+    return r < 0 || (r == 0 && toUnderlying(getAttr(x).kind) < toUnderlying(getAttr(y).kind));
+  });
 
-  // dedup
-  auto begin = this->obj->refValues().begin() + beginOffset;
-  const auto end = this->obj->refValues().end();
-  auto iter = begin;
-  Value prev = std::move(*begin);
-  for (++begin; begin != end; ++begin) {
-    if (toStrRef(prev) != toStrRef(*begin)) {
-      *iter = std::move(prev);
-      ++iter;
-      prev = std::move(*begin);
-    }
-  }
-  *iter = std::move(prev);
-  ++iter;
-  this->obj->refValues().erase(iter, end);
+  // dedup (only extract first appeared element)
+  const auto iter =
+      std::unique(refValues.begin(), refValues.end(),
+                  [](const Value &x, const Value &y) { return toStrRef(x) == toStrRef(y); });
+  refValues.erase(iter, refValues.end());
 }
 
 StringRef CandidatesWrapper::getCommonPrefixStr() const {
