@@ -465,21 +465,9 @@ Optional<std::unordered_map<std::string, HandlePtr>> ModuleArchive::unpack(TypeP
   return handleMap;
 }
 
-static void tryInsertByAscendingOrder(std::vector<ModuleArchivePtr> &targets,
-                                      const ModuleArchivePtr &archive) {
-  assert(archive);
-  auto iter = std::lower_bound(targets.begin(), targets.end(), archive,
-                               [](const ModuleArchivePtr &x, const ModuleArchivePtr &y) {
-                                 return x->getModId() < y->getModId();
-                               });
-  if (iter == targets.end() || (*iter)->getModId() != archive->getModId()) {
-    targets.insert(iter, archive);
-  }
-}
-
 static void resolveTargets(const ModuleArchives &archives, std::vector<ModuleArchivePtr> &targets,
                            const ModuleArchivePtr &archive) {
-  tryInsertByAscendingOrder(targets, archive);
+  targets.push_back(archive);
   for (auto &e : archive->getImported()) {
     auto child = archives.find(e.modId);
     assert(child);
@@ -502,11 +490,24 @@ static void visit(const ModuleArchives &archives, std::vector<ModuleArchivePtr> 
 }
 
 static std::vector<ModuleArchivePtr> topologicalSort(const ModuleArchives &archives,
-                                                     const std::vector<ModuleArchivePtr> &targets) {
+                                                     std::vector<ModuleArchivePtr> &&targets) {
   std::vector<ModuleArchivePtr> ret;
   if (targets.empty()) {
     return ret;
   }
+
+  // sort and uniq
+  std::sort(targets.begin(), targets.end(),
+            [](const ModuleArchivePtr &x, const ModuleArchivePtr &y) {
+              return x->getModId() < y->getModId();
+            });
+  const auto iter = std::unique(targets.begin(), targets.end(),
+                                [](const ModuleArchivePtr &x, const ModuleArchivePtr &y) {
+                                  return x->getModId() == y->getModId();
+                                });
+  targets.erase(iter, targets.end());
+
+  // topological sort
   std::vector<bool> used(toUnderlying(targets.back()->getModId()) + 1, false);
   for (auto &e : targets) {
     visit(archives, ret, used, e);
@@ -522,7 +523,7 @@ ModuleArchive::getDepsByTopologicalOrder(const ModuleArchives &archives) const {
     assert(child);
     resolveTargets(archives, targets, child);
   }
-  return topologicalSort(archives, targets);
+  return topologicalSort(archives, std::move(targets));
 }
 
 static const ModType *getModType(const TypePool &pool, ModId modId) {
