@@ -73,6 +73,16 @@ public:
 struct SymbolRequest {
   ModId modId;
   unsigned int pos;
+
+  bool operator==(const SymbolRequest &o) const {
+    return this->modId == o.modId && this->pos == o.pos;
+  }
+
+  bool operator!=(const SymbolRequest &o) const { return !(*this == o); }
+
+  bool operator<(const SymbolRequest &o) const {
+    return this->modId < o.modId || (this->modId == o.modId && this->pos < o.pos);
+  }
 };
 
 class DeclBase {

@@ -22,6 +22,15 @@
 #include "index.h"
 #include "pass.h"
 
+template <>
+struct std::hash<arsh::lsp::SymbolRequest> {
+  size_t operator()(const arsh::lsp::SymbolRequest &v) const noexcept {
+    uint64_t value = v.pos;
+    value |= static_cast<uint64_t>(arsh::toUnderlying(v.modId)) << 32;
+    return std::hash<uint64_t>()(value);
+  }
+};
+
 namespace arsh::lsp {
 
 enum class ScopeKind : unsigned char {
@@ -32,12 +41,64 @@ enum class ScopeKind : unsigned char {
   BLOCK,
 };
 
+template <typename T>
+struct SymbolToPos {
+  unsigned int operator()(const T &v) const { return v.getPos(); }
+};
+
+struct ForeignDeclToPos {
+  SymbolRequest operator()(const ForeignDecl &decl) const {
+    return {.modId = decl.getModId(), .pos = decl.getPos()};
+  }
+};
+
+template <typename Pos, typename T, typename ToPos = SymbolToPos<T>>
+class SymbolSet {
+private:
+  std::unordered_map<Pos, unsigned int> indexes;
+  std::vector<T> values;
+
+public:
+  std::pair<T *, bool> tryInsert(T &&symbol) {
+    const Pos pos = ToPos()(symbol);
+    const unsigned int index = this->values.size();
+    auto [r, s] = this->indexes.try_emplace(pos, index);
+    if (s) {
+      this->values.push_back(std::move(symbol));
+      return {this->values.data() + index, s};
+    }
+    return {this->values.data() + r->second, s};
+  }
+
+  const T *find(Pos pos) const {
+    if (auto iter = this->indexes.find(pos); iter != this->indexes.end()) {
+      return this->values.data() + iter->second;
+    }
+    return nullptr;
+  }
+
+  T *findMut(Pos pos) {
+    if (auto iter = this->indexes.find(pos); iter != this->indexes.end()) {
+      return this->values.data() + iter->second;
+    }
+    return nullptr;
+  }
+
+  std::vector<T> take() && {
+    std::sort(this->values.begin(), this->values.end(),
+              [](const T &x, const T &y) { return ToPos()(x) < ToPos()(y); });
+    std::vector<T> tmp;
+    tmp.swap(this->values);
+    return tmp;
+  }
+};
+
 class IndexBuilder {
 private:
   const SourcePtr src;
-  std::vector<DeclSymbol> decls;
-  std::vector<Symbol> symbols;
-  std::vector<ForeignDecl> foreign;
+  SymbolSet<unsigned int, DeclSymbol> decls;
+  SymbolSet<unsigned int, Symbol> symbols;
+  SymbolSet<SymbolRequest, ForeignDecl, ForeignDeclToPos> foreign;
   ForeignDeclNameMap foreignNames;
   std::vector<std::pair<SymbolRef, IndexLink>> links;
   std::vector<ScopeInterval> scopeIntervals;
@@ -131,9 +192,9 @@ public:
     return {
         .modId = this->src->getSrcId(),
         .srcHash = this->src->getHash(),
-        .decls = std::move(this->decls),
-        .symbols = std::move(this->symbols),
-        .foreignDecls = std::move(this->foreign),
+        .decls = std::move(this->decls).take(),
+        .symbols = std::move(this->symbols).take(),
+        .foreignDecls = std::move(this->foreign).take(),
         .foreignNames = std::move(this->foreignNames),
         .globals = std::move(*this->scope).take(),
         .links = std::move(this->links),

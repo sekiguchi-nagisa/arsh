@@ -131,7 +131,7 @@ const DeclSymbol *IndexBuilder::addDeclImpl(const Type *recv, const NameInfo &in
       .token = info.getToken(),
       .name = CStrPtr(strdup(mangledName.c_str())),
   };
-  if (auto *decl = this->insertNewDecl(kind, attr, std::move(name), hover, body, op)) {
+  if (const auto *decl = this->insertNewDecl(kind, attr, std::move(name), hover, body, op)) {
     if (!this->insertNewSymbol(info.getToken(), decl)) {
       return nullptr;
     }
@@ -150,30 +150,26 @@ const Symbol *IndexBuilder::addSymbolImpl(const Type *recv, const NameInfo &name
 
   DeclBase *decl;
   if (ref->getModId() == this->getModId()) {
-    auto iter = std::lower_bound(this->decls.begin(), this->decls.end(), ref->getPos(),
-                                 DeclSymbol::Compare());
-    if (iter == this->decls.end()) {
+    decl = this->decls.findMut(ref->getPos());
+    if (!decl) {
       return nullptr;
     }
-    decl = &*iter;
-    assert(decl->getPos() == ref->getPos());
   } else { // foreign decl
     SymbolRequest request = {.modId = ref->getModId(), .pos = ref->getPos()};
-    auto iter = std::lower_bound(this->foreign.begin(), this->foreign.end(), request,
-                                 ForeignDecl::Compare());
-    if (iter == this->foreign.end() || iter->getModId() != request.modId ||
-        iter->getPos() != request.pos) { // not found, register foreign decl
+    decl = this->foreign.findMut(request);
+    if (!decl) { // not found, register foreign decl
       auto *ret = this->indexes.findDecl(request);
       if (!ret || (!ret->has(DeclSymbol::Attr::GLOBAL | DeclSymbol::Attr::PUBLIC) &&
                    !isBuiltinMod(ref->getModId()))) {
         return nullptr;
       }
-      iter = this->foreign.insert(iter, ForeignDecl(*ret));
-      this->foreignNames.emplace(std::make_pair(ret->getModId(), iter->getMangledName()),
-                                 iter->toRef());
+      auto [r, s] = this->foreign.tryInsert(ForeignDecl(*ret));
+      static_cast<void>(s);
+      assert(s);
+      this->foreignNames.emplace(std::make_pair(ret->getModId(), r->getMangledName()), r->toRef());
+      decl = r;
     }
-    this->foreignNames.try_emplace(std::make_pair(ref->getModId(), std::move(name)), iter->toRef());
-    decl = &*iter;
+    this->foreignNames.try_emplace(std::make_pair(ref->getModId(), std::move(name)), decl->toRef());
   }
   if (auto *symbol = this->insertNewSymbol(nameInfo.getToken(), decl)) {
     auto symbolRef = SymbolRef::create(nameInfo.getToken(), this->getModId());
@@ -380,12 +376,7 @@ bool IndexBuilder::addBuiltinMethod(const Type &recvType, unsigned int methodInd
 
 const DeclSymbol *IndexBuilder::findDecl(const Symbol &symbol) const {
   if (symbol.getDeclModId() == this->getModId()) {
-    auto iter = std::lower_bound(this->decls.begin(), this->decls.end(), symbol.getDeclPos(),
-                                 DeclSymbol::Compare());
-    if (iter == this->decls.end() || iter->getPos() != symbol.getDeclPos()) {
-      return nullptr;
-    }
-    return &(*iter);
+    return this->decls.find(symbol.getDeclPos());
   } else {
     auto *index = this->indexes.findDecl({
         .modId = symbol.getDeclModId(),
@@ -395,13 +386,7 @@ const DeclSymbol *IndexBuilder::findDecl(const Symbol &symbol) const {
   }
 }
 
-DeclSymbol *IndexBuilder::findDeclMut(const unsigned int pos) {
-  auto iter = std::lower_bound(this->decls.begin(), this->decls.end(), pos, DeclSymbol::Compare());
-  if (iter != this->decls.end() && iter->getPos() == pos) {
-    return &(*iter);
-  }
-  return nullptr;
-}
+DeclSymbol *IndexBuilder::findDeclMut(const unsigned int pos) { return this->decls.findMut(pos); }
 
 void IndexBuilder::addHereDocStartEnd(const NameInfo &start, Token end) {
   // insert here start
@@ -473,18 +458,15 @@ DeclSymbol *IndexBuilder::insertNewDecl(DeclSymbol::Kind k, DeclSymbol::Attr att
   case DeclInsertOp::NONE:
     break;
   }
-
-  auto iter = std::lower_bound(this->decls.begin(), this->decls.end(), decl.getPos(),
-                               DeclSymbol::Compare());
-  if (iter != this->decls.end() && iter->getPos() == decl.getPos()) {
+  auto &&[r, s] = this->decls.tryInsert(std::move(decl));
+  if (!s) {
     LOG(LogLevel::ERROR, "at %s, try to add decl: %s, but already added: %s",
         this->src->getPath().c_str(),
         formatSymbol(*this->src, decl.getMangledName(), decl.getToken()).c_str(),
-        formatSymbol(*this->src, iter->getMangledName(), iter->getToken()).c_str());
+        formatSymbol(*this->src, r->getMangledName(), r->getToken()).c_str());
     return nullptr;
   }
-  iter = this->decls.insert(iter, std::move(decl));
-  return &(*iter);
+  return r;
 }
 
 const Symbol *IndexBuilder::insertNewSymbol(Token token, const DeclBase *decl) {
@@ -496,16 +478,14 @@ const Symbol *IndexBuilder::insertNewSymbol(Token token, const DeclBase *decl) {
     return nullptr;
   }
   auto &symbol = ret.unwrap();
-  auto iter = std::lower_bound(this->symbols.begin(), this->symbols.end(), symbol.getPos(),
-                               Symbol::Compare());
-  if (iter != this->symbols.end() && iter->getPos() == symbol.getPos()) {
+  auto &&[r, s] = this->symbols.tryInsert(Symbol(symbol));
+  if (!s) {
     LOG(LogLevel::ERROR, "at %s, try to add symbol: %s, but already added: %s",
         this->src->getPath().c_str(), formatSymbol(*this->src, "", symbol.getToken()).c_str(),
-        formatSymbol(*this->src, "", iter->getToken()).c_str());
+        formatSymbol(*this->src, "", r->getToken()).c_str());
     return nullptr;
   }
-  iter = this->symbols.insert(iter, symbol);
-  return &(*iter);
+  return r;
 }
 
 void IndexBuilder::addParamTypeInfo(Token token, const Type &recvType, const MethodHandle &handle) {
