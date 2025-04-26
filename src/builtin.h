@@ -1784,7 +1784,8 @@ ARSH_METHOD array_addAll(RuntimeContext &ctx) {
   CHECK_ITER_INVALIDATION(obj);
   auto &value = typeAs<ArrayObject>(LOCAL(1));
   if (&obj != &value) {
-    size_t valueSize = value.getValues().size();
+    const size_t valueSize = value.getValues().size();
+    obj.refValues().reserve(valueSize + obj.size());
     for (size_t i = 0; i < valueSize; i++) {
       TRY(obj.append(ctx, Value(value.getValues()[i])));
     }
