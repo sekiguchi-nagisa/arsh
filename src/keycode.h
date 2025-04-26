@@ -17,7 +17,6 @@
 #ifndef ARSH_KEYCODE_H
 #define ARSH_KEYCODE_H
 
-#include <functional>
 #include <unordered_map>
 #include <vector>
 
@@ -128,7 +127,7 @@ public:
       case ESC: { // bracket stop \e[201~
         char seq[6];
         seq[0] = '\x1b';
-        const char expect[] = {'[', '2', '0', '1', '~'};
+        constexpr char expect[] = {'[', '2', '0', '1', '~'};
         unsigned int count = 0;
         for (; count < std::size(expect); count++) {
           if (ssize_t r = readRetryWithTimeout(this->fd, seq + count + 1, 1, this->timeout);
@@ -157,7 +156,7 @@ public:
         if (!func({&buf, 1})) {
           noMem = true;
         }
-        continue;
+        break;
       }
     }
 
@@ -165,9 +164,8 @@ public:
     if (noMem) {
       errno = ENOMEM;
       return false;
-    } else {
-      return true;
     }
+    return true;
   }
 };
 

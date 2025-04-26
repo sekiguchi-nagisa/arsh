@@ -49,7 +49,7 @@ struct BraceRange {
 /**
  * for sequence style brace expansion
  * @param ref
- * begin..end..step
+ * `begin..end..step`
  * @param isChar
  * if true, char range, otherwise, int range
  * @param error
