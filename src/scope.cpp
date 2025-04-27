@@ -439,10 +439,7 @@ NameRegisterResult NameScope::add(std::string &&name, HandlePtr &&handle, NameRe
       assert(this->kind == BLOCK);
       this->curLocalIndex++;
       this->localSize++;
-
-      if (this->curLocalIndex > this->maxVarCount.get()) {
-        this->maxVarCount.get() = this->curLocalIndex;
-      }
+      this->maxVarCount.get() = std::max(this->maxVarCount.get(), this->curLocalIndex);
     }
   }
   return Ok(pair.first->second.first);

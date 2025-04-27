@@ -33,17 +33,17 @@ using flag32_set_t = uint32_t;
 using flag32_t = uint32_t;
 
 template <typename T>
-inline constexpr void setFlag(T &set, T flag) {
+constexpr void setFlag(T &set, T flag) {
   set |= flag;
 }
 
 template <typename T>
-inline constexpr void unsetFlag(T &set, T flag) {
+constexpr void unsetFlag(T &set, T flag) {
   set &= ~flag;
 }
 
 template <typename T>
-inline constexpr bool hasFlag(T set, T flag) {
+constexpr bool hasFlag(T set, T flag) {
   return (set & flag) == flag;
 }
 

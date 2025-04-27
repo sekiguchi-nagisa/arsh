@@ -83,7 +83,7 @@ static void showFeature(FILE *fp) {
 
   const unsigned int featureBit = ARState_featureBit();
   for (unsigned int i = 0; i < std::size(featureNames); i++) {
-    if (hasFlag(featureBit, static_cast<unsigned int>(1u << i))) {
+    if (hasFlag(featureBit, 1u << i)) {
       fprintf(fp, "%s\n", featureNames[i]);
     }
   }

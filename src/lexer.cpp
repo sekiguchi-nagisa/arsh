@@ -490,8 +490,7 @@ EscapeSeqResult parseEscapeSeq(const char *begin, const char *end, bool needOcta
   }
   const char *old = begin;
   begin++; // consume '\'
-  char next = *(begin++);
-  switch (next) {
+  switch (const char next = *(begin++); next) {
   case '\\':
     return ok('\\');
   case 'a':

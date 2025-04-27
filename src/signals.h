@@ -56,7 +56,7 @@ SignalEntryRange getStandardSignalEntries();
 
 SignalEntryRange getRealTimeSignalEntries();
 
-const SignalEntry *findSignalEntryByName(StringRef name);
+const SignalEntry *findSignalEntryByName(StringRef ref);
 
 const SignalEntry *findSignalEntryByNum(int sigNum);
 

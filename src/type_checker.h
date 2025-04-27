@@ -541,7 +541,7 @@ private:
     this->errors.emplace_back(token, std::move(e));
   }
 
-  enum class ErrorSymbolKind {
+  enum class ErrorSymbolKind : unsigned char {
     VAR,
     METHOD,
     TYPE_ALIAS,

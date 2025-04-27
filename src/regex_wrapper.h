@@ -53,7 +53,7 @@ struct PCREVersion {
   OP(MULTILINE, (1u << 1u), 'm')                                                                   \
   OP(DOTALL, (1u << 2u), 's')
 
-enum class PCRECompileFlag : unsigned int {
+enum class PCRECompileFlag : unsigned char {
 #define GEN_ENUM2(E, B, C) E = B,
   EACH_PCRE_COMPILE_FLAG(GEN_ENUM2)
 #undef GEN_ENUN2

@@ -62,7 +62,7 @@ void formatMethodSignature(const Type *recvType, const MethodHandle &handle, std
 inline void formatMethodSignature(const Type &recvType, const MethodHandle &handle,
                                   std::string &out,
                                   const std::function<void(StringRef)> &paramCallback = nullptr) {
-  return formatMethodSignature(&recvType, handle, out, paramCallback);
+  formatMethodSignature(&recvType, handle, out, paramCallback);
 }
 
 /**

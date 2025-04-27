@@ -175,7 +175,7 @@ class ProcTable;
 
 class JobTable;
 
-enum class JobInfoFormat : unsigned int {
+enum class JobInfoFormat : unsigned short {
   JOB_ID = 1u << 0u,
   STATE = 1u << 1u,
   CUR_JOB = 1u << 2u,
@@ -254,7 +254,7 @@ public:
   static ObjPtr<JobObject> create(unsigned int size, const Proc *procs, bool saveStdin,
                                   ObjPtr<UnixFdObject> inObj, ObjPtr<UnixFdObject> outObj,
                                   Value &&desc) {
-    void *ptr = operator new(sizeof(JobObject) + sizeof(Proc) * size);
+    void *ptr = operator new(sizeof(JobObject) + (sizeof(Proc) * size));
     auto *entry = new (ptr)
         JobObject(size, procs, saveStdin, std::move(inObj), std::move(outObj), std::move(desc));
     return ObjPtr<JobObject>(entry);

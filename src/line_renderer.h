@@ -173,12 +173,12 @@ public:
   /**
    * render script (perform syntax highlight, line continuation check)
    * @param source
-   * @param errorTokenChecker
+   * @param errorCmdChecker
    * @return
    * reach incomplete input (need more characters), return false
    */
   bool renderScript(StringRef source,
-                    const std::function<bool(StringRef)> &errorTokenChecker = nullptr);
+                    const std::function<bool(StringRef)> &errorCmdChecker = nullptr);
 
   void renderLines(StringRef source) { this->render(source, HighlightTokenClass::NONE_); }
 

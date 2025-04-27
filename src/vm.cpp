@@ -1386,7 +1386,7 @@ bool VM::callPipeline(ARState &state, Value &&desc, bool lastPipe, ForkKind fork
     }
 
     // set pc to next instruction
-    state.stack.ip() += read16(state.stack.ip() + 1 + procIndex * 2) - 1;
+    state.stack.ip() += read16(state.stack.ip() + 1 + (procIndex * 2)) - 1;
     return true;
   } else if (procIndex == procSize) { // parent (last pipeline)
     if (lastPipe) {

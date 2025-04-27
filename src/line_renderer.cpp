@@ -379,7 +379,7 @@ bool LineRenderer::render(StringRef ref, HighlightTokenClass tokenClass) {
 bool LineRenderer::renderControlChar(int codePoint, const std::string *color) {
   assert(isControlChar(codePoint));
   if (codePoint == '\t') {
-    unsigned int colLen = TAB_WIDTH - this->totalCols % TAB_WIDTH;
+    unsigned int colLen = TAB_WIDTH - (this->totalCols % TAB_WIDTH);
     if (this->totalCols + colLen > this->colLimit) { // line break
       switch (this->breakOp) {
       case LineBreakOp::SOFT_WRAP:

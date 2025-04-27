@@ -703,7 +703,7 @@ public:
 
 class AccessNode : public WithRtti<AssignableNode, NodeKind::Access> {
 public:
-  enum AdditionalOp {
+  enum AdditionalOp : unsigned char {
     NOP,
     DUP_RECV,
   };
@@ -1115,7 +1115,7 @@ public:
  */
 class EmbedNode : public WithRtti<Node, NodeKind::Embed> {
 public:
-  enum Kind {
+  enum Kind : unsigned char {
     STR_EXPR,
     CMD_ARG,
   };
@@ -2012,7 +2012,7 @@ public:
 
 class CaseNode : public WithRtti<Node, NodeKind::Case> {
 public:
-  enum Kind : unsigned int {
+  enum Kind : unsigned char {
     MAP = 0,
     IF_ELSE = 1,
   };
@@ -2885,7 +2885,7 @@ public:
 
 class CodeCompNode : public WithRtti<Node, NodeKind::CodeComp> {
 public:
-  enum Kind : unsigned int {
+  enum Kind : unsigned char {
     VAR,            // complete variable names
     VAR_IN_CMD_ARG, // complete variable names (within command argument)
     VAR_OR_PARAM,   // complete variable names or param names

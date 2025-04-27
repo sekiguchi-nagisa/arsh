@@ -49,7 +49,7 @@ public:
     unsigned char rightPad; // for right padding size of candidate
 
     unsigned int itemLen() const {
-      return this->len + (TAB_WIDTH - this->len % TAB_WIDTH) + this->tabs * TAB_WIDTH;
+      return this->len + (TAB_WIDTH - this->len % TAB_WIDTH) + (this->tabs * TAB_WIDTH);
     }
   };
 
@@ -141,9 +141,8 @@ public:
     if (this->index == 0) {
       this->curRow = this->getActualRows() - 1;
       this->index = this->items.size() - 1;
-      if (unsigned int offset = this->index % this->getLogicalRows(); offset < this->curRow) {
-        this->curRow = offset;
-      }
+      const unsigned int offset = this->index % this->getLogicalRows();
+      this->curRow = std::min(this->curRow, offset);
     } else {
       if (this->curRow == 0) {
         if (this->index % this->getLogicalRows() > 0) {
@@ -183,7 +182,7 @@ public:
     if (curCols > 0) {
       this->index -= logicalRows;
     } else {
-      unsigned int nextIndex = this->index - 1 + logicalRows * (this->getPanes() - 1);
+      unsigned int nextIndex = this->index - 1 + (logicalRows * (this->getPanes() - 1));
       unsigned int curLogicalRows = this->index % logicalRows;
       if (this->curRow > 0) {
         this->curRow--;
@@ -205,7 +204,7 @@ public:
     if (curCols < this->getPanes() - 1 && this->index + logicalRows < this->items.size()) {
       this->index += logicalRows;
     } else {
-      unsigned int nextIndex = this->index + 1 - logicalRows * curCols;
+      unsigned int nextIndex = this->index + 1 - (logicalRows * curCols);
       unsigned int curLogicalRows = this->index % logicalRows;
       if (nextIndex < this->items.size() && curLogicalRows < logicalRows - 1) {
         if (this->curRow < this->getActualRows() - 1) {
