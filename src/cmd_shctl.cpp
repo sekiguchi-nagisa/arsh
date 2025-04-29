@@ -289,8 +289,8 @@ static int setAndPrintConf(OrderedMapObject &mapObj, unsigned int maxKeyLen, Str
     return errno;
   }
   auto pair = mapObj.insert(Value::createStr(key), Value::createStr(value));
-  assert(pair.second);
-  (void)pair;
+  assert(pair.second == OrderedMapObject::InsertStatus::OK);
+  static_cast<void>(pair);
   return 0;
 }
 

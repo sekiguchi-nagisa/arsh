@@ -143,7 +143,8 @@ unsigned int OrderedMapEntries::compact() {
 // ##     OrderedMapObject     ##
 // ##############################
 
-std::pair<int, bool> OrderedMapObject::insert(const Value &key, Value &&value) {
+std::pair<int, OrderedMapObject::InsertStatus> OrderedMapObject::insert(const Value &key,
+                                                                        Value &&value) {
   if (unlikely(!this->buckets)) {
     this->buckets = std::make_unique<Bucket[]>(this->bucketLen.capacity());
   }
@@ -152,11 +153,11 @@ std::pair<int, bool> OrderedMapObject::insert(const Value &key, Value &&value) {
   if (this->probeBuckets(OrderedMapKey(key), probe)) {
     int index = this->buckets[probe.bucketIndex].entryIndex;
     assert(index != -1);
-    return {index, false};
+    return {index, InsertStatus::NOP};
   }
 
   if (unlikely(this->size() == MAX_SIZE)) {
-    return {-1, false};
+    return {-1, InsertStatus::LIMIT};
   }
 
   // add entry (but not add to buckets)
@@ -181,7 +182,7 @@ std::pair<int, bool> OrderedMapObject::insert(const Value &key, Value &&value) {
   this->insertEntryIndex(entryIndex, probe);
 
   this->bucketLen.setSize(this->bucketLen.size() + 1);
-  return {static_cast<int>(entryIndex), true};
+  return {static_cast<int>(entryIndex), InsertStatus::OK};
 }
 
 void OrderedMapObject::insertEntryIndex(unsigned int entryIndex, const ProbeState &probe) {
@@ -322,16 +323,17 @@ bool OrderedMapObject::checkIteratorInvalidation(ARState &state, bool isReplyVar
 }
 
 Value OrderedMapObject::put(ARState &st, Value &&key, Value &&value) {
-  auto pair = this->insert(key, Value(value));
-  if (pair.second) { // success insertion
+  switch (auto [index, s] = this->insert(key, Value(value)); s) {
+  case InsertStatus::OK:
     return Value::createInvalid();
-  } else if (pair.first == -1) { // insertion failed (reach limit)
-    raiseError(st, TYPE::OutOfRangeError, ERROR_MAP_LIMIT);
-    return {};
-  } else { // already inserted
-    std::swap((*this)[pair.first].refValue(), value);
+  case InsertStatus::NOP:
+    std::swap((*this)[index].refValue(), value);
     return std::move(value);
+  case InsertStatus::LIMIT:
+    raiseError(st, TYPE::OutOfRangeError, ERROR_MAP_LIMIT);
+    break;
   }
+  return {};
 }
 
 Value OrderedMapIterObject::next(TypePool &pool) {

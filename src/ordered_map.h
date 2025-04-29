@@ -203,6 +203,12 @@ public:
 
   const auto &getEntries() const { return this->entries; }
 
+  enum class InsertStatus : unsigned char {
+    OK,    // successfully inserted
+    NOP,   // do nothing (already inserted)
+    LIMIT, // reach map size limit
+  };
+
   /**
    * insert new entry
    * @param key
@@ -212,7 +218,7 @@ public:
    * if insertion failed (reach size limit), return (-1, false)
    * otherwise, return (entry index, true)
    */
-  std::pair<int, bool> insert(const Value &key, Value &&value);
+  std::pair<int, InsertStatus> insert(const Value &key, Value &&value);
 
   /**
    * lookup map entry index by key

@@ -1308,7 +1308,7 @@ void ByteCodeGenerator::generateCaseLabels(const ArmNode &node, OrderedMapObject
   unsigned int offset = this->currentCodeOffset();
   for (auto &e : node.getConstPatternNodes()) {
     auto pair = obj.insert(newObject(*e), Value::createNum(offset));
-    if (!pair.second) {
+    if (pair.second != OrderedMapObject::InsertStatus::OK) {
       fatal("map insertion failed\n");
     }
   }

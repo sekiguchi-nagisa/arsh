@@ -781,7 +781,7 @@ TEST(MapTest, base) {
   retIndex = obj->lookup(Value::createStr("ABC"));
   ASSERT_EQ(0, retIndex);
   ASSERT_EQ(retIndex, pair.first);
-  ASSERT_TRUE(pair.second);
+  ASSERT_EQ(OrderedMapObject::InsertStatus::OK, pair.second);
   ASSERT_EQ("ABC", (*obj)[retIndex].getKey().asStrRef());
   ASSERT_EQ(12, (*obj)[retIndex].getValue().asInt());
 
@@ -790,13 +790,13 @@ TEST(MapTest, base) {
   ASSERT_EQ(1, obj->size());
   ASSERT_EQ(1, obj->getEntries().getUsedSize());
   ASSERT_EQ(0, pair.first);
-  ASSERT_FALSE(pair.second);
+  ASSERT_EQ(OrderedMapObject::InsertStatus::NOP, pair.second);
 
   pair = obj->insert(Value::createStr("1234"), Value::createInt(-99));
   ASSERT_EQ(2, obj->size());
   ASSERT_EQ(2, obj->getEntries().getUsedSize());
   ASSERT_EQ(1, pair.first);
-  ASSERT_TRUE(pair.second);
+  ASSERT_EQ(OrderedMapObject::InsertStatus::OK, pair.second);
   retIndex = obj->lookup(Value::createStr("1234"));
   ASSERT_EQ(1, retIndex);
   ASSERT_EQ("1234", (*obj)[retIndex].getKey().asStrRef());
@@ -806,7 +806,7 @@ TEST(MapTest, base) {
   ASSERT_EQ(3, obj->size());
   ASSERT_EQ(3, obj->getEntries().getUsedSize());
   ASSERT_EQ(2, pair.first);
-  ASSERT_TRUE(pair.second);
+  ASSERT_EQ(OrderedMapObject::InsertStatus::OK, pair.second);
   retIndex = obj->lookup(Value::createStr("***"));
   ASSERT_EQ(2, retIndex);
   ASSERT_EQ("***", (*obj)[retIndex].getKey().asStrRef());
@@ -861,7 +861,7 @@ TEST(MapTest, rand1) {
     const auto &keyValue = keyValues[i];
     auto pair = obj->insert(Value::createStr(keyValue.first),
                             Value::createInt(static_cast<int64_t>(keyValue.second)));
-    ASSERT_TRUE(pair.second);
+    ASSERT_EQ(OrderedMapObject::InsertStatus::OK, pair.second);
     ASSERT_EQ(i, pair.first);
     ASSERT_EQ(keyValue.first, (*obj)[pair.first].getKey().asStrRef());
     ASSERT_EQ(keyValue.second, (*obj)[pair.first].getValue().asInt());
@@ -889,7 +889,7 @@ TEST(MapTest, rand1) {
     const auto &keyValue = keyValues[i];
     auto pair = obj->insert(Value::createStr(keyValue.first),
                             Value::createInt(static_cast<int64_t>(keyValue.second + 9999)));
-    ASSERT_FALSE(pair.second);
+    ASSERT_EQ(OrderedMapObject::InsertStatus::NOP, pair.second);
     ASSERT_EQ(i, pair.first);
     ASSERT_EQ(keyValue.first, (*obj)[pair.first].getKey().asStrRef());
     ASSERT_EQ(keyValue.second, (*obj)[pair.first].getValue().asInt());
@@ -993,7 +993,7 @@ TEST(MapTest, rand1) {
     SCOPED_TRACE("(" + key + ", " + std::to_string(v) + ")");
 
     auto pair = obj->insert(Value::createStr(key), Value::createInt(static_cast<int64_t>(v)));
-    ASSERT_TRUE(pair.second);
+    ASSERT_EQ(OrderedMapObject::InsertStatus::OK, pair.second);
     ASSERT_NE(-1, pair.first);
 
     ASSERT_EQ(key, (*obj)[pair.first].getKey().asStrRef());
