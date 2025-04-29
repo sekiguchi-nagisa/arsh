@@ -17,6 +17,12 @@
 
 ### Changed
 
+#### Core
+
+- change default value of some environmental variables when ``getpwuid`` failed
+    - ``HOME``: default is ``/``
+    - ``LOGNAME``, ``USER``: default is empty string
+
 #### Builtin
 
 - change type constraint of some builtin method

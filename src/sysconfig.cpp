@@ -37,11 +37,10 @@ SysConfig::SysConfig() {
   if (struct passwd *pw = getpwuid(getuid()); likely(pw != nullptr)) {
     home = pw->pw_dir;
   } else {
-#ifndef __EMSCRIPTEN__
-    fatal_perror("getpwuid failed");
-#else
     home = getenv(ENV_HOME);
-#endif
+    if (!home) {
+      home = "/"; // like bash/zsh, fallback to '/'
+    }
   }
 
   {
