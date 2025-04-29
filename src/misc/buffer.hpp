@@ -43,7 +43,7 @@ public:
   using reference = T &;
   using const_reference = const T &;
 
-  static constexpr size_type MAX_SIZE = static_cast<SIZE_T>(-1);
+  static constexpr size_type MAX_SIZE = static_cast<size_type>(-1);
 
 private:
   static_assert(std::is_unsigned_v<SIZE_T>, "need unsigned type");
@@ -119,7 +119,10 @@ public:
   ~FlexBuffer() { free(this->data_); }
 
   FlexBuffer &operator=(FlexBuffer &&buffer) noexcept {
-    this->swap(buffer);
+    if (this != std::addressof(buffer)) {
+      this->~FlexBuffer();
+      new (this) FlexBuffer(std::move(buffer));
+    }
     return *this;
   }
 
@@ -232,7 +235,7 @@ public:
   bool operator!=(const FlexBuffer &v) const noexcept { return !(*this == v); }
 
   /**
-   * after call it, maxSize and usedSize is 0, and data is null.
+   * after called it, maxSize and usedSize is 0, and data is null.
    * call free() to release returned pointer.
    * @return
    */
@@ -257,34 +260,32 @@ void FlexBuffer<T, SIZE_T>::checkRange(size_type index) const noexcept {
 }
 
 template <typename T, typename SIZE_T>
-FlexBuffer<T, SIZE_T> &
-FlexBuffer<T, SIZE_T>::operator+=(const FlexBuffer<T, SIZE_T> &buffer) noexcept {
+FlexBuffer<T, SIZE_T> &FlexBuffer<T, SIZE_T>::operator+=(const FlexBuffer &buffer) noexcept {
   return this->append(buffer.data(), buffer.size());
 }
 
 template <typename T, typename SIZE_T>
-FlexBuffer<T, SIZE_T> &FlexBuffer<T, SIZE_T>::operator+=(FlexBuffer<T, SIZE_T> &&buffer) noexcept {
-  FlexBuffer<T, SIZE_T> tmp(std::move(buffer));
-  *this += tmp;
+FlexBuffer<T, SIZE_T> &FlexBuffer<T, SIZE_T>::operator+=(FlexBuffer &&buffer) noexcept {
+  if (this != std::addressof(buffer)) {
+    const auto &tmp = buffer;
+    *this += tmp;
+  }
   return *this;
 }
 
 template <typename T, typename SIZE_T>
 FlexBuffer<T, SIZE_T> &FlexBuffer<T, SIZE_T>::append(const T *value, size_type size) noexcept {
-  if (this->data_ == value) {
-    fatal("appending own buffer\n");
+  if (this->data_ != value) {
+    this->needMoreCap(size);
+    memcpy(this->data_ + this->size_, value, sizeof(T) * size);
+    this->size_ += size;
   }
-  this->needMoreCap(size);
-  memcpy(this->data_ + this->size_, value, sizeof(T) * size);
-  this->size_ += size;
   return *this;
 }
 
 template <typename T, typename SIZE_T>
 void FlexBuffer<T, SIZE_T>::reserve(size_type reservingSize) noexcept {
-  if (reservingSize > this->max_size()) {
-    fatal("reserving size must be less than max_size\n");
-  }
+  reservingSize = std::min(reservingSize, this->max_size());
   if (reservingSize > this->cap_) {
     this->cap_ = reservingSize;
     this->data_ = static_cast<T *>(realloc(this->data(), sizeof(T) * this->capacity()));

@@ -194,21 +194,30 @@ TEST(BufferTest, case6) {
   ASSERT_EQ(2u, buffer.size());
 }
 
-#ifndef __EMSCRIPTEN__
 TEST(BufferTest, case7) { // test append own
   IBuffer buffer;
   buffer += 23;
   buffer += 43;
+  ASSERT_EQ(2u, buffer.size());
+  ASSERT_EQ(23u, buffer[0]);
+  ASSERT_EQ(43u, buffer[1]);
 
-  ASSERT_NO_FATAL_FAILURE(
-      ASSERT_EXIT(buffer += buffer, ::testing::KilledBySignal(SIGABRT), "appending own buffer\n"));
+  // append own
+  buffer += std::move(buffer); // do nothing
+  ASSERT_EQ(2u, buffer.size());
+  ASSERT_EQ(23u, buffer[0]);
+  ASSERT_EQ(43u, buffer[1]);
 
-  buffer += std::move(buffer);
+  buffer += buffer;
+  ASSERT_EQ(2u, buffer.size());
+  ASSERT_EQ(23u, buffer[0]);
+  ASSERT_EQ(43u, buffer[1]);
+
+  buffer.append(buffer.data(), buffer.size());
   ASSERT_EQ(2u, buffer.size());
   ASSERT_EQ(23u, buffer[0]);
   ASSERT_EQ(43u, buffer[1]);
 }
-#endif
 
 TEST(BufferTest, case8) {
   IBuffer buffer;
