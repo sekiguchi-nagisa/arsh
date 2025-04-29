@@ -90,7 +90,7 @@ public:
       this->intRange = o.intRange;
       break;
     case CheckerKind::CHOICE:
-      this->choice = std::move(o.choice);
+      new (&this->choice) Choice(std::move(o.choice));
       break;
     }
     o.checkerKind = CheckerKind::NOP;
