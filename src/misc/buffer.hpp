@@ -17,6 +17,7 @@
 #ifndef MISC_LIB_BUFFER_HPP
 #define MISC_LIB_BUFFER_HPP
 
+#include <algorithm>
 #include <cassert>
 #include <cstdint>
 #include <cstring>
@@ -24,7 +25,6 @@
 #include <type_traits>
 #include <utility>
 
-#include "detect.hpp"
 #include "fatal.h"
 #include "noncopyable.h"
 

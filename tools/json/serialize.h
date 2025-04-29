@@ -17,6 +17,8 @@
 #ifndef ARSH_TOOLS_JSON_SERIALIZE_H
 #define ARSH_TOOLS_JSON_SERIALIZE_H
 
+#include <misc/detect.hpp>
+
 #include "json.h"
 
 namespace arsh::json {
@@ -106,8 +108,8 @@ public:
 
   void operator()(const char *fieldName, bool v);
 
-  template <typename T, enable_when<(std::is_signed_v<T> || std::is_unsigned_v<T>)&&sizeof(T) <=
-                                    sizeof(int64_t)> = nullptr>
+  template <typename T, enable_when<(std::is_signed_v<T> || std::is_unsigned_v<T>) &&
+                                    sizeof(T) <= sizeof(int64_t)> = nullptr>
   void operator()(const char *fieldName, T v) {
     (*this)(fieldName, static_cast<int64_t>(v));
   }
@@ -219,8 +221,8 @@ public:
 
   void operator()(const char *fieldName, bool &v);
 
-  template <typename T, enable_when<(std::is_signed_v<T> || std::is_unsigned_v<T>)&&sizeof(T) <=
-                                    sizeof(int64_t)> = nullptr>
+  template <typename T, enable_when<(std::is_signed_v<T> || std::is_unsigned_v<T>) &&
+                                    sizeof(T) <= sizeof(int64_t)> = nullptr>
   void operator()(const char *fieldName, T &v) {
     int64_t v1;
     (*this)(fieldName, v1);
