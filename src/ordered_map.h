@@ -225,11 +225,11 @@ public:
     if (this->bucketLen.size() == 0) {
       return -1;
     }
-    ProbeState state; // NOLINT
-    if (!this->probeBuckets(key, state)) {
+    ProbeState probe; // NOLINT
+    if (!this->probeBuckets(key, probe)) {
       return -1;
     }
-    return this->buckets[state.bucketIndex].entryIndex;
+    return this->buckets[probe.bucketIndex].entryIndex;
   }
 
   int lookup(const Value &key) const { return this->lookup(OrderedMapKey(key)); }
@@ -273,9 +273,9 @@ private:
     int dist;
   };
 
-  bool probeBuckets(const OrderedMapKey &key, ProbeState &state) const;
+  bool probeBuckets(const OrderedMapKey &key, ProbeState &probe) const;
 
-  void insertEntryIndex(unsigned int entryIndex, const ProbeState &state);
+  void insertEntryIndex(unsigned int entryIndex, const ProbeState &probe);
 
   /**
    * @param grow

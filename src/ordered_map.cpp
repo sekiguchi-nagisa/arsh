@@ -148,9 +148,9 @@ std::pair<int, bool> OrderedMapObject::insert(const Value &key, Value &&value) {
     this->buckets = std::make_unique<Bucket[]>(this->bucketLen.capacity());
   }
 
-  ProbeState state; // NOLINT
-  if (this->probeBuckets(OrderedMapKey(key), state)) {
-    int index = this->buckets[state.bucketIndex].entryIndex;
+  ProbeState probe; // NOLINT
+  if (this->probeBuckets(OrderedMapKey(key), probe)) {
+    int index = this->buckets[probe.bucketIndex].entryIndex;
     assert(index != -1);
     return {index, false};
   }
@@ -171,22 +171,22 @@ std::pair<int, bool> OrderedMapObject::insert(const Value &key, Value &&value) {
       this->entries.compact();
     }
     this->rehash(needGrow);
-    state.bucketIndex = this->bucketLen.toBucketIndex(state.keyHash);
-    state.dist = 0;
+    probe.bucketIndex = this->bucketLen.toBucketIndex(probe.keyHash);
+    probe.dist = 0;
   }
   const unsigned int entryIndex =
-      this->entries.add(key.withMetaData(state.keyHash), std::move(value));
+      this->entries.add(key.withMetaData(probe.keyHash), std::move(value));
 
   // add entry index to buckets
-  this->insertEntryIndex(entryIndex, state);
+  this->insertEntryIndex(entryIndex, probe);
 
   this->bucketLen.setSize(this->bucketLen.size() + 1);
   return {static_cast<int>(entryIndex), true};
 }
 
-void OrderedMapObject::insertEntryIndex(unsigned int entryIndex, const ProbeState &state) {
-  unsigned int bucketIndex = state.bucketIndex;
-  int dist = state.dist;
+void OrderedMapObject::insertEntryIndex(unsigned int entryIndex, const ProbeState &probe) {
+  unsigned int bucketIndex = probe.bucketIndex;
+  int dist = probe.dist;
 
   while (true) {
     auto &curBucket = this->buckets[bucketIndex];
@@ -215,17 +215,17 @@ OrderedMapEntries::Entry OrderedMapObject::remove(const Value &key) {
     return {};
   }
 
-  ProbeState state; // NOLINT
-  if (!this->probeBuckets(OrderedMapKey(key), state)) {
+  ProbeState probe; // NOLINT
+  if (!this->probeBuckets(OrderedMapKey(key), probe)) {
     return {};
   }
 
-  auto entry = this->entries.del(this->buckets[state.bucketIndex].entryIndex);
-  this->buckets[state.bucketIndex] = Bucket();
+  auto entry = this->entries.del(this->buckets[probe.bucketIndex].entryIndex);
+  this->buckets[probe.bucketIndex] = Bucket();
   this->bucketLen.setSize(this->bucketLen.size() - 1);
 
-  unsigned int prevBucketIndex = state.bucketIndex;
-  unsigned int bucketIndex = this->bucketLen.nextBucketIndex(state.bucketIndex);
+  unsigned int prevBucketIndex = probe.bucketIndex;
+  unsigned int bucketIndex = this->bucketLen.nextBucketIndex(probe.bucketIndex);
   while (true) {
     auto &curBucket = this->buckets[bucketIndex];
     if (!curBucket || curBucket.distanceToInitBucketIndex == 0) {
@@ -252,7 +252,7 @@ void OrderedMapObject::clear() {
   this->entries.clear();
 }
 
-bool OrderedMapObject::probeBuckets(const OrderedMapKey &key, ProbeState &state) const {
+bool OrderedMapObject::probeBuckets(const OrderedMapKey &key, ProbeState &probe) const {
   const unsigned int keyHash = key.hash(this->seed);
   unsigned int bucketIndex = this->bucketLen.toBucketIndex(keyHash);
   int dist = 0;
@@ -273,7 +273,7 @@ bool OrderedMapObject::probeBuckets(const OrderedMapKey &key, ProbeState &state)
     bucketIndex = this->bucketLen.nextBucketIndex(bucketIndex);
   }
 
-  state = {
+  probe = {
       .keyHash = keyHash,
       .bucketIndex = bucketIndex,
       .dist = dist,
@@ -298,12 +298,12 @@ void OrderedMapObject::rehash(bool grow) {
   for (unsigned int i = 0; i < size; i++) {
     if (auto &e = this->entries[i]) {
       unsigned int keyHash = e.getKeyHash();
-      ProbeState state = {
+      ProbeState probe = {
           .keyHash = keyHash,
           .bucketIndex = this->bucketLen.toBucketIndex(keyHash),
           .dist = 0,
       };
-      this->insertEntryIndex(i, state);
+      this->insertEntryIndex(i, probe);
     }
   }
 }
