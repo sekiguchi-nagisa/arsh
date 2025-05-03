@@ -95,11 +95,7 @@ ARSH_METHOD eq_eq(RuntimeContext &ctx) {
   SUPPRESS_WARNING(eq_eq);
   auto &left = LOCAL(0);
   auto &right = LOCAL(1);
-  const bool s = left.equals(ctx, right, true);
-  if (ctx.hasError()) {
-    RET_ERROR;
-  }
-  RET_BOOL(s);
+  RET_BOOL(left.equals(ctx, right, true)); // skip error check
 }
 
 //!bind: function $OP_NE($this: Eq_, $target: Eq_): Bool
@@ -107,11 +103,7 @@ ARSH_METHOD eq_ne(RuntimeContext &ctx) {
   SUPPRESS_WARNING(eq_eq);
   auto &left = LOCAL(0);
   auto &right = LOCAL(1);
-  const bool s = left.equals(ctx, right, true);
-  if (ctx.hasError()) {
-    RET_ERROR;
-  }
-  RET_BOOL(!s);
+  RET_BOOL(!left.equals(ctx, right, true)); // skip error check
 }
 
 //!bind: function equals($this: Eq_, $target: Eq_): Bool
@@ -119,11 +111,7 @@ ARSH_METHOD eq_equals(RuntimeContext &ctx) {
   SUPPRESS_WARNING(eq_eq);
   auto &left = LOCAL(0);
   auto &right = LOCAL(1);
-  const bool s = left.equals(ctx, right);
-  if (ctx.hasError()) {
-    RET_ERROR;
-  }
-  RET_BOOL(s);
+  RET_BOOL(left.equals(ctx, right)); // skip error check
 }
 
 // ###################
@@ -135,11 +123,7 @@ ARSH_METHOD ord_compare(RuntimeContext &ctx) {
   SUPPRESS_WARNING(ord_compare);
   auto &x = LOCAL(0);
   auto &y = LOCAL(1);
-  const int r = x.compare(ctx, y);
-  if (ctx.hasError()) {
-    RET_ERROR;
-  }
-  RET(Value::createInt(r));
+  RET(Value::createInt(x.compare(ctx, y))); // skip error check
 }
 
 // #################
@@ -1855,10 +1839,7 @@ ARSH_METHOD array_sort(RuntimeContext &ctx) {
   CHECK_ITER_INVALIDATION(obj);
   std::sort(obj.refValues().begin(), obj.refValues().end(),
             [&ctx](const Value &x, const Value &y) { return x.compare(ctx, y) < 0; });
-  if (ctx.hasError()) {
-    RET_ERROR;
-  }
-  RET(LOCAL(0));
+  RET(LOCAL(0)); // skip error check
 }
 
 //!bind: function sortBy($this : Array<T0>, $comp : Func<Int, [T0, T0]>) : Array<T0>
@@ -1869,9 +1850,8 @@ ARSH_METHOD array_sortBy(RuntimeContext &ctx) {
   auto &comp = LOCAL(1);
   if (mergeSort(ctx, obj, comp)) {
     RET(LOCAL(0));
-  } else {
-    RET_ERROR;
   }
+  RET_ERROR;
 }
 
 //!bind: function searchSorted($this: Array<T0>, $target: T0): Int where T0 : Ord_
@@ -1879,10 +1859,7 @@ ARSH_METHOD array_search(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_search);
   auto &obj = typeAs<ArrayObject>(LOCAL(0));
   auto &value = LOCAL(1);
-  const auto retIndex = searchSorted(ctx, value, obj, nullptr);
-  if (ctx.hasError()) {
-    RET_ERROR;
-  }
+  const auto retIndex = searchSorted(ctx, value, obj, nullptr); // skip error check
   RET(Value::createInt(retIndex));
 }
 
@@ -1892,10 +1869,7 @@ ARSH_METHOD array_searchBy(RuntimeContext &ctx) {
   auto &obj = typeAs<ArrayObject>(LOCAL(0));
   auto &value = LOCAL(1);
   auto &compFunc = LOCAL(2);
-  const int64_t retIndex = searchSorted(ctx, value, obj, compFunc);
-  if (ctx.hasError()) {
-    RET_ERROR;
-  }
+  const int64_t retIndex = searchSorted(ctx, value, obj, compFunc); // skip error check
   RET(Value::createInt(retIndex));
 }
 
