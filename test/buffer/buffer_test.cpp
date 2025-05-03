@@ -2,6 +2,7 @@
 
 #include <misc/buffer.hpp>
 #include <misc/inlined_array.hpp>
+#include <misc/inlined_stack.hpp>
 #include <misc/ring_buffer.hpp>
 
 using namespace arsh;
@@ -541,6 +542,68 @@ TEST(InlinedArray, trivialCopyable) {
       ASSERT_EQ(99, values2[0].value);
       ASSERT_FALSE(values2[0].name);
     }
+  }
+}
+
+TEST(InlinedStack, base) {
+  {
+    InlinedStack<AAA, 3> stack;
+    ASSERT_EQ(0, stack.size());
+    ASSERT_EQ(3, stack.capacity());
+    ASSERT_TRUE(stack.isStackAlloc());
+
+    stack.push({.name = "hey1", .value = 111});
+    ASSERT_EQ(1, stack.size());
+    ASSERT_EQ(3, stack.capacity());
+    ASSERT_EQ(111, stack.back().value);
+    ASSERT_STREQ("hey1", stack.back().name);
+
+    stack.push({.name = "hey2", .value = 222});
+    ASSERT_EQ(2, stack.size());
+    ASSERT_EQ(3, stack.capacity());
+    ASSERT_TRUE(stack.isStackAlloc());
+    ASSERT_EQ(222, stack.back().value);
+    ASSERT_STREQ("hey2", stack.back().name);
+
+    stack.push({.name = "hey3", .value = 333});
+    ASSERT_EQ(3, stack.size());
+    ASSERT_EQ(3, stack.capacity());
+    ASSERT_TRUE(stack.isStackAlloc());
+    ASSERT_EQ(333, stack.back().value);
+    ASSERT_STREQ("hey3", stack.back().name);
+
+    stack.push({.name = "hey44", .value = 4444});
+    ASSERT_EQ(4, stack.size());
+    ASSERT_EQ(4, stack.capacity());
+    ASSERT_FALSE(stack.isStackAlloc());
+    ASSERT_EQ(4444, stack.back().value);
+    ASSERT_STREQ("hey44", stack.back().name);
+
+    stack.push({.name = "hey55", .value = 5});
+    ASSERT_EQ(5, stack.size());
+    ASSERT_EQ(6, stack.capacity());
+    ASSERT_FALSE(stack.isStackAlloc());
+    ASSERT_EQ(5, stack.back().value);
+    ASSERT_STREQ("hey55", stack.back().name);
+
+    stack.pop();
+    ASSERT_EQ(4, stack.size());
+    ASSERT_EQ(6, stack.capacity());
+    ASSERT_EQ(4444, stack.back().value);
+    ASSERT_STREQ("hey44", stack.back().name);
+
+    stack.pop();
+    ASSERT_EQ(3, stack.size());
+    ASSERT_EQ(6, stack.capacity());
+    ASSERT_EQ(333, stack.back().value);
+    ASSERT_STREQ("hey3", stack.back().name);
+
+    stack.pop();
+    ASSERT_EQ(2, stack.size());
+    ASSERT_EQ(6, stack.capacity());
+    ASSERT_FALSE(stack.isStackAlloc());
+    ASSERT_EQ(222, stack.back().value);
+    ASSERT_STREQ("hey2", stack.back().name);
   }
 }
 
