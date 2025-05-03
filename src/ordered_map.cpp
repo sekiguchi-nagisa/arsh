@@ -18,6 +18,7 @@
 #include "../external/rapidhash/rapidhash.h"
 #include "core.h"
 #include "misc/num_util.hpp"
+#include "object_util.h"
 #include "type_pool.h"
 
 namespace arsh {
@@ -33,7 +34,7 @@ bool OrderedMapKey::equals(const Value &other) const {
   }
   assert(is<std::reference_wrapper<const Value>>(this->value));
   auto &v = get<std::reference_wrapper<const Value>>(this->value).get();
-  return v.equals(other);
+  return Equality()(v, other); // never overflow
 }
 
 static uint64_t simpleHash(uint64_t value) {

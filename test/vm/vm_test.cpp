@@ -2,6 +2,7 @@
 
 #include "../test_common.h"
 #include <misc/split_random.hpp>
+#include <object_util.h>
 #include <ordered_map.h>
 #include <vm.h>
 
@@ -728,7 +729,7 @@ struct ObjectTest : ::testing::Test {
     ASSERT_EQ(p.smallStr, isSmallStr(v.kind()));
 
     auto o = v.withMetaData(p.meta);
-    ASSERT_TRUE(v.equals(o));
+    ASSERT_TRUE(Equality()(v, o));
     ASSERT_EQ(p.ref, o.asStrRef());
     ASSERT_EQ(p.ref.size(), o.asStrRef().size());
     ASSERT_EQ(p.meta, o.getMetaData());

@@ -95,7 +95,11 @@ ARSH_METHOD eq_eq(RuntimeContext &ctx) {
   SUPPRESS_WARNING(eq_eq);
   auto &left = LOCAL(0);
   auto &right = LOCAL(1);
-  RET_BOOL(left.equals(right, true));
+  const bool s = left.equals(ctx, right, true);
+  if (ctx.hasError()) {
+    RET_ERROR;
+  }
+  RET_BOOL(s);
 }
 
 //!bind: function $OP_NE($this: Eq_, $target: Eq_): Bool
@@ -103,7 +107,11 @@ ARSH_METHOD eq_ne(RuntimeContext &ctx) {
   SUPPRESS_WARNING(eq_eq);
   auto &left = LOCAL(0);
   auto &right = LOCAL(1);
-  RET_BOOL(!left.equals(right, true));
+  const bool s = left.equals(ctx, right, true);
+  if (ctx.hasError()) {
+    RET_ERROR;
+  }
+  RET_BOOL(!s);
 }
 
 //!bind: function equals($this: Eq_, $target: Eq_): Bool
@@ -111,7 +119,11 @@ ARSH_METHOD eq_equals(RuntimeContext &ctx) {
   SUPPRESS_WARNING(eq_eq);
   auto &left = LOCAL(0);
   auto &right = LOCAL(1);
-  RET_BOOL(left.equals(right));
+  const bool s = left.equals(ctx, right);
+  if (ctx.hasError()) {
+    RET_ERROR;
+  }
+  RET_BOOL(s);
 }
 
 // ###################
@@ -123,7 +135,11 @@ ARSH_METHOD ord_compare(RuntimeContext &ctx) {
   SUPPRESS_WARNING(ord_compare);
   auto &x = LOCAL(0);
   auto &y = LOCAL(1);
-  RET(Value::createInt(x.compare(y)));
+  const int r = x.compare(ctx, y);
+  if (ctx.hasError()) {
+    RET_ERROR;
+  }
+  RET(Value::createInt(r));
 }
 
 // #################
@@ -1838,7 +1854,10 @@ ARSH_METHOD array_sort(RuntimeContext &ctx) {
   auto &obj = typeAs<ArrayObject>(LOCAL(0));
   CHECK_ITER_INVALIDATION(obj);
   std::sort(obj.refValues().begin(), obj.refValues().end(),
-            [](const Value &x, const Value &y) { return x.compare(y) < 0; });
+            [&ctx](const Value &x, const Value &y) { return x.compare(ctx, y) < 0; });
+  if (ctx.hasError()) {
+    RET_ERROR;
+  }
   RET(LOCAL(0));
 }
 
@@ -1861,6 +1880,9 @@ ARSH_METHOD array_search(RuntimeContext &ctx) {
   auto &obj = typeAs<ArrayObject>(LOCAL(0));
   auto &value = LOCAL(1);
   const auto retIndex = searchSorted(ctx, value, obj, nullptr);
+  if (ctx.hasError()) {
+    RET_ERROR;
+  }
   RET(Value::createInt(retIndex));
 }
 
@@ -1934,9 +1956,12 @@ ARSH_METHOD array_indexOf(RuntimeContext &ctx) {
 
   int64_t index = -1;
   for (size_t i = offset.index; i < size; i++) {
-    if (arrayObj.getValues()[i].equals(value)) {
+    if (arrayObj.getValues()[i].equals(ctx, value)) {
       index = static_cast<int64_t>(i);
       break;
+    }
+    if (ctx.hasError()) {
+      RET_ERROR;
     }
   }
   RET(Value::createInt(index));
@@ -1951,9 +1976,12 @@ ARSH_METHOD array_lastIndexOf(RuntimeContext &ctx) {
   assert(size <= ArrayObject::MAX_SIZE);
   int64_t index = -1;
   for (int64_t i = static_cast<int64_t>(size) - 1; i > -1; i--) {
-    if (arrayObj.getValues()[i].equals(value)) {
+    if (arrayObj.getValues()[i].equals(ctx, value)) {
       index = i;
       break;
+    }
+    if (ctx.hasError()) {
+      RET_ERROR;
     }
   }
   RET(Value::createInt(index));
@@ -1968,9 +1996,12 @@ ARSH_METHOD array_contains(RuntimeContext &ctx) {
   assert(size <= ArrayObject::MAX_SIZE);
   bool found = false;
   for (size_t i = 0; i < size; i++) {
-    if (arrayObj.getValues()[i].equals(value)) {
+    if (arrayObj.getValues()[i].equals(ctx, value)) {
       found = true;
       break;
+    }
+    if (ctx.hasError()) {
+      RET_ERROR;
     }
   }
   RET_BOOL(found);

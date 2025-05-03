@@ -22,6 +22,7 @@
 #include "core.h"
 #include "line_editor.h"
 #include "misc/num_util.hpp"
+#include "object_util.h"
 #include "ordered_map.h"
 #include "pager.h"
 #include "redir.h"
@@ -460,68 +461,24 @@ bool Value::opInterp(StrBuilder &builder) const {
   return this->opStr(builder);
 }
 
-bool Value::equals(const Value &o, const bool partial) const {
-  // for String
-  if (this->hasStrRef() && o.hasStrRef()) {
-    return this->asStrRef() == o.asStrRef();
-  }
-
-  if (this->kind() != o.kind()) {
+bool Value::equals(ARState &state, const Value &o, bool partial) const {
+  Equality equality(partial);
+  const bool s = equality(*this, o);
+  if (equality.hasOverflow()) {
+    raiseError(state, TYPE::StackOverflowError, "equal deep nesting objects");
     return false;
   }
-  switch (this->kind()) {
-  case ValueKind::EMPTY:
-    return true;
-  case ValueKind::BOOL:
-    return this->asBool() == o.asBool();
-  case ValueKind::SIG:
-    return this->asSig() == o.asSig();
-  case ValueKind::INT:
-    return this->asInt() == o.asInt();
-  case ValueKind::FLOAT:
-    if (partial) {
-      return this->asFloat() == o.asFloat();
-    }
-    return compareByTotalOrder(this->asFloat(), o.asFloat()) == 0;
-  default:
-    assert(this->kind() == ValueKind::OBJECT);
-    if (this->get()->getKind() != o.get()->getKind()) {
-      return false;
-    }
-    return reinterpret_cast<uintptr_t>(this->get()) == reinterpret_cast<uintptr_t>(o.get());
-  }
+  return s;
 }
 
-int Value::compare(const Value &o) const {
-  // for String
-  if (this->hasStrRef() && o.hasStrRef()) {
-    auto left = this->asStrRef();
-    auto right = o.asStrRef();
-    return left.compare(right);
+int Value::compare(ARState &state, const Value &o) const {
+  Ordering ordering;
+  const int r = ordering(*this, o);
+  if (ordering.hasOverflow()) {
+    raiseError(state, TYPE::StackOverflowError, "compare deep nesting objects");
+    return -1;
   }
-
-  assert(this->kind() == o.kind());
-  switch (this->kind()) {
-  case ValueKind::BOOL: {
-    int left = this->asBool() ? 1 : 0;
-    int right = o.asBool() ? 1 : 0;
-    return left - right;
-  }
-  case ValueKind::SIG:
-    return this->asSig() - o.asSig();
-  case ValueKind::INT: {
-    int64_t left = this->asInt();
-    int64_t right = o.asInt();
-    if (left == right) {
-      return 0;
-    }
-    return left < right ? -1 : 1;
-  }
-  case ValueKind::FLOAT:
-    return compareByTotalOrder(this->asFloat(), o.asFloat());
-  default:
-    return 1; // normally unreachable
-  }
+  return r;
 }
 
 bool Value::appendAsStr(ARState &state, StringRef value) {

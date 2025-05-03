@@ -261,6 +261,7 @@ set(ARSH_SRC
         src/renderer.cpp
         src/case_fold.cpp
         src/format_util.cpp
+        src/object_util.cpp
         ${lexer_src}
         ${bind_src}
         ${embed_src})

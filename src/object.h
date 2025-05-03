@@ -500,23 +500,28 @@ public:
   bool opInterp(StrBuilder &builder) const;
 
   /**
-   * for HashMap (total order)
+   * for equality. may raise error (reach stack depth limit)
+   * @param state
    * @param o
    * @param partial
    * if true, check partial equality
    * @return
+   * if this == o, return true,
+   * otherwise return false (even if error)
    */
-  bool equals(const Value &o, bool partial = false) const;
+  bool equals(ARState &state, const Value &o, bool partial = false) const;
 
   /**
-   * three-way compare for Array#sort (total order)
+   * three-way total order compare. may raise error (reach stack depth limit)
+   * @param state
    * @param o
    * @return
    * if this < o, return negative number
    * if this == o, return 0
    * if this > o, return positive number
+   * if error, return -1
    */
-  int compare(const Value &o) const;
+  int compare(ARState &state, const Value &o) const;
 
   /**
    * force mutate string.
