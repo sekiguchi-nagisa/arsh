@@ -47,7 +47,7 @@ public:
     if (this->isAllocated()) {
       this->ptr_ = this->alloc_.alloc();
     }
-    if constexpr (!std::is_trivial_v<T>) {
+    if constexpr (!std::is_trivially_default_constructible_v<T>) {
       for (size_t i = 0; i < this->size(); i++) {
         new (&this->ptr_[i]) T;
       }
