@@ -201,7 +201,7 @@ constexpr const char *ERROR_STRING_LIMIT = "reach String size limit";
 constexpr const char *ERROR_MAP_LIMIT = "reach Map size limit";
 constexpr const char *ERROR_NULL_CHAR_PATH = "file path contains null characters";
 constexpr const char *ERROR_READLINE = "readLine failed";
-constexpr const char *ERROR_PIPE = "pipe opend failed";
+constexpr const char *ERROR_PIPE = "pipe open failed";
 constexpr const char *ERROR_FD_SETUP = "file descriptor setup failed";
 
 // =====  generic type name  =====
