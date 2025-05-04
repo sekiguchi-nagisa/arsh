@@ -387,7 +387,7 @@ TEST_F(EqOrdTest, base) {
   ASSERT_TRUE(Equality()(Value::createBool(true), Value::createBool(true)));
   ASSERT_TRUE(Equality()(Value::createBool(false), Value::createBool(false)));
   ASSERT_FALSE(Equality()(Value::createBool(true), Value::createBool(false)));
-  ASSERT_TRUE(Equality()(Value::createSig(SIGCHLD), Value::createSig(SIGCLD)));
+  ASSERT_TRUE(Equality()(Value::createSig(SIGINT), Value::createSig(SIGINT)));
   ASSERT_TRUE(Equality()(Value::createFloat(3.14), Value::createFloat(3.14)));
   ASSERT_TRUE(Equality(true)(Value::createFloat(3.14), Value::createFloat(3.14)));
   ASSERT_TRUE(Equality()(Value::createFloat(0.0 / 0.0), Value::createFloat(0.0 / 0.0)));
@@ -403,7 +403,7 @@ TEST_F(EqOrdTest, base) {
   ASSERT_TRUE(Ordering()(Value::createBool(false), Value::createBool(false)) == 0);
   ASSERT_TRUE(Ordering()(Value::createSig(SIGINT), Value::createSig(SIGCHLD)) < 0);
   ASSERT_TRUE(Ordering()(Value::createSig(SIGUSR2), Value::createSig(SIGHUP)) > 0);
-  ASSERT_TRUE(Ordering()(Value::createSig(SIGCHLD), Value::createSig(SIGCLD)) == 0);
+  ASSERT_TRUE(Ordering()(Value::createSig(SIGINT), Value::createSig(SIGINT)) == 0);
   ASSERT_TRUE(Ordering()(Value::createInt(-1234), Value::createInt(0)) < 0);
   ASSERT_TRUE(Ordering()(Value::createInt(-1234), Value::createInt(-9999)) > 0);
   ASSERT_TRUE(Ordering()(Value::createInt(12), Value::createInt(12)) == 0);
