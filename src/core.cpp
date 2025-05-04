@@ -918,7 +918,7 @@ static int64_t compare(ARState &state, const Value &x, const Value &y, const Val
     assert(v.hasType(TYPE::Int));
     return v.asInt();
   }
-  return x.compare(state, y);
+  return x.compare(state, y); // skip error check
 }
 
 int64_t searchSorted(ARState &state, const Value &value, ArrayObject &arrayObj,

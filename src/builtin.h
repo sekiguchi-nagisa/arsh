@@ -1837,8 +1837,9 @@ ARSH_METHOD array_sort(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_sort);
   auto &obj = typeAs<ArrayObject>(LOCAL(0));
   CHECK_ITER_INVALIDATION(obj);
-  std::sort(obj.refValues().begin(), obj.refValues().end(),
-            [&ctx](const Value &x, const Value &y) { return x.compare(ctx, y) < 0; });
+  std::sort(obj.refValues().begin(), obj.refValues().end(), [&ctx](const Value &x, const Value &y) {
+    return ctx.hasError() || x.compare(ctx, y) < 0; // if error, skip compare
+  });
   RET(LOCAL(0)); // skip error check
 }
 
