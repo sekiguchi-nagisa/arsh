@@ -28,18 +28,29 @@ namespace arsh {
 struct OrdFrame {
   const Value *x;
   const Value *y;
+  unsigned int xi;
+  unsigned int yi;
 
-  static OrdFrame create(const Value &x, const Value &y) {
-    OrdFrame frame;
-    frame.x = &x;
-    frame.y = &y;
-    return frame;
-  }
+  OrdFrame() = default;
+
+  OrdFrame(const Value &x, const Value &y) : x(&x), y(&y), xi(0), yi(0) {} // NOLINT
 };
 
+#define GOTO_NEXT_EQ(FS, F)                                                                        \
+  do {                                                                                             \
+    (FS).push(F);                                                                                  \
+    if ((FS).size() == STACK_DEPTH_LIMIT) {                                                        \
+      this->overflow = true;                                                                       \
+      return false;                                                                                \
+    }                                                                                              \
+    goto NEXT;                                                                                     \
+  } while (false)
+
 bool Equality::operator()(const Value &x, const Value &y) {
+  this->overflow = false;
   InlinedStack<OrdFrame, 4> frames;
-  for (frames.push(OrdFrame::create(x, y)); frames.size(); frames.pop()) {
+  for (frames.push(OrdFrame(x, y)); frames.size(); frames.pop()) {
+  NEXT: {
     auto &xp = *frames.back().x;
     auto &yp = *frames.back().y;
 
@@ -99,13 +110,34 @@ bool Equality::operator()(const Value &x, const Value &y) {
 
     // for object
     switch (xp.get()->getKind()) {
-    case ObjectKind::Array:
+    case ObjectKind::Array: {
+      auto &xa = typeAs<ArrayObject>(xp);
+      auto &ya = typeAs<ArrayObject>(yp);
+      if (xa.size() != ya.size()) {
+        return false;
+      }
+      if (auto &frame = frames.back(); frame.xi < xa.size()) {
+        GOTO_NEXT_EQ(frames, OrdFrame(xa.getValues()[frame.xi++], ya.getValues()[frame.yi++]));
+      }
+      continue;
+    }
     case ObjectKind::OrderedMap:
-    case ObjectKind::Base:
-      return false; // TODO:
+      return false; // TODO
+    case ObjectKind::Base: {
+      auto &xo = typeAs<BaseObject>(xp);
+      auto &yo = typeAs<BaseObject>(yp);
+      if (xo.getFieldSize() != yo.getFieldSize()) {
+        return false;
+      }
+      if (auto &frame = frames.back(); frame.xi < xo.getFieldSize()) {
+        GOTO_NEXT_EQ(frames, OrdFrame(xo[frame.xi++], yo[frame.yi++]));
+      }
+      continue;
+    }
     default:
       return false;
     }
+  }
   }
   return true;
 }
@@ -114,9 +146,21 @@ bool Equality::operator()(const Value &x, const Value &y) {
 // ##     Ordering     ##
 // ######################
 
+#define GOTO_NEXT_ORD(FS, F)                                                                       \
+  do {                                                                                             \
+    (FS).push(F);                                                                                  \
+    if ((FS).size() == STACK_DEPTH_LIMIT) {                                                        \
+      this->overflow = true;                                                                       \
+      return -1;                                                                                   \
+    }                                                                                              \
+    goto NEXT;                                                                                     \
+  } while (false)
+
 int Ordering::operator()(const Value &x, const Value &y) {
+  this->overflow = false;
   InlinedStack<OrdFrame, 4> frames;
-  for (frames.push(OrdFrame::create(x, y)); frames.size(); frames.pop()) {
+  for (frames.push(OrdFrame(x, y)); frames.size(); frames.pop()) {
+  NEXT: {
     auto &xp = *frames.back().x;
     auto &yp = *frames.back().y;
 
@@ -129,13 +173,7 @@ int Ordering::operator()(const Value &x, const Value &y) {
     }
 
     if (xp.kind() != yp.kind()) {
-      if (xp.isInvalid()) {
-        return -1;
-      }
-      if (yp.isInvalid()) {
-        return 1;
-      }
-      return -1;
+      return toUnderlying(xp.kind()) - toUnderlying(yp.kind());
     }
 
     switch (xp.kind()) {
@@ -171,7 +209,10 @@ int Ordering::operator()(const Value &x, const Value &y) {
       continue;
     case ValueKind::OBJECT:
       if (xp.get()->getKind() != yp.get()->getKind()) {
-        return -1;
+        return toUnderlying(xp.get()->getKind()) - toUnderlying(yp.get()->getKind());
+      }
+      if (reinterpret_cast<uintptr_t>(xp.get()) == reinterpret_cast<uintptr_t>(yp.get())) {
+        continue; // fast path
       }
       break;
     default:
@@ -180,13 +221,44 @@ int Ordering::operator()(const Value &x, const Value &y) {
 
     // for object
     switch (xp.get()->getKind()) {
-    case ObjectKind::Array:
+    case ObjectKind::Array: {
+      auto &xa = typeAs<ArrayObject>(xp);
+      auto &ya = typeAs<ArrayObject>(yp);
+      const unsigned int xSize = xa.size();
+      const unsigned int ySize = ya.size();
+      if (auto &frame = frames.back(); frame.xi < std::min(xSize, ySize)) {
+        GOTO_NEXT_ORD(frames, OrdFrame(xa.getValues()[frame.xi++], ya.getValues()[frame.yi++]));
+      }
+      if (xSize < ySize) {
+        return -1;
+      }
+      if (xSize > ySize) {
+        return 1;
+      }
+      continue;
+    }
     case ObjectKind::OrderedMap:
-    case ObjectKind::Base:
-      return -1; // TODO:
+      return -1; // TODO
+    case ObjectKind::Base: {
+      auto &xo = typeAs<BaseObject>(xp);
+      auto &yo = typeAs<BaseObject>(yp);
+      const unsigned int xSize = xo.getFieldSize();
+      const unsigned int ySize = yo.getFieldSize();
+      if (auto &frame = frames.back(); frame.xi < std::min(xSize, ySize)) {
+        GOTO_NEXT_ORD(frames, OrdFrame(xo[frame.xi++], yo[frame.yi++]));
+      }
+      if (xSize < ySize) {
+        return -1;
+      }
+      if (xSize > ySize) {
+        return 1;
+      }
+      continue;
+    }
     default:
       return -1; // normally unreachable
     }
+  }
   }
   return 0;
 }
