@@ -18,6 +18,7 @@
 #include "misc/inlined_stack.hpp"
 #include "misc/num_util.hpp"
 #include "object.h"
+#include "ordered_map.h"
 
 namespace arsh {
 
@@ -30,6 +31,8 @@ struct OrdFrame {
   const Value *y;
   unsigned int xi;
   unsigned int yi;
+
+  static_assert(OrderedMapObject::MAX_SIZE * 2 < UINT32_MAX);
 
   OrdFrame() = default;
 
@@ -45,6 +48,15 @@ struct OrdFrame {
     }                                                                                              \
     goto NEXT;                                                                                     \
   } while (false)
+
+static unsigned int skipEmptyEntries(const OrderedMapObject &obj, unsigned int &index) {
+  unsigned int i = index / 2;
+  for (auto &entries = obj.getEntries(); i < entries.getUsedSize() && !entries[i];) {
+    i++;
+    index += 2;
+  }
+  return i;
+}
 
 bool Equality::operator()(const Value &x, const Value &y) {
   this->overflow = false;
@@ -121,8 +133,25 @@ bool Equality::operator()(const Value &x, const Value &y) {
       }
       continue;
     }
-    case ObjectKind::OrderedMap:
-      return false; // TODO
+    case ObjectKind::OrderedMap: { // order-independent
+      auto &xo = typeAs<OrderedMapObject>(xp);
+      auto &yo = typeAs<OrderedMapObject>(yp);
+      if (xo.size() != yo.size()) {
+        return false;
+      }
+      auto &frame = frames.back();
+      const unsigned int xi = skipEmptyEntries(xo, frame.xi);
+      if (xi < xo.getEntries().getUsedSize()) {
+        auto &xe = xo.getEntries()[xi];
+        frame.xi += 2;
+        const int yi = yo.lookup(xe.getKey());
+        if (yi < 0) {
+          return false;
+        }
+        GOTO_NEXT_EQ(frames, OrdFrame(xe.getValue(), yo.getEntries()[yi].getValue()));
+      }
+      continue;
+    }
     case ObjectKind::Base: {
       auto &xo = typeAs<BaseObject>(xp);
       auto &yo = typeAs<BaseObject>(yp);
@@ -226,7 +255,7 @@ int Ordering::operator()(const Value &x, const Value &y) {
       auto &ya = typeAs<ArrayObject>(yp);
       const unsigned int xSize = xa.size();
       const unsigned int ySize = ya.size();
-      if (auto &frame = frames.back(); frame.xi < std::min(xSize, ySize)) {
+      if (auto &frame = frames.back(); frame.xi < xSize && frame.yi < ySize) {
         GOTO_NEXT_ORD(frames, OrdFrame(xa.getValues()[frame.xi++], ya.getValues()[frame.yi++]));
       }
       if (xSize < ySize) {
@@ -237,14 +266,35 @@ int Ordering::operator()(const Value &x, const Value &y) {
       }
       continue;
     }
-    case ObjectKind::OrderedMap:
-      return -1; // TODO
+    case ObjectKind::OrderedMap: { // order-dependent
+      auto &xo = typeAs<OrderedMapObject>(xp);
+      auto &yo = typeAs<OrderedMapObject>(yp);
+      auto &frame = frames.back();
+      const unsigned int xi = skipEmptyEntries(xo, frame.xi);
+      const unsigned int yi = skipEmptyEntries(yo, frame.yi);
+      if (xi < xo.getEntries().getUsedSize() && yi < yo.getEntries().getUsedSize()) {
+        const bool isKey = frame.xi % 2 == 0;
+        frame.xi++;
+        frame.yi++;
+        auto &xe = xo.getEntries()[xi];
+        auto &ye = yo.getEntries()[yi];
+        GOTO_NEXT_ORD(frames, OrdFrame(isKey ? xe.getKey() : xe.getValue(),
+                                       isKey ? ye.getKey() : ye.getValue()));
+      }
+      if (xo.size() < yo.size()) {
+        return -1;
+      }
+      if (xo.size() > yo.size()) {
+        return 1;
+      }
+      continue;
+    }
     case ObjectKind::Base: {
       auto &xo = typeAs<BaseObject>(xp);
       auto &yo = typeAs<BaseObject>(yp);
       const unsigned int xSize = xo.getFieldSize();
       const unsigned int ySize = yo.getFieldSize();
-      if (auto &frame = frames.back(); frame.xi < std::min(xSize, ySize)) {
+      if (auto &frame = frames.back(); frame.xi < xSize && frame.yi < ySize) {
         GOTO_NEXT_ORD(frames, OrdFrame(xo[frame.xi++], yo[frame.yi++]));
       }
       if (xSize < ySize) {
@@ -255,8 +305,9 @@ int Ordering::operator()(const Value &x, const Value &y) {
       }
       continue;
     }
-    default:
-      return -1; // normally unreachable
+    default: // normally unreachable
+      return static_cast<int>(reinterpret_cast<intptr_t>(xp.get()) -
+                              reinterpret_cast<intptr_t>(yp.get()));
     }
   }
   }

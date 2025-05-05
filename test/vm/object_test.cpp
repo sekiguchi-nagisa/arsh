@@ -417,7 +417,7 @@ TEST_F(EqOrdTest, base) {
   ASSERT_TRUE(Ordering()(Value::createStr(""), Value::createStr("1")) < 0);
   ASSERT_TRUE(Ordering()(Value::createStr("112"), Value::createStr("11")) > 0);
   ASSERT_TRUE(Ordering()(Value::createStr("1234"), Value::createStr("1234")) == 0);
-  ASSERT_TRUE(Ordering()(Value::create<UnixFdObject>(23), Value::create<UnixFdObject>(23)) < 0);
+  ASSERT_TRUE(Ordering()(Value::create<UnixFdObject>(23), Value::create<UnixFdObject>(23)) != 0);
 }
 
 TEST_F(EqOrdTest, different) {
@@ -539,6 +539,133 @@ TEST_F(EqOrdTest, tuple2) {
   // clear
   (*obj1)[1] = Value::createInvalid();
   (*obj2)[1] = Value::createInvalid();
+}
+
+TEST_F(EqOrdTest, map1) {
+  auto obj1 = this->map(TYPE::String, TYPE::Int).obj;
+  auto obj2 = this->map(TYPE::String, TYPE::Int).obj;
+  ASSERT_TRUE(Equality()(obj1, obj1));
+  ASSERT_TRUE(Ordering()(obj1, obj1) == 0);
+  ASSERT_TRUE(Equality()(obj1, obj2));
+  ASSERT_TRUE(Ordering()(obj1, obj2) == 0);
+  obj2 = this->map(TYPE::Int, TYPE::Int).obj;
+  ASSERT_TRUE(Equality()(obj1, obj2)); // true, even if different type
+  ASSERT_TRUE(Ordering()(obj1, obj2) == 0);
+
+  obj1 = this->map(TYPE::String, TYPE::Float)
+             .add(Value::createStr("AAA"), Value::createFloat(std::nan("")))
+             .obj;
+  obj2 = this->map(TYPE::String, TYPE::Float)
+             .add(Value::createStr("AAA"), Value::createFloat(std::nan("")))
+             .obj;
+  ASSERT_TRUE(Equality()(obj1, obj2));
+  ASSERT_FALSE(Equality(true)(obj1, obj2));
+  ASSERT_TRUE(Ordering()(obj1, obj2) == 0);
+
+  obj1 = this->map(TYPE::String, TYPE::Int)
+             .add(Value::createStr("aa"), Value::createInt(2))
+             .add(Value::createStr("bb"), Value::createInt(-1))
+             .obj;
+  obj2 = this->map(TYPE::String, TYPE::Int)
+             .add(Value::createStr("aa"), Value::createInt(2))
+             .add(Value::createStr("bb"), Value::createInt(-1))
+             .obj;
+  ASSERT_TRUE(Equality()(obj1, obj2));
+  ASSERT_TRUE(Ordering()(obj1, obj2) == 0);
+
+  obj2 = this->map(TYPE::String, TYPE::Int)
+             .add(Value::createStr("aa"), Value::createInt(2))
+             .add(Value::createStr("bbb"), Value::createInt(-1))
+             .obj;
+  ASSERT_FALSE(Equality()(obj1, obj2));
+  ASSERT_TRUE(Ordering()(obj1, obj2) < 0);
+  ASSERT_TRUE(Ordering()(obj2, obj1) > 0);
+
+  obj2 = this->map(TYPE::String, TYPE::Int)
+             .add(Value::createStr("aa"), Value::createInt(2))
+             .add(Value::createStr("bb"), Value::createInt(-134))
+             .obj;
+  ASSERT_FALSE(Equality()(obj1, obj2));
+  ASSERT_TRUE(Ordering()(obj1, obj2) > 0);
+  ASSERT_TRUE(Ordering()(obj2, obj1) < 0);
+
+  obj2 = this->map(TYPE::String, TYPE::Int)
+             .add(Value::createStr("aa"), Value::createInt(2))
+             .add(Value::createStr("bb"), Value::createInt(-1))
+             .add(Value::createStr("ccc"), Value::createInt(5))
+             .obj;
+  ASSERT_FALSE(Equality()(obj1, obj2));
+  ASSERT_TRUE(Ordering()(obj1, obj2) < 0);
+  ASSERT_TRUE(Ordering()(obj2, obj1) > 0);
+
+  // key-value order independent (same entries, but different insertion order)
+  obj1 = this->map(TYPE::String, TYPE::Int)
+             .add(Value::createStr("aa"), Value::createInt(2))
+             .add(Value::createStr("bb"), Value::createInt(-1))
+             .obj;
+  obj2 = this->map(TYPE::String, TYPE::Int)
+             .add(Value::createStr("bb"), Value::createInt(-1))
+             .add(Value::createStr("aa"), Value::createInt(2))
+             .obj;
+  ASSERT_TRUE(Equality()(obj1, obj2));
+  ASSERT_TRUE(Ordering()(obj1, obj2) < 0);
+  ASSERT_TRUE(Ordering()(obj2, obj1) > 0);
+}
+
+TEST_F(EqOrdTest, map2) {
+  auto obj1 = this->map(TYPE::Int, TYPE::Any).add(Value::createInt(42), Value::createInt(34)).obj;
+  auto obj2 = this->map(TYPE::Int, TYPE::Any).add(Value::createInt(42), Value::createInt(34)).obj;
+
+  Equality equality;
+  Ordering ordering;
+  obj1->insert(Value::createInt(99), obj2);
+  obj2->insert(Value::createInt(99), obj1);
+  ASSERT_TRUE(equality(obj2, obj2));
+  ASSERT_TRUE(ordering(obj2, obj2) == 0);
+  ASSERT_FALSE(equality.hasOverflow());
+  ASSERT_FALSE(ordering.hasOverflow());
+
+  ASSERT_FALSE(equality(obj1, obj2));
+  ASSERT_TRUE(ordering(obj1, obj2) < 0);
+  ASSERT_TRUE(equality.hasOverflow());
+  ASSERT_TRUE(ordering.hasOverflow());
+
+  ASSERT_FALSE(equality(obj1, obj2));
+  ASSERT_TRUE(ordering(obj2, obj1) < 0);
+  ASSERT_TRUE(equality.hasOverflow());
+  ASSERT_TRUE(ordering.hasOverflow());
+
+  // clear
+  obj1->clear();
+  obj2->clear();
+}
+
+TEST_F(EqOrdTest, map3) { // sparse entries
+  auto obj1 = this->map(TYPE::Int, TYPE::Int)
+                  .add(Value::createInt(2), Value::createInt(222))
+                  .add(Value::createInt(3), Value::createInt(333))
+                  .add(Value::createInt(4), Value::createInt(333))
+                  .add(Value::createInt(5), Value::createInt(555))
+                  .add(Value::createInt(7), Value::createInt(777))
+                  .obj;
+  auto obj2 = this->map(TYPE::Int, TYPE::Int)
+                  .add(Value::createInt(-34), Value::createInt(-222))
+                  .add(Value::createInt(2), Value::createInt(222))
+                  .add(Value::createInt(4), Value::createInt(444))
+                  .add(Value::createInt(5), Value::createInt(555))
+                  .obj;
+  ASSERT_FALSE(Equality()(obj1, obj2));
+  ASSERT_TRUE(Ordering()(obj1, obj2) > 0);
+  ASSERT_TRUE(Ordering()(obj2, obj1) < 0);
+
+  // remove entry
+  obj1->remove(Value::createInt(7));
+  obj1->remove(Value::createInt(3));
+  obj1->remove(Value::createInt(4));
+  obj2->remove(Value::createInt(4));
+  obj2->remove(Value::createInt(-34));
+  ASSERT_TRUE(Equality()(obj1, obj2));
+  ASSERT_TRUE(Ordering()(obj1, obj2) == 0);
 }
 
 int main(int argc, char **argv) {
