@@ -181,6 +181,55 @@ const TypeTemplate *TypePool::getTypeTemplate(StringRef typeName) const {
   return iter->second;
 }
 
+const Type *TypePool::resolveCommonSuperType(std::vector<const Type *> &types) {
+  // remove Nothing? type
+  bool hasOptNothing = false;
+  for (auto iter = types.begin(); iter != types.end();) {
+    if ((*iter)->is(TYPE::OptNothing)) {
+      iter = types.erase(iter);
+      hasOptNothing = true;
+    } else {
+      ++iter;
+    }
+  }
+
+  std::sort(types.begin(), types.end(), [](const Type *x, const Type *y) {
+    /**
+     *  require weak ordering (see. https://cpprefjp.github.io/reference/algorithm.html)
+     */
+    return x != y && x->isSameOrBaseTypeOf(*y);
+  });
+
+  unsigned int count = 1;
+  for (; count < types.size(); count++) {
+    if (!types[0]->isSameOrBaseTypeOf(*types[count])) {
+      break;
+    }
+  }
+  if (count == types.size()) {
+    if (hasOptNothing) {
+      /**
+       * [T, Nothing?]
+       *  -> if T is Void -> Void
+       *  -> if T is U? -> U?
+       *  -> otherwise -> T?
+       */
+      const auto *type = types[0];
+      if (type->isVoidType() || type->isOptionType()) {
+        return type;
+      }
+      if (auto ret = this->createOptionType(*type)) {
+        return ret.asOk();
+      }
+    } else {
+      return types[0];
+    }
+  } else if (hasOptNothing && types.empty()) {
+    return &this->get(TYPE::OptNothing);
+  }
+  return nullptr;
+}
+
 TypeOrError TypePool::createReifiedType(const TypeTemplate &typeTemplate,
                                         std::vector<const Type *> &&elementTypes) {
   if (this->tupleTemplate == typeTemplate) {

@@ -163,6 +163,19 @@ public:
 
   const auto &getTemplateMap() const { return this->templateMap; }
 
+  /**
+   * resolve common super type from `types`
+   * if `types` follow [T, Nothing?]
+   *   if T is Void => Void
+   *   if T is U? => U?
+   *   otherwise => T?
+   * @param types
+   * after called, may be modified
+   * @return
+   * if not resolve common support type, return null
+   */
+  const Type *resolveCommonSuperType(std::vector<const Type *> &types);
+
   TypeOrError createReifiedType(const TypeTemplate &typeTemplate,
                                 std::vector<const Type *> &&elementTypes);
 

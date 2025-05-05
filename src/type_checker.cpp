@@ -1599,64 +1599,21 @@ void TypeChecker::checkPatternType(ArmNode &node, PatternCollector &collector) {
 
 const Type &TypeChecker::resolveCommonSuperType(const Node &node, std::vector<const Type *> &&types,
                                                 const Type *fallbackType) {
-  // remove Nothing? type
-  bool hasOptNothing = false;
-  for (auto iter = types.begin(); iter != types.end();) {
-    if ((*iter)->is(TYPE::OptNothing)) {
-      iter = types.erase(iter);
-      hasOptNothing = true;
-    } else {
-      ++iter;
-    }
+  if (auto *type = this->typePool().resolveCommonSuperType(types)) {
+    return *type;
   }
-
-  std::sort(types.begin(), types.end(), [](const Type *x, const Type *y) {
-    /**
-     *  require weak ordering (see. https://cpprefjp.github.io/reference/algorithm.html)
-     */
-    return x != y && x->isSameOrBaseTypeOf(*y);
-  });
-
-  unsigned int count = 1;
-  for (; count < types.size(); count++) {
-    if (!types[0]->isSameOrBaseTypeOf(*types[count])) {
-      break;
-    }
-  }
-  if (count == types.size()) {
-    if (hasOptNothing) {
-      /**
-       * [T, Nothing?]
-       *  -> if T is Void -> Void
-       *  -> if T is U? -> U?
-       *  -> otherwise -> T?
-       */
-      const auto *type = types[0];
-      if (type->isVoidType() || type->isOptionType()) {
-        return *type;
-      } else if (auto ret = this->typePool().createOptionType(*type)) {
-        return *ret.asOk();
-      }
-    } else {
-      return *types[0];
-    }
-  } else if (hasOptNothing && types.empty()) {
-    return this->typePool().get(TYPE::OptNothing);
-  }
-
   if (fallbackType) {
     return *fallbackType;
-  } else {
-    std::string value;
-    for (const auto &t : types) {
-      if (!value.empty()) {
-        value += ", ";
-      }
-      value += t->getNameRef();
-    }
-    this->reportError<NoCommonSuper>(node, value.c_str());
-    return this->typePool().getUnresolvedType();
   }
+  std::string value;
+  for (const auto &t : types) {
+    if (!value.empty()) {
+      value += ", ";
+    }
+    value += t->getNameRef();
+  }
+  this->reportError<NoCommonSuper>(node, value.c_str());
+  return this->typePool().getUnresolvedType();
 }
 
 #define TRY(E)                                                                                     \
