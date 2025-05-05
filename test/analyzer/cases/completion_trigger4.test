@@ -15,7 +15,7 @@
 {"jsonrpc": "2.0", "method": "textDocument/didOpen",
  "params": {
     "textDocument": {"languageId": "arsh", "version": 1, "uri": "file:///test/test.ds",
-                     "text": "var aa = (12,23)\n$aa."}
+                     "text": "var aa = (12,new Error('ss'))\n$aa."}
  }
 }
 
@@ -37,14 +37,14 @@
 #    CHECK:       "kind": 5,
 #    CHECK:       "label": "_0",
 #    CHECK:       "labelDetails": {
-#    CHECK:         "detail": ": Int for (Int, Int)"
+#    CHECK:         "detail": ": Int for (Int, Error)"
 #    CHECK:       }
 #    CHECK:     },
 #    CHECK:     {
 #    CHECK:       "kind": 5,
 #    CHECK:       "label": "_1",
 #    CHECK:       "labelDetails": {
-#    CHECK:         "detail": ": Int for (Int, Int)"
+#    CHECK:         "detail": ": Error for (Int, Error)"
 #    CHECK:       }
 #    CHECK:     }
 #    CHECK:   ]

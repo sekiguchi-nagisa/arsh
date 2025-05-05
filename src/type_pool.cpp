@@ -230,6 +230,20 @@ const Type *TypePool::resolveCommonSuperType(std::vector<const Type *> &types) {
   return nullptr;
 }
 
+static const Type &resolveCollectionSuperType(const TypePool &pool, const Type &elementType) {
+  const Type *type = &elementType;
+  if (type->isOptionType()) {
+    type = &cast<OptionType>(type)->getElementType();
+  }
+  if (pool.get(TYPE::Eq_).isSameOrBaseTypeOf(*type)) {
+    if (pool.get(TYPE::Ord_).isSameOrBaseTypeOf(*type)) {
+      return pool.get(TYPE::Ord_);
+    }
+    return pool.get(TYPE::Eq_);
+  }
+  return pool.get(TYPE::Any);
+}
+
 TypeOrError TypePool::createReifiedType(const TypeTemplate &typeTemplate,
                                         std::vector<const Type *> &&elementTypes) {
   if (this->tupleTemplate == typeTemplate) {
@@ -248,13 +262,15 @@ TypeOrError TypePool::createReifiedType(const TypeTemplate &typeTemplate,
   auto *type = this->get(typeName);
   if (type == nullptr) {
     if (this->arrayTemplate == typeTemplate) {
-      auto *arrayType = this->newType<ArrayType>(typeName, typeTemplate.getInfo(),
-                                                 this->get(TYPE::Any), *elementTypes[0]);
+      auto &superType = resolveCollectionSuperType(*this, *elementTypes[0]);
+      auto *arrayType =
+          this->newType<ArrayType>(typeName, typeTemplate.getInfo(), superType, *elementTypes[0]);
       assert(arrayType);
       this->registerHandles(*arrayType);
       type = arrayType;
     } else if (this->mapTemplate == typeTemplate) {
-      auto *mapType = this->newType<MapType>(typeName, typeTemplate.getInfo(), this->get(TYPE::Any),
+      auto &superType = resolveCollectionSuperType(*this, *elementTypes[1]);
+      auto *mapType = this->newType<MapType>(typeName, typeTemplate.getInfo(), superType,
                                              *elementTypes[0], *elementTypes[1]);
       assert(mapType);
       this->registerHandles(*mapType);
@@ -326,8 +342,14 @@ TypeOrError TypePool::createTupleType(std::vector<const Type *> &&elementTypes) 
   std::string typeName(toTupleTypeName(elementTypes));
   auto *type = this->get(typeName);
   if (type == nullptr) {
-    auto &superType = this->get(TYPE::Any);
-    auto *tuple = this->newType<TupleType>(typeName, this->tupleTemplate.getInfo(), superType,
+    std::vector<const Type *> elementSuperTypes;
+    elementSuperTypes.reserve(elementTypes.size());
+    for (auto &e : elementTypes) {
+      elementSuperTypes.push_back(&resolveCollectionSuperType(*this, *e));
+    }
+    auto *superType = this->resolveCommonSuperType(elementSuperTypes);
+    assert(superType);
+    auto *tuple = this->newType<TupleType>(typeName, this->tupleTemplate.getInfo(), *superType,
                                            std::move(elementTypes));
     assert(tuple);
     this->registerHandles(*tuple);
@@ -370,27 +392,25 @@ TypeOrError TypePool::createErrorType(const std::string &typeName, const Type &s
 
 TypeOrError TypePool::createRecordType(const std::string &typeName, ModId belongedModId) {
   std::string name = toQualifiedTypeName(typeName, belongedModId);
-  auto *type = this->newType<RecordType>(name, this->get(TYPE::Any));
-  if (type) {
+  if (auto *type = this->newType<RecordType>(name, this->get(TYPE::Any))) {
     return Ok(type);
-  } else {
-    RAISE_TL_ERROR(DefinedType, typeName.c_str());
   }
+  RAISE_TL_ERROR(DefinedType, typeName.c_str());
 }
 
 TypeOrError TypePool::createCLIRecordType(const std::string &typeName, ModId belongedModId,
                                           CLIRecordType::Attr attr, std::string &&desc) {
   std::string name = toQualifiedTypeName(typeName, belongedModId);
-  auto *type = this->newType<CLIRecordType>(name, this->get(TYPE::CLI), attr, std::move(desc));
-  if (type) {
+  if (auto *type =
+          this->newType<CLIRecordType>(name, this->get(TYPE::CLI), attr, std::move(desc))) {
     return Ok(type);
-  } else {
-    RAISE_TL_ERROR(DefinedType, typeName.c_str());
   }
+  RAISE_TL_ERROR(DefinedType, typeName.c_str());
 }
 
 TypeOrError TypePool::finalizeRecordType(const RecordType &recordType,
                                          std::unordered_map<std::string, HandlePtr> &&handles) {
+  std::vector<const Type *> elementSuperTypes;
   unsigned int fieldCount = 0;
   for (auto &e : handles) {
     if (!e.second->isMethodHandle() && !e.second->is(HandleKind::TYPE_ALIAS)) {
@@ -399,6 +419,9 @@ TypeOrError TypePool::finalizeRecordType(const RecordType &recordType,
       if (type.isVoidType() || type.isNothingType() || type.isUnresolved()) {
         RAISE_TL_ERROR(InvalidElement, type.getName());
       }
+      if (recordType.getSuperType()->is(TYPE::Any)) { // for normal record type
+        elementSuperTypes.push_back(&resolveCollectionSuperType(*this, type));
+      }
     }
   }
   if (fieldCount > SYS_LIMIT_TUPLE_NUM) {
@@ -406,6 +429,12 @@ TypeOrError TypePool::finalizeRecordType(const RecordType &recordType,
   }
   auto *newRecordType = cast<RecordType>(this->getMut(recordType.typeId()));
   assert(!newRecordType->isFinalized());
+  if (recordType.getSuperType()->is(TYPE::Any)) {        // resolve actual super type of record
+    elementSuperTypes.push_back(&this->get(TYPE::Ord_)); // for empty record
+    auto *superType = this->resolveCommonSuperType(elementSuperTypes);
+    assert(superType);
+    newRecordType->superType = superType;
+  }
   newRecordType->finalize(fieldCount, std::move(handles));
   return Ok(newRecordType);
 }

@@ -135,23 +135,24 @@ $assertArray($(env | grep ^P | for l in $STDIN {
 
 
 # field/method
-$assertArray(["_0", "_1"], $(complete "(1,2)."))
-$assertArray([ "B", 'BB', 'C', '_A'], $(complete 'typedef AAA($a : Int){ var _A = 34; let B = $a; var C = $false; var BB = $C; }; new AAA(34).'))
+$assertArray(["_0", "_1", 'compare', 'equals'], $(complete "(1,2)."))
+$assertArray([ "B", 'BB', 'C', '_A', 'compare', 'equals'], $(complete 'typedef AAA($a : Int){ var _A = 34; let B = $a; var C = $false; var BB = $C; }; new AAA(34).'))
 $assertArray([ "B", 'BB'], $(complete 'typedef AAA($a : Int){ var _A = 34; let B = $a; var C = $false; var BB = $C; }; new AAA(34).B'))
 $assertArray(['B', 'BB'], $(complete 'typedef AAA{ var B : Int; let BB : String; }; new AAA(1, "34").B'))
 assert $(complete 'typedef AAA($a: Int) { var v = $a; new AAA(45).').empty()
 
 $assertArray(["ifEmpty", "indexOf"], $(complete '$SCRIPT_NAME.i'))
 $assertArray(["sort", "sortBy"], $(complete '$@.so'))
-$assertArray(["sortBy"], $(complete '[[34],[67]].so'))
+$assertArray(["sort", "sortBy"], $(complete '[[34],[67]].so'))
+$assertArray(["sortBy"], $(complete '[23 as Any].so'))
 $assertArray(["BASH_COMPLETION_COMPAT", "BASH_COMPLETION_PATH",
               '_fullname', '_func', '_scriptDir', '_scriptName',
                "compAdd", 'compDelegate', 'extractCompTarget', 'findBashCompScript'],
                 $(complete "source $SCRIPT_DIR/../../../../share/arsh/modules/completion.arsh as CP; \$CP."))
 $assertArray([ '_fullname', "_func", '_scriptDir', '_scriptName', "hello", "hey", "hey2", "hey3",],
              $(complete "source $SCRIPT_DIR/../../_module4test/inlined2.ds as mod; \$mod."))
-$assertArray([ 'begin', 'end'], $(complete "source $SCRIPT_DIR/../../_module4test/module1.ds; new Interval(0,23)."))
-$assertArray([ 'begin', 'end'], $(complete "source $SCRIPT_DIR/../../_module4test/module1.ds as mod; new mod.Interval(0,23)."))
+$assertArray([ 'begin', 'compare', 'end', 'equals',], $(complete "source $SCRIPT_DIR/../../_module4test/module1.ds; new Interval(0,23)."))
+$assertArray([ 'begin', 'compare', 'end', 'equals'], $(complete "source $SCRIPT_DIR/../../_module4test/module1.ds as mod; new mod.Interval(0,23)."))
 $assertArray(['abs', "compare", "equals", "toFloat"], $(complete '
     if let a = "fjeri".toInt() {
         var b = 45.0

@@ -10,10 +10,11 @@
 
 #### Builtin
 
-- add ``Eq_``, ``Ord_`` type
+- add ``Eq_``, ``Ord_`` interface type
     - ``Eq_`` type has ``==``, ``!=``, ``equals`` methods.
         - ``equals`` method is total order unlike ``==``
     - ``Ord_`` type has ``compare`` method for total order comparison
+    - ``Array``, ``Map``, ``Tuple``, record types are inherit these interfaces from element types
 
 ### Changed
 

@@ -533,6 +533,11 @@ typedef BBB() {}
 
   {
     auto *type = index->findBaseType(toQualifiedTypeName("AAA", static_cast<ModId>(modId)));
+    ASSERT_TRUE(type);
+    ASSERT_EQ("%Ord_", type->getValue());
+    ASSERT_EQ(BUILTIN_MOD_ID, type->resolveBelongedModId());
+
+    type = builtinIndex->findBaseType("%Ord_");
     ASSERT_FALSE(type);
   }
 

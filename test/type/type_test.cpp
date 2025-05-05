@@ -215,7 +215,7 @@ TEST_F(TypeTest, superType) {
       this->assertSuperType(this->pool.get(TYPE::ProcSubst), this->pool.get(TYPE::FD)));
 
   ASSERT_NO_FATAL_FAILURE(
-      this->assertSuperType(this->pool.get(TYPE::StringArray), this->pool.get(TYPE::Any)));
+      this->assertSuperType(this->pool.get(TYPE::StringArray), this->pool.get(TYPE::Ord_)));
   ASSERT_NO_FATAL_FAILURE(
       this->assertSuperType(this->pool.get(TYPE::Throwable), this->pool.get(TYPE::Any)));
   ASSERT_NO_FATAL_FAILURE(
@@ -236,6 +236,24 @@ TEST_F(TypeTest, superType) {
       this->assertSuperType(this->pool.get(TYPE::RegexSyntaxError), this->pool.get(TYPE::Error)));
   ASSERT_NO_FATAL_FAILURE(
       this->assertSuperType(this->pool.get(TYPE::Command), this->pool.get(TYPE::Eq_)));
+  ASSERT_NO_FATAL_FAILURE(
+      this->assertSuperType(*this->pool.createArrayType(this->pool.get(TYPE::Signal)).asOk(),
+                            this->pool.get(TYPE::Ord_)));
+  ASSERT_NO_FATAL_FAILURE(
+      this->assertSuperType(*this->pool.createArrayType(this->pool.get(TYPE::Command)).asOk(),
+                            this->pool.get(TYPE::Eq_)));
+  ASSERT_NO_FATAL_FAILURE(
+      this->assertSuperType(*this->pool.createArrayType(this->pool.get(TYPE::Signals)).asOk(),
+                            this->pool.get(TYPE::Any)));
+  ASSERT_NO_FATAL_FAILURE(this->assertSuperType(
+      *this->pool.createMapType(this->pool.get(TYPE::Int), this->pool.get(TYPE::Int)).asOk(),
+      this->pool.get(TYPE::Ord_)));
+  ASSERT_NO_FATAL_FAILURE(this->assertSuperType(
+      *this->pool.createMapType(this->pool.get(TYPE::Int), this->pool.get(TYPE::Command)).asOk(),
+      this->pool.get(TYPE::Eq_)));
+  ASSERT_NO_FATAL_FAILURE(this->assertSuperType(
+      *this->pool.createMapType(this->pool.get(TYPE::Int), this->pool.get(TYPE::Error)).asOk(),
+      this->pool.get(TYPE::Any)));
 }
 
 TEST_F(TypeTest, templateName) {
@@ -252,14 +270,27 @@ TEST_F(TypeTest, typeToken) {
       this->assertSuperType(this->toType<Int_t>(), this->pool.get(TYPE::Value_)));
 
   ASSERT_NO_FATAL_FAILURE(
-      this->assertSuperType(this->toType<Array_t<String_t>>(), this->pool.get(TYPE::Any)));
+      this->assertSuperType(this->toType<Array_t<String_t>>(), this->pool.get(TYPE::Ord_)));
   ASSERT_NO_FATAL_FAILURE(
       this->assertSuperType(this->toType<Array_t<Error_t>>(), this->pool.get(TYPE::Any)));
+  ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->toType<Array_t<Array_t<String_t>>>(),
+                                                this->pool.get(TYPE::Ord_)));
+  ASSERT_NO_FATAL_FAILURE(
+      this->assertSuperType(this->toType<Array_t<Array_t<Error_t>>>(), this->pool.get(TYPE::Any)));
+  ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->toType<Array_t<Array_t<Func_t<Void_t>>>>(),
+                                                this->pool.get(TYPE::Eq_)));
 
   ASSERT_NO_FATAL_FAILURE(this->assertSuperType(
-      this->toType<Map_t<Bool_t, Tuple_t<Float_t, String_t>>>(), this->pool.get(TYPE::Any)));
+      this->toType<Map_t<Bool_t, Tuple_t<Float_t, String_t>>>(), this->pool.get(TYPE::Ord_)));
   ASSERT_NO_FATAL_FAILURE(
-      this->assertSuperType(this->toType<Tuple_t<Error_t>>(), this->pool.get(TYPE::Any)));
+      this->assertSuperType(this->toType<Map_t<Bool_t, Tuple_t<Float_t, String_t, Error_t>>>(),
+                            this->pool.get(TYPE::Any)));
+  ASSERT_NO_FATAL_FAILURE(
+      this->assertSuperType(this->toType<Tuple_t<Error_t, Int_t>>(), this->pool.get(TYPE::Any)));
+  ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->toType<Tuple_t<Tuple_t<Error_t>, String_t>>(),
+                                                this->pool.get(TYPE::Any)));
+  ASSERT_NO_FATAL_FAILURE(this->assertSuperType(this->toType<Tuple_t<Int_t, Func_t<Void_t>>>(),
+                                                this->pool.get(TYPE::Eq_)));
 
   ASSERT_NO_FATAL_FAILURE(
       this->assertSuperType(this->toType<Func_t<Void_t>>(), this->pool.get(TYPE::Eq_)));
