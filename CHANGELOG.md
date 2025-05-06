@@ -30,6 +30,10 @@
     - ``Array#sort``, ``Array#searchSorted`` require ``Ord_`` type
     - ``Array#indexOf``, ``Array#lastIndexOf``, ``Array#contains`` require ``Eq_`` type
 
+### Fixed
+
+- completion candidate quotation in completion module. now not quote suffix space
+
 ## [0.37.0] - 2025-03-31
 
 ### Added

@@ -844,7 +844,7 @@ bool PathLikeChecker::operator()(const StringRef literal) {
   std::string key = literal.toString(); // not contains null characters
   auto iter = this->cache.find(key);
   if (iter == this->cache.end()) {
-    bool r = checkExistenceOfPathLikeLiteral(state, literal);
+    bool r = checkExistenceOfPathLikeLiteral(this->state, literal);
     iter = this->cache.emplace(std::move(key), r).first;
   }
   return iter->second;

@@ -201,14 +201,29 @@ function _comp_wrap(file : String, target : String, words : [String], cursor : I
         if test -d $line && $line[-1] != '/' && $line.contains('/') { # for directory
             $line += '/'
         }
-        if (test -e $line) {  # FIXME: more precise quote requirement checking
-            $line = $line.quote()
-        }
+        $line = $_quote($line)
         var long = $line.startsWith('--') && $line.endsWith('=') # suppress automatic space insertion for `--long=`
         $ret.add($line, $space: $long ? 0 : -1)
         $? = 0 # suppress error
     }
     return $ret.size() == 0 ? $none : $ret
+}
+
+function _quote(can: String): String {
+    if (test -e $can) { # if file, always quote. (ideally, should recoginiza `complete/compgen -o` options)
+        return $can.quote()
+    }
+
+    var space = $false
+    if $can.endsWith(' ') {
+        $space = $true
+        $can = $can.slice(0,-1) # trim suffix space
+    }
+    var ret = $can.quote()
+    if $space {
+        $ret += ' '
+    }
+    return $ret
 }
 
 # extract completion target (func, cmd). ex `complete -o default -F func cmd`
