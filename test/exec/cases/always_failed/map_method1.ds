@@ -1,0 +1,4 @@
+#$test($result = 'type', $lineNum = 4, $chars = 5, $errorKind = 'UndefinedBinary', $status = 1)
+
+var m1 = [12: new Error(''), 34: new Error('2345')]
+$m1 == $m1

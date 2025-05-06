@@ -1,0 +1,8 @@
+#$test($result = 'type', $lineNum = 8, $chars = 12, $errorKind = 'UndefinedMethod', $status = 1)
+
+var m1 = [12: $SIG_IGN, 34: $SIG_DFL]
+var m2 = [34: $SIG_DFL, 12: $SIG_IGN]
+assert $m1.equals($m2)
+assert $m1 == $m2
+assert !($m1 != $m2)
+assert $m1.compare($m2) != 0

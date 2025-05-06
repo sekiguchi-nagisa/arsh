@@ -1,0 +1,11 @@
+#$test($result = 'type', $lineNum = 11, $chars = 20, $errorKind = 'UndefinedMethod', $status = 1)
+
+typedef AAA($i : Int) {
+    var v = $i
+    var a = $v + 34
+    var s = $SIG_DFL
+}
+
+assert new AAA(12).equals(new AAA(12))
+assert !(new AAA(12) == new AAA(12))
+assert new AAA(12).compare(new AAA(12)) != 0

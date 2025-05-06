@@ -1,0 +1,4 @@
+#$test($result = 'type', $lineNum = 4, $chars = 12, $errorKind = 'UndefinedMethod', $status = 1)
+
+var m1 = [12: new Error(''), 34: new Error('2345')]
+assert $m1.equals($m1)

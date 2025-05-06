@@ -1,0 +1,9 @@
+#$test($result = 'type', $lineNum = 9, $chars = 13, $errorKind = 'UndefinedBinary', $status = 1)
+
+typedef AAA($i : Int) {
+    var v = $i
+    var a = $v + 34
+    var s : AAA?  # recursive type
+}
+
+new AAA(12) == new AAA(12)

@@ -1,0 +1,9 @@
+#$test($result = 'type', $lineNum = 9, $chars = 13, $errorKind = 'UndefinedMethod', $status = 1)
+
+typedef AAA($i : Int) {
+    var v = $i
+    var a = $v + 34
+    var s = $STDIN
+}
+
+new AAA(12).equals(new AAA(12))

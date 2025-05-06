@@ -1,0 +1,73 @@
+
+# for stack overflow
+
+## Array
+var a1 = [[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[3]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]
+var a2 = [[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[32]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]
+
+var a11 = [[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[$a1]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]
+var a22 = [[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[$a2]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]
+
+var a111 = [[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[$a11]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]
+var a222 = [[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[[$a22]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]]
+
+var ex = 23 as Any
+
+$ex = 23
+try { assert $a1 != $a2; } catch e {$ex = $e;}
+assert $ex is Any
+
+$ex = 23
+try { assert $a11 != $a22; } catch e {$ex = $e;}
+assert $ex is Any
+
+$ex = 23
+try { assert $a111 != $a222; } catch e {$ex = $e;}
+assert $ex is StackOverflowError
+assert ($ex as StackOverflowError).message() == 'equal deep nesting objects'
+
+$ex = 23
+try { assert $a111.compare($a222) < 0; } catch e {$ex = $e;}
+assert $ex is StackOverflowError
+assert ($ex as StackOverflowError).message() == 'compare deep nesting objects'
+
+## map
+$ex = 23
+try { assert ! [23: [12:$a111]].equals([23: [12:$a222]]); } catch e {$ex = $e;}
+assert $ex is StackOverflowError
+assert ($ex as StackOverflowError).message() == 'equal deep nesting objects'
+
+$ex = 23
+try { assert [23: [$false:$a111]].compare([23: [$false:$a222]]) < 0; } catch e {$ex = $e;}
+assert $ex is StackOverflowError
+assert ($ex as StackOverflowError).message() == 'compare deep nesting objects'
+
+## tuple
+$ex = 23
+try { assert  (($a111,), 23) != (($a222,), 23); } catch e {$ex = $e;}
+assert $ex is StackOverflowError
+assert ($ex as StackOverflowError).message() == 'equal deep nesting objects'
+
+$ex = 23
+try { assert ((($a111,),1), 23).compare(((($a222,),2), 34)) < 0; } catch e {$ex = $e;}
+assert $ex is StackOverflowError
+assert ($ex as StackOverflowError).message() == 'compare deep nesting objects'
+
+## record
+typedef AAA {
+    var value: Int
+    var next: typeof($a111)?
+}
+$ex = 23
+try { assert new AAA(1, $a111) != new AAA(1, $none); } catch e {$ex = $e;}
+assert $ex is Any
+
+$ex = 23
+try { assert new AAA(1, $a111) != new AAA(1, $a222); } catch e {$ex = $e;}
+assert $ex is StackOverflowError
+assert ($ex as StackOverflowError).message() == 'equal deep nesting objects'
+
+$ex = 23
+try { assert new AAA(1, $a222).compare(new AAA(1, $a111)) > 0; } catch e {$ex = $e;}
+assert $ex is StackOverflowError
+assert ($ex as StackOverflowError).message() == 'compare deep nesting objects'

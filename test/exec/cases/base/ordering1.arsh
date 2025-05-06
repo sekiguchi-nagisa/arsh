@@ -1,0 +1,49 @@
+# for equals/comapre method
+
+let nan = 0.0/0.0
+
+## Array
+assert new [Int]() == new [Int]()
+assert new [Int]().equals(new [Int]())
+assert new [Int]().compare(new [Int]()) == 0
+assert new [Int]().compare([23]) < 0
+assert [213].compare(new [Int]()) > 0
+assert !([3.14 as Float?, $nan] == [3.14 as Float?, $nan])  # partial order
+assert [3.14 as Float?, $nan] != [3.14 as Float?, $nan]
+assert [3.14 as Float?, $nan].equals([3.14 as Float?, $nan]) # total order
+assert [3.14 as Float?, $nan].compare([3.14 as Float?, $nan]) == 0
+assert [3.14 as Float?, $nan].compare([3.14 as Float?, $nan, 1.0]) < 0
+assert [3.14 as Float?, $nan, 2.0].compare([3.14 as Float?, $nan]) > 0
+
+## Map
+assert new [Int:Float]() == new [Int:Float]()
+assert new [Int:Float]().equals(new [Int:Float]())
+assert [12: ["a", 'b'], 34: ['ddd', 'eee', 'www']] == [34: ['ddd', 'eee', 'www'], 12: ["a", 'b']]
+assert [12: ["a", 'b'], 34: ['ddd', 'eee', 'www']].equals(
+    [34: ['ddd', 'eee', 'www'], 12: ["a", 'b']])  # insertion order independent
+assert [12: ["a", 'b'], 34: ['ddd', 'eee', 'www']].compare(
+    [34: ['ddd', 'eee', 'www'], 12: ["a", 'b']]) != 0 # insertion order dependent
+
+assert ['a': 1.0, 'b':$nan] != ['a': 1.0, 'b':$nan]
+assert ['a': 1.0, 'b':$nan].compare(['a': 1.0, 'b':$nan]) == 0
+assert ['a': 1.0, 'b':$nan].compare(['a': 1.0, 'b':$nan, 'c': -23.4]) < 0
+assert ['a': 1.0, 'b':$nan, 'e':2.3].compare(['a': 1.0, 'b':$nan]) > 0
+
+## Tuple
+assert (1,2,3) == (1,2,3)
+assert (1,2,3) != (1,2,4)
+assert (1,3,4).compare((1,4,5)) < 0
+assert (1,4,5).compare((1,4,1)) > 0
+
+## record
+type AAA{
+    var aa: Int
+    var bb: String?
+    var cc: Float
+}
+assert new AAA(1, 's', $nan) != new AAA(1, 's', $nan)
+assert new AAA(1, 's', $nan).equals(new AAA(1, 's', $nan))
+assert new AAA(1, 's', $nan).compare(new AAA(1, 's', $nan)) == 0
+assert new AAA(1, 's', 23.4).compare(new AAA(1, 's', $nan)) < 0
+assert new AAA(1, 'ss',23.4).compare(new AAA(1, 's', $nan)) > 0
+assert new AAA(1, $none,23.4).compare(new AAA(1, 's', $nan)) < 0

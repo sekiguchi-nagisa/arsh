@@ -1,0 +1,4 @@
+#$test($result = 'type', $lineNum = 4, $chars = 5, $errorKind = 'UndefinedBinary', $status = 1)
+
+var s5 = [[2.12 as Any, 34.0e10]]
+$s5 != $s5  # undefined
