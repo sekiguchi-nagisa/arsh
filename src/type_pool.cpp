@@ -435,7 +435,22 @@ TypeOrError TypePool::finalizeRecordType(const RecordType &recordType,
     assert(superType);
     newRecordType->superType = superType;
   }
-  newRecordType->finalize(fieldCount, std::move(handles));
+
+  PackedParamNamesBuilder builder(32);
+  std::vector<StringRef> fields;
+  fields.resize(fieldCount);
+  for (auto &[name, hd] : handles) {
+    if (hd->is(HandleKind::TYPE_ALIAS)) {
+      continue;
+    }
+    fields[hd->getIndex()] = name;
+  }
+  for (auto &e : fields) {
+    builder.addParamName(e);
+  }
+
+  newRecordType->finalize(fieldCount, std::move(handles),
+                          CStrPtr(std::move(builder).build().take()));
   return Ok(newRecordType);
 }
 

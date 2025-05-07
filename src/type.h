@@ -641,6 +641,8 @@ private:
    */
   std::unordered_map<std::string, HandlePtr> handleMap;
 
+  CStrPtr packedFieldNames; // for field name
+
 protected:
   RecordType(TypeKind k, unsigned int id, StringRef ref, const Type &superType)
       : Type(k, id, ref, &superType) {
@@ -657,6 +659,8 @@ public:
 
   const auto &getHandleMap() const { return this->handleMap; }
 
+  const char *getPackedFieldNames() const { return this->packedFieldNames.get(); }
+
   unsigned int getFieldSize() const { return this->meta.u16_u8.v1; }
 
   bool isFinalized() const { return this->meta.u16_u8.v2_1 != 0; }
@@ -666,8 +670,10 @@ public:
   static bool classof(const Type *type) { return type->isRecordOrDerived(); }
 
 protected:
-  void finalize(unsigned char fieldSize, std::unordered_map<std::string, HandlePtr> &&handles) {
+  void finalize(unsigned char fieldSize, std::unordered_map<std::string, HandlePtr> &&handles,
+                CStrPtr &&packedFieldNames) {
     this->handleMap = std::move(handles);
+    this->packedFieldNames = std::move(packedFieldNames);
     this->meta.u16_u8.v1 = fieldSize;
     this->meta.u16_u8.v2_1 = 1; // finalize
   }

@@ -735,6 +735,7 @@ TEST_F(ArchiveTest, userdefined) {
     ASSERT_TRUE(recordType.isFinalized());
     ASSERT_EQ(2, recordType.getFieldSize());
     ASSERT_EQ(2, recordType.getHandleMap().size());
+    ASSERT_STREQ("begin;end", recordType.getPackedFieldNames());
     auto hd = recordType.lookupField("begin");
     ASSERT_TRUE(hd);
     ASSERT_EQ(recordType, this->pool().get(hd->getTypeId()));
