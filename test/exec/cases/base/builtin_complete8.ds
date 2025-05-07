@@ -83,6 +83,12 @@ $args = @($COMPREPLY)
 assert $args.size() == 1
 assert $args[0] == 'mkdir@user-defined'
 
+assert complete -d -- '\let(){}; let'
+assert $COMPREPLY.size() == 1
+$args = @($COMPREPLY)
+assert $args.size() == 1
+assert $args[0] == 'let'  # not override keyword
+
 ## module/sub command
 source $SCRIPT_DIR/../../_module4test/comp.ds as comp234
 

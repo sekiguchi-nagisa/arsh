@@ -13,7 +13,7 @@ try { $can1[0]; } catch e { $ex = $e; }
 assert $ex is OutOfRangeError
 
 $can1 = new Candidates([''])
-assert $can1.size() == 0  # ignore emoty string
+assert $can1.size() == 0  # ignore empty string
 
 $can1 = new Candidates(['aaa'])
 assert $can1.size() == 1

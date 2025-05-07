@@ -67,13 +67,13 @@ public:
 
 struct CandidateAttr {
   enum class Kind : unsigned char { // not change enum order
+    NONE,
     CMD_MOD,
     CMD_UDC,
     CMD_BUILTIN,
     CMD_DYNA,
     CMD_EXTERNAL,
     TYPE_SIGNATURE, // for variable/function/member
-    NONE,
   } kind;
 
   enum class Suffix : unsigned char {

@@ -33,6 +33,7 @@
 ### Fixed
 
 - completion candidate quotation in completion module. now not quote suffix space
+- fix completion candidate description when override keyword
 
 ## [0.37.0] - 2025-03-31
 
