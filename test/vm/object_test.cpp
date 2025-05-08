@@ -1,5 +1,6 @@
 #include "gtest/gtest.h"
-#include <math.h>
+
+#include <cmath>
 
 #include <misc/split_random.hpp>
 #include <object.h>
@@ -321,7 +322,7 @@ TEST(MapTest, rand2) {
   auto obj = toObjPtr<OrderedMapObject>(value); // FIXME:
 }
 
-class EqOrdTest : public ::testing::Test {
+class ObjectUtilTest : public ::testing::Test {
 protected:
   TypePool pool;
 
@@ -378,9 +379,27 @@ public:
     }
     return nullptr;
   }
+
+  void checkStr(StringRef expect, const Value &value) const {
+    StrAppender appender(SYS_LIMIT_STRING_MAX);
+    Stringifier stringifier(this->pool, appender);
+    ASSERT_TRUE(stringifier.addAsStr(value));
+    ASSERT_FALSE(stringifier.hasOverflow());
+    auto actual = std::move(appender).take();
+    ASSERT_EQ(expect, actual);
+  }
+
+  void checkInterp(StringRef expect, const Value &value) const {
+    StrAppender appender(SYS_LIMIT_STRING_MAX);
+    Stringifier stringifier(this->pool, appender);
+    ASSERT_TRUE(stringifier.addAsInterp(value));
+    ASSERT_FALSE(stringifier.hasOverflow());
+    auto actual = std::move(appender).take();
+    ASSERT_EQ(expect, actual);
+  }
 };
 
-TEST_F(EqOrdTest, base) {
+TEST_F(ObjectUtilTest, base) {
   ASSERT_TRUE(Equality()(Value::createInvalid(), Value::createInvalid()));
   ASSERT_TRUE(Equality()(Value::createInt(1234), Value::createInt(1234)));
   ASSERT_FALSE(Equality()(Value::createInt(1234), Value::createInt(1233)));
@@ -420,7 +439,7 @@ TEST_F(EqOrdTest, base) {
   ASSERT_TRUE(Ordering()(Value::create<UnixFdObject>(23), Value::create<UnixFdObject>(23)) != 0);
 }
 
-TEST_F(EqOrdTest, different) {
+TEST_F(ObjectUtilTest, different) {
   ASSERT_FALSE(Equality()(Value::createInvalid(), Value::createInt(1234)));
   ASSERT_FALSE(Equality()(Value::createFloat(0.0), Value::createInt(1234)));
   ASSERT_FALSE(Equality()(Value::create<UnixFdObject>(234), Value::createStr("1234")));
@@ -436,7 +455,7 @@ TEST_F(EqOrdTest, different) {
   ASSERT_TRUE(Ordering()(this->map(TYPE::Int, TYPE::Int).obj, this->array(TYPE::Int).obj) > 0);
 }
 
-TEST_F(EqOrdTest, array1) {
+TEST_F(ObjectUtilTest, array1) {
   auto obj1 = this->array(TYPE::String).obj;
   auto obj2 = this->array(TYPE::String).obj;
   ASSERT_TRUE(Equality()(obj1, obj2));
@@ -470,7 +489,7 @@ TEST_F(EqOrdTest, array1) {
   ASSERT_TRUE(Ordering()(obj2, obj1) > 0);
 }
 
-TEST_F(EqOrdTest, array2) {
+TEST_F(ObjectUtilTest, array2) {
   auto obj1 = this->array(TYPE::Any).obj;
   obj1->append(obj1);
   auto obj2 = this->array(TYPE::Any).add(Value::createInt(234)).obj;
@@ -502,7 +521,7 @@ TEST_F(EqOrdTest, array2) {
   obj2->refValues().clear();
 }
 
-TEST_F(EqOrdTest, tuple1) {
+TEST_F(ObjectUtilTest, tuple1) {
   auto obj1 = this->tuple(Value::createInt(12), Value::createFloat(std::nan("")));
   auto obj2 = this->tuple(Value::createInt(12), Value::createFloat(std::nan("")));
   ASSERT_TRUE(Equality()(obj1, obj2)); // total order
@@ -516,7 +535,7 @@ TEST_F(EqOrdTest, tuple1) {
   ASSERT_TRUE(Ordering()(obj2, obj1) < 0);
 }
 
-TEST_F(EqOrdTest, tuple2) {
+TEST_F(ObjectUtilTest, tuple2) {
   auto obj1 = this->tuple(Value::createInt(12), Value::createFloat(std::nan("")));
   auto obj2 = this->tuple(Value::createInt(12), Value::createFloat(std::nan("")));
   (*obj1)[1] = obj2;
@@ -541,7 +560,7 @@ TEST_F(EqOrdTest, tuple2) {
   (*obj2)[1] = Value::createInvalid();
 }
 
-TEST_F(EqOrdTest, map1) {
+TEST_F(ObjectUtilTest, map1) {
   auto obj1 = this->map(TYPE::String, TYPE::Int).obj;
   auto obj2 = this->map(TYPE::String, TYPE::Int).obj;
   ASSERT_TRUE(Equality()(obj1, obj1));
@@ -612,7 +631,7 @@ TEST_F(EqOrdTest, map1) {
   ASSERT_TRUE(Ordering()(obj2, obj1) > 0);
 }
 
-TEST_F(EqOrdTest, map2) {
+TEST_F(ObjectUtilTest, map2) {
   auto obj1 = this->map(TYPE::Int, TYPE::Any).add(Value::createInt(42), Value::createInt(34)).obj;
   auto obj2 = this->map(TYPE::Int, TYPE::Any).add(Value::createInt(42), Value::createInt(34)).obj;
 
@@ -640,7 +659,7 @@ TEST_F(EqOrdTest, map2) {
   obj2->clear();
 }
 
-TEST_F(EqOrdTest, map3) { // sparse entries
+TEST_F(ObjectUtilTest, map3) { // sparse entries
   auto obj1 = this->map(TYPE::Int, TYPE::Int)
                   .add(Value::createInt(2), Value::createInt(222))
                   .add(Value::createInt(3), Value::createInt(333))
@@ -666,6 +685,99 @@ TEST_F(EqOrdTest, map3) { // sparse entries
   obj2->remove(Value::createInt(-34));
   ASSERT_TRUE(Equality()(obj1, obj2));
   ASSERT_TRUE(Ordering()(obj1, obj2) == 0);
+}
+
+TEST_F(ObjectUtilTest, str) {
+  ASSERT_NO_FATAL_FAILURE(this->checkStr("", Value()));
+  ASSERT_NO_FATAL_FAILURE(this->checkStr("(invalid)", Value::createInvalid()));
+  ASSERT_NO_FATAL_FAILURE(this->checkStr("9", Value::createSig(SIGKILL)));
+  ASSERT_NO_FATAL_FAILURE(this->checkStr("true", Value::createBool(true)));
+  ASSERT_NO_FATAL_FAILURE(this->checkStr("false", Value::createBool(false)));
+  ASSERT_NO_FATAL_FAILURE(this->checkStr("-999", Value::createInt(-999)));
+  ASSERT_NO_FATAL_FAILURE(this->checkStr("3.14", Value::createFloat(3.14)));
+  ASSERT_NO_FATAL_FAILURE(this->checkStr("0.0", Value::createFloat(0)));
+  ASSERT_NO_FATAL_FAILURE(this->checkStr("-0.0", Value::createFloat(-0.0)));
+  ASSERT_NO_FATAL_FAILURE(this->checkStr("Infinity", Value::createFloat(3.14 / 0.0)));
+  ASSERT_NO_FATAL_FAILURE(this->checkStr("-Infinity", Value::createFloat(3.14 / -0.0)));
+  ASSERT_NO_FATAL_FAILURE(this->checkStr("NaN", Value::createFloat(std::nan("0xf"))));
+  ASSERT_NO_FATAL_FAILURE(this->checkStr("NaN", Value::createFloat(std::nan(""))));
+  ASSERT_NO_FATAL_FAILURE(this->checkStr("", Value::createStr()));
+  ASSERT_NO_FATAL_FAILURE(this->checkStr("hello world !!", Value::createStr("hello world !!")));
+}
+
+TEST_F(ObjectUtilTest, strCollection1) {
+  ASSERT_NO_FATAL_FAILURE(this->checkStr("[]", this->array(TYPE::Int).obj));
+  ASSERT_NO_FATAL_FAILURE(this->checkStr(
+      "[23, -99]",
+      this->array(TYPE::Int).add(Value::createInt(23)).add(Value::createInt(-99)).obj));
+  ASSERT_NO_FATAL_FAILURE(this->checkStr(
+      "[(invalid), -99]",
+      this->array(TYPE::Any).add(Value::createInvalid()).add(Value::createInt(-99)).obj));
+  ASSERT_NO_FATAL_FAILURE(this->checkStr(
+      "[[], [, hey]]",
+      this->array(TYPE::StringArray)
+          .add(this->array(TYPE::String).obj)
+          .add(this->array(TYPE::String).add(Value::createStr()).add(Value::createStr("hey")).obj)
+          .obj));
+
+  ASSERT_NO_FATAL_FAILURE(this->checkStr("[]", this->map(TYPE::Int, TYPE::String).obj));
+  ASSERT_NO_FATAL_FAILURE(this->checkStr(
+      "[12 : 34]",
+      this->map(TYPE::Int, TYPE::Any).add(Value::createInt(12), Value::createInt(34)).obj));
+  ASSERT_NO_FATAL_FAILURE(
+      this->checkStr("[12 : 34, 99 : (invalid), 0 : hey workd]",
+                     this->map(TYPE::Int, TYPE::Any)
+                         .add(Value::createInt(12), Value::createInt(34))
+                         .add(Value::createInt(99), Value::createInvalid())
+                         .add(Value::createInt(0), Value::createStr("hey workd"))
+                         .obj));
+
+  ASSERT_NO_FATAL_FAILURE(this->checkStr("(true,)", this->tuple(Value::createBool(true))));
+  ASSERT_NO_FATAL_FAILURE(this->checkStr(
+      "(true, Infinity)", this->tuple(Value::createBool(true), Value::createFloat(2.0 / 0.0))));
+  ASSERT_NO_FATAL_FAILURE(this->checkStr(
+      "(true, Infinity,  hey )", this->tuple(Value::createBool(true), Value::createFloat(2.0 / 0.0),
+                                             Value::createStr(" hey "))));
+}
+
+TEST_F(ObjectUtilTest, strCollection2) {}
+
+TEST_F(ObjectUtilTest, interpCollection1) {
+  ASSERT_NO_FATAL_FAILURE(this->checkInterp("", this->array(TYPE::Int).obj));
+  ASSERT_NO_FATAL_FAILURE(
+      this->checkInterp("12", this->array(TYPE::Int).add(Value::createInt(12)).obj));
+  ASSERT_NO_FATAL_FAILURE(this->checkInterp(
+      "12 34", this->array(TYPE::Int).add(Value::createInt(12)).add(Value::createInt(34)).obj));
+  ASSERT_NO_FATAL_FAILURE(this->checkInterp("45 -945", this->array(TYPE::Int)
+                                                           .add(Value::createInvalid())
+                                                           .add(Value::createInvalid())
+                                                           .add(Value::createInt(45))
+                                                           .add(Value::createInvalid())
+                                                           .add(Value::createInt(-945))
+                                                           .add(Value::createInvalid())
+                                                           .obj));
+
+  ASSERT_NO_FATAL_FAILURE(this->checkInterp("", this->map(TYPE::Int, TYPE::String).obj));
+  ASSERT_NO_FATAL_FAILURE(
+      this->checkInterp("89  90 @@@ 99 AAA", this->map(TYPE::Int, TYPE::String)
+                                                 .add(Value::createInt(23), Value::createInvalid())
+                                                 .add(Value::createInt(56), Value::createInvalid())
+                                                 .add(Value::createInt(89), Value::createStr())
+                                                 .add(Value::createInt(90), Value::createStr("@@@"))
+                                                 .add(Value::createInt(99), Value::createStr("AAA"))
+                                                 .add(Value::createInt(599), Value::createInvalid())
+                                                 .obj));
+
+  ASSERT_NO_FATAL_FAILURE(this->checkInterp("true", this->tuple(Value::createBool(true))));
+  ASSERT_NO_FATAL_FAILURE(this->checkInterp(
+      "true Infinity  hey ", this->tuple(Value::createBool(true), Value::createFloat(2.0 / 0.0),
+                                         Value::createStr(" hey "))));
+  auto obj = this->tuple(Value::createBool(true), Value::createFloat(-2.0 / 0.0),
+                         Value::createStr("hey"), Value::createBool(false), Value::createInt(34));
+  typeAs<BaseObject>(obj)[0] = Value::createInvalid();
+  typeAs<BaseObject>(obj)[1] = Value::createInvalid();
+  typeAs<BaseObject>(obj)[4] = Value::createInvalid();
+  ASSERT_NO_FATAL_FAILURE(this->checkInterp("hey false", obj));
 }
 
 int main(int argc, char **argv) {

@@ -17,9 +17,12 @@
 #ifndef ARSH_COMPARE_H
 #define ARSH_COMPARE_H
 
+#include "misc/string_ref.hpp"
+
 namespace arsh {
 
 class Value;
+class TypePool;
 
 class Equality {
 private:
@@ -46,6 +49,70 @@ public:
   bool hasOverflow() const { return this->overflow; }
 
   int operator()(const Value &x, const Value &y);
+};
+
+class Stringifier {
+public:
+  struct Appender {
+    virtual ~Appender() = default;
+
+    /**
+     * @param ref
+     * @return
+     * if reach limit, return false
+     */
+    virtual bool operator()(StringRef ref) = 0;
+  };
+
+private:
+  const TypePool &pool;
+  Appender &appender;
+  bool overflow{false};
+  bool truncated{false};
+
+  static constexpr unsigned int STACK_DEPTH_LIMIT = 256;
+
+public:
+  Stringifier(const TypePool &pool, Appender &appender) : pool(pool), appender(appender) {}
+
+  bool hasOverflow() const { return this->overflow; }
+
+  bool isTruncated() const { return this->truncated; }
+
+  /**
+   * for to-string (OP_STR)
+   * @param value
+   * @return
+   */
+  bool addAsStr(const Value &value);
+
+  /**
+   * for string interpolation (OP_INTERP)
+   * @param value
+   * @return
+   */
+  bool addAsInterp(const Value &value);
+
+private:
+  /**
+   * for non-recursive type
+   * @param value
+   * @return
+   */
+  bool addAsFlatStr(const Value &value);
+};
+
+class StrAppender : public Stringifier::Appender {
+private:
+  std::string buf;
+  const unsigned int limit;
+
+public:
+  explicit StrAppender(unsigned int limit) : limit(limit) {}
+
+  bool operator()(StringRef) override;
+
+  std::string take() && { return std::move(this->buf); }
 };
 
 } // namespace arsh

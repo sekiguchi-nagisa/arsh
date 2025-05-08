@@ -14,11 +14,17 @@
  * limitations under the License.
  */
 
-#include "object_util.h"
+#include "../external/dragonbox/simple_dragonbox.h"
+
+#include "candidates.h"
+#include "constant.h"
+#include "job.h"
 #include "misc/inlined_stack.hpp"
 #include "misc/num_util.hpp"
 #include "object.h"
+#include "object_util.h"
 #include "ordered_map.h"
+#include "type_pool.h"
 
 namespace arsh {
 
@@ -50,6 +56,12 @@ struct OrdFrame {
   } while (false)
 
 static unsigned int skipEmptyEntries(const OrderedMapObject &obj, unsigned int &index) {
+  for (auto &entries = obj.getEntries(); index < entries.getUsedSize() && !entries[index]; index++)
+    ;
+  return index;
+}
+
+static unsigned int skipEmptyEntries2(const OrderedMapObject &obj, unsigned int &index) {
   unsigned int i = index / 2;
   for (auto &entries = obj.getEntries(); i < entries.getUsedSize() && !entries[i];) {
     i++;
@@ -143,7 +155,7 @@ bool Equality::operator()(const Value &x, const Value &y) {
       const unsigned int xi = skipEmptyEntries(xo, frame.xi);
       if (xi < xo.getEntries().getUsedSize()) {
         auto &xe = xo.getEntries()[xi];
-        frame.xi += 2;
+        frame.xi++;
         const int yi = yo.lookup(xe.getKey());
         if (yi < 0) {
           return false;
@@ -270,8 +282,8 @@ int Ordering::operator()(const Value &x, const Value &y) {
       auto &xo = typeAs<OrderedMapObject>(xp);
       auto &yo = typeAs<OrderedMapObject>(yp);
       auto &frame = frames.back();
-      const unsigned int xi = skipEmptyEntries(xo, frame.xi);
-      const unsigned int yi = skipEmptyEntries(yo, frame.yi);
+      const unsigned int xi = skipEmptyEntries2(xo, frame.xi);
+      const unsigned int yi = skipEmptyEntries2(yo, frame.yi);
       if (xi < xo.getEntries().getUsedSize() && yi < yo.getEntries().getUsedSize()) {
         const bool isKey = frame.xi % 2 == 0;
         frame.xi++;
@@ -312,6 +324,330 @@ int Ordering::operator()(const Value &x, const Value &y) {
   }
   }
   return 0;
+}
+
+// #########################
+// ##     Stringifier     ##
+// #########################
+
+static std::string toString(double value) {
+  if (std::isnan(value)) {
+    return "NaN";
+  }
+  if (std::isinf(value)) {
+    return value > 0 ? "Infinity" : "-Infinity";
+  }
+  if (value == 0.0) {
+    return std::signbit(value) ? "-0.0" : "0.0";
+  }
+
+  auto [significand, exponent, sign] = jkj::simple_dragonbox::to_decimal(
+      value, jkj::simple_dragonbox::policy::cache::compact,
+      jkj::simple_dragonbox::policy::binary_to_decimal_rounding::to_even);
+  return Decimal{.significand = significand, .exponent = exponent, .sign = sign}.toString();
+}
+
+bool Stringifier::addAsFlatStr(const Value &value) {
+  switch (value.kind()) {
+  case ValueKind::EMPTY:
+    return true; // do nothing
+  case ValueKind::NUMBER: {
+    auto v = std::to_string(value.asNum());
+    return this->appender(v);
+  }
+  case ValueKind::NUM_LIST:
+  case ValueKind::STACK_GUARD: {
+    auto &nums = value.asNumList();
+    char buf[128];
+    const int s = snprintf(buf, std::size(buf), "[%u, %u, %u]", nums[0], nums[1], nums[2]);
+    assert(s > 0);
+    return this->appender(StringRef(buf, s));
+  }
+  case ValueKind::DUMMY: {
+    const unsigned int typeId = value.asTypeId();
+    if (typeId == toUnderlying(TYPE::Module)) { // for temporary module descriptor
+      char buf[64];
+      const int s =
+          snprintf(buf, std::size(buf), "%s%u)", OBJ_TEMP_MOD_PREFIX, value.asNumList()[1]);
+      assert(s > 0);
+      return this->appender(StringRef(buf, s));
+    }
+    char buf[64];
+    const int s = snprintf(buf, std::size(buf), "Object(%u)", typeId);
+    assert(s > 0);
+    return this->appender(StringRef(buf, s));
+  }
+  case ValueKind::EXPAND_META:
+    return this->appender(toString(value.asExpandMeta().first));
+  case ValueKind::INVALID:
+    return this->appender("(invalid)");
+  case ValueKind::BOOL:
+    return this->appender(value.asBool() ? "true" : "false");
+  case ValueKind::SIG: {
+    auto v = std::to_string(value.asSig());
+    return this->appender(v);
+  }
+  case ValueKind::INT: {
+    auto v = std::to_string(value.asInt());
+    return this->appender(v);
+  }
+  case ValueKind::FLOAT: {
+    double d = value.asFloat();
+    auto v = toString(d);
+    return this->appender(v);
+  }
+  default:
+    if (value.hasStrRef()) {
+      return this->appender(value.asStrRef());
+    }
+    assert(value.kind() == ValueKind::OBJECT);
+    break;
+  }
+
+  // for non-nested object
+  switch (value.get()->getKind()) {
+  case ObjectKind::UnixFd: {
+    char buf[64];
+    const int s =
+        snprintf(buf, std::size(buf), "/dev/fd/%u", typeAs<UnixFdObject>(value).getRawFd());
+    assert(s > 0);
+    return this->appender(StringRef(buf, s));
+  }
+  case ObjectKind::Regex:
+    return this->appender(typeAs<RegexObject>(value).getStr());
+  case ObjectKind::Error: {
+    auto &obj = typeAs<ErrorObject>(value);
+    const auto ref = obj.getMessage().asStrRef();
+    return this->appender(this->pool.get(obj.getTypeID()).getNameRef()) && this->appender(": ") &&
+           this->appender(ref);
+  }
+  case ObjectKind::Func: {
+    auto &obj = typeAs<FuncObject>(value);
+    std::string str;
+    const auto kind = obj.getCode().getKind();
+    switch (kind) {
+    case CodeKind::TOPLEVEL:
+      str += OBJ_MOD_PREFIX;
+      break;
+    case CodeKind::FUNCTION:
+      str += "function(";
+      break;
+    case CodeKind::USER_DEFINED_CMD:
+      str += "command(";
+      break;
+    default:
+      break;
+    }
+    const auto modId = obj.getCode().getBelongedModId();
+    if (const char *name = obj.getCode().getName(); name[0]) {
+      if (!isBuiltinMod(modId) &&
+          (kind == CodeKind::FUNCTION || kind == CodeKind::USER_DEFINED_CMD)) { // NOLINT
+        str += toModTypeName(modId);
+        str += '.';
+      }
+      str += name;
+    } else {
+      char buf[32]; // hex of 64bit pointer is up to 16 chars
+      snprintf(buf, std::size(buf), "0x%zx", reinterpret_cast<uintptr_t>(&obj));
+      str += buf;
+    }
+    str += ")";
+    return this->appender(str);
+  }
+  case ObjectKind::Closure: {
+    char buf[32]; // hex of 64bit pointer is up to 16 chars
+    const int s = snprintf(buf, std::size(buf), "closure(0x%zx)",
+                           reinterpret_cast<uintptr_t>(&typeAs<ClosureObject>(value).getFuncObj()));
+    assert(s > 0);
+    return this->appender(StringRef(buf, s));
+  }
+  case ObjectKind::Job: {
+    char buf[32];
+    const int s = snprintf(buf, std::size(buf), "%%%u", typeAs<JobObject>(value).getJobID());
+    assert(s > 0);
+    return this->appender(StringRef(buf, s));
+  }
+  case ObjectKind::Candidate: {
+    auto &obj = typeAs<CandidateObject>(value);
+    return this->appender(obj.underlying());
+  }
+  default:
+    char buf[32]; // hex of 64bit pointer is up to 16 chars
+    const int s =
+        snprintf(buf, std::size(buf), "Object(0x%zx)", reinterpret_cast<uintptr_t>(value.get()));
+    assert(s > 0);
+    return this->appender(StringRef(buf, s));
+  }
+}
+
+struct StrFrame {
+  const Value *v;
+  unsigned int i;
+  unsigned int p; // for packed field names
+
+  StrFrame() = default;
+
+  explicit StrFrame(const Value &v) : v(&v), i(0), p(0) {}
+};
+
+#define GOTO_NEXT_STR(FS, F)                                                                       \
+  do {                                                                                             \
+    (FS).push(F);                                                                                  \
+    if ((FS).size() == STACK_DEPTH_LIMIT) {                                                        \
+      this->overflow = true;                                                                       \
+      return false;                                                                                \
+    }                                                                                              \
+    goto NEXT;                                                                                     \
+  } while (false)
+
+#define TRY(E)                                                                                     \
+  do {                                                                                             \
+    if (unlikely(!(E))) {                                                                          \
+      return false;                                                                                \
+    }                                                                                              \
+  } while (false)
+
+bool Stringifier::addAsStr(const Value &value) {
+  this->overflow = false;
+  InlinedStack<StrFrame, 4> frames;
+  for (frames.push(StrFrame(value)); frames.size(); frames.pop()) {
+  NEXT: {
+    const auto &v = *frames.back().v;
+    if (v.isObject()) {
+      switch (v.get()->getKind()) {
+      case ObjectKind::RegexMatch:
+      case ObjectKind::Array: {
+        const auto &values = isa<ArrayObject>(v.get()) ? typeAs<ArrayObject>(v).getValues()
+                                                       : typeAs<RegexMatchObject>(v).getGroups();
+        if (values.empty()) { // for empty
+          TRY(this->appender("[]"));
+          continue;
+        }
+        if (auto &frame = frames.back(); frame.i < values.size()) {
+          TRY(this->appender(frame.i == 0 ? "[" : ", "));
+          GOTO_NEXT_STR(frames, StrFrame(values[frame.i++]));
+        }
+        TRY(this->appender("]"));
+        continue;
+      }
+      case ObjectKind::OrderedMap: {
+        auto &obj = typeAs<OrderedMapObject>(v);
+        if (obj.size() == 0) { // for empty
+          TRY(this->appender("[]"));
+          continue;
+        }
+        auto &frame = frames.back();
+        const bool first = frame.i == 0;
+        if (const unsigned int index = skipEmptyEntries2(obj, frame.i);
+            index < obj.getEntries().getUsedSize()) {
+          const bool isKey = frame.i % 2 == 0;
+          const char *cc = first ? "[" : isKey ? ", " : " : ";
+          TRY(this->appender(cc));
+          frame.i++;
+          auto &e = obj.getEntries()[index];
+          GOTO_NEXT_STR(frames, StrFrame(isKey ? e.getKey() : e.getValue()));
+        }
+        TRY(this->appender("]"));
+        continue;
+      }
+      case ObjectKind::Base: {
+        auto &frame = frames.back();
+        auto &obj = typeAs<BaseObject>(v);
+        if (auto &type = this->pool.get(obj.getTypeID()); type.isTupleType()) {
+          if (frame.i < obj.getFieldSize()) {
+            TRY(this->appender(frame.i == 0 ? "(" : ", "));
+            GOTO_NEXT_STR(frames, StrFrame(obj[frame.i++]));
+          }
+          TRY(this->appender(obj.getFieldSize() == 1 ? ",)" : ")"));
+        } else {
+          return false; // TODO:
+        }
+        continue;
+      }
+      default:
+        break;
+      }
+    }
+    if (!this->addAsFlatStr(v)) {
+      return false;
+    }
+  }
+  }
+  return true;
+}
+
+bool Stringifier::addAsInterp(const Value &value) {
+  this->overflow = false;
+  InlinedStack<StrFrame, 4> frames;
+  for (frames.push(StrFrame(value)); frames.size(); frames.pop()) {
+  NEXT: {
+    const auto &v = *frames.back().v;
+    if (v.isObject()) {
+      switch (v.get()->getKind()) {
+      case ObjectKind::RegexMatch:
+      case ObjectKind::Array: {
+        const auto &values = isa<ArrayObject>(v.get()) ? typeAs<ArrayObject>(v).getValues()
+                                                       : typeAs<RegexMatchObject>(v).getGroups();
+        auto &frame = frames.back();
+        for (; frame.i < values.size() && values[frame.i].isInvalid(); frame.i++)
+          ;
+        if (frame.i < values.size()) {
+          if (frame.p++ > 0) {
+            TRY(this->appender(" "));
+          }
+          GOTO_NEXT_STR(frames, StrFrame(values[frame.i++]));
+        }
+        continue;
+      }
+      case ObjectKind::OrderedMap: {
+        auto &obj = typeAs<OrderedMapObject>(v);
+        auto &frame = frames.back();
+        unsigned int index = skipEmptyEntries2(obj, frame.i);
+        while (index < obj.getEntries().getUsedSize() &&
+               obj.getEntries()[index].getValue().isInvalid()) {
+          frame.i += 2;
+          index = skipEmptyEntries2(obj, frame.i);
+        }
+        if (index < obj.getEntries().getUsedSize()) {
+          const bool isKey = frame.i % 2 == 0;
+          frame.i++;
+          if (frame.p++ > 0) {
+            TRY(this->appender(" "));
+          }
+          auto &e = obj.getEntries()[index];
+          GOTO_NEXT_STR(frames, StrFrame(isKey ? e.getKey() : e.getValue()));
+        }
+        continue;
+      }
+      case ObjectKind::Base: {
+        auto &obj = typeAs<BaseObject>(v);
+        assert(this->pool.get(obj.getTypeID()).isTupleType() ||
+               this->pool.get(obj.getTypeID()).isRecordOrDerived());
+        auto &frame = frames.back();
+        for (; frame.i < obj.getFieldSize() && obj[frame.i].isInvalid(); frame.i++)
+          ;
+        if (frame.i < obj.getFieldSize()) {
+          if (frame.p++ > 0) {
+            TRY(this->appender(" "));
+          }
+          GOTO_NEXT_STR(frames, StrFrame(obj[frame.i++]));
+        }
+        continue;
+      }
+      default:
+        break;
+      }
+    }
+    if (!this->addAsFlatStr(v)) {
+      return false;
+    }
+  }
+  }
+  return true;
+}
+
+bool StrAppender::operator()(const StringRef ref) {
+  return checkedAppend(ref, this->limit, this->buf);
 }
 
 } // namespace arsh
