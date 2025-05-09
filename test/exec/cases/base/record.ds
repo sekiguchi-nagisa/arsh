@@ -108,3 +108,10 @@ assert (new Empty() as String) == "{}"
 assert (new AAA() as String) == "{a : 34, b : c}"
 assert $ddd as String == "{data : @@@@, next : {data : @@@, next : {data : @@, next : {data : @, next : {data : , next : (invalid)}}}}}"
 assert "$ddd" == "@@@@ @@@ @@ @ "
+
+var ex = 2345 as Any
+var cccN = new CCC('aaa', 'bbb')
+$cccN._next = $cccN
+try { $cccN as String; } catch e { $ex = $e; }
+assert $ex is StackOverflowError
+$cccN._next = $none

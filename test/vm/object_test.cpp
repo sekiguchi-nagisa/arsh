@@ -740,7 +740,54 @@ TEST_F(ObjectUtilTest, strCollection1) {
                                              Value::createStr(" hey "))));
 }
 
-TEST_F(ObjectUtilTest, strCollection2) {}
+TEST_F(ObjectUtilTest, strCollection2) {
+  {
+    auto array = this->array(TYPE::Any).add(Value::createInvalid()).add(Value::createStr("")).obj;
+    array->append(array);
+    array->append(Value::createBool(false));
+
+    StrAppender appender(StringObject::MAX_SIZE);
+    Stringifier stringifier(this->pool, appender);
+    ASSERT_TRUE(stringifier.addAsStr(Value::createFloat(3.12)));
+    ASSERT_FALSE(stringifier.hasOverflow());
+    ASSERT_FALSE(stringifier.addAsStr(array));
+    ASSERT_TRUE(stringifier.hasOverflow());
+    array->refValues().clear();
+  }
+
+  {
+    auto map = this->map(TYPE::Int, TYPE::Any)
+                   .add(Value::createInt(12), Value::createInvalid())
+                   .add(Value::createInt(55), Value::createSig(SIGINT))
+                   .add(Value::createInt(5555), Value::createBool(false))
+                   .obj;
+    map->remove(Value::createInt(55));
+    StrAppender appender(StringObject::MAX_SIZE);
+    Stringifier stringifier(this->pool, appender);
+    ASSERT_TRUE(stringifier.addAsStr(map));
+    ASSERT_FALSE(stringifier.hasOverflow());
+    ASSERT_EQ("[12 : (invalid), 5555 : false]", appender.get());
+
+    map->insert(Value::createInt(-888), map);
+    ASSERT_FALSE(stringifier.addAsStr(map));
+    ASSERT_TRUE(stringifier.hasOverflow());
+    map->clear();
+  }
+
+  {
+    auto tuple =
+        this->tuple(Value::createBool(false), Value::createStr("hey"), Value::createFloat(-0.0));
+    StrAppender appender(StringObject::MAX_SIZE);
+    Stringifier stringifier(this->pool, appender);
+    ASSERT_TRUE(stringifier.addAsStr(tuple));
+    ASSERT_FALSE(stringifier.hasOverflow());
+    ASSERT_EQ("(false, hey, -0.0)", appender.get());
+    (*tuple)[1] = tuple;
+    ASSERT_FALSE(stringifier.addAsStr(tuple));
+    ASSERT_TRUE(stringifier.hasOverflow());
+    (*tuple)[1] = Value();
+  }
+}
 
 TEST_F(ObjectUtilTest, interpCollection1) {
   ASSERT_NO_FATAL_FAILURE(this->checkInterp("", this->array(TYPE::Int).obj));
@@ -780,7 +827,54 @@ TEST_F(ObjectUtilTest, interpCollection1) {
   ASSERT_NO_FATAL_FAILURE(this->checkInterp("hey false", obj));
 }
 
-TEST_F(ObjectUtilTest, interpCollection2) {}
+TEST_F(ObjectUtilTest, interpCollection2) {
+  {
+    auto array = this->array(TYPE::Any).add(Value::createInvalid()).add(Value::createStr("")).obj;
+    array->append(array);
+    array->append(Value::createBool(false));
+
+    StrAppender appender(StringObject::MAX_SIZE);
+    Stringifier stringifier(this->pool, appender);
+    ASSERT_TRUE(stringifier.addAsInterp(Value::createFloat(3.12)));
+    ASSERT_FALSE(stringifier.hasOverflow());
+    ASSERT_FALSE(stringifier.addAsInterp(array));
+    ASSERT_TRUE(stringifier.hasOverflow());
+    array->refValues().clear();
+  }
+
+  {
+    auto map = this->map(TYPE::Int, TYPE::Any)
+                   .add(Value::createInt(12), Value::createInvalid())
+                   .add(Value::createInt(55), Value::createSig(SIGINT))
+                   .add(Value::createInt(5555), Value::createBool(false))
+                   .obj;
+    map->remove(Value::createInt(55));
+    StrAppender appender(StringObject::MAX_SIZE);
+    Stringifier stringifier(this->pool, appender);
+    ASSERT_TRUE(stringifier.addAsInterp(map));
+    ASSERT_FALSE(stringifier.hasOverflow());
+    ASSERT_EQ("5555 false", appender.get());
+
+    map->insert(Value::createInt(-888), map);
+    ASSERT_FALSE(stringifier.addAsInterp(map));
+    ASSERT_TRUE(stringifier.hasOverflow());
+    map->clear();
+  }
+
+  {
+    auto tuple =
+        this->tuple(Value::createBool(false), Value::createStr("hey"), Value::createFloat(-0.0));
+    StrAppender appender(StringObject::MAX_SIZE);
+    Stringifier stringifier(this->pool, appender);
+    ASSERT_TRUE(stringifier.addAsInterp(tuple));
+    ASSERT_FALSE(stringifier.hasOverflow());
+    ASSERT_EQ("false hey -0.0", appender.get());
+    (*tuple)[1] = tuple;
+    ASSERT_FALSE(stringifier.addAsInterp(tuple));
+    ASSERT_TRUE(stringifier.hasOverflow());
+    (*tuple)[1] = Value();
+  }
+}
 
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);

@@ -20,6 +20,14 @@ assert $b is (String,)
 assert !($b is (String) )
 assert $b as String == "(hello,)"
 
+var ex = 2345 as Any
+var nn = (23, $none as Any?, (34,'hey'))
+assert $nn as String == '(23, (invalid), (34, hey))'
+$nn._1 = $nn
+try { $nn as String; } catch e { $ex = $e; }
+assert $ex is StackOverflowError
+$nn._1 = $none
+
 
 var c = ($true,
          23,

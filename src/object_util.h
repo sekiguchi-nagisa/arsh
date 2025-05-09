@@ -115,6 +115,8 @@ public:
   bool operator()(StringRef ref) override;
 
   std::string take() && { return std::move(this->buf); }
+
+  const std::string &get() const { return this->buf; }
 };
 
 class StrObjAppender : public Stringifier::Appender {

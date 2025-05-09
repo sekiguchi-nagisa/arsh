@@ -590,9 +590,7 @@ bool Stringifier::addAsStr(const Value &value) {
         break;
       }
     }
-    if (!this->addAsFlatStr(v)) {
-      return false;
-    }
+    TRY(this->addAsFlatStr(v));
   }
   }
   return true;
@@ -660,9 +658,7 @@ bool Stringifier::addAsInterp(const Value &value) {
         break;
       }
     }
-    if (!this->addAsFlatStr(v)) {
-      return false;
-    }
+    TRY(this->addAsFlatStr(v));
   }
   }
   return true;

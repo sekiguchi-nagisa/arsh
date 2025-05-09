@@ -61,6 +61,13 @@ assert "${[12,34]}" == "12 34"
 assert "${[['a','b'],['c','d','e']]}" == "a b c d e"
 assert "${[34 as Int?, new Int?(), 89]}" == "34 89"
 
+var ex = 234 as Any
+var aa = [23 as Any, $false as Any]
+$aa.add($aa)
+try { "$aa"; } catch e { $ex = $e; }
+assert $ex is StackOverflowError
+$aa.clear()
+
 ## Map
 assert "${[23:34 as Int?, 900: new Int?()]}" == "23 34"
 assert "${[34:12, 900:45,-9: -99]}" == "34 12 900 45 -9 -99"
@@ -71,8 +78,21 @@ assert "${[34:12, 900:45,-9: -99]}" == "34 12 900 45 -9 -99"
     assert "$m" == 'ccc 333 ddd 444'
 }
 
+$ex = 123
+var mm = ['aa': 45 as Any?, 'bbb': $none, 'ccc': 3.23]
+$mm.put('ddd', $mm)
+try { "$mm"; } catch e { $ex = $e; }
+assert $ex is StackOverflowError
+$mm.clear()
+
 ## Tuple
 assert "${(23,'a',(1,$false),[0,3])}" == '23 a 1 false 0 3'
+var tt = (34, 45 as Any, $SIGINT)
+$tt._1 = $tt
+$ex = 56
+try { "$tt"; } catch e { $ex = $e; }
+assert $ex is StackOverflowError
+$tt._1 = 1234
 
 ## Record
 typedef AA0 {}
@@ -87,10 +107,15 @@ assert "${new AAA(-90, '')}" == '-90 '
 
 typedef List {
     let value : String
-    let next : List?
+    var next : List?
 }
 var list = new List("a b", new List("cc", new List?()))
 assert "$list" == 'a b cc'
+$list.next = $list
+$ex = 99
+try { "$list"; } catch e { $ex = $e; }
+assert $ex is StackOverflowError
+$list.next = $none
 
 ## Candidates
 assert "${new Candidates([''])}" == ""

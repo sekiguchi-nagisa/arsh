@@ -193,6 +193,13 @@ assert "1,2,".split(",").join(",") == "1,2,"
 assert [[["h", "l"].join("e"), "lo"].join(), "world", "!!"].join(" ") == "hello world !!"
 $ex = 12
 assert ["hoge".toInt()] as String == "[(invalid)]"
+{
+    var aa = [23 as Any?, $false, $none]
+    $aa.add($aa)
+    try { $aa.join('+'); } catch e { $ex = $e; }
+    assert $ex is StackOverflowError
+    $aa.clear()
+}
 
 # copy
 var cc1 = [3, 4, 6]
@@ -209,3 +216,16 @@ assert([34, 43] is Array<Int>)
 assert([34] is Any)
 
 assert(new Array<Any>() is Array<Any>)
+
+# toString
+assert new [Int]() as String == '[]'
+assert [3.4] as String == '[3.4]'
+assert [1 as Any?, $none,43, $false] as String == '[1, (invalid), 43, false]'
+$ex = 2345
+{
+    var aa = [$none as Any?, '', [34]]
+    $aa.add($aa)
+    try { $aa as String; } catch e { $ex = $e; }
+    assert $ex is StackOverflowError
+    $aa.clear()
+}
