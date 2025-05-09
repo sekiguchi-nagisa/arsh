@@ -75,6 +75,9 @@ assert "${[34:12, 900:45,-9: -99]}" == "34 12 900 45 -9 -99"
 assert "${(23,'a',(1,$false),[0,3])}" == '23 a 1 false 0 3'
 
 ## Record
+typedef AA0 {}
+assert "${new AA0()}" == ""
+
 typedef AAA {
     var aaa : Int
     var bbb : String

@@ -19,6 +19,8 @@
 
 #include "misc/string_ref.hpp"
 
+struct ARState;
+
 namespace arsh {
 
 class Value;
@@ -110,9 +112,20 @@ private:
 public:
   explicit StrAppender(unsigned int limit) : limit(limit) {}
 
-  bool operator()(StringRef) override;
+  bool operator()(StringRef ref) override;
 
   std::string take() && { return std::move(this->buf); }
+};
+
+class StrObjAppender : public Stringifier::Appender {
+private:
+  ARState &state;
+  Value &value;
+
+public:
+  StrObjAppender(ARState &state, Value &value) : state(state), value(value) {}
+
+  bool operator()(StringRef ref) override;
 };
 
 } // namespace arsh

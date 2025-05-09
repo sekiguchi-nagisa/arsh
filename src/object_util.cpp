@@ -409,7 +409,7 @@ bool Stringifier::addAsFlatStr(const Value &value) {
   case ObjectKind::UnixFd: {
     char buf[64];
     const int s =
-        snprintf(buf, std::size(buf), "/dev/fd/%u", typeAs<UnixFdObject>(value).getRawFd());
+        snprintf(buf, std::size(buf), "/dev/fd/%d", typeAs<UnixFdObject>(value).getRawFd());
     assert(s > 0);
     return this->appender(StringRef(buf, s));
   }
@@ -507,6 +507,17 @@ struct StrFrame {
     }                                                                                              \
   } while (false)
 
+static StringRef nextFieldName(const char *packedFieldNames, unsigned int &index) {
+  const unsigned int start = index;
+  for (; packedFieldNames[index] && packedFieldNames[index] != ';'; index++)
+    ;
+  StringRef ref(packedFieldNames + start, index - start);
+  if (packedFieldNames[index] == ';') {
+    index++;
+  }
+  return ref;
+}
+
 bool Stringifier::addAsStr(const Value &value) {
   this->overflow = false;
   InlinedStack<StrFrame, 4> frames;
@@ -553,14 +564,25 @@ bool Stringifier::addAsStr(const Value &value) {
       case ObjectKind::Base: {
         auto &frame = frames.back();
         auto &obj = typeAs<BaseObject>(v);
-        if (auto &type = this->pool.get(obj.getTypeID()); type.isTupleType()) {
+        if (auto &type = this->pool.get(obj.getTypeID()); type.isRecordOrDerived()) {
+          if (obj.getFieldSize() == 0) {
+            TRY(this->appender("{}"));
+            continue;
+          }
+          if (frame.i < obj.getFieldSize()) {
+            TRY(this->appender(frame.i == 0 ? "{" : ", ") &&
+                this->appender(
+                    nextFieldName(cast<RecordType>(type).getPackedFieldNames(), frame.p)) &&
+                this->appender(" : "));
+            GOTO_NEXT_STR(frames, StrFrame(obj[frame.i++]));
+          }
+          TRY(this->appender("}"));
+        } else {
           if (frame.i < obj.getFieldSize()) {
             TRY(this->appender(frame.i == 0 ? "(" : ", "));
             GOTO_NEXT_STR(frames, StrFrame(obj[frame.i++]));
           }
           TRY(this->appender(obj.getFieldSize() == 1 ? ",)" : ")"));
-        } else {
-          return false; // TODO:
         }
         continue;
       }
@@ -649,5 +671,7 @@ bool Stringifier::addAsInterp(const Value &value) {
 bool StrAppender::operator()(const StringRef ref) {
   return checkedAppend(ref, this->limit, this->buf);
 }
+
+bool StrObjAppender::operator()(StringRef ref) { return this->value.appendAsStr(this->state, ref); }
 
 } // namespace arsh

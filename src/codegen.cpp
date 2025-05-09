@@ -1993,7 +1993,7 @@ void ByteCodeDumper::dumpCode(const CompiledCode &c) {
     for (unsigned int i = 0; c.getConstPool()[i]; i++) {
       fprintf(this->fp, "  %s: ", formatNum(constSize, i).c_str());
       auto &v = c.getConstPool()[i];
-      std::string value = v.toString();
+      std::string value = v.toString(this->typePool);
       switch (v.kind()) {
       case ValueKind::NUMBER:
         fprintf(this->fp, "%s", value.c_str());

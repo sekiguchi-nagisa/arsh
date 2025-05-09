@@ -16,7 +16,6 @@
 
 #include <memory>
 
-#include "../external/dragonbox/simple_dragonbox.h"
 #include "arg_parser.h"
 #include "candidates.h"
 #include "core.h"
@@ -124,169 +123,11 @@ uint32_t Value::getMetaData() const {
   return this->value.meta;
 }
 
-static std::string toString(double value) {
-  if (std::isnan(value)) {
-    return "NaN";
-  }
-  if (std::isinf(value)) {
-    return value > 0 ? "Infinity" : "-Infinity";
-  }
-  if (value == 0.0) {
-    return std::signbit(value) ? "-0.0" : "0.0";
-  }
-
-  auto [significand, exponent, sign] = jkj::simple_dragonbox::to_decimal(
-      value, jkj::simple_dragonbox::policy::cache::compact,
-      jkj::simple_dragonbox::policy::binary_to_decimal_rounding::to_even);
-  return Decimal{.significand = significand, .exponent = exponent, .sign = sign}.toString();
-}
-
-std::string Value::toString() const {
-  switch (this->kind()) {
-  case ValueKind::NUMBER:
-    return std::to_string(this->asNum());
-  case ValueKind::NUM_LIST: {
-    auto &nums = this->asNumList();
-    char buf[256];
-    snprintf(buf, std::size(buf), "[%u, %u, %u]", nums[0], nums[1], nums[2]);
-    return {buf};
-  }
-  case ValueKind::DUMMY: {
-    unsigned int typeId = this->asTypeId();
-    if (typeId == toUnderlying(TYPE::Module)) {
-      std::string str = OBJ_TEMP_MOD_PREFIX; // for temporary module descriptor
-      str += std::to_string(this->asNumList()[1]);
-      str += ")";
-      return str;
-    } else {
-      std::string str("Object(");
-      str += std::to_string(typeId);
-      str += ")";
-      return str;
-    }
-  }
-  case ValueKind::EXPAND_META:
-    return ::toString(this->asExpandMeta().first);
-  case ValueKind::BOOL:
-    return this->asBool() ? "true" : "false";
-  case ValueKind::SIG:
-    return std::to_string(this->asSig());
-  case ValueKind::INT:
-    return std::to_string(this->asInt());
-  case ValueKind::FLOAT: {
-    double d = this->asFloat();
-    return ::toString(d);
-  }
-  default:
-    if (this->hasStrRef()) {
-      return this->asStrRef().toString();
-    }
-    assert(this->kind() == ValueKind::OBJECT);
-    break;
-  }
-
-  switch (this->get()->getKind()) {
-  case ObjectKind::UnixFd: {
-    std::string str = "/dev/fd/";
-    str += std::to_string(typeAs<UnixFdObject>(*this).getRawFd());
-    return str;
-  }
-  case ObjectKind::Regex:
-    return typeAs<RegexObject>(*this).getStr();
-  case ObjectKind::Array: {
-    auto &values = typeAs<ArrayObject>(*this).getValues();
-    std::string str = "[";
-    unsigned int size = values.size();
-    for (unsigned int i = 0; i < size; i++) {
-      if (i > 0) {
-        str += ", ";
-      }
-      str += values[i].toString();
-    }
-    str += "]";
-    return str;
-  }
-  case ObjectKind::OrderedMap: {
-    auto &entries = typeAs<OrderedMapObject>(*this).getEntries();
-    std::string ret = "[";
-    unsigned int count = 0;
-    for (auto &e : entries) {
-      if (!e) {
-        continue;
-      }
-      if (count++ > 0) {
-        ret += ", ";
-      }
-      ret += e.getKey().toString();
-      ret += " : ";
-      ret += e.getValue().toString();
-    }
-    ret += "]";
-    return ret;
-  }
-  case ObjectKind::Base: { // for tuple
-    auto &obj = typeAs<BaseObject>(*this);
-    unsigned int fieldSize = obj.getFieldSize();
-    std::string value = "(";
-    for (unsigned int i = 0; i < fieldSize; i++) {
-      if (i > 0) {
-        value += ", ";
-      }
-      value += obj[i].toString();
-    }
-    value += ")";
-    return value;
-  }
-  case ObjectKind::Func: {
-    auto &obj = typeAs<FuncObject>(*this);
-    std::string str;
-    const auto kind = obj.getCode().getKind();
-    switch (kind) {
-    case CodeKind::TOPLEVEL:
-      str += OBJ_MOD_PREFIX;
-      break;
-    case CodeKind::FUNCTION:
-      str += "function(";
-      break;
-    case CodeKind::USER_DEFINED_CMD:
-      str += "command(";
-      break;
-    default:
-      break;
-    }
-    const auto modId = obj.getCode().getBelongedModId();
-    if (const char *name = obj.getCode().getName(); name[0]) {
-      if (!isBuiltinMod(modId) &&
-          (kind == CodeKind::FUNCTION || kind == CodeKind::USER_DEFINED_CMD)) {
-        str += toModTypeName(modId);
-        str += '.';
-      }
-      str += name;
-    } else {
-      char buf[32]; // hex of 64bit pointer is up to 16 chars
-      snprintf(buf, std::size(buf), "0x%zx", reinterpret_cast<uintptr_t>(&obj));
-      str += buf;
-    }
-    str += ")";
-    return str;
-  }
-  case ObjectKind::Closure: {
-    char buf[32]; // hex of 64bit pointer is up to 16 chars
-    snprintf(buf, std::size(buf), "closure(0x%zx)",
-             reinterpret_cast<uintptr_t>(&typeAs<ClosureObject>(*this).getFuncObj()));
-    return {buf};
-  }
-  case ObjectKind::Job: {
-    std::string str = "%";
-    str += std::to_string(typeAs<JobObject>(*this).getJobID());
-    return str;
-  }
-  default:
-    std::string str("Object(");
-    str += std::to_string(reinterpret_cast<uintptr_t>(this->get()));
-    str += ")";
-    return str;
-  }
+std::string Value::toString(const TypePool &pool) const {
+  StrAppender appender(SYS_LIMIT_PRINTABLE_MAX);
+  Stringifier stringifier(pool, appender);
+  stringifier.addAsStr(*this);
+  return std::move(appender).take();
 }
 
 #define GUARD_RECURSION(state)                                                                     \
@@ -304,161 +145,30 @@ std::string Value::toString() const {
     }                                                                                              \
   } while (false)
 
-bool Value::opStr(StrBuilder &builder) const {
-  GUARD_RECURSION(builder.getState());
-
-  if (this->isInvalid()) {
-    return builder.add("(invalid)");
+bool Value::opStr(ARState &state, Value &out) const {
+  StrObjAppender appender(state, out);
+  Stringifier stringifier(state.typePool, appender);
+  if (!stringifier.addAsStr(*this)) {
+    if (stringifier.hasOverflow()) {
+      raiseError(state, TYPE::StackOverflowError, "string representation of deep nesting object");
+    }
+    assert(state.hasError());
+    return false;
   }
-  if (this->isObject()) {
-    switch (this->get()->getKind()) {
-    case ObjectKind::RegexMatch:
-    case ObjectKind::Array: {
-      const auto &values = isa<ArrayObject>(this->get())
-                               ? typeAs<ArrayObject>(*this).getValues()
-                               : typeAs<RegexMatchObject>(*this).getGroups();
-      TRY(builder.add("["));
-      const unsigned int size = values.size();
-      for (unsigned int i = 0; i < size; i++) {
-        if (i > 0) {
-          TRY(builder.add(", "));
-        }
-        TRY(values[i].opStr(builder));
-      }
-      return builder.add("]");
-    }
-    case ObjectKind::OrderedMap: {
-      auto &entries = typeAs<OrderedMapObject>(*this).getEntries();
-      TRY(builder.add("["));
-      unsigned int count = 0;
-      for (auto &e : entries) {
-        if (!e) {
-          continue;
-        }
-        if (count++ > 0) {
-          TRY(builder.add(", "));
-        }
-        TRY(e.getKey().opStr(builder));
-        TRY(builder.add(" : "));
-        TRY(e.getValue().opStr(builder));
-      }
-      return builder.add("]");
-    }
-    case ObjectKind::Base: {
-      auto &obj = typeAs<BaseObject>(*this);
-      auto &type = builder.getState().typePool.get(this->getTypeID());
-      if (type.isTupleType()) {
-        TRY(builder.add("("));
-        unsigned int size = obj.getFieldSize();
-        for (unsigned int i = 0; i < size; i++) {
-          if (i > 0) {
-            TRY(builder.add(", "));
-          }
-          TRY(obj[i].opStr(builder));
-        }
-        if (size == 1) {
-          TRY(builder.add(","));
-        }
-        return builder.add(")");
-      } else {
-        assert(type.isRecordOrDerived());
-        auto &recordType = cast<RecordType>(type);
-        TRY(builder.add("{"));
-        unsigned int size = obj.getFieldSize();
-        std::vector<StringRef> buf;
-        buf.resize(size);
-        for (auto &e : recordType.getHandleMap()) {
-          if (e.second->is(HandleKind::TYPE_ALIAS)) {
-            continue;
-          }
-          buf[e.second->getIndex()] = e.first;
-        }
-        for (unsigned int i = 0; i < size; i++) {
-          if (i > 0) {
-            TRY(builder.add(", "));
-          }
-          TRY(builder.add(buf[i]));
-          TRY(builder.add(" : "));
-          TRY(obj[i].opStr(builder));
-        }
-        return builder.add("}");
-      }
-    }
-    case ObjectKind::Error: {
-      auto &obj = typeAs<ErrorObject>(*this);
-      auto ref = obj.getMessage().asStrRef();
-      return builder.add(builder.getState().typePool.get(this->getTypeID()).getNameRef()) &&
-             builder.add(": ") && builder.add(ref);
-    }
-    case ObjectKind::Candidate: {
-      auto &obj = typeAs<CandidateObject>(*this);
-      return builder.add(obj.underlying());
-    }
-    default:
-      break;
-    }
-  }
-  return builder.add(this->toString());
+  return true;
 }
 
-bool Value::opInterp(StrBuilder &builder) const {
-  GUARD_RECURSION(builder.getState());
-
-  if (this->isObject()) {
-    switch (this->get()->getKind()) {
-    case ObjectKind::RegexMatch:
-    case ObjectKind::Array: {
-      unsigned int count = 0;
-      const auto &values = isa<ArrayObject>(this->get())
-                               ? typeAs<ArrayObject>(*this).getValues()
-                               : typeAs<RegexMatchObject>(*this).getGroups();
-      for (auto &e : values) {
-        if (e.isInvalid()) {
-          continue;
-        }
-        if (count++ > 0) {
-          TRY(builder.add(" "));
-        }
-        TRY(e.opInterp(builder));
-      }
-      return true;
+bool Value::opInterp(ARState &state, Value &out) const {
+  StrObjAppender appender(state, out);
+  Stringifier stringifier(state.typePool, appender);
+  if (!stringifier.addAsInterp(*this)) {
+    if (stringifier.hasOverflow()) {
+      raiseError(state, TYPE::StackOverflowError, "string interpolation of deep nesting object");
     }
-    case ObjectKind::OrderedMap: {
-      unsigned int count = 0;
-      for (auto &e : typeAs<OrderedMapObject>(*this).getEntries()) {
-        if (!e || e.getValue().isInvalid()) {
-          continue;
-        }
-        if (count++ > 0) {
-          TRY(builder.add(" "));
-        }
-        TRY(e.getKey().opInterp(builder) && builder.add(" ") && e.getValue().opInterp(builder));
-      }
-      return true;
-    }
-    case ObjectKind::Base: {
-      auto &obj = typeAs<BaseObject>(*this);
-      assert(builder.getState().typePool.get(this->getTypeID()).isTupleType() ||
-             builder.getState().typePool.get(this->getTypeID()).isRecordOrDerived());
-      unsigned int size = obj.getFieldSize();
-      unsigned int count = 0;
-      for (unsigned int i = 0; i < size; i++) {
-        auto &e = obj[i];
-        if (e.isInvalid()) {
-          continue;
-        }
-        if (count++ > 0) {
-          TRY(builder.add(" "));
-        }
-        TRY(e.opInterp(builder));
-      }
-      return true;
-    }
-    default:
-      break;
-    }
+    assert(state.hasError());
+    return false;
   }
-  return this->opStr(builder);
+  return true;
 }
 
 bool Value::equals(ARState &state, const Value &o, bool partial) const {
@@ -660,7 +370,7 @@ bool CmdArgsBuilder::add(Value &&arg) {
           return false;
         }
       }
-      auto strObj = Value::createStr(arg.toString());
+      auto strObj = Value::createStr(arg.toString(this->state.typePool));
       bool r = this->argv->append(this->state, std::move(strObj));
       if (r) {
         assert(arg.get()->getRefcount() == 1);
@@ -701,9 +411,10 @@ bool CmdArgsBuilder::add(Value &&arg) {
       break;
     }
   }
-  StrBuilder builder(this->state);
-  TRY(arg.opStr(builder));
-  return this->add(std::move(builder).take());
+
+  auto v = Value::createStr();
+  TRY(arg.opStr(this->state, v));
+  return this->add(std::move(v));
 }
 
 // ##########################

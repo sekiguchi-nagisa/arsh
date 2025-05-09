@@ -1284,14 +1284,13 @@ bool VM::builtinEval(ARState &state, ArrayObject &argvObj) {
   if (size == 1) {
     src = argvObj.getValues()[0];
   } else {
-    StrBuilder builder(state);
+    src = Value::createStr();
     for (unsigned int i = 0; i < size; i++) {
       if (i > 0) {
-        TRY(builder.add(" "));
+        TRY(src.appendAsStr(state, " "));
       }
-      TRY(builder.add(argvObj.getValues()[i].asStrRef()));
+      TRY(src.appendAsStr(state, argvObj.getValues()[i].asStrRef()));
     }
-    src = std::move(builder).take();
   }
   auto &modType = getCurRuntimeModule(state);
   if (auto func = compileAsFunc(state, src.asStrRef(), modType, false)) {

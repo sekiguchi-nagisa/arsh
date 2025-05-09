@@ -156,6 +156,10 @@ assert $args[4] == 'c c'
 assert $args[5] == 'false'
 
 ## Record
+typedef Empty() {}
+$args = @(${new Empty()})
+assert $args.empty()
+
 typedef Interval($a : Int, $b : Int) {
     let _begin = $a
     let end = $b

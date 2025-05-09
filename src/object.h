@@ -478,26 +478,29 @@ public:
   uint32_t getMetaData() const;
 
   /**
-   * get light-weight string representation
+   * get string representation (limited length )
+   * @param pool
    * @return
    */
-  std::string toString() const;
+  std::string toString(const TypePool &pool) const;
 
   /**
-   * OP_STR method implementation
-   * @param builder
+   * OP_STR method implementation (may have error)
+   * @param state
+   * @param out
+   * must be string
    * @return
    * if it has error, return false
    */
-  bool opStr(StrBuilder &builder) const;
+  bool opStr(ARState &state, Value &out) const;
 
   /**
-   * OP_INTERP method implementation. write result to 'toStrBuf'
-   * @param builder
-   * @return
-   * if it has error, return false
+   *OP_INTERP method implementation (may have error)
+   * @param state
+   * @param out must be string
+   * @return if it has error, return false
    */
-  bool opInterp(StrBuilder &builder) const;
+  bool opInterp(ARState &state, Value &out) const;
 
   /**
    * for equality. may raise error (reach stack depth limit)
@@ -672,21 +675,6 @@ inline bool concatAsStr(ARState &state, Value &left, const Value &right, bool se
   }
   return left.appendAsStr(state, right.asStrRef());
 }
-
-class StrBuilder {
-private:
-  ARState &state;
-  Value buf; // must be String
-
-public:
-  explicit StrBuilder(ARState &st) : state(st), buf(Value::createStr("")) {}
-
-  bool add(StringRef value) { return this->buf.appendAsStr(this->state, value); }
-
-  ARState &getState() const { return this->state; }
-
-  Value take() && { return std::move(this->buf); }
-};
 
 inline Value exitStatusToBool(int64_t s) { return Value::createBool(s == 0); }
 

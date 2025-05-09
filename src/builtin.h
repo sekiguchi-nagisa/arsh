@@ -33,6 +33,7 @@
 #include "misc/files.hpp"
 #include "misc/num_util.hpp"
 #include "misc/word.hpp"
+#include "object_util.h"
 #include "ordered_map.h"
 #include "signals.h"
 #include "vm.h"
@@ -69,21 +70,17 @@ using RuntimeContext = ARState;
 //!bind: function $OP_STR($this : Any) : String
 ARSH_METHOD to_str(RuntimeContext &ctx) {
   SUPPRESS_WARNING(to_str);
-  StrBuilder builder(ctx);
-  if (!LOCAL(0).opStr(builder)) {
-    RET_ERROR;
-  }
-  RET(std::move(builder).take());
+  auto ret = Value::createStr();
+  LOCAL(0).opStr(ctx, ret); // skip error check
+  RET(ret);
 }
 
 //!bind: function $OP_INTERP($this : Any) : String
 ARSH_METHOD to_interp(RuntimeContext &ctx) {
   SUPPRESS_WARNING(to_interp);
-  StrBuilder builder(ctx);
-  if (!LOCAL(0).opInterp(builder)) {
-    RET_ERROR;
-  }
-  RET(std::move(builder).take());
+  auto ret = Value::createStr();
+  LOCAL(0).opInterp(ctx, ret); // skip error check
+  RET(ret);
 }
 
 // ##################
@@ -1878,18 +1875,19 @@ ARSH_METHOD array_searchBy(RuntimeContext &ctx) {
 ARSH_METHOD array_join(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_join);
   auto &obj = typeAs<ArrayObject>(LOCAL(0));
-  auto v = LOCAL(1);
-  auto delim = v.isInvalid() ? "" : v.asStrRef();
-
-  StrBuilder builder(ctx);
+  auto delim = LOCAL(1);
+  if (delim.isInvalid()) {
+    delim = Value::createStr();
+  }
+  auto ret = Value::createStr();
   size_t count = 0;
   for (auto &e : obj.getValues()) {
     if (count++ > 0) {
-      TRY(builder.add(delim));
+      TRY(delim.opStr(ctx, ret));
     }
-    TRY(e.opStr(builder));
+    TRY(e.opStr(ctx, ret));
   }
-  RET(std::move(builder).take());
+  RET(ret);
 }
 
 /*//!bind: function map($this : Array<T0>, $mapper : Func<T1,[T0]>) : Array<T1>
@@ -2048,8 +2046,8 @@ ARSH_METHOD map_get(RuntimeContext &ctx) {
   auto retIndex = obj.lookup(key);
   if (retIndex == -1) {
     std::string msg = "not found key: ";
-    appendAsPrintable(key.hasStrRef() ? key.asStrRef() : key.toString(), SYS_LIMIT_ERROR_MSG_MAX,
-                      msg);
+    appendAsPrintable(key.hasStrRef() ? key.asStrRef() : key.toString(ctx.typePool),
+                      SYS_LIMIT_ERROR_MSG_MAX, msg);
     raiseError(ctx, TYPE::KeyNotFoundError, std::move(msg));
     RET_ERROR;
   }
@@ -2129,8 +2127,8 @@ ARSH_METHOD map_swap(RuntimeContext &ctx) {
   auto retIndex = obj.lookup(key);
   if (retIndex == -1) {
     std::string msg = "not found key: ";
-    appendAsPrintable(key.hasStrRef() ? key.asStrRef() : key.toString(), SYS_LIMIT_ERROR_MSG_MAX,
-                      msg);
+    appendAsPrintable(key.hasStrRef() ? key.asStrRef() : key.toString(ctx.typePool),
+                      SYS_LIMIT_ERROR_MSG_MAX, msg);
     raiseError(ctx, TYPE::KeyNotFoundError, std::move(msg));
     RET_ERROR;
   }
