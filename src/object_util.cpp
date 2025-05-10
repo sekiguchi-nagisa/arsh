@@ -18,12 +18,14 @@
 
 #include "candidates.h"
 #include "constant.h"
+#include "core.h"
 #include "job.h"
 #include "misc/inlined_stack.hpp"
 #include "misc/num_util.hpp"
 #include "object.h"
 #include "object_util.h"
 #include "ordered_map.h"
+#include "redir.h"
 #include "type_pool.h"
 
 namespace arsh {
@@ -45,7 +47,7 @@ struct OrdFrame {
   OrdFrame(const Value &x, const Value &y) : x(&x), y(&y), xi(0), yi(0) {} // NOLINT
 };
 
-#define GOTO_NEXT_EQ(FS, F)                                                                        \
+#define GOTO_NEXT(FS, F)                                                                           \
   do {                                                                                             \
     (FS).push(F);                                                                                  \
     if ((FS).size() == STACK_DEPTH_LIMIT) {                                                        \
@@ -141,7 +143,7 @@ bool Equality::operator()(const Value &x, const Value &y) {
         return false;
       }
       if (auto &frame = frames.back(); frame.xi < xa.size()) {
-        GOTO_NEXT_EQ(frames, OrdFrame(xa.getValues()[frame.xi++], ya.getValues()[frame.yi++]));
+        GOTO_NEXT(frames, OrdFrame(xa.getValues()[frame.xi++], ya.getValues()[frame.yi++]));
       }
       continue;
     }
@@ -160,7 +162,7 @@ bool Equality::operator()(const Value &x, const Value &y) {
         if (yi < 0) {
           return false;
         }
-        GOTO_NEXT_EQ(frames, OrdFrame(xe.getValue(), yo.getEntries()[yi].getValue()));
+        GOTO_NEXT(frames, OrdFrame(xe.getValue(), yo.getEntries()[yi].getValue()));
       }
       continue;
     }
@@ -171,7 +173,7 @@ bool Equality::operator()(const Value &x, const Value &y) {
         return false;
       }
       if (auto &frame = frames.back(); frame.xi < xo.getFieldSize()) {
-        GOTO_NEXT_EQ(frames, OrdFrame(xo[frame.xi++], yo[frame.yi++]));
+        GOTO_NEXT(frames, OrdFrame(xo[frame.xi++], yo[frame.yi++]));
       }
       continue;
     }
@@ -187,7 +189,7 @@ bool Equality::operator()(const Value &x, const Value &y) {
 // ##     Ordering     ##
 // ######################
 
-#define GOTO_NEXT_ORD(FS, F)                                                                       \
+#define GOTO_NEXT2(FS, F)                                                                          \
   do {                                                                                             \
     (FS).push(F);                                                                                  \
     if ((FS).size() == STACK_DEPTH_LIMIT) {                                                        \
@@ -268,7 +270,7 @@ int Ordering::operator()(const Value &x, const Value &y) {
       const unsigned int xSize = xa.size();
       const unsigned int ySize = ya.size();
       if (auto &frame = frames.back(); frame.xi < xSize && frame.yi < ySize) {
-        GOTO_NEXT_ORD(frames, OrdFrame(xa.getValues()[frame.xi++], ya.getValues()[frame.yi++]));
+        GOTO_NEXT2(frames, OrdFrame(xa.getValues()[frame.xi++], ya.getValues()[frame.yi++]));
       }
       if (xSize < ySize) {
         return -1;
@@ -290,8 +292,8 @@ int Ordering::operator()(const Value &x, const Value &y) {
         frame.yi++;
         auto &xe = xo.getEntries()[xi];
         auto &ye = yo.getEntries()[yi];
-        GOTO_NEXT_ORD(frames, OrdFrame(isKey ? xe.getKey() : xe.getValue(),
-                                       isKey ? ye.getKey() : ye.getValue()));
+        GOTO_NEXT2(frames, OrdFrame(isKey ? xe.getKey() : xe.getValue(),
+                                    isKey ? ye.getKey() : ye.getValue()));
       }
       if (xo.size() < yo.size()) {
         return -1;
@@ -307,7 +309,7 @@ int Ordering::operator()(const Value &x, const Value &y) {
       const unsigned int xSize = xo.getFieldSize();
       const unsigned int ySize = yo.getFieldSize();
       if (auto &frame = frames.back(); frame.xi < xSize && frame.yi < ySize) {
-        GOTO_NEXT_ORD(frames, OrdFrame(xo[frame.xi++], yo[frame.yi++]));
+        GOTO_NEXT2(frames, OrdFrame(xo[frame.xi++], yo[frame.yi++]));
       }
       if (xSize < ySize) {
         return -1;
@@ -407,11 +409,8 @@ bool Stringifier::addAsFlatStr(const Value &value) {
   // for non-nested object
   switch (value.get()->getKind()) {
   case ObjectKind::UnixFd: {
-    char buf[64];
-    const int s =
-        snprintf(buf, std::size(buf), "/dev/fd/%d", typeAs<UnixFdObject>(value).getRawFd());
-    assert(s > 0);
-    return this->appender(StringRef(buf, s));
+    auto str = typeAs<UnixFdObject>(value).toString();
+    return this->appender(str);
   }
   case ObjectKind::Regex:
     return this->appender(typeAs<RegexObject>(value).getStr());
@@ -490,16 +489,6 @@ struct StrFrame {
   explicit StrFrame(const Value &v) : v(&v), i(0), p(0) {}
 };
 
-#define GOTO_NEXT_STR(FS, F)                                                                       \
-  do {                                                                                             \
-    (FS).push(F);                                                                                  \
-    if ((FS).size() == STACK_DEPTH_LIMIT) {                                                        \
-      this->overflow = true;                                                                       \
-      return false;                                                                                \
-    }                                                                                              \
-    goto NEXT;                                                                                     \
-  } while (false)
-
 #define TRY(E)                                                                                     \
   do {                                                                                             \
     if (unlikely(!(E))) {                                                                          \
@@ -536,7 +525,7 @@ bool Stringifier::addAsStr(const Value &value) {
         }
         if (auto &frame = frames.back(); frame.i < values.size()) {
           TRY(this->appender(frame.i == 0 ? "[" : ", "));
-          GOTO_NEXT_STR(frames, StrFrame(values[frame.i++]));
+          GOTO_NEXT(frames, StrFrame(values[frame.i++]));
         }
         TRY(this->appender("]"));
         continue;
@@ -556,7 +545,7 @@ bool Stringifier::addAsStr(const Value &value) {
           TRY(this->appender(cc));
           frame.i++;
           auto &e = obj.getEntries()[index];
-          GOTO_NEXT_STR(frames, StrFrame(isKey ? e.getKey() : e.getValue()));
+          GOTO_NEXT(frames, StrFrame(isKey ? e.getKey() : e.getValue()));
         }
         TRY(this->appender("]"));
         continue;
@@ -574,13 +563,13 @@ bool Stringifier::addAsStr(const Value &value) {
                 this->appender(
                     nextFieldName(cast<RecordType>(type).getPackedFieldNames(), frame.p)) &&
                 this->appender(" : "));
-            GOTO_NEXT_STR(frames, StrFrame(obj[frame.i++]));
+            GOTO_NEXT(frames, StrFrame(obj[frame.i++]));
           }
           TRY(this->appender("}"));
         } else {
           if (frame.i < obj.getFieldSize()) {
             TRY(this->appender(frame.i == 0 ? "(" : ", "));
-            GOTO_NEXT_STR(frames, StrFrame(obj[frame.i++]));
+            GOTO_NEXT(frames, StrFrame(obj[frame.i++]));
           }
           TRY(this->appender(obj.getFieldSize() == 1 ? ",)" : ")"));
         }
@@ -615,7 +604,7 @@ bool Stringifier::addAsInterp(const Value &value) {
           if (frame.p++ > 0) {
             TRY(this->appender(" "));
           }
-          GOTO_NEXT_STR(frames, StrFrame(values[frame.i++]));
+          GOTO_NEXT(frames, StrFrame(values[frame.i++]));
         }
         continue;
       }
@@ -635,7 +624,7 @@ bool Stringifier::addAsInterp(const Value &value) {
             TRY(this->appender(" "));
           }
           auto &e = obj.getEntries()[index];
-          GOTO_NEXT_STR(frames, StrFrame(isKey ? e.getKey() : e.getValue()));
+          GOTO_NEXT(frames, StrFrame(isKey ? e.getKey() : e.getValue()));
         }
         continue;
       }
@@ -650,7 +639,7 @@ bool Stringifier::addAsInterp(const Value &value) {
           if (frame.p++ > 0) {
             TRY(this->appender(" "));
           }
-          GOTO_NEXT_STR(frames, StrFrame(obj[frame.i++]));
+          GOTO_NEXT(frames, StrFrame(obj[frame.i++]));
         }
         continue;
       }
@@ -669,5 +658,117 @@ bool StrAppender::operator()(const StringRef ref) {
 }
 
 bool StrObjAppender::operator()(StringRef ref) { return this->value.appendAsStr(this->state, ref); }
+
+#define GOTO_NEXT3(FS, F)                                                                          \
+  do {                                                                                             \
+    (FS).push(F);                                                                                  \
+    if ((FS).size() == SYS_LIMIT_NESTED_OBJ_DEPTH) {                                               \
+      overflow = true;                                                                             \
+      goto END;                                                                                    \
+    }                                                                                              \
+    goto NEXT;                                                                                     \
+  } while (false)
+
+bool addAsCmdArg(ARState &state, Value &&value, ArrayObject &argv, Value &redir) {
+  if (value.hasStrRef()) { // fast path
+    return argv.append(state, std::move(value));
+  }
+
+  bool overflow = false;
+  InlinedStack<StrFrame, 4> frames;
+  for (frames.push(StrFrame(value)); frames.size(); frames.pop()) {
+  NEXT: {
+    const auto &arg = *frames.back().v;
+    if (arg.isInvalid()) {
+      continue;
+    }
+    if (arg.hasStrRef()) { // fast path
+      TRY(argv.append(state, Value(arg)));
+      continue;
+    }
+    if (arg.isObject()) {
+      switch (arg.get()->getKind()) {
+      case ObjectKind::UnixFd: {
+        /**
+         * when pass fd object to command arguments,
+         * unset close-on-exec and add pseudo redirection entry
+         */
+        if (!redir) {
+          redir = Value::create<RedirObject>();
+        } else if (redir.isInvalid()) {
+          raiseError(state, TYPE::ArgumentError, "cannot pass FD object to argument array");
+          return false;
+        }
+
+        const auto orgRefCount = arg.get()->getRefcount(); // if 1, arg == value
+        auto fdObj = toObjPtr<UnixFdObject>(arg);
+        if (orgRefCount > 1) {
+          if (auto ret = fdObj->dupWithCloseOnExec()) {
+            fdObj = std::move(ret);
+          } else {
+            raiseSystemError(state, errno, "failed to pass FD object to command arguments");
+            return false;
+          }
+        }
+        if (argv.append(state, Value::createStr(fdObj->toString()))) {
+          assert(fdObj->getRefcount() == 1 || arg.get() == fdObj.get());
+          if (!fdObj->closeOnExec(false)) {
+            raiseSystemError(state, errno, "failed to pass FD object to command arguments");
+            return false;
+          }
+          typeAs<RedirObject>(redir).addEntry(fdObj, RedirOp::NOP, -1);
+          continue;
+        }
+        return false;
+      }
+      case ObjectKind::RegexMatch:
+      case ObjectKind::Array: {
+        auto &values = isa<ArrayObject>(arg.get()) ? typeAs<ArrayObject>(arg).getValues()
+                                                   : typeAs<RegexMatchObject>(arg).getGroups();
+        if (auto &frame = frames.back(); frame.i < values.size()) {
+          GOTO_NEXT3(frames, StrFrame(values[frame.i++]));
+        }
+        continue;
+      }
+      case ObjectKind::OrderedMap: {
+        auto &obj = typeAs<OrderedMapObject>(arg);
+        auto &frame = frames.back();
+        unsigned int index = skipEmptyEntries2(obj, frame.i);
+        while (index < obj.getEntries().getUsedSize() &&
+               obj.getEntries()[index].getValue().isInvalid()) {
+          frame.i += 2;
+          index = skipEmptyEntries2(obj, frame.i);
+        }
+        if (index < obj.getEntries().getUsedSize()) {
+          const bool isKey = frame.i % 2 == 0;
+          frame.i++;
+          auto &e = obj.getEntries()[index];
+          GOTO_NEXT3(frames, StrFrame(isKey ? e.getKey() : e.getValue()));
+        }
+        continue;
+      }
+      case ObjectKind::Base: {
+        auto &obj = typeAs<BaseObject>(arg);
+        if (auto &frame = frames.back(); frame.i < obj.getFieldSize()) {
+          GOTO_NEXT3(frames, StrFrame(obj[frame.i++]));
+        }
+        continue;
+      }
+      default:
+        break;
+      }
+    }
+    auto v = Value::createStr();
+    TRY(arg.opStr(state, v) && argv.append(state, std::move(v)));
+  }
+  }
+END:
+  if (overflow) {
+    raiseError(state, TYPE::StackOverflowError,
+               "pass deep nesting object to command argument list");
+    return false;
+  }
+  return true;
+}
 
 } // namespace arsh

@@ -30,6 +30,8 @@
 #include "redir.h"
 #include "vm.h"
 
+#include "object_util.h"
+
 // #####################
 // ##     ARState     ##
 // #####################
@@ -2147,9 +2149,8 @@ bool VM::mainLoop(ARState &state) {
          */
         auto arg = state.stack.pop();
         auto redir = state.stack.pop();
-        CmdArgsBuilder builder(state, toObjPtr<ArrayObject>(state.stack.peek()), std::move(redir));
-        TRY(builder.add(std::move(arg)));
-        state.stack.push(std::move(builder).takeRedir());
+        TRY(addAsCmdArg(state, std::move(arg), typeAs<ArrayObject>(state.stack.peek()), redir));
+        state.stack.push(std::move(redir));
         vmnext;
       }
       vmcase(ADD_EXPANDING) {

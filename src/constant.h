@@ -498,6 +498,7 @@ constexpr size_t SYS_LIMIT_NATIVE_RECURSION = 200;
 #else
 constexpr size_t SYS_LIMIT_NATIVE_RECURSION = 256;
 #endif
+constexpr size_t SYS_LIMIT_NESTED_OBJ_DEPTH = 256;
 constexpr size_t SYS_LIMIT_FUNC_DEPTH = 32;
 constexpr size_t SYS_LIMIT_UPVAR_NUM = UINT8_MAX;
 constexpr size_t SYS_LIMIT_JOB_DESC_LEN = 96;

@@ -738,6 +738,13 @@ public:
 
   int getRawFd() const { return this->fd; }
 
+  std::string toString() const {
+    char buf[32];
+    const int s = snprintf(buf, std::size(buf), "/dev/fd/%d", this->getRawFd());
+    assert(s > 0);
+    return {buf, static_cast<size_t>(s)};
+  }
+
   /**
    * @return must be JobObject
    */
@@ -948,28 +955,6 @@ struct StrArrayIter {
 };
 
 #define ASSERT_ARRAY_SIZE(obj) assert((obj).size() <= ArrayObject::MAX_SIZE)
-
-// for command argument construction
-class CmdArgsBuilder {
-private:
-  ARState &state;
-  ObjPtr<ArrayObject> argv;
-  Value redir; // may be null, invalid, RedirObject
-
-public:
-  explicit CmdArgsBuilder(ARState &state, ObjPtr<ArrayObject> argv, Value &&redir)
-      : state(state), argv(std::move(argv)), redir(std::move(redir)) {}
-
-  /**
-   *
-   * @param arg
-   * @return
-   * if it has error, return false
-   */
-  bool add(Value &&arg);
-
-  Value takeRedir() && { return std::move(this->redir); }
-};
 
 class BaseObject : public ObjectWithRtti<ObjectKind::Base> {
 private:

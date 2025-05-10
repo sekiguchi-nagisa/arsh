@@ -20,7 +20,6 @@
 #include "candidates.h"
 #include "core.h"
 #include "line_editor.h"
-#include "misc/num_util.hpp"
 #include "object_util.h"
 #include "ordered_map.h"
 #include "pager.h"
@@ -129,21 +128,6 @@ std::string Value::toString(const TypePool &pool) const {
   stringifier.addAsStr(*this);
   return std::move(appender).take();
 }
-
-#define GUARD_RECURSION(state)                                                                     \
-  RecursionGuard _guard(state);                                                                    \
-  do {                                                                                             \
-    if (unlikely(!_guard.checkLimit())) {                                                          \
-      return false;                                                                                \
-    }                                                                                              \
-  } while (false)
-
-#define TRY(E)                                                                                     \
-  do {                                                                                             \
-    if (unlikely(!(E))) {                                                                          \
-      return false;                                                                                \
-    }                                                                                              \
-  } while (false)
 
 bool Value::opStr(ARState &state, Value &out) const {
   StrObjAppender appender(state, out);
@@ -335,86 +319,6 @@ BaseObject::~BaseObject() {
   for (unsigned int i = 0; i < this->fieldSize; i++) {
     (*this)[this->fieldSize - 1 - i].~Value(); // destruct object reverse order
   }
-}
-
-bool CmdArgsBuilder::add(Value &&arg) {
-  GUARD_RECURSION(this->state);
-
-  if (arg.isInvalid()) {
-    return true; // do nothing
-  }
-
-  if (arg.hasStrRef()) {
-    return this->argv->append(this->state, std::move(arg));
-  }
-
-  if (arg.isObject()) {
-    switch (arg.get()->getKind()) {
-    case ObjectKind::UnixFd: {
-      /**
-       * when pass fd object to command arguments,
-       * unset close-on-exec and add pseudo redirection entry
-       */
-      if (!this->redir) {
-        this->redir = Value::create<RedirObject>();
-      } else if (this->redir.isInvalid()) {
-        raiseError(this->state, TYPE::ArgumentError, "cannot pass FD object to argument array");
-        return false;
-      }
-
-      if (arg.get()->getRefcount() > 1) {
-        if (auto ret = typeAs<UnixFdObject>(arg).dupWithCloseOnExec()) {
-          arg = ret;
-        } else {
-          raiseSystemError(this->state, errno, "failed to pass FD object to command arguments");
-          return false;
-        }
-      }
-      auto strObj = Value::createStr(arg.toString(this->state.typePool));
-      bool r = this->argv->append(this->state, std::move(strObj));
-      if (r) {
-        assert(arg.get()->getRefcount() == 1);
-        if (!typeAs<UnixFdObject>(arg).closeOnExec(false)) {
-          raiseSystemError(this->state, errno, "failed to pass FD object to command arguments");
-          return false;
-        }
-        typeAs<RedirObject>(this->redir).addEntry(std::move(arg), RedirOp::NOP, -1);
-      }
-      return r;
-    }
-    case ObjectKind::RegexMatch:
-    case ObjectKind::Array: {
-      auto &values = isa<ArrayObject>(arg.get()) ? typeAs<ArrayObject>(arg).getValues()
-                                                 : typeAs<RegexMatchObject>(arg).getGroups();
-      for (auto &e : values) {
-        TRY(this->add(Value(e)));
-      }
-      return true;
-    }
-    case ObjectKind::OrderedMap:
-      for (auto &e : typeAs<OrderedMapObject>(arg).getEntries()) {
-        if (!e || e.getValue().isInvalid()) {
-          continue;
-        }
-        TRY(this->add(Value(e.getKey())) && this->add(Value(e.getValue())));
-      }
-      return true;
-    case ObjectKind::Base: {
-      auto &obj = typeAs<BaseObject>(arg);
-      unsigned int size = obj.getFieldSize();
-      for (unsigned int i = 0; i < size; i++) {
-        TRY(this->add(Value(obj[i])));
-      }
-      return true;
-    }
-    default:
-      break;
-    }
-  }
-
-  auto v = Value::createStr();
-  TRY(arg.opStr(this->state, v));
-  return this->add(std::move(v));
 }
 
 // ##########################

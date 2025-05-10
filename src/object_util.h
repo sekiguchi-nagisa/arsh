@@ -17,13 +17,14 @@
 #ifndef ARSH_COMPARE_H
 #define ARSH_COMPARE_H
 
-#include "misc/string_ref.hpp"
+#include "constant.h"
 
 struct ARState;
 
 namespace arsh {
 
 class Value;
+class ArrayObject;
 class TypePool;
 
 class Equality {
@@ -31,7 +32,7 @@ private:
   const bool partial;
   bool overflow{false};
 
-  static constexpr unsigned int STACK_DEPTH_LIMIT = 256;
+  static constexpr unsigned int STACK_DEPTH_LIMIT = SYS_LIMIT_NESTED_OBJ_DEPTH;
 
 public:
   explicit Equality(bool partial = false) : partial(partial) {}
@@ -45,7 +46,7 @@ class Ordering {
 private:
   bool overflow{false};
 
-  static constexpr unsigned int STACK_DEPTH_LIMIT = 256;
+  static constexpr unsigned int STACK_DEPTH_LIMIT = SYS_LIMIT_NESTED_OBJ_DEPTH;
 
 public:
   bool hasOverflow() const { return this->overflow; }
@@ -70,16 +71,13 @@ private:
   const TypePool &pool;
   Appender &appender;
   bool overflow{false};
-  bool truncated{false};
 
-  static constexpr unsigned int STACK_DEPTH_LIMIT = 256;
+  static constexpr unsigned int STACK_DEPTH_LIMIT = SYS_LIMIT_NESTED_OBJ_DEPTH;
 
 public:
   Stringifier(const TypePool &pool, Appender &appender) : pool(pool), appender(appender) {}
 
   bool hasOverflow() const { return this->overflow; }
-
-  bool isTruncated() const { return this->truncated; }
 
   /**
    * for to-string (OP_STR)
@@ -122,13 +120,25 @@ public:
 class StrObjAppender : public Stringifier::Appender {
 private:
   ARState &state;
-  Value &value;
+  Value &value; // must be String
 
 public:
   StrObjAppender(ARState &state, Value &value) : state(state), value(value) {}
 
   bool operator()(StringRef ref) override;
 };
+
+/**
+ * build command argument list
+ * @param state
+ * @param value
+ * @param argv
+ * @param redir
+ * may be null, invalid or RedirObject
+ * @return
+ * if error, return false
+ */
+bool addAsCmdArg(ARState &state, Value &&value, ArrayObject &argv, Value &redir);
 
 } // namespace arsh
 

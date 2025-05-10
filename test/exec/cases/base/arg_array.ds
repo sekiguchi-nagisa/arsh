@@ -125,6 +125,15 @@ try { $args = @(${[$STDOUT, $STDOUT]}) } catch e { $ex = $e; }
 assert $ex is ArgumentError
 assert ($ex as ArgumentError).message() == 'cannot pass FD object to argument array'
 
+$ex = 21345
+try { 
+    var aa= [2 as Any?, 34, '']; $aa[1] = $aa;
+    defer { $aa.clear(); }
+    $args = @($aa);
+ } catch e { $ex = $e; }
+assert $ex is StackOverflowError
+assert ($ex as StackOverflowError).message() == 'pass deep nesting object to command argument list'
+
 ## Map
 var m = [34 : 'a' as String?, 9999: new String?(), 45: 'b' as String?]
 $args = @($m)
@@ -144,6 +153,16 @@ assert $args[3] == 'b'
     assert $args[2] == '-88'
     assert $args[3] == 'ccc'
 }
+
+$ex = 21345
+try { 
+    var mm = ['aa' : 2 as Any?, 'b':34]; $mm['eee'] = $mm;
+    defer { $mm.clear(); }
+    $args = @($mm);
+ } catch e { $ex = $e; }
+assert $ex is StackOverflowError
+assert ($ex as StackOverflowError).message() == 'pass deep nesting object to command argument list'
+
 
 ## Tuple
 $args = @(${(34,['','b','','c c'],($false,))})
@@ -173,13 +192,20 @@ assert $args[1] == '98'
 
 typedef List($a : String, $n : List?) {
     let value = $a
-    let next = $n
+    var next = $n
 }
 var list = new List("a b", new List("cc", new List?()))
 $args = @( $list )
 assert $args.size() == 2
 assert $args[0] == 'a b'
 assert $args[1] == 'cc'
+
+$ex = 24
+$list.next = $list; 
+try { $args = @($list); } catch e { $ex = $e; }
+assert $ex is StackOverflowError
+assert ($ex as StackOverflowError).message() == 'pass deep nesting object to command argument list'
+$list.next = $none
 
 ## Candidates
 var can = new Candidates(['aaa'])
