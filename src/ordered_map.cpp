@@ -37,7 +37,13 @@ bool OrderedMapKey::equals(const Value &other) const {
   return Equality()(v, other); // never overflow
 }
 
-uint64_t OrderedMapKey::hash(uint64_t seed) const {
+static uint64_t simpleHash(uint64_t value) {
+  uint64_t ret = UINT64_MAX;
+  rapid_mum(&value, &ret);
+  return ret;
+}
+
+unsigned int OrderedMapKey::hash(uint64_t seed) const {
   bool isStr = false;
   uint64_t u64 = 0;
   const void *ptr = nullptr;
@@ -77,7 +83,14 @@ uint64_t OrderedMapKey::hash(uint64_t seed) const {
       break;
     }
   }
-  return isStr ? rapidhash_withSeed(ptr, size, seed) : rapid_mix(u64, seed);
+
+  uint64_t hash;
+  if (isStr) {
+    hash = rapidhash_withSeed(ptr, size, seed);
+  } else {
+    hash = simpleHash(u64);
+  }
+  return static_cast<unsigned int>(hash);
 }
 
 // ###############################
@@ -242,7 +255,7 @@ void OrderedMapObject::clear() {
 }
 
 bool OrderedMapObject::probeBuckets(const OrderedMapKey &key, ProbeState &probe) const {
-  const auto keyHash = static_cast<unsigned int>(key.hash(this->seed)); // only use 32bit
+  const unsigned int keyHash = key.hash(this->seed);
   unsigned int bucketIndex = this->bucketLen.toBucketIndex(keyHash);
   int dist = 0;
   bool found = false;
