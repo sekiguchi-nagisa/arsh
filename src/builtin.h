@@ -2045,10 +2045,11 @@ ARSH_METHOD map_get(RuntimeContext &ctx) {
   auto &key = LOCAL(1);
   auto retIndex = obj.lookup(key);
   if (retIndex == -1) {
-    std::string msg = "not found key: ";
-    appendAsPrintable(key.hasStrRef() ? key.asStrRef() : key.toString(ctx.typePool),
-                      SYS_LIMIT_ERROR_MSG_MAX, msg);
-    raiseError(ctx, TYPE::KeyNotFoundError, std::move(msg));
+    StrAppender appender(SYS_LIMIT_ERROR_MSG_MAX);
+    appender("not found key: ");
+    appender.setAppendOp(StrAppender::Op::PRINTABLE);
+    Stringifier(ctx.typePool, appender).addAsStr(key);
+    raiseError(ctx, TYPE::KeyNotFoundError, std::move(appender).take());
     RET_ERROR;
   }
   RET(obj[retIndex].getValue());
@@ -2126,10 +2127,11 @@ ARSH_METHOD map_swap(RuntimeContext &ctx) {
   auto &key = LOCAL(1);
   auto retIndex = obj.lookup(key);
   if (retIndex == -1) {
-    std::string msg = "not found key: ";
-    appendAsPrintable(key.hasStrRef() ? key.asStrRef() : key.toString(ctx.typePool),
-                      SYS_LIMIT_ERROR_MSG_MAX, msg);
-    raiseError(ctx, TYPE::KeyNotFoundError, std::move(msg));
+    StrAppender appender(SYS_LIMIT_ERROR_MSG_MAX);
+    appender("not found key: ");
+    appender.setAppendOp(StrAppender::Op::PRINTABLE);
+    Stringifier(ctx.typePool, appender).addAsStr(key);
+    raiseError(ctx, TYPE::KeyNotFoundError, std::move(appender).take());
     RET_ERROR;
   }
   std::swap(obj[retIndex].refValue(), value);

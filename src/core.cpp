@@ -21,11 +21,13 @@
 
 #include "candidates.h"
 #include "compiler.h"
+#include "format_util.h"
 #include "logger.h"
 #include "misc/files.hpp"
 #include "misc/num_util.hpp"
 #include "misc/pty.hpp"
 #include "node.h"
+#include "object_util.h"
 #include "vm.h"
 
 extern char **environ; // NOLINT
@@ -102,8 +104,17 @@ void raiseSystemError(ARState &st, int errorNum, std::string &&message) {
   raiseError(st, TYPE::SystemError, std::move(str));
 }
 
+static std::string toPrintable(const TypePool &pool, const Value &value) {
+  StrAppender appender(SYS_LIMIT_PRINTABLE_MAX >> 2);
+  Stringifier stringifier(pool, appender);
+  appender.setAppendOp(StrAppender::Op::PRINTABLE);
+  stringifier.addAsStr(value);
+  return std::move(appender).take();
+}
+
 void raiseAssertFail(ARState &st, Value &&msg, const AssertOp op, Value &&left, Value &&right) {
-  constexpr auto MAX_PRINTABLE = SYS_LIMIT_PRINTABLE_MAX >> 1;
+  static_assert(SYS_LIMIT_PRINTABLE_MAX <= SYS_LIMIT_ERROR_MSG_MAX);
+  constexpr auto MAX_PRINTABLE = SYS_LIMIT_PRINTABLE_MAX >> 2;
   std::string value;
   if (op != AssertOp::DEFAULT) {
     const StringRef ref = msg.asStrRef();
@@ -121,13 +132,11 @@ void raiseAssertFail(ARState &st, Value &&msg, const AssertOp op, Value &&left, 
     value += "  <LHS>: ";
     value += st.typePool.get(left.getTypeID()).getNameRef();
     value += " = ";
-    appendAsPrintable(left.hasStrRef() ? left.asStrRef() : left.toString(st.typePool),
-                      MAX_PRINTABLE + value.size(), value);
+    value += toPrintable(st.typePool, left);
     value += "\n  <RHS>: ";
     value += st.typePool.get(right.getTypeID()).getNameRef();
     value += " = ";
-    appendAsPrintable(right.hasStrRef() ? right.asStrRef() : right.toString(st.typePool),
-                      MAX_PRINTABLE + value.size(), value);
+    value += toPrintable(st.typePool, right);
     msg = Value::createStr(std::move(value));
     break;
   }

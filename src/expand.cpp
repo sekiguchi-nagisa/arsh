@@ -190,12 +190,13 @@ static Value concatPath(ARState &state, const Value *const constPool, const Valu
         tmp.clear();
       }
 
-      if (const auto meta = cur->asExpandMeta().first; meta == ExpandMeta::TILDE) {
+      const auto meta = cur->asExpandMeta().first;
+      if (meta == ExpandMeta::TILDE) {
         param.tildeCount++;
       } else if (meta == ExpandMeta::ASSIGN) {
         param.assignCount++;
       }
-      if (!checkedAppend(cur->toString(state.typePool), StringObject::MAX_SIZE, tmp)) {
+      if (!checkedAppend(toString(meta), StringObject::MAX_SIZE, tmp)) {
         goto RAISE;
       }
     }
@@ -260,7 +261,7 @@ static bool concatAsGlobPattern(ARState &state, const Value *const constPool,
       if (meta == ExpandMeta::TILDE && !tilde && (cur == begin || !prefix.empty())) {
         tilde = true;
       }
-      if (!checkedAppend(v.toString(state.typePool), StringObject::MAX_SIZE, out)) {
+      if (!checkedAppend(toString(meta), StringObject::MAX_SIZE, out)) {
         goto NOMEM;
       }
       if (meta == ExpandMeta::ASSIGN && prefix.empty() && !globMeta && !tilde) {

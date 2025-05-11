@@ -52,12 +52,13 @@ inline std::string quoteAsShellArg(StringRef ref) {
  * @param ref
  * @param maxSize
  * @param out
- * if reach maxSize, truncate and put '...'
+ * @return
+ * if reach maxSize, truncate and put '...' and return false
  */
-void appendAsPrintable(StringRef ref, size_t maxSize, std::string &out);
+bool appendAsPrintable(StringRef ref, size_t maxSize, std::string &out);
 
-inline void appendAsPrintable(const StringRef ref, std::string &out) {
-  appendAsPrintable(ref, out.max_size(), out);
+inline bool appendAsPrintable(const StringRef ref, std::string &out) {
+  return appendAsPrintable(ref, out.max_size(), out);
 }
 
 /**

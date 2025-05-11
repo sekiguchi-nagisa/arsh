@@ -124,15 +124,17 @@ std::string toPrintable(const StringRef ref) {
   return out;
 }
 
-void appendAsPrintable(StringRef ref, size_t maxSize, std::string &out) {
+bool appendAsPrintable(StringRef ref, size_t maxSize, std::string &out) {
   const auto old = errno;
+  bool status = true;
   for (int ch : ref) { // for arm32/arm64
     if (unlikely(out.size() >= maxSize)) {
       if (maxSize >= 3) {
         out.resize(maxSize - 3);
         out += "...";
       }
-      break;
+      status = false;
+      goto END;
     }
     if ((ch >= 0 && ch < 32) || ch == 127) {
       char d[16];
@@ -142,7 +144,9 @@ void appendAsPrintable(StringRef ref, size_t maxSize, std::string &out) {
       out += static_cast<char>(ch);
     }
   }
+END:
   errno = old;
+  return status;
 }
 
 std::string unquoteCmdArgLiteral(const StringRef ref, bool unescape) {

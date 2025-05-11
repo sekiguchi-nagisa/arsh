@@ -103,9 +103,16 @@ private:
 };
 
 class StrAppender : public Stringifier::Appender {
+public:
+  enum class Op : unsigned char {
+    APPEND,    // just append
+    PRINTABLE, // append as printable string
+  };
+
 private:
   std::string buf;
   const unsigned int limit;
+  Op appendOp{Op::APPEND};
 
 public:
   explicit StrAppender(unsigned int limit) : limit(limit) {}
@@ -115,6 +122,10 @@ public:
   std::string take() && { return std::move(this->buf); }
 
   const std::string &get() const { return this->buf; }
+
+  Op getAppendOp() const { return this->appendOp; }
+
+  void setAppendOp(Op op) { this->appendOp = op; }
 };
 
 class StrObjAppender : public Stringifier::Appender {

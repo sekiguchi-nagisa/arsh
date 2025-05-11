@@ -19,6 +19,7 @@
 #include "candidates.h"
 #include "constant.h"
 #include "core.h"
+#include "format_util.h"
 #include "job.h"
 #include "misc/inlined_stack.hpp"
 #include "misc/num_util.hpp"
@@ -654,7 +655,13 @@ bool Stringifier::addAsInterp(const Value &value) {
 }
 
 bool StrAppender::operator()(const StringRef ref) {
-  return checkedAppend(ref, this->limit, this->buf);
+  switch (this->appendOp) {
+  case Op::APPEND:
+    return checkedAppend(ref, this->limit, this->buf);
+  case Op::PRINTABLE:
+    return appendAsPrintable(ref, this->limit, this->buf);
+  }
+  return true; // normally unreachable
 }
 
 bool StrObjAppender::operator()(StringRef ref) { return this->value.appendAsStr(this->state, ref); }
