@@ -32,8 +32,10 @@ public:
 
   bool equals(const Value &other) const;
 
-  unsigned int hash(uint64_t seed) const;
+  uint64_t hash(uint64_t seed) const;
 };
+
+uint64_t hashRange(const Value *begin, const Value *end);
 
 class OrderedMapEntries {
 public:

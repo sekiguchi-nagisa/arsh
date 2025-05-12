@@ -1864,13 +1864,19 @@ bool VM::mainLoop(ARState &state) {
         vmnext;
       }
       vmcase(INIT_FIELDS) {
-        unsigned int offset = consume8(state.stack.ip());
-        unsigned int size = consume8(state.stack.ip());
+        const unsigned int offset = consume8(state.stack.ip());
+        const unsigned int size = consume8(state.stack.ip());
 
         auto &obj = typeAs<BaseObject>(state.stack.peek());
         assert(obj.getFieldSize() == size);
         for (unsigned int i = 0; i < size; i++) {
           obj[i] = state.stack.getLocal(offset + i);
+        }
+        if (size > 0 && state.typePool.get(TYPE::Value_)
+                            .isSameOrBaseTypeOf(state.typePool.get(obj.getTypeID()))) {
+          const Value *begin = &obj[0];
+          const Value *end = begin + size;
+          obj.setHash(hashRange(begin, end));
         }
         vmnext;
       }

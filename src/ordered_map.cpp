@@ -39,11 +39,21 @@ bool OrderedMapKey::equals(const Value &other) const {
 
 static uint64_t simpleHash(uint64_t value) {
   uint64_t ret = UINT64_MAX;
-  rapid_mum(&value, &ret);
+  rapid_mum(&value, &ret); // generate up to UINT64_MAX hash value
   return ret;
 }
 
-unsigned int OrderedMapKey::hash(uint64_t seed) const {
+// rapidhash equivalent to `wyhash64` see. https://github.com/wangyi-fudan/wyhash
+// a useful 64bit-64bit mix function to produce deterministic pseudo random numbers that can pass
+// BigCrush and PractRand
+static uint64_t rapidhash64(uint64_t A, uint64_t B) {
+  A ^= 0x2d358dccaa6c78a5ull;
+  B ^= 0x8bb84b93962eacc9ull;
+  rapid_mum(&A, &B);
+  return rapid_mix(A ^ 0x2d358dccaa6c78a5ull, B ^ 0x8bb84b93962eacc9ull);
+}
+
+uint64_t OrderedMapKey::hash(uint64_t seed) const {
   bool isStr = false;
   uint64_t u64 = 0;
   const void *ptr = nullptr;
@@ -76,6 +86,8 @@ unsigned int OrderedMapKey::hash(uint64_t seed) const {
         ptr = ref.data();
         size = ref.size();
         isStr = true;
+      } else if (v.kind() == ValueKind::OBJECT && v.get()->getKind() == ObjectKind::Base) {
+        u64 = typeAs<BaseObject>(v).getHash();
       } else {
         assert(v.isObject());
         u64 = static_cast<int64_t>(reinterpret_cast<uintptr_t>(v.get()));
@@ -83,14 +95,15 @@ unsigned int OrderedMapKey::hash(uint64_t seed) const {
       break;
     }
   }
+  return isStr ? rapidhash_withSeed(ptr, size, seed) : simpleHash(u64);
+}
 
-  uint64_t hash;
-  if (isStr) {
-    hash = rapidhash_withSeed(ptr, size, seed);
-  } else {
-    hash = simpleHash(u64);
+uint64_t hashRange(const Value *begin, const Value *const end) {
+  uint64_t hash = 0;
+  for (; begin != end; ++begin) {
+    hash = rapidhash64(hash, OrderedMapKey(*begin).hash(RAPID_SEED));
   }
-  return static_cast<unsigned int>(hash);
+  return hash;
 }
 
 // ###############################
@@ -255,7 +268,7 @@ void OrderedMapObject::clear() {
 }
 
 bool OrderedMapObject::probeBuckets(const OrderedMapKey &key, ProbeState &probe) const {
-  const unsigned int keyHash = key.hash(this->seed);
+  const auto keyHash = static_cast<unsigned int>(key.hash(this->seed)); // only use 32bit
   unsigned int bucketIndex = this->bucketLen.toBucketIndex(keyHash);
   int dist = 0;
   bool found = false;

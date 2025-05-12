@@ -958,6 +958,7 @@ struct StrArrayIter {
 
 class BaseObject : public ObjectWithRtti<ObjectKind::Base> {
 private:
+  unsigned int hash{0}; // for Value type
   unsigned int fieldSize;
   RawValue fields[];
 
@@ -993,6 +994,10 @@ public:
   }
 
   unsigned int getFieldSize() const { return this->fieldSize; }
+
+  unsigned int getHash() const { return this->hash; }
+
+  void setHash(unsigned int h) { this->hash = h; }
 };
 
 template <typename... Arg>
