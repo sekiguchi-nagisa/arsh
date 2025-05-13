@@ -230,13 +230,17 @@ const Type *TypePool::resolveCommonSuperType(std::vector<const Type *> &types) {
   return nullptr;
 }
 
-static const Type &resolveCollectionSuperType(const TypePool &pool, const Type &elementType) {
+static const Type &resolveCollectionSuperType(const TypePool &pool, const Type &elementType,
+                                              bool allowValueType = false) {
   const Type *type = &elementType;
   if (type->isOptionType()) {
     type = &cast<OptionType>(type)->getElementType();
   }
   if (pool.get(TYPE::Eq_).isSameOrBaseTypeOf(*type)) {
     if (pool.get(TYPE::Ord_).isSameOrBaseTypeOf(*type)) {
+      if (allowValueType && pool.get(TYPE::Value_).isSameOrBaseTypeOf(*type)) {
+        return pool.get(TYPE::Value_);
+      }
       return pool.get(TYPE::Ord_);
     }
     return pool.get(TYPE::Eq_);
@@ -420,7 +424,8 @@ TypeOrError TypePool::finalizeRecordType(const RecordType &recordType,
         RAISE_TL_ERROR(InvalidElement, type.getName());
       }
       if (recordType.getSuperType()->is(TYPE::Any)) { // for normal record type
-        elementSuperTypes.push_back(&resolveCollectionSuperType(*this, type));
+        elementSuperTypes.push_back(
+            &resolveCollectionSuperType(*this, type, e.second->has(HandleAttr::READ_ONLY)));
       }
     }
   }
@@ -429,8 +434,8 @@ TypeOrError TypePool::finalizeRecordType(const RecordType &recordType,
   }
   auto *newRecordType = cast<RecordType>(this->getMut(recordType.typeId()));
   assert(!newRecordType->isFinalized());
-  if (recordType.getSuperType()->is(TYPE::Any)) {        // resolve actual super type of record
-    elementSuperTypes.push_back(&this->get(TYPE::Ord_)); // for empty record
+  if (recordType.getSuperType()->is(TYPE::Any)) {          // resolve actual super type of record
+    elementSuperTypes.push_back(&this->get(TYPE::Value_)); // for empty record
     auto *superType = this->resolveCommonSuperType(elementSuperTypes);
     assert(superType);
     newRecordType->superType = superType;

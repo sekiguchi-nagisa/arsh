@@ -1,0 +1,45 @@
+# for user-defined key type
+
+type Empty(){}
+
+type Interval {
+    let begin: Int
+    let end: Int
+}
+
+type Range {
+    let begin: Interval
+    let end: Interval
+}
+
+type Invalid() {
+    let value = $none
+}
+
+assert new Empty() == new Empty()
+assert new Empty().compare(new Empty()) == 0
+
+var m0 = [new Empty(): 2345, new Empty(): 9999]
+assert $m0.size() == 1
+assert $m0[new Empty()] == 9999
+
+assert new Invalid() == new Invalid()
+assert new Invalid().compare(new Invalid()) == 0
+assert [new Invalid(): 1234, new Invalid(): -999][new Invalid()] == -999
+
+assert new Interval(1,3).compare(new Interval(2,4)) < 0
+assert new Interval(1,3).compare(new Interval(1,2)) > 0
+assert new Interval(1,3).compare(new Interval(1,3)) == 0
+assert new Interval(1,3) == new Interval(1,3)
+
+var m1 = [new Interval(1,4): '1+4', new Interval(3,7): '3+7']
+assert $m1[new Interval(1,4)] == '1+4'
+assert $m1[new Interval(3,7)] == '3+7'
+$m1[new Interval(1,4)] = '1+4!!!'
+assert $m1[new Interval(1,4)] == '1+4!!!'
+
+var m2 = [
+    new Range(new Interval(1,4), new Interval(-9,-3)): 'AAAAA',
+    new Range(new Interval(6,9), new Interval(-12,-89)): 'BBBBB',
+]
+assert $m2.put(new Range(new Interval(1,4), new Interval(-9,-3)), 'FFF')! == 'AAAAA'

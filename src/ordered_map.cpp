@@ -86,11 +86,12 @@ uint64_t OrderedMapKey::hash(uint64_t seed) const {
         ptr = ref.data();
         size = ref.size();
         isStr = true;
-      } else if (v.kind() == ValueKind::OBJECT && v.get()->getKind() == ObjectKind::Base) {
-        u64 = typeAs<BaseObject>(v).getHash();
-      } else {
-        assert(v.isObject());
-        u64 = static_cast<int64_t>(reinterpret_cast<uintptr_t>(v.get()));
+      } else if (v.kind() == ValueKind::OBJECT) {
+        if (v.get()->getKind() == ObjectKind::Base) {
+          u64 = typeAs<BaseObject>(v).getHash();
+        } else {
+          u64 = reinterpret_cast<uintptr_t>(v.get());
+        }
       }
       break;
     }

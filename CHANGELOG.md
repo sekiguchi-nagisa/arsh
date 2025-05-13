@@ -7,6 +7,7 @@
 #### Core
 
 - add subshell syntax ``&( )``
+- now immutable record type will be map key
 
 #### Builtin
 
