@@ -131,14 +131,14 @@ protected:
     native_type_info_t info;
     unsigned int u32;
     struct {
-      unsigned short v1;
-      unsigned char v2_1;
-      unsigned char v2_2;
-    } u16_u8;
+      bool finalized;
+      unsigned char fieldSize;
+      unsigned short extraAttr;
+    } recordTypeAttr;
     struct {
-      unsigned short v1;
-      unsigned short v2;
-    } u16_2;
+      ModId modId;
+      unsigned short childSize;
+    } modTypeAttr;
   } meta{};
 
   const CStrPtr name;
@@ -646,12 +646,12 @@ private:
 protected:
   RecordType(TypeKind k, unsigned int id, StringRef ref, const Type &superType)
       : Type(k, id, ref, &superType) {
-    this->meta.u32 = 0;
+    this->meta.u32 = 0; // force initialize
   }
 
-  void setExtraAttr(unsigned char attr) { this->meta.u16_u8.v2_2 = attr; }
+  void setExtraAttr(unsigned char attr) { this->meta.recordTypeAttr.extraAttr = attr; }
 
-  unsigned char getExtraAttr() const { return this->meta.u16_u8.v2_2; }
+  unsigned char getExtraAttr() const { return this->meta.recordTypeAttr.extraAttr; }
 
 public:
   RecordType(unsigned int id, StringRef ref, const Type &superType)
@@ -661,9 +661,9 @@ public:
 
   const char *getPackedFieldNames() const { return this->packedFieldNames.get(); }
 
-  unsigned int getFieldSize() const { return this->meta.u16_u8.v1; }
+  unsigned int getFieldSize() const { return this->meta.recordTypeAttr.fieldSize; }
 
-  bool isFinalized() const { return this->meta.u16_u8.v2_1 != 0; }
+  bool isFinalized() const { return this->meta.recordTypeAttr.finalized; }
 
   HandlePtr lookupField(const std::string &fieldName) const;
 
@@ -674,8 +674,8 @@ protected:
                 CStrPtr &&packedFieldNames) {
     this->handleMap = std::move(handles);
     this->packedFieldNames = std::move(packedFieldNames);
-    this->meta.u16_u8.v1 = fieldSize;
-    this->meta.u16_u8.v2_1 = 1; // finalize
+    this->meta.recordTypeAttr.fieldSize = fieldSize;
+    this->meta.recordTypeAttr.finalized = true;
   }
 };
 
@@ -790,17 +790,16 @@ public:
           std::unordered_map<std::string, HandlePtr> &&handles, FlexBuffer<Imported> &&children,
           unsigned int index, ModAttr attr)
       : Type(TypeKind::Mod, id, toModTypeName(modId), &superType) {
-    this->meta.u16_2.v1 = toUnderlying(modId);
-    this->meta.u16_2.v2 = 0;
+    this->meta.modTypeAttr = {.modId = modId, .childSize = 0};
     this->data.e3.values[0] = index;
     this->reopen(std::move(handles), std::move(children), attr);
   }
 
   ~ModType();
 
-  ModId getModId() const { return static_cast<ModId>(this->meta.u16_2.v1); }
+  ModId getModId() const { return this->meta.modTypeAttr.modId; }
 
-  unsigned short getChildSize() const { return this->meta.u16_2.v2; }
+  unsigned short getChildSize() const { return this->meta.modTypeAttr.childSize; }
 
   Imported getChildAt(unsigned int i) const {
     assert(i < this->getChildSize());
@@ -883,9 +882,10 @@ private:
 
   void reopen(std::unordered_map<std::string, HandlePtr> &&handles, FlexBuffer<Imported> &&children,
               ModAttr attr) {
+    assert(children.size() <= UINT16_MAX);
     this->disposeChildren();
     this->handleMap = std::move(handles);
-    this->meta.u16_2.v2 = children.size();
+    this->meta.modTypeAttr.childSize = children.size();
     if (this->getChildSize() < 3) {
       for (unsigned int i = 0; i < this->getChildSize(); i++) {
         this->data.e3.v[i] = children[i];
