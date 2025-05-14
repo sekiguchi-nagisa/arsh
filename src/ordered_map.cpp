@@ -102,7 +102,7 @@ uint64_t OrderedMapKey::hash(uint64_t seed) const {
 uint64_t hashRange(const Value *begin, const Value *const end) {
   uint64_t hash = 0;
   for (; begin != end; ++begin) {
-    hash = rapidhash64(hash, OrderedMapKey(*begin).hash(RAPID_SEED));
+    hash = rapidhash64(hash, OrderedMapKey(*begin).hash(0));
   }
   return hash;
 }
