@@ -495,6 +495,7 @@ constexpr size_t SYS_LIMIT_EXPANSION_RESULTS = 4096;
 constexpr size_t SYS_LIMIT_FUNC_LEN = UINT32_MAX;
 constexpr size_t SYS_LIMIT_NATIVE_RECURSION = 128;
 constexpr size_t SYS_LIMIT_NESTED_OBJ_DEPTH = 256;
+constexpr size_t SYS_LIMIT_RECORD_TYPE_FIELD_DEPTH = SYS_LIMIT_NESTED_OBJ_DEPTH >> 1;
 constexpr size_t SYS_LIMIT_FUNC_DEPTH = 32;
 constexpr size_t SYS_LIMIT_UPVAR_NUM = UINT8_MAX;
 constexpr size_t SYS_LIMIT_JOB_DESC_LEN = 96;

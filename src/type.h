@@ -131,9 +131,9 @@ protected:
     native_type_info_t info;
     unsigned int u32;
     struct {
-      bool finalized;
+      unsigned short depth;
       unsigned char fieldSize;
-      unsigned short extraAttr;
+      unsigned char extraAttr;
     } recordTypeAttr;
     struct {
       ModId modId;
@@ -663,7 +663,9 @@ public:
 
   unsigned int getFieldSize() const { return this->meta.recordTypeAttr.fieldSize; }
 
-  bool isFinalized() const { return this->meta.recordTypeAttr.finalized; }
+  unsigned int getDepth() const { return this->meta.recordTypeAttr.depth; }
+
+  bool isFinalized() const { return this->getDepth() > 0; }
 
   HandlePtr lookupField(const std::string &fieldName) const;
 
@@ -675,7 +677,7 @@ protected:
     this->handleMap = std::move(handles);
     this->packedFieldNames = std::move(packedFieldNames);
     this->meta.recordTypeAttr.fieldSize = fieldSize;
-    this->meta.recordTypeAttr.finalized = true;
+    this->meta.recordTypeAttr.depth = 1; // finalize
   }
 };
 
