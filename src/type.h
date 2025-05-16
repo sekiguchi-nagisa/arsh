@@ -20,6 +20,7 @@
 #include <array>
 #include <cassert>
 #include <functional>
+#include <limits>
 #include <memory>
 #include <string>
 #include <unordered_map>
@@ -673,11 +674,13 @@ public:
 
 protected:
   void finalize(unsigned char fieldSize, std::unordered_map<std::string, HandlePtr> &&handles,
-                CStrPtr &&packedFieldNames) {
+                CStrPtr &&packedFieldNames, unsigned int depth) {
     this->handleMap = std::move(handles);
     this->packedFieldNames = std::move(packedFieldNames);
     this->meta.recordTypeAttr.fieldSize = fieldSize;
-    this->meta.recordTypeAttr.depth = 1; // finalize
+    using depth_t = decltype(this->meta.recordTypeAttr.depth);
+    this->meta.recordTypeAttr.depth = static_cast<depth_t>(
+        std::min<size_t>(std::numeric_limits<depth_t>::max(), depth)); // finalize
   }
 };
 

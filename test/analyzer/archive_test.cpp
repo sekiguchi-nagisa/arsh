@@ -733,6 +733,7 @@ TEST_F(ArchiveTest, userdefined) {
   {
     auto &recordType = cast<RecordType>(*typeOrError);
     ASSERT_TRUE(recordType.isFinalized());
+    ASSERT_EQ(1, recordType.getDepth());
     ASSERT_EQ(2, recordType.getFieldSize());
     ASSERT_EQ(2, recordType.getHandleMap().size());
     ASSERT_STREQ("begin;end", recordType.getPackedFieldNames());
@@ -766,6 +767,7 @@ TEST_F(ArchiveTest, userdefined) {
    * after deserialized, always true
    */
   ASSERT_TRUE(cast<RecordType>(typeOrError)->isFinalized());
+  ASSERT_EQ(1, cast<RecordType>(typeOrError)->getDepth());
   handle2 = this->scope().lookup(toTypeAliasFullName(typeName));
   ASSERT_FALSE(handle2); // in named import, not found
   ASSERT_EQ(NameLookupError::NOT_FOUND, handle2.asErr());

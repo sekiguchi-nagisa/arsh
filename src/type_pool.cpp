@@ -412,9 +412,18 @@ TypeOrError TypePool::createCLIRecordType(const std::string &typeName, ModId bel
   RAISE_TL_ERROR(DefinedType, typeName.c_str());
 }
 
+static const RecordType *checkRecordType(const Type &type) {
+  auto *t = &type;
+  if (t->isOptionType()) {
+    t = &cast<OptionType>(t)->getElementType();
+  }
+  return t->isRecordOrDerived() ? cast<RecordType>(t) : nullptr;
+}
+
 TypeOrError TypePool::finalizeRecordType(const RecordType &recordType,
                                          std::unordered_map<std::string, HandlePtr> &&handles) {
   std::vector<const Type *> elementSuperTypes;
+  unsigned int depth = 1;
   unsigned int fieldCount = 0;
   for (auto &e : handles) {
     if (!e.second->isMethodHandle() && !e.second->is(HandleKind::TYPE_ALIAS)) {
@@ -427,6 +436,9 @@ TypeOrError TypePool::finalizeRecordType(const RecordType &recordType,
         elementSuperTypes.push_back(
             &resolveCollectionSuperType(*this, type, e.second->has(HandleAttr::READ_ONLY)));
       }
+      if (auto *t = checkRecordType(type)) {
+        depth = std::max(depth, t->getDepth() + 1);
+      }
     }
   }
   if (fieldCount > SYS_LIMIT_TUPLE_NUM) {
@@ -434,8 +446,9 @@ TypeOrError TypePool::finalizeRecordType(const RecordType &recordType,
   }
   auto *newRecordType = cast<RecordType>(this->getMut(recordType.typeId()));
   assert(!newRecordType->isFinalized());
-  if (recordType.getSuperType()->is(TYPE::Any)) {          // resolve actual super type of record
-    elementSuperTypes.push_back(&this->get(TYPE::Value_)); // for empty record
+  if (recordType.getSuperType()->is(TYPE::Any)) { // resolve actual super type of record
+    const auto t = depth < SYS_LIMIT_RECORD_TYPE_FIELD_DEPTH ? TYPE::Value_ : TYPE::Ord_;
+    elementSuperTypes.push_back(&this->get(t)); // for empty record
     auto *superType = this->resolveCommonSuperType(elementSuperTypes);
     assert(superType);
     newRecordType->superType = superType;
@@ -455,7 +468,7 @@ TypeOrError TypePool::finalizeRecordType(const RecordType &recordType,
   }
 
   newRecordType->finalize(fieldCount, std::move(handles),
-                          CStrPtr(std::move(builder).build().take()));
+                          CStrPtr(std::move(builder).build().take()), depth);
   return Ok(newRecordType);
 }
 
