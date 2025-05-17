@@ -44,18 +44,17 @@ unsigned int getGraphemeWidth(const CharWidthProperties &ps, const GraphemeClust
     } else if (isRegionalIndicator(codePoint)) {
       flagSeqCount++;
     }
-    int w = UnicodeUtil::width(codePoint, ps.eaw);
-    if (w > 0) {
+    if (const int w = UnicodeUtil::width(codePoint, ps.eaw); w > 0) {
       width += w;
     }
   }
   if (flagSeqCount == 2) {
     return ps.flagSeqWidth;
   }
-  if (width > 2 && ps.zwjSeqFallback) {
-    return width;
+  if (ret.isEmojiSeq()) {
+    return ps.zwjSeqFallback ? width : 2;
   }
-  return width < 2 ? width : 2;
+  return width;
 }
 
 // ##############################

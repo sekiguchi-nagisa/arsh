@@ -17,8 +17,6 @@
 #ifndef MISC_LIB_GRAPHEME_HPP
 #define MISC_LIB_GRAPHEME_HPP
 
-#include <tuple>
-
 #include "detect.hpp"
 #include "string_ref.hpp"
 #include "unicode.hpp"
@@ -75,7 +73,7 @@ public:
    * get InCB_* property
    * @param codePoint
    * @return
-   * if has no InCB property, return Any
+   * if no InCB property, return Any
    * otherwise, return InCB_Linker or InCB_Extend
    */
   static BreakProperty getInCBExtendOrLinker(int codePoint);
@@ -142,15 +140,19 @@ class GraphemeCluster {
 private:
   StringRef ref; // grapheme cluster
   bool invalid{false};
+  bool emojiSeq{false}; // emoji modifier sequence or emoji ZWJ sequence
 
 public:
   GraphemeCluster() = default;
 
-  GraphemeCluster(StringRef ref, bool invalid) : ref(ref), invalid(invalid) {}
+  GraphemeCluster(StringRef ref, bool invalid, bool emojiSeq)
+      : ref(ref), invalid(invalid), emojiSeq(emojiSeq) {}
 
   StringRef getRef() const { return this->ref; }
 
   bool hasInvalid() const { return this->invalid; }
+
+  bool isEmojiSeq() const { return this->emojiSeq; }
 };
 
 template <typename Stream>
@@ -162,6 +164,7 @@ private:
   Stream stream;
   int codePoint{-1};
   BreakProperty state{BreakProperty::SOT};
+  bool emojiSeq{false};
 
 protected:
   GraphemeScanner(Stream &&stream, int codePoint, BreakProperty property)
@@ -175,6 +178,8 @@ public:
   int getCodePoint() const { return this->codePoint; }
 
   BreakProperty getProperty() const { return this->state; }
+
+  bool foundEmojiSeq() const { return this->emojiSeq; }
 
   /**
    * scan grapheme cluster boundary
@@ -251,6 +256,7 @@ bool GraphemeScanner<Stream>::scanBoundary() {
   const auto after = this->nextProperty();
   const auto before = this->state;
   this->state = after;
+  this->emojiSeq = false;
 
   switch (before) {
   case BreakProperty::SOT:
@@ -347,6 +353,7 @@ bool GraphemeScanner<Stream>::scanBoundary() {
     break;
   case BreakProperty::Extended_Pictographic_with_ZWJ:
     if (after == BreakProperty::Extended_Pictographic) {
+      this->emojiSeq = true;
       return false; // GB11
     }
     break;
@@ -383,8 +390,10 @@ public:
     }
     auto *begin = this->charBegin;
     const char *end;
+    bool emojiSeq = false;
     while (true) {
       end = this->getIter();
+      emojiSeq = emojiSeq || this->foundEmojiSeq();
       if (this->scanBoundary()) {
         break;
       }
@@ -394,7 +403,7 @@ public:
     }
     this->charBegin = end;
     StringRef ref(begin, static_cast<size_t>(end - begin));
-    return {ref, invalid};
+    return {ref, invalid, emojiSeq};
   }
 
 private:
