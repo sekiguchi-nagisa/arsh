@@ -248,6 +248,10 @@ assert '4334 '.width() == 5
 assert $'\n\t'.width() == 0
 assert "あ2い".width() == 5
 assert '👨‍👨‍👦'.width() == 2
+assert $'\u0023'.width() == 1
+assert $'\uFE0F'.width() == 0
+assert $'\u0023\uFE0F'.width() == 2 # VS16 (emoji style) is always 2 width
+assert $'\u0023\uFE0F\u20E3'.width() == 2 # VS16 (emoji style) is always 2 width
 
 ## east-asian width
 assert "$(LANG=ja_JP.UTF-8 LC_ALL=ja_JP.UTF-8 LC_CTYPE=ja_JP.UTF-8 call $BIN_NAME -c 'echo ${"○".width()}')" == "2"
@@ -258,6 +262,10 @@ assert "○".width(1) == 1
 assert "○".width(2) == 2
 assert "あ".width(1) == 2
 assert "あ".width(2) == 2
+assert $'\U2640'.width(1) == 1
+assert $'\U2640'.width(2) == 2
+assert $'\U2640\uFE0F'.width(1) == 2  # VS16 (emoji style) is always 2 width
+assert $'\U2640\uFE0F'.width(2) == 2
 
 ## broken encoded string
 let invalid = $'\xC2\x24\xE0\xA4\xC2\xE0\xB8\xB3'

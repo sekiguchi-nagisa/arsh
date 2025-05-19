@@ -24,6 +24,9 @@ call $BIN_NAME $SCRIPT_DIR/gen_word_break_property.ds $src/misc/word_break_prope
 echo try update $src/misc/case_fold.in
 call $BIN_NAME $SCRIPT_DIR/gen_case_fold.arsh $src/misc/case_fold.in
 
+echo try update $src/misc/emoji_variation.in
+call $BIN_NAME $SCRIPT_DIR/gen_emoji_variation.arsh $src/misc/emoji_variation.in
+
 ## for test case
 var test = "$SCRIPT_DIR/../test"
 

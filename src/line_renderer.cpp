@@ -33,9 +33,21 @@ static bool isRegionalIndicator(int codePoint) {
   return codePoint >= 0x1F1E6 && codePoint <= 0x1F1E6 + ('z' - 'a');
 }
 
+static bool isEmojiVariationSeqBase(int codePoint) {
+#define EMOJI_VARIATION_ENTRY int
+#include "misc/emoji_variation.in"
+
+#undef EMOJI_VARIATION_ENTRY
+
+  return std::binary_search(std::begin(emoji_variation_table), std::end(emoji_variation_table),
+                            codePoint);
+}
+
 unsigned int getGraphemeWidth(const CharWidthProperties &ps, const GraphemeCluster &ret) {
   unsigned int width = 0;
-  unsigned int flagSeqCount = 0;
+  int prevCodePoint = 0;
+  unsigned char flagSeqCount = 0;
+  unsigned char prevWidth = 0;
   Utf8Stream stream(ret.getRef().begin(), ret.getRef().end());
   while (stream) {
     int codePoint = stream.nextCodePoint();
@@ -43,10 +55,16 @@ unsigned int getGraphemeWidth(const CharWidthProperties &ps, const GraphemeClust
       codePoint = UnicodeUtil::REPLACEMENT_CHAR_CODE;
     } else if (isRegionalIndicator(codePoint)) {
       flagSeqCount++;
+    } else if (codePoint == 0xFE0F && isEmojiVariationSeqBase(prevCodePoint)) { // VS16
+      width -= prevWidth;
+      width += 2; // force wide width
     }
+    prevWidth = 0;
     if (const int w = UnicodeUtil::width(codePoint, ps.eaw); w > 0) {
       width += w;
+      prevWidth = w;
     }
+    prevCodePoint = codePoint;
   }
   if (flagSeqCount == 2) {
     return ps.flagSeqWidth;
