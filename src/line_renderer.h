@@ -25,8 +25,8 @@ namespace arsh {
 // high level api for unicode-aware character op
 
 #define EACH_CHAR_WIDTH_PROPERTY(OP)                                                               \
-  OP(EAW, "○")                                                                                     \
   OP(RGI, "🇯")                                                                                     \
+  OP(EAW, "○")                                                                                     \
   OP(EMOJI_FLAG_SEQ, "🇯🇵")                                                                         \
   OP(EMOJI_ZWJ_SEQ, "👩🏼‍🏭")
 
@@ -59,11 +59,11 @@ struct CharWidthProperties {
 
   void setProperty(CharWidthProperty p, std::size_t len) {
     switch (p) {
-    case CharWidthProperty::EAW:
-      this->eaw = len == 2 ? AmbiguousCharWidth::FULL : AmbiguousCharWidth::HALF;
-      break;
     case CharWidthProperty::RGI:
       this->reginalIndicatorWidth = len;
+      break;
+    case CharWidthProperty::EAW:
+      this->eaw = len == 2 ? AmbiguousCharWidth::FULL : AmbiguousCharWidth::HALF;
       break;
     case CharWidthProperty::EMOJI_FLAG_SEQ:
       this->flagSeqWidth = len;
