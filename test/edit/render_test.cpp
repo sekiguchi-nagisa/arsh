@@ -126,6 +126,12 @@ TEST(EncodingTest, charLen2) {
   ret = getCharLen(line, ps); //
   ASSERT_EQ(4, ret.byteSize);
   ASSERT_EQ(1, ret.colSize); // regional indicator is half
+
+  ps.setProperty(CharWidthProperty::RGI, 2); // override width
+  ASSERT_EQ("🇦", line);
+  ret = getCharLen(line, ps); //
+  ASSERT_EQ(4, ret.byteSize);
+  ASSERT_EQ(2, ret.colSize);
 }
 
 TEST(EncodingTest, charLenControl) {

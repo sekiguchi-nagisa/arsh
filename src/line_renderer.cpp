@@ -46,7 +46,6 @@ static bool isEmojiVariationSeqBase(int codePoint) {
 unsigned int getGraphemeWidth(const CharWidthProperties &ps, const GraphemeCluster &ret) {
   unsigned int width = 0;
   int prevCodePoint = 0;
-  unsigned char flagSeqCount = 0;
   unsigned char prevWidth = 0;
   Utf8Stream stream(ret.getRef().begin(), ret.getRef().end());
   while (stream) {
@@ -54,10 +53,25 @@ unsigned int getGraphemeWidth(const CharWidthProperties &ps, const GraphemeClust
     if (ps.replaceInvalid && codePoint < 0) {
       codePoint = UnicodeUtil::REPLACEMENT_CHAR_CODE;
     } else if (isRegionalIndicator(codePoint)) {
-      flagSeqCount++;
+      if (isRegionalIndicator(prevCodePoint)) {
+        width -= prevWidth;
+        width += ps.flagSeqWidth; // force specified width
+        prevWidth = ps.flagSeqWidth;
+        prevCodePoint = codePoint;
+        continue;
+      }
+      if (ps.reginalIndicatorWidth) { // use specified width
+        width += ps.reginalIndicatorWidth;
+        prevWidth = ps.reginalIndicatorWidth;
+        prevCodePoint = codePoint;
+        continue;
+      }
     } else if (codePoint == 0xFE0F && isEmojiVariationSeqBase(prevCodePoint)) { // VS16
       width -= prevWidth;
       width += 2; // force wide width
+      prevWidth = 2;
+      prevCodePoint = codePoint;
+      continue;
     }
     prevWidth = 0;
     if (const int w = UnicodeUtil::width(codePoint, ps.eaw); w > 0) {
@@ -65,9 +79,6 @@ unsigned int getGraphemeWidth(const CharWidthProperties &ps, const GraphemeClust
       prevWidth = w;
     }
     prevCodePoint = codePoint;
-  }
-  if (flagSeqCount == 2) {
-    return ps.flagSeqWidth;
   }
   if (ret.isEmojiSeq()) {
     return ps.zwjSeqFallback ? width : 2;

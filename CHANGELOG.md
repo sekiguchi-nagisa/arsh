@@ -33,6 +33,7 @@
 - fix emoji sequence handling of ``String#width`` method and line renderer
     - now width of grapheme cluster (except for emoji zwj sequence) is sum of the code point width
     - width of emoji variation sequence (VS16, emoji-style) is always 2
+    - add workaround for regional indicator width
 
 ### Fixed
 

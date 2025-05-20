@@ -698,18 +698,13 @@ ARSH_METHOD string_width(RuntimeContext &ctx) {
   auto &v = LOCAL(1);
 
   // resolve east-asian width option
-  auto n = v.isInvalid() ? 0 : v.asInt();
-  auto eaw = n == 2                       ? AmbiguousCharWidth::FULL
-             : n == 1                     ? AmbiguousCharWidth::HALF
-             : UnicodeUtil::isCJKLocale() ? AmbiguousCharWidth::FULL
-                                          : AmbiguousCharWidth::HALF;
-
-  CharWidthProperties ps = {
-      .eaw = eaw,
-      .flagSeqWidth = 2,
-      .zwjSeqFallback = false,
-      .replaceInvalid = true,
-  };
+  const auto n = v.isInvalid() ? 0 : v.asInt();
+  CharWidthProperties ps{};
+  ps.replaceInvalid = true;
+  ps.eaw = n == 2                       ? AmbiguousCharWidth::FULL
+           : n == 1                     ? AmbiguousCharWidth::HALF
+           : UnicodeUtil::isCJKLocale() ? AmbiguousCharWidth::FULL
+                                        : AmbiguousCharWidth::HALF;
   int64_t value = 0;
   iterateGrapheme(
       ref, [&value, &ps](const GraphemeCluster &ret) { value += getGraphemeWidth(ps, ret); });

@@ -26,6 +26,7 @@ namespace arsh {
 
 #define EACH_CHAR_WIDTH_PROPERTY(OP)                                                               \
   OP(EAW, "○")                                                                                     \
+  OP(RGI, "🇯")                                                                                     \
   OP(EMOJI_FLAG_SEQ, "🇯🇵")                                                                         \
   OP(EMOJI_ZWJ_SEQ, "👩🏼‍🏭")
 
@@ -51,7 +52,8 @@ const CharWidthPropertyList &getCharWidthPropertyList();
 
 struct CharWidthProperties {
   AmbiguousCharWidth eaw{AmbiguousCharWidth::HALF};
-  unsigned char flagSeqWidth{4};
+  unsigned char reginalIndicatorWidth{0}; // if 0, use original width
+  unsigned char flagSeqWidth{2};
   bool zwjSeqFallback{false};
   bool replaceInvalid{false};
 
@@ -59,6 +61,9 @@ struct CharWidthProperties {
     switch (p) {
     case CharWidthProperty::EAW:
       this->eaw = len == 2 ? AmbiguousCharWidth::FULL : AmbiguousCharWidth::HALF;
+      break;
+    case CharWidthProperty::RGI:
+      this->reginalIndicatorWidth = len;
       break;
     case CharWidthProperty::EMOJI_FLAG_SEQ:
       this->flagSeqWidth = len;
@@ -197,6 +202,7 @@ private:
   /**
    *
    * @param codePoint
+   * @param color
    * @return
    * if reach lineNumLimit or colLenLimit, return false
    */
