@@ -1811,11 +1811,16 @@ bool VM::mainLoop(ARState &state) {
         state.stack.storeByOffset(offset, std::move(v));
         vmnext;
       }
-      vmcase(CONCAT) vmcase(APPEND) {
-        const bool selfConcat = op == OpCode::APPEND;
+      vmcase(CONCAT) vmcase(INTERPOLATE) vmcase(APPEND) {
+        ConcatOp concatOp{};
+        if (op == OpCode::APPEND) {
+          setFlag(concatOp, ConcatOp::APPEND);
+        } else if (op == OpCode::INTERPOLATE) {
+          setFlag(concatOp, ConcatOp::INTERPOLATE);
+        }
         auto right = state.stack.pop();
         auto left = state.stack.pop();
-        TRY(concatAsStr(state, left, right, selfConcat));
+        TRY(concatAsStr(state, left, right, concatOp));
         state.stack.push(std::move(left));
         vmnext;
       }

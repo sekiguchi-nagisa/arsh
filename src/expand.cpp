@@ -122,7 +122,7 @@ bool VM::applyTildeExpansion(ARState &state, StringRef path, bool assign) {
   auto ret = Value::createStr(std::move(str));
   if (assign) {
     auto left = state.stack.pop();
-    const bool r = concatAsStr(state, left, ret, false);
+    const bool r = concatAsStr(state, left, ret);
     if (r) {
       state.stack.push(std::move(left));
     }

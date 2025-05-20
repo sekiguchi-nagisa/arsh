@@ -16,8 +16,6 @@ function compare(target: Ord_): Int for Ord_
 ## Any type
 ```
 function %OP_STR(): String for Any
-
-function %OP_INTERP(): String for Any
 ```
 
 ## Int type

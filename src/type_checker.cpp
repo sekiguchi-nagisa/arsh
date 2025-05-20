@@ -1179,20 +1179,7 @@ void TypeChecker::visitEmbedNode(EmbedNode &node) {
   }
 
   node.setType(exprType);
-  if (node.getKind() == EmbedNode::STR_EXPR) {
-    auto &type = this->typePool().get(TYPE::String);
-    if (!type.isSameOrBaseTypeOf(exprType)) { // call __INTERP__()
-      const std::string methodName(OP_INTERP);
-      if (auto *handle = this->typePool().lookupMethod(exprType, methodName)) {
-        assert(handle->getReturnType() == type);
-        node.setHandle(handle);
-      } else { // if exprType is Unresolved
-        this->reportError<UndefinedMethod>(node.getExprNode(), methodName.c_str(),
-                                           exprType.getName(), "");
-        node.setType(this->typePool().getUnresolvedType());
-      }
-    }
-  } else {
+  if (node.getKind() == EmbedNode::CMD_ARG) {
     if (!this->typePool().get(TYPE::String).isSameOrBaseTypeOf(exprType) &&
         !this->typePool().get(TYPE::StringArray).isSameOrBaseTypeOf(exprType) &&
         !this->typePool().get(TYPE::FD).isSameOrBaseTypeOf(

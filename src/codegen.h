@@ -487,7 +487,7 @@ private:
    * => LOAD 'AAA', LOAD '=', CONCAT, LOAD '~', CONCAT, LOAD '/root', CONCAT, EXPAND_TILDE
    * @param node
    */
-  void generateCmdArg(CmdArgNode &node) {
+  void generateCmdArg(const CmdArgNode &node) {
     this->emitSourcePos(node.getPos());
     const unsigned int size = node.getSegmentNodes().size();
     ConcatCmdArgParam param;

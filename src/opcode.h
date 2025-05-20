@@ -79,6 +79,7 @@ namespace arsh {
   OP(SWAP, 0, 0)                                                                                   \
   OP(STORE_BY_OFFSET, 1, -1)                                                                       \
   OP(CONCAT, 0, -1)                                                                                \
+  OP(INTERPOLATE, 0, -1)                                                                           \
   OP(APPEND, 0, -1)                                                                                \
   OP(APPEND_ARRAY, 0, -1)                                                                          \
   OP(APPEND_MAP, 0, -2)                                                                            \

@@ -162,40 +162,41 @@ $expect("$(ds --dump-code -n -c 'echo hello | echo hello &')", 0, $out)
 $out = "### dump compiled code ###
 Source File: (string)
 ARCode: top level
-  code size: 38
+  code size: 37
   max stack depth: 4
   number of local variable: 0
   number of global variable: 56
 Code:
    0: LOAD_CONST  2
-   2: LOAD_GLOBAL  21
-   5: CALL_BUILTIN  1  %interp
-   8: LOOKUP_HASH
-   9: GOTO  36
-  14: LOAD_CONST  3
-  16: FORK  6  14
-  20: LOAD_CONST  4
-  22: NEW_CMD
-  23: PUSH_NULL
-  24: PUSH_STR1  \`8'
-  26: ADD_CMD_ARG
-  27: CALL_CMD_NOFORK
-  28: TERM_HOOK
-  29: SUBSHELL_EXIT
-  30: POP
-  31: GOTO  36
-  36: PUSH_INVALID
-  37: RETURN
+   2: PUSH_STR0
+   3: LOAD_GLOBAL  21
+   6: INTERPOLATE
+   7: LOOKUP_HASH
+   8: GOTO  35
+  13: LOAD_CONST  3
+  15: FORK  6  14
+  19: LOAD_CONST  4
+  21: NEW_CMD
+  22: PUSH_NULL
+  23: PUSH_STR1  \`8'
+  25: ADD_CMD_ARG
+  26: CALL_CMD_NOFORK
+  27: TERM_HOOK
+  28: SUBSHELL_EXIT
+  29: POP
+  30: GOTO  35
+  35: PUSH_INVALID
+  36: RETURN
 Constant Pool:
   0: String (string)
-  1: String $(pwd)
-  2: Void [999 : 14]
+  1: String /home/skgchxngsxyz-leap/workspace/arsh/build-asan
+  2: Void [999 : 13]
   3: String sleep 8
   4: String sleep
 Line Number Table:
-  lineNum: 1, address:  2
+  lineNum: 1, address:  3
 Exception Table:
-  begin: 20, end: 28, type: process guard%%, dest: 28, offset: 0, size: 0, level: 0"
+  begin: 19, end: 27, type: process guard%%, dest: 27, offset: 0, size: 0, level: 0"
 
 $expect("$(ds -n --dump-code -c 'case "$PID" { "999" => sleep 8 & else => {} }')", 0, $out)
 

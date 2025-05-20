@@ -161,8 +161,7 @@ constexpr const char *OP_NEXT = "%next";
 constexpr const char *OP_BOOL = "%bool"; // for boolean cast
 
 // to string
-constexpr const char *OP_STR = "%str";       // for string cast or command argument
-constexpr const char *OP_INTERP = "%interp"; // for interpolation
+constexpr const char *OP_STR = "%str"; // for string cast or command argument
 
 // num cast
 constexpr const char *OP_TO_INT = "toInt";

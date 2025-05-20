@@ -75,14 +75,6 @@ ARSH_METHOD to_str(RuntimeContext &ctx) {
   RET(ret);
 }
 
-//!bind: function $OP_INTERP($this : Any) : String
-ARSH_METHOD to_interp(RuntimeContext &ctx) {
-  SUPPRESS_WARNING(to_interp);
-  auto ret = Value::createStr();
-  LOCAL(0).opInterp(ctx, ret); // skip error check
-  RET(ret);
-}
-
 // ##################
 // ##     Eq%%     ##
 // ##################

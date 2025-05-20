@@ -29,6 +29,7 @@
 #include "misc/files.hpp"
 #include "misc/rtti.hpp"
 #include "misc/string_ref.hpp"
+#include "object_util.h"
 #include "regex_wrapper.h"
 #include "type.h"
 #include <config.h>
@@ -288,7 +289,6 @@ struct ObjectConstructor {
   static Object *construct(Arg &&...arg) { return new T(std::forward<Arg>(arg)...); }
 };
 
-class StrBuilder;
 class GraphemeCluster;
 
 class Value : public RawValue {
@@ -495,7 +495,7 @@ public:
   bool opStr(ARState &state, Value &out) const;
 
   /**
-   *OP_INTERP method implementation (may have error)
+   * OP_INTERP method implementation (may have error)
    * @param state
    * @param out must be string
    * @return if it has error, return false
@@ -660,19 +660,31 @@ ObjPtr<T> toObjPtr(const Value &value) noexcept {
   return ObjPtr<T>(&ref);
 }
 
-inline bool concatAsStr(ARState &state, Value &left, const Value &right, bool selfConcat) {
-  assert(right.hasStrRef());
+enum class ConcatOp : unsigned char {
+  APPEND = 1u << 0u,
+  INTERPOLATE = 1u << 1u,
+};
+
+template <>
+struct allow_enum_bitop<ConcatOp> : std::true_type {};
+
+inline bool concatAsStr(ARState &state, Value &left, const Value &right,
+                        const ConcatOp concatOp = {}) {
   if (right.kind() == ValueKind::SSTR0) {
-    return true;
+    return true; // do nothing
   }
-  if (left.kind() == ValueKind::SSTR0) {
+  if (left.kind() == ValueKind::SSTR0 && right.hasStrRef()) {
     left = right;
     return true;
   }
-  int copyCount = selfConcat ? 2 : 1;
+  const int copyCount = hasFlag(concatOp, ConcatOp::APPEND) ? 2 : 1;
   if (left.isObject() && left.get()->getRefcount() > copyCount) {
     left = Value::createStr(left.asStrRef());
   }
+  if (hasFlag(concatOp, ConcatOp::INTERPOLATE)) {
+    return right.opInterp(state, left);
+  }
+  assert(right.hasStrRef());
   return left.appendAsStr(state, right.asStrRef());
 }
 
