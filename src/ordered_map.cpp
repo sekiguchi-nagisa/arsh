@@ -15,11 +15,13 @@
  */
 
 #include "ordered_map.h"
-#include "../external/rapidhash/rapidhash.h"
 #include "core.h"
 #include "misc/num_util.hpp"
 #include "object_util.h"
 #include "type_pool.h"
+
+#define RAPIDHASH_COMPACT
+#include "../external/rapidhash/rapidhash.h"
 
 namespace arsh {
 

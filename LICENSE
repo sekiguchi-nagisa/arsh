@@ -237,7 +237,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 Files: external/rapidhash/*
 
-rapidhash V2 - Very fast, high quality, platform-independent hashing algorithm.
+rapidhash V2.2 - Very fast, high quality, platform-independent hashing algorithm.
 Copyright (C) 2025 Nicolas De Carli
 
 Based on 'wyhash', by Wang Yi <godspeed_china@yeah.net>
