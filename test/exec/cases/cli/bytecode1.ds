@@ -189,7 +189,7 @@ Code:
   36: RETURN
 Constant Pool:
   0: String (string)
-  1: String /home/skgchxngsxyz-leap/workspace/arsh/build-asan
+  1: String $(pwd)
   2: Void [999 : 13]
   3: String sleep 8
   4: String sleep
