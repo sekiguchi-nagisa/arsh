@@ -232,7 +232,7 @@ static void checkProperty(CharWidthProperties &ps, int inFd, int outFd) {
   int lastPos = 1;
   for (auto &e : getCharWidthPropertyList()) {
     char buf[32];
-    const int s = snprintf(buf, std::size(buf), "\x1b[?25l%s\x1b[1K\x1b[6n", e.second);
+    const int s = snprintf(buf, std::size(buf), "\x1b[?25l<%s>\x1b[1K\x1b[6n", e.second);
     if (s < 0 || write(outFd, buf, s) == -1) { // hide cursor and clear line immediately
       break;
     }
@@ -240,8 +240,8 @@ static void checkProperty(CharWidthProperties &ps, int inFd, int outFd) {
     if (pos < 0) {
       break;
     }
-    LOG(TRACE_EDIT, "char:%s, pos:%d", e.second, pos);
-    ps.setProperty(e.first, pos - lastPos);
+    LOG(TRACE_EDIT, "char:<%s>, pos:%d", e.second, pos);
+    ps.setProperty(e.first, pos - lastPos - 2);
     lastPos = pos;
   }
 }
