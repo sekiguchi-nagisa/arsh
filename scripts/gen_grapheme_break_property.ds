@@ -90,6 +90,7 @@ function validate(ranges: [Range]) {
         if $prev {
             assert $prev!.begin < $r.begin
             assert $prev!.end < $r.end
+            assert $prev!.end < $r.begin
         }
         $prev = $r
     }

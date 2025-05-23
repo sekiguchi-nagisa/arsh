@@ -58,8 +58,8 @@ public:
     InCB_Extend,
     InCB_Linker,
 
-    // indicate [InCB_Extend InCB_Linker]* InCB_Linker [InCB_Extend InCB_Linker]*
-    InCB_Extend_Linker,
+    // InCB_Consonant [InCB_Extend InCB_Linker]* InCB_Linker [InCB_Extend InCB_Linker]*
+    InCB_Consonant_with_Linker, // (at-least one InCB_Linker)
   };
 
   /**
@@ -75,6 +75,7 @@ public:
    * @return
    * if no InCB property, return Any
    * otherwise, return InCB_Linker or InCB_Extend
+   * (also BreakProperty::Extend or BreakProperty::ZWJ)
    */
   static BreakProperty getInCBExtendOrLinker(int codePoint);
 };
@@ -109,10 +110,6 @@ GraphemeBoundary<Bool>::getBreakProperty(int codePoint) {
 template <bool Bool>
 typename GraphemeBoundary<Bool>::BreakProperty
 GraphemeBoundary<Bool>::getInCBExtendOrLinker(int codePoint) {
-  if (codePoint < 0) {
-    return BreakProperty::Any; // invalid code points are always grapheme boundary
-  }
-
   using PropertyInterval = CodePointPropertyInterval<BreakProperty>;
 
 #define UNICODE_PROPERTY_RANGE PropertyInterval
@@ -129,7 +126,7 @@ GraphemeBoundary<Bool>::getInCBExtendOrLinker(int codePoint) {
       return interval.property();
     }
   }
-  return BreakProperty::Any;
+  return BreakProperty::Any; // if no inCB
 }
 
 } // namespace detail
@@ -193,57 +190,6 @@ private:
     this->codePoint = this->stream.nextCodePoint();
     return GraphemeBoundary::getBreakProperty(this->codePoint);
   }
-
-  bool lookaheadInCBSeq() {
-    bool r = false;
-    const auto oldState = this->stream.saveState();
-
-    enum InCBState : unsigned char {
-      Init,
-      Pre_Extend,
-      Linker,
-      Post_Extend,
-    } prevInCB = Init;
-
-    int code = this->codePoint;
-    for (;; code = this->stream.nextCodePoint()) {
-      if (code < 0) {
-        goto END;
-      }
-      auto p = GraphemeBoundary::getInCBExtendOrLinker(code);
-      switch (prevInCB) {
-      case Init:
-      case Pre_Extend:
-        if (p == BreakProperty::InCB_Extend) {
-          prevInCB = Pre_Extend;
-          continue;
-        } else if (p == BreakProperty::InCB_Linker) {
-          prevInCB = Linker;
-          continue;
-        }
-        goto END;
-      case Linker:
-      case Post_Extend:
-        if (p == BreakProperty::InCB_Extend) {
-          prevInCB = Post_Extend;
-          continue;
-        } else if (p == BreakProperty::InCB_Linker) {
-          prevInCB = Linker;
-          continue;
-        }
-        goto TRY_CONSONANT;
-      }
-    }
-
-  TRY_CONSONANT:
-    if (auto p = GraphemeBoundary::getBreakProperty(code); p == BreakProperty::InCB_Consonant) {
-      r = true;
-    }
-
-  END:
-    this->stream.restoreState(oldState);
-    return r;
-  }
 };
 
 // see. https://unicode.org/reports/tr29/#Grapheme_Cluster_Boundary_Rules
@@ -306,16 +252,26 @@ bool GraphemeScanner<Stream>::scanBoundary() {
     }
     break;
   case BreakProperty::InCB_Consonant:
-    if (this->lookaheadInCBSeq()) {
-      this->state = BreakProperty::InCB_Extend_Linker;
+    if (const auto inCB = GraphemeBoundary::getInCBExtendOrLinker(this->getCodePoint());
+        inCB == BreakProperty::InCB_Extend) {
+      this->state = BreakProperty::InCB_Consonant;
+      return false; // GB9c
+    } else if (inCB == BreakProperty::InCB_Linker) {
+      this->state = BreakProperty::InCB_Consonant_with_Linker;
       return false; // GB9c
     }
     break;
-  case BreakProperty::InCB_Extend_Linker:
-    if (after != BreakProperty::InCB_Consonant) {
-      this->state = BreakProperty::InCB_Extend_Linker;
+  case BreakProperty::InCB_Consonant_with_Linker:
+    if (after == BreakProperty::InCB_Consonant) {
+      this->state = BreakProperty::InCB_Consonant;
+      return false; // GB9c
     }
-    return false; // GB9c
+    if (const auto inCB = GraphemeBoundary::getInCBExtendOrLinker(this->getCodePoint());
+        inCB == BreakProperty::InCB_Extend || inCB == BreakProperty::InCB_Linker) {
+      this->state = BreakProperty::InCB_Consonant_with_Linker;
+      return false; // GB9c
+    }
+    break;
   default:
     break;
   }

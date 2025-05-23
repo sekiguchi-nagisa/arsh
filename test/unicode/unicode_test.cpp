@@ -636,7 +636,7 @@ TEST(GraphemeBreakTestBase, scan2) {
   ASSERT_FALSE(scanner.hasNext());
 }
 
-TEST_P(GraphemeBreakTest, InCB) {
+TEST(GraphemeBreakTestBase, InCB) {
   std::vector<int> codes = {0x0915, 0x094D, 0x094D, 0x0924};
   GraphemeScanner<CodePointStream> scanner((CodePointStream(codes)));
 
@@ -652,6 +652,7 @@ TEST_P(GraphemeBreakTest, base) {
 
 static std::vector<std::string> getGraphemeTargets() {
 #include GRAPHEME_BREAK_TEST_H
+
   std::vector<std::string> ret;
   for (auto &e : grapheme_break_tests) {
     ret.emplace_back(e);
@@ -802,6 +803,7 @@ TEST_P(WordBreakTest, base) {
 
 static std::vector<std::string> getWordTargets() {
 #include WORD_BREAK_TEST_H
+
   std::vector<std::string> ret;
   for (auto &e : word_break_tests) {
     ret.emplace_back(e);
