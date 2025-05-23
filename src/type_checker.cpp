@@ -1112,9 +1112,6 @@ void TypeChecker::visitBinaryOpNode(BinaryOpNode &node) {
     if (!leftType.is(TYPE::String)) {
       this->resolveToStringCoercion(node.refLeftNode());
     }
-    if (!rightType.is(TYPE::String)) {
-      this->resolveToStringCoercion(node.refRightNode());
-    }
     node.setType(this->typePool().get(TYPE::String));
     return;
   }

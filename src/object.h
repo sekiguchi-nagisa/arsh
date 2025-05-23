@@ -681,11 +681,13 @@ inline bool concatAsStr(ARState &state, Value &left, const Value &right,
   if (left.isObject() && left.get()->getRefcount() > copyCount) {
     left = Value::createStr(left.asStrRef());
   }
+  if (right.hasStrRef()) { // fast-path
+    return left.appendAsStr(state, right.asStrRef());
+  }
   if (hasFlag(concatOp, ConcatOp::INTERPOLATE)) {
     return right.opInterp(state, left);
   }
-  assert(right.hasStrRef());
-  return left.appendAsStr(state, right.asStrRef());
+  return right.opStr(state, left);
 }
 
 inline Value exitStatusToBool(int64_t s) { return Value::createBool(s == 0); }
