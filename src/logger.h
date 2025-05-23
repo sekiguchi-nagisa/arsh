@@ -24,9 +24,9 @@
 #define EACH_LOGGING_POLICY(E)                                                                     \
   E(TRACE_TOKEN)                                                                                   \
   E(DUMP_EXEC)                                                                                     \
-  E(DUMP_CONSOLE)                                                                                  \
   E(DUMP_WAIT)                                                                                     \
-  E(TRACE_MODULE)
+  E(TRACE_MODULE)                                                                                  \
+  E(TRACE_EDIT)
 
 namespace arsh {
 

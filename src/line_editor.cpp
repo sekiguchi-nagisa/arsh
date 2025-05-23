@@ -116,6 +116,7 @@
 
 #include "line_buffer.h"
 #include "line_editor.h"
+#include "logger.h"
 #include "misc/pty.hpp"
 #include "pager.h"
 #include "vm.h"
@@ -124,22 +125,6 @@
 
 #define UNUSED(x) (void)(x)
 static const char *unsupported_term[] = {"dumb", "cons25", "emacs", nullptr};
-
-/* Debugging macro. */
-#if 0
-FILE *lndebug_fp = nullptr;
-#define lndebug(...)                                                                               \
-  do {                                                                                             \
-    if (lndebug_fp == nullptr) {                                                                   \
-      lndebug_fp = fopen("/dev/pts/2", "a");                                                       \
-    }                                                                                              \
-    fprintf(lndebug_fp, __VA_ARGS__);                                                              \
-    fputc('\n', lndebug_fp);                                                                       \
-    fflush(lndebug_fp);                                                                            \
-  } while (0)
-#else
-#define lndebug(fmt, ...)
-#endif
 
 /* ======================= Low level terminal handling ====================== */
 
@@ -255,6 +240,7 @@ static void checkProperty(CharWidthProperties &ps, int inFd, int outFd) {
     if (pos < 0) {
       break;
     }
+    LOG(TRACE_EDIT, "char:%s, pos:%d", e.second, pos);
     ps.setProperty(e.first, pos - lastPos);
     lastPos = pos;
   }
@@ -485,11 +471,11 @@ void LineEditorObject::refreshLine(ARState &state, RenderingContext &ctx, bool r
   this->continueLine = ret.continueLine;
   const unsigned int actualCursorRows = ret.cursorRows;
 
-  lndebug("[len=%u, pos=%u, oldCursorRows=%u, oldRenderedRows=%u]", ctx.buf.getUsedSize(),
-          ctx.buf.getCursor(), ctx.oldCursorRows, ctx.oldRenderedRows);
-  lndebug("(rows,cols)=(%u, %u)", winSize.rows, winSize.cols);
-  lndebug("renderedRows: %zu, cursor(rows,cols)=(%zu,%zu)", ret.renderedRows, ret.cursorRows,
-          ret.cursorCols);
+  LOG(TRACE_EDIT, "[len=%u, pos=%u, oldCursorRows=%u, oldRenderedCols=%u]", ctx.buf.getUsedSize(),
+      ctx.buf.getCursor(), ctx.oldCursorRows, ctx.oldRenderedCols);
+  LOG(TRACE_EDIT, "(rows,cols)=(%u, %u)", winSize.rows, winSize.cols);
+  LOG(TRACE_EDIT, "renderedRows: %zu, cursor(rows,cols)=(%zu,%zu)", ret.renderedRows,
+      ret.cursorRows, ret.cursorCols);
 
   /*
    * hide cursor during rendering due to suppress potential cursor flicker
@@ -503,19 +489,19 @@ void LineEditorObject::refreshLine(ARState &state, RenderingContext &ctx, bool r
   } else {
     if (ctx.oldCursorRows > 1) { // set cursor original row position
       const auto diff = ctx.oldCursorRows - 1;
-      lndebug("go up cursor: %u", diff);
+      LOG(TRACE_EDIT, "go up cursor: %u", diff);
       snprintf(seq, std::size(seq), "\x1b[%uA", diff);
       ab += seq;
     }
     /* Clean the top and bellow lines. */
-    lndebug("clear");
+    LOG(TRACE_EDIT, "clear");
     ab += "\r\x1b[0K\x1b[0J";
   }
 
   /* adjust too long rendered lines */
-  lndebug("scrolling: %s", ctx.scrolling ? "true" : "false");
+  LOG(TRACE_EDIT, "scrolling: %s", ctx.scrolling ? "true" : "false");
   ctx.scrolling = fitToWinSize(ctx, static_cast<bool>(pager), winSize.rows, ret);
-  lndebug("adjust renderedRows: %zu. cursorRows: %zu", ret.renderedRows, ret.cursorRows);
+  LOG(TRACE_EDIT, "adjust renderedRows: %zu. cursorRows: %zu", ret.renderedRows, ret.cursorRows);
 
   /* set escape sequence */
   ret.renderedLines.insert(0, ab);
@@ -523,13 +509,13 @@ void LineEditorObject::refreshLine(ARState &state, RenderingContext &ctx, bool r
 
   /* Go up till we reach the expected position. */
   if (const auto dist = static_cast<unsigned int>(ret.renderedRows - ret.cursorRows); dist > 0) {
-    lndebug("go-up %u", dist);
+    LOG(TRACE_EDIT, "go-up %u", dist);
     snprintf(seq, std::size(seq), "\x1b[%dA", dist);
     ab += seq;
   }
 
   /* Set column position, zero-based. */
-  lndebug("set col %u", 1 + static_cast<unsigned int>(ret.cursorCols));
+  LOG(TRACE_EDIT, "set col %u", 1 + static_cast<unsigned int>(ret.cursorCols));
   if (ret.cursorCols) {
     snprintf(seq, std::size(seq), "\r\x1b[%uC", static_cast<unsigned int>(ret.cursorCols));
   } else {
@@ -538,7 +524,6 @@ void LineEditorObject::refreshLine(ARState &state, RenderingContext &ctx, bool r
   ab += seq;
   ab += "\x1b[?25h"; // show cursor (from VT220 extension)
 
-  lndebug("\n");
   ctx.oldCursorRows = ret.cursorRows;
   ctx.oldActualCursorRows = actualCursorRows;
   ctx.oldRenderedCols = ret.renderedCols;

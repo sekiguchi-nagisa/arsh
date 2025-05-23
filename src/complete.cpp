@@ -24,7 +24,6 @@
 #include "format_signature.h"
 #include "format_util.h"
 #include "frontend.h"
-#include "logger.h"
 #include "misc/edit_distance.hpp"
 #include "misc/files.hpp"
 #include "misc/format.hpp"
@@ -403,7 +402,6 @@ static bool completeFileName(StringRef compWordToken, const std::string &baseDir
   } else {
     targetDir = expandDots(baseDir.c_str(), ".");
   }
-  LOG(DUMP_CONSOLE, "targetDir = %s", targetDir.c_str());
 
   /**
    * resolve basename
