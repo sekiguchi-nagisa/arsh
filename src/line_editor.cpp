@@ -237,11 +237,12 @@ static void checkProperty(CharWidthProperties &ps, int inFd, int outFd) {
       break;
     }
     const int pos = getCursorPosition(inFd, outFd, false);
-    if (pos < 0) {
+    const int len = pos - lastPos - 2;
+    LOG(TRACE_EDIT, "char:<%s>, pos:%d, len:%d", e.second, pos, len);
+    if (len <= 0) {
       break;
     }
-    LOG(TRACE_EDIT, "char:<%s>, pos:%d", e.second, pos);
-    ps.setProperty(e.first, pos - lastPos - 2);
+    ps.setProperty(e.first, len);
     lastPos = pos;
   }
 }
