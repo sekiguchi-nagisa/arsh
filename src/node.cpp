@@ -179,6 +179,14 @@ void StringNode::dump(NodeDumper &dumper) const {
 // ##     StringExprNode     ##
 // ############################
 
+void StringExprNode::addExprNode(std::unique_ptr<Node> &&node) {
+  this->updateToken(node->getToken()); // for here-doc
+  if (isa<EmbedNode>(*node)) {
+    cast<EmbedNode>(*node).setSegmentIndex(this->nodes.size());
+  }
+  this->nodes.push_back(std::move(node));
+}
+
 void StringExprNode::dump(NodeDumper &dumper) const { DUMP(nodes); }
 
 // #######################
@@ -404,6 +412,7 @@ void EmbedNode::dump(NodeDumper &dumper) const {
   DUMP_ENUM(kind, EACH_ENUM);
 #undef EACH_ENUM
 
+  DUMP(segmentIndex);
   DUMP_PTR(exprNode);
   DUMP_PTR(handle);
 }
@@ -445,6 +454,8 @@ void CmdArgNode::addSegmentNode(std::unique_ptr<Node> &&node) {
     } else if (wildNode.meta == ExpandMeta::BRACKET_CLOSE && this->hasBracketExpr()) {
       wildNode.setExpand(true);
     }
+  } else if (isa<EmbedNode>(*node)) {
+    cast<EmbedNode>(*node).setSegmentIndex(this->segmentNodes.size());
   }
   this->segmentNodes.push_back(std::move(node));
 }

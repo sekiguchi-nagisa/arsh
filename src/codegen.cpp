@@ -449,15 +449,24 @@ void ByteCodeGenerator::generateConcat(Node &node, bool fragment) {
     }
     break;
   case NodeKind::Embed: {
-    auto &exprNode = cast<EmbedNode>(node).getExprNode();
+    auto &embedNode = cast<EmbedNode>(node);
+    auto &exprNode = embedNode.getExprNode();
     if (isBinaryStrConcat(exprNode) || isa<StringExprNode>(exprNode) || isa<StringNode>(exprNode)) {
       this->generateConcat(exprNode, fragment);
       return;
     }
-    if (cast<EmbedNode>(node).getKind() == EmbedNode::STR_EXPR) {
+    if (embedNode.getKind() == EmbedNode::STR_EXPR) {
       this->visit(exprNode);
       assert(fragment);
       this->emit0byteIns(OpCode::INTERPOLATE);
+      return;
+    }
+    // concat with parameter expansion
+    if (embedNode.getSegmentIndex() > 0 && embedNode.getHandle()) { // eliminate redundant OP_STR
+      assert(embedNode.getKind() == EmbedNode::CMD_ARG);
+      this->visit(exprNode);
+      assert(fragment);
+      this->emit0byteIns(OpCode::CONCAT);
       return;
     }
     break;

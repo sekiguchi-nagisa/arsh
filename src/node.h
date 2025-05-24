@@ -509,14 +509,9 @@ public:
 
   ~StringExprNode() override = default;
 
-  void addExprNode(std::unique_ptr<Node> &&node) {
-    this->updateToken(node->getToken()); // for here-doc
-    this->nodes.push_back(std::move(node));
-  }
+  void addExprNode(std::unique_ptr<Node> &&node);
 
   const std::vector<std::unique_ptr<Node>> &getExprNodes() const { return this->nodes; }
-
-  std::vector<std::unique_ptr<Node>> &refExprNodes() { return this->nodes; }
 
   void dump(NodeDumper &dumper) const override;
 };
@@ -1123,6 +1118,8 @@ public:
 private:
   const Kind kind;
 
+  unsigned int segmentIndex{0};
+
   std::unique_ptr<Node> exprNode;
 
   const MethodHandle *handle{nullptr}; // for method call
@@ -1139,6 +1136,10 @@ public:
   ~EmbedNode() override = default;
 
   Kind getKind() const { return this->kind; }
+
+  void setSegmentIndex(unsigned int i) { this->segmentIndex = i; }
+
+  unsigned int getSegmentIndex() const { return this->segmentIndex; }
 
   Node &getExprNode() const { return *this->exprNode; }
 

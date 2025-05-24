@@ -24,6 +24,9 @@
 - change default value of some environmental variables when ``getpwuid`` failed
     - ``HOME``: default is ``/``
     - ``LOGNAME``, ``USER``: default is empty string
+- overhaul internal string concatenation/string interpolation
+    - eliminate intermediate string objects
+    - correctly check deeply nested objects
 
 #### Builtin
 
