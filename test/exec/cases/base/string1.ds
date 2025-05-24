@@ -251,6 +251,9 @@ assert '👨‍👨‍👦'.width() == 2 # emoji zwj sequence
 assert '👩'.width() == 2  # emoji
 assert $'\U1F3FB'.width() == 2 # emoji modifier (skin tone)
 assert $'👩\U1F3FB'.width() == 2 # emoji modifier sequence
+assert $'\u00A9'.width() == 1
+assert $'\uFE0E'.width() == 0
+assert $'\u00A9\uFE0E'.width() == 1 # VS15 (text style) is origianl width
 assert $'\u0023'.width() == 1
 assert $'\uFE0F'.width() == 0
 assert $'\u0023\uFE0F'.width() == 2 # VS16 (emoji style) is always 2 width

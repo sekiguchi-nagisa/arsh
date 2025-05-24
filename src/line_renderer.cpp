@@ -80,7 +80,7 @@ unsigned int getGraphemeWidth(const CharWidthProperties &ps, const GraphemeClust
     }
     prevCodePoint = codePoint;
   }
-  if (ret.isEmojiSeq()) {
+  if (ret.isEmojiSeq() && width > 2) {
     return ps.zwjSeqFallback ? width : 2;
   }
   return width;
