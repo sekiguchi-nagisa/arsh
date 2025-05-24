@@ -299,12 +299,13 @@ bool GraphemeScanner<Stream>::scanBoundary() {
     }
     break;
   case BreakProperty::Extended_Pictographic:
-    this->emojiSeq = true;
     if (after == BreakProperty::Extend) {
       this->state = BreakProperty::Extended_Pictographic; // consume Extend
-      return false;                                       // GB11
+      this->emojiSeq = true;
+      return false; // GB11
     } else if (after == BreakProperty::ZWJ) {
       this->state = BreakProperty::Extended_Pictographic_with_ZWJ;
+      this->emojiSeq = true;
       return false; // GB11
     }
     break;
