@@ -247,11 +247,15 @@ assert '🇯🇵'.width() == 2
 assert '4334 '.width() == 5
 assert $'\n\t'.width() == 0
 assert "あ2い".width() == 5
-assert '👨‍👨‍👦'.width() == 2
+assert '👨‍👨‍👦'.width() == 2 # emoji zwj sequence
+assert '👩'.width() == 2  # emoji
+assert $'\U1F3FB'.width() == 2 # emoji modifier (skin tone)
+assert $'👩\U1F3FB'.width() == 2 # emoji modifier sequence
 assert $'\u0023'.width() == 1
 assert $'\uFE0F'.width() == 0
 assert $'\u0023\uFE0F'.width() == 2 # VS16 (emoji style) is always 2 width
-assert $'\u0023\uFE0F\u20E3'.width() == 2 # VS16 (emoji style) is always 2 width
+assert $'\u0023\uFE0F\u20E3'.width() == 2 # emoji keycap sequence, VS16 (emoji style) is always 2 width
+assert $'\U1F3F4\UE0067\UE0062\UE0073\UE0063\UE0074\UE007F'.width() == 2 # emoji tag sequence
 
 ## east-asian width
 assert "$(LANG=ja_JP.UTF-8 LC_ALL=ja_JP.UTF-8 LC_CTYPE=ja_JP.UTF-8 call $BIN_NAME -c 'echo ${"○".width()}')" == "2"
