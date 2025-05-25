@@ -901,7 +901,7 @@ static bool merge(ARState &state, ArrayObject &arrayObj, Value *buf, const Value
 static unsigned int getStackDepth(unsigned int size) {
   unsigned int depth = 0;
   for (; depth < 32; depth++) {
-    if (size <= (1 << depth)) {
+    if (size <= (1u << depth)) {
       break;
     }
   }
