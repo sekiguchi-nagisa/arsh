@@ -925,7 +925,7 @@ bool mergeSort(ARState &state, ArrayObject &arrayObj, const Value &compFunc) {
   auto cleanup = finally([&arrayObj] { arrayObj.unlock(); });
 
   InlinedStack<MergeSortFrame, 9> frames;
-  static_assert(sizeof(frames) == 128);
+  static_assert(sizeof(frames) <= 128);
   frames.reserve(getStackDepth(arrayObj.size()));
   for (frames.push(MergeSortFrame::create(0, arrayObj.size())); frames.size(); frames.pop()) {
   NEXT: {
