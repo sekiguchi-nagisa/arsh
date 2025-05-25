@@ -56,20 +56,27 @@ public:
 
   size_type capacity() const { return this->isStackAlloc() ? N : this->cap; }
 
+  void reserve(size_type newCap) {
+    if (this->capacity() >= newCap) {
+      return;
+    }
+    T *newPtr = this->isStackAlloc() ? nullptr : this->ptr;
+    newPtr = static_cast<T *>(realloc(newPtr, sizeof(T) * newCap));
+    if (!newPtr) {
+      fatal_perror("memory allocation failed");
+    }
+    if (this->isStackAlloc()) {
+      memcpy(newPtr, this->data, sizeof(T) * this->size());
+    }
+    this->ptr = newPtr;
+    this->cap = newCap;
+  }
+
   void push(T value) {
     if (this->size() == this->capacity()) {
-      size_t newCap = this->capacity();
+      size_type newCap = this->capacity();
       newCap += newCap >> 1u;
-      T *newPtr = this->isStackAlloc() ? nullptr : this->ptr;
-      newPtr = static_cast<T *>(realloc(newPtr, sizeof(T) * newCap));
-      if (!newPtr) {
-        fatal_perror("memory allocation failed");
-      }
-      if (this->isStackAlloc()) {
-        memcpy(newPtr, this->data, sizeof(T) * this->size());
-      }
-      this->ptr = newPtr;
-      this->cap = newCap;
+      this->reserve(newCap);
     }
     this->ptr[this->usedSize++] = value;
   }

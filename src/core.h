@@ -257,7 +257,7 @@ public:
  * @param compFunc
  * must be (T,T) -> Int
  * @return
- * if has error, return false
+ * if error, return false
  */
 bool mergeSort(ARState &state, ArrayObject &arrayObj, const Value &compFunc);
 

@@ -24,6 +24,7 @@
 #include "format_util.h"
 #include "logger.h"
 #include "misc/files.hpp"
+#include "misc/inlined_stack.hpp"
 #include "misc/num_util.hpp"
 #include "misc/pty.hpp"
 #include "node.h"
@@ -897,25 +898,62 @@ static bool merge(ARState &state, ArrayObject &arrayObj, Value *buf, const Value
   return true;
 }
 
-static bool mergeSortImpl(ARState &state, ArrayObject &arrayObj, Value *buf, const Value &compFunc,
-                          size_t left, size_t right) {
-  if (left + 1 >= right) {
-    return true;
+static unsigned int getStackDepth(unsigned int size) {
+  unsigned int depth = 0;
+  for (; depth < 32; depth++) {
+    if (size <= (1 << depth)) {
+      break;
+    }
   }
-
-  size_t mid = (left + right) / 2;
-  return mergeSortImpl(state, arrayObj, buf, compFunc, left, mid) &&
-         mergeSortImpl(state, arrayObj, buf, compFunc, mid, right) &&
-         merge(state, arrayObj, buf, compFunc, left, mid, right);
+  return depth;
 }
+
+struct MergeSortFrame {
+  unsigned int left;
+  unsigned int right;
+  unsigned int count;
+
+  static MergeSortFrame create(const unsigned int left, const unsigned int right) {
+    return {.left = left, .right = right, .count = 0};
+  }
+};
 
 bool mergeSort(ARState &state, ArrayObject &arrayObj, const Value &compFunc) {
   auto buf = std::make_unique<Value[]>(arrayObj.size());
   assert(!arrayObj.locking());
   arrayObj.lock(ArrayObject::LockType::SORT_BY);
-  bool r = mergeSortImpl(state, arrayObj, buf.get(), compFunc, 0, arrayObj.size());
-  arrayObj.unlock();
-  return r;
+  auto cleanup = finally([&arrayObj] { arrayObj.unlock(); });
+
+  InlinedStack<MergeSortFrame, 9> frames;
+  static_assert(sizeof(frames) == 128);
+  frames.reserve(getStackDepth(arrayObj.size()));
+  for (frames.push(MergeSortFrame::create(0, arrayObj.size())); frames.size(); frames.pop()) {
+  NEXT: {
+    auto &frame = frames.back();
+    if (frame.left + 1 >= frame.right) {
+      continue;
+    }
+    const unsigned int mid = (frame.left + frame.right) / 2;
+    if (frame.count < 2) {
+      unsigned int left;
+      unsigned int right;
+      if (frame.count == 0) {
+        left = frame.left;
+        right = mid;
+      } else {
+        left = mid;
+        right = frame.right;
+      }
+      frame.count++;
+      frames.push(MergeSortFrame::create(left, right));
+      goto NEXT;
+    }
+    if (!merge(state, arrayObj, buf.get(), compFunc, frame.left, mid, frame.right)) {
+      return false;
+    }
+  }
+  }
+  return true;
 }
 
 static int64_t compare(ARState &state, const Value &x, const Value &y, const Value &compFunc) {
