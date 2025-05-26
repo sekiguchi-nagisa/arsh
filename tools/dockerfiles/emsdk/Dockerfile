@@ -9,3 +9,7 @@ RUN chown -R tux:users /home/tux/dev && chmod -R 744 /home/tux/dev
 USER tux
 WORKDIR /home/tux/dev
 CMD cat /proc/1/cgroup && sh scripts/em.sh
+
+CMD DIR="$(pwd)" && cd  /home/tux/dev && \
+    sh scripts/em.sh && \
+    sudo cp build-em/arsh* /mnt/ && (sudo cp arsh* "$DIR" || true)
