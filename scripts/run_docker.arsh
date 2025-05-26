@@ -1,0 +1,43 @@
+#!/usr/bin/env arsh
+
+[<CLI(toplevel:$true)>]
+type _Param() {
+    [<Flag(help: "enable interactive debug")>]
+    var debug = $false
+
+    [<Arg(help: "dockerfile path")>]
+    var file = "."
+
+    [<Option(help: "binding host directory (always mount to /mnt)")>]
+    var bind : String?
+}
+
+var p = new _Param()
+$p.setName($ARG0)
+$p.parse($@)
+
+var root = $p.file.realpath()
+if !(test -d $root) {
+    $root = $root.dirname()
+}
+
+let workdir = "$SCRIPT_DIR/../".realpath()
+
+var name = "build_${$root.basename()}:1"
+echo Dockfile path: "'$root/Dockerfile'"
+echo build docker image: "'$name'"
+
+docker build --network host -t $name -f $root/Dockerfile $workdir || exit $?
+
+var binds : [String]
+if let d = $p.bind {
+    $binds.add("-v")
+    $binds.add("${$d.realpath()}:/mnt")
+}
+
+if $p.debug {
+    docker run --rm --network=host $binds -it $name /bin/sh 
+} else {
+    docker run --rm --network=host $binds -t $name
+}
+
