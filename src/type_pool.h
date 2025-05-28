@@ -60,13 +60,12 @@ public:
 
   class Value {
   private:
-    static constexpr uint64_t TAG = static_cast<uint64_t>(1) << 63;
-
     union {
       MethodHandle *handle_;
-      int64_t index_;
+      uintptr_t index_;
     };
 
+    bool alloc{false};
     unsigned int commitId_{0}; // for discard
 
   public:
@@ -74,7 +73,7 @@ public:
 
     Value() : index_(0) {}
 
-    explicit Value(unsigned int index) : index_(static_cast<int64_t>(index | TAG)) {}
+    explicit Value(unsigned int index) : index_(index) {}
 
     /**
      *
@@ -82,11 +81,12 @@ public:
      * @param ptr
      * must not be null
      */
-    explicit Value(unsigned int commitId, MethodHandle *ptr) : index_(0), commitId_(commitId) {
-      this->handle_ = ptr;
-    }
+    explicit Value(unsigned int commitId, MethodHandle *ptr)
+        : handle_(ptr), alloc(true), commitId_(commitId) {}
 
-    Value(Value &&v) noexcept : index_(v.index_), commitId_(v.commitId_) { v.index_ = 0; }
+    Value(Value &&v) noexcept : index_(v.index_), alloc(v.alloc), commitId_(v.commitId_) {
+      v.alloc = false;
+    }
 
     ~Value() {
       if (*this) {
@@ -102,9 +102,9 @@ public:
       return *this;
     }
 
-    explicit operator bool() const { return this->index_ > 0; }
+    explicit operator bool() const { return this->alloc; }
 
-    unsigned int index() const { return ~TAG & this->index_; }
+    unsigned int index() const { return this->index_; }
 
     const MethodHandle *handle() const { return this->handle_; }
 
