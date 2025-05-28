@@ -256,7 +256,7 @@ TEST_F(DirectiveTest, envs3) {
 TEST_F(DirectiveTest, ignored1) {
   ASSERT_FALSE(this->getDirective().isIgnoredPlatform());
   ASSERT_NO_FATAL_FAILURE(
-      this->parse("#$test($ignored = 'linux|cygwin|msys|wsl|darwin|container')", true));
+      this->parse("#$test($ignored = 'linux|cygwin|msys|wsl|darwin|container|android')", true));
   ASSERT_TRUE(this->getDirective().isIgnoredPlatform());
 }
 
