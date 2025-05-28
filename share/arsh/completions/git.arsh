@@ -12,6 +12,8 @@ function _lookup() : String {
         '/etc/bash_completion.d/git', # fedora, old debian
         '/usr/share/bash-completion/completions/git', # arch, ubuntu, new debian
         '/usr/share/bash-completion/git', # gentoo
+        "${$INSTALL_PREFIX == '/usr' ? '' : $INSTALL_PREFIX}/etc/bash_completion.d/git-completion.bash",
+        "${INSTALL_PREFIX}/share/bash-completion/completions/git",
     ]
     for $i in $list {
         test -f $i && return $i

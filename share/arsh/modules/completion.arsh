@@ -117,15 +117,19 @@ function _comp_arg(ctx : Module, deflist: [_CompDef], opt : String, prefix : Str
     return $none
 }
 
+let INSTALL_PREFIX = $DATA_DIR.dirname().dirname()
+
 let _bash_completion_dirs = [
-    "$DATA_DIR/../bash-completion/completions/",
-    '/etc/bash_completion.d/',
-    '/usr/share/bash-completion/completions/',
     '/usr/local/etc/bash_completion.d/',
     '/usr/local/share/bash-completion/completions/',
 
     '/opt/homebrew/etc/bash_completion.d/',
     '/opt/homebrew/share/bash-completion/completions/',
+
+    "${$INSTALL_PREFIX == '/usr' ? '' : $INSTALL_PREFIX}/etc/bash_completion.d/",
+    "$INSTALL_PREFIX/share/bash-completion/completions/",
+    '/etc/bash_completion.d/',
+    '/usr/share/bash-completion/completions/',
 ]
 
 function findBashCompScript(name : String) : String? {
@@ -138,10 +142,10 @@ function findBashCompScript(name : String) : String? {
 }
 
 let _bash_completion_paths = [
-    "$DATA_DIR/../bash-completion/bash_completion",
-    "/usr/share/bash-completion/bash_completion",
     "/usr/local/share/bash-completion/bash_completion",
     "/opt/homebrew/share/bash-completion/bash_completion",
+    "/usr/share/bash-completion/bash_completion",
+    "$INSTALL_PREFIX/share/bash-completion/bash_completion",
 ]
 
 var BASH_COMPLETION_PATH = "/usr/share/bash-completion/bash_completion"
