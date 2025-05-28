@@ -327,7 +327,9 @@ constexpr const char *BUILD_ARCH =
     ;
 
 constexpr const char *BUILD_OS =
-#ifdef __linux__
+#ifdef __ANDROID__
+    "android"
+#elif defined __linux__
     "linux"
 #elif defined __APPLE__
     "darwin"

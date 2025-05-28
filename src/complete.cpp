@@ -264,6 +264,7 @@ static void completeSigName(const std::string &prefix, CompCandidateConsumer &co
 }
 
 static void completeUserName(const std::string &prefix, CompCandidateConsumer &consumer) {
+#ifndef __ANDROID__
   setpwent();
   for (struct passwd *pw; (pw = getpwent()) != nullptr;) {
     StringRef pname = pw->pw_name;
@@ -272,6 +273,10 @@ static void completeUserName(const std::string &prefix, CompCandidateConsumer &c
     }
   }
   endpwent();
+#else
+  static_cast<void>(prefix);
+  static_cast<void>(consumer);
+#endif
 }
 
 static void completeGroupName(const std::string &prefix, CompCandidateConsumer &consumer) {
@@ -367,6 +372,7 @@ static bool completeFileName(StringRef compWordToken, const std::string &baseDir
                              ObserverPtr<const CancelToken> cancel) {
   const auto dirSepIndex = prefix.lastIndexOf("/");
 
+#ifndef __ANDROID__
   // complete tilde
   if (hasFlag(op, CodeCompOp::TILDE) && prefix.startsWith("~") && dirSepIndex == StringRef::npos) {
     setpwent();
@@ -384,6 +390,7 @@ static bool completeFileName(StringRef compWordToken, const std::string &baseDir
     endpwent();
     return true;
   }
+#endif
 
   // complete file name
 

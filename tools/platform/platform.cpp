@@ -53,6 +53,8 @@ static PlatformType detectPlatform() {
       return PlatformType::WSL2;
     }
     return PlatformType::LINUX;
+  } else if (buildOS == "android") {
+    return PlatformType::ANDROID;
   } else if (buildOS == "darwin") {
     return PlatformType::DARWIN;
   } else if (buildOS == "cygwin") {

@@ -24,6 +24,7 @@ namespace arsh::platform {
 #define EACH_PLATFORM_TYPE(OP)                                                                     \
   OP(UNKNOWN) /* unknown platform */                                                               \
   OP(LINUX)   /* linux */                                                                          \
+  OP(ANDROID) /* android */                                                                        \
   OP(DARWIN)  /* macOS */                                                                          \
   OP(CYGWIN)  /* Cygwin */                                                                         \
   OP(MSYS)    /* MSYS2 */                                                                          \
