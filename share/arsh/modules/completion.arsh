@@ -118,6 +118,7 @@ function _comp_arg(ctx : Module, deflist: [_CompDef], opt : String, prefix : Str
 }
 
 let _bash_completion_dirs = [
+    "$DATA_DIR/../bash-completion/completions/",
     '/etc/bash_completion.d/',
     '/usr/share/bash-completion/completions/',
     '/usr/local/etc/bash_completion.d/',
@@ -137,6 +138,7 @@ function findBashCompScript(name : String) : String? {
 }
 
 let _bash_completion_paths = [
+    "$DATA_DIR/../bash-completion/bash_completion",
     "/usr/share/bash-completion/bash_completion",
     "/usr/local/share/bash-completion/bash_completion",
     "/opt/homebrew/share/bash-completion/bash_completion",
