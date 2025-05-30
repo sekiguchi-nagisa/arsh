@@ -38,7 +38,7 @@ test -f DerivedGeneralCategory.txt ||
 test -f EastAsianWidth.txt ||
     curl http://www.unicode.org/Public/UCD/latest/ucd/EastAsianWidth.txt -o ./EastAsianWidth.txt
 
-var version = "0.2.0"
+var version = "0.4.0"
 
 test -e guniset || 
     curl -L \
