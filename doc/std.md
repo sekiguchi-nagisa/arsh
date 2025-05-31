@@ -143,6 +143,8 @@ function ifEmpty(default: String?): String? for String
 
 function count(): Int for String
 
+function bytes(): [Int] for String
+
 function chars(): [String] for String
 
 function words(): [String] for String

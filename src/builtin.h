@@ -644,6 +644,22 @@ ARSH_METHOD string_count(RuntimeContext &ctx) {
   RET(Value::createInt(count));
 }
 
+//!bind: function bytes($this: String): Array<Int>
+ARSH_METHOD string_bytes(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(string_bytes);
+  auto ref = LOCAL(0).asStrRef();
+  auto value =
+      Value::create<ArrayObject>(*ctx.typePool.createArrayType(ctx.typePool.get(TYPE::Int)).asOk());
+  auto &array = typeAs<ArrayObject>(value);
+  array.refValues().resize(ref.size());
+  const size_t size = ref.size();
+  for (size_t i = 0; i < size; i++) {
+    array.refValues()[i] = Value::createInt(static_cast<unsigned char>(ref[i]));
+  }
+  ASSERT_ARRAY_SIZE(array);
+  RET(value);
+}
+
 //!bind: function chars($this : String) : Array<String>
 ARSH_METHOD string_chars(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_chars);
