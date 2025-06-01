@@ -31,6 +31,7 @@
 
 #### Builtin
 
+- **Breaking Change**: remove ``String#charAt`` method. use ``String#chars`` instead
 - change type constraint of some builtin method
     - ``Array#sort``, ``Array#searchSorted`` require ``Ord_`` type
     - ``Array#indexOf``, ``Array#lastIndexOf``, ``Array#contains`` require ``Eq_`` type

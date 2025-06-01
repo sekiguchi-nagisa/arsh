@@ -770,29 +770,6 @@ ARSH_METHOD string_get(RuntimeContext &ctx) {
   RET(Value::createStr(ref.substr(value.index, 1)));
 }
 
-//!bind: function charAt($this : String, $index : Int) : String
-ARSH_METHOD string_charAt(RuntimeContext &ctx) {
-  SUPPRESS_WARNING(string_charAt);
-
-  StringRef ref = LOCAL(0).asStrRef();
-  Utf8GraphemeScanner scanner(Utf8Stream(ref.begin(), ref.end()));
-  const auto pos = LOCAL(1).asInt();
-
-  ssize_t count = 0;
-  for (; scanner.hasNext(); count++) {
-    GraphemeCluster ret = scanner.next();
-    if (count == pos) {
-      RET(Value::createStr(ret));
-    }
-  }
-  std::string msg = "character count is ";
-  msg += std::to_string(count);
-  msg += ", but character position is ";
-  msg += std::to_string(pos);
-  raiseOutOfRangeError(ctx, std::move(msg));
-  RET_ERROR;
-}
-
 static Value sliceImpl(const ArrayObject &obj, size_t begin, size_t end) {
   auto b = obj.getValues().begin() + begin;
   auto e = obj.getValues().begin() + end;

@@ -153,8 +153,6 @@ function width(eaw: Int?): Int for String
 
 function %OP_GET(index: Int): String for String
 
-function charAt(index: Int): String for String
-
 function slice(start: Int, end: Int?): String for String
 
 function startsWith(target: String): Bool for String

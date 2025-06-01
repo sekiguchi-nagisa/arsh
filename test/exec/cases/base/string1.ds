@@ -66,10 +66,7 @@ assert "12345"[-2] == '4'
 try { "12あ90灘"[123]; assert($false); } catch($e) { assert($e is OutOfRangeError); }
 try { "12あ90灘"[-123]; assert($false); } catch($e) { assert($e is OutOfRangeError); }
 assert("12あ90灘"[2] != 'あ')  # get ascii character encoding
-assert("12あ90灘".charAt(2) == "あ")   # get UTF8 character
 assert("12あ90灘"[5] != '灘')  # get get ascii character encoding
-assert("12あ90灘".charAt(5) == '灘')   # get UTF8 character
-try { "12あ90灘".charAt(6); assert($false); } catch($e) { assert($e is OutOfRangeError); }
 
 assert($a.slice(0, 4) == "hell");
 assert "1234".slice(4, 4).empty()
@@ -299,12 +296,6 @@ assert $gca[2] == $'\uFFFD'
 assert $gca[3] == $'\uFFFD'
 assert $gca[4] == $'\uFFFD'
 assert $gca[5] == $'\u0E33'
-assert $gca[0] == $invalid.charAt(0)
-assert $gca[1] == $invalid.charAt(1)
-assert $gca[2] == $invalid.charAt(2)
-assert $gca[3] == $invalid.charAt(3)
-assert $gca[4] == $invalid.charAt(4)
-assert $gca[5] == $invalid.charAt(5)
 assert $invalid.width(2) == 10
 assert $invalid.width(1) == 6
 assert $invalid.width() == 
