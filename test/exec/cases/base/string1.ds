@@ -68,6 +68,15 @@ try { "12あ90灘"[-123]; assert($false); } catch($e) { assert($e is OutOfRangeE
 assert("12あ90灘"[2] != 'あ')  # get ascii character encoding
 assert("12あ90灘"[5] != '灘')  # get get ascii character encoding
 
+assert $'\x00\x01'.byteAt(0) == 0
+assert $'\x00\x01'.byteAt(1) == 1
+assert 'あい'.byteAt(0) == 0xE3
+assert 'あい'.byteAt(3) == 0xE3
+try { ""[1]; assert($false); } catch($e) { assert($e is OutOfRangeError); }
+try { "あ"[4]; assert($false); } catch($e) { assert($e is OutOfRangeError); }
+assert $'\xFE\xFA'.byteAt(0) == 0xFE
+assert $'\xFE\xFA'.byteAt(1) == 0xFA
+
 assert($a.slice(0, 4) == "hell");
 assert "1234".slice(4, 4).empty()
 assert($a.slice(-3, -1) == "rl");

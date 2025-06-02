@@ -770,6 +770,17 @@ ARSH_METHOD string_get(RuntimeContext &ctx) {
   RET(Value::createStr(ref.substr(value.index, 1)));
 }
 
+//!bind: function byteAt($this: String, $index: Int): Int
+ARSH_METHOD string_byteAt(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(string_byteAt);
+  auto ref = LOCAL(0).asStrRef();
+  const size_t size = ref.size();
+  const auto index = LOCAL(1).asInt();
+
+  auto value = TRY(resolveIndex(ctx, index, size));
+  RET(Value::createInt(static_cast<unsigned char>(ref[value.index])));
+}
+
 static Value sliceImpl(const ArrayObject &obj, size_t begin, size_t end) {
   auto b = obj.getValues().begin() + begin;
   auto e = obj.getValues().begin() + end;

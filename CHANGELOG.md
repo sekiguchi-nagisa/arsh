@@ -16,7 +16,9 @@
         - ``equals`` method is total order unlike ``==``
     - ``Ord_`` type has ``compare`` method for total order comparison
     - ``Array``, ``Map``, ``Tuple``, record types are inherit these interfaces from element types
-- add ``String#bytes`` method. get underlying raw bytes as ``[Int]``
+- add raw byte methods to ``String`` type
+    - ``String#bytes``: get underlying raw bytes as ``[Int]``
+    - ``String#byteAt``: get raw byte at index
 
 ### Changed
 
