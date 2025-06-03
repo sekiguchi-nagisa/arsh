@@ -262,6 +262,7 @@ set(ARSH_SRC
         src/case_fold.cpp
         src/format_util.cpp
         src/object_util.cpp
+        src/decimal.cpp
         ${lexer_src}
         ${bind_src}
         ${embed_src})

@@ -14,17 +14,16 @@
  * limitations under the License.
  */
 
-#include "../external/dragonbox/simple_dragonbox.h"
-
+#include "object_util.h"
 #include "candidates.h"
 #include "constant.h"
 #include "core.h"
+#include "decimal.h"
 #include "format_util.h"
 #include "job.h"
 #include "misc/inlined_stack.hpp"
 #include "misc/num_util.hpp"
 #include "object.h"
-#include "object_util.h"
 #include "ordered_map.h"
 #include "redir.h"
 #include "type_pool.h"
@@ -340,14 +339,9 @@ static std::string toString(double value) {
   if (std::isinf(value)) {
     return value > 0 ? "Infinity" : "-Infinity";
   }
-  if (value == 0.0) {
-    return std::signbit(value) ? "-0.0" : "0.0";
-  }
-
-  auto [significand, exponent, sign] = jkj::simple_dragonbox::to_decimal(
-      value, jkj::simple_dragonbox::policy::cache::compact,
-      jkj::simple_dragonbox::policy::binary_to_decimal_rounding::to_even);
-  return Decimal{.significand = significand, .exponent = exponent, .sign = sign}.toString();
+  Decimal decimal{};
+  Decimal::create(value, decimal);
+  return decimal.toString();
 }
 
 bool Stringifier::addAsFlatStr(const Value &value) {

@@ -7,6 +7,8 @@
 #include <misc/num_util.hpp>
 #include <misc/time_util.hpp>
 
+#include <decimal.h>
+
 using namespace arsh;
 
 enum class Flag : unsigned int {
@@ -703,7 +705,7 @@ TEST(EditDistanceTest, cost) {
 }
 
 static std::string toUTC(time_t time) {
-  struct tm utc {};
+  struct tm utc{};
   gmtime_r(&time, &utc);
   char data[1024];
   strftime(data, std::size(data), "%Y/%m/%d %H:%M:%S", &utc);
@@ -996,6 +998,8 @@ TEST(ShiftOpTest, unsignedRight) {
 }
 
 TEST(DecimalTest, base) {
+  ASSERT_EQ("0.0", (Decimal{0, 0, false}).toString());
+  ASSERT_EQ("-0.0", (Decimal{0, 0, true}).toString());
   ASSERT_EQ("1.0", (Decimal{1, 0, false}).toString());
   ASSERT_EQ("-1.0", (Decimal{1, 0, true}).toString());
 
