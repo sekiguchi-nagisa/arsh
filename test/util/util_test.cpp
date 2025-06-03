@@ -1,13 +1,12 @@
 #include "gtest/gtest.h"
 
+#include <misc/decimal.hpp>
 #include <misc/edit_distance.hpp>
 #include <misc/files.hpp>
 #include <misc/flag_util.hpp>
 #include <misc/format.hpp>
 #include <misc/num_util.hpp>
 #include <misc/time_util.hpp>
-
-#include <decimal.h>
 
 using namespace arsh;
 
