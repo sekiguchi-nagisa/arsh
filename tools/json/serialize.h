@@ -191,6 +191,135 @@ private:
   void append(const char *fieldName, JSON &&json);
 };
 
+class DirectJSONSerializer {
+private:
+  std::string data;
+
+public:
+  DirectJSONSerializer() { this->data.reserve(1024); }
+
+  std::string take() && { return std::move(this->data); }
+
+  void operator()(const char *fieldName, std::nullptr_t);
+
+  void operator()(const char *fieldName, bool v);
+
+  template <typename T, enable_when<(std::is_signed_v<T> || std::is_unsigned_v<T>) &&
+                                    sizeof(T) <= sizeof(int64_t)> = nullptr>
+  void operator()(const char *fieldName, T v) {
+    (*this)(fieldName, static_cast<int64_t>(v));
+  }
+
+  void operator()(const char *fieldName, int64_t v);
+
+  void operator()(const char *fieldName, double v);
+
+  void operator()(const char *fieldName, const char *v) { (*this)(fieldName, std::string(v)); }
+
+  void operator()(const char *fieldName, const std::string &v);
+
+  void operator()(const char *fieldName, const JSON &v);
+
+  template <typename T, enable_when<is_array_v<T>> = nullptr>
+  void operator()(const char *fieldName, T &v) {
+    this->appendFieldWith(fieldName, [&] {
+      this->append('[');
+      for (auto &e : v) {
+        (*this)(e);
+        this->append(',');
+      }
+      this->popSep();
+      this->append(']');
+    });
+  }
+
+  template <typename T, enable_when<is_map_v<T>> = nullptr>
+  void operator()(const char *fieldName, T &v) {
+    this->appendFieldWith(fieldName, [&] {
+      this->append('{');
+      for (auto &[k, v] : v) {
+        (*this)(k.c_str(), v);
+      }
+      this->popSep();
+      this->append('}');
+    });
+  }
+
+  template <typename T, enable_when<is_object_v<T>> = nullptr>
+  void operator()(const char *fieldName, T &v) {
+    this->appendFieldWith(fieldName, [&] {
+      this->append('{');
+      jsonify(*this, v);
+      this->popSep();
+      this->append('}');
+    });
+  }
+
+  template <typename T, enable_when<std::is_enum_v<T>> = nullptr>
+  void operator()(const char *fieldName, T &v) {
+    this->appendFieldWith(fieldName, [&] { jsonify(*this, v); });
+  }
+
+  template <typename... R>
+  void operator()(const char *fieldName, Union<R...> &v) {
+    SerializeUnion<sizeof...(R) - 1, R...>()(*this, fieldName, v);
+  }
+
+  template <typename T, enable_when<is_optional_v<T>> = nullptr>
+  void operator()(const char *fieldName, T &v) {
+    if (v.hasValue()) {
+      (*this)(fieldName, v.unwrap());
+    }
+  }
+
+  template <typename T>
+  void operator()(T &&v) {
+    (*this)(nullptr, std::forward<T>(v));
+  }
+
+private:
+  template <int N, typename... R>
+  struct SerializeUnion {
+    void operator()(DirectJSONSerializer &serializer, const char *fieldName,
+                    Union<R...> &value) const {
+      if constexpr (N == -1) {
+        serializer(fieldName, JSON()); // invalid
+      } else if (value.tag() == N) {
+        using T = typename TypeByIndex<N, R...>::type;
+        serializer(fieldName, arsh::get<T>(value));
+      } else {
+        SerializeUnion<N - 1, R...>()(serializer, fieldName, value);
+      }
+    }
+  };
+
+  void popSep() {
+    if (!this->data.empty() && this->data.back() == ',') {
+      this->data.pop_back();
+    }
+  }
+
+  void append(const StringRef ref) { this->data += ref; }
+
+  void append(const char ch) { this->data += ch; }
+
+  void appendField(const char *name, const StringRef ref) {
+    this->appendFieldWith(name, [&] { this->append(ref); });
+  }
+
+  template <typename Func>
+  void appendFieldWith(const char *name, Func func) {
+    if (name) {
+      JSON::quote(name, this->data);
+      this->append(':');
+    }
+    func();
+    if (name) {
+      this->append(',');
+    }
+  }
+};
+
 class ValidationError {
 private:
   std::vector<std::string> messages;

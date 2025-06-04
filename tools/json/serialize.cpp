@@ -70,6 +70,34 @@ void JSONSerializer::append(const char *fieldName, JSON &&json) {
   }
 }
 
+// ##################################
+// ##     DirectJSONSerializer     ##
+// ##################################
+
+void DirectJSONSerializer::operator()(const char *fieldName, std::nullptr_t) {
+  this->appendFieldWith(fieldName, [&] { JSON::toString(nullptr, this->data); });
+}
+
+void DirectJSONSerializer::operator()(const char *fieldName, bool v) {
+  this->appendFieldWith(fieldName, [&] { JSON::toString(v, this->data); });
+}
+
+void DirectJSONSerializer::operator()(const char *fieldName, int64_t v) {
+  this->appendFieldWith(fieldName, [&] { JSON::toString(v, this->data); });
+}
+
+void DirectJSONSerializer::operator()(const char *fieldName, double v) {
+  this->appendFieldWith(fieldName, [&] { JSON::toString(v, this->data); });
+}
+
+void DirectJSONSerializer::operator()(const char *fieldName, const std::string &v) {
+  this->appendFieldWith(fieldName, [&] { JSON::quote(v, this->data); });
+}
+
+void DirectJSONSerializer::operator()(const char *fieldName, const JSON &v) {
+  this->appendFieldWith(fieldName, [&] { v.serialize(this->data, 0); });
+}
+
 // ###########################
 // ##     JSONValidator     ##
 // ###########################

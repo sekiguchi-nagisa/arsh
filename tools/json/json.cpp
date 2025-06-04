@@ -16,6 +16,8 @@
 
 #include <constant.h>
 
+#include <misc/decimal.hpp>
+#include <misc/format.hpp>
 #include <misc/num_util.hpp>
 #include <misc/resource.hpp>
 #include <misc/unicode.hpp>
@@ -97,9 +99,9 @@ static unsigned int actualSize(const Object &value) {
 struct Serializer {
   const unsigned int tab;
   unsigned int level{0};
-  std::string str;
+  std::string &str;
 
-  explicit Serializer(unsigned int tab) : tab(tab) {}
+  explicit Serializer(std::string &str, unsigned int tab) : tab(tab), str(str) {}
 
   void operator()(const JSON &value) {
     if (value.isInvalid()) {
@@ -125,29 +127,15 @@ struct Serializer {
 #undef GEN_CASE
   }
 
-  void serialize(std::nullptr_t) { this->str += "null"; }
+  void serialize(std::nullptr_t) { JSON::toString(nullptr, this->str); }
 
-  void serialize(bool value) { this->str += value ? "true" : "false"; }
+  void serialize(bool value) { JSON::toString(value, this->str); }
 
-  void serialize(int64_t value) { this->str += std::to_string(value); }
+  void serialize(int64_t value) { JSON::toString(value, this->str); }
 
-  void serialize(double value) { this->str += std::to_string(value); }
+  void serialize(double value) { JSON::toString(value, this->str); }
 
-  void serialize(const String &value) {
-    this->str += '"';
-    for (unsigned char ch : value) {
-      if (ch < 0x1F) {
-        char buf[16];
-        snprintf(buf, 16, "\\u%04x", ch);
-        str += buf;
-        continue;
-      } else if (ch == '\\' || ch == '"') {
-        this->str += '\\';
-      }
-      this->str += static_cast<char>(ch);
-    }
-    this->str += '"';
-  }
+  void serialize(const String &value) { JSON::quote(value, this->str); }
 
   void serialize(const Array &value) {
     if (actualSize(value) == 0) {
@@ -235,14 +223,36 @@ struct Serializer {
   }
 };
 
-std::string JSON::serialize(unsigned int tab) const {
-  POSIX_LOCALE_C.use(); // always use C locale (for std::to_string)
-
-  Serializer serializer(tab);
+void JSON::serialize(std::string &out, unsigned int tab) const {
+  Serializer serializer(out, tab);
   serializer(*this);
+}
 
-  Locale::restore();
-  return std::move(serializer.str);
+void JSON::quote(StringRef ref, std::string &out) {
+  out += '"';
+  for (unsigned char ch : ref) {
+    if (ch < 0x1F) {
+      char buf[16];
+      const int s = snprintf(buf, std::size(buf), "\\u%04x", ch);
+      assert(s > 0);
+      out += StringRef(buf, s);
+      continue;
+    }
+    if (ch == '\\' || ch == '"') {
+      out += '\\';
+    }
+    out += static_cast<char>(ch);
+  }
+  out += '"';
+}
+
+void JSON::toString(double value, std::string &out) {
+  Decimal decimal{};
+  if (Decimal::create(value, decimal)) {
+    out += decimal.toString();
+  } else {
+    toString(nullptr, out);
+  }
 }
 
 const char *toString(JSONTokenKind kind) {

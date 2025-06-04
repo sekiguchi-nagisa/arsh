@@ -106,7 +106,23 @@ public:
 
   size_t size() const;
 
-  std::string serialize(unsigned int tab = 0) const;
+  void serialize(std::string &out, unsigned int tab) const;
+
+  std::string serialize(unsigned int tab = 0) const {
+    std::string out;
+    this->serialize(out, tab);
+    return out;
+  }
+
+  static void quote(StringRef ref, std::string &out);
+
+  static void toString(double value, std::string &out);
+
+  static void toString(int64_t value, std::string &out) { out += std::to_string(value); }
+
+  static void toString(std::nullptr_t, std::string &out) { out += "null"; }
+
+  static void toString(bool v, std::string &out) { out += v ? "true" : "false"; }
 };
 
 struct JSONMember {

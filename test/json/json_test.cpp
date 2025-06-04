@@ -552,6 +552,88 @@ TEST(SerializeTest, map) {
   }
 }
 
+template <typename T>
+static std::string directSerialize(T &&v) {
+  DirectJSONSerializer serializer;
+  serializer(std::forward<T>(v));
+  return std::move(serializer).take();
+}
+
+struct DirectSerializeTest : public ::testing::Test {
+  template <typename T>
+  static void testDirectSerialize(const char *expect, T &&v) {
+    auto actual = directSerialize(v);
+    ASSERT_TRUE(JSON::fromString(actual.c_str()).hasValue());
+    ASSERT_EQ(expect, actual);
+  }
+};
+
+TEST_F(DirectSerializeTest, base) {
+  ASSERT_NO_FATAL_FAILURE(testDirectSerialize("null", nullptr));
+  ASSERT_NO_FATAL_FAILURE(testDirectSerialize("null", std::nan("")));
+  ASSERT_NO_FATAL_FAILURE(testDirectSerialize("null", std::numeric_limits<double>::infinity()));
+  ASSERT_NO_FATAL_FAILURE(testDirectSerialize("null", -std::numeric_limits<double>::infinity()));
+  ASSERT_NO_FATAL_FAILURE(testDirectSerialize("null", std::nan("")));
+  ASSERT_NO_FATAL_FAILURE(testDirectSerialize("false", false));
+  ASSERT_NO_FATAL_FAILURE(testDirectSerialize("true", true));
+  ASSERT_NO_FATAL_FAILURE(testDirectSerialize("0", 0));
+  ASSERT_NO_FATAL_FAILURE(testDirectSerialize("0.2", 0.2));
+  ASSERT_NO_FATAL_FAILURE(testDirectSerialize("-0.2", -0.2));
+  ASSERT_NO_FATAL_FAILURE(testDirectSerialize("\"AAA\"", "AAA"));
+  ASSERT_EQ("", directSerialize(JSON()));
+
+  std::vector<int> v = {1, 2, 3};
+  ASSERT_NO_FATAL_FAILURE(testDirectSerialize("[1,2,3]", v));
+  v = {123};
+  ASSERT_NO_FATAL_FAILURE(testDirectSerialize("[123]", v));
+  v.clear();
+  ASSERT_NO_FATAL_FAILURE(testDirectSerialize("[]", v));
+}
+
+TEST_F(DirectSerializeTest, object) {
+  AAA v = {.a1 = 190,
+           .a2 = BBB{
+               .b1 = -234,
+               .b2 = "world!!",
+           }};
+  ASSERT_NO_FATAL_FAILURE(testDirectSerialize(R"({"a1":190,"a2":{"b1":-234,"b2":"world!!"}})", v));
+
+  std::vector<AAA> vv{v};
+  ASSERT_NO_FATAL_FAILURE(
+      testDirectSerialize(R"([{"a1":190,"a2":{"b1":-234,"b2":"world!!"}}])", vv));
+
+  Optional<AAA> vo;
+  ASSERT_EQ("", directSerialize(vo));
+
+  vo = v;
+  ASSERT_NO_FATAL_FAILURE(testDirectSerialize(R"({"a1":190,"a2":{"b1":-234,"b2":"world!!"}})", vo));
+}
+
+TEST_F(DirectSerializeTest, variant) {
+  Union<bool, BBB, int> v;
+  ASSERT_EQ("", directSerialize(v));
+
+  v = 234;
+  ASSERT_NO_FATAL_FAILURE(testDirectSerialize("234", v));
+
+  v = false;
+  ASSERT_NO_FATAL_FAILURE(testDirectSerialize("false", v));
+
+  v = BBB{
+      .b1 = 999,
+      .b2 = "@@@@",
+  };
+  ASSERT_NO_FATAL_FAILURE(testDirectSerialize(R"({"b1":999,"b2":"@@@@"})", v));
+}
+
+TEST_F(DirectSerializeTest, map) {
+  std::map<std::string, std::vector<unsigned int>> map = {
+      {"AAA", {1, 2, 3}},
+      {"BBB", {4, 5, 6}},
+  };
+  ASSERT_NO_FATAL_FAILURE(testDirectSerialize(R"({"AAA":[1,2,3],"BBB":[4,5,6]})", map));
+}
+
 TEST(DeserializeTest, base) {
   JSONDeserializer deserializer(false);
   bool b = true;
