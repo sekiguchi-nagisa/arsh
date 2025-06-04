@@ -17,10 +17,7 @@
 #include <constant.h>
 
 #include <misc/decimal.hpp>
-#include <misc/format.hpp>
 #include <misc/num_util.hpp>
-#include <misc/resource.hpp>
-#include <misc/unicode.hpp>
 
 #include "json.h"
 
