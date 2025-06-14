@@ -18,7 +18,7 @@
 # CHECK: {
 # CHECK:   "error": {
 # CHECK:     "code": -32600,
-# CHECK:     "data": "undefined field `jsonrpc'",
+# CHECK:     "data": "undefined field `id'",
 # CHECK:     "message": "Invalid Request"
 # CHECK:   },
 # CHECK:   "id": null,

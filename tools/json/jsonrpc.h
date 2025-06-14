@@ -107,12 +107,14 @@ struct Response {
   std::string jsonrpc{"2.0"};
 
   JSON id; // number|string|null
-  Optional<JSON> result;
+  Optional<Union<JSON, RawJSON>> result;
   Optional<Error> error;
 
   Response() = default;
 
   Response(JSON &&id, JSON &&result) : id(std::move(id)), result(std::move(result)) {}
+
+  Response(JSON &&id, RawJSON &&result) : id(std::move(id)), result(std::move(result)) {}
 
   Response(JSON &&id, Error &&error) : id(std::move(id)), error(std::move(error)) {}
 
@@ -120,13 +122,15 @@ struct Response {
 
   template <typename T>
   void jsonify(T &t) {
-    t("jsonrpc", this->jsonrpc);
     t("id", this->id);
+    t("jsonrpc", this->jsonrpc);
     t("result", this->result);
     t("error", this->error);
   }
 
   JSON toJSON();
+
+  JSON takeResultAsJSON() &&;
 };
 
 using Message = Union<Request, Response>;
@@ -210,7 +214,7 @@ public:
 
   void notify(const std::string &methodName, JSON &&param);
 
-  void reply(JSON &&id, JSON &&result);
+  void reply(JSON &&id, RawJSON &&result);
 
   /**
    *
@@ -252,14 +256,14 @@ public:
   virtual ssize_t recv(size_t size, char *data) = 0;
 };
 
-using ReplyImpl = Result<JSON, Error>;
+using ReplyImpl = Result<RawJSON, Error>;
 
 template <typename T>
 struct Reply : public ReplyImpl {
-  static JSON serialize(T &&value) {
-    JSONSerializer serializer;
+  static RawJSON serialize(T &&value) {
+    DirectJSONSerializer serializer;
     serializer(value);
-    return std::move(serializer).take();
+    return {std::move(serializer).take()};
   }
 
   Reply(T &&value) : ReplyImpl(Ok(serialize(std::move(value)))) {} // NOLINT
@@ -273,7 +277,7 @@ struct Reply : public ReplyImpl {
 
 template <>
 struct Reply<void> : public ReplyImpl {
-  Reply(std::nullptr_t) : ReplyImpl(Ok(JSON(nullptr))) {} // NOLINT
+  Reply(std::nullptr_t) : ReplyImpl(Ok(RawJSON::null())) {} // NOLINT
 
   Reply(ErrHolder<Error> &&err) : ReplyImpl(std::move(err)) {} // NOLINT
 
@@ -388,11 +392,11 @@ public:
             Error ecallback) {
     ResponseCallback func = [this, callback, ecallback, name](Response &&res) {
       if (res) {
-        JSONDeserializer deserializer(std::move(res.result));
+        JSONDeserializer deserializer(std::move(res).takeResultAsJSON());
         Ret ret;
         deserializer(ret);
         if (deserializer.hasError()) {
-          this->responseValidationError(name, deserializer.getValidationError(), res);
+          res.error = this->responseValidationError(name, deserializer.getValidationError());
         } else {
           callback(ret);
           return;
@@ -421,7 +425,7 @@ protected:
 
   void notificationValidationError(const std::string &name, const ValidationError &e);
 
-  void responseValidationError(const std::string &name, const ValidationError &e, Response &res);
+  Error responseValidationError(const std::string &name, const ValidationError &e);
 
   void bindImpl(const std::string &methodName, Call &&func);
 

@@ -45,6 +45,16 @@ JSON Response::toJSON() {
   return std::move(serializer).take();
 }
 
+JSON Response::takeResultAsJSON() && {
+  if (is<JSON>(this->result)) {
+    return std::move(get<JSON>(this->result));
+  }
+  if (is<RawJSON>(this->result)) {
+    return get<RawJSON>(this->result).toJSON();
+  }
+  return JSON();
+}
+
 #define LOG(L, ...)                                                                                \
   do {                                                                                             \
     this->logger.get().enabled(L) && (this->logger.get())(L, __VA_ARGS__);                         \
@@ -135,10 +145,12 @@ void Transport::notify(const std::string &methodName, JSON &&param) {
   this->send(str.size(), str.c_str());
 }
 
-void Transport::reply(JSON &&id, JSON &&result) {
-  auto json = Response(std::move(id), std::move(result)).toJSON();
-  LOG(LogLevel::DEBUG, "reply:\n%s", json.serialize(2).c_str());
-  auto str = json.serialize();
+void Transport::reply(JSON &&id, RawJSON &&result) {
+  Response res(std::move(id), std::move(result));
+  DirectJSONSerializer serializer;
+  serializer(res);
+  auto str = std::move(serializer).take();
+  LOG(LogLevel::DEBUG, "reply:\n%s", JSON::fromString(str.c_str()).serialize(2).c_str());
   this->send(str.size(), str.c_str());
 }
 
@@ -256,12 +268,11 @@ void Handler::notificationValidationError(const std::string &name, const Validat
       str.c_str());
 }
 
-void Handler::responseValidationError(const std::string &name, const ValidationError &e,
-                                      Response &res) {
+Error Handler::responseValidationError(const std::string &name, const ValidationError &e) {
   std::string str = e.formatError();
   LOG(LogLevel::ERROR, "response message validation failed at `%s': \n%s", name.c_str(),
       str.c_str());
-  res.error = Error(InvalidParams, std::move(str));
+  return Error(InvalidParams, std::move(str));
 }
 
 void Handler::bindImpl(const std::string &methodName, Call &&func) {

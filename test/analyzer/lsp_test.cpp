@@ -459,7 +459,7 @@ TEST(ClientTest, run) {
   auto &res = get<rpc::Response>(ret);
   ASSERT_EQ(1, res.id.asLong());
   ASSERT_TRUE(res);
-  ASSERT_EQ("Content-Length: 4\r\n\r\n1234", res.result.unwrap().asString());
+  ASSERT_EQ("Content-Length: 4\r\n\r\n1234", std::move(res).takeResultAsJSON().asString());
 }
 
 static Source source(StringRef content) {

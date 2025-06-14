@@ -605,6 +605,12 @@ TEST_F(DirectSerializeTest, object) {
   Optional<AAA> vo;
   ASSERT_EQ("", directSerialize(vo));
 
+  JSON jj;
+  ASSERT_EQ("", directSerialize(jj));
+
+  RawJSON raw;
+  ASSERT_EQ("", directSerialize(raw));
+
   vo = v;
   ASSERT_NO_FATAL_FAILURE(testDirectSerialize(R"({"a1":190,"a2":{"b1":-234,"b2":"world!!"}})", vo));
 }

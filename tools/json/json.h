@@ -18,9 +18,7 @@
 #define ARSH_TOOLS_JSON_JSON_H
 
 #include <cstdlib>
-#include <cstring>
 #include <map>
-#include <memory>
 #include <string>
 #include <vector>
 
@@ -41,9 +39,9 @@ struct JSONMember;
 
 class JSON : public Union<std::nullptr_t, bool, int64_t, double, String, Array, Object> {
 public:
-  using Base = Union<std::nullptr_t, bool, int64_t, double, String, Array, Object>;
+  using Base = Union;
 
-  explicit JSON() : Base() {}
+  explicit JSON() = default;
 
   JSON(bool v) : Base(v) {}                                // NOLINT
   JSON(int64_t v) : Base(v) {}                             // NOLINT
@@ -171,6 +169,20 @@ inline Object object(JSONMember &&m, Arg &&...arg) {
   detail_json::append(value, std::forward<JSONMember>(m), std::forward<Arg>(arg)...);
   return value;
 }
+
+struct RawJSON {
+  std::string jsonStr;
+
+  static RawJSON null() {
+    RawJSON raw;
+    JSON::toString(nullptr, raw.jsonStr);
+    return raw;
+  }
+
+  JSON toJSON() const { return JSON::fromString(this->jsonStr.c_str()); }
+
+  explicit operator bool() const { return !this->jsonStr.empty(); }
+};
 
 #define EACH_JSON_TOKEN(OP)                                                                        \
   OP(INVALID, "<invalid>")                                                                         \

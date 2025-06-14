@@ -20,6 +20,7 @@
 #include <misc/detect.hpp>
 
 #include "json.h"
+#include "misc/rtti.hpp"
 
 namespace arsh::json {
 
@@ -63,8 +64,9 @@ template <typename T>
 constexpr bool is_optional_v = is_optional<T>::value;
 
 template <typename T>
-constexpr bool is_object_v = !is_string_v<T> && !is_array_v<T> && !is_map_v<T> && !is_union_v<T> &&
-                             !is_optional_v<T> && !std::is_same_v<T, JSON> && std::is_class_v<T>;
+constexpr bool is_object_v =
+    !is_string_v<T> && !is_array_v<T> && !is_map_v<T> && !is_union_v<T> && !is_optional_v<T> &&
+    !std::is_same_v<T, JSON> && !std::is_same_v<T, RawJSON> && std::is_class_v<T>;
 
 template <typename T>
 struct array_element {};
@@ -123,6 +125,8 @@ public:
   void operator()(const char *fieldName, const std::string &v);
 
   void operator()(const char *fieldName, const JSON &v);
+
+  void operator()(const char *fieldName, const RawJSON &v);
 
   template <typename T, enable_when<is_array_v<T>> = nullptr>
   void operator()(const char *fieldName, T &v) {
@@ -219,6 +223,8 @@ public:
   void operator()(const char *fieldName, const std::string &v);
 
   void operator()(const char *fieldName, const JSON &v);
+
+  void operator()(const char *fieldName, const RawJSON &v);
 
   template <typename T, enable_when<is_array_v<T>> = nullptr>
   void operator()(const char *fieldName, T &v) {
@@ -368,6 +374,8 @@ public:
 
   void operator()(const char *fieldName, JSON &v);
 
+  void operator()(const char *fieldName, RawJSON &v);
+
   template <typename T, enable_when<is_array_v<T>> = nullptr>
   void operator()(const char *fieldName, T &v) {
     JSON *json = this->validateField<Array>(fieldName);
@@ -499,7 +507,7 @@ private:
    * @param fieldName
    * if fieldName null, return this->value
    * @param tag
-   * @param op
+   * @param optional
    * @return
    * resolved field
    */
@@ -530,6 +538,9 @@ struct is_serialize : std::false_type {};
 
 template <>
 struct is_serialize<JSONSerializer> : std::true_type {};
+
+template <>
+struct is_serialize<DirectJSONSerializer> : std::true_type {};
 
 template <typename T>
 constexpr bool is_serialize_v = is_serialize<T>::value;

@@ -57,6 +57,10 @@ void JSONSerializer::operator()(const char *fieldName, const JSON &v) {
   this->append(fieldName, JSON(v));
 }
 
+void JSONSerializer::operator()(const char *fieldName, const RawJSON &v) {
+  this->append(fieldName, v.toJSON());
+}
+
 void JSONSerializer::append(const char *fieldName, JSON &&json) {
   if (this->result.isArray()) {
     this->result.asArray().push_back(std::move(json));
@@ -95,7 +99,15 @@ void DirectJSONSerializer::operator()(const char *fieldName, const std::string &
 }
 
 void DirectJSONSerializer::operator()(const char *fieldName, const JSON &v) {
-  this->appendFieldWith(fieldName, [&] { v.serialize(this->data, 0); });
+  if (!v.isInvalid()) {
+    this->appendFieldWith(fieldName, [&] { v.serialize(this->data, 0); });
+  }
+}
+
+void DirectJSONSerializer::operator()(const char *fieldName, const RawJSON &v) {
+  if (v) {
+    this->appendFieldWith(fieldName, [&] { this->data += v.jsonStr; });
+  }
 }
 
 // ###########################
@@ -161,6 +173,14 @@ void JSONDeserializerImpl::operator()(const char *fieldName, JSON &v) {
   if (JSON *json = this->validateField(fieldName, -1)) {
     if (!this->validOnly) {
       v = std::move(*json);
+    }
+  }
+}
+
+void JSONDeserializerImpl::operator()(const char *fieldName, RawJSON &v) {
+  if (JSON *json = this->validateField(fieldName, -1)) {
+    if (!this->validOnly) {
+      v = {json->serialize(0)};
     }
   }
 }
