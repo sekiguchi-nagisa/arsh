@@ -202,7 +202,7 @@ private:
 public:
   DirectJSONSerializer() { this->data.reserve(1024); }
 
-  std::string take() && { return std::move(this->data); }
+  RawJSON take() && { return {std::move(this->data)}; }
 
   void operator()(const char *fieldName, std::nullptr_t);
 

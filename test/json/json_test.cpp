@@ -556,7 +556,7 @@ template <typename T>
 static std::string directSerialize(T &&v) {
   DirectJSONSerializer serializer;
   serializer(std::forward<T>(v));
-  return std::move(serializer).take();
+  return std::move(std::move(serializer).take().jsonStr);
 }
 
 struct DirectSerializeTest : public ::testing::Test {

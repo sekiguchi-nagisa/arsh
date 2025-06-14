@@ -214,7 +214,9 @@ public:
 
   void notify(const std::string &methodName, JSON &&param);
 
-  void reply(JSON &&id, RawJSON &&result);
+  void reply(JSON &&id, RawJSON &&result) {
+    this->reply(Response(std::move(id), std::move(result)));
+  }
 
   /**
    *
@@ -222,7 +224,9 @@ public:
    * may be null
    * @param error
    */
-  void reply(JSON &&id, Error &&error);
+  void reply(JSON &&id, Error &&error) { this->reply(Response(std::move(id), std::move(error))); }
+
+  void reply(Response &&res);
 
   // raw level message send/recv api. not directly use them.
 
@@ -263,7 +267,7 @@ struct Reply : public ReplyImpl {
   static RawJSON serialize(T &&value) {
     DirectJSONSerializer serializer;
     serializer(value);
-    return {std::move(serializer).take()};
+    return std::move(serializer).take();
   }
 
   Reply(T &&value) : ReplyImpl(Ok(serialize(std::move(value)))) {} // NOLINT

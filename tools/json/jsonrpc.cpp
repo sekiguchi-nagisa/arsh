@@ -145,20 +145,12 @@ void Transport::notify(const std::string &methodName, JSON &&param) {
   this->send(str.size(), str.c_str());
 }
 
-void Transport::reply(JSON &&id, RawJSON &&result) {
-  Response res(std::move(id), std::move(result));
+void Transport::reply(Response &&res) {
   DirectJSONSerializer serializer;
   serializer(res);
-  auto str = std::move(serializer).take();
-  LOG(LogLevel::DEBUG, "reply:\n%s", JSON::fromString(str.c_str()).serialize(2).c_str());
-  this->send(str.size(), str.c_str());
-}
-
-void Transport::reply(JSON &&id, Error &&error) {
-  auto json = Response(std::move(id), std::move(error)).toJSON();
-  LOG(LogLevel::DEBUG, "reply error:\n%s", json.serialize(2).c_str());
-  auto str = json.serialize();
-  this->send(str.size(), str.c_str());
+  auto raw = std::move(serializer).take();
+  LOG(LogLevel::DEBUG, "reply%s:\n%s", res ? "" : " error", raw.toJSON().serialize(2).c_str());
+  this->send(raw.jsonStr.size(), raw.jsonStr.c_str());
 }
 
 // #####################
