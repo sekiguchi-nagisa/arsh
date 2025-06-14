@@ -1111,8 +1111,10 @@ protected:
   }
 };
 
+static RawJSON toRawJSON(JSON &&json) { return RawJSON(json.serialize(0)); }
+
 TEST_F(RPCTest, api1) {
-  this->transport.call(34, "hoge", {{"value", false}});
+  this->transport.call(34, "hoge", toRawJSON({{"value", false}}));
   JSON json;
   ASSERT_NO_FATAL_FAILURE(this->parseResponse(json));
   ASSERT_EQ("2.0", json["jsonrpc"].asString());
@@ -1123,7 +1125,7 @@ TEST_F(RPCTest, api1) {
 }
 
 TEST_F(RPCTest, api2) {
-  this->transport.notify("hoge", {{"value", "hey"}});
+  this->transport.notify("hoge", toRawJSON({{"value", "hey"}}));
   JSON json;
   ASSERT_NO_FATAL_FAILURE(this->parseResponse(json));
   ASSERT_EQ("2.0", json["jsonrpc"].asString());

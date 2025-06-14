@@ -131,20 +131,6 @@ CallbackMap::Entry CallbackMap::take(const std::string &id) {
 // ##     Transport     ##
 // #######################
 
-void Transport::call(JSON &&id, const std::string &methodName, JSON &&param) {
-  auto json = Request(std::move(id), methodName, std::move(param)).toJSON();
-  LOG(LogLevel::DEBUG, "call:\n%s", json.serialize(2).c_str());
-  auto str = json.serialize();
-  this->send(str.size(), str.c_str());
-}
-
-void Transport::notify(const std::string &methodName, JSON &&param) {
-  auto json = Request(JSON(), methodName, std::move(param)).toJSON();
-  LOG(LogLevel::DEBUG, "notify:\n%s", json.serialize(2).c_str());
-  auto str = json.serialize();
-  this->send(str.size(), str.c_str());
-}
-
 void Transport::call(RawRequest &&req) {
   RawJSONSerializer serializer;
   serializer(req);

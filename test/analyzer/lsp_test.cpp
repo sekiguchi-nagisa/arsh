@@ -237,11 +237,11 @@ struct ServerTest : public InteractiveBase {
   }
 
   void call(const char *methodName, JSON &&params) {
-    this->client->call(++this->count, methodName, std::move(params));
+    this->client->call(++this->count, methodName, RawJSON(params.serialize(0)));
   }
 
   void notify(const char *methodName, JSON &&params) const {
-    this->client->notify(methodName, std::move(params));
+    this->client->notify(methodName, RawJSON(params.serialize(0)));
   }
 
   std::string readLog() const {
