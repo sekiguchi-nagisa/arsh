@@ -145,8 +145,17 @@ void Transport::notify(const std::string &methodName, JSON &&param) {
   this->send(str.size(), str.c_str());
 }
 
+void Transport::call(RawRequest &&req) {
+  RawJSONSerializer serializer;
+  serializer(req);
+  auto raw = std::move(serializer).take();
+  LOG(LogLevel::DEBUG, "%s:\n%s", req.isCall() ? "call" : "notify",
+      raw.toJSON().serialize(2).c_str());
+  this->send(raw.jsonStr.size(), raw.jsonStr.c_str());
+}
+
 void Transport::reply(Response &&res) {
-  DirectJSONSerializer serializer;
+  RawJSONSerializer serializer;
   serializer(res);
   auto raw = std::move(serializer).take();
   LOG(LogLevel::DEBUG, "reply%s:\n%s", res ? "" : " error", raw.toJSON().serialize(2).c_str());
@@ -279,7 +288,7 @@ void Handler::bindImpl(const std::string &methodName, Notification &&func) {
   }
 }
 
-void Handler::callImpl(Transport &transport, const std::string &methodName, JSON &&json,
+void Handler::callImpl(Transport &transport, const std::string &methodName, RawJSON &&json,
                        ResponseCallback &&func) {
   auto id = this->callbackMap.add(methodName, std::move(func));
   transport.call(std::move(id), methodName, std::move(json));

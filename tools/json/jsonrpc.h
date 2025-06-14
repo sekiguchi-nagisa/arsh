@@ -61,13 +61,31 @@ struct Error {
   JSON toJSON();
 };
 
-struct Request {
+struct RequestBase {
   static_assert(std::is_same_v<JSON, Optional<JSON>::base_type>);
 
   std::string jsonrpc{"2.0"};
-  Optional<JSON> id;     // optional. must be `number | string | null'
-  std::string method;    // if error, indicate error message
-  Optional<JSON> params; // optional. must be `array<any> | object | null'
+  Optional<JSON> id;  // optional. must be `number | string | null'
+  std::string method; // if error, indicate error message
+
+  RequestBase() = default;
+
+  RequestBase(JSON &&id, const std::string &method) : id(std::move(id)), method(method) {}
+
+  bool isNotification() const { return !this->isCall(); }
+
+  bool isCall() const { return !this->id.isInvalid() && !this->id.unwrap().isNull(); }
+
+  template <typename T>
+  void jsonify(T &t) {
+    t("jsonrpc", this->jsonrpc);
+    t("id", this->id);
+    t("method", this->method);
+  }
+};
+
+struct Request : RequestBase {
+  Optional<JSON> params; // optional. must be `array<any> | object | null`
 
   /**
    * each param must be validated
@@ -76,29 +94,39 @@ struct Request {
    * @param params
    */
   Request(JSON &&id, const std::string &method, JSON &&params)
-      : id(std::move(id)), method(method), params(std::move(params)) {}
+      : RequestBase(std::move(id), method), params(std::move(params)) {}
 
   Request(const std::string &method, JSON &&params) : Request(JSON(), method, std::move(params)) {}
 
   Request() = default;
 
-  bool isNotification() const { return !this->isCall(); }
-
-  bool isCall() const { return !this->id.isInvalid() && !this->id.unwrap().isNull(); }
-
   /**
    * convert to request json.
    * object must be notification or request.
-   * after call it, will be empty.
+   * after called it, will be empty.
    * @return
    */
   JSON toJSON(); // for testing
 
   template <typename T>
   void jsonify(T &t) {
-    t("jsonrpc", this->jsonrpc);
-    t("id", this->id);
-    t("method", this->method);
+    RequestBase::jsonify(t);
+    t("params", this->params);
+  }
+};
+
+struct RawRequest : RequestBase {
+  RawJSON params; // optional. must be `array<any> | object | null`
+
+  RawRequest(JSON &&id, const std::string &method, RawJSON &&params)
+      : RequestBase(std::move(id), method), params(std::move(params)) {}
+
+  RawRequest(const std::string &method, RawJSON &&params)
+      : RawRequest(JSON(), method, std::move(params)) {}
+
+  template <typename T>
+  void jsonify(T &t) {
+    RequestBase::jsonify(t);
     t("params", this->params);
   }
 };
@@ -214,6 +242,16 @@ public:
 
   void notify(const std::string &methodName, JSON &&param);
 
+  void call(JSON &&id, const std::string &methodName, RawJSON &&param) {
+    this->call(RawRequest(std::move(id), methodName, std::move(param)));
+  }
+
+  void notify(const std::string &methodName, RawJSON &&param) {
+    this->call(RawRequest(methodName, std::move(param)));
+  }
+
+  void call(RawRequest &&req);
+
   void reply(JSON &&id, RawJSON &&result) {
     this->reply(Response(std::move(id), std::move(result)));
   }
@@ -265,7 +303,7 @@ using ReplyImpl = Result<RawJSON, Error>;
 template <typename T>
 struct Reply : public ReplyImpl {
   static RawJSON serialize(T &&value) {
-    DirectJSONSerializer serializer;
+    RawJSONSerializer serializer;
     serializer(value);
     return std::move(serializer).take();
   }
@@ -408,14 +446,14 @@ public:
       }
       ecallback(res.error.unwrap());
     };
-    JSONSerializer serializer;
+    RawJSONSerializer serializer;
     serializer(param);
     this->callImpl(transport, name, std::move(serializer).take(), std::move(func));
   }
 
   template <typename Param>
   void notify(Transport &transport, const std::string &name, Param &&param) {
-    JSONSerializer serializer;
+    RawJSONSerializer serializer;
     serializer(param);
     transport.notify(name, std::move(serializer).take());
   }
@@ -435,7 +473,7 @@ protected:
 
   void bindImpl(const std::string &methodName, Notification &&func);
 
-  void callImpl(Transport &transport, const std::string &methodName, JSON &&json,
+  void callImpl(Transport &transport, const std::string &methodName, RawJSON &&json,
                 ResponseCallback &&func);
 };
 

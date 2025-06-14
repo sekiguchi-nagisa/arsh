@@ -21,90 +21,37 @@
 
 namespace arsh::json {
 
-// ############################
-// ##     JSONSerializer     ##
-// ############################
-
-JSONSerializer JSONSerializer::asArray() {
-  Array v;
-  JSONSerializer s;
-  s.result = std::move(v);
-  return s;
-}
-
-JSONSerializer JSONSerializer::asObject() {
-  Object v;
-  JSONSerializer s;
-  s.result = std::move(v);
-  return s;
-}
-
-void JSONSerializer::operator()(const char *fieldName, std::nullptr_t) {
-  this->append(fieldName, JSON(nullptr));
-}
-
-void JSONSerializer::operator()(const char *fieldName, bool v) { this->append(fieldName, v); }
-
-void JSONSerializer::operator()(const char *fieldName, int64_t v) { this->append(fieldName, v); }
-
-void JSONSerializer::operator()(const char *fieldName, double v) { this->append(fieldName, v); }
-
-void JSONSerializer::operator()(const char *fieldName, const std::string &v) {
-  this->append(fieldName, v);
-}
-
-void JSONSerializer::operator()(const char *fieldName, const JSON &v) {
-  this->append(fieldName, JSON(v));
-}
-
-void JSONSerializer::operator()(const char *fieldName, const RawJSON &v) {
-  this->append(fieldName, v.toJSON());
-}
-
-void JSONSerializer::append(const char *fieldName, JSON &&json) {
-  if (this->result.isArray()) {
-    this->result.asArray().push_back(std::move(json));
-  } else if (this->result.isObject()) {
-    assert(fieldName);
-    this->result.asObject().emplace(fieldName, std::move(json));
-  } else if (this->result.isInvalid()) {
-    this->result = std::move(json);
-  } else {
-    fatal("broken");
-  }
-}
-
 // ##################################
 // ##     DirectJSONSerializer     ##
 // ##################################
 
-void DirectJSONSerializer::operator()(const char *fieldName, std::nullptr_t) {
+void RawJSONSerializer::operator()(const char *fieldName, std::nullptr_t) {
   this->appendFieldWith(fieldName, [&] { JSON::toString(nullptr, this->data); });
 }
 
-void DirectJSONSerializer::operator()(const char *fieldName, bool v) {
+void RawJSONSerializer::operator()(const char *fieldName, bool v) {
   this->appendFieldWith(fieldName, [&] { JSON::toString(v, this->data); });
 }
 
-void DirectJSONSerializer::operator()(const char *fieldName, int64_t v) {
+void RawJSONSerializer::operator()(const char *fieldName, int64_t v) {
   this->appendFieldWith(fieldName, [&] { JSON::toString(v, this->data); });
 }
 
-void DirectJSONSerializer::operator()(const char *fieldName, double v) {
+void RawJSONSerializer::operator()(const char *fieldName, double v) {
   this->appendFieldWith(fieldName, [&] { JSON::toString(v, this->data); });
 }
 
-void DirectJSONSerializer::operator()(const char *fieldName, const std::string &v) {
+void RawJSONSerializer::operator()(const char *fieldName, const std::string &v) {
   this->appendFieldWith(fieldName, [&] { JSON::quote(v, this->data); });
 }
 
-void DirectJSONSerializer::operator()(const char *fieldName, const JSON &v) {
+void RawJSONSerializer::operator()(const char *fieldName, const JSON &v) {
   if (!v.isInvalid()) {
     this->appendFieldWith(fieldName, [&] { v.serialize(this->data, 0); });
   }
 }
 
-void DirectJSONSerializer::operator()(const char *fieldName, const RawJSON &v) {
+void RawJSONSerializer::operator()(const char *fieldName, const RawJSON &v) {
   if (v) {
     this->appendFieldWith(fieldName, [&] { this->data += v.jsonStr; });
   }
@@ -180,7 +127,7 @@ void JSONDeserializerImpl::operator()(const char *fieldName, JSON &v) {
 void JSONDeserializerImpl::operator()(const char *fieldName, RawJSON &v) {
   if (JSON *json = this->validateField(fieldName, -1)) {
     if (!this->validOnly) {
-      v = {json->serialize(0)};
+      v = RawJSON(json->serialize(0));
     }
   }
 }

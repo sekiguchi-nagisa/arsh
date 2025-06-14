@@ -173,10 +173,14 @@ inline Object object(JSONMember &&m, Arg &&...arg) {
 struct RawJSON {
   std::string jsonStr;
 
+  RawJSON() = default;
+
+  explicit RawJSON(std::string &&value) : jsonStr(std::move(value)) {}
+
   static RawJSON null() {
-    RawJSON raw;
-    JSON::toString(nullptr, raw.jsonStr);
-    return raw;
+    RawJSON value;
+    JSON::toString(nullptr, value.jsonStr);
+    return value;
   }
 
   JSON toJSON() const { return JSON::fromString(this->jsonStr.c_str()); }

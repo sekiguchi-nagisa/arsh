@@ -554,7 +554,7 @@ TEST(SerializeTest, map) {
 
 template <typename T>
 static std::string directSerialize(T &&v) {
-  DirectJSONSerializer serializer;
+  RawJSONSerializer serializer;
   serializer(std::forward<T>(v));
   return std::move(std::move(serializer).take().jsonStr);
 }

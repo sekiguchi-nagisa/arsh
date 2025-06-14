@@ -20,7 +20,6 @@
 #include <misc/detect.hpp>
 
 #include "json.h"
-#include "misc/rtti.hpp"
 
 namespace arsh::json {
 
@@ -90,119 +89,14 @@ struct map_value<std::map<std::string, T>> {
 template <typename T>
 using map_value_t = typename map_value<T>::type;
 
-class JSONSerializer {
-private:
-  /**
-   * final serialized value
-   */
-  JSON result;
-
-  static JSONSerializer asArray();
-
-  static JSONSerializer asObject();
-
-public:
-  const JSON &get() const { return this->result; }
-
-  JSON take() && { return std::move(result); }
-
-  void operator()(const char *fieldName, std::nullptr_t);
-
-  void operator()(const char *fieldName, bool v);
-
-  template <typename T, enable_when<(std::is_signed_v<T> || std::is_unsigned_v<T>) &&
-                                    sizeof(T) <= sizeof(int64_t)> = nullptr>
-  void operator()(const char *fieldName, T v) {
-    (*this)(fieldName, static_cast<int64_t>(v));
-  }
-
-  void operator()(const char *fieldName, int64_t v);
-
-  void operator()(const char *fieldName, double v);
-
-  void operator()(const char *fieldName, const char *v) { (*this)(fieldName, std::string(v)); }
-
-  void operator()(const char *fieldName, const std::string &v);
-
-  void operator()(const char *fieldName, const JSON &v);
-
-  void operator()(const char *fieldName, const RawJSON &v);
-
-  template <typename T, enable_when<is_array_v<T>> = nullptr>
-  void operator()(const char *fieldName, T &v) {
-    auto s = JSONSerializer::asArray();
-    for (auto &e : v) {
-      s(nullptr, e);
-    }
-    this->append(fieldName, std::move(s).take());
-  }
-
-  template <typename T, enable_when<is_map_v<T>> = nullptr>
-  void operator()(const char *fieldName, T &v) {
-    auto s = JSONSerializer::asObject();
-    for (auto &e : v) {
-      s(e.first.c_str(), e.second);
-    }
-    this->append(fieldName, std::move(s).take());
-  }
-
-  template <typename T, enable_when<is_object_v<T>> = nullptr>
-  void operator()(const char *fieldName, T &v) {
-    auto s = JSONSerializer::asObject();
-    jsonify(s, v);
-    this->append(fieldName, std::move(s).take());
-  }
-
-  template <typename T, enable_when<std::is_enum_v<T>> = nullptr>
-  void operator()(const char *fieldName, T &v) {
-    JSONSerializer s;
-    jsonify(s, v);
-    this->append(fieldName, std::move(s).take());
-  }
-
-  template <typename... R>
-  void operator()(const char *fieldName, Union<R...> &v) {
-    ToJSON<sizeof...(R) - 1, R...>()(*this, fieldName, v);
-  }
-
-  template <typename T, enable_when<is_optional_v<T>> = nullptr>
-  void operator()(const char *fieldName, T &v) {
-    if (v.hasValue()) {
-      (*this)(fieldName, v.unwrap());
-    }
-  }
-
-  template <typename T>
-  void operator()(T &&v) {
-    (*this)(nullptr, std::forward<T>(v));
-  }
-
-private:
-  template <int N, typename... R>
-  struct ToJSON {
-    void operator()(JSONSerializer &serializer, const char *fieldName, Union<R...> &value) const {
-      if constexpr (N == -1) {
-        serializer.append(fieldName, JSON());
-      } else if (value.tag() == N) {
-        using T = typename TypeByIndex<N, R...>::type;
-        serializer(fieldName, arsh::get<T>(value));
-      } else {
-        ToJSON<N - 1, R...>()(serializer, fieldName, value);
-      }
-    }
-  };
-
-  void append(const char *fieldName, JSON &&json);
-};
-
-class DirectJSONSerializer {
+class RawJSONSerializer {
 private:
   std::string data;
 
 public:
-  DirectJSONSerializer() { this->data.reserve(1024); }
+  RawJSONSerializer() { this->data.reserve(1024); }
 
-  RawJSON take() && { return {std::move(this->data)}; }
+  RawJSON take() && { return RawJSON(std::move(this->data)); }
 
   void operator()(const char *fieldName, std::nullptr_t);
 
@@ -286,7 +180,7 @@ public:
 private:
   template <int N, typename... R>
   struct SerializeUnion {
-    void operator()(DirectJSONSerializer &serializer, const char *fieldName,
+    void operator()(RawJSONSerializer &serializer, const char *fieldName,
                     Union<R...> &value) const {
       if constexpr (N == -1) {
         serializer(fieldName, JSON()); // invalid
@@ -323,6 +217,26 @@ private:
     if (name) {
       this->append(',');
     }
+  }
+};
+
+class JSONSerializer {
+private:
+  /**
+   * final serialized value
+   */
+  JSON result;
+
+public:
+  const JSON &get() const { return this->result; }
+
+  JSON take() && { return std::move(result); }
+
+  template <typename T>
+  void operator()(T &&v) {
+    RawJSONSerializer serializer;
+    serializer(v);
+    this->result = std::move(serializer).take().toJSON();
   }
 };
 
@@ -537,10 +451,7 @@ template <typename T>
 struct is_serialize : std::false_type {};
 
 template <>
-struct is_serialize<JSONSerializer> : std::true_type {};
-
-template <>
-struct is_serialize<DirectJSONSerializer> : std::true_type {};
+struct is_serialize<RawJSONSerializer> : std::true_type {};
 
 template <typename T>
 constexpr bool is_serialize_v = is_serialize<T>::value;
