@@ -87,7 +87,13 @@ assert complete -d -- '\let(){}; let'
 assert $COMPREPLY.size() == 1
 $args = @($COMPREPLY)
 assert $args.size() == 1
-assert $args[0] == 'let'  # not override keyword
+assert $args[0] == 'let@keyword'  # not override keyword
+
+assert complete -d -- '\let(){}; \let'
+assert $COMPREPLY.size() == 1
+$args = @($COMPREPLY)
+assert $args.size() == 1
+assert $args[0] == '\let@user-defined'
 
 ## module/sub command
 source $SCRIPT_DIR/../../_module4test/comp.ds as comp234

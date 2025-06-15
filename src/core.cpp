@@ -446,6 +446,12 @@ public:
         this->overflow = !this->reply.addNewCandidateWith(this->state, candidate.value, desc, attr);
         return;
       }
+      if (candidate.kind == CompCandidateKind::KEYWORD && isIdentifierStart(candidate.value[0])) {
+        this->overflow =
+            !this->reply.addNewCandidateWith(this->state, candidate.value, "keyword",
+                                             CandidateAttr{CandidateAttr::Kind::NONE, true});
+        return;
+      }
 
       const std::string typeSig = candidate.formatTypeSignature(this->state.typePool);
       if (!typeSig.empty()) {
