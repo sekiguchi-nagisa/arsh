@@ -187,12 +187,12 @@ static StringRef::size_type startsWithAnsiEscape(StringRef ref) {
   return 0;
 }
 
-class TokenEmitterImpl : public TokenEmitter {
+class HighlightTokenizer : public TokenEmitter {
 private:
   std::vector<std::pair<HighlightTokenClass, Token>> tokens;
 
 public:
-  explicit TokenEmitterImpl(StringRef source) : TokenEmitter(source) {}
+  explicit HighlightTokenizer(StringRef source) : TokenEmitter(source) {}
 
   std::vector<std::pair<HighlightTokenClass, Token>> take() && { return std::move(this->tokens); }
 
@@ -241,7 +241,7 @@ static bool nextIsLP(const StringRef source,
 bool LineRenderer::renderScript(const StringRef source,
                                 const std::function<bool(StringRef)> &errorCmdChecker) {
   // for syntax highlight
-  TokenEmitterImpl tokenEmitter(source);
+  HighlightTokenizer tokenEmitter(source);
   auto error = tokenEmitter.tokenizeAndEmit();
   auto lex = tokenEmitter.getLexerPtr();
   const auto tokens = std::move(tokenEmitter).take();
