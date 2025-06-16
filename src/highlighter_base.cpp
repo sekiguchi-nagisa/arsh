@@ -186,4 +186,6 @@ std::unique_ptr<ParseError> TokenEmitter::tokenizeAndEmit() {
   return nullptr;
 }
 
+void Tokenizer::emit(TokenKind kind, Token token) { this->tokens.emplace_back(kind, token); }
+
 } // namespace arsh

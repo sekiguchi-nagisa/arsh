@@ -187,21 +187,6 @@ static StringRef::size_type startsWithAnsiEscape(StringRef ref) {
   return 0;
 }
 
-class HighlightTokenizer : public TokenEmitter {
-private:
-  std::vector<std::pair<HighlightTokenClass, Token>> tokens;
-
-public:
-  explicit HighlightTokenizer(StringRef source) : TokenEmitter(source) {}
-
-  std::vector<std::pair<HighlightTokenClass, Token>> take() && { return std::move(this->tokens); }
-
-private:
-  void emit(TokenKind kind, Token token) override {
-    this->tokens.emplace_back(toTokenClass(kind), token);
-  }
-};
-
 void LineRenderer::renderWithANSI(StringRef prompt) {
   for (StringRef::size_type pos = 0; pos != StringRef::npos;) {
     auto r = prompt.find('\x1b', pos);
@@ -228,8 +213,7 @@ void LineRenderer::renderWithANSI(StringRef prompt) {
   }
 }
 
-static bool nextIsLP(const StringRef source,
-                     const std::vector<std::pair<HighlightTokenClass, Token>> &tokens,
+static bool nextIsLP(const StringRef source, const std::vector<std::pair<TokenKind, Token>> &tokens,
                      unsigned int curIndex) {
   if (curIndex + 1 < tokens.size()) {
     const auto next = tokens[curIndex + 1].second;
@@ -241,7 +225,7 @@ static bool nextIsLP(const StringRef source,
 bool LineRenderer::renderScript(const StringRef source,
                                 const std::function<bool(StringRef)> &errorCmdChecker) {
   // for syntax highlight
-  HighlightTokenizer tokenEmitter(source);
+  Tokenizer tokenEmitter(source);
   auto error = tokenEmitter.tokenizeAndEmit();
   auto lex = tokenEmitter.getLexerPtr();
   const auto tokens = std::move(tokenEmitter).take();
@@ -260,7 +244,7 @@ bool LineRenderer::renderScript(const StringRef source,
     }
     curPos = token.endPos();
     const StringRef ref = source.substr(token.pos, token.size);
-    HighlightTokenClass tokenClass = tokens[i].first;
+    HighlightTokenClass tokenClass = toTokenClass(tokens[i].first);
     if (supportErrorHighlight && tokenClass == HighlightTokenClass::COMMAND &&
         !nextIsLP(source, tokens, i)) {
       if (!errorCmdChecker(ref)) {
@@ -291,7 +275,7 @@ bool LineRenderer::renderScript(const StringRef source,
   } else if (!tokens.empty()) {
     auto token = tokens.back().second;
     auto last = lex->toStrRef(token);
-    switch (tokens.back().first) {
+    switch (toTokenClass(tokens.back().first)) {
     case HighlightTokenClass::NONE_:
       if (last.size() == 2 && last == "\\\n") {
         return false;

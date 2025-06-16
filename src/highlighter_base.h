@@ -93,6 +93,19 @@ private:
   virtual void emit(TokenKind kind, Token token) = 0;
 };
 
+class Tokenizer : public TokenEmitter {
+private:
+  std::vector<std::pair<TokenKind, Token>> tokens;
+
+public:
+  explicit Tokenizer(StringRef source) : TokenEmitter(source) {}
+
+  std::vector<std::pair<TokenKind, Token>> take() && { return std::move(this->tokens); }
+
+private:
+  void emit(TokenKind kind, Token token) override;
+};
+
 } // namespace arsh
 
 #endif // ARSH_HIGHLIGHTER_BASE_H
