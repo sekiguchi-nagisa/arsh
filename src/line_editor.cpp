@@ -249,44 +249,6 @@ static void checkProperty(CharWidthProperties &ps, int inFd, int outFd) {
 
 /* =========================== Line editing ================================= */
 
-static bool linenoiseEditDeleteTo(LineBuffer &buf, KillRing &killRing) {
-  std::string out;
-  bool r = buf.deleteLineToCursor(false, &out);
-  if (r) {
-    killRing.add(std::move(out));
-  }
-  return r;
-}
-
-static bool linenoiseEditDeleteFrom(LineBuffer &buf, KillRing &killRing) {
-  std::string out;
-  bool r = buf.deleteLineFromCursor(&out);
-  if (r) {
-    killRing.add(std::move(out));
-  }
-  return r;
-}
-
-/* Delete the previous word, maintaining the cursor at the start of the
- * current word. */
-static bool linenoiseEditDeletePrevWord(LineBuffer &buf, KillRing &killRing) {
-  std::string out;
-  bool r = buf.deletePrevWord(&out);
-  if (r) {
-    killRing.add(std::move(out));
-  }
-  return r;
-}
-
-static bool linenoiseEditDeleteNextWord(LineBuffer &buf, KillRing &killRing) {
-  std::string out;
-  bool r = buf.deleteNextWord(&out);
-  if (r) {
-    killRing.add(std::move(out));
-  }
-  return r;
-}
-
 static bool linenoiseEditSwapChars(LineBuffer &buf) {
   if (buf.getCursor() == 0) { //  does not swap
     return false;
@@ -770,12 +732,14 @@ ssize_t LineEditorObject::editInRawMode(ARState &state, RenderingContext &ctx) {
       break;
     }
     case EditActionType::BACKWORD_KILL_LINE: /* delete the whole line or delete to current */
-      if (linenoiseEditDeleteTo(ctx.buf, this->killRing)) {
+      if (std::string capture; ctx.buf.deleteLineToCursor(false, &capture)) {
+        this->killRing.add(std::move(capture));
         this->refreshLine(state, ctx);
       }
       break;
     case EditActionType::KILL_LINE: /* delete from current to end of line */
-      if (linenoiseEditDeleteFrom(ctx.buf, this->killRing)) {
+      if (std::string capture; ctx.buf.deleteLineFromCursor(&capture)) {
+        this->killRing.add(std::move(capture));
         this->refreshLine(state, ctx);
       }
       break;
@@ -804,12 +768,14 @@ ssize_t LineEditorObject::editInRawMode(ARState &state, RenderingContext &ctx) {
       this->refreshLine(state, ctx);
       break;
     case EditActionType::BACKWARD_KILL_WORD:
-      if (linenoiseEditDeletePrevWord(ctx.buf, this->killRing)) {
+      if (std::string capture; ctx.buf.deletePrevWord(&capture)) {
+        this->killRing.add(std::move(capture));
         this->refreshLine(state, ctx);
       }
       break;
     case EditActionType::KILL_WORD:
-      if (linenoiseEditDeleteNextWord(ctx.buf, this->killRing)) {
+      if (std::string capture; ctx.buf.deleteNextWord(&capture)) {
+        this->killRing.add(std::move(capture));
         this->refreshLine(state, ctx);
       }
       break;
