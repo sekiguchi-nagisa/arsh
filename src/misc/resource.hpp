@@ -18,6 +18,7 @@
 #define MISC_LIB_RESOURCE_HPP
 
 #include <cerrno>
+#include <cstdint>
 #include <cstdio>
 #include <memory>
 #include <string>
