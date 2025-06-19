@@ -8,7 +8,7 @@ macro(getRE2C)
             GIT_REPOSITORY https://github.com/skvadrik/re2c.git
             GIT_TAG 7bc7c1980a1a8142402574bbfb5ebe5fe2d995a9 # 4.2
             GIT_PROGRESS 1
-            UPDATE_DISCONNECTED 1
+            UPDATE_DISCONNECTED 0
     )
 
     set(RE2C_SRC "${re2c_SOURCE_DIR}")
