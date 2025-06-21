@@ -36,6 +36,14 @@ try {
 assert ($ex as GlobError).lineno() == 33
 
 $ex = 2
+try { echo ??$PID; } catch $e { $ex = $e; }
+assert $ex is GlobError
+
+$ex = 2
+try { echo /..//.././.2.e{4..-1}../_.0.e{4..-1}exit[$$resul; } catch $e { $ex = $e; }
+assert $ex is GlobError
+
+$ex = 2
 try { echo [[:aaa:]]*; } catch $e { $ex = $e; }
 assert $ex is GlobError
 assert ($ex as GlobError).message() == "undefined character class: aaa in \`[[:aaa:]]*'"
