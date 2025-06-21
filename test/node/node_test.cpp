@@ -484,7 +484,6 @@ nodes:
                         size: 5
                       type:
                       kind: "STR_EXPR"
-                      segmentIndex: 0
                       exprNode:
                         nodeKind: Var
                         token:
@@ -648,7 +647,6 @@ nodes:
                             size: 8
                           type:
                           kind: "CMD_ARG"
-                          segmentIndex: 0
                           exprNode:
                             nodeKind: Number
                             token:

@@ -1179,7 +1179,8 @@ void TypeChecker::visitEmbedNode(EmbedNode &node) {
   if (node.getKind() == EmbedNode::CMD_ARG) {
     if (!this->typePool().get(TYPE::String).isSameOrBaseTypeOf(exprType) &&
         !this->typePool().get(TYPE::StringArray).isSameOrBaseTypeOf(exprType) &&
-        !this->typePool().get(TYPE::FD).isSameOrBaseTypeOf(exprType)) { // call __STR__
+        !this->typePool().get(TYPE::FD).isSameOrBaseTypeOf(
+            exprType)) { // call __STR__ or __CMD__ARG
       if (exprType.isCollectionLike() || exprType.is(TYPE::Any)) {
         node.setType(this->typePool().get(TYPE::StringArray));
       } else if (auto *handle = this->typePool().lookupMethod(exprType, OP_STR)) {
