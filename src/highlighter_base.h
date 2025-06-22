@@ -94,13 +94,18 @@ private:
 };
 
 class Tokenizer : public TokenEmitter {
+public:
+  using TokenList = std::vector<std::pair<TokenKind, Token>>;
+
 private:
-  std::vector<std::pair<TokenKind, Token>> tokens;
+  TokenList tokens;
 
 public:
   explicit Tokenizer(StringRef source) : TokenEmitter(source) {}
 
-  std::vector<std::pair<TokenKind, Token>> take() && { return std::move(this->tokens); }
+  TokenList take() && { return std::move(this->tokens); }
+
+  const TokenList &getTokens() const { return this->tokens; }
 
 private:
   void emit(TokenKind kind, Token token) override;

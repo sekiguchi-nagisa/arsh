@@ -119,6 +119,7 @@
 #include "logger.h"
 #include "misc/pty.hpp"
 #include "pager.h"
+#include "token_edit.h"
 #include "vm.h"
 
 // ++++++++++ copied from linenoise.c ++++++++++++++
@@ -768,27 +769,75 @@ ssize_t LineEditorObject::editInRawMode(ARState &state, RenderingContext &ctx) {
       this->refreshLine(state, ctx);
       break;
     case EditActionType::BACKWARD_KILL_WORD:
+    BACKWARD_KILL_WORD_L:
       if (std::string capture; ctx.buf.deletePrevWord(&capture)) {
         this->killRing.add(std::move(capture));
         this->refreshLine(state, ctx);
       }
       break;
     case EditActionType::KILL_WORD:
+    KILL_WORD_L:
       if (std::string capture; ctx.buf.deleteNextWord(&capture)) {
         this->killRing.add(std::move(capture));
         this->refreshLine(state, ctx);
       }
       break;
     case EditActionType::BACKWARD_WORD:
+    BACKWARD_WORD_L:
       if (ctx.buf.moveCursorToLeftByWord()) {
         this->refreshLine(state, ctx, false);
       }
       break;
     case EditActionType::FORWARD_WORD:
+    FORWARD_WORD_L:
       if (ctx.buf.moveCursorToRightByWord()) {
         this->refreshLine(state, ctx, false);
       }
       break;
+    case EditActionType::BACKWARD_KILL_TOKEN:
+      if (this->hasFeature(LineEditorFeature::LANG_EXTENSION)) {
+        std::string capture;
+        if (auto ret = deletePrevToken(ctx.buf, &capture); ret.hasValue()) {
+          if (ret.unwrap()) {
+            this->killRing.add(std::move(capture));
+            this->refreshLine(state, ctx);
+          }
+          break;
+        }
+      }
+      goto BACKWARD_KILL_WORD_L;
+    case EditActionType::KILL_TOKEN:
+      if (this->hasFeature(LineEditorFeature::LANG_EXTENSION)) {
+        std::string capture;
+        if (auto ret = deleteNextToken(ctx.buf, &capture); ret.hasValue()) {
+          if (ret.unwrap()) {
+            this->killRing.add(std::move(capture));
+            this->refreshLine(state, ctx);
+          }
+          break;
+        }
+      }
+      goto KILL_WORD_L;
+    case EditActionType::BACKWARD_TOKEN:
+      if (this->hasFeature(LineEditorFeature::LANG_EXTENSION)) {
+        if (auto ret = moveCursorToLeftByToken(ctx.buf); ret.hasValue()) {
+          if (ret.unwrap()) {
+            this->refreshLine(state, ctx, false);
+          }
+          break;
+        }
+      }
+      goto BACKWARD_WORD_L;
+    case EditActionType::FORWARD_TOKEN:
+      if (this->hasFeature(LineEditorFeature::LANG_EXTENSION)) {
+        if (auto ret = moveCursorToRightByToken(ctx.buf); ret.hasValue()) {
+          if (ret.unwrap()) {
+            this->refreshLine(state, ctx, false);
+          }
+          break;
+        }
+      }
+      goto FORWARD_WORD_L;
     case EditActionType::NEWLINE:
       if (ctx.buf.insertToCursor({"\n", 1})) {
         this->refreshLine(state, ctx);

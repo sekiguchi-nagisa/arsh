@@ -194,14 +194,18 @@ public:
   OP(KILL_WORD, "kill-word")                       /* ALT-D */                                     \
   OP(BACKWARD_WORD, "backward-word")               /* ALT-B / ALT-LEFT */                          \
   OP(FORWARD_WORD, "forward-word")                 /* ALT-F / ALT-RIGHT */                         \
-  OP(NEWLINE, "newline")                           /* ALT-ENTER */                                 \
-  OP(YANK, "yank")                                 /* CTRL-Y */                                    \
-  OP(YANK_POP, "yank-pop")                         /* ALT-Y */                                     \
-  OP(UNDO, "undo")                                 /* CTRL-Z */                                    \
-  OP(REDO, "redo")                                 /* CTRL-_ */                                    \
-  OP(INSERT_KEYCODE, "insert-keycode")             /* CTRL-V */                                    \
-  OP(BRACKET_PASTE, "bracket-paste")               /* ESC [200~ */                                 \
-  OP(CUSTOM, "%custom")                            /* for custom action */
+  OP(BACKWARD_KILL_TOKEN, "backward-kill-token")                                                   \
+  OP(KILL_TOKEN, "kill-token")                                                                     \
+  OP(BACKWARD_TOKEN, "backward-token")                                                             \
+  OP(FORWARD_TOKEN, "forward-token")                                                               \
+  OP(NEWLINE, "newline")               /* ALT-ENTER */                                             \
+  OP(YANK, "yank")                     /* CTRL-Y */                                                \
+  OP(YANK_POP, "yank-pop")             /* ALT-Y */                                                 \
+  OP(UNDO, "undo")                     /* CTRL-Z */                                                \
+  OP(REDO, "redo")                     /* CTRL-_ */                                                \
+  OP(INSERT_KEYCODE, "insert-keycode") /* CTRL-V */                                                \
+  OP(BRACKET_PASTE, "bracket-paste")   /* ESC [200~ */                                             \
+  OP(CUSTOM, "%custom")                /* for custom action */
 
 enum class EditActionType : unsigned char {
 #define GEN_ENUM(E, S) E,

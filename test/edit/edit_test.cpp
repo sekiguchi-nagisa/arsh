@@ -5,6 +5,7 @@
 #include <keycode.h>
 #include <line_buffer.h>
 #include <line_renderer.h>
+#include <token_edit.h>
 
 using namespace arsh;
 
@@ -457,6 +458,78 @@ struct LineBufferTest : public ::testing::Test {
       actualLine = buffer.getCurLine(true).toString();
       ASSERT_EQ(e.wholeLine, actualLine);
     }
+  }
+
+  struct TokenEditPattern {
+    std::string before;
+    unsigned int beforePos;
+    std::string after;
+    unsigned int afterPos;
+  };
+
+  static void testEditLeftToken(const TokenEditPattern &pattern) {
+    ASSERT_LE(pattern.beforePos, pattern.before.size());
+    ASSERT_LE(pattern.afterPos, pattern.after.size());
+
+    const bool s = pattern.beforePos != pattern.afterPos;
+    std::string storage;
+    size_t size = std::max(pattern.before.size(), pattern.after.size());
+    size += size >> 1;
+    storage.resize(size, '@');
+    LineBuffer buffer(storage.data(), storage.size());
+    ASSERT_EQ(0, buffer.getUsedSize());
+    ASSERT_EQ(0, buffer.getCursor());
+    ASSERT_EQ("", buffer.get().toString());
+
+    // delete prev
+    ASSERT_TRUE(buffer.insertToCursor(pattern.before));
+    buffer.setCursor(pattern.beforePos);
+    auto ret = deletePrevToken(buffer, nullptr);
+    ASSERT_TRUE(ret.hasValue());
+    ASSERT_EQ(s, ret.unwrap());
+    ASSERT_EQ(pattern.after, buffer.get().toString());
+    ASSERT_EQ(pattern.afterPos, buffer.getCursor());
+
+    // move left
+    buffer.deleteAll();
+    ASSERT_TRUE(buffer.insertToCursor(pattern.before));
+    buffer.setCursor(pattern.beforePos);
+    ret = moveCursorToLeftByToken(buffer);
+    ASSERT_TRUE(ret.hasValue());
+    ASSERT_EQ(s, ret.unwrap());
+    ASSERT_EQ(pattern.afterPos, buffer.getCursor());
+  }
+
+  static void testEditRightToken(const TokenEditPattern &pattern, bool s = true) {
+    ASSERT_LE(pattern.beforePos, pattern.before.size());
+    ASSERT_LE(pattern.afterPos, pattern.after.size());
+
+    std::string storage;
+    size_t size = std::max(pattern.before.size(), pattern.after.size());
+    size += size >> 1;
+    storage.resize(size, '@');
+    LineBuffer buffer(storage.data(), storage.size());
+    ASSERT_EQ(0, buffer.getUsedSize());
+    ASSERT_EQ(0, buffer.getCursor());
+    ASSERT_EQ("", buffer.get().toString());
+
+    // delete next
+    ASSERT_TRUE(buffer.insertToCursor(pattern.before));
+    buffer.setCursor(pattern.beforePos);
+    auto ret = deleteNextToken(buffer, nullptr);
+    ASSERT_TRUE(ret.hasValue());
+    ASSERT_EQ(s, ret.unwrap());
+    ASSERT_EQ(pattern.after, buffer.get().toString());
+    ASSERT_EQ(pattern.afterPos, buffer.getCursor());
+
+    // move right
+    buffer.deleteAll();
+    ASSERT_TRUE(buffer.insertToCursor(pattern.before));
+    buffer.setCursor(pattern.beforePos);
+    ret = moveCursorToRightByToken(buffer);
+    ASSERT_TRUE(ret.hasValue());
+    ASSERT_EQ(s, ret.unwrap());
+    ASSERT_EQ(pattern.afterPos, buffer.getCursor());
   }
 };
 
@@ -972,6 +1045,44 @@ TEST_F(LineBufferTest, insertingSuffix) {
   prefix = "llvm";
   ASSERT_EQ(11, buffer.resolveInsertingSuffix(prefix, false));
   ASSERT_EQ("", prefix.toString());
+}
+
+TEST_F(LineBufferTest, tokenEditInvalid) {
+  std::string storage;
+  storage.resize(32, '@');
+  LineBuffer buffer(storage.data(), storage.size());
+  ASSERT_EQ("", buffer.get().toString());
+
+  ASSERT_TRUE(buffer.insertToCursor("var $123"));
+  ASSERT_EQ(8, buffer.getCursor());
+
+  ASSERT_FALSE(deletePrevToken(buffer, nullptr).hasValue());
+  ASSERT_FALSE(deleteNextToken(buffer, nullptr).hasValue());
+  ASSERT_FALSE(moveCursorToLeftByToken(buffer).hasValue());
+  ASSERT_FALSE(moveCursorToRightByToken(buffer).hasValue());
+
+  ASSERT_EQ("var $123", buffer.get());
+  ASSERT_EQ(8, buffer.getCursor());
+}
+
+TEST_F(LineBufferTest, tokenEditLeftPrev1) {
+  const TokenEditPattern patterns[] = {
+      {"echo aa", 7, "echo ", 5},
+      {"echo aa 123", 10, "echo aa 3", 8},
+      {"echo aa 123", 9, "echo aa 23", 8},
+      {"echo aa 123", 8, "echo 123", 5},
+      {"echo aa 123", 7, "echo  123", 5},
+      {"echo aa 123", 6, "echo a 123", 5},
+      {"echo aa 123", 5, "aa 123", 0},
+      {"echo aa 123", 4, " aa 123", 0},
+      {"   echo aa 123", 3, "echo aa 123", 0},
+      {"echo aa 123", 0, "echo aa 123", 0},
+  };
+
+  for (auto &p : patterns) {
+    SCOPED_TRACE("\n>>> " + p.before + "\npos: " + std::to_string(p.beforePos));
+    ASSERT_NO_FATAL_FAILURE(testEditLeftToken(p));
+  }
 }
 
 int main(int argc, char **argv) {
