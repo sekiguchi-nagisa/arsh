@@ -24,8 +24,8 @@ struct Pipe {
     }
   }
 
-  ssize_t write(StringRef ref) const {
-    return ::write(this->getWritePipe(), ref.data(), ref.size());
+  void write(StringRef ref) const {
+    static_cast<void>(::write(this->getWritePipe(), ref.data(), ref.size()));
   }
 
   int getReadPipe() const { return this->fds[0]; }

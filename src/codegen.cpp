@@ -1915,7 +1915,7 @@ void ByteCodeDumper::dumpCode(const CompiledCode &c) {
 
   fputs("Code:\n", this->fp);
   {
-    const char *opName[] = {
+    constexpr const char *opName[] = {
 #define GEN_NAME(CODE, N, S) #CODE,
         OPCODE_LIST(GEN_NAME)
 #undef GEN_NAME

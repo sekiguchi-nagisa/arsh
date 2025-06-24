@@ -281,7 +281,7 @@ private:
   std::unique_ptr<TypeNode> returnTypeNode;
 
   /**
-   * may be empty vector, if has no parameter
+   * may be empty vector, if no parameter
    */
   std::vector<std::unique_ptr<TypeNode>> paramTypeNodes;
 
@@ -2194,7 +2194,7 @@ public:
   }
 
   /**
-   * if has no finally block, return null
+   * if no finally block, return null
    */
   DeferNode *getFinallyNode() const { return this->finallyNode.get(); }
 

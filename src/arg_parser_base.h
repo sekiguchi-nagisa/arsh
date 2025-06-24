@@ -207,7 +207,7 @@ public:
    * if CheckerKind::INT, set parsed value
    * otherwise, set 0
    * @param err
-   * if has error, set error message
+   * if error, set error message
    * @return
    */
   bool checkArg(StringRef arg, bool shortOpt, int64_t &out, std::string &err) const;

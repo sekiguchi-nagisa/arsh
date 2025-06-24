@@ -138,11 +138,11 @@ public:
    * @param bufLimit
    * limit of final replaced string length
    * @param output
-   * if has error, write error message
+   * if error, write error message
    * if success, write replaced string
    * @return
-   * if success, return replacement count (may be 0)
-   * if has error, return negative value
+   * if success, return replacement count (maybe 0)
+   * if error, return negative value
    */
   int substitute(StringRef target, StringRef replacement, bool global, size_t bufLimit,
                  std::string &output);
