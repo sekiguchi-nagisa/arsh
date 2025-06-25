@@ -175,6 +175,8 @@ static int getCursorPosition(int ifd, int ofd, bool queryCursor) {
     }
   }
   buf[i] = '\0';
+  LOG(TRACE_EDIT, "i=%d, buf:[%x %x %x %x %x %x %x]", i, buf[0], buf[1], buf[2], buf[3], buf[4],
+      buf[5], buf[6]);
 
   /* Parse it. */
   if (constexpr int ESC = 27; buf[0] != ESC || buf[1] != '[') {
