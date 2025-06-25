@@ -25,8 +25,8 @@ namespace arsh {
 // high level api for unicode-aware character op
 
 #define EACH_CHAR_WIDTH_PROPERTY(OP)                                                               \
-  OP(RGI, "🇯")                                                                                     \
   OP(EAW, "○")                                                                                     \
+  OP(RGI, "🇯")                                                                                     \
   OP(EMOJI_FLAG_SEQ, "🇯🇵")                                                                         \
   OP(EMOJI_ZWJ_SEQ, "👩🏼‍🏭")
 

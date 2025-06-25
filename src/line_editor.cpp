@@ -175,8 +175,8 @@ static int getCursorPosition(int ifd, int ofd, bool queryCursor) {
     }
   }
   buf[i] = '\0';
-  LOG(TRACE_EDIT, "i=%d, buf:[%x %x %x %x %x %x %x]", i, buf[0], buf[1], buf[2], buf[3], buf[4],
-      buf[5], buf[6]);
+  LOG(TRACE_EDIT, "i=%d, buf:[%02x %02x %02x %02x %02x %02x %02x]", i, buf[0], buf[1], buf[2],
+      buf[3], buf[4], buf[5], buf[6]);
 
   /* Parse it. */
   if (constexpr int ESC = 27; buf[0] != ESC || buf[1] != '[') {
@@ -232,21 +232,23 @@ static void checkProperty(CharWidthProperties &ps, int inFd, int outFd) {
     return;
   }
 
-  int lastPos = 1;
   for (auto &e : getCharWidthPropertyList()) {
     char buf[32];
-    const int s = snprintf(buf, std::size(buf), "\x1b[?25l<%s>\x1b[1K\x1b[6n", e.second);
-    if (s < 0 || write(outFd, buf, s) == -1) { // hide cursor and clear line immediately
+    /**
+     * hide cursor and clear line immediately (due to suppress cursor flicker)
+     */
+    const int s = snprintf(buf, std::size(buf), "\x1b[?25l<%s>\x1b[1K\x1b[6n\r", e.second);
+    tcflush(inFd, TCIFLUSH); // force clear inbound data
+    if (s < 0 || write(outFd, buf, s) == -1) {
       break;
     }
     const int pos = getCursorPosition(inFd, outFd, false);
-    const int len = pos - lastPos - 2;
+    const int len = pos - 3;
     LOG(TRACE_EDIT, "char:<%s>, pos:%d, len:%d", e.second, pos, len);
     if (len <= 0) {
-      break;
+      continue; // skip unresolved property
     }
     ps.setProperty(e.first, len);
-    lastPos = pos;
   }
 }
 
