@@ -1562,7 +1562,7 @@ std::unique_ptr<Node> Parser::parse_cmdArgSeg(CmdArgNode &argNode, const CmdArgP
       this->curKind = TokenKind::HERE_START;
     }
     this->consume();                                 // always success
-    const bool unescape = !argNode.hasBracketExpr(); // if has bracket expr, not unescape
+    const bool unescape = !argNode.hasBracketExpr(); // if bracket expr, not unescape
     auto strNode = std::make_unique<StringNode>(token, this->lexer->toCmdArg(token, unescape),
                                                 StringNode::CMD_ARG);
     if (!unescape) {
@@ -2389,13 +2389,13 @@ std::unique_ptr<Node> Parser::parse_interpolation(EmbedNode::Kind kind) {
     const Token token = this->expect(TokenKind::APPLIED_NAME_WITH_FIELD);
 
     // split `${recv.field1.field2}'
-    // split begin token `${'
+    // split begin token `${`
     const Token beginToken = token.slice(0, 2);
 
     // split inner names
     const Token innerToken = token.slice(2, token.size - 1);
 
-    // split end token `}'
+    // split end token `}`
     const Token endToken = token.sliceFrom(token.size - 1);
 
     return std::make_unique<EmbedNode>(beginToken.pos, kind, this->toAccessNode(innerToken),

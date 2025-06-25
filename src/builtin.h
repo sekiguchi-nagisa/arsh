@@ -53,12 +53,6 @@
 #define ARSH_METHOD static Value
 #define ARSH_METHOD_DECL static Value
 
-/**
- *   //!bind: function <method name>($this : <receiver type>, $param1 : <type1>, $param2? : <type2>, ...) : <return type>
- *   //!bind: constructor <type name>($param1 : <type1>, ....)
- *   $<param name>?  has default value
- */
-
 namespace arsh {
 
 using RuntimeContext = ARState;
