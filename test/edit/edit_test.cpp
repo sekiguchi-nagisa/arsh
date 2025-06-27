@@ -501,7 +501,7 @@ struct LineBufferTest : public ::testing::Test {
     ASSERT_EQ(pattern.afterPos, buffer.getCursor());
   }
 
-  static void testEditRightToken(const TokenEditPattern &pattern, bool s = true) {
+  static void testEditRightToken(const TokenEditPattern &pattern) {
     ASSERT_LE(pattern.beforePos, pattern.before.size());
     ASSERT_LE(pattern.afterPos, pattern.after.size());
 
@@ -515,11 +515,12 @@ struct LineBufferTest : public ::testing::Test {
     ASSERT_EQ("", buffer.get().toString());
 
     // delete next
+    std::string killed;
     ASSERT_TRUE(buffer.insertToCursor(pattern.before));
     buffer.setCursor(pattern.beforePos);
-    auto ret = deleteNextToken(buffer, nullptr);
+    auto ret = deleteNextToken(buffer, &killed);
     ASSERT_TRUE(ret.hasValue());
-    ASSERT_EQ(s, ret.unwrap());
+    ASSERT_EQ(!killed.empty(), ret.unwrap());
     ASSERT_EQ(pattern.after, buffer.get().toString());
     ASSERT_EQ(pattern.afterPos, buffer.getCursor());
 
@@ -529,8 +530,8 @@ struct LineBufferTest : public ::testing::Test {
     buffer.setCursor(pattern.beforePos);
     ret = moveCursorToRightByToken(buffer);
     ASSERT_TRUE(ret.hasValue());
-    ASSERT_EQ(s, ret.unwrap());
-    ASSERT_EQ(pattern.afterPos, buffer.getCursor());
+    ASSERT_EQ(!killed.empty(), ret.unwrap());
+    ASSERT_EQ(pattern.afterPos, buffer.getCursor() - killed.size());
   }
 };
 
@@ -1083,6 +1084,22 @@ TEST_F(LineBufferTest, tokenEditLeftPrev1) {
   for (auto &p : patterns) {
     SCOPED_TRACE("\n>>> " + p.before + "\npos: " + std::to_string(p.beforePos));
     ASSERT_NO_FATAL_FAILURE(testEditLeftToken(p));
+  }
+}
+
+TEST_F(LineBufferTest, tokenEditRightNext1) {
+  const TokenEditPattern patterns[] = {
+      {"echo aa 123", 0, " aa 123", 0},      {"echo aa 123", 1, "e aa 123", 1},
+      {"echo aa 123", 2, "ec aa 123", 2},    {"echo aa 123", 3, "ech aa 123", 3},
+      {"echo aa 123", 4, "echo 123", 4},     {"echo aa 123", 5, "echo  123", 5},
+      {"echo aa 123", 6, "echo a 123", 6},   {"echo aa 123", 7, "echo aa", 7},
+      {"echo aa 123", 8, "echo aa ", 8},     {"echo aa 123", 9, "echo aa 1", 9},
+      {"echo aa 123", 10, "echo aa 12", 10}, {"echo aa 123", 11, "echo aa 123", 11},
+  };
+
+  for (auto &p : patterns) {
+    SCOPED_TRACE("\n>>> " + p.before + "\npos: " + std::to_string(p.beforePos));
+    ASSERT_NO_FATAL_FAILURE(testEditRightToken(p));
   }
 }
 
