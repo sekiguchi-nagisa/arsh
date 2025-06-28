@@ -19,6 +19,11 @@
 - add raw byte methods to ``String`` type
     - ``String#bytes``: get underlying raw bytes as ``[Int]``
     - ``String#byteAt``: get raw byte at index
+- add experimental token-aware line edit actions
+    - `backward-token`
+    - `backward-kill-token`
+    - `forward-token`
+    - `kill-token`
 
 ### Changed
 
