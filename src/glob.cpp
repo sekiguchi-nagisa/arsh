@@ -495,7 +495,16 @@ std::pair<Glob::Status, bool> Glob::match(const std::string &baseDir, const char
     return {Status::MATCH, true};
   }
 
-  for (const dirent *entry; (entry = readdir(dir.get())) != nullptr;) {
+  while (true) {
+    errno = 0;
+    const dirent *entry = readdir(dir.get());
+    if (!entry) {
+      if (errno != 0) { // readdir may fail
+        this->errNum = errno;
+        return {Status::RESOURCE_LIMIT, true};
+      }
+      break;
+    }
     if (hasFlag(this->option, Option::GLOB_LIMIT) && this->readdirCount++ == READDIR_LIMIT) {
       return {Status::RESOURCE_LIMIT, true};
     }
@@ -632,7 +641,16 @@ Glob::Status Glob::matchDoubleStar(const std::string &baseDir, const size_t targ
   }
   pathBuf.reserve(pathBuf.size() + 32);
   const size_t orgBufSize = pathBuf.size();
-  for (const dirent *entry; (entry = readdir(dir.get())) != nullptr;) {
+  while (true) {
+    errno = 0;
+    const dirent *entry = readdir(dir.get());
+    if (!entry) {
+      if (errno != 0) { // readdir may fail
+        this->errNum = errno;
+        return Status::RESOURCE_LIMIT;
+      }
+      break;
+    }
     const StringRef name = entry->d_name;
     if (name[0] == '.') {
       if (name.size() == 1 || (name.size() == 2 && name[1] == '.') ||
