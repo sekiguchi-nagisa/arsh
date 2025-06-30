@@ -7,7 +7,7 @@
 #### Core
 
 - add subshell syntax ``&( )``
-- now immutable record type will be map key
+- now immutable record types will be map keys
 
 #### Builtin
 
@@ -15,7 +15,7 @@
     - ``Eq_`` type has ``==``, ``!=``, ``equals`` methods.
         - ``equals`` method is total order unlike ``==``
     - ``Ord_`` type has ``compare`` method for total order comparison
-    - ``Array``, ``Map``, ``Tuple``, record types are inherit these interfaces from element types
+    - ``Array``, ``Map``, ``Tuple``, record types inherit these interfaces from element types
 - add raw byte methods to ``String`` type
     - ``String#bytes``: get underlying raw bytes as ``[Int]``
     - ``String#byteAt``: get raw byte at index
@@ -43,8 +43,9 @@
     - ``Array#sort``, ``Array#searchSorted`` require ``Ord_`` type
     - ``Array#indexOf``, ``Array#lastIndexOf``, ``Array#contains`` require ``Eq_`` type
 - fix emoji sequence handling of ``String#width`` method and line renderer
-    - now width of grapheme cluster (except for emoji zwj sequence) is sum of the code point width
-    - width of emoji variation sequence (VS16, emoji-style) is always 2
+    - now the width of the grapheme cluster (except for emoji zwj sequences) is the sum of the code
+      point width
+    - the width of emoji variation sequences (VS16, emoji-style) is always 2
     - add workaround for regional indicator width
 
 ### Fixed
