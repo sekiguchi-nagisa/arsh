@@ -42,15 +42,10 @@ Job PipelineObject::syncStatusAndDispose() {
    * due to prevent write blocking of child processes, force to restore stdin before call wait.
    * in some situation, raise SIGPIPE in child processes.
    */
-  const bool restored = this->entry->restoreStdin();
+  this->entry->restoreStdin();
   const auto waitOp = state.isJobControl() ? WaitOp::BLOCK_UNTRACED : WaitOp ::BLOCKING;
   this->state.jobTable.waitForJob(this->entry, waitOp);
   this->state.updatePipeStatus(this->entry->getProcSize(), this->entry->getProcs(), true);
-
-  if (restored) {
-    int ret = this->state.tryToBeForeground();
-    LOG(DUMP_EXEC, "tryToBeForeground: %d, %s", ret, strerror(errno));
-  }
   this->state.jobTable.waitForAny();
   return std::move(this->entry);
 }
