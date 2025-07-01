@@ -117,6 +117,25 @@ TEST_F(InteractiveTest, wait_ctrlc2) {
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 128 + SIGINT));
 }
 
+TEST_F(InteractiveTest, lastpipe_ctrlc) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+  this->sendLine("true | while($true){}");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "true | while($true){}\n"));
+  std::this_thread::sleep_for(std::chrono::milliseconds(500));
+  this->send(CTRL_C);
+  std::string err = format(R"([runtime error]
+SystemError: %s
+    from (builtin):8 'function _DEF_SIGINT()'
+    from (stdin):1 '<toplevel>()'
+)",
+                           strsignal(SIGINT));
+  ASSERT_NO_FATAL_FAILURE(this->expect(promptAfterCtrlC(PROMPT), err));
+  this->send(CTRL_D);
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED, "\n"));
+}
+
 TEST_F(InteractiveTest, ctrlz1) {
   this->invoke("--quiet", "--norc");
 

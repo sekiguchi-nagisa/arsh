@@ -1314,7 +1314,7 @@ bool VM::returnFromUserDefinedCommand(ARState &state, int64_t status) {
   return true;
 }
 
-bool VM::callPipeline(ARState &state, Value &&desc, bool lastPipe, ForkKind forkKind) {
+bool VM::callPipeline(ARState &state, Value &&desc, const bool lastPipe, const ForkKind forkKind) {
   /**
    * ls | grep .
    * ==> pipeSize == 1, procSize == 2
@@ -1338,9 +1338,12 @@ bool VM::callPipeline(ARState &state, Value &&desc, bool lastPipe, ForkKind fork
 
   // fork
   InlinedArray<Proc, 6> children(procSize);
-  const auto procOp = resolveProcOp(state, forkKind);
+  auto procOp = resolveProcOp(state, forkKind);
   auto procOpRemain = procOp;
   unsetFlag(procOpRemain, Proc::Op::FOREGROUND); // remain process already foreground
+  if (lastPipe) {
+    unsetFlag(procOp, Proc::Op::FOREGROUND);
+  }
   pid_t pgid = resolvePGID(state.isRootShell(), forkKind);
   const bool jobCtrl = state.isJobControl();
   Proc proc; // NOLINT
