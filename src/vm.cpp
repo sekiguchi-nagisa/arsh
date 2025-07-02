@@ -2097,7 +2097,7 @@ bool VM::mainLoop(ARState &state) {
       vmcase(SYNC_PIPESTATUS) {
         const unsigned char index = consume8(state.stack.ip());
         auto &pipeline = typeAs<PipelineObject>(state.stack.getLocal(index));
-        auto job = pipeline.syncStatusAndDispose();
+        auto job = pipeline.syncStatusAndDispose(false);
         if (job && !checkPipelineError(state, *job, true)) {
           vmerror;
         }

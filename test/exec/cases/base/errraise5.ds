@@ -20,7 +20,7 @@ assert $PIPESTATUS[1] == 56
 $ex = 45643652
 try {
     ls | for a in $STDIN { 
-        sh -c 'exit 156'; echo $a; } | {
+        sh -c 'exit 156'; echo $a; } | { sleep 0.5
              false; }
 } catch e { $ex = $e; }
 assert ($ex as ExecError).message() == "\`false' command exits with non-zero status: \`1'"
@@ -37,7 +37,7 @@ ff() { return $1.toInt() ?? 99; }
 $ex = 45643652
 try {
     ls | for a in $STDIN { 
-        ff 67; echo $a; } | { 
+        ff 67; echo $a; } | { sleep 0.5
             ff 145; }
 } catch e { $ex = $e; }
 assert ($ex as ExecError).message() == "\`ff' command exits with non-zero status: \`145'"
@@ -145,7 +145,7 @@ ggg() {
     $PIPESTATUS.clear()
     $? = 0
     exit 88 | {
-        defer { $old = $PIPESTATUS.copy(); }
+        defer { $old = $PIPESTATUS.copy(); }; sleep 0.2
         34/($1.toInt() ?? 0)
     }
     return 123
@@ -165,4 +165,23 @@ assert $PIPESTATUS.size() == 2
 assert $PIPESTATUS[0] == 88
 assert $PIPESTATUS[1] == 0
 assert $old!.size() == 0
+
+## last-pipe force unwind
+$PIPESTATUS.clear()
+$ex = 45643652
+var jj : Job?
+try {
+    sleep 10000 | { $jj = $JOB['%1']; false; }
+} catch e { $ex = $e; }
+assert ($ex as ExecError).message() == "\`false' command exits with non-zero status: \`1'"
+assert ($ex as ExecError).lineno() == 174
+
+assert $? == 0
+assert $PIPESTATUS.size() == 2
+assert $PIPESTATUS[0] == 0  # sleep command does not exited during unwind
+assert $PIPESTATUS[1] == 1
+assert $jj!.size() == 1
+$jj!.wait()
+assert $jj!.status(0)! == 130
+
 true

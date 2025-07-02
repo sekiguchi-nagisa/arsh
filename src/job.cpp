@@ -150,7 +150,7 @@ static std::string toString(const WaitResult ret) {
 
 // #endif
 
-WaitResult waitForProc(pid_t pid, WaitOp op) {
+WaitResult waitForProc(const pid_t pid, const WaitOp op) {
   int option = 0;
   switch (op) {
   case WaitOp::BLOCKING:
@@ -163,7 +163,7 @@ WaitResult waitForProc(pid_t pid, WaitOp op) {
     break;
   }
 
-  LOG(DUMP_WAIT, "waitpid(%d, %s)", pid, toString(op));
+  LOG(DUMP_WAIT, "before waitpid(%d, %s)", pid, toString(op));
 
   int status = 0;
   errno = 0;

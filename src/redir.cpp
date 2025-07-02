@@ -32,9 +32,10 @@ bool Pipe::open() {
 #endif
 }
 
-PipelineObject::~PipelineObject() { this->syncStatusAndDispose(); }
+PipelineObject::~PipelineObject() { this->syncStatusAndDispose(true); }
 
-Job PipelineObject::syncStatusAndDispose() {
+Job PipelineObject::syncStatusAndDispose(bool duringUnwind) {
+  LOG(DUMP_WAIT, "during unwind: %s", duringUnwind ? "true" : "false");
   if (!this->entry) {
     return nullptr;
   }
@@ -43,10 +44,14 @@ Job PipelineObject::syncStatusAndDispose() {
    * in some situation, raise SIGPIPE in child processes.
    */
   this->entry->restoreStdin();
-  const auto waitOp = state.isJobControl() ? WaitOp::BLOCK_UNTRACED : WaitOp ::BLOCKING;
+  if (duringUnwind) {
+    static_cast<void>(this->entry->send(SIGINT));
+  }
+  const auto waitOp = duringUnwind                 ? WaitOp::NONBLOCKING
+                      : this->state.isJobControl() ? WaitOp::BLOCK_UNTRACED
+                                                   : WaitOp::BLOCKING;
   this->state.jobTable.waitForJob(this->entry, waitOp);
   this->state.updatePipeStatus(this->entry->getProcSize(), this->entry->getProcs(), true);
-  this->state.jobTable.waitForAny();
   return std::move(this->entry);
 }
 

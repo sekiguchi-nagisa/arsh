@@ -190,7 +190,13 @@ public:
 
   ~PipelineObject();
 
-  Job syncStatusAndDispose();
+  /**
+   * wait pipeline status
+   * @param duringUnwind
+   * if true, send SIGINT
+   * @return
+   */
+  Job syncStatusAndDispose(bool duringUnwind);
 };
 
 /**
