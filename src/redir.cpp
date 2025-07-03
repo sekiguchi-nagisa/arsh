@@ -89,7 +89,7 @@ static int doIOHere(const StringRef &value, int newFd, bool insertNewline) {
         pipe.close(READ_PIPE);
         if (write(pipe[WRITE_PIPE], value.data(), value.size()) < 0 ||
             write(pipe[WRITE_PIPE], "\n", insertNewline ? 1 : 0) < 0) {
-          if (errno != EPIPE) { // ignore SIGPIPE (if reader process already terminated)
+          if (errno != EPIPE) { // ignore SIGPIPE (if a reader process already terminated)
             perror("IO here process failed");
             exit(1);
           }
@@ -105,8 +105,8 @@ static int doIOHere(const StringRef &value, int newFd, bool insertNewline) {
 
 enum class RedirOpenFlag : unsigned char {
   READ,
-  WRITE,   // if file exists, error
-  CLOBBER, // if file exists, truncate 0
+  WRITE,   // if a file exists, error
+  CLOBBER, // if a file exists, truncate 0
   APPEND,
   READ_WRITE,
 };
@@ -146,7 +146,7 @@ static int redirectToFile(const StringRef fileName, const RedirOpenFlag openFlag
   int fd = open(fileName.data(), flag, 0666);
   if (openFlag == RedirOpenFlag::WRITE && fd < 0 && errno == EEXIST) {
     fd = open(fileName.data(), O_WRONLY, 0666);
-    if (fd > -1 && S_ISREG(getStMode(fd))) { // only allow non-regular file
+    if (fd > -1 && S_ISREG(getStMode(fd))) { // only allow a non-regular file
       close(fd);
       return EEXIST;
     }

@@ -182,14 +182,14 @@ TEST_F(InteractiveTest, lineEditorEAW) {
       this->sendLineAndExpect("assert $LINE_EDIT.configs()['eaw'] as Int == 0"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $EAW == 1"));
 
-  // force set width (EAW is 2, even if actual width is 1)
+  // force set width (EAW is 2, even if the actual width is 1)
   this->eaw = AmbiguousCharWidth::HALF;
   ASSERT_NO_FATAL_FAILURE(
       this->sendLineAndExpect("assert $LINE_EDIT.configs()['eaw'] as Int == 0"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.config('eaw', 2)"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $EAW == 2"));
 
-  // force set width (EAW is 1, even if actual width is 1)
+  // force set width (EAW is 1, even if the actual width is 1)
   this->eaw = AmbiguousCharWidth::FULL;
   ASSERT_NO_FATAL_FAILURE(
       this->sendLineAndExpect("assert $LINE_EDIT.configs()['eaw'] as Int == 2"));
@@ -434,7 +434,7 @@ TEST_F(InteractiveTest, lineEditorComp1) {
   this->send(CTRL_C);
   ASSERT_NO_FATAL_FAILURE(this->expect("\n>>> "));
 
-  // insert single candidates with prefix
+  // insert single candidates with a prefix
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
       "$LINE_EDIT.setCompletion(function(s,m) => new Candidates(['true']))"));
   this->send("()" LEFT "$t\t");
@@ -442,7 +442,7 @@ TEST_F(InteractiveTest, lineEditorComp1) {
   this->send("\r");
   ASSERT_NO_FATAL_FAILURE(this->expect(">>> ($true)\n: Bool = true\n>>> "));
 
-  // insert single candidates without prefix
+  // insert single candidates without a prefix
   this->send("()" LEFT "\t");
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "(true)"));
   this->send("\r");
@@ -558,7 +558,7 @@ TEST_F(InteractiveTest, lineEditorComp2) {
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
 }
 
-// completion candidate rotation without common prefix
+// completion candidate rotation without a common prefix
 TEST_F(InteractiveTest, lineEditorComp3) {
   this->invoke("--quiet", "--norc");
 
@@ -595,7 +595,7 @@ SystemError: execution error: aaaa: command not found
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(127, WaitStatus::EXITED, "\n"));
 }
 
-// insert common prefix with multi-bytes char
+// insert a common prefix with multi-bytes char
 TEST_F(InteractiveTest, lineEditorComp4) {
   this->invoke("--quiet", "--norc");
 

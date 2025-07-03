@@ -73,7 +73,7 @@ CompiledCode CodeBuilder::build(const std::string &name) {
       .code = this->codeBuffer.take(),
   });
 
-  // create constant pool
+  // create a constant pool
   this->constBuffer.append(nullptr); // sentinel
   auto *constPool = std::move(this->constBuffer).take();
 
@@ -81,7 +81,7 @@ CompiledCode CodeBuilder::build(const std::string &name) {
   this->lineNumEntries.push_back({SYS_LIMIT_FUNC_LEN, 0});
   auto *entries = this->lineNumEntries.take();
 
-  // create exception entry
+  // create an exception entry
   const unsigned int exceptEntrySize = this->catchBuilders.size();
   auto *except = new ExceptionEntry[exceptEntrySize + 1];
   for (unsigned int i = 0; i < exceptEntrySize; i++) {
@@ -1330,7 +1330,7 @@ void ByteCodeGenerator::generateIfElseCase(CaseNode &node) {
   // generate expr
   this->visit(node.getExprNode());
 
-  // generate if-else chain
+  // generate if-else-chain
   auto &eqHandle = *this->typePool.lookupMethod(*exprType, OP_EQ);
   auto &matchHandle = *this->typePool.lookupMethod(*exprType, OP_MATCH);
 

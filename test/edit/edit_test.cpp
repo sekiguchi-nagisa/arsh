@@ -482,7 +482,7 @@ struct LineBufferTest : public ::testing::Test {
     ASSERT_EQ(0, buffer.getCursor());
     ASSERT_EQ("", buffer.get().toString());
 
-    // delete prev
+    // delete prev token
     ASSERT_TRUE(buffer.insertToCursor(pattern.before));
     buffer.setCursor(pattern.beforePos);
     auto ret = deletePrevToken(buffer, nullptr);
@@ -514,7 +514,7 @@ struct LineBufferTest : public ::testing::Test {
     ASSERT_EQ(0, buffer.getCursor());
     ASSERT_EQ("", buffer.get().toString());
 
-    // delete next
+    // delete next token
     std::string killed;
     ASSERT_TRUE(buffer.insertToCursor(pattern.before));
     buffer.setCursor(pattern.beforePos);
@@ -563,7 +563,7 @@ TEST_F(LineBufferTest, base) {
   ASSERT_EQ("1", buffer.getToCursor().toString());
   ASSERT_EQ("234", buffer.getFromCursor().toString());
 
-  // delete right
+  // delete right of cursor
   ASSERT_TRUE(buffer.deleteFromCursor(1));
   ASSERT_EQ(3, buffer.getUsedSize());
   ASSERT_EQ(1, buffer.getCursor());
@@ -571,7 +571,7 @@ TEST_F(LineBufferTest, base) {
   ASSERT_EQ("1", buffer.getToCursor().toString());
   ASSERT_EQ("34", buffer.getFromCursor().toString());
 
-  // delete left
+  // delete left of cursor
   ASSERT_TRUE(buffer.deleteToCursor(1));
   ASSERT_EQ(2, buffer.getUsedSize());
   ASSERT_EQ(0, buffer.getCursor());
@@ -807,7 +807,7 @@ TEST_F(LineBufferTest, newline3) {
   std::string storage;
   storage.resize(32, '@');
   LineBuffer buffer(storage.data(), storage.size());
-  ASSERT_TRUE(buffer.insertToCursor("123\n456\n789\n")); // end with newline
+  ASSERT_TRUE(buffer.insertToCursor("123\n456\n789\n")); // end with a newline
   ASSERT_EQ(12, buffer.getCursor());
   ASSERT_EQ(12, buffer.getUsedSize());
   buffer.syncNewlinePosList();

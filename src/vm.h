@@ -37,7 +37,7 @@
 namespace arsh {
 
 enum class EvalOP : unsigned char {
-  PROPAGATE = 1u << 0u, // propagate uncaught exception to caller (except for subshell).
+  PROPAGATE = 1u << 0u, // propagate uncaught exceptions to caller (except for subshell).
 };
 
 template <>
@@ -575,7 +575,7 @@ private:
    * if true, evaluate last pipe in parent shell
    * @param forkKind
    * @return
-   * if has error, return false.
+   * if error, return false.
    */
   static bool callPipeline(ARState &state, Value &&desc, bool lastPipe, ForkKind forkKind);
 
@@ -598,7 +598,7 @@ private:
   /**
    * @param state
    * @return
-   * if has exception, return false.
+   * if error, return false.
    */
   static bool mainLoop(ARState &state);
 
@@ -617,7 +617,7 @@ private:
    * @param dsError
    * if not null, set error info
    * @return
-   * if has error or not value, return null
+   * if error or no value, return null
    * otherwise, return value
    */
   static Value startEval(ARState &state, EvalOP op, ARError *dsError);
@@ -628,7 +628,7 @@ public:
    * entry point of toplevel code evaluation.
    * @param state
    * @param func
-   * must be toplevel compiled function.
+   * must be a toplevel compiled function.
    * @param dsError
    * if not null, set error information
    */
@@ -685,7 +685,7 @@ public:
   static void handleUncaughtException(ARState &state, ARError *dsError, bool inTermHook = false);
 
   /**
-   * call user-defined termination handler specified by TERM_HOOK.
+   * call the user-defined termination handler specified by TERM_HOOK.
    * after call TERM_HOOK, send SIGHUP to manged jobs
    * @param state
    */
