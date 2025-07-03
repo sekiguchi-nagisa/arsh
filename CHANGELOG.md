@@ -7,8 +7,8 @@
 #### Core
 
 - **Breaking Change**: adjust last-pipe behavior
-    - the first process of `last-pipe` is no longer foreground process leader
-    - when thrown from last-pipe, send ``SIGINT`` to pipeline processes and non-block wait status
+    - the first process of last-pipe is no longer foreground process leader
+    - when thrown from last-pipe, send ``SIGINT`` to pipeline processes and wait processs termination with non-blocking
 
 ## [0.38.0] - 2025-06-30
 
