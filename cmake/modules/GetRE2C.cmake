@@ -6,7 +6,7 @@ macro(getRE2C)
     download_project(
             PROJ re2c
             GIT_REPOSITORY https://github.com/skvadrik/re2c.git
-            GIT_TAG 7bc7c1980a1a8142402574bbfb5ebe5fe2d995a9 # 4.2
+            GIT_TAG ffdc69dc2eee74404109f916721491b9dc5a2948 # 4.3
             GIT_PROGRESS 1
             UPDATE_DISCONNECTED 0
     )
