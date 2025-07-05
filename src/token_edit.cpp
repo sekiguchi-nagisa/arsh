@@ -38,21 +38,27 @@ static unsigned int lookupToken(const Tokenizer::TokenList &tokens, unsigned int
   return tokens.size();
 }
 
+static Tokenizer::TokenList tokenize(const LineBuffer &buf) {
+  Tokenizer tokenizer(buf.get());
+  auto error = tokenizer.tokenizeAndEmit();
+  auto tokens = std::move(tokenizer).take();
+  if (error) {
+    if (buf.getCursor() > error->getErrorToken().endPos()) {
+      tokens.clear();
+    } else if (StringRef(error->getErrorKind()) == INVALID_TOKEN) {
+      tokens.emplace_back(error->getTokenKind(), error->getErrorToken());
+    }
+  }
+  return tokens;
+}
+
 static Optional<unsigned int> resolveEditAfterPos(const LineBuffer &buf,
                                                   const MoveOrDeleteTokenParam param) {
-  Tokenizer tokenizer(buf.get());
-  if (auto error = tokenizer.tokenizeAndEmit()) {
-    return {}; // TODO: ignore error after cursor position
-  }
-  auto &tokens = tokenizer.getTokens();
+  auto tokens = tokenize(buf);
   if (tokens.empty()) {
     return {};
   }
-
   unsigned int cursor = buf.getCursor();
-  if (param.left && cursor == buf.getUsedSize()) {
-    cursor--; // ignore last newline
-  }
   unsigned int index = lookupToken(tokens, cursor);
   if (param.left) {
     index = index < tokens.size() ? index : index - 1;

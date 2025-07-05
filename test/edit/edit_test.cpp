@@ -533,6 +533,54 @@ struct LineBufferTest : public ::testing::Test {
     ASSERT_EQ(!killed.empty(), ret.unwrap());
     ASSERT_EQ(pattern.afterPos, buffer.getCursor() - killed.size());
   }
+
+  static void invalidEditLeftToken(const std::string &line, unsigned int pos) {
+    std::string storage;
+    size_t size = line.size();
+    size += size >> 1;
+    storage.resize(size, '@');
+    LineBuffer buffer(storage.data(), storage.size());
+    ASSERT_EQ(0, buffer.getUsedSize());
+    ASSERT_EQ(0, buffer.getCursor());
+    ASSERT_EQ("", buffer.get().toString());
+
+    // delete prev token
+    ASSERT_TRUE(buffer.insertToCursor(line));
+    buffer.setCursor(pos);
+    auto ret = deletePrevToken(buffer, nullptr);
+    ASSERT_FALSE(ret.hasValue());
+
+    // move left
+    buffer.deleteAll();
+    ASSERT_TRUE(buffer.insertToCursor(line));
+    buffer.setCursor(pos);
+    ret = moveCursorToLeftByToken(buffer);
+    ASSERT_FALSE(ret.hasValue());
+  }
+
+  static void invalidEditRightToken(const std::string &line, unsigned int pos) {
+    std::string storage;
+    size_t size = line.size();
+    size += size >> 1;
+    storage.resize(size, '@');
+    LineBuffer buffer(storage.data(), storage.size());
+    ASSERT_EQ(0, buffer.getUsedSize());
+    ASSERT_EQ(0, buffer.getCursor());
+    ASSERT_EQ("", buffer.get().toString());
+
+    // delete prev token
+    ASSERT_TRUE(buffer.insertToCursor(line));
+    buffer.setCursor(pos);
+    auto ret = deleteNextToken(buffer, nullptr);
+    ASSERT_FALSE(ret.hasValue());
+
+    // move left
+    buffer.deleteAll();
+    ASSERT_TRUE(buffer.insertToCursor(line));
+    buffer.setCursor(pos);
+    ret = moveCursorToRightByToken(buffer);
+    ASSERT_FALSE(ret.hasValue());
+  }
 };
 
 TEST_F(LineBufferTest, base) {
@@ -1069,6 +1117,7 @@ TEST_F(LineBufferTest, tokenEditInvalid) {
 
 TEST_F(LineBufferTest, tokenEditLeftPrev1) {
   const TokenEditPattern patterns[] = {
+      {"echo a", 6, "echo ", 5},
       {"echo aa", 7, "echo ", 5},
       {"echo aa 123", 10, "echo aa 3", 8},
       {"echo aa 123", 9, "echo aa 23", 8},
@@ -1101,6 +1150,51 @@ TEST_F(LineBufferTest, tokenEditRightNext1) {
     SCOPED_TRACE("\n>>> " + p.before + "\npos: " + std::to_string(p.beforePos));
     ASSERT_NO_FATAL_FAILURE(testEditRightToken(p));
   }
+}
+
+TEST_F(LineBufferTest, tokenEditInvalidRecover1) {
+  const TokenEditPattern patterns[] = {
+      {"var ab = 1234", 13, "var ab = ", 9},
+      {"var ab = ", 9, "var ab ", 7},
+      {"var ab ", 7, "var ", 4},
+      {"var ", 4, "", 0},
+      {"var a", 5, "var ", 4},
+      {"var $", 5, "var ", 4},
+      {"var a = '1 @", 12, "var a = ", 8},
+      {"var a = '1 @", 3, " a = '1 @", 0},
+      {"var a = '1 @", 4, "a = '1 @", 0},
+      {"var a = '1 @", 5, "var  = '1 @", 4},
+      {"var a = $/12", 12, "var a = ", 8},
+      {"var a = `12", 11, "var a = ", 8},
+  };
+
+  for (auto &p : patterns) {
+    SCOPED_TRACE("\n>>> " + p.before + "\npos: " + std::to_string(p.beforePos));
+    ASSERT_NO_FATAL_FAILURE(testEditLeftToken(p));
+  }
+
+  // test invalid edit
+  ASSERT_NO_FATAL_FAILURE(invalidEditLeftToken("var $AAA", 8));
+}
+
+TEST_F(LineBufferTest, tokenEditInvalidRecover2) {
+  const TokenEditPattern patterns[] = {
+      {"var ab = $", 0, " ab = $", 0},     {"var ab = $", 1, "v ab = $", 1},
+      {"var ab = $", 2, "va ab = $", 2},   {"var ab = $", 3, "var = $", 3},
+      {"var ab = $", 4, "var  = $", 4},    {"var ab = $", 5, "var a = $", 5},
+      {"var ab = $", 6, "var ab $", 6},    {"var ab = $", 7, "var ab  $", 7},
+      {"var ab = $", 8, "var ab =", 8},    {"var ab = $", 9, "var ab = ", 9},
+      {"var a = $/js", 0, " a = $/js", 0}, {"var a = 'fa", 0, " a = 'fa", 0},
+      {"var a = `12", 0, " a = `12", 0},
+  };
+
+  for (auto &p : patterns) {
+    SCOPED_TRACE("\n>>> " + p.before + "\npos: " + std::to_string(p.beforePos));
+    ASSERT_NO_FATAL_FAILURE(testEditRightToken(p));
+  }
+
+  // test invalid edit
+  ASSERT_NO_FATAL_FAILURE(invalidEditRightToken("var $AAA", 7));
 }
 
 int main(int argc, char **argv) {
