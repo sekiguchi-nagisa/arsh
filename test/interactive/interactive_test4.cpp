@@ -943,6 +943,113 @@ TEST_F(InteractiveTest, lineEditorInterrupt4) {
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(210, WaitStatus::EXITED, "WINCH\n> AAB\n"));
 }
 
+TEST_F(InteractiveTest, tokenEdit1) { // lang-extension=false
+  this->invoke("--quiet", "--norc");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+  ASSERT_NO_FATAL_FAILURE(this->changePrompt("> "));
+
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.config('lang-extension', $false)"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.bind('^[b', 'backward-token')"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.bind('^[f', 'forward-token')"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.bind('^W', 'backward-kill-token')"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.bind('^[d', 'kill-token')"));
+
+  // if lang-extension is disabled, fallback to word op
+  this->send("aaa @@@bbb");
+  ASSERT_NO_FATAL_FAILURE(this->expect("> aaa @@@bbb"));
+  {
+    auto cleanup = this->reuseScreen();
+    this->send(ESC_("b")); // move left
+    this->send("^");
+    ASSERT_NO_FATAL_FAILURE(this->expect("> aaa @@@^bbb"));
+    this->send(CTRL_W); // remove left
+    ASSERT_NO_FATAL_FAILURE(this->expect("> aaa @@@bbb"));
+    this->send(ESC_("b")); // move left
+    this->send("^");
+    ASSERT_NO_FATAL_FAILURE(this->expect("> aaa @@^@bbb"));
+    this->send(ESC_("f")); // move right
+    this->send(ESC_("d")); // remove right
+    ASSERT_NO_FATAL_FAILURE(this->expect("> aaa @@^@"));
+
+    this->send(CTRL_C);
+    ASSERT_NO_FATAL_FAILURE(this->expect("> aaa @@^@\n> "));
+  }
+
+  this->send(CTRL_D);
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
+}
+
+TEST_F(InteractiveTest, tokenEdit2) { // lang-extension=true
+  this->invoke("--quiet", "--norc");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+  ASSERT_NO_FATAL_FAILURE(this->changePrompt("> "));
+
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.config('lang-extension', $true)"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.bind('^[b', 'backward-token')"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.bind('^[f', 'forward-token')"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.bind('^W', 'backward-kill-token')"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.bind('^[d', 'kill-token')"));
+
+  this->send("aaa @@@bbb");
+  ASSERT_NO_FATAL_FAILURE(this->expect("> aaa @@@bbb"));
+  {
+    auto cleanup = this->reuseScreen();
+    this->send(ESC_("b")); // move left
+    this->send("^");
+    ASSERT_NO_FATAL_FAILURE(this->expect("> aaa ^@@@bbb"));
+    this->send(CTRL_W); // remove left
+    ASSERT_NO_FATAL_FAILURE(this->expect("> aaa @@@bbb"));
+    this->send(ESC_("b")); // move left
+    this->send("^");
+    ASSERT_NO_FATAL_FAILURE(this->expect("> ^aaa @@@bbb"));
+    this->send(ESC_("f")); // move right
+    this->send(ESC_("d")); // remove right
+    ASSERT_NO_FATAL_FAILURE(this->expect("> ^aaa"));
+
+    this->send(CTRL_C);
+    ASSERT_NO_FATAL_FAILURE(this->expect("> ^aaa\n> "));
+  }
+
+  this->send(CTRL_D);
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
+}
+
+TEST_F(InteractiveTest, tokenEdit3) { // invalid syntax
+  this->invoke("--quiet", "--norc");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+  ASSERT_NO_FATAL_FAILURE(this->changePrompt("> "));
+
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.config('lang-extension', $true)"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.bind('^[b', 'backward-token')"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.bind('^[f', 'forward-token')"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.bind('^W', 'backward-kill-token')"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.bind('^[d', 'kill-token')"));
+
+  this->send("var $ABC");
+  ASSERT_NO_FATAL_FAILURE(this->expect("> var $ABC"));
+  {
+    auto cleanup = this->reuseScreen();
+    this->send(ESC_("b")); // move left
+    this->send("q");
+    ASSERT_NO_FATAL_FAILURE(this->expect("> var $qABC"));
+    this->send(CTRL_W); // remove left
+    ASSERT_NO_FATAL_FAILURE(this->expect("> var $ABC"));
+    this->send(ESC_("b")); // move left
+    this->send(ESC_("d")); // remove right
+    ASSERT_NO_FATAL_FAILURE(this->expect("> var ABC"));
+    this->send("$");
+    ASSERT_NO_FATAL_FAILURE(this->expect("> var $ABC"));
+    this->send(ESC_("f")); // move right
+    ASSERT_NO_FATAL_FAILURE(this->expect("> var $ABC"));
+
+    this->send(CTRL_C);
+    ASSERT_NO_FATAL_FAILURE(this->expect("> var $ABC\n> "));
+  }
+
+  this->send(CTRL_D);
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
+}
+
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
