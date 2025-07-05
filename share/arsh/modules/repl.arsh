@@ -40,3 +40,17 @@ source $SCRIPT_DIR/fzf.arsh
 
 # handle SIGHUP (for termination handler invocation at logout)
 $SIGHUP.trap($SIG_EXIT)
+
+# enable token-aware actions
+{
+    var binding: [String:String]
+    for k,a in $LINE_EDIT.bindings() {
+        if $a.contains("word") {
+            $binding[$k] = $a.replace("word", "token")
+        }
+    }
+
+    for k, a in $binding {
+        $LINE_EDIT.bind($k, $a)
+    }
+}

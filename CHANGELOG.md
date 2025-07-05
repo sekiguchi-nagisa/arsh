@@ -7,8 +7,13 @@
 #### Core
 
 - **Breaking Change**: adjust last-pipe behavior
-    - the first process of last-pipe is no longer foreground process leader
-    - when thrown from last-pipe, send ``SIGINT`` to pipeline processes and wait processs termination with non-blocking
+    - the first process of last-pipe is no longer a foreground process leader
+    - when thrown from last-pipe, send ``SIGINT`` to pipeline processes and wait process termination
+      with non-blocking
+
+#### Module
+
+- **Breaking Change**: in ``repl`` module, enable token-aware line edit actions by default
 
 ## [0.38.0] - 2025-06-30
 
