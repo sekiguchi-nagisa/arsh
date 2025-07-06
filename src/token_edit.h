@@ -25,28 +25,41 @@ namespace arsh {
 
 class LineBuffer;
 
+struct TokenizerResult;
+
 struct MoveOrDeleteTokenParam {
   bool left; // if true, edit left/prev/backward token. otherwise, edit right/next/forward token
   bool move; // if true, move cursor. otherwise, delete bytes
 };
 
+/**
+ *
+ * @param buf
+ * @param param
+ * @param capture
+ * @param cache
+ * maybe null, after call it, modify content
+ * @return
+ */
 Optional<bool> moveCursorOrDeleteToken(LineBuffer &buf, MoveOrDeleteTokenParam param,
-                                       std::string *capture);
+                                       std::string *capture, TokenizerResult *cache);
 
-inline Optional<bool> moveCursorToLeftByToken(LineBuffer &buf) {
-  return moveCursorOrDeleteToken(buf, {.left = true, .move = true}, nullptr);
+inline Optional<bool> moveCursorToLeftByToken(LineBuffer &buf, TokenizerResult *cache = nullptr) {
+  return moveCursorOrDeleteToken(buf, {.left = true, .move = true}, nullptr, cache);
 }
 
-inline Optional<bool> moveCursorToRightByToken(LineBuffer &buf) {
-  return moveCursorOrDeleteToken(buf, {.left = false, .move = true}, nullptr);
+inline Optional<bool> moveCursorToRightByToken(LineBuffer &buf, TokenizerResult *cache = nullptr) {
+  return moveCursorOrDeleteToken(buf, {.left = false, .move = true}, nullptr, cache);
 }
 
-inline Optional<bool> deletePrevToken(LineBuffer &buf, std::string *capture) {
-  return moveCursorOrDeleteToken(buf, {.left = true, .move = false}, capture);
+inline Optional<bool> deletePrevToken(LineBuffer &buf, std::string *capture,
+                                      TokenizerResult *cache = nullptr) {
+  return moveCursorOrDeleteToken(buf, {.left = true, .move = false}, capture, cache);
 }
 
-inline Optional<bool> deleteNextToken(LineBuffer &buf, std::string *capture) {
-  return moveCursorOrDeleteToken(buf, {.left = false, .move = false}, capture);
+inline Optional<bool> deleteNextToken(LineBuffer &buf, std::string *capture,
+                                      TokenizerResult *cache = nullptr) {
+  return moveCursorOrDeleteToken(buf, {.left = false, .move = false}, capture, cache);
 }
 
 } // namespace arsh

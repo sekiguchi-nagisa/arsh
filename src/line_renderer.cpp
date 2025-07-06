@@ -226,17 +226,16 @@ bool LineRenderer::renderScript(const StringRef source,
                                 const std::function<bool(StringRef)> &errorCmdChecker) {
   // for syntax highlight
   Tokenizer tokenEmitter(source);
-  auto error = tokenEmitter.tokenizeAndEmit();
+  auto ret = tokenEmitter();
   auto lex = tokenEmitter.getLexerPtr();
-  const auto tokens = std::move(tokenEmitter).take();
 
   // render lines with highlight
   bool next = true;
   unsigned int curPos = 0;
   const bool supportErrorHighlight =
       errorCmdChecker && this->findColorCode(HighlightTokenClass::ERROR_);
-  for (unsigned int i = 0; i < tokens.size(); i++) {
-    Token token = tokens[i].second;
+  for (unsigned int i = 0; i < ret.tokens.size(); i++) {
+    Token token = ret.tokens[i].second;
     assert(curPos <= token.pos);
     if (!this->render(source.slice(curPos, token.pos), HighlightTokenClass::NONE_)) {
       next = false;
@@ -244,9 +243,9 @@ bool LineRenderer::renderScript(const StringRef source,
     }
     curPos = token.endPos();
     const StringRef ref = source.substr(token.pos, token.size);
-    HighlightTokenClass tokenClass = toTokenClass(tokens[i].first);
+    HighlightTokenClass tokenClass = toTokenClass(ret.tokens[i].first);
     if (supportErrorHighlight && tokenClass == HighlightTokenClass::COMMAND &&
-        !nextIsLP(source, tokens, i)) {
+        !nextIsLP(source, ret.tokens, i)) {
       if (!errorCmdChecker(ref)) {
         tokenClass = HighlightTokenClass::ERROR_;
       }
@@ -256,42 +255,46 @@ bool LineRenderer::renderScript(const StringRef source,
       break;
     }
   }
-  // render remain lines
+  // render remaining lines
   if (next && curPos < source.size()) {
     auto remain = source.substr(curPos);
     this->render(remain, HighlightTokenClass::NONE_);
   }
 
   // line continuation checking
-  if (error) {
-    if (error->getTokenKind() == TokenKind::EOS) {
-      return false;
+  bool lineContinue = true;
+  if (ret.error) {
+    if (ret.error->getTokenKind() == TokenKind::EOS) {
+      lineContinue = false;
     } else {
-      auto kind = error->getTokenKind();
+      auto kind = ret.error->getTokenKind();
       if (isUnclosedToken(kind) && kind != TokenKind::UNCLOSED_REGEX_LITERAL) {
-        return false;
+        lineContinue = false;
       }
     }
-  } else if (!tokens.empty()) {
-    auto token = tokens.back().second;
+  } else if (!ret.tokens.empty()) {
+    auto token = ret.tokens.back().second;
     auto last = lex->toStrRef(token);
-    switch (toTokenClass(tokens.back().first)) {
+    switch (toTokenClass(ret.tokens.back().first)) {
     case HighlightTokenClass::NONE_:
       if (last.size() == 2 && last == "\\\n") {
-        return false;
+        lineContinue = false;
       }
       break;
     case HighlightTokenClass::COMMAND:
     case HighlightTokenClass::COMMAND_ARG:
       if (last.endsWith("\\\n")) {
-        return false;
+        lineContinue = false;
       }
       break;
     default:
       break;
     }
   }
-  return true;
+  if (this->tokenizeResult) {
+    *this->tokenizeResult = std::move(ret);
+  }
+  return lineContinue;
 }
 
 const std::string *LineRenderer::findColorCode(HighlightTokenClass tokenClass) const {

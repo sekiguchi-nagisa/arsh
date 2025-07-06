@@ -93,6 +93,11 @@ private:
   virtual void emit(TokenKind kind, Token token) = 0;
 };
 
+struct TokenizerResult {
+  std::vector<std::pair<TokenKind, Token>> tokens;
+  std::unique_ptr<ParseError> error;
+};
+
 class Tokenizer : public TokenEmitter {
 public:
   using TokenList = std::vector<std::pair<TokenKind, Token>>;
@@ -103,9 +108,13 @@ private:
 public:
   explicit Tokenizer(StringRef source) : TokenEmitter(source) {}
 
-  TokenList take() && { return std::move(this->tokens); }
-
-  const TokenList &getTokens() const { return this->tokens; }
+  TokenizerResult operator()() {
+    auto error = this->tokenizeAndEmit();
+    return {
+        .tokens = std::move(tokens),
+        .error = std::move(error),
+    };
+  }
 
 private:
   void emit(TokenKind kind, Token token) override;

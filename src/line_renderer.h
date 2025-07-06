@@ -22,7 +22,7 @@
 
 namespace arsh {
 
-// high level api for unicode-aware character op
+// high-level api for unicode-aware character op
 
 #define EACH_CHAR_WIDTH_PROPERTY(OP)                                                               \
   OP(EAW, "○")                                                                                     \
@@ -116,7 +116,7 @@ private:
   const CharWidthProperties &ps;
 
   /**
-   * may be null
+   * maybe null
    */
   const ObserverPtr<const ANSIEscapeSeqMap> escapeSeqMap;
 
@@ -138,6 +138,8 @@ private:
    * append to existing content
    */
   ObserverPtr<std::string> output;
+
+  ObserverPtr<TokenizerResult> tokenizeResult;
 
 public:
   LineRenderer(const CharWidthProperties &ps, size_t initCols, ObserverPtr<std::string> output,
@@ -168,6 +170,8 @@ public:
 
   const ANSIEscapeSeqMap *getEscapeSeqMap() const { return this->escapeSeqMap.get(); }
 
+  void setTokenizeResult(ObserverPtr<TokenizerResult> ret) { this->tokenizeResult = ret; }
+
   /**
    * render lines with color code (ansi escape sequence).
    * ansi escape sequences are not quoted
@@ -176,7 +180,7 @@ public:
   void renderWithANSI(StringRef prompt);
 
   /**
-   * render script (perform syntax highlight, line continuation check)
+   * render a script (perform syntax highlight, line continuation check)
    * @param source
    * @param errorCmdChecker
    * @return

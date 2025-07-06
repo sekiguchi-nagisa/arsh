@@ -38,23 +38,30 @@ static unsigned int lookupToken(const Tokenizer::TokenList &tokens, unsigned int
   return tokens.size();
 }
 
-static Tokenizer::TokenList tokenize(const LineBuffer &buf) {
-  Tokenizer tokenizer(buf.get());
-  auto error = tokenizer.tokenizeAndEmit();
-  auto tokens = std::move(tokenizer).take();
-  if (error) {
-    if (buf.getCursor() > error->getErrorToken().endPos()) {
-      tokens.clear();
-    } else if (StringRef(error->getErrorKind()) == INVALID_TOKEN) {
-      tokens.emplace_back(error->getTokenKind(), error->getErrorToken());
+static Tokenizer::TokenList tokenize(const LineBuffer &buf, TokenizerResult *cache) {
+  TokenizerResult ret;
+  if (!cache) {
+    Tokenizer tokenizer(buf.get());
+    ret = tokenizer();
+    cache = &ret;
+  }
+
+  if (cache->error) {
+    if (buf.getCursor() > cache->error->getErrorToken().endPos()) {
+      cache->tokens.clear();
+    } else if (StringRef(cache->error->getErrorKind()) == INVALID_TOKEN) {
+      cache->tokens.emplace_back(cache->error->getTokenKind(), cache->error->getErrorToken());
     }
   }
-  return tokens;
+  Tokenizer::TokenList tmp;
+  std::swap(tmp, cache->tokens); // explicitly clear tokens
+  return tmp;
 }
 
 static Optional<unsigned int> resolveEditAfterPos(const LineBuffer &buf,
-                                                  const MoveOrDeleteTokenParam param) {
-  auto tokens = tokenize(buf);
+                                                  const MoveOrDeleteTokenParam param,
+                                                  TokenizerResult *cache) {
+  auto tokens = tokenize(buf, cache);
   if (tokens.empty()) {
     return {};
   }
@@ -94,8 +101,8 @@ static Optional<unsigned int> resolveEditAfterPos(const LineBuffer &buf,
 }
 
 Optional<bool> moveCursorOrDeleteToken(LineBuffer &buf, const MoveOrDeleteTokenParam param,
-                                       std::string *capture) {
-  if (auto ret = resolveEditAfterPos(buf, param); ret.hasValue()) {
+                                       std::string *capture, TokenizerResult *cache) {
+  if (auto ret = resolveEditAfterPos(buf, param, cache); ret.hasValue()) {
     const unsigned int afterPos = ret.unwrap();
     if (param.move) {
       const bool moved = buf.getCursor() != afterPos;

@@ -71,6 +71,7 @@ RenderingResult doRendering(const RenderingContext &ctx, ObserverPtr<const Array
       result.renderedLines += OSC133_("B");
     }
     renderer.setInitCols(promptCols);
+    renderer.setTokenizeResult(makeObserver(ctx.tokenizeCache));
     result.continueLine = renderLines(ctx.buf, pager, renderer, ctx.errorCmdChecker);
     result.renderedRows = renderer.getTotalRows() + 1;
     result.renderedCols = renderer.getMaxTotalCols();

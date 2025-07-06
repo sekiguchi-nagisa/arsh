@@ -45,6 +45,7 @@ struct RenderingContext {
   bool semanticPrompt{false};
   unsigned char prevExitStatus{0}; // for semantic prompt
   std::function<bool(StringRef)> errorCmdChecker;
+  mutable TokenizerResult tokenizeCache; // previously tokenized result
 
   RenderingContext(char *data, size_t len, StringRef prompt,
                    std::function<bool(StringRef)> &&errorCmdChecker)
