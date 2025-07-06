@@ -108,7 +108,7 @@ private:
 public:
   explicit Tokenizer(StringRef source) : TokenEmitter(source) {}
 
-  TokenizerResult operator()() {
+  TokenizerResult tokenize() {
     auto error = this->tokenizeAndEmit();
     return {
         .tokens = std::move(tokens),

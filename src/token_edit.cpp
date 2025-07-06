@@ -42,7 +42,7 @@ static Tokenizer::TokenList tokenize(const LineBuffer &buf, TokenizerResult *cac
   TokenizerResult ret;
   if (!cache) {
     Tokenizer tokenizer(buf.get());
-    ret = tokenizer();
+    ret = tokenizer.tokenize();
     cache = &ret;
   }
 

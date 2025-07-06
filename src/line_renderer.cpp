@@ -226,7 +226,7 @@ bool LineRenderer::renderScript(const StringRef source,
                                 const std::function<bool(StringRef)> &errorCmdChecker) {
   // for syntax highlight
   Tokenizer tokenEmitter(source);
-  auto ret = tokenEmitter();
+  auto ret = tokenEmitter.tokenize();
   auto lex = tokenEmitter.getLexerPtr();
 
   // render lines with highlight
