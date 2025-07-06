@@ -134,7 +134,7 @@
                      "?=") /* suppress -Wtrigraphs */                                              \
   /* for case expression */                                                                        \
   TOKEN(CASE_ARM, "=>")                                                                            \
-  /* context dependent key word */                                                                 \
+  /* context-dependent key word */                                                                 \
   TOKEN(AS, "as")                                                                                  \
   TOKEN(AS_OPT, "as?")                                                                             \
   TOKEN(FUNC, "Func")                                                                              \

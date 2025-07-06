@@ -1128,28 +1128,58 @@ TEST_F(LineBufferTest, tokenEditLeftPrev1) {
       {"echo aa 123", 4, " aa 123", 0},
       {"   echo aa 123", 3, "echo aa 123", 0},
       {"echo aa 123", 0, "echo aa 123", 0},
+      // edit within comment
+      {"echo # this is\nls", 5, "# this is\nls", 0},
   };
 
   for (auto &p : patterns) {
     SCOPED_TRACE("\n>>> " + p.before + "\npos: " + std::to_string(p.beforePos));
     ASSERT_NO_FATAL_FAILURE(testEditLeftToken(p));
   }
+
+  // edit within comment
+  ASSERT_NO_FATAL_FAILURE(invalidEditLeftToken("echo # this is\nls", 14));
+  ASSERT_NO_FATAL_FAILURE(invalidEditLeftToken("echo # this is\nls", 13));
+  ASSERT_NO_FATAL_FAILURE(invalidEditLeftToken("echo # this is\nls", 11));
+  ASSERT_NO_FATAL_FAILURE(invalidEditLeftToken("echo # this is\nls", 8));
+  ASSERT_NO_FATAL_FAILURE(invalidEditLeftToken("echo # this is\nls", 7));
+  ASSERT_NO_FATAL_FAILURE(invalidEditLeftToken("echo # this is\nls", 6));
 }
 
 TEST_F(LineBufferTest, tokenEditRightNext1) {
   const TokenEditPattern patterns[] = {
-      {"echo aa 123", 0, " aa 123", 0},      {"echo aa 123", 1, "e aa 123", 1},
-      {"echo aa 123", 2, "ec aa 123", 2},    {"echo aa 123", 3, "ech aa 123", 3},
-      {"echo aa 123", 4, "echo 123", 4},     {"echo aa 123", 5, "echo  123", 5},
-      {"echo aa 123", 6, "echo a 123", 6},   {"echo aa 123", 7, "echo aa", 7},
-      {"echo aa 123", 8, "echo aa ", 8},     {"echo aa 123", 9, "echo aa 1", 9},
-      {"echo aa 123", 10, "echo aa 12", 10}, {"echo aa 123", 11, "echo aa 123", 11},
+      {"echo aa 123", 0, " aa 123", 0},
+      {"echo aa 123", 1, "e aa 123", 1},
+      {"echo aa 123", 2, "ec aa 123", 2},
+      {"echo aa 123", 3, "ech aa 123", 3},
+      {"echo aa 123", 4, "echo 123", 4},
+      {"echo aa 123", 5, "echo  123", 5},
+      {"echo aa 123", 6, "echo a 123", 6},
+      {"echo aa 123", 7, "echo aa", 7},
+      {"echo aa 123", 8, "echo aa ", 8},
+      {"echo aa 123", 9, "echo aa 1", 9},
+      {"echo aa 123", 10, "echo aa 12", 10},
+      {"echo aa 123", 11, "echo aa 123", 11},
+      // edit within comment
+      {"ls # this is\nls", 0, " # this is\nls", 0},
+      {"ls # this is\nls", 1, "l # this is\nls", 1},
+      {"ls # this is\nls", 2, "ls\nls", 2},
+      {"ls # this is\nls", 3, "ls \nls", 3},
+      {"ls # this is\nls", 12, "ls # this isls", 12},
   };
 
   for (auto &p : patterns) {
     SCOPED_TRACE("\n>>> " + p.before + "\npos: " + std::to_string(p.beforePos));
     ASSERT_NO_FATAL_FAILURE(testEditRightToken(p));
   }
+
+  // edit within comment
+  ASSERT_NO_FATAL_FAILURE(invalidEditRightToken("ls # this is\nls", 4));
+  ASSERT_NO_FATAL_FAILURE(invalidEditRightToken("ls # this is\nls", 5));
+  ASSERT_NO_FATAL_FAILURE(invalidEditRightToken("ls # this is\nls", 6));
+  ASSERT_NO_FATAL_FAILURE(invalidEditRightToken("ls # this is\nls", 9));
+  ASSERT_NO_FATAL_FAILURE(invalidEditRightToken("ls # this is\nls", 10));
+  ASSERT_NO_FATAL_FAILURE(invalidEditRightToken("ls # this is\nls", 11));
 }
 
 TEST_F(LineBufferTest, tokenEditInvalidRecover1) {
@@ -1195,6 +1225,7 @@ TEST_F(LineBufferTest, tokenEditInvalidRecover2) {
 
   // test invalid edit
   ASSERT_NO_FATAL_FAILURE(invalidEditRightToken("var $AAA", 7));
+  ASSERT_NO_FATAL_FAILURE(invalidEditLeftToken("echo # this is\nls", 6));
 }
 
 int main(int argc, char **argv) {

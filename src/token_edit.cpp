@@ -58,17 +58,21 @@ static Optional<unsigned int> resolveEditAfterPos(const LineBuffer &buf,
   if (tokens.empty()) {
     return {};
   }
-  unsigned int cursor = buf.getCursor();
+  const unsigned int cursor = buf.getCursor();
   unsigned int index = lookupToken(tokens, cursor);
   if (param.left) {
     index = index < tokens.size() ? index : index - 1;
     Token token = tokens[index].second;
     if (cursor <= token.pos) {
       if (index) {
-        token = tokens[index - 1].second;
+        index--;
+        token = tokens[index].second;
       } else {
         return 0;
       }
+    }
+    if (tokens[index].first == TokenKind::COMMENT && cursor > token.pos) {
+      return {}; // within comment
     }
     return token.pos;
   }
@@ -80,7 +84,13 @@ static Optional<unsigned int> resolveEditAfterPos(const LineBuffer &buf,
     index--;
     token = tokens[index].second;
   }
-  return token.endPos() <= buf.getUsedSize() ? token.endPos() : buf.getUsedSize();
+  if (token.endPos() <= buf.getUsedSize()) {
+    if (tokens[index].first == TokenKind::COMMENT && cursor > token.pos) {
+      return {}; // within comment
+    }
+    return token.endPos();
+  }
+  return buf.getUsedSize();
 }
 
 Optional<bool> moveCursorOrDeleteToken(LineBuffer &buf, const MoveOrDeleteTokenParam param,
