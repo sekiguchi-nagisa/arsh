@@ -1163,8 +1163,9 @@ TEST_F(LineBufferTest, tokenEditRightNext1) {
       // edit within comment
       {"ls # this is\nls", 0, " # this is\nls", 0},
       {"ls # this is\nls", 1, "l # this is\nls", 1},
-      {"ls # this is\nls", 2, "ls\nls", 2},
-      {"ls # this is\nls", 3, "ls \nls", 3},
+      {"ls # this is\nls", 2, "ls# this is\nls", 2},
+      {"ls    # this is\nls", 2, "ls# this is\nls", 2},
+      {"ls    # this is\nls", 3, "ls # this is\nls", 3},
       {"ls # this is\nls", 12, "ls # this isls", 12},
   };
 
@@ -1174,6 +1175,7 @@ TEST_F(LineBufferTest, tokenEditRightNext1) {
   }
 
   // edit within comment
+  ASSERT_NO_FATAL_FAILURE(invalidEditRightToken("ls # this is\nls", 3));
   ASSERT_NO_FATAL_FAILURE(invalidEditRightToken("ls # this is\nls", 4));
   ASSERT_NO_FATAL_FAILURE(invalidEditRightToken("ls # this is\nls", 5));
   ASSERT_NO_FATAL_FAILURE(invalidEditRightToken("ls # this is\nls", 6));

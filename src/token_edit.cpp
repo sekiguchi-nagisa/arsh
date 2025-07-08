@@ -87,12 +87,16 @@ static Optional<unsigned int> resolveEditAfterPos(const LineBuffer &buf,
     return buf.getUsedSize();
   }
   Token token = tokens[index].second;
-  if (cursor < token.pos && index > 0 && cursor < tokens[index - 1].second.endPos()) {
-    index--;
-    token = tokens[index].second;
+  if (cursor < token.pos) {
+    if (index > 0 && cursor < tokens[index - 1].second.endPos()) {
+      index--;
+      token = tokens[index].second;
+    } else if (tokens[index].first == TokenKind::COMMENT) {
+      return token.pos;
+    }
   }
   if (token.endPos() <= buf.getUsedSize()) {
-    if (tokens[index].first == TokenKind::COMMENT && cursor > token.pos) {
+    if (tokens[index].first == TokenKind::COMMENT && cursor >= token.pos) {
       return {}; // within comment
     }
     return token.endPos();
