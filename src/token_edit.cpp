@@ -58,6 +58,30 @@ static Tokenizer::TokenList tokenize(const LineBuffer &buf, TokenizerResult *cac
   return tmp;
 }
 
+static const char *reverseSearchPathSep(const char *begin, const char *end) {
+  if (*end == '/') {
+    --end;
+  }
+  for (; begin != end; --end) {
+    if (*end == '/') {
+      return end;
+    }
+  }
+  return nullptr;
+}
+
+static const char *searchPathSep(const char *begin, const char *end) {
+  if (*begin == '/') {
+    ++begin;
+  }
+  for (; begin != end; ++begin) {
+    if (*begin == '/') {
+      return begin;
+    }
+  }
+  return nullptr;
+}
+
 static Optional<unsigned int> resolveEditAfterPos(const LineBuffer &buf,
                                                   const MoveOrDeleteTokenParam param,
                                                   TokenizerResult *cache) {
@@ -78,8 +102,20 @@ static Optional<unsigned int> resolveEditAfterPos(const LineBuffer &buf,
         return 0;
       }
     }
-    if (tokens[index].first == TokenKind::COMMENT && cursor > token.pos) {
-      return {}; // within comment
+    if (const auto kind = tokens[index].first; cursor > token.pos) {
+      if (kind == TokenKind::COMMENT) {
+        return {}; // within comment
+      }
+      if (kind == TokenKind::COMMAND || kind == TokenKind::CMD_ARG_PART) {
+        const char *ptr = buf.get().data();
+        const char *end = ptr + cursor;
+        if (*(end - 1) == '/') {
+          return cursor - 1;
+        }
+        if (const auto *ret = reverseSearchPathSep(ptr + token.pos - 1, end)) {
+          return ret - ptr + 1;
+        }
+      }
     }
     return token.pos;
   }
@@ -96,12 +132,19 @@ static Optional<unsigned int> resolveEditAfterPos(const LineBuffer &buf,
     }
   }
   if (token.endPos() <= buf.getUsedSize()) {
-    if (tokens[index].first == TokenKind::COMMENT && cursor >= token.pos) {
+    const auto kind = tokens[index].first;
+    if (kind == TokenKind::COMMENT && cursor >= token.pos) {
       return {}; // within comment
+    }
+    if (kind == TokenKind::COMMAND || kind == TokenKind::CMD_ARG_PART) {
+      const char *ptr = buf.get().data();
+      if (const char *ret = searchPathSep(ptr + cursor, ptr + token.endPos())) {
+        return ret - ptr;
+      }
     }
     return token.endPos();
   }
-  return buf.getUsedSize();
+  return buf.getUsedSize(); // if EOS
 }
 
 Optional<bool> moveCursorOrDeleteToken(LineBuffer &buf, const MoveOrDeleteTokenParam param,

@@ -1130,6 +1130,18 @@ TEST_F(LineBufferTest, tokenEditLeftPrev1) {
       {"echo aa 123", 0, "echo aa 123", 0},
       // edit within comment
       {"echo # this is\nls", 5, "# this is\nls", 0},
+      // command/command-argument with separator '/'
+      {"ho/AAA/BBB", 0, "ho/AAA/BBB", 0},
+      {"ho/AAA/BBB", 1, "o/AAA/BBB", 0},
+      {"ho/AAA/BBB", 2, "/AAA/BBB", 0},
+      {"ho/AAA/BBB", 3, "hoAAA/BBB", 2},
+      {"ho/AAA/BBB", 4, "ho/AA/BBB", 3},
+      {"ho/AAA/BBB", 5, "ho/A/BBB", 3},
+      {"ho/AAA/BBB", 6, "ho//BBB", 3},
+      {"ho/AAA/BBB", 7, "ho/AAABBB", 6},
+      {"q /ho/   w", 9, "q /ho/w", 6},
+      {"q /ho/w", 6, "q /how", 5},
+      {"q /how", 5, "q /w", 3},
   };
 
   for (auto &p : patterns) {
@@ -1167,6 +1179,17 @@ TEST_F(LineBufferTest, tokenEditRightNext1) {
       {"ls    # this is\nls", 2, "ls# this is\nls", 2},
       {"ls    # this is\nls", 3, "ls # this is\nls", 3},
       {"ls # this is\nls", 12, "ls # this isls", 12},
+      // command/command-argument with separator '/'
+      {"  /ls", 0, "/ls", 0},
+      {"  23/ls", 0, "/ls", 0},
+      {"ec    /ls", 3, "ec /ls", 3},
+      {"ec /ls", 0, " /ls", 0},
+      {"ec /ls", 1, "e /ls", 1},
+      {"ec /ls", 2, "ec/ls", 2},
+      {"ec /ls", 3, "ec ", 3},
+      {"ec /ls", 4, "ec /", 4},
+      {"ec   12/ls", 2, "ec/ls", 2},
+      {"s /ls/fre", 3, "s //fre", 3},
   };
 
   for (auto &p : patterns) {

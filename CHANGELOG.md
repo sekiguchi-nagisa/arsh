@@ -13,6 +13,7 @@
 - improve token-aware line edit actions
     - within comment, fallback to word actions
     - ignore parser error after cursor position
+    - treat '/' separator as a token boundary
 
 #### Module
 
