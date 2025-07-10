@@ -18,6 +18,7 @@
 #### Module
 
 - **Breaking Change**: in ``repl`` module, enable token-aware line edit actions by default
+- in prompt module, ``renderPrompt`` function supports ``\j`` escape sequence, now show managed job count
 
 ## [0.38.0] - 2025-06-30
 

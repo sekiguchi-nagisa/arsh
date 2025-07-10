@@ -85,6 +85,7 @@ function renderPrompt(p : String) : String {
                     $ch = $_escape($_formatCurTime($key, $fmt, $curTime))
                 }
             }
+            'j' => { $ch = $JOB.count() as String; }
             't' => { printf -v $key '%(%T)T' $curTime; $ch = $reply.remove($key)! }
             'T' => { printf -v $key '%(%I:%M:%S)T' $curTime; $ch = $reply.remove($key)! }
             '@' => { printf -v $key '%(%I:%M %p)T' $curTime; $ch = $reply.remove($key)! }
@@ -124,6 +125,7 @@ Prompt Escape Sequence:
     \e      escape sequence
     \h      host name
     \H      fully qualified host name
+    \j      number of managaed jobs
     \l      base name of tty
     \n      newline
     \r      carriage return
