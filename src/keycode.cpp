@@ -121,6 +121,21 @@ std::string KeyCode::toString() const {
   return ret;
 }
 
+// ###############################
+// ##     KeyCodeRecognizer     ##
+// ###############################
+
+void KeyCodeRecognizer::appendToBuf(const char *data, size_t len) {
+  const ssize_t cursorOffset = this->cursor - this->buf.data();
+  const ssize_t markerOffset = this->marker - this->buf.data();
+
+  this->buf.append(data, len);
+
+  this->cursor = this->buf.data() + cursorOffset;
+  this->limit = this->buf.data() + this->buf.size();
+  this->marker = this->buf.data() + markerOffset;
+}
+
 // ###########################
 // ##     KeyCodeReader     ##
 // ###########################

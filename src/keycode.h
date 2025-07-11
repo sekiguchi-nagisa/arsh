@@ -123,6 +123,32 @@ private:
   unsigned int code() const { return this->value & ((1 << CODE_BIT) - 1); }
 };
 
+class KeyCodeRecognizer { // for key code sequence parsing (caret, CSI, utf8 bytes)
+public:
+  enum class Status : unsigned char {
+    ACCEPT,
+    NEED_MORE,
+    FAIL,
+  };
+
+private:
+  std::string buf;
+  bool allowCaret{false}; // accept caret notation like '^D'
+  const char *cursor{nullptr};
+  const char *limit{nullptr};
+  const char *marker{nullptr};
+
+public:
+  void setAllowCaret(bool allow) { this->allowCaret = allow; }
+
+  std::string take() && { return std::move(this->buf); }
+
+  std::pair<KeyCode, Status> recognize(const char *data, size_t len);
+
+private:
+  void appendToBuf(const char *data, size_t len);
+};
+
 class KeyCodeReader {
 public:
   static constexpr int DEFAULT_READ_TIMEOUT_MSEC = 100;
