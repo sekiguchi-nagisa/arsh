@@ -48,7 +48,7 @@ struct ReadWithTimeoutParam {
  * @param param
  * @return
  * if timeout, return -2
- * if has error, return -1 and set errno
+ * if error, return -1 and set errno
  * otherwise, return non-negative number
  */
 ssize_t readWithTimeout(int fd, char *buf, size_t bufSize, ReadWithTimeoutParam param);
