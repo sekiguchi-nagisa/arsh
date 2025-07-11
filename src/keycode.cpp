@@ -111,7 +111,13 @@ std::string KeyCode::toString() const {
       ret += '+';
     }
   }
-  // ret += std::to_string(this-)
+  if (this->isFuncKey()) {
+    // TODO
+  } else {
+    char buf[4];
+    const unsigned int len = UnicodeUtil::codePointToUtf8(this->asCodePoint(), buf);
+    ret.append(buf, len);
+  }
   return ret;
 }
 

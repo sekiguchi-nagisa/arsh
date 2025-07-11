@@ -22,6 +22,7 @@
 
 #include "misc/detect.hpp"
 #include "misc/enum_util.hpp"
+#include "misc/flag_util.hpp"
 #include "misc/resource.hpp"
 #include "misc/result.hpp"
 #include "signals.h"
@@ -76,6 +77,8 @@ enum class ModifierKey : unsigned char {
 template <>
 struct allow_enum_bitop<ModifierKey> : std::true_type {};
 
+enum class FunctionKey : unsigned char {};
+
 class KeyCode {
 private:
   static constexpr unsigned int CODE_BIT = 23;
@@ -90,13 +93,30 @@ public:
       : value(static_cast<unsigned int>(toUnderlying(modifier)) << (CODE_BIT + 1) |
               static_cast<unsigned int>(codePoint)) {}
 
+  constexpr KeyCode(FunctionKey funcKey, ModifierKey modifier)
+      : value(static_cast<unsigned int>(toUnderlying(modifier)) << (CODE_BIT + 1) |
+              (1 << CODE_BIT) | static_cast<unsigned int>(toUnderlying(funcKey))) {}
+
   bool isFuncKey() const { return this->value & (1u << CODE_BIT); }
 
   ModifierKey modifiers() const { return static_cast<ModifierKey>(this->value >> (CODE_BIT + 1)); }
 
   bool hasModifier(ModifierKey modifier) const { return hasFlag(this->modifiers(), modifier); }
 
+  int asCodePoint() const {
+    assert(!this->isFuncKey());
+    return static_cast<int>(this->code());
+  }
+
+  FunctionKey asFuncKey() const {
+    assert(this->isFuncKey());
+    return static_cast<FunctionKey>(this->code());
+  }
+
   std::string toString() const;
+
+private:
+  unsigned int code() const { return this->value & ((1 << CODE_BIT) - 1); }
 };
 
 class KeyCodeReader {
