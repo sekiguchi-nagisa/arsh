@@ -113,6 +113,10 @@ public:
     return static_cast<FunctionKey>(this->code());
   }
 
+  bool operator==(const KeyCode &o) const { return this->value == o.value; }
+
+  unsigned int rawValue() const { return this->value; }
+
   std::string toString() const;
 
 private:
