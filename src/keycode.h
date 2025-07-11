@@ -21,6 +21,7 @@
 #include <vector>
 
 #include "misc/detect.hpp"
+#include "misc/enum_util.hpp"
 #include "misc/resource.hpp"
 #include "misc/result.hpp"
 #include "signals.h"
@@ -54,6 +55,49 @@ ssize_t readWithTimeout(int fd, char *buf, size_t bufSize, ReadWithTimeoutParam 
 inline ssize_t readRetryWithTimeout(int fd, char *buf, size_t bufSize, int timeoutMSec) {
   return readWithTimeout(fd, buf, bufSize, {.retry = true, .timeoutMSec = timeoutMSec});
 }
+
+#define EACH_MODIFIER_KEY(E)                                                                       \
+  E(SHIFT, (1u << 0u), "shift")                                                                    \
+  E(ALT, (1u << 1u), "alt")                                                                        \
+  E(CTRL, (1u << 2u), "ctrl")                                                                      \
+  E(SUPER, (1u << 3u), "super")                                                                    \
+  E(HYPER, (1u << 4u), "hyper")                                                                    \
+  E(META, (1u << 5u), "meta")                                                                      \
+  E(CAPS, (1u << 6u), "caps_lock")                                                                 \
+  E(NUM, (1u << 7u), "num_lock")
+
+// for kitty keyboard protocol
+enum class ModifierKey : unsigned char {
+#define GEN_ENUM(E, D, S) E = (D),
+  EACH_MODIFIER_KEY(GEN_ENUM)
+#undef GEN_ENUM
+};
+
+template <>
+struct allow_enum_bitop<ModifierKey> : std::true_type {};
+
+class KeyCode {
+private:
+  static constexpr unsigned int CODE_BIT = 23;
+
+  /**
+   * | 8bit (modifier) | 1bit (if 1, functional key) | 23bit (code point or functional key) |
+   */
+  unsigned int value{0};
+
+public:
+  constexpr KeyCode(int codePoint, ModifierKey modifier)
+      : value(static_cast<unsigned int>(toUnderlying(modifier)) << (CODE_BIT + 1) |
+              static_cast<unsigned int>(codePoint)) {}
+
+  bool isFuncKey() const { return this->value & (1u << CODE_BIT); }
+
+  ModifierKey modifiers() const { return static_cast<ModifierKey>(this->value >> (CODE_BIT + 1)); }
+
+  bool hasModifier(ModifierKey modifier) const { return hasFlag(this->modifiers(), modifier); }
+
+  std::string toString() const;
+};
 
 class KeyCodeReader {
 public:

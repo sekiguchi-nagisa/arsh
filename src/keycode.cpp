@@ -92,6 +92,29 @@ static int waitForInputReady(int fd, int timeoutMSec, const sigset_t *mask) {
 
 namespace arsh {
 
+// #####################
+// ##     KeyCode     ##
+// #####################
+
+std::string KeyCode::toString() const {
+  constexpr const char *table[] = {
+#define GEN_TABLE(E, D, S) S,
+      EACH_MODIFIER_KEY(GEN_TABLE)
+#undef GEN_TABLE
+  };
+
+  std::string ret;
+  for (unsigned int i = 0; i < std::size(table); i++) {
+    const auto modifier = static_cast<ModifierKey>(1u << i);
+    if (this->hasModifier(modifier)) {
+      ret += table[i];
+      ret += '+';
+    }
+  }
+  // ret += std::to_string(this-)
+  return ret;
+}
+
 // ###########################
 // ##     KeyCodeReader     ##
 // ###########################
