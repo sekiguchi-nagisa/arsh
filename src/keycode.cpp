@@ -139,16 +139,23 @@ static ssize_t readCodePoint(int fd, char (&buf)[8]) {
   return readSize;
 }
 
-#define READ_BYTE(b, bs)                                                                           \
+static ssize_t readAndAppendByte(int fd, std::string &out, int timeout) {
+  char b;
+  const ssize_t r = readRetryWithTimeout(fd, &b, 1, timeout);
+  if (r > 0) {
+    out += b;
+  }
+  return r;
+}
+
+#define READ_AND_APPEND_BYTE()                                                                     \
   do {                                                                                             \
-    ssize_t r = readRetryWithTimeout(this->fd, (b) + (bs), 1, this->timeout);                      \
+    ssize_t r = readAndAppendByte(this->fd, this->keycode, this->timeout);                         \
     if (r <= 0) {                                                                                  \
       if (r == -1) {                                                                               \
-        return -1;                                                                                 \
+        return -1; /* read error */                                                                \
       }                                                                                            \
-      goto END;                                                                                    \
-    } else {                                                                                       \
-      seqSize++;                                                                                   \
+      goto END; /* read timeout or EOF */                                                          \
     }                                                                                              \
   } while (false)
 
@@ -166,47 +173,50 @@ ssize_t KeyCodeReader::fetch(AtomicSigSet &&watchSigSet) {
     }
   }
 
-  constexpr char ESC = '\x1b';
-  char buf[8];
-  ssize_t readSize = readCodePoint(this->fd, buf);
-  if (readSize <= 0) {
-    return readSize;
-  }
-  assert(readSize > 0 && readSize < 5);
-  this->keycode.assign(buf, static_cast<size_t>(readSize));
-  if (isEscapeChar(buf[0])) {
-    assert(readSize == 1);
-    char seq[8];
-    unsigned int seqSize = 0;
-    READ_BYTE(seq, seqSize);
-    if (seq[0] != '[' && seq[0] != 'O' && seq[0] != ESC) { // ESC ? sequence
-      goto END;
+  // read code point
+  {
+    char buf[8];
+    ssize_t readSize = readCodePoint(this->fd, buf);
+    if (readSize <= 0) {
+      return readSize;
     }
+    assert(readSize > 0 && readSize < 5);
+    this->keycode.assign(buf, static_cast<size_t>(readSize));
+  }
 
-    READ_BYTE(seq, seqSize);
-    if (seq[0] == '[') {                    // ESC [ sequence
-      if (seq[1] >= '0' && seq[1] <= '9') { // ESC [ n x
-        READ_BYTE(seq, seqSize);
-        if ((seq[1] == '2' && seq[2] == '0') ||
-            (seq[1] == '1' && seq[2] == ';')) { // ESC [200~ or ESC [1;3A
-          READ_BYTE(seq, seqSize);
-          READ_BYTE(seq, seqSize);
-          goto END;
-        }
-      } else { // ESC [ x
-        goto END;
+  if (isEscapeChar(this->keycode[0])) {
+    assert(this->keycode.size() == 1);
+    READ_AND_APPEND_BYTE();
+    if (const char next = this->keycode.back(); next == '[') { // CSI sequence ('\e [ ?')
+      READ_AND_APPEND_BYTE();
+      char ch = this->keycode.back();
+
+      // try to consume parameter bytes [0-9:;<=>?]
+      while (ch >= 0x30 && ch <= 0x3F) {
+        READ_AND_APPEND_BYTE();
+        ch = this->keycode.back();
       }
-    } else if (seq[0] == 'O') { // ESC O sequence
-      goto END;
-    } else if (seq[0] == ESC) {
-      if (seq[1] == '[') { // ESC ESC [ ? sequence
-        READ_BYTE(seq, seqSize);
-        goto END;
+
+      // try to consume intermediate bytes [ !"#$%&'()*+,-./]
+      while (ch >= 0x20 && ch <= 0x2F) {
+        READ_AND_APPEND_BYTE();
+        ch = this->keycode.back();
+      }
+
+      // consume a single final byte [@A-Z[\]^_`a-z{|}~]
+      if (ch >= 0x40 && ch <= 0x7E) {
+        goto END; // valid CSI sequence
+      }
+    } else if (next == 'O') { // '\e O ?'
+      READ_AND_APPEND_BYTE();
+    } else if (next == '\x1b') { // '\e \e [ ?' (alt+arrow in macOS terminal.app)
+      READ_AND_APPEND_BYTE();
+      if (this->keycode.back() == '[') {
+        READ_AND_APPEND_BYTE();
       }
     }
-  END:
-    this->keycode.append(seq, seqSize);
   }
+END:
   return static_cast<ssize_t>(this->keycode.size());
 }
 
