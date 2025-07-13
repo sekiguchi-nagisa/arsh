@@ -393,22 +393,22 @@ KeyBindings::KeyBindings() {
       {ESC_ "[4~", EditActionType::END_OF_LINE}, // for putty
       {ESC_ "[3~", EditActionType::DELETE_CHAR}, // for putty
       {ESC_ "[200~", EditActionType::BRACKET_PASTE},
-      {ESC_ "[1;3A", EditActionType::PREV_HISTORY},
-      {ESC_ "[1;3B", EditActionType::NEXT_HISTORY},
-      {ESC_ "[1;3D", EditActionType::BACKWARD_WORD},
-      {ESC_ "[1;3C", EditActionType::FORWARD_WORD},
-      {ESC_ "[A", EditActionType::UP_OR_HISTORY},
-      {ESC_ "[B", EditActionType::DOWN_OR_HISTORY},
-      {ESC_ "[D", EditActionType::BACKWARD_CHAR},
-      {ESC_ "[C", EditActionType::FORWARD_CHAR},
+      {ESC_ "[1;3A", EditActionType::PREV_HISTORY},  // alt+up
+      {ESC_ "[1;3B", EditActionType::NEXT_HISTORY},  // alt+down
+      {ESC_ "[1;3D", EditActionType::BACKWARD_WORD}, // alt+left
+      {ESC_ "[1;3C", EditActionType::FORWARD_WORD},  // alt+right
+      {ESC_ "[A", EditActionType::UP_OR_HISTORY},    // up
+      {ESC_ "[B", EditActionType::DOWN_OR_HISTORY},  // down
+      {ESC_ "[D", EditActionType::BACKWARD_CHAR},    // left
+      {ESC_ "[C", EditActionType::FORWARD_CHAR},     // right
       {ESC_ "[H", EditActionType::BEGINNING_OF_LINE},
       {ESC_ "[F", EditActionType::END_OF_LINE},
       {ESC_ "OH", EditActionType::BEGINNING_OF_LINE},
       {ESC_ "OF", EditActionType::END_OF_LINE},
-      {ESC_ ESC_ "[A", EditActionType::PREV_HISTORY},  // for mac
-      {ESC_ ESC_ "[B", EditActionType::NEXT_HISTORY},  // for mac
-      {ESC_ ESC_ "[D", EditActionType::BACKWARD_WORD}, // for mac
-      {ESC_ ESC_ "[C", EditActionType::FORWARD_WORD},  // for mac
+      {ESC_ ESC_ "[A", EditActionType::PREV_HISTORY},  // for macOS terminal.app (alt+up)
+      {ESC_ ESC_ "[B", EditActionType::NEXT_HISTORY},  // for macOS terminal.app (alt+up)
+      {ESC_ ESC_ "[D", EditActionType::BACKWARD_WORD}, // for macOS terminal.app (alt+left)
+      {ESC_ ESC_ "[C", EditActionType::FORWARD_WORD},  // for macOS terminal.app (alt+right)
   };
   for (auto &e : entries) {
     auto pair = this->values.emplace(e.key, e.type);
@@ -430,20 +430,20 @@ KeyBindings::KeyBindings() {
       {CTRL_P_, PagerAction::PREV},
       {CTRL_N_, PagerAction::NEXT},
 
-      {ESC_ "[1;3A", PagerAction::PREV},
-      {ESC_ "[1;3B", PagerAction::NEXT},
-      {ESC_ "[1;3D", PagerAction::LEFT},
-      {ESC_ "[1;3C", PagerAction::RIGHT},
-      {ESC_ "[A", PagerAction::PREV},
-      {ESC_ "[B", PagerAction::NEXT},
-      {ESC_ "[D", PagerAction::LEFT},
-      {ESC_ "[C", PagerAction::RIGHT},
+      {ESC_ "[1;3A", PagerAction::PREV},  // alt+up
+      {ESC_ "[1;3B", PagerAction::NEXT},  // alt+down
+      {ESC_ "[1;3D", PagerAction::LEFT},  // alt+left
+      {ESC_ "[1;3C", PagerAction::RIGHT}, // alt+right
+      {ESC_ "[A", PagerAction::PREV},     // up
+      {ESC_ "[B", PagerAction::NEXT},     // down
+      {ESC_ "[D", PagerAction::LEFT},     // left
+      {ESC_ "[C", PagerAction::RIGHT},    // right
 
       // for mac
-      {ESC_ ESC_ "[A", PagerAction::PREV},
-      {ESC_ ESC_ "[B", PagerAction::NEXT},
-      {ESC_ ESC_ "[D", PagerAction::LEFT},
-      {ESC_ ESC_ "[C", PagerAction::RIGHT},
+      {ESC_ ESC_ "[A", PagerAction::PREV},  // for macOS terminal.app (alt+up)
+      {ESC_ ESC_ "[B", PagerAction::NEXT},  // for macOS terminal.app (alt+up)
+      {ESC_ ESC_ "[D", PagerAction::LEFT},  // for macOS terminal.app (alt+left)
+      {ESC_ ESC_ "[C", PagerAction::RIGHT}, // for macOS terminal.app (alt+right)
   };
   for (auto &e : pagers) {
     auto pair = this->pagerValues.emplace(e.key, e.action);
