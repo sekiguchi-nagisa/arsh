@@ -252,7 +252,9 @@ TEST_F(KeyCodeTest, invalid) {
     StringRef seq;
     Optional<KeyEvent> event;
   } patterns[] = {
-      {"12", {}},
+      {"12", {}},        {CSI_("%"), {}},    {CSI_("-12423~"), {}},
+      {CSI_("123"), {}}, {CSI_("aaaa"), {}}, {SS3_("%"), {}},
+      {SS3_("AA"), {}},  {CSI_("1*A"), {}},  {CSI_("1;122QA"), {}},
   };
   for (unsigned int i = 0; i < std::size(patterns); i++) {
     auto &p = patterns[i];
@@ -451,6 +453,7 @@ TEST_F(KeyCodeTest, alt4) {
       {ESC_("\x1E"), KeyEvent('^', ModifierKey::CTRL | ModifierKey::ALT)},
       {ESC_("\x1F"), KeyEvent('_', ModifierKey::CTRL | ModifierKey::ALT)},
       {ESC_("\x7F"), KeyEvent('?', ModifierKey::CTRL | ModifierKey::ALT)},
+      {ESC_("\x80"), {}},
   };
   for (unsigned int i = 0; i < std::size(patterns); i++) {
     auto &p = patterns[i];
@@ -551,11 +554,15 @@ TEST_F(KeyCodeTest, funcKey) {
       {CSI_("P"), KeyEvent(FunctionKey::F1)},
       {CSI_("11~"), KeyEvent(FunctionKey::F1)},
       {SS3_("P"), KeyEvent(FunctionKey::F1)},
+      {CSI_("0P"), {}},
+      {CSI_("2P"), {}},
 
       {CSI_("1Q"), KeyEvent(FunctionKey::F2)},
       {CSI_("Q"), KeyEvent(FunctionKey::F2)},
       {CSI_("12~"), KeyEvent(FunctionKey::F2)},
       {SS3_("Q"), KeyEvent(FunctionKey::F2)},
+      {CSI_("0Q"), {}},
+      {CSI_("2Q"), {}},
 
       {CSI_("1R"), {}}, // invalid
       {CSI_("R"), {}},  // invalid
@@ -566,6 +573,8 @@ TEST_F(KeyCodeTest, funcKey) {
       {CSI_("S"), KeyEvent(FunctionKey::F4)},
       {CSI_("14~"), KeyEvent(FunctionKey::F4)},
       {SS3_("S"), KeyEvent(FunctionKey::F4)},
+      {CSI_("0S"), {}},
+      {CSI_("2S"), {}},
 
       {CSI_("15~"), KeyEvent(FunctionKey::F5)},
       {CSI_("16~"), {}},
@@ -582,6 +591,52 @@ TEST_F(KeyCodeTest, funcKey) {
 
       {CSI_("Z"), KeyEvent(FunctionKey::TAB, ModifierKey::SHIFT)},
       {CSI_("1Z"), KeyEvent(FunctionKey::TAB, ModifierKey::SHIFT)},
+      {CSI_("0Z"), {}},
+      {CSI_("2Z"), {}},
+
+  };
+  for (unsigned int i = 0; i < std::size(patterns); i++) {
+    auto &p = patterns[i];
+    SCOPED_TRACE(format("\nindex:%d, seq:%s, event:%s", i, KeyBindings::toCaret(p.seq).c_str(),
+                        p.event.hasValue() ? p.event.unwrap().toString().c_str() : ""));
+    ASSERT_NO_FATAL_FAILURE(checkCode(p.seq, p.event));
+  }
+}
+
+TEST_F(KeyCodeTest, modifier) {
+  static const struct {
+    StringRef seq;
+    Optional<KeyEvent> event;
+  } patterns[] = {
+      {CSI_("1A"), KeyEvent(FunctionKey::UP)},
+      {CSI_("1;0A"), KeyEvent(FunctionKey::UP)},
+      {CSI_("1;1A"), KeyEvent(FunctionKey::UP)},
+      {CSI_("1;2A"), KeyEvent(FunctionKey::UP, ModifierKey::SHIFT)},
+      {CSI_("1;3A"), KeyEvent(FunctionKey::UP, ModifierKey::ALT)},
+      {CSI_("1;4A"), KeyEvent(FunctionKey::UP, ModifierKey::SHIFT | ModifierKey::ALT)},
+      {CSI_("1;5A"), KeyEvent(FunctionKey::UP, ModifierKey::CTRL)},
+      {CSI_("1;6A"), KeyEvent(FunctionKey::UP, ModifierKey::CTRL | ModifierKey::SHIFT)},
+      {CSI_("1;7A"), KeyEvent(FunctionKey::UP, ModifierKey::CTRL | ModifierKey::ALT)},
+      {CSI_("1;8A"),
+       KeyEvent(FunctionKey::UP, ModifierKey::CTRL | ModifierKey::ALT | ModifierKey::SHIFT)},
+      {CSI_("1;9A"), KeyEvent(FunctionKey::UP, ModifierKey::SUPER)},
+      {CSI_("1;17A"), KeyEvent(FunctionKey::UP, ModifierKey::HYPER)},
+      {CSI_("1;33A"), KeyEvent(FunctionKey::UP, ModifierKey::META)},
+      {CSI_("1;65A"), KeyEvent(FunctionKey::UP, ModifierKey::CAPS)},
+      {CSI_("1;129A"), KeyEvent(FunctionKey::UP, ModifierKey::NUM)},
+      {CSI_("1;255A"),
+       KeyEvent(FunctionKey::UP, ModifierKey::NUM | ModifierKey::CAPS | ModifierKey::META |
+                                     ModifierKey::HYPER | ModifierKey::SUPER | ModifierKey::CTRL |
+                                     ModifierKey::ALT)},
+      {CSI_("1;256A"),
+       KeyEvent(FunctionKey::UP, ModifierKey::NUM | ModifierKey::CAPS | ModifierKey::META |
+                                     ModifierKey::HYPER | ModifierKey::SUPER | ModifierKey::CTRL |
+                                     ModifierKey::ALT | ModifierKey::SHIFT)},
+      {CSI_("1;257A"), {}},
+      {CSI_("1;4294967295A"), {}},
+      {CSI_("1;4294967290A"), {}},
+      {CSI_("1;23::::A"), {}},
+      {CSI_("1;23A;:"), {}},
   };
   for (unsigned int i = 0; i < std::size(patterns); i++) {
     auto &p = patterns[i];

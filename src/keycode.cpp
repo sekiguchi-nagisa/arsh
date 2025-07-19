@@ -301,6 +301,19 @@ static Optional<KeyEvent> resolveCSI(int num, ModifierKey modifiers, const char 
   return {};
 }
 
+constexpr ModifierKey fillModifiers() {
+  ModifierKey modifiers{};
+  constexpr ModifierKey table[] = {
+#define GEN_TABLE(E, D, S) ModifierKey::E,
+      EACH_MODIFIER_KEY(GEN_TABLE)
+#undef GEN_TABLE
+  };
+  for (auto &e : table) {
+    setFlag(modifiers, e);
+  }
+  return modifiers;
+}
+
 static Optional<KeyEvent> parseCSISeq(StringRef seq) { // TODO: kitty protocol (alternate key)
   assert(!seq.empty());
   ModifierKey modifiers{};
@@ -316,9 +329,11 @@ static Optional<KeyEvent> parseCSISeq(StringRef seq) { // TODO: kitty protocol (
   // extract modifiers (number)
   if (seq.empty()) { // do nothing
   } else if (seq[0] == ';') {
+    constexpr int MODIFIERS_LIMIT = toUnderlying(fillModifiers()) + 1;
+
     seq.removePrefix(1);
     int v = parseNum(seq, 0);
-    if (v < 0 || v > UINT8_MAX) {
+    if (v < 0 || v > MODIFIERS_LIMIT) {
       goto ERROR;
     }
     if (v) {
