@@ -22,6 +22,7 @@
 #include "constant.h"
 #include "keycode.h"
 #include "misc/format.hpp"
+#include "misc/num_util.hpp"
 #include "misc/unicode.hpp"
 
 #ifdef __linux__
@@ -92,6 +93,348 @@ static int waitForInputReady(int fd, int timeoutMSec, const sigset_t *mask) {
 
 namespace arsh {
 
+// ######################
+// ##     KeyEvent     ##
+// ######################
+
+static bool isShifted(int ch) { return ch >= 'A' && ch <= 'Z'; }
+
+static int unshift(int ch) { return (ch - 'A') + 'a'; }
+
+static Optional<KeyEvent> parseSS3Seq(const char ch) {
+  FunctionKey funcKey;
+  switch (ch) {
+  case 'A':
+    funcKey = FunctionKey::UP;
+    break;
+  case 'B':
+    funcKey = FunctionKey::DOWN;
+    break;
+  case 'C':
+    funcKey = FunctionKey::RIGHT;
+    break;
+  case 'D':
+    funcKey = FunctionKey::LEFT;
+    break;
+  case 'F':
+    funcKey = FunctionKey::END;
+    break;
+  case 'H':
+    funcKey = FunctionKey::HOME;
+    break;
+  case 'P':
+    funcKey = FunctionKey::F1;
+    break;
+  case 'Q':
+    funcKey = FunctionKey::F2;
+    break;
+  case 'R':
+    funcKey = FunctionKey::F3;
+    break;
+  case 'S':
+    funcKey = FunctionKey::F4;
+    break;
+  default:
+    return {};
+  }
+  return KeyEvent(funcKey);
+}
+
+static int parseNum(StringRef &seq, int defaultValue) {
+  StringRef::size_type pos = 0;
+  while (pos < seq.size() && isDigit(seq[pos])) {
+    pos++;
+  }
+  if (pos) {
+    StringRef param = seq.slice(0, pos);
+    seq = seq.substr(pos);
+    const auto ret = convertToNum10<int32_t>(param.begin(), param.end());
+    if (!ret || ret.value < 0) {
+      return -1;
+    }
+    return ret.value;
+  }
+  return defaultValue;
+}
+
+static FunctionKey resolveTildeFuncKey(int num) {
+  switch (num) {
+  case 2:
+    return FunctionKey::INSERT;
+  case 3:
+    return FunctionKey::DELETE;
+  case 5:
+    return FunctionKey::PAGE_UP;
+  case 6:
+    return FunctionKey::PAGE_DOWN;
+  case 7:
+    return FunctionKey::HOME;
+  case 8:
+    return FunctionKey::END;
+  case 11:
+    return FunctionKey::F1;
+  case 12:
+    return FunctionKey::F2;
+  case 13:
+    return FunctionKey::F3;
+  case 14:
+    return FunctionKey::F4;
+  case 15:
+    return FunctionKey::F5;
+  case 17:
+    return FunctionKey::F6;
+  case 18:
+    return FunctionKey::F7;
+  case 19:
+    return FunctionKey::F8;
+  case 20:
+    return FunctionKey::F9;
+  case 21:
+    return FunctionKey::F10;
+  case 23:
+    return FunctionKey::F11;
+  case 24:
+    return FunctionKey::F12;
+  case 29:
+    return FunctionKey::MENU;
+  case 200:
+    return FunctionKey::BRACKET_START;
+  default:
+    break;
+  }
+  return FunctionKey::ESCAPE; // not found
+}
+
+static FunctionKey resolveUFuncKey(int num) {
+  switch (num) {
+  case 9:
+    return FunctionKey::TAB;
+  case 13:
+    return FunctionKey::ENTER;
+  case 27:
+    return FunctionKey::ESCAPE;
+  case 127:
+    return FunctionKey::BACKSPACE;
+  case 57358:
+    return FunctionKey::CAPS_LOCK;
+  case 57359:
+    return FunctionKey::SCROLL_LOCK;
+  case 57360:
+    return FunctionKey::NUM_LOCK;
+  case 57361:
+    return FunctionKey::PRINT_SCREEN;
+  case 57362:
+    return FunctionKey::PAUSE;
+  case 57363:
+    return FunctionKey::MENU;
+  default:
+    break;
+  }
+  return FunctionKey::BRACKET_START; // not found
+}
+
+static Optional<KeyEvent> resolveCSI(int num, ModifierKey modifiers, const char final) {
+  switch (final) {
+  case 'A':
+    if (num == 1) {
+      return KeyEvent(FunctionKey::UP, modifiers);
+    }
+    break;
+  case 'B':
+    if (num == 1) {
+      return KeyEvent(FunctionKey::DOWN, modifiers);
+    }
+    break;
+  case 'C':
+    if (num == 1) {
+      return KeyEvent(FunctionKey::RIGHT, modifiers);
+    }
+    break;
+  case 'D':
+    if (num == 1) {
+      return KeyEvent(FunctionKey::LEFT, modifiers);
+    }
+    break;
+  case 'F':
+    if (num == 1) {
+      return KeyEvent(FunctionKey::END, modifiers);
+    }
+    break;
+  case 'H':
+    if (num == 1) {
+      return KeyEvent(FunctionKey::HOME, modifiers);
+    }
+    break;
+  case 'P':
+    if (num == 1) {
+      return KeyEvent(FunctionKey::F1, modifiers);
+    }
+    break;
+  case 'Q':
+    if (num == 1) {
+      return KeyEvent(FunctionKey::F2, modifiers);
+    }
+    break;
+  case 'S':
+    if (num == 1) {
+      return KeyEvent(FunctionKey::F4, modifiers);
+    }
+    break;
+  case 'u':
+    if (auto funcKey = resolveUFuncKey(num); funcKey != FunctionKey::BRACKET_START) {
+      return KeyEvent(funcKey, modifiers);
+    }
+    break; // TODO: unicode code point
+  case '~':
+    if (auto funcKey = resolveTildeFuncKey(num); funcKey != FunctionKey::ESCAPE) {
+      return KeyEvent(funcKey, modifiers);
+    }
+    break;
+  default:
+    break;
+  }
+  return {};
+}
+
+static Optional<KeyEvent> parseCSISeq(StringRef seq) { // TODO: kitty protocol (alternate key)
+  assert(!seq.empty());
+  ModifierKey modifiers{};
+  const char final = seq.back();
+  seq.removeSuffix(1);
+
+  // extract param bytes (number)
+  const int num = parseNum(seq, 1);
+  if (num < 0) {
+    goto ERROR;
+  }
+
+  // extract modifiers (number)
+  if (seq.empty()) { // do nothing
+  } else if (seq[0] == ';') {
+    seq.removePrefix(1);
+    int v = parseNum(seq, 0);
+    if (v < 0 || v > UINT8_MAX) {
+      goto ERROR;
+    }
+    if (v) {
+      modifiers = static_cast<ModifierKey>(v - 1);
+    }
+  } else {
+    goto ERROR;
+  }
+
+  if (seq.empty()) {
+    return resolveCSI(num, modifiers, final);
+  }
+
+ERROR:
+  return {};
+}
+
+Optional<KeyEvent> KeyEvent::fromEscapeSeq(const StringRef seq) {
+  if (seq.empty() || !isControlChar(seq[0])) {
+    return {};
+  }
+  if (seq.size() == 1) { // C0 control codes
+    auto v = static_cast<unsigned char>(seq[0]);
+    v ^= 64;
+    assert(isCaretTarget(v));
+    if (isShifted(v)) {
+      v = unshift(v);
+    }
+    return KeyEvent(v, ModifierKey::CTRL);
+  }
+  assert(seq[0] == '\x1b');
+  if (seq.size() == 2) { // ESC ?
+    int ch = static_cast<unsigned char>(seq[1]);
+    if (ch >= 0 && ch <= 127) {
+      auto modifiers = ModifierKey::ALT;
+      if (isShifted(ch)) {
+        setFlag(modifiers, ModifierKey::SHIFT);
+        ch = unshift(ch);
+      }
+      return KeyEvent(ch, modifiers);
+    }
+    return {};
+  }
+  if (seq.size() == 3 && seq[1] == 'O') { // SS3 ( ESC O ?)
+    return parseSS3Seq(seq[2]);
+  }
+  if (const char next = seq[1]; next == '[') { // 'ESC [ ?'
+    auto ret = parseCSISeq(seq.substr(2));
+    if (ret.hasValue()) {
+      if (auto event = ret.unwrap();
+          event.isFuncKey() && event.asFuncKey() == FunctionKey::BRACKET_START) {
+        if (seq == BRACKET_START) { // only accept the '\x1b[200~' sequence
+          return event;
+        }
+        return {};
+      }
+    }
+    return ret;
+  } else if (next == '\x1b' && seq.size() == 4 && seq[2] == '[') {
+    FunctionKey funcKey;
+    switch (seq[3]) { // '\e \e [ ?' (alt+arrow in macOS terminal.app)
+    case 'A':
+      funcKey = FunctionKey::UP;
+      break;
+    case 'B':
+      funcKey = FunctionKey::DOWN;
+      break;
+    case 'C':
+      funcKey = FunctionKey::RIGHT;
+      break;
+    case 'D':
+      funcKey = FunctionKey::LEFT;
+      break;
+    default:
+      return {};
+    }
+    return KeyEvent(funcKey, ModifierKey::ALT);
+  }
+  return {};
+}
+
+Optional<KeyEvent> KeyEvent::parseHRNotation(StringRef ref, std::string *err) {
+  (void)ref;
+  (void)err;
+  return {};
+}
+
+std::string KeyEvent::toString() const {
+  std::string ret;
+  {
+    constexpr const char *table[] = {
+#define GEN_TABLE(E, D, S) S,
+        EACH_MODIFIER_KEY(GEN_TABLE)
+#undef GEN_TABLE
+    };
+
+    for (unsigned int i = 0; i < std::size(table); i++) {
+      const auto modifier = static_cast<ModifierKey>(1u << i);
+      if (this->hasModifier(modifier)) {
+        ret += table[i];
+        ret += '+';
+      }
+    }
+  }
+  if (this->isFuncKey()) {
+    constexpr const char *table[] = {
+#define GEN_TABLE(E, S) #E,
+        EACH_FUNCTION_KEY(GEN_TABLE)
+#undef GEN_TABLE
+    };
+    if (unsigned int index = toUnderlying(this->asFuncKey()); index < std::size(table)) {
+      ret += table[index];
+    }
+  } else {
+    char buf[4];
+    const unsigned int len = UnicodeUtil::codePointToUtf8(this->asCodePoint(), buf);
+    ret.append(buf, len);
+  }
+  return ret;
+}
+
 // ###########################
 // ##     KeyCodeReader     ##
 // ###########################
@@ -160,6 +503,7 @@ static ssize_t readAndAppendByte(int fd, std::string &out, int timeout) {
   } while (false)
 
 ssize_t KeyCodeReader::fetch(AtomicSigSet &&watchSigSet) {
+  this->event = {};
   {
     sigset_t set;
     sigfillset(&set);
@@ -217,6 +561,7 @@ ssize_t KeyCodeReader::fetch(AtomicSigSet &&watchSigSet) {
     }
   }
 END:
+  this->event = KeyEvent::fromEscapeSeq(this->keycode);
   return static_cast<ssize_t>(this->keycode.size());
 }
 

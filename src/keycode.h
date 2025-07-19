@@ -21,6 +21,8 @@
 #include <vector>
 
 #include "misc/detect.hpp"
+#include "misc/enum_util.hpp"
+#include "misc/flag_util.hpp"
 #include "misc/resource.hpp"
 #include "misc/result.hpp"
 #include "signals.h"
@@ -46,7 +48,7 @@ struct ReadWithTimeoutParam {
  * @param param
  * @return
  * if timeout, return -2
- * if has error, return -1 and set errno
+ * if error, return -1 and set errno
  * otherwise, return non-negative number
  */
 ssize_t readWithTimeout(int fd, char *buf, size_t bufSize, ReadWithTimeoutParam param);
@@ -55,6 +57,124 @@ inline ssize_t readRetryWithTimeout(int fd, char *buf, size_t bufSize, int timeo
   return readWithTimeout(fd, buf, bufSize, {.retry = true, .timeoutMSec = timeoutMSec});
 }
 
+#define EACH_MODIFIER_KEY(OP)                                                                      \
+  OP(SHIFT, (1u << 0u), "shift")                                                                   \
+  OP(ALT, (1u << 1u), "alt")                                                                       \
+  OP(CTRL, (1u << 2u), "ctrl")                                                                     \
+  OP(SUPER, (1u << 3u), "super")                                                                   \
+  OP(HYPER, (1u << 4u), "hyper")                                                                   \
+  OP(META, (1u << 5u), "meta")                                                                     \
+  OP(CAPS, (1u << 6u), "caps_lock")                                                                \
+  OP(NUM, (1u << 7u), "num_lock")
+
+// for kitty keyboard protocol
+enum class ModifierKey : unsigned char {
+#define GEN_ENUM(E, D, S) E = (D),
+  EACH_MODIFIER_KEY(GEN_ENUM)
+#undef GEN_ENUM
+};
+
+template <>
+struct allow_enum_bitop<ModifierKey> : std::true_type {};
+
+#define EACH_FUNCTION_KEY(OP)                                                                      \
+  OP(ESCAPE, "esc")                                                                                \
+  OP(ENTER, "")                                                                                    \
+  OP(TAB, "")                                                                                      \
+  OP(BACKSPACE, "bs")                                                                              \
+  OP(INSERT, "ins")                                                                                \
+  OP(DELETE, "del")                                                                                \
+  OP(LEFT, "")                                                                                     \
+  OP(RIGHT, "")                                                                                    \
+  OP(UP, "")                                                                                       \
+  OP(DOWN, "")                                                                                     \
+  OP(PAGE_UP, "pgup")                                                                              \
+  OP(PAGE_DOWN, "pgdn")                                                                            \
+  OP(HOME, "")                                                                                     \
+  OP(END, "")                                                                                      \
+  OP(CAPS_LOCK, "caps")                                                                            \
+  OP(SCROLL_LOCK, "scrlk")                                                                         \
+  OP(NUM_LOCK, "numlk")                                                                            \
+  OP(PRINT_SCREEN, "prtsc")                                                                        \
+  OP(PAUSE, "break")                                                                               \
+  OP(MENU, "")                                                                                     \
+  OP(F1, "")                                                                                       \
+  OP(F2, "")                                                                                       \
+  OP(F3, "")                                                                                       \
+  OP(F4, "")                                                                                       \
+  OP(F5, "")                                                                                       \
+  OP(F6, "")                                                                                       \
+  OP(F7, "")                                                                                       \
+  OP(F8, "")                                                                                       \
+  OP(F9, "")                                                                                       \
+  OP(F10, "")                                                                                      \
+  OP(F11, "")                                                                                      \
+  OP(F12, "")                                                                                      \
+  OP(BRACKET_START, "") /* for bracket-paste mode */
+
+enum class FunctionKey : unsigned char {
+#define GEN_ENUM(E, A) E,
+  EACH_FUNCTION_KEY(GEN_ENUM)
+#undef GEN_ENUM
+};
+
+class KeyEvent {
+private:
+  static constexpr const char *BRACKET_START = "\x1b[200~";
+  static constexpr unsigned int CODE_MASK = (1u << 24) - 1; // 23bit
+  static_assert(sizeof(FunctionKey) * 8 <= 23);
+
+  /**
+   * | 1bit (if 1, function key) | 23bit (code point or function key) | 8bit (modifiers)
+   */
+  unsigned int value{0};
+
+public:
+  static Optional<KeyEvent> fromEscapeSeq(StringRef seq);
+
+  static Optional<KeyEvent> parseHRNotation(StringRef ref, std::string *err);
+
+  constexpr KeyEvent() = default;
+
+  constexpr explicit KeyEvent(int codePoint, ModifierKey modifiers = {})
+      : value((static_cast<unsigned int>(codePoint) & CODE_MASK) << 8 | toUnderlying(modifiers)) {}
+
+  constexpr explicit KeyEvent(FunctionKey funcKey, ModifierKey modifiers = {})
+      : value((static_cast<unsigned int>(funcKey) & CODE_MASK) << 8 | toUnderlying(modifiers) |
+              1u << 31u) {}
+
+  bool isFuncKey() const { return this->value & (1u << 31u); }
+
+  ModifierKey modifiers() const { return static_cast<ModifierKey>(this->value & 0xFF); }
+
+  bool hasModifier(ModifierKey modifier) const { return hasFlag(this->modifiers(), modifier); }
+
+  int asCodePoint() const {
+    assert(!this->isFuncKey());
+    return static_cast<int>(this->asCode());
+  }
+
+  FunctionKey asFuncKey() const {
+    assert(this->isFuncKey());
+    return static_cast<FunctionKey>(this->asCode());
+  }
+
+  bool operator==(const KeyEvent &o) const { return this->value == o.value; }
+
+  unsigned int rawValue() const { return this->value; }
+
+  std::string toString() const;
+
+  struct Hasher {
+    size_t operator()(const KeyEvent &event) const {
+      return std::hash<unsigned int>()(event.rawValue());
+    }
+  };
+
+private:
+  unsigned int asCode() const { return (this->value >> 8) & CODE_MASK; }
+};
+
 class KeyCodeReader {
 public:
   static constexpr int DEFAULT_READ_TIMEOUT_MSEC = 100;
@@ -62,7 +182,8 @@ public:
 private:
   int fd{-1};
   int timeout{DEFAULT_READ_TIMEOUT_MSEC};
-  std::string keycode; // single utf8 character or escape sequence
+  std::string keycode;      // single utf8 character (maybe raw bytes) or escape sequence
+  Optional<KeyEvent> event; // recognized key event (via ANSI Escape Sequence)
 
 public:
   explicit KeyCodeReader(int fd) : fd(fd) {}
@@ -74,6 +195,8 @@ public:
   bool empty() const { return this->keycode.empty(); }
 
   const std::string &get() const { return this->keycode; }
+
+  Optional<KeyEvent> getEvent() const { return this->event; }
 
   void clear() { this->keycode.clear(); }
 

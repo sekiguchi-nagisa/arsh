@@ -636,6 +636,8 @@ ssize_t LineEditorObject::editInRawMode(ARState &state, RenderingContext &ctx) {
     const unsigned int prevYankedSize = yankedSize;
     yankedSize = 0;
 
+    LOG(TRACE_EDIT, "keycode:%s, event:%s", KeyBindings::toCaret(reader.get()).c_str(),
+        reader.getEvent().hasValue() ? reader.getEvent().unwrap().toString().c_str() : "");
     if (!reader.hasControlChar()) {
       auto &buf = reader.get();
       if (const bool merge = buf != " "; ctx.buf.insertToCursor(buf, merge)) {
