@@ -1,0 +1,597 @@
+
+#include "../test_common.h"
+
+#include "gtest/gtest.h"
+
+#include <keycode.h>
+#include <misc/fatal.h>
+
+using namespace arsh;
+
+struct Pipe {
+  int fds[2];
+
+  Pipe() {
+    if (pipe(this->fds) < 0) {
+      fatal_perror("pipe creation failed\n");
+    }
+  }
+
+  ~Pipe() {
+    for (auto &f : this->fds) {
+      close(f);
+    }
+  }
+
+  void write(StringRef ref) const {
+    const auto r = ::write(this->getWritePipe(), ref.data(), ref.size());
+    static_cast<void>(r);
+  }
+
+  int getReadPipe() const { return this->fds[0]; }
+
+  int getWritePipe() const { return this->fds[1]; }
+};
+
+TEST(KeyCodeReaderTest, base) {
+  Pipe pipe;
+  pipe.write("1あ2\t\r");
+  KeyCodeReader reader(pipe.getReadPipe());
+  ASSERT_TRUE(reader.empty());
+  ASSERT_EQ(1, reader.fetch());
+  ASSERT_EQ("1", reader.get());
+
+  ASSERT_EQ(3, reader.fetch());
+  ASSERT_EQ("あ", reader.get());
+  ASSERT_FALSE(reader.hasControlChar());
+
+  ASSERT_EQ(1, reader.fetch());
+  ASSERT_EQ("2", reader.get());
+
+  ASSERT_EQ(1, reader.fetch());
+  ASSERT_EQ("\t", reader.get());
+  ASSERT_TRUE(reader.hasControlChar());
+
+  ASSERT_EQ(1, reader.fetch());
+  ASSERT_EQ("\r", reader.get());
+  ASSERT_TRUE(reader.hasControlChar());
+}
+
+#define ESC_(s) "\x1b" s
+
+TEST(KeyCodeReaderTest, escapeSeq) {
+  Pipe pipe;
+  pipe.write(ESC_("fあ") ESC_("OF") ESC_("[A") ESC_("[1~") ESC_("[200~1") ESC_("[1;3D")
+                 ESC_("\x1b[A"));
+  KeyCodeReader reader(pipe.getReadPipe());
+  ASSERT_TRUE(reader.empty());
+
+  ASSERT_EQ(2, reader.fetch());
+  ASSERT_EQ(ESC_("f"), reader.get());
+  ASSERT_TRUE(reader.hasControlChar());
+  ASSERT_TRUE(reader.hasEscapeSeq());
+
+  ASSERT_EQ(3, reader.fetch());
+  ASSERT_EQ("あ", reader.get());
+  ASSERT_FALSE(reader.hasControlChar());
+  ASSERT_FALSE(reader.hasEscapeSeq());
+
+  ASSERT_EQ(3, reader.fetch());
+  ASSERT_EQ(ESC_("OF"), reader.get());
+  ASSERT_TRUE(reader.hasControlChar());
+  ASSERT_TRUE(reader.hasEscapeSeq());
+
+  ASSERT_EQ(3, reader.fetch());
+  ASSERT_EQ(ESC_("[A"), reader.get());
+  ASSERT_TRUE(reader.hasControlChar());
+  ASSERT_TRUE(reader.hasEscapeSeq());
+
+  ASSERT_EQ(4, reader.fetch());
+  ASSERT_EQ(ESC_("[1~"), reader.get());
+  ASSERT_TRUE(reader.hasControlChar());
+  ASSERT_TRUE(reader.hasEscapeSeq());
+
+  ASSERT_EQ(6, reader.fetch());
+  ASSERT_EQ(ESC_("[200~"), reader.get());
+  ASSERT_TRUE(reader.hasControlChar());
+  ASSERT_TRUE(reader.hasEscapeSeq());
+
+  ASSERT_EQ(1, reader.fetch());
+  ASSERT_EQ("1", reader.get());
+  ASSERT_FALSE(reader.hasControlChar());
+  ASSERT_FALSE(reader.hasEscapeSeq());
+
+  ASSERT_EQ(6, reader.fetch());
+  ASSERT_EQ(ESC_("[1;3D"), reader.get());
+  ASSERT_TRUE(reader.hasControlChar());
+  ASSERT_TRUE(reader.hasEscapeSeq());
+
+  ASSERT_EQ(4, reader.fetch());
+  ASSERT_EQ(ESC_("\x1b[A"), reader.get());
+  ASSERT_TRUE(reader.hasControlChar());
+  ASSERT_TRUE(reader.hasEscapeSeq());
+}
+
+TEST(KeyCodeReaderTest, timeout) {
+  {
+    Pipe pipe;
+    pipe.write("\x1b[");
+    KeyCodeReader reader(pipe.getReadPipe());
+    ASSERT_TRUE(reader.empty());
+    ASSERT_EQ(2, reader.fetch());
+    ASSERT_EQ("\x1b[", reader.get());
+  }
+
+  {
+    Pipe pipe;
+    pipe.write("\x1b");
+    KeyCodeReader reader(pipe.getReadPipe());
+    ASSERT_TRUE(reader.empty());
+    ASSERT_EQ(1, reader.fetch());
+    ASSERT_EQ("\x1b", reader.get());
+  }
+}
+
+TEST(KeyCodeReaderTest, invalid) {
+  Pipe pipe;
+  pipe.write("\xFF\xC2\xFF\xE0\x80\xFF\xF0\x80");
+  KeyCodeReader reader(pipe.getReadPipe());
+  ASSERT_TRUE(reader.empty());
+  ASSERT_EQ(1, reader.fetch());
+  ASSERT_EQ("\xFF", reader.get());
+
+  ASSERT_EQ(2, reader.fetch());
+  ASSERT_EQ("\xC2\xFF", reader.get());
+
+  ASSERT_EQ(3, reader.fetch());
+  ASSERT_EQ("\xE0\x80\xFF", reader.get());
+
+  ASSERT_EQ(2, reader.fetch());
+  ASSERT_EQ("\xF0\x80", reader.get());
+}
+
+TEST(KeyCodeReaderTest, bracketError) {
+  {
+    Pipe pipe;
+    pipe.write("12345");
+    KeyCodeReader reader(pipe.getReadPipe());
+    ASSERT_FALSE(reader.intoBracketedPasteMode([](StringRef) { return true; }));
+    ASSERT_EQ(ETIME, errno);
+  }
+
+  {
+    Pipe pipe;
+    pipe.write("12345\x1b[201");
+    KeyCodeReader reader(pipe.getReadPipe());
+    ASSERT_FALSE(reader.intoBracketedPasteMode([](StringRef) { return true; }));
+    ASSERT_EQ(ETIME, errno);
+  }
+
+  {
+    Pipe pipe;
+    pipe.write("12345\x1b[201~");
+    KeyCodeReader reader(pipe.getReadPipe());
+    ASSERT_FALSE(reader.intoBracketedPasteMode([](StringRef) { return false; }));
+    ASSERT_EQ(ENOMEM, errno);
+  }
+}
+
+struct CaretTest : public ::testing::Test {
+  static void checkCaret(StringRef caret, StringRef value) {
+    auto v = KeyBindings::parseCaret(caret);
+    ASSERT_EQ(value, v);
+    ASSERT_EQ(caret, KeyBindings::toCaret(v));
+  }
+};
+
+TEST_F(CaretTest, caret1) {
+  ASSERT_NO_FATAL_FAILURE(checkCaret("^@", StringRef("\0", 1)));
+  ASSERT_NO_FATAL_FAILURE(checkCaret("^A", "\x01"));
+  ASSERT_NO_FATAL_FAILURE(checkCaret("^B", "\x02"));
+  ASSERT_NO_FATAL_FAILURE(checkCaret("^C", "\x03"));
+  ASSERT_NO_FATAL_FAILURE(checkCaret("^D", "\x04"));
+  ASSERT_NO_FATAL_FAILURE(checkCaret("^E", "\x05"));
+  ASSERT_NO_FATAL_FAILURE(checkCaret("^F", "\x06"));
+  ASSERT_NO_FATAL_FAILURE(checkCaret("^G", "\x07"));
+  ASSERT_NO_FATAL_FAILURE(checkCaret("^H", "\x08"));
+  ASSERT_NO_FATAL_FAILURE(checkCaret("^I", "\x09"));
+  ASSERT_NO_FATAL_FAILURE(checkCaret("^J", "\x0A"));
+  ASSERT_NO_FATAL_FAILURE(checkCaret("^K", "\x0B"));
+  ASSERT_NO_FATAL_FAILURE(checkCaret("^L", "\x0C"));
+  ASSERT_NO_FATAL_FAILURE(checkCaret("^M", "\x0D"));
+  ASSERT_NO_FATAL_FAILURE(checkCaret("^N", "\x0E"));
+  ASSERT_NO_FATAL_FAILURE(checkCaret("^O", "\x0F"));
+  ASSERT_NO_FATAL_FAILURE(checkCaret("^P", "\x10"));
+  ASSERT_NO_FATAL_FAILURE(checkCaret("^Q", "\x11"));
+  ASSERT_NO_FATAL_FAILURE(checkCaret("^R", "\x12"));
+  ASSERT_NO_FATAL_FAILURE(checkCaret("^S", "\x13"));
+  ASSERT_NO_FATAL_FAILURE(checkCaret("^T", "\x14"));
+  ASSERT_NO_FATAL_FAILURE(checkCaret("^U", "\x15"));
+  ASSERT_NO_FATAL_FAILURE(checkCaret("^V", "\x16"));
+  ASSERT_NO_FATAL_FAILURE(checkCaret("^W", "\x17"));
+  ASSERT_NO_FATAL_FAILURE(checkCaret("^X", "\x18"));
+  ASSERT_NO_FATAL_FAILURE(checkCaret("^Y", "\x19"));
+  ASSERT_NO_FATAL_FAILURE(checkCaret("^Z", "\x1A"));
+  ASSERT_NO_FATAL_FAILURE(checkCaret("^[", "\x1B"));
+  ASSERT_NO_FATAL_FAILURE(checkCaret("^\\", "\x1C"));
+  ASSERT_NO_FATAL_FAILURE(checkCaret("^]", "\x1D"));
+  ASSERT_NO_FATAL_FAILURE(checkCaret("^^", "\x1E"));
+  ASSERT_NO_FATAL_FAILURE(checkCaret("^_", "\x1F"));
+  ASSERT_NO_FATAL_FAILURE(checkCaret("^?", "\x7F"));
+}
+
+TEST_F(CaretTest, caret2) {
+  ASSERT_NO_FATAL_FAILURE(checkCaret("", ""));
+  ASSERT_NO_FATAL_FAILURE(checkCaret("\xFF", "\xFF"));
+  ASSERT_NO_FATAL_FAILURE(checkCaret("^[^[A^", "\x1B\x1B"
+                                               "A^"));
+  ASSERT_NO_FATAL_FAILURE(checkCaret("^1", "^1"));
+  ASSERT_NO_FATAL_FAILURE(checkCaret("^", "^"));
+  ASSERT_NO_FATAL_FAILURE(checkCaret("^^^", "\x1E^"));
+  ASSERT_NO_FATAL_FAILURE(checkCaret("12", "12"));
+  ASSERT_NO_FATAL_FAILURE(checkCaret("^[^M", "\x1b\r"));
+  ASSERT_EQ("\x1b\r", KeyBindings::parseCaret("^[\r"));
+  ASSERT_EQ("^[^M", KeyBindings::toCaret("\x1b\r"));
+}
+
+struct KeyCodeTest : public ::testing::Test {
+  static void checkCode(const StringRef seq, const Optional<KeyEvent> &event) {
+    auto ret = KeyEvent::fromEscapeSeq(seq);
+    ASSERT_EQ(event.hasValue(), ret.hasValue());
+    if (ret.hasValue()) {
+      ASSERT_EQ(event.unwrap().toString(), ret.unwrap().toString());
+    }
+  }
+};
+
+#define CSI_(S) ESC_("[" S)
+#define SS3_(C) ESC_("O" C)
+
+TEST_F(KeyCodeTest, invalid) {
+  static const struct {
+    StringRef seq;
+    Optional<KeyEvent> event;
+  } patterns[] = {
+      {"12", {}},
+  };
+  for (unsigned int i = 0; i < std::size(patterns); i++) {
+    auto &p = patterns[i];
+    SCOPED_TRACE(format("\nindex:%d, seq:%s, event:%s", i, KeyBindings::toCaret(p.seq).c_str(),
+                        p.event.hasValue() ? p.event.unwrap().toString().c_str() : ""));
+    ASSERT_NO_FATAL_FAILURE(checkCode(p.seq, p.event));
+  }
+}
+
+TEST_F(KeyCodeTest, controlChar) {
+  static const struct {
+    StringRef seq;
+    Optional<KeyEvent> event;
+  } patterns[] = {
+      {{"\x00", 0}, {}},
+      {{"\x00", 1}, KeyEvent('@', ModifierKey::CTRL)},
+      {"\x01", KeyEvent('a', ModifierKey::CTRL)},
+      {"\x02", KeyEvent('b', ModifierKey::CTRL)},
+      {"\x03", KeyEvent('c', ModifierKey::CTRL)},
+      {"\x04", KeyEvent('d', ModifierKey::CTRL)},
+      {"\x05", KeyEvent('e', ModifierKey::CTRL)},
+      {"\x06", KeyEvent('f', ModifierKey::CTRL)},
+      {"\x07", KeyEvent('g', ModifierKey::CTRL)},
+      {"\x08", KeyEvent('h', ModifierKey::CTRL)},
+      {"\x09", KeyEvent('i', ModifierKey::CTRL)},
+      {"\x0A", KeyEvent('j', ModifierKey::CTRL)},
+      {"\x0B", KeyEvent('k', ModifierKey::CTRL)},
+      {"\x0C", KeyEvent('l', ModifierKey::CTRL)},
+      {"\x0D", KeyEvent('m', ModifierKey::CTRL)},
+      {"\x0E", KeyEvent('n', ModifierKey::CTRL)},
+      {"\x0F", KeyEvent('o', ModifierKey::CTRL)},
+      {"\x10", KeyEvent('p', ModifierKey::CTRL)},
+      {"\x11", KeyEvent('q', ModifierKey::CTRL)},
+      {"\x12", KeyEvent('r', ModifierKey::CTRL)},
+      {"\x13", KeyEvent('s', ModifierKey::CTRL)},
+      {"\x14", KeyEvent('t', ModifierKey::CTRL)},
+      {"\x15", KeyEvent('u', ModifierKey::CTRL)},
+      {"\x16", KeyEvent('v', ModifierKey::CTRL)},
+      {"\x17", KeyEvent('w', ModifierKey::CTRL)},
+      {"\x18", KeyEvent('x', ModifierKey::CTRL)},
+      {"\x19", KeyEvent('y', ModifierKey::CTRL)},
+      {"\x1A", KeyEvent('z', ModifierKey::CTRL)},
+      {"\x1B", KeyEvent('[', ModifierKey::CTRL)},
+      {"\x1C", KeyEvent('\\', ModifierKey::CTRL)},
+      {"\x1D", KeyEvent(']', ModifierKey::CTRL)},
+      {"\x1E", KeyEvent('^', ModifierKey::CTRL)},
+      {"\x1F", KeyEvent('_', ModifierKey::CTRL)},
+      {"\x7F", KeyEvent('?', ModifierKey::CTRL)},
+  };
+  for (unsigned int i = 0; i < std::size(patterns); i++) {
+    auto &p = patterns[i];
+    SCOPED_TRACE(format("\nindex:%d, seq:%s, event:%s", i, KeyBindings::toCaret(p.seq).c_str(),
+                        p.event.hasValue() ? p.event.unwrap().toString().c_str() : ""));
+    ASSERT_NO_FATAL_FAILURE(checkCode(p.seq, p.event));
+  }
+}
+
+TEST_F(KeyCodeTest, alt1) {
+  static const struct {
+    StringRef seq;
+    Optional<KeyEvent> event;
+  } patterns[] = {
+      {ESC_("a"), KeyEvent('a', ModifierKey::ALT)}, {ESC_("b"), KeyEvent('b', ModifierKey::ALT)},
+      {ESC_("c"), KeyEvent('c', ModifierKey::ALT)}, {ESC_("d"), KeyEvent('d', ModifierKey::ALT)},
+      {ESC_("e"), KeyEvent('e', ModifierKey::ALT)}, {ESC_("f"), KeyEvent('f', ModifierKey::ALT)},
+      {ESC_("g"), KeyEvent('g', ModifierKey::ALT)}, {ESC_("h"), KeyEvent('h', ModifierKey::ALT)},
+      {ESC_("i"), KeyEvent('i', ModifierKey::ALT)}, {ESC_("j"), KeyEvent('j', ModifierKey::ALT)},
+      {ESC_("k"), KeyEvent('k', ModifierKey::ALT)}, {ESC_("l"), KeyEvent('l', ModifierKey::ALT)},
+      {ESC_("m"), KeyEvent('m', ModifierKey::ALT)}, {ESC_("n"), KeyEvent('n', ModifierKey::ALT)},
+      {ESC_("o"), KeyEvent('o', ModifierKey::ALT)}, {ESC_("p"), KeyEvent('p', ModifierKey::ALT)},
+      {ESC_("q"), KeyEvent('q', ModifierKey::ALT)}, {ESC_("r"), KeyEvent('r', ModifierKey::ALT)},
+      {ESC_("s"), KeyEvent('s', ModifierKey::ALT)}, {ESC_("t"), KeyEvent('t', ModifierKey::ALT)},
+      {ESC_("u"), KeyEvent('u', ModifierKey::ALT)}, {ESC_("v"), KeyEvent('v', ModifierKey::ALT)},
+      {ESC_("w"), KeyEvent('w', ModifierKey::ALT)}, {ESC_("x"), KeyEvent('x', ModifierKey::ALT)},
+      {ESC_("y"), KeyEvent('y', ModifierKey::ALT)}, {ESC_("z"), KeyEvent('z', ModifierKey::ALT)},
+  };
+  for (unsigned int i = 0; i < std::size(patterns); i++) {
+    auto &p = patterns[i];
+    SCOPED_TRACE(format("\nindex:%d, seq:%s, event:%s", i, KeyBindings::toCaret(p.seq).c_str(),
+                        p.event.hasValue() ? p.event.unwrap().toString().c_str() : ""));
+    ASSERT_NO_FATAL_FAILURE(checkCode(p.seq, p.event));
+  }
+}
+
+TEST_F(KeyCodeTest, alt2) {
+  static const struct {
+    StringRef seq;
+    Optional<KeyEvent> event;
+  } patterns[] = {
+      {ESC_("A"), KeyEvent('a', ModifierKey::ALT | ModifierKey::SHIFT)},
+      {ESC_("B"), KeyEvent('b', ModifierKey::ALT | ModifierKey::SHIFT)},
+      {ESC_("C"), KeyEvent('c', ModifierKey::ALT | ModifierKey::SHIFT)},
+      {ESC_("D"), KeyEvent('d', ModifierKey::ALT | ModifierKey::SHIFT)},
+      {ESC_("E"), KeyEvent('e', ModifierKey::ALT | ModifierKey::SHIFT)},
+      {ESC_("F"), KeyEvent('f', ModifierKey::ALT | ModifierKey::SHIFT)},
+      {ESC_("G"), KeyEvent('g', ModifierKey::ALT | ModifierKey::SHIFT)},
+      {ESC_("H"), KeyEvent('h', ModifierKey::ALT | ModifierKey::SHIFT)},
+      {ESC_("I"), KeyEvent('i', ModifierKey::ALT | ModifierKey::SHIFT)},
+      {ESC_("J"), KeyEvent('j', ModifierKey::ALT | ModifierKey::SHIFT)},
+      {ESC_("K"), KeyEvent('k', ModifierKey::ALT | ModifierKey::SHIFT)},
+      {ESC_("L"), KeyEvent('l', ModifierKey::ALT | ModifierKey::SHIFT)},
+      {ESC_("M"), KeyEvent('m', ModifierKey::ALT | ModifierKey::SHIFT)},
+      {ESC_("N"), KeyEvent('n', ModifierKey::ALT | ModifierKey::SHIFT)},
+      {ESC_("O"), KeyEvent('o', ModifierKey::ALT | ModifierKey::SHIFT)},
+      {ESC_("P"), KeyEvent('p', ModifierKey::ALT | ModifierKey::SHIFT)},
+      {ESC_("Q"), KeyEvent('q', ModifierKey::ALT | ModifierKey::SHIFT)},
+      {ESC_("R"), KeyEvent('r', ModifierKey::ALT | ModifierKey::SHIFT)},
+      {ESC_("S"), KeyEvent('s', ModifierKey::ALT | ModifierKey::SHIFT)},
+      {ESC_("T"), KeyEvent('t', ModifierKey::ALT | ModifierKey::SHIFT)},
+      {ESC_("U"), KeyEvent('u', ModifierKey::ALT | ModifierKey::SHIFT)},
+      {ESC_("V"), KeyEvent('v', ModifierKey::ALT | ModifierKey::SHIFT)},
+      {ESC_("W"), KeyEvent('w', ModifierKey::ALT | ModifierKey::SHIFT)},
+      {ESC_("X"), KeyEvent('x', ModifierKey::ALT | ModifierKey::SHIFT)},
+      {ESC_("Y"), KeyEvent('y', ModifierKey::ALT | ModifierKey::SHIFT)},
+      {ESC_("Z"), KeyEvent('z', ModifierKey::ALT | ModifierKey::SHIFT)},
+  };
+  for (unsigned int i = 0; i < std::size(patterns); i++) {
+    auto &p = patterns[i];
+    SCOPED_TRACE(format("\nindex:%d, seq:%s, event:%s", i, KeyBindings::toCaret(p.seq).c_str(),
+                        p.event.hasValue() ? p.event.unwrap().toString().c_str() : ""));
+    ASSERT_NO_FATAL_FAILURE(checkCode(p.seq, p.event));
+  }
+}
+
+TEST_F(KeyCodeTest, alt3) {
+  static const struct {
+    StringRef seq;
+    Optional<KeyEvent> event;
+  } patterns[] = {
+      {ESC_("0"), KeyEvent('0', ModifierKey::ALT)},   {ESC_("1"), KeyEvent('1', ModifierKey::ALT)},
+      {ESC_("2"), KeyEvent('2', ModifierKey::ALT)},   {ESC_("3"), KeyEvent('3', ModifierKey::ALT)},
+      {ESC_("4"), KeyEvent('4', ModifierKey::ALT)},   {ESC_("5"), KeyEvent('5', ModifierKey::ALT)},
+      {ESC_("6"), KeyEvent('6', ModifierKey::ALT)},   {ESC_("7"), KeyEvent('7', ModifierKey::ALT)},
+      {ESC_("8"), KeyEvent('8', ModifierKey::ALT)},   {ESC_("9"), KeyEvent('9', ModifierKey::ALT)},
+      {ESC_(" "), KeyEvent(' ', ModifierKey::ALT)},   {ESC_("!"), KeyEvent('!', ModifierKey::ALT)},
+      {ESC_("\""), KeyEvent('"', ModifierKey::ALT)},  {ESC_("#"), KeyEvent('#', ModifierKey::ALT)},
+      {ESC_("$"), KeyEvent('$', ModifierKey::ALT)},   {ESC_("%"), KeyEvent('%', ModifierKey::ALT)},
+      {ESC_("&"), KeyEvent('&', ModifierKey::ALT)},   {ESC_("'"), KeyEvent('\'', ModifierKey::ALT)},
+      {ESC_("("), KeyEvent('(', ModifierKey::ALT)},   {ESC_(")"), KeyEvent(')', ModifierKey::ALT)},
+      {ESC_("*"), KeyEvent('*', ModifierKey::ALT)},   {ESC_("+"), KeyEvent('+', ModifierKey::ALT)},
+      {ESC_(","), KeyEvent(',', ModifierKey::ALT)},   {ESC_("-"), KeyEvent('-', ModifierKey::ALT)},
+      {ESC_("."), KeyEvent('.', ModifierKey::ALT)},   {ESC_("/"), KeyEvent('/', ModifierKey::ALT)},
+      {ESC_(":"), KeyEvent(':', ModifierKey::ALT)},   {ESC_(";"), KeyEvent(';', ModifierKey::ALT)},
+      {ESC_("<"), KeyEvent('<', ModifierKey::ALT)},   {ESC_("="), KeyEvent('=', ModifierKey::ALT)},
+      {ESC_(">"), KeyEvent('>', ModifierKey::ALT)},   {ESC_("?"), KeyEvent('?', ModifierKey::ALT)},
+      {ESC_("@"), KeyEvent('@', ModifierKey::ALT)},   {ESC_("["), KeyEvent('[', ModifierKey::ALT)},
+      {ESC_("\\"), KeyEvent('\\', ModifierKey::ALT)}, {ESC_("]"), KeyEvent(']', ModifierKey::ALT)},
+      {ESC_("^"), KeyEvent('^', ModifierKey::ALT)},   {ESC_("_"), KeyEvent('_', ModifierKey::ALT)},
+      {ESC_("`"), KeyEvent('`', ModifierKey::ALT)},   {ESC_("{"), KeyEvent('{', ModifierKey::ALT)},
+      {ESC_("|"), KeyEvent('|', ModifierKey::ALT)},   {ESC_("}"), KeyEvent('}', ModifierKey::ALT)},
+      {ESC_("~"), KeyEvent('~', ModifierKey::ALT)},
+  };
+  for (unsigned int i = 0; i < std::size(patterns); i++) {
+    auto &p = patterns[i];
+    SCOPED_TRACE(format("\nindex:%d, seq:%s, event:%s", i, KeyBindings::toCaret(p.seq).c_str(),
+                        p.event.hasValue() ? p.event.unwrap().toString().c_str() : ""));
+    ASSERT_NO_FATAL_FAILURE(checkCode(p.seq, p.event));
+  }
+}
+
+TEST_F(KeyCodeTest, alt4) {
+  static const struct {
+    StringRef seq;
+    Optional<KeyEvent> event;
+  } patterns[] = {
+      {{ESC_("\x00"), 2}, KeyEvent('@', ModifierKey::CTRL | ModifierKey::ALT)},
+      {ESC_("\x01"), KeyEvent('a', ModifierKey::CTRL | ModifierKey::ALT)},
+      {ESC_("\x02"), KeyEvent('b', ModifierKey::CTRL | ModifierKey::ALT)},
+      {ESC_("\x03"), KeyEvent('c', ModifierKey::CTRL | ModifierKey::ALT)},
+      {ESC_("\x04"), KeyEvent('d', ModifierKey::CTRL | ModifierKey::ALT)},
+      {ESC_("\x05"), KeyEvent('e', ModifierKey::CTRL | ModifierKey::ALT)},
+      {ESC_("\x06"), KeyEvent('f', ModifierKey::CTRL | ModifierKey::ALT)},
+      {ESC_("\x07"), KeyEvent('g', ModifierKey::CTRL | ModifierKey::ALT)},
+      {ESC_("\x08"), KeyEvent('h', ModifierKey::CTRL | ModifierKey::ALT)},
+      {ESC_("\x09"), KeyEvent('i', ModifierKey::CTRL | ModifierKey::ALT)},
+      {ESC_("\x0A"), KeyEvent('j', ModifierKey::CTRL | ModifierKey::ALT)},
+      {ESC_("\x0B"), KeyEvent('k', ModifierKey::CTRL | ModifierKey::ALT)},
+      {ESC_("\x0C"), KeyEvent('l', ModifierKey::CTRL | ModifierKey::ALT)},
+      {ESC_("\x0D"), KeyEvent('m', ModifierKey::CTRL | ModifierKey::ALT)},
+      {ESC_("\x0E"), KeyEvent('n', ModifierKey::CTRL | ModifierKey::ALT)},
+      {ESC_("\x0F"), KeyEvent('o', ModifierKey::CTRL | ModifierKey::ALT)},
+      {ESC_("\x10"), KeyEvent('p', ModifierKey::CTRL | ModifierKey::ALT)},
+      {ESC_("\x11"), KeyEvent('q', ModifierKey::CTRL | ModifierKey::ALT)},
+      {ESC_("\x12"), KeyEvent('r', ModifierKey::CTRL | ModifierKey::ALT)},
+      {ESC_("\x13"), KeyEvent('s', ModifierKey::CTRL | ModifierKey::ALT)},
+      {ESC_("\x14"), KeyEvent('t', ModifierKey::CTRL | ModifierKey::ALT)},
+      {ESC_("\x15"), KeyEvent('u', ModifierKey::CTRL | ModifierKey::ALT)},
+      {ESC_("\x16"), KeyEvent('v', ModifierKey::CTRL | ModifierKey::ALT)},
+      {ESC_("\x17"), KeyEvent('w', ModifierKey::CTRL | ModifierKey::ALT)},
+      {ESC_("\x18"), KeyEvent('x', ModifierKey::CTRL | ModifierKey::ALT)},
+      {ESC_("\x19"), KeyEvent('y', ModifierKey::CTRL | ModifierKey::ALT)},
+      {ESC_("\x1A"), KeyEvent('z', ModifierKey::CTRL | ModifierKey::ALT)},
+      {ESC_("\x1B"), KeyEvent('[', ModifierKey::CTRL | ModifierKey::ALT)},
+      {ESC_("\x1C"), KeyEvent('\\', ModifierKey::CTRL | ModifierKey::ALT)},
+      {ESC_("\x1D"), KeyEvent(']', ModifierKey::CTRL | ModifierKey::ALT)},
+      {ESC_("\x1E"), KeyEvent('^', ModifierKey::CTRL | ModifierKey::ALT)},
+      {ESC_("\x1F"), KeyEvent('_', ModifierKey::CTRL | ModifierKey::ALT)},
+      {ESC_("\x7F"), KeyEvent('?', ModifierKey::CTRL | ModifierKey::ALT)},
+  };
+  for (unsigned int i = 0; i < std::size(patterns); i++) {
+    auto &p = patterns[i];
+    SCOPED_TRACE(format("\nindex:%d, seq:%s, event:%s", i, KeyBindings::toCaret(p.seq).c_str(),
+                        p.event.hasValue() ? p.event.unwrap().toString().c_str() : ""));
+    ASSERT_NO_FATAL_FAILURE(checkCode(p.seq, p.event));
+  }
+}
+
+TEST_F(KeyCodeTest, altArrow) {
+  static const struct {
+    StringRef seq;
+    Optional<KeyEvent> event;
+  } patterns[] = {
+      {ESC_("\x1b[A"), KeyEvent(FunctionKey::UP, ModifierKey::ALT)},
+      {ESC_("\x1b[B"), KeyEvent(FunctionKey::DOWN, ModifierKey::ALT)},
+      {ESC_("\x1b[C"), KeyEvent(FunctionKey::RIGHT, ModifierKey::ALT)},
+      {ESC_("\x1b[D"), KeyEvent(FunctionKey::LEFT, ModifierKey::ALT)},
+      {ESC_("\x1b[H"), {}},
+      {ESC_("\x1b[F"), {}},
+      {CSI_("1;3A"), KeyEvent(FunctionKey::UP, ModifierKey::ALT)},
+      {CSI_("1;3B"), KeyEvent(FunctionKey::DOWN, ModifierKey::ALT)},
+      {CSI_("1;3C"), KeyEvent(FunctionKey::RIGHT, ModifierKey::ALT)},
+      {CSI_("1;3D"), KeyEvent(FunctionKey::LEFT, ModifierKey::ALT)},
+  };
+  for (unsigned int i = 0; i < std::size(patterns); i++) {
+    auto &p = patterns[i];
+    SCOPED_TRACE(format("\nindex:%d, seq:%s, event:%s", i, KeyBindings::toCaret(p.seq).c_str(),
+                        p.event.hasValue() ? p.event.unwrap().toString().c_str() : ""));
+    ASSERT_NO_FATAL_FAILURE(checkCode(p.seq, p.event));
+  }
+}
+
+TEST_F(KeyCodeTest, funcKey) {
+  static const struct {
+    StringRef seq;
+    Optional<KeyEvent> event;
+  } patterns[] = {
+      {CSI_("27u"), KeyEvent(FunctionKey::ESCAPE)},
+      {CSI_("13u"), KeyEvent(FunctionKey::ENTER)},
+      {CSI_("9u"), KeyEvent(FunctionKey::TAB)},
+      {CSI_("127u"), KeyEvent(FunctionKey::BACKSPACE)},
+
+      {CSI_("1~"), {}},
+      {CSI_("2~"), KeyEvent(FunctionKey::INSERT)},
+      {CSI_("3~"), KeyEvent(FunctionKey::DELETE)},
+      {CSI_("4~"), {}},
+      {CSI_("5~"), KeyEvent(FunctionKey::PAGE_UP)},
+      {CSI_("6~"), KeyEvent(FunctionKey::PAGE_DOWN)},
+
+      {CSI_("A"), KeyEvent(FunctionKey::UP)},
+      {CSI_("1A"), KeyEvent(FunctionKey::UP)},
+      {SS3_("A"), KeyEvent(FunctionKey::UP)},
+      {CSI_("0A"), {}},
+      {CSI_("2A"), {}},
+
+      {CSI_("B"), KeyEvent(FunctionKey::DOWN)},
+      {CSI_("1B"), KeyEvent(FunctionKey::DOWN)},
+      {SS3_("B"), KeyEvent(FunctionKey::DOWN)},
+      {CSI_("0B"), {}},
+      {CSI_("2B"), {}},
+
+      {CSI_("C"), KeyEvent(FunctionKey::RIGHT)},
+      {CSI_("1C"), KeyEvent(FunctionKey::RIGHT)},
+      {SS3_("C"), KeyEvent(FunctionKey::RIGHT)},
+      {CSI_("0C"), {}},
+      {CSI_("2C"), {}},
+
+      {CSI_("D"), KeyEvent(FunctionKey::LEFT)},
+      {CSI_("1D"), KeyEvent(FunctionKey::LEFT)},
+      {SS3_("D"), KeyEvent(FunctionKey::LEFT)},
+      {CSI_("0D"), {}},
+      {CSI_("2D"), {}},
+
+      {CSI_("H"), KeyEvent(FunctionKey::HOME)},
+      {CSI_("1H"), KeyEvent(FunctionKey::HOME)},
+      {CSI_("7~"), KeyEvent(FunctionKey::HOME)},
+      {SS3_("H"), KeyEvent(FunctionKey::HOME)},
+      {CSI_("0H"), {}},
+      {CSI_("2H"), {}},
+
+      {CSI_("F"), KeyEvent(FunctionKey::END)},
+      {CSI_("1F"), KeyEvent(FunctionKey::END)},
+      {CSI_("8~"), KeyEvent(FunctionKey::END)},
+      {SS3_("F"), KeyEvent(FunctionKey::END)},
+      {CSI_("0F"), {}},
+      {CSI_("2F"), {}},
+
+      {CSI_("57358u"), KeyEvent(FunctionKey::CAPS_LOCK)},
+      {CSI_("57359u"), KeyEvent(FunctionKey::SCROLL_LOCK)},
+      {CSI_("57360u"), KeyEvent(FunctionKey::NUM_LOCK)},
+      {CSI_("57361u"), KeyEvent(FunctionKey::PRINT_SCREEN)},
+      {CSI_("57362u"), KeyEvent(FunctionKey::PAUSE)},
+      {CSI_("57363u"), KeyEvent(FunctionKey::MENU)},
+      {CSI_("29~"), KeyEvent(FunctionKey::MENU)},
+
+      {CSI_("1P"), KeyEvent(FunctionKey::F1)},
+      {CSI_("P"), KeyEvent(FunctionKey::F1)},
+      {CSI_("11~"), KeyEvent(FunctionKey::F1)},
+      {SS3_("P"), KeyEvent(FunctionKey::F1)},
+
+      {CSI_("1Q"), KeyEvent(FunctionKey::F2)},
+      {CSI_("Q"), KeyEvent(FunctionKey::F2)},
+      {CSI_("12~"), KeyEvent(FunctionKey::F2)},
+      {SS3_("Q"), KeyEvent(FunctionKey::F2)},
+
+      {CSI_("1R"), {}}, // invalid
+      {CSI_("R"), {}},  // invalid
+      {CSI_("13~"), KeyEvent(FunctionKey::F3)},
+      {SS3_("R"), KeyEvent(FunctionKey::F3)},
+
+      {CSI_("1S"), KeyEvent(FunctionKey::F4)},
+      {CSI_("S"), KeyEvent(FunctionKey::F4)},
+      {CSI_("14~"), KeyEvent(FunctionKey::F4)},
+      {SS3_("S"), KeyEvent(FunctionKey::F4)},
+
+      {CSI_("15~"), KeyEvent(FunctionKey::F5)},
+      {CSI_("16~"), {}},
+      {CSI_("17~"), KeyEvent(FunctionKey::F6)},
+      {CSI_("18~"), KeyEvent(FunctionKey::F7)},
+      {CSI_("19~"), KeyEvent(FunctionKey::F8)},
+      {CSI_("20~"), KeyEvent(FunctionKey::F9)},
+      {CSI_("21~"), KeyEvent(FunctionKey::F10)},
+      {CSI_("22~"), {}},
+      {CSI_("23~"), KeyEvent(FunctionKey::F11)},
+      {CSI_("24~"), KeyEvent(FunctionKey::F12)},
+      {CSI_("25~"), {}},
+      {CSI_("200~"), KeyEvent(FunctionKey::BRACKET_START)},
+
+      {CSI_("Z"), KeyEvent(FunctionKey::TAB, ModifierKey::SHIFT)},
+      {CSI_("1Z"), KeyEvent(FunctionKey::TAB, ModifierKey::SHIFT)},
+  };
+  for (unsigned int i = 0; i < std::size(patterns); i++) {
+    auto &p = patterns[i];
+    SCOPED_TRACE(format("\nindex:%d, seq:%s, event:%s", i, KeyBindings::toCaret(p.seq).c_str(),
+                        p.event.hasValue() ? p.event.unwrap().toString().c_str() : ""));
+    ASSERT_NO_FATAL_FAILURE(checkCode(p.seq, p.event));
+  }
+}
+
+int main(int argc, char **argv) {
+  ::testing::InitGoogleTest(&argc, argv);
+  return RUN_ALL_TESTS();
+}

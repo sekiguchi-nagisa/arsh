@@ -36,7 +36,7 @@
  * @param mask
  * @return
  * if input is ready, return 0
- * if has error, return -1 and set errno
+ * if error, return -1 and set errno
  * if timeout, return -2
  */
 static int waitForInputReady(int fd, int timeoutMSec, const sigset_t *mask) {
@@ -68,7 +68,7 @@ static int waitForInputReady(int fd, int timeoutMSec, const sigset_t *mask) {
  * @param timeoutMSec
  * @return
  * if input is ready, return 0
- * if has error, return -1 and set errno
+ * if error, return -1 and set errno
  * if timeout, return -2
  */
 static int waitForInputReady(int fd, int timeoutMSec, const sigset_t *mask) {
@@ -280,6 +280,11 @@ static Optional<KeyEvent> resolveCSI(int num, ModifierKey modifiers, const char 
       return KeyEvent(FunctionKey::F4, modifiers);
     }
     break;
+  case 'Z':
+    if (num == 1) {
+      return KeyEvent(FunctionKey::TAB, modifiers | ModifierKey::SHIFT);
+    }
+    break;
   case 'u':
     if (auto funcKey = resolveUFuncKey(num); funcKey != FunctionKey::BRACKET_START) {
       return KeyEvent(funcKey, modifiers);
@@ -349,6 +354,15 @@ Optional<KeyEvent> KeyEvent::fromEscapeSeq(const StringRef seq) {
     int ch = static_cast<unsigned char>(seq[1]);
     if (ch >= 0 && ch <= 127) {
       auto modifiers = ModifierKey::ALT;
+      if (isControlChar(ch)) {
+        setFlag(modifiers, ModifierKey::CTRL);
+        auto v = static_cast<unsigned char>(ch);
+        v ^= 64;
+        ch = v;
+        if (isShifted(ch)) {
+          ch = unshift(ch);
+        }
+      }
       if (isShifted(ch)) {
         setFlag(modifiers, ModifierKey::SHIFT);
         ch = unshift(ch);

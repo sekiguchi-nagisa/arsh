@@ -393,7 +393,7 @@ public:
    * remove custom action
    * @param ref
    * @return
-   * return removed custom action index.
+   * return the removed custom action index.
    * if not found, return -1
    */
   int remove(StringRef ref);
@@ -463,10 +463,10 @@ public:
   /**
    *
    * @param caret
-   * may be caret notation
+   * maybe caret notation
    * @param name
-   * must be action name or empty
-   * if name is empty, clear binding
+   * must be an action name or empty
+   * if a name is empty, clear binding
    * @return
    */
   AddStatus addBinding(StringRef caret, StringRef name);
