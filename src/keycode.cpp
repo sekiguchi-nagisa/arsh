@@ -21,6 +21,7 @@
 
 #include "constant.h"
 #include "keycode.h"
+#include "keyname_lex.h"
 #include "misc/format.hpp"
 #include "misc/num_util.hpp"
 #include "misc/unicode.hpp"
@@ -93,6 +94,30 @@ static int waitForInputReady(int fd, int timeoutMSec, const sigset_t *mask) {
 
 namespace arsh {
 
+const char *toString(ModifierKey modifier) {
+  switch (modifier) {
+#define GEN_CASE(E, B, S)                                                                          \
+  case ModifierKey::E:                                                                             \
+    return S;
+    EACH_MODIFIER_KEY(GEN_CASE)
+#undef GEN_CASE
+  default:
+    return "";
+  }
+}
+
+const char *toString(FunctionKey funcKey) {
+  switch (funcKey) {
+#define GEN_CASE(E)                                                                                \
+  case FunctionKey::E:                                                                             \
+    return #E;
+    EACH_FUNCTION_KEY(GEN_CASE)
+#undef GEN_CASE
+  default:
+    return "";
+  }
+}
+
 // ######################
 // ##     KeyEvent     ##
 // ######################
@@ -100,6 +125,8 @@ namespace arsh {
 static bool isShifted(int ch) { return ch >= 'A' && ch <= 'Z'; }
 
 static int unshift(int ch) { return (ch - 'A') + 'a'; }
+
+static bool isShiftable(int ch) { return (ch >= 'a' && ch <= 'z') || ch == ' '; }
 
 static Optional<KeyEvent> parseSS3Seq(const char ch) {
   FunctionKey funcKey;
@@ -215,12 +242,12 @@ static FunctionKey resolveUFuncKey(int num) {
     return FunctionKey::ESCAPE;
   case 127:
     return FunctionKey::BACKSPACE;
-  case 57358:
-    return FunctionKey::CAPS_LOCK;
+  // case 57358:
+  //   return FunctionKey::CAPS_LOCK;
   case 57359:
     return FunctionKey::SCROLL_LOCK;
-  case 57360:
-    return FunctionKey::NUM_LOCK;
+  // case 57360:
+  //   return FunctionKey::NUM_LOCK;
   case 57361:
     return FunctionKey::PRINT_SCREEN;
   case 57362:
@@ -299,6 +326,15 @@ static Optional<KeyEvent> resolveCSI(int num, ModifierKey modifiers, const char 
     break;
   }
   return {};
+}
+
+constexpr unsigned int numOfModifiers() {
+  constexpr ModifierKey table[] = {
+#define GEN_TABLE(E, D, S) ModifierKey::E,
+      EACH_MODIFIER_KEY(GEN_TABLE)
+#undef GEN_TABLE
+  };
+  return std::size(table);
 }
 
 constexpr ModifierKey fillModifiers() {
@@ -424,38 +460,273 @@ Optional<KeyEvent> KeyEvent::fromEscapeSeq(const StringRef seq) {
   return {};
 }
 
-Optional<KeyEvent> KeyEvent::parseHRNotation(StringRef ref, std::string *err) {
-  (void)ref;
-  (void)err;
-  return {};
+static std::string normalizeIdentifier(const StringRef ref) {
+  std::string value;
+  for (char ch : ref) {
+    if (ch == '_') {
+      continue;
+    }
+    if (isShifted(ch)) {
+      ch = static_cast<char>(unshift(ch));
+    }
+    value += ch;
+  }
+  return value;
+}
+
+static std::unordered_map<std::string, ModifierKey> initModifierMap() {
+  std::unordered_map<std::string, ModifierKey> ret;
+  constexpr unsigned int N = numOfModifiers();
+  for (unsigned int i = 0; i < N; i++) {
+    const auto modifier = static_cast<ModifierKey>(1u << i);
+    std::string key = normalizeIdentifier(toString(modifier));
+    assert(!key.empty());
+    ret.emplace(std::move(key), modifier);
+  }
+  return ret;
+}
+
+static const ModifierKey *lookupModifier(const std::string &normalizedKey) {
+  static const auto modifierMap = initModifierMap();
+  if (auto iter = modifierMap.find(normalizedKey); iter != modifierMap.end()) {
+    return &iter->second;
+  }
+  return nullptr;
+}
+
+constexpr unsigned int numOfFuncKey() {
+  constexpr FunctionKey table[] = {
+#define GEN_TABLE(E) FunctionKey::E,
+      EACH_FUNCTION_KEY(GEN_TABLE)
+#undef GEN_TABLE
+  };
+  return std::size(table);
+}
+
+static std::unordered_map<std::string, FunctionKey> initFuncKeyMap() {
+  std::unordered_map<std::string, FunctionKey> ret;
+  constexpr unsigned int N = numOfFuncKey();
+  for (unsigned int i = 0; i < N; i++) {
+    auto funcKey = static_cast<FunctionKey>(i);
+    if (funcKey == FunctionKey::BRACKET_START) {
+      continue;
+    }
+    auto key = normalizeIdentifier(toString(funcKey));
+    assert(!key.empty());
+    ret.emplace(std::move(key), funcKey);
+  }
+
+  // add alias
+  constexpr struct {
+    const char *alias;
+    FunctionKey funcKey;
+  } aliasTable[] = {
+      {"esc", FunctionKey::ESCAPE},
+      {"bs", FunctionKey::BACKSPACE},
+      {"ins", FunctionKey::INSERT},
+      {"del", FunctionKey::DELETE},
+      {"pgup", FunctionKey::PAGE_UP},
+      {"pgdn", FunctionKey::PAGE_DOWN},
+      /*{"caps", FunctionKey::CAPS_LOCK},*/
+      {"scrlk", FunctionKey::SCROLL_LOCK},
+      /*{"numlk", FunctionKey::NUM_LOCK},*/ {"prtsc", FunctionKey::PRINT_SCREEN},
+      {"break", FunctionKey::PAUSE},
+  };
+  for (auto &e : aliasTable) {
+    ret.emplace(e.alias, e.funcKey);
+  }
+  return ret;
+}
+
+static const FunctionKey *lookupFuncKey(const std::string &normalizedKey) {
+  static const auto funcKeyMap = initFuncKeyMap();
+  if (auto iter = funcKeyMap.find(normalizedKey); iter != funcKeyMap.end()) {
+    return &iter->second;
+  }
+  return nullptr;
+}
+
+static char lookupAsciiChar(const std::string &normalizedKey) {
+  constexpr struct {
+    StringRef abbr;
+    char ch;
+  } entries[] = {{"space", ' '}, {"plus", '+'}, {"minus", '-'}};
+  for (auto &e : entries) {
+    if (e.abbr == normalizedKey) {
+      return e.ch;
+    }
+  }
+  return '\0';
+}
+
+class KeyNameParser {
+private:
+  KeyNameLexer lexer;
+  Token token;
+  KeyNameTokenKind kind{};
+  ModifierKey modifiers{};
+  std::string *err{nullptr};
+
+public:
+  KeyNameParser(StringRef ref, std::string *err) : lexer(ref), err(err) {}
+
+  /**
+   * sequence : modifier ('+' | '-') sequence
+   *          | ASCII_CHAR
+   *          | funcKey
+   * modifier : IDENTIFIER
+   * funcKey  : IDENTIFIER
+   */
+  Optional<KeyEvent> operator()() {
+    this->fetchNext();
+
+    KeyEvent event;
+    std::string key;
+    while (this->kind == KeyNameTokenKind::IDENTIFIER) {
+      key = this->getNormalizedKey();
+      auto *modifier = lookupModifier(key);
+      if (!modifier) {
+        break;
+      }
+      this->fetchNext();
+      if (this->kind == KeyNameTokenKind::PLUS || this->kind == KeyNameTokenKind::MINUS) {
+        this->fetchNext();
+        setFlag(this->modifiers, *modifier);
+        key.clear();
+      } else {
+        if (this->err) {
+          *err += "need '+' or '-' after modifier";
+        }
+        goto ERROR;
+      }
+    }
+
+    switch (this->kind) {
+    case KeyNameTokenKind::ASCII_CHAR:
+    case KeyNameTokenKind::PLUS:
+    case KeyNameTokenKind::MINUS: {
+      StringRef ref = this->getTokenText();
+      assert(ref.size() == 1);
+      char ch = ref[0];
+      if (hasFlag(this->modifiers, ModifierKey::SHIFT) && !isShiftable(ch)) {
+        this->reportShiftError();
+        goto ERROR;
+      }
+      if (isShifted(ch)) {
+        ch = static_cast<char>(unshift(ch));
+        setFlag(this->modifiers, ModifierKey::SHIFT);
+      }
+      event = KeyEvent(ch, this->modifiers);
+      this->fetchNext();
+      break;
+    }
+    case KeyNameTokenKind::IDENTIFIER: {
+      if (key.empty()) {
+        key = this->getNormalizedKey();
+      }
+      if (auto *funcKey = lookupFuncKey(key)) {
+        event = KeyEvent(*funcKey, this->modifiers);
+      } else if (char ch = lookupAsciiChar(key); ch != '\0') {
+        if (hasFlag(this->modifiers, ModifierKey::SHIFT) && !isShiftable(ch)) {
+          this->reportShiftError();
+          goto ERROR;
+        }
+        event = KeyEvent(ch, this->modifiers);
+      } else {
+        if (this->err) {
+          *this->err += "unrecognized modifier or function key: ";
+          *this->err += this->getTokenText();
+        }
+        goto ERROR;
+      }
+      this->fetchNext();
+      break;
+    }
+    default:
+      if (this->err) {
+        *this->err += "need modifiers or keyname";
+      }
+      goto ERROR;
+    }
+
+    if (this->kind == KeyNameTokenKind::EOS) {
+      return event;
+    }
+    if (this->err) {
+      *this->err += "invalid token: ";
+      *this->err += this->lexer.toStrRef(this->token);
+    }
+
+  ERROR:
+    return {};
+  }
+
+private:
+  void fetchNext() { this->kind = this->lexer.nextToken(this->token); }
+
+  void reportShiftError() const {
+    if (this->err) {
+      *this->err += "shift modifier is only allowed with lower letter or function key";
+    }
+  }
+
+  StringRef getTokenText() const { return this->lexer.toStrRef(this->token); }
+
+  std::string getNormalizedKey() const { return normalizeIdentifier(this->getTokenText()); }
+};
+
+Optional<KeyEvent> KeyEvent::fromKeyName(StringRef ref, std::string *err) {
+  KeyNameParser parser(ref, err);
+  return parser();
+}
+
+std::string KeyEvent::parseCaret(StringRef caret) {
+  std::string value;
+  auto size = caret.size();
+  for (StringRef::size_type i = 0; i < size; i++) {
+    char ch = caret[i];
+    if (ch == '^' && i + 1 < size && isCaretTarget(caret[i + 1])) {
+      i++;
+      unsigned int v = static_cast<unsigned char>(caret[i]);
+      v ^= 64;
+      assert(isControlChar(static_cast<int>(v)));
+      ch = static_cast<char>(static_cast<int>(v));
+    }
+    value += ch;
+  }
+  return value;
+}
+
+std::string KeyEvent::toCaret(StringRef value) {
+  std::string ret;
+  for (char ch : value) {
+    if (isControlChar(ch)) {
+      unsigned int v = static_cast<unsigned char>(ch);
+      v ^= 64;
+      assert(isCaretTarget(static_cast<int>(v)));
+      ret += "^";
+      ret += static_cast<char>(static_cast<int>(v));
+    } else {
+      ret += ch;
+    }
+  }
+  return ret;
 }
 
 std::string KeyEvent::toString() const {
   std::string ret;
-  {
-    constexpr const char *table[] = {
-#define GEN_TABLE(E, D, S) S,
-        EACH_MODIFIER_KEY(GEN_TABLE)
-#undef GEN_TABLE
-    };
-
-    for (unsigned int i = 0; i < std::size(table); i++) {
-      const auto modifier = static_cast<ModifierKey>(1u << i);
-      if (this->hasModifier(modifier)) {
-        ret += table[i];
-        ret += '+';
-      }
+  constexpr unsigned int N = numOfModifiers();
+  for (unsigned int i = 0; i < N; i++) {
+    const auto modifier = static_cast<ModifierKey>(1u << i);
+    if (this->hasModifier(modifier)) {
+      ret += arsh::toString(modifier);
+      ret += '+';
     }
   }
   if (this->isFuncKey()) {
-    constexpr const char *table[] = {
-#define GEN_TABLE(E, S) #E,
-        EACH_FUNCTION_KEY(GEN_TABLE)
-#undef GEN_TABLE
-    };
-    if (unsigned int index = toUnderlying(this->asFuncKey()); index < std::size(table)) {
-      ret += table[index];
-    }
+    ret += arsh::toString(this->asFuncKey());
+  } else if (this->asCodePoint() == ' ') {
+    ret += "space";
   } else {
     char buf[4];
     const unsigned int len = UnicodeUtil::codePointToUtf8(this->asCodePoint(), buf);
@@ -677,39 +948,6 @@ int CustomActionMap::remove(StringRef ref) {
 // ##     KeyBindings    ##
 // ########################
 
-std::string KeyBindings::parseCaret(StringRef caret) {
-  std::string value;
-  auto size = caret.size();
-  for (StringRef::size_type i = 0; i < size; i++) {
-    char ch = caret[i];
-    if (ch == '^' && i + 1 < size && isCaretTarget(caret[i + 1])) {
-      i++;
-      unsigned int v = static_cast<unsigned char>(caret[i]);
-      v ^= 64;
-      assert(isControlChar(static_cast<int>(v)));
-      ch = static_cast<char>(static_cast<int>(v));
-    }
-    value += ch;
-  }
-  return value;
-}
-
-std::string KeyBindings::toCaret(StringRef value) {
-  std::string ret;
-  for (char ch : value) {
-    if (isControlChar(ch)) {
-      unsigned int v = static_cast<unsigned char>(ch);
-      v ^= 64;
-      assert(isCaretTarget(static_cast<int>(v)));
-      ret += "^";
-      ret += static_cast<char>(static_cast<int>(v));
-    } else {
-      ret += ch;
-    }
-  }
-  return ret;
-}
-
 #define CTRL_A_ "\x01"
 #define CTRL_B_ "\x02"
 #define CTRL_C_ "\x03"
@@ -880,7 +1118,7 @@ const StrRefMap<CustomActionType> &KeyBindings::getCustomActionTypes() {
 }
 
 KeyBindings::AddStatus KeyBindings::addBinding(StringRef caret, StringRef name) {
-  auto key = parseCaret(caret);
+  auto key = KeyEvent::parseCaret(caret);
   if (key.empty() || !isControlChar(key[0])) {
     return AddStatus::INVALID_START_CHAR;
   }

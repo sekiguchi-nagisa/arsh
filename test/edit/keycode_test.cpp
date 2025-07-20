@@ -1,5 +1,6 @@
 
 #include "../test_common.h"
+#include "keyname_lex.h"
 
 #include "gtest/gtest.h"
 
@@ -178,9 +179,9 @@ TEST(KeyCodeReaderTest, bracketError) {
 
 struct CaretTest : public ::testing::Test {
   static void checkCaret(StringRef caret, StringRef value) {
-    auto v = KeyBindings::parseCaret(caret);
+    auto v = KeyEvent::parseCaret(caret);
     ASSERT_EQ(value, v);
-    ASSERT_EQ(caret, KeyBindings::toCaret(v));
+    ASSERT_EQ(caret, KeyEvent::toCaret(v));
   }
 };
 
@@ -230,8 +231,8 @@ TEST_F(CaretTest, caret2) {
   ASSERT_NO_FATAL_FAILURE(checkCaret("^^^", "\x1E^"));
   ASSERT_NO_FATAL_FAILURE(checkCaret("12", "12"));
   ASSERT_NO_FATAL_FAILURE(checkCaret("^[^M", "\x1b\r"));
-  ASSERT_EQ("\x1b\r", KeyBindings::parseCaret("^[\r"));
-  ASSERT_EQ("^[^M", KeyBindings::toCaret("\x1b\r"));
+  ASSERT_EQ("\x1b\r", KeyEvent::parseCaret("^[\r"));
+  ASSERT_EQ("^[^M", KeyEvent::toCaret("\x1b\r"));
 }
 
 struct KeyCodeTest : public ::testing::Test {
@@ -239,7 +240,36 @@ struct KeyCodeTest : public ::testing::Test {
     auto ret = KeyEvent::fromEscapeSeq(seq);
     ASSERT_EQ(event.hasValue(), ret.hasValue());
     if (ret.hasValue()) {
-      ASSERT_EQ(event.unwrap().toString(), ret.unwrap().toString());
+      auto &e = event.unwrap();
+      ASSERT_EQ(e.toString(), ret.unwrap().toString());
+      if (e.isFuncKey() && e.asFuncKey() == FunctionKey::BRACKET_START) {
+        return; // ignore
+      }
+      checkName(e.toString(), e);
+    }
+  }
+
+  static void checkName(const StringRef keyName, KeyEvent event) {
+    std::string err;
+    auto ret = KeyEvent::fromKeyName(keyName, &err);
+    ASSERT_EQ("", err);
+    ASSERT_TRUE(ret.hasValue());
+    ASSERT_EQ(event.toString(), ret.unwrap().toString());
+  }
+
+  static void checkName(const StringRef keyName, const std::string &err) {
+    std::string actual;
+    auto ret = KeyEvent::fromKeyName(keyName, &actual);
+    ASSERT_FALSE(ret.hasValue());
+    ASSERT_EQ(err, actual);
+  }
+
+  static void checkName(const StringRef keyName, const Union<KeyEvent, std::string> &eventOrErr) {
+    ASSERT_TRUE(eventOrErr.hasValue());
+    if (is<KeyEvent>(eventOrErr)) {
+      checkName(keyName, get<KeyEvent>(eventOrErr));
+    } else {
+      checkName(keyName, get<std::string>(eventOrErr));
     }
   }
 };
@@ -258,7 +288,7 @@ TEST_F(KeyCodeTest, invalid) {
   };
   for (unsigned int i = 0; i < std::size(patterns); i++) {
     auto &p = patterns[i];
-    SCOPED_TRACE(format("\nindex:%d, seq:%s, event:%s", i, KeyBindings::toCaret(p.seq).c_str(),
+    SCOPED_TRACE(format("\nindex:%d, seq:%s, event:%s", i, KeyEvent::toCaret(p.seq).c_str(),
                         p.event.hasValue() ? p.event.unwrap().toString().c_str() : ""));
     ASSERT_NO_FATAL_FAILURE(checkCode(p.seq, p.event));
   }
@@ -306,7 +336,7 @@ TEST_F(KeyCodeTest, controlChar) {
   };
   for (unsigned int i = 0; i < std::size(patterns); i++) {
     auto &p = patterns[i];
-    SCOPED_TRACE(format("\nindex:%d, seq:%s, event:%s", i, KeyBindings::toCaret(p.seq).c_str(),
+    SCOPED_TRACE(format("\nindex:%d, seq:%s, event:%s", i, KeyEvent::toCaret(p.seq).c_str(),
                         p.event.hasValue() ? p.event.unwrap().toString().c_str() : ""));
     ASSERT_NO_FATAL_FAILURE(checkCode(p.seq, p.event));
   }
@@ -333,7 +363,7 @@ TEST_F(KeyCodeTest, alt1) {
   };
   for (unsigned int i = 0; i < std::size(patterns); i++) {
     auto &p = patterns[i];
-    SCOPED_TRACE(format("\nindex:%d, seq:%s, event:%s", i, KeyBindings::toCaret(p.seq).c_str(),
+    SCOPED_TRACE(format("\nindex:%d, seq:%s, event:%s", i, KeyEvent::toCaret(p.seq).c_str(),
                         p.event.hasValue() ? p.event.unwrap().toString().c_str() : ""));
     ASSERT_NO_FATAL_FAILURE(checkCode(p.seq, p.event));
   }
@@ -373,7 +403,7 @@ TEST_F(KeyCodeTest, alt2) {
   };
   for (unsigned int i = 0; i < std::size(patterns); i++) {
     auto &p = patterns[i];
-    SCOPED_TRACE(format("\nindex:%d, seq:%s, event:%s", i, KeyBindings::toCaret(p.seq).c_str(),
+    SCOPED_TRACE(format("\nindex:%d, seq:%s, event:%s", i, KeyEvent::toCaret(p.seq).c_str(),
                         p.event.hasValue() ? p.event.unwrap().toString().c_str() : ""));
     ASSERT_NO_FATAL_FAILURE(checkCode(p.seq, p.event));
   }
@@ -409,7 +439,7 @@ TEST_F(KeyCodeTest, alt3) {
   };
   for (unsigned int i = 0; i < std::size(patterns); i++) {
     auto &p = patterns[i];
-    SCOPED_TRACE(format("\nindex:%d, seq:%s, event:%s", i, KeyBindings::toCaret(p.seq).c_str(),
+    SCOPED_TRACE(format("\nindex:%d, seq:%s, event:%s", i, KeyEvent::toCaret(p.seq).c_str(),
                         p.event.hasValue() ? p.event.unwrap().toString().c_str() : ""));
     ASSERT_NO_FATAL_FAILURE(checkCode(p.seq, p.event));
   }
@@ -457,7 +487,7 @@ TEST_F(KeyCodeTest, alt4) {
   };
   for (unsigned int i = 0; i < std::size(patterns); i++) {
     auto &p = patterns[i];
-    SCOPED_TRACE(format("\nindex:%d, seq:%s, event:%s", i, KeyBindings::toCaret(p.seq).c_str(),
+    SCOPED_TRACE(format("\nindex:%d, seq:%s, event:%s", i, KeyEvent::toCaret(p.seq).c_str(),
                         p.event.hasValue() ? p.event.unwrap().toString().c_str() : ""));
     ASSERT_NO_FATAL_FAILURE(checkCode(p.seq, p.event));
   }
@@ -481,7 +511,7 @@ TEST_F(KeyCodeTest, altArrow) {
   };
   for (unsigned int i = 0; i < std::size(patterns); i++) {
     auto &p = patterns[i];
-    SCOPED_TRACE(format("\nindex:%d, seq:%s, event:%s", i, KeyBindings::toCaret(p.seq).c_str(),
+    SCOPED_TRACE(format("\nindex:%d, seq:%s, event:%s", i, KeyEvent::toCaret(p.seq).c_str(),
                         p.event.hasValue() ? p.event.unwrap().toString().c_str() : ""));
     ASSERT_NO_FATAL_FAILURE(checkCode(p.seq, p.event));
   }
@@ -542,9 +572,9 @@ TEST_F(KeyCodeTest, funcKey) {
       {CSI_("0F"), {}},
       {CSI_("2F"), {}},
 
-      {CSI_("57358u"), KeyEvent(FunctionKey::CAPS_LOCK)},
+      // {CSI_("57358u"), KeyEvent(FunctionKey::CAPS_LOCK)},
       {CSI_("57359u"), KeyEvent(FunctionKey::SCROLL_LOCK)},
-      {CSI_("57360u"), KeyEvent(FunctionKey::NUM_LOCK)},
+      // {CSI_("57360u"), KeyEvent(FunctionKey::NUM_LOCK)},
       {CSI_("57361u"), KeyEvent(FunctionKey::PRINT_SCREEN)},
       {CSI_("57362u"), KeyEvent(FunctionKey::PAUSE)},
       {CSI_("57363u"), KeyEvent(FunctionKey::MENU)},
@@ -597,7 +627,7 @@ TEST_F(KeyCodeTest, funcKey) {
   };
   for (unsigned int i = 0; i < std::size(patterns); i++) {
     auto &p = patterns[i];
-    SCOPED_TRACE(format("\nindex:%d, seq:%s, event:%s", i, KeyBindings::toCaret(p.seq).c_str(),
+    SCOPED_TRACE(format("\nindex:%d, seq:%s, event:%s", i, KeyEvent::toCaret(p.seq).c_str(),
                         p.event.hasValue() ? p.event.unwrap().toString().c_str() : ""));
     ASSERT_NO_FATAL_FAILURE(checkCode(p.seq, p.event));
   }
@@ -640,9 +670,34 @@ TEST_F(KeyCodeTest, modifier) {
   };
   for (unsigned int i = 0; i < std::size(patterns); i++) {
     auto &p = patterns[i];
-    SCOPED_TRACE(format("\nindex:%d, seq:%s, event:%s", i, KeyBindings::toCaret(p.seq).c_str(),
+    SCOPED_TRACE(format("\nindex:%d, seq:%s, event:%s", i, KeyEvent::toCaret(p.seq).c_str(),
                         p.event.hasValue() ? p.event.unwrap().toString().c_str() : ""));
     ASSERT_NO_FATAL_FAILURE(checkCode(p.seq, p.event));
+  }
+}
+
+TEST_F(KeyCodeTest, name1) {
+  static const struct {
+    std::string keyName;
+    Union<KeyEvent, std::string> eventOrErr;
+  } patterns[] = {
+      {"ctrl+m", KeyEvent('m', ModifierKey::CTRL)},
+      {"ctrl-M", KeyEvent('m', ModifierKey::CTRL | ModifierKey::SHIFT)},
+      {"ALT  -alt++", KeyEvent('+', ModifierKey::ALT)},
+      {"alt--", KeyEvent('-', ModifierKey::ALT)},
+      {"super+ ___plus___", KeyEvent('+', ModifierKey::SUPER)},
+      {"  m_Eta  + hY__P_eR-m_iNus", KeyEvent('-', ModifierKey::HYPER | ModifierKey::META)},
+      {"  ctrl  +   m   ", KeyEvent('m', ModifierKey::CTRL)},
+      {"shift - spA_ce", KeyEvent(' ', ModifierKey::SHIFT)},
+  };
+
+  for (unsigned int i = 0; i < std::size(patterns); i++) {
+    auto &p = patterns[i];
+    SCOPED_TRACE(format("\nindex:%d, keyName:%s, eventOrErr:%s", i, p.keyName.c_str(),
+                        is<KeyEvent>(p.eventOrErr) ? get<KeyEvent>(p.eventOrErr).toString().c_str()
+                        : is<std::string>(p.eventOrErr) ? get<std::string>(p.eventOrErr).c_str()
+                                                        : ""));
+    ASSERT_NO_FATAL_FAILURE(checkName(p.keyName, p.eventOrErr));
   }
 }
 

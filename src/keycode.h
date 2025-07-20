@@ -74,49 +74,53 @@ enum class ModifierKey : unsigned char {
 #undef GEN_ENUM
 };
 
+const char *toString(ModifierKey modifier);
+
 template <>
 struct allow_enum_bitop<ModifierKey> : std::true_type {};
 
 #define EACH_FUNCTION_KEY(OP)                                                                      \
-  OP(ESCAPE, "esc")                                                                                \
-  OP(ENTER, "")                                                                                    \
-  OP(TAB, "")                                                                                      \
-  OP(BACKSPACE, "bs")                                                                              \
-  OP(INSERT, "ins")                                                                                \
-  OP(DELETE, "del")                                                                                \
-  OP(LEFT, "")                                                                                     \
-  OP(RIGHT, "")                                                                                    \
-  OP(UP, "")                                                                                       \
-  OP(DOWN, "")                                                                                     \
-  OP(PAGE_UP, "pgup")                                                                              \
-  OP(PAGE_DOWN, "pgdn")                                                                            \
-  OP(HOME, "")                                                                                     \
-  OP(END, "")                                                                                      \
-  OP(CAPS_LOCK, "caps")                                                                            \
-  OP(SCROLL_LOCK, "scrlk")                                                                         \
-  OP(NUM_LOCK, "numlk")                                                                            \
-  OP(PRINT_SCREEN, "prtsc")                                                                        \
-  OP(PAUSE, "break")                                                                               \
-  OP(MENU, "")                                                                                     \
-  OP(F1, "")                                                                                       \
-  OP(F2, "")                                                                                       \
-  OP(F3, "")                                                                                       \
-  OP(F4, "")                                                                                       \
-  OP(F5, "")                                                                                       \
-  OP(F6, "")                                                                                       \
-  OP(F7, "")                                                                                       \
-  OP(F8, "")                                                                                       \
-  OP(F9, "")                                                                                       \
-  OP(F10, "")                                                                                      \
-  OP(F11, "")                                                                                      \
-  OP(F12, "")                                                                                      \
-  OP(BRACKET_START, "") /* for bracket-paste mode */
+  OP(ESCAPE) /* esc */                                                                             \
+  OP(ENTER)                                                                                        \
+  OP(TAB)                                                                                          \
+  OP(BACKSPACE) /* bs */                                                                           \
+  OP(INSERT)    /* ins */                                                                          \
+  OP(DELETE)    /* del */                                                                          \
+  OP(LEFT)                                                                                         \
+  OP(RIGHT)                                                                                        \
+  OP(UP)                                                                                           \
+  OP(DOWN)                                                                                         \
+  OP(PAGE_UP)   /* pgup */                                                                         \
+  OP(PAGE_DOWN) /* pgdn */                                                                         \
+  OP(HOME)                                                                                         \
+  OP(END)                                                                                          \
+  /*OP(CAPS_LOCK)*/ /* caps */                                                                     \
+  OP(SCROLL_LOCK)   /* scrlk */                                                                    \
+  /*OP(NUM_LOCK)*/  /* numlk */                                                                    \
+  OP(PRINT_SCREEN)  /* prtsc */                                                                    \
+  OP(PAUSE)         /* break */                                                                    \
+  OP(MENU)                                                                                         \
+  OP(F1)                                                                                           \
+  OP(F2)                                                                                           \
+  OP(F3)                                                                                           \
+  OP(F4)                                                                                           \
+  OP(F5)                                                                                           \
+  OP(F6)                                                                                           \
+  OP(F7)                                                                                           \
+  OP(F8)                                                                                           \
+  OP(F9)                                                                                           \
+  OP(F10)                                                                                          \
+  OP(F11)                                                                                          \
+  OP(F12)                                                                                          \
+  OP(BRACKET_START) /* for bracket-paste mode */
 
 enum class FunctionKey : unsigned char {
-#define GEN_ENUM(E, A) E,
+#define GEN_ENUM(E) E,
   EACH_FUNCTION_KEY(GEN_ENUM)
 #undef GEN_ENUM
 };
+
+const char *toString(FunctionKey funcKey);
 
 class KeyEvent {
 private:
@@ -132,7 +136,17 @@ private:
 public:
   static Optional<KeyEvent> fromEscapeSeq(StringRef seq);
 
-  static Optional<KeyEvent> parseHRNotation(StringRef ref, std::string *err);
+  static Optional<KeyEvent> fromKeyName(StringRef ref, std::string *err);
+
+  /**
+   * parse caret notation
+   * @param caret
+   * @return
+   * if invalid caret notation, return empty string
+   */
+  static std::string parseCaret(StringRef caret);
+
+  static std::string toCaret(StringRef value);
 
   constexpr KeyEvent() = default;
 
@@ -434,16 +448,6 @@ public:
 
   static const StrRefMap<CustomActionType> &getCustomActionTypes();
 
-  /**
-   * parse caret notation
-   * @param caret
-   * @return
-   * if invalid caret notation, return empty string
-   */
-  static std::string parseCaret(StringRef caret);
-
-  static std::string toCaret(StringRef value);
-
   KeyBindings();
 
   const EditAction *findAction(const std::string &keycode) const;
@@ -489,7 +493,7 @@ public:
   template <typename Func, enable_when<binding_consumer_requirement_v<Func>> = nullptr>
   void fillBindings(Func func) const {
     for (auto &e : this->values) {
-      auto caret = toCaret(e.first);
+      auto caret = KeyEvent::toCaret(e.first);
       const char *action = toString(e.second.type);
       if (e.second.type == EditActionType::CUSTOM) {
         action = this->customActions.findByIndex(e.second.customActionIndex)->first.get();

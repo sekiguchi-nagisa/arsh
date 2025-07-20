@@ -34,7 +34,7 @@ bool LineEditorObject::addKeyBind(ARState &state, StringRef key, StringRef name)
     break;
   case KeyBindings::AddStatus::FORBID_BRACKET_START_CODE:
     message = "cannot change binding of bracket start code `";
-    message += KeyBindings::toCaret(KeyBindings::BRACKET_START);
+    message += KeyEvent::toCaret(KeyBindings::BRACKET_START);
     message += '\'';
     break;
   case KeyBindings::AddStatus::FORBID_BRACKET_ACTION:

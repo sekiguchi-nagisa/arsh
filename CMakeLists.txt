@@ -161,6 +161,13 @@ add_gen_lexer_target(
         RE2C_OPTION "-W -Werror -c -8 -s -t ${CMAKE_CURRENT_BINARY_DIR}/src/yycond.h"
 )
 
+set(keyname_lex_src ${CMAKE_CURRENT_BINARY_DIR}/keyname_lex.cpp)
+add_gen_lexer_target(
+        TARGET gen_keyname_lexer
+        SOURCE_FILE ${CMAKE_CURRENT_SOURCE_DIR}/src/keyname_lex.re2c.cpp
+        OUTPUT_FILE ${keyname_lex_src}
+        RE2C_OPTION "-W -Werror -8 -s"
+)
 
 #==================================#
 #     generate builtin binding     #
@@ -265,7 +272,8 @@ set(ARSH_SRC
         src/token_edit.cpp
         ${lexer_src}
         ${bind_src}
-        ${embed_src})
+        ${embed_src}
+        ${keyname_lex_src})
 
 
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/src_to_str)
@@ -289,7 +297,7 @@ if (BUILD_SHARED_LIB)
 endif ()
 
 add_library(arsh_obj OBJECT ${ARSH_SRC})
-add_dependencies(arsh_obj gen_lexer)
+add_dependencies(arsh_obj gen_lexer gen_keyname_lexer)
 set_target_properties(arsh_obj PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 set(ARSH_STATIC arsh_static)
