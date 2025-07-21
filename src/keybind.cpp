@@ -167,30 +167,23 @@ KeyBindings::KeyBindings() {
       {ESC_ ENTER_, EditActionType::NEWLINE},
       {ESC_ "<", EditActionType::BEGINNING_OF_BUF},
       {ESC_ ">", EditActionType::END_OF_BUF},
-      {ESC_ "[1~", EditActionType::BEGINNING_OF_LINE},
-      {ESC_ "[4~", EditActionType::END_OF_LINE}, // for putty
-      {ESC_ "[3~", EditActionType::DELETE_CHAR}, // for putty
-      {ESC_ "[200~", EditActionType::BRACKET_PASTE},
-      {ESC_ "[1;3A", EditActionType::PREV_HISTORY},  // alt+up
-      {ESC_ "[1;3B", EditActionType::NEXT_HISTORY},  // alt+down
-      {ESC_ "[1;3D", EditActionType::BACKWARD_WORD}, // alt+left
-      {ESC_ "[1;3C", EditActionType::FORWARD_WORD},  // alt+right
-      {ESC_ "[A", EditActionType::UP_OR_HISTORY},    // up
-      {ESC_ "[B", EditActionType::DOWN_OR_HISTORY},  // down
-      {ESC_ "[D", EditActionType::BACKWARD_CHAR},    // left
-      {ESC_ "[C", EditActionType::FORWARD_CHAR},     // right
-      {ESC_ "[H", EditActionType::BEGINNING_OF_LINE},
-      {ESC_ "[F", EditActionType::END_OF_LINE},
-      {ESC_ "OH", EditActionType::BEGINNING_OF_LINE},
-      {ESC_ "OF", EditActionType::END_OF_LINE},
-      {ESC_ ESC_ "[A", EditActionType::PREV_HISTORY},  // for macOS terminal.app (alt+up)
-      {ESC_ ESC_ "[B", EditActionType::NEXT_HISTORY},  // for macOS terminal.app (alt+up)
-      {ESC_ ESC_ "[D", EditActionType::BACKWARD_WORD}, // for macOS terminal.app (alt+left)
-      {ESC_ ESC_ "[C", EditActionType::FORWARD_WORD},  // for macOS terminal.app (alt+right)
+      {ESC_ "[3~", EditActionType::DELETE_CHAR},
+      {ESC_ "[1;3A", EditActionType::PREV_HISTORY},   // alt+up
+      {ESC_ "[1;3B", EditActionType::NEXT_HISTORY},   // alt+down
+      {ESC_ "[1;3D", EditActionType::BACKWARD_WORD},  // alt+left
+      {ESC_ "[1;3C", EditActionType::FORWARD_WORD},   // alt+right
+      {ESC_ "[A", EditActionType::UP_OR_HISTORY},     // up
+      {ESC_ "[B", EditActionType::DOWN_OR_HISTORY},   // down
+      {ESC_ "[D", EditActionType::BACKWARD_CHAR},     // left
+      {ESC_ "[C", EditActionType::FORWARD_CHAR},      // right
+      {ESC_ "[H", EditActionType::BEGINNING_OF_LINE}, // home
+      {ESC_ "[F", EditActionType::END_OF_LINE},       // end
   };
   for (auto &e : entries) {
-    auto pair = this->values.emplace(e.key, e.type);
-    (void)pair;
+    auto event = KeyEvent::fromEscapeSeq(e.key);
+    assert(event.hasValue());
+    auto pair = this->values.emplace(event.unwrap(), e.type);
+    static_cast<void>(pair);
     assert(pair.second);
   }
 
@@ -199,14 +192,10 @@ KeyBindings::KeyBindings() {
     const char key[7];
     PagerAction action;
   } pagers[] = {
-      {ENTER_, PagerAction::SELECT},
-      {CTRL_J_, PagerAction::SELECT},
-      {CTRL_C_, PagerAction::CANCEL},
-      {ESC_, PagerAction::ESCAPE},
-      {TAB_, PagerAction::NEXT},
-      {ESC_ "[Z", PagerAction::PREV}, // shift-tab
-      {CTRL_P_, PagerAction::PREV},
-      {CTRL_N_, PagerAction::NEXT},
+      {ENTER_, PagerAction::SELECT},      {CTRL_J_, PagerAction::SELECT},
+      {CTRL_C_, PagerAction::CANCEL},     {ESC_, PagerAction::ESCAPE},
+      {TAB_, PagerAction::NEXT},          {ESC_ "[Z", PagerAction::PREV}, // shift-tab
+      {CTRL_P_, PagerAction::PREV},       {CTRL_N_, PagerAction::NEXT},
 
       {ESC_ "[1;3A", PagerAction::PREV},  // alt+up
       {ESC_ "[1;3B", PagerAction::NEXT},  // alt+down
@@ -216,31 +205,25 @@ KeyBindings::KeyBindings() {
       {ESC_ "[B", PagerAction::NEXT},     // down
       {ESC_ "[D", PagerAction::LEFT},     // left
       {ESC_ "[C", PagerAction::RIGHT},    // right
-
-      // for mac
-      {ESC_ ESC_ "[A", PagerAction::PREV},  // for macOS terminal.app (alt+up)
-      {ESC_ ESC_ "[B", PagerAction::NEXT},  // for macOS terminal.app (alt+up)
-      {ESC_ ESC_ "[D", PagerAction::LEFT},  // for macOS terminal.app (alt+left)
-      {ESC_ ESC_ "[C", PagerAction::RIGHT}, // for macOS terminal.app (alt+right)
   };
   for (auto &e : pagers) {
-    auto pair = this->pagerValues.emplace(e.key, e.action);
+    auto event = KeyEvent::fromEscapeSeq(e.key);
+    assert(event.hasValue());
+    auto pair = this->pagerValues.emplace(event.unwrap(), e.action);
     (void)pair;
     assert(pair.second);
   }
 }
 
-const EditAction *KeyBindings::findAction(const std::string &keycode) const {
-  auto iter = this->values.find(keycode);
-  if (iter != this->values.end()) {
+const EditAction *KeyBindings::findAction(KeyEvent event) const {
+  if (auto iter = this->values.find(event); iter != this->values.end()) {
     return &iter->second;
   }
   return nullptr;
 }
 
-const PagerAction *KeyBindings::findPagerAction(const std::string &keycode) const {
-  auto iter = this->pagerValues.find(keycode);
-  if (iter != this->pagerValues.end()) {
+const PagerAction *KeyBindings::findPagerAction(KeyEvent event) const {
+  if (auto iter = this->pagerValues.find(event); iter != this->pagerValues.end()) {
     return &iter->second;
   }
   return nullptr;
@@ -273,23 +256,10 @@ const StrRefMap<CustomActionType> &KeyBindings::getCustomActionTypes() {
   return types;
 }
 
-KeyBindings::AddStatus KeyBindings::addBinding(StringRef caret, StringRef name) {
-  auto key = KeyEvent::parseCaret(caret);
-  if (key.empty() || !isControlChar(key[0])) {
-    return AddStatus::INVALID_START_CHAR;
-  }
-  if (key == BRACKET_START) {
-    return AddStatus::FORBID_BRACKET_START_CODE;
-  }
-  for (auto &e : caret) {
-    if (!isascii(e)) {
-      return AddStatus::INVALID_ASCII;
-    }
-  }
-
+KeyBindings::AddStatus KeyBindings::addBinding(const KeyEvent event, const StringRef name) {
   auto &actionMap = getEditActionTypes();
   if (name.empty()) {
-    this->values.erase(key);
+    this->values.erase(event);
   } else {
     EditAction action = EditActionType::ACCEPT;
     if (auto iter = actionMap.find(name); iter != actionMap.end()) {
@@ -299,18 +269,13 @@ KeyBindings::AddStatus KeyBindings::addBinding(StringRef caret, StringRef name) 
     } else {
       return AddStatus::UNDEF;
     }
-
-    if (action.type == EditActionType::BRACKET_PASTE) {
-      return AddStatus::FORBID_BRACKET_ACTION;
-    }
-
-    if (auto iter = this->values.find(key); iter != this->values.end()) {
+    if (auto iter = this->values.find(event); iter != this->values.end()) {
       iter->second = action; // overwrite previous bind
     } else {
       if (this->values.size() == SYS_LIMIT_KEY_BINDING_MAX) {
         return AddStatus::LIMIT;
       }
-      this->values.emplace(key, action);
+      this->values.emplace(event, action);
     }
   }
   return AddStatus::OK;
@@ -321,48 +286,57 @@ bool KeyBindings::addBinding(StringRef key, StringRef name, std::string *err) {
   std::string dummy;
   char tail = '\'';
 
-  switch (this->addBinding(key, name)) {
+  Optional<KeyEvent> event;
+  if (key.size() > 1 && key[0] == '^') { // caret notation
+    auto seq = KeyEvent::parseCaret(key);
+    event = KeyEvent::fromEscapeSeq(seq);
+    if (!event.hasValue() || event.unwrap().isBracketPateStart()) {
+      header = "unrecognized escape sequence: `";
+      goto ERROR;
+    }
+  } else { // keyname
+    event = KeyEvent::fromKeyName(key, &dummy);
+    if (!event.hasValue()) {
+      key = dummy;
+      tail = '\0';
+      goto ERROR;
+    }
+  }
+  if (!event.unwrap().isFuncKey() && (event.unwrap().modifiers() == ModifierKey{} ||
+                                      event.unwrap().modifiers() == ModifierKey::SHIFT)) {
+    header = "ascii code needs at-least one modifier (except for shift): `";
+    goto ERROR;
+  }
+
+  switch (this->addBinding(event.unwrap(), name)) {
   case AddStatus::OK:
     return true;
   case AddStatus::UNDEF:
     header = "undefined edit action: `";
-    break;
-  case AddStatus::FORBID_BRACKET_START_CODE:
-    header = "cannot change binding of bracket start code `";
-    dummy = KeyEvent::toCaret(BRACKET_START);
-    name = dummy;
-    break;
-  case AddStatus::FORBID_BRACKET_ACTION:
-    header = "cannot bind to `";
-    dummy = toString(EditActionType::BRACKET_PASTE);
-    name = dummy;
-    break;
-  case AddStatus::INVALID_START_CHAR:
-    header = "keycode must start with control character: `";
-    name = key;
-    break;
-  case AddStatus::INVALID_ASCII:
-    header = "keycode must be ascii characters: `";
-    name = key;
+    key = name;
     break;
   case AddStatus::LIMIT:
     header = "number of key bindings reaches limit (up to ";
     dummy = std::to_string(SYS_LIMIT_KEY_BINDING_MAX);
-    name = dummy;
+    key = dummy;
     tail = ')';
     break;
   }
+
+ERROR:
   if (err) {
     *err = header;
-    appendAsPrintable(name, SYS_LIMIT_ERROR_MSG_MAX - 1, *err);
-    *err += tail;
+    appendAsPrintable(key, SYS_LIMIT_ERROR_MSG_MAX - 1, *err);
+    if (tail) {
+      *err += tail;
+    }
   }
   return false;
 }
 
 Result<unsigned int, KeyBindings::DefineError> KeyBindings::defineCustomAction(StringRef name,
                                                                                StringRef type) {
-  // check action name format
+  // check an action name format
   if (name.empty()) {
     return Err(DefineError::INVALID_NAME);
   }
@@ -381,7 +355,7 @@ Result<unsigned int, KeyBindings::DefineError> KeyBindings::defineCustomAction(S
     return Err(DefineError::INVALID_TYPE);
   }
 
-  // check already defined action name
+  // check already the defined action name
   if (auto iter = getEditActionTypes().find(name); iter != getEditActionTypes().end()) {
     return Err(DefineError::DEFINED);
   }

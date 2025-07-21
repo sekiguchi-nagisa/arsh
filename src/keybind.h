@@ -64,7 +64,6 @@ namespace arsh {
   OP(UNDO, "undo")                     /* CTRL-Z */                                                \
   OP(REDO, "redo")                     /* CTRL-_ */                                                \
   OP(INSERT_KEYCODE, "insert-keycode") /* CTRL-V */                                                \
-  OP(BRACKET_PASTE, "bracket-paste")   /* ESC [200~ */                                             \
   OP(CUSTOM, "%custom")                /* for custom action */
 
 enum class EditActionType : unsigned char {
@@ -147,14 +146,14 @@ enum class PagerAction : unsigned char {
 };
 
 class KeyBindings {
-public:
-  static constexpr const char *BRACKET_START = "\x1b[200~";
-
 private:
+  template <typename T>
+  using KeyEventMap = std::unordered_map<KeyEvent, T, KeyEvent::Hasher>;
+
   /**
    * keycode to edit action mapping
    */
-  std::unordered_map<std::string, EditAction> values;
+  KeyEventMap<EditAction> values;
 
   /**
    * custom action name to action properties mapping
@@ -164,7 +163,7 @@ private:
   /**
    * keycode to pager action mapping
    */
-  std::unordered_map<std::string, PagerAction> pagerValues;
+  KeyEventMap<PagerAction> pagerValues;
 
 public:
   static const StrRefMap<EditActionType> &getEditActionTypes();
@@ -173,9 +172,17 @@ public:
 
   KeyBindings();
 
-  const EditAction *findAction(const std::string &keycode) const;
+  const EditAction *findAction(KeyEvent event) const;
 
-  const PagerAction *findPagerAction(const std::string &keycode) const;
+  const EditAction *findAction(const Optional<KeyEvent> &event) const {
+    return event.hasValue() ? this->findAction(event.unwrap()) : nullptr;
+  }
+
+  const PagerAction *findPagerAction(KeyEvent event) const;
+
+  const PagerAction *findPagerAction(const Optional<KeyEvent> &event) const {
+    return event.hasValue() ? this->findPagerAction(event.unwrap()) : nullptr;
+  }
 
   /**
    *
@@ -204,17 +211,17 @@ public:
 
   template <typename Func>
   static constexpr bool binding_consumer_requirement_v =
-      std::is_same_v<void, std::invoke_result_t<Func, StringRef, StringRef>>;
+      std::is_same_v<void, std::invoke_result_t<Func, std::string &&, std::string &&>>;
 
   template <typename Func, enable_when<binding_consumer_requirement_v<Func>> = nullptr>
   void fillBindings(Func func) const {
     for (auto &e : this->values) {
-      auto caret = KeyEvent::toCaret(e.first);
-      const char *action = toString(e.second.type);
+      auto key = e.first.toString();
+      std::string action = toString(e.second.type);
       if (e.second.type == EditActionType::CUSTOM) {
         action = this->customActions.findByIndex(e.second.customActionIndex)->first.get();
       }
-      func(caret, action);
+      func(std::move(key), std::move(action));
     }
   }
 
@@ -239,23 +246,19 @@ private:
   enum class AddStatus : unsigned char {
     OK,
     UNDEF,
-    FORBID_BRACKET_START_CODE,
-    FORBID_BRACKET_ACTION,
-    INVALID_START_CHAR,
-    INVALID_ASCII,
     LIMIT,
   };
 
   /**
    *
-   * @param caret
-   * maybe caret notation
+   * @param event
+   * must be a valid key event
    * @param name
    * must be an action name or empty
    * if a name is empty, clear binding
    * @return
    */
-  AddStatus addBinding(StringRef caret, StringRef name);
+  AddStatus addBinding(KeyEvent event, StringRef name);
 };
 
 } // namespace arsh

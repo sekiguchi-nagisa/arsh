@@ -401,6 +401,7 @@ TEST_F(KeyCodeTest, controlChar) {
       {"\x1E", KeyEvent('^', ModifierKey::CTRL)},
       {"\x1F", KeyEvent('_', ModifierKey::CTRL)},
       {"\x7F", KeyEvent('?', ModifierKey::CTRL)},
+      {"\x7Fあ", {}},
   };
   for (unsigned int i = 0; i < std::size(patterns); i++) {
     auto &p = patterns[i];
@@ -595,10 +596,10 @@ TEST_F(KeyCodeTest, funcKey) {
       {CSI_("9u"), KeyEvent(FunctionKey::TAB)},
       {CSI_("127u"), KeyEvent(FunctionKey::BACKSPACE)},
 
-      {CSI_("1~"), {}},
+      {CSI_("1~"), KeyEvent(FunctionKey::HOME)},
       {CSI_("2~"), KeyEvent(FunctionKey::INSERT)},
       {CSI_("3~"), KeyEvent(FunctionKey::DELETE)},
-      {CSI_("4~"), {}},
+      {CSI_("4~"), KeyEvent(FunctionKey::END)},
       {CSI_("5~"), KeyEvent(FunctionKey::PAGE_UP)},
       {CSI_("6~"), KeyEvent(FunctionKey::PAGE_DOWN)},
 

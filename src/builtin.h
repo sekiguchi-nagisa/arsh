@@ -2508,8 +2508,9 @@ ARSH_METHOD edit_bindings(RuntimeContext &ctx) {
   assert(ret);
   auto &mapType = cast<MapType>(*ret.asOk());
   auto value = Value::create<OrderedMapObject>(mapType, ctx.getRng().next());
-  editor.getKeyBindings().fillBindings([&value](StringRef key, StringRef action) {
-    typeAs<OrderedMapObject>(value).insert(Value::createStr(key), Value::createStr(action));
+  editor.getKeyBindings().fillBindings([&value](std::string &&key, std::string &&action) {
+    typeAs<OrderedMapObject>(value).insert(Value::createStr(std::move(key)),
+                                           Value::createStr(std::move(action)));
   });
   RET(value);
 }

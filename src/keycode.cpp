@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <unistd.h>
+
 #include "keycode.h"
 #include "keyname_lex.h"
 #include "misc/format.hpp"
@@ -180,10 +182,14 @@ static int parseNum(StringRef &seq, int defaultValue) {
 
 static FunctionKey resolveTildeFuncKey(int num) {
   switch (num) {
+  case 1:
+    return FunctionKey::HOME; // for GNU Screen
   case 2:
     return FunctionKey::INSERT;
   case 3:
     return FunctionKey::DELETE;
+  case 4:
+    return FunctionKey::END; // for GNU Screen
   case 5:
     return FunctionKey::PAGE_UP;
   case 6:
@@ -394,7 +400,9 @@ Optional<KeyEvent> KeyEvent::fromEscapeSeq(const StringRef seq) {
     }
     return KeyEvent(v, ModifierKey::CTRL);
   }
-  assert(seq[0] == '\x1b');
+  if (seq[0] != '\x1b') {
+    return {};
+  }
   if (seq.size() == 2) { // ESC ?
     int ch = static_cast<unsigned char>(seq[1]);
     if (ch >= 0 && ch <= 127) {
@@ -421,14 +429,8 @@ Optional<KeyEvent> KeyEvent::fromEscapeSeq(const StringRef seq) {
   }
   if (const char next = seq[1]; next == '[') { // 'ESC [ ?'
     auto ret = parseCSISeq(seq.substr(2));
-    if (ret.hasValue()) {
-      if (auto event = ret.unwrap();
-          event.isFuncKey() && event.asFuncKey() == FunctionKey::BRACKET_START) {
-        if (seq == BRACKET_START) { // only accept the '\x1b[200~' sequence
-          return event;
-        }
-        return {};
-      }
+    if (ret.hasValue() && ret.unwrap().isBracketPateStart() && seq != BRACKET_START) {
+      return {}; // only accept the '\x1b[200~' sequence (ignore extra modifiers)
     }
     return ret;
   } else if (next == '\x1b' && seq.size() == 4 && seq[2] == '[') {

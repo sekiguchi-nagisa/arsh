@@ -13,27 +13,24 @@ $bindings.sortBy(function(a,b) => $a._0.compare($b._0))
 assert diff <(bind -p) <(for a in $bindings{ echo "\"${a._0}\": ${a._1}"; })
 
 # -q option
-assert "$(bind -q backward-word)" == '"^[[1;3D"
-"^[^[[D"
-"^[b"'
+assert "$(bind -q backward-word)" == '"alt+LEFT"
+"alt+b"'
 assert "$(bind -q hogehoge)".empty()
 
 # add
-assert !(bind -p | grep '\^G')
-assert bind "^G" backward-word
-assert "$(bind -q backward-word)" == '"^G"
-"^[[1;3D"
-"^[^[[D"
-"^[b"'
-assert bind -p | grep '\^G'
+assert !(bind -p | grep 'ctrl+g')
+assert bind "ctrl+g" backward-word
+assert "$(bind -q backward-word)" == '"alt+LEFT"
+"alt+b"
+"ctrl+g"'
+assert bind -p | grep 'ctrl+g'
 
 # -r option
-assert bind -r "^G"
-assert !(bind -p | grep '\^G')
-assert "$(bind -q backward-word)" == '"^[[1;3D"
-"^[^[[D"
-"^[b"'
-assert bind -r "^G"  # remove already removed keycode
+assert bind -r "ctrl+g"
+assert !(bind -p | grep 'ctrl+g')
+assert "$(bind -q backward-word)" == '"alt+LEFT"
+"alt+b"'
+assert bind -r "ctrl+g"  # remove already removed keycode
 
 
 # invalid option

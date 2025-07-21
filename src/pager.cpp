@@ -233,7 +233,7 @@ void ArrayPager::render(LineRenderer &renderer) const {
 
 EditActionStatus waitPagerAction(ArrayPager &pager, const KeyBindings &bindings,
                                  KeyCodeReader &reader) {
-  // read key code and update pager state
+  // read key code and update the pager state
   if (ssize_t r = reader.fetch(); r <= 0) {
     if (r == -1 && errno == EINTR) {
       return EditActionStatus::CANCEL;
@@ -243,7 +243,7 @@ EditActionStatus waitPagerAction(ArrayPager &pager, const KeyBindings &bindings,
   if (!reader.hasControlChar()) {
     return EditActionStatus::OK;
   }
-  const auto *action = bindings.findPagerAction(reader.get());
+  const auto *action = bindings.findPagerAction(reader.getEvent());
   if (!action) {
     return EditActionStatus::OK;
   }

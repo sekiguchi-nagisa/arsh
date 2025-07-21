@@ -5,24 +5,28 @@ var editor = new LineEditor()
 var bindings = $editor.bindings()  # get read-only view of current keybindings (modification of view does not affect actual keybindings)
 assert $bindings is [String : String]
 
-assert $bindings["^I"] == "complete"
-assert $bindings["^E"] == "end-of-line"
-assert $bindings["^?"] == "backward-delete-char"
-assert $bindings["^[[D"] == "backward-char"
+assert $bindings["ctrl+i"] == "complete"
+assert $bindings["ctrl+e"] == "end-of-line"
+assert $bindings["ctrl+?"] == "backward-delete-char"
+assert $bindings["LEFT"] == "backward-char"
 assert !$bindings.get("^[12") 
 
 ## change keybind
 var ex = 34 as Any
 try { $editor.bind("", "complete"); } catch e { $ex = $e;}
-assert ($ex as ArgumentError).message() == "keycode must start with control character: \`'"
+assert ($ex as ArgumentError).message() == "need modifiers or keyname: "
 
 $ex = 34
 try { $editor.bind("A", "complete"); } catch e { $ex = $e;}
-assert ($ex as ArgumentError).message() == "keycode must start with control character: \`A'"
+assert ($ex as ArgumentError).message() == "ascii code needs at-least one modifier (except for shift): \`A'"
+
+$ex = 34
+try { $editor.bind("a", "complete"); } catch e { $ex = $e;}
+assert ($ex as ArgumentError).message() == "ascii code needs at-least one modifier (except for shift): \`a'"
 
 $ex = 34
 try { $editor.bind("^Aあ", "complete"); } catch e { $ex = $e;}
-assert ($ex as ArgumentError).message() == "keycode must be ascii characters: \`^Aあ'"
+assert ($ex as ArgumentError).message() == "unrecognized escape sequence: \`^Aあ'"
 
 $ex = 34
 try { $editor.bind("^A", "hogehogehuga"); } catch e { $ex = $e;}
@@ -30,23 +34,23 @@ assert ($ex as ArgumentError).message() == "undefined edit action: \`hogehogehug
 
 $ex = 34
 try { $editor.bind("^[[200~", "complete"); } catch e { $ex = $e;}
-assert ($ex as ArgumentError).message() == "cannot change binding of bracket start code \`^[[200~'"
+assert ($ex as ArgumentError).message() == "unrecognized escape sequence: \`^[[200~'"
 
 $ex = 34
 try { $editor.bind("^[D", "bracket-paste"); } catch e { $ex = $e;}
-assert ($ex as ArgumentError).message() == "cannot bind to \`bracket-paste'"
+assert ($ex as ArgumentError).message() == "undefined edit action: \`bracket-paste'"
 
 $ex = 34
 try { $editor.bind("^[[D", "complete"); } catch e { $ex = $e;}
 assert ! ($ex is ArgumentError)  # change binding
-assert $bindings["^[[D"] == "backward-char"  # keybind modification does not affect previous result of LineEditor#bindings
-assert $editor.bindings()["^[[D"] == "complete"
+assert $bindings["LEFT"] == "backward-char"  # keybind modification does not affect previous result of LineEditor#bindings
+assert $editor.bindings()["LEFT"] == "complete"
 
 $ex = 34
-try { $editor.bind("^[12", "beginning-of-line"); } catch e { $ex = $e;}
+try { $editor.bind("F12", "beginning-of-line"); } catch e { $ex = $e;}
 assert ! ($ex is ArgumentError)  # add binding
-assert !$bindings.get("^[12")  # keybind modification does not affect previous result of LineEditor#bindings
-assert $editor.bindings()["^[12"] == "beginning-of-line"
+assert !$bindings.get("F12")  # keybind modification does not affect previous result of LineEditor#bindings
+assert $editor.bindings()["F12"] == "beginning-of-line"
 
 ## remove bind
 $ex = 34
@@ -56,26 +60,35 @@ assert ! $editor.bindings().get("^[[D")
 
 ## re-add
 $ex = 34
-try { $editor.bind("^[[D", "end-of-line"); } catch e { $ex = $e;}  # if action is empty string, remove keybind
+try { $editor.bind("DOWN", "end-of-line"); } catch e { $ex = $e;}  # if action is empty string, remove keybind
 assert ! ($ex is ArgumentError)  # change bindings
-assert $editor.bindings()["^[[D"] == "end-of-line"
+assert $editor.bindings()["DOWN"] == "end-of-line"
 
 ## remove bind
 $ex = 34
-try { $editor.bind("^[[D"); } catch e { $ex = $e;}  # if action is empty string, remove keybind
+try { $editor.bind("DOWN"); } catch e { $ex = $e;}  # if action is empty string, remove keybind
 assert ! ($ex is ArgumentError)  # change bindings
-assert ! $editor.bindings().get("^[[D")
+assert ! $editor.bindings().get("DOWN")
 
 ## limit
 $ex = 45
 try {
-    for(var i = 0; $i < 10000; $i++) {
-        $editor.bind("^[$i", "accept")
+    for m1 in ['shift', 'alt', 'ctrl', 'meta', 'super', 'hyper', 'caps_lock', 'num_lock'] {
+        for m2 in ['alt', 'ctrl', 'meta', 'super', 'hyper', 'caps_lock', 'num_lock'] {
+            for m3 in ['alt', 'ctrl', 'meta', 'super', 'hyper', 'caps_lock', 'num_lock'] {
+                for k in ['F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12', 
+                        'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n'] {
+                    var key  = "$m1+$m2+$m3+$k"
+                    $editor.bind($key, "accept")
+                }
+            }
+        }
     }
 } catch e : Error {
     $ex = $e
 }
 assert ($ex as ArgumentError).message() == "number of key bindings reaches limit (up to 255)"
+$editor = new LineEditor()
 
 # actions
 assert $editor.actions() is [String]
@@ -89,9 +102,9 @@ $editor.bind('^[2', '')
 assert ! $editor.actions().contains('action1')
 $editor.action('action1', 'replace-whole', function(s, o) => $s)
 assert $editor.actions().contains('action1')
-assert !$editor.bindings().get('^]')
-$editor.bind('^]', 'action1')
-assert $editor.bindings()['^]'] == 'action1'
+assert !$editor.bindings().get('ctrl+]')
+$editor.bind('ctrl+]', 'action1')
+assert $editor.bindings()['ctrl+]'] == 'action1'
 
 ## re-define
 $ex = 34
@@ -132,9 +145,9 @@ assert $editor.actions().contains("backward-char")
 $editor.action('action2', 'replace-whole', function(s,o)=> $s)
 $editor.action('action3', 'replace-line', function(s,o)=> $s)
 $editor.action('action4', 'insert', function(s,o)=> $s)
-assert ! $editor.bindings().get('^S')
-$editor.bind('^S', 'action3')
-assert $editor.bindings().get('^S')
+assert ! $editor.bindings().get('ctrl+s')
+$editor.bind('ctrl+s', 'action3')
+assert $editor.bindings().get('ctrl+s')
 
 assert $editor.actions().contains("action1")
 assert $editor.actions().contains("action2")
@@ -144,7 +157,7 @@ $editor.action('action1', 'replace-whole-accept')
 $editor.action('action3', 'replace-whole-accept')
 assert ! $editor.actions().contains("action1")
 assert ! $editor.actions().contains("action3")
-assert ! $editor.bindings().get('^S')
+assert ! $editor.bindings().get('ctrl+s')
 
 $editor.action('action5', 'hist-select', function(s,o) => $s)
 $editor.action('action6', 'kill-ring-select', function(s,o) => $s)

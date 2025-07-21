@@ -15,10 +15,17 @@
     - ignore parser error after cursor position
     - treat '/' separator as a token boundary
 
+#### Builtin
+
+- overhaul internal keycode handling of ``LineEditor``
+    - correctly read unrecognized CSI sequences
+    - ``LineEditor#bind`` method accept human-readable keyname (such as `F1`, `ctrl+alt+a`, `bs`)
+    - ``LineEditor#bindings`` method return human-readable keyname
+
 #### Module
 
 - **Breaking Change**: in ``repl`` module, enable token-aware line edit actions by default
-- in prompt module, ``renderPrompt`` function supports ``\j`` escape sequence, now show managed job count
+- in prompt module, ``renderPrompt`` function supports ``\j``, now show managed job count
 
 ## [0.38.0] - 2025-06-30
 

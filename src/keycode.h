@@ -155,6 +155,10 @@ public:
 
   bool isFuncKey() const { return this->value & (1u << 31u); }
 
+  bool isBracketPateStart() const {
+    return this->isFuncKey() && this->asFuncKey() == FunctionKey::BRACKET_START;
+  }
+
   ModifierKey modifiers() const { return static_cast<ModifierKey>(this->value & 0xFF); }
 
   bool hasModifier(ModifierKey modifier) const { return hasFlag(this->modifiers(), modifier); }
@@ -208,7 +212,10 @@ public:
 
   Optional<KeyEvent> getEvent() const { return this->event; }
 
-  void clear() { this->keycode.clear(); }
+  void clear() {
+    this->keycode.clear();
+    this->event = {};
+  }
 
   bool hasControlChar() const { return !this->empty() && isControlChar(this->keycode[0]); }
 

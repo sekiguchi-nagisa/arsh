@@ -646,9 +646,25 @@ ssize_t LineEditorObject::editInRawMode(ARState &state, RenderingContext &ctx) {
       }
       return -1;
     }
+    if (auto event = reader.getEvent(); event.hasValue() && event.unwrap().isBracketPateStart()) {
+      ctx.buf.commitLastChange();
+      const auto oldTimeout = reader.getTimeout();
+      reader.setTimeout(KeyCodeReader::DEFAULT_READ_TIMEOUT_MSEC * 2);
+      bool r = reader.intoBracketedPasteMode(
+          [&ctx](StringRef ref) { return ctx.buf.insertToCursor(ref, true); });
+      reader.setTimeout(oldTimeout);
+      const int old = errno;
+      ctx.buf.commitLastChange();
+      this->refreshLine(state, ctx); // always refresh the line even if error
+      if (!r) {
+        errno = old;
+        return -1;
+      }
+      continue;
+    }
 
     // dispatch edit action
-    const auto *action = this->keyBindings.findAction(reader.get());
+    const auto *action = this->keyBindings.findAction(reader.getEvent());
     if (!action) {
       continue; // skip unbound key action
     }
@@ -913,22 +929,6 @@ ssize_t LineEditorObject::editInRawMode(ARState &state, RenderingContext &ctx) {
         return -1;
       }
       break;
-    case EditActionType::BRACKET_PASTE: {
-      ctx.buf.commitLastChange();
-      const auto oldTimeout = reader.getTimeout();
-      reader.setTimeout(KeyCodeReader::DEFAULT_READ_TIMEOUT_MSEC * 2);
-      bool r = reader.intoBracketedPasteMode(
-          [&ctx](StringRef ref) { return ctx.buf.insertToCursor(ref, true); });
-      reader.setTimeout(oldTimeout);
-      const int old = errno;
-      ctx.buf.commitLastChange();
-      this->refreshLine(state, ctx); // always refresh line even if error
-      if (!r) {
-        errno = old;
-        return -1;
-      }
-      break;
-    }
     case EditActionType::CUSTOM: {
       bool r = this->kickCustomCallback(state, ctx.buf, action->customActionType,
                                         action->customActionIndex);
@@ -1106,7 +1106,7 @@ FIRST_DRAW:
     status = EditActionStatus::OK;
     goto END;
   }
-  if (auto *action = this->keyBindings.findAction(reader.get());
+  if (auto *action = this->keyBindings.findAction(reader.getEvent());
       !action || action->type != EditActionType::COMPLETE) {
     status = EditActionStatus::OK;
     goto END;
