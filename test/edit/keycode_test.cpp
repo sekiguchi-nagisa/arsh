@@ -177,6 +177,74 @@ TEST(KeyCodeReaderTest, bracketError) {
   }
 }
 
+TEST(KeyCodeReaderTest, CSI) {
+  {
+    std::string seq = "\x1b[W";
+    Pipe pipe;
+    pipe.write(seq.c_str());
+    KeyCodeReader reader(pipe.getReadPipe());
+    ASSERT_TRUE(reader.empty());
+    ASSERT_EQ(seq.size(), reader.fetch());
+    ASSERT_EQ(seq, reader.get());
+    ASSERT_FALSE(reader.getEvent().hasValue());
+  }
+
+  {
+    std::string seq = "\x1b[>=W";
+    Pipe pipe;
+    pipe.write(seq.c_str());
+    KeyCodeReader reader(pipe.getReadPipe());
+    ASSERT_TRUE(reader.empty());
+    ASSERT_EQ(seq.size(), reader.fetch());
+    ASSERT_EQ(seq, reader.get());
+    ASSERT_FALSE(reader.getEvent().hasValue());
+  }
+
+  {
+    std::string seq = "\x1b[%%W";
+    Pipe pipe;
+    pipe.write(seq.c_str());
+    KeyCodeReader reader(pipe.getReadPipe());
+    ASSERT_TRUE(reader.empty());
+    ASSERT_EQ(seq.size(), reader.fetch());
+    ASSERT_EQ(seq, reader.get());
+    ASSERT_FALSE(reader.getEvent().hasValue());
+  }
+
+  {
+    std::string seq = "\x1b[019:;<=>?22222222222234344356 !\"#$%&'()*+,-./]";
+    Pipe pipe;
+    pipe.write(seq.c_str());
+    KeyCodeReader reader(pipe.getReadPipe());
+    ASSERT_TRUE(reader.empty());
+    ASSERT_EQ(seq.size(), reader.fetch());
+    ASSERT_EQ(seq, reader.get());
+    ASSERT_FALSE(reader.getEvent().hasValue());
+  }
+
+  {
+    std::string seq = "\x1b[019:;<=>?223434435678 !\"#$%&'()*+,-./^";
+    Pipe pipe;
+    pipe.write(seq.c_str());
+    KeyCodeReader reader(pipe.getReadPipe());
+    ASSERT_TRUE(reader.empty());
+    ASSERT_EQ(seq.size(), reader.fetch());
+    ASSERT_EQ(seq, reader.get());
+    ASSERT_FALSE(reader.getEvent().hasValue());
+  }
+
+  {
+    std::string seq = "\x1b[019:;<=>?223434435678 !\"#$%&'()*+,-./G";
+    Pipe pipe;
+    pipe.write(seq.c_str());
+    KeyCodeReader reader(pipe.getReadPipe());
+    ASSERT_TRUE(reader.empty());
+    ASSERT_EQ(seq.size(), reader.fetch());
+    ASSERT_EQ(seq, reader.get());
+    ASSERT_FALSE(reader.getEvent().hasValue());
+  }
+}
+
 struct CaretTest : public ::testing::Test {
   static void checkCaret(StringRef caret, StringRef value) {
     auto v = KeyEvent::parseCaret(caret);

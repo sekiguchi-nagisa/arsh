@@ -35,7 +35,7 @@ namespace process {
   } while (false)
 
 /**
- * must be valid number
+ * must be a valid number
  * @param begin
  * @param end
  * @return
@@ -118,6 +118,8 @@ INIT:
     "\x1b]133;B\x1b\\"                      { this->addFTCS(FTCS::COMMAND_START); NEXT(); }
     "\x1b]133;C\x1b\\"                      { this->addFTCS(FTCS::COMMAND_EXECUTED); NEXT(); }
     "\x1b]133;D" (";" DECIMAL)? "\x1b\\"    { this->addFTCS(FTCS::COMMAND_FINISHED); NEXT(); }
+    "\x1b[" [0-9:;<=>?]* [ !"#$%&'()*+,-./]* [@A-Z[\\\]^_`a-z{|}~]
+                                            { NEXT(); }
 
     [^]                                     { this->addCodePoint(start, cursor); NEXT(); }
     *                                       { RET(Result::INVALID); }

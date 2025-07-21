@@ -244,6 +244,11 @@ TEST(ANSITest, base) {
   screen.interpret(line.c_str(), line.size());
   ASSERT_EQ("", screen.toString());
 
+  screen = Screen();
+  line = "a\x1b[0123456789:;<=>? !\"#$%&'()*+,-./\\b"; // ignore unsupported CSI
+  screen.interpret(line.c_str(), line.size());
+  ASSERT_EQ("ab", screen.toString());
+
   unsigned int bellCount = 0;
   screen = Screen();
   screen.setBellCallback([&bellCount] { bellCount++; });
