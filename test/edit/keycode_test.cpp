@@ -676,7 +676,172 @@ TEST_F(KeyCodeTest, modifier) {
   }
 }
 
-TEST_F(KeyCodeTest, name1) {
+TEST_F(KeyCodeTest, keyName1) {
+  static const struct {
+    std::string keyName;
+    Union<KeyEvent, std::string> eventOrErr;
+  } patterns[] = {
+
+      {"!", KeyEvent('!')},     {"  \"", KeyEvent('"')}, {"#", KeyEvent('#')},
+      {" $\t", KeyEvent('$')},  {"%", KeyEvent('%')},    {"& ", KeyEvent('&')},
+      {"'", KeyEvent('\'')},    {"( ", KeyEvent('(')},   {" ) ", KeyEvent(')')},
+      {"* ", KeyEvent('*')},    {"+", KeyEvent('+')},    {",", KeyEvent(',')},
+      {" - ", KeyEvent('-')},   {".", KeyEvent('.')},    {"\t\n/ \r", KeyEvent('/')},
+      {"0", KeyEvent('0')},     {"1", KeyEvent('1')},    {"2", KeyEvent('2')},
+      {"3", KeyEvent('3')},     {"4", KeyEvent('4')},    {"5", KeyEvent('5')},
+      {"6", KeyEvent('6')},     {"7 ", KeyEvent('7')},   {"8", KeyEvent('8')},
+      {"\t9\t", KeyEvent('9')}, {":", KeyEvent(':')},    {" ; ", KeyEvent(';')},
+      {"< ", KeyEvent('<')},    {"=", KeyEvent('=')},    {" > ", KeyEvent('>')},
+      {" ? ", KeyEvent('?')},   {" @", KeyEvent('@')},   {"[", KeyEvent('[')},
+      {" \\ ", KeyEvent('\\')}, {"] ", KeyEvent(']')},   {"^", KeyEvent('^')},
+      {" _ ", KeyEvent('_')},   {" ` ", KeyEvent('`')},  {" a", KeyEvent('a')},
+      {" b", KeyEvent('b')},    {" c", KeyEvent('c')},   {"d", KeyEvent('d')},
+      {" e ", KeyEvent('e')},   {"f ", KeyEvent('f')},   {"g", KeyEvent('g')},
+      {" h ", KeyEvent('h')},   {"i ", KeyEvent('i')},   {" j", KeyEvent('j')},
+      {" k", KeyEvent('k')},    {"l ", KeyEvent('l')},
+
+      {"m", KeyEvent('m')},     {" n ", KeyEvent('n')},  {"o ", KeyEvent('o')},
+      {"p", KeyEvent('p')},     {" q ", KeyEvent('q')},  {"r ", KeyEvent('r')},
+      {" s\t", KeyEvent('s')},  {"\nt", KeyEvent('t')},  {"\r\tu", KeyEvent('u')},
+      {" v\t", KeyEvent('v')},  {"\nw", KeyEvent('w')},  {"\r\tx", KeyEvent('x')},
+      {" y\t", KeyEvent('y')},  {"\nz", KeyEvent('z')},  {"\r\t{", KeyEvent('{')},
+      {" |\t", KeyEvent('|')},  {"\n}", KeyEvent('}')},  {"\r\t~", KeyEvent('~')},
+  };
+
+  for (unsigned int i = 0; i < std::size(patterns); i++) {
+    auto &p = patterns[i];
+    SCOPED_TRACE(format("\nindex:%d, keyName:%s, eventOrErr:%s", i, p.keyName.c_str(),
+                        is<KeyEvent>(p.eventOrErr) ? get<KeyEvent>(p.eventOrErr).toString().c_str()
+                        : is<std::string>(p.eventOrErr) ? get<std::string>(p.eventOrErr).c_str()
+                                                        : ""));
+    ASSERT_NO_FATAL_FAILURE(checkName(p.keyName, p.eventOrErr));
+  }
+}
+
+TEST_F(KeyCodeTest, keyName2) {
+  static const struct {
+    std::string keyName;
+    Union<KeyEvent, std::string> eventOrErr;
+  } patterns[] = {
+      {"A", KeyEvent('a', ModifierKey::SHIFT)},     {"B", KeyEvent('b', ModifierKey::SHIFT)},
+      {"C ", KeyEvent('c', ModifierKey::SHIFT)},    {"D", KeyEvent('d', ModifierKey::SHIFT)},
+      {"E ", KeyEvent('e', ModifierKey::SHIFT)},    {"\nF", KeyEvent('f', ModifierKey::SHIFT)},
+      {"G ", KeyEvent('g', ModifierKey::SHIFT)},    {"  H", KeyEvent('h', ModifierKey::SHIFT)},
+      {"\tI\t", KeyEvent('i', ModifierKey::SHIFT)}, {"\tJ\t", KeyEvent('j', ModifierKey::SHIFT)},
+      {"K ", KeyEvent('k', ModifierKey::SHIFT)},    {"  L", KeyEvent('l', ModifierKey::SHIFT)},
+      {"\tM\t", KeyEvent('m', ModifierKey::SHIFT)}, {"\tN\t", KeyEvent('n', ModifierKey::SHIFT)},
+      {"O ", KeyEvent('o', ModifierKey::SHIFT)},    {"  P", KeyEvent('p', ModifierKey::SHIFT)},
+      {"\tQ\t", KeyEvent('q', ModifierKey::SHIFT)}, {"\tR\t", KeyEvent('r', ModifierKey::SHIFT)},
+      {"S ", KeyEvent('s', ModifierKey::SHIFT)},    {"  T", KeyEvent('t', ModifierKey::SHIFT)},
+      {"\tU\t", KeyEvent('u', ModifierKey::SHIFT)}, {"\tV\t", KeyEvent('v', ModifierKey::SHIFT)},
+      {"W ", KeyEvent('w', ModifierKey::SHIFT)},    {"  X", KeyEvent('x', ModifierKey::SHIFT)},
+      {"\tY\t", KeyEvent('y', ModifierKey::SHIFT)}, {"\tZ\t", KeyEvent('z', ModifierKey::SHIFT)},
+  };
+
+  for (unsigned int i = 0; i < std::size(patterns); i++) {
+    auto &p = patterns[i];
+    SCOPED_TRACE(format("\nindex:%d, keyName:%s, eventOrErr:%s", i, p.keyName.c_str(),
+                        is<KeyEvent>(p.eventOrErr) ? get<KeyEvent>(p.eventOrErr).toString().c_str()
+                        : is<std::string>(p.eventOrErr) ? get<std::string>(p.eventOrErr).c_str()
+                                                        : ""));
+    ASSERT_NO_FATAL_FAILURE(checkName(p.keyName, p.eventOrErr));
+  }
+}
+
+TEST_F(KeyCodeTest, keyName3) {
+  static const struct {
+    std::string keyName;
+    Union<KeyEvent, std::string> eventOrErr;
+  } patterns[] = {
+      {"  space", KeyEvent(' ')},
+      {"__sPa_C__E___\n", KeyEvent(' ')},
+      {"pLus", KeyEvent('+')},
+      {"\n\tM_inus", KeyEvent('-')},
+  };
+
+  for (unsigned int i = 0; i < std::size(patterns); i++) {
+    auto &p = patterns[i];
+    SCOPED_TRACE(format("\nindex:%d, keyName:%s, eventOrErr:%s", i, p.keyName.c_str(),
+                        is<KeyEvent>(p.eventOrErr) ? get<KeyEvent>(p.eventOrErr).toString().c_str()
+                        : is<std::string>(p.eventOrErr) ? get<std::string>(p.eventOrErr).c_str()
+                                                        : ""));
+    ASSERT_NO_FATAL_FAILURE(checkName(p.keyName, p.eventOrErr));
+  }
+}
+
+TEST_F(KeyCodeTest, funcKeyName1) {
+  static const struct {
+    std::string keyName;
+    Union<KeyEvent, std::string> eventOrErr;
+  } patterns[] = {
+      {" esCap_e", KeyEvent(FunctionKey::ESCAPE)},
+      {"ESC\n", KeyEvent(FunctionKey::ESCAPE)},
+      {"enter ", KeyEvent(FunctionKey::ENTER)},
+      {"\n\t_tA_B", KeyEvent(FunctionKey::TAB)},
+      {"BackSpaCe", KeyEvent(FunctionKey::BACKSPACE)},
+      {"bS ", KeyEvent(FunctionKey::BACKSPACE)},
+      {"inserT_", KeyEvent(FunctionKey::INSERT)},
+      {"ins ", KeyEvent(FunctionKey::INSERT)},
+      {"DELETE", KeyEvent(FunctionKey::DELETE)},
+      {"del", KeyEvent(FunctionKey::DELETE)},
+      {"_l_EFT_", KeyEvent(FunctionKey::LEFT)},
+      {"right\r", KeyEvent(FunctionKey::RIGHT)},
+      {"UP", KeyEvent(FunctionKey::UP)},
+      {"Down", KeyEvent(FunctionKey::DOWN)},
+      {"pageup", KeyEvent(FunctionKey::PAGE_UP)},
+      {"pAGED_own", KeyEvent(FunctionKey::PAGE_DOWN)},
+      {"pGUP", KeyEvent(FunctionKey::PAGE_UP)},
+      {"pgdN", KeyEvent(FunctionKey::PAGE_DOWN)},
+      {"Home", KeyEvent(FunctionKey::HOME)},
+      {"END_", KeyEvent(FunctionKey::END)},
+      {"CAPS_LOCK", "need '+' or '-' after modifier"},
+      {"scrollLock", KeyEvent(FunctionKey::SCROLL_LOCK)},
+      {"\t SCRLK_", KeyEvent(FunctionKey::SCROLL_LOCK)},
+      {"Num_LoCK", "need '+' or '-' after modifier"},
+      {"Print_Scr_Een", KeyEvent(FunctionKey::PRINT_SCREEN)},
+      {"prtsc", KeyEvent(FunctionKey::PRINT_SCREEN)},
+      {"break", KeyEvent(FunctionKey::PAUSE)},
+      {"paU__Se", KeyEvent(FunctionKey::PAUSE)},
+      {"Menu", KeyEvent(FunctionKey::MENU)},
+      {"F0", "unrecognized modifier or function key: F0"},
+      {"F13", "unrecognized modifier or function key: F13"},
+      {"bracket_start", "unrecognized modifier or function key: bracket_start"},
+  };
+
+  for (unsigned int i = 0; i < std::size(patterns); i++) {
+    auto &p = patterns[i];
+    SCOPED_TRACE(format("\nindex:%d, keyName:%s, eventOrErr:%s", i, p.keyName.c_str(),
+                        is<KeyEvent>(p.eventOrErr) ? get<KeyEvent>(p.eventOrErr).toString().c_str()
+                        : is<std::string>(p.eventOrErr) ? get<std::string>(p.eventOrErr).c_str()
+                                                        : ""));
+    ASSERT_NO_FATAL_FAILURE(checkName(p.keyName, p.eventOrErr));
+  }
+}
+
+TEST_F(KeyCodeTest, funcKeyName2) {
+  static const struct {
+    std::string keyName;
+    Union<KeyEvent, std::string> eventOrErr;
+  } patterns[] = {
+      {"F1", KeyEvent(FunctionKey::F1)},     {"f2", KeyEvent(FunctionKey::F2)},
+      {"f3", KeyEvent(FunctionKey::F3)},     {"F4", KeyEvent(FunctionKey::F4)},
+      {"f5", KeyEvent(FunctionKey::F5)},     {"\nf6", KeyEvent(FunctionKey::F6)},
+      {"F7", KeyEvent(FunctionKey::F7)},     {"\tf8", KeyEvent(FunctionKey::F8)},
+      {"_F_9", KeyEvent(FunctionKey::F9)},   {"F10__", KeyEvent(FunctionKey::F10)},
+      {"f1__1", KeyEvent(FunctionKey::F11)}, {"f1_2", KeyEvent(FunctionKey::F12)},
+  };
+
+  for (unsigned int i = 0; i < std::size(patterns); i++) {
+    auto &p = patterns[i];
+    SCOPED_TRACE(format("\nindex:%d, keyName:%s, eventOrErr:%s", i, p.keyName.c_str(),
+                        is<KeyEvent>(p.eventOrErr) ? get<KeyEvent>(p.eventOrErr).toString().c_str()
+                        : is<std::string>(p.eventOrErr) ? get<std::string>(p.eventOrErr).c_str()
+                                                        : ""));
+    ASSERT_NO_FATAL_FAILURE(checkName(p.keyName, p.eventOrErr));
+  }
+}
+
+TEST_F(KeyCodeTest, nameAndModifier) {
   static const struct {
     std::string keyName;
     Union<KeyEvent, std::string> eventOrErr;
@@ -689,6 +854,36 @@ TEST_F(KeyCodeTest, name1) {
       {"  m_Eta  + hY__P_eR-m_iNus", KeyEvent('-', ModifierKey::HYPER | ModifierKey::META)},
       {"  ctrl  +   m   ", KeyEvent('m', ModifierKey::CTRL)},
       {"shift - spA_ce", KeyEvent(' ', ModifierKey::SHIFT)},
+      {"shift - s", KeyEvent('s', ModifierKey::SHIFT)},
+      {"shift + alt - Tab", KeyEvent(FunctionKey::TAB, ModifierKey::SHIFT | ModifierKey::ALT)},
+  };
+
+  for (unsigned int i = 0; i < std::size(patterns); i++) {
+    auto &p = patterns[i];
+    SCOPED_TRACE(format("\nindex:%d, keyName:%s, eventOrErr:%s", i, p.keyName.c_str(),
+                        is<KeyEvent>(p.eventOrErr) ? get<KeyEvent>(p.eventOrErr).toString().c_str()
+                        : is<std::string>(p.eventOrErr) ? get<std::string>(p.eventOrErr).c_str()
+                                                        : ""));
+    ASSERT_NO_FATAL_FAILURE(checkName(p.keyName, p.eventOrErr));
+  }
+}
+
+TEST_F(KeyCodeTest, InvalidkeyName) {
+  static const struct {
+    std::string keyName;
+    Union<KeyEvent, std::string> eventOrErr;
+  } patterns[] = {
+      {" ", "need modifiers or keyname: "},
+      {"shift", "need '+' or '-' after modifier"},
+      {"shift &", "need '+' or '-' after modifier"},
+      {" shift -", "need modifiers or keyname: "},
+      {" shift +", "need modifiers or keyname: "},
+      {"shift+M", "shift modifier is only allowed with lower letter or function key"},
+      {"shift++", "shift modifier is only allowed with lower letter or function key"},
+      {"shift- Minus", "shift modifier is only allowed with lower letter or function key"},
+      {"shift+s 1234", "invalid token: 1"},
+      {"s + shift", "invalid token: +"},
+      {"shift+s qw", "invalid token: qw"},
   };
 
   for (unsigned int i = 0; i < std::size(patterns); i++) {

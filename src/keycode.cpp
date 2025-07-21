@@ -644,7 +644,8 @@ public:
     }
     default:
       if (this->err) {
-        *this->err += "need modifiers or keyname";
+        *this->err += "need modifiers or keyname: ";
+        *this->err += this->getTokenText();
       }
       goto ERROR;
     }

@@ -35,8 +35,6 @@ enum class KeyNameTokenKind : unsigned char {
 #undef GEN_ENUM
 };
 
-// const char *toString(KeyNameTokenKind kind);
-
 class KeyNameLexer : public LexerBase {
 public:
   explicit KeyNameLexer(StringRef ref) : LexerBase("(string)", ref.data(), ref.size()) {}
