@@ -18,7 +18,7 @@
 #define ARSH_PAGER_H
 
 #include "candidates.h"
-#include "keycode.h"
+#include "keybind.h"
 #include "misc/buffer.hpp"
 
 namespace arsh {

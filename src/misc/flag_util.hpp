@@ -53,7 +53,7 @@ private:
   T value{0};
 
 public:
-  static constexpr size_t BIT_SIZE = sizeof(T) * 8;
+  static constexpr std::size_t BIT_SIZE = sizeof(T) * 8;
 
   static constexpr bool checkRange(uint8_t v) { return v < BIT_SIZE; }
 

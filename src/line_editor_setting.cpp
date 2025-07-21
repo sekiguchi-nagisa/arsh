@@ -21,50 +21,6 @@
 
 namespace arsh {
 
-bool LineEditorObject::addKeyBind(ARState &state, StringRef key, StringRef name) {
-  auto s = this->keyBindings.addBinding(key, name);
-  std::string message;
-  switch (s) {
-  case KeyBindings::AddStatus::OK:
-    break;
-  case KeyBindings::AddStatus::UNDEF:
-    message = "undefined edit action: `";
-    appendAsPrintable(name, SYS_LIMIT_ERROR_MSG_MAX - 1, message);
-    message += '\'';
-    break;
-  case KeyBindings::AddStatus::FORBID_BRACKET_START_CODE:
-    message = "cannot change binding of bracket start code `";
-    message += KeyEvent::toCaret(KeyBindings::BRACKET_START);
-    message += '\'';
-    break;
-  case KeyBindings::AddStatus::FORBID_BRACKET_ACTION:
-    message = "cannot bind to `";
-    message += toString(EditActionType::BRACKET_PASTE);
-    message += '\'';
-    break;
-  case KeyBindings::AddStatus::INVALID_START_CHAR:
-    message = "keycode must start with control character: `";
-    appendAsPrintable(key, SYS_LIMIT_ERROR_MSG_MAX - 1, message);
-    message += '\'';
-    break;
-  case KeyBindings::AddStatus::INVALID_ASCII:
-    message = "keycode must be ascii characters: `";
-    appendAsPrintable(key, SYS_LIMIT_ERROR_MSG_MAX - 1, message);
-    message += '\'';
-    break;
-  case KeyBindings::AddStatus::LIMIT:
-    message = "number of key bindings reaches limit (up to ";
-    message += std::to_string(SYS_LIMIT_KEY_BINDING_MAX);
-    message += ')';
-    break;
-  }
-  if (!message.empty()) {
-    raiseError(state, TYPE::ArgumentError, std::move(message));
-    return false;
-  }
-  return true;
-}
-
 LineEditorObject::custom_callback_iter
 LineEditorObject::lookupCustomCallback(unsigned int index) const {
   auto dummy = Value::createInvalid().withMetaData(index);

@@ -2492,7 +2492,10 @@ ARSH_METHOD edit_bind(RuntimeContext &ctx) {
   CHECK_EDITOR_LOCK(editor);
   auto key = LOCAL(1).asStrRef();
   auto v = LOCAL(2);
-  editor.addKeyBind(ctx, key, v.isInvalid() ? "" : v.asStrRef());
+  if (std::string err; !editor.addKeyBind(key, v.isInvalid() ? "" : v.asStrRef(), err)) {
+    raiseError(ctx, TYPE::ArgumentError, std::move(err));
+    RET_ERROR;
+  }
   RET_VOID;
 }
 

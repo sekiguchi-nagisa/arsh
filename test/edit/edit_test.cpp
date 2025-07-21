@@ -2,6 +2,7 @@
 
 #include "gtest/gtest.h"
 
+#include <keybind.h>
 #include <keycode.h>
 #include <line_buffer.h>
 #include <token_edit.h>

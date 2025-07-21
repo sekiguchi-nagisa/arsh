@@ -270,6 +270,7 @@ set(ARSH_SRC
         src/format_util.cpp
         src/object_util.cpp
         src/token_edit.cpp
+        src/keybind.cpp
         ${lexer_src}
         ${bind_src}
         ${embed_src}

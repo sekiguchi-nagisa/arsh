@@ -19,7 +19,7 @@
 
 #include <termios.h>
 
-#include "keycode.h"
+#include "keybind.h"
 #include "object.h"
 #include "renderer.h"
 
@@ -116,15 +116,9 @@ public:
     this->escapeSeqMap = ANSIEscapeSeqMap::fromString(colorSetting);
   }
 
-  /**
-   *
-   * @param state
-   * @param key
-   * @param name
-   * @return
-   * if error, return false
-   */
-  bool addKeyBind(ARState &state, StringRef key, StringRef name);
+  bool addKeyBind(StringRef key, StringRef name, std::string &err) {
+    return this->keyBindings.addBinding(key, name, &err);
+  }
 
   bool defineCustomAction(ARState &state, StringRef name, StringRef type,
                           ObjPtr<Object> &&callback);
