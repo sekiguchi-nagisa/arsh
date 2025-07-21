@@ -29,6 +29,9 @@ if(command -v arcolorize &>> /dev/null) {
     if getenv COLORTERM && $REPLY == 'truecolor' {
         $format = "term"
     }
+    if getenv TERM && $REPLY.contains('screen') {
+        $format = "term256"
+    }
     var color = "$(arcolorize --dump -s monokai_dimmed -f $format 2>> /dev/null)"
     if $? == 0 {
         $LINE_EDIT.config('color', $color)
