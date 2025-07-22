@@ -31,6 +31,8 @@ inline bool isEscapeChar(int ch) { return ch == '\x1b'; }
 
 inline bool isCaretTarget(int ch) { return (ch >= '@' && ch <= '_') || ch == '?'; }
 
+inline bool isAsciiPrintable(int ch) { return ch >= 32 && ch <= 126; }
+
 struct ReadWithTimeoutParam {
   bool retry;
   int timeoutMSec;
@@ -155,7 +157,9 @@ public:
 
   bool isFuncKey() const { return this->value & (1u << 31u); }
 
-  bool isBracketPateStart() const {
+  bool isCodePoint() const { return !this->isFuncKey(); }
+
+  bool isBracketPasteStart() const {
     return this->isFuncKey() && this->asFuncKey() == FunctionKey::BRACKET_START;
   }
 

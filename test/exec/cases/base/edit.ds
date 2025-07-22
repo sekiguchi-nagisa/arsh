@@ -18,11 +18,11 @@ assert ($ex as ArgumentError).message() == "need modifiers or keyname: "
 
 $ex = 34
 try { $editor.bind("A", "complete"); } catch e { $ex = $e;}
-assert ($ex as ArgumentError).message() == "ascii code needs at-least one modifier (except for shift): \`A'"
+assert ($ex as ArgumentError).message() == "ascii keycode needs at-least one modifier (except for shift): \`shift+a'"
 
 $ex = 34
-try { $editor.bind("a", "complete"); } catch e { $ex = $e;}
-assert ($ex as ArgumentError).message() == "ascii code needs at-least one modifier (except for shift): \`a'"
+try { $editor.bind("  a", "complete"); } catch e { $ex = $e;}
+assert ($ex as ArgumentError).message() == "ascii keycode needs at-least one modifier (except for shift): \`a'"
 
 $ex = 34
 try { $editor.bind("^Aあ", "complete"); } catch e { $ex = $e;}

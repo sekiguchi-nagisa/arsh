@@ -646,7 +646,7 @@ ssize_t LineEditorObject::editInRawMode(ARState &state, RenderingContext &ctx) {
       }
       return -1;
     }
-    if (auto event = reader.getEvent(); event.hasValue() && event.unwrap().isBracketPateStart()) {
+    if (auto event = reader.getEvent(); event.hasValue() && event.unwrap().isBracketPasteStart()) {
       ctx.buf.commitLastChange();
       const auto oldTimeout = reader.getTimeout();
       reader.setTimeout(KeyCodeReader::DEFAULT_READ_TIMEOUT_MSEC * 2);

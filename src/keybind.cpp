@@ -290,7 +290,7 @@ bool KeyBindings::addBinding(StringRef key, StringRef name, std::string *err) {
   if (key.size() > 1 && key[0] == '^') { // caret notation
     auto seq = KeyEvent::parseCaret(key);
     event = KeyEvent::fromEscapeSeq(seq);
-    if (!event.hasValue() || event.unwrap().isBracketPateStart()) {
+    if (!event.hasValue() || event.unwrap().isBracketPasteStart()) {
       header = "unrecognized escape sequence: `";
       goto ERROR;
     }
@@ -302,10 +302,19 @@ bool KeyBindings::addBinding(StringRef key, StringRef name, std::string *err) {
       goto ERROR;
     }
   }
-  if (!event.unwrap().isFuncKey() && (event.unwrap().modifiers() == ModifierKey{} ||
-                                      event.unwrap().modifiers() == ModifierKey::SHIFT)) {
-    header = "ascii code needs at-least one modifier (except for shift): `";
-    goto ERROR;
+  if (const auto e = event.unwrap(); e.isCodePoint()) {
+    if (!isAsciiPrintable(e.asCodePoint())) { // kitty protocol supports arbitrary code points
+      header = "keycode must be ascii printable char or function key: `";
+      dummy = e.toString();
+      key = dummy;
+      goto ERROR;
+    }
+    if (const auto m = e.modifiers(); m == ModifierKey{} || m == ModifierKey::SHIFT) {
+      header = "ascii keycode needs at-least one modifier (except for shift): `";
+      dummy = e.toString();
+      key = dummy;
+      goto ERROR;
+    }
   }
 
   switch (this->addBinding(event.unwrap(), name)) {
