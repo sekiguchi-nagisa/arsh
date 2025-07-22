@@ -514,7 +514,7 @@ static std::unordered_map<std::string, FunctionKey> initFuncKeyMap() {
 
   // add alias
   constexpr struct {
-    const char *alias;
+    char alias[7];
     FunctionKey funcKey;
   } aliasTable[] = {
       {"esc", FunctionKey::ESCAPE},
@@ -544,7 +544,7 @@ static const FunctionKey *lookupFuncKey(const std::string &normalizedKey) {
 
 static char lookupAsciiChar(const std::string &normalizedKey) {
   constexpr struct {
-    StringRef abbr;
+    char abbr[7];
     char ch;
   } entries[] = {{"space", ' '}, {"plus", '+'}, {"minus", '-'}};
   for (auto &e : entries) {
