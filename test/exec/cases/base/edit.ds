@@ -8,7 +8,7 @@ assert $bindings is [String : String]
 assert $bindings["ctrl+i"] == "complete"
 assert $bindings["ctrl+e"] == "end-of-line"
 assert $bindings["ctrl+?"] == "backward-delete-char"
-assert $bindings["LEFT"] == "backward-char"
+assert $bindings["left"] == "backward-char"
 assert !$bindings.get("^[12") 
 
 ## change keybind
@@ -43,14 +43,14 @@ assert ($ex as ArgumentError).message() == "undefined edit action: \`bracket-pas
 $ex = 34
 try { $editor.bind("^[[D", "complete"); } catch e { $ex = $e;}
 assert ! ($ex is ArgumentError)  # change binding
-assert $bindings["LEFT"] == "backward-char"  # keybind modification does not affect previous result of LineEditor#bindings
-assert $editor.bindings()["LEFT"] == "complete"
+assert $bindings["left"] == "backward-char"  # keybind modification does not affect previous result of LineEditor#bindings
+assert $editor.bindings()["left"] == "complete"
 
 $ex = 34
 try { $editor.bind("F12", "beginning-of-line"); } catch e { $ex = $e;}
 assert ! ($ex is ArgumentError)  # add binding
-assert !$bindings.get("F12")  # keybind modification does not affect previous result of LineEditor#bindings
-assert $editor.bindings()["F12"] == "beginning-of-line"
+assert !$bindings.get("f12")  # keybind modification does not affect previous result of LineEditor#bindings
+assert $editor.bindings()["f12"] == "beginning-of-line"
 
 ## remove bind
 $ex = 34
@@ -62,13 +62,13 @@ assert ! $editor.bindings().get("^[[D")
 $ex = 34
 try { $editor.bind("DOWN", "end-of-line"); } catch e { $ex = $e;}  # if action is empty string, remove keybind
 assert ! ($ex is ArgumentError)  # change bindings
-assert $editor.bindings()["DOWN"] == "end-of-line"
+assert $editor.bindings()["down"] == "end-of-line"
 
 ## remove bind
 $ex = 34
 try { $editor.bind("DOWN"); } catch e { $ex = $e;}  # if action is empty string, remove keybind
 assert ! ($ex is ArgumentError)  # change bindings
-assert ! $editor.bindings().get("DOWN")
+assert ! $editor.bindings().get("down")
 
 ## limit
 $ex = 45

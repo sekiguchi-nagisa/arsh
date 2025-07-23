@@ -78,42 +78,42 @@ template <>
 struct allow_enum_bitop<ModifierKey> : std::true_type {};
 
 #define EACH_FUNCTION_KEY(OP)                                                                      \
-  OP(ESCAPE) /* esc */                                                                             \
-  OP(ENTER)                                                                                        \
-  OP(TAB)                                                                                          \
-  OP(BACKSPACE) /* bs */                                                                           \
-  OP(INSERT)    /* ins */                                                                          \
-  OP(DELETE)    /* del */                                                                          \
-  OP(LEFT)                                                                                         \
-  OP(RIGHT)                                                                                        \
-  OP(UP)                                                                                           \
-  OP(DOWN)                                                                                         \
-  OP(PAGE_UP)   /* pgup */                                                                         \
-  OP(PAGE_DOWN) /* pgdn */                                                                         \
-  OP(HOME)                                                                                         \
-  OP(END)                                                                                          \
-  /*OP(CAPS_LOCK)*/ /* caps */                                                                     \
-  OP(SCROLL_LOCK)   /* scrlk */                                                                    \
-  /*OP(NUM_LOCK)*/  /* numlk */                                                                    \
-  OP(PRINT_SCREEN)  /* prtsc */                                                                    \
-  OP(PAUSE)         /* break */                                                                    \
-  OP(MENU)                                                                                         \
-  OP(F1)                                                                                           \
-  OP(F2)                                                                                           \
-  OP(F3)                                                                                           \
-  OP(F4)                                                                                           \
-  OP(F5)                                                                                           \
-  OP(F6)                                                                                           \
-  OP(F7)                                                                                           \
-  OP(F8)                                                                                           \
-  OP(F9)                                                                                           \
-  OP(F10)                                                                                          \
-  OP(F11)                                                                                          \
-  OP(F12)                                                                                          \
-  OP(BRACKET_START) /* for bracket-paste mode */
+  OP(ESCAPE, "escape") /* esc */                                                                   \
+  OP(ENTER, "enter")                                                                               \
+  OP(TAB, "tab")                                                                                   \
+  OP(BACKSPACE, "backspace") /* bs */                                                              \
+  OP(INSERT, "insert")       /* ins */                                                             \
+  OP(DELETE, "delete")       /* del */                                                             \
+  OP(LEFT, "left")                                                                                 \
+  OP(RIGHT, "right")                                                                               \
+  OP(UP, "up")                                                                                     \
+  OP(DOWN, "down")                                                                                 \
+  OP(PAGE_UP, "page_up")     /* pgup */                                                            \
+  OP(PAGE_DOWN, "page_down") /* pgdn */                                                            \
+  OP(HOME, "home")                                                                                 \
+  OP(END, "end")                                                                                   \
+  /*OP(CAPS_LOCK)*/                /* caps */                                                      \
+  OP(SCROLL_LOCK, "scroll_lock")   /* scrlk */                                                     \
+  /*OP(NUM_LOCK)*/                 /* numlk */                                                     \
+  OP(PRINT_SCREEN, "print_screen") /* prtsc */                                                     \
+  OP(PAUSE, "pause")               /* break */                                                     \
+  OP(MENU, "menu")                                                                                 \
+  OP(F1, "f1")                                                                                     \
+  OP(F2, "f2")                                                                                     \
+  OP(F3, "f3")                                                                                     \
+  OP(F4, "f4")                                                                                     \
+  OP(F5, "f5")                                                                                     \
+  OP(F6, "f6")                                                                                     \
+  OP(F7, "f7")                                                                                     \
+  OP(F8, "f8")                                                                                     \
+  OP(F9, "f9")                                                                                     \
+  OP(F10, "f10")                                                                                   \
+  OP(F11, "f11")                                                                                   \
+  OP(F12, "f12")                                                                                   \
+  OP(BRACKET_START, "bracket_start") /* for bracket-paste mode */
 
 enum class FunctionKey : unsigned char {
-#define GEN_ENUM(E) E,
+#define GEN_ENUM(E, S) E,
   EACH_FUNCTION_KEY(GEN_ENUM)
 #undef GEN_ENUM
 };

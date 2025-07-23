@@ -104,9 +104,9 @@ const char *toString(ModifierKey modifier) {
 
 const char *toString(FunctionKey funcKey) {
   switch (funcKey) {
-#define GEN_CASE(E)                                                                                \
+#define GEN_CASE(E, S)                                                                             \
   case FunctionKey::E:                                                                             \
-    return #E;
+    return S;
     EACH_FUNCTION_KEY(GEN_CASE)
 #undef GEN_CASE
   default:
@@ -492,7 +492,7 @@ static const ModifierKey *lookupModifier(const std::string &normalizedKey) {
 
 constexpr unsigned int numOfFuncKey() {
   constexpr FunctionKey table[] = {
-#define GEN_TABLE(E) FunctionKey::E,
+#define GEN_TABLE(E, S) FunctionKey::E,
       EACH_FUNCTION_KEY(GEN_TABLE)
 #undef GEN_TABLE
   };
