@@ -104,113 +104,94 @@ int CustomActionMap::remove(StringRef ref) {
 // ##     KeyBindings    ##
 // ########################
 
-#define CTRL_A_ "\x01"
-#define CTRL_B_ "\x02"
-#define CTRL_C_ "\x03"
-#define CTRL_D_ "\x04"
-#define CTRL_E_ "\x05"
-#define CTRL_F_ "\x06"
-#define CTRL_H_ "\x08"
-#define CTRL_I_ "\x09"
-#define TAB_ CTRL_I_
-#define CTRL_J_ "\x0A"
-#define CTRL_K_ "\x0B"
-#define CTRL_L_ "\x0C"
-#define CTRL_M_ "\x0D"
-#define ENTER_ CTRL_M_
-#define CTRL_N_ "\x0E"
-#define CTRL_P_ "\x10"
-#define CTRL_T_ "\x14"
-#define CTRL_U_ "\x15"
-#define CTRL_V_ "\x16"
-#define CTRL_W_ "\x17"
-#define CTRL_Y_ "\x19"
-#define CTRL_Z_ "\x1A"
-#define ESC_ "\x1b"
-#define BACKSPACE_ "\x7F"
-
 KeyBindings::KeyBindings() {
   // define edit action
   constexpr struct {
-    const char key[7];
+    KeyEvent event;
     EditActionType type;
   } entries[] = {
-      // control character
-      {ENTER_, EditActionType::ACCEPT},
-      {CTRL_J_, EditActionType::ACCEPT},
-      {CTRL_C_, EditActionType::CANCEL},
-      {TAB_, EditActionType::COMPLETE},
-      {CTRL_H_, EditActionType::BACKWARD_DELETE_CHAR},
-      {BACKSPACE_, EditActionType::BACKWARD_DELETE_CHAR},
-      {CTRL_D_, EditActionType::DELETE_OR_EXIT},
-      {CTRL_T_, EditActionType::TRANSPOSE_CHAR},
-      {CTRL_B_, EditActionType::BACKWARD_CHAR},
-      {CTRL_F_, EditActionType::FORWARD_CHAR},
-      {CTRL_P_, EditActionType::UP_OR_HISTORY},
-      {CTRL_N_, EditActionType::DOWN_OR_HISTORY},
-      {CTRL_U_, EditActionType::BACKWORD_KILL_LINE},
-      {CTRL_K_, EditActionType::KILL_LINE},
-      {CTRL_A_, EditActionType::BEGINNING_OF_LINE},
-      {CTRL_E_, EditActionType::END_OF_LINE},
-      {CTRL_L_, EditActionType::CLEAR_SCREEN},
-      {CTRL_W_, EditActionType::BACKWARD_KILL_WORD},
-      {CTRL_V_, EditActionType::INSERT_KEYCODE},
-      {CTRL_Y_, EditActionType::YANK},
-      {CTRL_Z_, EditActionType::UNDO},
+      // control character (ctrl+)
+      {KeyEvent(FunctionKey::ENTER), EditActionType::ACCEPT},     // for kitty
+      {KeyEvent('m', ModifierKey::CTRL), EditActionType::ACCEPT}, // normally via enter
+      {KeyEvent('j', ModifierKey::CTRL), EditActionType::ACCEPT},
+      {KeyEvent('c', ModifierKey::CTRL), EditActionType::CANCEL},
+      {KeyEvent(FunctionKey::TAB), EditActionType::COMPLETE},       // for kitty
+      {KeyEvent('i', ModifierKey::CTRL), EditActionType::COMPLETE}, // normally via tab
+      {KeyEvent('h', ModifierKey::CTRL), EditActionType::BACKWARD_DELETE_CHAR},
+      {KeyEvent(FunctionKey::BACKSPACE), EditActionType::BACKWARD_DELETE_CHAR}, // for kitty
+      {KeyEvent('?', ModifierKey::CTRL),
+       EditActionType::BACKWARD_DELETE_CHAR}, // normally via backspace
+      {KeyEvent('d', ModifierKey::CTRL), EditActionType::DELETE_OR_EXIT},
+      {KeyEvent('t', ModifierKey::CTRL), EditActionType::TRANSPOSE_CHAR},
+      {KeyEvent('b', ModifierKey::CTRL), EditActionType::BACKWARD_CHAR},
+      {KeyEvent('f', ModifierKey::CTRL), EditActionType::FORWARD_CHAR},
+      {KeyEvent('p', ModifierKey::CTRL), EditActionType::UP_OR_HISTORY},
+      {KeyEvent('n', ModifierKey::CTRL), EditActionType::DOWN_OR_HISTORY},
+      {KeyEvent('u', ModifierKey::CTRL), EditActionType::BACKWARD_KILL_LINE},
+      {KeyEvent('k', ModifierKey::CTRL), EditActionType::KILL_LINE},
+      {KeyEvent('a', ModifierKey::CTRL), EditActionType::BEGINNING_OF_LINE},
+      {KeyEvent('e', ModifierKey::CTRL), EditActionType::END_OF_LINE},
+      {KeyEvent('l', ModifierKey::CTRL), EditActionType::CLEAR_SCREEN},
+      {KeyEvent(FunctionKey::BACKSPACE, ModifierKey::CTRL),
+       EditActionType::BACKWARD_KILL_WORD}, // for kitty
+      {KeyEvent('w', ModifierKey::CTRL), EditActionType::BACKWARD_KILL_WORD},
+      {KeyEvent('v', ModifierKey::CTRL), EditActionType::INSERT_KEYCODE},
+      {KeyEvent('y', ModifierKey::CTRL), EditActionType::YANK},
+      {KeyEvent('z', ModifierKey::CTRL), EditActionType::UNDO},
 
-      // escape sequence
-      {ESC_ "b", EditActionType::BACKWARD_WORD},
-      {ESC_ "f", EditActionType::FORWARD_WORD},
-      {ESC_ "d", EditActionType::KILL_WORD},
-      {ESC_ "y", EditActionType::YANK_POP},
-      {ESC_ "/", EditActionType::REDO},
-      {ESC_ ENTER_, EditActionType::NEWLINE},
-      {ESC_ "<", EditActionType::BEGINNING_OF_BUF},
-      {ESC_ ">", EditActionType::END_OF_BUF},
-      {ESC_ "[3~", EditActionType::DELETE_CHAR},
-      {ESC_ "[1;3A", EditActionType::PREV_HISTORY},   // alt+up
-      {ESC_ "[1;3B", EditActionType::NEXT_HISTORY},   // alt+down
-      {ESC_ "[1;3D", EditActionType::BACKWARD_WORD},  // alt+left
-      {ESC_ "[1;3C", EditActionType::FORWARD_WORD},   // alt+right
-      {ESC_ "[A", EditActionType::UP_OR_HISTORY},     // up
-      {ESC_ "[B", EditActionType::DOWN_OR_HISTORY},   // down
-      {ESC_ "[D", EditActionType::BACKWARD_CHAR},     // left
-      {ESC_ "[C", EditActionType::FORWARD_CHAR},      // right
-      {ESC_ "[H", EditActionType::BEGINNING_OF_LINE}, // home
-      {ESC_ "[F", EditActionType::END_OF_LINE},       // end
+      // escape sequence (alt+)
+      {KeyEvent('b', ModifierKey::ALT), EditActionType::BACKWARD_WORD},
+      {KeyEvent('f', ModifierKey::ALT), EditActionType::FORWARD_WORD},
+      {KeyEvent('d', ModifierKey::ALT), EditActionType::KILL_WORD},
+      {KeyEvent('y', ModifierKey::ALT), EditActionType::YANK_POP},
+      {KeyEvent('/', ModifierKey::ALT), EditActionType::REDO},
+      {KeyEvent(FunctionKey::ENTER, ModifierKey::ALT), EditActionType::NEWLINE}, // for kitty
+      {KeyEvent('m', ModifierKey::ALT | ModifierKey::CTRL),
+       EditActionType::NEWLINE}, // normally via alt-enter
+      {KeyEvent('<', ModifierKey::ALT), EditActionType::BEGINNING_OF_BUF},
+      {KeyEvent('>', ModifierKey::ALT), EditActionType::END_OF_BUF},
+      {KeyEvent(FunctionKey::DELETE), EditActionType::DELETE_CHAR},
+      {KeyEvent(FunctionKey::UP, ModifierKey::ALT), EditActionType::PREV_HISTORY},
+      {KeyEvent(FunctionKey::DOWN, ModifierKey::ALT), EditActionType::NEXT_HISTORY},
+      {KeyEvent(FunctionKey::LEFT, ModifierKey::ALT), EditActionType::BACKWARD_WORD},
+      {KeyEvent(FunctionKey::RIGHT, ModifierKey::ALT), EditActionType::FORWARD_WORD},
+      {KeyEvent(FunctionKey::UP), EditActionType::UP_OR_HISTORY},
+      {KeyEvent(FunctionKey::DOWN), EditActionType::DOWN_OR_HISTORY},
+      {KeyEvent(FunctionKey::LEFT), EditActionType::BACKWARD_CHAR},
+      {KeyEvent(FunctionKey::RIGHT), EditActionType::FORWARD_CHAR},
+      {KeyEvent(FunctionKey::HOME), EditActionType::BEGINNING_OF_LINE},
+      {KeyEvent(FunctionKey::END), EditActionType::END_OF_LINE},
   };
   for (auto &e : entries) {
-    auto event = KeyEvent::fromEscapeSeq(e.key);
-    assert(event.hasValue());
-    auto pair = this->values.emplace(event.unwrap(), e.type);
+    const auto pair = this->values.emplace(e.event, e.type);
     static_cast<void>(pair);
     assert(pair.second);
   }
 
   // define pager action
   constexpr struct {
-    const char key[7];
+    KeyEvent event;
     PagerAction action;
   } pagers[] = {
-      {ENTER_, PagerAction::SELECT},      {CTRL_J_, PagerAction::SELECT},
-      {CTRL_C_, PagerAction::CANCEL},     {ESC_, PagerAction::ESCAPE},
-      {TAB_, PagerAction::NEXT},          {ESC_ "[Z", PagerAction::PREV}, // shift-tab
-      {CTRL_P_, PagerAction::PREV},       {CTRL_N_, PagerAction::NEXT},
-
-      {ESC_ "[1;3A", PagerAction::PREV},  // alt+up
-      {ESC_ "[1;3B", PagerAction::NEXT},  // alt+down
-      {ESC_ "[1;3D", PagerAction::LEFT},  // alt+left
-      {ESC_ "[1;3C", PagerAction::RIGHT}, // alt+right
-      {ESC_ "[A", PagerAction::PREV},     // up
-      {ESC_ "[B", PagerAction::NEXT},     // down
-      {ESC_ "[D", PagerAction::LEFT},     // left
-      {ESC_ "[C", PagerAction::RIGHT},    // right
+      {KeyEvent(FunctionKey::ENTER), PagerAction::SELECT},     // for kitty
+      {KeyEvent('m', ModifierKey::CTRL), PagerAction::SELECT}, // normally via enter
+      {KeyEvent('j', ModifierKey::CTRL), PagerAction::SELECT},
+      {KeyEvent('c', ModifierKey::CTRL), PagerAction::CANCEL},
+      {KeyEvent(FunctionKey::ESCAPE), PagerAction::ESCAPE},    // for kitty
+      {KeyEvent('[', ModifierKey::CTRL), PagerAction::ESCAPE}, // normally via escape
+      {KeyEvent('i', ModifierKey::CTRL), PagerAction::NEXT},   // normally via tab
+      {KeyEvent(FunctionKey::TAB), PagerAction::NEXT},         // for kitty
+      {KeyEvent(FunctionKey::TAB, ModifierKey::SHIFT), PagerAction::PREV},
+      {KeyEvent('p', ModifierKey::CTRL), PagerAction::PREV},
+      {KeyEvent('n', ModifierKey::CTRL), PagerAction::NEXT},
+      {KeyEvent(FunctionKey::UP), PagerAction::PREV},
+      {KeyEvent(FunctionKey::DOWN), PagerAction::NEXT},
+      {KeyEvent(FunctionKey::LEFT), PagerAction::LEFT},
+      {KeyEvent(FunctionKey::RIGHT), PagerAction::RIGHT},
   };
   for (auto &e : pagers) {
-    auto event = KeyEvent::fromEscapeSeq(e.key);
-    assert(event.hasValue());
-    auto pair = this->pagerValues.emplace(event.unwrap(), e.action);
-    (void)pair;
+    const auto pair = this->pagerValues.emplace(e.event, e.action);
+    static_cast<void>(pair);
     assert(pair.second);
   }
 }

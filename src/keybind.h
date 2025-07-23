@@ -43,7 +43,7 @@ namespace arsh {
   OP(NEXT_HISTORY, "next-history")                 /* ALT-DOWN */                                  \
   OP(UP_OR_HISTORY, "up-or-history")               /* CTRL-P / UP */                               \
   OP(DOWN_OR_HISTORY, "down-or-history")           /* CTRL-N / DOWN */                             \
-  OP(BACKWORD_KILL_LINE, "backward-kill-line")     /* CTRL-U */                                    \
+  OP(BACKWARD_KILL_LINE, "backward-kill-line")     /* CTRL-U */                                    \
   OP(KILL_LINE, "kill-line")                       /* CTRL-K */                                    \
   OP(BEGINNING_OF_LINE, "beginning-of-line")       /* CTRL-A / HOME */                             \
   OP(END_OF_LINE, "end-of-line")                   /* CTRL-E / EMD */                              \

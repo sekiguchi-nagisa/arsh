@@ -733,7 +733,7 @@ ssize_t LineEditorObject::editInRawMode(ARState &state, RenderingContext &ctx) {
       }
       break;
     }
-    case EditActionType::BACKWORD_KILL_LINE: /* delete the whole line or delete to current */
+    case EditActionType::BACKWARD_KILL_LINE: /* delete the whole line or delete to current */
       if (std::string capture; ctx.buf.deleteLineToCursor(false, &capture)) {
         this->killRing.add(std::move(capture));
         this->refreshLine(state, ctx);
