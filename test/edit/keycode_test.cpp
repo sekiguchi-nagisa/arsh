@@ -310,10 +310,6 @@ struct KeyCodeTest : public ::testing::Test {
     if (ret.hasValue()) {
       auto &e = event.unwrap();
       ASSERT_EQ(e.toString(), ret.unwrap().toString());
-      if (e.isFuncKey() && e.asFuncKey() == FunctionKey::BRACKET_START) {
-        return; // ignore
-      }
-      checkName(e.toString(), e);
     }
   }
 
@@ -736,6 +732,48 @@ TEST_F(KeyCodeTest, modifier) {
       {CSI_("1;4294967290A"), {}},
       {CSI_("1;23::::A"), {}},
       {CSI_("1;23A;:"), {}},
+  };
+  for (unsigned int i = 0; i < std::size(patterns); i++) {
+    auto &p = patterns[i];
+    SCOPED_TRACE(format("\nindex:%d, seq:%s, event:%s", i, KeyEvent::toCaret(p.seq).c_str(),
+                        p.event.hasValue() ? p.event.unwrap().toString().c_str() : ""));
+    ASSERT_NO_FATAL_FAILURE(checkCode(p.seq, p.event));
+  }
+}
+
+TEST_F(KeyCodeTest, kittyProtocol) {
+  static const struct {
+    StringRef seq;
+    Optional<KeyEvent> event;
+  } patterns[] = {
+      {CSI_("32u"), KeyEvent(' ')},
+      {CSI_("32;2u"), KeyEvent(' ', ModifierKey::SHIFT)},
+      {CSI_("32;4:1u"), KeyEvent(' ', ModifierKey::SHIFT | ModifierKey::ALT)},
+      {CSI_("32::32;2u"), KeyEvent(' ', ModifierKey::SHIFT)}, // base-layout key
+      {CSI_("121;2u"), KeyEvent('y', ModifierKey::SHIFT)},
+      {CSI_("121:89;2u"), KeyEvent('y', ModifierKey::SHIFT)},
+      {CSI_("120;6u"), KeyEvent('x', ModifierKey::SHIFT | ModifierKey::CTRL)},
+      {CSI_("120:88;6u"), KeyEvent('x', ModifierKey::SHIFT | ModifierKey::CTRL)},
+      {CSI_("120:88;6:1u"), KeyEvent('x', ModifierKey::SHIFT | ModifierKey::CTRL)},
+      {CSI_("88u"), KeyEvent('X')},                        // shifted-key, but no shift
+      {CSI_("121:89u"), {}},                               // alternate code, but no shift
+      {CSI_("121:89;3u"), {}},                             // alternate code, but no shift
+      {CSI_("57:40;2:1u"), KeyEvent('(')},                 // use alternate code
+      {CSI_("57:40;4u"), KeyEvent('(', ModifierKey::ALT)}, // use alternate code
+      {CSI_("57;2u"), KeyEvent('9', ModifierKey::SHIFT)},  // with shift, but no alternate code
+      {CSI_("57:40;2:3u"), {}}, // not support other events (only allow press)
+      {CSI_("57343u"), KeyEvent(57343)},
+      {CSI_("57344u"), {}}, // not allow Unicode Private Use Area
+      {CSI_("57345u"), {}},
+      {CSI_("63743u"), {}},
+      {CSI_("63744u"), KeyEvent(63744)},
+      {CSI_("0u"), KeyEvent(0)},                       // allow C0 control (normally not provided)
+      {CSI_("1;2u"), KeyEvent(1, ModifierKey::SHIFT)}, // allow C0 control (normally not provided)
+      {CSI_("32:<;2u"), {}},
+      {CSI_("32:12;2:u"), {}},
+      {CSI_("32:12;2;u"), {}},
+      {CSI_("32:12;2:<u"), {}},
+      {CSI_("32:12:&;2:1u"), {}},
   };
   for (unsigned int i = 0; i < std::size(patterns); i++) {
     auto &p = patterns[i];

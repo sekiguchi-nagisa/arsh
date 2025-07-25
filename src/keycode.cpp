@@ -122,7 +122,9 @@ static bool isShifted(int ch) { return ch >= 'A' && ch <= 'Z'; }
 
 static int unshift(int ch) { return (ch - 'A') + 'a'; }
 
-static bool isShiftable(int ch) { return (ch >= 'a' && ch <= 'z') || ch == ' '; }
+static bool isShiftable(int ch) { return ch >= 'a' && ch <= 'z'; }
+
+static bool isShiftableOrSpace(int ch) { return isShiftable(ch) || ch == ' '; }
 
 static Optional<KeyEvent> parseSS3Seq(const char ch) {
   FunctionKey funcKey;
@@ -260,8 +262,24 @@ static FunctionKey resolveUFuncKey(int num) {
   return FunctionKey::BRACKET_START; // not found
 }
 
-static Optional<KeyEvent> resolveCSI(int num, ModifierKey modifiers, const char final) {
-  switch (final) {
+static Optional<KeyEvent> resolveCodePoint(int num, ModifierKey modifiers, int alternateCode) {
+  // ignore Unicode Private Use Area (kitty may treat theme as additional functional keys)
+  if (num >= 57344 && num <= 63743) {
+    return {};
+  }
+  if (alternateCode > -1 && !hasFlag(modifiers, ModifierKey::SHIFT)) {
+    return {}; // invalid alternate code (need shift modifier)
+  }
+  if (hasFlag(modifiers, ModifierKey::SHIFT) && alternateCode > -1 && !isShiftable(num)) {
+    num = alternateCode;
+    unsetFlag(modifiers, ModifierKey::SHIFT);
+  }
+  return KeyEvent(num, modifiers);
+}
+
+static Optional<KeyEvent> resolveCSI(int num, ModifierKey modifiers, int alternateCode,
+                                     const char finalByte) {
+  switch (finalByte) {
   case 'A':
     if (num == 1) {
       return KeyEvent(FunctionKey::UP, modifiers);
@@ -316,7 +334,7 @@ static Optional<KeyEvent> resolveCSI(int num, ModifierKey modifiers, const char 
     if (auto funcKey = resolveUFuncKey(num); funcKey != FunctionKey::BRACKET_START) {
       return KeyEvent(funcKey, modifiers);
     }
-    break; // TODO: unicode code point
+    return resolveCodePoint(num, modifiers, alternateCode);
   case '~':
     if (auto funcKey = resolveTildeFuncKey(num); funcKey != FunctionKey::ESCAPE) {
       return KeyEvent(funcKey, modifiers);
@@ -350,16 +368,36 @@ constexpr ModifierKey fillModifiers() {
   return modifiers;
 }
 
-static Optional<KeyEvent> parseCSISeq(StringRef seq) { // TODO: kitty protocol (alternate key)
+static Optional<KeyEvent> parseCSISeq(StringRef seq) {
   assert(!seq.empty());
   ModifierKey modifiers{};
-  const char final = seq.back();
+  int alternateCode = -1;
+  const char finalByte = seq.back();
   seq.removeSuffix(1);
 
   // extract param bytes (number)
   const int num = parseNum(seq, 1);
   if (num < 0) {
     goto ERROR;
+  }
+
+  if (!seq.empty() && seq[0] == ':') { // alternate key
+    seq.removePrefix(1);
+    if (seq.empty()) {
+      goto ERROR;
+    }
+    if (seq[0] != ':') {
+      alternateCode = parseNum(seq, -1);
+      if (alternateCode < 0) {
+        goto ERROR;
+      }
+    }
+  }
+  if (!seq.empty() && seq[0] == ':') { // base-layout key
+    seq.removePrefix(1);
+    if (parseNum(seq, -1) < 0) { // TODO: support base-layout key (currently, parse but ignore)
+      goto ERROR;
+    }
   }
 
   // extract modifiers (number)
@@ -379,8 +417,17 @@ static Optional<KeyEvent> parseCSISeq(StringRef seq) { // TODO: kitty protocol (
     goto ERROR;
   }
 
+  // event type
+  if (!seq.empty() && seq[0] == ':') {
+    seq.removePrefix(1);
+    if (parseNum(seq, -1) != 1) { // only accept '1' (press event)
+      goto ERROR;
+    }
+  }
+
+  // TODO: associated text of kitty protocol
   if (seq.empty()) {
-    return resolveCSI(num, modifiers, final);
+    return resolveCSI(num, modifiers, alternateCode, finalByte);
   }
 
 ERROR:
@@ -604,7 +651,7 @@ public:
       StringRef ref = this->getTokenText();
       assert(ref.size() == 1);
       char ch = ref[0];
-      if (hasFlag(this->modifiers, ModifierKey::SHIFT) && !isShiftable(ch)) {
+      if (hasFlag(this->modifiers, ModifierKey::SHIFT) && !isShiftableOrSpace(ch)) {
         this->reportShiftError();
         goto ERROR;
       }
@@ -623,7 +670,7 @@ public:
       if (auto *funcKey = lookupFuncKey(key)) {
         event = KeyEvent(*funcKey, this->modifiers);
       } else if (char ch = lookupAsciiChar(key); ch != '\0') {
-        if (hasFlag(this->modifiers, ModifierKey::SHIFT) && !isShiftable(ch)) {
+        if (hasFlag(this->modifiers, ModifierKey::SHIFT) && !isShiftableOrSpace(ch)) {
           this->reportShiftError();
           goto ERROR;
         }
