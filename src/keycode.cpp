@@ -429,7 +429,7 @@ Optional<KeyEvent> KeyEvent::fromEscapeSeq(const StringRef seq) {
   }
   if (const char next = seq[1]; next == '[') { // 'ESC [ ?'
     auto ret = parseCSISeq(seq.substr(2));
-    if (ret.hasValue() && ret.unwrap().isBracketPasteStart() && seq != BRACKET_START) {
+    if (ret.hasValue() && ret.unwrap().isBracketedPasteStart() && seq != BRACKET_START) {
       return {}; // only accept the '\x1b[200~' sequence (ignore extra modifiers)
     }
     return ret;

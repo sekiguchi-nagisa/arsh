@@ -271,7 +271,7 @@ bool KeyBindings::addBinding(StringRef key, StringRef name, std::string *err) {
   if (key.size() > 1 && key[0] == '^') { // caret notation
     auto seq = KeyEvent::parseCaret(key);
     event = KeyEvent::fromEscapeSeq(seq);
-    if (!event.hasValue() || event.unwrap().isBracketPasteStart()) {
+    if (!event.hasValue() || event.unwrap().isBracketedPasteStart()) {
       header = "unrecognized escape sequence: `";
       goto ERROR;
     }

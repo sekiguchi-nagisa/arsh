@@ -159,7 +159,7 @@ public:
 
   bool isCodePoint() const { return !this->isFuncKey(); }
 
-  bool isBracketPasteStart() const {
+  bool isBracketedPasteStart() const {
     return this->isFuncKey() && this->asFuncKey() == FunctionKey::BRACKET_START;
   }
 
@@ -238,6 +238,10 @@ public:
     AtomicSigSet set;
     set.add(SIGWINCH);
     return this->fetch(std::move(set));
+  }
+
+  bool hasBracketedPasteStart() const {
+    return this->event.hasValue() && this->event.unwrap().isBracketedPasteStart();
   }
 
   template <typename Func>

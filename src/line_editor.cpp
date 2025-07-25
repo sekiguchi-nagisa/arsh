@@ -625,7 +625,7 @@ ssize_t LineEditorObject::editInRawMode(ARState &state, RenderingContext &ctx) {
       }
       return -1;
     }
-    if (auto event = reader.getEvent(); event.hasValue() && event.unwrap().isBracketPasteStart()) {
+    if (reader.hasBracketedPasteStart()) {
       ctx.buf.commitLastChange();
       const auto oldTimeout = reader.getTimeout();
       reader.setTimeout(KeyCodeReader::DEFAULT_READ_TIMEOUT_MSEC * 2);
@@ -889,6 +889,9 @@ ssize_t LineEditorObject::editInRawMode(ARState &state, RenderingContext &ctx) {
     case EditActionType::INSERT_KEYCODE:
     REDO_INSERT_KEYCODE:
       if (ssize_t r = reader.fetch(toSigSet(state.sigVector)); r > 0) {
+        if (reader.hasBracketedPasteStart()) {
+          goto NO_FETCH; // not insert bracket start bytes
+        }
         auto &buf = reader.get();
         if (const bool merge = buf != " " && buf != "\n"; ctx.buf.insertToCursor(buf, merge)) {
           this->refreshLine(state, ctx);

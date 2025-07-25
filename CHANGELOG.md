@@ -21,6 +21,7 @@
     - correctly read unrecognized CSI sequences
     - ``LineEditor#bind`` method accept human-readable keyname (such as `F1`, `ctrl+alt+a`, `bs`)
     - ``LineEditor#bindings`` method return human-readable keyname
+    - ``insert-keycode`` action no longer accept ``CSI 200 ~`` (bracketed paste start)
 
 #### Module
 
