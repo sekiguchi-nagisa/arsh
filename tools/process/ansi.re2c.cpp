@@ -110,10 +110,6 @@ INIT:
     "\x1b[1K"                               { this->clearLineTo(); NEXT(); }
     "\x1b[2K"                               { this->clearLine(); NEXT(); }
     "\x1b[6n"                               { this->reportPos(); NEXT(); }
-    "\x1b[?2004h"                           { NEXT(); }
-    "\x1b[?2004l"                           { NEXT(); }
-    "\x1b[?" [0-9]+ "h"                     { NEXT(); }
-    "\x1b[?" [0-9]+ "l"                     { NEXT(); }
     "\x1b]133;A\x1b\\"                      { this->addFTCS(FTCS::PROMPT); NEXT(); }
     "\x1b]133;B\x1b\\"                      { this->addFTCS(FTCS::COMMAND_START); NEXT(); }
     "\x1b]133;C\x1b\\"                      { this->addFTCS(FTCS::COMMAND_EXECUTED); NEXT(); }

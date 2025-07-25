@@ -167,6 +167,42 @@ TEST_F(InteractiveTest, lineEditorConfig1) {
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
 }
 
+TEST_F(InteractiveTest, lineEditorConfig2) { // enable/disable bracketed paste mode
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+  ASSERT_NO_FATAL_FAILURE(
+      this->sendLineAndExpect("assert ($LINE_EDIT.configs()['bracketed-paste'] as Bool)"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.config('bracketed-paste', $false)"));
+
+  unsigned int enableBracketedPasteCount = 0;
+  unsigned int disableBracketedPasteCount = 0;
+  this->setCSIListener([&enableBracketedPasteCount, &disableBracketedPasteCount](StringRef seq) {
+    if (seq == "\x1b[?2004h") {
+      enableBracketedPasteCount++;
+    } else if (seq == "\x1b[?2004l") {
+      disableBracketedPasteCount++;
+    }
+  });
+
+  ASSERT_NO_FATAL_FAILURE(
+      this->sendLineAndExpect("assert !($LINE_EDIT.configs()['bracketed-paste'] as Bool)"));
+  ASSERT_EQ(0, enableBracketedPasteCount);
+  ASSERT_EQ(0, disableBracketedPasteCount);
+
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.config('bracketed-paste', $true)"));
+  ASSERT_EQ(1, enableBracketedPasteCount);
+  ASSERT_EQ(0, disableBracketedPasteCount);
+
+  ASSERT_NO_FATAL_FAILURE(
+      this->sendLineAndExpect("assert ($LINE_EDIT.configs()['bracketed-paste'] as Bool)"));
+  ASSERT_EQ(2, enableBracketedPasteCount);
+  ASSERT_EQ(1, disableBracketedPasteCount);
+
+  this->send(CTRL_D);
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
+}
+
 TEST_F(InteractiveTest, lineEditorEAW) {
   this->invoke("--quiet", "--norc");
 
