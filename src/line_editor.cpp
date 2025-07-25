@@ -641,8 +641,6 @@ ssize_t LineEditorObject::editInRawMode(ARState &state, RenderingContext &ctx) {
     const unsigned int prevYankedSize = yankedSize;
     yankedSize = 0;
 
-    LOG(TRACE_EDIT, "\n@@ keycode:%s, event:%s", KeyEvent::toCaret(reader.get()).c_str(),
-        reader.getEvent().hasValue() ? reader.getEvent().unwrap().toString().c_str() : "");
     if (!reader.hasControlChar()) { // valid or invalid utf8 sequence
       auto &buf = reader.get();
       if (const bool merge = buf != " "; ctx.buf.insertToCursor(buf, merge)) {
@@ -1106,6 +1104,7 @@ EditActionStatus LineEditorObject::completeLine(ARState &state, RenderingContext
 
 FIRST_DRAW:
   this->refreshLine(state, ctx, true, makeObserver(pager));
+FETCH:
   if (ssize_t r = reader.fetch(toSigSet(state.sigVector)); r <= 0) {
     if (r == -1 && errno == EINTR) {
       if (this->handleSignals(state)) {
@@ -1123,7 +1122,10 @@ FIRST_DRAW:
     status = EditActionStatus::OK;
     goto END;
   }
-  if (auto *action = this->keyBindings.findAction(reader.getEvent());
+  if (!reader.getEvent().hasValue()) {
+    goto FETCH; // ignore unrecognized escape sequence
+  }
+  if (auto *action = this->keyBindings.findAction(reader.getEvent().unwrap());
       !action || action->type != EditActionType::COMPLETE) {
     status = EditActionStatus::OK;
     goto END;

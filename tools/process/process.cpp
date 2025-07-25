@@ -608,6 +608,14 @@ void Screen::clearLine() {
   }
 }
 
+void Screen::addUnrecognizedCSI(const char *begin, const char *end) {
+  arsh::StringRef seq(begin, end - begin);
+  assert(seq.startsWith("\x1b["));
+  if (this->csiListener) {
+    this->csiListener(seq);
+  }
+}
+
 static std::string toStringAtLine(const arsh::FlexBuffer<int> &buf) {
   std::string ret;
   for (int ch : buf) {

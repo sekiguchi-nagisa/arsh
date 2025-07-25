@@ -486,12 +486,14 @@ TEST_F(InteractiveTest, lineEditorComp2) {
     this->send("\t");
     ASSERT_NO_FATAL_FAILURE(this->expect("> ($t)\ntrue    tee     touch   \n"));
 
+    this->sendCSIu(57344, SHIFT); // send an unrecognized escape sequence (should ignore)
     this->send("\t");
     ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "($true)\ntrue    tee     touch   \n"));
     this->send("\t");
     ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "($tee)\ntrue    tee     touch   \n"));
     this->send(UP);
     ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "($true)\ntrue    tee     touch   \n"));
+    this->send("\x1b[111111111e"); // send an unrecognized escape sequence (should ignore)
     this->send(DOWN RIGHT);
     ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "($touch)\ntrue    tee     touch   \n"));
     this->send(LEFT LEFT);
@@ -941,6 +943,49 @@ TEST_F(InteractiveTest, lineEditorInterrupt4) {
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
   }
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(210, WaitStatus::EXITED, "WINCH\n> AAB\n"));
+}
+
+TEST_F(InteractiveTest, kittyKeyboardProtocol) {
+  this->invoke("--quiet", "--norc");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+
+  unsigned int enableKittyCount = 0;
+  unsigned int disableKittyCount = 0;
+  this->setCSIListener([&enableKittyCount, &disableKittyCount](StringRef seq) {
+    if (seq == "\x1b[=13u") {
+      enableKittyCount++;
+    } else if (seq == "\x1b[=0u") {
+      disableKittyCount++;
+    }
+  });
+
+  ASSERT_NO_FATAL_FAILURE(this->changePrompt("> "));
+  ASSERT_EQ(0, enableKittyCount);
+  ASSERT_EQ(0, disableKittyCount);
+  ASSERT_NO_FATAL_FAILURE(
+      this->sendLineAndExpect("$LINE_EDIT.config('keyboard-protocol', 'kitty')"));
+  ASSERT_EQ(1, enableKittyCount);
+  ASSERT_EQ(0, disableKittyCount);
+
+  this->send("echo");
+  ASSERT_NO_FATAL_FAILURE(this->expect("> echo"));
+  {
+    auto cleanup = this->reuseScreen();
+    this->sendCSIu(' ');
+    this->sendCSIu('a');
+    this->sendCSIu('b');
+    this->sendCSIu(57355); // unrecognized escape sequence (should ignore)
+    this->sendCSIu('c');
+    this->sendCSIu('a', SHIFT);
+    ASSERT_NO_FATAL_FAILURE(this->expect("> echo abcA"));
+    this->sendCSIu(13); // enter
+    ASSERT_NO_FATAL_FAILURE(this->expect("> echo abcA\nabcA\n> "));
+  }
+
+  ASSERT_EQ(2, enableKittyCount);
+  ASSERT_EQ(1, disableKittyCount);
+  this->send(CTRL_D);
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
 }
 
 TEST_F(InteractiveTest, tokenEdit1) { // lang-extension=false

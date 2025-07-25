@@ -47,6 +47,8 @@ private:
 
   std::function<void()> bellCallback; // for bell character
 
+  std::function<void(arsh::StringRef)> csiListener;
+
   arsh::AmbiguousCharWidth eaw{arsh::AmbiguousCharWidth::HALF};
 
   unsigned char yych{0};
@@ -81,8 +83,10 @@ public:
 
   void setReporter(std::function<void(std::string &&)> func) { this->reporter = std::move(func); }
 
-  void setBellCallback(std::function<void()> &&callback) {
-    this->bellCallback = std::move(callback);
+  void setBellCallback(std::function<void()> callback) { this->bellCallback = std::move(callback); }
+
+  void setCSIListener(std::function<void(arsh::StringRef)> func) {
+    this->csiListener = std::move(func);
   }
 
   void setEAW(arsh::AmbiguousCharWidth v) { this->eaw = v; }
@@ -204,6 +208,8 @@ public:
   std::string toString() const;
 
 private:
+  void addUnrecognizedCSI(const char *begin, const char *end);
+
   void updateMaxUsedRows() {
     if (this->row + 1 > this->maxUsedRows) {
       this->maxUsedRows = this->row + 1;

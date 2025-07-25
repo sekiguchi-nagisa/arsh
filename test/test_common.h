@@ -212,6 +212,7 @@ protected:
 
 private:
   std::function<void()> bellCallback;
+  std::function<void(arsh::StringRef)> csiListener;
   Screen screen;
 
 public:
@@ -224,6 +225,10 @@ public:
 
   void setBellCallback(std::function<void()> &&callback) {
     this->bellCallback = std::move(callback);
+  }
+
+  void setCSIListener(std::function<void(arsh::StringRef)> &&callback) {
+    this->csiListener = std::move(callback);
   }
 
   std::pair<std::string, std::string> readAll() override;
@@ -293,6 +298,21 @@ public:
     str += data;
     str += "\x1b[201~";
     this->send(str);
+  }
+
+  static constexpr unsigned char SHIFT = 1u << 1u;
+  static constexpr unsigned char ALT = 1u << 2u;
+  static constexpr unsigned char CTRL = 1u << 3u;
+
+  void sendCSIu(int codePoint, unsigned char modifiers = {}) {
+    std::string seq = "\x1b[";
+    seq += std::to_string(codePoint);
+    if (modifiers) {
+      seq += ";";
+      seq += std::to_string(modifiers);
+    }
+    seq += 'u';
+    this->send(seq);
   }
 
 private:

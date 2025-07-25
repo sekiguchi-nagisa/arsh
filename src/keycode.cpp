@@ -18,6 +18,7 @@
 
 #include "keycode.h"
 #include "keyname_lex.h"
+#include "logger.h"
 #include "misc/format.hpp"
 #include "misc/num_util.hpp"
 #include "misc/unicode.hpp"
@@ -904,6 +905,8 @@ ssize_t KeyCodeReader::fetch(AtomicSigSet &&watchSigSet) {
   }
 END:
   this->event = KeyEvent::fromEscapeSeq(this->keycode);
+  LOG(TRACE_EDIT, "\n@@ keycode:%s, event:%s", KeyEvent::toCaret(this->keycode).c_str(),
+      this->event.hasValue() ? this->event.unwrap().toString().c_str() : "");
   return static_cast<ssize_t>(this->keycode.size());
 }
 
