@@ -361,8 +361,6 @@ int LineEditorObject::enableRawMode(int fd) {
   this->rawMode = true;
   if (this->hasFeature(LineEditorFeature::BRACKETED_PASTE)) {
     enableBracketPasteMode(fd);
-  } else {
-    disableBracketPasteMode(fd);
   }
   return 0;
 
@@ -372,7 +370,9 @@ fatal:
 }
 
 void LineEditorObject::disableRawMode(int fd) {
-  disableBracketPasteMode(fd);
+  if (this->hasFeature(LineEditorFeature::BRACKETED_PASTE)) {
+    disableBracketPasteMode(fd);
+  }
   /* Don't even check the return value as it's too late. */
   if (this->rawMode && tcsetattr(fd, TCSAFLUSH, &this->orgTermios) != -1) {
     this->rawMode = false;
