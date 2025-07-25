@@ -82,6 +82,7 @@ bool LineEditorObject::defineCustomAction(ARState &state, StringRef name, String
   OP(COLOR, "color", TYPE::String)                                                                 \
   OP(EAW, "eaw", TYPE::Int)                                                                        \
   OP(USE_FLOW_CONTROL, "flow-control", TYPE::Bool)                                                 \
+  OP(KEYBOARD_PROTOCOL, "keyboard-protocol", TYPE::String)                                         \
   OP(KILL_RING_SIZE, "killring-size", TYPE::Int)                                                   \
   OP(LANG_EXTENSION, "lang-extension", TYPE::Bool)                                                 \
   OP(SEMANTIC_PROMPT, "semantic-prompt", TYPE::Bool)
@@ -178,6 +179,9 @@ bool LineEditorObject::setConfig(ARState &state, StringRef name, const Value &va
   case EditConfig::SEMANTIC_PROMPT:
     this->setFeature(LineEditorFeature::SEMANTIC_PROMPT, value.asBool());
     return true;
+  case EditConfig::KEYBOARD_PROTOCOL:
+    this->setFeature(LineEditorFeature::KITTY_KEYBOARD_PROTOCOL, value.asStrRef() == "kitty");
+    return true;
   }
   raiseError(state, TYPE::ArgumentError, std::move(message));
   return false;
@@ -233,6 +237,10 @@ Value LineEditorObject::getConfigs(ARState &state) const {
       break;
     case EditConfig::SEMANTIC_PROMPT:
       value = Value::createBool(this->hasFeature(LineEditorFeature::SEMANTIC_PROMPT));
+      break;
+    case EditConfig::KEYBOARD_PROTOCOL:
+      value = Value::createStr(
+          this->hasFeature(LineEditorFeature::KITTY_KEYBOARD_PROTOCOL) ? "kitty" : "");
       break;
     }
     map.insert(key, std::move(value));

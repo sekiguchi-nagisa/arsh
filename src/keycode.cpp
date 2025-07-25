@@ -122,8 +122,6 @@ static bool isShifted(int ch) { return ch >= 'A' && ch <= 'Z'; }
 
 static int unshift(int ch) { return (ch - 'A') + 'a'; }
 
-static bool isShiftable(int ch) { return ch >= 'a' && ch <= 'z'; }
-
 static bool isShiftableOrSpace(int ch) { return isShiftable(ch) || ch == ' '; }
 
 static Optional<KeyEvent> parseSS3Seq(const char ch) {

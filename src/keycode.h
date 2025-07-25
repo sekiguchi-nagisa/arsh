@@ -33,6 +33,8 @@ inline bool isCaretTarget(int ch) { return (ch >= '@' && ch <= '_') || ch == '?'
 
 inline bool isAsciiPrintable(int ch) { return ch >= 32 && ch <= 126; }
 
+inline bool isShiftable(int ch) { return ch >= 'a' && ch <= 'z'; }
+
 struct ReadWithTimeoutParam {
   bool retry;
   int timeoutMSec;
@@ -242,6 +244,29 @@ public:
 
   bool hasBracketedPasteStart() const {
     return this->event.hasValue() && this->event.unwrap().isBracketedPasteStart();
+  }
+
+  /**
+   * for `Report all keys as escape sequence` feature in kitty keyboard protocol.
+   * get non-modified code point
+   * @return
+   * if failed, return -1
+   */
+  int getEscapedPlainCodePoint() const {
+    if (!this->event.hasValue()) {
+      return -1;
+    }
+    const auto e = this->event.unwrap();
+    if (!e.isCodePoint()) {
+      return -1;
+    }
+    int codePoint = e.asCodePoint();
+    if (const auto m = e.modifiers(); m == ModifierKey{}) {
+      return codePoint;
+    } else if (m == ModifierKey::SHIFT && isShiftable(codePoint)) {
+      return (codePoint - 'a') + 'A';
+    }
+    return -1;
   }
 
   template <typename Func>

@@ -311,6 +311,26 @@ static void disableBracketPasteMode(int fd) {
   }
 }
 
+static void enableKittyKeyboardProtocol(int fd) {
+  /**
+   * enable the following progressive enhancement
+   * (see https://sw.kovidgoyal.net/kitty/keyboard-protocol/#progressive-enhancement)
+   *
+   * 0b1    Disambiguate escape codes
+   * 0b100  Report alternate keys
+   * 0b1000 Report all keys as escape codes
+   */
+  const char *s = "\x1b[=13u"; // 0b1101
+  if (write(fd, s, strlen(s)) == -1) {
+  }
+}
+
+static void disableKittyKeyboardProtocol(int fd) {
+  const char *s = "\x1b[=0u"; // reset all enhancement flags
+  if (write(fd, s, strlen(s)) == -1) {
+  }
+}
+
 /* Raw mode: 1960 magic shit. */
 int LineEditorObject::enableRawMode(int fd) {
   termios raw{}; // NOLINT
@@ -362,6 +382,9 @@ int LineEditorObject::enableRawMode(int fd) {
   if (this->hasFeature(LineEditorFeature::BRACKETED_PASTE)) {
     enableBracketPasteMode(fd);
   }
+  if (this->hasFeature(LineEditorFeature::KITTY_KEYBOARD_PROTOCOL)) {
+    enableKittyKeyboardProtocol(fd);
+  }
   return 0;
 
 fatal:
@@ -372,6 +395,9 @@ fatal:
 void LineEditorObject::disableRawMode(int fd) {
   if (this->hasFeature(LineEditorFeature::BRACKETED_PASTE)) {
     disableBracketPasteMode(fd);
+  }
+  if (this->hasFeature(LineEditorFeature::KITTY_KEYBOARD_PROTOCOL)) {
+    disableKittyKeyboardProtocol(fd);
   }
   /* Don't even check the return value as it's too late. */
   if (this->rawMode && tcsetattr(fd, TCSAFLUSH, &this->orgTermios) != -1) {
@@ -615,11 +641,20 @@ ssize_t LineEditorObject::editInRawMode(ARState &state, RenderingContext &ctx) {
     const unsigned int prevYankedSize = yankedSize;
     yankedSize = 0;
 
-    LOG(TRACE_EDIT, "keycode:%s, event:%s", KeyEvent::toCaret(reader.get()).c_str(),
+    LOG(TRACE_EDIT, "\n@@ keycode:%s, event:%s", KeyEvent::toCaret(reader.get()).c_str(),
         reader.getEvent().hasValue() ? reader.getEvent().unwrap().toString().c_str() : "");
-    if (!reader.hasControlChar()) {
+    if (!reader.hasControlChar()) { // valid or invalid utf8 sequence
       auto &buf = reader.get();
       if (const bool merge = buf != " "; ctx.buf.insertToCursor(buf, merge)) {
+        this->refreshLine(state, ctx);
+        continue;
+      }
+      return -1;
+    }
+    if (const auto codePoint = reader.getEscapedPlainCodePoint(); codePoint > -1) {
+      char buf[6];
+      unsigned int r = UnicodeUtil::codePointToUtf8(codePoint, buf);
+      if (ctx.buf.insertToCursor({buf, r}, codePoint != ' ')) {
         this->refreshLine(state, ctx);
         continue;
       }

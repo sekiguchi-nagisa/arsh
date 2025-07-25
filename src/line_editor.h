@@ -29,7 +29,8 @@ enum class LineEditorFeature : unsigned char {
   LANG_EXTENSION = 1u << 0u, // syntax highlight, auto-line continuation
   BRACKETED_PASTE = 1u << 1u,
   FLOW_CONTROL = 1u << 2u,
-  SEMANTIC_PROMPT = 1u << 3u, // OSC133 (shell integration/semantic prompt)
+  SEMANTIC_PROMPT = 1u << 3u,         // OSC133 (shell integration/semantic prompt)
+  KITTY_KEYBOARD_PROTOCOL = 1u << 4u, // emit CSI = 13 u sequence
 };
 
 template <>
