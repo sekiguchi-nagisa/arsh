@@ -24,7 +24,8 @@ assert($s == "he1")
 }
 
 # field
-var t = (0, "a", 1)
+type T { var _0: Int; var _1: String; var _2: Int; }
+var t = new T(0, "a", 1)
 $t._0++
 $t._1++
 $t._2++

@@ -61,7 +61,8 @@ assert $b! == 100
 }
 
 # field
-var t = (0, 12)
+type T { var _0: Int; var _1:Int; }
+var t = new T(0, 12)
 $t._0 += 1
 assert($t._0 == 1)
 $t._0 *= 2
@@ -76,13 +77,15 @@ assert($t._0 == -1)
 $t._1 -= 10
 assert($t._1 == 2)
 
-var t2 = ("", 23)
+type T2 { var _0: String; var _1: Int; }
+var t2 = new T2("", 23)
 $t2._0 += "abcd"
 assert $t2._0 == "abcd"
 $t2._0 = ''
 assert $t2._0.empty()
 
-var t3 = ('~hfore'.toInt(),)
+type T3 { var _0: Int?; }
+var t3 = new T3('~hfore'.toInt())
 $t3._0 ??= 888
 assert $t3._0! == 888
 $t3._0 = '~'.toInt()

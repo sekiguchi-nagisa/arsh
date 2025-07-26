@@ -1,4 +1,0 @@
-#$test($result = 'type', $status = 1, $errorKind = 'InvalidTupleElement', $chars = 15, $lineNum = 4)
-
-assert(34 is (Int,
-              Nothing))

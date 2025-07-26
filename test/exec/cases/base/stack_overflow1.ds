@@ -1,6 +1,7 @@
 #$test($status = 0)
 
-var a = (0 as Any, )
+type T{ var _0: Any; }
+var a = new T(0 as Any)
 var b = new Map<Int, Any>()
 var c = new Array<Any>()
 

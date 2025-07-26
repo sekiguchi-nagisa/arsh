@@ -328,7 +328,7 @@ complete 'echo '
 TEST_F(VMTest, callFuncAPI) {
   const char *src = R"(
   function sum(a: Int, b : Int): Int { return $a + $b; }
-  function inc(a: (Int,)) {  $a._0++; }
+  function inc(a: [Int]) {  $a[0]++; }
 )";
   ASSERT_NO_FATAL_FAILURE(this->eval(src));
 
@@ -358,13 +358,14 @@ TEST_F(VMTest, callFuncAPI) {
     auto &funcType = this->state->typePool.get(handle->getTypeId());
     ASSERT_TRUE(isa<FunctionType>(funcType));
     auto &type = cast<FunctionType>(funcType).getParamTypeAt(0);
-    ASSERT_TRUE(type.isTupleType());
-    auto value = Value::create<BaseObject>(cast<TupleType>(type));
-    auto &obj = typeAs<BaseObject>(value);
-    obj[0] = Value::createInt(78);
+    ASSERT_TRUE(type.isArrayType());
+    auto value = Value::create<ArrayObject>(cast<ArrayType>(type));
+    auto &obj = typeAs<ArrayObject>(value);
+    obj.append(Value::createInt(78));
+    ASSERT_EQ(78, obj.getValues()[0].asInt());
     auto ret = VM::callFunction(*this->state, std::move(func), makeArgs(Value(value)));
     ASSERT_FALSE(ret); // void
-    ASSERT_EQ(79, obj[0].asInt());
+    ASSERT_EQ(79, obj.getValues()[0].asInt());
   }
 }
 

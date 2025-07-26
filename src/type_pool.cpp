@@ -349,7 +349,7 @@ TypeOrError TypePool::createTupleType(std::vector<const Type *> &&elementTypes) 
     std::vector<const Type *> elementSuperTypes;
     elementSuperTypes.reserve(elementTypes.size());
     for (auto &e : elementTypes) {
-      elementSuperTypes.push_back(&resolveCollectionSuperType(*this, *e));
+      elementSuperTypes.push_back(&resolveCollectionSuperType(*this, *e, true));
     }
     auto *superType = this->resolveCommonSuperType(elementSuperTypes);
     assert(superType);

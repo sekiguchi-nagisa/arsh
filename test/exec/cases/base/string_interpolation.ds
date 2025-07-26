@@ -87,12 +87,6 @@ $mm.clear()
 
 ## Tuple
 assert "${(23,'a',(1,$false),[0,3])}" == '23 a 1 false 0 3'
-var tt = (34, 45 as Any, $SIGINT)
-$tt._1 = $tt
-$ex = 56
-try { "$tt"; } catch e { $ex = $e; }
-assert $ex is StackOverflowError
-$tt._1 = 1234
 
 ## Record
 typedef AA0 {}

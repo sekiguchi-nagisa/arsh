@@ -21,16 +21,30 @@ test -f emoji-data.txt ||
     curl https://www.unicode.org/Public/UCD/latest/ucd/emoji/emoji-data.txt -o emoji-data.txt
 
 
-typedef Range = (
-    Int,    # begin codepoint
-    Int,    # end codepoint
-    String, # begin codepoint string
-    String, # end codepoint string
-    String  # property string
-)
+typedef Range {
+    let begin : Int         # begin codepoint (inclusive)
+    let end : Int           # end codepoint (inclusive)
+    let begin_str : String  # begin codepoint string
+    let end_str : String    # end codepoint string
+    let property : String   # property string
+}
 
-function rangeComp($x : Range, $y : Range) : Int {
-    return $x._1.compare($y._0)
+function compare(o : Range) : Int for Range {
+    return $this.end.compare($o.begin)
+}
+
+function try_merge(o : Range) : Range? for Range {
+    if $this.end + 1 == $o.begin && $this.property == $o.property {
+        # merge range
+        return new Range(
+            $this.begin,
+            $o.end,
+            $this.begin_str,
+            $o.end_str,
+            $this.property
+        )
+    }
+    return $none
 }
 
 function parse($line : String) : Range {
@@ -39,7 +53,7 @@ function parse($line : String) : Range {
     var end = "0x${$m.group(3) ?? $m.group(1)!}"
     var p = $m.group(4)!
 
-    return (
+    return new Range(
         $begin.toInt()!,
         $end.toInt()!,
         $begin,
@@ -52,8 +66,8 @@ function validate($ranges : [Range]) {
     var prev : Range?
     for r in $ranges {
         if $prev {
-            assert $prev!._0 < $r._0: "prev:${$prev!}, cur:${$r}"
-            assert $prev!._1 < $r._1: "prev:${$prev!}, cur:${$r}"
+            assert $prev!.begin < $r.begin: "prev:${$prev!}, cur:${$r}"
+            assert $prev!.end < $r.end: "prev:${$prev!}, cur:${$r}"
         }
         $prev = $r
     }
@@ -67,11 +81,9 @@ function minimize($ranges : [Range]) : [Range] {
             $ret.add($r)
             continue
         }
-        var p = $ret.peek()
-        if $p._1 + 1 == $r._0 && $p._4 == $r._4 {
-            # merge range
-            $p._1 = $r._1
-            $p._3 = $r._3
+        if let n = $ret.peek().try_merge($r) {
+            $ret.pop()
+            $ret.push($n)
             continue
         }
         $ret.add($r)
@@ -102,7 +114,7 @@ cat ./WordBreakProperty.txt | for(var count = 0; read -f $'\n'; $count++) {
     echo $REPLY
 } with > ./trimed_WordBreakProperty.txt
 
-$ranges.sortBy($rangeComp)
+$ranges.sortBy(function (x,y) => $x.compare($y))
 $ranges = $minimize($ranges)
 
 # emoji-data.txt
@@ -120,7 +132,7 @@ cat ./emoji-data.txt | for(var count = 0; read -f $'\n'; $count++) {
     echo $REPLY
 } with > ./trimed_emoji-data.txt
 
-$ranges2.sortBy($rangeComp)
+$ranges2.sortBy(function (x,y) => $x.compare($y))
 $ranges2 = $minimize($ranges2)
 
 # final output
@@ -134,7 +146,7 @@ $ranges2 = $minimize($ranges2)
 } with >> $out
 
 for $r in $ranges {
-    echo "    { ${$r._2}, ${$r._3}, PROPERTY(${$r._4}) },"
+    echo "    { ${$r.begin_str}, ${$r.end_str}, PROPERTY(${$r.property}) },"
 } with >> $out
 
 {
@@ -152,7 +164,7 @@ for $r in $ranges {
 } with >> $out
 
 for $r in $ranges2 {
-    echo "    { ${$r._2}, ${$r._3}, PROPERTY(${$r._4}) },"
+    echo "    { ${r.begin_str}, ${r.end_str}, PROPERTY(${r.property}) },"
 } with >> $out
 
 {

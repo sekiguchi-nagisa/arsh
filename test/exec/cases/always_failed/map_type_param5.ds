@@ -1,0 +1,4 @@
+#$test($result = 'type', $status = 1, $errorKind = 'InvalidMapKey', $chars = 24, $lineNum = 4)
+
+assert (23 as Any) is [(Int,): Int]
+assert (23 as Any) is [(Int, Any): Int]

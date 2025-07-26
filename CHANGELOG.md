@@ -10,6 +10,8 @@
     - the first process of last-pipe is no longer a foreground process leader
     - when thrown from last-pipe, send ``SIGINT`` to pipeline processes and wait process termination
       with non-blocking
+- **Breaking Change**: tuple type fields are now read-only
+    - if all the fields are immutable, the tuple type will be immutable
 - improve token-aware line edit actions
     - within comment, fallback to word actions
     - ignore parser error after cursor position

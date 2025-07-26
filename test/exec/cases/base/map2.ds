@@ -18,6 +18,11 @@ var sg = [$SIGHUP : "hung up", $SIGKILL : "killed"]
 assert $sg[$SIGHUP] == "hung up"
 assert $sg[$SIG.get("KILL")!] == "killed"
 
+# Tuple
+var tt = [(23,'aa'): 111, (23, 'ab'):222]
+assert $tt[(23,'a' + 'a')] == 111
+assert !$tt.get((22,'a' + 'a'))
+
 # duplicated key
 var dd = ["a" : 23, "a" : 54]
 assert $dd.size() == 1
