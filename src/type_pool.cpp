@@ -351,12 +351,10 @@ TypeOrError TypePool::createTupleType(std::vector<const Type *> &&elementTypes) 
     for (auto &e : elementTypes) {
       elementSuperTypes.push_back(&resolveCollectionSuperType(*this, *e, true));
     }
-    auto *superType = this->resolveCommonSuperType(elementSuperTypes);
+    auto *superType = this->resolveCommonSuperType(elementSuperTypes); // TODO: check depth
     assert(superType);
-    auto *tuple = this->newType<TupleType>(typeName, this->tupleTemplate.getInfo(), *superType,
-                                           std::move(elementTypes));
+    auto *tuple = this->newType<TupleType>(typeName, *superType, std::move(elementTypes), 1);
     assert(tuple);
-    this->registerHandles(*tuple);
     type = tuple;
   }
   return Ok(type);
@@ -412,12 +410,12 @@ TypeOrError TypePool::createCLIRecordType(const std::string &typeName, ModId bel
   RAISE_TL_ERROR(DefinedType, typeName.c_str());
 }
 
-static const RecordType *checkRecordType(const Type &type) {
+static const BaseRecordType *resolveBaseRecordType(const Type &type) {
   auto *t = &type;
   if (t->isOptionType()) {
     t = &cast<OptionType>(t)->getElementType();
   }
-  return t->isRecordOrDerived() ? cast<RecordType>(t) : nullptr;
+  return isa<BaseRecordType>(t) ? cast<BaseRecordType>(t) : nullptr;
 }
 
 TypeOrError TypePool::finalizeRecordType(const RecordType &recordType,
@@ -436,7 +434,7 @@ TypeOrError TypePool::finalizeRecordType(const RecordType &recordType,
         elementSuperTypes.push_back(
             &resolveCollectionSuperType(*this, type, e.second->has(HandleAttr::READ_ONLY)));
       }
-      if (auto *t = checkRecordType(type)) {
+      if (auto *t = resolveBaseRecordType(type)) {
         depth = std::max(depth, t->getDepth() + 1);
       }
     }

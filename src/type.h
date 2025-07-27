@@ -183,7 +183,7 @@ public:
 
   bool isBuiltinOrDerived() const {
     auto k = toUnderlying(this->typeKind());
-    return k >= toUnderlying(TypeKind::Builtin) && k <= toUnderlying(TypeKind::Tuple);
+    return k >= toUnderlying(TypeKind::Builtin) && k <= toUnderlying(TypeKind::Map);
   }
 
   bool isRecordOrDerived() const {
@@ -587,31 +587,6 @@ public:
   static bool classof(const Type *type) { return type->isMapType(); }
 };
 
-class TupleType : public BuiltinType {
-private:
-  std::unordered_map<std::string, HandlePtr> fieldHandleMap;
-
-public:
-  /**
-   * superType is AnyType ot VariantType
-   */
-  TupleType(unsigned int id, StringRef ref, native_type_info_t info, const Type &superType,
-            std::vector<const Type *> &&types);
-
-  const auto &getFieldHandleMap() const { return this->fieldHandleMap; }
-
-  /**
-   * return types.size()
-   */
-  unsigned int getFieldSize() const { return this->fieldHandleMap.size(); }
-
-  HandlePtr lookupField(const std::string &fieldName) const;
-
-  const Type &getFieldTypeAt(const TypePool &pool, unsigned int i) const;
-
-  static bool classof(const Type *type) { return type->isTupleType(); }
-};
-
 class OptionType : public Type {
 private:
   const Type &elementType;
@@ -633,34 +608,34 @@ public:
   static bool classof(const Type *type) { return type->isDerivedErrorType(); }
 };
 
-class RecordType : public Type {
-private:
-  friend class TypePool;
-
+class BaseRecordType : public Type {
+protected:
   /**
    * maintains field / type alias
    */
   std::unordered_map<std::string, HandlePtr> handleMap;
 
-  CStrPtr packedFieldNames; // for field name
-
-protected:
-  RecordType(TypeKind k, unsigned int id, StringRef ref, const Type &superType)
+  BaseRecordType(TypeKind k, unsigned int id, StringRef ref, const Type &superType)
       : Type(k, id, ref, &superType) {
     this->meta.u32 = 0; // force initialize
   }
+
+  ~BaseRecordType() = default;
 
   void setExtraAttr(unsigned char attr) { this->meta.recordTypeAttr.extraAttr = attr; }
 
   unsigned char getExtraAttr() const { return this->meta.recordTypeAttr.extraAttr; }
 
+  void setFieldSize(unsigned char fieldSize) { this->meta.recordTypeAttr.fieldSize = fieldSize; }
+
+  void setDepth(unsigned int depth) {
+    using depth_t = decltype(this->meta.recordTypeAttr.depth);
+    this->meta.recordTypeAttr.depth = static_cast<depth_t>(
+        std::min<size_t>(std::numeric_limits<depth_t>::max(), depth)); // finalize
+  }
+
 public:
-  RecordType(unsigned int id, StringRef ref, const Type &superType)
-      : RecordType(TypeKind::Record, id, ref, superType) {}
-
   const auto &getHandleMap() const { return this->handleMap; }
-
-  const char *getPackedFieldNames() const { return this->packedFieldNames.get(); }
 
   unsigned int getFieldSize() const { return this->meta.recordTypeAttr.fieldSize; }
 
@@ -670,6 +645,35 @@ public:
 
   HandlePtr lookupField(const std::string &fieldName) const;
 
+  static bool classof(const Type *type) { return type->isTupleType() || type->isRecordOrDerived(); }
+};
+
+class TupleType : public BaseRecordType {
+public:
+  TupleType(unsigned int id, StringRef ref, const Type &superType,
+            std::vector<const Type *> &&types, unsigned int depth);
+
+  const Type &getFieldTypeAt(const TypePool &pool, unsigned int i) const;
+
+  static bool classof(const Type *type) { return type->isTupleType(); }
+};
+
+class RecordType : public BaseRecordType {
+private:
+  friend class TypePool;
+
+  CStrPtr packedFieldNames; // for field name
+
+protected:
+  RecordType(TypeKind k, unsigned int id, StringRef ref, const Type &superType)
+      : BaseRecordType(k, id, ref, superType) {}
+
+public:
+  RecordType(unsigned int id, StringRef ref, const Type &superType)
+      : RecordType(TypeKind::Record, id, ref, superType) {}
+
+  const char *getPackedFieldNames() const { return this->packedFieldNames.get(); }
+
   static bool classof(const Type *type) { return type->isRecordOrDerived(); }
 
 protected:
@@ -677,10 +681,8 @@ protected:
                 CStrPtr &&packedFieldNames, unsigned int depth) {
     this->handleMap = std::move(handles);
     this->packedFieldNames = std::move(packedFieldNames);
-    this->meta.recordTypeAttr.fieldSize = fieldSize;
-    using depth_t = decltype(this->meta.recordTypeAttr.depth);
-    this->meta.recordTypeAttr.depth = static_cast<depth_t>(
-        std::min<size_t>(std::numeric_limits<depth_t>::max(), depth)); // finalize
+    this->setFieldSize(fieldSize);
+    this->setDepth(depth);
   }
 };
 

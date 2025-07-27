@@ -42,10 +42,9 @@ void Type::destroy() {
 HandlePtr Type::lookupField(const TypePool &pool, const std::string &fieldName) const {
   switch (this->typeKind()) {
   case TypeKind::Tuple:
-    return cast<TupleType>(this)->lookupField(fieldName);
   case TypeKind::Record:
   case TypeKind::CLIRecord:
-    return cast<RecordType>(this)->lookupField(fieldName);
+    return cast<BaseRecordType>(this)->lookupField(fieldName);
   case TypeKind::Mod:
     return cast<ModType>(this)->lookup(pool, fieldName);
   default:
@@ -57,15 +56,9 @@ void Type::walkField(const TypePool &pool,
                      const std::function<bool(StringRef, const Handle &)> &walker) const {
   switch (this->typeKind()) {
   case TypeKind::Tuple:
-    for (auto &e : cast<TupleType>(this)->getFieldHandleMap()) {
-      if (!walker(e.first, *e.second)) {
-        return;
-      }
-    }
-    break;
   case TypeKind::Record:
   case TypeKind::CLIRecord:
-    for (auto &e : cast<RecordType>(this)->getHandleMap()) {
+    for (auto &e : cast<BaseRecordType>(this)->getHandleMap()) {
       if (!walker(e.first, *e.second)) {
         return;
       }
@@ -178,20 +171,34 @@ ModId Type::resolveBelongedModId() const {
   return BUILTIN_MOD_ID;
 }
 
+// ############################
+// ##     BaseRecordType     ##
+// ############################
+
+HandlePtr BaseRecordType::lookupField(const std::string &fieldName) const {
+  auto iter = this->handleMap.find(fieldName);
+  if (iter == this->handleMap.end()) {
+    return nullptr;
+  }
+  return iter->second;
+}
+
 // #######################
 // ##     TupleType     ##
 // #######################
 
 static std::string toTupleFieldName(unsigned int i) { return "_" + std::to_string(i); }
 
-TupleType::TupleType(unsigned int id, StringRef ref, native_type_info_t info, const Type &superType,
-                     std::vector<const Type *> &&types)
-    : BuiltinType(TypeKind::Tuple, id, ref, &superType, info) {
+TupleType::TupleType(unsigned int id, StringRef ref, const Type &superType,
+                     std::vector<const Type *> &&types, unsigned int depth)
+    : BaseRecordType(TypeKind::Tuple, id, ref, superType) {
   const unsigned int size = types.size();
   for (unsigned int i = 0; i < size; i++) {
     auto handle = HandlePtr::create(*types[i], i, HandleKind::VAR, HandleAttr::READ_ONLY);
-    this->fieldHandleMap.emplace(toTupleFieldName(i), std::move(handle));
+    this->handleMap.emplace(toTupleFieldName(i), std::move(handle));
   }
+  this->setFieldSize(size);
+  this->setDepth(depth);
 }
 
 const Type &TupleType::getFieldTypeAt(const TypePool &pool, unsigned int i) const {
@@ -200,26 +207,6 @@ const Type &TupleType::getFieldTypeAt(const TypePool &pool, unsigned int i) cons
   auto handle = this->lookupField(name);
   assert(handle);
   return pool.get(handle->getTypeId());
-}
-
-HandlePtr TupleType::lookupField(const std::string &fieldName) const {
-  auto iter = this->fieldHandleMap.find(fieldName);
-  if (iter == this->fieldHandleMap.end()) {
-    return nullptr;
-  }
-  return iter->second;
-}
-
-// ########################
-// ##     RecordType     ##
-// ########################
-
-HandlePtr RecordType::lookupField(const std::string &fieldName) const {
-  auto iter = this->handleMap.find(fieldName);
-  if (iter == this->handleMap.end()) {
-    return nullptr;
-  }
-  return iter->second;
 }
 
 // ###########################

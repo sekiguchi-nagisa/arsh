@@ -232,11 +232,9 @@ void VM::pushNewObject(ARState &state, const Type &type) {
     value = Value::create<OrderedMapObject>(type, state.getRng().next());
     break;
   case TypeKind::Tuple:
-    value = Value::create<BaseObject>(cast<TupleType>(type));
-    break;
   case TypeKind::Record:
   case TypeKind::CLIRecord:
-    value = Value::create<BaseObject>(cast<RecordType>(type));
+    value = Value::create<BaseObject>(cast<BaseRecordType>(type));
     break;
   default:
     value = Value::createDummy(type);

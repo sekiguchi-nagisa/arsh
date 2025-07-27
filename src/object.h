@@ -990,14 +990,9 @@ public:
 
   void operator delete(void *ptr) { ::operator delete(ptr); }
 
-  /**
-   * for tuple object construction
-   * @param type
-   * must be tuple type
-   */
-  static BaseObject *create(const TupleType &type) { return create(type, type.getFieldSize()); }
-
-  static BaseObject *create(const RecordType &type) { return create(type, type.getFieldSize()); }
+  static BaseObject *create(const BaseRecordType &type) {
+    return create(type, type.getFieldSize());
+  }
 
   ~BaseObject();
 
