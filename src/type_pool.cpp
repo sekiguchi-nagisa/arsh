@@ -335,6 +335,14 @@ TypeOrError TypePool::createOptionType(std::vector<const Type *> &&elementTypes)
   return Ok(type);
 }
 
+static const BaseRecordType *resolveBaseRecordType(const Type &type) {
+  auto *t = &type;
+  if (t->isOptionType()) {
+    t = &cast<OptionType>(t)->getElementType();
+  }
+  return isa<BaseRecordType>(t) ? cast<BaseRecordType>(t) : nullptr;
+}
+
 TypeOrError TypePool::createTupleType(std::vector<const Type *> &&elementTypes) {
   auto checked = checkElementTypes(this->tupleTemplate, elementTypes, SYS_LIMIT_TUPLE_NUM);
   if (!checked) {
@@ -346,14 +354,20 @@ TypeOrError TypePool::createTupleType(std::vector<const Type *> &&elementTypes) 
   std::string typeName(toTupleTypeName(elementTypes));
   auto *type = this->get(typeName);
   if (type == nullptr) {
+    unsigned int depth = 1;
     std::vector<const Type *> elementSuperTypes;
     elementSuperTypes.reserve(elementTypes.size());
     for (auto &e : elementTypes) {
       elementSuperTypes.push_back(&resolveCollectionSuperType(*this, *e, true));
+      if (auto *t = resolveBaseRecordType(*e)) {
+        depth = std::max(depth, t->getDepth() + 1);
+      }
     }
-    auto *superType = this->resolveCommonSuperType(elementSuperTypes); // TODO: check depth
+    const auto t = depth < SYS_LIMIT_RECORD_TYPE_FIELD_DEPTH ? TYPE::Value_ : TYPE::Ord_;
+    elementSuperTypes.push_back(&this->get(t));
+    auto *superType = this->resolveCommonSuperType(elementSuperTypes);
     assert(superType);
-    auto *tuple = this->newType<TupleType>(typeName, *superType, std::move(elementTypes), 1);
+    auto *tuple = this->newType<TupleType>(typeName, *superType, std::move(elementTypes), depth);
     assert(tuple);
     type = tuple;
   }
@@ -408,14 +422,6 @@ TypeOrError TypePool::createCLIRecordType(const std::string &typeName, ModId bel
     return Ok(type);
   }
   RAISE_TL_ERROR(DefinedType, typeName.c_str());
-}
-
-static const BaseRecordType *resolveBaseRecordType(const Type &type) {
-  auto *t = &type;
-  if (t->isOptionType()) {
-    t = &cast<OptionType>(t)->getElementType();
-  }
-  return isa<BaseRecordType>(t) ? cast<BaseRecordType>(t) : nullptr;
 }
 
 TypeOrError TypePool::finalizeRecordType(const RecordType &recordType,
