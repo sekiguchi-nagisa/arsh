@@ -663,9 +663,7 @@ public:
       break;
     }
     case KeyNameTokenKind::IDENTIFIER: {
-      if (key.empty()) {
-        key = this->getNormalizedKey();
-      }
+      assert(!key.empty());
       if (auto *funcKey = lookupFuncKey(key)) {
         event = KeyEvent(*funcKey, this->modifiers);
       } else if (char ch = lookupAsciiChar(key); ch != '\0') {
