@@ -494,6 +494,38 @@ TEST_F(InteractiveTest, killRing2) { // resize kill-ring
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
 }
 
+TEST_F(InteractiveTest, killRing3) { // token-aware edit
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.config('lang-extension', $true)"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.bind('^W', 'backward-kill-token')"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.bind('^[d', 'kill-token')"));
+
+  // // kill and yank
+  this->send("/usr/local/bin");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "/usr/local/bin"));
+  this->send(CTRL_W);
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "/usr/local/"));
+  this->send(CTRL_Y);
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "/usr/local/bin"));
+  this->send(CTRL_A);
+  this->send(ESC_("d"));
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "/local/bin"));
+  this->send(CTRL_Y);
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "/usr/local/bin"));
+  this->send("/\r");
+
+  const char *err = R"([runtime error]
+SystemError: execution error: /usr//local/bin: Permission denied
+    from (stdin):4 '<toplevel>()'
+)";
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "/usr//local/bin\n" + PROMPT, err));
+
+  this->send(CTRL_D);
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(126, WaitStatus::EXITED, "\n"));
+}
+
 TEST_F(InteractiveTest, history1) {
 #ifdef CODE_COVERAGE
   this->timeoutMSec = 500;
