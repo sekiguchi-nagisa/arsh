@@ -1131,6 +1131,44 @@ TEST_F(InteractiveTest, tokenEdit3) { // invalid syntax
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
 }
 
+TEST_F(InteractiveTest, tokenEdit4) { // edit with comment
+  this->invoke("--quiet", "--norc");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+  ASSERT_NO_FATAL_FAILURE(this->changePrompt("> "));
+
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.config('lang-extension', $true)"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.bind('^[b', 'backward-token')"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.bind('^[f', 'forward-token')"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.bind('^W', 'backward-kill-token')"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.bind('^[d', 'kill-token')"));
+
+  this->send("  #  /usr/local-user/bin");
+  ASSERT_NO_FATAL_FAILURE(this->expect(">   #  /usr/local-user/bin"));
+  {
+    auto cleanup = this->reuseScreen();
+    this->send(ESC_("b") ESC_("b") ESC_("b")); // move left
+    this->send("q");
+    ASSERT_NO_FATAL_FAILURE(this->expect(">   #  /usr/local-quser/bin"));
+    this->send(CTRL_W); // remove left
+    ASSERT_NO_FATAL_FAILURE(this->expect(">   #  /usr/local-user/bin"));
+    this->send(ESC_("b")); // move left
+    this->send(ESC_("d")); // remove right
+    ASSERT_NO_FATAL_FAILURE(this->expect(">   #  /usr/local"));
+    this->send(ESC_("b") ESC_("b")); // move left
+    this->send("/");
+    ASSERT_NO_FATAL_FAILURE(this->expect(">   #  /usr//local"));
+    this->send(ESC_("f")); // move right
+    this->send("/");
+    ASSERT_NO_FATAL_FAILURE(this->expect(">   #  /usr//local/"));
+
+    this->send(CTRL_C);
+    ASSERT_NO_FATAL_FAILURE(this->expect(">   #  /usr//local/\n> "));
+  }
+
+  this->send(CTRL_D);
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
+}
+
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
