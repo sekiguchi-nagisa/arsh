@@ -988,7 +988,7 @@ TEST_F(InteractiveTest, kittyKeyboardProtocol) {
   unsigned int enableKittyCount = 0;
   unsigned int disableKittyCount = 0;
   this->setCSIListener([&enableKittyCount, &disableKittyCount](StringRef seq) {
-    if (seq == "\x1b[=13u") {
+    if (seq == "\x1b[=5u") {
       enableKittyCount++;
     } else if (seq == "\x1b[=0u") {
       disableKittyCount++;
