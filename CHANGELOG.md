@@ -24,8 +24,11 @@
     - ``LineEditor#bind`` method accept human-readable keyname (such as `F1`, `ctrl+alt+a`, `bs`)
     - ``LineEditor#bindings`` method return human-readable keyname
     - ``insert-keycode`` action no longer accept ``CSI 200 ~`` (bracketed paste start)
-    - recognize kitty keyboard protocol
-- add ``keyboard-protocol`` config to ``LineEditor``. now can enable kitty keyboard protocol
+    - ``^I``, ``^M``, ``^[``, ``^?`` are recognized as ``tab``, ``enter``, ``esc``, ``backspace``
+    - support kitty keyboard protocol
+- add ``keyboard-protocol`` config to ``LineEditor``.
+    - when specify ``kitty``, enable kitty keyboard protocol's progressive enhancement
+        - enable `Disambiguate escape codes` and `Report alternate keys`
 
 #### Module
 

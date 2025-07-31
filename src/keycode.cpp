@@ -438,6 +438,9 @@ Optional<KeyEvent> KeyEvent::fromEscapeSeq(const StringRef seq) {
     return {};
   }
   if (seq.size() == 1) { // C0 control codes
+    if (auto funcKey = resolveUFuncKey(seq[0]); funcKey != FunctionKey::BRACKET_START) {
+      return KeyEvent(funcKey); // for TAB, ENTER, ESC, BACKSPACE
+    }
     auto v = static_cast<unsigned char>(seq[0]);
     v ^= 64;
     assert(isCaretTarget(v));
