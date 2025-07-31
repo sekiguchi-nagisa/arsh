@@ -245,8 +245,8 @@ static FunctionKey resolveUFuncKey(int num) {
     return FunctionKey::BACKSPACE;
   // case 57358:
   //   return FunctionKey::CAPS_LOCK;
-  case 57359:
-    return FunctionKey::SCROLL_LOCK;
+  // case 57359:
+  //   return FunctionKey::SCROLL_LOCK;
   // case 57360:
   //   return FunctionKey::NUM_LOCK;
   case 57361:
@@ -570,7 +570,7 @@ static std::unordered_map<std::string, FunctionKey> initFuncKeyMap() {
       {"pgup", FunctionKey::PAGE_UP},
       {"pgdn", FunctionKey::PAGE_DOWN},
       /*{"caps", FunctionKey::CAPS_LOCK},*/
-      {"scrlk", FunctionKey::SCROLL_LOCK},
+      /*{"scrlk", FunctionKey::SCROLL_LOCK},*/
       /*{"numlk", FunctionKey::NUM_LOCK},*/ {"prtsc", FunctionKey::PRINT_SCREEN},
       {"break", FunctionKey::PAUSE},
   };

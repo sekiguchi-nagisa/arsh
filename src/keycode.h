@@ -63,9 +63,9 @@ inline ssize_t readRetryWithTimeout(int fd, char *buf, size_t bufSize, int timeo
   OP(CTRL, (1u << 2u), "ctrl")                                                                     \
   OP(SUPER, (1u << 3u), "super")                                                                   \
   OP(HYPER, (1u << 4u), "hyper")                                                                   \
-  OP(META, (1u << 5u), "meta")                                                                     \
-  OP(CAPS, (1u << 6u), "caps_lock")                                                                \
-  OP(NUM, (1u << 7u), "num_lock")
+  OP(META, (1u << 5u), "meta")
+// OP(CAPS, (1u << 6u), "caps_lock")
+// OP(NUM, (1u << 7u), "num_lock")
 
 // for kitty keyboard protocol
 enum class ModifierKey : unsigned char {
@@ -94,11 +94,11 @@ struct allow_enum_bitop<ModifierKey> : std::true_type {};
   OP(PAGE_DOWN, "page_down") /* pgdn */                                                            \
   OP(HOME, "home")                                                                                 \
   OP(END, "end")                                                                                   \
-  /*OP(CAPS_LOCK)*/                /* caps */                                                      \
-  OP(SCROLL_LOCK, "scroll_lock")   /* scrlk */                                                     \
-  /*OP(NUM_LOCK)*/                 /* numlk */                                                     \
-  OP(PRINT_SCREEN, "print_screen") /* prtsc */                                                     \
-  OP(PAUSE, "pause")               /* break */                                                     \
+  /*OP(CAPS_LOCK)*/                  /* caps */                                                    \
+  /*OP(SCROLL_LOCK, "scroll_lock")*/ /* scrlk */                                                   \
+  /*OP(NUM_LOCK)*/                   /* numlk */                                                   \
+  OP(PRINT_SCREEN, "print_screen")   /* prtsc */                                                   \
+  OP(PAUSE, "pause")                 /* break */                                                   \
   OP(MENU, "menu")                                                                                 \
   OP(F1, "f1")                                                                                     \
   OP(F2, "f2")                                                                                     \

@@ -652,7 +652,7 @@ TEST_F(KeyCodeTest, funcKey) {
       {CSI_("2F"), {}},
 
       // {CSI_("57358u"), KeyEvent(FunctionKey::CAPS_LOCK)},
-      {CSI_("57359u"), KeyEvent(FunctionKey::SCROLL_LOCK)},
+      // {CSI_("57359u"), KeyEvent(FunctionKey::SCROLL_LOCK)},
       // {CSI_("57360u"), KeyEvent(FunctionKey::NUM_LOCK)},
       {CSI_("57361u"), KeyEvent(FunctionKey::PRINT_SCREEN)},
       {CSI_("57362u"), KeyEvent(FunctionKey::PAUSE)},
@@ -731,16 +731,19 @@ TEST_F(KeyCodeTest, modifier) {
       {CSI_("1;9A"), KeyEvent(FunctionKey::UP, ModifierKey::SUPER)},
       {CSI_("1;17A"), KeyEvent(FunctionKey::UP, ModifierKey::HYPER)},
       {CSI_("1;33A"), KeyEvent(FunctionKey::UP, ModifierKey::META)},
-      {CSI_("1;65A"), KeyEvent(FunctionKey::UP, ModifierKey::CAPS)},
-      {CSI_("1;129A"), KeyEvent(FunctionKey::UP, ModifierKey::NUM)},
-      {CSI_("1;255A"),
-       KeyEvent(FunctionKey::UP, ModifierKey::NUM | ModifierKey::CAPS | ModifierKey::META |
-                                     ModifierKey::HYPER | ModifierKey::SUPER | ModifierKey::CTRL |
-                                     ModifierKey::ALT)},
-      {CSI_("1;256A"),
-       KeyEvent(FunctionKey::UP, ModifierKey::NUM | ModifierKey::CAPS | ModifierKey::META |
-                                     ModifierKey::HYPER | ModifierKey::SUPER | ModifierKey::CTRL |
-                                     ModifierKey::ALT | ModifierKey::SHIFT)},
+      // {CSI_("1;65A"), KeyEvent(FunctionKey::UP, ModifierKey::CAPS)},
+      // {CSI_("1;129A"), KeyEvent(FunctionKey::UP, ModifierKey::NUM)},
+      // {CSI_("1;255A"),
+      //  KeyEvent(FunctionKey::UP, ModifierKey::NUM | ModifierKey::CAPS | ModifierKey::META |
+      //                                ModifierKey::HYPER | ModifierKey::SUPER | ModifierKey::CTRL
+      //                                | ModifierKey::ALT)},
+      // {CSI_("1;256A"),
+      //  KeyEvent(FunctionKey::UP, ModifierKey::NUM | ModifierKey::CAPS | ModifierKey::META |
+      //                                ModifierKey::HYPER | ModifierKey::SUPER | ModifierKey::CTRL
+      //                                | ModifierKey::ALT | ModifierKey::SHIFT)},
+      {CSI_("1;65A"), {}},
+      {CSI_("1;129A"), {}},
+      {CSI_("1;255A"), {}},
       {CSI_("1;257A"), {}},
       {CSI_("1;4294967295A"), {}},
       {CSI_("1;4294967290A"), {}},
@@ -769,6 +772,7 @@ TEST_F(KeyCodeTest, kittyProtocol) {
       {CSI_("120;6u"), KeyEvent('x', ModifierKey::SHIFT | ModifierKey::CTRL)},
       {CSI_("120:88;6u"), KeyEvent('x', ModifierKey::SHIFT | ModifierKey::CTRL)},
       {CSI_("120:88;6:1u"), KeyEvent('x', ModifierKey::SHIFT | ModifierKey::CTRL)},
+      {CSI_("120:88;66:1u"), {}},                          // unrecognized modifier
       {CSI_("88u"), KeyEvent('X')},                        // shifted-key, but no shift
       {CSI_("121:89u"), {}},                               // alternate code, but no shift
       {CSI_("121:89;3u"), {}},                             // alternate code, but no shift
@@ -915,10 +919,11 @@ TEST_F(KeyCodeTest, funcKeyName1) {
       {"pgdN", KeyEvent(FunctionKey::PAGE_DOWN)},
       {"Home", KeyEvent(FunctionKey::HOME)},
       {"END_", KeyEvent(FunctionKey::END)},
-      {"CAPS_LOCK", "need '+' or '-' after modifier"},
-      {"scrollLock", KeyEvent(FunctionKey::SCROLL_LOCK)},
-      {"\t SCRLK_", KeyEvent(FunctionKey::SCROLL_LOCK)},
-      {"Num_LoCK", "need '+' or '-' after modifier"},
+      {"CTrl", "need '+' or '-' after modifier"},
+      {"CAPS_LOCK", "unrecognized modifier or function key: CAPS_LOCK"},
+      {"scrollLock", "unrecognized modifier or function key: scrollLock"},
+      {"\t SCRLK_", "unrecognized modifier or function key: SCRLK_"},
+      {"Num_LoCK", "unrecognized modifier or function key: Num_LoCK"},
       {"Print_Scr_Een", KeyEvent(FunctionKey::PRINT_SCREEN)},
       {"prtsc", KeyEvent(FunctionKey::PRINT_SCREEN)},
       {"break", KeyEvent(FunctionKey::PAUSE)},

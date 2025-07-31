@@ -73,9 +73,9 @@ assert ! $editor.bindings().get("down")
 ## limit
 $ex = 45
 try {
-    for m1 in ['shift', 'alt', 'ctrl', 'meta', 'super', 'hyper', 'caps_lock', 'num_lock'] {
-        for m2 in ['alt', 'ctrl', 'meta', 'super', 'hyper', 'caps_lock', 'num_lock'] {
-            for m3 in ['alt', 'ctrl', 'meta', 'super', 'hyper', 'caps_lock', 'num_lock'] {
+    for m1 in ['shift', 'alt', 'ctrl', 'meta', 'super', 'hyper',] {
+        for m2 in ['alt', 'ctrl', 'meta', 'super', 'hyper',] {
+            for m3 in ['alt', 'ctrl', 'meta', 'super', 'hyper', ] {
                 for k in ['F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7', 'F8', 'F9', 'F10', 'F11', 'F12', 
                         'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n'] {
                     var key  = "$m1+$m2+$m3+$k"
