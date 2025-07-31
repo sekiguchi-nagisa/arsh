@@ -318,9 +318,8 @@ static void enableKittyKeyboardProtocol(int fd) {
    *
    * 0b1    Disambiguate escape codes
    * 0b100  Report alternate keys
-   * 0b1000 Report all keys as escape codes
    */
-  const char *s = "\x1b[=13u"; // 0b1101
+  const char *s = "\x1b[=5u"; // 0b101
   if (write(fd, s, strlen(s)) == -1) {
   }
 }
