@@ -140,7 +140,10 @@ void InteractiveBase::invokeImpl(const std::vector<std::string> &args, int sleep
 
 std::pair<std::string, std::string> InteractiveShellBase::readAll() {
   if (this->resetBeforeRead) {
-    this->resetScreen();
+    const auto winSize = this->handle.getWinSize();
+    assert(winSize.rows != 0);
+    assert(winSize.cols != 0);
+    this->screen.reset({.row = winSize.rows, .col = winSize.cols});
   }
   std::string err;
   this->handle.readAll(this->timeoutMSec,
@@ -152,15 +155,4 @@ std::pair<std::string, std::string> InteractiveShellBase::readAll() {
                          }
                        });
   return {this->screen.toString(), std::move(err)};
-}
-
-void InteractiveShellBase::resetScreen() {
-  const auto winSize = this->handle.getWinSize();
-  assert(winSize.rows != 0);
-  assert(winSize.cols != 0);
-  this->screen = Screen({.row = winSize.rows, .col = winSize.cols});
-  this->screen.setEAW(this->eaw);
-  this->screen.setReporter([&](std::string &&m) { this->send(m.c_str()); });
-  this->screen.setBellCallback(this->bellCallback);
-  this->screen.setCSIListener(this->csiListener);
 }

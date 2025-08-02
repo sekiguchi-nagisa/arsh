@@ -190,7 +190,7 @@ TEST_F(InteractiveTest, tab2) {
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(""));
 
   unsigned int bellCount = 0;
-  this->setBellCallback([&bellCount] { bellCount++; });
+  this->screen.setBellCallback([&bellCount] { bellCount++; });
   this->send("12345\t");
   ASSERT_NO_FATAL_FAILURE(this->expect("> 12345"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("", ": Int = 12345"));

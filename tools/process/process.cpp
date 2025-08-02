@@ -476,13 +476,6 @@ void ProcBuilder::syncEnv() const {
 // ##     Screen     ##
 // ####################
 
-Screen::Screen(Pos pos) : LexerBase("<screen>"), maxRows(pos.row), maxCols(pos.col) {
-  this->bufs.resize(this->maxRows);
-  for (auto &buf : this->bufs) {
-    buf.resize(this->maxCols, '\0');
-  }
-}
-
 void Screen::resize(Pos pos) {
   this->bufs.resize(pos.row);
   for (auto &buf : this->bufs) {

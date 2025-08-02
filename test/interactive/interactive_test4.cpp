@@ -177,13 +177,14 @@ TEST_F(InteractiveTest, lineEditorConfig2) { // enable/disable bracketed paste m
 
   unsigned int enableBracketedPasteCount = 0;
   unsigned int disableBracketedPasteCount = 0;
-  this->setCSIListener([&enableBracketedPasteCount, &disableBracketedPasteCount](StringRef seq) {
-    if (seq == "\x1b[?2004h") {
-      enableBracketedPasteCount++;
-    } else if (seq == "\x1b[?2004l") {
-      disableBracketedPasteCount++;
-    }
-  });
+  this->screen.setCSIListener(
+      [&enableBracketedPasteCount, &disableBracketedPasteCount](StringRef seq) {
+        if (seq == "\x1b[?2004h") {
+          enableBracketedPasteCount++;
+        } else if (seq == "\x1b[?2004l") {
+          disableBracketedPasteCount++;
+        }
+      });
 
   ASSERT_NO_FATAL_FAILURE(
       this->sendLineAndExpect("assert !($LINE_EDIT.configs()['bracketed-paste'] as Bool)"));
@@ -209,24 +210,24 @@ TEST_F(InteractiveTest, lineEditorEAW) {
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
 
   // auto-detect width
-  this->eaw = AmbiguousCharWidth::FULL;
+  this->screen.setEAW(AmbiguousCharWidth::FULL);
   ASSERT_NO_FATAL_FAILURE(
       this->sendLineAndExpect("assert $LINE_EDIT.configs()['eaw'] as Int == 0"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $EAW == 2"));
-  this->eaw = AmbiguousCharWidth::HALF;
+  this->screen.setEAW(AmbiguousCharWidth::HALF);
   ASSERT_NO_FATAL_FAILURE(
       this->sendLineAndExpect("assert $LINE_EDIT.configs()['eaw'] as Int == 0"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $EAW == 1"));
 
   // force set width (EAW is 2, even if the actual width is 1)
-  this->eaw = AmbiguousCharWidth::HALF;
+  this->screen.setEAW(AmbiguousCharWidth::HALF);
   ASSERT_NO_FATAL_FAILURE(
       this->sendLineAndExpect("assert $LINE_EDIT.configs()['eaw'] as Int == 0"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.config('eaw', 2)"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $EAW == 2"));
 
   // force set width (EAW is 1, even if the actual width is 1)
-  this->eaw = AmbiguousCharWidth::FULL;
+  this->screen.setEAW(AmbiguousCharWidth::FULL);
   ASSERT_NO_FATAL_FAILURE(
       this->sendLineAndExpect("assert $LINE_EDIT.configs()['eaw'] as Int == 2"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.config('eaw', 1)"));
@@ -987,7 +988,7 @@ TEST_F(InteractiveTest, kittyKeyboardProtocol) {
 
   unsigned int enableKittyCount = 0;
   unsigned int disableKittyCount = 0;
-  this->setCSIListener([&enableKittyCount, &disableKittyCount](StringRef seq) {
+  this->screen.setCSIListener([&enableKittyCount, &disableKittyCount](StringRef seq) {
     if (seq == "\x1b[=5u") {
       enableKittyCount++;
     } else if (seq == "\x1b[=0u") {

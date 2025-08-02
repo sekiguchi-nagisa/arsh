@@ -83,9 +83,28 @@ public:
     static Pos defaultSize() { return {24, 80}; }
   };
 
-  explicit Screen(Pos pos);
+  explicit Screen(Pos pos) : LexerBase("<screen>"), maxRows(pos.row), maxCols(pos.col) {
+    this->resize(pos);
+  }
 
   Screen() : Screen(Pos::defaultSize()) {}
+
+  void resize(Pos pos);
+
+  /**
+   * reset internal state (not reset some callback functions and EAW setting)
+   * @param pos
+   */
+  void reset(Pos pos = Pos::defaultSize()) {
+    Screen tmp(pos);
+    tmp.reporter = std::move(this->reporter);
+    tmp.bellCallback = std::move(this->bellCallback);
+    tmp.csiListener = std::move(this->csiListener);
+    tmp.oscListener = std::move(this->oscListener);
+    tmp.ftcsListener = std::move(this->ftcsListener);
+    tmp.eaw = this->eaw;
+    *this = std::move(tmp);
+  }
 
   void setReporter(std::function<void(std::string &&)> func) { this->reporter = std::move(func); }
 
@@ -105,8 +124,6 @@ public:
 
   void setEAW(arsh::AmbiguousCharWidth v) { this->eaw = v; }
 
-  void resize(Pos pos);
-
   /**
    * entry point
    * @param data
@@ -117,19 +134,7 @@ public:
    */
   Result interpret(const char *data, unsigned int size);
 
-  /**
-   *
-   * @param ch
-   * must be ascii
-   */
-  void addChar(int ch);
-
-  /**
-   * currently not support combining character
-   * @param begin
-   * @param end
-   */
-  void addCodePoint(const char *begin, const char *end);
+  std::string toString() const;
 
   /**
    * set cursor position (1-based)
@@ -156,6 +161,21 @@ public:
         .col = this->col + 1,
     };
   }
+
+private:
+  /**
+   *
+   * @param ch
+   * must be ascii
+   */
+  void addChar(int ch);
+
+  /**
+   * currently not support combining character
+   * @param begin
+   * @param end
+   */
+  void addCodePoint(const char *begin, const char *end);
 
   void reportPos();
 
@@ -215,9 +235,6 @@ public:
     this->updateMaxUsedRows();
   }
 
-  std::string toString() const;
-
-private:
   void addUnrecognizedCSI(const char *begin, const char *end);
 
   void addUnrecognizedOSC(const char *begin, const char *end);

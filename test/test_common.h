@@ -208,28 +208,16 @@ class InteractiveShellBase : public InteractiveBase {
 protected:
   std::string prompt{"> "};
   bool resetBeforeRead{true};
-  arsh::AmbiguousCharWidth eaw{arsh::AmbiguousCharWidth::FULL};
-
-private:
-  std::function<void()> bellCallback;
-  std::function<void(arsh::StringRef)> csiListener;
   Screen screen;
 
 public:
   InteractiveShellBase(const char *binPath, const char *dir)
       : InteractiveBase(binPath, dir), screen({.row = DEFAULT_WIN_ROW, .col = DEFAULT_WIN_COL}) {
-    this->screen.setEAW(this->eaw);
+    this->screen.setEAW(arsh::AmbiguousCharWidth::FULL);
+    this->screen.setReporter([&](std::string &&m) { this->send(m.c_str()); });
   }
 
   void setPrompt(const std::string &p) { this->prompt = p; }
-
-  void setBellCallback(std::function<void()> &&callback) {
-    this->bellCallback = std::move(callback);
-  }
-
-  void setCSIListener(std::function<void(arsh::StringRef)> &&callback) {
-    this->csiListener = std::move(callback);
-  }
 
   std::pair<std::string, std::string> readAll() override;
 
@@ -314,9 +302,6 @@ public:
     seq += 'u';
     this->send(seq);
   }
-
-private:
-  void resetScreen();
 
 protected:
   [[nodiscard]] auto reuseScreen() {
