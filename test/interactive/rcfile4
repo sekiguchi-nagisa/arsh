@@ -1,5 +1,5 @@
 # for interactive test
-# for promtp test
+# for prompt test
 
 source ../../share/arsh/modules/repl_impl/prompt.arsh inlined
 

@@ -684,6 +684,28 @@ TEST_F(InteractiveTest, prePrompt) {
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
 }
 
+TEST_F(InteractiveTest, title) {
+  this->invoke("--quiet", "--rcfile", INTERACTIVE_TEST_WORK_DIR "/rcfile4");
+
+  std::this_thread::sleep_for(std::chrono::milliseconds(400));
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $PRE_PROMPTS.empty()"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert ! $TITLE_HOOK"));
+
+  std::string seq;
+  this->screen.setOSCListener([&seq](StringRef ref) { seq = ref.toString(); });
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
+      "var c = -1; $TITLE_HOOK = function() => { $c++; $c%2 == 0 ? 't'+$c : $none; }"));
+  ASSERT_EQ("\x1b]0;t0", seq);
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $c == 0"));
+  ASSERT_EQ("\x1b]0;t0", seq); // not changed
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $c == 1"));
+  ASSERT_EQ("\x1b]0;t2", seq);
+
+  this->send(CTRL_D);
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
+}
+
 TEST_F(InteractiveTest, insert) {
   this->invoke("--quiet", "--norc");
 
