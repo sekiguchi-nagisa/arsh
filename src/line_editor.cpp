@@ -205,12 +205,33 @@ static void linenoiseBeep(int fd) {
 }
 
 /**
+ * workaround for screen/tmux
+ * @return
+ */
+static bool underMultiplexer() {
+  if (StringRef(getenv("TERM")).contains("screen")) {
+    return true;
+  }
+  if (getenv("TMUX")) {
+    return true;
+  }
+  return false;
+}
+
+/**
  * must call before initial line refresh
  * @param ps
  * @param inFd
  * @param outFd
  */
 static void checkProperty(CharWidthProperties &ps, int inFd, int outFd) {
+  if (underMultiplexer()) {
+    /**
+     * if run under terminal multiplexer (screen/tmux), disable character width checking
+     */
+    return;
+  }
+
   for (auto &e : getCharWidthPropertyList()) {
     char buf[32];
     /**
