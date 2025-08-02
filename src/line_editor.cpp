@@ -419,6 +419,12 @@ static int preparePrompt(int inFd, int outFd) {
   return 0;
 }
 
+#define OSC133_(O) "\x1b]133;" O "\x1b\\"
+
+static int emitPromptStart(char (&data)[64], int prevExitStatus) {
+  return snprintf(data, std::size(data), "\x1b]133;D;%d\x1b\\" OSC133_("A"), prevExitStatus);
+}
+
 /* Multi-line low-level line refresh.
  *
  * Rewrite the currently edited line accordingly to the buffer content,
@@ -469,6 +475,10 @@ void LineEditorObject::refreshLine(ARState &state, RenderingContext &ctx, bool r
     LOG(TRACE_EDIT, "clear");
     ab += "\r\x1b[0K\x1b[0J";
   }
+  if (ctx.semanticPrompt) {
+    emitPromptStart(seq, ctx.prevExitStatus);
+    ab += seq;
+  }
 
   /* adjust too long rendered lines */
   LOG(TRACE_EDIT, "scrolling: %s", ctx.scrolling ? "true" : "false");
@@ -509,8 +519,7 @@ ssize_t LineEditorObject::accept(ARState &state, RenderingContext &ctx) {
     errno = EAGAIN;
     return -1;
   }
-  if (ctx.buf.moveCursorToEndOfBuf() || this->hasFeature(LineEditorFeature::SEMANTIC_PROMPT)) {
-    ctx.semanticPrompt = this->hasFeature(LineEditorFeature::SEMANTIC_PROMPT);
+  if (ctx.buf.moveCursorToEndOfBuf()) {
     this->refreshLine(state, ctx, false);
   }
   return static_cast<ssize_t>(ctx.buf.getUsedSize());
@@ -569,17 +578,13 @@ ssize_t LineEditorObject::editLine(ARState &state, RenderingContext &ctx) {
     if (ctx.scrolling) {
       linenoiseClearScreen(this->inFd);
       putNewline = false;
-    } else if (ctx.buf.moveCursorToEndOfBuf() ||
-               this->hasFeature(LineEditorFeature::SEMANTIC_PROMPT)) {
-      ctx.semanticPrompt = this->hasFeature(LineEditorFeature::SEMANTIC_PROMPT);
+    } else if (ctx.buf.moveCursorToEndOfBuf()) {
       this->refreshLine(state, ctx, false);
     }
   }
   this->disableRawMode(this->inFd);
   if (putNewline) {
-    constexpr char data[] = "\n";
-    ssize_t r = write(this->outFd, data, std::size(data) - 1);
-    UNUSED(r);
+    dprintf(this->outFd, "\n%s", ctx.semanticPrompt ? OSC133_("C") : "");
   }
   errno = errNum;
   return count;
@@ -611,6 +616,7 @@ ssize_t LineEditorObject::editInRawMode(ARState &state, RenderingContext &ctx) {
   state.setGlobal(BuiltinVarOffset::EAW,
                   Value::createInt(ctx.ps.eaw == AmbiguousCharWidth::HALF ? 1 : 2));
   ctx.prevExitStatus = static_cast<unsigned char>(state.getMaskedExitStatus());
+  ctx.semanticPrompt = this->hasFeature(LineEditorFeature::SEMANTIC_PROMPT);
   this->refreshLine(state, ctx);
 
   bool rotating = false;

@@ -43,10 +43,6 @@ static bool renderLines(const LineBuffer &buf, ObserverPtr<const ArrayPager> pag
 
 #define OSC133_(O) "\x1b]133;" O "\x1b\\"
 
-static int emitPromptStart(char (&data)[64], int prevExitStatus) {
-  return snprintf(data, std::size(data), "\x1b]133;D;%d\x1b\\" OSC133_("A"), prevExitStatus);
-}
-
 RenderingResult doRendering(const RenderingContext &ctx, ObserverPtr<const ArrayPager> pager,
                             ObserverPtr<const ANSIEscapeSeqMap> escapeSeqMap,
                             unsigned int maxCols) {
@@ -55,11 +51,6 @@ RenderingResult doRendering(const RenderingContext &ctx, ObserverPtr<const Array
   RenderingResult result;
   {
     // render prompt and compute prompt row/column length
-    if (ctx.semanticPrompt) {
-      char data[64];
-      emitPromptStart(data, ctx.prevExitStatus);
-      result.renderedLines += data;
-    }
     LineRenderer renderer(ctx.ps, 0, result.renderedLines, escapeSeqMap);
     renderer.setColLimit(maxCols);
     renderer.renderWithANSI(ctx.prompt);
@@ -76,9 +67,6 @@ RenderingResult doRendering(const RenderingContext &ctx, ObserverPtr<const Array
     result.renderedRows = renderer.getTotalRows() + 1;
     result.renderedCols = renderer.getMaxTotalCols();
     result.promptRows = static_cast<unsigned int>(promptRows + 1);
-    if (ctx.semanticPrompt) {
-      result.renderedLines += OSC133_("C");
-    }
   }
 
   // get cursor row/column length
@@ -156,23 +144,12 @@ bool fitToWinSize(const RenderingContext &ctx, const bool showPager, const unsig
   result.renderedRows -= eraseRows;
   if (auto r = findNthPos(result.renderedLines, eraseRows, NL); r != StringRef::npos) {
     result.renderedLines.erase(0, r + NL.size());
-    if (ctx.semanticPrompt) {
-      if (eraseRows >= result.promptRows) {
-        result.renderedLines.insert(0, OSC133_("B"));
-      }
-      char data[64];
-      emitPromptStart(data, ctx.prevExitStatus);
-      result.renderedLines.insert(0, data);
-    }
   }
 
   // remove lower rows of window
   if (result.renderedRows > winRows) {
     if (auto r = findNthPos(result.renderedLines, winRows, NL); r != StringRef::npos) {
       result.renderedLines.erase(result.renderedLines.begin() + r, result.renderedLines.end());
-      if (ctx.semanticPrompt) {
-        result.renderedLines += OSC133_("C");
-      }
     }
     result.renderedRows = winRows;
   }

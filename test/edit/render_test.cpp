@@ -435,22 +435,22 @@ TEST(RendererTest, semanticPrompt) {
 
   {
     auto ret = doRendering(ctx, nullptr, nullptr, 80);
-    std::string expect = "\x1b]133;D;0\x1b\\\x1b]133;A\x1b\\1>\r\n"
+    std::string expect = "1>\r\n"
                          "2>\r\n"
                          ">> \x1b]133;B\x1b\\1111\r\n"
                          "   2222\r\n"
-                         "   3333\x1b]133;C\x1b\\";
+                         "   3333";
     ASSERT_EQ(expect, ret.renderedLines);
   }
 
   {
-    ctx.prevExitStatus = 123;
+    ctx.prevExitStatus = 123; // not affect
     auto ret = doRendering(ctx, nullptr, nullptr, 80);
-    std::string expect = "\x1b]133;D;123\x1b\\\x1b]133;A\x1b\\1>\r\n"
+    std::string expect = "1>\r\n"
                          "2>\r\n"
                          ">> \x1b]133;B\x1b\\1111\r\n"
                          "   2222\r\n"
-                         "   3333\x1b]133;C\x1b\\";
+                         "   3333";
     ASSERT_EQ(expect, ret.renderedLines);
   }
 }
@@ -1612,11 +1612,11 @@ TEST_F(ScrollTest, semanticPrompt1) {
     auto ret = render();
     this->fit(ret, false);
     ASSERT_EQ(1, ret.promptRows);
-    ASSERT_EQ("\x1b]133;D;0\x1b\\\x1b]133;A\x1b\\> \x1b]133;B\x1b\\011111\r\n"
+    ASSERT_EQ("> \x1b]133;B\x1b\\011111\r\n"
               "  022222\r\n"
               "  033333\r\n"
               "  044444\r\n"
-              "  055555\x1b]133;C\x1b\\",
+              "  055555",
               ret.renderedLines);
   }
 
@@ -1627,11 +1627,11 @@ TEST_F(ScrollTest, semanticPrompt1) {
     auto ret = render();
     this->fit(ret, false);
     ASSERT_EQ(1, ret.promptRows);
-    ASSERT_EQ("\x1b]133;D;12\x1b\\\x1b]133;A\x1b\\\x1b]133;B\x1b\\  066666\r\n"
+    ASSERT_EQ("  066666\r\n"
               "  077777\r\n"
               "  088888\r\n"
               "  099999\r\n"
-              "  100000\x1b]133;C\x1b\\",
+              "  100000",
               ret.renderedLines);
   }
 
@@ -1643,11 +1643,11 @@ TEST_F(ScrollTest, semanticPrompt1) {
     auto ret = render();
     this->fit(ret, false);
     ASSERT_EQ(1, ret.promptRows);
-    ASSERT_EQ("\x1b]133;D;12\x1b\\\x1b]133;A\x1b\\\x1b]133;B\x1b\\  033333\r\n"
+    ASSERT_EQ("  033333\r\n"
               "  044444\r\n"
               "  055555\r\n"
               "  066666\r\n"
-              "  077777\x1b]133;C\x1b\\",
+              "  077777",
               ret.renderedLines);
   }
 }
@@ -1673,11 +1673,11 @@ TEST_F(ScrollTest, semanticPrompt2) {
     ASSERT_EQ(6, ret.cursorRows);
     this->fit(ret, false);
     ASSERT_EQ(3, ret.promptRows);
-    ASSERT_EQ("\x1b]133;D;0\x1b\\\x1b]133;A\x1b\\2>\r\n"
+    ASSERT_EQ("2>\r\n"
               "3>\r\n"
               "> \x1b]133;B\x1b\\011111\r\n"
               "  022222\r\n"
-              "  033333\x1b]133;C\x1b\\",
+              "  033333",
               ret.renderedLines);
   }
 }
