@@ -153,18 +153,11 @@ public:
   }
 
   LexerBase &operator=(LexerBase &&lex) noexcept {
-    this->swap(lex);
+    if (this != std::addressof(lex)) {
+      this->~LexerBase();
+      new (this) LexerBase(std::move(lex));
+    }
     return *this;
-  }
-
-  void swap(LexerBase &lex) noexcept {
-    std::swap(this->sourceName, lex.sourceName);
-    std::swap(this->lineNumTable, lex.lineNumTable);
-    this->buf.swap(lex.buf);
-    std::swap(this->cursor, lex.cursor);
-    std::swap(this->limit, lex.limit);
-    std::swap(this->marker, lex.marker);
-    std::swap(this->ctxMarker, lex.ctxMarker);
   }
 
   const std::string &getSourceName() const { return this->sourceName; }
