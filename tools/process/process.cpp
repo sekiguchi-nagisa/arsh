@@ -616,6 +616,49 @@ void Screen::addUnrecognizedCSI(const char *begin, const char *end) {
   }
 }
 
+void Screen::addUnrecognizedOSC(const char *begin, const char *end) {
+  arsh::StringRef seq(begin, end - begin);
+  assert(seq.startsWith("\x1b]"));
+  assert(seq.endsWith("\x07") || seq.endsWith("\x1b\\"));
+  if (seq.endsWith("\x07")) {
+    seq.removeSuffix(1);
+  } else if (seq.endsWith("\x1b\\")) {
+    seq.removeSuffix(2);
+  }
+
+  constexpr const char *FTCS_PREFIX = "\x1b]133;";
+  if (this->ftcsListener && seq.startsWith(FTCS_PREFIX)) { // FTCS
+    auto param = seq.substr(strlen(FTCS_PREFIX));
+    FTCS kind = FTCS::UNRECOGNIZED;
+    if (!param.empty()) {
+      const char p = param[0];
+      param.removePrefix(1);
+      switch (p) {
+      case 'A':
+        kind = FTCS::PROMPT;
+        break;
+      case 'B':
+        kind = FTCS::COMMAND_START;
+        break;
+      case 'C':
+        kind = FTCS::COMMAND_EXECUTED;
+        break;
+      case 'D':
+        kind = FTCS::COMMAND_FINISHED;
+        break;
+      default:
+        break;
+      }
+    }
+    this->ftcsListener(seq, kind, param);
+    return;
+  }
+
+  if (this->oscListener) {
+    this->oscListener(seq);
+  }
+}
+
 static std::string toStringAtLine(const arsh::FlexBuffer<int> &buf) {
   std::string ret;
   for (int ch : buf) {

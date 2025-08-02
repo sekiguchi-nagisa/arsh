@@ -110,10 +110,8 @@ INIT:
     "\x1b[1K"                               { this->clearLineTo(); NEXT(); }
     "\x1b[2K"                               { this->clearLine(); NEXT(); }
     "\x1b[6n"                               { this->reportPos(); NEXT(); }
-    "\x1b]133;A\x1b\\"                      { this->addFTCS(FTCS::PROMPT); NEXT(); }
-    "\x1b]133;B\x1b\\"                      { this->addFTCS(FTCS::COMMAND_START); NEXT(); }
-    "\x1b]133;C\x1b\\"                      { this->addFTCS(FTCS::COMMAND_EXECUTED); NEXT(); }
-    "\x1b]133;D" (";" DECIMAL)? "\x1b\\"    { this->addFTCS(FTCS::COMMAND_FINISHED); NEXT(); }
+    "\x1b]" [\x08-\x0D\x20-\x7E]+ ("\x1b\\" | "\x07")
+                                            { this->addUnrecognizedOSC(start, cursor); NEXT(); }
     "\x1b[" [0-9:;<=>?]* [ !"#$%&'()*+,-./]* [@A-Z[\\\]^_`a-z{|}~]
                                             { this->addUnrecognizedCSI(start, cursor); NEXT(); }
 

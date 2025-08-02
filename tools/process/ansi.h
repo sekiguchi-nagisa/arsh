@@ -27,11 +27,20 @@ namespace process {
 
 /**
  * for VT100 escape sequence handling.
- * currently implement small subset.
+ * currently implement a small subset.
  * see. http://bkclass.web.fc2.com/doc_vt100.html
  *      https://vt100.net/docs/vt100-ug/chapter3.html
  */
 class Screen : public arsh::LexerBase {
+public:
+  enum class FTCS : unsigned char {
+    PROMPT,
+    COMMAND_START,
+    COMMAND_EXECUTED,
+    COMMAND_FINISHED,
+    UNRECOGNIZED,
+  };
+
 private:
   unsigned int maxRows; // y
   unsigned int maxCols; // x
@@ -48,6 +57,10 @@ private:
   std::function<void()> bellCallback; // for bell character
 
   std::function<void(arsh::StringRef)> csiListener;
+
+  std::function<void(arsh::StringRef)> oscListener;
+
+  std::function<void(arsh::StringRef, FTCS, arsh::StringRef)> ftcsListener;
 
   arsh::AmbiguousCharWidth eaw{arsh::AmbiguousCharWidth::HALF};
 
@@ -70,13 +83,6 @@ public:
     static Pos defaultSize() { return {24, 80}; }
   };
 
-  enum class FTCS : unsigned char { // for semantic prompt
-    PROMPT,
-    COMMAND_START,
-    COMMAND_EXECUTED,
-    COMMAND_FINISHED,
-  };
-
   explicit Screen(Pos pos);
 
   Screen() : Screen(Pos::defaultSize()) {}
@@ -87,6 +93,14 @@ public:
 
   void setCSIListener(std::function<void(arsh::StringRef)> func) {
     this->csiListener = std::move(func);
+  }
+
+  void setOSCListener(std::function<void(arsh::StringRef)> func) {
+    this->oscListener = std::move(func);
+  }
+
+  void setFTCSListener(std::function<void(arsh::StringRef, FTCS, arsh::StringRef)> func) {
+    this->ftcsListener = std::move(func);
   }
 
   void setEAW(arsh::AmbiguousCharWidth v) { this->eaw = v; }
@@ -201,14 +215,12 @@ public:
     this->updateMaxUsedRows();
   }
 
-  void addFTCS(FTCS c) {
-    static_cast<void>(c); // do nothing, TODO: add marker
-  }
-
   std::string toString() const;
 
 private:
   void addUnrecognizedCSI(const char *begin, const char *end);
+
+  void addUnrecognizedOSC(const char *begin, const char *end);
 
   void updateMaxUsedRows() {
     if (this->row + 1 > this->maxUsedRows) {

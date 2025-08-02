@@ -326,6 +326,71 @@ TEST(ANSITest, resize) {
   ASSERT_EQ(19, screen.getCursor().col);
 }
 
+TEST(ANSITest, listener) {
+  // CSI
+  {
+    Screen screen;
+    std::string seq;
+    screen.setCSIListener([&seq](arsh::StringRef ref) { seq = ref.toString(); });
+    arsh::StringRef line = "\x1b[27~11";
+    screen.interpret(line.data(), line.size());
+    ASSERT_EQ("11", screen.toString());
+    ASSERT_EQ("\x1b[27~", seq);
+  }
+
+  // OSC
+  {
+    Screen screen;
+    std::string seq;
+    screen.setOSCListener([&seq](arsh::StringRef ref) { seq = ref.toString(); });
+    arsh::StringRef line = "\x1b]133;A\x1b\\@@";
+    screen.interpret(line.data(), line.size());
+    ASSERT_EQ("@@", screen.toString());
+    ASSERT_EQ("\x1b]133;A", seq);
+  }
+
+  {
+    Screen screen;
+    std::string seq;
+    screen.setOSCListener([&seq](arsh::StringRef ref) { seq = ref.toString(); });
+    arsh::StringRef line = "\x1b]133;D;12\a12@";
+    screen.interpret(line.data(), line.size());
+    ASSERT_EQ("12@", screen.toString());
+    ASSERT_EQ("\x1b]133;D;12", seq);
+  }
+
+  // FTCS
+  {
+    Screen screen;
+    std::string seq;
+    std::string raw;
+    Screen::FTCS ftcs = Screen::FTCS::UNRECOGNIZED;
+    std::string param;
+    screen.setOSCListener([&seq](arsh::StringRef ref) { seq = ref.toString(); });
+    screen.setFTCSListener(
+        [&raw, &ftcs, &param](arsh::StringRef raw0, Screen::FTCS ftcs0, arsh::StringRef param0) {
+          raw = raw0.toString();
+          ftcs = ftcs0;
+          param = param0.toString();
+        });
+    arsh::StringRef line = "\x1b]133;D;12\a12@";
+    screen.interpret(line.data(), line.size());
+    ASSERT_EQ("12@", screen.toString());
+    ASSERT_EQ("", seq);
+    ASSERT_EQ("\x1b]133;D;12", raw);
+    ASSERT_EQ(";12", param);
+    ASSERT_EQ(Screen::FTCS::COMMAND_FINISHED, ftcs);
+
+    // unrecognized
+    line = "\x1b]133;Q;12\a12@";
+    screen.interpret(line.data(), line.size());
+    ASSERT_EQ("", seq);
+    ASSERT_EQ("\x1b]133;Q;12", raw);
+    ASSERT_EQ(";12", param);
+    ASSERT_EQ(Screen::FTCS::UNRECOGNIZED, ftcs);
+  }
+}
+
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
