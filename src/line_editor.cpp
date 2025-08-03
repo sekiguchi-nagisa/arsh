@@ -440,12 +440,6 @@ static int preparePrompt(int inFd, int outFd) {
   return 0;
 }
 
-#define OSC133_(O) "\x1b]133;" O "\x1b\\"
-
-static int emitPromptStart(char (&data)[64], int prevExitStatus) {
-  return snprintf(data, std::size(data), "\x1b]133;D;%d\x1b\\" OSC133_("A"), prevExitStatus);
-}
-
 /* Multi-line low-level line refresh.
  *
  * Rewrite the currently edited line accordingly to the buffer content,
@@ -495,10 +489,6 @@ void LineEditorObject::refreshLine(ARState &state, RenderingContext &ctx, bool r
     /* Clean the top and bellow lines. */
     LOG(TRACE_EDIT, "clear");
     ab += "\r\x1b[0K\x1b[0J";
-  }
-  if (ctx.semanticPrompt) {
-    emitPromptStart(seq, ctx.prevExitStatus);
-    ab += seq;
   }
 
   /* adjust too long rendered lines */
@@ -579,6 +569,8 @@ static bool rotateHistoryOrUpDown(HistRotator &histRotate, LineBuffer &buf, bool
   }
 }
 
+#define OSC133_(O) "\x1b]133;" O "\x1b\\"
+
 /* This function is the core of the line editing capability of linenoise.
  * It expects 'fd' to be already in "raw mode" so that every key pressed
  * will be returned ASAP to read().
@@ -605,7 +597,8 @@ ssize_t LineEditorObject::editLine(ARState &state, RenderingContext &ctx) {
   }
   this->disableRawMode(this->inFd);
   if (putNewline) {
-    dprintf(this->outFd, "\n%s", ctx.semanticPrompt ? OSC133_("C") : "");
+    dprintf(this->outFd, "\n%s",
+            this->hasFeature(LineEditorFeature::SEMANTIC_PROMPT) ? OSC133_("C") : "");
   }
   errno = errNum;
   return count;
@@ -630,14 +623,16 @@ ssize_t LineEditorObject::editInRawMode(ARState &state, RenderingContext &ctx) {
   HistRotator histRotate(this->history);
 
   preparePrompt(this->inFd, this->outFd);
+  if (this->hasFeature(LineEditorFeature::SEMANTIC_PROMPT)) {
+    // emit OSC133 before property check due to workaround for iTerm2
+    dprintf(this->outFd, "\x1b]133;D;%d\x1b\\" OSC133_("A"), state.getMaskedExitStatus());
+  }
   checkProperty(ctx.ps, this->inFd, this->outFd);
   if (this->eaw != 0) { // force set east asin width
     ctx.ps.eaw = this->eaw == 1 ? AmbiguousCharWidth::HALF : AmbiguousCharWidth::FULL;
   }
   state.setGlobal(BuiltinVarOffset::EAW,
                   Value::createInt(ctx.ps.eaw == AmbiguousCharWidth::HALF ? 1 : 2));
-  ctx.prevExitStatus = static_cast<unsigned char>(state.getMaskedExitStatus());
-  ctx.semanticPrompt = this->hasFeature(LineEditorFeature::SEMANTIC_PROMPT);
   this->refreshLine(state, ctx);
 
   bool rotating = false;

@@ -41,8 +41,6 @@ static bool renderLines(const LineBuffer &buf, ObserverPtr<const ArrayPager> pag
   return continueLine;
 }
 
-#define OSC133_(O) "\x1b]133;" O "\x1b\\"
-
 RenderingResult doRendering(const RenderingContext &ctx, ObserverPtr<const ArrayPager> pager,
                             ObserverPtr<const ANSIEscapeSeqMap> escapeSeqMap,
                             unsigned int maxCols) {
@@ -58,9 +56,6 @@ RenderingResult doRendering(const RenderingContext &ctx, ObserverPtr<const Array
     promptCols = renderer.getTotalCols();
 
     // render lines and compute lines row/columns length
-    if (ctx.semanticPrompt) {
-      result.renderedLines += OSC133_("B");
-    }
     renderer.setInitCols(promptCols);
     renderer.setTokenizeResult(makeObserver(ctx.tokenizeCache));
     result.continueLine = renderLines(ctx.buf, pager, renderer, ctx.errorCmdChecker);
