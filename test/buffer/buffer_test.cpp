@@ -607,6 +607,53 @@ TEST(InlinedStack, base) {
   }
 }
 
+TEST(InlinedStack, nonTrivial) {
+  {
+    InlinedStack<std::string, 3> stack;
+    ASSERT_EQ(0, stack.size());
+    ASSERT_EQ(3, stack.capacity());
+    ASSERT_TRUE(stack.isStackAlloc());
+    stack.push("0_qwertyuiopasdfghjklzxcvbnm");
+    stack.push("1_qwertyuiopasdfghjklzxcvbnm");
+    ASSERT_EQ(2, stack.size());
+    ASSERT_EQ(3, stack.capacity());
+    ASSERT_TRUE(stack.isStackAlloc());
+    ASSERT_EQ("0_qwertyuiopasdfghjklzxcvbnm", stack.front());
+    ASSERT_EQ("1_qwertyuiopasdfghjklzxcvbnm", stack.back());
+
+    stack.pop();
+    ASSERT_EQ(1, stack.size());
+    stack.push("3_qwertyuiopasdfghjklzxcvbnm");
+    ASSERT_EQ("3_qwertyuiopasdfghjklzxcvbnm", stack.back());
+    ASSERT_EQ(2, stack.size());
+    ASSERT_EQ(3, stack.capacity());
+  }
+
+  {
+    InlinedStack<std::string, 3> stack;
+    ASSERT_EQ(0, stack.size());
+    ASSERT_EQ(3, stack.capacity());
+    ASSERT_TRUE(stack.isStackAlloc());
+    stack.push("0_qwertyuiopasdfghjklzxcvbnm");
+    stack.push("1_qwertyuiopasdfghjklzxcvbnm");
+    stack.push("2_qwertyuiopasdfghjklzxcvbnm");
+    stack.push("3_qwertyuiopasdfghjklzxcvbnm");
+    ASSERT_EQ(4, stack.size());
+    ASSERT_EQ(4, stack.capacity());
+    ASSERT_FALSE(stack.isStackAlloc());
+
+    stack.push("4_qwertyuiopasdfghjklzxcvbnm");
+    ASSERT_EQ(5, stack.size());
+    ASSERT_EQ(6, stack.capacity());
+
+    ASSERT_EQ("4_qwertyuiopasdfghjklzxcvbnm", stack.back());
+    stack.pop();
+    ASSERT_EQ("3_qwertyuiopasdfghjklzxcvbnm", stack.back());
+    stack.push("5_qwertyuiopasdfghjklzxcvbnm");
+    ASSERT_EQ("5_qwertyuiopasdfghjklzxcvbnm", stack.back());
+  }
+}
+
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

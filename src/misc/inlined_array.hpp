@@ -25,7 +25,7 @@ BEGIN_MISC_LIB_NAMESPACE_DECL
 template <typename T, size_t N>
 class InlinedArray {
 private:
-  static_assert(std::is_standard_layout_v<T> && std::is_trivially_copyable_v<T>, "forbidden type");
+  static_assert(std::is_trivially_copyable_v<T>, "forbidden type");
 
   struct Alloc : protected std::allocator<T> {
     const size_t size;

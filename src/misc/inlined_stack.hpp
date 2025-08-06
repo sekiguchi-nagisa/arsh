@@ -29,7 +29,7 @@ BEGIN_MISC_LIB_NAMESPACE_DECL
 template <typename T, size_t N, typename SIZE_T = unsigned int>
 class InlinedStack {
 private:
-  static_assert(std::is_standard_layout_v<T> && std::is_trivially_copyable_v<T>, "forbidden type");
+  static_assert(std::is_default_constructible_v<T>);
   static_assert(N <= std::numeric_limits<SIZE_T>::max());
 
   SIZE_T usedSize{0};
@@ -45,8 +45,14 @@ public:
   InlinedStack() { this->ptr = this->data; }
 
   ~InlinedStack() {
-    if (!this->isStackAlloc()) {
-      free(this->ptr);
+    if constexpr (std::is_trivially_destructible_v<T>) {
+      if (!this->isStackAlloc()) {
+        free(this->ptr);
+      }
+    } else {
+      if (!this->isStackAlloc()) {
+        delete[] this->ptr;
+      }
     }
   }
 
@@ -61,12 +67,22 @@ public:
       return;
     }
     T *newPtr = this->isStackAlloc() ? nullptr : this->ptr;
-    newPtr = static_cast<T *>(realloc(newPtr, sizeof(T) * newCap));
-    if (!newPtr) {
-      fatal_perror("memory allocation failed");
-    }
-    if (this->isStackAlloc()) {
-      memcpy(newPtr, this->data, sizeof(T) * this->size());
+    if constexpr (std::is_trivially_copyable_v<T>) {
+      newPtr = static_cast<T *>(realloc(newPtr, sizeof(T) * newCap));
+      if (!newPtr) {
+        fatal_perror("memory allocation failed");
+      }
+      if (this->isStackAlloc()) {
+        memcpy(newPtr, this->data, sizeof(T) * this->size());
+      }
+    } else {
+      newPtr = new T[newCap];
+      for (size_t i = 0; i < this->size(); i++) {
+        newPtr[i] = std::move(this->ptr[i]);
+      }
+      if (!this->isStackAlloc()) {
+        delete[] this->ptr;
+      }
     }
     this->ptr = newPtr;
     this->cap = newCap;
@@ -78,10 +94,19 @@ public:
       newCap += newCap >> 1u;
       this->reserve(newCap);
     }
-    this->ptr[this->usedSize++] = value;
+    if constexpr (std::is_trivially_move_assignable_v<T>) {
+      this->ptr[this->usedSize++] = value;
+    } else {
+      this->ptr[this->usedSize++] = std::move(value);
+    }
   }
 
-  void pop() { --this->usedSize; }
+  void pop() {
+    if constexpr (!std::is_trivially_destructible_v<T>) {
+      this->ptr[this->usedSize].~T();
+    }
+    --this->usedSize;
+  }
 
   T &back() { return this->ptr[this->usedSize - 1]; }
 
