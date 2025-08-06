@@ -49,6 +49,8 @@ public:
 
     std::string delta;
 
+    std::unique_ptr<const Change> prev;
+
     Change(ChangeOp op, unsigned int cursor, std::string &&delta, bool merge)
         : type(op), merge(merge), cursor(cursor), delta(std::move(delta)) {}
 
@@ -70,6 +72,7 @@ private:
   FlexBuffer<unsigned int> newlinePosList;
   RingBuffer<Change> changes;
   unsigned int changeIndex{0};
+  bool atomicEdit{false};
 
 public:
   NON_COPYABLE(LineBuffer);
@@ -91,6 +94,18 @@ public:
    * @param v
    */
   void setCursor(unsigned int v) { this->cursor = std::min(v, this->getUsedSize()); }
+
+  template <typename Func>
+  static constexpr bool atomic_edit_requirement_v =
+      std::is_same_v<void, std::invoke_result_t<Func, LineBuffer &>>;
+
+  template <typename Func, enable_when<atomic_edit_requirement_v<Func>> = nullptr>
+  void intoAtomicEdit(Func func) {
+    this->insertToCursor("");
+    this->atomicEdit = true;
+    func(*this);
+    this->atomicEdit = false;
+  }
 
   unsigned int getUsedSize() const { return this->usedSize; }
 

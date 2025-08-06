@@ -261,8 +261,13 @@ static bool linenoiseEditSwapChars(LineBuffer &buf) {
   if (buf.getCursor() == buf.getUsedSize()) {
     buf.moveCursorToLeftByChar();
   }
-  std::string cutStr;
-  return buf.deletePrevChar(&cutStr) && buf.moveCursorToRightByChar() && buf.insertToCursor(cutStr);
+
+  bool s = false;
+  buf.intoAtomicEdit([&s](LineBuffer &b) {
+    std::string cutStr;
+    s = b.deletePrevChar(&cutStr) && b.moveCursorToRightByChar() && b.insertToCursor(cutStr);
+  });
+  return s;
 }
 
 /* This function is called when linenoise() is called with the standard

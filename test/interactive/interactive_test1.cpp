@@ -918,6 +918,36 @@ TEST_F(InteractiveTest, undo2) {
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
 }
 
+TEST_F(InteractiveTest, undo3) { // combined op (ex. swap character)
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+
+  // insert chars
+  this->send("123456789");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "123456789"));
+  this->send(CTRL_W);
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + ""));
+  this->send("あい");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "あい"));
+  this->send(CTRL_T); // swap
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "いあ"));
+  this->send(CTRL_Z);
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "あい"));
+  this->send(CTRL_Z CTRL_Z);
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "123456789"));
+  this->send(ESC_("/") ESC_("/"));
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "あい"));
+  this->send(ESC_("/"));
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "いあ"));
+
+  this->send(CTRL_C);
+  ASSERT_NO_FATAL_FAILURE(this->expect("\n" + PROMPT));
+
+  this->send(CTRL_D);
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
+}
+
 TEST_F(InteractiveTest, undoRotate1) {
   this->invoke("--quiet", "--norc");
 

@@ -16,6 +16,7 @@
 
 #include "line_buffer.h"
 #include "misc/grapheme.hpp"
+#include "misc/inlined_stack.hpp"
 #include "misc/word.hpp"
 
 namespace arsh {
@@ -232,21 +233,24 @@ bool LineBuffer::undo() {
   }
   this->changeIndex--;
   this->changes[this->changeIndex].merge = false;
-  const auto &change = this->changes[this->changeIndex];
-  EditOp editOp{.trackChange = false, .mergeChange = false};
-  this->cursor = change.cursor;
-  switch (change.type) {
-  case ChangeOp::INSERT:
-    this->deleteToCursor(change.delta.size(), nullptr, editOp);
-    break;
-  case ChangeOp::DELETE_TO:
-  case ChangeOp::DELETE_FROM:
-    this->insertToCursor(change.delta, editOp);
-    if (change.type == ChangeOp::DELETE_FROM) {
-      this->cursor = change.cursor;
+  const auto *change = &this->changes[this->changeIndex];
+  do {
+    constexpr EditOp editOp{.trackChange = false, .mergeChange = false};
+    this->cursor = change->cursor;
+    switch (change->type) {
+    case ChangeOp::INSERT:
+      this->deleteToCursor(change->delta.size(), nullptr, editOp);
+      break;
+    case ChangeOp::DELETE_TO:
+    case ChangeOp::DELETE_FROM:
+      this->insertToCursor(change->delta, editOp);
+      if (change->type == ChangeOp::DELETE_FROM) {
+        this->cursor = change->cursor;
+      }
+      break;
     }
-    break;
-  }
+    change = change->prev.get();
+  } while (change);
   return true;
 }
 
@@ -256,23 +260,34 @@ bool LineBuffer::redo() {
   }
   assert(this->changeIndex < this->changes.size());
   this->changes[this->changeIndex].merge = false;
-  const auto &change = this->changes[this->changeIndex];
-  EditOp editOp{.trackChange = false, .mergeChange = false};
-  this->changeIndex++;
-  switch (change.type) {
-  case ChangeOp::INSERT:
-    this->cursor = change.cursor - change.delta.size();
-    this->insertToCursor(change.delta, editOp);
-    break;
-  case ChangeOp::DELETE_TO:
-    this->cursor = change.cursor + change.delta.size();
-    this->deleteToCursor(change.delta.size(), nullptr, editOp);
-    break;
-  case ChangeOp::DELETE_FROM:
-    this->cursor = change.cursor;
-    this->deleteFromCursor(change.delta.size(), nullptr, editOp);
-    break;
+
+  // reverse order of changes
+  InlinedStack<const Change *, 4> stack;
+  for (const auto *change = &this->changes[this->changeIndex]; change;
+       change = change->prev.get()) {
+    stack.push(change);
   }
+
+  // revert changes
+  this->changeIndex++;
+  do {
+    constexpr EditOp editOp{.trackChange = false, .mergeChange = false};
+    switch (const auto *change = stack.back(); change->type) {
+    case ChangeOp::INSERT:
+      this->cursor = change->cursor - change->delta.size();
+      this->insertToCursor(change->delta, editOp);
+      break;
+    case ChangeOp::DELETE_TO:
+      this->cursor = change->cursor + change->delta.size();
+      this->deleteToCursor(change->delta.size(), nullptr, editOp);
+      break;
+    case ChangeOp::DELETE_FROM:
+      this->cursor = change->cursor;
+      this->deleteFromCursor(change->delta.size(), nullptr, editOp);
+      break;
+    }
+    stack.pop();
+  } while (stack.size());
   return true;
 }
 
@@ -319,6 +334,10 @@ void LineBuffer::trackChange(ChangeOp op, std::string &&delta, bool merge) {
     this->changes.back().merge = r;
     if (r) {
       return;
+    }
+    if (this->atomicEdit) {
+      newChange.prev = std::make_unique<const Change>(std::move(this->changes.back()));
+      this->changes.pop_back();
     }
   }
   this->changes.push_back(std::move(newChange));

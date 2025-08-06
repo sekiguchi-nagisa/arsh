@@ -804,6 +804,37 @@ TEST_F(LineBufferTest, insertingSuffix) {
   ASSERT_EQ("", prefix.toString());
 }
 
+TEST_F(LineBufferTest, atomicEdit) {
+  std::string storage;
+  storage.resize(32, '@');
+  LineBuffer buffer(storage.data(), storage.size());
+  ASSERT_EQ("", buffer.get().toString());
+
+  ASSERT_TRUE(buffer.insertToCursor("34 && la"));
+  ASSERT_EQ(8, buffer.getCursor());
+
+  // replace
+  buffer.intoAtomicEdit([&](LineBuffer &buf) {
+    buf.setCursor(6);
+    buf.deleteFromCursor(2);
+    ASSERT_EQ("34 && ", buf.get().toString());
+    buf.insertToCursor("ls -la");
+    ASSERT_EQ("34 && ls -la", buf.get().toString());
+  });
+
+  // undo/redo replace
+  ASSERT_TRUE(buffer.undo());
+  ASSERT_EQ("34 && la", buffer.get().toString());
+  ASSERT_TRUE(buffer.undo());
+  ASSERT_EQ("", buffer.get().toString());
+  ASSERT_FALSE(buffer.undo());
+  ASSERT_TRUE(buffer.redo());
+  ASSERT_EQ("34 && la", buffer.get().toString());
+  ASSERT_TRUE(buffer.redo());
+  ASSERT_EQ("34 && ls -la", buffer.get().toString());
+  ASSERT_FALSE(buffer.redo());
+}
+
 TEST_F(LineBufferTest, tokenEditInvalid) {
   std::string storage;
   storage.resize(32, '@');
