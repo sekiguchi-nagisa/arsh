@@ -56,8 +56,8 @@ public:
      *
      * @param o
      * @return
-     * if merge succeed, return true.
-     * otherwise, return false (original object is not changed)
+     * if successfully merged, return true.
+     * otherwise, return false (the original object is not changed)
      */
     bool tryMerge(const Change &o);
   };
@@ -122,12 +122,12 @@ public:
   };
 
   /**
-   * get interval (pos, len) of current cursor line
+   * get interval (pos, len) of the current cursor line
    * @param wholeLine
-   * if true, get whole current line
+   * if true, get the whole current line
    * if false, get line until current cursor
    * @return
-   * start position of current line, length of current line
+   * start position of the current line, length of the current line
    */
   Interval findCurLineInterval(bool wholeLine) const;
 
@@ -140,9 +140,9 @@ public:
   unsigned int findCurLineNum() const { return this->findCurNewlineIndex() + 1; }
 
   /**
-   * get current line
+   * get the current line
    * @param wholeLine
-   * if true, get whole current line
+   * if true, get the whole current line
    * if false, line until current cursor
    * @return
    */
@@ -161,12 +161,12 @@ public:
   // edit op
 
   /**
-   * insert bytes to cursor position.
+   * insert bytes to the cursor position.
    * after insertion, increment cursor by size
    * @param ref
    * @param merge
    * @return
-   * if insertion succeed, return true (if ref is empty, return true)
+   * if successfully inserted, return true (if `ref` is empty, return true)
    * otherwise, return false
    */
   bool insertToCursor(StringRef ref, bool merge = false) {
@@ -174,26 +174,26 @@ public:
   }
 
   /**
-   * delete bytes at the left of cursor
+   * delete bytes at the left of the cursor
    * after deletion, decrement cursor by size
    * @param size
    * @param capture
    * @param merge
    * @return
-   * if deletion succeed, return true
+   * if successfully deleted, return true
    */
   bool deleteToCursor(size_t size, std::string *capture = nullptr, bool merge = false) {
     return this->deleteToCursor(size, capture, EditOp{.trackChange = true, .mergeChange = merge});
   }
 
   /**
-   * delete bytes at the right of cursor
+   * delete bytes at the right of the cursor
    * after deletion, not decrement cursor (but still decrement usedSize by size)
    * @param size
    * @param capture
    * @param merge
    * @return
-   * if deletion succeed, return true
+   * if successfully deleted, return true
    */
   bool deleteFromCursor(size_t size, std::string *capture = nullptr, bool merge = false) {
     return this->deleteFromCursor(size, capture, EditOp{.trackChange = true, .mergeChange = merge});
@@ -340,26 +340,26 @@ private:
   bool insertToCursor(StringRef ref, EditOp editOp);
 
   /**
-   * delete bytes at the left of cursor
+   * delete bytes at the left of the cursor
    * after deletion, decrement cursor by size
    * @param size
    * @param capture
-   * may be null
+   * maybe null
    * @param editOp
    * @return
-   * if deletion succeed, return true
+   * if successfully deleted, return true
    */
   bool deleteToCursor(size_t size, std::string *capture, EditOp editOp);
 
   /**
-   * delete bytes at the right of cursor
+   * delete bytes at the right of the cursor
    * after deletion, not decrement cursor (but still decrement usedSize by size)
    * @param size
    * @param capture
-   * may be null
+   * maybe null
    * @param editOp
    * @return
-   * if deletion succeed, return true
+   * if successfully deleted, return true
    */
   bool deleteFromCursor(size_t size, std::string *capture, EditOp editOp);
 
