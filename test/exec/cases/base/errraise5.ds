@@ -171,14 +171,14 @@ $PIPESTATUS.clear()
 $ex = 45643652
 var jj : Job?
 try {
-    sleep 10000 | { $jj = $JOB['%1']; false; }
+    sleep 10000 | { sleep 0.1; $jj = $JOB['%1']; false; }
 } catch e { $ex = $e; }
 assert ($ex as ExecError).message() == "\`false' command exits with non-zero status: \`1'"
 assert ($ex as ExecError).lineno() == 174
 
 assert $? == 0
 assert $PIPESTATUS.size() == 2
-assert $PIPESTATUS[0] == 0  # sleep command does not exited during unwind
+assert $PIPESTATUS[0] == 130
 assert $PIPESTATUS[1] == 1
 assert $jj!.size() == 1
 $jj!.wait()
