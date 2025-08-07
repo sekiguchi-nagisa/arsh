@@ -16,6 +16,7 @@
 
 #include <climits>
 #include <sys/wait.h>
+#include <thread>
 
 #include "logger.h"
 #include "redir.h"
@@ -46,12 +47,15 @@ Job PipelineObject::syncStatusAndDispose(bool duringUnwind) {
   this->entry->restoreStdin();
   if (duringUnwind) {
     static_cast<void>(this->entry->send(SIGINT));
+    std::this_thread::sleep_for(std::chrono::milliseconds(1)); // wait for signal delivery
   }
   const auto waitOp = duringUnwind                 ? WaitOp::NONBLOCKING
                       : this->state.isJobControl() ? WaitOp::BLOCK_UNTRACED
                                                    : WaitOp::BLOCKING;
   this->state.jobTable.waitForJob(this->entry, waitOp);
   this->state.updatePipeStatus(this->entry->getProcSize(), this->entry->getProcs(), true);
+  this->state.jobTable.removeToplevelLastPipeJobIfSame(this->entry);
+  static_cast<void>(this->state.tryToBeForeground());
   return std::move(this->entry);
 }
 

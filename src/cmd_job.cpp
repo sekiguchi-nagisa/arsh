@@ -226,7 +226,7 @@ int builtin_fg_bg(ARState &state, ArrayObject &argvObj) {
   if (job) {
     auto fmt = JobInfoFormat::DESC;
     if (fg) {
-      beForeground(job->getValidPid(0));
+      static_cast<void>(job->tryToForeground());
     } else {
       setFlag(fmt, JobInfoFormat::JOB_ID);
     }
@@ -251,7 +251,11 @@ int builtin_fg_bg(ARState &state, ArrayObject &argvObj) {
     } else if (job->isTerminated()) {
       job->lastProc().showSignal();
     }
-    static_cast<void>(state.tryToBeForeground());
+    if (auto lastPipe = state.jobTable.getToplevelLastPipeJob()) {
+      static_cast<void>(lastPipe->tryToForeground());
+    } else {
+      static_cast<void>(state.tryToBeForeground());
+    }
     if (errNum != 0) {
       errno = errNum;
       PERROR(state, argvObj, "wait failed");

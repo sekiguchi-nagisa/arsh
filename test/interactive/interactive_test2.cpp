@@ -297,7 +297,7 @@ ExecError: foo
     from (stdin):1 '<toplevel>()'
 )";
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("true | throw new ExecError('foo')", "", estr));
-
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$false", ": Bool = false"));
   this->send(CTRL_D);
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED, "\n"));
 }

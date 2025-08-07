@@ -117,7 +117,7 @@ TEST_F(InteractiveTest, wait_ctrlc2) {
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 128 + SIGINT));
 }
 
-TEST_F(InteractiveTest, lastpipe_ctrlc) {
+TEST_F(InteractiveTest, lastpipe_ctrlc1) {
   this->invoke("--quiet", "--norc");
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
@@ -134,6 +134,53 @@ SystemError: %s
   ASSERT_NO_FATAL_FAILURE(this->expect(promptAfterCtrlC(PROMPT), err));
   this->send(CTRL_D);
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED, "\n"));
+}
+
+TEST_F(InteractiveTest, lastpipe_ctrlc2) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+  this->sendLine("var aa = sleep 1000 | sleep 2000 | { sleep 3000; }");
+  ASSERT_NO_FATAL_FAILURE(
+      this->expect(PROMPT + "var aa = sleep 1000 | sleep 2000 | { sleep 3000; }\n"));
+  std::this_thread::sleep_for(std::chrono::milliseconds(500));
+  this->send(CTRL_C);
+  std::string err = strsignal(SIGINT);
+  err += "\n";
+  ASSERT_NO_FATAL_FAILURE(this->expect(promptAfterCtrlC(PROMPT), err));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert ! $aa"));
+  this->send(CTRL_D);
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(130, WaitStatus::EXITED, "\n"));
+}
+
+TEST_F(InteractiveTest, lastpipe_ctrlc3) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+  this->sendLine("sleep 3000");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "sleep 3000\n"));
+  std::this_thread::sleep_for(std::chrono::milliseconds(500));
+  this->send(CTRL_Z);
+  ASSERT_NO_FATAL_FAILURE(this->expect(promptAfterCtrlZ(PROMPT), "[1] + Stopped  sleep 3000\n"));
+
+  this->sendLine("var aa = sleep 1000 | sleep 2000 | { jobs; fg; }");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT +
+                                       "var aa = sleep 1000 | sleep 2000 | { jobs; fg; }\n"
+                                       "[1] + Stopped  sleep 3000\n"
+                                       "[2]   Running  sleep 1000 | sleep 2000 | { jobs; fg; }\n"
+                                       "sleep 3000\n"));
+
+  std::this_thread::sleep_for(std::chrono::milliseconds(200));
+  this->send(CTRL_C);
+  std::string err = strsignal(SIGINT);
+  err += "\n";
+  ASSERT_NO_FATAL_FAILURE(this->expect(ctrlCChar(), err));
+  std::this_thread::sleep_for(std::chrono::milliseconds(200));
+  this->send(CTRL_C);
+  ASSERT_NO_FATAL_FAILURE(this->expect(promptAfterCtrlC(PROMPT)));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert ! $aa"));
+  this->send(CTRL_D);
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(130, WaitStatus::EXITED, "\n"));
 }
 
 TEST_F(InteractiveTest, ctrlz1) {

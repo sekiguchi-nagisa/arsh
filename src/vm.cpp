@@ -516,23 +516,33 @@ static bool needForeground(ForkKind kind) {
 /**
  * for `setpgid(pid, pgid)`
  *
- * @param rootShell
+ * @param state
  * @param kind
  * @return
  * if created child process should be process group leader (create job), return 0
  * otherwise, return its parent process group id (default)
  */
-static pid_t resolvePGID(bool rootShell, ForkKind kind) {
-  if (rootShell) {
-    if (kind != ForkKind::STR && kind != ForkKind::ARRAY) {
-      /**
-       * in root shell, created child process should be process group leader
-       * (except for command substitution)
-       */
+static pid_t resolvePGID(const ARState &state, ForkKind kind) {
+  if (state.isRootShell()) {
+    switch (kind) {
+    case ForkKind::NONE:
+    case ForkKind::PIPE_FAIL:
+      if (pid_t pgid = state.jobTable.getToplevelLastPipePGID(); pgid > -1) {
+        return pgid;
+      }
       return 0;
+    case ForkKind::STR:
+    case ForkKind::ARRAY:
+      break; // always inherit current pgid
+    case ForkKind::IN_PIPE:
+    case ForkKind::OUT_PIPE:
+    case ForkKind::COPROC:
+    case ForkKind::JOB:
+    case ForkKind::DISOWN:
+      return 0; // created a child process should be process group leader
     }
   }
-  return getpgid(0);
+  return getpgid(0); // in subshell, inherit current pgid
 }
 
 static Proc::Op resolveProcOp(const ARState &st, ForkKind kind) {
@@ -562,7 +572,7 @@ bool VM::forkAndEval(ARState &state, Value &&desc) {
     raiseSystemError(state, errno, ERROR_PIPE);
     return false;
   }
-  const pid_t pgid = resolvePGID(state.isRootShell(), forkKind);
+  const pid_t pgid = resolvePGID(state, forkKind);
   const auto procOp = resolveProcOp(state, forkKind);
   const bool jobCtrl = state.isJobControl();
   auto proc = Proc::fork(state, pgid, procOp);
@@ -822,7 +832,7 @@ bool VM::forkAndExec(ARState &state, const char *filePath, const ArrayObject &ar
     return false;
   }
 
-  const pid_t pgid = resolvePGID(state.isRootShell(), ForkKind::NONE);
+  const pid_t pgid = resolvePGID(state, ForkKind::NONE);
   const auto procOp = resolveProcOp(state, ForkKind::NONE);
   auto proc = Proc::fork(state, pgid, procOp);
   if (proc.pid() == -1) {
@@ -1336,13 +1346,10 @@ bool VM::callPipeline(ARState &state, Value &&desc, const bool lastPipe, const F
 
   // fork
   InlinedArray<Proc, 6> children(procSize);
-  auto procOp = resolveProcOp(state, forkKind);
+  const auto procOp = resolveProcOp(state, forkKind);
   auto procOpRemain = procOp;
   unsetFlag(procOpRemain, Proc::Op::FOREGROUND); // remain process already foreground
-  if (lastPipe) {
-    unsetFlag(procOp, Proc::Op::FOREGROUND);
-  }
-  pid_t pgid = resolvePGID(state.isRootShell(), forkKind);
+  pid_t pgid = resolvePGID(state, forkKind);
   const bool jobCtrl = state.isJobControl();
   Proc proc; // NOLINT
 

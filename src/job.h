@@ -306,6 +306,13 @@ public:
     return -1;
   }
 
+  pid_t getPGID() const {
+    if (this->isAvailable() && this->isGrouped()) {
+      return this->procs[0].pid(); // return valid pgid if grouped
+    }
+    return -1;
+  }
+
   /**
    *
    * @return
@@ -344,6 +351,15 @@ public:
    * if failed, return false and set errno
    */
   bool send(int sigNum) const;
+
+  /**
+   * process group of this job will be foreground
+   * @return
+   * if success, return 0.
+   * if do-nothing, return 1.
+   * if error, return -1 and set errno
+   */
+  int tryToForeground() const;
 
   void updateState() {
     if (this->isAvailable()) {
@@ -542,6 +558,8 @@ private:
 
   CurPrevJobs curPrevJobs;
 
+  Job toplevelLastPipeJob; // if not null, within last-pipe
+
   ObserverPtr<JobNotifyCallback> notifyCallback;
 
 public:
@@ -560,13 +578,14 @@ public:
 
   /**
    * for subshell
-   * job table still maintains jobs, but not control theme
+   * job-table still maintains jobs but not control theme
    */
   void loseControlOfJobs() {
     for (auto &e : this->jobs) {
       e->setState(JobObject::State::UNCONTROLLED);
     }
     this->procTable.clear();
+    this->toplevelLastPipeJob = nullptr;
   }
 
   /**
@@ -595,7 +614,7 @@ public:
    * must be already attached job (still available and owned)
    */
   void setCurrentJob(Job job) {
-    if (job->getJobID() != 0 && job->isAvailable() && !job->isDisowned() &&
+    if (job->getJobID() != 0 && job->isAvailable() && !job->isDisowned() && !job->isLastPipe() &&
         this->curPrevJobs.cur != job) {
       if (auto &cur = this->curPrevJobs.cur; cur && cur->isDisowned()) {
         cur = nullptr;
@@ -610,6 +629,21 @@ public:
    * @return
    */
   const CurPrevJobs &syncAndGetCurPrevJobs();
+
+  void removeToplevelLastPipeJobIfSame(const Job &job) {
+    if (this->toplevelLastPipeJob == job) {
+      this->toplevelLastPipeJob = nullptr;
+    }
+  }
+
+  Job getToplevelLastPipeJob() const { return this->toplevelLastPipeJob; }
+
+  pid_t getToplevelLastPipePGID() const {
+    if (this->toplevelLastPipeJob) {
+      return this->toplevelLastPipeJob->getPGID();
+    }
+    return -1;
+  }
 
   /**
    * get Job by job id

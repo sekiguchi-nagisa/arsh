@@ -6,10 +6,13 @@
 
 #### Core
 
-- **Breaking Change**: adjust last-pipe behavior
-    - the first process of last-pipe is no longer a foreground process leader
-    - when thrown from last-pipe, send ``SIGINT`` to pipeline processes and wait process termination
-      with non-blocking
+- **Breaking Change**: change last-pipe behavior with job control
+    - commands within the last-pipe belong to the same process-group of the pipeline
+    - if the last-pipe-job is terminated, the process within last-pipe (shell itself) will be a
+      foreground process
+    - when thrown from last-pipe, always send ``SIGINT`` to the last-pipe-job and wait process
+      termination with non-blocking
+    - the last-pipe-job is no longer the current-job.
 - **Breaking Change**: tuple type fields are now read-only
     - if all the fields are immutable, the tuple type will be immutable
 - improve token-aware line edit actions

@@ -98,6 +98,10 @@ inline std::string promptAfterCtrlZ(const std::string &prompt) {
   return value;
 }
 
+inline const char *ctrlCChar() {
+  return !platform::isCygwinOrMsys(platform::platform()) ? "^C" : "";
+}
+
 inline const char *ctrlZChar() {
   return !platform::isCygwinOrMsys(platform::platform()) ? "^Z" : "";
 }

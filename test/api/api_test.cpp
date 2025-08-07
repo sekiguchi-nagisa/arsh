@@ -1072,8 +1072,8 @@ TEST_F(JobTest, pid1) { // enable job control
   ASSERT_EQ(pids[0].ppid, pids[1].ppid);
 
   ASSERT_EQ(pids[0].pid, pids[0].pgid);
-  ASSERT_NE(pids[0].pid, pids[1].pgid);
-  ASSERT_NE(pids[0].pgid, pids[1].pgid);
+  ASSERT_EQ(pids[0].pid, pids[1].pgid);
+  ASSERT_EQ(pids[0].pgid, pids[1].pgid);
 }
 
 TEST_F(JobTest, pid2) { // disable job control
@@ -1113,16 +1113,16 @@ TEST_F(JobTest, pid2) { // disable job control
   ASSERT_EQ(pids[0].pgid, pids[1].pgid);
 
   // last pipe
-  result = EXEC("%s --first | { %s; }", PID_CHECK_PATH, PID_CHECK_PATH);
+  result = EXEC2("%s --first | { %s; }", PID_CHECK_PATH, PID_CHECK_PATH);
   ASSERT_NO_FATAL_FAILURE(this->expectRegex(result, 0, WaitStatus::EXITED, PATTERN2));
   pids = decompose(result.out);
   ASSERT_EQ(2u, pids.size());
 
   ASSERT_EQ(pids[0].ppid, pids[1].ppid);
 
-  ASSERT_EQ(pids[0].pid, pids[0].pgid);
+  ASSERT_NE(pids[0].pid, pids[0].pgid);
   ASSERT_NE(pids[0].pid, pids[1].pgid);
-  ASSERT_NE(pids[0].pgid, pids[1].pgid);
+  ASSERT_EQ(pids[0].pgid, pids[1].pgid);
 }
 
 #undef EXEC

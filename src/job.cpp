@@ -26,15 +26,17 @@
 
 namespace arsh {
 
-int beForeground(pid_t pid) {
+static int changeForegroundProcessGroup(pid_t pgid) {
   errno = 0;
   const int ttyFd = open("/dev/tty", O_RDONLY);
-  const int r = tcsetpgrp(ttyFd, getpgid(pid));
+  const int r = tcsetpgrp(ttyFd, pgid);
   const int old = errno;
   close(ttyFd);
   errno = old;
   return r;
 }
+
+int beForeground(pid_t pid) { return changeForegroundProcessGroup(getpgid(pid)); }
 
 Proc Proc::fork(ARState &st, pid_t pgid, const Op op) {
   SignalGuard guard;
@@ -374,14 +376,19 @@ bool JobObject::restoreStdin() {
   return false;
 }
 
+int JobObject::tryToForeground() const {
+  if (pid_t pgid = this->getPGID(); pgid > -1) {
+    return changeForegroundProcessGroup(pgid);
+  }
+  return 1;
+}
+
 bool JobObject::send(int sigNum) const {
   if (!this->isAvailable()) {
     errno = ESRCH;
     return false;
   }
-
-  if (this->isGrouped()) {
-    pid_t pgid = this->getProcs()[0].pid(); // first process pid is equivalent to pgid
+  if (pid_t pgid = this->getPGID(); pgid > -1) {
     return kill(-pgid, sigNum) == 0;
   }
   for (unsigned int i = 0; i < this->procSize; i++) {
@@ -495,6 +502,9 @@ Job JobTable::attach(Job job, bool disowned) {
       job->disown();
     } else {
       this->setCurrentJob(job);
+      if (!this->toplevelLastPipeJob && job->isLastPipe()) {
+        this->toplevelLastPipeJob = job;
+      }
     }
   }
   return job;
@@ -528,7 +538,7 @@ const JobTable::CurPrevJobs &JobTable::syncAndGetCurPrevJobs() {
   if (!this->curPrevJobs.prev) {
     for (auto iter = this->jobs.rbegin(); iter != this->jobs.rend(); ++iter) {
       auto &j = *iter;
-      if (j->isTerminated() || j->isDisowned()) {
+      if (j->isTerminated() || j->isDisowned() || j->isLastPipe()) {
         continue;
       }
       if (j != this->curPrevJobs.cur) {
@@ -711,6 +721,12 @@ void JobTable::removeTerminatedJobs() {
   if (auto &cur = this->curPrevJobs.cur; cur && cur->isTerminated()) {
     cur = std::move(this->curPrevJobs.prev);
     this->curPrevJobs.prev = nullptr;
+  }
+  if (this->toplevelLastPipeJob && this->toplevelLastPipeJob->isTerminated()) {
+    if (this->toplevelLastPipeJob->isGrouped()) {
+      beForeground(0);
+    }
+    this->toplevelLastPipeJob = nullptr;
   }
 }
 
