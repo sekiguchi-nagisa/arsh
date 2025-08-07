@@ -108,7 +108,7 @@ public:
    * wait for termination
    * @param op
    * @param showSignal
-   * if true, print signal message when terminated by signal.
+   * if true, print the signal message when terminated by signal.
    * @return
    * if waitpid return 0, set 'exitStatus_' and return it.
    * if waitpid return -1, return -1.
@@ -134,7 +134,7 @@ public:
   bool updateState(WaitResult ret);
 
   /**
-   * show signal message to stderr (for terminated by signal)
+   * show the signal message to stderr (for terminated by signal)
    */
   void showSignal() const;
 
@@ -147,23 +147,23 @@ public:
   int send(int sigNum) const;
 
   enum class Op : unsigned char {
-    JOB_CONTROL = 1u << 0u, // enable job control in child process
+    JOB_CONTROL = 1u << 0u, // enable job control in a child process
     FOREGROUND = 1u << 1u,  // child process should be foreground-job
   };
 
   /**
-   * create new child process.
-   * after fork, reset user-defined signal handler setting in child process.
+   * create a new child process.
+   * after fork, reset user-defined signal handler setting in a child process.
    * @param st
    * @param pgid
-   * PGID of created child process. only affect if JOB_CONTROL is set
+   * PGID of a created child process. only affect if JOB_CONTROL is set
    * @param op
-   * if set JOB_CONTROL, enable job control in created child process and
+   * if set JOB_CONTROL, enable job control in a created child process and
    * reset job control signal setting.
-   * if set FOREGROUND, created child process should be foreground.
+   * if set FOREGROUND, a created child process should be a foreground process.
    * (only affect if JOB_CONTROL is set)
    * @return
-   * if Proc#pid() is -1, fork failed due to EAGAIN.
+   * if Proc#pid() is -1, `fork` failed due to EAGAIN.
    */
   static Proc fork(ARState &st, pid_t pgid, Op op);
 };
@@ -236,7 +236,7 @@ private:
 
   unsigned char procSize;
 
-  Value desc; // for jobs command output. must be String
+  Value desc; // for `jobs` command output. must be String
 
   /**
    * initial size is procSize
@@ -336,7 +336,7 @@ public:
 
   /**
    * restore STDIN_FD
-   * if has no ownership, do nothing.
+   * if no ownership, do nothing.
    * @return
    * if restore fd, return true.
    * if already called, return false
@@ -345,7 +345,7 @@ public:
 
   /**
    * send signal to all processes.
-   * if jos is process group leader, send signal to process group
+   * if jos is a process group leader, send a signal to a process group
    * @param sigNum
    * @return
    * if failed, return false and set errno
@@ -353,13 +353,13 @@ public:
   bool send(int sigNum) const;
 
   /**
-   * process group of this job will be foreground
+   * the process group of this job will be the foreground process group
    * @return
    * if success, return 0.
    * if do-nothing, return 1.
    * if error, return -1 and set errno
    */
-  int tryToForeground() const;
+  int tryToBeForeground() const;
 
   void updateState() {
     if (this->isAvailable()) {
@@ -376,18 +376,18 @@ public:
   }
 
   /**
-   * get exit status of last process
+   * get exit status of the last process
    * @return
    */
   int exitStatus() const { return this->procs[this->procSize - 1].exitStatus(); }
 
   /**
    * wait for termination.
-   * after termination, `state' will be TERMINATED.
+   * after termination, `state` will be `TERMINATED`.
    * @param op
    * @return
-   * exit status of last process.
-   * if cannot terminate (has no-ownership or has error), return -1 and set errno
+   * exit status of the last process.
+   * if termination failed (has no-ownership or has error), return -1 and set errno
    */
   int wait(WaitOp op);
 
@@ -446,8 +446,8 @@ public:
   const Entry *findProc(pid_t pid) const;
 
   /**
-   * call deleteProc() in specified entry by pid.
-   * actual delete operation is not performed until call batchedRemove()
+   * call deleteProc() in a specified entry by pid.
+   * the actual delete operation is not performed until calling batchedRemove()
    * @param pid
    * @return
    * if found corresponding entry, return true
@@ -589,22 +589,22 @@ public:
   }
 
   /**
-   * if has ownership, wait termination.
+   * if no ownership, wait for termination.
    * @param job
-   * may be null. if null, return immediately
+   * maybe null. if null, return immediately
    * @param op
    * @param suppressNotify
    * if true, suppress notification of specified job termination
    * @return
-   * exit status of last process.
+   * exit status of the last process.
    * after waiting termination, remove entry.
    */
   int waitForJob(const Job &job, WaitOp op, bool suppressNotify = false);
 
   /**
-   * update status of managed jobs.
-   * when a job is terminated, detach job.
-   * should call after wait termination of foreground job.
+   * update the status of managed jobs.
+   * when a job is terminated, detach a job.
+   * should call after wait termination of a foreground job.
    */
   void waitForAny();
 
@@ -625,7 +625,7 @@ public:
   }
 
   /**
-   * sync and get cur/prev job
+   * sync and get the cur/prev job
    * @return
    */
   const CurPrevJobs &syncAndGetCurPrevJobs();
@@ -650,7 +650,7 @@ public:
    * @param jobId
    * @return
    * if not found, return nullptr
-   * if job is disowned, return nullptr
+   * if the job is disowned, return nullptr
    */
   Job find(unsigned int jobId) const {
     auto iter = this->findIter(jobId);
@@ -661,7 +661,7 @@ public:
   }
 
   /**
-   * send signal to all job except for disowned job
+   * send signal to all jobs except for disowned jobs
    * @param sigNum
    */
   void send(int sigNum) const {
@@ -727,7 +727,7 @@ private:
  * @param out
  * append formatted string
  * @return
- * if out.size() reaches limit, trim out and return false
+ * if out.size() reaches the limit, trim out and return false
  */
 bool formatJobDesc(StringRef ref, std::string &out);
 

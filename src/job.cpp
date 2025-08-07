@@ -376,7 +376,7 @@ bool JobObject::restoreStdin() {
   return false;
 }
 
-int JobObject::tryToForeground() const {
+int JobObject::tryToBeForeground() const {
   if (pid_t pgid = this->getPGID(); pgid > -1) {
     return changeForegroundProcessGroup(pgid);
   }
@@ -519,7 +519,7 @@ void JobTable::waitForAny() {
       break;
     }
     if (auto [job, offset] = this->updateProcState(ret); job && job->isTerminated()) {
-      (void)offset;
+      static_cast<void>(offset);
       this->notifyTermination(job);
     }
   }
