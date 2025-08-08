@@ -296,7 +296,8 @@ TEST_F(InteractiveTest, throwFromLastPipe1) {
 ExecError: foo
     from (stdin):1 '<toplevel>()'
 )";
-  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("true | throw new ExecError('foo')", "", estr));
+  ASSERT_NO_FATAL_FAILURE(
+      this->sendLineAndExpect("true | { sleep 0.1; throw new ExecError('foo'); }", "", estr));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$false", ": Bool = false"));
   this->send(CTRL_D);
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED, "\n"));
@@ -312,7 +313,7 @@ ArithmeticError: zero division
     from (stdin):2 '<toplevel>()'
 )";
   ASSERT_NO_FATAL_FAILURE(
-      this->sendLineAndExpect("sleep 1000 | { $jj = $JOB['%1']; 1/0; }", "", estr));
+      this->sendLineAndExpect("sleep 1000 | { sleep 0.1; $jj = $JOB['%1']; 1/0; }", "", estr));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $PIPESTATUS.size() == 2"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $jj!.status(0)! == 130"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $jj!.size() == 1"));
