@@ -152,11 +152,12 @@ TEST_F(ProcTest, pty4) {
     }
     return 0;
   });
-  std::this_thread::sleep_for(std::chrono::milliseconds(500));
+  std::this_thread::sleep_for(std::chrono::milliseconds(200));
   std::string str = "\x03"; // CTRL-C
   auto r = write(handle.in(), str.c_str(), str.size());
   (void)r;
   fsync(handle.in());
+  std::this_thread::sleep_for(std::chrono::milliseconds(200));
   auto ret2 = handle.waitAndGetResult(false);
   if (arsh::platform::isFakeUnix(arsh::platform::platform())) {
     this->expect(ret2, SIGINT, WaitStatus::SIGNALED);
