@@ -170,7 +170,7 @@ TEST_F(InteractiveTest, lastpipe_ctrlc3) {
                                        "[2]   Running  sleep 1000 | sleep 2000 | { jobs; fg; }\n"
                                        "sleep 3000\n"));
 
-  std::this_thread::sleep_for(std::chrono::milliseconds(200));
+  std::this_thread::sleep_for(std::chrono::milliseconds(500));
   this->send(CTRL_C);
   std::string err = strsignal(SIGINT);
   err += "\n";
