@@ -13,6 +13,7 @@
     - when thrown from last-pipe, always send ``SIGINT`` to the last-pipe-job and wait process
       termination with non-blocking
     - the last-pipe-job is no longer the current-job.
+    - wait for child process setup completion due to rance condition of `tcsetpgrp`
 - **Breaking Change**: tuple type fields are now read-only
     - if all the fields are immutable, the tuple type will be immutable
 - improve token-aware line edit actions
