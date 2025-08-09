@@ -240,7 +240,7 @@ int Proc::send(int sigNum) const {
 // ##     JobObject     ##
 // #######################
 
-JobObject::JobObject(unsigned int size, const Proc *procs, bool saveStdin,
+JobObject::JobObject(unsigned int size, const Proc *procs, const Param param,
                      ObjPtr<UnixFdObject> inObj, ObjPtr<UnixFdObject> outObj, Value &&desc)
     : ObjectWithRtti(TYPE::Job), inObj(std::move(inObj)), outObj(std::move(outObj)), procSize(size),
       desc(std::move(desc)) {
@@ -248,11 +248,11 @@ JobObject::JobObject(unsigned int size, const Proc *procs, bool saveStdin,
   for (unsigned int i = 0; i < this->procSize; i++) {
     this->procs[i] = procs[i];
   }
-  if (saveStdin) {
+  if (param.saveStdin) {
     this->oldStdin = dupFDCloseOnExec(STDIN_FILENO); // FIXME: report error
     setFlag(this->meta, ATTR_LAST_PIPE);
   }
-  if (pid_t pid = this->getValidPid(0); pid > -1 && pid == getpgid(pid)) {
+  if (param.grouped) {
     setFlag(this->meta, ATTR_GROUPED); // belong its own process group
   }
 }
@@ -503,7 +503,7 @@ Job JobTable::attach(Job job, bool disowned) {
       job->disown();
     } else {
       this->setCurrentJob(job);
-      if (!this->toplevelLastPipeJob && job->isLastPipe()) {
+      if (!this->toplevelLastPipeJob && job->isLastPipe() && job->isGrouped()) {
         this->toplevelLastPipeJob = job;
       }
     }
@@ -723,10 +723,15 @@ void JobTable::removeTerminatedJobs() {
     cur = std::move(this->curPrevJobs.prev);
     this->curPrevJobs.prev = nullptr;
   }
+
+  LOG(DUMP_WAIT, "toplevelLastPipeJob, state=%d",
+      this->toplevelLastPipeJob ? toUnderlying(this->toplevelLastPipeJob->state()) : -1);
   if (this->toplevelLastPipeJob && this->toplevelLastPipeJob->isTerminated()) {
     if (this->toplevelLastPipeJob->isGrouped()) {
+      LOG(DUMP_WAIT, "switch back to foreground");
       beForeground(0);
     }
+    LOG(DUMP_WAIT, "remove toplevelLastPipeJob");
     this->toplevelLastPipeJob = nullptr;
   }
 }

@@ -432,11 +432,11 @@ static bool checkPipelineError(ARState &state, const JobObject &job, bool lastPi
 }
 
 bool VM::attachAsyncJob(ARState &state, Value &&desc, unsigned int procSize, const Proc *procs,
-                        ForkKind forkKind, PipeSet &pipeSet, Value &ret) {
+                        const ForkKind forkKind, const bool grouped, PipeSet &pipeSet, Value &ret) {
   switch (forkKind) {
   case ForkKind::NONE:
   case ForkKind::PIPE_FAIL: {
-    const auto entry = JobObject::fromPipe(procSize, procs, std::move(desc));
+    const auto entry = JobObject::fromPipe(procSize, procs, std::move(desc), grouped);
     // job termination
     const auto waitOp = state.isJobControl() ? WaitOp::BLOCK_UNTRACED : WaitOp::BLOCKING;
     const int status = entry->wait(waitOp);
@@ -468,7 +468,7 @@ bool VM::attachAsyncJob(ARState &state, Value &&desc, unsigned int procSize, con
     /**
      * job object does not maintain <(), >() file descriptor
      */
-    auto entry = JobObject::fromPipe(procSize, procs, std::move(desc));
+    auto entry = JobObject::fromPipe(procSize, procs, std::move(desc), grouped);
     state.jobTable.attach(entry, true); // always disowned
 
     // create process substitution wrapper
@@ -480,8 +480,9 @@ bool VM::attachAsyncJob(ARState &state, Value &&desc, unsigned int procSize, con
   case ForkKind::JOB:
   case ForkKind::DISOWN: {
     const bool disown = forkKind == ForkKind::DISOWN;
-    const auto entry = JobObject::create(procSize, procs, false, newFD(pipeSet.in[WRITE_PIPE]),
-                                         newFD(pipeSet.out[READ_PIPE]), std::move(desc));
+    const auto entry = JobObject::create(
+        procSize, procs, JobObject::Param{.saveStdin = false, .grouped = grouped},
+        newFD(pipeSet.in[WRITE_PIPE]), newFD(pipeSet.out[READ_PIPE]), std::move(desc));
     state.jobTable.attach(entry, disown);
     ret = Value(entry.get());
     break;
@@ -571,6 +572,7 @@ bool VM::forkAndEval(ARState &state, Value &&desc) {
   const pid_t pgid = resolvePGID(state, forkKind);
   const auto procOp = resolveProcOp(state, forkKind);
   const bool jobCtrl = state.isJobControl();
+  const bool grouped = jobCtrl && pgid == 0;
   auto proc = Proc::fork(state, pgid, procOp);
   if (proc.pid() > 0) { // parent process
     pipeSet.in.close(READ_PIPE);
@@ -591,7 +593,7 @@ bool VM::forkAndEval(ARState &state, Value &&desc) {
          * if read failed, not wait termination (always attach to job table)
          */
         pipeSet.out.close(READ_PIPE); // close read pipe after wait, due to prevent EPIPE
-        state.jobTable.attach(JobObject::fromProc(proc, std::move(desc)));
+        state.jobTable.attach(JobObject::fromProc(proc, std::move(desc), grouped));
 
         if (ret && ARState::isInterrupted()) {
           raiseSystemError(state, EINTR, ERROR_CMD_SUB);
@@ -605,7 +607,7 @@ bool VM::forkAndEval(ARState &state, Value &&desc) {
       const int errNum = errno;
       pipeSet.out.close(READ_PIPE); // close read pipe after wait, due to prevent EPIPE
       if (!proc.is(Proc::State::TERMINATED)) {
-        state.jobTable.attach(JobObject::fromProc(proc, std::move(desc)));
+        state.jobTable.attach(JobObject::fromProc(proc, std::move(desc), grouped));
       }
       state.setExitStatus(status);
       if (status < 0) {
@@ -619,7 +621,7 @@ bool VM::forkAndEval(ARState &state, Value &&desc) {
     }
     default:
       if (const Proc procs[1] = {proc};
-          !attachAsyncJob(state, std::move(desc), 1, procs, forkKind, pipeSet, obj)) {
+          !attachAsyncJob(state, std::move(desc), 1, procs, forkKind, grouped, pipeSet, obj)) {
         return false;
       }
     }
@@ -862,7 +864,8 @@ bool VM::forkAndExec(ARState &state, const char *filePath, const ArrayObject &ar
     const int status = proc.wait(waitOp);
     int errNum2 = errno;
     if (!proc.is(Proc::State::TERMINATED)) {
-      const auto job = state.jobTable.attach(JobObject::fromProc(proc, toCmdDesc(argvObj)));
+      const auto job = state.jobTable.attach(
+          JobObject::fromProc(proc, toCmdDesc(argvObj), pgid == 0 && state.isJobControl()));
       if (proc.is(Proc::State::STOPPED) && state.isJobControl()) {
         job->showInfo();
       }
@@ -1348,6 +1351,7 @@ bool VM::callPipeline(ARState &state, Value &&desc, const bool lastPipe, const F
   unsetFlag(procOpRemain, Proc::Op::FOREGROUND); // remain process already foreground
   pid_t pgid = resolvePGID(state, forkKind);
   const bool jobCtrl = state.isJobControl();
+  const bool grouped = pgid == 0 && jobCtrl;
   Proc proc; // NOLINT
 
   uintptr_t procIndex;
@@ -1421,7 +1425,7 @@ bool VM::callPipeline(ARState &state, Value &&desc, const bool lastPipe, const F
       /**
        * in last pipe, save current stdin before call dup2
        */
-      auto jobEntry = JobObject::fromLastPipe(procSize, children.ptr(), std::move(desc));
+      auto jobEntry = JobObject::fromLastPipe(procSize, children.ptr(), std::move(desc), grouped);
       state.jobTable.attach(jobEntry);
       int errNum = 0;
       if (dup2(pipes[procIndex - 1][READ_PIPE], STDIN_FILENO) < 0) {
@@ -1438,8 +1442,8 @@ bool VM::callPipeline(ARState &state, Value &&desc, const bool lastPipe, const F
       pipeSet.out.close(WRITE_PIPE);
       pipes.closeAll();
       Value obj;
-      if (!attachAsyncJob(state, std::move(desc), procSize, children.ptr(), forkKind, pipeSet,
-                          obj)) {
+      if (!attachAsyncJob(state, std::move(desc), procSize, children.ptr(), forkKind, grouped,
+                          pipeSet, obj)) {
         return false;
       }
       if (obj) {

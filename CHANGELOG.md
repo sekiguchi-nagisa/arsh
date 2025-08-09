@@ -40,6 +40,11 @@
 - in prompt module, ``renderPrompt`` function supports ``\j``, now show managed job count
 - add ``TITLE_HOOK`` variable for terminal title setting (via ``OSC 0``)
 
+### Fixed
+
+- fix job object construction. now pass ``grouped`` attribute (
+    - not call `getpgid` due to child process termination
+
 ## [0.38.0] - 2025-06-30
 
 ### Added

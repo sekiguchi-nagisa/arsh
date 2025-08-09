@@ -201,6 +201,11 @@ public:
     UNCONTROLLED, // job is not created its own parent process
   };
 
+  struct Param {
+    bool saveStdin{false};
+    bool grouped{false};
+  };
+
 private:
   /**
    * writable file descriptor (connected to STDIN of Job). must be UnixFD_Object
@@ -247,31 +252,34 @@ private:
 
   NON_COPYABLE(JobObject);
 
-  JobObject(unsigned int size, const Proc *procs, bool saveStdin, ObjPtr<UnixFdObject> inObj,
+  JobObject(unsigned int size, const Proc *procs, Param param, ObjPtr<UnixFdObject> inObj,
             ObjPtr<UnixFdObject> outObj, Value &&desc);
 
 public:
-  static ObjPtr<JobObject> create(const unsigned int size, const Proc *procs, bool saveStdin,
+  static ObjPtr<JobObject> create(const unsigned int size, const Proc *procs, const Param param,
                                   ObjPtr<UnixFdObject> inObj, ObjPtr<UnixFdObject> outObj,
                                   Value &&desc) {
     void *ptr = operator new(sizeof(JobObject) + (sizeof(Proc) * size));
     auto *entry = new (ptr)
-        JobObject(size, procs, saveStdin, std::move(inObj), std::move(outObj), std::move(desc));
+        JobObject(size, procs, param, std::move(inObj), std::move(outObj), std::move(desc));
     return ObjPtr<JobObject>(entry);
   }
 
-  static ObjPtr<JobObject> fromPipe(const unsigned int size, const Proc *procs, Value &&desc) {
-    return create(size, procs, false, UnixFdObject::empty(), UnixFdObject::empty(),
-                  std::move(desc));
+  static ObjPtr<JobObject> fromPipe(const unsigned int size, const Proc *procs, Value &&desc,
+                                    const bool grouped) {
+    return create(size, procs, {.saveStdin = false, .grouped = grouped}, UnixFdObject::empty(),
+                  UnixFdObject::empty(), std::move(desc));
   }
 
-  static ObjPtr<JobObject> fromLastPipe(const unsigned int size, const Proc *procs, Value &&desc) {
-    return create(size, procs, true, UnixFdObject::empty(), UnixFdObject::empty(), std::move(desc));
+  static ObjPtr<JobObject> fromLastPipe(const unsigned int size, const Proc *procs, Value &&desc,
+                                        const bool grouped) {
+    return create(size, procs, {.saveStdin = true, .grouped = grouped}, UnixFdObject::empty(),
+                  UnixFdObject::empty(), std::move(desc));
   }
 
-  static ObjPtr<JobObject> fromProc(Proc proc, Value &&desc) {
+  static ObjPtr<JobObject> fromProc(Proc proc, Value &&desc, const bool grouped) {
     const Proc procs[1] = {proc};
-    return fromPipe(1, procs, std::move(desc));
+    return fromPipe(1, procs, std::move(desc), grouped);
   }
 
   void operator delete(void *ptr) { ::operator delete(ptr); }
