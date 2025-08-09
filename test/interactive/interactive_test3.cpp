@@ -118,9 +118,15 @@ TEST_F(InteractiveTest, wait_ctrlc2) {
 }
 
 TEST_F(InteractiveTest, lastpipe_ctrlc1) {
+  if (const char *logName = getenv("ARSH_DEBUG_LOG")) {
+    this->addEnv("ARSH_APPENDER", logName);
+    this->addEnv("ARSH_DUMP_WAIT", "on");
+    this->addEnv("ARSH_DUMP_TCSETPGRP", "on");
+  }
   this->invoke("--quiet", "--norc");
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+  auto cleanup = this->withTimeout(300);
   this->sendLine("true | while($true){}");
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "true | while($true){}\n"));
   std::this_thread::sleep_for(std::chrono::milliseconds(500));

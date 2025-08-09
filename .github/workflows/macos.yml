@@ -13,13 +13,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: prepare
-        run: brew install ninja
+        run: brew install ninja re2c
       - name: configure
         run: |
           export SDKROOT="$(xcrun --sdk macosx --show-sdk-path)"
           mkdir build
           cd build
-          cmake .. -G Ninja -DUSE_EXTRA_TEST=on
+          cmake .. -G Ninja -DUSE_EXTRA_TEST=on -DUSE_LOGGING=on
       - name: build
         run: |
           cd build
@@ -29,20 +29,25 @@ jobs:
       - name: test
         run: |
           cd build
-          ctest -j4 --output-on-failure
+          touch log.txt
+          ARSH_DEBUG_LOG=$(realpath log.txt) ctest -j4 --output-on-failure
+      - name: on-failure
+        if: failure()
+        run: |
+          cat build/log.txt
 
   build_on_mac_14:
     runs-on: macos-14
     steps:
       - uses: actions/checkout@v4
       - name: prepare
-        run: brew install ninja
+        run: brew install ninja re2c
       - name: configure
         run: |
           export SDKROOT="$(xcrun --sdk macosx --show-sdk-path)"
           mkdir build
           cd build
-          cmake .. -G Ninja -DUSE_EXTRA_TEST=on
+          cmake .. -G Ninja -DUSE_EXTRA_TEST=on -DUSE_LOGGING=on
       - name: build
         run: |
           cd build
@@ -52,20 +57,25 @@ jobs:
       - name: test
         run: |
           cd build
-          ctest -j4 --output-on-failure
+          touch log.txt
+          ARSH_DEBUG_LOG=$(realpath log.txt) ctest -j4 --output-on-failure
+      - name: on-failure
+        if: failure()
+        run: |
+          cat build/log.txt
 
   build_on_mac_15:
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4
       - name: prepare
-        run: brew install ninja
+        run: brew install ninja re2c
       - name: configure
         run: |
           export SDKROOT="$(xcrun --sdk macosx --show-sdk-path)"
           mkdir build
           cd build
-          cmake .. -G Ninja -DUSE_EXTRA_TEST=on
+          cmake .. -G Ninja -DUSE_EXTRA_TEST=on -DUSE_LOGGING=on
       - name: build
         run: |
           cd build
@@ -75,4 +85,9 @@ jobs:
       - name: test
         run: |
           cd build
-          ctest -j4 --output-on-failure
+          touch log.txt
+          ARSH_DEBUG_LOG=$(realpath log.txt) ctest -j4 --output-on-failure
+      - name: on-failure
+        if: failure()
+        run: |
+          cat build/log.txt
