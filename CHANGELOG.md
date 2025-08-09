@@ -13,7 +13,7 @@
     - when thrown from last-pipe, always send ``SIGINT`` to the last-pipe-job and wait process
       termination with non-blocking
     - the last-pipe-job is no longer the current-job.
-    - wait for child process setup completion due to rance condition of `tcsetpgrp`
+    - wait for child process setup completion due to race condition of `tcsetpgrp`
 - **Breaking Change**: tuple type fields are now read-only
     - if all the fields are immutable, the tuple type will be immutable
 - improve token-aware line edit actions
@@ -25,7 +25,7 @@
 
 - overhaul internal keycode handling of ``LineEditor``
     - correctly read unrecognized CSI sequences
-    - ``LineEditor#bind`` method accept human-readable keyname (such as `F1`, `ctrl+alt+a`, `bs`)
+    - ``LineEditor#bind`` method accept human-readable keyname (such as `F1`, `ctrl+alt+a`, `backspace`)
     - ``LineEditor#bindings`` method return human-readable keyname
     - ``insert-keycode`` action no longer accept ``CSI 200 ~`` (bracketed paste start)
     - ``^I``, ``^M``, ``^[``, ``^?`` are recognized as ``tab``, ``enter``, ``esc``, ``backspace``
