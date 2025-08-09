@@ -69,6 +69,14 @@ public:
     TERMINATED, // terminated
   };
 
+  struct Param {
+    pid_t pgid;      // for `setpgid`. if maybe 0
+    bool jobControl; // enable job control in a child process
+    bool foreground; // child process should be foreground-job
+
+    bool hasGroup() const { return this->jobControl && this->pgid == 0; }
+  };
+
 private:
   pid_t pid_{-1};
   State state_{State::TERMINATED};
@@ -146,30 +154,17 @@ public:
    */
   int send(int sigNum) const;
 
-  enum class Op : unsigned char {
-    JOB_CONTROL = 1u << 0u, // enable job control in a child process
-    FOREGROUND = 1u << 1u,  // child process should be foreground-job
-  };
-
   /**
    * create a new child process.
    * after fork, reset user-defined signal handler setting in a child process.
    * @param st
-   * @param pgid
-   * PGID of a created child process. only affect if JOB_CONTROL is set
-   * @param op
-   * if set JOB_CONTROL, enable job control in a created child process and
-   * reset job control signal setting.
-   * if set FOREGROUND, a created child process should be a foreground process.
-   * (only affect if JOB_CONTROL is set)
+   * @param param
+   * job-control related parameter
    * @return
    * if Proc#pid() is -1, `fork` failed due to EAGAIN.
    */
-  static Proc fork(ARState &st, pid_t pgid, Op op);
+  static Proc fork(ARState &st, Param param);
 };
-
-template <>
-struct allow_enum_bitop<Proc::Op> : std::true_type {};
 
 class ProcTable;
 

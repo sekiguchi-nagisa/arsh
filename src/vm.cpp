@@ -471,7 +471,7 @@ bool VM::attachAsyncJob(ARState &state, Value &&desc, unsigned int procSize, con
     auto entry = JobObject::fromPipe(procSize, procs, std::move(desc), grouped);
     state.jobTable.attach(entry, true); // always disowned
 
-    // create process substitution wrapper
+    // create the process substitution wrapper
     int &fd = forkKind == ForkKind::IN_PIPE ? pipeSet.in[WRITE_PIPE] : pipeSet.out[READ_PIPE];
     ret = newProcSubst(fd, std::move(entry));
     break;
@@ -542,21 +542,24 @@ static pid_t resolvePGID(const ARState &state, ForkKind kind) {
   return getpgid(0); // in subshell, inherit current pgid
 }
 
-static Proc::Op resolveProcOp(const ARState &st, ForkKind kind) {
-  Proc::Op op{};
+static Proc::Param resolveProcParam(const ARState &st, const ForkKind kind) {
+  Proc::Param param = {
+      .pgid = resolvePGID(st, kind),
+      .jobControl = false,
+      .foreground = false,
+  };
   if (st.isJobControl()) {
     if (kind != ForkKind::STR && kind != ForkKind::ARRAY) {
       /**
        * in command substitution, always disable JOB_CONTROL
        */
-      setFlag(op, Proc::Op::JOB_CONTROL);
+      param.jobControl = true;
     }
-
     if (needForeground(kind)) {
-      setFlag(op, Proc::Op::FOREGROUND);
+      param.foreground = true;
     }
   }
-  return op;
+  return param;
 }
 
 bool VM::forkAndEval(ARState &state, Value &&desc) {
@@ -569,11 +572,9 @@ bool VM::forkAndEval(ARState &state, Value &&desc) {
     raiseSystemError(state, errno, ERROR_PIPE);
     return false;
   }
-  const pid_t pgid = resolvePGID(state, forkKind);
-  const auto procOp = resolveProcOp(state, forkKind);
+  const auto param = resolveProcParam(state, forkKind);
   const bool jobCtrl = state.isJobControl();
-  const bool grouped = jobCtrl && pgid == 0;
-  auto proc = Proc::fork(state, pgid, procOp);
+  auto proc = Proc::fork(state, param);
   if (proc.pid() > 0) { // parent process
     pipeSet.in.close(READ_PIPE);
     pipeSet.out.close(WRITE_PIPE);
@@ -582,8 +583,8 @@ bool VM::forkAndEval(ARState &state, Value &&desc) {
 
     switch (forkKind) {
     case ForkKind::STR:
-    case ForkKind::ARRAY: { // always disable job control (so not change foreground process group)
-      assert(!hasFlag(procOp, Proc::Op::JOB_CONTROL));
+    case ForkKind::ARRAY: { // always disable job control (not change the foreground process group)
+      assert(!param.jobControl);
       pipeSet.in.close(WRITE_PIPE);
       const bool ret = forkKind == ForkKind::STR
                            ? readAsStr(state, pipeSet.out[READ_PIPE], obj)
@@ -593,7 +594,7 @@ bool VM::forkAndEval(ARState &state, Value &&desc) {
          * if read failed, not wait termination (always attach to job table)
          */
         pipeSet.out.close(READ_PIPE); // close read pipe after wait, due to prevent EPIPE
-        state.jobTable.attach(JobObject::fromProc(proc, std::move(desc), grouped));
+        state.jobTable.attach(JobObject::fromProc(proc, std::move(desc), param.hasGroup()));
 
         if (ret && ARState::isInterrupted()) {
           raiseSystemError(state, EINTR, ERROR_CMD_SUB);
@@ -607,7 +608,7 @@ bool VM::forkAndEval(ARState &state, Value &&desc) {
       const int errNum = errno;
       pipeSet.out.close(READ_PIPE); // close read pipe after wait, due to prevent EPIPE
       if (!proc.is(Proc::State::TERMINATED)) {
-        state.jobTable.attach(JobObject::fromProc(proc, std::move(desc), grouped));
+        state.jobTable.attach(JobObject::fromProc(proc, std::move(desc), param.hasGroup()));
       }
       state.setExitStatus(status);
       if (status < 0) {
@@ -620,8 +621,8 @@ bool VM::forkAndEval(ARState &state, Value &&desc) {
       break;
     }
     default:
-      if (const Proc procs[1] = {proc};
-          !attachAsyncJob(state, std::move(desc), 1, procs, forkKind, grouped, pipeSet, obj)) {
+      if (const Proc procs[1] = {proc}; !attachAsyncJob(state, std::move(desc), 1, procs, forkKind,
+                                                        param.hasGroup(), pipeSet, obj)) {
         return false;
       }
     }
@@ -708,7 +709,7 @@ static bool lookupUdc(const ARState &state, const ModType &modType, const char *
 
 ResolvedCmd CmdResolver::operator()(const ARState &state, const StringRef ref,
                                     const ModType *modType) const {
-  // first, check user-defined command
+  // first, check if user-defined command
   if (hasFlag(this->resolveOp, Op::FROM_UDC)) {
     const auto fqn = hasFlag(this->resolveOp, Op::FROM_FQN_UDC) ? ref.find('\0') : StringRef::npos;
     const char *cmdName = ref.data();
@@ -732,7 +733,7 @@ ResolvedCmd CmdResolver::operator()(const ARState &state, const StringRef ref,
     }
   }
 
-  // second, check builtin command
+  // second, check if builtin command
   if (hasFlag(this->resolveOp, Op::FROM_BUILTIN)) {
     if (const builtin_command_t bcmd = lookupBuiltinCommand(ref); bcmd != nullptr) {
       return ResolvedCmd::fromBuiltin(bcmd);
@@ -767,7 +768,7 @@ ResolvedCmd CmdResolver::operator()(const ARState &state, const StringRef ref,
     const char *cmdName = ref.data();
     cmd = ResolvedCmd::fromExternal(state.pathCache.searchPath(cmdName, this->searchOp));
 
-    // if command not found or directory, lookup CMD_FALLBACK
+    // if command not found or directory, look up CMD_FALLBACK
     if (hasFlag(this->resolveOp, Op::FROM_FALLBACK) &&
         (cmd.filePath() == nullptr || S_ISDIR(getStMode(cmd.filePath())))) {
       if (getBuiltinGlobal(state, VAR_CMD_FALLBACK).isObject()) {
@@ -828,9 +829,8 @@ bool VM::forkAndExec(ARState &state, const char *filePath, const ArrayObject &ar
     return false;
   }
 
-  const pid_t pgid = resolvePGID(state, ForkKind::NONE);
-  const auto procOp = resolveProcOp(state, ForkKind::NONE);
-  auto proc = Proc::fork(state, pgid, procOp);
+  const auto param = resolveProcParam(state, ForkKind::NONE);
+  auto proc = Proc::fork(state, param);
   if (proc.pid() == -1) {
     selfPipe.close();
     raiseCmdError(state, argvObj.getValues()[0].asCStr(), EAGAIN);
@@ -855,7 +855,7 @@ bool VM::forkAndExec(ARState &state, const char *filePath, const ArrayObject &ar
       }
     }
     selfPipe.close(READ_PIPE);
-    if (readSize > 0) { // remove cached path
+    if (readSize > 0) { // remove a cached path
       state.pathCache.removePath(argvObj.getValues()[0].asCStr());
     }
 
@@ -864,8 +864,8 @@ bool VM::forkAndExec(ARState &state, const char *filePath, const ArrayObject &ar
     const int status = proc.wait(waitOp);
     int errNum2 = errno;
     if (!proc.is(Proc::State::TERMINATED)) {
-      const auto job = state.jobTable.attach(
-          JobObject::fromProc(proc, toCmdDesc(argvObj), pgid == 0 && state.isJobControl()));
+      const auto job =
+          state.jobTable.attach(JobObject::fromProc(proc, toCmdDesc(argvObj), param.hasGroup()));
       if (proc.is(Proc::State::STOPPED) && state.isJobControl()) {
         job->showInfo();
       }
@@ -961,7 +961,7 @@ static bool checkCmdExecError(ARState &state, StringRef cmdName, CmdCallAttr att
 bool VM::callCommand(ARState &state, const ResolvedCmd &cmd, ObjPtr<ArrayObject> &&argvObj,
                      Value &&redirConfig, CmdCallAttr attr) {
   auto &array = *argvObj;
-  if (cmd.hasNullChar()) { // adjust command name
+  if (cmd.hasNullChar()) { // adjust the command name
     StringRef name = array.getValues()[0].asStrRef();
     const auto pos = name.find('\0');
     assert(pos != StringRef::npos);
@@ -1346,22 +1346,18 @@ bool VM::callPipeline(ARState &state, Value &&desc, const bool lastPipe, const F
 
   // fork
   InlinedArray<Proc, 6> children(procSize);
-  const auto procOp = resolveProcOp(state, forkKind);
-  auto procOpRemain = procOp;
-  unsetFlag(procOpRemain, Proc::Op::FOREGROUND); // remain process already foreground
-  pid_t pgid = resolvePGID(state, forkKind);
-  const bool jobCtrl = state.isJobControl();
-  const bool grouped = pgid == 0 && jobCtrl;
-  Proc proc; // NOLINT
+  const auto param = resolveProcParam(state, forkKind);
+  auto remainParam = param;
+  remainParam.foreground = false; // remain process already foreground
+  Proc proc;                      // NOLINT
 
   uintptr_t procIndex;
-  for (procIndex = 0;
-       procIndex < procSize &&
-       (proc = Proc::fork(state, pgid, procIndex == 0 ? procOp : procOpRemain)).pid() > 0;
+  for (procIndex = 0; procIndex < procSize &&
+                      (proc = Proc::fork(state, procIndex == 0 ? param : remainParam)).pid() > 0;
        procIndex++) {
     children[procIndex] = proc;
-    if (pgid == 0) {
-      pgid = proc.pid();
+    if (remainParam.pgid == 0) {
+      remainParam.pgid = proc.pid();
     }
   }
 
@@ -1376,7 +1372,7 @@ bool VM::callPipeline(ARState &state, Value &&desc, const bool lastPipe, const F
     int errNum = 0;
     if (procIndex == 0) { // first process
       if (dup2(pipes[procIndex][WRITE_PIPE], STDOUT_FILENO) < 0 ||
-          !pipeSet.setupChildStdin(forkKind, jobCtrl)) {
+          !pipeSet.setupChildStdin(forkKind, param.jobControl)) {
         errNum = errno;
       }
     } else if (procIndex > 0 && procIndex < pipeSize) { // other process.
@@ -1401,7 +1397,7 @@ bool VM::callPipeline(ARState &state, Value &&desc, const bool lastPipe, const F
       return false;
     }
 
-    // set pc to next instruction
+    // set pc to the next instruction
     state.stack.ip() += read16(state.stack.ip() + 1 + (procIndex * 2)) - 1;
     return true;
   } else if (procIndex == procSize) { // parent (last pipeline)
@@ -1425,7 +1421,8 @@ bool VM::callPipeline(ARState &state, Value &&desc, const bool lastPipe, const F
       /**
        * in last pipe, save current stdin before call dup2
        */
-      auto jobEntry = JobObject::fromLastPipe(procSize, children.ptr(), std::move(desc), grouped);
+      auto jobEntry =
+          JobObject::fromLastPipe(procSize, children.ptr(), std::move(desc), param.hasGroup());
       state.jobTable.attach(jobEntry);
       int errNum = 0;
       if (dup2(pipes[procIndex - 1][READ_PIPE], STDIN_FILENO) < 0) {
@@ -1442,8 +1439,8 @@ bool VM::callPipeline(ARState &state, Value &&desc, const bool lastPipe, const F
       pipeSet.out.close(WRITE_PIPE);
       pipes.closeAll();
       Value obj;
-      if (!attachAsyncJob(state, std::move(desc), procSize, children.ptr(), forkKind, grouped,
-                          pipeSet, obj)) {
+      if (!attachAsyncJob(state, std::move(desc), procSize, children.ptr(), forkKind,
+                          param.hasGroup(), pipeSet, obj)) {
         return false;
       }
       if (obj) {
@@ -1451,10 +1448,10 @@ bool VM::callPipeline(ARState &state, Value &&desc, const bool lastPipe, const F
       }
     }
 
-    // set pc to next instruction
+    // set pc to the next instruction
     state.stack.ip() += read16(state.stack.ip() + 1 + procIndex * 2) - 1;
   } else {
-    // force terminate forked process.
+    // force terminates child processes.
     for (unsigned int i = 0; i < procIndex; i++) {
       static_cast<void>(children[i].send(SIGKILL));
     }
@@ -2256,7 +2253,7 @@ bool VM::mainLoop(ARState &state) {
         auto obj = state.stack.pop();
         auto cmd = ResolvedCmd::fromCmdObj(obj.get());
         if (argv->size() == 0) {
-          // add dummy
+          // add sentinel
           argv->refValues().push_back(Value::createStr()); // not check iterator invalidation
         }
         TRY(callCommand(state, cmd, std::move(argv), std::move(redir), CmdCallAttr{}));
@@ -2491,7 +2488,7 @@ bool VM::handleException(ARState &state) {
           }
           state.stack.clearOperandsUntilGuard(StackGuardType::TRY, entry.guardLevel);
           state.stack.reclaimLocals(entry.localOffset, entry.localSize);
-          if (entryType.is(TYPE::Throwable)) { // finally block
+          if (entryType.is(TYPE::Throwable)) { // finally-block
             state.stack.enterFinally();
           } else { // catch block
             state.stack.loadThrownObject();
@@ -2516,7 +2513,7 @@ Value VM::startEval(ARState &state, EvalOP op, ARError *dsError) {
     setSignalSetting(state);
   }
 
-  // run main loop
+  // run main-loop
   Value value;
   if (mainLoop(state)) {
     value = state.stack.pop();

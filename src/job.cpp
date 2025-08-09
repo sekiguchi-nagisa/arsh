@@ -39,7 +39,7 @@ static int changeForegroundProcessGroup(pid_t pgid) {
 
 int beForeground(pid_t pid) { return changeForegroundProcessGroup(getpgid(pid)); }
 
-Proc Proc::fork(ARState &st, pid_t pgid, const Op op) {
+Proc Proc::fork(ARState &st, const Param param) {
   SignalGuard guard;
 
   // flush standard stream due to prevent mixing io buffer
@@ -54,9 +54,9 @@ Proc Proc::fork(ARState &st, pid_t pgid, const Op op) {
   const auto childRng = st.getRng().split();
   pid_t pid = ::fork();
   if (pid == 0) { // child process
-    if (hasFlag(op, Op::JOB_CONTROL)) {
-      setpgid(0, pgid);
-      if (hasFlag(op, Op::FOREGROUND)) {
+    if (param.jobControl) {
+      setpgid(0, param.pgid);
+      if (param.foreground) {
         beForeground(0);
       }
       setJobControlSignalSetting(st, false);
@@ -83,9 +83,9 @@ Proc Proc::fork(ARState &st, pid_t pgid, const Op op) {
 
     st.incSubShellLevel();
   } else if (pid > 0) {
-    if (hasFlag(op, Op::JOB_CONTROL)) {
-      setpgid(pid, pgid);
-      if (hasFlag(op, Op::FOREGROUND)) {
+    if (param.jobControl) {
+      setpgid(pid, param.pgid);
+      if (param.foreground) {
         beForeground(pid);
       }
     }
