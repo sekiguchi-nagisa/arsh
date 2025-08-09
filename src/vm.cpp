@@ -123,11 +123,10 @@ static bool check_strftime_plus(timestamp ts) {
 }
 
 ARState::ARState()
-    : modLoader(this->sysConfig),
-      emptyFDObj(toObjPtr<UnixFdObject>(Value::create<UnixFdObject>(-1))),
-      initTime(getCurrentTimestamp()), support_strftime_plus(check_strftime_plus(this->initTime)),
-      baseTime(this->initTime), rng(this->baseTime.time_since_epoch().count(),
-                                    std::random_device()(), 42, reinterpret_cast<uintptr_t>(this)) {
+    : modLoader(this->sysConfig), initTime(getCurrentTimestamp()),
+      support_strftime_plus(check_strftime_plus(this->initTime)), baseTime(this->initTime),
+      rng(this->baseTime.time_since_epoch().count(), std::random_device()(), 42,
+          reinterpret_cast<uintptr_t>(this)) {
   // init envs
   initEnv();
   const char *pwd = getenv(ENV_PWD);
@@ -363,9 +362,9 @@ static bool readAsStrArray(ARState &state, int fd, Value &ret) {
   return true;
 }
 
-static ObjPtr<UnixFdObject> newFD(const ARState &st, int &fd) {
+static ObjPtr<UnixFdObject> newFD(int &fd) {
   if (fd < 0) {
-    return st.emptyFDObj;
+    return UnixFdObject::empty();
   }
   int v = fd;
   fd = -1;
@@ -373,9 +372,9 @@ static ObjPtr<UnixFdObject> newFD(const ARState &st, int &fd) {
   return toObjPtr<UnixFdObject>(Value::create<UnixFdObject>(v));
 }
 
-static Value newProcSubst(const ARState &st, int &fd, Job &&job) {
+static Value newProcSubst(int &fd, Job &&job) {
   if (fd < 0) {
-    return st.emptyFDObj;
+    return UnixFdObject::empty();
   }
   int v = fd;
   fd = -1;
@@ -437,8 +436,7 @@ bool VM::attachAsyncJob(ARState &state, Value &&desc, unsigned int procSize, con
   switch (forkKind) {
   case ForkKind::NONE:
   case ForkKind::PIPE_FAIL: {
-    const auto entry = JobObject::create(procSize, procs, false, state.emptyFDObj, state.emptyFDObj,
-                                         std::move(desc));
+    const auto entry = JobObject::fromPipe(procSize, procs, std::move(desc));
     // job termination
     const auto waitOp = state.isJobControl() ? WaitOp::BLOCK_UNTRACED : WaitOp::BLOCKING;
     const int status = entry->wait(waitOp);
@@ -470,22 +468,20 @@ bool VM::attachAsyncJob(ARState &state, Value &&desc, unsigned int procSize, con
     /**
      * job object does not maintain <(), >() file descriptor
      */
-    auto entry = JobObject::create(procSize, procs, false, state.emptyFDObj, state.emptyFDObj,
-                                   std::move(desc));
+    auto entry = JobObject::fromPipe(procSize, procs, std::move(desc));
     state.jobTable.attach(entry, true); // always disowned
 
     // create process substitution wrapper
     int &fd = forkKind == ForkKind::IN_PIPE ? pipeSet.in[WRITE_PIPE] : pipeSet.out[READ_PIPE];
-    ret = newProcSubst(state, fd, std::move(entry));
+    ret = newProcSubst(fd, std::move(entry));
     break;
   }
   case ForkKind::COPROC:
   case ForkKind::JOB:
   case ForkKind::DISOWN: {
     const bool disown = forkKind == ForkKind::DISOWN;
-    const auto entry =
-        JobObject::create(procSize, procs, false, newFD(state, pipeSet.in[WRITE_PIPE]),
-                          newFD(state, pipeSet.out[READ_PIPE]), std::move(desc));
+    const auto entry = JobObject::create(procSize, procs, false, newFD(pipeSet.in[WRITE_PIPE]),
+                                         newFD(pipeSet.out[READ_PIPE]), std::move(desc));
     state.jobTable.attach(entry, disown);
     ret = Value(entry.get());
     break;
@@ -595,8 +591,7 @@ bool VM::forkAndEval(ARState &state, Value &&desc) {
          * if read failed, not wait termination (always attach to job table)
          */
         pipeSet.out.close(READ_PIPE); // close read pipe after wait, due to prevent EPIPE
-        state.jobTable.attach(
-            JobObject::create(proc, state.emptyFDObj, state.emptyFDObj, std::move(desc)));
+        state.jobTable.attach(JobObject::fromProc(proc, std::move(desc)));
 
         if (ret && ARState::isInterrupted()) {
           raiseSystemError(state, EINTR, ERROR_CMD_SUB);
@@ -610,8 +605,7 @@ bool VM::forkAndEval(ARState &state, Value &&desc) {
       const int errNum = errno;
       pipeSet.out.close(READ_PIPE); // close read pipe after wait, due to prevent EPIPE
       if (!proc.is(Proc::State::TERMINATED)) {
-        state.jobTable.attach(
-            JobObject::create(proc, state.emptyFDObj, state.emptyFDObj, std::move(desc)));
+        state.jobTable.attach(JobObject::fromProc(proc, std::move(desc)));
       }
       state.setExitStatus(status);
       if (status < 0) {
@@ -868,8 +862,7 @@ bool VM::forkAndExec(ARState &state, const char *filePath, const ArrayObject &ar
     const int status = proc.wait(waitOp);
     int errNum2 = errno;
     if (!proc.is(Proc::State::TERMINATED)) {
-      const auto job = state.jobTable.attach(
-          JobObject::create(proc, state.emptyFDObj, state.emptyFDObj, toCmdDesc(argvObj)));
+      const auto job = state.jobTable.attach(JobObject::fromProc(proc, toCmdDesc(argvObj)));
       if (proc.is(Proc::State::STOPPED) && state.isJobControl()) {
         job->showInfo();
       }
@@ -1428,8 +1421,7 @@ bool VM::callPipeline(ARState &state, Value &&desc, const bool lastPipe, const F
       /**
        * in last pipe, save current stdin before call dup2
        */
-      auto jobEntry = JobObject::create(procSize, children.ptr(), true, state.emptyFDObj,
-                                        state.emptyFDObj, std::move(desc));
+      auto jobEntry = JobObject::fromLastPipe(procSize, children.ptr(), std::move(desc));
       state.jobTable.attach(jobEntry);
       int errNum = 0;
       if (dup2(pipes[procIndex - 1][READ_PIPE], STDIN_FILENO) < 0) {

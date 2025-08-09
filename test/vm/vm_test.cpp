@@ -479,10 +479,7 @@ static JobTable::ConstEntryIter getBeginIter(const JobTable &table) { return tab
 static JobTable::ConstEntryIter getEndIter(const JobTable &table) { return table.end(); }
 
 struct JobTableTest : public VMTest {
-  Job newJob() {
-    return JobObject::create(Proc(), this->state->emptyFDObj, this->state->emptyFDObj,
-                             Value::createStr());
-  }
+  Job newJob() { return JobObject::fromProc(Proc(), Value::createStr()); }
 
   template <typename Func>
   Job newJob(Func func) {
@@ -491,8 +488,7 @@ struct JobTableTest : public VMTest {
       int s = func();
       exit(s);
     }
-    return JobObject::create(proc, this->state->emptyFDObj, this->state->emptyFDObj,
-                             Value::createStr());
+    return JobObject::fromProc(proc, Value::createStr());
   }
 
   template <typename Func>
@@ -502,8 +498,7 @@ struct JobTableTest : public VMTest {
       int s = func();
       exit(s);
     }
-    auto job = JobObject::create(proc, this->state->emptyFDObj, this->state->emptyFDObj,
-                                 Value::createStr());
+    auto job = JobObject::fromProc(proc, Value::createStr());
     this->state->jobTable.attach(job);
     return job;
   }

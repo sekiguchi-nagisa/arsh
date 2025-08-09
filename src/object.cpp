@@ -211,6 +211,11 @@ Value Value::createStr(const GraphemeCluster &ret) {
 // ##     UnixFD_Object     ##
 // ###########################
 
+const ObjPtr<UnixFdObject> &UnixFdObject::empty() {
+  static ObjPtr<UnixFdObject> empty = toObjPtr<UnixFdObject>(Value::create<UnixFdObject>(-1));
+  return empty;
+}
+
 UnixFdObject *UnixFdObject::create(int fd, ObjPtr<JobObject> &&job) {
   void *ptr = operator new(sizeof(UnixFdObject) + sizeof(RawValue));
   auto *obj = new (ptr) UnixFdObject(fd, true);

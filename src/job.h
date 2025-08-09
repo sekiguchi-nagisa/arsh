@@ -251,7 +251,7 @@ private:
             ObjPtr<UnixFdObject> outObj, Value &&desc);
 
 public:
-  static ObjPtr<JobObject> create(unsigned int size, const Proc *procs, bool saveStdin,
+  static ObjPtr<JobObject> create(const unsigned int size, const Proc *procs, bool saveStdin,
                                   ObjPtr<UnixFdObject> inObj, ObjPtr<UnixFdObject> outObj,
                                   Value &&desc) {
     void *ptr = operator new(sizeof(JobObject) + (sizeof(Proc) * size));
@@ -260,10 +260,18 @@ public:
     return ObjPtr<JobObject>(entry);
   }
 
-  static ObjPtr<JobObject> create(Proc proc, ObjPtr<UnixFdObject> inObj,
-                                  ObjPtr<UnixFdObject> outObj, Value &&desc) {
-    Proc procs[1] = {proc};
-    return create(1, procs, false, std::move(inObj), std::move(outObj), std::move(desc));
+  static ObjPtr<JobObject> fromPipe(const unsigned int size, const Proc *procs, Value &&desc) {
+    return create(size, procs, false, UnixFdObject::empty(), UnixFdObject::empty(),
+                  std::move(desc));
+  }
+
+  static ObjPtr<JobObject> fromLastPipe(const unsigned int size, const Proc *procs, Value &&desc) {
+    return create(size, procs, true, UnixFdObject::empty(), UnixFdObject::empty(), std::move(desc));
+  }
+
+  static ObjPtr<JobObject> fromProc(Proc proc, Value &&desc) {
+    const Proc procs[1] = {proc};
+    return fromPipe(1, procs, std::move(desc));
   }
 
   void operator delete(void *ptr) { ::operator delete(ptr); }

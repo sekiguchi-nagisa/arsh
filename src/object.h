@@ -704,6 +704,8 @@ private:
       : ObjectWithRtti(hasJob ? TYPE::ProcSubst : TYPE::FD), fd(fd), hasJob(hasJob) {}
 
 public:
+  static const ObjPtr<UnixFdObject> &empty();
+
   static UnixFdObject *create(int fd) {
     void *ptr = operator new(sizeof(UnixFdObject));
     return new (ptr) UnixFdObject(fd, false);

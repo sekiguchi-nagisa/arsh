@@ -68,8 +68,6 @@ public:
 
   NameScopePtr rootModScope;
 
-  const ObjPtr<UnixFdObject> emptyFDObj;
-
   const timestamp initTime; // for builtin printf command
 
 private:
