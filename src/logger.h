@@ -25,6 +25,7 @@
   E(TRACE_TOKEN)                                                                                   \
   E(DUMP_EXEC)                                                                                     \
   E(DUMP_WAIT)                                                                                     \
+  E(DUMP_TCSETPGRP)                                                                                \
   E(TRACE_MODULE)                                                                                  \
   E(TRACE_EDIT)
 
@@ -49,7 +50,7 @@ public:
 
   Logger() : SingletonLogger<Logger>("ARSH") {
     this->sync([&] {
-      const char *policies[] = {
+      constexpr const char *policies[] = {
 #define GEN_STR(E) "ARSH_" #E,
           EACH_LOGGING_POLICY(GEN_STR)
 #undef GEN_STR

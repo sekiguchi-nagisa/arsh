@@ -31,6 +31,7 @@ static int changeForegroundProcessGroup(pid_t pgid) {
   const int ttyFd = open("/dev/tty", O_RDONLY);
   const int r = tcsetpgrp(ttyFd, pgid);
   const int old = errno;
+  LOG(DUMP_TCSETPGRP, "tcsetpgrp(%d, %d) = (%d, %s)", ttyFd, pgid, r, strerror(old));
   close(ttyFd);
   errno = old;
   return r;

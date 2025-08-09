@@ -874,8 +874,7 @@ bool VM::forkAndExec(ARState &state, const char *filePath, const ArrayObject &ar
         job->showInfo();
       }
     }
-    const int ret = state.tryToBeForeground();
-    LOG(DUMP_EXEC, "tryToBeForeground: %d, %s", ret, strerror(errno));
+    static_cast<void>(state.tryToBeForeground());
     state.jobTable.waitForAny();
     if (errNum != 0) {
       errNum2 = errNum;
