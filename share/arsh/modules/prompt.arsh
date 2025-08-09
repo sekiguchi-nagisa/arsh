@@ -125,7 +125,7 @@ Prompt Escape Sequence:
     \e      escape sequence
     \h      host name
     \H      fully qualified host name
-    \j      number of managaed jobs
+    \j      number of managed jobs
     \l      base name of tty
     \n      newline
     \r      carriage return

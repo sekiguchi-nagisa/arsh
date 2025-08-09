@@ -42,7 +42,7 @@
 
 ### Fixed
 
-- fix job object construction. now pass ``grouped`` attribute (
+- fix job object construction. now pass ``grouped`` attribute
     - not call `getpgid` due to child process termination
 
 ## [0.38.0] - 2025-06-30
