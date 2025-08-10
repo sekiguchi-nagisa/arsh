@@ -86,9 +86,11 @@ private:
    */
   unsigned char exitStatus_{0};
 
-  bool signaled_{false};
+  static constexpr unsigned short ATTR_SIGNALED = 1u << 0u;
+  static constexpr unsigned short ATTR_CORE_DUMP = 1u << 1u;
+  static constexpr unsigned short ATTR_GROUPED_LEADER = 1u << 2u; // pid == pgid
 
-  bool coreDump_{false};
+  unsigned short attr{0};
 
   explicit Proc(pid_t pid) : pid_(pid), state_(State::RUNNING) {}
 
@@ -103,14 +105,16 @@ public:
 
   int exitStatus() const { return this->exitStatus_; }
 
-  bool signaled() const { return this->signaled_; }
+  bool signaled() const { return hasFlag(this->attr, ATTR_SIGNALED); }
 
   int asSigNum() const {
     assert(this->signaled());
     return this->exitStatus() - WaitResult::SIGNALED_STATUS_OFFSET;
   }
 
-  bool coreDump() const { return this->coreDump_; }
+  bool coreDump() const { return hasFlag(this->attr, ATTR_CORE_DUMP); }
+
+  bool groupLeader() const { return hasFlag(this->attr, ATTR_GROUPED_LEADER); }
 
   /**
    * wait for termination
@@ -196,11 +200,6 @@ public:
     UNCONTROLLED, // job is not created its own parent process
   };
 
-  struct Param {
-    bool saveStdin{false};
-    bool grouped{false};
-  };
-
 private:
   /**
    * writable file descriptor (connected to STDIN of Job). must be UnixFD_Object
@@ -224,7 +223,6 @@ private:
 
   static constexpr unsigned char ATTR_DISOWNED = 1u << 7u;
   static constexpr unsigned char ATTR_LAST_PIPE = 1u << 6u;
-  static constexpr unsigned char ATTR_GROUPED = 1u << 5u;
 
   static constexpr unsigned char STATE_MASK = 0x0F;
 
@@ -247,34 +245,31 @@ private:
 
   NON_COPYABLE(JobObject);
 
-  JobObject(unsigned int size, const Proc *procs, Param param, ObjPtr<UnixFdObject> inObj,
+  JobObject(unsigned int size, const Proc *procs, bool saveStdin, ObjPtr<UnixFdObject> inObj,
             ObjPtr<UnixFdObject> outObj, Value &&desc);
 
 public:
-  static ObjPtr<JobObject> create(const unsigned int size, const Proc *procs, const Param param,
+  static ObjPtr<JobObject> create(const unsigned int size, const Proc *procs, const bool saveStdin,
                                   ObjPtr<UnixFdObject> inObj, ObjPtr<UnixFdObject> outObj,
                                   Value &&desc) {
     void *ptr = operator new(sizeof(JobObject) + (sizeof(Proc) * size));
     auto *entry = new (ptr)
-        JobObject(size, procs, param, std::move(inObj), std::move(outObj), std::move(desc));
+        JobObject(size, procs, saveStdin, std::move(inObj), std::move(outObj), std::move(desc));
     return ObjPtr<JobObject>(entry);
   }
 
-  static ObjPtr<JobObject> fromPipe(const unsigned int size, const Proc *procs, Value &&desc,
-                                    const bool grouped) {
-    return create(size, procs, {.saveStdin = false, .grouped = grouped}, UnixFdObject::empty(),
-                  UnixFdObject::empty(), std::move(desc));
+  static ObjPtr<JobObject> fromPipe(const unsigned int size, const Proc *procs, Value &&desc) {
+    return create(size, procs, false, UnixFdObject::empty(), UnixFdObject::empty(),
+                  std::move(desc));
   }
 
-  static ObjPtr<JobObject> fromLastPipe(const unsigned int size, const Proc *procs, Value &&desc,
-                                        const bool grouped) {
-    return create(size, procs, {.saveStdin = true, .grouped = grouped}, UnixFdObject::empty(),
-                  UnixFdObject::empty(), std::move(desc));
+  static ObjPtr<JobObject> fromLastPipe(const unsigned int size, const Proc *procs, Value &&desc) {
+    return create(size, procs, true, UnixFdObject::empty(), UnixFdObject::empty(), std::move(desc));
   }
 
-  static ObjPtr<JobObject> fromProc(Proc proc, Value &&desc, const bool grouped) {
+  static ObjPtr<JobObject> fromProc(Proc proc, Value &&desc) {
     const Proc procs[1] = {proc};
-    return fromPipe(1, procs, std::move(desc), grouped);
+    return fromPipe(1, procs, std::move(desc));
   }
 
   void operator delete(void *ptr) { ::operator delete(ptr); }
@@ -295,7 +290,7 @@ public:
 
   bool isLastPipe() const { return hasFlag(this->meta, ATTR_LAST_PIPE); }
 
-  bool isGrouped() const { return hasFlag(this->meta, ATTR_GROUPED); }
+  bool isGrouped() const { return this->procs[0].groupLeader(); }
 
   const Proc *getProcs() const { return this->procs; }
 

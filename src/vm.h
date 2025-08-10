@@ -516,7 +516,7 @@ private:
                                             CmdCallAttr attr);
 
   static bool attachAsyncJob(ARState &state, Value &&desc, unsigned int procSize, const Proc *procs,
-                             ForkKind forkKind, bool grouped, PipeSet &pipeSet, Value &ret);
+                             ForkKind forkKind, PipeSet &pipeSet, Value &ret);
 
   static bool forkAndEval(ARState &state, Value &&desc);
 

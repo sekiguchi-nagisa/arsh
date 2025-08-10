@@ -90,7 +90,13 @@ Proc Proc::fork(ARState &st, const Param param) {
       }
     }
   }
-  return Proc(pid);
+  Proc proc(pid);
+  if (pid > 0) {
+    if (pid == getpgid(pid) || param.hasGroup()) {
+      setFlag(proc.attr, ATTR_GROUPED_LEADER);
+    }
+  }
+  return proc;
 }
 
 static void setWaitResult(int status, WaitResult &ret) {
@@ -205,8 +211,10 @@ bool Proc::updateState(WaitResult ret) {
   case WaitResult::Kind::SIGNALED:
     this->state_ = State::TERMINATED;
     this->exitStatus_ = ret.exitStatus;
-    this->signaled_ = true;
-    this->coreDump_ = ret.coreDump;
+    setFlag(this->attr, ATTR_SIGNALED);
+    if (ret.coreDump) {
+      setFlag(this->attr, ATTR_CORE_DUMP);
+    }
     break;
   case WaitResult::Kind::STOPPED:
     this->state_ = State::STOPPED;
@@ -240,7 +248,7 @@ int Proc::send(int sigNum) const {
 // ##     JobObject     ##
 // #######################
 
-JobObject::JobObject(unsigned int size, const Proc *procs, const Param param,
+JobObject::JobObject(unsigned int size, const Proc *procs, const bool saveStdin,
                      ObjPtr<UnixFdObject> inObj, ObjPtr<UnixFdObject> outObj, Value &&desc)
     : ObjectWithRtti(TYPE::Job), inObj(std::move(inObj)), outObj(std::move(outObj)), procSize(size),
       desc(std::move(desc)) {
@@ -248,12 +256,9 @@ JobObject::JobObject(unsigned int size, const Proc *procs, const Param param,
   for (unsigned int i = 0; i < this->procSize; i++) {
     this->procs[i] = procs[i];
   }
-  if (param.saveStdin) {
+  if (saveStdin) {
     this->oldStdin = dupFDCloseOnExec(STDIN_FILENO); // FIXME: report error
     setFlag(this->meta, ATTR_LAST_PIPE);
-  }
-  if (param.grouped) {
-    setFlag(this->meta, ATTR_GROUPED); // belong its own process group
   }
 }
 
@@ -727,11 +732,9 @@ void JobTable::removeTerminatedJobs() {
   LOG(DUMP_WAIT, "toplevelLastPipeJob, state=%d",
       this->toplevelLastPipeJob ? toUnderlying(this->toplevelLastPipeJob->state()) : -1);
   if (this->toplevelLastPipeJob && this->toplevelLastPipeJob->isTerminated()) {
-    if (this->toplevelLastPipeJob->isGrouped()) {
-      LOG(DUMP_WAIT, "switch back to foreground");
-      beForeground(0);
-    }
-    LOG(DUMP_WAIT, "remove toplevelLastPipeJob");
+    assert(this->toplevelLastPipeJob->isGrouped());
+    LOG(DUMP_WAIT, "remove toplevelLastPipeJob and switch back to foreground");
+    beForeground(0);
     this->toplevelLastPipeJob = nullptr;
   }
 }
