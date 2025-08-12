@@ -1411,6 +1411,7 @@ bool VM::callPipeline(ARState &state, Value &&desc, const bool lastPipe, const F
        */
       for (unsigned int i = 0; i < procSize; i++) {
         char b[1];
+        childSetups[i].close(WRITE_PIPE);
         if (read(childSetups[i][READ_PIPE], b, 1) != 1) {
         } // ignore error
       }
