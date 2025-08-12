@@ -51,6 +51,10 @@ Proc Proc::fork(ARState &st, const Param param) {
     return Proc(-1);
   }
 
+  Pipe selfPipe;
+  if (param.sync && !selfPipe.open()) {
+    return Proc(-1);
+  }
   const auto childRng = st.getRng().split();
   pid_t pid = ::fork();
   if (pid == 0) { // child process
@@ -82,6 +86,12 @@ Proc Proc::fork(ARState &st, const Param param) {
     st.getRng() = childRng;
 
     st.incSubShellLevel();
+
+    if (param.sync) {
+      selfPipe.close(READ_PIPE);
+      if (write(selfPipe[WRITE_PIPE], "1", 1) != 1) {
+      } // ignore error
+    }
   } else if (pid > 0) {
     if (param.jobControl) {
       setpgid(pid, param.pgid);
@@ -89,12 +99,26 @@ Proc Proc::fork(ARState &st, const Param param) {
         beForeground(pid);
       }
     }
-  }
-  Proc proc(pid);
-  if (pid > 0) {
-    if (pid == getpgid(pid) || param.hasGroup()) {
-      setFlag(proc.attr, ATTR_GROUPED_LEADER);
+    if (param.sync) {
+      /**
+       * wait for child process setup completion due to rance condition of `tcsetpgrp`
+       *
+       * ex. cmd0 & cmd1 | cmd2 | { fg; }
+       * Ideally `cmd1` will be foreground process and after that, `fg` will change `cmd0` with
+       * foreground. In some slow execution environment, `cmd1` has not be foreground before call
+       * `fg`. `fg` change `cmd0` with foreground, but `cmd1` will be foreground (race condition).
+       * As a result, `cmd0` still be background
+       */
+      selfPipe.close(WRITE_PIPE);
+      char b[1];
+      if (read(selfPipe[READ_PIPE], b, 1) != 1) {
+      } // ignore error
     }
+  }
+  selfPipe.close();
+  Proc proc(pid);
+  if (pid > 0 && param.hasGroup()) {
+    setFlag(proc.attr, ATTR_GROUP_LEADER);
   }
   return proc;
 }
@@ -745,7 +769,7 @@ JobLookupResult JobTable::lookup(StringRef key, bool allowProc) {
   if (key.empty()) {
     goto INVALID;
   }
-  if (key[0] == '%') { // may be job-spec
+  if (key[0] == '%') { // maybe job-spec
     key.removePrefix(1);
     if (key.size() == 1) {
       if (const char ch = key[0]; ch == '%' || ch == '+' || ch == '-') {

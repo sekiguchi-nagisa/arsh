@@ -541,11 +541,13 @@ static pid_t resolvePGID(const ARState &state, ForkKind kind) {
   return getpgid(0); // in subshell, inherit current pgid
 }
 
-static Proc::Param resolveProcParam(const ARState &st, const ForkKind kind) {
+static Proc::Param resolveProcParam(const ARState &st, const ForkKind kind,
+                                    const bool sync = false) {
   Proc::Param param = {
       .pgid = resolvePGID(st, kind),
       .jobControl = false,
       .foreground = false,
+      .sync = sync,
   };
   if (st.isJobControl()) {
     if (kind != ForkKind::STR && kind != ForkKind::ARRAY) {
@@ -1332,22 +1334,20 @@ bool VM::callPipeline(ARState &state, Value &&desc, const bool lastPipe, const F
 
   PipeSet pipeSet; // for substitution/co-process
   PipeList pipes(pipeSize);
-  PipeList childSetups(procSize); // for last-pipe
-  if (!pipeSet.openAll(forkKind) || !pipes.openAll() || (lastPipe && !childSetups.openAll())) {
+  if (!pipeSet.openAll(forkKind) || !pipes.openAll()) {
     const int errNum = errno;
     pipeSet.closeAll();
     pipes.closeAll();
-    childSetups.closeAll();
     raiseSystemError(state, errNum, ERROR_PIPE);
     return false;
   }
 
   // fork
   InlinedArray<Proc, 6> children(procSize);
-  const auto param = resolveProcParam(state, forkKind);
+  const auto param = resolveProcParam(state, forkKind, lastPipe);
   auto remainParam = param;
   remainParam.foreground = false; // remain process already foreground
-  Proc proc;                      // NOLINT
+  Proc proc;
 
   uintptr_t procIndex;
   for (procIndex = 0; procIndex < procSize &&
@@ -1383,12 +1383,8 @@ bool VM::callPipeline(ARState &state, Value &&desc, const bool lastPipe, const F
         errNum = errno;
       }
     }
-    if (lastPipe && write(childSetups[procIndex][WRITE_PIPE], "1", 1) != 1) {
-      errNum = errno;
-    }
     pipeSet.closeAll();
     pipes.closeAll();
-    childSetups.closeAll();
 
     if (errNum) {
       raiseSystemError(state, errNum, ERROR_FD_SETUP);
@@ -1400,23 +1396,6 @@ bool VM::callPipeline(ARState &state, Value &&desc, const bool lastPipe, const F
     return true;
   } else if (procIndex == procSize) { // parent (last pipeline)
     if (lastPipe) {
-      /**
-       * wait for child process setup completion due to rance condition of `tcsetpgrp`
-       *
-       * ex. cmd0 & cmd1 | cmd2 | { fg; }
-       * Ideally `cmd1` will be foreground process and after that, `fg` will change `cmd0` with
-       * foreground. In some slow execution environment, `cmd1` has not be foreground before call
-       * `fg`. `fg` change `cmd0` with foreground, but `cmd1` will be foreground (race condition).
-       * As a result, `cmd0` still be background
-       */
-      for (unsigned int i = 0; i < procSize; i++) {
-        char b[1];
-        childSetups[i].close(WRITE_PIPE);
-        if (read(childSetups[i][READ_PIPE], b, 1) != 1) {
-        } // ignore error
-      }
-      childSetups.closeAll();
-
       /**
        * in last pipe, save current stdin before call dup2
        */
@@ -1455,7 +1434,6 @@ bool VM::callPipeline(ARState &state, Value &&desc, const bool lastPipe, const F
     }
     pipeSet.closeAll();
     pipes.closeAll();
-    childSetups.closeAll();
 
     raiseSystemError(state, EAGAIN, "fork failed");
     return false;

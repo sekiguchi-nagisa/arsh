@@ -70,9 +70,10 @@ public:
   };
 
   struct Param {
-    pid_t pgid;      // for `setpgid`. if maybe 0
-    bool jobControl; // enable job control in a child process
-    bool foreground; // child process should be foreground-job
+    pid_t pgid{0};          // for `setpgid`. if maybe 0
+    bool jobControl{false}; // enable job control in a child process
+    bool foreground{false}; // child process should be foreground-job
+    bool sync{false};       // synchronize child process creation
 
     bool hasGroup() const { return this->jobControl && this->pgid == 0; }
   };
@@ -88,7 +89,7 @@ private:
 
   static constexpr unsigned short ATTR_SIGNALED = 1u << 0u;
   static constexpr unsigned short ATTR_CORE_DUMP = 1u << 1u;
-  static constexpr unsigned short ATTR_GROUPED_LEADER = 1u << 2u; // pid == pgid
+  static constexpr unsigned short ATTR_GROUP_LEADER = 1u << 2u; // pid == pgid
 
   unsigned short attr{0};
 
@@ -114,7 +115,7 @@ public:
 
   bool coreDump() const { return hasFlag(this->attr, ATTR_CORE_DUMP); }
 
-  bool groupLeader() const { return hasFlag(this->attr, ATTR_GROUPED_LEADER); }
+  bool groupLeader() const { return hasFlag(this->attr, ATTR_GROUP_LEADER); }
 
   /**
    * wait for termination

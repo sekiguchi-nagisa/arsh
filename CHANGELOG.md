@@ -25,7 +25,8 @@
 
 - overhaul internal keycode handling of ``LineEditor``
     - correctly read unrecognized CSI sequences
-    - ``LineEditor#bind`` method accept human-readable keyname (such as `F1`, `ctrl+alt+a`, `backspace`)
+    - ``LineEditor#bind`` method accept human-readable keyname (such as `F1`, `ctrl+alt+a`,
+      `backspace`)
     - ``LineEditor#bindings`` method return human-readable keyname
     - ``insert-keycode`` action no longer accept ``CSI 200 ~`` (bracketed paste start)
     - ``^I``, ``^M``, ``^[``, ``^?`` are recognized as ``tab``, ``enter``, ``esc``, ``backspace``
@@ -42,8 +43,7 @@
 
 ### Fixed
 
-- fix job object construction. now pass ``grouped`` attribute
-    - not call `getpgid` due to child process termination
+- fix job object construction. check group leader at process construction time
 
 ## [0.38.0] - 2025-06-30
 
