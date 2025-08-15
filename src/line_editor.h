@@ -31,6 +31,7 @@ enum class LineEditorFeature : unsigned char {
   FLOW_CONTROL = 1u << 2u,
   SEMANTIC_PROMPT = 1u << 3u,         // OSC133 (shell integration/semantic prompt)
   KITTY_KEYBOARD_PROTOCOL = 1u << 4u, // emit CSI = 5 u sequence
+  XTERM_MODIFY_OTHER_KEYS = 1u << 5u, // emit CSI > 4 ; 1 m sequence
 };
 
 template <>

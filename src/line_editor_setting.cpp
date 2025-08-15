@@ -180,7 +180,15 @@ bool LineEditorObject::setConfig(ARState &state, StringRef name, const Value &va
     this->setFeature(LineEditorFeature::SEMANTIC_PROMPT, value.asBool());
     return true;
   case EditConfig::KEYBOARD_PROTOCOL:
-    this->setFeature(LineEditorFeature::KITTY_KEYBOARD_PROTOCOL, value.asStrRef() == "kitty");
+    // unset related options before set option
+    this->setFeature(LineEditorFeature::KITTY_KEYBOARD_PROTOCOL, false);
+    this->setFeature(LineEditorFeature::XTERM_MODIFY_OTHER_KEYS, false);
+
+    if (value.asStrRef() == "kitty") {
+      this->setFeature(LineEditorFeature::KITTY_KEYBOARD_PROTOCOL, true);
+    } else if (value.asStrRef() == "xterm") {
+      this->setFeature(LineEditorFeature::XTERM_MODIFY_OTHER_KEYS, true);
+    }
     return true;
   }
   raiseError(state, TYPE::ArgumentError, std::move(message));
@@ -239,8 +247,10 @@ Value LineEditorObject::getConfigs(ARState &state) const {
       value = Value::createBool(this->hasFeature(LineEditorFeature::SEMANTIC_PROMPT));
       break;
     case EditConfig::KEYBOARD_PROTOCOL:
-      value = Value::createStr(
-          this->hasFeature(LineEditorFeature::KITTY_KEYBOARD_PROTOCOL) ? "kitty" : "");
+      value =
+          Value::createStr(this->hasFeature(LineEditorFeature::KITTY_KEYBOARD_PROTOCOL)   ? "kitty"
+                           : this->hasFeature(LineEditorFeature::XTERM_MODIFY_OTHER_KEYS) ? "xterm"
+                                                                                          : "");
       break;
     }
     map.insert(key, std::move(value));

@@ -802,6 +802,35 @@ TEST_F(KeyCodeTest, kittyProtocol) {
   }
 }
 
+TEST_F(KeyCodeTest, modifyOtherKeys) {
+  static const struct {
+    StringRef seq;
+    Optional<KeyEvent> event;
+  } patterns[] = {
+      {CSI_("27~"), {}},
+      {CSI_("27;~"), {}},
+      {CSI_("27;0~"), {}},
+      {CSI_("27;1;~"), {}},
+      {CSI_("27;0;9~"), {}},
+      {CSI_("27;;9~"), {}},
+      {CSI_("27;;~"), {}},
+      {CSI_("27;1;9~"), {}},
+      {CSI_("27;2;0~"), {}},
+      {CSI_("27;5;~"), {}},
+      {CSI_("27;115;9~"), {}},
+      {CSI_("27;2;9~"), KeyEvent(FunctionKey::TAB, ModifierKey::SHIFT)}, // normally not generated
+      {CSI_("27;5;9~"), KeyEvent(FunctionKey::TAB, ModifierKey::CTRL)},
+      {CSI_("27;5;44~"), KeyEvent(',', ModifierKey::CTRL)},
+      {CSI_("27;6;13~"), KeyEvent(FunctionKey::ENTER, ModifierKey::CTRL | ModifierKey::SHIFT)},
+  };
+  for (unsigned int i = 0; i < std::size(patterns); i++) {
+    auto &p = patterns[i];
+    SCOPED_TRACE(format("\nindex:%d, seq:%s, event:%s", i, KeyEvent::toCaret(p.seq).c_str(),
+                        p.event.hasValue() ? p.event.unwrap().toString().c_str() : ""));
+    ASSERT_NO_FATAL_FAILURE(checkCode(p.seq, p.event));
+  }
+}
+
 TEST_F(KeyCodeTest, keyName1) {
   static const struct {
     std::string keyName;

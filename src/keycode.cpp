@@ -367,6 +367,19 @@ constexpr ModifierKey fillModifiers() {
   return modifiers;
 }
 
+static Optional<ModifierKey> parseModifier(StringRef &seq) {
+  constexpr int MODIFIERS_LIMIT = toUnderlying(fillModifiers()) + 1;
+  int v = parseNum(seq, 0);
+  if (v < 0 || v > MODIFIERS_LIMIT) {
+    return {};
+  }
+  ModifierKey modifiers{};
+  if (v) {
+    modifiers = static_cast<ModifierKey>(v - 1);
+  }
+  return modifiers;
+}
+
 static Optional<KeyEvent> parseCSISeq(StringRef seq) {
   assert(!seq.empty());
   ModifierKey modifiers{};
@@ -378,6 +391,25 @@ static Optional<KeyEvent> parseCSISeq(StringRef seq) {
   const int num = parseNum(seq, 1);
   if (num < 0) {
     goto ERROR;
+  }
+
+  // modifyOtherKeys ( \e[27;modifier;code~ )
+  if (finalByte == '~' && num == 27 && !seq.empty() && seq[0] == ';') {
+    seq.removePrefix(1);
+    if (auto ret = parseModifier(seq); ret.hasValue() && toUnderlying(ret.unwrap()) > 0) {
+      modifiers = ret.unwrap();
+    } else {
+      goto ERROR;
+    }
+    if (seq.empty() || seq[0] != ';') {
+      goto ERROR;
+    }
+    seq.removePrefix(1);
+    const int num2 = parseNum(seq, 0);
+    if (num2 <= 0) {
+      goto ERROR;
+    }
+    return resolveCSI(num2, modifiers, -1, 'u');
   }
 
   if (!seq.empty() && seq[0] == ':') { // alternate key
@@ -402,15 +434,11 @@ static Optional<KeyEvent> parseCSISeq(StringRef seq) {
   // extract modifiers (number)
   if (seq.empty()) { // do nothing
   } else if (seq[0] == ';') {
-    constexpr int MODIFIERS_LIMIT = toUnderlying(fillModifiers()) + 1;
-
     seq.removePrefix(1);
-    int v = parseNum(seq, 0);
-    if (v < 0 || v > MODIFIERS_LIMIT) {
+    if (auto ret = parseModifier(seq); ret.hasValue()) {
+      modifiers = ret.unwrap();
+    } else {
       goto ERROR;
-    }
-    if (v) {
-      modifiers = static_cast<ModifierKey>(v - 1);
     }
   } else {
     goto ERROR;

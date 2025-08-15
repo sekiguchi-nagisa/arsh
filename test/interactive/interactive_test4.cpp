@@ -1025,6 +1025,60 @@ TEST_F(InteractiveTest, kittyKeyboardProtocol) {
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
 }
 
+static void codes(std::vector<std::string> &) {}
+
+template <typename... T>
+static void codes(std::vector<std::string> &ret, StringRef first, T &&...remain) {
+  ret.push_back(first.toString());
+  codes(ret, std::forward<T>(remain)...);
+}
+
+template <typename... T>
+static std::vector<std::string> codes(StringRef first, T &&...remain) {
+  std::vector<std::string> ret;
+  codes(ret, first, std::forward<T>(remain)...);
+  return ret;
+}
+
+TEST_F(InteractiveTest, modifyOtherKeys) {
+  constexpr StringRef CSI_ENABLE_KITTY = "\x1b[=5u";
+  constexpr StringRef CSI_DISABLE_KITTY = "\x1b[=0u";
+  constexpr StringRef CSI_ENABLE_XTERM = "\x1b[>4;1m";
+  constexpr StringRef CSI_DISABLE_XTERM = "\x1b[>4;0m";
+
+  this->invoke("--quiet", "--norc");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+
+  std::vector<std::string> csiList;
+  StrRefSet allowSet = {CSI_ENABLE_KITTY, CSI_DISABLE_KITTY, CSI_ENABLE_XTERM, CSI_DISABLE_XTERM};
+  this->screen.setCSIListener([&csiList, &allowSet](StringRef seq) {
+    if (allowSet.find(seq) != allowSet.end()) {
+      csiList.push_back(seq.toString());
+    }
+  });
+
+  ASSERT_NO_FATAL_FAILURE(this->changePrompt("> "));
+  ASSERT_EQ(0, csiList.size());
+  ASSERT_NO_FATAL_FAILURE(
+      this->sendLineAndExpect("$LINE_EDIT.config('keyboard-protocol', 'xterm')"));
+  ASSERT_EQ(codes(CSI_ENABLE_XTERM), csiList);
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
+      "assert $LINE_EDIT.configs()['keyboard-protocol'] as String == 'xterm'"));
+  ASSERT_EQ(codes(CSI_ENABLE_XTERM, CSI_DISABLE_XTERM, CSI_ENABLE_XTERM), csiList);
+  csiList.clear();
+  ASSERT_NO_FATAL_FAILURE(
+      this->sendLineAndExpect("$LINE_EDIT.config('keyboard-protocol', 'kitty')"));
+  ASSERT_EQ(codes(CSI_DISABLE_XTERM, CSI_ENABLE_KITTY), csiList);
+  csiList.clear();
+  ASSERT_NO_FATAL_FAILURE(
+      this->sendLineAndExpect("$LINE_EDIT.config('keyboard-protocol', 'xterm')"));
+  ASSERT_EQ(codes(CSI_DISABLE_KITTY, CSI_ENABLE_XTERM), csiList);
+
+  this->send(CTRL_D);
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
+  ASSERT_EQ(codes(CSI_DISABLE_KITTY, CSI_ENABLE_XTERM, CSI_DISABLE_XTERM), csiList);
+}
+
 TEST_F(InteractiveTest, tokenEdit1) { // lang-extension=false
   this->invoke("--quiet", "--norc");
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));

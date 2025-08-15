@@ -356,6 +356,18 @@ static void disableKittyKeyboardProtocol(int fd) {
   }
 }
 
+static void enableModifyOtherKeys(int fd) {
+  const char *s = "\x1b[>4;1m";
+  if (write(fd, s, strlen(s)) == -1) {
+  }
+}
+
+static void disableModifyOtherKeys(int fd) {
+  const char *s = "\x1b[>4;0m"; // reset all enhancement flags
+  if (write(fd, s, strlen(s)) == -1) {
+  }
+}
+
 /* Raw mode: 1960 magic shit. */
 int LineEditorObject::enableRawMode(int fd) {
   termios raw{}; // NOLINT
@@ -410,6 +422,9 @@ int LineEditorObject::enableRawMode(int fd) {
   if (this->hasFeature(LineEditorFeature::KITTY_KEYBOARD_PROTOCOL)) {
     enableKittyKeyboardProtocol(fd);
   }
+  if (this->hasFeature(LineEditorFeature::XTERM_MODIFY_OTHER_KEYS)) {
+    enableModifyOtherKeys(fd);
+  }
   return 0;
 
 fatal:
@@ -423,6 +438,9 @@ void LineEditorObject::disableRawMode(int fd) {
   }
   if (this->hasFeature(LineEditorFeature::KITTY_KEYBOARD_PROTOCOL)) {
     disableKittyKeyboardProtocol(fd);
+  }
+  if (this->hasFeature(LineEditorFeature::XTERM_MODIFY_OTHER_KEYS)) {
+    disableModifyOtherKeys(fd);
   }
   /* Don't even check the return value as it's too late. */
   if (this->rawMode && tcsetattr(fd, TCSAFLUSH, &this->orgTermios) != -1) {

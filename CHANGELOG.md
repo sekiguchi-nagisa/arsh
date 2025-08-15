@@ -34,6 +34,7 @@
 - add ``keyboard-protocol`` config to ``LineEditor``.
     - when specify ``kitty``, enable kitty keyboard protocol's progressive enhancement
         - enable `Disambiguate escape codes` and `Report alternate keys`
+    - when specify ``xterm``, enable modifyOtherKeys (level 1)
 
 #### Module
 
