@@ -319,6 +319,11 @@ static Optional<KeyEvent> resolveCSI(int num, ModifierKey modifiers, int alterna
       return KeyEvent(FunctionKey::F2, modifiers);
     }
     break;
+  case 'R':
+    if (num == 1) {
+      return KeyEvent(FunctionKey::F3, modifiers);
+    }
+    break;
   case 'S':
     if (num == 1) {
       return KeyEvent(FunctionKey::F4, modifiers);

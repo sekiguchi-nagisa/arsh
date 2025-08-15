@@ -674,10 +674,12 @@ TEST_F(KeyCodeTest, funcKey) {
       {CSI_("0Q"), {}},
       {CSI_("2Q"), {}},
 
-      {CSI_("1R"), {}}, // invalid
-      {CSI_("R"), {}},  // invalid
+      {CSI_("1R"), KeyEvent(FunctionKey::F3)},
+      {CSI_("R"), KeyEvent(FunctionKey::F3)},
       {CSI_("13~"), KeyEvent(FunctionKey::F3)},
       {SS3_("R"), KeyEvent(FunctionKey::F3)},
+      {CSI_("0R"), {}},
+      {CSI_("2R"), {}},
 
       {CSI_("1S"), KeyEvent(FunctionKey::F4)},
       {CSI_("S"), KeyEvent(FunctionKey::F4)},
