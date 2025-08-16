@@ -125,45 +125,6 @@ static int unshift(int ch) { return (ch - 'A') + 'a'; }
 
 static bool isShiftableOrSpace(int ch) { return isShiftable(ch) || ch == ' '; }
 
-static Optional<KeyEvent> parseSS3Seq(const char ch) {
-  FunctionKey funcKey;
-  switch (ch) {
-  case 'A':
-    funcKey = FunctionKey::UP;
-    break;
-  case 'B':
-    funcKey = FunctionKey::DOWN;
-    break;
-  case 'C':
-    funcKey = FunctionKey::RIGHT;
-    break;
-  case 'D':
-    funcKey = FunctionKey::LEFT;
-    break;
-  case 'F':
-    funcKey = FunctionKey::END;
-    break;
-  case 'H':
-    funcKey = FunctionKey::HOME;
-    break;
-  case 'P':
-    funcKey = FunctionKey::F1;
-    break;
-  case 'Q':
-    funcKey = FunctionKey::F2;
-    break;
-  case 'R':
-    funcKey = FunctionKey::F3;
-    break;
-  case 'S':
-    funcKey = FunctionKey::F4;
-    break;
-  default:
-    return {};
-  }
-  return KeyEvent(funcKey);
-}
-
 static int parseNum(StringRef &seq, int defaultValue) {
   StringRef::size_type pos = 0;
   while (pos < seq.size() && isDigit(seq[pos])) {
@@ -401,7 +362,7 @@ static Optional<KeyEvent> parseCSISeq(StringRef seq) {
   // modifyOtherKeys ( \e[27;modifier;code~ )
   if (finalByte == '~' && num == 27 && !seq.empty() && seq[0] == ';') {
     seq.removePrefix(1);
-    if (auto ret = parseModifier(seq); ret.hasValue() && toUnderlying(ret.unwrap()) > 0) {
+    if (auto ret = parseModifier(seq); ret.hasValue()) {
       modifiers = ret.unwrap();
     } else {
       goto ERROR;
@@ -411,7 +372,7 @@ static Optional<KeyEvent> parseCSISeq(StringRef seq) {
     }
     seq.removePrefix(1);
     const int num2 = parseNum(seq, 0);
-    if (num2 <= 0) {
+    if (num2 <= 0 || !seq.empty()) {
       goto ERROR;
     }
     return resolveCSI(num2, modifiers, -1, 'u');
@@ -466,6 +427,63 @@ ERROR:
   return {};
 }
 
+static Optional<KeyEvent> resolveSS3(ModifierKey modifiers, const char finalByte) {
+  FunctionKey funcKey;
+  switch (finalByte) {
+  case 'A':
+    funcKey = FunctionKey::UP;
+    break;
+  case 'B':
+    funcKey = FunctionKey::DOWN;
+    break;
+  case 'C':
+    funcKey = FunctionKey::RIGHT;
+    break;
+  case 'D':
+    funcKey = FunctionKey::LEFT;
+    break;
+  case 'F':
+    funcKey = FunctionKey::END;
+    break;
+  case 'H':
+    funcKey = FunctionKey::HOME;
+    break;
+  case 'P':
+    funcKey = FunctionKey::F1;
+    break;
+  case 'Q':
+    funcKey = FunctionKey::F2;
+    break;
+  case 'R':
+    funcKey = FunctionKey::F3;
+    break;
+  case 'S':
+    funcKey = FunctionKey::F4;
+    break;
+  default:
+    return {};
+  }
+  return KeyEvent(funcKey, modifiers);
+}
+
+static Optional<KeyEvent> parseSS3Seq(StringRef seq) {
+  ModifierKey modifiers{};
+  const char finalByte = seq.back();
+  seq.removeSuffix(1);
+
+  if (!seq.empty()) { // parse modifier
+    if (auto ret = parseModifier(seq); ret.hasValue()) {
+      modifiers = ret.unwrap();
+    } else {
+      return {};
+    }
+  }
+  if (!seq.empty()) {
+    return {};
+  }
+  return resolveSS3(modifiers, finalByte);
+}
+
 Optional<KeyEvent> KeyEvent::fromEscapeSeq(const StringRef seq) {
   if (seq.empty() || !isControlChar(seq[0])) {
     return {};
@@ -506,8 +524,8 @@ Optional<KeyEvent> KeyEvent::fromEscapeSeq(const StringRef seq) {
     }
     return {};
   }
-  if (seq.size() == 3 && seq[1] == 'O') { // SS3 ( ESC O ?)
-    return parseSS3Seq(seq[2]);
+  if (seq[1] == 'O' && seq.size() >= 3) { // SS3 ( ESC O ?)
+    return parseSS3Seq(seq.substr(2));
   }
   if (const char next = seq[1]; next == '[') { // 'ESC [ ?'
     auto ret = parseCSISeq(seq.substr(2));
@@ -930,6 +948,13 @@ ssize_t KeyCodeReader::fetch(AtomicSigSet &&watchSigSet) {
       }
     } else if (next == 'O') { // '\e O ?'
       READ_AND_APPEND_BYTE();
+      char ch = this->keycode.back();
+
+      // try to consume digits (some terminal emulator emit like '\e O 2 R')
+      while (ch >= '0' && ch <= '9') {
+        READ_AND_APPEND_BYTE();
+        ch = this->keycode.back();
+      }
     } else if (next == '\x1b') { // '\e \e [ ?' (alt+arrow in macOS terminal.app)
       READ_AND_APPEND_BYTE();
       if (this->keycode.back() == '[') {

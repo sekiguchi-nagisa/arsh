@@ -245,6 +245,40 @@ TEST(KeyCodeReaderTest, CSI) {
   }
 }
 
+TEST(KeyCodeReaderTest, SS3) {
+  {
+    std::string seq = "\x1bOR";
+    Pipe pipe;
+    pipe.write(seq.c_str());
+    KeyCodeReader reader(pipe.getReadPipe());
+    ASSERT_TRUE(reader.empty());
+    ASSERT_EQ(seq.size(), reader.fetch());
+    ASSERT_EQ(seq, reader.get());
+    ASSERT_TRUE(reader.getEvent().hasValue());
+  }
+
+  {
+    std::string seq = "\x1bO2R";
+    Pipe pipe;
+    pipe.write(seq.c_str());
+    KeyCodeReader reader(pipe.getReadPipe());
+    ASSERT_TRUE(reader.empty());
+    ASSERT_EQ(seq.size(), reader.fetch());
+    ASSERT_EQ(seq, reader.get());
+  }
+
+  {
+    std::string seq = "\x1bO0123456789R";
+    Pipe pipe;
+    pipe.write(seq.c_str());
+    KeyCodeReader reader(pipe.getReadPipe());
+    ASSERT_TRUE(reader.empty());
+    ASSERT_EQ(seq.size(), reader.fetch());
+    ASSERT_EQ(seq, reader.get());
+    ASSERT_FALSE(reader.getEvent().hasValue());
+  }
+}
+
 struct CaretTest : public ::testing::Test {
   static void checkCaret(StringRef caret, StringRef value) {
     auto v = KeyEvent::parseCaret(caret);
@@ -761,6 +795,30 @@ TEST_F(KeyCodeTest, modifier) {
   }
 }
 
+TEST_F(KeyCodeTest, SS3WithModifier) { // some terminal put modifiers to SS3 seq
+  static const struct {
+    StringRef seq;
+    Optional<KeyEvent> event;
+  } patterns[] = {
+      {SS3_("1H"), KeyEvent(FunctionKey::HOME)},
+      {SS3_("0P"), KeyEvent(FunctionKey::F1)},
+      {SS3_("2P"), KeyEvent(FunctionKey::F1, ModifierKey::SHIFT)},
+      {SS3_("3Q"), KeyEvent(FunctionKey::F2, ModifierKey::ALT)},
+      {SS3_("4R"), KeyEvent(FunctionKey::F3, ModifierKey::ALT | ModifierKey::SHIFT)},
+      {SS3_("5S"), KeyEvent(FunctionKey::F4, ModifierKey::CTRL)},
+      {SS3_("222S"), {}},
+      {SS3_("5aS"), {}},
+      {SS3_("222"), {}},
+      {SS3_("SS"), {}},
+  };
+  for (unsigned int i = 0; i < std::size(patterns); i++) {
+    auto &p = patterns[i];
+    SCOPED_TRACE(format("\nindex:%d, seq:%s, event:%s", i, KeyEvent::toCaret(p.seq).c_str(),
+                        p.event.hasValue() ? p.event.unwrap().toString().c_str() : ""));
+    ASSERT_NO_FATAL_FAILURE(checkCode(p.seq, p.event));
+  }
+}
+
 TEST_F(KeyCodeTest, kittyProtocol) {
   static const struct {
     StringRef seq;
@@ -812,14 +870,17 @@ TEST_F(KeyCodeTest, modifyOtherKeys) {
       {CSI_("27~"), {}},
       {CSI_("27;~"), {}},
       {CSI_("27;0~"), {}},
+      {CSI_("27;1aa~"), {}},
       {CSI_("27;1;~"), {}},
-      {CSI_("27;0;9~"), {}},
-      {CSI_("27;;9~"), {}},
       {CSI_("27;;~"), {}},
-      {CSI_("27;1;9~"), {}},
       {CSI_("27;2;0~"), {}},
       {CSI_("27;5;~"), {}},
       {CSI_("27;115;9~"), {}},
+      {CSI_("27;115;9aa~"), {}},
+      {CSI_("27;115;22222222222222222222222222222~"), {}},
+      {CSI_("27;0;9~"), KeyEvent(FunctionKey::TAB)},
+      {CSI_("27;;9~"), KeyEvent(FunctionKey::TAB)},
+      {CSI_("27;1;9~"), KeyEvent(FunctionKey::TAB)},
       {CSI_("27;2;9~"), KeyEvent(FunctionKey::TAB, ModifierKey::SHIFT)}, // normally not generated
       {CSI_("27;5;9~"), KeyEvent(FunctionKey::TAB, ModifierKey::CTRL)},
       {CSI_("27;5;44~"), KeyEvent(',', ModifierKey::CTRL)},
