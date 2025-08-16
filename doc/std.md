@@ -360,6 +360,8 @@ type LineEditor()
 
 function readLine(prompt: String?): String? for LineEditor
 
+function getkey(): (String, String) for LineEditor
+
 function setCompletion(comp: ((Module, String) -> Candidates)?): Void for LineEditor
 
 function setPrompt(prompt: ((String) -> String)?): Void for LineEditor

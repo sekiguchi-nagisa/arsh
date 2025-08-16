@@ -2433,6 +2433,14 @@ ARSH_METHOD edit_read(RuntimeContext &ctx) {
   }
 }
 
+//!bind: function getkey($this : LineEditor) : Tuple<String, String>
+ARSH_METHOD edit_get(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(edit_get);
+  auto &editor = typeAs<LineEditorObject>(LOCAL(0));
+  CHECK_EDITOR_LOCK(editor);
+  RET(editor.getkey(ctx));
+}
+
 //!bind: function setCompletion($this : LineEditor, $comp : Option<Func<Candidates,[Module,String]>>) : Void
 ARSH_METHOD edit_comp(RuntimeContext &ctx) {
   SUPPRESS_WARNING(edit_comp);

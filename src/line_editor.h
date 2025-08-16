@@ -131,6 +131,15 @@ public:
 
   Value getConfigs(ARState &state) const;
 
+  /**
+   * get read keycode (raw bytes) and recognized event
+   * @param state
+   * @return
+   * (keycode, event): (String, String).
+   * if throw error, return empty
+   */
+  Value getkey(ARState &state);
+
 private:
   void setFeature(LineEditorFeature f, bool set) {
     if (set) {

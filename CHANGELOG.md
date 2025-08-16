@@ -35,6 +35,7 @@
     - when specify ``kitty``, enable kitty keyboard protocol's progressive enhancement
         - enable `Disambiguate escape codes` and `Report alternate keys`
     - when specify ``xterm``, enable modifyOtherKeys (level 1)
+- add ``LineEditor#getkey`` method for read and get recognized keycode
 
 #### Module
 

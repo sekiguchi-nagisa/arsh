@@ -433,18 +433,20 @@ fatal:
 }
 
 void LineEditorObject::disableRawMode(int fd) {
-  if (this->hasFeature(LineEditorFeature::BRACKETED_PASTE)) {
-    disableBracketPasteMode(fd);
-  }
-  if (this->hasFeature(LineEditorFeature::KITTY_KEYBOARD_PROTOCOL)) {
-    disableKittyKeyboardProtocol(fd);
-  }
-  if (this->hasFeature(LineEditorFeature::XTERM_MODIFY_OTHER_KEYS)) {
-    disableModifyOtherKeys(fd);
-  }
-  /* Don't even check the return value as it's too late. */
-  if (this->rawMode && tcsetattr(fd, TCSAFLUSH, &this->orgTermios) != -1) {
-    this->rawMode = false;
+  if (this->rawMode) {
+    if (this->hasFeature(LineEditorFeature::BRACKETED_PASTE)) {
+      disableBracketPasteMode(fd);
+    }
+    if (this->hasFeature(LineEditorFeature::KITTY_KEYBOARD_PROTOCOL)) {
+      disableKittyKeyboardProtocol(fd);
+    }
+    if (this->hasFeature(LineEditorFeature::XTERM_MODIFY_OTHER_KEYS)) {
+      disableModifyOtherKeys(fd);
+    }
+    /* Don't even check the return value as it's too late. */
+    if (tcsetattr(fd, TCSAFLUSH, &this->orgTermios) != -1) {
+      this->rawMode = false;
+    }
   }
 }
 
@@ -1362,6 +1364,35 @@ bool LineEditorObject::handleSignals(ARState &state) {
    */
   this->kickCallback(state, std::move(func), std::move(args));
   return !state.hasError();
+}
+
+Value LineEditorObject::getkey(ARState &state) {
+  int errNum = 0;
+  Value ret;
+
+  KeyCodeReader reader(this->inFd);
+  if (this->enableRawMode(this->inFd) == 0 && reader.fetch() >= 0) {
+    auto typeOrError = state.typePool.createTupleType(
+        {&state.typePool.get(TYPE::String), &state.typePool.get(TYPE::String)});
+    assert(typeOrError && typeOrError.asOk()->isTupleType());
+    auto &tupleType = cast<TupleType>(*typeOrError.asOk());
+    ret = Value::create<BaseObject>(tupleType);
+    auto &obj = typeAs<BaseObject>(ret);
+    obj[0] = Value::createStr(KeyEvent::toCaret(reader.get()));
+    std::string event;
+    if (reader.getEvent().hasValue()) {
+      event = reader.getEvent().unwrap().toString();
+    }
+    obj[1] = Value::createStr(std::move(event));
+  } else {
+    errNum = errno;
+  }
+
+  this->disableRawMode(this->inFd);
+  if (errNum) {
+    raiseSystemError(state, errNum, "cannot getkey");
+  }
+  return ret;
 }
 
 } // namespace arsh

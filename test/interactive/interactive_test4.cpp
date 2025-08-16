@@ -982,6 +982,49 @@ TEST_F(InteractiveTest, lineEditorInterrupt4) {
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(210, WaitStatus::EXITED, "WINCH\n> AAB\n"));
 }
 
+TEST_F(InteractiveTest, lineEditorGetkey) {
+  this->invoke("--quiet", "--norc");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+
+  // normal key
+  this->sendLine("$LINE_EDIT.getkey()");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "$LINE_EDIT.getkey()\n"));
+  this->send("Q");
+  ASSERT_NO_FATAL_FAILURE(this->expect(": (String, String) = (Q, )\n" + PROMPT));
+
+  // recognized key event
+  this->sendLine("$LINE_EDIT.getkey()");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "$LINE_EDIT.getkey()\n"));
+  this->send(CTRL_A);
+  ASSERT_NO_FATAL_FAILURE(this->expect(": (String, String) = (^A, ctrl+a)\n" + PROMPT));
+
+  // unrecognized key event
+  this->sendLine("$LINE_EDIT.getkey()");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "$LINE_EDIT.getkey()\n"));
+  this->send(ESC_("[22222~"));
+  ASSERT_NO_FATAL_FAILURE(this->expect(": (String, String) = (^[[22222~, )\n" + PROMPT));
+
+  // bracketed paste (always ignore the following bytes of '^[[200~' sequence)
+  this->sendLine("$LINE_EDIT.getkey()");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "$LINE_EDIT.getkey()\n"));
+  this->paste("hello world !!!\n");
+  ASSERT_NO_FATAL_FAILURE(this->expect(": (String, String) = (^[[200~, bracket_start)\n" + PROMPT));
+
+  // error
+  this->sendLine("$LINE_EDIT.getkey()");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "$LINE_EDIT.getkey()\n"));
+  this->changeWinSize({.rows = 100, .cols = 200});
+  std::string err = format(R"([runtime error]
+SystemError: cannot getkey, caused by `%s'
+    from (stdin):5 '<toplevel>()'
+)",
+                           strerror(EINTR));
+  ASSERT_NO_FATAL_FAILURE(this->expect("" + PROMPT, err));
+
+  this->send(CTRL_D);
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED, "\n"));
+}
+
 TEST_F(InteractiveTest, kittyKeyboardProtocol) {
   this->invoke("--quiet", "--norc");
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
