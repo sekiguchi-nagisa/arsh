@@ -6,7 +6,7 @@
 
 #### Core
 
-- **Breaking Change**: change last-pipe behavior with job control
+- **Breaking Change**: change last-pipe behavior in job control
     - commands within the last-pipe belong to the same process-group of the pipeline
     - if the last-pipe-job is terminated, the process within last-pipe (shell itself) will be a
       foreground process
@@ -24,13 +24,13 @@
 #### Builtin
 
 - overhaul internal keycode handling of ``LineEditor``
-    - correctly read unrecognized CSI sequences
+    - correctly read unrecognized escape sequences (CSI/SS3)
     - ``LineEditor#bind`` method accept human-readable keyname (such as `F1`, `ctrl+alt+a`,
       `backspace`)
     - ``LineEditor#bindings`` method return human-readable keyname
     - ``insert-keycode`` action no longer accept ``CSI 200 ~`` (bracketed paste start)
     - ``^I``, ``^M``, ``^[``, ``^?`` are recognized as ``tab``, ``enter``, ``esc``, ``backspace``
-    - support kitty keyboard protocol
+    - support CSI-u encoding(kitty keyboard protocol, modifyOtherKeys)
 - add ``keyboard-protocol`` config to ``LineEditor``.
     - when specify ``kitty``, enable kitty keyboard protocol's progressive enhancement
         - enable `Disambiguate escape codes` and `Report alternate keys`
