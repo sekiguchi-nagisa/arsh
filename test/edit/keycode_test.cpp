@@ -819,6 +819,51 @@ TEST_F(KeyCodeTest, SS3WithModifier) { // some terminal put modifiers to SS3 seq
   }
 }
 
+TEST_F(KeyCodeTest, numpad) {
+  static const struct {
+    StringRef seq;
+    Optional<KeyEvent> event;
+  } patterns[] = {
+      {CSI_("57398u"), {}},
+      {CSI_("57399;2u"), KeyEvent('0', ModifierKey::SHIFT)},
+      {CSI_("57400u"), KeyEvent('1')},
+      {CSI_("57401u"), KeyEvent('2')},
+      {CSI_("57402u"), KeyEvent('3')},
+      {CSI_("57403u"), KeyEvent('4')},
+      {CSI_("57404u"), KeyEvent('5')},
+      {CSI_("57405;4u"), KeyEvent('6', ModifierKey::SHIFT | ModifierKey::ALT)},
+      {CSI_("57406u"), KeyEvent('7')},
+      {CSI_("57407u"), KeyEvent('8')},
+      {CSI_("57408u"), KeyEvent('9')},
+      {CSI_("57409u"), KeyEvent('.')},
+      {CSI_("57410u"), KeyEvent('/')},
+      {CSI_("57411u"), KeyEvent('*')},
+      {CSI_("57412;5u"), KeyEvent('-', ModifierKey::CTRL)},
+      {CSI_("57413u"), KeyEvent('+')},
+      {CSI_("57414;6u"), KeyEvent(FunctionKey::ENTER, ModifierKey::SHIFT | ModifierKey::CTRL)},
+      {CSI_("57415u"), KeyEvent('=')},
+      {CSI_("57416u"), {}},
+      {CSI_("57417u"), KeyEvent(FunctionKey::LEFT)},
+      {CSI_("57418u"), KeyEvent(FunctionKey::RIGHT)},
+      {CSI_("57419u"), KeyEvent(FunctionKey::UP)},
+      {CSI_("57420u"), KeyEvent(FunctionKey::DOWN)},
+      {CSI_("57421u"), KeyEvent(FunctionKey::PAGE_UP)},
+      {CSI_("57422u"), KeyEvent(FunctionKey::PAGE_DOWN)},
+      {CSI_("57423u"), KeyEvent(FunctionKey::HOME)},
+      {CSI_("57424u"), KeyEvent(FunctionKey::END)},
+      {CSI_("57425u"), KeyEvent(FunctionKey::INSERT)},
+      {CSI_("57426u"), KeyEvent(FunctionKey::DELETE)},
+      {CSI_("57427u"), {}},
+      {CSI_("57428u"), {}},
+  };
+  for (unsigned int i = 0; i < std::size(patterns); i++) {
+    auto &p = patterns[i];
+    SCOPED_TRACE(format("\nindex:%d, seq:%s, event:%s", i, KeyEvent::toCaret(p.seq).c_str(),
+                        p.event.hasValue() ? p.event.unwrap().toString().c_str() : ""));
+    ASSERT_NO_FATAL_FAILURE(checkCode(p.seq, p.event));
+  }
+}
+
 TEST_F(KeyCodeTest, kittyProtocol) {
   static const struct {
     StringRef seq;

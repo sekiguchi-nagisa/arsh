@@ -216,13 +216,80 @@ static FunctionKey resolveUFuncKey(int num) {
     return FunctionKey::PAUSE;
   case 57363:
     return FunctionKey::MENU;
+  case 57414: // KP_ENTER
+    return FunctionKey::ENTER;
+  case 57417: // KP_LEFT
+    return FunctionKey::LEFT;
+  case 57418: // KP_RIGHT
+    return FunctionKey::RIGHT;
+  case 57419: // KP_UP
+    return FunctionKey::UP;
+  case 57420: // KP_DOWN
+    return FunctionKey::DOWN;
+  case 57421: // KP_PAGE_UP
+    return FunctionKey::PAGE_UP;
+  case 57422: // KP_PAGE_DOWN
+    return FunctionKey::PAGE_DOWN;
+  case 57423: // KP_HOME
+    return FunctionKey::HOME;
+  case 57424: // KP_END
+    return FunctionKey::END;
+  case 57425: // KP_INSERT
+    return FunctionKey::INSERT;
+  case 57426: // KP_DELETE
+    return FunctionKey::DELETE;
+  // case 57427: // KP_BEGIN
   default:
     break;
   }
   return FunctionKey::BRACKET_START; // not found
 }
 
+static int remapNumpadNonFuncKey(int num) {
+  switch (num) {
+  case 57399: // KP_0
+    return '0';
+  case 57400: // KP_1
+    return '1';
+  case 57401: // KP_2
+    return '2';
+  case 57402: // KP_3
+    return '3';
+  case 57403: // KP_4
+    return '4';
+  case 57404: // KP_5
+    return '5';
+  case 57405: // KP_6
+    return '6';
+  case 57406: // KP_7
+    return '7';
+  case 57407: // KP_8
+    return '8';
+  case 57408: // KP_9
+    return '9';
+  case 57409: // KP_DECIMAL
+    return '.';
+  case 57410: // KP_DIVIDE
+    return '/';
+  case 57411: // KP_MULTIPLY
+    return '*';
+  case 57412: // KP_SUBTRACT
+    return '-';
+  case 57413: // KP_ADD
+    return '+';
+  case 57415: // KP_EQUAL
+    return '=';
+    // case 57416: // KP_SEPARATOR
+    //   return ','; // maybe '.'
+  default:
+    break;
+  }
+  return num;
+}
+
 static Optional<KeyEvent> resolveCodePoint(int num, ModifierKey modifiers, int alternateCode) {
+  num = remapNumpadNonFuncKey(num);
+
   // ignore Unicode Private Use Area (kitty may treat theme as additional functional keys)
   if (num >= 57344 && num <= 63743) {
     return {};

@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Added
+
+#### Builtin
+
+- add ``LineEditor#getkey`` method for read and get recognized keycode
+
 ### Changed
 
 #### Core
@@ -30,12 +36,11 @@
     - ``LineEditor#bindings`` method return human-readable keyname
     - ``insert-keycode`` action no longer accept ``CSI 200 ~`` (bracketed paste start)
     - ``^I``, ``^M``, ``^[``, ``^?`` are recognized as ``tab``, ``enter``, ``esc``, ``backspace``
-    - support CSI-u encoding(kitty keyboard protocol, modifyOtherKeys)
+    - support CSI-u encoding (kitty keyboard protocol, modifyOtherKeys)
 - add ``keyboard-protocol`` config to ``LineEditor``.
     - when specify ``kitty``, enable kitty keyboard protocol's progressive enhancement
         - enable `Disambiguate escape codes` and `Report alternate keys`
     - when specify ``xterm``, enable modifyOtherKeys (level 1)
-- add ``LineEditor#getkey`` method for read and get recognized keycode
 
 #### Module
 
