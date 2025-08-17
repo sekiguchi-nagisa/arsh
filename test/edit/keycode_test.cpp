@@ -855,6 +855,23 @@ TEST_F(KeyCodeTest, numpad) {
       {CSI_("57426u"), KeyEvent(FunctionKey::DELETE)},
       {CSI_("57427u"), {}},
       {CSI_("57428u"), {}},
+      // SS3 encoding
+      {SS3_("o"), KeyEvent('/')},
+      {SS3_("j"), KeyEvent('*')},
+      {SS3_("m"), KeyEvent('-')},
+      {SS3_("k"), KeyEvent('+')},
+      {SS3_("M"), KeyEvent(FunctionKey::ENTER)},
+      {SS3_("n"), KeyEvent('.')},
+      {SS3_("p"), KeyEvent('0')},
+      {SS3_("q"), KeyEvent('1')},
+      {SS3_("r"), KeyEvent('2')},
+      {SS3_("s"), KeyEvent('3')},
+      {SS3_("t"), KeyEvent('4')},
+      {SS3_("u"), KeyEvent('5')},
+      {SS3_("v"), KeyEvent('6')},
+      {SS3_("w"), KeyEvent('7')},
+      {SS3_("x"), KeyEvent('8')},
+      {SS3_("y"), KeyEvent('9')},
   };
   for (unsigned int i = 0; i < std::size(patterns); i++) {
     auto &p = patterns[i];

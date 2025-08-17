@@ -495,42 +495,62 @@ ERROR:
 }
 
 static Optional<KeyEvent> resolveSS3(ModifierKey modifiers, const char finalByte) {
-  FunctionKey funcKey;
   switch (finalByte) {
   case 'A':
-    funcKey = FunctionKey::UP;
-    break;
+    return KeyEvent(FunctionKey::UP, modifiers);
   case 'B':
-    funcKey = FunctionKey::DOWN;
-    break;
+    return KeyEvent(FunctionKey::DOWN, modifiers);
   case 'C':
-    funcKey = FunctionKey::RIGHT;
-    break;
+    return KeyEvent(FunctionKey::RIGHT, modifiers);
   case 'D':
-    funcKey = FunctionKey::LEFT;
-    break;
+    return KeyEvent(FunctionKey::LEFT, modifiers);
   case 'F':
-    funcKey = FunctionKey::END;
-    break;
+    return KeyEvent(FunctionKey::END, modifiers);
   case 'H':
-    funcKey = FunctionKey::HOME;
-    break;
+    return KeyEvent(FunctionKey::HOME, modifiers);
   case 'P':
-    funcKey = FunctionKey::F1;
-    break;
+    return KeyEvent(FunctionKey::F1, modifiers);
   case 'Q':
-    funcKey = FunctionKey::F2;
-    break;
+    return KeyEvent(FunctionKey::F2, modifiers);
   case 'R':
-    funcKey = FunctionKey::F3;
-    break;
+    return KeyEvent(FunctionKey::F3, modifiers);
   case 'S':
-    funcKey = FunctionKey::F4;
-    break;
+    return KeyEvent(FunctionKey::F4, modifiers);
+  case 'o': // KP_DIVIDE
+    return KeyEvent('/', modifiers);
+  case 'j': // KP_MULTIPLY
+    return KeyEvent('*', modifiers);
+  case 'm': // KP_SUBTRACT
+    return KeyEvent('-', modifiers);
+  case 'k': // KP_ADD
+    return KeyEvent('+', modifiers);
+  case 'M': // KP_ENTER
+    return KeyEvent(FunctionKey::ENTER, modifiers);
+  case 'n': // KP_DECIMAL
+    return KeyEvent('.', modifiers);
+  case 'p': // KP_0
+    return KeyEvent('0', modifiers);
+  case 'q': // KP_1
+    return KeyEvent('1', modifiers);
+  case 'r': // KP_2
+    return KeyEvent('2', modifiers);
+  case 's': // KP_3
+    return KeyEvent('3', modifiers);
+  case 't': // KP_4
+    return KeyEvent('4', modifiers);
+  case 'u': // KP_5
+    return KeyEvent('5', modifiers);
+  case 'v': // KP_6
+    return KeyEvent('6', modifiers);
+  case 'w': // KP_7
+    return KeyEvent('7', modifiers);
+  case 'x': // KP_8
+    return KeyEvent('8', modifiers);
+  case 'y': // KP_9
+    return KeyEvent('9', modifiers);
   default:
     return {};
   }
-  return KeyEvent(funcKey, modifiers);
 }
 
 static Optional<KeyEvent> parseSS3Seq(StringRef seq) {
