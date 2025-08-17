@@ -768,19 +768,19 @@ TEST_F(KeyCodeTest, modifier) {
       {CSI_("1;9A"), KeyEvent(FunctionKey::UP, ModifierKey::SUPER)},
       {CSI_("1;17A"), KeyEvent(FunctionKey::UP, ModifierKey::HYPER)},
       {CSI_("1;33A"), KeyEvent(FunctionKey::UP, ModifierKey::META)},
-      // {CSI_("1;65A"), KeyEvent(FunctionKey::UP, ModifierKey::CAPS)},
-      // {CSI_("1;129A"), KeyEvent(FunctionKey::UP, ModifierKey::NUM)},
-      // {CSI_("1;255A"),
-      //  KeyEvent(FunctionKey::UP, ModifierKey::NUM | ModifierKey::CAPS | ModifierKey::META |
-      //                                ModifierKey::HYPER | ModifierKey::SUPER | ModifierKey::CTRL
-      //                                | ModifierKey::ALT)},
-      // {CSI_("1;256A"),
-      //  KeyEvent(FunctionKey::UP, ModifierKey::NUM | ModifierKey::CAPS | ModifierKey::META |
-      //                                ModifierKey::HYPER | ModifierKey::SUPER | ModifierKey::CTRL
-      //                                | ModifierKey::ALT | ModifierKey::SHIFT)},
-      {CSI_("1;65A"), {}},
-      {CSI_("1;129A"), {}},
-      {CSI_("1;255A"), {}},
+      {CSI_("1;65A"), KeyEvent(FunctionKey::UP)},
+      {CSI_("1;67A"), KeyEvent(FunctionKey::UP, ModifierKey::ALT)},
+      {CSI_("1;129A"), KeyEvent(FunctionKey::UP)},
+      {CSI_("1;130A"), KeyEvent(FunctionKey::UP, ModifierKey::SHIFT)},
+      {CSI_("1;254A"),
+       KeyEvent(FunctionKey::UP, ModifierKey::SHIFT | ModifierKey::CTRL | ModifierKey::SUPER |
+                                     ModifierKey::META | ModifierKey::HYPER)},
+      {CSI_("1;255A"),
+       KeyEvent(FunctionKey::UP, ModifierKey::ALT | ModifierKey::CTRL | ModifierKey::SUPER |
+                                     ModifierKey::META | ModifierKey::HYPER)},
+      {CSI_("1;256A"),
+       KeyEvent(FunctionKey::UP, ModifierKey::ALT | ModifierKey::CTRL | ModifierKey::SUPER |
+                                     ModifierKey::META | ModifierKey::HYPER | ModifierKey::SHIFT)},
       {CSI_("1;257A"), {}},
       {CSI_("1;4294967295A"), {}},
       {CSI_("1;4294967290A"), {}},
@@ -806,7 +806,9 @@ TEST_F(KeyCodeTest, SS3WithModifier) { // some terminal put modifiers to SS3 seq
       {SS3_("3Q"), KeyEvent(FunctionKey::F2, ModifierKey::ALT)},
       {SS3_("4R"), KeyEvent(FunctionKey::F3, ModifierKey::ALT | ModifierKey::SHIFT)},
       {SS3_("5S"), KeyEvent(FunctionKey::F4, ModifierKey::CTRL)},
-      {SS3_("222S"), {}},
+      {SS3_("222S"), KeyEvent(FunctionKey::F4, ModifierKey::SHIFT | ModifierKey::CTRL |
+                                                   ModifierKey::SUPER | ModifierKey::HYPER)},
+      {SS3_("257S"), {}},
       {SS3_("5aS"), {}},
       {SS3_("222"), {}},
       {SS3_("SS"), {}},
@@ -895,7 +897,8 @@ TEST_F(KeyCodeTest, kittyProtocol) {
       {CSI_("120;6u"), KeyEvent('x', ModifierKey::SHIFT | ModifierKey::CTRL)},
       {CSI_("120:88;6u"), KeyEvent('x', ModifierKey::SHIFT | ModifierKey::CTRL)},
       {CSI_("120:88;6:1u"), KeyEvent('x', ModifierKey::SHIFT | ModifierKey::CTRL)},
-      {CSI_("120:88;66:1u"), {}},                          // unrecognized modifier
+      {CSI_("120:88;66:1u"), KeyEvent('x', ModifierKey::SHIFT)},
+      {CSI_("120:88;666:1u"), {}},                         // unrecognized modifier
       {CSI_("88u"), KeyEvent('X')},                        // shifted-key, but no shift
       {CSI_("121:89u"), {}},                               // alternate code, but no shift
       {CSI_("121:89;3u"), {}},                             // alternate code, but no shift
@@ -937,9 +940,9 @@ TEST_F(KeyCodeTest, modifyOtherKeys) {
       {CSI_("27;;~"), {}},
       {CSI_("27;2;0~"), {}},
       {CSI_("27;5;~"), {}},
-      {CSI_("27;115;9~"), {}},
-      {CSI_("27;115;9aa~"), {}},
-      {CSI_("27;115;22222222222222222222222222222~"), {}},
+      {CSI_("27;257;9~"), {}},
+      {CSI_("27;1151;9aa~"), {}},
+      {CSI_("27;1151;22222222222222222222222222222~"), {}},
       {CSI_("27;0;9~"), KeyEvent(FunctionKey::TAB)},
       {CSI_("27;;9~"), KeyEvent(FunctionKey::TAB)},
       {CSI_("27;1;9~"), KeyEvent(FunctionKey::TAB)},
@@ -947,6 +950,7 @@ TEST_F(KeyCodeTest, modifyOtherKeys) {
       {CSI_("27;5;9~"), KeyEvent(FunctionKey::TAB, ModifierKey::CTRL)},
       {CSI_("27;5;44~"), KeyEvent(',', ModifierKey::CTRL)},
       {CSI_("27;6;13~"), KeyEvent(FunctionKey::ENTER, ModifierKey::CTRL | ModifierKey::SHIFT)},
+      {CSI_("27;68;13~"), KeyEvent(FunctionKey::ENTER, ModifierKey::ALT | ModifierKey::SHIFT)},
   };
   for (unsigned int i = 0; i < std::size(patterns); i++) {
     auto &p = patterns[i];

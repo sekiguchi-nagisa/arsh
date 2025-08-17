@@ -401,14 +401,15 @@ constexpr ModifierKey fillModifiers() {
 }
 
 static Optional<ModifierKey> parseModifier(StringRef &seq) {
-  constexpr int MODIFIERS_LIMIT = toUnderlying(fillModifiers()) + 1;
+  constexpr unsigned int MODIFIER_MASK = toUnderlying(fillModifiers());
+  static_assert(MODIFIER_MASK <= UINT8_MAX);
   int v = parseNum(seq, 0);
-  if (v < 0 || v > MODIFIERS_LIMIT) {
+  if (v < 0 || v > UINT8_MAX + 1) {
     return {};
   }
   ModifierKey modifiers{};
   if (v) {
-    modifiers = static_cast<ModifierKey>(v - 1);
+    modifiers = static_cast<ModifierKey>((static_cast<unsigned int>(v) - 1) & MODIFIER_MASK);
   }
   return modifiers;
 }
