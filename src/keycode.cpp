@@ -279,8 +279,8 @@ static int remapNumpadNonFuncKey(int num) {
     return '+';
   case 57415: // KP_EQUAL
     return '=';
-    // case 57416: // KP_SEPARATOR
-    //   return ','; // maybe '.'
+  case 57416: // KP_SEPARATOR
+    return ',';
   default:
     break;
   }
@@ -529,6 +529,8 @@ static Optional<KeyEvent> resolveSS3(ModifierKey modifiers, const char finalByte
     return KeyEvent(FunctionKey::ENTER, modifiers);
   case 'n': // KP_DECIMAL
     return KeyEvent('.', modifiers);
+  case 'l':
+    return KeyEvent(',', modifiers);
   case 'p': // KP_0
     return KeyEvent('0', modifiers);
   case 'q': // KP_1
