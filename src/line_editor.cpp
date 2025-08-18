@@ -1388,6 +1388,10 @@ Value LineEditorObject::getkey(ARState &state) {
     errNum = errno;
   }
 
+  // force consume remain bytes
+  for (char data[256]; readRetryWithTimeout(this->inFd, data, std::size(data), 10) != -2;)
+    ;
+
   this->disableRawMode(this->inFd);
   if (errNum) {
     raiseSystemError(state, errNum, "cannot getkey");
