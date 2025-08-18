@@ -1394,7 +1394,7 @@ Value LineEditorObject::getkey(ARState &state) {
 
   this->disableRawMode(this->inFd);
   if (errNum) {
-    raiseSystemError(state, errNum, "cannot getkey");
+    raiseSystemError(state, errNum, "cannot read keycode");
   }
   return ret;
 }

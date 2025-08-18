@@ -1015,7 +1015,7 @@ TEST_F(InteractiveTest, lineEditorGetkey) {
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "$LINE_EDIT.getkey()\n"));
   this->changeWinSize({.rows = 100, .cols = 200});
   std::string err = format(R"([runtime error]
-SystemError: cannot getkey, caused by `%s'
+SystemError: cannot read keycode, caused by `%s'
     from (stdin):5 '<toplevel>()'
 )",
                            strerror(EINTR));
