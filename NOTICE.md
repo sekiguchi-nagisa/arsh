@@ -40,8 +40,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 ## external/rapidhash/rapidhash.h
 
-This file is distributed under the BSD 2-Clause
-License (https://www.opensource.org/licenses/bsd-license.php).
+This file is distributed under the MIT License
 This is copied from [Nicoshev/rapidhash](https://github.com/Nicoshev/rapidhash)
 
 ## external/dragonbox/simple_dragonbox.h

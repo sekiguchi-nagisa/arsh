@@ -20,7 +20,6 @@
 #include "object_util.h"
 #include "type_pool.h"
 
-#define RAPIDHASH_COMPACT
 #include "../external/rapidhash/rapidhash.h"
 
 namespace arsh {
