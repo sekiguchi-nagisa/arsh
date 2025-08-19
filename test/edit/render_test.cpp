@@ -854,6 +854,64 @@ TEST_F(PagerTest, truncate) {
   ASSERT_EQ(expect, out);
 }
 
+TEST_F(PagerTest, shrinkRow) {
+  /**
+   * AAA
+   * BBB
+   * CCC
+   * DDD
+   * EEE
+   * FFF
+   */
+  auto array = this->create("AAA", "BBB", "CCC", "DDD", "EEE", "FFF");
+  auto pager = ArrayPager::create(CandidatesWrapper(array), this->ps, {.rows = 10, .cols = 5});
+  ASSERT_EQ(1, pager.getPanes());
+  ASSERT_EQ(0, pager.getCurRow());
+  ASSERT_EQ(0, pager.getIndex());
+
+  const char *expect = "\x1b[7mAAA \x1b[0m\r\nBBB \r\nCCC \r\nDDD \r\n";
+  std::string out;
+  out = this->render(pager);
+  ASSERT_EQ(expect, out);
+
+  pager.moveCursorToNext();
+  pager.moveCursorToNext();
+  pager.moveCursorToNext();
+  expect = "AAA \r\nBBB \r\nCCC \r\n\x1b[7mDDD \x1b[0m\r\n";
+  out = this->render(pager);
+  ASSERT_EQ(expect, out);
+
+  // shrink
+  pager.updateWinSize({.rows = 9, .cols = 5});
+  expect = "BBB \r\nCCC \r\n\x1b[7mDDD \x1b[0m\r\n";
+  out = this->render(pager);
+  ASSERT_EQ(expect, out);
+
+  // shrink (no change)
+  pager.updateWinSize({.rows = 8, .cols = 5});
+  expect = "BBB \r\nCCC \r\n\x1b[7mDDD \x1b[0m\r\n";
+  out = this->render(pager);
+  ASSERT_EQ(expect, out);
+
+  // shrink
+  pager.updateWinSize({.rows = 7, .cols = 5});
+  expect = "CCC \r\n\x1b[7mDDD \x1b[0m\r\n";
+  out = this->render(pager);
+  ASSERT_EQ(expect, out);
+
+  pager.moveCursorToNext();
+  pager.updateWinSize({.rows = 7, .cols = 5});
+  expect = "DDD \r\n\x1b[7mEEE \x1b[0m\r\n";
+  out = this->render(pager);
+  ASSERT_EQ(expect, out);
+
+  // expand
+  pager.updateWinSize({.rows = 9, .cols = 5});
+  expect = "DDD \r\n\x1b[7mEEE \x1b[0m\r\nFFF \r\n";
+  out = this->render(pager);
+  ASSERT_EQ(expect, out);
+}
+
 TEST_F(PagerTest, desc1) {
   // single pane
   auto array = this->createWith({

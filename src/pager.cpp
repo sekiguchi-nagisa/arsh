@@ -102,8 +102,8 @@ void ArrayPager::updateWinSize(WindowSize size) {
   } else if (this->panes > MAX_PANE_NUM) {
     this->panes = MAX_PANE_NUM;
   }
-  if (this->curRow > this->rows) {
-    this->curRow = this->rows - 1;
+  if (this->curRow >= this->getActualRows()) {
+    this->curRow = this->getActualRows() - 1;
   }
   if (this->panes == 1) {
     // truncate to multiple of TAB_WIDTH
@@ -199,8 +199,9 @@ void ArrayPager::render(LineRenderer &renderer) const {
    */
   const unsigned int maxRowSize = this->getLogicalRows();
   unsigned int startIndex = this->index % maxRowSize;
-  assert(startIndex >= this->curRow);
-  startIndex -= this->curRow;
+  if (startIndex >= this->curRow) {
+    startIndex -= this->curRow;
+  }
   const unsigned int actualRows = this->getActualRows();
 
   renderer.setInitCols(0);

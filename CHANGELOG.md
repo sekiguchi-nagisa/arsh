@@ -52,6 +52,7 @@
 ### Fixed
 
 - fix job object construction. check group leader at process construction time
+- fix cursor position computation in completion pager shrink
 
 ## [0.38.0] - 2025-06-30
 
