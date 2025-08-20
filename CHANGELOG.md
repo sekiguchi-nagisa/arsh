@@ -48,6 +48,8 @@
 - **Breaking Change**: in ``repl`` module, enable token-aware line edit actions by default
 - in prompt module, ``renderPrompt`` function supports ``\j``, now show managed job count
 - add ``TITLE_HOOK`` variable for terminal title setting (via ``OSC 0``)
+- improve command argument completion of the builtin kill command.
+    - now complete ``-<sig-num>`` style parameters
 
 ### Fixed
 
