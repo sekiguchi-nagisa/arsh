@@ -1116,6 +1116,7 @@ EditActionStatus LineEditorObject::completeLine(ARState &state, RenderingContext
     return EditActionStatus::CANCEL;
   }
 
+  const auto watchSigSet = toSigSet(state.sigVector);
   unsigned int undoCount = 0;
   StringRef inserting = candidates.getCommonPrefixStr();
   ctx.buf.commitLastChange();
@@ -1151,7 +1152,7 @@ EditActionStatus LineEditorObject::completeLine(ARState &state, RenderingContext
 FIRST_DRAW:
   this->refreshLine(state, ctx, true, makeObserver(pager));
 FETCH:
-  if (ssize_t r = reader.fetch(toSigSet(state.sigVector)); r <= 0) {
+  if (ssize_t r = reader.fetch(watchSigSet); r <= 0) {
     if (r == -1 && errno == EINTR) {
       if (this->handleSignals(state)) {
         goto FIRST_DRAW;
@@ -1198,7 +1199,7 @@ FETCH:
       status = EditActionStatus::ERROR;
       break;
     }
-    status = waitPagerAction(pager, this->keyBindings, reader);
+    status = waitPagerAction(pager, this->keyBindings, reader,  watchSigSet);
     if (status == EditActionStatus::REVERT) {
       status = EditActionStatus::OK;
       while (undoCount > 0) {

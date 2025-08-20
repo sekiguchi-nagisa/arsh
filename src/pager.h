@@ -25,6 +25,7 @@ namespace arsh {
 
 class LineRenderer;
 struct CharWidthProperties;
+class AtomicSigSet;
 
 /**
  * for completion candidates paging
@@ -220,7 +221,7 @@ public:
 };
 
 EditActionStatus waitPagerAction(ArrayPager &pager, const KeyBindings &bindings,
-                                 KeyCodeReader &reader);
+                                 KeyCodeReader &reader, const AtomicSigSet &watchSigSet);
 
 class HistRotator {
 private:

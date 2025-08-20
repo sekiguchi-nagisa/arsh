@@ -23,6 +23,7 @@
 #include <vector>
 
 #include "misc/array_ref.hpp"
+#include "misc/detect.hpp"
 #include "misc/string_ref.hpp"
 
 namespace arsh {
@@ -119,6 +120,22 @@ public:
   }
 
   int popPendingSig();
+
+  template <typename Func>
+  static constexpr bool iter_requirement_v = std::is_same_v<bool, std::invoke_result_t<Func, int>>;
+
+  template <typename Func, enable_when<iter_requirement_v<Func>> = nullptr>
+  void iterate(Func func) const {
+    const underlying_t value = this->value();
+    for (int sig = 1; sig < NSIG; sig++) {
+      const auto flag = static_cast<underlying_t>(1) << static_cast<underlying_t>(sig - 1);
+      if (value & flag) {
+        if (!func(sig)) {
+          break;
+        }
+      }
+    }
+  }
 };
 
 } // namespace arsh

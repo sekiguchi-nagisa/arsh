@@ -987,15 +987,15 @@ static ssize_t readAndAppendByte(int fd, std::string &out, int timeout) {
     }                                                                                              \
   } while (false)
 
-ssize_t KeyCodeReader::fetch(AtomicSigSet &&watchSigSet) {
+ssize_t KeyCodeReader::fetch(const AtomicSigSet &watchSigSet) {
   this->event = {};
   {
     sigset_t set;
     sigfillset(&set);
-    while (!watchSigSet.empty()) {
-      const int sigNum = watchSigSet.popPendingSig();
+    watchSigSet.iterate([&set](int sigNum) {
       sigdelset(&set, sigNum);
-    }
+      return true;
+    });
     errno = 0;
     if (waitForInputReady(this->fd, -1, &set) == -1) {
       return -1;

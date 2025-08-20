@@ -963,7 +963,7 @@ TEST_F(InteractiveTest, lineEditorInterrupt4) {
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
       "$LINE_EDIT.setCompletion(function(m,s) => { new Candidates(['AAA', 'AAB']); })"));
   ASSERT_NO_FATAL_FAILURE(
-      this->sendLineAndExpect("$SIGWINCH.trap(function(s) => { echo ${$s.name()}; exit 210; })",
+      this->sendLineAndExpect("$SIGHUP.trap(function(s) => { echo ${$s.name()}; exit 210; })",
                               ": (Signal) -> Void = function(SIG_DFL)"));
 
   this->send("A");
@@ -976,10 +976,10 @@ TEST_F(InteractiveTest, lineEditorInterrupt4) {
     ASSERT_NO_FATAL_FAILURE(this->expect("> AAA\nAAA AAB \n"));
     this->send("\t");
     ASSERT_NO_FATAL_FAILURE(this->expect("> AAB\nAAA AAB \n"));
-    this->handle.kill(SIGWINCH);
+    this->handle.kill(SIGHUP);
     std::this_thread::sleep_for(std::chrono::milliseconds(100));
   }
-  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(210, WaitStatus::EXITED, "WINCH\n> AAB\n"));
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(210, WaitStatus::EXITED, "HUP\n> AAB\n"));
 }
 
 TEST_F(InteractiveTest, lineEditorGetkey) {

@@ -233,10 +233,10 @@ void ArrayPager::render(LineRenderer &renderer) const {
 }
 
 EditActionStatus waitPagerAction(ArrayPager &pager, const KeyBindings &bindings,
-                                 KeyCodeReader &reader) {
+                                 KeyCodeReader &reader, const AtomicSigSet &watchSigSet) {
 // read key code and update the pager state
 FETCH:
-  if (ssize_t r = reader.fetch(); r <= 0) {
+  if (ssize_t r = reader.fetch(watchSigSet); r <= 0) {
     if (r == -1 && errno == EINTR) {
       return EditActionStatus::CANCEL;
     }

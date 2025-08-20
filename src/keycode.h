@@ -234,12 +234,12 @@ public:
    * size of read
    * if read failed, return -1
    */
-  ssize_t fetch(AtomicSigSet &&watchSigSet);
+  ssize_t fetch(const AtomicSigSet &watchSigSet);
 
   ssize_t fetch() {
     AtomicSigSet set;
     set.add(SIGWINCH);
-    return this->fetch(std::move(set));
+    return this->fetch(set);
   }
 
   bool hasBracketedPasteStart() const {
