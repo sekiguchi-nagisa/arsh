@@ -146,7 +146,7 @@ $assertArray(["sort", "sortBy"], $(complete '$@.so'))
 $assertArray(["sort", "sortBy"], $(complete '[[34],[67]].so'))
 $assertArray(["sortBy"], $(complete '[23 as Any].so'))
 $assertArray(["BASH_COMPLETION_COMPAT", "BASH_COMPLETION_PATH", 'INSTALL_PREFIX',
-              '_fullname', '_func', '_scriptDir', '_scriptName',
+              '_fullname', '_func', '_scriptDir', '_scriptName', 'addArgFunc',
                "compAdd", 'compDelegate', 'extractCompTarget', 'findBashCompScript'],
                 $(complete "source $SCRIPT_DIR/../../../../share/arsh/modules/completion.arsh as CP; \$CP."))
 $assertArray([ '_fullname', "_func", '_scriptDir', '_scriptName', "hello", "hey", "hey2", "hey3",],

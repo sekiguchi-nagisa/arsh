@@ -50,6 +50,12 @@
 - add ``TITLE_HOOK`` variable for terminal title setting (via ``OSC 0``)
 - improve command argument completion of the builtin kill command.
     - now complete ``-<sig-num>`` style parameters
+- improve ``compdef`` command in ``completion`` module
+    - add ``--desc`` option for candidate description
+    - add ``--arg-func`` option for generating candidates from function
+        - also add ``addArgFunc`` helper function
+    - ``--short`` option accept one or more characters options
+    - ``--long`` option also accept single character options
 
 ### Fixed
 

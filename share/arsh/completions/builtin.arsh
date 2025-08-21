@@ -26,56 +26,9 @@ function _cmd($ctx : Module, $t : [String], $c : Int) : Candidates? {
 
 source $SCRIPT_DIR/../modules/fzf.arsh as _fzf
 
-let _kill_opt = {
-    var ret : [String]
-    for s in $SIG.list() {
-        $ret.add("-${$s.value()}")
-    }
-    $ret.sort()
-}
-
-function _kill($ctx : Module, $t : [String], $c : Int) : Candidates? {
-    let size = $t.size()
-    if $c < $size {
-        var v = $t.peek()
-        case $v {
-            '-' => {
-                var can = new Candidates().add('-l').add('-s')
-                for s in $SIG.list() {
-                    $can.add("-${$s.value()}", "SIG${$s.name()}")
-                }
-                return $can
-            }
-            else => if !$v.startsWith('-') {
-                if $t.size() > 2 {
-                    if $t[-2] == '-s' {
-                        complete -q -A signal -- $v
-                        return $COMPREPLY
-                    } elif $t[-2] == '-l' {
-                        return $none
-                    }
-                }
-            }
-        }
-    } else {
-        var v = $t.peek()
-        case $v {
-            '-s' => {
-                complete -q -A signal ''
-                return $COMPREPLY
-            }
-            else => if !$v.startsWith('-') || $_kill_opt.searchSorted($v) > -1  {
-                return new Candidates().add($_fzf.fzf_proc_select().join(' '))
-            }
-        }
-    }
-    return new Candidates()
-}
-
 $compAdd("command", $_cmd)
 $compAdd("call", $_cmd)
 $compAdd("exec", $_cmd)
-$compAdd('kill', $_kill)
 
 
 # defined by compdef
@@ -90,3 +43,14 @@ compdef --cmd pwd --short L
 compdef --cmd pwd --short P
 compdef --cmd complete --short A \
         --arg-cmd "help complete | grep -E '^      [_a-z]+' | sed 's/^      //g' | cut -d ' ' -f 1"
+
+## kill
+{
+    let ff = $addArgFunc(function() => new Candidates().add($_fzf.fzf_proc_select().join(' ')))
+    for s in $SIG.list() {
+        compdef --cmd kill --short ${$s.value()} --arg-func $ff --desc SIG${$s.name()}
+    }
+    compdef --cmd kill --short l
+    compdef --cmd kill --short s --arg-action signal
+    compdef --cmd kill --arg-func $ff
+}

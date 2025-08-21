@@ -5,6 +5,8 @@ type Completer = (Module, [String], Int) -> Candidates?
 
 let _compMap : [String : Completer]
 
+let _argFuncs : [String : () -> Candidates]
+
 function _defaultHook(ctx : Module, words : [String], cursor : Int) : Candidates? {
     if (command -v $words[0] &>> /dev/null) {
         var cmd = $words[0]
@@ -30,10 +32,11 @@ function compAdd(cmd : String, comp : Completer) : Completer? {
 
 # for completion helper
 
-type _CompDef(o : String?, t : Int?, a : String?) {
+type _CompDef(o : String?, t : Int?, a : String?, d: String?) {
     let option = $o ?? ""   # option (short, long option or other parameter)
-    let type = $t ?? -1     # arg type (-1: empty, 0: list, 1: cmdline, 2: action, 3: comp)
+    let type = $t ?? -1     # arg type (-1: empty, 0: list, 1: cmdline, 2: action, 3: comp, 4: func)
     let arg = $a ?? ""      # argument
+    let desc = $d           # description
 }
 
 let _compdefMap : [
@@ -51,12 +54,12 @@ function _comp_opt(deflist : [_CompDef], prefix : String) : Candidates {
         var opt = $def.option.ifEmpty() ?? continue
         if $opt.startsWith($prefix) {
             var long = $opt.startsWith('--') && $opt.endsWith('=')
-            $ret.add($opt, $space: $long ? 0 : -1)
+            $ret.add($opt, $space: $long ? 0 : -1, $desc: $def.desc)
         } elif $opt.startsWith("--") && $def.type != -1 {
             # opt -> --opt
             # prefix -> --opt=hoge
             if $prefix.startsWith($opt) && ($prefix.slice($opt.size()).startsWith('=') || $opt.endsWith('=')) {
-                $ret.add($opt)
+                $ret.add($opt, $desc: $def.desc)
             }
         }
     }
@@ -102,6 +105,10 @@ function _comp_arg(ctx : Module, deflist: [_CompDef], opt : String, prefix : Str
                 }
                 complete -q -m $ctx $actions $prefix;
                 $COMPREPLY
+            }
+            4 => {
+                var func = $_argFuncs.get($arg) ?? break
+                $func()
             }
             else => break
         }
@@ -324,11 +331,17 @@ type _CompDefParam() {
     [<Option(placeholder: "ACTION", xor: 1, help: "generate candidates from ACTION")>]
     var arg_action: String?
 
+    [<Option(placeholder: "FUNC", xor: 1, help: "generate candidate from specified FUNC call")>]
+    var arg_func: String?
+
     [<Option(placeholder: "SCRIPT", xor: 0, help: "set bash completion script")>]
     var comp_path: String?
 
     [<Option(placeholder: "TARGET", xor: 1, help: "set bash completion function")>]
     var comp_target: String?
+
+    [<Option(placeholder: "DESC", help: "specify option description")>]
+    var desc: String?
 }
 
 function _error($p : _CompDefParam, $msg : String) : Int {
@@ -368,6 +381,9 @@ compdef(param : _CompDefParam) {
     } elif let arg_action = $param.arg_action {
         $argType = 2
         $arg = $arg_action
+    } elif let arg_func = $param.arg_func {
+        $argType = 4
+        $arg = $arg_func
     }
 
     var deflist = $_compdefMap.get($param.cmd) ?? {
@@ -375,9 +391,15 @@ compdef(param : _CompDefParam) {
         $_compdefMap[$param.cmd] = $tmp
         $tmp
     }
-    $deflist.add(new _CompDef($opt, $argType, $arg))
+    $deflist.add(new _CompDef($opt, $argType, $arg, $param.desc))
 }
 
 function compDelegate(ctx : Module, words : [String], cursor : Int) : Candidates? {
     return $_defaultHook($ctx, $words, $cursor)
+}
+
+function addArgFunc(func: ()-> Candidates): String {
+    var key = "af" + ($RANDOM % 1000000000)
+    $_argFuncs[$key] = $func
+    return $key
 }
