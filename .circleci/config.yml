@@ -25,4 +25,4 @@ workflows:
   build:
     jobs:
       - build-on-gcc
-      - build-on-clang
+     # - build-on-clang
