@@ -31,7 +31,7 @@ function compAdd(cmd : String, comp : Completer) : Completer? {
 # for completion helper
 
 type _CompDef(o : String?, t : Int?, a : String?) {
-    let option = $o ?? ""   # option (length 0: empty, 1: short, 2<=: long, other)
+    let option = $o ?? ""   # option (short, long option or other parameter)
     let type = $t ?? -1     # arg type (-1: empty, 0: list, 1: cmdline, 2: action, 3: comp)
     let arg = $a ?? ""      # argument
 }
@@ -48,11 +48,7 @@ let _compdefMap : [
 function _comp_opt(deflist : [_CompDef], prefix : String) : Candidates {
     var ret : Candidates
     for def in $deflist {
-        var opt = case $def.option.size() {
-            0 => continue
-            1 => '-' + $def.option
-            else => '--' + $def.option
-        }
+        var opt = $def.option.ifEmpty() ?? continue
         if $opt.startsWith($prefix) {
             var long = $opt.startsWith('--') && $opt.endsWith('=')
             $ret.add($opt, $space: $long ? 0 : -1)
@@ -73,11 +69,7 @@ function _comp_opt(deflist : [_CompDef], prefix : String) : Candidates {
 #
 function _comp_arg(ctx : Module, deflist: [_CompDef], opt : String, prefix : String) : Candidates? {
     for def in $deflist {
-        $opt == case $def.option.size() {
-            0 => ""
-            1 => '-' + $def.option
-            else => '--' + $def.option
-        } || continue
+        $opt == $def.option || continue
 
         var arg = $def.arg
         return case $def.type {
@@ -317,10 +309,10 @@ type _CompDefParam() {
     [<Option(required: $true, placeholder: "COMMAND", help: "set target command")>]
     var cmd = ''
 
-    [<Option(placeholder: "SHORT_OPTION", xor: 0, help: "set short option (single character argument)")>]
+    [<Option(placeholder: "SHORT_OPTION", xor: 0, help: "set short option (start with '-')")>]
     var short : String?
 
-    [<Option(placeholder: "LONG_OPTION", xor: 0, help: "set long option (two or more characters argument)")>]
+    [<Option(placeholder: "LONG_OPTION", xor: 0, help: "set long option (start with '--')")>]
     var long: String?
 
     [<Option(placeholder: "LIST", xor: 1, help: "generate candidates from LIST split by ' '")>]
@@ -349,12 +341,10 @@ compdef(param : _CompDefParam) {
 
     var opt = ""
     if let short = $param.short {
-        $opt = $short
-        $opt.size() == 1 || return $_error($param, "--short needs single character argument")
+        $opt = '-'+ $short
     }
     if let long = $param.long {
-        $opt = $long
-        $opt.size() > 1 || return $_error($param, "--long needs two or more characters argument")
+        $opt = '--' + $long
     }
     var argType : Int?
     var arg : String?
