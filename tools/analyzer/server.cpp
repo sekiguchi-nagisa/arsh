@@ -543,7 +543,7 @@ void LSPServer::didCloseTextDocument(const DidCloseTextDocumentParams &params) {
 }
 
 void LSPServer::didChangeTextDocument(const DidChangeTextDocumentParams &params) {
-  LOG(LogLevel::INFO, "change textDocument: %s, %d", params.textDocument.uri.c_str(),
+  LOG(LogLevel::INFO, "change textDocument: %s, version=%d", params.textDocument.uri.c_str(),
       params.textDocument.version);
   this->worker->requestSourceChange(params);
 }
