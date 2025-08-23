@@ -42,6 +42,7 @@ struct RenderingContext {
   unsigned int oldRenderedCols{0};
   CharWidthProperties ps;
   bool scrolling{false};
+  bool semanticPrompt{false};
   std::function<bool(StringRef)> errorCmdChecker;
   mutable TokenizerResult tokenizeCache; // previously tokenized result
 

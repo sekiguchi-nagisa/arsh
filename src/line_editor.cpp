@@ -555,7 +555,8 @@ ssize_t LineEditorObject::accept(ARState &state, RenderingContext &ctx) {
     errno = EAGAIN;
     return -1;
   }
-  if (ctx.buf.moveCursorToEndOfBuf()) {
+  if (ctx.buf.moveCursorToEndOfBuf() || this->hasFeature(LineEditorFeature::SEMANTIC_PROMPT)) {
+    ctx.semanticPrompt = this->hasFeature(LineEditorFeature::SEMANTIC_PROMPT);
     this->refreshLine(state, ctx, false);
   }
   return static_cast<ssize_t>(ctx.buf.getUsedSize());
@@ -616,7 +617,9 @@ ssize_t LineEditorObject::editLine(ARState &state, RenderingContext &ctx) {
     if (ctx.scrolling) {
       linenoiseClearScreen(this->inFd);
       putNewline = false;
-    } else if (ctx.buf.moveCursorToEndOfBuf()) {
+    } else if (ctx.buf.moveCursorToEndOfBuf() ||
+               this->hasFeature(LineEditorFeature::SEMANTIC_PROMPT)) {
+      ctx.semanticPrompt = this->hasFeature(LineEditorFeature::SEMANTIC_PROMPT);
       this->refreshLine(state, ctx, false);
     }
   }
@@ -1199,7 +1202,7 @@ FETCH:
       status = EditActionStatus::ERROR;
       break;
     }
-    status = waitPagerAction(pager, this->keyBindings, reader,  watchSigSet);
+    status = waitPagerAction(pager, this->keyBindings, reader, watchSigSet);
     if (status == EditActionStatus::REVERT) {
       status = EditActionStatus::OK;
       while (undoCount > 0) {
