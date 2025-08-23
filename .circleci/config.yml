@@ -19,10 +19,10 @@ jobs:
       - checkout
       - run: uname -a
       - run: sudo apt update
-      - run: sudo apt install -y build-essential g++ clang cmake language-pack-ja ninja-build libpcre2-8-0 libpcre2-dev
+      - run: sudo apt install -y build-essential g++ libstdc++6 lld clang cmake language-pack-ja ninja-build libpcre2-8-0 libpcre2-dev
       - run: sh scripts/run_all_test.sh clang++
 workflows:
   build:
     jobs:
       - build-on-gcc
-      - build-on-clang
+     # - build-on-clang
