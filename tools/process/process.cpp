@@ -628,7 +628,7 @@ void Screen::addUnrecognizedOSC(const char *begin, const char *end) {
       param.removePrefix(1);
       switch (p) {
       case 'A':
-        kind = FTCS::PROMPT;
+        kind = FTCS::PROMPT_START;
         break;
       case 'B':
         kind = FTCS::COMMAND_START;

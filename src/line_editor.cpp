@@ -613,7 +613,7 @@ ssize_t LineEditorObject::editLine(ARState &state, RenderingContext &ctx) {
   const ssize_t count = this->editInRawMode(state, ctx);
   const int errNum = errno;
   bool putNewline = true;
-  if (count == -1 && errNum != 0) {
+  if (count == -1) {
     if (ctx.scrolling) {
       linenoiseClearScreen(this->inFd);
       putNewline = false;

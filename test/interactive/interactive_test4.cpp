@@ -1122,6 +1122,48 @@ TEST_F(InteractiveTest, modifyOtherKeys) {
   ASSERT_EQ(codes(CSI_DISABLE_KITTY, CSI_ENABLE_XTERM, CSI_DISABLE_XTERM), csiList);
 }
 
+TEST_F(InteractiveTest, semanticPrompt1) {
+  this->invoke("--quiet", "--norc");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+
+  std::vector<std::string> values;
+  this->screen.setFTCSListener(
+      [&values](StringRef seq, Screen::FTCS, StringRef) { values.emplace_back(seq.toString()); });
+
+  ASSERT_NO_FATAL_FAILURE(
+      this->sendLineAndExpect("assert ! ($LINE_EDIT.configs()['semantic-prompt'] as Bool)"));
+  ASSERT_EQ(0, values.size());
+  ASSERT_NO_FATAL_FAILURE(
+      this->sendLineAndExpect("$LINE_EDIT.config('semantic-prompt', true); $? = 56"));
+  ASSERT_EQ(codes("\x1b]133;D;56", "\x1b]133;A"), values);
+
+  this->send(CTRL_D);
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "\n"));
+
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(56, WaitStatus::EXITED));
+  ASSERT_EQ(codes("\x1b]133;D;56", "\x1b]133;A", "\x1b]133;B", "\x1b]133;C"), values);
+}
+
+TEST_F(InteractiveTest, semanticPrompt2) {
+  this->invoke("--quiet", "--norc");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+
+  std::vector<std::string> values;
+  this->screen.setFTCSListener(
+      [&values](StringRef seq, Screen::FTCS, StringRef) { values.emplace_back(seq.toString()); });
+
+  ASSERT_NO_FATAL_FAILURE(
+      this->sendLineAndExpect("assert ! ($LINE_EDIT.configs()['semantic-prompt'] as Bool)"));
+  ASSERT_EQ(0, values.size());
+  ASSERT_NO_FATAL_FAILURE(
+      this->sendLineAndExpect("$LINE_EDIT.config('semantic-prompt', true); $? = 56"));
+  ASSERT_EQ(codes("\x1b]133;D;56", "\x1b]133;A"), values);
+  this->send("exit 67\r");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "exit 67\n"));
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(67, WaitStatus::EXITED));
+  ASSERT_EQ(codes("\x1b]133;D;56", "\x1b]133;A", "\x1b]133;B", "\x1b]133;C"), values);
+}
+
 TEST_F(InteractiveTest, tokenEdit1) { // lang-extension=false
   this->invoke("--quiet", "--norc");
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));

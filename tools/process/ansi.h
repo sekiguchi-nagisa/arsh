@@ -34,7 +34,7 @@ namespace process {
 class Screen : public arsh::LexerBase {
 public:
   enum class FTCS : unsigned char {
-    PROMPT,
+    PROMPT_START,
     COMMAND_START,
     COMMAND_EXECUTED,
     COMMAND_FINISHED,
