@@ -55,3 +55,9 @@ compdef --cmd complete --short A \
     compdef --cmd kill --short s --arg-action signal
     compdef --cmd kill --arg-func $ff
 }
+
+## ulimit
+ulimit -h | for line in $STDIN {
+    var m = $/[ ]+-([a-zA-Z]) +(.+)/.match($line) ?? continue
+    compdef --cmd ulimit --short ${$m.group(1)!} --desc ${$m.group(2)!}
+}
