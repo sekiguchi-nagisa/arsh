@@ -36,6 +36,7 @@ $compAdd("exec", $_cmd)
 compdef --cmd help --arg-cmd "help | cut -d ' ' -f 1"
 compdef --cmd help --short s --arg-cmd "help | cut -d ' ' -f 1"
 compdef --cmd unsetenv --arg-action env
+compdef --cmd getenv --arg-action env
 compdef --cmd cd --arg-action dir
 compdef --cmd cd --short L --arg-action dir
 compdef --cmd cd --short P --arg-action dir
