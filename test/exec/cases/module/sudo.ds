@@ -1,7 +1,7 @@
 #$test($ignored = 'cygwin|msys')
 
 source ../../../../share/arsh/completions/sudo.arsh
-source ../../../../share/arsh/completions/printenv.arsh
+source ../../../../share/arsh/completions/external.arsh
 
 PATH=/usr/bin:/bin:
 
