@@ -8,6 +8,10 @@
 
 - add ``LineEditor#getkey`` method for read and get recognized keycode
 
+#### Module
+
+- add ``getenv``, ``ulimit`` completion
+
 ### Changed
 
 #### Core
@@ -56,6 +60,7 @@
         - also add ``addArgFunc`` helper function
     - ``--short`` option accept one or more characters options
     - ``--long`` option also accept single character options
+- merge some external command completion scripts into ``external.arsh``
 
 ### Fixed
 
