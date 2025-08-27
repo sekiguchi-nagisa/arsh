@@ -111,16 +111,13 @@ KeyBindings::KeyBindings() {
     EditActionType type;
   } entries[] = {
       // control character (ctrl+)
-      {KeyEvent(FunctionKey::ENTER), EditActionType::ACCEPT},     // for kitty
-      {KeyEvent('m', ModifierKey::CTRL), EditActionType::ACCEPT}, // normally via enter
+      {KeyEvent(FunctionKey::ENTER), EditActionType::ACCEPT}, // normally via enter (^M)
       {KeyEvent('j', ModifierKey::CTRL), EditActionType::ACCEPT},
       {KeyEvent('c', ModifierKey::CTRL), EditActionType::CANCEL},
-      {KeyEvent(FunctionKey::TAB), EditActionType::COMPLETE},       // for kitty
-      {KeyEvent('i', ModifierKey::CTRL), EditActionType::COMPLETE}, // normally via tab
+      {KeyEvent(FunctionKey::TAB), EditActionType::COMPLETE}, // normally via tab (^I)
       {KeyEvent('h', ModifierKey::CTRL), EditActionType::BACKWARD_DELETE_CHAR},
-      {KeyEvent(FunctionKey::BACKSPACE), EditActionType::BACKWARD_DELETE_CHAR}, // for kitty
-      {KeyEvent('?', ModifierKey::CTRL),
-       EditActionType::BACKWARD_DELETE_CHAR}, // normally via backspace
+      {KeyEvent(FunctionKey::BACKSPACE),
+       EditActionType::BACKWARD_DELETE_CHAR}, // normally via backspace (^?)
       {KeyEvent('d', ModifierKey::CTRL), EditActionType::DELETE_OR_EXIT},
       {KeyEvent('t', ModifierKey::CTRL), EditActionType::TRANSPOSE_CHAR},
       {KeyEvent('b', ModifierKey::CTRL), EditActionType::BACKWARD_CHAR},
@@ -173,14 +170,11 @@ KeyBindings::KeyBindings() {
     KeyEvent event;
     PagerAction action;
   } pagers[] = {
-      {KeyEvent(FunctionKey::ENTER), PagerAction::SELECT},     // for kitty
-      {KeyEvent('m', ModifierKey::CTRL), PagerAction::SELECT}, // normally via enter
+      {KeyEvent(FunctionKey::ENTER), PagerAction::SELECT}, // normally via enter (^M)
       {KeyEvent('j', ModifierKey::CTRL), PagerAction::SELECT},
       {KeyEvent('c', ModifierKey::CTRL), PagerAction::CANCEL},
-      {KeyEvent(FunctionKey::ESCAPE), PagerAction::ESCAPE},    // for kitty
-      {KeyEvent('[', ModifierKey::CTRL), PagerAction::ESCAPE}, // normally via escape
-      {KeyEvent('i', ModifierKey::CTRL), PagerAction::NEXT},   // normally via tab
-      {KeyEvent(FunctionKey::TAB), PagerAction::NEXT},         // for kitty
+      {KeyEvent(FunctionKey::ESCAPE), PagerAction::ESCAPE}, // normally via escape (^[)
+      {KeyEvent(FunctionKey::TAB), PagerAction::NEXT},      // normally via tab (^I)
       {KeyEvent(FunctionKey::TAB, ModifierKey::SHIFT), PagerAction::PREV},
       {KeyEvent('p', ModifierKey::CTRL), PagerAction::PREV},
       {KeyEvent('n', ModifierKey::CTRL), PagerAction::NEXT},

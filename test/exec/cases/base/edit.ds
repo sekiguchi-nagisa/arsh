@@ -5,9 +5,9 @@ var editor = new LineEditor()
 var bindings = $editor.bindings()  # get read-only view of current keybindings (modification of view does not affect actual keybindings)
 assert $bindings is [String : String]
 
-assert $bindings["ctrl+i"] == "complete"
+assert $bindings["tab"] == "complete"
 assert $bindings["ctrl+e"] == "end-of-line"
-assert $bindings["ctrl+?"] == "backward-delete-char"
+assert $bindings["backspace"] == "backward-delete-char"
 assert $bindings["left"] == "backward-char"
 assert !$bindings.get("^[12") 
 
