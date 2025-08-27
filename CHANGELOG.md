@@ -11,6 +11,7 @@
 #### Module
 
 - add ``getenv``, ``ulimit`` completion
+- add ``edit-command-line`` custom action via ``alt+e``
 
 ### Changed
 

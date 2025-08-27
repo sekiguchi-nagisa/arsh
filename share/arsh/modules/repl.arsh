@@ -57,3 +57,17 @@ $SIGHUP.trap($SIG_EXIT)
         $LINE_EDIT.bind($k, $a)
     }
 }
+
+# edit-command-line
+function _edit_command_line(line : String, list : [String]?) : String? {
+    var editor = (getenv VISUAL) ? $REPLY : (getenv EDITOR) ? $REPLY
+                : { echo 1>&2 $'\n'environmental variable \$VISUAL or \$EDITOR not set;  return $none; }
+    var tmp = "$(mktemp)".ifEmpty() ?? return $none
+    defer { rm -rf $tmp || true; }
+    printf "%s" $line > $tmp
+    call $editor $tmp || return $none
+    return IFS=$'\n' "$(cat $tmp)"
+}
+
+$LINE_EDIT.action('edit-command-line', 'replace-whole', $_edit_command_line)
+$LINE_EDIT.bind('^[e', 'edit-command-line') # ALT-e
