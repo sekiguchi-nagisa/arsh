@@ -143,8 +143,6 @@ KeyBindings::KeyBindings() {
       {KeyEvent('y', ModifierKey::ALT), EditActionType::YANK_POP},
       {KeyEvent('/', ModifierKey::ALT), EditActionType::REDO},
       {KeyEvent(FunctionKey::ENTER, ModifierKey::ALT), EditActionType::NEWLINE}, // for kitty
-      {KeyEvent('m', ModifierKey::ALT | ModifierKey::CTRL),
-       EditActionType::NEWLINE}, // normally via alt-enter
       {KeyEvent('<', ModifierKey::ALT), EditActionType::BEGINNING_OF_BUF},
       {KeyEvent('>', ModifierKey::ALT), EditActionType::END_OF_BUF},
       {KeyEvent(FunctionKey::DELETE), EditActionType::DELETE_CHAR},

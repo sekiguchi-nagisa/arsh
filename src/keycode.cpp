@@ -598,6 +598,9 @@ Optional<KeyEvent> KeyEvent::fromEscapeSeq(const StringRef seq) {
     if (ch >= 0 && ch <= 127) {
       auto modifiers = ModifierKey::ALT;
       if (isControlChar(ch)) {
+        if (auto funcKey = resolveUFuncKey(ch); funcKey != FunctionKey::BRACKET_START) {
+          return KeyEvent(funcKey, ModifierKey::ALT); // for TAB, ENTER, ESC, BACKSPACE
+        }
         setFlag(modifiers, ModifierKey::CTRL);
         auto v = static_cast<unsigned char>(ch);
         v ^= 64;
