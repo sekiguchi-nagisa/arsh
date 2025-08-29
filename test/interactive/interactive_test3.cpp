@@ -465,6 +465,13 @@ TEST_F(InteractiveTest, wait1) {
   std::this_thread::sleep_for(std::chrono::seconds(1));
   ASSERT_NO_FATAL_FAILURE(
       this->sendLineAndExpectRegex("wait", "", "^\\[1\\] \\+ [0-9]+ Done  sleep 1\n"));
+
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("var j = sleep 0.3 &"));
+  {
+    auto cleanup = this->withTimeout(500);
+    ASSERT_NO_FATAL_FAILURE(
+        this->sendLineAndExpectRegex("wait $j", "", "^\\[1\\] \\+ [0-9]+ Done  sleep 0.3\n"));
+  }
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 0));
 }
 
@@ -494,8 +501,9 @@ TEST_F(InteractiveTest, wait3) {
                                                   "(stdin):4: bg: no job control in this shell\n"));
 
   std::string err = format("^\\[1\\] \\+ [0-9]+ %s  while\\(true\\)\\{\\}\n", strsignal(SIGKILL));
-  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpectRegex("$j.kill($SIGKILL); wait $j", "", err));
-  ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 137));
+  ASSERT_NO_FATAL_FAILURE(
+      this->sendLineAndExpectRegex("$j.kill($SIGKILL); $j.wait()", ": Int = 137", err));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 1));
 }
 
 TEST_F(InteractiveTest, wait4) {
