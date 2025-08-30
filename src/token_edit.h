@@ -18,6 +18,7 @@
 #define ARSH_TOKEN_EDIT_H
 
 #include <string>
+#include <unordered_map>
 
 #include "misc/result.hpp"
 
@@ -61,6 +62,19 @@ inline Optional<bool> deleteNextToken(LineBuffer &buf, std::string *capture,
                                       TokenizerResult *cache = nullptr) {
   return moveCursorOrDeleteToken(buf, {.left = false, .move = false}, capture, cache);
 }
+
+using AbbrMap = std::unordered_map<std::string, std::string>;
+
+/**
+ * try to expand the abbreviation (command)
+ * @param buf
+ * replace token with expanded one
+ * @param abbrMap
+ * @param cache
+ * @return
+ * if expanded, return true
+ */
+bool tryToExpandAbbreviation(LineBuffer &buf, const AbbrMap &abbrMap, const TokenizerResult &cache);
 
 } // namespace arsh
 

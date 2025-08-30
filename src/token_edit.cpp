@@ -166,4 +166,41 @@ Optional<bool> moveCursorOrDeleteToken(LineBuffer &buf, const MoveOrDeleteTokenP
   return {}; // fallback
 }
 
+static bool replaceBytes(LineBuffer &buf, Token token, StringRef replacement) {
+  const unsigned int old = buf.getCursor();
+  bool r = false;
+  buf.intoAtomicEdit([&token, &replacement, &r](LineBuffer &b) { // TODO: atomic cursor move
+    const unsigned int suffixOffset = b.getCursor() - token.endPos();
+    b.setCursor(token.endPos());
+    if (b.deleteToCursor(token.size) && b.insertToCursor(replacement)) {
+      b.setCursor(b.getCursor() + suffixOffset);
+      r = true;
+    }
+  });
+  if (!r) {
+    buf.setCursor(old);
+  }
+  return r;
+}
+
+bool tryToExpandAbbreviation(LineBuffer &buf, const AbbrMap &abbrMap,
+                             const TokenizerResult &cache) {
+  if (abbrMap.empty() || cache.tokens.empty()) {
+    return false;
+  }
+  const unsigned int cursor = buf.getCursor();
+  const unsigned int index = lookupToken(cache.tokens, cursor);
+  if (index == 0 || index == cache.tokens.size() || cursor > cache.tokens[index].second.pos) {
+    return false;
+  }
+  if (auto &[kind, token] = cache.tokens[index - 1];
+      kind == TokenKind::COMMAND && cursor >= token.endPos()) {
+    std::string cmd = buf.get().substr(token.pos, token.size).toString();
+    if (auto iter = abbrMap.find(cmd); iter != abbrMap.end()) {
+      return replaceBytes(buf, token, iter->second);
+    }
+  }
+  return false;
+}
+
 } // namespace arsh

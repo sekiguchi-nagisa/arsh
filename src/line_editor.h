@@ -93,6 +93,11 @@ private:
    */
   std::vector<Value> customCallbacks;
 
+  /**
+   * for abbreviation. (pattern -> expanded)
+   */
+  std::unordered_map<std::string, std::string> abbrMap;
+
 public:
   explicit LineEditorObject(ARState &state);
 

@@ -694,6 +694,9 @@ ssize_t LineEditorObject::editInRawMode(ARState &state, RenderingContext &ctx) {
       auto &buf = reader.get();
       if (const bool merge = buf != " "; ctx.buf.insertToCursor(buf, merge)) {
         this->refreshLine(state, ctx);
+        if (buf == " " && tryToExpandAbbreviation(ctx.buf, this->abbrMap, ctx.tokenizeCache)) {
+          this->refreshLine(state, ctx);
+        }
         continue;
       }
       return -1;
@@ -703,6 +706,10 @@ ssize_t LineEditorObject::editInRawMode(ARState &state, RenderingContext &ctx) {
       unsigned int r = UnicodeUtil::codePointToUtf8(codePoint, buf);
       if (ctx.buf.insertToCursor({buf, r}, codePoint != ' ')) {
         this->refreshLine(state, ctx);
+        if (codePoint == ' ' &&
+            tryToExpandAbbreviation(ctx.buf, this->abbrMap, ctx.tokenizeCache)) {
+          this->refreshLine(state, ctx);
+        }
         continue;
       }
       return -1;
@@ -735,6 +742,9 @@ ssize_t LineEditorObject::editInRawMode(ARState &state, RenderingContext &ctx) {
       if (this->continueLine) {
         if (ctx.buf.insertToCursor({"\n", 1})) {
           this->refreshLine(state, ctx);
+          if (tryToExpandAbbreviation(ctx.buf, this->abbrMap, ctx.tokenizeCache)) {
+            this->refreshLine(state, ctx);
+          }
         } else {
           return -1;
         }
@@ -924,6 +934,9 @@ ssize_t LineEditorObject::editInRawMode(ARState &state, RenderingContext &ctx) {
     case EditActionType::NEWLINE:
       if (ctx.buf.insertToCursor({"\n", 1})) {
         this->refreshLine(state, ctx);
+        if (tryToExpandAbbreviation(ctx.buf, this->abbrMap, ctx.tokenizeCache)) {
+          this->refreshLine(state, ctx);
+        }
       } else {
         return -1;
       }

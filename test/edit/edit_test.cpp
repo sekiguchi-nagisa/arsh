@@ -2,6 +2,7 @@
 
 #include "gtest/gtest.h"
 
+#include <highlighter_base.h>
 #include <keybind.h>
 #include <keycode.h>
 #include <line_buffer.h>
@@ -287,6 +288,40 @@ struct LineBufferTest : public ::testing::Test {
     buffer.setCursor(pos);
     ret = moveCursorToRightByToken(buffer);
     ASSERT_FALSE(ret.hasValue());
+  }
+
+  static void testAbbr(const AbbrMap &map, const TokenEditPattern &pattern) {
+    ASSERT_LE(pattern.beforePos, pattern.before.size());
+    ASSERT_LE(pattern.afterPos, pattern.after.size());
+
+    std::string storage;
+    size_t size = std::max(pattern.before.size(), pattern.after.size());
+    size += size >> 1;
+    storage.resize(size, '@');
+    LineBuffer buffer(storage.data(), storage.size());
+    ASSERT_EQ(0, buffer.getUsedSize());
+    ASSERT_EQ(0, buffer.getCursor());
+    ASSERT_EQ("", buffer.get().toString());
+
+    // prepare
+    ASSERT_TRUE(buffer.insertToCursor(pattern.before));
+    buffer.setCursor(pattern.beforePos);
+    Tokenizer tokenizer(buffer.get());
+    auto cache = tokenizer.tokenize();
+
+    // try to expand
+    const bool es = pattern.before != pattern.after;
+    const bool as = tryToExpandAbbreviation(buffer, map, cache);
+    ASSERT_EQ(es, as);
+    ASSERT_EQ(pattern.after, buffer.get().toString());
+    ASSERT_EQ(pattern.afterPos, buffer.getCursor());
+
+    // undo
+    if (as) {
+      ASSERT_TRUE(buffer.undo());
+      ASSERT_EQ(pattern.before, buffer.get().toString());
+      ASSERT_EQ(pattern.beforePos, buffer.getCursor());
+    }
   }
 };
 
@@ -989,6 +1024,33 @@ TEST_F(LineBufferTest, tokenEditInvalidRecover2) {
   // test invalid edit
   ASSERT_NO_FATAL_FAILURE(invalidEditRightToken("var $AAA", 7));
   ASSERT_NO_FATAL_FAILURE(invalidEditLeftToken("echo # this is\nls", 6));
+}
+
+TEST_F(LineBufferTest, abbr1) {
+  ASSERT_NO_FATAL_FAILURE(testAbbr({}, {"", 0, "", 0}));
+  ASSERT_NO_FATAL_FAILURE(testAbbr({{"", "ls -la"}}, {"", 0, "", 0}));
+
+  AbbrMap map = {{"", "ls -la"}, {"ll", "ls -la"}};
+  const TokenEditPattern patterns[] = {
+      {"   ", 1, "   ", 1},
+      {"ll", 0, "ll", 0},
+      {"ll", 1, "ll", 1},
+      {"ll", 2, "ls -la", 6},
+      {"ll #", 2, "ls -la #", 6},
+      {"ll #", 3, "ls -la #", 7},
+      {"ll #s", 4, "ll #s", 4},
+      {"ll #s", 5, "ll #s", 5},
+      {"ll  #", 3, "ls -la  #", 7},
+      {"ll  #", 4, "ls -la  #", 8},
+      {" time ll &", 7, " time ll &", 7},
+      {" time ll &", 8, " time ls -la &", 12},
+      {"ll&", 2, "ls -la&", 6},
+  };
+
+  for (auto &p : patterns) {
+    SCOPED_TRACE("\n>>> " + p.before + "\npos: " + std::to_string(p.beforePos));
+    ASSERT_NO_FATAL_FAILURE(testAbbr(map, p));
+  }
 }
 
 int main(int argc, char **argv) {
