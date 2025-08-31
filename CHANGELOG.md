@@ -58,7 +58,7 @@
 - improve ``compdef`` command in ``completion`` module
     - add ``--desc`` option for candidate description
     - add ``--arg-func`` option for generating candidates from function
-        - also add ``addArgFunc`` helper function
+        - also add ``bindArgFunc`` helper function
     - ``--short`` option accept one or more characters options
     - ``--long`` option also accept single character options
 - merge some external command completion scripts into ``external.arsh``

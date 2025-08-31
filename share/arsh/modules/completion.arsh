@@ -5,7 +5,7 @@ type Completer = (Module, [String], Int) -> Candidates?
 
 let _compMap : [String : Completer]
 
-let _argFuncs : [String : () -> Candidates]
+let _argFuncs : [String : (String) -> Candidates]  # prefix -> (filtered) candidate
 
 function _defaultHook(ctx : Module, words : [String], cursor : Int) : Candidates? {
     if (command -v $words[0] &>> /dev/null) {
@@ -108,7 +108,7 @@ function _comp_arg(ctx : Module, deflist: [_CompDef], opt : String, prefix : Str
             }
             4 => {
                 var func = $_argFuncs.get($arg) ?? break
-                $func()
+                $func($prefix)
             }
             else => break
         }
@@ -398,7 +398,7 @@ function compDelegate(ctx : Module, words : [String], cursor : Int) : Candidates
     return $_defaultHook($ctx, $words, $cursor)
 }
 
-function addArgFunc(func: ()-> Candidates): String {
+function bindArgFunc(func: (String)-> Candidates): String {
     var key = "af" + ($RANDOM % 1000000000)
     $_argFuncs[$key] = $func
     return $key
