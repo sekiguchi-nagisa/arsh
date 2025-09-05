@@ -247,3 +247,40 @@ assert $editor.configs()['keyboard-protocol'] as String == ''
 
 $editor.config('keyboard-protocol', '')
 assert $editor.configs()['keyboard-protocol'] as String == ''
+
+# abbreviation
+## define
+assert $editor.abbrs().empty()
+$editor.abbr("ll", 'ls -ll')
+assert $editor.abbrs() == ["ll": "ls -ll"]
+$editor.abbr("la", 'ls -la')
+assert $editor.abbrs() == ["ll": "ls -ll", "la": "ls -la"]
+$editor.abbr("ll", 'ls -ll && echo hello')  # overwrite
+assert $editor.abbrs() == ["ll": "ls -ll && echo hello", "la": "ls -la"]
+
+## remove
+$editor.abbr("ll")
+assert $editor.abbrs() == ["la": "ls -la"]
+$editor.abbr("la", "")
+assert $editor.abbrs().empty()
+$editor.abbr("ll")  # already removed
+assert $editor.abbrs().empty()
+
+## invalid
+$ex = 34
+try { $editor.abbr("", "ls") } catch e { $ex = $e; }
+assert ($ex as ArgumentError).message() == "not allow empty pattern"
+
+$ex = 34
+try { $editor.abbr($'ll\x00', "ls") } catch e { $ex = $e; }
+assert ($ex as ArgumentError).message() == "\`pattern' contains null characters"
+
+$ex = 34
+try { $editor.abbr('ssss', $'ls -la \x00') } catch e { $ex = $e; }
+assert ($ex as ArgumentError).message() == "\`expansion' contains null characters"
+
+$ex = 34
+try {
+    for(var i = 0; $i < 100000; $i++) { $editor.abbr("i_$i", "iii_$i"); }
+} catch e { $ex = $e; }
+assert ($ex as ArgumentError).message() =~ $/number of abbreviations reaches limit .+/

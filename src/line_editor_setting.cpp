@@ -258,4 +258,39 @@ Value LineEditorObject::getConfigs(ARState &state) const {
   return ret;
 }
 
+bool LineEditorObject::defineAbbr(ARState &state, StringRef pattern, StringRef expansion) {
+  std::string err;
+  if (pattern.empty()) {
+    err = "not allow empty pattern";
+  } else if (pattern.hasNullChar()) {
+    err = "`pattern' contains null characters";
+  } else if (expansion.hasNullChar()) {
+    err = "`expansion' contains null characters";
+  } else {
+    auto key = pattern.toString();
+    if (auto iter = this->abbrMap.find(key); iter != this->abbrMap.end()) {
+      if (expansion.empty()) { // remove
+        this->abbrMap.erase(iter);
+      } else {
+        iter->second.clear();
+        iter->second += expansion; // overwrite existing abbreviation
+      }
+    } else if (!expansion.empty()) { // insert
+      if (this->abbrMap.size() == SYS_LIMIT_ABBR_MAX) {
+        err = "number of abbreviations reaches limit (up to ";
+        err += std::to_string(SYS_LIMIT_ABBR_MAX);
+        err += ')';
+      } else {
+        this->abbrMap.emplace(std::move(key), expansion.toString());
+      }
+    }
+  }
+
+  if (!err.empty()) {
+    raiseError(state, TYPE::ArgumentError, std::move(err));
+    return false;
+  }
+  return true;
+}
+
 } // namespace arsh

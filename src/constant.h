@@ -509,6 +509,7 @@ constexpr size_t SYS_LIMIT_STRING_MAX = INT32_MAX;
 constexpr size_t SYS_LIMIT_ARRAY_MAX = INT32_MAX;
 constexpr size_t SYS_LIMIT_KEY_BINDING_MAX = UINT8_MAX;
 constexpr size_t SYS_LIMIT_CUSTOM_ACTION_MAX = UINT8_MAX;
+constexpr size_t SYS_LIMIT_ABBR_MAX = UINT8_MAX;
 constexpr size_t SYS_LIMIT_KILL_RING_MAX = UINT8_MAX - 1;
 constexpr size_t SYS_LIMIT_PRINTABLE_MAX = UINT16_MAX;
 constexpr size_t SYS_LIMIT_DIRSTACK_SIZE = UINT8_MAX;

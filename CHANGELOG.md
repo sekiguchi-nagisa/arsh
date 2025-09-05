@@ -7,6 +7,10 @@
 #### Builtin
 
 - add ``LineEditor#getkey`` method for read and get recognized keycode
+- support abbreviation in ``LineEditor``
+    - replace a pattern (command) with a user-specified word
+    - define abbreviation via ``LineEditor#abbr`` method
+    - get abbreviations vis ``LineEditor#abbrs`` method
 
 #### Module
 

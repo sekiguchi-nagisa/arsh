@@ -132,6 +132,10 @@ public:
 
   const auto &getKeyBindings() const { return this->keyBindings; }
 
+  bool defineAbbr(ARState &state, StringRef pattern, StringRef expansion);
+
+  const auto &getAbbrMap() const { return this->abbrMap; }
+
   bool setConfig(ARState &state, StringRef name, const Value &value);
 
   Value getConfigs(ARState &state) const;

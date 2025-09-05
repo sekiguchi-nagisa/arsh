@@ -381,6 +381,10 @@ function actions(): [String] for LineEditor
 function config(name: String, value: Any): Void for LineEditor
 
 function configs(): [String : Any] for LineEditor
+
+function abbr(pattern: String, expansion: String?): Void for LineEditor
+
+function abbrs(): [String : String] for LineEditor
 ```
 
 ## CLI type
