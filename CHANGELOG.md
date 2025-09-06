@@ -10,7 +10,7 @@
 - support abbreviation in ``LineEditor``
     - replace a pattern (command) with a user-specified word
     - define abbreviation via ``LineEditor#abbr`` method
-    - get abbreviations vis ``LineEditor#abbrs`` method
+    - get abbreviations via ``LineEditor#abbrs`` method
 
 #### Module
 
