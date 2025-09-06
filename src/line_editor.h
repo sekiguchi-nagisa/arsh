@@ -168,7 +168,7 @@ private:
   void refreshLine(ARState &state, RenderingContext &ctx, bool repaint = true,
                    ObserverPtr<ArrayPager> pager = nullptr);
 
-  ssize_t accept(ARState &state, RenderingContext &ctx);
+  ssize_t accept(ARState &state, RenderingContext &ctx, bool expandAbbr);
 
   /**
    * entry point of actual line edit function

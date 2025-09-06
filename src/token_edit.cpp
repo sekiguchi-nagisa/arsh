@@ -183,18 +183,35 @@ static bool replaceBytes(LineBuffer &buf, Token token, StringRef replacement) {
   return r;
 }
 
+/**
+ * cursor position in the following cases
+ *
+ * ls
+ *   ^
+ *
+ * @param buf
+ * @param ret
+ * @return
+ */
+static bool isCursorInDummyNewline(const LineBuffer &buf, const TokenizerResult &ret) {
+  const unsigned int cursor = buf.getCursor();
+  return cursor == buf.getUsedSize() && ret.tokens.size() > 1 &&
+         ret.tokens.back().first == TokenKind::NEW_LINE && ret.tokens.back().second.pos == cursor &&
+         ret.tokens[ret.tokens.size() - 2].second.endPos() == cursor;
+}
+
 bool tryToExpandAbbreviation(LineBuffer &buf, const AbbrMap &abbrMap,
                              const TokenizerResult &cache) {
-  if (abbrMap.empty() || cache.tokens.empty()) {
+  if (abbrMap.empty() || cache.tokens.empty() || buf.getCursor() == 0) {
     return false;
   }
-  const unsigned int cursor = buf.getCursor();
+  const unsigned int cursor = buf.getCursor() - (isCursorInDummyNewline(buf, cache) ? 0 : 1);
   const unsigned int index = lookupToken(cache.tokens, cursor);
   if (index == 0 || index == cache.tokens.size() || cursor > cache.tokens[index].second.pos) {
     return false;
   }
   if (auto &[kind, token] = cache.tokens[index - 1];
-      kind == TokenKind::COMMAND && cursor >= token.endPos()) {
+      kind == TokenKind::COMMAND && cursor == token.endPos()) {
     std::string cmd = buf.get().substr(token.pos, token.size).toString();
     if (auto iter = abbrMap.find(cmd); iter != abbrMap.end()) {
       return replaceBytes(buf, token, iter->second);

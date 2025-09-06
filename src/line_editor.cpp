@@ -550,10 +550,13 @@ void LineEditorObject::refreshLine(ARState &state, RenderingContext &ctx, bool r
   } /* Can't recover from write error. */
 }
 
-ssize_t LineEditorObject::accept(ARState &state, RenderingContext &ctx) {
+ssize_t LineEditorObject::accept(ARState &state, RenderingContext &ctx, bool expandAbbr) {
   if (ctx.buf.moveCursorToEndOfBuf() || this->hasFeature(LineEditorFeature::SEMANTIC_PROMPT)) {
     ctx.semanticPrompt = this->hasFeature(LineEditorFeature::SEMANTIC_PROMPT);
     this->refreshLine(state, ctx, false);
+  }
+  if (expandAbbr && tryToExpandAbbreviation(ctx.buf, this->abbrMap, ctx.tokenizeCache)) {
+    this->refreshLine(state, ctx);
   }
   if (!this->kickAcceptorCallback(state, ctx.buf)) {
     errno = EAGAIN;
@@ -694,7 +697,8 @@ ssize_t LineEditorObject::editInRawMode(ARState &state, RenderingContext &ctx) {
       auto &buf = reader.get();
       if (const bool merge = buf != " "; ctx.buf.insertToCursor(buf, merge)) {
         this->refreshLine(state, ctx);
-        if (buf == " " && tryToExpandAbbreviation(ctx.buf, this->abbrMap, ctx.tokenizeCache)) {
+        if (buf.size() == 1 && isAbbrTriggerChar(buf[0]) &&
+            tryToExpandAbbreviation(ctx.buf, this->abbrMap, ctx.tokenizeCache)) {
           this->refreshLine(state, ctx);
         }
         continue;
@@ -706,7 +710,7 @@ ssize_t LineEditorObject::editInRawMode(ARState &state, RenderingContext &ctx) {
       unsigned int r = UnicodeUtil::codePointToUtf8(codePoint, buf);
       if (ctx.buf.insertToCursor({buf, r}, codePoint != ' ')) {
         this->refreshLine(state, ctx);
-        if (codePoint == ' ' &&
+        if (isAbbrTriggerChar(codePoint) &&
             tryToExpandAbbreviation(ctx.buf, this->abbrMap, ctx.tokenizeCache)) {
           this->refreshLine(state, ctx);
         }
@@ -750,7 +754,7 @@ ssize_t LineEditorObject::editInRawMode(ARState &state, RenderingContext &ctx) {
         }
       } else {
         histRotate.revertAll();
-        return this->accept(state, ctx);
+        return this->accept(state, ctx, true);
       }
       continue;
     case EditActionType::CANCEL:
@@ -1009,10 +1013,10 @@ ssize_t LineEditorObject::editInRawMode(ARState &state, RenderingContext &ctx) {
     case EditActionType::CUSTOM: {
       bool r = this->kickCustomCallback(state, ctx.buf, action->customActionType,
                                         action->customActionIndex);
-      this->refreshLine(state, ctx); // always refresh line even if error
+      this->refreshLine(state, ctx); // always refresh lines even if error
       if (r && action->customActionType == CustomActionType::REPLACE_WHOLE_ACCEPT) {
         histRotate.revertAll();
-        return this->accept(state, ctx);
+        return this->accept(state, ctx, false);
       }
       if (state.hasError()) {
         errno = EAGAIN;

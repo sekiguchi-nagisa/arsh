@@ -1036,15 +1036,32 @@ TEST_F(LineBufferTest, abbr1) {
       {"ll", 0, "ll", 0},
       {"ll", 1, "ll", 1},
       {"ll", 2, "ls -la", 6},
-      {"ll #", 2, "ls -la #", 6},
+      {"ll ", 2, "ll ", 2},
+      {"ll ", 3, "ls -la ", 7},
+      {"ll #", 2, "ll #", 2},
       {"ll #", 3, "ls -la #", 7},
       {"ll #s", 4, "ll #s", 4},
       {"ll #s", 5, "ll #s", 5},
       {"ll  #", 3, "ls -la  #", 7},
-      {"ll  #", 4, "ls -la  #", 8},
+      {"ll  #", 4, "ll  #", 4},
       {" time ll &", 7, " time ll &", 7},
-      {" time ll &", 8, " time ls -la &", 12},
-      {"ll&", 2, "ls -la&", 6},
+      {" time ll &", 8, " time ll &", 8},
+      {" time ll &", 9, " time ls -la &", 13},
+      {"ll&", 2, "ll&", 2},
+      {"ll&", 3, "ls -la&", 7},
+  };
+
+  for (auto &p : patterns) {
+    SCOPED_TRACE("\n>>> " + p.before + "\npos: " + std::to_string(p.beforePos));
+    ASSERT_NO_FATAL_FAILURE(testAbbr(map, p));
+  }
+}
+
+TEST_F(LineBufferTest, abbr2) {
+  AbbrMap map = {{"", "ls -la"}, {"ll", "ls -la"}};
+  const TokenEditPattern patterns[] = {
+      {"ll\n", 2, "ll\n", 2},   {"ll\n", 3, "ls -la\n", 7},     {"ll\n#", 3, "ls -la\n#", 7},
+      {"ll\n#", 4, "ll\n#", 4}, {"ll\n #", 3, "ls -la\n #", 7}, {"ll\n #", 4, "ll\n #", 4},
   };
 
   for (auto &p : patterns) {

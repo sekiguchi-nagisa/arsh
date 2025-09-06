@@ -76,6 +76,22 @@ using AbbrMap = std::unordered_map<std::string, std::string>;
  */
 bool tryToExpandAbbreviation(LineBuffer &buf, const AbbrMap &abbrMap, const TokenizerResult &cache);
 
+inline bool isAbbrTriggerChar(int ch) {
+  switch (ch) {
+  case ' ':
+  case '\t':
+  case ';':
+  case '|':
+  case '&':
+  case ')':
+  case '<':
+  case '>':
+    return true;
+  default:
+    return false;
+  }
+}
+
 } // namespace arsh
 
 #endif // ARSH_TOKEN_EDIT_H
