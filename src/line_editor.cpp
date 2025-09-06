@@ -752,7 +752,7 @@ ssize_t LineEditorObject::editInRawMode(ARState &state, RenderingContext &ctx) {
         histRotate.revertAll();
         return this->accept(state, ctx);
       }
-      break;
+      continue;
     case EditActionType::CANCEL:
       errno = EAGAIN;
       return -1;
@@ -769,17 +769,17 @@ ssize_t LineEditorObject::editInRawMode(ARState &state, RenderingContext &ctx) {
           goto NO_FETCH;
         }
       }
-      break;
+      continue;
     case EditActionType::BACKWARD_DELETE_CHAR:
       if (ctx.buf.deletePrevChar(nullptr, true)) {
         this->refreshLine(state, ctx);
       }
-      break;
+      continue;
     case EditActionType::DELETE_CHAR:
       if (ctx.buf.deleteNextChar(nullptr, true)) {
         this->refreshLine(state, ctx);
       }
-      break;
+      continue;
     case EditActionType::DELETE_OR_EXIT: /* remove char at right of cursor, or if the line is empty,
                                         act as end-of-file. */
       if (ctx.buf.getUsedSize() > 0) {
@@ -790,22 +790,22 @@ ssize_t LineEditorObject::editInRawMode(ARState &state, RenderingContext &ctx) {
         errno = 0;
         return -1;
       }
-      break;
+      continue;
     case EditActionType::TRANSPOSE_CHAR: /* swaps current character with previous */
       if (linenoiseEditSwapChars(ctx.buf)) {
         this->refreshLine(state, ctx);
       }
-      break;
+      continue;
     case EditActionType::BACKWARD_CHAR:
       if (ctx.buf.moveCursorToLeftByChar()) {
         this->refreshLine(state, ctx, false);
       }
-      break;
+      continue;
     case EditActionType::FORWARD_CHAR:
       if (ctx.buf.moveCursorToRightByChar()) {
         this->refreshLine(state, ctx, false);
       }
-      break;
+      continue;
     case EditActionType::PREV_HISTORY:
     case EditActionType::NEXT_HISTORY: {
       auto op = action->type == EditActionType::PREV_HISTORY ? HistRotator::Op::PREV
@@ -814,7 +814,7 @@ ssize_t LineEditorObject::editInRawMode(ARState &state, RenderingContext &ctx) {
         rotating = true;
         this->refreshLine(state, ctx);
       }
-      break;
+      continue;
     }
     case EditActionType::UP_OR_HISTORY:
     case EditActionType::DOWN_OR_HISTORY: {
@@ -823,70 +823,70 @@ ssize_t LineEditorObject::editInRawMode(ARState &state, RenderingContext &ctx) {
       if (rotateHistoryOrUpDown(histRotate, ctx.buf, rotating, op, prevRotating)) {
         this->refreshLine(state, ctx);
       }
-      break;
+      continue;
     }
     case EditActionType::BACKWARD_KILL_LINE: /* delete the whole line or delete to current */
       if (std::string capture; ctx.buf.deleteLineToCursor(false, &capture)) {
         this->killRing.add(std::move(capture));
         this->refreshLine(state, ctx);
       }
-      break;
+      continue;
     case EditActionType::KILL_LINE: /* delete from current to end of line */
       if (std::string capture; ctx.buf.deleteLineFromCursor(&capture)) {
         this->killRing.add(std::move(capture));
         this->refreshLine(state, ctx);
       }
-      break;
+      continue;
     case EditActionType::BEGINNING_OF_LINE: /* go to the start of the line */
       if (ctx.buf.moveCursorToStartOfLine()) {
         this->refreshLine(state, ctx, false);
       }
-      break;
+      continue;
     case EditActionType::END_OF_LINE: /* go to the end of the line */
       if (ctx.buf.moveCursorToEndOfLine()) {
         this->refreshLine(state, ctx, false);
       }
-      break;
+      continue;
     case EditActionType::BEGINNING_OF_BUF: /* go to the start of the buffer */
       if (ctx.buf.moveCursorToStartOfBuf()) {
         this->refreshLine(state, ctx, false);
       }
-      break;
+      continue;
     case EditActionType::END_OF_BUF: /* go to the end of the buffer */
       if (ctx.buf.moveCursorToEndOfBuf()) {
         this->refreshLine(state, ctx, false);
       }
-      break;
+      continue;
     case EditActionType::CLEAR_SCREEN:
       linenoiseClearScreen(this->outFd);
       this->refreshLine(state, ctx);
-      break;
+      continue;
     case EditActionType::BACKWARD_KILL_WORD:
     BACKWARD_KILL_WORD_L:
       if (std::string capture; ctx.buf.deletePrevWord(&capture)) {
         this->killRing.add(std::move(capture));
         this->refreshLine(state, ctx);
       }
-      break;
+      continue;
     case EditActionType::KILL_WORD:
     KILL_WORD_L:
       if (std::string capture; ctx.buf.deleteNextWord(&capture)) {
         this->killRing.add(std::move(capture));
         this->refreshLine(state, ctx);
       }
-      break;
+      continue;
     case EditActionType::BACKWARD_WORD:
     BACKWARD_WORD_L:
       if (ctx.buf.moveCursorToLeftByWord()) {
         this->refreshLine(state, ctx, false);
       }
-      break;
+      continue;
     case EditActionType::FORWARD_WORD:
     FORWARD_WORD_L:
       if (ctx.buf.moveCursorToRightByWord()) {
         this->refreshLine(state, ctx, false);
       }
-      break;
+      continue;
     case EditActionType::BACKWARD_KILL_TOKEN:
       if (this->hasFeature(LineEditorFeature::LANG_EXTENSION)) {
         std::string capture;
@@ -895,7 +895,7 @@ ssize_t LineEditorObject::editInRawMode(ARState &state, RenderingContext &ctx) {
             this->killRing.add(std::move(capture));
             this->refreshLine(state, ctx);
           }
-          break;
+          continue;
         }
       }
       goto BACKWARD_KILL_WORD_L;
@@ -907,7 +907,7 @@ ssize_t LineEditorObject::editInRawMode(ARState &state, RenderingContext &ctx) {
             this->killRing.add(std::move(capture));
             this->refreshLine(state, ctx);
           }
-          break;
+          continue;
         }
       }
       goto KILL_WORD_L;
@@ -917,7 +917,7 @@ ssize_t LineEditorObject::editInRawMode(ARState &state, RenderingContext &ctx) {
           if (ret.unwrap()) {
             this->refreshLine(state, ctx, false);
           }
-          break;
+          continue;
         }
       }
       goto BACKWARD_WORD_L;
@@ -927,7 +927,7 @@ ssize_t LineEditorObject::editInRawMode(ARState &state, RenderingContext &ctx) {
           if (ret.unwrap()) {
             this->refreshLine(state, ctx, false);
           }
-          break;
+          continue;
         }
       }
       goto FORWARD_WORD_L;
@@ -940,7 +940,7 @@ ssize_t LineEditorObject::editInRawMode(ARState &state, RenderingContext &ctx) {
       } else {
         return -1;
       }
-      break;
+      continue;
     case EditActionType::YANK:
       if (this->killRing) {
         this->killRing.reset();
@@ -954,7 +954,7 @@ ssize_t LineEditorObject::editInRawMode(ARState &state, RenderingContext &ctx) {
           }
         }
       }
-      break;
+      continue;
     case EditActionType::YANK_POP:
       if (prevYankedSize > 0) {
         assert(this->killRing);
@@ -970,17 +970,17 @@ ssize_t LineEditorObject::editInRawMode(ARState &state, RenderingContext &ctx) {
           }
         }
       }
-      break;
+      continue;
     case EditActionType::UNDO:
       if (ctx.buf.undo()) {
         this->refreshLine(state, ctx);
       }
-      break;
+      continue;
     case EditActionType::REDO:
       if (ctx.buf.redo()) {
         this->refreshLine(state, ctx);
       }
-      break;
+      continue;
     case EditActionType::INSERT_KEYCODE:
     REDO_INSERT_KEYCODE:
       if (ssize_t r = reader.fetch(toSigSet(state.sigVector)); r > 0) {
@@ -1005,7 +1005,7 @@ ssize_t LineEditorObject::editInRawMode(ARState &state, RenderingContext &ctx) {
         }
         return -1;
       }
-      break;
+      continue;
     case EditActionType::CUSTOM: {
       bool r = this->kickCustomCallback(state, ctx.buf, action->customActionType,
                                         action->customActionIndex);
@@ -1018,11 +1018,11 @@ ssize_t LineEditorObject::editInRawMode(ARState &state, RenderingContext &ctx) {
         errno = EAGAIN;
         return -1;
       }
-      break;
+      continue;
     }
+      assert(false); // unreachable
     }
   }
-  return static_cast<ssize_t>(ctx.buf.getUsedSize());
 }
 
 /* The high level function that is the main API of the linenoise library.
