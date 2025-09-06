@@ -551,13 +551,13 @@ void LineEditorObject::refreshLine(ARState &state, RenderingContext &ctx, bool r
 }
 
 ssize_t LineEditorObject::accept(ARState &state, RenderingContext &ctx) {
-  if (!this->kickHistSyncCallback(state, ctx.buf)) {
-    errno = EAGAIN;
-    return -1;
-  }
   if (ctx.buf.moveCursorToEndOfBuf() || this->hasFeature(LineEditorFeature::SEMANTIC_PROMPT)) {
     ctx.semanticPrompt = this->hasFeature(LineEditorFeature::SEMANTIC_PROMPT);
     this->refreshLine(state, ctx, false);
+  }
+  if (!this->kickAcceptorCallback(state, ctx.buf)) {
+    errno = EAGAIN;
+    return -static_cast<ssize_t>(ctx.buf.getUsedSize());
   }
   return static_cast<ssize_t>(ctx.buf.getUsedSize());
 }
@@ -1282,16 +1282,14 @@ ObjPtr<ArrayObject> LineEditorObject::kickCompletionCallback(ARState &state, Str
   return toObjPtr<ArrayObject>(ret);
 }
 
-bool LineEditorObject::kickHistSyncCallback(ARState &state, const LineBuffer &buf) {
-  if (!this->history) {
-    return true;
-  }
-  if (this->histSyncCallback) {
-    this->kickCallback(state, this->histSyncCallback,
-                       makeArgs(Value::createStr(buf.get()), this->history));
+bool LineEditorObject::kickAcceptorCallback(ARState &state, const LineBuffer &buf) {
+  if (this->acceptorCallback) {
+    this->kickCallback(state, this->acceptorCallback,
+                       makeArgs(Value::createStr(buf.get()),
+                                this->history ? this->history : Value::createInvalid()));
     return !state.hasError();
   }
-  return this->history->append(state, Value::createStr(buf.get()));
+  return !this->history || this->history->append(state, Value::createStr(buf.get()));
 }
 
 static ObjPtr<ArrayObject> toObj(const TypePool &pool, const KillRing &killRing) {

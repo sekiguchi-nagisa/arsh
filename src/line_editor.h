@@ -82,10 +82,11 @@ private:
   ObjPtr<ArrayObject> history;
 
   /**
-   * must be `(String, [String]) -> Void' type
+   * for history synchronization and pre-exec hook
+   * must be `(String, [String]?) -> Void' type
    * may be null
    */
-  ObjPtr<Object> histSyncCallback;
+  ObjPtr<Object> acceptorCallback;
 
   /**
    * for custom actions (custom action index as meta-data)
@@ -115,8 +116,8 @@ public:
 
   void setHistory(ObjPtr<ArrayObject> hist) { this->history = std::move(hist); }
 
-  void setHistSyncCallback(ObjPtr<Object> callback) {
-    this->histSyncCallback = std::move(callback);
+  void setAcceptorCallback(ObjPtr<Object> callback) {
+    this->acceptorCallback = std::move(callback);
   }
 
   void setColor(StringRef colorSetting) {
@@ -185,7 +186,7 @@ private:
 
   ObjPtr<ArrayObject> kickCompletionCallback(ARState &state, StringRef line);
 
-  bool kickHistSyncCallback(ARState &state, const LineBuffer &buf);
+  bool kickAcceptorCallback(ARState &state, const LineBuffer &buf);
 
   using custom_callback_iter = std::vector<Value>::const_iterator;
 

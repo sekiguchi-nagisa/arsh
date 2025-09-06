@@ -42,6 +42,8 @@
     - ``setPrompt`` -> ``setPrompter``
     - ``setCompletion`` -> ``setCompleter``
     - ``setHistSync`` -> ``setAcceptor``
+        - kick callback after line refresh regardless of history existence
+        - also change the type signature of callback (now ``(String, [String]?) -> Void``)
 - overhaul internal keycode handling of ``LineEditor``
     - correctly read unrecognized escape sequences (CSI/SS3)
     - ``LineEditor#bind`` method accept human-readable keyname (such as `F1`, `ctrl+alt+a`,

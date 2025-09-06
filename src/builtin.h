@@ -2480,7 +2480,7 @@ ARSH_METHOD edit_hist(RuntimeContext &ctx) {
   RET_VOID;
 }
 
-//!bind: function setAcceptor($this : LineEditor, $acceptor : Option<Func<Void,[String,Array<String>]>>) : Void
+//!bind: function setAcceptor($this : LineEditor, $acceptor : Option<Func<Void,[String,Option<Array<String>>]>>) : Void
 ARSH_METHOD edit_histSync(RuntimeContext &ctx) {
   SUPPRESS_WARNING(edit_histSync);
   auto &editor = typeAs<LineEditorObject>(LOCAL(0));
@@ -2489,7 +2489,7 @@ ARSH_METHOD edit_histSync(RuntimeContext &ctx) {
   if (!LOCAL(1).isInvalid()) {
     callback = LOCAL(1).toPtr();
   }
-  editor.setHistSyncCallback(std::move(callback));
+  editor.setAcceptorCallback(std::move(callback));
   RET_VOID;
 }
 

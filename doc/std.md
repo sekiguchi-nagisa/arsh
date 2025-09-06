@@ -368,7 +368,7 @@ function setPrompter(prompt: ((String) -> String)?): Void for LineEditor
 
 function setHistory(hist: [String]?): Void for LineEditor
 
-function setAcceptor(acceptor: ((String, [String]) -> Void)?): Void for LineEditor
+function setAcceptor(acceptor: ((String, [String]?) -> Void)?): Void for LineEditor
 
 function bind(key: String, action: String?): Void for LineEditor
 
