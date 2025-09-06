@@ -31,10 +31,6 @@
     - wait for child process setup completion due to race condition of `tcsetpgrp`
 - **Breaking Change**: tuple type fields are now read-only
     - if all the fields are immutable, the tuple type will be immutable
-- improve token-aware line edit actions
-    - within comment, fallback to word actions
-    - ignore parser error after cursor position
-    - treat '/' separator as a token boundary
 
 #### Builtin
 
@@ -44,6 +40,10 @@
     - ``setHistSync`` -> ``setAcceptor``
         - kick callback after line refresh regardless of history existence
         - also change the type signature of callback (now ``(String, [String]?) -> Void``)
+- improve token-aware line edit actions
+    - within comment, fallback to word actions
+    - ignore parser error after cursor position
+    - treat '/' separator as a token boundary          
 - overhaul internal keycode handling of ``LineEditor``
     - correctly read unrecognized escape sequences (CSI/SS3)
     - ``LineEditor#bind`` method accept human-readable keyname (such as `F1`, `ctrl+alt+a`,
@@ -53,7 +53,7 @@
     - ``^I``, ``^M``, ``^[``, ``^?`` are recognized as ``tab``, ``enter``, ``esc``, ``backspace``
     - support application keypad mode
     - support CSI-u encoding (kitty keyboard protocol, modifyOtherKeys)
-- add ``keyboard-protocol`` config to ``LineEditor``.
+- add ``keyboard-protocol`` config to ``LineEditor``
     - when specify ``kitty``, enable kitty keyboard protocol's progressive enhancement
         - enable `Disambiguate escape codes` and `Report alternate keys`
     - when specify ``xterm``, enable modifyOtherKeys (level 1)
