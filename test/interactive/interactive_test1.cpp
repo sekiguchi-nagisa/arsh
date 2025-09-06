@@ -129,7 +129,7 @@ TEST_F(InteractiveTest, tab1) {
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
-      "$LINE_EDIT.setCompletion(function(m, s) => { complete -m $m -q -s -- $s; $COMPREPLY;})"));
+      "$LINE_EDIT.setCompleter(function(m, s) => { complete -m $m -q -s -- $s; $COMPREPLY;})"));
   ASSERT_NO_FATAL_FAILURE(this->changePrompt("> "));
   this->send("$F\t");
   ASSERT_NO_FATAL_FAILURE(this->expect("> $F\nFALSE   False   \n"));
@@ -174,7 +174,7 @@ TEST_F(InteractiveTest, tab2) {
   std::this_thread::sleep_for(std::chrono::milliseconds(400));
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
-      "$LINE_EDIT.setCompletion(function(m, s) => { complete -m $m -q -s -- $s; $COMPREPLY;})"));
+      "$LINE_EDIT.setCompleter(function(m, s) => { complete -m $m -q -s -- $s; $COMPREPLY;})"));
   this->send("$RC\t");
   ASSERT_NO_FATAL_FAILURE(this->expectRegex(".+RC_VAR"));
   this->send("\r");
@@ -207,14 +207,14 @@ TEST_F(InteractiveTest, tab3) {
 
   ASSERT_NO_FATAL_FAILURE(this->changePrompt(">>> "));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
-      "$LINE_EDIT.setCompletion(function(m,s) => new Candidates(['@abc\\ -\\ @.csv']))"));
+      "$LINE_EDIT.setCompleter(function(m,s) => new Candidates(['@abc\\ -\\ @.csv']))"));
   this->send("echo @\t");
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "echo @abc\\ -\\ @.csv"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("", "@abc - @.csv"));
 
   // insert unprintable
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
-      "$LINE_EDIT.setCompletion(function(m,s) => new Candidates([$s + $'\\t\\x01']))"));
+      "$LINE_EDIT.setCompleter(function(m,s) => new Candidates([$s + $'\\t\\x01']))"));
   this->send("var a = 'A\t");
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "var a = 'A  ^A"));
   this->send("'\r");
@@ -1000,7 +1000,7 @@ TEST_F(InteractiveTest, undoRotate2) {
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
 
   // completion
-  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.setCompletion(function(m,s)=> new "
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.setCompleter(function(m,s)=> new "
                                                   "Candidates(@(true tee touch)))"));
   this->changePrompt("> ");
   this->send("()" LEFT "$t");
@@ -1026,7 +1026,7 @@ TEST_F(InteractiveTest, undoRotate2) {
 
   // completion with suffix space
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
-      "$LINE_EDIT.setCompletion(function(m, s) => { complete -m $m -q -d -- $s; $COMPREPLY;})"));
+      "$LINE_EDIT.setCompleter(function(m, s) => { complete -m $m -q -d -- $s; $COMPREPLY;})"));
   this->send("(echo )" LEFT "$SIGU");
   ASSERT_NO_FATAL_FAILURE(this->expect("> (echo $SIGU)"));
   {
@@ -1063,7 +1063,7 @@ TEST_F(InteractiveTest, undoRotate3) { // ESC
   // insert common prefix
   this->changePrompt("> ");
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
-      "$LINE_EDIT.setCompletion(function(m, s) => { complete -m $m -q -d -- $s; $COMPREPLY;})"));
+      "$LINE_EDIT.setCompleter(function(m, s) => { complete -m $m -q -d -- $s; $COMPREPLY;})"));
   this->send("(echo )" LEFT "$SIGU");
   ASSERT_NO_FATAL_FAILURE(this->expect("> (echo $SIGU)"));
   {

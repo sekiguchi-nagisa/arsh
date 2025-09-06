@@ -71,7 +71,7 @@ struct InteractiveTest : public InteractiveShellBase {
 
   void changePrompt(const char *newPrompt) {
     auto oldPrompt = this->prompt;
-    std::string line = "$LINE_EDIT.setPrompt(function(p) => '";
+    std::string line = "$LINE_EDIT.setPrompter(function(p) => '";
     line += newPrompt;
     line += "')";
     ASSERT_NO_FATAL_FAILURE(this->sendLine(line.c_str()));

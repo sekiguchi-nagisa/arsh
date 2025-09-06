@@ -13,7 +13,7 @@ test -e $DATA_HOME || mkdir -p $DATA_HOME || true
 history -r  # manually load history
 
 # completion setting
-$LINE_EDIT.setCompletion(function(m, s) => {
+$LINE_EDIT.setCompleter(function(m, s) => {
     complete -m $m -q -s -d -- $s
     $COMPREPLY
 })

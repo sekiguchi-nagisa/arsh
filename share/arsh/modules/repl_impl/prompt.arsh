@@ -12,7 +12,7 @@ let PRE_PROMPTS : [() -> Void]
 
 var TITLE_HOOK : (()-> String?)?
 
-$LINE_EDIT.setPrompt(function(p) => {
+$LINE_EDIT.setPrompter(function(p) => {
     for hook in $PRE_PROMPTS {
         let old = $?
         try { $hook(); } catch e { $e.show(); } finally { $? = $old; }

@@ -279,7 +279,7 @@ TEST_F(InteractiveTest, lineEditorGlobal) {
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("exit 56 | exit 99"));
 
   // set prompt callback
-  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.setPrompt(function(p) => {"
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.setPrompter(function(p) => {"
                                                   "  $? = 222; $IFS='111'; $REPLY='@'; "
                                                   "  printf -v var -- 'hey';"
                                                   "  exit 123 | exit 67 | exit 5;"
@@ -307,8 +307,8 @@ TEST_F(InteractiveTest, lineEditorRec) {
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
 
-  const char *text = "var e = new LineEditor(); $e.setPrompt(function(p)=>{"
-                     "  $e.setCompletion(function(m, s) => new Candidates($s.split('')));"
+  const char *text = "var e = new LineEditor(); $e.setPrompter(function(p)=>{"
+                     "  $e.setCompleter(function(m, s) => new Candidates($s.split('')));"
                      "  $p; "
                      "})";
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(text));
@@ -317,22 +317,22 @@ TEST_F(InteractiveTest, lineEditorRec) {
          "assert $ex is InvalidOperationError";
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(text));
 
-  text = "$ex = 34; $e.setPrompt(function(p)=>{"
+  text = "$ex = 34; $e.setPrompter(function(p)=>{"
          "  $e.readLine()!; })";
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(text));
   text = "try { $e.readLine(); assert false; } catch e { $ex = $e; }; "
          "assert $ex is InvalidOperationError";
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(text));
 
-  text = "$ex = 34; $e.setPrompt(function(p)=>{"
-         "  $e.setPrompt(function(pp)=> $pp);"
+  text = "$ex = 34; $e.setPrompter(function(p)=>{"
+         "  $e.setPrompter(function(pp)=> $pp);"
          "  $p; })";
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(text));
   text = "try { $e.readLine(); assert false; } catch e { $ex = $e; }; "
          "assert $ex is InvalidOperationError";
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(text));
 
-  text = "$ex = 34; $e.setPrompt(function(p)=>{"
+  text = "$ex = 34; $e.setPrompter(function(p)=>{"
          "  $e.config('color', '');"
          "  $p; })";
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(text));
@@ -341,7 +341,7 @@ TEST_F(InteractiveTest, lineEditorRec) {
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(text));
 
   // recursive call readLine from other instance
-  text = "$ex = 34; $e.setPrompt(function(p)=>{"
+  text = "$ex = 34; $e.setPrompter(function(p)=>{"
          "  $LINE_EDIT.readLine();"
          "  $p; })";
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(text));
@@ -359,14 +359,14 @@ TEST_F(InteractiveTest, lineEditorPrompt) {
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("var e = new LineEditor()"));
-  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$e.setPrompt(function(p)=> '%' + $p)"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$e.setPrompter(function(p)=> '%' + $p)"));
   const char *line = "$e.readLine($'>\\x00> ')";
   this->sendLine(line);
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + line + "\n%>^@> "));
   this->sendLine("1234");
   ASSERT_NO_FATAL_FAILURE(this->expect("%>^@> 1234\n: String? = 1234\n" + PROMPT));
 
-  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$e.setPrompt(function(p) => $p[100])"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$e.setPrompter(function(p) => $p[100])"));
   const char *err = R"([runtime error]
 OutOfRangeError: size is 2, but index is 100
     from (stdin):4 'function ()'
@@ -442,7 +442,7 @@ InvalidOperationError: cannot modify array object during iteration
 
   // modify history
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
-      "$LINE_EDIT.setCompletion(function(m, s) => new Candidates($hist.add($s)))"));
+      "$LINE_EDIT.setCompleter(function(m, s) => new Candidates($hist.add($s)))"));
   this->sendLine("$LINE_EDIT.readLine('> ')");
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "$LINE_EDIT.readLine('> ')\n> "));
   this->send("$T\t");
@@ -473,7 +473,7 @@ TEST_F(InteractiveTest, lineEditorComp1) {
 
   // insert single candidates with a prefix
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
-      "$LINE_EDIT.setCompletion(function(s,m) => new Candidates(['true']))"));
+      "$LINE_EDIT.setCompleter(function(s,m) => new Candidates(['true']))"));
   this->send("()" LEFT "$t\t");
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "($true)"));
   this->send("\r");
@@ -488,7 +488,7 @@ TEST_F(InteractiveTest, lineEditorComp1) {
   // insert unprintable (invalid, null,,)
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("var aa = new LineEditor()"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
-      "$aa.setCompletion(function(m,s) => new Candidates([$s + $'\\t\\x00' + $'\\xFF']))"));
+      "$aa.setCompleter(function(m,s) => new Candidates([$s + $'\\t\\x00' + $'\\xFF']))"));
   const char *line = "var ret = $aa.readLine('> ')";
   this->sendLine(line);
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + line + "\n> "));
@@ -513,7 +513,7 @@ TEST_F(InteractiveTest, lineEditorComp2) {
 
   // rotate candidates
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
-      "$LINE_EDIT.setCompletion(function(s,m) => new Candidates( @(true tee touch)) )"));
+      "$LINE_EDIT.setCompleter(function(s,m) => new Candidates( @(true tee touch)) )"));
   this->changePrompt("> ");
   this->send("()" LEFT "$t");
   ASSERT_NO_FATAL_FAILURE(this->expect("> ($t)"));
@@ -607,7 +607,7 @@ TEST_F(InteractiveTest, lineEditorComp3) {
 
   // rotate candidates
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
-      "$LINE_EDIT.setCompletion(function(s,m) => new Candidates( @(aaaa bbb ccc)) )"));
+      "$LINE_EDIT.setCompleter(function(s,m) => new Candidates( @(aaaa bbb ccc)) )"));
   this->send(";");
   ASSERT_NO_FATAL_FAILURE(this->expect("> ;"));
   {
@@ -642,7 +642,7 @@ TEST_F(InteractiveTest, lineEditorComp4) {
   ASSERT_NO_FATAL_FAILURE(this->changePrompt("> "));
 
   ASSERT_NO_FATAL_FAILURE(
-      this->sendLineAndExpect("$LINE_EDIT.setCompletion(function(s,m) => new "
+      this->sendLineAndExpect("$LINE_EDIT.setCompleter(function(s,m) => new "
                               "Candidates(@(20230907_バイタル 20230907_ラベル)))"));
   this->send("echo 20");
   ASSERT_NO_FATAL_FAILURE(this->expect("> echo 20"));
@@ -669,7 +669,7 @@ TEST_F(InteractiveTest, lineEditorCompSuffix) {
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
-      "$LINE_EDIT.setCompletion(function(m, s) => { complete -m $m -q -s -d -- $s; $COMPREPLY;})"));
+      "$LINE_EDIT.setCompleter(function(m, s) => { complete -m $m -q -s -d -- $s; $COMPREPLY;})"));
   ASSERT_NO_FATAL_FAILURE(this->changePrompt("> "));
 
   this->send("1234.\t");
@@ -711,7 +711,7 @@ TEST_F(InteractiveTest, lineEditorCompError) {
 
   // insert large item
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
-      "$LINE_EDIT.setCompletion(function(m,s)=> new Candidates([$(seq 1 9999).join(' ')]))"));
+      "$LINE_EDIT.setCompleter(function(m,s)=> new Candidates([$(seq 1 9999).join(' ')]))"));
 
   std::string err = format(R"([runtime error]
 SystemError: readLine failed, caused by `%s'
@@ -723,7 +723,7 @@ SystemError: readLine failed, caused by `%s'
 
   // rotate and insert large item
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
-      "$LINE_EDIT.setCompletion(function(m,s)=> new Candidates(['2', $(seq 1 9999).join(' ')]))"));
+      "$LINE_EDIT.setCompleter(function(m,s)=> new Candidates(['2', $(seq 1 9999).join(' ')]))"));
   this->send("12");
   ASSERT_NO_FATAL_FAILURE(this->expect("> 12"));
 
@@ -816,7 +816,7 @@ TEST_F(InteractiveTest, lineEditorResize2) {
   ASSERT_NO_FATAL_FAILURE(
       this->sendLineAndExpect("var can = $(for l in $(seq 1 10) { printf '%0*d\\n' 5 $l; })"));
   ASSERT_NO_FATAL_FAILURE(
-      this->sendLineAndExpect("$LINE_EDIT.setCompletion(function(s,m) => new Candidates($can))"));
+      this->sendLineAndExpect("$LINE_EDIT.setCompleter(function(s,m) => new Candidates($can))"));
   this->changeWinSize({.rows = 80, .cols = 20});
 
   this->send("0");
@@ -937,7 +937,7 @@ TEST_F(InteractiveTest, lineEditorInterrupt3) {
   ASSERT_NO_FATAL_FAILURE(this->changePrompt("> "));
 
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
-      "$LINE_EDIT.setCompletion(function(m,s) => { new Candidates(['AAA', 'AAB']); })"));
+      "$LINE_EDIT.setCompleter(function(m,s) => { new Candidates(['AAA', 'AAB']); })"));
   ASSERT_NO_FATAL_FAILURE(
       this->sendLineAndExpect("$SIGWINCH.trap(function(s) => { echo ${$s.name()}; exit 210; })",
                               ": (Signal) -> Void = function(SIG_DFL)"));
@@ -961,7 +961,7 @@ TEST_F(InteractiveTest, lineEditorInterrupt4) {
   ASSERT_NO_FATAL_FAILURE(this->changePrompt("> "));
 
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
-      "$LINE_EDIT.setCompletion(function(m,s) => { new Candidates(['AAA', 'AAB']); })"));
+      "$LINE_EDIT.setCompleter(function(m,s) => { new Candidates(['AAA', 'AAB']); })"));
   ASSERT_NO_FATAL_FAILURE(
       this->sendLineAndExpect("$SIGHUP.trap(function(s) => { echo ${$s.name()}; exit 210; })",
                               ": (Signal) -> Void = function(SIG_DFL)"));

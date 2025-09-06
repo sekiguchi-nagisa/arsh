@@ -2441,7 +2441,7 @@ ARSH_METHOD edit_get(RuntimeContext &ctx) {
   RET(editor.getkey(ctx));
 }
 
-//!bind: function setCompletion($this : LineEditor, $comp : Option<Func<Candidates,[Module,String]>>) : Void
+//!bind: function setCompleter($this : LineEditor, $comp : Option<Func<Candidates,[Module,String]>>) : Void
 ARSH_METHOD edit_comp(RuntimeContext &ctx) {
   SUPPRESS_WARNING(edit_comp);
   auto &editor = typeAs<LineEditorObject>(LOCAL(0));
@@ -2454,7 +2454,7 @@ ARSH_METHOD edit_comp(RuntimeContext &ctx) {
   RET_VOID;
 }
 
-//!bind: function setPrompt($this : LineEditor, $prompt : Option<Func<String,[String]>>) : Void
+//!bind: function setPrompter($this : LineEditor, $prompt : Option<Func<String,[String]>>) : Void
 ARSH_METHOD edit_prompt(RuntimeContext &ctx) {
   SUPPRESS_WARNING(edit_prompt);
   auto &editor = typeAs<LineEditorObject>(LOCAL(0));
@@ -2480,7 +2480,7 @@ ARSH_METHOD edit_hist(RuntimeContext &ctx) {
   RET_VOID;
 }
 
-//!bind: function setHistSync($this : LineEditor, $sync : Option<Func<Void,[String,Array<String>]>>) : Void
+//!bind: function setAcceptor($this : LineEditor, $acceptor : Option<Func<Void,[String,Array<String>]>>) : Void
 ARSH_METHOD edit_histSync(RuntimeContext &ctx) {
   SUPPRESS_WARNING(edit_histSync);
   auto &editor = typeAs<LineEditorObject>(LOCAL(0));

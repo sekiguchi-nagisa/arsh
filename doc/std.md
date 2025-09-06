@@ -362,13 +362,13 @@ function readLine(prompt: String?): String? for LineEditor
 
 function getkey(): (String, String) for LineEditor
 
-function setCompletion(comp: ((Module, String) -> Candidates)?): Void for LineEditor
+function setCompleter(comp: ((Module, String) -> Candidates)?): Void for LineEditor
 
-function setPrompt(prompt: ((String) -> String)?): Void for LineEditor
+function setPrompter(prompt: ((String) -> String)?): Void for LineEditor
 
 function setHistory(hist: [String]?): Void for LineEditor
 
-function setHistSync(sync: ((String, [String]) -> Void)?): Void for LineEditor
+function setAcceptor(acceptor: ((String, [String]) -> Void)?): Void for LineEditor
 
 function bind(key: String, action: String?): Void for LineEditor
 
