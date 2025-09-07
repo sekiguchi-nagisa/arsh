@@ -60,8 +60,8 @@ $ sudo make install
 * [install from package](https://software.opensuse.org//download.html?project=home%3Ansekiguchi&package=arsh)
     * Debian 11, 12
     * Ubuntu 22.04, 24.04
-    * Fedora 40, 41
-    * openSUSE Tumbleweed
+    * Fedora 40, 41, 42
+    * openSUSE 16, Tumbleweed
 
 2. run in interactive mode
 
