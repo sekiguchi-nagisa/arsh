@@ -43,7 +43,7 @@
 - improve token-aware line edit actions
     - within comment, fallback to word actions
     - ignore parser error after cursor position
-    - treat '/' separator as a token boundary          
+    - treat '/' separator as a token boundary
 - overhaul internal keycode handling of ``LineEditor``
     - correctly read unrecognized escape sequences (CSI/SS3)
     - ``LineEditor#bind`` method accept human-readable keyname (such as `F1`, `ctrl+alt+a`,
@@ -78,6 +78,7 @@
 - fix job object construction. check group leader at process construction time
 - fix cursor position computation in completion pager shrink
 - fix completion pager interruption. now interrupted by arbitrary signals
+- fix incorrect error highlight of user-defined command definition
 
 ## [0.38.0] - 2025-06-30
 

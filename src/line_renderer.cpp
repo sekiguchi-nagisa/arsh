@@ -213,13 +213,13 @@ void LineRenderer::renderWithANSI(StringRef prompt) {
   }
 }
 
-static bool nextIsLP(const StringRef source, const std::vector<std::pair<TokenKind, Token>> &tokens,
+static bool nextIsLP(const std::vector<std::pair<TokenKind, Token>> &tokens,
                      unsigned int curIndex) {
-  if (curIndex + 1 < tokens.size()) {
-    const auto next = tokens[curIndex + 1].second;
-    return source.substr(next.pos, next.size) == "(";
-  }
-  return false;
+  // skip trivia (escaped newlines)
+  for (curIndex++; curIndex < tokens.size() && tokens[curIndex].first == TokenKind::ESCAPED_NL;
+       curIndex++)
+    ;
+  return curIndex < tokens.size() && tokens[curIndex].first == TokenKind::LP;
 }
 
 bool LineRenderer::renderScript(const StringRef source,
@@ -245,7 +245,7 @@ bool LineRenderer::renderScript(const StringRef source,
     const StringRef ref = source.substr(token.pos, token.size);
     HighlightTokenClass tokenClass = toTokenClass(ret.tokens[i].first);
     if (supportErrorHighlight && tokenClass == HighlightTokenClass::COMMAND &&
-        !nextIsLP(source, ret.tokens, i)) {
+        !nextIsLP(ret.tokens, i)) {
       if (!errorCmdChecker(ref)) {
         tokenClass = HighlightTokenClass::ERROR_;
       }

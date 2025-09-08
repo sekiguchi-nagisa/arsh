@@ -1772,13 +1772,36 @@ TEST(ErrorHighlightTest, base) {
   });
 
   std::string buf;
-  buf.resize(16);
+  buf.resize(32);
   PathLikeChecker checker(*state);
   RenderingContext ctx(buf.data(), buf.size(), "> ", std::ref(checker));
 
-  ctx.buf.insertToCursor("slsss -la");
-  auto ret = doRendering(ctx, nullptr, makeObserver(seqMap), 100);
-  ASSERT_EQ("> \x1b[50mslsss\x1b[0m \x1b[40m-la\x1b[0m", ret.renderedLines);
+  {
+    ctx.buf.insertToCursor("slsss -la");
+    auto ret = doRendering(ctx, nullptr, makeObserver(seqMap), 100);
+    ASSERT_EQ("> \x1b[50mslsss\x1b[0m \x1b[40m-la\x1b[0m", ret.renderedLines);
+  }
+
+  { // no highlight (user-defined definition)
+    ctx.buf.deleteAll();
+    ctx.buf.insertToCursor("slsss () {}");
+    auto ret = doRendering(ctx, nullptr, makeObserver(seqMap), 100);
+    ASSERT_EQ("> \x1b[30mslsss\x1b[0m () {}", ret.renderedLines);
+  }
+
+  { // no highlight (user-defined definition)
+    ctx.buf.deleteAll();
+    ctx.buf.insertToCursor("slsss \\\n \\\n () {}");
+    auto ret = doRendering(ctx, nullptr, makeObserver(seqMap), 100);
+    ASSERT_EQ("> \x1b[30mslsss\x1b[0m \\\r\n   \\\r\n   () {}", ret.renderedLines);
+  }
+
+  { // no highlight (user-defined definition)
+    ctx.buf.deleteAll();
+    ctx.buf.insertToCursor("(slsss \\\n \n () {})");
+    auto ret = doRendering(ctx, nullptr, makeObserver(seqMap), 100);
+    ASSERT_EQ("> (\x1b[30mslsss\x1b[0m \\\r\n   \r\n   () {})", ret.renderedLines);
+  }
 }
 
 int main(int argc, char **argv) {
