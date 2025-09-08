@@ -177,7 +177,7 @@ static bool replaceBytes(LineBuffer &buf, Token token, StringRef replacement) {
       r = true;
     }
   });
-  if (!r) {
+  if (!r) { // TODO: revert edit (delete)
     buf.setCursor(old);
   }
   return r;
@@ -210,8 +210,9 @@ bool tryToExpandAbbreviation(LineBuffer &buf, const AbbrMap &abbrMap,
   if (index == 0 || index == cache.tokens.size() || cursor > cache.tokens[index].second.pos) {
     return false;
   }
-  if (auto &[kind, token] = cache.tokens[index - 1];
-      kind == TokenKind::COMMAND && cursor == token.endPos()) {
+  auto &[kind, token] = cache.tokens[index - 1];
+  if (kind == TokenKind::COMMAND && cursor == token.endPos() &&
+      !isUDCDeclTokenAt(cache.tokens, index - 1)) {
     std::string cmd = buf.get().substr(token.pos, token.size).toString();
     if (auto iter = abbrMap.find(cmd); iter != abbrMap.end()) {
       return replaceBytes(buf, token, iter->second);

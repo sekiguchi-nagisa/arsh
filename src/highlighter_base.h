@@ -120,6 +120,24 @@ private:
   void emit(TokenKind kind, Token token) override;
 };
 
+/**
+ * distinguish command and user-defined command decl
+ * ex. `AAA` and `BBB() {}`
+ * @param tokens
+ * @param index
+ * @return
+ */
+inline bool isUDCDeclTokenAt(const std::vector<std::pair<TokenKind, Token>> &tokens,
+                             unsigned int index) {
+  if (index < tokens.size() && tokens[index].first == TokenKind::COMMAND) {
+    // skip trivia (escaped newlines)
+    for (index++; index < tokens.size() && tokens[index].first == TokenKind::ESCAPED_NL; index++)
+      ;
+    return index < tokens.size() && tokens[index].first == TokenKind::LP;
+  }
+  return false;
+}
+
 } // namespace arsh
 
 #endif // ARSH_HIGHLIGHTER_BASE_H

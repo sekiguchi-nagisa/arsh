@@ -290,12 +290,20 @@ struct LineBufferTest : public ::testing::Test {
     ASSERT_FALSE(ret.hasValue());
   }
 
+  static size_t maxExpandSize(const AbbrMap &map) {
+    size_t ret = 0;
+    for (auto &[k, v] : map) {
+      ret = std::max(ret, v.size());
+    }
+    return ret;
+  }
+
   static void testAbbr(const AbbrMap &map, const TokenEditPattern &pattern) {
     ASSERT_LE(pattern.beforePos, pattern.before.size());
     ASSERT_LE(pattern.afterPos, pattern.after.size());
 
     std::string storage;
-    size_t size = std::max(pattern.before.size(), pattern.after.size());
+    size_t size = std::max(pattern.before.size(), pattern.after.size()) + maxExpandSize(map);
     size += size >> 1;
     storage.resize(size, '@');
     LineBuffer buffer(storage.data(), storage.size());
@@ -1060,8 +1068,14 @@ TEST_F(LineBufferTest, abbr1) {
 TEST_F(LineBufferTest, abbr2) {
   AbbrMap map = {{"", "ls -la"}, {"ll", "ls -la"}};
   const TokenEditPattern patterns[] = {
-      {"ll\n", 2, "ll\n", 2},   {"ll\n", 3, "ls -la\n", 7},     {"ll\n#", 3, "ls -la\n#", 7},
-      {"ll\n#", 4, "ll\n#", 4}, {"ll\n #", 3, "ls -la\n #", 7}, {"ll\n #", 4, "ll\n #", 4},
+      {"ll\n", 2, "ll\n", 2},
+      {"ll\n", 3, "ls -la\n", 7},
+      {"ll\n#", 3, "ls -la\n#", 7},
+      {"ll\n#", 4, "ll\n#", 4},
+      {"ll\n #", 3, "ls -la\n #", 7},
+      {"ll\n #", 4, "ll\n #", 4},
+      {"(ll\n(){})", 3, "(ll\n(){})", 3},
+      {"(ll\n(){})", 4, "(ll\n(){})", 4},
   };
 
   for (auto &p : patterns) {
