@@ -131,7 +131,9 @@ inline bool isUDCDeclTokenAt(const std::vector<std::pair<TokenKind, Token>> &tok
                              unsigned int index) {
   if (index < tokens.size() && tokens[index].first == TokenKind::COMMAND) {
     // skip trivia (escaped newlines)
-    for (index++; index < tokens.size() && tokens[index].first == TokenKind::ESCAPED_NL; index++)
+    for (index++; index < tokens.size() && (tokens[index].first == TokenKind::ESCAPED_NL ||
+                                            tokens[index].first == TokenKind::COMMENT);
+         index++)
       ;
     return index < tokens.size() && tokens[index].first == TokenKind::LP;
   }

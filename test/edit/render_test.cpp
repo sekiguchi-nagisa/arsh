@@ -1769,6 +1769,7 @@ TEST(ErrorHighlightTest, base) {
       {HighlightTokenClass::COMMAND, "\x1b[30m"},
       {HighlightTokenClass::COMMAND_ARG, "\x1b[40m"},
       {HighlightTokenClass::ERROR_, "\x1b[50m"},
+      {HighlightTokenClass::COMMENT, "\x1b[45m"},
   });
 
   std::string buf;
@@ -1801,6 +1802,13 @@ TEST(ErrorHighlightTest, base) {
     ctx.buf.insertToCursor("(slsss \\\n \n () {})");
     auto ret = doRendering(ctx, nullptr, makeObserver(seqMap), 100);
     ASSERT_EQ("> (\x1b[30mslsss\x1b[0m \\\r\n   \r\n   () {})", ret.renderedLines);
+  }
+
+  { // no highlight (user-defined definition)
+    ctx.buf.deleteAll();
+    ctx.buf.insertToCursor("(slsss # this\n () {})");
+    auto ret = doRendering(ctx, nullptr, makeObserver(seqMap), 100);
+    ASSERT_EQ("> (\x1b[30mslsss\x1b[0m \x1b[45m# this\x1b[0m\r\n   () {})", ret.renderedLines);
   }
 }
 
