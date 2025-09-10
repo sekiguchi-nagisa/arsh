@@ -857,13 +857,11 @@ TEST_F(LineBufferTest, atomicEdit) {
   ASSERT_EQ(8, buffer.getCursor());
 
   // replace
-  buffer.intoAtomicEdit([&](LineBuffer &buf) {
+  buffer.intoAtomicEdit([](LineBuffer &buf) {
     buf.setCursor(6);
-    buf.deleteFromCursor(2);
-    ASSERT_EQ("34 && ", buf.get().toString());
-    buf.insertToCursor("ls -la");
-    ASSERT_EQ("34 && ls -la", buf.get().toString());
+    return buf.deleteFromCursor(2) && buf.insertToCursor("ls -la");
   });
+  ASSERT_EQ("34 && ls -la", buffer.get().toString());
 
   // undo/redo replace
   ASSERT_TRUE(buffer.undo());
@@ -876,6 +874,20 @@ TEST_F(LineBufferTest, atomicEdit) {
   ASSERT_TRUE(buffer.redo());
   ASSERT_EQ("34 && ls -la", buffer.get().toString());
   ASSERT_FALSE(buffer.redo());
+
+  // fail
+  while (buffer.undo())
+    ;
+  buffer.deleteAll();
+  buffer.insertToCursor("hello world!!");
+  ASSERT_EQ("hello world!!", buffer.get().toString());
+  bool r = buffer.intoAtomicEdit([](LineBuffer &buf) {
+    std::string ins;
+    ins.resize(100, '@');
+    return buf.deleteToCursor(2) && buf.insertToCursor(ins);
+  });
+  ASSERT_FALSE(r);
+  ASSERT_EQ("hello world!!", buffer.get().toString());
 }
 
 TEST_F(LineBufferTest, tokenEditInvalid) {

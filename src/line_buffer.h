@@ -97,14 +97,23 @@ public:
 
   template <typename Func>
   static constexpr bool atomic_edit_requirement_v =
-      std::is_same_v<void, std::invoke_result_t<Func, LineBuffer &>>;
+      std::is_same_v<bool, std::invoke_result_t<Func, LineBuffer &>>;
 
   template <typename Func, enable_when<atomic_edit_requirement_v<Func>> = nullptr>
-  void intoAtomicEdit(Func func) {
+  bool intoAtomicEdit(Func func) {
+    const unsigned int old = this->getCursor();
     this->insertToCursor("");
     this->atomicEdit = true;
-    func(*this);
+    const bool r = func(*this);
     this->atomicEdit = false;
+    if (!r) {
+      this->undo();
+      while (this->changeIndex < this->changes.size()) { // forget change
+        this->changes.pop_back();
+      }
+      this->setCursor(old);
+    }
+    return r;
   }
 
   unsigned int getUsedSize() const { return this->usedSize; }

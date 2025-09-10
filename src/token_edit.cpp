@@ -167,20 +167,15 @@ Optional<bool> moveCursorOrDeleteToken(LineBuffer &buf, const MoveOrDeleteTokenP
 }
 
 static bool replaceBytes(LineBuffer &buf, Token token, StringRef replacement) {
-  const unsigned int old = buf.getCursor();
-  bool r = false;
-  buf.intoAtomicEdit([&token, &replacement, &r](LineBuffer &b) { // TODO: atomic cursor move
+  return buf.intoAtomicEdit([&token, &replacement](LineBuffer &b) {
     const unsigned int suffixOffset = b.getCursor() - token.endPos();
     b.setCursor(token.endPos());
     if (b.deleteToCursor(token.size) && b.insertToCursor(replacement)) {
       b.setCursor(b.getCursor() + suffixOffset);
-      r = true;
+      return true;
     }
+    return false;
   });
-  if (!r) { // TODO: revert edit (delete)
-    buf.setCursor(old);
-  }
-  return r;
 }
 
 /**
