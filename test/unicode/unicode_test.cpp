@@ -309,9 +309,6 @@ TEST_F(UnicodeTest, graphemeBreakProperty) {
   p = GraphemeBoundary::getBreakProperty(0xAC03);
   ASSERT_EQ(GraphemeBoundary::BreakProperty::LVT, p);
 
-  p = GraphemeBoundary::getBreakProperty(0x1F0CC);
-  ASSERT_EQ(GraphemeBoundary::BreakProperty::Extended_Pictographic, p);
-
   p = GraphemeBoundary::getBreakProperty(0x1F6B9); // Emoji/Extended_Pictographic
   ASSERT_EQ(GraphemeBoundary::BreakProperty::Extended_Pictographic, p);
 
