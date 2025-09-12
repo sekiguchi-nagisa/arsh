@@ -91,3 +91,31 @@ jobs:
         if: failure()
         run: |
           cat build/log.txt
+
+  build_on_mac_26:
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@v4
+      - name: prepare
+        run: brew install ninja re2c
+      - name: configure
+        run: |
+          export SDKROOT="$(xcrun --sdk macosx --show-sdk-path)"
+          mkdir build
+          cd build
+          cmake .. -G Ninja -DUSE_EXTRA_TEST=on -DUSE_LOGGING=on
+      - name: build
+        run: |
+          cd build
+          ninja
+          sudo ninja install
+          ./arsh ../scripts/copy_mod4extra.ds
+      - name: test
+        run: |
+          cd build
+          touch log.txt
+          ARSH_DEBUG_LOG=$(realpath log.txt) ctest -j4 --output-on-failure
+      - name: on-failure
+        if: failure()
+        run: |
+          cat build/log.txt
