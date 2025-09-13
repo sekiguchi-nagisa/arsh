@@ -104,6 +104,16 @@ public:
 
   ~LineEditorObject();
 
+  /**
+   * read line with line editing
+   * @param state
+   * @param prompt
+   * @param buf
+   * @param bufLen
+   * @return
+   * read size of input string.
+   * if error, return a negative number (less than -1) and set errno
+   */
   ssize_t readline(ARState &state, StringRef prompt, char *buf, size_t bufLen);
 
   bool locked() const { return this->lock; }

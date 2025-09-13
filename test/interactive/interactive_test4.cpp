@@ -758,6 +758,49 @@ SystemError: readLine failed, caused by `%s'
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED, "\n"));
 }
 
+TEST_F(InteractiveTest, lineEditorAcceptor) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+  ASSERT_NO_FATAL_FAILURE(this->changePrompt("> "));
+
+  ASSERT_NO_FATAL_FAILURE(
+      this->sendLineAndExpect("var ph : [String]?; var pl: String?; "
+                              "$LINE_EDIT.setAcceptor(function(l,h) => { "
+                              "assert ! $h;"
+                              "$l.contains('@') && throw new ArgumentError('@'); })"));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("1234", ": Int = 1234"));
+
+  // throw error
+  this->send("@@@");
+  ASSERT_NO_FATAL_FAILURE(this->expect("> @@@"));
+  {
+    auto cleanup = this->reuseScreen();
+    this->send(CTRL_M);
+    std::string err = R"([runtime error]
+ArgumentError: @
+    from (stdin):2 'function ()'
+)";
+    ASSERT_NO_FATAL_FAILURE(this->expect("> @@@\n> ", err));
+  }
+
+  // assert failed
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.setHistory([''])"));
+  this->send("@@@");
+  ASSERT_NO_FATAL_FAILURE(this->expect("> @@@"));
+  {
+    auto cleanup = this->reuseScreen();
+    this->send(CTRL_M);
+    std::string err = R"([runtime error]
+AssertionFailed: `! $h'
+    from (stdin):2 'function ()'
+)";
+    ASSERT_NO_FATAL_FAILURE(this->expect("> @@@\n", err));
+  }
+
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED));
+}
+
 // test tty
 TEST_F(InteractiveTest, lineEditorTTY) {
   this->invoke("--quiet", "--norc");
