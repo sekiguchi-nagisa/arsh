@@ -1088,6 +1088,8 @@ TEST_F(LineBufferTest, abbr2) {
       {"ll\n #", 4, "ll\n #", 4},
       {"(ll\n(){})", 3, "(ll\n(){})", 3},
       {"(ll\n(){})", 4, "(ll\n(){})", 4},
+      {"(ll", 3, "(ls -la", 7},
+      {"$(  ll", 6, "$(  ls -la", 10},
   };
 
   for (auto &p : patterns) {
