@@ -80,3 +80,60 @@ bind(param : _BindParam) {
     }
     return 0
 }
+
+
+# for abbreviation setting
+[<CLI(desc: "Set or display abbreviation")>]
+type _AbbrParam() {
+    [<Flag(short: 'l', xor: 1, help: "list defined abbreviations")>]
+    var list = $false
+
+    [<Option(short: 'r', xor: 1, placeholder: 'name', help: 'remove abbreviation of PATTERN')>]
+    var remove : String?
+
+    [<Arg>]
+    var pattern : String?
+
+    [<Arg>]
+    var expansion: String?
+}
+
+abbr(param: _AbbrParam) {
+    if $param.list {
+        var list:[(String,String)]
+        for e in $LINE_EDIT.abbrs() {
+            $list.add($e)
+        }
+        for e in $list.sort() {
+            printf "%s=%s\n" ${e._0} ${e._1}
+        }
+        return 0
+    }
+    if let name = $param.remove {
+        try {
+            $LINE_EDIT.abbr($name)
+        } catch e {
+            echo 1>&2 ${$param.usage($e.message(), $false)}
+            return 1
+        }
+        return 0
+    }
+    if let name = $param.pattern {
+        if !$param.expansion {
+            echo 1>&2 ${$param.usage("require EXPANSION argument after PATTERN argument", $false)}
+            return 1
+        }
+        var expansion = $param.expansion!
+        if $expansion.empty() {
+            echo 1>&2 ${$param.usage("EXPANSION argument must not be empty", $false)}
+            return 1
+        }
+        try {
+            $LINE_EDIT.abbr($name, $expansion)
+        } catch e {
+            echo 1>&2 ${$param.usage($e.message(), $false)}
+            return 1
+        }
+    }
+    return 0
+}

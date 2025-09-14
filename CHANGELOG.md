@@ -16,6 +16,7 @@
 
 - add ``getenv``, ``ulimit`` completion
 - add ``edit-command-line`` custom action via ``alt+e``
+- add ``abbr`` command for abbreviation management
 
 ### Changed
 

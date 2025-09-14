@@ -1,0 +1,38 @@
+
+source ../../../../share/arsh/modules/repl_impl/bind.arsh
+
+# empty
+assert "$(abbr -l)".empty()
+
+# define abbr
+abbr ll 'ls -ll'
+abbr la 'ls -la'
+abbr gb 'git branch'
+
+$LINE_EDIT.abbrs().size() == 3
+$LINE_EDIT.abbrs()["ll"] == "ls -ll"
+$LINE_EDIT.abbrs()["la"] == "ls -la"
+$LINE_EDIT.abbrs()["gb"] == "git branch"
+
+## error
+assert "$(abbr "aa"  2>&1)" == "abbr: require EXPANSION argument after PATTERN argument
+See \`abbr --help' for more information."
+assert $? == 1
+
+assert "$(abbr "" ls 2>&1)" == "abbr: not allow empty pattern
+See \`abbr --help' for more information."
+assert $? == 1
+
+assert "$(abbr "s" "" 2>&1)" == "abbr: EXPANSION argument must not be empty
+See \`abbr --help' for more information."
+assert $? == 1
+
+# -l
+assert "$(abbr -l)" == "gb=git branch
+la=ls -la
+ll=ls -ll"
+
+# -r
+assert abbr -r la
+assert "$(abbr -l)" == "gb=git branch
+ll=ls -ll"
