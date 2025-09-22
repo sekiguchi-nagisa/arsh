@@ -292,8 +292,8 @@ struct LineBufferTest : public ::testing::Test {
 
   static size_t maxExpandSize(const AbbrMap &map) {
     size_t ret = 0;
-    for (auto &[k, v] : map) {
-      ret = std::max(ret, v.size());
+    for (auto &e : map) {
+      ret = std::max(ret, e.second.size());
     }
     return ret;
   }
