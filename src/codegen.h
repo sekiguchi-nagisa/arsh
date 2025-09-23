@@ -222,6 +222,14 @@ private:
     this->curBuilder().append8(v);
   }
 
+  void emitLoadSpecialVarIns(SpecialVarKind k) {
+    this->emit1byteIns(OpCode::LOAD_SPECIAL, toUnderlying(k));
+  }
+
+  void emitStoreSpecialVarIns(SpecialVarKind k) {
+    this->emit1byteIns(OpCode::STORE_SPECIAL, toUnderlying(k));
+  }
+
   void emit2byteIns(OpCode op, unsigned short v) {
     ASSERT_BYTE_SIZE(op, 2);
     this->emitIns(op);

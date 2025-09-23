@@ -566,7 +566,7 @@ void ByteCodeGenerator::visitTupleNode(TupleNode &node) {
 
 void ByteCodeGenerator::visitVarNode(VarNode &node) {
   if (node.getExtraOp() == VarNode::CUR_ARG0) {
-    this->emit0byteIns(OpCode::LOAD_CUR_ARG0);
+    this->emitLoadSpecialVarIns(SpecialVarKind::CUR_ARG0);
     return;
   }
 
@@ -584,7 +584,7 @@ void ByteCodeGenerator::visitVarNode(VarNode &node) {
 
     this->emit0byteIns(OpCode::LOAD_ENV);
   } else if (node.getHandle()->is(HandleKind::MOD_CONST)) {
-    this->emit0byteIns(OpCode::LOAD_CUR_MOD);
+    this->emitLoadSpecialVarIns(SpecialVarKind::CUR_MOD);
 
     const unsigned int index = node.getIndex();
     const char *op = index == toIndex(BuiltinVarOffset::SCRIPT_NAME)  ? METHOD_SCRIPT_NAME
@@ -609,15 +609,15 @@ void ByteCodeGenerator::visitVarNode(VarNode &node) {
     const auto index = node.getIndex();
     if (node.hasAttr(HandleAttr::GLOBAL)) {
       if (index == toIndex(BuiltinVarOffset::MODULE)) {
-        this->emit0byteIns(OpCode::LOAD_CUR_MOD);
+        this->emitLoadSpecialVarIns(SpecialVarKind::CUR_MOD);
       } else if (index == toIndex(BuiltinVarOffset::RANDOM)) {
-        this->emit0byteIns(OpCode::RAND);
+        this->emitLoadSpecialVarIns(SpecialVarKind::RAND);
       } else if (index == toIndex(BuiltinVarOffset::SECONDS)) {
-        this->emit0byteIns(OpCode::GET_SECOND);
+        this->emitLoadSpecialVarIns(SpecialVarKind::SECOND);
       } else if (index == toIndex(BuiltinVarOffset::THROWN)) {
-        this->emit0byteIns(OpCode::LOAD_CUR_THROWN);
+        this->emitLoadSpecialVarIns(SpecialVarKind::CUR_THROWN);
       } else if (index == toIndex(BuiltinVarOffset::EXIT_STATUS)) {
-        this->emit0byteIns(OpCode::LOAD_STATUS);
+        this->emitLoadSpecialVarIns(SpecialVarKind::STATUS);
       } else {
         this->emit2byteIns(OpCode::LOAD_GLOBAL, index);
       }
@@ -1637,7 +1637,9 @@ void ByteCodeGenerator::visitAssignNode(AssignNode &node) {
     } else {
       if (varNode.hasAttr(HandleAttr::GLOBAL)) {
         if (index == toIndex(BuiltinVarOffset::SECONDS)) {
-          this->emit0byteIns(OpCode::SET_SECOND);
+          this->emitStoreSpecialVarIns(SpecialVarKind::SECOND);
+        } else if (index == toIndex(BuiltinVarOffset::EXIT_STATUS)) {
+          this->emitStoreSpecialVarIns(SpecialVarKind::STATUS);
         } else {
           this->emit2byteIns(OpCode::STORE_GLOBAL, index);
         }

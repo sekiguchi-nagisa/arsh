@@ -665,8 +665,9 @@ static NativeCode initCode(OpCode op) {
 static NativeCode initBuiltinEval() {
   NativeCode::ArrayType code;
   code[0] = static_cast<char>(OpCode::BUILTIN_EVAL);
-  code[1] = static_cast<char>(OpCode::LOAD_STATUS);
-  code[2] = static_cast<char>(OpCode::RETURN_UDC);
+  code[1] = static_cast<char>(OpCode::LOAD_SPECIAL);
+  code[2] = static_cast<char>(SpecialVarKind::STATUS);
+  code[3] = static_cast<char>(OpCode::RETURN_UDC);
   return NativeCode(code);
 }
 
@@ -2310,65 +2311,81 @@ bool VM::mainLoop(ARState &state) {
         TRY(typeAs<RedirObject>(state.stack.peek()).redirect(state));
         vmnext;
       }
-      vmcase(LOAD_CUR_MOD) {
-        ModId modId = cast<CompiledCode>(state.stack.code())->getBelongedModId();
-        const auto &entry = state.modLoader[modId];
-        auto &modType = cast<ModType>(state.typePool.get(entry.second.getTypeId()));
-        unsigned int index = modType.getIndex();
-        state.stack.push(state.getGlobal(index));
-        vmnext;
-      }
-      vmcase(LOAD_CUR_ARG0) {
-        const ControlFrame *frame = nullptr;
-        state.stack.walkFrames([&frame](const ControlFrame &f) {
-          if (f.code->is(CodeKind::USER_DEFINED_CMD)) {
-            frame = &f;
-            return false;
-          }
-          return true;
-        });
-        Value arg0;
-        if (frame) {
-          unsigned int localOffset = frame->localVarOffset;
-          arg0 = state.stack.unsafeGetOperand(localOffset + UDC_PARAM_ARG0);
-        } else {
-          arg0 = state.getGlobal(BuiltinVarOffset::ARG0);
+      vmcase(LOAD_SPECIAL) {
+        switch (static_cast<SpecialVarKind>(consume8(state.stack.ip()))) {
+        case SpecialVarKind::CUR_MOD: {
+          ModId modId = cast<CompiledCode>(state.stack.code())->getBelongedModId();
+          const auto &entry = state.modLoader[modId];
+          auto &modType = cast<ModType>(state.typePool.get(entry.second.getTypeId()));
+          unsigned int index = modType.getIndex();
+          state.stack.push(state.getGlobal(index));
+          break;
         }
-        state.stack.push(std::move(arg0));
-        vmnext;
-      }
-      vmcase(LOAD_CUR_THROWN) {
-        auto value = Value::createInvalid();
-        if (!state.stack.getFinallyEntries().empty()) {
-          if (auto &e = state.stack.getFinallyEntries().back(); e.hasError()) {
-            value = e.asError();
+        case SpecialVarKind::CUR_ARG0: {
+          const ControlFrame *frame = nullptr;
+          state.stack.walkFrames([&frame](const ControlFrame &f) {
+            if (f.code->is(CodeKind::USER_DEFINED_CMD)) {
+              frame = &f;
+              return false;
+            }
+            return true;
+          });
+          Value arg0;
+          if (frame) {
+            unsigned int localOffset = frame->localVarOffset;
+            arg0 = state.stack.unsafeGetOperand(localOffset + UDC_PARAM_ARG0);
+          } else {
+            arg0 = state.getGlobal(BuiltinVarOffset::ARG0);
           }
+          state.stack.push(std::move(arg0));
+          break;
         }
-        state.stack.push(std::move(value));
+        case SpecialVarKind::CUR_THROWN: {
+          auto value = Value::createInvalid();
+          if (!state.stack.getFinallyEntries().empty()) {
+            if (auto &e = state.stack.getFinallyEntries().back(); e.hasError()) {
+              value = e.asError();
+            }
+          }
+          state.stack.push(std::move(value));
+          break;
+        }
+        case SpecialVarKind::STATUS: {
+          auto v = state.getGlobal(BuiltinVarOffset::EXIT_STATUS);
+          state.stack.push(std::move(v));
+          break;
+        }
+        case SpecialVarKind::RAND:
+          state.stack.push(Value::createInt(state.getRng().nextInt64()));
+          break;
+        case SpecialVarKind::SECOND: {
+          auto now = getCurrentTimestamp();
+          auto diff = now - state.baseTime;
+          auto sec = std::chrono::duration_cast<std::chrono::seconds>(diff);
+          int64_t v = state.getGlobal(BuiltinVarOffset::SECONDS).asInt();
+          v += sec.count();
+          state.stack.push(Value::createInt(v));
+          break;
+        }
+        }
         vmnext;
       }
-      vmcase(LOAD_STATUS) {
-        auto v = state.getGlobal(BuiltinVarOffset::EXIT_STATUS);
-        state.stack.push(std::move(v));
-        vmnext;
-      }
-      vmcase(RAND) {
-        state.stack.push(Value::createInt(state.getRng().nextInt64()));
-        vmnext;
-      }
-      vmcase(GET_SECOND) {
-        auto now = getCurrentTimestamp();
-        auto diff = now - state.baseTime;
-        auto sec = std::chrono::duration_cast<std::chrono::seconds>(diff);
-        int64_t v = state.getGlobal(BuiltinVarOffset::SECONDS).asInt();
-        v += sec.count();
-        state.stack.push(Value::createInt(v));
-        vmnext;
-      }
-      vmcase(SET_SECOND) {
-        state.baseTime = getCurrentTimestamp();
+      vmcase(STORE_SPECIAL) {
         auto v = state.stack.pop();
-        state.setGlobal(BuiltinVarOffset::SECONDS, std::move(v));
+        switch (static_cast<SpecialVarKind>(consume8(state.stack.ip()))) {
+        case SpecialVarKind::CUR_MOD:
+        case SpecialVarKind::CUR_ARG0:
+        case SpecialVarKind::CUR_THROWN:
+        case SpecialVarKind::RAND:
+          break; // read-only (unreachable)
+        case SpecialVarKind::STATUS:
+          state.setGlobal(BuiltinVarOffset::EXIT_STATUS, std::move(v));
+          break;
+        case SpecialVarKind::SECOND:
+          state.baseTime = getCurrentTimestamp();
+          state.setGlobal(BuiltinVarOffset::SECONDS, std::move(v));
+          break;
+        }
         vmnext;
       }
       vmcase(GET_POS_ARG) {
