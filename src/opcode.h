@@ -26,8 +26,8 @@ namespace arsh {
  * C: opcode name
  * L: operand length
  * S: stack consumption
- *    if positive number, increase stack top index
- *    if negative number, decrease stack top index
+ *    if S is a positive number, increase stack top index
+ *    otherwise, decrease stack top index
  */
 #define OPCODE_LIST(OP)                                                                            \
   OP(SUBSHELL_EXIT, 0, 0)                                                                          \
@@ -162,7 +162,7 @@ enum class SpecialVarKind : unsigned char {
   CUR_MOD,
   CUR_ARG0,
   CUR_THROWN,
-  STATUS,
+  EXIT_STATUS,
   RAND,
   SECOND,
 };

@@ -666,7 +666,7 @@ static NativeCode initBuiltinEval() {
   NativeCode::ArrayType code;
   code[0] = static_cast<char>(OpCode::BUILTIN_EVAL);
   code[1] = static_cast<char>(OpCode::LOAD_SPECIAL);
-  code[2] = static_cast<char>(SpecialVarKind::STATUS);
+  code[2] = static_cast<char>(SpecialVarKind::EXIT_STATUS);
   code[3] = static_cast<char>(OpCode::RETURN_UDC);
   return NativeCode(code);
 }
@@ -2350,7 +2350,7 @@ bool VM::mainLoop(ARState &state) {
           state.stack.push(std::move(value));
           break;
         }
-        case SpecialVarKind::STATUS: {
+        case SpecialVarKind::EXIT_STATUS: {
           auto v = state.getGlobal(BuiltinVarOffset::EXIT_STATUS);
           state.stack.push(std::move(v));
           break;
@@ -2378,7 +2378,7 @@ bool VM::mainLoop(ARState &state) {
         case SpecialVarKind::CUR_THROWN:
         case SpecialVarKind::RAND:
           break; // read-only (unreachable)
-        case SpecialVarKind::STATUS:
+        case SpecialVarKind::EXIT_STATUS:
           state.setGlobal(BuiltinVarOffset::EXIT_STATUS, std::move(v));
           break;
         case SpecialVarKind::SECOND:

@@ -566,7 +566,7 @@ void ByteCodeGenerator::visitTupleNode(TupleNode &node) {
 
 void ByteCodeGenerator::visitVarNode(VarNode &node) {
   if (node.getExtraOp() == VarNode::CUR_ARG0) {
-    this->emitLoadSpecialVarIns(SpecialVarKind::CUR_ARG0);
+    this->emitLoadSpecialIns(SpecialVarKind::CUR_ARG0);
     return;
   }
 
@@ -584,7 +584,7 @@ void ByteCodeGenerator::visitVarNode(VarNode &node) {
 
     this->emit0byteIns(OpCode::LOAD_ENV);
   } else if (node.getHandle()->is(HandleKind::MOD_CONST)) {
-    this->emitLoadSpecialVarIns(SpecialVarKind::CUR_MOD);
+    this->emitLoadSpecialIns(SpecialVarKind::CUR_MOD);
 
     const unsigned int index = node.getIndex();
     const char *op = index == toIndex(BuiltinVarOffset::SCRIPT_NAME)  ? METHOD_SCRIPT_NAME
@@ -609,15 +609,15 @@ void ByteCodeGenerator::visitVarNode(VarNode &node) {
     const auto index = node.getIndex();
     if (node.hasAttr(HandleAttr::GLOBAL)) {
       if (index == toIndex(BuiltinVarOffset::MODULE)) {
-        this->emitLoadSpecialVarIns(SpecialVarKind::CUR_MOD);
+        this->emitLoadSpecialIns(SpecialVarKind::CUR_MOD);
       } else if (index == toIndex(BuiltinVarOffset::RANDOM)) {
-        this->emitLoadSpecialVarIns(SpecialVarKind::RAND);
+        this->emitLoadSpecialIns(SpecialVarKind::RAND);
       } else if (index == toIndex(BuiltinVarOffset::SECONDS)) {
-        this->emitLoadSpecialVarIns(SpecialVarKind::SECOND);
+        this->emitLoadSpecialIns(SpecialVarKind::SECOND);
       } else if (index == toIndex(BuiltinVarOffset::THROWN)) {
-        this->emitLoadSpecialVarIns(SpecialVarKind::CUR_THROWN);
+        this->emitLoadSpecialIns(SpecialVarKind::CUR_THROWN);
       } else if (index == toIndex(BuiltinVarOffset::EXIT_STATUS)) {
-        this->emitLoadSpecialVarIns(SpecialVarKind::STATUS);
+        this->emitLoadSpecialIns(SpecialVarKind::EXIT_STATUS);
       } else {
         this->emit2byteIns(OpCode::LOAD_GLOBAL, index);
       }
@@ -1637,9 +1637,9 @@ void ByteCodeGenerator::visitAssignNode(AssignNode &node) {
     } else {
       if (varNode.hasAttr(HandleAttr::GLOBAL)) {
         if (index == toIndex(BuiltinVarOffset::SECONDS)) {
-          this->emitStoreSpecialVarIns(SpecialVarKind::SECOND);
+          this->emitStoreSpecialIns(SpecialVarKind::SECOND);
         } else if (index == toIndex(BuiltinVarOffset::EXIT_STATUS)) {
-          this->emitStoreSpecialVarIns(SpecialVarKind::STATUS);
+          this->emitStoreSpecialIns(SpecialVarKind::EXIT_STATUS);
         } else {
           this->emit2byteIns(OpCode::STORE_GLOBAL, index);
         }

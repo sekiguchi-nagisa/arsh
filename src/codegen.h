@@ -222,11 +222,11 @@ private:
     this->curBuilder().append8(v);
   }
 
-  void emitLoadSpecialVarIns(SpecialVarKind k) {
+  void emitLoadSpecialIns(SpecialVarKind k) {
     this->emit1byteIns(OpCode::LOAD_SPECIAL, toUnderlying(k));
   }
 
-  void emitStoreSpecialVarIns(SpecialVarKind k) {
+  void emitStoreSpecialIns(SpecialVarKind k) {
     this->emit1byteIns(OpCode::STORE_SPECIAL, toUnderlying(k));
   }
 
