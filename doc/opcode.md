@@ -115,13 +115,8 @@
 | ADD_REDIR_OP1   | 1: byte1                       | redir value -> redir                         | add stack top value as redirection src (for stdout)          |
 | ADD_REDIR_OP2   | 1: byte1                       | redir value -> redir                         | add stack top value as redirection src (for stderr)          |
 | DO_REDIR        |                                | value -> value                               | perform redirection                                          |
-| LOAD_CUR_MOD    |                                | -> value                                     | load a current module                                        |
-| LOAD_CUR_ARG0   |                                | -> value                                     | load a current function arg0                                 |
-| LOAD_CUR_THROWN |                                | -> value                                     | load a current thrown object                                 |
-| LOAD_STATUS     |                                | -> value                                     | load exit status onto the stack                              |
-| RAND            |                                | -> value                                     | generate random number and push stack top                    |
-| GET_SECOND      |                                | -> value                                     | get differential time between current and base               |
-| SET_SECOND      |                                | value ->                                     | set base time                                                |
+| LOAD_SPECIAL    | 1: k                           | -> value                                     | load a special variable                                      |
+| STORE_SPECIAL   | 1: k                           | value ->                                     | store a value to a special variable                          |
 | GET_POS_ARG     |                                | args pos -> value                            | get positional argument                                      |
 | UNWRAP          |                                | value -> value                               | unwrap option value                                          |
 | CHECK_INVALID   |                                | value -> value                               | check if option value has a value                            |

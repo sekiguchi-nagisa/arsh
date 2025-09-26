@@ -116,7 +116,7 @@ Line Number Table:
 Exception Table:
 
 ARCode: command f
-  code size: 44
+  code size: 45
   max stack depth: 5
   number of local variable: 6
 Code:
@@ -127,28 +127,28 @@ Code:
    7: STORE_LOCAL  5
    9: LOAD_LOCAL  5
   11: STORE_LOCAL  4
-  13: LOAD_STATUS
-  14: ENTER_FINALLY  20
-  19: RETURN_UDC
-  20: RECLAIM_LOCAL  5  1
-  23: ASSERT_ENABLED  20
-  26: LOAD_LOCAL  4
-  28: PUSH_INT  99
-  30: DUP2
-  31: CALL_BUILTIN  2  %b_==
-  34: BRANCH_NOT  7
-  37: LOAD_CONST  0
-  39: ASSERT_FAIL2  1
-  41: POP
+  13: LOAD_SPECIAL  3
+  15: ENTER_FINALLY  21
+  20: RETURN_UDC
+  21: RECLAIM_LOCAL  5  1
+  24: ASSERT_ENABLED  20
+  27: LOAD_LOCAL  4
+  29: PUSH_INT  99
+  31: DUP2
+  32: CALL_BUILTIN  2  %b_==
+  35: BRANCH_NOT  7
+  38: LOAD_CONST  0
+  40: ASSERT_FAIL2  1
   42: POP
-  43: EXIT_FINALLY
+  43: POP
+  44: EXIT_FINALLY
 Constant Pool:
   0: String \`\$a == 99'
 Line Number Table:
   lineNum: 1, address:  9
 Exception Table:
-  begin: 4, end: 20, type: Throwable, dest: 20, offset: 0, size: 0, level: 1
-  begin: 23, end: 43, type: process guard%%, dest: 43, offset: 0, size: 0, level: 0"
+  begin: 4, end: 21, type: Throwable, dest: 21, offset: 0, size: 0, level: 1
+  begin: 24, end: 44, type: process guard%%, dest: 44, offset: 0, size: 0, level: 0"
 
 $expect("$(ds --dump-code -c 'f() { var a = 23; defer { assert $a == 99; }; var b = 99;$a = $b; }; f')", 0, $out)
 

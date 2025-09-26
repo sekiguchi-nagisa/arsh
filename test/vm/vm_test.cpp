@@ -119,7 +119,7 @@ TEST_F(VMTest, deinit1) {
   ASSERT_NO_FATAL_FAILURE(RefCount("a", 1));
 
   ASSERT_NO_FATAL_FAILURE(this->eval("{ var b = $a; if $true { var c = $a }; $RANDOM; }",
-                                     AR_ERROR_KIND_SUCCESS, OpCode::RAND,
+                                     AR_ERROR_KIND_SUCCESS, OpCode::LOAD_SPECIAL,
                                      [&] { ASSERT_NO_FATAL_FAILURE(RefCount("a", 2)); }));
 }
 
@@ -150,20 +150,22 @@ TEST_F(VMTest, deinit3) {
 
 TEST_F(VMTest, deinit4) {
   ASSERT_NO_FATAL_FAILURE(this->eval("function f($a : [String]) { $RANDOM; var b = $a; }; $f($@)",
-                                     AR_ERROR_KIND_SUCCESS, OpCode::RAND,
+                                     AR_ERROR_KIND_SUCCESS, OpCode::LOAD_SPECIAL,
                                      [&] { ASSERT_NO_FATAL_FAILURE(RefCount("@", 2)); }));
 }
 
 TEST_F(VMTest, deinit5) {
   ASSERT_NO_FATAL_FAILURE(this->eval(
       "function f($a : [String]) { var b = $a; { var c = $b; $RANDOM; }; var c = $b; }; $f($@)",
-      AR_ERROR_KIND_SUCCESS, OpCode::RAND, [&] { ASSERT_NO_FATAL_FAILURE(RefCount("@", 4)); }));
+      AR_ERROR_KIND_SUCCESS, OpCode::LOAD_SPECIAL,
+      [&] { ASSERT_NO_FATAL_FAILURE(RefCount("@", 4)); }));
 }
 
 TEST_F(VMTest, deinit6) {
   ASSERT_NO_FATAL_FAILURE(this->eval(
       "function f($a : [String]) { var b = $a; { var c = $b }; $RANDOM; var c = $b; }; $f($@)",
-      AR_ERROR_KIND_SUCCESS, OpCode::RAND, [&] { ASSERT_NO_FATAL_FAILURE(RefCount("@", 3)); }));
+      AR_ERROR_KIND_SUCCESS, OpCode::LOAD_SPECIAL,
+      [&] { ASSERT_NO_FATAL_FAILURE(RefCount("@", 3)); }));
 }
 
 TEST_F(VMTest, deinit7) {
@@ -172,19 +174,19 @@ TEST_F(VMTest, deinit7) {
 
   ASSERT_NO_FATAL_FAILURE(this->eval(
       "try { while $true { var a = $@; break; } } finally {  $RANDOM; }", AR_ERROR_KIND_SUCCESS,
-      OpCode::RAND, [&] { ASSERT_NO_FATAL_FAILURE(RefCount("@", 1)); }));
+      OpCode::LOAD_SPECIAL, [&] { ASSERT_NO_FATAL_FAILURE(RefCount("@", 1)); }));
 }
 
 TEST_F(VMTest, deinit8) {
   ASSERT_NO_FATAL_FAILURE(this->eval("try { var a = $@; 34 / 0 } catch $e { $RANDOM; }",
-                                     AR_ERROR_KIND_SUCCESS, OpCode::RAND,
+                                     AR_ERROR_KIND_SUCCESS, OpCode::LOAD_SPECIAL,
                                      [&] { ASSERT_NO_FATAL_FAILURE(RefCount("@", 1)); }));
 }
 
 TEST_F(VMTest, deinit9) {
   ASSERT_NO_FATAL_FAILURE(this->eval("try { var a = $@; 34 / 0 } catch $e { var b = $@; throw new "
                                      "Error('34'); } finally {  $RANDOM; }",
-                                     AR_ERROR_KIND_RUNTIME_ERROR, OpCode::RAND,
+                                     AR_ERROR_KIND_RUNTIME_ERROR, OpCode::LOAD_SPECIAL,
                                      [&] { ASSERT_NO_FATAL_FAILURE(RefCount("@", 1)); }));
 }
 
@@ -192,7 +194,7 @@ TEST_F(VMTest, deinit10) {
   ASSERT_NO_FATAL_FAILURE(
       this->eval("try { var a = $@; var b = $a; 34 / 0 } catch $e : RegexMatchError { var "
                  "b = $@; var c = $b; var d = $c; } finally {  $RANDOM; }",
-                 AR_ERROR_KIND_RUNTIME_ERROR, OpCode::RAND,
+                 AR_ERROR_KIND_RUNTIME_ERROR, OpCode::LOAD_SPECIAL,
                  [&] { ASSERT_NO_FATAL_FAILURE(RefCount("@", 1)); }));
 }
 
@@ -203,7 +205,7 @@ TEST_F(VMTest, deinit11) {
     { var b = $@; $b.size()/0; }
   } catch e { $RANDOM; }
 )";
-  ASSERT_NO_FATAL_FAILURE(this->eval(code, AR_ERROR_KIND_SUCCESS, OpCode::RAND,
+  ASSERT_NO_FATAL_FAILURE(this->eval(code, AR_ERROR_KIND_SUCCESS, OpCode::LOAD_SPECIAL,
                                      [&] { ASSERT_NO_FATAL_FAILURE(RefCount("@", 1)); }));
 }
 
@@ -215,7 +217,7 @@ TEST_F(VMTest, stacktop) {
 }
 )";
 
-  ASSERT_NO_FATAL_FAILURE(this->eval(text, AR_ERROR_KIND_SUCCESS, OpCode::RAND,
+  ASSERT_NO_FATAL_FAILURE(this->eval(text, AR_ERROR_KIND_SUCCESS, OpCode::LOAD_SPECIAL,
                                      [&] { ASSERT_NO_FATAL_FAILURE(RefCount("@", 1)); }));
 }
 
