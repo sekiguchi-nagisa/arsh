@@ -190,9 +190,16 @@ static bool replaceBytes(LineBuffer &buf, Token token, StringRef replacement) {
  */
 static bool isCursorInDummyNewline(const LineBuffer &buf, const TokenizerResult &ret) {
   const unsigned int cursor = buf.getCursor();
-  return cursor == buf.getUsedSize() && ret.tokens.size() > 1 &&
-         ret.tokens.back().first == TokenKind::NEW_LINE && ret.tokens.back().second.pos == cursor &&
-         ret.tokens[ret.tokens.size() - 2].second.endPos() == cursor;
+  if (cursor == buf.getUsedSize()) {
+    if (ret.error) {
+      return ret.error->getTokenKind() == TokenKind::EOS && ret.tokens.size() > 0 &&
+             ret.tokens.back().second.endPos() == cursor;
+    }
+    return ret.tokens.size() > 1 && ret.tokens.back().first == TokenKind::NEW_LINE &&
+           ret.tokens.back().second.pos == cursor &&
+           ret.tokens[ret.tokens.size() - 2].second.endPos() == cursor;
+  }
+  return false;
 }
 
 bool tryToExpandAbbreviation(LineBuffer &buf, const AbbrMap &abbrMap,
@@ -202,7 +209,10 @@ bool tryToExpandAbbreviation(LineBuffer &buf, const AbbrMap &abbrMap,
   }
   const unsigned int cursor = buf.getCursor() - (isCursorInDummyNewline(buf, cache) ? 0 : 1);
   const unsigned int index = lookupToken(cache.tokens, cursor);
-  if (index == 0 || index == cache.tokens.size() || cursor > cache.tokens[index].second.pos) {
+  if (cache.error && index == cache.tokens.size() && index > 0 &&
+      cursor < cache.error->getErrorToken().pos) { // do nothing
+  } else if (index == 0 || index == cache.tokens.size() ||
+             cursor > cache.tokens[index].second.pos) {
     return false;
   }
   auto &[kind, token] = cache.tokens[index - 1];

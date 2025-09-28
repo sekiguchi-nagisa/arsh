@@ -1385,31 +1385,21 @@ TEST_F(InteractiveTest, abbr1) {
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
 }
 
-TEST_F(InteractiveTest, abbr2) { // syntax error
+TEST_F(InteractiveTest, abbr2) { // syntax error (incomplete line)
   this->invoke("--quiet", "--norc");
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
   ASSERT_NO_FATAL_FAILURE(this->changePrompt("> "));
 
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$LINE_EDIT.abbr('ee', 'echo hello')"));
-  // this->send("ee");
-  // ASSERT_NO_FATAL_FAILURE(this->expect("> ee"));
-  // {
-  //   auto cleanup = this->reuseScreen();
-  //   this->send(" ");
-  //   ASSERT_NO_FATAL_FAILURE(this->expect("> echo hello "));
-  //   this->send(CTRL_Z);
-  //   ASSERT_NO_FATAL_FAILURE(this->expect("> ee "));
-  //   this->send(CTRL_Z);
-  //   ASSERT_NO_FATAL_FAILURE(this->expect("> ee"));
-  //   this->send("#" LEFT);
-  //   ASSERT_NO_FATAL_FAILURE(this->expect("> ee#"));
-  //   this->send(ALT_ENTER);
-  //   ASSERT_NO_FATAL_FAILURE(this->expect("> echo hello\n  #"));
-  //   this->send(CTRL_D);
-  //   ASSERT_NO_FATAL_FAILURE(this->expect("> echo hello\n  "));
-  //   this->sendLine("ee");
-  //   ASSERT_NO_FATAL_FAILURE(this->expect("> echo hello\n  echo hello\nhello\nhello\n> "));
-  // }
+  this->send("(ee");
+  ASSERT_NO_FATAL_FAILURE(this->expect("> (ee"));
+  {
+    auto cleanup = this->reuseScreen();
+    this->send(ALT_ENTER);
+    ASSERT_NO_FATAL_FAILURE(this->expect("> (echo hello\n  "));
+    this->sendLine(")");
+    ASSERT_NO_FATAL_FAILURE(this->expect("> (echo hello\n  )\nhello\n> "));
+  }
 
   this->send(CTRL_D);
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
