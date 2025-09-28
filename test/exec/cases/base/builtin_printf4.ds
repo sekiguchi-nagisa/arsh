@@ -149,7 +149,8 @@ for c in "cCxXyY" {
     $assertFormat("E$c")
 }
 
-for c in "deHImMSuUVwWy" {
+
+LANG=C for c in "deHImMSuUVwWy" {  # force use C locale for workaround in latest GNU date command
     $assertFormat("O$c")
 }
 
