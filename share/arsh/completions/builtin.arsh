@@ -57,7 +57,7 @@ compdef --cmd complete --short A \
 }
 
 ## ulimit
-ulimit -h | for line in $STDIN {
+(ulimit -h || true) | for line in $STDIN {
     var m = $/[ ]+-([a-zA-Z]) +(.+)/.match($line) ?? continue
     compdef --cmd ulimit --short ${$m.group(1)!} --desc ${$m.group(2)!}
 }
