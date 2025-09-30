@@ -1,0 +1,4 @@
+
+shctl set errraise
+
+source $SCRIPT_DIR/repl.arsh

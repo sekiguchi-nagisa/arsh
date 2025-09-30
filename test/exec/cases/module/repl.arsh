@@ -1,0 +1,34 @@
+
+source ../../../../share/arsh/modules/repl.arsh
+
+function modpath(name: String): String {
+    return ("$SCRIPT_DIR/../../../../share/arsh/modules/" + $name).realpath()
+}
+
+function comppath(name: String): String {
+    return ("$SCRIPT_DIR/../../../../share/arsh/completions/" + $name).realpath()
+}
+
+## check loaded module names
+var expect = ['(builtin)', '(root)', ]
+if (shctl is-sourced) { 
+    $expect.add("$SCRIPT_DIR/repl_errraise.arsh")
+}
+$expect.addAll([
+    $SCRIPT_NAME,
+    $modpath('repl.arsh'),
+    $modpath('repl_impl/prompt.arsh'),
+    $modpath('prompt.arsh'),
+    $modpath('repl_impl/history.arsh'),
+    $modpath('repl_impl/bind.arsh'),
+    $comppath('arsh.arsh'),
+    $modpath('completion.arsh'),
+    $comppath('builtin.arsh'),
+    $modpath('fzf.arsh'),
+    $comppath('external.arsh'),
+    $comppath('git.arsh'),
+    $comppath('sudo.arsh'),
+    $modpath('cnf.arsh'),
+])
+
+assert diff <(shctl module) <(printf "%s\n" $expect)
