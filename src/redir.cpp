@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
-#include <climits>
+#include <sys/uio.h>
 #include <sys/wait.h>
+
+#include <climits>
 #include <thread>
 
 #include "logger.h"
@@ -68,7 +70,15 @@ RedirObject::~RedirObject() {
   }
 }
 
-static int doIOHere(const StringRef &value, int newFd, bool insertNewline) {
+static ssize_t writeHereBody(int fd, StringRef body, bool insertNewline) {
+  const iovec vec[] = {
+      {.iov_base = const_cast<char *>(body.data()), .iov_len = body.size()},
+      {.iov_base = const_cast<char *>("\n"), .iov_len = insertNewline ? 1u : 0u},
+  };
+  return writev(fd, vec, std::size(vec));
+}
+
+static int doIOHere(const StringRef value, int newFd, bool insertNewline) {
   Pipe pipe;
   if (!pipe.open() || dup2(pipe[READ_PIPE], newFd) < 0) {
     return errno;
@@ -76,8 +86,7 @@ static int doIOHere(const StringRef &value, int newFd, bool insertNewline) {
 
   if (value.size() + (insertNewline ? 1 : 0) <= PIPE_BUF) {
     int errNum = 0;
-    if (write(pipe[WRITE_PIPE], value.data(), value.size()) < 0 ||
-        write(pipe[WRITE_PIPE], "\n", insertNewline ? 1 : 0) < 0) {
+    if (writeHereBody(pipe[WRITE_PIPE], value, insertNewline) < 0) {
       errNum = errno;
     }
     pipe.close();
@@ -91,8 +100,7 @@ static int doIOHere(const StringRef &value, int newFd, bool insertNewline) {
       pid = fork();   // double-fork (not wait IO-here process termination.)
       if (pid == 0) { // child
         pipe.close(READ_PIPE);
-        if (write(pipe[WRITE_PIPE], value.data(), value.size()) < 0 ||
-            write(pipe[WRITE_PIPE], "\n", insertNewline ? 1 : 0) < 0) {
+        if (writeHereBody(pipe[WRITE_PIPE], value, insertNewline) < 0) {
           if (errno != EPIPE) { // ignore SIGPIPE (if a reader process already terminated)
             perror("IO here process failed");
             exit(1);
