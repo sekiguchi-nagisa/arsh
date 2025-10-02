@@ -1,4 +1,9 @@
 
+# ignore err-raise at module loading time
+let _old = { shctl set -d; $REPLY; }
+defer { shctl set -r $_old; }
+shctl unset errraise
+
 # load default prompt setting
 source $SCRIPT_DIR/repl_impl/prompt.arsh inlined
 
