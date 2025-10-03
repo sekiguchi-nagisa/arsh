@@ -1,6 +1,6 @@
 # Changelog
 
-## [0.39.1] - 2025-10-xx
+## [0.39.1] - 2025-10-03
 
 - suppress ``ExecError`` in completion script
 - fix source path of std module (now not directly refer `$DATA_DIR`)
