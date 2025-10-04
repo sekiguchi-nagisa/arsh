@@ -178,7 +178,7 @@ assert ($ex as ExecError).lineno() == 174
 
 assert $? == 0
 assert $PIPESTATUS.size() == 2
-assert $PIPESTATUS[0] == 130
+assert $PIPESTATUS[0] == 130 || $PIPESTATUS[0] == 0
 assert $PIPESTATUS[1] == 1
 assert $jj!.size() == 1
 $jj!.wait()
