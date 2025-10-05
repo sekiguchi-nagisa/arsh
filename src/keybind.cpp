@@ -156,33 +156,11 @@ KeyBindings::KeyBindings() {
       {KeyEvent(FunctionKey::RIGHT), EditActionType::FORWARD_CHAR},
       {KeyEvent(FunctionKey::HOME), EditActionType::BEGINNING_OF_LINE},
       {KeyEvent(FunctionKey::END), EditActionType::END_OF_LINE},
+      {KeyEvent(FunctionKey::ESCAPE), EditActionType::PAGER_REVERT},
+      {KeyEvent(FunctionKey::TAB, ModifierKey::SHIFT), EditActionType::COMPLETE_BACKWARD},
   };
   for (auto &e : entries) {
     const auto pair = this->values.emplace(e.event, e.type);
-    static_cast<void>(pair);
-    assert(pair.second);
-  }
-
-  // define pager action
-  constexpr struct {
-    KeyEvent event;
-    PagerAction action;
-  } pagers[] = {
-      {KeyEvent(FunctionKey::ENTER), PagerAction::SELECT}, // normally via enter (^M)
-      {KeyEvent('j', ModifierKey::CTRL), PagerAction::SELECT},
-      {KeyEvent('c', ModifierKey::CTRL), PagerAction::CANCEL},
-      {KeyEvent(FunctionKey::ESCAPE), PagerAction::ESCAPE}, // normally via escape (^[)
-      {KeyEvent(FunctionKey::TAB), PagerAction::NEXT},      // normally via tab (^I)
-      {KeyEvent(FunctionKey::TAB, ModifierKey::SHIFT), PagerAction::PREV},
-      {KeyEvent('p', ModifierKey::CTRL), PagerAction::PREV},
-      {KeyEvent('n', ModifierKey::CTRL), PagerAction::NEXT},
-      {KeyEvent(FunctionKey::UP), PagerAction::PREV},
-      {KeyEvent(FunctionKey::DOWN), PagerAction::NEXT},
-      {KeyEvent(FunctionKey::LEFT), PagerAction::LEFT},
-      {KeyEvent(FunctionKey::RIGHT), PagerAction::RIGHT},
-  };
-  for (auto &e : pagers) {
-    const auto pair = this->pagerValues.emplace(e.event, e.action);
     static_cast<void>(pair);
     assert(pair.second);
   }
@@ -190,13 +168,6 @@ KeyBindings::KeyBindings() {
 
 const EditAction *KeyBindings::findAction(KeyEvent event) const {
   if (auto iter = this->values.find(event); iter != this->values.end()) {
-    return &iter->second;
-  }
-  return nullptr;
-}
-
-const PagerAction *KeyBindings::findPagerAction(KeyEvent event) const {
-  if (auto iter = this->pagerValues.find(event); iter != this->pagerValues.end()) {
     return &iter->second;
   }
   return nullptr;

@@ -33,6 +33,8 @@ namespace arsh {
   OP(ACCEPT, "accept")                             /* ENTER / CTRL-M / CTRL-J */                   \
   OP(CANCEL, "cancel")                             /* CTRL-C */                                    \
   OP(COMPLETE, "complete")                         /* TAB / CTRL-I */                              \
+  OP(COMPLETE_BACKWARD, "complete-backward")       /* SHIFT-TAB */                                 \
+  OP(PAGER_REVERT, "pager-revert")                 /* ESC */                                       \
   OP(BACKWARD_DELETE_CHAR, "backward-delete-char") /* CTRL-H / BACKSPACE */                        \
   OP(DELETE_CHAR, "delete-char")                   /* DELETE */                                    \
   OP(DELETE_OR_EXIT, "delete-or-exit")             /* CTRL-D */                                    \
@@ -135,16 +137,6 @@ public:
   int remove(StringRef ref);
 };
 
-enum class PagerAction : unsigned char {
-  SELECT,
-  CANCEL,
-  ESCAPE,
-  PREV,
-  NEXT,
-  LEFT,
-  RIGHT,
-};
-
 class KeyBindings {
 private:
   template <typename T>
@@ -160,11 +152,6 @@ private:
    */
   CustomActionMap customActions;
 
-  /**
-   * keycode to pager action mapping
-   */
-  KeyEventMap<PagerAction> pagerValues;
-
 public:
   static const StrRefMap<EditActionType> &getEditActionTypes();
 
@@ -176,12 +163,6 @@ public:
 
   const EditAction *findAction(const Optional<KeyEvent> &event) const {
     return event.hasValue() ? this->findAction(event.unwrap()) : nullptr;
-  }
-
-  const PagerAction *findPagerAction(KeyEvent event) const;
-
-  const PagerAction *findPagerAction(const Optional<KeyEvent> &event) const {
-    return event.hasValue() ? this->findPagerAction(event.unwrap()) : nullptr;
   }
 
   /**

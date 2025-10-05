@@ -232,6 +232,43 @@ void ArrayPager::render(LineRenderer &renderer) const {
   }
 }
 
+enum class PagerAction : unsigned char {
+  SELECT,
+  SELECT_NO_CLEAR,
+  CANCEL,
+  ESCAPE,
+  PREV,
+  NEXT,
+  LEFT,
+  RIGHT,
+};
+
+static PagerAction getPagerAction(const EditAction *edit) {
+  if (edit) {
+    switch (edit->type) {
+    case EditActionType::ACCEPT:
+      return PagerAction::SELECT;
+    case EditActionType::CANCEL:
+      return PagerAction::CANCEL;
+    case EditActionType::PAGER_REVERT:
+      return PagerAction::ESCAPE;
+    case EditActionType::BACKWARD_CHAR:
+      return PagerAction::LEFT;
+    case EditActionType::FORWARD_CHAR:
+      return PagerAction::RIGHT;
+    case EditActionType::UP_OR_HISTORY:
+    case EditActionType::COMPLETE_BACKWARD:
+      return PagerAction::PREV;
+    case EditActionType::DOWN_OR_HISTORY:
+    case EditActionType::COMPLETE:
+      return PagerAction::NEXT;
+    default:
+      break;
+    }
+  }
+  return PagerAction::SELECT_NO_CLEAR;
+}
+
 EditActionStatus waitPagerAction(ArrayPager &pager, const KeyBindings &bindings,
                                  KeyCodeReader &reader, const AtomicSigSet &watchSigSet) {
 // read key code and update the pager state
@@ -248,13 +285,13 @@ FETCH:
   if (!reader.getEvent().hasValue()) {
     goto FETCH; // ignore unrecognized escape sequence
   }
-  const auto *action = bindings.findPagerAction(reader.getEvent().unwrap());
-  if (!action) {
-    return EditActionStatus::OK;
+  const auto action = getPagerAction(bindings.findAction(reader.getEvent()));
+  if (action != PagerAction::SELECT_NO_CLEAR) {
+    reader.clear();
   }
-  reader.clear();
-  switch (*action) {
+  switch (action) {
   case PagerAction::SELECT:
+  case PagerAction::SELECT_NO_CLEAR:
     return EditActionStatus::OK;
   case PagerAction::CANCEL:
     return EditActionStatus::CANCEL;

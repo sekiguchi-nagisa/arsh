@@ -1,5 +1,24 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+#### Builtin
+
+- in ``LineEditor``, some edit actions now mapped to pager actions
+    - remap existing edit actions to pager actions
+        - ``accept``: select pager item
+        - ``cancel``: cancel pager
+        - ``backward-char``: move pager cursor to left item
+        - ``forward-char``: move pager cursor to right item
+        - ``up-or-history``: move pager cursor to previous item
+        - ``down-or-history``: move pager cursor to next item
+        - ``complete``: move pager cursor to next item
+    - also add the following actions
+        - ``complete-backward``: move pager cursor to previous item
+        - ``pager-revert``: revert pager inserted item
+
 ## [0.39.1] - 2025-10-03
 
 - suppress ``ExecError`` in completion script
