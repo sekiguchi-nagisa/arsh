@@ -734,7 +734,7 @@ ssize_t LineEditorObject::editInRawMode(ARState &state, RenderingContext &ctx) {
     }
 
     // dispatch edit action
-    const auto *action = this->keyBindings.findAction(reader.getEvent());
+    const auto *const action = this->keyBindings.findAction(reader.getEvent());
     if (!action) {
       continue; // skip unbound key action
     }
@@ -759,8 +759,10 @@ ssize_t LineEditorObject::editInRawMode(ARState &state, RenderingContext &ctx) {
       errno = EAGAIN;
       return -1;
     case EditActionType::COMPLETE:
+    case EditActionType::COMPLETE_BACKWARD:
       if (this->completionCallback) {
-        auto s = this->completeLine(state, ctx, reader);
+        auto s = this->completeLine(state, ctx, reader,
+                                    action->type == EditActionType::COMPLETE_BACKWARD);
         if (s == EditActionStatus::ERROR) {
           return -1;
         } else if (s == EditActionStatus::CANCEL) {
@@ -772,7 +774,6 @@ ssize_t LineEditorObject::editInRawMode(ARState &state, RenderingContext &ctx) {
         }
       }
       continue;
-    case EditActionType::COMPLETE_BACKWARD:
     case EditActionType::PAGER_REVERT:
       continue; // do nothing (just used in completion pager)
     case EditActionType::BACKWARD_DELETE_CHAR:
@@ -1126,7 +1127,7 @@ static bool insertCandidate(LineBuffer &buf, const StringRef inserting,
 }
 
 EditActionStatus LineEditorObject::completeLine(ARState &state, RenderingContext &ctx,
-                                                KeyCodeReader &reader) {
+                                                KeyCodeReader &reader, const bool backward) {
   reader.clear();
 
   CandidatesWrapper candidates(this->kickCompletionCallback(state, ctx.buf.getToCursor()));
@@ -1164,39 +1165,41 @@ EditActionStatus LineEditorObject::completeLine(ARState &state, RenderingContext
   auto status = EditActionStatus::CONTINUE;
   auto pager = ArrayPager::create(CandidatesWrapper(candidates), ctx.ps, {});
 
-  /**
-   * first, only show pager and wait next completion action.
-   * if next action is not completion action, break paging
-   */
-  pager.setShowCursor(false);
+  if (!backward) {
+    /**
+     * first, only show pager and wait next completion action.
+     * if next action is not completion action, break paging
+     */
+    pager.setShowCursor(false);
 
-FIRST_DRAW:
-  this->refreshLine(state, ctx, true, makeObserver(pager));
-FETCH:
-  if (ssize_t r = reader.fetch(watchSigSet); r <= 0) {
-    if (r == -1 && errno == EINTR) {
-      if (this->handleSignals(state)) {
-        goto FIRST_DRAW;
+  FIRST_DRAW:
+    this->refreshLine(state, ctx, true, makeObserver(pager));
+  FETCH:
+    if (ssize_t r = reader.fetch(watchSigSet); r <= 0) {
+      if (r == -1 && errno == EINTR) {
+        if (this->handleSignals(state)) {
+          goto FIRST_DRAW;
+        }
+        if (state.hasError()) {
+          status = EditActionStatus::CANCEL;
+          goto END;
+        }
       }
-      if (state.hasError()) {
-        status = EditActionStatus::CANCEL;
-        goto END;
-      }
+      status = EditActionStatus::ERROR;
+      goto END;
     }
-    status = EditActionStatus::ERROR;
-    goto END;
-  }
-  if (!reader.hasControlChar()) {
-    status = EditActionStatus::OK;
-    goto END;
-  }
-  if (!reader.getEvent().hasValue()) {
-    goto FETCH; // ignore unrecognized escape sequence
-  }
-  if (auto *action = this->keyBindings.findAction(reader.getEvent().unwrap());
-      !action || action->type != EditActionType::COMPLETE) {
-    status = EditActionStatus::OK;
-    goto END;
+    if (!reader.hasControlChar()) {
+      status = EditActionStatus::OK;
+      goto END;
+    }
+    if (!reader.getEvent().hasValue()) {
+      goto FETCH; // ignore unrecognized escape sequence
+    }
+    if (auto *action = this->keyBindings.findAction(reader.getEvent().unwrap());
+        !action || action->type != EditActionType::COMPLETE) {
+      status = EditActionStatus::OK;
+      goto END;
+    }
   }
 
   /**

@@ -50,6 +50,7 @@ using namespace arsh;
 #define HOME "\x1b[H"
 #define END "\x1b[F"
 
+#define SHIFT_TAB "\x1b[Z"
 #define ALT_ENTER "\x1b" CTRL_M
 
 #define XSTR(v) #v

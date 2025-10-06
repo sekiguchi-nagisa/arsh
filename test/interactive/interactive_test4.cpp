@@ -572,9 +572,7 @@ TEST_F(InteractiveTest, lineEditorComp2) {
   {
     auto cleanup = this->reuseScreen();
 
-    this->send("\t");
-    ASSERT_NO_FATAL_FAILURE(this->expect("> ;t\ntrue    tee     touch   \n"));
-    this->send("\t");
+    this->send(SHIFT_TAB);
     ASSERT_NO_FATAL_FAILURE(this->expect("> ;true\ntrue    tee     touch   \n"));
     this->send(UP UP);
     ASSERT_NO_FATAL_FAILURE(this->expect("> ;tee\ntrue    tee     touch   \n"));
@@ -585,7 +583,7 @@ TEST_F(InteractiveTest, lineEditorComp2) {
     ASSERT_NO_FATAL_FAILURE(this->expect("> ;tee2\ntrue    tee     touch   \n"));
     this->send("\t");
     ASSERT_NO_FATAL_FAILURE(this->expect("> ;tee2true\ntrue    tee     touch   \n"));
-    this->send(UP);
+    this->send(SHIFT_TAB);
     ASSERT_NO_FATAL_FAILURE(this->expect("> ;tee2touch\ntrue    tee     touch   \n"));
     this->send(CTRL_W); // cancel and edit
     ASSERT_NO_FATAL_FAILURE(this->expect("> ;"));

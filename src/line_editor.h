@@ -190,7 +190,8 @@ private:
 
   ssize_t editInRawMode(ARState &state, RenderingContext &ctx);
 
-  EditActionStatus completeLine(ARState &state, RenderingContext &ctx, KeyCodeReader &reader);
+  EditActionStatus completeLine(ARState &state, RenderingContext &ctx, KeyCodeReader &reader,
+                                bool backward);
 
   Value kickCallback(ARState &state, Value &&callback, CallArgs &&callArgs);
 
