@@ -758,6 +758,8 @@ ssize_t LineEditorObject::editInRawMode(ARState &state, RenderingContext &ctx) {
     case EditActionType::CANCEL:
       errno = EAGAIN;
       return -1;
+    case EditActionType::REVERT_PAGER:
+      continue; // do nothing (just used in completion pager)
     case EditActionType::COMPLETE:
     case EditActionType::COMPLETE_BACKWARD:
       if (this->completionCallback) {
@@ -774,8 +776,6 @@ ssize_t LineEditorObject::editInRawMode(ARState &state, RenderingContext &ctx) {
         }
       }
       continue;
-    case EditActionType::PAGER_REVERT:
-      continue; // do nothing (just used in completion pager)
     case EditActionType::BACKWARD_DELETE_CHAR:
       if (ctx.buf.deletePrevChar(nullptr, true)) {
         this->refreshLine(state, ctx);

@@ -17,7 +17,7 @@
         - ``complete``: move pager cursor to next item
     - also add the following actions
         - ``complete-backward``: move pager cursor to previous item
-        - ``pager-revert``: revert pager inserted item
+        - ``revert-pager``: revert pager inserted item
 
 ## [0.39.1] - 2025-10-03
 

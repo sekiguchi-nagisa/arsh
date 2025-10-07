@@ -32,9 +32,9 @@ namespace arsh {
 #define EACH_EDIT_ACTION_TYPE(OP)                                                                  \
   OP(ACCEPT, "accept")                             /* ENTER / CTRL-M / CTRL-J */                   \
   OP(CANCEL, "cancel")                             /* CTRL-C */                                    \
+  OP(REVERT_PAGER, "revert-pager")                 /* ESC */                                       \
   OP(COMPLETE, "complete")                         /* TAB / CTRL-I */                              \
   OP(COMPLETE_BACKWARD, "complete-backward")       /* SHIFT-TAB */                                 \
-  OP(PAGER_REVERT, "pager-revert")                 /* ESC */                                       \
   OP(BACKWARD_DELETE_CHAR, "backward-delete-char") /* CTRL-H / BACKSPACE */                        \
   OP(DELETE_CHAR, "delete-char")                   /* DELETE */                                    \
   OP(DELETE_OR_EXIT, "delete-or-exit")             /* CTRL-D */                                    \

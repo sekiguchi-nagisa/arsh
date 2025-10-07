@@ -236,7 +236,7 @@ enum class PagerAction : unsigned char {
   SELECT,
   SELECT_NO_CLEAR,
   CANCEL,
-  ESCAPE,
+  REVERT,
   PREV,
   NEXT,
   LEFT,
@@ -250,8 +250,8 @@ static PagerAction getPagerAction(const EditAction *edit) {
       return PagerAction::SELECT;
     case EditActionType::CANCEL:
       return PagerAction::CANCEL;
-    case EditActionType::PAGER_REVERT:
-      return PagerAction::ESCAPE;
+    case EditActionType::REVERT_PAGER:
+      return PagerAction::REVERT;
     case EditActionType::BACKWARD_CHAR:
       return PagerAction::LEFT;
     case EditActionType::FORWARD_CHAR:
@@ -295,7 +295,7 @@ FETCH:
     return EditActionStatus::OK;
   case PagerAction::CANCEL:
     return EditActionStatus::CANCEL;
-  case PagerAction::ESCAPE:
+  case PagerAction::REVERT:
     return EditActionStatus::REVERT;
   case PagerAction::PREV:
     pager.moveCursorToForward();
