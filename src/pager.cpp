@@ -250,7 +250,7 @@ static PagerAction getPagerAction(const EditAction *edit) {
       return PagerAction::SELECT;
     case EditActionType::CANCEL:
       return PagerAction::CANCEL;
-    case EditActionType::REVERT_PAGER:
+    case EditActionType::REVERT:
       return PagerAction::REVERT;
     case EditActionType::BACKWARD_CHAR:
       return PagerAction::LEFT;

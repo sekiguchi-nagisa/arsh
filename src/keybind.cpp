@@ -156,7 +156,7 @@ KeyBindings::KeyBindings() {
       {KeyEvent(FunctionKey::RIGHT), EditActionType::FORWARD_CHAR},
       {KeyEvent(FunctionKey::HOME), EditActionType::BEGINNING_OF_LINE},
       {KeyEvent(FunctionKey::END), EditActionType::END_OF_LINE},
-      {KeyEvent(FunctionKey::ESCAPE), EditActionType::REVERT_PAGER},
+      {KeyEvent(FunctionKey::ESCAPE), EditActionType::REVERT},
       {KeyEvent(FunctionKey::TAB, ModifierKey::SHIFT), EditActionType::COMPLETE_BACKWARD},
   };
   for (auto &e : entries) {

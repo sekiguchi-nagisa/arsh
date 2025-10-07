@@ -47,7 +47,7 @@ public:
     unsigned int len;       // actual item columns size
     unsigned short tabs;    // number of extra tab characters
     unsigned char leftPad;  // for left padding size of signature
-    unsigned char rightPad; // for right padding size of candidate
+    unsigned char rightPad; // for right padding size of the candidate
 
     unsigned int itemLen() const {
       return this->len + (TAB_WIDTH - this->len % TAB_WIDTH) + (this->tabs * TAB_WIDTH);
@@ -65,12 +65,12 @@ private:
   const unsigned int maxLenIndex;    // index of item with longest len
   unsigned int paneLen{0};           // pager pane length (paneLen * pages < window col size)
   unsigned int rows{0};              // pager row size (less than window row size)
-  unsigned int panes{0};             // number of pager pane
-  unsigned int index{0};             // index of currently selected item
+  unsigned int panes{0};             // number of pager panes
+  unsigned int index{0};             // index of the currently selected item
   unsigned int curRow{0};            // row of currently selected item (related to rows)
   bool showPager{true};              // if true, render pager
   bool showCursor{true};             // if true, render cursor
-  bool showRowNum{false};            // if true, render row number
+  bool showRowNum{false};            // if true, render the row number
   bool showDesc{true};               // if true, render description/signature
 
   ArrayPager(CandidatesWrapper &&obj, FlexBuffer<ItemEntry> &&items, unsigned int maxIndex,

@@ -758,7 +758,7 @@ ssize_t LineEditorObject::editInRawMode(ARState &state, RenderingContext &ctx) {
     case EditActionType::CANCEL:
       errno = EAGAIN;
       return -1;
-    case EditActionType::REVERT_PAGER:
+    case EditActionType::REVERT:
       continue; // do nothing (just used in completion pager)
     case EditActionType::COMPLETE:
     case EditActionType::COMPLETE_BACKWARD:
