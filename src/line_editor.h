@@ -39,8 +39,7 @@ struct allow_enum_bitop<LineEditorFeature> : std::true_type {};
 
 class LineEditorObject : public ObjectWithRtti<ObjectKind::LineEditor> {
 private:
-  int inFd;
-  int outFd; // does not close it
+  int ttyFd{-1};
 
   bool lock{false};
 
@@ -171,7 +170,7 @@ private:
 
   bool hasFeature(LineEditorFeature f) const { return hasFlag(this->features, f); }
 
-  int enableRawMode(int fd);
+  bool enableRawMode(int fd);
 
   void disableRawMode(int fd);
 

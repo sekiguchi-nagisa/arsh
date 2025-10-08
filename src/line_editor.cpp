@@ -124,27 +124,23 @@
 
 // ++++++++++ copied from linenoise.c ++++++++++++++
 
-#define UNUSED(x) (void)(x)
-static const char *unsupported_term[] = {"dumb", "cons25", "emacs", nullptr};
-
 /* ======================= Low level terminal handling ====================== */
 
 /* Return true if the terminal name is in the list of terminals we know are
  * not able to understand basic escape sequences. */
 static bool isUnsupportedTerm(const int fd) {
+  static constexpr const char *unsupported_terms[] = {"dumb", "cons25", "emacs"};
+
   const auto tcpgid = tcgetpgrp(fd);
   const auto pgid = getpgrp();
   if (tcpgid == -1 || pgid == -1 || tcpgid != pgid) {
-    return true;
+    return true; // not foreground
   }
-
-  const char *term = getenv("TERM");
-  if (term == nullptr) {
-    return false;
-  }
-  for (int j = 0; unsupported_term[j]; j++) {
-    if (!strcasecmp(term, unsupported_term[j])) {
-      return true;
+  if (const char *term = getenv("TERM")) {
+    for (auto &unsupported : unsupported_terms) {
+      if (!strcasecmp(term, unsupported)) {
+        return true;
+      }
     }
   }
   return false;
@@ -153,13 +149,13 @@ static bool isUnsupportedTerm(const int fd) {
 /* Use the ESC [6n escape sequence to query the horizontal cursor position
  * and return it. On error -1 is returned, on success the position of the
  * cursor. */
-static int getCursorPosition(int ifd, int ofd, bool queryCursor) {
+static int getCursorPosition(const int ttyFd, const bool queryCursor) {
   char buf[32];
   int cols, rows;
 
   /* Report cursor location */
   if (queryCursor) {
-    if (constexpr char data[] = "\x1b[6n"; write(ofd, data, std::size(data) - 1) != 4) {
+    if (constexpr char data[] = "\x1b[6n"; write(ttyFd, data, std::size(data) - 1) != 4) {
       return -1;
     }
   }
@@ -167,7 +163,7 @@ static int getCursorPosition(int ifd, int ofd, bool queryCursor) {
   /* Read the response: ESC [ rows ; cols R */
   unsigned int i = 0;
   for (; i < sizeof(buf) - 1; i++) {
-    if (readRetryWithTimeout(ifd, buf + i, 1, 2000) != 1) {
+    if (readRetryWithTimeout(ttyFd, buf + i, 1, 2000) != 1) {
       break;
     }
     if (buf[i] == 'R') {
@@ -189,7 +185,7 @@ static int getCursorPosition(int ifd, int ofd, bool queryCursor) {
 }
 
 /* Clear the screen. Used to handle ctrl+l */
-static void linenoiseClearScreen(int fd) {
+static void linenoiseClearScreen(const int fd) {
   if (constexpr char data[] = "\x1b[H\x1b[2J"; write(fd, data, std::size(data) - 1) <= 0) {
     /* nothing to do, just to avoid warning. */
   }
@@ -197,10 +193,10 @@ static void linenoiseClearScreen(int fd) {
 
 /* Beep, used for completion when there is nothing to complete or when all
  * the choices were already shown. */
-static void linenoiseBeep(int fd) {
+static void linenoiseBeep(const int fd) {
   constexpr char data[] = "\x07";
   ssize_t r = write(fd, data, std::size(data) - 1);
-  UNUSED(r);
+  static_cast<void>(r);
   fsync(fd);
 }
 
@@ -221,10 +217,9 @@ static bool underMultiplexer() {
 /**
  * must call before initial line refresh
  * @param ps
- * @param inFd
- * @param outFd
+ * @param ttyFd
  */
-static void checkProperty(CharWidthProperties &ps, int inFd, int outFd) {
+static void checkProperty(CharWidthProperties &ps, const int ttyFd) {
   if (underMultiplexer()) {
     /**
      * if run under terminal multiplexer (screen/tmux), disable character width checking
@@ -238,11 +233,11 @@ static void checkProperty(CharWidthProperties &ps, int inFd, int outFd) {
      * hide cursor and clear line immediately (due to suppress cursor flicker)
      */
     const int s = snprintf(buf, std::size(buf), "\x1b[?25l<%s>\x1b[1K\x1b[6n\r", e.second);
-    tcflush(inFd, TCIFLUSH); // force clear inbound data
-    if (s < 0 || write(outFd, buf, s) == -1) {
+    tcflush(ttyFd, TCIFLUSH); // force clear inbound data
+    if (s < 0 || write(ttyFd, buf, s) == -1) {
       break;
     }
-    const int pos = getCursorPosition(inFd, outFd, false);
+    const int pos = getCursorPosition(ttyFd, false);
     const int len = pos - 3;
     LOG(TRACE_EDIT, "char:<%s>, pos:%d, len:%d", e.second, pos, len);
     if (len <= 0) {
@@ -268,39 +263,6 @@ static bool linenoiseEditSwapChars(LineBuffer &buf) {
   });
 }
 
-/* This function is called when linenoise() is called with the standard
- * input file descriptor not attached to a TTY. So for example when the
- * program using linenoise is called in pipe or with a file redirected
- * to its standard input. In this case, we want to be able to return the
- * line regardless of its length (by default we are limited to 4k). */
-static ssize_t linenoiseNoTTY(int inFd, char *buf, size_t bufLen) {
-  assert(bufLen <= INT32_MAX && bufLen > 0);
-  bufLen--; // reserve for null terminate
-  size_t len = 0;
-  while (true) {
-    char data[64];
-    const ssize_t readSize = read(inFd, data, std::size(data));
-    if (readSize == -1 && errno == EAGAIN) {
-      continue;
-    }
-    if (readSize == 0) {
-      break;
-    }
-    if (readSize < 0) {
-      return -1;
-    }
-    if (const auto size = static_cast<size_t>(readSize); len + size <= bufLen) {
-      memcpy(buf + len, data, size);
-      len += size;
-    } else {
-      errno = ENOMEM;
-      return -1;
-    }
-  }
-  buf[len] = '\0';
-  return static_cast<ssize_t>(len);
-}
-
 // +++++++++++++++++++++++++++++++++++++++++++++++++++
 
 namespace arsh {
@@ -310,18 +272,14 @@ namespace arsh {
 // ##############################
 
 LineEditorObject::LineEditorObject(ARState &state) : ObjectWithRtti(TYPE::LineEditor) {
-  if (const int ttyFd = open("/dev/tty", O_RDWR | O_CLOEXEC); ttyFd > -1) {
-    this->inFd = ttyFd;
-    remapFDCloseOnExec(this->inFd);
-    this->outFd = this->inFd;
-    syncWinSize(state, this->inFd, nullptr);
-  } else { // fallback
-    this->inFd = dupFDCloseOnExec(STDIN_FILENO);
-    this->outFd = STDOUT_FILENO;
+  this->ttyFd = open("/dev/tty", O_RDWR | O_CLOEXEC);
+  if (this->ttyFd > -1) {
+    remapFDCloseOnExec(this->ttyFd);
+    syncWinSize(state, this->ttyFd, nullptr);
   }
 }
 
-LineEditorObject::~LineEditorObject() { close(this->inFd); }
+LineEditorObject::~LineEditorObject() { close(this->ttyFd); }
 
 static void enableBracketPasteMode(int fd) {
   const char *s = "\x1b[?2004h";
@@ -367,14 +325,11 @@ static void disableModifyOtherKeys(int fd) {
 }
 
 /* Raw mode: 1960 magic shit. */
-int LineEditorObject::enableRawMode(int fd) {
+bool LineEditorObject::enableRawMode(int fd) {
   termios raw{}; // NOLINT
 
-  if (!isatty(fd)) {
-    goto fatal;
-  }
   if (tcgetattr(fd, &this->orgTermios) == -1) {
-    goto fatal;
+    return false;
   }
 
   xcfmakesane(raw); /* modify the sane mode */
@@ -411,7 +366,7 @@ int LineEditorObject::enableRawMode(int fd) {
 
   /* put terminal in raw mode after flushing */
   if (tcsetattr(fd, TCSAFLUSH, &raw) < 0) {
-    goto fatal;
+    return false;
   }
   this->rawMode = true;
   if (this->hasFeature(LineEditorFeature::BRACKETED_PASTE)) {
@@ -423,11 +378,7 @@ int LineEditorObject::enableRawMode(int fd) {
   if (this->hasFeature(LineEditorFeature::XTERM_MODIFY_OTHER_KEYS)) {
     enableModifyOtherKeys(fd);
   }
-  return 0;
-
-fatal:
-  errno = ENOTTY;
-  return -1;
+  return true;
 }
 
 void LineEditorObject::disableRawMode(int fd) {
@@ -450,13 +401,12 @@ void LineEditorObject::disableRawMode(int fd) {
 
 /**
  * if the current cursor is not head of line. write % symbol like zsh
- * @param inFd
- * @param outFd
+ * @param ttyFd
  */
-static int preparePrompt(int inFd, int outFd) {
-  if (getCursorPosition(inFd, outFd, true) > 1) {
+static int preparePrompt(int ttyFd) {
+  if (getCursorPosition(ttyFd, true) > 1) {
     const char *s = "\x1b[7m%\x1b[0m\r\n";
-    if (write(outFd, s, strlen(s)) == -1) {
+    if (write(ttyFd, s, strlen(s)) == -1) {
       return -1;
     }
   }
@@ -470,7 +420,7 @@ static int preparePrompt(int inFd, int outFd) {
 void LineEditorObject::refreshLine(ARState &state, RenderingContext &ctx, bool repaint,
                                    ObserverPtr<ArrayPager> pager) {
   WinSize winSize;
-  syncWinSize(state, this->inFd, &winSize);
+  syncWinSize(state, this->ttyFd, &winSize);
 
   if (pager) {
     pager->updateWinSize({.rows = winSize.rows, .cols = winSize.cols});
@@ -544,7 +494,7 @@ void LineEditorObject::refreshLine(ARState &state, RenderingContext &ctx, bool r
   ctx.oldActualCursorRows = actualCursorRows;
   ctx.oldRenderedCols = ret.renderedCols;
 
-  if (write(this->outFd, ab.c_str(), ab.size()) == -1) {
+  if (write(this->ttyFd, ab.c_str(), ab.size()) == -1) {
   } /* Can't recover from write error. */
 }
 
@@ -607,7 +557,7 @@ static bool rotateHistoryOrUpDown(HistRotator &histRotate, LineBuffer &buf, bool
  *
  * The function returns the length of the current buffer. */
 ssize_t LineEditorObject::editLine(ARState &state, RenderingContext &ctx) {
-  if (this->enableRawMode(this->inFd)) {
+  if (!this->enableRawMode(this->ttyFd)) {
     return -1;
   }
 
@@ -616,7 +566,7 @@ ssize_t LineEditorObject::editLine(ARState &state, RenderingContext &ctx) {
   bool putNewline = true;
   if (count == -1) {
     if (ctx.scrolling) {
-      linenoiseClearScreen(this->inFd);
+      linenoiseClearScreen(this->ttyFd);
       putNewline = false;
     } else if (ctx.buf.moveCursorToEndOfBuf() ||
                this->hasFeature(LineEditorFeature::SEMANTIC_PROMPT)) {
@@ -624,9 +574,9 @@ ssize_t LineEditorObject::editLine(ARState &state, RenderingContext &ctx) {
       this->refreshLine(state, ctx, false);
     }
   }
-  this->disableRawMode(this->inFd);
+  this->disableRawMode(this->ttyFd);
   if (putNewline) {
-    dprintf(this->outFd, "\n%s",
+    dprintf(this->ttyFd, "\n%s",
             this->hasFeature(LineEditorFeature::SEMANTIC_PROMPT) ? OSC133_("C") : "");
   }
   errno = errNum;
@@ -651,12 +601,12 @@ ssize_t LineEditorObject::editInRawMode(ARState &state, RenderingContext &ctx) {
   }
   HistRotator histRotate(this->history);
 
-  preparePrompt(this->inFd, this->outFd);
+  preparePrompt(this->ttyFd);
   if (this->hasFeature(LineEditorFeature::SEMANTIC_PROMPT)) {
     // emit OSC133 before property check due to workaround for iTerm2
-    dprintf(this->outFd, "\x1b]133;D;%d\x1b\\" OSC133_("A"), state.getMaskedExitStatus());
+    dprintf(this->ttyFd, "\x1b]133;D;%d\x1b\\" OSC133_("A"), state.getMaskedExitStatus());
   }
-  checkProperty(ctx.ps, this->inFd, this->outFd);
+  checkProperty(ctx.ps, this->ttyFd);
   if (this->eaw != 0) { // force set east asin width
     ctx.ps.eaw = this->eaw == 1 ? AmbiguousCharWidth::HALF : AmbiguousCharWidth::FULL;
   }
@@ -666,7 +616,7 @@ ssize_t LineEditorObject::editInRawMode(ARState &state, RenderingContext &ctx) {
 
   bool rotating = false;
   unsigned int yankedSize = 0;
-  KeyCodeReader reader(this->inFd);
+  KeyCodeReader reader(this->ttyFd);
   while (true) {
     if (ssize_t r = reader.fetch(toSigSet(state.sigVector)); r <= 0) {
       if (r == -1) {
@@ -864,7 +814,7 @@ ssize_t LineEditorObject::editInRawMode(ARState &state, RenderingContext &ctx) {
       }
       continue;
     case EditActionType::CLEAR_SCREEN:
-      linenoiseClearScreen(this->outFd);
+      linenoiseClearScreen(this->ttyFd);
       this->refreshLine(state, ctx);
       continue;
     case EditActionType::BACKWARD_KILL_WORD:
@@ -1041,12 +991,8 @@ ssize_t LineEditorObject::readline(ARState &state, StringRef prompt, char *buf, 
     errno = EINVAL;
     return -1;
   }
-
-  errno = 0;
-  if (!isatty(this->inFd)) {
-    /* Not a tty: read from file / pipe. In this mode we don't want any
-     * limit to the line size, so we call a function to handle that. */
-    return linenoiseNoTTY(this->inFd, buf, bufLen);
+  if (!isatty(this->ttyFd)) {
+    return -1;
   }
 
   state.incReadlineCallCount();
@@ -1078,12 +1024,13 @@ ssize_t LineEditorObject::readline(ARState &state, StringRef prompt, char *buf, 
   if (promptVal.hasStrRef()) {
     prompt = promptVal.asStrRef();
   }
-  if (isUnsupportedTerm(this->inFd)) {
-    ssize_t r = write(this->outFd, prompt.data(), prompt.size());
-    UNUSED(r);
-    fsync(this->outFd);
+  errno = 0;
+  if (isUnsupportedTerm(this->ttyFd)) {
+    ssize_t r = write(this->ttyFd, prompt.data(), prompt.size());
+    static_cast<void>(r);
+    fsync(this->ttyFd);
     bufLen--; // preserve for null terminated
-    ssize_t rlen = read(this->inFd, buf, bufLen);
+    ssize_t rlen = read(this->ttyFd, buf, bufLen);
     if (rlen < 0) {
       return -1;
     }
@@ -1155,7 +1102,7 @@ EditActionStatus LineEditorObject::completeLine(ARState &state, RenderingContext
     }
   }
   if (const auto len = candidates.size(); len == 0) {
-    linenoiseBeep(this->outFd);
+    linenoiseBeep(this->ttyFd);
     return EditActionStatus::OK;
   } else if (len == 1) {
     return EditActionStatus::OK;
@@ -1259,11 +1206,11 @@ Value LineEditorObject::kickCallback(ARState &state, Value &&callback, CallArgs 
 
   const bool restoreTTY = this->rawMode;
   if (restoreTTY) {
-    this->disableRawMode(this->inFd);
+    this->disableRawMode(this->ttyFd);
   }
   auto ret = VM::callFunction(state, std::move(callback), std::move(callArgs));
   if (restoreTTY) {
-    this->enableRawMode(this->inFd);
+    this->enableRawMode(this->ttyFd);
   }
 
   // restore state
@@ -1393,8 +1340,8 @@ Value LineEditorObject::getkey(ARState &state) {
   int errNum = 0;
   Value ret;
 
-  KeyCodeReader reader(this->inFd);
-  if (this->enableRawMode(this->inFd) == 0 && reader.fetch() >= 0) {
+  KeyCodeReader reader(this->ttyFd);
+  if (this->enableRawMode(this->ttyFd) && reader.fetch() >= 0) {
     auto typeOrError = state.typePool.createTupleType(
         {&state.typePool.get(TYPE::String), &state.typePool.get(TYPE::String)});
     assert(typeOrError && typeOrError.asOk()->isTupleType());
@@ -1412,10 +1359,10 @@ Value LineEditorObject::getkey(ARState &state) {
   }
 
   // force consume remain bytes
-  for (char data[256]; readRetryWithTimeout(this->inFd, data, std::size(data), 10) != -2;)
+  for (char data[256]; readRetryWithTimeout(this->ttyFd, data, std::size(data), 10) != -2;)
     ;
 
-  this->disableRawMode(this->inFd);
+  this->disableRawMode(this->ttyFd);
   if (errNum) {
     raiseSystemError(state, errNum, "cannot read keycode");
   }
