@@ -19,6 +19,10 @@
         - ``complete-backward``: move pager cursor to previous item
         - ``revert``: revert pager inserted item
 
+#### API
+
+- correctly check internal ``beForeground`` error in ``ARState_readLine``
+
 ## [0.39.1] - 2025-10-03
 
 - suppress ``ExecError`` in completion script
