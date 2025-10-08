@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.39.2] - 2025-10-20
+
+- correctly check internal ``beForeground`` error in ``ARState_readLine``
+
 ## [0.39.1] - 2025-10-03
 
 - suppress ``ExecError`` in completion script
