@@ -159,6 +159,13 @@ function _save(path : String) {
     chmod g-rw,o-rw $path
 }
 
+var LOAD_HISTORY = function() => $_load($HISTFILE)
+
+var APPEND_HISTORY = function(hist:[String], line: String) => {
+    $_sync()
+    $_add_and_save($line)
+}
+
 history(param : _HistParam) {
     $_sync()
 
@@ -192,7 +199,3 @@ history(param : _HistParam) {
 }
 
 $LINE_EDIT.setHistory($HISTORY)
-$LINE_EDIT.setAcceptor(function(line, buf) => {
-    $_sync()
-    $_add_and_save($line)
-})

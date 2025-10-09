@@ -11,29 +11,3 @@ var PROMPT_RENDERER = $renderPrompt as typeof($renderPrompt)?
 let PRE_PROMPTS : [() -> Void]
 
 var TITLE_HOOK : (()-> String?)?
-
-$LINE_EDIT.setPrompter(function(p) => {
-    for hook in $PRE_PROMPTS {
-        let old = $?
-        try { $hook(); } catch e { $e.show(); } finally { $? = $old; }
-    }
-    try {
-        $p = $PROMPT_HOOK ? $PROMPT_HOOK!($PS1) : $PS1
-        if $PROMPT_RENDERER {
-            $p = $PROMPT_RENDERER!($p)
-        }
-    } catch e {
-        $e.show()
-    }
-
-    if let hook = $TITLE_HOOK {  # some terminal update active process name after receive OSC0
-        let old  = $?
-        try {
-            if var title = $hook() {
-                printf $'\e]0;%s\a' $title >> /dev/tty || true
-            }
-        } catch e { $e.show(); } finally { $? = $old; }
-    }
-
-    $p
-})

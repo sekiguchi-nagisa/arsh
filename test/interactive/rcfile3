@@ -1,7 +1,9 @@
 # for interactive test
 # for history test
 
-source ../../share/arsh/modules/repl_impl/history.arsh
+source ../../share/arsh/modules/repl.arsh inlined
 
 $HISTSIZE = 500
 $HISTFILE = ""
+
+$PS1= '\s-\v\$ '

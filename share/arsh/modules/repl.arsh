@@ -15,7 +15,50 @@ source $SCRIPT_DIR/repl_impl/bind.arsh inlined
 
 # create DATA_HOME
 test -e $DATA_HOME || mkdir -p $DATA_HOME || true
-history -r  # manually load history
+
+# prompt setting
+var _once = $false
+$LINE_EDIT.setPrompter(function(p) => {
+    let old = $?
+    if !$_once {
+        $_once = $true
+        try { $LOAD_HISTORY(); } catch e { $e.show(); } # load history at first prompt
+        $? = $old
+    }
+
+    for hook in $PRE_PROMPTS {
+        try { $hook(); } catch e { $e.show(); }
+        $? = $old
+    }
+    try {
+        $p = $PROMPT_HOOK ? $PROMPT_HOOK!($PS1) : $PS1
+        if $PROMPT_RENDERER {
+            $p = $PROMPT_RENDERER!($p)
+        }
+    } catch e {
+        $e.show()
+    }
+
+    if let hook = $TITLE_HOOK {  # some terminal update active process name after receive OSC0
+        $? = $old
+        try {
+            if var title = $hook() {
+                printf $'\e]0;%s\a' $title >> /dev/tty || true
+            }
+        } catch e { $e.show(); }
+    }
+
+    $p
+})
+
+# history setting
+$LINE_EDIT.setAcceptor(function(line, buf) => {
+    try {
+        if let hist = $buf {
+            $APPEND_HISTORY($hist, $line)
+        }
+    } catch e { $e.show(); }
+})
 
 # completion setting
 $LINE_EDIT.setCompleter(function(m, s) => {

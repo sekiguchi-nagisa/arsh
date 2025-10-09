@@ -19,6 +19,10 @@
         - ``complete-backward``: move pager cursor to previous item
         - ``revert``: revert pager inserted item
 
+#### Module
+
+- in ``repl.arsh`` module, load history at first prompt
+
 #### API
 
 - correctly check internal ``beForeground`` error in ``ARState_readLine``

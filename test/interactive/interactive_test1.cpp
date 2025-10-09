@@ -667,7 +667,7 @@ TEST_F(InteractiveTest, history4) {
 }
 
 TEST_F(InteractiveTest, prePrompt) {
-  this->invoke("--quiet", "--rcfile", INTERACTIVE_TEST_WORK_DIR "/rcfile4");
+  this->invoke("--quiet", "--rcfile", INTERACTIVE_TEST_WORK_DIR "/rcfile3");
 
   std::this_thread::sleep_for(std::chrono::milliseconds(400));
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
@@ -685,7 +685,7 @@ TEST_F(InteractiveTest, prePrompt) {
 }
 
 TEST_F(InteractiveTest, title) {
-  this->invoke("--quiet", "--rcfile", INTERACTIVE_TEST_WORK_DIR "/rcfile4");
+  this->invoke("--quiet", "--rcfile", INTERACTIVE_TEST_WORK_DIR "/rcfile3");
 
   std::this_thread::sleep_for(std::chrono::milliseconds(400));
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
