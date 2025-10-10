@@ -11,3 +11,5 @@ var PROMPT_RENDERER = $renderPrompt as typeof($renderPrompt)?
 let PRE_PROMPTS : [() -> Void]
 
 var TITLE_HOOK : (()-> String?)?
+
+let PRE_EXECS : [() -> Void]

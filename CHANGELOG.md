@@ -22,6 +22,7 @@
 #### Module
 
 - in ``repl.arsh`` module, load history at first prompt
+- add ``PRE_EXECS`` hook for call functions before executing command
 
 #### API
 

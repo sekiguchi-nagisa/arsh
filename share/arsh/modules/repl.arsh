@@ -53,11 +53,18 @@ $LINE_EDIT.setPrompter(function(p) => {
 
 # history setting
 $LINE_EDIT.setAcceptor(function(line, buf) => {
+    let old = $?
     try {
         if let hist = $buf {
             $APPEND_HISTORY($hist, $line)
         }
+        $? = $old
     } catch e { $e.show(); }
+
+    for hook in $PRE_EXECS {
+        try { $hook(); } catch e { $e.show(); }
+        $? = $old
+    }
 })
 
 # completion setting
