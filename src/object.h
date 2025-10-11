@@ -40,6 +40,7 @@ namespace arsh {
 
 #define EACH_OBJECT_KIND(OP)                                                                       \
   OP(String)                                                                                       \
+  OP(StringIter)                                                                                   \
   OP(UnixFd)                                                                                       \
   OP(Regex)                                                                                        \
   OP(RegexMatch)                                                                                   \
@@ -971,6 +972,26 @@ struct StrArrayIter {
 };
 
 #define ASSERT_ARRAY_SIZE(obj) assert((obj).size() <= ArrayObject::MAX_SIZE)
+
+class StringIterObject : public ObjectWithRtti<ObjectKind::StringIter> {
+private:
+  const Value str; // must be String
+
+  // for grapheme scanner state
+  unsigned int prevPos;
+  unsigned int curPos;
+  unsigned int boundary;
+
+public:
+  explicit StringIterObject(Value str);
+
+  /**
+   * get next iteration
+   * @return
+   * if reach the end, return invalid
+   */
+  Value next();
+};
 
 class BaseObject : public ObjectWithRtti<ObjectKind::Base> {
 private:

@@ -316,6 +316,44 @@ bool ArrayObject::checkIteratorInvalidation(ARState &state, const char *message)
   return true;
 }
 
+// ##############################
+// ##     StringIterObject     ##
+// ##############################
+
+StringIterObject::StringIterObject(Value str)
+    : ObjectWithRtti(TYPE::StringIter), str(std::move(str)) {
+  const auto ref = this->str.asStrRef();
+  Utf8GraphemeScanner scanner(Utf8Stream(ref.begin(), ref.end()));
+
+  // save scanner state
+  this->prevPos = scanner.getCharBegin() - ref.begin();
+  this->curPos = scanner.getStream().iter - ref.begin();
+  this->boundary =
+      CodePointWithMeta(scanner.getCodePoint(), toUnderlying(scanner.getProperty())).getValue();
+}
+
+Value StringIterObject::next() {
+  // restore scanner state
+  const auto ref = this->str.asStrRef();
+  const char *charBegin = ref.begin() + this->prevPos;
+  const char *cur = ref.begin() + this->curPos;
+  auto vv = CodePointWithMeta::from(this->boundary);
+  Utf8GraphemeScanner scanner(Utf8Stream(cur, ref.end()), charBegin, vv.codePoint(),
+                              static_cast<GraphemeBoundary::BreakProperty>(vv.getMeta()));
+  if (!scanner.hasNext()) {
+    return Value::createInvalid();
+  }
+  const auto ret = Value::createStr(scanner.next());
+
+  // save the current scanner state
+  this->prevPos = scanner.getCharBegin() - ref.begin();
+  this->curPos = scanner.getStream().iter - ref.begin();
+  this->boundary =
+      CodePointWithMeta(scanner.getCodePoint(), toUnderlying(scanner.getProperty())).getValue();
+
+  return ret;
+}
+
 // ########################
 // ##     BaseObject     ##
 // ########################

@@ -1031,45 +1031,10 @@ ARSH_METHOD string_toFloat(RuntimeContext &ctx) {
   RET(Value::createInvalid());
 }
 
-static Utf8GraphemeScanner asGraphemeScanner(StringRef ref, const uint32_t (&values)[3]) {
-  const char *charBegin = ref.begin() + values[0];
-  const char *cur = ref.begin() + values[1];
-  auto vv = CodePointWithMeta::from(values[2]);
-  return Utf8GraphemeScanner(Utf8Stream(cur, ref.end()), charBegin, vv.codePoint(),
-                             static_cast<GraphemeBoundary::BreakProperty>(vv.getMeta()));
-}
-
-static Value asDSValue(StringRef ref, const Utf8GraphemeScanner &scanner) {
-  unsigned int prevPos = scanner.getCharBegin() - ref.begin();
-  unsigned int curPos = scanner.getStream().iter - ref.begin();
-  unsigned int v =
-      CodePointWithMeta(scanner.getCodePoint(), toUnderlying(scanner.getProperty())).getValue();
-
-  return Value::createNumList(prevPos, curPos, v);
-}
-
 //!bind: function $OP_ITER($this : String) : StringIter
 ARSH_METHOD string_iter(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_iter);
-
-  /**
-   * record StringIter {
-   *      var ref : String
-   *      var scanner : {
-   *         prevPos : int32_t
-   *         curPos : int32_t
-   *         boundary : int32_t
-   *      }
-   * }
-   *
-   */
-  auto value = Value::create<BaseObject>(ctx.typePool.get(TYPE::StringIter), 2);
-  auto &obj = typeAs<BaseObject>(value);
-  StringRef ref = LOCAL(0).asStrRef();
-  Utf8GraphemeScanner scanner(Utf8Stream(ref.begin(), ref.end()));
-  obj[0] = LOCAL(0);
-  obj[1] = asDSValue(ref, scanner);
-  RET(value);
+  RET(Value::create<StringIterObject>(LOCAL(0)));
 }
 
 //!bind: function $OP_MATCH($this : String, $re : Regex) : Bool
@@ -1235,15 +1200,12 @@ ARSH_METHOD string_quote(RuntimeContext &ctx) {
 //!bind: function $OP_NEXT($this : StringIter) : String
 ARSH_METHOD stringIter_next(RuntimeContext &ctx) {
   SUPPRESS_WARNING(stringIter_next);
-  auto &iter = typeAs<BaseObject>(LOCAL(0));
-  auto scanner = asGraphemeScanner(iter[0].asStrRef(), iter[1].asNumList());
-  if (scanner.hasNext()) {
-    GraphemeCluster ret = scanner.next();
-    iter[1] = asDSValue(iter[0].asStrRef(), scanner);
-    RET(Value::createStr(ret));
-  } else {
+  auto &iter = typeAs<StringIterObject>(LOCAL(0));
+  auto ret = iter.next();
+  if (ret.isInvalid()) {
     RET_VOID;
   }
+  RET(ret);
 }
 
 // ###################
