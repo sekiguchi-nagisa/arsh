@@ -409,13 +409,13 @@ static bool needGlob(const Value *begin, const Value *end) {
  * @return
  */
 static bool tryUpdate(int64_t &cur, const BaseObject &obj) {
-  auto &nums = obj[3].asNumList();
+  auto nums = obj[3].asNumPair();
   const BraceRange range = {
       .begin = obj[0].asInt(),
       .end = obj[1].asInt(),
       .step = obj[2].asInt(),
-      .digits = nums[0],
-      .kind = static_cast<BraceRange::Kind>(nums[1]),
+      .digits = nums.first,
+      .kind = static_cast<BraceRange::Kind>(nums.second),
   };
   return tryUpdateSeqValue(cur, range);
 }
@@ -481,9 +481,9 @@ bool VM::applyBraceExpansion(ARState &state, ArrayObject &argv, const Value *beg
         goto CONTINUE;
       }
       case ExpandMeta::BRACE_SEQ_CLOSE: {
-        auto &nums = typeAs<BaseObject>(begin[i - 1])[3].asNumList();
-        const unsigned int digits = nums[0];
-        const auto kind = static_cast<BraceRange::Kind>(nums[1]);
+        auto nums = typeAs<BaseObject>(begin[i - 1])[3].asNumPair();
+        const unsigned int digits = nums.first;
+        const auto kind = static_cast<BraceRange::Kind>(nums.second);
         values[usedSize++] = Value::createStr(
             formatSeqValue(seqStack.back(), digits, kind == BraceRange::Kind::CHAR));
         goto CONTINUE;

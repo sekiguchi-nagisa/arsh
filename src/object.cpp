@@ -83,7 +83,7 @@ StringRef Value::asStrRef() const {
 }
 
 Value Value::withMetaData(uint32_t metaData) const {
-  assert(this->kind() != ValueKind::EXPAND_META && this->kind() != ValueKind::NUM_LIST &&
+  assert(this->kind() != ValueKind::EXPAND_META && this->kind() != ValueKind::NUM_PAIR &&
          this->kind() != ValueKind::STACK_GUARD && this->kind() != ValueKind::DUMMY);
 
   Value newValue = *this;
@@ -107,7 +107,7 @@ Value Value::withMetaData(uint32_t metaData) const {
 }
 
 uint32_t Value::getMetaData() const {
-  assert(this->kind() != ValueKind::EXPAND_META && this->kind() != ValueKind::NUM_LIST &&
+  assert(this->kind() != ValueKind::EXPAND_META && this->kind() != ValueKind::NUM_PAIR &&
          this->kind() != ValueKind::STACK_GUARD && this->kind() != ValueKind::DUMMY);
 
   if (isSmallStr(this->kind())) {

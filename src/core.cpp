@@ -543,7 +543,7 @@ static int kickCompHook(ARState &state, const unsigned int tempModIndex, const L
   }
 
   // prepare argument
-  auto ctx = Value::createDummy(state.typePool.get(TYPE::Module), tempModIndex, 0);
+  auto ctx = Value::createDummy(state.typePool.get(TYPE::Module), tempModIndex);
   auto argv = createArgv(state, lex, cmdNode, tempModIndex, word, tilde);
   unsigned int index = typeAs<ArrayObject>(argv).size();
   if (!word.empty()) {

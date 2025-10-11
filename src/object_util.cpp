@@ -352,11 +352,11 @@ bool Stringifier::addAsFlatStr(const Value &value) {
     auto v = std::to_string(value.asNum());
     return this->appender(v);
   }
-  case ValueKind::NUM_LIST:
+  case ValueKind::NUM_PAIR:
   case ValueKind::STACK_GUARD: {
-    auto &nums = value.asNumList();
+    auto nums = value.asNumPair();
     char buf[128];
-    const int s = snprintf(buf, std::size(buf), "[%u, %u, %u]", nums[0], nums[1], nums[2]);
+    const int s = snprintf(buf, std::size(buf), "[%u, %u]", nums.first, nums.second);
     assert(s > 0);
     return this->appender(StringRef(buf, s));
   }
@@ -365,7 +365,7 @@ bool Stringifier::addAsFlatStr(const Value &value) {
     if (typeId == toUnderlying(TYPE::Module)) { // for temporary module descriptor
       char buf[64];
       const int s =
-          snprintf(buf, std::size(buf), "%s%u)", OBJ_TEMP_MOD_PREFIX, value.asNumList()[1]);
+          snprintf(buf, std::size(buf), "%s%u)", OBJ_TEMP_MOD_PREFIX, value.asTypeIdMeta());
       assert(s > 0);
       return this->appender(StringRef(buf, s));
     }

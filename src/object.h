@@ -179,26 +179,17 @@ enum class StackGuardType : unsigned char {
 
 enum class ValueKind : unsigned char {
   EMPTY,
-  OBJECT,
-  // not null
-  NUMBER,
-  // uint64_t
-  NUM_LIST,
-  // [uint32_t uint32_t, uint32_t]
-  STACK_GUARD,
-  // [uint32_t uint32_t, uint32_t]
-  DUMMY,
-  // DSType(uint32_t), uint32_t, uint32_t
-  EXPAND_META,
-  // [uint32_t, uint32_t], for glob meta character, '?', '*', '{', ',', '}'
+  OBJECT,      // not null
+  NUMBER,      // uint64_t
+  NUM_PAIR,    // [uint32_t uint32_t]
+  STACK_GUARD, // [uint32_t uint32_t]
+  DUMMY,       // DSType(uint32_t), uint32_t
+  EXPAND_META, // [uint32_t, uint32_t], for glob meta character, '?', '*', '{', ',', '}'
   INVALID,
   BOOL,
-  SIG,
-  // int64_t
-  INT,
-  // int64_t
-  FLOAT,
-  // double
+  SIG,   // int64_t
+  INT,   // int64_t
+  FLOAT, // double
 
   // for small string (up to 14 characters)
   SSTR0,
@@ -264,7 +255,8 @@ protected:
 
     struct {
       ValueKind kind;
-      uint32_t values[3];
+      uint32_t v1;
+      uint32_t v2;
     } u32s;
   };
 
@@ -422,22 +414,29 @@ public:
     return this->value.u64;
   }
 
-  using uint32_3 = const uint32_t (&)[3];
-  uint32_3 asNumList() const { return this->u32s.values; }
+  std::pair<unsigned int, unsigned int> asNumPair() const {
+    assert(this->kind() == ValueKind::NUM_PAIR);
+    return {this->u32s.v1, this->u32s.v2};
+  }
 
   std::pair<StackGuardType, unsigned int> asStackGuard() const {
     assert(this->kind() == ValueKind::STACK_GUARD);
-    return {static_cast<StackGuardType>(this->u32s.values[0]), this->u32s.values[1]};
+    return {static_cast<StackGuardType>(this->u32s.v1), this->u32s.v2};
   }
 
   unsigned int asTypeId() const {
     assert(this->kind() == ValueKind::DUMMY);
-    return this->u32s.values[0];
+    return this->u32s.v1;
+  }
+
+  unsigned int asTypeIdMeta() const {
+    assert(this->kind() == ValueKind::DUMMY);
+    return this->u32s.v2;
   }
 
   std::pair<ExpandMeta, unsigned int> asExpandMeta() const {
     assert(this->kind() == ValueKind::EXPAND_META);
-    return {static_cast<ExpandMeta>(this->u32s.values[0]), this->u32s.values[1]};
+    return {static_cast<ExpandMeta>(this->u32s.v1), this->u32s.v2};
   }
 
   bool asBool() const {
@@ -549,35 +548,32 @@ public:
   static Value createStackGuard(StackGuardType t, unsigned int level = 0) {
     Value ret;
     ret.u32s.kind = ValueKind::STACK_GUARD;
-    ret.u32s.values[0] = static_cast<uint32_t>(t);
-    ret.u32s.values[1] = level;
-    ret.u32s.values[2] = 0;
+    ret.u32s.v1 = static_cast<uint32_t>(t);
+    ret.u32s.v2 = level;
     return ret;
   }
 
-  static Value createDummy(const Type &type, unsigned int v1 = 0, unsigned int v2 = 0) {
+  static Value createDummy(const Type &type, unsigned int v1 = 0) {
     Value ret;
     ret.u32s.kind = ValueKind::DUMMY;
-    ret.u32s.values[0] = static_cast<uint32_t>(type.typeId());
-    ret.u32s.values[1] = v1;
-    ret.u32s.values[2] = v2;
+    ret.u32s.v1 = static_cast<uint32_t>(type.typeId());
+    ret.u32s.v2 = v1;
     return ret;
   }
 
   static Value createExpandMeta(ExpandMeta meta, unsigned int v) {
     Value ret;
     ret.u32s.kind = ValueKind::EXPAND_META;
-    ret.u32s.values[0] = static_cast<unsigned int>(meta);
-    ret.u32s.values[1] = v;
+    ret.u32s.v1 = static_cast<unsigned int>(meta);
+    ret.u32s.v2 = v;
     return ret;
   }
 
-  static Value createNumList(uint32_t v1, uint32_t v2, uint32_t v3) {
+  static Value createNumPair(uint32_t v1, uint32_t v2) {
     Value ret;
-    ret.u32s.kind = ValueKind::NUM_LIST;
-    ret.u32s.values[0] = v1;
-    ret.u32s.values[1] = v2;
-    ret.u32s.values[2] = v3;
+    ret.u32s.kind = ValueKind::NUM_PAIR;
+    ret.u32s.v1 = v1;
+    ret.u32s.v2 = v2;
     return ret;
   }
 
