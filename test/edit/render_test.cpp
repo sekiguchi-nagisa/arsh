@@ -940,6 +940,8 @@ TEST_F(PagerTest, shrinkRow) {
   ASSERT_EQ(expect, out);
 }
 
+TEST_F(PagerTest, ratio) {}
+
 TEST_F(PagerTest, desc1) {
   // single pane
   auto array = this->createWith({

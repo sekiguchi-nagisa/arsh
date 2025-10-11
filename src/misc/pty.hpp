@@ -20,6 +20,7 @@
 #include <sys/ioctl.h>
 #include <termios.h>
 
+#include <cerrno>
 #include <utility>
 
 #if !defined(__CYGWIN__)

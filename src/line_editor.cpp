@@ -1110,7 +1110,7 @@ EditActionStatus LineEditorObject::completeLine(ARState &state, RenderingContext
 
   // show candidates
   auto status = EditActionStatus::CONTINUE;
-  auto pager = ArrayPager::create(CandidatesWrapper(candidates), ctx.ps, {});
+  auto pager = ArrayPager::create(CandidatesWrapper(candidates), ctx.ps, {}, this->pagerRatio);
 
   if (!backward) {
     /**

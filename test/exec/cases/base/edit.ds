@@ -182,7 +182,7 @@ assert ($ex as ArgumentError).message() == "number of custom actions reaches lim
 # configuration
 ## config list
 var configs = $editor.configs()
-assert $configs.size() == 8
+assert $configs.size() == 9
 assert $configs['killring-size'] as Int == 15
 assert $configs['eaw'] as Int == 0
 assert $configs['bracketed-paste'] as Bool
@@ -191,6 +191,7 @@ assert $configs['color'] as String == ''
 assert !($configs["lang-extension"] as Bool)
 assert !($configs["semantic-prompt"] as Bool)
 assert $configs['keyboard-protocol'] as String == ''
+assert $configs['pager-ratio'] as Int == 40
 
 ## invalid config
 $ex = 34
@@ -213,6 +214,7 @@ $editor.config('flow-control', $true)
 $editor.config('color', $'comment=\e[31m hoge=\e[31m type=111')
 $editor.config('semantic-prompt', $true)
 $editor.config('keyboard-protocol', 'kitty')
+$editor.config('pager-ratio', 99)
 
 ## previous config list is not changed
 assert $configs['killring-size'] as Int == 15
@@ -222,6 +224,7 @@ assert !($configs['flow-control'] as Bool)
 assert $configs['color'] as String == ''
 assert !($configs['semantic-prompt'] as Bool)
 assert $configs['keyboard-protocol'] as String == ''
+assert $configs['pager-ratio'] as Int == 40
 
 $configs = $editor.configs()
 assert $configs['killring-size'] as Int == 255
@@ -231,6 +234,7 @@ assert ($configs['flow-control'] as Bool)
 assert $configs['color'] as String == $'comment=\e[31m'
 assert ($configs['semantic-prompt'] as Bool)
 assert $configs['keyboard-protocol'] as String == 'kitty'
+assert $configs['pager-ratio'] as Int == 99
 
 $editor.config('eaw', 1)
 assert $editor.configs()['eaw'] as Int == 1
@@ -247,6 +251,15 @@ assert $editor.configs()['keyboard-protocol'] as String == ''
 
 $editor.config('keyboard-protocol', '')
 assert $editor.configs()['keyboard-protocol'] as String == ''
+
+$editor.config('pager-ratio', -10)
+assert $editor.configs()['pager-ratio'] as Int == 0
+
+$editor.config('pager-ratio', 0)
+assert $editor.configs()['pager-ratio'] as Int == 0
+
+$editor.config('pager-ratio', 101)
+assert $editor.configs()['pager-ratio'] as Int == 100
 
 # abbreviation
 ## define

@@ -85,6 +85,7 @@ bool LineEditorObject::defineCustomAction(ARState &state, StringRef name, String
   OP(KEYBOARD_PROTOCOL, "keyboard-protocol", TYPE::String)                                         \
   OP(KILL_RING_SIZE, "killring-size", TYPE::Int)                                                   \
   OP(LANG_EXTENSION, "lang-extension", TYPE::Bool)                                                 \
+  OP(PAGER_RATIO, "pager-ratio", TYPE::Int)                                                        \
   OP(SEMANTIC_PROMPT, "semantic-prompt", TYPE::Bool)
 
 enum class EditConfig : unsigned char {
@@ -190,6 +191,10 @@ bool LineEditorObject::setConfig(ARState &state, StringRef name, const Value &va
       this->setFeature(LineEditorFeature::XTERM_MODIFY_OTHER_KEYS, true);
     }
     return true;
+  case EditConfig::PAGER_RATIO:
+    this->pagerRatio =
+        static_cast<unsigned char>(std::min<int64_t>(std::max<int64_t>(0, value.asInt()), 100));
+    return true;
   }
   raiseError(state, TYPE::ArgumentError, std::move(message));
   return false;
@@ -251,6 +256,9 @@ Value LineEditorObject::getConfigs(ARState &state) const {
           Value::createStr(this->hasFeature(LineEditorFeature::KITTY_KEYBOARD_PROTOCOL)   ? "kitty"
                            : this->hasFeature(LineEditorFeature::XTERM_MODIFY_OTHER_KEYS) ? "xterm"
                                                                                           : "");
+      break;
+    case EditConfig::PAGER_RATIO:
+      value = Value::createInt(this->pagerRatio);
       break;
     }
     map.insert(key, std::move(value));

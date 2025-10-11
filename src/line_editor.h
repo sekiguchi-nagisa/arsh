@@ -47,9 +47,11 @@ private:
 
   bool continueLine{false};
 
-  unsigned char eaw{0}; // must be 0-2. if 0, auto-detect east asian width
+  unsigned char eaw{0}; // must be 0-2. if 0, auto-detect East Asian width
 
   LineEditorFeature features{LineEditorFeature::BRACKETED_PASTE};
+
+  unsigned char pagerRatio{40};
 
   ANSIEscapeSeqMap escapeSeqMap;
 

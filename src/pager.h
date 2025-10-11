@@ -35,8 +35,8 @@ public:
   static constexpr size_t TAB_WIDTH = SYS_LINE_RENDERER_TAB_WIDTH;
 
   struct WindowSize {
-    unsigned int rows{24};
-    unsigned int cols{80};
+    unsigned short rows{24};
+    unsigned short cols{80};
 
     bool operator==(WindowSize o) const { return this->rows == o.rows && this->cols == o.cols; }
 
@@ -55,12 +55,13 @@ public:
   };
 
 private:
-  static constexpr unsigned int ROW_RATIO = 40;
+  static constexpr unsigned int DEFAULT_ROW_RATIO = 40;
   static constexpr unsigned int MAX_PANE_NUM = 4;
   static constexpr unsigned int COL_MARGIN = 1;
 
   const CandidatesWrapper obj; // must be [String] or Candidates
   WindowSize winSize{0, 0};
+  const unsigned int rowRatio;
   const FlexBuffer<ItemEntry> items; // pre-computed item column size
   const unsigned int maxLenIndex;    // index of item with longest len
   unsigned int paneLen{0};           // pager pane length (paneLen * pages < window col size)
@@ -74,14 +75,14 @@ private:
   bool showDesc{true};               // if true, render description/signature
 
   ArrayPager(CandidatesWrapper &&obj, FlexBuffer<ItemEntry> &&items, unsigned int maxIndex,
-             WindowSize winSize)
-      : obj(std::move(obj)), items(std::move(items)), maxLenIndex(maxIndex) {
+             WindowSize winSize, unsigned int rowRatio)
+      : obj(std::move(obj)), rowRatio(rowRatio), items(std::move(items)), maxLenIndex(maxIndex) {
     this->updateWinSize(winSize);
   }
 
 public:
   static ArrayPager create(CandidatesWrapper &&obj, const CharWidthProperties &ps,
-                           WindowSize winSize);
+                           WindowSize winSize, unsigned int rowRatio = DEFAULT_ROW_RATIO);
 
   /**
    * update windows size.

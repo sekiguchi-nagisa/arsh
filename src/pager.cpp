@@ -26,7 +26,7 @@ namespace arsh {
 // ########################
 
 ArrayPager ArrayPager::create(CandidatesWrapper &&obj, const CharWidthProperties &ps,
-                              WindowSize winSize) {
+                              WindowSize winSize, unsigned int rowRatio) {
   unsigned int maxLen = 0;
   unsigned int maxIndex = 0;
   FlexBuffer<ItemEntry> items;
@@ -80,7 +80,7 @@ ArrayPager ArrayPager::create(CandidatesWrapper &&obj, const CharWidthProperties
     assert(padLen % TAB_WIDTH == 0);
     e.tabs = padLen / TAB_WIDTH;
   }
-  return {std::move(obj), std::move(items), maxIndex, winSize};
+  return {std::move(obj), std::move(items), maxIndex, winSize, rowRatio};
 }
 
 void ArrayPager::updateWinSize(WindowSize size) {
@@ -90,7 +90,8 @@ void ArrayPager::updateWinSize(WindowSize size) {
   this->showPager = true;
   this->showDesc = true;
   this->winSize = size;
-  this->rows = (this->winSize.rows * ROW_RATIO) / 100;
+  this->rows = (this->winSize.rows * this->rowRatio) / 100;
+  this->rows = std::min(this->rows, static_cast<unsigned int>(this->winSize.rows - 3));
   if (this->rows == 0) {
     this->rows = 1;
     this->showPager = false;
