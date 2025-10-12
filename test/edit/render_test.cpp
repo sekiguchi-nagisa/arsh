@@ -940,7 +940,176 @@ TEST_F(PagerTest, shrinkRow) {
   ASSERT_EQ(expect, out);
 }
 
-TEST_F(PagerTest, ratio) {}
+TEST_F(PagerTest, shrinkRatio) {
+  auto array = this->createWith({
+      {"AAAAAA", "command"},
+      {"BBBBBB", "command"},
+      {"CCCCCC", "command"},
+      {"DDDDDD", "command"},
+      {"EEEEEE", "command"},
+      {"FFFFFF", "command"},
+  });
+  {
+    auto pager = ArrayPager::create(CandidatesWrapper(array), this->ps, {.rows = 10, .cols = 30});
+    ASSERT_EQ(1, pager.getPanes());
+    ASSERT_EQ(0, pager.getCurRow());
+    ASSERT_EQ(0, pager.getIndex());
+    ASSERT_EQ(40, pager.getRowRatio());
+
+    const char *expect = "\x1b[7mAAAAAA     (command)    \x1b[0m\r\nBBBBBB     (command)    "
+                         "\r\nCCCCCC     (command)    \r\nDDDDDD     (command)    \r\n"
+                         "\x1B[7mrows 1-4/6\x1B[0m\r\n";
+    std::string out;
+    out = this->render(pager);
+    ASSERT_EQ(expect, out);
+  }
+
+  // change ratio (shrink)
+  {
+    auto pager =
+        ArrayPager::create(CandidatesWrapper(array), this->ps, {.rows = 10, .cols = 30}, 30);
+    ASSERT_EQ(1, pager.getPanes());
+    ASSERT_EQ(0, pager.getCurRow());
+    ASSERT_EQ(0, pager.getIndex());
+    ASSERT_EQ(30, pager.getRowRatio());
+
+    const char *expect = "\x1b[7mAAAAAA     (command)    \x1b[0m\r\nBBBBBB     (command)    "
+                         "\r\nCCCCCC     (command)    \r\n"
+                         "\x1B[7mrows 1-3/6\x1B[0m\r\n";
+    std::string out;
+    out = this->render(pager);
+    ASSERT_EQ(expect, out);
+  }
+
+  {
+    auto pager =
+        ArrayPager::create(CandidatesWrapper(array), this->ps, {.rows = 10, .cols = 30}, 10);
+    ASSERT_EQ(1, pager.getPanes());
+    ASSERT_EQ(0, pager.getCurRow());
+    ASSERT_EQ(0, pager.getIndex());
+    ASSERT_EQ(10, pager.getRowRatio());
+
+    const char *expect = "\x1b[7mAAAAAA     (command)    \x1b[0m\r\n"
+                         "\x1B[7mrows 1-1/6\x1B[0m\r\n";
+    std::string out;
+    out = this->render(pager);
+    ASSERT_EQ(expect, out);
+  }
+
+  {
+    auto pager =
+        ArrayPager::create(CandidatesWrapper(array), this->ps, {.rows = 10, .cols = 30}, 0);
+    ASSERT_EQ(1, pager.getPanes());
+    ASSERT_EQ(0, pager.getCurRow());
+    ASSERT_EQ(0, pager.getIndex());
+    ASSERT_EQ(0, pager.getRowRatio());
+
+    const char *expect = "";
+    std::string out;
+    out = this->render(pager);
+    ASSERT_EQ(expect, out);
+  }
+}
+
+TEST_F(PagerTest, expandRatio) {
+  auto array = this->createWith({
+      {"AAAAAA", "command"},
+      {"BBBBBB", "command"},
+      {"CCCCCC", "command"},
+      {"DDDDDD", "command"},
+      {"EEEEEE", "command"},
+      {"FFFFFF", "command"},
+  });
+  {
+    auto pager = ArrayPager::create(CandidatesWrapper(array), this->ps, {.rows = 10, .cols = 30});
+    ASSERT_EQ(1, pager.getPanes());
+    ASSERT_EQ(0, pager.getCurRow());
+    ASSERT_EQ(0, pager.getIndex());
+    ASSERT_EQ(40, pager.getRowRatio());
+
+    const char *expect = "\x1b[7mAAAAAA     (command)    \x1b[0m\r\nBBBBBB     (command)    "
+                         "\r\nCCCCCC     (command)    \r\nDDDDDD     (command)    \r\n"
+                         "\x1B[7mrows 1-4/6\x1B[0m\r\n";
+    std::string out;
+    out = this->render(pager);
+    ASSERT_EQ(expect, out);
+  }
+
+  // change ratio (expand)
+  {
+    auto pager =
+        ArrayPager::create(CandidatesWrapper(array), this->ps, {.rows = 10, .cols = 30}, 50);
+    ASSERT_EQ(1, pager.getPanes());
+    ASSERT_EQ(0, pager.getCurRow());
+    ASSERT_EQ(0, pager.getIndex());
+    ASSERT_EQ(50, pager.getRowRatio());
+
+    const char *expect = "\x1b[7mAAAAAA     (command)    \x1b[0m\r\n"
+                         "BBBBBB     (command)    \r\n"
+                         "CCCCCC     (command)    \r\n"
+                         "DDDDDD     (command)    \r\n"
+                         "EEEEEE     (command)    \r\n"
+                         "\x1B[7mrows 1-5/6\x1B[0m\r\n";
+    std::string out;
+    out = this->render(pager);
+    ASSERT_EQ(expect, out);
+  }
+
+  {
+    auto pager =
+        ArrayPager::create(CandidatesWrapper(array), this->ps, {.rows = 10, .cols = 30}, 100);
+    ASSERT_EQ(1, pager.getPanes());
+    ASSERT_EQ(0, pager.getCurRow());
+    ASSERT_EQ(0, pager.getIndex());
+    ASSERT_EQ(100, pager.getRowRatio());
+
+    const char *expect = "\x1b[7mAAAAAA     (command)    \x1b[0m\r\nBBBBBB     (command)    "
+                         "\r\nCCCCCC     (command)    \r\n"
+                         "DDDDDD     (command)    \r\n"
+                         "EEEEEE     (command)    \r\n"
+                         "FFFFFF     (command)    \r\n";
+    std::string out;
+    out = this->render(pager);
+    ASSERT_EQ(expect, out);
+  }
+
+  {
+    auto pager =
+        ArrayPager::create(CandidatesWrapper(array), this->ps, {.rows = 9, .cols = 30}, 100);
+    ASSERT_EQ(1, pager.getPanes());
+    ASSERT_EQ(0, pager.getCurRow());
+    ASSERT_EQ(0, pager.getIndex());
+    ASSERT_EQ(100, pager.getRowRatio());
+
+    const char *expect = "\x1b[7mAAAAAA     (command)    \x1b[0m\r\nBBBBBB     (command)    "
+                         "\r\nCCCCCC     (command)    \r\n"
+                         "DDDDDD     (command)    \r\n"
+                         "EEEEEE     (command)    \r\n"
+                         "FFFFFF     (command)    \r\n";
+    std::string out;
+    out = this->render(pager);
+    ASSERT_EQ(expect, out);
+  }
+
+  {
+    auto pager =
+        ArrayPager::create(CandidatesWrapper(array), this->ps, {.rows = 8, .cols = 30}, 100);
+    ASSERT_EQ(1, pager.getPanes());
+    ASSERT_EQ(0, pager.getCurRow());
+    ASSERT_EQ(0, pager.getIndex());
+    ASSERT_EQ(100, pager.getRowRatio());
+    ASSERT_EQ(6, pager.getRenderedRows());
+
+    const char *expect = "\x1b[7mAAAAAA     (command)    \x1b[0m\r\nBBBBBB     (command)    "
+                         "\r\nCCCCCC     (command)    \r\n"
+                         "DDDDDD     (command)    \r\n"
+                         "EEEEEE     (command)    \r\n"
+                         "\x1B[7mrows 1-5/6\x1B[0m\r\n";
+    std::string out;
+    out = this->render(pager);
+    ASSERT_EQ(expect, out);
+  }
+}
 
 TEST_F(PagerTest, desc1) {
   // single pane

@@ -95,6 +95,8 @@ public:
 
   WindowSize getWinSize() const { return this->winSize; }
 
+  unsigned int getRowRatio() const { return this->rowRatio; }
+
   unsigned int getIndex() const { return this->index; }
 
   unsigned int getPanes() const { return this->panes; }
