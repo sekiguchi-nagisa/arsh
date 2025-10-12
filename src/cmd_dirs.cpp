@@ -190,7 +190,7 @@ int builtin_dirs(ARState &state, ArrayObject &argvObj) {
     return 1;
   }
   if (dirStack.size() > SYS_LIMIT_DIRSTACK_SIZE) {
-    dirStack.refValues().resize(SYS_LIMIT_DIRSTACK_SIZE); // truncate
+    dirStack.resize(SYS_LIMIT_DIRSTACK_SIZE); // truncate
   }
 
   PrintDirOp dirOp{};
@@ -232,7 +232,7 @@ int builtin_pushd_popd(ARState &state, ArrayObject &argvObj) {
     return 1;
   }
   if (dirStack.size() > SYS_LIMIT_DIRSTACK_SIZE) {
-    dirStack.refValues().resize(SYS_LIMIT_DIRSTACK_SIZE); // truncate
+    dirStack.resize(SYS_LIMIT_DIRSTACK_SIZE); // truncate
   }
 
   GetOptState optState("h");
@@ -305,11 +305,11 @@ int builtin_pushd_popd(ARState &state, ArrayObject &argvObj) {
         return 1;
       }
       const size_t limit = dirStack.size();
-      dirStack.refValues().insert(dirStack.begin(), Value::createStr(cwd.get()));
+      static_cast<void>(dirStack.insert(state, 0, Value::createStr(cwd.get())));
       for (size_t count = static_cast<size_t>(rotateIndex) + 1; count < limit; count++) {
         auto top = dirStack.back();
         dirStack.pop_back();
-        dirStack.refValues().insert(dirStack.begin(), std::move(top));
+        static_cast<void>(dirStack.insert(state, 0, std::move(top)));
       }
       dirStack.pop_back();
     }

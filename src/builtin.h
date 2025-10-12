@@ -645,7 +645,7 @@ ARSH_METHOD string_bytes(RuntimeContext &ctx) {
   auto value =
       Value::create<ArrayObject>(*ctx.typePool.createArrayType(ctx.typePool.get(TYPE::Int)).asOk());
   auto &array = typeAs<ArrayObject>(value);
-  array.refValues().resize(ref.size());
+  array.resize(ref.size());
   const size_t size = ref.size();
   for (size_t i = 0; i < size; i++) {
     array[i] = Value::createInt(static_cast<unsigned char>(ref[i]));
@@ -1643,34 +1643,12 @@ ARSH_METHOD array_peek(RuntimeContext &ctx) {
   return value;
 }
 
-static bool array_insertImpl(ARState &ctx, int64_t index, const Value &v) {
-  auto &obj = typeAs<ArrayObject>(LOCAL(0));
-  if (unlikely(!obj.checkIteratorInvalidation(ctx))) {
-    return false;
-  }
-  const size_t size = obj.size();
-  if (size == ArrayObject::MAX_SIZE) {
-    raiseOutOfRangeError(ctx, std::string("reach Array size limit"));
-    return false;
-  }
-
-  auto ret = resolveIndex(ctx, index, size, true);
-  if (!ret) {
-    return false;
-  }
-  obj.refValues().insert(obj.begin() + ret.index, v);
-  return true;
-}
-
-static bool array_pushImpl(RuntimeContext &ctx) {
-  size_t index = typeAs<ArrayObject>(LOCAL(0)).size();
-  return array_insertImpl(ctx, index, LOCAL(1));
-}
-
 //!bind: function push($this : Array<T0>, $value : T0) : Void
 ARSH_METHOD array_push(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_push);
-  TRY(array_pushImpl(ctx));
+  auto &obj = typeAs<ArrayObject>(LOCAL(0));
+  auto v = LOCAL(1);
+  TRY(obj.append(ctx, std::move(v)));
   RET_VOID;
 }
 
@@ -1701,21 +1679,28 @@ ARSH_METHOD array_shift(RuntimeContext &ctx) {
 //!bind: function unshift($this : Array<T0>, $value : T0) : Void
 ARSH_METHOD array_unshift(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_unshift);
-  TRY(array_insertImpl(ctx, 0, LOCAL(1)));
+  auto &obj = typeAs<ArrayObject>(LOCAL(0));
+  auto v = LOCAL(1);
+  TRY(obj.insert(ctx, 0, std::move(v)));
   RET_VOID;
 }
 
 //!bind: function insert($this : Array<T0>, $index : Int, $value : T0) : Void
 ARSH_METHOD array_insert(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_insert);
-  TRY(array_insertImpl(ctx, LOCAL(1).asInt(), LOCAL(2)));
+  auto &obj = typeAs<ArrayObject>(LOCAL(0));
+  auto ret = resolveIndex(ctx, LOCAL(1).asInt(), obj.size(), true);
+  auto v = LOCAL(2);
+  TRY(ret && obj.insert(ctx, ret.index, std::move(v)));
   RET_VOID;
 }
 
 //!bind: function add($this : Array<T0>, $value : T0) : Array<T0>
 ARSH_METHOD array_add(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_add);
-  TRY(array_pushImpl(ctx));
+  auto &obj = typeAs<ArrayObject>(LOCAL(0));
+  auto v = LOCAL(1);
+  TRY(obj.append(ctx, std::move(v)));
   RET(LOCAL(0));
 }
 
@@ -1727,7 +1712,7 @@ ARSH_METHOD array_addAll(RuntimeContext &ctx) {
   auto &value = typeAs<ArrayObject>(LOCAL(1));
   if (&obj != &value) {
     const size_t valueSize = value.size();
-    obj.refValues().reserve(valueSize + obj.size());
+    obj.reserve(valueSize + obj.size());
     for (size_t i = 0; i < valueSize; i++) {
       TRY(obj.append(ctx, Value(value[i])));
     }

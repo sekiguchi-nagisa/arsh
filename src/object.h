@@ -910,6 +910,10 @@ public:
 
   void clear() { this->erase(this->begin(), this->end()); }
 
+  void resize(size_t afterSize) { this->values.resize(afterSize); }
+
+  void reserve(size_t newCap) { this->values.reserve(newCap); }
+
   void append(Value &&obj) { this->values.push_back(std::move(obj)); }
 
   void append(const Value &obj) { this->values.push_back(obj); }
@@ -919,9 +923,22 @@ public:
    * @param state
    * @param obj
    * @return
-   * if has error (reach array size limit), return false
+   * if error (reach array size limit), return false
    */
-  [[nodiscard]] bool append(ARState &state, Value &&obj);
+  [[nodiscard]] bool append(ARState &state, Value &&obj) {
+    return this->insert(state, this->size(), std::move(obj));
+  }
+
+  /**
+   * insert and check array size limit
+   * @param state
+   * @param index
+   * if larger than size, append to last
+   * @param value
+   * @return
+   * if error (reach array size limit), return false
+   */
+  [[nodiscard]] bool insert(ARState &state, size_t index, Value &&value);
 
   /**
    *

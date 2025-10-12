@@ -146,7 +146,7 @@ void ARState::updatePipeStatus(unsigned int size, const Proc *procs, bool mergeE
     this->setGlobal(BuiltinVarOffset::PIPESTATUS, Value::create<ArrayObject>(type));
   } else { // reuse existing object
     obj.clear();
-    obj.refValues().reserve(size + (mergeExitStatus ? 1 : 0));
+    obj.reserve(size + (mergeExitStatus ? 1 : 0));
   }
 
   auto &obj = typeAs<ArrayObject>(this->getGlobal(BuiltinVarOffset::PIPESTATUS));

@@ -273,7 +273,7 @@ bool RegexObject::match(ARState &state, const StringRef ref, MatchResult *ret) {
 // ##     Array_Object     ##
 // ##########################
 
-bool ArrayObject::append(ARState &state, Value &&obj) {
+bool ArrayObject::insert(ARState &state, size_t index, Value &&value) {
   if (unlikely(!this->checkIteratorInvalidation(state))) {
     return false;
   }
@@ -281,7 +281,8 @@ bool ArrayObject::append(ARState &state, Value &&obj) {
     raiseError(state, TYPE::OutOfRangeError, "reach Array size limit");
     return false;
   }
-  this->values.push_back(std::move(obj));
+  index = std::min(index, this->size());
+  this->values.insert(this->values.begin() + index, std::move(value));
   return true;
 }
 
