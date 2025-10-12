@@ -16,7 +16,7 @@ static ObjPtr<ArrayObject> createArgs(T &&...args) {
 }
 
 static std::string toStringAt(const ArrayObject &obj, size_t index) {
-  return obj.getValues()[index].asStrRef().toString();
+  return obj[index].asStrRef().toString();
 }
 
 static void fillWithInvalid(BaseObject &obj) {

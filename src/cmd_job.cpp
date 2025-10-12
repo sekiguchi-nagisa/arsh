@@ -109,7 +109,7 @@ int builtin_kill(ARState &state, ArrayObject &argvObj) {
   int sigNum = SIGTERM;
   bool listing = false;
 
-  if (argvObj.getValues().size() == 1) {
+  if (argvObj.size() == 1) {
     return showUsage(argvObj);
   }
 
@@ -123,7 +123,7 @@ int builtin_kill(ARState &state, ArrayObject &argvObj) {
   case '?': {
     StringRef sigStr = optState.optArg;
     if (opt == '?') { // skip prefix '-', ex. -9
-      sigStr = argvObj.getValues()[optState.index++].asStrRef().substr(1);
+      sigStr = argvObj[optState.index++].asStrRef().substr(1);
     }
     if (auto *e = findSig(sigStr)) {
       sigNum = e->sigNum;
@@ -142,8 +142,8 @@ int builtin_kill(ARState &state, ArrayObject &argvObj) {
     break;
   }
 
-  auto begin = argvObj.getValues().begin() + optState.index;
-  const auto end = argvObj.getValues().end();
+  auto begin = argvObj.begin() + optState.index;
+  const auto end = argvObj.end();
 
   if (begin == end) {
     if (listing) {
@@ -209,15 +209,15 @@ int builtin_fg_bg(ARState &state, ArrayObject &argvObj) {
     }
   }
 
-  const bool fg = argvObj.getValues()[0].asStrRef() == "fg";
-  const unsigned int size = argvObj.getValues().size();
+  const bool fg = argvObj[0].asStrRef() == "fg";
+  const unsigned int size = argvObj.size();
   const unsigned int index = optState.index;
   Job job;
   StringRef arg = "current";
   if (index == size) {
     job = state.jobTable.syncAndGetCurPrevJobs().cur;
   } else {
-    arg = argvObj.getValues()[index].asStrRef();
+    arg = argvObj[index].asStrRef();
     const auto ret = state.jobTable.lookup(arg);
     job = ret.isJob() ? ret.asJob() : nullptr;
   }
@@ -265,7 +265,7 @@ int builtin_fg_bg(ARState &state, ArrayObject &argvObj) {
 
   // process remain arguments
   for (unsigned int i = index + 1; i < size; i++) {
-    arg = argvObj.getValues()[i].asStrRef();
+    arg = argvObj[i].asStrRef();
     if (const auto target = state.jobTable.lookup(arg); target.isJob()) {
       target.asJob()->showInfo(stdout, JobInfoFormat::JOB_ID | JobInfoFormat::DESC);
       static_cast<void>(target.asJob()->send(SIGCONT));
@@ -306,7 +306,7 @@ int builtin_wait(ARState &state, ArrayObject &argvObj) {
     }
   }
   for (unsigned int i = optState.index; i < argvObj.size(); i++) {
-    const auto ref = argvObj.getValues()[i].asStrRef();
+    const auto ref = argvObj[i].asStrRef();
     auto target = resolveProcOrJob(state, argvObj, ref, false);
     Job job;
     int offset = -1;
@@ -433,7 +433,7 @@ int builtin_jobs(ARState &state, ArrayObject &argvObj) {
   // show specified jobs
   bool hasError = false;
   for (unsigned int i = optState.index; i < argvObj.size(); i++) {
-    const auto ref = argvObj.getValues()[i].asStrRef();
+    const auto ref = argvObj[i].asStrRef();
     auto ret = state.jobTable.lookup(ref);
     if (!ret.isJob()) {
       ERROR(state, argvObj, "%s: no such job", toPrintable(ref).c_str());
@@ -465,7 +465,7 @@ int builtin_disown(ARState &state, ArrayObject &argvObj) {
     return 0;
   }
   for (unsigned int i = optState.index; i < argvObj.size(); i++) {
-    const auto ref = argvObj.getValues()[i].asStrRef();
+    const auto ref = argvObj[i].asStrRef();
     auto ret = state.jobTable.lookup(ref);
     if (!ret.isJob()) {
       ERROR(state, argvObj, "%s: no such job", toPrintable(ref).c_str());

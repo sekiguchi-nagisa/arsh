@@ -162,16 +162,18 @@ public:
   unsigned int size() const { return this->obj->size(); }
 
   StringRef getCandidateAt(const unsigned int index) const {
-    return toStrRef(this->values()[index]);
+    return toStrRef(this->underlying()[index]);
   }
 
   StringRef getDescriptionAt(const unsigned int index) const {
-    auto &v = this->values()[index];
+    auto &v = this->underlying()[index];
     return v.isObject() && isa<CandidateObject>(v.get()) ? typeAs<CandidateObject>(v).description()
                                                          : "";
   }
 
-  CandidateAttr getAttrAt(const unsigned int index) const { return getAttr(this->values()[index]); }
+  CandidateAttr getAttrAt(const unsigned int index) const {
+    return getAttr(this->underlying()[index]);
+  }
 
   /**
    * resolve common prefix string (valid utf-8)
@@ -191,7 +193,7 @@ private:
     return m.attr;
   }
 
-  const std::vector<Value> &values() const { return this->obj->getValues(); }
+  const ArrayObject &underlying() const { return *this->obj; }
 
   bool add(ARState &state, Value &&v) { return this->obj->append(state, std::move(v)); }
 };

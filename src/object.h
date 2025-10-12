@@ -26,6 +26,7 @@
 #include <memory>
 
 #include "constant.h"
+#include "misc/array_ref.hpp"
 #include "misc/files.hpp"
 #include "misc/rtti.hpp"
 #include "misc/string_ref.hpp"
@@ -829,7 +830,7 @@ public:
 
   const auto &getRE() const { return this->reObj->getRE(); }
 
-  const auto &getGroups() const { return this->groups; }
+  ArrayRef<Value> groupsView() const { return {this->groups.data(), this->groups.size()}; }
 
   unsigned int getStartOffset() const { return this->startOffset; }
 
@@ -879,11 +880,21 @@ public:
 
   bool locking() const { return this->lockCount > 0; }
 
-  const std::vector<Value> &getValues() const { return this->values; }
+  ArrayRef<Value> view() const { return {this->values.data(), this->values.size()}; }
+
+  const Value &operator[](const size_t index) const { return this->values[index]; }
+
+  const auto &back() const { return this->values.back(); }
+
+  const auto &front() const { return this->values.front(); }
 
   std::vector<Value> &refValues() { return this->values; }
 
   size_t size() const { return this->values.size(); }
+
+  auto begin() const { return this->values.begin(); }
+
+  auto end() const { return this->values.end(); }
 
   void append(Value &&obj) { this->values.push_back(std::move(obj)); }
 
@@ -940,7 +951,7 @@ public:
 
   bool hasNext() const { return this->index < this->arrayObj->size(); }
 
-  Value next() { return this->arrayObj->getValues()[this->index++]; }
+  Value next() { return (*this->arrayObj)[this->index++]; }
 };
 
 struct StrArrayIter {

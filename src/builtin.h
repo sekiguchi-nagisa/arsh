@@ -776,8 +776,8 @@ ARSH_METHOD string_byteAt(RuntimeContext &ctx) {
 }
 
 static Value sliceImpl(const ArrayObject &obj, size_t begin, size_t end) {
-  auto b = obj.getValues().begin() + begin;
-  auto e = obj.getValues().begin() + end;
+  auto b = obj.begin() + begin;
+  auto e = obj.begin() + end;
   return Value::create<ArrayObject>(obj.getTypeID(), std::vector<Value>(b, e));
 }
 
@@ -1319,16 +1319,16 @@ ARSH_METHOD match_end(RuntimeContext &ctx) {
 ARSH_METHOD match_count(RuntimeContext &ctx) {
   SUPPRESS_WARNING(match_count);
   const auto &match = typeAs<RegexMatchObject>(LOCAL(0));
-  RET(Value::createInt(static_cast<int64_t>(match.getGroups().size())));
+  RET(Value::createInt(static_cast<int64_t>(match.groupsView().size())));
 }
 
 //!bind: function group($this : RegexMatch, $index: Int) : Option<String>
 ARSH_METHOD match_group(RuntimeContext &ctx) {
   SUPPRESS_WARNING(match_group);
-  const auto &match = typeAs<RegexMatchObject>(LOCAL(0));
+  auto groups = typeAs<RegexMatchObject>(LOCAL(0)).groupsView();
   if (int64_t index = LOCAL(1).asInt();
-      index > -1 && static_cast<uint64_t>(index) < match.getGroups().size()) {
-    RET(match.getGroups()[index]);
+      index > -1 && static_cast<uint64_t>(index) < groups.size()) {
+    RET(groups[index]);
   }
   RET(Value::createInvalid());
 }
@@ -1337,9 +1337,10 @@ ARSH_METHOD match_group(RuntimeContext &ctx) {
 ARSH_METHOD match_named(RuntimeContext &ctx) {
   SUPPRESS_WARNING(match_named);
   const auto &obj = typeAs<RegexMatchObject>(LOCAL(0));
+  auto groups = obj.groupsView();
   const int index = obj.getRE().getGroupIndexByName(LOCAL(1).asStrRef());
-  if (index > -1 && static_cast<uint64_t>(index) < obj.getGroups().size()) {
-    RET(obj.getGroups()[index]);
+  if (index > -1 && static_cast<uint64_t>(index) < groups.size()) {
+    RET(groups[index]);
   }
   RET(Value::createInvalid());
 }
@@ -1562,10 +1563,10 @@ ARSH_METHOD array_get(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_get);
 
   auto &obj = typeAs<ArrayObject>(LOCAL(0));
-  size_t size = obj.getValues().size();
+  size_t size = obj.size();
   auto index = LOCAL(1).asInt();
   auto ret = TRY(resolveIndex(ctx, index, size));
-  RET(obj.getValues()[ret.index]);
+  RET(obj[ret.index]);
 }
 
 //!bind: function get($this : Array<T0>, $index : Int) : Option<T0>
@@ -1573,13 +1574,13 @@ ARSH_METHOD array_get2(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_get2);
 
   auto &obj = typeAs<ArrayObject>(LOCAL(0));
-  size_t size = obj.getValues().size();
+  size_t size = obj.size();
   auto index = LOCAL(1).asInt();
   auto ret = resolveIndex(index, size, false);
   if (!ret) {
     RET(Value::createInvalid());
   }
-  RET(obj.getValues()[ret.index]);
+  RET(obj[ret.index]);
 }
 
 //!bind: function $OP_SET($this : Array<T0>, $index : Int, $value : T0) : Void
@@ -1588,7 +1589,7 @@ ARSH_METHOD array_set(RuntimeContext &ctx) {
 
   auto &obj = typeAs<ArrayObject>(LOCAL(0));
   CHECK_ITER_INVALIDATION(obj);
-  size_t size = obj.getValues().size();
+  size_t size = obj.size();
   auto index = LOCAL(1).asInt();
   auto ret = TRY(resolveIndex(ctx, index, size));
   obj.refValues()[ret.index] = EXTRACT_LOCAL(2);
@@ -1601,10 +1602,10 @@ ARSH_METHOD array_remove(RuntimeContext &ctx) {
 
   auto &obj = typeAs<ArrayObject>(LOCAL(0));
   CHECK_ITER_INVALIDATION(obj);
-  size_t size = obj.getValues().size();
+  size_t size = obj.size();
   auto index = LOCAL(1).asInt();
   auto ret = TRY(resolveIndex(ctx, index, size));
-  auto v = obj.getValues()[ret.index];
+  auto v = obj[ret.index];
   obj.refValues().erase(obj.refValues().begin() + ret.index);
   RET(v);
 }
@@ -1628,11 +1629,11 @@ ARSH_METHOD array_removeRange(RuntimeContext &ctx) {
 
 static bool array_fetch(RuntimeContext &ctx, Value &value, bool fetchLast = true) {
   auto &obj = typeAs<ArrayObject>(LOCAL(0));
-  if (obj.getValues().empty()) {
+  if (obj.size() == 0) {
     raiseOutOfRangeError(ctx, std::string("Array size is 0"));
     return false;
   }
-  value = fetchLast ? obj.getValues().back() : obj.getValues().front();
+  value = fetchLast ? obj.back() : obj.front();
   return true;
 }
 
@@ -1649,7 +1650,7 @@ static bool array_insertImpl(ARState &ctx, int64_t index, const Value &v) {
   if (unlikely(!obj.checkIteratorInvalidation(ctx))) {
     return false;
   }
-  size_t size = obj.getValues().size();
+  const size_t size = obj.size();
   if (size == ArrayObject::MAX_SIZE) {
     raiseOutOfRangeError(ctx, std::string("reach Array size limit"));
     return false;
@@ -1664,7 +1665,7 @@ static bool array_insertImpl(ARState &ctx, int64_t index, const Value &v) {
 }
 
 static bool array_pushImpl(RuntimeContext &ctx) {
-  size_t index = typeAs<ArrayObject>(LOCAL(0)).getValues().size();
+  size_t index = typeAs<ArrayObject>(LOCAL(0)).size();
   return array_insertImpl(ctx, index, LOCAL(1));
 }
 
@@ -1728,10 +1729,10 @@ ARSH_METHOD array_addAll(RuntimeContext &ctx) {
   CHECK_ITER_INVALIDATION(obj);
   auto &value = typeAs<ArrayObject>(LOCAL(1));
   if (&obj != &value) {
-    const size_t valueSize = value.getValues().size();
+    const size_t valueSize = value.size();
     obj.refValues().reserve(valueSize + obj.size());
     for (size_t i = 0; i < valueSize; i++) {
-      TRY(obj.append(ctx, Value(value.getValues()[i])));
+      TRY(obj.append(ctx, Value(value[i])));
     }
   }
   RET(LOCAL(0));
@@ -1743,7 +1744,7 @@ ARSH_METHOD array_swap(RuntimeContext &ctx) {
   auto &obj = typeAs<ArrayObject>(LOCAL(0));
   CHECK_ITER_INVALIDATION(obj);
   auto index = LOCAL(1).asInt();
-  auto ret = TRY(resolveIndex(ctx, index, obj.getValues().size()));
+  auto ret = TRY(resolveIndex(ctx, index, obj.size()));
   Value value = LOCAL(2);
   std::swap(obj.refValues()[ret.index], value);
   RET(value);
@@ -1828,7 +1829,7 @@ ARSH_METHOD array_join(RuntimeContext &ctx) {
   }
   auto ret = Value::createStr();
   size_t count = 0;
-  for (auto &e : obj.getValues()) {
+  for (auto &e : obj) {
     if (count++ > 0) {
       TRY(delim.opStr(ctx, ret));
     }
@@ -1876,7 +1877,7 @@ ARSH_METHOD array_indexOf(RuntimeContext &ctx) {
 
   int64_t index = -1;
   for (size_t i = offset.index; i < size; i++) {
-    if (arrayObj.getValues()[i].equals(ctx, value)) {
+    if (arrayObj[i].equals(ctx, value)) {
       index = static_cast<int64_t>(i);
       break;
     }
@@ -1896,7 +1897,7 @@ ARSH_METHOD array_lastIndexOf(RuntimeContext &ctx) {
   assert(size <= ArrayObject::MAX_SIZE);
   int64_t index = -1;
   for (int64_t i = static_cast<int64_t>(size) - 1; i > -1; i--) {
-    if (arrayObj.getValues()[i].equals(ctx, value)) {
+    if (arrayObj[i].equals(ctx, value)) {
       index = i;
       break;
     }
@@ -1916,7 +1917,7 @@ ARSH_METHOD array_contains(RuntimeContext &ctx) {
   assert(size <= ArrayObject::MAX_SIZE);
   bool found = false;
   for (size_t i = 0; i < size; i++) {
-    if (arrayObj.getValues()[i].equals(ctx, value)) {
+    if (arrayObj[i].equals(ctx, value)) {
       found = true;
       break;
     }
@@ -1933,7 +1934,7 @@ ARSH_METHOD array_trap(RuntimeContext &ctx) {
   auto &arrayObj = typeAs<ArrayObject>(LOCAL(0));
   auto handler = LOCAL(1).toPtr();
   AtomicSigSet set;
-  for (auto &e : arrayObj.getValues()) {
+  for (auto &e : arrayObj) {
     set.add(e.asSig());
   }
   installSignalHandler(ctx, set, handler);
@@ -1943,7 +1944,7 @@ ARSH_METHOD array_trap(RuntimeContext &ctx) {
 //!bind: function size($this : Array<T0>) : Int
 ARSH_METHOD array_size(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_size);
-  size_t size = typeAs<ArrayObject>(LOCAL(0)).getValues().size();
+  size_t size = typeAs<ArrayObject>(LOCAL(0)).size();
   assert(size <= ArrayObject::MAX_SIZE);
   RET(Value::createInt(size));
 }
@@ -1951,8 +1952,7 @@ ARSH_METHOD array_size(RuntimeContext &ctx) {
 //!bind: function empty($this : Array<T0>) : Bool
 ARSH_METHOD array_empty(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_empty);
-  bool empty = typeAs<ArrayObject>(LOCAL(0)).getValues().empty();
-  RET_BOOL(empty);
+  RET_BOOL(typeAs<ArrayObject>(LOCAL(0)).size() == 0);
 }
 
 //!bind: function clear($this : Array<T0>) : Void
@@ -2782,8 +2782,7 @@ ARSH_METHOD candidates_init(RuntimeContext &ctx) {
   SUPPRESS_WARNING(candidates_init);
   CandidatesWrapper wrapper(ctx.typePool);
   if (const auto v = LOCAL(1); !v.isInvalid()) {
-    const auto &values = typeAs<ArrayObject>(v).getValues();
-    for (auto &e : values) {
+    for (auto &e : typeAs<ArrayObject>(v)) {
       if (unlikely(!wrapper.addAsCandidate(ctx, e, false))) { // not insert space
         RET_ERROR;
       }

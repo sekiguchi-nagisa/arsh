@@ -946,10 +946,10 @@ int builtin_echo(ARState &st, ArrayObject &argvObj) {
   bool newline = true;
   bool interpEscape = false;
 
-  const unsigned int size = argvObj.getValues().size();
+  const unsigned int size = argvObj.size();
   unsigned int index = 1;
   for (; index < size; index++) {
-    StringRef arg = argvObj.getValues()[index].asStrRef();
+    StringRef arg = argvObj[index].asStrRef();
 
     if (arg.size() < 2 || arg[0] != '-') { // no options, such as 'a' '-' 'bb' ''
       goto DO_ECHO;
@@ -1000,7 +1000,7 @@ DO_ECHO:
       }
     }
 
-    auto arg = argvObj.getValues()[index].asStrRef();
+    auto arg = argvObj[index].asStrRef();
     if (interpEscape) {
       bool r = interpretEscapeSeq(arg, [](StringRef sub) {
         return fwrite(sub.data(), sizeof(char), sub.size(), stdout) == sub.size();
@@ -1060,7 +1060,7 @@ int builtin_printf(ARState &state, ArrayObject &argvObj) {
     return showUsage(argvObj);
   }
 
-  FormatPrinter printer(argvObj.getValues()[index].asStrRef(), state.initTime, setVar);
+  FormatPrinter printer(argvObj[index].asStrRef(), state.initTime, setVar);
   printer.setPlusFormat(state.support_strftime_plus);
 
 #ifdef FUZZING_BUILD_MODE
@@ -1074,8 +1074,8 @@ int builtin_printf(ARState &state, ArrayObject &argvObj) {
     reassignReplyVar(state);
   }
 
-  auto begin = argvObj.getValues().begin() + (index + 1);
-  const auto end = argvObj.getValues().end();
+  auto begin = argvObj.begin() + (index + 1);
+  const auto end = argvObj.end();
   do {
     begin = printer(begin, end);
     if (!printer.getError().empty()) {

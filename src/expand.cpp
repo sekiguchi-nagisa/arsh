@@ -88,7 +88,7 @@ public:
   StringRef get(size_t index) override {
     const size_t size = this->size();
     if (index < size) {
-      return this->dirStack().getValues()[index].asStrRef();
+      return this->dirStack()[index].asStrRef();
     }
     if (index == size) {
       this->cwd = this->state.getWorkingDir();

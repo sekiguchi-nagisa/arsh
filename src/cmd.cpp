@@ -120,10 +120,10 @@ builtin_command_t lookupBuiltinCommand(StringRef commandName) {
 }
 
 int GetOptState::operator()(const ArrayObject &obj) {
-  auto iter = StrArrayIter(obj.getValues().begin() + this->index);
-  const auto end = StrArrayIter(obj.getValues().end());
+  auto iter = StrArrayIter(obj.begin() + this->index);
+  const auto end = StrArrayIter(obj.end());
   const int ret = opt::GetOptState::operator()(iter, end);
-  this->index = iter.actual - obj.getValues().begin();
+  this->index = iter.actual - obj.begin();
   return ret;
 }
 
@@ -146,12 +146,12 @@ static bool printUsage(FILE *fp, StringRef prefix, bool isShortHelp = true) {
 }
 
 int showUsage(const ArrayObject &obj) {
-  printUsage(stderr, obj.getValues()[0].asStrRef());
+  printUsage(stderr, obj[0].asStrRef());
   return 2;
 }
 
 int showHelp(const ArrayObject &obj) {
-  printUsage(stdout, obj.getValues()[0].asStrRef(), false);
+  printUsage(stdout, obj[0].asStrRef(), false);
   return 2;
 }
 
@@ -206,14 +206,13 @@ static int builtin_help(ARState &st, ArrayObject &argvObj) {
   }
   unsigned int count = 0;
   for (; index < size; index++) {
-    const auto arg = argvObj.getValues()[index].asStrRef();
+    const auto arg = argvObj[index].asStrRef();
     if (printUsage(stdout, arg, shortHelp)) {
       count++;
     }
   }
   if (count == 0) {
-    ERROR(st, argvObj, "no help topics match `%s'.  Try `help help'.",
-          argvObj.getValues()[size - 1].asCStr());
+    ERROR(st, argvObj, "no help topics match `%s'.  Try `help help'.", argvObj[size - 1].asCStr());
     return 1;
   }
   return 0;
@@ -229,12 +228,12 @@ static int builtin_check_env(ARState &st, ArrayObject &argvObj) {
     }
   }
   unsigned int index = optState.index;
-  const unsigned int size = argvObj.getValues().size();
+  const unsigned int size = argvObj.size();
   if (index == size) {
     return showUsage(argvObj);
   }
   for (; index < size; index++) {
-    auto ref = argvObj.getValues()[index].asStrRef();
+    auto ref = argvObj[index].asStrRef();
     if (ref.hasNullChar()) {
       return 1;
     }
@@ -249,7 +248,7 @@ static int builtin_check_env(ARState &st, ArrayObject &argvObj) {
 static int parseExitStatus(const ARState &state, const ArrayObject &argvObj, unsigned int index) {
   int64_t ret = state.getGlobal(BuiltinVarOffset::EXIT_STATUS).asInt();
   if (index < argvObj.size() && index > 0) {
-    const auto value = argvObj.getValues()[index].asStrRef();
+    const auto value = argvObj[index].asStrRef();
     const auto pair = convertToNum10<int64_t>(value.begin(), value.end());
     if (pair) {
       ret = pair.value;
@@ -268,7 +267,7 @@ static int builtin_exit(ARState &state, ArrayObject &argvObj) {
   }
 
   const int ret = parseExitStatus(state, argvObj, optState.index);
-  if (argvObj.getValues()[0].asStrRef() == "_exit") {
+  if (argvObj[0].asStrRef() == "_exit") {
     exit(ret);
   }
   std::string str = "terminated by exit ";
@@ -378,7 +377,7 @@ static int builtin_hash(ARState &state, ArrayObject &argvObj) {
   unsigned int index = optState.index;
   if (index < size) {
     for (; index < size; index++) {
-      auto ref = argvObj.getValues()[index].asStrRef();
+      auto ref = argvObj[index].asStrRef();
       const char *name = ref.data();
       const bool hasNul = ref.hasNullChar();
       if (remove) {
@@ -478,7 +477,7 @@ static int builtin_complete(ARState &state, ArrayObject &argvObj) {
 
   StringRef line;
   if (optState.index < argvObj.size()) {
-    line = argvObj.getValues()[optState.index].asStrRef();
+    line = argvObj[optState.index].asStrRef();
   }
 
   if (doCodeCompletion(state, moduleDesc, option, line) < 0) {
@@ -525,7 +524,7 @@ static int builtin_getenv(ARState &state, ArrayObject &argvObj) {
   }
 
   state.setGlobal(BuiltinVarOffset::REPLY, Value::createStr());
-  const auto envName = argvObj.getValues()[index].asStrRef();
+  const auto envName = argvObj[index].asStrRef();
   if (envName.hasNullChar()) {
     ERROR(state, argvObj, "contains null characters: %s", toPrintable(envName).c_str());
     return 1;
@@ -566,7 +565,7 @@ static int builtin_setenv(ARState &st, ArrayObject &argvObj) {
   }
 
   for (; index < size; index++) {
-    auto kv = argvObj.getValues()[index].asStrRef();
+    auto kv = argvObj[index].asStrRef();
     const auto pos = kv.hasNullChar() ? StringRef::npos : kv.find("=");
     errno = EINVAL;
     if (pos != StringRef::npos && pos != 0) {
@@ -594,7 +593,7 @@ static int builtin_unsetenv(ARState &st, ArrayObject &argvObj) {
 
   const unsigned int size = argvObj.size();
   for (unsigned int index = optState.index; index < size; index++) {
-    auto envName = argvObj.getValues()[index].asStrRef();
+    auto envName = argvObj[index].asStrRef();
     if (!unsetEnv(st.pathCache, envName.hasNullChar() ? "" : envName.data())) {
       PERROR(st, argvObj, "%s", toPrintable(envName).c_str());
       return 1;
@@ -724,11 +723,10 @@ struct UlimitOptEntryTable {
   std::array<UlimitOptEntry, std::size(ulimitOps)> entries;
   unsigned int count{0};
 
-  int tryToUpdate(const ARState &st, GetOptState &optState, ArrayObject &argvObj, int opt) {
+  int tryToUpdate(const ARState &st, GetOptState &optState, const ArrayObject &argvObj, int opt) {
     Value arg;
-    if (optState.index < argvObj.getValues().size() &&
-        *argvObj.getValues()[optState.index].asCStr() != '-') {
-      arg = argvObj.getValues()[optState.index++];
+    if (optState.index < argvObj.size() && *argvObj[optState.index].asCStr() != '-') {
+      arg = argvObj[optState.index++];
     }
     if (!this->update(opt, arg)) {
       ERROR(st, argvObj, "%s: invalid number", arg.asCStr());
@@ -1037,9 +1035,9 @@ static int builtin_umask(ARState &st, ArrayObject &argvObj) {
   auto mask = umask(0);
   umask(mask);
 
-  if (optState.index < argvObj.getValues().size()) {
+  if (optState.index < argvObj.size()) {
     unsetFlag(op, PrintMaskOp::ONLY_PRINT | PrintMaskOp::REUSE);
-    const auto value = argvObj.getValues()[optState.index].asStrRef();
+    const auto value = argvObj[optState.index].asStrRef();
     if (!value.empty() && isDecimal(*value.data())) {
       const auto pair = convertToNum<int32_t>(value.begin(), value.end(), 8);
       const int num = pair.value;

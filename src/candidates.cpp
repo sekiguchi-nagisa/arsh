@@ -69,8 +69,7 @@ bool CandidatesWrapper::addNewCandidateWith(ARState &state, StringRef candidate,
 bool CandidatesWrapper::addAll(ARState &state, const ArrayObject &o) {
   assert(o.getTypeID() == toUnderlying(TYPE::Candidates));
   if (this->obj.get() != std::addressof(o)) {
-    const auto &values = o.getValues();
-    for (auto &e : values) {
+    for (auto &e : o) {
       if (!this->add(state, Value(e))) {
         return false;
       }
@@ -97,7 +96,7 @@ void CandidatesWrapper::sortAndDedup(const unsigned int beginOffset) {
 }
 
 StringRef CandidatesWrapper::getCommonPrefixStr() const {
-  const auto size = this->values().size();
+  const auto size = this->underlying().size();
   if (size == 0) {
     return "";
   }

@@ -184,7 +184,7 @@ bool printErrorAt(const ARState &state, const ArrayObject &argvObj, StringRef su
     out += std::to_string(lineNum);
     out += ": ";
   }
-  if (const StringRef cmdName = argvObj.getValues()[0].asStrRef(); !cmdName.empty()) {
+  if (const StringRef cmdName = argvObj[0].asStrRef(); !cmdName.empty()) {
     appendAsPrintable(cmdName, SYS_LIMIT_PRINTABLE_MAX, out);
     if (!sub.empty()) {
       out += " ";
@@ -873,8 +873,8 @@ static bool merge(ARState &state, ArrayObject &arrayObj, Value *buf, const Value
   size_t k = 0;
 
   while (i < mid && j < right) {
-    auto &x = arrayObj.getValues()[i];
-    auto &y = arrayObj.getValues()[j];
+    auto &x = arrayObj[i];
+    auto &y = arrayObj[j];
     auto v = VM::callFunction(state, Value(compFunc), makeArgs(x, y));
     if (state.hasError()) {
       return false;
@@ -891,11 +891,11 @@ static bool merge(ARState &state, ArrayObject &arrayObj, Value *buf, const Value
   }
   if (i == mid) {
     while (j < right) {
-      buf[k++] = arrayObj.getValues()[j++];
+      buf[k++] = arrayObj[j++];
     }
   } else {
     while (i < mid) {
-      buf[k++] = arrayObj.getValues()[i++];
+      buf[k++] = arrayObj[i++];
     }
   }
   for (size_t l = 0; l < k; l++) {
@@ -983,7 +983,7 @@ int64_t searchSorted(ARState &state, const Value &value, ArrayObject &arrayObj,
   for (auto size = static_cast<int64_t>(arrayObj.size()); size;) {
     const int64_t halfSize = size / 2;
     const int64_t mid = first + halfSize;
-    auto &midValue = arrayObj.getValues()[mid];
+    auto &midValue = arrayObj[mid];
     const int64_t ret = compare(state, midValue, value, compFunc);
     if (state.hasError()) {
       return ret;
@@ -996,7 +996,7 @@ int64_t searchSorted(ARState &state, const Value &value, ArrayObject &arrayObj,
     }
   }
   if (first == static_cast<int64_t>(arrayObj.size()) ||
-      compare(state, value, arrayObj.getValues()[first], compFunc) != 0) {
+      compare(state, value, arrayObj[first], compFunc) != 0) {
     return -first - 1;
   }
   return first;
@@ -1018,7 +1018,7 @@ int xexecve(const char *filePath, const ArrayObject &argvObj, char *const *envp)
     std::string str = filePath;
     str += ", [";
     unsigned int count = 0;
-    for (auto &e : argvObj.getValues()) {
+    for (auto &e : argvObj) {
       if (count++ > 0) {
         str += ", ";
       }
@@ -1043,7 +1043,7 @@ int xexecve(const char *filePath, const ArrayObject &argvObj, char *const *envp)
     argv = static_cast<char **>(ptr);
   }
   for (unsigned int i = 0; i < allocSize - 2; i++) {
-    argv[i] = const_cast<char *>(argvObj.getValues()[i].asCStr());
+    argv[i] = const_cast<char *>(argvObj[i].asCStr());
   }
   argv[allocSize - 2] = nullptr;
   argv[allocSize - 1] = nullptr;

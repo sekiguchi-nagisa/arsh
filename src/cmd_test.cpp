@@ -387,7 +387,7 @@ public:
   }
 
 private:
-  StringRef get(unsigned int index) const { return this->argvObj.getValues()[index].asStrRef(); }
+  StringRef get(unsigned int index) const { return this->argvObj[index].asStrRef(); }
 
   StringRef consume() { return this->get(this->offset++); }
 

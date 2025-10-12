@@ -143,7 +143,7 @@ bool Equality::operator()(const Value &x, const Value &y) {
         return false;
       }
       if (auto &frame = frames.back(); frame.xi < xa.size()) {
-        GOTO_NEXT(frames, OrdFrame(xa.getValues()[frame.xi++], ya.getValues()[frame.yi++]));
+        GOTO_NEXT(frames, OrdFrame(xa[frame.xi++], ya[frame.yi++]));
       }
       continue;
     }
@@ -270,7 +270,7 @@ int Ordering::operator()(const Value &x, const Value &y) {
       const unsigned int xSize = xa.size();
       const unsigned int ySize = ya.size();
       if (auto &frame = frames.back(); frame.xi < xSize && frame.yi < ySize) {
-        GOTO_NEXT2(frames, OrdFrame(xa.getValues()[frame.xi++], ya.getValues()[frame.yi++]));
+        GOTO_NEXT2(frames, OrdFrame(xa[frame.xi++], ya[frame.yi++]));
       }
       if (xSize < ySize) {
         return -1;
@@ -512,15 +512,15 @@ bool Stringifier::addAsStr(const Value &value) {
       switch (v.get()->getKind()) {
       case ObjectKind::RegexMatch:
       case ObjectKind::Array: {
-        const auto &values = isa<ArrayObject>(v.get()) ? typeAs<ArrayObject>(v).getValues()
-                                                       : typeAs<RegexMatchObject>(v).getGroups();
-        if (values.empty()) { // for empty
+        const auto view = isa<ArrayObject>(v.get()) ? typeAs<ArrayObject>(v).view()
+                                                    : typeAs<RegexMatchObject>(v).groupsView();
+        if (view.empty()) { // for empty
           TRY(this->appender("[]"));
           continue;
         }
-        if (auto &frame = frames.back(); frame.i < values.size()) {
+        if (auto &frame = frames.back(); frame.i < view.size()) {
           TRY(this->appender(frame.i == 0 ? "[" : ", "));
-          GOTO_NEXT(frames, StrFrame(values[frame.i++]));
+          GOTO_NEXT(frames, StrFrame(view[frame.i++]));
         }
         TRY(this->appender("]"));
         continue;
@@ -590,16 +590,16 @@ bool Stringifier::addAsInterp(const Value &value) {
       switch (v.get()->getKind()) {
       case ObjectKind::RegexMatch:
       case ObjectKind::Array: {
-        const auto &values = isa<ArrayObject>(v.get()) ? typeAs<ArrayObject>(v).getValues()
-                                                       : typeAs<RegexMatchObject>(v).getGroups();
+        const auto view = isa<ArrayObject>(v.get()) ? typeAs<ArrayObject>(v).view()
+                                                    : typeAs<RegexMatchObject>(v).groupsView();
         auto &frame = frames.back();
-        for (; frame.i < values.size() && values[frame.i].isInvalid(); frame.i++)
+        for (; frame.i < view.size() && view[frame.i].isInvalid(); frame.i++)
           ;
-        if (frame.i < values.size()) {
+        if (frame.i < view.size()) {
           if (frame.p++ > 0) {
             TRY(this->appender(" "));
           }
-          GOTO_NEXT(frames, StrFrame(values[frame.i++]));
+          GOTO_NEXT(frames, StrFrame(view[frame.i++]));
         }
         continue;
       }
@@ -724,10 +724,10 @@ bool addAsCmdArg(ARState &state, Value &&value, ArrayObject &argv, Value &redir)
       }
       case ObjectKind::RegexMatch:
       case ObjectKind::Array: {
-        auto &values = isa<ArrayObject>(arg.get()) ? typeAs<ArrayObject>(arg).getValues()
-                                                   : typeAs<RegexMatchObject>(arg).getGroups();
-        if (auto &frame = frames.back(); frame.i < values.size()) {
-          GOTO_NEXT3(frames, StrFrame(values[frame.i++]));
+        const auto view = isa<ArrayObject>(arg.get()) ? typeAs<ArrayObject>(arg).view()
+                                                      : typeAs<RegexMatchObject>(arg).groupsView();
+        if (auto &frame = frames.back(); frame.i < view.size()) {
+          GOTO_NEXT3(frames, StrFrame(view[frame.i++]));
         }
         continue;
       }

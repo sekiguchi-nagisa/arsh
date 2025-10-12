@@ -26,7 +26,7 @@ namespace arsh {
 
 static bool setToReplyMap(ARState &state, const ArrayObject &argvObj, unsigned int index,
                           std::string &&buf) {
-  auto varObj = argvObj.getValues()[index];
+  auto varObj = argvObj[index];
   auto valueObj = Value::createStr(std::move(buf));
   const auto ret = typeAs<OrderedMapObject>(state.getGlobal(BuiltinVarOffset::REPLY_VAR))
                        .put(state, std::move(varObj), std::move(valueObj));

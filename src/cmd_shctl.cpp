@@ -191,7 +191,7 @@ static int setOption(ARState &state, const ArrayObject &argvObj, const unsigned 
   // set/unset option
   bool foundMonitor = false;
   for (unsigned int i = offset; i < size; i++) {
-    auto name = argvObj.getValues()[i].asStrRef();
+    auto name = argvObj[i].asStrRef();
     auto option = recognizeRuntimeOption(name);
     if (empty(option)) {
       ERROR2(state, argvObj, subCmd, "unrecognized runtime option: %s", toPrintable(name).c_str());
@@ -233,7 +233,7 @@ static int showModule(const ARState &state, const ArrayObject &argvObj, const un
   int lastStatus = 0;
   int errNum = 0;
   for (unsigned int i = offset; i < size; i++) {
-    auto ref = argvObj.getValues()[i].asStrRef();
+    auto ref = argvObj[i].asStrRef();
     if (ref.hasNullChar()) {
       ERROR2(state, argvObj, subCmd, "contains null characters: %s", toPrintable(ref).c_str());
       lastStatus = 1;
@@ -357,7 +357,7 @@ int builtin_shctl(ARState &state, ArrayObject &argvObj) {
   }
 
   if (unsigned int index = optState.index; index < argvObj.size()) {
-    auto subCmd = argvObj.getValues()[index].asStrRef();
+    auto subCmd = argvObj[index].asStrRef();
     auto *entry = lookupSubCmd(subCmd);
     if (!entry) {
       ERROR(state, argvObj, "undefined subcommand: %s", toPrintable(subCmd).c_str());

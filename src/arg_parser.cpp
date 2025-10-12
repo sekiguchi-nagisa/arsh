@@ -297,9 +297,9 @@ static BaseObject *parseCommandLineImpl(ARState &state, StrArrayIter &iter, cons
 }
 
 CLIParseResult parseCommandLine(ARState &state, const ArrayObject &args, BaseObject &out) {
-  auto iter = StrArrayIter(args.getValues().begin());
+  auto iter = StrArrayIter(args.begin());
   const auto begin = iter;
-  const auto end = StrArrayIter(args.getValues().end());
+  const auto end = StrArrayIter(args.end());
   BaseObject *obj = &out;
   bool status;
   while (true) {

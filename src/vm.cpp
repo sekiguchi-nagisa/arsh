@@ -811,7 +811,7 @@ static void raiseInvalidCmdError(ARState &state, StringRef ref) {
 
 static Value toCmdDesc(const ArrayObject &argvObj) {
   std::string value;
-  for (auto &e : argvObj.getValues()) {
+  for (auto &e : argvObj) {
     if (!value.empty()) {
       value += ' ';
     }
@@ -835,7 +835,7 @@ bool VM::forkAndExec(ARState &state, const char *filePath, const ArrayObject &ar
   auto proc = Proc::fork(state, param);
   if (proc.pid() == -1) {
     selfPipe.close();
-    raiseCmdError(state, argvObj.getValues()[0].asCStr(), EAGAIN);
+    raiseCmdError(state, argvObj[0].asCStr(), EAGAIN);
     return false;
   } else if (proc.pid() == 0) { // child
     selfPipe.close(READ_PIPE);
@@ -858,7 +858,7 @@ bool VM::forkAndExec(ARState &state, const char *filePath, const ArrayObject &ar
     }
     selfPipe.close(READ_PIPE);
     if (readSize > 0) { // remove a cached path
-      state.pathCache.removePath(argvObj.getValues()[0].asCStr());
+      state.pathCache.removePath(argvObj[0].asCStr());
     }
 
     // wait process or job termination
@@ -877,7 +877,7 @@ bool VM::forkAndExec(ARState &state, const char *filePath, const ArrayObject &ar
       errNum2 = errNum;
     }
     if (errNum2 != 0) {
-      raiseCmdError(state, argvObj.getValues()[0].asCStr(), errNum2);
+      raiseCmdError(state, argvObj[0].asCStr(), errNum2);
       return false;
     }
     pushExitStatus(state, status);
@@ -894,7 +894,7 @@ bool VM::prepareSubCommand(ARState &state, const ModType &modType, ObjPtr<ArrayO
     return true;
   }
 
-  const auto subCmd = array.getValues()[1].asStrRef();
+  const auto subCmd = array[1].asStrRef();
   if (subCmd[0] == '_') {
     ERROR(state, array, "cannot resolve private subcommand: %s", toPrintable(subCmd).c_str());
     pushExitStatus(state, 1);
@@ -916,13 +916,13 @@ bool VM::prepareSubCommand(ARState &state, const ModType &modType, ObjPtr<ArrayO
 
 bool VM::callCommand(ARState &state, CmdResolver resolver, ObjPtr<ArrayObject> &&argvObj,
                      Value &&redirConfig, CmdCallAttr attr) {
-  const auto cmd = resolver(state, argvObj->getValues()[0].asStrRef());
+  const auto cmd = resolver(state, (*argvObj)[0].asStrRef());
   return callCommand(state, cmd, std::move(argvObj), std::move(redirConfig), attr);
 }
 
 static void traceCmd(const ARState &state, const ArrayObject &argv) {
   std::string value;
-  for (auto &e : argv.getValues()) {
+  for (auto &e : argv) {
     value += ' ';
     if (const StringRef ref = e.asStrRef(); !checkedAppend(ref, SYS_LIMIT_XTRACE_LINE_LEN, value)) {
       value += ref.substr(0, SYS_LIMIT_XTRACE_LINE_LEN);
@@ -963,7 +963,7 @@ bool VM::callCommand(ARState &state, const ResolvedCmd &cmd, ObjPtr<ArrayObject>
                      Value &&redirConfig, CmdCallAttr attr) {
   auto &array = *argvObj;
   if (cmd.hasNullChar()) { // adjust the command name
-    StringRef name = array.getValues()[0].asStrRef();
+    StringRef name = array[0].asStrRef();
     const auto pos = name.find('\0');
     assert(pos != StringRef::npos);
     name = name.substr(pos + 1);
@@ -982,7 +982,7 @@ bool VM::callCommand(ARState &state, const ResolvedCmd &cmd, ObjPtr<ArrayObject>
                                          std::move(redirConfig), attr);
   case ResolvedCmd::BUILTIN: {
     errno = 0;
-    const auto cmdName = array.getValues()[0];
+    const auto cmdName = array[0];
     const int status = cmd.builtinCmd()(state, array);
     flushStdFD();
     if (state.hasError()) {
@@ -1015,14 +1015,14 @@ bool VM::callCommand(ARState &state, const ResolvedCmd &cmd, ObjPtr<ArrayObject>
       const bool ret = forkAndExec(state, cmd.filePath(), array, std::move(redirConfig));
       if (ret) {
         const int status = state.getMaskedExitStatus();
-        if (!checkCmdExecError(state, array.getValues()[0].asStrRef(), attr, status)) {
+        if (!checkCmdExecError(state, array[0].asStrRef(), attr, status)) {
           return false;
         }
       }
       return ret;
     } else {
       xexecve(cmd.filePath(), array, nullptr);
-      raiseCmdError(state, array.getValues()[0].asCStr(), errno);
+      raiseCmdError(state, array[0].asCStr(), errno);
       return false;
     }
   }
@@ -1035,11 +1035,11 @@ bool VM::callCommand(ARState &state, const ResolvedCmd &cmd, ObjPtr<ArrayObject>
     return prepareFuncCall(state, 2);
   }
   case ResolvedCmd::INVALID:
-    raiseInvalidCmdError(state, array.getValues()[0].asStrRef());
+    raiseInvalidCmdError(state, array[0].asStrRef());
     return false;
   case ResolvedCmd::ILLEGAL_UDC: {
     std::string value = "attempt to access uninitialized user-defined command: `";
-    value += array.getValues()[0].asStrRef();
+    value += array[0].asStrRef();
     value += "'";
     raiseError(state, TYPE::IllegalAccessError, std::move(value));
     return false;
@@ -1081,14 +1081,14 @@ VM::BuiltinCmdResult VM::builtinCommand(ARState &state, ObjPtr<ArrayObject> &&ar
   }
 
   unsigned int index = optState.index;
-  const unsigned int argc = arrayObj.getValues().size();
+  const unsigned int argc = arrayObj.size();
   if (index == argc) { // do nothing
     return BuiltinCmdResult::display(0);
   }
 
   if (showDesc == 0) { // execute command
-    if (arrayObj.getValues()[1].asStrRef().hasNullChar()) {
-      const auto name = toPrintable(arrayObj.getValues()[1].asStrRef());
+    if (arrayObj[1].asStrRef().hasNullChar()) {
+      const auto name = toPrintable(arrayObj[1].asStrRef());
       ERROR(state, arrayObj, "contains null characters: %s", name.c_str());
       return BuiltinCmdResult::display(1);
     }
@@ -1107,7 +1107,7 @@ VM::BuiltinCmdResult VM::builtinCommand(ARState &state, ObjPtr<ArrayObject> &&ar
   unsigned int successCount = 0;
   int errNum = 0;
   for (; index < argc; index++) {
-    const auto ref = arrayObj.getValues()[index].asStrRef();
+    const auto ref = arrayObj[index].asStrRef();
     auto cmd = CmdResolver(CmdResolver::Op::NO_FALLBACK | CmdResolver::Op::FROM_FQN_UDC,
                            FilePathCache::SearchOp::DIRECT_SEARCH)(state, ref);
     switch (cmd.kind()) {
@@ -1212,10 +1212,10 @@ int VM::builtinExec(ARState &state, ArrayObject &argvObj, Value &&redir) {
   }
 
   const unsigned int index = optState.index;
-  const unsigned int argc = argvObj.getValues().size();
+  const unsigned int argc = argvObj.size();
   if (index < argc) { // exec
-    if (argvObj.getValues()[index].asStrRef().hasNullChar()) {
-      const auto name = toPrintable(argvObj.getValues()[index].asStrRef());
+    if (argvObj[index].asStrRef().hasNullChar()) {
+      const auto name = toPrintable(argvObj[index].asStrRef());
       ERROR(state, argvObj, "contains null characters: %s", name.c_str());
       return 1;
     }
@@ -1223,7 +1223,7 @@ int VM::builtinExec(ARState &state, ArrayObject &argvObj, Value &&redir) {
     /**
      * preserve arg0 (searchPath result indidate orignal pointer)
      */
-    const auto arg0 = argvObj.getValues()[index];
+    const auto arg0 = argvObj[index];
     const char *filePath =
         state.pathCache.searchPath(arg0.asCStr(), FilePathCache::SearchOp::DIRECT_SEARCH);
     if (progName.data() != nullptr) {
@@ -1234,7 +1234,7 @@ int VM::builtinExec(ARState &state, ArrayObject &argvObj, Value &&redir) {
       }
       argvObj.refValues()[index] = Value::createStr(progName); // not check iterator invalidation
     }
-    const auto begin = argvObj.getValues().begin();
+    const auto begin = argvObj.begin();
     argvObj.refValues().erase(begin, begin + index); // not check iterator invalidation
 
     // decrement SHLVL before call command
@@ -1256,8 +1256,8 @@ int VM::builtinExec(ARState &state, ArrayObject &argvObj, Value &&redir) {
 
     char *envp[] = {nullptr};
     xexecve(filePath, argvObj, clearEnv ? envp : nullptr);
-    raiseCmdError(state, argvObj.getValues()[0].asCStr(), errno);
-    state.pathCache.removePath(argvObj.getValues()[0].asCStr()); // always remove entry
+    raiseCmdError(state, argvObj[0].asCStr(), errno);
+    state.pathCache.removePath(argvObj[0].asCStr()); // always remove entry
 
     // restore SHLVL
     if (!clearEnv) {
@@ -1288,14 +1288,14 @@ bool VM::builtinEval(ARState &state, ArrayObject &argvObj) {
   }
   Value src;
   if (size == 1) {
-    src = argvObj.getValues()[0];
+    src = argvObj[0];
   } else {
     src = Value::createStr();
     for (unsigned int i = 0; i < size; i++) {
       if (i > 0) {
         TRY(src.appendAsStr(state, " "));
       }
-      TRY(src.appendAsStr(state, argvObj.getValues()[i].asStrRef()));
+      TRY(src.appendAsStr(state, argvObj[i].asStrRef()));
     }
   }
   auto &modType = getCurRuntimeModule(state);
@@ -2242,7 +2242,7 @@ bool VM::mainLoop(ARState &state) {
         auto attr = static_cast<CmdCallAttr>(v);
         Value redir = state.stack.getLocal(UDC_PARAM_REDIR);
         auto argv = toObjPtr<ArrayObject>(state.stack.getLocal(UDC_PARAM_ARGV));
-        const auto arg0 = argv->getValues()[0];
+        const auto arg0 = (*argv)[0];
         const auto ret = builtinCommand(state, std::move(argv), std::move(redir), attr);
         flushStdFD();
         if (ret.kind == BuiltinCmdResult::CALL) {
@@ -2275,7 +2275,7 @@ bool VM::mainLoop(ARState &state) {
         const auto attr = static_cast<CmdCallAttr>(v);
         Value redir = state.stack.getLocal(UDC_PARAM_REDIR);
         auto &argv = typeAs<ArrayObject>(state.stack.getLocal(UDC_PARAM_ARGV));
-        const auto arg0 = argv.getValues()[0];
+        const auto arg0 = argv[0];
         int status = builtinExec(state, argv, std::move(redir));
         if (state.hasError()) {
           vmerror;
@@ -2395,7 +2395,7 @@ bool VM::mainLoop(ARState &state) {
         assert(pos > 0 && static_cast<uint64_t>(pos) <= ArrayObject::MAX_SIZE);
         unsigned int index = static_cast<uint64_t>(pos) - 1;
         if (index < typeAs<ArrayObject>(args).size()) {
-          v = typeAs<ArrayObject>(args).getValues()[index];
+          v = typeAs<ArrayObject>(args)[index];
         }
         state.stack.push(std::move(v));
         vmnext;

@@ -362,7 +362,7 @@ bool HistRotator::rotate(StringRef &curBuf, HistRotator::Op op) {
     }
     this->histIndex = newHistIndex;
     bufIndex = histSize - 1 - this->histIndex;
-    curBuf = this->history->getValues()[bufIndex].asStrRef();
+    curBuf = (*this->history)[bufIndex].asStrRef();
     return true;
   }
 }
@@ -380,7 +380,7 @@ void HistRotator::truncateUntilLimit(bool beforeAppend) {
 bool HistRotator::save(ssize_t index, StringRef curBuf) {
   if (index < static_cast<ssize_t>(this->history->size()) && index > -1) {
     auto actualIndex = static_cast<unsigned int>(index);
-    auto org = this->history->getValues()[actualIndex];
+    auto org = (*this->history)[actualIndex];
     this->oldEntries.emplace(actualIndex, std::move(org));
     this->history->refValues()[actualIndex] =
         Value::createStr(curBuf); // not check iterator invalidation

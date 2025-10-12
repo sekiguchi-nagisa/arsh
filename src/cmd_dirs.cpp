@@ -74,8 +74,8 @@ int builtin_cd(ARState &state, ArrayObject &argvObj) {
 
   StringRef dest;
   bool useOldpwd = false;
-  if (const unsigned int index = optState.index; index < argvObj.getValues().size()) {
-    dest = argvObj.getValues()[index].asStrRef();
+  if (const unsigned int index = optState.index; index < argvObj.size()) {
+    dest = argvObj[index].asStrRef();
     if (dest == "-") {
       const char *v = getenv(ENV_OLDPWD);
       if (v == nullptr) {
@@ -171,14 +171,13 @@ static int printDirStack(const ArrayObject &dirStack, const char *cwd, const Pri
           prefix += "  ";
         }
       }
-      TRY(printf("%s%s\n", prefix.c_str(),
-                 formatDir(dirStack.getValues()[i].asStrRef(), home).c_str()) > -1);
+      TRY(printf("%s%s\n", prefix.c_str(), formatDir(dirStack[i].asStrRef(), home).c_str()) > -1);
     }
   } else {
     TRY(fputs(formatDir(cwd, home).c_str(), stdout) != EOF);
     for (int i = size - 1; i > -1; i--) {
       TRY(fputc(' ', stdout) != EOF);
-      TRY(fputs(formatDir(dirStack.getValues()[i].asStrRef(), home).c_str(), stdout) != EOF);
+      TRY(fputs(formatDir(dirStack[i].asStrRef(), home).c_str(), stdout) != EOF);
     }
     TRY(fputc('\n', stdout) != EOF);
   }
@@ -241,8 +240,7 @@ int builtin_pushd_popd(ARState &state, ArrayObject &argvObj) {
     if (opt == 'h') {
       return showHelp(argvObj);
     }
-    if (const auto ref = argvObj.getValues()[optState.index].asStrRef();
-        ref.size() > 1 && isDecimal(ref[1])) {
+    if (const auto ref = argvObj[optState.index].asStrRef(); ref.size() > 1 && isDecimal(ref[1])) {
       break;
     }
     return invalidOptionError(state, argvObj, optState);
@@ -252,7 +250,7 @@ int builtin_pushd_popd(ARState &state, ArrayObject &argvObj) {
   bool rotate = false;
   StringRef dest;
   if (optState.index < argvObj.size()) {
-    dest = argvObj.getValues()[optState.index].asStrRef();
+    dest = argvObj[optState.index].asStrRef();
     if (dest.startsWith("+") || dest.startsWith("-")) {
       const auto pair = convertToNum10<uint64_t>(dest.begin() + 1, dest.end());
       if (!pair) {
@@ -272,7 +270,7 @@ int builtin_pushd_popd(ARState &state, ArrayObject &argvObj) {
       rotate = true;
     }
   }
-  if (argvObj.getValues()[0].asStrRef() == "pushd") {
+  if (argvObj[0].asStrRef() == "pushd") {
     const auto cwd = state.getWorkingDir();
     if (!cwd) {
       PERROR(state, argvObj, "cannot resolve current working dir");
@@ -290,7 +288,7 @@ int builtin_pushd_popd(ARState &state, ArrayObject &argvObj) {
           ERROR(state, argvObj, "no other directory");
           return 1;
         }
-        dest = dirStack.getValues().back().asStrRef();
+        dest = dirStack.back().asStrRef();
       }
       if (!changeWorkingDir(state.logicalWorkingDir, dest, true)) {
         PERROR(state, argvObj, "%s", toPrintable(dest).c_str());
@@ -301,7 +299,7 @@ int builtin_pushd_popd(ARState &state, ArrayObject &argvObj) {
       }
       dirStack.append(Value::createStr(cwd.get()));
     } else if (rotateIndex < dirStack.size()) {
-      dest = dirStack.getValues()[rotateIndex].asStrRef();
+      dest = dirStack[rotateIndex].asStrRef();
       if (!changeWorkingDir(state.logicalWorkingDir, dest, true)) {
         PERROR(state, argvObj, "%s", toPrintable(dest).c_str());
         return 1;
@@ -323,7 +321,7 @@ int builtin_pushd_popd(ARState &state, ArrayObject &argvObj) {
     if (rotate && rotateIndex < dirStack.size()) {
       dirStack.refValues().erase(dirStack.refValues().begin() + static_cast<ssize_t>(rotateIndex));
     } else {
-      dest = dirStack.getValues().back().asStrRef();
+      dest = dirStack.back().asStrRef();
       if (!changeWorkingDir(state.logicalWorkingDir, dest, true)) {
         PERROR(state, argvObj, "%s", toPrintable(dest).c_str());
         return 1;

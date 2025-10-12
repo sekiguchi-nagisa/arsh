@@ -364,10 +364,10 @@ TEST_F(VMTest, callFuncAPI) {
     auto value = Value::create<ArrayObject>(cast<ArrayType>(type));
     auto &obj = typeAs<ArrayObject>(value);
     obj.append(Value::createInt(78));
-    ASSERT_EQ(78, obj.getValues()[0].asInt());
+    ASSERT_EQ(78, obj[0].asInt());
     auto ret = VM::callFunction(*this->state, std::move(func), makeArgs(Value(value)));
     ASSERT_FALSE(ret); // void
-    ASSERT_EQ(79, obj.getValues()[0].asInt());
+    ASSERT_EQ(79, obj[0].asInt());
   }
 }
 
