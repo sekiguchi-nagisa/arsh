@@ -198,7 +198,7 @@ int builtin_dirs(ARState &state, ArrayObject &argvObj) {
   for (int opt; (opt = optState(argvObj)) != -1;) {
     switch (opt) {
     case 'c':
-      dirStack.refValues().clear();
+      dirStack.clear();
       return 0;
     case 'l':
       setFlag(dirOp, PrintDirOp::FULL_PATH);
@@ -295,7 +295,7 @@ int builtin_pushd_popd(ARState &state, ArrayObject &argvObj) {
         return 1;
       }
       if (optState.index == argvObj.size()) {
-        dirStack.refValues().pop_back();
+        dirStack.pop_back();
       }
       dirStack.append(Value::createStr(cwd.get()));
     } else if (rotateIndex < dirStack.size()) {
@@ -305,13 +305,13 @@ int builtin_pushd_popd(ARState &state, ArrayObject &argvObj) {
         return 1;
       }
       const size_t limit = dirStack.size();
-      dirStack.refValues().insert(dirStack.refValues().begin(), Value::createStr(cwd.get()));
+      dirStack.refValues().insert(dirStack.begin(), Value::createStr(cwd.get()));
       for (size_t count = static_cast<size_t>(rotateIndex) + 1; count < limit; count++) {
-        auto top = dirStack.refValues().back();
-        dirStack.refValues().pop_back();
-        dirStack.refValues().insert(dirStack.refValues().begin(), std::move(top));
+        auto top = dirStack.back();
+        dirStack.pop_back();
+        dirStack.refValues().insert(dirStack.begin(), std::move(top));
       }
-      dirStack.refValues().pop_back();
+      dirStack.pop_back();
     }
   } else { // popd
     if (dirStack.size() == 0) {
@@ -319,14 +319,14 @@ int builtin_pushd_popd(ARState &state, ArrayObject &argvObj) {
       return 1;
     }
     if (rotate && rotateIndex < dirStack.size()) {
-      dirStack.refValues().erase(dirStack.refValues().begin() + static_cast<ssize_t>(rotateIndex));
+      dirStack.erase(dirStack.begin() + static_cast<ssize_t>(rotateIndex));
     } else {
       dest = dirStack.back().asStrRef();
       if (!changeWorkingDir(state.logicalWorkingDir, dest, true)) {
         PERROR(state, argvObj, "%s", toPrintable(dest).c_str());
         return 1;
       }
-      dirStack.refValues().pop_back();
+      dirStack.pop_back();
     }
   }
   const auto cwd = state.getWorkingDir();

@@ -648,7 +648,7 @@ ARSH_METHOD string_bytes(RuntimeContext &ctx) {
   array.refValues().resize(ref.size());
   const size_t size = ref.size();
   for (size_t i = 0; i < size; i++) {
-    array.refValues()[i] = Value::createInt(static_cast<unsigned char>(ref[i]));
+    array[i] = Value::createInt(static_cast<unsigned char>(ref[i]));
   }
   ASSERT_ARRAY_SIZE(array);
   RET(value);
@@ -1592,7 +1592,7 @@ ARSH_METHOD array_set(RuntimeContext &ctx) {
   size_t size = obj.size();
   auto index = LOCAL(1).asInt();
   auto ret = TRY(resolveIndex(ctx, index, size));
-  obj.refValues()[ret.index] = EXTRACT_LOCAL(2);
+  obj[ret.index] = EXTRACT_LOCAL(2);
   RET_VOID;
 }
 
@@ -1606,7 +1606,7 @@ ARSH_METHOD array_remove(RuntimeContext &ctx) {
   auto index = LOCAL(1).asInt();
   auto ret = TRY(resolveIndex(ctx, index, size));
   auto v = obj[ret.index];
-  obj.refValues().erase(obj.refValues().begin() + ret.index);
+  obj.erase(obj.begin() + ret.index);
   RET(v);
 }
 
@@ -1621,9 +1621,7 @@ ARSH_METHOD array_removeRange(RuntimeContext &ctx) {
   assert(obj.size() <= ArrayObject::MAX_SIZE);
   auto to = v.isInvalid() ? static_cast<int64_t>(obj.size()) : v.asInt();
   auto [start, stop] = resolveSliceRange(obj.size(), from, to);
-  auto &values = obj.refValues();
-  values.erase(values.begin() + static_cast<ssize_t>(start),
-               values.begin() + static_cast<ssize_t>(stop));
+  obj.erase(obj.begin() + static_cast<ssize_t>(start), obj.begin() + static_cast<ssize_t>(stop));
   RET_VOID;
 }
 
@@ -1660,7 +1658,7 @@ static bool array_insertImpl(ARState &ctx, int64_t index, const Value &v) {
   if (!ret) {
     return false;
   }
-  obj.refValues().insert(obj.refValues().begin() + ret.index, v);
+  obj.refValues().insert(obj.begin() + ret.index, v);
   return true;
 }
 
@@ -1684,7 +1682,7 @@ ARSH_METHOD array_pop(RuntimeContext &ctx) {
   CHECK_ITER_INVALIDATION(obj);
   Value v;
   TRY(array_fetch(ctx, v));
-  obj.refValues().pop_back();
+  obj.pop_back();
   RET(v);
 }
 
@@ -1696,8 +1694,7 @@ ARSH_METHOD array_shift(RuntimeContext &ctx) {
   CHECK_ITER_INVALIDATION(obj);
   Value v;
   TRY(array_fetch(ctx, v, false));
-  auto &values = obj.refValues();
-  values.erase(values.begin());
+  obj.erase(obj.begin());
   RET(v);
 }
 
@@ -1746,7 +1743,7 @@ ARSH_METHOD array_swap(RuntimeContext &ctx) {
   auto index = LOCAL(1).asInt();
   auto ret = TRY(resolveIndex(ctx, index, obj.size()));
   Value value = LOCAL(2);
-  std::swap(obj.refValues()[ret.index], value);
+  std::swap(obj[ret.index], value);
   RET(value);
 }
 
@@ -1773,7 +1770,7 @@ ARSH_METHOD array_reverse(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_reverse);
   auto &obj = typeAs<ArrayObject>(LOCAL(0));
   CHECK_ITER_INVALIDATION(obj);
-  std::reverse(obj.refValues().begin(), obj.refValues().end());
+  std::reverse(obj.begin(), obj.end());
   RET(LOCAL(0));
 }
 
@@ -1782,7 +1779,7 @@ ARSH_METHOD array_sort(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_sort);
   auto &obj = typeAs<ArrayObject>(LOCAL(0));
   CHECK_ITER_INVALIDATION(obj);
-  std::sort(obj.refValues().begin(), obj.refValues().end(), [&ctx](const Value &x, const Value &y) {
+  std::sort(obj.begin(), obj.end(), [&ctx](const Value &x, const Value &y) {
     return ctx.hasError() || x.compare(ctx, y) < 0; // if error, skip compare due to excessive raise
   });
   RET(LOCAL(0)); // skip error check
@@ -1960,7 +1957,7 @@ ARSH_METHOD array_clear(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_clear);
   auto &obj = typeAs<ArrayObject>(LOCAL(0));
   CHECK_ITER_INVALIDATION(obj);
-  obj.refValues().clear();
+  obj.clear();
   RET_VOID;
 }
 

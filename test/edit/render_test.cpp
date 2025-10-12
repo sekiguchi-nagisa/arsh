@@ -1351,7 +1351,7 @@ TEST(HistRotatorTest, broken1) {
   ASSERT_EQ("@@@", obj[3].asStrRef().toString());
   ASSERT_EQ("EEE", ref);
 
-  obj.refValues().erase(obj.refValues().begin() + 1);
+  obj.erase(obj.begin() + 1);
   ref = "&&&";
   r = rotate.rotate(ref, HistRotator::Op::PREV);
   ASSERT_TRUE(r);
@@ -1364,7 +1364,7 @@ TEST(HistRotatorTest, broken1) {
   r = rotate.rotate(ref, HistRotator::Op::PREV);
   ASSERT_FALSE(r);
 
-  obj.refValues().clear();
+  obj.clear();
   r = rotate.rotate(ref, HistRotator::Op::PREV);
   ASSERT_FALSE(r);
 
@@ -1400,7 +1400,7 @@ TEST(HistRotator, broken2) {
 
   // remove history and rotate prev
   ref = "%%%";
-  obj.refValues().erase(obj.refValues().begin(), obj.refValues().begin() + 2);
+  obj.erase(obj.begin(), obj.begin() + 2);
   ASSERT_EQ(2, obj.size());
   ASSERT_EQ("EEE", obj[0].asStrRef().toString());
   ASSERT_EQ("@@@", obj[1].asStrRef().toString());

@@ -884,17 +884,31 @@ public:
 
   const Value &operator[](const size_t index) const { return this->values[index]; }
 
+  Value &operator[](const size_t index) { return this->values[index]; }
+
   const auto &back() const { return this->values.back(); }
 
   const auto &front() const { return this->values.front(); }
-
-  std::vector<Value> &refValues() { return this->values; }
 
   size_t size() const { return this->values.size(); }
 
   auto begin() const { return this->values.begin(); }
 
   auto end() const { return this->values.end(); }
+
+  auto begin() { return this->values.begin(); }
+
+  auto end() { return this->values.end(); }
+
+  std::vector<Value> &refValues() { return this->values; }
+
+  auto erase(IterType first, IterType last) { return this->values.erase(first, last); }
+
+  auto erase(IterType iter) { return this->values.erase(iter); }
+
+  void pop_back() { this->values.pop_back(); }
+
+  void clear() { this->erase(this->begin(), this->end()); }
 
   void append(Value &&obj) { this->values.push_back(std::move(obj)); }
 

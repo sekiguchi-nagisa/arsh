@@ -82,17 +82,16 @@ void CandidatesWrapper::sortAndDedup(const unsigned int beginOffset) {
   if (beginOffset >= this->size() || this->size() - beginOffset == 1) {
     return;
   }
-  auto &refValues = this->obj->refValues();
-  std::sort(refValues.begin() + beginOffset, refValues.end(), [](const Value &x, const Value &y) {
+  std::sort(this->obj->begin() + beginOffset, this->obj->end(), [](const Value &x, const Value &y) {
     const int r = toStrRef(x).compare(toStrRef(y));
     return r < 0 || (r == 0 && toUnderlying(getAttr(x).kind) < toUnderlying(getAttr(y).kind));
   });
 
   // dedup (only extract first appeared element)
   const auto iter =
-      std::unique(refValues.begin(), refValues.end(),
+      std::unique(this->obj->begin(), this->obj->end(),
                   [](const Value &x, const Value &y) { return toStrRef(x) == toStrRef(y); });
-  refValues.erase(iter, refValues.end());
+  this->obj->erase(iter, this->obj->end());
 }
 
 StringRef CandidatesWrapper::getCommonPrefixStr() const {

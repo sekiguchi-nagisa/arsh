@@ -147,11 +147,11 @@ public:
   bool addAll(ARState &state, const ArrayObject &o);
 
   void pop() {
-    this->obj->refValues().pop_back(); // not check iterator invalidation
+    this->obj->pop_back(); // not check iterator invalidation
   }
 
   void clearAndShrink() {
-    this->obj->refValues().clear(); // not check iterator invalidation
+    this->obj->clear(); // not check iterator invalidation
     this->obj->refValues().shrink_to_fit();
   }
 

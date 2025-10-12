@@ -329,13 +329,12 @@ HistRotator::HistRotator(ObjPtr<ArrayObject> history) : history(std::move(histor
 void HistRotator::revertAll() {
   if (this->history) {
     if (this->history->size() > 0) {
-      this->history->refValues().pop_back(); // not check iterator invalidation
+      this->history->pop_back(); // not check iterator invalidation
     }
     this->truncateUntilLimit();
     for (auto &e : this->oldEntries) { // revert modified entry
       if (e.first < this->history->size()) {
-        this->history->refValues()[e.first] =
-            std::move(e.second); // not check iterator invalidation
+        (*this->history)[e.first] = std::move(e.second); // not check iterator invalidation
       }
     }
     this->history->unlock();
@@ -371,9 +370,9 @@ void HistRotator::truncateUntilLimit(bool beforeAppend) {
   const unsigned int offset = beforeAppend ? 1 : 0;
   if (this->history->size() + offset > this->getMaxSize()) {
     unsigned int delSize = this->history->size() + offset - this->getMaxSize();
-    auto &values = this->history->refValues(); // not check iterator invalidation
-    values.erase(values.begin(), values.begin() + delSize);
-    assert(values.size() == this->getMaxSize() - offset);
+    this->history->erase(this->history->begin(),
+                         this->history->begin() + delSize); // not check iterator invalidation
+    assert(this->history->size() == this->getMaxSize() - offset);
   }
 }
 
@@ -382,8 +381,7 @@ bool HistRotator::save(ssize_t index, StringRef curBuf) {
     auto actualIndex = static_cast<unsigned int>(index);
     auto org = (*this->history)[actualIndex];
     this->oldEntries.emplace(actualIndex, std::move(org));
-    this->history->refValues()[actualIndex] =
-        Value::createStr(curBuf); // not check iterator invalidation
+    (*this->history)[actualIndex] = Value::createStr(curBuf); // not check iterator invalidation
     return true;
   }
   return false;

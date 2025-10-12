@@ -899,7 +899,7 @@ static bool merge(ARState &state, ArrayObject &arrayObj, Value *buf, const Value
     }
   }
   for (size_t l = 0; l < k; l++) {
-    arrayObj.refValues()[left + l] = buf[l];
+    arrayObj[left + l] = buf[l];
   }
   return true;
 }

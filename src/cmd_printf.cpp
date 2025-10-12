@@ -1074,8 +1074,8 @@ int builtin_printf(ARState &state, ArrayObject &argvObj) {
     reassignReplyVar(state);
   }
 
-  auto begin = argvObj.begin() + (index + 1);
-  const auto end = argvObj.end();
+  auto begin = const_cast<const ArrayObject&>(argvObj).begin() + (index + 1);
+  auto end = const_cast<const ArrayObject&>(argvObj).end();
   do {
     begin = printer(begin, end);
     if (!printer.getError().empty()) {

@@ -468,12 +468,12 @@ TEST_F(ObjectUtilTest, array1) {
   ASSERT_TRUE(Equality()(obj1, obj2));
   ASSERT_TRUE(Ordering()(obj1, obj2) == 0);
 
-  obj2->refValues().pop_back();
+  obj2->pop_back();
   obj2->append(Value::createInt(56));
   ASSERT_FALSE(Equality()(obj1, obj2));
   ASSERT_TRUE(Ordering()(obj1, obj2) < 0);
 
-  obj1->refValues()[0] = Value::createInt(999);
+  (*obj1)[0] = Value::createInt(999);
   ASSERT_FALSE(Equality()(obj1, obj2));
   ASSERT_TRUE(Ordering()(obj1, obj2) > 0);
 
@@ -517,8 +517,8 @@ TEST_F(ObjectUtilTest, array2) {
   ASSERT_TRUE(ordering.hasOverflow());
 
   // clear
-  obj1->refValues().clear();
-  obj2->refValues().clear();
+  obj1->clear();
+  obj2->clear();
 }
 
 TEST_F(ObjectUtilTest, tuple1) {
@@ -752,7 +752,7 @@ TEST_F(ObjectUtilTest, strCollection2) {
     ASSERT_FALSE(stringifier.hasOverflow());
     ASSERT_FALSE(stringifier.addAsStr(array));
     ASSERT_TRUE(stringifier.hasOverflow());
-    array->refValues().clear();
+    array->clear();
   }
 
   {
@@ -839,7 +839,7 @@ TEST_F(ObjectUtilTest, interpCollection2) {
     ASSERT_FALSE(stringifier.hasOverflow());
     ASSERT_FALSE(stringifier.addAsInterp(array));
     ASSERT_TRUE(stringifier.hasOverflow());
-    array->refValues().clear();
+    array->clear();
   }
 
   {

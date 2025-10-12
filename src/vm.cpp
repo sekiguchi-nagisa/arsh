@@ -145,7 +145,7 @@ void ARState::updatePipeStatus(unsigned int size, const Proc *procs, bool mergeE
     auto &type = this->typePool.get(obj.getTypeID());
     this->setGlobal(BuiltinVarOffset::PIPESTATUS, Value::create<ArrayObject>(type));
   } else { // reuse existing object
-    obj.refValues().clear();
+    obj.clear();
     obj.refValues().reserve(size + (mergeExitStatus ? 1 : 0));
   }
 
@@ -967,7 +967,7 @@ bool VM::callCommand(ARState &state, const ResolvedCmd &cmd, ObjPtr<ArrayObject>
     const auto pos = name.find('\0');
     assert(pos != StringRef::npos);
     name = name.substr(pos + 1);
-    array.refValues()[0] = Value::createStr(name); // not check iterator invalidation
+    array[0] = Value::createStr(name); // not check iterator invalidation
   }
   if (state.has(RuntimeOption::XTRACE)) {
     traceCmd(state, array);
@@ -1093,8 +1093,7 @@ VM::BuiltinCmdResult VM::builtinCommand(ARState &state, ObjPtr<ArrayObject> &&ar
       return BuiltinCmdResult::display(1);
     }
 
-    auto &values = arrayObj.refValues();
-    values.erase(values.begin(), values.begin() + index); // not check iterator invalidation
+    arrayObj.erase(arrayObj.begin(), arrayObj.begin() + index); // not check iterator invalidation
 
     const auto resolve = CmdResolver(CmdResolver::Op::NO_UDC,
                                      useDefaultPath ? FilePathCache::SearchOp::USE_DEFAULT_PATH
@@ -1232,10 +1231,10 @@ int VM::builtinExec(ARState &state, ArrayObject &argvObj, Value &&redir) {
         ERROR(state, argvObj, "contains null characters: %s", name.c_str());
         return 1;
       }
-      argvObj.refValues()[index] = Value::createStr(progName); // not check iterator invalidation
+      argvObj[index] = Value::createStr(progName); // not check iterator invalidation
     }
     const auto begin = argvObj.begin();
-    argvObj.refValues().erase(begin, begin + index); // not check iterator invalidation
+    argvObj.erase(begin, begin + index); // not check iterator invalidation
 
     // decrement SHLVL before call command
     std::string oldSHLVL;
@@ -2231,7 +2230,7 @@ bool VM::mainLoop(ARState &state) {
         auto cmd = ResolvedCmd::fromCmdObj(obj.get());
         if (argv->size() == 0) {
           // add sentinel
-          argv->refValues().push_back(Value::createStr()); // not check iterator invalidation
+          argv->append(Value::createStr()); // not check iterator invalidation
         }
         TRY(callCommand(state, cmd, std::move(argv), std::move(redir), CmdCallAttr{}));
         CHECK_SIGNAL();
