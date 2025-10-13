@@ -2206,7 +2206,7 @@ void TypeChecker::postprocessFunction(FunctionNode &node) {
     returnType = &node.getReturnTypeNode()->getType();
   }
 
-  // insert terminal node if not found
+  // insert the terminal node if not found
   BlockNode &blockNode = node.getBlockNode();
   if (!blockNode.getType().isNothingType()) {
     if (returnType && returnType->isVoidType()) {
@@ -2482,7 +2482,7 @@ void TypeChecker::checkTypeUserDefinedCmd(UserDefinedCmdNode &node, const FuncCh
       }
     }
 
-    // register command name
+    // register the command name
     if (node.isAnonymousCmd()) {
       node.setType(this->typePool().get(TYPE::Command));
     } else if (auto handle = this->addUdcEntry(node)) {
@@ -2501,9 +2501,9 @@ void TypeChecker::checkTypeUserDefinedCmd(UserDefinedCmdNode &node, const FuncCh
     auto func = this->intoFunc(returnType); // pseudo return type
     {
       const auto old = this->allowWarning;
-      this->allowWarning = false; // temporary disable variable shadowing check
+      this->allowWarning = false; // temporarily disable variable shadowing check
 
-      // register dummy parameter (for propagating command attr)
+      // register a fake parameter (for propagating command attr)
       this->addEntry(node, "%%attr", this->typePool().get(TYPE::Any), HandleAttr::READ_ONLY);
 
       // register dummy parameter (for closing file descriptor)
@@ -2529,7 +2529,7 @@ void TypeChecker::checkTypeUserDefinedCmd(UserDefinedCmdNode &node, const FuncCh
       node.addCapture(e);
     }
 
-    // insert return node if not found
+    // insert the return node if not found
     if (node.getBlockNode().getNodes().empty() ||
         !node.getBlockNode().getNodes().back()->getType().isNothingType()) {
       if (returnType->isNothingType()) {

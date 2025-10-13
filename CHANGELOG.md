@@ -4,6 +4,10 @@
 
 ### Changed
 
+#### Core
+
+- **Breaking Change**: not override ``__gets``, ``__puts`` command names
+
 #### Builtin
 
 - in ``LineEditor``, some edit actions now mapped to pager actions
