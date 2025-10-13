@@ -425,7 +425,7 @@ enum class OperatorAttr : unsigned char {
 template <>
 struct allow_enum_bitop<OperatorAttr> : std::true_type {};
 
-enum class OperatorPrecedence : unsigned short {};
+enum class OperatorPrecedence : unsigned char {};
 
 inline OperatorPrecedence advance(OperatorPrecedence prec) {
   return static_cast<OperatorPrecedence>(toUnderlying(prec) + 1);
@@ -435,10 +435,10 @@ struct OperatorInfo {
   OperatorPrecedence prece;
   OperatorAttr attr;
 
-  OperatorInfo(unsigned short prece, OperatorAttr attr)
+  constexpr OperatorInfo(unsigned char prece, OperatorAttr attr)
       : prece(OperatorPrecedence{prece}), attr(attr) {}
 
-  OperatorInfo() : OperatorInfo(0, OperatorAttr()) {}
+  constexpr OperatorInfo() : OperatorInfo(0, OperatorAttr()) {}
 };
 
 OperatorInfo getOpInfo(TokenKind kind);
