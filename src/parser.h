@@ -320,9 +320,9 @@ protected:
    */
   std::unique_ptr<Node> parse_cmdArgSegImpl(const CmdArgNode &argNode, CmdArgParseOpt opt);
 
-  std::unique_ptr<Node> parse_expressionImpl(unsigned int basePrecedence);
+  std::unique_ptr<Node> parse_expressionImpl(OperatorPrecedence basePrecedence);
 
-  std::unique_ptr<Node> parse_expression(unsigned basePrecedence);
+  std::unique_ptr<Node> parse_expression(OperatorPrecedence basePrecedence);
 
   std::unique_ptr<Node> parse_expression() {
     return this->parse_expression(getPrecedence(TokenKind::ASSIGN));

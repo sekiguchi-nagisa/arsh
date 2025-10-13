@@ -1095,7 +1095,7 @@ std::unique_ptr<ArmNode> Parser::parse_armExpression() {
         TRY(this->expect(TokenKind::ELSE));
       }
     }
-    const unsigned int base = getPrecedence(TokenKind::PIPE) + 1;
+    const auto base = advance(getPrecedence(TokenKind::PIPE));
     armNode = std::make_unique<ArmNode>(TRY(this->parse_expression(base)));
     while (CUR_KIND() == TokenKind::PIPE) {
       this->expect(TokenKind::PIPE); // always success
@@ -1706,7 +1706,7 @@ static std::unique_ptr<Node> createBinaryNode(std::unique_ptr<Node> &&leftNode, 
  * @param basePrecedence
  * @return
  */
-std::unique_ptr<Node> Parser::parse_expressionImpl(unsigned int basePrecedence) {
+std::unique_ptr<Node> Parser::parse_expressionImpl(OperatorPrecedence basePrecedence) {
   GUARD_DEEP_NESTING(guard);
 
   auto node = TRY(this->parse_unaryExpression());
@@ -1801,9 +1801,8 @@ std::unique_ptr<Node> Parser::parse_expressionImpl(unsigned int basePrecedence) 
     default: {
       const Token token = this->curToken;
       const TokenKind op = this->scan();
-      const unsigned int nextPrece =
-          info.prece + (hasFlag(info.attr, OperatorAttr::RASSOC) ? 0 : 1);
-      auto rightNode = this->parse_expression(nextPrece);
+      const auto next = hasFlag(info.attr, OperatorAttr::RASSOC) ? info.prece : advance(info.prece);
+      auto rightNode = this->parse_expression(next);
       bool comp = false;
       if (this->incompleteNode) {
         comp = true;
@@ -1823,7 +1822,7 @@ std::unique_ptr<Node> Parser::parse_expressionImpl(unsigned int basePrecedence) 
   return node;
 }
 
-std::unique_ptr<Node> Parser::parse_expression(unsigned int basePrecedence) {
+std::unique_ptr<Node> Parser::parse_expression(OperatorPrecedence basePrecedence) {
   auto node = TRY(this->parse_expressionImpl(basePrecedence));
   if (this->hasNewline()) {
     TRY(this->parse_hereDocBody());
