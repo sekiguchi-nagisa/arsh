@@ -416,7 +416,7 @@ const char *toString(TokenKind kind);
 
 // for operator precedence parsing
 
-enum class OperatorAttr : unsigned short {
+enum class OperatorAttr : unsigned char {
   INFIX = 1 << 0,
   PREFIX = 1 << 1,
   RASSOC = 1 << 2,
@@ -425,18 +425,25 @@ enum class OperatorAttr : unsigned short {
 template <>
 struct allow_enum_bitop<OperatorAttr> : std::true_type {};
 
+enum class OperatorPrecedence : unsigned short {};
+
+inline OperatorPrecedence advance(OperatorPrecedence prec) {
+  return static_cast<OperatorPrecedence>(toUnderlying(prec) + 1);
+}
+
 struct OperatorInfo {
-  unsigned short prece;
+  OperatorPrecedence prece;
   OperatorAttr attr;
 
-  OperatorInfo(unsigned short prece, OperatorAttr attr) : prece(prece), attr(attr) {}
+  OperatorInfo(unsigned short prece, OperatorAttr attr)
+      : prece(OperatorPrecedence{prece}), attr(attr) {}
 
   OperatorInfo() : OperatorInfo(0, OperatorAttr()) {}
 };
 
 OperatorInfo getOpInfo(TokenKind kind);
 
-inline unsigned short getPrecedence(TokenKind kind) { return getOpInfo(kind).prece; }
+inline OperatorPrecedence getPrecedence(TokenKind kind) { return getOpInfo(kind).prece; }
 
 inline OperatorAttr getOpAttr(TokenKind kind) { return getOpInfo(kind).attr; }
 
