@@ -1294,7 +1294,7 @@ std::unique_ptr<Node> Parser::parse_command() {
   auto node = std::make_unique<CmdNode>(
       std::make_unique<StringNode>(token, this->lexer->toCmdArg(token), kind));
 
-  for (bool next = true; next && (this->hasSpace() || this->hasNewline());) {
+  while (this->hasSpace() || this->hasNewline()) {
     switch (CUR_KIND()) {
       // clang-format off
     EACH_LA_cmdArg_LP(GEN_LA_CASE)
@@ -1320,11 +1320,11 @@ std::unique_ptr<Node> Parser::parse_command() {
     case TokenKind::INVALID:
       E_DETAILED(ParseErrorKind::CMD_ARG, EACH_LA_cmdArgs(GEN_LA_ALTER));
     default:
-      next = false;
-      break;
+      goto END;
     }
   }
 
+END:
   switch (CUR_KIND()) {
     // clang-format off
   EACH_LA_redir(GEN_LA_CASE)
@@ -1749,7 +1749,7 @@ std::unique_ptr<Node> Parser::parse_expressionImpl(OperatorPrecedence basePreced
       this->consume(); // WITH
       auto redirNode = TRY(this->parse_redirOption());
       auto withNode = std::make_unique<WithNode>(std::move(node), std::move(redirNode));
-      for (bool next = true; next && this->hasSpace();) {
+      while (this->hasSpace()) {
         switch (CUR_KIND()) {
           // clang-format off
         EACH_LA_redir(GEN_LA_CASE)
@@ -1762,10 +1762,10 @@ std::unique_ptr<Node> Parser::parse_expressionImpl(OperatorPrecedence basePreced
         case TokenKind::COMPLETION:
           E_ALTER_OR_COMP(EACH_LA_redir(GEN_LA_ALTER));
         default:
-          next = false;
-          break;
+          goto END;
         }
       }
+    END:
       node = std::move(withNode);
       break;
     }
@@ -1861,7 +1861,7 @@ std::unique_ptr<Node> Parser::parse_suffixExpression() {
 
   auto node = TRY(this->parse_primaryExpression());
 
-  for (bool next = true; !this->hasLineTerminator() && next;) {
+  while (!this->hasLineTerminator()) {
     switch (CUR_KIND()) {
     case TokenKind::ACCESSOR: {
       this->consume(); // ACCESSOR
@@ -1928,10 +1928,10 @@ std::unique_ptr<Node> Parser::parse_suffixExpression() {
       break;
     }
     default:
-      next = false;
-      break;
+      goto END;
     }
   }
+END:
   return node;
 }
 
@@ -2142,7 +2142,7 @@ std::unique_ptr<Node> Parser::parse_arrayBody(Token token, std::unique_ptr<Node>
   GUARD_DEEP_NESTING(guard);
 
   auto arrayNode = std::make_unique<ArrayNode>(token.pos, std::move(firstNode));
-  for (bool next = true; next;) {
+  while (true) {
     switch (CUR_KIND()) {
     case TokenKind::COMMA:
       this->consume(); // COMMA
@@ -2151,12 +2151,12 @@ std::unique_ptr<Node> Parser::parse_arrayBody(Token token, std::unique_ptr<Node>
       }
       break;
     case TokenKind::RB:
-      next = false;
-      break;
+      goto END;
     default:
       E_ALTER_OR_COMP(TokenKind::COMMA, TokenKind::RB);
     }
   }
+END:
   return arrayNode;
 }
 
@@ -2167,7 +2167,7 @@ std::unique_ptr<Node> Parser::parse_mapBody(Token token, std::unique_ptr<Node> &
 
   auto valueNode = TRY(this->parse_expression());
   auto mapNode = std::make_unique<MapNode>(token.pos, std::move(keyNode), std::move(valueNode));
-  for (bool next = true; next;) {
+  while (true) {
     switch (CUR_KIND()) {
     case TokenKind::COMMA:
       this->consume(); //  COMMA
@@ -2179,12 +2179,12 @@ std::unique_ptr<Node> Parser::parse_mapBody(Token token, std::unique_ptr<Node> &
       }
       break;
     case TokenKind::RB:
-      next = false;
-      break;
+      goto END;
     default:
       E_ALTER_OR_COMP(TokenKind::COMMA, TokenKind::RB);
     }
   }
+END:
   return mapNode;
 }
 
@@ -2312,7 +2312,7 @@ std::unique_ptr<Node> Parser::parse_stringExpression() {
   Token token = this->expect(TokenKind::OPEN_DQUOTE); // always success
   auto node = std::make_unique<StringExprNode>(token.pos);
 
-  for (bool next = true; next;) {
+  while (true) {
     switch (CUR_KIND()) {
     case TokenKind::STR_ELEMENT: {
       token = this->expect(TokenKind::STR_ELEMENT); // always success
@@ -2339,8 +2339,7 @@ std::unique_ptr<Node> Parser::parse_stringExpression() {
       break;
     }
     case TokenKind::CLOSE_DQUOTE:
-      next = false;
-      break;
+      goto END;
     default:
       if (this->inVarNameCompletionPoint()) {
         this->makeCodeComp(CodeCompNode::VAR, nullptr, this->curToken);
@@ -2352,6 +2351,7 @@ std::unique_ptr<Node> Parser::parse_stringExpression() {
     }
   }
 
+END:
   token = TRY(this->expect(TokenKind::CLOSE_DQUOTE));
   node->updateToken(token);
   return node;
