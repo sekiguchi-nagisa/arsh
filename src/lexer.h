@@ -95,7 +95,7 @@ public:
     this->hereDocStarts.push_back({token, attr, pos});
   }
 
-  const auto &curHereDocState() const { return this->hereDocStarts[0]; }
+  const auto &curEntry() const { return this->hereDocStarts[0]; }
 
   void shift() { this->hereDocStarts.erase(this->hereDocStarts.begin()); }
 
@@ -226,7 +226,7 @@ public:
 
   void setHereDocStart(TokenKind hereOp, Token startToken, unsigned int redirPos);
 
-  const auto &getHereDocState() const { return this->hereDocStates.back().curHereDocState(); }
+  const auto &getHereDocStateAt(unsigned int index) const { return this->hereDocStates[index]; }
 
   unsigned int hereDocStateDepth() const { return this->hereDocStates.size(); }
 
@@ -330,7 +330,7 @@ private:
 
   void tryEnterHereDocMode() {
     if (this->hereDocStates.back()) {
-      auto attr = this->hereDocStates.back().curHereDocState().attr;
+      auto attr = this->hereDocStates.back().curEntry().attr;
       this->pushLexerMode(hasFlag(attr, HereDocState::Attr::EXPAND) ? yycEXP_HERE : yycHERE);
     }
   }

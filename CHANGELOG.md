@@ -4,6 +4,10 @@
 
 - correctly check internal ``beForeground`` error in ``ARState_readLine``
 
+### Fixed
+
+- bugfix incorrect here-doc parsing when the first element of here-doc body is expansion
+
 ## [0.39.1] - 2025-10-03
 
 - suppress ``ExecError`` in completion script

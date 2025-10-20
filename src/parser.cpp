@@ -1295,6 +1295,10 @@ std::unique_ptr<Node> Parser::parse_command() {
       std::make_unique<StringNode>(token, this->lexer->toCmdArg(token), kind));
 
   while (this->hasSpace() || this->hasNewline()) {
+    if (this->hasNewline()) {
+      TRY(this->parse_hereDocBody());
+    }
+
     switch (CUR_KIND()) {
       // clang-format off
     EACH_LA_cmdArg_LP(GEN_LA_CASE)
@@ -1427,43 +1431,43 @@ std::unique_ptr<Node> Parser::parse_hereDocBody() {
       continue;
     }
 
-    const unsigned int pos = this->lexer->getHereDocState().pos;
-    const auto attr = this->lexer->getHereDocState().attr;
+    auto &hereEntry = this->getActiveHereDocState().curEntry();
+    const unsigned int pos = hereEntry.pos;
+    const auto attr = hereEntry.attr;
     const auto index = this->findHereDocNodeIndex(pos);
     assert(index < this->hereDocNodes.size());
     const auto hereDocNode = this->hereDocNodes[index];
-    auto *strExprNode =
-        ({ cast<StringExprNode>(hereDocNode->getTargetNode().getSegmentNodes()[0].get()); });
+    auto &strExprNode = cast<StringExprNode>(*hereDocNode->getTargetNode().getSegmentNodes()[0]);
     while (CUR_KIND() != TokenKind::HERE_END) {
       switch (CUR_KIND()) {
         // clang-format off
-      EACH_LA_interpolation(GEN_LA_CASE)
+      EACH_LA_here_interpolation(GEN_LA_CASE)
         // clang-format on
         {
-          auto interp = TRY(this->parse_interpolation(EmbedNode::STR_EXPR));
-          strExprNode->addExprNode(std::move(interp));
+          auto interp = TRY(this->parse_interpolation(ExpansionLoc::HERE_BODY));
+          strExprNode.addExprNode(std::move(interp));
           break;
         }
-      case TokenKind::START_SUB_CMD: {
-        auto subNode = TRY(this->parse_cmdSubstitution(true));
-        strExprNode->addExprNode(std::move(subNode));
+      case TokenKind::HERE_START_SUB_CMD: {
+        auto subNode = TRY(this->parse_cmdSubstitution(ExpansionLoc::HERE_BODY));
+        strExprNode.addExprNode(std::move(subNode));
         break;
       }
       case TokenKind::BACKQUOTE_LITERAL: {
         auto subNode = TRY(this->parse_backquoteLiteral());
-        strExprNode->addExprNode(std::move(subNode));
+        strExprNode.addExprNode(std::move(subNode));
         break;
       }
       case TokenKind::STR_ELEMENT: {
         Token token = this->curToken;
         this->consume(); // always success
         auto newAttr = attr;
-        if (hasFlag(newAttr, HereDocState::Attr::IGNORE_TAB) && !shouldIgnoreTab(*strExprNode)) {
+        if (hasFlag(newAttr, HereDocState::Attr::IGNORE_TAB) && !shouldIgnoreTab(strExprNode)) {
           unsetFlag(newAttr, HereDocState::Attr::IGNORE_TAB);
         }
         auto subNode = std::make_unique<StringNode>(
             token, this->lexer->toHereDocBody(token, newAttr), StringNode::STRING);
-        strExprNode->addExprNode(std::move(subNode));
+        strExprNode.addExprNode(std::move(subNode));
         break;
       }
       case TokenKind::EOS:
@@ -1471,7 +1475,7 @@ std::unique_ptr<Node> Parser::parse_hereDocBody() {
             this->lexer->hereDocStateDepth() > 1) {
           constexpr TokenKind kinds[] = {TokenKind::HERE_END};
           std::string suffix = ": `";
-          suffix += this->lexer->toStrRef(this->lexer->getHereDocState().token);
+          suffix += this->lexer->toStrRef(this->getActiveHereDocState().curEntry().token);
           suffix += "'";
           this->reportDetailedError(ParseErrorKind::HERE_END, 1, kinds, suffix.c_str());
         }
@@ -1664,7 +1668,7 @@ std::unique_ptr<Node> Parser::parse_cmdArgSegImpl(const CmdArgNode &argNode,
   case TokenKind::OPEN_DQUOTE:
     return this->parse_stringExpression();
   case TokenKind::START_SUB_CMD:
-    return this->parse_cmdSubstitution();
+    return this->parse_cmdSubstitution(ExpansionLoc::CMD_ARG);
   case TokenKind::BACKQUOTE_LITERAL:
     return this->parse_backquoteLiteral();
   case TokenKind::START_IN_SUB:
@@ -1990,7 +1994,7 @@ std::unique_ptr<Node> Parser::parse_primaryExpression() {
   case TokenKind::OPEN_DQUOTE:
     return this->parse_stringExpression();
   case TokenKind::START_SUB_CMD:
-    return this->parse_cmdSubstitution();
+    return this->parse_cmdSubstitution(ExpansionLoc::NONE);
   case TokenKind::APPLIED_NAME:
   case TokenKind::SPECIAL_NAME:
     return this->parse_appliedName(CUR_KIND() == TokenKind::SPECIAL_NAME);
@@ -2324,12 +2328,12 @@ std::unique_ptr<Node> Parser::parse_stringExpression() {
     EACH_LA_interpolation(GEN_LA_CASE)
       // clang-format on
       {
-        auto interp = TRY(this->parse_interpolation(EmbedNode::STR_EXPR));
+        auto interp = TRY(this->parse_interpolation(ExpansionLoc::STRING));
         node->addExprNode(std::move(interp));
         break;
       }
     case TokenKind::START_SUB_CMD: {
-      auto subNode = TRY(this->parse_cmdSubstitution(true));
+      auto subNode = TRY(this->parse_cmdSubstitution(ExpansionLoc::STRING));
       node->addExprNode(std::move(subNode));
       break;
     }
@@ -2375,9 +2379,10 @@ std::unique_ptr<Node> Parser::toAccessNode(Token token) const {
   return node;
 }
 
-std::unique_ptr<Node> Parser::parse_interpolation(EmbedNode::Kind kind) {
+std::unique_ptr<Node> Parser::parse_interpolation(const ExpansionLoc loc) {
   GUARD_DEEP_NESTING(guard);
 
+  const auto kind = loc == ExpansionLoc::CMD_ARG ? EmbedNode::CMD_ARG : EmbedNode::STR_EXPR;
   switch (CUR_KIND()) {
   case TokenKind::APPLIED_NAME:
   case TokenKind::SPECIAL_NAME: {
@@ -2403,7 +2408,8 @@ std::unique_ptr<Node> Parser::parse_interpolation(EmbedNode::Kind kind) {
   default:
     auto ctx = this->inIgnorableNLCtx();
     unsigned int pos = START_POS();
-    TRY(this->expect(TokenKind::START_INTERP));
+    TRY(this->expect(loc == ExpansionLoc::HERE_BODY ? TokenKind::HERE_START_INTERP
+                                                    : TokenKind::START_INTERP));
     bool mayNeedSpace = false;
     const Token oldToken = this->curToken;
     const TokenKind oldKind = this->curKind;
@@ -2470,20 +2476,22 @@ std::unique_ptr<Node> Parser::parse_paramExpansion() {
     return node;
   }
   default:
-    return this->parse_interpolation(EmbedNode::CMD_ARG);
+    return this->parse_interpolation(ExpansionLoc::CMD_ARG);
   }
 }
 
-std::unique_ptr<Node> Parser::parse_cmdSubstitution(bool strExpr) {
+std::unique_ptr<Node> Parser::parse_cmdSubstitution(const ExpansionLoc loc) {
   GUARD_DEEP_NESTING(guard);
 
-  assert(CUR_KIND() == TokenKind::START_SUB_CMD);
   auto ctx = this->inIgnorableNLCtx();
   const unsigned int pos = START_POS();
-  this->consume(); // START_SUB_CMD
+  TRY(this->expect(loc == ExpansionLoc::HERE_BODY ? TokenKind::HERE_START_SUB_CMD
+                                                  : TokenKind::START_SUB_CMD));
   auto exprNode = TRY(this->parse_expression());
   const Token token = TRY(this->expect(TokenKind::RP));
-  return ForkNode::newCmdSubstitution(pos, std::move(exprNode), token, strExpr);
+  return ForkNode::newCmdSubstitution(pos, std::move(exprNode), token,
+                                      loc == ExpansionLoc::STRING ||
+                                          loc == ExpansionLoc::HERE_BODY);
 }
 
 std::unique_ptr<Node> Parser::parse_procSubstitution() {

@@ -1,0 +1,10 @@
+# RUN: exec $cmd $self
+
+# CHECK: hello
+# CHECK: False
+# STATUS: 0
+
+cat << EOF
+$(echo hello)
+False
+EOF

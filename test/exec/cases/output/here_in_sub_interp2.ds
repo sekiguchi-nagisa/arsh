@@ -1,0 +1,12 @@
+# RUN: exec $cmd $self
+
+# CHECK: 90
+# CHECK: false
+# STATUS: 0
+
+(
+cat << EOF
+${ 34 + 56}
+$False
+EOF
+)

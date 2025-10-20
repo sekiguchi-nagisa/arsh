@@ -101,6 +101,13 @@ private:
     unsigned int pos;
   } hereOp{{}, 0};
 
+  enum class ExpansionLoc : unsigned char { // for ${, $(
+    NONE,
+    CMD_ARG,
+    STRING,
+    HERE_BODY,
+  };
+
 public:
   explicit Parser(Lexer &lexer, ParserOption option = {},
                   ObserverPtr<CodeCompletionContext> compCtx = nullptr);
@@ -148,13 +155,17 @@ protected:
   bool hasLineTerminator() const { return this->hasNewline() && !this->ignorableNewlines.back(); }
 
   bool inHereDocBody() const {
-    if (this->curKind == TokenKind::HERE_END) {
+    switch (this->curKind) {
+    case TokenKind::HERE_END:
+    case TokenKind::HERE_START_INTERP:
+    case TokenKind::HERE_START_SUB_CMD:
       return true;
-    }
-    if (this->curKind == TokenKind::RP || this->curKind == TokenKind::RBC) {
+    case TokenKind::RP:
+    case TokenKind::RBC:
       return false;
+    default:
+      return this->lexer->getLexerMode().isHereDoc();
     }
-    return this->lexer->getLexerMode().isHereDoc();
   }
 
   bool inCompletionPoint() const { return this->curKind == TokenKind::COMPLETION; }
@@ -228,8 +239,18 @@ protected:
 
   std::unique_ptr<Node> toAccessNode(Token token) const;
 
+  const auto &getActiveHereDocState() const {
+    unsigned int depth = this->lexer->hereDocStateDepth();
+    if (this->curKind == TokenKind::HERE_START_SUB_CMD ||
+        this->curKind == TokenKind::HERE_START_INTERP) {
+      depth--;
+    }
+    assert(depth);
+    return this->lexer->getHereDocStateAt(depth - 1);
+  }
+
   /**
-   * lookup here doc node specified by pos
+   * look up here doc node specified by pos
    * @param pos
    * @return
    * if not found, return hereDocNodes.size()
@@ -356,11 +377,11 @@ protected:
 
   std::unique_ptr<Node> parse_stringExpression();
 
-  std::unique_ptr<Node> parse_interpolation(EmbedNode::Kind kind);
+  std::unique_ptr<Node> parse_interpolation(ExpansionLoc loc);
 
   std::unique_ptr<Node> parse_paramExpansion();
 
-  std::unique_ptr<Node> parse_cmdSubstitution(bool strExpr = false);
+  std::unique_ptr<Node> parse_cmdSubstitution(ExpansionLoc loc);
 
   std::unique_ptr<Node> parse_procSubstitution();
 
