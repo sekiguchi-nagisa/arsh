@@ -188,6 +188,8 @@
   TOKEN(REDIR_HERE_STR, "<<<")                                                                     \
   TOKEN(HERE_START, "<Here Doc Start>")                                                            \
   TOKEN(HERE_END, "<Here Doc End>")                                                                \
+  TOKEN(HERE_START_INTERP, "${")  /* for here doc body */                                          \
+  TOKEN(HERE_START_SUB_CMD, "$(") /* for here doc body*/                                           \
   TOKEN(PIPE, "|")                                                                                 \
   TOKEN(BACKGROUND, "&")                                                                           \
   TOKEN(DISOWN_BG, "&!")                                                                           \
@@ -271,6 +273,12 @@
   OP(APPLIED_NAME_WITH_FIELD)                                                                      \
   OP(START_INTERP)
 
+#define EACH_LA_here_interpolation(OP)                                                             \
+  OP(APPLIED_NAME)                                                                                 \
+  OP(SPECIAL_NAME)                                                                                 \
+  OP(APPLIED_NAME_WITH_FIELD)                                                                      \
+  OP(HERE_START_INTERP)
+
 #define EACH_LA_paramExpansion(OP)                                                                 \
   OP(APPLIED_NAME_WITH_BRACKET)                                                                    \
   OP(SPECIAL_NAME_WITH_BRACKET)                                                                    \
@@ -339,7 +347,10 @@
   EACH_LA_interpolation(OP) OP(START_SUB_CMD) OP(BACKQUOTE_LITERAL) OP(CLOSE_DQUOTE)
 
 #define EACH_LA_hereExpand(OP)                                                                     \
-  OP(STR_ELEMENT) EACH_LA_interpolation(OP) OP(START_SUB_CMD) OP(BACKQUOTE_LITERAL)
+  OP(STR_ELEMENT)                                                                                  \
+  OP(HERE_START_SUB_CMD)                                                                           \
+  OP(BACKQUOTE_LITERAL)                                                                            \
+  EACH_LA_here_interpolation(OP)
 
 #define EACH_LA_redir(OP)                                                                          \
   OP(REDIR_IN)                                                                                     \

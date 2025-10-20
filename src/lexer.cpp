@@ -291,7 +291,7 @@ bool Lexer::tryExitHereDocMode(unsigned int startPos) {
   } else {
     return false;
   }
-  StringRef start = this->toStrRef(this->hereDocStates.back().curHereDocState().token);
+  StringRef start = this->toStrRef(this->hereDocStates.back().curEntry().token);
   if (ref == start) { // exit heredoc
     this->hereDocStates.back().shift();
     this->popLexerMode();

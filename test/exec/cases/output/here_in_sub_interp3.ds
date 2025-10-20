@@ -1,0 +1,12 @@
+# RUN: exec $cmd $self
+
+# CHECK: @@@
+# CHECK: ssalse
+# STATUS: 0
+
+(
+cat << EOF
+$( echo @@@)
+ssalse
+EOF
+)

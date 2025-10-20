@@ -329,10 +329,10 @@ INIT:
                              { RET(SPECIAL_NAME); }
     <DSTRING,CMD,EXP_HERE> INNER_FIELD
                              { RET(APPLIED_NAME_WITH_FIELD); }
-    <DSTRING,CMD,EXP_HERE> "${"
-                             { PUSH_MODE_SKIP_NL_HERE(STMT); RET(START_INTERP); }
-    <DSTRING,CMD,EXP_HERE> "$("
-                             { PUSH_MODE_SKIP_NL_HERE(STMT); RET(START_SUB_CMD); }
+    <DSTRING,CMD> "${"       { PUSH_MODE_SKIP_NL_HERE(STMT); RET(     START_INTERP); }
+    <EXP_HERE>    "${"       { PUSH_MODE_SKIP_NL_HERE(STMT); RET(HERE_START_INTERP); }
+    <DSTRING,CMD> "$("       { PUSH_MODE_SKIP_NL_HERE(STMT); RET(     START_SUB_CMD); }
+    <EXP_HERE>    "$("       { PUSH_MODE_SKIP_NL_HERE(STMT); RET(HERE_START_SUB_CMD); }
     <DSTRING,CMD,EXP_HERE> BACKQUOTE_LITERAL
                              { UPDATE_LN(); RET(BACKQUOTE_LITERAL); }
     <EXP_HERE> EXP_HERE_BODY { UPDATE_LN(); RET_HERE_BODY(STR_ELEMENT); }
