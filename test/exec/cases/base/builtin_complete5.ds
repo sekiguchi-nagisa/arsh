@@ -64,6 +64,8 @@ let stmt = ['new', '"', '$(', '>(', '<(','&(', '@(', '(', '[', '[<', '{',
             'do', 'for', 'if', 'case', 'try', 'while', 'function',
             'break', 'continue', 'return', 'time',
             '!', '+', '-', 'throw', 'coproc',
+            '<', '>', '>|', '>>', '&>', '&>|', '&>>',
+            '<>', '<&', '>&', '<<', '<<-', '<<<',
 
             'type', 'assert', 'defer',
             'exportenv', 'importenv',
@@ -72,7 +74,9 @@ let stmt = ['new', '"', '$(', '>(', '<(','&(', '@(', '(', '[', '[<', '{',
 let expr = ['new', '"', '$(', '>(', '<(','&(', '@(', '(', '[', '{',
             'do', 'for', 'if', 'case', 'try', 'while', 'function',
             'break', 'continue', 'return', 'time',
-            '!', '+', '-', 'throw', 'coproc']
+            '!', '+', '-', 'throw', 'coproc',
+            '<', '>', '>|', '>>', '&>', '&>|', '&>>',
+            '<>', '<&', '>&', '<<', '<<-', '<<<']
 
 assert diff <(complete -A expr_kw '') <(for $e in $expr { echo $e; } | sort)
 assert diff <(complete -A expr_kw 'c') <(for $e in $expr { echo $e; } | grep '^c' | sort)
@@ -196,22 +200,22 @@ assert $COMPREPLY[0] == 'echo\\\\\ '
 
 
 ## invalid
-assert "$(complete -A 2>&1)" == "${$SCRIPT_NAME.basename()}:199: complete: -A: option requires argument"
+assert "$(complete -A 2>&1)" == "${$SCRIPT_NAME.basename()}:203: complete: -A: option requires argument"
 assert !complete -A
 assert $? == 1
 
-assert "$(complete -A hgorahe 2>&1)" == "${$SCRIPT_NAME.basename()}:203: complete: hgorahe: invalid action
+assert "$(complete -A hgorahe 2>&1)" == "${$SCRIPT_NAME.basename()}:207: complete: hgorahe: invalid action
 complete: complete [-A action] [-m descriptor] [-dqs] line"
 assert !complete -A fjairfaj
 assert $? == 2
 
-assert "$(complete -m $MODULE$'\000' 2>&1)" == "${$SCRIPT_NAME.basename()}:208: complete: ${MODULE}\x00: unrecognized module descriptor"
+assert "$(complete -m $MODULE$'\000' 2>&1)" == "${$SCRIPT_NAME.basename()}:212: complete: ${MODULE}\x00: unrecognized module descriptor"
 assert "$(complete -m $MODULE"3q4324" 2>&1)" == 
-    "${$SCRIPT_NAME.basename()}:209: complete: ${MODULE}3q4324: unrecognized module descriptor"
+    "${$SCRIPT_NAME.basename()}:213: complete: ${MODULE}3q4324: unrecognized module descriptor"
 assert !complete -m ${MODULE}3q4324
 assert $? == 1
-assert "$(complete -m 'TMD(34)' 2>&1)" == "${$SCRIPT_NAME.basename()}:213: complete: TMD(34): unrecognized module descriptor"
-assert "$(complete -m 'TMD(hoge)' 2>&1)" == "${$SCRIPT_NAME.basename()}:214: complete: TMD(hoge): unrecognized module descriptor"
+assert "$(complete -m 'TMD(34)' 2>&1)" == "${$SCRIPT_NAME.basename()}:217: complete: TMD(34): unrecognized module descriptor"
+assert "$(complete -m 'TMD(hoge)' 2>&1)" == "${$SCRIPT_NAME.basename()}:218: complete: TMD(hoge): unrecognized module descriptor"
 
 if (test -e /dev/full) {
     assert "$(complete '$(' 2>&1 > /dev/full)" =~ $/: complete: io error:.+/

@@ -56,7 +56,9 @@ struct allow_enum_bitop<CodeCompOp> : std::true_type {};
 
 inline bool willKickFrontEnd(CodeCompOp op) { return empty(op); }
 
-inline bool isKeyword(StringRef value) { return !value.startsWith("<") || !value.endsWith(">"); }
+inline bool isKeyword(StringRef value) { // ignore '<Identifier>'
+  return !(value.size() > 2 && value[0] == '<' && value.back() == '>');
+}
 
 class Lexer;
 

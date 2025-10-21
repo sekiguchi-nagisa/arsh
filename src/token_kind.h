@@ -315,7 +315,8 @@
   OP(BREAK)                                                                                        \
   OP(CONTINUE)                                                                                     \
   OP(RETURN)                                                                                       \
-  OP(COMPLETION)
+  OP(COMPLETION)                                                                                   \
+  EACH_LA_redir(OP)
 
 #define EACH_LA_expression(OP)                                                                     \
   OP(NOT)                                                                                          \

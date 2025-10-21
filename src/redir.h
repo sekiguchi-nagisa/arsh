@@ -45,7 +45,7 @@ public:
   /**
    * open pipe with CLOEXEC
    * @return
-   * if has error, return false
+   * if error, return false
    */
   [[nodiscard]] bool open();
 
@@ -136,13 +136,13 @@ struct PipeSet {
   }
 
   /**
-   * only call once in child
+   * only call once in a child
    */
-  [[nodiscard]] bool setupChildStdin(ForkKind forkKind, bool jobctl) {
+  [[nodiscard]] bool setupChildStdin(ForkKind forkKind, bool jobCtl) {
     if (!tryToDup(this->in[READ_PIPE], STDIN_FILENO)) {
       return false;
     }
-    if ((forkKind == ForkKind::DISOWN || forkKind == ForkKind::JOB) && !jobctl) {
+    if ((forkKind == ForkKind::DISOWN || forkKind == ForkKind::JOB) && !jobCtl) {
       // redirect stdin to null
       int fd = open("/dev/null", O_RDONLY);
       const bool s = fd > -1 && dup2(fd, STDIN_FILENO) > -1;
@@ -155,7 +155,7 @@ struct PipeSet {
   }
 
   /**
-   * only call once in child
+   * only call once in a child
    */
   [[nodiscard]] bool setupChildStdout() { return tryToDup(this->out[WRITE_PIPE], STDOUT_FILENO); }
 
@@ -213,7 +213,7 @@ public:
   static constexpr int MAX_FD_NUM = 9;
 
 private:
-  StaticBitSet<uint16_t> backupFDSet; // if corresponding bit is set, backup old fd
+  StaticBitSet<uint16_t> backupFDSet; // if the corresponding bit is set, back up old fd
 
   bool saved{false};
 
@@ -269,6 +269,7 @@ private:
         }
       }
     }
+    this->saved = false;
   }
 };
 

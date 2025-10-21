@@ -1,0 +1,5 @@
+
+#$test($result = 'type', $lineNum = 5, $chars = 2, $errorKind = 'NoEmptyRedir', $status = 1)
+
+23
+ < 111111

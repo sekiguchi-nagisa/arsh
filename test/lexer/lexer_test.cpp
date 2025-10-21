@@ -1714,9 +1714,10 @@ TEST_F(LexerTest_Lv1, MOD2) {
 }
 
 TEST_F(LexerTest_Lv1, LT1) {
-  const char *text = "<";
+  const char *text = "<"; // recognized as redir
   this->initLexer(text);
-  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::INVALID, "<"));
+  ASSERT_NO_FATAL_FAILURE(
+      EXPECT(TokenKind::REDIR_IN, "<", TokenKind::NEW_LINE, "\n", TokenKind::EOS, ""));
 }
 
 TEST_F(LexerTest_Lv1, LT2) {
@@ -1727,9 +1728,10 @@ TEST_F(LexerTest_Lv1, LT2) {
 }
 
 TEST_F(LexerTest_Lv1, GT1) {
-  const char *text = ">";
+  const char *text = ">"; // recognized as redir
   this->initLexer(text);
-  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::INVALID, ">"));
+  ASSERT_NO_FATAL_FAILURE(
+      EXPECT(TokenKind::REDIR_OUT, ">", TokenKind::NEW_LINE, "\n", TokenKind::EOS, ""));
 }
 
 TEST_F(LexerTest_Lv1, GT2) {
@@ -1740,9 +1742,10 @@ TEST_F(LexerTest_Lv1, GT2) {
 }
 
 TEST_F(LexerTest_Lv1, LE1) {
-  const char *text = "<=";
+  const char *text = "<="; // recognized as redir
   this->initLexer(text);
-  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::INVALID, "<"));
+  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::REDIR_IN, "<", TokenKind::META_ASSIGN, "=",
+                                 TokenKind::NEW_LINE, "\n", TokenKind::EOS, ""));
 }
 
 TEST_F(LexerTest_Lv1, LE2) {
@@ -1753,9 +1756,10 @@ TEST_F(LexerTest_Lv1, LE2) {
 }
 
 TEST_F(LexerTest_Lv1, GE1) {
-  const char *text = ">=";
+  const char *text = ">="; // recognized as redir
   this->initLexer(text);
-  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::INVALID, ">"));
+  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::REDIR_OUT, ">", TokenKind::META_ASSIGN, "=",
+                                 TokenKind::NEW_LINE, "\n", TokenKind::EOS, ""));
 }
 
 TEST_F(LexerTest_Lv1, GE2) {
@@ -1921,9 +1925,10 @@ TEST_F(LexerTest_Lv1, LSHIFT1) {
 }
 
 TEST_F(LexerTest_Lv1, LSHIFT2) {
-  const char *text = "<<";
+  const char *text = "<<"; // recognized as redir
   this->initLexer(text);
-  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::INVALID, "<"));
+  ASSERT_NO_FATAL_FAILURE(
+      EXPECT(TokenKind::REDIR_HERE_DOC, "<<", TokenKind::NEW_LINE, "\n", TokenKind::EOS, ""));
 }
 
 TEST_F(LexerTest_Lv1, RSHIFT1) {
@@ -1933,9 +1938,10 @@ TEST_F(LexerTest_Lv1, RSHIFT1) {
 }
 
 TEST_F(LexerTest_Lv1, RSHIFT2) {
-  const char *text = ">>";
+  const char *text = ">>"; // recognized as redir
   this->initLexer(text);
-  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::INVALID, ">"));
+  ASSERT_NO_FATAL_FAILURE(
+      EXPECT(TokenKind::REDIR_APPEND, ">>", TokenKind::NEW_LINE, "\n", TokenKind::EOS, ""));
 }
 
 TEST_F(LexerTest_Lv1, URSHIFT1) {
@@ -1945,15 +1951,17 @@ TEST_F(LexerTest_Lv1, URSHIFT1) {
 }
 
 TEST_F(LexerTest_Lv1, URSHIFT2) {
-  const char *text = ">>>";
+  const char *text = ">>>"; // recognized as redir
   this->initLexer(text);
-  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::INVALID, ">"));
+  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::REDIR_APPEND, ">>", TokenKind::REDIR_OUT, ">",
+                                 TokenKind::NEW_LINE, "\n", TokenKind::EOS, ""));
 }
 
 TEST_F(LexerTest_Lv1, URSHIFT3) {
   const char *text = ">>>>";
   this->initLexer(text, yycEXPR);
-  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::URSHIFT, ">>>", TokenKind::INVALID, ">"));
+  ASSERT_NO_FATAL_FAILURE(EXPECT(TokenKind::URSHIFT, ">>>", TokenKind::REDIR_OUT, ">",
+                                 TokenKind::NEW_LINE, "\n", TokenKind::EOS, ""));
 }
 
 TEST_F(LexerTest_Lv1, COND_AND1) {

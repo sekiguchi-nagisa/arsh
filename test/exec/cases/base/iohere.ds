@@ -9,3 +9,7 @@ for(var i = 0; $i < 10; $i++) {
     $a = $a + $a
 }
 assert "$(cat <<< $a && echo !!!)" == $a + $'\n!!!'
+
+# empty command
+
+assert "$(<<< 'hey say!!')" == 'hey say!!'

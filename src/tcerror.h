@@ -27,7 +27,7 @@ namespace arsh {
  */
 class TypeCheckError {
 public:
-  enum class Type : unsigned int {
+  enum class Type : unsigned char {
     ERROR,
     WARN,
   };
@@ -246,6 +246,8 @@ DEFINE_TCError(DefinedAutoSubCmd,
 DEFINE_TCError(InvalidSubCmd,
                "invalid sub-command: `%s', must not be start with '-' and has no null characters");
 DEFINE_TCError(SubCmdAttrType, "`SubCmd' attribute is only given to CLI record type field");
+DEFINE_TCError(EmptyRedirArgs, "not allow arguments after empty command redirection");
+DEFINE_TCError(NoEmptyRedir, "empty command redirection is only allowed after '$(', '<(', '>('");
 
 DEFINE_TCWarn(MeaninglessCast, "meaningless cast op");
 DEFINE_TCWarn(VarShadowing, "`%s' hides already defined name of outer scope");

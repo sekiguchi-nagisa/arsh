@@ -1246,12 +1246,30 @@ std::unique_ptr<CatchNode> Parser::parse_catchBlock() {
   return node;
 }
 
+static bool lookahead_redir(TokenKind kind) {
+  switch (kind) {
+    // clang-format off
+    EACH_LA_redir(GEN_LA_CASE) return true;
+    // clang-format on
+  default:
+    return false;
+  }
+}
+
 // command
-std::unique_ptr<Node> Parser::parse_command() {
+std::unique_ptr<Node> Parser::parse_command(bool allowEmptyCmd) {
   GUARD_DEEP_NESTING(guard);
 
-  assert(CUR_KIND() == TokenKind::COMMAND);
-  Token token = this->expect(TokenKind::COMMAND); // always success
+  Token token;
+  if (CUR_KIND() == TokenKind::COMMAND) {
+    token = this->expect(TokenKind::COMMAND); // always success
+    allowEmptyCmd = false;
+  } else {
+    assert(lookahead_redir(CUR_KIND()));
+    assert(lookahead_redir(CUR_KIND()));
+    token = this->curToken; // dummy
+    token.size = 0;
+  }
 
   if (CUR_KIND() == TokenKind::LP) { // command definition
     std::unique_ptr<VarDeclNode> paramNode;
@@ -1293,8 +1311,9 @@ std::unique_ptr<Node> Parser::parse_command() {
   auto kind = this->lexer->startsWith(token, '~') ? StringNode::TILDE : StringNode::STRING;
   auto node = std::make_unique<CmdNode>(
       std::make_unique<StringNode>(token, this->lexer->toCmdArg(token), kind));
+  node->setAllowEmpty(allowEmptyCmd);
 
-  while (this->hasSpace() || this->hasNewline()) {
+  while (!node->getSize() || this->hasSpace() || this->hasNewline()) {
     if (this->hasNewline()) {
       TRY(this->parse_hereDocBody());
     }
@@ -1329,16 +1348,9 @@ std::unique_ptr<Node> Parser::parse_command() {
   }
 
 END:
-  switch (CUR_KIND()) {
-    // clang-format off
-  EACH_LA_redir(GEN_LA_CASE)
-    // clang-format on
-    {
-      this->createError(this->curKind, this->curToken, REDIR_NEED_SPACE,
-                        "require space before redirection");
-    }
-  default:
-    break;
+  if (lookahead_redir(CUR_KIND())) {
+    this->createError(this->curKind, this->curToken, REDIR_NEED_SPACE,
+                      "require space before redirection");
   }
   return node;
 }
@@ -1346,45 +1358,39 @@ END:
 std::unique_ptr<RedirNode> Parser::parse_redirOption() {
   GUARD_DEEP_NESTING(guard);
 
-  switch (CUR_KIND()) {
-    // clang-format off
-  EACH_LA_redir(GEN_LA_CASE)
-    // clang-format on
-    {
-      Token token = this->curToken;
-      TokenKind kind = this->scan();
-      const bool hereDoc =
-          kind == TokenKind::REDIR_HERE_DOC || kind == TokenKind::REDIR_HERE_DOC_DASH;
-      auto parseOpt = CmdArgParseOpt::REDIR;
-      if (hereDoc) {
-        this->hereOp = {
-            .kind = kind,
-            .pos = token.pos,
-        };
-        parseOpt = CmdArgParseOpt::HERE_START;
-      }
-      auto node = std::make_unique<RedirNode>(kind, token, this->lexer->toStrRef(token),
-                                              TRY(this->parse_cmdArg(parseOpt)));
-      if (hereDoc) {
-        auto &argNode = node->getTargetNode();
-        const Token startToken = argNode.getToken();
-        {
-          StringRef ref = this->lexer->toStrRef(startToken);
-          if (ref[0] == '\'') {
-            ref.removePrefix(1);
-            ref.removeSuffix(1);
-          }
-          node->setHereStart(NameInfo(startToken, ref.toString()));
-        }
-        argNode.refSegmentNodes().pop_back();
-        argNode.addSegmentNode(std::make_unique<StringExprNode>(startToken.endPos()));
-        this->hereDocNodes.push_back(makeObserver(*node));
-      }
-      return node;
+  if (lookahead_redir(CUR_KIND())) {
+    Token token = this->curToken;
+    TokenKind kind = this->scan();
+    const bool hereDoc =
+        kind == TokenKind::REDIR_HERE_DOC || kind == TokenKind::REDIR_HERE_DOC_DASH;
+    auto parseOpt = CmdArgParseOpt::REDIR;
+    if (hereDoc) {
+      this->hereOp = {
+          .kind = kind,
+          .pos = token.pos,
+      };
+      parseOpt = CmdArgParseOpt::HERE_START;
     }
-  default:
-    E_ALTER_OR_COMP(EACH_LA_redir(GEN_LA_ALTER));
+    auto node = std::make_unique<RedirNode>(kind, token, this->lexer->toStrRef(token),
+                                            TRY(this->parse_cmdArg(parseOpt)));
+    if (hereDoc) {
+      auto &argNode = node->getTargetNode();
+      const Token startToken = argNode.getToken();
+      {
+        StringRef ref = this->lexer->toStrRef(startToken);
+        if (ref[0] == '\'') {
+          ref.removePrefix(1);
+          ref.removeSuffix(1);
+        }
+        node->setHereStart(NameInfo(startToken, ref.toString()));
+      }
+      argNode.refSegmentNodes().pop_back();
+      argNode.addSegmentNode(std::make_unique<StringExprNode>(startToken.endPos()));
+      this->hereDocNodes.push_back(makeObserver(*node));
+    }
+    return node;
   }
+  E_ALTER_OR_COMP(EACH_LA_redir(GEN_LA_ALTER));
 }
 
 size_t Parser::findHereDocNodeIndex(unsigned int pos) const {
@@ -1710,10 +1716,11 @@ static std::unique_ptr<Node> createBinaryNode(std::unique_ptr<Node> &&leftNode, 
  * @param basePrecedence
  * @return
  */
-std::unique_ptr<Node> Parser::parse_expressionImpl(OperatorPrecedence basePrecedence) {
+std::unique_ptr<Node> Parser::parse_expressionImpl(OperatorPrecedence basePrecedence,
+                                                   bool allowEmptyCmd) {
   GUARD_DEEP_NESTING(guard);
 
-  auto node = TRY(this->parse_unaryExpression());
+  auto node = TRY(this->parse_unaryExpression(allowEmptyCmd));
   while (!this->hasLineTerminator()) {
     if (this->tryCompleteInfixKeywords({
 #define GEN_TABLE(E) TokenKind::E,
@@ -1826,15 +1833,16 @@ std::unique_ptr<Node> Parser::parse_expressionImpl(OperatorPrecedence basePreced
   return node;
 }
 
-std::unique_ptr<Node> Parser::parse_expression(OperatorPrecedence basePrecedence) {
-  auto node = TRY(this->parse_expressionImpl(basePrecedence));
+std::unique_ptr<Node> Parser::parse_expression(OperatorPrecedence basePrecedence,
+                                               bool allowEmptyCmd) {
+  auto node = TRY(this->parse_expressionImpl(basePrecedence, allowEmptyCmd));
   if (this->hasNewline()) {
     TRY(this->parse_hereDocBody());
   }
   return node;
 }
 
-std::unique_ptr<Node> Parser::parse_unaryExpression() {
+std::unique_ptr<Node> Parser::parse_unaryExpression(bool allowEmptyCmd) {
   GUARD_DEEP_NESTING(guard);
 
   switch (CUR_KIND()) {
@@ -1856,14 +1864,14 @@ std::unique_ptr<Node> Parser::parse_unaryExpression() {
     return std::make_unique<TimeNode>(token, std::move(exprNode));
   }
   default:
-    return this->parse_suffixExpression();
+    return this->parse_suffixExpression(allowEmptyCmd);
   }
 }
 
-std::unique_ptr<Node> Parser::parse_suffixExpression() {
+std::unique_ptr<Node> Parser::parse_suffixExpression(bool allowEmptyCmd) {
   GUARD_DEEP_NESTING(guard);
 
-  auto node = TRY(this->parse_primaryExpression());
+  auto node = TRY(this->parse_primaryExpression(allowEmptyCmd));
 
   while (!this->hasLineTerminator()) {
     switch (CUR_KIND()) {
@@ -1950,12 +1958,17 @@ static std::unique_ptr<Node> createTupleOrGroup(Token open,
   return std::make_unique<TupleNode>(open.pos, std::move(nodes), close);
 }
 
-std::unique_ptr<Node> Parser::parse_primaryExpression() {
+std::unique_ptr<Node> Parser::parse_primaryExpression(bool allowEmptyCmd) {
   GUARD_DEEP_NESTING(guard);
 
   switch (CUR_KIND()) {
   case TokenKind::COMMAND:
-    return this->parse_command();
+    // clang-format off
+  EACH_LA_redir(GEN_LA_CASE)
+    // clang-format on
+    {
+      return this->parse_command(allowEmptyCmd);
+    }
   case TokenKind::ENV_ASSIGN:
     return this->parse_prefixAssign();
   case TokenKind::NEW: {
@@ -2487,7 +2500,7 @@ std::unique_ptr<Node> Parser::parse_cmdSubstitution(const ExpansionLoc loc) {
   const unsigned int pos = START_POS();
   TRY(this->expect(loc == ExpansionLoc::HERE_BODY ? TokenKind::HERE_START_SUB_CMD
                                                   : TokenKind::START_SUB_CMD));
-  auto exprNode = TRY(this->parse_expression());
+  auto exprNode = TRY(this->parse_expression(true));
   const Token token = TRY(this->expect(TokenKind::RP));
   return ForkNode::newCmdSubstitution(pos, std::move(exprNode), token,
                                       loc == ExpansionLoc::STRING ||
@@ -2501,7 +2514,7 @@ std::unique_ptr<Node> Parser::parse_procSubstitution() {
   auto ctx = this->inIgnorableNLCtx();
   const unsigned int pos = START_POS();
   const bool inPipe = this->scan() == TokenKind::START_IN_SUB;
-  auto exprNode = TRY(this->parse_expression());
+  auto exprNode = TRY(this->parse_expression(true));
   const Token token = TRY(this->expect(TokenKind::RP));
   return ForkNode::newProcSubstitution(pos, std::move(exprNode), token, inPipe);
 }

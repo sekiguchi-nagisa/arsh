@@ -94,6 +94,10 @@ TEST_F(RedirectTest, STDIN) {
       this->expect(CL("command __gets < %s", this->getTargetName()), 0, "hello world\n"));
   ASSERT_NO_FATAL_FAILURE(this->expect(CL("command grep < %s 'hello world'", this->getTargetName()),
                                        0, "hello world\n"));
+
+  // empty-command
+  ASSERT_NO_FATAL_FAILURE(this->expect(CL("printf '<%%s>\n' \"$( < %s)\"", this->getTargetName()),
+                                       0, "<hello world>\n"));
 }
 
 TEST_F(RedirectTest, STDOUT) {
@@ -594,6 +598,10 @@ TEST_F(RedirectTest, fd) {
          "assert $r[2] == 'world'",
          this->getTargetName());
   ASSERT_NO_FATAL_FAILURE(this->expect(std::move(v), 0));
+
+  // empty command
+  ASSERT_NO_FATAL_FAILURE(this->expect(CL("echo AAABBB123 >& >(> %s)", this->getTargetName()), 0));
+  ASSERT_NO_FATAL_FAILURE(this->contentEq("AAABBB123\n"));
 }
 
 TEST_F(RedirectTest, fdClose) {

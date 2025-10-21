@@ -1,0 +1,8 @@
+
+#$test($result = 'type', $lineNum = 8, $chars = 4, $errorKind = 'NoEmptyRedir', $status = 1)
+
+$(ls << EOF
+$(ls)
+EOF
+)
+"$((< /dev/null aaa))"

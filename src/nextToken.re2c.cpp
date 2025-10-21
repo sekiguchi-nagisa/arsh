@@ -360,19 +360,33 @@ INIT:
     <CMD> "$"                { if(this->inCompletionPoint()) { RET_OR_COMP(APPLIED_NAME); }
                                else { ERROR();} }
 
-    <CMD> [0-9]* "<"         { RET(REDIR_IN); }
-    <CMD> [0-9]* ">"         { RET(REDIR_OUT); }
-    <CMD> [0-9]* ">|"        { RET(REDIR_OUT_CLOBBER); }
-    <CMD> [0-9]* ">>"        { RET(REDIR_APPEND); }
-    <CMD>        "&>"        { RET(REDIR_OUT_ERR); }
-    <CMD>        "&>|"       { RET(REDIR_OUT_ERR_CLOBBER); }
-    <CMD>        "&>>"       { RET(REDIR_APPEND_OUT_ERR); }
-    <CMD> [0-9]* "<>"        { RET(REDIR_IN_OUT); }
-    <CMD> [0-9]* "<&"        { RET(REDIR_DUP_IN); }
-    <CMD> [0-9]* ">&"        { RET(REDIR_DUP_OUT); }
-    <CMD> [0-9]* "<<"        { RET(REDIR_HERE_DOC); }
-    <CMD> [0-9]* "<<-"       { RET(REDIR_HERE_DOC_DASH); }
-    <CMD> [0-9]* "<<<"       { RET(REDIR_HERE_STR); }
+    <CMD> [0-9]* "<"         {            RET(REDIR_IN); }
+    <STMT>       "<"         { MODE(CMD); RET(REDIR_IN); }
+    <CMD> [0-9]* ">"         {            RET(REDIR_OUT); }
+    <STMT>       ">"         { MODE(CMD); RET(REDIR_OUT); }
+    <CMD> [0-9]* ">|"        {            RET(REDIR_OUT_CLOBBER); }
+    <STMT>       ">|"        { MODE(CMD); RET(REDIR_OUT_CLOBBER); }
+    <CMD> [0-9]* ">>"        {            RET(REDIR_APPEND); }
+    <STMT>       ">>"        { MODE(CMD); RET(REDIR_APPEND); }
+    <CMD>        "&>"        {            RET(REDIR_OUT_ERR); }
+    <STMT>       "&>"        { MODE(CMD); RET(REDIR_OUT_ERR); }
+    <CMD>        "&>|"       {            RET(REDIR_OUT_ERR_CLOBBER); }
+    <STMT>       "&>|"       { MODE(CMD); RET(REDIR_OUT_ERR_CLOBBER); }
+    <CMD>        "&>>"       {            RET(REDIR_APPEND_OUT_ERR); }
+    <STMT>       "&>>"       { MODE(CMD); RET(REDIR_APPEND_OUT_ERR); }
+    <CMD> [0-9]* "<>"        {            RET(REDIR_IN_OUT); }
+    <STMT>       "<>"        { MODE(CMD); RET(REDIR_IN_OUT); }
+    <CMD> [0-9]* "<&"        {            RET(REDIR_DUP_IN); }
+    <STMT>       "<&"        { MODE(CMD); RET(REDIR_DUP_IN); }
+    <CMD> [0-9]* ">&"        {            RET(REDIR_DUP_OUT); }
+    <STMT>       ">&"        { MODE(CMD); RET(REDIR_DUP_OUT); }
+    <CMD> [0-9]* "<<"        {            RET(REDIR_HERE_DOC); }
+    <STMT>       "<<"        { MODE(CMD); RET(REDIR_HERE_DOC); }
+    <CMD> [0-9]* "<<-"       {            RET(REDIR_HERE_DOC_DASH); }
+    <STMT>       "<<-"       { MODE(CMD); RET(REDIR_HERE_DOC_DASH); }
+    <CMD> [0-9]* "<<<"       {            RET(REDIR_HERE_STR); }
+    <STMT>       "<<<"       { MODE(CMD); RET(REDIR_HERE_STR); }
+
     <CMD> ">("               { PUSH_MODE_SKIP_NL(STMT); RET(START_IN_SUB); }
     <CMD> "<("               { PUSH_MODE_SKIP_NL(STMT); RET(START_OUT_SUB); }
 

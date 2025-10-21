@@ -907,7 +907,11 @@ void ByteCodeGenerator::visitEmbedNode(EmbedNode &node) {
 }
 
 void ByteCodeGenerator::visitCmdNode(CmdNode &node) {
-  this->visit(node.getNameNode());
+  if (node.getNameNode().getValue().empty()) { // io redirection within substitution
+    this->emitString("__gets");
+  } else {
+    this->visit(node.getNameNode());
+  }
   if (node.getNameNode().isTilde()) {
     this->emit0byteIns(OpCode::EXPAND_TILDE);
   }

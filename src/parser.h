@@ -311,7 +311,7 @@ protected:
 
   std::unique_ptr<CatchNode> parse_catchBlock();
 
-  std::unique_ptr<Node> parse_command();
+  std::unique_ptr<Node> parse_command(bool allowEmptyCmd);
 
   std::unique_ptr<RedirNode> parse_redirOption();
 
@@ -341,19 +341,20 @@ protected:
    */
   std::unique_ptr<Node> parse_cmdArgSegImpl(const CmdArgNode &argNode, CmdArgParseOpt opt);
 
-  std::unique_ptr<Node> parse_expressionImpl(OperatorPrecedence basePrecedence);
+  std::unique_ptr<Node> parse_expressionImpl(OperatorPrecedence basePrecedence, bool allowEmptyCmd);
 
-  std::unique_ptr<Node> parse_expression(OperatorPrecedence basePrecedence);
+  std::unique_ptr<Node> parse_expression(OperatorPrecedence basePrecedence,
+                                         bool allowEmptyCmd = false);
 
-  std::unique_ptr<Node> parse_expression() {
-    return this->parse_expression(getPrecedence(TokenKind::ASSIGN));
+  std::unique_ptr<Node> parse_expression(bool allowEmptyCmd = false) {
+    return this->parse_expression(getPrecedence(TokenKind::ASSIGN), allowEmptyCmd);
   }
 
-  std::unique_ptr<Node> parse_unaryExpression();
+  std::unique_ptr<Node> parse_unaryExpression(bool allowEmptyCmd = false);
 
-  std::unique_ptr<Node> parse_suffixExpression();
+  std::unique_ptr<Node> parse_suffixExpression(bool allowEmptyCmd = false);
 
-  std::unique_ptr<Node> parse_primaryExpression();
+  std::unique_ptr<Node> parse_primaryExpression(bool allowEmptyCmd = false);
 
   std::unique_ptr<Node> parse_arrayBody(Token token, std::unique_ptr<Node> &&firstNode);
 

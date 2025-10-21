@@ -1474,6 +1474,8 @@ private:
 
   bool needFork{true};
 
+  bool allowEmpty{false}; // for empty command with io redirection
+
   HandlePtr handle;
 
 public:
@@ -1493,6 +1495,10 @@ public:
   void setNeedFork(bool in) { this->needFork = in; }
 
   bool getNeedFork() const { return this->needFork; }
+
+  void setAllowEmpty(bool allow) { this->allowEmpty = allow; }
+
+  bool getAllowEmpty() const { return this->allowEmpty; }
 
   void addRedirNode(std::unique_ptr<RedirNode> &&node);
 

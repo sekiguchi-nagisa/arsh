@@ -605,6 +605,7 @@ nodes:
                       hereEnd: "(pos = 0, size = 0)"
                   redirCount: 1
                   needFork: true
+                  allowEmpty: false
                   handle: null
                 methodCallNode: null
               - nodeKind: With
@@ -1064,6 +1065,7 @@ nodes:
               braceId: 0
       redirCount: 0
       needFork: true
+      allowEmpty: false
       handle: null
     targetTypeNode: null
     opKind: "TO_VOID"
@@ -1211,6 +1213,7 @@ nodes:
         argNodes:
         redirCount: 0
         needFork: true
+        allowEmpty: false
         handle: null
       baseIndex: 0
     targetTypeNode: null
@@ -1438,6 +1441,7 @@ nodes:
           hereEnd: "(pos = 28, size = 3)"
       redirCount: 1
       needFork: true
+      allowEmpty: false
       handle: null
     targetTypeNode: null
     opKind: "TO_VOID"

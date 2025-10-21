@@ -6,7 +6,10 @@
 
 #### Core
 
-- **Breaking Change**: not override ``__gets``, ``__puts`` command names
+- **Breaking Change**: not allow override of builtin ``__gets``, ``__puts`` commands
+- allow empty command io redirection within command/process substitution
+    - like ``$(< file)``, ``<(<<< string)``
+    - implicitly call ``__gets`` command
 
 #### Builtin
 

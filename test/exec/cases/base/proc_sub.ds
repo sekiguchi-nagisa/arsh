@@ -16,6 +16,13 @@ assert "$(cat <(echo world!))" == "world!"
 
 assert diff ${[ <(ls), <(ls) ]}
 
+## empty
+assert diff <(<<< ${'aaa' + $'\n' + 'hello'}) <(<< EOF
+aaa
+hello
+EOF
+)
+
 # >()
 $f = >(__gets)
 assert $f is UnixFD

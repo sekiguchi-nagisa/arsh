@@ -77,19 +77,25 @@ __cmd() {
 
     # keywords
     case $type {
-    '--expr' => $eachEcho(['new', '"', '$(', '>(', '&(', '@(', '<(', '(', '[', '{',
-                           'do', 'for', 'if', 'case', 'try', 'while', 'function',
-                           'break', 'continue', 'return', 'time',
-                           '!', '+', '-', 'throw', 'coproc'])
-    '--stmt' => $eachEcho(['new', '"', '$(', '>(', '<(', '&(', '@(', '(', '[', '[<', '{',
-                           'do', 'for', 'if', 'case', 'try', 'while', 'function',
-                           'break', 'continue', 'return', 'time',
-                           '!', '+', '-', 'throw', 'coproc',
+    '--expr' => $eachEcho([
+                            'new', '"', '$(', '>(', '&(', '@(', '<(', '(', '[', '{',
+                            'do', 'for', 'if', 'case', 'try', 'while', 'function',
+                            'break', 'continue', 'return', 'time',
+                            '!', '+', '-', 'throw', 'coproc',
+                            '<', '>', '>|', '>>', '&>', '&>|', '&>>',
+                            '<>', '<&', '>&', '<<', '<<-', '<<<'])
+    '--stmt' => $eachEcho([
+                            'new', '"', '$(', '>(', '<(', '&(', '@(', '(', '[', '[<', '{',
+                            'do', 'for', 'if', 'case', 'try', 'while', 'function',
+                            'break', 'continue', 'return', 'time',
+                            '!', '+', '-', 'throw', 'coproc',
+                            '<', '>', '>|', '>>', '&>', '&>|', '&>>',
+                            '<>', '<&', '>&', '<<', '<<-', '<<<',
 
                             'assert', 'defer',
-                           'exportenv', 'importenv',
-                           'let', 'source', 'source?','type',
-                           'var', ';'])
+                            'exportenv', 'importenv',
+                            'let', 'source', 'source?','type',
+                            'var', ';'])
     }
 }
 

@@ -1,0 +1,5 @@
+
+#$test($result = 'type', $lineNum = 5, $chars = 5, $errorKind = 'NoEmptyRedir', $status = 1)
+
+var aa = $(< /dev/null || 
+    < /dev/null aaa)

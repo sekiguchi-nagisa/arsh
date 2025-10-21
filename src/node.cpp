@@ -552,6 +552,7 @@ void CmdNode::dump(NodeDumper &dumper) const {
   DUMP(argNodes);
   DUMP(redirCount);
   DUMP(needFork);
+  DUMP(allowEmpty);
   DUMP_PTR(handle);
 }
 

@@ -23,10 +23,27 @@
 
 namespace arsh {
 
+static const Node *getNonRedirNode(const CmdNode &node) {
+  for (auto &e : node.getArgNodes()) {
+    if (!isa<RedirNode>(*e)) {
+      return e.get();
+    }
+  }
+  return nullptr;
+}
+
 void TypeChecker::visitCmdNode(CmdNode &node) {
   this->checkType(this->typePool().get(TYPE::String), node.getNameNode());
   for (auto &argNode : node.getArgNodes()) {
     this->checkTypeAsExpr(*argNode);
+  }
+  if (node.getNameNode().getValue().empty()) {
+    if (!node.getAllowEmpty()) {
+      this->reportError<NoEmptyRedir>(node);
+    }
+    if (auto *n = getNonRedirNode(node)) {
+      this->reportError<EmptyRedirArgs>(*n);
+    }
   }
   if (node.getNameNode().getValue() == "exit" || node.getNameNode().getValue() == "_exit") {
     node.setType(this->typePool().get(TYPE::Nothing));
@@ -53,7 +70,7 @@ void TypeChecker::visitCmdNode(CmdNode &node) {
 }
 
 void TypeChecker::checkBraceExpansion(CmdArgNode &node) {
-  // check balance of brace expansion
+  // check the balance of brace expansion
   std::vector<std::pair<unsigned int, unsigned int>> stack;
   auto &segmentNodes = node.refSegmentNodes();
   const unsigned int size = segmentNodes.size();
