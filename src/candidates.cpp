@@ -17,32 +17,23 @@
 #include "candidates.h"
 #include "core.h"
 #include "misc/unicode.hpp"
-#include "type_pool.h"
 
 namespace arsh {
 
-// ###############################
-// ##     CandidatesWrapper     ##
-// ###############################
+// ##############################
+// ##     CandidatesObject     ##
+// ##############################
 
-CandidatesWrapper::CandidatesWrapper(const TypePool &pool)
-    : obj(toObjPtr<ArrayObject>(Value::create<ArrayObject>(pool.get(TYPE::Candidates)))) {}
-
-static Value withMeta(const Value &value, CandidateAttr attr) {
-  const CandidatesWrapper::Meta m{.attr = attr};
-  return value.withMetaData(m.value);
-}
-
-bool CandidatesWrapper::addAsCandidate(ARState &state, const Value &value, bool needSpace) {
+bool CandidatesObject::addAsCandidate(ARState &state, const Value &value, bool needSpace) {
   assert(value.hasStrRef());
   if (value.asStrRef().empty()) {
     return true;
   }
-  return this->add(state, withMeta(value, {CandidateAttr::Kind::NONE, needSpace}));
+  return this->add(state, Value(value), {CandidateAttr::Kind::NONE, needSpace});
 }
 
-bool CandidatesWrapper::addNewCandidate(ARState &state, Value &&candidate, Value &&description,
-                                        bool needSpace) {
+bool CandidatesObject::addNewCandidate(ARState &state, Value &&candidate, Value &&description,
+                                       bool needSpace) {
   assert(candidate.hasStrRef());
   if (candidate.asStrRef().empty()) {
     return true;
@@ -54,22 +45,22 @@ bool CandidatesWrapper::addNewCandidate(ARState &state, Value &&candidate, Value
                                    {CandidateAttr::Kind::NONE, needSpace});
 }
 
-bool CandidatesWrapper::addNewCandidateWith(ARState &state, StringRef candidate,
-                                            StringRef description, const CandidateAttr attr) {
+bool CandidatesObject::addNewCandidateWith(ARState &state, StringRef candidate,
+                                           StringRef description, const CandidateAttr attr) {
   if (likely(candidate.size() < CandidateObject::MAX_SIZE &&
              description.size() < CandidateObject::MAX_SIZE &&
              candidate.size() + 1 <= CandidateObject::MAX_SIZE - description.size())) {
-    const Value value = CandidateObject::create(candidate, description);
-    return this->add(state, withMeta(value, attr));
+    Value value = CandidateObject::create(candidate, description);
+    return this->add(state, std::move(value), attr);
   }
   raiseError(state, TYPE::OutOfRangeError, "sum of candidate and signature size reaches limit");
   return false;
 }
 
-bool CandidatesWrapper::addAll(ARState &state, const ArrayObject &o) {
+bool CandidatesObject::addAll(ARState &state, const CandidatesObject &o) {
   assert(o.getTypeID() == toUnderlying(TYPE::Candidates));
-  if (this->obj.get() != std::addressof(o)) {
-    for (auto &e : o) {
+  if (this != std::addressof(o)) {
+    for (auto &e : o.values) {
       if (!this->add(state, Value(e))) {
         return false;
       }
@@ -78,24 +69,25 @@ bool CandidatesWrapper::addAll(ARState &state, const ArrayObject &o) {
   return true;
 }
 
-void CandidatesWrapper::sortAndDedup(const unsigned int beginOffset) {
+void CandidatesObject::sortAndDedup(const unsigned int beginOffset) {
   if (beginOffset >= this->size() || this->size() - beginOffset == 1) {
     return;
   }
-  std::sort(this->obj->begin() + beginOffset, this->obj->end(), [](const Value &x, const Value &y) {
-    const int r = toStrRef(x).compare(toStrRef(y));
-    return r < 0 || (r == 0 && toUnderlying(getAttr(x).kind) < toUnderlying(getAttr(y).kind));
-  });
+  std::sort(
+      this->values.begin() + beginOffset, this->values.end(), [](const Value &x, const Value &y) {
+        const int r = toStrRef(x).compare(toStrRef(y));
+        return r < 0 || (r == 0 && toUnderlying(getAttr(x).kind) < toUnderlying(getAttr(y).kind));
+      });
 
-  // dedup (only extract first appeared element)
+  // de-dup (only extract the first appeared element)
   const auto iter =
-      std::unique(this->obj->begin(), this->obj->end(),
+      std::unique(this->values.begin(), this->values.end(),
                   [](const Value &x, const Value &y) { return toStrRef(x) == toStrRef(y); });
-  this->obj->erase(iter, this->obj->end());
+  this->values.erase(iter, this->values.end());
 }
 
-StringRef CandidatesWrapper::getCommonPrefixStr() const {
-  const auto size = this->underlying().size();
+StringRef CandidatesObject::getCommonPrefixStr() const {
+  const auto size = this->size();
   if (size == 0) {
     return "";
   }
@@ -134,6 +126,20 @@ StringRef CandidatesWrapper::getCommonPrefixStr() const {
     }
   }
   return {begin, static_cast<size_t>(iter - begin)};
+}
+
+bool CandidatesObject::add(ARState &state, Value &&v, CandidateAttr attr) {
+  const Meta m{.attr = attr};
+  return this->add(state, v.withMetaData(m.value));
+}
+
+bool CandidatesObject::add(ARState &state, Value &&valueWithMeta) {
+  if (unlikely(this->size() == SYS_LIMIT_ARRAY_MAX)) {
+    raiseError(state, TYPE::OutOfRangeError, "reach Candidates size limit");
+    return false;
+  }
+  this->values.push_back(std::move(valueWithMeta));
+  return true;
 }
 
 } // namespace arsh

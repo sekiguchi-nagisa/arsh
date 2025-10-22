@@ -59,7 +59,7 @@ private:
   static constexpr unsigned int MAX_PANE_NUM = 4;
   static constexpr unsigned int COL_MARGIN = 1;
 
-  const CandidatesWrapper obj; // must be [String] or Candidates
+  const CandidatesObject &obj;
   WindowSize winSize{0, 0};
   const unsigned int rowRatio;
   const FlexBuffer<ItemEntry> items; // pre-computed item column size
@@ -74,14 +74,14 @@ private:
   bool showRowNum{false};            // if true, render the row number
   bool showDesc{true};               // if true, render description/signature
 
-  ArrayPager(CandidatesWrapper &&obj, FlexBuffer<ItemEntry> &&items, unsigned int maxIndex,
+  ArrayPager(const CandidatesObject &obj, FlexBuffer<ItemEntry> &&items, unsigned int maxIndex,
              WindowSize winSize, unsigned int rowRatio)
-      : obj(std::move(obj)), rowRatio(rowRatio), items(std::move(items)), maxLenIndex(maxIndex) {
+      : obj(obj), rowRatio(rowRatio), items(std::move(items)), maxLenIndex(maxIndex) {
     this->updateWinSize(winSize);
   }
 
 public:
-  static ArrayPager create(CandidatesWrapper &&obj, const CharWidthProperties &ps,
+  static ArrayPager create(const CandidatesObject &obj, const CharWidthProperties &ps,
                            WindowSize winSize, unsigned int rowRatio = DEFAULT_ROW_RATIO);
 
   /**

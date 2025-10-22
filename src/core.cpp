@@ -403,13 +403,13 @@ bool RuntimeCancelToken::isCanceled() const {
 class DefaultCompConsumer : public CompCandidateConsumer {
 private:
   ARState &state;
-  CandidatesWrapper reply;
+  ObjPtr<CandidatesObject> reply;
   bool overflow{false};
   const bool putDesc;
 
 public:
   DefaultCompConsumer(ARState &state, bool putDesc)
-      : state(state), reply(CandidatesWrapper(state.typePool)), putDesc(putDesc) {}
+      : state(state), reply(createObject<CandidatesObject>()), putDesc(putDesc) {}
 
   void operator()(CompCandidate &&candidate) override {
     if (this->overflow) {
@@ -443,13 +443,14 @@ public:
           break;
         }
         const CandidateAttr attr{kind, needSpace};
-        this->overflow = !this->reply.addNewCandidateWith(this->state, candidate.value, desc, attr);
+        this->overflow =
+            !this->reply->addNewCandidateWith(this->state, candidate.value, desc, attr);
         return;
       }
       if (candidate.kind == CompCandidateKind::KEYWORD && isIdentifierStart(candidate.value[0])) {
         this->overflow =
-            !this->reply.addNewCandidateWith(this->state, candidate.value, "keyword",
-                                             CandidateAttr{CandidateAttr::Kind::NONE, true});
+            !this->reply->addNewCandidateWith(this->state, candidate.value, "keyword",
+                                              CandidateAttr{CandidateAttr::Kind::NONE, true});
         return;
       }
 
@@ -465,27 +466,27 @@ public:
         }
         const CandidateAttr attr{CandidateAttr::Kind::TYPE_SIGNATURE, suffix};
         this->overflow =
-            !this->reply.addNewCandidateWith(this->state, candidate.value, typeSig, attr);
+            !this->reply->addNewCandidateWith(this->state, candidate.value, typeSig, attr);
         return;
       }
     }
-    if (!this->reply.addAsCandidate(this->state, Value::createStr(std::move(candidate.value)),
-                                    needSpace)) {
+    if (!this->reply->addAsCandidate(this->state, Value::createStr(std::move(candidate.value)),
+                                     needSpace)) {
       this->overflow = true;
     }
   }
 
-  void addAll(const ArrayObject &o) {
+  void addAll(const CandidatesObject &o) {
     if (!this->overflow) {
-      if (!this->reply.addAll(this->state, o)) {
+      if (!this->reply->addAll(this->state, o)) {
         this->overflow = true;
       }
     }
   }
 
-  ObjPtr<ArrayObject> finalize() && {
-    this->reply.sortAndDedup(0);
-    return std::move(this->reply).take();
+  ObjPtr<CandidatesObject> finalize() && {
+    this->reply->sortAndDedup(0);
+    return std::move(this->reply);
   }
 };
 
@@ -566,7 +567,7 @@ static int kickCompHook(ARState &state, const unsigned int tempModIndex, const L
     errno = EINVAL;
     return -1;
   }
-  auto &obj = typeAs<ArrayObject>(ret);
+  auto &obj = typeAs<CandidatesObject>(ret);
   consumer.addAll(obj);
   return static_cast<int>(obj.size());
 }
@@ -680,9 +681,9 @@ int doCodeCompletion(ARState &st, const StringRef modDesc, const DoCodeCompletio
   st.setGlobal(BuiltinVarOffset::COMPREPLY, std::move(consumer).finalize()); // override COMPREPLY
 
   // check space insertion
-  CandidatesWrapper wrapper(toObjPtr<ArrayObject>(st.getGlobal(BuiltinVarOffset::COMPREPLY)));
+  auto &obj = typeAs<CandidatesObject>(st.getGlobal(BuiltinVarOffset::COMPREPLY));
   if (!ret || ARState::isInterrupted() || st.hasError()) {
-    wrapper.clearAndShrink(); // if cancelled, force clear completion results
+    obj.clearAndShrink(); // if canceled, force clear completion results
     if (!st.hasError()) {
       raiseSystemError(st, EINTR, "code completion is cancelled");
     }
@@ -690,7 +691,7 @@ int doCodeCompletion(ARState &st, const StringRef modDesc, const DoCodeCompletio
     errno = EINTR;
     return -1;
   }
-  const size_t size = wrapper.size();
+  const size_t size = obj.size();
   assert(size <= ArrayObject::MAX_SIZE);
   return static_cast<int>(size);
 }

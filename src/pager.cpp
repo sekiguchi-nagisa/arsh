@@ -25,7 +25,7 @@ namespace arsh {
 // ##     ArrayPager     ##
 // ########################
 
-ArrayPager ArrayPager::create(CandidatesWrapper &&obj, const CharWidthProperties &ps,
+ArrayPager ArrayPager::create(const CandidatesObject &obj, const CharWidthProperties &ps,
                               WindowSize winSize, unsigned int rowRatio) {
   unsigned int maxLen = 0;
   unsigned int maxIndex = 0;
@@ -80,7 +80,7 @@ ArrayPager ArrayPager::create(CandidatesWrapper &&obj, const CharWidthProperties
     assert(padLen % TAB_WIDTH == 0);
     e.tabs = padLen / TAB_WIDTH;
   }
-  return {std::move(obj), std::move(items), maxIndex, winSize, rowRatio};
+  return {obj, std::move(items), maxIndex, winSize, rowRatio};
 }
 
 void ArrayPager::updateWinSize(WindowSize size) {

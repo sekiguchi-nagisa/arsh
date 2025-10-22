@@ -89,9 +89,9 @@ struct CandidateAttr {
   CandidateAttr(Kind k, Suffix s) : kind(k), suffix(s) {}
 };
 
-class CandidatesWrapper {
+class CandidatesObject : public ObjectWithRtti<ObjectKind::Candidates> {
 private:
-  ObjPtr<ArrayObject> obj; // must be Candidates
+  std::vector<Value> values;
 
 public:
   union Meta {
@@ -99,22 +99,10 @@ public:
     unsigned int value;
   };
 
-  static_assert(sizeof(Meta) == sizeof(unsigned int));
-
-  explicit CandidatesWrapper(const TypePool &pool);
-
-  explicit CandidatesWrapper(const ObjPtr<ArrayObject> &obj) : obj(obj) {
-    assert(!this->obj || this->obj->getTypeID() == toUnderlying(TYPE::Candidates));
-  }
-
-  explicit CandidatesWrapper(ObjPtr<ArrayObject> &&obj) : obj(std::move(obj)) {
-    assert(!this->obj || this->obj->getTypeID() == toUnderlying(TYPE::Candidates));
-  }
-
-  explicit operator bool() const { return static_cast<bool>(this->obj); }
+  explicit CandidatesObject() : ObjectWithRtti(TYPE::Candidates) {}
 
   /**
-   * always ignore empty candidate
+   * always ignore an empty candidate
    * @param state
    * @param value
    * must be String
@@ -124,7 +112,7 @@ public:
   bool addAsCandidate(ARState &state, const Value &value, bool needSpace);
 
   /**
-   * for builtin method. always ignore empty candidate
+   * for builtin method. always ignore an empty candidate
    * @param state
    * @param candidate
    * must be String
@@ -141,39 +129,32 @@ public:
   /**
    * @param state
    * @param o
-   * must be Candidates
    * @return
    */
-  bool addAll(ARState &state, const ArrayObject &o);
+  bool addAll(ARState &state, const CandidatesObject &o);
 
-  void pop() {
-    this->obj->pop_back(); // not check iterator invalidation
-  }
+  size_t size() const { return this->values.size(); }
+
+  void pop() { this->values.pop_back(); }
 
   void clearAndShrink() {
-    this->obj->clear(); // not check iterator invalidation
-    this->obj->refValues().shrink_to_fit();
+    this->values.clear();
+    this->values.shrink_to_fit();
   }
-
-  ObjPtr<ArrayObject> take() && { return std::move(this->obj); }
 
   void sortAndDedup(unsigned int beginOffset);
 
-  unsigned int size() const { return this->obj->size(); }
-
-  StringRef getCandidateAt(const unsigned int index) const {
-    return toStrRef(this->underlying()[index]);
-  }
+  StringRef getCandidateAt(const unsigned int index) const { return toStrRef(this->values[index]); }
 
   StringRef getDescriptionAt(const unsigned int index) const {
-    auto &v = this->underlying()[index];
+    auto &v = this->values[index];
     return v.isObject() && isa<CandidateObject>(v.get()) ? typeAs<CandidateObject>(v).description()
                                                          : "";
   }
 
-  CandidateAttr getAttrAt(const unsigned int index) const {
-    return getAttr(this->underlying()[index]);
-  }
+  CandidateAttr getAttrAt(const unsigned int index) const { return getAttr(this->values[index]); }
+
+  const auto &operator[](size_t index) const { return this->values[index]; }
 
   /**
    * resolve common prefix string (valid utf-8)
@@ -193,9 +174,9 @@ private:
     return m.attr;
   }
 
-  const ArrayObject &underlying() const { return *this->obj; }
+  bool add(ARState &state, Value &&v, CandidateAttr attr);
 
-  bool add(ARState &state, Value &&v) { return this->obj->append(state, std::move(v)); }
+  bool add(ARState &state, Value &&valueWithMeta); // not directly use it
 };
 
 } // namespace arsh

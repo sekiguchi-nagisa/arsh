@@ -37,6 +37,8 @@ enum class LineEditorFeature : unsigned char {
 template <>
 struct allow_enum_bitop<LineEditorFeature> : std::true_type {};
 
+class CandidatesObject;
+
 class LineEditorObject : public ObjectWithRtti<ObjectKind::LineEditor> {
 private:
   int ttyFd{-1};
@@ -196,7 +198,7 @@ private:
 
   Value kickCallback(ARState &state, Value &&callback, CallArgs &&callArgs);
 
-  ObjPtr<ArrayObject> kickCompletionCallback(ARState &state, StringRef line);
+  ObjPtr<CandidatesObject> kickCompletionCallback(ARState &state, StringRef line);
 
   bool kickAcceptorCallback(ARState &state, const LineBuffer &buf);
 

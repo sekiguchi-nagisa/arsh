@@ -525,6 +525,19 @@ bool Stringifier::addAsStr(const Value &value) {
         TRY(this->appender("]"));
         continue;
       }
+      case ObjectKind::Candidates: {
+        auto &obj = typeAs<CandidatesObject>(v);
+        if (obj.size() == 0) { // for empty
+          TRY(this->appender("[]"));
+          continue;
+        }
+        if (auto &frame = frames.back(); frame.i < obj.size()) {
+          TRY(this->appender(frame.i == 0 ? "[" : ", "));
+          GOTO_NEXT(frames, StrFrame(obj[frame.i++]));
+        }
+        TRY(this->appender("]"));
+        continue;
+      }
       case ObjectKind::OrderedMap: {
         auto &obj = typeAs<OrderedMapObject>(v);
         if (obj.size() == 0) { // for empty
@@ -600,6 +613,19 @@ bool Stringifier::addAsInterp(const Value &value) {
             TRY(this->appender(" "));
           }
           GOTO_NEXT(frames, StrFrame(view[frame.i++]));
+        }
+        continue;
+      }
+      case ObjectKind::Candidates: {
+        auto &obj = typeAs<CandidatesObject>(v);
+        auto &frame = frames.back();
+        for (; frame.i < obj.size() && obj[frame.i].isInvalid(); frame.i++)
+          ;
+        if (frame.i < obj.size()) {
+          if (frame.p++ > 0) {
+            TRY(this->appender(" "));
+          }
+          GOTO_NEXT(frames, StrFrame(obj[frame.i++]));
         }
         continue;
       }
@@ -728,6 +754,13 @@ bool addAsCmdArg(ARState &state, Value &&value, ArrayObject &argv, Value &redir)
                                                       : typeAs<RegexMatchObject>(arg).groupsView();
         if (auto &frame = frames.back(); frame.i < view.size()) {
           GOTO_NEXT3(frames, StrFrame(view[frame.i++]));
+        }
+        continue;
+      }
+      case ObjectKind::Candidates: {
+        auto &obj = typeAs<CandidatesObject>(arg);
+        if (auto &frame = frames.back(); frame.i < obj.size()) {
+          GOTO_NEXT3(frames, StrFrame(obj[frame.i++]));
         }
         continue;
       }

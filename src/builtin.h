@@ -2762,51 +2762,55 @@ ARSH_METHOD jobs_count(RuntimeContext &ctx) {
 //!bind: function $OP_INIT($this : Candidates, $values: Option<Array<String>>) : Candidates
 ARSH_METHOD candidates_init(RuntimeContext &ctx) {
   SUPPRESS_WARNING(candidates_init);
-  CandidatesWrapper wrapper(ctx.typePool);
+  auto obj = createObject<CandidatesObject>();
   if (const auto v = LOCAL(1); !v.isInvalid()) {
     for (auto &e : typeAs<ArrayObject>(v)) {
-      if (unlikely(!wrapper.addAsCandidate(ctx, e, false))) { // not insert space
+      if (unlikely(!obj->addAsCandidate(ctx, e, false))) { // not insert space
         RET_ERROR;
       }
     }
   }
-  RET(std::move(wrapper).take());
+  RET(obj);
 }
 
 //!bind: function size($this : Candidates) : Int
-ARSH_METHOD_DECL array_size(RuntimeContext &ctx);
+ARSH_METHOD candidates_size(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(candidates_size);
+  auto &obj = typeAs<CandidatesObject>(LOCAL(0));
+  RET(Value::createInt(obj.size()));
+}
 
 //!bind: function $OP_GET($this : Candidates, $index: Int) : String
 ARSH_METHOD candidates_get(RuntimeContext &ctx) {
   SUPPRESS_WARNING(candidates_get);
-  CandidatesWrapper wrapper(toObjPtr<ArrayObject>(LOCAL(0)));
-  const size_t size = wrapper.size();
+  auto &obj = typeAs<CandidatesObject>(LOCAL(0));
+  const size_t size = obj.size();
   const auto index = LOCAL(1).asInt();
   const auto value = TRY(resolveIndex(ctx, index, size));
-  RET(Value::createStr(wrapper.getCandidateAt(value.index)));
+  RET(Value::createStr(obj.getCandidateAt(value.index)));
 }
 
 //!bind: function hasSpace($this: Candidates, $index: Int) : Bool
 ARSH_METHOD candidates_space(RuntimeContext &ctx) {
   SUPPRESS_WARNING(candidates_space);
-  CandidatesWrapper wrapper(toObjPtr<ArrayObject>(LOCAL(0)));
-  const size_t size = wrapper.size();
+  auto &obj = typeAs<CandidatesObject>(LOCAL(0));
+  const size_t size = obj.size();
   const auto index = LOCAL(1).asInt();
   const auto value = TRY(resolveIndex(ctx, index, size));
-  RET_BOOL(wrapper.getAttrAt(value.index).suffix == CandidateAttr::Suffix::SPACE);
+  RET_BOOL(obj.getAttrAt(value.index).suffix == CandidateAttr::Suffix::SPACE);
 }
 
 //!bind: function add($this : Candidates, $can : String, $desc : Option<String>, $space : Option<Int>) : Candidates
 ARSH_METHOD candidates_add(RuntimeContext &ctx) {
   SUPPRESS_WARNING(candidates_add);
-  CandidatesWrapper wrapper(toObjPtr<ArrayObject>(LOCAL(0)));
+  auto &obj = typeAs<CandidatesObject>(LOCAL(0));
   auto candidate = LOCAL(1);
   auto description = LOCAL(2);
   const auto num = LOCAL(3).isInvalid() ? -1 : LOCAL(3).asInt();
   const bool needSpace = num < 0 ? CompCandidate::needSuffixSpace(candidate.asStrRef(),
                                                                   CompCandidateKind::USER_SPECIFIED)
                                  : num > 0;
-  if (!wrapper.addNewCandidate(ctx, std::move(candidate), std::move(description), needSpace)) {
+  if (!obj.addNewCandidate(ctx, std::move(candidate), std::move(description), needSpace)) {
     RET_ERROR;
   }
   RET(LOCAL(0));
@@ -2815,8 +2819,8 @@ ARSH_METHOD candidates_add(RuntimeContext &ctx) {
 //!bind: function addAll($this: Candidates, $other: Candidates) : Candidates
 ARSH_METHOD candidates_addAll(RuntimeContext &ctx) {
   SUPPRESS_WARNING(candidates_addAll);
-  CandidatesWrapper wrapper(toObjPtr<ArrayObject>(LOCAL(0)));
-  if (!wrapper.addAll(ctx, typeAs<ArrayObject>(LOCAL(1)))) {
+  auto &obj = typeAs<CandidatesObject>(LOCAL(0));
+  if (!obj.addAll(ctx, typeAs<CandidatesObject>(LOCAL(1)))) {
     RET_ERROR;
   }
   RET(LOCAL(0));

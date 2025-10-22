@@ -20,6 +20,7 @@
 #include <unistd.h>
 
 #include "binder.h"
+#include "candidates.h"
 #include "compiler.h"
 #include "line_editor.h"
 #include "misc/files.hpp"
@@ -105,12 +106,14 @@ struct BindingConsumer {
 
   void operator()(const Handle &handle, const Type &type) {
     auto value = Value::createDummy(type);
-    if (type.isArrayType() || type.is(TYPE::Candidates)) {
+    if (type.isArrayType()) {
       value = Value::create<ArrayObject>(type);
     } else if (type.isMapType()) {
       value = Value::create<OrderedMapObject>(type, this->state.getRng().next());
     } else if (type.isOptionType()) {
       value = Value::createInvalid();
+    } else if (type.is(TYPE::Candidates)) {
+      value = Value::create<CandidatesObject>();
     }
     this->state.setGlobal(handle.getIndex(), std::move(value));
   }

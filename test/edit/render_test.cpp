@@ -467,28 +467,29 @@ public:
 
   ~PagerTest() override { ARState_delete(&this->state); }
 
-  void append(CandidatesWrapper &) {}
+  void append(CandidatesObject &) {}
 
   template <typename... T>
-  void append(CandidatesWrapper &wrapper, const char *first, T &&...remain) {
+  void append(CandidatesObject &wrapper, const char *first, T &&...remain) {
     wrapper.addAsCandidate(*this->state, Value::createStr(first), false);
     this->append(wrapper, std::forward<T>(remain)...);
   }
 
   template <typename... T>
-  ObjPtr<ArrayObject> create(T &&...args) {
-    CandidatesWrapper wrapper(this->state->typePool);
-    this->append(wrapper, std::forward<T>(args)...);
-    return std::move(wrapper).take();
+  ObjPtr<CandidatesObject> create(T &&...args) {
+    auto obj = createObject<CandidatesObject>();
+    this->append(*obj, std::forward<T>(args)...);
+    return obj;
   }
 
-  ObjPtr<ArrayObject> createWith(std::vector<std::pair<const char *, const char *>> &&args,
-                                 const CandidateAttr attr = {CandidateAttr::Kind::NONE, false}) {
-    CandidatesWrapper wrapper(this->state->typePool);
+  ObjPtr<CandidatesObject> createWith(std::vector<std::pair<const char *, const char *>> &&args,
+                                      const CandidateAttr attr = {CandidateAttr::Kind::NONE,
+                                                                  false}) {
+    auto obj = createObject<CandidatesObject>();
     for (auto &[can, sig] : args) {
-      wrapper.addNewCandidateWith(*this->state, can, sig, attr);
+      obj->addNewCandidateWith(*this->state, can, sig, attr);
     }
-    return std::move(wrapper).take();
+    return obj;
   }
 
   std::string render(const ArrayPager &pager) const {
@@ -501,7 +502,7 @@ public:
 
 TEST_F(PagerTest, small1) { // less than pager length
   auto array = this->create("AAA", "BBB", "CCC", "DDD", "EEE", "FFF");
-  auto pager = ArrayPager::create(CandidatesWrapper(array), this->ps, {.rows = 24, .cols = 10});
+  auto pager = ArrayPager::create(*array, this->ps, {.rows = 24, .cols = 10});
   ASSERT_EQ(2, pager.getPanes());
   ASSERT_TRUE(pager.getRows() < pager.getWinSize().rows);
   ASSERT_TRUE(pager.getRows() > array->size() / 2);
@@ -553,7 +554,7 @@ TEST_F(PagerTest, small1) { // less than pager length
 
 TEST_F(PagerTest, small2) { // less than pager length
   auto array = this->create("AAA", "BBB", "CCC", "DDD", "EEE", "FFF");
-  auto pager = ArrayPager::create(CandidatesWrapper(array), this->ps, {.rows = 24, .cols = 10});
+  auto pager = ArrayPager::create(*array, this->ps, {.rows = 24, .cols = 10});
   ASSERT_EQ(2, pager.getPanes());
 
   const char *expect = "\x1b[7mAAA \x1b[0mDDD \r\nBBB EEE \r\nCCC FFF \r\n";
@@ -611,7 +612,7 @@ TEST_F(PagerTest, small2) { // less than pager length
 
 TEST_F(PagerTest, small3) { // less than pager length
   auto array = this->create("AAAAA", "BBBBB", "CCCCC", "DDDDD", "EEEEE");
-  auto pager = ArrayPager::create(CandidatesWrapper(array), this->ps, {.rows = 24, .cols = 20});
+  auto pager = ArrayPager::create(*array, this->ps, {.rows = 24, .cols = 20});
   ASSERT_EQ(2, pager.getPanes());
 
   /**
@@ -654,7 +655,7 @@ TEST_F(PagerTest, small3) { // less than pager length
 
 TEST_F(PagerTest, large1) { // larger than pager length
   auto array = this->create("AAA", "BBB", "CC\nC", "DDD", "EEE", "FFF", "GG\t", "HHH");
-  auto pager = ArrayPager::create(CandidatesWrapper(array), this->ps, {.rows = 5, .cols = 20});
+  auto pager = ArrayPager::create(*array, this->ps, {.rows = 5, .cols = 20});
   ASSERT_EQ(2, pager.getPanes());
   ASSERT_TRUE(pager.getRows() < array->size() / 2);
   ASSERT_EQ(0, pager.getCurRow());
@@ -740,7 +741,7 @@ TEST_F(PagerTest, large2) { // larger than pager length
    * DDD HHH
    */
   auto array = this->create("AAA", "BBB", "CC\nC", "DDD", "EEE", "FFF", "GGG", "HHH");
-  auto pager = ArrayPager::create(CandidatesWrapper(array), this->ps, {.rows = 5, .cols = 10});
+  auto pager = ArrayPager::create(*array, this->ps, {.rows = 5, .cols = 10});
   ASSERT_EQ(2, pager.getPanes());
 
   const char *expect = "\x1b[7mAAA \x1b[0mEEE \r\nBBB FFF \r\n";
@@ -816,7 +817,7 @@ TEST_F(PagerTest, single) { // larger than pager length
    * DDD
    */
   auto array = this->create("AAA", "BBB", "CCC", "DDD");
-  auto pager = ArrayPager::create(CandidatesWrapper(array), this->ps, {.rows = 100, .cols = 5});
+  auto pager = ArrayPager::create(*array, this->ps, {.rows = 100, .cols = 5});
   ASSERT_EQ(1, pager.getPanes());
   ASSERT_EQ(0, pager.getCurRow());
   ASSERT_EQ(0, pager.getIndex());
@@ -872,7 +873,7 @@ TEST_F(PagerTest, truncate) {
   this->ps.zwjSeqFallback = true;
   auto array = this->create("@@@", "ABCD123456", "ABCD987\r", "ABCDEああ", "123456\t\t",
                             "12345👩🏼‍🏭111");
-  auto pager = ArrayPager::create(CandidatesWrapper(array), this->ps, {.rows = 100, .cols = 10});
+  auto pager = ArrayPager::create(*array, this->ps, {.rows = 100, .cols = 10});
   ASSERT_EQ(1, pager.getPanes());
   ASSERT_EQ(8, pager.getPaneLen());
   pager.setShowCursor(false);
@@ -892,7 +893,7 @@ TEST_F(PagerTest, shrinkRow) {
    * FFF
    */
   auto array = this->create("AAA", "BBB", "CCC", "DDD", "EEE", "FFF");
-  auto pager = ArrayPager::create(CandidatesWrapper(array), this->ps, {.rows = 10, .cols = 5});
+  auto pager = ArrayPager::create(*array, this->ps, {.rows = 10, .cols = 5});
   ASSERT_EQ(1, pager.getPanes());
   ASSERT_EQ(0, pager.getCurRow());
   ASSERT_EQ(0, pager.getIndex());
@@ -941,7 +942,7 @@ TEST_F(PagerTest, shrinkRow) {
 }
 
 TEST_F(PagerTest, shrinkRatio) {
-  auto array = this->createWith({
+  const auto array = this->createWith({
       {"AAAAAA", "command"},
       {"BBBBBB", "command"},
       {"CCCCCC", "command"},
@@ -950,7 +951,7 @@ TEST_F(PagerTest, shrinkRatio) {
       {"FFFFFF", "command"},
   });
   {
-    auto pager = ArrayPager::create(CandidatesWrapper(array), this->ps, {.rows = 10, .cols = 30});
+    auto pager = ArrayPager::create(*array, this->ps, {.rows = 10, .cols = 30});
     ASSERT_EQ(1, pager.getPanes());
     ASSERT_EQ(0, pager.getCurRow());
     ASSERT_EQ(0, pager.getIndex());
@@ -966,8 +967,7 @@ TEST_F(PagerTest, shrinkRatio) {
 
   // change ratio (shrink)
   {
-    auto pager =
-        ArrayPager::create(CandidatesWrapper(array), this->ps, {.rows = 10, .cols = 30}, 30);
+    auto pager = ArrayPager::create(*array, this->ps, {.rows = 10, .cols = 30}, 30);
     ASSERT_EQ(1, pager.getPanes());
     ASSERT_EQ(0, pager.getCurRow());
     ASSERT_EQ(0, pager.getIndex());
@@ -982,8 +982,7 @@ TEST_F(PagerTest, shrinkRatio) {
   }
 
   {
-    auto pager =
-        ArrayPager::create(CandidatesWrapper(array), this->ps, {.rows = 10, .cols = 30}, 10);
+    auto pager = ArrayPager::create(*array, this->ps, {.rows = 10, .cols = 30}, 10);
     ASSERT_EQ(1, pager.getPanes());
     ASSERT_EQ(0, pager.getCurRow());
     ASSERT_EQ(0, pager.getIndex());
@@ -997,8 +996,7 @@ TEST_F(PagerTest, shrinkRatio) {
   }
 
   {
-    auto pager =
-        ArrayPager::create(CandidatesWrapper(array), this->ps, {.rows = 10, .cols = 30}, 0);
+    auto pager = ArrayPager::create(*array, this->ps, {.rows = 10, .cols = 30}, 0);
     ASSERT_EQ(1, pager.getPanes());
     ASSERT_EQ(0, pager.getCurRow());
     ASSERT_EQ(0, pager.getIndex());
@@ -1012,7 +1010,7 @@ TEST_F(PagerTest, shrinkRatio) {
 }
 
 TEST_F(PagerTest, expandRatio) {
-  auto array = this->createWith({
+  const auto array = this->createWith({
       {"AAAAAA", "command"},
       {"BBBBBB", "command"},
       {"CCCCCC", "command"},
@@ -1021,7 +1019,7 @@ TEST_F(PagerTest, expandRatio) {
       {"FFFFFF", "command"},
   });
   {
-    auto pager = ArrayPager::create(CandidatesWrapper(array), this->ps, {.rows = 10, .cols = 30});
+    auto pager = ArrayPager::create(*array, this->ps, {.rows = 10, .cols = 30});
     ASSERT_EQ(1, pager.getPanes());
     ASSERT_EQ(0, pager.getCurRow());
     ASSERT_EQ(0, pager.getIndex());
@@ -1037,8 +1035,7 @@ TEST_F(PagerTest, expandRatio) {
 
   // change ratio (expand)
   {
-    auto pager =
-        ArrayPager::create(CandidatesWrapper(array), this->ps, {.rows = 10, .cols = 30}, 50);
+    auto pager = ArrayPager::create(*array, this->ps, {.rows = 10, .cols = 30}, 50);
     ASSERT_EQ(1, pager.getPanes());
     ASSERT_EQ(0, pager.getCurRow());
     ASSERT_EQ(0, pager.getIndex());
@@ -1056,8 +1053,7 @@ TEST_F(PagerTest, expandRatio) {
   }
 
   {
-    auto pager =
-        ArrayPager::create(CandidatesWrapper(array), this->ps, {.rows = 10, .cols = 30}, 100);
+    auto pager = ArrayPager::create(*array, this->ps, {.rows = 10, .cols = 30}, 100);
     ASSERT_EQ(1, pager.getPanes());
     ASSERT_EQ(0, pager.getCurRow());
     ASSERT_EQ(0, pager.getIndex());
@@ -1074,8 +1070,7 @@ TEST_F(PagerTest, expandRatio) {
   }
 
   {
-    auto pager =
-        ArrayPager::create(CandidatesWrapper(array), this->ps, {.rows = 9, .cols = 30}, 100);
+    auto pager = ArrayPager::create(*array, this->ps, {.rows = 9, .cols = 30}, 100);
     ASSERT_EQ(1, pager.getPanes());
     ASSERT_EQ(0, pager.getCurRow());
     ASSERT_EQ(0, pager.getIndex());
@@ -1092,8 +1087,7 @@ TEST_F(PagerTest, expandRatio) {
   }
 
   {
-    auto pager =
-        ArrayPager::create(CandidatesWrapper(array), this->ps, {.rows = 8, .cols = 30}, 100);
+    auto pager = ArrayPager::create(*array, this->ps, {.rows = 8, .cols = 30}, 100);
     ASSERT_EQ(1, pager.getPanes());
     ASSERT_EQ(0, pager.getCurRow());
     ASSERT_EQ(0, pager.getIndex());
@@ -1120,7 +1114,7 @@ TEST_F(PagerTest, desc1) {
       {"DDD", "named pipe"},
       {"EEEE", ""},
   });
-  auto pager = ArrayPager::create(CandidatesWrapper(array), this->ps, {.rows = 24, .cols = 30});
+  auto pager = ArrayPager::create(*array, this->ps, {.rows = 24, .cols = 30});
   ASSERT_EQ(1, pager.getPanes());
   ASSERT_EQ(28, pager.getPaneLen());
   pager.setShowCursor(false);
@@ -1143,7 +1137,7 @@ TEST_F(PagerTest, desc2) {
       {"DDD", "named pipe"},
       {"EEEE", ""},
   });
-  auto pager = ArrayPager::create(CandidatesWrapper(array), this->ps, {.rows = 24, .cols = 60});
+  auto pager = ArrayPager::create(*array, this->ps, {.rows = 24, .cols = 60});
   ASSERT_EQ(2, pager.getPanes());
   ASSERT_EQ(28, pager.getPaneLen());
   pager.setShowCursor(false);
@@ -1175,7 +1169,7 @@ TEST_F(PagerTest, sig) {
           {"COMP_HOOK", ": ((Module, [String], Int) -> Candidates?)?"},
       },
       {CandidateAttr::Kind::TYPE_SIGNATURE, false});
-  auto pager = ArrayPager::create(CandidatesWrapper(array), this->ps, {.rows = 24, .cols = 80});
+  auto pager = ArrayPager::create(*array, this->ps, {.rows = 24, .cols = 80});
   ASSERT_EQ(1, pager.getPanes());
   ASSERT_EQ(56, pager.getPaneLen());
   pager.setShowCursor(false);
@@ -1199,16 +1193,15 @@ TEST_F(PagerTest, sig) {
 }
 
 TEST_F(PagerTest, candidate) {
-  CandidatesWrapper wrapper(this->createWith({}));
-  ASSERT_EQ(0, wrapper.size());
-  wrapper.addNewCandidateWith(*this->state, "mkdir", "command",
-                              {CandidateAttr::Kind::CMD_EXTERNAL, true});
-  wrapper.addNewCandidateWith(*this->state, "mkdir", "dynamic",
-                              {CandidateAttr::Kind::CMD_DYNA, true});
-  ASSERT_EQ(2, wrapper.size());
-  wrapper.sortAndDedup(0);
-  ASSERT_EQ(1, wrapper.size());
-  ASSERT_EQ(CandidateAttr::Kind::CMD_DYNA, wrapper.getAttrAt(0).kind);
+  auto obj = this->createWith({});
+  ASSERT_EQ(0, obj->size());
+  obj->addNewCandidateWith(*this->state, "mkdir", "command",
+                           {CandidateAttr::Kind::CMD_EXTERNAL, true});
+  obj->addNewCandidateWith(*this->state, "mkdir", "dynamic", {CandidateAttr::Kind::CMD_DYNA, true});
+  ASSERT_EQ(2, obj->size());
+  obj->sortAndDedup(0);
+  ASSERT_EQ(1, obj->size());
+  ASSERT_EQ(CandidateAttr::Kind::CMD_DYNA, obj->getAttrAt(0).kind);
 }
 
 TEST(HistRotatorTest, base) {
@@ -1784,7 +1777,7 @@ TEST_F(ScrollTest, pager) {
       {"DDD", "named pipe"},
       {"EEEE", ""},
   });
-  auto pager = ArrayPager::create(CandidatesWrapper(array), this->ps,
+  auto pager = ArrayPager::create(*array, this->ps,
                                   {.rows = this->winSize.rows, .cols = this->winSize.cols});
   ASSERT_EQ(2, pager.getPanes());
   ASSERT_EQ(28, pager.getPaneLen());

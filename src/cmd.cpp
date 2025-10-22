@@ -489,13 +489,12 @@ static int builtin_complete(ARState &state, ArrayObject &argvObj) {
   if (show) {
     int errNum = 0;
     std::string out;
-    const CandidatesWrapper wrapper(
-        toObjPtr<ArrayObject>(state.getGlobal(BuiltinVarOffset::COMPREPLY)));
-    const unsigned int size = wrapper.size();
+    auto &obj = typeAs<CandidatesObject>(state.getGlobal(BuiltinVarOffset::COMPREPLY));
+    const unsigned int size = obj.size();
     for (unsigned int i = 0; i < size; i++) {
       out.clear();
-      out += wrapper.getCandidateAt(i);
-      if (insertSpace && wrapper.getAttrAt(i).suffix == CandidateAttr::Suffix::SPACE) {
+      out += obj.getCandidateAt(i);
+      if (insertSpace && obj.getAttrAt(i).suffix == CandidateAttr::Suffix::SPACE) {
         out += ' ';
       }
       errNum = writeLine(out, stdout, false);

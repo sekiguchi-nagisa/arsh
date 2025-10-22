@@ -1077,8 +1077,8 @@ EditActionStatus LineEditorObject::completeLine(ARState &state, RenderingContext
                                                 KeyCodeReader &reader, const bool backward) {
   reader.clear();
 
-  CandidatesWrapper candidates(this->kickCompletionCallback(state, ctx.buf.getToCursor()));
-  if (!candidates || candidates.size() <= 1) {
+  auto candidates = this->kickCompletionCallback(state, ctx.buf.getToCursor());
+  if (!candidates || candidates->size() <= 1) {
     this->refreshLine(state, ctx);
   }
   if (!candidates) {
@@ -1087,11 +1087,11 @@ EditActionStatus LineEditorObject::completeLine(ARState &state, RenderingContext
 
   const auto watchSigSet = toSigSet(state.sigVector);
   unsigned int undoCount = 0;
-  StringRef inserting = candidates.getCommonPrefixStr();
+  StringRef inserting = candidates->getCommonPrefixStr();
   ctx.buf.commitLastChange();
-  const size_t offset = ctx.buf.resolveInsertingSuffix(inserting, candidates.size() == 1);
-  if (const auto size = candidates.size(); size > 0) {
-    const auto suffix = size == 1 ? candidates.getAttrAt(0).suffix : CandidateAttr::Suffix::NONE;
+  const size_t offset = ctx.buf.resolveInsertingSuffix(inserting, candidates->size() == 1);
+  if (const auto size = candidates->size(); size > 0) {
+    const auto suffix = size == 1 ? candidates->getAttrAt(0).suffix : CandidateAttr::Suffix::NONE;
     if (insertCandidate(ctx.buf, inserting, suffix)) {
       this->refreshLine(state, ctx);
     } else {
@@ -1101,7 +1101,7 @@ EditActionStatus LineEditorObject::completeLine(ARState &state, RenderingContext
       undoCount++;
     }
   }
-  if (const auto len = candidates.size(); len == 0) {
+  if (const auto len = candidates->size(); len == 0) {
     linenoiseBeep(this->ttyFd);
     return EditActionStatus::OK;
   } else if (len == 1) {
@@ -1110,7 +1110,7 @@ EditActionStatus LineEditorObject::completeLine(ARState &state, RenderingContext
 
   // show candidates
   auto status = EditActionStatus::CONTINUE;
-  auto pager = ArrayPager::create(CandidatesWrapper(candidates), ctx.ps, {}, this->pagerRatio);
+  auto pager = ArrayPager::create(*candidates, ctx.ps, {}, this->pagerRatio);
 
   if (!backward) {
     /**
@@ -1223,7 +1223,7 @@ Value LineEditorObject::kickCallback(ARState &state, Value &&callback, CallArgs 
   return ret;
 }
 
-ObjPtr<ArrayObject> LineEditorObject::kickCompletionCallback(ARState &state, StringRef line) {
+ObjPtr<CandidatesObject> LineEditorObject::kickCompletionCallback(ARState &state, StringRef line) {
   assert(this->completionCallback);
 
   const auto &modType = getCurRuntimeModule(state);
@@ -1234,7 +1234,7 @@ ObjPtr<ArrayObject> LineEditorObject::kickCompletionCallback(ARState &state, Str
   if (state.hasError()) {
     return nullptr;
   }
-  return toObjPtr<ArrayObject>(ret);
+  return toObjPtr<CandidatesObject>(ret);
 }
 
 bool LineEditorObject::kickAcceptorCallback(ARState &state, const LineBuffer &buf) {
