@@ -1212,8 +1212,8 @@ TEST_F(PagerTest, candidate) {
 }
 
 TEST(HistRotatorTest, base) {
-  auto value = toObjPtr<ArrayObject>(Value::create<ArrayObject>(
-      static_cast<unsigned int>(TYPE::StringArray), std::vector<Value>()));
+  auto value =
+      createObject<ArrayObject>(static_cast<unsigned int>(TYPE::StringArray), std::vector<Value>());
   auto &obj = *value;
   obj.append(Value::createStr("AAA"));
   obj.append(Value::createStr("BBB"));
@@ -1327,8 +1327,8 @@ TEST(HistRotatorTest, base) {
 }
 
 TEST(HistRotatorTest, broken1) {
-  auto value = toObjPtr<ArrayObject>(Value::create<ArrayObject>(
-      static_cast<unsigned int>(TYPE::StringArray), std::vector<Value>()));
+  auto value =
+      createObject<ArrayObject>(static_cast<unsigned int>(TYPE::StringArray), std::vector<Value>());
   auto &obj = *value;
   obj.append(Value::createStr("AAA"));
   obj.append(Value::createStr("BBB"));
@@ -1374,8 +1374,8 @@ TEST(HistRotatorTest, broken1) {
 }
 
 TEST(HistRotator, broken2) {
-  auto value = toObjPtr<ArrayObject>(Value::create<ArrayObject>(
-      static_cast<unsigned int>(TYPE::StringArray), std::vector<Value>()));
+  auto value =
+      createObject<ArrayObject>(static_cast<unsigned int>(TYPE::StringArray), std::vector<Value>());
   auto &obj = *value;
   obj.append(Value::createStr("AAA"));
   obj.append(Value::createStr("BBB"));

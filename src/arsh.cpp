@@ -453,7 +453,7 @@ int ARState_exec(ARState *st, char *const *argv) {
   GUARD_TRUE(st->execMode != AR_EXEC_MODE_NORMAL, 0);
   GUARD_NULL(argv, -1);
 
-  auto obj = toObjPtr<ArrayObject>(Value::create<ArrayObject>(st->typePool.get(TYPE::StringArray)));
+  auto obj = createObject<ArrayObject>(st->typePool.get(TYPE::StringArray));
   for (; *argv != nullptr; argv++) {
     const StringRef arg = *argv;
     if (arg.size() > SYS_LIMIT_STRING_MAX || obj->size() == SYS_LIMIT_ARRAY_MAX) {

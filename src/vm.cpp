@@ -369,7 +369,7 @@ static ObjPtr<UnixFdObject> newFD(int &fd) {
   int v = fd;
   fd = -1;
   remapFDCloseOnExec(v);
-  return toObjPtr<UnixFdObject>(Value::create<UnixFdObject>(v));
+  return createObject<UnixFdObject>(v);
 }
 
 static Value newProcSubst(int &fd, Job &&job) {

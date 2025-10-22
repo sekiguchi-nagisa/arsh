@@ -64,9 +64,7 @@ TEST_F(ObjectTest, meta) {
 TEST(MapTest, base) {
   TypePool pool;
   const auto &mapType = *pool.createMapType(pool.get(TYPE::String), pool.get(TYPE::Int)).take();
-
-  auto value = Value::create<OrderedMapObject>(mapType, 42);
-  auto obj = toObjPtr<OrderedMapObject>(value);
+  auto obj = createObject<OrderedMapObject>(mapType, 42);
 
   ASSERT_EQ(0, obj->size());
 
@@ -131,9 +129,7 @@ static std::string location(unsigned int index,
 TEST(MapTest, rand1) {
   TypePool pool;
   const auto &mapType = *pool.createMapType(pool.get(TYPE::String), pool.get(TYPE::Int)).take();
-
-  auto value = Value::create<OrderedMapObject>(mapType, 42);
-  auto obj = toObjPtr<OrderedMapObject>(value);
+  auto obj = createObject<OrderedMapObject>(mapType, 42);
 
   ASSERT_EQ(0, obj->size());
 
@@ -340,7 +336,7 @@ public:
 
   ArrayBuilder array(const Type &type) {
     auto ret = this->pool.createArrayType(type);
-    auto obj = ret ? toObjPtr<ArrayObject>(Value::create<ArrayObject>(*ret.asOk())) : nullptr;
+    auto obj = ret ? createObject<ArrayObject>(*ret.asOk()) : nullptr;
     return ArrayBuilder{.obj = std::move(obj)};
   }
 
@@ -357,8 +353,7 @@ public:
 
   MapBuilder map(const Type &k, const Type &v) {
     auto ret = this->pool.createMapType(k, v);
-    auto obj = ret ? toObjPtr<OrderedMapObject>(Value::create<OrderedMapObject>(*ret.asOk(), 42))
-                   : nullptr;
+    auto obj = ret ? createObject<OrderedMapObject>(*ret.asOk(), 42) : nullptr;
     return MapBuilder{.obj = std::move(obj)};
   }
 
@@ -370,7 +365,7 @@ public:
       types.push_back(&this->pool.get(e.getTypeID()));
     }
     if (auto ret = this->pool.createTupleType(std::move(types))) {
-      auto obj = toObjPtr<BaseObject>(Value::create<BaseObject>(cast<TupleType>(*ret.asOk())));
+      auto obj = createObject<BaseObject>(cast<TupleType>(*ret.asOk()));
       const unsigned int size = obj->getFieldSize();
       for (unsigned int i = 0; i < size; i++) {
         (*obj)[i] = std::move(values[i]);

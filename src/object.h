@@ -658,6 +658,14 @@ ObjPtr<T> toObjPtr(const Value &value) noexcept {
   return ObjPtr<T>(&ref);
 }
 
+template <typename T, typename... A>
+ObjPtr<T> createObject(A &&...args) {
+  static_assert(std::is_base_of_v<Object, T>, "must be subtype of Object");
+
+  return ObjPtr<T>(
+      static_cast<T *>(ObjectConstructor<T, A...>::construct(std::forward<A>(args)...)));
+}
+
 enum class ConcatOp : unsigned char {
   APPEND = 1u << 0u,
   INTERPOLATE = 1u << 1u,
@@ -951,8 +959,7 @@ public:
   bool checkIteratorInvalidation(ARState &state, const char *name = nullptr) const;
 
   ObjPtr<ArrayObject> copy() const {
-    return toObjPtr<ArrayObject>(
-        Value::create<ArrayObject>(this->getTypeID(), std::vector<Value>(this->values)));
+    return createObject<ArrayObject>(this->getTypeID(), std::vector<Value>(this->values));
   }
 
   Value takeFirst() {

@@ -1248,7 +1248,7 @@ bool LineEditorObject::kickAcceptorCallback(ARState &state, const LineBuffer &bu
 }
 
 static ObjPtr<ArrayObject> toObj(const TypePool &pool, const KillRing &killRing) {
-  auto obj = toObjPtr<ArrayObject>(Value::create<ArrayObject>(pool.get(TYPE::StringArray)));
+  auto obj = createObject<ArrayObject>(pool.get(TYPE::StringArray));
   const auto &buf = killRing.get();
   const unsigned int size = buf.size();
   for (unsigned int i = 0; i < size; i++) {

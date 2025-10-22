@@ -212,7 +212,7 @@ Value Value::createStr(const GraphemeCluster &ret) {
 // ###########################
 
 const ObjPtr<UnixFdObject> &UnixFdObject::empty() {
-  static ObjPtr<UnixFdObject> empty = toObjPtr<UnixFdObject>(Value::create<UnixFdObject>(-1));
+  static ObjPtr<UnixFdObject> empty = createObject<UnixFdObject>(-1);
   return empty;
 }
 
@@ -456,8 +456,8 @@ ObjPtr<ErrorObject> ErrorObject::newError(const ARState &state, const Type &type
     return true;
   });
   auto name = Value::createStr(type.getName());
-  return toObjPtr<ErrorObject>(Value::create<ErrorObject>(type, std::move(message), std::move(name),
-                                                          status, std::move(traces)));
+  return createObject<ErrorObject>(type, std::move(message), std::move(name), status,
+                                   std::move(traces));
 }
 
 // ##########################
