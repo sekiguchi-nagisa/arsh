@@ -471,7 +471,7 @@ public:
 
   template <typename... T>
   void append(CandidatesObject &wrapper, const char *first, T &&...remain) {
-    wrapper.addAsCandidate(*this->state, Value::createStr(first), false);
+    wrapper.addNewCandidateFrom(*this->state, std::string(first), false);
     this->append(wrapper, std::forward<T>(remain)...);
   }
 

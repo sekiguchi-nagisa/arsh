@@ -25,6 +25,7 @@ namespace arsh {
 
 class Value;
 class ArrayObject;
+class CandidatesObject;
 class TypePool;
 
 class Equality {
@@ -93,6 +94,8 @@ public:
    */
   bool addAsInterp(const Value &value);
 
+  bool addCandidateAsStr(const CandidatesObject &obj, unsigned int index);
+
 private:
   /**
    * for non-recursive type
@@ -106,7 +109,7 @@ class StrAppender : public Stringifier::Appender {
 public:
   enum class Op : unsigned char {
     APPEND,    // just append
-    PRINTABLE, // append as printable string
+    PRINTABLE, // append as a printable string
   };
 
 private:
@@ -145,7 +148,7 @@ public:
  * @param value
  * @param argv
  * @param redir
- * may be null, invalid or RedirObject
+ * maybe null, invalid or RedirObject
  * @return
  * if error, return false
  */

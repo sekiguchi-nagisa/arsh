@@ -27,6 +27,7 @@
 #include "ordered_map.h"
 #include "redir.h"
 #include "type_pool.h"
+#include "vm.h"
 
 namespace arsh {
 
@@ -461,10 +462,6 @@ bool Stringifier::addAsFlatStr(const Value &value) {
     assert(s > 0);
     return this->appender(StringRef(buf, s));
   }
-  case ObjectKind::Candidate: {
-    auto &obj = typeAs<CandidateObject>(value);
-    return this->appender(obj.underlying());
-  }
   default:
     char buf[32]; // hex of 64bit pointer is up to 16 chars
     const int s =
@@ -472,6 +469,26 @@ bool Stringifier::addAsFlatStr(const Value &value) {
     assert(s > 0);
     return this->appender(StringRef(buf, s));
   }
+}
+
+#define TRY(E)                                                                                     \
+  do {                                                                                             \
+    if (unlikely(!(E))) {                                                                          \
+      return false;                                                                                \
+    }                                                                                              \
+  } while (false)
+
+bool Stringifier::addCandidateAsStr(const CandidatesObject &obj, unsigned int index) {
+  auto &entry = obj[index];
+  if (entry.isObject() && isa<CandidateObject>(entry.get())) {
+    return this->appender(typeAs<CandidateObject>(entry).underlying());
+  }
+  assert(entry.hasStrRef());
+  TRY(this->appender(entry.asStrRef()));
+  if (auto desc = obj.getDescriptionAt(index); !desc.empty()) {
+    TRY(this->appender("@") && this->appender(desc));
+  }
+  return true;
 }
 
 struct StrFrame {
@@ -483,13 +500,6 @@ struct StrFrame {
 
   explicit StrFrame(const Value &v) : v(&v), i(0), p(0) {}
 };
-
-#define TRY(E)                                                                                     \
-  do {                                                                                             \
-    if (unlikely(!(E))) {                                                                          \
-      return false;                                                                                \
-    }                                                                                              \
-  } while (false)
 
 static StringRef nextFieldName(const char *packedFieldNames, unsigned int &index) {
   const unsigned int start = index;
@@ -527,13 +537,13 @@ bool Stringifier::addAsStr(const Value &value) {
       }
       case ObjectKind::Candidates: {
         auto &obj = typeAs<CandidatesObject>(v);
-        if (obj.size() == 0) { // for empty
+        const unsigned int size = obj.size();
+        if (size == 0) { // for empty
           TRY(this->appender("[]"));
           continue;
         }
-        if (auto &frame = frames.back(); frame.i < obj.size()) {
-          TRY(this->appender(frame.i == 0 ? "[" : ", "));
-          GOTO_NEXT(frames, StrFrame(obj[frame.i++]));
+        for (unsigned int i = 0; i < size; i++) { // always flat-layout (non-recursive)
+          TRY(this->appender(i == 0 ? "[" : ", ") && this->addCandidateAsStr(obj, i));
         }
         TRY(this->appender("]"));
         continue;
@@ -618,14 +628,12 @@ bool Stringifier::addAsInterp(const Value &value) {
       }
       case ObjectKind::Candidates: {
         auto &obj = typeAs<CandidatesObject>(v);
-        auto &frame = frames.back();
-        for (; frame.i < obj.size() && obj[frame.i].isInvalid(); frame.i++)
-          ;
-        if (frame.i < obj.size()) {
-          if (frame.p++ > 0) {
+        const unsigned int size = obj.size();
+        for (unsigned int i = 0; i < size; i++) { // always flat-layout (non-recursive)
+          if (i > 0) {
             TRY(this->appender(" "));
           }
-          GOTO_NEXT(frames, StrFrame(obj[frame.i++]));
+          TRY(this->addCandidateAsStr(obj, i));
         }
         continue;
       }
@@ -758,9 +766,13 @@ bool addAsCmdArg(ARState &state, Value &&value, ArrayObject &argv, Value &redir)
         continue;
       }
       case ObjectKind::Candidates: {
-        auto &obj = typeAs<CandidatesObject>(arg);
-        if (auto &frame = frames.back(); frame.i < obj.size()) {
-          GOTO_NEXT3(frames, StrFrame(obj[frame.i++]));
+        auto &obj = typeAs<CandidatesObject>(arg); // always flat-layout (non-recursive)
+        const unsigned int size = obj.size();
+        for (unsigned int i = 0; i < size; i++) {
+          auto out = Value::createStr();
+          StrObjAppender appender(state, out);
+          Stringifier stringifier(state.typePool, appender);
+          TRY(stringifier.addCandidateAsStr(obj, i) && argv.append(state, std::move(out)));
         }
         continue;
       }

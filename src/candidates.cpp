@@ -24,14 +24,6 @@ namespace arsh {
 // ##     CandidatesObject     ##
 // ##############################
 
-bool CandidatesObject::addAsCandidate(ARState &state, const Value &value, bool needSpace) {
-  assert(value.hasStrRef());
-  if (value.asStrRef().empty()) {
-    return true;
-  }
-  return this->add(state, Value(value), {CandidateAttr::Kind::NONE, needSpace});
-}
-
 bool CandidatesObject::addNewCandidate(ARState &state, Value &&candidate, Value &&description,
                                        bool needSpace) {
   assert(candidate.hasStrRef());
@@ -39,7 +31,7 @@ bool CandidatesObject::addNewCandidate(ARState &state, Value &&candidate, Value 
     return true;
   }
   if (description.isInvalid() || description.asStrRef().empty()) {
-    return this->addAsCandidate(state, candidate, needSpace);
+    return this->add(state, std::move(candidate), {CandidateAttr::Kind::NONE, needSpace});
   }
   return this->addNewCandidateWith(state, candidate.asStrRef(), description.asStrRef(),
                                    {CandidateAttr::Kind::NONE, needSpace});
@@ -54,6 +46,40 @@ bool CandidatesObject::addNewCandidateWith(ARState &state, StringRef candidate,
     return this->add(state, std::move(value), attr);
   }
   raiseError(state, TYPE::OutOfRangeError, "sum of candidate and signature size reaches limit");
+  return false;
+}
+
+static StringRef toDescription(const CandidateAttr::Kind kind) {
+  switch (kind) {
+  case CandidateAttr::Kind::NONE:
+    break;
+  case CandidateAttr::Kind::KEYWORD:
+    return "keyword";
+  case CandidateAttr::Kind::CMD_MOD:
+    return "module";
+  case CandidateAttr::Kind::CMD_UDC:
+    return "user-defined";
+  case CandidateAttr::Kind::CMD_BUILTIN:
+    return "builtin";
+  case CandidateAttr::Kind::CMD_DYNA:
+    return "dynamic";
+  case CandidateAttr::Kind::CMD_EXTERNAL:
+    return "command";
+  case CandidateAttr::Kind::TYPE_SIGNATURE:
+    break;
+  }
+  return "";
+}
+
+bool CandidatesObject::addNewCandidateFrom(ARState &state, std::string &&candidate,
+                                           const CandidateAttr attr) {
+  const auto description = toDescription(attr.kind); // dummy
+  if (likely(candidate.size() < CandidateObject::MAX_SIZE &&
+             description.size() < CandidateObject::MAX_SIZE &&
+             candidate.size() + 1 <= CandidateObject::MAX_SIZE - description.size())) {
+    return this->add(state, Value::createStr(std::move(candidate)), attr);
+  }
+  raiseError(state, TYPE::OutOfRangeError, "candidate size reaches limit");
   return false;
 }
 
@@ -84,6 +110,13 @@ void CandidatesObject::sortAndDedup(const unsigned int beginOffset) {
       std::unique(this->values.begin(), this->values.end(),
                   [](const Value &x, const Value &y) { return toStrRef(x) == toStrRef(y); });
   this->values.erase(iter, this->values.end());
+}
+
+StringRef CandidatesObject::getDescriptionAt(const unsigned int index) const {
+  if (auto &v = this->values[index]; v.isObject() && isa<CandidateObject>(v.get())) {
+    return typeAs<CandidateObject>(v).description();
+  }
+  return toDescription(this->getAttrAt(index).kind);
 }
 
 StringRef CandidatesObject::getCommonPrefixStr() const {
@@ -128,9 +161,9 @@ StringRef CandidatesObject::getCommonPrefixStr() const {
   return {begin, static_cast<size_t>(iter - begin)};
 }
 
-bool CandidatesObject::add(ARState &state, Value &&v, CandidateAttr attr) {
+bool CandidatesObject::add(ARState &state, Value &&value, CandidateAttr attr) {
   const Meta m{.attr = attr};
-  return this->add(state, v.withMetaData(m.value));
+  return this->add(state, value.withMetaData(m.value));
 }
 
 bool CandidatesObject::add(ARState &state, Value &&valueWithMeta) {

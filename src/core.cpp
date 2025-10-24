@@ -418,39 +418,33 @@ public:
     const bool needSpace = candidate.needSuffixSpace();
     if (this->putDesc) {
       if (candidate.kind == CompCandidateKind::COMMAND_NAME) {
-        const char *desc = "";
         auto kind = CandidateAttr::Kind::NONE;
         switch (candidate.getCmdNameType()) {
         case CompCandidate::CmdNameType::MOD:
-          desc = "module";
-          kind = CandidateAttr::Kind::CMD_UDC;
+          kind = CandidateAttr::Kind::CMD_MOD;
           break;
         case CompCandidate::CmdNameType::UDC:
-          desc = "user-defined";
           kind = CandidateAttr::Kind::CMD_UDC;
           break;
         case CompCandidate::CmdNameType::BUILTIN:
-          desc = "builtin";
           kind = CandidateAttr::Kind::CMD_BUILTIN;
           break;
         case CompCandidate::CmdNameType::DYNA_UDC:
-          desc = "dynamic";
           kind = CandidateAttr::Kind::CMD_DYNA;
           break;
         case CompCandidate::CmdNameType::EXTERNAL:
-          desc = "command";
           kind = CandidateAttr::Kind::CMD_EXTERNAL;
           break;
         }
         const CandidateAttr attr{kind, needSpace};
         this->overflow =
-            !this->reply->addNewCandidateWith(this->state, candidate.value, desc, attr);
+            !this->reply->addNewCandidateFrom(this->state, std::move(candidate.value), attr);
         return;
       }
       if (candidate.kind == CompCandidateKind::KEYWORD && isIdentifierStart(candidate.value[0])) {
         this->overflow =
-            !this->reply->addNewCandidateWith(this->state, candidate.value, "keyword",
-                                              CandidateAttr{CandidateAttr::Kind::NONE, true});
+            !this->reply->addNewCandidateFrom(this->state, std::move(candidate.value),
+                                              CandidateAttr{CandidateAttr::Kind::KEYWORD, true});
         return;
       }
 
@@ -470,8 +464,7 @@ public:
         return;
       }
     }
-    if (!this->reply->addAsCandidate(this->state, Value::createStr(std::move(candidate.value)),
-                                     needSpace)) {
+    if (!this->reply->addNewCandidateFrom(this->state, std::move(candidate.value), needSpace)) {
       this->overflow = true;
     }
   }

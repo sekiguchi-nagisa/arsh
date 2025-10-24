@@ -2765,7 +2765,8 @@ ARSH_METHOD candidates_init(RuntimeContext &ctx) {
   auto obj = createObject<CandidatesObject>();
   if (const auto v = LOCAL(1); !v.isInvalid()) {
     for (auto &e : typeAs<ArrayObject>(v)) {
-      if (unlikely(!obj->addAsCandidate(ctx, e, false))) { // not insert space
+      if (unlikely(!obj->addNewCandidate(ctx, Value(e), Value::createInvalid(),
+                                         false))) { // not insert space
         RET_ERROR;
       }
     }

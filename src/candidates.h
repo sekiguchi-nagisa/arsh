@@ -68,6 +68,7 @@ public:
 struct CandidateAttr {
   enum class Kind : unsigned char { // not change enum order
     NONE,
+    KEYWORD,
     CMD_MOD,
     CMD_UDC,
     CMD_BUILTIN,
@@ -102,16 +103,6 @@ public:
   explicit CandidatesObject() : ObjectWithRtti(TYPE::Candidates) {}
 
   /**
-   * always ignore an empty candidate
-   * @param state
-   * @param value
-   * must be String
-   * @param needSpace
-   * @return
-   */
-  bool addAsCandidate(ARState &state, const Value &value, bool needSpace);
-
-  /**
    * for builtin method. always ignore an empty candidate
    * @param state
    * @param candidate
@@ -125,6 +116,13 @@ public:
 
   bool addNewCandidateWith(ARState &state, StringRef candidate, StringRef description,
                            CandidateAttr attr);
+
+  bool addNewCandidateFrom(ARState &state, std::string &&candidate, CandidateAttr attr);
+
+  bool addNewCandidateFrom(ARState &state, std::string &&candidate, bool needSpace) {
+    return this->addNewCandidateFrom(state, std::move(candidate),
+                                     {CandidateAttr::Kind::NONE, needSpace});
+  }
 
   /**
    * @param state
@@ -146,11 +144,7 @@ public:
 
   StringRef getCandidateAt(const unsigned int index) const { return toStrRef(this->values[index]); }
 
-  StringRef getDescriptionAt(const unsigned int index) const {
-    auto &v = this->values[index];
-    return v.isObject() && isa<CandidateObject>(v.get()) ? typeAs<CandidateObject>(v).description()
-                                                         : "";
-  }
+  StringRef getDescriptionAt(unsigned int index) const;
 
   CandidateAttr getAttrAt(const unsigned int index) const { return getAttr(this->values[index]); }
 
@@ -174,7 +168,7 @@ private:
     return m.attr;
   }
 
-  bool add(ARState &state, Value &&v, CandidateAttr attr);
+  bool add(ARState &state, Value &&value, CandidateAttr attr);
 
   bool add(ARState &state, Value &&valueWithMeta); // not directly use it
 };
