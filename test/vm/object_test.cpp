@@ -10,6 +10,189 @@
 
 using namespace arsh;
 
+struct ObjectTest : ::testing::Test {
+  union F64ToU64 {
+    double f64;
+    uint64_t u64;
+  };
+
+  static constexpr uint8_t FLOAT_TAG = 1;
+  static constexpr uint8_t STRING_TAG = 2;
+  static constexpr uint8_t INT_TAG = 3;
+  static constexpr uint8_t UINT_TAG = 4;
+
+  static void checkFloatTagging(const double value, const bool large = false) {
+    auto tagged = encodeTaggedFloat<FLOAT_TAG>(value);
+    if (large) {
+      ASSERT_FALSE(hasTag(tagged, FLOAT_TAG));
+    } else {
+      ASSERT_TRUE(hasTag(tagged, FLOAT_TAG));
+      F64ToU64 expect = {.f64 = value};
+      F64ToU64 actual = {.f64 = decodeTaggedFloat<FLOAT_TAG>(tagged)};
+      ASSERT_EQ(expect.u64, actual.u64);
+    }
+  }
+
+  static void checkFloatTagging(const uint64_t bits, const bool large = false) {
+    F64ToU64 e{.u64 = bits};
+    checkFloatTagging(e.f64, large);
+  }
+
+  static void checkSmallString(const StringRef ref, const bool large = false) {
+    static_assert(STRING_TAG != 0);
+
+    if (large) {
+      ASSERT_FALSE(ref.size() <= InlinedString::MAX_SIZE);
+    } else {
+      ASSERT_TRUE(ref.size() <= InlinedString::MAX_SIZE);
+      TaggedValue value{0};
+      ASSERT_FALSE(hasTag(value, STRING_TAG));
+      {
+        InlinedString s;
+        s.set<STRING_TAG>(ref.data(), ref.size());
+        ASSERT_EQ(ref.toString(), StringRef(s.data(), s.size()).toString());
+        value = s.v;
+      }
+
+      ASSERT_TRUE(hasTag(value, STRING_TAG));
+      {
+        InlinedString s = {.v = value};
+        ASSERT_EQ(ref.toString(), StringRef(s.data(), s.size()).toString());
+      }
+    }
+  }
+
+  static void checkSmallInt(const int64_t v, const bool large = false) {
+    static_assert(INT_TAG != 0);
+
+    if (large) {
+      ASSERT_FALSE(withinInt56(v));
+    } else {
+      ASSERT_TRUE(withinInt56(v));
+      TaggedValue tagged = encodeTaggedInt<INT_TAG>(v);
+      ASSERT_TRUE(hasTag(tagged, INT_TAG));
+      auto actual = decodeTaggedInt(tagged);
+      ASSERT_EQ(v, actual);
+    }
+  }
+
+  static void checkSmallUInt(const uint64_t v, const bool large = false) {
+    static_assert(UINT_TAG != 0);
+
+    if (large) {
+      ASSERT_FALSE(withinUInt56(v));
+    } else {
+      ASSERT_TRUE(withinUInt56(v));
+      TaggedValue tagged = encodeTaggedUInt<UINT_TAG>(v);
+      ASSERT_TRUE(hasTag(tagged, UINT_TAG));
+      auto actual = decodeTaggedUInt(tagged);
+      ASSERT_EQ(v, actual);
+    }
+  }
+};
+
+TEST_F(ObjectTest, floatTagging) {
+  ASSERT_NO_FATAL_FAILURE(checkFloatTagging(0.0));
+  ASSERT_NO_FATAL_FAILURE(checkFloatTagging(-0.0));
+  ASSERT_NO_FATAL_FAILURE(checkFloatTagging(5e-324));
+  ASSERT_NO_FATAL_FAILURE(checkFloatTagging(-5e-324));
+  ASSERT_NO_FATAL_FAILURE(checkFloatTagging(2.1e-289, true));
+  ASSERT_NO_FATAL_FAILURE(checkFloatTagging(-2.1e-289, true));
+  ASSERT_NO_FATAL_FAILURE(checkFloatTagging(3.8e-270, true));
+  ASSERT_NO_FATAL_FAILURE(checkFloatTagging(5.9e-39, true));
+  ASSERT_NO_FATAL_FAILURE(checkFloatTagging(1.1e-19));
+  ASSERT_NO_FATAL_FAILURE(checkFloatTagging(-1.1e-19));
+  ASSERT_NO_FATAL_FAILURE(checkFloatTagging(2.0));
+  ASSERT_NO_FATAL_FAILURE(checkFloatTagging(-2.0));
+  ASSERT_NO_FATAL_FAILURE(checkFloatTagging(3.13));
+  ASSERT_NO_FATAL_FAILURE(checkFloatTagging(-3.13));
+  ASSERT_NO_FATAL_FAILURE(checkFloatTagging(3.7e18));
+  ASSERT_NO_FATAL_FAILURE(checkFloatTagging(3.7e19, true));
+  ASSERT_NO_FATAL_FAILURE(checkFloatTagging(-3.7e19, true));
+  ASSERT_NO_FATAL_FAILURE(checkFloatTagging(6.8e38, true));
+  ASSERT_NO_FATAL_FAILURE(checkFloatTagging(-6.8e38, true));
+  ASSERT_NO_FATAL_FAILURE(checkFloatTagging(1.1e270, true));
+  ASSERT_NO_FATAL_FAILURE(checkFloatTagging(-1.1e270, true));
+  ASSERT_NO_FATAL_FAILURE(checkFloatTagging(static_cast<uint64_t>(0b011111) << 58));
+  ASSERT_NO_FATAL_FAILURE(checkFloatTagging(static_cast<uint64_t>(0b111111) << 58));
+  ASSERT_NO_FATAL_FAILURE(checkFloatTagging(static_cast<uint64_t>(-1)));
+  ASSERT_NO_FATAL_FAILURE(checkFloatTagging(static_cast<uint64_t>(-1) >> 1));
+  ASSERT_NO_FATAL_FAILURE(checkFloatTagging(1.8e307));
+  ASSERT_NO_FATAL_FAILURE(checkFloatTagging(-1.8e307));
+  ASSERT_NO_FATAL_FAILURE(checkFloatTagging(INFINITY));
+  ASSERT_NO_FATAL_FAILURE(checkFloatTagging(-INFINITY));
+  ASSERT_NO_FATAL_FAILURE(checkFloatTagging(NAN));
+}
+
+TEST_F(ObjectTest, inlinedString) {
+  ASSERT_NO_FATAL_FAILURE(checkSmallString(""));
+  ASSERT_NO_FATAL_FAILURE(checkSmallString("1"));
+  ASSERT_NO_FATAL_FAILURE(checkSmallString("12"));
+  ASSERT_NO_FATAL_FAILURE(checkSmallString("123"));
+  ASSERT_NO_FATAL_FAILURE(checkSmallString("1234"));
+  ASSERT_NO_FATAL_FAILURE(checkSmallString("12345"));
+  ASSERT_NO_FATAL_FAILURE(checkSmallString("123456"));
+  ASSERT_NO_FATAL_FAILURE(checkSmallString("1234567", true));
+  ASSERT_NO_FATAL_FAILURE(checkSmallString("あい"));
+  ASSERT_NO_FATAL_FAILURE(checkSmallString({"\0\0", 2}));
+}
+
+TEST_F(ObjectTest, smallInt) {
+  ASSERT_NO_FATAL_FAILURE(checkSmallInt(INT56_MIN));
+  ASSERT_NO_FATAL_FAILURE(checkSmallInt(INT56_MAX));
+  ASSERT_NO_FATAL_FAILURE(checkSmallInt(0));
+  ASSERT_NO_FATAL_FAILURE(checkSmallInt(std::numeric_limits<int64_t>::min(), true));
+  ASSERT_NO_FATAL_FAILURE(checkSmallInt(std::numeric_limits<int64_t>::max(), true));
+  for (int64_t i = INT56_MIN; i < 0; i /= 2) {
+    ASSERT_NO_FATAL_FAILURE(checkSmallInt(i));
+  }
+  for (int64_t i = INT56_MIN; i < 0; i /= 3) {
+    ASSERT_NO_FATAL_FAILURE(checkSmallInt(i));
+  }
+  for (int64_t i = 1; i <= INT56_MAX; i *= 2) {
+    ASSERT_NO_FATAL_FAILURE(checkSmallInt(i));
+  }
+  for (int64_t i = 1; i <= INT56_MAX; i *= 3) {
+    ASSERT_NO_FATAL_FAILURE(checkSmallInt(i));
+  }
+
+  ASSERT_NO_FATAL_FAILURE(checkSmallInt(INT56_MIN - 1, true));
+  ASSERT_NO_FATAL_FAILURE(checkSmallInt(INT56_MAX + 1, true));
+
+  for (int64_t i = std::numeric_limits<int64_t>::min(); i < INT56_MIN; i /= 2) {
+    ASSERT_NO_FATAL_FAILURE(checkSmallInt(i, true));
+  }
+  for (int64_t i = std::numeric_limits<int64_t>::min(); i < INT56_MIN; i /= 3) {
+    ASSERT_NO_FATAL_FAILURE(checkSmallInt(i, true));
+  }
+  for (int64_t i = std::numeric_limits<int64_t>::max(); i > INT56_MAX; i /= 2) {
+    ASSERT_NO_FATAL_FAILURE(checkSmallInt(i, true));
+  }
+  for (int64_t i = std::numeric_limits<int64_t>::max(); i > INT56_MAX; i /= 3) {
+    ASSERT_NO_FATAL_FAILURE(checkSmallInt(i, true));
+  }
+}
+
+TEST_F(ObjectTest, smallUInt) {
+  ASSERT_NO_FATAL_FAILURE(checkSmallUInt(UINT56_MAX));
+  ASSERT_NO_FATAL_FAILURE(checkSmallUInt(0));
+  ASSERT_NO_FATAL_FAILURE(checkSmallUInt(UINT56_MAX + 1, true));
+  ASSERT_NO_FATAL_FAILURE(checkSmallUInt(std::numeric_limits<uint64_t>::max(), true));
+
+  for (uint64_t i = 1; i <= UINT56_MAX; i *= 2) {
+    ASSERT_NO_FATAL_FAILURE(checkSmallUInt(i));
+  }
+  for (uint64_t i = 1; i <= UINT56_MAX; i *= 3) {
+    ASSERT_NO_FATAL_FAILURE(checkSmallUInt(i));
+  }
+  for (uint64_t i = std::numeric_limits<uint64_t>::max(); i > UINT56_MAX; i /= 2) {
+    ASSERT_NO_FATAL_FAILURE(checkSmallUInt(i, true));
+  }
+  for (uint64_t i = std::numeric_limits<uint64_t>::max(); i > UINT56_MAX; i /= 3) {
+    ASSERT_NO_FATAL_FAILURE(checkSmallUInt(i, true));
+  }
+}
+
 TEST(MapTest, base) {
   TypePool pool;
   const auto &mapType = *pool.createMapType(pool.get(TYPE::String), pool.get(TYPE::Int)).take();

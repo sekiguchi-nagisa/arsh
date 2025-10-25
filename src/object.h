@@ -33,6 +33,7 @@
 #include "object_util.h"
 #include "regex_wrapper.h"
 #include "type.h"
+#include "value.h"
 #include <config.h>
 
 struct ARState;
