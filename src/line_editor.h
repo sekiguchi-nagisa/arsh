@@ -92,10 +92,10 @@ private:
   ObjPtr<Object> acceptorCallback;
 
   /**
-   * for custom actions (custom action index as meta-data)
+   * for custom actions (custom action index to callback mapping)
    * must be `(String, [String]?) -> String?' type
    */
-  std::vector<Value> customCallbacks;
+  std::unordered_map<unsigned int, ObjPtr<Object>> customCallbacks;
 
   /**
    * for abbreviation. (pattern -> expanded)
@@ -201,10 +201,6 @@ private:
   ObjPtr<CandidatesObject> kickCompletionCallback(ARState &state, StringRef line);
 
   bool kickAcceptorCallback(ARState &state, const LineBuffer &buf);
-
-  using custom_callback_iter = std::vector<Value>::const_iterator;
-
-  custom_callback_iter lookupCustomCallback(unsigned int index) const;
 
   /**
    *

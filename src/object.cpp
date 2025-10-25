@@ -82,46 +82,6 @@ StringRef Value::asStrRef() const {
   return {obj.getValue(), obj.size()};
 }
 
-Value Value::withMetaData(uint32_t metaData) const {
-  assert(this->kind() != ValueKind::EXPAND_META && this->kind() != ValueKind::NUM_PAIR &&
-         this->kind() != ValueKind::STACK_GUARD && this->kind() != ValueKind::DUMMY);
-
-  Value newValue = *this;
-  if (isSmallStr(newValue.kind())) {
-    StringRef ref{newValue.str.value, smallStrSize(newValue.kind())};
-    if (newValue.kind() <= ValueKind::SSTR10) {
-      const union {
-        char i8[4];
-        uint32_t u32;
-      } conv = {
-          .u32 = metaData,
-      };
-      memcpy(newValue.str.value + 11, conv.i8, 4);
-      return newValue;
-    } else {
-      newValue = create<StringObject>(ref);
-    }
-  }
-  newValue.value.meta = metaData;
-  return newValue;
-}
-
-uint32_t Value::getMetaData() const {
-  assert(this->kind() != ValueKind::EXPAND_META && this->kind() != ValueKind::NUM_PAIR &&
-         this->kind() != ValueKind::STACK_GUARD && this->kind() != ValueKind::DUMMY);
-
-  if (isSmallStr(this->kind())) {
-    assert(smallStrSize(this->kind()) <= 10);
-    union { // NOLINT
-      char i8[4];
-      uint32_t u32;
-    } conv = {};
-    memcpy(conv.i8, this->str.value + 11, 4);
-    return conv.u32;
-  }
-  return this->value.meta;
-}
-
 std::string Value::toString(const TypePool &pool) const {
   StrAppender appender(SYS_LIMIT_PRINTABLE_MAX);
   Stringifier stringifier(pool, appender);

@@ -21,19 +21,11 @@
 
 namespace arsh {
 
-LineEditorObject::custom_callback_iter
-LineEditorObject::lookupCustomCallback(unsigned int index) const {
-  auto dummy = Value::createInvalid().withMetaData(index);
-  return std::lower_bound(
-      this->customCallbacks.begin(), this->customCallbacks.end(), dummy,
-      [](const Value &x, const Value &y) { return x.getMetaData() < y.getMetaData(); });
-}
-
 bool LineEditorObject::defineCustomAction(ARState &state, StringRef name, StringRef type,
                                           ObjPtr<Object> &&callback) {
-  if (!callback) {
+  if (!callback) { // remove custom action
     if (int index = this->keyBindings.removeCustomAction(name); index > -1) {
-      auto iter = this->lookupCustomCallback(static_cast<unsigned int>(index));
+      auto iter = this->customCallbacks.find(static_cast<unsigned int>(index));
       assert(iter != this->customCallbacks.end());
       this->customCallbacks.erase(iter);
     }
@@ -41,12 +33,7 @@ bool LineEditorObject::defineCustomAction(ARState &state, StringRef name, String
   }
   auto s = this->keyBindings.defineCustomAction(name, type);
   if (s) {
-    auto entry = Value(callback).withMetaData(s.asOk());
-    if (auto iter = this->lookupCustomCallback(s.asOk()); iter != this->customCallbacks.end()) {
-      this->customCallbacks.insert(iter, std::move(entry));
-    } else {
-      this->customCallbacks.push_back(std::move(entry));
-    }
+    this->customCallbacks.emplace(s.asOk(), std::move(callback));
     return true;
   }
 

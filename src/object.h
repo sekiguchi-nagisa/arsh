@@ -466,20 +466,6 @@ public:
   const char *asCStr() const { return this->asStrRef().data(); }
 
   /**
-   * create new value with meta-data
-   * @param metaData
-   * @return
-   */
-  Value withMetaData(uint32_t metaData) const;
-
-  /**
-   * get metadata.
-   * only called for value from withMetaData()
-   * @return
-   */
-  uint32_t getMetaData() const;
-
-  /**
    * get string representation (limited length )
    * @param pool
    * @return
