@@ -112,7 +112,7 @@ uint64_t hashRange(const Value *begin, const Value *const end) {
 // ##     OrderedMapEntries     ##
 // ###############################
 
-unsigned int OrderedMapEntries::add(Value &&key, Value &&value) {
+unsigned int OrderedMapEntries::add(Value &&key, uint64_t hash, Value &&value) {
   if (this->usedSize == this->capacity) {
     unsigned int newCap = this->capacity;
     newCap += (newCap >> 1);
@@ -127,7 +127,7 @@ unsigned int OrderedMapEntries::add(Value &&key, Value &&value) {
     this->capacity = newCap;
   }
   unsigned int index = this->usedSize;
-  this->values[index].reset(std::move(key), std::move(value));
+  this->values[index].reset(std::move(key), hash, std::move(value));
   this->usedSize++;
   return index;
 }
@@ -159,7 +159,7 @@ unsigned int OrderedMapEntries::compact() {
 // ##     OrderedMapObject     ##
 // ##############################
 
-std::pair<int, OrderedMapObject::InsertStatus> OrderedMapObject::insert(const Value &key,
+std::pair<int, OrderedMapObject::InsertStatus> OrderedMapObject::insert(Value &&key,
                                                                         Value &&value) {
   if (unlikely(!this->buckets)) {
     this->buckets = std::make_unique<Bucket[]>(this->bucketLen.capacity());
@@ -192,7 +192,7 @@ std::pair<int, OrderedMapObject::InsertStatus> OrderedMapObject::insert(const Va
     probe.dist = 0;
   }
   const unsigned int entryIndex =
-      this->entries.add(key.withMetaData(probe.keyHash), std::move(value));
+      this->entries.add(std::move(key), probe.keyHash, std::move(value));
 
   // add entry index to buckets
   this->insertEntryIndex(entryIndex, probe);
@@ -270,7 +270,7 @@ void OrderedMapObject::clear() {
 }
 
 bool OrderedMapObject::probeBuckets(const OrderedMapKey &key, ProbeState &probe) const {
-  const auto keyHash = static_cast<unsigned int>(key.hash(this->seed)); // only use 32bit
+  const auto keyHash = key.hash(this->seed);
   unsigned int bucketIndex = this->bucketLen.toBucketIndex(keyHash);
   int dist = 0;
   bool found = false;
@@ -314,7 +314,7 @@ void OrderedMapObject::rehash(bool grow) {
   unsigned int size = this->entries.getUsedSize();
   for (unsigned int i = 0; i < size; i++) {
     if (auto &e = this->entries[i]) {
-      unsigned int keyHash = e.getKeyHash();
+      const auto keyHash = e.getKeyHash();
       ProbeState probe = {
           .keyHash = keyHash,
           .bucketIndex = this->bucketLen.toBucketIndex(keyHash),
@@ -339,7 +339,7 @@ bool OrderedMapObject::checkIteratorInvalidation(ARState &state, bool isReplyVar
 }
 
 Value OrderedMapObject::put(ARState &st, Value &&key, Value &&value) {
-  switch (auto [index, s] = this->insert(key, Value(value)); s) {
+  switch (auto [index, s] = this->insert(std::move(key), Value(value)); s) {
   case InsertStatus::OK:
     return Value::createInvalid();
   case InsertStatus::NOP:

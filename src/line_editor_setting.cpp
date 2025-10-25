@@ -261,7 +261,7 @@ Value LineEditorObject::getConfigs(ARState &state) const {
       value = Value::createInt(this->pagerRatio);
       break;
     }
-    map.insert(key, std::move(value));
+    map.insert(std::move(key), std::move(value));
   }
   return ret;
 }

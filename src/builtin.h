@@ -2089,7 +2089,7 @@ ARSH_METHOD map_copy(RuntimeContext &ctx) {
   auto ret = Value::create<OrderedMapObject>(type, ctx.getRng().next());
   auto &newMap = typeAs<OrderedMapObject>(ret);
   for (auto &e : obj.getEntries()) {
-    newMap.insert(e.getKey(), Value(e.getValue()));
+    newMap.insert(Value(e.getKey()), Value(e.getValue())); // never fail
   }
   RET(ret);
 }

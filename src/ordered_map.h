@@ -43,20 +43,22 @@ public:
   private:
     Value key;
     Value value;
+    uint64_t hash{0};
 
   public:
     Entry() = default;
 
-    void reset(Value &&k, Value &&v) {
+    void reset(Value &&k, uint64_t h, Value &&v) {
       this->key = std::move(k);
       this->value = std::move(v);
+      this->hash = h;
     }
 
     explicit operator bool() const { return static_cast<bool>(this->key); }
 
     const Value &getKey() const { return this->key; }
 
-    unsigned int getKeyHash() const { return this->key.getMetaData(); }
+    uint64_t getKeyHash() const { return this->hash; }
 
     const Value &getValue() const { return this->value; }
 
@@ -86,10 +88,11 @@ public:
   /**
    *
    * @param key
+   * @param hash
    * @param value
    * @return
    */
-  unsigned int add(Value &&key, Value &&value);
+  unsigned int add(Value &&key, uint64_t hash, Value &&value);
 
   Entry del(unsigned int index) {
     Entry tmp;
@@ -151,7 +154,9 @@ private:
       this->value = newValue;
     }
 
-    unsigned int toBucketIndex(unsigned int hash) const { return hash & (this->capacity() - 1); }
+    unsigned int toBucketIndex(uint64_t hash) const {
+      return hash & static_cast<uint64_t>(this->capacity() - 1);
+    }
 
     unsigned int nextBucketIndex(unsigned int index) const {
       return this->toBucketIndex(index + 1);
@@ -220,7 +225,7 @@ public:
    * if insertion failed (reach size limit), return (-1, false)
    * otherwise, return (entry index, true)
    */
-  std::pair<int, InsertStatus> insert(const Value &key, Value &&value);
+  std::pair<int, InsertStatus> insert(Value &&key, Value &&value);
 
   /**
    * lookup map entry index by key
@@ -276,7 +281,7 @@ public:
 
 private:
   struct ProbeState {
-    unsigned int keyHash;
+    uint64_t keyHash;
     unsigned int bucketIndex;
     int dist;
   };

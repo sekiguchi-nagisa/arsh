@@ -344,7 +344,7 @@ public:
     ObjPtr<OrderedMapObject> obj;
 
     MapBuilder &add(Value &&k, Value &&v) {
-      this->obj->insert(k, std::move(v));
+      this->obj->insert(std::move(k), std::move(v));
       return *this;
     }
   };
