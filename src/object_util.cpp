@@ -479,12 +479,12 @@ bool Stringifier::addAsFlatStr(const Value &value) {
   } while (false)
 
 bool Stringifier::addCandidateAsStr(const CandidatesObject &obj, unsigned int index) {
-  auto &entry = obj[index];
-  if (entry.isObject() && isa<CandidateObject>(entry.get())) {
-    return this->appender(typeAs<CandidateObject>(entry).underlying());
+  auto &value = obj[index].first;
+  if (value.isObject() && isa<CandidateObject>(value.get())) {
+    return this->appender(typeAs<CandidateObject>(value).underlying());
   }
-  assert(entry.hasStrRef());
-  TRY(this->appender(entry.asStrRef()));
+  assert(value.hasStrRef());
+  TRY(this->appender(value.asStrRef()));
   if (auto desc = obj.getDescriptionAt(index); !desc.empty()) {
     TRY(this->appender("@") && this->appender(desc));
   }

@@ -92,14 +92,11 @@ struct CandidateAttr {
 
 class CandidatesObject : public ObjectWithRtti<ObjectKind::Candidates> {
 private:
-  std::vector<Value> values;
+  using Entry = std::pair<Value, CandidateAttr>;
+
+  std::vector<Entry> values;
 
 public:
-  union Meta {
-    CandidateAttr attr;
-    unsigned int value;
-  };
-
   explicit CandidatesObject() : ObjectWithRtti(TYPE::Candidates) {}
 
   /**
@@ -142,11 +139,13 @@ public:
 
   void sortAndDedup(unsigned int beginOffset);
 
-  StringRef getCandidateAt(const unsigned int index) const { return toStrRef(this->values[index]); }
+  StringRef getCandidateAt(const unsigned int index) const {
+    return toStrRef(this->values[index].first);
+  }
 
   StringRef getDescriptionAt(unsigned int index) const;
 
-  CandidateAttr getAttrAt(const unsigned int index) const { return getAttr(this->values[index]); }
+  CandidateAttr getAttrAt(const unsigned int index) const { return this->values[index].second; }
 
   const auto &operator[](size_t index) const { return this->values[index]; }
 
@@ -161,11 +160,6 @@ private:
   static StringRef toStrRef(const Value &v) {
     return v.isObject() && isa<CandidateObject>(v.get()) ? typeAs<CandidateObject>(v).candidate()
                                                          : v.asStrRef();
-  }
-
-  static CandidateAttr getAttr(const Value &v) {
-    const Meta m{.value = v.getMetaData()};
-    return m.attr;
   }
 
   bool add(ARState &state, Value &&value, CandidateAttr attr);

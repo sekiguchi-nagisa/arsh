@@ -86,8 +86,8 @@ bool CandidatesObject::addNewCandidateFrom(ARState &state, std::string &&candida
 bool CandidatesObject::addAll(ARState &state, const CandidatesObject &o) {
   assert(o.getTypeID() == toUnderlying(TYPE::Candidates));
   if (this != std::addressof(o)) {
-    for (auto &e : o.values) {
-      if (!this->add(state, Value(e))) {
+    for (auto &[v, a] : o.values) {
+      if (!this->add(state, Value(v), a)) {
         return false;
       }
     }
@@ -99,21 +99,22 @@ void CandidatesObject::sortAndDedup(const unsigned int beginOffset) {
   if (beginOffset >= this->size() || this->size() - beginOffset == 1) {
     return;
   }
-  std::sort(
-      this->values.begin() + beginOffset, this->values.end(), [](const Value &x, const Value &y) {
-        const int r = toStrRef(x).compare(toStrRef(y));
-        return r < 0 || (r == 0 && toUnderlying(getAttr(x).kind) < toUnderlying(getAttr(y).kind));
-      });
+  std::sort(this->values.begin() + beginOffset, this->values.end(),
+            [](const Entry &x, const Entry &y) {
+              const int r = toStrRef(x.first).compare(toStrRef(y.first));
+              return r < 0 || (r == 0 && toUnderlying(x.second.kind) < toUnderlying(y.second.kind));
+            });
 
   // de-dup (only extract the first appeared element)
   const auto iter =
-      std::unique(this->values.begin(), this->values.end(),
-                  [](const Value &x, const Value &y) { return toStrRef(x) == toStrRef(y); });
+      std::unique(this->values.begin(), this->values.end(), [](const Entry &x, const Entry &y) {
+        return toStrRef(x.first) == toStrRef(y.first);
+      });
   this->values.erase(iter, this->values.end());
 }
 
 StringRef CandidatesObject::getDescriptionAt(const unsigned int index) const {
-  if (auto &v = this->values[index]; v.isObject() && isa<CandidateObject>(v.get())) {
+  if (auto &v = this->values[index].first; v.isObject() && isa<CandidateObject>(v.get())) {
     return typeAs<CandidateObject>(v).description();
   }
   return toDescription(this->getAttrAt(index).kind);
@@ -162,16 +163,11 @@ StringRef CandidatesObject::getCommonPrefixStr() const {
 }
 
 bool CandidatesObject::add(ARState &state, Value &&value, CandidateAttr attr) {
-  const Meta m{.attr = attr};
-  return this->add(state, value.withMetaData(m.value));
-}
-
-bool CandidatesObject::add(ARState &state, Value &&valueWithMeta) {
   if (unlikely(this->size() == SYS_LIMIT_ARRAY_MAX)) {
     raiseError(state, TYPE::OutOfRangeError, "reach Candidates size limit");
     return false;
   }
-  this->values.push_back(std::move(valueWithMeta));
+  this->values.emplace_back(std::move(value), attr);
   return true;
 }
 
