@@ -39,8 +39,8 @@ public:
   static constexpr size_t MAX_SIZE = SYS_LIMIT_STRING_MAX;
 
   static ObjPtr<CandidateObject> create(const StringRef candidate, const StringRef description) {
-    assert(candidate.size() <= MAX_SIZE);
-    assert(description.size() <= MAX_SIZE);
+    assert(candidate.size() < MAX_SIZE);
+    assert(description.size() < MAX_SIZE);
     assert(candidate.size() + 1 <= MAX_SIZE - description.size());
     const unsigned int allocSize = candidate.size() + description.size() + 1;
     void *ptr = operator new(sizeof(CandidateObject) + (sizeof(char) * allocSize));
@@ -94,9 +94,11 @@ class CandidatesObject : public ObjectWithRtti<ObjectKind::Candidates> {
 private:
   using Entry = std::pair<Value, CandidateAttr>;
 
-  std::vector<Entry> values;
+  std::vector<Entry> entries; // must be String or Candidate
 
 public:
+  static constexpr size_t MAX_SIZE = SYS_LIMIT_ARRAY_MAX;
+
   explicit CandidatesObject() : ObjectWithRtti(TYPE::Candidates) {}
 
   /**
@@ -126,35 +128,39 @@ public:
    * @param o
    * @return
    */
-  bool addAll(ARState &state, const CandidatesObject &o);
-
-  size_t size() const { return this->values.size(); }
-
-  void pop() { this->values.pop_back(); }
-
-  void clearAndShrink() {
-    this->values.clear();
-    this->values.shrink_to_fit();
+  bool addAll(ARState &state, const CandidatesObject &o) {
+    if (this != std::addressof(o)) {
+      for (auto &[v, a] : o.entries) {
+        if (!this->add(state, Value(v), a)) {
+          return false;
+        }
+      }
+    }
+    return true;
   }
+
+  size_t size() const { return this->entries.size(); }
+
+  void clearAndShrink() { this->entries = {}; }
 
   void sortAndDedup(unsigned int beginOffset);
 
   StringRef getCandidateAt(const unsigned int index) const {
-    return toStrRef(this->values[index].first);
+    return toStrRef(this->entries[index].first);
   }
 
   StringRef getDescriptionAt(unsigned int index) const;
 
-  CandidateAttr getAttrAt(const unsigned int index) const { return this->values[index].second; }
+  CandidateAttr getAttrAt(const unsigned int index) const { return this->entries[index].second; }
 
-  const auto &operator[](size_t index) const { return this->values[index]; }
+  const auto &operator[](const size_t index) const { return this->entries[index]; }
 
   /**
    * resolve common prefix string (valid utf-8)
    * @return
    * if not found common prefix string, return empty
    */
-  StringRef getCommonPrefixStr() const;
+  StringRef resolveCommonPrefixStr() const;
 
 private:
   static StringRef toStrRef(const Value &v) {
@@ -163,8 +169,6 @@ private:
   }
 
   bool add(ARState &state, Value &&value, CandidateAttr attr);
-
-  bool add(ARState &state, Value &&valueWithMeta); // not directly use it
 };
 
 } // namespace arsh

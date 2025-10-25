@@ -73,33 +73,20 @@ static StringRef toDescription(const CandidateAttr::Kind kind) {
 
 bool CandidatesObject::addNewCandidateFrom(ARState &state, std::string &&candidate,
                                            const CandidateAttr attr) {
-  const auto description = toDescription(attr.kind); // dummy
-  if (likely(candidate.size() < CandidateObject::MAX_SIZE &&
-             description.size() < CandidateObject::MAX_SIZE &&
-             candidate.size() + 1 <= CandidateObject::MAX_SIZE - description.size())) {
+  const auto descSize = toDescription(attr.kind).size(); // dummy
+  if (likely(candidate.size() < StringObject::MAX_SIZE && descSize < StringObject::MAX_SIZE &&
+             candidate.size() + 1 <= StringObject::MAX_SIZE - descSize)) {
     return this->add(state, Value::createStr(std::move(candidate)), attr);
   }
   raiseError(state, TYPE::OutOfRangeError, "candidate size reaches limit");
   return false;
 }
 
-bool CandidatesObject::addAll(ARState &state, const CandidatesObject &o) {
-  assert(o.getTypeID() == toUnderlying(TYPE::Candidates));
-  if (this != std::addressof(o)) {
-    for (auto &[v, a] : o.values) {
-      if (!this->add(state, Value(v), a)) {
-        return false;
-      }
-    }
-  }
-  return true;
-}
-
 void CandidatesObject::sortAndDedup(const unsigned int beginOffset) {
   if (beginOffset >= this->size() || this->size() - beginOffset == 1) {
     return;
   }
-  std::sort(this->values.begin() + beginOffset, this->values.end(),
+  std::sort(this->entries.begin() + beginOffset, this->entries.end(),
             [](const Entry &x, const Entry &y) {
               const int r = toStrRef(x.first).compare(toStrRef(y.first));
               return r < 0 || (r == 0 && toUnderlying(x.second.kind) < toUnderlying(y.second.kind));
@@ -107,20 +94,20 @@ void CandidatesObject::sortAndDedup(const unsigned int beginOffset) {
 
   // de-dup (only extract the first appeared element)
   const auto iter =
-      std::unique(this->values.begin(), this->values.end(), [](const Entry &x, const Entry &y) {
+      std::unique(this->entries.begin(), this->entries.end(), [](const Entry &x, const Entry &y) {
         return toStrRef(x.first) == toStrRef(y.first);
       });
-  this->values.erase(iter, this->values.end());
+  this->entries.erase(iter, this->entries.end());
 }
 
 StringRef CandidatesObject::getDescriptionAt(const unsigned int index) const {
-  if (auto &v = this->values[index].first; v.isObject() && isa<CandidateObject>(v.get())) {
+  if (auto &v = this->entries[index].first; v.isObject() && isa<CandidateObject>(v.get())) {
     return typeAs<CandidateObject>(v).description();
   }
   return toDescription(this->getAttrAt(index).kind);
 }
 
-StringRef CandidatesObject::getCommonPrefixStr() const {
+StringRef CandidatesObject::resolveCommonPrefixStr() const {
   const auto size = this->size();
   if (size == 0) {
     return "";
@@ -163,11 +150,11 @@ StringRef CandidatesObject::getCommonPrefixStr() const {
 }
 
 bool CandidatesObject::add(ARState &state, Value &&value, CandidateAttr attr) {
-  if (unlikely(this->size() == SYS_LIMIT_ARRAY_MAX)) {
+  if (unlikely(this->size() == MAX_SIZE)) {
     raiseError(state, TYPE::OutOfRangeError, "reach Candidates size limit");
     return false;
   }
-  this->values.emplace_back(std::move(value), attr);
+  this->entries.emplace_back(std::move(value), attr);
   return true;
 }
 

@@ -1087,7 +1087,7 @@ EditActionStatus LineEditorObject::completeLine(ARState &state, RenderingContext
 
   const auto watchSigSet = toSigSet(state.sigVector);
   unsigned int undoCount = 0;
-  StringRef inserting = candidates->getCommonPrefixStr();
+  StringRef inserting = candidates->resolveCommonPrefixStr();
   ctx.buf.commitLastChange();
   const size_t offset = ctx.buf.resolveInsertingSuffix(inserting, candidates->size() == 1);
   if (const auto size = candidates->size(); size > 0) {
