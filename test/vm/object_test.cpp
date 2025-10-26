@@ -16,19 +16,23 @@ struct ObjectTest : ::testing::Test {
     uint64_t u64;
   };
 
-  static constexpr uint8_t FLOAT_TAG = 1;
-  static constexpr uint8_t STRING_TAG = 2;
-  static constexpr uint8_t INT_TAG = 3;
-  static constexpr uint8_t UINT_TAG = 4;
+  enum TAG : uint8_t {
+    FLOAT_TAG = 1,
+    STRING_TAG = 2,
+    INT_TAG = 3,
+    UINT_TAG = 4,
+  };
+
+  using TaggedValue = TaggedValue<TAG>;
 
   static void checkFloatTagging(const double value, const bool large = false) {
-    auto tagged = encodeTaggedFloat<FLOAT_TAG>(value);
+    auto tagged = TaggedValue::encodeTaggedFloat<FLOAT_TAG>(value);
     if (large) {
-      ASSERT_FALSE(hasTag(tagged, FLOAT_TAG));
+      ASSERT_FALSE(tagged.hasTag(FLOAT_TAG));
     } else {
-      ASSERT_TRUE(hasTag(tagged, FLOAT_TAG));
+      ASSERT_TRUE(tagged.hasTag(FLOAT_TAG));
       F64ToU64 expect = {.f64 = value};
-      F64ToU64 actual = {.f64 = decodeTaggedFloat<FLOAT_TAG>(tagged)};
+      F64ToU64 actual = {.f64 = TaggedValue::decodeTaggedFloat<FLOAT_TAG>(tagged)};
       ASSERT_EQ(expect.u64, actual.u64);
     }
   }
@@ -42,25 +46,14 @@ struct ObjectTest : ::testing::Test {
     static_assert(STRING_TAG != 0);
 
     if (large) {
-      ASSERT_FALSE(ref.size() <= InlinedString::MAX_SIZE);
+      ASSERT_FALSE(ref.size() <= TaggedValue::MAX_STR_SIZE);
     } else {
-      ASSERT_TRUE(ref.size() <= InlinedString::MAX_SIZE);
+      ASSERT_TRUE(ref.size() <= TaggedValue::MAX_STR_SIZE);
       TaggedValue value{0};
-      ASSERT_FALSE(hasTag(value, STRING_TAG));
-      {
-        InlinedString s;
-        s.set<STRING_TAG>(ref.data(), ref.size());
-        ASSERT_EQ(ref.toString(), StringRef(s.data(), s.size()).toString());
-        value = s.v;
-      }
-
-      ASSERT_TRUE(hasTag(value, STRING_TAG));
-      StringRef actual;
-      {
-        InlinedString s = {.v = value};
-        actual = StringRef(s.data(), s.size());
-      }
-      ASSERT_EQ(ref.toString(), ref.toString());
+      ASSERT_FALSE(value.hasTag(STRING_TAG));
+      value.set<STRING_TAG>(ref.data(), ref.size());
+      ASSERT_EQ(ref.toString(), StringRef(value.data(), value.size()).toString());
+      ASSERT_TRUE(value.hasTag(STRING_TAG));
     }
   }
 
@@ -68,12 +61,12 @@ struct ObjectTest : ::testing::Test {
     static_assert(INT_TAG != 0);
 
     if (large) {
-      ASSERT_FALSE(withinInt56(v));
+      ASSERT_FALSE(TaggedValue::withinInt56(v));
     } else {
-      ASSERT_TRUE(withinInt56(v));
-      TaggedValue tagged = encodeTaggedInt(INT_TAG, v);
-      ASSERT_TRUE(hasTag(tagged, INT_TAG));
-      auto actual = decodeTaggedInt(tagged);
+      ASSERT_TRUE(TaggedValue::withinInt56(v));
+      TaggedValue tagged = TaggedValue::encodeTaggedInt(INT_TAG, v);
+      ASSERT_TRUE(tagged.hasTag(INT_TAG));
+      auto actual = TaggedValue::decodeTaggedInt(tagged);
       ASSERT_EQ(v, actual);
     }
   }
@@ -82,12 +75,12 @@ struct ObjectTest : ::testing::Test {
     static_assert(UINT_TAG != 0);
 
     if (large) {
-      ASSERT_FALSE(withinUInt56(v));
+      ASSERT_FALSE(TaggedValue::withinUInt56(v));
     } else {
-      ASSERT_TRUE(withinUInt56(v));
-      TaggedValue tagged = encodeTaggedUInt(UINT_TAG, v);
-      ASSERT_TRUE(hasTag(tagged, UINT_TAG));
-      auto actual = decodeTaggedUInt(tagged);
+      ASSERT_TRUE(TaggedValue::withinUInt56(v));
+      TaggedValue tagged = TaggedValue::encodeTaggedUInt(UINT_TAG, v);
+      ASSERT_TRUE(tagged.hasTag(UINT_TAG));
+      auto actual = TaggedValue::decodeTaggedUInt(tagged);
       ASSERT_EQ(v, actual);
     }
   }
@@ -140,57 +133,57 @@ TEST_F(ObjectTest, inlinedString) {
 }
 
 TEST_F(ObjectTest, smallInt) {
-  ASSERT_NO_FATAL_FAILURE(checkSmallInt(INT56_MIN));
-  ASSERT_NO_FATAL_FAILURE(checkSmallInt(INT56_MAX));
+  ASSERT_NO_FATAL_FAILURE(checkSmallInt(TaggedValue::INT56_MIN));
+  ASSERT_NO_FATAL_FAILURE(checkSmallInt(TaggedValue::INT56_MAX));
   ASSERT_NO_FATAL_FAILURE(checkSmallInt(0));
   ASSERT_NO_FATAL_FAILURE(checkSmallInt(std::numeric_limits<int64_t>::min(), true));
   ASSERT_NO_FATAL_FAILURE(checkSmallInt(std::numeric_limits<int64_t>::max(), true));
-  for (int64_t i = INT56_MIN; i < 0; i /= 2) {
+  for (int64_t i = TaggedValue::INT56_MIN; i < 0; i /= 2) {
     ASSERT_NO_FATAL_FAILURE(checkSmallInt(i));
   }
-  for (int64_t i = INT56_MIN; i < 0; i /= 3) {
+  for (int64_t i = TaggedValue::INT56_MIN; i < 0; i /= 3) {
     ASSERT_NO_FATAL_FAILURE(checkSmallInt(i));
   }
-  for (int64_t i = 1; i <= INT56_MAX; i *= 2) {
+  for (int64_t i = 1; i <= TaggedValue::INT56_MAX; i *= 2) {
     ASSERT_NO_FATAL_FAILURE(checkSmallInt(i));
   }
-  for (int64_t i = 1; i <= INT56_MAX; i *= 3) {
+  for (int64_t i = 1; i <= TaggedValue::INT56_MAX; i *= 3) {
     ASSERT_NO_FATAL_FAILURE(checkSmallInt(i));
   }
 
-  ASSERT_NO_FATAL_FAILURE(checkSmallInt(INT56_MIN - 1, true));
-  ASSERT_NO_FATAL_FAILURE(checkSmallInt(INT56_MAX + 1, true));
+  ASSERT_NO_FATAL_FAILURE(checkSmallInt(TaggedValue::INT56_MIN - 1, true));
+  ASSERT_NO_FATAL_FAILURE(checkSmallInt(TaggedValue::INT56_MAX + 1, true));
 
-  for (int64_t i = std::numeric_limits<int64_t>::min(); i < INT56_MIN; i /= 2) {
+  for (int64_t i = std::numeric_limits<int64_t>::min(); i < TaggedValue::INT56_MIN; i /= 2) {
     ASSERT_NO_FATAL_FAILURE(checkSmallInt(i, true));
   }
-  for (int64_t i = std::numeric_limits<int64_t>::min(); i < INT56_MIN; i /= 3) {
+  for (int64_t i = std::numeric_limits<int64_t>::min(); i < TaggedValue::INT56_MIN; i /= 3) {
     ASSERT_NO_FATAL_FAILURE(checkSmallInt(i, true));
   }
-  for (int64_t i = std::numeric_limits<int64_t>::max(); i > INT56_MAX; i /= 2) {
+  for (int64_t i = std::numeric_limits<int64_t>::max(); i > TaggedValue::INT56_MAX; i /= 2) {
     ASSERT_NO_FATAL_FAILURE(checkSmallInt(i, true));
   }
-  for (int64_t i = std::numeric_limits<int64_t>::max(); i > INT56_MAX; i /= 3) {
+  for (int64_t i = std::numeric_limits<int64_t>::max(); i > TaggedValue::INT56_MAX; i /= 3) {
     ASSERT_NO_FATAL_FAILURE(checkSmallInt(i, true));
   }
 }
 
 TEST_F(ObjectTest, smallUInt) {
-  ASSERT_NO_FATAL_FAILURE(checkSmallUInt(UINT56_MAX));
+  ASSERT_NO_FATAL_FAILURE(checkSmallUInt(TaggedValue::UINT56_MAX));
   ASSERT_NO_FATAL_FAILURE(checkSmallUInt(0));
-  ASSERT_NO_FATAL_FAILURE(checkSmallUInt(UINT56_MAX + 1, true));
+  ASSERT_NO_FATAL_FAILURE(checkSmallUInt(TaggedValue::UINT56_MAX + 1, true));
   ASSERT_NO_FATAL_FAILURE(checkSmallUInt(std::numeric_limits<uint64_t>::max(), true));
 
-  for (uint64_t i = 1; i <= UINT56_MAX; i *= 2) {
+  for (uint64_t i = 1; i <= TaggedValue::UINT56_MAX; i *= 2) {
     ASSERT_NO_FATAL_FAILURE(checkSmallUInt(i));
   }
-  for (uint64_t i = 1; i <= UINT56_MAX; i *= 3) {
+  for (uint64_t i = 1; i <= TaggedValue::UINT56_MAX; i *= 3) {
     ASSERT_NO_FATAL_FAILURE(checkSmallUInt(i));
   }
-  for (uint64_t i = std::numeric_limits<uint64_t>::max(); i > UINT56_MAX; i /= 2) {
+  for (uint64_t i = std::numeric_limits<uint64_t>::max(); i > TaggedValue::UINT56_MAX; i /= 2) {
     ASSERT_NO_FATAL_FAILURE(checkSmallUInt(i, true));
   }
-  for (uint64_t i = std::numeric_limits<uint64_t>::max(); i > UINT56_MAX; i /= 3) {
+  for (uint64_t i = std::numeric_limits<uint64_t>::max(); i > TaggedValue::UINT56_MAX; i /= 3) {
     ASSERT_NO_FATAL_FAILURE(checkSmallUInt(i, true));
   }
 }

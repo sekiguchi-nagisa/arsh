@@ -48,9 +48,9 @@ const char *toString(ObjectKind kind) {
   return table[toUnderlying(kind)];
 }
 
-// #####################
-// ##     DSValue     ##
-// #####################
+// ###################
+// ##     Value     ##
+// ###################
 
 unsigned int Value::getTypeID() const {
   switch (this->kind()) {
@@ -75,7 +75,7 @@ unsigned int Value::getTypeID() const {
 
 StringRef Value::asStrRef() const {
   assert(this->hasStrRef());
-  if (this->hasTag(ValueTag::STRING)) {
+  if (this->ss.hasTag(ValueTag::STRING)) {
     return {this->ss.data(), this->ss.size()};
   }
   auto &obj = typeAs<StringObject>(*this);
@@ -138,7 +138,7 @@ int Value::compare(ARState &state, const Value &o) const {
 bool Value::appendAsStr(ARState &state, StringRef value) {
   assert(this->hasStrRef());
 
-  const bool small = this->hasTag(ValueTag::STRING);
+  const bool small = this->ss.hasTag(ValueTag::STRING);
   const size_t size = small ? this->ss.size() : typeAs<StringObject>(*this).size();
   if (unlikely(size > StringObject::MAX_SIZE - value.size())) {
     raiseStringLimit(state);
@@ -147,8 +147,8 @@ bool Value::appendAsStr(ARState &state, StringRef value) {
 
   if (small) {
     size_t newSize = size + value.size();
-    if (newSize <= InlinedString::MAX_SIZE) {
-      this->ss.append<static_cast<uint8_t>(ValueTag::STRING)>(value.data(), value.size());
+    if (newSize <= TaggedValue::MAX_STR_SIZE) {
+      this->ss.append<ValueTag::STRING>(value.data(), value.size());
       return true;
     }
     *this = create<StringObject>(StringRef(ss.data(), size));
@@ -158,14 +158,14 @@ bool Value::appendAsStr(ARState &state, StringRef value) {
 }
 
 Value Value::createStr(StringRef ref) {
-  if (ref.size() <= InlinedString::MAX_SIZE) {
+  if (ref.size() <= TaggedValue::MAX_STR_SIZE) {
     return Value(ref.data(), ref.size());
   }
   return create<StringObject>(ref);
 }
 
 Value Value::createStr(std::string &&value) {
-  if (value.size() <= InlinedString::MAX_SIZE) {
+  if (value.size() <= TaggedValue::MAX_STR_SIZE) {
     return Value(value.data(), value.size());
   }
   return create<StringObject>(std::move(value));
