@@ -81,10 +81,27 @@ bool Equality::operator()(const Value &x, const Value &y) {
     auto &xp = *frames.back().x;
     auto &yp = *frames.back().y;
 
-    // for string
-    if (xp.hasStrRef() && yp.hasStrRef()) {
+    if (xp.hasStrRef() && yp.hasStrRef()) { // for string
       if (xp.asStrRef() == yp.asStrRef()) {
         continue;
+      }
+      return false;
+    }
+    if (xp.hasInt() && yp.hasInt()) { // for int
+      if (xp.asInt() == yp.asInt()) {
+        continue;
+      }
+      return false;
+    }
+    if (xp.hasFloat() && yp.hasFloat()) { // for float
+      if (this->partial) {
+        if (xp.asFloat() == yp.asFloat()) {
+          continue;
+        }
+      } else {
+        if (compareByTotalOrder(xp.asFloat(), yp.asFloat()) == 0) {
+          continue;
+        }
       }
       return false;
     }
@@ -105,22 +122,6 @@ bool Equality::operator()(const Value &x, const Value &y) {
     case ValueKind::SIG:
       if (xp.asSig() == yp.asSig()) {
         continue;
-      }
-      return false;
-    case ValueKind::INT:
-      if (xp.asInt() == yp.asInt()) {
-        continue;
-      }
-      return false;
-    case ValueKind::FLOAT:
-      if (this->partial) {
-        if (xp.asFloat() == yp.asFloat()) {
-          continue;
-        }
-      } else {
-        if (compareByTotalOrder(xp.asFloat(), yp.asFloat()) == 0) {
-          continue;
-        }
       }
       return false;
     case ValueKind::OBJECT:
@@ -208,19 +209,40 @@ int Ordering::operator()(const Value &x, const Value &y) {
     auto &xp = *frames.back().x;
     auto &yp = *frames.back().y;
 
-    // for string
-    if (xp.hasStrRef() && yp.hasStrRef()) {
+    if (xp.hasStrRef() && yp.hasStrRef()) { // for string
       if (const int r = xp.asStrRef().compare(yp.asStrRef())) {
         return r;
       }
       continue;
     }
-
-    if (xp.kind() != yp.kind()) {
-      return toUnderlying(xp.kind()) - toUnderlying(yp.kind());
+    if (xp.hasInt() && yp.hasInt()) { // for int
+      const int64_t left = xp.asInt();
+      const int64_t right = yp.asInt();
+      if (left == right) {
+        continue;
+      }
+      return left < right ? -1 : 1;
+    }
+    if (xp.hasFloat() && yp.hasFloat()) { // for float
+      if (const int r = compareByTotalOrder(xp.asFloat(), yp.asFloat())) {
+        return r;
+      }
+      continue;
     }
 
-    switch (xp.kind()) {
+    const auto xk = xp.kind();
+    const auto yk = yp.kind();
+    if (xk != yk) {
+      if (xk == ValueKind::INVALID) {
+        return -1;
+      }
+      if (yk == ValueKind::INVALID) {
+        return 1;
+      }
+      return static_cast<int>(toUnderlying(xk)) - static_cast<int>(toUnderlying(yk));
+    }
+
+    switch (xk) {
     case ValueKind::EMPTY:
     case ValueKind::INVALID:
       continue;
@@ -238,19 +260,6 @@ int Ordering::operator()(const Value &x, const Value &y) {
       }
       continue;
     }
-    case ValueKind::INT: {
-      const int64_t left = xp.asInt();
-      const int64_t right = yp.asInt();
-      if (left == right) {
-        continue;
-      }
-      return left < right ? -1 : 1;
-    }
-    case ValueKind::FLOAT:
-      if (const int r = compareByTotalOrder(xp.asFloat(), yp.asFloat())) {
-        return r;
-      }
-      continue;
     case ValueKind::OBJECT:
       if (xp.get()->getKind() != yp.get()->getKind()) {
         return toUnderlying(xp.get()->getKind()) - toUnderlying(yp.get()->getKind());
@@ -353,11 +362,11 @@ bool Stringifier::addAsFlatStr(const Value &value) {
     auto v = std::to_string(value.asNum());
     return this->appender(v);
   }
-  case ValueKind::NUM_PAIR:
+  case ValueKind::BRACE_RANGE_ATTR:
   case ValueKind::STACK_GUARD: {
-    auto nums = value.asNumPair();
+    auto [u16, u32] = value.asUInt16UInt32Pair();
     char buf[128];
-    const int s = snprintf(buf, std::size(buf), "[%u, %u]", nums.first, nums.second);
+    const int s = snprintf(buf, std::size(buf), "[%u, %u]", u16, u32);
     assert(s > 0);
     return this->appender(StringRef(buf, s));
   }
@@ -385,16 +394,16 @@ bool Stringifier::addAsFlatStr(const Value &value) {
     auto v = std::to_string(value.asSig());
     return this->appender(v);
   }
-  case ValueKind::INT: {
-    auto v = std::to_string(value.asInt());
-    return this->appender(v);
-  }
-  case ValueKind::FLOAT: {
-    double d = value.asFloat();
-    auto v = toString(d);
-    return this->appender(v);
-  }
   default:
+    if (value.hasInt()) {
+      auto v = std::to_string(value.asInt());
+      return this->appender(v);
+    }
+    if (value.hasFloat()) {
+      double d = value.asFloat();
+      auto v = toString(d);
+      return this->appender(v);
+    }
     if (value.hasStrRef()) {
       return this->appender(value.asStrRef());
     }

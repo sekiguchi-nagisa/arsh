@@ -59,7 +59,7 @@ Constant Pool:
   0: String (string)
   1: String $(pwd)
   2: String echo
-  3: Any (5, -1, 2, [3, 1])
+  3: Any (5, -1, 2, [1, 3])
 Line Number Table:
   lineNum: 1, address:  4
 Exception Table:"

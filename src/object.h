@@ -25,6 +25,7 @@
 #include <chrono>
 #include <memory>
 
+#include "brace.h"
 #include "constant.h"
 #include "misc/array_ref.hpp"
 #include "misc/files.hpp"
@@ -41,6 +42,8 @@ struct ARState;
 namespace arsh {
 
 #define EACH_OBJECT_KIND(OP)                                                                       \
+  OP(Int)                                                                                          \
+  OP(Float)                                                                                        \
   OP(String)                                                                                       \
   OP(StringIter)                                                                                   \
   OP(UnixFd)                                                                                       \
@@ -149,6 +152,26 @@ struct ObjectRefCount {
 template <typename T>
 using ObjPtr = IntrusivePtr<T, ObjectRefCount>;
 
+class IntObject : public ObjectWithRtti<ObjectKind::Int> {
+private:
+  const int64_t value;
+
+public:
+  explicit IntObject(int64_t value) : ObjectWithRtti(TYPE::Int), value(value) {}
+
+  int64_t getValue() const { return this->value; }
+};
+
+class FloatObject : public ObjectWithRtti<ObjectKind::Float> {
+private:
+  const double value;
+
+public:
+  explicit FloatObject(double value) : ObjectWithRtti(TYPE::Float), value(value) {};
+
+  double getValue() const { return this->value; }
+};
+
 class StringObject : public ObjectWithRtti<ObjectKind::String> {
 private:
   std::string value;
@@ -180,104 +203,62 @@ enum class StackGuardType : unsigned char {
   TRY,
 };
 
-enum class ValueKind : unsigned char {
-  EMPTY,
-  OBJECT,      // not null
-  NUMBER,      // uint64_t
-  NUM_PAIR,    // [uint32_t uint32_t]
-  STACK_GUARD, // [uint32_t uint32_t]
-  DUMMY,       // DSType(uint32_t), uint32_t
-  EXPAND_META, // [uint32_t, uint32_t], for glob meta character, '?', '*', '{', ',', '}'
-  INVALID,
-  BOOL,
-  SIG,   // int64_t
-  INT,   // int64_t
-  FLOAT, // double
-
-  // for small string (up to 14 characters)
-  SSTR0,
-  SSTR1,
-  SSTR2,
-  SSTR3,
-  SSTR4,
-  SSTR5,
-  SSTR6,
-  SSTR7,
-  SSTR8,
-  SSTR9,
-  SSTR10,
-  SSTR11,
-  SSTR12,
-  SSTR13,
-  SSTR14,
+enum class ValueTag : uint8_t {
+  OBJECT, // object pointer (not null)
+  EMPTY,  // null
+  FLOAT,  // common float
+  UINT,   // uint56
+  INT,    // int56
+  STRING, // small string (up to 6 byte)
 };
 
-inline bool isSmallStr(ValueKind kind) {
-  switch (kind) {
-  case ValueKind::SSTR0:
-  case ValueKind::SSTR1:
-  case ValueKind::SSTR2:
-  case ValueKind::SSTR3:
-  case ValueKind::SSTR4:
-  case ValueKind::SSTR5:
-  case ValueKind::SSTR6:
-  case ValueKind::SSTR7:
-  case ValueKind::SSTR8:
-  case ValueKind::SSTR9:
-  case ValueKind::SSTR10:
-  case ValueKind::SSTR11:
-  case ValueKind::SSTR12:
-  case ValueKind::SSTR13:
-  case ValueKind::SSTR14:
-    return true;
-  default:
-    return false;
-  }
-}
+enum class ValueKind : unsigned char {
+  EMPTY = toUnderlying(ValueTag::EMPTY),
+  OBJECT = toUnderlying(ValueTag::OBJECT),                      // not null
+  NUMBER = (0x1 << 3) | toUnderlying(ValueTag::UINT),           // uint64_t
+  BRACE_RANGE_ATTR = (0x2 << 3) | toUnderlying(ValueTag::UINT), // [uint16_t uint32_t]
+  STACK_GUARD = (0x3 << 3) | toUnderlying(ValueTag::UINT),      // [uint16_t uint32_t]
+  DUMMY = (0x4 << 3) | toUnderlying(ValueTag::UINT),            // [uint16_t, DSType(uint32_t)]
+  EXPAND_META =
+      (0x5 << 3) |
+      toUnderlying(ValueTag::UINT), // [uint16_t, uint32_t], for glob meta, '?', '*', '{', ',', '}'
+  INVALID = (0x6 << 3) | toUnderlying(ValueTag::UINT),
+
+  BOOL = (0x1 << 3) | toUnderlying(ValueTag::INT),
+  SIG = (0x2 << 3) | toUnderlying(ValueTag::INT),       // int64_t
+  SMALL_INT = (0x3 << 3) | toUnderlying(ValueTag::INT), // int64_t
+  COMMON_FLOAT = toUnderlying(ValueTag::FLOAT),         // double
+  SMALL_STR = toUnderlying(ValueTag::STRING),
+};
 
 class RawValue {
 protected:
-  union {
-    struct {
-      ValueKind kind;
-      uint32_t meta; // for future usage
-      union {
-        Object *obj; // not null
-        uint64_t u64;
-        int64_t i64;
-        double f64;
-        bool b;
-        const Type *type; // not null
-      };
-    } value;
-
-    struct {
-      ValueKind kind;
-      char value[15]; // null terminated
-    } str;
-
-    struct {
-      ValueKind kind;
-      uint32_t v1;
-      uint32_t v2;
-    } u32s;
-  };
+  InlinedString ss;
 
 public:
   void swap(RawValue &o) noexcept { std::swap(*this, o); }
 
-  ValueKind kind() const { return this->value.kind; }
-
-  static unsigned int smallStrSize(ValueKind kind) {
-    assert(isSmallStr(kind));
-    return static_cast<unsigned int>(kind) - static_cast<unsigned int>(ValueKind::SSTR0);
+  ValueKind kind() const {
+    switch (this->tag()) {
+    case ValueTag::EMPTY:
+      return ValueKind::EMPTY;
+    case ValueTag::OBJECT:
+      return ValueKind::OBJECT;
+    case ValueTag::FLOAT:
+      return ValueKind::COMMON_FLOAT;
+    case ValueTag::INT:
+    case ValueTag::UINT:
+      return static_cast<ValueKind>(toUnderlying(this->ss.v) & 0xFF);
+    case ValueTag::STRING:
+      return ValueKind::SMALL_STR;
+    }
+    return ValueKind::EMPTY; // unreachable
   }
 
-  static ValueKind toSmallStrKind(unsigned int size) {
-    assert(size <= smallStrSize(ValueKind::SSTR14));
-    auto base = static_cast<unsigned int>(ValueKind::SSTR0);
-    return static_cast<ValueKind>(base + size);
-  }
+protected:
+  ValueTag tag() const { return static_cast<ValueTag>(getTag(this->ss.v)); }
+
+  bool hasTag(ValueTag tag) const { return arsh::hasTag(this->ss.v, toUnderlying(tag)); }
 };
 
 template <typename T, typename... Arg>
@@ -289,26 +270,28 @@ class GraphemeCluster;
 
 class Value : public RawValue {
 private:
-  static_assert(sizeof(RawValue) == 16);
+  static_assert(sizeof(RawValue) == 8);
 
-  explicit Value(uint64_t value) noexcept {
-    this->value.kind = ValueKind::NUMBER;
-    this->value.u64 = value;
+  static constexpr auto EMPTY = TaggedValue{toUnderlying(ValueTag::EMPTY)};
+  static constexpr auto INVALID = TaggedValue{toUnderlying(ValueKind::INVALID)};
+
+  Value(ValueKind kind, uint64_t value) noexcept { this->ss.v = encodeTaggedUInt(kind, value); }
+
+  Value(ValueKind kind, uint16_t u16, uint32_t u32) noexcept {
+    this->ss.v =
+        encodeTaggedUInt(kind, static_cast<uint64_t>(u16) << 32 | static_cast<uint64_t>(u32));
   }
 
   explicit Value(int64_t value) noexcept {
-    this->value.kind = ValueKind::INT;
-    this->value.i64 = value;
+    this->ss.v = encodeTaggedInt(ValueKind::SMALL_INT, value);
   }
 
   explicit Value(bool value) noexcept {
-    this->value.kind = ValueKind::BOOL;
-    this->value.b = value;
+    this->ss.v = encodeTaggedInt(ValueKind::BOOL, value ? 1 : 0);
   }
 
   explicit Value(double value) noexcept {
-    this->value.kind = ValueKind::FLOAT;
-    this->value.f64 = value;
+    this->ss.v = encodeTaggedFloat<static_cast<uint8_t>(ValueTag::FLOAT)>(value);
   }
 
   /**
@@ -316,47 +299,42 @@ private:
    */
   Value(const char *data, unsigned int size) noexcept {
     assert(data || size == 0);
-    assert(size <= smallStrSize(ValueKind::SSTR14));
-    this->str.kind = toSmallStrKind(size);
-    if (data) {
-      memcpy(this->str.value, data, size);
-    }
-    this->str.value[size] = '\0';
+    assert(size <= InlinedString::MAX_SIZE);
+    this->ss.set<static_cast<uint8_t>(ValueTag::STRING)>(data, size);
   }
 
 public:
   explicit Value(Object *o) noexcept {
     assert(o);
-    this->value.kind = ValueKind::OBJECT;
-    this->value.obj = o;
-    this->value.obj->refCount++;
+    o->refCount++;
+    this->ss.v = static_cast<TaggedValue>(reinterpret_cast<uintptr_t>(o));
   }
 
   /**
    * equivalent to Value(nullptr)
    */
-  Value() noexcept { this->value.kind = ValueKind::EMPTY; }
+  Value() noexcept { this->ss.v = EMPTY; }
 
   Value(std::nullptr_t) noexcept : Value() {} // NOLINT
 
   Value(const Value &value) noexcept : RawValue(value) {
     if (this->isObject()) {
-      this->value.obj->refCount++;
+      this->get()->refCount++;
     }
   }
 
   /**
    * not increment refCount
    */
-  Value(Value &&value) noexcept : RawValue(value) { value.value.kind = ValueKind::EMPTY; }
+  Value(Value &&value) noexcept : RawValue(value) { value.ss.v = EMPTY; }
 
   template <typename T, enable_when<std::is_base_of_v<Object, T>> = nullptr>
   Value(const ObjPtr<T> &o) noexcept : Value(Value(o.get())) {} // NOLINT
 
   ~Value() {
     if (this->isObject()) {
-      if (--this->value.obj->refCount == 0) {
-        this->value.obj->destroy();
+      if (--this->get()->refCount == 0) {
+        this->get()->destroy();
       }
     }
   }
@@ -382,24 +360,29 @@ public:
    */
   void reset() noexcept {
     this->~Value();
-    this->value.kind = ValueKind::EMPTY;
+    this->ss.v = EMPTY;
   }
 
   Object *get() const noexcept {
-    assert(this->kind() == ValueKind::OBJECT);
-    return this->value.obj;
+    static_assert(toUnderlying(ValueTag::OBJECT) == 0);
+    assert(this->isObject());
+    union {
+      uintptr_t u;
+      Object *ptr;
+    } e = {.u = toUnderlying(this->ss.v)};
+    return e.ptr;
   }
 
   ObjPtr<Object> toPtr() const { return ObjPtr<Object>(this->get()); }
 
-  explicit operator bool() const noexcept { return this->kind() != ValueKind::EMPTY; }
+  explicit operator bool() const noexcept { return this->ss.v != EMPTY; }
 
   /**
    * if represents Object, return true.
    */
-  bool isObject() const noexcept { return this->kind() == ValueKind::OBJECT; }
+  bool isObject() const noexcept { return this->hasTag(ValueTag::OBJECT); }
 
-  bool isInvalid() const noexcept { return this->kind() == ValueKind::INVALID; }
+  bool isInvalid() const noexcept { return this->ss.v == INVALID; }
 
   unsigned int getTypeID() const;
 
@@ -408,58 +391,84 @@ public:
   bool hasType(unsigned int id) const { return this->getTypeID() == id; }
 
   bool hasStrRef() const {
-    return isSmallStr(this->kind()) ||
+    return this->hasTag(ValueTag::STRING) ||
            (this->isObject() && this->get()->getKind() == ObjectKind::String);
   }
 
   unsigned int asNum() const {
     assert(this->kind() == ValueKind::NUMBER);
-    return this->value.u64;
+    return decodeTaggedUInt(this->ss.v);
   }
 
-  std::pair<unsigned int, unsigned int> asNumPair() const {
-    assert(this->kind() == ValueKind::NUM_PAIR);
-    return {this->u32s.v1, this->u32s.v2};
+  std::pair<uint16_t, uint32_t> asUInt16UInt32Pair() const {
+    assert(this->hasTag(ValueTag::UINT));
+    auto v = decodeTaggedUInt(this->ss.v);
+    return {static_cast<uint16_t>(v >> 32),
+            static_cast<uint32_t>(v & static_cast<uint64_t>(UINT32_MAX))};
+  }
+
+  std::pair<BraceRange::Kind, unsigned int> asBraceRangeAttr() const {
+    assert(this->kind() == ValueKind::BRACE_RANGE_ATTR);
+    auto [u16, u32] = this->asUInt16UInt32Pair();
+    return {static_cast<BraceRange::Kind>(u16), u32};
   }
 
   std::pair<StackGuardType, unsigned int> asStackGuard() const {
     assert(this->kind() == ValueKind::STACK_GUARD);
-    return {static_cast<StackGuardType>(this->u32s.v1), this->u32s.v2};
+    auto [u16, u32] = this->asUInt16UInt32Pair();
+    return {static_cast<StackGuardType>(u16), u32};
   }
 
   unsigned int asTypeId() const {
     assert(this->kind() == ValueKind::DUMMY);
-    return this->u32s.v1;
+    return this->asUInt16UInt32Pair().second;
   }
 
   unsigned int asTypeIdMeta() const {
     assert(this->kind() == ValueKind::DUMMY);
-    return this->u32s.v2;
+    return this->asUInt16UInt32Pair().first;
   }
 
   std::pair<ExpandMeta, unsigned int> asExpandMeta() const {
     assert(this->kind() == ValueKind::EXPAND_META);
-    return {static_cast<ExpandMeta>(this->u32s.v1), this->u32s.v2};
+    auto [u16, u32] = this->asUInt16UInt32Pair();
+    return {static_cast<ExpandMeta>(u16), u32};
   }
 
   bool asBool() const {
     assert(this->kind() == ValueKind::BOOL);
-    return this->value.b;
+    return decodeTaggedInt(this->ss.v) == 1;
   }
 
   int asSig() const {
     assert(this->kind() == ValueKind::SIG);
-    return static_cast<int>(this->value.i64);
+    return static_cast<int>(decodeTaggedInt(this->ss.v));
+  }
+
+  bool hasInt() const {
+    return this->kind() == ValueKind::SMALL_INT ||
+           (this->isObject() && this->get()->getKind() == ObjectKind::Int);
   }
 
   int64_t asInt() const {
-    assert(this->kind() == ValueKind::INT);
-    return this->value.i64;
+    if (this->hasTag(ValueTag::INT)) {
+      return decodeTaggedInt(this->ss.v);
+    }
+    assert(this->get()->getKind() == ObjectKind::Int);
+    return static_cast<IntObject *>(this->get())->getValue();
+  }
+
+  bool hasFloat() const {
+    return this->hasTag(ValueTag::FLOAT) ||
+           (this->isObject() && this->get()->getKind() == ObjectKind::Float);
   }
 
   double asFloat() const {
-    assert(this->kind() == ValueKind::FLOAT);
-    return this->value.f64;
+    if (this->hasTag(ValueTag::FLOAT)) {
+      return decodeTaggedFloat<static_cast<uint8_t>(ValueTag::FLOAT)>(this->ss.v);
+    }
+    assert(this->get()->getKind() == ObjectKind::Float);
+    return static_cast<FloatObject *>(this->get())->getValue();
   }
 
   StringRef asStrRef() const;
@@ -532,79 +541,66 @@ public:
     return Value(ObjectConstructor<T, A...>::construct(std::forward<A>(args)...));
   }
 
-  static Value createNum(unsigned int v) { return Value(static_cast<uint64_t>(v)); }
+  static Value createNum(unsigned int v) { return Value(ValueKind::NUMBER, v); }
 
   static Value createStackGuard(StackGuardType t, unsigned int level = 0) {
-    Value ret;
-    ret.u32s.kind = ValueKind::STACK_GUARD;
-    ret.u32s.v1 = static_cast<uint32_t>(t);
-    ret.u32s.v2 = level;
-    return ret;
+    static_assert(sizeof(StackGuardType) <= sizeof(uint16_t));
+    return Value(ValueKind::STACK_GUARD, toUnderlying(t), level);
   }
 
   static Value createDummy(const Type &type, unsigned int v1 = 0) {
-    Value ret;
-    ret.u32s.kind = ValueKind::DUMMY;
-    ret.u32s.v1 = static_cast<uint32_t>(type.typeId());
-    ret.u32s.v2 = v1;
-    return ret;
+    return Value(ValueKind::DUMMY, v1, type.typeId());
   }
 
   static Value createExpandMeta(ExpandMeta meta, unsigned int v) {
-    Value ret;
-    ret.u32s.kind = ValueKind::EXPAND_META;
-    ret.u32s.v1 = static_cast<unsigned int>(meta);
-    ret.u32s.v2 = v;
-    return ret;
+    static_assert(sizeof(ExpandMeta) <= sizeof(uint16_t));
+    return Value(ValueKind::EXPAND_META, toUnderlying(meta), v);
   }
 
-  static Value createNumPair(uint32_t v1, uint32_t v2) {
-    Value ret;
-    ret.u32s.kind = ValueKind::NUM_PAIR;
-    ret.u32s.v1 = v1;
-    ret.u32s.v2 = v2;
-    return ret;
+  static Value createBraceRangeAttr(BraceRange::Kind kind, unsigned int digits) {
+    static_assert(sizeof(BraceRange::Kind) <= sizeof(uint16_t));
+    return Value(ValueKind::BRACE_RANGE_ATTR, toUnderlying(kind), digits);
   }
 
   static Value createInvalid() {
-    Value ret;
-    ret.value.kind = ValueKind::INVALID;
-    return ret;
+    Value value;
+    value.ss.v = INVALID;
+    return value;
   }
 
   static Value createBool(bool v) { return Value(v); }
 
   static Value createSig(int num) {
-    Value ret(static_cast<int64_t>(num));
-    ret.value.kind = ValueKind::SIG;
+    Value ret;
+    ret.ss.v = encodeTaggedInt(ValueKind::SIG, num);
     return ret;
   }
 
-  static Value createInt(int64_t num) { return Value(num); }
+  static Value createInt(int64_t num) {
+    if (withinInt56(num)) {
+      return Value(num);
+    }
+    return create<IntObject>(num);
+  }
 
-  static Value createFloat(double v) { return Value(v); }
+  static Value createFloat(double v) {
+    if (Value value(v); value.hasTag(ValueTag::FLOAT)) {
+      return value;
+    }
+    return create<FloatObject>(v);
+  }
 
   // for string construction
-  static Value createStr() { return Value("", 0); }
+  static Value createStr() { return createStr(StringRef()); }
 
   static Value createStr(const char *str) {
     assert(str);
     return createStr(StringRef(str));
   }
 
-  static Value createStr(StringRef ref) {
-    if (ref.size() <= smallStrSize(ValueKind::SSTR14)) {
-      return Value(ref.data(), ref.size());
-    }
-    return create<StringObject>(ref);
-  }
+  static Value createStr(StringRef ref);
 
-  static Value createStr(std::string &&value) {
-    if (value.size() <= smallStrSize(ValueKind::SSTR14)) {
-      return Value(value.data(), value.size());
-    }
-    return create<StringObject>(std::move(value));
-  }
+  static Value createStr(std::string &&value);
 
   /**
    * create String from grapheme cluster.
@@ -664,12 +660,14 @@ struct allow_enum_bitop<ConcatOp> : std::true_type {};
 
 inline bool concatAsStr(ARState &state, Value &left, const Value &right,
                         const ConcatOp concatOp = {}) {
-  if (right.kind() == ValueKind::SSTR0) {
-    return true; // do nothing
-  }
-  if (left.kind() == ValueKind::SSTR0 && right.hasStrRef()) {
-    left = right;
-    return true;
+  if (right.hasStrRef()) {
+    if (right.asStrRef().empty()) {
+      return true; // do nothing
+    }
+    if (left.hasStrRef() && left.asStrRef().empty()) {
+      left = right;
+      return true;
+    }
   }
   const int copyCount = hasFlag(concatOp, ConcatOp::APPEND) ? 2 : 1;
   if (left.isObject() && left.get()->getRefcount() > copyCount) {

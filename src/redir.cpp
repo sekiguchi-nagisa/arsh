@@ -242,7 +242,7 @@ static int redirectImpl(const RedirObject::Entry &entry, const bool overwrite) {
     int fd;
     if (entry.value.isObject() && isa<UnixFdObject>(entry.value.get())) {
       fd = typeAs<UnixFdObject>(entry.value).getRawFd();
-    } else if (entry.value.kind() == ValueKind::INT) {
+    } else if (entry.value.hasInt()) {
       fd = static_cast<int>(entry.value.asInt());
     } else {
       assert(entry.value.isInvalid());

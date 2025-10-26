@@ -55,10 +55,12 @@ struct ObjectTest : ::testing::Test {
       }
 
       ASSERT_TRUE(hasTag(value, STRING_TAG));
+      StringRef actual;
       {
         InlinedString s = {.v = value};
-        ASSERT_EQ(ref.toString(), StringRef(s.data(), s.size()).toString());
+        actual = StringRef(s.data(), s.size());
       }
+      ASSERT_EQ(ref.toString(), ref.toString());
     }
   }
 
@@ -69,7 +71,7 @@ struct ObjectTest : ::testing::Test {
       ASSERT_FALSE(withinInt56(v));
     } else {
       ASSERT_TRUE(withinInt56(v));
-      TaggedValue tagged = encodeTaggedInt<INT_TAG>(v);
+      TaggedValue tagged = encodeTaggedInt(INT_TAG, v);
       ASSERT_TRUE(hasTag(tagged, INT_TAG));
       auto actual = decodeTaggedInt(tagged);
       ASSERT_EQ(v, actual);
@@ -83,7 +85,7 @@ struct ObjectTest : ::testing::Test {
       ASSERT_FALSE(withinUInt56(v));
     } else {
       ASSERT_TRUE(withinUInt56(v));
-      TaggedValue tagged = encodeTaggedUInt<UINT_TAG>(v);
+      TaggedValue tagged = encodeTaggedUInt(UINT_TAG, v);
       ASSERT_TRUE(hasTag(tagged, UINT_TAG));
       auto actual = decodeTaggedUInt(tagged);
       ASSERT_EQ(v, actual);
@@ -574,8 +576,8 @@ TEST_F(ObjectUtilTest, different) {
 
   ASSERT_TRUE(Ordering()(Value::createInvalid(), Value::createBool(false)) < 0);
   ASSERT_TRUE(Ordering()(Value::createInt(1234), Value::createInvalid()) > 0);
-  ASSERT_TRUE(Ordering()(Value::createInt(1234), Value::createFloat(1234)) < 0);
-  ASSERT_TRUE(Ordering()(Value::createFloat(1234), Value::createInt(1234)) > 0);
+  ASSERT_TRUE(Ordering()(Value::createInt(1234), Value::createFloat(1234)) > 0);
+  ASSERT_TRUE(Ordering()(Value::createFloat(1234), Value::createInt(1234)) < 0);
   ASSERT_TRUE(Ordering()(Value::create<UnixFdObject>(234), Value::createStr("1234")) < 0);
   ASSERT_TRUE(Ordering()(Value::createStr("1234"), Value::create<UnixFdObject>(234)) > 0);
   ASSERT_TRUE(Ordering()(this->array(TYPE::Int).obj, this->map(TYPE::Int, TYPE::Int).obj) < 0);

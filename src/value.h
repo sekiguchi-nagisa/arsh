@@ -20,6 +20,8 @@
 #include <cstdint>
 #include <cstring>
 
+#include "misc/detect.hpp"
+
 namespace arsh {
 
 enum class TaggedValue : uint64_t {}; // lower 3bit is a tag (up to 7)
@@ -69,12 +71,10 @@ double decodeTaggedFloat(const TaggedValue v) {
 }
 
 union InlinedString {
-  using SmallStr = char[8];
-
   TaggedValue v; // lower 8bit => len (5bit) | tag (3bit)
-  SmallStr s;    // assume little-endian
+  char s[8];     // assume little-endian
 
-  static constexpr unsigned int MAX_SIZE = sizeof(SmallStr) - 2;
+  static constexpr unsigned int MAX_SIZE = sizeof(s) - 2;
 
   unsigned int size() const { return static_cast<unsigned int>(this->s[0]) >> 3; }
 
@@ -82,7 +82,7 @@ union InlinedString {
    *
    * @return null terminated
    */
-  char *data() { return this->s + 1; }
+  const char *data() const { return this->s + 1; }
 
   /**
    * @tparam TAG
@@ -94,7 +94,17 @@ union InlinedString {
     static_assert(TAG <= 7);
     this->s[0] = static_cast<uint8_t>((size << 3) | TAG);
     memcpy(this->s + 1, data, size);
-    this->s[std::size(this->s) - 1] = '\0';
+    this->s[size + 1] = '\0';
+  }
+
+  template <uint8_t TAG>
+  void append(const char *data, const size_t size) {
+    static_assert(TAG <= 7);
+    size_t oldSize = this->size();
+    size_t newSize = oldSize + size;
+    this->s[0] = static_cast<uint8_t>((newSize << 3) | TAG);
+    memcpy(this->s + 1 + oldSize, data, size);
+    this->s[newSize + 1] = '\0';
   }
 };
 
@@ -106,14 +116,15 @@ inline bool withinInt56(int64_t v) { return v >= INT56_MIN && v <= INT56_MAX; }
 /**
  * sign (1bit) | truncate (8bit) | remain (55bit)
  * => remain (55bit) | sign (1bit) | tag (8bit)
- * @tparam TAG
+ * @tparam T
  * @param v must be int56
  * @return
  */
-template <uint8_t TAG>
-TaggedValue encodeTaggedInt(const int64_t v) {
+template <typename T, enable_when<sizeof(T) == sizeof(uint8_t) &&
+                                  (std::is_integral_v<T> || std::is_enum_v<T>)> = nullptr>
+TaggedValue encodeTaggedInt(const T tag, const int64_t v) {
   uint64_t vv = rotateLeft(static_cast<uint64_t>(v), 9);
-  return static_cast<TaggedValue>((vv & ~static_cast<uint64_t>(0xFF)) | TAG);
+  return static_cast<TaggedValue>((vv & ~static_cast<uint64_t>(0xFF)) | static_cast<uint8_t>(tag));
 }
 
 /**
@@ -138,14 +149,15 @@ inline bool withinUInt56(const uint64_t v) { return v <= UINT56_MAX; }
 /**
  * truncate (8bit) | remain (56bit)
  * => remain (56bit) | tag (8bit)
- * @tparam TAG
+ * @tparam T
  * @param v must be uint56
  * @return
  */
-template <uint8_t TAG>
-TaggedValue encodeTaggedUInt(const uint64_t v) {
+template <typename T, enable_when<sizeof(T) == sizeof(uint8_t) &&
+                                  (std::is_integral_v<T> || std::is_enum_v<T>)> = nullptr>
+TaggedValue encodeTaggedUInt(const T tag, const uint64_t v) {
   uint64_t vv = rotateLeft(v, 8);
-  return static_cast<TaggedValue>((vv & ~static_cast<uint64_t>(0xFF)) | TAG);
+  return static_cast<TaggedValue>((vv & ~static_cast<uint64_t>(0xFF)) | static_cast<uint8_t>(tag));
 }
 
 /**

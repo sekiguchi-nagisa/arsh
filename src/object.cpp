@@ -60,23 +60,23 @@ unsigned int Value::getTypeID() const {
     return toUnderlying(TYPE::Bool);
   case ValueKind::SIG:
     return toUnderlying(TYPE::Signal);
-  case ValueKind::INT:
+  case ValueKind::SMALL_INT:
     return toUnderlying(TYPE::Int);
-  case ValueKind::FLOAT:
+  case ValueKind::COMMON_FLOAT:
     return toUnderlying(TYPE::Float);
-  default:
-    if (isSmallStr(this->kind())) {
-      return toUnderlying(TYPE::String);
-    }
-    assert(this->kind() == ValueKind::OBJECT);
+  case ValueKind::SMALL_STR:
+    return toUnderlying(TYPE::String);
+  case ValueKind::OBJECT:
     return this->get()->getTypeID();
+  default:
+    return toUnderlying(TYPE::Void); // normally unreachable
   }
 }
 
 StringRef Value::asStrRef() const {
   assert(this->hasStrRef());
-  if (isSmallStr(this->kind())) {
-    return {this->str.value, smallStrSize(this->kind())};
+  if (this->hasTag(ValueTag::STRING)) {
+    return {this->ss.data(), this->ss.size()};
   }
   auto &obj = typeAs<StringObject>(*this);
   return {obj.getValue(), obj.size()};
@@ -138,8 +138,8 @@ int Value::compare(ARState &state, const Value &o) const {
 bool Value::appendAsStr(ARState &state, StringRef value) {
   assert(this->hasStrRef());
 
-  const bool small = isSmallStr(this->kind());
-  const size_t size = small ? smallStrSize(this->kind()) : typeAs<StringObject>(*this).size();
+  const bool small = this->hasTag(ValueTag::STRING);
+  const size_t size = small ? this->ss.size() : typeAs<StringObject>(*this).size();
   if (unlikely(size > StringObject::MAX_SIZE - value.size())) {
     raiseStringLimit(state);
     return false;
@@ -147,16 +147,28 @@ bool Value::appendAsStr(ARState &state, StringRef value) {
 
   if (small) {
     size_t newSize = size + value.size();
-    if (newSize <= smallStrSize(ValueKind::SSTR14)) {
-      memcpy(this->str.value + size, value.data(), value.size());
-      this->str.kind = toSmallStrKind(newSize);
-      this->str.value[newSize] = '\0';
+    if (newSize <= InlinedString::MAX_SIZE) {
+      this->ss.append<static_cast<uint8_t>(ValueTag::STRING)>(value.data(), value.size());
       return true;
     }
-    (*this) = Value::create<StringObject>(StringRef(this->str.value, size));
+    *this = create<StringObject>(StringRef(ss.data(), size));
   }
   typeAs<StringObject>(*this).unsafeAppend(value);
   return true;
+}
+
+Value Value::createStr(StringRef ref) {
+  if (ref.size() <= InlinedString::MAX_SIZE) {
+    return Value(ref.data(), ref.size());
+  }
+  return create<StringObject>(ref);
+}
+
+Value Value::createStr(std::string &&value) {
+  if (value.size() <= InlinedString::MAX_SIZE) {
+    return Value(value.data(), value.size());
+  }
+  return create<StringObject>(std::move(value));
 }
 
 Value Value::createStr(const GraphemeCluster &ret) {

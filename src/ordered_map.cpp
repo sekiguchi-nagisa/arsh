@@ -75,14 +75,12 @@ uint64_t OrderedMapKey::hash(uint64_t seed) const {
     case ValueKind::SIG:
       u64 = v.asSig();
       break;
-    case ValueKind::INT:
-      u64 = v.asInt();
-      break;
-    case ValueKind::FLOAT:
-      u64 = doubleToBits(v.asFloat());
-      break;
     default:
-      if (v.hasStrRef()) {
+      if (v.hasInt()) {
+        u64 = v.asInt();
+      } else if (v.hasFloat()) {
+        u64 = doubleToBits(v.asFloat());
+      } else if (v.hasStrRef()) {
         auto ref = v.asStrRef();
         ptr = ref.data();
         size = ref.size();

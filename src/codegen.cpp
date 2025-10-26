@@ -1016,7 +1016,7 @@ void ByteCodeGenerator::visitBraceSeqNode(BraceSeqNode &node) {
   obj[0] = Value::createInt(range.begin);
   obj[1] = Value::createInt(range.end);
   obj[2] = Value::createInt(range.step);
-  obj[3] = Value::createNumPair(range.digits, toUnderlying(range.kind));
+  obj[3] = Value::createBraceRangeAttr(range.kind, range.digits);
   this->emitLdcIns(std::move(value));
 }
 
