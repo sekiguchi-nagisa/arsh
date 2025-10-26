@@ -93,13 +93,13 @@ jobs:
     runs-on: ubuntu-24.04
     strategy:
       matrix:
-        cc: [ clang++-16, clang++-17, clang++-18, clang++-19 ]
+        cc: [ clang++-16, clang++-17, clang++-18, clang++-19, clang++-20 ]
     steps:
       - uses: actions/checkout@v4
       - name: prepare
         run: |
           sudo apt update
-          sudo apt install language-pack-ja ninja-build clang-19
+          sudo apt install language-pack-ja ninja-build clang-19 clang-20
       - name: configure
         run: |
           mkdir build
@@ -156,14 +156,14 @@ jobs:
       - name: prepare
         run: |
           sudo apt update
-          sudo apt install language-pack-ja ninja-build clang-19
+          sudo apt install language-pack-ja ninja-build clang-20
       - name: configure
         run: |
           mkdir build
           cd build
           cmake .. -G Ninja \
                 -DCMAKE_BUILD_TYPE=debug \
-                -DCMAKE_CXX_COMPILER=clang++-19 \
+                -DCMAKE_CXX_COMPILER=clang++-20 \
                 -DSANITIZER=${{ matrix.option }} \
                 -DUSE_EXTRA_TEST=on
       - name: build
@@ -184,14 +184,14 @@ jobs:
       - name: prepare
         run: |
           sudo apt update
-          sudo apt install language-pack-ja ninja-build
+          sudo apt install language-pack-ja ninja-build clang-20
       - name: configure
         run: |
           mkdir build
           cd build
           cmake .. -G Ninja \
                 -DFUZZING_BUILD_MODE=on \
-                -DCMAKE_CXX_COMPILER=clang++-18
+                -DCMAKE_CXX_COMPILER=clang++-20
       - name: build
         run: |
           cd build
