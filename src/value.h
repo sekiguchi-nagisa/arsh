@@ -54,18 +54,22 @@ union TaggedValue {
   void set(const char *data, const size_t size) {
     static_assert(static_cast<uint8_t>(TAG) <= 7);
     this->s[0] = static_cast<uint8_t>((size << 3) | static_cast<uint8_t>(TAG));
-    memcpy(this->s + 1, data, size);
+    if (data) {
+      memcpy(this->s + 1, data, size);
+    }
     this->s[size + 1] = '\0';
   }
 
   template <T TAG>
   void append(const char *data, const size_t size) {
     static_assert(static_cast<uint8_t>(TAG) <= 7);
-    size_t oldSize = this->size();
-    size_t newSize = oldSize + size;
-    this->s[0] = static_cast<uint8_t>((newSize << 3) | static_cast<uint8_t>(TAG));
-    memcpy(this->s + 1 + oldSize, data, size);
-    this->s[newSize + 1] = '\0';
+    if (data && size) {
+      size_t oldSize = this->size();
+      size_t newSize = oldSize + size;
+      this->s[0] = static_cast<uint8_t>((newSize << 3) | static_cast<uint8_t>(TAG));
+      memcpy(this->s + 1 + oldSize, data, size);
+      this->s[newSize + 1] = '\0';
+    }
   }
 
   static uint64_t rotateLeft(const uint64_t x, const unsigned int k) {
