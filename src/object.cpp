@@ -147,7 +147,7 @@ bool Value::appendAsStr(ARState &state, StringRef value) {
 
   if (small) {
     size_t newSize = size + value.size();
-    if (newSize <= TaggedValue::MAX_STR_SIZE) {
+    if (newSize <= TValue::MAX_STR_SIZE) {
       this->ss.append<ValueTag::STRING>(value.data(), value.size());
       return true;
     }
@@ -158,14 +158,14 @@ bool Value::appendAsStr(ARState &state, StringRef value) {
 }
 
 Value Value::createStr(StringRef ref) {
-  if (ref.size() <= TaggedValue::MAX_STR_SIZE) {
+  if (ref.size() <= TValue::MAX_STR_SIZE) {
     return Value(ref.data(), ref.size());
   }
   return create<StringObject>(ref);
 }
 
 Value Value::createStr(std::string &&value) {
-  if (value.size() <= TaggedValue::MAX_STR_SIZE) {
+  if (value.size() <= TValue::MAX_STR_SIZE) {
     return Value(value.data(), value.size());
   }
   return create<StringObject>(std::move(value));

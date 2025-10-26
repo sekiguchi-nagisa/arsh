@@ -233,9 +233,9 @@ enum class ValueKind : unsigned char {
 
 class RawValue {
 protected:
-  using TaggedValue = TaggedValue<ValueTag>;
+  using TValue = TaggedValue<ValueTag>;
 
-  TaggedValue ss;
+  TValue ss;
 
 public:
   void swap(RawValue &o) noexcept { std::swap(*this, o); }
@@ -269,28 +269,28 @@ class Value : public RawValue {
 private:
   static_assert(sizeof(RawValue) == 8);
 
-  static constexpr auto EMPTY = TaggedValue{.u64 = toUnderlying(ValueTag::EMPTY)};
-  static constexpr auto INVALID = TaggedValue{.u64 = toUnderlying(ValueKind::INVALID)};
+  static constexpr auto EMPTY = TValue{.u64 = toUnderlying(ValueTag::EMPTY)};
+  static constexpr auto INVALID = TValue{.u64 = toUnderlying(ValueKind::INVALID)};
 
   Value(ValueKind kind, uint64_t value) noexcept {
-    this->ss = TaggedValue::encodeTaggedUInt(kind, value);
+    this->ss = TValue::encodeTaggedUInt(kind, value);
   }
 
   Value(ValueKind kind, uint16_t u16, uint32_t u32) noexcept {
-    this->ss = TaggedValue::encodeTaggedUInt(kind, static_cast<uint64_t>(u16) << 32 |
-                                                       static_cast<uint64_t>(u32));
+    this->ss = TValue::encodeTaggedUInt(kind, static_cast<uint64_t>(u16) << 32 |
+                                                  static_cast<uint64_t>(u32));
   }
 
   explicit Value(int64_t value) noexcept {
-    this->ss = TaggedValue::encodeTaggedInt(ValueKind::SMALL_INT, value);
+    this->ss = TValue::encodeTaggedInt(ValueKind::SMALL_INT, value);
   }
 
   explicit Value(bool value) noexcept {
-    this->ss = TaggedValue::encodeTaggedInt(ValueKind::BOOL, value ? 1 : 0);
+    this->ss = TValue::encodeTaggedInt(ValueKind::BOOL, value ? 1 : 0);
   }
 
   explicit Value(double value) noexcept {
-    this->ss = TaggedValue::encodeTaggedFloat<ValueTag::FLOAT>(value);
+    this->ss = TValue::encodeTaggedFloat<ValueTag::FLOAT>(value);
   }
 
   /**
@@ -298,7 +298,7 @@ private:
    */
   Value(const char *data, unsigned int size) noexcept {
     assert(data || size == 0);
-    assert(size <= TaggedValue::MAX_STR_SIZE);
+    assert(size <= TValue::MAX_STR_SIZE);
     this->ss.set<ValueTag::STRING>(data, size);
   }
 
@@ -392,12 +392,12 @@ public:
 
   unsigned int asNum() const {
     assert(this->kind() == ValueKind::NUMBER);
-    return TaggedValue::decodeTaggedUInt(this->ss);
+    return TValue::decodeTaggedUInt(this->ss);
   }
 
   std::pair<uint16_t, uint32_t> asUInt16UInt32Pair() const {
     assert(this->ss.hasTag(ValueTag::UINT));
-    auto v = TaggedValue::decodeTaggedUInt(this->ss);
+    auto v = TValue::decodeTaggedUInt(this->ss);
     return {static_cast<uint16_t>(v >> 32),
             static_cast<uint32_t>(v & static_cast<uint64_t>(UINT32_MAX))};
   }
@@ -432,12 +432,12 @@ public:
 
   bool asBool() const {
     assert(this->kind() == ValueKind::BOOL);
-    return TaggedValue::decodeTaggedInt(this->ss) == 1;
+    return TValue::decodeTaggedInt(this->ss) == 1;
   }
 
   int asSig() const {
     assert(this->kind() == ValueKind::SIG);
-    return static_cast<int>(TaggedValue::decodeTaggedInt(this->ss));
+    return static_cast<int>(TValue::decodeTaggedInt(this->ss));
   }
 
   bool hasInt() const {
@@ -447,7 +447,7 @@ public:
 
   int64_t asInt() const {
     if (this->ss.hasTag(ValueTag::INT)) {
-      return TaggedValue::decodeTaggedInt(this->ss);
+      return TValue::decodeTaggedInt(this->ss);
     }
     assert(this->get()->getKind() == ObjectKind::Int);
     return static_cast<IntObject *>(this->get())->getValue();
@@ -460,7 +460,7 @@ public:
 
   double asFloat() const {
     if (this->ss.hasTag(ValueTag::FLOAT)) {
-      return TaggedValue::decodeTaggedFloat<ValueTag::FLOAT>(this->ss);
+      return TValue::decodeTaggedFloat<ValueTag::FLOAT>(this->ss);
     }
     assert(this->get()->getKind() == ObjectKind::Float);
     return static_cast<FloatObject *>(this->get())->getValue();
@@ -567,12 +567,12 @@ public:
 
   static Value createSig(int num) {
     Value ret;
-    ret.ss = TaggedValue::encodeTaggedInt(ValueKind::SIG, num);
+    ret.ss = TValue::encodeTaggedInt(ValueKind::SIG, num);
     return ret;
   }
 
   static Value createInt(int64_t num) {
-    if (TaggedValue::withinInt56(num)) {
+    if (TValue::withinInt56(num)) {
       return Value(num);
     }
     return create<IntObject>(num);
