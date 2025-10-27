@@ -35,6 +35,24 @@ struct ObjectTest : ::testing::Test {
       F64ToU64 actual = {.f64 = TValue::decodeTaggedFloat<FLOAT_TAG>(tagged)};
       ASSERT_EQ(expect.u64, actual.u64);
     }
+
+    // value api
+    auto v = Value::createFloat(value);
+    ASSERT_TRUE(v.hasFloat());
+    F64ToU64 expect = {.f64 = value};
+    F64ToU64 actual = {.f64 = v.asFloat()};
+    if (std::isnan(value)) {
+      ASSERT_TRUE(std::isnan(v.asFloat()));
+    } else {
+      ASSERT_EQ(value, v.asFloat());
+    }
+    ASSERT_EQ(expect.u64, actual.u64);
+    if (large) {
+      ASSERT_TRUE(v.isObject());
+      ASSERT_TRUE(v.get()->getKind() == ObjectKind::Float);
+    } else {
+      ASSERT_TRUE(v.kind() == ValueKind::COMMON_FLOAT);
+    }
   }
 
   static void checkFloatTagging(const uint64_t bits, const bool large = false) {
@@ -68,6 +86,16 @@ struct ObjectTest : ::testing::Test {
       ASSERT_TRUE(tagged.hasTag(INT_TAG));
       auto actual = TValue::decodeTaggedInt(tagged);
       ASSERT_EQ(v, actual);
+    }
+
+    auto value = Value::createInt(v);
+    ASSERT_TRUE(value.hasInt());
+    ASSERT_EQ(v, value.asInt());
+    if (large) {
+      ASSERT_TRUE(value.isObject());
+      ASSERT_TRUE(value.get()->getKind() == ObjectKind::Int);
+    } else {
+      ASSERT_TRUE(value.kind() == ValueKind::SMALL_INT);
     }
   }
 

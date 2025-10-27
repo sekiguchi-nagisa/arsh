@@ -85,7 +85,7 @@ uint64_t OrderedMapKey::hash(uint64_t seed) const {
         ptr = ref.data();
         size = ref.size();
         isStr = true;
-      } else if (v.kind() == ValueKind::OBJECT) {
+      } else if (v.isObject()) {
         if (v.get()->getKind() == ObjectKind::Base) {
           u64 = typeAs<BaseObject>(v).getHash();
         } else {

@@ -24,9 +24,11 @@
 
 namespace arsh {
 
-template <typename T, enable_when<std::is_enum_v<T> &&
-                                  std::is_same_v<std::underlying_type_t<T>, uint8_t>> = nullptr>
+template <typename T>
 union TaggedValue {
+  static_assert(std::is_enum_v<T>);
+  static_assert(std::is_same_v<std::underlying_type_t<T>, uint8_t>);
+
   uint64_t u64; // lower 8bit => meta (5bit) | tag (3bit, up to 7)
   void *ptr;
   char s[8]; // assume little-endian

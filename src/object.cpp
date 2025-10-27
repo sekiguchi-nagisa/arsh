@@ -75,8 +75,8 @@ unsigned int Value::getTypeID() const {
 
 StringRef Value::asStrRef() const {
   assert(this->hasStrRef());
-  if (this->ss.hasTag(ValueTag::STRING)) {
-    return {this->ss.data(), this->ss.size()};
+  if (this->tv.hasTag(ValueTag::STRING)) {
+    return {this->tv.data(), this->tv.size()};
   }
   auto &obj = typeAs<StringObject>(*this);
   return {obj.getValue(), obj.size()};
@@ -138,8 +138,8 @@ int Value::compare(ARState &state, const Value &o) const {
 bool Value::appendAsStr(ARState &state, StringRef value) {
   assert(this->hasStrRef());
 
-  const bool small = this->ss.hasTag(ValueTag::STRING);
-  const size_t size = small ? this->ss.size() : typeAs<StringObject>(*this).size();
+  const bool small = this->tv.hasTag(ValueTag::STRING);
+  const size_t size = small ? this->tv.size() : typeAs<StringObject>(*this).size();
   if (unlikely(size > StringObject::MAX_SIZE - value.size())) {
     raiseStringLimit(state);
     return false;
@@ -148,10 +148,10 @@ bool Value::appendAsStr(ARState &state, StringRef value) {
   if (small) {
     size_t newSize = size + value.size();
     if (newSize <= TValue::MAX_STR_SIZE) {
-      this->ss.append<ValueTag::STRING>(value.data(), value.size());
+      this->tv.append<ValueTag::STRING>(value.data(), value.size());
       return true;
     }
-    *this = create<StringObject>(StringRef(ss.data(), size));
+    *this = create<StringObject>(StringRef(tv.data(), size));
   }
   typeAs<StringObject>(*this).unsafeAppend(value);
   return true;

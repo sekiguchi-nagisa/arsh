@@ -1547,8 +1547,7 @@ bool VM::mainLoop(ARState &state) {
       vmcase(TERM_HOOK) {
         assert(state.subshellLevel());
         handleUncaughtException(state, nullptr);
-        if (auto funcObj = state.getGlobal(state.termHookIndex);
-            funcObj.kind() != ValueKind::INVALID) {
+        if (auto funcObj = state.getGlobal(state.termHookIndex); !funcObj.isInvalid()) {
           TRY(kickTermHook(state, std::move(funcObj)));
         }
         vmnext;
@@ -2400,14 +2399,14 @@ bool VM::mainLoop(ARState &state) {
         vmnext;
       }
       vmcase(UNWRAP) {
-        if (state.stack.peek().kind() == ValueKind::INVALID) {
+        if (state.stack.peek().isInvalid()) {
           raiseError(state, TYPE::UnwrapError, "invalid value");
           vmerror;
         }
         vmnext;
       }
       vmcase(CHECK_INVALID) {
-        bool b = state.stack.pop().kind() != ValueKind::INVALID;
+        bool b = !state.stack.pop().isInvalid();
         state.stack.push(Value::createBool(b));
         vmnext;
       }
@@ -2675,7 +2674,7 @@ void VM::prepareTermination(ARState &state) {
   assert(state.stack.recDepth() == 0);
 
   RecursionGuard guard(state);
-  if (auto funcObj = state.getGlobal(state.termHookIndex); funcObj.kind() != ValueKind::INVALID) {
+  if (auto funcObj = state.getGlobal(state.termHookIndex); !funcObj.isInvalid()) {
     if (kickTermHook(state, std::move(funcObj))) { // always success
       startEval(state, EvalOP{}, nullptr);
     }

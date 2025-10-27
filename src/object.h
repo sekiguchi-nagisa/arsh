@@ -203,7 +203,7 @@ enum class StackGuardType : unsigned char {
   TRY,
 };
 
-enum class ValueTag : uint8_t {
+enum class ValueTag : unsigned char {
   OBJECT, // object pointer (not null)
   EMPTY,  // null
   FLOAT,  // common float
@@ -231,31 +231,10 @@ enum class ValueKind : unsigned char {
   SMALL_STR = toUnderlying(ValueTag::STRING),
 };
 
-class RawValue {
-protected:
+struct RawValue {
   using TValue = TaggedValue<ValueTag>;
 
-  TValue ss;
-
-public:
-  void swap(RawValue &o) noexcept { std::swap(*this, o); }
-
-  ValueKind kind() const {
-    switch (this->ss.getTag()) {
-    case ValueTag::EMPTY:
-      return ValueKind::EMPTY;
-    case ValueTag::OBJECT:
-      return ValueKind::OBJECT;
-    case ValueTag::FLOAT:
-      return ValueKind::COMMON_FLOAT;
-    case ValueTag::INT:
-    case ValueTag::UINT:
-      return static_cast<ValueKind>(this->ss.u64 & 0xFF);
-    case ValueTag::STRING:
-      return ValueKind::SMALL_STR;
-    }
-    return ValueKind::EMPTY; // unreachable
-  }
+  TValue tv;
 };
 
 template <typename T, typename... Arg>
@@ -273,24 +252,24 @@ private:
   static constexpr auto INVALID = TValue{.u64 = toUnderlying(ValueKind::INVALID)};
 
   Value(ValueKind kind, uint64_t value) noexcept {
-    this->ss = TValue::encodeTaggedUInt(kind, value);
+    this->tv = TValue::encodeTaggedUInt(kind, value);
   }
 
   Value(ValueKind kind, uint16_t u16, uint32_t u32) noexcept {
-    this->ss = TValue::encodeTaggedUInt(kind, static_cast<uint64_t>(u16) << 32 |
+    this->tv = TValue::encodeTaggedUInt(kind, static_cast<uint64_t>(u16) << 32 |
                                                   static_cast<uint64_t>(u32));
   }
 
   explicit Value(int64_t value) noexcept {
-    this->ss = TValue::encodeTaggedInt(ValueKind::SMALL_INT, value);
+    this->tv = TValue::encodeTaggedInt(ValueKind::SMALL_INT, value);
   }
 
   explicit Value(bool value) noexcept {
-    this->ss = TValue::encodeTaggedInt(ValueKind::BOOL, value ? 1 : 0);
+    this->tv = TValue::encodeTaggedInt(ValueKind::BOOL, value ? 1 : 0);
   }
 
   explicit Value(double value) noexcept {
-    this->ss = TValue::encodeTaggedFloat<ValueTag::FLOAT>(value);
+    this->tv = TValue::encodeTaggedFloat<ValueTag::FLOAT>(value);
   }
 
   /**
@@ -299,20 +278,20 @@ private:
   Value(const char *data, unsigned int size) noexcept {
     assert(data || size == 0);
     assert(size <= TValue::MAX_STR_SIZE);
-    this->ss.set<ValueTag::STRING>(data, size);
+    this->tv.set<ValueTag::STRING>(data, size);
   }
 
 public:
   explicit Value(Object *o) noexcept {
     assert(o);
     o->refCount++;
-    this->ss.ptr = o;
+    this->tv.ptr = o;
   }
 
   /**
    * equivalent to Value(nullptr)
    */
-  Value() noexcept { this->ss = EMPTY; }
+  Value() noexcept { this->tv = EMPTY; }
 
   Value(std::nullptr_t) noexcept : Value() {} // NOLINT
 
@@ -325,7 +304,7 @@ public:
   /**
    * not increment refCount
    */
-  Value(Value &&value) noexcept : RawValue(value) { value.ss = EMPTY; }
+  Value(Value &&value) noexcept : RawValue(value) { value.tv = EMPTY; }
 
   template <typename T, enable_when<std::is_base_of_v<Object, T>> = nullptr>
   Value(const ObjPtr<T> &o) noexcept : Value(Value(o.get())) {} // NOLINT
@@ -354,30 +333,49 @@ public:
     return *this;
   }
 
+  void swap(Value &o) noexcept { std::swap(this->tv, o.tv); }
+
+  ValueKind kind() const {
+    switch (this->tv.getTag()) {
+    case ValueTag::EMPTY:
+      return ValueKind::EMPTY;
+    case ValueTag::OBJECT:
+      return ValueKind::OBJECT;
+    case ValueTag::FLOAT:
+      return ValueKind::COMMON_FLOAT;
+    case ValueTag::INT:
+    case ValueTag::UINT:
+      return static_cast<ValueKind>(this->tv.u64 & 0xFF);
+    case ValueTag::STRING:
+      return ValueKind::SMALL_STR;
+    }
+    return ValueKind::EMPTY; // unreachable
+  }
+
   /**
    * release current pointer.
    */
   void reset() noexcept {
     this->~Value();
-    this->ss = EMPTY;
+    this->tv = EMPTY;
   }
 
   Object *get() const noexcept {
     static_assert(toUnderlying(ValueTag::OBJECT) == 0);
     assert(this->isObject());
-    return static_cast<Object *>(this->ss.ptr);
+    return static_cast<Object *>(this->tv.ptr);
   }
 
   ObjPtr<Object> toPtr() const { return ObjPtr<Object>(this->get()); }
 
-  explicit operator bool() const noexcept { return this->ss.u64 != EMPTY.u64; }
+  explicit operator bool() const noexcept { return this->tv.u64 != EMPTY.u64; }
 
   /**
    * if represents Object, return true.
    */
-  bool isObject() const noexcept { return this->ss.hasTag(ValueTag::OBJECT); }
+  bool isObject() const noexcept { return this->tv.hasTag(ValueTag::OBJECT); }
 
-  bool isInvalid() const noexcept { return this->ss.u64 == INVALID.u64; }
+  bool isInvalid() const noexcept { return this->tv.u64 == INVALID.u64; }
 
   unsigned int getTypeID() const;
 
@@ -386,18 +384,18 @@ public:
   bool hasType(unsigned int id) const { return this->getTypeID() == id; }
 
   bool hasStrRef() const {
-    return this->ss.hasTag(ValueTag::STRING) ||
+    return this->tv.hasTag(ValueTag::STRING) ||
            (this->isObject() && this->get()->getKind() == ObjectKind::String);
   }
 
   unsigned int asNum() const {
     assert(this->kind() == ValueKind::NUMBER);
-    return TValue::decodeTaggedUInt(this->ss);
+    return TValue::decodeTaggedUInt(this->tv);
   }
 
   std::pair<uint16_t, uint32_t> asUInt16UInt32Pair() const {
-    assert(this->ss.hasTag(ValueTag::UINT));
-    auto v = TValue::decodeTaggedUInt(this->ss);
+    assert(this->tv.hasTag(ValueTag::UINT));
+    auto v = TValue::decodeTaggedUInt(this->tv);
     return {static_cast<uint16_t>(v >> 32),
             static_cast<uint32_t>(v & static_cast<uint64_t>(UINT32_MAX))};
   }
@@ -432,12 +430,12 @@ public:
 
   bool asBool() const {
     assert(this->kind() == ValueKind::BOOL);
-    return TValue::decodeTaggedInt(this->ss) == 1;
+    return TValue::decodeTaggedInt(this->tv) == 1;
   }
 
   int asSig() const {
     assert(this->kind() == ValueKind::SIG);
-    return static_cast<int>(TValue::decodeTaggedInt(this->ss));
+    return static_cast<int>(TValue::decodeTaggedInt(this->tv));
   }
 
   bool hasInt() const {
@@ -446,21 +444,21 @@ public:
   }
 
   int64_t asInt() const {
-    if (this->ss.hasTag(ValueTag::INT)) {
-      return TValue::decodeTaggedInt(this->ss);
+    if (this->tv.hasTag(ValueTag::INT)) {
+      return TValue::decodeTaggedInt(this->tv);
     }
     assert(this->get()->getKind() == ObjectKind::Int);
     return static_cast<IntObject *>(this->get())->getValue();
   }
 
   bool hasFloat() const {
-    return this->ss.hasTag(ValueTag::FLOAT) ||
+    return this->tv.hasTag(ValueTag::FLOAT) ||
            (this->isObject() && this->get()->getKind() == ObjectKind::Float);
   }
 
   double asFloat() const {
-    if (this->ss.hasTag(ValueTag::FLOAT)) {
-      return TValue::decodeTaggedFloat<ValueTag::FLOAT>(this->ss);
+    if (this->tv.hasTag(ValueTag::FLOAT)) {
+      return TValue::decodeTaggedFloat<ValueTag::FLOAT>(this->tv);
     }
     assert(this->get()->getKind() == ObjectKind::Float);
     return static_cast<FloatObject *>(this->get())->getValue();
@@ -559,7 +557,7 @@ public:
 
   static Value createInvalid() {
     Value value;
-    value.ss = INVALID;
+    value.tv = INVALID;
     return value;
   }
 
@@ -567,7 +565,7 @@ public:
 
   static Value createSig(int num) {
     Value ret;
-    ret.ss = TValue::encodeTaggedInt(ValueKind::SIG, num);
+    ret.tv = TValue::encodeTaggedInt(ValueKind::SIG, num);
     return ret;
   }
 
@@ -579,7 +577,7 @@ public:
   }
 
   static Value createFloat(double v) {
-    if (Value value(v); value.ss.hasTag(ValueTag::FLOAT)) {
+    if (Value value(v); value.tv.hasTag(ValueTag::FLOAT)) {
       return value;
     }
     return create<FloatObject>(v);
