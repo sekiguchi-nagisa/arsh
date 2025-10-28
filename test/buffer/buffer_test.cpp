@@ -1,5 +1,6 @@
 #include "gtest/gtest.h"
 
+#include <misc/bitset.hpp>
 #include <misc/buffer.hpp>
 #include <misc/inlined_array.hpp>
 #include <misc/inlined_stack.hpp>
@@ -651,6 +652,61 @@ TEST(InlinedStack, nonTrivial) {
     ASSERT_EQ("3_qwertyuiopasdfghjklzxcvbnm", stack.back());
     stack.push("5_qwertyuiopasdfghjklzxcvbnm");
     ASSERT_EQ("5_qwertyuiopasdfghjklzxcvbnm", stack.back());
+  }
+}
+
+TEST(BitSetTest, base) {
+  {
+    BitSet set(0);
+    ASSERT_EQ(0, set.size());
+    set.set();
+    ASSERT_EQ(0, set.count());
+  }
+
+  {
+    BitSet set(1);
+    ASSERT_EQ(1, set.size());
+    set.set();
+    ASSERT_TRUE(set.test(0));
+    ASSERT_EQ(1, set.count());
+    set.reset(0);
+    ASSERT_FALSE(set.test(0));
+  }
+
+  {
+    BitSet set(64);
+    ASSERT_EQ(64, set.size());
+    set.set();
+    ASSERT_TRUE(set.test(0));
+    ASSERT_EQ(64, set.count());
+    set.reset(0).reset(3);
+    ASSERT_FALSE(set.test(0));
+    ASSERT_FALSE(set.test(3));
+    ASSERT_EQ(62, set.count());
+  }
+
+  {
+    BitSet set(100);
+    ASSERT_EQ(100, set.size());
+    set.set();
+    ASSERT_TRUE(set.test(0));
+    ASSERT_EQ(100, set.count());
+    set.reset(0).reset(3).reset(64).reset(65).reset(81);
+    ASSERT_FALSE(set.test(0));
+    ASSERT_FALSE(set.test(3));
+    ASSERT_FALSE(set.test(64));
+    ASSERT_FALSE(set.test(65));
+    ASSERT_FALSE(set.test(81));
+    ASSERT_EQ(95, set.count());
+
+    BitSet set2(set);
+    ASSERT_EQ(100, set2.size());
+    ASSERT_EQ(95, set2.count());
+    set2.reset(63).reset(99);
+    ASSERT_FALSE(set2.test(63));
+    ASSERT_FALSE(set2.test(99));
+    ASSERT_EQ(93, set2.count());
+    ASSERT_EQ(95, set.count());
   }
 }
 

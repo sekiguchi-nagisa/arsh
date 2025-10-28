@@ -54,6 +54,16 @@ public:
     }
   }
 
+  InlinedArray(const InlinedArray &o) : alloc_(o.alloc_) {
+    this->ptr_ = this->data_;
+    if (this->isAllocated()) {
+      this->ptr_ = this->alloc_.alloc();
+    }
+    for (size_t i = 0; i < this->size(); i++) {
+      new (&this->ptr_[i]) T(o[i]);
+    }
+  }
+
   ~InlinedArray() {
     if (this->isAllocated()) {
       this->alloc_.dealloc(this->ptr_);
