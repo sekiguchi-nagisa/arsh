@@ -659,6 +659,7 @@ TEST(BitSetTest, base) {
   {
     BitSet set(0);
     ASSERT_EQ(0, set.size());
+    ASSERT_EQ(0, set.count());
     set.set();
     ASSERT_EQ(0, set.count());
   }
@@ -674,6 +675,18 @@ TEST(BitSetTest, base) {
   }
 
   {
+    BitSet set(63);
+    ASSERT_EQ(63, set.size());
+    set.set();
+    ASSERT_TRUE(set.test(0));
+    ASSERT_EQ(63, set.count());
+    set.reset(0).reset(3);
+    ASSERT_FALSE(set.test(0));
+    ASSERT_FALSE(set.test(3));
+    ASSERT_EQ(61, set.count());
+  }
+
+  {
     BitSet set(64);
     ASSERT_EQ(64, set.size());
     set.set();
@@ -683,6 +696,20 @@ TEST(BitSetTest, base) {
     ASSERT_FALSE(set.test(0));
     ASSERT_FALSE(set.test(3));
     ASSERT_EQ(62, set.count());
+  }
+
+  {
+    BitSet set(65);
+    ASSERT_EQ(65, set.size());
+    set.set();
+    ASSERT_TRUE(set.test(0));
+    ASSERT_EQ(65, set.count());
+    set.reset(0).reset(3).reset(63).reset(64);
+    ASSERT_FALSE(set.test(0));
+    ASSERT_FALSE(set.test(3));
+    ASSERT_FALSE(set.test(63));
+    ASSERT_FALSE(set.test(64));
+    ASSERT_EQ(61, set.count());
   }
 
   {

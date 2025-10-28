@@ -32,7 +32,7 @@ private:
   InlinedArray<base, 1> sets; // values(std::max<size_t>(nbits, 1) - 1 / N + 1)
 
 public:
-  explicit BitSet(size_t nbits) : nbits(nbits), sets(std::max<size_t>(nbits, 1) - 1 / N + 1) {}
+  explicit BitSet(size_t nbits) : nbits(nbits), sets((std::max<size_t>(nbits, 1) - 1) / N + 1) {}
 
   BitSet(const BitSet &o) = default;
 
@@ -43,7 +43,7 @@ public:
     for (size_t i = 0; i < size - 1; i++) {
       this->sets[i].set();
     }
-    size_t remain = this->nbits % N;
+    size_t remain = this->nbits - (size - 1) * N;
     for (size_t i = 0; i < remain; i++) {
       this->sets[size - 1].set(i);
     }
