@@ -1,0 +1,6 @@
+
+AAA() {
+    echo ${$SCRIPT_NAME.basename()}: AAA: $@
+}
+
+var count = 1

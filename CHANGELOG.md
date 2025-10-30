@@ -36,6 +36,10 @@
 - in ``repl.arsh`` module, load history at first prompt
 - add ``PRE_EXECS`` hook for call functions before executing command
 
+### Fixed
+
+- fix nested sub-command lookup
+
 ## [0.39.2] - 2025-10-20
 
 - correctly check internal ``beForeground`` error in ``ARState_readLine``

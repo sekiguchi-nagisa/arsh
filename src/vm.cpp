@@ -888,30 +888,39 @@ bool VM::forkAndExec(ARState &state, const char *filePath, const ArrayObject &ar
 bool VM::prepareSubCommand(ARState &state, const ModType &modType, ObjPtr<ArrayObject> &&argvObj,
                            Value &&redirConfig) {
   auto &array = *argvObj;
+  auto *curModType = &modType;
+
+NEXT:
   if (array.size() == 1) {
     ERROR(state, array, "require subcommand");
     pushExitStatus(state, 2);
     return true;
   }
 
-  const auto subCmd = array[1].asStrRef();
-  if (subCmd[0] == '_') {
-    ERROR(state, array, "cannot resolve private subcommand: %s", toPrintable(subCmd).c_str());
-    pushExitStatus(state, 1);
-    return true;
-  }
+  {
+    const auto subCmd = array[1].asStrRef();
+    if (subCmd[0] == '_') {
+      ERROR(state, array, "cannot resolve private subcommand: %s", toPrintable(subCmd).c_str());
+      pushExitStatus(state, 1);
+      return true;
+    }
 
-  const std::string key = toCmdFullName(subCmd);
-  const auto handle = modType.lookup(state.typePool, key);
-  if (!handle) {
-    ERROR(state, array, "undefined subcommand: %s", toPrintable(subCmd).c_str());
-    pushExitStatus(state, 2);
-    return true;
+    const std::string key = toCmdFullName(subCmd);
+    const auto handle = curModType->lookup(state.typePool, key);
+    if (!handle) {
+      ERROR(state, array, "undefined subcommand: %s", toPrintable(subCmd).c_str());
+      pushExitStatus(state, 2);
+      return true;
+    }
+    auto &obj = typeAs<FuncObject>(state.getGlobal(handle->getIndex()));
+    array.takeFirst(); // not check iterator invalidation
+    if (auto &type = state.typePool.get(obj.getTypeID()); type.isModType()) { // module
+      curModType = &cast<ModType>(type);
+      goto NEXT;
+    }
+    return prepareUserDefinedCommandCall(state, obj.getCode(), std::move(argvObj),
+                                         std::move(redirConfig), CmdCallAttr::SET_VAR);
   }
-  auto &udc = typeAs<FuncObject>(state.getGlobal(handle->getIndex())).getCode();
-  array.takeFirst(); // not check iterator invalidation
-  return prepareUserDefinedCommandCall(state, udc, std::move(argvObj), std::move(redirConfig),
-                                       CmdCallAttr::SET_VAR);
 }
 
 bool VM::callCommand(ARState &state, CmdResolver resolver, ObjPtr<ArrayObject> &&argvObj,

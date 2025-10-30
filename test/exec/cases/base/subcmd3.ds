@@ -1,0 +1,10 @@
+
+source ../../_module4test/subcmd_nest1.ds as sub1
+
+assert $sub1.sub2.count == 2
+
+sub1 sub2 AAA
+
+assert $sub1.sub2.count == 2  # never change
+
+assert "$(call 'sub1' sub2 AAA 1 2 3)" == 'subcmd_nest2.ds: AAA: 1 2 3'
