@@ -1,5 +1,9 @@
 # Changelog
 
+## [0.39.3] - 2025-10-31
+
+- fix nested sub-command lookup
+
 ## [0.39.2] - 2025-10-20
 
 - correctly check internal ``beForeground`` error in ``ARState_readLine``
