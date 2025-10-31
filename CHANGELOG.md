@@ -36,7 +36,7 @@
 - in ``repl.arsh`` module, load history at first prompt
 - add ``PRE_EXECS`` hook for call functions before executing command
 
-### Fixed
+## [0.39.3] - 2025-10-31
 
 - fix nested sub-command lookup
 
