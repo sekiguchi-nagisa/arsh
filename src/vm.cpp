@@ -898,12 +898,12 @@ NEXT:
   }
 
   {
-  const auto subCmd = array.getValues()[1].asStrRef();
-  if (subCmd[0] == '_') {
-    ERROR(state, array, "cannot resolve private subcommand: %s", toPrintable(subCmd).c_str());
-    pushExitStatus(state, 1);
-    return true;
-  }
+    const auto subCmd = array.getValues()[1].asStrRef();
+    if (subCmd[0] == '_') {
+      ERROR(state, array, "cannot resolve private subcommand: %s", toPrintable(subCmd).c_str());
+      pushExitStatus(state, 1);
+      return true;
+    }
 
     const std::string key = toCmdFullName(subCmd);
     const auto handle = curModType->lookup(state.typePool, key);
