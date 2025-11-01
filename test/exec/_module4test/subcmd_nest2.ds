@@ -4,3 +4,14 @@ AAA() {
 }
 
 var count = 1
+
+type Interval {
+    var begin: Int
+    var end: Int
+}
+
+function dist() :Int for Interval {
+    return $this.end - $this.begin
+}
+
+var II = new Interval(1,1)

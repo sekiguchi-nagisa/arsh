@@ -377,7 +377,12 @@ NameScope::lookupMethod(TypePool &pool, const Type &recvType, const std::string 
   auto *globalScope = this->getGlobalScope();
   for (const Type *type = &recvType; type != nullptr; type = type->getSuperType()) {
     std::string name = toMethodFullName(type->typeId(), methodName);
-    if (auto handle = globalScope->find(name)) {
+    const ModType *modType = nullptr;
+    if (auto belongedModId = type->resolveBelongedModId();
+        belongedModId != this->modId && !isBuiltinMod(belongedModId)) { // imported type
+      modType = pool.getModTypeById(belongedModId);
+    }
+    if (auto handle = modType ? modType->lookup(pool, name) : globalScope->find(name)) {
       assert(handle->isMethodHandle());
       if (handle->isVisibleInMod(this->modId, methodName)) {
         return Ok(cast<MethodHandle>(handle.get()));
