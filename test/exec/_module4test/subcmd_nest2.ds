@@ -14,4 +14,11 @@ function dist() :Int for Interval {
     return $this.end - $this.begin
 }
 
+function merge(other: Interval): Interval for Interval {
+    return new Interval(
+        $this.begin < $other.begin ? $this.begin : $other.begin,
+        $this.end < $other.end ? $other.end : $this.end
+    )
+}
+
 var II = new Interval(1,1)

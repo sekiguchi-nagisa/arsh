@@ -1,5 +1,12 @@
 source ../../_module4test/subcmd_nest1.ds as sub1
 
 assert $sub1.sub2.II.dist() == 0
-
 assert new sub1.sub2.Interval(1,3).dist() == 2
+
+assert $sub1.sub2.II.begin == 1
+assert $sub1.sub2.II.end == 1
+assert new sub1.sub2.Interval(1,3).begin == 1
+assert new sub1.sub2.Interval(1,3).end == 3
+
+assert new sub1.sub2.Interval(1,3).merge($other: new sub1.sub2.Interval(2,4)) ==
+    new sub1.sub2.Interval(1,4)
