@@ -622,17 +622,24 @@ void SymbolIndexer::visitCmdNode(CmdNode &node) {
     NameInfo info(node.getNameNode().getToken(), cmdName);
     symbol = this->builder().addCmd(info, node.getHandle());
   }
-  if (auto nameInfo = getConstArg(node.getArgNodes()); symbol && nameInfo.hasValue()) {
+  for (unsigned int offset = 0; symbol;) {
+    auto [constNode, index] = node.findConstCmdArgNode(offset);
+    if (!constNode) {
+      break;
+    }
     if (auto *decl = this->builder().findDecl(*symbol);
         decl && decl->is(DeclSymbol::Kind::MOD)) { // resolve sub-command
       auto ret = decl->getInfoAsModId();
       if (ret.second) {
         auto &type = *this->builder().getPool().getModTypeById(ret.first);
-        auto handle =
-            type.lookup(this->builder().getPool(), toCmdFullName(nameInfo.unwrap().getName()));
-        this->builder().addSymbol(nameInfo.unwrap(), DeclSymbol::Kind::CMD, handle);
+        auto handle = type.lookup(this->builder().getPool(), toCmdFullName(constNode->getValue()));
+        NameInfo nameInfo(constNode->getToken(), constNode->getValue());
+        symbol = this->builder().addSymbol(nameInfo, DeclSymbol::Kind::CMD, handle);
+        offset = index + 1;
+        continue;
       }
     }
+    break;
   }
   this->visitEach(node.getArgNodes());
 }

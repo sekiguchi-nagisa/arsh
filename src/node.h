@@ -1327,6 +1327,10 @@ public:
   void setExpansionError(bool set) { this->expansionError = set; }
 
   bool hasExpansionError() const { return this->expansionError; }
+
+  bool isConstArg() const {
+    return this->segmentNodes.size() == 1 && isa<StringNode>(*this->segmentNodes[0]);
+  }
 };
 
 class ArgArrayNode : public WithRtti<Node, NodeKind::ArgArray> {
@@ -1507,6 +1511,18 @@ public:
   const HandlePtr &getHandle() const { return this->handle; }
 
   void dump(NodeDumper &dumper) const override;
+
+  std::pair<const StringNode *, unsigned int> findConstCmdArgNode(unsigned int offset) const {
+    const unsigned int size = this->argNodes.size();
+    for (; offset < size; offset++) {
+      if (auto &e = *this->argNodes[offset];
+          isa<CmdArgNode>(e) && cast<CmdArgNode>(e).isConstArg()) {
+        auto &arg = cast<CmdArgNode>(e);
+        return {cast<StringNode>(arg.getSegmentNodes()[0].get()), offset};
+      }
+    }
+    return {nullptr, offset};
+  }
 };
 
 class PipelineNode : public WithRtti<Node, NodeKind::Pipeline> {

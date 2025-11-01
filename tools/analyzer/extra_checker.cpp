@@ -86,12 +86,11 @@ void ExtraChecker::visitCmdNode(CmdNode &node) {
   this->visit(node.getNameNode());
   if (auto &handle = node.getHandle()) {
     auto &type = this->contexts.back().getPool().get(handle->getTypeId());
-    if (type.isModType()) { // may be sub-command call
-      if (auto ret = getConstArg(node.getArgNodes()); ret.hasValue()) {
-        auto &nameInfo = ret.unwrap();
-        auto subCmd = toCmdFullName(nameInfo.getName());
+    if (type.isModType()) { // maybe sub-command call
+      if (auto pair = node.findConstCmdArgNode(0); pair.first) {
+        auto subCmd = toCmdFullName(pair.first->getValue());
         if (!cast<ModType>(type).lookup(this->contexts.back().getPool(), subCmd)) {
-          this->warn<UndefinedSubCmd>(nameInfo.getToken(), nameInfo.getName().c_str());
+          this->warn<UndefinedSubCmd>(pair.first->getToken(), pair.first->getValue().c_str());
         }
       }
     }

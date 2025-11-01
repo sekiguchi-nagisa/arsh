@@ -766,7 +766,7 @@ static bool completeCLIOption(const TypePool &pool, const Lexer &lexer, const CL
   const unsigned int size = cmdNode.getArgNodes().size();
   for (unsigned int i = 0; i < size; i++) {
     auto &e = cmdNode.getArgNodes()[i];
-    if (isa<RedirNode>(*e)) {
+    if (isa<RedirNode>(*e) || !isa<CmdArgNode>(*e) || !cast<CmdArgNode>(*e).isConstArg()) {
       continue;
     }
     const StringRef ref = lexer.toStrRef(e->getToken());

@@ -38,9 +38,6 @@ public:
 
   virtual bool consume(const std::unique_ptr<Node> &node);
 
-  static Optional<NameInfo> getConstArg(const std::vector<std::unique_ptr<Node>> &argsNode,
-                                        unsigned int offset = 0);
-
 protected:
   void visitTypeNode(TypeNode &node) override;
   void visitNumberNode(NumberNode &node) override;

@@ -27,24 +27,6 @@ bool NodePass::consume(const std::unique_ptr<Node> &node) {
   return true;
 }
 
-Optional<NameInfo> NodePass::getConstArg(const std::vector<std::unique_ptr<Node>> &argsNode,
-                                         unsigned int offset) {
-  const CmdArgNode *argNode = nullptr;
-  unsigned int offsetCount = 0;
-  for (unsigned int i = 0; i < argsNode.size() && offset <= offsetCount; i++) {
-    if (isa<CmdArgNode>(*argsNode[i]) && offset == offsetCount++) {
-      argNode = cast<CmdArgNode>(argsNode[i].get());
-      break;
-    }
-  }
-  if (argNode && argNode->getSegmentNodes().size() == 1 &&
-      isa<StringNode>(*argNode->getSegmentNodes()[0])) {
-    auto &strNode = cast<StringNode>(*argNode->getSegmentNodes()[0]);
-    return NameInfo(strNode.getToken(), strNode.getValue());
-  }
-  return {};
-}
-
 void NodePass::visitTypeNode(TypeNode &node) {
   switch (node.typeKind) {
   case TypeNode::Base:

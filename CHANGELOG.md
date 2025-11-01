@@ -10,6 +10,7 @@
 - allow empty command io redirection within command/process substitution
     - like ``$(< file)``, ``<(<<< string)``
     - implicitly call ``__gets`` command
+- correctly index nested named imported symbols
 
 #### Builtin
 
