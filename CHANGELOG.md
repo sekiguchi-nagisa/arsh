@@ -10,12 +10,11 @@
 - allow empty command io redirection within command/process substitution
     - like ``$(< file)``, ``<(<<< string)``
     - implicitly call ``__gets`` command
-- correctly index nested named imported symbols
 
 #### Builtin
 
-- in ``LineEditor``, some edit actions now mapped to pager actions
-    - remap existing edit actions to pager actions
+- in ``LineEditor``, some edit actions are now mapped to pager actions
+    - remap the following edit actions to pager actions
         - ``accept``: select pager item
         - ``cancel``: cancel pager
         - ``backward-char``: move pager cursor to left item
@@ -34,6 +33,10 @@
 - improve sub-command completion
     - complete sub-command from nested named imported modules
     - put sub-command description (`user-defined` or `module`)
+
+#### LSP
+
+- correctly index nested named imported symbols
 
 #### Module
 
