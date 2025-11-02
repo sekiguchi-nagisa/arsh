@@ -2,3 +2,5 @@
 source ./subcmd_nest2.ds as sub2
 
 $sub2.count++
+
+sss() {}

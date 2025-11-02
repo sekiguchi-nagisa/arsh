@@ -3,6 +3,10 @@ AAA() {
     echo ${$SCRIPT_NAME.basename()}: AAA: $@
 }
 
+ABE() {}
+
+BBB() {}
+
 var count = 1
 
 type Interval {

@@ -664,23 +664,14 @@ static void completeParamName(const std::vector<std::string> &paramNames, const 
   }
 }
 
-static const CmdArgNode *findFirstCmdArg(const CmdNode &node) {
-  for (auto &e : node.getArgNodes()) {
-    if (e->is(NodeKind::CmdArg)) {
-      return cast<CmdArgNode>(e.get());
-    }
-  }
-  return nullptr;
-}
-
 static bool completeBuiltinOption(const CmdNode &cmdNode, const Lexer &lexer,
                                   const std::string &word, CompCandidateConsumer &consumer) {
   if (cmdNode.getNameNode().getValue() != "shctl") {
     return false;
   }
 
-  if (auto *firstArgNode = findFirstCmdArg(cmdNode)) {
-    const auto ref = lexer.toStrRef(firstArgNode->getToken());
+  if (auto pair = cmdNode.findConstCmdArgNode(0); pair.first) {
+    const auto ref = lexer.toStrRef(pair.first->getToken());
     if (ref == "set" || ref == "unset") {
       for (auto &e : getRuntimeOptionEntries()) {
         if (StringRef name = e.name; name.startsWith(word)) {
@@ -794,8 +785,6 @@ static const CLIRecordType *resolveCLIType(const Type &type) {
   return nullptr;
 }
 
-static bool hasCmdArg(const CmdNode &node) { return findFirstCmdArg(node); }
-
 static bool completeSubCmdOrCLIOption(const TypePool &pool, const Lexer &lexer,
                                       const NameScope &scope, const CmdNode &cmdNode,
                                       const std::string &word, CompCandidateConsumer &consumer) {
@@ -808,11 +797,27 @@ static bool completeSubCmdOrCLIOption(const TypePool &pool, const Lexer &lexer,
     return completeCLIOption(pool, lexer, *cliType, cmdNode, word, consumer);
   }
 
-  // sub-command (no-additional arguments)
-  if (!type.isModType() || hasCmdArg(cmdNode)) {
+  // sub-command
+  const auto *curModType = checked_cast<ModType>(&type);
+  for (unsigned int offset = 0; curModType;) {
+    auto [constNode, index] = cmdNode.findConstCmdArgNode(offset);
+    if (!constNode) {
+      if (index == cmdNode.getArgNodes().size()) { // reach end
+        break;
+      }
+      return false;
+    }
+    auto hd = curModType->lookup(pool, toCmdFullName(constNode->getValue()));
+    if (!hd) {
+      return false;
+    }
+    curModType = checked_cast<ModType>(&pool.get(hd->getTypeId()));
+    offset = index + 1;
+  }
+  if (!curModType) {
     return false;
   }
-  auto fieldWalker = [&](StringRef name, const Handle &) {
+  curModType->walkField(pool, [&word, &consumer](StringRef name, const Handle &) {
     if (name.startsWith(word) && isCmdFullName(name)) {
       if (!name.startsWith("_")) {
         name.removeSuffix(strlen(CMD_SYMBOL_SUFFIX));
@@ -820,8 +825,7 @@ static bool completeSubCmdOrCLIOption(const TypePool &pool, const Lexer &lexer,
       }
     }
     return true;
-  };
-  type.walkField(pool, fieldWalker);
+  });
   return true;
 }
 

@@ -1470,7 +1470,7 @@ private:
   std::unique_ptr<StringNode> nameNode;
 
   /**
-   * may be CmdArgNode, RedirNode
+   * must be CmdArgNode or RedirNode
    */
   std::vector<std::unique_ptr<Node>> argNodes;
 
@@ -1515,11 +1515,13 @@ public:
   std::pair<const StringNode *, unsigned int> findConstCmdArgNode(unsigned int offset) const {
     const unsigned int size = this->argNodes.size();
     for (; offset < size; offset++) {
-      if (auto &e = *this->argNodes[offset];
-          isa<CmdArgNode>(e) && cast<CmdArgNode>(e).isConstArg()) {
-        auto &arg = cast<CmdArgNode>(e);
-        return {cast<StringNode>(arg.getSegmentNodes()[0].get()), offset};
+      if (isa<RedirNode>(*this->argNodes[offset])) {
+        continue;
       }
+      if (auto &argNode = cast<CmdArgNode>(*this->argNodes[offset]); argNode.isConstArg()) {
+        return {cast<StringNode>(argNode.getSegmentNodes()[0].get()), offset};
+      }
+      break;
     }
     return {nullptr, offset};
   }

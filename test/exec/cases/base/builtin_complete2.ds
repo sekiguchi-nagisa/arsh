@@ -224,6 +224,13 @@ assert $(complete "source $SCRIPT_DIR/../../../../share/arsh/modules/cnf.arsh as
 $assertArray(["say0", "say1", "say2"],
              $(complete "source $SCRIPT_DIR/../../_module4test/inlined2.ds as mod; mod "))
 assert $(complete "aaa(){}; aaa .l").empty()
+$assertArray(["sss", "sub2"], $(complete "source $SCRIPT_DIR/../../_module4test/subcmd_nest1.ds as CP; CP "))
+$assertArray(["sss", "sub2"], $(complete "source $SCRIPT_DIR/../../_module4test/subcmd_nest1.ds as CP; CP s"))
+$assertArray(["sub2"], $(complete "source $SCRIPT_DIR/../../_module4test/subcmd_nest1.ds as CP; CP su"))
+$assertArray(["AAA", "ABE", "BBB"], $(complete "source $SCRIPT_DIR/../../_module4test/subcmd_nest1.ds as CP; CP sub2 "))
+$assertArray(["AAA", "ABE",], $(complete "source $SCRIPT_DIR/../../_module4test/subcmd_nest1.ds as CP; C\\P s\\ub2 A"))
+$assertArray(["AAA"], $(complete "source $SCRIPT_DIR/../../_module4test/subcmd_nest1.ds as CP; CP s\\ub2 AA"))
+assert $(complete "source $SCRIPT_DIR/../../_module4test/subcmd_nest1.ds as CP; CP s\\ub2 CC").empty()
 
 # no completion candidate
 assert($(complete '34').empty())

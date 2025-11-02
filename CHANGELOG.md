@@ -31,6 +31,8 @@
         - default is 40
         - when set to 0, the pager is disabled
         - when set to 100, the pager is full height
+- improve sub-command completion
+    - complete sub-command for nested named imported modules
 
 #### Module
 
