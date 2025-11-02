@@ -89,8 +89,10 @@ protected:
   }
 
   static bool isIgnoredTestCase(const std::string &path) {
-    const char *ignoredPattern[] = {"mod",       "subcmd", "shctl",    "complete5", "complete6",
-                                    "complete8", "load",   "fullname", "cli5.ds",   "named_arg"};
+    const char *ignoredPattern[] = {
+        "mod",        "subcmd", "shctl",    "complete5", "complete6", "complete8",
+        "complete10", "load",   "fullname", "cli5.ds",   "named_arg",
+    };
     return std::any_of(std::begin(ignoredPattern), std::end(ignoredPattern),
                        [&path](const char *pt) { return StringRef(path).contains(pt); });
   }
@@ -103,7 +105,7 @@ static std::vector<std::string> getTargetCases(const char *dir) {
   ret.erase(std::remove_if(ret.begin(), ret.end(),
                            [](const std::string &v) {
                              const StringRef ref = v;
-                             return !ref.endsWith(".ds") && !ref.endsWith(".ar");
+                             return !ref.endsWith(".ds") && !ref.endsWith(".arsh");
                            }),
             ret.end());
   std::sort(ret.begin(), ret.end());

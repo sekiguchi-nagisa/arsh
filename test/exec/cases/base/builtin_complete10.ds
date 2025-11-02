@@ -1,0 +1,15 @@
+
+source $SCRIPT_DIR/../../_module4test/comp_nest.ds as mod
+
+source $SCRIPT_DIR/builtin_complete9.ds as mod2
+
+assert diff <(complete -- 'mod2 ') <(<<< 'fff')
+assert diff <(complete -- 'mod2 fff b')  <(echo 'bbb1' && echo bbb2)
+
+assert diff <(complete -- 'mod ') <(<<< 'mod')
+assert diff <(complete -- 'mod mod ') <(<<< 'fff')
+assert diff <(complete -- 'mod mod fff --c') <(<<< '--count')
+assert diff <(complete -- 'mod mod fff --count ') <(complete -A file)
+assert diff <(complete -- 'mod mod fff b')  <(echo 'bbb1' && echo bbb2)
+assert diff <(complete -- 'mod mod fff bbb1 ')  <(<<< 'ccc')
+assert diff <(complete -- '!! mod mod fff bbb1 c')  <(<<< 'ccc')

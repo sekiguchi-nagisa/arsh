@@ -56,10 +56,11 @@ inline std::vector<std::string> getSortedFileList(const char *dir, const char *i
   assert(!ret.empty());
   ret.erase(std::remove_if(ret.begin(), ret.end(),
                            [ignored](const std::string &v) {
-                             if (ignored && StringRef(v).startsWith(ignored)) {
+                             StringRef ref = v;
+                             if (ignored && ref.startsWith(ignored)) {
                                return true;
                              }
-                             return !StringRef(v).endsWith(".ds");
+                             return !ref.endsWith(".ds") && !ref.endsWith(".arsh");
                            }),
             ret.end());
   std::sort(ret.begin(), ret.end());
