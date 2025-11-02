@@ -88,3 +88,8 @@ assert diff <(complete 'ps --he') <(echo --help)
 assert $(complete 'ps --s').empty()
 assert diff <(complete 'ps --help ') <(echo aaa && echo bbb && echo ccc && echo ddd)
 assert $(complete 'ps --help 1').empty()
+
+# alias
+$compAlias('diff', 'ps')
+assert diff <(complete 'diff --he') <(echo --help)
+assert diff <(complete 'diff --help ') <(echo aaa && echo bbb && echo ccc && echo ddd)

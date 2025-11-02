@@ -398,6 +398,13 @@ function compDelegate(ctx : Module, words : [String], cursor : Int) : Candidates
     return $_defaultHook($ctx, $words, $cursor)
 }
 
+function compAlias(cmd: String, target: String): Completer? {
+    return $compAdd($cmd, function(ctx, words, cursor) =>{
+        $words[0] = $target
+        $compDelegate($ctx, $words, $cursor)
+    })
+}
+
 function bindArgFunc(func: (String)-> Candidates): String {
     var key = "af" + ($RANDOM % 1000000000)
     $_argFuncs[$key] = $func

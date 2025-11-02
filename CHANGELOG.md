@@ -38,6 +38,7 @@
 
 - in ``repl.arsh`` module, load history at first prompt
 - add ``PRE_EXECS`` hook for call functions before executing command
+- add ``compAlias`` to ``completion.arsh`` module. now define completion as alisa of others
 
 ### Fixed
 
