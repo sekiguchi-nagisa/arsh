@@ -664,10 +664,17 @@ static void completeParamName(const std::vector<std::string> &paramNames, const 
   }
 }
 
-static bool completeBuiltinOption(const CmdNode &cmdNode, const Lexer &lexer,
-                                  const std::string &word, CompCandidateConsumer &consumer) {
+enum class CmdArgCompStatus : unsigned char {
+  OK,      // completion succeeded
+  INVALID, // do nothing
+  CANCEL,  // completion canceled (via error or signal)
+};
+
+static CmdArgCompStatus completeBuiltinOption(const CmdNode &cmdNode, const Lexer &lexer,
+                                              const std::string &word,
+                                              CompCandidateConsumer &consumer) {
   if (cmdNode.getNameNode().getValue() != "shctl") {
-    return false;
+    return CmdArgCompStatus::INVALID;
   }
 
   if (auto pair = cmdNode.findConstCmdArgNode(0); pair.first) {
@@ -686,11 +693,11 @@ static bool completeBuiltinOption(const CmdNode &cmdNode, const Lexer &lexer,
       }
     }
   }
-  return true;
+  return CmdArgCompStatus::OK;
 }
 
-static bool completeCLIOptionImpl(const CLIRecordType &type, const std::string &word, bool firstArg,
-                                  CompCandidateConsumer &consumer) {
+static CmdArgCompStatus completeCLIOptionImpl(const CLIRecordType &type, const std::string &word,
+                                              bool firstArg, CompCandidateConsumer &consumer) {
   if (word.empty() || word[0] != '-') {
     if (hasFlag(type.getAttr(), CLIRecordType::Attr::HAS_SUBCMD) && firstArg) {
       // complete sub-command
@@ -702,9 +709,9 @@ static bool completeCLIOptionImpl(const CLIRecordType &type, const std::string &
           consumer(name, CompCandidateKind::COMMAND_ARG);
         }
       }
-      return true;
+      return CmdArgCompStatus::OK;
     }
-    return false;
+    return CmdArgCompStatus::INVALID;
   }
 
   // complete Flag, Option
@@ -731,7 +738,7 @@ static bool completeCLIOptionImpl(const CLIRecordType &type, const std::string &
       }
       if (StringRef(value).startsWith(word)) {
         if (value.size() == word.size() && value.back() == '=') { // 'value == word' and '--long='
-          return false;
+          return CmdArgCompStatus::INVALID;
         }
         CompCandidate candidate(value, CompCandidateKind::COMMAND_ARG);
         if (value.back() == '=') {
@@ -741,24 +748,43 @@ static bool completeCLIOptionImpl(const CLIRecordType &type, const std::string &
       } else if (StringRef ref = word; ref.endsWith("=") && e.getParseOp() == OptParseOp::HAS_ARG) {
         ref.removeSuffix(1);
         if (ref == value) {
-          return false;
+          return CmdArgCompStatus::INVALID;
         }
       }
     }
   }
-  return true;
+  return CmdArgCompStatus::OK;
 }
 
-static bool completeCLIOption(const TypePool &pool, const Lexer &lexer, const CLIRecordType &type,
-                              const CmdNode &cmdNode, const std::string &word,
-                              CompCandidateConsumer &consumer) {
+static CmdArgCompStatus callUserDefinedComp(const CodeCompletionContext &ctx,
+                                            const UserDefinedComp &comp, const unsigned int offset,
+                                            CompCandidateConsumer &consumer) {
+  if (comp) {
+    const int s = comp(ctx, offset, consumer);
+    if (s < 0 && errno == EINTR) {
+      return CmdArgCompStatus::CANCEL;
+    }
+    if (s > -1) {
+      return CmdArgCompStatus::OK;
+    }
+  }
+  return CmdArgCompStatus::INVALID;
+}
+
+static CmdArgCompStatus completeCLIOption(const TypePool &pool, const Lexer &lexer,
+                                          const CLIRecordType &type, const CmdNode &cmdNode,
+                                          const unsigned int argOffset, const std::string &word,
+                                          CompCandidateConsumer &consumer) {
   const auto *cliType = &type;
   int latestSubCmdIndex = -1;
   const unsigned int size = cmdNode.getArgNodes().size();
-  for (unsigned int i = 0; i < size; i++) {
+  for (unsigned int i = argOffset; i < size; i++) {
     auto &e = cmdNode.getArgNodes()[i];
-    if (isa<RedirNode>(*e) || !isa<CmdArgNode>(*e) || !cast<CmdArgNode>(*e).isConstArg()) {
+    if (isa<RedirNode>(*e)) {
       continue;
+    }
+    if (!cast<CmdArgNode>(*e).isConstArg()) {
+      return CmdArgCompStatus::INVALID;
     }
     const StringRef ref = lexer.toStrRef(e->getToken());
     if (ref.empty() || ref[0] == '-') {
@@ -785,16 +811,23 @@ static const CLIRecordType *resolveCLIType(const Type &type) {
   return nullptr;
 }
 
-static bool completeSubCmdOrCLIOption(const TypePool &pool, const Lexer &lexer,
-                                      const NameScope &scope, const CmdNode &cmdNode,
-                                      const std::string &word, CompCandidateConsumer &consumer) {
-  auto handle = scope.lookup(toCmdFullName(cmdNode.getNameNode().getValue()));
+static CmdArgCompStatus completeCmdArg(const TypePool &pool, const UserDefinedComp &comp,
+                                       const CodeCompletionContext &ctx,
+                                       CompCandidateConsumer &consumer) {
+  // first, try to call user-defined completion
+  if (const auto s = callUserDefinedComp(ctx, comp, 0, consumer); s != CmdArgCompStatus::INVALID) {
+    return s;
+  }
+
+  auto &cmdNode = *ctx.getCmdNode();
+  auto &word = ctx.getCompWord();
+  auto handle = ctx.getScope().lookup(toCmdFullName(cmdNode.getNameNode().getValue()));
   if (!handle) { // try complete builtin command options
-    return completeBuiltinOption(cmdNode, lexer, word, consumer);
+    return completeBuiltinOption(cmdNode, *ctx.getLexer(), word, consumer);
   }
   auto &type = pool.get(handle.asOk()->getTypeId());
   if (const auto *cliType = resolveCLIType(type)) { // CLI
-    return completeCLIOption(pool, lexer, *cliType, cmdNode, word, consumer);
+    return completeCLIOption(pool, *ctx.getLexer(), *cliType, cmdNode, 0, word, consumer);
   }
 
   // sub-command
@@ -805,17 +838,17 @@ static bool completeSubCmdOrCLIOption(const TypePool &pool, const Lexer &lexer,
       if (index == cmdNode.getArgNodes().size()) { // reach end
         break;
       }
-      return false;
+      return CmdArgCompStatus::INVALID;
     }
     auto hd = curModType->lookup(pool, toCmdFullName(constNode->getValue()));
     if (!hd) {
-      return false;
+      return CmdArgCompStatus::INVALID;
     }
     curModType = checked_cast<ModType>(&pool.get(hd->getTypeId()));
     offset = index + 1;
   }
   if (!curModType) {
-    return false;
+    return CmdArgCompStatus::INVALID;
   }
   curModType->walkField(pool, [&word, &consumer](StringRef name, const Handle &) {
     if (name.startsWith(word) && isCmdFullName(name)) {
@@ -826,7 +859,7 @@ static bool completeSubCmdOrCLIOption(const TypePool &pool, const Lexer &lexer,
     }
     return true;
   });
-  return true;
+  return CmdArgCompStatus::OK;
 }
 
 bool CodeCompleter::invoke(const CodeCompletionContext &ctx) {
@@ -886,6 +919,7 @@ bool CodeCompleter::invoke(const CodeCompletionContext &ctx) {
     completeExpected(ctx.getExtraWords(), ctx.getCompWord(), this->consumer);
   }
   if (ctx.has(CodeCompOp::MEMBER)) {
+    assert(ctx.getRecvType());
     completeMember(this->pool, ctx.getScope(), *ctx.getRecvType(), ctx.getCompWord(),
                    this->consumer);
   }
@@ -902,20 +936,13 @@ bool CodeCompleter::invoke(const CodeCompletionContext &ctx) {
     completeParamName(ctx.getExtraWords(), ctx.getCompWord(), this->consumer);
   }
   if (ctx.has(CodeCompOp::CMD_ARG)) {
-    if (this->userDefinedComp) {
-      const int s =
-          this->userDefinedComp(*ctx.getLexer(), *ctx.getCmdNode(), ctx.getCompWord(),
-                                hasFlag(ctx.getFallbackOp(), CodeCompOp::TILDE), this->consumer);
-      if (s < 0 && errno == EINTR) {
-        return false;
-      }
-      if (s > -1) {
-        return true;
-      }
-    }
-    if (completeSubCmdOrCLIOption(this->pool, *ctx.getLexer(), ctx.getScope(), *ctx.getCmdNode(),
-                                  ctx.getCompWord(), this->consumer)) {
+    switch (completeCmdArg(this->pool, this->userDefinedComp, ctx, this->consumer)) {
+    case CmdArgCompStatus::OK:
       return true;
+    case CmdArgCompStatus::INVALID:
+      break;
+    case CmdArgCompStatus::CANCEL:
+      return false;
     }
     if (const auto op = ctx.getFallbackOp(); hasFlag(op, CodeCompOp::FILE)) {
       const auto prefix = StringRef(ctx.getCompWord()).substr(ctx.getCompWordOffset());

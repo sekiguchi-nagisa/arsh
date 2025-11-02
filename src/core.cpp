@@ -500,7 +500,7 @@ static Value getFullNameFromTempMod(const ARState &state, const unsigned int tem
 }
 
 static Value createArgv(const ARState &state, const Lexer &lex, const CmdNode &cmdNode,
-                        const unsigned int temModIndex, const std::string &word, bool tilde) {
+                        const unsigned int temModIndex, const std::string &word, const bool tilde) {
   std::vector<Value> values;
 
   // add cmd
@@ -527,9 +527,10 @@ static Value createArgv(const ARState &state, const Lexer &lex, const CmdNode &c
   return Value::create<ArrayObject>(state.typePool.get(TYPE::StringArray), std::move(values));
 }
 
-static int kickCompHook(ARState &state, const unsigned int tempModIndex, const Lexer &lex,
-                        const CmdNode &cmdNode, const std::string &word, bool tilde,
+static int kickCompHook(ARState &state, const unsigned int tempModIndex,
+                        const CodeCompletionContext &ctx, const unsigned int offset,
                         DefaultCompConsumer &consumer) {
+  (void)offset;
   auto hook = getBuiltinGlobal(state, VAR_COMP_HOOK);
   if (hook.isInvalid()) {
     errno = EINVAL;
@@ -537,8 +538,10 @@ static int kickCompHook(ARState &state, const unsigned int tempModIndex, const L
   }
 
   // prepare argument
-  auto ctx = Value::createDummy(state.typePool.get(TYPE::Module), tempModIndex);
-  auto argv = createArgv(state, lex, cmdNode, tempModIndex, word, tilde);
+  auto &word = ctx.getCompWord();
+  auto dummyMod = Value::createDummy(state.typePool.get(TYPE::Module), tempModIndex);
+  auto argv = createArgv(state, *ctx.getLexer(), *ctx.getCmdNode(), tempModIndex, word,
+                         hasFlag(ctx.getFallbackOp(), CodeCompOp::TILDE));
   unsigned int index = typeAs<ArrayObject>(argv).size();
   if (!word.empty()) {
     index--;
@@ -548,8 +551,9 @@ static int kickCompHook(ARState &state, const unsigned int tempModIndex, const L
   auto oldStatus = state.getGlobal(BuiltinVarOffset::EXIT_STATUS);
   auto oldIFS = state.getGlobal(BuiltinVarOffset::IFS);
   state.setGlobal(BuiltinVarOffset::IFS, Value::createStr(VAL_DEFAULT_IFS)); // set to default
-  auto ret = VM::callFunction(state, std::move(hook),
-                              makeArgs(std::move(ctx), std::move(argv), Value::createInt(index)));
+  auto ret =
+      VM::callFunction(state, std::move(hook),
+                       makeArgs(std::move(dummyMod), std::move(argv), Value::createInt(index)));
   state.setGlobal(BuiltinVarOffset::EXIT_STATUS, std::move(oldStatus));
   state.setGlobal(BuiltinVarOffset::IFS, std::move(oldIFS));
   if (state.hasError()) {
@@ -634,11 +638,10 @@ static bool completeImpl(ARState &st, ResolvedTempMod resolvedMod, StringRef sou
 
   CodeCompleter codeCompleter(consumer, willKickFrontEnd(option) ? makeObserver(provider) : nullptr,
                               st.sysConfig, st.typePool, st.logicalWorkingDir);
-  codeCompleter.setUserDefinedComp([&st, resolvedMod](const Lexer &lex, const CmdNode &cmdNode,
-                                                      const std::string &word, bool tilde,
+  codeCompleter.setUserDefinedComp([&st, resolvedMod](const CodeCompletionContext &ctx,
+                                                      unsigned int offset,
                                                       CompCandidateConsumer &cc) {
-    return kickCompHook(st, resolvedMod.index, lex, cmdNode, word, tilde,
-                        static_cast<DefaultCompConsumer &>(cc));
+    return kickCompHook(st, resolvedMod.index, ctx, offset, static_cast<DefaultCompConsumer &>(cc));
   });
   codeCompleter.setDynaUdcComp([&st](const std::string &word, CompCandidateConsumer &consumer) {
     auto &dynaUdcs = typeAs<OrderedMapObject>(st.getGlobal(BuiltinVarOffset::DYNA_UDCS));
