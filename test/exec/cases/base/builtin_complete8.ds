@@ -108,7 +108,5 @@ assert complete -d -- 'comp234 '
 assert $COMPREPLY.size() == 2
 $args = @($COMPREPLY)
 assert $args.size() == 2
-# assert $args[0] == 'hogehoge@user-defined'
-# assert $args[1] == 'zzzaaa123@user-defined'
-assert $args[0] == 'hogehoge'
-assert $args[1] == 'zzzaaa123'
+assert $args[0] == 'hogehoge@user-defined'
+assert $args[1] == 'zzzaaa123@user-defined'

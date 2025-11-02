@@ -328,7 +328,7 @@ public:
    * @param walker
    */
   template <typename Walker, enable_when<walker_requirement_v<Walker>> = nullptr>
-  void walk(Walker walker) const {
+  void walk(const Walker &walker) const {
     for (const auto *cur = this; cur != nullptr; cur = cur->parent.get()) {
       for (auto &e : cur->getHandles()) {
         if (!walker(e.first, *e.second.first)) {
