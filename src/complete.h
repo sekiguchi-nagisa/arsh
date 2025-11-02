@@ -154,7 +154,7 @@ void completeType(const TypePool &pool, const NameScope &scope, const Type *recv
 
 /**
  * if failed (cannot call user-defined comp or error), return -1
- * otherwise, return number of consumed completion candidates
+ * otherwise, return the number of consumed completion candidates
  */
 using UserDefinedComp =
     std::function<int(const Lexer &lex, const CmdNode &cmdNode, const std::string &word, bool tilde,
@@ -167,7 +167,7 @@ private:
   CompCandidateConsumer &consumer;
   ObserverPtr<FrontEnd::ModuleProvider> provider;
   const SysConfig &config;
-  TypePool &pool;
+  const TypePool &pool;
   const std::string &logicalWorkingDir;
   UserDefinedComp userDefinedComp;
   DynaUdcComp dynaUdcComp;
@@ -175,7 +175,7 @@ private:
 
 public:
   CodeCompleter(CompCandidateConsumer &consumer, ObserverPtr<FrontEnd::ModuleProvider> provider,
-                const SysConfig &config, TypePool &pool, const std::string &workDir)
+                const SysConfig &config, const TypePool &pool, const std::string &workDir)
       : consumer(consumer), provider(provider), config(config), pool(pool),
         logicalWorkingDir(workDir) {}
 
@@ -186,14 +186,14 @@ public:
   void setCancel(const CancelToken &c) { this->cancel = makeObserver(c); }
 
   /**
-   * if module provider is specified, parse 'ref' and complete candidates (except for 'option')
+   * if a module provider is specified, parse 'ref' and complete candidates (except for `option`)
    * otherwise complete candidates corresponding to 'option'
    * @param scope
    * @param scriptName
    * @param ref
    * @param option
    * @return
-   * if cancelled (interrupted by signal or has error), return false
+   * if canceled (interrupted by signal or has error), return false
    */
   bool operator()(NameScopePtr scope, const std::string &scriptName, StringRef ref,
                   CodeCompOp option);
@@ -202,7 +202,7 @@ private:
   /**
    * @param ctx
    * @return
-   * if cancelled (interrupted by signal or has error), return false
+   * if canceled (interrupted by signal or has error), return false
    */
   bool invoke(const CodeCompletionContext &ctx);
 };
@@ -210,26 +210,26 @@ private:
 // for error suggestion
 
 /**
- * get similar var name from scope
+ * get the similar var name from scope
  * @param name
  * @param scope
  * @param threshold
  * @return
- * if suggestion score (edit distance) is greater than threshold, return empty string
+ * if the suggestion score (edit distance) is greater than the threshold, return the empty string
  */
 std::string suggestSimilarVarName(StringRef name, const NameScope &scope,
                                   unsigned int threshold = 3);
 
 /**
- * get similar type name from scope and type pool
+ * get the similar type name from scope and type pool
  * @param name
  * @param pool
  * @param scope
  * @param recvType
- * may be null
+ * maybe null
  * @param threshold
  * @return
- * if suggestion score (edit distance) is greater than threshold, return empty string
+ * if the suggestion score (edit distance) is greater than the threshold, return the empty string
  */
 std::string suggestSimilarType(StringRef name, const TypePool &pool, const NameScope &scope,
                                const Type *recvType, unsigned int threshold = 3);
@@ -243,7 +243,7 @@ template <>
 struct allow_enum_bitop<SuggestMemberType> : std::true_type {};
 
 /**
- * get similar member (field/method)
+ * get the similar member (field/method)
  * @param name
  * @param pool
  * @param scope
@@ -251,7 +251,7 @@ struct allow_enum_bitop<SuggestMemberType> : std::true_type {};
  * @param targetType
  * @param threshold
  * @return
- * if suggestion score (edit distance) is greater than threshold, return empty string
+ * if the suggestion score (edit distance) is greater than the threshold, return the empty string
  */
 std::string suggestSimilarMember(StringRef name, const TypePool &pool, const NameScope &scope,
                                  const Type &recvType, SuggestMemberType targetType,

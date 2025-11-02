@@ -36,7 +36,7 @@ namespace arsh {
 
 void CodeCompletionContext::addCmdOrKeywordRequest(const Lexer &lexer, Token wordToken,
                                                    bool inStmt) {
-  // add command request
+  // add the command request
   std::string value = lexer.toCmdArg(wordToken);
   const bool isDir = strchr(value.c_str(), '/') != nullptr;
   const bool mayBeKeyword = wordToken.size == value.size();
@@ -50,7 +50,7 @@ void CodeCompletionContext::addCmdOrKeywordRequest(const Lexer &lexer, Token wor
     this->addCompRequest(CodeCompOp::COMMAND, std::move(value));
   }
 
-  // add keyword request
+  // add the keyword request
   if (mayBeKeyword) {
     setFlag(this->compOp, inStmt ? CodeCompOp::STMT_KW : CodeCompOp::EXPR_KW);
   }
@@ -475,7 +475,7 @@ static bool completeModule(const SysConfig &config, const StringRef compWordToke
     return true;
   }
 
-  // complete from local module dir
+  // complete from the local module dir
   TRY(completeFileName(compWordToken, config.getModuleHome(), prefix, op, consumer, cancel));
 
   // complete from system module dir
@@ -934,7 +934,7 @@ bool CodeCompleter::invoke(const CodeCompletionContext &ctx) {
 static LexerPtr lex(const std::string &scriptName, StringRef ref, const std::string &scriptDir) {
   ByteBuffer buf(ref.begin(), ref.end());
   if (!buf.empty() && buf.back() == '\n') {
-    buf += '\n'; // explicitly append newline for command name completion
+    buf += '\n'; // explicitly append a newline for command name completion
   }
   return LexerPtr::create(scriptName.c_str(), std::move(buf), CStrPtr(strdup(scriptDir.c_str())));
 }
