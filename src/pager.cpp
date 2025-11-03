@@ -98,11 +98,8 @@ void ArrayPager::updateWinSize(WindowSize size) {
   }
   this->paneLen = this->items[this->maxLenIndex].itemLen();
   this->panes = (this->winSize.cols - COL_MARGIN) / this->paneLen;
-  if (this->panes == 0) {
-    this->panes = 1;
-  } else if (this->panes > MAX_PANE_NUM) {
-    this->panes = MAX_PANE_NUM;
-  }
+  this->panes = std::max(this->panes, 1u);
+  this->panes = std::min(this->panes, MAX_PANE_NUM);
   if (this->curRow >= this->getActualRows()) {
     this->curRow = this->getActualRows() - 1;
   }

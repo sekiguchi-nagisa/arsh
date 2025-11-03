@@ -56,7 +56,7 @@ public:
 
 private:
   static constexpr unsigned int DEFAULT_ROW_RATIO = 40;
-  static constexpr unsigned int MAX_PANE_NUM = 4;
+  static constexpr unsigned int MAX_PANE_NUM = 128;
   static constexpr unsigned int COL_MARGIN = 1;
 
   const CandidatesObject &obj;
