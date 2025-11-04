@@ -157,7 +157,7 @@ void completeType(const TypePool &pool, const NameScope &scope, const Type *recv
  * otherwise, return the number of consumed completion candidates
  */
 using UserDefinedComp = std::function<int(const CodeCompletionContext &, unsigned int,
-                                          CompCandidateConsumer &consumer)>;
+                                          const ModType *, CompCandidateConsumer &consumer)>;
 
 using DynaUdcComp = std::function<void(const std::string &word, CompCandidateConsumer &consumer)>;
 

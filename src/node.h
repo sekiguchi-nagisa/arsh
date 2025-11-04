@@ -1331,6 +1331,11 @@ public:
   bool isConstArg() const {
     return this->segmentNodes.size() == 1 && isa<StringNode>(*this->segmentNodes[0]);
   }
+
+  const auto &asConstArg() const {
+    assert(this->isConstArg());
+    return cast<StringNode>(*this->segmentNodes[0]);
+  }
 };
 
 class ArgArrayNode : public WithRtti<Node, NodeKind::ArgArray> {
@@ -1519,7 +1524,7 @@ public:
         continue;
       }
       if (auto &argNode = cast<CmdArgNode>(*this->argNodes[offset]); argNode.isConstArg()) {
-        return {cast<StringNode>(argNode.getSegmentNodes()[0].get()), offset};
+        return {&argNode.asConstArg(), offset};
       }
       break;
     }

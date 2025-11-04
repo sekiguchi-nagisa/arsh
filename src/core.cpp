@@ -484,12 +484,18 @@ public:
 };
 
 static Value getFullNameFromTempMod(const ARState &state, const unsigned int temModIndex,
-                                    const std::string &name) {
+                                    const CmdNode &cmdNode, unsigned int offset,
+                                    const ModType *cmdModType) {
+  const StringRef name =
+      !cmdModType ? cmdNode.getNameNode().getValue()
+                  : cast<CmdArgNode>(*cmdNode.getArgNodes()[offset]).asConstArg().getValue();
   Value cmdName;
-  const auto modId = state.tempModScope[temModIndex]->modId;
-  if (auto *modType = state.typePool.getModTypeById(modId)) {
-    auto retName = resolveFullCommandName(state, name, *modType, true);
-    if (!retName.empty()) {
+  const ModType *modType = cmdModType;
+  if (!modType) {
+    modType = state.typePool.getModTypeById(state.tempModScope[temModIndex]->modId);
+  }
+  if (modType) {
+    if (auto retName = resolveFullCommandName(state, name, *modType, true); !retName.empty()) {
       cmdName = Value::createStr(std::move(retName));
     }
   }
@@ -499,25 +505,27 @@ static Value getFullNameFromTempMod(const ARState &state, const unsigned int tem
   return cmdName;
 }
 
-static Value createArgv(const ARState &state, const Lexer &lex, const CmdNode &cmdNode,
-                        const unsigned int temModIndex, const std::string &word, const bool tilde) {
+static Value createArgv(const ARState &state, unsigned int tempModIndex,
+                        const CodeCompletionContext &ctx, unsigned int offset,
+                        const ModType *cmdModType) {
   std::vector<Value> values;
 
   // add cmd
-  values.push_back(getFullNameFromTempMod(state, temModIndex, cmdNode.getNameNode().getValue()));
+  values.push_back(
+      getFullNameFromTempMod(state, tempModIndex, *ctx.getCmdNode(), offset, cmdModType));
 
   // add args
-  for (auto &e : cmdNode.getArgNodes()) {
-    if (isa<RedirNode>(*e)) {
-      continue;
+  auto &argNodes = ctx.getCmdNode()->getArgNodes();
+  for (unsigned int i = offset + (cmdModType ? 1 : 0); i < argNodes.size(); i++) {
+    if (auto &e = *argNodes[i]; isa<CmdArgNode>(e)) {
+      values.push_back(Value::createStr(ctx.getLexer()->toStrRef(e.getToken())));
     }
-    values.push_back(Value::createStr(lex.toStrRef(e->getToken())));
   }
 
   // add last arg
-  if (!word.empty()) {
+  if (auto &word = ctx.getCompWord(); !word.empty()) {
     std::string actual;
-    if (!tilde && StringRef(word).startsWith("~")) {
+    if (!hasFlag(ctx.getFallbackOp(), CodeCompOp::TILDE) && StringRef(word).startsWith("~")) {
       actual += "\\";
     }
     actual += word;
@@ -529,8 +537,7 @@ static Value createArgv(const ARState &state, const Lexer &lex, const CmdNode &c
 
 static int kickCompHook(ARState &state, const unsigned int tempModIndex,
                         const CodeCompletionContext &ctx, const unsigned int offset,
-                        DefaultCompConsumer &consumer) {
-  (void)offset;
+                        const ModType *cmdModType, DefaultCompConsumer &consumer) {
   auto hook = getBuiltinGlobal(state, VAR_COMP_HOOK);
   if (hook.isInvalid()) {
     errno = EINVAL;
@@ -540,8 +547,7 @@ static int kickCompHook(ARState &state, const unsigned int tempModIndex,
   // prepare argument
   auto &word = ctx.getCompWord();
   auto dummyMod = Value::createDummy(state.typePool.get(TYPE::Module), tempModIndex);
-  auto argv = createArgv(state, *ctx.getLexer(), *ctx.getCmdNode(), tempModIndex, word,
-                         hasFlag(ctx.getFallbackOp(), CodeCompOp::TILDE));
+  auto argv = createArgv(state, tempModIndex, ctx, offset, cmdModType);
   unsigned int index = typeAs<ArrayObject>(argv).size();
   if (!word.empty()) {
     index--;
@@ -638,11 +644,12 @@ static bool completeImpl(ARState &st, ResolvedTempMod resolvedMod, StringRef sou
 
   CodeCompleter codeCompleter(consumer, willKickFrontEnd(option) ? makeObserver(provider) : nullptr,
                               st.sysConfig, st.typePool, st.logicalWorkingDir);
-  codeCompleter.setUserDefinedComp([&st, resolvedMod](const CodeCompletionContext &ctx,
-                                                      unsigned int offset,
-                                                      CompCandidateConsumer &cc) {
-    return kickCompHook(st, resolvedMod.index, ctx, offset, static_cast<DefaultCompConsumer &>(cc));
-  });
+  codeCompleter.setUserDefinedComp(
+      [&st, resolvedMod](const CodeCompletionContext &ctx, unsigned int offset,
+                         const ModType *cmdModType, CompCandidateConsumer &cc) {
+        return kickCompHook(st, resolvedMod.index, ctx, offset, cmdModType,
+                            static_cast<DefaultCompConsumer &>(cc));
+      });
   codeCompleter.setDynaUdcComp([&st](const std::string &word, CompCandidateConsumer &consumer) {
     auto &dynaUdcs = typeAs<OrderedMapObject>(st.getGlobal(BuiltinVarOffset::DYNA_UDCS));
     for (auto &e : dynaUdcs.getEntries()) {

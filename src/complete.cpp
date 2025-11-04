@@ -775,9 +775,10 @@ static CmdArgCompStatus completeCLIOptionImpl(const CLIRecordType &type, const s
 
 static CmdArgCompStatus callUserDefinedComp(const CodeCompletionContext &ctx,
                                             const UserDefinedComp &comp, const unsigned int offset,
+                                            const ModType *cmdModType,
                                             CompCandidateConsumer &consumer) {
   if (comp) {
-    const int s = comp(ctx, offset, consumer);
+    const int s = comp(ctx, offset, cmdModType, consumer);
     if (s < 0 && errno == EINTR) {
       return CmdArgCompStatus::CANCEL;
     }
@@ -830,7 +831,8 @@ static CmdArgCompStatus completeCmdArg(const TypePool &pool, const UserDefinedCo
                                        const CodeCompletionContext &ctx,
                                        CompCandidateConsumer &consumer) {
   // first, try to call user-defined completion
-  if (const auto s = callUserDefinedComp(ctx, comp, 0, consumer); s != CmdArgCompStatus::INVALID) {
+  if (const auto s = callUserDefinedComp(ctx, comp, 0, nullptr, consumer);
+      s != CmdArgCompStatus::INVALID) {
     return s;
   }
 
@@ -861,6 +863,15 @@ static CmdArgCompStatus completeCmdArg(const TypePool &pool, const UserDefinedCo
     curModType = checked_cast<ModType>(&pool.get(hd->getTypeId()));
     curUdcType = checked_cast<FunctionType>(&pool.get(hd->getTypeId()));
     offset = index + 1;
+  }
+  if ((curModType || curUdcType) && offset <= cmdNode.getArgNodes().size() && offset > 0) {
+    const auto *belongedModType = pool.getModTypeById(
+        (curModType ? static_cast<const Type *>(curModType) : curUdcType)->resolveBelongedModId());
+    assert(belongedModType);
+    if (const auto s = callUserDefinedComp(ctx, comp, offset - 1, belongedModType, consumer);
+        s != CmdArgCompStatus::INVALID) {
+      return s;
+    }
   }
   if (curUdcType) {
     if (auto *cliType = resolveCLIType(*curUdcType)) {
