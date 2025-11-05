@@ -34,6 +34,7 @@
     - complete sub-command from nested named imported modules
     - put sub-command description (`user-defined` or `module`)
     - complete CLI option
+    - call user-defined completion
 
 #### LSP
 

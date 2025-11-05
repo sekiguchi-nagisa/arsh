@@ -3,13 +3,24 @@ source $SCRIPT_DIR/../../_module4test/comp_nest.ds as mod
 
 source $SCRIPT_DIR/builtin_complete9.ds as mod2
 
-assert diff <(complete -- 'mod2 ') <(<<< 'fff')
+assert diff <(complete -- 'mod2 ') <(printf "%s\n" fff ggg)
 assert diff <(complete -- 'mod2 fff b')  <(echo 'bbb1' && echo bbb2)
 
 assert diff <(complete -- 'mod ') <(<<< 'mod')
-assert diff <(complete -- 'mod mod ') <(<<< 'fff')
+assert diff <(complete -- 'mod mod ') <(printf "%s\n" fff ggg)
 assert diff <(complete -- 'mod mod fff --c') <(<<< '--count')
 assert diff <(complete -- 'mod mod fff --count ') <(complete -A file)
 assert diff <(complete -- 'mod mod fff b')  <(echo 'bbb1' && echo bbb2)
 assert diff <(complete -- 'mod mod fff bbb1 ')  <(<<< 'ccc')
 assert diff <(complete -- '!! mod mod fff bbb1 c')  <(<<< 'ccc')
+
+## user-defined completer for sub-command
+$COMP_HOOK = function(m, argv, c) =>
+    $argv[0].endsWith('mod') ? new Candidates(['-A', '-B', '-C']) : $none
+assert $(complete -- 'mod2 -').empty() # not call user-defined completer for module
+# assert $(complete -- 'mod -').empty() # not call user-defined completer for module
+assert $(complete -- 'mod mod -').empty() # not call user-defined completer for module
+
+$COMP_HOOK = function(m, argv, c) =>
+    $argv[0].endsWith('fff') ? new Candidates(['--a', '--b', '--c']) : $none
+assert diff <(complete -- 'mod2 fff -') <(printf "%s\n" ${['--a', '--b', '--c']})

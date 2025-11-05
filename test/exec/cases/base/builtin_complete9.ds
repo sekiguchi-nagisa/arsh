@@ -36,6 +36,7 @@ typedef AAA() {
 }
 
 fff(p : AAA) { echo $p; }
+ggg() { echo $@; }
 
 ## complete options
 complete -s -- 'fff -'

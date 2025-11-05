@@ -830,23 +830,23 @@ static const CLIRecordType *resolveCLIType(const FunctionType &funcType) {
 static CmdArgCompStatus completeCmdArg(const TypePool &pool, const UserDefinedComp &comp,
                                        const CodeCompletionContext &ctx,
                                        CompCandidateConsumer &consumer) {
-  // first, try to call user-defined completion
-  if (const auto s = callUserDefinedComp(ctx, comp, 0, nullptr, consumer);
-      s != CmdArgCompStatus::INVALID) {
-    return s;
-  }
-
-  auto &cmdNode = *ctx.getCmdNode();
+  const auto &cmdNode = *ctx.getCmdNode();
   auto &word = ctx.getCompWord();
   auto handle = ctx.getScope().lookup(toCmdFullName(cmdNode.getNameNode().getValue()));
+  if (!handle || !pool.get(handle.asOk()->getTypeId()).isModType()) {
+    if (const auto s = callUserDefinedComp(ctx, comp, 0, nullptr, consumer);
+        s != CmdArgCompStatus::INVALID) { // call user-defined completer for non-module
+      return s;
+    }
+  }
   if (!handle) { // try complete builtin command options
     return completeBuiltinOption(cmdNode, *ctx.getLexer(), word, consumer);
   }
 
   // sub-command
-  auto &type = pool.get(handle.asOk()->getTypeId());
-  const auto *curModType = checked_cast<ModType>(&type);
-  const auto *curUdcType = checked_cast<FunctionType>(&type);
+  const ModType *belongedModType = nullptr;
+  const auto *curModType = checked_cast<ModType>(&pool.get(handle.asOk()->getTypeId()));
+  const auto *curUdcType = checked_cast<FunctionType>(&pool.get(handle.asOk()->getTypeId()));
   unsigned int offset = 0;
   while (curModType) {
     auto [constNode, index] = cmdNode.findConstCmdArgNode(offset);
@@ -860,20 +860,18 @@ static CmdArgCompStatus completeCmdArg(const TypePool &pool, const UserDefinedCo
     if (!hd) {
       return CmdArgCompStatus::INVALID;
     }
+    belongedModType = pool.getModTypeById(hd->getModId());
     curModType = checked_cast<ModType>(&pool.get(hd->getTypeId()));
     curUdcType = checked_cast<FunctionType>(&pool.get(hd->getTypeId()));
     offset = index + 1;
   }
-  if ((curModType || curUdcType) && offset <= cmdNode.getArgNodes().size() && offset > 0) {
-    const auto *belongedModType = pool.getModTypeById(
-        (curModType ? static_cast<const Type *>(curModType) : curUdcType)->resolveBelongedModId());
-    assert(belongedModType);
-    if (const auto s = callUserDefinedComp(ctx, comp, offset - 1, belongedModType, consumer);
-        s != CmdArgCompStatus::INVALID) {
-      return s;
-    }
-  }
   if (curUdcType) {
+    if (belongedModType && offset <= cmdNode.getArgNodes().size() && offset > 0) {
+      if (const auto s = callUserDefinedComp(ctx, comp, offset - 1, belongedModType, consumer);
+          s != CmdArgCompStatus::INVALID) {
+        return s;
+      }
+    }
     if (auto *cliType = resolveCLIType(*curUdcType)) {
       return completeCLIOption(pool, *ctx.getLexer(), *cliType, cmdNode, offset, word, consumer);
     }

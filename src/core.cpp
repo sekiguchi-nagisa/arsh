@@ -545,11 +545,10 @@ static int kickCompHook(ARState &state, const unsigned int tempModIndex,
   }
 
   // prepare argument
-  auto &word = ctx.getCompWord();
   auto dummyMod = Value::createDummy(state.typePool.get(TYPE::Module), tempModIndex);
   auto argv = createArgv(state, tempModIndex, ctx, offset, cmdModType);
   unsigned int index = typeAs<ArrayObject>(argv).size();
-  if (!word.empty()) {
+  if (!ctx.getCompWord().empty()) {
     index--;
   }
 
