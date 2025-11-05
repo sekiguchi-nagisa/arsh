@@ -49,6 +49,7 @@
 ### Fixed
 
 - bugfix method lookup for nested named imported types
+- fix type signature of module types
 
 ## [0.39.3] - 2025-10-31
 

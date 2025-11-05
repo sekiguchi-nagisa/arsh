@@ -35,6 +35,8 @@ static void normalizeTypeName(StringRef typeName, std::string &out) {
       }
       if (offset < sub.size() && sub[offset] == '.') {
         sub = sub.substr(++offset);
+      } else {
+        out += "%mod";
       }
     }
     out += sub;

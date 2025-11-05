@@ -98,6 +98,19 @@ assert $args[0] == '\let@user-defined'
 ## module/sub command
 source $SCRIPT_DIR/../../_module4test/comp.ds as comp234
 
+assert complete -d -- '$comp2'
+assert $COMPREPLY.size() == 1
+$args = @($COMPREPLY)
+assert $args.size() == 1
+assert $args[0] == 'comp234@: %mod3'
+
+assert complete -d -- '[$comp234].a'
+assert $COMPREPLY.size() == 2
+$args = @($COMPREPLY)
+assert $args.size() == 2
+assert $args[0] == 'add@(value: %mod3): [%mod3] for [%mod3]'
+assert $args[1] == 'addAll@(other: [%mod3]): [%mod3] for [%mod3]'
+
 assert complete -d -- 'comp2'
 assert $COMPREPLY.size() == 1
 $args = @($COMPREPLY)
