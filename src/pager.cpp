@@ -91,7 +91,7 @@ void ArrayPager::updateWinSize(WindowSize size) {
   this->showDesc = true;
   this->winSize = size;
   this->rows = (this->winSize.rows * this->rowRatio) / 100;
-  this->rows = std::min(this->rows, static_cast<unsigned int>(this->winSize.rows - 3));
+  this->rows = std::min(this->rows, static_cast<unsigned int>(this->winSize.rows - ROW_MARGIN));
   if (this->rows == 0) {
     this->rows = 1;
     this->showPager = false;

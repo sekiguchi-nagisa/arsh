@@ -57,6 +57,7 @@ public:
 private:
   static constexpr unsigned int DEFAULT_ROW_RATIO = 40;
   static constexpr unsigned int COL_MARGIN = 1;
+  static constexpr unsigned int ROW_MARGIN = 3;
 
   const CandidatesObject &obj;
   WindowSize winSize{0, 0};
@@ -120,11 +121,15 @@ public:
   }
 
   /**
-   * get row size of actually rendered
+   * get row size of actually rendered pager items
    * @return
    */
   unsigned int getActualRows() const { return std::min(this->getLogicalRows(), this->getRows()); }
 
+  /**
+   * get row size of actually rendered (include row-number indicator)
+   * @return
+   */
   unsigned int getRenderedRows() const {
     return this->showPager ? this->getActualRows() + (this->showRowNum ? 1 : 0) : 0;
   }
