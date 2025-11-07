@@ -710,6 +710,73 @@ TEST_F(PagerTest, candidate) {
   ASSERT_EQ(CandidateAttr::Kind::CMD_DYNA, obj->getAttrAt(0).kind);
 }
 
+TEST_F(PagerTest, filter) {
+  /**
+   * ABC EFG
+   * BCD FGH
+   * CDE GHI
+   * DEF HIJ
+   */
+  auto array = this->create("ABC", "BCD", "CDE", "DEF", "EFG", "FGH", "GHI", "HIJ");
+  auto pager = ArrayPager::create(*array, this->ps, {.rows = 5, .cols = 10}, 100);
+  ASSERT_EQ(2, pager.getPanes());
+
+  const char *expect = "\x1b[7mABC \x1b[0mEFG \r\nBCD FGH \r\n";
+  std::string out;
+  out = this->render(pager);
+  ASSERT_EQ(expect, out);
+
+  // non-filer mode
+  pager.pushQueryChar("");
+  ASSERT_EQ("", pager.getQuery());
+  pager.pushQueryChar("23");
+  ASSERT_EQ("", pager.getQuery());
+  pager.popQueryChar();
+  ASSERT_EQ("", pager.getQuery());
+
+  // enable
+  ASSERT_TRUE(pager.tryToEnableFilterMode());
+  expect = "search: \r\n\x1b[7mABC \x1b[0mEFG \r\n";
+  out = this->render(pager);
+  ASSERT_EQ(expect, out);
+
+  // push
+  pager.pushQueryChar("B");
+  ASSERT_EQ("B", pager.getQuery());
+  expect = "search: B\r\n\x1b[7mABC \x1b[0mBCD \r\n";
+  out = this->render(pager);
+  ASSERT_EQ(expect, out);
+
+  pager.moveCursorToNext();
+  expect = "search: B\r\nABC \x1b[7mBCD \x1b[0m\r\n";
+  out = this->render(pager);
+  ASSERT_EQ(expect, out);
+
+  // pop
+  pager.popQueryChar();
+  ASSERT_EQ("", pager.getQuery());
+  expect = "search: \r\n\x1b[7mBCD \x1b[0mFGH \r\n";
+  out = this->render(pager);
+  ASSERT_EQ(expect, out);
+
+  pager.moveCursorToNext();
+  pager.moveCursorToNext();
+  expect = "search: \r\n\x1b[7mDEF \x1b[0mHIJ \r\n";
+  out = this->render(pager);
+  ASSERT_EQ(expect, out);
+
+  // push
+  pager.pushQueryChar("C");
+  expect = "search: C\r\n\x1b[7mABC \x1b[0mCDE \r\n";
+  out = this->render(pager);
+  ASSERT_EQ(expect, out);
+
+  pager.moveCursorToNext();
+  expect = "search: C\r\n\x1b[7mBCD \x1b[0m\r\n";
+  out = this->render(pager);
+  ASSERT_EQ(expect, out);
+}
+
 TEST(HistRotatorTest, base) {
   auto value =
       createObject<ArrayObject>(static_cast<unsigned int>(TYPE::StringArray), std::vector<Value>());

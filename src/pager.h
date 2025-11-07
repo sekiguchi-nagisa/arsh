@@ -62,21 +62,24 @@ private:
   const CandidatesObject &obj;
   WindowSize winSize{0, 0};
   const unsigned int rowRatio;
-  const FlexBuffer<ItemEntry> items; // pre-computed item column size
-  const unsigned int maxLenIndex;    // index of item with longest len
-  unsigned int paneLen{0};           // pager pane length (paneLen * pages < window col size)
-  unsigned int rows{0};              // pager row size (less than window row size)
-  unsigned int panes{0};             // number of pager panes
-  unsigned int index{0};             // index of the currently selected item
-  unsigned int curRow{0};            // row of currently selected item (related to rows)
-  bool showPager{true};              // if true, render pager
-  bool showCursor{true};             // if true, render cursor
-  bool showRowNum{false};            // if true, render the row number
-  bool showDesc{true};               // if true, render description/signature
+  FlexBuffer<unsigned int> filteredItemIndexes; // maintains filtered item indexes
+  const FlexBuffer<ItemEntry> items;            // pre-computed item column size
+  const unsigned int maxLenItemIndex;           // index of item with longest len
+  unsigned int paneLen{0}; // pager pane length (paneLen * pages < window col size)
+  unsigned int rows{0};    // pager row size (less than window row size)
+  unsigned int panes{0};   // number of pager panes
+  unsigned int index{0};   // index of the currently selected filtered item
+  unsigned int curRow{0};  // row of currently selected item (related to rows)
+  bool showPager{true};    // if true, render pager
+  bool showCursor{true};   // if true, render cursor
+  bool showRowNum{false};  // if true, render the row number
+  bool showDesc{true};     // if true, render description/signature
+  bool filterMode{false};  // if true, enable search filter mode
+  std::string query;       // for search filter
 
   ArrayPager(const CandidatesObject &obj, FlexBuffer<ItemEntry> &&items, unsigned int maxIndex,
              WindowSize winSize, unsigned int rowRatio)
-      : obj(obj), rowRatio(rowRatio), items(std::move(items)), maxLenIndex(maxIndex) {
+      : obj(obj), rowRatio(rowRatio), items(std::move(items)), maxLenItemIndex(maxIndex) {
     this->updateWinSize(winSize);
   }
 
@@ -89,11 +92,50 @@ public:
    * if windows size changed, recompute panes, rows
    * @param size
    */
-  void updateWinSize(WindowSize size);
+  void updateWinSize(const WindowSize size) {
+    if (this->getWinSize() == size) {
+      return; // no update
+    }
+    this->winSize = size;
+    this->updateLayout();
+  }
+
+  void setQuery(StringRef ref) {
+    if (this->isFilterMode()) {
+      this->query = ref.toString();
+      this->rebuildFilteredItemIndex();
+    }
+  }
+
+  void pushQueryChar(StringRef grapheme);
+
+  void popQueryChar();
+
+  const auto &getQuery() const { return this->query; }
 
   void setShowCursor(bool set) { this->showCursor = set; }
 
   WindowSize getWinSize() const { return this->winSize; }
+
+  bool isFilterMode() const { return this->filterMode; }
+
+  bool tryToEnableFilterMode() {
+    this->filterMode = true; // try to set mode
+    if (this->getRows() < 2) {
+      this->filterMode = false; // getActualRows() must be larger than 0
+    }
+    if (this->isFilterMode()) {
+      this->rebuildFilteredItemIndex(); // fill filtered index
+      return true;
+    }
+    return false;
+  }
+
+  void disableFilterMode() {
+    this->filterMode = false;
+    this->filteredItemIndexes.clear();
+    this->updateLayout();
+  }
 
   unsigned int getRowRatio() const { return this->rowRatio; }
 
@@ -116,27 +158,39 @@ public:
    * @return
    */
   unsigned int getLogicalRows() const {
-    return static_cast<unsigned int>(this->items.size() / this->panes) +
-           (this->items.size() % this->panes == 0 ? 0 : 1);
+    const unsigned int size = this->filteredItemSize();
+    return (size / this->panes) + (size % this->panes == 0 ? 0 : 1);
   }
 
   /**
    * get row size of actually rendered pager items
    * @return
    */
-  unsigned int getActualRows() const { return std::min(this->getLogicalRows(), this->getRows()); }
+  unsigned int getActualRows() const {
+    unsigned int actual = std::min(this->getLogicalRows(), this->getRows());
+    if (this->isFilterMode() && actual + 1 > this->getRows()) {
+      actual--;
+    }
+    return actual;
+  }
 
   /**
    * get row size of actually rendered (include row-number indicator)
    * @return
    */
   unsigned int getRenderedRows() const {
-    return this->showPager ? this->getActualRows() + (this->showRowNum ? 1 : 0) : 0;
+    return this->showPager
+               ? this->getActualRows() + (this->showRowNum ? 1 : 0) + (this->isFilterMode() ? 1 : 0)
+               : 0;
   }
 
-  StringRef getCurCandidate() const { return this->obj.getCandidateAt(this->getIndex()); }
+  StringRef getCurCandidate() const {
+    return this->obj.getCandidateAt(this->toActualItemIndex(this->getIndex()));
+  }
 
-  CandidateAttr getCurCandidateAttr() const { return this->obj.getAttrAt(this->getIndex()); }
+  CandidateAttr getCurCandidateAttr() const {
+    return this->obj.getAttrAt(this->toActualItemIndex(this->getIndex()));
+  }
 
   /**
    * actual rendering function
@@ -148,7 +202,7 @@ public:
   void moveCursorToForward() {
     if (this->index == 0) {
       this->curRow = this->getActualRows() - 1;
-      this->index = this->items.size() - 1;
+      this->index = this->filteredItemSize() - 1;
       const unsigned int offset = this->index % this->getLogicalRows();
       this->curRow = std::min(this->curRow, offset);
     } else {
@@ -166,7 +220,7 @@ public:
   }
 
   void moveCursorToNext() {
-    if (this->index == this->items.size() - 1) {
+    if (this->index == this->filteredItemSize() - 1) {
       this->curRow = 0;
       this->index = 0;
     } else {
@@ -199,7 +253,7 @@ public:
         nextIndex = logicalRows * this->getPanes() - 1;
         this->curRow = this->getActualRows() - 1;
       }
-      while (nextIndex >= this->items.size()) {
+      while (nextIndex >= this->filteredItemSize()) {
         nextIndex -= logicalRows;
       }
       this->index = nextIndex;
@@ -209,12 +263,12 @@ public:
   void moveCursorToRight() {
     const auto logicalRows = this->getLogicalRows();
     const auto curCols = this->index / logicalRows;
-    if (curCols < this->getPanes() - 1 && this->index + logicalRows < this->items.size()) {
+    if (curCols < this->getPanes() - 1 && this->index + logicalRows < this->filteredItemSize()) {
       this->index += logicalRows;
     } else {
       unsigned int nextIndex = this->index + 1 - (logicalRows * curCols);
       unsigned int curLogicalRows = this->index % logicalRows;
-      if (nextIndex < this->items.size() && curLogicalRows < logicalRows - 1) {
+      if (nextIndex < this->filteredItemSize() && curLogicalRows < logicalRows - 1) {
         if (this->curRow < this->getActualRows() - 1) {
           this->curRow++;
         }
@@ -224,6 +278,24 @@ public:
         this->index = 0;
       }
     }
+  }
+
+private:
+  void updateLayout();
+
+  void rebuildFilteredItemIndex();
+
+  unsigned int filteredItemSize() const {
+    return this->isFilterMode() ? this->filteredItemIndexes.size() : this->items.size();
+  }
+
+  unsigned int toActualItemIndex(unsigned int filteredIndex) const {
+    return this->isFilterMode() ? this->filteredItemIndexes[filteredIndex] : filteredIndex;
+  }
+
+  bool matchItemAt(unsigned int itemIndex) const {
+    StringRef candidate = this->obj.getCandidateAt(itemIndex);
+    return candidate.contains(this->query);
   }
 };
 

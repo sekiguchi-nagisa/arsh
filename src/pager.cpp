@@ -83,20 +83,16 @@ ArrayPager ArrayPager::create(const CandidatesObject &obj, const CharWidthProper
   return {obj, std::move(items), maxIndex, winSize, rowRatio};
 }
 
-void ArrayPager::updateWinSize(WindowSize size) {
-  if (this->getWinSize() == size) {
-    return; // no update
-  }
+void ArrayPager::updateLayout() {
   this->showPager = true;
   this->showDesc = true;
-  this->winSize = size;
   this->rows = (this->winSize.rows * this->rowRatio) / 100;
   this->rows = std::min(this->rows, static_cast<unsigned int>(this->winSize.rows - ROW_MARGIN));
   if (this->rows == 0) {
     this->rows = 1;
     this->showPager = false;
   }
-  this->paneLen = this->items[this->maxLenIndex].itemLen();
+  this->paneLen = this->items[this->maxLenItemIndex].itemLen();
   this->panes = (this->winSize.cols - COL_MARGIN) / this->paneLen;
   this->panes = std::max(this->panes, 1u);
   if (this->curRow >= this->getActualRows()) {
@@ -120,6 +116,53 @@ void ArrayPager::updateWinSize(WindowSize size) {
       this->showRowNum = true;
     }
   }
+}
+
+void ArrayPager::rebuildFilteredItemIndex() {
+  this->filteredItemIndexes.clear();
+  for (unsigned int i = 0; i < this->items.size(); i++) {
+    if (this->matchItemAt(i)) {
+      this->filteredItemIndexes.push_back(i);
+    }
+  }
+  if (const auto size = this->filteredItemSize(); size > 0 && this->index >= size) {
+    this->index = 0;
+    this->curRow = 0;
+  }
+  this->updateLayout();
+}
+
+void ArrayPager::pushQueryChar(const StringRef grapheme) {
+  if (!this->isFilterMode() || grapheme.empty()) {
+    return;
+  }
+  if (this->query.empty()) {
+    this->query += grapheme;
+    this->rebuildFilteredItemIndex();
+  } else { // incremental search
+    this->query += grapheme;
+    auto iter =
+        std::remove_if(this->filteredItemIndexes.begin(), this->filteredItemIndexes.end(),
+                       [&](unsigned int itemIndex) { return !this->matchItemAt(itemIndex); });
+    this->filteredItemIndexes.erase(iter, this->filteredItemIndexes.end());
+    if (const auto size = this->filteredItemSize(); size > 0 && this->index >= size) {
+      this->index = 0;
+      this->curRow = 0;
+    }
+    this->updateLayout();
+  }
+}
+
+void ArrayPager::popQueryChar() {
+  if (!this->isFilterMode() || this->query.empty()) {
+    return;
+  }
+  size_t byteSize = 0;
+  iterateGrapheme(this->query, [&byteSize](const GraphemeCluster &grapheme) {
+    byteSize = grapheme.getRef().size();
+  });
+  this->query.resize(this->query.size() - byteSize);
+  this->rebuildFilteredItemIndex();
 }
 
 static void renderItem(LineRenderer &renderer, const bool showDesc, const StringRef can,
@@ -182,6 +225,21 @@ void ArrayPager::render(LineRenderer &renderer) const {
     return;
   }
 
+  if (this->isFilterMode()) {
+    renderer.setLineBreakOp(LineRenderer::LineBreakOp::TRUNCATE);
+    renderer.setInitCols(0);
+    renderer.setEmitNewline(false);
+    renderer.renderLines("search: ");
+    renderer.renderLines(this->query);
+    renderer.setEmitNewline(true);
+    renderer.renderLines("\n");
+    if (!this->filteredItemSize()) {
+      renderer.renderWithANSI("\x1b[7m(no matches)\x1b[0m\n");
+      return;
+    }
+    renderer.setLineBreakOp(LineRenderer::LineBreakOp::SOFT_WRAP);
+  }
+
   /**
    * resolve start index.
    * example,
@@ -210,13 +268,14 @@ void ArrayPager::render(LineRenderer &renderer) const {
     renderer.setEmitNewline(false);                  // ignore newlines
     for (unsigned int j = 0; j < this->panes; j++) { // render row
       const unsigned int actualIndex = startIndex + i + j * maxRowSize;
-      if (actualIndex >= this->items.size()) {
+      if (actualIndex >= this->filteredItemSize()) {
         break;
       }
       const bool selected = actualIndex == this->index && this->showCursor;
-      renderItem(renderer, this->showDesc, this->obj.getCandidateAt(actualIndex),
-                 this->obj.getAttrAt(actualIndex), this->obj.getDescriptionAt(actualIndex),
-                 this->items[actualIndex], selected);
+      const unsigned int itemIndex = toActualItemIndex(actualIndex);
+      renderItem(renderer, this->showDesc, this->obj.getCandidateAt(itemIndex),
+                 this->obj.getAttrAt(itemIndex), this->obj.getDescriptionAt(itemIndex),
+                 this->items[itemIndex], selected);
     }
     renderer.setEmitNewline(true); // re-enable newline characters
     renderer.renderLines("\n");
@@ -277,16 +336,25 @@ FETCH:
     return EditActionStatus::ERROR;
   }
   if (!reader.hasControlChar()) {
+    if (pager.isFilterMode()) {
+      pager.pushQueryChar(reader.get());
+      return EditActionStatus::CONTINUE;
+    }
     return EditActionStatus::OK;
   }
   if (!reader.getEvent().hasValue()) {
     goto FETCH; // ignore unrecognized escape sequence
   }
-  const auto action = getPagerAction(bindings.findAction(reader.getEvent()));
-  if (action != PagerAction::SELECT_NO_CLEAR) {
+  const auto *action = bindings.findAction(reader.getEvent());
+  if (action->type == EditActionType::BACKWARD_DELETE_CHAR && pager.isFilterMode()) {
+    pager.popQueryChar();
+    return EditActionStatus::CONTINUE;
+  }
+  const auto pagerAction = getPagerAction(action);
+  if (pagerAction != PagerAction::SELECT_NO_CLEAR) {
     reader.clear();
   }
-  switch (action) {
+  switch (pagerAction) {
   case PagerAction::SELECT:
   case PagerAction::SELECT_NO_CLEAR:
     return EditActionStatus::OK;

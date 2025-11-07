@@ -1112,7 +1112,9 @@ EditActionStatus LineEditorObject::completeLine(ARState &state, RenderingContext
   auto status = EditActionStatus::CONTINUE;
   auto pager = ArrayPager::create(*candidates, ctx.ps, {}, this->pagerRatio);
 
-  if (!backward) {
+  if (backward) { // enable search filter
+    pager.tryToEnableFilterMode();
+  } else {
     /**
      * first, only show pager and wait next completion action.
      * if next action is not completion action, break paging

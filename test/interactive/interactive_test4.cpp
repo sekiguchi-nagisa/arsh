@@ -566,6 +566,7 @@ TEST_F(InteractiveTest, lineEditorComp2) {
     ASSERT_NO_FATAL_FAILURE(this->expect("> '$t%true'\n> "));
   }
 
+  // backward-complete (also enable search filer)
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(""));
   this->send(";t");
   ASSERT_NO_FATAL_FAILURE(this->expect("> ;t"));
@@ -573,18 +574,19 @@ TEST_F(InteractiveTest, lineEditorComp2) {
     auto cleanup = this->reuseScreen();
 
     this->send(SHIFT_TAB);
-    ASSERT_NO_FATAL_FAILURE(this->expect("> ;true\ntrue    tee     touch   \n"));
+    ASSERT_NO_FATAL_FAILURE(this->expect("> ;true\nsearch: \ntrue    tee     touch   \n"));
     this->send(UP UP);
-    ASSERT_NO_FATAL_FAILURE(this->expect("> ;tee\ntrue    tee     touch   \n"));
-    this->send("2"); // cancel and insert
-    ASSERT_NO_FATAL_FAILURE(this->expect("> ;tee2"));
-
+    ASSERT_NO_FATAL_FAILURE(this->expect("> ;tee\nsearch: \ntrue    tee     touch   \n"));
+    this->send("2"); // search, but no matches
+    ASSERT_NO_FATAL_FAILURE(this->expect("> ;tee\nsearch: 2\n(no matches)\n"));
+    this->send(CTRL_H);
+    ASSERT_NO_FATAL_FAILURE(this->expect("> ;tee\nsearch: \ntrue    tee     touch   \n"));
+    this->send("e");
+    ASSERT_NO_FATAL_FAILURE(this->expect("> ;tee\nsearch: e\ntrue    tee     \n"));
     this->send("\t");
-    ASSERT_NO_FATAL_FAILURE(this->expect("> ;tee2\ntrue    tee     touch   \n"));
-    this->send("\t");
-    ASSERT_NO_FATAL_FAILURE(this->expect("> ;tee2true\ntrue    tee     touch   \n"));
+    ASSERT_NO_FATAL_FAILURE(this->expect("> ;true\nsearch: e\ntrue    tee     \n"));
     this->send(SHIFT_TAB);
-    ASSERT_NO_FATAL_FAILURE(this->expect("> ;tee2touch\ntrue    tee     touch   \n"));
+    ASSERT_NO_FATAL_FAILURE(this->expect("> ;tee\nsearch: e\ntrue    tee     \n"));
     this->send(CTRL_W); // cancel and edit
     ASSERT_NO_FATAL_FAILURE(this->expect("> ;"));
     this->send(CTRL_W);
