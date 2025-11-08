@@ -128,15 +128,12 @@ size_t LineBuffer::resolveInsertingSuffix(StringRef &inserting, const bool singl
 bool LineBuffer::insertToCursor(const StringRef ref, const EditOp editOp) {
   assert(this->cursor <= this->usedSize);
   if (this->usedSize + ref.size() <= this->bufSize) {
-    if (this->usedSize == this->cursor) { // insert to last
-      memcpy(&this->buf[this->cursor], ref.data(), ref.size());
-      this->cursor += ref.size();
-      this->usedSize += ref.size();
-      this->buf[this->usedSize] = '\0';
-    } else {
-      memmove(this->buf + this->cursor + ref.size(), this->buf + this->cursor,
-              this->usedSize - this->cursor);
-      memcpy(&this->buf[this->cursor], ref.data(), ref.size());
+    if (!ref.empty()) {
+      if (this->cursor < this->usedSize) {
+        memmove(this->buf + this->cursor + ref.size(), this->buf + this->cursor,
+                this->usedSize - this->cursor);
+      }
+      memcpy(this->buf + this->cursor, ref.data(), ref.size());
       this->cursor += ref.size();
       this->usedSize += ref.size();
       this->buf[this->usedSize] = '\0';
