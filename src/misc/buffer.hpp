@@ -196,11 +196,17 @@ public:
 
   void push_back(T &&value) noexcept { this->push_back_impl(value); }
 
-  void pop_back() noexcept { this->size_--; }
+  void pop_back() noexcept { --this->size_; }
 
-  reference operator[](size_type index) noexcept { return this->data_[index]; }
+  reference operator[](size_type index) noexcept {
+    assert(index < this->size());
+    return this->data_[index];
+  }
 
-  const_reference operator[](size_type index) const noexcept { return this->data_[index]; }
+  const_reference operator[](size_type index) const noexcept {
+    assert(index < this->size());
+    return this->data_[index];
+  }
 
   reference at(size_type index) noexcept;
 
