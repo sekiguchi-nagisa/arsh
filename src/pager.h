@@ -103,7 +103,7 @@ public:
   void setQuery(StringRef ref) {
     if (this->isFilterMode()) {
       this->query = ref.toString();
-      this->rebuildFilteredItemIndex();
+      this->rebuildFilteredItemIndexes();
     }
   }
 
@@ -120,12 +120,9 @@ public:
   bool isFilterMode() const { return this->filterMode; }
 
   bool tryToEnableFilterMode() {
-    this->filterMode = true; // try to set mode
-    if (this->getRows() < 2) {
-      this->filterMode = false; // getActualRows() must be larger than 0
-    }
+    this->filterMode = this->getRows() >= 2; // rows are at least 2
     if (this->isFilterMode()) {
-      this->rebuildFilteredItemIndex(); // fill filtered index
+      this->rebuildFilteredItemIndexes(); // fill filtered index
       return true;
     }
     return false;
@@ -134,7 +131,12 @@ public:
   void disableFilterMode() {
     this->filterMode = false;
     this->filteredItemIndexes.clear();
+    this->query.clear();
     this->updateLayout();
+  }
+
+  unsigned int filteredItemSize() const {
+    return this->isFilterMode() ? this->filteredItemIndexes.size() : this->items.size();
   }
 
   unsigned int getRowRatio() const { return this->rowRatio; }
@@ -200,6 +202,9 @@ public:
 
   // for pager api
   void moveCursorToForward() {
+    if (!this->filteredItemSize()) {
+      return;
+    }
     if (this->index == 0) {
       this->curRow = this->getActualRows() - 1;
       this->index = this->filteredItemSize() - 1;
@@ -220,6 +225,9 @@ public:
   }
 
   void moveCursorToNext() {
+    if (!this->filteredItemSize()) {
+      return;
+    }
     if (this->index == this->filteredItemSize() - 1) {
       this->curRow = 0;
       this->index = 0;
@@ -239,6 +247,9 @@ public:
   }
 
   void moveCursorToLeft() {
+    if (!this->filteredItemSize()) {
+      return;
+    }
     const auto logicalRows = this->getLogicalRows();
     const auto curCols = this->index / logicalRows;
     if (curCols > 0) {
@@ -261,6 +272,9 @@ public:
   }
 
   void moveCursorToRight() {
+    if (!this->filteredItemSize()) {
+      return;
+    }
     const auto logicalRows = this->getLogicalRows();
     const auto curCols = this->index / logicalRows;
     if (curCols < this->getPanes() - 1 && this->index + logicalRows < this->filteredItemSize()) {
@@ -283,14 +297,12 @@ public:
 private:
   void updateLayout();
 
-  void rebuildFilteredItemIndex();
-
-  unsigned int filteredItemSize() const {
-    return this->isFilterMode() ? this->filteredItemIndexes.size() : this->items.size();
-  }
+  void rebuildFilteredItemIndexes();
 
   unsigned int toActualItemIndex(unsigned int filteredIndex) const {
-    return this->isFilterMode() ? this->filteredItemIndexes[filteredIndex] : filteredIndex;
+    return this->isFilterMode() && filteredIndex < this->filteredItemIndexes.size()
+               ? this->filteredItemIndexes[filteredIndex]
+               : filteredIndex;
   }
 
   bool matchItemAt(unsigned int itemIndex) const {

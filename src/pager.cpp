@@ -98,7 +98,7 @@ void ArrayPager::updateLayout() {
   this->panes = saturatedSub(this->winSize.cols, COL_MARGIN) / this->paneLen;
   this->panes = std::max(this->panes, 1u);
   if (this->curRow >= this->getActualRows()) {
-    this->curRow = this->getActualRows() - 1;
+    this->curRow = saturatedSub(this->getActualRows(), 1);
   }
   if (this->panes == 1) {
     // truncate to multiple of TAB_WIDTH
@@ -120,7 +120,7 @@ void ArrayPager::updateLayout() {
   }
 }
 
-void ArrayPager::rebuildFilteredItemIndex() {
+void ArrayPager::rebuildFilteredItemIndexes() {
   this->filteredItemIndexes.clear();
   for (unsigned int i = 0; i < this->items.size(); i++) {
     if (this->matchItemAt(i)) {
@@ -138,21 +138,15 @@ void ArrayPager::pushQueryChar(const StringRef grapheme) {
   if (!this->isFilterMode() || grapheme.empty()) {
     return;
   }
-  if (this->query.empty()) {
-    this->query += grapheme;
-    this->rebuildFilteredItemIndex();
-  } else { // incremental search
-    this->query += grapheme;
-    auto iter =
-        std::remove_if(this->filteredItemIndexes.begin(), this->filteredItemIndexes.end(),
-                       [&](unsigned int itemIndex) { return !this->matchItemAt(itemIndex); });
-    this->filteredItemIndexes.erase(iter, this->filteredItemIndexes.end());
-    if (const auto size = this->filteredItemSize(); size > 0 && this->index >= size) {
-      this->index = 0;
-      this->curRow = 0;
-    }
-    this->updateLayout();
+  this->query += grapheme;
+  auto iter = std::remove_if(this->filteredItemIndexes.begin(), this->filteredItemIndexes.end(),
+                             [&](unsigned int itemIndex) { return !this->matchItemAt(itemIndex); });
+  this->filteredItemIndexes.erase(iter, this->filteredItemIndexes.end());
+  if (const auto size = this->filteredItemSize(); size > 0 && this->index >= size) {
+    this->index = 0;
+    this->curRow = 0;
   }
+  this->updateLayout();
 }
 
 void ArrayPager::popQueryChar() {
@@ -164,7 +158,7 @@ void ArrayPager::popQueryChar() {
     byteSize = grapheme.getRef().size();
   });
   this->query.resize(this->query.size() - byteSize);
-  this->rebuildFilteredItemIndex();
+  this->rebuildFilteredItemIndexes();
 }
 
 static void renderItem(LineRenderer &renderer, const bool showDesc, const StringRef can,
@@ -274,7 +268,7 @@ void ArrayPager::render(LineRenderer &renderer) const {
         break;
       }
       const bool selected = actualIndex == this->index && this->showCursor;
-      const unsigned int itemIndex = toActualItemIndex(actualIndex);
+      const unsigned int itemIndex = this->toActualItemIndex(actualIndex);
       renderItem(renderer, this->showDesc, this->obj.getCandidateAt(itemIndex),
                  this->obj.getAttrAt(itemIndex), this->obj.getDescriptionAt(itemIndex),
                  this->items[itemIndex], selected);
@@ -348,7 +342,7 @@ FETCH:
     goto FETCH; // ignore unrecognized escape sequence
   }
   const auto *action = bindings.findAction(reader.getEvent());
-  if (action->type == EditActionType::BACKWARD_DELETE_CHAR && pager.isFilterMode()) {
+  if (action && action->type == EditActionType::BACKWARD_DELETE_CHAR && pager.isFilterMode()) {
     pager.popQueryChar();
     return EditActionStatus::CONTINUE;
   }

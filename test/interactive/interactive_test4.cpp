@@ -509,8 +509,6 @@ TEST_F(InteractiveTest, lineEditorComp2) {
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
 
-  ASSERT_NO_FATAL_FAILURE(this->changePrompt(">>> "));
-
   // rotate candidates
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
       "$LINE_EDIT.setCompleter(function(s,m) => new Candidates( @(true tee touch)) )"));
@@ -564,33 +562,6 @@ TEST_F(InteractiveTest, lineEditorComp2) {
     ASSERT_NO_FATAL_FAILURE(this->expect("> '$t%true'\ntrue    tee     touch   \n"));
     this->send(CTRL_C); // cancel comp
     ASSERT_NO_FATAL_FAILURE(this->expect("> '$t%true'\n> "));
-  }
-
-  // backward-complete (also enable search filer)
-  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(""));
-  this->send(";t");
-  ASSERT_NO_FATAL_FAILURE(this->expect("> ;t"));
-  {
-    auto cleanup = this->reuseScreen();
-
-    this->send(SHIFT_TAB);
-    ASSERT_NO_FATAL_FAILURE(this->expect("> ;true\nsearch: \ntrue    tee     touch   \n"));
-    this->send(UP UP);
-    ASSERT_NO_FATAL_FAILURE(this->expect("> ;tee\nsearch: \ntrue    tee     touch   \n"));
-    this->send("2"); // search, but no matches
-    ASSERT_NO_FATAL_FAILURE(this->expect("> ;tee\nsearch: 2\n(no matches)\n"));
-    this->send(CTRL_H);
-    ASSERT_NO_FATAL_FAILURE(this->expect("> ;tee\nsearch: \ntrue    tee     touch   \n"));
-    this->send("e");
-    ASSERT_NO_FATAL_FAILURE(this->expect("> ;tee\nsearch: e\ntrue    tee     \n"));
-    this->send("\t");
-    ASSERT_NO_FATAL_FAILURE(this->expect("> ;true\nsearch: e\ntrue    tee     \n"));
-    this->send(SHIFT_TAB);
-    ASSERT_NO_FATAL_FAILURE(this->expect("> ;tee\nsearch: e\ntrue    tee     \n"));
-    this->send(CTRL_W); // cancel and edit
-    ASSERT_NO_FATAL_FAILURE(this->expect("> ;"));
-    this->send(CTRL_W);
-    ASSERT_NO_FATAL_FAILURE(this->expect("> "));
   }
 
   this->send(CTRL_D);
@@ -697,6 +668,44 @@ TEST_F(InteractiveTest, lineEditorCompSuffix) {
 
     this->send(CTRL_C);
     ASSERT_NO_FATAL_FAILURE(this->expect("> 1234.compare(\n> "));
+  }
+
+  this->send(CTRL_D);
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
+}
+
+TEST_F(InteractiveTest, lineEditorCompFilter) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
+      "$LINE_EDIT.setCompleter(function(s,m) => new Candidates( @(true tee touch)) )"));
+  this->changePrompt("> ");
+
+  // backward-complete (also enable search filer)
+  this->send(";t");
+  ASSERT_NO_FATAL_FAILURE(this->expect("> ;t"));
+  {
+    auto cleanup = this->reuseScreen();
+
+    this->send(SHIFT_TAB);
+    ASSERT_NO_FATAL_FAILURE(this->expect("> ;true\nsearch: \ntrue    tee     touch   \n"));
+    this->send(UP UP);
+    ASSERT_NO_FATAL_FAILURE(this->expect("> ;tee\nsearch: \ntrue    tee     touch   \n"));
+    this->send("2"); // search, but no matches
+    ASSERT_NO_FATAL_FAILURE(this->expect("> ;t\nsearch: 2\n(no matches)\n"));
+    this->send(CTRL_H);
+    ASSERT_NO_FATAL_FAILURE(this->expect("> ;tee\nsearch: \ntrue    tee     touch   \n"));
+    this->send("e");
+    ASSERT_NO_FATAL_FAILURE(this->expect("> ;tee\nsearch: e\ntrue    tee     \n"));
+    this->send("\t");
+    ASSERT_NO_FATAL_FAILURE(this->expect("> ;true\nsearch: e\ntrue    tee     \n"));
+    this->send(SHIFT_TAB);
+    ASSERT_NO_FATAL_FAILURE(this->expect("> ;tee\nsearch: e\ntrue    tee     \n"));
+    this->send(CTRL_W); // cancel and edit
+    ASSERT_NO_FATAL_FAILURE(this->expect("> ;"));
+    this->send(CTRL_W);
+    ASSERT_NO_FATAL_FAILURE(this->expect("> "));
   }
 
   this->send(CTRL_D);

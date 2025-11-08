@@ -710,7 +710,7 @@ TEST_F(PagerTest, candidate) {
   ASSERT_EQ(CandidateAttr::Kind::CMD_DYNA, obj->getAttrAt(0).kind);
 }
 
-TEST_F(PagerTest, filter) {
+TEST_F(PagerTest, filterBase) {
   /**
    * ABC EFG
    * BCD FGH
@@ -775,6 +775,59 @@ TEST_F(PagerTest, filter) {
   expect = "search: C\r\n\x1b[7mBCD \x1b[0m\r\n";
   out = this->render(pager);
   ASSERT_EQ(expect, out);
+}
+
+TEST_F(PagerTest, filterNoMatches) {
+  /**
+   * ABC EFG
+   * BCD FGH
+   * CDE GHI
+   * DEF HIJ
+   */
+  auto array = this->create("ABC", "BCD", "CDE", "DEF", "EFG", "FGH", "GHI", "HIJ");
+  auto pager = ArrayPager::create(*array, this->ps, {.rows = 5, .cols = 10}, 100);
+  ASSERT_EQ(2, pager.getPanes());
+
+  const char *expect = "\x1b[7mABC \x1b[0mEFG \r\nBCD FGH \r\n";
+  std::string out;
+  out = this->render(pager);
+  ASSERT_EQ(expect, out);
+
+  // filter mode
+  ASSERT_TRUE(pager.tryToEnableFilterMode());
+  pager.moveCursorToNext();
+  pager.moveCursorToNext();
+  expect = "search: \r\n\x1b[7mCDE \x1b[0mGHI \r\n";
+  out = this->render(pager);
+  ASSERT_EQ(expect, out);
+  ASSERT_EQ(2, pager.getIndex());
+  ASSERT_EQ(0, pager.getCurRow());
+
+  // no matches
+  pager.pushQueryChar("Z");
+  expect = "search: Z\r\n\x1b[7m(no matches)\x1b[0m\r\n";
+  out = this->render(pager);
+  ASSERT_EQ(expect, out);
+  ASSERT_EQ(2, pager.getIndex()); // index is not changed if no matches
+  ASSERT_EQ(0, pager.getCurRow());
+  ASSERT_EQ(array->getCandidateAt(2).toString(), pager.getCurCandidate().toString());
+
+  // move cursor (the index is not changed)
+  pager.moveCursorToNext();
+  ASSERT_EQ(2, pager.getIndex());
+  ASSERT_EQ(0, pager.getCurRow());
+
+  pager.moveCursorToForward();
+  ASSERT_EQ(2, pager.getIndex());
+  ASSERT_EQ(0, pager.getCurRow());
+
+  pager.moveCursorToLeft();
+  ASSERT_EQ(2, pager.getIndex());
+  ASSERT_EQ(0, pager.getCurRow());
+
+  pager.moveCursorToRight();
+  ASSERT_EQ(2, pager.getIndex());
+  ASSERT_EQ(0, pager.getCurRow());
 }
 
 TEST(HistRotatorTest, base) {

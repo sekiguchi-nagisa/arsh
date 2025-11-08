@@ -1161,16 +1161,22 @@ EditActionStatus LineEditorObject::completeLine(ARState &state, RenderingContext
     if (oldSize != ctx.buf.getUsedSize()) {
       ctx.buf.undo();
     }
-    const auto can = pager.getCurCandidate();
-    const auto suffix = pager.getCurCandidateAttr().suffix;
-    assert(offset <= ctx.buf.getCursor());
-    size_t prefixLen = ctx.buf.getCursor() - offset;
-    size_t prevCanLen = can.size() - prefixLen;
-    if (insertCandidate(ctx.buf, {can.data() + prefixLen, prevCanLen}, suffix)) {
-      this->refreshLine(state, ctx, true, makeObserver(pager));
+    if (pager.filteredItemSize()) {
+      const auto can = pager.getCurCandidate();
+      const auto suffix = pager.getCurCandidateAttr().suffix;
+      assert(offset <= ctx.buf.getCursor());
+      size_t prefixLen = ctx.buf.getCursor() - offset;
+      size_t prevCanLen = can.size() - prefixLen;
+      if (insertCandidate(ctx.buf, {can.data() + prefixLen, prevCanLen}, suffix)) {
+        this->refreshLine(state, ctx, true, makeObserver(pager));
+      } else {
+        status = EditActionStatus::ERROR;
+        break;
+      }
     } else {
-      status = EditActionStatus::ERROR;
-      break;
+      if (insertCandidate(ctx.buf, {}, CandidateAttr::Suffix::NONE)) { // insert empty
+        this->refreshLine(state, ctx, true, makeObserver(pager));
+      }
     }
     status = waitPagerAction(pager, this->keyBindings, reader, watchSigSet);
     if (status == EditActionStatus::REVERT) {
