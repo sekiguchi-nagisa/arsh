@@ -625,9 +625,10 @@ void TypeChecker::checkArgsNode(const CallSignature &callSignature, ArgsNode &no
     const unsigned int maxSize = std::max(argSize, paramSize);
     for (unsigned int i = 0; i < maxSize; i++) {
       if (i < argSize && i < paramSize) {
-        this->checkType(*callSignature.paramTypes[i], *node.getNodes()[i]);
         if (eqOrOrd && i == 0) { // for T.compare(T)
           this->checkType(*callSignature.recvType, *node.getNodes()[i]);
+        } else {
+          this->checkType(*callSignature.paramTypes[i], *node.getNodes()[i]);
         }
       } else if (i < argSize) {
         this->checkTypeAsExpr(*node.getNodes()[i]);
