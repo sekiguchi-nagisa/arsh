@@ -33,6 +33,7 @@ namespace arsh {
   OP(ACCEPT, "accept")                             /* ENTER / CTRL-M / CTRL-J */                   \
   OP(CANCEL, "cancel")                             /* CTRL-C */                                    \
   OP(REVERT, "revert")                             /* ESC */                                       \
+  OP(TOGGLE_SEARCH, "toggle-search")               /* CTRL-S */                                    \
   OP(COMPLETE, "complete")                         /* TAB / CTRL-I */                              \
   OP(COMPLETE_BACKWARD, "complete-backward")       /* SHIFT-TAB */                                 \
   OP(BACKWARD_DELETE_CHAR, "backward-delete-char") /* CTRL-H / BACKSPACE */                        \

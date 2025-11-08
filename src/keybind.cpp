@@ -135,6 +135,7 @@ KeyBindings::KeyBindings() {
       {KeyEvent('v', ModifierKey::CTRL), EditActionType::INSERT_KEYCODE},
       {KeyEvent('y', ModifierKey::CTRL), EditActionType::YANK},
       {KeyEvent('z', ModifierKey::CTRL), EditActionType::UNDO},
+      {KeyEvent('s', ModifierKey::CTRL), EditActionType::TOGGLE_SEARCH},
 
       // escape sequence (alt+)
       {KeyEvent('b', ModifierKey::ALT), EditActionType::BACKWARD_WORD},

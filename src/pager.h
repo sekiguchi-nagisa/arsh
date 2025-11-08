@@ -128,12 +128,7 @@ public:
     return false;
   }
 
-  void disableFilterMode() {
-    this->filterMode = false;
-    this->filteredItemIndexes.clear();
-    this->query.clear();
-    this->updateLayout();
-  }
+  void disableFilterMode();
 
   unsigned int filteredItemSize() const {
     return this->isFilterMode() ? this->filteredItemIndexes.size() : this->items.size();

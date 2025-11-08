@@ -709,6 +709,7 @@ ssize_t LineEditorObject::editInRawMode(ARState &state, RenderingContext &ctx) {
       errno = EAGAIN;
       return -1;
     case EditActionType::REVERT:
+    case EditActionType::TOGGLE_SEARCH:
       continue; // do nothing (just used in completion pager)
     case EditActionType::COMPLETE:
     case EditActionType::COMPLETE_BACKWARD:
@@ -1144,13 +1145,23 @@ EditActionStatus LineEditorObject::completeLine(ARState &state, RenderingContext
     if (!reader.getEvent().hasValue()) {
       goto FETCH; // ignore unrecognized escape sequence
     }
-    if (auto *action = this->keyBindings.findAction(reader.getEvent().unwrap());
-        !action || action->type != EditActionType::COMPLETE) {
-      status = EditActionStatus::OK;
-      goto END;
+    if (const auto *action = this->keyBindings.findAction(reader.getEvent())) {
+      switch (action->type) {
+      case EditActionType::COMPLETE:
+        goto ROTATE;
+      case EditActionType::COMPLETE_BACKWARD:
+      case EditActionType::TOGGLE_SEARCH:
+        pager.tryToEnableFilterMode();
+        goto ROTATE;
+      default:
+        break;
+      }
     }
+    status = EditActionStatus::OK;
+    goto END;
   }
 
+ROTATE:
   /**
    * paging completion candidates
    */

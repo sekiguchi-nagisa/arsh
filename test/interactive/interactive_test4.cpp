@@ -702,9 +702,29 @@ TEST_F(InteractiveTest, lineEditorCompFilter) {
     ASSERT_NO_FATAL_FAILURE(this->expect("> ;true\nsearch: e\ntrue    tee     \n"));
     this->send(SHIFT_TAB);
     ASSERT_NO_FATAL_FAILURE(this->expect("> ;tee\nsearch: e\ntrue    tee     \n"));
+    this->send(CTRL_D); // not passthru
+    ASSERT_NO_FATAL_FAILURE(this->expect("> ;tee\nsearch: e\ntrue    tee     \n"));
+    this->send(CTRL_S);
+    ASSERT_NO_FATAL_FAILURE(this->expect("> ;tee\ntrue    tee     touch   \n"));
     this->send(CTRL_W); // cancel and edit
     ASSERT_NO_FATAL_FAILURE(this->expect("> ;"));
     this->send(CTRL_W);
+    ASSERT_NO_FATAL_FAILURE(this->expect("> "));
+  }
+
+  this->send("time ");
+  ASSERT_NO_FATAL_FAILURE(this->expect("> time "));
+  {
+    auto cleanup = this->reuseScreen();
+    this->send("\t");
+    ASSERT_NO_FATAL_FAILURE(this->expect("> time \ntrue    tee     touch   \n"));
+    this->send(CTRL_S); // enable search filter
+    ASSERT_NO_FATAL_FAILURE(this->expect("> time true\nsearch: \ntrue    tee     touch   \n"));
+    this->send("o");
+    ASSERT_NO_FATAL_FAILURE(this->expect("> time touch\nsearch: o\ntouch   \n"));
+    this->send("\r");
+    ASSERT_NO_FATAL_FAILURE(this->expect("> time touch"));
+    this->send(CTRL_U);
     ASSERT_NO_FATAL_FAILURE(this->expect("> "));
   }
 

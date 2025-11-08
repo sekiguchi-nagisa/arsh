@@ -775,6 +775,23 @@ TEST_F(PagerTest, filterBase) {
   expect = "search: C\r\n\x1b[7mBCD \x1b[0m\r\n";
   out = this->render(pager);
   ASSERT_EQ(expect, out);
+
+  // expand
+  pager.updateWinSize({.rows = 10, .cols = 10});
+  expect = "search: C\r\n\x1b[7mBCD \x1b[0m\r\nCDE \r\n";
+  out = this->render(pager);
+  ASSERT_EQ(expect, out);
+
+  pager.moveCursorToNext();
+  expect = "search: C\r\nABC \x1b[7mCDE \x1b[0m\r\nBCD \r\n";
+  out = this->render(pager);
+  ASSERT_EQ(expect, out);
+
+  // disable filter
+  pager.disableFilterMode();
+  expect = "ABC EFG \r\nBCD FGH \r\n\x1b[7mCDE \x1b[0mGHI \r\nDEF HIJ \r\n";
+  out = this->render(pager);
+  ASSERT_EQ(expect, out);
 }
 
 TEST_F(PagerTest, filterNoMatches) {

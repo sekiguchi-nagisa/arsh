@@ -161,6 +161,19 @@ void ArrayPager::popQueryChar() {
   this->rebuildFilteredItemIndexes();
 }
 
+void ArrayPager::disableFilterMode() {
+  const unsigned int newIndex = this->toActualItemIndex(this->index);
+  this->filterMode = false;
+  this->filteredItemIndexes.clear();
+  this->query.clear();
+  this->curRow = 0;
+  this->index = 0;
+  for (unsigned int i = 0; i < newIndex; i++) {
+    this->moveCursorToNext();
+  }
+  this->updateLayout();
+}
+
 static void renderItem(LineRenderer &renderer, const bool showDesc, const StringRef can,
                        const CandidateAttr attr, const StringRef desc,
                        const ArrayPager::ItemEntry &e, const bool selected) {
@@ -284,43 +297,6 @@ void ArrayPager::render(LineRenderer &renderer) const {
   }
 }
 
-enum class PagerAction : unsigned char {
-  SELECT,
-  SELECT_NO_CLEAR,
-  CANCEL,
-  REVERT,
-  PREV,
-  NEXT,
-  LEFT,
-  RIGHT,
-};
-
-static PagerAction getPagerAction(const EditAction *edit) {
-  if (edit) {
-    switch (edit->type) {
-    case EditActionType::ACCEPT:
-      return PagerAction::SELECT;
-    case EditActionType::CANCEL:
-      return PagerAction::CANCEL;
-    case EditActionType::REVERT:
-      return PagerAction::REVERT;
-    case EditActionType::BACKWARD_CHAR:
-      return PagerAction::LEFT;
-    case EditActionType::FORWARD_CHAR:
-      return PagerAction::RIGHT;
-    case EditActionType::UP_OR_HISTORY:
-    case EditActionType::COMPLETE_BACKWARD:
-      return PagerAction::PREV;
-    case EditActionType::DOWN_OR_HISTORY:
-    case EditActionType::COMPLETE:
-      return PagerAction::NEXT;
-    default:
-      break;
-    }
-  }
-  return PagerAction::SELECT_NO_CLEAR;
-}
-
 EditActionStatus waitPagerAction(ArrayPager &pager, const KeyBindings &bindings,
                                  KeyCodeReader &reader, const AtomicSigSet &watchSigSet) {
 // read key code and update the pager state
@@ -342,34 +318,50 @@ FETCH:
     goto FETCH; // ignore unrecognized escape sequence
   }
   const auto *action = bindings.findAction(reader.getEvent());
-  if (action && action->type == EditActionType::BACKWARD_DELETE_CHAR && pager.isFilterMode()) {
-    pager.popQueryChar();
-    return EditActionStatus::CONTINUE;
-  }
-  const auto pagerAction = getPagerAction(action);
-  if (pagerAction != PagerAction::SELECT_NO_CLEAR) {
-    reader.clear();
-  }
-  switch (pagerAction) {
-  case PagerAction::SELECT:
-  case PagerAction::SELECT_NO_CLEAR:
+  if (!action) {
     return EditActionStatus::OK;
-  case PagerAction::CANCEL:
+  }
+  switch (action->type) {
+  case EditActionType::ACCEPT:
+    reader.clear();
+    return EditActionStatus::OK;
+  case EditActionType::CANCEL:
     return EditActionStatus::CANCEL;
-  case PagerAction::REVERT:
+  case EditActionType::REVERT:
+    reader.clear();
     return EditActionStatus::REVERT;
-  case PagerAction::PREV:
-    pager.moveCursorToForward();
+  case EditActionType::TOGGLE_SEARCH:
+    if (pager.isFilterMode()) {
+      pager.disableFilterMode();
+    } else {
+      pager.tryToEnableFilterMode();
+    }
     break;
-  case PagerAction::NEXT:
-    pager.moveCursorToNext();
-    break;
-  case PagerAction::LEFT:
+  case EditActionType::BACKWARD_CHAR:
     pager.moveCursorToLeft();
     break;
-  case PagerAction::RIGHT:
+  case EditActionType::FORWARD_CHAR:
     pager.moveCursorToRight();
     break;
+  case EditActionType::UP_OR_HISTORY:
+  case EditActionType::COMPLETE_BACKWARD:
+    pager.moveCursorToForward();
+    break;
+  case EditActionType::DOWN_OR_HISTORY:
+  case EditActionType::COMPLETE:
+    pager.moveCursorToNext();
+    break;
+  case EditActionType::BACKWARD_DELETE_CHAR:
+    if (pager.isFilterMode()) {
+      pager.popQueryChar();
+      return EditActionStatus::CONTINUE;
+    }
+    return EditActionStatus::OK;
+  default:
+    if (pager.isFilterMode()) {
+      goto FETCH; // ignore unbound action in search filer mode
+    }
+    return EditActionStatus::OK;
   }
   return EditActionStatus::CONTINUE;
 }

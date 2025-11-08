@@ -12,7 +12,9 @@
         - when set to 0, the pager is disabled
         - when set to 100, the pager is full height
 - add incremental search filter to completion pager of ``LineEditor``
-    - show search toggle via ``complete-backward`` edit action
+    - complete and show search filer via ``complete-backward`` edit action
+    - enable/disable search filer via ``toggle-search`` edit action
+    - ignore unbound edit action in search filer mode
 
 ### Changed
 
