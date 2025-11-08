@@ -83,24 +83,26 @@ ArrayPager ArrayPager::create(const CandidatesObject &obj, const CharWidthProper
   return {obj, std::move(items), maxIndex, winSize, rowRatio};
 }
 
+static unsigned int saturatedSub(unsigned int x, unsigned int y) { return std::max(x, y) - y; }
+
 void ArrayPager::updateLayout() {
   this->showPager = true;
   this->showDesc = true;
   this->rows = (this->winSize.rows * this->rowRatio) / 100;
-  this->rows = std::min(this->rows, static_cast<unsigned int>(this->winSize.rows - ROW_MARGIN));
+  this->rows = std::min(this->rows, saturatedSub(this->winSize.rows, ROW_MARGIN));
   if (this->rows == 0) {
     this->rows = 1;
     this->showPager = false;
   }
   this->paneLen = this->items[this->maxLenItemIndex].itemLen();
-  this->panes = (this->winSize.cols - COL_MARGIN) / this->paneLen;
+  this->panes = saturatedSub(this->winSize.cols, COL_MARGIN) / this->paneLen;
   this->panes = std::max(this->panes, 1u);
   if (this->curRow >= this->getActualRows()) {
     this->curRow = this->getActualRows() - 1;
   }
   if (this->panes == 1) {
     // truncate to multiple of TAB_WIDTH
-    unsigned int colLimit = ((this->winSize.cols - COL_MARGIN) / TAB_WIDTH) * TAB_WIDTH;
+    unsigned int colLimit = saturatedSub(this->winSize.cols, COL_MARGIN) / TAB_WIDTH * TAB_WIDTH;
     if (this->paneLen > colLimit) {
       this->paneLen = colLimit; // larger than window size
       this->showDesc = false;

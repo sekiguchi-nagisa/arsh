@@ -57,7 +57,7 @@ public:
 private:
   static constexpr unsigned int DEFAULT_ROW_RATIO = 40;
   static constexpr unsigned int COL_MARGIN = 1;
-  static constexpr unsigned int ROW_MARGIN = 3;
+  static constexpr unsigned int ROW_MARGIN = 3; // line + pager-item + newline
 
   const CandidatesObject &obj;
   WindowSize winSize{0, 0};
