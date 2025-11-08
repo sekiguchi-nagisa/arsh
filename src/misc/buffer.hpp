@@ -281,7 +281,7 @@ FlexBuffer<T, SIZE_T> &FlexBuffer<T, SIZE_T>::operator+=(FlexBuffer &&buffer) no
 
 template <typename T, typename SIZE_T>
 FlexBuffer<T, SIZE_T> &FlexBuffer<T, SIZE_T>::append(const T *value, size_type size) noexcept {
-  if (this->data_ != value) {
+  if (this->data_ != value && size) {
     this->needMoreCap(size);
     memcpy(this->data_ + this->size_, value, sizeof(T) * size);
     this->size_ += size;
