@@ -18,7 +18,7 @@ jobs:
       - name: prepare
         run: |
           sudo apt update
-          sudo apt install language-pack-ja ninja-build
+          sudo apt install language-pack-ja ninja-build g++-9
       - name: configure
         run: |
           mkdir build
