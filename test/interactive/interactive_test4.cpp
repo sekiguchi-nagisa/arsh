@@ -761,7 +761,7 @@ TEST_F(InteractiveTest, lineEditorCompFilterSearchBox) {
     ASSERT_NO_FATAL_FAILURE(this->expect("> ;touch\nsearch: ouc\ntouch   \n"));
 
     // revert and clear line
-    this->send("\x1b");
+    this->sendCSIu(27); // ESC
     ASSERT_NO_FATAL_FAILURE(this->expect("> ;t"));
     this->send(CTRL_U);
     ASSERT_NO_FATAL_FAILURE(this->expect("> "));
