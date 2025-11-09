@@ -74,6 +74,11 @@ RenderingResult doRendering(const RenderingContext &ctx, ObserverPtr<const Array
     LineRenderer renderer(ctx.ps, promptCols);
     renderer.setColLimit(maxCols);
     renderer.renderLines(ctx.buf.getToCursor());
+    if (pager && pager->isFilterMode()) {
+      renderer.setInitCols(0);
+      renderer.renderLines("\n");
+      ArrayPager::renderSearchBox(renderer, pager->getQuery());
+    }
     result.cursorCols = renderer.getTotalCols();
     result.cursorRows = promptRows + 1 + renderer.getTotalRows();
   }

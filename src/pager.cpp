@@ -235,12 +235,7 @@ void ArrayPager::render(LineRenderer &renderer) const {
   }
 
   if (this->isFilterMode()) {
-    renderer.setLineBreakOp(LineRenderer::LineBreakOp::TRUNCATE);
-    renderer.setInitCols(0);
-    renderer.setEmitNewline(false);
-    renderer.renderLines("search: ");
-    renderer.renderLines(this->query);
-    renderer.setEmitNewline(true);
+    renderSearchBox(renderer, this->query);
     renderer.renderLines("\n");
     if (!this->filteredItemSize()) {
       renderer.renderWithANSI("\x1b[7m(no matches)\x1b[0m\n");
@@ -295,6 +290,17 @@ void ArrayPager::render(LineRenderer &renderer) const {
              startIndex + actualRows, this->getLogicalRows());
     renderer.renderWithANSI(footer);
   }
+}
+
+void ArrayPager::renderSearchBox(LineRenderer &renderer, StringRef query) {
+  renderer.setLineBreakOp(LineRenderer::LineBreakOp::TRUNCATE);
+  renderer.setInitCols(0);
+  renderer.setEmitNewline(false);
+  renderer.renderWithANSI("\x1b[4m");
+  renderer.renderLines(SEARCH_FILTER_PREFIX);
+  renderer.renderLines(query);
+  renderer.setEmitNewline(true);
+  renderer.renderWithANSI("\x1b[0m");
 }
 
 EditActionStatus waitPagerAction(ArrayPager &pager, const KeyBindings &bindings,

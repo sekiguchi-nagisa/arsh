@@ -1114,6 +1114,9 @@ EditActionStatus LineEditorObject::completeLine(ARState &state, RenderingContext
   auto pager = ArrayPager::create(*candidates, ctx.ps, {}, this->pagerRatio);
 
   if (backward) { // enable search filter
+    WinSize winSize;
+    syncWinSize(state, this->ttyFd, &winSize);
+    pager.updateWinSize({.rows = winSize.rows, .cols = winSize.cols});
     pager.tryToEnableFilterMode();
   } else {
     /**

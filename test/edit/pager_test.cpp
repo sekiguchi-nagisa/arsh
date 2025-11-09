@@ -736,54 +736,54 @@ TEST_F(PagerTest, filterBase) {
 
   // enable
   ASSERT_TRUE(pager.tryToEnableFilterMode());
-  expect = "search: \r\n\x1b[7mABC \x1b[0mEFG \r\n";
+  expect = "\x1b[4msearch: \x1b[0m\r\n\x1b[7mABC \x1b[0mEFG \r\n";
   out = this->render(pager);
   ASSERT_EQ(expect, out);
 
   // push
   pager.pushQueryChar("B");
   ASSERT_EQ("B", pager.getQuery());
-  expect = "search: B\r\n\x1b[7mABC \x1b[0mBCD \r\n";
+  expect = "\x1b[4msearch: B\x1b[0m\r\n\x1b[7mABC \x1b[0mBCD \r\n";
   out = this->render(pager);
   ASSERT_EQ(expect, out);
 
   pager.moveCursorToNext();
-  expect = "search: B\r\nABC \x1b[7mBCD \x1b[0m\r\n";
+  expect = "\x1b[4msearch: B\x1b[0m\r\nABC \x1b[7mBCD \x1b[0m\r\n";
   out = this->render(pager);
   ASSERT_EQ(expect, out);
 
   // pop
   pager.popQueryChar();
   ASSERT_EQ("", pager.getQuery());
-  expect = "search: \r\n\x1b[7mBCD \x1b[0mFGH \r\n";
+  expect = "\x1b[4msearch: \x1b[0m\r\n\x1b[7mBCD \x1b[0mFGH \r\n";
   out = this->render(pager);
   ASSERT_EQ(expect, out);
 
   pager.moveCursorToNext();
   pager.moveCursorToNext();
-  expect = "search: \r\n\x1b[7mDEF \x1b[0mHIJ \r\n";
+  expect = "\x1b[4msearch: \x1b[0m\r\n\x1b[7mDEF \x1b[0mHIJ \r\n";
   out = this->render(pager);
   ASSERT_EQ(expect, out);
 
   // push
   pager.pushQueryChar("C");
-  expect = "search: C\r\n\x1b[7mABC \x1b[0mCDE \r\n";
+  expect = "\x1b[4msearch: C\x1b[0m\r\n\x1b[7mABC \x1b[0mCDE \r\n";
   out = this->render(pager);
   ASSERT_EQ(expect, out);
 
   pager.moveCursorToNext();
-  expect = "search: C\r\n\x1b[7mBCD \x1b[0m\r\n";
+  expect = "\x1b[4msearch: C\x1b[0m\r\n\x1b[7mBCD \x1b[0m\r\n";
   out = this->render(pager);
   ASSERT_EQ(expect, out);
 
   // expand
   pager.updateWinSize({.rows = 10, .cols = 10});
-  expect = "search: C\r\n\x1b[7mBCD \x1b[0m\r\nCDE \r\n";
+  expect = "\x1b[4msearch: C\x1b[0m\r\n\x1b[7mBCD \x1b[0m\r\nCDE \r\n";
   out = this->render(pager);
   ASSERT_EQ(expect, out);
 
   pager.moveCursorToNext();
-  expect = "search: C\r\nABC \x1b[7mCDE \x1b[0m\r\nBCD \r\n";
+  expect = "\x1b[4msearch: C\x1b[0m\r\nABC \x1b[7mCDE \x1b[0m\r\nBCD \r\n";
   out = this->render(pager);
   ASSERT_EQ(expect, out);
 
@@ -814,7 +814,7 @@ TEST_F(PagerTest, filterNoMatches) {
   ASSERT_TRUE(pager.tryToEnableFilterMode());
   pager.moveCursorToNext();
   pager.moveCursorToNext();
-  expect = "search: \r\n\x1b[7mCDE \x1b[0mGHI \r\n";
+  expect = "\x1b[4msearch: \x1b[0m\r\n\x1b[7mCDE \x1b[0mGHI \r\n";
   out = this->render(pager);
   ASSERT_EQ(expect, out);
   ASSERT_EQ(2, pager.getIndex());
@@ -822,7 +822,7 @@ TEST_F(PagerTest, filterNoMatches) {
 
   // no matches
   pager.pushQueryChar("Z");
-  expect = "search: Z\r\n\x1b[7m(no matches)\x1b[0m\r\n";
+  expect = "\x1b[4msearch: Z\x1b[0m\r\n\x1b[7m(no matches)\x1b[0m\r\n";
   out = this->render(pager);
   ASSERT_EQ(expect, out);
   ASSERT_EQ(2, pager.getIndex()); // index is not changed if no matches

@@ -34,6 +34,8 @@ class ArrayPager {
 public:
   static constexpr size_t TAB_WIDTH = SYS_LINE_RENDERER_TAB_WIDTH;
 
+  static constexpr StringRef SEARCH_FILTER_PREFIX = "search: ";
+
   struct WindowSize {
     unsigned short rows{24};
     unsigned short cols{80};
@@ -194,6 +196,8 @@ public:
    * @param renderer
    */
   void render(LineRenderer &renderer) const;
+
+  static void renderSearchBox(LineRenderer &renderer, StringRef query);
 
   // for pager api
   void moveCursorToForward() {
