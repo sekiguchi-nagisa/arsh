@@ -6,15 +6,10 @@
 
 #### Builtin
 
-- add ``pager-ratio`` config to ``LineEditor#config`` method
-    - specify the ratio of completion pager height to terminal height (0–100)
-        - default is 40
-        - when set to 0, the pager is disabled
-        - when set to 100, the pager is full height
 - add incremental search filter to completion pager of ``LineEditor``
-    - complete and show search filer via ``complete-backward`` edit action
-    - enable/disable search filer via ``toggle-search`` edit action
-    - ignore unbound edit action in search filer mode
+    - complete and show search filter via ``complete-backward`` edit action
+    - enable/disable search filter via ``toggle-search`` edit action
+    - ignore unbound escape sequences / edit actions in search filter mode
 
 ### Changed
 
@@ -39,6 +34,11 @@
     - also add the following actions
         - ``complete-backward``: move pager cursor to previous item
         - ``revert``: revert pager inserted item
+- add ``pager-ratio`` config to ``LineEditor#config`` method
+    - specify the ratio of completion pager height to terminal height (0–100)
+        - default is 40
+        - when set to 0, the pager is disabled
+        - when set to 100, the pager is full height
 - improve sub-command completion
     - complete sub-command from nested named imported modules
     - put sub-command description (`user-defined` or `module`)
