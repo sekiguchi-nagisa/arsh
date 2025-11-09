@@ -47,13 +47,10 @@ public:
   /**
    *
    * @param value
-   * may be null. if not null, must be null-terminated string.
+   * maybe null. if not null, it must be a null-terminated string.
    */
-  constexpr StringRefBase(const char *value) noexcept : ptr_(value), size_(0) { // NOLINT
-    if (this->ptr_) {
-      this->size_ = __builtin_strlen(this->ptr_);
-    }
-  }
+  constexpr StringRefBase(const char *value) noexcept // NOLINT
+      : ptr_(value), size_(this->ptr_ ? __builtin_strlen(this->ptr_) : 0) {}
 
   constexpr StringRefBase(const char *value, size_type size) noexcept : ptr_(value), size_(size) {}
 
