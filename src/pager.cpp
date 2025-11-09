@@ -321,10 +321,36 @@ FETCH:
     return EditActionStatus::OK;
   }
   if (!reader.getEvent().hasValue()) {
-    goto FETCH; // ignore unrecognized escape sequence
+    goto FETCH; // ignore unrecognized escape sequences
+  }
+  if (pager.isFilterMode()) {
+    if (const auto codePoint = reader.getEscapedPlainCodePoint(); codePoint > -1) {
+      char buf[4];
+      unsigned int r = UnicodeUtil::codePointToUtf8(codePoint, buf);
+      pager.pushQueryChar({buf, r});
+      return EditActionStatus::CONTINUE;
+    }
+    if (reader.hasBracketedPasteStart()) {
+      std::string out;
+      const auto oldTimeout = reader.getTimeout();
+      reader.setTimeout(oldTimeout * 2);
+      const bool r = reader.intoBracketedPasteMode([&out](const StringRef ref) {
+        out += ref; // TODO: check limit
+        return true;
+      });
+      reader.setTimeout(oldTimeout);
+      if (!r) {
+        return EditActionStatus::ERROR;
+      }
+      pager.pushQueryChar(out);
+      return EditActionStatus::CONTINUE;
+    }
   }
   const auto *action = bindings.findAction(reader.getEvent());
   if (!action) {
+    if (pager.isFilterMode()) {
+      goto FETCH; // ignore unbound escape sequences in search filer mode
+    }
     return EditActionStatus::OK;
   }
   switch (action->type) {
@@ -365,7 +391,7 @@ FETCH:
     return EditActionStatus::OK;
   default:
     if (pager.isFilterMode()) {
-      goto FETCH; // ignore unbound action in search filer mode
+      goto FETCH; // ignore unbound actions in search filer mode
     }
     return EditActionStatus::OK;
   }

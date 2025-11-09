@@ -275,9 +275,6 @@ public:
 
   template <typename Func, enable_when<consumer_requirement_v<Func>> = nullptr>
   bool intoBracketedPasteMode(Func func) const {
-    constexpr char ENTER = 13;
-    constexpr char ESC = 27;
-
     errno = 0;
     bool noMem = false;
     while (true) {
@@ -292,12 +289,12 @@ public:
         goto END;
       }
       switch (buf) {
-      case ENTER:
+      case '\r':
         if (!func({"\n", 1})) { // insert \n instead of \r
           noMem = true;
         }
         continue;
-      case ESC: { // bracket stop \e[201~
+      case '\x1b': { // bracket stop \e[201~
         char seq[6];
         seq[0] = '\x1b';
         constexpr char expect[] = {'[', '2', '0', '1', '~'};

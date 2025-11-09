@@ -704,6 +704,8 @@ TEST_F(InteractiveTest, lineEditorCompFilter) {
     ASSERT_NO_FATAL_FAILURE(this->expect("> ;tee\nsearch: e\ntrue    tee     \n"));
     this->send(CTRL_D); // not passthru
     ASSERT_NO_FATAL_FAILURE(this->expect("> ;tee\nsearch: e\ntrue    tee     \n"));
+    this->sendCSIu('z', CTRL | ALT | SHIFT); // ignore unbound escape sequences
+    ASSERT_NO_FATAL_FAILURE(this->expect("> ;tee\nsearch: e\ntrue    tee     \n"));
     this->send(CTRL_S);
     ASSERT_NO_FATAL_FAILURE(this->expect("> ;tee\ntrue    tee     touch   \n"));
     this->send(CTRL_W); // cancel and edit
@@ -724,6 +726,43 @@ TEST_F(InteractiveTest, lineEditorCompFilter) {
     ASSERT_NO_FATAL_FAILURE(this->expect("> time touch\nsearch: o\ntouch   \n"));
     this->send("\r");
     ASSERT_NO_FATAL_FAILURE(this->expect("> time touch"));
+    this->send(CTRL_U);
+    ASSERT_NO_FATAL_FAILURE(this->expect("> "));
+  }
+
+  this->send(CTRL_D);
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
+}
+
+TEST_F(InteractiveTest, lineEditorCompFilterSearchBox) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
+      "$LINE_EDIT.setCompleter(function(s,m) => new Candidates( @(true tee touch)) )"));
+  this->changePrompt("> ");
+
+  // backward-complete (also enable search filer)
+  this->send(";t");
+  ASSERT_NO_FATAL_FAILURE(this->expect("> ;t"));
+  {
+    auto cleanup = this->reuseScreen();
+    this->send(SHIFT_TAB);
+    ASSERT_NO_FATAL_FAILURE(this->expect("> ;true\nsearch: \ntrue    tee     touch   \n"));
+    this->sendCSIu(';');
+    ASSERT_NO_FATAL_FAILURE(this->expect("> ;t\nsearch: ;\n(no matches)\n"));
+    this->paste("hello world!!");
+    ASSERT_NO_FATAL_FAILURE(this->expect("> ;t\nsearch: ;hello world!!\n(no matches)\n"));
+    this->send(CTRL_S);
+    ASSERT_NO_FATAL_FAILURE(this->expect("> ;true\ntrue    tee     touch   \n"));
+    this->send(CTRL_S);
+    ASSERT_NO_FATAL_FAILURE(this->expect("> ;true\nsearch: \ntrue    tee     touch   \n"));
+    this->paste("ouc");
+    ASSERT_NO_FATAL_FAILURE(this->expect("> ;touch\nsearch: ouc\ntouch   \n"));
+
+    // revert and clear line
+    this->send("\x1b");
+    ASSERT_NO_FATAL_FAILURE(this->expect("> ;t"));
     this->send(CTRL_U);
     ASSERT_NO_FATAL_FAILURE(this->expect("> "));
   }

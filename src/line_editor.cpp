@@ -669,7 +669,7 @@ ssize_t LineEditorObject::editInRawMode(ARState &state, RenderingContext &ctx) {
     if (reader.hasBracketedPasteStart()) {
       ctx.buf.commitLastChange();
       const auto oldTimeout = reader.getTimeout();
-      reader.setTimeout(KeyCodeReader::DEFAULT_READ_TIMEOUT_MSEC * 2);
+      reader.setTimeout(oldTimeout * 2);
       bool r = reader.intoBracketedPasteMode(
           [&ctx](StringRef ref) { return ctx.buf.insertToCursor(ref, true); });
       reader.setTimeout(oldTimeout);
