@@ -33,7 +33,7 @@ DEFINE_HIGHLIGHT_STYLE(monokai) {
   constexpr auto TEXT = ValidRule("#F8F8F2");
   constexpr auto BG = ValidRule("bg:#272822");
   constexpr auto ARG = ValidRule("#E6DB74");
-  constexpr auto ERR = ValidRule("#f44747");
+  constexpr auto ERR = ValidRule("bold #f44747");
 
   return {
       {HighlightTokenClass::COMMENT, COMMENT},  {HighlightTokenClass::KEYWORD, KEYWORD},

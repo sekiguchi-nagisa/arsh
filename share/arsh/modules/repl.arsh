@@ -79,7 +79,9 @@ source $SCRIPT_DIR/cnf.arsh inlined
 $ISDIR_HOOK = function($s : String) => cd $s && pwd
 
 # syntax highlight color setting
-if(command -v arcolorize &>> /dev/null) {
+{
+    var bin = "$(command -v ${$DATA_DIR.dirname().dirname()}/bin/arcolorize 2> /dev/null || 
+                    command -v arcolorize 2> /dev/null)"
     var format = "term256"
     if getenv COLORTERM && $REPLY == 'truecolor' {
         $format = "term"
@@ -87,9 +89,11 @@ if(command -v arcolorize &>> /dev/null) {
     if getenv TERM && $REPLY.contains('screen') {
         $format = "term256"
     }
-    var color = "$(arcolorize --dump -s monokai_dimmed -f $format 2>> /dev/null)"
-    if $? == 0 {
-        $LINE_EDIT.config('color', $color)
+    if !$bin.empty() {
+        var color = "$(call $bin --dump -s monokai_dimmed -f $format 2>> /dev/null)"
+        if $? == 0 {
+            $LINE_EDIT.config('color', $color)
+        }
     }
 }
 

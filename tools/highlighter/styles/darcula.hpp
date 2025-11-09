@@ -34,7 +34,7 @@ DEFINE_HIGHLIGHT_STYLE(darcula) {
   constexpr auto PARAM = ValidRule("#A9B7C6");
   constexpr auto TEXT = ValidRule("#D4D4D4");
   constexpr auto BG = ValidRule("bg:#2B2B2B");
-  constexpr auto ERR = ValidRule("#BC3F3C");
+  constexpr auto ERR = ValidRule("bold #BC3F3C");
 
   return {
       {HighlightTokenClass::COMMENT, COMMENT},  {HighlightTokenClass::KEYWORD, KEYWORD},
