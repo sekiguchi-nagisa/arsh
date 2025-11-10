@@ -41,7 +41,7 @@ class CandidatesObject;
 
 class LineEditorObject : public ObjectWithRtti<ObjectKind::LineEditor> {
 private:
-  int ttyFd{-1};
+  const int ttyFd; // never closed
 
   bool lock{false};
 
@@ -105,7 +105,7 @@ private:
 public:
   explicit LineEditorObject(ARState &state);
 
-  ~LineEditorObject();
+  ~LineEditorObject() = default;
 
   /**
    * read line with line editing

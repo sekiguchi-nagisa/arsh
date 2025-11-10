@@ -77,6 +77,8 @@ private:
                               RuntimeOption::FAIL_GLOB | RuntimeOption::FAIL_TILDE |
                               RuntimeOption::GLOBSTAR | RuntimeOption::HUP_EXIT};
 
+  int ttyFd{-1};
+
 public:
   ARExecMode execMode{AR_EXEC_MODE_NORMAL};
 
@@ -146,7 +148,9 @@ public:
 
   ARState();
 
-  ~ARState() = default;
+  ~ARState();
+
+  int getTTYFd() const { return this->ttyFd; }
 
   bool hasError() const { return this->stack.hasError(); }
 
@@ -205,7 +209,7 @@ public:
    */
   int tryToBeForeground() const {
     if (this->isJobControl() && this->jobTable.getToplevelLastPipePGID() < 0) {
-      return beForeground(0);
+      return beForeground(this->ttyFd, 0);
     }
     return 1;
   }

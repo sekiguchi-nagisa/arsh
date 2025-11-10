@@ -122,11 +122,19 @@ static bool check_strftime_plus(timestamp ts) {
   return false;
 }
 
+static int tryOpenTTY() {
+  int ttyFd = open("/dev/tty", O_RDWR | O_CLOEXEC);
+  if (ttyFd > -1) {
+    remapFDCloseOnExec(ttyFd);
+  }
+  return ttyFd;
+}
+
 ARState::ARState()
-    : modLoader(this->sysConfig), initTime(getCurrentTimestamp()),
-      support_strftime_plus(check_strftime_plus(this->initTime)), baseTime(this->initTime),
-      rng(this->baseTime.time_since_epoch().count(), std::random_device()(), 42,
-          reinterpret_cast<uintptr_t>(this)) {
+    : modLoader(this->sysConfig), initTime(getCurrentTimestamp()), ttyFd(tryOpenTTY()),
+      support_strftime_plus(check_strftime_plus(this->initTime)), jobTable(this->ttyFd),
+      baseTime(this->initTime), rng(this->baseTime.time_since_epoch().count(),
+                                    std::random_device()(), 42, reinterpret_cast<uintptr_t>(this)) {
   // init envs
   initEnv();
   const char *pwd = getenv(ENV_PWD);
@@ -135,6 +143,8 @@ ARState::ARState()
     this->logicalWorkingDir = expandDots(nullptr, pwd);
   }
 }
+
+ARState::~ARState() { close(this->ttyFd); }
 
 void ARState::updatePipeStatus(unsigned int size, const Proc *procs, bool mergeExitStatus) {
   if (size == 1 && !mergeExitStatus) {
@@ -2436,7 +2446,7 @@ bool VM::mainLoop(ARState &state) {
       SignalGuard guard;
       int sigNum = ARState::popPendingSignal();
       if (sigNum == SIGWINCH) {
-        syncWinSize(state, -1, nullptr);
+        syncWinSize(state, nullptr);
       }
       if (auto handler = state.sigVector.lookup(sigNum); handler != nullptr) {
         if (!kickSignalHandler(state, sigNum, handler)) {

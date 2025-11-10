@@ -24,7 +24,7 @@
 
 namespace arsh {
 
-int beForeground(pid_t pid);
+int beForeground(int ttyFd, pid_t pid);
 
 #define EACH_WAIT_OP(OP)                                                                           \
   OP(BLOCKING)                                                                                     \
@@ -361,12 +361,13 @@ public:
 
   /**
    * the process group of this job will be the foreground process group
+   * @param ttyFd
    * @return
    * if success, return 0.
    * if do-nothing, return 1.
    * if error, return -1 and set errno
    */
-  int tryToBeForeground() const;
+  int tryToBeForeground(int ttyFd) const;
 
   void updateState() {
     if (this->isAvailable()) {
@@ -436,8 +437,13 @@ public:
 private:
   FlexBuffer<Entry> entries;
   unsigned int deletedCount{0};
+  const int ttyFd; // never closed
 
 public:
+  explicit ProcTable(int ttyFd) : ttyFd(ttyFd) {}
+
+  int getTTYFd() const { return this->ttyFd; }
+
   const FlexBuffer<Entry> &getEntries() const { return this->entries; }
 
   void add(const Job &job) {
@@ -574,7 +580,7 @@ public:
 
   using ConstEntryIter = std::vector<Job>::const_iterator;
 
-  JobTable() = default;
+  explicit JobTable(int ttyFd) : procTable(ttyFd) {}
   ~JobTable() = default;
 
   void setNotifyCallback(ObserverPtr<JobNotifyCallback> callback) {

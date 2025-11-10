@@ -442,7 +442,7 @@ TEST_F(VMTest, callMethodAPI) {
 }
 
 TEST(ProcTableTest, base) {
-  ProcTable table;
+  ProcTable table(-1);
   auto *e = table.addProc(12, 1, 1);
   ASSERT_EQ(12, e->pid());
   ASSERT_EQ(1, e->jobId());
@@ -509,7 +509,7 @@ struct JobTableTest : public VMTest {
 };
 
 TEST_F(JobTableTest, attach) {
-  JobTable jobTable;
+  JobTable jobTable(-1);
   {
     auto &e = jobTable.syncAndGetCurPrevJobs();
     ASSERT_FALSE(e.cur);

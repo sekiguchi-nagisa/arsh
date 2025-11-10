@@ -271,15 +271,8 @@ namespace arsh {
 // ##     LineEditorObject     ##
 // ##############################
 
-LineEditorObject::LineEditorObject(ARState &state) : ObjectWithRtti(TYPE::LineEditor) {
-  this->ttyFd = open("/dev/tty", O_RDWR | O_CLOEXEC);
-  if (this->ttyFd > -1) {
-    remapFDCloseOnExec(this->ttyFd);
-    syncWinSize(state, this->ttyFd, nullptr);
-  }
-}
-
-LineEditorObject::~LineEditorObject() { close(this->ttyFd); }
+LineEditorObject::LineEditorObject(ARState &state)
+    : ObjectWithRtti(TYPE::LineEditor), ttyFd(state.getTTYFd()) {}
 
 static void enableBracketPasteMode(int fd) {
   const char *s = "\x1b[?2004h";
@@ -420,7 +413,7 @@ static int preparePrompt(int ttyFd) {
 void LineEditorObject::refreshLine(ARState &state, RenderingContext &ctx, bool repaint,
                                    ObserverPtr<ArrayPager> pager) {
   WinSize winSize;
-  syncWinSize(state, this->ttyFd, &winSize);
+  syncWinSize(state, &winSize);
 
   if (pager) {
     pager->updateWinSize({.rows = winSize.rows, .cols = winSize.cols});
@@ -1115,7 +1108,7 @@ EditActionStatus LineEditorObject::completeLine(ARState &state, RenderingContext
 
   if (backward) { // enable search filter
     WinSize winSize;
-    syncWinSize(state, this->ttyFd, &winSize);
+    syncWinSize(state, &winSize);
     pager.updateWinSize({.rows = winSize.rows, .cols = winSize.cols});
     pager.tryToEnableFilterMode();
   } else {

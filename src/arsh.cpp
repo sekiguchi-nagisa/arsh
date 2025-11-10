@@ -183,7 +183,7 @@ ARState *ARState_createWithMode(ARExecMode mode) {
   bindBuiltins(bindingConsumer, ctx->sysConfig, ctx->typePool, *builtin);
 
   loadEmbeddedScript(ctx, builtin);
-
+  syncWinSize(*ctx, nullptr);
   ctx->execMode = mode;
   return ctx;
 }
@@ -597,7 +597,7 @@ ssize_t ARState_readLine(ARState *st, char *buf, size_t bufSize, ARError *e) {
    * always be (termianl) foreground process
    * some background process may change termianl foreground setting
    */
-  if (beForeground(getpid()) < 0) {
+  if (beForeground(st->getTTYFd(), getpid()) < 0) {
     return -1;
   }
   auto &editor = typeAs<LineEditorObject>(getBuiltinGlobal(*st, VAR_LINE_EDIT));

@@ -26,18 +26,16 @@
 
 namespace arsh {
 
-static int changeForegroundProcessGroup(pid_t pgid) {
+static int changeForegroundProcessGroup(int ttyFd, pid_t pgid) {
   errno = 0;
-  const int ttyFd = open("/dev/tty", O_RDONLY);
   const int r = tcsetpgrp(ttyFd, pgid);
   const int old = errno;
   LOG(DUMP_TCSETPGRP, "tcsetpgrp(%d, %d) = (%d, %s)", ttyFd, pgid, r, strerror(old));
-  close(ttyFd);
   errno = old;
   return r;
 }
 
-int beForeground(pid_t pid) { return changeForegroundProcessGroup(getpgid(pid)); }
+int beForeground(int ttyFd, pid_t pid) { return changeForegroundProcessGroup(ttyFd, getpgid(pid)); }
 
 Proc Proc::fork(ARState &st, const Param param) {
   SignalGuard guard;
@@ -61,7 +59,7 @@ Proc Proc::fork(ARState &st, const Param param) {
     if (param.jobControl) {
       setpgid(0, param.pgid);
       if (param.foreground) {
-        beForeground(0);
+        beForeground(st.getTTYFd(), 0);
       }
       setJobControlSignalSetting(st, false);
     }
@@ -96,7 +94,7 @@ Proc Proc::fork(ARState &st, const Param param) {
     if (param.jobControl) {
       setpgid(pid, param.pgid);
       if (param.foreground) {
-        beForeground(pid);
+        beForeground(st.getTTYFd(), pid);
       }
     }
     if (param.sync) {
@@ -406,9 +404,9 @@ bool JobObject::restoreStdin() {
   return false;
 }
 
-int JobObject::tryToBeForeground() const {
+int JobObject::tryToBeForeground(int ttyFd) const {
   if (pid_t pgid = this->getPGID(); pgid > -1) {
-    return changeForegroundProcessGroup(pgid);
+    return changeForegroundProcessGroup(ttyFd, pgid);
   }
   return 1;
 }
@@ -758,7 +756,7 @@ void JobTable::removeTerminatedJobs() {
   if (this->toplevelLastPipeJob && this->toplevelLastPipeJob->isTerminated()) {
     assert(this->toplevelLastPipeJob->isGrouped());
     LOG(DUMP_WAIT, "remove toplevelLastPipeJob and switch back to foreground");
-    beForeground(0);
+    beForeground(this->getProcTable().getTTYFd(), 0);
     this->toplevelLastPipeJob = nullptr;
   }
 }
