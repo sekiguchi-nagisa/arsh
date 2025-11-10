@@ -174,9 +174,9 @@ private:
 
   bool hasFeature(LineEditorFeature f) const { return hasFlag(this->features, f); }
 
-  bool enableRawMode(int fd);
+  bool enableRawMode();
 
-  void disableRawMode(int fd);
+  void disableRawMode();
 
   void refreshLine(ARState &state, RenderingContext &ctx, bool repaint = true,
                    ObserverPtr<ArrayPager> pager = nullptr);

@@ -318,13 +318,12 @@ static void disableModifyOtherKeys(int fd) {
 }
 
 /* Raw mode: 1960 magic shit. */
-bool LineEditorObject::enableRawMode(int fd) {
-  termios raw{}; // NOLINT
-
-  if (tcgetattr(fd, &this->orgTermios) == -1) {
+bool LineEditorObject::enableRawMode() {
+  if (tcgetattr(this->ttyFd, &this->orgTermios) == -1) {
     return false;
   }
 
+  termios raw{};    // NOLINT
   xcfmakesane(raw); /* modify the sane mode */
   /* input modes: no break, no CR to NL, no parity check, no strip char
    */
@@ -358,35 +357,35 @@ bool LineEditorObject::enableRawMode(int fd) {
   cfsetospeed(&raw, EXTB);
 
   /* put terminal in raw mode after flushing */
-  if (tcsetattr(fd, TCSAFLUSH, &raw) < 0) {
+  if (tcsetattr(this->ttyFd, TCSAFLUSH, &raw) < 0) {
     return false;
   }
   this->rawMode = true;
   if (this->hasFeature(LineEditorFeature::BRACKETED_PASTE)) {
-    enableBracketPasteMode(fd);
+    enableBracketPasteMode(this->ttyFd);
   }
   if (this->hasFeature(LineEditorFeature::KITTY_KEYBOARD_PROTOCOL)) {
-    enableKittyKeyboardProtocol(fd);
+    enableKittyKeyboardProtocol(this->ttyFd);
   }
   if (this->hasFeature(LineEditorFeature::XTERM_MODIFY_OTHER_KEYS)) {
-    enableModifyOtherKeys(fd);
+    enableModifyOtherKeys(this->ttyFd);
   }
   return true;
 }
 
-void LineEditorObject::disableRawMode(int fd) {
+void LineEditorObject::disableRawMode() {
   if (this->rawMode) {
     if (this->hasFeature(LineEditorFeature::BRACKETED_PASTE)) {
-      disableBracketPasteMode(fd);
+      disableBracketPasteMode(this->ttyFd);
     }
     if (this->hasFeature(LineEditorFeature::KITTY_KEYBOARD_PROTOCOL)) {
-      disableKittyKeyboardProtocol(fd);
+      disableKittyKeyboardProtocol(this->ttyFd);
     }
     if (this->hasFeature(LineEditorFeature::XTERM_MODIFY_OTHER_KEYS)) {
-      disableModifyOtherKeys(fd);
+      disableModifyOtherKeys(this->ttyFd);
     }
     /* Don't even check the return value as it's too late. */
-    if (tcsetattr(fd, TCSAFLUSH, &this->orgTermios) != -1) {
+    if (tcsetattr(this->ttyFd, TCSAFLUSH, &this->orgTermios) != -1) {
       this->rawMode = false;
     }
   }
@@ -550,7 +549,7 @@ static bool rotateHistoryOrUpDown(HistRotator &histRotate, LineBuffer &buf, bool
  *
  * The function returns the length of the current buffer. */
 ssize_t LineEditorObject::editLine(ARState &state, RenderingContext &ctx) {
-  if (!this->enableRawMode(this->ttyFd)) {
+  if (!this->enableRawMode()) {
     return -1;
   }
 
@@ -567,7 +566,7 @@ ssize_t LineEditorObject::editLine(ARState &state, RenderingContext &ctx) {
       this->refreshLine(state, ctx, false);
     }
   }
-  this->disableRawMode(this->ttyFd);
+  this->disableRawMode();
   if (putNewline) {
     dprintf(this->ttyFd, "\n%s",
             this->hasFeature(LineEditorFeature::SEMANTIC_PROMPT) ? OSC133_("C") : "");
@@ -1221,11 +1220,11 @@ Value LineEditorObject::kickCallback(ARState &state, Value &&callback, CallArgs 
 
   const bool restoreTTY = this->rawMode;
   if (restoreTTY) {
-    this->disableRawMode(this->ttyFd);
+    this->disableRawMode();
   }
   auto ret = VM::callFunction(state, std::move(callback), std::move(callArgs));
   if (restoreTTY) {
-    this->enableRawMode(this->ttyFd);
+    this->enableRawMode();
   }
 
   // restore state
@@ -1356,7 +1355,7 @@ Value LineEditorObject::getkey(ARState &state) {
   Value ret;
 
   KeyCodeReader reader(this->ttyFd);
-  if (this->enableRawMode(this->ttyFd) && reader.fetch() >= 0) {
+  if (this->enableRawMode() && reader.fetch() >= 0) {
     auto typeOrError = state.typePool.createTupleType(
         {&state.typePool.get(TYPE::String), &state.typePool.get(TYPE::String)});
     assert(typeOrError && typeOrError.asOk()->isTupleType());
@@ -1377,7 +1376,7 @@ Value LineEditorObject::getkey(ARState &state) {
   for (char data[256]; readRetryWithTimeout(this->ttyFd, data, std::size(data), 10) != -2;)
     ;
 
-  this->disableRawMode(this->ttyFd);
+  this->disableRawMode();
   if (errNum) {
     raiseSystemError(state, errNum, "cannot read keycode");
   }
