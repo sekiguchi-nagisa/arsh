@@ -737,6 +737,42 @@ TEST(BitSetTest, base) {
   }
 }
 
+TEST(BitSetTest, countZero) {
+  {
+    BitSet set(129);
+    ASSERT_EQ(129, set.countTailZero());
+    for (int i = 128; i > -1; i--) {
+      set.set(i);
+      ASSERT_EQ(i, set.countTailZero());
+      set.reset(i);
+    }
+  }
+
+  {
+    BitSet set(129);
+    set.set(17);
+    ASSERT_EQ(17, set.countTailZero());
+  }
+}
+
+TEST(BitSetTest, iterate) {
+  BitSet set(137);
+  ASSERT_EQ(137, set.size());
+  ASSERT_EQ(set.size(), set.nextSetBit(0));
+  set.set(23);
+  set.set(49);
+  set.set(67);
+  set.set(91);
+  set.set(129);
+  ASSERT_EQ(23, set.nextSetBit(0));
+  ASSERT_EQ(23, set.nextSetBit(23));
+  ASSERT_EQ(49, set.nextSetBit(24));
+  ASSERT_EQ(67, set.nextSetBit(50));
+  ASSERT_EQ(91, set.nextSetBit(68));
+  ASSERT_EQ(129, set.nextSetBit(92));
+  ASSERT_EQ(137, set.nextSetBit(130));
+}
+
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

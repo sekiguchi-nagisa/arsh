@@ -17,6 +17,7 @@
 #ifndef MISC_LIB_INLINED_ARRAY_HPP
 #define MISC_LIB_INLINED_ARRAY_HPP
 
+#include <cassert>
 #include <memory>
 #include <type_traits>
 
@@ -74,9 +75,15 @@ public:
 
   T *ptr() { return this->ptr_; }
 
-  const T &operator[](size_t i) const { return this->ptr_[i]; }
+  const T &operator[](size_t i) const {
+    assert(i < this->size());
+    return this->ptr_[i];
+  }
 
-  T &operator[](size_t i) { return this->ptr_[i]; }
+  T &operator[](size_t i) {
+    assert(i < this->size());
+    return this->ptr_[i];
+  }
 
   bool isAllocated() const { return this->size() > std::size(this->data_); }
 };

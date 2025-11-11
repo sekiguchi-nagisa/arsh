@@ -51,11 +51,13 @@ public:
   }
 
   BitSet &set(size_t pos) {
+    assert(pos < this->size());
     this->sets[pos / N].set(pos % N);
     return *this;
   }
 
   BitSet &reset(size_t pos) {
+    assert(pos < this->size());
     this->sets[pos / N].reset(pos % N);
     return *this;
   }
@@ -69,6 +71,36 @@ public:
   }
 
   size_t size() const { return this->nbits; }
+
+  size_t countTailZero() const {
+    const size_t maskBits = this->sets.size() * N - this->size();
+    size_t count = 0;
+    for (size_t i = 0; i < this->sets.size(); i++) {
+      auto set = this->sets[i];
+      if (i == this->sets.size() - 1) {
+        set.set(N - maskBits);
+      }
+      if (uint64_t raw = set.to_ullong()) {
+        count += __builtin_ctzll(raw);
+        break;
+      }
+      count += N;
+    }
+    return count;
+  }
+
+  size_t nextSetBit(size_t fromIndex) const {
+    if (!fromIndex) {
+      return this->countTailZero(); // fast-path
+    }
+    size_t retIndex = fromIndex;
+    for (; retIndex < this->size(); retIndex++) {
+      if (this->test(retIndex)) {
+        break;
+      }
+    }
+    return retIndex;
+  }
 };
 
 END_MISC_LIB_NAMESPACE_DECL
