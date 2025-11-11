@@ -77,7 +77,7 @@ public:
     size_t count = 0;
     for (size_t i = 0; i < this->sets.size(); i++) {
       auto set = this->sets[i];
-      if (i == this->sets.size() - 1) {
+      if (i == this->sets.size() - 1 && maskBits != 0) {
         set.set(N - maskBits);
       }
       if (uint64_t raw = set.to_ullong()) {

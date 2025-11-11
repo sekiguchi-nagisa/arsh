@@ -753,6 +753,36 @@ TEST(BitSetTest, countZero) {
     set.set(17);
     ASSERT_EQ(17, set.countTailZero());
   }
+
+  {
+    BitSet set(63);
+    ASSERT_EQ(63, set.countTailZero());
+    for (int i = 62; i > -1; i--) {
+      set.set(i);
+      ASSERT_EQ(i, set.countTailZero());
+      set.reset(i);
+    }
+  }
+
+  {
+    BitSet set(64);
+    ASSERT_EQ(64, set.countTailZero());
+    for (int i = 63; i > -1; i--) {
+      set.set(i);
+      ASSERT_EQ(i, set.countTailZero());
+      set.reset(i);
+    }
+  }
+
+  for (int i = 0; i < 132; i++) {
+    BitSet set(i);
+    ASSERT_EQ(i, set.countTailZero());
+    for (int j = i - 1; j > -1; j--) {
+      set.set(j);
+      ASSERT_EQ(j, set.countTailZero());
+      set.reset(j);
+    }
+  }
 }
 
 TEST(BitSetTest, iterate) {
