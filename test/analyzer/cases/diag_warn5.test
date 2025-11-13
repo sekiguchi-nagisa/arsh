@@ -1,0 +1,93 @@
+# RUN: call $cmd --test $self --debounce-time 10
+
+{"id": 0, "jsonrpc": "2.0", "method": "initialize",
+ "params": {"capabilities": {}, "rootUri": "file:///test", "processId": 46}}
+
+#    CHECK: {
+# CHECK_IF:     "capabilities": {
+# CHECK_IF: }
+
+<<<
+{"jsonrpc": "2.0", "method": "textDocument/didOpen",
+ "params": {
+    "textDocument": {"languageId": "arsh", "version": 1, "uri": "test:///test.ds",
+        "text": "source $SCRIPT_DIR/nest.ds as nest;\nnest mod1 'qq'"}
+ }
+}
+
+# CHECK_IF:   "method": "textDocument/publishDiagnostics",
+#    CHECK:   "params": {
+#    CHECK:     "diagnostics": [],
+#    CHECK:     "uri": "test:///mod1.ds"
+#    CHECK:   }
+#    CHECK: }
+
+# CHECK_IF:   "method": "textDocument/publishDiagnostics",
+#    CHECK:   "params": {
+#    CHECK:     "diagnostics": [],
+#    CHECK:     "uri": "test:///nest.ds"
+#    CHECK:   }
+#    CHECK: }
+
+# CHECK_IF:   "method": "textDocument/publishDiagnostics",
+#    CHECK:   "params": {
+#    CHECK:     "diagnostics": [
+#    CHECK:       {
+#    CHECK:         "code": "semantic error: UndefinedSubCmd",
+#    CHECK:         "message": "may be undefined sub-command: `qq'",
+#    CHECK:         "range": {
+#    CHECK:           "end": {
+#    CHECK:             "character": 14,
+#    CHECK:             "line": 1
+#    CHECK:           },
+#    CHECK:           "start": {
+#    CHECK:             "character": 10,
+#    CHECK:             "line": 1
+#    CHECK:           }
+#    CHECK:         },
+#    CHECK:         "severity": 2
+#    CHECK:       }
+#    CHECK:     ],
+#    CHECK:     "uri": "test:///test.ds"
+#    CHECK:   }
+
+
+<<<
+{"jsonrpc": "2.0", "method": "textDocument/didChange",
+  "params": {
+    "contentChanges": [ { "text": "source $SCRIPT_DIR/nest.ds as nest;\nnest mod1 hey-say" } ],
+    "textDocument": { "uri": "test:///test.ds", "version": 2 }
+  }
+}
+
+# CHECK_IF:   "method": "textDocument/publishDiagnostics",
+#    CHECK:   "params": {
+#    CHECK:     "diagnostics": [],
+
+<<<
+{"jsonrpc": "2.0", "method": "textDocument/didChange",
+  "params": {
+    "contentChanges": [ { "text": "source $SCRIPT_DIR/nest.ds as nest;\nnest mod1 'hey''23'" } ],
+    "textDocument": { "uri": "test:///test.ds", "version": 3 }
+  }
+}
+
+# CHECK_IF:   "method": "textDocument/publishDiagnostics",
+#    CHECK:   "params": {
+#    CHECK:     "diagnostics": [],
+
+<<<
+{"jsonrpc": "2.0", "method": "textDocument/didClose",
+  "params": { "textDocument": { "uri": "test:///test.ds" } } }
+
+---
+{"id": 2, "jsonrpc": "2.0", "method": "shutdown"}
+
+# CHECK_IF: {
+#    CHECK:   "id": 2,
+#    CHECK:   "jsonrpc": "2.0",
+#    CHECK:   "result": null
+#    CHECK: }
+<<<
+{"jsonrpc": "2.0", "method": "exit"}
+# STATUS: 0

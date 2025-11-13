@@ -85,14 +85,20 @@ void ExtraChecker::visitFunctionNode(FunctionNode &node) {
 void ExtraChecker::visitCmdNode(CmdNode &node) {
   this->visit(node.getNameNode());
   if (auto &handle = node.getHandle()) {
-    auto &type = this->contexts.back().getPool().get(handle->getTypeId());
-    if (type.isModType()) { // maybe sub-command call
-      if (auto pair = node.findConstCmdArgNode(0); pair.first) {
-        auto subCmd = toCmdFullName(pair.first->getValue());
-        if (!cast<ModType>(type).lookup(this->contexts.back().getPool(), subCmd)) {
-          this->warn<UndefinedSubCmd>(pair.first->getToken(), pair.first->getValue().c_str());
+    auto &pool = this->contexts.back().getPool();
+    auto &type = pool.get(handle->getTypeId());
+    unsigned int offset = 0;
+    for (auto *modType = checked_cast<ModType>(&type); modType;) { // maybe sub-command call
+      if (auto [argNode, cur] = node.findConstCmdArgNode(offset); argNode) {
+        auto subCmd = toCmdFullName(argNode->getValue());
+        if (auto hd = modType->lookup(pool, subCmd)) {
+          modType = checked_cast<ModType>(&pool.get(hd->getTypeId()));
+          offset = cur + 1;
+          continue;
         }
+        this->warn<UndefinedSubCmd>(argNode->getToken(), argNode->getValue().c_str());
       }
+      break;
     }
   }
   this->visitEach(node.getArgNodes());
