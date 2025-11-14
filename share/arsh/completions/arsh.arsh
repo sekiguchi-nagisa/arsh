@@ -22,9 +22,9 @@ compdef --cmd arshd --long log  --arg-list 'debug info warning error fatal'
 compdef --cmd arshd --long test --arg-action file
 compdef --cmd arshd --long test-open --arg-action file
 compdef --cmd arshd --long wait-time
+compdef --cmd arshd --short h
 
 ## arcolorize
-compdef --cmd arcolorize --long daemon
 compdef --cmd arcolorize --long html-full
 compdef --cmd arcolorize --long html-lineno=
 compdef --cmd arcolorize --long html-lineno-table
