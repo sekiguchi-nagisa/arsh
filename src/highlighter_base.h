@@ -108,10 +108,12 @@ private:
 public:
   explicit Tokenizer(StringRef source) : TokenEmitter(source) {}
 
+  const auto &get() const { return this->tokens; }
+
   TokenizerResult tokenize() {
     auto error = this->tokenizeAndEmit();
     return {
-        .tokens = std::move(tokens),
+        .tokens = std::move(this->tokens),
         .error = std::move(error),
     };
   }

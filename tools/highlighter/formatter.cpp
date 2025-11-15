@@ -24,17 +24,25 @@ namespace arsh::highlighter {
 // ##     Formatter     ##
 // #######################
 
-void Formatter::emit(TokenKind kind, Token token) {
-  assert(this->curSrcPos <= token.pos);
-  HighlightTokenClass tokenClass = toTokenClass(kind);
-  this->drawTrivia(this->source.slice(this->curSrcPos, token.pos));
-  this->curSrcPos = token.endPos();
-  this->draw(this->source.substr(token.pos, token.size), &tokenClass);
-}
+void Formatter::initialize(StringRef newSource) { this->source = newSource; }
 
-void Formatter::initialize(StringRef newSource) {
-  this->source = newSource;
-  this->curSrcPos = 0;
+void Formatter::finalize() {
+  auto &tokens = this->get();
+  const unsigned int size = tokens.size();
+  unsigned int curSrcPos = 0;
+  for (unsigned int i = 0; i < size; i++) {
+    Token token = tokens[i].second;
+    assert(curSrcPos <= token.pos);
+    this->drawTrivia(this->source.slice(curSrcPos, token.pos));
+    curSrcPos = token.endPos();
+    HighlightTokenClass tokenClass = toTokenClass(tokens[i].first);
+    this->draw(this->source.substr(token.pos, token.size), &tokenClass);
+  }
+  // render remaining lines
+  if (curSrcPos < this->source.size()) {
+    this->drawTrivia(this->source.substr(curSrcPos));
+  }
+  this->output.flush();
 }
 
 std::string Formatter::dump() { return ""; }
@@ -58,15 +66,6 @@ void Formatter::drawTrivia(StringRef ref) {
 // ###########################
 
 void NullFormatter::draw(StringRef ref, const HighlightTokenClass *) { this->write(ref); }
-
-void NullFormatter::finalize() {
-  if (this->curSrcPos < this->source.size()) {
-    auto remain = this->source.substr(this->curSrcPos);
-    this->drawTrivia(remain);
-    this->curSrcPos = this->source.size();
-  }
-  this->output.flush();
-}
 
 // ####################################
 // ##     IndexedColorPalette256     ##
@@ -206,15 +205,6 @@ void ANSIFormatter::draw(StringRef ref, const HighlightTokenClass *tokenClass) {
       this->write("\n");
     }
   }
-}
-
-void ANSIFormatter::finalize() {
-  if (this->curSrcPos < this->source.size()) {
-    auto remain = this->source.substr(this->curSrcPos);
-    this->drawTrivia(remain);
-    this->curSrcPos = this->source.size();
-  }
-  this->output.flush();
 }
 
 std::string ANSIFormatter::dump() {
@@ -400,11 +390,7 @@ void HTMLFormatter::initialize(StringRef newSource) {
 }
 
 void HTMLFormatter::finalize() {
-  if (this->curSrcPos < this->source.size()) {
-    auto remain = this->source.substr(this->curSrcPos);
-    this->drawTrivia(remain);
-    this->curSrcPos = this->source.size();
-  }
+  Formatter::finalize();
   this->output << "</code></pre></div>";
   if (hasFlag(this->formatOp, HTMLFormatOp::TABLE)) {
     this->output << "\n</td></tr></table>";
