@@ -121,7 +121,7 @@ FormatterFactory::create(std::ostream &stream) const {
     TermColorCap colorCap = formatterType == FormatterType::TERM_TRUECOLOR
                                 ? TermColorCap::TRUE_COLOR
                                 : TermColorCap::INDEXED_256;
-    auto formatter = std::make_unique<ANSIFormatter>(style, stream, colorCap);
+    auto formatter = std::make_unique<ANSIFormatter>(style, this->notFoundCmds, stream, colorCap);
     return Ok(std::move(formatter));
   }
   case FormatterType::HTML: {
@@ -142,7 +142,8 @@ FormatterFactory::create(std::ostream &stream) const {
         lineNumOffset = ret.value;
       }
     }
-    auto formatter = std::make_unique<HTMLFormatter>(style, stream, formatOp, lineNumOffset);
+    auto formatter =
+        std::make_unique<HTMLFormatter>(style, this->notFoundCmds, stream, formatOp, lineNumOffset);
     return Ok(std::move(formatter));
   }
   }

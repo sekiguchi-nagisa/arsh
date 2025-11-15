@@ -32,7 +32,7 @@ class FormatterFactory {
 private:
   std::reference_wrapper<const StyleMap> styleMap;
 
-  StrRefMap<FormatterType> supportedFormats; // name to actual formatter type
+  StrRefMap<FormatterType> supportedFormats; // name to an actual formatter type
 
   StringRef formatName{"ansi"};
 
@@ -45,6 +45,8 @@ private:
   bool htmlTable{false};
 
   std::vector<StringRef> customStyles;
+
+  std::unordered_set<std::string> notFoundCmds;
 
 public:
   static constexpr const char *DEFAULT_STYLE_NAME = "darcula";
@@ -66,6 +68,12 @@ public:
   void setHTMLTable(bool set) { this->htmlTable = set; }
 
   void setCustomStyles(std::vector<StringRef> &&values) { this->customStyles = std::move(values); }
+
+  void addNotFoundCmd(StringRef cmd) {
+    if (!cmd.empty()) {
+      this->notFoundCmds.emplace(cmd.toString());
+    }
+  }
 
   Result<std::unique_ptr<Formatter>, std::string> create(std::ostream &stream) const;
 };

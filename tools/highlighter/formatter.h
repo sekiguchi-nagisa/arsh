@@ -26,11 +26,13 @@ namespace arsh::highlighter {
 class Formatter : public Tokenizer {
 protected:
   const Style style;
+  const std::unordered_set<std::string> notFoundCmds; // for error highlight
   std::ostream &output;
 
 public:
-  Formatter(Style style, std::ostream &output)
-      : Tokenizer(""), style(std::move(style)), output(output) {}
+  Formatter(Style style, std::unordered_set<std::string> notFoundCmds, std::ostream &output)
+      : Tokenizer(""), style(std::move(style)), notFoundCmds(std::move(notFoundCmds)),
+        output(output) {}
 
   virtual void initialize(StringRef newSource);
 
@@ -61,7 +63,7 @@ private:
   void draw(StringRef ref, const HighlightTokenClass *tokenClass) override;
 
 public:
-  NullFormatter(const Style &style, std::ostream &output) : Formatter(style, output) {}
+  NullFormatter(const Style &style, std::ostream &output) : Formatter(style, {}, output) {}
 };
 
 enum class TermColorCap : unsigned char {
@@ -105,8 +107,9 @@ private:
   void draw(StringRef ref, const HighlightTokenClass *tokenClass) override;
 
 public:
-  ANSIFormatter(const Style &style, std::ostream &output, TermColorCap cap)
-      : Formatter(style, output), colorCap(cap) {}
+  ANSIFormatter(const Style &style, std::unordered_set<std::string> notFoundCmds,
+                std::ostream &output, TermColorCap cap)
+      : Formatter(style, std::move(notFoundCmds), output), colorCap(cap) {}
 
   std::string dump() override;
 };
@@ -136,9 +139,10 @@ private:
   void draw(StringRef ref, const HighlightTokenClass *tokenClass) override;
 
 public:
-  HTMLFormatter(const Style &style, std::ostream &output, HTMLFormatOp op,
-                unsigned int lineNumOffset)
-      : Formatter(style, output), formatOp(op), lineNumOffset(lineNumOffset) {}
+  HTMLFormatter(const Style &style, std::unordered_set<std::string> notFoundCmds,
+                std::ostream &output, HTMLFormatOp op, unsigned int lineNumOffset)
+      : Formatter(style, std::move(notFoundCmds), output), formatOp(op),
+        lineNumOffset(lineNumOffset) {}
 
   void initialize(StringRef newSource) override;
 

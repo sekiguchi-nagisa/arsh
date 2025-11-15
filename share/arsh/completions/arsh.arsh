@@ -31,6 +31,7 @@ compdef --cmd arcolorize --long html-lineno-table
 compdef --cmd arcolorize --long dump
 compdef --cmd arcolorize --long custom-style
 compdef --cmd arcolorize --long sample
+compdef --cmd arcolorize --long not-found-cmds
 compdef --cmd arcolorize --short h
 compdef --cmd arcolorize --short l
 compdef --cmd arcolorize --short o --arg-action file

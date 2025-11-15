@@ -11,6 +11,10 @@
     - enable/disable search filter via ``toggle-search`` edit action
     - ignore unbound escape sequences / edit actions in search filter mode
 
+#### Misc
+
+- add ``--not-found-cmds`` option to ``arcolorize`` for error highlight
+
 ### Changed
 
 #### Core

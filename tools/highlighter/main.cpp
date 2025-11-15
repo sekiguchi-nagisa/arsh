@@ -39,6 +39,7 @@ enum class OptionSet : unsigned char {
   DUMP,
   CUSTOM_STYLE,
   SAMPLE,
+  NOT_FOUND_CMDS,
 };
 
 const OptParser<OptionSet>::Option options[] = {
@@ -59,6 +60,8 @@ const OptParser<OptionSet>::Option options[] = {
     {OptionSet::CUSTOM_STYLE, 0, "custom-style", OptParseOp::HAS_ARG, "name=rule ...",
      "set custom color style"},
     {OptionSet::SAMPLE, 0, "sample", OptParseOp::NO_ARG, "use embedded sample code as input"},
+    {OptionSet::NOT_FOUND_CMDS, 0, "not-found-cmds", OptParseOp::HAS_ARG,
+     "for error highlight. `cmd1 cmd2 ...'"},
     {OptionSet::HELP, 'h', "help", OptParseOp::NO_ARG, "show help message"},
 };
 
@@ -223,6 +226,12 @@ int main(int argc, char **argv) {
       break;
     case OptionSet::SAMPLE:
       useSample = true;
+      break;
+    case OptionSet::NOT_FOUND_CMDS:
+      splitByDelim(result.getValue(), ' ', [&factory](StringRef cmd, bool) {
+        factory.addNotFoundCmd(cmd);
+        return true;
+      });
       break;
     }
   }

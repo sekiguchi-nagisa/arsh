@@ -27,6 +27,8 @@ namespace arsh::highlighter {
 void Formatter::initialize(StringRef newSource) { this->source = newSource; }
 
 void Formatter::finalize() {
+  const bool errorHighlight =
+      !this->notFoundCmds.empty() && this->style.find(HighlightTokenClass::ERROR_);
   auto &tokens = this->get();
   const unsigned int size = tokens.size();
   unsigned int curSrcPos = 0;
@@ -35,8 +37,15 @@ void Formatter::finalize() {
     assert(curSrcPos <= token.pos);
     this->drawTrivia(this->source.slice(curSrcPos, token.pos));
     curSrcPos = token.endPos();
+    const StringRef ref = this->source.substr(token.pos, token.size);
     HighlightTokenClass tokenClass = toTokenClass(tokens[i].first);
-    this->draw(this->source.substr(token.pos, token.size), &tokenClass);
+    if (errorHighlight && tokenClass == HighlightTokenClass::COMMAND &&
+        !isUDCDeclTokenAt(tokens, i)) {
+      if (this->notFoundCmds.find(ref.toString()) != this->notFoundCmds.end()) {
+        tokenClass = HighlightTokenClass::ERROR_;
+      }
+    }
+    this->draw(ref, &tokenClass);
   }
   // render remaining lines
   if (curSrcPos < this->source.size()) {

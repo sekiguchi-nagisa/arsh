@@ -632,6 +632,7 @@ Options:
   --dump                        dump ansi color code of theme
   --custom-style name=rule ...  set custom color style
   --sample                      use embedded sample code as input
+  --not-found-cmds arg          for error highlight. `cmd1 cmd2 ...'
   -h, --help                    show help message
 )",
                     HIGHLIGHTER_PATH, HIGHLIGHTER_PATH);
@@ -652,6 +653,7 @@ Options:
   --dump                        dump ansi color code of theme
   --custom-style name=rule ...  set custom color style
   --sample                      use embedded sample code as input
+  --not-found-cmds arg          for error highlight. `cmd1 cmd2 ...'
   -h, --help                    show help message
 )";
   ProcBuilder builder = {HIGHLIGHTER_PATH, "-q"};
@@ -671,6 +673,7 @@ Options:
   --dump                        dump ansi color code of theme
   --custom-style name=rule ...  set custom color style
   --sample                      use embedded sample code as input
+  --not-found-cmds arg          for error highlight. `cmd1 cmd2 ...'
   -h, --help                    show help message
 )";
   ProcBuilder builder = {HIGHLIGHTER_PATH, "-o"};
@@ -684,6 +687,9 @@ TEST_F(ColorizeTest, cli1) {
   assert "$(echo '1234' | exec $colorize)" == $'\033[38;2;104;151;187m1234\033[0m'
   assert "$(echo '1234' | exec $colorize -f console)" == $'\033[38;2;104;151;187m1234\033[0m'
   assert "$(echo '1234' | exec $colorize -s darcula)" == $'\033[38;2;104;151;187m1234\033[0m'
+  assert "$(echo ' curl' | exec $colorize -s darcula)" == $' \033[38;2;255;198;109mcurl\033[0m'
+  assert "$(echo ' curl' | exec $colorize -s darcula --not-found-cmds 'curl tar')" ==
+                                          $' \033[38;2;188;63;60m\x1b[1mcurl\033[0m'
   assert "$(echo '1234 # comment' | exec $colorize --custom-style 'number=' 'comment=' -s darcula)" == '1234 # comment'
   assert "$(echo -n '1234' | exec $colorize -s null)" == $'1234'
   assert "$(echo -n '1234' | exec $colorize --custom-style number='#aaa' -s null --custom-style number='#abc')" == $'\x1b[38;2;170;187;204m1234\x1b[0m'
