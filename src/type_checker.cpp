@@ -864,6 +864,9 @@ void TypeChecker::visitNumberNode(NumberNode &node) {
   case NumberNode::None:
     node.setType(this->typePool().get(TYPE::OptNothing)); // for constant expression
     break;
+  case NumberNode::Func:
+    node.setType(this->typePool().get(node.getAsFunc()->getTypeId())); // for constant expression
+    break;
   }
 }
 
@@ -1545,7 +1548,7 @@ void TypeChecker::checkPatternType(ArmNode &node, PatternCollector &collector) {
   // check pattern type
   for (auto &e : node.getPatternNodes()) {
     auto *type = &this->checkTypeAsExpr(*e);
-    if (type->isOptionType()) {
+    if (type->isOptionType() || type->isFuncType()) {
       this->reportError<Unacceptable>(*e, type->getName());
     }
     if (type->is(TYPE::Regex)) {
@@ -1766,6 +1769,10 @@ std::unique_ptr<Node> TypeChecker::evalConstant(const Node &node) {
         constNode = NumberNode::newNone(token);
         break;
       }
+      this->checkTypeAsExpr(*constNode);
+      return constNode;
+    } else if (varNode.getHandle()->isFuncHandle()) {
+      auto constNode = NumberNode::newFunc(token, cast<FuncHandle>(*varNode.getHandle()));
       this->checkTypeAsExpr(*constNode);
       return constNode;
     } else {

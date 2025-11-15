@@ -1,0 +1,12 @@
+
+#$test($result = 'type', $lineNum = 8, $errorKind = 'Unacceptable', $chars = 3, $status = 1)
+
+function fff():Int { return 23; }
+
+var aaa = 34
+case $fff {
+  $fff => { $aaa = -1; }
+  else => { $aaa = 0; }
+}
+
+assert $aaa == 34

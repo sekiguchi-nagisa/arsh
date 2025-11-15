@@ -517,6 +517,10 @@ void ByteCodeGenerator::visitNumberNode(NumberNode &node) {
   case NumberNode::None: // normally unreachable
     this->emit0byteIns(OpCode::PUSH_INVALID);
     break;
+  case NumberNode::Func: // normally unreachable
+    assert(node.getAsFunc()->has(HandleAttr::GLOBAL));
+    this->emit2byteIns(OpCode::LOAD_GLOBAL, node.getAsFunc()->getIndex());
+    break;
   }
 }
 

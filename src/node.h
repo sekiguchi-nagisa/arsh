@@ -339,7 +339,8 @@ inline std::unique_ptr<TypeNode> newErrorTypeNode() {
   OP(Float)                                                                                        \
   OP(Signal)                                                                                       \
   OP(Bool)                                                                                         \
-  OP(None) /* for dummy value */
+  OP(None) /* for dummy value */                                                                   \
+  OP(Func)
 
 class NumberNode : public WithRtti<Node, NodeKind::Number> {
 public:
@@ -354,6 +355,7 @@ private:
   union {
     int64_t intValue;
     double floatValue;
+    const FuncHandle *funcHandle;
   };
 
 public:
@@ -416,6 +418,12 @@ public:
     return node;
   }
 
+  static std::unique_ptr<NumberNode> newFunc(Token token, const FuncHandle &handle) {
+    auto node = std::make_unique<NumberNode>(token, Func);
+    node->funcHandle = &handle;
+    return node;
+  }
+
   ~NumberNode() override = default;
 
   int64_t getIntValue() const { return this->intValue; }
@@ -423,6 +431,8 @@ public:
   bool getAsBoolValue() const { return this->intValue > 0; }
 
   double getFloatValue() const { return this->floatValue; }
+
+  const FuncHandle *getAsFunc() const { return this->funcHandle; }
 
   bool isInit() const { return this->init; }
 
@@ -441,11 +451,7 @@ public:
   std::unique_ptr<NumberNode> clone() const {
     auto node = std::make_unique<NumberNode>(this->getActualToken(), this->kind);
     node->setType(this->getType());
-    if (this->kind == Kind::Float) {
-      node->floatValue = this->getFloatValue();
-    } else {
-      node->intValue = this->getIntValue();
-    }
+    node->intValue = this->intValue;
     return node;
   }
 };

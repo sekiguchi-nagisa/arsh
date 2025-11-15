@@ -152,6 +152,9 @@ void NumberNode::dump(NodeDumper &dumper) const {
   case Float:
     DUMP(floatValue);
     break;
+  case Func:
+    DUMP(funcHandle);
+    break;
   }
 }
 
