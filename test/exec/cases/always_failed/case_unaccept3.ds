@@ -1,0 +1,12 @@
+
+#$test($result = 'type', $lineNum = 7, $errorKind = 'Unacceptable', $chars = 3, $status = 1)
+
+var aaa = 0
+
+case 23 == $@.size() {
+  $TRUE => { $aaa = 1; }
+  $FALSE => { $aaa = -1; }
+  else => { $aaa = 111; }
+}
+
+assert $aaa == 0

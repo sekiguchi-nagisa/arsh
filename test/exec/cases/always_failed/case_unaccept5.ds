@@ -1,0 +1,11 @@
+
+#$test($result = 'type', $lineNum = 7, $errorKind = 'Unacceptable', $chars = 3, $status = 1)
+
+var aaa = 0
+
+case (1,2) {
+  (3,4) => { $aaa = -1; }
+  else => { $aaa = 111; }
+}
+
+assert $aaa == 0

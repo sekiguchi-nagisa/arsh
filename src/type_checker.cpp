@@ -1475,7 +1475,9 @@ bool TypeChecker::PatternCollector::collect(const Node &constNode) {
   if (!this->map) {
     switch (constNode.getNodeKind()) {
     case NodeKind::Number:
-      this->map = std::make_unique<IntPatternMap>();
+      if (constNode.getType().is(TYPE::Int) || constNode.getType().is(TYPE::Signal)) {
+        this->map = std::make_unique<IntPatternMap>();
+      }
       break;
     case NodeKind::String:
       this->map = std::make_unique<StrPatternMap>();
@@ -1539,7 +1541,7 @@ void TypeChecker::checkPatternType(ArmNode &node, PatternCollector &collector) {
   if (node.getPatternNodes().empty()) {
     if (collector.hasElsePattern()) {
       Token token{node.getPos(), 4};
-      const auto elseNode = std::make_unique<StringNode>(token, "else");
+      const auto elseNode = std::make_unique<StringNode>(token, "else"); // dummy
       this->reportError<DupPattern>(*elseNode);
     }
     collector.setElsePattern(true);
@@ -1548,7 +1550,9 @@ void TypeChecker::checkPatternType(ArmNode &node, PatternCollector &collector) {
   // check pattern type
   for (auto &e : node.getPatternNodes()) {
     auto *type = &this->checkTypeAsExpr(*e);
-    if (type->isOptionType() || type->isFuncType()) {
+    constexpr TYPE allowed[] = {TYPE::Int, TYPE::Signal, TYPE::String, TYPE::Regex};
+    if (!std::any_of(std::begin(allowed), std::end(allowed),
+                     [&type](TYPE t) { return type->is(t); })) {
       this->reportError<Unacceptable>(*e, type->getName());
     }
     if (type->is(TYPE::Regex)) {

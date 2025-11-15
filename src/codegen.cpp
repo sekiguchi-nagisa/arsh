@@ -1271,14 +1271,14 @@ void ByteCodeGenerator::visitIfNode(IfNode &node) {
 }
 
 static Value newObject(Node &constNode) {
-  auto kind = constNode.getNodeKind();
-  assert(kind == NodeKind::Number || kind == NodeKind::String);
-  if (kind == NodeKind::Number) {
+  if (isa<NumberNode>(constNode)) {
     if (constNode.getType().is(TYPE::Signal)) {
       return Value::createSig(static_cast<int>(cast<NumberNode>(constNode).getIntValue()));
     }
+    assert(constNode.getType().is(TYPE::Int));
     return Value::createInt(cast<NumberNode>(constNode).getIntValue());
   }
+  assert(isa<StringNode>(constNode));
   return Value::createStr(cast<StringNode>(constNode).getValue());
 }
 
