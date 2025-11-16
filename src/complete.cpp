@@ -687,16 +687,15 @@ enum class CmdArgCompStatus : unsigned char {
   CANCEL,  // completion canceled (via error or signal)
 };
 
-static CmdArgCompStatus completeBuiltinOption(const CmdNode &cmdNode, const Lexer &lexer,
-                                              const std::string &word,
+static CmdArgCompStatus completeBuiltinOption(const CmdNode &cmdNode, const std::string &word,
                                               CompCandidateConsumer &consumer) {
   if (cmdNode.getNameNode().getValue() != "shctl") {
     return CmdArgCompStatus::INVALID;
   }
 
   if (auto pair = cmdNode.findConstCmdArgNode(0); pair.first) {
-    const auto ref = lexer.toStrRef(pair.first->getToken());
-    if (ref == "set" || ref == "unset") {
+    const auto &value = pair.first->getValue();
+    if (value == "set" || value == "unset") {
       for (auto &e : getRuntimeOptionEntries()) {
         if (StringRef name = e.name; name.startsWith(word)) {
           consumer(name, CompCandidateKind::COMMAND_ARG);
@@ -789,9 +788,9 @@ static CmdArgCompStatus callUserDefinedComp(const CodeCompletionContext &ctx,
   return CmdArgCompStatus::INVALID;
 }
 
-static CmdArgCompStatus completeCLIOption(const TypePool &pool, const Lexer &lexer,
-                                          const CLIRecordType &type, const CmdNode &cmdNode,
-                                          const unsigned int argOffset, const std::string &word,
+static CmdArgCompStatus completeCLIOption(const TypePool &pool, const CLIRecordType &type,
+                                          const CmdNode &cmdNode, const unsigned int argOffset,
+                                          const std::string &word,
                                           CompCandidateConsumer &consumer) {
   const auto *cliType = &type;
   int latestSubCmdIndex = -1;
@@ -804,11 +803,11 @@ static CmdArgCompStatus completeCLIOption(const TypePool &pool, const Lexer &lex
     if (!cast<CmdArgNode>(*e).isConstArg()) {
       return CmdArgCompStatus::INVALID;
     }
-    const StringRef ref = lexer.toStrRef(e->getToken());
-    if (ref.empty() || ref[0] == '-') {
+    auto &arg = cast<CmdArgNode>(*e).asConstArg().getValue();
+    if (arg.empty() || arg[0] == '-') {
       break;
     }
-    auto ret = cliType->findSubCmdInfo(pool, ref);
+    auto ret = cliType->findSubCmdInfo(pool, arg);
     if (ret.first) {
       cliType = ret.first;
       latestSubCmdIndex = static_cast<int>(i);
@@ -840,7 +839,7 @@ static CmdArgCompStatus completeCmdArg(const TypePool &pool, const UserDefinedCo
     }
   }
   if (!handle) { // try complete builtin command options
-    return completeBuiltinOption(cmdNode, *ctx.getLexer(), word, consumer);
+    return completeBuiltinOption(cmdNode, word, consumer);
   }
 
   // sub-command
@@ -873,7 +872,7 @@ static CmdArgCompStatus completeCmdArg(const TypePool &pool, const UserDefinedCo
       }
     }
     if (auto *cliType = resolveCLIType(*curUdcType)) {
-      return completeCLIOption(pool, *ctx.getLexer(), *cliType, cmdNode, offset, word, consumer);
+      return completeCLIOption(pool, *cliType, cmdNode, offset, word, consumer);
     }
   } else if (curModType) {
     curModType->walkField(pool, udcCandidateConsumer(getCompWordToken(ctx), word, consumer, false));

@@ -277,7 +277,7 @@ static BaseObject *parseCommandLineImpl(ARState &state, StrArrayIter &iter, cons
   if (!checkRequireOrPositionalArgs(state, instance, requiredSet, xorGroupSet, iter, end, out)) {
     return nullptr;
   }
-  // try parse sub-command
+  // try to parse sub-command
   if (!stop && iter != end && hasFlag(type.getAttr(), CLIRecordType::Attr::HAS_SUBCMD)) {
     const StringRef arg = *iter;
     if (auto [subCmdType, fieldOffset] = type.findSubCmdInfo(state.typePool, arg); subCmdType) {
