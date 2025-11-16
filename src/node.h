@@ -1334,13 +1334,18 @@ public:
 
   bool hasExpansionError() const { return this->expansionError; }
 
-  bool isConstArg() const {
-    return this->segmentNodes.size() == 1 && isa<StringNode>(*this->segmentNodes[0]);
-  }
-
-  const auto &asConstArg() const {
-    assert(this->isConstArg());
-    return cast<StringNode>(*this->segmentNodes[0]);
+  const std::string *getConstArg() const {
+    if (this->segmentNodes.size() == 1) {
+      if (auto *n = checked_cast<StringNode>(this->segmentNodes[0].get())) {
+        return &n->getValue();
+      }
+      if (auto *n = checked_cast<StringExprNode>(this->segmentNodes[0].get())) {
+        if (n->getExprNodes().size() == 1 && isa<StringNode>(*n->getExprNodes()[0])) {
+          return &cast<StringNode>(*n->getExprNodes()[0]).getValue();
+        }
+      }
+    }
+    return nullptr;
   }
 };
 
@@ -1522,15 +1527,14 @@ public:
   const HandlePtr &getHandle() const { return this->handle; }
 
   void dump(NodeDumper &dumper) const override;
-
-  std::pair<const StringNode *, unsigned int> findConstCmdArgNode(unsigned int offset) const {
+  std::pair<const std::string *, unsigned int> findConstCmdArg(unsigned int offset) const {
     const unsigned int size = this->argNodes.size();
     for (; offset < size; offset++) {
       if (isa<RedirNode>(*this->argNodes[offset])) {
         continue;
       }
-      if (auto &argNode = cast<CmdArgNode>(*this->argNodes[offset]); argNode.isConstArg()) {
-        return {&argNode.asConstArg(), offset};
+      if (auto *arg = cast<CmdArgNode>(*this->argNodes[offset]).getConstArg()) {
+        return {arg, offset};
       }
       break;
     }

@@ -693,8 +693,8 @@ static CmdArgCompStatus completeBuiltinOption(const CmdNode &cmdNode, const std:
     return CmdArgCompStatus::INVALID;
   }
 
-  if (auto pair = cmdNode.findConstCmdArgNode(0); pair.first) {
-    const auto &value = pair.first->getValue();
+  if (auto pair = cmdNode.findConstCmdArg(0); pair.first) {
+    const auto &value = *pair.first;
     if (value == "set" || value == "unset") {
       for (auto &e : getRuntimeOptionEntries()) {
         if (StringRef name = e.name; name.startsWith(word)) {
@@ -800,14 +800,14 @@ static CmdArgCompStatus completeCLIOption(const TypePool &pool, const CLIRecordT
     if (isa<RedirNode>(*e)) {
       continue;
     }
-    if (!cast<CmdArgNode>(*e).isConstArg()) {
+    auto *arg = cast<CmdArgNode>(*e).getConstArg();
+    if (!arg) {
       return CmdArgCompStatus::INVALID;
     }
-    auto &arg = cast<CmdArgNode>(*e).asConstArg().getValue();
-    if (arg.empty() || arg[0] == '-') {
+    if (arg->empty() || (*arg)[0] == '-') {
       break;
     }
-    auto ret = cliType->findSubCmdInfo(pool, arg);
+    auto ret = cliType->findSubCmdInfo(pool, *arg);
     if (ret.first) {
       cliType = ret.first;
       latestSubCmdIndex = static_cast<int>(i);
@@ -848,14 +848,14 @@ static CmdArgCompStatus completeCmdArg(const TypePool &pool, const UserDefinedCo
   const auto *curUdcType = checked_cast<FunctionType>(&pool.get(handle.asOk()->getTypeId()));
   unsigned int offset = 0;
   while (curModType) {
-    auto [constNode, index] = cmdNode.findConstCmdArgNode(offset);
-    if (!constNode) {
+    auto [arg, index] = cmdNode.findConstCmdArg(offset);
+    if (!arg) {
       if (index == cmdNode.getArgNodes().size()) { // reach end
         break;
       }
       return CmdArgCompStatus::INVALID;
     }
-    auto hd = curModType->lookup(pool, toCmdFullName(constNode->getValue()));
+    auto hd = curModType->lookup(pool, toCmdFullName(*arg));
     if (!hd) {
       return CmdArgCompStatus::INVALID;
     }

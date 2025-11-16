@@ -478,9 +478,9 @@ public:
 static Value getFullNameFromTempMod(const ARState &state, const unsigned int temModIndex,
                                     const CmdNode &cmdNode, unsigned int offset,
                                     const ModType *cmdModType) {
-  const StringRef name =
-      !cmdModType ? cmdNode.getNameNode().getValue()
-                  : cast<CmdArgNode>(*cmdNode.getArgNodes()[offset]).asConstArg().getValue();
+  const StringRef name = !cmdModType
+                             ? cmdNode.getNameNode().getValue()
+                             : *cast<CmdArgNode>(*cmdNode.getArgNodes()[offset]).getConstArg();
   Value cmdName;
   const ModType *modType = cmdModType;
   if (!modType) {

@@ -623,8 +623,8 @@ void SymbolIndexer::visitCmdNode(CmdNode &node) {
     symbol = this->builder().addCmd(info, node.getHandle());
   }
   for (unsigned int offset = 0; symbol;) {
-    auto [constNode, index] = node.findConstCmdArgNode(offset);
-    if (!constNode) {
+    auto [arg, index] = node.findConstCmdArg(offset);
+    if (!arg) {
       break;
     }
     if (auto *decl = this->builder().findDecl(*symbol);
@@ -632,8 +632,8 @@ void SymbolIndexer::visitCmdNode(CmdNode &node) {
       auto ret = decl->getInfoAsModId();
       if (ret.second) {
         auto &type = *this->builder().getPool().getModTypeById(ret.first);
-        auto handle = type.lookup(this->builder().getPool(), toCmdFullName(constNode->getValue()));
-        NameInfo nameInfo(constNode->getToken(), constNode->getValue());
+        auto handle = type.lookup(this->builder().getPool(), toCmdFullName(*arg));
+        NameInfo nameInfo(node.getArgNodes()[index]->getToken(), *arg);
         symbol = this->builder().addSymbol(nameInfo, DeclSymbol::Kind::CMD, handle);
         offset = index + 1;
         continue;
