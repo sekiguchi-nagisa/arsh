@@ -152,14 +152,24 @@ void completeMember(const TypePool &pool, const NameScope &scope, const Type &re
 void completeType(const TypePool &pool, const NameScope &scope, const Type *recvType,
                   StringRef word, CompCandidateConsumer &consumer);
 
-/**
- * if failed (cannot call user-defined comp or error), return -1
- * otherwise, return the number of consumed completion candidates
- */
-using UserDefinedComp = std::function<int(const CodeCompletionContext &, unsigned int,
-                                          const ModType *, CompCandidateConsumer &consumer)>;
+struct ForeignCompHandler {
+  virtual ~ForeignCompHandler() = default;
 
-using DynaUdcComp = std::function<void(const std::string &word, CompCandidateConsumer &consumer)>;
+  /**
+   *
+   * @param ctx
+   * @param offset
+   * @param cmdModType
+   * @param consumer
+   * @return
+   * if failed (cannot call user-defined comp or error), return -1
+   * otherwise, return the number of consumed completion candidates
+   */
+  virtual int callUserDefinedComp(const CodeCompletionContext &ctx, unsigned int offset,
+                                  const ModType *cmdModType, CompCandidateConsumer &consumer) = 0;
+
+  virtual void completeDynamicUdc(const std::string &word, CompCandidateConsumer &consumer) = 0;
+};
 
 class CodeCompleter {
 private:
@@ -168,8 +178,7 @@ private:
   const SysConfig &config;
   const TypePool &pool;
   const std::string &logicalWorkingDir;
-  UserDefinedComp userDefinedComp;
-  DynaUdcComp dynaUdcComp;
+  std::unique_ptr<ForeignCompHandler> foreignComp;
   ObserverPtr<const CancelToken> cancel;
 
 public:
@@ -178,9 +187,9 @@ public:
       : consumer(consumer), provider(provider), config(config), pool(pool),
         logicalWorkingDir(workDir) {}
 
-  void setUserDefinedComp(UserDefinedComp &&comp) { this->userDefinedComp = std::move(comp); }
-
-  void setDynaUdcComp(DynaUdcComp &&comp) { this->dynaUdcComp = std::move(comp); }
+  void setForeignCompHandler(std::unique_ptr<ForeignCompHandler> &&comp) {
+    this->foreignComp = std::move(comp);
+  }
 
   void setCancel(const CancelToken &c) { this->cancel = makeObserver(c); }
 

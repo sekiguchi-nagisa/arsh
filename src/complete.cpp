@@ -773,11 +773,11 @@ static CmdArgCompStatus completeCLIOptionImpl(const CLIRecordType &type, const s
 }
 
 static CmdArgCompStatus callUserDefinedComp(const CodeCompletionContext &ctx,
-                                            const UserDefinedComp &comp, const unsigned int offset,
-                                            const ModType *cmdModType,
+                                            const std::unique_ptr<ForeignCompHandler> &comp,
+                                            const unsigned int offset, const ModType *cmdModType,
                                             CompCandidateConsumer &consumer) {
   if (comp) {
-    const int s = comp(ctx, offset, cmdModType, consumer);
+    const int s = comp->callUserDefinedComp(ctx, offset, cmdModType, consumer);
     if (s < 0 && errno == EINTR) {
       return CmdArgCompStatus::CANCEL;
     }
@@ -826,7 +826,8 @@ static const CLIRecordType *resolveCLIType(const FunctionType &funcType) {
   return nullptr;
 }
 
-static CmdArgCompStatus completeCmdArg(const TypePool &pool, const UserDefinedComp &comp,
+static CmdArgCompStatus completeCmdArg(const TypePool &pool,
+                                       const std::unique_ptr<ForeignCompHandler> &comp,
                                        const CodeCompletionContext &ctx,
                                        CompCandidateConsumer &consumer) {
   const auto &cmdNode = *ctx.getCmdNode();
@@ -896,8 +897,8 @@ bool CodeCompleter::invoke(const CodeCompletionContext &ctx) {
     TRY(completeCmdName(getCompWordToken(ctx), ctx.getScope(), ctx.getCompWord(), ctx.getCompOp(),
                         this->consumer, this->cancel));
   }
-  if (ctx.has(CodeCompOp::DYNA_UDC) && this->dynaUdcComp) {
-    this->dynaUdcComp(ctx.getCompWord(), this->consumer);
+  if (ctx.has(CodeCompOp::DYNA_UDC) && this->foreignComp) {
+    this->foreignComp->completeDynamicUdc(ctx.getCompWord(), this->consumer);
   }
   if (ctx.has(CodeCompOp::USER)) {
     completeUserName(ctx.getCompWord(), this->consumer);
@@ -942,7 +943,7 @@ bool CodeCompleter::invoke(const CodeCompletionContext &ctx) {
     completeParamName(ctx.getExtraWords(), ctx.getCompWord(), this->consumer);
   }
   if (ctx.has(CodeCompOp::CMD_ARG)) {
-    switch (completeCmdArg(this->pool, this->userDefinedComp, ctx, this->consumer)) {
+    switch (completeCmdArg(this->pool, this->foreignComp, ctx, this->consumer)) {
     case CmdArgCompStatus::OK:
       return true;
     case CmdArgCompStatus::INVALID:

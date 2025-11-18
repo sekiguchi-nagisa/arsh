@@ -626,23 +626,25 @@ static void discardTempMod(std::vector<NameScopePtr> &tempModScopes, ResolvedTem
   }
 }
 
-static bool completeImpl(ARState &st, ResolvedTempMod resolvedMod, StringRef source,
-                         const CodeCompOp option, DefaultCompConsumer &consumer) {
-  auto scope = st.tempModScope[resolvedMod.index];
-  DefaultModuleProvider provider(st.modLoader, st.typePool, scope,
-                                 std::make_unique<RuntimeCancelToken>());
-  auto discardPoint = provider.getCurrentDiscardPoint();
+class DefaultForeignCompHandler : public ForeignCompHandler {
+private:
+  ARState &state;
+  ResolvedTempMod resolvedMod;
 
-  CodeCompleter codeCompleter(consumer, willKickFrontEnd(option) ? makeObserver(provider) : nullptr,
-                              st.sysConfig, st.typePool, st.logicalWorkingDir);
-  codeCompleter.setUserDefinedComp(
-      [&st, resolvedMod](const CodeCompletionContext &ctx, unsigned int offset,
-                         const ModType *cmdModType, CompCandidateConsumer &cc) {
-        return kickCompHook(st, resolvedMod.index, ctx, offset, cmdModType,
-                            static_cast<DefaultCompConsumer &>(cc));
-      });
-  codeCompleter.setDynaUdcComp([&st](const std::string &word, CompCandidateConsumer &consumer) {
-    auto &dynaUdcs = typeAs<OrderedMapObject>(st.getGlobal(BuiltinVarOffset::DYNA_UDCS));
+public:
+  DefaultForeignCompHandler(ARState &state, ResolvedTempMod resolvedMod)
+      : state(state), resolvedMod(resolvedMod) {}
+
+  ~DefaultForeignCompHandler() override = default;
+
+  int callUserDefinedComp(const CodeCompletionContext &ctx, unsigned offset,
+                          const ModType *cmdModType, CompCandidateConsumer &consumer) override {
+    return kickCompHook(this->state, this->resolvedMod.index, ctx, offset, cmdModType,
+                        static_cast<DefaultCompConsumer &>(consumer));
+  }
+
+  void completeDynamicUdc(const std::string &word, CompCandidateConsumer &consumer) override {
+    auto &dynaUdcs = typeAs<OrderedMapObject>(this->state.getGlobal(BuiltinVarOffset::DYNA_UDCS));
     for (auto &e : dynaUdcs.getEntries()) {
       if (!e) {
         continue;
@@ -653,7 +655,19 @@ static bool completeImpl(ARState &st, ResolvedTempMod resolvedMod, StringRef sou
         consumer(std::move(candidate));
       }
     }
-  });
+  }
+};
+
+static bool completeImpl(ARState &st, ResolvedTempMod resolvedMod, StringRef source,
+                         const CodeCompOp option, DefaultCompConsumer &consumer) {
+  auto scope = st.tempModScope[resolvedMod.index];
+  DefaultModuleProvider provider(st.modLoader, st.typePool, scope,
+                                 std::make_unique<RuntimeCancelToken>());
+  auto discardPoint = provider.getCurrentDiscardPoint();
+
+  CodeCompleter codeCompleter(consumer, willKickFrontEnd(option) ? makeObserver(provider) : nullptr,
+                              st.sysConfig, st.typePool, st.logicalWorkingDir);
+  codeCompleter.setForeignCompHandler(std::make_unique<DefaultForeignCompHandler>(st, resolvedMod));
   codeCompleter.setCancel(provider.getCancelToken());
 
   bool ret = codeCompleter(scope, st.modLoader[scope->modId].first.get(), source, option);
