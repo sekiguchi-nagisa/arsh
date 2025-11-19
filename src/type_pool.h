@@ -47,11 +47,10 @@ public:
   struct Hash {
     std::size_t operator()(const Key &key) const {
       auto hash = FNVHash::compute(key.ref.begin(), key.ref.end());
-      union {
-        char b[4];
-        unsigned int i;
-      } wrap = {.i = key.id};
-      for (auto b : wrap.b) {
+      char bb[4];
+      static_assert(sizeof(key.id) == sizeof(unsigned int));
+      memcpy(bb, &key.id, sizeof(unsigned int ));
+      for (auto b : bb) {
         FNVHash::update(hash, b);
       }
       return hash;

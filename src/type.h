@@ -140,7 +140,7 @@ protected:
       ModId modId;
       unsigned short childSize;
     } modTypeAttr;
-  } meta{};
+  } meta;
 
   const CStrPtr name;
 

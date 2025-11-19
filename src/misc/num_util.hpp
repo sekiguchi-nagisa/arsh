@@ -364,11 +364,6 @@ constexpr unsigned int hexToNum(char ch) {
 }
 
 inline int64_t doubleToBits(double d) {
-  union {
-    int64_t i64;
-    double f64;
-  } data;
-
   /**
    * https://docs.oracle.com/javase/jp/8/docs/api/java/lang/Double.html#compare-double-double-
    */
@@ -378,8 +373,9 @@ inline int64_t doubleToBits(double d) {
   if (std::isinf(d)) {
     return d > 0 ? 0x7ff0000000000000L : 0xfff0000000000000L;
   }
-  data.f64 = d;
-  return data.i64;
+  int64_t i64;
+  memcpy(&i64, &d, sizeof(double));
+  return i64;
 }
 
 inline int compareByTotalOrder(double x, double y) {

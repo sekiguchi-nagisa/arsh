@@ -88,13 +88,10 @@ union TaggedValue {
   template <T TAG>
   static TaggedValue encodeTaggedFloat(const double v) {
     static_assert(static_cast<uint8_t>(TAG) <= 7);
-    union {
-      double d;
-      uint64_t u;
-    } e = {.d = v};
+    uint64_t u;
+    memcpy(&u, &v, sizeof(double));
     return TaggedValue{
-        .u64 =
-            rotateLeft(e.u + (static_cast<uint64_t>(1 + 2 * static_cast<uint8_t>(TAG)) << 58), 5)};
+        .u64 = rotateLeft(u + (static_cast<uint64_t>(1 + 2 * static_cast<uint8_t>(TAG)) << 58), 5)};
   }
 
   /**
@@ -109,11 +106,9 @@ union TaggedValue {
     static_assert(static_cast<uint8_t>(TAG) <= 7);
     const uint64_t vv =
         rotateLeft(v.u64, 59) - (static_cast<uint64_t>(1 + 2 * static_cast<uint8_t>(TAG)) << 58);
-    union {
-      double d;
-      uint64_t u;
-    } e = {.u = vv};
-    return e.d;
+    double d;
+    memcpy(&d, &vv, sizeof(uint64_t));
+    return d;
   }
 
   static constexpr auto INT56_MAX = static_cast<int64_t>(0x7FFFFFFFFFFFFF);
