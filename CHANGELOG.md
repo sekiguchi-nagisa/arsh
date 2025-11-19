@@ -39,7 +39,7 @@
         - ``complete-backward``: move pager cursor to previous item
         - ``revert``: revert pager inserted item
 - add ``pager-ratio`` config to ``LineEditor#config`` method
-    - specify the ratio of completion pager height to terminal height (0–100)
+    - specify the ratio of completion pager height to terminal height (0-100)
         - default is 40
         - when set to 0, the pager is disabled
         - when set to 100, the pager is full height
