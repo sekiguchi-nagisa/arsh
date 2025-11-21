@@ -84,7 +84,7 @@ struct ObjectRefCount;
 
 class Object {
 protected:
-  int refCount{0};
+  unsigned int refCount{0};
 
   /**
    * |  24bit  |  8bit       |
@@ -104,7 +104,7 @@ protected:
   ~Object() = default;
 
 public:
-  int getRefcount() const { return this->refCount; }
+  unsigned int getRefcount() const { return this->refCount; }
 
   unsigned int getTypeID() const { return this->tag >> 8; }
 
@@ -134,11 +134,11 @@ public:
 };
 
 struct ObjectRefCount {
-  static long useCount(const Object *ptr) noexcept { return ptr->refCount; }
+  static auto useCount(const Object *ptr) noexcept { return ptr->refCount; }
 
   static void increase(Object *ptr) noexcept {
     if (ptr != nullptr) {
-      ptr->refCount++;
+      ++ptr->refCount;
     }
   }
 
@@ -662,7 +662,7 @@ inline bool concatAsStr(ARState &state, Value &left, const Value &right,
       return true;
     }
   }
-  const int copyCount = hasFlag(concatOp, ConcatOp::APPEND) ? 2 : 1;
+  const unsigned int copyCount = hasFlag(concatOp, ConcatOp::APPEND) ? 2 : 1;
   if (left.isObject() && left.get()->getRefcount() > copyCount) {
     left = Value::createStr(left.asStrRef());
   }

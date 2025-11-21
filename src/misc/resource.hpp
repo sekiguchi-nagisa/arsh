@@ -47,7 +47,7 @@ struct RefCountOp final {
 
   static void increase(RefCount<T> *ptr) noexcept {
     if (ptr != nullptr) {
-      ptr->count++;
+      ++ptr->count;
     }
   }
 
@@ -106,7 +106,7 @@ public:
 
   void swap(IntrusivePtr &o) noexcept { std::swap(this->ptr, o.ptr); }
 
-  long useCount() const noexcept { return P::useCount(this->ptr); }
+  auto useCount() const noexcept { return P::useCount(this->ptr); }
 
   T *get() const noexcept { return this->ptr; }
 
