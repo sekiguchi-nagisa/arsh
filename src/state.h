@@ -215,14 +215,17 @@ public:
   void setLocal(unsigned char index, const Value &obj) { this->setLocal(index, Value(obj)); }
 
   void setLocal(unsigned char index, Value &&obj) {
+    assert(this->frame.localVarOffset + index <= this->frame.stackTopIndex);
     this->operands[this->frame.localVarOffset + index] = std::move(obj);
   }
 
   const Value &getLocal(unsigned char index) const {
+    assert(this->frame.localVarOffset + index <= this->frame.stackTopIndex);
     return this->operands[this->frame.localVarOffset + index];
   }
 
   Value moveLocal(unsigned char index) {
+    assert(this->frame.localVarOffset + index <= this->frame.stackTopIndex);
     return std::move(this->operands[this->frame.localVarOffset + index]);
   }
 

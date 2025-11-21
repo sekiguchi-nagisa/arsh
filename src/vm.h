@@ -163,9 +163,15 @@ public:
     this->setGlobal(toIndex(offset), std::move(obj));
   }
 
-  void setGlobal(unsigned int index, Value &&obj) { this->globals[index] = std::move(obj); }
+  void setGlobal(unsigned int index, Value &&obj) {
+    assert(index < this->globals.size());
+    this->globals[index] = std::move(obj);
+  }
 
-  const Value &getGlobal(unsigned int index) const { return this->globals[index]; }
+  const Value &getGlobal(unsigned int index) const {
+    assert(index < this->globals.size());
+    return this->globals[index];
+  }
 
   const Value &getGlobal(BuiltinVarOffset offset) const { return this->getGlobal(toIndex(offset)); }
 
