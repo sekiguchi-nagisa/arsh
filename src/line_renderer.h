@@ -18,6 +18,7 @@
 #define ARSH_LINE_RENDERER_H
 
 #include "highlighter_base.h"
+#include "misc/array_ref.hpp"
 #include "misc/grapheme.hpp"
 
 namespace arsh {
@@ -36,19 +37,7 @@ enum class CharWidthProperty : unsigned char {
 #undef GEN_ENUM
 };
 
-constexpr unsigned int getCharWidthPropertyLen() {
-  constexpr CharWidthProperty table[] = {
-#define GEN_ENUM(E, S) CharWidthProperty::E,
-      EACH_CHAR_WIDTH_PROPERTY(GEN_ENUM)
-#undef GEN_ENUM
-  };
-  return std::size(table);
-}
-
-using CharWidthPropertyList =
-    std::array<std::pair<CharWidthProperty, const char *>, getCharWidthPropertyLen()>;
-
-const CharWidthPropertyList &getCharWidthPropertyList();
+ArrayRef<std::pair<CharWidthProperty, const char *>> getCharWidthPropertyRange();
 
 struct CharWidthProperties {
   AmbiguousCharWidth eaw{AmbiguousCharWidth::HALF};

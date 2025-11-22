@@ -20,13 +20,14 @@
 
 namespace arsh {
 
-const CharWidthPropertyList &getCharWidthPropertyList() {
-  static CharWidthPropertyList table = {{
+static constexpr std::pair<CharWidthProperty, const char *> charWidthProperties[] = {
 #define GEN_ENUM(E, S) {CharWidthProperty::E, S},
-      EACH_CHAR_WIDTH_PROPERTY(GEN_ENUM)
+    EACH_CHAR_WIDTH_PROPERTY(GEN_ENUM)
 #undef GEN_ENUM
-  }};
-  return table;
+};
+
+ArrayRef<std::pair<CharWidthProperty, const char *>> getCharWidthPropertyRange() {
+  return ArrayRef(charWidthProperties);
 }
 
 static bool isRegionalIndicator(int codePoint) {

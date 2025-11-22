@@ -227,23 +227,23 @@ static void checkProperty(CharWidthProperties &ps, const int ttyFd) {
     return;
   }
 
-  for (auto &e : getCharWidthPropertyList()) {
+  for (auto &[p, str] : getCharWidthPropertyRange()) {
     char buf[32];
     /**
      * hide cursor and clear line immediately (due to suppress cursor flicker)
      */
-    const int s = snprintf(buf, std::size(buf), "\x1b[?25l<%s>\x1b[1K\x1b[6n\r", e.second);
+    const int s = snprintf(buf, std::size(buf), "\x1b[?25l<%s>\x1b[1K\x1b[6n\r", str);
     tcflush(ttyFd, TCIFLUSH); // force clear inbound data
     if (s < 0 || write(ttyFd, buf, s) == -1) {
       break;
     }
     const int pos = getCursorPosition(ttyFd, false);
     const int len = pos - 3;
-    LOG(TRACE_EDIT, "char:<%s>, pos:%d, len:%d", e.second, pos, len);
+    LOG(TRACE_EDIT, "char:<%s>, pos:%d, len:%d", str, pos, len);
     if (len <= 0) {
       continue; // skip unresolved property
     }
-    ps.setProperty(e.first, len);
+    ps.setProperty(p, len);
   }
 }
 
