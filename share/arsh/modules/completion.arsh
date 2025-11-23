@@ -116,6 +116,33 @@ function _comp_arg(ctx : Module, deflist: [_CompDef], opt : String, prefix : Str
     return $none
 }
 
+let _help_comp_targets = ["bison", "ls", "rm", "ps"].sort()
+
+function _comp_opt_by_help(argv: [String], cursor: Int): Candidates? {
+    let cmd = $argv[0]
+    $_help_comp_targets.searchSorted($cmd) < 0 && return $none
+    command -v $cmd &>> /dev/null || return $none
+    var word = $cursor < $argv.size() ? $argv[$cursor] : return $none
+    $word.endsWith("=") && return $none
+    var can: Candidates
+    var proc = <(call $cmd --help)
+    for line in $proc {
+        var matched = $/^ *(?<short>[-][a-zA-Z]),? *(?<long>[-][-][a-zA-Z0-9-]+=?)/.match($line) ?? continue
+        if let short = $matched.named("short") {
+            if $short.startsWith($word) {
+                $can.add($short)
+            }
+        }
+        if let long = $matched.named("long") {
+            if $long.startsWith($word) {
+                var sp = $long.endsWith("=") ? 0:1
+                $can.add($long, $space:$sp)
+            }
+        }
+    }
+    return $can.size() == 0 && $proc.job().wait() != 0 ? $none : $can
+}
+
 let INSTALL_PREFIX = $DATA_DIR.dirname().dirname()
 
 let _bash_completion_dirs = [
@@ -266,7 +293,7 @@ function _comp_autoload(cmd : String) : String? {
 function _from_compdef(ctx : Module, words : [String], cursor : Int) : Candidates? {
     var cmd = $words[0]
     var deflist = $_compdefMap.get($cmd) ?? {
-        $cmd = $_comp_autoload($cmd) ?? return $none
+        $cmd = $_comp_autoload($cmd) ?? return $_comp_opt_by_help($words, $cursor)
         $_compdefMap[$cmd]
     }
     if $deflist[0].type == 3 {
