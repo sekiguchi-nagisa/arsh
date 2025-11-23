@@ -107,3 +107,24 @@ compdef --cmd ${$nest.mod._fullname('ggg')!} --long hey --arg-list 'aaa bbb ccc'
 assert diff <(complete 'nest mod ggg --he') <(echo --hey)
 assert diff <(complete 'nest mod ggg --hey ') <(printf "%s\n" aaa bbb ccc)
 assert diff <(complete 'nest mod ggg --hey c') <(printf "%s\n" ccc)
+
+# help-based comp
+$DYNA_UDCS['bison'] = () {
+    cat << 'EOF'
+bison [OPTION] ... [FILE] ...
+
+  -a, --all  show all
+  -c         command
+  --help     show this help message
+  -d, --dump=path
+EOF
+}
+
+echo
+complete 'bison -'
+
+assert diff <(complete 'bison -') <(printf -- "%s\n" --all --dump= --help -a -c -d)
+assert diff <(complete 'bison --du') <(printf -- "%s\n" --dump=)
+assert diff <(complete 'bison --dump=') <(complete -A file)
+assert diff <(complete 'bison --dump=/') <(complete -A file /)
+assert diff <(complete 'bison --dump=~/') <(complete -A file -A tilde '~/')

@@ -132,9 +132,11 @@ function _comp_opt_by_help(argv: [String], cursor: Int): Candidates? {
     command -v $cmd &>> /dev/null || return $none
     var word = $cursor < $argv.size() ? $argv[$cursor] : return $none
     var can: Candidates
-    var proc = <(call $cmd --help)
+    var proc = <(LANG=C call $cmd --help)
     for line in $proc {
-        var matched = $/^ *(?<short>[-][a-zA-Z]),? *(?<long>[-][-][a-zA-Z0-9-]+=?)/.match($line) ?? continue
+        $/^ *[-][-a-zA-Z0-9]/ =~ $line || continue
+
+        var matched = $/^ *((?<short>[-][a-zA-Z]),? *)?(?<long>[-][-][a-zA-Z0-9-]+=?)?/.match($line) ?? continue
         if let short = $matched.named("short") {
             if $short.startsWith($word) {
                 $can.add($short)
