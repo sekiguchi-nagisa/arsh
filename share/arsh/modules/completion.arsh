@@ -131,6 +131,7 @@ function _comp_opt_by_help(argv: [String], cursor: Int): Candidates? {
     $_help_comp_targets.searchSorted($cmd) < 0 && return $none
     command -v $cmd &>> /dev/null || return $none
     var word = $cursor < $argv.size() ? $argv[$cursor] : return $none
+    $word.startsWith('-') || return $none
     var can: Candidates
     var proc = <(LANG=C call $cmd --help)
     for line in $proc {
