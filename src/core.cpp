@@ -527,13 +527,12 @@ static Value createArgv(const ARState &state, unsigned int tempModIndex,
   return Value::create<ArrayObject>(state.typePool.get(TYPE::StringArray), std::move(values));
 }
 
-static int kickCompHook(ARState &state, const unsigned int tempModIndex,
-                        const CodeCompletionContext &ctx, const unsigned int offset,
-                        const ModType *cmdModType, DefaultCompConsumer &consumer) {
+static CmdArgCompStatus kickCompHook(ARState &state, const unsigned int tempModIndex,
+                                     const CodeCompletionContext &ctx, const unsigned int offset,
+                                     const ModType *cmdModType, DefaultCompConsumer &consumer) {
   auto hook = getBuiltinGlobal(state, VAR_COMP_HOOK);
   if (hook.isInvalid()) {
-    errno = EINVAL;
-    return -1;
+    return CmdArgCompStatus::INVALID;
   }
 
   // prepare argument
@@ -554,16 +553,13 @@ static int kickCompHook(ARState &state, const unsigned int tempModIndex,
   state.setGlobal(BuiltinVarOffset::EXIT_STATUS, std::move(oldStatus));
   state.setGlobal(BuiltinVarOffset::IFS, std::move(oldIFS));
   if (state.hasError()) {
-    errno = EINTR;
-    return -1;
+    return CmdArgCompStatus::CANCEL;
   }
   if (ret.isInvalid()) {
-    errno = EINVAL;
-    return -1;
+    return CmdArgCompStatus::INVALID;
   }
-  auto &obj = typeAs<CandidatesObject>(ret);
-  consumer.addAll(obj);
-  return static_cast<int>(obj.size());
+  consumer.addAll(typeAs<CandidatesObject>(ret));
+  return CmdArgCompStatus::OK;
 }
 
 struct ResolvedTempMod {
@@ -637,8 +633,9 @@ public:
 
   ~DefaultForeignCompHandler() override = default;
 
-  int callUserDefinedComp(const CodeCompletionContext &ctx, unsigned offset,
-                          const ModType *cmdModType, CompCandidateConsumer &consumer) override {
+  CmdArgCompStatus callUserDefinedComp(const CodeCompletionContext &ctx, unsigned offset,
+                                       const ModType *cmdModType,
+                                       CompCandidateConsumer &consumer) override {
     return kickCompHook(this->state, this->resolvedMod.index, ctx, offset, cmdModType,
                         static_cast<DefaultCompConsumer &>(consumer));
   }
@@ -667,7 +664,8 @@ static bool completeImpl(ARState &st, ResolvedTempMod resolvedMod, StringRef sou
 
   CodeCompleter codeCompleter(consumer, willKickFrontEnd(option) ? makeObserver(provider) : nullptr,
                               st.sysConfig, st.typePool, st.logicalWorkingDir);
-  codeCompleter.setForeignCompHandler(std::make_unique<DefaultForeignCompHandler>(st, resolvedMod));
+  DefaultForeignCompHandler foreignHandler(st, resolvedMod);
+  codeCompleter.setForeignCompHandler(foreignHandler);
   codeCompleter.setCancel(provider.getCancelToken());
 
   bool ret = codeCompleter(scope, st.modLoader[scope->modId].first.get(), source, option);

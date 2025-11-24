@@ -681,12 +681,6 @@ static void completeParamName(const std::vector<std::string> &paramNames, const 
   }
 }
 
-enum class CmdArgCompStatus : unsigned char {
-  OK,      // completion succeeded
-  INVALID, // do nothing
-  CANCEL,  // completion canceled (via error or signal)
-};
-
 static CmdArgCompStatus completeBuiltinOption(const CmdNode &cmdNode, const std::string &word,
                                               CompCandidateConsumer &consumer) {
   if (cmdNode.getNameNode().getValue() != "shctl") {
@@ -772,22 +766,6 @@ static CmdArgCompStatus completeCLIOptionImpl(const CLIRecordType &type, const s
   return CmdArgCompStatus::OK;
 }
 
-static CmdArgCompStatus callUserDefinedComp(const CodeCompletionContext &ctx,
-                                            const std::unique_ptr<ForeignCompHandler> &comp,
-                                            const unsigned int offset, const ModType *cmdModType,
-                                            CompCandidateConsumer &consumer) {
-  if (comp) {
-    const int s = comp->callUserDefinedComp(ctx, offset, cmdModType, consumer);
-    if (s < 0 && errno == EINTR) {
-      return CmdArgCompStatus::CANCEL;
-    }
-    if (s > -1) {
-      return CmdArgCompStatus::OK;
-    }
-  }
-  return CmdArgCompStatus::INVALID;
-}
-
 static CmdArgCompStatus completeCLIOption(const TypePool &pool, const CLIRecordType &type,
                                           const CmdNode &cmdNode, const unsigned int argOffset,
                                           const std::string &word,
@@ -826,15 +804,23 @@ static const CLIRecordType *resolveCLIType(const FunctionType &funcType) {
   return nullptr;
 }
 
-static CmdArgCompStatus completeCmdArg(const TypePool &pool,
-                                       const std::unique_ptr<ForeignCompHandler> &comp,
+static CmdArgCompStatus tryToCallUserDefinedComp(const CodeCompletionContext &ctx,
+                                                 ObserverPtr<ForeignCompHandler> comp,
+                                                 const unsigned int offset,
+                                                 const ModType *cmdModType,
+                                                 CompCandidateConsumer &consumer) {
+  return comp ? comp->callUserDefinedComp(ctx, offset, cmdModType, consumer)
+              : CmdArgCompStatus::INVALID;
+}
+
+static CmdArgCompStatus completeCmdArg(const TypePool &pool, ObserverPtr<ForeignCompHandler> comp,
                                        const CodeCompletionContext &ctx,
                                        CompCandidateConsumer &consumer) {
   const auto &cmdNode = *ctx.getCmdNode();
   auto &word = ctx.getCompWord();
   auto handle = ctx.getScope().lookup(toCmdFullName(cmdNode.getNameNode().getValue()));
   if (!handle || !pool.get(handle.asOk()->getTypeId()).isModType()) {
-    if (const auto s = callUserDefinedComp(ctx, comp, 0, nullptr, consumer);
+    if (const auto s = tryToCallUserDefinedComp(ctx, comp, 0, nullptr, consumer);
         s != CmdArgCompStatus::INVALID) { // call user-defined completer for non-module
       return s;
     }
@@ -867,7 +853,7 @@ static CmdArgCompStatus completeCmdArg(const TypePool &pool,
   }
   if (curUdcType) {
     if (belongedModType && offset <= cmdNode.getArgNodes().size() && offset > 0) {
-      if (const auto s = callUserDefinedComp(ctx, comp, offset - 1, belongedModType, consumer);
+      if (const auto s = tryToCallUserDefinedComp(ctx, comp, offset - 1, belongedModType, consumer);
           s != CmdArgCompStatus::INVALID) {
         return s;
       }

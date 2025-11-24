@@ -152,6 +152,12 @@ void completeMember(const TypePool &pool, const NameScope &scope, const Type &re
 void completeType(const TypePool &pool, const NameScope &scope, const Type *recvType,
                   StringRef word, CompCandidateConsumer &consumer);
 
+enum class CmdArgCompStatus : unsigned char {
+  OK,      // completion succeeded
+  INVALID, // do nothing
+  CANCEL,  // completion canceled (via error or signal)
+};
+
 struct ForeignCompHandler {
   virtual ~ForeignCompHandler() = default;
 
@@ -165,8 +171,9 @@ struct ForeignCompHandler {
    * if failed (cannot call user-defined comp or error), return -1
    * otherwise, return the number of consumed completion candidates
    */
-  virtual int callUserDefinedComp(const CodeCompletionContext &ctx, unsigned int offset,
-                                  const ModType *cmdModType, CompCandidateConsumer &consumer) = 0;
+  virtual CmdArgCompStatus callUserDefinedComp(const CodeCompletionContext &ctx,
+                                               unsigned int offset, const ModType *cmdModType,
+                                               CompCandidateConsumer &consumer) = 0;
 
   virtual void completeDynamicUdc(const std::string &word, CompCandidateConsumer &consumer) = 0;
 };
@@ -178,7 +185,7 @@ private:
   const SysConfig &config;
   const TypePool &pool;
   const std::string &logicalWorkingDir;
-  std::unique_ptr<ForeignCompHandler> foreignComp;
+  ObserverPtr<ForeignCompHandler> foreignComp;
   ObserverPtr<const CancelToken> cancel;
 
 public:
@@ -187,9 +194,7 @@ public:
       : consumer(consumer), provider(provider), config(config), pool(pool),
         logicalWorkingDir(workDir) {}
 
-  void setForeignCompHandler(std::unique_ptr<ForeignCompHandler> &&comp) {
-    this->foreignComp = std::move(comp);
-  }
+  void setForeignCompHandler(ForeignCompHandler &comp) { this->foreignComp = makeObserver(comp); }
 
   void setCancel(const CancelToken &c) { this->cancel = makeObserver(c); }
 
