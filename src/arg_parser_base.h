@@ -28,7 +28,7 @@
 
 namespace arsh {
 
-enum class ArgEntryAttr : unsigned short {
+enum class ArgEntryAttr : unsigned char {
   REQUIRED = 1u << 0u,    // require option
   POSITIONAL = 1u << 1u,  // positional argument
   REMAIN = 1u << 2u,      // remain argument (last positional argument that accept string array)
@@ -41,6 +41,8 @@ template <>
 struct allow_enum_bitop<ArgEntryAttr> : std::true_type {};
 
 enum class ArgEntryIndex : unsigned short {};
+
+class FuncHandle;
 
 class ArgEntry : public OptParseOption<ArgEntryIndex> {
 public:
@@ -58,7 +60,7 @@ private:
   ArgEntryAttr attr{};
   int8_t xorGroupId{-1};
   CheckerKind checkerKind{CheckerKind::NOP};
-  std::string defaultValue; // for OptParseOp::OPT_ARG. may be empty
+  std::string defaultValue; // for OptParseOp::OPT_ARG. maybe empty
 
   using Choice = FlexBuffer<char *>;
 
@@ -71,6 +73,8 @@ private:
     Choice choice;
   };
 
+  const FuncHandle *compHandle{nullptr}; // for completion. must global
+
 public:
   static ArgEntry newHelp(ArgEntryIndex index);
 
@@ -82,7 +86,7 @@ public:
   ArgEntry(ArgEntry &&o) noexcept // NOLINT
       : OptParseOption(std::move(static_cast<OptParseOption &>(o))), fieldOffset(o.fieldOffset),
         attr(o.attr), xorGroupId(o.xorGroupId), checkerKind(o.checkerKind),
-        defaultValue(std::move(o.defaultValue)) {
+        defaultValue(std::move(o.defaultValue)), compHandle(o.compHandle) {
     switch (this->checkerKind) {
     case CheckerKind::NOP:
       break;
@@ -199,6 +203,10 @@ public:
 
   const std::string &getDetail() const { return this->detail; }
 
+  void setCompHandle(const FuncHandle &handle) { this->compHandle = &handle; }
+
+  const FuncHandle *getCompHandle() const { return this->compHandle; }
+
   /**
    *
    * @param arg
@@ -207,7 +215,7 @@ public:
    * if CheckerKind::INT, set parsed value
    * otherwise, set 0
    * @param err
-   * if error, set error message
+   * if error, set the error message
    * @return
    */
   bool checkArg(StringRef arg, bool shortOpt, int64_t &out, std::string &err) const;

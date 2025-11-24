@@ -35,20 +35,20 @@ only allowed for field declaration that is ``Bool`` or ``Bool?`` type
 ### ``Option`` attribute
 only allowed for field declaration that is ``String``, ``String?``, ``Int`` or ``Int?`` type
 
-| **param**   | **type**      | **default**                               | **description**                                               |
-|-------------|---------------|-------------------------------------------|---------------------------------------------------------------|
-| short       | ``String``    | empty string                              | define short option name(single ascii character)              |
-| long        | ``String``    | equivalent to lower kebab case field name | define long option name (at-least 2 or more ascii characters) |
-| required    | ``Bool``      | false                                     | required or not                                               |
-| opt         | ``Bool``      | false                                     | following argument is optional or not                         |
-| stop        | ``Bool``      | false                                     | stop option recognition                                       |
-| default     | ``String``    | null                                      | default argument for optional argument                        |
-| placeholder | ``String``    | equivalent to upper snake case field name | placeholder for argument                                      |
-| range       | ``(Int,Int)`` | null                                      | range of integer argument (inclusive, inclusive)              |
-| choice      | ``[String]``  | null                                      | valid choice of string argument                               |
-| xor         | ``Int``       | null                                      | set xor argument group number                                 |
-| help        | ``String``    | empty string                              | help message of this option                                   |
-
+| **param**   | **type**                         | **default**                               | **description**                                               |
+|-------------|----------------------------------|-------------------------------------------|---------------------------------------------------------------|
+| short       | ``String``                       | empty string                              | define short option name(single ascii character)              |
+| long        | ``String``                       | equivalent to lower kebab case field name | define long option name (at-least 2 or more ascii characters) |
+| required    | ``Bool``                         | false                                     | required or not                                               |
+| opt         | ``Bool``                         | false                                     | following argument is optional or not                         |
+| stop        | ``Bool``                         | false                                     | stop option recognition                                       |
+| default     | ``String``                       | null                                      | default argument for optional argument                        |
+| placeholder | ``String``                       | equivalent to upper snake case field name | placeholder for argument                                      |
+| range       | ``(Int,Int)``                    | null                                      | range of integer argument (inclusive, inclusive)              |
+| choice      | ``[String]``                     | null                                      | valid choice of string argument                               |
+| xor         | ``Int``                          | null                                      | set xor argument group number                                 |
+| help        | ``String``                       | empty string                              | help message of this option                                   |
+| comp        | ``(String,String)->Candidates?`` | null                                      | set completion callback                                       |
 
 ### ``Arg`` attribute
 only allowed for field declaration that is ``String``, ``String?``, ``[String]``, ``[String]?``, ``Int`` or ``Int?`` type

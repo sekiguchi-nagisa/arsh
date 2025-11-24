@@ -4,6 +4,11 @@
 
 ### Added
 
+#### Core
+
+- add ``comp`` attribute parameter to ``Option`` attribute
+    - now define custom completion handlers for CLI record
+
 #### Builtin
 
 - add incremental search filter to completion pager of ``LineEditor``

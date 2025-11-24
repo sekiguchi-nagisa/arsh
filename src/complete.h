@@ -161,19 +161,12 @@ enum class CmdArgCompStatus : unsigned char {
 struct ForeignCompHandler {
   virtual ~ForeignCompHandler() = default;
 
-  /**
-   *
-   * @param ctx
-   * @param offset
-   * @param cmdModType
-   * @param consumer
-   * @return
-   * if failed (cannot call user-defined comp or error), return -1
-   * otherwise, return the number of consumed completion candidates
-   */
   virtual CmdArgCompStatus callUserDefinedComp(const CodeCompletionContext &ctx,
                                                unsigned int offset, const ModType *cmdModType,
                                                CompCandidateConsumer &consumer) = 0;
+
+  virtual CmdArgCompStatus callCLIComp(const FuncHandle &handle, StringRef opt, StringRef word,
+                                       CompCandidateConsumer &consumer) = 0;
 
   virtual void completeDynamicUdc(const std::string &word, CompCandidateConsumer &consumer) = 0;
 };

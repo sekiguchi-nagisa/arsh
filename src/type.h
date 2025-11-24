@@ -678,9 +678,9 @@ public:
 
 protected:
   void finalize(unsigned char fieldSize, std::unordered_map<std::string, HandlePtr> &&handles,
-                CStrPtr &&packedFieldNames, unsigned int depth) {
+                CStrPtr &&packed, unsigned int depth) {
     this->handleMap = std::move(handles);
-    this->packedFieldNames = std::move(packedFieldNames);
+    this->packedFieldNames = std::move(packed);
     this->setFieldSize(fieldSize);
     this->setDepth(depth);
   }

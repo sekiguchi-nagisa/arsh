@@ -7,13 +7,40 @@ typedef CCC() {
     var target = ""
 }
 
+var OPT: String?
+
+function count(opt: String, prefix: String): Candidates? {
+    $OPT = $opt
+    var ret: Candidates
+    for c in ['111', '123', '1234', '222'] {
+        if $c.startsWith($prefix) {
+            $ret.add($c)
+        }
+    }
+    $prefix.startsWith('EEE') && throw new InvalidOperationError($prefix)
+    return $ret
+}
+
+function output(opt: String, prefix: String): Candidates? {
+    var ret: Candidates
+    for c in ['AAA', 'AAB', 'ABB', 'ABC'] {
+        if $c.startsWith($prefix) {
+            $ret.add($c)
+        }
+    }
+    return $ret
+}
+
 [<CLI>]
 typedef BBB() {
     [<Flag(short: "v", long: "verbose")>]
     var verbose = $false
 
-    [<Option(short: "c", long: "count")>]
+    [<Option(short: "c", long: "count", comp: $count)>]
     var count = 0
+
+    [<Option(short: 'o', long: "output", opt:$true, comp: $output)>]
+    var output : String?
 
     [<SubCmd>]
     var ccc : CCC?
@@ -94,6 +121,29 @@ assert diff <(complete -- 'fff --version ./') <(complete -A file './')
 assert diff <(complete -- 'fff --count=') <(complete -A file)
 assert diff <(complete -- 'fff --dump=') <(complete -A file)
 assert diff <(complete -- 'fff --fajjaiae ') <(complete -A file)  # complete file names after invalid option
+
+## complete via user-defined func
+assert diff <(complete -- 'fff bbb1 --count ') <(printf "%s\n" 111 123 1234 222 )
+assert diff <(complete -- 'fff bbb1 --count=') <(printf "%s\n" 111 123 1234 222 )
+assert diff <(complete -- 'fff bbb1 -c 12') <(printf "%s\n" 123 1234 )
+assert diff <(complete -- 'fff bbb1 --count 12') <(printf "%s\n" 123 1234 )
+assert diff <(complete -- 'fff bbb1 --count=2') <(printf "%s\n" 222)
+assert $(complete -- 'fff bbb1 --count=3').empty()
+assert diff <(complete -- 'fff bbb1 --output=') <(printf "%s\n" 'AAA' 'AAB' 'ABB' 'ABC' )
+assert diff <(complete -- 'fff bbb1 -o') <(printf "%s\n" -o )
+assert diff <(complete -- 'fff bbb1 -oA') <(printf "%s\n" 'AAA' 'AAB' 'ABB' 'ABC' )
+
+$OPT = $none
+complete -- 'fff bbb1 --count '
+assert $OPT! == '--count'
+
+$OPT = $none
+complete -- 'fff bbb1 --count=12'
+assert $OPT! == '--count='
+
+var ex = 2345 as Any
+try { complete -- 'fff bbb1 --count=EEER'; } catch e { $ex = $e; }
+assert ($ex as InvalidOperationError).message() == 'EEER'
 
 ## complete sub-command
 assert diff <(complete -- 'fff ') <(echo 'bbb1' && echo bbb2)

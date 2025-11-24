@@ -527,6 +527,24 @@ static Value createArgv(const ARState &state, unsigned int tempModIndex,
   return Value::create<ArrayObject>(state.typePool.get(TYPE::StringArray), std::move(values));
 }
 
+static CmdArgCompStatus callCompCallback(ARState &state, Value &&func, CallArgs &&args,
+                                         DefaultCompConsumer &consumer) {
+  auto oldStatus = state.getGlobal(BuiltinVarOffset::EXIT_STATUS);
+  auto oldIFS = state.getGlobal(BuiltinVarOffset::IFS);
+  state.setGlobal(BuiltinVarOffset::IFS, Value::createStr(VAL_DEFAULT_IFS)); // set to default
+  auto ret = VM::callFunction(state, std::move(func), std::move(args));
+  state.setGlobal(BuiltinVarOffset::EXIT_STATUS, std::move(oldStatus));
+  state.setGlobal(BuiltinVarOffset::IFS, std::move(oldIFS));
+  if (state.hasError()) {
+    return CmdArgCompStatus::CANCEL;
+  }
+  if (ret.isInvalid()) {
+    return CmdArgCompStatus::INVALID;
+  }
+  consumer.addAll(typeAs<CandidatesObject>(ret));
+  return CmdArgCompStatus::OK;
+}
+
 static CmdArgCompStatus kickCompHook(ARState &state, const unsigned int tempModIndex,
                                      const CodeCompletionContext &ctx, const unsigned int offset,
                                      const ModType *cmdModType, DefaultCompConsumer &consumer) {
@@ -543,23 +561,10 @@ static CmdArgCompStatus kickCompHook(ARState &state, const unsigned int tempModI
     index--;
   }
 
-  // kick hook
-  auto oldStatus = state.getGlobal(BuiltinVarOffset::EXIT_STATUS);
-  auto oldIFS = state.getGlobal(BuiltinVarOffset::IFS);
-  state.setGlobal(BuiltinVarOffset::IFS, Value::createStr(VAL_DEFAULT_IFS)); // set to default
-  auto ret =
-      VM::callFunction(state, std::move(hook),
-                       makeArgs(std::move(dummyMod), std::move(argv), Value::createInt(index)));
-  state.setGlobal(BuiltinVarOffset::EXIT_STATUS, std::move(oldStatus));
-  state.setGlobal(BuiltinVarOffset::IFS, std::move(oldIFS));
-  if (state.hasError()) {
-    return CmdArgCompStatus::CANCEL;
-  }
-  if (ret.isInvalid()) {
-    return CmdArgCompStatus::INVALID;
-  }
-  consumer.addAll(typeAs<CandidatesObject>(ret));
-  return CmdArgCompStatus::OK;
+  // kick completion callback
+  return callCompCallback(state, std::move(hook),
+                          makeArgs(std::move(dummyMod), std::move(argv), Value::createInt(index)),
+                          consumer);
 }
 
 struct ResolvedTempMod {
@@ -638,6 +643,17 @@ public:
                                        CompCandidateConsumer &consumer) override {
     return kickCompHook(this->state, this->resolvedMod.index, ctx, offset, cmdModType,
                         static_cast<DefaultCompConsumer &>(consumer));
+  }
+
+  CmdArgCompStatus callCLIComp(const FuncHandle &handle, StringRef opt, StringRef word,
+                               CompCandidateConsumer &consumer) override {
+    auto func = this->state.tryToGetGlobal(handle.getIndex());
+    if (!func) { // maybe uninitialized
+      return CmdArgCompStatus::INVALID;
+    }
+    return callCompCallback(this->state, std::move(func),
+                            makeArgs(Value::createStr(opt), Value::createStr(word)),
+                            static_cast<DefaultCompConsumer &>(consumer));
   }
 
   void completeDynamicUdc(const std::string &word, CompCandidateConsumer &consumer) override {

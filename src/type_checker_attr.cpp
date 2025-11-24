@@ -25,6 +25,12 @@ static const Type &createIntPairType(TypePool &pool) {
   return *ret.asOk();
 }
 
+static const Type &createCompFuncType(TypePool &pool) {
+  auto ret = pool.createOptionType(pool.get(TYPE::Candidates));
+  ret = pool.createFuncType(*ret.asOk(), {&pool.get(TYPE::String), &pool.get(TYPE::String)});
+  return *ret.asOk();
+}
+
 static const char *toString(Attribute::Loc loc) {
   switch (loc) {
   case Attribute::Loc::NONE:
@@ -48,8 +54,8 @@ void TypeChecker::visitAttributeNode(AttributeNode &node) {
     this->reportError<InvalidAttrLoc>(node, attr->getName(), toString(attr->getLoc()));
   }
   if (attr->getLoc() == Attribute::Loc::FIELD) {
-    if (!this->funcCtx->withinConstructor() ||
-        !isa<CLIRecordType>(this->funcCtx->getReturnType())) {
+    if (!this->funcCtx->withinConstructor() ||                 // NOLINT
+        !isa<CLIRecordType>(this->funcCtx->getReturnType())) { // NOLINT
       this->reportError<NeedCLIAttr>(node, node.getAttrName().c_str());
     }
   }
@@ -73,8 +79,10 @@ void TypeChecker::visitAttributeNode(AttributeNode &node) {
     paramSet.add(*p);
 
     // check param type
-    auto &paramType = *p == Attribute::Param::RANGE ? createIntPairType(this->pool)
-                                                    : getRequiredParamType(this->pool, *p);
+    auto &paramType = *p == Attribute::Param::RANGE  ? createIntPairType(this->pool)
+                      : *p == Attribute::Param::COMP ? createCompFuncType(this->pool)
+                                                     : getRequiredParamType(this->pool, *p);
+
     auto &exprNode = node.getValueNodes()[i];
     if (this->checkType(paramType, *exprNode).isUnresolved()) {
       continue;
@@ -459,6 +467,12 @@ void TypeChecker::resolveArgEntry(ResolveArgEntryParam &resolveParam, const unsi
         return;
       }
       continue;
+    }
+    case Attribute::Param::COMP: {
+      auto &funcHandle = cast<NumberNode>(constNode).getAsFunc();
+      assert(funcHandle.has(HandleAttr::GLOBAL));
+      entry.setCompHandle(funcHandle);
+      continue; // NOLINT
     }
     }
   }

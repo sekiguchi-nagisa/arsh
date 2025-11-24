@@ -865,7 +865,7 @@ void TypeChecker::visitNumberNode(NumberNode &node) {
     node.setType(this->typePool().get(TYPE::OptNothing)); // for constant expression
     break;
   case NumberNode::Func:
-    node.setType(this->typePool().get(node.getAsFunc()->getTypeId())); // for constant expression
+    node.setType(this->typePool().get(node.getAsFunc().getTypeId())); // for constant expression
     break;
   }
 }

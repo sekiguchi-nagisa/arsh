@@ -228,6 +228,8 @@ private:
     }
   }
 
+  void writeBool(bool v) { this->write8(v ? 1 : 0); }
+
   void write8(uint8_t b) { this->writeN<1>(b); }
 
   void write16(uint16_t b) { this->writeN<2>(b); }
@@ -301,6 +303,8 @@ private:
     }
     return v;
   }
+
+  bool readBool() { return this->read8() > 0; }
 
   uint8_t read8() { return static_cast<uint8_t>(this->readN<1>()); }
 

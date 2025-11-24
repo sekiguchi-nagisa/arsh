@@ -1,6 +1,26 @@
 
 # for key bind setting
 
+function _comp_actions(opt: String, prefix: String): Candidates {
+    var ret: Candidates
+    for a in $LINE_EDIT.actions() {
+        if $a.startsWith($prefix) {
+            $ret.add($a)
+        }
+    }
+    return $ret
+}
+
+function _comp_keycodes(opt: String, prefix: String): Candidates {
+    var ret: Candidates
+    for k,_ in $LINE_EDIT.bindings() {
+        if $k.startsWith($prefix) {
+            $ret.add($k.quote())
+        }
+    }
+    return $ret
+}
+
 [<CLI(desc: 'Set or display key bindings')>]
 type _BindParam() {
     [<Flag(short: 'l', xor: 1, help: "list defined key actions")>]
@@ -9,10 +29,12 @@ type _BindParam() {
     [<Flag(short: 'p', xor: 1, help: 'list key bindings')>]
     var print = $false
 
-    [<Option(short: 'q', xor: 1, placeholder: 'action', help: 'find key codes that bind to ACTION')>]
+    [<Option(short: 'q', xor: 1, placeholder: 'action', comp:$_comp_actions,
+        help: 'find key codes that bind to ACTION')>]
     var query : String?
 
-    [<Option(short: 'r', xor: 1, placeholder: 'keycode', help: 'remove key binding to KEYCODE')>]
+    [<Option(short: 'r', xor: 1, placeholder: 'keycode', comp:$_comp_keycodes,
+        help: 'remove key binding to KEYCODE')>]
     var remove : String?
 
     [<Arg>]

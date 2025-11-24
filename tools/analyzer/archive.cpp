@@ -206,6 +206,10 @@ void Archiver::add(const ArgEntry &entry) {
     break;
   }
   }
+  this->writeBool(entry.getCompHandle());
+  if (auto *handle = entry.getCompHandle()) {
+    this->add("", *handle);
+  }
 }
 
 std::pair<std::string, HandlePtr> Archive::unpack(TypePool &pool) const {
@@ -412,6 +416,11 @@ std::pair<ArgEntry, bool> Unarchiver::unpackArgEntry() {
     }
     break;
   }
+  }
+  if (this->readBool()) {
+    if (auto ret = this->unpackHandle(); ret.second) {
+      entry.setCompHandle(cast<FuncHandle>(*ret.second));
+    }
   }
   return {std::move(entry), true};
 }

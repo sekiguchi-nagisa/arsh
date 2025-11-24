@@ -175,6 +175,10 @@ public:
 
   const Value &getGlobal(BuiltinVarOffset offset) const { return this->getGlobal(toIndex(offset)); }
 
+  Value tryToGetGlobal(unsigned int index) const {
+    return index < this->globals.size() ? this->getGlobal(index) : Value();
+  }
+
   void setLocal(unsigned char index, Value &&obj) { this->stack.setLocal(index, std::move(obj)); }
 
   const Value &getLocal(unsigned char index) const { return this->stack.getLocal(index); }

@@ -43,7 +43,8 @@
   OP(RANGE, "range", TYPE::Void /* dummy type */)                                                  \
   OP(CHOICE, "choice", TYPE::StringArray)                                                          \
   OP(XOR, "xor", TYPE::Int)                                                                        \
-  OP(NAME, "name", TYPE::String)
+  OP(NAME, "name", TYPE::String)                                                                   \
+  OP(COMP, "comp", TYPE::Void /* dummy type */)
 
 namespace arsh {
 

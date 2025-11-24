@@ -432,7 +432,7 @@ public:
 
   double getFloatValue() const { return this->floatValue; }
 
-  const FuncHandle *getAsFunc() const { return this->funcHandle; }
+  const FuncHandle &getAsFunc() const { return *this->funcHandle; }
 
   bool isInit() const { return this->init; }
 

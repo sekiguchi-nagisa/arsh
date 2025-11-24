@@ -110,6 +110,7 @@ AttributeMap AttributeMap::create() {
                       Attribute::Param::CHOICE,
                       Attribute::Param::XOR,
                       Attribute::Param::HELP,
+                      Attribute::Param::COMP,
                   },
                   {TYPE::String, TYPE::Int});
   defineAttribute(values, AttributeKind::ARG, Attribute::Loc::FIELD,

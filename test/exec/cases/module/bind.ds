@@ -59,4 +59,8 @@ assert $? == 1
 assert "$(bind ^G hogehoge 2>&1)" == "bind: undefined edit action: \`hogehoge'
 See \`bind --help' for more information."
 
+# complete
+assert diff <(complete 'bind -q co') <(printf "%s\n" complete complete-backward)
+assert diff <(complete 'bind -r e') <(printf "%s\n" end enter escape)
+
 true
