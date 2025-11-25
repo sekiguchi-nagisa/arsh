@@ -6,32 +6,35 @@ call $BIN_NAME --help | grep '  -' | cut -d ' ' -f 3 | cut -d '[' -f 1 |
 for $line in $STDIN {
     var k = $line.startsWith('--') ? "--long" : "--short"
     var o = $line.startsWith('--') ? $line.slice(2) : $line.slice(1)
-    ($o == 'e' || $o.startsWith('dump')) && continue
+    ($o == 'e' || $o.startsWith('dump') || $o == 'status-log' || $o == 'rcfile') && continue
     compdef --cmd arsh $k $o
 }
-compdef --cmd arsh --long dump-ast= --arg-action file
-compdef --cmd arsh --long dump-untyped-ast= --arg-action file
-compdef --cmd arsh --long dump-code= --arg-action file
+compdef --cmd arsh --long dump-ast --arg-action file
+compdef --cmd arsh --long dump-untyped-ast --arg-action file
+compdef --cmd arsh --long dump-code --arg-action file
+compdef --cmd arsh --long status-log= --arg-action file
+compdef --cmd arsh --long rcfile= --arg-action file
 compdef --cmd arsh --short e --arg-action cmd
 
+
 ## arshd
-compdef --cmd arshd --long debounce-time
+compdef --cmd arshd --long debounce-time=
 compdef --cmd arshd --long help
 compdef --cmd arshd --long language-server
-compdef --cmd arshd --long log  --arg-list 'debug info warning error fatal'
-compdef --cmd arshd --long test --arg-action file
-compdef --cmd arshd --long test-open --arg-action file
-compdef --cmd arshd --long wait-time
+compdef --cmd arshd --long log= --arg-list 'debug info warning error fatal'
+compdef --cmd arshd --long test= --arg-action file
+compdef --cmd arshd --long test-open= --arg-action file
+compdef --cmd arshd --long wait-time=
 compdef --cmd arshd --short h
 
 ## arcolorize
 compdef --cmd arcolorize --long html-full
-compdef --cmd arcolorize --long html-lineno=
+compdef --cmd arcolorize --long html-lineno
 compdef --cmd arcolorize --long html-lineno-table
 compdef --cmd arcolorize --long dump
 compdef --cmd arcolorize --long custom-style
 compdef --cmd arcolorize --long sample
-compdef --cmd arcolorize --long not-found-cmds
+compdef --cmd arcolorize --long not-found-cmds=
 compdef --cmd arcolorize --short h
 compdef --cmd arcolorize --short l
 compdef --cmd arcolorize --short o --arg-action file
