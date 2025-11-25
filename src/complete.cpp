@@ -742,7 +742,7 @@ static CmdArgCompStatus completeCLIFlagOrOption(const CLIRecordType &type, const
     }
     std::string value = "--";
     value += e.getLongName();
-    if (e.getParseOp() == OptParseOp::OPT_ARG) {
+    if (e.getParseOp() == OptParseOp::HAS_ARG) {
       value += '=';
     }
     if (StringRef(value).startsWith(word)) {

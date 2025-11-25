@@ -96,7 +96,7 @@ assert diff <(complete 'diff --help ') <(echo aaa && echo bbb && echo ccc && ech
 
 # sub-command
 source $SCRIPT_DIR/../../_module4test/comp_nest.ds  as nest
-assert diff <(complete 'nest mod fff -') <(printf "%s\n" --count --dump= --help --version -d -h -v)
+assert diff <(complete 'nest mod fff -') <(printf "%s\n" --count= --dump --help --version -d -h -v)
 compdef --cmd ${$nest.mod._fullname('fff')!} --long hey --arg-list 'aaa bbb ccc'
 assert diff <(complete 'nest mod fff --he') <(echo --hey)
 assert diff <(complete 'nest mod fff --hey ') <(printf "%s\n" aaa bbb ccc)

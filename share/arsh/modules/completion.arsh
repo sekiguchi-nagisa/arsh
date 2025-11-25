@@ -255,7 +255,7 @@ function _comp_wrap(file : String, target : String, words : [String], cursor : I
 }
 
 function _quote(can: String): String {
-    if (test -e $can) { # if file, always quote. (ideally, should recoginiza `complete/compgen -o` options)
+    if (test -e $can) { # if file, always quote. (ideally, should recognize `complete/compgen -o` options)
         return $can.quote()
     }
 

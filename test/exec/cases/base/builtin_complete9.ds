@@ -68,10 +68,10 @@ ggg() { echo $@; }
 ## complete options
 complete -s -- 'fff -'
 assert $COMPREPLY.size() == 7
-assert $COMPREPLY[0] == "--count"
-assert $COMPREPLY.hasSpace(0)
-assert $COMPREPLY[1] == "--dump="
-assert ! $COMPREPLY.hasSpace(1)
+assert $COMPREPLY[0] == "--count="
+assert ! $COMPREPLY.hasSpace(0)
+assert $COMPREPLY[1] == "--dump"
+assert $COMPREPLY.hasSpace(1)
 assert $COMPREPLY[2] == "--help"
 assert $COMPREPLY.hasSpace(2)
 assert $COMPREPLY[3] == "--version"
@@ -85,10 +85,10 @@ assert $COMPREPLY.hasSpace(6)
 
 complete -s -- 'fff --'
 assert $COMPREPLY.size() == 4
-assert $COMPREPLY[0] == "--count"
-assert $COMPREPLY.hasSpace(0)
-assert $COMPREPLY[1] == "--dump="
-assert ! $COMPREPLY.hasSpace(1)
+assert $COMPREPLY[0] == "--count="
+assert ! $COMPREPLY.hasSpace(0)
+assert $COMPREPLY[1] == "--dump"
+assert $COMPREPLY.hasSpace(1)
 assert $COMPREPLY[2] == "--help"
 assert $COMPREPLY.hasSpace(2)
 assert $COMPREPLY[3] == "--version"
@@ -96,23 +96,23 @@ assert $COMPREPLY.hasSpace(3)
 
 complete -s -- 'fff --c'
 assert $COMPREPLY.size() == 1
-assert $COMPREPLY[0] == "--count"
-assert $COMPREPLY.hasSpace(0)
+assert $COMPREPLY[0] == "--count="
+assert ! $COMPREPLY.hasSpace(0)
 
 complete -s -- 'fff --count'
 assert $COMPREPLY.size() == 1
-assert $COMPREPLY[0] == "--count"
-assert $COMPREPLY.hasSpace(0)
+assert $COMPREPLY[0] == "--count="
+assert ! $COMPREPLY.hasSpace(0)
 
 complete -s -- 'fff --d'
 assert $COMPREPLY.size() == 1
-assert $COMPREPLY[0] == "--dump="
-assert ! $COMPREPLY.hasSpace(0)
+assert $COMPREPLY[0] == "--dump"
+assert $COMPREPLY.hasSpace(0)
 
 complete -s -- 'fff --dump'
 assert $COMPREPLY.size() == 1
-assert $COMPREPLY[0] == "--dump="
-assert ! $COMPREPLY.hasSpace(0)
+assert $COMPREPLY[0] == "--dump"
+assert $COMPREPLY.hasSpace(0)
 
 ## complete file names after options
 assert diff <(complete -- 'fff --count ') <(complete -A file)
@@ -130,8 +130,10 @@ assert diff <(complete -- 'fff bbb1 --count 12') <(printf "%s\n" 123 1234 )
 assert diff <(complete -- 'fff bbb1 --count=2') <(printf "%s\n" 222)
 assert $(complete -- 'fff bbb1 --count=3').empty()
 assert diff <(complete -- 'fff bbb1 --output=') <(printf "%s\n" 'AAA' 'AAB' 'ABB' 'ABC' )
-assert diff <(complete -- 'fff bbb1 -o') <(printf "%s\n" -o )
+assert diff <(complete -- 'fff bbb1 --output ') <(complete -A file)
+assert diff <(complete -- 'fff bbb1 -o') <(printf "%s\n" -o ) # fallback
 assert diff <(complete -- 'fff bbb1 -oA') <(printf "%s\n" 'AAA' 'AAB' 'ABB' 'ABC' )
+assert diff <(complete -- 'fff bbb1 -o ') <(complete -A file) # fallback
 
 $OPT = $none
 complete -- 'fff bbb1 --count '
