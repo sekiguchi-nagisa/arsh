@@ -709,6 +709,14 @@ static CmdArgCompStatus completeBuiltinOption(const CmdNode &cmdNode, const std:
 static CmdArgCompStatus completeCLIArg(StringRef opt, const ArgEntry &entry, StringRef word,
                                        ObserverPtr<ForeignCompHandler> comp,
                                        CompCandidateConsumer &consumer) {
+  if (entry.getCheckerKind() == ArgEntry::CheckerKind::CHOICE) {
+    for (auto &e : entry.getChoice()) {
+      if (StringRef ref = e; ref.startsWith(word)) {
+        consumer(ref, CompCandidateKind::COMMAND_ARG);
+      }
+    }
+    return CmdArgCompStatus::OK;
+  }
   if (auto handle = entry.getCompHandle(); handle && comp) {
     return comp->callCLIComp(*handle, opt, word, consumer);
   }

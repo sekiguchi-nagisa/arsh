@@ -53,6 +53,8 @@
     - put sub-command description (`user-defined` or `module`)
     - complete CLI option
     - call user-defined completion
+- improve CLI option completion
+    - complete candidates specified by ``choice`` attribute param
 
 #### LSP
 

@@ -239,6 +239,7 @@ DEFINE_TCError(AttrLimit, "number of attributes reaches limit");
 DEFINE_TCError(ChoiceLimit, "number of choice elements reaches limit");
 DEFINE_TCError(XORGroupRange, "xor group number must be 0~63");
 DEFINE_TCError(RequiredXORGroup, "xor group `%d' need `required' param");
+DEFINE_TCError(CombineChoiceComp, "cannot combine `choice' and `comp` attribute parameters");
 DEFINE_TCError(CombineArgSubCmd, "cannot combine `Arg' and `SubCmd' attributes");
 DEFINE_TCError(DefinedSubCmd, "already defined sub-command: `%s'");
 DEFINE_TCError(DefinedAutoSubCmd,

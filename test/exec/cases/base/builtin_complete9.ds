@@ -42,6 +42,12 @@ typedef BBB() {
     [<Option(short: 'o', long: "output", opt:$true, comp: $output)>]
     var output : String?
 
+    [<Option(choice: ['debug', 'info', 'warn', 'error'])>]
+    var log = "warn"
+
+    [<Option(choice: ['stdin', 'stdout', 'stderr'], opt:$true, short:'s', long:'stream')>]
+    var stream = "stdin"
+
     [<SubCmd>]
     var ccc : CCC?
 }
@@ -146,6 +152,14 @@ assert $OPT! == '--count='
 var ex = 2345 as Any
 try { complete -- 'fff bbb1 --count=EEER'; } catch e { $ex = $e; }
 assert ($ex as InvalidOperationError).message() == 'EEER'
+
+## complete choice
+assert diff <(complete -- 'fff bbb1 --log=') <(printf "%s\n" debug error info warn)
+assert diff <(complete -- 'fff bbb1 --log i') <(printf "%s\n" info)
+assert diff <(complete -- 'fff bbb1 -ss') <(printf "%s\n" stderr stdin stdout)
+assert diff <(complete -- 'fff bbb1 -s ') <(complete -A file) # fallback
+assert diff <(complete -- 'fff bbb1 --stream=stde') <(printf "%s\n" stderr)
+assert diff <(complete -- 'fff bbb1 --stream ') <(complete -A file) # fallback
 
 ## complete sub-command
 assert diff <(complete -- 'fff ') <(echo 'bbb1' && echo bbb2)

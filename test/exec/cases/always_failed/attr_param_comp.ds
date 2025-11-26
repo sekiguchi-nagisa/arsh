@@ -1,0 +1,15 @@
+#$test($result = 'type', $lineNum = 12, $chars = 5, $errorKind = 'CombineChoiceComp', $status = 1)
+
+var ss = "s"
+
+function _comp(opt: String, prefix: String): Candidates {
+    return new Candidates()
+}
+
+[<
+  CLI >]
+typedef AAA() {
+  [<Option(short: 'd', choice: ['debug', "info", 'warn', 'error'],
+    comp: $_comp)>]
+  var bb : String?
+}

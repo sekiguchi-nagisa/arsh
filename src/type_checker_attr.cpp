@@ -545,6 +545,9 @@ void TypeChecker::resolveArgEntry(ResolveArgEntryParam &resolveParam, const unsi
       this->reportError<CombineArgSubCmd>(attrNode.getAttrNameInfo().getToken());
     }
   }
+  if (entry.getCheckerKind() == ArgEntry::CheckerKind::CHOICE && entry.getCompHandle()) {
+    this->reportError<CombineChoiceComp>(attrNode.getAttrNameInfo().getToken());
+  }
 
   entries.push_back(std::move(entry));
   resolveParam.tokens.push_back(attrNode.getAttrNameInfo().getToken());
