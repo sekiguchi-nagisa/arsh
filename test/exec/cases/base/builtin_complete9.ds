@@ -33,7 +33,7 @@ function output(opt: String, prefix: String): Candidates? {
 
 [<CLI>]
 typedef BBB() {
-    [<Flag(short: "v", long: "verbose")>]
+    [<Flag(short: "v")>]
     var verbose = $false
 
     [<Option(short: "c", long: "count", comp: $count)>]
@@ -129,7 +129,7 @@ assert diff <(complete -- 'fff --dump=') <(complete -A file)
 assert diff <(complete -- 'fff --fajjaiae ') <(complete -A file)  # complete file names after invalid option
 
 ## complete via user-defined func
-assert diff <(complete -- 'fff bbb1 --count ') <(printf "%s\n" 111 123 1234 222 )
+assert diff <(complete -- 'fff bbb1 -v --count ') <(printf "%s\n" 111 123 1234 222 )
 assert diff <(complete -- 'fff bbb1 --count=') <(printf "%s\n" 111 123 1234 222 )
 assert diff <(complete -- 'fff bbb1 -c 12') <(printf "%s\n" 123 1234 )
 assert diff <(complete -- 'fff bbb1 --count 12') <(printf "%s\n" 123 1234 )
@@ -158,7 +158,8 @@ assert diff <(complete -- 'fff bbb1 --log=') <(printf "%s\n" debug error info wa
 assert diff <(complete -- 'fff bbb1 --log i') <(printf "%s\n" info)
 assert diff <(complete -- 'fff bbb1 -ss') <(printf "%s\n" stderr stdin stdout)
 assert diff <(complete -- 'fff bbb1 -s ') <(complete -A file) # fallback
-assert diff <(complete -- 'fff bbb1 --stream=stde') <(printf "%s\n" stderr)
+assert diff <(complete -- 'fff bbb1 "--log" info --stream=stde') <(printf "%s\n" stderr)
+# assert diff <(complete -- 'fff bbb1 --log=info --stream=stde') <(printf "%s\n" stderr)
 assert diff <(complete -- 'fff bbb1 --stream ') <(complete -A file) # fallback
 
 ## complete sub-command

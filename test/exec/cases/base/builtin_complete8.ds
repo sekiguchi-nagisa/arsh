@@ -10,16 +10,33 @@ assert $args[1] == 'compare@(target: Int): Int for Int'
 assert $args[2] == 'equals@(target: Int): Bool for Int'
 assert $args[3] == 'toFloat@(): Float for Int'
 
-assert complete -d -- '$COMPREPLY.s'
+assert complete -d -- '$COMPREPLY.a'
 $args = @($COMPREPLY)
-assert $args.size() == 1
-assert $args[0] == 'size@(): Int for Candidates'
+assert $args.size() == 2
+assert $args[0] == 'add@(can: String, desc: String?, space: Int?): Candidates for Candidates'
+assert $args[1] == 'addAll@(other: Candidates): Candidates for Candidates'
 
 assert complete -d -- '$OSTY'
 assert $COMPREPLY.size() == 1
 $args = @($COMPREPLY)
 assert $args.size() == 1
 assert $args[0] == 'OSTYPE@: String'
+
+assert complete -d -- '$reply.s'
+$args = @($COMPREPLY)
+assert $args.size() == 2
+assert $args[0] == 'size@(): Int for [String : String]'
+assert $args[1] == 'swap@(key: String, value: String): String for [String : String]'
+
+assert complete -d -- '
+    type AAA{}; 
+    function size(): Int for AAA{ return 23; }; 
+    function sum(a: Int, b: Int): Int  for AAA{ return $a+$b; }
+    new AAA().s'
+$args = @($COMPREPLY)
+assert $args.size() == 2
+assert $args[0] == 'size@(): Int for AAA'
+assert $args[1] == 'sum@(a: Int, b: Int): Int for AAA'
 
 ## command description
 assert complete -d -- 'shct'
