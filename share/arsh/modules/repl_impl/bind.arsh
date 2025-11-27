@@ -103,6 +103,15 @@ bind(param : _BindParam) {
     return 0
 }
 
+function _comp_abbr(opt: String, prefix: String): Candidates {
+    var ret : Candidates
+    for k,_ in $LINE_EDIT.abbrs() {
+        if $k.startsWith($prefix) {
+            $ret.add($k.quote())
+        }
+    }
+    return $ret
+}
 
 # for abbreviation setting
 [<CLI(desc: "Set or display abbreviation")>]
@@ -110,7 +119,8 @@ type _AbbrParam() {
     [<Flag(short: 'l', xor: 1, help: "list defined abbreviations")>]
     var list = $false
 
-    [<Option(short: 'r', xor: 1, placeholder: 'name', help: 'remove abbreviation of PATTERN')>]
+    [<Option(short: 'r', xor: 1, placeholder: 'name', comp: $_comp_abbr,
+        help: 'remove abbreviation of PATTERN')>]
     var remove : String?
 
     [<Arg>]
