@@ -771,6 +771,76 @@ TEST_F(InteractiveTest, lineEditorCompFilterSearchBox) {
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
 }
 
+TEST_F(InteractiveTest, lineEditorCompPagerRatio) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+  this->changePrompt("> ");
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
+      "function ri(ratio: Int) { $LINE_EDIT.config('pager-ratio', $ratio); }"));
+  ASSERT_NO_FATAL_FAILURE(
+      this->sendLineAndExpect("$LINE_EDIT.setCompleter(function(s,m) => "
+                              "new Candidates( $(printf '%03d\\n' $(seq 1 99)) ) )"));
+  this->changeWinSize({.rows = 15, .cols = 15});
+
+  // default ratio
+  this->send("0");
+  ASSERT_NO_FATAL_FAILURE(this->expect("> 0"));
+  {
+    auto cleanup = this->reuseScreen();
+    this->send("\t");
+    ASSERT_NO_FATAL_FAILURE(this->expect("> 0\n"
+                                         "001 034 067 \n002 035 068 \n003 036 069 \n"
+                                         "004 037 070 \n005 038 071 \n006 039 072 \n"));
+    this->send(CTRL_C);
+    ASSERT_NO_FATAL_FAILURE(this->expect("> 0\n> "));
+  }
+
+  // shrink
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$ri(20)"));
+  this->send("0");
+  ASSERT_NO_FATAL_FAILURE(this->expect("> 0"));
+  {
+    auto cleanup = this->reuseScreen();
+    this->send("\t");
+    ASSERT_NO_FATAL_FAILURE(this->expect("> 0\n"
+                                         "001 034 067 \n002 035 068 \n003 036 069 \n"));
+    this->send(CTRL_C);
+    ASSERT_NO_FATAL_FAILURE(this->expect("> 0\n> "));
+  }
+
+  // no pager
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$ri(0)"));
+  this->send("0");
+  ASSERT_NO_FATAL_FAILURE(this->expect("> 0"));
+  {
+    auto cleanup = this->reuseScreen();
+    this->send("\t");
+    ASSERT_NO_FATAL_FAILURE(this->expect("> 0\n"));
+    this->send(CTRL_C);
+    ASSERT_NO_FATAL_FAILURE(this->expect("> 0\n> "));
+  }
+
+  // full
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$ri(100)"));
+  this->send("0");
+  ASSERT_NO_FATAL_FAILURE(this->expect("> 0"));
+  {
+    auto cleanup = this->reuseScreen();
+    this->send("\t");
+    ASSERT_NO_FATAL_FAILURE(this->expect("> 0\n"
+                                         "001 034 067 \n002 035 068 \n003 036 069 \n"
+                                         "004 037 070 \n005 038 071 \n006 039 072 \n"
+                                         "007 040 073 \n008 041 074 \n009 042 075 \n"
+                                         "010 043 076 \n011 044 077 \n012 045 078 \n"));
+    this->send(CTRL_C);
+    ASSERT_NO_FATAL_FAILURE(this->expect("> 0\n> "));
+  }
+
+  this->send(CTRL_D);
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
+}
+
 TEST_F(InteractiveTest, lineEditorCompError) {
   this->invoke("--quiet", "--norc");
 
