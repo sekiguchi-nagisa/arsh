@@ -28,7 +28,7 @@ function _sudo($ctx : Module, $t : [String], $c : Int) : Candidates? {
     }
 
     importenv PATH : ""
-    PATH=$PATH:/sbin:/usr/sbin:/usr/local/sbin complete -q $opt $prefix
+    PATH=$PATH:/sbin:/usr/sbin:/usr/local/sbin complete -q -d $opt $prefix
     return $COMPREPLY
 }
 

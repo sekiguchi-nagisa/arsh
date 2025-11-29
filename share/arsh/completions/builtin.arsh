@@ -16,7 +16,7 @@ function _cmd($ctx : Module, $t : [String], $c : Int) : Candidates? {
         if $prefix.startsWith('~') {
             $actions.add('-A').add('tilde')
         }
-        complete -q -m $ctx $actions $prefix
+        complete -q -d -m $ctx $actions $prefix
         return $COMPREPLY
     } else {
         $t.shift()
