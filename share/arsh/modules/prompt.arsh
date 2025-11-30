@@ -39,7 +39,7 @@ function _formatCurTime(key : String, fmt : String, epoc : String) : String {
         $epocs.add($epoc)
     }
     printf -v $key ${p._0} $epocs &>> /dev/null
-    return $reply.remove($key) ?? $fmt
+    return $reply.get($key) ?? $fmt
 }
 
 let _cache = [
@@ -69,14 +69,14 @@ function renderPrompt(p : String) : String {
     let size = $p.size()
     let key = "_" + $RANDOM % 1000000000
     printf -v $key "%(%s.%N)T"
-    let curTime = $reply.remove($key)!
+    let curTime = $reply.get($key)!
     for(var i = 0; $i < $size; $i++) {
         var ch = $p[$i]
         if $ch == '\' && $i + 1 < $size {
             $i++
             var k = $p[$i]
             case $k {
-            'd' => { printf -v $key '%(%a %m %d)T' $curTime; $ch = $reply.remove($key)! }
+            'd' => { printf -v $key '%(%a %m %d)T' $curTime; $ch = $reply.get($key)! }
             'D' => if $i + 1 < $size && $p[$i + 1] == '{' {
                 var r = $p.indexOf("}", $i + 1)
                 if $r != -1 {
@@ -86,10 +86,10 @@ function renderPrompt(p : String) : String {
                 }
             }
             'j' => { $ch = $JOB.count() as String; }
-            't' => { printf -v $key '%(%T)T' $curTime; $ch = $reply.remove($key)! }
-            'T' => { printf -v $key '%(%I:%M:%S)T' $curTime; $ch = $reply.remove($key)! }
-            '@' => { printf -v $key '%(%I:%M %p)T' $curTime; $ch = $reply.remove($key)! }
-            'A' => { printf -v $key '%(%H:%M)T' $curTime; $ch = $reply.remove($key)! }
+            't' => { printf -v $key '%(%T)T' $curTime; $ch = $reply.get($key)! }
+            'T' => { printf -v $key '%(%I:%M:%S)T' $curTime; $ch = $reply.get($key)! }
+            '@' => { printf -v $key '%(%I:%M %p)T' $curTime; $ch = $reply.get($key)! }
+            'A' => { printf -v $key '%(%H:%M)T' $curTime; $ch = $reply.get($key)! }
             'w' => {
                 if $PWD.startsWith($_home) {
                     $ch = "~" + $_escape($PWD.slice($_home.size()))
@@ -113,7 +113,7 @@ function renderPrompt(p : String) : String {
         $ret += $ch
     }
     printf -v $key "%b" $ret
-    return $reply.remove($key)!
+    return $reply.get($key)!
 }
 
 [<CLI(verbose: $true, desc: "Interpret prompt as bash compatible way
