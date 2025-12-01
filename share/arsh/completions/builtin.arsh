@@ -42,8 +42,6 @@ compdef --cmd cd --short L --arg-action dir
 compdef --cmd cd --short P --arg-action dir
 compdef --cmd pwd --short L
 compdef --cmd pwd --short P
-compdef --cmd complete --short A \
-        --arg-cmd "help complete | grep -E '^      [_a-z]+' | sed 's/^      //g' | cut -d ' ' -f 1"
 
 ## kill
 {
@@ -61,3 +59,21 @@ compdef --cmd complete --short A \
     var m = $/[ ]+-([a-zA-Z]) +(.+)/.match($line) ?? continue
     compdef --cmd ulimit --short ${$m.group(1)!} --desc ${$m.group(2)!}
 }
+
+## complete
+for line in <(complete -h) {
+    var ret = $/^[ ]+-([a-zA-Z-]) +(.+)/.match($line) ?? continue
+    $ret.group(1)! == 'A' && continue
+    compdef --cmd complete --short ${$ret.group(1)!} --desc ${$ret.group(2)!}
+}
+compdef --cmd complete --short A --desc 'show completion candidates via ACTION' \
+    --arg-func $bindArgFunc(function(p) => {
+        var ret: Candidates
+        for line in <(complete -h) {
+            var matched = $/^      ([_a-z]+) +(.+)/.match($line) ?? continue
+            if $matched.group(1)!.startsWith($p) {
+                $ret.add($matched.group(1)!, $matched.group(2)!.split('.')[0])
+            }
+        }
+        return $ret
+    })

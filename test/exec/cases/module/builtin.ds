@@ -53,6 +53,17 @@ assert diff <(complete 'unsetenv H') <(complete -A env H)
 # cd
 assert diff <(complete 'cd /') <(complete -A dir '/')
 
-# complete -A
+# complete
+assert diff <(complete -d -q -- 'complete -' && printf "%s\n" $COMPREPLY) \
+            <(printf "%s\n" 
+                '-A@show completion candidates via ACTION'
+                '-d@may put description of completion candidate'
+                '-m@complete in specified module context'
+                '-q@does not show completion candidates'
+                '-s@may put space to completion candidate suffix'
+            )
+
 assert diff <(complete 'complete -A ') \
             <(help complete | grep -E '^      [_a-z]+' | sed 's/^      //g' | cut -d ' ' -f 1 | sort)
+assert diff <(complete -d -q -- 'complete -A s' && printf "%s\n" $COMPREPLY) \
+            <(printf "%s\n" 'signal@complete signal names'    'stmt_kw@complete statement keywords')

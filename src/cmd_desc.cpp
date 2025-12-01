@@ -69,7 +69,7 @@ static constexpr BuiltinCmdDesc table[] = {
      "      exec       complete executable file names\n"
      "      tilde      expand tilde before completion. only available in \n"
      "                 combination of file, module exec actions\n"
-     "      command    complete command names including external, user-defined, builtin ones\n"
+     "      command    complete external, builtin, user-defined commands\n"
      "      cmd        equivalent to 'command'\n"
      "      external   complete external commands\n"
      "      builtin    complete builtin commands\n"
