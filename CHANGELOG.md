@@ -44,7 +44,7 @@
         - ``complete-backward``: move pager cursor to previous item
         - ``revert``: revert pager inserted item
 - add ``pager-ratio`` config to ``LineEditor#config`` method
-    - specify the ratio of completion pager height to terminal height (0-100)
+    - specify the ratio of completion pager height to terminal height (0~100)
         - default is 40
         - when set to 0, the pager is disabled
         - when set to 100, the pager is full height
@@ -64,8 +64,12 @@
 
 - in ``repl.arsh`` module, load history at first prompt
 - add ``PRE_EXECS`` hook for call functions before executing command
-- add ``compAlias`` to ``completion.arsh`` module. now define completion as alisa of others
-- add help-based completions for coreutils
+- various ``completion.arsh`` module improvements
+    - add ``compAlias`` function. now define completion as alisa of others
+    - add help-based completions for coreutils
+- improve builtin commands completions
+    - show description in ``completion`` command completion
+    - complete ``-INT`` style arguments in ``kill`` command completion
 
 ### Fixed
 

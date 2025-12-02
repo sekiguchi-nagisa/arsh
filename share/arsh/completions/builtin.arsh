@@ -48,8 +48,10 @@ compdef --cmd pwd --short P
     let ff = $bindArgFunc(function(_) => new Candidates().add($_fzf.fzf_proc_select().join(' ')))
     for s in $SIG.list() {
         compdef --cmd kill --short ${$s.value()} --arg-func $ff --desc SIG${$s.name()}
+        compdef --cmd kill --short ${$s.name()} --arg-func $ff --desc ${$s.value()}
     }
     compdef --cmd kill --short l
+    compdef --cmd kill --short L
     compdef --cmd kill --short s --arg-action signal
     compdef --cmd kill --arg-func $ff
 }
