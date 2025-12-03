@@ -133,7 +133,7 @@ private:
     unsigned int value{0};
 
   public:
-    static constexpr uint64_t MASK_27bit = 0x7FFFFFF; // 2^27 - 1
+    static constexpr unsigned int MASK_27bit = 0x7FFFFFF; // 2^27 - 1
 
     explicit BucketLen(unsigned int initCapExp) { this->setCapExp(initCapExp); }
 

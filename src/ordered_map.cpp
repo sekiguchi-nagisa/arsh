@@ -135,7 +135,7 @@ unsigned int OrderedMapEntries::compact() {
 
   // find first deleted index
   for (unsigned int i = 0; i < this->usedSize; i++) {
-    if (!values[i]) {
+    if (!this->values[i]) {
       lastDeletedIndex = i;
       break;
     }
@@ -144,8 +144,8 @@ unsigned int OrderedMapEntries::compact() {
 
   // pack entry
   for (unsigned int i = lastDeletedIndex + 1; i < this->usedSize; i++) {
-    if (values[i]) {
-      std::swap(values[i], values[lastDeletedIndex]);
+    if (this->values[i]) {
+      std::swap(this->values[i], this->values[lastDeletedIndex]);
       lastDeletedIndex++;
     }
   }

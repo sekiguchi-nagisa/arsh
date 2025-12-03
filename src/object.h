@@ -629,7 +629,7 @@ T &typeAs(const Value &value) noexcept {
   return cast<T>(*value.get());
 }
 
-template <typename T>
+template <typename T, enable_when<std::is_base_of_v<Object, T>> = nullptr>
 ObjPtr<T> toObjPtr(const Value &value) noexcept {
   auto &ref = typeAs<T>(value);
   return ObjPtr<T>(&ref);
@@ -886,8 +886,6 @@ public:
   auto begin() { return this->values.begin(); }
 
   auto end() { return this->values.end(); }
-
-  std::vector<Value> &refValues() { return this->values; }
 
   auto erase(IterType first, IterType last) { return this->values.erase(first, last); }
 
