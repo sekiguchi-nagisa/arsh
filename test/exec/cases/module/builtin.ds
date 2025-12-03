@@ -1,3 +1,4 @@
+# for builtin command completion
 
 # shctl
 _extract_sub() {
@@ -67,3 +68,27 @@ assert diff <(complete 'complete -A ') \
             <(help complete | grep -E '^      [_a-z]+' | sed 's/^      //g' | cut -d ' ' -f 1 | sort)
 assert diff <(complete -d -q -- 'complete -A s' && printf "%s\n" $COMPREPLY) \
             <(printf "%s\n" 'signal@complete signal names'    'stmt_kw@complete statement keywords')
+
+# fg/bg/jobs
+var jj : [Job]
+$jj.add(sleep 1000 &).add( sleep 2000 &).add( sleep 3000 &)
+defer {
+    kill -INT $jj
+}
+
+var expected = @(
+    %1 "${$JOB.get('%1')!.pid(0)!} Running  sleep 1000"
+    %2 "${$JOB.get('%2')!.pid(0)!} Running  sleep 2000"
+    %3 "${$JOB.get('%3')!.pid(0)!} Running  sleep 3000"
+)
+assert diff <(complete -d -q -- 'fg ' && printf "%s\n" $COMPREPLY) <(printf "%s@%s\n" $expected)
+assert diff <(complete -d -q -- 'bg ' && printf "%s\n" $COMPREPLY) <(printf "%s@%s\n" $expected)
+assert diff <(complete -d -q -- 'jobs ' && printf "%s\n" $COMPREPLY) <(printf "%s@%s\n" $expected)
+assert diff <(complete -d -q -- 'jobs -l ' && printf "%s\n" $COMPREPLY) <(printf "%s@%s\n" $expected)
+assert diff <(complete -d -q -- 'jobs -' && printf "%s\n" $COMPREPLY) \
+            <(printf "%s\n" 
+                '-l@show verbose information'
+                '-p@show process id only'
+                '-r@only allow running jobs'
+                '-s@only allow stopped jobs'
+            )

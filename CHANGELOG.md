@@ -67,9 +67,10 @@
 - various ``completion.arsh`` module improvements
     - add ``compAlias`` function. now define completion as alisa of others
     - add help-based completions for coreutils
-- improve builtin commands completions
+- improve builtin commands completion
     - show description in ``completion`` command completion
     - complete ``-INT`` style arguments in ``kill`` command completion
+    - complete jobspec in ``fg``, ``bg``, ``jobs`` command completion
 
 ### Fixed
 

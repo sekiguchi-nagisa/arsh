@@ -79,3 +79,26 @@ compdef --cmd complete --short A --desc 'show completion candidates via ACTION' 
         }
         return $ret
     })
+
+## fg/bg/jobs
+{
+    var ff = $bindArgFunc(function(p)=>{
+        var ret: Candidates
+        for line in <(jobs -l) {
+            var matched = $/^\[([0-9]+)\] +[+-]? +(.+)/.match($line) ?? continue
+            var spec = '%'+$matched.group(1)!
+            if $spec.startsWith($p) {
+                $ret.add($can:$spec, $desc:$matched.group(2) ?? "")
+            }
+        }
+        return $ret
+    })
+
+    compdef --cmd fg --arg-func=$ff
+    compdef --cmd bg --arg-func=$ff
+    compdef --cmd jobs --arg-func=$ff
+    for line in <(jobs -h) {
+        var ret = $/^[ ]+-([a-zA-Z-]) +(.+)/.match($line) ?? continue
+        compdef --cmd jobs --short ${$ret.group(1)!} --arg-func $ff --desc ${$ret.group(2)!}
+    }
+}
