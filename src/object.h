@@ -635,6 +635,13 @@ ObjPtr<T> toObjPtr(const Value &value) noexcept {
   return ObjPtr<T>(&ref);
 }
 
+template <typename T, enable_when<std::is_base_of_v<Object, T>> = nullptr>
+ObjPtr<T> toObjPtr(Value &&value) noexcept {
+  auto ret = toObjPtr<T>(value);
+  value.reset();
+  return ret;
+}
+
 template <typename T, typename... A>
 ObjPtr<T> createObject(A &&...args) {
   static_assert(std::is_base_of_v<Object, T>, "must be subtype of Object");

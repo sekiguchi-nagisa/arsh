@@ -82,15 +82,11 @@ bool CandidatesObject::addNewCandidateFrom(ARState &state, std::string &&candida
   return false;
 }
 
-void CandidatesObject::sortAndDedup(const unsigned int beginOffset) {
-  if (beginOffset >= this->size() || this->size() - beginOffset == 1) {
-    return;
-  }
-  std::sort(this->entries.begin() + beginOffset, this->entries.end(),
-            [](const Entry &x, const Entry &y) {
-              const int r = toStrRef(x.first).compare(toStrRef(y.first));
-              return r < 0 || (r == 0 && toUnderlying(x.second.kind) < toUnderlying(y.second.kind));
-            });
+void CandidatesObject::sortAndDedup() {
+  std::sort(this->entries.begin(), this->entries.end(), [](const Entry &x, const Entry &y) {
+    const int r = toStrRef(x.first).compare(toStrRef(y.first));
+    return r < 0 || (r == 0 && toUnderlying(x.second.kind) < toUnderlying(y.second.kind));
+  });
 
   // de-dup (only extract the first appeared element)
   const auto iter =

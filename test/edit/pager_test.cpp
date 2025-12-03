@@ -705,7 +705,7 @@ TEST_F(PagerTest, candidate) {
                            {CandidateAttr::Kind::CMD_EXTERNAL, true});
   obj->addNewCandidateWith(*this->state, "mkdir", "dynamic", {CandidateAttr::Kind::CMD_DYNA, true});
   ASSERT_EQ(2, obj->size());
-  obj->sortAndDedup(0);
+  obj->sortAndDedup();
   ASSERT_EQ(1, obj->size());
   ASSERT_EQ(CandidateAttr::Kind::CMD_DYNA, obj->getAttrAt(0).kind);
 }

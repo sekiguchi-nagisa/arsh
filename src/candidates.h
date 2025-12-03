@@ -143,7 +143,13 @@ public:
 
   void clearAndShrink() { this->entries = {}; }
 
-  void sortAndDedup(unsigned int beginOffset);
+  ObjPtr<CandidatesObject> copy() const {
+    auto ret = createObject<CandidatesObject>();
+    ret->entries = this->entries;
+    return ret;
+  }
+
+  void sortAndDedup();
 
   StringRef getCandidateAt(const unsigned int index) const {
     return toStrRef(this->entries[index].first);

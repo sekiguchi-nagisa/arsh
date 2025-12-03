@@ -400,10 +400,12 @@ private:
   const bool putDesc;
 
 public:
-  DefaultCompConsumer(ARState &state, bool putDesc)
-      : state(state), reply(createObject<CandidatesObject>()), putDesc(putDesc) {}
+  DefaultCompConsumer(ARState &state, bool putDesc) : state(state), putDesc(putDesc) {}
 
   void operator()(CompCandidate &&candidate) override {
+    if (!this->reply) {
+      this->reply = createObject<CandidatesObject>();
+    }
     if (this->overflow) {
       return; // do nothing
     }
@@ -461,16 +463,28 @@ public:
     }
   }
 
-  void addAll(const CandidatesObject &o) {
+  void addAll(ObjPtr<CandidatesObject> &&o) {
     if (!this->overflow) {
-      if (!this->reply->addAll(this->state, o)) {
+      if (!this->reply) {
+        if (o->getRefcount() > 1) {
+          this->reply = o->copy();
+        } else {
+          this->reply = std::move(o);
+        }
+        return;
+      }
+      if (!this->reply->addAll(this->state, *o)) {
         this->overflow = true;
       }
     }
   }
 
   ObjPtr<CandidatesObject> finalize() && {
-    this->reply->sortAndDedup(0);
+    if (this->reply) {
+      this->reply->sortAndDedup();
+    } else {
+      this->reply = createObject<CandidatesObject>();
+    }
     return std::move(this->reply);
   }
 };
@@ -541,7 +555,7 @@ static CmdArgCompStatus callCompCallback(ARState &state, Value &&func, CallArgs 
   if (ret.isInvalid()) {
     return CmdArgCompStatus::INVALID;
   }
-  consumer.addAll(typeAs<CandidatesObject>(ret));
+  consumer.addAll(toObjPtr<CandidatesObject>(std::move(ret)));
   return CmdArgCompStatus::OK;
 }
 
