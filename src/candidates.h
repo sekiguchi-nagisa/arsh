@@ -95,11 +95,13 @@ private:
   using Entry = std::pair<Value, CandidateAttr>;
 
   std::vector<Entry> entries; // must be String or Candidate
+  const bool sorting;
 
 public:
   static constexpr size_t MAX_SIZE = SYS_LIMIT_ARRAY_MAX;
 
-  explicit CandidatesObject() : ObjectWithRtti(TYPE::Candidates) {}
+  explicit CandidatesObject(bool sorting = true)
+      : ObjectWithRtti(TYPE::Candidates), sorting(sorting) {}
 
   /**
    * for builtin method. always ignore an empty candidate
@@ -144,7 +146,7 @@ public:
   void clearAndShrink() { this->entries = {}; }
 
   ObjPtr<CandidatesObject> copy() const {
-    auto ret = createObject<CandidatesObject>();
+    auto ret = createObject<CandidatesObject>(this->sorting);
     ret->entries = this->entries;
     return ret;
   }

@@ -46,11 +46,14 @@ compdef --cmd pwd --short P
 ## kill
 {
     let ff = $bindArgFunc(function(_) => new Candidates().add($_fzf.fzf_proc_select().join(' ')))
-    for s in $SIG.list() {
-        compdef --cmd kill --short ${$s.value()} --arg-func $ff --desc SIG${$s.name()}
+    var list = $SIG.list()
+    for s in $list {
         compdef --cmd kill --short ${$s.name()} --arg-func $ff --desc ${$s.value()}
     }
-    compdef --cmd kill --short l
+    for s in $list {
+        compdef --cmd kill --short ${$s.value()} --arg-func $ff --desc SIG${$s.name()}
+    }
+    compdef --cmd kill --short l --nosort
     compdef --cmd kill --short L
     compdef --cmd kill --short s --arg-action signal
     compdef --cmd kill --arg-func $ff
@@ -80,10 +83,10 @@ compdef --cmd complete --short A --desc 'show completion candidates via ACTION' 
         return $ret
     })
 
-## fg/bg/jobs
+## fg/bg/jobs/disown
 {
     var ff = $bindArgFunc(function(p)=>{
-        var ret: Candidates
+        var ret = new Candidates($sort:$false)
         for line in <(jobs -l) {
             var matched = $/^\[([0-9]+)\] +[+-]? +(.+)/.match($line) ?? continue
             var spec = '%'+$matched.group(1)!
@@ -96,6 +99,7 @@ compdef --cmd complete --short A --desc 'show completion candidates via ACTION' 
 
     compdef --cmd fg --arg-func=$ff
     compdef --cmd bg --arg-func=$ff
+    compdef --cmd disown --arg-func=$ff
     compdef --cmd jobs --arg-func=$ff
     for line in <(jobs -h) {
         var ret = $/^[ ]+-([a-zA-Z-]) +(.+)/.match($line) ?? continue

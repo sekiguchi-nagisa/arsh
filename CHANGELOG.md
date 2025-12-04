@@ -55,6 +55,7 @@
     - call user-defined completion
 - improve CLI option completion
     - complete candidates specified by ``choice`` attribute param
+- add ``sort`` param to ``Candidates`` object constructor. now suppress sorting of candidates
 
 #### LSP
 
@@ -70,7 +71,9 @@
 - improve builtin commands completion
     - show description in ``completion`` command completion
     - complete ``-INT`` style arguments in ``kill`` command completion
-    - complete jobspec in ``fg``, ``bg``, ``jobs`` command completion
+    - complete jobspec in ``fg``, ``bg``, ``disown``, ``jobs`` command completion
+- add some options to ``compdef`` command
+    - ``--nosort``: suppress sorting of candidates
 
 ### Fixed
 

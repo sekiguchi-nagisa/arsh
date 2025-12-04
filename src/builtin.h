@@ -2759,11 +2759,15 @@ ARSH_METHOD jobs_count(RuntimeContext &ctx) {
 // ##     Candidates     ##
 // ########################
 
-//!bind: function $OP_INIT($this : Candidates, $values: Option<Array<String>>) : Candidates
+//!bind: function $OP_INIT($this : Candidates, $values: Option<Array<String>>, $sort: Option<Bool>) : Candidates
 ARSH_METHOD candidates_init(RuntimeContext &ctx) {
   SUPPRESS_WARNING(candidates_init);
-  auto obj = createObject<CandidatesObject>();
-  if (const auto v = LOCAL(1); !v.isInvalid()) {
+  bool sorting = ({
+    auto &v = LOCAL(2);
+    v.isInvalid() || v.asBool();
+  });
+  auto obj = createObject<CandidatesObject>(sorting);
+  if (const auto &v = LOCAL(1); !v.isInvalid()) {
     for (auto &e : typeAs<ArrayObject>(v)) {
       if (unlikely(!obj->addNewCandidate(ctx, Value(e), Value::createInvalid(),
                                          false))) { // not insert space

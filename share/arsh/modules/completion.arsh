@@ -32,25 +32,27 @@ function compAdd(cmd : String, comp : Completer) : Completer? {
 
 # for completion helper
 
-type _CompDef(o : String?, t : Int?, a : String?, d: String?) {
+type _CompDefEntry(o : String?, t : Int?, a : String?, d: String?) {
     let option = $o ?? ""   # option (short, long option or other parameter)
     let type = $t ?? -1     # arg type (-1: empty, 0: list, 1: cmdline, 2: action, 3: comp, 4: func)
     let arg = $a ?? ""      # argument
     let desc = $d           # description
 }
 
-let _compdefMap : [
-    String :        # command name
-    [ _CompDef ]
-]
+type _CompDef() {
+    let entries : [_CompDefEntry]
+    var sort = $true
+}
+
+let _compdefMap : [String : _CompDef] # command name to completion definition mapping
 
 
 #
 # $prefix starts with '-'
 #
-function _comp_opt(deflist : [_CompDef], prefix : String) : Candidates {
-    var ret : Candidates
-    for def in $deflist {
+function _comp_opt(deflist : _CompDef, prefix : String) : Candidates {
+    var ret = new Candidates($sort:$deflist.sort)
+    for def in $deflist.entries {
         var opt = $def.option.ifEmpty() ?? continue
         if $opt.startsWith($prefix) {
             var long = $opt.startsWith('--') && $opt.endsWith('=')
@@ -70,8 +72,8 @@ function _comp_opt(deflist : [_CompDef], prefix : String) : Candidates {
 # complete arguments of specified option
 # $opt is empty string or starts with '-'
 #
-function _comp_arg(ctx : Module, deflist: [_CompDef], opt : String, prefix : String) : Candidates? {
-    for def in $deflist {
+function _comp_arg(ctx : Module, deflist: _CompDef, opt : String, prefix : String) : Candidates? {
+    for def in $deflist.entries {
         $opt == $def.option || continue
 
         var arg = $def.arg
@@ -309,8 +311,8 @@ function _from_compdef(ctx : Module, words : [String], cursor : Int) : Candidate
         $cmd = $_comp_autoload($cmd) ?? return $_comp_opt_by_help($words, $cursor)
         $_compdefMap[$cmd]
     }
-    if $deflist[0].type == 3 {
-        return $_comp_wrap($deflist[0].option, $deflist[0].arg, $words, $cursor)
+    if $deflist.entries[0].type == 3 {
+        return $_comp_wrap($deflist.entries[0].option, $deflist.entries[0].arg, $words, $cursor)
     }
 
     if $words.size() == $cursor {    # complete arguments or options
@@ -355,6 +357,9 @@ function _from_compdef(ctx : Module, words : [String], cursor : Int) : Candidate
 type _CompDefParam() {
     [<Option(required: $true, placeholder: "COMMAND", help: "set target command")>]
     var cmd = ''
+
+    [<Flag(help: "disable sorting of candidate")>]
+    var nosort = $false
 
     [<Option(placeholder: "SHORT_OPTION", xor: 0, help: "set short option (start with '-')")>]
     var short : String?
@@ -426,12 +431,15 @@ compdef(param : _CompDefParam) {
         $arg = $arg_func
     }
 
-    var deflist = $_compdefMap.get($param.cmd) ?? {
-        var tmp : [_CompDef]
+    var def = $_compdefMap.get($param.cmd) ?? {
+        var tmp : _CompDef
         $_compdefMap[$param.cmd] = $tmp
         $tmp
     }
-    $deflist.add(new _CompDef($opt, $argType, $arg, $param.desc))
+    if $param.nosort {
+        $def.sort = $false
+    }
+    $def.entries.add(new _CompDefEntry($opt, $argType, $arg, $param.desc))
 }
 
 function compDelegate(ctx : Module, words : [String], cursor : Int) : Candidates? {

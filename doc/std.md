@@ -400,7 +400,7 @@ function usage(message: String?, verbose: Bool?): String for CLI
 
 ## Candidates type
 ```
-type Candidates(values: [String]?)
+type Candidates(values: [String]?, sort: Bool?)
 
 function size(): Int for Candidates
 

@@ -83,6 +83,9 @@ bool CandidatesObject::addNewCandidateFrom(ARState &state, std::string &&candida
 }
 
 void CandidatesObject::sortAndDedup() {
+  if (!this->sorting) {
+    return; // do nothing
+  }
   std::sort(this->entries.begin(), this->entries.end(), [](const Entry &x, const Entry &y) {
     const int r = toStrRef(x.first).compare(toStrRef(y.first));
     return r < 0 || (r == 0 && toUnderlying(x.second.kind) < toUnderlying(y.second.kind));
