@@ -42,9 +42,10 @@ static constexpr BuiltinCmdDesc table[] = {
     {"cd", "[-LP] [dir]",
      "    Changing the current directory to DIR.  The Environment variable\n"
      "    HOME is the default DIR.  A null directory name is the same as\n"
-     "    the current directory.  If -L is specified, use logical directory \n"
-     "    (with symbolic link).  If -P is specified, use physical directory \n"
-     "    (without symbolic link).  Default is -L."},
+     "    the current directory.\n"
+     "    Options:\n"
+     "      -L    use logical directory (with symbolic link, default behavior)\n"
+     "      -P    use physical directory (without symbolic link)"},
     {"checkenv", "variable ...",
      "    Check existence of specified environmental variables.\n"
      "    If all of variables are exist and not empty string, exit with 0."},
@@ -175,9 +176,9 @@ static constexpr BuiltinCmdDesc table[] = {
      "      dir    push DIR onto the stack"},
     {"pwd", "[-LP]",
      "    Print the current working directory(absolute path).\n"
-     "    If -L specified, print logical working directory.\n"
-     "    If -P specified, print physical working directory\n"
-     "    (without symbolic link).  Default is -L."},
+     "    Options:\n"
+     "      -L    print logical working directory (with symbolic link, default behavior)\n"
+     "      -P    print physical working directory (without symbolic link)"},
     {"read",
      "[-rs] [-d delim] [-f ifs] [-n nbytes] [-N nbytes] "
      "[-p prompt] [-t timeout] [-u fd] [name ...]",

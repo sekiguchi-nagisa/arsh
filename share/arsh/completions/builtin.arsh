@@ -32,16 +32,23 @@ $compAdd("exec", $_cmd)
 
 
 # defined by compdef
-
 compdef --cmd help --arg-cmd "help | cut -d ' ' -f 1"
 compdef --cmd help --short s --arg-cmd "help | cut -d ' ' -f 1"
 compdef --cmd unsetenv --arg-action env
 compdef --cmd getenv --arg-action env
+
+let _option_pattern = $/^[ ]+-([a-zA-Z]) +(.+)/
+
+## cd/pwd
 compdef --cmd cd --arg-action dir
-compdef --cmd cd --short L --arg-action dir
-compdef --cmd cd --short P --arg-action dir
-compdef --cmd pwd --short L
-compdef --cmd pwd --short P
+for line in <(cd -h) {
+    var m = $_option_pattern.match($line) ?? continue
+    compdef --cmd cd --short ${$m.group(1)!} --desc ${$m.group(2)!} --arg-action dir
+}
+for line in <(pwd -h) {
+    var m = $_option_pattern.match($line) ?? continue
+    compdef --cmd pwd --short ${$m.group(1)!} --desc ${$m.group(2)!}
+}
 
 ## kill
 {
@@ -61,13 +68,13 @@ compdef --cmd pwd --short P
 
 ## ulimit
 (ulimit -h || true) | for line in $STDIN {
-    var m = $/[ ]+-([a-zA-Z]) +(.+)/.match($line) ?? continue
+    var m = $_option_pattern.match($line) ?? continue
     compdef --cmd ulimit --short ${$m.group(1)!} --desc ${$m.group(2)!}
 }
 
 ## complete
 for line in <(complete -h) {
-    var ret = $/^[ ]+-([a-zA-Z-]) +(.+)/.match($line) ?? continue
+    var ret = $_option_pattern.match($line) ?? continue
     $ret.group(1)! == 'A' && continue
     compdef --cmd complete --short ${$ret.group(1)!} --desc ${$ret.group(2)!}
 }
@@ -102,7 +109,7 @@ compdef --cmd complete --short A --desc 'show completion candidates via ACTION' 
     compdef --cmd disown --arg-func=$ff
     compdef --cmd jobs --arg-func=$ff
     for line in <(jobs -h) {
-        var ret = $/^[ ]+-([a-zA-Z-]) +(.+)/.match($line) ?? continue
+        var ret = $_option_pattern.match($line) ?? continue
         compdef --cmd jobs --short ${$ret.group(1)!} --arg-func $ff --desc ${$ret.group(2)!}
     }
 }
