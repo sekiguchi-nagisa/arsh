@@ -42,6 +42,7 @@ type _CompDefEntry(o : String?, t : Int?, a : String?, d: String?) {
 type _CompDef() {
     let entries : [_CompDefEntry]
     var sort = $true
+    var subcmds: [String : _CompDef]?
 }
 
 let _compdefMap : [String : _CompDef] # command name to completion definition mapping
@@ -311,10 +312,22 @@ function _from_compdef(ctx : Module, words : [String], cursor : Int) : Candidate
         $cmd = $_comp_autoload($cmd) ?? return $_comp_opt_by_help($words, $cursor)
         $_compdefMap[$cmd]
     }
-    if $deflist.entries[0].type == 3 {
-        return $_comp_wrap($deflist.entries[0].option, $deflist.entries[0].arg, $words, $cursor)
+    # resolve sub-command def
+    # 'CMD sub1 '
+    # 'CMD sub1 -d'
+    while $deflist.subcmds && $words.size() >= 2 && $cursor >= 2 {
+        if let sub = $deflist.subcmds!.get($words[1]) {
+            $deflist = $sub
+            $words.shift()
+            $cursor--
+        } else {
+            break
+        }
     }
 
+    if !$deflist.entries.empty() && $deflist.entries[0].type == 3 {
+        return $_comp_wrap($deflist.entries[0].option, $deflist.entries[0].arg, $words, $cursor)
+    }
     if $words.size() == $cursor {    # complete arguments or options
         # 'CMD '
         # 'CMD arg '
@@ -357,6 +370,9 @@ function _from_compdef(ctx : Module, words : [String], cursor : Int) : Candidate
 type _CompDefParam() {
     [<Option(required: $true, placeholder: "COMMAND", help: "set target command")>]
     var cmd = ''
+
+    [<Option(placeholder: "SUBCMD...", help: "set target sub-command (null deliminated list)")>]
+    var subcmd : String?
 
     [<Flag(help: "disable sorting of candidate")>]
     var nosort = $false
@@ -436,6 +452,24 @@ compdef(param : _CompDefParam) {
         $_compdefMap[$param.cmd] = $tmp
         $tmp
     }
+    if let subs = $param.subcmd {
+        for sub in $subs.split($'\0') {
+            $sub.ifEmpty() ?? continue
+            $/^[a-zA-Z0-9_][a-zA-Z0-9_-]*$/ =~ $sub || 
+                return $_error($param, "--subcmd option only accept valid sub-command names: $sub")
+            let subcmds = $def.subcmds ?? {
+                var m = new [String : _CompDef]()
+                $def.subcmds = $m
+                $m
+            }
+            $def = $subcmds.get($sub) ?? {
+                var f = new _CompDef()
+                $subcmds[$sub] = $f
+                $f
+            }
+        }
+    }
+
     if $param.nosort {
         $def.sort = $false
     }

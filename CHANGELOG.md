@@ -75,6 +75,7 @@
     - complete ``dirs`` command options
 - add some options to ``compdef`` command
     - ``--nosort``: suppress sorting of candidates
+    - ``--subcmd``: define sub-command completions
 
 ### Fixed
 
