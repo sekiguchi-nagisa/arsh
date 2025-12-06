@@ -15,6 +15,7 @@
  */
 
 #include <binder.h>
+#include <cmd_desc.h>
 #include <complete.h>
 #include <embed.h>
 #include <format_signature.h>
@@ -403,6 +404,44 @@ public:
   }
 };
 
+struct DummyForeignCompHandler : ForeignCompHandler {
+  ~DummyForeignCompHandler() override = default;
+
+  CmdArgCompStatus callUserDefinedComp(const CodeCompletionContext &ctx, unsigned, const ModType *,
+                                       CompCandidateConsumer &consumer) override {
+    const auto &cmdNode = *ctx.getCmdNode();
+    const StringRef word = ctx.getCompWord();
+    if (cmdNode.getNameNode().getValue() != "shctl") {
+      return CmdArgCompStatus::INVALID;
+    }
+
+    if (auto pair = cmdNode.findConstCmdArg(0); pair.first) {
+      const auto &value = *pair.first;
+      if (value == "set" || value == "unset") {
+        for (auto &e : getRuntimeOptionEntries()) {
+          if (StringRef name = e.name; name.startsWith(word)) {
+            consumer(name, CompCandidateKind::COMMAND_ARG);
+          }
+        }
+      }
+    } else { // only complete shctl sub-commands
+      for (auto &e : getSHCTLSubCmdEntries()) {
+        if (StringRef name = e.name; name.startsWith(word)) {
+          consumer(name, CompCandidateKind::COMMAND_ARG);
+        }
+      }
+    }
+    return CmdArgCompStatus::OK;
+  }
+
+  CmdArgCompStatus callCLIComp(const FuncHandle &, StringRef, StringRef,
+                               CompCandidateConsumer &) override {
+    return CmdArgCompStatus::INVALID;
+  }
+
+  void completeDynamicUdc(const std::string &, CompCandidateConsumer &) override {}
+};
+
 static std::string toDirName(const std::string &fullPath) {
   StringRef ref = fullPath;
   auto pos = ref.lastIndexOf("/");
@@ -420,6 +459,8 @@ Optional<std::vector<CompletionItem>> Analyzer::complete(const SourcePtr &src, u
   CodeCompleter codeCompleter(collector,
                               makeObserver(static_cast<FrontEnd::ModuleProvider &>(*this)),
                               this->sysConfig, ptr->getPool(), workDir);
+  DummyForeignCompHandler foreignComp;
+  codeCompleter.setForeignCompHandler(foreignComp);
 
   // set completion options
   const CodeCompOp ignoredOp = hasFlag(extraOp, ExtraCompOp::FILE_NAME)

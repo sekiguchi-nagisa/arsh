@@ -1,0 +1,55 @@
+# RUN: call $cmd --test $self
+
+{"id": 0, "jsonrpc": "2.0", "method": "initialize",
+ "params": {"capabilities": {}, "rootUri": "file:///test", "processId": 46}}
+
+#    CHECK: {
+# CHECK_IF:     "capabilities": {
+# CHECK_IF: }
+
+<<<
+{"jsonrpc": "2.0", "method": "textDocument/didOpen",
+ "params": {
+    "textDocument": {"languageId": "arsh", "version": 1, "uri": "test:///test.ds",
+    "text": "shctl i"
+    }
+ }
+}
+
+<<<
+{"id": 1, "jsonrpc": "2.0", "method": "textDocument/completion",
+  "params": {
+    "context": { "triggerKind": 1 },
+    "position": { "character": 7, "line": 0 },
+    "textDocument": { "uri": "test:///test.ds" }
+  }
+}
+
+# complete attribute
+
+# CHECK_IF:   "id": 1,
+#    CHECK:   "jsonrpc": "2.0",
+#    CHECK:   "result": [
+#    CHECK:     {
+#    CHECK:       "kind": 1,
+#    CHECK:       "label": "info"
+#    CHECK:     },
+#    CHECK:     {
+#    CHECK:       "kind": 1,
+#    CHECK:       "label": "is-interactive"
+#    CHECK:     },
+#    CHECK:     {
+#    CHECK:       "kind": 1,
+#    CHECK:       "label": "is-sourced"
+#    CHECK:     }
+#    CHECK:   ]
+
+<<<
+{"id": 3, "jsonrpc": "2.0", "method": "shutdown"}
+
+# CHECK_IF:   "result": null
+#    CHECK: }
+
+<<<
+{"jsonrpc": "2.0", "method": "exit"}
+# STATUS: 0

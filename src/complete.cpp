@@ -681,31 +681,6 @@ static void completeParamName(const std::vector<std::string> &paramNames, const 
   }
 }
 
-static CmdArgCompStatus completeBuiltinOption(const CmdNode &cmdNode, const std::string &word,
-                                              CompCandidateConsumer &consumer) {
-  if (cmdNode.getNameNode().getValue() != "shctl") {
-    return CmdArgCompStatus::INVALID;
-  }
-
-  if (auto pair = cmdNode.findConstCmdArg(0); pair.first) {
-    const auto &value = *pair.first;
-    if (value == "set" || value == "unset") {
-      for (auto &e : getRuntimeOptionEntries()) {
-        if (StringRef name = e.name; name.startsWith(word)) {
-          consumer(name, CompCandidateKind::COMMAND_ARG);
-        }
-      }
-    }
-  } else { // only complete shctl sub-commands
-    for (auto &e : getSHCTLSubCmdEntries()) {
-      if (StringRef name = e.name; name.startsWith(word)) {
-        consumer(name, CompCandidateKind::COMMAND_ARG);
-      }
-    }
-  }
-  return CmdArgCompStatus::OK;
-}
-
 static CmdArgCompStatus completeCLIArg(StringRef opt, const ArgEntry &entry, StringRef word,
                                        ObserverPtr<ForeignCompHandler> comp,
                                        CompCandidateConsumer &consumer) {
@@ -889,16 +864,12 @@ static CmdArgCompStatus completeCmdArg(const TypePool &pool, ObserverPtr<Foreign
                                        const CodeCompletionContext &ctx,
                                        CompCandidateConsumer &consumer) {
   const auto &cmdNode = *ctx.getCmdNode();
-  auto &word = ctx.getCompWord();
   auto handle = ctx.getScope().lookup(toCmdFullName(cmdNode.getNameNode().getValue()));
-  if (!handle || !pool.get(handle.asOk()->getTypeId()).isModType()) {
+  if (!handle || !pool.get(handle.asOk()->getTypeId()).isModType()) { // call for non-module
     if (const auto s = tryToCallUserDefinedComp(ctx, comp, 0, nullptr, consumer);
-        s != CmdArgCompStatus::INVALID) { // call user-defined completer for non-module
+        !handle || s != CmdArgCompStatus::INVALID) {
       return s;
     }
-  }
-  if (!handle) { // try complete builtin command options
-    return completeBuiltinOption(cmdNode, word, consumer);
   }
 
   // sub-command
@@ -931,10 +902,11 @@ static CmdArgCompStatus completeCmdArg(const TypePool &pool, ObserverPtr<Foreign
       }
     }
     if (auto *cliType = resolveCLIType(*curUdcType)) {
-      return completeCLIOption(pool, cliType, cmdNode, offset, word, comp, consumer);
+      return completeCLIOption(pool, cliType, cmdNode, offset, ctx.getCompWord(), comp, consumer);
     }
   } else if (curModType) {
-    curModType->walkField(pool, udcCandidateConsumer(getCompWordToken(ctx), word, consumer, false));
+    curModType->walkField(
+        pool, udcCandidateConsumer(getCompWordToken(ctx), ctx.getCompWord(), consumer, false));
     return CmdArgCompStatus::OK;
   }
   return CmdArgCompStatus::INVALID;

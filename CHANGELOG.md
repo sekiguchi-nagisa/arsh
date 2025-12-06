@@ -73,6 +73,7 @@
     - complete ``-INT`` style options in ``kill`` command completion
     - complete jobspec in ``fg``, ``bg``, ``disown``, ``jobs`` commands completion
     - complete ``dirs`` command options
+    - re-introduce ``shctl`` command completion (drop support native completion)
 - add some options to ``compdef`` command
     - ``--nosort``: suppress sorting of candidates
     - ``--subcmd``: define sub-command completions
