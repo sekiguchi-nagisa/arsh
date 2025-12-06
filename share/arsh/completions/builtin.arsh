@@ -137,15 +137,15 @@ compdef --cmd complete --short A --desc 'show completion candidates via ACTION' 
     })
 
     ## sub-commands
-    compdef --cmd=shctl --subcmd=is-interactive
-    compdef --cmd=shctl --subcmd=is-sourced
-    compdef --cmd=shctl --subcmd=backtrace
-    compdef --cmd=shctl --subcmd=function
+    compdef --cmd=shctl --subcmd=is-interactive --arg-empty
+    compdef --cmd=shctl --subcmd=is-sourced --arg-empty
+    compdef --cmd=shctl --subcmd=backtrace --arg-empty
+    compdef --cmd=shctl --subcmd=function --arg-empty
     compdef --cmd=shctl --subcmd=module --arg-action module
     compdef --cmd=shctl --subcmd=set --arg-cmd 'shctl set | cut -d " " -f 1'
-    compdef --cmd=shctl --subcmd=set --short d --desc 'dump current runtime options'
-    compdef --cmd=shctl --subcmd=set --short r --desc 'restore runtime options'
+    compdef --cmd=shctl --subcmd=set --short d  --arg-empty --desc 'dump current runtime options'
+    compdef --cmd=shctl --subcmd=set --short r  --arg-empty --desc 'restore runtime options'
     compdef --cmd=shctl --subcmd=unset --arg-cmd 'shctl set | cut -d " " -f 1'
-    compdef --cmd=shctl --subcmd=info
-    compdef --cmd=shctl --subcmd=winsize
+    compdef --cmd=shctl --subcmd=info --arg-empty
+    compdef --cmd=shctl --subcmd=winsize --arg-empty
 }

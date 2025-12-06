@@ -76,6 +76,7 @@
 - add some options to ``compdef`` command
     - ``--nosort``: suppress sorting of candidates
     - ``--subcmd``: define sub-command completions
+    - ``--arg-empty``: generate empty candidate
 
 ### Fixed
 

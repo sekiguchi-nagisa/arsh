@@ -110,8 +110,12 @@ function _comp_arg(ctx : Module, deflist: _CompDef, opt : String, prefix : Strin
                 $COMPREPLY
             }
             4 => {
-                var func = $_argFuncs.get($arg) ?? break
-                $func($prefix)
+                if $arg.empty() {
+                    new Candidates()
+                } else {
+                    var func = $_argFuncs.get($arg) ?? break
+                    $func($prefix)
+                }
             }
             else => break
         }
@@ -395,6 +399,9 @@ type _CompDefParam() {
     [<Option(placeholder: "FUNC", xor: 1, help: "generate candidate from specified FUNC call")>]
     var arg_func: String?
 
+    [<Flag(xor: 1, help: "not generate candidates (empty candidate)")>]
+    var arg_empty = $false
+
     [<Option(placeholder: "SCRIPT", xor: 0, help: "set bash completion script")>]
     var comp_path: String?
 
@@ -445,6 +452,9 @@ compdef(param : _CompDefParam) {
     } elif let arg_func = $param.arg_func {
         $argType = 4
         $arg = $arg_func
+    } elif $param.arg_empty {
+        $argType = 4
+        $arg = ''
     }
 
     var def = $_compdefMap.get($param.cmd) ?? {
