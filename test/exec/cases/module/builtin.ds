@@ -76,6 +76,7 @@ assert diff <(complete -d -q -- 'complete -A s' && printf "%s\n" $COMPREPLY) \
 # fg/bg/jobs
 var jj : [Job]
 $jj.add(sleep 1000 &).add( sleep 2000 &).add( sleep 3000 &)
+sleep 0.1
 defer {
     kill -INT $jj
 }
