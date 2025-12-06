@@ -50,6 +50,12 @@ for line in <(pwd -h) {
     compdef --cmd pwd --short ${$m.group(1)!} --desc ${$m.group(2)!}
 }
 
+## dirs
+for line in <(dirs -h) {
+    var m = $_option_pattern.match($line) ?? continue
+    compdef --cmd dirs --short ${$m.group(1)!} --desc ${$m.group(2)!}
+}
+
 ## kill
 {
     let ff = $bindArgFunc(function(_) => new Candidates().add($_fzf.fzf_proc_select().join(' ')))

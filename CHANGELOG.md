@@ -70,8 +70,9 @@
     - add help-based completions for coreutils
 - improve builtin commands completion
     - show description in ``completion`` command completion
-    - complete ``-INT`` style arguments in ``kill`` command completion
-    - complete jobspec in ``fg``, ``bg``, ``disown``, ``jobs`` command completion
+    - complete ``-INT`` style options in ``kill`` command completion
+    - complete jobspec in ``fg``, ``bg``, ``disown``, ``jobs`` commands completion
+    - complete ``dirs`` command options
 - add some options to ``compdef`` command
     - ``--nosort``: suppress sorting of candidates
 
