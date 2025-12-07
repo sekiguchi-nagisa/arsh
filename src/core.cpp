@@ -677,7 +677,7 @@ public:
         continue;
       }
       if (const auto name = e.getKey().asStrRef(); name.startsWith(word)) {
-        CompCandidate candidate(name, CompCandidateKind::COMMAND_NAME);
+        CompCandidate candidate(word, CompCandidateKind::COMMAND_NAME, name);
         candidate.setCmdNameType(CompCandidate::CmdNameType::DYNA_UDC);
         consumer(std::move(candidate));
       }

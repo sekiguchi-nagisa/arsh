@@ -420,14 +420,14 @@ struct DummyForeignCompHandler : ForeignCompHandler {
       if (value == "set" || value == "unset") {
         for (auto &e : getRuntimeOptionEntries()) {
           if (StringRef name = e.name; name.startsWith(word)) {
-            consumer(name, CompCandidateKind::COMMAND_ARG);
+            consumer(word, CompCandidateKind::COMMAND_ARG, name);
           }
         }
       }
     } else { // only complete shctl sub-commands
       for (auto &e : getSHCTLSubCmdEntries()) {
         if (StringRef name = e.name; name.startsWith(word)) {
-          consumer(name, CompCandidateKind::COMMAND_ARG);
+          consumer(word, CompCandidateKind::COMMAND_ARG, name);
         }
       }
     }

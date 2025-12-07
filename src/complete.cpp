@@ -63,8 +63,9 @@ void CodeCompletionContext::addCmdOrKeywordRequest(const Lexer &lexer, Token wor
 
 // for input completion
 
-CompCandidate::CompCandidate(const QuoteParam *param, StringRef v, CompCandidateKind k, int p)
-    : kind(k), suffixSpace(needSuffixSpace(v, k)), priority(p) {
+CompCandidate::CompCandidate(const Prefix &prefix, CompCandidateKind k, StringRef v, int p)
+    : kind(k), suffixSpace(needSuffixSpace(v, k)), priority(p),
+      prefixSize(prefix.compWordToken.size()) {
   assert(!v.empty());
   switch (this->kind) {
   case CompCandidateKind::COMMAND_NAME:
@@ -72,11 +73,11 @@ CompCandidate::CompCandidate(const QuoteParam *param, StringRef v, CompCandidate
   case CompCandidateKind::COMMAND_ARG:
   case CompCandidateKind::COMMAND_TILDE:
   case CompCandidateKind::ENV_NAME: {
-    const bool trimPrefix = param && !param->compWordToken.empty();
+    const bool trimPrefix = !prefix.compWordToken.empty();
     if (trimPrefix) {
-      assert(param->compWord.size() <= v.size());
-      this->value += param->compWordToken;
-      v.removePrefix(param->compWord.size());
+      assert(prefix.compWord.size() <= v.size());
+      this->value += prefix.compWordToken;
+      v.removePrefix(prefix.compWord.size());
     }
     if (this->kind != CompCandidateKind::COMMAND_TILDE) {
       quoteAsCmdOrShellArg(v, this->value,
@@ -227,7 +228,7 @@ static void completeKeyword(const std::string &prefix, CodeCompOp option,
       continue;
     }
     if (const StringRef value = toString(e); isKeyword(value) && value.startsWith(prefix)) {
-      consumer(value, CompCandidateKind::KEYWORD);
+      consumer(prefix, CompCandidateKind::KEYWORD, value);
     }
   }
 }
@@ -244,7 +245,7 @@ static void completeEnvName(const std::string &namePrefix, CompCandidateConsumer
       }
       const auto kind =
           validNameOnly ? CompCandidateKind::VALID_ENV_NAME : CompCandidateKind::ENV_NAME;
-      consumer(name, kind);
+      consumer(namePrefix, kind, name);
     }
   }
 }
@@ -257,7 +258,7 @@ static void completeSigName(const std::string &prefix, CompCandidateConsumer &co
   for (auto &range : ranges) {
     for (auto &e : range) {
       if (StringRef sigName = e.abbrName; sigName.startsWith(prefix)) {
-        consumer(sigName, CompCandidateKind::SIGNAL);
+        consumer(prefix, CompCandidateKind::SIGNAL, sigName);
       }
     }
   }
@@ -269,7 +270,7 @@ static void completeUserName(const std::string &prefix, CompCandidateConsumer &c
   for (struct passwd *pw; (pw = getpwent()) != nullptr;) {
     StringRef pname = pw->pw_name;
     if (pname.startsWith(prefix)) {
-      consumer(pname, CompCandidateKind::USER);
+      consumer(prefix, CompCandidateKind::USER, pname);
     }
   }
   endpwent();
@@ -284,7 +285,7 @@ static void completeGroupName(const std::string &prefix, CompCandidateConsumer &
   for (struct group *gp; (gp = getgrent()) != nullptr;) {
     StringRef gname = gp->gr_name;
     if (gname.startsWith(prefix)) {
-      consumer(gname, CompCandidateKind::GROUP);
+      consumer(prefix, CompCandidateKind::GROUP, gname);
     }
   }
   endgrent();
@@ -313,8 +314,8 @@ static auto udcCandidateConsumer(const StringRef compWordToken, const std::strin
     if (isCmdFullName(udc)) {
       udc.removeSuffix(strlen(CMD_SYMBOL_SUFFIX));
       if (udc.startsWith(cmdPrefix) && (allowPrivate || !udc.startsWith("_"))) {
-        CompCandidate candidate({.compWordToken = compWordToken, .compWord = cmdPrefix}, udc,
-                                CompCandidateKind::COMMAND_NAME);
+        CompCandidate candidate({.compWordToken = compWordToken, .compWord = cmdPrefix},
+                                CompCandidateKind::COMMAND_NAME, udc);
         candidate.setCmdNameType(handle.is(HandleKind::UDC) ? CompCandidate::CmdNameType::UDC
                                                             : CompCandidate::CmdNameType::MOD);
         consumer(std::move(candidate));
@@ -345,8 +346,8 @@ static bool completeCmdName(const StringRef compWordToken, const NameScope &scop
     const auto range = getBuiltinCmdDescRange();
     for (auto &e : range) {
       if (StringRef builtin = e.name; builtin.startsWith(cmdPrefix)) {
-        CompCandidate candidate({.compWordToken = compWordToken, .compWord = cmdPrefix}, builtin,
-                                CompCandidateKind::COMMAND_NAME);
+        CompCandidate candidate({.compWordToken = compWordToken, .compWord = cmdPrefix},
+                                CompCandidateKind::COMMAND_NAME, builtin);
         candidate.setCmdNameType(CompCandidate::CmdNameType::BUILTIN);
         consumer(std::move(candidate));
       }
@@ -371,8 +372,8 @@ static bool completeCmdName(const StringRef compWordToken, const NameScope &scop
         }
         if (StringRef cmd = entry->d_name;
             cmd.startsWith(cmdPrefix) && isExecutable(dir.get(), entry)) {
-          CompCandidate candidate({.compWordToken = compWordToken, .compWord = cmdPrefix}, cmd,
-                                  CompCandidateKind::COMMAND_NAME);
+          CompCandidate candidate({.compWordToken = compWordToken, .compWord = cmdPrefix},
+                                  CompCandidateKind::COMMAND_NAME, cmd);
           candidate.setCmdNameType(CompCandidate::CmdNameType::EXTERNAL);
           consumer(std::move(candidate));
         }
@@ -400,8 +401,8 @@ static bool completeFileName(StringRef compWordToken, const std::string &baseDir
         std::string value("~");
         value += pwName;
         value += '/';
-        consumer(CompCandidate({.compWordToken = compWordToken, .compWord = prefix}, value,
-                               CompCandidateKind::COMMAND_TILDE));
+        consumer({.compWordToken = compWordToken, .compWord = prefix},
+                 CompCandidateKind::COMMAND_TILDE, value);
       }
     }
     endpwent();
@@ -470,8 +471,7 @@ static bool completeFileName(StringRef compWordToken, const std::string &baseDir
       }
       const auto kind = hasFlag(op, CodeCompOp::EXEC) ? CompCandidateKind::COMMAND_NAME_PART
                                                       : CompCandidateKind::COMMAND_ARG;
-      consumer(
-          CompCandidate({.compWordToken = compWordToken, .compWord = basenamePrefix}, value, kind));
+      consumer({.compWordToken = compWordToken, .compWord = basenamePrefix}, kind, value);
     }
   }
   return true;
@@ -518,7 +518,7 @@ void completeVarName(const NameScope &scope, const StringRef prefix, bool inCmdA
         }
         priority *= -1;
         const auto kind = inCmdArg ? CompCandidateKind::VAR_IN_CMD_ARG : CompCandidateKind::VAR;
-        CompCandidate candidate(varName, kind, priority);
+        CompCandidate candidate(prefix, kind, varName, priority);
         candidate.setHandle(handle);
         consumer(std::move(candidate));
       }
@@ -534,7 +534,7 @@ static void completeExpected(const std::vector<std::string> &expected, const std
   for (auto &e : expected) {
     if (isKeyword(e)) {
       if (StringRef(e).startsWith(prefix)) {
-        consumer(e, CompCandidateKind::KEYWORD);
+        consumer(prefix, CompCandidateKind::KEYWORD, e);
       }
     }
   }
@@ -546,7 +546,7 @@ void completeMember(const TypePool &pool, const NameScope &scope, const Type &re
   auto fieldWalker = [&](StringRef name, const Handle &handle) {
     if (name.startsWith(word) && isVarName(name)) {
       if (handle.isVisibleInMod(scope.modId, name)) {
-        CompCandidate candidate(name, CompCandidateKind::FIELD);
+        CompCandidate candidate(word, CompCandidateKind::FIELD, name);
         candidate.setFieldInfo(recvType, handle);
         consumer(std::move(candidate));
       }
@@ -565,7 +565,7 @@ void completeMember(const TypePool &pool, const NameScope &scope, const Type &re
       for (const auto *t = &recvType; t != nullptr; t = t->getSuperType()) {
         if (type == *t) {
           name = trimMethodFullNameSuffix(name);
-          CompCandidate candidate(name, CompCandidateKind::METHOD);
+          CompCandidate candidate(word, CompCandidateKind::METHOD, name);
           candidate.setHandle(handle);
           consumer(std::move(candidate));
           break;
@@ -584,7 +584,7 @@ void completeMember(const TypePool &pool, const NameScope &scope, const Type &re
       for (const auto *t = &recvType; t != nullptr; t = t->getSuperType()) {
         if (type == *t) {
           unsigned int methodIndex = e.second ? e.second.handle()->getIndex() : e.second.index();
-          CompCandidate candidate(name, CompCandidateKind::NATIVE_METHOD);
+          CompCandidate candidate(word, CompCandidateKind::NATIVE_METHOD, name);
           candidate.setNativeMethodInfo(recvType, methodIndex);
           consumer(std::move(candidate));
           break;
@@ -601,7 +601,7 @@ void completeType(const TypePool &pool, const NameScope &scope, const Type *recv
       if (name.startsWith(word) && isTypeAliasFullName(name)) {
         if (handle.isVisibleInMod(scope.modId, name)) {
           name.removeSuffix(strlen(TYPE_ALIAS_SYMBOL_SUFFIX));
-          consumer(name, CompCandidateKind::TYPE);
+          consumer(word, CompCandidateKind::TYPE, name);
         }
       }
       return true;
@@ -614,7 +614,7 @@ void completeType(const TypePool &pool, const NameScope &scope, const Type *recv
   scope.walk([&](StringRef name, const Handle &) {
     if (name.startsWith(word) && isTypeAliasFullName(name)) {
       name.removeSuffix(strlen(TYPE_ALIAS_SYMBOL_SUFFIX));
-      consumer(name, CompCandidateKind::TYPE);
+      consumer(word, CompCandidateKind::TYPE, name);
     }
     return true;
   });
@@ -627,20 +627,20 @@ void completeType(const TypePool &pool, const NameScope &scope, const Type *recv
     }
     if (const StringRef name = t->getNameRef();
         name.startsWith(word) && std::all_of(name.begin(), name.end(), isLetterOrDigit)) {
-      consumer(name, CompCandidateKind::TYPE);
+      consumer(word, CompCandidateKind::TYPE, name);
     }
   }
 
   // search TypeTemplate
   for (auto &e : pool.getTemplateMap()) {
     if (StringRef name = e.first; name.startsWith(word)) {
-      consumer(name, CompCandidateKind::TYPE);
+      consumer(word, CompCandidateKind::TYPE, name);
     }
   }
 
   // typeof
   if (constexpr StringRef name = "typeof"; name.startsWith(word)) {
-    consumer(name, CompCandidateKind::TYPE);
+    consumer(word, CompCandidateKind::TYPE, name);
   }
 }
 
@@ -655,7 +655,7 @@ static void completeAttribute(const std::string &prefix, CompCandidateConsumer &
       continue;
     }
     if (const StringRef attr = toString(kind); attr.startsWith(prefix)) {
-      consumer(attr, CompCandidateKind::KEYWORD);
+      consumer(prefix, CompCandidateKind::KEYWORD, attr);
     }
   }
 }
@@ -665,7 +665,7 @@ static void completeAttributeParam(const std::string &prefix, AttributeParamSet 
   paramSet.iterate([&](Attribute::Param param) {
     StringRef ref = toString(param);
     if (ref.startsWith(prefix)) {
-      consumer(ref, CompCandidateKind::KEYWORD);
+      consumer(prefix, CompCandidateKind::KEYWORD, ref);
     }
   });
 }
@@ -676,7 +676,7 @@ static void completeParamName(const std::vector<std::string> &paramNames, const 
   for (unsigned int i = 0; i < size; i++) {
     if (StringRef ref = paramNames[i]; ref.startsWith(word)) {
       const auto priority = static_cast<int>(9000000 + i);
-      consumer(paramNames[i], CompCandidateKind::PARAM, priority);
+      consumer(word, CompCandidateKind::PARAM, paramNames[i], priority);
     }
   }
 }
@@ -687,7 +687,7 @@ static CmdArgCompStatus completeCLIArg(StringRef opt, const ArgEntry &entry, Str
   if (entry.getCheckerKind() == ArgEntry::CheckerKind::CHOICE) {
     for (auto &e : entry.getChoice()) {
       if (StringRef ref = e; ref.startsWith(word)) {
-        consumer(ref, CompCandidateKind::COMMAND_ARG);
+        consumer(word, CompCandidateKind::COMMAND_ARG, ref);
       }
     }
     return CmdArgCompStatus::OK;
@@ -712,7 +712,7 @@ static CmdArgCompStatus completeCLIFlagOrOption(const CLIRecordType &type, const
       value += '-';
       value += e.getShortName();
       if (StringRef(value).startsWith(word)) {
-        consumer(value, CompCandidateKind::COMMAND_ARG);
+        consumer(word, CompCandidateKind::COMMAND_ARG, value);
       } else if (e.op == OptParseOp::OPT_ARG && word.startsWith(value)) {
         StringRef arg = word;
         arg.removePrefix(value.size());
@@ -732,7 +732,7 @@ static CmdArgCompStatus completeCLIFlagOrOption(const CLIRecordType &type, const
       if (value.size() == word.size() && value.back() == '=') { // 'value == word' and '--long='
         return completeCLIArg(value, e, "", comp, consumer);
       }
-      CompCandidate candidate(value, CompCandidateKind::COMMAND_ARG);
+      CompCandidate candidate(word, CompCandidateKind::COMMAND_ARG, value);
       if (value.back() == '=') {
         candidate.overrideSuffixSpace(false);
       }
@@ -824,7 +824,7 @@ static CmdArgCompStatus completeCLIOption(const TypePool &pool, const CLIRecordT
         continue;
       }
       if (StringRef name(e.getArgName()); name.startsWith(word)) {
-        consumer(name, CompCandidateKind::COMMAND_ARG);
+        consumer(word, CompCandidateKind::COMMAND_ARG, name);
       }
     }
     return CmdArgCompStatus::OK;

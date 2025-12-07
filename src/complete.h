@@ -57,15 +57,16 @@ public:
     EXTERNAL,
   };
 
-  struct QuoteParam {
-    StringRef compWordToken;
-    StringRef compWord;
+  struct Prefix {
+    StringRef compWordToken; // original token (quoted)
+    StringRef compWord;      // unquoted
   };
 
   std::string value;
   const CompCandidateKind kind;
   bool suffixSpace;
   const int priority;
+  const size_t prefixSize;
 
 private:
   union {
@@ -81,13 +82,11 @@ private:
     CmdNameType cmdNameType;
   } meta{};
 
-  CompCandidate(const QuoteParam *param, StringRef v, CompCandidateKind kind, int priority);
-
 public:
-  CompCandidate(StringRef v, CompCandidateKind k, int p = 0) : CompCandidate(nullptr, v, k, p) {}
+  CompCandidate(StringRef prefix, CompCandidateKind k, StringRef v, int p = 0)
+      : CompCandidate({prefix, prefix}, k, v, p) {}
 
-  CompCandidate(const QuoteParam &param, StringRef v, CompCandidateKind kind)
-      : CompCandidate(&param, v, kind, 0) {}
+  CompCandidate(const Prefix &prefix, CompCandidateKind kind, StringRef v, int p = 0);
 
   void setHandle(const Handle &handle) { this->meta.handle = &handle; }
 
@@ -128,8 +127,13 @@ class CompCandidateConsumer {
 public:
   virtual ~CompCandidateConsumer() = default;
 
-  void operator()(StringRef ref, CompCandidateKind kind, int priority = 0) {
-    (*this)(CompCandidate(ref, kind, priority));
+  void operator()(StringRef prefix, CompCandidateKind kind, StringRef ref, int priority = 0) {
+    (*this)(CompCandidate(prefix, kind, ref, priority));
+  }
+
+  void operator()(const CompCandidate::Prefix &prefix, CompCandidateKind kind, StringRef ref,
+                  int priority = 0) {
+    (*this)(CompCandidate(prefix, kind, ref, priority));
   }
 
   virtual void operator()(CompCandidate &&candidate) = 0;
