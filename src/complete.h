@@ -57,11 +57,6 @@ public:
     EXTERNAL,
   };
 
-  struct Prefix {
-    StringRef compWordToken; // original token (quoted)
-    StringRef compWord;      // unquoted
-  };
-
   std::string value;
   const CompCandidateKind kind;
   bool suffixSpace;
@@ -86,7 +81,7 @@ public:
   CompCandidate(StringRef prefix, CompCandidateKind k, StringRef v, int p = 0)
       : CompCandidate({prefix, prefix}, k, v, p) {}
 
-  CompCandidate(const Prefix &prefix, CompCandidateKind kind, StringRef v, int p = 0);
+  CompCandidate(const CompPrefix &prefix, CompCandidateKind kind, StringRef v, int p = 0);
 
   void setHandle(const Handle &handle) { this->meta.handle = &handle; }
 
@@ -131,7 +126,7 @@ public:
     (*this)(CompCandidate(prefix, kind, ref, priority));
   }
 
-  void operator()(const CompCandidate::Prefix &prefix, CompCandidateKind kind, StringRef ref,
+  void operator()(const CompPrefix &prefix, CompCandidateKind kind, StringRef ref,
                   int priority = 0) {
     (*this)(CompCandidate(prefix, kind, ref, priority));
   }

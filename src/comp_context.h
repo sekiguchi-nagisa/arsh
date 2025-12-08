@@ -17,6 +17,7 @@
 #ifndef ARSH_COMP_CONTEXT_H
 #define ARSH_COMP_CONTEXT_H
 
+#include "lexer.h"
 #include "node.h"
 #include "scope.h"
 
@@ -60,7 +61,10 @@ inline bool isKeyword(StringRef value) { // ignore '<Identifier>'
   return !(value.size() > 2 && value[0] == '<' && value.back() == '>');
 }
 
-class Lexer;
+struct CompPrefix {
+  StringRef compWordToken; // original token (quoted)
+  StringRef compWord;      // unquoted
+};
 
 class CodeCompletionContext {
 private:
@@ -236,6 +240,25 @@ public:
   const auto &getScriptDir() const { return this->scriptDir; }
 
   Token getCompWordToken() const { return this->compWordToken; }
+
+  CompPrefix toCompPrefix() const {
+    CompPrefix prefix;
+    if (this->getLexer()) {
+      prefix.compWordToken = this->getLexer()->toStrRef(this->getCompWordToken());
+    }
+    prefix.compWord = this->getCompWord();
+    return prefix;
+  }
+
+  CompPrefix toCompPrefixByOffset() const {
+    CompPrefix prefix;
+    if (this->getLexer()) {
+      prefix.compWordToken = this->getLexer()->toStrRef(
+          this->getCompWordToken().sliceFrom(this->getCompWordTokenOffset()));
+    }
+    prefix.compWord = StringRef(this->getCompWord()).substr(this->getCompWordOffset());
+    return prefix;
+  }
 };
 
 } // namespace arsh
