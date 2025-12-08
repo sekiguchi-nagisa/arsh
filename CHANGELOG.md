@@ -14,7 +14,7 @@
 - add incremental search filter to completion pager of ``LineEditor``
     - complete and show search filter via ``complete-backward`` edit action
     - enable/disable search filter via ``toggle-search`` edit action
-    - ignore unbound escape sequences / edit actions in search filter mode
+    - ignore unbound escape sequences and edit actions in search filter mode
 
 #### Misc
 
@@ -28,6 +28,7 @@
 - allow empty command io redirection within command/process substitution
     - like ``$(< file)``, ``<(<<< string)``
     - implicitly call ``__gets`` command
+    - syntactically accept empty command io redirection in arbitrary place
 
 #### Builtin
 
@@ -67,18 +68,18 @@
 - in ``repl.arsh`` module, load history at first prompt
 - add ``PRE_EXECS`` hook for call functions before executing command
 - various ``completion.arsh`` module improvements
-    - add ``compAlias`` function. now define completion as alisa of others
+    - add ``compAlias`` function. now define completion as alias of others
     - add help-based completions for coreutils
+    - add some options to ``compdef`` command
+        - ``--nosort``: suppress sorting of candidates
+        - ``--subcmd``: define sub-command completions
+        - ``--arg-empty``: generate empty candidate
 - improve builtin commands completion
     - show description in ``completion`` command completion
     - complete ``-INT`` style options in ``kill`` command completion
     - complete jobspec in ``fg``, ``bg``, ``disown``, ``jobs`` commands completion
     - complete ``dirs`` command options
     - re-introduce ``shctl`` command completion (drop support native completion)
-- add some options to ``compdef`` command
-    - ``--nosort``: suppress sorting of candidates
-    - ``--subcmd``: define sub-command completions
-    - ``--arg-empty``: generate empty candidate
 
 ### Fixed
 
