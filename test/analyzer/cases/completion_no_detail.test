@@ -33,22 +33,74 @@
 #    CHECK:     {
 #    CHECK:       "kind": 6,
 #    CHECK:       "label": "TRUE",
-#    CHECK:       "sortText": "0"
+#    CHECK:       "sortText": "0",
+#    CHECK:       "textEdit": {
+#    CHECK:         "newText": "TRUE",
+#    CHECK:         "range": {
+#    CHECK:           "end": {
+#    CHECK:             "character": 2,
+#    CHECK:             "line": 0
+#    CHECK:           },
+#    CHECK:           "start": {
+#    CHECK:             "character": 1,
+#    CHECK:             "line": 0
+#    CHECK:           }
+#    CHECK:         }
+#    CHECK:       }
 #    CHECK:     },
 #    CHECK:     {
 #    CHECK:       "kind": 6,
 #    CHECK:       "label": "True",
-#    CHECK:       "sortText": "0"
+#    CHECK:       "sortText": "0",
+#    CHECK:       "textEdit": {
+#    CHECK:         "newText": "True",
+#    CHECK:         "range": {
+#    CHECK:           "end": {
+#    CHECK:             "character": 2,
+#    CHECK:             "line": 0
+#    CHECK:           },
+#    CHECK:           "start": {
+#    CHECK:             "character": 1,
+#    CHECK:             "line": 0
+#    CHECK:           }
+#    CHECK:         }
+#    CHECK:       }
 #    CHECK:     },
 #    CHECK:     {
 #    CHECK:       "kind": 6,
 #    CHECK:       "label": "TERM_HOOK",
-#    CHECK:       "sortText": "1"
+#    CHECK:       "sortText": "1",
+#    CHECK:       "textEdit": {
+#    CHECK:         "newText": "TERM_HOOK",
+#    CHECK:         "range": {
+#    CHECK:           "end": {
+#    CHECK:             "character": 2,
+#    CHECK:             "line": 0
+#    CHECK:           },
+#    CHECK:           "start": {
+#    CHECK:             "character": 1,
+#    CHECK:             "line": 0
+#    CHECK:           }
+#    CHECK:         }
+#    CHECK:       }
 #    CHECK:     },
 #    CHECK:     {
 #    CHECK:       "kind": 6,
 #    CHECK:       "label": "THROWN",
-#    CHECK:       "sortText": "2"
+#    CHECK:       "sortText": "2",
+#    CHECK:       "textEdit": {
+#    CHECK:         "newText": "THROWN",
+#    CHECK:         "range": {
+#    CHECK:           "end": {
+#    CHECK:             "character": 2,
+#    CHECK:             "line": 0
+#    CHECK:           },
+#    CHECK:           "start": {
+#    CHECK:             "character": 1,
+#    CHECK:             "line": 0
+#    CHECK:           }
+#    CHECK:         }
+#    CHECK:       }
 #    CHECK:     }
 #    CHECK:   ]
 

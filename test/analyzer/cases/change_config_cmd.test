@@ -35,11 +35,37 @@
 #    CHECK:   "result": [
 #    CHECK:     {
 #    CHECK:       "kind": 1,
-#    CHECK:       "label": "sh..."
+#    CHECK:       "label": "sh...",
+#    CHECK:       "textEdit": {
+#    CHECK:         "newText": "sh...",
+#    CHECK:         "range": {
+#    CHECK:           "end": {
+#    CHECK:             "character": 2,
+#    CHECK:             "line": 1
+#    CHECK:           },
+#    CHECK:           "start": {
+#    CHECK:             "character": 0,
+#    CHECK:             "line": 1
+#    CHECK:           }
+#    CHECK:         }
+#    CHECK:       }
 #    CHECK:     },
 #    CHECK:     {
 #    CHECK:       "kind": 1,
-#    CHECK:       "label": "shctl"
+#    CHECK:       "label": "shctl",
+#    CHECK:       "textEdit": {
+#    CHECK:         "newText": "shctl",
+#    CHECK:         "range": {
+#    CHECK:           "end": {
+#    CHECK:             "character": 2,
+#    CHECK:             "line": 1
+#    CHECK:           },
+#    CHECK:           "start": {
+#    CHECK:             "character": 0,
+#    CHECK:             "line": 1
+#    CHECK:           }
+#    CHECK:         }
+#    CHECK:       }
 #    CHECK:     }
 #    CHECK:   ]
 
@@ -72,13 +98,52 @@
 #    CHECK:   "result": [
 #    CHECK:     {
 #    CHECK:       "kind": 1,
-#    CHECK:       "label": "sh"
+#    CHECK:       "label": "sh",
+#    CHECK:       "textEdit": {
+#    CHECK:         "newText": "sh",
+#    CHECK:         "range": {
+#    CHECK:           "end": {
+#    CHECK:             "character": 2,
+#    CHECK:             "line": 1
+#    CHECK:           },
+#    CHECK:           "start": {
+#    CHECK:             "character": 0,
+#    CHECK:             "line": 1
+#    CHECK:           }
+#    CHECK:         }
+#    CHECK:       }
 #    CHECK:     },
 #    CHECK:     {
 #    CHECK:       "kind": 1,
-#    CHECK:       "label": "sh..."
+#    CHECK:       "label": "sh...",
+#    CHECK:       "textEdit": {
+#    CHECK:         "newText": "sh...",
+#    CHECK:         "range": {
+#    CHECK:           "end": {
+#    CHECK:             "character": 2,
+#    CHECK:             "line": 1
+#    CHECK:           },
+#    CHECK:           "start": {
+#    CHECK:             "character": 0,
+#    CHECK:             "line": 1
+#    CHECK:           }
+#    CHECK:         }
+#    CHECK:       }
 #    CHECK:     },
-# CHECK_IF:       "label": "shctl"
+# CHECK_IF:       "label": "shctl",
+#    CHECK:       "textEdit": {
+#    CHECK:         "newText": "shctl",
+#    CHECK:         "range": {
+#    CHECK:           "end": {
+#    CHECK:             "character": 2,
+#    CHECK:             "line": 1
+#    CHECK:           },
+#    CHECK:           "start": {
+#    CHECK:             "character": 0,
+#    CHECK:             "line": 1
+#    CHECK:           }
+#    CHECK:         }
+#    CHECK:       }
 # CHECK_IF:   ]
 
 <<<

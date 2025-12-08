@@ -98,6 +98,94 @@ struct Location {
   }
 };
 
+struct TextEdit {
+  Range range;
+  std::string newText;
+
+  template <typename T>
+  void jsonify(T &t) {
+    JSONIFY(range);
+    JSONIFY(newText);
+  }
+};
+
+using ChangeAnnotationIdentifier = std::string;
+
+struct AnnotatedTextEdit : public TextEdit {
+  ChangeAnnotationIdentifier annotationId;
+
+  template <typename T>
+  void jsonify(T &t) {
+    TextEdit::jsonify(t);
+    JSONIFY(annotationId);
+  }
+
+  static AnnotatedTextEdit from(TextEdit &&edit, ChangeAnnotationIdentifier &&id) {
+    AnnotatedTextEdit anno{};
+    anno.annotationId = std::move(id);
+    anno.range = edit.range;
+    anno.newText = std::move(edit.newText);
+    return anno;
+  }
+};
+
+// for TextDocument
+
+struct TextDocumentIdentifier {
+  DocumentURI uri;
+
+  template <typename T>
+  void jsonify(T &t) {
+    JSONIFY(uri);
+  }
+};
+
+struct VersionedTextDocumentIdentifier : public TextDocumentIdentifier {
+  int version;
+
+  template <typename T>
+  void jsonify(T &t) {
+    TextDocumentIdentifier::jsonify(t);
+    JSONIFY(version);
+  }
+};
+
+struct OptionalVersionedTextDocumentIdentifier : public TextDocumentIdentifier {
+  Union<int, std::nullptr_t> version;
+
+  template <typename T>
+  void jsonify(T &t) {
+    TextDocumentIdentifier::jsonify(t);
+    JSONIFY(version);
+  }
+};
+
+struct TextDocumentItem {
+  DocumentURI uri;
+  std::string languageId;
+  int version;
+  std::string text;
+
+  template <typename T>
+  void jsonify(T &t) {
+    JSONIFY(uri);
+    JSONIFY(languageId);
+    JSONIFY(version);
+    JSONIFY(text);
+  }
+};
+
+struct TextDocumentEdit {
+  OptionalVersionedTextDocumentIdentifier textDocument;
+  std::vector<Union<AnnotatedTextEdit, TextEdit>> edits;
+
+  template <typename T>
+  void jsonify(T &t) {
+    JSONIFY(textDocument);
+    JSONIFY(edits);
+  }
+};
+
 enum class DiagnosticSeverity : int {
   Error = 1,
   Warning = 2,
@@ -710,52 +798,6 @@ struct InitializedParams {
   void jsonify(T &) {}
 };
 
-// for TextDocument
-
-struct TextDocumentIdentifier {
-  DocumentURI uri;
-
-  template <typename T>
-  void jsonify(T &t) {
-    JSONIFY(uri);
-  }
-};
-
-struct VersionedTextDocumentIdentifier : public TextDocumentIdentifier {
-  int version;
-
-  template <typename T>
-  void jsonify(T &t) {
-    TextDocumentIdentifier::jsonify(t);
-    JSONIFY(version);
-  }
-};
-
-struct OptionalVersionedTextDocumentIdentifier : public TextDocumentIdentifier {
-  Union<int, std::nullptr_t> version;
-
-  template <typename T>
-  void jsonify(T &t) {
-    TextDocumentIdentifier::jsonify(t);
-    JSONIFY(version);
-  }
-};
-
-struct TextDocumentItem {
-  DocumentURI uri;
-  std::string languageId;
-  int version;
-  std::string text;
-
-  template <typename T>
-  void jsonify(T &t) {
-    JSONIFY(uri);
-    JSONIFY(languageId);
-    JSONIFY(version);
-    JSONIFY(text);
-  }
-};
-
 struct TextDocumentPositionParams {
   TextDocumentIdentifier textDocument;
   Position position;
@@ -998,6 +1040,7 @@ struct CompletionItem {
   Optional<CompletionItemLabelDetails> labelDetails;
   CompletionItemKind kind;
   Optional<std::string> sortText;
+  Optional<TextEdit> textEdit;
   int priority; // dummy. not defined in lsp
 
   template <typename T>
@@ -1006,6 +1049,7 @@ struct CompletionItem {
     JSONIFY(labelDetails);
     JSONIFY(kind);
     JSONIFY(sortText);
+    JSONIFY(textEdit);
   }
 };
 
@@ -1260,48 +1304,6 @@ struct SignatureHelpParams : public TextDocumentPositionParams, public WorkDoneP
     TextDocumentPositionParams::jsonify(t);
     WorkDoneProgressParams::jsonify(t);
     JSONIFY(context);
-  }
-};
-
-struct TextEdit {
-  Range range;
-  std::string newText;
-
-  template <typename T>
-  void jsonify(T &t) {
-    JSONIFY(range);
-    JSONIFY(newText);
-  }
-};
-
-using ChangeAnnotationIdentifier = std::string;
-
-struct AnnotatedTextEdit : public TextEdit {
-  ChangeAnnotationIdentifier annotationId;
-
-  template <typename T>
-  void jsonify(T &t) {
-    TextEdit::jsonify(t);
-    JSONIFY(annotationId);
-  }
-
-  static AnnotatedTextEdit from(TextEdit &&edit, ChangeAnnotationIdentifier &&id) {
-    AnnotatedTextEdit anno{};
-    anno.annotationId = std::move(id);
-    anno.range = edit.range;
-    anno.newText = std::move(edit.newText);
-    return anno;
-  }
-};
-
-struct TextDocumentEdit {
-  OptionalVersionedTextDocumentIdentifier textDocument;
-  std::vector<Union<AnnotatedTextEdit, TextEdit>> edits;
-
-  template <typename T>
-  void jsonify(T &t) {
-    JSONIFY(textDocument);
-    JSONIFY(edits);
   }
 };
 

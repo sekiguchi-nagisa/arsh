@@ -310,12 +310,18 @@ bool DiagnosticEmitter::exitModule() {
 
 class CompletionItemCollector : public CompCandidateConsumer {
 private:
-  std::shared_ptr<TypePool> pool;
+  const std::shared_ptr<const TypePool> pool;
   std::vector<CompletionItem> items;
+  const SourcePtr src;
+  const unsigned int offset;
   bool labelDetail{false};
+  ObserverPtr<LoggerBase> logger;
+  Optional<Range> compPrefixRange;
 
 public:
-  explicit CompletionItemCollector(std::shared_ptr<TypePool> pool) : pool(std::move(pool)) {}
+  CompletionItemCollector(std::shared_ptr<const TypePool> pool, SourcePtr src, unsigned int offset,
+                          ObserverPtr<LoggerBase> logger)
+      : pool(std::move(pool)), src(std::move(src)), offset(offset), logger(logger) {}
 
   void setLabelDetail(bool set) { this->labelDetail = set; }
 
@@ -342,7 +348,7 @@ public:
     }
   }
 
-  static Optional<CompletionItemLabelDetails> formatLabelDetail(TypePool &pool,
+  static Optional<CompletionItemLabelDetails> formatLabelDetail(const TypePool &pool,
                                                                 const CompCandidate &candidate) {
     std::string signature = candidate.formatTypeSignature(pool);
     if (signature.empty()) {
@@ -354,6 +360,17 @@ public:
     };
   }
 
+  static Optional<Range> toRange(size_t prefixSize, const Source &src, unsigned int offset) {
+    if (offset >= prefixSize) {
+      auto start = src.toPosition(offset - prefixSize);
+      auto end = src.toPosition(offset);
+      if (start.hasValue() && end.hasValue()) {
+        return Range{.start = start.unwrap(), .end = end.unwrap()};
+      }
+    }
+    return {};
+  }
+
   void operator()(CompCandidate &&candidate) override {
     if (candidate.value.empty()) {
       return;
@@ -362,11 +379,23 @@ public:
     if (this->labelDetail) {
       details = formatLabelDetail(*this->pool, candidate);
     }
+    if (!this->compPrefixRange.hasValue() && candidate.prefixSize) {
+      this->compPrefixRange = toRange(candidate.prefixSize, *this->src, this->offset);
+      if (!this->compPrefixRange.hasValue()) {
+        LOG(LogLevel::ERROR, "broken candidate prefix size: %zu, offset: %u", candidate.prefixSize,
+            this->offset);
+      }
+    }
+    Optional<TextEdit> textEdit;
+    if (this->compPrefixRange.hasValue()) {
+      textEdit = TextEdit{.range = this->compPrefixRange.unwrap(), .newText = candidate.value};
+    }
     this->items.push_back(CompletionItem{
         .label = std::move(candidate.value),
         .labelDetails = std::move(details),
         .kind = toItemKind(candidate),
         .sortText = {},
+        .textEdit = std::move(textEdit),
         .priority = candidate.priority,
     });
   }
@@ -455,7 +484,7 @@ Optional<std::vector<CompletionItem>> Analyzer::complete(const SourcePtr &src, u
 
   std::string workDir = toDirName(src->getPath());
   auto &ptr = this->addNew(src);
-  CompletionItemCollector collector(ptr->getPoolPtr());
+  CompletionItemCollector collector(ptr->getPoolPtr(), src, offset, this->logger);
   CodeCompleter codeCompleter(collector,
                               makeObserver(static_cast<FrontEnd::ModuleProvider &>(*this)),
                               this->sysConfig, ptr->getPool(), workDir);

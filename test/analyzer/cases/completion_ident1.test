@@ -43,7 +43,20 @@
 #    CHECK:       "labelDetails": {
 #    CHECK:         "detail": ": Int"
 #    CHECK:       },
-#    CHECK:       "sortText": "00"
+#    CHECK:       "sortText": "00",
+#    CHECK:       "textEdit": {
+#    CHECK:         "newText": "ZAA",
+#    CHECK:         "range": {
+#    CHECK:           "end": {
+#    CHECK:             "character": 2,
+#    CHECK:             "line": 1
+#    CHECK:           },
+#    CHECK:           "start": {
+#    CHECK:             "character": 1,
+#    CHECK:             "line": 1
+#    CHECK:           }
+#    CHECK:         }
+#    CHECK:       }
 #    CHECK:     },
 #    CHECK:     {
 #    CHECK:       "kind": 6,
@@ -51,7 +64,20 @@
 #    CHECK:       "labelDetails": {
 #    CHECK:         "detail": ": Int"
 #    CHECK:       },
-#    CHECK:       "sortText": "01"
+#    CHECK:       "sortText": "01",
+#    CHECK:       "textEdit": {
+#    CHECK:         "newText": "Z10",
+#    CHECK:         "range": {
+#    CHECK:           "end": {
+#    CHECK:             "character": 2,
+#    CHECK:             "line": 1
+#    CHECK:           },
+#    CHECK:           "start": {
+#    CHECK:             "character": 1,
+#    CHECK:             "line": 1
+#    CHECK:           }
+#    CHECK:         }
+#    CHECK:       }
 #    CHECK:     },
 #    CHECK:     {
 #    CHECK:       "kind": 6,
@@ -59,7 +85,20 @@
 #    CHECK:       "labelDetails": {
 #    CHECK:         "detail": ": Int"
 #    CHECK:       },
-#    CHECK:       "sortText": "02"
+#    CHECK:       "sortText": "02",
+#    CHECK:       "textEdit": {
+#    CHECK:         "newText": "Z9",
+#    CHECK:         "range": {
+#    CHECK:           "end": {
+#    CHECK:             "character": 2,
+#    CHECK:             "line": 1
+#    CHECK:           },
+#    CHECK:           "start": {
+#    CHECK:             "character": 1,
+#    CHECK:             "line": 1
+#    CHECK:           }
+#    CHECK:         }
+#    CHECK:       }
 #    CHECK:     },
 #    CHECK:     {
 #    CHECK:       "kind": 6,
@@ -67,7 +106,20 @@
 #    CHECK:       "labelDetails": {
 #    CHECK:         "detail": ": Int"
 #    CHECK:       },
-#    CHECK:       "sortText": "03"
+#    CHECK:       "sortText": "03",
+#    CHECK:       "textEdit": {
+#    CHECK:         "newText": "Z8",
+#    CHECK:         "range": {
+#    CHECK:           "end": {
+#    CHECK:             "character": 2,
+#    CHECK:             "line": 1
+#    CHECK:           },
+#    CHECK:           "start": {
+#    CHECK:             "character": 1,
+#    CHECK:             "line": 1
+#    CHECK:           }
+#    CHECK:         }
+#    CHECK:       }
 #    CHECK:     },
 #    CHECK:     {
 #    CHECK:       "kind": 6,
@@ -75,7 +127,20 @@
 #    CHECK:       "labelDetails": {
 #    CHECK:         "detail": ": Int"
 #    CHECK:       },
-#    CHECK:       "sortText": "04"
+#    CHECK:       "sortText": "04",
+#    CHECK:       "textEdit": {
+#    CHECK:         "newText": "Z7",
+#    CHECK:         "range": {
+#    CHECK:           "end": {
+#    CHECK:             "character": 2,
+#    CHECK:             "line": 1
+#    CHECK:           },
+#    CHECK:           "start": {
+#    CHECK:             "character": 1,
+#    CHECK:             "line": 1
+#    CHECK:           }
+#    CHECK:         }
+#    CHECK:       }
 #    CHECK:     },
 #    CHECK:     {
 #    CHECK:       "kind": 6,
@@ -83,7 +148,20 @@
 #    CHECK:       "labelDetails": {
 #    CHECK:         "detail": ": Int"
 #    CHECK:       },
-#    CHECK:       "sortText": "05"
+#    CHECK:       "sortText": "05",
+#    CHECK:       "textEdit": {
+#    CHECK:         "newText": "Z6",
+#    CHECK:         "range": {
+#    CHECK:           "end": {
+#    CHECK:             "character": 2,
+#    CHECK:             "line": 1
+#    CHECK:           },
+#    CHECK:           "start": {
+#    CHECK:             "character": 1,
+#    CHECK:             "line": 1
+#    CHECK:           }
+#    CHECK:         }
+#    CHECK:       }
 #    CHECK:     },
 #    CHECK:     {
 #    CHECK:       "kind": 6,
@@ -91,7 +169,20 @@
 #    CHECK:       "labelDetails": {
 #    CHECK:         "detail": ": Int"
 #    CHECK:       },
-#    CHECK:       "sortText": "06"
+#    CHECK:       "sortText": "06",
+#    CHECK:       "textEdit": {
+#    CHECK:         "newText": "Z5",
+#    CHECK:         "range": {
+#    CHECK:           "end": {
+#    CHECK:             "character": 2,
+#    CHECK:             "line": 1
+#    CHECK:           },
+#    CHECK:           "start": {
+#    CHECK:             "character": 1,
+#    CHECK:             "line": 1
+#    CHECK:           }
+#    CHECK:         }
+#    CHECK:       }
 #    CHECK:     },
 #    CHECK:     {
 #    CHECK:       "kind": 6,
@@ -99,7 +190,20 @@
 #    CHECK:       "labelDetails": {
 #    CHECK:         "detail": ": Int"
 #    CHECK:       },
-#    CHECK:       "sortText": "07"
+#    CHECK:       "sortText": "07",
+#    CHECK:       "textEdit": {
+#    CHECK:         "newText": "Z4",
+#    CHECK:         "range": {
+#    CHECK:           "end": {
+#    CHECK:             "character": 2,
+#    CHECK:             "line": 1
+#    CHECK:           },
+#    CHECK:           "start": {
+#    CHECK:             "character": 1,
+#    CHECK:             "line": 1
+#    CHECK:           }
+#    CHECK:         }
+#    CHECK:       }
 #    CHECK:     },
 #    CHECK:     {
 #    CHECK:       "kind": 6,
@@ -107,7 +211,20 @@
 #    CHECK:       "labelDetails": {
 #    CHECK:         "detail": ": Int"
 #    CHECK:       },
-#    CHECK:       "sortText": "08"
+#    CHECK:       "sortText": "08",
+#    CHECK:       "textEdit": {
+#    CHECK:         "newText": "Z3",
+#    CHECK:         "range": {
+#    CHECK:           "end": {
+#    CHECK:             "character": 2,
+#    CHECK:             "line": 1
+#    CHECK:           },
+#    CHECK:           "start": {
+#    CHECK:             "character": 1,
+#    CHECK:             "line": 1
+#    CHECK:           }
+#    CHECK:         }
+#    CHECK:       }
 #    CHECK:     },
 #    CHECK:     {
 #    CHECK:       "kind": 6,
@@ -115,7 +232,20 @@
 #    CHECK:       "labelDetails": {
 #    CHECK:         "detail": ": Int"
 #    CHECK:       },
-#    CHECK:       "sortText": "09"
+#    CHECK:       "sortText": "09",
+#    CHECK:       "textEdit": {
+#    CHECK:         "newText": "Z2",
+#    CHECK:         "range": {
+#    CHECK:           "end": {
+#    CHECK:             "character": 2,
+#    CHECK:             "line": 1
+#    CHECK:           },
+#    CHECK:           "start": {
+#    CHECK:             "character": 1,
+#    CHECK:             "line": 1
+#    CHECK:           }
+#    CHECK:         }
+#    CHECK:       }
 #    CHECK:     },
 #    CHECK:     {
 #    CHECK:       "kind": 6,
@@ -123,7 +253,20 @@
 #    CHECK:       "labelDetails": {
 #    CHECK:         "detail": ": Int"
 #    CHECK:       },
-#    CHECK:       "sortText": "10"
+#    CHECK:       "sortText": "10",
+#    CHECK:       "textEdit": {
+#    CHECK:         "newText": "Z1",
+#    CHECK:         "range": {
+#    CHECK:           "end": {
+#    CHECK:             "character": 2,
+#    CHECK:             "line": 1
+#    CHECK:           },
+#    CHECK:           "start": {
+#    CHECK:             "character": 1,
+#    CHECK:             "line": 1
+#    CHECK:           }
+#    CHECK:         }
+#    CHECK:       }
 #    CHECK:     },
 #    CHECK:     {
 #    CHECK:       "kind": 6,
@@ -131,7 +274,20 @@
 #    CHECK:       "labelDetails": {
 #    CHECK:         "detail": ": Bool"
 #    CHECK:       },
-#    CHECK:       "sortText": "11"
+#    CHECK:       "sortText": "11",
+#    CHECK:       "textEdit": {
+#    CHECK:         "newText": "ZA",
+#    CHECK:         "range": {
+#    CHECK:           "end": {
+#    CHECK:             "character": 2,
+#    CHECK:             "line": 1
+#    CHECK:           },
+#    CHECK:           "start": {
+#    CHECK:             "character": 1,
+#    CHECK:             "line": 1
+#    CHECK:           }
+#    CHECK:         }
+#    CHECK:       }
 #    CHECK:     }
 #    CHECK:   ]
 
@@ -164,7 +320,20 @@
 #    CHECK:       "labelDetails": {
 #    CHECK:         "detail": "(aA: Float, b: Float): Void"
 #    CHECK:       },
-#    CHECK:       "sortText": "0"
+#    CHECK:       "sortText": "0",
+#    CHECK:       "textEdit": {
+#    CHECK:         "newText": "Z2",
+#    CHECK:         "range": {
+#    CHECK:           "end": {
+#    CHECK:             "character": 2,
+#    CHECK:             "line": 1
+#    CHECK:           },
+#    CHECK:           "start": {
+#    CHECK:             "character": 1,
+#    CHECK:             "line": 1
+#    CHECK:           }
+#    CHECK:         }
+#    CHECK:       }
 #    CHECK:     },
 #    CHECK:     {
 #    CHECK:       "kind": 3,
@@ -172,7 +341,20 @@
 #    CHECK:       "labelDetails": {
 #    CHECK:         "detail": "(ss: String): String"
 #    CHECK:       },
-#    CHECK:       "sortText": "1"
+#    CHECK:       "sortText": "1",
+#    CHECK:       "textEdit": {
+#    CHECK:         "newText": "Z1",
+#    CHECK:         "range": {
+#    CHECK:           "end": {
+#    CHECK:             "character": 2,
+#    CHECK:             "line": 1
+#    CHECK:           },
+#    CHECK:           "start": {
+#    CHECK:             "character": 1,
+#    CHECK:             "line": 1
+#    CHECK:           }
+#    CHECK:         }
+#    CHECK:       }
 #    CHECK:     },
 #    CHECK:     {
 #    CHECK:       "kind": 3,
@@ -180,7 +362,20 @@
 #    CHECK:       "labelDetails": {
 #    CHECK:         "detail": "(): Int"
 #    CHECK:       },
-#    CHECK:       "sortText": "2"
+#    CHECK:       "sortText": "2",
+#    CHECK:       "textEdit": {
+#    CHECK:         "newText": "Z0",
+#    CHECK:         "range": {
+#    CHECK:           "end": {
+#    CHECK:             "character": 2,
+#    CHECK:             "line": 1
+#    CHECK:           },
+#    CHECK:           "start": {
+#    CHECK:             "character": 1,
+#    CHECK:             "line": 1
+#    CHECK:           }
+#    CHECK:         }
+#    CHECK:       }
 #    CHECK:     }
 #    CHECK:   ]
 

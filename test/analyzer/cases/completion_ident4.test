@@ -32,19 +32,71 @@
 #    CHECK:   "result": [
 #    CHECK:     {
 #    CHECK:       "kind": 7,
-#    CHECK:       "label": "Regex"
+#    CHECK:       "label": "Regex",
+#    CHECK:       "textEdit": {
+#    CHECK:         "newText": "Regex",
+#    CHECK:         "range": {
+#    CHECK:           "end": {
+#    CHECK:             "character": 2,
+#    CHECK:             "line": 1
+#    CHECK:           },
+#    CHECK:           "start": {
+#    CHECK:             "character": 0,
+#    CHECK:             "line": 1
+#    CHECK:           }
+#    CHECK:         }
+#    CHECK:       }
 #    CHECK:     },
 #    CHECK:     {
 #    CHECK:       "kind": 7,
-#    CHECK:       "label": "RegexMatch"
+#    CHECK:       "label": "RegexMatch",
+#    CHECK:       "textEdit": {
+#    CHECK:         "newText": "RegexMatch",
+#    CHECK:         "range": {
+#    CHECK:           "end": {
+#    CHECK:             "character": 2,
+#    CHECK:             "line": 1
+#    CHECK:           },
+#    CHECK:           "start": {
+#    CHECK:             "character": 0,
+#    CHECK:             "line": 1
+#    CHECK:           }
+#    CHECK:         }
+#    CHECK:       }
 #    CHECK:     },
 #    CHECK:     {
 #    CHECK:       "kind": 7,
-#    CHECK:       "label": "RegexMatchError"
+#    CHECK:       "label": "RegexMatchError",
+#    CHECK:       "textEdit": {
+#    CHECK:         "newText": "RegexMatchError",
+#    CHECK:         "range": {
+#    CHECK:           "end": {
+#    CHECK:             "character": 2,
+#    CHECK:             "line": 1
+#    CHECK:           },
+#    CHECK:           "start": {
+#    CHECK:             "character": 0,
+#    CHECK:             "line": 1
+#    CHECK:           }
+#    CHECK:         }
+#    CHECK:       }
 #    CHECK:     },
 #    CHECK:     {
 #    CHECK:       "kind": 7,
-#    CHECK:       "label": "RegexSyntaxError"
+#    CHECK:       "label": "RegexSyntaxError",
+#    CHECK:       "textEdit": {
+#    CHECK:         "newText": "RegexSyntaxError",
+#    CHECK:         "range": {
+#    CHECK:           "end": {
+#    CHECK:             "character": 2,
+#    CHECK:             "line": 1
+#    CHECK:           },
+#    CHECK:           "start": {
+#    CHECK:             "character": 0,
+#    CHECK:             "line": 1
+#    CHECK:           }
+#    CHECK:         }
+#    CHECK:       }
 #    CHECK:     }
 #    CHECK:   ]
 

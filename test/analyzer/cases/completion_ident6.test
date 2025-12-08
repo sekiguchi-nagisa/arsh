@@ -68,15 +68,54 @@
 #    CHECK:   "result": [
 #    CHECK:     {
 #    CHECK:       "kind": 14,
-#    CHECK:       "label": "short"
+#    CHECK:       "label": "short",
+#    CHECK:       "textEdit": {
+#    CHECK:         "newText": "short",
+#    CHECK:         "range": {
+#    CHECK:           "end": {
+#    CHECK:             "character": 1,
+#    CHECK:             "line": 1
+#    CHECK:           },
+#    CHECK:           "start": {
+#    CHECK:             "character": 0,
+#    CHECK:             "line": 1
+#    CHECK:           }
+#    CHECK:         }
+#    CHECK:       }
 #    CHECK:     },
 #    CHECK:     {
 #    CHECK:       "kind": 14,
-#    CHECK:       "label": "stop"
+#    CHECK:       "label": "stop",
+#    CHECK:       "textEdit": {
+#    CHECK:         "newText": "stop",
+#    CHECK:         "range": {
+#    CHECK:           "end": {
+#    CHECK:             "character": 1,
+#    CHECK:             "line": 1
+#    CHECK:           },
+#    CHECK:           "start": {
+#    CHECK:             "character": 0,
+#    CHECK:             "line": 1
+#    CHECK:           }
+#    CHECK:         }
+#    CHECK:       }
 #    CHECK:     },
 #    CHECK:     {
 #    CHECK:       "kind": 14,
-#    CHECK:       "label": "store"
+#    CHECK:       "label": "store",
+#    CHECK:       "textEdit": {
+#    CHECK:         "newText": "store",
+#    CHECK:         "range": {
+#    CHECK:           "end": {
+#    CHECK:             "character": 1,
+#    CHECK:             "line": 1
+#    CHECK:           },
+#    CHECK:           "start": {
+#    CHECK:             "character": 0,
+#    CHECK:             "line": 1
+#    CHECK:           }
+#    CHECK:         }
+#    CHECK:       }
 #    CHECK:     }
 #    CHECK:   ]
 

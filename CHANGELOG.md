@@ -60,6 +60,7 @@
 #### LSP
 
 - correctly index nested named imported symbols
+- put ``textEdit`` field to ``textDocument/completion`` result
 
 #### Module
 

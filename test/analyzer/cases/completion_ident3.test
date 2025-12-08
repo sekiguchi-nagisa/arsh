@@ -32,7 +32,20 @@
 #    CHECK:   "result": [
 #    CHECK:     {
 #    CHECK:       "kind": 14,
-#    CHECK:       "label": "function"
+#    CHECK:       "label": "function",
+#    CHECK:       "textEdit": {
+#    CHECK:         "newText": "function",
+#    CHECK:         "range": {
+#    CHECK:           "end": {
+#    CHECK:             "character": 6,
+#    CHECK:             "line": 0
+#    CHECK:           },
+#    CHECK:           "start": {
+#    CHECK:             "character": 0,
+#    CHECK:             "line": 0
+#    CHECK:           }
+#    CHECK:         }
+#    CHECK:       }
 #    CHECK:     }
 #    CHECK:   ]
 

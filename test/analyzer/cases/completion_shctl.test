@@ -32,15 +32,54 @@
 #    CHECK:   "result": [
 #    CHECK:     {
 #    CHECK:       "kind": 1,
-#    CHECK:       "label": "info"
+#    CHECK:       "label": "info",
+#    CHECK:       "textEdit": {
+#    CHECK:         "newText": "info",
+#    CHECK:         "range": {
+#    CHECK:           "end": {
+#    CHECK:             "character": 7,
+#    CHECK:             "line": 0
+#    CHECK:           },
+#    CHECK:           "start": {
+#    CHECK:             "character": 6,
+#    CHECK:             "line": 0
+#    CHECK:           }
+#    CHECK:         }
+#    CHECK:       }
 #    CHECK:     },
 #    CHECK:     {
 #    CHECK:       "kind": 1,
-#    CHECK:       "label": "is-interactive"
+#    CHECK:       "label": "is-interactive",
+#    CHECK:       "textEdit": {
+#    CHECK:         "newText": "is-interactive",
+#    CHECK:         "range": {
+#    CHECK:           "end": {
+#    CHECK:             "character": 7,
+#    CHECK:             "line": 0
+#    CHECK:           },
+#    CHECK:           "start": {
+#    CHECK:             "character": 6,
+#    CHECK:             "line": 0
+#    CHECK:           }
+#    CHECK:         }
+#    CHECK:       }
 #    CHECK:     },
 #    CHECK:     {
 #    CHECK:       "kind": 1,
-#    CHECK:       "label": "is-sourced"
+#    CHECK:       "label": "is-sourced",
+#    CHECK:       "textEdit": {
+#    CHECK:         "newText": "is-sourced",
+#    CHECK:         "range": {
+#    CHECK:           "end": {
+#    CHECK:             "character": 7,
+#    CHECK:             "line": 0
+#    CHECK:           },
+#    CHECK:           "start": {
+#    CHECK:             "character": 6,
+#    CHECK:             "line": 0
+#    CHECK:           }
+#    CHECK:         }
+#    CHECK:       }
 #    CHECK:     }
 #    CHECK:   ]
 
