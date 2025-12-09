@@ -64,6 +64,24 @@ inline bool isKeyword(StringRef value) { // ignore '<Identifier>'
 struct CompPrefix {
   StringRef compWordToken; // original token (quoted)
   StringRef compWord;      // unquoted
+
+  void removePrefix(size_t prefixSize) {
+    this->compWord.removePrefix(prefixSize);
+
+    // trim comWordToken (quoted)
+    size_t index = 0;
+    for (size_t count = 0; count < prefixSize && index < this->compWordToken.size(); index++) {
+      char ch = this->compWordToken[index];
+      if (ch == '\\' && index + 1 < this->compWordToken.size()) {
+        const char next = this->compWordToken[++index];
+        if (next == '\n') {
+          continue;
+        }
+      }
+      count++;
+    }
+    this->compWordToken = this->compWordToken.substr(index);
+  }
 };
 
 class CodeCompletionContext {
@@ -150,7 +168,7 @@ public:
   }
 
   void addExpectedTokenRequest(std::string &&prefix, TokenKind kind) {
-    TokenKind kinds[] = {kind};
+    const TokenKind kinds[] = {kind};
     this->addExpectedTokenRequests(std::move(prefix), 1, kinds);
   }
 
