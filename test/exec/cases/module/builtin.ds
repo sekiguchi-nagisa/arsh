@@ -76,15 +76,14 @@ assert diff <(complete -d -q -- 'complete -A s' && printf "%s\n" $COMPREPLY) \
 # fg/bg/jobs
 var jj : [Job]
 $jj.add(sleep 1000 &).add( sleep 2000 &).add( sleep 3000 &)
-sleep 0.1
 defer {
     kill -INT $jj
 }
 
 var expected = @(
-    %1 "${$JOB.get('%1')!.pid(0)!} Running  sleep 1000"
-    %2 "${$JOB.get('%2')!.pid(0)!} Running  sleep 2000"
-    %3 "${$JOB.get('%3')!.pid(0)!} Running  sleep 3000"
+    %1 "${$JOB['%1'].pid(0)!} Running  sleep 1000"
+    %2 "${$JOB['%2'].pid(0)!} Running  sleep 2000"
+    %3 "${$JOB['%3'].pid(0)!} Running  sleep 3000"
 )
 assert diff <(complete -d -q -- 'fg ' && printf "%s\n" $COMPREPLY) <(printf "%s@%s\n" $expected)
 assert diff <(complete -d -q -- 'bg ' && printf "%s\n" $COMPREPLY) <(printf "%s@%s\n" $expected)
