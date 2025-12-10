@@ -659,24 +659,25 @@ static void completeParamName(const std::vector<std::string> &paramNames, const 
   }
 }
 
-static CmdArgCompStatus completeCLIArg(StringRef opt, const ArgEntry &entry, StringRef word,
+static CmdArgCompStatus completeCLIArg(StringRef opt, const ArgEntry &entry,
+                                       const CompPrefix &prefix,
                                        ObserverPtr<ForeignCompHandler> comp,
                                        CompCandidateConsumer &consumer) {
   if (entry.getCheckerKind() == ArgEntry::CheckerKind::CHOICE) {
     for (auto &e : entry.getChoice()) {
-      if (StringRef ref = e; ref.startsWith(word)) {
-        consumer(word, CompCandidateKind::COMMAND_ARG, ref);
+      if (StringRef ref = e; ref.startsWith(prefix.compWord)) {
+        consumer(prefix, CompCandidateKind::COMMAND_ARG, ref);
       }
     }
     return CmdArgCompStatus::OK;
   }
   if (auto handle = entry.getCompHandle(); handle && comp) {
-    return comp->callCLIComp(*handle, opt, word, consumer);
+    return comp->callCLIComp(*handle, opt, prefix.compWord, consumer);
   }
   return CmdArgCompStatus::INVALID;
 }
 
-static CmdArgCompStatus completeCLIFlagOrOption(const CLIRecordType &type, const StringRef word,
+static CmdArgCompStatus completeCLIFlagOrOption(const CLIRecordType &type, const CompPrefix &prefix,
                                                 ObserverPtr<ForeignCompHandler> comp,
                                                 CompCandidateConsumer &consumer) {
   for (auto &e : type.getEntries()) {
@@ -689,12 +690,12 @@ static CmdArgCompStatus completeCLIFlagOrOption(const CLIRecordType &type, const
       std::string value;
       value += '-';
       value += e.getShortName();
-      if (StringRef(value).startsWith(word)) {
-        consumer(word, CompCandidateKind::COMMAND_ARG, value);
-      } else if (e.op == OptParseOp::OPT_ARG && word.startsWith(value)) {
-        StringRef arg = word;
-        arg.removePrefix(value.size());
-        return completeCLIArg(value, e, arg, comp, consumer);
+      if (StringRef(value).startsWith(prefix.compWord)) {
+        consumer(prefix, CompCandidateKind::COMMAND_ARG, value);
+      } else if (e.op == OptParseOp::OPT_ARG && prefix.compWord.startsWith(value)) {
+        CompPrefix remain = prefix;
+        remain.removePrefix(value.size());
+        return completeCLIArg(value, e, remain, comp, consumer);
       }
     }
     // long option
@@ -706,11 +707,12 @@ static CmdArgCompStatus completeCLIFlagOrOption(const CLIRecordType &type, const
     if (e.getParseOp() == OptParseOp::HAS_ARG) {
       value += '=';
     }
-    if (StringRef(value).startsWith(word)) {
-      if (value.size() == word.size() && value.back() == '=') { // 'value == word' and '--long='
-        return completeCLIArg(value, e, "", comp, consumer);
+    if (StringRef(value).startsWith(prefix.compWord)) {
+      if (value.size() == prefix.compWord.size() &&
+          value.back() == '=') { // 'value == word' and '--long='
+        return completeCLIArg(value, e, CompPrefix{}, comp, consumer);
       }
-      CompCandidate candidate(word, CompCandidateKind::COMMAND_ARG, value);
+      CompCandidate candidate(prefix, CompCandidateKind::COMMAND_ARG, value);
       if (value.back() == '=') {
         candidate.overrideSuffixSpace(false);
       }
@@ -719,10 +721,10 @@ static CmdArgCompStatus completeCLIFlagOrOption(const CLIRecordType &type, const
       if (value.back() != '=') {
         value += '=';
       }
-      if (word.startsWith(value)) {
-        StringRef arg = word;
-        arg.removePrefix(value.size());
-        return completeCLIArg(value, e, arg, comp, consumer);
+      if (prefix.compWord.startsWith(value)) {
+        CompPrefix remain = prefix;
+        remain.removePrefix(value.size());
+        return completeCLIArg(value, e, remain, comp, consumer);
       }
     }
   }
@@ -750,7 +752,7 @@ static const ArgEntry *resolveArgEntryNeedArg(const CLIRecordType &type, StringR
 
 static CmdArgCompStatus completeCLIOption(const TypePool &pool, const CLIRecordType *cliType,
                                           const CmdNode &cmdNode, unsigned int argOffset,
-                                          const std::string &word,
+                                          const CompPrefix &prefix,
                                           ObserverPtr<ForeignCompHandler> comp,
                                           CompCandidateConsumer &consumer) {
   /**
@@ -795,28 +797,28 @@ static CmdArgCompStatus completeCLIOption(const TypePool &pool, const CLIRecordT
   }
 
   // complete sub-commands
-  if (!lastOpt && !argCount && (word.empty() || word[0] != '-') &&
+  if (!lastOpt && !argCount && (prefix.compWord.empty() || prefix.compWord[0] != '-') &&
       hasFlag(cliType->getAttr(), CLIRecordType::Attr::HAS_SUBCMD)) {
     for (auto &e : cliType->getEntries()) {
       if (!e.isSubCmd()) {
         continue;
       }
-      if (StringRef name(e.getArgName()); name.startsWith(word)) {
-        consumer(word, CompCandidateKind::COMMAND_ARG, name);
+      if (StringRef name(e.getArgName()); name.startsWith(prefix.compWord)) {
+        consumer(prefix, CompCandidateKind::COMMAND_ARG, name);
       }
     }
     return CmdArgCompStatus::OK;
   }
 
   // complete Flag/Option
-  if (!word.empty() && word[0] == '-') {
-    return completeCLIFlagOrOption(*cliType, word, comp, consumer);
+  if (!prefix.compWord.empty() && prefix.compWord[0] == '-') {
+    return completeCLIFlagOrOption(*cliType, prefix, comp, consumer);
   }
 
   // complete optional arg
   if (lastOpt) {
     if (auto *entry = resolveArgEntryNeedArg(*cliType, *lastOpt)) {
-      return completeCLIArg(*lastOpt, *entry, word, comp, consumer);
+      return completeCLIArg(*lastOpt, *entry, prefix, comp, consumer);
     }
   }
   return CmdArgCompStatus::INVALID; // TODO: positional arguments
@@ -880,7 +882,7 @@ static CmdArgCompStatus completeCmdArg(const TypePool &pool, ObserverPtr<Foreign
       }
     }
     if (auto *cliType = resolveCLIType(*curUdcType)) {
-      return completeCLIOption(pool, cliType, cmdNode, offset, ctx.getCompWord(), comp, consumer);
+      return completeCLIOption(pool, cliType, cmdNode, offset, ctx.toCompPrefix(), comp, consumer);
     }
   } else if (curModType) {
     curModType->walkField(pool, udcCandidateConsumer(ctx.toCompPrefix(), consumer, false));

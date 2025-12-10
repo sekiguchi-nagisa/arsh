@@ -100,9 +100,9 @@ assert $COMPREPLY.hasSpace(2)
 assert $COMPREPLY[3] == "--version"
 assert $COMPREPLY.hasSpace(3)
 
-complete -s -- 'fff --c'
+complete -s -- 'fff -\-c'
 assert $COMPREPLY.size() == 1
-assert $COMPREPLY[0] == "--count="
+assert $COMPREPLY[0] == "-\\-count="
 assert ! $COMPREPLY.hasSpace(0)
 
 complete -s -- 'fff --count'
@@ -110,9 +110,9 @@ assert $COMPREPLY.size() == 1
 assert $COMPREPLY[0] == "--count="
 assert ! $COMPREPLY.hasSpace(0)
 
-complete -s -- 'fff --d'
+complete -s -- 'fff --\d\'
 assert $COMPREPLY.size() == 1
-assert $COMPREPLY[0] == "--dump"
+assert $COMPREPLY[0] == "--\\d\\ump"
 assert $COMPREPLY.hasSpace(0)
 
 complete -s -- 'fff --dump'
@@ -129,8 +129,8 @@ assert diff <(complete -- 'fff --dump=') <(complete -A file)
 assert diff <(complete -- 'fff --fajjaiae ') <(complete -A file)  # complete file names after invalid option
 
 ## complete via user-defined func
-assert diff <(complete -- 'fff bbb1 -v --count ') <(printf "%s\n" 111 123 1234 222 )
-assert diff <(complete -- 'fff bbb1 --count=') <(printf "%s\n" 111 123 1234 222 )
+assert diff <(complete -- 'fff bbb1 -v --c\ount ') <(printf "%s\n" 111 123 1234 222 )
+assert diff <(complete -- 'fff bbb1 -\-count=') <(printf "%s\n" 111 123 1234 222 )
 assert diff <(complete -- 'fff bbb1 -c 12') <(printf "%s\n" 123 1234 )
 assert diff <(complete -- 'fff bbb1 --count 12') <(printf "%s\n" 123 1234 )
 assert diff <(complete -- 'fff bbb1 --count=2') <(printf "%s\n" 222)
@@ -155,8 +155,10 @@ assert ($ex as InvalidOperationError).message() == 'EEER'
 
 ## complete choice
 assert diff <(complete -- 'fff bbb1 --log=') <(printf "%s\n" debug error info warn)
+assert diff <(complete -- 'fff bbb1 \--l\og=') <(printf "%s\n" debug error info warn)
 assert diff <(complete -- 'fff bbb1 --log i') <(printf "%s\n" info)
 assert diff <(complete -- 'fff bbb1 -ss') <(printf "%s\n" stderr stdin stdout)
+assert diff <(complete -- 'fff bbb1 -\ss\t') <(printf "%s\n" 's\tderr' 's\tdin' 's\tdout')
 assert diff <(complete -- 'fff bbb1 -s ') <(complete -A file) # fallback
 assert diff <(complete -- 'fff bbb1 "--log" info --stream=stde') <(printf "%s\n" stderr)
 # assert diff <(complete -- 'fff bbb1 --log=info --stream=stde') <(printf "%s\n" stderr)
@@ -166,7 +168,8 @@ assert diff <(complete -- 'fff bbb1 --stream ') <(complete -A file) # fallback
 assert diff <(complete -- 'fff ') <(echo 'bbb1' && echo bbb2)
 assert diff <(complete -- 'fff b')  <(echo 'bbb1' && echo bbb2)
 assert diff <(complete -- 'fff bbb1 ')  <(echo 'ccc')
-assert diff <(complete -- 'fff bbb1 c')  <(echo 'ccc')
+assert diff <(complete -- 'fff bb\b1 c')  <(echo 'ccc')
+assert diff <(complete -- 'fff bbb1 c\')  <(echo 'c\cc')
 assert diff <(complete -- 'fff bbb1 ccc ')  <(complete -A file)  # if word is empty and no sub-commands
 
 
