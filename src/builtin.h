@@ -1193,6 +1193,14 @@ ARSH_METHOD string_quote(RuntimeContext &ctx) {
   RET(Value::createStr(std::move(ret)));
 }
 
+//!bind: function dequote($this : String) : String
+ARSH_METHOD string_dequote(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(string_dequote);
+  auto ref = LOCAL(0).asStrRef();
+  auto ret = unquoteCmdArgLiteral(ref, true);
+  RET(Value::createStr(std::move(ret)));
+}
+
 // ########################
 // ##     StringIter     ##
 // ########################

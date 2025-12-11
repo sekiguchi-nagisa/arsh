@@ -15,6 +15,8 @@
     - complete and show search filter via ``complete-backward`` edit action
     - enable/disable search filter via ``toggle-search`` edit action
     - ignore unbound escape sequences and edit actions in search filter mode
+- add ``String#dequote`` method. de-quote string as command argument literal
+    - unlike ``String#quote``, only remove backslash characters
 
 #### Misc
 

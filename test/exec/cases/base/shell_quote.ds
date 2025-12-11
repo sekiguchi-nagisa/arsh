@@ -25,3 +25,18 @@ $assertQuote($'\xFE', "$'\\xfe'")
 $assertQuote('`echo hello`', '\`echo\ hello\`')
 $assertQuote('echo &!', 'echo\ \&\!')
 $assertQuote('[,]', '\[,\]')
+
+# for dequote
+assert "".dequote() == ""
+assert " ".dequote() == " "
+assert $'\0'.dequote() == $'\0'
+assert 'あ'.dequote() == 'あ'
+assert $'\xFF\xFF'.dequote() == $'\xFF\xFF'
+assert '\'.dequote() == '\'
+assert '\1'.dequote() == '1'
+assert '\ '.dequote() == ' '
+assert '\\'.dequote() == '\'
+assert '\"'.dequote() == '"'
+assert $'h\$ello\\\nworld'.dequote() == 'h$elloworld'
+assert $'hello\\\tworld'.dequote() == $'hello\tworld'
+assert $'hello\\\n\nworld'.dequote() == $'hello\nworld'

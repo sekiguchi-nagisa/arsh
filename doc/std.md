@@ -198,6 +198,8 @@ function upper(): String for String
 function foldCase(full: Bool?, turkic: Bool?): String for String
 
 function quote(): String for String
+
+function dequote(): String for String
 ```
 
 ## FD type
