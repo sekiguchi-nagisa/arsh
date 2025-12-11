@@ -672,7 +672,7 @@ static CmdArgCompStatus completeCLIArg(StringRef opt, const ArgEntry &entry,
     return CmdArgCompStatus::OK;
   }
   if (auto handle = entry.getCompHandle(); handle && comp) {
-    return comp->callCLIComp(*handle, opt, prefix.compWord, consumer);
+    return comp->callCLIComp(*handle, opt, prefix, consumer);
   }
   return CmdArgCompStatus::INVALID;
 }

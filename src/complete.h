@@ -164,7 +164,8 @@ struct ForeignCompHandler {
                                                unsigned int offset, const ModType *cmdModType,
                                                CompCandidateConsumer &consumer) = 0;
 
-  virtual CmdArgCompStatus callCLIComp(const FuncHandle &handle, StringRef opt, StringRef word,
+  virtual CmdArgCompStatus callCLIComp(const FuncHandle &handle, StringRef opt,
+                                       const CompPrefix &prefix,
                                        CompCandidateConsumer &consumer) = 0;
 
   virtual void completeDynamicUdc(const std::string &word, CompCandidateConsumer &consumer) = 0;

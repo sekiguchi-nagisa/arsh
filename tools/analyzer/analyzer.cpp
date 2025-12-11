@@ -463,7 +463,7 @@ struct DummyForeignCompHandler : ForeignCompHandler {
     return CmdArgCompStatus::OK;
   }
 
-  CmdArgCompStatus callCLIComp(const FuncHandle &, StringRef, StringRef,
+  CmdArgCompStatus callCLIComp(const FuncHandle &, StringRef, const CompPrefix &,
                                CompCandidateConsumer &) override {
     return CmdArgCompStatus::INVALID;
   }

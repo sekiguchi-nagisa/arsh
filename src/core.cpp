@@ -529,13 +529,8 @@ static Value createArgv(const ARState &state, unsigned int tempModIndex,
   }
 
   // add last arg
-  if (auto &word = ctx.getCompWord(); !word.empty()) {
-    std::string actual;
-    if (!hasFlag(ctx.getFallbackOp(), CodeCompOp::TILDE) && StringRef(word).startsWith("~")) {
-      actual += "\\";
-    }
-    actual += word;
-    values.push_back(Value::createStr(std::move(actual)));
+  if (auto word = ctx.toCompPrefix().compWordToken; !word.empty()) {
+    values.push_back(Value::createStr(word));
   }
 
   return Value::create<ArrayObject>(state.typePool.get(TYPE::StringArray), std::move(values));
@@ -659,14 +654,14 @@ public:
                         static_cast<DefaultCompConsumer &>(consumer));
   }
 
-  CmdArgCompStatus callCLIComp(const FuncHandle &handle, StringRef opt, StringRef word,
+  CmdArgCompStatus callCLIComp(const FuncHandle &handle, StringRef opt, const CompPrefix &prefix,
                                CompCandidateConsumer &consumer) override {
     auto func = this->state.tryToGetGlobal(handle.getIndex());
     if (!func) { // maybe uninitialized
       return CmdArgCompStatus::INVALID;
     }
     return callCompCallback(this->state, std::move(func),
-                            makeArgs(Value::createStr(opt), Value::createStr(word)),
+                            makeArgs(Value::createStr(opt), Value::createStr(prefix.compWordToken)),
                             static_cast<DefaultCompConsumer &>(consumer));
   }
 
