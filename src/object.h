@@ -152,6 +152,19 @@ struct ObjectRefCount {
 template <typename T>
 using ObjPtr = IntrusivePtr<T, ObjectRefCount>;
 
+template <typename T, typename... Arg>
+struct ObjectConstructor {
+  static Object *construct(Arg &&...arg) { return new T(std::forward<Arg>(arg)...); }
+};
+
+template <typename T, typename... A>
+ObjPtr<T> createObject(A &&...args) {
+  static_assert(std::is_base_of_v<Object, T>, "must be subtype of Object");
+
+  return ObjPtr<T>(
+      static_cast<T *>(ObjectConstructor<T, A...>::construct(std::forward<A>(args)...)));
+}
+
 class IntObject : public ObjectWithRtti<ObjectKind::Int> {
 private:
   const int64_t value;
@@ -196,6 +209,23 @@ public:
    * @param v
    */
   void unsafeAppend(StringRef v) { this->value += v; }
+
+  /**
+   * unsafe api. not directly use it
+   * @param v
+   */
+  void unsafeAssign(std::string &&v) { this->value = std::move(v); }
+
+  ObjPtr<StringObject> tryToAssign(std::string &&v) {
+    ObjPtr<StringObject> obj;
+    if (this->getRefcount() > 1) {
+      obj = createObject<StringObject>(std::move(v));
+    } else {
+      this->value = std::move(v); // overwrite
+      obj = ObjPtr<StringObject>(this);
+    }
+    return obj;
+  }
 };
 
 enum class StackGuardType : unsigned char {
@@ -235,11 +265,6 @@ struct RawValue {
   using TValue = TaggedValue<ValueTag>;
 
   TValue tv;
-};
-
-template <typename T, typename... Arg>
-struct ObjectConstructor {
-  static Object *construct(Arg &&...arg) { return new T(std::forward<Arg>(arg)...); }
 };
 
 class GraphemeCluster;
@@ -383,9 +408,10 @@ public:
 
   bool hasType(unsigned int id) const { return this->getTypeID() == id; }
 
+  bool isSmallStr() const { return this->tv.hasTag(ValueTag::STRING); }
+
   bool hasStrRef() const {
-    return this->tv.hasTag(ValueTag::STRING) ||
-           (this->isObject() && this->get()->getKind() == ObjectKind::String);
+    return this->isSmallStr() || (this->isObject() && this->get()->getKind() == ObjectKind::String);
   }
 
   unsigned int asNum() const {
@@ -640,14 +666,6 @@ ObjPtr<T> toObjPtr(Value &&value) noexcept {
   auto ret = toObjPtr<T>(value);
   value.reset();
   return ret;
-}
-
-template <typename T, typename... A>
-ObjPtr<T> createObject(A &&...args) {
-  static_assert(std::is_base_of_v<Object, T>, "must be subtype of Object");
-
-  return ObjPtr<T>(
-      static_cast<T *>(ObjectConstructor<T, A...>::construct(std::forward<A>(args)...)));
 }
 
 enum class ConcatOp : unsigned char {

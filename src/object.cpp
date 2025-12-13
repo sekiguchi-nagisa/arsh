@@ -75,7 +75,7 @@ unsigned int Value::getTypeID() const {
 
 StringRef Value::asStrRef() const {
   assert(this->hasStrRef());
-  if (this->tv.hasTag(ValueTag::STRING)) {
+  if (this->isSmallStr()) {
     return {this->tv.data(), this->tv.size()};
   }
   auto &obj = typeAs<StringObject>(*this);
@@ -138,7 +138,7 @@ int Value::compare(ARState &state, const Value &o) const {
 bool Value::appendAsStr(ARState &state, StringRef value) {
   assert(this->hasStrRef());
 
-  const bool small = this->tv.hasTag(ValueTag::STRING);
+  const bool small = this->isSmallStr();
   const size_t size = small ? this->tv.size() : typeAs<StringObject>(*this).size();
   if (unlikely(size > StringObject::MAX_SIZE - value.size())) {
     raiseStringLimit(state);

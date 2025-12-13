@@ -17,6 +17,7 @@
     - ignore unbound escape sequences and edit actions in search filter mode
 - add ``String#dequote`` method. de-quote string as command argument literal
     - unlike ``String#quote``, only remove backslash characters
+- add ``Candidates#quote`` method for manually quote candidates
 
 #### Misc
 

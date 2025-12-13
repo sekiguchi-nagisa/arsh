@@ -38,10 +38,12 @@ private:
 public:
   static constexpr size_t MAX_SIZE = SYS_LIMIT_STRING_MAX;
 
+  static bool checkAllocSize(const size_t canSize, const size_t descSize) {
+    return canSize < MAX_SIZE && descSize < MAX_SIZE && canSize + 1 <= MAX_SIZE - descSize;
+  }
+
   static ObjPtr<CandidateObject> create(const StringRef candidate, const StringRef description) {
-    assert(candidate.size() < MAX_SIZE);
-    assert(description.size() < MAX_SIZE);
-    assert(candidate.size() + 1 <= MAX_SIZE - description.size());
+    assert(checkAllocSize(candidate.size(), description.size()));
     const unsigned int allocSize = candidate.size() + description.size() + 1;
     void *ptr = operator new(sizeof(CandidateObject) + (sizeof(char) * allocSize));
     auto *obj = new (ptr) CandidateObject(candidate, description);
@@ -91,15 +93,16 @@ struct CandidateAttr {
 };
 
 class CandidatesObject : public ObjectWithRtti<ObjectKind::Candidates> {
-private:
+public:
+  static constexpr size_t MAX_SIZE = SYS_LIMIT_ARRAY_MAX;
+
   using Entry = std::pair<Value, CandidateAttr>;
 
+private:
   std::vector<Entry> entries; // must be String or Candidate
   const bool sorting;
 
 public:
-  static constexpr size_t MAX_SIZE = SYS_LIMIT_ARRAY_MAX;
-
   explicit CandidatesObject(bool sorting = true)
       : ObjectWithRtti(TYPE::Candidates), sorting(sorting) {}
 
@@ -170,10 +173,21 @@ public:
    */
   StringRef resolveCommonPrefixStr() const;
 
+  /**
+   * quote each candidate.
+   *
+   * ex. -\-h => [ --hey, --help ]  => [ -\-hey, -\-help ]
+   * @param quotedWord must be quoted
+   */
+  void quote(StringRef quotedWord);
+
+  static bool isCandidateObj(const Value &v) {
+    return v.isObject() && isa<CandidateObject>(v.get());
+  }
+
 private:
   static StringRef toStrRef(const Value &v) {
-    return v.isObject() && isa<CandidateObject>(v.get()) ? typeAs<CandidateObject>(v).candidate()
-                                                         : v.asStrRef();
+    return isCandidateObj(v) ? typeAs<CandidateObject>(v).candidate() : v.asStrRef();
   }
 
   bool add(ARState &state, Value &&value, CandidateAttr attr);

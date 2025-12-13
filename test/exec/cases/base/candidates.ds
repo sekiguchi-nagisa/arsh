@@ -70,6 +70,33 @@ assert ! $can3.hasSpace(1)
 $can3.add('echo\\\\\ ') # escape last space
 assert $can3.hasSpace(2)
 
+## quote
+var can4 = new Candidates()
+$can4.add('llvm1=', $space:0)
+$can4.add('llvm2/', 'this is a dummy', $space:0)
+$can4.add('ll 23', 'hey', $space:1)
+$can4.quote("")
+assert $can4.size() == 3
+assert @($can4) == @('llvm1=' 'llvm2/@this is a dummy' 'll\ 23@hey')
+assert !$can4.hasSpace(0)
+assert !$can4.hasSpace(1)
+assert $can4.hasSpace(2)
+
+$can4 = new Candidates(@('llvm1=' 'llvm2/' 'll 23' 'll\23'))
+$can4.quote();
+assert $can4.size() == 4
+assert @($can4) == @('llvm1=' 'llvm2/' 'll\ 23' 'll\\23')
+
+$can4 = new Candidates(@('llvm1=' 'llvm2/' 'll 23' 'll\23'))
+$can4.quote('--output=\l\l')
+assert $can4.size() == 4
+assert @($can4) == @('\l\lvm1=' '\l\lvm2/' '\l\l\ 23' '\l\l\\23')
+
+$can4 = new Candidates(@('llvm1=' 'llvm2/' 'll 23' 'll\23'))
+$can4.quote('--output=\ll\')  # not overlapped
+assert $can4.size() == 4
+assert @($can4) == @('llvm1=' 'llvm2/' 'll\ 23' 'll\\23')
+
 ## too large candidates
 printf -v var "%*s" 2147483640 aa
 let large = $reply.remove('var')!

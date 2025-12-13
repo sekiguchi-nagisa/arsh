@@ -16,6 +16,7 @@
 
 #include "candidates.h"
 #include "core.h"
+#include "format_util.h"
 #include "misc/unicode.hpp"
 
 namespace arsh {
@@ -39,9 +40,7 @@ bool CandidatesObject::addNewCandidate(ARState &state, Value &&candidate, Value 
 
 bool CandidatesObject::addNewCandidateWith(ARState &state, StringRef candidate,
                                            StringRef description, const CandidateAttr attr) {
-  if (likely(candidate.size() < CandidateObject::MAX_SIZE &&
-             description.size() < CandidateObject::MAX_SIZE &&
-             candidate.size() + 1 <= CandidateObject::MAX_SIZE - description.size())) {
+  if (likely(CandidateObject::checkAllocSize(candidate.size(), description.size()))) {
     Value value = CandidateObject::create(candidate, description);
     return this->add(state, std::move(value), attr);
   }
@@ -71,11 +70,13 @@ static StringRef toDescription(const CandidateAttr::Kind kind) {
   return "";
 }
 
+static size_t toDescriptionSize(const CandidateAttr::Kind kind) {
+  return toDescription(kind).size();
+}
+
 bool CandidatesObject::addNewCandidateFrom(ARState &state, std::string &&candidate,
                                            const CandidateAttr attr) {
-  const auto descSize = toDescription(attr.kind).size(); // dummy
-  if (likely(candidate.size() < StringObject::MAX_SIZE && descSize < StringObject::MAX_SIZE &&
-             candidate.size() + 1 <= StringObject::MAX_SIZE - descSize)) {
+  if (likely(CandidateObject::checkAllocSize(candidate.size(), toDescriptionSize(attr.kind)))) {
     return this->add(state, Value::createStr(std::move(candidate)), attr);
   }
   raiseError(state, TYPE::OutOfRangeError, "candidate size reaches limit");
@@ -146,6 +147,85 @@ StringRef CandidatesObject::resolveCommonPrefixStr() const {
     }
   }
   return {begin, static_cast<size_t>(iter - begin)};
+}
+
+/**
+ * ex. quotedWord: `--cmd=l\l`, candidatePrefix: `llvm-`
+ * => ret: (`l\l`, `ll`)
+ * @param quotedWord
+ * @param candidatePrefix
+ * @return
+ */
+static CompPrefix resolveQuotedCandidatePrefix(const StringRef quotedWord,
+                                               const StringRef candidatePrefix) {
+  const std::string word = unquoteCmdArgLiteral(quotedWord, true);
+  /*
+   * compute suffix overlapped with candidate prefix
+   *
+   * ex. word: --cmd=ll, prefix: llvm-
+   * => suffix: ll (offset: 6)
+   */
+  bool matched = false;
+  size_t wordSuffixOffset = word.size() - std::min(word.size(), candidatePrefix.size());
+  for (; wordSuffixOffset < word.size(); wordSuffixOffset++) {
+    auto wordSuffix = StringRef(word).substr(wordSuffixOffset);
+    if (candidatePrefix.startsWith(wordSuffix)) {
+      matched = true;
+      break;
+    }
+  }
+  if (!matched) {
+    return {};
+  }
+
+  const size_t wordSuffixSize = StringRef(word).substr(wordSuffixOffset).size();
+  const StringRef canPrefix = candidatePrefix.substr(0, wordSuffixSize);
+  CompPrefix prefix{
+      .compWordToken = quotedWord,
+      .compWord = word,
+  };
+  prefix.removePrefix(wordSuffixOffset);
+  assert(prefix.compWord == canPrefix);
+  prefix.compWord = canPrefix; // due to prevent dangling reference
+  return prefix;
+}
+
+static void replaceCandidate(CandidatesObject::Entry &entry, std::string &&replaced) {
+  if (entry.first.hasStrRef() &&
+      CandidateObject::checkAllocSize(replaced.size(), toDescriptionSize(entry.second.kind))) {
+    if (replaced.size() <= Value::TValue::MAX_STR_SIZE || entry.first.isSmallStr()) {
+      entry.first = Value::createStr(std::move(replaced));
+    } else {
+      entry.first = typeAs<StringObject>(entry.first).tryToAssign(std::move(replaced));
+    }
+  } else if (CandidatesObject::isCandidateObj(entry.first) &&
+             CandidateObject::checkAllocSize(
+                 replaced.size(), typeAs<CandidateObject>(entry.first).descriptionSize())) {
+    entry.first =
+        CandidateObject::create(replaced, typeAs<CandidateObject>(entry.first).description());
+  }
+}
+
+void CandidatesObject::quote(const StringRef quotedWord) {
+  /**
+   * allocate std::string due to prevent dangling reference
+   * (original reference will be modified below)
+   */
+  const std::string candidatePrefix = this->resolveCommonPrefixStr().toString();
+  const CompPrefix prefix = resolveQuotedCandidatePrefix(quotedWord, candidatePrefix);
+
+  // modify original candidate (apply quoting)
+  const unsigned int size = this->size();
+  for (unsigned int i = 0; i < size; i++) {
+    const StringRef can = this->getCandidateAt(i);
+    assert(prefix.compWord.size() <= can.size());
+    std::string replaced = prefix.compWordToken.toString();
+    quoteAsCmdOrShellArg(can.substr(prefix.compWord.size()), replaced, false);
+    if (can != replaced) {
+      assert(replaced.size() > can.size());
+      replaceCandidate(this->entries[i], std::move(replaced));
+    }
+  }
 }
 
 bool CandidatesObject::add(ARState &state, Value &&value, CandidateAttr attr) {

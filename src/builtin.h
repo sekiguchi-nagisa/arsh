@@ -2839,6 +2839,15 @@ ARSH_METHOD candidates_addAll(RuntimeContext &ctx) {
   RET(LOCAL(0));
 }
 
+//!bind: function quote($this: Candidates, $quoted: Option<String>) : Void
+ARSH_METHOD candidates_quote(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(candidates_quote);
+  auto &obj = typeAs<CandidatesObject>(LOCAL(0));
+  const StringRef quotedWord = LOCAL(1).isInvalid() ? "" : LOCAL(1).asStrRef();
+  obj.quote(quotedWord);
+  RET_VOID;
+}
+
 } // namespace arsh
 
 #endif // ARSH_BUILTIN_H
