@@ -38,7 +38,7 @@ bool Pipe::open() {
 PipelineObject::~PipelineObject() { this->syncStatusAndDispose(true); }
 
 Job PipelineObject::syncStatusAndDispose(bool duringUnwind) {
-  LOG(DUMP_WAIT, "during unwind: %s", duringUnwind ? "true" : "false");
+  LOG(TRACE_JOB, "during unwind: %s", duringUnwind ? "true" : "false");
   if (!this->entry) {
     return nullptr;
   }

@@ -27,7 +27,8 @@
   E(DUMP_WAIT)                                                                                     \
   E(DUMP_TCSETPGRP)                                                                                \
   E(TRACE_MODULE)                                                                                  \
-  E(TRACE_EDIT)
+  E(TRACE_EDIT)                                                                                    \
+  E(TRACE_JOB)
 
 namespace arsh {
 

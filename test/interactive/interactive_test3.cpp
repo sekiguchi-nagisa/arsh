@@ -122,6 +122,7 @@ TEST_F(InteractiveTest, lastpipe_ctrlc1) {
     this->addEnv("ARSH_APPENDER", logName);
     this->addEnv("ARSH_DUMP_WAIT", "on");
     this->addEnv("ARSH_DUMP_TCSETPGRP", "on");
+    this->addEnv("ARSH_TRACE_JOB", "on");
   }
   this->invoke("--quiet", "--norc");
 

@@ -194,7 +194,7 @@ WaitResult waitForProc(const pid_t pid, const WaitOp op) {
     break;
   }
 
-  LOG(DUMP_WAIT, "before waitpid(%d, %s)", pid, toString(op));
+  LOG(DUMP_WAIT, "call waitpid(%d, %s)", pid, toString(op));
 
   int status = 0;
   errno = 0;
@@ -209,7 +209,7 @@ WaitResult waitForProc(const pid_t pid, const WaitOp op) {
   }
 
   // dump waitpid status
-  LOG(DUMP_WAIT, "waitpid(%d, %s) = (%s)", pid, toString(op), toString(ret).c_str());
+  LOG(DUMP_WAIT, "return waitpid(%d, %s) = (%s)", pid, toString(op), toString(ret).c_str());
 
   errno = errNum; // NOLINT
   return ret;
@@ -602,7 +602,7 @@ static const Proc *findLastStopped(const Job &job) {
 }
 
 int JobTable::waitForJob(const Job &job, WaitOp op, bool suppressNotify) {
-  LOG(DUMP_WAIT, "@@enter op: %s", toString(op));
+  LOG(TRACE_JOB, "@@enter op: %s", toString(op));
   if (job && !job->isAvailable()) {
     return job->wait(op);
   }
@@ -751,11 +751,11 @@ void JobTable::removeTerminatedJobs() {
     this->curPrevJobs.prev = nullptr;
   }
 
-  LOG(DUMP_WAIT, "toplevelLastPipeJob, state=%d",
+  LOG(TRACE_JOB, "toplevelLastPipeJob, state=%d",
       this->toplevelLastPipeJob ? toUnderlying(this->toplevelLastPipeJob->state()) : -1);
   if (this->toplevelLastPipeJob && this->toplevelLastPipeJob->isTerminated()) {
     assert(this->toplevelLastPipeJob->isGrouped());
-    LOG(DUMP_WAIT, "remove toplevelLastPipeJob and switch back to foreground");
+    LOG(TRACE_JOB, "remove toplevelLastPipeJob and switch back to foreground");
     beForeground(this->getProcTable().getTTYFd(), 0);
     this->toplevelLastPipeJob = nullptr;
   }
