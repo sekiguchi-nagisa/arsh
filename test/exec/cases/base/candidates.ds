@@ -93,9 +93,9 @@ assert $can4.size() == 4
 assert @($can4) == @('\l\lvm1=' '\l\lvm2/' '\l\l\ 23' '\l\l\\23')
 
 $can4 = new Candidates(@('llvm1=' 'llvm2/' 'll 23' 'll\23'))
-$can4.quote('--output=\ll\')  # not overlapped
+$can4.quote('--output=\ll\')
 assert $can4.size() == 4
-assert @($can4) == @('llvm1=' 'llvm2/' 'll\ 23' 'll\\23')
+assert @($can4) == @('\ll\vm1=' '\ll\vm2/' '\ll\ 23' '\ll\\23')
 
 ## too large candidates
 printf -v var "%*s" 2147483640 aa

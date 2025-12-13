@@ -390,8 +390,12 @@ INIT:
     <CMD> ">("               { PUSH_MODE_SKIP_NL(STMT); RET(START_IN_SUB); }
     <CMD> "<("               { PUSH_MODE_SKIP_NL(STMT); RET(START_OUT_SUB); }
 
-    <CMD> NEW_LINE           { UPDATE_LN(); if(!SKIPPABLE_NL()) { MODE(STMT); CHECK_HERE();
-                               RET_NEW_LINE(); } else { CHECK_HERE(); FIND_NEW_LINE(); } }
+    <CMD> NEW_LINE           { UPDATE_LN();
+                               if(!SKIPPABLE_NL()) { MODE(STMT); CHECK_HERE(); RET_NEW_LINE(); }
+                               else { CHECK_HERE(); FIND_NEW_LINE(); } }
+    <CMD> "\\" [\n]          { UPDATE_LN();
+                               if(this->inCompletionPoint()) { RET_OR_COMP(CMD_ARG_PART); }
+                               else { STORE_COMMENT(); SKIP(); } }
 
     <TYPE> "Func"            { RET_OR_COMP(FUNC); }
     <TYPE> "typeof"          { RET_OR_COMP(TYPEOF); }
@@ -429,7 +433,7 @@ INIT:
                                STORE_COMMENT(); SKIP(); }
     <STMT,EXPR,NAME,CMD,TYPE,PARAM,ATTR> [ \t]+
                              { FIND_SPACE(); }
-    <STMT,EXPR,NAME,CMD,TYPE,PARAM,ATTR> "\\" [\n]
+    <STMT,EXPR,NAME,TYPE,PARAM,ATTR> "\\" [\n]
                              { UPDATE_LN(); STORE_COMMENT(); SKIP(); }
 
     <STMT,CMD> UNCLOSED_STRING_LITERAL / "\000"

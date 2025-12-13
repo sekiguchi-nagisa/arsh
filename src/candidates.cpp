@@ -220,7 +220,8 @@ void CandidatesObject::quote(const StringRef quotedWord) {
     const StringRef can = this->getCandidateAt(i);
     assert(prefix.compWord.size() <= can.size());
     std::string replaced = prefix.compWordToken.toString();
-    quoteAsCmdOrShellArg(can.substr(prefix.compWord.size()), replaced, false);
+    quoteAsCmdOrShellArg(can.substr(prefix.compWord.size()), replaced,
+                         {.asCmd = false, .carryBackslash = prefix.carryBackslash()});
     if (can != replaced) {
       assert(replaced.size() > can.size());
       replaceCandidate(this->entries[i], std::move(replaced));

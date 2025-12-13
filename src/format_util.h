@@ -27,25 +27,42 @@ int vformatTo(std::string &out, const char *fmt, va_list arg);
 
 int formatTo(std::string &out, const char *fmt, ...) __attribute__((format(printf, 2, 3)));
 
+struct QuoteParam {
+  bool asCmd;
+  bool carryBackslash;
+};
+
 /**
  * quote string that can be reused in command name or command argument.
  * unlike lexer definition, if contains unprintable characters or invalid utf8 sequence,
- * convert to hex notation even if command name (asCmd is true)
+ * convert to hex notation even if a command name (asCmd is true)
  * @param ref
  * @param out
- * @param asCmd
- * quote as command name
+ * @param param
  * @return
  * if contains unprintable characters or invalid utf8 sequences, return false
  * otherwise, return true
  */
-bool quoteAsCmdOrShellArg(StringRef ref, std::string &out, bool asCmd);
+bool quoteAsCmdOrShellArg(StringRef ref, std::string &out, QuoteParam param);
+
+inline bool quoteAsCmdOrShellArg(StringRef ref, std::string &out, bool asCmd) {
+  return quoteAsCmdOrShellArg(ref, out, {.asCmd = asCmd, .carryBackslash = false});
+}
 
 inline std::string quoteAsShellArg(StringRef ref) {
   std::string ret;
   quoteAsCmdOrShellArg(ref, ret, false);
   return ret;
 }
+
+/**
+ * unquote command/command-argument literal
+ * @param ref
+ * @param unescape
+ * normally true
+ * @return
+ */
+std::string unquoteCmdArgLiteral(StringRef ref, bool unescape);
 
 /**
  * convert to printable string

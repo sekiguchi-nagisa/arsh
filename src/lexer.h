@@ -20,6 +20,7 @@
 #include <cstdint>
 #include <cstdlib>
 
+#include "format_util.h"
 #include "misc/lexer_base.hpp"
 #include "token_kind.h"
 
@@ -104,15 +105,6 @@ public:
 
 template <>
 struct allow_enum_bitop<HereDocState::Attr> : std::true_type {};
-
-/**
- * unquote command/command-argument literal
- * @param ref
- * @param unescape
- * normally true
- * @return
- */
-std::string unquoteCmdArgLiteral(StringRef ref, bool unescape);
 
 class Lexer : public LexerBase, public RefCount<Lexer> {
 private:

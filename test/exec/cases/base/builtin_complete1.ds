@@ -188,15 +188,34 @@ function assertArray2(expect: [String], actual: Candidates) {
     $assertArray($expect, $aa)
 }
 
+let tmpdir = "$(mktemp -d)"
+assert $? == 0
+defer {
+    rm -rf $tmpdir
+}
+(pushd $tmpdir && 
+    touch ' hey ' && 
+    touch '\@@' && 
+    touch '~hoge' && 
+    touch AAA && 
+    mkdir $'\n$$' && 
+    popd) || throw new Error('failed')
+
 $assertArray($(file '/bin' 1), $(complete '/bin/'))
 $assertArray($(file '/usr/bin/' 1), $(complete '/usr/bin/'))
 $assertArray($(file '.' 1), $(complete './'))
-$assertArray($(file '.' 1 | for line in $STDIN { echo "\\$line"; }), $(complete './\')) # escaped
+$assertArray($(file '.' 1 | for line in $STDIN { echo ${ $line.startsWith("\\") ? $line : "\\$line" }; }), 
+                $(complete './\')) # escaped
+$assertArray(["\$'\\x0a'\\\$\\\$/"], $(cd $tmpdir && complete './')) # escaped
+$assertArray(["\\\$'\\x0a'\\\$\\\$/"], $(cd $tmpdir && complete './\')) # escaped
 $assertArray2($map($(file '.' 1), function(s)=> $'\\\n' + $s), {complete ${'./\' + $'\n'} &>> /dev/null; $COMPREPLY;}) # escaped
 $assertArray($(file '.'), $(complete 'echo '))
 $assertArray($(file '.'), $(complete 'echo hoge '))
 $assertArray($(file '.'), $(complete 'echo hoge 34 '))
-$assertArray($(file '.' | for line in $STDIN { printf "\\%s\n" $line; }), $(complete 'echo hoge 34 ./\')) # escaped
+$assertArray($(file '.' | for line in $STDIN { echo ${ $line.startsWith("\\") ? $line : "\\$line" }; } | sort), 
+                $(complete 'echo hoge 34 ./\')) # escaped
+$assertArray(["\\\$'\\x0a'\\\$\\\$/", '\ hey\ ', '\\@@', '\~hoge', '\AAA'].sort(), 
+                $(cd $tmpdir && complete 'echo hey ./\')) # escaped
 $assertArray2($map($(file '.'), function(s)=> $'\\\n' + $s), {complete ${'echo hoge 34 ./\' + $'\n'} &>>/dev/null; $COMPREPLY;}) # escaped
 $assertArray(['b\in/'], $(complete 'echo hoge 34 /\usr/b\i'))  # escaped
 $assertArray($(file '.'), $(complete 'echo hoge 34='))
@@ -206,10 +225,15 @@ $assertArray(new [String](), $(complete 'echo if\=./'))
 $assertArray(new [String](), $(complete 'echo =./'))
 $assertArray(new [String](), $(complete 'echo ='))
 $assertArray($(file '.'), $(complete $'echo \\\n  ./'))
-$assertArray($(file '.'), $(complete 'echo \'))
+$assertArray($(file '.' | for line in $STDIN { echo ${ $line.startsWith("\\") ? $line : "\\$line" }; } | sort),
+                 $(complete 'echo \')) # escaped
+$assertArray(["\\\$'\\x0a'\\\$\\\$/", '\ hey\ ', '\\@@', '\~hoge', '\AAA'].sort(), 
+                $(cd $tmpdir && complete 'echo hey \')) # escaped
 $assertArray($(ls -pa . | grep '^\.' | sort | uniq), $(complete 'echo .'))
 $assertArray($(file '/' | grep '^b'), $(complete 'echo /b'))
 $assertArray($(file '/' | grep '^b'), $(complete 'echo if=/b'))
+$assertArray(["\\\$'\\x0a'\\\$\\\$/", '\ hey\ ', '\\@@', '\~hoge', '\AAA'].sort(), 
+                $(cd $tmpdir && complete 'echo if=\')) # escaped
 $assertArray($(file '/usr/bin'), $(complete 'echo > /usr/bin/'))
 $assertArray(['b\in/'], $(complete 'echo > /us\r\/b\i'))  # escaped
 $assertArray($(file ~), $(complete 'echo 23 ~/'))
@@ -236,6 +260,10 @@ $assertArray($(file '.'), $(complete 'echo > '))
 $assertArray($(file '.'), $(complete 'echo >./'))
 $assertArray($(file '.'), $(complete 'echo <<<./'))
 $assertArray($(file '.'), $(complete 'echo <<< '))
+$assertArray(["\\\$'\\x0a'\\\$\\\$/", '\ hey\ ', '\\@@', '\~hoge', '\AAA'].sort(), 
+                $(cd $tmpdir && complete 'echo >> \')) # escaped
+$assertArray(["\\\$'\\x0a'\\\$\\\$/", '\ hey\ ', '\\@@', '\~hoge', '\AAA'].sort(), 
+                $(complete "echo >|$tmpdir/\\")) # escaped
 $assertArray(new [String](), $(complete 'echo 2>&1./'))
 $assertArray(new [String](), $(complete 'echo 1>&2./'))
 $assertArray(new [String](), $(complete 'echo > if=./'))
@@ -254,11 +282,17 @@ $assertArray($(file '/bin'), $(complete 'AAA=hoge:/bin/'))
 $assertArray($(file '/usr/bin'), $(complete 'AAA=${3434}:/usr/bin/'))
 $assertArray($(file ~/), $(complete 'AAA=hoge\\:~/'))
 $assertArray($(file ~/), $(complete 'AAA=~/'))
+$assertArray(["\\\$'\\x0a'\\\$\\\$/", '\ hey\ ', '\\@@', '\~hoge', '\AAA'].sort(), 
+                $(cd $tmpdir && complete 'AAA=\')) # escaped
 $assertArray($(file ~/), $(complete 'AAA=${1234}:~/'))
 $assertArray(['\b\in/'], $(complete 'AAA=${1234}:\/u\sr\/\b\i'))  # escaped
 if $OSTYPE !~ $/cygwin/i  && $OSTYPE !~ $/msys/ {
     $assertArray(['~\ro\ot/'], $(complete 'AAA=sss:~\ro\o'))  # escaped
 }
+$assertArray(["\\\$'\\x0a'\\\$\\\$/", '\ hey\ ', '\\@@', '\~hoge', '\AAA'].sort(), 
+                $(cd $tmpdir && complete 'AAA=hoge:\')) # escaped
+$assertArray(["\\\$'\\x0a'\\\$\\\$/", '\ hey\ ', '\\@@', '\~hoge', '\AAA'].sort(), 
+                $(complete "AAA=hoge:$tmpdir/\\")) # escaped
 $assertArray($(file '.'), $(complete '@('))
 $assertArray($(file '/usr/bin'), $(complete '@(34 /usr/bin/'))
 $assertArray($(file ~/), $(complete '@(${45 + 45} ~/'))

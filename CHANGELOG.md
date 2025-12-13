@@ -52,6 +52,7 @@
         - default is 40
         - when set to 0, the pager is disabled
         - when set to 100, the pager is full height
+- add ``sort`` param to ``Candidates`` object constructor. now suppress sorting of candidates
 - improve sub-command completion
     - complete sub-command from nested named imported modules
     - put sub-command description (`user-defined` or `module`)
@@ -59,7 +60,9 @@
     - call user-defined completion
 - improve CLI option completion
     - complete candidates specified by ``choice`` attribute param
-- add ``sort`` param to ``Candidates`` object constructor. now suppress sorting of candidates
+- overhaul quoted comp word handling
+    - correctly quote completion candidates started with invalid command argument characters
+    - change trailing backslash handling of comp word. now treat it as a command argument part
 
 #### LSP
 

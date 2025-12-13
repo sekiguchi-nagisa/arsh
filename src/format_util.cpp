@@ -51,13 +51,16 @@ int formatTo(std::string &out, const char *fmt, ...) {
   return s;
 }
 
-bool quoteAsCmdOrShellArg(const StringRef ref, std::string &out, bool asCmd) {
+bool quoteAsCmdOrShellArg(const StringRef ref, std::string &out, const QuoteParam param) {
+  const size_t oldSize = out.size();
   StringRef::size_type hexCount = 0;
   auto begin = ref.begin();
   const auto end = ref.end();
-  if (asCmd && begin != end) {
+  if (param.asCmd && begin != end) {
     if (char ch = *begin; isDecimal(ch) || ch == '+' || ch == '-') {
-      out += '\\';
+      if (!param.carryBackslash || out.size() != oldSize) {
+        out += '\\';
+      }
       out += ch;
       begin++;
     }
@@ -97,7 +100,9 @@ bool quoteAsCmdOrShellArg(const StringRef ref, std::string &out, bool asCmd) {
       case '?':
       case '!':
         assert(byteSize == 1);
-        out += '\\';
+        if (!param.carryBackslash || out.size() != oldSize) {
+          out += '\\';
+        }
         out.append(begin, byteSize);
         break;
       default:
@@ -155,7 +160,10 @@ std::string unquoteCmdArgLiteral(const StringRef ref, bool unescape) {
 
   for (StringRef::size_type i = 0; i < ref.size(); i++) {
     char ch = ref[i];
-    if (ch == '\\' && i + 1 < ref.size()) {
+    if (ch == '\\') {
+      if (i + 1 == ref.size()) {
+        continue; // skip trailing backslash
+      }
       const char next = ref[++i];
       if (next == '\n') {
         continue;

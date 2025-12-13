@@ -82,6 +82,10 @@ struct CompPrefix {
     }
     this->compWordToken = this->compWordToken.substr(index);
   }
+
+  bool carryBackslash() const {
+    return this->compWordToken.endsWith("\\") && !this->compWord.endsWith("\\");
+  }
 };
 
 class CodeCompletionContext {

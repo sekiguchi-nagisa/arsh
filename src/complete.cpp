@@ -82,7 +82,8 @@ CompCandidate::CompCandidate(const CompPrefix &prefix, CompCandidateKind k, Stri
     }
     if (this->kind != CompCandidateKind::COMMAND_TILDE) {
       quoteAsCmdOrShellArg(v, this->value,
-                           this->kind == CompCandidateKind::COMMAND_NAME && !trimPrefix);
+                           {.asCmd = this->kind == CompCandidateKind::COMMAND_NAME && !trimPrefix,
+                            .carryBackslash = prefix.carryBackslash()});
     } else {
       this->value += v;
     }
