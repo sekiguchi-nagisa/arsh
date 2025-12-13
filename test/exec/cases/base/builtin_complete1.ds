@@ -21,30 +21,16 @@ function comp($a : String, $path : String) : Array<String> {
     }
 }
 
-function escape($s : String) : String {
-    var c = 0
-    var buf = ''
-    for $ch in $s {
-        if $c == 0 && '+-0123456789'.indexOf($ch) != -1 {
-            $buf += '\'
-        }
-        if $ch == ' ' || $ch == '[' || $ch == ']'{
-            $buf += '\'
-        }
-        $buf += $ch
-        $c++
+function escape($s : String) : String {  # for command name quote
+    $s.empty() && return $s
+    var r = $s.quote()
+    if "0123456789".indexOf($r[0]) != -1 || $r[0] == '+' || $r[0] == '-' {
+        $r = "\\" + $r
     }
-    return $buf
+    return $r
 }
-function escape2($s : String) : String {
-    var buf = ''
-    for $ch in $s {
-        if $ch == ' ' || $ch == '$' || $ch == '[' || $ch == ']'{
-            $buf += '\'
-        }
-        $buf += $ch
-    }
-    return $buf
+function escape2($s : String) : String {  # for command argument quote
+    return $s.quote()
 }
 
 function eachEcho($list : [String]) {
