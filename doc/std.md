@@ -197,7 +197,7 @@ function upper(): String for String
 
 function foldCase(full: Bool?, turkic: Bool?): String for String
 
-function quote(): String for String
+function quote(cmd: Bool?): String for String
 
 function dequote(): String for String
 ```
@@ -414,7 +414,7 @@ function add(can: String, desc: String?, space: Int?): Candidates for Candidates
 
 function addAll(other: Candidates): Candidates for Candidates
 
-function quote(quoted: String?): Void for Candidates
+function quote(quoted: String?, cmd: Bool?): Void for Candidates
 ```
 
 ## StringIter type

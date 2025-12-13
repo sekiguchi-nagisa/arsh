@@ -25,6 +25,14 @@ $assertQuote($'\xFE', "$'\\xfe'")
 $assertQuote('`echo hello`', '\`echo\ hello\`')
 $assertQuote('echo &!', 'echo\ \&\!')
 $assertQuote('[,]', '\[,\]')
+$assertQuote('7z', '7z')
+
+# quote as command
+assert "7z".quote($cmd:$true) == '\7z'
+assert "--hey".quote($cmd:$true) == '\--hey'
+assert "--hey".quote($cmd:$false) == '--hey'
+assert "+<>{}".quote($cmd:$true) == '\+\<\>\{\}'
+assert "+<>{}".quote($cmd:$false) == '+\<\>\{\}'
 
 # for dequote
 assert "".dequote() == ""

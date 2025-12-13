@@ -53,6 +53,7 @@
         - when set to 0, the pager is disabled
         - when set to 100, the pager is full height
 - add ``sort`` param to ``Candidates`` object constructor. now suppress sorting of candidates
+- add ``cmd`` param to ``String#quote`` method. now quote as command
 - improve sub-command completion
     - complete sub-command from nested named imported modules
     - put sub-command description (`user-defined` or `module`)

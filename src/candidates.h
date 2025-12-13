@@ -178,8 +178,9 @@ public:
    *
    * ex. -\-h => [ --hey, --help ]  => [ -\-hey, -\-help ]
    * @param quotedWord must be quoted
+   * @param asCmd only affect if quotedWord is empty
    */
-  void quote(StringRef quotedWord);
+  void quote(StringRef quotedWord, bool asCmd);
 
   static bool isCandidateObj(const Value &v) {
     return v.isObject() && isa<CandidateObject>(v.get());

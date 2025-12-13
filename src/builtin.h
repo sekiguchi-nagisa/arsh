@@ -1181,11 +1181,13 @@ ARSH_METHOD string_foldCase(RuntimeContext &ctx) {
   RET(ret);
 }
 
-//!bind: function quote($this : String) : String
+//!bind: function quote($this : String, $cmd: Option<Bool>) : String
 ARSH_METHOD string_quote(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_quote);
   auto ref = LOCAL(0).asStrRef();
-  auto ret = quoteAsShellArg(ref);
+  const bool asCmd = LOCAL(1).isInvalid() ? false : LOCAL(1).asBool();
+  std::string ret;
+  quoteAsCmdOrShellArg(ref, ret, asCmd);
   if (ret.size() > StringObject::MAX_SIZE) {
     raiseStringLimit(ctx);
     RET_ERROR;
@@ -2839,12 +2841,13 @@ ARSH_METHOD candidates_addAll(RuntimeContext &ctx) {
   RET(LOCAL(0));
 }
 
-//!bind: function quote($this: Candidates, $quoted: Option<String>) : Void
+//!bind: function quote($this: Candidates, $quoted: Option<String>, $cmd: Option<Bool>) : Void
 ARSH_METHOD candidates_quote(RuntimeContext &ctx) {
   SUPPRESS_WARNING(candidates_quote);
   auto &obj = typeAs<CandidatesObject>(LOCAL(0));
   const StringRef quotedWord = LOCAL(1).isInvalid() ? "" : LOCAL(1).asStrRef();
-  obj.quote(quotedWord);
+  const bool asCmd = LOCAL(2).isInvalid() ? false : LOCAL(2).asBool();
+  obj.quote(quotedWord, asCmd);
   RET_VOID;
 }
 

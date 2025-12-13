@@ -206,7 +206,11 @@ static void replaceCandidate(CandidatesObject::Entry &entry, std::string &&repla
   }
 }
 
-void CandidatesObject::quote(const StringRef quotedWord) {
+void CandidatesObject::quote(const StringRef quotedWord, bool asCmd) {
+  if (quotedWord.size()) {
+    asCmd = false;
+  }
+
   /**
    * allocate std::string due to prevent dangling reference
    * (original reference will be modified below)
@@ -221,7 +225,7 @@ void CandidatesObject::quote(const StringRef quotedWord) {
     assert(prefix.compWord.size() <= can.size());
     std::string replaced = prefix.compWordToken.toString();
     quoteAsCmdOrShellArg(can.substr(prefix.compWord.size()), replaced,
-                         {.asCmd = false, .carryBackslash = prefix.carryBackslash()});
+                         {.asCmd = asCmd, .carryBackslash = prefix.carryBackslash()});
     if (can != replaced) {
       assert(replaced.size() > can.size());
       replaceCandidate(this->entries[i], std::move(replaced));

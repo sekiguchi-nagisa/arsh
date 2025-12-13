@@ -97,6 +97,21 @@ $can4.quote('--output=\ll\')
 assert $can4.size() == 4
 assert @($can4) == @('\ll\vm1=' '\ll\vm2/' '\ll\ 23' '\ll\\23')
 
+$can4 = new Candidates(@('+12' ' #dd' '-w' '2to3'))
+$can4.quote('--output=', $cmd:$true)
+assert $can4.size() == 4
+assert @($can4) == @('+12' '\ \#dd' '-w' '2to3')
+
+$can4 = new Candidates(@('+12' ' #dd' '-w' '2to3'))
+$can4.quote('', $cmd:$true)
+assert $can4.size() == 4
+assert @($can4) == @('\+12' '\ \#dd' '\-w' '\2to3')
+
+$can4 = new Candidates(@('+12' ' #dd' '-w' '2to3'))
+$can4.quote($cmd:$true)
+assert $can4.size() == 4
+assert @($can4) == @('\+12' '\ \#dd' '\-w' '\2to3')
+
 ## too large candidates
 printf -v var "%*s" 2147483640 aa
 let large = $reply.remove('var')!
