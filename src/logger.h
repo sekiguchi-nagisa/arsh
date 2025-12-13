@@ -28,7 +28,8 @@
   E(DUMP_TCSETPGRP)                                                                                \
   E(TRACE_MODULE)                                                                                  \
   E(TRACE_EDIT)                                                                                    \
-  E(TRACE_JOB)
+  E(TRACE_JOB)                                                                                     \
+  E(TRACE_COMP)
 
 namespace arsh {
 

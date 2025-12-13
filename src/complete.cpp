@@ -24,6 +24,7 @@
 #include "format_signature.h"
 #include "format_util.h"
 #include "frontend.h"
+#include "logger.h"
 #include "misc/edit_distance.hpp"
 #include "misc/files.hpp"
 #include "misc/format.hpp"
@@ -223,6 +224,7 @@ static void completeKeyword(const std::string &prefix, CodeCompOp option,
 #undef GEN_ITEM
   };
   const bool onlyExpr = !hasFlag(option, CodeCompOp::STMT_KW);
+  LOG(TRACE_COMP, "prefix:%s, validNameOnly:%s", prefix.c_str(), onlyExpr ? "true" : "false");
   for (auto &e : table) {
     if (onlyExpr && !isExprKeyword(e)) {
       continue;
@@ -235,6 +237,8 @@ static void completeKeyword(const std::string &prefix, CodeCompOp option,
 
 static void completeEnvName(const std::string &namePrefix, CompCandidateConsumer &consumer,
                             bool validNameOnly) {
+  LOG(TRACE_COMP, "prefix:%s, validNameOnly:%s", namePrefix.c_str(),
+      validNameOnly ? "true" : "false");
   for (unsigned int i = 0; environ[i] != nullptr; i++) {
     StringRef env(environ[i]);
     const auto r = env.indexOf("=");
@@ -251,6 +255,7 @@ static void completeEnvName(const std::string &namePrefix, CompCandidateConsumer
 }
 
 static void completeSigName(const std::string &prefix, CompCandidateConsumer &consumer) {
+  LOG(TRACE_COMP, "prefix:%s", prefix.c_str());
   const SignalEntryRange ranges[] = {
       getStandardSignalEntries(),
       getRealTimeSignalEntries(),
@@ -265,6 +270,7 @@ static void completeSigName(const std::string &prefix, CompCandidateConsumer &co
 }
 
 static void completeUserName(const std::string &prefix, CompCandidateConsumer &consumer) {
+  LOG(TRACE_COMP, "prefix:%s", prefix.c_str());
 #ifndef __ANDROID__
   setpwent();
   for (struct passwd *pw; (pw = getpwent()) != nullptr;) {
@@ -281,6 +287,7 @@ static void completeUserName(const std::string &prefix, CompCandidateConsumer &c
 }
 
 static void completeGroupName(const std::string &prefix, CompCandidateConsumer &consumer) {
+  LOG(TRACE_COMP, "prefix:%s", prefix.c_str());
   setgrent();
   for (struct group *gp; (gp = getgrent()) != nullptr;) {
     StringRef gname = gp->gr_name;
@@ -317,13 +324,18 @@ static auto udcCandidateConsumer(const CompPrefix &prefix, CompCandidateConsumer
 static bool completeCmdName(const CompPrefix &prefix, const NameScope &scope,
                             const CodeCompOp option, CompCandidateConsumer &consumer,
                             ObserverPtr<const CancelToken> cancel) {
+  LOG(TRACE_COMP, "prefix:(token:%s, word:%s)", prefix.compWordToken.toString().c_str(),
+      prefix.compWord.toString().c_str());
+
   // complete user-defined command
   if (hasFlag(option, CodeCompOp::UDC)) {
+    LOG(TRACE_COMP, "try to complete udc");
     scope.walk(udcCandidateConsumer(prefix, consumer));
   }
 
   // complete builtin command
   if (hasFlag(option, CodeCompOp::BUILTIN)) {
+    LOG(TRACE_COMP, "try to complete builtin");
     const auto range = getBuiltinCmdDescRange();
     for (auto &e : range) {
       if (StringRef builtin = e.name; builtin.startsWith(prefix.compWord)) {
@@ -336,6 +348,7 @@ static bool completeCmdName(const CompPrefix &prefix, const NameScope &scope,
 
   // complete external command
   if (hasFlag(option, CodeCompOp::EXTERNAL)) {
+    LOG(TRACE_COMP, "try to complete external");
     const char *pathEnv = getenv(ENV_PATH);
     if (pathEnv == nullptr) {
       return true;
@@ -366,6 +379,8 @@ static bool completeCmdName(const CompPrefix &prefix, const NameScope &scope,
 static bool completeFileName(const CompPrefix &prefix, const std::string &baseDir,
                              const CodeCompOp op, CompCandidateConsumer &consumer,
                              ObserverPtr<const CancelToken> cancel) {
+  LOG(TRACE_COMP, "prefix:(token:%s, word:%s), baseDir:%s", prefix.compWordToken.toString().c_str(),
+      prefix.compWord.toString().c_str(), baseDir.c_str());
   const auto dirSepIndex = prefix.compWord.lastIndexOf("/");
 
 #ifndef __ANDROID__
@@ -458,6 +473,10 @@ static bool completeFileName(const CompPrefix &prefix, const std::string &baseDi
 static bool completeModule(const SysConfig &config, const CompPrefix &prefix,
                            const std::string &scriptDir, bool tilde,
                            CompCandidateConsumer &consumer, ObserverPtr<const CancelToken> cancel) {
+  LOG(TRACE_COMP, "prefix:(token:%s, word:%s), scriptDir:%s",
+      prefix.compWordToken.toString().c_str(), prefix.compWord.toString().c_str(),
+      scriptDir.c_str());
+
   CodeCompOp op{};
   if (tilde) {
     op = CodeCompOp::TILDE;
@@ -479,6 +498,8 @@ static bool completeModule(const SysConfig &config, const CompPrefix &prefix,
 
 void completeVarName(const NameScope &scope, const StringRef prefix, bool inCmdArg,
                      CompCandidateConsumer &consumer) {
+  LOG(TRACE_COMP, "prefix:%s, inCmdArg:%s", prefix.toString().c_str(), inCmdArg ? "true" : "false");
+
   const int offset = static_cast<int>(scope.getGlobalScope()->getMaxGlobalVarIndex() * 10);
   unsigned int funcScopeDepth = 0;
   for (const auto *cur = &scope; cur != nullptr; cur = cur->parent.get()) {
@@ -509,6 +530,8 @@ void completeVarName(const NameScope &scope, const StringRef prefix, bool inCmdA
 
 static void completeExpected(const std::vector<std::string> &expected, const std::string &prefix,
                              CompCandidateConsumer &consumer) {
+  LOG(TRACE_COMP, "prefix:%s", prefix.c_str());
+
   for (auto &e : expected) {
     if (isKeyword(e)) {
       if (StringRef(e).startsWith(prefix)) {
@@ -520,6 +543,8 @@ static void completeExpected(const std::vector<std::string> &expected, const std
 
 void completeMember(const TypePool &pool, const NameScope &scope, const Type &recvType,
                     const StringRef word, CompCandidateConsumer &consumer) {
+  LOG(TRACE_COMP, "recv:%s, prefix:%s", recvType.getName(), word.toString().c_str());
+
   // complete field
   auto fieldWalker = [&](StringRef name, const Handle &handle) {
     if (name.startsWith(word) && isVarName(name)) {
@@ -574,6 +599,9 @@ void completeMember(const TypePool &pool, const NameScope &scope, const Type &re
 
 void completeType(const TypePool &pool, const NameScope &scope, const Type *recvType,
                   const StringRef word, CompCandidateConsumer &consumer) {
+  LOG(TRACE_COMP, "recv: %s, prefix:%s", recvType ? recvType->getName() : "(null)",
+      word.toString().c_str());
+
   if (recvType) {
     auto fieldWalker = [&](StringRef name, const Handle &handle) {
       if (name.startsWith(word) && isTypeAliasFullName(name)) {
@@ -623,6 +651,8 @@ void completeType(const TypePool &pool, const NameScope &scope, const Type *recv
 }
 
 static void completeAttribute(const std::string &prefix, CompCandidateConsumer &consumer) {
+  LOG(TRACE_COMP, "prefix:%s", prefix.c_str());
+
   constexpr AttributeKind kinds[] = {
 #define GEN_TABLE(E, S) AttributeKind::E,
       EACH_ATTRIBUTE_KIND(GEN_TABLE)
@@ -640,6 +670,8 @@ static void completeAttribute(const std::string &prefix, CompCandidateConsumer &
 
 static void completeAttributeParam(const std::string &prefix, AttributeParamSet paramSet,
                                    CompCandidateConsumer &consumer) {
+  LOG(TRACE_COMP, "prefix:%s", prefix.c_str());
+
   paramSet.iterate([&](Attribute::Param param) {
     StringRef ref = toString(param);
     if (ref.startsWith(prefix)) {
@@ -650,6 +682,8 @@ static void completeAttributeParam(const std::string &prefix, AttributeParamSet 
 
 static void completeParamName(const std::vector<std::string> &paramNames, const StringRef word,
                               CompCandidateConsumer &consumer) {
+  LOG(TRACE_COMP, "prefix:%s", word.toString().c_str());
+
   const unsigned int size = paramNames.size();
   for (unsigned int i = 0; i < size; i++) {
     if (StringRef ref = paramNames[i]; ref.startsWith(word)) {
@@ -663,7 +697,11 @@ static CmdArgCompStatus completeCLIArg(StringRef opt, const ArgEntry &entry,
                                        const CompPrefix &prefix,
                                        ObserverPtr<ForeignCompHandler> comp,
                                        CompCandidateConsumer &consumer) {
+  LOG(TRACE_COMP, "opt: %s, prefix:(token:%s, word:%s)", opt.toString().c_str(),
+      prefix.compWordToken.toString().c_str(), prefix.compWord.toString().c_str());
+
   if (entry.getCheckerKind() == ArgEntry::CheckerKind::CHOICE) {
+    LOG(TRACE_COMP, "try to complete choice");
     for (auto &e : entry.getChoice()) {
       if (StringRef ref = e; ref.startsWith(prefix.compWord)) {
         consumer(prefix, CompCandidateKind::COMMAND_ARG, ref);
@@ -672,6 +710,7 @@ static CmdArgCompStatus completeCLIArg(StringRef opt, const ArgEntry &entry,
     return CmdArgCompStatus::OK;
   }
   if (auto handle = entry.getCompHandle(); handle && comp) {
+    LOG(TRACE_COMP, "call: callCLIComp");
     return comp->callCLIComp(*handle, opt, prefix, consumer);
   }
   return CmdArgCompStatus::INVALID;
@@ -680,6 +719,9 @@ static CmdArgCompStatus completeCLIArg(StringRef opt, const ArgEntry &entry,
 static CmdArgCompStatus completeCLIFlagOrOption(const CLIRecordType &type, const CompPrefix &prefix,
                                                 ObserverPtr<ForeignCompHandler> comp,
                                                 CompCandidateConsumer &consumer) {
+  LOG(TRACE_COMP, "cliType: %s, prefix:(token:%s, word:%s)", type.getName(),
+      prefix.compWordToken.toString().c_str(), prefix.compWord.toString().c_str());
+
   for (auto &e : type.getEntries()) {
     if (!e.isOption()) {
       continue;
@@ -836,13 +878,22 @@ static CmdArgCompStatus tryToCallUserDefinedComp(const CodeCompletionContext &ct
                                                  const unsigned int offset,
                                                  const ModType *cmdModType,
                                                  CompCandidateConsumer &consumer) {
-  return comp ? comp->callUserDefinedComp(ctx, offset, cmdModType, consumer)
-              : CmdArgCompStatus::INVALID;
+  if (comp) {
+    LOG(TRACE_COMP, "prefix:(token:%s, word:%s), cmdModType:%s, offset:%d",
+        ctx.toCompPrefix().compWordToken.toString().c_str(), ctx.getCompWord().c_str(),
+        cmdModType ? cmdModType->getName() : "(null)", offset);
+
+    return comp->callUserDefinedComp(ctx, offset, cmdModType, consumer);
+  }
+  return CmdArgCompStatus::INVALID;
 }
 
 static CmdArgCompStatus completeCmdArg(const TypePool &pool, ObserverPtr<ForeignCompHandler> comp,
                                        const CodeCompletionContext &ctx,
                                        CompCandidateConsumer &consumer) {
+  LOG(TRACE_COMP, "prefix:(token:%s, word:%s)", ctx.toCompPrefix().compWordToken.toString().c_str(),
+      ctx.getCompWord().c_str());
+
   const auto &cmdNode = *ctx.getCmdNode();
   auto handle = ctx.getScope().lookup(toCmdFullName(cmdNode.getNameNode().getValue()));
   if (!handle || !pool.get(handle.asOk()->getTypeId()).isModType()) { // call for non-module
@@ -960,6 +1011,7 @@ bool CodeCompleter::invoke(const CodeCompletionContext &ctx) {
       return false;
     }
     if (const auto op = ctx.getFallbackOp(); hasFlag(op, CodeCompOp::FILE)) {
+      LOG(TRACE_COMP, "fallback to filename completion");
       TRY(completeFileName(ctx.toCompPrefixByOffset(), this->logicalWorkingDir, op, this->consumer,
                            this->cancel));
     }
@@ -990,6 +1042,8 @@ static std::string toScriptDir(const std::string &scriptName) {
 
 bool CodeCompleter::operator()(NameScopePtr scope, const std::string &scriptName, StringRef ref,
                                CodeCompOp option) {
+  LOG(TRACE_COMP, "line(printable): `%s`", toPrintable(ref).c_str());
+
   const auto scriptDir = toScriptDir(scriptName);
   CodeCompletionContext compCtx(std::move(scope), scriptDir);
   if (this->provider) {
@@ -1000,6 +1054,7 @@ bool CodeCompleter::operator()(NameScopePtr scope, const std::string &scriptName
     // perform completion
     consumeAllInput(frontEnd);
     compCtx.ignore(option);
+    LOG(TRACE_COMP, "complete with frontend context");
     return this->invoke(compCtx);
   }
   compCtx.addCompRequest(option, ref.toString());
