@@ -28,15 +28,19 @@ assert $? == 2
 
 # short option
 compdef --cmd ls --short l
-compdef --cmd ls --short q --arg-list 'AAA ABB ABC CCC'
+compdef --cmd ls --short q --arg-list 'AAA ABB ABC CCC D$D D;E'
 
 assert diff <(complete 'ls -') <(echo -l && echo -q)
+assert diff <(complete 'ls \-\') <(echo '\-\l' && echo '\-\q')
 assert diff <(complete 'ls - ') <(complete -A file)
 assert diff <(complete 'ls -l') <(echo -l)
+assert diff <(complete 'ls -l\') <(echo '-l\')
 assert $(complete 'ls -s').empty()
 assert diff <(complete 'ls -q') <(echo -q)
-assert diff <(complete 'ls -q ') <(echo AAA && echo ABB && echo ABC && echo CCC)
+assert diff <(complete 'ls -q ') <(echo AAA && echo ABB && echo ABC && echo CCC && echo 'D\$D' && echo 'D\;E')
 assert diff <(complete 'ls -q AB') <(echo ABB && echo ABC)
+assert diff <(complete 'ls -q \AB\') <(echo '\AB\B' && echo '\AB\C')
+assert diff <(complete 'ls -q D\') <(echo 'D\$D' && echo 'D\;E')
 
 compdef --cmd ls --short s --arg-action env
 
@@ -65,20 +69,24 @@ compdef --cmd ls --long top
 compdef --cmd ls --long log= --arg-list 'error warn info'
 
 assert diff <(complete 'ls -') <(printf -- "%s\n"  --log= --show --stop --top -l -q -s )
+assert diff <(complete 'ls \-') <(printf -- "%s\n"  \\--log= \\--show \\--stop \\--top \\-l \\-q \\-s )
 
 assert diff <(complete 'ls --') <(printf -- "%s\n"  --log= --show --stop --top)
-assert diff <(complete 'ls --sh') <(echo --show)
+assert diff <(complete 'ls \--sh') <(echo '\--show')
 assert diff <(complete 'ls --sto') <(echo --stop)
-assert diff <(complete 'ls --show ') <(ls)
+assert diff <(complete 'ls --sto\') <(echo '--sto\p')
+assert diff <(complete 'ls --\show ') <(for line in <(ls){ echo ${$line.quote()}; } | sort)
 assert diff <(complete 'ls --show') <(echo --show)
 assert diff <(complete 'ls --stop ') <(complete -A signal)
-assert diff <(complete 'ls --stop T') <(complete -A signal T)
+assert diff <(complete 'ls -\-stop T') <(complete -A signal T)
 assert diff <(complete 'ls --stop=') <(complete -A signal)
 assert diff <(complete 'ls --stop=T') <(complete -A signal T)
 assert diff <(complete 'ls --lo') <(echo --log=)
 assert { complete 'ls --lo' && $COMPREPLY.size() == 1 && ! $COMPREPLY.hasSpace(0); }
 assert diff <(complete 'ls --log=') <(printf "%s\n" error info warn)
+assert diff <(complete 'ls --log=\') <(printf "%s\n" '\error' '\info' '\warn')
 assert diff <(complete 'ls --log=e') <(printf "%s\n" error)
+assert diff <(complete 'ls -\-log=\e\') <(printf "%s\n" '\e\rror')
 assert diff <(complete 'ls --t') <(echo --top)
 assert $(complete 'ls --top=').empty()
 assert $(complete 'ls --top=./').empty()
@@ -87,6 +95,7 @@ compdef --cmd ps --long help --arg-list 'ccc aaa ddd bbb'
 assert diff <(complete 'ps --he') <(echo --help)
 assert $(complete 'ps --s').empty()
 assert diff <(complete 'ps --help ') <(echo aaa && echo bbb && echo ccc && echo ddd)
+assert diff <(complete 'ps \--h\e\lp \') <(echo '\aaa' && echo '\bbb' && echo '\ccc' && echo '\ddd')
 assert $(complete 'ps --help 1').empty()
 
 # alias

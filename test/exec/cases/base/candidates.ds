@@ -112,6 +112,16 @@ $can4.quote($cmd:$true)
 assert $can4.size() == 4
 assert @($can4) == @('\+12' '\ \#dd' '\-w' '\2to3')
 
+$can4 = new Candidates(@(info warn error))
+$can4.quote('\')
+assert $can4.size() == 3
+assert @($can4) == @('\info' '\warn' '\error')
+
+$can4 = new Candidates(@(llvm11 llm llvmpipe))
+$can4.quote('\')
+assert $can4.size() == 3
+assert @($can4) == @('\llvm11' '\llm' '\llvmpipe')
+
 ## too large candidates
 printf -v var "%*s" 2147483640 aa
 let large = $reply.remove('var')!

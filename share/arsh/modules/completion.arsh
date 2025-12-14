@@ -34,7 +34,7 @@ function compAdd(cmd : String, comp : Completer) : Completer? {
 
 type _CompDefEntry(o : String?, t : Int?, a : String?, d: String?) {
     let option = $o ?? ""   # option (short, long option or other parameter)
-    let type = $t ?? -1     # arg type (-1: empty, 0: list, 1: cmdline, 2: action, 3: comp, 4: func)
+    let type = $t ?? -1     # arg type (-1: empty, 0: list, 1: cmdline, 2: action, 3: comp, 4: func, 5: raw_func)
     let arg = $a ?? ""      # argument
     let desc = $d           # description
 }
@@ -47,9 +47,23 @@ type _CompDef() {
 
 let _compdefMap : [String : _CompDef] # command name to completion definition mapping
 
+function _remove_prefix_from_quoted(quoted: String, n: Int): String {
+    var index = 0
+    let size = $quoted.size()
+    for (var count = 0; $count < $n && $index < $size; $index++) {
+        var ch = $quoted[$index]
+        if $ch == '\' && $index + 1 < $size {
+            $index++
+            $quoted[$index] == $'\n' && continue
+        }
+        $count++
+    }
+    return $quoted.slice($index)
+}
 
 #
 # $prefix starts with '-'
+# return raw candidates (not quoted)
 #
 function _comp_opt(deflist : _CompDef, prefix : String) : Candidates {
     var ret = new Candidates($sort:$deflist.sort)
@@ -72,8 +86,10 @@ function _comp_opt(deflist : _CompDef, prefix : String) : Candidates {
 #
 # complete arguments of specified option
 # $opt is empty string or starts with '-'
+# return quoted candidates
 #
-function _comp_arg(ctx : Module, deflist: _CompDef, opt : String, prefix : String) : Candidates? {
+function _comp_arg(ctx : Module, deflist: _CompDef, opt : String, prefixToken : String) : Candidates? {
+    let prefix = $prefixToken.dequote()
     for def in $deflist.entries {
         $opt == $def.option || continue
 
@@ -86,6 +102,7 @@ function _comp_arg(ctx : Module, deflist: _CompDef, opt : String, prefix : Strin
                         $r.add($a)
                     }
                 }
+                $r.quote($prefixToken)
                 $r
             }
             1 => {
@@ -95,6 +112,7 @@ function _comp_arg(ctx : Module, deflist: _CompDef, opt : String, prefix : Strin
                         $ret.add($line)
                     }
                 }
+                $ret.quote($prefixToken)
                 $ret
             }
             2 => {
@@ -103,10 +121,10 @@ function _comp_arg(ctx : Module, deflist: _CompDef, opt : String, prefix : Strin
                     $actions.add("-A")
                     $actions.add($a)
                 }
-                if $prefix.startsWith('~') {
+                if $prefixToken.startsWith('~') {
                     $actions.add('-A').add('tilde')
                 }
-                complete -q -m $ctx $actions $prefix;
+                complete -q -m $ctx $actions $prefix;  # FIXME: quoting
                 $COMPREPLY
             }
             4 => {
@@ -114,8 +132,14 @@ function _comp_arg(ctx : Module, deflist: _CompDef, opt : String, prefix : Strin
                     new Candidates()
                 } else {
                     var func = $_argFuncs.get($arg) ?? break
-                    $func($prefix)
+                    var ret = $func($prefix)
+                    $ret.quote($prefixToken)
+                    $ret
                 }
+            }
+            5 => {
+                var func = $_argFuncs.get($arg) ?? break
+                $func($prefixToken)  # pass raw word
             }
             else => break
         }
@@ -338,7 +362,7 @@ function _from_compdef(ctx : Module, words : [String], cursor : Int) : Candidate
         # 'CMD '
         # 'CMD arg '
         # 'CMD -s '
-        var prev = $words.size() == 1 ? "" : $words[-1]
+        var prev = ($words.size() == 1 ? "" : $words[-1]).dequote()
         return $_comp_arg($ctx, $deflist, $prev.startsWith("-") ? $prev : "", "")
     } else {
         # 'CMD d'
@@ -348,7 +372,8 @@ function _from_compdef(ctx : Module, words : [String], cursor : Int) : Candidate
         # 'CMD -s d'
         # 'CMD arg1 d'
         assert $words.size() > 1
-        var prev = $words[-1]
+        var prevToken = $words[-1]
+        var prev = $prevToken.dequote()
         if $prev.startsWith('-') { # 'CMD -', 'CMD --d'
             var ret = $_comp_opt($deflist, $prev)
             if $ret.size() == 1 {
@@ -356,19 +381,20 @@ function _from_compdef(ctx : Module, words : [String], cursor : Int) : Candidate
                 if $opt.startsWith("--") && $prev.startsWith($opt) {
                     # for `--opt=' style option
                     if $opt.endsWith('=') {  # defined as `--long opt=' form
-                        $prev = $prev.slice($opt.size())
-                        return $_comp_arg($ctx, $deflist, $opt, $prev)
+                        $prevToken = $_remove_prefix_from_quoted($prevToken, $opt.size())
+                        return $_comp_arg($ctx, $deflist, $opt, $prevToken)
                     }
                     if $prev.slice($opt.size()).startsWith('=') {
-                        $prev = $prev.slice($opt.size() + 1)
-                        return $_comp_arg($ctx, $deflist, $opt, $prev)
+                        $prevToken = $_remove_prefix_from_quoted($prevToken, $opt.size() + 1)
+                        return $_comp_arg($ctx, $deflist, $opt, $prevToken)
                     }
                 }
             }
+            $ret.quote($prevToken)
             return $ret
         }
-        var opt = $words.size() == 2 ? "" : $words[-2]
-        return $_comp_arg($ctx, $deflist, $opt.startsWith("-") ? $opt : "", $prev)
+        var opt = ($words.size() == 2 ? "" : $words[-2]).dequote()
+        return $_comp_arg($ctx, $deflist, $opt.startsWith("-") ? $opt : "", $prevToken)
     }
 }
 
@@ -398,8 +424,11 @@ type _CompDefParam() {
     [<Option(placeholder: "ACTION", xor: 1, help: "generate candidates from ACTION")>]
     var arg_action: String?
 
-    [<Option(placeholder: "FUNC", xor: 1, help: "generate candidate from specified FUNC call")>]
+    [<Option(placeholder: "FUNC", xor: 1, help: "generate candidate from specified FUNC call (pass de-quoted word)")>]
     var arg_func: String?
+
+    [<Option(placeholder: "FUNC", xor:1, help: "generate candidate from specified FUNC call (pass quoted word)")>]
+    var arg_raw_func: String?
 
     [<Flag(xor: 1, help: "not generate candidates (empty candidate)")>]
     var arg_empty = $false
@@ -453,6 +482,9 @@ compdef(param : _CompDefParam) {
         $arg = $arg_action
     } elif let arg_func = $param.arg_func {
         $argType = 4
+        $arg = $arg_func
+    }elif let arg_func = $param.arg_raw_func {
+        $argType = 5
         $arg = $arg_func
     } elif $param.arg_empty {
         $argType = 4

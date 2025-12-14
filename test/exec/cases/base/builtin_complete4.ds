@@ -52,6 +52,36 @@ assert $COMPREPLY.size() == 0
 assert $fullName.contains($'\0')
 assert $fullName == $MODULE._fullname('hogehoge')!  # after user-defined command definition, resolve fullname
 
+# words
+{
+    var words2: [String]
+    var cursor2 = 0
+    $COMP_HOOK = function($ctx : Module, $words : [String], $cursor : Int) => {
+        $words2 = $words
+        $cursor2 = $cursor
+        return $none
+    }
+    complete -q 'ls '
+    assert $words2 == ['ls']
+    assert $cursor2 == 1
+
+    complete -q 'ls -la'
+    assert $words2 == ['ls', '-la']
+    assert $cursor2 == 1
+
+    complete -q 'ls -la '
+    assert $words2 == ['ls', '-la']
+    assert $cursor2 == 2
+
+    complete -q 'ls -la @'
+    assert $words2 == ['ls', '-la', '@']
+    assert $cursor2 == 2
+
+    complete -q 'ls -a \'
+    assert $words2 == ['ls', '-a', '\']
+    assert $cursor2 == 2
+}
+
 
 # escape
 function comp2($ctx : Module, $words : [String], $cursor : Int) : Candidates {
@@ -65,7 +95,7 @@ $assertComp('echo ', ['&h', '\23'])  # ignore empty candidates
 # invalid
 $COMP_HOOK = function(m, w, c) => $none
 complete -q 'echo ~'
-assert $COMPREPLY.size() > 1
+assert $COMPREPLY.size() > 1  # fallback to filename completion
 
 # error
 function comp3($ctx : Module, $words : [String], $cursor : Int) : Candidates {

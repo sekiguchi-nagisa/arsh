@@ -165,17 +165,12 @@ static CompPrefix resolveQuotedCandidatePrefix(const StringRef quotedWord,
    * ex. word: --cmd=ll, prefix: llvm-
    * => suffix: ll (offset: 6)
    */
-  bool matched = false;
   size_t wordSuffixOffset = word.size() - std::min(word.size(), candidatePrefix.size());
   for (; wordSuffixOffset < word.size(); wordSuffixOffset++) {
     auto wordSuffix = StringRef(word).substr(wordSuffixOffset);
     if (candidatePrefix.startsWith(wordSuffix)) {
-      matched = true;
       break;
     }
-  }
-  if (!matched) {
-    return {};
   }
 
   const size_t wordSuffixSize = StringRef(word).substr(wordSuffixOffset).size();

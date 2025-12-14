@@ -24,6 +24,7 @@ $PATH = "/usr/bin:/bin:"
 
 assert diff <(complete 'shctl ') <(help shctl | _extract_sub | sort)
 assert diff <(complete 'shctl i') <(echo info && echo is-interactive && echo is-sourced)
+assert diff <(complete 'shctl \i\') <(echo '\i\nfo' && echo '\i\s-interactive' && echo '\i\s-sourced')
 assert diff <(complete 'shctl set ') <(shctl set | _extract_option | sort)
 assert diff <(complete 'shctl unset ') <(shctl set | _extract_option | sort)
 assert diff <(complete 'shctl set assert fa') <(shctl set | _extract_option | grep fa | sort)

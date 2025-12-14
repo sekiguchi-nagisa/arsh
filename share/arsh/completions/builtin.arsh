@@ -61,15 +61,15 @@ for line in <(dirs -h) {
     let ff = $bindArgFunc(function(_) => new Candidates().add($_fzf.fzf_proc_select().join(' ')))
     var list = $SIG.list()
     for s in $list {
-        compdef --cmd kill --short ${$s.name()} --arg-func $ff --desc ${$s.value()}
+        compdef --cmd kill --short ${$s.name()} --arg-raw-func $ff --desc ${$s.value()}
     }
     for s in $list {
-        compdef --cmd kill --short ${$s.value()} --arg-func $ff --desc SIG${$s.name()}
+        compdef --cmd kill --short ${$s.value()} --arg-raw-func $ff --desc SIG${$s.name()}
     }
     compdef --cmd kill --short l --nosort
     compdef --cmd kill --short L
     compdef --cmd kill --short s --arg-action signal
-    compdef --cmd kill --arg-func $ff
+    compdef --cmd kill --arg-raw-func $ff
 }
 
 ## ulimit
