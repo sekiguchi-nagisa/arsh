@@ -959,7 +959,10 @@ bool CodeCompleter::invoke(const CodeCompletionContext &ctx) {
                         this->cancel));
   }
   if (ctx.has(CodeCompOp::DYNA_UDC) && this->foreignComp) {
-    this->foreignComp->completeDynamicUdc(ctx.getCompWord(), this->consumer);
+    auto prefix = ctx.toCompPrefix();
+    LOG(TRACE_COMP, "try to complete dynamic udc, prefix:(token:%s, word:%s)",
+        prefix.compWordToken.toString().c_str(), prefix.compWord.toString().c_str());
+    this->foreignComp->completeDynamicUdc(prefix, this->consumer);
   }
   if (ctx.has(CodeCompOp::USER)) {
     completeUserName(ctx.getCompWord(), this->consumer);

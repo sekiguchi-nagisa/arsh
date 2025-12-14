@@ -665,14 +665,14 @@ public:
                             static_cast<DefaultCompConsumer &>(consumer));
   }
 
-  void completeDynamicUdc(const std::string &word, CompCandidateConsumer &consumer) override {
+  void completeDynamicUdc(const CompPrefix &prefix, CompCandidateConsumer &consumer) override {
     auto &dynaUdcs = typeAs<OrderedMapObject>(this->state.getGlobal(BuiltinVarOffset::DYNA_UDCS));
     for (auto &e : dynaUdcs.getEntries()) {
       if (!e) {
         continue;
       }
-      if (const auto name = e.getKey().asStrRef(); name.startsWith(word)) {
-        CompCandidate candidate(word, CompCandidateKind::COMMAND_NAME, name);
+      if (const auto name = e.getKey().asStrRef(); name.startsWith(prefix.compWord)) {
+        CompCandidate candidate(prefix, CompCandidateKind::COMMAND_NAME, name);
         candidate.setCmdNameType(CompCandidate::CmdNameType::DYNA_UDC);
         consumer(std::move(candidate));
       }

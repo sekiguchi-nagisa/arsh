@@ -468,7 +468,7 @@ struct DummyForeignCompHandler : ForeignCompHandler {
     return CmdArgCompStatus::INVALID;
   }
 
-  void completeDynamicUdc(const std::string &, CompCandidateConsumer &) override {}
+  void completeDynamicUdc(const CompPrefix &, CompCandidateConsumer &) override {}
 };
 
 static std::string toDirName(const std::string &fullPath) {

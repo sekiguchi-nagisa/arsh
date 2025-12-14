@@ -168,7 +168,7 @@ struct ForeignCompHandler {
                                        const CompPrefix &prefix,
                                        CompCandidateConsumer &consumer) = 0;
 
-  virtual void completeDynamicUdc(const std::string &word, CompCandidateConsumer &consumer) = 0;
+  virtual void completeDynamicUdc(const CompPrefix &prefix, CompCandidateConsumer &consumer) = 0;
 };
 
 class CodeCompleter {

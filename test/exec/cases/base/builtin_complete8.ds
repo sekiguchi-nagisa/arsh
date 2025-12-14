@@ -46,13 +46,19 @@ assert $args.size() == 1
 assert $args[0] == 'shctl@builtin'
 
 fff1() {}
-$DYNA_UDCS['fff2'] = (){}
+$DYNA_UDCS['fff 2'] = (){}
 assert complete -d -- 'fff'
 assert $COMPREPLY.size() == 2
 $args = @($COMPREPLY)
 assert $args.size() == 2
 assert $args[0] == 'fff1@user-defined'
-assert $args[1] == 'fff2@dynamic'
+assert $args[1] == 'fff\ 2@dynamic'
+
+assert complete -d -- '\f\ff\'
+assert $COMPREPLY.size() == 2
+$args = @($COMPREPLY)
+assert $args.size() == 2
+assert $args == @('\f\ff\ 2@dynamic' '\f\ff\1@user-defined')
 
 assert complete -d -- 'mkdir'
 assert $COMPREPLY.size() == 1
