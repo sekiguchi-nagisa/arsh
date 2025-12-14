@@ -272,6 +272,11 @@ function _comp_wrap(file : String, target : String, words : [String], cursor : I
     done
     '
 
+    var wordToken = $words.peek()
+    if $cursor >= $words.size() {
+        $wordToken = ""
+    }
+
     $? = 0 # suppress error
     var ret : Candidates
     bash -c $script bash \
@@ -279,29 +284,25 @@ function _comp_wrap(file : String, target : String, words : [String], cursor : I
         if test -d $line && $line[-1] != '/' && $line.contains('/') { # for directory
             $line += '/'
         }
-        $line = $_quote($line)
-        var long = $line.startsWith('--') && $line.endsWith('=') # suppress automatic space insertion for `--long=`
-        $ret.add($line, $space: $long ? 0 : -1)
+        var r = $_format($line)
+        $ret.add($r._0, $space:$r._1)
         $? = 0 # suppress error
     }
+    $ret.quote($wordToken)
     return $ret.size() == 0 ? $none : $ret
 }
 
-function _quote(can: String): String {
-    if (test -e $can) { # if file, always quote. (ideally, should recognize `complete/compgen -o` options)
-        return $can.quote()
-    }
-
-    var space = $false
+# return -1: auto-detect, 0: nospace, 1: space
+function _format(can: String): (String, Int) {
+    test -e $can && return ($can, -1) # if file. (ideally, should recognize `complete/compgen -o` options)
+    var space = -1
     if $can.endsWith(' ') {
-        $space = $true
+        $space = 1
         $can = $can.slice(0,-1) # trim suffix space
+    } elif $can.startsWith('--') && $can.endsWith('=') { # `--long=`, suppress space insertion
+        $space = 0
     }
-    var ret = $can.quote()
-    if $space {
-        $ret += ' '
-    }
-    return $ret
+    return ($can, $space)
 }
 
 # extract completion target (func, cmd). ex `complete -o default -F func cmd`
