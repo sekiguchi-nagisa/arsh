@@ -276,6 +276,9 @@ function _comp_wrap(file : String, target : String, words : [String], cursor : I
     if $cursor >= $words.size() {
         $wordToken = ""
     }
+    if $wordToken.endsWith('\') && !$wordToken.dequote().endsWith('\') {
+        $words[-1] = $wordToken.slice(0,-1)  # force remove trailing backslash
+    }
 
     $? = 0 # suppress error
     var ret : Candidates
