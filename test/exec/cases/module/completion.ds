@@ -124,9 +124,12 @@ echo
 complete 'bison -'
 
 assert diff <(complete 'bison -') <(printf -- "%s\n" --all --dump= --help -a -c -d)
+assert diff <(complete 'bison \-') <(printf -- "%s\n" '\--all' '\--dump=' '\--help' '\-a' '\-c' '\-d')
 assert diff <(complete 'bison --du') <(printf -- "%s\n" --dump=)
+assert diff <(complete 'bison -\-du\') <(printf -- "%s\n" '-\-du\mp=')
 assert diff <(complete 'bison --dump=') <(complete -A file)
 assert diff <(complete 'bison --dump=/') <(complete -A file /)
+assert diff <(complete 'bison --dump=/\') <(complete 'echo /\')
 assert diff <(complete 'bison --dump=~/') <(complete -A file -A tilde '~/')
 assert diff <(complete 'bison -c ') <(complete -A file)
 assert diff <(complete 'bison -c ./') <(complete -A file './')

@@ -137,7 +137,8 @@ function _comp_opt_by_help(argv: [String], cursor: Int): Candidates? {
     let cmd = $argv[0]
     $_help_comp_targets.searchSorted($cmd) < 0 && return $none
     command -v $cmd &>> /dev/null || return $none
-    var word = $cursor < $argv.size() ? $argv[$cursor] : return $none
+    let wordToken = $cursor < $argv.size() ? $argv[$cursor] : return $none
+    let word = $wordToken.dequote()
     $word.startsWith('-') || return $none
     var can: Candidates
     var proc = <(LANG=C call $cmd --help)
@@ -160,6 +161,7 @@ function _comp_opt_by_help(argv: [String], cursor: Int): Candidates? {
             }
         }
     }
+    $can.quote($wordToken)
     return $can.size() == 0 && $proc.job().wait() != 0 ? $none : $can
 }
 
