@@ -36,3 +36,8 @@ ll=ls -ll"
 assert abbr -r la
 assert "$(abbr -l)" == "gb=git branch
 ll=ls -ll"
+
+# complete
+abbr lA 'ls -A'
+assert diff <(complete 'abbr -r ') <(printf "%s\n" gb lA ll)
+assert diff <(complete 'abbr -r \l\') <(printf "%s\n" '\l\A' '\l\l')

@@ -61,6 +61,8 @@ See \`bind --help' for more information."
 
 # complete
 assert diff <(complete 'bind -q co') <(printf "%s\n" complete complete-backward)
+assert diff <(complete 'bind -q c\o\') <(printf "%s\n" 'c\o\mplete' 'c\o\mplete-backward')
 assert diff <(complete 'bind -r e') <(printf "%s\n" end enter escape)
+assert diff <(complete 'bind -r \e\') <(printf "%s\n" '\e\nd' '\e\nter' '\e\scape')
 
 true

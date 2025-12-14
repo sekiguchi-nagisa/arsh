@@ -753,7 +753,9 @@ static CmdArgCompStatus completeCLIFlagOrOption(const CLIRecordType &type, const
     if (StringRef(value).startsWith(prefix.compWord)) {
       if (value.size() == prefix.compWord.size() &&
           value.back() == '=') { // 'value == word' and '--long='
-        return completeCLIArg(value, e, CompPrefix{}, comp, consumer);
+        CompPrefix remain = prefix;
+        remain.removePrefix(value.size());
+        return completeCLIArg(value, e, remain, comp, consumer);
       }
       CompCandidate candidate(prefix, CompCandidateKind::COMMAND_ARG, value);
       if (value.back() == '=') {

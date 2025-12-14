@@ -1,23 +1,27 @@
 
 # for key bind setting
 
-function _comp_actions(opt: String, prefix: String): Candidates {
+function _comp_actions(opt: String, prefixToken: String): Candidates {
+    let prefix = $prefixToken.dequote()
     var ret: Candidates
     for a in $LINE_EDIT.actions() {
         if $a.startsWith($prefix) {
             $ret.add($a)
         }
     }
+    $ret.quote($prefixToken)
     return $ret
 }
 
-function _comp_keycodes(opt: String, prefix: String): Candidates {
+function _comp_keycodes(opt: String, prefixToken: String): Candidates {
+    let prefix = $prefixToken.dequote()
     var ret: Candidates
     for k,_ in $LINE_EDIT.bindings() {
         if $k.startsWith($prefix) {
             $ret.add($k.quote())
         }
     }
+    $ret.quote($prefixToken)
     return $ret
 }
 
@@ -103,13 +107,15 @@ bind(param : _BindParam) {
     return 0
 }
 
-function _comp_abbr(opt: String, prefix: String): Candidates {
+function _comp_abbr(opt: String, prefixToken: String): Candidates {
+    let prefix = $prefixToken.dequote()
     var ret : Candidates
     for k,_ in $LINE_EDIT.abbrs() {
         if $k.startsWith($prefix) {
             $ret.add($k.quote())
         }
     }
+    $ret.quote($prefixToken)
     return $ret
 }
 

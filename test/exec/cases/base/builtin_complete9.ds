@@ -9,7 +9,8 @@ typedef CCC() {
 
 var OPT: String?
 
-function count(opt: String, prefix: String): Candidates? {
+function count(opt: String, prefixToken: String): Candidates? {
+    let prefix = $prefixToken.dequote()
     $OPT = $opt
     var ret: Candidates
     for c in ['111', '123', '1234', '222'] {
@@ -18,16 +19,19 @@ function count(opt: String, prefix: String): Candidates? {
         }
     }
     $prefix.startsWith('EEE') && throw new InvalidOperationError($prefix)
+    $ret.quote($prefixToken)
     return $ret
 }
 
-function output(opt: String, prefix: String): Candidates? {
+function output(opt: String, prefixToken: String): Candidates? {
+    let prefix = $prefixToken.dequote()
     var ret: Candidates
     for c in ['AAA', 'AAB', 'ABB', 'ABC'] {
         if $c.startsWith($prefix) {
             $ret.add($c)
         }
     }
+    $ret.quote($prefixToken)
     return $ret
 }
 
@@ -120,7 +124,7 @@ assert $COMPREPLY.size() == 1
 assert $COMPREPLY[0] == "--dump"
 assert $COMPREPLY.hasSpace(0)
 
-## complete file names after options
+## complete file names after options (fallback)
 assert diff <(complete -- 'fff --count ') <(complete -A file)
 assert diff <(complete -- 'fff --version ') <(complete -A file)
 assert diff <(complete -- 'fff --version ./') <(complete -A file './')
@@ -130,15 +134,21 @@ assert diff <(complete -- 'fff --fajjaiae ') <(complete -A file)  # complete fil
 
 ## complete via user-defined func
 assert diff <(complete -- 'fff bbb1 -v --c\ount ') <(printf "%s\n" 111 123 1234 222 )
+assert diff <(complete -- 'fff bbb1 -v --c\ount \') <(printf "%s\n" '\111' '\123' '\1234' '\222' )
 assert diff <(complete -- 'fff bbb1 -\-count=') <(printf "%s\n" 111 123 1234 222 )
+assert diff <(complete -- 'fff bbb1 -\-count=\') <(printf "%s\n" '\111' '\123' '\1234' '\222' )
 assert diff <(complete -- 'fff bbb1 -c 12') <(printf "%s\n" 123 1234 )
 assert diff <(complete -- 'fff bbb1 --count 12') <(printf "%s\n" 123 1234 )
+assert diff <(complete -- 'fff bbb1 --count \1\2\') <(printf "%s\n" '\1\2\3' '\1\2\34' )
 assert diff <(complete -- 'fff bbb1 --count=2') <(printf "%s\n" 222)
+assert diff <(complete -- 'fff bbb1 --count=2\') <(printf "%s\n" '2\22')
 assert $(complete -- 'fff bbb1 --count=3').empty()
 assert diff <(complete -- 'fff bbb1 --output=') <(printf "%s\n" 'AAA' 'AAB' 'ABB' 'ABC' )
 assert diff <(complete -- 'fff bbb1 --output ') <(complete -A file)
 assert diff <(complete -- 'fff bbb1 -o') <(printf "%s\n" -o ) # fallback
 assert diff <(complete -- 'fff bbb1 -oA') <(printf "%s\n" 'AAA' 'AAB' 'ABB' 'ABC' )
+assert diff <(complete -- 'fff bbb1 -o\A') <(printf "%s\n" '\AAA' '\AAB' '\ABB' '\ABC' )
+assert diff <(complete -- 'fff bbb1 -oA\B\') <(printf "%s\n"  'A\B\B' 'A\B\C' )
 assert diff <(complete -- 'fff bbb1 -o ') <(complete -A file) # fallback
 
 $OPT = $none
@@ -160,6 +170,8 @@ assert diff <(complete -- 'fff bbb1 --log i') <(printf "%s\n" info)
 assert diff <(complete -- 'fff bbb1 -ss') <(printf "%s\n" stderr stdin stdout)
 assert diff <(complete -- 'fff bbb1 -\ss\t') <(printf "%s\n" 's\tderr' 's\tdin' 's\tdout')
 assert diff <(complete -- 'fff bbb1 -s ') <(complete -A file) # fallback
+assert diff <(complete -- 'fff bbb1 "--log" info --stream=') <(printf "%s\n" stderr stdin stdout)
+assert diff <(complete -- 'fff bbb1 "--log" info --stream=\') <(printf "%s\n" '\stderr' '\stdin' '\stdout')
 assert diff <(complete -- 'fff bbb1 "--log" info --stream=stde') <(printf "%s\n" stderr)
 # assert diff <(complete -- 'fff bbb1 --log=info --stream=stde') <(printf "%s\n" stderr)
 assert diff <(complete -- 'fff bbb1 --stream ') <(complete -A file) # fallback
