@@ -32,17 +32,77 @@ function compAdd(cmd : String, comp : Completer) : Completer? {
 
 # for completion helper
 
-type _CompDefEntry(o : String?, t : Int?, a : String?, d: String?) {
-    let option = $o ?? ""   # option (short, long option or other parameter)
-    let type = $t ?? -1     # arg type (-1: empty, 0: list, 1: cmdline, 2: action, 3: comp, 4: func, 5: raw_func)
-    let arg = $a ?? ""      # argument
+type _CompDefEntry(t : Int?, a : String?, d: String?) {
+    let argType = $t ?? -1  # arg type (-1: empty, 0: list, 1: cmdline, 2: action, 3: comp, 4: func, 5: raw_func)
+    let arg = $a ?? ""      # argument (for argument completion)
     let desc = $d           # description
 }
 
 type _CompDef() {
-    let entries : [_CompDefEntry]
+    let entries : [ 
+        String : # option (short: starts with '-', long: starts with '--', arg: empty, path: starts with '/')
+        _CompDefEntry
+    ]
     var sort = $true
     var subcmds: [String : _CompDef]?
+}
+
+function getFirst(): (String, _CompDefEntry)? for _CompDef {
+    return for e in $this.entries { break $e; }
+}
+
+function generate(ctx: Module, prefixToken: String): Candidates? for _CompDefEntry {
+    let arg = $this.arg
+    let prefix = $prefixToken.dequote()
+    return case $this.argType {
+        0 => {
+            var r : Candidates
+            for a in $arg.split(" ") {
+                if $a.startsWith($prefix) {
+                    $r.add($a)
+                }
+            }
+            $r.quote($prefixToken)
+            $r
+        }
+        1 => {
+            var ret : Candidates
+            for line in <(call $BIN_NAME -c "$arg") {
+                if $line.startsWith($prefix) {
+                    $ret.add($line)
+                }
+            }
+            $ret.quote($prefixToken)
+            $ret
+        }
+        2 => {
+            var actions : [String]
+            for a in $arg.split("|") {
+                $actions.add("-A")
+                $actions.add($a)
+            }
+            if $prefixToken.startsWith('~') {
+                $actions.add('-A').add('tilde')
+            }
+            complete -q -m $ctx $actions $prefix;  # FIXME: quoting
+            $COMPREPLY
+        }
+        4 => {
+            if $arg.empty() {
+                new Candidates()
+            } else {
+                var func = $_argFuncs.get($arg) ?? return $none
+                var ret = $func($prefix)
+                $ret.quote($prefixToken)
+                $ret
+            }
+        }
+        5 => {
+            var func = $_argFuncs.get($arg) ?? return $none
+            $func($prefixToken)  # pass raw word
+        }
+        else => $none
+    }
 }
 
 let _compdefMap : [String : _CompDef] # command name to completion definition mapping
@@ -67,16 +127,16 @@ function _remove_prefix_from_quoted(quoted: String, n: Int): String {
 #
 function _comp_opt(deflist : _CompDef, prefix : String) : Candidates {
     var ret = new Candidates($sort:$deflist.sort)
-    for def in $deflist.entries {
-        var opt = $def.option.ifEmpty() ?? continue
-        if $opt.startsWith($prefix) {
-            var long = $opt.startsWith('--') && $opt.endsWith('=')
-            $ret.add($opt, $space: $long ? 0 : -1, $desc: $def.desc)
-        } elif $opt.startsWith("--") && $def.type != -1 {
+    for option, def in $deflist.entries {
+        $option.startsWith('-') || continue
+        if $option.startsWith($prefix) {
+            var long = $option.startsWith('--') && $option.endsWith('=')
+            $ret.add($option, $space: $long ? 0 : -1, $desc: $def.desc)
+        } elif $option.startsWith("--") && $def.argType != -1 {
             # opt -> --opt
             # prefix -> --opt=hoge
-            if $prefix.startsWith($opt) && ($prefix.slice($opt.size()).startsWith('=') || $opt.endsWith('=')) {
-                $ret.add($opt, $desc: $def.desc)
+            if $prefix.startsWith($option) && ($prefix.slice($option.size()).startsWith('=') || $option.endsWith('=')) {
+                $ret.add($option, $desc: $def.desc)
             }
         }
     }
@@ -89,60 +149,8 @@ function _comp_opt(deflist : _CompDef, prefix : String) : Candidates {
 # return quoted candidates
 #
 function _comp_arg(ctx : Module, deflist: _CompDef, opt : String, prefixToken : String) : Candidates? {
-    let prefix = $prefixToken.dequote()
-    for def in $deflist.entries {
-        $opt == $def.option || continue
-
-        var arg = $def.arg
-        return case $def.type {
-            0 => {
-                var r : Candidates
-                for a in $arg.split(" ") {
-                    if $a.startsWith($prefix) {
-                        $r.add($a)
-                    }
-                }
-                $r.quote($prefixToken)
-                $r
-            }
-            1 => {
-                var ret : Candidates
-                for line in <(call $BIN_NAME -c "$arg") {
-                    if $line.startsWith($prefix) {
-                        $ret.add($line)
-                    }
-                }
-                $ret.quote($prefixToken)
-                $ret
-            }
-            2 => {
-                var actions : [String]
-                for a in $arg.split("|") {
-                    $actions.add("-A")
-                    $actions.add($a)
-                }
-                if $prefixToken.startsWith('~') {
-                    $actions.add('-A').add('tilde')
-                }
-                complete -q -m $ctx $actions $prefix;  # FIXME: quoting
-                $COMPREPLY
-            }
-            4 => {
-                if $arg.empty() {
-                    new Candidates()
-                } else {
-                    var func = $_argFuncs.get($arg) ?? break
-                    var ret = $func($prefix)
-                    $ret.quote($prefixToken)
-                    $ret
-                }
-            }
-            5 => {
-                var func = $_argFuncs.get($arg) ?? break
-                $func($prefixToken)  # pass raw word
-            }
-            else => break
-        }
+    if let def = $deflist.entries.get($opt) {
+        return $def.generate($ctx, $prefixToken)
     }
     return $none
 }
@@ -359,8 +367,10 @@ function _from_compdef(ctx : Module, words : [String], cursor : Int) : Candidate
         }
     }
 
-    if !$deflist.entries.empty() && $deflist.entries[0].type == 3 {
-        return $_comp_wrap($deflist.entries[0].option, $deflist.entries[0].arg, $words, $cursor)
+    if let e = $deflist.getFirst() {
+        if $e._1.argType == 3 {
+            return $_comp_wrap($e._0, $e._1.arg, $words, $cursor)
+        }
     }
     if $words.size() == $cursor {    # complete arguments or options
         # 'CMD '
@@ -521,7 +531,10 @@ compdef(param : _CompDefParam) {
     if $param.nosort {
         $def.sort = $false
     }
-    $def.entries.add(new _CompDefEntry($opt, $argType, $arg, $param.desc))
+    if $def.entries.put($opt, new _CompDefEntry($argType, $arg, $param.desc)) {
+        return $_error($param, "already defined option: $opt for ${param.cmd}")
+    }
+    return 0
 }
 
 function compDelegate(ctx : Module, words : [String], cursor : Int) : Candidates? {
@@ -536,7 +549,10 @@ function compAlias(cmd: String, target: String): Completer? {
 }
 
 function bindArgFunc(func: (String)-> Candidates): String {
-    var key = "af" + ($RANDOM % 1000000000)
+    let key = for(var i = 10000; $i< 1000000000000000000;$i*=10) {
+        let key = "af${$RANDOM % $i}"
+        $_argFuncs.get($key) ?? break $key
+    } ?? "af$RANDOM"
     $_argFuncs[$key] = $func
     return $key
 }

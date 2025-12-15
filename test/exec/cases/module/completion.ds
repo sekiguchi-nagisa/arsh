@@ -5,28 +5,35 @@ source ../../../../share/arsh/modules/completion.arsh
 
 $BASH_COMPLETION_PATH = $SCRIPT_NAME  ## force disable bash completion
 
-# no option
+# for compdef
+## no option
 assert compdef 2>&1 | grep 'compdef: require --cmd option'
 compdef &> /dev/null
 assert $? == 1
 
-# -h
+## -h
 assert compdef -h 2>&1 | grep 'Usage: compdef \[OPTIONS\]'
 compdef &> /dev/null -h
 assert $? == 0
 
-# --help
+## --help
 assert compdef --help 2>&1 | grep 'Usage: compdef \[OPTIONS\]'
 compdef &> /dev/null --help
 assert $? == 0
 
-# invalid option
+## invalid option
 assert compdef --he 2>&1 | grep 'compdef: invalid option: --he'
 compdef &> /dev/null --he
 assert $? == 2
 
+## error
+assert compdef --cmd @@@@@ --short l
+assert ! compdef --cmd @@@@@ --short l
+assert $? == 1
+assert compdef --cmd @@@@@ --short l 2>&1 | grep 'compdef: already defined option: -l for @@@@@'
 
-# short option
+
+## short option
 compdef --cmd ls --short l
 compdef --cmd ls --short q --arg-list 'AAA ABB ABC CCC D$D D;E'
 
@@ -62,7 +69,7 @@ assert diff <(complete 'ps 4') <(echo 456)
 assert $(complete 'ps A').empty()
 
 
-# long option
+## long option
 compdef --cmd ls --long show --arg-cmd 'ls'
 compdef --cmd ls --long stop --arg-action signal
 compdef --cmd ls --long top
@@ -98,12 +105,7 @@ assert diff <(complete 'ps --help ') <(echo aaa && echo bbb && echo ccc && echo 
 assert diff <(complete 'ps \--h\e\lp \') <(echo '\aaa' && echo '\bbb' && echo '\ccc' && echo '\ddd')
 assert $(complete 'ps --help 1').empty()
 
-# alias
-$compAlias('diff', 'ps')
-assert diff <(complete 'diff --he') <(echo --help)
-assert diff <(complete 'diff --help ') <(echo aaa && echo bbb && echo ccc && echo ddd)
-
-# sub-command
+## sub-command
 source $SCRIPT_DIR/../../_module4test/comp_nest.ds  as nest
 assert diff <(complete 'nest mod fff -') <(printf "%s\n" --count= --dump --help --version -d -h -v)
 compdef --cmd ${$nest.mod._fullname('fff')!} --long hey --arg-list 'aaa bbb ccc'
@@ -116,6 +118,11 @@ compdef --cmd ${$nest.mod._fullname('ggg')!} --long hey --arg-list 'aaa bbb ccc'
 assert diff <(complete 'nest mod ggg --he') <(echo --hey)
 assert diff <(complete 'nest mod ggg --hey ') <(printf "%s\n" aaa bbb ccc)
 assert diff <(complete 'nest mod ggg --hey c') <(printf "%s\n" ccc)
+
+# alias
+$compAlias('diff', 'ps')
+assert diff <(complete 'diff --he') <(echo --help)
+assert diff <(complete 'diff --help ') <(echo aaa && echo bbb && echo ccc && echo ddd)
 
 # help-based comp
 $DYNA_UDCS['bison'] = () {
