@@ -121,31 +121,14 @@ compdef --cmd complete --short A --desc 'show completion candidates via ACTION' 
 }
 
 ## shctl
-{
-    let subs = [
-        'is-interactive', 'is-sourced', 'backtrace', 
-        'function', 'module', 'set', 'unset', 'info', 'winsize'
-    ]
-    compdef --cmd=shctl --arg-func=$bindArgFunc(function(p)=> {
-        var ret: Candidates
-        for sub in $subs {
-            if $sub.startsWith($p) {
-                $ret.add($sub)
-            }
-        }
-        $ret
-    })
-
-    ## sub-commands
-    compdef --cmd=shctl --subcmd=is-interactive --arg-empty
-    compdef --cmd=shctl --subcmd=is-sourced --arg-empty
-    compdef --cmd=shctl --subcmd=backtrace --arg-empty
-    compdef --cmd=shctl --subcmd=function --arg-empty
-    compdef --cmd=shctl --subcmd=module --arg-action module
-    compdef --cmd=shctl --subcmd=set --arg-cmd 'shctl set | cut -d " " -f 1'
-    compdef --cmd=shctl --subcmd=set --short d  --arg-empty --desc 'dump current runtime options'
-    compdef --cmd=shctl --subcmd=set --short r  --arg-empty --desc 'restore runtime options'
-    compdef --cmd=shctl --subcmd=unset --arg-cmd 'shctl set | cut -d " " -f 1'
-    compdef --cmd=shctl --subcmd=info --arg-empty
-    compdef --cmd=shctl --subcmd=winsize --arg-empty
-}
+compdef --cmd=shctl --subcmd=is-interactive --arg-empty
+compdef --cmd=shctl --subcmd=is-sourced --arg-empty
+compdef --cmd=shctl --subcmd=backtrace --arg-empty
+compdef --cmd=shctl --subcmd=function --arg-empty
+compdef --cmd=shctl --subcmd=module --arg-action module
+compdef --cmd=shctl --subcmd=set --arg-cmd 'shctl set | cut -d " " -f 1'
+compdef --cmd=shctl --subcmd=set --short d  --arg-empty --desc 'dump current runtime options'
+compdef --cmd=shctl --subcmd=set --short r  --arg-empty --desc 'restore runtime options'
+compdef --cmd=shctl --subcmd=unset --arg-cmd 'shctl set | cut -d " " -f 1'
+compdef --cmd=shctl --subcmd=info --arg-empty
+compdef --cmd=shctl --subcmd=winsize --arg-empty

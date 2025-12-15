@@ -152,6 +152,17 @@ function _comp_arg(ctx : Module, deflist: _CompDef, opt : String, prefixToken : 
     if let def = $deflist.entries.get($opt) {
         return $def.generate($ctx, $prefixToken)
     }
+    if $opt.empty() && $deflist.subcmds { # complete sub-command
+        let prefix = $prefixToken.dequote()
+        var can : Candidates
+        for cmd, _ in $deflist.subcmds {
+            if $cmd.startsWith($prefix) {
+                $can.add($cmd)
+            }
+        }
+        $can.quote($prefixToken)
+        return $can
+    }
     return $none
 }
 
