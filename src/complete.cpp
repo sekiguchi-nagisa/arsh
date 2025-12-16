@@ -733,12 +733,13 @@ static CmdArgCompStatus completeCLIFlagOrOption(const CLIRecordType &type, const
       std::string value;
       value += '-';
       value += e.getShortName();
-      if (StringRef(value).startsWith(prefix.compWord)) {
-        consumer(prefix, CompCandidateKind::COMMAND_ARG, value);
-      } else if (e.op == OptParseOp::OPT_ARG && prefix.compWord.startsWith(value)) {
+      if (e.op == OptParseOp::OPT_ARG && prefix.compWord.startsWith(value)) {
         CompPrefix remain = prefix;
         remain.removePrefix(value.size());
         return completeCLIArg(value, e, remain, comp, consumer);
+      }
+      if (StringRef(value).startsWith(prefix.compWord)) {
+        consumer(prefix, CompCandidateKind::COMMAND_ARG, value);
       }
     }
     // long option
