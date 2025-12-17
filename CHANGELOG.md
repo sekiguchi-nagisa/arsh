@@ -78,6 +78,7 @@
 - various ``completion.arsh`` module improvements
     - add ``compAlias`` function. now define completion as alias of others
     - add help-based completions for coreutils
+    - improve tilde expansion checking of arg action
     - add some options to ``compdef`` command
         - ``--nosort``: suppress sorting of candidates
         - ``--subcmd``: define sub-command completions

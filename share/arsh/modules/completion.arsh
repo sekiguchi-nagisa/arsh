@@ -51,7 +51,22 @@ function getFirst(): (String, _CompDefEntry)? for _CompDef {
     return for e in $this.entries { break $e; }
 }
 
-function generate(ctx: Module, prefixToken: String): Candidates? for _CompDefEntry {
+function _should_tilde_expand(optToken: String): Bool {
+    var count = 0
+    if $optToken.endsWith('=') {
+        let limit = - $optToken.size() - 1
+        for(var i = -2; $i > $limit; $i--) {
+            if $optToken[$i] == '\' {
+                $count++
+            } else {
+                break
+            }
+        }
+    }
+    return $count %2 == 0
+}
+
+function generate(ctx: Module, optToken: String, prefixToken: String): Candidates? for _CompDefEntry {
     let arg = $this.arg
     let prefix = $prefixToken.dequote()
     return case $this.argType {
@@ -81,7 +96,7 @@ function generate(ctx: Module, prefixToken: String): Candidates? for _CompDefEnt
                 $actions.add("-A")
                 $actions.add($a)
             }
-            if $prefixToken.startsWith('~') {
+            if $prefixToken.startsWith('~') && $_should_tilde_expand($optToken) {
                 $actions.add('-A').add('tilde')
             }
             complete -q -m $ctx $actions $prefix;  # FIXME: quoting
@@ -148,9 +163,9 @@ function _comp_opt(deflist : _CompDef, prefix : String) : Candidates {
 # $opt is empty string or starts with '-'
 # return quoted candidates
 #
-function _comp_arg(ctx : Module, deflist: _CompDef, opt : String, prefixToken : String) : Candidates? {
+function _comp_arg(ctx : Module, deflist: _CompDef, optToken: String, opt : String, prefixToken : String) : Candidates? {
     if let def = $deflist.entries.get($opt) {
-        return $def.generate($ctx, $prefixToken)
+        return $def.generate($ctx, $opt.empty() ? "" : $optToken, $prefixToken)
     }
     if $opt.empty() && $deflist.subcmds { # complete sub-command
         let prefix = $prefixToken.dequote()
@@ -387,8 +402,9 @@ function _from_compdef(ctx : Module, words : [String], cursor : Int) : Candidate
         # 'CMD '
         # 'CMD arg '
         # 'CMD -s '
-        var prev = ($words.size() == 1 ? "" : $words[-1]).dequote()
-        return $_comp_arg($ctx, $deflist, $prev.startsWith("-") ? $prev : "", "")
+        var prevToken = ($words.size() == 1 ? "" : $words[-1])
+        var prev = $prevToken.dequote()
+        return $_comp_arg($ctx, $deflist, $prevToken, $prev.startsWith("-") ? $prev : "", "")
     } else {
         # 'CMD d'
         # 'CMD -'
@@ -397,7 +413,7 @@ function _from_compdef(ctx : Module, words : [String], cursor : Int) : Candidate
         # 'CMD -s d'
         # 'CMD arg1 d'
         assert $words.size() > 1
-        var prevToken = $words[-1]
+        let prevToken = $words[-1]
         var prev = $prevToken.dequote()
         if $prev.startsWith('-') { # 'CMD -', 'CMD --d'
             var ret = $_comp_opt($deflist, $prev)
@@ -406,20 +422,23 @@ function _from_compdef(ctx : Module, words : [String], cursor : Int) : Candidate
                 if $opt.startsWith("--") && $prev.startsWith($opt) {
                     # for `--opt=' style option
                     if $opt.endsWith('=') {  # defined as `--long opt=' form
-                        $prevToken = $_remove_prefix_from_quoted($prevToken, $opt.size())
-                        return $_comp_arg($ctx, $deflist, $opt, $prevToken)
+                        var prefixToken = $_remove_prefix_from_quoted($prevToken, $opt.size())
+                        var optToken = $prevToken.slice(0, $prevToken.size() - $prefixToken.size())
+                        return $_comp_arg($ctx, $deflist, $optToken, $opt, $prefixToken)
                     }
                     if $prev.slice($opt.size()).startsWith('=') {
-                        $prevToken = $_remove_prefix_from_quoted($prevToken, $opt.size() + 1)
-                        return $_comp_arg($ctx, $deflist, $opt, $prevToken)
+                        var prefixToken = $_remove_prefix_from_quoted($prevToken, $opt.size() + 1)
+                        var optToken = $prevToken.slice(0, $prevToken.size() - $prefixToken.size())
+                        return $_comp_arg($ctx, $deflist, $optToken, $opt, $prefixToken)
                     }
                 }
             }
             $ret.quote($prevToken)
             return $ret
         }
-        var opt = ($words.size() == 2 ? "" : $words[-2]).dequote()
-        return $_comp_arg($ctx, $deflist, $opt.startsWith("-") ? $opt : "", $prevToken)
+        var optToken = ($words.size() == 2 ? "" : $words[-2])
+        var opt = $optToken.dequote()
+        return $_comp_arg($ctx, $deflist, $optToken, $opt.startsWith("-") ? $opt : "", $prevToken)
     }
 }
 
