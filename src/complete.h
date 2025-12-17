@@ -60,6 +60,7 @@ public:
   std::string value;
   const CompCandidateKind kind;
   bool suffixSpace;
+  bool cliOptDetail{false};
   const int priority;
   const size_t prefixSize;
 
@@ -75,6 +76,7 @@ private:
       unsigned int methodIndex;
     } nativeMethodHandleInfo;
     CmdNameType cmdNameType;
+    const std::string *detail;
   } meta{};
 
 public:
@@ -112,6 +114,17 @@ public:
   void overrideSuffixSpace(bool space) { this->suffixSpace = space; }
 
   std::string formatTypeSignature(const TypePool &pool) const;
+
+  void setCLIOptDetail(const std::string &detail) {
+    if (!detail.empty()) {
+      this->meta.detail = &detail;
+      this->cliOptDetail = true;
+    }
+  }
+
+  const auto &getCLIOptDetail() const { return *this->meta.detail; }
+
+  bool hasCLIOptDetail() const { return this->cliOptDetail; }
 
   bool needSuffixSpace() const { return this->suffixSpace; }
 

@@ -739,7 +739,9 @@ static CmdArgCompStatus completeCLIFlagOrOption(const CLIRecordType &type, const
         return completeCLIArg(value, e, remain, comp, consumer);
       }
       if (StringRef(value).startsWith(prefix.compWord)) {
-        consumer(prefix, CompCandidateKind::COMMAND_ARG, value);
+        CompCandidate candidate(prefix, CompCandidateKind::COMMAND_ARG, value);
+        candidate.setCLIOptDetail(e.getDetail());
+        consumer(std::move(candidate));
       }
     }
     // long option
@@ -762,6 +764,7 @@ static CmdArgCompStatus completeCLIFlagOrOption(const CLIRecordType &type, const
       if (value.back() == '=') {
         candidate.overrideSuffixSpace(false);
       }
+      candidate.setCLIOptDetail(e.getDetail());
       consumer(std::move(candidate));
     } else if (e.op != OptParseOp::NO_ARG) {
       if (value.back() != '=') {

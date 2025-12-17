@@ -61,6 +61,7 @@
     - call user-defined completion
 - improve CLI option completion
     - complete candidates specified by ``choice`` attribute param
+    - show detail message of option/flag
 - overhaul quoted comp word handling
     - correctly quote completion candidates started with invalid command argument characters
     - change trailing backslash handling of comp word. now treat it as a command argument part

@@ -441,6 +441,12 @@ public:
                                               CandidateAttr{CandidateAttr::Kind::KEYWORD, true});
         return;
       }
+      if (candidate.kind == CompCandidateKind::COMMAND_ARG && candidate.hasCLIOptDetail()) {
+        this->overflow = !this->reply->addNewCandidateWith(this->state, candidate.value,
+                                                           candidate.getCLIOptDetail(),
+                                                           {CandidateAttr::Kind::NONE, needSpace});
+        return;
+      }
 
       const std::string typeSig = candidate.formatTypeSignature(this->state.typePool);
       if (!typeSig.empty()) {

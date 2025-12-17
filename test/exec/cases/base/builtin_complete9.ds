@@ -43,13 +43,13 @@ typedef BBB() {
     [<Option(short: "c", long: "count", comp: $count)>]
     var count = 0
 
-    [<Option(short: 'o', long: "output", opt:$true, comp: $output)>]
+    [<Option(short: 'o', long: "output", opt:$true, comp: $output, help:$'set output file\n12')>]
     var output : String?
 
-    [<Option(choice: ['debug', 'info', 'warn', 'error'])>]
+    [<Option(choice: ['debug', 'info', 'warn', 'error'], help:"")>]
     var log = "warn"
 
-    [<Option(choice: ['stdin', 'stdout', 'stderr'], opt:$true, short:'s', long:'stream')>]
+    [<Option(choice: ['stdin', 'stdout', 'stderr'], opt:$true, short:'s', long:'stream', help:"set input stream (default is stdin)")>]
     var stream = "stdin"
 
     [<SubCmd>]
@@ -146,6 +146,15 @@ assert $COMPREPLY[8] == "-s"
 assert $COMPREPLY.hasSpace(8)
 assert $COMPREPLY[9] == "-v"
 assert $COMPREPLY.hasSpace(9)
+
+complete -s -d -- 'fff bbb2 --'
+assert @($COMPREPLY) == @(
+    "--count="
+    "--help@show this help message"
+    "--log="
+    $'--output@set output file\n12'
+    "--stream@set input stream (default is stdin)"
+)
 
 ## complete file names after options (fallback)
 assert diff <(complete -- 'fff --count ') <(complete -A file)
