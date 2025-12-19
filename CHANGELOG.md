@@ -83,6 +83,8 @@
         - ``--nosort``: suppress sorting of candidates
         - ``--subcmd``: define sub-command completions
         - ``--arg-empty``: generate empty candidate
+        - ``--long-single``: long-option with single dash
+    - ``--short`` option only allow single ascii character
 - improve builtin commands completion
     - show description in ``completion`` command completion
     - complete ``-INT`` style options in ``kill`` command completion

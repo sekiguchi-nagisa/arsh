@@ -145,9 +145,9 @@ function _comp_opt(deflist : _CompDef, prefix : String) : Candidates {
     for option, def in $deflist.entries {
         $option.startsWith('-') || continue
         if $option.startsWith($prefix) {
-            var long = $option.startsWith('--') && $option.endsWith('=')
+            var long = $option.endsWith('=') && $option.size() > 2 # --opt=, -opt=
             $ret.add($option, $space: $long ? 0 : -1, $desc: $def.desc)
-        } elif $option.startsWith("--") && $def.argType != -1 {
+        } elif $option.size() > 2 && $def.argType != -1 { # --opt, -opt
             # opt -> --opt
             # prefix -> --opt=hoge
             if $prefix.startsWith($option) && ($prefix.slice($option.size()).startsWith('=') || $option.endsWith('=')) {
@@ -419,9 +419,9 @@ function _from_compdef(ctx : Module, words : [String], cursor : Int) : Candidate
             var ret = $_comp_opt($deflist, $prev)
             if $ret.size() == 1 {
                 var opt = $ret[0]
-                if $opt.startsWith("--") && $prev.startsWith($opt) {
-                    # for `--opt=' style option
-                    if $opt.endsWith('=') {  # defined as `--long opt=' form
+                if $prev.startsWith($opt) {
+                    # for `--opt=' or `-opt=' style option
+                    if $opt.endsWith('=') && $opt.size() > 2 {  # defined as `--long opt=' or `--long-single opt=` form
                         var prefixToken = $_remove_prefix_from_quoted($prevToken, $opt.size())
                         var optToken = $prevToken.slice(0, $prevToken.size() - $prefixToken.size())
                         return $_comp_arg($ctx, $deflist, $optToken, $opt, $prefixToken)
@@ -458,6 +458,9 @@ type _CompDefParam() {
 
     [<Option(placeholder: "LONG_OPTION", xor: 0, help: "set long option (start with '--')")>]
     var long: String?
+
+    [<Option(placeholder: "LONG_SIGLE_DASH", xor: 0, help: "set long option with single dash")>]
+    var long_single: String?
 
     [<Option(placeholder: "LIST", xor: 1, help: "generate candidates from LIST split by ' '")>]
     var arg_list: String?
@@ -497,10 +500,16 @@ compdef(param : _CompDefParam) {
 
     var opt = ""
     if let short = $param.short {
+        if $short.size() > 1 {
+            return $_error($param, "\`--short' option only accept single ascii char: \`$short'")
+        }
         $opt = '-'+ $short
     }
     if let long = $param.long {
         $opt = '--' + $long
+    }
+    if let longSingle = $param.long_single {
+        $opt = '-' + $longSingle
     }
     var argType : Int?
     var arg : String?
@@ -562,7 +571,7 @@ compdef(param : _CompDefParam) {
         $def.sort = $false
     }
     if $def.entries.put($opt, new _CompDefEntry($argType, $arg, $param.desc)) {
-        return $_error($param, "already defined option: $opt for ${param.cmd}")
+        return $_error($param, "already defined option: \`$opt' for \`${param.cmd}'")
     }
     return 0
 }

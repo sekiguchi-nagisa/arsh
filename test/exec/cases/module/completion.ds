@@ -30,7 +30,10 @@ assert $? == 2
 assert compdef --cmd @@@@@ --short l
 assert ! compdef --cmd @@@@@ --short l
 assert $? == 1
-assert compdef --cmd @@@@@ --short l 2>&1 | grep 'compdef: already defined option: -l for @@@@@'
+assert compdef --cmd @@@@@ --short l 2>&1 | grep "compdef: already defined option: \`-l' for \`@@@@@'"
+
+assert compdef --cmd @@@@@ --short ww 2>&1 | grep  "\`--short' option only accept single ascii char: \`ww'"
+assert $PIPESTATUS[0] == 1
 
 
 ## short option
@@ -113,6 +116,19 @@ assert { var a = $(complete 'ls --out=\~'); $a.empty() || $a[0].startsWith('\~')
 assert $(complete 'ls --out\=~/').empty()  # not expand tilde
 assert ! $(complete 'ls --out\\=~/').empty()
 assert $(complete 'ls --out\\\=~/').empty() # not expand tilde
+
+## long option with single dash
+compdef --cmd=cut --long-single 'verbose'
+compdef --cmd=cut --long-single 'set=' --arg-list 'aa11 aa12 aa21 aa22 bb11'
+assert diff <(complete 'cut -') <(printf "%s\n" '-set=' '-verbose')
+assert diff <(complete 'cut \-\') <(printf "%s\n" '\-\set=' '\-\verbose')
+assert diff <(complete 'cut -v\er\') <(printf "%s\n" '-v\er\bose')
+assert diff <(complete 'cut -verbose') <(printf "%s\n" '-verbose')
+assert diff <(complete 'cut -set=') <(printf "%s\n" 'aa11' 'aa12' 'aa21' 'aa22' 'bb11')
+assert diff <(complete 'cut \-set=') <(printf "%s\n" 'aa11' 'aa12' 'aa21' 'aa22' 'bb11')
+assert diff <(complete 'cut -set=\') <(printf "%s\n" '\aa11' '\aa12' '\aa21' '\aa22' '\bb11')
+assert diff <(complete 'cut -set=aa') <(printf "%s\n" 'aa11' 'aa12' 'aa21' 'aa22')
+assert diff <(complete 'cut -set=\aa1\') <(printf "%s\n" '\aa1\1' '\aa1\2')
 
 ## sub-command
 source $SCRIPT_DIR/../../_module4test/comp_nest.ds  as nest
