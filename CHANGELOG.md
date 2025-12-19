@@ -52,6 +52,7 @@
         - default is 40
         - when set to 0, the pager is disabled
         - when set to 100, the pager is full height
+- re-compute the pager cursor position after the window resize
 - add ``sort`` param to ``Candidates`` object constructor. now suppress sorting of candidates
 - add ``cmd`` param to ``String#quote`` method. now quote as command
 - improve sub-command completion

@@ -83,8 +83,6 @@ ArrayPager ArrayPager::create(const CandidatesObject &obj, const CharWidthProper
   return {obj, std::move(items), maxIndex, winSize, rowRatio};
 }
 
-static unsigned int saturatedSub(unsigned int x, unsigned int y) { return std::max(x, y) - y; }
-
 void ArrayPager::updateLayout() {
   this->showPager = true;
   this->showDesc = true;
@@ -97,9 +95,6 @@ void ArrayPager::updateLayout() {
   this->paneLen = this->items[this->maxLenItemIndex].itemLen();
   this->panes = saturatedSub(this->winSize.cols, COL_MARGIN) / this->paneLen;
   this->panes = std::max(this->panes, 1u);
-  if (this->curRow >= this->getActualRows()) {
-    this->curRow = saturatedSub(this->getActualRows(), 1);
-  }
   if (this->panes == 1) {
     // truncate to multiple of TAB_WIDTH
     unsigned int colLimit = saturatedSub(this->winSize.cols, COL_MARGIN) / TAB_WIDTH * TAB_WIDTH;
@@ -116,6 +111,16 @@ void ArrayPager::updateLayout() {
         static_cast<unsigned int>(strlen("rows ")) + countDigits(this->getLogicalRows()) * 3 + 2;
     if (footerSize < this->panes * this->paneLen) {
       this->showRowNum = true;
+    }
+  }
+
+  // re-compute cursor position
+  if (this->filteredItemSize()) {
+    const unsigned int orgIndex = this->index;
+    this->index = 0;
+    this->curRow = 0;
+    while (this->index < orgIndex) {
+      this->moveCursorToNext();
     }
   }
 }

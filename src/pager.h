@@ -205,7 +205,7 @@ public:
       return;
     }
     if (this->index == 0) {
-      this->curRow = this->getActualRows() - 1;
+      this->curRow = saturatedSub(this->getActualRows(), 1);
       this->index = this->filteredItemSize() - 1;
       const unsigned int offset = this->index % this->getLogicalRows();
       this->curRow = std::min(this->curRow, offset);
@@ -214,7 +214,7 @@ public:
         if (this->index % this->getLogicalRows() > 0) {
           this->curRow = 0;
         } else {
-          this->curRow = this->getActualRows() - 1;
+          this->curRow = saturatedSub(this->getActualRows(), 1);
         }
       } else {
         this->curRow--;
@@ -231,12 +231,12 @@ public:
       this->curRow = 0;
       this->index = 0;
     } else {
-      if (this->curRow == this->getActualRows() - 1) {
+      if (this->curRow == saturatedSub(this->getActualRows(), 1)) {
         unsigned int logicalRows = this->getLogicalRows();
         if (this->index % logicalRows == logicalRows - 1) {
           this->curRow = 0;
         } else {
-          this->curRow = this->getActualRows() - 1;
+          this->curRow = saturatedSub(this->getActualRows(), 1);
         }
       } else {
         this->curRow++;
@@ -261,7 +261,7 @@ public:
       }
       if (curLogicalRows == 0) {
         nextIndex = logicalRows * this->getPanes() - 1;
-        this->curRow = this->getActualRows() - 1;
+        this->curRow = saturatedSub(this->getActualRows(), 1);
       }
       while (nextIndex >= this->filteredItemSize()) {
         nextIndex -= logicalRows;
@@ -282,7 +282,7 @@ public:
       unsigned int nextIndex = this->index + 1 - (logicalRows * curCols);
       unsigned int curLogicalRows = this->index % logicalRows;
       if (nextIndex < this->filteredItemSize() && curLogicalRows < logicalRows - 1) {
-        if (this->curRow < this->getActualRows() - 1) {
+        if (this->curRow < saturatedSub(this->getActualRows(), 1)) {
           this->curRow++;
         }
         this->index = nextIndex;
@@ -294,6 +294,8 @@ public:
   }
 
 private:
+  static unsigned int saturatedSub(unsigned int x, unsigned int y) { return std::max(x, y) - y; }
+
   void updateLayout();
 
   void rebuildFilteredItemIndexes();

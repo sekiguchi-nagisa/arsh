@@ -442,7 +442,7 @@ TEST_F(PagerTest, shrinkRow) {
 
   // expand
   pager.updateWinSize({.rows = 9, .cols = 5});
-  expect = "DDD \r\n\x1b[7mEEE \x1b[0m\r\nFFF \r\n";
+  expect = "CCC \r\nDDD \r\n\x1b[7mEEE \x1b[0m\r\n";
   out = this->render(pager);
   ASSERT_EQ(expect, out);
 }
@@ -778,7 +778,7 @@ TEST_F(PagerTest, filterBase) {
 
   // expand
   pager.updateWinSize({.rows = 10, .cols = 10});
-  expect = "\x1b[4msearch: C\x1b[0m\r\n\x1b[7mBCD \x1b[0m\r\nCDE \r\n";
+  expect = "\x1b[4msearch: C\x1b[0m\r\nABC CDE \r\n\x1b[7mBCD \x1b[0m\r\n";
   out = this->render(pager);
   ASSERT_EQ(expect, out);
 
