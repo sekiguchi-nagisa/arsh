@@ -41,6 +41,10 @@
 - **Breaking Change**: change ``String#split`` method behavior when pass empty delimiter.
     - like dart and go, split into code points
     - if invalid encoding, split into single bytes
+- **Breaking Change**: invalid utf8 byte handling of ``String#chars``, ``String#words`` method
+    - now not replace invalid bytes by default
+    - add ``replace`` param for replacing invalid utf8 bytes with placement character
+- **Breaking Change**: not replace invalid utf8 bytes during string iteration
 - in ``LineEditor``, some edit actions are now mapped to pager actions
     - remap the following edit actions to pager actions
         - ``accept``: select pager item

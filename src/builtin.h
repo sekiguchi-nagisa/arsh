@@ -654,37 +654,43 @@ ARSH_METHOD string_bytes(RuntimeContext &ctx) {
   RET(value);
 }
 
-//!bind: function chars($this : String) : Array<String>
+//!bind: function chars($this : String, $replace: Option<Bool>) : Array<String>
 ARSH_METHOD string_chars(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_chars);
   auto ref = LOCAL(0).asStrRef();
+  const bool replaceInvalid = LOCAL(1).isInvalid() ? false : LOCAL(1).asBool();
   auto value = Value::create<ArrayObject>(ctx.typePool.get(TYPE::StringArray));
   auto &array = typeAs<ArrayObject>(value);
 
-  iterateGrapheme(ref, [&array](const GraphemeCluster &ret) {
-    array.append(Value::createStr(ret)); // not check iterator invalidation
+  iterateGrapheme(ref, [&array, replaceInvalid](const GraphemeCluster &grapheme) {
+    StringRef ref = grapheme.hasInvalid() && replaceInvalid ? UnicodeUtil::REPLACEMENT_CHAR_UTF8
+                                                            : grapheme.getRef();
+    array.append(Value::createStr(ref)); // not check iterator invalidation
   });
   ASSERT_ARRAY_SIZE(array);
   RET(value);
 }
 
-//!bind: function words($this : String) : Array<String>
+//!bind: function words($this : String, $replace: Option<Bool>) : Array<String>
 ARSH_METHOD string_words(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_words);
   auto ref = LOCAL(0).asStrRef();
+  const bool replaceInvalid = LOCAL(1).isInvalid() ? false : LOCAL(1).asBool();
   auto value = Value::create<ArrayObject>(ctx.typePool.get(TYPE::StringArray));
   auto &array = typeAs<ArrayObject>(value);
-  iterateWord(ref, [&array](StringRef wordRef) {
+  iterateWord(ref, [&array, replaceInvalid](StringRef wordRef) {
     std::string word;
     const auto *end = wordRef.end();
     for (auto *iter = wordRef.begin(); iter != end;) {
-      unsigned int size = UnicodeUtil::utf8ValidateChar(iter, end);
-      if (size < 1) {
+      if (const unsigned int size = UnicodeUtil::utf8ValidateChar(iter, end)) {
+        word += StringRef(iter, size);
+        iter += size;
+      } else if (replaceInvalid) {
         word += UnicodeUtil::REPLACEMENT_CHAR_UTF8;
         iter++;
       } else {
-        word += StringRef(iter, size);
-        iter += size;
+        word += StringRef(iter, 1);
+        iter++;
       }
     }
     array.append(Value::createStr(std::move(word))); // not check iterator invalidation

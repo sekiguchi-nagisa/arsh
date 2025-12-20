@@ -267,8 +267,6 @@ struct RawValue {
   TValue tv;
 };
 
-class GraphemeCluster;
-
 class Value : public RawValue {
 private:
   static_assert(sizeof(RawValue) == 8);
@@ -620,14 +618,6 @@ public:
   static Value createStr(StringRef ref);
 
   static Value createStr(std::string &&value);
-
-  /**
-   * create String from grapheme cluster.
-   * if it has invalid code points, replace theme with 'Unicode replacement char'
-   * @param ret
-   * @return
-   */
-  static Value createStr(const GraphemeCluster &ret);
 };
 
 template <typename T>

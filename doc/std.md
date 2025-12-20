@@ -145,9 +145,9 @@ function count(): Int for String
 
 function bytes(): [Int] for String
 
-function chars(): [String] for String
+function chars(replace: Bool?): [String] for String
 
-function words(): [String] for String
+function words(replace: Bool?): [String] for String
 
 function width(eaw: Int?): Int for String
 

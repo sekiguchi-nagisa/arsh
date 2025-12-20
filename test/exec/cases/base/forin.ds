@@ -65,19 +65,25 @@ var expects = $invalid.chars()
 for a in $invalid {
     $rr.add($a)
 }
-assert $rr.size() == 6
-assert $rr[0] == "�"
+assert $rr.size() == 6  # split into original bytes even if invalid utf8 bytes
+assert $rr[0] == $'\xC2'
 assert $rr[0] == $expects[0]
+assert !$rr[0].validate()
 assert $rr[1] == "$"
 assert $rr[1] == $expects[1]
-assert $rr[2] == "�"
+assert $rr[1].validate()
+assert $rr[2] == $'\xE0'
 assert $rr[2] == $expects[2]
-assert $rr[3] == "�"
+assert !$rr[2].validate()
+assert $rr[3] == $'\xA4'
 assert $rr[3] == $expects[3]
-assert $rr[4] == '�'
+assert !$rr[3].validate()
+assert $rr[4] == $'\xC2'
 assert $rr[4] == $expects[4]
+assert !$rr[4].validate()
 assert $rr[5] == $'\u0E33'
 assert $rr[5] == $expects[5]
+assert $rr[5].validate()
 
 ## for-in optional (check unwrap)
 $rr.clear()

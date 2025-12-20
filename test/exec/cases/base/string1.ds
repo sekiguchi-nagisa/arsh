@@ -301,11 +301,11 @@ let invalid = $'\xC2\x24\xE0\xA4\xC2\xE0\xB8\xB3'
 assert $invalid.count() == 6
 $gca = $invalid.chars()
 assert $gca.size() == 6
-assert $gca[0] == $'\uFFFD' # replace invalid byte with replacement char (U+FFFD)
+assert $gca[0] == $'\xC2' # original byte
 assert $gca[1] == $'\x24'
-assert $gca[2] == $'\uFFFD'
-assert $gca[3] == $'\uFFFD'
-assert $gca[4] == $'\uFFFD'
+assert $gca[2] == $'\xE0'
+assert $gca[3] == $'\xA4'
+assert $gca[4] == $'\xC2'
 assert $gca[5] == $'\u0E33'
 assert $invalid.width(2) == 10
 assert $invalid.width(1) == 6
@@ -316,13 +316,50 @@ assert $invalid.width() ==
     $aa
 }
 
+$gca = $invalid.chars($replace:$true)
+assert $gca.size() == 6
+assert $gca[0] == $'\uFFFD' # replace invalid byte with replacement char (U+FFFD)
+assert $gca[1] == $'\x24'
+assert $gca[2] == $'\uFFFD' # replace invalid byte with replacement char (U+FFFD)
+assert $gca[3] == $'\uFFFD' # replace invalid byte with replacement char (U+FFFD)
+assert $gca[4] == $'\uFFFD' # replace invalid byte with replacement char (U+FFFD)
+assert $gca[5] == $'\u0E33'
+
+$gca = $invalid.chars($replace:$false)
+assert $gca.size() == 6
+assert $gca[0] == $'\xC2' # original byte
+assert $gca[1] == $'\x24'
+assert $gca[2] == $'\xE0'
+assert $gca[3] == $'\xA4'
+assert $gca[4] == $'\xC2'
+assert $gca[5] == $'\u0E33'
+
+
 $words = $invalid.words()
+assert $words.size() == 6
+assert $words[0] == $'\xC2'
+assert $words[1] == $'\x24'
+assert $words[2] == $'\xE0'
+assert $words[3] == $'\xA4'
+assert $words[4] == $'\xC2'
+assert $words[5] == $'\u0E33'
+
+$words = $invalid.words($replace:$true)
 assert $words.size() == 6
 assert $words[0] == $'\uFFFD' # replace invalid byte with replacement char (U+FFFD)
 assert $words[1] == $'\x24'
 assert $words[2] == $'\uFFFD'
 assert $words[3] == $'\uFFFD'
 assert $words[4] == $'\uFFFD'
+assert $words[5] == $'\u0E33'
+
+$words = $invalid.words($replace:$false)
+assert $words.size() == 6
+assert $words[0] == $'\xC2'
+assert $words[1] == $'\x24'
+assert $words[2] == $'\xE0'
+assert $words[3] == $'\xA4'
+assert $words[4] == $'\xC2'
 assert $words[5] == $'\u0E33'
 
 ## validate

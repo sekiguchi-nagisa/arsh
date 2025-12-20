@@ -171,14 +171,6 @@ Value Value::createStr(std::string &&value) {
   return create<StringObject>(std::move(value));
 }
 
-Value Value::createStr(const GraphemeCluster &ret) {
-  if (ret.hasInvalid()) {
-    return Value::createStr(UnicodeUtil::REPLACEMENT_CHAR_UTF8);
-  } else {
-    return Value::createStr(ret.getRef());
-  }
-}
-
 // ###########################
 // ##     UnixFD_Object     ##
 // ###########################
@@ -316,7 +308,8 @@ Value StringIterObject::next() {
   if (!scanner.hasNext()) {
     return Value::createInvalid();
   }
-  const auto ret = Value::createStr(scanner.next());
+  // always put consumed bytes (even if invalid utf8)
+  const auto ret = Value::createStr(scanner.next().getRef());
 
   // save the current scanner state
   this->prevPos = scanner.getCharBegin() - ref.begin();
