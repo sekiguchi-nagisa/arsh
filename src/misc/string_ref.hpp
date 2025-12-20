@@ -50,7 +50,7 @@ public:
    * maybe null. if not null, it must be a null-terminated string.
    */
   constexpr StringRefBase(const char *value) noexcept // NOLINT
-      : ptr_(value), size_(this->ptr_ ? __builtin_strlen(this->ptr_) : 0) {}
+      : ptr_(value), size_(this->ptr_ ? std::char_traits<char>::length(this->ptr_) : 0) {}
 
   constexpr StringRefBase(const char *value, size_type size) noexcept : ptr_(value), size_(size) {}
 
@@ -72,7 +72,7 @@ public:
 
   int compare(StringRefBase ref) const noexcept {
     size_t size = std::min(this->size_, ref.size_);
-    int ret = memcmp(this->ptr_, ref.ptr_, size);
+    int ret = std::char_traits<char>::compare(this->ptr_, ref.ptr_, size);
     if (ret) {
       return ret;
     }
@@ -172,12 +172,14 @@ public:
   }
 
   bool startsWith(StringRefBase ref) const {
-    return this->size_ >= ref.size_ && memcmp(this->ptr_, ref.ptr_, ref.size_) == 0;
+    return this->size_ >= ref.size_ &&
+           std::char_traits<char>::compare(this->ptr_, ref.ptr_, ref.size_) == 0;
   }
 
   bool endsWith(StringRefBase ref) const {
     return this->size_ >= ref.size_ &&
-           memcmp(this->ptr_ + (this->size_ - ref.size_), ref.ptr_, ref.size_) == 0;
+           std::char_traits<char>::compare(this->ptr_ + (this->size_ - ref.size_), ref.ptr_,
+                                           ref.size_) == 0;
   }
 
   std::string toString() const { return std::string(this->data(), this->size()); }
@@ -193,7 +195,8 @@ private:
 using StringRef = StringRefBase<true>;
 
 inline bool operator==(StringRef left, StringRef right) {
-  return left.size() == right.size() && memcmp(left.data(), right.data(), left.size()) == 0;
+  return left.size() == right.size() &&
+         std::char_traits<char>::compare(left.data(), right.data(), left.size()) == 0;
 }
 
 inline bool operator!=(StringRef left, StringRef right) { return !(left == right); }
