@@ -400,7 +400,9 @@ private:
   const bool putDesc;
 
 public:
-  DefaultCompConsumer(ARState &state, bool putDesc) : state(state), putDesc(putDesc) {}
+  DefaultCompConsumer(ARState &state, const DoCodeCompletionOption option)
+      : CompCandidateConsumer(willKickFrontEnd(option.op) ? CompQuoteType::AUTO : option.quote),
+        state(state), putDesc(option.putDesc) {}
 
   void operator()(CompCandidate &&candidate) override {
     if (!this->reply) {
@@ -579,7 +581,7 @@ static CmdArgCompStatus kickCompHook(ARState &state, const unsigned int tempModI
   auto dummyMod = Value::createDummy(state.typePool.get(TYPE::Module), tempModIndex);
   auto argv = createArgv(state, tempModIndex, ctx, offset, cmdModType);
   unsigned int index = typeAs<ArrayObject>(argv).size();
-  if (ctx.getCompWordToken().size) {
+  if (ctx.getCompWordToken().size()) {
     index--;
   }
 
@@ -685,7 +687,7 @@ public:
         continue;
       }
       if (const auto name = e.getKey().asStrRef(); name.startsWith(prefix.compWord)) {
-        CompCandidate candidate(prefix, CompCandidateKind::COMMAND_NAME, name);
+        CompCandidate candidate(prefix, CompCandidateKind::COMMAND_NAME, name, consumer.quoteType);
         candidate.setCmdNameType(CompCandidate::CmdNameType::DYNA_UDC);
         consumer(std::move(candidate));
       }
@@ -694,19 +696,21 @@ public:
 };
 
 static bool completeImpl(ARState &st, ResolvedTempMod resolvedMod, StringRef source,
-                         const CodeCompOp option, DefaultCompConsumer &consumer) {
+                         const DoCodeCompletionOption option, DefaultCompConsumer &consumer) {
   auto scope = st.tempModScope[resolvedMod.index];
   DefaultModuleProvider provider(st.modLoader, st.typePool, scope,
                                  std::make_unique<RuntimeCancelToken>());
   auto discardPoint = provider.getCurrentDiscardPoint();
 
-  CodeCompleter codeCompleter(consumer, willKickFrontEnd(option) ? makeObserver(provider) : nullptr,
+  CodeCompleter codeCompleter(consumer,
+                              willKickFrontEnd(option.op) ? makeObserver(provider) : nullptr,
                               st.sysConfig, st.typePool, st.logicalWorkingDir);
   DefaultForeignCompHandler foreignHandler(st, resolvedMod);
   codeCompleter.setForeignCompHandler(foreignHandler);
   codeCompleter.setCancel(provider.getCancelToken());
 
-  bool ret = codeCompleter(scope, st.modLoader[scope->modId].first.get(), source, option);
+  bool ret =
+      codeCompleter(scope, st.modLoader[scope->modId].first.get(), source, option.op, option.quote);
   provider.discard(discardPoint);
   discardTempMod(st.tempModScope, resolvedMod);
   return ret;
@@ -720,8 +724,8 @@ int doCodeCompletion(ARState &st, const StringRef modDesc, const DoCodeCompletio
     return -1;
   }
 
-  DefaultCompConsumer consumer(st, option.putDesc);
-  const bool ret = completeImpl(st, resolvedMod, source, option.op, consumer);
+  DefaultCompConsumer consumer(st, option);
+  const bool ret = completeImpl(st, resolvedMod, source, option, consumer);
   st.setGlobal(BuiltinVarOffset::COMPREPLY, std::move(consumer).finalize()); // override COMPREPLY
 
   // check space insertion

@@ -53,8 +53,10 @@ assert diff <(complete 'exec ~/') <(complete -A exec -A tilde '~/')
 # unsetenv
 setenv 'ZZZ(3.14)=12345'
 
-assert diff <(complete 'unsetenv ') <(complete -A env)
+assert diff <(complete 'unsetenv ') <(complete -Q -A env)
+assert diff <(complete 'unsetenv \') <(complete -Q -A env '\')
 assert diff <(complete 'unsetenv H') <(complete -A env H)
+assert diff <(complete 'unsetenv \H\') <(complete -A env -Q '\H\')
 
 # cd
 assert diff <(complete 'cd /') <(complete -A dir '/')
@@ -63,6 +65,7 @@ assert diff <(complete 'cd /') <(complete -A dir '/')
 assert diff <(complete -d -q -- 'complete -' && printf "%s\n" $COMPREPLY) \
             <(printf "%s\n" 
                 '-A@show completion candidates via ACTION'
+                '-Q@explicitly quote completion candidates. treat LINE as quoted word.'
                 '-d@may put description of completion candidate'
                 '-m@complete in specified module context'
                 '-q@does not show completion candidates'

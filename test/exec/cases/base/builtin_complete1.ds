@@ -95,9 +95,13 @@ $IFS = $'\n'
 
 
 # error
-complete '-Q' 2> /dev/null
+complete '-Y' 2> /dev/null
 assert($? == 2)
-assert complete -Q 2>&1 | grep ': complete: -Q: invalid option'
+assert complete -Y 2>&1 | grep ': complete: -Y: invalid option'
+
+complete -Qww 2>/dev/null
+assert($? == 2)
+assert complete -Qww 2>&1 | grep ': complete: ww: invalid quote type'
 
 
 # empty string

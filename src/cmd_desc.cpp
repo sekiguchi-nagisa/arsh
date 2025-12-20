@@ -54,14 +54,17 @@ static constexpr BuiltinCmdDesc table[] = {
      "    If -p option is specified, search command from default PATH.\n"
      "    If -V or -v option are specified, print description of COMMAND.\n"
      "    -V option shows more detailed information."},
-    {"complete", "[-A action] [-m descriptor] [-dqs] line",
+    {"complete", "[-A action] [-m descriptor] [-dqs] [-Q[type]] line",
      "    Show completion candidates.\n"
      "    Options:\n"
      "      -d    may put description of completion candidate\n"
      "      -q    does not show completion candidates\n"
      "      -s    may put space to completion candidate suffix\n"
      "      -m    complete in specified module context\n"
-     "      -A    show completion candidates via ACTION\n"
+     "      -A    show completion candidates via ACTION. treat LINE as de-quoted word\n"
+     "      -Q    explicitly quote completion candidates. treat LINE as quoted word.\n"
+     "            TYPE indicates quoting type (`cmd' or `arg', default is `arg').\n"
+     "            only affect when specified `-A' option\n"
      "\n"
      "    Actions:\n"
      "      file       complete file names\n"

@@ -437,11 +437,11 @@ static StrRefMap<CodeCompOp> initCompActions() {
 static int builtin_complete(ARState &state, ArrayObject &argvObj) {
   static const auto actionMap = initCompActions();
 
-  DoCodeCompletionOption option{};
+  DoCodeCompletionOption option;
   bool show = true;
   bool insertSpace = false;
   StringRef moduleDesc;
-  GetOptState optState(":A:m:dqsh");
+  GetOptState optState(":A:m:dqshQ::");
   for (int opt; (opt = optState(argvObj)) != -1;) {
     switch (opt) {
     case 'A': {
@@ -467,6 +467,16 @@ static int builtin_complete(ARState &state, ArrayObject &argvObj) {
       break;
     case 'h':
       return showHelp(argvObj);
+    case 'Q':
+      if (optState.optArg.empty() || optState.optArg == "arg") {
+        option.quote = CompQuoteType::ARG;
+      } else if (optState.optArg == "cmd") {
+        option.quote = CompQuoteType::CMD;
+      } else {
+        ERROR(state, argvObj, "%s: invalid quote type", toPrintable(optState.optArg).c_str());
+        return showUsage(argvObj);
+      }
+      break;
     case ':':
       ERROR(state, argvObj, "-%c: option requires argument", optState.optOpt);
       return 1;

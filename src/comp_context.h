@@ -97,13 +97,23 @@ struct CompPrefix {
   }
 };
 
+enum class CompQuoteType : unsigned char {
+  NONE, // no-quote
+  AUTO, // auto-detect
+  CMD,  // quote as command
+  ARG,  // quote as command-argument
+};
+
 class CodeCompletionContext {
 private:
   ObserverPtr<const Lexer> lex;
 
   const std::string &scriptDir; // for module completion
 
-  Token compWordToken;
+  /**
+   * quoted current completion word (maybe empty)
+   */
+  std::string compWordToken;
 
   /**
    * current completion word
@@ -164,10 +174,16 @@ public:
     this->compWord = std::move(word);
   }
 
+  void addCompRequest(CodeCompOp op, std::string &&wordToken, std::string &&word) {
+    this->compOp = op;
+    this->compWordToken = std::move(wordToken);
+    this->compWord = std::move(word);
+  }
+
   void addCompRequest(const Lexer &lexer, CodeCompOp op, Token wordToken, std::string &&word) {
     this->compOp = op;
     this->compWord = std::move(word);
-    this->compWordToken = wordToken;
+    this->compWordToken = lexer.toTokenText(wordToken);
     this->lex = makeObserver(lexer);
   }
 
@@ -270,25 +286,20 @@ public:
 
   const auto &getScriptDir() const { return this->scriptDir; }
 
-  Token getCompWordToken() const { return this->compWordToken; }
+  const auto &getCompWordToken() const { return this->compWordToken; }
 
   CompPrefix toCompPrefix() const {
-    CompPrefix prefix;
-    if (this->getLexer()) {
-      prefix.compWordToken = this->getLexer()->toStrRef(this->getCompWordToken());
-    }
-    prefix.compWord = this->getCompWord();
-    return prefix;
+    return {
+        .compWordToken = this->getCompWordToken(),
+        .compWord = this->getCompWord(),
+    };
   }
 
   CompPrefix toCompPrefixByOffset() const {
-    CompPrefix prefix;
-    if (this->getLexer()) {
-      prefix.compWordToken = this->getLexer()->toStrRef(
-          this->getCompWordToken().sliceFrom(this->getCompWordTokenOffset()));
-    }
-    prefix.compWord = StringRef(this->getCompWord()).substr(this->getCompWordOffset());
-    return prefix;
+    return {
+        .compWordToken = StringRef(this->getCompWordToken()).substr(this->getCompWordTokenOffset()),
+        .compWord = StringRef(this->getCompWord()).substr(this->getCompWordOffset()),
+    };
   }
 };
 

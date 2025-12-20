@@ -18,8 +18,18 @@ assert diff <(complete -A env 'Z') \
               <(env | grep ^Z | for l in $STDIN { 
                                   var ss = $l.split('='); 
                                   $l.indexOf('=') > -1 && echo $ss[0];  } | 
+                                  LANG=C sort)
+assert diff <(complete -A env -Q 'Z') \
+              <(env | grep ^Z | for l in $STDIN { 
+                                  var ss = $l.split('='); 
+                                  $l.indexOf('=') > -1 && echo $ss[0];  } | 
                                   sed 's/(/\\(/' | sed 's/)/\\)/' | LANG=C sort)
 assert diff <(complete -A env -A valid_env 'Z') \
+              <(env | grep ^Z | for l in $STDIN { # also complete invalid env name even if specified `valid_env` action
+                                  var ss = $l.split('='); 
+                                  $l.indexOf('=') > -1 && echo $ss[0];  } | 
+                                  LANG=C sort)
+assert diff <(complete -Q -A env -A valid_env 'Z') \
               <(env | grep ^Z | for l in $STDIN { # also complete invalid env name even if specified `valid_env` action
                                   var ss = $l.split('='); 
                                   $l.indexOf('=') > -1 && echo $ss[0];  } | 
@@ -41,14 +51,14 @@ if $OSTYPE.lower() == "linux" {
 }
 
 ## file
-assert diff <(complete -A file) <(complete 'ls ')
-assert diff <(complete -A file '') <(complete 'ls ')
-assert diff <(complete -A file '.') <(complete 'ls .')
+assert diff <(complete -A file -Q ) <(complete 'ls ')
+assert diff <(complete -A file -Q '') <(complete 'ls ')
+assert diff <(complete -A file -Q '.') <(complete 'ls .')
 assert diff <(complete -A file -A tilde '~') <(complete 'ls ~')
 assert $(complete -A file /fjafifafoifare/).empty()
 
 ## exec
-assert diff <(complete -A exec /usr/bin/) <(complete '/usr/bin/')
+assert diff <(complete -Q -A exec /usr/bin/) <(complete '/usr/bin/')
 
 ## directory
 assert diff <(complete -A dir /usr/) <(complete '/usr/' | grep '.*/$')
@@ -94,9 +104,11 @@ hogehogehuga(){}
 \{\}() {}
 a\	b(){}
 
-var udc = ["\\{\\}","a\$'\x09'b", "hogehogehuga", 'mod']
+var udc_quoted = ["\\{\\}","a\$'\x09'b", "hogehogehuga", 'mod']
+var udc = ["{}",$'a\tb', "hogehogehuga", 'mod']
+assert diff <(complete -Q -A udc) <(for $e in $udc_quoted { echo $e; } | sort)
 assert diff <(complete -A udc) <(for $e in $udc { echo $e; } | sort)
-assert diff <(complete -A udc 'h') <(for $e in $udc { echo $e; } | grep '^h'| sort)
+assert diff <(complete -A udc 'h') <(for $e in $udc_quoted { echo $e; } | grep '^h'| sort)
 assert "$(complete -A udc 'e')".empty()
 assert "$(complete -A dyna 'zz')".empty()
 assert {complete -q -A cmd -- 'zzzzzzzzzaaaaaa'; $COMPREPLY; }.size() == 0
@@ -105,7 +117,7 @@ $DYNA_UDCS["zzzzzzzzzaaaaaa@@@"] = (){}
 assert diff <(complete -A cmd -- 'zzzzzzzzzaaaaaa') <(echo zzzzzzzzzaaaaaa && echo zzzzzzzzzaaaaaa@@@)
 assert diff <(complete -A dyna -- 'zzzzzzzzzaaaaaa') <(echo zzzzzzzzzaaaaaa && echo zzzzzzzzzaaaaaa@@@)
 
-assert diff <(complete -A command -A stmt_kw) <(complete ';')
+assert diff <(complete -A command -A stmt_kw t) <(complete 't')
 assert diff <(complete -A command -A stmt_kw l) <(complete 'l')
 assert diff <(complete -A command -A stmt_kw c) <(complete 'c')
 assert diff <(complete -A type) <(complete '34 as ')
@@ -200,22 +212,22 @@ assert $COMPREPLY[0] == 'echo\\\\\ '
 
 
 ## invalid
-assert "$(complete -A 2>&1)" == "${$SCRIPT_NAME.basename()}:203: complete: -A: option requires argument"
+assert "$(complete -A 2>&1)" == "${$SCRIPT_NAME.basename()}:215: complete: -A: option requires argument"
 assert !complete -A
 assert $? == 1
 
-assert "$(complete -A hgorahe 2>&1)" == "${$SCRIPT_NAME.basename()}:207: complete: hgorahe: invalid action
-complete: complete [-A action] [-m descriptor] [-dqs] line"
+assert "$(complete -A hgorahe 2>&1)" == "${$SCRIPT_NAME.basename()}:219: complete: hgorahe: invalid action
+complete: complete [-A action] [-m descriptor] [-dqs] [-Q[type]] line"
 assert !complete -A fjairfaj
 assert $? == 2
 
-assert "$(complete -m $MODULE$'\000' 2>&1)" == "${$SCRIPT_NAME.basename()}:212: complete: ${MODULE}\x00: unrecognized module descriptor"
+assert "$(complete -m $MODULE$'\000' 2>&1)" == "${$SCRIPT_NAME.basename()}:224: complete: ${MODULE}\x00: unrecognized module descriptor"
 assert "$(complete -m $MODULE"3q4324" 2>&1)" == 
-    "${$SCRIPT_NAME.basename()}:213: complete: ${MODULE}3q4324: unrecognized module descriptor"
+    "${$SCRIPT_NAME.basename()}:225: complete: ${MODULE}3q4324: unrecognized module descriptor"
 assert !complete -m ${MODULE}3q4324
 assert $? == 1
-assert "$(complete -m 'TMD(34)' 2>&1)" == "${$SCRIPT_NAME.basename()}:217: complete: TMD(34): unrecognized module descriptor"
-assert "$(complete -m 'TMD(hoge)' 2>&1)" == "${$SCRIPT_NAME.basename()}:218: complete: TMD(hoge): unrecognized module descriptor"
+assert "$(complete -m 'TMD(34)' 2>&1)" == "${$SCRIPT_NAME.basename()}:229: complete: TMD(34): unrecognized module descriptor"
+assert "$(complete -m 'TMD(hoge)' 2>&1)" == "${$SCRIPT_NAME.basename()}:230: complete: TMD(hoge): unrecognized module descriptor"
 
 if (test -e /dev/full) {
     assert "$(complete '$(' 2>&1 > /dev/full)" =~ $/: complete: io error:.+/
@@ -223,13 +235,13 @@ if (test -e /dev/full) {
 }
 
 ## help
-assert help complete | grep '^complete: complete \[-A action] \[-m descriptor] \[-dqs] line'
+assert help complete | grep '^complete: complete \[-A action] \[-m descriptor] \[-dqs] \[-Q\[type]] line'
 assert $PIPESTATUS[0] == 0 && $PIPESTATUS[1] == 0
 
-assert complete -h| grep '^complete: complete \[-A action] \[-m descriptor] \[-dqs] line'
+assert complete -h| grep '^complete: complete \[-A action] \[-m descriptor] \[-dqs] \[-Q\[type]] line'
 assert $PIPESTATUS[0] == 2 && $PIPESTATUS[1] == 0
 
-assert complete --help| grep '^complete: complete \[-A action] \[-m descriptor] \[-dqs] line'
+assert complete --help| grep '^complete: complete \[-A action] \[-m descriptor] \[-dqs] \[-Q\[type]] line'
 assert $PIPESTATUS[0] == 2 && $PIPESTATUS[1] == 0
 
 true

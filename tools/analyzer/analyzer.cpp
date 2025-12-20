@@ -439,7 +439,7 @@ struct DummyForeignCompHandler : ForeignCompHandler {
   CmdArgCompStatus callUserDefinedComp(const CodeCompletionContext &ctx, unsigned, const ModType *,
                                        CompCandidateConsumer &consumer) override {
     const auto &cmdNode = *ctx.getCmdNode();
-    const StringRef word = ctx.getCompWord();
+    const auto prefix = ctx.toCompPrefix();
     if (cmdNode.getNameNode().getValue() != "shctl") {
       return CmdArgCompStatus::INVALID;
     }
@@ -448,15 +448,15 @@ struct DummyForeignCompHandler : ForeignCompHandler {
     if (auto pair = cmdNode.findConstCmdArg(0, &out); pair.first) {
       if (out == "set" || out == "unset") {
         for (auto &e : getRuntimeOptionEntries()) {
-          if (StringRef name = e.name; name.startsWith(word)) {
-            consumer(word, CompCandidateKind::COMMAND_ARG, name);
+          if (StringRef name = e.name; name.startsWith(prefix.compWord)) {
+            consumer(prefix, CompCandidateKind::COMMAND_ARG, name);
           }
         }
       }
     } else { // only complete shctl sub-commands
       for (auto &e : getSHCTLSubCmdEntries()) {
-        if (StringRef name = e.name; name.startsWith(word)) {
-          consumer(word, CompCandidateKind::COMMAND_ARG, name);
+        if (StringRef name = e.name; name.startsWith(prefix.compWord)) {
+          consumer(prefix, CompCandidateKind::COMMAND_ARG, name);
         }
       }
     }

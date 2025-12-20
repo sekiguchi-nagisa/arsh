@@ -35,6 +35,9 @@
 
 #### Builtin
 
+- **Breaking Change**: change quote handling of ``complete`` command when passed ``-A`` option
+    - by default, does not quote candidates
+    - explicitly quote candidates by ``-Q`` option (also de-quote word)
 - in ``LineEditor``, some edit actions are now mapped to pager actions
     - remap the following edit actions to pager actions
         - ``accept``: select pager item

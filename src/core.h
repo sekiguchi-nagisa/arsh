@@ -154,8 +154,9 @@ public:
 };
 
 struct DoCodeCompletionOption {
-  CodeCompOp op;
-  bool putDesc;
+  CodeCompOp op{};
+  bool putDesc{false};
+  CompQuoteType quote{CompQuoteType::NONE};
 };
 
 /**

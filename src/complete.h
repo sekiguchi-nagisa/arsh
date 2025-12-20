@@ -80,10 +80,8 @@ private:
   } meta{};
 
 public:
-  CompCandidate(StringRef prefix, CompCandidateKind k, StringRef v, int p = 0)
-      : CompCandidate({prefix, prefix}, k, v, p) {}
-
-  CompCandidate(const CompPrefix &prefix, CompCandidateKind kind, StringRef v, int p = 0);
+  CompCandidate(const CompPrefix &prefix, CompCandidateKind kind, StringRef v, CompQuoteType quote,
+                int p = 0);
 
   void setHandle(const Handle &handle) { this->meta.handle = &handle; }
 
@@ -133,15 +131,15 @@ public:
 
 class CompCandidateConsumer {
 public:
-  virtual ~CompCandidateConsumer() = default;
+  const CompQuoteType quoteType;
 
-  void operator()(StringRef prefix, CompCandidateKind kind, StringRef ref, int priority = 0) {
-    (*this)(CompCandidate(prefix, kind, ref, priority));
-  }
+  explicit CompCandidateConsumer(CompQuoteType type = CompQuoteType::AUTO) : quoteType(type) {}
+
+  virtual ~CompCandidateConsumer() = default;
 
   void operator()(const CompPrefix &prefix, CompCandidateKind kind, StringRef ref,
                   int priority = 0) {
-    (*this)(CompCandidate(prefix, kind, ref, priority));
+    (*this)(CompCandidate(prefix, kind, ref, this->quoteType, priority));
   }
 
   virtual void operator()(CompCandidate &&candidate) = 0;
@@ -155,14 +153,14 @@ public:
  * @param inCmdArg
  * @param consumer
  */
-void completeVarName(const NameScope &scope, StringRef prefix, bool inCmdArg,
+void completeVarName(const NameScope &scope, const CompPrefix &prefix, bool inCmdArg,
                      CompCandidateConsumer &consumer);
 
 void completeMember(const TypePool &pool, const NameScope &scope, const Type &recvType,
-                    StringRef word, CompCandidateConsumer &consumer);
+                    const CompPrefix &word, CompCandidateConsumer &consumer);
 
 void completeType(const TypePool &pool, const NameScope &scope, const Type *recvType,
-                  StringRef word, CompCandidateConsumer &consumer);
+                  const CompPrefix &word, CompCandidateConsumer &consumer);
 
 enum class CmdArgCompStatus : unsigned char {
   OK,      // completion succeeded
@@ -211,11 +209,12 @@ public:
    * @param scriptName
    * @param ref
    * @param option
+   * @param quote
    * @return
    * if canceled (interrupted by signal or has error), return false
    */
   bool operator()(NameScopePtr scope, const std::string &scriptName, StringRef ref,
-                  CodeCompOp option);
+                  CodeCompOp option, CompQuoteType quote = CompQuoteType::AUTO);
 
 private:
   /**

@@ -99,7 +99,7 @@ function generate(ctx: Module, optToken: String, prefixToken: String): Candidate
             if $prefixToken.startsWith('~') && $_should_tilde_expand($optToken) {
                 $actions.add('-A').add('tilde')
             }
-            complete -q -m $ctx $actions $prefix;  # FIXME: quoting
+            complete -q -m $ctx -Q $actions $prefixToken;
             $COMPREPLY
         }
         4 => {
