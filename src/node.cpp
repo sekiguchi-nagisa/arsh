@@ -466,6 +466,39 @@ void CmdArgNode::dump(NodeDumper &dumper) const {
   DUMP(segmentNodes);
 }
 
+bool CmdArgNode::tryToConcatAsConst(std::string *out) const {
+  if (this->isBraceExpansion() || this->isGlobExpansion()) {
+    return false;
+  }
+  for (auto &segNode : this->segmentNodes) {
+    switch (segNode->getNodeKind()) {
+    case NodeKind::String:
+      if (out) {
+        auto &node = cast<StringNode>(*segNode);
+        *out += node.getValue();
+      }
+      continue;
+    case NodeKind::StringExpr:
+      if (auto &node = cast<StringExprNode>(*segNode);
+          node.getExprNodes().size() == 1 && isa<StringNode>(*node.getExprNodes()[0])) {
+        if (out) {
+          *out += cast<StringNode>(*node.getExprNodes()[0]).getValue();
+        }
+        continue;
+      }
+      return false;
+    case NodeKind::WildCard:
+      if (out) {
+        *out += toString(cast<WildCardNode>(*segNode).meta);
+      }
+      continue;
+    default:
+      return false;
+    }
+  }
+  return true;
+}
+
 // ##########################
 // ##     ArgArrayNode     ##
 // ##########################

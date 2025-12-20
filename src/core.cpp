@@ -495,12 +495,19 @@ public:
   }
 };
 
+static std::string toConstString(const CmdArgNode &argNode) {
+  std::string out;
+  bool r = argNode.tryToConcatAsConst(&out);
+  static_cast<void>(r);
+  assert(r);
+  return out;
+}
+
 static Value getFullNameFromTempMod(const ARState &state, const unsigned int temModIndex,
                                     const CmdNode &cmdNode, unsigned int offset,
                                     const ModType *cmdModType) {
-  const StringRef name = !cmdModType
-                             ? cmdNode.getNameNode().getValue()
-                             : *cast<CmdArgNode>(*cmdNode.getArgNodes()[offset]).getConstArg();
+  std::string name = !cmdModType ? cmdNode.getNameNode().getValue()
+                                 : toConstString(cast<CmdArgNode>(*cmdNode.getArgNodes()[offset]));
   Value cmdName;
   const ModType *modType = cmdModType;
   if (!modType) {
@@ -512,7 +519,7 @@ static Value getFullNameFromTempMod(const ARState &state, const unsigned int tem
     }
   }
   if (!cmdName) {
-    cmdName = Value::createStr(name);
+    cmdName = Value::createStr(std::move(name));
   }
   return cmdName;
 }

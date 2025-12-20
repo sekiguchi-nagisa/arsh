@@ -206,7 +206,7 @@ assert diff <(complete -- 'fff bbb1 -s ') <(complete -A file) # fallback
 assert diff <(complete -- 'fff bbb1 "--log" info --stream=') <(printf "%s\n" stderr stdin stdout)
 assert diff <(complete -- 'fff bbb1 "--log" info --stream=\') <(printf "%s\n" '\stderr' '\stdin' '\stdout')
 assert diff <(complete -- 'fff bbb1 "--log" info --stream=stde') <(printf "%s\n" stderr)
-# assert diff <(complete -- 'fff bbb1 --log=info --stream=stde') <(printf "%s\n" stderr)
+assert diff <(complete -- 'fff bbb1 --log=info --stream=stde') <(printf "%s\n" stderr)
 assert diff <(complete -- 'fff bbb1 --stream ') <(complete -A file) # fallback
 
 ## complete sub-command

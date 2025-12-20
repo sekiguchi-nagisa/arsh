@@ -444,9 +444,9 @@ struct DummyForeignCompHandler : ForeignCompHandler {
       return CmdArgCompStatus::INVALID;
     }
 
-    if (auto pair = cmdNode.findConstCmdArg(0); pair.first) {
-      const auto &value = *pair.first;
-      if (value == "set" || value == "unset") {
+    std::string out;
+    if (auto pair = cmdNode.findConstCmdArg(0, &out); pair.first) {
+      if (out == "set" || out == "unset") {
         for (auto &e : getRuntimeOptionEntries()) {
           if (StringRef name = e.name; name.startsWith(word)) {
             consumer(word, CompCandidateKind::COMMAND_ARG, name);

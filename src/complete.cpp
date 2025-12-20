@@ -818,23 +818,24 @@ static CmdArgCompStatus completeCLIOption(const TypePool &pool, const CLIRecordT
    * => cliTYpe=cmd, lastOpt=null, argCount=1
    */
   assert(cliType);
-  const std::string *lastOpt = nullptr;
+  Optional<std::string> lastOpt;
   unsigned int argCount = 0;
   while (true) {
-    auto [arg, cur] = cmdNode.findConstCmdArg(argOffset);
-    if (!arg) {
+    std::string arg;
+    auto [argNode, cur] = cmdNode.findConstCmdArg(argOffset, &arg);
+    if (!argNode) {
       if (cur == cmdNode.getArgNodes().size()) { // reach end
         break;
       }
       return CmdArgCompStatus::INVALID;
     }
-    if (!arg->empty() && (*arg)[0] == '-') { // option
-      lastOpt = arg;
-    } else if (lastOpt) { // cmd -A -B arg
-      lastOpt = nullptr;
+    if (!arg.empty() && arg[0] == '-') { // option
+      lastOpt = std::move(arg);
+    } else if (lastOpt.hasValue()) { // cmd -A -B arg
+      lastOpt = {};
       argCount++;
     } else if (!argCount) {
-      if (auto ret = cliType->findSubCmdInfo(pool, *arg); ret.first) { // cmd sub
+      if (auto ret = cliType->findSubCmdInfo(pool, arg); ret.first) { // cmd sub
         cliType = ret.first;
       } else { // cmd arg
         argCount++;
@@ -846,7 +847,7 @@ static CmdArgCompStatus completeCLIOption(const TypePool &pool, const CLIRecordT
   }
 
   // complete sub-commands
-  if (!lastOpt && !argCount && (prefix.compWord.empty() || prefix.compWord[0] != '-') &&
+  if (!lastOpt.hasValue() && !argCount && (prefix.compWord.empty() || prefix.compWord[0] != '-') &&
       hasFlag(cliType->getAttr(), CLIRecordType::Attr::HAS_SUBCMD)) {
     for (auto &e : cliType->getEntries()) {
       if (!e.isSubCmd()) {
@@ -865,9 +866,9 @@ static CmdArgCompStatus completeCLIOption(const TypePool &pool, const CLIRecordT
   }
 
   // complete optional arg
-  if (lastOpt) {
-    if (auto *entry = resolveArgEntryNeedArg(*cliType, *lastOpt)) {
-      return completeCLIArg(*lastOpt, *entry, prefix, comp, consumer);
+  if (lastOpt.hasValue()) {
+    if (auto *entry = resolveArgEntryNeedArg(*cliType, lastOpt.unwrap())) {
+      return completeCLIArg(lastOpt.unwrap(), *entry, prefix, comp, consumer);
     }
   }
   return CmdArgCompStatus::INVALID; // TODO: positional arguments
@@ -916,14 +917,15 @@ static CmdArgCompStatus completeCmdArg(const TypePool &pool, ObserverPtr<Foreign
   const auto *curUdcType = checked_cast<FunctionType>(&pool.get(handle.asOk()->getTypeId()));
   unsigned int offset = 0;
   while (curModType) {
-    auto [arg, index] = cmdNode.findConstCmdArg(offset);
-    if (!arg) {
+    std::string arg;
+    auto [argNode, index] = cmdNode.findConstCmdArg(offset, &arg);
+    if (!argNode) {
       if (index == cmdNode.getArgNodes().size()) { // reach end
         break;
       }
       return CmdArgCompStatus::INVALID;
     }
-    auto hd = curModType->lookup(pool, toCmdFullName(*arg));
+    auto hd = curModType->lookup(pool, toCmdFullName(arg));
     if (!hd) {
       return CmdArgCompStatus::INVALID;
     }
@@ -943,6 +945,8 @@ static CmdArgCompStatus completeCmdArg(const TypePool &pool, ObserverPtr<Foreign
       return completeCLIOption(pool, cliType, cmdNode, offset, ctx.toCompPrefix(), comp, consumer);
     }
   } else if (curModType) {
+    LOG(TRACE_COMP, "try to complete sub-commands, prefix:(token:%s, word:%s)",
+        ctx.toCompPrefix().compWordToken.toString().c_str(), ctx.getCompWord().c_str());
     curModType->walkField(pool, udcCandidateConsumer(ctx.toCompPrefix(), consumer, false));
     return CmdArgCompStatus::OK;
   }

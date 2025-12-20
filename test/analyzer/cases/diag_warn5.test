@@ -55,7 +55,7 @@
 <<<
 {"jsonrpc": "2.0", "method": "textDocument/didChange",
   "params": {
-    "contentChanges": [ { "text": "source $SCRIPT_DIR/nest.ds as nest;\nnest mod1 hey-say" } ],
+    "contentChanges": [ { "text": "source $SCRIPT_DIR/nest.ds as nest;\nnest mod1 hey-'say'" } ],
     "textDocument": { "uri": "test:///test.ds", "version": 2 }
   }
 }
@@ -67,7 +67,7 @@
 <<<
 {"jsonrpc": "2.0", "method": "textDocument/didChange",
   "params": {
-    "contentChanges": [ { "text": "source $SCRIPT_DIR/nest.ds as nest;\nnest mod1 'hey''23'" } ],
+    "contentChanges": [ { "text": "source $SCRIPT_DIR/nest.ds as nest;\nnest mod1 'hey'\"${ 23 }\"" } ],
     "textDocument": { "uri": "test:///test.ds", "version": 3 }
   }
 }

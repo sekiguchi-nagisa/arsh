@@ -89,14 +89,15 @@ void ExtraChecker::visitCmdNode(CmdNode &node) {
     auto &type = pool.get(handle->getTypeId());
     unsigned int offset = 0;
     for (auto *modType = checked_cast<ModType>(&type); modType;) { // maybe sub-command call
-      if (auto [arg, cur] = node.findConstCmdArg(offset); arg) {
-        auto subCmd = toCmdFullName(*arg);
+      std::string arg;
+      if (auto [argNode, cur] = node.findConstCmdArg(offset, &arg); argNode) {
+        auto subCmd = toCmdFullName(arg);
         if (auto hd = modType->lookup(pool, subCmd)) {
           modType = checked_cast<ModType>(&pool.get(hd->getTypeId()));
           offset = cur + 1;
           continue;
         }
-        this->warn<UndefinedSubCmd>(node.getArgNodes()[cur]->getToken(), arg->c_str());
+        this->warn<UndefinedSubCmd>(node.getArgNodes()[cur]->getToken(), arg.c_str());
       }
       break;
     }
