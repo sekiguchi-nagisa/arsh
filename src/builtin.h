@@ -895,7 +895,15 @@ ARSH_METHOD string_split(RuntimeContext &ctx) {
   auto delimStr = LOCAL(1).asStrRef();
 
   if (delimStr.empty()) {
-    ptr.append(LOCAL(0)); // not check iterator invalidation
+    const auto end = thisStr.end();
+    for (auto iter = thisStr.begin(); iter != end;) {
+      unsigned int size = UnicodeUtil::utf8ValidateChar(iter, end);
+      if (size == 0) {
+        size = 1;
+      }
+      ptr.append(Value::createStr(StringRef(iter, size))); // not check iterator invalidation
+      iter += size;
+    }
   } else {
     for (StringRef::size_type pos = 0; pos != StringRef::npos;) {
       auto ret = thisStr.find(delimStr, pos);

@@ -181,12 +181,11 @@ assert($sa.size() == 1)
 assert($sa[0] == "hello")
 
 $sa = "hello".split("")
-assert($sa.size() == 1)
-assert($sa[0] == "hello")
+assert($sa.size() == 5)
+assert $sa == ['h', 'e', 'l', 'l', 'o']
 
 $sa = "".split("")
-assert($sa.size() == 1)
-assert($sa[0] == "")
+assert($sa.size() == 0)
 
 $sa = $'a\x00b\x00'.split($'\x00')
 assert $sa.size() == 3
@@ -206,6 +205,9 @@ $sa = $'a\x00b\x00c'.split('b')
 assert $sa.size() == 2
 assert $sa[0] == $'a\x00'
 assert $sa[1] == $'\x00c'
+
+$sa = $'a\xFFあ\xFEい\xEE'.split('')
+assert $sa == ['a', $'\xFF', 'あ', $'\xFE', 'い', $'\xEE']
 
 assert "hello".replace("e", "@") == "h@llo"
 assert "hello".replace("ll", "") == "heo"

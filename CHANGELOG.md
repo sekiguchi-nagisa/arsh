@@ -38,6 +38,9 @@
 - **Breaking Change**: change quote handling of ``complete`` command when passed ``-A`` option
     - by default, does not quote candidates
     - explicitly quote candidates by ``-Q`` option (also de-quote word)
+- **Breaking Change**: change ``String#split`` method behavior when pass empty delimiter.
+    - like dart and go, split into code points
+    - if invalid encoding, split into single bytes
 - in ``LineEditor``, some edit actions are now mapped to pager actions
     - remap the following edit actions to pager actions
         - ``accept``: select pager item
