@@ -86,6 +86,15 @@ struct CompPrefix {
   bool carryBackslash() const {
     return this->compWordToken.endsWith("\\") && !this->compWord.endsWith("\\");
   }
+
+  std::string toString() const {
+    std::string out = "(token:";
+    out += this->compWordToken;
+    out += ", word:";
+    out += this->compWord;
+    out += ")";
+    return out;
+  }
 };
 
 class CodeCompletionContext {

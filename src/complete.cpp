@@ -325,8 +325,7 @@ static auto udcCandidateConsumer(const CompPrefix &prefix, CompCandidateConsumer
 static bool completeCmdName(const CompPrefix &prefix, const NameScope &scope,
                             const CodeCompOp option, CompCandidateConsumer &consumer,
                             ObserverPtr<const CancelToken> cancel) {
-  LOG(TRACE_COMP, "prefix:(token:%s, word:%s)", prefix.compWordToken.toString().c_str(),
-      prefix.compWord.toString().c_str());
+  LOG(TRACE_COMP, "prefix:%s", prefix.toString().c_str());
 
   // complete user-defined command
   if (hasFlag(option, CodeCompOp::UDC)) {
@@ -380,8 +379,7 @@ static bool completeCmdName(const CompPrefix &prefix, const NameScope &scope,
 static bool completeFileName(const CompPrefix &prefix, const std::string &baseDir,
                              const CodeCompOp op, CompCandidateConsumer &consumer,
                              ObserverPtr<const CancelToken> cancel) {
-  LOG(TRACE_COMP, "prefix:(token:%s, word:%s), baseDir:%s", prefix.compWordToken.toString().c_str(),
-      prefix.compWord.toString().c_str(), baseDir.c_str());
+  LOG(TRACE_COMP, "prefix:%s, baseDir:%s", prefix.toString().c_str(), baseDir.c_str());
   const auto dirSepIndex = prefix.compWord.lastIndexOf("/");
 
 #ifndef __ANDROID__
@@ -474,9 +472,7 @@ static bool completeFileName(const CompPrefix &prefix, const std::string &baseDi
 static bool completeModule(const SysConfig &config, const CompPrefix &prefix,
                            const std::string &scriptDir, bool tilde,
                            CompCandidateConsumer &consumer, ObserverPtr<const CancelToken> cancel) {
-  LOG(TRACE_COMP, "prefix:(token:%s, word:%s), scriptDir:%s",
-      prefix.compWordToken.toString().c_str(), prefix.compWord.toString().c_str(),
-      scriptDir.c_str());
+  LOG(TRACE_COMP, "prefix:%s, scriptDir:%s", prefix.toString().c_str(), scriptDir.c_str());
 
   CodeCompOp op{};
   if (tilde) {
@@ -698,8 +694,7 @@ static CmdArgCompStatus completeCLIArg(StringRef opt, const ArgEntry &entry,
                                        const CompPrefix &prefix,
                                        ObserverPtr<ForeignCompHandler> comp,
                                        CompCandidateConsumer &consumer) {
-  LOG(TRACE_COMP, "opt: %s, prefix:(token:%s, word:%s)", opt.toString().c_str(),
-      prefix.compWordToken.toString().c_str(), prefix.compWord.toString().c_str());
+  LOG(TRACE_COMP, "opt: %s, prefix:%s", opt.toString().c_str(), prefix.toString().c_str());
 
   if (entry.getCheckerKind() == ArgEntry::CheckerKind::CHOICE) {
     LOG(TRACE_COMP, "try to complete choice");
@@ -720,8 +715,7 @@ static CmdArgCompStatus completeCLIArg(StringRef opt, const ArgEntry &entry,
 static CmdArgCompStatus completeCLIFlagOrOption(const CLIRecordType &type, const CompPrefix &prefix,
                                                 ObserverPtr<ForeignCompHandler> comp,
                                                 CompCandidateConsumer &consumer) {
-  LOG(TRACE_COMP, "cliType: %s, prefix:(token:%s, word:%s)", type.getName(),
-      prefix.compWordToken.toString().c_str(), prefix.compWord.toString().c_str());
+  LOG(TRACE_COMP, "cliType: %s, prefix:%s", type.getName(), prefix.toString().c_str());
 
   for (auto &e : type.getEntries()) {
     if (!e.isOption()) {
@@ -887,8 +881,7 @@ static CmdArgCompStatus tryToCallUserDefinedComp(const CodeCompletionContext &ct
                                                  const ModType *cmdModType,
                                                  CompCandidateConsumer &consumer) {
   if (comp) {
-    LOG(TRACE_COMP, "prefix:(token:%s, word:%s), cmdModType:%s, offset:%d",
-        ctx.toCompPrefix().compWordToken.toString().c_str(), ctx.getCompWord().c_str(),
+    LOG(TRACE_COMP, "prefix:%s, cmdModType:%s, offset:%d", ctx.toCompPrefix().toString().c_str(),
         cmdModType ? cmdModType->getName() : "(null)", offset);
 
     return comp->callUserDefinedComp(ctx, offset, cmdModType, consumer);
@@ -899,8 +892,7 @@ static CmdArgCompStatus tryToCallUserDefinedComp(const CodeCompletionContext &ct
 static CmdArgCompStatus completeCmdArg(const TypePool &pool, ObserverPtr<ForeignCompHandler> comp,
                                        const CodeCompletionContext &ctx,
                                        CompCandidateConsumer &consumer) {
-  LOG(TRACE_COMP, "prefix:(token:%s, word:%s)", ctx.toCompPrefix().compWordToken.toString().c_str(),
-      ctx.getCompWord().c_str());
+  LOG(TRACE_COMP, "prefix:%s", ctx.toCompPrefix().toString().c_str());
 
   const auto &cmdNode = *ctx.getCmdNode();
   auto handle = ctx.getScope().lookup(toCmdFullName(cmdNode.getNameNode().getValue()));
@@ -945,8 +937,8 @@ static CmdArgCompStatus completeCmdArg(const TypePool &pool, ObserverPtr<Foreign
       return completeCLIOption(pool, cliType, cmdNode, offset, ctx.toCompPrefix(), comp, consumer);
     }
   } else if (curModType) {
-    LOG(TRACE_COMP, "try to complete sub-commands, prefix:(token:%s, word:%s)",
-        ctx.toCompPrefix().compWordToken.toString().c_str(), ctx.getCompWord().c_str());
+    LOG(TRACE_COMP, "try to complete sub-commands, prefix:%s",
+        ctx.toCompPrefix().toString().c_str());
     curModType->walkField(pool, udcCandidateConsumer(ctx.toCompPrefix(), consumer, false));
     return CmdArgCompStatus::OK;
   }
@@ -970,8 +962,7 @@ bool CodeCompleter::invoke(const CodeCompletionContext &ctx) {
   }
   if (ctx.has(CodeCompOp::DYNA_UDC) && this->foreignComp) {
     auto prefix = ctx.toCompPrefix();
-    LOG(TRACE_COMP, "try to complete dynamic udc, prefix:(token:%s, word:%s)",
-        prefix.compWordToken.toString().c_str(), prefix.compWord.toString().c_str());
+    LOG(TRACE_COMP, "try to complete dynamic udc, prefix:%s", prefix.toString().c_str());
     this->foreignComp->completeDynamicUdc(prefix, this->consumer);
   }
   if (ctx.has(CodeCompOp::USER)) {
