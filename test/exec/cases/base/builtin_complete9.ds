@@ -157,12 +157,12 @@ assert @($COMPREPLY) == @(
 )
 
 ## complete file names after options (fallback)
-assert diff <(complete -- 'fff --count ') <(complete -A file)
-assert diff <(complete -- 'fff --version ') <(complete -A file)
-assert diff <(complete -- 'fff --version ./') <(complete -A file './')
-assert diff <(complete -- 'fff --count=') <(complete -A file)
-assert diff <(complete -- 'fff --dump=') <(complete -A file)
-assert diff <(complete -- 'fff --fajjaiae ') <(complete -A file)  # complete file names after invalid option
+assert diff <(complete -- 'fff --count ') <(complete -Q -A file)
+assert diff <(complete -- 'fff --version ') <(complete -Q -A file)
+assert diff <(complete -- 'fff --version ./') <(complete -Q -A file './')
+assert diff <(complete -- 'fff --count=') <(complete -Q -A file)
+assert diff <(complete -- 'fff --dump=') <(complete -Q -A file)
+assert diff <(complete -- 'fff --fajjaiae ') <(complete -Q -A file)  # complete file names after invalid option
 
 ## complete via user-defined func
 assert diff <(complete -- 'fff bbb1 -v --c\ount ') <(printf "%s\n" 111 123 1234 222 )
@@ -176,13 +176,13 @@ assert diff <(complete -- 'fff bbb1 --count=2') <(printf "%s\n" 222)
 assert diff <(complete -- 'fff bbb1 --count=2\') <(printf "%s\n" '2\22')
 assert $(complete -- 'fff bbb1 --count=3').empty()
 assert diff <(complete -- 'fff bbb1 --output=') <(printf "%s\n" 'AAA' 'AAB' 'ABB' 'ABC' )
-assert diff <(complete -- 'fff bbb1 --output ') <(complete -A file)
+assert diff <(complete -- 'fff bbb1 --output ') <(complete -Q -A file)
 assert diff <(complete -- 'fff bbb1 -o') <(printf "%s\n" 'AAA' 'AAB' 'ABB' 'ABC' )
 assert diff <(complete -- 'fff bbb1 -o\') <(printf "%s\n" '\AAA' '\AAB' '\ABB' '\ABC' )
 assert diff <(complete -- 'fff bbb1 -oA') <(printf "%s\n" 'AAA' 'AAB' 'ABB' 'ABC' )
 assert diff <(complete -- 'fff bbb1 -o\A') <(printf "%s\n" '\AAA' '\AAB' '\ABB' '\ABC' )
 assert diff <(complete -- 'fff bbb1 -oA\B\') <(printf "%s\n"  'A\B\B' 'A\B\C' )
-assert diff <(complete -- 'fff bbb1 -o ') <(complete -A file) # fallback
+assert diff <(complete -- 'fff bbb1 -o ') <(complete -Q -A file) # fallback
 
 $OPT = $none
 complete -- 'fff bbb1 --count '
@@ -202,12 +202,12 @@ assert diff <(complete -- 'fff bbb1 \--l\og=') <(printf "%s\n" debug error info 
 assert diff <(complete -- 'fff bbb1 --log i') <(printf "%s\n" info)
 assert diff <(complete -- 'fff bbb1 -ss') <(printf "%s\n" stderr stdin stdout)
 assert diff <(complete -- 'fff bbb1 -\ss\t') <(printf "%s\n" 's\tderr' 's\tdin' 's\tdout')
-assert diff <(complete -- 'fff bbb1 -s ') <(complete -A file) # fallback
+assert diff <(complete -- 'fff bbb1 -s ') <(complete -Q -A file) # fallback
 assert diff <(complete -- 'fff bbb1 "--log" info --stream=') <(printf "%s\n" stderr stdin stdout)
 assert diff <(complete -- 'fff bbb1 "--log" info --stream=\') <(printf "%s\n" '\stderr' '\stdin' '\stdout')
 assert diff <(complete -- 'fff bbb1 "--log" info --stream=stde') <(printf "%s\n" stderr)
 assert diff <(complete -- 'fff bbb1 --log=info --stream=stde') <(printf "%s\n" stderr)
-assert diff <(complete -- 'fff bbb1 --stream ') <(complete -A file) # fallback
+assert diff <(complete -- 'fff bbb1 --stream ') <(complete -Q -A file) # fallback
 
 ## complete sub-command
 assert diff <(complete -- 'fff ') <(echo 'bbb1' && echo bbb2)
@@ -215,7 +215,7 @@ assert diff <(complete -- 'fff b')  <(echo 'bbb1' && echo bbb2)
 assert diff <(complete -- 'fff bbb1 ')  <(echo 'ccc')
 assert diff <(complete -- 'fff bb\b1 c')  <(echo 'ccc')
 assert diff <(complete -- 'fff bbb1 c\')  <(echo 'c\cc')
-assert diff <(complete -- 'fff bbb1 ccc ')  <(complete -A file)  # if word is empty and no sub-commands
+assert diff <(complete -- 'fff bbb1 ccc ')  <(complete -Q -A file)  # if word is empty and no sub-commands
 
 
 ## not complete option (comp word must start with valid option name)

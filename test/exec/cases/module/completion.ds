@@ -42,7 +42,7 @@ compdef --cmd ls --short q --arg-list 'AAA ABB ABC CCC D$D D;E'
 
 assert diff <(complete 'ls -') <(echo -l && echo -q)
 assert diff <(complete 'ls \-\') <(echo '\-\l' && echo '\-\q')
-assert diff <(complete 'ls - ') <(complete -A file)
+assert diff <(complete 'ls - ') <(complete -Q -A file)
 assert diff <(complete 'ls -l') <(echo -l)
 assert diff <(complete 'ls -l\') <(echo '-l\')
 assert $(complete 'ls -s').empty()
@@ -55,8 +55,8 @@ assert diff <(complete 'ls -q D\') <(echo 'D\$D' && echo 'D\;E')
 compdef --cmd ls --short s --arg-action env
 
 assert diff <(complete 'ls -s') <(echo -s)
-assert diff <(complete 'ls -s P') <(complete -A env P)
-assert diff <(complete 'ls -s ') <(complete -A env )
+assert diff <(complete 'ls -s P') <(complete -Q -A env P)
+assert diff <(complete 'ls -s ') <(complete -Q -A env )
 
 
 assert $(complete 'ps -x').empty()
@@ -87,10 +87,10 @@ assert diff <(complete 'ls --sto') <(echo --stop)
 assert diff <(complete 'ls --sto\') <(echo '--sto\p')
 assert diff <(complete 'ls --\show ') <(for line in <(ls){ echo ${$line.quote()}; } | sort)
 assert diff <(complete 'ls --show') <(echo --show)
-assert diff <(complete 'ls --stop ') <(complete -A signal)
-assert diff <(complete 'ls -\-stop T') <(complete -A signal T)
-assert diff <(complete 'ls --stop=') <(complete -A signal)
-assert diff <(complete 'ls --stop=T') <(complete -A signal T)
+assert diff <(complete 'ls --stop ') <(complete -Q -A signal)
+assert diff <(complete 'ls -\-stop T') <(complete -Q -A signal T)
+assert diff <(complete 'ls --stop=') <(complete -Q -A signal)
+assert diff <(complete 'ls --stop=T') <(complete -Q -A signal T)
 assert diff <(complete 'ls --lo') <(echo --log=)
 assert { complete 'ls --lo' && $COMPREPLY.size() == 1 && ! $COMPREPLY.hasSpace(0); }
 assert diff <(complete 'ls --log=') <(printf "%s\n" error info warn)
@@ -110,8 +110,8 @@ assert $(complete 'ps --help 1').empty()
 
 compdef --cmd ls --long out= --arg-action file
 compdef --cmd ls --long out\\= --arg-action file
-assert diff <(complete 'ls --out=~') <(complete -A file -A tilde '~')
-assert diff <(complete 'ls --ou\t=~') <(complete -A file -A tilde '~')
+assert diff <(complete 'ls --out=~') <(complete -Q -A file -A tilde '~')
+assert diff <(complete 'ls --ou\t=~') <(complete -Q -A file -A tilde '~')
 assert { var a = $(complete 'ls --out=\~'); $a.empty() || $a[0].startsWith('\~'); }  # not expand tilde
 assert $(complete 'ls --out\=~/').empty()  # not expand tilde
 assert ! $(complete 'ls --out\\=~/').empty()
@@ -129,6 +129,20 @@ assert diff <(complete 'cut \-set=') <(printf "%s\n" 'aa11' 'aa12' 'aa21' 'aa22'
 assert diff <(complete 'cut -set=\') <(printf "%s\n" '\aa11' '\aa12' '\aa21' '\aa22' '\bb11')
 assert diff <(complete 'cut -set=aa') <(printf "%s\n" 'aa11' 'aa12' 'aa21' 'aa22')
 assert diff <(complete 'cut -set=\aa1\') <(printf "%s\n" '\aa1\1' '\aa1\2')
+
+## empty arg
+compdef --cmd=cat --short=A --arg-cmd=
+compdef --cmd=cat --short=B --arg-list=
+compdef --cmd=cat --short=C --arg-action=
+compdef --cmd=cat --short=D --arg-func=
+compdef --cmd=cat --short=E --arg-raw-func=
+compdef --cmd=cat --short=F --arg-empty
+complete -q 'cat -A '; assert $COMPREPLY.size() == 0
+complete -q 'cat -B '; assert $COMPREPLY.size() == 0
+complete -q 'cat -C '; assert $COMPREPLY.size() == 0
+complete -q 'cat -D '; assert $COMPREPLY.size() == 0
+complete -q 'cat -E '; assert $COMPREPLY.size() == 0
+complete -q 'cat -F '; assert $COMPREPLY.size() == 0
 
 ## sub-command
 source $SCRIPT_DIR/../../_module4test/comp_nest.ds  as nest
@@ -168,10 +182,10 @@ assert diff <(complete 'bison -') <(printf -- "%s\n" --all --dump= --help -a -c 
 assert diff <(complete 'bison \-') <(printf -- "%s\n" '\--all' '\--dump=' '\--help' '\-a' '\-c' '\-d')
 assert diff <(complete 'bison --du') <(printf -- "%s\n" --dump=)
 assert diff <(complete 'bison -\-du\') <(printf -- "%s\n" '-\-du\mp=')
-assert diff <(complete 'bison --dump=') <(complete -A file)
-assert diff <(complete 'bison --dump=/') <(complete -A file /)
+assert diff <(complete 'bison --dump=') <(complete -Q -A file)
+assert diff <(complete 'bison --dump=/') <(complete -Q -A file /)
 assert diff <(complete 'bison --dump=/\') <(complete 'echo /\')
-assert diff <(complete 'bison --dump=~/') <(complete -A file -A tilde '~/')
-assert diff <(complete 'bison -c ') <(complete -A file)
-assert diff <(complete 'bison -c ./') <(complete -A file './')
-assert diff <(complete 'bison -c ~/') <(complete -A file -A tilde '~/')
+assert diff <(complete 'bison --dump=~/') <(complete -Q -A file -A tilde '~/')
+assert diff <(complete 'bison -c ') <(complete -Q -A file)
+assert diff <(complete 'bison -c ./') <(complete -Q -A file './')
+assert diff <(complete 'bison -c ~/') <(complete -Q -A file -A tilde '~/')
