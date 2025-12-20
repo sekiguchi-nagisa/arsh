@@ -67,7 +67,7 @@ function _should_tilde_expand(optToken: String): Bool {
 }
 
 function generate(ctx: Module, optToken: String, prefixToken: String): Candidates? for _CompDefEntry {
-    let arg = $this.arg
+    let arg = $this.arg.ifEmpty() ?? return new Candidates()
     let prefix = $prefixToken.dequote()
     return case $this.argType {
         0 => {
@@ -103,14 +103,10 @@ function generate(ctx: Module, optToken: String, prefixToken: String): Candidate
             $COMPREPLY
         }
         4 => {
-            if $arg.empty() {
-                new Candidates()
-            } else {
-                var func = $_argFuncs.get($arg) ?? return $none
-                var ret = $func($prefix)
-                $ret.quote($prefixToken)
-                $ret
-            }
+            var func = $_argFuncs.get($arg) ?? return $none
+            var ret = $func($prefix)
+            $ret.quote($prefixToken)
+            $ret
         }
         5 => {
             var func = $_argFuncs.get($arg) ?? return $none
