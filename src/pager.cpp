@@ -125,6 +125,11 @@ void ArrayPager::updateLayout() {
   }
 }
 
+bool ArrayPager::matchItemAt(unsigned int itemIndex) const {
+  StringRef candidate = this->obj.getCandidateAt(itemIndex);
+  return fuzzyFind(candidate, this->query);
+}
+
 void ArrayPager::rebuildFilteredItemIndexes() {
   this->filteredItemIndexes.clear();
   for (unsigned int i = 0; i < this->items.size(); i++) {

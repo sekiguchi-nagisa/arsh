@@ -11,7 +11,7 @@
 
 #### Builtin
 
-- add incremental search filter to completion pager of ``LineEditor``
+- add incremental fuzzy search filter to completion pager of ``LineEditor``
     - complete and show search filter via ``complete-backward`` edit action
     - enable/disable search filter via ``toggle-search`` edit action
     - ignore unbound escape sequences and edit actions in search filter mode
@@ -31,7 +31,7 @@
 - allow empty command io redirection within command/process substitution
     - like ``$(< file)``, ``<(<<< string)``
     - implicitly call ``__gets`` command
-    - syntactically accept empty command io redirection in arbitrary place
+    - syntactically accept empty command io redirection in an arbitrary place
 
 #### Builtin
 

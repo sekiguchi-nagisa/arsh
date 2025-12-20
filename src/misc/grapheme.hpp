@@ -407,6 +407,21 @@ size_t iterateGrapheme(StringRef ref, Func consumer) {
   return iterateGraphemeUntil(ref, static_cast<size_t>(-1), std::move(consumer));
 }
 
+inline bool fuzzyFind(StringRef haystack, StringRef needle) { // NOLINT
+  size_t pos = 0;
+  bool matched = true;
+  iterateGrapheme(needle, [&](const GraphemeCluster &grapheme) {
+    auto ret = haystack.find(grapheme.getRef(), pos);
+    if (ret == StringRef::npos) {
+      matched = false;
+      return false;
+    }
+    pos = ret + grapheme.getRef().size();
+    return true;
+  });
+  return matched;
+}
+
 END_MISC_LIB_NAMESPACE_DECL
 
 #endif // MISC_LIB_GRAPHEME_HPP

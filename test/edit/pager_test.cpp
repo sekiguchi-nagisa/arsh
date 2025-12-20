@@ -847,6 +847,84 @@ TEST_F(PagerTest, filterNoMatches) {
   ASSERT_EQ(0, pager.getCurRow());
 }
 
+TEST_F(PagerTest, filterFuzzyMatchBase) {
+  ASSERT_TRUE(fuzzyFind("AABBCC", ""));
+  ASSERT_TRUE(fuzzyFind("AABBCC", "A"));
+  ASSERT_TRUE(fuzzyFind("AABBCC", "AA"));
+  ASSERT_TRUE(fuzzyFind("AABBCC", "AB"));
+  ASSERT_TRUE(fuzzyFind("AABBCC", "AAB"));
+  ASSERT_TRUE(fuzzyFind("AABBCC", "ABB"));
+  ASSERT_TRUE(fuzzyFind("AABBCC", "ABC"));
+  ASSERT_TRUE(fuzzyFind("AABBCC", "AC"));
+  ASSERT_TRUE(fuzzyFind("AABBCC", "B"));
+  ASSERT_TRUE(fuzzyFind("AABBCC", "BB"));
+  ASSERT_TRUE(fuzzyFind("AABBCC", "C"));
+  ASSERT_TRUE(fuzzyFind("AABBCC", "CC"));
+  ASSERT_TRUE(fuzzyFind("AABBCC", "AABCC"));
+  ASSERT_FALSE(fuzzyFind("AABBCC", "BA"));
+  ASSERT_FALSE(fuzzyFind("AABBCC", "CCC"));
+  ASSERT_FALSE(fuzzyFind("AABBCC", "DA"));
+  ASSERT_TRUE(fuzzyFind("", ""));
+  ASSERT_FALSE(fuzzyFind("", "@"));
+  ASSERT_FALSE(fuzzyFind("", "BA"));
+}
+
+TEST_F(PagerTest, filterFuzzyMatch) {
+  /**
+   * ABCEFG
+   * BCDFGH
+   * CDEGHI
+   * DEFHIJ
+   */
+  auto array = this->create("ABCEFG", "BCDFGH", "CDEGHI", "DEFHIJ");
+  auto pager = ArrayPager::create(*array, this->ps, {.rows = 10, .cols = 10}, 100);
+  ASSERT_EQ(1, pager.getPanes());
+
+  ASSERT_TRUE(pager.tryToEnableFilterMode());
+  const char *expect = "\x1b[4msearch: \x1b[0m\r\n"
+                       "\x1b[7mABCEFG  \x1b[0m\r\nBCDFGH  \r\nCDEGHI  \r\nDEFHIJ  \r\n";
+  std::string out;
+  out = this->render(pager);
+  ASSERT_EQ(expect, out);
+
+  // push
+  pager.pushQueryChar("CG");
+  expect = "\x1b[4msearch: CG\x1b[0m\r\n"
+           "\x1b[7mABCEFG  \x1b[0m\r\nBCDFGH  \r\nCDEGHI  \r\n";
+  out = this->render(pager);
+  ASSERT_EQ(expect, out);
+
+  // push
+  pager.pushQueryChar("H");
+  expect = "\x1b[4msearch: CGH\x1b[0m\r\n"
+           "\x1b[7mBCDFGH  \x1b[0m\r\nCDEGHI  \r\n";
+  out = this->render(pager);
+  ASSERT_EQ(expect, out);
+
+  // push
+  pager.pushQueryChar("I");
+  expect = "\x1b[4msearch: CGHI\x1b[0m\r\n"
+           "\x1b[7mCDEGHI  \x1b[0m\r\n";
+  out = this->render(pager);
+  ASSERT_EQ(expect, out);
+
+  // pop
+  pager.popQueryChar();
+  pager.popQueryChar();
+  pager.popQueryChar();
+  expect = "\x1b[4msearch: C\x1b[0m\r\n"
+           "\x1b[7mABCEFG  \x1b[0m\r\nBCDFGH  \r\nCDEGHI  \r\n";
+  out = this->render(pager);
+  ASSERT_EQ(expect, out);
+
+  // push
+  pager.pushQueryChar("F");
+  expect = "\x1b[4msearch: CF\x1b[0m\r\n"
+           "\x1b[7mABCEFG  \x1b[0m\r\nBCDFGH  \r\n";
+  out = this->render(pager);
+  ASSERT_EQ(expect, out);
+}
+
 TEST(HistRotatorTest, base) {
   auto value =
       createObject<ArrayObject>(static_cast<unsigned int>(TYPE::StringArray), std::vector<Value>());

@@ -306,10 +306,7 @@ private:
                : filteredIndex;
   }
 
-  bool matchItemAt(unsigned int itemIndex) const {
-    StringRef candidate = this->obj.getCandidateAt(itemIndex);
-    return candidate.contains(this->query);
-  }
+  bool matchItemAt(unsigned int itemIndex) const;
 };
 
 EditActionStatus waitPagerAction(ArrayPager &pager, const KeyBindings &bindings,
