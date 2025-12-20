@@ -83,7 +83,7 @@ $jj.add(sleep 1000 &).add( sleep 2000 &).add( sleep 3000 &)
 defer {
     kill -INT $jj
 }
-
+jobs -l # for debug
 var expected = @(
     %1 "${$JOB['%1'].pid(0)!} Running  sleep 1000"
     %2 "${$JOB['%2'].pid(0)!} Running  sleep 2000"
