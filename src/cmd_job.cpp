@@ -299,7 +299,7 @@ int builtin_wait(ARState &state, ArrayObject &argvObj) {
   std::vector<std::pair<Job, int>> targets;
   if (optState.index == argvObj.size()) {
     for (auto &j : state.jobTable) {
-      if (j->isDisowned()) {
+      if (j->isDisowned() || !j->isControlled()) {
         continue;
       }
       targets.emplace_back(j, -1);
