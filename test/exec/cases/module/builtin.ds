@@ -78,17 +78,28 @@ assert diff <(complete -d -q -- 'complete -A s' && printf "%s\n" $COMPREPLY) \
             <(printf "%s\n" 'signal@complete signal names'    'stmt_kw@complete statement keywords')
 
 # fg/bg/jobs
-var jj : [Job]
-$jj.add(sleep 1000 &).add( sleep 2000 &).add( sleep 3000 &)
+var expected = new [(Job, String)]().add({
+    var j = sleep 1000 &
+    var f = "${$j.pid(0)!} Running  sleep 1000"
+    ($j,$f)
+}).add({
+    var j = sleep 2000 &
+    var f = "${$j.pid(0)!} Running  sleep 2000"
+    ($j,$f)
+}).add({
+    var j = sleep 3000 &
+    var f = "${$j.pid(0)!} Running  sleep 3000"
+    ($j,$f)
+})
 defer {
-    kill -INT $jj
+    for e in $expected {
+        $e._0.kill($SIGINT)
+    }
 }
+$expected.sortBy(function(x,y)=> 
+    "${x._0}".slice(1).toInt()!.compare("${y._0}".slice(1).toInt()!))
+
 jobs -l # for debug
-var expected = @(
-    %1 "${$JOB['%1'].pid(0)!} Running  sleep 1000"
-    %2 "${$JOB['%2'].pid(0)!} Running  sleep 2000"
-    %3 "${$JOB['%3'].pid(0)!} Running  sleep 3000"
-)
 assert diff <(complete -d -q -- 'fg ' && printf "%s\n" $COMPREPLY) <(printf "%s@%s\n" $expected)
 assert diff <(complete -d -q -- 'bg ' && printf "%s\n" $COMPREPLY) <(printf "%s@%s\n" $expected)
 assert diff <(complete -d -q -- 'jobs ' && printf "%s\n" $COMPREPLY) <(printf "%s@%s\n" $expected)
