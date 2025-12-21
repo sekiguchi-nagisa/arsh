@@ -1091,7 +1091,7 @@ bool CodeCompleter::operator()(NameScopePtr scope, const std::string &scriptName
   }
   compCtx.addCompRequest(option, std::move(wordToken), std::move(word));
   LOG(TRACE_COMP, "complete: prefix:%s, quote:%d", compCtx.toCompPrefix().toString().c_str(),
-      quote);
+      static_cast<unsigned int>(quote));
   return this->invoke(compCtx);
 }
 
