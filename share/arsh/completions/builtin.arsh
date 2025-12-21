@@ -81,8 +81,9 @@ for line in <(dirs -h) {
 ## complete
 for line in <(complete -h) {
     var ret = $_option_pattern.match($line) ?? continue
-    $ret.group(1)! == 'A' && continue
-    compdef --cmd complete --short ${$ret.group(1)!} --desc ${$ret.group(2)!}
+    var o = $ret.group(1)!
+    ($o == 'A' || $o == 'Q') && continue
+    compdef --cmd complete --short $o --desc ${$ret.group(2)!}
 }
 compdef --cmd complete --short A --desc 'show completion candidates via ACTION' \
     --arg-func $bindArgFunc(function(p) => {
@@ -95,6 +96,7 @@ compdef --cmd complete --short A --desc 'show completion candidates via ACTION' 
         }
         return $ret
     })
+compdef --cmd complete --short-opt=Q --desc 'explicitly quote completion candidates' --arg-list 'arg cmd'
 
 ## fg/bg/jobs/disown
 {

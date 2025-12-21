@@ -94,7 +94,8 @@
         - ``--nosort``: suppress sorting of candidates
         - ``--subcmd``: define sub-command completions
         - ``--arg-empty``: generate empty candidate
-        - ``--long-single``: long-option with single dash
+        - ``--long-single``: long-option with single dash (``-opt`` form)
+        - ``--short-opt``: short-option with optional argument (``-Oarg`` form)
     - ``--short`` option only allow single ascii character
 - improve builtin commands completion
     - show description in ``completion`` command completion

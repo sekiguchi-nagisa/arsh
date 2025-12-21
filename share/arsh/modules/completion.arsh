@@ -32,10 +32,11 @@ function compAdd(cmd : String, comp : Completer) : Completer? {
 
 # for completion helper
 
-type _CompDefEntry(t : Int?, a : String?, d: String?) {
+type _CompDefEntry(t : Int?, a : String?, d: String?, o: Bool?) {
     let argType = $t ?? -1  # arg type (-1: empty, 0: list, 1: cmdline, 2: action, 3: comp, 4: func, 5: raw_func)
     let arg = $a ?? ""      # argument (for argument completion)
     let desc = $d           # description
+    let opt = $o ?? $false  # for short optional (-s[arg]). 
 }
 
 type _CompDef() {
@@ -66,7 +67,10 @@ function _should_tilde_expand(optToken: String): Bool {
     return $count %2 == 0
 }
 
-function generate(ctx: Module, optToken: String, prefixToken: String): Candidates? for _CompDefEntry {
+function generate(ctx: Module, optToken: String, prefixToken: String, allowOptShort: Bool): Candidates? for _CompDefEntry {
+    if $this.opt && !$allowOptShort {
+        return $none
+    }
     let arg = $this.arg
     let prefix = $prefixToken.dequote()
     return case $this.argType {
@@ -153,10 +157,16 @@ function _comp_opt(deflist : _CompDef, prefix : String) : Candidates {
         if $option.startsWith($prefix) {
             var long = $option.endsWith('=') && $option.size() > 2 # --opt=, -opt=
             $ret.add($option, $space: $long ? 0 : -1, $desc: $def.desc)
-        } elif $option.size() > 2 && $def.argType != -1 { # --opt, -opt
-            # opt -> --opt
-            # prefix -> --opt=hoge
-            if $prefix.startsWith($option) && ($prefix.slice($option.size()).startsWith('=') || $option.endsWith('=')) {
+        } elif $prefix.startsWith($option) && $def.argType != -1 { 
+            if $option.size() > 2 { # --opt=arg, -opt=arg
+                # opt -> --opt, -opt
+                # prefix -> --opt=hoge, -opt=hoge
+                if ($prefix.slice($option.size()).startsWith('=') || $option.endsWith('=')) {
+                    $ret.add($option, $desc: $def.desc)
+                }
+            } elif $def.opt { # -D[arg]
+                # opt -> -O
+                # prefix -> -Oarg
                 $ret.add($option, $desc: $def.desc)
             }
         }
@@ -169,9 +179,9 @@ function _comp_opt(deflist : _CompDef, prefix : String) : Candidates {
 # $opt is empty string or starts with '-'
 # return quoted candidates
 #
-function _comp_arg(ctx : Module, deflist: _CompDef, optToken: String, opt : String, prefixToken : String) : Candidates? {
+function _comp_arg(ctx : Module, deflist: _CompDef, optToken: String, opt : String, prefixToken : String, allowOptShort: Bool?) : Candidates? {
     if let def = $deflist.entries.get($opt) {
-        return $def.generate($ctx, $opt.empty() ? "" : $optToken, $prefixToken)
+        return $def.generate($ctx, $opt.empty() ? "" : $optToken, $prefixToken, $allowOptShort ?? $false)
     }
     if $opt.empty() && $deflist.subcmds { # complete sub-command
         let prefix = $prefixToken.dequote()
@@ -432,10 +442,19 @@ function _from_compdef(ctx : Module, words : [String], cursor : Int) : Candidate
                         var optToken = $prevToken.slice(0, $prevToken.size() - $prefixToken.size())
                         return $_comp_arg($ctx, $deflist, $optToken, $opt, $prefixToken)
                     }
-                    if $prev.slice($opt.size()).startsWith('=') {
+                    if $prev.slice($opt.size()).startsWith('=') {  # -option=arg, --option=arg
                         var prefixToken = $_remove_prefix_from_quoted($prevToken, $opt.size() + 1)
                         var optToken = $prevToken.slice(0, $prevToken.size() - $prefixToken.size())
                         return $_comp_arg($ctx, $deflist, $optToken, $opt, $prefixToken)
+                    }
+                    if $opt.size() == 2 {
+                        if let e = $deflist.entries.get($opt) {
+                            if $e.opt {
+                                var prefixToken = $_remove_prefix_from_quoted($prevToken, $opt.size())
+                                var optToken = $prevToken.slice(0, $prevToken.size() - $prefixToken.size())
+                                return $_comp_arg($ctx, $deflist, $optToken, $opt, $prefixToken, $true)
+                            }
+                        }
                     }
                 }
             }
@@ -467,6 +486,9 @@ type _CompDefParam() {
 
     [<Option(placeholder: "LONG_SIGLE_DASH", xor: 0, help: "set long option with single dash")>]
     var long_single: String?
+
+    [<Option(placeholder: "SHORT_OPTION", xor:0, help: "set short option taking optional argument (start with '-')")>]
+    var short_opt: String?
 
     [<Option(placeholder: "LIST", xor: 1, help: "generate candidates from LIST split by ' '")>]
     var arg_list: String?
@@ -504,18 +526,26 @@ function _error($p : _CompDefParam, $msg : String) : Int {
 compdef(param : _CompDefParam) {
     $compAdd("", $_from_compdef)
 
-    var opt = ""
+    var opt = $false
+    var option = ""
     if let short = $param.short {
         if $short.size() > 1 {
             return $_error($param, "\`--short' option only accept single ascii char: \`$short'")
         }
-        $opt = '-'+ $short
+        $option = '-'+ $short
     }
     if let long = $param.long {
-        $opt = '--' + $long
+        $option = '--' + $long
     }
     if let longSingle = $param.long_single {
-        $opt = '-' + $longSingle
+        $option = '-' + $longSingle
+    }
+    if let shortOpt = $param.short_opt {
+        if $shortOpt.size() > 1 {
+            return $_error($param, "\`--short-opt' option only accept single ascii char: \`$shortOpt'")
+        }
+        $option = '-'+ $shortOpt
+        $opt = $true
     }
     var argType : Int?
     var arg : String?
@@ -525,7 +555,7 @@ compdef(param : _CompDefParam) {
         }
         if let target = $param.comp_target {
             $argType = 3
-            $opt = $path
+            $option = $path
             $arg = $target
         } else {
             return $_error($param, "need \`--comp-target' option")
@@ -576,8 +606,8 @@ compdef(param : _CompDefParam) {
     if $param.nosort {
         $def.sort = $false
     }
-    if $def.entries.put($opt, new _CompDefEntry($argType, $arg, $param.desc)) {
-        return $_error($param, "already defined option: \`$opt' for \`${param.cmd}'")
+    if $def.entries.put($option, new _CompDefEntry($argType, $arg, $param.desc, $opt)) {
+        return $_error($param, "already defined option: \`$option' for \`${param.cmd}'")
     }
     return 0
 }
