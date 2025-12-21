@@ -97,13 +97,6 @@ struct CompPrefix {
   }
 };
 
-enum class CompQuoteType : unsigned char {
-  NONE, // no-quote
-  AUTO, // auto-detect
-  CMD,  // quote as command
-  ARG,  // quote as command-argument
-};
-
 class CodeCompletionContext {
 private:
   ObserverPtr<const Lexer> lex;

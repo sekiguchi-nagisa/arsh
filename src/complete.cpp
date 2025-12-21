@@ -74,7 +74,6 @@ static bool shouldQuote(const CompCandidateKind k, const CompQuoteType quoteType
     case CompCandidateKind::COMMAND_NAME_PART:
     case CompCandidateKind::COMMAND_ARG:
     case CompCandidateKind::COMMAND_TILDE:
-    case CompCandidateKind::ENV_NAME:
       return true;
     default:
       return false;
@@ -92,8 +91,8 @@ CompCandidate::CompCandidate(const CompPrefix &prefix, CompCandidateKind k, Stri
       prefixSize(std::max(prefix.compWordToken.size(), prefix.compWord.size())) {
   assert(!v.empty());
   if (shouldQuote(k, quote)) {
-    const bool trimPrefix = !prefix.compWordToken.empty();
-    if (trimPrefix) {
+    bool quoteAsCmd = false;
+    if (prefix.compWordToken.size()) { // replace prefix with compWordToken
       assert(prefix.compWord.size() <= v.size());
       this->value += prefix.compWordToken;
       v.removePrefix(prefix.compWord.size());
@@ -101,11 +100,12 @@ CompCandidate::CompCandidate(const CompPrefix &prefix, CompCandidateKind k, Stri
       assert(v.startsWith("~"));
       this->value += '~';
       v.removePrefix(1);
+    } else if ((this->kind == CompCandidateKind::COMMAND_NAME && quote == CompQuoteType::AUTO) ||
+               quote == CompQuoteType::CMD) {
+      quoteAsCmd = true;
     }
-    const bool asCmd = !trimPrefix && (this->kind == CompCandidateKind::COMMAND_NAME ||
-                                       quote == CompQuoteType::CMD);
     quoteAsCmdOrShellArg(v, this->value,
-                         {.asCmd = asCmd, .carryBackslash = prefix.carryBackslash()});
+                         {.asCmd = quoteAsCmd, .carryBackslash = prefix.carryBackslash()});
   } else {
     this->value += v;
   }
@@ -1090,6 +1090,8 @@ bool CodeCompleter::operator()(NameScopePtr scope, const std::string &scriptName
     word = ref.toString(); // treat as de-quoted word
   }
   compCtx.addCompRequest(option, std::move(wordToken), std::move(word));
+  LOG(TRACE_COMP, "complete: prefix:%s, quote:%d", compCtx.toCompPrefix().toString().c_str(),
+      quote);
   return this->invoke(compCtx);
 }
 

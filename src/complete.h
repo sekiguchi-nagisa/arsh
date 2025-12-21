@@ -47,6 +47,13 @@ enum class CompCandidateKind : unsigned char {
   TYPE,
 };
 
+enum class CompQuoteType : unsigned char {
+  NONE, // no-quote
+  AUTO, // auto-detect
+  CMD,  // quote as command
+  ARG,  // quote as command-argument
+};
+
 class CompCandidate {
 public:
   enum class CmdNameType : unsigned char {

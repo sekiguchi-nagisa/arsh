@@ -103,10 +103,14 @@ assert diff <(complete -A builtin e) <(help | cut -d ' ' -f 1 | grep '^e' | sort
 hogehogehuga(){}
 \{\}() {}
 a\	b(){}
+\99(){}
 
-var udc_quoted = ["\\{\\}","a\$'\x09'b", "hogehogehuga", 'mod']
-var udc = ["{}",$'a\tb', "hogehogehuga", 'mod']
+var udc_quoted = ["\\{\\}","a\$'\x09'b", "hogehogehuga", 'mod', '99']
+var udc_quoted_cmd = ["\\{\\}","a\$'\x09'b", "hogehogehuga", 'mod', '\99']
+var udc = ["{}",$'a\tb', "hogehogehuga", 'mod', '99']
 assert diff <(complete -Q -A udc) <(for $e in $udc_quoted { echo $e; } | sort)
+assert diff <(complete -Qarg -A udc) <(for $e in $udc_quoted { echo $e; } | sort)
+assert diff <(complete -Qcmd -A udc) <(for $e in $udc_quoted_cmd { echo $e; } | sort)
 assert diff <(complete -A udc) <(for $e in $udc { echo $e; } | sort)
 assert diff <(complete -A udc 'h') <(for $e in $udc_quoted { echo $e; } | grep '^h'| sort)
 assert "$(complete -A udc 'e')".empty()
@@ -212,22 +216,22 @@ assert $COMPREPLY[0] == 'echo\\\\\ '
 
 
 ## invalid
-assert "$(complete -A 2>&1)" == "${$SCRIPT_NAME.basename()}:215: complete: -A: option requires argument"
+assert "$(complete -A 2>&1)" == "${$SCRIPT_NAME.basename()}:219: complete: -A: option requires argument"
 assert !complete -A
 assert $? == 1
 
-assert "$(complete -A hgorahe 2>&1)" == "${$SCRIPT_NAME.basename()}:219: complete: hgorahe: invalid action
+assert "$(complete -A hgorahe 2>&1)" == "${$SCRIPT_NAME.basename()}:223: complete: hgorahe: invalid action
 complete: complete [-A action] [-m descriptor] [-dqs] [-Q[type]] line"
 assert !complete -A fjairfaj
 assert $? == 2
 
-assert "$(complete -m $MODULE$'\000' 2>&1)" == "${$SCRIPT_NAME.basename()}:224: complete: ${MODULE}\x00: unrecognized module descriptor"
+assert "$(complete -m $MODULE$'\000' 2>&1)" == "${$SCRIPT_NAME.basename()}:228: complete: ${MODULE}\x00: unrecognized module descriptor"
 assert "$(complete -m $MODULE"3q4324" 2>&1)" == 
-    "${$SCRIPT_NAME.basename()}:225: complete: ${MODULE}3q4324: unrecognized module descriptor"
+    "${$SCRIPT_NAME.basename()}:229: complete: ${MODULE}3q4324: unrecognized module descriptor"
 assert !complete -m ${MODULE}3q4324
 assert $? == 1
-assert "$(complete -m 'TMD(34)' 2>&1)" == "${$SCRIPT_NAME.basename()}:229: complete: TMD(34): unrecognized module descriptor"
-assert "$(complete -m 'TMD(hoge)' 2>&1)" == "${$SCRIPT_NAME.basename()}:230: complete: TMD(hoge): unrecognized module descriptor"
+assert "$(complete -m 'TMD(34)' 2>&1)" == "${$SCRIPT_NAME.basename()}:233: complete: TMD(34): unrecognized module descriptor"
+assert "$(complete -m 'TMD(hoge)' 2>&1)" == "${$SCRIPT_NAME.basename()}:234: complete: TMD(hoge): unrecognized module descriptor"
 
 if (test -e /dev/full) {
     assert "$(complete '$(' 2>&1 > /dev/full)" =~ $/: complete: io error:.+/
