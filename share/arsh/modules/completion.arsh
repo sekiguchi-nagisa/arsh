@@ -67,12 +67,13 @@ function _should_tilde_expand(optToken: String): Bool {
 }
 
 function generate(ctx: Module, optToken: String, prefixToken: String): Candidates? for _CompDefEntry {
-    let arg = $this.arg.ifEmpty() ?? return new Candidates()
+    let arg = $this.arg
     let prefix = $prefixToken.dequote()
     return case $this.argType {
         0 => {
             var r : Candidates
             for a in $arg.split(" ") {
+                $a.empty() && continue
                 if $a.startsWith($prefix) {
                     $r.add($a)
                 }
@@ -93,6 +94,7 @@ function generate(ctx: Module, optToken: String, prefixToken: String): Candidate
         2 => {
             var actions : [String]
             for a in $arg.split("|") {
+                $a.empty() && continue
                 $actions.add("-A")
                 $actions.add($a)
             }
@@ -103,14 +105,22 @@ function generate(ctx: Module, optToken: String, prefixToken: String): Candidate
             $COMPREPLY
         }
         4 => {
-            var func = $_argFuncs.get($arg) ?? return $none
-            var ret = $func($prefix)
-            $ret.quote($prefixToken)
-            $ret
+            if $arg.empty() {
+                new Candidates()
+            } else {
+                var func = $_argFuncs.get($arg) ?? return $none
+                var ret = $func($prefix)
+                $ret.quote($prefixToken)
+                $ret
+            }
         }
         5 => {
-            var func = $_argFuncs.get($arg) ?? return $none
-            $func($prefixToken)  # pass raw word
+            if $arg.empty() {
+                new Candidates()
+            } else {
+                var func = $_argFuncs.get($arg) ?? return $none
+                $func($prefixToken)  # pass raw word
+            }
         }
         else => $none
     }
