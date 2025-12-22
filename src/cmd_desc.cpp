@@ -50,10 +50,11 @@ static constexpr BuiltinCmdDesc table[] = {
      "    Check existence of specified environmental variables.\n"
      "    If all of variables are exist and not empty string, exit with 0."},
     {"command", "[-pVv] command [arg ...]",
-     "    Execute COMMAND with ARGs excepting user defined command.\n"
-     "    If -p option is specified, search command from default PATH.\n"
-     "    If -V or -v option are specified, print description of COMMAND.\n"
-     "    -V option shows more detailed information."},
+     "    Execute COMMAND with ARGs (only call builtin or external commands).\n"
+     "    Options:\n"
+     "      -p    search command from default PATH\n"
+     "      -v    print filename of COMMAND\n"
+     "      -V    print more verbose description of COMMAND"},
     {"complete", "[-A action] [-m descriptor] [-dqs] [-Q[type]] line",
      "    Show completion candidates.\n"
      "    Options:\n"
