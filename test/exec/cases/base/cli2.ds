@@ -125,4 +125,43 @@ Options:
   --upper0-c1-amel0-case UPPER0_C1_AMEL0_CASE
   -h, --help                                   show this help message" : new _AAA().usage()
 
+
+# multiple flag
+[<CLI>]
+type CCC() {
+  [<Flag(long:"inc")>]
+  [<Flag(long:"dec", store:$false)>]
+  var count : Int?
+
+    [<Flag(long:"inc2")>]
+  [<Flag(long:"dec2", store:$false)>]
+  var count2 = 0
+
+  [<Flag(long:"set")>]
+    [<Flag(long:"unset", store:$false)>]
+  var flag : Bool?
+}
+
+var cc = new CCC()
+$cc.setName("cmd6")
+assert !$cc.flag
+assert $cc.parse(["--set", "--unset", "--unset", "--unset", "--set"]) == 5
+assert $cc.flag!  # store last flag
+
+assert !$cc.count
+assert $cc.parse(["--dec", "--inc", "--dec"]) == 3
+assert $cc.count! == -1 # inc/dec flag
+
+assert $cc.parse(["--dec2", "--inc2", "--dec2", "--inc2", "--inc2", "--dec"]) == 6
+assert $cc.count! == -2
+assert $cc.count2 == 1
+
+## overflow (saturated)
+$cc.count = 9223372036854775806
+assert $cc.parse(["--dec", "--inc", "--inc", "--inc"]) == 4
+assert $cc.count! == 9223372036854775807
+$cc.count2 = -9223372036854775807
+assert $cc.parse(["--dec2", "--dec2", "--inc2", "--dec2", "--dec2"]) == 5
+assert $cc.count2 == -9223372036854775807 - 1
+
 true

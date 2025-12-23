@@ -232,11 +232,6 @@ void TypeChecker::postCheckFieldAttributes(const VarDeclNode &varDeclNode) {
   }
 }
 
-static bool isOptionOrBase(const Type &type, TYPE target) {
-  return type.is(target) ||
-         (isa<OptionType>(type) && cast<OptionType>(type).getElementType().is(target));
-}
-
 static bool isValidLongOpt(const std::string &opt) {
   if (opt.size() < 2) {
     return false;
@@ -313,7 +308,7 @@ void TypeChecker::resolveArgEntry(ResolveArgEntryParam &resolveParam, const unsi
     setFlag(argEntryAttr, ArgEntryAttr::SUBCMD);
     break;
   }
-  if (isOptionOrBase(fieldType, TYPE::Int)) {
+  if (isSameOrOptionTypeOf(fieldType, this->typePool().get(TYPE::Int))) {
     entry.setIntRange(INT64_MIN, INT64_MAX);
   }
 
@@ -514,7 +509,7 @@ void TypeChecker::resolveArgEntry(ResolveArgEntryParam &resolveParam, const unsi
       }
       return;
     }
-    if (isOptionOrBase(fieldType, TYPE::StringArray)) {
+    if (isSameOrOptionTypeOf(fieldType, this->typePool().get(TYPE::StringArray))) {
       foundOptionSet.emplace("<remain>");
       setFlag(argEntryAttr, ArgEntryAttr::REMAIN);
     }

@@ -600,6 +600,11 @@ public:
   static bool classof(const Type *type) { return type->isOptionType(); }
 };
 
+inline bool isSameOrOptionTypeOf(const Type &type, const Type &targetType) {
+  return (type == targetType) ||
+         (type.isOptionType() && cast<OptionType>(type).getElementType() == targetType);
+}
+
 class DerivedErrorType : public Type {
 public:
   DerivedErrorType(unsigned int id, StringRef ref, const Type &superType)

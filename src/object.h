@@ -471,7 +471,7 @@ public:
     if (this->tv.hasTag(ValueTag::INT)) {
       return TValue::decodeTaggedInt(this->tv);
     }
-    assert(this->get()->getKind() == ObjectKind::Int);
+    assert(this->isObject() && this->get()->getKind() == ObjectKind::Int);
     return static_cast<IntObject *>(this->get())->getValue();
   }
 
@@ -484,7 +484,7 @@ public:
     if (this->tv.hasTag(ValueTag::FLOAT)) {
       return TValue::decodeTaggedFloat<ValueTag::FLOAT>(this->tv);
     }
-    assert(this->get()->getKind() == ObjectKind::Float);
+    assert(this->isObject() && this->get()->getKind() == ObjectKind::Float);
     return static_cast<FloatObject *>(this->get())->getValue();
   }
 

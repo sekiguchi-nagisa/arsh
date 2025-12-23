@@ -535,6 +535,81 @@ See `cmd22 --help' for more information.)";
   ASSERT_EQ(err, error->getMessage().asStrRef().toString());
 }
 
+TEST_F(ArgParserTest, multipleFlag) {
+  ArgEntriesBuilder builder;
+  builder
+      .add(this->typePool().get(TYPE::Int),
+           [](ArgEntry &e) {
+             e.setParseOp(OptParseOp::NO_ARG);
+             e.setShortName('d');
+             e.setLongName("debug");
+             e.setDetail("enable debug");
+           })
+      .add(this->typePool().get(TYPE::Int),
+           [](ArgEntry &e) {
+             e.setParseOp(OptParseOp::NO_ARG);
+             e.setShortName('n');
+             e.setDetail("disable debug");
+             e.setAttr(ArgEntryAttr::STORE_FALSE);
+           })
+      .addHelp();
+
+  auto &recordType = this->createRecordType("type1", std::move(builder));
+  auto &entries = recordType.getEntries();
+  ASSERT_EQ(3, entries.size());
+  ASSERT_EQ(OptParseOp::NO_ARG, entries[0].getParseOp());
+  ASSERT_EQ('d', entries[0].getShortName());
+  ASSERT_EQ("debug", entries[0].getLongName());
+  ASSERT_EQ(OptParseOp::NO_ARG, entries[1].getParseOp());
+  ASSERT_EQ('n', entries[1].getShortName());
+  ASSERT_EQ("", entries[1].getLongName());
+  ASSERT_EQ(OptParseOp::NO_ARG, entries[2].getParseOp());
+  ASSERT_EQ('h', entries[2].getShortName());
+  ASSERT_EQ("help", entries[2].getLongName());
+
+  auto args = createArgs("-d", "-n", "--debug", "--", "BBB", "CCC");
+  ASSERT_EQ(6, args->size());
+  ASSERT_EQ("-d", toStringAt(*args, 0));
+  ASSERT_EQ("-n", toStringAt(*args, 1));
+  ASSERT_EQ("--debug", toStringAt(*args, 2));
+  ASSERT_EQ("--", toStringAt(*args, 3));
+  ASSERT_EQ("BBB", toStringAt(*args, 4));
+  ASSERT_EQ("CCC", toStringAt(*args, 5));
+
+  auto out = createObject<BaseObject>(recordType);
+  ASSERT_EQ(3, out->getFieldSize());
+  ASSERT_FALSE((*out)[0]);
+  ASSERT_FALSE((*out)[1]);
+  ASSERT_FALSE((*out)[2]);
+  (*out)[0] = Value::createStr("cmd1");
+  (*out)[1] = Value::createInvalid();
+  (*out)[2] = Value::createInt(100);
+  auto ret = parseCommandLine(*this->state, *args, *out);
+  ASSERT_TRUE(ret);
+  ASSERT_EQ(4, ret.index);
+  ASSERT_EQ(2, (*out)[1].asInt());
+  ASSERT_EQ(99, (*out)[2].asInt());
+
+  // overflow
+  (*out)[1] = Value::createInt(std::numeric_limits<int64_t>::max() - 1);
+  (*out)[2] = Value::createInt(std::numeric_limits<int64_t>::min());
+  ret = parseCommandLine(*this->state, *args, *out);
+  ASSERT_TRUE(ret);
+  ASSERT_EQ(4, ret.index);
+  ASSERT_EQ(std::numeric_limits<int64_t>::max(), (*out)[1].asInt());
+  ASSERT_EQ(std::numeric_limits<int64_t>::min(), (*out)[2].asInt());
+
+  // help
+  const char *help = R"(Usage: cmd1 [OPTIONS]
+
+Options:
+  -d, --debug  enable debug
+  -n           disable debug
+  -h, --help   show this help message)";
+  std::string v = createArgParser("cmd1", recordType).formatUsage("", true).unwrap();
+  ASSERT_EQ(help, v);
+}
+
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

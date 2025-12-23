@@ -32,6 +32,8 @@
     - like ``$(< file)``, ``<(<<< string)``
     - implicitly call ``__gets`` command
     - syntactically accept empty command io redirection in an arbitrary place
+- ``Flag`` attribute support ``Int`` type field
+    - when matches a flag, increment/decrement the corresponding field
 
 #### Builtin
 

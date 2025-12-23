@@ -96,7 +96,7 @@ AttributeMap AttributeMap::create() {
                       Attribute::Param::XOR,
                       Attribute::Param::HELP,
                   },
-                  {TYPE::Bool});
+                  {TYPE::Bool, TYPE::Int});
   defineAttribute(values, AttributeKind::OPTION, Attribute::Loc::FIELD,
                   {
                       Attribute::Param::SHORT,

@@ -242,7 +242,25 @@ static BaseObject *parseCommandLineImpl(ARState &state, StrArrayIter &iter, cons
     }
     switch (entry.getParseOp()) {
     case OptParseOp::NO_ARG: // set flag
-      out[entry.getFieldOffset()] = Value::createBool(!entry.hasAttr(ArgEntryAttr::STORE_FALSE));
+      if (auto &fieldType = state.typePool.get(entry.getFieldTypeId());
+          isSameOrOptionTypeOf(fieldType, state.typePool.get(TYPE::Bool))) { // store as bool
+        out[entry.getFieldOffset()] = Value::createBool(!entry.hasAttr(ArgEntryAttr::STORE_FALSE));
+      } else {
+        assert(isSameOrOptionTypeOf(fieldType, state.typePool.get(TYPE::Int)));
+        const int64_t base =
+            out[entry.getFieldOffset()].isInvalid() ? 0 : out[entry.getFieldOffset()].asInt();
+        int64_t r;
+        if (entry.hasAttr(ArgEntryAttr::STORE_FALSE)) { // saturated sub
+          if (unlikely(ssub_overflow(base, 1, r))) {
+            r = std::numeric_limits<int64_t>::min();
+          }
+        } else { // saturated add
+          if (unlikely(sadd_overflow(base, 1, r))) {
+            r = std::numeric_limits<int64_t>::max();
+          }
+        }
+        out[entry.getFieldOffset()] = Value::createInt(r);
+      }
       break;
     case OptParseOp::HAS_ARG:
     case OptParseOp::OPT_ARG:

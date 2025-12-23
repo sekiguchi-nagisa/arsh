@@ -19,7 +19,7 @@ only allowed for user-defied type definition
 | desc      | ``String`` | empty string | set description message                                     |
 
 ### ``Flag`` attribute
-only allowed for field declaration that is ``Bool`` or ``Bool?`` type
+only allowed for field declaration that is ``Bool``, ``Bool?``, ``Int`` or ``Int?`` type
 
 | **param** | **type**   | **default**                               | **description**                                               |
 |-----------|------------|-------------------------------------------|---------------------------------------------------------------|
