@@ -85,14 +85,21 @@ TypePool::TypePool() {
   // init string array type(for command argument)
   {
     auto checked = this->createArrayType(this->get(TYPE::String)); // TYPE::StringArray
-    (void)checked;
+    static_cast<void>(checked);
+    assert(checked);
+  }
+
+  // init [String : String] type
+  {
+    auto checked = this->createMapType(this->get(TYPE::String), this->get(TYPE::String));
+    static_cast<void>(checked);
     assert(checked);
   }
 
   // init optional nothing type (for dummy invalid value)
   {
     auto checked = this->createOptionType(this->get(TYPE::Nothing));
-    (void)checked;
+    static_cast<void>(checked);
     assert(checked);
   }
 

@@ -2479,10 +2479,7 @@ ARSH_METHOD edit_bind(RuntimeContext &ctx) {
 ARSH_METHOD edit_bindings(RuntimeContext &ctx) {
   SUPPRESS_WARNING(edit_bindings);
   auto &editor = typeAs<LineEditorObject>(LOCAL(0));
-  auto &stringType = ctx.typePool.get(TYPE::String);
-  auto ret = ctx.typePool.createMapType(stringType, stringType);
-  assert(ret);
-  auto &mapType = cast<MapType>(*ret.asOk());
+  auto &mapType = cast<MapType>(ctx.typePool.get(TYPE::StringStringMap));
   auto value = Value::create<OrderedMapObject>(mapType, ctx.getRng().next());
   editor.getKeyBindings().fillBindings([&value](std::string &&key, std::string &&action) {
     typeAs<OrderedMapObject>(value).insert(Value::createStr(std::move(key)),
@@ -2556,10 +2553,7 @@ ARSH_METHOD edit_abbr(RuntimeContext &ctx) {
 ARSH_METHOD edit_abbrs(RuntimeContext &ctx) {
   SUPPRESS_WARNING(edit_abbrs);
   auto &editor = typeAs<LineEditorObject>(LOCAL(0));
-  auto &stringType = ctx.typePool.get(TYPE::String);
-  auto ret = ctx.typePool.createMapType(stringType, stringType);
-  assert(ret);
-  auto &mapType = cast<MapType>(*ret.asOk());
+  auto &mapType = cast<MapType>(ctx.typePool.get(TYPE::StringStringMap));
   auto value = Value::create<OrderedMapObject>(mapType, ctx.getRng().next());
   for (auto &[p, e] : editor.getAbbrMap()) {
     typeAs<OrderedMapObject>(value).insert(Value::createStr(p), Value::createStr(e));

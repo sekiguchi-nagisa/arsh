@@ -102,7 +102,7 @@ void bindBuiltins(Consumer &consumer, const SysConfig &config, TypePool &pool, N
    * holding read variable.
    * must be Map_Object
    */
-  binder.bind("reply", *pool.createMapType(pool.get(TYPE::String), pool.get(TYPE::String)).take());
+  binder.bind("reply", pool.get(TYPE::StringStringMap));
 
   binder.bind("DYNA_UDCS",
               *pool.createMapType(pool.get(TYPE::String), pool.get(TYPE::Command)).take());

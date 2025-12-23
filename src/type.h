@@ -72,8 +72,9 @@ enum class TYPE : unsigned int {
   LineEditor,
   CLI,
   Candidates,
-  StringArray, // for command argument
-  OptNothing,  // for dummy invalid value
+  StringArray,     // for command argument
+  StringStringMap, // for reply
+  OptNothing,      // for dummy invalid value
 
   ArithmeticError,
   OutOfRangeError,

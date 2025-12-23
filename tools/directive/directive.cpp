@@ -118,12 +118,7 @@ private:
    * return always [String : String] type
    * @return
    */
-  const Type &getMapType() {
-    return *this->typePool()
-                .createMapType(this->typePool().get(TYPE::String),
-                               this->typePool().get(TYPE::String))
-                .take();
-  }
+  const Type &getMapType() { return this->typePool().get(TYPE::StringStringMap); }
 
   void createError(const Node &node, const std::string &str) {
     this->errors.emplace_back(node.getToken(), "", CStrPtr(strdup(str.c_str())));
