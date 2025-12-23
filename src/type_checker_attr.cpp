@@ -291,7 +291,8 @@ static std::string toArgName(const std::string &name) {
 void TypeChecker::resolveArgEntry(ResolveArgEntryParam &resolveParam, const unsigned int offset,
                                   const AttributeNode &attrNode, const VarDeclNode &declNode,
                                   std::vector<ArgEntry> &entries) {
-  ArgEntry entry(static_cast<ArgEntryIndex>(entries.size()),
+  auto &fieldType = declNode.getExprNode()->getType();
+  ArgEntry entry(fieldType.typeId(), static_cast<ArgEntryIndex>(entries.size()),
                  declNode.getHandle()->getIndex() - offset);
   ArgEntryAttr argEntryAttr{};
   switch (attrNode.getAttrKind()) {
@@ -312,7 +313,7 @@ void TypeChecker::resolveArgEntry(ResolveArgEntryParam &resolveParam, const unsi
     setFlag(argEntryAttr, ArgEntryAttr::SUBCMD);
     break;
   }
-  if (isOptionOrBase(declNode.getExprNode()->getType(), TYPE::Int)) {
+  if (isOptionOrBase(fieldType, TYPE::Int)) {
     entry.setIntRange(INT64_MIN, INT64_MAX);
   }
 
@@ -401,7 +402,7 @@ void TypeChecker::resolveArgEntry(ResolveArgEntryParam &resolveParam, const unsi
       continue;
     case Attribute::Param::RANGE: {
       auto &type = this->typePool().get(TYPE::Int);
-      if (declNode.getExprNode()->getType().isSameOrBaseTypeOf(type)) {
+      if (fieldType.isSameOrBaseTypeOf(type)) {
         auto &tupleNode = cast<TupleNode>(constNode);
         assert(tupleNode.getNodes().size() == 2);
         int64_t min = cast<NumberNode>(*tupleNode.getNodes()[0]).getIntValue();
@@ -419,7 +420,7 @@ void TypeChecker::resolveArgEntry(ResolveArgEntryParam &resolveParam, const unsi
     }
     case Attribute::Param::CHOICE: {
       auto &type = this->typePool().get(TYPE::String);
-      if (declNode.getExprNode()->getType().isSameOrBaseTypeOf(type)) {
+      if (fieldType.isSameOrBaseTypeOf(type)) {
         auto &arrayNode = cast<ArrayNode>(constNode);
         if (arrayNode.getExprNodes().size() > SYS_LIMIT_ATTR_CHOICE_SIZE) {
           this->reportError<ChoiceLimit>(constNode);
@@ -513,7 +514,7 @@ void TypeChecker::resolveArgEntry(ResolveArgEntryParam &resolveParam, const unsi
       }
       return;
     }
-    if (isOptionOrBase(declNode.getExprNode()->getType(), TYPE::StringArray)) {
+    if (isOptionOrBase(fieldType, TYPE::StringArray)) {
       foundOptionSet.emplace("<remain>");
       setFlag(argEntryAttr, ArgEntryAttr::REMAIN);
     }

@@ -45,23 +45,26 @@ public:
 TEST_F(ArgParserTest, base) {
   ArgEntriesBuilder builder;
   builder
-      .add([](ArgEntry &e) {
-        e.setParseOp(OptParseOp::NO_ARG);
-        e.setShortName('s');
-        e.setLongName("status");
-      })
-      .add([](ArgEntry &e) {
-        e.setParseOp(OptParseOp::HAS_ARG);
-        e.setShortName('o');
-        e.setLongName("output");
-        e.setArgName("arg");
-      })
-      .add([](ArgEntry &e) {
-        e.setParseOp(OptParseOp::NO_ARG);
-        e.setShortName('d');
-        e.setDetail("enable debug");
-        e.setAttr(ArgEntryAttr::STORE_FALSE);
-      })
+      .add(this->typePool().get(TYPE::Bool),
+           [](ArgEntry &e) {
+             e.setParseOp(OptParseOp::NO_ARG);
+             e.setShortName('s');
+             e.setLongName("status");
+           })
+      .add(this->typePool().get(TYPE::String),
+           [](ArgEntry &e) {
+             e.setParseOp(OptParseOp::HAS_ARG);
+             e.setShortName('o');
+             e.setLongName("output");
+             e.setArgName("arg");
+           })
+      .add(this->typePool().get(TYPE::Bool),
+           [](ArgEntry &e) {
+             e.setParseOp(OptParseOp::NO_ARG);
+             e.setShortName('d');
+             e.setDetail("enable debug");
+             e.setAttr(ArgEntryAttr::STORE_FALSE);
+           })
       .addHelp();
 
   auto &recordType = this->createRecordType("type1", std::move(builder));
@@ -114,20 +117,22 @@ Options:
 TEST_F(ArgParserTest, opt) {
   ArgEntriesBuilder builder;
   builder
-      .add([](ArgEntry &e) {
-        e.setParseOp(OptParseOp::OPT_ARG);
-        e.setShortName('d');
-        e.setLongName("dump");
-        e.setArgName("file");
-        e.setDefaultValue("stdout");
-      })
+      .add(this->typePool().get(TYPE::String),
+           [](ArgEntry &e) {
+             e.setParseOp(OptParseOp::OPT_ARG);
+             e.setShortName('d');
+             e.setLongName("dump");
+             e.setArgName("file");
+             e.setDefaultValue("stdout");
+           })
       .addHelp()
-      .add([](ArgEntry &e) {
-        e.setParseOp(OptParseOp::NO_ARG);
-        e.setArgName("src");
-        e.setAttr(ArgEntryAttr::POSITIONAL | ArgEntryAttr::REQUIRED);
-      })
-      .add([](ArgEntry &e) {
+      .add(this->typePool().get(TYPE::String),
+           [](ArgEntry &e) {
+             e.setParseOp(OptParseOp::NO_ARG);
+             e.setArgName("src");
+             e.setAttr(ArgEntryAttr::POSITIONAL | ArgEntryAttr::REQUIRED);
+           })
+      .add(this->typePool().get(TYPE::StringArray), [](ArgEntry &e) {
         e.setParseOp(OptParseOp::NO_ARG);
         e.setArgName("dest");
         e.setAttr(ArgEntryAttr::POSITIONAL | ArgEntryAttr::REMAIN);
@@ -181,18 +186,20 @@ Options:
 TEST_F(ArgParserTest, stop) {
   ArgEntriesBuilder builder;
   builder
-      .add([](ArgEntry &e) {
-        e.setParseOp(OptParseOp::HAS_ARG);
-        e.setShortName('c');
-        e.setArgName("cmd");
-        e.setAttr(ArgEntryAttr::STOP_OPTION);
-      })
-      .add([](ArgEntry &e) {
-        e.setParseOp(OptParseOp::NO_ARG);
-        e.setShortName('d');
-      })
+      .add(this->typePool().get(TYPE::String),
+           [](ArgEntry &e) {
+             e.setParseOp(OptParseOp::HAS_ARG);
+             e.setShortName('c');
+             e.setArgName("cmd");
+             e.setAttr(ArgEntryAttr::STOP_OPTION);
+           })
+      .add(this->typePool().get(TYPE::Bool),
+           [](ArgEntry &e) {
+             e.setParseOp(OptParseOp::NO_ARG);
+             e.setShortName('d');
+           })
       .addHelp()
-      .add([](ArgEntry &e) {
+      .add(this->typePool().get(TYPE::StringArray), [](ArgEntry &e) {
         e.setParseOp(OptParseOp::NO_ARG);
         e.setArgName("remain");
         e.setAttr(ArgEntryAttr::POSITIONAL | ArgEntryAttr::REMAIN);
@@ -225,16 +232,17 @@ TEST_F(ArgParserTest, stop) {
 TEST_F(ArgParserTest, range) {
   ArgEntriesBuilder builder;
   builder
-      .add([](ArgEntry &e) {
-        e.setParseOp(OptParseOp::HAS_ARG);
-        e.setShortName('t');
-        e.setLongName("time");
-        e.setArgName("msec");
-        e.setIntRange(0, 1000);
-        e.setAttr(ArgEntryAttr::REQUIRED);
-      })
+      .add(this->typePool().get(TYPE::Int),
+           [](ArgEntry &e) {
+             e.setParseOp(OptParseOp::HAS_ARG);
+             e.setShortName('t');
+             e.setLongName("time");
+             e.setArgName("msec");
+             e.setIntRange(0, 1000);
+             e.setAttr(ArgEntryAttr::REQUIRED);
+           })
       .addHelp()
-      .add([](ArgEntry &e) {
+      .add(this->typePool().get(TYPE::String), [](ArgEntry &e) {
         e.setParseOp(OptParseOp::NO_ARG);
         e.setArgName("level");
         e.addChoice(strdup("info"));
@@ -360,7 +368,7 @@ Options:
 
 TEST_F(ArgParserTest, help) {
   ArgEntriesBuilder builder;
-  builder.addHelp().add([](ArgEntry &e) {
+  builder.addHelp().add(this->typePool().get(TYPE::Bool), [](ArgEntry &e) {
     e.setParseOp(OptParseOp::NO_ARG);
     e.setArgName("output");
     e.setAttr(ArgEntryAttr::POSITIONAL);
@@ -411,7 +419,7 @@ Options:
 
 TEST_F(ArgParserTest, shortUsage1) {
   ArgEntriesBuilder builder;
-  builder.addHelp().add([](ArgEntry &e) {
+  builder.addHelp().add(this->typePool().get(TYPE::Bool), [](ArgEntry &e) {
     e.setParseOp(OptParseOp::NO_ARG);
     e.setArgName("output");
     e.setAttr(ArgEntryAttr::POSITIONAL);
@@ -467,15 +475,16 @@ See `cmd11 --help' for more information.)";
 TEST_F(ArgParserTest, shortUsage2) {
   ArgEntriesBuilder builder;
   builder
-      .add([](ArgEntry &e) {
-        e.setParseOp(OptParseOp::HAS_ARG);
-        e.setArgName("time");
-        e.setShortName('t');
-        e.setIntRange(0, 1000);
-        e.setAttr(ArgEntryAttr::REQUIRED);
-      })
+      .add(this->typePool().get(TYPE::Int),
+           [](ArgEntry &e) {
+             e.setParseOp(OptParseOp::HAS_ARG);
+             e.setArgName("time");
+             e.setShortName('t');
+             e.setIntRange(0, 1000);
+             e.setAttr(ArgEntryAttr::REQUIRED);
+           })
       .addHelp()
-      .add([](ArgEntry &e) {
+      .add(this->typePool().get(TYPE::Bool), [](ArgEntry &e) {
         e.setParseOp(OptParseOp::NO_ARG);
         e.setArgName("output");
         e.setAttr(ArgEntryAttr::POSITIONAL | ArgEntryAttr::REQUIRED);

@@ -615,7 +615,7 @@ TEST_F(ArchiveTest, mod3) {
 
 TEST_F(ArchiveTest, mod4) {
   {
-    auto &modType3 = this->loadMod(false, [&](AnalyzerContext &ctx1) {
+    auto &modType3 = this->loadMod(false, [this](AnalyzerContext &ctx1) {
       auto &modType4 = this->loadModAt(ctx1, true, [](AnalyzerContext &ctx2) {
         auto ret = ctx2.getPool().createArrayType(ctx2.getPool().get(TYPE::Bool));
         ASSERT_TRUE(ret);
@@ -666,7 +666,7 @@ TEST_F(ArchiveTest, mod4) {
 }
 
 TEST_F(ArchiveTest, userdefined) {
-  auto &modType = this->loadMod(false, [&](AnalyzerContext &ctx) { // named import
+  auto &modType = this->loadMod(false, [](AnalyzerContext &ctx) { // named import
     const auto modId = ctx.getModId();
     const char *typeName = "APIError";
     auto ret = ctx.getPool().createErrorType(typeName, ctx.getPool().get(TYPE::Error), modId);
@@ -779,7 +779,7 @@ TEST_F(ArchiveTest, function) {
   /**
    * for named import
    */
-  auto &modType = this->loadMod(false, [&](AnalyzerContext &ctx) {
+  auto &modType = this->loadMod(false, [](AnalyzerContext &ctx) {
     // no args
     auto typeOrError = ctx.getPool().createFuncType(ctx.getPool().get(TYPE::Int), {});
     ASSERT_TRUE(typeOrError);
@@ -838,7 +838,7 @@ TEST_F(ArchiveTest, method1) {
   /**
    * for named import
    */
-  auto &modType = this->loadMod(false, [&](AnalyzerContext &ctx) {
+  auto &modType = this->loadMod(false, [](AnalyzerContext &ctx) {
     auto ret = ctx.getScope()->defineMethod(
         ctx.getPool(), ctx.getPool().get(TYPE::Int), "sum", ctx.getPool().get(TYPE::Int),
         {&ctx.getPool().get(TYPE::Int)}, packedParamNames({"right"}));
@@ -865,7 +865,7 @@ TEST_F(ArchiveTest, method2) {
   /**
    * for global import
    */
-  auto &modType = this->loadMod(true, [&](AnalyzerContext &ctx) {
+  auto &modType = this->loadMod(true, [](AnalyzerContext &ctx) {
     auto ret = ctx.getScope()->defineMethod(
         ctx.getPool(), ctx.getPool().get(TYPE::Int), "sum", ctx.getPool().get(TYPE::Int),
         {&ctx.getPool().get(TYPE::Int)}, packedParamNames({"target"}));
@@ -880,9 +880,9 @@ TEST_F(ArchiveTest, method2) {
   });
   (void)modType;
 
-  auto methodorError = this->scope().lookupMethod(this->pool(), this->pool().get(TYPE::Int), "sum");
-  ASSERT_TRUE(methodorError);
-  auto *method = methodorError.asOk();
+  auto methodOrError = this->scope().lookupMethod(this->pool(), this->pool().get(TYPE::Int), "sum");
+  ASSERT_TRUE(methodOrError);
+  auto *method = methodOrError.asOk();
   ASSERT_TRUE(method->isMethodHandle());
   ASSERT_EQ(1, method->getParamSize());
   ASSERT_EQ(this->pool().get(TYPE::Int), method->getParamTypeAt(0));
@@ -890,24 +890,25 @@ TEST_F(ArchiveTest, method2) {
   ASSERT_EQ(this->pool().get(TYPE::Int), method->getReturnType());
   ASSERT_EQ("target", method->getPackedParamNames().toString());
 
-  methodorError = this->scope().lookupMethod(this->pool(), this->pool().get(TYPE::Int), "_value");
-  ASSERT_FALSE(methodorError);
+  methodOrError = this->scope().lookupMethod(this->pool(), this->pool().get(TYPE::Int), "_value");
+  ASSERT_FALSE(methodOrError);
 }
 
 TEST_F(ArchiveTest, argEntry) {
   /**
    * for global import
    */
-  auto &modType = this->loadMod(true, [&](AnalyzerContext &ctx) {
+  auto &modType = this->loadMod(true, [](AnalyzerContext &ctx) {
     ArgEntriesBuilder builder;
     builder
-        .add([](ArgEntry &e) {
-          e.setParseOp(OptParseOp::NO_ARG);
-          e.setShortName('e');
-          e.setLongName("enable");
-          e.setDetail("enable features");
-        })
-        .add(1,
+        .add(ctx.getPool().get(TYPE::Bool),
+             [](ArgEntry &e) {
+               e.setParseOp(OptParseOp::NO_ARG);
+               e.setShortName('e');
+               e.setLongName("enable");
+               e.setDetail("enable features");
+             })
+        .add(ctx.getPool().get(TYPE::Bool), 1,
              [](ArgEntry &e) {
                e.setParseOp(OptParseOp::NO_ARG);
                e.setShortName('d');
@@ -915,28 +916,31 @@ TEST_F(ArchiveTest, argEntry) {
                e.setAttr(ArgEntryAttr::STORE_FALSE);
                e.setDetail("disable features");
              })
-        .add([](ArgEntry &e) {
-          e.setParseOp(OptParseOp::OPT_ARG);
-          e.setShortName('o');
-          e.setLongName("output");
-          e.setArgName("target");
-          e.setDefaultValue("/dev/stdout");
-          e.setAttr(ArgEntryAttr::REQUIRED);
-        })
-        .add([](ArgEntry &e) {
-          e.setParseOp(OptParseOp::HAS_ARG);
-          e.setShortName('t');
-          e.setLongName("timeout");
-          e.setIntRange(0, INT64_MAX);
-        })
-        .add([](ArgEntry &e) {
-          e.setParseOp(OptParseOp::HAS_ARG);
-          e.setLongName("log");
-          e.setArgName("level");
-          e.addChoice(strdup("info"));
-          e.addChoice(strdup("warn"));
-        })
-        .add([](ArgEntry &e) {
+        .add(ctx.getPool().get(TYPE::String),
+             [](ArgEntry &e) {
+               e.setParseOp(OptParseOp::OPT_ARG);
+               e.setShortName('o');
+               e.setLongName("output");
+               e.setArgName("target");
+               e.setDefaultValue("/dev/stdout");
+               e.setAttr(ArgEntryAttr::REQUIRED);
+             })
+        .add(ctx.getPool().get(TYPE::Int),
+             [](ArgEntry &e) {
+               e.setParseOp(OptParseOp::HAS_ARG);
+               e.setShortName('t');
+               e.setLongName("timeout");
+               e.setIntRange(0, INT64_MAX);
+             })
+        .add(ctx.getPool().get(TYPE::String),
+             [](ArgEntry &e) {
+               e.setParseOp(OptParseOp::HAS_ARG);
+               e.setLongName("log");
+               e.setArgName("level");
+               e.addChoice(strdup("info"));
+               e.addChoice(strdup("warn"));
+             })
+        .add(ctx.getPool().get(TYPE::StringArray), [](ArgEntry &e) {
           e.setArgName("files");
           e.setAttr(ArgEntryAttr::POSITIONAL | ArgEntryAttr::REMAIN | ArgEntryAttr::REQUIRED);
         });
@@ -970,6 +974,7 @@ TEST_F(ArchiveTest, argEntry) {
   ASSERT_TRUE(entries[0].getDefaultValue().empty());
   ASSERT_EQ("enable features", entries[0].getDetail());
   ASSERT_EQ(ArgEntry::CheckerKind::NOP, entries[0].getCheckerKind());
+  ASSERT_EQ(this->pool().get(TYPE::Bool), this->pool().get(entries[0].getFieldTypeId()));
 
   // -d --disable
   ASSERT_EQ(1, entries[1].getFieldOffset());
@@ -981,6 +986,7 @@ TEST_F(ArchiveTest, argEntry) {
   ASSERT_TRUE(entries[1].getDefaultValue().empty());
   ASSERT_EQ("disable features", entries[1].getDetail());
   ASSERT_EQ(ArgEntry::CheckerKind::NOP, entries[1].getCheckerKind());
+  ASSERT_EQ(this->pool().get(TYPE::Bool), this->pool().get(entries[1].getFieldTypeId()));
 
   // -o --output
   ASSERT_EQ(2, entries[2].getFieldOffset());
@@ -992,6 +998,7 @@ TEST_F(ArchiveTest, argEntry) {
   ASSERT_EQ("/dev/stdout", entries[2].getDefaultValue());
   ASSERT_TRUE(entries[2].getDetail().empty());
   ASSERT_EQ(ArgEntry::CheckerKind::NOP, entries[2].getCheckerKind());
+  ASSERT_EQ(this->pool().get(TYPE::String), this->pool().get(entries[2].getFieldTypeId()));
 
   // -t  --timeout
   ASSERT_EQ(3, entries[3].getFieldOffset());
@@ -1002,6 +1009,7 @@ TEST_F(ArchiveTest, argEntry) {
   ASSERT_TRUE(entries[3].getArgName().empty());
   ASSERT_TRUE(entries[3].getDefaultValue().empty());
   ASSERT_TRUE(entries[3].getDetail().empty());
+  ASSERT_EQ(this->pool().get(TYPE::Int), this->pool().get(entries[3].getFieldTypeId()));
   ASSERT_EQ(ArgEntry::CheckerKind::INT, entries[3].getCheckerKind());
   {
     auto [min, max] = entries[3].getIntRange();
@@ -1018,6 +1026,7 @@ TEST_F(ArchiveTest, argEntry) {
   ASSERT_EQ("level", entries[4].getArgName());
   ASSERT_TRUE(entries[4].getDefaultValue().empty());
   ASSERT_TRUE(entries[4].getDetail().empty());
+  ASSERT_EQ(this->pool().get(TYPE::String), this->pool().get(entries[4].getFieldTypeId()));
   ASSERT_EQ(ArgEntry::CheckerKind::CHOICE, entries[4].getCheckerKind());
   {
     auto &choice = entries[4].getChoice();
@@ -1037,6 +1046,7 @@ TEST_F(ArchiveTest, argEntry) {
   ASSERT_TRUE(entries[5].getDefaultValue().empty());
   ASSERT_TRUE(entries[5].getDetail().empty());
   ASSERT_EQ(ArgEntry::CheckerKind::NOP, entries[5].getCheckerKind());
+  ASSERT_EQ(this->pool().get(TYPE::StringArray), this->pool().get(entries[5].getFieldTypeId()));
 }
 
 struct Builder {

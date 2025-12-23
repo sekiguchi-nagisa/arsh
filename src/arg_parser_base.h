@@ -56,7 +56,8 @@ public:
   };
 
 private:
-  unsigned char fieldOffset{0}; // corresponding field offset
+  const unsigned int fieldTypeId;
+  const unsigned char fieldOffset{0}; // corresponding field offset
   ArgEntryAttr attr{};
   int8_t xorGroupId{-1};
   CheckerKind checkerKind{CheckerKind::NOP};
@@ -78,15 +79,17 @@ private:
 public:
   static ArgEntry newHelp(ArgEntryIndex index);
 
-  explicit ArgEntry(ArgEntryIndex index, unsigned char fieldOffset)
-      : OptParseOption(index), fieldOffset(fieldOffset), intRange({0, 0}) {}
+  explicit ArgEntry(unsigned int fieldTypeId, ArgEntryIndex index, unsigned char fieldOffset)
+      : OptParseOption(index), fieldTypeId(fieldTypeId), fieldOffset(fieldOffset),
+        intRange({0, 0}) {}
 
   ~ArgEntry();
 
   ArgEntry(ArgEntry &&o) noexcept // NOLINT
-      : OptParseOption(std::move(static_cast<OptParseOption &>(o))), fieldOffset(o.fieldOffset),
-        attr(o.attr), xorGroupId(o.xorGroupId), checkerKind(o.checkerKind),
-        defaultValue(std::move(o.defaultValue)), compHandle(o.compHandle) {
+      : OptParseOption(std::move(static_cast<OptParseOption &>(o))), fieldTypeId(o.fieldTypeId),
+        fieldOffset(o.fieldOffset), attr(o.attr), xorGroupId(o.xorGroupId),
+        checkerKind(o.checkerKind), defaultValue(std::move(o.defaultValue)),
+        compHandle(o.compHandle) {
     switch (this->checkerKind) {
     case CheckerKind::NOP:
       break;
@@ -107,6 +110,8 @@ public:
     }
     return *this;
   }
+
+  unsigned int getFieldTypeId() const { return this->fieldTypeId; }
 
   ArgEntryIndex getIndex() const { return this->kind; }
 

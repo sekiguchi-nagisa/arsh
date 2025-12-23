@@ -19,6 +19,7 @@
 #include "arg_parser_base.h"
 #include "constant.h"
 #include "misc/num_util.hpp"
+#include "type.h"
 
 namespace arsh {
 
@@ -27,7 +28,7 @@ namespace arsh {
 // ######################
 
 ArgEntry ArgEntry::newHelp(ArgEntryIndex index) {
-  ArgEntry entry(index, 0);
+  ArgEntry entry(toUnderlying(TYPE::Bool), index, 0);
   entry.setShortName('h');
   entry.setLongName("help");
   entry.setDetail("show this help message");

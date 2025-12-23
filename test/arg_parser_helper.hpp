@@ -18,16 +18,16 @@ public:
       std::is_same_v<void, std::invoke_result_t<Func, ArgEntry &>>;
 
   template <typename Func, enable_when<func_requirement_v<Func>> = nullptr>
-  ArgEntriesBuilder &add(unsigned char v, Func func) {
+  ArgEntriesBuilder &add(const Type &type, unsigned char v, Func func) {
     auto index = this->getCurIndex();
-    this->values.emplace_back(index, v);
+    this->values.emplace_back(type.typeId(), index, v);
     func(this->values.back());
     return *this;
   }
 
   template <typename Func, enable_when<func_requirement_v<Func>> = nullptr>
-  ArgEntriesBuilder &add(Func func) {
-    return this->add(this->fieldOffset++, std::move(func));
+  ArgEntriesBuilder &add(const Type &type, Func func) {
+    return this->add(type, this->fieldOffset++, std::move(func));
   }
 
   ArgEntriesBuilder &addHelp() {
@@ -52,7 +52,7 @@ inline const CLIRecordType &createRecordType(TypePool &pool, const char *typeNam
   for (size_t i = 0; i < entries.size(); i++) {
     std::string name = "field_";
     name += std::to_string(i);
-    auto handle = HandlePtr::create(pool.get(TYPE::String), i, HandleKind::VAR,
+    auto handle = HandlePtr::create(pool.get(entries[i].getFieldTypeId()), i, HandleKind::VAR,
                                     HandleAttr::UNCAPTURED, modId);
     handles.emplace(std::move(name), std::move(handle));
   }

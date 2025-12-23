@@ -177,6 +177,7 @@ void Archiver::add(StringRef name, const Handle &handle) {
 }
 
 void Archiver::add(const ArgEntry &entry) {
+  this->add(this->getPool().get(entry.getFieldTypeId()));
   this->writeEnum(entry.getIndex());
   this->write8(entry.getFieldOffset());
   this->writeEnum(entry.getParseOp());
@@ -379,8 +380,9 @@ const Type *Unarchiver::unpackType() {
 }
 
 std::pair<ArgEntry, bool> Unarchiver::unpackArgEntry() {
+  auto *type = this->unpackType();
   auto index = this->readEnum<ArgEntryIndex>();
-  ArgEntry entry(index, this->read8());
+  ArgEntry entry(type->typeId(), index, this->read8());
   entry.setParseOp(this->readEnum<OptParseOp>());
   entry.setAttr(this->readEnum<ArgEntryAttr>());
   entry.setXORGroupId(this->read8());
