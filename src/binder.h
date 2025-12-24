@@ -155,7 +155,7 @@ void bindBuiltins(Consumer &consumer, const SysConfig &config, TypePool &pool, N
    * contains latest executed pipeline status.
    * must be Array_Object
    */
-  binder.bind("PIPESTATUS", *pool.createArrayType(pool.get(TYPE::Int)).take());
+  binder.bind("PIPESTATUS", pool.get(TYPE::IntArray));
 
   binder.bind("SUBSHELL", 0);
 

@@ -642,8 +642,7 @@ ARSH_METHOD string_count(RuntimeContext &ctx) {
 ARSH_METHOD string_bytes(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_bytes);
   auto ref = LOCAL(0).asStrRef();
-  auto value =
-      Value::create<ArrayObject>(*ctx.typePool.createArrayType(ctx.typePool.get(TYPE::Int)).asOk());
+  auto value = Value::create<ArrayObject>(ctx.typePool.get(TYPE::IntArray));
   auto &array = typeAs<ArrayObject>(value);
   array.resize(ref.size());
   const size_t size = ref.size();

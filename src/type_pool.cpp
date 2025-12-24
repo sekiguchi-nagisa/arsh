@@ -82,9 +82,16 @@ TypePool::TypePool() {
 
   this->initTypeTemplate(this->funcTemplate, TypeTemplate::Kind::Func, {}, info_FuncType());
 
-  // init string array type(for command argument)
+  // init [String] type (for command argument)
   {
     auto checked = this->createArrayType(this->get(TYPE::String)); // TYPE::StringArray
+    static_cast<void>(checked);
+    assert(checked);
+  }
+
+  // init [Int] type (for PIPESTATUS)
+  {
+    auto checked = this->createArrayType(this->get(TYPE::Int)); // TYPE::IntArray
     static_cast<void>(checked);
     assert(checked);
   }
@@ -92,7 +99,7 @@ TypePool::TypePool() {
   // init [String : String] type
   {
     auto checked = this->createMapType(this->get(TYPE::String), this->get(TYPE::String));
-    static_cast<void>(checked);
+    static_cast<void>(checked); // TYPE::StringStringMap
     assert(checked);
   }
 

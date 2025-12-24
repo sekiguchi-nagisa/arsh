@@ -73,6 +73,7 @@ enum class TYPE : unsigned int {
   CLI,
   Candidates,
   StringArray,     // for command argument
+  IntArray,        // for PIPESTATUS
   StringStringMap, // for reply
   OptNothing,      // for dummy invalid value
 
