@@ -34,6 +34,8 @@
     - syntactically accept empty command io redirection in an arbitrary place
 - ``Flag`` attribute support ``Int`` type field
     - when matches a flag, increment/decrement the corresponding field
+- ``Option`` attribute support ``[String]`` and ``[Int]`` type field
+    - now store multiple appeared option arguments to an array
 
 #### Builtin
 

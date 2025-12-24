@@ -308,7 +308,8 @@ void TypeChecker::resolveArgEntry(ResolveArgEntryParam &resolveParam, const unsi
     setFlag(argEntryAttr, ArgEntryAttr::SUBCMD);
     break;
   }
-  if (isSameOrOptionTypeOf(fieldType, this->typePool().get(TYPE::Int))) {
+  if (isSameOrOptionTypeOf(fieldType, this->typePool().get(TYPE::Int)) ||
+      isSameOrOptionTypeOf(fieldType, this->typePool().get(TYPE::IntArray))) {
     entry.setIntRange(INT64_MIN, INT64_MAX);
   }
 
@@ -396,8 +397,9 @@ void TypeChecker::resolveArgEntry(ResolveArgEntryParam &resolveParam, const unsi
       entry.setArgName(cast<StringNode>(constNode).getValue().c_str());
       continue;
     case Attribute::Param::RANGE: {
-      auto &type = this->typePool().get(TYPE::Int);
-      if (fieldType.isSameOrBaseTypeOf(type)) {
+      auto &intType = this->typePool().get(TYPE::Int);
+      auto &intArrayType = this->typePool().get(TYPE::IntArray);
+      if (fieldType.isSameOrBaseTypeOf(intType) || fieldType.isSameOrBaseTypeOf(intArrayType)) {
         auto &tupleNode = cast<TupleNode>(constNode);
         assert(tupleNode.getNodes().size() == 2);
         int64_t min = cast<NumberNode>(*tupleNode.getNodes()[0]).getIntValue();
@@ -407,8 +409,11 @@ void TypeChecker::resolveArgEntry(ResolveArgEntryParam &resolveParam, const unsi
         }
         entry.setIntRange(min, max);
       } else {
+        std::string dummy = intType.getName();
+        dummy += "', `";
+        dummy += intArrayType.getName();
         this->reportError<FieldAttrParamType>(paramInfo.getToken(), paramInfo.getName().c_str(),
-                                              type.getName());
+                                              dummy.c_str());
         return;
       }
       continue;

@@ -91,12 +91,27 @@ static bool checkAndSetArg(ARState &state, const ArgParser &parser, const ArgEnt
                            StringRef arg, bool shortOpt, BaseObject &out) {
   int64_t v = 0;
   if (std::string err; entry.checkArg(arg, shortOpt, v, err)) {
-    unsigned int offset = entry.getFieldOffset();
-    if (entry.getCheckerKind() == ArgEntry::CheckerKind::INT) {
-      out[offset] = Value::createInt(v);
-    } else {
-      out[offset] = Value::createStr(arg);
+    const unsigned int fieldOffset = entry.getFieldOffset();
+    auto value = entry.getCheckerKind() == ArgEntry::CheckerKind::INT ? Value::createInt(v)
+                                                                      : Value::createStr(arg);
+    if (auto &fieldType = state.typePool.get(entry.getFieldTypeId());
+        isSameOrOptionTypeOf(fieldType, state.typePool.get(TYPE::StringArray)) ||
+        isSameOrOptionTypeOf(fieldType, state.typePool.get(TYPE::IntArray))) {
+      if (out[fieldOffset].isInvalid()) {
+        auto &type =
+            fieldType.isOptionType() ? cast<OptionType>(fieldType).getElementType() : fieldType;
+        assert(type.isArrayType());
+        assert(cast<ArrayType>(type).getElementType().is(
+            entry.getCheckerKind() == ArgEntry::CheckerKind::INT ? TYPE::Int : TYPE::String));
+        out[fieldOffset] = Value::create<ArrayObject>(type);
+      }
+      return typeAs<ArrayObject>(out[fieldOffset]).append(state, std::move(value));
     }
+    assert(isSameOrOptionTypeOf(
+        state.typePool.get(entry.getFieldTypeId()),
+        state.typePool.get(entry.getCheckerKind() == ArgEntry::CheckerKind::INT ? TYPE::Int
+                                                                                : TYPE::String)));
+    out[fieldOffset] = std::move(value);
     return true;
   } else {
     raiseCLIUsage(state, parser, err, verboseUsage(state, out), 1);

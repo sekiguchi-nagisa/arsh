@@ -33,7 +33,7 @@ only allowed for field declaration that is ``Bool``, ``Bool?``, ``Int`` or ``Int
 
 
 ### ``Option`` attribute
-only allowed for field declaration that is ``String``, ``String?``, ``Int`` or ``Int?`` type
+only allowed for field declaration that is ``String``, ``String?``, ``Int``, ``Int?``, ``[String]``, ``[String]?``, ``[Int]`` or ``[Int]?`` type
 
 | **param**   | **type**                         | **default**                               | **description**                                               |
 |-------------|----------------------------------|-------------------------------------------|---------------------------------------------------------------|

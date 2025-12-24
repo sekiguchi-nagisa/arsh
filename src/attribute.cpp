@@ -112,7 +112,7 @@ AttributeMap AttributeMap::create() {
                       Attribute::Param::HELP,
                       Attribute::Param::COMP,
                   },
-                  {TYPE::String, TYPE::Int});
+                  {TYPE::String, TYPE::Int, TYPE::StringArray, TYPE::IntArray});
   defineAttribute(values, AttributeKind::ARG, Attribute::Loc::FIELD,
                   {
                       Attribute::Param::REQUIRED,

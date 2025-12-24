@@ -164,4 +164,50 @@ $cc.count2 = -9223372036854775807
 assert $cc.parse(["--dec2", "--dec2", "--inc2", "--dec2", "--dec2"]) == 5
 assert $cc.count2 == -9223372036854775807 - 1
 
+
+# multiple option
+[<CLI>]
+type DDD() {
+  [<Option>]
+  var time: [Int]?
+
+  [<Option>]
+  var time2 = [-99]
+
+  [<Option>]
+  var action: [String]?
+
+  [<Option>]
+  var action2: [String]
+}
+
+var dd = new DDD()
+$dd.setName('cmd7')
+assert ! $dd.time
+assert $dd.time2 == [-99]
+assert ! $dd.action
+assert $dd.action2.empty()
+
+assert $dd.parse(["--time", "12", "--time2", "222", "--time2=234", "--time", "13", "--time=14"]) == 8
+assert $dd.time
+assert $dd.time! == [12, 13, 14]
+assert $dd.time2.size() == 3
+assert $dd.time2 == [-99, 222, 234]
+assert ! $dd.action
+assert $dd.action2.empty()
+assert ($dd.time![0] as Any) is Int
+assert ($dd.time![1] as Any) is Int
+assert ($dd.time![2] as Any) is Int
+assert ($dd.time2[0] as Any) is Int
+assert ($dd.time2[1] as Any) is Int
+
+assert $dd.parse(["--action=file", "--action2=FILE", "--action2", "DIR", "--action", "host"]) == 6
+assert $dd.action
+assert $dd.action! == ["file", "host"]
+assert $dd.action2 == ["FILE", "DIR"]
+assert ($dd.action![0] as Any) is String
+assert ($dd.action![1] as Any) is String
+assert ($dd.action2[0] as Any) is String
+assert ($dd.action2[1] as Any) is String
+
 true

@@ -610,6 +610,71 @@ Options:
   ASSERT_EQ(help, v);
 }
 
+TEST_F(ArgParserTest, multipleOPtion) {
+  ArgEntriesBuilder builder;
+  builder
+      .add(this->typePool().get(TYPE::IntArray),
+           [](ArgEntry &e) {
+             e.setParseOp(OptParseOp::HAS_ARG);
+             e.setArgName("time");
+             e.setLongName("time");
+             e.setShortName('t');
+             e.setIntRange(-1000, 1000);
+           })
+      .add(this->typePool().get(TYPE::StringArray),
+           [](ArgEntry &e) {
+             e.setParseOp(OptParseOp::HAS_ARG);
+             e.setShortName('f');
+             e.setLongName("file");
+             e.setDetail("set file");
+           })
+      .addHelp();
+
+  auto &recordType = this->createRecordType("type1", std::move(builder));
+  auto &entries = recordType.getEntries();
+  ASSERT_EQ(3, entries.size());
+  ASSERT_EQ(OptParseOp::HAS_ARG, entries[0].getParseOp());
+  ASSERT_EQ('t', entries[0].getShortName());
+  ASSERT_EQ("time", entries[0].getLongName());
+  ASSERT_EQ(OptParseOp::HAS_ARG, entries[1].getParseOp());
+  ASSERT_EQ('f', entries[1].getShortName());
+  ASSERT_EQ("file", entries[1].getLongName());
+  ASSERT_EQ(OptParseOp::NO_ARG, entries[2].getParseOp());
+  ASSERT_EQ('h', entries[2].getShortName());
+  ASSERT_EQ("help", entries[2].getLongName());
+
+  auto args = createArgs("-t", "10", "--file=home", "-f", "BBB", "--time=-999");
+  ASSERT_EQ(6, args->size());
+  ASSERT_EQ("-t", toStringAt(*args, 0));
+  ASSERT_EQ("10", toStringAt(*args, 1));
+  ASSERT_EQ("--file=home", toStringAt(*args, 2));
+  ASSERT_EQ("-f", toStringAt(*args, 3));
+  ASSERT_EQ("BBB", toStringAt(*args, 4));
+  ASSERT_EQ("--time=-999", toStringAt(*args, 5));
+
+  auto out = createObject<BaseObject>(recordType);
+  ASSERT_EQ(3, out->getFieldSize());
+  ASSERT_FALSE((*out)[0]);
+  ASSERT_FALSE((*out)[1]);
+  ASSERT_FALSE((*out)[2]);
+  (*out)[0] = Value::createStr("cmd1");
+  (*out)[1] = Value::createInvalid();
+  (*out)[2] = Value::createInvalid();
+  auto ret = parseCommandLine(*this->state, *args, *out);
+  ASSERT_TRUE(ret);
+  ASSERT_EQ(6, ret.index);
+  ASSERT_TRUE((*out)[1].isObject());
+  ASSERT_TRUE(isa<ArrayObject>((*out)[1].get()));
+  ASSERT_EQ(2, typeAs<ArrayObject>((*out)[1]).size());
+  ASSERT_EQ(10, typeAs<ArrayObject>((*out)[1])[0].asInt());
+  ASSERT_EQ(-999, typeAs<ArrayObject>((*out)[1])[1].asInt());
+  ASSERT_TRUE((*out)[2].isObject());
+  ASSERT_TRUE(isa<ArrayObject>((*out)[2].get()));
+  ASSERT_EQ(2, typeAs<ArrayObject>((*out)[2]).size());
+  ASSERT_EQ("home", typeAs<ArrayObject>((*out)[2])[0].asStrRef().toString());
+  ASSERT_EQ("BBB", typeAs<ArrayObject>((*out)[2])[1].asStrRef().toString());
+}
+
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
