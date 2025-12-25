@@ -17,14 +17,14 @@ typedef AAA() {
   var ddd = 23
 
   [<
-    Option
+    Option(choice:['aaa', 'bbb'])
     >]
   var eee : [String]
 
   [<Option>]
   var fff: [String]?
 
-  [<Option>]
+  [<Option(range:(1,1000))>]
   var ggg: [Int]?
 
   [<Option>]

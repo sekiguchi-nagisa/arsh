@@ -149,6 +149,25 @@ static std::string concatTypeNames(const TypePool &pool, const std::vector<TYPE>
   return value;
 }
 
+static void concatTypeNames(std::string &) {}
+
+template <typename... T>
+static void concatTypeNames(std::string &out, const Type &type, T &&...remain) {
+  out += ", `";
+  out += type.getNameRef();
+  out += '\'';
+  concatTypeNames(out, std::forward<T>(remain)...);
+}
+
+template <typename... T>
+static std::string concatTypeNames(const Type &type, T &&...remain) {
+  std::string ret = "`";
+  ret += type.getNameRef();
+  ret += '\'';
+  concatTypeNames(ret, std::forward<T>(remain)...);
+  return ret;
+}
+
 std::tuple<bool, CLIRecordType::Attr, StringRef>
 TypeChecker::postCheckConstructorAttribute(const FunctionNode &node) {
   assert(node.isConstructor());
@@ -409,9 +428,7 @@ void TypeChecker::resolveArgEntry(ResolveArgEntryParam &resolveParam, const unsi
         }
         entry.setIntRange(min, max);
       } else {
-        std::string dummy = intType.getName();
-        dummy += "', `";
-        dummy += intArrayType.getName();
+        std::string dummy = concatTypeNames(intType, intArrayType);
         this->reportError<FieldAttrParamType>(paramInfo.getToken(), paramInfo.getName().c_str(),
                                               dummy.c_str());
         return;
@@ -419,8 +436,9 @@ void TypeChecker::resolveArgEntry(ResolveArgEntryParam &resolveParam, const unsi
       continue;
     }
     case Attribute::Param::CHOICE: {
-      auto &type = this->typePool().get(TYPE::String);
-      if (fieldType.isSameOrBaseTypeOf(type)) {
+      auto &strType = this->typePool().get(TYPE::String);
+      auto &strArrayType = this->typePool().get(TYPE::StringArray);
+      if (fieldType.isSameOrBaseTypeOf(strType) || fieldType.isSameOrBaseTypeOf(strArrayType)) {
         auto &arrayNode = cast<ArrayNode>(constNode);
         if (arrayNode.getExprNodes().size() > SYS_LIMIT_ATTR_CHOICE_SIZE) {
           this->reportError<ChoiceLimit>(constNode);
@@ -440,8 +458,9 @@ void TypeChecker::resolveArgEntry(ResolveArgEntryParam &resolveParam, const unsi
           entry.addChoice(strdup(ref.data()));
         }
       } else {
+        std::string dummy = concatTypeNames(strType, strArrayType);
         this->reportError<FieldAttrParamType>(paramInfo.getToken(), paramInfo.getName().c_str(),
-                                              type.getName());
+                                              dummy.c_str());
         return;
       }
       continue;

@@ -212,7 +212,7 @@ DEFINE_TCError(CLIInitParam,
 DEFINE_TCError(NeedCLIAttr,
                "`%s' attribute is only available within user-defined type having `CLI' attribute");
 DEFINE_TCError(FieldAttrType, "`%s' attribute is only given to %s type field");
-DEFINE_TCError(FieldAttrParamType, "attribute parameter `%s' is only allowed to `%s' type field");
+DEFINE_TCError(FieldAttrParamType, "attribute parameter `%s' is only allowed to %s type field");
 DEFINE_TCError(FieldAttrPrivate,
                "`%s' attribute is only given to public field (not starting with _)");
 DEFINE_TCError(FieldAttrReadOnly,
