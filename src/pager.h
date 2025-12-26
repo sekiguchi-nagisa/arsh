@@ -58,38 +58,38 @@ public:
   };
 
 private:
-  static constexpr unsigned int DEFAULT_ROW_RATIO = 40;
+  static constexpr unsigned char DEFAULT_ROW_RATIO = 40;
   static constexpr unsigned int COL_MARGIN = 1;
   static constexpr unsigned int ROW_MARGIN = 3; // line + pager-item + newline
 
   const CandidatesObject &obj;
-  WindowSize winSize{0, 0};
-  const unsigned int rowRatio;
   const FlexBuffer<ItemEntry> items;  // pre-computed item column size
   const unsigned int maxLenItemIndex; // index of item with longest len
-  unsigned int paneLen{0};            // pager pane length (paneLen * pages < window col size)
-  unsigned int rows{0};               // pager row size (less than window row size)
-  unsigned int panes{0};              // number of pager panes
-  unsigned int index{0};              // index of the currently selected filtered item
-  unsigned int curRow{0};             // row of currently selected item (related to rows)
-  bool showPager{true};               // if true, render pager
-  bool showCursor{true};              // if true, render cursor
-  bool showRowNum{false};             // if true, render the row number
-  bool showDesc{true};                // if true, render description/signature
-  bool filterMode{false};             // if true, enable search filter mode
-  BitSet filteredItemSet{0};          // maintains filtered item indexes
+  WindowSize winSize{0, 0};
+  unsigned int paneLen{0}; // pager pane length (paneLen * pages < window col size)
+  unsigned int rows{0};    // pager row size (less than window row size)
+  unsigned int panes{0};   // number of pager panes
+  unsigned int index{0};   // index of the currently selected filtered item
+  unsigned int curRow{0};  // row of currently selected item (related to rows)
+  const unsigned char rowRatio;
+  bool showPager{true};   // if true, render pager
+  bool showCursor{true};  // if true, render cursor
+  bool showRowNum{false}; // if true, render the row number
+  bool showDesc{true};    // if true, render description/signature
+  bool filterMode{false}; // if true, enable search filter mode
   unsigned int filteredItemCount{0};
-  std::string query; // for search filter
+  BitSet filteredItemSet{0}; // maintains filtered item indexes
+  std::string query;         // for search filter
 
   ArrayPager(const CandidatesObject &obj, FlexBuffer<ItemEntry> &&items, unsigned int maxIndex,
-             WindowSize winSize, unsigned int rowRatio)
-      : obj(obj), rowRatio(rowRatio), items(std::move(items)), maxLenItemIndex(maxIndex) {
+             WindowSize winSize, unsigned char rowRatio)
+      : obj(obj), items(std::move(items)), maxLenItemIndex(maxIndex), rowRatio(rowRatio) {
     this->updateWinSize(winSize);
   }
 
 public:
   static ArrayPager create(const CandidatesObject &obj, const CharWidthProperties &ps,
-                           WindowSize winSize, unsigned int rowRatio = DEFAULT_ROW_RATIO);
+                           WindowSize winSize, unsigned char rowRatio = DEFAULT_ROW_RATIO);
 
   /**
    * update windows size.

@@ -26,7 +26,7 @@ namespace arsh {
 // ########################
 
 ArrayPager ArrayPager::create(const CandidatesObject &obj, const CharWidthProperties &ps,
-                              WindowSize winSize, unsigned int rowRatio) {
+                              WindowSize winSize, unsigned char rowRatio) {
   unsigned int maxLen = 0;
   unsigned int maxIndex = 0;
   FlexBuffer<ItemEntry> items;
