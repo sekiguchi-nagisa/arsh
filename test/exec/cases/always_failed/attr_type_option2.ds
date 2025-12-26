@@ -1,4 +1,4 @@
-#$test($result = 'type', $lineNum = 24, $chars = 3, $errorKind = 'FieldAttrType', $status = 1)
+#$test($result = 'type', $lineNum = 27, $chars = 3, $errorKind = 'FieldAttrType', $status = 1)
 
 [<
   CLI
@@ -17,7 +17,10 @@ typedef AAA() {
   var fff: [String]?
 
   [<Option>]
-  var ggg: [Int]?
+  var ggg: [Int]?; 
+  
+  [<Option(choice:['aaa', 'bbb'])>] var gg1: [String:String]
+    [<Option(choice:['aaa', 'bbb'])>] var gg2: [String:String]?
 
   [<Option>]
   var hhh: [Int]

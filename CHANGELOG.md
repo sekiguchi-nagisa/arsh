@@ -36,6 +36,8 @@
     - when matches a flag, increment/decrement the corresponding field
 - ``Option`` attribute support ``[String]`` and ``[Int]`` type field
     - now store multiple appeared option arguments to an array
+- ``Option`` attribute support ``key=value`` style option arguments
+    - put into ``[String : String]`` map objects
 
 #### Builtin
 

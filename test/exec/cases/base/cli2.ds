@@ -210,4 +210,33 @@ assert ($dd.action![1] as Any) is String
 assert ($dd.action2[0] as Any) is String
 assert ($dd.action2[1] as Any) is String
 
+
+# env option
+[<CLI>]
+type EEE() {
+  [<Option(short:'D', long:"def")>]
+  var def : [String:String]
+
+  [<Option(short:'W', opt:$true)>]
+  var warn: [String:String]?
+}
+
+var ee = new EEE()
+$ee.setName('cmd8')
+assert $ee.def.empty()
+assert !$ee.warn
+
+assert $ee.parse(["-W", "-DBUILD_TYPE=debug", "-Wextra", "-Wlevel=4=3", 
+                  "-DNDEBUG", "-DOSTYPE=",  "-D=", "--def=BUILD_TYPE=release"]) == 8
+assert $ee.def.size() == 4
+assert $ee.def["BUILD_TYPE"] == "release"
+assert $ee.def["NDEBUG"].empty()
+assert $ee.def["OSTYPE"] == ""
+assert $ee.def[""] == ""
+assert $ee.warn
+assert $ee.warn!.size() == 3
+assert $ee.warn![""].empty()
+assert $ee.warn!["extra"].empty()
+assert $ee.warn!["level"] == "4=3"
+
 true

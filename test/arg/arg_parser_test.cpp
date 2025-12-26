@@ -1,7 +1,9 @@
+
 #include "gtest/gtest.h"
 
 #include <arg_parser.h>
 #include <arsh/arsh.h>
+#include <ordered_map.h>
 #include <vm.h>
 
 #include "../arg_parser_helper.hpp"
@@ -610,7 +612,7 @@ Options:
   ASSERT_EQ(help, v);
 }
 
-TEST_F(ArgParserTest, multipleOPtion) {
+TEST_F(ArgParserTest, multipleOption) {
   ArgEntriesBuilder builder;
   builder
       .add(this->typePool().get(TYPE::IntArray),
@@ -673,6 +675,82 @@ TEST_F(ArgParserTest, multipleOPtion) {
   ASSERT_EQ(2, typeAs<ArrayObject>((*out)[2]).size());
   ASSERT_EQ("home", typeAs<ArrayObject>((*out)[2])[0].asStrRef().toString());
   ASSERT_EQ("BBB", typeAs<ArrayObject>((*out)[2])[1].asStrRef().toString());
+}
+
+TEST_F(ArgParserTest, keyValueOption) {
+  ArgEntriesBuilder builder;
+  builder
+      .add(this->typePool().get(TYPE::StringStringMap),
+           [](ArgEntry &e) {
+             e.setParseOp(OptParseOp::HAS_ARG);
+             e.setShortName('E');
+             e.setLongName("env");
+             e.setDetail("define env");
+           })
+      .add(this->typePool().get(TYPE::StringStringMap),
+           [](ArgEntry &e) {
+             e.setParseOp(OptParseOp::OPT_ARG);
+             e.setShortName('W');
+             e.setDetail("set warning");
+           })
+      .addHelp();
+  auto &recordType = this->createRecordType("type1", std::move(builder));
+  auto &entries = recordType.getEntries();
+  ASSERT_EQ(3, entries.size());
+  ASSERT_EQ(OptParseOp::HAS_ARG, entries[0].getParseOp());
+  ASSERT_EQ('E', entries[0].getShortName());
+  ASSERT_EQ("env", entries[0].getLongName());
+  ASSERT_EQ(OptParseOp::OPT_ARG, entries[1].getParseOp());
+  ASSERT_EQ('W', entries[1].getShortName());
+  ASSERT_EQ("", entries[1].getLongName());
+  ASSERT_EQ(OptParseOp::NO_ARG, entries[2].getParseOp());
+  ASSERT_EQ('h', entries[2].getShortName());
+  ASSERT_EQ("help", entries[2].getLongName());
+
+  auto args = createArgs("-E", "PATH=/usr/bin:/bin", "--env=ROOT=/root", "-Wextra", "-W", "-W==");
+  ASSERT_EQ(6, args->size());
+  ASSERT_EQ("-E", toStringAt(*args, 0));
+  ASSERT_EQ("PATH=/usr/bin:/bin", toStringAt(*args, 1));
+  ASSERT_EQ("--env=ROOT=/root", toStringAt(*args, 2));
+  ASSERT_EQ("-Wextra", toStringAt(*args, 3));
+  ASSERT_EQ("-W", toStringAt(*args, 4));
+  ASSERT_EQ("-W==", toStringAt(*args, 5));
+
+  auto out = createObject<BaseObject>(recordType);
+  ASSERT_EQ(3, out->getFieldSize());
+  ASSERT_FALSE((*out)[0]);
+  ASSERT_FALSE((*out)[1]);
+  ASSERT_FALSE((*out)[2]);
+  (*out)[0] = Value::createStr("cmd1");
+  (*out)[1] = Value::createInvalid();
+  (*out)[2] = Value::createInvalid();
+  auto ret = parseCommandLine(*this->state, *args, *out);
+  ASSERT_TRUE(ret);
+  ASSERT_EQ(6, ret.index);
+  ASSERT_TRUE((*out)[1].isObject());
+  ASSERT_TRUE(isa<OrderedMapObject>((*out)[1].get()));
+  ASSERT_EQ(2, typeAs<OrderedMapObject>((*out)[1]).size());
+  ASSERT_EQ("/usr/bin:/bin",
+            typeAs<OrderedMapObject>(
+                (*out)[1])[typeAs<OrderedMapObject>((*out)[1]).lookup(Value::createStr("PATH"))]
+                .getValue()
+                .asStrRef()
+                .toString());
+  ASSERT_EQ("/root",
+            typeAs<OrderedMapObject>(
+                (*out)[1])[typeAs<OrderedMapObject>((*out)[1]).lookup(Value::createStr("ROOT"))]
+                .getValue()
+                .asStrRef()
+                .toString());
+  ASSERT_TRUE((*out)[2].isObject());
+  ASSERT_TRUE(isa<OrderedMapObject>((*out)[2].get()));
+  ASSERT_EQ(2, typeAs<OrderedMapObject>((*out)[2]).size());
+  int index = typeAs<OrderedMapObject>((*out)[2]).lookup(Value::createStr("extra"));
+  ASSERT_EQ(0, index);
+  ASSERT_EQ("", typeAs<OrderedMapObject>((*out)[2])[index].getValue().asStrRef().toString());
+  index = typeAs<OrderedMapObject>((*out)[2]).lookup(Value::createStr(""));
+  ASSERT_EQ(1, index);
+  ASSERT_EQ("=", typeAs<OrderedMapObject>((*out)[2])[index].getValue().asStrRef().toString());
 }
 
 int main(int argc, char **argv) {

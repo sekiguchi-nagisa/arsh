@@ -438,7 +438,9 @@ void TypeChecker::resolveArgEntry(ResolveArgEntryParam &resolveParam, const unsi
     case Attribute::Param::CHOICE: {
       auto &strType = this->typePool().get(TYPE::String);
       auto &strArrayType = this->typePool().get(TYPE::StringArray);
-      if (fieldType.isSameOrBaseTypeOf(strType) || fieldType.isSameOrBaseTypeOf(strArrayType)) {
+      auto &strMapType = this->typePool().get(TYPE::StringStringMap);
+      if (fieldType.isSameOrBaseTypeOf(strType) || fieldType.isSameOrBaseTypeOf(strArrayType) ||
+          fieldType.isSameOrBaseTypeOf(strMapType)) {
         auto &arrayNode = cast<ArrayNode>(constNode);
         if (arrayNode.getExprNodes().size() > SYS_LIMIT_ATTR_CHOICE_SIZE) {
           this->reportError<ChoiceLimit>(constNode);

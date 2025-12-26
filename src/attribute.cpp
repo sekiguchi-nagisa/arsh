@@ -97,22 +97,23 @@ AttributeMap AttributeMap::create() {
                       Attribute::Param::HELP,
                   },
                   {TYPE::Bool, TYPE::Int});
-  defineAttribute(values, AttributeKind::OPTION, Attribute::Loc::FIELD,
-                  {
-                      Attribute::Param::SHORT,
-                      Attribute::Param::LONG,
-                      Attribute::Param::REQUIRED,
-                      Attribute::Param::OPT,
-                      Attribute::Param::STOP,
-                      Attribute::Param::DEFAULT,
-                      Attribute::Param::PLACE_HOLDER,
-                      Attribute::Param::RANGE,
-                      Attribute::Param::CHOICE,
-                      Attribute::Param::XOR,
-                      Attribute::Param::HELP,
-                      Attribute::Param::COMP,
-                  },
-                  {TYPE::String, TYPE::Int, TYPE::StringArray, TYPE::IntArray});
+  defineAttribute(
+      values, AttributeKind::OPTION, Attribute::Loc::FIELD,
+      {
+          Attribute::Param::SHORT,
+          Attribute::Param::LONG,
+          Attribute::Param::REQUIRED,
+          Attribute::Param::OPT,
+          Attribute::Param::STOP,
+          Attribute::Param::DEFAULT,
+          Attribute::Param::PLACE_HOLDER,
+          Attribute::Param::RANGE,
+          Attribute::Param::CHOICE,
+          Attribute::Param::XOR,
+          Attribute::Param::HELP,
+          Attribute::Param::COMP,
+      },
+      {TYPE::String, TYPE::Int, TYPE::StringArray, TYPE::IntArray, TYPE::StringStringMap});
   defineAttribute(values, AttributeKind::ARG, Attribute::Loc::FIELD,
                   {
                       Attribute::Param::REQUIRED,

@@ -17,6 +17,7 @@
 #include <algorithm>
 
 #include "arg_parser.h"
+#include "ordered_map.h"
 #include "vm.h"
 
 namespace arsh {
@@ -92,10 +93,28 @@ static bool checkAndSetArg(ARState &state, const ArgParser &parser, const ArgEnt
   int64_t v = 0;
   if (std::string err; entry.checkArg(arg, shortOpt, v, err)) {
     const unsigned int fieldOffset = entry.getFieldOffset();
+    auto &fieldType = state.typePool.get(entry.getFieldTypeId());
+    if (isSameOrOptionTypeOf(fieldType, state.typePool.get(TYPE::StringStringMap))) {
+      if (out[fieldOffset].isInvalid()) {
+        auto &type =
+            fieldType.isOptionType() ? cast<OptionType>(fieldType).getElementType() : fieldType;
+        assert(type.isMapType());
+        out[fieldOffset] = Value::create<OrderedMapObject>(type, state.getRng().next());
+      }
+      assert(entry.getCheckerKind() != ArgEntry::CheckerKind::INT);
+      StringRef key = arg;
+      StringRef value;
+      if (auto retPos = arg.find('='); retPos != StringRef::npos) {
+        key = arg.slice(0, retPos);
+        value = arg.substr(retPos + 1);
+      }
+      return static_cast<bool>(typeAs<OrderedMapObject>(out[fieldOffset])
+                                   .put(state, Value::createStr(key), Value::createStr(value)));
+    }
+
     auto value = entry.getCheckerKind() == ArgEntry::CheckerKind::INT ? Value::createInt(v)
                                                                       : Value::createStr(arg);
-    if (auto &fieldType = state.typePool.get(entry.getFieldTypeId());
-        isSameOrOptionTypeOf(fieldType, state.typePool.get(TYPE::StringArray)) ||
+    if (isSameOrOptionTypeOf(fieldType, state.typePool.get(TYPE::StringArray)) ||
         isSameOrOptionTypeOf(fieldType, state.typePool.get(TYPE::IntArray))) {
       if (out[fieldOffset].isInvalid()) {
         auto &type =
