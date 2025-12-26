@@ -19,6 +19,7 @@
 
 #include <bitset>
 
+#include "misc/detect.hpp"
 #include "misc/inlined_array.hpp"
 
 BEGIN_MISC_LIB_NAMESPACE_DECL
@@ -62,6 +63,12 @@ public:
     return *this;
   }
 
+  void clear() {
+    for (size_t i = 0; i < this->sets.size(); i++) {
+      this->sets[i].reset();
+    }
+  }
+
   size_t count() const {
     size_t sum = 0;
     for (size_t i = 0; i < this->sets.size(); i++) {
@@ -100,6 +107,43 @@ public:
       }
     }
     return retIndex;
+  }
+
+  template <typename Iter>
+  static constexpr bool iter_requirement_v =
+      std::is_same_v<bool, std::invoke_result_t<Iter, size_t>>;
+
+  template <typename Func, enable_when<iter_requirement_v<Func>> = nullptr>
+  void iterateSetBitFrom(size_t fromIndex, Func func) const {
+    for (; fromIndex < this->size(); fromIndex++) {
+      if (this->test(fromIndex) && !func(fromIndex)) {
+        break;
+      }
+    }
+  }
+
+  template <typename Func, enable_when<iter_requirement_v<Func>> = nullptr>
+  void iterateSetBit(Func func) const {
+    return this->iterateSetBitFrom(this->countTailZero(), func);
+  }
+
+  /**
+   *
+   * @param n 0-based index
+   * @return
+   */
+  size_t getNthSetBitIndex(size_t n) const {
+    size_t index = 0;
+    size_t count = 0;
+    this->iterateSetBit([&index, &n, &count](size_t setIndex) {
+      if (count <= n) {
+        index = setIndex;
+        count++;
+        return true;
+      }
+      return false;
+    });
+    return index;
   }
 };
 

@@ -19,6 +19,7 @@
 
 #include "candidates.h"
 #include "keybind.h"
+#include "misc/bitset.hpp"
 #include "misc/buffer.hpp"
 
 namespace arsh {
@@ -64,20 +65,21 @@ private:
   const CandidatesObject &obj;
   WindowSize winSize{0, 0};
   const unsigned int rowRatio;
-  FlexBuffer<unsigned int> filteredItemIndexes; // maintains filtered item indexes
-  const FlexBuffer<ItemEntry> items;            // pre-computed item column size
-  const unsigned int maxLenItemIndex;           // index of item with longest len
-  unsigned int paneLen{0}; // pager pane length (paneLen * pages < window col size)
-  unsigned int rows{0};    // pager row size (less than window row size)
-  unsigned int panes{0};   // number of pager panes
-  unsigned int index{0};   // index of the currently selected filtered item
-  unsigned int curRow{0};  // row of currently selected item (related to rows)
-  bool showPager{true};    // if true, render pager
-  bool showCursor{true};   // if true, render cursor
-  bool showRowNum{false};  // if true, render the row number
-  bool showDesc{true};     // if true, render description/signature
-  bool filterMode{false};  // if true, enable search filter mode
-  std::string query;       // for search filter
+  const FlexBuffer<ItemEntry> items;  // pre-computed item column size
+  const unsigned int maxLenItemIndex; // index of item with longest len
+  unsigned int paneLen{0};            // pager pane length (paneLen * pages < window col size)
+  unsigned int rows{0};               // pager row size (less than window row size)
+  unsigned int panes{0};              // number of pager panes
+  unsigned int index{0};              // index of the currently selected filtered item
+  unsigned int curRow{0};             // row of currently selected item (related to rows)
+  bool showPager{true};               // if true, render pager
+  bool showCursor{true};              // if true, render cursor
+  bool showRowNum{false};             // if true, render the row number
+  bool showDesc{true};                // if true, render description/signature
+  bool filterMode{false};             // if true, enable search filter mode
+  BitSet filteredItemSet{0};          // maintains filtered item indexes
+  unsigned int filteredItemCount{0};
+  std::string query; // for search filter
 
   ArrayPager(const CandidatesObject &obj, FlexBuffer<ItemEntry> &&items, unsigned int maxIndex,
              WindowSize winSize, unsigned int rowRatio)
@@ -133,7 +135,7 @@ public:
   void disableFilterMode();
 
   unsigned int filteredItemSize() const {
-    return this->isFilterMode() ? this->filteredItemIndexes.size() : this->items.size();
+    return this->isFilterMode() ? this->filteredItemCount : this->items.size();
   }
 
   unsigned int getRowRatio() const { return this->rowRatio; }
@@ -183,13 +185,7 @@ public:
                : 0;
   }
 
-  StringRef getCurCandidate() const {
-    return this->obj.getCandidateAt(this->toActualItemIndex(this->getIndex()));
-  }
-
-  CandidateAttr getCurCandidateAttr() const {
-    return this->obj.getAttrAt(this->toActualItemIndex(this->getIndex()));
-  }
+  unsigned int toCurItemIndex() const { return this->toActualItemIndex(this->getIndex()); }
 
   /**
    * actual rendering function
@@ -300,11 +296,7 @@ private:
 
   void rebuildFilteredItemIndexes();
 
-  unsigned int toActualItemIndex(unsigned int filteredIndex) const {
-    return this->isFilterMode() && filteredIndex < this->filteredItemIndexes.size()
-               ? this->filteredItemIndexes[filteredIndex]
-               : filteredIndex;
-  }
+  unsigned int toActualItemIndex(unsigned int filteredIndex) const;
 
   bool matchItemAt(unsigned int itemIndex) const;
 };

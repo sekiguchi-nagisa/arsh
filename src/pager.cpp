@@ -131,12 +131,18 @@ bool ArrayPager::matchItemAt(unsigned int itemIndex) const {
 }
 
 void ArrayPager::rebuildFilteredItemIndexes() {
-  this->filteredItemIndexes.clear();
+  if (this->filteredItemSet.size()) {
+    this->filteredItemSet.clear();
+  } else {
+    this->filteredItemSet.~BitSet();
+    new (&this->filteredItemSet) BitSet(this->items.size());
+  }
   for (unsigned int i = 0; i < this->items.size(); i++) {
     if (this->matchItemAt(i)) {
-      this->filteredItemIndexes.push_back(i);
+      this->filteredItemSet.set(i);
     }
   }
+  this->filteredItemCount = this->filteredItemSet.count();
   if (const auto size = this->filteredItemSize(); size > 0 && this->index >= size) {
     this->index = 0;
     this->curRow = 0;
@@ -144,14 +150,27 @@ void ArrayPager::rebuildFilteredItemIndexes() {
   this->updateLayout();
 }
 
+unsigned int ArrayPager::toActualItemIndex(const unsigned int filteredIndex) const {
+  if (!this->isFilterMode() || filteredIndex >= this->filteredItemCount) {
+    return filteredIndex;
+  }
+  return this->filteredItemSet.getNthSetBitIndex(filteredIndex);
+}
+
 void ArrayPager::pushQueryChar(const StringRef grapheme) {
   if (!this->isFilterMode() || grapheme.empty()) {
     return;
   }
   this->query += grapheme;
-  auto iter = std::remove_if(this->filteredItemIndexes.begin(), this->filteredItemIndexes.end(),
-                             [&](unsigned int itemIndex) { return !this->matchItemAt(itemIndex); });
-  this->filteredItemIndexes.erase(iter, this->filteredItemIndexes.end());
+  for (unsigned int itemIndex = this->filteredItemSet.nextSetBit(0);
+       itemIndex < this->filteredItemCount;
+       itemIndex = this->filteredItemSet.nextSetBit(itemIndex + 1)) {
+    assert(this->filteredItemSet.test(itemIndex));
+    if (!this->matchItemAt(itemIndex)) {
+      this->filteredItemSet.reset(itemIndex);
+    }
+  }
+  this->filteredItemCount = this->filteredItemSet.count();
   if (const auto size = this->filteredItemSize(); size > 0 && this->index >= size) {
     this->index = 0;
     this->curRow = 0;
@@ -172,9 +191,12 @@ void ArrayPager::popQueryChar() {
 }
 
 void ArrayPager::disableFilterMode() {
-  const unsigned int newIndex = this->toActualItemIndex(this->index);
+  const unsigned int newIndex = this->toCurItemIndex();
   this->filterMode = false;
-  this->filteredItemIndexes.clear();
+  if (this->filteredItemSet.size()) {
+    this->filteredItemSet.clear();
+    this->filteredItemCount = 0;
+  }
   this->query.clear();
   this->curRow = 0;
   this->index = 0;
@@ -278,6 +300,14 @@ void ArrayPager::render(LineRenderer &renderer) const {
     renderer.setColLimit(this->getPaneLen());
     renderer.setLineBreakOp(LineRenderer::LineBreakOp::TRUNCATE);
   }
+
+  // fill index cache
+  InlinedArray<unsigned int, 8> itemIndexCache(this->panes);
+  for (unsigned int j = 0; j < this->panes; j++) {
+    itemIndexCache[j] = this->toActualItemIndex(startIndex + j * maxRowSize);
+  }
+
+  // render panes
   for (unsigned int i = 0; i < actualRows; i++) {
     renderer.setEmitNewline(false);                  // ignore newlines
     for (unsigned int j = 0; j < this->panes; j++) { // render row
@@ -286,10 +316,17 @@ void ArrayPager::render(LineRenderer &renderer) const {
         break;
       }
       const bool selected = actualIndex == this->index && this->showCursor;
-      const unsigned int itemIndex = this->toActualItemIndex(actualIndex);
+      const unsigned int itemIndex = itemIndexCache[j];
       renderItem(renderer, this->showDesc, this->obj.getCandidateAt(itemIndex),
                  this->obj.getAttrAt(itemIndex), this->obj.getDescriptionAt(itemIndex),
                  this->items[itemIndex], selected);
+
+      // update cache
+      if (this->isFilterMode()) {
+        itemIndexCache[j] = this->filteredItemSet.nextSetBit(itemIndexCache[j] + 1);
+      } else {
+        itemIndexCache[j]++;
+      }
     }
     renderer.setEmitNewline(true); // re-enable newline characters
     renderer.renderLines("\n");

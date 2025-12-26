@@ -1168,8 +1168,9 @@ ROTATE:
       ctx.buf.undo();
     }
     if (pager.filteredItemSize()) {
-      const auto can = pager.getCurCandidate();
-      const auto suffix = pager.getCurCandidateAttr().suffix;
+      const unsigned int itemIndex = pager.toCurItemIndex();
+      const auto can = candidates->getCandidateAt(itemIndex);
+      const auto suffix = candidates->getAttrAt(itemIndex).suffix;
       assert(offset <= ctx.buf.getCursor());
       size_t prefixLen = ctx.buf.getCursor() - offset;
       size_t prevCanLen = can.size() - prefixLen;

@@ -827,7 +827,8 @@ TEST_F(PagerTest, filterNoMatches) {
   ASSERT_EQ(expect, out);
   ASSERT_EQ(2, pager.getIndex()); // index is not changed if no matches
   ASSERT_EQ(0, pager.getCurRow());
-  ASSERT_EQ(array->getCandidateAt(2).toString(), pager.getCurCandidate().toString());
+  ASSERT_EQ(array->getCandidateAt(2).toString(),
+            array->getCandidateAt(pager.toCurItemIndex()).toString());
 
   // move cursor (the index is not changed)
   pager.moveCursorToNext();

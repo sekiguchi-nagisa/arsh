@@ -789,18 +789,46 @@ TEST(BitSetTest, iterate) {
   BitSet set(137);
   ASSERT_EQ(137, set.size());
   ASSERT_EQ(set.size(), set.nextSetBit(0));
+  set.set(0);
   set.set(23);
   set.set(49);
   set.set(67);
   set.set(91);
   set.set(129);
-  ASSERT_EQ(23, set.nextSetBit(0));
+  ASSERT_EQ(0, set.nextSetBit(0));
+  ASSERT_EQ(23, set.nextSetBit(1));
   ASSERT_EQ(23, set.nextSetBit(23));
   ASSERT_EQ(49, set.nextSetBit(24));
   ASSERT_EQ(67, set.nextSetBit(50));
   ASSERT_EQ(91, set.nextSetBit(68));
   ASSERT_EQ(129, set.nextSetBit(92));
-  ASSERT_EQ(137, set.nextSetBit(130));
+  ASSERT_EQ(137, set.nextSetBit(130)); // not set
+
+  // iterate api
+  std::vector<size_t> setIndexes;
+  set.iterateSetBit([&setIndexes](size_t index) {
+    setIndexes.push_back(index);
+    return true;
+  });
+  ASSERT_EQ(6, setIndexes.size());
+  ASSERT_EQ(0, setIndexes[0]);
+  ASSERT_EQ(23, setIndexes[1]);
+  ASSERT_EQ(49, setIndexes[2]);
+  ASSERT_EQ(67, setIndexes[3]);
+  ASSERT_EQ(91, setIndexes[4]);
+  ASSERT_EQ(129, setIndexes[5]);
+
+  ASSERT_EQ(0, set.getNthSetBitIndex(0));
+  ASSERT_EQ(23, set.getNthSetBitIndex(1));
+  ASSERT_EQ(49, set.getNthSetBitIndex(2));
+  ASSERT_EQ(67, set.getNthSetBitIndex(3));
+  ASSERT_EQ(91, set.getNthSetBitIndex(4));
+  ASSERT_EQ(129, set.getNthSetBitIndex(5));
+  set.set(136);
+  ASSERT_EQ(136, set.getNthSetBitIndex(6));
+  ASSERT_TRUE(set.test(136));
+  ASSERT_EQ(136, set.getNthSetBitIndex(7));
+  ASSERT_FALSE(set.test(137));
 }
 
 int main(int argc, char **argv) {
