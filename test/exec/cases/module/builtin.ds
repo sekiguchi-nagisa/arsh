@@ -19,6 +19,7 @@ _extract_option() {
 }
 
 source ../../../../share/arsh/completions/builtin.arsh
+source ../../../../share/arsh/completions/external.arsh
 
 $PATH = "/usr/bin:/bin:"
 
@@ -45,11 +46,11 @@ assert diff <(complete 'command ') <(complete -Q -A external -A builtin "")
 assert diff <(complete 'command /usr/bin/') <(complete -Q -A exec '/usr/bin/')
 assert diff <(complete 'com\mand /\usr/bin/') <(complete -Q -A exec '/\usr/bin/')
 assert diff <(complete 'command ~/') <(complete -Q -A exec -A tilde '~/')
-assert diff <(ZZZ3=23 complete 'command \p\rinte\nv ZZZ') <(echo ZZZ3)
+assert diff <(ZZZ3=23 complete 'command unse\te\nv ZZZ') <(echo ZZZ3)
 assert diff <(complete 'call ') <(complete -Q -A cmd)
 assert diff <(complete 'call /usr/bin/') <(complete -Q -A exec '/usr/bin/')
 assert diff <(complete 'ca\ll ~/') <(complete -Q -A exec -A tilde '~/')
-assert diff <(ZZZQ3=23 complete 'call \p\rinte\nv Z\ZZ') <(echo Z\\ZZQ3)
+assert diff <(ZZZQ3=23 complete 'call \un\set\env Z\ZZ') <(echo Z\\ZZQ3)
 assert diff <(complete 'exec ') <(complete -Q -A external "")
 assert diff <(complete 'ex\ec /usr/bin/') <(complete -Q -A exec "/usr/bin/")
 assert diff <(complete 'exec ~/') <(complete -Q -A exec -A tilde '~/')
