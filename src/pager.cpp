@@ -162,14 +162,7 @@ void ArrayPager::pushQueryChar(const StringRef grapheme) {
     return;
   }
   this->query += grapheme;
-  for (unsigned int itemIndex = this->filteredItemSet.nextSetBit(0);
-       itemIndex < this->filteredItemCount;
-       itemIndex = this->filteredItemSet.nextSetBit(itemIndex + 1)) {
-    assert(this->filteredItemSet.test(itemIndex));
-    if (!this->matchItemAt(itemIndex)) {
-      this->filteredItemSet.reset(itemIndex);
-    }
-  }
+  this->filteredItemSet.resetIf([&](size_t setIndex) { return !this->matchItemAt(setIndex); });
   this->filteredItemCount = this->filteredItemSet.count();
   if (const auto size = this->filteredItemSize(); size > 0 && this->index >= size) {
     this->index = 0;

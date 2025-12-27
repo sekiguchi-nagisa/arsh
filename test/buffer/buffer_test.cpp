@@ -831,6 +831,42 @@ TEST(BitSetTest, iterate) {
   ASSERT_FALSE(set.test(137));
 }
 
+TEST(BitSetTest, reset) {
+  BitSet set(137);
+  ASSERT_EQ(137, set.size());
+  ASSERT_EQ(set.size(), set.nextSetBit(0));
+  set.set(0);
+  set.set(8);
+  set.set(23);
+  set.set(49);
+  set.set(56);
+  set.set(67);
+  set.set(91);
+  set.set(112);
+  set.set(129);
+  ASSERT_EQ(9, set.count());
+  ASSERT_TRUE(set.test(0));
+  ASSERT_TRUE(set.test(8));
+  ASSERT_TRUE(set.test(23));
+  ASSERT_TRUE(set.test(49));
+  ASSERT_TRUE(set.test(56));
+  ASSERT_TRUE(set.test(67));
+  ASSERT_TRUE(set.test(91));
+  ASSERT_TRUE(set.test(112));
+  ASSERT_TRUE(set.test(129));
+  set.resetIf([](size_t setIndex) { return setIndex % 2 == 0; });
+  ASSERT_EQ(5, set.count());
+  ASSERT_FALSE(set.test(0));
+  ASSERT_FALSE(set.test(8));
+  ASSERT_TRUE(set.test(23));
+  ASSERT_TRUE(set.test(49));
+  ASSERT_FALSE(set.test(56));
+  ASSERT_TRUE(set.test(67));
+  ASSERT_TRUE(set.test(91));
+  ASSERT_FALSE(set.test(112));
+  ASSERT_TRUE(set.test(129));
+}
+
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

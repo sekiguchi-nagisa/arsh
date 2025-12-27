@@ -145,6 +145,15 @@ public:
     });
     return index;
   }
+
+  template <typename Func, enable_when<iter_requirement_v<Func>> = nullptr>
+  void resetIf(Func func) {
+    for (size_t fromIndex = this->countTailZero(); fromIndex < this->size(); fromIndex++) {
+      if (this->test(fromIndex) && func(fromIndex)) {
+        this->reset(fromIndex);
+      }
+    }
+  }
 };
 
 END_MISC_LIB_NAMESPACE_DECL
