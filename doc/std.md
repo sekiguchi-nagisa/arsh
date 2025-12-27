@@ -402,7 +402,7 @@ function usage(message: String?, verbose: Bool?): String for CLI
 
 ## Candidates type
 ```
-type Candidates(values: [String]?, sort: Bool?)
+type Candidates(values: [String]?, sort: Bool?, trimSize: Int?)
 
 function size(): Int for Candidates
 

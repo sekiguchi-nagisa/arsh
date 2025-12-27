@@ -1082,7 +1082,13 @@ EditActionStatus LineEditorObject::completeLine(ARState &state, RenderingContext
   unsigned int undoCount = 0;
   StringRef inserting = candidates->resolveCommonPrefixStr();
   ctx.buf.commitLastChange();
-  const size_t offset = ctx.buf.resolveInsertingSuffix(inserting, candidates->size() == 1);
+  if (const auto trimSize = candidates->getTrimSize()) {
+    ctx.buf.deleteToCursor(std::min(trimSize, ctx.buf.getCursor()));
+    undoCount++;
+  }
+  const size_t offset = candidates->getTrimSize()
+                            ? ctx.buf.getCursor()
+                            : ctx.buf.resolveInsertingSuffix(inserting, candidates->size() == 1);
   if (const auto size = candidates->size(); size > 0) {
     const auto suffix = size == 1 ? candidates->getAttrAt(0).suffix : CandidateAttr::Suffix::NONE;
     if (insertCandidate(ctx.buf, inserting, suffix)) {

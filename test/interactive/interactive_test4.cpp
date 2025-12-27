@@ -841,6 +841,52 @@ TEST_F(InteractiveTest, lineEditorCompPagerRatio) {
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
 }
 
+TEST_F(InteractiveTest, lineEditorCompTrim) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+  this->changePrompt("> ");
+  ASSERT_NO_FATAL_FAILURE(
+      this->sendLineAndExpect("$LINE_EDIT.setCompleter(function(s,m) => "
+                              "new Candidates( $(printf '%03d\\n' $(seq 1 9)), $trimSize:3 ) )"));
+  this->send("hey ***");
+  ASSERT_NO_FATAL_FAILURE(this->expect("> hey ***"));
+  {
+    auto cleanup = this->reuseScreen();
+    this->send("\t");
+    ASSERT_NO_FATAL_FAILURE(this->expect("> hey 00\n"
+                                         "001 002 003 004 005 006 007 008 009 \n"));
+    this->send(CTRL_C);
+    ASSERT_NO_FATAL_FAILURE(this->expect("> hey 00\n> "));
+  }
+
+  // too large trim size
+  ASSERT_NO_FATAL_FAILURE(
+      this->sendLineAndExpect("$LINE_EDIT.setCompleter(function(s,m) => "
+                              "new Candidates( $(printf '%03d\\n' $(seq 1 9)), $trimSize:30 ) )"));
+  this->send("hey ***");
+  this->send(LEFT LEFT);
+  ASSERT_NO_FATAL_FAILURE(this->expect("> hey ***"));
+  {
+    auto cleanup = this->reuseScreen();
+    this->send("\t");
+    ASSERT_NO_FATAL_FAILURE(this->expect("> 00**\n"
+                                         "001 002 003 004 005 006 007 008 009 \n"));
+    this->send("\t");
+    ASSERT_NO_FATAL_FAILURE(this->expect("> 001**\n"
+                                         "001 002 003 004 005 006 007 008 009 \n"));
+    this->send("\t");
+    ASSERT_NO_FATAL_FAILURE(this->expect("> 002**\n"
+                                         "001 002 003 004 005 006 007 008 009 \n"));
+
+    this->send(CTRL_C);
+    ASSERT_NO_FATAL_FAILURE(this->expect("> 002**\n> "));
+  }
+
+  this->send(CTRL_D);
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
+}
+
 TEST_F(InteractiveTest, lineEditorCompError) {
   this->invoke("--quiet", "--norc");
 

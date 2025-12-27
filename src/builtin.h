@@ -2776,7 +2776,7 @@ ARSH_METHOD jobs_count(RuntimeContext &ctx) {
 // ##     Candidates     ##
 // ########################
 
-//!bind: function $OP_INIT($this : Candidates, $values: Option<Array<String>>, $sort: Option<Bool>) : Candidates
+//!bind: function $OP_INIT($this : Candidates, $values: Option<Array<String>>, $sort: Option<Bool>, $trimSize: Option<Int>) : Candidates
 ARSH_METHOD candidates_init(RuntimeContext &ctx) {
   SUPPRESS_WARNING(candidates_init);
   bool sorting = ({
@@ -2784,6 +2784,12 @@ ARSH_METHOD candidates_init(RuntimeContext &ctx) {
     v.isInvalid() || v.asBool();
   });
   auto obj = createObject<CandidatesObject>(sorting);
+  if (!LOCAL(3).isInvalid()) {
+    unsigned int trimSize =
+        std::max(static_cast<int64_t>(0),
+                 std::min(static_cast<int64_t>(SYS_LIMIT_STRING_MAX), LOCAL(3).asInt()));
+    obj->setTrimSize(trimSize);
+  }
   if (const auto &v = LOCAL(1); !v.isInvalid()) {
     for (auto &e : typeAs<ArrayObject>(v)) {
       if (unlikely(!obj->addNewCandidate(ctx, Value(e), Value::createInvalid(),

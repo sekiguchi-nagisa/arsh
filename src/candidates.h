@@ -101,6 +101,7 @@ public:
 private:
   std::vector<Entry> entries; // must be String or Candidate
   const bool sorting;
+  unsigned int trimSize{0}; // before inserting candidates, trim bytes
 
 public:
   explicit CandidatesObject(bool sorting = true)
@@ -144,6 +145,10 @@ public:
     return true;
   }
 
+  unsigned int getTrimSize() const { return this->trimSize; }
+
+  void setTrimSize(unsigned int s) { this->trimSize = s; }
+
   size_t size() const { return this->entries.size(); }
 
   void clearAndShrink() { this->entries = {}; }
@@ -151,6 +156,7 @@ public:
   ObjPtr<CandidatesObject> copy() const {
     auto ret = createObject<CandidatesObject>(this->sorting);
     ret->entries = this->entries;
+    ret->trimSize = this->trimSize;
     return ret;
   }
 
