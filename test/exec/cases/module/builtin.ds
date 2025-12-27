@@ -26,29 +26,34 @@ assert diff <(complete 'shctl ') <(help shctl | _extract_sub | sort)
 assert diff <(complete 'shctl i') <(echo info && echo is-interactive && echo is-sourced)
 assert diff <(complete 'shctl \i\') <(echo '\i\nfo' && echo '\i\s-interactive' && echo '\i\s-sourced')
 assert diff <(complete 'shctl set ') <(shctl set | _extract_option | sort)
+assert diff <(complete 'shctl s\et \') <(shctl set | _extract_option | for line in $STDIN { echo "\\${line}"; } | sort)
 assert diff <(complete 'shctl unset ') <(shctl set | _extract_option | sort)
 assert diff <(complete 'shctl set assert fa') <(shctl set | _extract_option | grep fa | sort)
 assert diff <(complete 'shctl set -') <(echo '-d' && echo '-r')
 assert $(complete 'shctl set -d ').empty()
 assert $(complete 'shctl is-interactive ').empty()
 assert diff <(complete 'shctl unset c') <(echo clobber)
-assert diff <(complete 'shctl module ') <(complete -A module)
-assert diff <(complete 'shctl module ./su') <(complete -A module ./su)
+assert diff <(complete 'shctl module ') <(complete -Q -A module)
+assert diff <(complete 'shctl module ./su') <(complete -Q -A module ./su)
 
 # help
 assert diff <(complete 'help ') <(help | cut -d ' ' -f 1)
 assert diff <(complete 'help u') <(help | cut -d ' ' -f 1 | grep '^u')
 
 # command/call/exec
-assert diff <(complete 'command ') <(complete -A external -A builtin "")
-assert diff <(complete 'command /usr/bin/') <(complete -A exec '/usr/bin/')
-assert diff <(complete 'command ~/') <(complete -A exec -A tilde '~/')
-assert diff <(complete 'call ') <(complete -A cmd)
-assert diff <(complete 'call /usr/bin/') <(complete -A exec '/usr/bin/')
-assert diff <(complete 'call ~/') <(complete -A exec -A tilde '~/')
-assert diff <(complete 'exec ') <(complete -A external "")
-assert diff <(complete 'exec /usr/bin/') <(complete -A exec "/usr/bin/")
-assert diff <(complete 'exec ~/') <(complete -A exec -A tilde '~/')
+assert diff <(complete 'command ') <(complete -Q -A external -A builtin "")
+assert diff <(complete 'command /usr/bin/') <(complete -Q -A exec '/usr/bin/')
+assert diff <(complete 'com\mand /\usr/bin/') <(complete -Q -A exec '/\usr/bin/')
+assert diff <(complete 'command ~/') <(complete -Q -A exec -A tilde '~/')
+assert diff <(ZZZ3=23 complete 'command \p\rinte\nv ZZZ') <(echo ZZZ3)
+assert diff <(complete 'call ') <(complete -Q -A cmd)
+assert diff <(complete 'call /usr/bin/') <(complete -Q -A exec '/usr/bin/')
+assert diff <(complete 'ca\ll ~/') <(complete -Q -A exec -A tilde '~/')
+assert diff <(ZZZQ3=23 complete 'call \p\rinte\nv Z\ZZ') <(echo Z\\ZZQ3)
+assert diff <(complete 'exec ') <(complete -Q -A external "")
+assert diff <(complete 'ex\ec /usr/bin/') <(complete -Q -A exec "/usr/bin/")
+assert diff <(complete 'exec ~/') <(complete -Q -A exec -A tilde '~/')
+assert diff <(ZZZQ3=23 complete 'exec \p\rinte\nv Z\ZZ') <(echo Z\\ZZQ3)
 
 # unsetenv
 setenv 'ZZZ(3.14)=12345'
@@ -59,7 +64,7 @@ assert diff <(complete 'unsetenv H') <(complete -A env H)
 assert diff <(complete 'unsetenv \H\') <(complete -A env -Q '\H\')
 
 # cd
-assert diff <(complete 'cd /') <(complete -A dir '/')
+assert diff <(complete 'cd /') <(complete -Q -A dir '/')
 
 # complete
 assert diff <(complete -d -q -- 'complete -' && printf "%s\n" $COMPREPLY) \

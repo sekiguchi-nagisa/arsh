@@ -5,17 +5,27 @@ function _sudo($ctx : Module, $t : [String], $c : Int) : Candidates? {
     for(var i = 1; $i < $t.size(); $i++) {
         var v = $t[$i]
         case $v {
-        $/^-.*$/ => continue
+        $/^[\\]?-.*$/ => continue
         else => if $i < $t.size() - 1 || $c == $t.size() {
                     return {
-                        importenv PATH : ""
-                        PATH=$PATH:/sbin:/usr/sbin:/usr/local/sbin $compDelegate($ctx, $t.slice($i), $c - $i)
+                        var argv = $t.slice($i)
+                        $argv[0] = $argv[0].dequote()
+                        PATH=$PATH:/sbin:/usr/sbin:/usr/local/sbin $compDelegate($ctx, $argv, $c - $i)
                     }
                 }
         }
     }
-    if $c < $t.size() && $t.peek() == '-' {
-        return new Candidates().add('-A').add('-b').add('-E').add('-H').add('-n').add('-P').add('-S')
+    let wordToken = $t.peek()
+    if $c < $t.size() && ($wordToken.startsWith('-') || $wordToken.startsWith('\-')) {
+        var word = $wordToken.dequote()
+        var ret = new Candidates()
+        for o in ['-A', '-b', '-E', '-H', '-n', '-P', '-S'] {
+            if $o.startsWith($word) {
+                $ret.add($o)
+            }
+        }
+        $ret.quote($wordToken)
+        return $ret
     }
 
     var opt = ['-A', 'external']
@@ -26,9 +36,7 @@ function _sudo($ctx : Module, $t : [String], $c : Int) : Candidates? {
     if $prefix.startsWith('~') {
         $opt.add('-A').add('tilde')
     }
-
-    importenv PATH : ""
-    PATH=$PATH:/sbin:/usr/sbin:/usr/local/sbin complete -q -d $opt $prefix
+    PATH=$PATH:/sbin:/usr/sbin:/usr/local/sbin complete -q -d -Q $opt -- $prefix
     return $COMPREPLY
 }
 

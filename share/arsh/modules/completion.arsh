@@ -105,7 +105,7 @@ function generate(ctx: Module, optToken: String, prefixToken: String, allowOptSh
             if $prefixToken.startsWith('~') && $_should_tilde_expand($optToken) {
                 $actions.add('-A').add('tilde')
             }
-            complete -q -m $ctx -Q $actions $prefixToken;
+            complete -q -m $ctx -Q $actions -- $prefixToken;
             $COMPREPLY
         }
         4 => {
@@ -400,7 +400,7 @@ function _from_compdef(ctx : Module, words : [String], cursor : Int) : Candidate
     # 'CMD sub1 '
     # 'CMD sub1 -d'
     while $deflist.subcmds && $words.size() >= 2 && $cursor >= 2 {
-        if let sub = $deflist.subcmds!.get($words[1]) {
+        if let sub = $deflist.subcmds!.get($words[1].dequote()) {
             $deflist = $sub
             $words.shift()
             $cursor--

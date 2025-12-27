@@ -13,10 +13,10 @@ assert complete 'sudo ' | grep '^umount$'
 assert complete 'sudo ' | grep '^sudo$'
 
 assert diff <(complete 'sudo ') \
-            <(PATH=$PATH:/sbin:/usr/sbin:/usr/local/sbin complete -A external '')
+            <(PATH=$PATH:/sbin:/usr/sbin:/usr/local/sbin complete -A external -Q  '')
 assert diff <(complete 'sudo /usr/bin/') \
-            <(complete -A exec '/usr/bin/')
-assert diff <(complete 'sudo ~/') <(complete -A exec -A tilde '~/')
+            <(complete -Q -A exec '/usr/bin/')
+assert diff <(complete 'sudo ~/') <(complete -Q -A exec -A tilde '~/')
 
 
 assert complete 'sudo hal' | grep 'halt'
@@ -24,9 +24,13 @@ assert complete 'sudo hal' | grep 'halt'
 assert complete 'sudo printenv HO' | grep HOME
 
 assert diff <(complete 'sudo -') <(for $a in ['-A', '-b', '-E', '-H', '-n', '-P', '-S'].sort() { __puts -1 $a; })
+assert diff <(complete 'sudo \-\') <(for $a in ['\-\A', '\-\b', '\-\E', '\-\H', '\-\n', '\-\P', '\-\S'].sort() { __puts -1 $a; })
+
+assert diff <(complete 'sudo -E') <(printf "%s\n" -E)
 
 assert complete 'sudo -E -A printenv ' | grep PATH
 assert complete 'sudo -A -E printenv HO' | grep HOME
+assert complete 'sudo -A \-E \pri\ntenv \HO' | grep HOME
 
 ## change PATH
 

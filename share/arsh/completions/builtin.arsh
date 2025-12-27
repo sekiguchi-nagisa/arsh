@@ -16,10 +16,11 @@ function _cmd($ctx : Module, $t : [String], $c : Int) : Candidates? {
         if $prefix.startsWith('~') {
             $actions.add('-A').add('tilde')
         }
-        complete -q -d -m $ctx $actions $prefix
+        complete -q -d -m $ctx -Q $actions -- $prefix
         return $COMPREPLY
     } else {
         $t.shift()
+        $t[0] = $t[0].dequote()
         return $compDelegate($ctx, $t, $c - 1)
     }
 }
@@ -74,7 +75,7 @@ for line in <(dirs -h) {
 }
 
 ## ulimit
-(ulimit -h || true) | for line in $STDIN {
+for line in <(ulimit -h) {
     var m = $_option_pattern.match($line) ?? continue
     compdef --cmd ulimit --short ${$m.group(1)!} --desc ${$m.group(2)!}
 }
