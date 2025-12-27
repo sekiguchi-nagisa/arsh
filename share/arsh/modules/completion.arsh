@@ -215,7 +215,7 @@ function _comp_opt_by_help(argv: [String], cursor: Int): Candidates? {
     let word = $wordToken.dequote()
     $word.startsWith('-') || return $none
     var can: Candidates
-    var proc = <(LANG=C call $cmd --help)
+    var proc = <(LANG=C call $cmd --help 2>> /dev/null)
     for line in $proc {
         $/^ *[-][-a-zA-Z0-9]/ =~ $line || continue
 
