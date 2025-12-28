@@ -11,6 +11,20 @@ check_file() {
     }
 }
 
+check_exe() {
+    if(test -f $1) {
+        if(test -x $1) {
+            echo found executable: $1
+            return 0
+        }
+        echo found, but not executable: $1
+        return 1
+    } else {
+        echo 1>&2 not found: $1
+        return 1
+    }
+}
+
 shctl set errraise
 
 ## version
@@ -21,17 +35,18 @@ let patch = $ss[2].toInt()!
 echo $VERSION
 
 ## check binary
-assert command -V arsh
-assert command -V arshd
+let INSTALL_PREFIX = $DATA_DIR.dirname().dirname()
+assert check_exe $INSTALL_PREFIX/bin/arsh
+assert check_exe $INSTALL_PREFIX/bin/arshd
 if $major >= 0 && $minor >= 35 {
-    assert command -V arcolorize
+    assert check_exe $INSTALL_PREFIX/bin/arcolorize
 } else {
-    assert command -V dscolorize
+    assert check_exe $INSTALL_PREFIX/bin/dscolorize
 }
-assert check_file $DATA_DIR/tools/litecheck
-assert test -x $DATA_DIR/tools/litecheck
+assert check_exe $DATA_DIR/tools/litecheck
 
-assert command -V fzf  # check dependency
+## check dependency
+assert command -V fzf
 
 ## check modules
 assert check_file $MODULE_DIR/repl
@@ -40,6 +55,9 @@ assert check_file $MODULE_DIR/repl_impl/prompt
 assert check_file $MODULE_DIR/repl_impl/prompt.arsh
 assert check_file $MODULE_DIR/completion
 assert check_file $MODULE_DIR/completion.arsh
+
+assert "$(shctl module repl.arsh)" == "$MODULE_DIR/repl.arsh"
+assert "$(shctl module completion.arsh)" == "$MODULE_DIR/completion.arsh"
 
 assert "$(shctl module repl 2>&1)" == "$(shctl module repl.arsh 2>&1)"
 assert "$(shctl module repl_impl/prompt 2>&1)" == "$(shctl module repl_impl/prompt.arsh 2>&1)"
@@ -50,4 +68,4 @@ source repl inlined
 shctl module
 
 ## check bash-completions
-assert "$(cd / && complete -- 'git check')" == 'checkout '
+assert "$(cd / && complete -- 'cmake --build')" == '--build'

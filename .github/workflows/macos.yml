@@ -25,6 +25,7 @@ jobs:
           cd build
           ninja
           sudo ninja install
+          ninja checkinstall
           ./arsh ../scripts/copy_mod4extra.ds
       - name: test
         run: |
@@ -53,6 +54,7 @@ jobs:
           cd build
           ninja
           sudo ninja install
+          ninja checkinstall
           ./arsh ../scripts/copy_mod4extra.ds
       - name: test
         run: |
@@ -81,6 +83,7 @@ jobs:
           cd build
           ninja
           sudo ninja install
+          ninja checkinstall
           ./arsh ../scripts/copy_mod4extra.ds
       - name: test
         run: |

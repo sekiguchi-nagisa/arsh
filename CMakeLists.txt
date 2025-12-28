@@ -349,6 +349,14 @@ endif ()
 install(DIRECTORY share/ DESTINATION ${CMAKE_INSTALL_FULL_DATADIR})
 install(PROGRAMS tools/litecheck/litecheck DESTINATION ${CMAKE_INSTALL_FULL_DATADIR}/arsh/tools)
 
+#======================#
+#     checkinstall     #
+#======================#
+
+add_custom_target(checkinstall
+        COMMAND ${CMAKE_INSTALL_FULL_BINDIR}/${BIN_NAME} ${CMAKE_CURRENT_SOURCE_DIR}/scripts/check_package.arsh)
+
+
 #++++++++++++++++++++#
 #     setup test     #
 #++++++++++++++++++++#

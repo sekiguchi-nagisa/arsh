@@ -145,6 +145,11 @@ jobs:
         run: |
           cd build
           ctest -j4 --output-on-failure
+      - name: install
+        run: |
+          cd build
+          sudo ninja install
+          ninja checkinstall
 
   build_on_linux_sanitizer:
     runs-on: ubuntu-24.04
@@ -171,6 +176,7 @@ jobs:
           cd build
           ninja
           sudo ninja install
+          ninja checkinstall
           arsh ../scripts/copy_mod4extra.ds
       - name: test
         run: |
