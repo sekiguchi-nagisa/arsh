@@ -32,7 +32,7 @@ function _error(ln : Int, m : String) : Nothing {
 }
 
 function _lines(path : String) : [String] {
-    return "$(cat $path)".split($'\n')
+    return "$(< $path)".split($'\n')
 }
 
 ##############################
@@ -185,7 +185,7 @@ function _diff(offset : Int, expect : String, actual : String) : (String, Bool) 
     assert $offset > 0
 
     $? = 0
-    var o = "$(command $_diff_opts 2>&1 <(cat <<< $expect) <(cat <<< $actual))"
+    var o = "$(command $_diff_opts 2>&1 <(<<< $expect) <(<<< $actual))"
     var s = $? == 0
 
     if $s {

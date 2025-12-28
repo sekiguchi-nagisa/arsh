@@ -125,7 +125,7 @@ function _edit_command_line(line : String, list : [String]?) : String? {
     defer { rm -rf $tmp || true; }
     printf "%s" $line > $tmp
     call $editor $tmp || return $none
-    return IFS=$'\n' "$(cat $tmp)"
+    return IFS=$'\n' "$(< $tmp)"
 }
 
 $LINE_EDIT.action('edit-command-line', 'replace-whole', $_edit_command_line)
