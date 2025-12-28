@@ -16,7 +16,7 @@ jobs:
       - name: prepare
         run: |
           sudo apt update
-          sudo apt install language-pack-ja ninja-build
+          sudo apt install language-pack-ja ninja-build fzf bash-completion
       - name: configure
         run: |
           mkdir build

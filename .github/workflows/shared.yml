@@ -19,7 +19,9 @@ jobs:
       - name: prepare
         run: |
           sudo apt update
-          sudo apt install language-pack-ja ninja-build lld lld-17 llvm-17 llvm-17-dev llvm-17-linker-tools
+          sudo apt install language-pack-ja ninja-build lld lld-17 \
+                           llvm-17 llvm-17-dev llvm-17-linker-tools \
+                           fzf bash-completion
       - name: configure
         run: |
           mkdir build

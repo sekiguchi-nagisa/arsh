@@ -1,6 +1,6 @@
 FROM ubuntu:24.04
 
-RUN apt update && apt install -y curl gpg git
+RUN apt update && apt install -y curl gpg cmake
 
 RUN useradd -m tux
 RUN groupadd -g 2001 admin && usermod -G admin tux  && echo '%admin ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
