@@ -68,4 +68,4 @@ source repl inlined
 shctl module
 
 ## check bash-completions
-assert "$(cd / && complete -- 'cmake --build')" == '--build'
+assert "$(cd / && complete -- 'cmake --build' 2>&1)" == '--build'

@@ -13,7 +13,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: prepare
-        run: brew install ninja re2c fzf bash bash-completion
+        run: brew install ninja re2c fzf bash bash-completion@2
       - name: configure
         run: |
           export SDKROOT="$(xcrun --sdk macosx --show-sdk-path)"
@@ -42,7 +42,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: prepare
-        run: brew install ninja re2c fzf bash bash-completion
+        run: brew install ninja re2c fzf bash bash-completion@2
       - name: configure
         run: |
           export SDKROOT="$(xcrun --sdk macosx --show-sdk-path)"
@@ -71,7 +71,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: prepare
-        run: brew install ninja re2c fzf bash bash-completion
+        run: brew install ninja re2c fzf bash bash-completion@2
       - name: configure
         run: |
           export SDKROOT="$(xcrun --sdk macosx --show-sdk-path)"
