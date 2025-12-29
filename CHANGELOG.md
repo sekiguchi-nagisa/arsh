@@ -285,6 +285,10 @@
 
 #### Core
 
+- **Breaking Change**: change type checking of Array and Map type elements
+    - the common super type of these element types will be the element type
+    - ex. ``[23, 34.5, "" as Any]`` is ``[Any]`` (previously, type error)
+    - now cannot infer parameter types of anonymous function within Array and Map
 - ``else`` pattern in case expression is no longer needed if ``Void`` type expression
 
 #### Builtin

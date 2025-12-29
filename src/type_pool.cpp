@@ -96,7 +96,7 @@ TypePool::TypePool() {
     assert(checked);
   }
 
-  // init [String : String] type
+  // init [String:String] type
   {
     auto checked = this->createMapType(this->get(TYPE::String), this->get(TYPE::String));
     static_cast<void>(checked); // TYPE::StringStringMap
@@ -173,11 +173,11 @@ void TypePool::discard(const TypeDiscardPoint point) {
   // abort method handle
   this->methodIdCount = point.methodIdOffset;
   for (auto iter = this->methodMap.begin(); iter != this->methodMap.end();) {
-    if (iter->first.id >= point.typeIdOffset) { // discard all method of discarded type
+    if (iter->first.id >= point.typeIdOffset) { // discard all methods of discarded types
       iter = this->methodMap.erase(iter);
       continue;
     } else if (iter->second && iter->second.commitId() >= point.methodIdOffset) {
-      // only discard instantiated method handle
+      // only discard instantiated method handles
       auto *ptr = iter->second.handle();
       assert(ptr);
       iter->second = Value(ptr->getIndex());
@@ -206,7 +206,12 @@ const Type *TypePool::resolveCommonSuperType(std::vector<const Type *> &types) {
       ++iter;
     }
   }
+  // de-dup
+  std::sort(types.begin(), types.end(),
+            [](const Type *x, const Type *y) { return x->typeId() < y->typeId(); });
+  types.erase(std::unique(types.begin(), types.end()), types.end());
 
+  // resolve super type by sort
   std::sort(types.begin(), types.end(), [](const Type *x, const Type *y) {
     /**
      *  require weak ordering (see. https://cpprefjp.github.io/reference/algorithm.html)

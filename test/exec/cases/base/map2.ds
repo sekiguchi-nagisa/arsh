@@ -27,3 +27,10 @@ assert !$tt.get((22,'a' + 'a',($false,)))
 var dd = ["a" : 23, "a" : 54]
 assert $dd.size() == 1
 assert $dd['a'] == 54
+
+# sub-type
+var ee = [2 : new ArithmeticError(''), 3 : new InvalidOperationError(''), 4 : new Error('')]
+assert $ee is [Int:Error]
+assert $ee[2].name() == new ArithmeticError('').name()
+assert $ee[3].name() == new InvalidOperationError('').name()
+assert $ee[4].name() == new Error('').name()

@@ -229,3 +229,7 @@ $ex = 2345
     assert $ex is StackOverflowError
     $aa.clear()
 }
+
+# sub-type
+assert [34, $none] is [Int?]
+assert [45,"", 3.2 as Any] is Any

@@ -88,12 +88,12 @@ TEST_F(CmdlineTest, marker1) {
   ASSERT_EQ("", result.out);
 
   // line marker of semantic error
-  msg = R"([semantic error] require `Int' type, but is `String' type
- --> (string):1:6
-[34, "hey"]
-     ^~~~~
+  msg = R"([semantic error] cannot resolve common super type from `Int', `String'
+ --> (string):1:1
+[34, "hey", 56]
+^~~~~~~~~~~~~~~
 )";
-  ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "[34, \"hey\"]"), 1, "", msg));
+  ASSERT_NO_FATAL_FAILURE(this->expect(ds("-c", "[34, \"hey\", 56]"), 1, "", msg));
 
   // line marker containing newline
   const char *s = R"(

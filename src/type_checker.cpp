@@ -910,13 +910,11 @@ void TypeChecker::visitRegexNode(RegexNode &node) {
 void TypeChecker::visitArrayNode(ArrayNode &node) {
   const unsigned int size = node.getExprNodes().size();
   assert(size != 0);
-  auto &firstElementNode = node.getExprNodes()[0];
-  auto &elementType = this->checkTypeAsSomeExpr(*firstElementNode);
-
-  for (unsigned int i = 1; i < size; i++) {
-    this->checkType(elementType, *node.getExprNodes()[i]);
+  std::vector<const Type *> types(size);
+  for (unsigned int i = 0; i < size; i++) {
+    types[i] = &this->checkTypeAsSomeExpr(*node.getExprNodes()[i]);
   }
-
+  auto &elementType = this->resolveCommonSuperType(node, std::move(types), nullptr);
   if (auto typeOrError = this->typePool().createArrayType(elementType)) {
     node.setType(*std::move(typeOrError).take());
   }
@@ -925,17 +923,17 @@ void TypeChecker::visitArrayNode(ArrayNode &node) {
 void TypeChecker::visitMapNode(MapNode &node) {
   const unsigned int size = node.getValueNodes().size();
   assert(size != 0);
+  std::vector<const Type *> types(size);
   auto &firstKeyNode = node.getKeyNodes()[0];
   this->checkTypeAsSomeExpr(*firstKeyNode);
   auto &keyType = this->checkType(this->typePool().get(TYPE::Value_), *firstKeyNode);
-  auto &firstValueNode = node.getValueNodes()[0];
-  auto &valueType = this->checkTypeAsSomeExpr(*firstValueNode);
+  types[0] = &this->checkTypeAsSomeExpr(*node.getValueNodes()[0]);
 
   for (unsigned int i = 1; i < size; i++) {
     this->checkType(keyType, *node.getKeyNodes()[i]);
-    this->checkType(valueType, *node.getValueNodes()[i]);
+    types[i] = &this->checkTypeAsSomeExpr(*node.getValueNodes()[i]);
   }
-
+  auto &valueType = this->resolveCommonSuperType(node, std::move(types), nullptr);
   if (auto typeOrError = this->typePool().createMapType(keyType, valueType)) {
     node.setType(*std::move(typeOrError).take());
   }
@@ -1602,7 +1600,9 @@ const Type &TypeChecker::resolveCommonSuperType(const Node &node, std::vector<co
     if (!value.empty()) {
       value += ", ";
     }
+    value += '`';
     value += t->getNameRef();
+    value += '\'';
   }
   this->reportError<NoCommonSuper>(node, value.c_str());
   return this->typePool().getUnresolvedType();

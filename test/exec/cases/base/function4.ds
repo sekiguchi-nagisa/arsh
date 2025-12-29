@@ -32,15 +32,15 @@ var ret : (Error, String)?
 
 $kick(function() => {
     45 / 0
-}, function(a : Error, b) => {
+}, $f:function(a : Error, b) => {
     $ret = ($a, $b)
 })
 
 assert $ret!._0 is ArithmeticError
 assert $ret!._1 == "NG"
 
-## inference in array
-var FFs = [ $FF, function(a, b) => "$a<>$b", function(a : Any, b) => "$a@@$b" ]
+## not inference in array (explicitly specify parameter type of function)
+var FFs = [ $FF, function(a: Int, b:String) => "$a<>$b", function(a : Any, b: String) => "$a@@$b" ]
 assert $FFs[0](23, "a") == "23&a"
 assert $FFs[1](23, "a") == "23<>a"
 assert $FFs[2](23, "a") == "23@@a"

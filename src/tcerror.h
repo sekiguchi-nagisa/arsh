@@ -177,7 +177,7 @@ DEFINE_TCError(UndefinedNamedArg, "undefined named argument: `%s'%s");
 DEFINE_TCError(RepeatedNamedArg, "named argument: `%s' is repeated");
 DEFINE_TCError(MissingNamedArg, "missing named argument: `%s'");
 DEFINE_TCError(RegexSyntax, "regex syntax error: `%s'");
-DEFINE_TCError(NoCommonSuper, "cannot resolve common super type from `%s'");
+DEFINE_TCError(NoCommonSuper, "cannot resolve common super type from %s");
 DEFINE_TCError(ConcatParam, "concatenation of `%s' type expression is not allowed");
 DEFINE_TCError(FuncDepthLimit, "nested function depth reaches limit");
 DEFINE_TCError(UpvarLimit, "number of upper variables in local function reaches limit");
@@ -233,7 +233,7 @@ DEFINE_TCError(NullCharAttrParam,
                "attribute parameter `%s' does not accept strings that have null characters");
 DEFINE_TCError(DupChoiceElement, "attribute parameter `choice' has duplicated element: `%s'");
 DEFINE_TCError(InvalidUDCParamType, "invalid parameter type: `%s', must be derived types of "
-                                    "`CLI' (except for `Nothing type')");
+                                    "`CLI' (except for `Nothing' type)");
 DEFINE_TCError(InvalidUDCParam, "no-return user-defined command cannot accept parameter");
 DEFINE_TCError(AttrLimit, "number of attributes reaches limit");
 DEFINE_TCError(ChoiceLimit, "number of choice elements reaches limit");
