@@ -17,6 +17,8 @@
 #ifndef ARSH_HANDLE_INFO_H
 #define ARSH_HANDLE_INFO_H
 
+#include <iterator>
+
 namespace arsh {
 
 // builtin type
@@ -98,7 +100,7 @@ namespace arsh {
  * ex. constructor(a : Array<Int>, b : T1)
  * --> VOID_T P_N2 ARRAY_T P_N1 INT_T T1
  */
-enum class HandleInfo : char {
+enum class HandleInfo : unsigned char {
 #define GEN_ENUM(ENUM) ENUM,
   EACH_HANDLE_INFO(GEN_ENUM)
 #undef GEN_ENUM

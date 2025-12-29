@@ -553,8 +553,8 @@ public:
   TypeOrError decode();
 
   unsigned int decodeNum() {
-    return static_cast<unsigned int>(static_cast<int>(*(this->cursor++)) -
-                                     static_cast<int>(HandleInfo::P_N0));
+    return static_cast<unsigned int>(*(this->cursor++)) -
+           static_cast<unsigned int>(HandleInfo::P_N0);
   }
 
   /**
@@ -582,22 +582,13 @@ TypeOrError TypeDecoder::decode() {
     EACH_HANDLE_INFO_TYPE(GEN_CASE)
 #undef GEN_CASE
   case HandleInfo::Array: {
-    auto &t = this->pool.getArrayTemplate();
-    unsigned int size = this->decodeNum();
-    assert(size == 1);
-    std::vector<const Type *> elementTypes(size);
-    elementTypes[0] = TRY(decode());
-    return this->pool.createReifiedType(t, std::move(elementTypes));
+    auto *elementType = TRY(this->decode());
+    return this->pool.createArrayType(*elementType);
   }
   case HandleInfo::Map: {
-    auto &t = this->pool.getMapTemplate();
-    unsigned int size = this->decodeNum();
-    assert(size == 2);
-    std::vector<const Type *> elementTypes(size);
-    for (unsigned int i = 0; i < size; i++) {
-      elementTypes[i] = TRY(this->decode());
-    }
-    return this->pool.createReifiedType(t, std::move(elementTypes));
+    auto *keyType = TRY(this->decode());
+    auto *valueType = TRY(this->decode());
+    return this->pool.createMapType(*keyType, *valueType);
   }
   case HandleInfo::Tuple: {
     unsigned int size = this->decodeNum();
@@ -608,12 +599,8 @@ TypeOrError TypeDecoder::decode() {
     return this->pool.createTupleType(std::move(elementTypes));
   }
   case HandleInfo::Option: {
-    auto &t = this->pool.getOptionTemplate();
-    unsigned int size = this->decodeNum();
-    assert(size == 1);
-    std::vector<const Type *> elementTypes(size);
-    elementTypes[0] = TRY(this->decode());
-    return this->pool.createReifiedType(t, std::move(elementTypes));
+    auto *elementType = TRY(this->decode());
+    return this->pool.createOptionType(*elementType);
   }
   case HandleInfo::Func: {
     auto *retType = TRY(this->decode());

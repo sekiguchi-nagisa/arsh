@@ -49,7 +49,7 @@ public:
       auto hash = FNVHash::compute(key.ref.begin(), key.ref.end());
       char bb[4];
       static_assert(sizeof(key.id) == sizeof(unsigned int));
-      memcpy(bb, &key.id, sizeof(unsigned int ));
+      memcpy(bb, &key.id, sizeof(unsigned int));
       for (auto b : bb) {
         FNVHash::update(hash, b);
       }
@@ -190,8 +190,6 @@ public:
     return this->createOptionType({&elementType});
   }
 
-  TypeOrError createOptionType(std::vector<const Type *> &&elementTypes);
-
   TypeOrError createTupleType(std::vector<const Type *> &&elementTypes);
 
   /**
@@ -308,6 +306,8 @@ private:
    */
   static std::string toFunctionTypeName(const Type &returnType,
                                         const std::vector<const Type *> &paramTypes);
+
+  TypeOrError createOptionType(std::vector<const Type *> &&elementTypes);
 
   /**
    * @param t

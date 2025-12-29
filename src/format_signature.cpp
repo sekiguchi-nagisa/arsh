@@ -157,8 +157,7 @@ public:
       : ptr(ptr), paramTypes(std::move(types)) {}
 
   unsigned int decodeNum() {
-    return static_cast<unsigned int>(static_cast<int>(*(this->ptr++)) -
-                                     static_cast<int>(HandleInfo::P_N0));
+    return static_cast<unsigned int>(*(this->ptr++)) - static_cast<unsigned int>(HandleInfo::P_N0);
   }
 
   std::string decodeType(bool replaceIface);
@@ -227,18 +226,12 @@ std::string Decoder::decodeType(bool replaceIface) {
 #undef GEN_CASE
 
   case HandleInfo::Array: {
-    unsigned int size = this->decodeNum();
-    (void)size;
-    assert(size == 1);
     std::string out = "[";
     out += this->decodeType(replaceIface);
     out += "]";
     return out;
   }
   case HandleInfo::Map: {
-    unsigned int size = this->decodeNum();
-    (void)size;
-    assert(size == 2);
     std::string out = "[";
     out += this->decodeType(replaceIface);
     out += " : ";
@@ -265,9 +258,6 @@ std::string Decoder::decodeType(bool replaceIface) {
     return out;
   }
   case HandleInfo::Option: {
-    unsigned int size = this->decodeNum();
-    (void)size;
-    assert(size == 1);
     std::string out = this->decodeType(replaceIface);
     if (isFuncType(out)) {
       out.insert(0, "(") += ")";

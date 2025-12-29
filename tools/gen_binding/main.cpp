@@ -204,9 +204,9 @@ bool HandleInfoSerializer::isType(const std::vector<HandleInfo> &infos, unsigned
       EACH_HANDLE_INFO_TYPE(GEN_CASE)
       return true;
     case HandleInfo::Array:
-      return getNum(infos, index) == 1 && isType(infos, index);
+      return isType(infos, index);
     case HandleInfo::Map:
-      return getNum(infos, index) == 2 && isType(infos, index) && isType(infos, index);
+      return isType(infos, index) && isType(infos, index);
     case HandleInfo::Tuple: {
       int num = getNum(infos, index);
       if (num < 0 || num > 8) {
@@ -220,7 +220,7 @@ bool HandleInfoSerializer::isType(const std::vector<HandleInfo> &infos, unsigned
       return true;
     }
     case HandleInfo::Option:
-      return getNum(infos, index) == 1 && isType(infos, index);
+      return isType(infos, index);
     case HandleInfo::Func: {
       if (!isType(infos, index)) {
         return false;
@@ -440,14 +440,19 @@ void ReifiedTypeToken::serialize(HandleInfoSerializer &s) const {
     }
   }
 
-  typeTemp->serialize(s);
-  s.add(fromNum(elementSize));
+  this->typeTemp->serialize(s);
+  if (this->typeTemp->isType(HandleInfo::Tuple)) {
+    s.add(fromNum(elementSize));
+  } else {
+    assert(this->typeTemp->isType(HandleInfo::Array) || this->typeTemp->isType(HandleInfo::Map) ||
+           this->typeTemp->isType(HandleInfo::Option));
+  }
   for (auto &tok : this->elements) {
     tok->serialize(s);
   }
 }
 
-std::unordered_map<std::string, std::pair<unsigned int, HandleInfo>> initTypeMap() {
+auto initTypeMap() {
   std::unordered_map<std::string, std::pair<unsigned int, HandleInfo>> map = {
       {TYPE_ARRAY, {1, HandleInfo::Array}},
       {TYPE_MAP, {2, HandleInfo::Map}},
