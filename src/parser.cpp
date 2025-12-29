@@ -815,9 +815,9 @@ std::unique_ptr<Node> Parser::parse_statementImpl() {
   }
 }
 
-std::unique_ptr<Node> Parser::parse_statement() {
+std::unique_ptr<Node> Parser::parse_statement(bool onlyLineEnd) {
   auto node = TRY(this->parse_statementImpl());
-  TRY(this->parse_statementEnd());
+  TRY(this->parse_statementEnd(onlyLineEnd));
   return node;
 }
 
@@ -1121,8 +1121,7 @@ std::unique_ptr<Node> Parser::parse_forExpression() {
 
     this->expectAndChangeMode(TokenKind::LP, yycSTMT); // always success
 
-    auto initNode = TRY(this->parse_statementImpl());
-    TRY(this->parse_statementEnd(true));
+    auto initNode = TRY(this->parse_statement(true));
 
     auto condNode = TRY(this->parse_forCond());
     TRY(this->parse_statementEnd(true));

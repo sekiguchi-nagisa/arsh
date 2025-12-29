@@ -281,7 +281,7 @@ protected:
    */
   std::unique_ptr<Node> parse_statementImpl();
 
-  std::unique_ptr<Node> parse_statement();
+  std::unique_ptr<Node> parse_statement(bool onlyLineEnd = false);
 
   /**
    *
