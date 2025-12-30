@@ -19,8 +19,8 @@
 
 #include <algorithm>
 #include <clocale>
+#include <cstdint>
 #include <cstring>
-#include <cstddef>
 
 BEGIN_MISC_LIB_NAMESPACE_DECL
 
@@ -132,12 +132,6 @@ struct UnicodeUtil {
     }
     return -1;
   }
-
-  static bool isCombiningChar(int codePoint);
-
-  static bool isWideChar(int codePoint);
-
-  static bool isAmbiguousChar(int codePoint);
 
   /**
    * get width of unicode code point.
