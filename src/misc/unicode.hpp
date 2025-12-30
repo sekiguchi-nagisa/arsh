@@ -20,6 +20,7 @@
 #include <algorithm>
 #include <clocale>
 #include <cstring>
+#include <cstddef>
 
 BEGIN_MISC_LIB_NAMESPACE_DECL
 
