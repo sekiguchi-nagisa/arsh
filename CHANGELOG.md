@@ -99,7 +99,7 @@
 - in ``repl.arsh`` module, load history at first prompt
 - add ``PRE_EXECS`` hook for call functions before executing command
 - various ``completion.arsh`` module improvements
-    - add ``compAlias`` function. now define completion as alias of others
+    - add ``compAlias`` function. now define completion as an alias of others
     - add help-based completions for coreutils
     - improve tilde expansion checking of arg action
     - add some options to ``compdef`` command
