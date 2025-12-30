@@ -205,6 +205,13 @@ add_custom_command(OUTPUT ${embed_src}
         DEPENDS src_to_str
 )
 
+#=================#
+#     unicode     #
+#=================#
+
+add_library(unicode STATIC
+        src/unicode/case_fold.cpp
+)
 
 #=================#
 #     libarsh     #
@@ -266,7 +273,6 @@ set(ARSH_SRC
         src/candidates.cpp
         src/format_signature.cpp
         src/renderer.cpp
-        src/case_fold.cpp
         src/format_util.cpp
         src/object_util.cpp
         src/token_edit.cpp
@@ -303,7 +309,7 @@ set_target_properties(arsh_obj PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
 set(ARSH_STATIC arsh_static)
 add_library(${ARSH_STATIC} STATIC $<TARGET_OBJECTS:arsh_obj>)
-target_link_libraries(${ARSH_STATIC} ${PCRE2_LIBRARY})
+target_link_libraries(${ARSH_STATIC} unicode ${PCRE2_LIBRARY})
 
 if (BUILD_SHARED_LIB)
     set(ARSH_LIB arsh_lib)

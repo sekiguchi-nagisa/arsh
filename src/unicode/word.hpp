@@ -17,8 +17,8 @@
 #ifndef MISC_LIB_WORD_HPP
 #define MISC_LIB_WORD_HPP
 
-#include "string_ref.hpp"
-#include "unicode.hpp"
+#include "../misc/string_ref.hpp"
+#include "../misc/unicode.hpp"
 
 BEGIN_MISC_LIB_NAMESPACE_DECL
 

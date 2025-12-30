@@ -17,9 +17,9 @@
 #ifndef MISC_LIB_GRAPHEME_HPP
 #define MISC_LIB_GRAPHEME_HPP
 
-#include "detect.hpp"
-#include "string_ref.hpp"
-#include "unicode.hpp"
+#include "../misc/detect.hpp"
+#include "../misc/string_ref.hpp"
+#include "../misc/unicode.hpp"
 
 BEGIN_MISC_LIB_NAMESPACE_DECL
 

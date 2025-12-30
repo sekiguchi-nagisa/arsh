@@ -19,7 +19,7 @@
 
 #include "highlighter_base.h"
 #include "misc/array_ref.hpp"
-#include "misc/grapheme.hpp"
+#include "unicode/grapheme.hpp"
 
 namespace arsh {
 

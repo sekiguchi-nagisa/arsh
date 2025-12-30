@@ -27,15 +27,15 @@
 
 #include "arg_parser.h"
 #include "candidates.h"
-#include "case_fold.h"
 #include "format_util.h"
 #include "line_editor.h"
 #include "misc/files.hpp"
 #include "misc/num_util.hpp"
-#include "misc/word.hpp"
 #include "object_util.h"
 #include "ordered_map.h"
 #include "signals.h"
+#include "unicode/case_fold.h"
+#include "unicode/word.hpp"
 #include "vm.h"
 
 #include <arsh/arsh.h>

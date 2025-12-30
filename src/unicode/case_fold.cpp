@@ -16,9 +16,9 @@
 
 #include <algorithm>
 
-#include "case_fold.h"
 #include "misc/array_ref.hpp"
 #include "misc/unicode.hpp"
+#include "unicode/case_fold.h"
 
 namespace arsh {
 
@@ -31,7 +31,7 @@ using CaseMappingFullFoldEntry = uint16_t[CaseFoldingResult::FULL_FOLD_ENTRY_SIZ
 #define CASE_FOLD_F_ENTRY CaseMappingFullFoldEntry
 #define CASE_FOLD_T_ENTRY CaseMappingShortEntry
 
-#include "misc/case_fold.in"
+#include "case_fold.in"
 
 #undef CASE_FOLD_shortC_ENTRY
 #undef CASE_FOLD_longC_ENTRY

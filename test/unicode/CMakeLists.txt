@@ -10,5 +10,5 @@ add_definitions("-DWORD_BREAK_TEST_H=\"${CMAKE_CURRENT_SOURCE_DIR}/word_break_te
 add_executable(${TEST_NAME}
         unicode_test.cpp
 )
-target_link_libraries(${TEST_NAME} gtest gtest_main)
+target_link_libraries(${TEST_NAME} gtest gtest_main unicode)
 add_test(${TEST_NAME} ${TEST_NAME})

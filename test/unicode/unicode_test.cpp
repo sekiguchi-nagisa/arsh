@@ -2,9 +2,9 @@
 
 #include <cstring>
 
-#include <misc/grapheme.hpp>
 #include <misc/num_util.hpp>
-#include <misc/word.hpp>
+#include <unicode/grapheme.hpp>
+#include <unicode/word.hpp>
 
 #include "../test_common.h"
 

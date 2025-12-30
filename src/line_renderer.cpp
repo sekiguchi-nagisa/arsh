@@ -36,7 +36,7 @@ static bool isRegionalIndicator(int codePoint) {
 
 static bool isEmojiVariationSeqBase(int codePoint) {
 #define EMOJI_VARIATION_ENTRY int
-#include "misc/emoji_variation.in"
+#include "unicode/emoji_variation.in"
 
 #undef EMOJI_VARIATION_ENTRY
 
