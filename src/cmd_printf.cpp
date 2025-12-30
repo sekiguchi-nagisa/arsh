@@ -23,7 +23,7 @@
 #include "misc/num_util.hpp"
 #include "misc/time_util.hpp"
 #include "ordered_map.h"
-#include "unicode/grapheme.hpp"
+#include "unicode/grapheme.h"
 #include "vm.h"
 
 namespace arsh {

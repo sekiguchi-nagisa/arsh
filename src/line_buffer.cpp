@@ -16,8 +16,8 @@
 
 #include "line_buffer.h"
 #include "misc/inlined_stack.hpp"
-#include "unicode/grapheme.hpp"
-#include "unicode/word.hpp"
+#include "unicode/grapheme.h"
+#include "unicode/word.h"
 
 namespace arsh {
 

@@ -3,8 +3,8 @@
 #include <cstring>
 
 #include <misc/num_util.hpp>
-#include <unicode/grapheme.hpp>
-#include <unicode/word.hpp>
+#include <unicode/grapheme.h>
+#include <unicode/word.h>
 
 #include "../test_common.h"
 
@@ -336,22 +336,22 @@ TEST_F(UnicodeTest, graphemeBreakProperty) {
 TEST_F(UnicodeTest, wordBreakProperty) {
   int code = 0;
   toCodePoint("1", code);
-  auto p = WordBoundary::getBreakProperty(code);
-  ASSERT_EQ(WordBoundary::BreakProperty::Numeric, p);
+  auto p = getWordBreakProperty(code);
+  ASSERT_EQ(WordBreakProperty::Numeric, p);
 
   toCodePoint(".", code);
-  p = WordBoundary::getBreakProperty(code);
-  ASSERT_EQ(WordBoundary::BreakProperty::MidNumLet, p);
+  p = getWordBreakProperty(code);
+  ASSERT_EQ(WordBreakProperty::MidNumLet, p);
 
-  p = WordBoundary::getBreakProperty(0x0E33);
-  ASSERT_EQ(WordBoundary::BreakProperty::Any, p);
+  p = getWordBreakProperty(0x0E33);
+  ASSERT_EQ(WordBreakProperty::Any, p);
 
-  p = WordBoundary::getBreakProperty(UnicodeUtil::REPLACEMENT_CHAR_CODE);
-  ASSERT_EQ(WordBoundary::BreakProperty::Any, p);
+  p = getWordBreakProperty(UnicodeUtil::REPLACEMENT_CHAR_CODE);
+  ASSERT_EQ(WordBreakProperty::Any, p);
 
   // dummy property for broken code points (`Newline` is always word boundary)
-  p = WordBoundary ::getBreakProperty(-1);
-  ASSERT_EQ(WordBoundary::BreakProperty::Newline, p);
+  p = getWordBreakProperty(-1);
+  ASSERT_EQ(WordBreakProperty::Newline, p);
 }
 
 static std::vector<int> getInput(const std::string &param) {

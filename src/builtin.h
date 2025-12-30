@@ -35,7 +35,7 @@
 #include "ordered_map.h"
 #include "signals.h"
 #include "unicode/case_fold.h"
-#include "unicode/word.hpp"
+#include "unicode/word.h"
 #include "vm.h"
 
 #include <arsh/arsh.h>

@@ -211,6 +211,8 @@ add_custom_command(OUTPUT ${embed_src}
 
 add_library(unicode STATIC
         src/unicode/case_fold.cpp
+        src/unicode/grapheme.cpp
+        src/unicode/word.cpp
 )
 
 #=================#
