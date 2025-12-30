@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## [0.40.0] - 2025-12-30
 
 ### Added
 
@@ -28,6 +28,10 @@
 #### Core
 
 - **Breaking Change**: not allow override of builtin ``__gets``, ``__puts`` commands
+- **Breaking Change**: change type checking of Array and Map type elements
+    - the common super type of these element types will be the element type
+    - ex. ``[23, 34.5, "" as Any]`` is ``[Any]`` (previously, type error)
+    - now cannot infer parameter types of anonymous function within Array and Map
 - allow empty command io redirection within command/process substitution
     - like ``$(< file)``, ``<(<<< string)``
     - implicitly call ``__gets`` command
@@ -285,10 +289,6 @@
 
 #### Core
 
-- **Breaking Change**: change type checking of Array and Map type elements
-    - the common super type of these element types will be the element type
-    - ex. ``[23, 34.5, "" as Any]`` is ``[Any]`` (previously, type error)
-    - now cannot infer parameter types of anonymous function within Array and Map
 - ``else`` pattern in case expression is no longer needed if ``Void`` type expression
 
 #### Builtin
