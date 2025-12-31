@@ -1,0 +1,55 @@
+#!/usr/bin/env arsh
+
+# download guniset to current
+
+let _old = { shctl set -d; $REPLY; }
+defer { shctl set -r $_old; }
+shctl set errraise
+
+var _install_dir = "./guniset_dir"
+test -d $_install_dir || mkdir $_install_dir
+$_install_dir = $_install_dir.realpath()
+
+pushd $_install_dir
+defer { popd; }
+
+test -f DerivedGeneralCategory.txt ||
+    curl http://www.unicode.org/Public/UCD/latest/ucd/extracted/DerivedGeneralCategory.txt \
+        -o ./DerivedGeneralCategory.txt
+
+test -f EastAsianWidth.txt ||
+    curl http://www.unicode.org/Public/UCD/latest/ucd/EastAsianWidth.txt -o ./EastAsianWidth.txt
+
+let _version = "0.4.0"
+
+(test -x guniset && "$(./guniset -v)".split(" ")[0] == "v$_version") ||
+    (curl -L \
+        https://github.com/sekiguchi-nagisa/guniset/releases/download/v${_version}/guniset-$_version-$OSTYPE-$MACHTYPE \
+        > ./guniset && chmod +x ./guniset)
+
+export-env GUNISET_DIR = $PWD
+let GUNISET_PATH = "$_install_dir/guniset".realpath()
+
+# helper function for code gen
+type CodePointSet() {
+    let bmp: [String]
+    let nonbmp: [String]
+}
+
+function createCodePointSet(setop: String): CodePointSet {
+    var ret = new CodePointSet()
+    # generate bmp
+    for line in <(call $GUNISET_PATH --filter=bmp -- $setop) {
+        $ret.bmp.add($line)
+    }
+    # generate non-bmp
+    for line in <(call $GUNISET_PATH --filter=non-bmp -- $setop) { 
+        # line: { 0x11111, 0x111111 },
+        var ss = $line.split(", ")
+        assert $ss.size() == 2
+        var first = $ss[0] + " },"
+        var last = "{ " + $ss[1]
+        $ret.nonbmp.add($first).add($last)
+    }
+    return $ret
+}

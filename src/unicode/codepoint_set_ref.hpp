@@ -88,6 +88,8 @@ public:
   constexpr CodePointSetRef(unsigned short bmpSize, const BMPCodePointRange *ptr, unsigned int size)
       : ptr(ptr), bmpSize(bmpSize), size(size) {}
 
+  explicit operator bool() const { return this->size > 0; }
+
   ArrayRef<BMPCodePointRange> getBMPRanges() const { return {this->ptr, this->bmpSize}; }
 
   ArrayRef<NonBMPCodePointRange> getNonBMPRanges() const {

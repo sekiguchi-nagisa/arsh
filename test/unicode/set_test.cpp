@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 
 #include <unicode/codepoint_set_ref.hpp>
+#include <unicode/property.h>
 
 using namespace arsh;
 
@@ -195,6 +196,16 @@ TEST(CodePointSetRefTest, nonBmpOnly) {
       ASSERT_TRUE(setRef.contains(first));
     }
   }
+}
+
+TEST(UCPTest, category) {
+  ASSERT_TRUE(ucp::getCategorySet(ucp::Category::Me));
+  ASSERT_TRUE(ucp::getCategorySet(ucp::Category::Me).contains(0x20DF));
+  ASSERT_STREQ("Me", toString(ucp::Category::Me));
+  ASSERT_TRUE(ucp::getCategory(0x20DF).hasValue());
+  ASSERT_EQ(ucp::Category::Me, ucp::getCategory(0x20DF).unwrap());
+  ASSERT_TRUE(ucp::parseCategory("Me").hasValue());
+  ASSERT_EQ(ucp::Category::Me, ucp::parseCategory("Me").unwrap());
 }
 
 int main(int argc, char **argv) {
