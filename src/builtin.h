@@ -35,6 +35,7 @@
 #include "ordered_map.h"
 #include "signals.h"
 #include "unicode/case_fold.h"
+#include "unicode/property.h"
 #include "unicode/word.h"
 #include "vm.h"
 
@@ -115,11 +116,13 @@ ARSH_METHOD ord_compare(RuntimeContext &ctx) {
 
 // =====  unary op  =====
 
-//!bind: function $OP_PLUS($this : Int) : Int
-ARSH_METHOD int_plus(RuntimeContext &ctx) {
-  SUPPRESS_WARNING(int_plus);
-  RET(LOCAL(0));
+ARSH_METHOD do_nothing_return_this(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(do_nothing_return_this);
+  RET(LOCAL(0)); // just return this
 }
+
+//!bind: function $OP_PLUS($this : Int) : Int
+ARSH_METHOD_DECL do_nothing_return_this(RuntimeContext &ctx);
 
 //!bind: function $OP_MINUS($this : Int) : Int
 ARSH_METHOD int_minus(RuntimeContext &ctx) {
@@ -342,10 +345,7 @@ ARSH_METHOD int_toFloat(RuntimeContext &ctx) {
 // =====  unary op  =====
 
 //!bind: function $OP_PLUS($this : Float) : Float
-ARSH_METHOD float_plus(RuntimeContext &ctx) {
-  SUPPRESS_WARNING(float_plus);
-  RET(LOCAL(0));
-}
+ARSH_METHOD_DECL do_nothing_return_this(RuntimeContext &ctx);
 
 //!bind: function $OP_MINUS($this : Float) : Float
 ARSH_METHOD float_minus(RuntimeContext &ctx) {
@@ -2862,6 +2862,29 @@ ARSH_METHOD candidates_quote(RuntimeContext &ctx) {
   const bool asCmd = LOCAL(2).isInvalid() ? false : LOCAL(2).asBool();
   obj.quote(quotedWord, asCmd);
   RET_VOID;
+}
+
+// #########################
+// ##     UnicodeData     ##
+// #########################
+
+//!bind: function $OP_INIT($this: UnicodeData): UnicodeData
+ARSH_METHOD_DECL do_nothing_return_this(RuntimeContext &ctx);
+
+//!bind: function category($this: UnicodeData, $char: String): String
+ARSH_METHOD unicode_category(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(unicode_category);
+  auto ref = LOCAL(1).asStrRef();
+  if (ref.size() <= 4) {
+    int codePoint = -1;
+    if (UnicodeUtil::utf8ToCodePoint(ref.data(), ref.size(), codePoint) == ref.size()) {
+      if (auto cate = ucp::getCategory(codePoint); cate.hasValue()) {
+        RET(Value::createStr(toString(cate.unwrap())));
+      }
+    }
+  }
+  raiseError(ctx, TYPE::ArgumentError, "must be valid single utf8 code point");
+  RET_ERROR;
 }
 
 } // namespace arsh

@@ -43,7 +43,8 @@ namespace arsh {
   OP(Command)                                                                                      \
   OP(LineEditor)                                                                                   \
   OP(CLI)                                                                                          \
-  OP(Candidates)
+  OP(Candidates)                                                                                   \
+  OP(UnicodeData)
 
 #define EACH_HANDLE_INFO_TYPE_HIDDEN(OP)                                                           \
   OP(StringIter)                                                                                   \

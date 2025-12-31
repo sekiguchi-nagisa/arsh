@@ -417,6 +417,13 @@ function addAll(other: Candidates): Candidates for Candidates
 function quote(quoted: String?, cmd: Bool?): Void for Candidates
 ```
 
+## UnicodeData type
+```
+type UnicodeData()
+
+function category(char: String): String for UnicodeData
+```
+
 ## StringIter type
 ```
 function %OP_NEXT(): String for StringIter

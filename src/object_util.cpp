@@ -23,6 +23,7 @@
 #include "misc/decimal.hpp"
 #include "misc/inlined_stack.hpp"
 #include "misc/num_util.hpp"
+#include "misc/unicode_version.in"
 #include "object.h"
 #include "ordered_map.h"
 #include "redir.h"
@@ -372,17 +373,17 @@ bool Stringifier::addAsFlatStr(const Value &value) {
   }
   case ValueKind::DUMMY: {
     const unsigned int typeId = value.asTypeId();
-    if (typeId == toUnderlying(TYPE::Module)) { // for temporary module descriptor
-      char buf[64];
-      const int s =
-          snprintf(buf, std::size(buf), "%s%u)", OBJ_TEMP_MOD_PREFIX, value.asTypeIdMeta());
-      assert(s > 0);
-      return this->appender(StringRef(buf, s));
-    }
     char buf[64];
-    const int s = snprintf(buf, std::size(buf), "Object(%u)", typeId);
-    assert(s > 0);
-    return this->appender(StringRef(buf, s));
+    int len = 0;
+    if (typeId == toUnderlying(TYPE::Module)) { // for temporary module descriptor
+      len = snprintf(buf, std::size(buf), "%s%u)", OBJ_TEMP_MOD_PREFIX, value.asTypeIdMeta());
+    } else if (typeId == toUnderlying(TYPE::UnicodeData)) {
+      len = static_cast<int>(strlen(UNICODE_VERSION_STR));
+      memcpy(buf, UNICODE_VERSION_STR, len);
+    } else {
+      len = snprintf(buf, std::size(buf), "Object(%u)", typeId);
+    }
+    return this->appender(StringRef(buf, len));
   }
   case ValueKind::EXPAND_META:
     return this->appender(toString(value.asExpandMeta().first));

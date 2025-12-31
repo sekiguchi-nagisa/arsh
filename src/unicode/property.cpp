@@ -16,6 +16,7 @@
 
 #include "property.h"
 #include "../misc/enum_util.hpp"
+#include "../misc/unicode.hpp"
 
 namespace arsh {
 namespace ucp {
@@ -50,9 +51,11 @@ CodePointSetRef getCategorySet(const Category category) {
 }
 
 Optional<Category> getCategory(const int codePoint) {
-  for (unsigned int i = 0; i < std::size(category_set_table); i++) {
-    if (category_set_table[i].contains(codePoint)) {
-      return static_cast<Category>(i);
+  if (UnicodeUtil::isValidCodePoint(codePoint)) {
+    for (unsigned int i = 0; i < std::size(category_set_table); i++) {
+      if (category_set_table[i].contains(codePoint)) {
+        return static_cast<Category>(i);
+      }
     }
   }
   return {};

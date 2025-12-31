@@ -72,6 +72,7 @@ enum class TYPE : unsigned int {
   LineEditor,
   CLI,
   Candidates,
+  UnicodeData,
   StringArray,     // for command argument
   IntArray,        // for PIPESTATUS
   StringStringMap, // for reply

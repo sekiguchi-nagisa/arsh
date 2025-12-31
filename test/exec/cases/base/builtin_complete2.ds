@@ -184,7 +184,7 @@ var types = [
     'OutOfRangeError', 'ProcSubst', 'Regex', 'RegexMatch', 'RegexMatchError', 'RegexSyntaxError', 
     'ShellExit', 'Signal', 'Signals', 'StackOverflowError', 'String', 'SystemError', 
     'Throwable', 'TildeError', 'Tuple', 'TypeCastError',
-    'UnixFD', 'UnwrapError','UnwrappingError', 'Void', 'typeof',
+    'UnicodeData', 'UnixFD', 'UnwrapError','UnwrappingError', 'Void', 'typeof',
 ]
 
 $assertArray(['Bool', 'Boolean'], $(complete '34 is [B'))

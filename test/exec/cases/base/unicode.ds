@@ -1,0 +1,52 @@
+
+# for UnicodeData
+
+var ex = 23 as Any
+var ucd = new UnicodeData()
+
+# string representation is equivalent to unicode version string
+assert "$ucd" == { shctl info > /dev/null; $reply["%unicode"]; }  
+
+# category
+var expected = [
+    ($'\0',"Cc"), ($'\U009F', 'Cc'),
+    ($'\u202E',"Cf"), ($'\UE007C', 'Cf'),
+    ($'\uE002', "Co"), ($'\UF0030', 'Co'), ($'\U10FFED', 'Co'),
+    ($'\u085C', 'Cn'), ($'\u128E', 'Cn'), ($'\U108B2', 'Cn'),
+    # ($'\uD800', 'Cs'),  # surrogate (never appeared in utf8)
+    ('a', 'Ll'), ($'\U1D451', 'Ll'),
+    ($'\u02E2', 'Lm'), ($'\U16FE0', 'Lm'),
+    ($'\u0692', 'Lo'), ($'\u3728', 'Lo'), ($'\U2B820', 'Lo'),
+    ($'\U1F89', 'Lt'),
+    ($'\UA77B', 'Lu'), ($'\U1D517', 'Lu'),
+    ($'\U0BCA', 'Mc'), ($'\U11F41', 'Mc'),
+    ($'\u20E2', 'Me'),
+    ($'\u0AFB', 'Mn'), ($'\U11130', 'Mn'),
+    ($'\u0CE7', 'Nd'), ($'\U11F52', 'Nd'),
+    ($'\U2177', 'Nl'), ($'\U12436', 'Nl'),
+    ($'\U3249', 'No'), ($'\U16B5B', 'No'),
+    ($'\U2054', 'Pc'), 
+    ($'\U2012', 'Pd'), ($'\U10D6E', 'Pd'),
+    ($'\U232A', 'Pe'), 
+    ($'\U2E0D', 'Pf'),
+    ($'\U2E02', 'Pi'), 
+    ($'\UFE12', 'Po'), ($'\U11A9F', 'Po'),
+    ($'\UFF62', 'Ps'),
+    ($'\UFFE0', 'Sc'), ($'\U11FDF', 'Sc'), 
+    ($'\UA703', 'Sk'), ($'\U1F3FD', 'Sk'),
+    ($'\U2B49', 'Sm'), ($'\U1D76F', 'Sm'),
+    ($'\U0D4F', 'So'), ($'\U1F999', 'So'),
+    ($'\U2028', 'Zl'), 
+    ($'\U2029', 'Zp'), 
+    ($'\U2003', 'Zs'), 
+]
+
+for e in $expected {
+    assert $e._1 == $ucd.category($e._0)  : "$e"
+}
+
+try { $ucd.category($'\uD800') } catch e { $ex = $e; } # surrogate
+assert ($ex as ArgumentError).message() == 'must be valid single utf8 code point'
+
+try { $ucd.category($'あ1') } catch e { $ex = $e; }
+assert ($ex as ArgumentError).message() == 'must be valid single utf8 code point'

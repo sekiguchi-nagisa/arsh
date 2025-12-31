@@ -69,6 +69,7 @@ TypePool::TypePool() {
   this->initBuiltinType(TYPE::LineEditor, "LineEditor", TYPE::Any, info_LineEditorType());
   this->initBuiltinType(TYPE::CLI, "CLI", TYPE::Any, info_CLIType());
   this->initBuiltinType(TYPE::Candidates, "Candidates", TYPE::Any, info_CandidatesType());
+  this->initBuiltinType(TYPE::UnicodeData, "UnicodeData", TYPE::Any, info_UnicodeDataType());
 
   // initialize type template
   this->initTypeTemplate(this->arrayTemplate, TypeTemplate::Kind::Array, {&this->get(TYPE::Any)},
