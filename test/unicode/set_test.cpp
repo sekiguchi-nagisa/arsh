@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 
-#include <unicode/codepoint_set_ref.hpp>
+#include <unicode/codepoint_set.hpp>
 #include <unicode/property.h>
 
 using namespace arsh;

@@ -14,14 +14,15 @@
  * limitations under the License.
  */
 
-#ifndef ARSH_UNICODE_CODEPOINT_SET_REF_H
-#define ARSH_UNICODE_CODEPOINT_SET_REF_H
+#ifndef ARSH_UNICODE_CODEPOINT_SET_H
+#define ARSH_UNICODE_CODEPOINT_SET_H
 
 #include <algorithm>
 #include <cassert>
 #include <cstdint>
 
 #include "../misc/array_ref.hpp"
+#include "../misc/noncopyable.h"
 
 namespace arsh {
 
@@ -115,6 +116,65 @@ public:
   }
 };
 
+class CodePointSet {
+private:
+  BMPCodePointRange *ptr{nullptr};
+  unsigned int size{0};
+  unsigned short bmpSize{0};
+  bool borrowed{true}; // if true, not delete `ptr`
+
+  CodePointSet(unsigned short bmpSize, BMPCodePointRange *ptr, unsigned int size, bool borrowed)
+      : ptr(ptr), size(size), bmpSize(bmpSize), borrowed(borrowed) {}
+
+public:
+  static CodePointSet take(unsigned short bmpSize, const BMPCodePointRange *ptr,
+                           unsigned int size) {
+    return {bmpSize, const_cast<BMPCodePointRange *>(ptr), size, false};
+  }
+
+  static CodePointSet borrow(unsigned short bmpSize, BMPCodePointRange *ptr, unsigned int size) {
+    return {bmpSize, ptr, size, true};
+  }
+
+  CodePointSet() = default;
+
+  NON_COPYABLE(CodePointSet);
+
+  CodePointSet(CodePointSet &&o) noexcept
+      : ptr(o.ptr), size(o.size), bmpSize(o.bmpSize), borrowed(o.borrowed) {
+    o.ptr = nullptr;
+    o.borrowed = true;
+  }
+
+  ~CodePointSet() {
+    if (!this->borrowed) {
+      operator delete(this->ptr);
+    }
+  }
+
+  CodePointSet &operator=(CodePointSet &&o) noexcept {
+    if (this->ptr != o.ptr) {
+      this->~CodePointSet();
+      new (this) CodePointSet(std::move(o));
+    }
+    return *this;
+  }
+
+  bool isBorrowed() const { return this->borrowed; }
+
+  unsigned int getSize() const { return this->size; }
+
+  unsigned short getBMPSize() const { return this->bmpSize; }
+
+  BMPCodePointRange *take() && {
+    auto *p = this->ptr;
+    this->ptr = nullptr;
+    return p;
+  }
+
+  CodePointSetRef ref() const { return {this->bmpSize, this->ptr, this->size}; }
+};
+
 } // namespace arsh
 
-#endif // ARSH_UNICODE_CODEPOINT_SET_REF_H
+#endif // ARSH_UNICODE_CODEPOINT_SET_H
