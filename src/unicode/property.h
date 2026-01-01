@@ -19,7 +19,6 @@
 
 #include "../misc/result.hpp"
 #include "../misc/string_ref.hpp"
-#include "codepoint_set_ref.hpp"
 
 namespace arsh {
 namespace ucp {
@@ -65,13 +64,6 @@ enum class Category : unsigned char {
 };
 
 Optional<Category> parseCategory(StringRef ref);
-
-/**
- * * @param category
- * @return
- * if pass invalid category, return empty
- */
-CodePointSetRef getCategorySet(Category category);
 
 Optional<Category> getCategory(int codePoint);
 
