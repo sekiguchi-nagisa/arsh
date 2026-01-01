@@ -2260,13 +2260,7 @@ std::unique_ptr<ArgsNode> Parser::parse_arguments(Token first) {
   Token token = first.size == 0 ? TRY(this->expect(TokenKind::LP)) : first;
 
   auto argsNode = std::make_unique<ArgsNode>(token);
-  for (unsigned int count = 0; CUR_KIND() != TokenKind::RP; count++) {
-    if (count > 0) {
-      if (CUR_KIND() != TokenKind::COMMA) {
-        E_ALTER_OR_COMP(TokenKind::COMMA, TokenKind::RP);
-      }
-      this->consume(); // COMMA
-    }
+  while (CUR_KIND() != TokenKind::RP) {
     if (lookahead_expression(CUR_KIND())) {
       if (this->inCompletionPoint() && (hasFlag(this->option, ParserOption::COLLECT_SIGNATURE) ||
                                         this->inVarNameCompletionPoint())) {
@@ -2314,6 +2308,13 @@ std::unique_ptr<ArgsNode> Parser::parse_arguments(Token first) {
       }
     } else {
       E_DETAILED(ParseErrorKind::EXPR_RP, EACH_LA_expression(GEN_LA_ALTER) TokenKind::RP);
+    }
+
+    // consume trailing comma
+    if (CUR_KIND() == TokenKind::COMMA) {
+      this->consume(); // COMMA
+    } else if (CUR_KIND() != TokenKind::RP) {
+      E_ALTER_OR_COMP(TokenKind::COMMA, TokenKind::RP);
     }
   }
   token = this->expect(TokenKind::RP); // always success

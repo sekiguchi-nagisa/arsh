@@ -1,0 +1,31 @@
+
+# allow trailing comma
+
+function sum(a: Int?, b:Int?) : Int { return ($a??0) + ($b??0); }
+
+## function
+$sum(1,3,)
+$sum(1,)
+$sum($a:1,)
+$sum($b:5
+, $a:1
+,
+)
+
+## method
+$OSTYPE.slice(34,)
+$OSTYPE.slice(1,3,)
+$OSTYPE.slice($end:34,
+$start:5
+ ,
+ )
+
+## constructor
+new Candidates([""],)
+new Candidates([""]
+    ,
+        $false
+        ,
+         )
+new Candidates($values:[""],)
+new Candidates($sort: $false, $values:[""],)

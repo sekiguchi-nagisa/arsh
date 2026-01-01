@@ -10,6 +10,12 @@
     - string representation of object is Unicode version string (equivalent to ``shctl info`` output)
     - add ``category`` method for query Unicode general category of code point (single utf8 char)
 
+### Changed
+
+#### Core
+
+- allow trailing comma in function arguments
+
 ## [0.40.0] - 2025-12-30
 
 ### Added
