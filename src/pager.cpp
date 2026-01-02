@@ -108,7 +108,7 @@ void ArrayPager::updateLayout() {
       this->getLogicalRows() > this->getActualRows()) {
     // rows 23-111/111
     unsigned int footerSize =
-        static_cast<unsigned int>(strlen("rows ")) + countDigits(this->getLogicalRows()) * 3 + 2;
+        static_cast<unsigned int>(strlen("rows ")) + (countDigits(this->getLogicalRows()) * 3) + 2;
     if (footerSize < this->panes * this->paneLen) {
       this->showRowNum = true;
     }
@@ -297,14 +297,14 @@ void ArrayPager::render(LineRenderer &renderer) const {
   // fill index cache
   InlinedArray<unsigned int, 8> itemIndexCache(this->panes);
   for (unsigned int j = 0; j < this->panes; j++) {
-    itemIndexCache[j] = this->toActualItemIndex(startIndex + j * maxRowSize);
+    itemIndexCache[j] = this->toActualItemIndex(startIndex + (j * maxRowSize));
   }
 
   // render panes
   for (unsigned int i = 0; i < actualRows; i++) {
     renderer.setEmitNewline(false);                  // ignore newlines
     for (unsigned int j = 0; j < this->panes; j++) { // render row
-      const unsigned int actualIndex = startIndex + i + j * maxRowSize;
+      const unsigned int actualIndex = startIndex + i + (j * maxRowSize);
       if (actualIndex >= this->filteredItemSize()) {
         break;
       }

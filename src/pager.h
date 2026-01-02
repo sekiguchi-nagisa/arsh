@@ -256,7 +256,7 @@ public:
         this->curRow--;
       }
       if (curLogicalRows == 0) {
-        nextIndex = logicalRows * this->getPanes() - 1;
+        nextIndex = (logicalRows * this->getPanes()) - 1;
         this->curRow = saturatedSub(this->getActualRows(), 1);
       }
       while (nextIndex >= this->filteredItemSize()) {
