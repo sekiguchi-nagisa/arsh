@@ -387,17 +387,15 @@ TEST(SetBuilderTest, complement1) {
   CodePointSetBuilder builder;
   builder.add(ref);
   builder.complement();
-  ASSERT_EQ(5, builder.getCodePointRanges().size());
+  ASSERT_EQ(4, builder.getCodePointRanges().size());
   ASSERT_EQ(101, builder.getCodePointRanges()[0].first);
   ASSERT_EQ(199, builder.getCodePointRanges()[0].second);
   ASSERT_EQ(301, builder.getCodePointRanges()[1].first);
   ASSERT_EQ(399, builder.getCodePointRanges()[1].second);
-  ASSERT_EQ(401, builder.getCodePointRanges()[2].first);
-  ASSERT_EQ(499, builder.getCodePointRanges()[2].second);
-  ASSERT_EQ(501, builder.getCodePointRanges()[3].first);
-  ASSERT_EQ(UINT16_MAX - 101, builder.getCodePointRanges()[3].second);
-  ASSERT_EQ(UINT16_MAX + 101, builder.getCodePointRanges()[4].first);
-  ASSERT_EQ(UnicodeUtil::CODE_POINT_MAX, builder.getCodePointRanges()[4].second);
+  ASSERT_EQ(501, builder.getCodePointRanges()[2].first);
+  ASSERT_EQ(UINT16_MAX - 101, builder.getCodePointRanges()[2].second);
+  ASSERT_EQ(UINT16_MAX + 101, builder.getCodePointRanges()[3].first);
+  ASSERT_EQ(UnicodeUtil::CODE_POINT_MAX, builder.getCodePointRanges()[3].second);
 
   //
   builder.complement();
