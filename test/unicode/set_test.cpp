@@ -3,6 +3,7 @@
 #include "gtest/gtest.h"
 
 #include <misc/codepoint_set.hpp>
+#include <misc/unicode.hpp>
 #include <unicode/property.h>
 #include <unicode/set_builder.h>
 
@@ -368,6 +369,64 @@ TEST(SetBuilderTest, intersect) {
   other = set({{UINT16_MAX + 200, UINT16_MAX + 1000}});
   builder.intersect(other.ref());
   ASSERT_EQ(0, builder.getCodePointRanges().size());
+}
+
+TEST(SetBuilderTest, complement1) {
+  static constexpr BMPCodePointRange table[] = {
+      // clang-format off
+    {0, 100},
+    {200, 300},
+    {400, 500},
+    {UINT16_MAX-100, UINT16_MAX},
+    {UINT16_MAX+1},{UINT16_MAX+100},
+      // clang-format on
+  };
+  constexpr CodePointSetRef ref(4, table, std::size(table));
+
+  //
+  CodePointSetBuilder builder;
+  builder.add(ref);
+  builder.complement();
+  ASSERT_EQ(5, builder.getCodePointRanges().size());
+  ASSERT_EQ(101, builder.getCodePointRanges()[0].first);
+  ASSERT_EQ(199, builder.getCodePointRanges()[0].second);
+  ASSERT_EQ(301, builder.getCodePointRanges()[1].first);
+  ASSERT_EQ(399, builder.getCodePointRanges()[1].second);
+  ASSERT_EQ(401, builder.getCodePointRanges()[2].first);
+  ASSERT_EQ(499, builder.getCodePointRanges()[2].second);
+  ASSERT_EQ(501, builder.getCodePointRanges()[3].first);
+  ASSERT_EQ(UINT16_MAX - 101, builder.getCodePointRanges()[3].second);
+  ASSERT_EQ(UINT16_MAX + 101, builder.getCodePointRanges()[4].first);
+  ASSERT_EQ(UnicodeUtil::CODE_POINT_MAX, builder.getCodePointRanges()[4].second);
+
+  //
+  builder.complement();
+  ASSERT_EQ(4, builder.getCodePointRanges().size());
+  ASSERT_EQ(0, builder.getCodePointRanges()[0].first);
+  ASSERT_EQ(100, builder.getCodePointRanges()[0].second);
+  ASSERT_EQ(200, builder.getCodePointRanges()[1].first);
+  ASSERT_EQ(300, builder.getCodePointRanges()[1].second);
+  ASSERT_EQ(400, builder.getCodePointRanges()[2].first);
+  ASSERT_EQ(500, builder.getCodePointRanges()[2].second);
+  ASSERT_EQ(UINT16_MAX - 100, builder.getCodePointRanges()[3].first);
+  ASSERT_EQ(UINT16_MAX + 100, builder.getCodePointRanges()[3].second);
+
+  //
+  auto codePointSet = builder.build();
+  builder.complement();
+  builder.add(codePointSet.ref());
+  ASSERT_EQ(1, builder.getCodePointRanges().size());
+  ASSERT_EQ(0, builder.getCodePointRanges()[0].first);
+  ASSERT_EQ(UnicodeUtil::CODE_POINT_MAX, builder.getCodePointRanges()[0].second);
+}
+
+TEST(SetBuilderTest, complement2) {
+  CodePointSetBuilder builder;
+  ASSERT_EQ(0, builder.getCodePointRanges().size());
+  builder.complement();
+  ASSERT_EQ(1, builder.getCodePointRanges().size());
+  ASSERT_EQ(0, builder.getCodePointRanges()[0].first);
+  ASSERT_EQ(UnicodeUtil::CODE_POINT_MAX, builder.getCodePointRanges()[0].second);
 }
 
 int main(int argc, char **argv) {

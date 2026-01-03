@@ -45,6 +45,8 @@ public:
 
   void intersect(CodePointSetRef ref);
 
+  void complement();
+
   CodePointSet build();
 
 private:

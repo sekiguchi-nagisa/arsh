@@ -103,6 +103,36 @@ void CodePointSetBuilder::intersect(CodePointSetRef ref) {
   this->sortAndCompact();
 }
 
+void CodePointSetBuilder::complement() {
+  std::vector<std::pair<int, int>> buf;
+  const unsigned int size = this->codePointRanges.size();
+  for (unsigned int i = 0; i < size; i++) {
+    auto [first, last] = this->codePointRanges[i];
+    int newFirst = 0;
+    int newLast = 0;
+    if (i == 0) {
+      if (first == 0) {
+        continue;
+      }
+      newFirst = 0;
+      newLast = first - 1;
+    } else {
+      newFirst = this->codePointRanges[i - 1].second + 1;
+      newLast = first - 1;
+    }
+    assert(newFirst <= newLast);
+    buf.emplace_back(newFirst, newLast);
+  }
+  if (size) {
+    if (int last = this->codePointRanges.back().second; last != UnicodeUtil::CODE_POINT_MAX) {
+      buf.emplace_back(last + 1, UnicodeUtil::CODE_POINT_MAX);
+    }
+  } else {
+    buf.emplace_back(0, UnicodeUtil::CODE_POINT_MAX);
+  }
+  this->codePointRanges = std::move(buf);
+}
+
 CodePointSet CodePointSetBuilder::build() {
   FlexBuffer<BMPCodePointRange> tmp;
   tmp.reserve(this->codePointRanges.size() / 2);
