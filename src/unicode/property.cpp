@@ -15,9 +15,9 @@
  */
 
 #include "property.h"
+#include "../misc/codepoint_set.hpp"
 #include "../misc/enum_util.hpp"
 #include "../misc/unicode.hpp"
-#include "codepoint_set.hpp"
 
 namespace arsh {
 namespace ucp {

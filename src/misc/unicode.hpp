@@ -38,6 +38,8 @@ template <bool T>
 struct UnicodeUtil {
   static_assert(T, "not allowed instantiation");
 
+  static constexpr int CODE_POINT_MAX = 0x10FFFF;
+
   static constexpr int REPLACEMENT_CHAR_CODE = 0xFFFD;
 
   static constexpr const char *REPLACEMENT_CHAR_UTF8 = "\xEF\xBF\xBD";
@@ -104,13 +106,13 @@ struct UnicodeUtil {
   static unsigned int codePointToUtf8(int codePoint, char *buf);
 
   static bool isValidCodePoint(int codePoint) {
-    return codePoint >= 0x0000 && codePoint <= 0x10FFFF;
+    return codePoint >= 0x0000 && codePoint <= CODE_POINT_MAX;
   }
 
   static bool isBmpCodePoint(int codePoint) { return codePoint >= 0x0000 && codePoint <= 0xFFFF; }
 
   static bool isSupplementaryCodePoint(int codePoint) {
-    return codePoint > 0xFFFF && codePoint <= 0x10FFFF;
+    return codePoint > 0xFFFF && codePoint <= CODE_POINT_MAX;
   }
 
   static bool isHighSurrogate(unsigned short v) { return v >= 0xD800 && v <= 0xDBFF; }

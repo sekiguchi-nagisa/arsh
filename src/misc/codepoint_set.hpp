@@ -14,17 +14,19 @@
  * limitations under the License.
  */
 
-#ifndef ARSH_UNICODE_CODEPOINT_SET_H
-#define ARSH_UNICODE_CODEPOINT_SET_H
+#ifndef MISC_LIB_CODEPOINT_SET_H
+#define MISC_LIB_CODEPOINT_SET_H
 
 #include <algorithm>
 #include <cassert>
 #include <cstdint>
+#include <type_traits>
 
-#include "../misc/array_ref.hpp"
-#include "../misc/noncopyable.h"
+#include "array_ref.hpp"
+#include "buffer.hpp"
+#include "noncopyable.h"
 
-namespace arsh {
+BEGIN_MISC_LIB_NAMESPACE_DECL
 
 class BMPCodePointRange {
 private:
@@ -78,6 +80,8 @@ class CodePointSetRef {
 private:
   static_assert(sizeof(BMPCodePointRange) == sizeof(uint32_t));
   static_assert(sizeof(NonBMPCodePointRange) == sizeof(uint32_t) * 2);
+  static_assert(std::is_trivially_destructible_v<BMPCodePointRange>);
+  static_assert(std::is_trivially_destructible_v<NonBMPCodePointRange>);
 
   const BMPCodePointRange *ptr{nullptr};
   unsigned short bmpSize{0};
@@ -127,13 +131,14 @@ private:
       : ptr(ptr), size(size), bmpSize(bmpSize), borrowed(borrowed) {}
 
 public:
-  static CodePointSet take(unsigned short bmpSize, const BMPCodePointRange *ptr,
-                           unsigned int size) {
-    return {bmpSize, const_cast<BMPCodePointRange *>(ptr), size, false};
+  static CodePointSet take(unsigned short bmpSize, FlexBuffer<BMPCodePointRange> &&buf) {
+    unsigned int size = buf.size();
+    return {bmpSize, buf.take(), size, false};
   }
 
-  static CodePointSet borrow(unsigned short bmpSize, BMPCodePointRange *ptr, unsigned int size) {
-    return {bmpSize, ptr, size, true};
+  static CodePointSet borrow(unsigned short bmpSize, const BMPCodePointRange *ptr,
+                             unsigned int size) {
+    return {bmpSize, const_cast<BMPCodePointRange *>(ptr), size, true};
   }
 
   CodePointSet() = default;
@@ -148,7 +153,7 @@ public:
 
   ~CodePointSet() {
     if (!this->borrowed) {
-      operator delete(this->ptr);
+      free(this->ptr);
     }
   }
 
@@ -175,6 +180,6 @@ public:
   CodePointSetRef ref() const { return {this->bmpSize, this->ptr, this->size}; }
 };
 
-} // namespace arsh
+END_MISC_LIB_NAMESPACE_DECL
 
-#endif // ARSH_UNICODE_CODEPOINT_SET_H
+#endif // MISC_LIB_CODEPOINT_SET_H
