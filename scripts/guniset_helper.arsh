@@ -13,14 +13,18 @@ $_install_dir = $_install_dir.realpath()
 pushd $_install_dir
 defer { popd; }
 
-test -f DerivedGeneralCategory.txt ||
-    curl http://www.unicode.org/Public/UCD/latest/ucd/extracted/DerivedGeneralCategory.txt \
-        -o ./DerivedGeneralCategory.txt
+for path in @(
+    http://www.unicode.org/Public/UCD/latest/ucd/extracted/DerivedGeneralCategory.txt
+    http://www.unicode.org/Public/UCD/latest/ucd/EastAsianWidth.txt
+    http://www.unicode.org/Public/UCD/latest/ucd/PropertyValueAliases.txt
+    http://www.unicode.org/Public/UCD/latest/ucd/Scripts.txt
+    http://www.unicode.org/Public/UCD/latest/ucd/ScriptExtensions.txt
+) {
+    var name = $path.basename()
+    test -f $name || curl $path -o ./$name
+}
 
-test -f EastAsianWidth.txt ||
-    curl http://www.unicode.org/Public/UCD/latest/ucd/EastAsianWidth.txt -o ./EastAsianWidth.txt
-
-let _version = "0.5.0"
+let _version = "0.6.0"
 
 (test -x guniset && "$(./guniset -v)".split(" ")[0] == "v$_version") ||
     (curl -L \
