@@ -1,3 +1,4 @@
+#include "misc/enum_util.hpp"
 #include "misc/unicode.hpp"
 
 #include "gtest/gtest.h"
@@ -203,9 +204,10 @@ TEST(CodePointSetRefTest, nonBmpOnly) {
 }
 
 TEST(UCPTest, category) {
-  // ASSERT_TRUE(ucp::getCategorySet(ucp::Category::Me));
-  // ASSERT_TRUE(ucp::getCategorySet(ucp::Category::Me).contains(0x20DF));
-  ASSERT_STREQ("Me", toString(ucp::Category::Me));
+  auto set = ucp::getPropertySet(ucp::Property::category(ucp::Category::Me));
+  ASSERT_TRUE(set);
+  ASSERT_TRUE(set.ref().contains(0x20DF));
+  ASSERT_EQ("Me", ucp::toString(ucp::Category::Me).toString());
   ASSERT_TRUE(ucp::getCategory(0x20DF).hasValue());
   ASSERT_EQ(ucp::Category::Me, ucp::getCategory(0x20DF).unwrap());
   ASSERT_TRUE(ucp::parseCategory("Me").hasValue());

@@ -39,70 +39,6 @@ void CodePointSetBuilder::add(CodePointSetRef ref) {
   this->sortAndCompact();
 }
 
-template <typename Func>
-static constexpr bool remove_requirement_v = std::is_same_v<bool, std::invoke_result_t<Func, int>>;
-
-template <typename Func, enable_when<remove_requirement_v<Func>> = nullptr>
-static void removeIf(std::vector<std::pair<int, int>> &ranges, Func func) {
-  /**
-   * consider the following cases
-   * (1,5), if func(5) == true
-   * => (1,4)
-   * (1,5), if func(1) == true
-   * => (2,5)
-   * (1,5), if func(4) == true
-   * => (1,3), (5,5)
-   * (1,1), if func(1) == true
-   * => remove
-   */
-  const unsigned int oldEnd = ranges.size();
-  int lastIndex = -1;
-  for (unsigned int index = 0; index < oldEnd; index++) {
-    for (int codePoint = ranges[index].first; codePoint <= ranges[index].second; codePoint++) {
-      if (!func(codePoint)) {
-        continue;
-      }
-      auto &range = ranges[index];
-      if (codePoint == range.first) {
-        if (range.first == range.second) { // remove
-          goto END;
-        }
-        range.first++;
-      } else if (codePoint == range.second) {
-        range.second--;
-      } else {
-        int newFirst = range.first;
-        int newLast = codePoint - 1;
-        range.first = codePoint + 1;
-        if (static_cast<unsigned int>(lastIndex + 1) < index) {
-          lastIndex++;
-          ranges[lastIndex] = std::make_pair(newFirst, newLast);
-        } else {
-          ranges.emplace_back(newFirst, newLast);
-        }
-      }
-    }
-    lastIndex++;
-    if (static_cast<unsigned int>(lastIndex) != index) {
-      ranges[lastIndex] = ranges[index];
-    }
-  END: {}
-  }
-
-  // compact
-  ranges.erase(ranges.begin() + (lastIndex + 1), ranges.begin() + oldEnd);
-}
-
-void CodePointSetBuilder::sub(CodePointSetRef ref) {
-  removeIf(this->codePointRanges, [&ref](int codePoint) { return ref.contains(codePoint); });
-  this->sortAndCompact();
-}
-
-void CodePointSetBuilder::intersect(CodePointSetRef ref) {
-  removeIf(this->codePointRanges, [&ref](int codePoint) { return !ref.contains(codePoint); });
-  this->sortAndCompact();
-}
-
 void CodePointSetBuilder::complement() {
   std::vector<std::pair<int, int>> buf;
   const unsigned int size = this->codePointRanges.size();
@@ -131,6 +67,63 @@ void CodePointSetBuilder::complement() {
     buf.emplace_back(0, UnicodeUtil::CODE_POINT_MAX);
   }
   this->codePointRanges = std::move(buf);
+}
+
+void CodePointSetBuilder::remove(const CodePointSetRef ref, const bool negate) {
+  /**
+   * consider the following cases
+   * (1,5), if func(5) == true
+   * => (1,4)
+   * (1,5), if func(1) == true
+   * => (2,5)
+   * (1,5), if func(4) == true
+   * => (1,3), (5,5)
+   * (1,1), if func(1) == true
+   * => remove
+   */
+  const unsigned int oldEnd = this->codePointRanges.size();
+  int lastIndex = -1;
+  for (unsigned int index = 0; index < oldEnd; index++) {
+    for (int codePoint = this->codePointRanges[index].first;
+         codePoint <= this->codePointRanges[index].second; codePoint++) {
+      bool matched = ref.contains(codePoint);
+      if (negate) {
+        matched = !matched;
+      }
+      if (!matched) {
+        continue;
+      }
+      auto &range = this->codePointRanges[index];
+      if (codePoint == range.first) {
+        if (range.first == range.second) { // remove
+          goto END;
+        }
+        range.first++;
+      } else if (codePoint == range.second) {
+        range.second--;
+      } else {
+        int newFirst = range.first;
+        int newLast = codePoint - 1;
+        range.first = codePoint + 1;
+        if (static_cast<unsigned int>(lastIndex + 1) < index) {
+          lastIndex++;
+          this->codePointRanges[lastIndex] = std::make_pair(newFirst, newLast);
+        } else {
+          this->codePointRanges.emplace_back(newFirst, newLast);
+        }
+      }
+    }
+    lastIndex++;
+    if (static_cast<unsigned int>(lastIndex) != index) {
+      this->codePointRanges[lastIndex] = this->codePointRanges[index];
+    }
+  END: {}
+  }
+
+  // compact
+  this->codePointRanges.erase(this->codePointRanges.begin() + (lastIndex + 1),
+                              this->codePointRanges.begin() + oldEnd);
+  this->sortAndCompact();
 }
 
 CodePointSet CodePointSetBuilder::build() {

@@ -28,7 +28,7 @@ echo try to update $src/unicode/emoji_variation.in
 call $BIN_NAME $SCRIPT_DIR/gen_emoji_variation.arsh $src/unicode/emoji_variation.in
 
 echo try to update $src/unicode/ucp_general_category.in
-call $BIN_NAME $SCRIPT_DIR/gen_category_table.arsh $src/unicode/ucp_general_category.in
+call $BIN_NAME $SCRIPT_DIR/gen_category_table.arsh --header=$src/unicode/ucp_general_category_def.in $src/unicode/ucp_general_category.in
 
 ## for test case
 var test = "$SCRIPT_DIR/../test"

@@ -41,15 +41,21 @@ public:
    * for difference
    * @param ref
    */
-  void sub(CodePointSetRef ref);
+  void sub(const CodePointSetRef ref) { this->remove(ref, false); }
 
-  void intersect(CodePointSetRef ref);
+  void intersect(const CodePointSetRef ref) { this->remove(ref, true); }
 
   void complement();
 
+  /**
+   * build code point set. after return, still maintains an original buffer
+   * @return
+   */
   CodePointSet build();
 
 private:
+  void remove(CodePointSetRef ref, bool negate);
+
   void sortAndCompact(); // TODO: lazy compaction
 };
 

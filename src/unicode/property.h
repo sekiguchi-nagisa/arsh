@@ -17,49 +17,20 @@
 #ifndef ARSH_UNICODE_PROPERTY_H
 #define ARSH_UNICODE_PROPERTY_H
 
+#include "../misc/enum_util.hpp"
 #include "../misc/result.hpp"
 #include "../misc/string_ref.hpp"
+#include "set_builder.h"
 
-namespace arsh {
-namespace ucp {
+#include "ucp_general_category_def.in"
+
+namespace arsh::ucp {
 
 // for Unicode general category
 
-#define EACH_UCP_CATEGORY(E)                                                                       \
-  E(Lu)                                                                                            \
-  E(Ll)                                                                                            \
-  E(Lt)                                                                                            \
-  E(Lm)                                                                                            \
-  E(Lo)                                                                                            \
-  E(Mn)                                                                                            \
-  E(Mc)                                                                                            \
-  E(Me)                                                                                            \
-  E(Nd)                                                                                            \
-  E(Nl)                                                                                            \
-  E(No)                                                                                            \
-  E(Pc)                                                                                            \
-  E(Pd)                                                                                            \
-  E(Ps)                                                                                            \
-  E(Pe)                                                                                            \
-  E(Pi)                                                                                            \
-  E(Pf)                                                                                            \
-  E(Po)                                                                                            \
-  E(Sm)                                                                                            \
-  E(Sc)                                                                                            \
-  E(Sk)                                                                                            \
-  E(So)                                                                                            \
-  E(Zs)                                                                                            \
-  E(Zl)                                                                                            \
-  E(Zp)                                                                                            \
-  E(Cc)                                                                                            \
-  E(Cf)                                                                                            \
-  E(Cs)                                                                                            \
-  E(Co)                                                                                            \
-  E(Cn)
-
 enum class Category : unsigned char {
-#define GEN_ENUM(E) E,
-  EACH_UCP_CATEGORY(GEN_ENUM)
+#define GEN_ENUM(E, S) E,
+  EACH_UCP_GENERAL_CATEGORY(GEN_ENUM)
 #undef GEN_ENUM
 };
 
@@ -67,10 +38,65 @@ Optional<Category> parseCategory(StringRef ref);
 
 Optional<Category> getCategory(int codePoint);
 
-} // namespace ucp
+StringRef toString(Category category, bool longName = false);
 
-const char *toString(ucp::Category category);
+#define EACH_UCP_PROPERTY_NAME(E)                                                                  \
+  E(General_Category, "gc")                                                                        \
+  E(Script, "sc")                                                                                  \
+  E(Script_Extensions, "scx")
 
-} // namespace arsh
+class Property {
+public:
+  enum class Name : unsigned char {
+#define GEN_ENUM(E, A) E,
+    EACH_UCP_PROPERTY_NAME(GEN_ENUM)
+#undef GEN_ENUM
+        Lone, // for lone property
+  };
+
+  static_assert(sizeof(Category) == sizeof(Name));
+
+private:
+  Name name;
+
+  unsigned char value;
+
+public:
+  Property(Name name, unsigned char value) : name(name), value(value) {}
+
+  static Property category(Category cate) { return {Name::General_Category, toUnderlying(cate)}; }
+
+  Name getName() const { return this->name; }
+
+  unsigned char getValue() const { return this->value; }
+};
+
+Optional<Property> parseProperty(StringRef name, StringRef value, std::string *err);
+
+inline Optional<Property> parseProperty(const StringRef value, std::string *err) {
+  return parseProperty("", value, err);
+}
+
+struct BuilderOrSet {
+  bool isBuilder;
+  union {
+    CodePointSetBuilder *builder;
+    CodePointSet *set;
+  };
+
+  explicit BuilderOrSet(CodePointSetBuilder &builder) : isBuilder(true), builder(&builder) {}
+
+  explicit BuilderOrSet(CodePointSet &set) : isBuilder(false), set(&set) {}
+};
+
+bool getPropertySet(Property property, BuilderOrSet out);
+
+inline CodePointSet getPropertySet(const Property property) {
+  CodePointSet set;
+  getPropertySet(property, BuilderOrSet(set));
+  return set;
+}
+
+} // namespace arsh::ucp
 
 #endif // ARSH_UNICODE_PROPERTY_H

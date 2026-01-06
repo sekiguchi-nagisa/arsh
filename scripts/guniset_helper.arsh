@@ -13,23 +13,14 @@ $_install_dir = $_install_dir.realpath()
 pushd $_install_dir
 defer { popd; }
 
-for path in @(
-    http://www.unicode.org/Public/UCD/latest/ucd/extracted/DerivedGeneralCategory.txt
-    http://www.unicode.org/Public/UCD/latest/ucd/EastAsianWidth.txt
-    http://www.unicode.org/Public/UCD/latest/ucd/PropertyValueAliases.txt
-    http://www.unicode.org/Public/UCD/latest/ucd/Scripts.txt
-    http://www.unicode.org/Public/UCD/latest/ucd/ScriptExtensions.txt
-) {
-    var name = $path.basename()
-    test -f $name || curl $path -o ./$name
-}
-
-let _version = "0.6.0"
+let _version = "0.7.0"
 
 (test -x guniset && "$(./guniset -v)".split(" ")[0] == "v$_version") ||
     (curl -L \
         https://github.com/sekiguchi-nagisa/guniset/releases/download/v${_version}/guniset-$_version-$OSTYPE-$MACHTYPE \
         > ./guniset && chmod +x ./guniset)
+
+./guniset download ./
 
 export-env GUNISET_DIR = $PWD
 let GUNISET_PATH = "$_install_dir/guniset".realpath()

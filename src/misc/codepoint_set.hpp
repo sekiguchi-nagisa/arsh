@@ -95,6 +95,12 @@ public:
 
   explicit operator bool() const { return this->size > 0; }
 
+  const BMPCodePointRange *getPtr() const { return this->ptr; }
+
+  unsigned short getBMPSize() const { return this->bmpSize; }
+
+  unsigned int getSize() const { return this->size; }
+
   ArrayRef<BMPCodePointRange> getBMPRanges() const { return {this->ptr, this->bmpSize}; }
 
   ArrayRef<NonBMPCodePointRange> getNonBMPRanges() const {
@@ -141,6 +147,10 @@ public:
     return {bmpSize, const_cast<BMPCodePointRange *>(ptr), size, true};
   }
 
+  static CodePointSet borrow(const CodePointSetRef ref) {
+    return borrow(ref.getBMPSize(), ref.getPtr(), ref.getSize());
+  }
+
   CodePointSet() = default;
 
   NON_COPYABLE(CodePointSet);
@@ -164,6 +174,8 @@ public:
     }
     return *this;
   }
+
+  explicit operator bool() const { return this->getSize() > 0; }
 
   bool isBorrowed() const { return this->borrowed; }
 
