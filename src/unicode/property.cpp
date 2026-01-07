@@ -25,6 +25,10 @@ namespace arsh::ucp {
 #define PROPERTY_SET_RANGE BMPCodePointRange
 #define PROPERTY_SET_RANGE_TABLE CodePointSetRef
 
+// ==============================
+// ==     General Category     ==
+// ==============================
+
 #include "ucp_general_category.in"
 
 static constexpr const char *categoryNames[] = {
@@ -77,48 +81,6 @@ StringRef toString(Category category, bool longName) {
     return name;
   }
   return "";
-}
-
-Optional<Property> parseProperty(StringRef name, StringRef value, std::string *err) {
-  static const StrRefMap<Property::Name> propertyNames = {
-      {"General_Category", Property::Name::General_Category},
-      {"gc", Property::Name::General_Category},
-      {"Script", Property::Name::Script},
-      {"sc", Property::Name::Script},
-      {"Script_Extensions", Property::Name::Script_Extensions},
-      {"scx", Property::Name::Script_Extensions},
-  };
-  // resolve property name
-  Property::Name prefix;
-  if (name.empty()) {
-    prefix = Property::Name::Lone;
-  } else if (auto iter = propertyNames.find(name); iter != propertyNames.end()) {
-    prefix = iter->second;
-  } else {
-    if (err) {
-      *err += "unrecognized property name: ";
-      *err += name;
-    }
-    return {};
-  }
-
-  // resolve property value
-  switch (prefix) {
-  case Property::Name::General_Category:
-    if (auto ret = parseCategory(value); ret.hasValue()) {
-      return Property(prefix, toUnderlying(ret.unwrap()));
-    }
-    break;
-  case Property::Name::Script:
-  case Property::Name::Script_Extensions:
-  case Property::Name::Lone:
-    break; // TODO
-  }
-  if (err) {
-    *err += "unrecognized property value: ";
-    *err += value;
-  }
-  return {};
 }
 
 static constexpr struct CategoryCombination {
@@ -205,11 +167,153 @@ static bool getCategorySet(const Category category, BuilderOrSet out) {
   return false; // normally unreachable (for broken category)
 }
 
+// ====================
+// ==     Script     ==
+// ====================
+
+#include "ucp_script.in"
+
+static constexpr const char *scriptNames[] = {
+#define GEN_TABLE(E, S) S,
+    EACH_UCP_SCRIPT(GEN_TABLE)
+#undef GEN_TABLE
+};
+
+enum class Script : unsigned char {
+#define GEN_ENUM(E, S) E,
+  EACH_UCP_SCRIPT(GEN_ENUM)
+#undef GEN_ENUM
+};
+
+static auto initScriptNameMap() {
+  StrRefMap<Script> map;
+  for (unsigned int i = 0; i < std::size(scriptNames); i++) {
+    auto category = static_cast<Script>(i);
+    splitByDelim(scriptNames[i], '|', [&map, category](StringRef ref, bool) {
+      map.emplace(ref, category);
+      return true;
+    });
+  }
+  return map;
+}
+
+static StringRef toString(Script script, bool longName) {
+  if (const auto i = toUnderlying(script); i < std::size(scriptNames)) {
+    StringRef name;
+    unsigned int count = 0;
+    const unsigned int limit = longName ? 2 : 1;
+    splitByDelim(scriptNames[i], '|', [&count, &limit, &name](StringRef ref, bool) {
+      name = ref;
+      return ++count < limit;
+    });
+    return name;
+  }
+  return "";
+}
+
+StringRef getScript(const int codePoint) {
+  if (UnicodeUtil::isValidCodePoint(codePoint)) {
+    auto script = Script::Zzzz;
+    for (unsigned int i = 0; i < std::size(script_set_table_except_Zzzz); i++) {
+      if (script_set_table_except_Zzzz[i].contains(codePoint)) {
+        script = static_cast<Script>(i);
+        break;
+      }
+    }
+    return toString(script, true);
+  }
+  return "";
+}
+
+static Optional<Script> parseScript(const StringRef ref) {
+  static const auto map = initScriptNameMap();
+  if (const auto iter = map.find(ref); iter != map.end()) {
+    return iter->second;
+  }
+  return {};
+}
+
+static bool getScriptSet(const Script script, BuilderOrSet out) {
+  CodePointSet set;
+  switch (script) {
+#define GEN_CASE(E, S) case Script::E:
+    EACH_UCP_SCRIPT_PRIME(GEN_CASE)
+#undef GEN_CASE
+    if (auto ref = script_set_table_except_Zzzz[toUnderlying(script)]; out.isBuilder) {
+      out.builder->add(ref);
+    } else {
+      *out.set = CodePointSet::borrow(ref);
+    }
+    return true;
+  case Script::Zzzz: {
+    CodePointSetBuilder builder;
+    for (auto &e : script_set_table_except_Zzzz) {
+      builder.add(e);
+    }
+    builder.complement();
+    if (auto tmp = builder.build(); out.isBuilder) {
+      out.builder->add(tmp.ref());
+    } else {
+      *out.set = std::move(tmp);
+    }
+    return true;
+  }
+  }
+  return false; // normally unreachable (for a broken script)
+}
+
+Optional<Property> parseProperty(StringRef name, StringRef value, std::string *err) {
+  static const StrRefMap<Property::Name> propertyNames = {
+      {"General_Category", Property::Name::General_Category},
+      {"gc", Property::Name::General_Category},
+      {"Script", Property::Name::Script},
+      {"sc", Property::Name::Script},
+      {"Script_Extensions", Property::Name::Script_Extensions},
+      {"scx", Property::Name::Script_Extensions},
+  };
+  // resolve property name
+  Property::Name prefix;
+  if (name.empty()) {
+    prefix = Property::Name::Lone;
+  } else if (auto iter = propertyNames.find(name); iter != propertyNames.end()) {
+    prefix = iter->second;
+  } else {
+    if (err) {
+      *err += "unrecognized property name: ";
+      *err += name;
+    }
+    return {};
+  }
+
+  // resolve property value
+  switch (prefix) {
+  case Property::Name::General_Category:
+    if (auto ret = parseCategory(value); ret.hasValue()) {
+      return Property(prefix, toUnderlying(ret.unwrap()));
+    }
+    break;
+  case Property::Name::Script:
+  case Property::Name::Script_Extensions:
+    if (auto ret = parseScript(value); ret.hasValue()) {
+      return Property(prefix, toUnderlying(ret.unwrap()));
+    }
+    break;
+  case Property::Name::Lone:
+    break; // TODO
+  }
+  if (err) {
+    *err += "unrecognized property value: ";
+    *err += value;
+  }
+  return {};
+}
+
 bool getPropertySet(const Property property, BuilderOrSet out) {
   switch (property.getName()) {
   case Property::Name::General_Category:
     return getCategorySet(static_cast<Category>(property.getValue()), out);
   case Property::Name::Script:
+    return getScriptSet(static_cast<Script>(property.getValue()), out);
   case Property::Name::Script_Extensions:
   case Property::Name::Lone:
     break; // TODO

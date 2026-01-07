@@ -422,6 +422,8 @@ function quote(quoted: String?, cmd: Bool?): Void for Candidates
 type UnicodeData()
 
 function category(char: String): String for UnicodeData
+
+function script(char: String): String for UnicodeData
 ```
 
 ## StringIter type

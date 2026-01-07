@@ -14,10 +14,11 @@
  * limitations under the License.
  */
 
-#include "set_builder.h"
+#include <cassert>
+
 #include "../misc/buffer.hpp"
-#include "../misc/detect.hpp"
 #include "../misc/unicode.hpp"
+#include "set_builder.h"
 
 namespace arsh {
 

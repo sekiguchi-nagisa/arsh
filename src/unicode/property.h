@@ -40,6 +40,8 @@ Optional<Category> getCategory(int codePoint);
 
 StringRef toString(Category category, bool longName = false);
 
+StringRef getScript(int codePoint);
+
 #define EACH_UCP_PROPERTY_NAME(E)                                                                  \
   E(General_Category, "gc")                                                                        \
   E(Script, "sc")                                                                                  \

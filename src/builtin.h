@@ -2887,6 +2887,22 @@ ARSH_METHOD unicode_category(RuntimeContext &ctx) {
   RET_ERROR;
 }
 
+//!bind: function script($this: UnicodeData, $char: String): String
+ARSH_METHOD unicode_script(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(unicode_script);
+  auto ref = LOCAL(1).asStrRef();
+  if (ref.size() <= 4) {
+    int codePoint = -1;
+    if (UnicodeUtil::utf8ToCodePoint(ref.data(), ref.size(), codePoint) == ref.size()) {
+      if (auto ret = ucp::getScript(codePoint); !ret.empty()) {
+        RET(Value::createStr(ret));
+      }
+    }
+  }
+  raiseError(ctx, TYPE::ArgumentError, "must be valid single utf8 code point");
+  RET_ERROR;
+}
+
 } // namespace arsh
 
 #endif // ARSH_BUILTIN_H

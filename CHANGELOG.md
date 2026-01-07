@@ -7,8 +7,10 @@
 #### Builtin
 
 - add ``UnicodeData`` type
-    - string representation of object is Unicode version string (equivalent to ``shctl info`` output)
-    - add ``category`` method for query Unicode general category of code point (single utf8 char)
+    - string representation of the object is Unicode version string (equivalent to ``shctl info``
+      output)
+    - add ``category`` method for query Unicode General Category of code point (single utf8 char)
+    - add ``script`` method for query Unicode Script of code point (single utf8 char)
 
 ### Changed
 
