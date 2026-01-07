@@ -43,8 +43,10 @@ let cateNames : [String: [String]]
     echo
     echo '#define EACH_UCP_GENERAL_CATEGORY(E) \'
     echo '    EACH_UCP_GENERAL_CATEGORY_PRIME(E) \'
-    for cat in $excludes {
-        echo "    E($cat, \"$cat|${$cateNames[$cat].join('|')}\") \\"
+    let size = $excludes.size()
+    for(var i = 0; $i < $size; $i++) {
+        var cat = $excludes[$i]
+        echo "    E($cat, \"$cat|${$cateNames[$cat].join('|')}\")${$i < $size - 1 ? ' \' : ""}"
     }
 } with > ${param.header}
 

@@ -56,4 +56,4 @@
     E(S, "S|Symbol") \
     E(Z, "Z|Separator") \
     E(Cn, "Cn|Unassigned") \
-    E(C, "C|Other") \
+    E(C, "C|Other")
