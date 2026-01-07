@@ -216,6 +216,9 @@ add_library(unicode STATIC
         src/unicode/property.cpp
         src/unicode/set_builder.cpp
 )
+if (BUILD_SHARED_LIB)
+    set_target_properties(unicode PROPERTIES POSITION_INDEPENDENT_CODE ON)
+endif ()
 
 #=================#
 #     libarsh     #
@@ -309,7 +312,9 @@ endif ()
 
 add_library(arsh_obj OBJECT ${ARSH_SRC})
 add_dependencies(arsh_obj gen_lexer gen_keyname_lexer)
-set_target_properties(arsh_obj PROPERTIES POSITION_INDEPENDENT_CODE ON)
+if (BUILD_SHARED_LIB)
+    set_target_properties(arsh_obj PROPERTIES POSITION_INDEPENDENT_CODE ON)
+endif ()
 
 set(ARSH_STATIC arsh_static)
 add_library(${ARSH_STATIC} STATIC $<TARGET_OBJECTS:arsh_obj>)
