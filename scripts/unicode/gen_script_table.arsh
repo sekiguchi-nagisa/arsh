@@ -80,4 +80,33 @@ for cate, s in $bmpSizeMap {
 }
 write "};"
 
+## generate each script extension table
+$bmpSizeMap.clear()
+for cate in $cates {
+    var set = $createCodePointSet("scx:$cate")
+    $set.empty() && continue
+    write "static constexpr PROPERTY_SET_RANGE scriptx_set_table_$cate[] = {"
+    write "    // BMP"
+    for e in $set.bmp {
+        write "    $e"
+    }
+    write "    // Non-BMP"
+    let size = $set.nonbmp.size()
+    assert $size %2 == 0
+    for (var i = 0; $i < $size; $i+=2) {
+        write "    ${$set.nonbmp[$i]} ${$set.nonbmp[$i+1]}"
+    }
+    write "};"
+    $bmpSizeMap.put($cate, $set.bmp.size())
+}
+write
+write '#define EACH_UCP_SCRIPT_EXTENSION(E) \'
+var c = 0;
+for cate, bmpSize in $bmpSizeMap {
+    write "    E($cate, $bmpSize)${$c < $bmpSizeMap.size() - 1 ? ' \' : ""}"
+    $c++
+}
+
+
+
 echo code generation success

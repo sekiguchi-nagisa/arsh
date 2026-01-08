@@ -56,3 +56,7 @@ function createCodePointSet(setop: String): CodePointSet {
     }
     return $ret
 }
+
+function empty() : Bool for CodePointSet {
+    return $this.bmp.empty() && $this.nonbmp.empty()
+}

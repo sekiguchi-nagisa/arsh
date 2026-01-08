@@ -262,6 +262,29 @@ static bool getScriptSet(const Script script, BuilderOrSet out) {
   return false; // normally unreachable (for a broken script)
 }
 
+static bool getScriptXSet(const Script script, BuilderOrSet out) {
+  CodePointSetRef ref;
+  switch (script) {
+#define GEN_CASE(E, B)                                                                             \
+  case Script::E:                                                                                  \
+    ref = {B, scriptx_set_table_##E, std::size(scriptx_set_table_##E)};                            \
+    break;
+    EACH_UCP_SCRIPT_EXTENSION(GEN_CASE)
+#undef GEN_CASE
+  default:
+    break;
+  }
+  if (ref.getSize()) {
+    if (out.isBuilder) {
+      out.builder->add(ref);
+    } else {
+      *out.set = CodePointSet::borrow(ref);
+    }
+    return true;
+  }
+  return false;
+}
+
 Optional<Property> parseProperty(StringRef name, StringRef value, std::string *err) {
   static const StrRefMap<Property::Name> propertyNames = {
       {"General_Category", Property::Name::General_Category},
@@ -315,6 +338,7 @@ bool getPropertySet(const Property property, BuilderOrSet out) {
   case Property::Name::Script:
     return getScriptSet(static_cast<Script>(property.getValue()), out);
   case Property::Name::Script_Extensions:
+    return getScriptXSet(static_cast<Script>(property.getValue()), out);
   case Property::Name::Lone:
     break; // TODO
   }
