@@ -22,5 +22,5 @@ set(TEST_NAME set_test)
 add_executable(${TEST_NAME}
         set_test.cpp
 )
-target_link_libraries(${TEST_NAME} gtest gtest_main unicode)
+target_link_libraries(${TEST_NAME} gtest gtest_main unicode test_common)
 add_test(${TEST_NAME} ${TEST_NAME})

@@ -1,12 +1,14 @@
 #include "gtest/gtest.h"
 
 #include <cstring>
+#include <utility>
 
 #include <misc/num_util.hpp>
 #include <unicode/grapheme.h>
 #include <unicode/word.h>
 
 #include "../test_common.h"
+#include "unicode/property.h"
 
 using namespace arsh;
 

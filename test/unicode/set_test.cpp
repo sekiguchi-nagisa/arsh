@@ -1,7 +1,4 @@
-#include "misc/enum_util.hpp"
-#include "misc/unicode.hpp"
-
-#include "gtest/gtest.h"
+#include "../test_common.h"
 
 #include <misc/codepoint_set.hpp>
 #include <misc/unicode.hpp>
@@ -428,6 +425,51 @@ TEST(SetBuilderTest, complement2) {
   ASSERT_EQ(0, builder.getCodePointRanges()[0].first);
   ASSERT_EQ(UnicodeUtil::CODE_POINT_MAX, builder.getCodePointRanges()[0].second);
 }
+
+template <typename... T>
+constexpr std::array<int, 5> toArray(T... arg) {
+  static_assert(sizeof...(T) <= 5);
+  std::array<int, 5> ret = {arg...};
+  return ret;
+}
+
+struct CodePointArray {
+  std::array<int, 5> codePoints;
+  unsigned int usedSize;
+
+  template <typename... T>
+  constexpr CodePointArray(int first, T &&...remain) // NOLINT
+      : codePoints(toArray(first, std::forward<T>(remain)...)), usedSize(sizeof...(T) + 1) {}
+};
+
+struct PROPERTY_TEST_ENTRY {
+  StringRef property;
+  StringRef value;
+  CodePointArray array;
+};
+
+#include "./ucp_property_test.in"
+
+struct PropertyTest : public ::testing::TestWithParam<PROPERTY_TEST_ENTRY> {
+  static void doTest() {
+    auto &entry = GetParam();
+    auto property = ucp::parseProperty(entry.property, entry.value, nullptr);
+    ASSERT_TRUE(property.hasValue());
+    for (unsigned int i = 0; i < entry.array.usedSize; i++) {
+      const int codePoint = entry.array.codePoints[i];
+      auto out = format("%s, %s = 0x%04X", entry.property.toString().c_str(),
+                        entry.value.toString().c_str(), codePoint);
+      SCOPED_TRACE(out);
+      auto set = ucp::getPropertySet(property.unwrap());
+      ASSERT_TRUE(set);
+      ASSERT_TRUE(set.ref().contains(codePoint));
+    }
+  }
+};
+
+TEST_P(PropertyTest, base) { ASSERT_NO_FATAL_FAILURE(doTest()); }
+
+INSTANTIATE_TEST_SUITE_P(PropertyTest, PropertyTest, ::testing::ValuesIn(property_test_table));
 
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);

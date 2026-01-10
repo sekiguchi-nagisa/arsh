@@ -2,28 +2,12 @@
 
 # download guniset to current
 
-let _old = { shctl set -d; $REPLY; }
-defer { shctl set -r $_old; }
-shctl set errraise
-
 var _install_dir = "./guniset_dir"
 test -d $_install_dir || mkdir $_install_dir
 $_install_dir = $_install_dir.realpath()
 
-pushd $_install_dir
-defer { popd; }
-
-let _version = "0.7.0"
-
-(test -x guniset && "$(./guniset -v)".split(" ")[0] == "v$_version") ||
-    (curl -L \
-        https://github.com/sekiguchi-nagisa/guniset/releases/download/v${_version}/guniset-$_version-$OSTYPE-$MACHTYPE \
-        > ./guniset && chmod +x ./guniset)
-
-./guniset download ./
-
-export-env GUNISET_DIR = $PWD
-let GUNISET_PATH = "$_install_dir/guniset".realpath()
+export-env GUNISET_DIR = $_install_dir
+let GUNISET_PATH = "$_install_dir/guniset"
 
 # helper function for code gen
 guniset() {
@@ -32,6 +16,24 @@ guniset() {
 
 db_header() {
     guniset info | grep -v 'GUNISET'
+}
+
+install_guniset() {
+    let _old = { shctl set -d; $REPLY; }
+    defer { shctl set -r $_old; }
+    shctl set errraise
+
+    pushd $_install_dir
+    defer { popd; }
+
+    let _version = "0.8.1"
+
+    (test -x guniset && "$(./guniset -v)".split(" ")[0] == "v$_version") ||
+        (curl -L \
+            https://github.com/sekiguchi-nagisa/guniset/releases/download/v${_version}/guniset-$_version-$OSTYPE-$MACHTYPE \
+            > ./guniset && chmod +x ./guniset)
+
+    ./guniset download ./
 }
 
 type CodePointSet() {
@@ -60,3 +62,5 @@ function createCodePointSet(setop: String): CodePointSet {
 function empty() : Bool for CodePointSet {
     return $this.bmp.empty() && $this.nonbmp.empty()
 }
+
+shctl is-sourced || install_guniset

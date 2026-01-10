@@ -6,6 +6,10 @@ var src = "$SCRIPT_DIR/../src".realpath()
 
 mkdir -p unicode-temp && cd unicode-temp
 
+## prepare
+call $SCRIPT_DIR/unicode/guniset_helper.arsh
+
+## generate unicode tables
 echo try to update $src/misc/unicode_version.in
 call $BIN_NAME $SCRIPT_DIR/unicode/gen_unicode_version.ds $src/misc/unicode_version.in
 
@@ -42,3 +46,6 @@ call $BIN_NAME $SCRIPT_DIR/unicode/gen_grapheme_break_test.ds $test/unicode/grap
 
 echo try to update $test/unicode/word_break_test.in
 call $BIN_NAME $SCRIPT_DIR/unicode/gen_word_break_test.ds $test/unicode/word_break_test.in
+
+echo try to update $test/unicode/ucp_property_test.in
+call $BIN_NAME $SCRIPT_DIR/unicode/gen_property_test.arsh --type=cpp $test/unicode/ucp_property_test.in
