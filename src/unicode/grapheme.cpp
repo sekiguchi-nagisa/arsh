@@ -15,6 +15,7 @@
  */
 
 #include "grapheme.h"
+#include "../misc/enum_util.hpp"
 
 namespace arsh {
 
@@ -27,42 +28,34 @@ GraphemeBoundary::BreakProperty GraphemeBoundary::getBreakProperty(const int cod
     return BreakProperty::Control; // invalid code points are always grapheme boundary
   }
 
-  using PropertyInterval = CodePointPropertyInterval<BreakProperty>;
-
-#define UNICODE_PROPERTY_RANGE PropertyInterval
-#define PROPERTY(E) BreakProperty::E
+#define UNICODE_PROPERTY_RANGE CodePointWithMeta
+#define PROPERTY(E) toUnderlying(BreakProperty::E)
 #include "grapheme_break_property.in"
 
 #undef PROPERTY
 #undef UNICODE_PROPERTY_RANGE
 
-  auto iter = std::lower_bound(std::begin(grapheme_break_property_table),
+  auto iter = std::upper_bound(std::begin(grapheme_break_property_table),
                                std::end(grapheme_break_property_table), codePoint,
-                               PropertyInterval::Comp());
+                               CodePointWithMeta::Comp());
   if (iter != std::end(grapheme_break_property_table)) {
-    if (auto &interval = *iter; interval.contains(codePoint)) {
-      return interval.property();
-    }
+    return static_cast<BreakProperty>((iter - 1)->getMeta());
   }
   return BreakProperty::Any;
 }
 
 GraphemeBoundary::BreakProperty GraphemeBoundary::getInCBExtendOrLinker(const int codePoint) {
-  using PropertyInterval = CodePointPropertyInterval<BreakProperty>;
-
-#define UNICODE_PROPERTY_RANGE PropertyInterval
-#define PROPERTY(E) BreakProperty::E
+#define UNICODE_PROPERTY_RANGE CodePointWithMeta
+#define PROPERTY(E) toUnderlying(BreakProperty::E)
 #include "incb_property.in"
 
 #undef PROPERTY
 #undef UNICODE_PROPERTY_RANGE
 
-  auto iter = std::lower_bound(std::begin(incb_property_table), std::end(incb_property_table),
-                               codePoint, PropertyInterval::Comp());
+  auto iter = std::upper_bound(std::begin(incb_property_table), std::end(incb_property_table),
+                               codePoint, CodePointWithMeta::Comp());
   if (iter != std::end(incb_property_table)) {
-    if (auto &interval = *iter; interval.contains(codePoint)) {
-      return interval.property();
-    }
+    return static_cast<BreakProperty>((iter - 1)->getMeta());
   }
   return BreakProperty::Any; // if no inCB
 }

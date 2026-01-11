@@ -16,6 +16,9 @@
 
 #include "word.h"
 
+#include "../misc/enum_util.hpp"
+#include "misc/unicode.hpp"
+
 namespace arsh {
 
 WordBreakProperty getWordBreakProperty(const int codePoint) {
@@ -23,10 +26,8 @@ WordBreakProperty getWordBreakProperty(const int codePoint) {
     return WordBreakProperty::Newline; // invalid code points are always word boundary
   }
 
-  using PropertyInterval = CodePointPropertyInterval<WordBreakProperty>;
-
-#define UNICODE_PROPERTY_RANGE PropertyInterval
-#define PROPERTY(E) WordBreakProperty::E
+#define UNICODE_PROPERTY_RANGE CodePointWithMeta
+#define PROPERTY(E) toUnderlying(WordBreakProperty::E)
 #define USE_WORD_BREAK_PROPERTY
 #include "word_break_property.in"
 
@@ -35,12 +36,10 @@ WordBreakProperty getWordBreakProperty(const int codePoint) {
 #undef UNICODE_PROPERTY_RANGE
 
   auto iter =
-      std::lower_bound(std::begin(word_break_property_table), std::end(word_break_property_table),
-                       codePoint, typename PropertyInterval::Comp());
+      std::upper_bound(std::begin(word_break_property_table), std::end(word_break_property_table),
+                       codePoint, CodePointWithMeta::Comp());
   if (iter != std::end(word_break_property_table)) {
-    if (auto &interval = *iter; interval.contains(codePoint)) {
-      return interval.property();
-    }
+    return static_cast<WordBreakProperty>((iter - 1)->getMeta());
   }
   return WordBreakProperty::Any;
 }

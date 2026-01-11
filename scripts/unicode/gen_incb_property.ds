@@ -126,10 +126,18 @@ $ranges = $minimize($ranges)
     echo
     echo // clang-format off
     echo "static constexpr UNICODE_PROPERTY_RANGE incb_property_table[] = {"
-} with >> $out
 
-for $r in $ranges {
-    echo "    { ${r.begin_str}, ${r.end_str}, PROPERTY(${r.property}) },"
-} with >> $out
+    let size = $ranges.size()
+    if $ranges[0].begin > 0 {
+        echo "    { 0x0000, PROPERTY(Any) },"
+    }
+    for(var i = 0; $i < $size; $i++) {
+        var r = $ranges[$i]
+        if $i > 0 && $ranges[$i-1].end + 1 < $r.begin {  # fill Any
+            printf "    { 0x%04X, PROPERTY(Any) },\n" ${$ranges[$i-1].end+1}
+        }
+        echo "    { ${r.begin_str}, PROPERTY(${r.property}) },"
+    }
 
-echo -e "};" >> $out
+    echo -e "};"
+} with >> $out

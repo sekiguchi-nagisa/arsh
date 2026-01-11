@@ -414,7 +414,7 @@ public:
 
   static CodePointWithMeta from(unsigned int v) { return CodePointWithMeta(v); }
 
-  CodePointWithMeta(int codePoint, unsigned char meta) : value(meta << 24) {
+  constexpr CodePointWithMeta(int codePoint, unsigned char meta) : value(meta << 24) {
     this->value |= codePoint < 0 ? 0xFFFFFF : static_cast<unsigned int>(codePoint) & 0xFFFFFF;
   }
 
@@ -426,6 +426,12 @@ public:
     unsigned int cc = this->value & 0xFFFFFF;
     return cc == 0xFFFFFF ? -1 : static_cast<int>(cc);
   }
+
+  struct Comp {
+    bool operator()(CodePointWithMeta l, int r) const { return l.codePoint() < r; }
+
+    bool operator()(int l, CodePointWithMeta r) const { return l < r.codePoint(); }
+  };
 };
 
 template <typename T>
