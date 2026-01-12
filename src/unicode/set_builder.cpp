@@ -32,6 +32,11 @@ void CodePointSetBuilder::add(CodePointSetRef ref) {
   for (auto &e : bmpRanges) {
     this->codePointRanges.emplace_back(e.firstBMP(), e.lastBMP());
   }
+  auto packedRanges = ref.getPackedNonBMPRanges();
+  this->codePointRanges.reserve(this->codePointRanges.size() + packedRanges.size());
+  for (auto &e : packedRanges) {
+    this->codePointRanges.emplace_back(e.firstNonBMP(), e.lastNonBMP());
+  }
   auto nonBmpRanges = ref.getNonBMPRanges();
   this->codePointRanges.reserve(this->codePointRanges.size() + nonBmpRanges.size());
   for (auto &e : nonBmpRanges) {

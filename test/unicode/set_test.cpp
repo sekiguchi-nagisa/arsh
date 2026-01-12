@@ -28,15 +28,18 @@ TEST(CodePointSetRefTest, base) {
       {0x3021, 0x3029},
       {0x3038, 0x303A},
       {0xA6E6, 0xA6EF},
+      // packed NON-BMP
+      PackedNonBMPCodePointRange::pack(0x10140,0x10174),
+      PackedNonBMPCodePointRange::pack(0x10341,0x10341),
       // NON-BMP
-      {0x10140},{0x10174},
-      {0x10341},{0x10341},
+      // {0x10140},{0x10174},
+      // {0x10341},{0x10341},
       {0x1034A},{0x1034A},
       {0x103D1},{0x103D5},
       {0x12400},{0x1246E},
       // clang-format on
   };
-  CodePointSetRef setRef(7, table, std::size(table));
+  CodePointSetRef setRef(7, 2, table, std::size(table));
 
   // BMP
   const auto bmpRanges = setRef.getBMPRanges();
@@ -47,13 +50,22 @@ TEST(CodePointSetRefTest, base) {
     ASSERT_EQ(orgBMP[i].second, bmpRanges[i].lastBMP());
   }
 
+  // packed-NonBMP
+  const auto packedRanges = setRef.getPackedNonBMPRanges();
+  ASSERT_EQ(2, packedRanges.size());
+  for (size_t i = 0; i < 2; i++) {
+    SCOPED_TRACE("index=" + std::to_string(i));
+    ASSERT_EQ(orgNonBMP[i].first, packedRanges[i].firstNonBMP());
+    ASSERT_EQ(orgNonBMP[i].second, packedRanges[i].lastNonBMP());
+  }
+
   // NonBMP
   const auto nonBmpRanges = setRef.getNonBMPRanges();
-  ASSERT_EQ(std::size(orgNonBMP), nonBmpRanges.size());
-  for (size_t i = 0; i < std::size(orgNonBMP); i++) {
+  ASSERT_EQ(std::size(orgNonBMP) - 2, nonBmpRanges.size());
+  for (size_t i = 2; i < std::size(orgNonBMP); i++) {
     SCOPED_TRACE("index=" + std::to_string(i));
-    ASSERT_EQ(orgNonBMP[i].first, nonBmpRanges[i].firstNonBMP());
-    ASSERT_EQ(orgNonBMP[i].second, nonBmpRanges[i].lastNonBMP());
+    ASSERT_EQ(orgNonBMP[i].first, nonBmpRanges[i - 2].firstNonBMP());
+    ASSERT_EQ(orgNonBMP[i].second, nonBmpRanges[i - 2].lastNonBMP());
   }
 
   // lookup
@@ -377,10 +389,11 @@ TEST(SetBuilderTest, complement1) {
     {200, 300},
     {400, 500},
     {UINT16_MAX-100, UINT16_MAX},
-    {UINT16_MAX+1},{UINT16_MAX+100},
+    PackedNonBMPCodePointRange::pack(UINT16_MAX+1, UINT16_MAX+50),
+    {UINT16_MAX+51},{UINT16_MAX+100},
       // clang-format on
   };
-  constexpr CodePointSetRef ref(4, table, std::size(table));
+  constexpr CodePointSetRef ref(4, 1, table, std::size(table));
 
   //
   CodePointSetBuilder builder;

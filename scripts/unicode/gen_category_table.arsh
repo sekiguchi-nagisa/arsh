@@ -48,20 +48,23 @@ let cateNames : [String: [String]]
 ## generate each category set table
 auto_gen_header > $out
 
-var bmpSizeMap: [String: Int]
+var sizeMap: [String: OffsetEntry]
+var offset = 0
+write "static constexpr PROPERTY_SET_RANGE category_set_table_except_Cn[] = {"
 for cate in $cates {
-    var set = $createCodePointSet("cat:$cate")
-    write "static constexpr PROPERTY_SET_RANGE category_set_table_$cate[] = {"
+    var set = $createCodePointSet("cat:$cate", $true)
+    write "    /* $cate */"
     $set.emit() with >> $out
-    write "};"
-    $bmpSizeMap.put($cate, $set.bmp.size())
+    $sizeMap.put($cate, $set.toOffsetEntry($offset))
+    $offset += $set.tableSize()
 }
+write "};"
 
 ## generate final table
 write 
-write "static constexpr PROPERTY_SET_RANGE_TABLE category_set_table_except_Cn[] = {"
-for cate, s in $bmpSizeMap {
-    write "    {$s, category_set_table_$cate, std::size(category_set_table_$cate)}, // $cate"
+write "static constexpr PROPERTY_SET_RANGE_TABLE_OFFSET category_set_table_offset_except_Cn[] = {"
+for cate, s in $sizeMap {
+    write "    {${$s.str()}}, // $cate"
 }
 write "};"
 

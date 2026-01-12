@@ -24,6 +24,15 @@ namespace arsh::ucp {
 
 #define PROPERTY_SET_RANGE BMPCodePointRange
 #define PROPERTY_SET_RANGE_TABLE CodePointSetRef
+#define PACKED(F, L) PackedNonBMPCodePointRange::pack(F, L)
+#define PROPERTY_SET_RANGE_TABLE_OFFSET OffsetEntry
+
+struct OffsetEntry {
+  unsigned short offset;
+  unsigned short bmpSize;
+  unsigned short packedSize;
+  unsigned short tableSize;
+};
 
 // ==============================
 // ==     General Category     ==
@@ -57,10 +66,20 @@ Optional<Category> parseCategory(const StringRef ref) {
   return {};
 }
 
+constexpr unsigned int categoryTableSize() {
+  return std::size(category_set_table_offset_except_Cn);
+}
+
+static CodePointSetRef getCategoryTable(unsigned int index) {
+  assert(index < categoryTableSize());
+  const OffsetEntry &e = category_set_table_offset_except_Cn[index];
+  return {e.bmpSize, e.packedSize, category_set_table_except_Cn + e.offset, e.tableSize};
+}
+
 Optional<Category> getCategory(const int codePoint) {
   if (UnicodeUtil::isValidCodePoint(codePoint)) {
-    for (unsigned int i = 0; i < std::size(category_set_table_except_Cn); i++) {
-      if (category_set_table_except_Cn[i].contains(codePoint)) {
+    for (unsigned int i = 0; i < categoryTableSize(); i++) {
+      if (getCategoryTable(i).contains(codePoint)) {
         return static_cast<Category>(i);
       }
     }
@@ -114,7 +133,7 @@ static bool getCategorySet(const Category category, BuilderOrSet out) {
 #define GEN_CASE(E, S) case Category::E:
     EACH_UCP_GENERAL_CATEGORY_PRIME(GEN_CASE)
 #undef GEN_CASE
-    if (auto ref = category_set_table_except_Cn[toUnderlying(category)]; out.isBuilder) {
+    if (auto ref = getCategoryTable(toUnderlying(category)); out.isBuilder) {
       out.builder->add(ref);
     } else {
       *out.set = CodePointSet::borrow(ref);
@@ -133,8 +152,8 @@ static bool getCategorySet(const Category category, BuilderOrSet out) {
       b = out.builder;
     }
     for (auto c : lookupCategoryCombination(category).combination) {
-      if (unsigned int index = toUnderlying(c); index < std::size(category_set_table_except_Cn)) {
-        b->add(category_set_table_except_Cn[index]);
+      if (unsigned int index = toUnderlying(c); index < categoryTableSize()) {
+        b->add(getCategoryTable(index));
       }
     }
     if (!out.isBuilder) {
@@ -146,14 +165,14 @@ static bool getCategorySet(const Category category, BuilderOrSet out) {
   case Category::C: {
     // build Cn
     CodePointSetBuilder builder;
-    for (auto c : category_set_table_except_Cn) {
-      builder.add(c);
+    for (unsigned int i = 0; i < categoryTableSize(); i++) {
+      builder.add(getCategoryTable(i));
     }
     builder.complement();
 
     if (category == Category::C) {
       for (auto c : {Category::Cc, Category::Cf, Category::Cs, Category::Co}) {
-        builder.add(category_set_table_except_Cn[toUnderlying(c)]);
+        builder.add(getCategoryTable(toUnderlying(c)));
       }
     }
     if (auto tmp = builder.build(); out.isBuilder) {
@@ -205,10 +224,18 @@ StringRef toString(Script script, bool longName) {
   return "";
 }
 
+constexpr unsigned int scriptTableSize() { return std::size(script_set_table_offset_except_Zzzz); }
+
+static CodePointSetRef getScriptTable(unsigned int index) {
+  assert(index < scriptTableSize());
+  const OffsetEntry &e = script_set_table_offset_except_Zzzz[index];
+  return {e.bmpSize, e.packedSize, script_set_table_except_Zzzz + e.offset, e.tableSize};
+}
+
 Optional<Script> getScript(const int codePoint) {
   if (UnicodeUtil::isValidCodePoint(codePoint)) {
-    for (unsigned int i = 0; i < std::size(script_set_table_except_Zzzz); i++) {
-      if (script_set_table_except_Zzzz[i].contains(codePoint)) {
+    for (unsigned int i = 0; i < scriptTableSize(); i++) {
+      if (getScriptTable(i).contains(codePoint)) {
         return static_cast<Script>(i);
       }
     }
@@ -231,7 +258,7 @@ static bool getScriptSet(const Script script, BuilderOrSet out) {
 #define GEN_CASE(E, S) case Script::E:
     EACH_UCP_SCRIPT_PRIME(GEN_CASE)
 #undef GEN_CASE
-    if (auto ref = script_set_table_except_Zzzz[toUnderlying(script)]; out.isBuilder) {
+    if (auto ref = getScriptTable(toUnderlying(script)); out.isBuilder) {
       out.builder->add(ref);
     } else {
       *out.set = CodePointSet::borrow(ref);
@@ -239,8 +266,8 @@ static bool getScriptSet(const Script script, BuilderOrSet out) {
     return true;
   case Script::Zzzz: {
     CodePointSetBuilder builder;
-    for (auto &e : script_set_table_except_Zzzz) {
-      builder.add(e);
+    for (unsigned int i = 0; i < scriptTableSize(); i++) {
+      builder.add(getScriptTable(i));
     }
     builder.complement();
     if (auto tmp = builder.build(); out.isBuilder) {
@@ -257,9 +284,9 @@ static bool getScriptSet(const Script script, BuilderOrSet out) {
 static bool getScriptXSet(const Script script, BuilderOrSet out) {
   CodePointSetRef ref;
   switch (script) {
-#define GEN_CASE(E, B)                                                                             \
+#define GEN_CASE(E, O, B, P, S)                                                                    \
   case Script::E:                                                                                  \
-    ref = {B, scriptx_set_table_##E, std::size(scriptx_set_table_##E)};                            \
+    ref = {B, P, scriptx_set_table + (O), S};                                                      \
     break;
     EACH_UCP_SCRIPT_EXTENSION(GEN_CASE)
 #undef GEN_CASE

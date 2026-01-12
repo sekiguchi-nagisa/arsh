@@ -76,15 +76,50 @@ public:
   };
 };
 
+class PackedNonBMPCodePointRange : public BMPCodePointRange {
+public:
+  /**
+   *
+   * @param first
+   * @param size must be less than 2048 (1<<11)
+   */
+  constexpr PackedNonBMPCodePointRange(int first, unsigned int size)
+      : BMPCodePointRange(static_cast<uint32_t>(first) | (size << 21)) {}
+
+  static constexpr auto pack(int first, int last) {
+    if (first <= last && (last - first) < (1 << 11)) {
+      return PackedNonBMPCodePointRange(first, static_cast<unsigned int>(last - first));
+    }
+    throw 23;
+  }
+
+  int firstNonBMP() const { return static_cast<int>(this->underlying() & 0x1FFFFF); }
+
+  int lastNonBMP() const {
+    return this->firstNonBMP() + static_cast<int>(this->underlying() >> 21);
+  }
+
+  struct SearchComp {
+    bool operator()(const PackedNonBMPCodePointRange &x, int y) const { return x.lastNonBMP() < y; }
+
+    bool operator()(int x, const PackedNonBMPCodePointRange &y) const {
+      return x < y.firstNonBMP();
+    }
+  };
+};
+
 class CodePointSetRef {
 private:
   static_assert(sizeof(BMPCodePointRange) == sizeof(uint32_t));
   static_assert(sizeof(NonBMPCodePointRange) == sizeof(uint32_t) * 2);
+  static_assert(sizeof(PackedNonBMPCodePointRange) == sizeof(uint32_t));
   static_assert(std::is_trivially_destructible_v<BMPCodePointRange>);
   static_assert(std::is_trivially_destructible_v<NonBMPCodePointRange>);
+  static_assert(std::is_trivially_destructible_v<PackedNonBMPCodePointRange>);
 
   const BMPCodePointRange *ptr{nullptr};
   unsigned short bmpSize{0};
+  unsigned short packedNonBmpSize{0};
   unsigned int size{0};
 
 public:
@@ -93,21 +128,33 @@ public:
   constexpr CodePointSetRef(unsigned short bmpSize, const BMPCodePointRange *ptr, unsigned int size)
       : ptr(ptr), bmpSize(bmpSize), size(size) {}
 
+  constexpr CodePointSetRef(unsigned short bmpSize, unsigned short packedSize,
+                            const BMPCodePointRange *ptr, unsigned int size)
+      : ptr(ptr), bmpSize(bmpSize), packedNonBmpSize(packedSize), size(size) {}
+
   explicit operator bool() const { return this->size > 0; }
 
   const BMPCodePointRange *getPtr() const { return this->ptr; }
 
   unsigned short getBMPSize() const { return this->bmpSize; }
 
+  unsigned short getPackedNonBMPSize() const { return this->packedNonBmpSize; }
+
   unsigned int getSize() const { return this->size; }
 
   ArrayRef<BMPCodePointRange> getBMPRanges() const { return {this->ptr, this->bmpSize}; }
 
+  ArrayRef<PackedNonBMPCodePointRange> getPackedNonBMPRanges() const {
+    auto *remain = static_cast<const PackedNonBMPCodePointRange *>(this->ptr + this->bmpSize);
+    return {remain, this->packedNonBmpSize};
+  }
+
   ArrayRef<NonBMPCodePointRange> getNonBMPRanges() const {
-    assert(this->bmpSize <= this->size);
-    assert((this->size - this->bmpSize) % 2 == 0);
-    unsigned int remainSize = (this->size - this->bmpSize) / 2;
-    auto *remain = static_cast<const NonBMPCodePointRange *>(this->ptr + this->bmpSize);
+    assert(this->bmpSize + this->packedNonBmpSize <= this->size);
+    assert((this->size - this->bmpSize - this->packedNonBmpSize) % 2 == 0);
+    unsigned int remainSize = (this->size - this->bmpSize - this->packedNonBmpSize) / 2;
+    auto *remain = static_cast<const NonBMPCodePointRange *>(this->ptr + this->bmpSize +
+                                                             this->packedNonBmpSize);
     return {remain, remainSize};
   }
 
@@ -120,6 +167,13 @@ public:
       return std::binary_search(ranges.begin(), ranges.end(), static_cast<uint16_t>(codePoint),
                                 BMPCodePointRange::SearchComp());
     }
+    if (this->packedNonBmpSize) {
+      auto packedRanges = this->getPackedNonBMPRanges();
+      if (std::binary_search(packedRanges.begin(), packedRanges.end(), codePoint,
+                             PackedNonBMPCodePointRange::SearchComp())) {
+        return true;
+      }
+    }
     auto ranges = this->getNonBMPRanges();
     return std::binary_search(ranges.begin(), ranges.end(), codePoint,
                               NonBMPCodePointRange::SearchComp());
@@ -129,26 +183,38 @@ public:
 class CodePointSet {
 private:
   BMPCodePointRange *ptr{nullptr};
-  unsigned int size{0};
   unsigned short bmpSize{0};
-  bool borrowed{true}; // if true, not delete `ptr`
+  unsigned short packedNonBmpSize{0};
+  unsigned int sizeWithMeta{0}; // | 1bit (1:owned, 0:borrowed) | 31bit (set size, up to 21bit) |
 
-  CodePointSet(unsigned short bmpSize, BMPCodePointRange *ptr, unsigned int size, bool borrowed)
-      : ptr(ptr), size(size), bmpSize(bmpSize), borrowed(borrowed) {}
+  CodePointSet(unsigned short bmpSize, unsigned short packedSize, BMPCodePointRange *ptr,
+               unsigned int size, bool borrowed)
+      : ptr(ptr), bmpSize(bmpSize), packedNonBmpSize(packedSize),
+        sizeWithMeta(size | ((borrowed ? 0 : 1) << 31)) {}
 
 public:
-  static CodePointSet take(unsigned short bmpSize, FlexBuffer<BMPCodePointRange> &&buf) {
+  static CodePointSet take(unsigned short bmpSize, unsigned short packedSize,
+                           FlexBuffer<BMPCodePointRange> &&buf) {
     unsigned int size = buf.size();
-    return {bmpSize, buf.take(), size, false};
+    return {bmpSize, packedSize, buf.take(), size, false};
+  }
+
+  static CodePointSet take(unsigned short bmpSize, FlexBuffer<BMPCodePointRange> &&buf) {
+    return take(bmpSize, 0, std::move(buf));
+  }
+
+  static CodePointSet borrow(unsigned short bmpSize, unsigned short packedSize,
+                             const BMPCodePointRange *ptr, unsigned int size) {
+    return {bmpSize, packedSize, const_cast<BMPCodePointRange *>(ptr), size, true};
   }
 
   static CodePointSet borrow(unsigned short bmpSize, const BMPCodePointRange *ptr,
                              unsigned int size) {
-    return {bmpSize, const_cast<BMPCodePointRange *>(ptr), size, true};
+    return borrow(bmpSize, 0, ptr, size);
   }
 
   static CodePointSet borrow(const CodePointSetRef ref) {
-    return borrow(ref.getBMPSize(), ref.getPtr(), ref.getSize());
+    return borrow(ref.getBMPSize(), ref.getPackedNonBMPSize(), ref.getPtr(), ref.getSize());
   }
 
   CodePointSet() = default;
@@ -156,13 +222,14 @@ public:
   NON_COPYABLE(CodePointSet);
 
   CodePointSet(CodePointSet &&o) noexcept
-      : ptr(o.ptr), size(o.size), bmpSize(o.bmpSize), borrowed(o.borrowed) {
+      : ptr(o.ptr), bmpSize(o.bmpSize), packedNonBmpSize(o.packedNonBmpSize),
+        sizeWithMeta(o.sizeWithMeta) {
     o.ptr = nullptr;
-    o.borrowed = true;
+    o.sizeWithMeta = o.getSize(); // clear first bit
   }
 
   ~CodePointSet() {
-    if (!this->borrowed) {
+    if (this->isOwned()) {
       free(this->ptr);
     }
   }
@@ -177,11 +244,13 @@ public:
 
   explicit operator bool() const { return this->getSize() > 0; }
 
-  bool isBorrowed() const { return this->borrowed; }
+  bool isOwned() const { return (this->sizeWithMeta >> 31) == 1; }
 
-  unsigned int getSize() const { return this->size; }
+  unsigned int getSize() const { return this->sizeWithMeta & ((1u << 31) - 1); }
 
   unsigned short getBMPSize() const { return this->bmpSize; }
+
+  unsigned short getPackedNonBMPSize() const { return this->packedNonBmpSize; }
 
   BMPCodePointRange *take() && {
     auto *p = this->ptr;
@@ -189,7 +258,9 @@ public:
     return p;
   }
 
-  CodePointSetRef ref() const { return {this->bmpSize, this->ptr, this->size}; }
+  CodePointSetRef ref() const {
+    return {this->bmpSize, this->packedNonBmpSize, this->ptr, this->getSize()};
+  }
 };
 
 END_MISC_LIB_NAMESPACE_DECL

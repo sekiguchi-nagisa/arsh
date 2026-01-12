@@ -14,7 +14,8 @@
 
 // clang-format off
 
-static constexpr PROPERTY_SET_RANGE script_set_table_Zyyy[] = {
+static constexpr PROPERTY_SET_RANGE script_set_table_except_Zzzz[] = {
+    /* Zyyy */
     // BMP
     { 0x0000, 0x0040 },
     { 0x005B, 0x0060 },
@@ -106,95 +107,95 @@ static constexpr PROPERTY_SET_RANGE script_set_table_Zyyy[] = {
     { 0xFFE0, 0xFFE6 },
     { 0xFFE8, 0xFFEE },
     { 0xFFF9, 0xFFFD },
+    // Packed-Non-BMP
+    PACKED(0x10100, 0x10102),
+    PACKED(0x10107, 0x10133),
+    PACKED(0x10137, 0x1013F),
+    PACKED(0x10190, 0x1019C),
+    PACKED(0x101D0, 0x101FC),
+    PACKED(0x102E1, 0x102FB),
+    PACKED(0x1BCA0, 0x1BCA3),
+    PACKED(0x1CC00, 0x1CCFC),
+    PACKED(0x1CD00, 0x1CEB3),
+    PACKED(0x1CEBA, 0x1CED0),
+    PACKED(0x1CEE0, 0x1CEF0),
+    PACKED(0x1CF50, 0x1CFC3),
+    PACKED(0x1D000, 0x1D0F5),
+    PACKED(0x1D100, 0x1D126),
+    PACKED(0x1D129, 0x1D166),
+    PACKED(0x1D16A, 0x1D17A),
+    PACKED(0x1D183, 0x1D184),
+    PACKED(0x1D18C, 0x1D1A9),
+    PACKED(0x1D1AE, 0x1D1EA),
+    PACKED(0x1D2C0, 0x1D2D3),
+    PACKED(0x1D2E0, 0x1D2F3),
+    PACKED(0x1D300, 0x1D356),
+    PACKED(0x1D360, 0x1D378),
+    PACKED(0x1D400, 0x1D454),
+    PACKED(0x1D456, 0x1D49C),
+    PACKED(0x1D49E, 0x1D49F),
+    PACKED(0x1D4A2, 0x1D4A2),
+    PACKED(0x1D4A5, 0x1D4A6),
+    PACKED(0x1D4A9, 0x1D4AC),
+    PACKED(0x1D4AE, 0x1D4B9),
+    PACKED(0x1D4BB, 0x1D4BB),
+    PACKED(0x1D4BD, 0x1D4C3),
+    PACKED(0x1D4C5, 0x1D505),
+    PACKED(0x1D507, 0x1D50A),
+    PACKED(0x1D50D, 0x1D514),
+    PACKED(0x1D516, 0x1D51C),
+    PACKED(0x1D51E, 0x1D539),
+    PACKED(0x1D53B, 0x1D53E),
+    PACKED(0x1D540, 0x1D544),
+    PACKED(0x1D546, 0x1D546),
+    PACKED(0x1D54A, 0x1D550),
+    PACKED(0x1D552, 0x1D6A5),
+    PACKED(0x1D6A8, 0x1D7CB),
+    PACKED(0x1D7CE, 0x1D7FF),
+    PACKED(0x1EC71, 0x1ECB4),
+    PACKED(0x1ED01, 0x1ED3D),
+    PACKED(0x1F000, 0x1F02B),
+    PACKED(0x1F030, 0x1F093),
+    PACKED(0x1F0A0, 0x1F0AE),
+    PACKED(0x1F0B1, 0x1F0BF),
+    PACKED(0x1F0C1, 0x1F0CF),
+    PACKED(0x1F0D1, 0x1F0F5),
+    PACKED(0x1F100, 0x1F1AD),
+    PACKED(0x1F1E6, 0x1F1FF),
+    PACKED(0x1F201, 0x1F202),
+    PACKED(0x1F210, 0x1F23B),
+    PACKED(0x1F240, 0x1F248),
+    PACKED(0x1F250, 0x1F251),
+    PACKED(0x1F260, 0x1F265),
+    PACKED(0x1F300, 0x1F6D8),
+    PACKED(0x1F6DC, 0x1F6EC),
+    PACKED(0x1F6F0, 0x1F6FC),
+    PACKED(0x1F700, 0x1F7D9),
+    PACKED(0x1F7E0, 0x1F7EB),
+    PACKED(0x1F7F0, 0x1F7F0),
+    PACKED(0x1F800, 0x1F80B),
+    PACKED(0x1F810, 0x1F847),
+    PACKED(0x1F850, 0x1F859),
+    PACKED(0x1F860, 0x1F887),
+    PACKED(0x1F890, 0x1F8AD),
+    PACKED(0x1F8B0, 0x1F8BB),
+    PACKED(0x1F8C0, 0x1F8C1),
+    PACKED(0x1F8D0, 0x1F8D8),
+    PACKED(0x1F900, 0x1FA57),
+    PACKED(0x1FA60, 0x1FA6D),
+    PACKED(0x1FA70, 0x1FA7C),
+    PACKED(0x1FA80, 0x1FA8A),
+    PACKED(0x1FA8E, 0x1FAC6),
+    PACKED(0x1FAC8, 0x1FAC8),
+    PACKED(0x1FACD, 0x1FADC),
+    PACKED(0x1FADF, 0x1FAEA),
+    PACKED(0x1FAEF, 0x1FAF8),
+    PACKED(0x1FB00, 0x1FB92),
+    PACKED(0x1FB94, 0x1FBFA),
+    PACKED(0xE0001, 0xE0001),
+    PACKED(0xE0020, 0xE007F),
     // Non-BMP
-    { 0x10100 }, { 0x10102 },
-    { 0x10107 }, { 0x10133 },
-    { 0x10137 }, { 0x1013F },
-    { 0x10190 }, { 0x1019C },
-    { 0x101D0 }, { 0x101FC },
-    { 0x102E1 }, { 0x102FB },
-    { 0x1BCA0 }, { 0x1BCA3 },
-    { 0x1CC00 }, { 0x1CCFC },
-    { 0x1CD00 }, { 0x1CEB3 },
-    { 0x1CEBA }, { 0x1CED0 },
-    { 0x1CEE0 }, { 0x1CEF0 },
-    { 0x1CF50 }, { 0x1CFC3 },
-    { 0x1D000 }, { 0x1D0F5 },
-    { 0x1D100 }, { 0x1D126 },
-    { 0x1D129 }, { 0x1D166 },
-    { 0x1D16A }, { 0x1D17A },
-    { 0x1D183 }, { 0x1D184 },
-    { 0x1D18C }, { 0x1D1A9 },
-    { 0x1D1AE }, { 0x1D1EA },
-    { 0x1D2C0 }, { 0x1D2D3 },
-    { 0x1D2E0 }, { 0x1D2F3 },
-    { 0x1D300 }, { 0x1D356 },
-    { 0x1D360 }, { 0x1D378 },
-    { 0x1D400 }, { 0x1D454 },
-    { 0x1D456 }, { 0x1D49C },
-    { 0x1D49E }, { 0x1D49F },
-    { 0x1D4A2 }, { 0x1D4A2 },
-    { 0x1D4A5 }, { 0x1D4A6 },
-    { 0x1D4A9 }, { 0x1D4AC },
-    { 0x1D4AE }, { 0x1D4B9 },
-    { 0x1D4BB }, { 0x1D4BB },
-    { 0x1D4BD }, { 0x1D4C3 },
-    { 0x1D4C5 }, { 0x1D505 },
-    { 0x1D507 }, { 0x1D50A },
-    { 0x1D50D }, { 0x1D514 },
-    { 0x1D516 }, { 0x1D51C },
-    { 0x1D51E }, { 0x1D539 },
-    { 0x1D53B }, { 0x1D53E },
-    { 0x1D540 }, { 0x1D544 },
-    { 0x1D546 }, { 0x1D546 },
-    { 0x1D54A }, { 0x1D550 },
-    { 0x1D552 }, { 0x1D6A5 },
-    { 0x1D6A8 }, { 0x1D7CB },
-    { 0x1D7CE }, { 0x1D7FF },
-    { 0x1EC71 }, { 0x1ECB4 },
-    { 0x1ED01 }, { 0x1ED3D },
-    { 0x1F000 }, { 0x1F02B },
-    { 0x1F030 }, { 0x1F093 },
-    { 0x1F0A0 }, { 0x1F0AE },
-    { 0x1F0B1 }, { 0x1F0BF },
-    { 0x1F0C1 }, { 0x1F0CF },
-    { 0x1F0D1 }, { 0x1F0F5 },
-    { 0x1F100 }, { 0x1F1AD },
-    { 0x1F1E6 }, { 0x1F1FF },
-    { 0x1F201 }, { 0x1F202 },
-    { 0x1F210 }, { 0x1F23B },
-    { 0x1F240 }, { 0x1F248 },
-    { 0x1F250 }, { 0x1F251 },
-    { 0x1F260 }, { 0x1F265 },
-    { 0x1F300 }, { 0x1F6D8 },
-    { 0x1F6DC }, { 0x1F6EC },
-    { 0x1F6F0 }, { 0x1F6FC },
-    { 0x1F700 }, { 0x1F7D9 },
-    { 0x1F7E0 }, { 0x1F7EB },
-    { 0x1F7F0 }, { 0x1F7F0 },
-    { 0x1F800 }, { 0x1F80B },
-    { 0x1F810 }, { 0x1F847 },
-    { 0x1F850 }, { 0x1F859 },
-    { 0x1F860 }, { 0x1F887 },
-    { 0x1F890 }, { 0x1F8AD },
-    { 0x1F8B0 }, { 0x1F8BB },
-    { 0x1F8C0 }, { 0x1F8C1 },
-    { 0x1F8D0 }, { 0x1F8D8 },
-    { 0x1F900 }, { 0x1FA57 },
-    { 0x1FA60 }, { 0x1FA6D },
-    { 0x1FA70 }, { 0x1FA7C },
-    { 0x1FA80 }, { 0x1FA8A },
-    { 0x1FA8E }, { 0x1FAC6 },
-    { 0x1FAC8 }, { 0x1FAC8 },
-    { 0x1FACD }, { 0x1FADC },
-    { 0x1FADF }, { 0x1FAEA },
-    { 0x1FAEF }, { 0x1FAF8 },
-    { 0x1FB00 }, { 0x1FB92 },
-    { 0x1FB94 }, { 0x1FBFA },
-    { 0xE0001 }, { 0xE0001 },
-    { 0xE0020 }, { 0xE007F },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Latn[] = {
+    /* Latn */
     // BMP
     { 0x0041, 0x005A },
     { 0x0061, 0x007A },
@@ -227,14 +228,14 @@ static constexpr PROPERTY_SET_RANGE script_set_table_Latn[] = {
     { 0xFB00, 0xFB06 },
     { 0xFF21, 0xFF3A },
     { 0xFF41, 0xFF5A },
+    // Packed-Non-BMP
+    PACKED(0x10780, 0x10785),
+    PACKED(0x10787, 0x107B0),
+    PACKED(0x107B2, 0x107BA),
+    PACKED(0x1DF00, 0x1DF1E),
+    PACKED(0x1DF25, 0x1DF2A),
     // Non-BMP
-    { 0x10780 }, { 0x10785 },
-    { 0x10787 }, { 0x107B0 },
-    { 0x107B2 }, { 0x107BA },
-    { 0x1DF00 }, { 0x1DF1E },
-    { 0x1DF25 }, { 0x1DF2A },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Grek[] = {
+    /* Grek */
     // BMP
     { 0x0370, 0x0373 },
     { 0x0375, 0x0377 },
@@ -269,12 +270,12 @@ static constexpr PROPERTY_SET_RANGE script_set_table_Grek[] = {
     { 0x1FF6, 0x1FFE },
     { 0x2126, 0x2126 },
     { 0xAB65, 0xAB65 },
+    // Packed-Non-BMP
+    PACKED(0x10140, 0x1018E),
+    PACKED(0x101A0, 0x101A0),
+    PACKED(0x1D200, 0x1D245),
     // Non-BMP
-    { 0x10140 }, { 0x1018E },
-    { 0x101A0 }, { 0x101A0 },
-    { 0x1D200 }, { 0x1D245 },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Cyrl[] = {
+    /* Cyrl */
     // BMP
     { 0x0400, 0x0484 },
     { 0x0487, 0x052F },
@@ -284,19 +285,18 @@ static constexpr PROPERTY_SET_RANGE script_set_table_Cyrl[] = {
     { 0x2DE0, 0x2DFF },
     { 0xA640, 0xA69F },
     { 0xFE2E, 0xFE2F },
+    // Packed-Non-BMP
+    PACKED(0x1E030, 0x1E06D),
+    PACKED(0x1E08F, 0x1E08F),
     // Non-BMP
-    { 0x1E030 }, { 0x1E06D },
-    { 0x1E08F }, { 0x1E08F },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Armn[] = {
+    /* Armn */
     // BMP
     { 0x0531, 0x0556 },
     { 0x0559, 0x058A },
     { 0x058D, 0x058F },
     { 0xFB13, 0xFB17 },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Hebr[] = {
+    /* Hebr */
     // BMP
     { 0x0591, 0x05C7 },
     { 0x05D0, 0x05EA },
@@ -308,8 +308,7 @@ static constexpr PROPERTY_SET_RANGE script_set_table_Hebr[] = {
     { 0xFB43, 0xFB44 },
     { 0xFB46, 0xFB4F },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Arab[] = {
+    /* Arab */
     // BMP
     { 0x0600, 0x0604 },
     { 0x0606, 0x060B },
@@ -329,69 +328,67 @@ static constexpr PROPERTY_SET_RANGE script_set_table_Arab[] = {
     { 0xFDF0, 0xFDFF },
     { 0xFE70, 0xFE74 },
     { 0xFE76, 0xFEFC },
+    // Packed-Non-BMP
+    PACKED(0x10E60, 0x10E7E),
+    PACKED(0x10EC2, 0x10EC7),
+    PACKED(0x10ED0, 0x10ED8),
+    PACKED(0x10EFA, 0x10EFF),
+    PACKED(0x1EE00, 0x1EE03),
+    PACKED(0x1EE05, 0x1EE1F),
+    PACKED(0x1EE21, 0x1EE22),
+    PACKED(0x1EE24, 0x1EE24),
+    PACKED(0x1EE27, 0x1EE27),
+    PACKED(0x1EE29, 0x1EE32),
+    PACKED(0x1EE34, 0x1EE37),
+    PACKED(0x1EE39, 0x1EE39),
+    PACKED(0x1EE3B, 0x1EE3B),
+    PACKED(0x1EE42, 0x1EE42),
+    PACKED(0x1EE47, 0x1EE47),
+    PACKED(0x1EE49, 0x1EE49),
+    PACKED(0x1EE4B, 0x1EE4B),
+    PACKED(0x1EE4D, 0x1EE4F),
+    PACKED(0x1EE51, 0x1EE52),
+    PACKED(0x1EE54, 0x1EE54),
+    PACKED(0x1EE57, 0x1EE57),
+    PACKED(0x1EE59, 0x1EE59),
+    PACKED(0x1EE5B, 0x1EE5B),
+    PACKED(0x1EE5D, 0x1EE5D),
+    PACKED(0x1EE5F, 0x1EE5F),
+    PACKED(0x1EE61, 0x1EE62),
+    PACKED(0x1EE64, 0x1EE64),
+    PACKED(0x1EE67, 0x1EE6A),
+    PACKED(0x1EE6C, 0x1EE72),
+    PACKED(0x1EE74, 0x1EE77),
+    PACKED(0x1EE79, 0x1EE7C),
+    PACKED(0x1EE7E, 0x1EE7E),
+    PACKED(0x1EE80, 0x1EE89),
+    PACKED(0x1EE8B, 0x1EE9B),
+    PACKED(0x1EEA1, 0x1EEA3),
+    PACKED(0x1EEA5, 0x1EEA9),
+    PACKED(0x1EEAB, 0x1EEBB),
+    PACKED(0x1EEF0, 0x1EEF1),
     // Non-BMP
-    { 0x10E60 }, { 0x10E7E },
-    { 0x10EC2 }, { 0x10EC7 },
-    { 0x10ED0 }, { 0x10ED8 },
-    { 0x10EFA }, { 0x10EFF },
-    { 0x1EE00 }, { 0x1EE03 },
-    { 0x1EE05 }, { 0x1EE1F },
-    { 0x1EE21 }, { 0x1EE22 },
-    { 0x1EE24 }, { 0x1EE24 },
-    { 0x1EE27 }, { 0x1EE27 },
-    { 0x1EE29 }, { 0x1EE32 },
-    { 0x1EE34 }, { 0x1EE37 },
-    { 0x1EE39 }, { 0x1EE39 },
-    { 0x1EE3B }, { 0x1EE3B },
-    { 0x1EE42 }, { 0x1EE42 },
-    { 0x1EE47 }, { 0x1EE47 },
-    { 0x1EE49 }, { 0x1EE49 },
-    { 0x1EE4B }, { 0x1EE4B },
-    { 0x1EE4D }, { 0x1EE4F },
-    { 0x1EE51 }, { 0x1EE52 },
-    { 0x1EE54 }, { 0x1EE54 },
-    { 0x1EE57 }, { 0x1EE57 },
-    { 0x1EE59 }, { 0x1EE59 },
-    { 0x1EE5B }, { 0x1EE5B },
-    { 0x1EE5D }, { 0x1EE5D },
-    { 0x1EE5F }, { 0x1EE5F },
-    { 0x1EE61 }, { 0x1EE62 },
-    { 0x1EE64 }, { 0x1EE64 },
-    { 0x1EE67 }, { 0x1EE6A },
-    { 0x1EE6C }, { 0x1EE72 },
-    { 0x1EE74 }, { 0x1EE77 },
-    { 0x1EE79 }, { 0x1EE7C },
-    { 0x1EE7E }, { 0x1EE7E },
-    { 0x1EE80 }, { 0x1EE89 },
-    { 0x1EE8B }, { 0x1EE9B },
-    { 0x1EEA1 }, { 0x1EEA3 },
-    { 0x1EEA5 }, { 0x1EEA9 },
-    { 0x1EEAB }, { 0x1EEBB },
-    { 0x1EEF0 }, { 0x1EEF1 },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Syrc[] = {
+    /* Syrc */
     // BMP
     { 0x0700, 0x070D },
     { 0x070F, 0x074A },
     { 0x074D, 0x074F },
     { 0x0860, 0x086A },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Thaa[] = {
+    /* Thaa */
     // BMP
     { 0x0780, 0x07B1 },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Deva[] = {
+    /* Deva */
     // BMP
     { 0x0900, 0x0950 },
     { 0x0955, 0x0963 },
     { 0x0966, 0x097F },
     { 0xA8E0, 0xA8FF },
+    // Packed-Non-BMP
+    PACKED(0x11B00, 0x11B09),
     // Non-BMP
-    { 0x11B00 }, { 0x11B09 },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Beng[] = {
+    /* Beng */
     // BMP
     { 0x0980, 0x0983 },
     { 0x0985, 0x098C },
@@ -408,8 +405,7 @@ static constexpr PROPERTY_SET_RANGE script_set_table_Beng[] = {
     { 0x09DF, 0x09E3 },
     { 0x09E6, 0x09FE },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Guru[] = {
+    /* Guru */
     // BMP
     { 0x0A01, 0x0A03 },
     { 0x0A05, 0x0A0A },
@@ -428,8 +424,7 @@ static constexpr PROPERTY_SET_RANGE script_set_table_Guru[] = {
     { 0x0A5E, 0x0A5E },
     { 0x0A66, 0x0A76 },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Gujr[] = {
+    /* Gujr */
     // BMP
     { 0x0A81, 0x0A83 },
     { 0x0A85, 0x0A8D },
@@ -446,8 +441,7 @@ static constexpr PROPERTY_SET_RANGE script_set_table_Gujr[] = {
     { 0x0AE6, 0x0AF1 },
     { 0x0AF9, 0x0AFF },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Orya[] = {
+    /* Orya */
     // BMP
     { 0x0B01, 0x0B03 },
     { 0x0B05, 0x0B0C },
@@ -464,8 +458,7 @@ static constexpr PROPERTY_SET_RANGE script_set_table_Orya[] = {
     { 0x0B5F, 0x0B63 },
     { 0x0B66, 0x0B77 },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Taml[] = {
+    /* Taml */
     // BMP
     { 0x0B82, 0x0B83 },
     { 0x0B85, 0x0B8A },
@@ -483,11 +476,11 @@ static constexpr PROPERTY_SET_RANGE script_set_table_Taml[] = {
     { 0x0BD0, 0x0BD0 },
     { 0x0BD7, 0x0BD7 },
     { 0x0BE6, 0x0BFA },
+    // Packed-Non-BMP
+    PACKED(0x11FC0, 0x11FF1),
+    PACKED(0x11FFF, 0x11FFF),
     // Non-BMP
-    { 0x11FC0 }, { 0x11FF1 },
-    { 0x11FFF }, { 0x11FFF },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Telu[] = {
+    /* Telu */
     // BMP
     { 0x0C00, 0x0C0C },
     { 0x0C0E, 0x0C10 },
@@ -503,8 +496,7 @@ static constexpr PROPERTY_SET_RANGE script_set_table_Telu[] = {
     { 0x0C66, 0x0C6F },
     { 0x0C77, 0x0C7F },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Knda[] = {
+    /* Knda */
     // BMP
     { 0x0C80, 0x0C8C },
     { 0x0C8E, 0x0C90 },
@@ -520,8 +512,7 @@ static constexpr PROPERTY_SET_RANGE script_set_table_Knda[] = {
     { 0x0CE6, 0x0CEF },
     { 0x0CF1, 0x0CF3 },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Mlym[] = {
+    /* Mlym */
     // BMP
     { 0x0D00, 0x0D0C },
     { 0x0D0E, 0x0D10 },
@@ -531,8 +522,7 @@ static constexpr PROPERTY_SET_RANGE script_set_table_Mlym[] = {
     { 0x0D54, 0x0D63 },
     { 0x0D66, 0x0D7F },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Sinh[] = {
+    /* Sinh */
     // BMP
     { 0x0D81, 0x0D83 },
     { 0x0D85, 0x0D96 },
@@ -546,16 +536,15 @@ static constexpr PROPERTY_SET_RANGE script_set_table_Sinh[] = {
     { 0x0DD8, 0x0DDF },
     { 0x0DE6, 0x0DEF },
     { 0x0DF2, 0x0DF4 },
+    // Packed-Non-BMP
+    PACKED(0x111E1, 0x111F4),
     // Non-BMP
-    { 0x111E1 }, { 0x111F4 },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Thai[] = {
+    /* Thai */
     // BMP
     { 0x0E01, 0x0E3A },
     { 0x0E40, 0x0E5B },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Laoo[] = {
+    /* Laoo */
     // BMP
     { 0x0E81, 0x0E82 },
     { 0x0E84, 0x0E84 },
@@ -569,8 +558,7 @@ static constexpr PROPERTY_SET_RANGE script_set_table_Laoo[] = {
     { 0x0ED0, 0x0ED9 },
     { 0x0EDC, 0x0EDF },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Tibt[] = {
+    /* Tibt */
     // BMP
     { 0x0F00, 0x0F47 },
     { 0x0F49, 0x0F6C },
@@ -580,16 +568,15 @@ static constexpr PROPERTY_SET_RANGE script_set_table_Tibt[] = {
     { 0x0FCE, 0x0FD4 },
     { 0x0FD9, 0x0FDA },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Mymr[] = {
+    /* Mymr */
     // BMP
     { 0x1000, 0x109F },
     { 0xA9E0, 0xA9FE },
     { 0xAA60, 0xAA7F },
+    // Packed-Non-BMP
+    PACKED(0x116D0, 0x116E3),
     // Non-BMP
-    { 0x116D0 }, { 0x116E3 },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Geor[] = {
+    /* Geor */
     // BMP
     { 0x10A0, 0x10C5 },
     { 0x10C7, 0x10C7 },
@@ -602,8 +589,7 @@ static constexpr PROPERTY_SET_RANGE script_set_table_Geor[] = {
     { 0x2D27, 0x2D27 },
     { 0x2D2D, 0x2D2D },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Hang[] = {
+    /* Hang */
     // BMP
     { 0x1100, 0x11FF },
     { 0x302E, 0x302F },
@@ -620,8 +606,7 @@ static constexpr PROPERTY_SET_RANGE script_set_table_Hang[] = {
     { 0xFFD2, 0xFFD7 },
     { 0xFFDA, 0xFFDC },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Ethi[] = {
+    /* Ethi */
     // BMP
     { 0x1200, 0x1248 },
     { 0x124A, 0x124D },
@@ -655,66 +640,62 @@ static constexpr PROPERTY_SET_RANGE script_set_table_Ethi[] = {
     { 0xAB11, 0xAB16 },
     { 0xAB20, 0xAB26 },
     { 0xAB28, 0xAB2E },
+    // Packed-Non-BMP
+    PACKED(0x1E7E0, 0x1E7E6),
+    PACKED(0x1E7E8, 0x1E7EB),
+    PACKED(0x1E7ED, 0x1E7EE),
+    PACKED(0x1E7F0, 0x1E7FE),
     // Non-BMP
-    { 0x1E7E0 }, { 0x1E7E6 },
-    { 0x1E7E8 }, { 0x1E7EB },
-    { 0x1E7ED }, { 0x1E7EE },
-    { 0x1E7F0 }, { 0x1E7FE },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Cher[] = {
+    /* Cher */
     // BMP
     { 0x13A0, 0x13F5 },
     { 0x13F8, 0x13FD },
     { 0xAB70, 0xABBF },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Cans[] = {
+    /* Cans */
     // BMP
     { 0x1400, 0x167F },
     { 0x18B0, 0x18F5 },
+    // Packed-Non-BMP
+    PACKED(0x11AB0, 0x11ABF),
     // Non-BMP
-    { 0x11AB0 }, { 0x11ABF },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Ogam[] = {
+    /* Ogam */
     // BMP
     { 0x1680, 0x169C },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Runr[] = {
+    /* Runr */
     // BMP
     { 0x16A0, 0x16EA },
     { 0x16EE, 0x16F8 },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Khmr[] = {
+    /* Khmr */
     // BMP
     { 0x1780, 0x17DD },
     { 0x17E0, 0x17E9 },
     { 0x17F0, 0x17F9 },
     { 0x19E0, 0x19FF },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Mong[] = {
+    /* Mong */
     // BMP
     { 0x1800, 0x1801 },
     { 0x1804, 0x1804 },
     { 0x1806, 0x1819 },
     { 0x1820, 0x1878 },
     { 0x1880, 0x18AA },
+    // Packed-Non-BMP
+    PACKED(0x11660, 0x1166C),
     // Non-BMP
-    { 0x11660 }, { 0x1166C },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Hira[] = {
+    /* Hira */
     // BMP
     { 0x3041, 0x3096 },
     { 0x309D, 0x309F },
+    // Packed-Non-BMP
+    PACKED(0x1B001, 0x1B11F),
+    PACKED(0x1B132, 0x1B132),
+    PACKED(0x1B150, 0x1B152),
+    PACKED(0x1F200, 0x1F200),
     // Non-BMP
-    { 0x1B001 }, { 0x1B11F },
-    { 0x1B132 }, { 0x1B132 },
-    { 0x1B150 }, { 0x1B152 },
-    { 0x1F200 }, { 0x1F200 },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Kana[] = {
+    /* Kana */
     // BMP
     { 0x30A1, 0x30FA },
     { 0x30FD, 0x30FF },
@@ -723,23 +704,22 @@ static constexpr PROPERTY_SET_RANGE script_set_table_Kana[] = {
     { 0x3300, 0x3357 },
     { 0xFF66, 0xFF6F },
     { 0xFF71, 0xFF9D },
+    // Packed-Non-BMP
+    PACKED(0x1AFF0, 0x1AFF3),
+    PACKED(0x1AFF5, 0x1AFFB),
+    PACKED(0x1AFFD, 0x1AFFE),
+    PACKED(0x1B000, 0x1B000),
+    PACKED(0x1B120, 0x1B122),
+    PACKED(0x1B155, 0x1B155),
+    PACKED(0x1B164, 0x1B167),
     // Non-BMP
-    { 0x1AFF0 }, { 0x1AFF3 },
-    { 0x1AFF5 }, { 0x1AFFB },
-    { 0x1AFFD }, { 0x1AFFE },
-    { 0x1B000 }, { 0x1B000 },
-    { 0x1B120 }, { 0x1B122 },
-    { 0x1B155 }, { 0x1B155 },
-    { 0x1B164 }, { 0x1B167 },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Bopo[] = {
+    /* Bopo */
     // BMP
     { 0x02EA, 0x02EB },
     { 0x3105, 0x312F },
     { 0x31A0, 0x31BF },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Hani[] = {
+    /* Hani */
     // BMP
     { 0x2E80, 0x2E99 },
     { 0x2E9B, 0x2EF3 },
@@ -752,41 +732,40 @@ static constexpr PROPERTY_SET_RANGE script_set_table_Hani[] = {
     { 0x4E00, 0x9FFF },
     { 0xF900, 0xFA6D },
     { 0xFA70, 0xFAD9 },
+    // Packed-Non-BMP
+    PACKED(0x16FE2, 0x16FE3),
+    PACKED(0x16FF0, 0x16FF6),
+    PACKED(0x2EBF0, 0x2EE5D),
+    PACKED(0x2F800, 0x2FA1D),
     // Non-BMP
-    { 0x16FE2 }, { 0x16FE3 },
-    { 0x16FF0 }, { 0x16FF6 },
     { 0x20000 }, { 0x2A6DF },
     { 0x2A700 }, { 0x2B81D },
     { 0x2B820 }, { 0x2CEAD },
     { 0x2CEB0 }, { 0x2EBE0 },
-    { 0x2EBF0 }, { 0x2EE5D },
-    { 0x2F800 }, { 0x2FA1D },
     { 0x30000 }, { 0x3134A },
     { 0x31350 }, { 0x33479 },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Yiii[] = {
+    /* Yiii */
     // BMP
     { 0xA000, 0xA48C },
     { 0xA490, 0xA4C6 },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Ital[] = {
+    /* Ital */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x10300, 0x10323),
+    PACKED(0x1032D, 0x1032F),
     // Non-BMP
-    { 0x10300 }, { 0x10323 },
-    { 0x1032D }, { 0x1032F },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Goth[] = {
+    /* Goth */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x10330, 0x1034A),
     // Non-BMP
-    { 0x10330 }, { 0x1034A },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Dsrt[] = {
+    /* Dsrt */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x10400, 0x1044F),
     // Non-BMP
-    { 0x10400 }, { 0x1044F },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Zinh[] = {
+    /* Zinh */
     // BMP
     { 0x0300, 0x036F },
     { 0x0485, 0x0486 },
@@ -808,42 +787,38 @@ static constexpr PROPERTY_SET_RANGE script_set_table_Zinh[] = {
     { 0x3099, 0x309A },
     { 0xFE00, 0xFE0F },
     { 0xFE20, 0xFE2D },
+    // Packed-Non-BMP
+    PACKED(0x101FD, 0x101FD),
+    PACKED(0x102E0, 0x102E0),
+    PACKED(0x1133B, 0x1133B),
+    PACKED(0x1CF00, 0x1CF2D),
+    PACKED(0x1CF30, 0x1CF46),
+    PACKED(0x1D167, 0x1D169),
+    PACKED(0x1D17B, 0x1D182),
+    PACKED(0x1D185, 0x1D18B),
+    PACKED(0x1D1AA, 0x1D1AD),
+    PACKED(0xE0100, 0xE01EF),
     // Non-BMP
-    { 0x101FD }, { 0x101FD },
-    { 0x102E0 }, { 0x102E0 },
-    { 0x1133B }, { 0x1133B },
-    { 0x1CF00 }, { 0x1CF2D },
-    { 0x1CF30 }, { 0x1CF46 },
-    { 0x1D167 }, { 0x1D169 },
-    { 0x1D17B }, { 0x1D182 },
-    { 0x1D185 }, { 0x1D18B },
-    { 0x1D1AA }, { 0x1D1AD },
-    { 0xE0100 }, { 0xE01EF },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Tglg[] = {
+    /* Tglg */
     // BMP
     { 0x1700, 0x1715 },
     { 0x171F, 0x171F },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Hano[] = {
+    /* Hano */
     // BMP
     { 0x1720, 0x1734 },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Buhd[] = {
+    /* Buhd */
     // BMP
     { 0x1740, 0x1753 },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Tagb[] = {
+    /* Tagb */
     // BMP
     { 0x1760, 0x176C },
     { 0x176E, 0x1770 },
     { 0x1772, 0x1773 },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Limb[] = {
+    /* Limb */
     // BMP
     { 0x1900, 0x191E },
     { 0x1920, 0x192B },
@@ -851,214 +826,195 @@ static constexpr PROPERTY_SET_RANGE script_set_table_Limb[] = {
     { 0x1940, 0x1940 },
     { 0x1944, 0x194F },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Tale[] = {
+    /* Tale */
     // BMP
     { 0x1950, 0x196D },
     { 0x1970, 0x1974 },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Linb[] = {
+    /* Linb */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x10000, 0x1000B),
+    PACKED(0x1000D, 0x10026),
+    PACKED(0x10028, 0x1003A),
+    PACKED(0x1003C, 0x1003D),
+    PACKED(0x1003F, 0x1004D),
+    PACKED(0x10050, 0x1005D),
+    PACKED(0x10080, 0x100FA),
     // Non-BMP
-    { 0x10000 }, { 0x1000B },
-    { 0x1000D }, { 0x10026 },
-    { 0x10028 }, { 0x1003A },
-    { 0x1003C }, { 0x1003D },
-    { 0x1003F }, { 0x1004D },
-    { 0x10050 }, { 0x1005D },
-    { 0x10080 }, { 0x100FA },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Ugar[] = {
+    /* Ugar */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x10380, 0x1039D),
+    PACKED(0x1039F, 0x1039F),
     // Non-BMP
-    { 0x10380 }, { 0x1039D },
-    { 0x1039F }, { 0x1039F },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Shaw[] = {
+    /* Shaw */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x10450, 0x1047F),
     // Non-BMP
-    { 0x10450 }, { 0x1047F },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Osma[] = {
+    /* Osma */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x10480, 0x1049D),
+    PACKED(0x104A0, 0x104A9),
     // Non-BMP
-    { 0x10480 }, { 0x1049D },
-    { 0x104A0 }, { 0x104A9 },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Cprt[] = {
+    /* Cprt */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x10800, 0x10805),
+    PACKED(0x10808, 0x10808),
+    PACKED(0x1080A, 0x10835),
+    PACKED(0x10837, 0x10838),
+    PACKED(0x1083C, 0x1083C),
+    PACKED(0x1083F, 0x1083F),
     // Non-BMP
-    { 0x10800 }, { 0x10805 },
-    { 0x10808 }, { 0x10808 },
-    { 0x1080A }, { 0x10835 },
-    { 0x10837 }, { 0x10838 },
-    { 0x1083C }, { 0x1083C },
-    { 0x1083F }, { 0x1083F },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Brai[] = {
+    /* Brai */
     // BMP
     { 0x2800, 0x28FF },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Bugi[] = {
+    /* Bugi */
     // BMP
     { 0x1A00, 0x1A1B },
     { 0x1A1E, 0x1A1F },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Copt[] = {
+    /* Copt */
     // BMP
     { 0x03E2, 0x03EF },
     { 0x2C80, 0x2CF3 },
     { 0x2CF9, 0x2CFF },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Talu[] = {
+    /* Talu */
     // BMP
     { 0x1980, 0x19AB },
     { 0x19B0, 0x19C9 },
     { 0x19D0, 0x19DA },
     { 0x19DE, 0x19DF },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Glag[] = {
+    /* Glag */
     // BMP
     { 0x2C00, 0x2C5F },
+    // Packed-Non-BMP
+    PACKED(0x1E000, 0x1E006),
+    PACKED(0x1E008, 0x1E018),
+    PACKED(0x1E01B, 0x1E021),
+    PACKED(0x1E023, 0x1E024),
+    PACKED(0x1E026, 0x1E02A),
     // Non-BMP
-    { 0x1E000 }, { 0x1E006 },
-    { 0x1E008 }, { 0x1E018 },
-    { 0x1E01B }, { 0x1E021 },
-    { 0x1E023 }, { 0x1E024 },
-    { 0x1E026 }, { 0x1E02A },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Tfng[] = {
+    /* Tfng */
     // BMP
     { 0x2D30, 0x2D67 },
     { 0x2D6F, 0x2D70 },
     { 0x2D7F, 0x2D7F },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Sylo[] = {
+    /* Sylo */
     // BMP
     { 0xA800, 0xA82C },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Xpeo[] = {
+    /* Xpeo */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x103A0, 0x103C3),
+    PACKED(0x103C8, 0x103D5),
     // Non-BMP
-    { 0x103A0 }, { 0x103C3 },
-    { 0x103C8 }, { 0x103D5 },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Khar[] = {
+    /* Khar */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x10A00, 0x10A03),
+    PACKED(0x10A05, 0x10A06),
+    PACKED(0x10A0C, 0x10A13),
+    PACKED(0x10A15, 0x10A17),
+    PACKED(0x10A19, 0x10A35),
+    PACKED(0x10A38, 0x10A3A),
+    PACKED(0x10A3F, 0x10A48),
+    PACKED(0x10A50, 0x10A58),
     // Non-BMP
-    { 0x10A00 }, { 0x10A03 },
-    { 0x10A05 }, { 0x10A06 },
-    { 0x10A0C }, { 0x10A13 },
-    { 0x10A15 }, { 0x10A17 },
-    { 0x10A19 }, { 0x10A35 },
-    { 0x10A38 }, { 0x10A3A },
-    { 0x10A3F }, { 0x10A48 },
-    { 0x10A50 }, { 0x10A58 },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Bali[] = {
+    /* Bali */
     // BMP
     { 0x1B00, 0x1B4C },
     { 0x1B4E, 0x1B7F },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Xsux[] = {
+    /* Xsux */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x12000, 0x12399),
+    PACKED(0x12400, 0x1246E),
+    PACKED(0x12470, 0x12474),
+    PACKED(0x12480, 0x12543),
     // Non-BMP
-    { 0x12000 }, { 0x12399 },
-    { 0x12400 }, { 0x1246E },
-    { 0x12470 }, { 0x12474 },
-    { 0x12480 }, { 0x12543 },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Phnx[] = {
+    /* Phnx */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x10900, 0x1091B),
+    PACKED(0x1091F, 0x1091F),
     // Non-BMP
-    { 0x10900 }, { 0x1091B },
-    { 0x1091F }, { 0x1091F },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Phag[] = {
+    /* Phag */
     // BMP
     { 0xA840, 0xA877 },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Nkoo[] = {
+    /* Nkoo */
     // BMP
     { 0x07C0, 0x07FA },
     { 0x07FD, 0x07FF },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Sund[] = {
+    /* Sund */
     // BMP
     { 0x1B80, 0x1BBF },
     { 0x1CC0, 0x1CC7 },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Lepc[] = {
+    /* Lepc */
     // BMP
     { 0x1C00, 0x1C37 },
     { 0x1C3B, 0x1C49 },
     { 0x1C4D, 0x1C4F },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Olck[] = {
+    /* Olck */
     // BMP
     { 0x1C50, 0x1C7F },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Vaii[] = {
+    /* Vaii */
     // BMP
     { 0xA500, 0xA62B },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Saur[] = {
+    /* Saur */
     // BMP
     { 0xA880, 0xA8C5 },
     { 0xA8CE, 0xA8D9 },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Kali[] = {
+    /* Kali */
     // BMP
     { 0xA900, 0xA92D },
     { 0xA92F, 0xA92F },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Rjng[] = {
+    /* Rjng */
     // BMP
     { 0xA930, 0xA953 },
     { 0xA95F, 0xA95F },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Lyci[] = {
+    /* Lyci */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x10280, 0x1029C),
     // Non-BMP
-    { 0x10280 }, { 0x1029C },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Cari[] = {
+    /* Cari */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x102A0, 0x102D0),
     // Non-BMP
-    { 0x102A0 }, { 0x102D0 },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Lydi[] = {
+    /* Lydi */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x10920, 0x10939),
+    PACKED(0x1093F, 0x1093F),
     // Non-BMP
-    { 0x10920 }, { 0x10939 },
-    { 0x1093F }, { 0x1093F },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Cham[] = {
+    /* Cham */
     // BMP
     { 0xAA00, 0xAA36 },
     { 0xAA40, 0xAA4D },
     { 0xAA50, 0xAA59 },
     { 0xAA5C, 0xAA5F },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Lana[] = {
+    /* Lana */
     // BMP
     { 0x1A20, 0x1A5E },
     { 0x1A60, 0x1A7C },
@@ -1066,812 +1022,808 @@ static constexpr PROPERTY_SET_RANGE script_set_table_Lana[] = {
     { 0x1A90, 0x1A99 },
     { 0x1AA0, 0x1AAD },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Tavt[] = {
+    /* Tavt */
     // BMP
     { 0xAA80, 0xAAC2 },
     { 0xAADB, 0xAADF },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Avst[] = {
+    /* Avst */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x10B00, 0x10B35),
+    PACKED(0x10B39, 0x10B3F),
     // Non-BMP
-    { 0x10B00 }, { 0x10B35 },
-    { 0x10B39 }, { 0x10B3F },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Egyp[] = {
+    /* Egyp */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x13000, 0x13455),
     // Non-BMP
-    { 0x13000 }, { 0x13455 },
     { 0x13460 }, { 0x143FA },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Samr[] = {
+    /* Samr */
     // BMP
     { 0x0800, 0x082D },
     { 0x0830, 0x083E },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Lisu[] = {
+    /* Lisu */
     // BMP
     { 0xA4D0, 0xA4FF },
+    // Packed-Non-BMP
+    PACKED(0x11FB0, 0x11FB0),
     // Non-BMP
-    { 0x11FB0 }, { 0x11FB0 },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Bamu[] = {
+    /* Bamu */
     // BMP
     { 0xA6A0, 0xA6F7 },
+    // Packed-Non-BMP
+    PACKED(0x16800, 0x16A38),
     // Non-BMP
-    { 0x16800 }, { 0x16A38 },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Java[] = {
+    /* Java */
     // BMP
     { 0xA980, 0xA9CD },
     { 0xA9D0, 0xA9D9 },
     { 0xA9DE, 0xA9DF },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Mtei[] = {
+    /* Mtei */
     // BMP
     { 0xAAE0, 0xAAF6 },
     { 0xABC0, 0xABED },
     { 0xABF0, 0xABF9 },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Armi[] = {
+    /* Armi */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x10840, 0x10855),
+    PACKED(0x10857, 0x1085F),
     // Non-BMP
-    { 0x10840 }, { 0x10855 },
-    { 0x10857 }, { 0x1085F },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Sarb[] = {
+    /* Sarb */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x10A60, 0x10A7F),
     // Non-BMP
-    { 0x10A60 }, { 0x10A7F },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Prti[] = {
+    /* Prti */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x10B40, 0x10B55),
+    PACKED(0x10B58, 0x10B5F),
     // Non-BMP
-    { 0x10B40 }, { 0x10B55 },
-    { 0x10B58 }, { 0x10B5F },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Phli[] = {
+    /* Phli */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x10B60, 0x10B72),
+    PACKED(0x10B78, 0x10B7F),
     // Non-BMP
-    { 0x10B60 }, { 0x10B72 },
-    { 0x10B78 }, { 0x10B7F },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Orkh[] = {
+    /* Orkh */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x10C00, 0x10C48),
     // Non-BMP
-    { 0x10C00 }, { 0x10C48 },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Kthi[] = {
+    /* Kthi */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x11080, 0x110C2),
+    PACKED(0x110CD, 0x110CD),
     // Non-BMP
-    { 0x11080 }, { 0x110C2 },
-    { 0x110CD }, { 0x110CD },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Batk[] = {
+    /* Batk */
     // BMP
     { 0x1BC0, 0x1BF3 },
     { 0x1BFC, 0x1BFF },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Brah[] = {
+    /* Brah */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x11000, 0x1104D),
+    PACKED(0x11052, 0x11075),
+    PACKED(0x1107F, 0x1107F),
     // Non-BMP
-    { 0x11000 }, { 0x1104D },
-    { 0x11052 }, { 0x11075 },
-    { 0x1107F }, { 0x1107F },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Mand[] = {
+    /* Mand */
     // BMP
     { 0x0840, 0x085B },
     { 0x085E, 0x085E },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Cakm[] = {
+    /* Cakm */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x11100, 0x11134),
+    PACKED(0x11136, 0x11147),
     // Non-BMP
-    { 0x11100 }, { 0x11134 },
-    { 0x11136 }, { 0x11147 },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Merc[] = {
+    /* Merc */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x109A0, 0x109B7),
+    PACKED(0x109BC, 0x109CF),
+    PACKED(0x109D2, 0x109FF),
     // Non-BMP
-    { 0x109A0 }, { 0x109B7 },
-    { 0x109BC }, { 0x109CF },
-    { 0x109D2 }, { 0x109FF },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Mero[] = {
+    /* Mero */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x10980, 0x1099F),
     // Non-BMP
-    { 0x10980 }, { 0x1099F },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Plrd[] = {
+    /* Plrd */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x16F00, 0x16F4A),
+    PACKED(0x16F4F, 0x16F87),
+    PACKED(0x16F8F, 0x16F9F),
     // Non-BMP
-    { 0x16F00 }, { 0x16F4A },
-    { 0x16F4F }, { 0x16F87 },
-    { 0x16F8F }, { 0x16F9F },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Shrd[] = {
+    /* Shrd */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x11180, 0x111DF),
+    PACKED(0x11B60, 0x11B67),
     // Non-BMP
-    { 0x11180 }, { 0x111DF },
-    { 0x11B60 }, { 0x11B67 },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Sora[] = {
+    /* Sora */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x110D0, 0x110E8),
+    PACKED(0x110F0, 0x110F9),
     // Non-BMP
-    { 0x110D0 }, { 0x110E8 },
-    { 0x110F0 }, { 0x110F9 },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Takr[] = {
+    /* Takr */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x11680, 0x116B9),
+    PACKED(0x116C0, 0x116C9),
     // Non-BMP
-    { 0x11680 }, { 0x116B9 },
-    { 0x116C0 }, { 0x116C9 },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Aghb[] = {
+    /* Aghb */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x10530, 0x10563),
+    PACKED(0x1056F, 0x1056F),
     // Non-BMP
-    { 0x10530 }, { 0x10563 },
-    { 0x1056F }, { 0x1056F },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Bass[] = {
+    /* Bass */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x16AD0, 0x16AED),
+    PACKED(0x16AF0, 0x16AF5),
     // Non-BMP
-    { 0x16AD0 }, { 0x16AED },
-    { 0x16AF0 }, { 0x16AF5 },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Dupl[] = {
+    /* Dupl */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x1BC00, 0x1BC6A),
+    PACKED(0x1BC70, 0x1BC7C),
+    PACKED(0x1BC80, 0x1BC88),
+    PACKED(0x1BC90, 0x1BC99),
+    PACKED(0x1BC9C, 0x1BC9F),
     // Non-BMP
-    { 0x1BC00 }, { 0x1BC6A },
-    { 0x1BC70 }, { 0x1BC7C },
-    { 0x1BC80 }, { 0x1BC88 },
-    { 0x1BC90 }, { 0x1BC99 },
-    { 0x1BC9C }, { 0x1BC9F },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Elba[] = {
+    /* Elba */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x10500, 0x10527),
     // Non-BMP
-    { 0x10500 }, { 0x10527 },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Gran[] = {
+    /* Gran */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x11300, 0x11303),
+    PACKED(0x11305, 0x1130C),
+    PACKED(0x1130F, 0x11310),
+    PACKED(0x11313, 0x11328),
+    PACKED(0x1132A, 0x11330),
+    PACKED(0x11332, 0x11333),
+    PACKED(0x11335, 0x11339),
+    PACKED(0x1133C, 0x11344),
+    PACKED(0x11347, 0x11348),
+    PACKED(0x1134B, 0x1134D),
+    PACKED(0x11350, 0x11350),
+    PACKED(0x11357, 0x11357),
+    PACKED(0x1135D, 0x11363),
+    PACKED(0x11366, 0x1136C),
+    PACKED(0x11370, 0x11374),
     // Non-BMP
-    { 0x11300 }, { 0x11303 },
-    { 0x11305 }, { 0x1130C },
-    { 0x1130F }, { 0x11310 },
-    { 0x11313 }, { 0x11328 },
-    { 0x1132A }, { 0x11330 },
-    { 0x11332 }, { 0x11333 },
-    { 0x11335 }, { 0x11339 },
-    { 0x1133C }, { 0x11344 },
-    { 0x11347 }, { 0x11348 },
-    { 0x1134B }, { 0x1134D },
-    { 0x11350 }, { 0x11350 },
-    { 0x11357 }, { 0x11357 },
-    { 0x1135D }, { 0x11363 },
-    { 0x11366 }, { 0x1136C },
-    { 0x11370 }, { 0x11374 },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Hmng[] = {
+    /* Hmng */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x16B00, 0x16B45),
+    PACKED(0x16B50, 0x16B59),
+    PACKED(0x16B5B, 0x16B61),
+    PACKED(0x16B63, 0x16B77),
+    PACKED(0x16B7D, 0x16B8F),
     // Non-BMP
-    { 0x16B00 }, { 0x16B45 },
-    { 0x16B50 }, { 0x16B59 },
-    { 0x16B5B }, { 0x16B61 },
-    { 0x16B63 }, { 0x16B77 },
-    { 0x16B7D }, { 0x16B8F },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Khoj[] = {
+    /* Khoj */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x11200, 0x11211),
+    PACKED(0x11213, 0x11241),
     // Non-BMP
-    { 0x11200 }, { 0x11211 },
-    { 0x11213 }, { 0x11241 },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Lina[] = {
+    /* Lina */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x10600, 0x10736),
+    PACKED(0x10740, 0x10755),
+    PACKED(0x10760, 0x10767),
     // Non-BMP
-    { 0x10600 }, { 0x10736 },
-    { 0x10740 }, { 0x10755 },
-    { 0x10760 }, { 0x10767 },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Mahj[] = {
+    /* Mahj */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x11150, 0x11176),
     // Non-BMP
-    { 0x11150 }, { 0x11176 },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Mani[] = {
+    /* Mani */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x10AC0, 0x10AE6),
+    PACKED(0x10AEB, 0x10AF6),
     // Non-BMP
-    { 0x10AC0 }, { 0x10AE6 },
-    { 0x10AEB }, { 0x10AF6 },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Mend[] = {
+    /* Mend */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x1E800, 0x1E8C4),
+    PACKED(0x1E8C7, 0x1E8D6),
     // Non-BMP
-    { 0x1E800 }, { 0x1E8C4 },
-    { 0x1E8C7 }, { 0x1E8D6 },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Modi[] = {
+    /* Modi */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x11600, 0x11644),
+    PACKED(0x11650, 0x11659),
     // Non-BMP
-    { 0x11600 }, { 0x11644 },
-    { 0x11650 }, { 0x11659 },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Mroo[] = {
+    /* Mroo */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x16A40, 0x16A5E),
+    PACKED(0x16A60, 0x16A69),
+    PACKED(0x16A6E, 0x16A6F),
     // Non-BMP
-    { 0x16A40 }, { 0x16A5E },
-    { 0x16A60 }, { 0x16A69 },
-    { 0x16A6E }, { 0x16A6F },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Narb[] = {
+    /* Narb */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x10A80, 0x10A9F),
     // Non-BMP
-    { 0x10A80 }, { 0x10A9F },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Nbat[] = {
+    /* Nbat */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x10880, 0x1089E),
+    PACKED(0x108A7, 0x108AF),
     // Non-BMP
-    { 0x10880 }, { 0x1089E },
-    { 0x108A7 }, { 0x108AF },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Palm[] = {
+    /* Palm */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x10860, 0x1087F),
     // Non-BMP
-    { 0x10860 }, { 0x1087F },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Pauc[] = {
+    /* Pauc */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x11AC0, 0x11AF8),
     // Non-BMP
-    { 0x11AC0 }, { 0x11AF8 },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Perm[] = {
+    /* Perm */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x10350, 0x1037A),
     // Non-BMP
-    { 0x10350 }, { 0x1037A },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Phlp[] = {
+    /* Phlp */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x10B80, 0x10B91),
+    PACKED(0x10B99, 0x10B9C),
+    PACKED(0x10BA9, 0x10BAF),
     // Non-BMP
-    { 0x10B80 }, { 0x10B91 },
-    { 0x10B99 }, { 0x10B9C },
-    { 0x10BA9 }, { 0x10BAF },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Sidd[] = {
+    /* Sidd */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x11580, 0x115B5),
+    PACKED(0x115B8, 0x115DD),
     // Non-BMP
-    { 0x11580 }, { 0x115B5 },
-    { 0x115B8 }, { 0x115DD },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Sind[] = {
+    /* Sind */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x112B0, 0x112EA),
+    PACKED(0x112F0, 0x112F9),
     // Non-BMP
-    { 0x112B0 }, { 0x112EA },
-    { 0x112F0 }, { 0x112F9 },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Tirh[] = {
+    /* Tirh */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x11480, 0x114C7),
+    PACKED(0x114D0, 0x114D9),
     // Non-BMP
-    { 0x11480 }, { 0x114C7 },
-    { 0x114D0 }, { 0x114D9 },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Wara[] = {
+    /* Wara */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x118A0, 0x118F2),
+    PACKED(0x118FF, 0x118FF),
     // Non-BMP
-    { 0x118A0 }, { 0x118F2 },
-    { 0x118FF }, { 0x118FF },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Ahom[] = {
+    /* Ahom */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x11700, 0x1171A),
+    PACKED(0x1171D, 0x1172B),
+    PACKED(0x11730, 0x11746),
     // Non-BMP
-    { 0x11700 }, { 0x1171A },
-    { 0x1171D }, { 0x1172B },
-    { 0x11730 }, { 0x11746 },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Hluw[] = {
+    /* Hluw */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x14400, 0x14646),
     // Non-BMP
-    { 0x14400 }, { 0x14646 },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Hatr[] = {
+    /* Hatr */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x108E0, 0x108F2),
+    PACKED(0x108F4, 0x108F5),
+    PACKED(0x108FB, 0x108FF),
     // Non-BMP
-    { 0x108E0 }, { 0x108F2 },
-    { 0x108F4 }, { 0x108F5 },
-    { 0x108FB }, { 0x108FF },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Mult[] = {
+    /* Mult */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x11280, 0x11286),
+    PACKED(0x11288, 0x11288),
+    PACKED(0x1128A, 0x1128D),
+    PACKED(0x1128F, 0x1129D),
+    PACKED(0x1129F, 0x112A9),
     // Non-BMP
-    { 0x11280 }, { 0x11286 },
-    { 0x11288 }, { 0x11288 },
-    { 0x1128A }, { 0x1128D },
-    { 0x1128F }, { 0x1129D },
-    { 0x1129F }, { 0x112A9 },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Hung[] = {
+    /* Hung */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x10C80, 0x10CB2),
+    PACKED(0x10CC0, 0x10CF2),
+    PACKED(0x10CFA, 0x10CFF),
     // Non-BMP
-    { 0x10C80 }, { 0x10CB2 },
-    { 0x10CC0 }, { 0x10CF2 },
-    { 0x10CFA }, { 0x10CFF },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Sgnw[] = {
+    /* Sgnw */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x1D800, 0x1DA8B),
+    PACKED(0x1DA9B, 0x1DA9F),
+    PACKED(0x1DAA1, 0x1DAAF),
     // Non-BMP
-    { 0x1D800 }, { 0x1DA8B },
-    { 0x1DA9B }, { 0x1DA9F },
-    { 0x1DAA1 }, { 0x1DAAF },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Adlm[] = {
+    /* Adlm */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x1E900, 0x1E94B),
+    PACKED(0x1E950, 0x1E959),
+    PACKED(0x1E95E, 0x1E95F),
     // Non-BMP
-    { 0x1E900 }, { 0x1E94B },
-    { 0x1E950 }, { 0x1E959 },
-    { 0x1E95E }, { 0x1E95F },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Bhks[] = {
+    /* Bhks */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x11C00, 0x11C08),
+    PACKED(0x11C0A, 0x11C36),
+    PACKED(0x11C38, 0x11C45),
+    PACKED(0x11C50, 0x11C6C),
     // Non-BMP
-    { 0x11C00 }, { 0x11C08 },
-    { 0x11C0A }, { 0x11C36 },
-    { 0x11C38 }, { 0x11C45 },
-    { 0x11C50 }, { 0x11C6C },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Marc[] = {
+    /* Marc */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x11C70, 0x11C8F),
+    PACKED(0x11C92, 0x11CA7),
+    PACKED(0x11CA9, 0x11CB6),
     // Non-BMP
-    { 0x11C70 }, { 0x11C8F },
-    { 0x11C92 }, { 0x11CA7 },
-    { 0x11CA9 }, { 0x11CB6 },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Newa[] = {
+    /* Newa */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x11400, 0x1145B),
+    PACKED(0x1145D, 0x11461),
     // Non-BMP
-    { 0x11400 }, { 0x1145B },
-    { 0x1145D }, { 0x11461 },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Osge[] = {
+    /* Osge */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x104B0, 0x104D3),
+    PACKED(0x104D8, 0x104FB),
     // Non-BMP
-    { 0x104B0 }, { 0x104D3 },
-    { 0x104D8 }, { 0x104FB },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Tang[] = {
+    /* Tang */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x16FE0, 0x16FE0),
+    PACKED(0x18D00, 0x18D1E),
+    PACKED(0x18D80, 0x18DF2),
     // Non-BMP
-    { 0x16FE0 }, { 0x16FE0 },
     { 0x17000 }, { 0x18AFF },
-    { 0x18D00 }, { 0x18D1E },
-    { 0x18D80 }, { 0x18DF2 },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Gonm[] = {
+    /* Gonm */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x11D00, 0x11D06),
+    PACKED(0x11D08, 0x11D09),
+    PACKED(0x11D0B, 0x11D36),
+    PACKED(0x11D3A, 0x11D3A),
+    PACKED(0x11D3C, 0x11D3D),
+    PACKED(0x11D3F, 0x11D47),
+    PACKED(0x11D50, 0x11D59),
     // Non-BMP
-    { 0x11D00 }, { 0x11D06 },
-    { 0x11D08 }, { 0x11D09 },
-    { 0x11D0B }, { 0x11D36 },
-    { 0x11D3A }, { 0x11D3A },
-    { 0x11D3C }, { 0x11D3D },
-    { 0x11D3F }, { 0x11D47 },
-    { 0x11D50 }, { 0x11D59 },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Nshu[] = {
+    /* Nshu */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x16FE1, 0x16FE1),
+    PACKED(0x1B170, 0x1B2FB),
     // Non-BMP
-    { 0x16FE1 }, { 0x16FE1 },
-    { 0x1B170 }, { 0x1B2FB },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Soyo[] = {
+    /* Soyo */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x11A50, 0x11AA2),
     // Non-BMP
-    { 0x11A50 }, { 0x11AA2 },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Zanb[] = {
+    /* Zanb */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x11A00, 0x11A47),
     // Non-BMP
-    { 0x11A00 }, { 0x11A47 },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Dogr[] = {
+    /* Dogr */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x11800, 0x1183B),
     // Non-BMP
-    { 0x11800 }, { 0x1183B },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Gong[] = {
+    /* Gong */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x11D60, 0x11D65),
+    PACKED(0x11D67, 0x11D68),
+    PACKED(0x11D6A, 0x11D8E),
+    PACKED(0x11D90, 0x11D91),
+    PACKED(0x11D93, 0x11D98),
+    PACKED(0x11DA0, 0x11DA9),
     // Non-BMP
-    { 0x11D60 }, { 0x11D65 },
-    { 0x11D67 }, { 0x11D68 },
-    { 0x11D6A }, { 0x11D8E },
-    { 0x11D90 }, { 0x11D91 },
-    { 0x11D93 }, { 0x11D98 },
-    { 0x11DA0 }, { 0x11DA9 },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Maka[] = {
+    /* Maka */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x11EE0, 0x11EF8),
     // Non-BMP
-    { 0x11EE0 }, { 0x11EF8 },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Medf[] = {
+    /* Medf */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x16E40, 0x16E9A),
     // Non-BMP
-    { 0x16E40 }, { 0x16E9A },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Rohg[] = {
+    /* Rohg */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x10D00, 0x10D27),
+    PACKED(0x10D30, 0x10D39),
     // Non-BMP
-    { 0x10D00 }, { 0x10D27 },
-    { 0x10D30 }, { 0x10D39 },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Sogd[] = {
+    /* Sogd */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x10F30, 0x10F59),
     // Non-BMP
-    { 0x10F30 }, { 0x10F59 },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Sogo[] = {
+    /* Sogo */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x10F00, 0x10F27),
     // Non-BMP
-    { 0x10F00 }, { 0x10F27 },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Elym[] = {
+    /* Elym */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x10FE0, 0x10FF6),
     // Non-BMP
-    { 0x10FE0 }, { 0x10FF6 },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Nand[] = {
+    /* Nand */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x119A0, 0x119A7),
+    PACKED(0x119AA, 0x119D7),
+    PACKED(0x119DA, 0x119E4),
     // Non-BMP
-    { 0x119A0 }, { 0x119A7 },
-    { 0x119AA }, { 0x119D7 },
-    { 0x119DA }, { 0x119E4 },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Hmnp[] = {
+    /* Hmnp */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x1E100, 0x1E12C),
+    PACKED(0x1E130, 0x1E13D),
+    PACKED(0x1E140, 0x1E149),
+    PACKED(0x1E14E, 0x1E14F),
     // Non-BMP
-    { 0x1E100 }, { 0x1E12C },
-    { 0x1E130 }, { 0x1E13D },
-    { 0x1E140 }, { 0x1E149 },
-    { 0x1E14E }, { 0x1E14F },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Wcho[] = {
+    /* Wcho */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x1E2C0, 0x1E2F9),
+    PACKED(0x1E2FF, 0x1E2FF),
     // Non-BMP
-    { 0x1E2C0 }, { 0x1E2F9 },
-    { 0x1E2FF }, { 0x1E2FF },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Chrs[] = {
+    /* Chrs */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x10FB0, 0x10FCB),
     // Non-BMP
-    { 0x10FB0 }, { 0x10FCB },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Diak[] = {
+    /* Diak */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x11900, 0x11906),
+    PACKED(0x11909, 0x11909),
+    PACKED(0x1190C, 0x11913),
+    PACKED(0x11915, 0x11916),
+    PACKED(0x11918, 0x11935),
+    PACKED(0x11937, 0x11938),
+    PACKED(0x1193B, 0x11946),
+    PACKED(0x11950, 0x11959),
     // Non-BMP
-    { 0x11900 }, { 0x11906 },
-    { 0x11909 }, { 0x11909 },
-    { 0x1190C }, { 0x11913 },
-    { 0x11915 }, { 0x11916 },
-    { 0x11918 }, { 0x11935 },
-    { 0x11937 }, { 0x11938 },
-    { 0x1193B }, { 0x11946 },
-    { 0x11950 }, { 0x11959 },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Kits[] = {
+    /* Kits */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x16FE4, 0x16FE4),
+    PACKED(0x18B00, 0x18CD5),
+    PACKED(0x18CFF, 0x18CFF),
     // Non-BMP
-    { 0x16FE4 }, { 0x16FE4 },
-    { 0x18B00 }, { 0x18CD5 },
-    { 0x18CFF }, { 0x18CFF },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Yezi[] = {
+    /* Yezi */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x10E80, 0x10EA9),
+    PACKED(0x10EAB, 0x10EAD),
+    PACKED(0x10EB0, 0x10EB1),
     // Non-BMP
-    { 0x10E80 }, { 0x10EA9 },
-    { 0x10EAB }, { 0x10EAD },
-    { 0x10EB0 }, { 0x10EB1 },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Cpmn[] = {
+    /* Cpmn */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x12F90, 0x12FF2),
     // Non-BMP
-    { 0x12F90 }, { 0x12FF2 },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Ougr[] = {
+    /* Ougr */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x10F70, 0x10F89),
     // Non-BMP
-    { 0x10F70 }, { 0x10F89 },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Tnsa[] = {
+    /* Tnsa */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x16A70, 0x16ABE),
+    PACKED(0x16AC0, 0x16AC9),
     // Non-BMP
-    { 0x16A70 }, { 0x16ABE },
-    { 0x16AC0 }, { 0x16AC9 },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Toto[] = {
+    /* Toto */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x1E290, 0x1E2AE),
     // Non-BMP
-    { 0x1E290 }, { 0x1E2AE },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Vith[] = {
+    /* Vith */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x10570, 0x1057A),
+    PACKED(0x1057C, 0x1058A),
+    PACKED(0x1058C, 0x10592),
+    PACKED(0x10594, 0x10595),
+    PACKED(0x10597, 0x105A1),
+    PACKED(0x105A3, 0x105B1),
+    PACKED(0x105B3, 0x105B9),
+    PACKED(0x105BB, 0x105BC),
     // Non-BMP
-    { 0x10570 }, { 0x1057A },
-    { 0x1057C }, { 0x1058A },
-    { 0x1058C }, { 0x10592 },
-    { 0x10594 }, { 0x10595 },
-    { 0x10597 }, { 0x105A1 },
-    { 0x105A3 }, { 0x105B1 },
-    { 0x105B3 }, { 0x105B9 },
-    { 0x105BB }, { 0x105BC },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Kawi[] = {
+    /* Kawi */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x11F00, 0x11F10),
+    PACKED(0x11F12, 0x11F3A),
+    PACKED(0x11F3E, 0x11F5A),
     // Non-BMP
-    { 0x11F00 }, { 0x11F10 },
-    { 0x11F12 }, { 0x11F3A },
-    { 0x11F3E }, { 0x11F5A },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Nagm[] = {
+    /* Nagm */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x1E4D0, 0x1E4F9),
     // Non-BMP
-    { 0x1E4D0 }, { 0x1E4F9 },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Gara[] = {
+    /* Gara */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x10D40, 0x10D65),
+    PACKED(0x10D69, 0x10D85),
+    PACKED(0x10D8E, 0x10D8F),
     // Non-BMP
-    { 0x10D40 }, { 0x10D65 },
-    { 0x10D69 }, { 0x10D85 },
-    { 0x10D8E }, { 0x10D8F },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Gukh[] = {
+    /* Gukh */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x16100, 0x16139),
     // Non-BMP
-    { 0x16100 }, { 0x16139 },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Krai[] = {
+    /* Krai */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x16D40, 0x16D79),
     // Non-BMP
-    { 0x16D40 }, { 0x16D79 },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Onao[] = {
+    /* Onao */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x1E5D0, 0x1E5FA),
+    PACKED(0x1E5FF, 0x1E5FF),
     // Non-BMP
-    { 0x1E5D0 }, { 0x1E5FA },
-    { 0x1E5FF }, { 0x1E5FF },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Sunu[] = {
+    /* Sunu */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x11BC0, 0x11BE1),
+    PACKED(0x11BF0, 0x11BF9),
     // Non-BMP
-    { 0x11BC0 }, { 0x11BE1 },
-    { 0x11BF0 }, { 0x11BF9 },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Todr[] = {
+    /* Todr */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x105C0, 0x105F3),
     // Non-BMP
-    { 0x105C0 }, { 0x105F3 },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Tutg[] = {
+    /* Tutg */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x11380, 0x11389),
+    PACKED(0x1138B, 0x1138B),
+    PACKED(0x1138E, 0x1138E),
+    PACKED(0x11390, 0x113B5),
+    PACKED(0x113B7, 0x113C0),
+    PACKED(0x113C2, 0x113C2),
+    PACKED(0x113C5, 0x113C5),
+    PACKED(0x113C7, 0x113CA),
+    PACKED(0x113CC, 0x113D5),
+    PACKED(0x113D7, 0x113D8),
+    PACKED(0x113E1, 0x113E2),
     // Non-BMP
-    { 0x11380 }, { 0x11389 },
-    { 0x1138B }, { 0x1138B },
-    { 0x1138E }, { 0x1138E },
-    { 0x11390 }, { 0x113B5 },
-    { 0x113B7 }, { 0x113C0 },
-    { 0x113C2 }, { 0x113C2 },
-    { 0x113C5 }, { 0x113C5 },
-    { 0x113C7 }, { 0x113CA },
-    { 0x113CC }, { 0x113D5 },
-    { 0x113D7 }, { 0x113D8 },
-    { 0x113E1 }, { 0x113E2 },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Sidt[] = {
+    /* Sidt */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x10940, 0x10959),
     // Non-BMP
-    { 0x10940 }, { 0x10959 },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Tayo[] = {
+    /* Tayo */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x1E6C0, 0x1E6DE),
+    PACKED(0x1E6E0, 0x1E6F5),
+    PACKED(0x1E6FE, 0x1E6FF),
     // Non-BMP
-    { 0x1E6C0 }, { 0x1E6DE },
-    { 0x1E6E0 }, { 0x1E6F5 },
-    { 0x1E6FE }, { 0x1E6FF },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Tols[] = {
+    /* Tols */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x11DB0, 0x11DDB),
+    PACKED(0x11DE0, 0x11DE9),
     // Non-BMP
-    { 0x11DB0 }, { 0x11DDB },
-    { 0x11DE0 }, { 0x11DE9 },
-};
-static constexpr PROPERTY_SET_RANGE script_set_table_Berf[] = {
+    /* Berf */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x16EA0, 0x16EB8),
+    PACKED(0x16EBB, 0x16ED3),
     // Non-BMP
-    { 0x16EA0 }, { 0x16EB8 },
-    { 0x16EBB }, { 0x16ED3 },
 };
 
-static constexpr PROPERTY_SET_RANGE_TABLE script_set_table_except_Zzzz[] = {
-    {90, script_set_table_Zyyy, std::size(script_set_table_Zyyy)}, // Zyyy
-    {31, script_set_table_Latn, std::size(script_set_table_Latn)}, // Latn
-    {33, script_set_table_Grek, std::size(script_set_table_Grek)}, // Grek
-    {8, script_set_table_Cyrl, std::size(script_set_table_Cyrl)}, // Cyrl
-    {4, script_set_table_Armn, std::size(script_set_table_Armn)}, // Armn
-    {9, script_set_table_Hebr, std::size(script_set_table_Hebr)}, // Hebr
-    {18, script_set_table_Arab, std::size(script_set_table_Arab)}, // Arab
-    {4, script_set_table_Syrc, std::size(script_set_table_Syrc)}, // Syrc
-    {1, script_set_table_Thaa, std::size(script_set_table_Thaa)}, // Thaa
-    {4, script_set_table_Deva, std::size(script_set_table_Deva)}, // Deva
-    {14, script_set_table_Beng, std::size(script_set_table_Beng)}, // Beng
-    {16, script_set_table_Guru, std::size(script_set_table_Guru)}, // Guru
-    {14, script_set_table_Gujr, std::size(script_set_table_Gujr)}, // Gujr
-    {14, script_set_table_Orya, std::size(script_set_table_Orya)}, // Orya
-    {16, script_set_table_Taml, std::size(script_set_table_Taml)}, // Taml
-    {13, script_set_table_Telu, std::size(script_set_table_Telu)}, // Telu
-    {13, script_set_table_Knda, std::size(script_set_table_Knda)}, // Knda
-    {7, script_set_table_Mlym, std::size(script_set_table_Mlym)}, // Mlym
-    {12, script_set_table_Sinh, std::size(script_set_table_Sinh)}, // Sinh
-    {2, script_set_table_Thai, std::size(script_set_table_Thai)}, // Thai
-    {11, script_set_table_Laoo, std::size(script_set_table_Laoo)}, // Laoo
-    {7, script_set_table_Tibt, std::size(script_set_table_Tibt)}, // Tibt
-    {3, script_set_table_Mymr, std::size(script_set_table_Mymr)}, // Mymr
-    {10, script_set_table_Geor, std::size(script_set_table_Geor)}, // Geor
-    {14, script_set_table_Hang, std::size(script_set_table_Hang)}, // Hang
-    {32, script_set_table_Ethi, std::size(script_set_table_Ethi)}, // Ethi
-    {3, script_set_table_Cher, std::size(script_set_table_Cher)}, // Cher
-    {2, script_set_table_Cans, std::size(script_set_table_Cans)}, // Cans
-    {1, script_set_table_Ogam, std::size(script_set_table_Ogam)}, // Ogam
-    {2, script_set_table_Runr, std::size(script_set_table_Runr)}, // Runr
-    {4, script_set_table_Khmr, std::size(script_set_table_Khmr)}, // Khmr
-    {5, script_set_table_Mong, std::size(script_set_table_Mong)}, // Mong
-    {2, script_set_table_Hira, std::size(script_set_table_Hira)}, // Hira
-    {7, script_set_table_Kana, std::size(script_set_table_Kana)}, // Kana
-    {3, script_set_table_Bopo, std::size(script_set_table_Bopo)}, // Bopo
-    {11, script_set_table_Hani, std::size(script_set_table_Hani)}, // Hani
-    {2, script_set_table_Yiii, std::size(script_set_table_Yiii)}, // Yiii
-    {0, script_set_table_Ital, std::size(script_set_table_Ital)}, // Ital
-    {0, script_set_table_Goth, std::size(script_set_table_Goth)}, // Goth
-    {0, script_set_table_Dsrt, std::size(script_set_table_Dsrt)}, // Dsrt
-    {20, script_set_table_Zinh, std::size(script_set_table_Zinh)}, // Zinh
-    {2, script_set_table_Tglg, std::size(script_set_table_Tglg)}, // Tglg
-    {1, script_set_table_Hano, std::size(script_set_table_Hano)}, // Hano
-    {1, script_set_table_Buhd, std::size(script_set_table_Buhd)}, // Buhd
-    {3, script_set_table_Tagb, std::size(script_set_table_Tagb)}, // Tagb
-    {5, script_set_table_Limb, std::size(script_set_table_Limb)}, // Limb
-    {2, script_set_table_Tale, std::size(script_set_table_Tale)}, // Tale
-    {0, script_set_table_Linb, std::size(script_set_table_Linb)}, // Linb
-    {0, script_set_table_Ugar, std::size(script_set_table_Ugar)}, // Ugar
-    {0, script_set_table_Shaw, std::size(script_set_table_Shaw)}, // Shaw
-    {0, script_set_table_Osma, std::size(script_set_table_Osma)}, // Osma
-    {0, script_set_table_Cprt, std::size(script_set_table_Cprt)}, // Cprt
-    {1, script_set_table_Brai, std::size(script_set_table_Brai)}, // Brai
-    {2, script_set_table_Bugi, std::size(script_set_table_Bugi)}, // Bugi
-    {3, script_set_table_Copt, std::size(script_set_table_Copt)}, // Copt
-    {4, script_set_table_Talu, std::size(script_set_table_Talu)}, // Talu
-    {1, script_set_table_Glag, std::size(script_set_table_Glag)}, // Glag
-    {3, script_set_table_Tfng, std::size(script_set_table_Tfng)}, // Tfng
-    {1, script_set_table_Sylo, std::size(script_set_table_Sylo)}, // Sylo
-    {0, script_set_table_Xpeo, std::size(script_set_table_Xpeo)}, // Xpeo
-    {0, script_set_table_Khar, std::size(script_set_table_Khar)}, // Khar
-    {2, script_set_table_Bali, std::size(script_set_table_Bali)}, // Bali
-    {0, script_set_table_Xsux, std::size(script_set_table_Xsux)}, // Xsux
-    {0, script_set_table_Phnx, std::size(script_set_table_Phnx)}, // Phnx
-    {1, script_set_table_Phag, std::size(script_set_table_Phag)}, // Phag
-    {2, script_set_table_Nkoo, std::size(script_set_table_Nkoo)}, // Nkoo
-    {2, script_set_table_Sund, std::size(script_set_table_Sund)}, // Sund
-    {3, script_set_table_Lepc, std::size(script_set_table_Lepc)}, // Lepc
-    {1, script_set_table_Olck, std::size(script_set_table_Olck)}, // Olck
-    {1, script_set_table_Vaii, std::size(script_set_table_Vaii)}, // Vaii
-    {2, script_set_table_Saur, std::size(script_set_table_Saur)}, // Saur
-    {2, script_set_table_Kali, std::size(script_set_table_Kali)}, // Kali
-    {2, script_set_table_Rjng, std::size(script_set_table_Rjng)}, // Rjng
-    {0, script_set_table_Lyci, std::size(script_set_table_Lyci)}, // Lyci
-    {0, script_set_table_Cari, std::size(script_set_table_Cari)}, // Cari
-    {0, script_set_table_Lydi, std::size(script_set_table_Lydi)}, // Lydi
-    {4, script_set_table_Cham, std::size(script_set_table_Cham)}, // Cham
-    {5, script_set_table_Lana, std::size(script_set_table_Lana)}, // Lana
-    {2, script_set_table_Tavt, std::size(script_set_table_Tavt)}, // Tavt
-    {0, script_set_table_Avst, std::size(script_set_table_Avst)}, // Avst
-    {0, script_set_table_Egyp, std::size(script_set_table_Egyp)}, // Egyp
-    {2, script_set_table_Samr, std::size(script_set_table_Samr)}, // Samr
-    {1, script_set_table_Lisu, std::size(script_set_table_Lisu)}, // Lisu
-    {1, script_set_table_Bamu, std::size(script_set_table_Bamu)}, // Bamu
-    {3, script_set_table_Java, std::size(script_set_table_Java)}, // Java
-    {3, script_set_table_Mtei, std::size(script_set_table_Mtei)}, // Mtei
-    {0, script_set_table_Armi, std::size(script_set_table_Armi)}, // Armi
-    {0, script_set_table_Sarb, std::size(script_set_table_Sarb)}, // Sarb
-    {0, script_set_table_Prti, std::size(script_set_table_Prti)}, // Prti
-    {0, script_set_table_Phli, std::size(script_set_table_Phli)}, // Phli
-    {0, script_set_table_Orkh, std::size(script_set_table_Orkh)}, // Orkh
-    {0, script_set_table_Kthi, std::size(script_set_table_Kthi)}, // Kthi
-    {2, script_set_table_Batk, std::size(script_set_table_Batk)}, // Batk
-    {0, script_set_table_Brah, std::size(script_set_table_Brah)}, // Brah
-    {2, script_set_table_Mand, std::size(script_set_table_Mand)}, // Mand
-    {0, script_set_table_Cakm, std::size(script_set_table_Cakm)}, // Cakm
-    {0, script_set_table_Merc, std::size(script_set_table_Merc)}, // Merc
-    {0, script_set_table_Mero, std::size(script_set_table_Mero)}, // Mero
-    {0, script_set_table_Plrd, std::size(script_set_table_Plrd)}, // Plrd
-    {0, script_set_table_Shrd, std::size(script_set_table_Shrd)}, // Shrd
-    {0, script_set_table_Sora, std::size(script_set_table_Sora)}, // Sora
-    {0, script_set_table_Takr, std::size(script_set_table_Takr)}, // Takr
-    {0, script_set_table_Aghb, std::size(script_set_table_Aghb)}, // Aghb
-    {0, script_set_table_Bass, std::size(script_set_table_Bass)}, // Bass
-    {0, script_set_table_Dupl, std::size(script_set_table_Dupl)}, // Dupl
-    {0, script_set_table_Elba, std::size(script_set_table_Elba)}, // Elba
-    {0, script_set_table_Gran, std::size(script_set_table_Gran)}, // Gran
-    {0, script_set_table_Hmng, std::size(script_set_table_Hmng)}, // Hmng
-    {0, script_set_table_Khoj, std::size(script_set_table_Khoj)}, // Khoj
-    {0, script_set_table_Lina, std::size(script_set_table_Lina)}, // Lina
-    {0, script_set_table_Mahj, std::size(script_set_table_Mahj)}, // Mahj
-    {0, script_set_table_Mani, std::size(script_set_table_Mani)}, // Mani
-    {0, script_set_table_Mend, std::size(script_set_table_Mend)}, // Mend
-    {0, script_set_table_Modi, std::size(script_set_table_Modi)}, // Modi
-    {0, script_set_table_Mroo, std::size(script_set_table_Mroo)}, // Mroo
-    {0, script_set_table_Narb, std::size(script_set_table_Narb)}, // Narb
-    {0, script_set_table_Nbat, std::size(script_set_table_Nbat)}, // Nbat
-    {0, script_set_table_Palm, std::size(script_set_table_Palm)}, // Palm
-    {0, script_set_table_Pauc, std::size(script_set_table_Pauc)}, // Pauc
-    {0, script_set_table_Perm, std::size(script_set_table_Perm)}, // Perm
-    {0, script_set_table_Phlp, std::size(script_set_table_Phlp)}, // Phlp
-    {0, script_set_table_Sidd, std::size(script_set_table_Sidd)}, // Sidd
-    {0, script_set_table_Sind, std::size(script_set_table_Sind)}, // Sind
-    {0, script_set_table_Tirh, std::size(script_set_table_Tirh)}, // Tirh
-    {0, script_set_table_Wara, std::size(script_set_table_Wara)}, // Wara
-    {0, script_set_table_Ahom, std::size(script_set_table_Ahom)}, // Ahom
-    {0, script_set_table_Hluw, std::size(script_set_table_Hluw)}, // Hluw
-    {0, script_set_table_Hatr, std::size(script_set_table_Hatr)}, // Hatr
-    {0, script_set_table_Mult, std::size(script_set_table_Mult)}, // Mult
-    {0, script_set_table_Hung, std::size(script_set_table_Hung)}, // Hung
-    {0, script_set_table_Sgnw, std::size(script_set_table_Sgnw)}, // Sgnw
-    {0, script_set_table_Adlm, std::size(script_set_table_Adlm)}, // Adlm
-    {0, script_set_table_Bhks, std::size(script_set_table_Bhks)}, // Bhks
-    {0, script_set_table_Marc, std::size(script_set_table_Marc)}, // Marc
-    {0, script_set_table_Newa, std::size(script_set_table_Newa)}, // Newa
-    {0, script_set_table_Osge, std::size(script_set_table_Osge)}, // Osge
-    {0, script_set_table_Tang, std::size(script_set_table_Tang)}, // Tang
-    {0, script_set_table_Gonm, std::size(script_set_table_Gonm)}, // Gonm
-    {0, script_set_table_Nshu, std::size(script_set_table_Nshu)}, // Nshu
-    {0, script_set_table_Soyo, std::size(script_set_table_Soyo)}, // Soyo
-    {0, script_set_table_Zanb, std::size(script_set_table_Zanb)}, // Zanb
-    {0, script_set_table_Dogr, std::size(script_set_table_Dogr)}, // Dogr
-    {0, script_set_table_Gong, std::size(script_set_table_Gong)}, // Gong
-    {0, script_set_table_Maka, std::size(script_set_table_Maka)}, // Maka
-    {0, script_set_table_Medf, std::size(script_set_table_Medf)}, // Medf
-    {0, script_set_table_Rohg, std::size(script_set_table_Rohg)}, // Rohg
-    {0, script_set_table_Sogd, std::size(script_set_table_Sogd)}, // Sogd
-    {0, script_set_table_Sogo, std::size(script_set_table_Sogo)}, // Sogo
-    {0, script_set_table_Elym, std::size(script_set_table_Elym)}, // Elym
-    {0, script_set_table_Nand, std::size(script_set_table_Nand)}, // Nand
-    {0, script_set_table_Hmnp, std::size(script_set_table_Hmnp)}, // Hmnp
-    {0, script_set_table_Wcho, std::size(script_set_table_Wcho)}, // Wcho
-    {0, script_set_table_Chrs, std::size(script_set_table_Chrs)}, // Chrs
-    {0, script_set_table_Diak, std::size(script_set_table_Diak)}, // Diak
-    {0, script_set_table_Kits, std::size(script_set_table_Kits)}, // Kits
-    {0, script_set_table_Yezi, std::size(script_set_table_Yezi)}, // Yezi
-    {0, script_set_table_Cpmn, std::size(script_set_table_Cpmn)}, // Cpmn
-    {0, script_set_table_Ougr, std::size(script_set_table_Ougr)}, // Ougr
-    {0, script_set_table_Tnsa, std::size(script_set_table_Tnsa)}, // Tnsa
-    {0, script_set_table_Toto, std::size(script_set_table_Toto)}, // Toto
-    {0, script_set_table_Vith, std::size(script_set_table_Vith)}, // Vith
-    {0, script_set_table_Kawi, std::size(script_set_table_Kawi)}, // Kawi
-    {0, script_set_table_Nagm, std::size(script_set_table_Nagm)}, // Nagm
-    {0, script_set_table_Gara, std::size(script_set_table_Gara)}, // Gara
-    {0, script_set_table_Gukh, std::size(script_set_table_Gukh)}, // Gukh
-    {0, script_set_table_Krai, std::size(script_set_table_Krai)}, // Krai
-    {0, script_set_table_Onao, std::size(script_set_table_Onao)}, // Onao
-    {0, script_set_table_Sunu, std::size(script_set_table_Sunu)}, // Sunu
-    {0, script_set_table_Todr, std::size(script_set_table_Todr)}, // Todr
-    {0, script_set_table_Tutg, std::size(script_set_table_Tutg)}, // Tutg
-    {0, script_set_table_Sidt, std::size(script_set_table_Sidt)}, // Sidt
-    {0, script_set_table_Tayo, std::size(script_set_table_Tayo)}, // Tayo
-    {0, script_set_table_Tols, std::size(script_set_table_Tols)}, // Tols
-    {0, script_set_table_Berf, std::size(script_set_table_Berf)}, // Berf
+static constexpr PROPERTY_SET_RANGE_TABLE_OFFSET script_set_table_offset_except_Zzzz[] = {
+    {0, 90, 86, 176}, // Zyyy
+    {176, 31, 5, 36}, // Latn
+    {212, 33, 3, 36}, // Grek
+    {248, 8, 2, 10}, // Cyrl
+    {258, 4, 0, 4}, // Armn
+    {262, 9, 0, 9}, // Hebr
+    {271, 18, 38, 56}, // Arab
+    {327, 4, 0, 4}, // Syrc
+    {331, 1, 0, 1}, // Thaa
+    {332, 4, 1, 5}, // Deva
+    {337, 14, 0, 14}, // Beng
+    {351, 16, 0, 16}, // Guru
+    {367, 14, 0, 14}, // Gujr
+    {381, 14, 0, 14}, // Orya
+    {395, 16, 2, 18}, // Taml
+    {413, 13, 0, 13}, // Telu
+    {426, 13, 0, 13}, // Knda
+    {439, 7, 0, 7}, // Mlym
+    {446, 12, 1, 13}, // Sinh
+    {459, 2, 0, 2}, // Thai
+    {461, 11, 0, 11}, // Laoo
+    {472, 7, 0, 7}, // Tibt
+    {479, 3, 1, 4}, // Mymr
+    {483, 10, 0, 10}, // Geor
+    {493, 14, 0, 14}, // Hang
+    {507, 32, 4, 36}, // Ethi
+    {543, 3, 0, 3}, // Cher
+    {546, 2, 1, 3}, // Cans
+    {549, 1, 0, 1}, // Ogam
+    {550, 2, 0, 2}, // Runr
+    {552, 4, 0, 4}, // Khmr
+    {556, 5, 1, 6}, // Mong
+    {562, 2, 4, 6}, // Hira
+    {568, 7, 7, 14}, // Kana
+    {582, 3, 0, 3}, // Bopo
+    {585, 11, 4, 27}, // Hani
+    {612, 2, 0, 2}, // Yiii
+    {614, 0, 2, 2}, // Ital
+    {616, 0, 1, 1}, // Goth
+    {617, 0, 1, 1}, // Dsrt
+    {618, 20, 10, 30}, // Zinh
+    {648, 2, 0, 2}, // Tglg
+    {650, 1, 0, 1}, // Hano
+    {651, 1, 0, 1}, // Buhd
+    {652, 3, 0, 3}, // Tagb
+    {655, 5, 0, 5}, // Limb
+    {660, 2, 0, 2}, // Tale
+    {662, 0, 7, 7}, // Linb
+    {669, 0, 2, 2}, // Ugar
+    {671, 0, 1, 1}, // Shaw
+    {672, 0, 2, 2}, // Osma
+    {674, 0, 6, 6}, // Cprt
+    {680, 1, 0, 1}, // Brai
+    {681, 2, 0, 2}, // Bugi
+    {683, 3, 0, 3}, // Copt
+    {686, 4, 0, 4}, // Talu
+    {690, 1, 5, 6}, // Glag
+    {696, 3, 0, 3}, // Tfng
+    {699, 1, 0, 1}, // Sylo
+    {700, 0, 2, 2}, // Xpeo
+    {702, 0, 8, 8}, // Khar
+    {710, 2, 0, 2}, // Bali
+    {712, 0, 4, 4}, // Xsux
+    {716, 0, 2, 2}, // Phnx
+    {718, 1, 0, 1}, // Phag
+    {719, 2, 0, 2}, // Nkoo
+    {721, 2, 0, 2}, // Sund
+    {723, 3, 0, 3}, // Lepc
+    {726, 1, 0, 1}, // Olck
+    {727, 1, 0, 1}, // Vaii
+    {728, 2, 0, 2}, // Saur
+    {730, 2, 0, 2}, // Kali
+    {732, 2, 0, 2}, // Rjng
+    {734, 0, 1, 1}, // Lyci
+    {735, 0, 1, 1}, // Cari
+    {736, 0, 2, 2}, // Lydi
+    {738, 4, 0, 4}, // Cham
+    {742, 5, 0, 5}, // Lana
+    {747, 2, 0, 2}, // Tavt
+    {749, 0, 2, 2}, // Avst
+    {751, 0, 1, 3}, // Egyp
+    {754, 2, 0, 2}, // Samr
+    {756, 1, 1, 2}, // Lisu
+    {758, 1, 1, 2}, // Bamu
+    {760, 3, 0, 3}, // Java
+    {763, 3, 0, 3}, // Mtei
+    {766, 0, 2, 2}, // Armi
+    {768, 0, 1, 1}, // Sarb
+    {769, 0, 2, 2}, // Prti
+    {771, 0, 2, 2}, // Phli
+    {773, 0, 1, 1}, // Orkh
+    {774, 0, 2, 2}, // Kthi
+    {776, 2, 0, 2}, // Batk
+    {778, 0, 3, 3}, // Brah
+    {781, 2, 0, 2}, // Mand
+    {783, 0, 2, 2}, // Cakm
+    {785, 0, 3, 3}, // Merc
+    {788, 0, 1, 1}, // Mero
+    {789, 0, 3, 3}, // Plrd
+    {792, 0, 2, 2}, // Shrd
+    {794, 0, 2, 2}, // Sora
+    {796, 0, 2, 2}, // Takr
+    {798, 0, 2, 2}, // Aghb
+    {800, 0, 2, 2}, // Bass
+    {802, 0, 5, 5}, // Dupl
+    {807, 0, 1, 1}, // Elba
+    {808, 0, 15, 15}, // Gran
+    {823, 0, 5, 5}, // Hmng
+    {828, 0, 2, 2}, // Khoj
+    {830, 0, 3, 3}, // Lina
+    {833, 0, 1, 1}, // Mahj
+    {834, 0, 2, 2}, // Mani
+    {836, 0, 2, 2}, // Mend
+    {838, 0, 2, 2}, // Modi
+    {840, 0, 3, 3}, // Mroo
+    {843, 0, 1, 1}, // Narb
+    {844, 0, 2, 2}, // Nbat
+    {846, 0, 1, 1}, // Palm
+    {847, 0, 1, 1}, // Pauc
+    {848, 0, 1, 1}, // Perm
+    {849, 0, 3, 3}, // Phlp
+    {852, 0, 2, 2}, // Sidd
+    {854, 0, 2, 2}, // Sind
+    {856, 0, 2, 2}, // Tirh
+    {858, 0, 2, 2}, // Wara
+    {860, 0, 3, 3}, // Ahom
+    {863, 0, 1, 1}, // Hluw
+    {864, 0, 3, 3}, // Hatr
+    {867, 0, 5, 5}, // Mult
+    {872, 0, 3, 3}, // Hung
+    {875, 0, 3, 3}, // Sgnw
+    {878, 0, 3, 3}, // Adlm
+    {881, 0, 4, 4}, // Bhks
+    {885, 0, 3, 3}, // Marc
+    {888, 0, 2, 2}, // Newa
+    {890, 0, 2, 2}, // Osge
+    {892, 0, 3, 5}, // Tang
+    {897, 0, 7, 7}, // Gonm
+    {904, 0, 2, 2}, // Nshu
+    {906, 0, 1, 1}, // Soyo
+    {907, 0, 1, 1}, // Zanb
+    {908, 0, 1, 1}, // Dogr
+    {909, 0, 6, 6}, // Gong
+    {915, 0, 1, 1}, // Maka
+    {916, 0, 1, 1}, // Medf
+    {917, 0, 2, 2}, // Rohg
+    {919, 0, 1, 1}, // Sogd
+    {920, 0, 1, 1}, // Sogo
+    {921, 0, 1, 1}, // Elym
+    {922, 0, 3, 3}, // Nand
+    {925, 0, 4, 4}, // Hmnp
+    {929, 0, 2, 2}, // Wcho
+    {931, 0, 1, 1}, // Chrs
+    {932, 0, 8, 8}, // Diak
+    {940, 0, 3, 3}, // Kits
+    {943, 0, 3, 3}, // Yezi
+    {946, 0, 1, 1}, // Cpmn
+    {947, 0, 1, 1}, // Ougr
+    {948, 0, 2, 2}, // Tnsa
+    {950, 0, 1, 1}, // Toto
+    {951, 0, 8, 8}, // Vith
+    {959, 0, 3, 3}, // Kawi
+    {962, 0, 1, 1}, // Nagm
+    {963, 0, 3, 3}, // Gara
+    {966, 0, 1, 1}, // Gukh
+    {967, 0, 1, 1}, // Krai
+    {968, 0, 2, 2}, // Onao
+    {970, 0, 2, 2}, // Sunu
+    {972, 0, 1, 1}, // Todr
+    {973, 0, 11, 11}, // Tutg
+    {984, 0, 1, 1}, // Sidt
+    {985, 0, 3, 3}, // Tayo
+    {988, 0, 2, 2}, // Tols
+    {990, 0, 2, 2}, // Berf
 };
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Latn[] = {
+
+static constexpr PROPERTY_SET_RANGE scriptx_set_table[] = {
+    /* Latn */
     // BMP
     { 0x00B7, 0x00B7 },
     { 0x02BC, 0x02BC },
@@ -1899,8 +1851,7 @@ static constexpr PROPERTY_SET_RANGE scriptx_set_table_Latn[] = {
     { 0xA700, 0xA707 },
     { 0xA92E, 0xA92E },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Grek[] = {
+    /* Grek */
     // BMP
     { 0x00B7, 0x00B7 },
     { 0x0300, 0x0301 },
@@ -1914,8 +1865,7 @@ static constexpr PROPERTY_SET_RANGE scriptx_set_table_Grek[] = {
     { 0x1DC0, 0x1DC1 },
     { 0x205D, 0x205D },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Cyrl[] = {
+    /* Cyrl */
     // BMP
     { 0x02BC, 0x02BC },
     { 0x0300, 0x0302 },
@@ -1929,19 +1879,16 @@ static constexpr PROPERTY_SET_RANGE scriptx_set_table_Cyrl[] = {
     { 0x2E43, 0x2E43 },
     { 0xA66F, 0xA66F },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Armn[] = {
+    /* Armn */
     // BMP
     { 0x0308, 0x0308 },
     { 0x0589, 0x0589 },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Hebr[] = {
+    /* Hebr */
     // BMP
     { 0x0307, 0x0308 },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Arab[] = {
+    /* Arab */
     // BMP
     { 0x060C, 0x060C },
     { 0x061B, 0x061C },
@@ -1956,10 +1903,10 @@ static constexpr PROPERTY_SET_RANGE scriptx_set_table_Arab[] = {
     { 0xFD3E, 0xFD3F },
     { 0xFDF2, 0xFDF2 },
     { 0xFDFD, 0xFDFD },
+    // Packed-Non-BMP
+    PACKED(0x102E0, 0x102FB),
     // Non-BMP
-    { 0x102E0 }, { 0x102FB },
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Syrc[] = {
+    /* Syrc */
     // BMP
     { 0x0303, 0x0304 },
     { 0x0307, 0x0308 },
@@ -1976,8 +1923,7 @@ static constexpr PROPERTY_SET_RANGE scriptx_set_table_Syrc[] = {
     { 0x1DF8, 0x1DF8 },
     { 0x1DFA, 0x1DFA },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Thaa[] = {
+    /* Thaa */
     // BMP
     { 0x060C, 0x060C },
     { 0x061B, 0x061C },
@@ -1986,8 +1932,7 @@ static constexpr PROPERTY_SET_RANGE scriptx_set_table_Thaa[] = {
     { 0xFDF2, 0xFDF2 },
     { 0xFDFD, 0xFDFD },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Deva[] = {
+    /* Deva */
     // BMP
     { 0x02BC, 0x02BC },
     { 0x0951, 0x0952 },
@@ -1999,8 +1944,7 @@ static constexpr PROPERTY_SET_RANGE scriptx_set_table_Deva[] = {
     { 0xA8F1, 0xA8F1 },
     { 0xA8F3, 0xA8F3 },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Beng[] = {
+    /* Beng */
     // BMP
     { 0x02BC, 0x02BC },
     { 0x0951, 0x0952 },
@@ -2017,46 +1961,42 @@ static constexpr PROPERTY_SET_RANGE scriptx_set_table_Beng[] = {
     { 0x1CF5, 0x1CF7 },
     { 0xA8F1, 0xA8F1 },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Guru[] = {
+    /* Guru */
     // BMP
     { 0x0951, 0x0952 },
     { 0x0964, 0x0965 },
     { 0x0A66, 0x0A6F },
     { 0xA830, 0xA839 },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Gujr[] = {
+    /* Gujr */
     // BMP
     { 0x0951, 0x0952 },
     { 0x0964, 0x0965 },
     { 0x0AE6, 0x0AEF },
     { 0xA830, 0xA839 },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Orya[] = {
+    /* Orya */
     // BMP
     { 0x0951, 0x0952 },
     { 0x0964, 0x0965 },
     { 0x1CDA, 0x1CDA },
     { 0x1CF2, 0x1CF2 },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Taml[] = {
+    /* Taml */
     // BMP
     { 0x0951, 0x0952 },
     { 0x0964, 0x0965 },
     { 0x0BE6, 0x0BF3 },
     { 0x1CDA, 0x1CDA },
     { 0xA8F3, 0xA8F3 },
+    // Packed-Non-BMP
+    PACKED(0x11301, 0x11301),
+    PACKED(0x11303, 0x11303),
+    PACKED(0x1133B, 0x1133C),
+    PACKED(0x11FD0, 0x11FD1),
+    PACKED(0x11FD3, 0x11FD3),
     // Non-BMP
-    { 0x11301 }, { 0x11301 },
-    { 0x11303 }, { 0x11303 },
-    { 0x1133B }, { 0x1133C },
-    { 0x11FD0 }, { 0x11FD1 },
-    { 0x11FD3 }, { 0x11FD3 },
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Telu[] = {
+    /* Telu */
     // BMP
     { 0x0951, 0x0952 },
     { 0x0964, 0x0965 },
@@ -2065,8 +2005,7 @@ static constexpr PROPERTY_SET_RANGE scriptx_set_table_Telu[] = {
     { 0x1CDA, 0x1CDA },
     { 0x1CF2, 0x1CF2 },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Knda[] = {
+    /* Knda */
     // BMP
     { 0x0951, 0x0952 },
     { 0x0964, 0x0965 },
@@ -2078,8 +2017,7 @@ static constexpr PROPERTY_SET_RANGE scriptx_set_table_Knda[] = {
     { 0x1CF4, 0x1CF4 },
     { 0xA830, 0xA835 },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Mlym[] = {
+    /* Mlym */
     // BMP
     { 0x0951, 0x0952 },
     { 0x0964, 0x0965 },
@@ -2087,33 +2025,28 @@ static constexpr PROPERTY_SET_RANGE scriptx_set_table_Mlym[] = {
     { 0x1CF2, 0x1CF2 },
     { 0xA830, 0xA832 },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Sinh[] = {
+    /* Sinh */
     // BMP
     { 0x0964, 0x0965 },
     { 0x1CF2, 0x1CF2 },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Thai[] = {
+    /* Thai */
     // BMP
     { 0x02BC, 0x02BC },
     { 0x02D7, 0x02D7 },
     { 0x0303, 0x0303 },
     { 0x0331, 0x0331 },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Tibt[] = {
+    /* Tibt */
     // BMP
     { 0x3008, 0x300B },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Mymr[] = {
+    /* Mymr */
     // BMP
     { 0x1040, 0x1049 },
     { 0xA92E, 0xA92E },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Geor[] = {
+    /* Geor */
     // BMP
     { 0x00B7, 0x00B7 },
     { 0x0589, 0x0589 },
@@ -2121,8 +2054,7 @@ static constexpr PROPERTY_SET_RANGE scriptx_set_table_Geor[] = {
     { 0x205A, 0x205A },
     { 0x2E31, 0x2E31 },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Hang[] = {
+    /* Hang */
     // BMP
     { 0x3001, 0x3003 },
     { 0x3008, 0x3011 },
@@ -2133,13 +2065,11 @@ static constexpr PROPERTY_SET_RANGE scriptx_set_table_Hang[] = {
     { 0xFE45, 0xFE46 },
     { 0xFF61, 0xFF65 },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Ethi[] = {
+    /* Ethi */
     // BMP
     { 0x030E, 0x030E },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Cher[] = {
+    /* Cher */
     // BMP
     { 0x0300, 0x0302 },
     { 0x0304, 0x0304 },
@@ -2147,13 +2077,11 @@ static constexpr PROPERTY_SET_RANGE scriptx_set_table_Cher[] = {
     { 0x0323, 0x0324 },
     { 0x0330, 0x0331 },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Runr[] = {
+    /* Runr */
     // BMP
     { 0x16EB, 0x16ED },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Mong[] = {
+    /* Mong */
     // BMP
     { 0x1802, 0x1803 },
     { 0x1805, 0x1805 },
@@ -2161,8 +2089,7 @@ static constexpr PROPERTY_SET_RANGE scriptx_set_table_Mong[] = {
     { 0x3001, 0x3002 },
     { 0x3008, 0x300B },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Hira[] = {
+    /* Hira */
     // BMP
     { 0x3001, 0x3003 },
     { 0x3008, 0x3011 },
@@ -2178,8 +2105,7 @@ static constexpr PROPERTY_SET_RANGE scriptx_set_table_Hira[] = {
     { 0xFF70, 0xFF70 },
     { 0xFF9E, 0xFF9F },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Kana[] = {
+    /* Kana */
     // BMP
     { 0x0305, 0x0305 },
     { 0x0323, 0x0323 },
@@ -2197,8 +2123,7 @@ static constexpr PROPERTY_SET_RANGE scriptx_set_table_Kana[] = {
     { 0xFF70, 0xFF70 },
     { 0xFF9E, 0xFF9F },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Bopo[] = {
+    /* Bopo */
     // BMP
     { 0x02C7, 0x02C7 },
     { 0x02C9, 0x02CB },
@@ -2213,8 +2138,7 @@ static constexpr PROPERTY_SET_RANGE scriptx_set_table_Bopo[] = {
     { 0xFE45, 0xFE46 },
     { 0xFF61, 0xFF65 },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Hani[] = {
+    /* Hani */
     // BMP
     { 0x00B7, 0x00B7 },
     { 0x2FF0, 0x2FFF },
@@ -2240,11 +2164,11 @@ static constexpr PROPERTY_SET_RANGE scriptx_set_table_Hani[] = {
     { 0xA700, 0xA707 },
     { 0xFE45, 0xFE46 },
     { 0xFF61, 0xFF65 },
+    // Packed-Non-BMP
+    PACKED(0x1D360, 0x1D371),
+    PACKED(0x1F250, 0x1F251),
     // Non-BMP
-    { 0x1D360 }, { 0x1D371 },
-    { 0x1F250 }, { 0x1F251 },
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Yiii[] = {
+    /* Yiii */
     // BMP
     { 0x3001, 0x3002 },
     { 0x3008, 0x3011 },
@@ -2252,73 +2176,63 @@ static constexpr PROPERTY_SET_RANGE scriptx_set_table_Yiii[] = {
     { 0x30FB, 0x30FB },
     { 0xFF61, 0xFF65 },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Goth[] = {
+    /* Goth */
     // BMP
     { 0x00B7, 0x00B7 },
     { 0x0304, 0x0305 },
     { 0x0308, 0x0308 },
     { 0x0331, 0x0331 },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Tglg[] = {
+    /* Tglg */
     // BMP
     { 0x1735, 0x1736 },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Hano[] = {
+    /* Hano */
     // BMP
     { 0x1735, 0x1736 },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Buhd[] = {
+    /* Buhd */
     // BMP
     { 0x1735, 0x1736 },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Tagb[] = {
+    /* Tagb */
     // BMP
     { 0x1735, 0x1736 },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Limb[] = {
+    /* Limb */
     // BMP
     { 0x0965, 0x0965 },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Tale[] = {
+    /* Tale */
     // BMP
     { 0x0300, 0x0301 },
     { 0x0307, 0x0308 },
     { 0x030C, 0x030C },
     { 0x1040, 0x1049 },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Linb[] = {
+    /* Linb */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x10100, 0x10102),
+    PACKED(0x10107, 0x10133),
+    PACKED(0x10137, 0x1013F),
     // Non-BMP
-    { 0x10100 }, { 0x10102 },
-    { 0x10107 }, { 0x10133 },
-    { 0x10137 }, { 0x1013F },
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Shaw[] = {
+    /* Shaw */
     // BMP
     { 0x00B7, 0x00B7 },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Cprt[] = {
+    /* Cprt */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x10100, 0x10102),
+    PACKED(0x10107, 0x10133),
+    PACKED(0x10137, 0x1013F),
     // Non-BMP
-    { 0x10100 }, { 0x10102 },
-    { 0x10107 }, { 0x10133 },
-    { 0x10137 }, { 0x1013F },
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Bugi[] = {
+    /* Bugi */
     // BMP
     { 0xA9CF, 0xA9CF },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Copt[] = {
+    /* Copt */
     // BMP
     { 0x00B7, 0x00B7 },
     { 0x0300, 0x0300 },
@@ -2326,10 +2240,10 @@ static constexpr PROPERTY_SET_RANGE scriptx_set_table_Copt[] = {
     { 0x0307, 0x0307 },
     { 0x0374, 0x0375 },
     { 0x2E17, 0x2E17 },
+    // Packed-Non-BMP
+    PACKED(0x102E0, 0x102FB),
     // Non-BMP
-    { 0x102E0 }, { 0x102FB },
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Glag[] = {
+    /* Glag */
     // BMP
     { 0x00B7, 0x00B7 },
     { 0x0303, 0x0303 },
@@ -2342,114 +2256,96 @@ static constexpr PROPERTY_SET_RANGE scriptx_set_table_Glag[] = {
     { 0x2E43, 0x2E43 },
     { 0xA66F, 0xA66F },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Tfng[] = {
+    /* Tfng */
     // BMP
     { 0x0302, 0x0302 },
     { 0x0304, 0x0304 },
     { 0x0306, 0x0309 },
     { 0x0323, 0x0323 },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Sylo[] = {
+    /* Sylo */
     // BMP
     { 0x0964, 0x0965 },
     { 0x09E6, 0x09EF },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Phag[] = {
+    /* Phag */
     // BMP
     { 0x1802, 0x1803 },
     { 0x1805, 0x1805 },
     { 0x202F, 0x202F },
     { 0x3002, 0x3002 },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Nkoo[] = {
+    /* Nkoo */
     // BMP
     { 0x060C, 0x060C },
     { 0x061B, 0x061B },
     { 0x061F, 0x061F },
     { 0xFD3E, 0xFD3F },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Kali[] = {
+    /* Kali */
     // BMP
     { 0xA92E, 0xA92E },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Lyci[] = {
+    /* Lyci */
     // BMP
     { 0x205A, 0x205A },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Cari[] = {
+    /* Cari */
     // BMP
     { 0x00B7, 0x00B7 },
     { 0x205A, 0x205A },
     { 0x205D, 0x205D },
     { 0x2E31, 0x2E31 },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Lydi[] = {
+    /* Lydi */
     // BMP
     { 0x00B7, 0x00B7 },
     { 0x2E31, 0x2E31 },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Avst[] = {
+    /* Avst */
     // BMP
     { 0x00B7, 0x00B7 },
     { 0x2E30, 0x2E31 },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Samr[] = {
+    /* Samr */
     // BMP
     { 0x2E31, 0x2E31 },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Lisu[] = {
+    /* Lisu */
     // BMP
     { 0x02BC, 0x02BC },
     { 0x02CD, 0x02CD },
     { 0x300A, 0x300B },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Java[] = {
+    /* Java */
     // BMP
     { 0xA9CF, 0xA9CF },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Orkh[] = {
+    /* Orkh */
     // BMP
     { 0x205A, 0x205A },
     { 0x2E30, 0x2E30 },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Kthi[] = {
+    /* Kthi */
     // BMP
     { 0x0966, 0x096F },
     { 0x2E31, 0x2E31 },
     { 0xA830, 0xA839 },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Mand[] = {
+    /* Mand */
     // BMP
     { 0x0640, 0x0640 },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Cakm[] = {
+    /* Cakm */
     // BMP
     { 0x09E6, 0x09EF },
     { 0x1040, 0x1049 },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Mero[] = {
+    /* Mero */
     // BMP
     { 0x205D, 0x205D },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Shrd[] = {
+    /* Shrd */
     // BMP
     { 0x0951, 0x0951 },
     { 0x1CD7, 0x1CD7 },
@@ -2461,37 +2357,33 @@ static constexpr PROPERTY_SET_RANGE scriptx_set_table_Shrd[] = {
     { 0xA830, 0xA835 },
     { 0xA838, 0xA838 },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Takr[] = {
+    /* Takr */
     // BMP
     { 0x0964, 0x0965 },
     { 0xA830, 0xA839 },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Aghb[] = {
+    /* Aghb */
     // BMP
     { 0x0304, 0x0304 },
     { 0x0331, 0x0331 },
     { 0x035E, 0x035E },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Dupl[] = {
+    /* Dupl */
     // BMP
     { 0x00B7, 0x00B7 },
     { 0x0307, 0x0308 },
     { 0x030A, 0x030A },
     { 0x0323, 0x0324 },
     { 0x2E3C, 0x2E3C },
+    // Packed-Non-BMP
+    PACKED(0x1BCA0, 0x1BCA3),
     // Non-BMP
-    { 0x1BCA0 }, { 0x1BCA3 },
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Elba[] = {
+    /* Elba */
     // BMP
     { 0x00B7, 0x00B7 },
     { 0x0305, 0x0305 },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Gran[] = {
+    /* Gran */
     // BMP
     { 0x0951, 0x0952 },
     { 0x0964, 0x0965 },
@@ -2501,43 +2393,40 @@ static constexpr PROPERTY_SET_RANGE scriptx_set_table_Gran[] = {
     { 0x1CF2, 0x1CF4 },
     { 0x1CF8, 0x1CF9 },
     { 0x20F0, 0x20F0 },
+    // Packed-Non-BMP
+    PACKED(0x11301, 0x11301),
+    PACKED(0x11303, 0x11303),
+    PACKED(0x1133B, 0x1133C),
+    PACKED(0x11FD0, 0x11FD1),
+    PACKED(0x11FD3, 0x11FD3),
     // Non-BMP
-    { 0x11301 }, { 0x11301 },
-    { 0x11303 }, { 0x11303 },
-    { 0x1133B }, { 0x1133C },
-    { 0x11FD0 }, { 0x11FD1 },
-    { 0x11FD3 }, { 0x11FD3 },
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Khoj[] = {
+    /* Khoj */
     // BMP
     { 0x0AE6, 0x0AEF },
     { 0xA830, 0xA839 },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Lina[] = {
+    /* Lina */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x10107, 0x10133),
     // Non-BMP
-    { 0x10107 }, { 0x10133 },
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Mahj[] = {
+    /* Mahj */
     // BMP
     { 0x00B7, 0x00B7 },
     { 0x0964, 0x096F },
     { 0xA830, 0xA839 },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Mani[] = {
+    /* Mani */
     // BMP
     { 0x0640, 0x0640 },
+    // Packed-Non-BMP
+    PACKED(0x10AF2, 0x10AF2),
     // Non-BMP
-    { 0x10AF2 }, { 0x10AF2 },
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Modi[] = {
+    /* Modi */
     // BMP
     { 0xA830, 0xA839 },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Perm[] = {
+    /* Perm */
     // BMP
     { 0x00B7, 0x00B7 },
     { 0x0300, 0x0300 },
@@ -2545,19 +2434,16 @@ static constexpr PROPERTY_SET_RANGE scriptx_set_table_Perm[] = {
     { 0x0313, 0x0313 },
     { 0x0483, 0x0483 },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Phlp[] = {
+    /* Phlp */
     // BMP
     { 0x0640, 0x0640 },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Sind[] = {
+    /* Sind */
     // BMP
     { 0x0964, 0x0965 },
     { 0xA830, 0xA839 },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Tirh[] = {
+    /* Tirh */
     // BMP
     { 0x0951, 0x0952 },
     { 0x0964, 0x0965 },
@@ -2566,29 +2452,25 @@ static constexpr PROPERTY_SET_RANGE scriptx_set_table_Tirh[] = {
     { 0x1CF2, 0x1CF2 },
     { 0xA830, 0xA839 },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Mult[] = {
+    /* Mult */
     // BMP
     { 0x0A66, 0x0A6F },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Hung[] = {
+    /* Hung */
     // BMP
     { 0x205A, 0x205A },
     { 0x205D, 0x205D },
     { 0x2E31, 0x2E31 },
     { 0x2E41, 0x2E41 },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Adlm[] = {
+    /* Adlm */
     // BMP
     { 0x061F, 0x061F },
     { 0x0640, 0x0640 },
     { 0x204F, 0x204F },
     { 0x2E41, 0x2E41 },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Newa[] = {
+    /* Newa */
     // BMP
     { 0x0951, 0x0952 },
     { 0x1CD5, 0x1CD5 },
@@ -2598,39 +2480,33 @@ static constexpr PROPERTY_SET_RANGE scriptx_set_table_Newa[] = {
     { 0x1CEB, 0x1CEB },
     { 0x1CED, 0x1CED },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Osge[] = {
+    /* Osge */
     // BMP
     { 0x0301, 0x0301 },
     { 0x0304, 0x0304 },
     { 0x030B, 0x030B },
     { 0x0358, 0x0358 },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Tang[] = {
+    /* Tang */
     // BMP
     { 0x2FF0, 0x2FFF },
     { 0x31EF, 0x31EF },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Gonm[] = {
+    /* Gonm */
     // BMP
     { 0x0964, 0x0965 },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Dogr[] = {
+    /* Dogr */
     // BMP
     { 0x0964, 0x096F },
     { 0xA830, 0xA839 },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Gong[] = {
+    /* Gong */
     // BMP
     { 0x00B7, 0x00B7 },
     { 0x0964, 0x0965 },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Rohg[] = {
+    /* Rohg */
     // BMP
     { 0x060C, 0x060C },
     { 0x061B, 0x061B },
@@ -2638,13 +2514,11 @@ static constexpr PROPERTY_SET_RANGE scriptx_set_table_Rohg[] = {
     { 0x0640, 0x0640 },
     { 0x06D4, 0x06D4 },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Sogd[] = {
+    /* Sogd */
     // BMP
     { 0x0640, 0x0640 },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Nand[] = {
+    /* Nand */
     // BMP
     { 0x0951, 0x0951 },
     { 0x0964, 0x0965 },
@@ -2654,49 +2528,43 @@ static constexpr PROPERTY_SET_RANGE scriptx_set_table_Nand[] = {
     { 0x1CFA, 0x1CFA },
     { 0xA830, 0xA835 },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Yezi[] = {
+    /* Yezi */
     // BMP
     { 0x060C, 0x060C },
     { 0x061B, 0x061B },
     { 0x061F, 0x061F },
     { 0x0660, 0x0669 },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Cpmn[] = {
+    /* Cpmn */
     // BMP
+    // Packed-Non-BMP
+    PACKED(0x10100, 0x10101),
     // Non-BMP
-    { 0x10100 }, { 0x10101 },
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Ougr[] = {
+    /* Ougr */
     // BMP
     { 0x0640, 0x0640 },
+    // Packed-Non-BMP
+    PACKED(0x10AF2, 0x10AF2),
     // Non-BMP
-    { 0x10AF2 }, { 0x10AF2 },
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Toto[] = {
+    /* Toto */
     // BMP
     { 0x02BC, 0x02BC },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Gara[] = {
+    /* Gara */
     // BMP
     { 0x060C, 0x060C },
     { 0x061B, 0x061B },
     { 0x061F, 0x061F },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Gukh[] = {
+    /* Gukh */
     // BMP
     { 0x0965, 0x0965 },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Onao[] = {
+    /* Onao */
     // BMP
     { 0x0964, 0x0965 },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Sunu[] = {
+    /* Sunu */
     // BMP
     { 0x0300, 0x0301 },
     { 0x0303, 0x0303 },
@@ -2705,8 +2573,7 @@ static constexpr PROPERTY_SET_RANGE scriptx_set_table_Sunu[] = {
     { 0x032D, 0x032D },
     { 0x0331, 0x0331 },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Todr[] = {
+    /* Todr */
     // BMP
     { 0x0301, 0x0301 },
     { 0x0304, 0x0304 },
@@ -2715,8 +2582,7 @@ static constexpr PROPERTY_SET_RANGE scriptx_set_table_Todr[] = {
     { 0x0313, 0x0313 },
     { 0x035E, 0x035E },
     // Non-BMP
-};
-static constexpr PROPERTY_SET_RANGE scriptx_set_table_Tutg[] = {
+    /* Tutg */
     // BMP
     { 0x0CE6, 0x0CEF },
     { 0x1CF2, 0x1CF2 },
@@ -2727,102 +2593,102 @@ static constexpr PROPERTY_SET_RANGE scriptx_set_table_Tutg[] = {
 };
 
 #define EACH_UCP_SCRIPT_EXTENSION(E) \
-    E(Latn, 25) \
-    E(Grek, 11) \
-    E(Cyrl, 11) \
-    E(Armn, 2) \
-    E(Hebr, 1) \
-    E(Arab, 13) \
-    E(Syrc, 14) \
-    E(Thaa, 6) \
-    E(Deva, 9) \
-    E(Beng, 14) \
-    E(Guru, 4) \
-    E(Gujr, 4) \
-    E(Orya, 4) \
-    E(Taml, 5) \
-    E(Telu, 6) \
-    E(Knda, 9) \
-    E(Mlym, 5) \
-    E(Sinh, 2) \
-    E(Thai, 4) \
-    E(Tibt, 1) \
-    E(Mymr, 2) \
-    E(Geor, 5) \
-    E(Hang, 8) \
-    E(Ethi, 1) \
-    E(Cher, 5) \
-    E(Runr, 1) \
-    E(Mong, 5) \
-    E(Hira, 13) \
-    E(Kana, 15) \
-    E(Bopo, 12) \
-    E(Hani, 24) \
-    E(Yiii, 5) \
-    E(Goth, 4) \
-    E(Tglg, 1) \
-    E(Hano, 1) \
-    E(Buhd, 1) \
-    E(Tagb, 1) \
-    E(Limb, 1) \
-    E(Tale, 4) \
-    E(Linb, 0) \
-    E(Shaw, 1) \
-    E(Cprt, 0) \
-    E(Bugi, 1) \
-    E(Copt, 6) \
-    E(Glag, 10) \
-    E(Tfng, 4) \
-    E(Sylo, 2) \
-    E(Phag, 4) \
-    E(Nkoo, 4) \
-    E(Kali, 1) \
-    E(Lyci, 1) \
-    E(Cari, 4) \
-    E(Lydi, 2) \
-    E(Avst, 2) \
-    E(Samr, 1) \
-    E(Lisu, 3) \
-    E(Java, 1) \
-    E(Orkh, 2) \
-    E(Kthi, 3) \
-    E(Mand, 1) \
-    E(Cakm, 2) \
-    E(Mero, 1) \
-    E(Shrd, 9) \
-    E(Takr, 2) \
-    E(Aghb, 3) \
-    E(Dupl, 5) \
-    E(Elba, 2) \
-    E(Gran, 8) \
-    E(Khoj, 2) \
-    E(Lina, 0) \
-    E(Mahj, 3) \
-    E(Mani, 1) \
-    E(Modi, 1) \
-    E(Perm, 5) \
-    E(Phlp, 1) \
-    E(Sind, 2) \
-    E(Tirh, 6) \
-    E(Mult, 1) \
-    E(Hung, 4) \
-    E(Adlm, 4) \
-    E(Newa, 7) \
-    E(Osge, 4) \
-    E(Tang, 2) \
-    E(Gonm, 1) \
-    E(Dogr, 2) \
-    E(Gong, 2) \
-    E(Rohg, 5) \
-    E(Sogd, 1) \
-    E(Nand, 7) \
-    E(Yezi, 4) \
-    E(Cpmn, 0) \
-    E(Ougr, 1) \
-    E(Toto, 1) \
-    E(Gara, 3) \
-    E(Gukh, 1) \
-    E(Onao, 1) \
-    E(Sunu, 6) \
-    E(Todr, 6) \
-    E(Tutg, 5)
+    E(Latn, 0, 25, 0, 25) \
+    E(Grek, 25, 11, 0, 11) \
+    E(Cyrl, 36, 11, 0, 11) \
+    E(Armn, 47, 2, 0, 2) \
+    E(Hebr, 49, 1, 0, 1) \
+    E(Arab, 50, 13, 1, 14) \
+    E(Syrc, 64, 14, 0, 14) \
+    E(Thaa, 78, 6, 0, 6) \
+    E(Deva, 84, 9, 0, 9) \
+    E(Beng, 93, 14, 0, 14) \
+    E(Guru, 107, 4, 0, 4) \
+    E(Gujr, 111, 4, 0, 4) \
+    E(Orya, 115, 4, 0, 4) \
+    E(Taml, 119, 5, 5, 10) \
+    E(Telu, 129, 6, 0, 6) \
+    E(Knda, 135, 9, 0, 9) \
+    E(Mlym, 144, 5, 0, 5) \
+    E(Sinh, 149, 2, 0, 2) \
+    E(Thai, 151, 4, 0, 4) \
+    E(Tibt, 155, 1, 0, 1) \
+    E(Mymr, 156, 2, 0, 2) \
+    E(Geor, 158, 5, 0, 5) \
+    E(Hang, 163, 8, 0, 8) \
+    E(Ethi, 171, 1, 0, 1) \
+    E(Cher, 172, 5, 0, 5) \
+    E(Runr, 177, 1, 0, 1) \
+    E(Mong, 178, 5, 0, 5) \
+    E(Hira, 183, 13, 0, 13) \
+    E(Kana, 196, 15, 0, 15) \
+    E(Bopo, 211, 12, 0, 12) \
+    E(Hani, 223, 24, 2, 26) \
+    E(Yiii, 249, 5, 0, 5) \
+    E(Goth, 254, 4, 0, 4) \
+    E(Tglg, 258, 1, 0, 1) \
+    E(Hano, 259, 1, 0, 1) \
+    E(Buhd, 260, 1, 0, 1) \
+    E(Tagb, 261, 1, 0, 1) \
+    E(Limb, 262, 1, 0, 1) \
+    E(Tale, 263, 4, 0, 4) \
+    E(Linb, 267, 0, 3, 3) \
+    E(Shaw, 270, 1, 0, 1) \
+    E(Cprt, 271, 0, 3, 3) \
+    E(Bugi, 274, 1, 0, 1) \
+    E(Copt, 275, 6, 1, 7) \
+    E(Glag, 282, 10, 0, 10) \
+    E(Tfng, 292, 4, 0, 4) \
+    E(Sylo, 296, 2, 0, 2) \
+    E(Phag, 298, 4, 0, 4) \
+    E(Nkoo, 302, 4, 0, 4) \
+    E(Kali, 306, 1, 0, 1) \
+    E(Lyci, 307, 1, 0, 1) \
+    E(Cari, 308, 4, 0, 4) \
+    E(Lydi, 312, 2, 0, 2) \
+    E(Avst, 314, 2, 0, 2) \
+    E(Samr, 316, 1, 0, 1) \
+    E(Lisu, 317, 3, 0, 3) \
+    E(Java, 320, 1, 0, 1) \
+    E(Orkh, 321, 2, 0, 2) \
+    E(Kthi, 323, 3, 0, 3) \
+    E(Mand, 326, 1, 0, 1) \
+    E(Cakm, 327, 2, 0, 2) \
+    E(Mero, 329, 1, 0, 1) \
+    E(Shrd, 330, 9, 0, 9) \
+    E(Takr, 339, 2, 0, 2) \
+    E(Aghb, 341, 3, 0, 3) \
+    E(Dupl, 344, 5, 1, 6) \
+    E(Elba, 350, 2, 0, 2) \
+    E(Gran, 352, 8, 5, 13) \
+    E(Khoj, 365, 2, 0, 2) \
+    E(Lina, 367, 0, 1, 1) \
+    E(Mahj, 368, 3, 0, 3) \
+    E(Mani, 371, 1, 1, 2) \
+    E(Modi, 373, 1, 0, 1) \
+    E(Perm, 374, 5, 0, 5) \
+    E(Phlp, 379, 1, 0, 1) \
+    E(Sind, 380, 2, 0, 2) \
+    E(Tirh, 382, 6, 0, 6) \
+    E(Mult, 388, 1, 0, 1) \
+    E(Hung, 389, 4, 0, 4) \
+    E(Adlm, 393, 4, 0, 4) \
+    E(Newa, 397, 7, 0, 7) \
+    E(Osge, 404, 4, 0, 4) \
+    E(Tang, 408, 2, 0, 2) \
+    E(Gonm, 410, 1, 0, 1) \
+    E(Dogr, 411, 2, 0, 2) \
+    E(Gong, 413, 2, 0, 2) \
+    E(Rohg, 415, 5, 0, 5) \
+    E(Sogd, 420, 1, 0, 1) \
+    E(Nand, 421, 7, 0, 7) \
+    E(Yezi, 428, 4, 0, 4) \
+    E(Cpmn, 432, 0, 1, 1) \
+    E(Ougr, 433, 1, 1, 2) \
+    E(Toto, 435, 1, 0, 1) \
+    E(Gara, 436, 3, 0, 3) \
+    E(Gukh, 439, 1, 0, 1) \
+    E(Onao, 440, 1, 0, 1) \
+    E(Sunu, 441, 6, 0, 6) \
+    E(Todr, 447, 6, 0, 6) \
+    E(Tutg, 453, 5, 0, 5)

@@ -48,38 +48,45 @@ let excludes  = @(Zzzz) # Unknown
 ## generate each script set table
 auto_gen_header > $out
 
-var bmpSizeMap: [String: Int]
+var sizeMap: [String: OffsetEntry]
+var offset = 0
+write "static constexpr PROPERTY_SET_RANGE script_set_table_except_Zzzz[] = {"
 for cate in $cates {
-    var set = $createCodePointSet("sc:$cate")
-    write "static constexpr PROPERTY_SET_RANGE script_set_table_$cate[] = {"
+    var set = $createCodePointSet("sc:$cate", $true)
+    write "    /* $cate */"
     $set.emit() with >> $out
-    write "};"
-    $bmpSizeMap.put($cate, $set.bmp.size())
-}
-
-## generate final table
-write 
-write "static constexpr PROPERTY_SET_RANGE_TABLE script_set_table_except_Zzzz[] = {"
-for cate, s in $bmpSizeMap {
-    write "    {$s, script_set_table_$cate, std::size(script_set_table_$cate)}, // $cate"
+    $sizeMap.put($cate, $set.toOffsetEntry($offset))
+    $offset += $set.tableSize()
 }
 write "};"
 
-## generate each script extension table
-$bmpSizeMap.clear()
-for cate in $cates {
-    var set = $createCodePointSet("scx:$cate")
-    $set.empty() && continue
-    write "static constexpr PROPERTY_SET_RANGE scriptx_set_table_$cate[] = {"
-    $set.emit() with >> $out
-    write "};"
-    $bmpSizeMap.put($cate, $set.bmp.size())
+## generate final table
+write 
+write "static constexpr PROPERTY_SET_RANGE_TABLE_OFFSET script_set_table_offset_except_Zzzz[] = {"
+for cate, s in $sizeMap {
+    write "    {${$s.str()}}, // $cate"
 }
+write "};"
+write
+
+## generate each script extension table
+$sizeMap.clear()
+$offset = 0
+write "static constexpr PROPERTY_SET_RANGE scriptx_set_table[] = {"
+for cate in $cates {
+    var set = $createCodePointSet("scx:$cate", $true)
+    $set.empty() && continue
+    write "    /* $cate */"
+    $set.emit() with >> $out
+    $sizeMap.put($cate, $set.toOffsetEntry($offset))
+    $offset += $set.tableSize()
+}
+write "};"
 write
 write '#define EACH_UCP_SCRIPT_EXTENSION(E) \'
 var c = 0;
-for cate, bmpSize in $bmpSizeMap {
-    write "    E($cate, $bmpSize)${$c < $bmpSizeMap.size() - 1 ? ' \' : ""}"
+for cate, s in $sizeMap {
+    write "    E($cate, ${$s.str()})${$c < $sizeMap.size() - 1 ? ' \' : ""}"
     $c++
 }
 
