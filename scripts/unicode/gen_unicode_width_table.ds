@@ -11,19 +11,6 @@ write() {
     echo $@ >> $out
 }
 
-function table($n : String, $v : [String], suffix: String) {
-    write -n "static constexpr UNICODE_INTERVAL_$suffix $n[] = {"
-    var i = 0
-    for $e in $v {
-        if($i % 4 == 0) { write -n -e "\n   "; }
-        write -n " $e"
-        $i++
-    }
-    write
-    write "};"
-    write
-}
-
 source ./guniset_helper.arsh
 
 shctl set errraise
@@ -32,14 +19,28 @@ shctl set errraise
 echo generate file: $out
 auto_gen_header > $out
 
-$IFS = $'\n'
-$table("zero_width_table_16", $(guniset generate --filter=bmp 'cat:Me,Mn,Cf + U+1160..U+11FF - U+00AD'), '16')
-$table("zero_width_table_32", $(guniset generate --filter=non-bmp 'cat:Me,Mn,Cf + U+1160..U+11FF - U+00AD'), '32')
+var targets = [
+    ('zero_width_table','cat:Me,Mn,Cf + U+1160..U+11FF - U+00AD'),
+    ('two_width_table', 'eaw:F,W - cat:Me,Mn,Cf'),
+    ('ambiguous_width_table', 'eaw:A - cat:Me,Mn,Cf'),
+]
 
-$table("two_width_table_16", $(guniset generate --filter=bmp 'eaw:F,W - cat:Me,Mn,Cf'), '16')
-$table("two_width_table_32", $(guniset generate --filter=non-bmp 'eaw:F,W - cat:Me,Mn,Cf'), '32')
+var sizeMap: [String: OffsetEntry]
+var offset = 0
+write "static constexpr PROPERTY_SET_RANGE all_table[] = {"
+for target in $targets {
+    var set = $createCodePointSet($target._1, $true)
+    assert !$set.empty()
+    write "    /* ${target._0} */"
+    $set.emit() with >> $out
+    $sizeMap.put($target._0, $set.toOffsetEntry($offset))
+    $offset += $set.tableSize()
+}
+write "};"
+write
+for n, e in $sizeMap {
+    write "constexpr PROPERTY_SET_RANGE_TABLE $n(${e.bmpSize}, ${e.packedSize}, all_table + ${e.offset}, ${e.tableSize});"
+}
 
-$table("ambiguous_width_table_16", $(guniset generate --filter=bmp 'eaw:A - cat:Me,Mn,Cf'), '16')
-$table("ambiguous_width_table_32", $(guniset generate --filter=non-bmp 'eaw:A - cat:Me,Mn,Cf'), '32')
 
 echo code generation success
