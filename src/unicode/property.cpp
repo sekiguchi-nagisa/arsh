@@ -179,12 +179,6 @@ static constexpr const char *scriptNames[] = {
 #undef GEN_TABLE
 };
 
-enum class Script : unsigned char {
-#define GEN_ENUM(E, S) E,
-  EACH_UCP_SCRIPT(GEN_ENUM)
-#undef GEN_ENUM
-};
-
 static auto initScriptNameMap() {
   StrRefMap<Script> map;
   for (unsigned int i = 0; i < std::size(scriptNames); i++) {
@@ -197,7 +191,7 @@ static auto initScriptNameMap() {
   return map;
 }
 
-static StringRef toString(Script script, bool longName) {
+StringRef toString(Script script, bool longName) {
   if (const auto i = toUnderlying(script); i < std::size(scriptNames)) {
     StringRef name;
     unsigned int count = 0;
@@ -211,21 +205,19 @@ static StringRef toString(Script script, bool longName) {
   return "";
 }
 
-StringRef getScript(const int codePoint) {
+Optional<Script> getScript(const int codePoint) {
   if (UnicodeUtil::isValidCodePoint(codePoint)) {
-    auto script = Script::Zzzz;
     for (unsigned int i = 0; i < std::size(script_set_table_except_Zzzz); i++) {
       if (script_set_table_except_Zzzz[i].contains(codePoint)) {
-        script = static_cast<Script>(i);
-        break;
+        return static_cast<Script>(i);
       }
     }
-    return toString(script, true);
+    return Script::Zzzz;
   }
-  return "";
+  return {};
 }
 
-static Optional<Script> parseScript(const StringRef ref) {
+Optional<Script> parseScript(const StringRef ref) {
   static const auto map = initScriptNameMap();
   if (const auto iter = map.find(ref); iter != map.end()) {
     return iter->second;

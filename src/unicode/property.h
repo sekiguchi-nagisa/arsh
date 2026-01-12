@@ -23,6 +23,7 @@
 #include "set_builder.h"
 
 #include "ucp_general_category_def.in"
+#include "ucp_script_def.in"
 
 namespace arsh::ucp {
 
@@ -40,7 +41,21 @@ Optional<Category> getCategory(int codePoint);
 
 StringRef toString(Category category, bool longName = false);
 
-StringRef getScript(int codePoint);
+// for Unicode Script property
+
+enum class Script : unsigned char {
+#define GEN_ENUM(E, S) E,
+  EACH_UCP_SCRIPT(GEN_ENUM)
+#undef GEN_ENUM
+};
+
+Optional<Script> parseScript(StringRef ref);
+
+Optional<Script> getScript(int codePoint);
+
+StringRef toString(Script script, bool longName = true);
+
+// Unicode Property api
 
 #define EACH_UCP_PROPERTY_NAME(E)                                                                  \
   E(General_Category, "gc")                                                                        \

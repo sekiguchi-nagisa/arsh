@@ -28,7 +28,7 @@ install_guniset() {
 
     let _version = "0.8.1"
 
-    (test -x guniset && "$(./guniset -v)".split(" ")[0] == "v$_version") ||
+    (test -x ./guniset && "$(./guniset -v)".split(" ")[0] == "v$_version") ||
         (curl -L \
             https://github.com/sekiguchi-nagisa/guniset/releases/download/v${_version}/guniset-$_version-$OSTYPE-$MACHTYPE \
             > ./guniset && chmod +x ./guniset)

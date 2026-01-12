@@ -2894,8 +2894,8 @@ ARSH_METHOD unicode_script(RuntimeContext &ctx) {
   if (ref.size() <= 4) {
     int codePoint = -1;
     if (UnicodeUtil::utf8ToCodePoint(ref.data(), ref.size(), codePoint) == ref.size()) {
-      if (auto ret = ucp::getScript(codePoint); !ret.empty()) {
-        RET(Value::createStr(ret));
+      if (auto ret = ucp::getScript(codePoint); ret.hasValue()) {
+        RET(Value::createStr(toString(ret.unwrap())));
       }
     }
   }
