@@ -36,10 +36,10 @@ install_guniset() {
     pushd $_install_dir
     defer { popd; }
 
-    let _version = "0.8.1"
+    let _version = "0.9.0"
 
-    (test -x ./guniset && "$(./guniset -v)".split(" ")[0] == "v$_version") ||
-        (curl -L \
+    (test -x ./guniset && "$(./guniset -v || true)".split(" ")[0] == "v$_version") ||
+        (sleep 0.1 && curl -L \
             https://github.com/sekiguchi-nagisa/guniset/releases/download/v${_version}/guniset-$_version-$OSTYPE-$MACHTYPE \
             > ./guniset && chmod +x ./guniset)
 
