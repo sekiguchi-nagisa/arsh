@@ -63,6 +63,9 @@ bool FrontEnd::tryToParse() {
     if (hasFlag(this->option, FrontEndOption::IMPLICIT_BLOCK)) {
       setFlag(parserOption, ParserOption::IMPLICIT_BLOCK);
     }
+    if (hasFlag(this->option, FrontEndOption::ERROR_RECOVERY)) {
+      setFlag(parserOption, ParserOption::ERROR_RECOVER);
+    }
     ObserverPtr<CodeCompletionContext> handler;
     if (this->contexts.size() == 1) { // code completion is disabled in sourced scripts
       handler = this->checker.getCodeCompletionHandler();
@@ -70,9 +73,13 @@ bool FrontEnd::tryToParse() {
     Parser parser(*ctx->lexer, parserOption, handler);
     ctx->nodes = parser();
     assert(!ctx->nodes.empty());
-    if (parser.hasError()) {
+    if (parser.hasError() || parser.getOldErrors().size()) {
       this->curScope()->updateModAttr(ModAttr::HAS_ERRORS);
-      this->listener &&this->listener->handleParseError(this->contexts, parser.getError());
+      this->listener &&this->listener->handleParseError(
+          this->contexts,
+          parser.getOldErrors().size()
+              ? *parser.getOldErrors().front()
+              : parser.getError()); // only report first appeared syntax error
       if (!hasFlag(this->option, FrontEndOption::ERROR_RECOVERY)) {
         return false;
       }

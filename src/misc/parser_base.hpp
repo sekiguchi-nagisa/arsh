@@ -90,7 +90,6 @@ protected:
 
   unsigned int callCount{0};
 
-private:
   std::unique_ptr<ParseErrorBase<T>> error;
 
 public:

@@ -458,6 +458,35 @@ void Parser::reportDetailedError(ParseErrorKind kind, unsigned int size, const T
                     std::move(message));
 }
 
+std::unique_ptr<Node> Parser::recoverAndSkipUntilSyncPoint(bool onlyLineEnd) {
+  if (this->incompleteNode || !this->hasError() ||
+      !hasFlag(this->option, ParserOption::ERROR_RECOVER)) {
+    return nullptr;
+  }
+  for (unsigned int count = 0;; count++) {
+    switch (this->curKind) {
+    case TokenKind::EOS:
+    case TokenKind::COMPLETION:
+      return nullptr;
+    case TokenKind::RBC:
+    case TokenKind::LINE_END:
+    case TokenKind::NEW_LINE:
+      if (!count && this->error->getTokenKind() == this->curKind &&
+          this->curKind == TokenKind::RBC) {
+        break; // ignore first appeared mismatched token
+      }
+      if (onlyLineEnd && this->curKind != TokenKind::LINE_END) {
+        break;
+      }
+      this->oldErrors.push_back(std::move(this->error));
+      return std::make_unique<ErrorNode>(this->getOldErrors().back()->getErrorToken());
+    default:
+      break;
+    }
+    this->fetchNext(); // force consume token (not trace token)
+  }
+}
+
 // parse rule definition
 std::unique_ptr<FunctionNode> Parser::parse_function(bool needBody) {
   GUARD_DEEP_NESTING(guard);
@@ -816,7 +845,12 @@ std::unique_ptr<Node> Parser::parse_statementImpl() {
 }
 
 std::unique_ptr<Node> Parser::parse_statement(bool onlyLineEnd) {
-  auto node = TRY(this->parse_statementImpl());
+  auto node = this->parse_statementImpl();
+  if (auto r = this->recoverAndSkipUntilSyncPoint(onlyLineEnd)) {
+    node = std::move(r);
+  } else if (this->hasError()) {
+    return nullptr;
+  }
   TRY(this->parse_statementEnd(onlyLineEnd));
   return node;
 }
@@ -1184,13 +1218,17 @@ static bool lookahead_expression(TokenKind kind) {
 std::unique_ptr<Node> Parser::parse_forCond() {
   GUARD_DEEP_NESTING(guard);
 
+  std::unique_ptr<Node> node;
   if (lookahead_expression(CUR_KIND())) {
-    return this->parse_expression();
+    node = this->parse_expression();
   } else if (CUR_KIND() != TokenKind::LINE_END) {
-    E_DETAILED(ParseErrorKind::EXPR_END, EACH_LA_expression(GEN_LA_ALTER) TokenKind::LINE_END);
-  } else {
-    return nullptr;
+    this->reportDetailedError(ParseErrorKind::EXPR_END,
+                              {EACH_LA_expression(GEN_LA_ALTER) TokenKind::LINE_END});
   }
+  if (auto r = this->recoverAndSkipUntilSyncPoint(true)) {
+    node = std::move(r);
+  }
+  return node;
 }
 
 std::unique_ptr<Node> Parser::parse_forIter() {

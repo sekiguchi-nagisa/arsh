@@ -232,12 +232,18 @@ $assertArray(["AAA", "ABE",], $(complete "source $SCRIPT_DIR/../../_module4test/
 $assertArray(["AAA"], $(complete "source $SCRIPT_DIR/../../_module4test/subcmd_nest1.ds as CP; CP s\\ub2 AA"))
 assert $(complete "source $SCRIPT_DIR/../../_module4test/subcmd_nest1.ds as CP; CP s\\ub2 CC").empty()
 
+# error recover
+$assertArray($(complete 'var a = ;'), $(complete ';'))
+$assertArray( $(complete 'coproc { $$$; break 34.'), $(complete 'break 34.'))
+$assertArray( $(complete '[]; { return 34.'), $(complete '34.') )
+$assertArray($(complete 'for(][;;){ l'), $(complete 'l'))
+$assertArray($(complete 'for(][;][;){ l'), $(complete 'l'))
+
 # no completion candidate
 assert($(complete '34').empty())
 assert($(complete '34 ').empty())
 assert($(complete 'echo hello ${45}').empty())
 assert($(complete 'echo hello ${45}./').empty())
-assert($(complete 'var a = ;').empty())
 assert($(complete 'var 23').empty())
 assert($(complete 'var ').empty())
 assert($(complete '[  )').empty())
@@ -248,8 +254,6 @@ assert $(complete 'ls # this is a comment ').empty()
 assert $(complete 'var a : Int.').empty()
 assert $(complete 'typedef AAA() { var ZZ = 34; function() => $Z').empty()
 assert $(complete 'ZZZ=12345 function() => $Z').empty()
-# assert $(complete 'coproc { break 34.').empty()
-# assert $(complete '{ return 34.').empty()
 
 complete '#jerijf' > /dev/null
 assert $COMPREPLY.size() == 0

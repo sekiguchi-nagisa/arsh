@@ -32,6 +32,7 @@ enum class ParserOption : unsigned char {
   NEED_HERE_END = 1u << 1u,     // for line continuation checking
   COLLECT_SIGNATURE = 1u << 2u, // for signature help
   IMPLICIT_BLOCK = 1u << 3u,
+  ERROR_RECOVER = 1u << 4u, // ignore the error and continue parsing
 };
 
 template <>
@@ -96,6 +97,8 @@ private:
 
   std::vector<ObserverPtr<RedirNode>> hereDocNodes;
 
+  std::vector<std::unique_ptr<ParseError>> oldErrors;
+
   struct HereOp {
     TokenKind kind;
     unsigned int pos;
@@ -117,6 +120,10 @@ public:
   std::vector<std::unique_ptr<Node>> operator()();
 
   explicit operator bool() const { return this->curKind != TokenKind::EOS; }
+
+  const auto &getOldErrors() const { return this->oldErrors; }
+
+  auto takeOldErrors() && { return std::move(this->oldErrors); }
 
 protected:
   /**
@@ -236,6 +243,8 @@ protected:
                       "heredoc start word must follow `[a-zA-Z0-9_-]+' or "
                       "`['][a-zA-Z0-9_-]+[']' format");
   }
+
+  std::unique_ptr<Node> recoverAndSkipUntilSyncPoint(bool onlyLineEnd);
 
   std::unique_ptr<Node> toAccessNode(Token token) const;
 

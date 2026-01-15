@@ -58,7 +58,12 @@ HighlightTokenRange getHighlightTokenRange();
 class TokenEmitter : public TriviaStore, public TokenTracker {
 protected:
   StringRef source;
-  LexerPtr lexerPtr; // set after call tokenizeAndEmit()
+
+  /**
+   * the following members will be set after call tokenizeAndEmit()
+   */
+  LexerPtr lexerPtr;
+  std::vector<std::unique_ptr<ParseError>> oldErrors;
 
 public:
   explicit TokenEmitter(StringRef source) : source(source) {}
@@ -68,6 +73,8 @@ public:
   [[nodiscard]] StringRef getSource() const { return this->source; }
 
   const LexerPtr &getLexerPtr() const { return this->lexerPtr; }
+
+  const auto &getOldErrors() const { return this->oldErrors; }
 
   void operator()(TokenKind kind, Token token) override;
 

@@ -177,9 +177,10 @@ std::unique_ptr<ParseError> TokenEmitter::tokenizeAndEmit() {
   StringRef content = this->getSource();
   this->lexerPtr = LexerPtr::create("<dummy>", ByteBuffer(content.begin(), content.end()), nullptr);
   this->lexerPtr->setTriviaStore(makeObserver(*this));
-  Parser parser(*this->lexerPtr, ParserOption::NEED_HERE_END);
+  Parser parser(*this->lexerPtr, ParserOption::NEED_HERE_END | ParserOption::ERROR_RECOVER);
   parser.setTracker(this);
   parser();
+  this->oldErrors = std::move(parser).takeOldErrors();
   if (parser.hasError()) {
     return std::move(parser).takeError();
   }

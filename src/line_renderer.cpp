@@ -253,15 +253,17 @@ bool LineRenderer::renderScript(const StringRef source,
     this->render(remain, HighlightTokenClass::NONE_);
   }
 
-  // line continuation checking
-  bool lineContinue = true;
-  if (ret.error) {
+  // line continuation checking (if line editing should continue, isCompleteLine will be false)
+  bool isCompleteLine = true;
+  if (tokenEmitter.getOldErrors().size()) {
+    isCompleteLine = true;
+  } else if (ret.error) {
     if (ret.error->getTokenKind() == TokenKind::EOS) {
-      lineContinue = false;
+      isCompleteLine = false;
     } else {
       auto kind = ret.error->getTokenKind();
       if (isUnclosedToken(kind) && kind != TokenKind::UNCLOSED_REGEX_LITERAL) {
-        lineContinue = false;
+        isCompleteLine = false;
       }
     }
   } else if (!ret.tokens.empty()) {
@@ -270,13 +272,13 @@ bool LineRenderer::renderScript(const StringRef source,
     switch (toTokenClass(ret.tokens.back().first)) {
     case HighlightTokenClass::NONE_:
       if (last.size() == 2 && last == "\\\n") {
-        lineContinue = false;
+        isCompleteLine = false;
       }
       break;
     case HighlightTokenClass::COMMAND:
     case HighlightTokenClass::COMMAND_ARG:
       if (last.endsWith("\\\n")) {
-        lineContinue = false;
+        isCompleteLine = false;
       }
       break;
     default:
@@ -286,7 +288,7 @@ bool LineRenderer::renderScript(const StringRef source,
   if (this->tokenizeResult) {
     *this->tokenizeResult = std::move(ret);
   }
-  return lineContinue;
+  return isCompleteLine;
 }
 
 const std::string *LineRenderer::findColorCode(HighlightTokenClass tokenClass) const {
