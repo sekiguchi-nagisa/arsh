@@ -11,16 +11,37 @@ type _Param() {
 }
 
 ## helper
-let combinedSet = @(  # generated from other property combination
-    Alphabetic 
-    Assigned 
-    Default_Ignorable_Code_Point
-    Grapheme_Base
-    Grapheme_Extend
-    Lowercase
-    Math
-    Uppercase
-).sort()
+let combinedSet = [  # generated from other property combination
+    "Alphabetic": "dcp:Lowercase + dcp:Uppercase + cat:Lt + cat:Lm + cat:Lo + cat:Nl + prop:Other_Alphabetic",
+    "Assigned": "",
+    "Cased": "dcp:Lowercase + dcp:Uppercase + cat:Lt",
+    "Default_Ignorable_Code_Point": 
+        "prop:Other_Default_Ignorable_Code_Point + cat:Cf + prop:Variation_Selector - prop:White_Space - U+FFF9..U+FFFB - U+13430..U+1343F - prop:Prepended_Concatenation_Mark",
+    "Grapheme_Base": 
+        "U+0..U+10FFFF - cat:Cc - cat:Cf - cat:Cs - cat:Co - cat:Cn - cat:Zl - cat:Zp - dcp:Grapheme_Extend",
+    "Grapheme_Extend": "cat:Me + cat:Mn + prop:Other_Grapheme_Extend",
+    "ID_Continue": 
+        "dcp:ID_Start + cat:Mn + cat:Mc + cat:Nd + cat:Pc + prop:Other_ID_Continue - prop:Pattern_Syntax - prop:Pattern_White_Space",
+    "ID_Start": "cat:L + cat:Nl + prop:Other_ID_Start - prop:Pattern_Syntax - prop:Pattern_White_Space",
+    "Lowercase": 'cat:Ll + prop:Other_Lowercase',
+    "Math": "cat:Sm + prop:Other_Math",
+    "Uppercase": 'cat:Lu + prop:Other_Uppercase',
+    "XID_Continue": "",
+    "XID_Start": "",
+]
+
+function assertCombinedSet() {
+    for k, v in $combinedSet {
+        $v.empty() && continue
+        assert (diff <(guniset generate "dcp:$k") <(guniset generate $v)) : $k
+    }
+
+    # for XID
+    assert !$(guniset generate "dcp:ID_Continue - dcp:XID_Continue").empty()
+    assert $(guniset generate "dcp:XID_Continue - dcp:ID_Continue").empty()
+    assert !$(guniset generate "dcp:ID_Start - dcp:XID_Start").empty()
+    assert $(guniset generate "dcp:XID_Start - dcp:ID_Start").empty()
+}
 
 type LoneProperty(n: String, a: String, p: String?) {
     let name = $n
@@ -29,7 +50,9 @@ type LoneProperty(n: String, a: String, p: String?) {
     let query = case $name {
         "ASCII" => "0..7F"
         "Any" => "0..10FFFF"
-        else => $prefix && $combinedSet.searchSorted($name) < 0  ? $prefix! + ":" + $name : $none
+        "XID_Continue_Delta" => "dcp:ID_Continue - dcp:XID_Continue"
+        "XID_Start_Delta" => "dcp:ID_Start - dcp:XID_Start"
+        else => $prefix && !$combinedSet.get($name)  ? $prefix! + ":" + $name : $none
     }
 }
 
@@ -112,14 +135,20 @@ let internals = $create([  # for internally used property
 @(Other_Default_Ignorable_Code_Point  -  PropList.txt),
 @(Prepended_Concatenation_Mark        -  PropList.txt),
 @(Other_Grapheme_Extend               -  PropList.txt),
+@(Other_ID_Continue                   -  PropList.txt),
+@(Other_ID_Start                      -  PropList.txt),
 @(Other_Lowercase                     -  PropList.txt),
 @(Other_Math                          -  PropList.txt),
 @(Other_Uppercase                     -  PropList.txt),
+@(XID_Continue_Delta                  -  dummy), # dummy property for XID_Continue
+@(XID_Start_Delta                     -  dummy), # dummy property for XID_Start
 ])
 
 
 _main(param : _Param) {
     shctl set errraise
+
+    $assertCombinedSet()
 
     ## generate lone property header
     {

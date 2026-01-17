@@ -27,7 +27,6 @@
     E(Any, "Any") \
     E(Bidi_Control, "Bidi_Control|Bidi_C") \
     E(Case_Ignorable, "Case_Ignorable|CI") \
-    E(Cased, "Cased") \
     E(Changes_When_Casefolded, "Changes_When_Casefolded|CWCF") \
     E(Changes_When_Casemapped, "Changes_When_Casemapped|CWCM") \
     E(Changes_When_Lowercased, "Changes_When_Lowercased|CWL") \
@@ -46,8 +45,6 @@
     E(Hex_Digit, "Hex_Digit|Hex") \
     E(IDS_Binary_Operator, "IDS_Binary_Operator|IDSB") \
     E(IDS_Trinary_Operator, "IDS_Trinary_Operator|IDST") \
-    E(ID_Continue, "ID_Continue|IDC") \
-    E(ID_Start, "ID_Start|IDS") \
     E(Ideographic, "Ideographic|Ideo") \
     E(Join_Control, "Join_Control|Join_C") \
     E(Logical_Order_Exception, "Logical_Order_Exception|LOE") \
@@ -63,19 +60,22 @@
     E(Unified_Ideograph, "Unified_Ideograph|UIdeo") \
     E(Variation_Selector, "Variation_Selector|VS") \
     E(White_Space, "White_Space|space") \
-    E(XID_Continue, "XID_Continue|XIDC") \
-    E(XID_Start, "XID_Start|XIDS") \
     /* for combined lone property */ \
     E(Alphabetic, "Alphabetic|Alpha") \
     E(Assigned, "Assigned") \
     E(Bidi_Mirrored, "Bidi_Mirrored|Bidi_M") \
+    E(Cased, "Cased") \
     E(Changes_When_NFKC_Casefolded, "Changes_When_NFKC_Casefolded|CWKCF") \
     E(Default_Ignorable_Code_Point, "Default_Ignorable_Code_Point|DI") \
     E(Grapheme_Base, "Grapheme_Base|Gr_Base") \
     E(Grapheme_Extend, "Grapheme_Extend|Gr_Ext") \
+    E(ID_Continue, "ID_Continue|IDC") \
+    E(ID_Start, "ID_Start|IDS") \
     E(Lowercase, "Lowercase|Lower") \
     E(Math, "Math") \
     E(Uppercase, "Uppercase|Upper") \
+    E(XID_Continue, "XID_Continue|XIDC") \
+    E(XID_Start, "XID_Start|XIDS") \
 
 
 #define EACH_UCP_LONE_PROPERTY_PRIME_INTERNAL(E) \
@@ -83,9 +83,13 @@
     E(Other_Default_Ignorable_Code_Point) \
     E(Prepended_Concatenation_Mark) \
     E(Other_Grapheme_Extend) \
+    E(Other_ID_Continue) \
+    E(Other_ID_Start) \
     E(Other_Lowercase) \
     E(Other_Math) \
     E(Other_Uppercase) \
+    E(XID_Continue_Delta) \
+    E(XID_Start_Delta) \
 
 
 #define EACH_UCP_LONE_PROPERTY_PRIME(E) \
@@ -94,7 +98,6 @@
     E(Any) \
     E(Bidi_Control) \
     E(Case_Ignorable) \
-    E(Cased) \
     E(Changes_When_Casefolded) \
     E(Changes_When_Casemapped) \
     E(Changes_When_Lowercased) \
@@ -113,8 +116,6 @@
     E(Hex_Digit) \
     E(IDS_Binary_Operator) \
     E(IDS_Trinary_Operator) \
-    E(ID_Continue) \
-    E(ID_Start) \
     E(Ideographic) \
     E(Join_Control) \
     E(Logical_Order_Exception) \
@@ -130,8 +131,6 @@
     E(Unified_Ideograph) \
     E(Variation_Selector) \
     E(White_Space) \
-    E(XID_Continue) \
-    E(XID_Start) \
 
 
 #define EACH_UCP_LONE_PROPERTY(E) \
@@ -140,14 +139,19 @@
     E(Alphabetic) \
     E(Assigned) \
     E(Bidi_Mirrored) \
+    E(Cased) \
     E(Changes_When_NFKC_Casefolded) \
     E(Default_Ignorable_Code_Point) \
     E(Grapheme_Base) \
     E(Grapheme_Extend) \
+    E(ID_Continue) \
+    E(ID_Start) \
     E(Lowercase) \
     E(Math) \
     E(Uppercase) \
+    E(XID_Continue) \
+    E(XID_Start) \
     /* end */
 
-#define UCP_LONE_PROPERTY_PRIME_INTERNAL_SIZE 7
-#define UCP_LONE_PROPERTY_SIZE 60
+#define UCP_LONE_PROPERTY_PRIME_INTERNAL_SIZE 11
+#define UCP_LONE_PROPERTY_SIZE 64

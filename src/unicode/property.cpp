@@ -398,7 +398,26 @@ static bool getLoneSet(const Lone lone, BuilderOrSet out) {
     }
     return true;
   }
-  case Lone::Bidi_Mirrored:                // TODO:
+  case Lone::Bidi_Mirrored: // TODO:
+    break;
+  case Lone::Cased: {
+    // Generated from: Lowercase + Uppercase + Lt
+    CodePointSetBuilder builder;
+    constexpr Property combs[] = {
+        fromLone(Lone::Lowercase),
+        fromLone(Lone::Uppercase),
+        Property::category(Category::Lt),
+    };
+    for (auto &p : combs) {
+      getPropertySet(p, BuilderOrSet(builder));
+    }
+    if (out.isBuilder) {
+      out.builder->add(builder);
+    } else {
+      *out.set = builder.build();
+    }
+    return true;
+  }
   case Lone::Changes_When_NFKC_Casefolded: // TODO:
     break;
   case Lone::Default_Ignorable_Code_Point: {
@@ -478,6 +497,55 @@ static bool getLoneSet(const Lone lone, BuilderOrSet out) {
     }
     return true;
   }
+  case Lone::ID_Continue: {
+    /*
+     * Generated from:
+     * [\p{ID_Start}\p{Mn}\p{Mc}\p{Nd}\p{Pc}\p{Other_ID_Continue}-\p{Pattern_Syntax}-\p{Pattern_White_Space}]
+     * --> ID_Start + Mn + Mc + Nd + Pc + Other_ID_Continue
+     *     - Pattern_Syntax - Pattern_White_Space
+     *
+     */
+    CodePointSetBuilder builder;
+    constexpr Property combs[] = {
+        fromLone(Lone::ID_Start),         Property::category(Category::Mn),
+        Property::category(Category::Mc), Property::category(Category::Nd),
+        Property::category(Category::Pc), fromLone(Lone::Other_ID_Continue),
+    };
+    for (auto &p : combs) {
+      getPropertySet(p, BuilderOrSet(builder));
+    }
+    builder.sub(getPropertySet(fromLone(Lone::Pattern_Syntax)).ref());
+    builder.sub(getPropertySet(fromLone(Lone::Pattern_White_Space)).ref());
+    if (out.isBuilder) {
+      out.builder->add(builder);
+    } else {
+      *out.set = builder.build();
+    }
+    return true;
+  }
+  case Lone::ID_Start: {
+    /*
+     * Generated from: [\p{L}\p{Nl}\p{Other_ID_Start}-\p{Pattern_Syntax}-\p{Pattern_White_Space}]
+     * --> L + Nl + Other_ID_Start - Pattern_Syntax - Pattern_White_Space
+     */
+    CodePointSetBuilder builder;
+    constexpr Property combs[] = {
+        Property::category(Category::L),
+        Property::category(Category::Nl),
+        fromLone(Lone::Other_ID_Start),
+    };
+    for (auto &p : combs) {
+      getPropertySet(p, BuilderOrSet(builder));
+    }
+    builder.sub(getPropertySet(fromLone(Lone::Pattern_Syntax)).ref());
+    builder.sub(getPropertySet(fromLone(Lone::Pattern_White_Space)).ref());
+    if (out.isBuilder) {
+      out.builder->add(builder);
+    } else {
+      *out.set = builder.build();
+    }
+    return true;
+  }
   case Lone::Lowercase: {
     // Generated from: Ll + Other_Lowercase
     CodePointSetBuilder builder;
@@ -507,6 +575,28 @@ static bool getLoneSet(const Lone lone, BuilderOrSet out) {
     CodePointSetBuilder builder;
     getPropertySet(Property::category(Category::Lu), BuilderOrSet(builder));
     getPropertySet(fromLone(Lone::Other_Uppercase), BuilderOrSet(builder));
+    if (out.isBuilder) {
+      out.builder->add(builder);
+    } else {
+      *out.set = builder.build();
+    }
+    return true;
+  }
+  case Lone::XID_Continue: {
+    CodePointSetBuilder builder;
+    getPropertySet(fromLone(Lone::ID_Continue), BuilderOrSet(builder));
+    builder.sub(getPropertySet(fromLone(Lone::XID_Continue_Delta)).ref());
+    if (out.isBuilder) {
+      out.builder->add(builder);
+    } else {
+      *out.set = builder.build();
+    }
+    return true;
+  }
+  case Lone::XID_Start: {
+    CodePointSetBuilder builder;
+    getPropertySet(fromLone(Lone::ID_Start), BuilderOrSet(builder));
+    builder.sub(getPropertySet(fromLone(Lone::XID_Start_Delta)).ref());
     if (out.isBuilder) {
       out.builder->add(builder);
     } else {
