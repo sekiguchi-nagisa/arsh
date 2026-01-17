@@ -463,6 +463,8 @@ struct PROPERTY_TEST_ENTRY {
   CodePointArray array;
 };
 
+#define PROPERTY_NAME_TEST_ENTRY std::vector<std::pair<const char *, const char *>>
+
 #include "./ucp_property_test.in"
 
 struct PropertyTest : public ::testing::TestWithParam<PROPERTY_TEST_ENTRY> {
@@ -485,6 +487,28 @@ struct PropertyTest : public ::testing::TestWithParam<PROPERTY_TEST_ENTRY> {
 TEST_P(PropertyTest, base) { ASSERT_NO_FATAL_FAILURE(doTest()); }
 
 INSTANTIATE_TEST_SUITE_P(PropertyTest, PropertyTest, ::testing::ValuesIn(property_test_table));
+
+struct PropertyNameTest : public ::testing::TestWithParam<PROPERTY_NAME_TEST_ENTRY> {
+  static void doTest() {
+    auto &entries = GetParam();
+    ASSERT_TRUE(!entries.empty());
+    auto property = ucp::parseProperty(entries[0].first, entries[0].second, nullptr);
+    ASSERT_TRUE(property.hasValue());
+    for (auto &e : entries) {
+      auto out = format("(%s, %s)", e.first, e.second);
+      SCOPED_TRACE(out);
+      auto other = ucp::parseProperty(e.first, e.second, nullptr);
+      ASSERT_TRUE(other.hasValue());
+      ASSERT_EQ(property.unwrap().getName(), other.unwrap().getName());
+      ASSERT_EQ(property.unwrap().getValue(), other.unwrap().getValue());
+    }
+  }
+};
+
+TEST_P(PropertyNameTest, base) { ASSERT_NO_FATAL_FAILURE(doTest()); }
+
+INSTANTIATE_TEST_SUITE_P(PropertyNameTest, PropertyNameTest,
+                         ::testing::ValuesIn(property_name_test_table));
 
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);

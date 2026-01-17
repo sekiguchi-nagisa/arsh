@@ -526,7 +526,7 @@ Optional<Property> parseProperty(StringRef name, StringRef value, std::string *e
   // resolve property name
   Property::Name prefix;
   if (name.empty()) {
-    prefix = Property::Name::Lone;
+    prefix = Property::Name::Lone; // Lone or General Category
   } else if (auto iter = propertyNames.find(name); iter != propertyNames.end()) {
     prefix = iter->second;
   } else {
@@ -541,7 +541,7 @@ Optional<Property> parseProperty(StringRef name, StringRef value, std::string *e
   switch (prefix) {
   case Property::Name::General_Category:
     if (auto ret = parseCategory(value); ret.hasValue()) {
-      return Property(prefix, toUnderlying(ret.unwrap()));
+      return Property::category(ret.unwrap());
     }
     break;
   case Property::Name::Script:
@@ -551,8 +551,11 @@ Optional<Property> parseProperty(StringRef name, StringRef value, std::string *e
     }
     break;
   case Property::Name::Lone:
+    if (auto ret = parseCategory(value); ret.hasValue()) {
+      return Property::category(ret.unwrap());
+    }
     if (auto ret = parseLone(value); ret.hasValue()) {
-      return Property(prefix, toUnderlying(ret.unwrap()));
+      return fromLone(ret.unwrap());
     }
     break;
   }

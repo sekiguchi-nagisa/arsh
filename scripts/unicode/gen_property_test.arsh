@@ -32,7 +32,7 @@ function sample(op: String): [String] {
     return $r.empty() ? new [String]() : $r.split($'\n')
 }
 
-function gen_for_cpp(output: String) {
+function gen_property_test_table(output: String) {
     {
         auto_gen_header
         echo "static constexpr PROPERTY_TEST_ENTRY property_test_table[] = {"
@@ -89,12 +89,71 @@ function gen_for_cpp(output: String) {
         printf "    {\"\", \"%s\", {%s}},\n" ${def.name} ${$ss.join(", ")}
     } with >> $output
 
-    echo "};" >> $output
+    {
+        echo "};"
+        echo
+    } with >> $output
+}
+
+function gen_property_name_test_table(output: String) {
+    echo 'static const PROPERTY_NAME_TEST_ENTRY property_name_test_table[] = {' >> $output
+
+    # general category
+    for line in <(guniset enum 'gc') {
+        var ss = $line.split(", ")
+        var entry = "{"
+        for s in $ss {
+            $entry += "{\"General_Category\", \"$s\"}, {\"gc\", \"$s\"}, {\"\", \"$s\"}, "
+        }
+        $entry += "},"
+        echo "    $entry"
+    } with >> $output
+
+    # general script
+    for line in <(guniset enum 'sc') {
+        var ss = $line.split(", ")
+        var entry = "{"
+        for s in $ss {
+            $entry += "{\"Script\", \"$s\"}, {\"sc\", \"$s\"}, "
+        }
+        $entry += "},"
+        echo "    $entry"
+    } with >> $output
+
+    # general script
+    for line in <(guniset enum 'scx') {
+        var ss = $line.split(", ")
+        var entry = "{"
+        for s in $ss {
+            $entry += "{\"Script_Extensions\", \"$s\"}, {\"scx\", \"$s\"}, "
+        }
+        $entry += "},"
+        echo "    $entry"
+    } with >> $output
+
+    # lone property
+    for def in $defs {
+        var ss = [$def.name]
+        if let abbr = $def.abbr {
+            $ss.add($abbr)
+        }
+        var entry = "{"
+        for s in $ss {
+            $entry += "{\"\", \"$s\"}, "
+        }
+        $entry += "},"
+        echo "    $entry"
+    } with >> $output
+
+    {
+        echo "};"
+        echo
+    } with >> $output
 }
 
 _main(p : _Param) {
     case $p.type {
-        'cpp' => $gen_for_cpp($p.output)
+        'cpp' => {$gen_property_test_table($p.output); $gen_property_name_test_table($p.output); }
         'arsh' => $gen_for_arsh($p.output)
     }
     return 0
