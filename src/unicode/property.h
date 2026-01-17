@@ -114,6 +114,8 @@ inline CodePointSet getPropertySet(const Property property) {
   return set;
 }
 
+bool isExtendedPictographic(int codePoint);
+
 } // namespace arsh::ucp
 
 #endif // ARSH_UNICODE_PROPERTY_H

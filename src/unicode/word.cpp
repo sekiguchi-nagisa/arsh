@@ -28,10 +28,9 @@ WordBreakProperty getWordBreakProperty(const int codePoint) {
 
 #define UNICODE_PROPERTY_RANGE CodePointWithMeta
 #define PROPERTY(E) toUnderlying(WordBreakProperty::E)
-#define USE_WORD_BREAK_PROPERTY
+
 #include "word_break_property.in"
 
-#undef USE_WORD_BREAK_PROPERTY
 #undef PROPERTY
 #undef UNICODE_PROPERTY_RANGE
 
@@ -42,33 +41,6 @@ WordBreakProperty getWordBreakProperty(const int codePoint) {
     return static_cast<WordBreakProperty>((iter - 1)->getMeta());
   }
   return WordBreakProperty::Any;
-}
-
-bool isExtendedPictographic(const int codePoint) {
-  enum EmojiProperty : unsigned char {
-    Extended_Pictographic,
-  };
-
-  using PropertyInterval = CodePointPropertyInterval<EmojiProperty>;
-
-#define UNICODE_PROPERTY_RANGE PropertyInterval
-#define PROPERTY(E) EmojiProperty::E
-#define USE_EMOJI_PROPERTY
-#include "word_break_property.in"
-
-#undef USE_EMOJI_PROPERTY
-#undef PROPERTY
-#undef UNICODE_PROPERTY_RANGE
-
-  auto iter = std::lower_bound(std::begin(emoji_property_table), std::end(emoji_property_table),
-                               codePoint, typename PropertyInterval::Comp());
-  if (iter != std::end(emoji_property_table)) {
-    if (auto &interval = *iter;
-        interval.contains(codePoint) && interval.property() == Extended_Pictographic) {
-      return true;
-    }
-  }
-  return false;
 }
 
 } // namespace arsh

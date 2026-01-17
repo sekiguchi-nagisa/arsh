@@ -17,9 +17,6 @@ cd $work_dir
 test -f GraphemeBreakProperty.txt ||
     curl http://www.unicode.org/Public/UCD/latest/ucd/auxiliary/GraphemeBreakProperty.txt -o ./GraphemeBreakProperty.txt
 
-test -f emoji-data.txt ||
-    curl https://www.unicode.org/Public/UCD/latest/ucd/emoji/emoji-data.txt -o emoji-data.txt
-
 test -f DerivedCoreProperties.txt ||
     curl https://www.unicode.org/Public/UCD/latest/ucd/DerivedCoreProperties.txt -o DerivedCoreProperties.txt
 
@@ -136,20 +133,6 @@ cat ./GraphemeBreakProperty.txt | for(var count = 0; read -f $'\n'; $count++) {
     try { $ranges.add($parse($REPLY)); } catch $e : Error { $e.show(); echo 1>&2 $count $REPLY; }
     echo $REPLY
 } with > ./trimed_GraphemeBreakProperty.txt 
-
-# emoji-data.txt
-cat ./emoji-data.txt | for(var count = 0; read -f $'\n'; $count++) {
-    if $count < 2 {
-        echo $REPLY >> $out
-        continue
-    }
-
-    if $REPLY.startsWith('#') || $REPLY.empty() || $REPLY.indexOf("Extended_Pictographic") == -1 {
-        continue
-    }
-    try { $ranges.add($parse($REPLY)); } catch $e : Error { $e.show(); echo 1>&2 $count $REPLY; }
-    echo $REPLY
-} with > ./trimed_emoji-data.txt
 
 # DerivedCoreProperties.txt (only extract InCB Consonant)
 cat ./DerivedCoreProperties.txt | for(var count = 0; read -f $'\n'; $count++) {

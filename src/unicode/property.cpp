@@ -440,4 +440,10 @@ bool getPropertySet(const Property property, BuilderOrSet out) {
   return false;
 }
 
+bool isExtendedPictographic(const int codePoint) {
+  auto set =
+      getPropertySet(Property(Property::Name::Lone, toUnderlying(Lone::Extended_Pictographic)));
+  return set.ref().contains(codePoint);
+}
+
 } // namespace arsh::ucp

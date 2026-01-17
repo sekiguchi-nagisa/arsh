@@ -17,10 +17,6 @@ cd $work_dir
 test -f WordBreakProperty.txt ||
     curl http://www.unicode.org/Public/UCD/latest/ucd/auxiliary/WordBreakProperty.txt -o ./WordBreakProperty.txt
 
-test -f emoji-data.txt ||
-    curl https://www.unicode.org/Public/UCD/latest/ucd/emoji/emoji-data.txt -o emoji-data.txt
-
-
 typedef Range {
     let begin : Int         # begin codepoint (inclusive)
     let end : Int           # end codepoint (inclusive)
@@ -117,30 +113,11 @@ cat ./WordBreakProperty.txt | for(var count = 0; read -f $'\n'; $count++) {
 $ranges.sortBy(function (x,y) => $x.compare($y))
 $ranges = $minimize($ranges)
 
-# emoji-data.txt
-var ranges2: [Range]
-cat ./emoji-data.txt | for(var count = 0; read -f $'\n'; $count++) {
-    if $count < 2 {
-        echo $REPLY >> $out
-        continue
-    }
-
-    if $REPLY.startsWith('#') || $REPLY.empty() || $REPLY.indexOf("Extended_Pictographic") == -1 {
-        continue
-    }
-    try { $ranges2.add($parse($REPLY)); } catch $e : Error { $e.show(); echo 1>&2 $count $REPLY; }
-    echo $REPLY
-} with > ./trimed_emoji-data.txt
-
-$ranges2.sortBy(function (x,y) => $x.compare($y))
-$ranges2 = $minimize($ranges2)
-
 # final output
 {
     echo "*/"
     echo
     echo // clang-format off
-    echo "#ifdef USE_WORD_BREAK_PROPERTY"
     echo
     echo "static constexpr UNICODE_PROPERTY_RANGE word_break_property_table[] = {"
 
@@ -155,20 +132,5 @@ $ranges2 = $minimize($ranges2)
         }
         echo "    { ${r.begin_str}, PROPERTY(${r.property}) },"
     }
-
     echo -e "};"
-    echo
-    echo "#endif"
-    echo
-    echo "#ifdef USE_EMOJI_PROPERTY"
-    echo
-    echo "static constexpr UNICODE_PROPERTY_RANGE emoji_property_table[] = {"
-
-    for $r in $ranges2 {
-        echo "    { ${r.begin_str}, ${r.end_str}, PROPERTY(${r.property}) },"
-    }
-
-    echo -e "};"
-    echo
-    echo "#endif"
 } with >> $out

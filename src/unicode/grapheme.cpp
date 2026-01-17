@@ -16,6 +16,7 @@
 
 #include "grapheme.h"
 #include "../misc/enum_util.hpp"
+#include "property.h"
 
 namespace arsh {
 
@@ -39,7 +40,13 @@ GraphemeBoundary::BreakProperty GraphemeBoundary::getBreakProperty(const int cod
                                std::end(grapheme_break_property_table), codePoint,
                                CodePointWithMeta::Comp());
   if (iter != std::end(grapheme_break_property_table)) {
-    return static_cast<BreakProperty>((iter - 1)->getMeta());
+    auto p = static_cast<BreakProperty>((iter - 1)->getMeta());
+    if (p != BreakProperty::Any) {
+      return p;
+    }
+    if (ucp::isExtendedPictographic(codePoint)) {
+      return BreakProperty::Extended_Pictographic;
+    }
   }
   return BreakProperty::Any;
 }

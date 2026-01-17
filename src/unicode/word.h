@@ -20,6 +20,7 @@
 #include "../misc/detect.hpp"
 #include "../misc/string_ref.hpp"
 #include "../misc/unicode.hpp"
+#include "property.h"
 
 namespace arsh {
 
@@ -54,8 +55,6 @@ enum class WordBreakProperty : unsigned char {
 };
 
 WordBreakProperty getWordBreakProperty(int codePoint);
-
-bool isExtendedPictographic(int codePoint); // TODO: replace
 
 template <typename Stream>
 class WordScanner {
@@ -120,7 +119,7 @@ bool WordScanner<Stream>::scanBoundary() {
   const bool prevZWJ = this->zwj;
   this->zwj = after == WordBreakProperty::ZWJ;
 
-  if (prevZWJ && isExtendedPictographic(codePoint)) {
+  if (prevZWJ && ucp::isExtendedPictographic(codePoint)) {
     return false; // WB3c
   }
 
