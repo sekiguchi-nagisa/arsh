@@ -221,7 +221,6 @@ void NodePass::visitSourceListNode(SourceListNode &) {} // unreachable
 void NodePass::visitCodeCompNode(CodeCompNode &) {}
 
 void NodePass::visitErrorNode(ErrorNode &node) {
-  assert(this->isTopLevel());
   this->visitingDepth--;
   NodePass::visit(node.getOrgNode());
   this->visitingDepth++;
