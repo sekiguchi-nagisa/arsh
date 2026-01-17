@@ -369,9 +369,9 @@ static bool getLoneSet(const Lone lone, BuilderOrSet out) {
     // Generated from: Lowercase + Uppercase + Lt + Lm + Lo + Nl + Other_Alphabetic
     CodePointSetBuilder builder;
     constexpr Property combs[] = {
-        fromLone(Lone::Lowercase),          fromLone(Lone::Uppercase),
-        {Property::category(Category::Lt)}, {Property::category(Category::Lm)},
-        {Property::category(Category::Lo)}, {Property::category(Category::Nl)},
+        fromLone(Lone::Lowercase),        fromLone(Lone::Uppercase),
+        Property::category(Category::Lt), Property::category(Category::Lm),
+        Property::category(Category::Lo), Property::category(Category::Nl),
         fromLone(Lone::Other_Alphabetic),
     };
     for (auto &p : combs) {
@@ -413,7 +413,7 @@ static bool getLoneSet(const Lone lone, BuilderOrSet out) {
     CodePointSetBuilder builder;
     constexpr Property combs[] = {
         fromLone(Lone::Other_Default_Ignorable_Code_Point),
-        {Property::category(Category::Cf)},
+        Property::category(Category::Cf),
         fromLone(Lone::Variation_Selector),
     };
     for (auto &p : combs) {
@@ -445,9 +445,9 @@ static bool getLoneSet(const Lone lone, BuilderOrSet out) {
      */
     CodePointSetBuilder builder;
     constexpr Property combs[] = {
-        {Property::category(Category::C)},
-        {Property::category(Category::Zl)},
-        {Property::category(Category::Zp)},
+        Property::category(Category::C),
+        Property::category(Category::Zl),
+        Property::category(Category::Zp),
         fromLone(Lone::Grapheme_Extend),
     };
     for (auto &p : combs) {
@@ -464,9 +464,14 @@ static bool getLoneSet(const Lone lone, BuilderOrSet out) {
   case Lone::Grapheme_Extend: {
     // Generated from: Me + Mn + Other_Grapheme_Extend
     CodePointSetBuilder builder;
-    getPropertySet(Property::category(Category::Me), BuilderOrSet(builder));
-    getPropertySet(Property::category(Category::Mn), BuilderOrSet(builder));
-    getPropertySet(fromLone(Lone::Other_Grapheme_Extend), BuilderOrSet(builder));
+    constexpr Property combs[] = {
+        Property::category(Category::Me),
+        Property::category(Category::Mn),
+        fromLone(Lone::Other_Grapheme_Extend),
+    };
+    for (auto &p : combs) {
+      getPropertySet(p, BuilderOrSet(builder));
+    }
     if (out.isBuilder) {
       out.builder->add(builder);
     } else {
