@@ -19,6 +19,7 @@
 #include "../misc/enum_util.hpp"
 #include "../misc/format.hpp"
 #include "../misc/unicode.hpp"
+#include "property.h"
 
 namespace arsh::ucp {
 
@@ -350,6 +351,8 @@ static Optional<Lone> parseLone(const StringRef ref) {
   return {};
 }
 
+constexpr Property fromLone(Lone l) { return {Property::Name::Lone, toUnderlying(l)}; }
+
 static bool getLoneSet(const Lone lone, BuilderOrSet out) {
   switch (lone) {
 #define GEN_CASE(E) case Lone::E:
@@ -362,17 +365,151 @@ static bool getLoneSet(const Lone lone, BuilderOrSet out) {
       *out.set = CodePointSet::borrow(ref);
     }
     return true;
-  case Lone::Alphabetic:
-  case Lone::Assigned:
-  case Lone::Bidi_Mirrored:
-  case Lone::Changes_When_NFKC_Casefolded:
-  case Lone::Default_Ignorable_Code_Point:
-  case Lone::Grapheme_Base:
-  case Lone::Grapheme_Extend:
-  case Lone::Lowercase:
-  case Lone::Math:
-  case Lone::Uppercase:
+  case Lone::Alphabetic: {
+    // Generated from: Lowercase + Uppercase + Lt + Lm + Lo + Nl + Other_Alphabetic
+    CodePointSetBuilder builder;
+    constexpr Property combs[] = {
+        fromLone(Lone::Lowercase),          fromLone(Lone::Uppercase),
+        {Property::category(Category::Lt)}, {Property::category(Category::Lm)},
+        {Property::category(Category::Lo)}, {Property::category(Category::Nl)},
+        fromLone(Lone::Other_Alphabetic),
+    };
+    for (auto &p : combs) {
+      getPropertySet(p, BuilderOrSet(builder));
+    }
+    if (out.isBuilder) {
+      out.builder->add(builder);
+    } else {
+      *out.set = builder.build();
+    }
+    return true;
+  }
+  case Lone::Assigned: {
+    /*
+     * \P{Cn}
+     * --> !(Cn)
+     */
+    CodePointSetBuilder builder;
+    getPropertySet(Property::category(Category::Cn), BuilderOrSet(builder));
+    builder.complement();
+    if (out.isBuilder) {
+      out.builder->add(builder);
+    } else {
+      *out.set = builder.build();
+    }
+    return true;
+  }
+  case Lone::Bidi_Mirrored:                // TODO:
+  case Lone::Changes_When_NFKC_Casefolded: // TODO:
     break;
+  case Lone::Default_Ignorable_Code_Point: {
+    /*
+     * Generated from:
+     *    Other_Default_Ignorable_Code_Point + Cf (Format characters)
+     *    + Variation_Selector - White_Space - FFF9..FFFB (Interlinear annotation format characters)
+     *    - 13430..1343F (Egyptian hieroglyph format characters) - Prepended_Concatenation_Mark
+     * (Exceptional format characters that should be visible)
+     */
+    CodePointSetBuilder builder;
+    constexpr Property combs[] = {
+        fromLone(Lone::Other_Default_Ignorable_Code_Point),
+        {Property::category(Category::Cf)},
+        fromLone(Lone::Variation_Selector),
+    };
+    for (auto &p : combs) {
+      getPropertySet(p, BuilderOrSet(builder));
+    }
+    builder.sub(getPropertySet(fromLone(Lone::White_Space)).ref());
+    {
+      CodePointSetBuilder tmp;
+      tmp.add(0xFFF9, 0xFFFB);
+      builder.sub(tmp.build().ref());
+      tmp.clear();
+      tmp.add(0x13430, 0x1343F);
+      builder.sub(tmp.build().ref());
+    }
+    builder.sub(getPropertySet(fromLone(Lone::Prepended_Concatenation_Mark)).ref());
+
+    if (out.isBuilder) {
+      out.builder->add(builder);
+    } else {
+      *out.set = builder.build();
+    }
+    return true;
+  }
+  case Lone::Grapheme_Base: {
+    /**
+     * Generated from: [0..10FFFF] - Cc - Cf - Cs - Co - Cn - Zl - Zp - Grapheme_Extend
+     * --> !(Cc + Cf + Cs + Co + Cn + Zl + Zp + Grapheme_Extend)
+     * --> !(C + Zl + Zp + Grapheme_Extend)
+     */
+    CodePointSetBuilder builder;
+    constexpr Property combs[] = {
+        {Property::category(Category::C)},
+        {Property::category(Category::Zl)},
+        {Property::category(Category::Zp)},
+        fromLone(Lone::Grapheme_Extend),
+    };
+    for (auto &p : combs) {
+      getPropertySet(p, BuilderOrSet(builder));
+    }
+    builder.complement();
+    if (out.isBuilder) {
+      out.builder->add(builder);
+    } else {
+      *out.set = builder.build();
+    }
+    return true;
+  }
+  case Lone::Grapheme_Extend: {
+    // Generated from: Me + Mn + Other_Grapheme_Extend
+    CodePointSetBuilder builder;
+    getPropertySet(Property::category(Category::Me), BuilderOrSet(builder));
+    getPropertySet(Property::category(Category::Mn), BuilderOrSet(builder));
+    getPropertySet(fromLone(Lone::Other_Grapheme_Extend), BuilderOrSet(builder));
+    if (out.isBuilder) {
+      out.builder->add(builder);
+    } else {
+      *out.set = builder.build();
+    }
+    return true;
+  }
+  case Lone::Lowercase: {
+    // Generated from: Ll + Other_Lowercase
+    CodePointSetBuilder builder;
+    getPropertySet(Property::category(Category::Ll), BuilderOrSet(builder));
+    getPropertySet(fromLone(Lone::Other_Lowercase), BuilderOrSet(builder));
+    if (out.isBuilder) {
+      out.builder->add(builder);
+    } else {
+      *out.set = builder.build();
+    }
+    return true;
+  }
+  case Lone::Math: {
+    // Generated from: Sm + Other_Math
+    CodePointSetBuilder builder;
+    getPropertySet(Property::category(Category::Sm), BuilderOrSet(builder));
+    getPropertySet(fromLone(Lone::Other_Math), BuilderOrSet(builder));
+    if (out.isBuilder) {
+      out.builder->add(builder);
+    } else {
+      *out.set = builder.build();
+    }
+    return true;
+  }
+  case Lone::Uppercase: {
+    // Generated from: Lu + Other_Uppercase
+    CodePointSetBuilder builder;
+    getPropertySet(Property::category(Category::Lu), BuilderOrSet(builder));
+    getPropertySet(fromLone(Lone::Other_Uppercase), BuilderOrSet(builder));
+    if (out.isBuilder) {
+      out.builder->add(builder);
+    } else {
+      *out.set = builder.build();
+    }
+    return true;
+  }
   }
   return false; // normally unreachable (for a broken lone property)
 }

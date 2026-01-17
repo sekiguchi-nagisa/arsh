@@ -45,6 +45,21 @@ void CodePointSetBuilder::add(CodePointSetRef ref) {
   this->sortAndCompact();
 }
 
+void CodePointSetBuilder::add(const CodePointSetBuilder &other) {
+  this->codePointRanges.reserve(this->codePointRanges.size() + other.getCodePointRanges().size());
+  for (auto &e : other.getCodePointRanges()) {
+    this->codePointRanges.push_back(e);
+  }
+  this->sortAndCompact();
+}
+
+void CodePointSetBuilder::add(int first, int last) {
+  int actualFirst = std::max(0, std::min(first, last));
+  int actualLast = std::min(UnicodeUtil::CODE_POINT_MAX, std::max(first, last));
+  this->codePointRanges.emplace_back(actualFirst, actualLast);
+  this->sortAndCompact();
+}
+
 void CodePointSetBuilder::complement() {
   std::vector<std::pair<int, int>> buf;
   const unsigned int size = this->codePointRanges.size();

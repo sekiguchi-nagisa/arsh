@@ -37,6 +37,10 @@ public:
    */
   void add(CodePointSetRef ref);
 
+  void add(int first, int last);
+
+  void add(const CodePointSetBuilder &other);
+
   /**
    * for difference
    * @param ref
@@ -52,6 +56,8 @@ public:
    * @return
    */
   CodePointSet build();
+
+  void clear() { this->codePointRanges.clear(); }
 
 private:
   void remove(CodePointSetRef ref, bool negate);

@@ -79,9 +79,11 @@ private:
   unsigned char value;
 
 public:
-  Property(Name name, unsigned char value) : name(name), value(value) {}
+  constexpr Property(Name name, unsigned char value) : name(name), value(value) {}
 
-  static Property category(Category cate) { return {Name::General_Category, toUnderlying(cate)}; }
+  static constexpr Property category(Category cate) {
+    return {Name::General_Category, toUnderlying(cate)};
+  }
 
   Name getName() const { return this->name; }
 
