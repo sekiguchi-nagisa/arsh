@@ -304,6 +304,79 @@ static bool getScriptXSet(const Script script, BuilderOrSet out) {
   return false;
 }
 
+// ===========================
+// ==     Lone Property     ==
+// ===========================
+
+#include "ucp_lone.in"
+#include "ucp_lone_def.in"
+
+enum class Lone : unsigned char {
+#define GEN_ENUM(E) E,
+  EACH_UCP_LONE_PROPERTY(GEN_ENUM)
+#undef GEN_ENUM
+};
+
+static constexpr const char *loneNames[] = {
+#define GEN_TABLE(E, S) S,
+    EACH_UCP_LONE_PROPERTY_NAME(GEN_TABLE)
+#undef GEN_TABLE
+};
+
+static auto initLoneNameMap() {
+  StrRefMap<Lone> map;
+  for (unsigned int i = UCP_LONE_PROPERTY_PRIME_INTERNAL_SIZE; i < UCP_LONE_PROPERTY_SIZE; i++) {
+    auto category = static_cast<Lone>(i);
+    const unsigned int index = i - UCP_LONE_PROPERTY_PRIME_INTERNAL_SIZE;
+    splitByDelim(loneNames[index], '|', [&map, category](StringRef ref, bool) {
+      map.emplace(ref, category);
+      return true;
+    });
+  }
+  return map;
+}
+
+static CodePointSetRef getLonePrimeTable(unsigned int index) {
+  assert(index < std::size(lone_set_prime_table_offset));
+  const OffsetEntry &e = lone_set_prime_table_offset[index];
+  return {e.bmpSize, e.packedSize, lone_set_prime_table + e.offset, e.tableSize};
+}
+
+static Optional<Lone> parseLone(const StringRef ref) {
+  static const auto map = initLoneNameMap();
+  if (const auto iter = map.find(ref); iter != map.end()) {
+    return iter->second;
+  }
+  return {};
+}
+
+static bool getLoneSet(const Lone lone, BuilderOrSet out) {
+  switch (lone) {
+#define GEN_CASE(E) case Lone::E:
+    EACH_UCP_LONE_PROPERTY_PRIME_INTERNAL(GEN_CASE)
+    EACH_UCP_LONE_PROPERTY_PRIME(GEN_CASE)
+#undef GEN_CASE
+    if (auto ref = getLonePrimeTable(toUnderlying(lone)); out.isBuilder) {
+      out.builder->add(ref);
+    } else {
+      *out.set = CodePointSet::borrow(ref);
+    }
+    return true;
+  case Lone::Alphabetic:
+  case Lone::Assigned:
+  case Lone::Bidi_Mirrored:
+  case Lone::Changes_When_NFKC_Casefolded:
+  case Lone::Default_Ignorable_Code_Point:
+  case Lone::Grapheme_Base:
+  case Lone::Grapheme_Extend:
+  case Lone::Lowercase:
+  case Lone::Math:
+  case Lone::Uppercase:
+    break;
+  }
+  return false; // normally unreachable (for a broken lone property)
+}
+
 Optional<Property> parseProperty(StringRef name, StringRef value, std::string *err) {
   static const StrRefMap<Property::Name> propertyNames = {
       {"General_Category", Property::Name::General_Category},
@@ -341,7 +414,10 @@ Optional<Property> parseProperty(StringRef name, StringRef value, std::string *e
     }
     break;
   case Property::Name::Lone:
-    break; // TODO
+    if (auto ret = parseLone(value); ret.hasValue()) {
+      return Property(prefix, toUnderlying(ret.unwrap()));
+    }
+    break;
   }
   if (err) {
     *err += "unrecognized property value: ";
@@ -359,7 +435,7 @@ bool getPropertySet(const Property property, BuilderOrSet out) {
   case Property::Name::Script_Extensions:
     return getScriptXSet(static_cast<Script>(property.getValue()), out);
   case Property::Name::Lone:
-    break; // TODO
+    return getLoneSet(static_cast<Lone>(property.getValue()), out);
   }
   return false;
 }

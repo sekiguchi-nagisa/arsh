@@ -37,6 +37,9 @@ call $BIN_NAME $SCRIPT_DIR/unicode/gen_category_table.arsh --header=$src/unicode
 echo try to update $src/unicode/ucp_script.in
 call $BIN_NAME $SCRIPT_DIR/unicode/gen_script_table.arsh --header=$src/unicode/ucp_script_def.in $src/unicode/ucp_script.in
 
+echo try to update $src/unicode/ucp_lone.in
+call $BIN_NAME $SCRIPT_DIR/unicode/gen_lone_property_table.arsh --header=$src/unicode/ucp_lone_def.in $src/unicode/ucp_lone.in
+
 
 ## for test case
 var test = "$SCRIPT_DIR/../test"

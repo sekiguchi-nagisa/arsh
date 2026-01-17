@@ -1,0 +1,218 @@
+#!/usr/bin/env arsh
+
+[<CLI(toplevel:$true)>]
+type _Param() {
+    [<Option(required: $true, help: "specify header file")>]
+    var header = ""
+    [<Arg(required:$true, help: "specify output file")>]
+    var output = ""
+}
+
+var param = new _Param()
+$param.parse($@)
+
+let out = $param.output
+write() { echo $@ >> $out; }
+
+source ./guniset_helper.arsh
+
+shctl set errraise
+
+## helper
+let combinedSet = @(  # generated from other property combination
+    Alphabetic 
+    Assigned 
+    Default_Ignorable_Code_Point
+    Grapheme_Base
+    Grapheme_Extend
+    Lowercase
+    Math
+    Uppercase
+).sort()
+
+type LoneProperty(n: String, a: String, p: String?) {
+    let name = $n
+    let abbr = $a != "-" ? $a : $none
+    let query = case $name {
+        "ASCII" => "0..7F"
+        "Any" => "0..10FFFF"
+        else => if let prefix = $p { $prefix + ":" + $name; } else { $none } 
+    }
+}
+
+function create(args: [[String]]) : [LoneProperty] {
+    var ret: [LoneProperty]
+    for arg in $args {
+        var name = $arg[0]
+        var setPrefix = case $arg.get(2) {
+            "PropList.txt" => "prop"
+            "DerivedCoreProperties.txt" => "dcp"
+            "emoji-data.txt" => "emoji"
+            else => $none
+        }
+        if $combinedSet.searchSorted($name) > -1 {  # ignore combined property
+            $setPrefix = $none
+        }
+        $ret.add(new LoneProperty($name, $arg[1], $setPrefix))
+    }
+    return $ret
+}
+
+
+
+## target property definition
+let defs = $create([
+@( ASCII                         -                                       ),
+@( ASCII_Hex_Digit               AHex      PropList.txt                  ),
+@( Alphabetic                    Alpha     DerivedCoreProperties.txt     ),
+@( Any                           -                                       ),
+@( Assigned                      -                                       ),
+@( Bidi_Control                  Bidi_C    PropList.txt                  ),
+@( Bidi_Mirrored                 Bidi_M    UnicodeData.txt               ),
+@( Case_Ignorable                CI        DerivedCoreProperties.txt     ),
+@( Cased                         -         DerivedCoreProperties.txt     ),
+@( Changes_When_Casefolded       CWCF      DerivedCoreProperties.txt     ),
+@( Changes_When_Casemapped       CWCM      DerivedCoreProperties.txt     ),
+@( Changes_When_Lowercased       CWL       DerivedCoreProperties.txt     ),
+@( Changes_When_NFKC_Casefolded  CWKCF     DerivedNormalizationProps.txt ),
+@( Changes_When_Titlecased       CWT       DerivedCoreProperties.txt     ),
+@( Changes_When_Uppercased       CWU       DerivedCoreProperties.txt     ),
+@( Dash                          -         PropList.txt                  ),
+@( Default_Ignorable_Code_Point  DI        DerivedCoreProperties.txt     ),
+@( Deprecated                    Dep       PropList.txt                  ),
+@( Diacritic                     Dia       PropList.txt                  ),
+@( Emoji                         -         emoji-data.txt                ),
+@( Emoji_Component               EComp     emoji-data.txt                ),
+@( Emoji_Modifier                EMod      emoji-data.txt                ),
+@( Emoji_Modifier_Base           EBase     emoji-data.txt                ),
+@( Emoji_Presentation            EPres     emoji-data.txt                ),
+@( Extended_Pictographic         ExtPict   emoji-data.txt                ),
+@( Extender                      Ext       PropList.txt                  ),
+@( Grapheme_Base                 Gr_Base   DerivedCoreProperties.txt     ),
+@( Grapheme_Extend               Gr_Ext    DerivedCoreProperties.txt     ),
+@( Hex_Digit                     Hex       PropList.txt                  ),
+@( IDS_Binary_Operator           IDSB      PropList.txt                  ),
+@( IDS_Trinary_Operator          IDST      PropList.txt                  ),
+@( ID_Continue                   IDC       DerivedCoreProperties.txt     ),
+@( ID_Start                      IDS       DerivedCoreProperties.txt     ),
+@( Ideographic                   Ideo      PropList.txt                  ),
+@( Join_Control                  Join_C    PropList.txt                  ),
+@( Logical_Order_Exception       LOE       PropList.txt                  ),
+@( Lowercase                     Lower     DerivedCoreProperties.txt     ),
+@( Math                          -         DerivedCoreProperties.txt     ),
+@( Noncharacter_Code_Point       NChar     PropList.txt                  ),
+@( Pattern_Syntax                Pat_Syn   PropList.txt                  ),
+@( Pattern_White_Space           Pat_WS    PropList.txt                  ),
+@( Quotation_Mark                QMark     PropList.txt                  ),
+@( Radical                       -         PropList.txt                  ),
+@( Regional_Indicator            RI        PropList.txt                  ),
+@( Sentence_Terminal             STerm     PropList.txt                  ),
+@( Soft_Dotted                   SD        PropList.txt                  ),
+@( Terminal_Punctuation          Term      PropList.txt                  ),
+@( Unified_Ideograph             UIdeo     PropList.txt                  ),
+@( Uppercase                     Upper     DerivedCoreProperties.txt     ),
+@( Variation_Selector            VS        PropList.txt                  ),
+@( White_Space                   space     PropList.txt                  ),
+@( XID_Continue                  XIDC      DerivedCoreProperties.txt     ),
+@( XID_Start                     XIDS      DerivedCoreProperties.txt     ),
+])
+
+let internals = $create([  # for internally used property
+@(Other_Alphabetic                    -  PropList.txt),
+@(Other_Default_Ignorable_Code_Point  -  PropList.txt),
+@(Prepended_Concatenation_Mark        -  PropList.txt),
+@(Other_Grapheme_Extend               -  PropList.txt),
+@(Other_Lowercase                     -  PropList.txt),
+@(Other_Math                          -  PropList.txt),
+@(Other_Uppercase                     -  PropList.txt),
+])
+
+
+## generate lone property header
+{
+    auto_gen_header
+    echo '#define EACH_UCP_LONE_PROPERTY_NAME(E) \'
+    echo '    /* for prime lone property */ \'
+    for def in $defs {
+        $def.query || continue
+        var names = [$def.name]
+        if let abbr = $def.abbr {
+            $names.add($abbr)
+        }
+        echo "    E(${$def.name}, \"${$names.join('|')}\") \\"
+    }
+    echo '    /* for combined lone property */ \'
+    for def in $defs {
+        !$def.query || continue
+        var names = [$def.name]
+        if let abbr = $def.abbr {
+            $names.add($abbr)
+        }
+        echo "    E(${$def.name}, \"${$names.join('|')}\") \\"
+    }
+    echo
+    echo
+    echo '#define EACH_UCP_LONE_PROPERTY_PRIME_INTERNAL(E) \'
+    for def in $internals {
+        assert $def.query
+        echo "    E(${$def.name}) \\"
+    }
+    echo
+    echo
+    echo '#define EACH_UCP_LONE_PROPERTY_PRIME(E) \'
+    for def in $defs {
+        $def.query || continue
+        echo "    E(${$def.name}) \\"
+    }
+    echo
+    echo
+    echo '#define EACH_UCP_LONE_PROPERTY(E) \'
+    echo '    EACH_UCP_LONE_PROPERTY_PRIME_INTERNAL(E) \'
+    echo '    EACH_UCP_LONE_PROPERTY_PRIME(E) \'
+    for def in $defs {
+        !$def.query || continue
+        echo "    E(${$def.name}) \\"
+    }
+    echo '    /* end */'
+    echo
+    echo "#define UCP_LONE_PROPERTY_PRIME_INTERNAL_SIZE ${$internals.size()}"
+    echo "#define UCP_LONE_PROPERTY_SIZE ${$internals.size()+$defs.size()}"
+} with > ${param.header}
+
+
+## generate each lone property table
+auto_gen_header > $out
+
+var sizeMap: [String: OffsetEntry]
+var offset = 0
+write "static constexpr PROPERTY_SET_RANGE lone_set_prime_table[] = {"
+write "    /* for internal used property */"
+for def in $internals {
+    var query = $def.query!
+    var set = $createCodePointSet($query, $true)
+    write "    /* ${def.name} */"
+    $set.emit() with >> $out
+    $sizeMap.put($def.name, $set.toOffsetEntry($offset))
+    $offset += $set.tableSize()
+}
+write "    /* for external used property */"
+for def in $defs {
+    var query = $def.query ?? continue
+    var set = $createCodePointSet($query, $true)
+    write "    /* ${def.name} */"
+    $set.emit() with >> $out
+    $sizeMap.put($def.name, $set.toOffsetEntry($offset))
+    $offset += $set.tableSize()
+}
+write "};"
+
+## generate final table
+write
+write "static constexpr PROPERTY_SET_RANGE_TABLE_OFFSET lone_set_prime_table_offset[] = {"
+for cate, s in $sizeMap {
+    write "    {${$s.str()}}, // $cate"
+}
+write "};"
+write
+
+echo code generation success
