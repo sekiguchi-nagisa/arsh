@@ -19,7 +19,6 @@
 #include "../misc/enum_util.hpp"
 #include "../misc/format.hpp"
 #include "../misc/unicode.hpp"
-#include "property.h"
 
 namespace arsh::ucp {
 
