@@ -1,5 +1,7 @@
 #!/usr/bin/env arsh
 
+source ./guniset_helper.arsh
+
 [<CLI(toplevel:$true)>]
 type _Param() {
     [<Option(required: $true, help: "specify header file")>]
@@ -7,16 +9,6 @@ type _Param() {
     [<Arg(required:$true, help: "specify output file")>]
     var output = ""
 }
-
-var param = new _Param()
-$param.parse($@)
-
-let out = $param.output
-write() { echo $@ >> $out; }
-
-source ./guniset_helper.arsh
-
-shctl set errraise
 
 ## helper
 let combinedSet = @(  # generated from other property combination
@@ -33,10 +25,11 @@ let combinedSet = @(  # generated from other property combination
 type LoneProperty(n: String, a: String, p: String?) {
     let name = $n
     let abbr = $a != "-" ? $a : $none
+    let prefix = $p
     let query = case $name {
         "ASCII" => "0..7F"
         "Any" => "0..10FFFF"
-        else => if let prefix = $p { $prefix + ":" + $name; } else { $none } 
+        else => $prefix && $combinedSet.searchSorted($name) < 0  ? $prefix! + ":" + $name : $none
     }
 }
 
@@ -49,9 +42,6 @@ function create(args: [[String]]) : [LoneProperty] {
             "DerivedCoreProperties.txt" => "dcp"
             "emoji-data.txt" => "emoji"
             else => $none
-        }
-        if $combinedSet.searchSorted($name) > -1 {  # ignore combined property
-            $setPrefix = $none
         }
         $ret.add(new LoneProperty($name, $arg[1], $setPrefix))
     }
@@ -128,91 +118,98 @@ let internals = $create([  # for internally used property
 ])
 
 
-## generate lone property header
-{
-    auto_gen_header
-    echo '#define EACH_UCP_LONE_PROPERTY_NAME(E) \'
-    echo '    /* for prime lone property */ \'
-    for def in $defs {
-        $def.query || continue
-        var names = [$def.name]
-        if let abbr = $def.abbr {
-            $names.add($abbr)
+_main(param : _Param) {
+    shctl set errraise
+
+    ## generate lone property header
+    {
+        auto_gen_header
+        echo '#define EACH_UCP_LONE_PROPERTY_NAME(E) \'
+        echo '    /* for prime lone property */ \'
+        for def in $defs {
+            $def.query || continue
+            var names = [$def.name]
+            if let abbr = $def.abbr {
+                $names.add($abbr)
+            }
+            echo "    E(${$def.name}, \"${$names.join('|')}\") \\"
         }
-        echo "    E(${$def.name}, \"${$names.join('|')}\") \\"
-    }
-    echo '    /* for combined lone property */ \'
-    for def in $defs {
-        !$def.query || continue
-        var names = [$def.name]
-        if let abbr = $def.abbr {
-            $names.add($abbr)
+        echo '    /* for combined lone property */ \'
+        for def in $defs {
+            !$def.query || continue
+            var names = [$def.name]
+            if let abbr = $def.abbr {
+                $names.add($abbr)
+            }
+            echo "    E(${$def.name}, \"${$names.join('|')}\") \\"
         }
-        echo "    E(${$def.name}, \"${$names.join('|')}\") \\"
-    }
-    echo
-    echo
-    echo '#define EACH_UCP_LONE_PROPERTY_PRIME_INTERNAL(E) \'
-    for def in $internals {
-        assert $def.query
-        echo "    E(${$def.name}) \\"
-    }
-    echo
-    echo
-    echo '#define EACH_UCP_LONE_PROPERTY_PRIME(E) \'
-    for def in $defs {
-        $def.query || continue
-        echo "    E(${$def.name}) \\"
-    }
-    echo
-    echo
-    echo '#define EACH_UCP_LONE_PROPERTY(E) \'
-    echo '    EACH_UCP_LONE_PROPERTY_PRIME_INTERNAL(E) \'
-    echo '    EACH_UCP_LONE_PROPERTY_PRIME(E) \'
-    for def in $defs {
-        !$def.query || continue
-        echo "    E(${$def.name}) \\"
-    }
-    echo '    /* end */'
-    echo
-    echo "#define UCP_LONE_PROPERTY_PRIME_INTERNAL_SIZE ${$internals.size()}"
-    echo "#define UCP_LONE_PROPERTY_SIZE ${$internals.size()+$defs.size()}"
-} with > ${param.header}
+        echo
+        echo
+        echo '#define EACH_UCP_LONE_PROPERTY_PRIME_INTERNAL(E) \'
+        for def in $internals {
+            assert $def.query
+            echo "    E(${$def.name}) \\"
+        }
+        echo
+        echo
+        echo '#define EACH_UCP_LONE_PROPERTY_PRIME(E) \'
+        for def in $defs {
+            $def.query || continue
+            echo "    E(${$def.name}) \\"
+        }
+        echo
+        echo
+        echo '#define EACH_UCP_LONE_PROPERTY(E) \'
+        echo '    EACH_UCP_LONE_PROPERTY_PRIME_INTERNAL(E) \'
+        echo '    EACH_UCP_LONE_PROPERTY_PRIME(E) \'
+        for def in $defs {
+            !$def.query || continue
+            echo "    E(${$def.name}) \\"
+        }
+        echo '    /* end */'
+        echo
+        echo "#define UCP_LONE_PROPERTY_PRIME_INTERNAL_SIZE ${$internals.size()}"
+        echo "#define UCP_LONE_PROPERTY_SIZE ${$internals.size()+$defs.size()}"
+    } with > ${param.header}
 
+    ## generate each lone property table
+    {
+        auto_gen_header
 
-## generate each lone property table
-auto_gen_header > $out
+        var sizeMap: [String: OffsetEntry]
+        var offset = 0
+        echo "static constexpr PROPERTY_SET_RANGE lone_set_prime_table[] = {"
+        echo "    /* for internal used property */"
+        for def in $internals {
+            var query = $def.query!
+            var set = $createCodePointSet($query, $true)
+            echo "    /* ${def.name} */"
+            $set.emit()
+            $sizeMap.put($def.name, $set.toOffsetEntry($offset))
+            $offset += $set.tableSize()
+        }
+        echo "    /* for external used property */"
+        for def in $defs {
+            var query = $def.query ?? continue
+            var set = $createCodePointSet($query, $true)
+            echo "    /* ${def.name} */"
+            $set.emit()
+            $sizeMap.put($def.name, $set.toOffsetEntry($offset))
+            $offset += $set.tableSize()
+        }
+        echo "};"
 
-var sizeMap: [String: OffsetEntry]
-var offset = 0
-write "static constexpr PROPERTY_SET_RANGE lone_set_prime_table[] = {"
-write "    /* for internal used property */"
-for def in $internals {
-    var query = $def.query!
-    var set = $createCodePointSet($query, $true)
-    write "    /* ${def.name} */"
-    $set.emit() with >> $out
-    $sizeMap.put($def.name, $set.toOffsetEntry($offset))
-    $offset += $set.tableSize()
+        ## generate final table
+        echo
+        echo "static constexpr PROPERTY_SET_RANGE_TABLE_OFFSET lone_set_prime_table_offset[] = {"
+        for cate, s in $sizeMap {
+            echo "    {${$s.str()}}, // $cate"
+        }
+        echo "};"
+        echo
+    } with > ${param.output}
+
+    echo code generation success
 }
-write "    /* for external used property */"
-for def in $defs {
-    var query = $def.query ?? continue
-    var set = $createCodePointSet($query, $true)
-    write "    /* ${def.name} */"
-    $set.emit() with >> $out
-    $sizeMap.put($def.name, $set.toOffsetEntry($offset))
-    $offset += $set.tableSize()
-}
-write "};"
 
-## generate final table
-write
-write "static constexpr PROPERTY_SET_RANGE_TABLE_OFFSET lone_set_prime_table_offset[] = {"
-for cate, s in $sizeMap {
-    write "    {${$s.str()}}, // $cate"
-}
-write "};"
-write
-
-echo code generation success
+shctl is-sourced || _main $@

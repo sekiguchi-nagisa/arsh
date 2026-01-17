@@ -439,15 +439,17 @@ TEST(SetBuilderTest, complement2) {
   ASSERT_EQ(UnicodeUtil::CODE_POINT_MAX, builder.getCodePointRanges()[0].second);
 }
 
+constexpr unsigned int MAX_TEST_CODEPOINT_SIZE = 10;
+
 template <typename... T>
-constexpr std::array<int, 5> toArray(T... arg) {
-  static_assert(sizeof...(T) <= 5);
-  std::array<int, 5> ret = {arg...};
+constexpr std::array<int, MAX_TEST_CODEPOINT_SIZE> toArray(T... arg) {
+  static_assert(sizeof...(T) <= MAX_TEST_CODEPOINT_SIZE);
+  std::array<int, MAX_TEST_CODEPOINT_SIZE> ret = {arg...};
   return ret;
 }
 
 struct CodePointArray {
-  std::array<int, 5> codePoints;
+  std::array<int, MAX_TEST_CODEPOINT_SIZE> codePoints;
   unsigned int usedSize;
 
   template <typename... T>

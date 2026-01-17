@@ -1,6 +1,7 @@
 #!/usr/bin/env arsh
 
 source ./guniset_helper.arsh
+source ./gen_lone_property_table.arsh
 
 [<CLI(toplevel: $true)>]
 type _Param() {
@@ -27,7 +28,7 @@ function gen_for_arsh(output: String) {
 }
 
 function sample(op: String): [String] {
-    var r = "$(guniset sample --seed=42 $op)".replace("U+", "0x")
+    var r = "$(guniset sample --seed=42 --limit=10 $op)".replace("U+", "0x")
     return $r.empty() ? new [String]() : $r.split($'\n')
 }
 
@@ -69,6 +70,23 @@ function gen_for_cpp(output: String) {
         $ss.empty() && continue
         assert !$ss.join(", ").empty() : "<$ss>"
         printf "    {\"scx\", \"%s\", {%s}},\n" $target ${$ss.join(", ")}
+    } with >> $output
+
+    # lone property
+    for def in $defs {
+        let query = if let q = $def.query {
+            $q
+        } elif let p = $def.prefix {
+            "$p:${def.name}"
+        } elif $def.name == 'Assigned' {
+            "!(cat:Cn)"
+        } else {
+            echo 1>&2 "[warn] ignore: ${def.name}"
+            continue
+        }
+        var ss = $sample($query)
+        assert !$ss.join(", ").empty() : "<$ss>"
+        printf "    {\"\", \"%s\", {%s}},\n" ${def.name} ${$ss.join(", ")}
     } with >> $output
 
     echo "};" >> $output
