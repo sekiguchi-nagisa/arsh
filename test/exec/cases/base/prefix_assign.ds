@@ -1,5 +1,5 @@
 
-# undefiend env 
+# undefined env
 assert (AAA=1234 ($AAA + '!')) == '1234!'
 
 ZZZ123='hello world' AAA123=123 \
@@ -25,7 +25,8 @@ assert !(env | grep ^AAA123=)
 export-env HOGE777 = 'abcdefg'
 export-env VVVV_90 = 'XYZW++'
 
-assert (HOGE777=\
+assert (HOG\E\
+777=\
 ~/"$(echo 4444)" VVVV_90=9999\\:~/\:~/= \
    abcd000= {
     assert "$(env | grep ^HOGE777=)".split('=')[1] == "$(echo ~/)4444"
@@ -39,7 +40,7 @@ assert $VVVV_90 == 'XYZW++'
 assert !(env | grep ^abcd000=)
 
 # IFS
-## undeifned env
+## undefined env
 unsetenv IFS
 let OLD = $IFS
 assert $IFS != '1234'

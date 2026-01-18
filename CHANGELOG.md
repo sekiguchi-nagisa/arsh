@@ -17,6 +17,7 @@
 #### Core
 
 - allow trailing comma in function arguments
+- unquote backslash of prefix env names like command name
 
 ## [0.40.0] - 2025-12-30
 
