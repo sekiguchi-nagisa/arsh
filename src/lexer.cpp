@@ -452,12 +452,6 @@ std::pair<double, bool> Lexer::toDouble(Token token) const {
   return {ret.value, static_cast<bool>(ret)};
 }
 
-bool Lexer::toEnvName(Token token, std::string &out) const {
-  auto ref = this->toStrRef(token);
-  out = ref.toString();
-  return isValidIdentifier(ref);
-}
-
 static EscapeSeqResult okByte(unsigned char b, unsigned short size) {
   return {
       .kind = EscapeSeqResult::OK_BYTE,

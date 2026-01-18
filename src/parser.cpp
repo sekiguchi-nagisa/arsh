@@ -2564,16 +2564,8 @@ std::unique_ptr<PrefixAssignNode> Parser::parse_prefixAssign() {
   std::vector<std::unique_ptr<AssignNode>> envDeclNodes;
   do {
     Token token = TRY(this->expect(TokenKind::ENV_ASSIGN));
-    auto nameNode = ({
-      std::string envName;
-      auto nameToken = token.slice(0, token.size - 1);
-      if (!this->lexer->toEnvName(nameToken, envName)) {
-        this->reportTokenFormatError(TokenKind::ENV_ASSIGN, nameToken, "must be identifier");
-        return nullptr;
-      }
-      std::make_unique<VarNode>(nameToken, std::move(envName));
-    });
-
+    auto nameToken = token.slice(0, token.size - 1);
+    auto nameNode = std::make_unique<VarNode>(nameToken, this->lexer->toCmdArg(nameToken));
     std::unique_ptr<Node> valueNode;
     if (!this->hasSpace() && !this->hasLineTerminator() && lookahead_cmdArg_LP(CUR_KIND())) {
       valueNode = this->parse_cmdArg(CmdArgParseOpt::ASSIGN);

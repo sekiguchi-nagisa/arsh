@@ -2075,6 +2075,10 @@ void TypeChecker::visitPrefixAssignNode(PrefixAssignNode &node) {
       assert(isa<VarNode>(e->getLeftNode()));
       auto &leftNode = cast<VarNode>(e->getLeftNode());
       leftNode.setType(this->typePool().getUnresolvedType());
+      if (!isValidIdentifier(leftNode.getVarName())) {
+        this->reportError<InvalidEnvName>(leftNode, leftNode.getVarName().c_str());
+        continue;
+      }
       if (const auto handle =
               this->addEnvEntry(leftNode.getToken(), leftNode.getVarName(), false)) {
         leftNode.setHandle(handle);

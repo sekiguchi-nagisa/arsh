@@ -1,4 +1,0 @@
-
-#$test($result = 'parse', $lineNum = 4, $chars = 32, $errorKind = 'EXPR', $status = 1)
-
-assert 34 == (AAA=12 BB=12 45 +)

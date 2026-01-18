@@ -249,6 +249,7 @@ DEFINE_TCError(InvalidSubCmd,
 DEFINE_TCError(SubCmdAttrType, "`SubCmd' attribute is only given to CLI record type field");
 DEFINE_TCError(EmptyRedirArgs, "not allow arguments after empty command redirection");
 DEFINE_TCError(NoEmptyRedir, "empty command redirection is only allowed after '$(', '<(', '>('");
+DEFINE_TCError(InvalidEnvName, "env name must be valid identifier: `%s'");
 
 DEFINE_TCWarn(MeaninglessCast, "meaningless cast op");
 DEFINE_TCWarn(VarShadowing, "`%s' hides already defined name of outer scope");

@@ -277,8 +277,6 @@ public:
 
   std::pair<double, bool> toDouble(Token token) const;
 
-  bool toEnvName(Token token, std::string &out) const;
-
 private:
   /**
    * low level api. normally should not use it

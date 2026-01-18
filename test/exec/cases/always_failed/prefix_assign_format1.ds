@@ -1,0 +1,4 @@
+#$test($result = 'type', $lineNum = 3,$chars = 1,  $errorKind = 'InvalidEnvName', $status = 1)
+
+hoge@jf\
+i=\(AAA\)  env | grep hoge@jf
