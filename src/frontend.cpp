@@ -75,11 +75,14 @@ bool FrontEnd::tryToParse() {
     assert(!ctx->nodes.empty());
     if (parser.hasError() || parser.getOldErrors().size()) {
       this->curScope()->updateModAttr(ModAttr::HAS_ERRORS);
-      this->listener &&this->listener->handleParseError(
-          this->contexts,
-          parser.getOldErrors().size()
-              ? *parser.getOldErrors().front()
-              : parser.getError()); // only report first appeared syntax error
+      if (this->listener) {
+        for (auto &e : parser.getOldErrors()) {
+          this->listener->handleParseError(this->contexts, *e);
+        }
+        if (parser.hasError()) {
+          this->listener->handleParseError(this->contexts, parser.getError());
+        }
+      }
       if (!hasFlag(this->option, FrontEndOption::ERROR_RECOVERY)) {
         return false;
       }
