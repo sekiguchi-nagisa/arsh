@@ -1415,7 +1415,7 @@ std::unique_ptr<RedirNode> Parser::parse_redirOption() {
       const Token startToken = argNode.getToken();
       {
         StringRef ref = this->lexer->toStrRef(startToken);
-        if (ref[0] == '\'') {
+        if (ref.size() > 1 && ref[0] == '\'') {
           ref.removePrefix(1);
           ref.removeSuffix(1);
         }

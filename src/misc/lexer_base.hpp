@@ -171,7 +171,7 @@ public:
   unsigned int getMaxLineNum() const { return this->lineNumTable.getMaxLineNum(); }
 
   /**
-   * get current reading position.
+   * get the current reading position.
    */
   unsigned int getPos() const { return this->cursor - this->buf.data(); }
 
@@ -187,21 +187,18 @@ public:
   bool isLastNewlineInserted() const { return this->lastNewlineInserted; }
 
   StringRef toStrRef(Token token) const {
-    assert(this->withinRange(token));
-    return StringRef(this->buf.data() + token.pos, token.size);
+    return StringRef(this->buf.data() + token.pos, this->withinRange(token) ? token.size : 0);
   }
 
   /**
    * get text of token.
    */
   std::string toTokenText(Token token) const {
-    assert(this->withinRange(token));
-    return std::string(this->buf.data() + token.pos, token.size);
+    return std::string(this->buf.data() + token.pos, this->withinRange(token) ? token.size : 0);
   }
 
   bool startsWith(Token token, int ch) const {
-    assert(this->withinRange(token));
-    return this->buf[token.pos] == ch;
+    return this->withinRange(token) && this->buf[token.pos] == ch;
   }
 
   /**

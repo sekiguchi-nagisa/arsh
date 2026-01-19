@@ -305,22 +305,20 @@ bool Lexer::singleToString(Token token, std::string &out) const {
   if (this->startsWith(token, '$')) {
     return this->escapedSingleToString(token, out);
   }
-
-  Token trimed = token;
-  trimed.pos++;
-  trimed.size -= 2;
-
-  out = this->toTokenText(trimed);
+  if (token.size >= 2) {
+    token.pos++;
+    token.size -= 2;
+  }
+  out = this->toTokenText(token);
   return true;
 }
 
 bool Lexer::escapedSingleToString(Token token, std::string &out) const {
-  assert(this->withinRange(token));
-
   StringRef ref = this->toStrRef(token);
-  ref.removePrefix(2); // prefix "$'"
-  ref.removeSuffix(1); // suffix "'"
-
+  if (ref.size() >= 3) {
+    ref.removePrefix(2); // prefix $'
+    ref.removeSuffix(1); // suffix '
+  }
   const char *end = ref.end();
   for (const char *iter = ref.begin(); iter != end;) {
     if (*iter == '\\') {
@@ -360,16 +358,13 @@ bool Lexer::escapedSingleToString(Token token, std::string &out) const {
 }
 
 std::string Lexer::doubleElementToString(Token token, const bool skipDouble) const {
-  assert(this->withinRange(token));
-
   std::string str;
-  str.reserve(token.size);
-
-  const unsigned int stopPos = token.pos + token.size;
-  for (unsigned int i = token.pos; i < stopPos; i++) {
-    char ch = this->buf[i];
-    if (ch == '\\' && i + 1 < stopPos) {
-      char next = this->buf[++i];
+  const auto ref = this->toStrRef(token);
+  const unsigned int size = ref.size();
+  for (unsigned int i = 0; i < size; i++) {
+    char ch = ref[i];
+    if (ch == '\\' && i + 1 < size) {
+      char next = ref[++i];
       switch (next) {
       case '"':
         if (skipDouble) {
@@ -409,11 +404,12 @@ std::string Lexer::toHereDocBody(Token token, HereDocState::Attr attr) const {
 }
 
 std::string Lexer::toName(Token token) const {
-  assert(this->withinRange(token));
-
+  auto ref = this->toStrRef(token);
+  if (!ref.empty() && ref[0] == '$') {
+    ref.removePrefix(1);
+  }
   std::string name;
-  for (unsigned int i = this->buf[token.pos] == '$' ? 1 : 0; i < token.size; i++) {
-    char ch = this->buf[token.pos + i];
+  for (const auto ch : ref) {
     switch (ch) {
     /**
      * ex. $true, ${true}, $@[
@@ -446,7 +442,6 @@ std::pair<int64_t, bool> Lexer::toInt64(Token token) const {
 }
 
 std::pair<double, bool> Lexer::toDouble(Token token) const {
-  assert(this->withinRange(token));
   auto ret = convertToDouble(this->toTokenText(token).c_str());
   assert(ret || ret.kind == DoubleConversionResult::OUT_OF_RANGE);
   return {ret.value, static_cast<bool>(ret)};
