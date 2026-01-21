@@ -15,12 +15,12 @@ let ORG_DIR = $2.realpath()
 test -d $ORG_DIR || usage "$ORG_DIR" must be directory
 
 let NEW_DIR = "${ORG_DIR}_new"
-test -e $NEW_DIR && usage "$NEW_DIR" is alreays exists
+test -e $NEW_DIR && usage "$NEW_DIR" already exists
 
 mkdir $NEW_DIR
 
 ARSH_SUPPRESS_COMPILE_ERROR=on call $BIN -merge=1 -jobs="$(nproc)" -workers="$(nproc)" \
-  -rss_limit_mb=8192 $NEW_DIR $ORG_DIR && {
+        -rss_limit_mb=8192 $NEW_DIR $ORG_DIR && {
     echo move $NEW_DIR to $ORG_DIR
     rm -rf $ORG_DIR
     mv $NEW_DIR $ORG_DIR

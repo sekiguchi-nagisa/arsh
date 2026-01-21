@@ -487,9 +487,7 @@ bool TypeChecker::concatAsGlobPattern(const Token token, SourceListNode::path_it
 
 static unsigned int getExpansionLimit() {
 #ifdef FUZZING_BUILD_MODE
-  if (const char *env = getenv("ARSH_SUPPRESS_MOD_LOADING")) {
-    return 512;
-  }
+  return 512;
 #endif
   return SYS_LIMIT_EXPANSION_RESULTS;
 }
