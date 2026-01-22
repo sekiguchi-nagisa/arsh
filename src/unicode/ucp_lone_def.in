@@ -16,6 +16,10 @@
   Date: 2025-07-30, 23:55:08 GMT
 - emoji-data.txt
   Date: 2025-07-25, 17:54:31 GMT
+- DerivedBinaryProperties-17.0.0.txt
+  Date: 2025-01-27, 18:09:10 GMT
+- DerivedNormalizationProps-17.0.0.txt
+  Date: 2025-01-27, 18:09:14 GMT
 */
 
 // clang-format off
@@ -26,10 +30,12 @@
     E(ASCII_Hex_Digit, "ASCII_Hex_Digit|AHex") \
     E(Any, "Any") \
     E(Bidi_Control, "Bidi_Control|Bidi_C") \
+    E(Bidi_Mirrored, "Bidi_Mirrored|Bidi_M") \
     E(Case_Ignorable, "Case_Ignorable|CI") \
     E(Changes_When_Casefolded, "Changes_When_Casefolded|CWCF") \
     E(Changes_When_Casemapped, "Changes_When_Casemapped|CWCM") \
     E(Changes_When_Lowercased, "Changes_When_Lowercased|CWL") \
+    E(Changes_When_NFKC_Casefolded, "Changes_When_NFKC_Casefolded|CWKCF") \
     E(Changes_When_Titlecased, "Changes_When_Titlecased|CWT") \
     E(Changes_When_Uppercased, "Changes_When_Uppercased|CWU") \
     E(Dash, "Dash") \
@@ -63,9 +69,7 @@
     /* for combined lone property */ \
     E(Alphabetic, "Alphabetic|Alpha") \
     E(Assigned, "Assigned") \
-    E(Bidi_Mirrored, "Bidi_Mirrored|Bidi_M") \
     E(Cased, "Cased") \
-    E(Changes_When_NFKC_Casefolded, "Changes_When_NFKC_Casefolded|CWKCF") \
     E(Default_Ignorable_Code_Point, "Default_Ignorable_Code_Point|DI") \
     E(Grapheme_Base, "Grapheme_Base|Gr_Base") \
     E(Grapheme_Extend, "Grapheme_Extend|Gr_Ext") \
@@ -97,10 +101,12 @@
     E(ASCII_Hex_Digit) \
     E(Any) \
     E(Bidi_Control) \
+    E(Bidi_Mirrored) \
     E(Case_Ignorable) \
     E(Changes_When_Casefolded) \
     E(Changes_When_Casemapped) \
     E(Changes_When_Lowercased) \
+    E(Changes_When_NFKC_Casefolded) \
     E(Changes_When_Titlecased) \
     E(Changes_When_Uppercased) \
     E(Dash) \
@@ -138,9 +144,7 @@
     EACH_UCP_LONE_PROPERTY_PRIME(E) \
     E(Alphabetic) \
     E(Assigned) \
-    E(Bidi_Mirrored) \
     E(Cased) \
-    E(Changes_When_NFKC_Casefolded) \
     E(Default_Ignorable_Code_Point) \
     E(Grapheme_Base) \
     E(Grapheme_Extend) \

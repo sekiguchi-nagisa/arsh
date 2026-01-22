@@ -36,7 +36,7 @@ install_guniset() {
     pushd $_install_dir
     defer { popd; }
 
-    let _version = "0.9.0"
+    let _version = "0.10.0"
 
     (test -x ./guniset && "$(./guniset -v || true)".split(" ")[0] == "v$_version") ||
         (sleep 0.1 && curl -L \

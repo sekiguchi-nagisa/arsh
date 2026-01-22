@@ -398,8 +398,6 @@ static bool getLoneSet(const Lone lone, BuilderOrSet out) {
     }
     return true;
   }
-  case Lone::Bidi_Mirrored: // TODO:
-    break;
   case Lone::Cased: {
     // Generated from: Lowercase + Uppercase + Lt
     CodePointSetBuilder builder;
@@ -418,8 +416,6 @@ static bool getLoneSet(const Lone lone, BuilderOrSet out) {
     }
     return true;
   }
-  case Lone::Changes_When_NFKC_Casefolded: // TODO:
-    break;
   case Lone::Default_Ignorable_Code_Point: {
     /*
      * Generated from:

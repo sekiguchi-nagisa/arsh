@@ -64,6 +64,8 @@ function create(args: [[String]]) : [LoneProperty] {
             "PropList.txt" => "prop"
             "DerivedCoreProperties.txt" => "dcp"
             "emoji-data.txt" => "emoji"
+            "DerivedBinaryProperties.txt" => "dbp"
+            "DerivedNormalizationProps.txt" => "dnp"
             else => $none
         }
         $ret.add(new LoneProperty($name, $arg[1], $setPrefix))
@@ -81,7 +83,7 @@ let defs = $create([
 @( Any                           -                                       ),
 @( Assigned                      -                                       ),
 @( Bidi_Control                  Bidi_C    PropList.txt                  ),
-@( Bidi_Mirrored                 Bidi_M    UnicodeData.txt               ),
+@( Bidi_Mirrored                 Bidi_M    DerivedBinaryProperties.txt   ),
 @( Case_Ignorable                CI        DerivedCoreProperties.txt     ),
 @( Cased                         -         DerivedCoreProperties.txt     ),
 @( Changes_When_Casefolded       CWCF      DerivedCoreProperties.txt     ),
