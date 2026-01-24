@@ -256,13 +256,13 @@ $expected = [
 ]
 
 for e in $expected {
-    assert $e._1 == $ucd.emoji($e._0)  : "$e"
+    assert $e._1 == $ucd.emojiSeq($e._0)  : "$e"
 }
 
 $ex = 34
-try { $ucd.emoji($'\U26EA@') } catch e { $ex = $e; }
+try { $ucd.emojiSeq($'\U26EA@') } catch e { $ex = $e; }
 assert ($ex as ArgumentError).message() == 'must be valid single grapheme cluster'
 
 $ex = 34
-try { $ucd.emoji($'\xFF') } catch e { $ex = $e; }
+try { $ucd.emojiSeq($'\xFF') } catch e { $ex = $e; }
 assert ($ex as ArgumentError).message() == 'must be valid single grapheme cluster'

@@ -2903,7 +2903,7 @@ ARSH_METHOD unicode_script(RuntimeContext &ctx) {
   RET_ERROR;
 }
 
-//!bind: function emoji($this: UnicodeData, $char: String): String
+//!bind: function emojiSeq($this: UnicodeData, $char: String): String
 ARSH_METHOD unicode_emoji(RuntimeContext &ctx) {
   SUPPRESS_WARNING(unicode_emoji);
   auto ref = LOCAL(1).asStrRef();

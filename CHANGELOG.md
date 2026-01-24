@@ -11,7 +11,7 @@
       output)
     - ``category``: query Unicode General Category of code point (single utf8 char)
     - ``script``: query Unicode Script of code point (single utf8 char)
-    - ``emoji``: query Emoji sequence property of character (single grapheme cluster)
+    - ``emojiSeq``: query Emoji sequence property of character (single grapheme cluster)
 
 ### Changed
 
