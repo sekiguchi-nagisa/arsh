@@ -677,10 +677,10 @@ bool isExtendedPictographic(const int codePoint) {
   return set.ref().contains(codePoint);
 }
 
-Optional<EmojiProperty> parseEmojiProperty(StringRef ref) {
-  static const StrRefMap<EmojiProperty> propertyNames = {
-#define GEN_TABLE(E, B) {#E, EmojiProperty::E},
-      EACH_EMOJI_PROPERTY(GEN_TABLE)
+Optional<RGIEmojiSeq> parseEmojiProperty(StringRef ref) {
+  static const StrRefMap<RGIEmojiSeq> propertyNames = {
+#define GEN_TABLE(E, B) {#E, RGIEmojiSeq::E},
+      EACH_RGI_EMOJI_SEQ(GEN_TABLE)
 #undef GEN_TABLE
   };
   if (const auto iter = propertyNames.find(ref); iter != propertyNames.end()) {
@@ -689,12 +689,12 @@ Optional<EmojiProperty> parseEmojiProperty(StringRef ref) {
   return {};
 }
 
-const char *toString(EmojiProperty p) {
+const char *toString(RGIEmojiSeq p) {
   switch (p) {
 #define GEN_CASE(E, B)                                                                             \
-  case EmojiProperty::E:                                                                           \
+  case RGIEmojiSeq::E:                                                                             \
     return #E;
-    EACH_EMOJI_PROPERTY(GEN_CASE)
+    EACH_RGI_EMOJI_SEQ(GEN_CASE)
 #undef GEN_CASE
   default:
     break;
@@ -704,9 +704,9 @@ const char *toString(EmojiProperty p) {
 
 #include <packed_emoji_trie.h>
 
-EmojiProperty getEmojiProperty(StringRef ref) {
-  return lookupEmojiPropertyFrom(ref, packed_emoji_radix_tree_table,
-                                 std::size(packed_emoji_radix_tree_table));
+RGIEmojiSeq getEmojiProperty(StringRef ref) {
+  return lookupRGIEmojiSeqFrom(ref, packed_emoji_radix_tree_table,
+                               std::size(packed_emoji_radix_tree_table));
 }
 
 } // namespace arsh::ucp

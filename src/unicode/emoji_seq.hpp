@@ -24,7 +24,7 @@
 
 namespace arsh {
 
-#define EACH_EMOJI_PROPERTY(E)                                                                     \
+#define EACH_RGI_EMOJI_SEQ(E)                                                                      \
   E(Basic_Emoji, (1u << 0u))                                                                       \
   E(Emoji_Keycap_Sequence, (1u << 1u))                                                             \
   E(RGI_Emoji_Modifier_Sequence, (1u << 2u))                                                       \
@@ -33,15 +33,15 @@ namespace arsh {
   E(RGI_Emoji_ZWJ_Sequence, (1u << 5u))                                                            \
   E(RGI_Emoji, ((1u << 6u) - 1u))
 
-enum class EmojiProperty : unsigned char {
+enum class RGIEmojiSeq : unsigned char {
   None = 0,
 #define GEN_ENUM(E, B) E = (B),
-  EACH_EMOJI_PROPERTY(GEN_ENUM)
+  EACH_RGI_EMOJI_SEQ(GEN_ENUM)
 #undef GEN_ENUM
 };
 
 template <>
-struct allow_enum_bitop<EmojiProperty> : std::true_type {};
+struct allow_enum_bitop<RGIEmojiSeq> : std::true_type {};
 
 struct RadixChildIter {
   static constexpr unsigned int CHILD_OFFSET_BYTES = 2;
@@ -88,8 +88,8 @@ struct RadixChildIter {
   }
 };
 
-inline EmojiProperty lookupEmojiPropertyFrom(StringRef ref, const uint8_t *const ptr,
-                                             const size_t size) {
+inline RGIEmojiSeq lookupRGIEmojiSeqFrom(StringRef ref, const uint8_t *const ptr,
+                                         const size_t size) {
   /*
    * lookup from a serialized radix tree
    *
@@ -107,10 +107,10 @@ inline EmojiProperty lookupEmojiPropertyFrom(StringRef ref, const uint8_t *const
       break;
     }
     offset += prefixLen;
-    auto property = static_cast<EmojiProperty>(ptr[offset++]);
+    auto property = static_cast<RGIEmojiSeq>(ptr[offset++]);
     ref.removePrefix(prefixLen);
     if (ref.empty()) {
-      if (property != EmojiProperty::None) { // reach edge
+      if (property != RGIEmojiSeq::None) { // reach edge
         return property;
       }
       break;
@@ -127,7 +127,7 @@ inline EmojiProperty lookupEmojiPropertyFrom(StringRef ref, const uint8_t *const
       break;
     }
   }
-  return EmojiProperty::None;
+  return RGIEmojiSeq::None;
 }
 
 } // namespace arsh

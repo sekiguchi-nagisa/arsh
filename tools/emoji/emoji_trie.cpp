@@ -37,8 +37,8 @@ static StringRef findCommonPrefix(StringRef x, StringRef y) {
   return x.slice(0, i);
 }
 
-bool EmojiRadixTree::add(StringRef seq, EmojiProperty p) {
-  if (p == EmojiProperty::None) {
+bool EmojiRadixTree::add(StringRef seq, RGIEmojiSeq p) {
+  if (p == RGIEmojiSeq::None) {
     return false;
   }
   for (auto *tree = this;;) {
@@ -46,13 +46,13 @@ bool EmojiRadixTree::add(StringRef seq, EmojiProperty p) {
     seq.removePrefix(common.size());
     if (common.size() == tree->prefix.size()) {
       if (seq.empty()) {
-        if (tree->property == EmojiProperty::None) {
+        if (tree->property == RGIEmojiSeq::None) {
           tree->property = p;
           return true;
         }
         break; // already inserted
       }
-      if (tree->prefix.empty() && tree->children.empty() && tree->property == EmojiProperty::None) {
+      if (tree->prefix.empty() && tree->children.empty() && tree->property == RGIEmojiSeq::None) {
         tree->prefix = seq.toString();
         tree->property = p;
         return true;
@@ -78,7 +78,7 @@ bool EmojiRadixTree::add(StringRef seq, EmojiProperty p) {
       char key = child->getPrefix()[0];
       tree->children.emplace(key, std::move(child));
       tree->prefix = common.toString();
-      tree->property = EmojiProperty::None;
+      tree->property = RGIEmojiSeq::None;
       if (seq.empty()) {
         tree->property = p;
         return true;
@@ -89,14 +89,14 @@ bool EmojiRadixTree::add(StringRef seq, EmojiProperty p) {
   return false;
 }
 
-static EmojiProperty findImpl(const EmojiRadixTree *tree, StringRef seq) {
+static RGIEmojiSeq findImpl(const EmojiRadixTree *tree, StringRef seq) {
   while (true) {
     if (!seq.startsWith(tree->getPrefix())) {
       break;
     }
     seq.removePrefix(tree->getPrefix().size());
     if (seq.empty()) {
-      if (tree->getProperty() != EmojiProperty::None) { // reach edge
+      if (tree->getProperty() != RGIEmojiSeq::None) { // reach edge
         return tree->getProperty();
       }
       break;
@@ -109,10 +109,10 @@ static EmojiProperty findImpl(const EmojiRadixTree *tree, StringRef seq) {
       break;
     }
   }
-  return EmojiProperty::None;
+  return RGIEmojiSeq::None;
 }
 
-EmojiProperty EmojiRadixTree::find(const StringRef seq) const { return findImpl(this, seq); }
+RGIEmojiSeq EmojiRadixTree::find(const StringRef seq) const { return findImpl(this, seq); }
 
 EmojiRadixTree *EmojiRadixTree::getOrCreate(char ch) {
   auto iter = this->children.find(ch);

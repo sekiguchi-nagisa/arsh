@@ -24,7 +24,7 @@
 using namespace arsh;
 
 struct EMOJI_SEQ_ENTRY {
-  EmojiProperty property;
+  RGIEmojiSeq property;
   CodePointArray codes;
 };
 

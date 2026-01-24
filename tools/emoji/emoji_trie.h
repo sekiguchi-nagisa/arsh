@@ -30,13 +30,13 @@ namespace arsh {
 class EmojiRadixTree {
 private:
   std::string prefix;
-  EmojiProperty property{EmojiProperty::None};
+  RGIEmojiSeq property{RGIEmojiSeq::None};
   std::unordered_map<char, std::unique_ptr<EmojiRadixTree>> children;
 
 public:
   EmojiRadixTree() = default;
 
-  explicit EmojiRadixTree(StringRef prefix, EmojiProperty property)
+  explicit EmojiRadixTree(StringRef prefix, RGIEmojiSeq property)
       : prefix(prefix.toString()), property(property) {}
 
   const auto &getPrefix() const { return this->prefix; }
@@ -48,7 +48,7 @@ public:
     return iter != this->children.end() ? iter->second.get() : nullptr;
   }
 
-  EmojiProperty getProperty() const { return this->property; }
+  RGIEmojiSeq getProperty() const { return this->property; }
 
   bool empty() const { return this->prefix.empty() && this->children.empty(); }
 
@@ -70,9 +70,9 @@ public:
    * if already found, return false
    * if p is None, return false
    */
-  bool add(StringRef seq, EmojiProperty p);
+  bool add(StringRef seq, RGIEmojiSeq p);
 
-  EmojiProperty find(StringRef seq) const;
+  RGIEmojiSeq find(StringRef seq) const;
 
 private:
   EmojiRadixTree *getOrCreate(char ch);

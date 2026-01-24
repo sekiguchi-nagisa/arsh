@@ -119,11 +119,11 @@ inline CodePointSet getPropertySet(const Property property) {
 
 bool isExtendedPictographic(int codePoint);
 
-Optional<EmojiProperty> parseEmojiProperty(StringRef ref);
+Optional<RGIEmojiSeq> parseEmojiProperty(StringRef ref);
 
-const char *toString(EmojiProperty p);
+const char *toString(RGIEmojiSeq p);
 
-EmojiProperty getEmojiProperty(StringRef ref);
+RGIEmojiSeq getEmojiProperty(StringRef ref);
 
 } // namespace arsh::ucp
 
