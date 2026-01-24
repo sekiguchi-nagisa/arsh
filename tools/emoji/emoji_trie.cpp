@@ -142,7 +142,7 @@ FlexBuffer<uint8_t> serialize(const EmojiRadixTree &radixTree) {
     // write child offset
     assert(tree.getChildren().size() <= UINT8_MAX);
     buf.push_back(tree.getChildren().size());
-    std::pmr::vector<const EmojiRadixTree *> children;
+    std::vector<const EmojiRadixTree *> children;
     for (auto &e : tree.getChildren()) {
       assert(!e.second->getPrefix().empty());
       children.push_back(e.second.get());
