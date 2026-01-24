@@ -24,3 +24,15 @@ add_executable(${TEST_NAME}
 )
 target_link_libraries(${TEST_NAME} gtest gtest_main unicode test_common)
 add_test(${TEST_NAME} ${TEST_NAME})
+
+
+#====================#
+#     emoji_test     #
+#====================#
+
+set(TEST_NAME emoji_test)
+add_executable(${TEST_NAME}
+        emoji_test.cpp
+)
+target_link_libraries(${TEST_NAME} gtest gtest_main emoji_trie unicode test_common)
+add_test(${TEST_NAME} ${TEST_NAME})

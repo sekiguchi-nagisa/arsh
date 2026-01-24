@@ -205,6 +205,19 @@ add_custom_command(OUTPUT ${embed_src}
         DEPENDS src_to_str
 )
 
+#=========================================#
+#     generate serialized emoji table     #
+#=========================================#
+
+set(emoji_trie_src ${CMAKE_CURRENT_BINARY_DIR}/src/packed_emoji_trie.h)
+add_custom_command(OUTPUT ${emoji_trie_src}
+        COMMAND ${CMAKE_CURRENT_BINARY_DIR}/tools/emoji/gen_emoji_trie
+        ${emoji_trie_src}
+        MAIN_DEPENDENCY ${CMAKE_CURRENT_SOURCE_DIR}/tools/emoji/emoji_seq.in
+        DEPENDS gen_emoji_trie
+)
+
+
 #=================#
 #     unicode     #
 #=================#
@@ -215,7 +228,9 @@ add_library(unicode STATIC
         src/unicode/word.cpp
         src/unicode/property.cpp
         src/unicode/set_builder.cpp
+        ${emoji_trie_src}
 )
+add_dependencies(unicode gen_emoji_trie)
 if (BUILD_SHARED_LIB)
     set_target_properties(unicode PROPERTIES POSITION_INDEPENDENT_CODE ON)
 endif ()
@@ -302,6 +317,7 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/highlighter)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/analyzer)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/inspect)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/helper)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/emoji)
 
 
 set(CMAKE_MACOSX_RPATH ON)

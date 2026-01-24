@@ -424,6 +424,8 @@ type UnicodeData()
 function category(char: String): String for UnicodeData
 
 function script(char: String): String for UnicodeData
+
+function emoji(char: String): String for UnicodeData
 ```
 
 ## StringIter type

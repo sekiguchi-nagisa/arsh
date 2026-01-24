@@ -17,14 +17,6 @@
 #ifndef MISC_LIB_OPT_HPP
 #define MISC_LIB_OPT_HPP
 
-#include <algorithm>
-#include <cstdlib>
-#include <cstring>
-#include <ostream>
-#include <string>
-#include <vector>
-
-#include "flag_util.hpp"
 #include "string_ref.hpp"
 
 BEGIN_MISC_LIB_NAMESPACE_DECL

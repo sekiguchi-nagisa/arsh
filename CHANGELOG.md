@@ -6,11 +6,12 @@
 
 #### Builtin
 
-- add ``UnicodeData`` type
+- add ``UnicodeData`` type and related methods
     - string representation of the object is Unicode version string (equivalent to ``shctl info``
       output)
-    - add ``category`` method for query Unicode General Category of code point (single utf8 char)
-    - add ``script`` method for query Unicode Script of code point (single utf8 char)
+    - ``category``: query Unicode General Category of code point (single utf8 char)
+    - ``script``: query Unicode Script of code point (single utf8 char)
+    - ``emoji``: query Emoji sequence property of character (single grapheme cluster)
 
 ### Changed
 

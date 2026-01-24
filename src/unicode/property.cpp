@@ -15,6 +15,7 @@
  */
 
 #include "property.h"
+
 #include "../misc/codepoint_set.hpp"
 #include "../misc/enum_util.hpp"
 #include "../misc/format.hpp"
@@ -674,6 +675,38 @@ bool isExtendedPictographic(const int codePoint) {
   auto set =
       getPropertySet(Property(Property::Name::Lone, toUnderlying(Lone::Extended_Pictographic)));
   return set.ref().contains(codePoint);
+}
+
+Optional<EmojiProperty> parseEmojiProperty(StringRef ref) {
+  static const StrRefMap<EmojiProperty> propertyNames = {
+#define GEN_TABLE(E, B) {#E, EmojiProperty::E},
+      EACH_EMOJI_PROPERTY(GEN_TABLE)
+#undef GEN_TABLE
+  };
+  if (const auto iter = propertyNames.find(ref); iter != propertyNames.end()) {
+    return iter->second;
+  }
+  return {};
+}
+
+const char *toString(EmojiProperty p) {
+  switch (p) {
+#define GEN_CASE(E, B)                                                                             \
+  case EmojiProperty::E:                                                                           \
+    return #E;
+    EACH_EMOJI_PROPERTY(GEN_CASE)
+#undef GEN_CASE
+  default:
+    break;
+  }
+  return "";
+}
+
+#include <packed_emoji_trie.h>
+
+EmojiProperty getEmojiProperty(StringRef ref) {
+  return lookupEmojiPropertyFrom(ref, packed_emoji_radix_tree_table,
+                                 std::size(packed_emoji_radix_tree_table));
 }
 
 } // namespace arsh::ucp

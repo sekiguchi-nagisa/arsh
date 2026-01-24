@@ -2903,6 +2903,22 @@ ARSH_METHOD unicode_script(RuntimeContext &ctx) {
   RET_ERROR;
 }
 
+//!bind: function emoji($this: UnicodeData, $char: String): String
+ARSH_METHOD unicode_emoji(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(unicode_emoji);
+  auto ref = LOCAL(1).asStrRef();
+  GraphemeCluster grapheme;
+  iterateGrapheme(ref, [&grapheme](const GraphemeCluster &ret) {
+    grapheme = ret;
+    return false;
+  });
+  if (grapheme.getRef().size() == ref.size() && !grapheme.hasInvalid()) {
+    RET(Value::createStr(ucp::toString(ucp::getEmojiProperty(grapheme.getRef()))));
+  }
+  raiseError(ctx, TYPE::ArgumentError, "must be valid single grapheme cluster");
+  RET_ERROR;
+}
+
 } // namespace arsh
 
 #endif // ARSH_BUILTIN_H

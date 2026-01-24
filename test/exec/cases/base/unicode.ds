@@ -243,3 +243,26 @@ assert ($ex as ArgumentError).message() == 'must be valid single utf8 code point
 $ex = 34
 try { $ucd.script($'あ1') } catch e { $ex = $e; }
 assert ($ex as ArgumentError).message() == 'must be valid single utf8 code point'
+
+# emoji sequence property (for Unicode 17)
+$expected = [
+    ('',''), ('a', ''), ('あ', ''), ($'\0', ''), ($'\U113C9', ''),('🇯🇯', ''),
+    ($'\U26EA', 'Basic_Emoji'), ($'\U2728', 'Basic_Emoji'), ($'\U267E\UFE0F', 'Basic_Emoji'), ($'\U1F6E5\UFE0F', 'Basic_Emoji'),
+    ($'\U0033\UFE0F\U20E3', 'Emoji_Keycap_Sequence'), ($'\U0039\uFE0F\u20E3', 'Emoji_Keycap_Sequence'),
+    ($'🇯🇵', 'RGI_Emoji_Flag_Sequence'), ($'\U1F1ED\U1F1F3', 'RGI_Emoji_Flag_Sequence'), ($'\U1F1E6\U1F1FA', 'RGI_Emoji_Flag_Sequence'),
+    ('🏴󠁧󠁢󠁥󠁮󠁧󠁿', 'RGI_Emoji_Tag_Sequence'),('🏴󠁧󠁢󠁳󠁣󠁴󠁿', 'RGI_Emoji_Tag_Sequence'),('🏴󠁧󠁢󠁷󠁬󠁳󠁿', 'RGI_Emoji_Tag_Sequence'),
+    ('👃🏽', 'RGI_Emoji_Modifier_Sequence'), ('🛌🏿', 'RGI_Emoji_Modifier_Sequence'), ('🫶🏽', 'RGI_Emoji_Modifier_Sequence'),
+    ('👨🏻‍❤️‍👨🏼', 'RGI_Emoji_ZWJ_Sequence'),('👨🏼‍🎓', 'RGI_Emoji_ZWJ_Sequence'),('🧘🏾‍♀️', 'RGI_Emoji_ZWJ_Sequence'), ('🧑🏾‍🐰‍🧑🏼', 'RGI_Emoji_ZWJ_Sequence'),
+]
+
+for e in $expected {
+    assert $e._1 == $ucd.emoji($e._0)  : "$e"
+}
+
+$ex = 34
+try { $ucd.emoji($'\U26EA@') } catch e { $ex = $e; }
+assert ($ex as ArgumentError).message() == 'must be valid single grapheme cluster'
+
+$ex = 34
+try { $ucd.emoji($'\xFF') } catch e { $ex = $e; }
+assert ($ex as ArgumentError).message() == 'must be valid single grapheme cluster'

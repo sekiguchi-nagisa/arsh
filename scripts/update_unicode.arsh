@@ -40,6 +40,10 @@ call $BIN_NAME $SCRIPT_DIR/unicode/gen_script_table.arsh --header=$src/unicode/u
 echo try to update $src/unicode/ucp_lone.in
 call $BIN_NAME $SCRIPT_DIR/unicode/gen_lone_property_table.arsh --header=$src/unicode/ucp_lone_def.in $src/unicode/ucp_lone.in
 
+let tools = "$SCRIPT_DIR/../tools".realpath()
+echo try to update $tools/emoji/emoji_seq.in
+call $BIN_NAME $SCRIPT_DIR/unicode/gen_emoji_seq_table.arsh $tools/emoji/emoji_seq.in
+
 
 ## for test case
 var test = "$SCRIPT_DIR/../test"
