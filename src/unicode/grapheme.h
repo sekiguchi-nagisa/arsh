@@ -253,6 +253,55 @@ inline bool fuzzyFind(StringRef haystack, StringRef needle) { // NOLINT
   return matched;
 }
 
+// for grapheme cluster width
+
+#define EACH_CHAR_WIDTH_PROPERTY_CHECK(OP)                                                         \
+  OP(EAW, "○")                                                                                     \
+  OP(RGI, "🇯")                                                                                     \
+  OP(EMOJI_FLAG_SEQ, "🇯🇵")                                                                         \
+  OP(EMOJI_ZWJ_SEQ, "👩🏼‍🏭")
+
+enum class CharWidthPropertyCheck : unsigned char {
+#define GEN_ENUM(E, S) E,
+  EACH_CHAR_WIDTH_PROPERTY_CHECK(GEN_ENUM)
+#undef GEN_ENUM
+};
+
+ArrayRef<std::pair<CharWidthPropertyCheck, const char *>> getCharWidthPropertyChecks();
+
+struct CharWidthProperties {
+  AmbiguousCharWidth eaw{AmbiguousCharWidth::HALF};
+  unsigned char reginalIndicatorWidth{0}; // if 0, use the original width
+  unsigned char flagSeqWidth{2};
+  bool zwjSeqFallback{false};
+  bool replaceInvalid{false};
+
+  void setProperty(CharWidthPropertyCheck p, std::size_t len) {
+    switch (p) {
+    case CharWidthPropertyCheck::RGI:
+      this->reginalIndicatorWidth = len;
+      break;
+    case CharWidthPropertyCheck::EAW:
+      this->eaw = len == 2 ? AmbiguousCharWidth::FULL : AmbiguousCharWidth::HALF;
+      break;
+    case CharWidthPropertyCheck::EMOJI_FLAG_SEQ:
+      this->flagSeqWidth = len;
+      break;
+    case CharWidthPropertyCheck::EMOJI_ZWJ_SEQ:
+      this->zwjSeqFallback = len > 2;
+      break;
+    }
+  }
+};
+
+/**
+ * get width of a grapheme cluster
+ * @param ps
+ * @param ret
+ * @return
+ */
+unsigned int getGraphemeWidth(const CharWidthProperties &ps, const GraphemeCluster &ret);
+
 } // namespace arsh
 
 #endif // ARSH_UNICODE_GRAPHEME_HPP

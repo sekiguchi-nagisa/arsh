@@ -189,4 +189,71 @@ bool GraphemeBoundary::checkBoundary(const int codePoint) {
   return true; // GB999
 }
 
+static constexpr std::pair<CharWidthPropertyCheck, const char *> charWidthProperties[] = {
+#define GEN_ENUM(E, S) {CharWidthPropertyCheck::E, S},
+    EACH_CHAR_WIDTH_PROPERTY_CHECK(GEN_ENUM)
+#undef GEN_ENUM
+};
+
+ArrayRef<std::pair<CharWidthPropertyCheck, const char *>> getCharWidthPropertyChecks() {
+  return ArrayRef(charWidthProperties);
+}
+
+static bool isRegionalIndicator(int codePoint) {
+  return codePoint >= 0x1F1E6 && codePoint <= 0x1F1E6 + ('z' - 'a');
+}
+
+static bool isEmojiVariationSeqBase(int codePoint) {
+#define EMOJI_VARIATION_ENTRY int
+#include "unicode/emoji_variation.in"
+
+#undef EMOJI_VARIATION_ENTRY
+
+  return std::binary_search(std::begin(emoji_variation_table), std::end(emoji_variation_table),
+                            codePoint);
+}
+
+unsigned int getGraphemeWidth(const CharWidthProperties &ps, const GraphemeCluster &ret) {
+  unsigned int width = 0;
+  int prevCodePoint = 0;
+  unsigned char prevWidth = 0;
+  Utf8Stream stream(ret.getRef().begin(), ret.getRef().end());
+  while (stream) {
+    int codePoint = stream.nextCodePoint();
+    if (ps.replaceInvalid && codePoint < 0) {
+      codePoint = UnicodeUtil::REPLACEMENT_CHAR_CODE;
+    } else if (isRegionalIndicator(codePoint)) {
+      if (isRegionalIndicator(prevCodePoint)) {
+        width -= prevWidth;
+        width += ps.flagSeqWidth; // force specified width
+        prevWidth = ps.flagSeqWidth;
+        prevCodePoint = codePoint;
+        continue;
+      }
+      if (ps.reginalIndicatorWidth) { // use specified width
+        width += ps.reginalIndicatorWidth;
+        prevWidth = ps.reginalIndicatorWidth;
+        prevCodePoint = codePoint;
+        continue;
+      }
+    } else if (codePoint == 0xFE0F && isEmojiVariationSeqBase(prevCodePoint)) { // VS16
+      width -= prevWidth;
+      width += 2; // force wide width
+      prevWidth = 2;
+      prevCodePoint = codePoint;
+      continue;
+    }
+    prevWidth = 0;
+    if (const int w = UnicodeUtil::width(codePoint, ps.eaw); w > 0) {
+      width += w;
+      prevWidth = w;
+    }
+    prevCodePoint = codePoint;
+  }
+  if (ret.isEmojiSeq() && width > 2) {
+    return ps.zwjSeqFallback ? width : 2;
+  }
+  return width;
+}
+
 } // namespace arsh

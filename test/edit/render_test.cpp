@@ -135,7 +135,7 @@ TEST(EncodingTest, charLen2) {
 
   line.removePrefix(ret.byteSize);
   ASSERT_EQ("○🇦🇽b🇦🇽💁🏾‍♀️c💁🏾‍♀️🇦", line);
-  ps.setProperty(CharWidthProperty::EAW, 2);
+  ps.setProperty(CharWidthPropertyCheck::EAW, 2);
   ret = getCharLen(line, ps); // ○
   ASSERT_EQ(3, ret.byteSize);
   ASSERT_EQ(2, ret.colSize); // full width
@@ -143,7 +143,7 @@ TEST(EncodingTest, charLen2) {
   line.removePrefix(ret.byteSize);
   ASSERT_EQ("🇦🇽b🇦🇽💁🏾‍♀️c💁🏾‍♀️🇦", line);
   ps = CharWidthProperties();
-  ps.setProperty(CharWidthProperty::EMOJI_FLAG_SEQ, 2);
+  ps.setProperty(CharWidthPropertyCheck::EMOJI_FLAG_SEQ, 2);
   ret = getCharLen(line, ps); // 🇦🇽
   ASSERT_EQ(8, ret.byteSize);
   ASSERT_EQ(2, ret.colSize); // FLAG_SEQ width is 2
@@ -157,7 +157,7 @@ TEST(EncodingTest, charLen2) {
   line.removePrefix(ret.byteSize);
   ASSERT_EQ("🇦🇽💁🏾‍♀️c💁🏾‍♀️🇦", line);
   ps = CharWidthProperties();
-  ps.setProperty(CharWidthProperty::EMOJI_FLAG_SEQ, 4);
+  ps.setProperty(CharWidthPropertyCheck::EMOJI_FLAG_SEQ, 4);
   ret = getCharLen(line, ps); // 🇦🇽
   ASSERT_EQ(8, ret.byteSize);
   ASSERT_EQ(4, ret.colSize); // FLAG_SEQ width is 4
@@ -178,8 +178,8 @@ TEST(EncodingTest, charLen2) {
   line.removePrefix(ret.byteSize);
   ASSERT_EQ("💁🏾‍♀️🇦", line);
   ps = CharWidthProperties();
-  ps.setProperty(CharWidthProperty::EMOJI_ZWJ_SEQ, 3);
-  ps.setProperty(CharWidthProperty::EAW, 2);
+  ps.setProperty(CharWidthPropertyCheck::EMOJI_ZWJ_SEQ, 3);
+  ps.setProperty(CharWidthPropertyCheck::EAW, 2);
   ret = getCharLen(line, ps); // 💁🏾‍♀️
   ASSERT_EQ(17, ret.byteSize);
   ASSERT_EQ(6, ret.colSize);
@@ -190,7 +190,7 @@ TEST(EncodingTest, charLen2) {
   ASSERT_EQ(4, ret.byteSize);
   ASSERT_EQ(1, ret.colSize); // regional indicator is half
 
-  ps.setProperty(CharWidthProperty::RGI, 2); // override width
+  ps.setProperty(CharWidthPropertyCheck::RGI, 2); // override width
   ASSERT_EQ("🇦", line);
   ret = getCharLen(line, ps); //
   ASSERT_EQ(4, ret.byteSize);

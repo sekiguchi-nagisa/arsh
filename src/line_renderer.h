@@ -18,59 +18,9 @@
 #define ARSH_LINE_RENDERER_H
 
 #include "highlighter_base.h"
-#include "misc/array_ref.hpp"
 #include "unicode/grapheme.h"
 
 namespace arsh {
-
-// high-level api for unicode-aware character op
-
-#define EACH_CHAR_WIDTH_PROPERTY(OP)                                                               \
-  OP(EAW, "○")                                                                                     \
-  OP(RGI, "🇯")                                                                                     \
-  OP(EMOJI_FLAG_SEQ, "🇯🇵")                                                                         \
-  OP(EMOJI_ZWJ_SEQ, "👩🏼‍🏭")
-
-enum class CharWidthProperty : unsigned char {
-#define GEN_ENUM(E, S) E,
-  EACH_CHAR_WIDTH_PROPERTY(GEN_ENUM)
-#undef GEN_ENUM
-};
-
-ArrayRef<std::pair<CharWidthProperty, const char *>> getCharWidthPropertyRange();
-
-struct CharWidthProperties {
-  AmbiguousCharWidth eaw{AmbiguousCharWidth::HALF};
-  unsigned char reginalIndicatorWidth{0}; // if 0, use original width
-  unsigned char flagSeqWidth{2};
-  bool zwjSeqFallback{false};
-  bool replaceInvalid{false};
-
-  void setProperty(CharWidthProperty p, std::size_t len) {
-    switch (p) {
-    case CharWidthProperty::RGI:
-      this->reginalIndicatorWidth = len;
-      break;
-    case CharWidthProperty::EAW:
-      this->eaw = len == 2 ? AmbiguousCharWidth::FULL : AmbiguousCharWidth::HALF;
-      break;
-    case CharWidthProperty::EMOJI_FLAG_SEQ:
-      this->flagSeqWidth = len;
-      break;
-    case CharWidthProperty::EMOJI_ZWJ_SEQ:
-      this->zwjSeqFallback = len > 2;
-      break;
-    }
-  }
-};
-
-/**
- * get width of a grapheme cluster
- * @param ps
- * @param ret
- * @return
- */
-unsigned int getGraphemeWidth(const CharWidthProperties &ps, const GraphemeCluster &ret);
 
 class ANSIEscapeSeqMap {
 private:

@@ -227,7 +227,7 @@ static void checkProperty(CharWidthProperties &ps, const int ttyFd) {
     return;
   }
 
-  for (auto &[p, str] : getCharWidthPropertyRange()) {
+  for (auto &[p, str] : getCharWidthPropertyChecks()) {
     char buf[32];
     /**
      * hide cursor and clear line immediately (due to suppress cursor flicker)
