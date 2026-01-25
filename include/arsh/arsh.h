@@ -55,17 +55,17 @@ AR_PUBLIC_API(ARState *) ARState_createWithMode(ARExecMode mode);
 static inline ARState *ARState_create() { return ARState_createWithMode(AR_EXEC_MODE_NORMAL); }
 
 /**
- * delete ARState. before call destructor, call TERM_HOOK
- * after release object, assign null to ctx.
+ * delete ARState. before calling destructor, call TERM_HOOK
+ * after releasing the object, assign null to ctx.
  * @param st
- * may be null
+ * maybe null
  */
 AR_PUBLIC_API(void) ARState_delete(ARState **st);
 
 /**
  * get ARExecMode.
  * @param st
- * may be null
+ * maybe null
  * @return
  * if st is null, return always AR_EXEC_MODE_NORMAL
  */
@@ -107,13 +107,13 @@ AR_PUBLIC_API(int) ARState_setShellName(ARState *st, const char *shellName);
  * @param args
  * if null, clear '@'
  * @return
- * if args size reaches limit, return -1 and clear '@'
+ * if args size reaches the limit, return -1 and clear '@'
  * otherwise return 0
  */
 AR_PUBLIC_API(int) ARState_setArguments(ARState *st, char *const *args);
 
 /**
- * set full path of current executable path (in linux, /proc/self/exe)
+ * set fullpath of the current executable path (in linux, /proc/self/exe)
  * @param st
  * @return
  * if cannot resolve path, return null.
@@ -205,7 +205,7 @@ typedef struct {
 
   /**
    * indicates the number of characters in error line
-   * if kind is not S_ERROR_KIND_PARSE_ERROR, AR_ERROR_KIND_TYPE_ERROR or
+   * if kind is not S_ERROR_KIND_PARSE_ERROR, AR_ERROR_KIND_TYPE_ERROR, or
    * AR_ERROR_KIND_CODEGEN_ERROR, always is 0
    */
   unsigned int chars;
@@ -224,25 +224,25 @@ typedef struct {
  * release internal fields of ARError.
  * after call it, assign null to `fileName'
  * @param e
- * may be null
+ * maybe null
  */
 AR_PUBLIC_API(void) ARError_release(ARError *e);
 
 /**
  * evaluate string. if e is not null, set error info.
- * SCRIPT_DIR is always current working directory
+ * SCRIPT_DIR is always the current working directory
  * @param st
  * @param sourceName
- * if null, source name is treated as standard input.
+ * if null, sourceName is treated as standard input.
  * @param data
  * not null
  * @param size
  * size of data
  * @param e
- * may be null
+ * maybe null
  * @return
- * exit status of most recently executed command(include exit, 0~255).
- * if terminated by some errors(exception, assertion, syntax or semantic error), return always 1.
+ * exit status of the most recently executed command (include exit, 0~255).
+ * if terminated by some errors (exception, assertion, syntax, or semantic error), return always 1.
  * if st or data is null, return -1 and not set error
  */
 AR_PUBLIC_API(int)
@@ -267,38 +267,38 @@ ARState_eval(ARState *st, const char *sourceName, const char *data, size_t size,
 
 /**
  * open file as module. if e is not null, set error info.
- * before evaluation reset line number.
+ * before evaluation reset the line number.
  * @param st
  * not null.
  * @param fileName
  * not null
  * @param option
  * @param e
- * may be null
+ * maybe null
  * @return
- * exit status of most recently executed command(include exit, 0~255).
- * if terminated by some errors(exception, assertion, syntax or semantic error), return always 1.
- * if fileName is already loaded module, return always 0 and do nothing.
+ * exit status of the most recently executed command (include exit, 0~255).
+ * if terminated by some errors (exception, assertion, syntax, or semantic error), return always 1.
+ * if fileName is an already loaded module, return always 0 and do nothing.
  * if st or fileName is null, return -1 and not set error
  */
 AR_PUBLIC_API(int)
 ARState_loadModule(ARState *st, const char *fileName, unsigned int option, ARError *e);
 
 /**
- * open file and evaluate. if e is not null, set error info.
- * set SCRIPT_DIR to dirname of fileName.
- * before evaluation reset line number.
+ * open sourceName and evaluate. if e is not null, set error info.
+ * set SCRIPT_DIR to the dirname of sourceName.
+ * before evaluation reset the line number.
  * equivalent to ARState_loadModule(AR_MOD_FULLPATH | AR_MOD_SEPARATE_CTX)
  * @param st
  * @param sourceName
  * not null
  * @param e
- * may be null.
+ * maybe null.
  * @return
- * exit status of most recently executed command(include exit, 0~255).
- * if terminated by some errors(exception, assertion, syntax or semantic error), return always 1.
- * if fileName is already loaded file, return 1.
- * if fileName is already loaded module, return always 0 and do nothing.
+ * exit status of the most recently executed command (include exit, 0~255).
+ * if terminated by some errors (exception, assertion, syntax, or semantic error), return always 1.
+ * if fileName is an already loaded file, return 1.
+ * if fileName is an already loaded module, return always 0 and do nothing.
  * if st is null, return -1 and not set error
  */
 static inline int ARState_loadAndEval(ARState *st, const char *sourceName, ARError *e) {
@@ -352,7 +352,7 @@ typedef struct {
 /**
  * get version information
  * @param version
- * may be null
+ * maybe null
  * @return
  * version string
  */
@@ -376,7 +376,7 @@ AR_PUBLIC_API(unsigned int) ARState_featureBit();
  * output buffer for read data (after read, will be null terminated)
  * @param bufSize
  * @param e
- * may be null
+ * maybe null
  * @return
  * if has error or reach end of stream, return -1
  * if canceled, return -1 and set EAGAIN

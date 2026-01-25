@@ -135,7 +135,7 @@ function emitTable(entries: [Entry], name: String) {
 }
 
 function emitTable2(entries: [Entry], name: String) {
-    # resolve max mapping lenght
+    # resolve max mapping length
     var size = 0
     for e in $entries {
         if $e.mappingStr.size() > $size {

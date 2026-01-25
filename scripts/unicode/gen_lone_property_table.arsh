@@ -144,9 +144,9 @@ let internals = $create([  # for internally used property
 @(Other_Lowercase                     -  PropList.txt),
 @(Other_Math                          -  PropList.txt),
 @(Other_Uppercase                     -  PropList.txt),
-@(InCB_Linker                         -  DerivedCoreProperties.txt),    # for graphme cluster
-@(InCB_Consonant                      -  DerivedCoreProperties.txt),    # for graphme cluster
-@(InCB_Extend                         -  DerivedCoreProperties.txt),    # for graphme cluster
+@(InCB_Linker                         -  DerivedCoreProperties.txt),    # for grapheme cluster
+@(InCB_Consonant                      -  DerivedCoreProperties.txt),    # for grapheme cluster
+@(InCB_Extend                         -  DerivedCoreProperties.txt),    # for grapheme cluster
 @(MidLetter                           -  WordBreakProperty.txt),
 @(MidNumLet                           -  WordBreakProperty.txt),
 @(Single_Quote                        -  WordBreakProperty.txt),
