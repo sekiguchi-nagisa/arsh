@@ -310,13 +310,6 @@ static bool getScriptXSet(const Script script, BuilderOrSet out) {
 // ===========================
 
 #include "ucp_lone.in"
-#include "ucp_lone_def.in"
-
-enum class Lone : unsigned char {
-#define GEN_ENUM(E) E,
-  EACH_UCP_LONE_PROPERTY(GEN_ENUM)
-#undef GEN_ENUM
-};
 
 static constexpr const char *loneNames[] = {
 #define GEN_TABLE(E, S) S,
@@ -337,8 +330,10 @@ static auto initLoneNameMap() {
   return map;
 }
 
+constexpr unsigned int primeLoneTableSize() { return std::size(lone_set_prime_table_offset); }
+
 static CodePointSetRef getLonePrimeTable(unsigned int index) {
-  assert(index < std::size(lone_set_prime_table_offset));
+  assert(index < primeLoneTableSize());
   const OffsetEntry &e = lone_set_prime_table_offset[index];
   return {e.bmpSize, e.packedSize, lone_set_prime_table + e.offset, e.tableSize};
 }
@@ -671,10 +666,12 @@ bool getPropertySet(const Property property, BuilderOrSet out) {
   return false;
 }
 
-bool isExtendedPictographic(const int codePoint) {
-  auto set =
-      getPropertySet(Property(Property::Name::Lone, toUnderlying(Lone::Extended_Pictographic)));
-  return set.ref().contains(codePoint);
+bool hasPrimeLoneProperty(int codePoint, Lone lone) {
+  if (const unsigned int v = toUnderlying(lone); v < primeLoneTableSize()) {
+    auto set = getPropertySet(Property(Property::Name::Lone, v));
+    return set.ref().contains(codePoint);
+  }
+  return false;
 }
 
 Optional<RGIEmojiSeq> parseEmojiProperty(StringRef ref) {

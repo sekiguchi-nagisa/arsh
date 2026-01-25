@@ -44,6 +44,9 @@ GraphemeBoundary::BreakProperty GraphemeBoundary::getBreakProperty(const int cod
     if (p != BreakProperty::Any) {
       return p;
     }
+    if (ucp::hasPrimeLoneProperty(codePoint, ucp::Lone::InCB_Consonant)) {
+      return BreakProperty::InCB_Consonant;
+    }
     if (ucp::isExtendedPictographic(codePoint)) {
       return BreakProperty::Extended_Pictographic;
     }
@@ -52,17 +55,11 @@ GraphemeBoundary::BreakProperty GraphemeBoundary::getBreakProperty(const int cod
 }
 
 GraphemeBoundary::BreakProperty GraphemeBoundary::getInCBExtendOrLinker(const int codePoint) {
-#define UNICODE_PROPERTY_RANGE CodePointWithMeta
-#define PROPERTY(E) toUnderlying(BreakProperty::E)
-#include "incb_property.in"
-
-#undef PROPERTY
-#undef UNICODE_PROPERTY_RANGE
-
-  auto iter = std::upper_bound(std::begin(incb_property_table), std::end(incb_property_table),
-                               codePoint, CodePointWithMeta::Comp());
-  if (iter != std::end(incb_property_table)) {
-    return static_cast<BreakProperty>((iter - 1)->getMeta());
+  if (ucp::hasPrimeLoneProperty(codePoint, ucp::Lone::InCB_Extend)) {
+    return BreakProperty::InCB_Extend;
+  }
+  if (ucp::hasPrimeLoneProperty(codePoint, ucp::Lone::InCB_Linker)) {
+    return BreakProperty::InCB_Linker;
   }
   return BreakProperty::Any; // if no inCB
 }

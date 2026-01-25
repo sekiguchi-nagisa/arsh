@@ -92,6 +92,9 @@
     E(Other_Lowercase) \
     E(Other_Math) \
     E(Other_Uppercase) \
+    E(InCB_Linker) \
+    E(InCB_Consonant) \
+    E(InCB_Extend) \
     E(XID_Continue_Delta) \
     E(XID_Start_Delta) \
 
@@ -157,5 +160,5 @@
     E(XID_Start) \
     /* end */
 
-#define UCP_LONE_PROPERTY_PRIME_INTERNAL_SIZE 11
-#define UCP_LONE_PROPERTY_SIZE 64
+#define UCP_LONE_PROPERTY_PRIME_INTERNAL_SIZE 14
+#define UCP_LONE_PROPERTY_SIZE 67

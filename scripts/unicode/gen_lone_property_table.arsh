@@ -142,6 +142,9 @@ let internals = $create([  # for internally used property
 @(Other_Lowercase                     -  PropList.txt),
 @(Other_Math                          -  PropList.txt),
 @(Other_Uppercase                     -  PropList.txt),
+@(InCB_Linker                         -  DerivedCoreProperties.txt),    # for graphme cluster
+@(InCB_Consonant                      -  DerivedCoreProperties.txt),    # for graphme cluster
+@(InCB_Extend                         -  DerivedCoreProperties.txt),    # for graphme cluster
 @(XID_Continue_Delta                  -  dummy), # dummy property for XID_Continue
 @(XID_Start_Delta                     -  dummy), # dummy property for XID_Start
 ])

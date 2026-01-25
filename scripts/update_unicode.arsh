@@ -19,9 +19,6 @@ call $BIN_NAME $SCRIPT_DIR/unicode/gen_unicode_width_table.ds $src/misc/unicode_
 echo try to update $src/unicode/grapheme_break_property.in
 call $BIN_NAME $SCRIPT_DIR/unicode/gen_grapheme_break_property.ds $src/unicode/grapheme_break_property.in
 
-echo try to update $src/unicode/incb_property.in
-call $BIN_NAME $SCRIPT_DIR/unicode/gen_incb_property.ds $src/unicode/incb_property.in
-
 echo try to update $src/unicode/word_break_property.in
 call $BIN_NAME $SCRIPT_DIR/unicode/gen_word_break_property.ds $src/unicode/word_break_property.in
 

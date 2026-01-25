@@ -24,6 +24,7 @@
 #include "set_builder.h"
 
 #include "ucp_general_category_def.in"
+#include "ucp_lone_def.in"
 #include "ucp_script_def.in"
 
 namespace arsh::ucp {
@@ -55,6 +56,12 @@ Optional<Script> parseScript(StringRef ref);
 Optional<Script> getScript(int codePoint);
 
 StringRef toString(Script script, bool longName = true);
+
+enum class Lone : unsigned char {
+#define GEN_ENUM(E) E,
+  EACH_UCP_LONE_PROPERTY(GEN_ENUM)
+#undef GEN_ENUM
+};
 
 // Unicode Property api
 
@@ -117,7 +124,17 @@ inline CodePointSet getPropertySet(const Property property) {
   return set;
 }
 
-bool isExtendedPictographic(int codePoint);
+/**
+ * check if codePoint has prime lone property (not combined).
+ * @param codePoint
+ * @param lone
+ * @return
+ */
+bool hasPrimeLoneProperty(int codePoint, Lone lone);
+
+inline bool isExtendedPictographic(int codePoint) {
+  return hasPrimeLoneProperty(codePoint, Lone::Extended_Pictographic);
+}
 
 Optional<RGIEmojiSeq> parseEmojiProperty(StringRef ref);
 
