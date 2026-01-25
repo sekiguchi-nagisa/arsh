@@ -29,7 +29,7 @@ type Entry {
 }
 
 function format(): String for Entry {
-    var ret = "{EmojiProperty::${this.prop}, { "
+    var ret = "{RGIEmojiSeq::${this.prop}, { "
     printf -v var "0x%04X, " ${this.codes}
     $ret += $reply['var']
     $ret += "}},"
