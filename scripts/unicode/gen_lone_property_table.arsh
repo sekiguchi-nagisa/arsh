@@ -14,6 +14,7 @@ type _Param() {
 let combinedSet = [  # generated from other property combination
     "Alphabetic": "dcp:Lowercase + dcp:Uppercase + cat:Lt + cat:Lm + cat:Lo + cat:Nl + prop:Other_Alphabetic",
     "Assigned": "",
+    "Case_Ignorable": "cat:Mn + cat:Me + cat:Cf + cat:Lm + cat:Sk + wbp:MidLetter + wbp:MidNumLet + wbp:Single_Quote",
     "Cased": "dcp:Lowercase + dcp:Uppercase + cat:Lt",
     "Default_Ignorable_Code_Point": 
         "prop:Other_Default_Ignorable_Code_Point + cat:Cf + prop:Variation_Selector - prop:White_Space - U+FFF9..U+FFFB - U+13430..U+1343F - prop:Prepended_Concatenation_Mark",
@@ -66,6 +67,7 @@ function create(args: [[String]]) : [LoneProperty] {
             "emoji-data.txt" => "emoji"
             "DerivedBinaryProperties.txt" => "dbp"
             "DerivedNormalizationProps.txt" => "dnp"
+            "WordBreakProperty.txt" => "wbp"
             else => $none
         }
         $ret.add(new LoneProperty($name, $arg[1], $setPrefix))
@@ -145,6 +147,9 @@ let internals = $create([  # for internally used property
 @(InCB_Linker                         -  DerivedCoreProperties.txt),    # for graphme cluster
 @(InCB_Consonant                      -  DerivedCoreProperties.txt),    # for graphme cluster
 @(InCB_Extend                         -  DerivedCoreProperties.txt),    # for graphme cluster
+@(MidLetter                           -  WordBreakProperty.txt),
+@(MidNumLet                           -  WordBreakProperty.txt),
+@(Single_Quote                        -  WordBreakProperty.txt),
 @(XID_Continue_Delta                  -  dummy), # dummy property for XID_Continue
 @(XID_Start_Delta                     -  dummy), # dummy property for XID_Start
 ])

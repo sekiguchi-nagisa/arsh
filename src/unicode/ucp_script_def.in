@@ -20,6 +20,12 @@
   Date: 2025-01-27, 18:09:10 GMT
 - DerivedNormalizationProps-17.0.0.txt
   Date: 2025-01-27, 18:09:14 GMT
+- GraphemeBreakProperty-17.0.0.txt
+  Date: 2025-06-30, 06:20:23 GMT
+- WordBreakProperty-17.0.0.txt
+  Date: 2025-06-30, 06:20:49 GMT
+- SentenceBreakProperty-17.0.0.txt
+  Date: 2025-06-30, 06:20:48 GMT
 */
 
 // clang-format off

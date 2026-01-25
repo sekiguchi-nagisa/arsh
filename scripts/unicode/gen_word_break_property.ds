@@ -94,6 +94,8 @@ function minimize($ranges : [Range]) : [Range] {
     echo "/*"
  } with > $out
 
+var ignored = ["MidLetter":$true,"MidNumLet":$true,"Single_Quote":$true, ]
+
 var ranges : [Range]
 
 # WordBreakProperty.txt
@@ -106,7 +108,11 @@ cat ./WordBreakProperty.txt | for(var count = 0; read -f $'\n'; $count++) {
     if $REPLY.startsWith('#') || $REPLY.empty() {
         continue
     }
-    try { $ranges.add($parse($REPLY)); } catch $e : Error { $e.show(); echo 1>&2 $count $REPLY; }
+    var r = $parse($REPLY)
+    if $ignored.get($r.property) {
+        continue
+    }
+    try { $ranges.add($r); } catch $e : Error { $e.show(); echo 1>&2 $count $REPLY; }
     echo $REPLY
 } with > ./trimed_WordBreakProperty.txt
 

@@ -20,6 +20,12 @@
   Date: 2025-01-27, 18:09:10 GMT
 - DerivedNormalizationProps-17.0.0.txt
   Date: 2025-01-27, 18:09:14 GMT
+- GraphemeBreakProperty-17.0.0.txt
+  Date: 2025-06-30, 06:20:23 GMT
+- WordBreakProperty-17.0.0.txt
+  Date: 2025-06-30, 06:20:49 GMT
+- SentenceBreakProperty-17.0.0.txt
+  Date: 2025-06-30, 06:20:48 GMT
 */
 
 // clang-format off
@@ -31,7 +37,6 @@
     E(Any, "Any") \
     E(Bidi_Control, "Bidi_Control|Bidi_C") \
     E(Bidi_Mirrored, "Bidi_Mirrored|Bidi_M") \
-    E(Case_Ignorable, "Case_Ignorable|CI") \
     E(Changes_When_Casefolded, "Changes_When_Casefolded|CWCF") \
     E(Changes_When_Casemapped, "Changes_When_Casemapped|CWCM") \
     E(Changes_When_Lowercased, "Changes_When_Lowercased|CWL") \
@@ -69,6 +74,7 @@
     /* for combined lone property */ \
     E(Alphabetic, "Alphabetic|Alpha") \
     E(Assigned, "Assigned") \
+    E(Case_Ignorable, "Case_Ignorable|CI") \
     E(Cased, "Cased") \
     E(Default_Ignorable_Code_Point, "Default_Ignorable_Code_Point|DI") \
     E(Grapheme_Base, "Grapheme_Base|Gr_Base") \
@@ -95,6 +101,9 @@
     E(InCB_Linker) \
     E(InCB_Consonant) \
     E(InCB_Extend) \
+    E(MidLetter) \
+    E(MidNumLet) \
+    E(Single_Quote) \
     E(XID_Continue_Delta) \
     E(XID_Start_Delta) \
 
@@ -105,7 +114,6 @@
     E(Any) \
     E(Bidi_Control) \
     E(Bidi_Mirrored) \
-    E(Case_Ignorable) \
     E(Changes_When_Casefolded) \
     E(Changes_When_Casemapped) \
     E(Changes_When_Lowercased) \
@@ -147,6 +155,7 @@
     EACH_UCP_LONE_PROPERTY_PRIME(E) \
     E(Alphabetic) \
     E(Assigned) \
+    E(Case_Ignorable) \
     E(Cased) \
     E(Default_Ignorable_Code_Point) \
     E(Grapheme_Base) \
@@ -160,5 +169,5 @@
     E(XID_Start) \
     /* end */
 
-#define UCP_LONE_PROPERTY_PRIME_INTERNAL_SIZE 14
-#define UCP_LONE_PROPERTY_SIZE 67
+#define UCP_LONE_PROPERTY_PRIME_INTERNAL_SIZE 17
+#define UCP_LONE_PROPERTY_SIZE 70

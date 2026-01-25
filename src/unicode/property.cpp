@@ -394,6 +394,29 @@ static bool getLoneSet(const Lone lone, BuilderOrSet out) {
     }
     return true;
   }
+  case Lone::Case_Ignorable: {
+    /*
+     * Generated from:
+     *    Mn + Me + Cf + Lm + Sk
+     *    + Word_Break=MidLetter + Word_Break=MidNumLet + Word_Break=Single_Quote
+     */
+    CodePointSetBuilder builder;
+    constexpr Property combs[] = {
+        Property::category(Category::Mn), Property::category(Category::Me),
+        Property::category(Category::Cf), Property::category(Category::Lm),
+        Property::category(Category::Sk), fromLone(Lone::MidLetter),
+        fromLone(Lone::MidNumLet),        fromLone(Lone::Single_Quote),
+    };
+    for (auto &p : combs) {
+      getPropertySet(p, BuilderOrSet(builder));
+    }
+    if (out.isBuilder) {
+      out.builder->add(builder);
+    } else {
+      *out.set = builder.build();
+    }
+    return true;
+  }
   case Lone::Cased: {
     // Generated from: Lowercase + Uppercase + Lt
     CodePointSetBuilder builder;

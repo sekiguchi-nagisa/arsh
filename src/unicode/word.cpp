@@ -17,7 +17,7 @@
 #include "word.h"
 
 #include "../misc/enum_util.hpp"
-#include "misc/unicode.hpp"
+#include "../misc/unicode.hpp"
 
 namespace arsh {
 
@@ -38,7 +38,19 @@ WordBreakProperty getWordBreakProperty(const int codePoint) {
       std::upper_bound(std::begin(word_break_property_table), std::end(word_break_property_table),
                        codePoint, CodePointWithMeta::Comp());
   if (iter != std::end(word_break_property_table)) {
-    return static_cast<WordBreakProperty>((iter - 1)->getMeta());
+    auto p = static_cast<WordBreakProperty>((iter - 1)->getMeta());
+    if (p != WordBreakProperty::Any) {
+      return p;
+    }
+    if (ucp::hasPrimeLoneProperty(codePoint, ucp::Lone::MidLetter)) {
+      return WordBreakProperty::MidLetter;
+    }
+    if (ucp::hasPrimeLoneProperty(codePoint, ucp::Lone::MidNumLet)) {
+      return WordBreakProperty::MidNumLet;
+    }
+    if (ucp::hasPrimeLoneProperty(codePoint, ucp::Lone::Single_Quote)) {
+      return WordBreakProperty::Single_Quote;
+    }
   }
   return WordBreakProperty::Any;
 }
