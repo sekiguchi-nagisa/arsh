@@ -487,7 +487,11 @@ bool TypeChecker::concatAsGlobPattern(const Token token, SourceListNode::path_it
 
 static unsigned int getExpansionLimit() {
 #ifdef FUZZING_BUILD_MODE
-  return 512;
+  if (auto *env = getenv("ARSH_FUZZ_EXPAND_LIMIT")) {
+    if (auto ret = convertToNum10<unsigned int>(env)) {
+      return std::min<size_t>(SYS_LIMIT_EXPANSION_RESULTS, ret.value);
+    }
+  }
 #endif
   return SYS_LIMIT_EXPANSION_RESULTS;
 }

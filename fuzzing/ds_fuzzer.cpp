@@ -35,6 +35,7 @@ static FuzzPolicy getFuzzPolicy() {
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
   static auto policy = getFuzzPolicy();
+  setenv("ARSH_FUZZ_EXPAND_LIMIT", "1", 0 /*not overwrite */); // suppress source expansion
 
   switch (policy) {
   case FuzzPolicy::EVAL: {
