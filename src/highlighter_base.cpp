@@ -180,7 +180,14 @@ std::unique_ptr<ParseError> TokenEmitter::tokenizeAndEmit() {
   Parser parser(*this->lexerPtr, ParserOption::NEED_HERE_END | ParserOption::ERROR_RECOVER);
   parser.setTracker(this);
   parser();
+  auto curToken = parser.getCurToken();
   this->oldErrors = std::move(parser).takeOldErrors();
+  if (!this->oldErrors.empty() &&
+      curToken.endPos() == this->oldErrors.back()->getErrorToken().endPos()) {
+    auto e = std::move(this->oldErrors.back());
+    this->oldErrors.pop_back();
+    return e;
+  }
   if (parser.hasError()) {
     return std::move(parser).takeError();
   }

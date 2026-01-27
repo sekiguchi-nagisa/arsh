@@ -188,9 +188,7 @@ bool LineRenderer::renderScript(const StringRef source,
 
   // line continuation checking (if line editing should continue, isCompleteLine will be false)
   bool isCompleteLine = true;
-  if (tokenEmitter.getOldErrors().size()) {
-    isCompleteLine = true;
-  } else if (ret.error) {
+  if (ret.error) {
     if (ret.error->getTokenKind() == TokenKind::EOS) {
       isCompleteLine = false;
     } else {

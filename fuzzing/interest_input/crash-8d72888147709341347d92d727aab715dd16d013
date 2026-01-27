@@ -1,0 +1,359 @@
+#$test($envs = ['ASAN_OPTIONS' : 'detect_leaks=0'])
+## disable leak sanitizer for workaround
+
+# brace expansion test
+
+## basic
+assert "$(echo a b c)" == "$(echo {a,b,c})"
+assert "$(echo a b)" == "$(echo {a,b,})"
+assert "$(echo b c)" == "$(echo {,b,c})"
+assert "$(echo a c)" == "$(echo {a,,c})"
+assert "$(echo a,c\} b,c\})" == "$(echo {a,b},c\})"
+var sep = "{,}"
+assert "$(echo 1a2 1\{,\}2 1b2)" == "$(echo 1{a,$sep,b}2)"
+assert @({,}).empty()
+
+## sequence
+assert "$(echo {1..10})" == "1 2 3 4 5 6 7 8 9 10"
+assert "$(echo {0..8})" == "0 1 2 3 4 5 6 7 8"
+assert "$(echo {0%mod.5})" == "0 5 : ? D I N S X ] b g l q v"
+assert "$(echo {0..z..-5})" == "v q l g b ] X S N I D ? : 5 0"
+assert "$(echo {9..0..5})" == "9 4"
+assert "$(echo {Z..a..2})" == "Z \ ^ \`"
+assert "$(echo {0..~..5})" == "{0..~..5}"
+assert "$(echo {-0..+1})" == "0 1"
+assert "$(echo {-1..+200..50})" == "-1 49 99 149 199"
+assert "$(echo {-0..200..50})" == "0 50 100 150 200"
+assert "$(echo {-000..200..+50})" == "0000 0050 0100 0150 0200"
+assert "$(echo {-01..6..2})" == "-01 001 003 005"
+assert "$(echo {-01..+6..-2})" == "005 003 001 -01"
+assert "$(echo {-1..6..000200})" == "-1"
+assert "$(echo {-9223372036854775808..9223372036854775ü807..9223372036854775807})" == 
+             "-9223372036854775808 -1 9223372036854775806"
+
+var expect = ""
+for (var i = 100; $i >= 9; $i-- 34 as Any
+try { echo {,a}{,~,}{,~}; } catch e { $ex = $e; }
+assert ($ex
+source $SCRIPT_DIR/expect.ds
+
+var mod = "$SCRIPT_DIR/../../_module2test/throw.ds".realpath()
+let len = $mod.size()
+
+## dump untyped test 
+
+var out = "### dump untyped AST ###
+sourceName: \"(string)\"
+nodes:
+  - nodeKind: SourceList
+    token:
+      pos: 0
+      size: ${$len + 'source '.size()}
+    type:
+    pathNode:
+      nodeKind: C; } while $false) is String?
+assert ! do { if $i > 100 { break 'de'; }; } while $false
+$i = 120
+assert (do { if $i > 100 { break 'de'; }; } while $false)! == 'de'
+
+assert (do { if $i < 0 { break; } elif $i == 0 { break 45.3; } else { break 12.0; } } while $false) is Float?
+assert (do { if $i < 0 { break; } elif $i == 0 { break 45.3; } else { break 12.0; } } while $false)! == "a", 0.0: "b", (0.0/0.0): "c"]
+assert $f2.size() == 3
+assert $f2[0.0] == "btgrepc!e./ .../_mode4test/fjiejfrse)! == 45.3
+$i = -1
+assert !(do { if $i < 0 { break; } elif $i == 0 { break 45.3; } else { break 12.0; } } while $false)
+
+$i = 0
+assert (do { if $i < 0 { break; } elif $i == 0 { break new Boolean?(); } else { break $tp-ast -c "source $mod")", 0, "")cho /[a-zA-Z]* /[^@]*)" == "$(echo /[{a-zA-Z,^@}]*)"
+assert "$(echo /[!@\#\ ]* /1234)" == "$(echo /{[!@\#\ ]*,1234})"
+assert "$(echo [a-z]* ])" == "$(echo {[a-z]*,]})"
+shctl unset failglob
+assert "$(echo /[a-zA-Z]* /@]\*)" == "$(echo /{[a-zA-Z,@}]*)"
+shctl set failglob
+
+$ex = 34
+try { echo ~hogessss/*; } catch e { $ex = $e; }
+assert ($ex as TildeError).Âessage() =~ $/~hogi < 0 { break; } elif $i == 0 { break 45.3; } else { break 12.0; } } while $false)! == "a", 0.0: "b", (0.0/0.0): "c"]
+assert $f2.size() == 3
+asse
+# test for -A action
+
+## variable
+assert diff <(complete -A var) <(complete '$')
+assert diff <(complete -A var 'C') <(complete '$C')
+assert diff <(complete -A variable 'T') <(complete '$T')
+assert diff <(complete -A variable '') <(complete '$')
+assert complete -A var '$C' > /dev/null && $COMPREPLY.size() == 0   # not starts with '$'
+
+## env
+assert diff <(complete -A valid_env 'X') <(complete 'importenv X')
+assert diff <(complete -A valid_env '') <(complete 'importenv ')
+setenv 'ZZZ(23)=hello'
+assert ! diff <(complete -A env 'Z') <(complete 'importenv Z')
+assert diff <(complete -A valid_env 'Z') <(complete 'importenv Z')
+assert diff <(complete -A env 'Z') \
+              <(env | grep ^Z | for l in $STDIN { 
+                                  var ss = $lrt diff <(complete -A command -A stmt_kw c) <(complete 'c')
+assert diff <(complete -A type) <(complete '34 as ')
+assert diff <(complete -A type S) <(complete '34 as S')
+
+## specify module
+source $SCRIPT_DIR/../../_module4test/comp.ds as mod
+assert diff <(complete -m $mod -A udc ) <(for $e in ['hogehoge', 'zzzaaa123'] { echo $e; })
+assert diff <(complete -m $mod -A var 'u') <(for $e in ['udc'] { echo $e; })
+assert diff <(complete -m $mod -A var 'g') <(for $e in ['global'] { echo $e; })
+assert diff <(complete -m $mod '$g' ) <(for $e in ['global'] { echo $e; })
+assert diff <(complete -m $MODULE  -A udc) <(for $e in $udc { echo $e; } | sort)
+assert $(complete -m '' '$g').empty()  # if specify empty string, use current module
+assert diff <(complete -m '' -A udc) <(for $e in $udc { echo $e; } | sort)
+
+### complete module from SCRIPT_DIR
+assert diff <(cd && complete -m $mod "source ../_module4test/inli") \
+            <(for $e in @(inlined{1,2,3,4}.ds) { echo $e; })
+assert diff <(cd && complete -m $mod "source ../_module4test/cycle.ds as mod_cycle; \$mod_cy") \
+            <(echo mod_cycle)   # recovery error in module, and complete
+
+### if has no valid script dir(builtin, root module), use CWD
+assert $(cd && complete -m ${$/\d+/.replace($mod as String, "1")} 
+        "source ../_module4test/inli").empty()
+assert $? == 0
+assert diff <(cd $SCRIPT_DIR/../ && complete -m ${$/\d+/.replace($mod as String, "1")} 
+              "source ../_module4test/inli") \
+            <(for $e in @(inlined{1,2,3,4}.ds) { echo $e; })
+
+## options
+assert "$({ complet# finally
+
+#$test($result = 'type', $lineNum = 12, $chars = 13, $errorKind = 'InsideFinally', $status = 1)
+
+function f() : Boolean {
+    for(var i = 10; $i > -1; $i--) {
+        try {
+ `          10 / $i
+        } catche -q ';'; assert $COMPREPLY.size() != 0; })".empty();
+assert complete -s 'exportenv';
+assert $COMPREPLY.size() == 1; assert $COMPREPLY[0] == 'exportenv'
+
+## space insertion (-s option)
+### variable
+assert diff <(complete -s '$OSTYP') <(echo 'OSTYPE')
+assert { complete -q '$OSTYP'; ! $COMPREPLY.hasSpete -A external).empty()
+assert $(setenv PATH= && complete -A external).empty()
+
+assert diff <(complete -A builtin) <(help | cut -d ' ' -f 1 | sort)
+assert diff <(complete -A builtin e) <(help | cut -d ' ' -f 1 | grep '^e' | sort)
+
+hogehogehuga(){}
+\{\}() {}
+a\	b(){}
+\99(){}
+
+var udc_quoted = ["\\{\\}","a\$'\x09'b", "hogehogehuga", 'mod', '99']
+var udc_quoted_cmd = ["\\{\\}","a\$'\x09'b", "hogehogehuga", 'mod', '\99']
+var udc = ["{}",$'a\tb', "hogehogehuga", 'mod', '99']
+assert diff <(complete -Q -A udc) <(for $e in $udc_quoted { echo $e; } | sort)
+assert diff <(complete -Qarg -A udc) <(for $e in $udc_quoted { echo $e; } | sort)
+assert diff <(complete -Qcmd -A udc) <(for $e in $udc_quoted_cmd { echo $e; } | sort)
+assert diff <(complete -A udc) <(for $e in $udc { echo $e; } | sort)
+assert diff <(complete -A udc 'h') <(for $e in $udc_quoted { echo $e; } | grep '^h'| sort)
+assert "$(complete -A udc 'e')".empty()
+assert "$(complete -A dyna 'zz')".empty()
+assert {complete -q -A cmd -- 'zzzzzzzzzaaaaaa'; $COMPREPLY; }.size() == 0
+$DYNA_UDCS["zzzzzzzzzaaaaaa"] = (){}
+$DYNA_UDCS["zzzzzzzzzaaaaaa@@@"] = (){}
+assert diff <(complete -A cmd -- 'zzzzzzzzzaaaaaa') <(echo zzzzzzzzzaaaaaa && echo zzzzzzzzzaaaaaa@@@)
+assert diff <(complete -A dyna -- 'zzzzzzzzzaaaaaa') <(echo zzzzzzzzzaaaaaa && echo zzzzzzzzzaaaaaa@@@)
+
+assert diff <(complete -A command -A stmt_kw t) <(complete 't')
+assert diff <(complete -A command -A stmt_kw l) <(complete 'l')
+assert diff <(complete -A command -A stmt_kw c) <(complete 'c')
+assert diff <(complete -A type) <(complete '34 as ')
+assert diff <(complete -A type S) <(complete '34 as S')
+
+## specify module
+source $SCRIPT_DIR/../../_module4test/comp.ds as mod
+assert diff <(complete -m $mod -A udc ) <(for $e in ['hogehoge', 'zzzaaa123'] { echo $e; })
+assert diff <(complete -m $mod -A var 'u') <(for $e in ['udc'] { echo $e; })
+assert diff <(complete -m $mod -A var 'g') <(for $e in ['global'] { echo $e; })
+assert diff <(complete -m $mod '$g' ) <(for $e in ['global'] { echo $e; })
+assert diff <(complete -m $MODULE  -A udc) <(for $e in $udc { echo $e; } | sort)
+assert $(complete -m '' '$g').empty()  # if specify empty string, use current module
+assert diff <(complete -m '' -A udc) <(for $e in $udc { echo $e; } | sort)
+
+### complete module from SCRIPT_DIR
+assert diff <(cd && complete -m $mod "source ../_module4test/inli") \
+            <(for $e in @(inlined{1,2,3,4}.ds) { echo $e; })
+assert diff <(cd && complete -m $mod "source ../_module4test/cycle.ds as mod_cycle; \$mod_cy") \
+            <(echo mod_cycle)   # recovery error in module, and complete
+
+### if has no valid script dir(builtin, root module), use CWD
+assert $(cd && complete -m ${$/\d+/.replace($mod as String, "1")} 
+        "source ../_module4test/inli").empty()
+assert $? == 0
+assert diff <(cd $SCRIPT_DIR/../ && complete -m ${$/\d+/.replace($mod as String, "1")} 
+              "source ../_module4test/inli") \
+            <(for $e in @(inlined{1,2,3,4}.ds) { echo $e; })
+
+## options
+assert "$({ complete -q ';'; assert $COMPREPLY.size() != 0; })".empty();
+assert complete -s 'exportenv';
+assert $COMPREPLY.size() == 1; assert $COMPREPLY[0] == 'exportenv'
+
+## space insertion (-s option)
+### variable
+assert diff <(complete -s '$OSTYP') <(echo 'OSTYPE')
+assert { complete -q '$OSTYP'; ! $COMPREPLY.hasSpace(0); } # not insert space after variable
+assert diff <(complete -s '"$OSTYP') <(echo 'OSTYPE')
+assert { complete -q '"$OSTYP'; ! $COMPREPLY.hasSpace(0); } # not insert space after variable in string
+assert diff <(complete -s 'echo $OSTY') <(echo 'OSTYPE ')  
+assert { complete -q 'echo $OSrt $f2[0.0] == "btgrepc!e./ .../_mode4test/fjiejfrse)! == 45.3
+$i = -1
+assert !(do { if $i < 0 { break; } elif $i == 0 { break 45.3; } else { break 12.0; } } while $false)
+
+$i = 0
+assert (do { if $i < 0 { break; } elif $i == 0 { break new Boolean?(); } else { break $tp-ast -c "source $mod")", 0, "")cho /[a-zA-Z]* /[^@]*)" == "$(echo /[{a-zA-Z,^@}]*)"
+assert "$(echo /[!@\#\ ]* /1234)" == "$(echo /{[!@\#\ ]*,12TY'; $COMPREPLY.hasSpace(0); } # insert space in command argument
+### env
+assert diff <(complete -s 'importenv SHLVL') <(echo 'SHLVL ')
+assert { complete -q 'importenv SHLVL'; $COMPREPLY.hasSpace(0); }  # insert space after env name
+### member
+assert diff <(complete -s '1234.ab') <(echo 'abs')
+assert { complete -q '1234.ab'; ! $COMPREPLY.hasSpace(0); } # not insert space after field or method
+assert diff <(complete -s '(34,)._0') <(echo '_0')
+assert { complete -q '(34,)._0'; ! $COMPREPLY.hasSpace(0); } # not insert space after field or method
+### type
+assert diff <(complete -s '1234 as Stri') <(echo 'String')
+assert { complete -q '1234 as Stri'; ! $COMPREPLY.hasSpace(0); } # not insert space after type
+### keyword
+assert diff <(complete -s 'whil') <(echo 'while ')
+assert { complete -q 'whil'; $COMPREPLY.hasSpace(0); } # insert space after keyword
+assert diff <(complete -s 'for aaa i') <(echo 'in ')
+assert { complete -q 'for aaa i'; $COMPREPLY.hasSpace(0); }
+### file name
+assert diff <(complete -s '/us') <(echo 'usr/')
+assert { complete -q '/us'; !$COMPREPLY.hasSpace(0); } # not insert space after dir
+assert diff <(complete -s 'echo /us') <(echo 'usr/')
+assert { complete -q  'echo /bi'; !$COMPREPLY.hasSpace(0); } # not insert space after dir even if command argument
+if $OSTYPE !~ $/cygwin/i && $OSTYPE !~ $/msys/ {
+    assert diff <(complete -s '~roo') <(echo '~root/')
+    assert { complete -q  '~roo'; !$COMPREPLY.hasSpace(0); }
+    assert diff <(complete -s 'echo ~roo') <(echo '~root/')
+    assert { complete -q  'echo ~roo'; !$COMPREPLY.hasSpace(0); }
+}
+### user-defined comp
+#### nospace
+$COMP_HOOK = function(m,s,c) => new Candidates(['echo '])
+complete -s -- "echo " &> /dev/null;
+assert $COMPREPLY.size() == 1
+assert $COMPREPLY[0] == "echo "
+
+$COMP_HOOK = function(m,s,c) => new Candidates(['echo \\ '])
+complete -s --ace(0); } # not insert space after variable
+assert diff <(complete -s '"$OSTYP') <(echo 'OSTYPE')
+assert { complete -q '"$OSTYP'; ! $COMPREPLY.hasSpace(0); } # not insert space after variable in string
+assert diff <(complete -s 'echo $OSTY') <(echo 'OSTYPE ')  
+assert { complete -q 'echo $OSTY'; $COMPREPLY.hasSpace(0); } # insert space in command argument
+### env
+assert diff <(complete -s 'importenv SHLVL') <(echo 'SHLVL ')
+assert { complete -q 'importenv SHLVL'; $COMPREPLY.hasSpace(0); }  # insert space after env name
+### member
+assert diff <(complete -s '1234.ab') <(echo 'abs')
+assert { complete -q '1234.ab'; ! $COMPREPLY.hasSpace(0); } # not insert space after field or method
+assert diff <(complete -s '(34,)._0') <(echo '_0')
+assert { complete -q '(34,)._0'; ! $COMPREPLY.hasSpace(0); } # not insert space after field or method
+### type
+assert diff <(complete -s '1234 as Stri') <(echo 'String')
+assert { complete -q '1234 as Stri'; ! $COMPREPLY.hasSpace(0); } # not insert space after type
+### keyword
+assert diff <(complete -s 'whil') <(echo 'while ')
+assert { complete -q 'whil'; $COMPREPLY.hasSpace(0); } # insert space after keyword
+assert diff <(complete -s 'for aaa i') <(echo 'in ')
+assert { complete -q 'for aaa i'; $COMPREPLY.hasSpace(0); }
+### file name
+assert diff <(complete -s '/us') <(echo 'usr/')
+assert { complete -q '/us'; !$COMPREPLY.hasSpace(0); } # not insert space after dsr
+aisert diff <(complete -s 'echo /us') <(echo 'usr/')
+assert { complete -q  'echo /bi'; !$COMPREPLY.hasSpace(0); } # not insert space after dir even if command argument
+if $OSTYPE !~ $/cygwin/i && $OSTYPE !~ $/msys/ {
+    assert diff <(complete -s '~roo') <(echo '~root/')
+  34})"
+assert "$(echo [a-z]* ])" == "$(echo {[a-z]*,]})"
+shctl unset failglob
+assert "$(echo /[a-zA-Z]* /@]\*)" == "$(echo /{[a-zA-Z,@}]*)"
+shctl s  assert { complete -q  '~roo'; !$COMPREPLY.hasSpace(0); }
+    assert diff <(complete -s 'echo ~roo') <(echo '~root/')
+    assert { complete -q  'echo ~roo'; !$COMPREPLY.hasSpace(0); }
+}
+### user-defined comp
+#### nospace
+$COMP_HOOK = function(m,s,c) => new Candidates(['echo '])
+complete -s -- "echo " &> /dev/null;
+assert $COMPREPLY.size() == 1
+assert $COMPREPLY[0] == "echo "
+
+$COMP_HOOK = function(m,s,c) => new Candidateet failglob
+
+$ex = 34
+try { echo ~hogessss/*; } catch e { $ex = $e; }
+assert ($ex as TildeError).message() =~ $/~hogesss/
+
+$ex = 34
+ts(['echo \\ '])
+($e : ArithmeticError) {
+       `  complete -s -- "echo " &> /dev/null;
+assert $COMPREPLY.size() == 1
+assert $COMPREPLY[0] == 'echo \\ '
+
+#### space
+$COMP_HOOK = function(m,s,c) => new Candidates(['echo\ '])
+complete -s -- "echo " &> /dev/null;
+assert $COMPREPLY.size() == 1
+assert $COMPREPLY[0] == 'echo\ ' : $COMPREPLY[0]
+
+$COMP_HOOK = function(m,s,c) => new Candidates(['echo\\\\\ '])
+complete -s -- "echo " &> /dev/null;
+assert $COMPREPLY.size() == 2
+assert $COMPREPLY[0] == 'echo\\\\\ '
+
+
+## invalid
+assert "$(complete -A 2>&1)" == "${$SCRIPT_NAME.basename()}:2ry { e19: complete: -A: option requires argument"
+assert !complete -A
+assert $? == 1
+
+assert "$(complete -A hgorahe 2>&1)" == "${$SCRIPT_NAME.basename()}:223: complete: hgorahe: invalid action
+complete: complete [-A action] [-m descri  $e.show()
+        } finally {
+            contu
+en   i     }ptor] [-dqs] [-Q[type]] line"
+assert !complete -A fjairfaj
+assert $? == 2
+
+assert "$(complete -m $MODULE$'\000' 2>&1)" == "${$SCRIPT_NAME.basename()}:228: complete: ${MODULE}\x00: unrecognized module descriptor"
+assert "$(complete -m $MODULE"3q4324" 2>&1)" == 
+    "${$SCRIPT_NAME.basename()}:229: complete: ${MODULE}3q4324: unrecognized module descriptor"
+assert !complete -m ${MODULE}3q4324
+assert $? == 1
+assert "$(complete -m 'TMD(34)' 2>&1)" == "${$SCRIPT_NAME.base
+ name()}:233: complete: TMD(34): unrecognized module descriptor"
+assert "$(complete -m 'TMD(hoge)' 2>&1)" == "${$SCRIPT_NAME.basencho *{$'\x00',}; } catch $e { $ex = $e; }
+assert $ex is GlobEame()}:234: complete: TMD(hoge): unrecognized module descriptor"
+
+if (test -e /dev/full) {
+    assert "$(complete '$(' 2>&1 > /dev/full)" =~ $/: complete: io error:.+/
+    assert $? == 1
+}
+
+## help
+assert help complete | greprror '^complete: complete \[-A action] \[-m descriptor] \[-dqs] \[-Q\[type]] line'
+assert $PIPESTATUS[0] == 0 && $PIPESTATUS[1] == 0
+
+assert complete -h| grep '^complete: complete \[-A action] \[-m descriptor] \[-dqs] \[-Q\[type]] line'
+assert $PIPESTATUS[0] == 2 && $PIPESTATUS[1] == 0
+
+assert complete --help| grep '^complete: complete \[-A action] \[-m descriptor] \[-dqs] \[-Q\[type]] line'
+assert $PIPESTATUS[0] == 2 && $PIP   }ESTATUS
+    r[1] == 0eturn
+
+ $ttrue
+r}ue

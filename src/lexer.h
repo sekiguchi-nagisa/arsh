@@ -200,6 +200,8 @@ public:
     }
   }
 
+  unsigned int modeStackDepth() const { return this->modeStack.size(); }
+
   LexerMode getLexerMode() const { return this->curMode; }
 
   void setComplete(bool allow) { this->complete = allow; }
@@ -217,6 +219,15 @@ public:
   void setTriviaStore(ObserverPtr<TriviaStore> store) { this->triviaStore = store; }
 
   void setHereDocStart(TokenKind hereOp, Token startToken, unsigned int redirPos);
+
+  void resetHereDocStart() {
+    if (this->hereDocStates.back()) {
+      this->hereDocStates.back().shift();
+      if (this->curMode.isHereDoc()) {
+        this->popLexerMode();
+      }
+    }
+  }
 
   const auto &getHereDocStateAt(unsigned int index) const { return this->hereDocStates[index]; }
 

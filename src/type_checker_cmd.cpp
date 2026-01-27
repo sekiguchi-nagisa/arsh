@@ -20,6 +20,7 @@
 #include "misc/num_util.hpp"
 #include "paths.h"
 #include "type_checker.h"
+#include <config.h> // for FUZZING_BUILD_MODE
 
 namespace arsh {
 

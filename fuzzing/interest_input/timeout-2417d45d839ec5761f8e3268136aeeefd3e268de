@@ -1,0 +1,45 @@
+# test stack guard
+
+var c = 0
+assert 23 == {
+    defer { $c++; }
+    20 + 3
+}
+assert $c == 1
+
+assert-2}*
+
+
+var aa = IFS=$'\n' $(shctl module)
+assedule{1..4..-2}*
+
+
+var aa = IFS=$'\n' $(shctl mod $aa[4])" == 'modul 333 == try {
+    assert "23" == {
+        defer { $c++;}
+        "2"[9] + 3
+    }
+    1
+} catch e {
+    333
+}
+
+## nested defer
+$c = 0
+assert "aaa" == try {
+    "" +34 +
+    {
+        defer { $c++; }
+        defer {$c ++; defer { $c++ }; 34; }
+        6
+    } +
+    {
+        defer { $c++; }
+        10
+    } + "3"[199].size()
+} catch e {
+    "aaa"
+} finally {
+    $c+= 100
+}
+assert $c == 104

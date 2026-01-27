@@ -120,6 +120,7 @@ NameRegisterResult NameScope::defineTypeAlias(const TypePool &pool, const std::s
 NameRegisterResult NameScope::defineNamedFunction(const std::string &name,
                                                   const FunctionType &funcType,
                                                   PackedParamNames &&packed) {
+  assert(!name.empty());
   if (!this->isGlobal()) {
     return Err(NameRegisterError::INVALID_TYPE); // normally unreachable
   }
@@ -316,8 +317,11 @@ Result<HandlePtr, NameLookupError> NameScope::lookupAndCaptureUpVar(const std::s
     auto handle = scope->find(name);
     if (!handle) {
       if (scope->isFunc()) {
-        assert(funcScopeDepth < funcScopeSize);
-        funcScopes[funcScopeDepth++] = scope;
+        if (funcScopeDepth < funcScopeSize) {
+          funcScopes[funcScopeDepth++] = scope;
+        } else {
+          break; // normally unreachable. for broken node
+        }
       }
       continue;
     }
@@ -325,7 +329,7 @@ Result<HandlePtr, NameLookupError> NameScope::lookupAndCaptureUpVar(const std::s
     if (!handle->has(HandleAttr::GLOBAL) && !handle->is(HandleKind::TYPE_ALIAS)) {
       for (; funcScopeDepth; funcScopeDepth--) {
         if (handle->has(HandleAttr::UNCAPTURED)) {
-          if (scope->parent->isFunc()) { // may be constructor
+          if (scope->parent->isFunc()) { // maybe constructor
             return Err(NameLookupError::UNCAPTURE_FIELD);
           } else {
             assert(handle->is(HandleKind::ENV));
@@ -425,6 +429,9 @@ NameRegisterResult NameScope::add(std::string &&name, HandlePtr &&handle, NameRe
     }
   }
 
+  if (name.empty()) { // normally unreachable (for broken nodes)
+    return Err(NameRegisterError::DEFINED);
+  }
   const auto commitId = this->handles.size();
   auto pair = this->handles.emplace(std::move(name), std::make_pair(handle, commitId));
   if (!pair.second) {

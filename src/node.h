@@ -146,9 +146,9 @@ public:
   }
 
   void setParenPos(unsigned int openPos, Token closeToken) {
-    assert(openPos <= this->actual.pos);
-    assert(this->actual.endPos() <= closeToken.endPos());
-    this->token = {openPos, closeToken.endPos() - openPos};
+    if (openPos <= this->actual.pos && this->actual.endPos() <= closeToken.endPos()) {
+      this->token = {openPos, closeToken.endPos() - openPos};
+    }
   }
 
   void setType(const Type &t) { this->type = &t; }
@@ -2952,6 +2952,8 @@ private:
   std::unique_ptr<Node> orgNode;
 
 public:
+  explicit ErrorNode(unsigned int pos) : ErrorNode(Token{pos, 0}) {}
+
   explicit ErrorNode(Token token) : WithRtti(token) {}
 
   explicit ErrorNode(std::unique_ptr<Node> &&node)

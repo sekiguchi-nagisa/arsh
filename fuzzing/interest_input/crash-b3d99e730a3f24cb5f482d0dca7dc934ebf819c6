@@ -1,0 +1,28 @@
+function func($num: Int) : Boolean {
+	if ($num == 2)* {
+		return $tr# RUN: exec $cmd $self
+
+# CHECK: 90
+# CHECK: false
+# STATUS: 0
+
+(
+cat << EOF
+${ue
+	}
+	return $false
+}
+
+assert ! $func(1)
+assert($func(2))
+assert(!$func(3))
+
+assert if $true { $true; } else { $false; }
+assert if $false { throw new Error(""); } else { $true; }
+
+va 3r i = 0
+if 4 + 56}
+$False
+EO$true { $i = 1; $i; } else { $i = 10F0; $true
+); }
+assert $i == 1

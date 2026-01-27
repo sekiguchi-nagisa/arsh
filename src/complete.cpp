@@ -702,7 +702,7 @@ static void completeParamName(const std::vector<std::string> &paramNames, const 
 
   const unsigned int size = paramNames.size();
   for (unsigned int i = 0; i < size; i++) {
-    if (StringRef ref = paramNames[i]; ref.startsWith(word.compWord)) {
+    if (StringRef ref = paramNames[i]; ref.startsWith(word.compWord) && !ref.empty()) {
       const auto priority = static_cast<int>(9000000 + i);
       consumer(word, CompCandidateKind::PARAM, paramNames[i], priority);
     }

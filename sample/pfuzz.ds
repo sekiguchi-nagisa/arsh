@@ -11,4 +11,4 @@ var N = $FUZZ_JOBS.toInt() ?? 4
 # ARSH_FUZZ_POLICY  comp: do-completion (default), eval: compile-only
 # ARSH_FUZZ_EXPAND_LIMIT  set expansion limit (default is 1)
 
-ARSH_SUPPRESS_COMPILE_ERROR=on exec $bin -jobs=$N -workers=$N -rss_limit_mb=81920 $@
+ARSH_SUPPRESS_COMPILE_ERROR=on exec $bin -jobs=$N -workers=$N -rss_limit_mb=81920 -timeout=90 $@

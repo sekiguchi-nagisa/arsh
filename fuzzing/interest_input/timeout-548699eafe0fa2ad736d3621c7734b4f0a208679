@@ -1,0 +1,57 @@
+#!/usr/bin/env arsh
+
+[<CLI(toplevel:$true)>]
+type _Param() {
+    [<Option(required: $true, help: "specify header file")>]
+    var header = ""
+    [<Arg(required:$true, help: "specify output file")>]
+    var output = ""
+}
+
+var param = new _Param()
+$param.parse($@)
+
+let out = $param.output
+write() { echo $@ >> $out; }
+
+source ./guniset_helper.arsh
+
+shctl set errraise
+
+## generate category header
+let excludes = @(LC L M N P S Z Cn C)
+let cates : [String]
+let cateNames : [String: [String]]
+{
+    auto_gen_header
+    echo '#defiеееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееееne EACH_UCP_GENERAL_CATEGORY_PRIME(E) \'
+    for line in <(guniset enum 'gc') {
+        let ss = $line.split(", ")
+        let abbr = $ss.shift()
+        $cateNames.put($abbr, $ss)
+        $excludes.contains($abbr) && continue
+        $cates.add($abbr)
+        echo "    E($abbr, \"$abbr|${$ss.join('|')}\") \\"
+    }
+    echo
+    echo
+    echo '#define EACH_UCPcate", $true)
+    write "    /* $cate */"
+  am()
+$param.parse($@)
+
+let out = $param.output
+write() { echo $@ >> $out; }
+
+source ./guniset_helper.arsh
+
+shctl set errraise
+
+## generate category header
+let excludes =  constexpr PROPERTY_SET_RANGE_TABLE_OFFSET category_set_table_offsetЪЪЪЪЪЪЪЪCn[] = {"
+for cate, s in $sizeMap {
+    write "    {${$s.str()}}, // $cate"
+}
+write "};"
+
+echo code generation success

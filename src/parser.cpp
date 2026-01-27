@@ -30,20 +30,23 @@
 
 #define E_ALTER(...)                                                                               \
   do {                                                                                             \
-    this->reportNoViableAlterError((TokenKind[]){__VA_ARGS__}, false);                             \
-    return nullptr;                                                                                \
+    if (!this->reportNoViableAlterError((TokenKind[]){__VA_ARGS__}, false)) {                      \
+      return nullptr;                                                                              \
+    }                                                                                              \
   } while (false)
 
 #define E_ALTER_OR_COMP(...)                                                                       \
   do {                                                                                             \
-    this->reportNoViableAlterError((TokenKind[]){__VA_ARGS__}, true);                              \
-    return nullptr;                                                                                \
+    if (!this->reportNoViableAlterError((TokenKind[]){__VA_ARGS__}, true)) {                       \
+      return nullptr;                                                                              \
+    }                                                                                              \
   } while (false)
 
 #define E_DETAILED(k, ...)                                                                         \
   do {                                                                                             \
-    this->reportDetailedError(k, (TokenKind[]){__VA_ARGS__});                                      \
-    return nullptr;                                                                                \
+    if (!this->reportDetailedError(k, (TokenKind[]){__VA_ARGS__})) {                               \
+      return nullptr;                                                                              \
+    }                                                                                              \
   } while (false)
 
 #define TRY(expr)                                                                                  \
@@ -63,7 +66,7 @@ namespace arsh {
     this->reportDeepNestingError();                                                                \
     return nullptr;                                                                                \
   }                                                                                                \
-  (void)name
+  static_cast<void>(name)
 
 // ####################
 // ##     Parser     ##
@@ -120,7 +123,7 @@ std::vector<std::unique_ptr<Node>> Parser::operator()() {
     }
   } else {
     while (this->curKind != TokenKind::EOS) {
-      auto node = this->parse_statement();
+      auto node = this->parse_statement(StmtParseOpt::DISALLOW_RBC);
       bool stop = false;
       if (this->incompleteNode) {
         this->clear(); // force ignore parse error
@@ -182,8 +185,13 @@ void Parser::popLexerMode() {
 }
 
 void Parser::changeLexerModeToSTMT() {
-  if (this->lexer->getPrevMode().cond() == yycSTMT) { // already statement mode
+  switch (this->lexer->getPrevMode().cond()) {
+  case yycSTMT: // already statement mode
+  case yycPARAM:
+  case yycNAME: // PARAM or NAME mode, also not change (normally unreachable, for broken input)
     return;
+  default:
+    break;
   }
   switch (CUR_KIND()) {
   case TokenKind::LP:
@@ -206,20 +214,38 @@ void Parser::changeLexerModeToSTMT() {
   this->refetch(yycSTMT);
 }
 
+bool Parser::saveAndClearError() {
+  if (this->hasError() && hasFlag(this->option, ParserOption::ERROR_RECOVER) &&
+      !this->inCompletionPoint()) {
+    if (auto cur = std::move(this->error);
+        this->oldErrors.empty() ||
+        this->oldErrors.back()->getErrorToken() != cur->getErrorToken()) {
+      this->oldErrors.push_back(std::move(cur));
+    }
+    return true;
+  }
+  return false;
+}
+
 Token Parser::expect(TokenKind kind, bool fetchNext) {
   if (this->inCompletionPoint() && !this->compCtx->hasCompRequest()) {
     this->compCtx->addExpectedTokenRequest(this->lexer->toTokenText(this->curToken), kind);
   }
+  Token retToken = this->curToken;
   if (isUnclosedToken(this->curKind)) {
     this->createError(this->curKind, this->curToken, INVALID_TOKEN, toString(this->curKind));
-    return this->curToken;
+  } else {
+    retToken = parse_base_type::expect(kind, fetchNext);
   }
-  return parse_base_type::expect(kind, fetchNext);
+  if (this->saveAndClearError()) {
+    retToken.size = 0;
+  }
+  return retToken;
 }
 
 Token Parser::expectAndChangeMode(TokenKind kind, LexerCond cond, bool fetchNext) {
   const Token token = this->expect(kind, false);
-  if (!this->hasError()) {
+  if (!this->hasError() && token.size) {
     this->lexer->setLexerCond(cond);
     if (fetchNext) {
       this->fetchNext();
@@ -414,56 +440,65 @@ void Parser::resolveFileNameCompletionTarget(const CmdArgNode &cmdArgNode,
   }
 }
 
-void Parser::reportNoViableAlterError(unsigned int size, const TokenKind *alters, bool allowComp) {
+bool Parser::reportNoViableAlterError(unsigned int size, const TokenKind *alters, bool allowComp) {
   if (allowComp && this->inCompletionPoint()) {
     this->compCtx->addExpectedTokenRequests(this->lexer->toTokenText(this->curToken), size, alters);
   }
   if (isUnclosedToken(this->curKind)) {
     this->createError(this->curKind, this->curToken, INVALID_TOKEN, toString(this->curKind));
-    return;
+  } else {
+    parse_base_type::reportNoViableAlterError(size, alters);
   }
-  parse_base_type::reportNoViableAlterError(size, alters);
+  return this->saveAndClearError();
 }
 
-void Parser::reportDetailedError(ParseErrorKind kind, unsigned int size, const TokenKind *alters,
+bool Parser::reportDetailedError(ParseErrorKind kind, unsigned int size, const TokenKind *alters,
                                  const char *messageSuffix) {
-  constexpr struct ERROR {
-    const char *kind;
-    const char *message;
-  } table[] = {
-#define GEN_TABLE(E, S) {#E, S},
-      EACH_PARSE_ERROR_KIND(GEN_TABLE)
-#undef GEN_TABLE
-  };
-  auto &e = table[toUnderlying(kind)];
-  std::string message;
-  if (isInvalidToken(this->curKind)) {
-    message += "invalid token, ";
-  } else if (isUnclosedToken(this->curKind)) {
+  if (isUnclosedToken(this->curKind)) {
     this->createError(this->curKind, this->curToken, INVALID_TOKEN, toString(this->curKind));
-    return;
-  } else if (!isEOSToken(this->curKind)) {
-    message += "mismatched token `";
-    message += toString(this->curKind);
-    message += "', ";
+  } else {
+    constexpr struct ERROR {
+      const char *kind;
+      const char *message;
+    } table[] = {
+#define GEN_TABLE(E, S) {#E, S},
+        EACH_PARSE_ERROR_KIND(GEN_TABLE)
+#undef GEN_TABLE
+    };
+    auto &e = table[toUnderlying(kind)];
+    std::string message;
+    if (isInvalidToken(this->curKind)) {
+      message += "invalid token, ";
+    } else if (!isEOSToken(this->curKind)) {
+      message += "mismatched token `";
+      message += toString(this->curKind);
+      message += "', ";
+    }
+    message += "expected ";
+    message += e.message;
+    if (messageSuffix) {
+      message += messageSuffix;
+    }
+    std::vector<TokenKind> expectedTokens(alters, alters + size);
+    this->createError(this->curKind, this->curToken, e.kind, std::move(expectedTokens),
+                      std::move(message));
   }
-  message += "expected ";
-  message += e.message;
-  if (messageSuffix) {
-    message += messageSuffix;
-  }
-
-  std::vector<TokenKind> expectedTokens(alters, alters + size);
-  this->createError(this->curKind, this->curToken, e.kind, std::move(expectedTokens),
-                    std::move(message));
+  return this->saveAndClearError();
 }
 
-std::unique_ptr<Node> Parser::recoverAndSkipUntilSyncPoint(bool onlyLineEnd) {
-  if (this->incompleteNode || !this->hasError() ||
-      !hasFlag(this->option, ParserOption::ERROR_RECOVER)) {
+std::unique_ptr<Node> Parser::recoverAndSkipUntilSyncPoint(StmtParseOpt opt) {
+  if (this->incompleteNode || !hasFlag(this->option, ParserOption::ERROR_RECOVER)) {
     return nullptr;
   }
-  for (unsigned int count = 0;; count++) {
+  if (!this->hasError() && !this->oldErrors.empty() &&
+      this->oldErrors.back()->getErrorToken() == this->curToken) {
+    this->error = std::move(this->oldErrors.back());
+    this->oldErrors.pop_back();
+  }
+  if (!this->hasError()) {
+    return nullptr;
+  }
+  while (true) {
     switch (this->curKind) {
     case TokenKind::EOS:
     case TokenKind::COMPLETION:
@@ -471,17 +506,21 @@ std::unique_ptr<Node> Parser::recoverAndSkipUntilSyncPoint(bool onlyLineEnd) {
     case TokenKind::RBC:
     case TokenKind::LINE_END:
     case TokenKind::NEW_LINE:
-      if (!count && this->error->getTokenKind() == this->curKind &&
-          this->curKind == TokenKind::RBC) {
-        break; // ignore first appeared mismatched token
+    case TokenKind::HERE_END:
+      if (opt == StmtParseOpt::ONLY_LINE_END && this->curKind != TokenKind::LINE_END) {
+        break;
       }
-      if (onlyLineEnd && this->curKind != TokenKind::LINE_END) {
+      if (this->curKind == TokenKind::RBC &&
+          (opt == StmtParseOpt::DISALLOW_RBC || !this->lexer->modeStackDepth())) {
         break;
       }
       this->oldErrors.push_back(std::move(this->error));
       return std::make_unique<ErrorNode>(this->getOldErrors().back()->getErrorToken());
     default:
       break;
+    }
+    if (auto c = this->lexer->getLexerMode().cond(); c == yycNAME || c == yycPARAM) {
+      this->refetch(yycSTMT);
     }
     this->fetchNext(); // force consume token (not trace token)
   }
@@ -496,9 +535,9 @@ std::unique_ptr<FunctionNode> Parser::parse_function(bool needBody) {
   this->consume(); // FUNCTION
 
   NameInfo nameInfo({startPos, 0}, "");
-  if (CUR_KIND() == TokenKind::IDENTIFIER) { // named function
-    nameInfo = TRY(this->expectName(TokenKind::IDENTIFIER, &Lexer::toName));
-  } else { // anonymous function
+  if (CUR_KIND() == TokenKind::IDENTIFIER) {                            // named function
+    nameInfo = this->expectName(TokenKind::IDENTIFIER, &Lexer::toName); // always success
+  } else {                                                              // anonymous function
     this->refetch(yycEXPR);
   }
   auto node = std::make_unique<FunctionNode>(startPos, std::move(nameInfo));
@@ -523,6 +562,7 @@ std::unique_ptr<FunctionNode> Parser::parse_function(bool needBody) {
       node->addParamNode(std::move(param), std::move(typeNode));
     } else {
       E_ALTER(TokenKind::PARAM_NAME, TokenKind::RP);
+      break;
     }
   }
   this->expect(TokenKind::RP); // always success
@@ -634,7 +674,8 @@ std::unique_ptr<TypeNode> Parser::parse_typeNameImpl() {
         this->consume(); // COMMA
         count++;
       } else if (CUR_KIND() != TokenKind::PTYPE_CLOSE) {
-        E_ALTER(TokenKind::TYPE_SEP, TokenKind::PTYPE_CLOSE);
+        E_ALTER_OR_COMP(TokenKind::TYPE_SEP, TokenKind::PTYPE_CLOSE);
+        break;
       }
     }
     Token closeToken = TRY(this->expect(TokenKind::PTYPE_CLOSE));
@@ -695,7 +736,7 @@ std::unique_ptr<TypeNode> Parser::parse_typeNameImpl() {
 
         // rest arg type
         while (CUR_KIND() == TokenKind::TYPE_SEP) {
-          this->consume();
+          this->consume(); // TYPE_SEP
           types.push_back(TRY(this->parse_typeName(false)));
         }
         TRY(this->expect(TokenKind::ATYPE_CLOSE));
@@ -711,6 +752,7 @@ std::unique_ptr<TypeNode> Parser::parse_typeNameImpl() {
       this->makeCodeComp(CodeCompNode::TYPE, nullptr, this->curToken);
     }
     E_DETAILED(ParseErrorKind::TYPE, EACH_LA_typeName(GEN_LA_ALTER));
+    return newVoidTypeNode(); // dummy
   }
 }
 
@@ -758,7 +800,7 @@ std::unique_ptr<Node> Parser::parse_statementImpl() {
     auto condNode = TRY(this->parse_expression());
     std::unique_ptr<Node> messageNode;
     if (!this->hasLineTerminator() && CUR_KIND() == TokenKind::COLON) {
-      TRY(this->expectAndChangeMode(TokenKind::COLON, yycSTMT));
+      this->expectAndChangeMode(TokenKind::COLON, yycSTMT); // always success
       messageNode = TRY(this->parse_expression());
     } else {
       std::string msg = "`";
@@ -793,7 +835,7 @@ std::unique_ptr<Node> Parser::parse_statementImpl() {
     Token token = nameInfo.getToken();
     std::unique_ptr<Node> exprNode;
     if (!this->hasLineTerminator() && CUR_KIND() == TokenKind::COLON) {
-      TRY(this->expectAndChangeMode(TokenKind::COLON, yycSTMT));
+      this->expectAndChangeMode(TokenKind::COLON, yycSTMT); // always success
       exprNode = TRY(this->parse_expression());
     }
 
@@ -824,9 +866,9 @@ std::unique_ptr<Node> Parser::parse_statementImpl() {
     } else if (this->inCompletionPointAt(TokenKind::CMD_ARG_PART)) {
       const auto ref = this->lexer->toStrRef(this->curToken);
       if (!optional && StringRef("as").startsWith(ref) && !ref.empty()) {
-        TRY(this->expect(TokenKind::AS)); // FIXME:
+        TRY(this->expect(TokenKind::AS)); // for completion
       } else if (StringRef("inlined").startsWith(ref) && !ref.empty()) {
-        TRY(this->expect(TokenKind::INLINED)); // FIXME:
+        TRY(this->expect(TokenKind::INLINED)); // for completion
       }
     }
     return node;
@@ -841,23 +883,20 @@ std::unique_ptr<Node> Parser::parse_statementImpl() {
     // clang-format on
   default:
     E_DETAILED(ParseErrorKind::STMT, EACH_LA_statement(GEN_LA_ALTER));
+    return std::make_unique<ErrorNode>(this->curToken.pos);
   }
 }
 
-std::unique_ptr<Node> Parser::parse_statement(bool onlyLineEnd) {
-  auto node = this->parse_statementImpl();
-  if (auto r = this->recoverAndSkipUntilSyncPoint(onlyLineEnd)) {
-    node = std::move(r);
-  } else if (this->hasError()) {
-    return nullptr;
-  }
-  TRY(this->parse_statementEnd(onlyLineEnd));
+std::unique_ptr<Node> Parser::parse_statement(StmtParseOpt opt) {
+  auto node = TRY(this->parse_statementImpl());
+  this->recoverAndSkipUntilSyncPoint(opt);
+  TRY(this->parse_statementEnd(opt));
   return node;
 }
 
-std::unique_ptr<Node> Parser::parse_statementEnd(bool onlyLineEnd) {
+std::unique_ptr<Node> Parser::parse_statementEnd(StmtParseOpt opt) {
   bool checkHere = false;
-  if (onlyLineEnd) {
+  if (opt == StmtParseOpt::ONLY_LINE_END) {
     TRY(this->expect(TokenKind::LINE_END));
     checkHere = true;
   } else {
@@ -900,19 +939,19 @@ std::unique_ptr<Node> Parser::parse_typedef() {
   auto nameInfo = TRY(this->expectName(TokenKind::IDENTIFIER, &Lexer::toTokenText));
   switch (CUR_KIND()) {
   case TokenKind::ASSIGN: {
-    TRY(this->expect(TokenKind::ASSIGN, false));
+    this->expect(TokenKind::ASSIGN, false); // always success
     auto typeToken = TRY(this->parse_typeName());
     return TypeDefNode::alias(startPos, std::move(nameInfo), std::move(typeToken));
   }
   case TokenKind::COLON: {
-    TRY(this->expect(TokenKind::COLON, false));
+    this->expect(TokenKind::COLON, false); // always success
     auto typeToken = TRY(this->parse_typeName());
     return TypeDefNode::errorDef(startPos, std::move(nameInfo), std::move(typeToken));
   }
   case TokenKind::LP: { // explicit constructor
     auto node = std::make_unique<FunctionNode>(startPos, std::move(nameInfo),
                                                FunctionNode::EXPLICIT_CONSTRUCTOR);
-    TRY(this->expectAndChangeMode(TokenKind::LP, yycPARAM));
+    this->expectAndChangeMode(TokenKind::LP, yycPARAM); // always success
     for (unsigned int count = 0; CUR_KIND() != TokenKind::RP; count++) {
       auto ctx = this->inIgnorableNLCtx();
 
@@ -942,6 +981,7 @@ std::unique_ptr<Node> Parser::parse_typedef() {
         node->addParamNode(std::move(param), std::move(type));
       } else {
         E_ALTER(TokenKind::PARAM_NAME, TokenKind::RP);
+        break;
       }
     }
     this->expect(TokenKind::RP); // always success
@@ -986,6 +1026,7 @@ std::unique_ptr<Node> Parser::parse_typedef() {
         node->addParamNode(pos, readOnly, std::move(param), std::move(type));
       } else {
         E_ALTER_OR_COMP(TokenKind::VAR, TokenKind::LET, TokenKind::RBC);
+        break;
       }
     }
     auto rbcToken = this->expect(TokenKind::RBC); // always success
@@ -995,6 +1036,7 @@ std::unique_ptr<Node> Parser::parse_typedef() {
   }
   default:
     E_ALTER_OR_COMP(TokenKind::ASSIGN, TokenKind::COLON, TokenKind::LP, TokenKind::LBC);
+    return std::make_unique<ErrorNode>(this->curToken.pos);
   }
 }
 
@@ -1049,6 +1091,7 @@ std::unique_ptr<Node> Parser::parse_variableDeclaration() {
   }
   default:
     E_ALTER_OR_COMP(TokenKind::ASSIGN, TokenKind::COLON);
+    exprNode = std::make_unique<ErrorNode>(this->curToken.pos);
   }
   return std::make_unique<VarDeclNode>(startPos, std::move(nameInfo), std::move(exprNode),
                                        readOnly);
@@ -1126,7 +1169,7 @@ std::unique_ptr<ArmNode> Parser::parse_armExpression() {
     if (this->inCompletionPoint()) {
       const auto ref = this->lexer->toStrRef(this->curToken);
       if (StringRef("else").startsWith(ref) && !ref.empty()) {
-        TRY(this->expect(TokenKind::ELSE));
+        TRY(this->expect(TokenKind::ELSE)); // for completion
       }
     }
     const auto base = advance(getPrecedence(TokenKind::PIPE));
@@ -1139,8 +1182,10 @@ std::unique_ptr<ArmNode> Parser::parse_armExpression() {
 
   TRY(this->expect(TokenKind::CASE_ARM));
   armNode->setActionNode(TRY(this->parse_expression()));
+  if (!this->recoverAndSkipUntilSyncPoint() && this->hasError()) {
+    return nullptr; // suppress infinite loop
+  }
   TRY(this->parse_statementEnd());
-
   return armNode;
 }
 
@@ -1155,10 +1200,10 @@ std::unique_ptr<Node> Parser::parse_forExpression() {
 
     this->expectAndChangeMode(TokenKind::LP, yycSTMT); // always success
 
-    auto initNode = TRY(this->parse_statement(true));
+    auto initNode = TRY(this->parse_statement(StmtParseOpt::ONLY_LINE_END));
 
     auto condNode = TRY(this->parse_forCond());
-    TRY(this->parse_statementEnd(true));
+    TRY(this->parse_statementEnd(StmtParseOpt::ONLY_LINE_END));
 
     auto iterNode = TRY(this->parse_forIter());
 
@@ -1224,9 +1269,9 @@ std::unique_ptr<Node> Parser::parse_forCond() {
   } else if (CUR_KIND() != TokenKind::LINE_END) {
     this->reportDetailedError(ParseErrorKind::EXPR_END,
                               {EACH_LA_expression(GEN_LA_ALTER) TokenKind::LINE_END});
-  }
-  if (auto r = this->recoverAndSkipUntilSyncPoint(true)) {
-    node = std::move(r);
+    if (auto r = this->recoverAndSkipUntilSyncPoint(StmtParseOpt::ONLY_LINE_END)) {
+      node = std::move(r);
+    }
   }
   return node;
 }
@@ -1238,6 +1283,7 @@ std::unique_ptr<Node> Parser::parse_forIter() {
     return this->parse_expression();
   } else if (CUR_KIND() != TokenKind::RP) {
     E_DETAILED(ParseErrorKind::EXPR_RP, EACH_LA_expression(GEN_LA_ALTER) TokenKind::RP);
+    return std::make_unique<ErrorNode>(this->curToken.pos);
   } else {
     return std::make_unique<EmptyNode>();
   }
@@ -1323,7 +1369,7 @@ std::unique_ptr<Node> Parser::parse_command(bool allowEmptyCmd) {
     TRY(this->expect(TokenKind::RP));
     std::unique_ptr<TypeNode> returnTypeNode;
     if (CUR_KIND() == TokenKind::COLON) {
-      TRY(this->expect(TokenKind::COLON, false));
+      this->expect(TokenKind::COLON, false); // always success
       returnTypeNode = TRY(this->parse_typeName());
     }
     bool comp = false;
@@ -1385,9 +1431,10 @@ std::unique_ptr<Node> Parser::parse_command(bool allowEmptyCmd) {
   }
 
 END:
-  if (lookahead_redir(CUR_KIND())) {
+  if (lookahead_redir(CUR_KIND())) { // TODO: treat as semantic error
     this->createError(this->curKind, this->curToken, REDIR_NEED_SPACE,
                       "require space before redirection");
+    this->recoverAndSkipUntilSyncPoint(); // skip unconsumed redir token and command arg
   }
   return node;
 }
@@ -1410,7 +1457,7 @@ std::unique_ptr<RedirNode> Parser::parse_redirOption() {
     }
     auto node = std::make_unique<RedirNode>(kind, token, this->lexer->toStrRef(token),
                                             TRY(this->parse_cmdArg(parseOpt)));
-    if (hereDoc) {
+    if (hereDoc && this->consumedKind == TokenKind::HERE_START) {
       auto &argNode = node->getTargetNode();
       const Token startToken = argNode.getToken();
       {
@@ -1421,13 +1468,16 @@ std::unique_ptr<RedirNode> Parser::parse_redirOption() {
         }
         node->setHereStart(NameInfo(startToken, ref.toString()));
       }
-      argNode.refSegmentNodes().pop_back();
+      argNode.refSegmentNodes().clear();
       argNode.addSegmentNode(std::make_unique<StringExprNode>(startToken.endPos()));
       this->hereDocNodes.push_back(makeObserver(*node));
     }
     return node;
   }
   E_ALTER_OR_COMP(EACH_LA_redir(GEN_LA_ALTER));
+  return std::make_unique<RedirNode>(
+      this->curKind, this->curToken, "",
+      std::make_unique<CmdArgNode>(std::make_unique<StringNode>(Token{this->curToken.pos, 0})));
 }
 
 size_t Parser::findHereDocNodeIndex(unsigned int pos) const {
@@ -1464,11 +1514,7 @@ static bool shouldIgnoreTab(const StringExprNode &node) {
 std::unique_ptr<Node> Parser::parse_hereDocBody() {
   GUARD_DEEP_NESTING(guard);
 
-  if (this->hereDocNodes.empty()) {
-    return nullptr;
-  }
-
-  while (this->inHereDocBody()) {
+  while (!this->hereDocNodes.empty() && this->inHereDocBody()) {
     if (CUR_KIND() == TokenKind::HERE_END) { // already exit here doc mode
       this->consume();
       continue;
@@ -1478,7 +1524,9 @@ std::unique_ptr<Node> Parser::parse_hereDocBody() {
     const unsigned int pos = hereEntry.pos;
     const auto attr = hereEntry.attr;
     const auto index = this->findHereDocNodeIndex(pos);
-    assert(index < this->hereDocNodes.size());
+    if (index >= this->hereDocNodes.size()) {
+      break; // normally unreachable (for broken input)
+    }
     const auto hereDocNode = this->hereDocNodes[index];
     auto &strExprNode = cast<StringExprNode>(*hereDocNode->getTargetNode().getSegmentNodes()[0]);
     while (CUR_KIND() != TokenKind::HERE_END) {
@@ -1518,7 +1566,9 @@ std::unique_ptr<Node> Parser::parse_hereDocBody() {
             this->lexer->hereDocStateDepth() > 1) {
           constexpr TokenKind kinds[] = {TokenKind::HERE_END};
           std::string suffix = ": `";
-          suffix += this->lexer->toStrRef(this->getActiveHereDocState().curEntry().token);
+          if (auto &st = this->getActiveHereDocState()) {
+            suffix += this->lexer->toStrRef(st.curEntry().token);
+          }
           suffix += "'";
           this->reportDetailedError(ParseErrorKind::HERE_END, 1, kinds, suffix.c_str());
         }
@@ -1533,8 +1583,12 @@ std::unique_ptr<Node> Parser::parse_hereDocBody() {
           }
         }
         E_ALTER(EACH_LA_hereExpand(GEN_LA_ALTER)); // FIXME: completion in no-expand
+        if (this->recoverAndSkipUntilSyncPoint()) {
+          goto END;
+        }
       }
     }
+  END:
     auto token = TRY(this->expect(TokenKind::HERE_END));
     token.size--; // skip last newline
     hereDocNode->setHereEnd(token);
@@ -1553,7 +1607,7 @@ static bool lookahead_cmdArg_LP(TokenKind kind) {
   }
 }
 
-std::unique_ptr<CmdArgNode> Parser::parse_cmdArg(const CmdArgParseOpt opt) {
+std::unique_ptr<CmdArgNode> Parser::parse_cmdArg(CmdArgParseOpt opt) {
   GUARD_DEEP_NESTING(guard);
 
   auto node = std::make_unique<CmdArgNode>(this->curToken, opt == CmdArgParseOpt::ASSIGN);
@@ -1561,9 +1615,15 @@ std::unique_ptr<CmdArgNode> Parser::parse_cmdArg(const CmdArgParseOpt opt) {
 
   while (!this->hasSpace() && !this->hasNewline() && lookahead_cmdArg_LP(CUR_KIND())) {
     if (opt == CmdArgParseOpt::HERE_START) {
+      opt = CmdArgParseOpt::REDIR; // disable here-doc mode
       this->createError(this->curKind, this->curToken, HERE_START_NEED_SPACE,
                         "require space after here doc start word");
-      return nullptr;
+      if (!this->saveAndClearError()) {
+        return nullptr;
+      }
+      if (this->consumedKind == TokenKind::HERE_START) {
+        this->lexer->resetHereDocStart();
+      }
     }
     TRY(this->parse_cmdArgSeg(*node, opt));
   }
@@ -1586,13 +1646,15 @@ static bool isHereDocStart(StringRef ref) {
   return count > 0;
 }
 
-std::unique_ptr<Node> Parser::parse_cmdArgSeg(CmdArgNode &argNode, const CmdArgParseOpt opt) {
+std::unique_ptr<Node> Parser::parse_cmdArgSeg(CmdArgNode &argNode, CmdArgParseOpt opt) {
   GUARD_DEEP_NESTING(guard);
 
   if (opt == CmdArgParseOpt::HERE_START) {
     if (CUR_KIND() != TokenKind::CMD_ARG_PART && CUR_KIND() != TokenKind::STRING_LITERAL) {
-      this->reportHereDocStartError(this->curKind, this->curToken);
-      return nullptr;
+      opt = CmdArgParseOpt::REDIR; // disable here-doc mode
+      if (!this->reportHereDocStartError(this->curKind, this->curToken)) {
+        return nullptr;
+      }
     }
   }
 
@@ -1603,8 +1665,9 @@ std::unique_ptr<Node> Parser::parse_cmdArgSeg(CmdArgNode &argNode, const CmdArgP
       if (isHereDocStart(this->lexer->toStrRef(token))) {
         this->lexer->setHereDocStart(this->hereOp.kind, token, this->hereOp.pos);
       } else {
-        this->reportHereDocStartError(this->curKind, token);
-        return nullptr;
+        if (!this->reportHereDocStartError(this->curKind, token)) {
+          return nullptr;
+        }
       }
       this->curKind = TokenKind::HERE_START;
     }
@@ -1730,6 +1793,10 @@ std::unique_ptr<Node> Parser::parse_cmdArgSegImpl(const CmdArgNode &argNode,
                : opt == CmdArgParseOpt::REDIR ? ParseErrorKind::REDIR
                                               : ParseErrorKind::CMD_ARG,
                EACH_LA_cmdArg(GEN_LA_ALTER));
+    if (auto r = this->recoverAndSkipUntilSyncPoint()) { // suppress infinite loop
+      return r;
+    }
+    return std::make_unique<StringNode>(""); // dummy
   }
 }
 
@@ -2073,6 +2140,7 @@ std::unique_ptr<Node> Parser::parse_primaryExpression(bool allowEmptyCmd) {
         count++;
       } else if (CUR_KIND() != TokenKind::RP) {
         E_ALTER_OR_COMP(TokenKind::COMMA, TokenKind::RP);
+        break;
       }
     }
     Token closeToken = TRY(this->expect(TokenKind::RP));
@@ -2094,6 +2162,7 @@ std::unique_ptr<Node> Parser::parse_primaryExpression(bool allowEmptyCmd) {
       node = TRY(this->parse_mapBody(token, std::move(keyNode)));
     } else {
       E_ALTER_OR_COMP(TokenKind::COMMA, TokenKind::RB, TokenKind::COLON);
+      node = std::make_unique<ErrorNode>(std::move(keyNode));
     }
     token = TRY(this->expect(TokenKind::RB));
     node->updateToken(token);
@@ -2189,6 +2258,7 @@ std::unique_ptr<Node> Parser::parse_primaryExpression(bool allowEmptyCmd) {
       }
     }
     E_DETAILED(ParseErrorKind::EXPR, EACH_LA_primary(GEN_LA_ALTER));
+    return std::make_unique<ErrorNode>(this->curToken.pos);
   }
 }
 
@@ -2208,6 +2278,7 @@ std::unique_ptr<Node> Parser::parse_arrayBody(Token token, std::unique_ptr<Node>
       goto END;
     default:
       E_ALTER_OR_COMP(TokenKind::COMMA, TokenKind::RB);
+      goto END;
     }
   }
 END:
@@ -2236,6 +2307,7 @@ std::unique_ptr<Node> Parser::parse_mapBody(Token token, std::unique_ptr<Node> &
       goto END;
     default:
       E_ALTER_OR_COMP(TokenKind::COMMA, TokenKind::RB);
+      goto END;
     }
   }
 END:
@@ -2256,8 +2328,9 @@ std::unique_ptr<Node> Parser::parse_stringLiteral(bool asHereStart) {
     if (isHereDocStart(this->lexer->toStrRef(token))) {
       this->lexer->setHereDocStart(this->hereOp.kind, token, this->hereOp.pos);
     } else {
-      this->reportHereDocStartError(this->curKind, token);
-      return nullptr;
+      if (!this->reportHereDocStartError(this->curKind, token)) {
+        return nullptr;
+      }
     }
     this->curKind = TokenKind::HERE_START; // for syntax highlight
   }
@@ -2266,6 +2339,7 @@ std::unique_ptr<Node> Parser::parse_stringLiteral(bool asHereStart) {
 }
 
 std::unique_ptr<Node> Parser::parse_regexLiteral() {
+  assert(CUR_KIND() == TokenKind::REGEX_LITERAL);
   Token token = this->expect(TokenKind::REGEX_LITERAL);           // always success
   std::string str = this->lexer->toTokenText(token.sliceFrom(2)); // skip prefix '$/'
   const char *ptr = strrchr(str.c_str(), '/');
@@ -2278,7 +2352,8 @@ std::unique_ptr<Node> Parser::parse_regexLiteral() {
 }
 
 std::unique_ptr<Node> Parser::parse_backquoteLiteral() {
-  Token token = TRY(this->expect(TokenKind::BACKQUOTE_LITERAL));
+  assert(CUR_KIND() == TokenKind::BACKQUOTE_LITERAL);
+  Token token = this->expect(TokenKind::BACKQUOTE_LITERAL);
   return std::make_unique<StringNode>(token, this->lexer->toTokenText(token),
                                       StringNode::BACKQUOTE);
 }
@@ -2327,7 +2402,7 @@ std::unique_ptr<ArgsNode> Parser::parse_arguments(Token first) {
 
       if (CUR_KIND() == TokenKind::COLON && mayBeNamedArgStart(*argNode)) {
         auto nameInfo = std::move(cast<VarNode>(*argNode)).takeAsNameInfo();
-        TRY(this->expectAndChangeMode(TokenKind::COLON, yycSTMT));
+        this->expectAndChangeMode(TokenKind::COLON, yycSTMT); // always success
         argNode = this->parse_expression();
         bool incomplete = false;
         if (this->incompleteNode) {
@@ -2353,6 +2428,7 @@ std::unique_ptr<ArgsNode> Parser::parse_arguments(Token first) {
       this->consume(); // COMMA
     } else if (CUR_KIND() != TokenKind::RP) {
       E_ALTER_OR_COMP(TokenKind::COMMA, TokenKind::RP);
+      break;
     }
   }
   token = this->expect(TokenKind::RP); // always success
@@ -2403,6 +2479,7 @@ std::unique_ptr<Node> Parser::parse_stringExpression() {
         this->compCtx->addExpectedTokenRequests(std::string(), kinds);
       }
       E_ALTER(EACH_LA_stringExpression(GEN_LA_ALTER));
+      goto END;
     }
   }
 
@@ -2471,7 +2548,9 @@ std::unique_ptr<Node> Parser::parse_interpolation(const ExpansionLoc loc) {
         if (oldKind == TokenKind::COMMAND) {
           this->createError(oldKind, oldToken, START_INTERP_CMD_NEED_SPACE,
                             "require space between `${' and command due to syntax ambiguity");
-          return nullptr;
+          if (!this->saveAndClearError()) {
+            return nullptr;
+          }
         }
       }
     }
@@ -2479,7 +2558,9 @@ std::unique_ptr<Node> Parser::parse_interpolation(const ExpansionLoc loc) {
     if (mayNeedSpace && isa<NumberNode>(*node)) {
       this->createError(oldKind, oldToken, START_INTERP_NUM_NEED_SPACE,
                         "require space between `${' and number literal due to syntax ambiguity");
-      return nullptr;
+      if (!this->saveAndClearError()) {
+        return nullptr;
+      }
     }
     auto endToken = TRY(this->expect(TokenKind::RBC));
     return std::make_unique<EmbedNode>(pos, kind, std::move(node), endToken);
@@ -2563,7 +2644,8 @@ std::unique_ptr<PrefixAssignNode> Parser::parse_prefixAssign() {
   bool comp = false;
   std::vector<std::unique_ptr<AssignNode>> envDeclNodes;
   do {
-    Token token = TRY(this->expect(TokenKind::ENV_ASSIGN));
+    assert(CUR_KIND() == TokenKind::ENV_ASSIGN);
+    Token token = this->expect(TokenKind::ENV_ASSIGN); // always success
     auto nameToken = token.slice(0, token.size - 1);
     auto nameNode = std::make_unique<VarNode>(nameToken, this->lexer->toCmdArg(nameToken));
     std::unique_ptr<Node> valueNode;
@@ -2608,13 +2690,15 @@ std::unique_ptr<Node> Parser::parse_cmdArgArray() {
   GUARD_DEEP_NESTING(guard);
 
   auto ctx = this->inIgnorableNLCtx();
-  Token token = TRY(this->expect(TokenKind::AT_PAREN));
+  assert(CUR_KIND() == TokenKind::AT_PAREN);
+  Token token = this->expect(TokenKind::AT_PAREN); // always success
   auto node = std::make_unique<ArgArrayNode>(token);
   while (true) {
     if (lookahead_cmdArg_LP(CUR_KIND())) {
       node->addCmdArgNode(TRY(this->parse_cmdArg()));
     } else if (CUR_KIND() != TokenKind::RP) {
       E_DETAILED(ParseErrorKind::CMD_ARG, EACH_LA_cmdArgs(GEN_LA_ALTER));
+      break;
     } else {
       break;
     }
@@ -2642,6 +2726,7 @@ std::unique_ptr<Node> Parser::parse_attributes() {
         if (!attrNode->getKeys().empty()) {
           if (CUR_KIND() != TokenKind::COMMA) {
             E_ALTER_OR_COMP(TokenKind::COMMA, TokenKind::RP);
+            break;
           }
           TRY(this->expectAndChangeMode(TokenKind::COMMA, yycATTR));
         }
@@ -2672,6 +2757,7 @@ std::unique_ptr<Node> Parser::parse_attributes() {
     break;
   default:
     E_ALTER_OR_COMP(TokenKind::VAR, TokenKind::LET, TokenKind::TYPE, TokenKind::ATTR_OPEN);
+    node = std::make_unique<ErrorNode>(this->curToken.pos);
   }
 
   switch (node->getNodeKind()) {

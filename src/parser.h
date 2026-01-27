@@ -46,6 +46,12 @@ enum class CmdArgParseOpt : unsigned char {
   HERE_START,
 };
 
+enum class StmtParseOpt : unsigned char {
+  IGNORE_RBC,    // the statement may end with '}'
+  DISALLOW_RBC,  // the statement must not end with '}'
+  ONLY_LINE_END, // the statement must end with ';'
+};
+
 using ParseError = ParseErrorBase<TokenKind>;
 
 struct TokenTracker {
@@ -121,6 +127,8 @@ public:
 
   explicit operator bool() const { return this->curKind != TokenKind::EOS; }
 
+  Token getCurToken() const { return this->curToken; }
+
   const auto &getOldErrors() const { return this->oldErrors; }
 
   auto takeOldErrors() && { return std::move(this->oldErrors); }
@@ -142,6 +150,13 @@ protected:
    * try to change lexer mode to STMT mode and re-fetch token.
    */
   void changeLexerModeToSTMT();
+
+  /**
+   * after called, hasError() will false except for completion
+   * @return
+   * if successfully clear error, return true
+   */
+  bool saveAndClearError();
 
   Token expect(TokenKind kind, bool fetchNext = true);
 
@@ -224,27 +239,43 @@ protected:
   }
 
   template <unsigned int N>
-  void reportNoViableAlterError(const TokenKind (&alters)[N], bool allowComp) {
-    this->reportNoViableAlterError(N, alters, allowComp);
+  bool reportNoViableAlterError(const TokenKind (&alters)[N], bool allowComp) {
+    return this->reportNoViableAlterError(N, alters, allowComp);
   }
 
-  void reportNoViableAlterError(unsigned int size, const TokenKind *alters, bool allowComp);
+  /**
+   *
+   * @param size
+   * @param alters
+   * @param allowComp
+   * @return if successfully clear error, return true
+   */
+  bool reportNoViableAlterError(unsigned int size, const TokenKind *alters, bool allowComp);
 
   template <unsigned int N>
-  void reportDetailedError(ParseErrorKind kind, const TokenKind (&alters)[N]) {
-    this->reportDetailedError(kind, N, alters, nullptr);
+  bool reportDetailedError(ParseErrorKind kind, const TokenKind (&alters)[N]) {
+    return this->reportDetailedError(kind, N, alters, nullptr);
   }
 
-  void reportDetailedError(ParseErrorKind kind, unsigned int size, const TokenKind *alters,
+  /**
+   *
+   * @param kind
+   * @param size
+   * @param alters
+   * @param messageSuffix
+   * @return if successfully clear error, return true
+   */
+  bool reportDetailedError(ParseErrorKind kind, unsigned int size, const TokenKind *alters,
                            const char *messageSuffix);
 
-  void reportHereDocStartError(TokenKind kind, Token token) {
+  bool reportHereDocStartError(TokenKind kind, Token token) {
     this->createError(kind, token, INVALID_HERE_START,
                       "heredoc start word must follow `[a-zA-Z0-9_-]+' or "
                       "`['][a-zA-Z0-9_-]+[']' format");
+    return this->saveAndClearError();
   }
 
-  std::unique_ptr<Node> recoverAndSkipUntilSyncPoint(bool onlyLineEnd);
+  std::unique_ptr<Node> recoverAndSkipUntilSyncPoint(StmtParseOpt opt = StmtParseOpt::IGNORE_RBC);
 
   std::unique_ptr<Node> toAccessNode(Token token) const;
 
@@ -290,15 +321,15 @@ protected:
    */
   std::unique_ptr<Node> parse_statementImpl();
 
-  std::unique_ptr<Node> parse_statement(bool onlyLineEnd = false);
+  std::unique_ptr<Node> parse_statement(StmtParseOpt opt = StmtParseOpt::IGNORE_RBC);
 
   /**
    *
-   * @param onlyLineEnd
+   * @param opt
    * @return
    * always nullptr
    */
-  std::unique_ptr<Node> parse_statementEnd(bool onlyLineEnd = false);
+  std::unique_ptr<Node> parse_statementEnd(StmtParseOpt opt = StmtParseOpt::IGNORE_RBC);
 
   std::unique_ptr<Node> parse_typedef();
 

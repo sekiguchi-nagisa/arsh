@@ -309,6 +309,7 @@ public:
 
 TEST_F(LineRendererTest, continuation) {
   ASSERT_TRUE(isCompleteLine("echo"));
+  ASSERT_TRUE(isCompleteLine("var 34y47yyr234"));
   ASSERT_TRUE(isCompleteLine("{}}"));
   ASSERT_TRUE(isCompleteLine("$OSTYPE ++"));
   ASSERT_TRUE(isCompleteLine("$/frefrear\\/fer"));
@@ -319,6 +320,7 @@ TEST_F(LineRendererTest, continuation) {
   ASSERT_TRUE(isCompleteLine("cat << EOF\nthis is a pen\nEOF"));
   ASSERT_FALSE(isCompleteLine("echo\\"));
   ASSERT_FALSE(isCompleteLine("echo AAA\\"));
+  ASSERT_FALSE(isCompleteLine("var 34y47yyr234; echo\\"));
   ASSERT_FALSE(isCompleteLine("if (true"));
   ASSERT_FALSE(isCompleteLine("(echo >"));
   ASSERT_FALSE(isCompleteLine("{ echo hello"));
