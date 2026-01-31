@@ -78,7 +78,7 @@ static CodePointSetRef getCategoryTable(unsigned int index) {
 }
 
 Optional<Category> getCategory(const int codePoint) {
-  if (UnicodeUtil::isValidCodePoint(codePoint)) {
+  if (UnicodeUtil::isCodePoint(codePoint)) {
     for (unsigned int i = 0; i < categoryTableSize(); i++) {
       if (getCategoryTable(i).contains(codePoint)) {
         return static_cast<Category>(i);
@@ -234,7 +234,7 @@ static CodePointSetRef getScriptTable(unsigned int index) {
 }
 
 Optional<Script> getScript(const int codePoint) {
-  if (UnicodeUtil::isValidCodePoint(codePoint)) {
+  if (UnicodeUtil::isCodePoint(codePoint)) {
     for (unsigned int i = 0; i < scriptTableSize(); i++) {
       if (getScriptTable(i).contains(codePoint)) {
         return static_cast<Script>(i);

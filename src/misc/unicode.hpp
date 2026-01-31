@@ -96,7 +96,7 @@ struct UnicodeUtil {
   /**
    *
    * @param codePoint
-   * must be Unicode code point
+   * must be Unicode code point (accept surrogate)
    * @param buf
    * at least 4byte
    * @return
@@ -105,8 +105,12 @@ struct UnicodeUtil {
    */
   static unsigned int codePointToUtf8(int codePoint, char *buf);
 
-  static bool isValidCodePoint(int codePoint) {
+  static bool isCodePoint(int codePoint) {
     return codePoint >= 0x0000 && codePoint <= CODE_POINT_MAX;
+  }
+
+  static bool isValidCodePoint(int codePoint) {
+    return isCodePoint(codePoint) && !isSurrogate(codePoint);
   }
 
   static bool isBmpCodePoint(int codePoint) { return codePoint >= 0x0000 && codePoint <= 0xFFFF; }
@@ -115,11 +119,11 @@ struct UnicodeUtil {
     return codePoint > 0xFFFF && codePoint <= CODE_POINT_MAX;
   }
 
-  static bool isHighSurrogate(unsigned short v) { return v >= 0xD800 && v <= 0xDBFF; }
+  static bool isHighSurrogate(int codePoint) { return codePoint >= 0xD800 && codePoint <= 0xDBFF; }
 
-  static bool isLowSurrogate(unsigned short v) { return v >= 0xDC00 && v <= 0xDFFF; }
+  static bool isLowSurrogate(int codePoint) { return codePoint >= 0xDC00 && codePoint <= 0xDFFF; }
 
-  static bool isSurrogate(unsigned short v) { return v >= 0xD800 && v <= 0xDFFF; }
+  static bool isSurrogate(int codePoint) { return codePoint >= 0xD800 && codePoint <= 0xDFFF; }
 
   /**
    * if illegal surrogate pair, return -1.
@@ -127,7 +131,7 @@ struct UnicodeUtil {
    * @param low
    * @return
    */
-  static int utf16ToCodePoint(unsigned short high, unsigned short low) {
+  static int utf16ToCodePoint(int high, int low) {
     if (isHighSurrogate(high) && isLowSurrogate(low)) {
       return static_cast<int>((static_cast<unsigned int>(high - 0xD800) << 10) +
                               static_cast<unsigned int>(low - 0xDC00) + 0x10000);
@@ -266,7 +270,7 @@ unsigned int UnicodeUtil<T>::utf8ToCodePoint(const char *begin0, const char *end
 
 template <bool T>
 unsigned int UnicodeUtil<T>::codePointToUtf8(int codePoint, char *const buf) {
-  if (!isValidCodePoint(codePoint)) {
+  if (!isCodePoint(codePoint)) {
     return 0;
   }
 
