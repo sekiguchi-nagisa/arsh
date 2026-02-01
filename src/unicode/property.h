@@ -41,8 +41,6 @@ Optional<Category> parseCategory(StringRef ref);
 
 Optional<Category> getCategory(int codePoint);
 
-StringRef toString(Category category, bool longName = false);
-
 // for Unicode Script property
 
 enum class Script : unsigned char {
@@ -55,15 +53,11 @@ Optional<Script> parseScript(StringRef ref);
 
 Optional<Script> getScript(int codePoint);
 
-StringRef toString(Script script, bool longName = true);
-
 enum class Lone : unsigned char {
 #define GEN_ENUM(E) E,
   EACH_UCP_LONE_PROPERTY(GEN_ENUM)
 #undef GEN_ENUM
 };
-
-StringRef toString(Lone lone, bool longName = true);
 
 // Unicode Property api
 
@@ -95,10 +89,26 @@ public:
     return {Name::General_Category, toUnderlying(cate)};
   }
 
+  static constexpr Property lone(Lone lone) { return {Name::Lone, toUnderlying(lone)}; }
+
   Name getName() const { return this->name; }
 
   unsigned char getValue() const { return this->value; }
+
+  StringRef toStringValue(bool longName) const;
 };
+
+inline StringRef toString(Category category, bool longName = false) {
+  return Property::category(category).toStringValue(longName);
+}
+
+inline StringRef toString(Script script, bool longName = true) {
+  return Property(Property::Name::Script, toUnderlying(script)).toStringValue(longName);
+}
+
+inline StringRef toString(Lone lone, bool longName = true) {
+  return Property::lone(lone).toStringValue(longName);
+}
 
 Optional<Property> parseProperty(StringRef name, StringRef value, std::string *err);
 

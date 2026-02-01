@@ -89,20 +89,6 @@ Optional<Category> getCategory(const int codePoint) {
   return {};
 }
 
-StringRef toString(Category category, bool longName) {
-  if (const auto i = toUnderlying(category); i < std::size(categoryNames)) {
-    StringRef name;
-    unsigned int count = 0;
-    const unsigned int limit = longName ? 2 : 1;
-    splitByDelim(categoryNames[i], '|', [&count, &limit, &name](StringRef ref, bool) {
-      name = ref;
-      return ++count < limit;
-    });
-    return name;
-  }
-  return "";
-}
-
 static constexpr struct CategoryCombination {
   Category category;
   Category combination[7]; // Cn is sentinel
@@ -211,20 +197,6 @@ static auto initScriptNameMap() {
   return map;
 }
 
-StringRef toString(Script script, bool longName) {
-  if (const auto i = toUnderlying(script); i < std::size(scriptNames)) {
-    StringRef name;
-    unsigned int count = 0;
-    const unsigned int limit = longName ? 2 : 1;
-    splitByDelim(scriptNames[i], '|', [&count, &limit, &name](StringRef ref, bool) {
-      name = ref;
-      return ++count < limit;
-    });
-    return name;
-  }
-  return "";
-}
-
 constexpr unsigned int scriptTableSize() { return std::size(script_set_table_offset_except_Zzzz); }
 
 static CodePointSetRef getScriptTable(unsigned int index) {
@@ -328,24 +300,6 @@ static auto initLoneNameMap() {
     });
   }
   return map;
-}
-
-StringRef toString(Lone lone, bool longName) {
-  if (const auto i = toUnderlying(lone);
-      i >= UCP_LONE_PROPERTY_PRIME_INTERNAL_SIZE && i < UCP_LONE_PROPERTY_SIZE) {
-    unsigned int index = i - UCP_LONE_PROPERTY_PRIME_INTERNAL_SIZE;
-    StringRef name;
-    unsigned int count = 0;
-    const unsigned int limit = longName ? 1 : 2;
-    splitByDelim(loneNames[index], '|', [&count, &limit, &name](StringRef ref, bool) {
-      name = ref;
-      return ++count < limit;
-    });
-    if (count == limit) {
-      return name;
-    }
-  }
-  return "";
 }
 
 constexpr unsigned int primeLoneTableSize() { return std::size(lone_set_prime_table_offset); }
@@ -639,6 +593,43 @@ static bool getLoneSet(const Lone lone, BuilderOrSet out) {
   }
   }
   return false; // normally unreachable (for a broken lone property)
+}
+
+StringRef Property::toStringValue(const bool longName) const {
+  StringRef nameEntry;
+  unsigned int limit = 0;
+  switch (this->getName()) {
+  case Name::General_Category:
+    if (this->value < std::size(categoryNames)) {
+      nameEntry = categoryNames[this->value];
+    }
+    limit = longName ? 2 : 1;
+    break;
+  case Name::Script:
+  case Name::Script_Extensions:
+    if (this->value < std::size(scriptNames)) {
+      nameEntry = scriptNames[this->value];
+    }
+    limit = longName ? 2 : 1;
+    break;
+  case Name::Lone:
+    if (this->value >= UCP_LONE_PROPERTY_PRIME_INTERNAL_SIZE &&
+        this->value < UCP_LONE_PROPERTY_SIZE) {
+      nameEntry = loneNames[this->value - UCP_LONE_PROPERTY_PRIME_INTERNAL_SIZE];
+    }
+    limit = longName ? 1 : 2;
+    break;
+  }
+  StringRef ret;
+  unsigned int count = 0;
+  splitByDelim(nameEntry, '|', [&count, &limit, &ret](StringRef ref, bool) {
+    ret = ref;
+    return ++count < limit;
+  });
+  if (count == limit) {
+    return ret;
+  }
+  return "";
 }
 
 Optional<Property> parseProperty(StringRef name, StringRef value, std::string *err) {
