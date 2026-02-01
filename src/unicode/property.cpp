@@ -330,6 +330,24 @@ static auto initLoneNameMap() {
   return map;
 }
 
+StringRef toString(Lone lone, bool longName) {
+  if (const auto i = toUnderlying(lone);
+      i >= UCP_LONE_PROPERTY_PRIME_INTERNAL_SIZE && i < UCP_LONE_PROPERTY_SIZE) {
+    unsigned int index = i - UCP_LONE_PROPERTY_PRIME_INTERNAL_SIZE;
+    StringRef name;
+    unsigned int count = 0;
+    const unsigned int limit = longName ? 1 : 2;
+    splitByDelim(loneNames[index], '|', [&count, &limit, &name](StringRef ref, bool) {
+      name = ref;
+      return ++count < limit;
+    });
+    if (count == limit) {
+      return name;
+    }
+  }
+  return "";
+}
+
 constexpr unsigned int primeLoneTableSize() { return std::size(lone_set_prime_table_offset); }
 
 static CodePointSetRef getLonePrimeTable(unsigned int index) {

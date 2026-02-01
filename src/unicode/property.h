@@ -63,6 +63,8 @@ enum class Lone : unsigned char {
 #undef GEN_ENUM
 };
 
+StringRef toString(Lone lone, bool longName = true);
+
 // Unicode Property api
 
 #define EACH_UCP_PROPERTY_NAME(E)                                                                  \

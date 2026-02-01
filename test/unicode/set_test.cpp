@@ -223,6 +223,39 @@ TEST(UCPTest, category) {
   ASSERT_EQ(ucp::Category::Me, ucp::parseCategory("Me").unwrap());
 }
 
+TEST(UCPTest, script) {
+  ASSERT_EQ("Kana", ucp::toString(ucp::Script::Kana, false));
+  ASSERT_EQ("Katakana", ucp::toString(ucp::Script::Kana));
+  ASSERT_EQ(ucp::Script::Kana, ucp::parseScript("Kana").unwrap());
+  ASSERT_EQ(ucp::Script::Kana, ucp::parseScript("Katakana").unwrap());
+
+  ASSERT_EQ("Zinh", ucp::toString(ucp::Script::Zinh, false));
+  ASSERT_EQ("Inherited", ucp::toString(ucp::Script::Zinh, true));
+  ASSERT_EQ(ucp::Script::Zinh, ucp::parseScript("Zinh").unwrap());
+  ASSERT_EQ(ucp::Script::Zinh, ucp::parseScript("Inherited").unwrap());
+  ASSERT_EQ(ucp::Script::Zinh, ucp::parseScript("Qaai").unwrap());
+}
+
+TEST(UCPTest, lone) {
+  ASSERT_EQ("Bidi_M", ucp::toString(ucp::Lone::Bidi_Mirrored, false));
+  ASSERT_EQ("Bidi_Mirrored", ucp::toString(ucp::Lone::Bidi_Mirrored, true));
+  ASSERT_EQ(ucp::Lone::Bidi_Mirrored,
+            static_cast<ucp::Lone>(ucp::parseProperty("Bidi_M", nullptr).unwrap().getValue()));
+  ASSERT_EQ(
+      ucp::Lone::Bidi_Mirrored,
+      static_cast<ucp::Lone>(ucp::parseProperty("Bidi_Mirrored", nullptr).unwrap().getValue()));
+
+  ASSERT_EQ("Cased", ucp::toString(ucp::Lone::Cased, true));
+  ASSERT_EQ("", ucp::toString(ucp::Lone::Cased, false)); // not found short name
+  ASSERT_EQ(ucp::Lone::Cased,
+            static_cast<ucp::Lone>(ucp::parseProperty("Cased", nullptr).unwrap().getValue()));
+
+  // internal property
+  ASSERT_EQ("", ucp::toString(ucp::Lone::Other_Alphabetic, true));
+  ASSERT_EQ("", ucp::toString(ucp::Lone::Other_Alphabetic, false));
+  ASSERT_FALSE(ucp::parseProperty("Other_Alphabetic", nullptr).hasValue());
+}
+
 static void addRange(CodePointSetBuilder &builder, const int first, const int last) {
   int newFirst = std::max(0, std::min(first, last));
   int newLast = std::min(UnicodeUtil::CODE_POINT_MAX, std::max(first, last));
