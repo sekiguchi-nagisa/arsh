@@ -235,6 +235,19 @@ if (BUILD_SHARED_LIB)
     set_target_properties(unicode PROPERTIES POSITION_INDEPENDENT_CODE ON)
 endif ()
 
+#===============#
+#     regex     #
+#===============#
+
+add_library(regex STATIC
+        src/regex/parser.cpp
+        src/regex/dump.cpp
+)
+target_link_libraries(regex unicode)
+if (BUILD_SHARED_LIB)
+    set_target_properties(regex PROPERTIES POSITION_INDEPENDENT_CODE ON)
+endif ()
+
 #=================#
 #     libarsh     #
 #=================#
