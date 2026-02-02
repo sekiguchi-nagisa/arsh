@@ -78,8 +78,17 @@ int main(int argc, char **argv) {
 
   EmojiRadixTree tree;
   for (auto [p, codes] : emoji_seq_table) {
-    tree.add(codes.toUTF8(), p);
+    auto str = codes.toUTF8();
+    if (!tree.add(str, p)) {
+      fatal("cannot insert emoji seq: %s", str.c_str());
+    }
   }
   auto buf = serialize(tree);
+  for (auto [p, codes] : emoji_seq_table) {
+    auto str = codes.toUTF8();
+    if (lookupRGIEmojiSeqFrom(str, buf.data(), buf.size()) != p) {
+      fatal("cannot lookup emoji seq: %s", str.c_str());
+    }
+  }
   return emit(fp, argv[0], buf);
 }
