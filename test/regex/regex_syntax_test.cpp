@@ -161,6 +161,64 @@ pattern:
       token: (pos = 3, size = 1)
       codePoint: U+0063, c
 )"},
+
+    // ^
+    {"start1", "^", "", R"(
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Boundary
+  token: (pos = 0, size = 1)
+  boundary: START
+)"},
+    {"start2", "^", "u", R"(
+flag: (mode = u, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Boundary
+  token: (pos = 0, size = 1)
+  boundary: START
+)"},
+    {"start3", "^", "v", R"(
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Boundary
+  token: (pos = 0, size = 1)
+  boundary: START
+)"},
+
+    // $
+    {"end1", "$", "", R"(
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Boundary
+  token: (pos = 0, size = 1)
+  boundary: END
+)"},
+{"end2", "$", "u", R"(
+flag: (mode = u, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Boundary
+  token: (pos = 0, size = 1)
+  boundary: END
+)"},
+{"end3", "$", "v", R"(
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Boundary
+  token: (pos = 0, size = 1)
+  boundary: END
+)"},
 };
 INSTANTIATE_TEST_SUITE_P(base, SyntaxTreeTest, ::testing::ValuesIn(syntaxBaseCases));
 
@@ -373,7 +431,243 @@ pattern:
   token: (pos = 0, size = 2)
   boundary: WORD
 )"},
+
     // \B
+    {"esc-B1", "\\B", "", R"(
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Boundary
+  token: (pos = 0, size = 2)
+  boundary: NOT_WORD
+)"},
+    {"esc-B2", "\\B", "u", R"(
+flag: (mode = u, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Boundary
+  token: (pos = 0, size = 2)
+  boundary: NOT_WORD
+)"},
+    {"esc-B3", "\\B", "v", R"(
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Boundary
+  token: (pos = 0, size = 2)
+  boundary: NOT_WORD
+)"},
+    // \d
+    {"esc-d1", "\\d", "", R"(
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Property
+  token: (pos = 0, size = 2)
+  property: DIGIT
+  value: 0
+  invert: false
+)"},
+    {"esc-d2", "\\d", "u", R"(
+flag: (mode = u, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Property
+  token: (pos = 0, size = 2)
+  property: DIGIT
+  value: 0
+  invert: false
+)"},
+    {"esc-d3", "\\d", "v", R"(
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Property
+  token: (pos = 0, size = 2)
+  property: DIGIT
+  value: 0
+  invert: false
+)"},
+    // \D
+    {"esc-D1", "\\D", "", R"(
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Property
+  token: (pos = 0, size = 2)
+  property: NOT_DIGIT
+  value: 0
+  invert: true
+)"},
+    {"esc-D2", "\\D", "u", R"(
+flag: (mode = u, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Property
+  token: (pos = 0, size = 2)
+  property: NOT_DIGIT
+  value: 0
+  invert: true
+)"},
+    {"esc-D3", "\\D", "v", R"(
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Property
+  token: (pos = 0, size = 2)
+  property: NOT_DIGIT
+  value: 0
+  invert: true
+)"},
+
+    // \s
+    {"esc-s1", "\\s", "", R"(
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Property
+  token: (pos = 0, size = 2)
+  property: SPACE
+  value: 0
+  invert: false
+)"},
+    {"esc-s2", "\\s", "u", R"(
+flag: (mode = u, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Property
+  token: (pos = 0, size = 2)
+  property: SPACE
+  value: 0
+  invert: false
+)"},
+    {"esc-s3", "\\s", "v", R"(
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Property
+  token: (pos = 0, size = 2)
+  property: SPACE
+  value: 0
+  invert: false
+)"},
+
+    // \S
+    {"esc-S1", "\\S", "", R"(
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Property
+  token: (pos = 0, size = 2)
+  property: NOT_SPACE
+  value: 0
+  invert: true
+)"},
+    {"esc-S2", "\\S", "u", R"(
+flag: (mode = u, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Property
+  token: (pos = 0, size = 2)
+  property: NOT_SPACE
+  value: 0
+  invert: true
+)"},
+    {"esc-S3", "\\S", "v", R"(
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Property
+  token: (pos = 0, size = 2)
+  property: NOT_SPACE
+  value: 0
+  invert: true
+)"},
+
+    // \w
+    {"esc-w1", "\\w", "", R"(
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Property
+  token: (pos = 0, size = 2)
+  property: WORD
+  value: 0
+  invert: false
+)"},
+    {"esc-w2", "\\w", "u", R"(
+flag: (mode = u, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Property
+  token: (pos = 0, size = 2)
+  property: WORD
+  value: 0
+  invert: false
+)"},
+    {"esc-w3", "\\w", "v", R"(
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Property
+  token: (pos = 0, size = 2)
+  property: WORD
+  value: 0
+  invert: false
+)"},
+
+    // \W
+    {"esc-W1", "\\W", "", R"(
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Property
+  token: (pos = 0, size = 2)
+  property: NOT_WORD
+  value: 0
+  invert: true
+)"},
+    {"esc-W2", "\\W", "u", R"(
+flag: (mode = u, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Property
+  token: (pos = 0, size = 2)
+  property: NOT_WORD
+  value: 0
+  invert: true
+)"},
+    {"esc-W3", "\\W", "v", R"(
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Property
+  token: (pos = 0, size = 2)
+  property: NOT_WORD
+  value: 0
+  invert: true
+)"},
 };
 INSTANTIATE_TEST_SUITE_P(atomEscape2, SyntaxTreeTest, ::testing::ValuesIn(syntaxAtomEscape2Cases));
 
@@ -966,6 +1260,201 @@ pattern:
 };
 INSTANTIATE_TEST_SUITE_P(UnicodeEscape2, SyntaxTreeTest,
                          ::testing::ValuesIn(syntaxUnicodeEscape2Cases));
+
+static constexpr SyntaxTreeTestEntry syntaxUnicodePropertyCases[] = {
+    {"esc-p-1", "\\p", "", R"(
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Char
+  token: (pos = 0, size = 2)
+  codePoint: U+0070, p
+)"},
+    {"esc-p-2", "\\p", "u", {{0, 2}, "invalid unicode property escape: `\\p'"}},
+    {"esc-p-3", "\\p", "v", {{0, 2}, "invalid unicode property escape: `\\p'"}},
+
+    {"esc-P{-1", "\\P{", "", R"(
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Seq
+  token: (pos = 0, size = 3)
+  patterns:
+    - kind: Char
+      token: (pos = 0, size = 2)
+      codePoint: U+0050, P
+    - kind: Char
+      token: (pos = 2, size = 1)
+      codePoint: U+007B, {
+)"},
+    {"esc-P{-2", "\\P{", "u", {{0, 3}, "invalid unicode property escape: `\\P{'"}},
+    {"esc-P{-3", "\\P{", "v", {{0, 3}, "invalid unicode property escape: `\\P{'"}},
+
+    {"esc-p{C-1", "\\p{C", "", R"(
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Seq
+  token: (pos = 0, size = 4)
+  patterns:
+    - kind: Char
+      token: (pos = 0, size = 2)
+      codePoint: U+0070, p
+    - kind: Char
+      token: (pos = 2, size = 1)
+      codePoint: U+007B, {
+    - kind: Char
+      token: (pos = 3, size = 1)
+      codePoint: U+0043, C
+)"},
+    {"esc-p{C-2", "\\p{C", "u", {{0, 4}, "invalid unicode property escape: `\\p{C'"}},
+    {"esc-p{C-3", "\\p{C", "v", {{0, 4}, "invalid unicode property escape: `\\p{C'"}},
+
+    {"esc-p{あ}-1", "\\p{あ}", "", R"(
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Seq
+  token: (pos = 0, size = 7)
+  patterns:
+    - kind: Char
+      token: (pos = 0, size = 2)
+      codePoint: U+0070, p
+    - kind: Char
+      token: (pos = 2, size = 1)
+      codePoint: U+007B, {
+    - kind: Char
+      token: (pos = 3, size = 3)
+      codePoint: U+3042, あ
+    - kind: Char
+      token: (pos = 6, size = 1)
+      codePoint: U+007D, }
+)"},
+    {"esc-p{あ}-2", "\\p{あ}", "u", {{0, 7}, "unrecognized property value: あ"}},
+    {"esc-p{あ}-3", "\\p{あ}", "v", {{0, 7}, "unrecognized property value: あ"}},
+
+    {"esc-p{Co}-1", "\\p{Co}", "", R"(
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Seq
+  token: (pos = 0, size = 6)
+  patterns:
+    - kind: Char
+      token: (pos = 0, size = 2)
+      codePoint: U+0070, p
+    - kind: Char
+      token: (pos = 2, size = 1)
+      codePoint: U+007B, {
+    - kind: Char
+      token: (pos = 3, size = 1)
+      codePoint: U+0043, C
+    - kind: Char
+      token: (pos = 4, size = 1)
+      codePoint: U+006F, o
+    - kind: Char
+      token: (pos = 5, size = 1)
+      codePoint: U+007D, }
+)"},
+    {"esc-p{Co}-2", "\\p{Co}", "u", R"(
+flag: (mode = u, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Property
+  token: (pos = 0, size = 6)
+  property: UNICODE
+  value: gc=Private_Use
+  invert: false
+)"},
+    {"esc-p{Co}-3", "\\p{Co}", "v", R"(
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Property
+  token: (pos = 0, size = 6)
+  property: UNICODE
+  value: gc=Private_Use
+  invert: false
+)"},
+
+    {"esc-p{GC=C}-1", "\\p{GC=C}", "u", {{0, 8}, "unrecognized property name: GC"}},
+    {"esc-p{GC=C}-2", "\\p{GC=C}", "v", {{0, 8}, "unrecognized property name: GC"}},
+
+    {"esc-p{Arab}-1", " \\p{Arab}", "u", {{1, 8}, "unrecognized property value: Arab"}},
+    {"esc-p{Arab}-2", " \\p{Arab}", "v", {{1, 8}, "unrecognized property value: Arab"}},
+
+    {"esc-p{Script=Arab}-1", "\\p{Script=Arab}", "u", R"(
+flag: (mode = u, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Property
+  token: (pos = 0, size = 15)
+  property: UNICODE
+  value: sc=Arabic
+  invert: false
+)"},
+    {"esc-p{Script=Arab}-2", "\\p{Script=Arab}", "vi", R"(
+flag: (mode = v, modifier = i)
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Property
+  token: (pos = 0, size = 15)
+  property: UNICODE
+  value: sc=Arabic
+  invert: false
+)"},
+
+    {"esc-P{Term}-1", "\\P{Term}", "u", R"(
+flag: (mode = u, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Property
+  token: (pos = 0, size = 8)
+  property: NOT_UNICODE
+  value: Terminal_Punctuation
+  invert: true
+)"},
+    {"esc-P{Term}-2", "\\P{Term}", "v", R"(
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Property
+  token: (pos = 0, size = 8)
+  property: NOT_UNICODE
+  value: Terminal_Punctuation
+  invert: true
+)"},
+
+    {"esc-p{RGI_Emoji}-1",
+     "\\p{RGI_Emoji}",
+     "u",
+     {{0, 13}, "unrecognized property value: RGI_Emoji"}},
+    {"esc-p{RGI_Emoji}-2", "\\p{RGI_Emoji}", "v", R"(
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Property
+  token: (pos = 0, size = 13)
+  property: EMOJI
+  value: RGI_Emoji
+  invert: false
+)"},
+};
+
+INSTANTIATE_TEST_SUITE_P(UnicodeProperty, SyntaxTreeTest,
+                         ::testing::ValuesIn(syntaxUnicodePropertyCases));
 
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);

@@ -250,13 +250,13 @@ void TreeDumper::dumpRaw(const PropertyNode &node) {
     auto p = node.getUCP();
     switch (p.getName()) {
     case ucp::Property::Name::General_Category:
-      str += "gc=";
+      str = "gc=";
       break;
     case ucp::Property::Name::Script:
-      str += "sc=";
+      str = "sc=";
       break;
     case ucp::Property::Name::Script_Extensions:
-      str += "scx=";
+      str = "scx=";
       break;
     case ucp::Property::Name::Lone:
       break;
@@ -264,6 +264,8 @@ void TreeDumper::dumpRaw(const PropertyNode &node) {
     str += p.toStringValue(true);
   } else if (t == PropertyNode::Type::EMOJI) {
     str = ucp::toString(node.getEmojiSeq());
+  } else {
+    str = "0";
   }
   this->dump("value", str.c_str());
   this->dump("invert", node.isInvert());

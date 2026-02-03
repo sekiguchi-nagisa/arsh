@@ -478,10 +478,8 @@ INVALID:
 
 std::unique_ptr<BackRefNode> Parser::parseNamedBackRef() { // TODO
   const auto old = this->iter;
-  assert(!this->isEnd() && *this->iter == '\\');
-  this->iter++;
-  assert(!this->isEnd() && *this->iter == 'k');
-  this->iter++;
+  assert(this->startsWith("\\k"));
+  this->iter += 2;
   (void)old;
   return nullptr;
 }
