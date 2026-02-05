@@ -201,7 +201,7 @@ pattern:
   token: (pos = 0, size = 1)
   boundary: END
 )"},
-{"end2", "$", "u", R"(
+    {"end2", "$", "u", R"(
 flag: (mode = u, modifier = )
 captureGroupCount: 0
 namedCaptureGroups: []
@@ -210,7 +210,7 @@ pattern:
   token: (pos = 0, size = 1)
   boundary: END
 )"},
-{"end3", "$", "v", R"(
+    {"end3", "$", "v", R"(
 flag: (mode = v, modifier = )
 captureGroupCount: 0
 namedCaptureGroups: []
@@ -1455,6 +1455,128 @@ pattern:
 
 INSTANTIATE_TEST_SUITE_P(UnicodeProperty, SyntaxTreeTest,
                          ::testing::ValuesIn(syntaxUnicodePropertyCases));
+
+static constexpr SyntaxTreeTestEntry syntaxNamedBackRefCases[] = {
+    {"ref1", "\\k", "", R"(
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Char
+  token: (pos = 0, size = 2)
+  codePoint: U+006B, k
+)"},
+    {"ref2", "\\k", "u", {{0, 2}, "\\k is not followed by <"}},
+    {"ref3", "\\k", "v", {{0, 2}, "\\k is not followed by <"}},
+    {"ref-<1", "\\k<", "", R"(
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Seq
+  token: (pos = 0, size = 3)
+  patterns:
+    - kind: Char
+      token: (pos = 0, size = 2)
+      codePoint: U+006B, k
+    - kind: Char
+      token: (pos = 2, size = 1)
+      codePoint: U+003C, <
+)"},
+    {"ref-<2", "\\k<", "u", {{2, 1}, "capture group name must contain valid identifier: `<'"}},
+    {"ref-<2-1", "\\k<2", "", R"(
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Seq
+  token: (pos = 0, size = 4)
+  patterns:
+    - kind: Char
+      token: (pos = 0, size = 2)
+      codePoint: U+006B, k
+    - kind: Char
+      token: (pos = 2, size = 1)
+      codePoint: U+003C, <
+    - kind: Char
+      token: (pos = 3, size = 1)
+      codePoint: U+0032, 2
+)"},
+    {"ref-<2-3", "\\k<2", "v", {{2, 2}, "capture group name must contain valid identifier: `<2'"}},
+    {"ref-<あ", "\\k<あ", "v", {{2, 4}, "unclosed capture group name: `<あ'"}},
+    {"ref-<あ@",
+     "\\k<あ@",
+     "v",
+     {{2, 5}, "capture group name must contain valid identifier: `<あ@'"}},
+    {"ref-<あ1", "\\k<あ1", "v", {{2, 5}, "unclosed capture group name: `<あ1'"}},
+    {"ref-esc", "\\k<\\", "u", {{3, 1}, "invalid unicode escape: `\\'"}},
+    {"ref-esc-u", "\\k<\\u", "u", {{3, 2}, "invalid unicode escape: `\\u'"}},
+    {"ref-esc-u{", "\\k<\\u{", "u", {{3, 3}, "invalid unicode escape: `\\u{'"}},
+    {"ref-esc-u",
+     "\\k<\\uEEEE",
+     "u",
+     {{2, 7}, "capture group name must contain valid identifier: `<\xEE\xBB\xAE'"}},
+
+    {"ref-あ1-1", "\\k<あ1>", "", R"(
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Seq
+  token: (pos = 0, size = 8)
+  patterns:
+    - kind: Char
+      token: (pos = 0, size = 2)
+      codePoint: U+006B, k
+    - kind: Char
+      token: (pos = 2, size = 1)
+      codePoint: U+003C, <
+    - kind: Char
+      token: (pos = 3, size = 3)
+      codePoint: U+3042, あ
+    - kind: Char
+      token: (pos = 6, size = 1)
+      codePoint: U+0031, 1
+    - kind: Char
+      token: (pos = 7, size = 1)
+      codePoint: U+003E, >
+)"},
+    {"ref-あ1-2", "\\k<あ1>", "u", {{0, 8}, "undefined capture group name: `<あ1>'"}},
+    {"ref-あ1-3", "\\k<あ1>", "v", {{0, 8}, "undefined capture group name: `<あ1>'"}},
+
+    {"ref-u3042-1", "\\k<\\u30421>", "", R"(
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Seq
+  token: (pos = 0, size = 8)
+  patterns:
+    - kind: Char
+      token: (pos = 0, size = 2)
+      codePoint: U+006B, k
+    - kind: Char
+      token: (pos = 2, size = 1)
+      codePoint: U+003C, <
+    - kind: Char
+      token: (pos = 3, size = 3)
+      codePoint: U+3042, あ
+    - kind: Char
+      token: (pos = 6, size = 1)
+      codePoint: U+0031, 1
+    - kind: Char
+      token: (pos = 7, size = 1)
+      codePoint: U+003E, >
+)"},
+    {"ref-u30421-2", "\\k<\\u30421>", "u", {{0, 11}, "undefined capture group name: `<あ1>'"}},
+    {"ref-u30421-3", "\\k<\\u30421>", "v", {{0, 11}, "undefined capture group name: `<あ1>'"}},
+
+    //     {"ref-u{3042}1-1", "\\k<\\u{3042}1>", "", R"(
+    // )"}, //TODO: fix repeat
+    {"ref-u{3042}1-2", "\\k<\\u{3042}1>", "v", {{0, 13}, "undefined capture group name: `<あ1>'"}},
+};
+INSTANTIATE_TEST_SUITE_P(NamedBackRef, SyntaxTreeTest,
+                         ::testing::ValuesIn(syntaxNamedBackRefCases));
 
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);

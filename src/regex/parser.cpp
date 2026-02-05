@@ -58,6 +58,20 @@ void Parser::reportError(Token token, const char *fmt, ...) { // NOLINT
   free(str);
 }
 
+int Parser::nextValidCodePoint() {
+  int codePoint = -1;
+  if (unsigned int len = UnicodeUtil::utf8ToCodePoint(this->iter, this->end(), codePoint)) {
+    if (!UnicodeUtil::isValidCodePoint(codePoint)) {
+      this->reportError(this->curToken(len), "invalid UTF-8 (surrogate): `U+%04X'", codePoint);
+      return -1;
+    }
+    this->iter += len;
+  } else {
+    this->reportError(this->curToken(), "invalid UTF-8 byte: `%02X'", *this->iter);
+  }
+  return codePoint;
+}
+
 static void append(std::unique_ptr<Node> &node, std::unique_ptr<Node> &&tmp) {
   if (!node) {
     node = std::move(tmp);
@@ -162,17 +176,17 @@ std::unique_ptr<Node> Parser::parse() {
     }
 
   CHAR:
-    int codePoint = -1;
-    if (unsigned int len = UnicodeUtil::utf8ToCodePoint(this->iter, this->end(), codePoint)) {
-      append(node, std::make_unique<CharNode>(this->curToken(len), codePoint));
-      this->iter += len;
+    const auto old = this->iter;
+    if (int codePoint = this->nextValidCodePoint(); codePoint > -1) {
+      append(node, std::make_unique<CharNode>(this->getTokenFrom(old), codePoint));
     } else {
-      this->reportError(this->curToken(), "invalid UTF-8 byte: `%02x'", *this->iter);
       return nullptr;
     }
   }
   if (!node) {
     node = std::make_unique<EmptyNode>(this->curPos());
+  } else if (isa<AltNode>(*node) && !cast<AltNode>(*node).getPatterns().back()) {
+    cast<AltNode>(*node).appendToLast(std::make_unique<EmptyNode>(this->curPos()));
   }
   return node;
 }
@@ -244,7 +258,7 @@ std::unique_ptr<Node> Parser::parseAtomEscape() {
       codePoint = '\0';
       goto CHAR;
     }
-    return std::make_unique<BackRefNode>(this->getTokenFrom(start), tmp, false);
+    return std::make_unique<BackRefNode>(this->getTokenFrom(start), tmp.toString(), false);
   }
   case 'b':
     this->iter++;
@@ -325,17 +339,17 @@ std::unique_ptr<Node> Parser::parseAtomEscape() {
       codePoint = static_cast<unsigned char>(*this->iter++);
       goto CHAR;
     }
-    if (unsigned int len = UnicodeUtil::utf8ToCodePoint(this->iter, this->end(), codePoint)) {
-      StringRef tmp(this->iter, len);
-      this->iter += len;
+    codePoint = this->nextValidCodePoint();
+    if (codePoint > -1) {
       if (this->flag.is(Mode::BMP)) {
         goto CHAR;
       }
-      this->reportError(this->getTokenFrom(start), "invalid escape: `\\%s'",
-                        tmp.toString().c_str());
+      char data[5];
+      unsigned int len = UnicodeUtil::codePointToUtf8(codePoint, data);
+      data[len] = '\0';
+      this->reportError(this->getTokenFrom(start), "invalid escape: `\\%s'", data);
       return nullptr;
     }
-    this->reportError(this->curToken(), "invalid UTF-8 byte: `%02x'", *this->iter);
     return nullptr;
   }
 
@@ -364,6 +378,9 @@ int Parser::parseUnicodeEscapeBMP(const bool ignoreError) {
   }
 
 INVALID:
+  if (this->startsWith("\\")) {
+    this->iter++;
+  }
   if (!ignoreError) {
     this->reportError(this->getTokenFrom(old), "invalid unicode escape: `%s'",
                       StringRef(old, this->iter - old).toString().c_str());
@@ -476,18 +493,250 @@ INVALID:
   return nullptr;
 }
 
-std::unique_ptr<BackRefNode> Parser::parseNamedBackRef() { // TODO
+std::unique_ptr<Node> Parser::parseNamedBackRef() {
   const auto old = this->iter;
   assert(this->startsWith("\\k"));
   this->iter += 2;
-  (void)old;
-  return nullptr;
+  auto name = this->parseCaptureGroupName(old, this->flag.is(Mode::BMP));
+  if (name.empty()) {
+    if (this->flag.is(Mode::BMP)) {
+      this->iter = old + 2;
+      return std::make_unique<CharNode>(this->getTokenFrom(old), 'k');
+    }
+    return nullptr;
+  }
+  return std::make_unique<BackRefNode>(this->getTokenFrom(old), std::move(name), true);
 }
 
-std::string Parser::parseCaptureGroupName() { // TODO
-  std::string name;
+static bool isJSIdStartAscii(int codePoint) {
+  return (codePoint >= 'a' && codePoint <= 'z') || (codePoint >= 'A' && codePoint <= 'Z') ||
+         codePoint == '_' || codePoint == '$';
+}
 
+static bool isJSIdStart(CodePointSet &cache, const int codePoint) {
+  if (codePoint <= 127) { // fast-path
+    return isJSIdStartAscii(codePoint);
+  }
+  if (!cache) { // uninitialized
+    cache = ucp::getPropertySet(ucp::Property::lone(ucp::Lone::ID_Start));
+    assert(cache);
+  }
+  return cache.ref().contains(codePoint);
+}
+
+static bool isJSIdContinue(CodePointSet &cache, const int codePoint) {
+  if (codePoint <= 127) { // fast-path
+    return isJSIdStartAscii(codePoint) || (codePoint >= '0' && codePoint <= '9');
+  }
+  if (!cache) { // uninitialized
+    cache = ucp::getPropertySet(ucp::Property::lone(ucp::Lone::ID_Continue));
+    assert(cache);
+  }
+  return cache.ref().contains(codePoint);
+}
+
+static void appendCodePoint(std::string &out, int codePoint) {
+  assert(UnicodeUtil::isValidCodePoint(codePoint));
+  char b[4];
+  unsigned int len = UnicodeUtil::codePointToUtf8(codePoint, b);
+  out.append(b, len);
+}
+
+#define TRY_CP(E)                                                                                  \
+  ({                                                                                               \
+    if (this->isEnd()) {                                                                           \
+      goto END;                                                                                    \
+    }                                                                                              \
+    int cp__ = (E);                                                                                \
+    if (cp__ < 0) {                                                                                \
+      return "";                                                                                   \
+    }                                                                                              \
+    cp__;                                                                                          \
+  })
+
+std::string Parser::parseCaptureGroupName(const char *prefixStart, const bool ignoreError) {
+  const auto old = this->iter;
+  if (!this->startsWith("<")) {
+    if (!ignoreError) {
+      StringRef prefix(prefixStart, old - prefixStart);
+      this->reportError(this->getTokenFrom(prefixStart), "%s is not followed by <",
+                        prefix.toString().c_str());
+    }
+    return "";
+  }
+  this->iter++;
+
+  std::string name = "<";
+
+  // ID_Start
+  int codePoint = TRY_CP(this->nextValidCodePoint());
+  if (codePoint == '>') {
+    name += '>';
+    goto INVALID;
+  }
+  if (codePoint == '\\') {
+    this->iter--;
+    codePoint = TRY_CP(this->parseUnicodeEscape(ignoreError));
+  }
+  appendCodePoint(name, codePoint);
+  if (!isJSIdStart(this->idStartSet, codePoint)) {
+    goto INVALID;
+  }
+
+  // // ID_Continue
+  while (true) {
+    codePoint = TRY_CP(this->nextValidCodePoint());
+    if (codePoint == '>') {
+      name += '>';
+      break;
+    }
+    if (codePoint == '\\') {
+      this->iter--;
+      codePoint = TRY_CP(this->parseUnicodeEscape(ignoreError));
+    }
+    appendCodePoint(name, codePoint);
+    if (!isJSIdContinue(this->idContinueSet, codePoint)) {
+      goto INVALID;
+    }
+  }
   return name;
+
+END:
+  if (name != "<") {
+    if (!ignoreError) {
+      this->reportError(this->getTokenFrom(old), "unclosed capture group name: `%s'", name.c_str());
+    }
+    return "";
+  }
+
+INVALID:
+  if (!ignoreError) {
+    this->reportError(this->getTokenFrom(old),
+                      "capture group name must contain valid identifier: `%s'", name.c_str());
+  }
+  return "";
+}
+
+bool Parser::check(std::unique_ptr<Node> &node) {
+  bool r = this->checkBackRef(node); // TODO: more extra syntax check
+  if (this->overflow) {
+    this->reportOverflow();
+    return false;
+  }
+  return r;
+}
+
+#define GOTO_NEXT(FS, F)                                                                           \
+  do {                                                                                             \
+    (FS).back().index++;                                                                           \
+    (FS).push(F);                                                                                  \
+    if ((FS).size() == STACK_DEPTH_LIMIT) {                                                        \
+      this->overflow = true;                                                                       \
+      return false;                                                                                \
+    }                                                                                              \
+    goto NEXT;                                                                                     \
+  } while (false)
+
+static std::vector<std::unique_ptr<Node>> split(const BackRefNode &refNode) {
+  std::vector<std::unique_ptr<Node>> nodes;
+  if (refNode.isNamed()) {
+    // \k
+    Token token = {refNode.getToken().pos, 2};
+    nodes.push_back(std::make_unique<CharNode>(token, 'k'));
+
+    // <identifier>
+    const char *iter = refNode.getName().c_str();
+    const char *end = refNode.getName().c_str() + refNode.getName().size();
+    while (iter != end) {
+      int codePoint = -1;
+      const unsigned int len = UnicodeUtil::utf8ToCodePoint(iter, end, codePoint);
+      assert(len);
+      iter += len;
+      token = {token.endPos(), len};
+      nodes.push_back(std::make_unique<CharNode>(token, codePoint));
+    }
+  } else { // TODO
+  }
+  return nodes;
+}
+
+bool Parser::checkBackRef(std::unique_ptr<Node> &node) {
+  for (this->checkerFrames.push(CheckerFrame(node)); this->checkerFrames.size();
+       this->checkerFrames.pop()) {
+  NEXT: {
+    auto &frame = this->checkerFrames.back();
+    auto &curNode = **frame.node;
+    if (isa<BackRefNode>(curNode) && frame.index == 0) {
+      auto &refNode = cast<BackRefNode>(curNode);
+      if (auto s = this->resolveCaptureGroup(refNode); s == BackRefResolveStatus::ERROR) {
+        return false;
+      } else if (s == BackRefResolveStatus::REPLACE) {
+        auto nodes = split(refNode);
+        auto seqNode = std::make_unique<SeqNode>(std::move(nodes[0]), std::move(nodes[1]));
+        for (unsigned int i = 2; i < nodes.size(); i++) {
+          seqNode->append(std::move(nodes[i]));
+        }
+        frame.node->reset(seqNode.release());
+      }
+      continue;
+    }
+    if (isa<NestedNode>(curNode) && frame.index == 0) {
+      auto &nestedNode = cast<NestedNode>(curNode);
+      if (auto *refNode = checked_cast<BackRefNode>(nestedNode.getPattern().get())) {
+        if (auto s = this->resolveCaptureGroup(*refNode); s == BackRefResolveStatus::ERROR) {
+          return false;
+        } else if (s == BackRefResolveStatus::REPLACE) {
+          auto nodes = split(*refNode);
+          auto seqNode = std::make_unique<SeqNode>(std::move(nodes[0]), std::move(nodes[1]));
+          for (unsigned int i = 2; i < nodes.size(); i++) {
+            seqNode->append(std::move(nodes[i]));
+          }
+          nestedNode.refPattern() = std::move(seqNode);
+        }
+        continue;
+      }
+      GOTO_NEXT(this->checkerFrames, CheckerFrame(nestedNode.refPattern()));
+    }
+    if (isa<ListNode>(curNode) && frame.index < cast<ListNode>(curNode).refPatterns().size()) {
+      auto &listNode = cast<ListNode>(curNode);
+      auto &cNode = listNode.refPatterns()[frame.index];
+      if (auto *refNode = checked_cast<BackRefNode>(cNode.get())) {
+        if (auto s = this->resolveCaptureGroup(*refNode); s == BackRefResolveStatus::ERROR) {
+          return false;
+        } else if (s == BackRefResolveStatus::REPLACE) {
+          auto nodes = split(*refNode);
+          listNode.refPatterns().erase(listNode.refPatterns().begin() + frame.index);
+          auto i = listNode.refPatterns().begin() + frame.index;
+          for (auto &e : nodes) {
+            i = listNode.refPatterns().insert(i, std::move(e));
+          }
+        }
+        frame.index++;
+        goto NEXT;
+      }
+      GOTO_NEXT(this->checkerFrames, CheckerFrame(cNode));
+    }
+  }
+  }
+  return true;
+}
+
+Parser::BackRefResolveStatus Parser::resolveCaptureGroup(BackRefNode &refNode) {
+  if (refNode.isNamed()) {
+    auto &name = refNode.getName();
+    if (auto i = this->namedCaptureGroups.find(name); i != this->namedCaptureGroups.end()) {
+      refNode.setGroupIndex(i->second);
+      return BackRefResolveStatus::OK;
+    }
+    if (this->flag.is(Mode::BMP)) {
+      return BackRefResolveStatus::REPLACE;
+    }
+    this->reportError(refNode.getToken(), "undefined capture group name: `%s'", name.c_str());
+    return BackRefResolveStatus::ERROR;
+  }
+  auto &value = refNode.getName(); // TODO: resolve index
+  this->reportError(refNode.getToken(), "capture group index is out-of-range: `%s'", value.c_str());
+  return BackRefResolveStatus::ERROR;
 }
 
 } // namespace arsh::regex

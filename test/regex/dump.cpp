@@ -29,7 +29,7 @@ static void usage(FILE *fp, char **argv) {
 static std::pair<unsigned int, unsigned int> formatLoc(StringRef src, Token token) {
   unsigned int line = 1;
   unsigned int lastLineOffset = 0;
-  for (unsigned int i = 0; i <= token.pos; i++) {
+  for (unsigned int i = 0; i <= token.pos && i < src.size(); i++) {
     if (src[i] == '\n') {
       lastLineOffset = i;
       line++;
@@ -63,8 +63,10 @@ int main(int argc, char **argv) {
   regex::Parser parser;
   auto tree = parser(pattern, flag.unwrap());
   if (parser.hasError()) {
-    auto [line, pos] = formatLoc(pattern, parser.getError()->token);
-    fprintf(stderr, "%d:%d [error] %s\n", line, pos, parser.getError()->message.c_str());
+    auto token = parser.getError()->token;
+    auto [line, pos] = formatLoc(pattern, token);
+    fprintf(stderr, "%d:%d [error] %s\n at %s\n", line, pos, parser.getError()->message.c_str(),
+            token.str().c_str());
     return 1;
   }
 

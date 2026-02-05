@@ -20,6 +20,7 @@
 #include <cstdlib>
 #include <limits>
 #include <type_traits>
+#include <utility>
 
 #include "fatal.h"
 #include "noncopyable.h"

@@ -17,6 +17,7 @@
 #ifndef ARSH_REGEX_PARSER_H
 #define ARSH_REGEX_PARSER_H
 
+#include "misc/inlined_stack.hpp"
 #include "misc/string_ref.hpp"
 
 #include "node.h"
@@ -32,13 +33,27 @@ public:
     Error(Token token, std::string &&message) : token(token), message(std::move(message)) {}
   };
 
+  struct CheckerFrame {
+    std::unique_ptr<Node> *node;
+    unsigned int index;
+
+    CheckerFrame() = default;
+
+    explicit CheckerFrame(std::unique_ptr<Node> &node) : node(&node), index(0) {}
+  };
+
 private:
+  static constexpr unsigned int STACK_DEPTH_LIMIT = 256;
+
   StringRef ref;
   const char *iter{nullptr};
   Flag flag;
+  bool overflow{false};
   unsigned int captureGroupCount{0};
   std::unordered_map<std::string, unsigned int> namedCaptureGroups;
   std::unique_ptr<Error> error{nullptr};
+
+  InlinedStack<CheckerFrame, 4> checkerFrames;
 
   CodePointSet idStartSet;
   CodePointSet idContinueSet;
@@ -49,10 +64,21 @@ public:
   SyntaxTree operator()(const StringRef src, const Flag f) {
     this->ref = src;
     this->flag = f;
+    this->overflow = false;
     this->captureGroupCount = 0;
     this->iter = this->begin();
     this->error.reset();
+    while (this->checkerFrames.size()) {
+      this->checkerFrames.pop();
+    }
+
+    // actual parse function
     auto node = this->parse();
+    if (node) {
+      if (!this->check(node)) {
+        node = nullptr;
+      }
+    }
     return {this->flag, this->captureGroupCount, std::move(node),
             std::move(this->namedCaptureGroups)};
   }
@@ -74,6 +100,10 @@ private:
 
   void reportError(Token token, const char *fmt, ...) __attribute__((format(printf, 3, 4)));
 
+  void reportOverflow() {
+    this->reportError(this->getTokenFrom(this->begin()), "deeply nested regular expression");
+  }
+
   const char *begin() const { return this->ref.begin(); }
 
   const char *end() const { return this->ref.end(); }
@@ -83,6 +113,8 @@ private:
   bool startsWith(StringRef prefix) const {
     return StringRef(this->iter, this->end() - this->iter).startsWith(prefix);
   }
+
+  int nextValidCodePoint();
 
   std::unique_ptr<Node> parse();
 
@@ -100,14 +132,35 @@ private:
 
   std::unique_ptr<PropertyNode> parseUnicodePropertyEscape();
 
-  std::unique_ptr<BackRefNode> parseNamedBackRef();
+  std::unique_ptr<Node> parseNamedBackRef();
 
   /**
-   * parse capture group name (never report error)
+   * parse capture group name
+   * @param prefixStart for error message
+   * @param ignoreError
    * @return
    * if error, return empty
    */
-  std::string parseCaptureGroupName();
+  std::string parseCaptureGroupName(const char *prefixStart, bool ignoreError);
+
+  // extra syntax check
+  bool check(std::unique_ptr<Node> &node);
+
+  /**
+   * check back reference indicate valid capture group name / index
+   * in BMP mode, if invalid name, replace it with char nodes
+   * @param node
+   * @return
+   */
+  bool checkBackRef(std::unique_ptr<Node> &node);
+
+  enum class BackRefResolveStatus : unsigned char {
+    OK,
+    ERROR,
+    REPLACE,
+  };
+
+  BackRefResolveStatus resolveCaptureGroup(BackRefNode &refNode);
 };
 
 } // namespace arsh::regex

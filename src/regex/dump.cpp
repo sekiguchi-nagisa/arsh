@@ -188,8 +188,13 @@ void TreeDumper::dumpRaw(const Node &node) {
     DUMP_ENUM("boundary", cast<BoundaryNode>(node).getType(), EACH_RE_BOUNDARY);
 #undef EACH_RE_BOUNDARY
     break;
-  case NodeKind::BackRef:
-    break; // TODO
+  case NodeKind::BackRef: {
+    auto &n = cast<BackRefNode>(node);
+    this->dump("name", n.getName());
+    this->dump("named", n.isNamed());
+    this->dumpAs("index", "%d", n.getGroupIndex());
+    break;
+  }
   case NodeKind::Repeat: {
     auto &n = cast<RepeatNode>(node);
     this->dumpAs("repeat", "(min = %d, max = %d)", n.getMin(), n.getMax());

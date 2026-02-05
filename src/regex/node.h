@@ -91,6 +91,100 @@ public:
   static bool classof(const Node *node) { return node->getKind() == K; }
 };
 
+class NestedNode : public Node {
+protected:
+  std::unique_ptr<Node> pattern;
+
+  NestedNode(NodeKind kind, Token token, std::unique_ptr<Node> &&pattern)
+      : Node(kind, token), pattern(std::move(pattern)) {}
+
+  NestedNode(NodeKind kind, std::unique_ptr<Node> &&pattern)
+      : Node(kind, pattern->getToken()), pattern(std::move(pattern)) {}
+
+public:
+  static bool classof(const Node *node) {
+    switch (node->getKind()) {
+    case NodeKind::Empty:
+    case NodeKind::Any:
+    case NodeKind::Char:
+    case NodeKind::CharClass:
+    case NodeKind::Property:
+    case NodeKind::Boundary:
+    case NodeKind::BackRef:
+    case NodeKind::Seq:
+    case NodeKind::Alt:
+      break;
+    case NodeKind::Repeat:
+    case NodeKind::LookAround:
+    case NodeKind::Group:
+      return true;
+    }
+    return false;
+  }
+
+  const auto &getPattern() const { return this->pattern; }
+
+  auto &refPattern() { return this->pattern; }
+};
+
+template <NodeKind K>
+class NestedNodeWithRtti : public NestedNode {
+protected:
+  NestedNodeWithRtti(Token token, std::unique_ptr<Node> &&pattern)
+      : NestedNode(K, token, std::move(pattern)) {}
+
+  explicit NestedNodeWithRtti(std::unique_ptr<Node> &&pattern)
+      : NestedNode(K, std::move(pattern)) {}
+
+public:
+  static constexpr auto KIND = K;
+
+  static bool classof(const Node *node) { return node->getKind() == K; }
+};
+
+class ListNode : public Node {
+protected:
+  std::vector<std::unique_ptr<Node>> patterns;
+
+  ListNode(NodeKind kind, Token token) : Node(kind, token) {}
+
+public:
+  static bool classof(const Node *node) {
+    switch (node->getKind()) {
+    case NodeKind::Empty:
+    case NodeKind::Any:
+    case NodeKind::Char:
+    case NodeKind::Property:
+    case NodeKind::Boundary:
+    case NodeKind::BackRef:
+    case NodeKind::Repeat:
+    case NodeKind::LookAround:
+    case NodeKind::Group:
+      break;
+    case NodeKind::CharClass:
+    case NodeKind::Seq:
+    case NodeKind::Alt:
+      return true;
+    }
+    return false;
+  }
+
+  const auto &getPatterns() const { return this->patterns; }
+
+  auto &refPatterns() { return this->patterns; }
+};
+
+template <NodeKind K>
+class ListNodeWithRtti : public ListNode {
+protected:
+  explicit ListNodeWithRtti(Token token) : ListNode(K, token) {}
+
+public:
+  static constexpr auto KIND = K;
+
+  static bool classof(const Node *node) { return node->getKind() == K; }
+};
+
 class EmptyNode : public NodeWithRtti<NodeKind::Empty> {
 public:
   explicit EmptyNode(unsigned int pos) : NodeWithRtti({pos, 0}) {}
@@ -108,25 +202,22 @@ public:
   int getCodePoint() const { return static_cast<int>(this->u32); }
 };
 
-class CharClassNode : public NodeWithRtti<NodeKind::CharClass> {
-private:
-  std::vector<std::unique_ptr<Node>> chars;
-
+class CharClassNode : public ListNodeWithRtti<NodeKind::CharClass> {
 public:
-  explicit CharClassNode(Token token, bool invert) : NodeWithRtti(token) {
+  explicit CharClassNode(Token token, bool invert) : ListNodeWithRtti(token) {
     this->u8 = invert ? 1 : 0;
   }
 
   void add(std::unique_ptr<Node> &&node) {
     this->updateToken(node->getToken());
-    this->chars.push_back(std::move(node));
+    this->patterns.push_back(std::move(node));
   }
 
   bool isInvert() const { return this->u8 == 1; }
 
-  const auto &getChars() const { return this->chars; }
+  const auto &getChars() const { return this->patterns; }
 
-  auto &refChars() { return this->chars; }
+  auto &refChars() { return this->patterns; }
 };
 
 class PropertyNode : public NodeWithRtti<NodeKind::Property> {
@@ -226,29 +317,32 @@ public:
 class BackRefNode : public NodeWithRtti<NodeKind::BackRef> {
 private:
   /**
-   * capture group name or digits
+   * capture group name (<name>) or index (digits)
    * in bmp mode, may indicate octal digits sequence
+   * (initial value maybe invalid group name or index)
    */
-  std::string name; // TODO: check group name
+  std::string name;
 
 public:
-  BackRefNode(Token token, StringRef ref, bool named) : NodeWithRtti(token), name(ref.toString()) {
+  BackRefNode(Token token, std::string &&name, bool named)
+      : NodeWithRtti(token), name(std::move(name)) {
     this->u8 = named ? 1 : 0;
   }
 
   bool isNamed() const { return this->u8 == 1; }
 
+  void setGroupIndex(unsigned int index) { this->u32 = index; }
+
+  unsigned int getGroupIndex() const { return this->u32; }
+
   const auto &getName() const { return this->name; }
 };
 
-class RepeatNode : public NodeWithRtti<NodeKind::Repeat> {
-private:
-  std::unique_ptr<Node> pattern;
-
+class RepeatNode : public NestedNodeWithRtti<NodeKind::Repeat> {
 public:
   RepeatNode(std::unique_ptr<Node> &&pattern, unsigned short min, unsigned short max, bool greedy,
              Token end)
-      : NodeWithRtti(pattern->getToken()), pattern(std::move(pattern)) {
+      : NestedNodeWithRtti(pattern->getToken(), std::move(pattern)) {
     this->updateToken(end);
     this->u8 = greedy ? 1 : 0;
     this->u16 = min;
@@ -260,17 +354,12 @@ public:
   unsigned short getMin() const { return this->u16; }
 
   unsigned short getMax() const { return this->u32; }
-
-  const auto &getPattern() const { return this->pattern; }
 };
 
-class SeqNode : public NodeWithRtti<NodeKind::Seq> {
-private:
-  std::vector<std::unique_ptr<Node>> patterns;
-
+class SeqNode : public ListNodeWithRtti<NodeKind::Seq> {
 public:
   SeqNode(std::unique_ptr<Node> &&left, std::unique_ptr<Node> &&right)
-      : NodeWithRtti(left->getToken()) {
+      : ListNodeWithRtti(left->getToken()) {
     this->append(std::move(left));
     this->append(std::move(right));
   }
@@ -279,16 +368,11 @@ public:
     this->updateToken(node->getToken());
     this->patterns.push_back(std::move(node));
   }
-
-  const auto &getPatterns() const { return this->patterns; }
 };
 
-class AltNode : public NodeWithRtti<NodeKind::Alt> {
-private:
-  std::vector<std::unique_ptr<Node>> patterns;
-
+class AltNode : public ListNodeWithRtti<NodeKind::Alt> {
 public:
-  explicit AltNode(std::unique_ptr<Node> &&node) : NodeWithRtti(node->getToken()) {
+  explicit AltNode(std::unique_ptr<Node> &&node) : ListNodeWithRtti(node->getToken()) {
     this->append(std::move(node));
   }
 
@@ -300,11 +384,9 @@ public:
   void appendNull() { this->patterns.push_back(nullptr); }
 
   void appendToLast(std::unique_ptr<Node> &&node);
-
-  const auto &getPatterns() const { return this->patterns; }
 };
 
-class LookAroundNode : public NodeWithRtti<NodeKind::LookAround> {
+class LookAroundNode : public NestedNodeWithRtti<NodeKind::LookAround> {
 public:
   enum class Type : unsigned char {
     LOOK_AHEAD,      // (?=pattern)
@@ -313,22 +395,16 @@ public:
     LOOK_BEHIND_NOT, // (?<!pattern)
   };
 
-private:
-  std::unique_ptr<Node> pattern;
-
-public:
   LookAroundNode(Token start, Type type, std::unique_ptr<Node> &&pattern, Token end)
-      : NodeWithRtti(start), pattern(std::move(pattern)) {
+      : NestedNodeWithRtti(start, std::move(pattern)) {
     this->u8 = toUnderlying(type);
     this->updateToken(end);
   }
 
   Type getType() const { return static_cast<Type>(this->u8); }
-
-  const auto &getPattern() const { return this->pattern; }
 };
 
-class GroupNode : public NodeWithRtti<NodeKind::Group> {
+class GroupNode : public NestedNodeWithRtti<NodeKind::Group> {
 public:
   enum class Type : unsigned char {
     CAPTURE,     // (pattern)
@@ -336,19 +412,13 @@ public:
     MODIFIER,    // (?ims-ims:pattern)
   };
 
-private:
-  std::unique_ptr<Node> pattern;
-
-public:
   GroupNode(Token start, Type type, std::unique_ptr<Node> &&pattern, Token end)
-      : NodeWithRtti(start), pattern(std::move(pattern)) {
+      : NestedNodeWithRtti(start, std::move(pattern)) {
     this->u8 = toUnderlying(type);
     this->updateToken(end);
   }
 
   Type getType() const { return static_cast<Type>(this->u8); }
-
-  const auto &getPattern() const { return this->pattern; }
 };
 
 class SyntaxTree {
