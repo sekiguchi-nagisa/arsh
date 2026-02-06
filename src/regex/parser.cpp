@@ -110,6 +110,7 @@ std::unique_ptr<Node> Parser::parse() {
   std::unique_ptr<Node> node;
 
   while (this->iter != this->end()) {
+    std::unique_ptr<Node> atomNode;
     switch (*this->iter) {
     case '^':
       append(node, std::make_unique<BoundaryNode>(this->curToken(), BoundaryNode::Type::START));
@@ -122,15 +123,19 @@ std::unique_ptr<Node> Parser::parse() {
     case '\\': {
       this->iter++;
       if (auto r = this->parseAtomEscape()) {
-        append(node, std::move(r));
-        continue;
+        if (isa<BoundaryNode>(*r)) {
+          append(node, std::move(r));
+          continue;
+        }
+        atomNode = std::move(r);
+        goto REPEAT;
       }
       return nullptr;
     }
     case '.':
-      append(node, std::make_unique<AnyNode>(this->curToken()));
+      atomNode = std::make_unique<AnyNode>(this->curToken());
       this->iter++;
-      continue;
+      goto REPEAT;
     case '*':
     case '+':
     case '?': {
@@ -138,25 +143,29 @@ std::unique_ptr<Node> Parser::parse() {
       return nullptr;
     }
     case '(':
-      break; // TODO
+      goto REPEAT; // TODO
     case ')':
       this->reportError(this->curToken(), "unmatched `)'");
       return nullptr;
     case '[':
-      break; // TODO
+      goto REPEAT; // TODO
     case ']':
       if (this->flag.isEitherUnicodeMode()) {
         this->reportError(this->curToken(), "unmatched `]'");
         return nullptr;
       }
-      goto CHAR;
+      atomNode = std::make_unique<CharNode>(this->curToken(), *this->iter);
+      this->iter++;
+      goto REPEAT;
     case '{':
     case '}':
       if (this->flag.isEitherUnicodeMode()) {
         this->reportError(this->curToken(), "lone quantifier bracket `%c'", *this->iter);
         return nullptr;
       }
-      goto CHAR;
+      atomNode = std::make_unique<CharNode>(this->curToken(), *this->iter);
+      this->iter++;
+      goto REPEAT;
     case '|':
       if (!node) {
         node = std::make_unique<EmptyNode>(this->curPos());
@@ -171,18 +180,24 @@ std::unique_ptr<Node> Parser::parse() {
       cast<AltNode>(*node).appendNull(); // for next alternative
       this->iter++;
       continue;
-    default:
-      break;
-    }
-
-  CHAR:
-    const auto old = this->iter;
-    if (int codePoint = this->nextValidCodePoint(); codePoint > -1) {
-      append(node, std::make_unique<CharNode>(this->getTokenFrom(old), codePoint));
-    } else {
+    default: {
+      const auto old = this->iter;
+      if (int codePoint = this->nextValidCodePoint(); codePoint > -1) {
+        atomNode = std::make_unique<CharNode>(this->getTokenFrom(old), codePoint);
+        goto REPEAT;
+      }
       return nullptr;
     }
+    }
+
+  REPEAT:
+    atomNode = this->tryToParseQuantifier(std::move(atomNode), this->flag.is(Mode::LEGACY));
+    if (!atomNode) {
+      return nullptr;
+    }
+    append(node, std::move(atomNode));
   }
+
   if (!node) {
     node = std::make_unique<EmptyNode>(this->curPos());
   } else if (isa<AltNode>(*node) && !cast<AltNode>(*node).getPatterns().back()) {
@@ -558,9 +573,8 @@ std::string Parser::parseCaptureGroupName(const char *prefixStart, const bool ig
   const auto old = this->iter;
   if (!this->startsWith("<")) {
     if (!ignoreError) {
-      StringRef prefix(prefixStart, old - prefixStart);
       this->reportError(this->getTokenFrom(prefixStart), "%s is not followed by <",
-                        prefix.toString().c_str());
+                        this->getStrRefFrom(prefixStart).toString().c_str());
     }
     return "";
   }
@@ -615,6 +629,132 @@ INVALID:
                       "capture group name must contain valid identifier: `%s'", name.c_str());
   }
   return "";
+}
+
+std::unique_ptr<Node> Parser::tryToParseQuantifier(std::unique_ptr<Node> &&node,
+                                                   const bool ignoreError) {
+  const auto old = this->iter;
+  bool greedy = true;
+  switch (*this->iter) {
+  case '?':
+    this->iter++;
+    if (this->startsWith("?")) {
+      this->iter++;
+      greedy = false;
+    }
+    return RepeatNode::option(std::move(node), greedy, this->getTokenFrom(old));
+  case '*':
+    this->iter++;
+    if (this->startsWith("?")) {
+      this->iter++;
+      greedy = false;
+    }
+    return RepeatNode::zeroOrMore(std::move(node), greedy, this->getTokenFrom(old));
+  case '+':
+    this->iter++;
+    if (this->startsWith("?")) {
+      this->iter++;
+      greedy = false;
+    }
+    return RepeatNode::oneOrMore(std::move(node), greedy, this->getTokenFrom(old));
+  case '{': {
+    this->iter++;
+    unsigned short min = 0;
+    if (auto ret = this->parseQuantifierDigits(old, ignoreError, ','); ret.hasValue()) {
+      min = ret.unwrap();
+    } else if (ignoreError) {
+      this->iter = old;
+      return std::move(node);
+    } else {
+      return nullptr;
+    }
+    unsigned int max = min;
+    if (this->isEnd()) {
+      if (ignoreError) {
+        this->iter = old;
+        return std::move(node);
+      }
+      this->reportError(this->getTokenFrom(old), "unclosed quantifier: `%s'",
+                        this->getStrRefFrom(old).toString().c_str());
+      return nullptr;
+    }
+    if (*this->iter == ',') {
+      this->iter++;
+      if (this->startsWith("}")) {
+        max = RepeatNode::UNLIMIT;
+      } else {
+        if (auto ret = this->parseQuantifierDigits(old, ignoreError, '}'); ret.hasValue()) {
+          max = ret.unwrap();
+        } else if (ignoreError) {
+          this->iter = old;
+          return std::move(node);
+        } else {
+          return nullptr;
+        }
+      }
+    }
+    if (!this->startsWith("}")) {
+      if (!this->isEnd()) {
+        this->iter++;
+      }
+      if (ignoreError) {
+        this->iter = old;
+        return std::move(node);
+      }
+      this->reportError(this->getTokenFrom(old), "unclosed quantifier: `%s'",
+                        this->getStrRefFrom(old).toString().c_str());
+      return nullptr;
+    }
+    this->iter++;
+    if (this->startsWith("?")) {
+      this->iter++;
+      greedy = false;
+    }
+    if (min > max) {
+      this->reportError(this->getTokenFrom(old), "numbers out of order in {} quantifier");
+      return nullptr;
+    }
+    return std::make_unique<RepeatNode>(std::move(node), min, max, greedy, this->getTokenFrom(old));
+  }
+  default:
+    return std::move(node);
+  }
+}
+
+Optional<unsigned short> Parser::parseQuantifierDigits(const char *prefixStart,
+                                                       const bool ignoreError, const char end) {
+  const auto old = this->iter;
+  std::string digits;
+  while (!this->isEnd() && *this->iter != end && *this->iter != '}') {
+    digits += *this->iter++;
+  }
+  if (digits.empty()) {
+    if (!this->isEnd()) {
+      this->iter++;
+    }
+    if (!ignoreError) {
+      this->reportError(this->getTokenFrom(prefixStart), "invalid quantifier: `%s'",
+                        this->getStrRefFrom(prefixStart).toString().c_str());
+    }
+    return {};
+  }
+
+  auto ret = convertToNum10<uint64_t>(digits.c_str(), digits.c_str() + digits.size());
+  if (!ret) {
+    if (!ignoreError) {
+      this->reportError(this->getTokenFrom(old), "must be positive decimal number: `%s'",
+                        digits.c_str());
+    }
+    return {};
+  }
+  if (ret.value > RepeatNode::QUANTIFIER_MAX) {
+    if (!ignoreError) {
+      this->reportError(this->getTokenFrom(old), "too large quantifier number: `%s'",
+                        digits.c_str());
+    }
+    return {};
+  }
+  return static_cast<unsigned short>(ret.value);
 }
 
 bool Parser::check(std::unique_ptr<Node> &node) {

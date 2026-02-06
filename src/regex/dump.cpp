@@ -197,7 +197,13 @@ void TreeDumper::dumpRaw(const Node &node) {
   }
   case NodeKind::Repeat: {
     auto &n = cast<RepeatNode>(node);
-    this->dumpAs("repeat", "(min = %d, max = %d)", n.getMin(), n.getMax());
+    std::string limit;
+    if (n.isUnlimited()) {
+      limit = "unlimited";
+    } else {
+      limit = std::to_string(n.getMax());
+    }
+    this->dumpAs("repeat", "(min = %d, max = %s)", n.getMin(), limit.c_str());
     this->dump("greedy", n.isGreedy());
     this->dump("pattern", *n.getPattern());
     break;

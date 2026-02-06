@@ -98,6 +98,8 @@ private:
     return token;
   }
 
+  StringRef getStrRefFrom(const char *begin) const { return StringRef(begin, this->iter - begin); }
+
   void reportError(Token token, const char *fmt, ...) __attribute__((format(printf, 3, 4)));
 
   void reportOverflow() {
@@ -142,6 +144,11 @@ private:
    * if error, return empty
    */
   std::string parseCaptureGroupName(const char *prefixStart, bool ignoreError);
+
+  std::unique_ptr<Node> tryToParseQuantifier(std::unique_ptr<Node> &&node, bool ignoreError);
+
+  Optional<unsigned short> parseQuantifierDigits(const char *prefixStart, bool ignoreError,
+                                                 char end);
 
   // extra syntax check
   bool check(std::unique_ptr<Node> &node);

@@ -340,7 +340,11 @@ public:
 
 class RepeatNode : public NestedNodeWithRtti<NodeKind::Repeat> {
 public:
-  RepeatNode(std::unique_ptr<Node> &&pattern, unsigned short min, unsigned short max, bool greedy,
+  static constexpr unsigned int QUANTIFIER_MAX = UINT16_MAX;
+
+  static constexpr unsigned int UNLIMIT = UINT32_MAX;
+
+  RepeatNode(std::unique_ptr<Node> &&pattern, unsigned short min, unsigned int max, bool greedy,
              Token end)
       : NestedNodeWithRtti(pattern->getToken(), std::move(pattern)) {
     this->updateToken(end);
@@ -349,11 +353,28 @@ public:
     this->u32 = max;
   }
 
+  static std::unique_ptr<RepeatNode> option(std::unique_ptr<Node> &&pattern, bool greedy,
+                                            Token end) {
+    return std::make_unique<RepeatNode>(std::move(pattern), 0, 1, greedy, end);
+  }
+
+  static std::unique_ptr<RepeatNode> zeroOrMore(std::unique_ptr<Node> &&pattern, bool greedy,
+                                                Token end) {
+    return std::make_unique<RepeatNode>(std::move(pattern), 0, UNLIMIT, greedy, end);
+  }
+
+  static std::unique_ptr<RepeatNode> oneOrMore(std::unique_ptr<Node> &&pattern, bool greedy,
+                                               Token end) {
+    return std::make_unique<RepeatNode>(std::move(pattern), 1, UNLIMIT, greedy, end);
+  }
+
   bool isGreedy() const { return this->u8 == 1; }
 
   unsigned short getMin() const { return this->u16; }
 
-  unsigned short getMax() const { return this->u32; }
+  unsigned int getMax() const { return this->u32; }
+
+  bool isUnlimited() const { return this->getMax() == UNLIMIT; }
 };
 
 class SeqNode : public ListNodeWithRtti<NodeKind::Seq> {

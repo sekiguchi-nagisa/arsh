@@ -1133,30 +1133,14 @@ flag: (mode = , modifier = )
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
-  kind: Seq
+  kind: Repeat
   token: (pos = 0, size = 8)
-  patterns:
-    - kind: Char
-      token: (pos = 0, size = 2)
-      codePoint: U+0075, u
-    - kind: Char
-      token: (pos = 2, size = 1)
-      codePoint: U+007B, {
-    - kind: Char
-      token: (pos = 3, size = 1)
-      codePoint: U+0037, 7
-    - kind: Char
-      token: (pos = 4, size = 1)
-      codePoint: U+0030, 0
-    - kind: Char
-      token: (pos = 5, size = 1)
-      codePoint: U+0035, 5
-    - kind: Char
-      token: (pos = 6, size = 1)
-      codePoint: U+0038, 8
-    - kind: Char
-      token: (pos = 7, size = 1)
-      codePoint: U+007D, }
+  repeat: (min = 7058, max = 7058)
+  greedy: true
+  pattern:
+    kind: Char
+    token: (pos = 0, size = 2)
+    codePoint: U+0075, u
 )"},
     {"escape-u{7058}-2", "\\u{7058}", "u", R"(
 flag: (mode = u, modifier = )
@@ -1577,6 +1561,270 @@ pattern:
 };
 INSTANTIATE_TEST_SUITE_P(NamedBackRef, SyntaxTreeTest,
                          ::testing::ValuesIn(syntaxNamedBackRefCases));
+
+static constexpr SyntaxTreeTestEntry syntaxRepeat1Cases[] = {
+    {"rp-あ?", " あ?", "", R"(
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Seq
+  token: (pos = 0, size = 5)
+  patterns:
+    - kind: Char
+      token: (pos = 0, size = 1)
+      codePoint: U+0020, \x20
+    - kind: Repeat
+      token: (pos = 1, size = 4)
+      repeat: (min = 0, max = 1)
+      greedy: true
+      pattern:
+        kind: Char
+        token: (pos = 1, size = 3)
+        codePoint: U+3042, あ
+)"},
+    {"rp-あ??", " あ??", "v", R"(
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Seq
+  token: (pos = 0, size = 6)
+  patterns:
+    - kind: Char
+      token: (pos = 0, size = 1)
+      codePoint: U+0020, \x20
+    - kind: Repeat
+      token: (pos = 1, size = 5)
+      repeat: (min = 0, max = 1)
+      greedy: false
+      pattern:
+        kind: Char
+        token: (pos = 1, size = 3)
+        codePoint: U+3042, あ
+)"},
+    {"rp-a*", "a*", "", R"(
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Repeat
+  token: (pos = 0, size = 2)
+  repeat: (min = 0, max = unlimited)
+  greedy: true
+  pattern:
+    kind: Char
+    token: (pos = 0, size = 1)
+    codePoint: U+0061, a
+)"},
+    {"rp-a*?", "a*?", "u", R"(
+flag: (mode = u, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Repeat
+  token: (pos = 0, size = 3)
+  repeat: (min = 0, max = unlimited)
+  greedy: false
+  pattern:
+    kind: Char
+    token: (pos = 0, size = 1)
+    codePoint: U+0061, a
+)"},
+    {"rp-a**", "a**", "", {{2, 1}, "`*' quantifier does not follow atom"}},
+    {"rp-a**-u", "a**", "u", {{2, 1}, "`*' quantifier does not follow atom"}},
+    {"rp-w+", "\\w+", "", R"(
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Repeat
+  token: (pos = 0, size = 3)
+  repeat: (min = 1, max = unlimited)
+  greedy: true
+  pattern:
+    kind: Property
+    token: (pos = 0, size = 2)
+    property: WORD
+    value: 0
+    invert: false
+)"},
+    {"rp-.+?", ".+?", "", R"(
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Repeat
+  token: (pos = 0, size = 3)
+  repeat: (min = 1, max = unlimited)
+  greedy: false
+  pattern:
+    kind: Any
+    token: (pos = 0, size = 1)
+)"},
+    {"rp-b*?", " \\b*?", "", {{3, 1}, "`*' quantifier does not follow atom"}},
+    {"rp-B?", " \\B?", "", {{3, 1}, "`?' quantifier does not follow atom"}},
+    {"rp-^+", "^+", "", {{1, 1}, "`+' quantifier does not follow atom"}},
+};
+INSTANTIATE_TEST_SUITE_P(Repeat1, SyntaxTreeTest, ::testing::ValuesIn(syntaxRepeat1Cases));
+
+static constexpr SyntaxTreeTestEntry syntaxRepeat2Cases[] = {
+    {"rp-${-1", "${", "", R"(
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Seq
+  token: (pos = 0, size = 2)
+  patterns:
+    - kind: Boundary
+      token: (pos = 0, size = 1)
+      boundary: END
+    - kind: Char
+      token: (pos = 1, size = 1)
+      codePoint: U+007B, {
+)"},
+    {"rp-${-2", "${", "u", {{1, 1}, "lone quantifier bracket `{'"}},
+    {"rp-3{", "3{", "u", {{1, 1}, "invalid quantifier: `{'"}},
+    {"rp-a{Q}", "a{Q}", "", R"(
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Seq
+  token: (pos = 0, size = 4)
+  patterns:
+    - kind: Char
+      token: (pos = 0, size = 1)
+      codePoint: U+0061, a
+    - kind: Char
+      token: (pos = 1, size = 1)
+      codePoint: U+007B, {
+    - kind: Char
+      token: (pos = 2, size = 1)
+      codePoint: U+0051, Q
+    - kind: Char
+      token: (pos = 3, size = 1)
+      codePoint: U+007D, }
+)"},
+    {"rp-a{Q}-u", "a{Q}", "u", {{2, 1}, "must be positive decimal number: `Q'"}},
+    {"rp-d{1", "\\d{1", "", R"(
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Seq
+  token: (pos = 0, size = 4)
+  patterns:
+    - kind: Property
+      token: (pos = 0, size = 2)
+      property: DIGIT
+      value: 0
+      invert: false
+    - kind: Char
+      token: (pos = 2, size = 1)
+      codePoint: U+007B, {
+    - kind: Char
+      token: (pos = 3, size = 1)
+      codePoint: U+0031, 1
+)"},
+    {"rp-d{1-v", "\\d{1", "v", {{2, 2}, "unclosed quantifier: `{1'"}},
+    {"rp-S{1,-v", "\\S{1,", "v", {{2, 3}, "invalid quantifier: `{1,'"}},
+    {"rp-S{1, 2}-v", "\\S{1, 2}", "v", {{5, 2}, "must be positive decimal number: ` 2'"}},
+    {"rp-S{1,a-v", "\\S{1,a", "v", {{5, 1}, "must be positive decimal number: `a'"}},
+    {"rp-S{-1}-v", "\\S{-1}", "v", {{3, 2}, "must be positive decimal number: `-1'"}},
+    {"rp-S{1,2-v", "\\s{1,2", "v", {{2, 4}, "unclosed quantifier: `{1,2'"}},
+    {"rp-large",
+     "\\W{1,21111111111111",
+     "u",
+     {{5, 14}, "too large quantifier number: `21111111111111'"}},
+    {"rp-order-u", "Q{2,1}", "u", {{1, 5}, "numbers out of order in {} quantifier"}},
+    {"rp-{2}", "w{2}", "", R"(
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Repeat
+  token: (pos = 0, size = 4)
+  repeat: (min = 2, max = 2)
+  greedy: true
+  pattern:
+    kind: Char
+    token: (pos = 0, size = 1)
+    codePoint: U+0077, w
+)"},
+    {"rp-{2,}", "w{2,}", "", R"(
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Repeat
+  token: (pos = 0, size = 5)
+  repeat: (min = 2, max = unlimited)
+  greedy: true
+  pattern:
+    kind: Char
+    token: (pos = 0, size = 1)
+    codePoint: U+0077, w
+)"},
+    {"rp-w{2,4}", "w{2,4}", "u", R"(
+flag: (mode = u, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Repeat
+  token: (pos = 0, size = 6)
+  repeat: (min = 2, max = 4)
+  greedy: true
+  pattern:
+    kind: Char
+    token: (pos = 0, size = 1)
+    codePoint: U+0077, w
+)"},
+    {"rp-2{10}?", "2{010}?", "u", R"(
+flag: (mode = u, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Repeat
+  token: (pos = 0, size = 7)
+  repeat: (min = 10, max = 10)
+  greedy: false
+  pattern:
+    kind: Char
+    token: (pos = 0, size = 1)
+    codePoint: U+0032, 2
+)"},
+    {"rp-2{010,}?", "2{010,}?", "", R"(
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Repeat
+  token: (pos = 0, size = 8)
+  repeat: (min = 10, max = unlimited)
+  greedy: false
+  pattern:
+    kind: Char
+    token: (pos = 0, size = 1)
+    codePoint: U+0032, 2
+)"},
+    {"rp-2{010,00111}?", "2{010,00111}?", "v", R"(
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Repeat
+  token: (pos = 0, size = 13)
+  repeat: (min = 10, max = 111)
+  greedy: false
+  pattern:
+    kind: Char
+    token: (pos = 0, size = 1)
+    codePoint: U+0032, 2
+)"},
+};
+INSTANTIATE_TEST_SUITE_P(Repeat2, SyntaxTreeTest, ::testing::ValuesIn(syntaxRepeat2Cases));
 
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
