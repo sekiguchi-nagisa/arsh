@@ -226,7 +226,7 @@ std::unique_ptr<Node> Parser::parseAtomEscape() {
       this->iter++;
       goto CHAR;
     }
-    if (this->flag.is(Mode::BMP)) {
+    if (this->flag.is(Mode::LEGACY)) {
       this->iter--; // only consume '\\'
       codePoint = '\\';
       goto CHAR;
@@ -286,7 +286,7 @@ std::unique_ptr<Node> Parser::parseAtomEscape() {
     return std::make_unique<PropertyNode>(this->getTokenFrom(start), PropertyNode::Type::NOT_WORD);
   case 'p':
   case 'P':
-    if (this->flag.is(Mode::BMP)) {
+    if (this->flag.is(Mode::LEGACY)) {
       codePoint = static_cast<unsigned char>(*this->iter++);
       goto CHAR;
     }
@@ -308,7 +308,7 @@ std::unique_ptr<Node> Parser::parseAtomEscape() {
       goto CHAR;
     }
   INVALID_HEX:
-    if (this->flag.is(Mode::BMP)) {
+    if (this->flag.is(Mode::LEGACY)) {
       this->iter = old;
       codePoint = 'x';
       goto CHAR;
@@ -319,11 +319,11 @@ std::unique_ptr<Node> Parser::parseAtomEscape() {
   }
   case 'u': {
     this->iter--;
-    codePoint = this->parseUnicodeEscape(this->flag.is(Mode::BMP));
+    codePoint = this->parseUnicodeEscape(this->flag.is(Mode::LEGACY));
     if (UnicodeUtil::isValidCodePoint(codePoint)) {
       goto CHAR;
     }
-    if (this->flag.is(Mode::BMP) && !this->hasError()) {
+    if (this->flag.is(Mode::LEGACY) && !this->hasError()) {
       this->iter = start;
       this->iter += 2;
       codePoint = 'u';
@@ -341,7 +341,7 @@ std::unique_ptr<Node> Parser::parseAtomEscape() {
     }
     codePoint = this->nextValidCodePoint();
     if (codePoint > -1) {
-      if (this->flag.is(Mode::BMP)) {
+      if (this->flag.is(Mode::LEGACY)) {
         goto CHAR;
       }
       char data[5];
@@ -497,9 +497,9 @@ std::unique_ptr<Node> Parser::parseNamedBackRef() {
   const auto old = this->iter;
   assert(this->startsWith("\\k"));
   this->iter += 2;
-  auto name = this->parseCaptureGroupName(old, this->flag.is(Mode::BMP));
+  auto name = this->parseCaptureGroupName(old, this->flag.is(Mode::LEGACY));
   if (name.empty()) {
-    if (this->flag.is(Mode::BMP)) {
+    if (this->flag.is(Mode::LEGACY)) {
       this->iter = old + 2;
       return std::make_unique<CharNode>(this->getTokenFrom(old), 'k');
     }
@@ -728,7 +728,7 @@ Parser::BackRefResolveStatus Parser::resolveCaptureGroup(BackRefNode &refNode) {
       refNode.setGroupIndex(i->second);
       return BackRefResolveStatus::OK;
     }
-    if (this->flag.is(Mode::BMP)) {
+    if (this->flag.is(Mode::LEGACY)) {
       return BackRefResolveStatus::REPLACE;
     }
     this->reportError(refNode.getToken(), "undefined capture group name: `%s'", name.c_str());

@@ -54,7 +54,7 @@ int main(int argc, char **argv) {
   }
 
   std::string err;
-  auto flag = regex::Flag::parse(modifiers, regex::Mode::BMP, &err);
+  auto flag = regex::Flag::parse(modifiers, regex::Mode::LEGACY, &err);
   if (!flag.hasValue()) {
     fprintf(stderr, "[error] %s\n", err.c_str());
     return 1;

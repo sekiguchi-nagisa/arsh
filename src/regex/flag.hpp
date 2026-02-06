@@ -27,7 +27,7 @@ namespace arsh::regex {
 constexpr const char *VERSION = "ES2025";
 
 enum class Mode : unsigned char {
-  BMP,         // only match UTF16 bmp
+  LEGACY,      // legacy mode
   UNICODE,     // 'u' (default)
   UNICODE_SET, // 'v'
 };
@@ -53,7 +53,7 @@ namespace arsh::regex {
 
 class Flag {
 private:
-  Mode mode_{Mode::BMP};
+  Mode mode_{Mode::LEGACY};
   Modifier modifiers_{};
 
 public:

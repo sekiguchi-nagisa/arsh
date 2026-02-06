@@ -75,7 +75,7 @@ std::string TreeDumper::operator()(const SyntaxTree &tree) {
 void TreeDumper::dump(const char *fieldName, Flag flag) {
   std::string str = "(mode = ";
   switch (flag.mode()) {
-  case Mode::BMP:
+  case Mode::LEGACY:
     break;
   case Mode::UNICODE:
     str += 'u';

@@ -80,7 +80,7 @@ struct SyntaxTreeTest : public ::testing::TestWithParam<SyntaxTreeTestEntry> {
   static void doTest() {
     auto &p = GetParam();
     std::string err;
-    auto flag = regex::Flag::parse(p.modifiers, regex::Mode::BMP, &err);
+    auto flag = regex::Flag::parse(p.modifiers, regex::Mode::LEGACY, &err);
     SCOPED_TRACE(format("name: %s, pattern: %s, modifiers: %s", p.name, p.pattern, p.modifiers));
     ASSERT_EQ("", err);
     ASSERT_TRUE(flag.hasValue());
