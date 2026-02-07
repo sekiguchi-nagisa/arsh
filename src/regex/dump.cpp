@@ -15,12 +15,11 @@
  */
 
 #include "dump.h"
+#include "misc/unicode.hpp"
 #include "node.h"
 
 #include <algorithm>
 #include <cstdarg>
-
-#include "misc/unicode.hpp"
 
 namespace arsh::regex {
 
@@ -41,23 +40,31 @@ void TreeDumper::dumpAs(const char *fieldName, const char *fmt, ...) { // NOLINT
   free(str);
 }
 
-static std::string format(const std::unordered_map<std::string, unsigned int> &namedCaptureGroups) {
-  std::vector<std::pair<StringRef, unsigned int>> groups;
-  for (auto &[k, v] : namedCaptureGroups) {
-    groups.emplace_back(k, v);
+static void format(const NamedCaptureEntry &entry, std::string &out) {
+  if (entry.hasMultipleIndices()) {
+    out += '[';
+    const unsigned int size = entry.getSize();
+    for (unsigned int i = 0; i < size; i++) {
+      if (i > 0) {
+        out += ", ";
+      }
+      out += std::to_string(entry[i]);
+    }
+  } else {
+    out += std::to_string(entry.getIndex());
   }
-  std::sort(groups.begin(), groups.end(),
-            [](const std::pair<StringRef, unsigned int> &x,
-               const std::pair<StringRef, unsigned int> &y) { return x.second < y.second; });
+}
+
+static std::string format(const NamedCaptureGroups &namedCaptureGroups) {
   std::string ret = "[";
   unsigned int count = 0;
-  for (auto &[k, v] : groups) {
+  for (auto &[name, entry] : namedCaptureGroups.getEntries()) {
     if (count++ > 0) {
       ret += ", ";
     }
-    ret += k;
-    ret += ":";
-    ret += std::to_string(v);
+    ret += name;
+    ret += ':';
+    format(entry, ret);
   }
   ret += ']';
   return ret;
@@ -191,8 +198,7 @@ void TreeDumper::dumpRaw(const Node &node) {
   case NodeKind::BackRef: {
     auto &n = cast<BackRefNode>(node);
     this->dump("name", n.getName());
-    this->dump("named", n.isNamed());
-    this->dumpAs("index", "%d", n.getGroupIndex());
+    this->dumpAs("index", "%d", n.getIndex());
     break;
   }
   case NodeKind::Repeat: {

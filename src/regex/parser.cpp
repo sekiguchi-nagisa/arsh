@@ -106,6 +106,55 @@ static bool isSyntaxChar(const char ch) {
   }
 }
 
+SyntaxTree Parser::operator()(const StringRef src, const Flag f) {
+  this->ref = src;
+  this->flag = f;
+  this->overflow = false;
+  this->captureGroupCount = 0;
+  this->namedCaptureGroups.clear();
+  this->iter = this->begin();
+  this->namedRefNodes.clear();
+  this->error.reset();
+
+  // actual parse function
+  auto node = this->parse();
+
+  // build NamedCaptureGroups
+  using Entry = std::pair<std::string, NamedCaptureEntry>;
+  std::vector<Entry> entries;
+  for (auto &e : this->namedCaptureGroups) {
+    auto entry = e.second.size() == 1 ? NamedCaptureEntry(e.second[0])
+                                      : NamedCaptureEntry(std::move(e.second));
+    entries.emplace_back(std::move(e.first), std::move(entry)); // NOLINT
+  }
+  std::sort(entries.begin(), entries.end(), [](const Entry &x, const Entry &y) {
+    unsigned int xi = x.second.hasMultipleIndices() ? x.second[0] : x.second.getIndex();
+    unsigned int yi = y.second.hasMultipleIndices() ? y.second[0] : y.second.getIndex();
+    return xi < yi;
+  });
+  StrRefMap<unsigned short> offsetMap;
+  for (unsigned int i = 0; i < entries.size(); i++) {
+    offsetMap.emplace(entries[i].first, static_cast<unsigned short>(i));
+  }
+
+  // check named-reference
+  if (node) {
+    for (auto &e : this->namedRefNodes) {
+      auto &name = e->getName();
+      if (auto i = offsetMap.find(name); i != offsetMap.end()) {
+        e->setIndex(i->second);
+      } else {
+        this->reportUndefinedNamedRef(e->getToken(), name.c_str());
+        node = nullptr;
+        break;
+      }
+    }
+  }
+
+  return {this->flag, this->captureGroupCount, std::move(node),
+          NamedCaptureGroups(std::move(offsetMap), std::move(entries))};
+}
+
 std::unique_ptr<Node> Parser::parse() {
   std::unique_ptr<Node> node;
 
@@ -273,7 +322,13 @@ std::unique_ptr<Node> Parser::parseAtomEscape() {
       codePoint = '\0';
       goto CHAR;
     }
-    return std::make_unique<BackRefNode>(this->getTokenFrom(start), tmp.toString(), false);
+    auto ret = convertToNum10<unsigned int>(tmp.begin(), tmp.end());
+    if (ret.value < this->captureGroupCount) {
+      return std::make_unique<BackRefNode>(this->getTokenFrom(start), ret.value);
+    }
+    this->reportError(this->getTokenFrom(start),
+                      "backref index is greater than capture group count: `%d'", ret.value);
+    return nullptr;
   }
   case 'b':
     this->iter++;
@@ -513,14 +568,19 @@ std::unique_ptr<Node> Parser::parseNamedBackRef() {
   assert(this->startsWith("\\k"));
   this->iter += 2;
   auto name = this->parseCaptureGroupName(old, this->flag.is(Mode::LEGACY));
-  if (name.empty()) {
+  if (name.empty() || !this->hasNameCaptureGroup()) {
     if (this->flag.is(Mode::LEGACY)) {
       this->iter = old + 2;
       return std::make_unique<CharNode>(this->getTokenFrom(old), 'k');
     }
+    if (!name.empty()) {
+      this->reportUndefinedNamedRef(this->getTokenFrom(old), name.c_str());
+    }
     return nullptr;
   }
-  return std::make_unique<BackRefNode>(this->getTokenFrom(old), std::move(name), true);
+  auto node = std::make_unique<BackRefNode>(this->getTokenFrom(old), std::move(name));
+  this->namedRefNodes.push_back(node.get());
+  return node;
 }
 
 static bool isJSIdStartAscii(int codePoint) {
@@ -580,12 +640,11 @@ std::string Parser::parseCaptureGroupName(const char *prefixStart, const bool ig
   }
   this->iter++;
 
-  std::string name = "<";
+  std::string name;
 
   // ID_Start
   int codePoint = TRY_CP(this->nextValidCodePoint());
   if (codePoint == '>') {
-    name += '>';
     goto INVALID;
   }
   if (codePoint == '\\') {
@@ -601,7 +660,6 @@ std::string Parser::parseCaptureGroupName(const char *prefixStart, const bool ig
   while (true) {
     codePoint = TRY_CP(this->nextValidCodePoint());
     if (codePoint == '>') {
-      name += '>';
       break;
     }
     if (codePoint == '\\') {
@@ -616,7 +674,7 @@ std::string Parser::parseCaptureGroupName(const char *prefixStart, const bool ig
   return name;
 
 END:
-  if (name != "<") {
+  if (!name.empty() && this->isEnd()) {
     if (!ignoreError) {
       this->reportError(this->getTokenFrom(old), "unclosed capture group name: `%s'", name.c_str());
     }
@@ -755,128 +813,6 @@ Optional<unsigned short> Parser::parseQuantifierDigits(const char *prefixStart,
     return {};
   }
   return static_cast<unsigned short>(ret.value);
-}
-
-bool Parser::check(std::unique_ptr<Node> &node) {
-  bool r = this->checkBackRef(node); // TODO: more extra syntax check
-  if (this->overflow) {
-    this->reportOverflow();
-    return false;
-  }
-  return r;
-}
-
-#define GOTO_NEXT(FS, F)                                                                           \
-  do {                                                                                             \
-    (FS).back().index++;                                                                           \
-    (FS).push(F);                                                                                  \
-    if ((FS).size() == STACK_DEPTH_LIMIT) {                                                        \
-      this->overflow = true;                                                                       \
-      return false;                                                                                \
-    }                                                                                              \
-    goto NEXT;                                                                                     \
-  } while (false)
-
-static std::vector<std::unique_ptr<Node>> split(const BackRefNode &refNode) {
-  std::vector<std::unique_ptr<Node>> nodes;
-  if (refNode.isNamed()) {
-    // \k
-    Token token = {refNode.getToken().pos, 2};
-    nodes.push_back(std::make_unique<CharNode>(token, 'k'));
-
-    // <identifier>
-    const char *iter = refNode.getName().c_str();
-    const char *end = refNode.getName().c_str() + refNode.getName().size();
-    while (iter != end) {
-      int codePoint = -1;
-      const unsigned int len = UnicodeUtil::utf8ToCodePoint(iter, end, codePoint);
-      assert(len);
-      iter += len;
-      token = {token.endPos(), len};
-      nodes.push_back(std::make_unique<CharNode>(token, codePoint));
-    }
-  } else { // TODO
-  }
-  return nodes;
-}
-
-bool Parser::checkBackRef(std::unique_ptr<Node> &node) {
-  for (this->checkerFrames.push(CheckerFrame(node)); this->checkerFrames.size();
-       this->checkerFrames.pop()) {
-  NEXT: {
-    auto &frame = this->checkerFrames.back();
-    auto &curNode = **frame.node;
-    if (isa<BackRefNode>(curNode) && frame.index == 0) {
-      auto &refNode = cast<BackRefNode>(curNode);
-      if (auto s = this->resolveCaptureGroup(refNode); s == BackRefResolveStatus::ERROR) {
-        return false;
-      } else if (s == BackRefResolveStatus::REPLACE) {
-        auto nodes = split(refNode);
-        auto seqNode = std::make_unique<SeqNode>(std::move(nodes[0]), std::move(nodes[1]));
-        for (unsigned int i = 2; i < nodes.size(); i++) {
-          seqNode->append(std::move(nodes[i]));
-        }
-        frame.node->reset(seqNode.release());
-      }
-      continue;
-    }
-    if (isa<NestedNode>(curNode) && frame.index == 0) {
-      auto &nestedNode = cast<NestedNode>(curNode);
-      if (auto *refNode = checked_cast<BackRefNode>(nestedNode.getPattern().get())) {
-        if (auto s = this->resolveCaptureGroup(*refNode); s == BackRefResolveStatus::ERROR) {
-          return false;
-        } else if (s == BackRefResolveStatus::REPLACE) {
-          auto nodes = split(*refNode);
-          auto seqNode = std::make_unique<SeqNode>(std::move(nodes[0]), std::move(nodes[1]));
-          for (unsigned int i = 2; i < nodes.size(); i++) {
-            seqNode->append(std::move(nodes[i]));
-          }
-          nestedNode.refPattern() = std::move(seqNode);
-        }
-        continue;
-      }
-      GOTO_NEXT(this->checkerFrames, CheckerFrame(nestedNode.refPattern()));
-    }
-    if (isa<ListNode>(curNode) && frame.index < cast<ListNode>(curNode).refPatterns().size()) {
-      auto &listNode = cast<ListNode>(curNode);
-      auto &cNode = listNode.refPatterns()[frame.index];
-      if (auto *refNode = checked_cast<BackRefNode>(cNode.get())) {
-        if (auto s = this->resolveCaptureGroup(*refNode); s == BackRefResolveStatus::ERROR) {
-          return false;
-        } else if (s == BackRefResolveStatus::REPLACE) {
-          auto nodes = split(*refNode);
-          listNode.refPatterns().erase(listNode.refPatterns().begin() + frame.index);
-          auto i = listNode.refPatterns().begin() + frame.index;
-          for (auto &e : nodes) {
-            i = listNode.refPatterns().insert(i, std::move(e));
-          }
-        }
-        frame.index++;
-        goto NEXT;
-      }
-      GOTO_NEXT(this->checkerFrames, CheckerFrame(cNode));
-    }
-  }
-  }
-  return true;
-}
-
-Parser::BackRefResolveStatus Parser::resolveCaptureGroup(BackRefNode &refNode) {
-  if (refNode.isNamed()) {
-    auto &name = refNode.getName();
-    if (auto i = this->namedCaptureGroups.find(name); i != this->namedCaptureGroups.end()) {
-      refNode.setGroupIndex(i->second);
-      return BackRefResolveStatus::OK;
-    }
-    if (this->flag.is(Mode::LEGACY)) {
-      return BackRefResolveStatus::REPLACE;
-    }
-    this->reportError(refNode.getToken(), "undefined capture group name: `%s'", name.c_str());
-    return BackRefResolveStatus::ERROR;
-  }
-  auto &value = refNode.getName(); // TODO: resolve index
-  this->reportError(refNode.getToken(), "capture group index is out-of-range: `%s'", value.c_str());
-  return BackRefResolveStatus::ERROR;
 }
 
 } // namespace arsh::regex

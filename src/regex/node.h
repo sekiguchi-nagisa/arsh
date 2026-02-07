@@ -20,13 +20,13 @@
 #include <memory>
 #include <vector>
 
+#include "capture.h"
+#include "flag.hpp"
 #include "misc/enum_util.hpp"
 #include "misc/noncopyable.h"
 #include "misc/rtti.hpp"
 #include "misc/token.hpp"
 #include "unicode/property.h"
-
-#include "flag.hpp"
 
 namespace arsh::regex {
 
@@ -317,25 +317,31 @@ public:
 class BackRefNode : public NodeWithRtti<NodeKind::BackRef> {
 private:
   /**
-   * capture group name (<name>) or index (digits)
-   * in bmp mode, may indicate octal digits sequence
-   * (initial value maybe invalid group name or index)
+   * capture group name
    */
   std::string name;
 
 public:
-  BackRefNode(Token token, std::string &&name, bool named)
-      : NodeWithRtti(token), name(std::move(name)) {
-    this->u8 = named ? 1 : 0;
+  BackRefNode(Token token, std::string &&name) : NodeWithRtti(token), name(std::move(name)) {
+    this->setIndex(0);
   }
 
-  bool isNamed() const { return this->u8 == 1; }
+  BackRefNode(Token token, unsigned int groupIndex) : NodeWithRtti(token) {
+    this->setIndex(groupIndex);
+  }
 
-  void setGroupIndex(unsigned int index) { this->u32 = index; }
+  void setIndex(unsigned int index) { this->u32 = index; }
 
-  unsigned int getGroupIndex() const { return this->u32; }
+  /**
+   * if named-reference, index indicates offset of named capture group entry
+   * otherwise, indicates group index
+   * @return
+   */
+  unsigned int getIndex() const { return this->u32; }
 
   const auto &getName() const { return this->name; }
+
+  bool isNamed() const { return !this->getName().empty(); }
 };
 
 class RepeatNode : public NestedNodeWithRtti<NodeKind::Repeat> {
@@ -447,11 +453,11 @@ private:
   Flag flag;
   unsigned int captureGroupCount;
   std::unique_ptr<Node> pattern;
-  std::unordered_map<std::string, unsigned int> namedCaptureGroups;
+  NamedCaptureGroups namedCaptureGroups;
 
 public:
   SyntaxTree(Flag flag, unsigned int count, std::unique_ptr<Node> pattern,
-             std::unordered_map<std::string, unsigned int> &&namedCaptureGroups)
+             NamedCaptureGroups &&namedCaptureGroups)
       : flag(flag), captureGroupCount(count), pattern(std::move(pattern)),
         namedCaptureGroups(std::move(namedCaptureGroups)) {}
 
@@ -462,6 +468,8 @@ public:
   unsigned int getCaptureGroupCount() const { return this->captureGroupCount; }
 
   const auto &getNamedCaptureGroups() const { return this->namedCaptureGroups; }
+
+  auto takeNamedCaptureGroups() && { return std::move(this->namedCaptureGroups); }
 
   explicit operator bool() const { return static_cast<bool>(this->pattern); }
 };

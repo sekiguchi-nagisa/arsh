@@ -50,10 +50,9 @@ private:
   Flag flag;
   bool overflow{false};
   unsigned int captureGroupCount{0};
-  std::unordered_map<std::string, unsigned int> namedCaptureGroups;
+  std::unordered_map<std::string, FlexBuffer<unsigned int>> namedCaptureGroups;
+  std::vector<BackRefNode *> namedRefNodes; // for lazy named backref check
   std::unique_ptr<Error> error{nullptr};
-
-  InlinedStack<CheckerFrame, 4> checkerFrames;
 
   CodePointSet idStartSet;
   CodePointSet idContinueSet;
@@ -61,27 +60,7 @@ private:
 public:
   Parser() = default;
 
-  SyntaxTree operator()(const StringRef src, const Flag f) {
-    this->ref = src;
-    this->flag = f;
-    this->overflow = false;
-    this->captureGroupCount = 0;
-    this->iter = this->begin();
-    this->error.reset();
-    while (this->checkerFrames.size()) {
-      this->checkerFrames.pop();
-    }
-
-    // actual parse function
-    auto node = this->parse();
-    if (node) {
-      if (!this->check(node)) {
-        node = nullptr;
-      }
-    }
-    return {this->flag, this->captureGroupCount, std::move(node),
-            std::move(this->namedCaptureGroups)};
-  }
+  SyntaxTree operator()(StringRef src, Flag f);
 
   bool hasError() const { return static_cast<bool>(this->error); }
 
@@ -104,6 +83,10 @@ private:
 
   void reportOverflow() {
     this->reportError(this->getTokenFrom(this->begin()), "deeply nested regular expression");
+  }
+
+  void reportUndefinedNamedRef(Token token, const char *name) {
+    this->reportError(token, "undefined capture group name: `%s'", name);
   }
 
   const char *begin() const { return this->ref.begin(); }
@@ -136,6 +119,10 @@ private:
 
   std::unique_ptr<Node> parseNamedBackRef();
 
+  bool hasNameCaptureGroup() const {
+    return !this->namedCaptureGroups.empty(); // TODO: lazy fill
+  }
+
   /**
    * parse capture group name
    * @param prefixStart for error message
@@ -149,25 +136,6 @@ private:
 
   Optional<unsigned short> parseQuantifierDigits(const char *prefixStart, bool ignoreError,
                                                  char end);
-
-  // extra syntax check
-  bool check(std::unique_ptr<Node> &node);
-
-  /**
-   * check back reference indicate valid capture group name / index
-   * in BMP mode, if invalid name, replace it with char nodes
-   * @param node
-   * @return
-   */
-  bool checkBackRef(std::unique_ptr<Node> &node);
-
-  enum class BackRefResolveStatus : unsigned char {
-    OK,
-    ERROR,
-    REPLACE,
-  };
-
-  BackRefResolveStatus resolveCaptureGroup(BackRefNode &refNode);
 };
 
 } // namespace arsh::regex
