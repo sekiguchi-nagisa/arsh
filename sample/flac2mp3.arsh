@@ -1,0 +1,44 @@
+#!/usr/bin/env arsh
+
+$# == 2 || {
+    echo 1>&2 "[usage] $0 [src dir] [dest dir]"
+    exit 1
+}
+
+let SRC_DIR = $@[0].realpath()
+var DEST_DIR = $@[1]
+
+test -e $DEST_DIR && {
+    echo 1>&2 already exists directory: $DEST_DIR
+    exit 1
+}
+
+command -v ffmpeg || {
+    echo 1>&2 require ffmpeg
+    exit 1
+}
+
+mkdir -p $DEST_DIR
+$DEST_DIR = $DEST_DIR.realpath()
+
+
+cd $SRC_DIR
+
+var elist = new [String]()
+
+for $src in IFS=$'\n' $(find . -name "*.flac") {
+    echo $src
+    var dir = "$DEST_DIR/$(dirname $src)"
+    test -e $dir || mkdir -p $dir
+    ffmpeg -i $src -q:a 2 ${"$DEST_DIR/$src".replace(".flac", ".mp3")}
+    if $? != 0 {
+        $elist.push($src)
+    }
+}
+
+if !$elist.empty() {
+    echo -e "\033[0;31merror happened!!\033[0m"
+    for $e in $elist {
+        echo -e "\033[0;31m${e}\033[0m"
+    }
+}
