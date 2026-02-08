@@ -31,7 +31,7 @@ Currently, under heavy development. Language specification is subject to change 
 * gcc (9, 10, 11, 12, 13, 14)
 * clang (11, 12, 13, 14, 15, 16, 17, 18, 19, 20)
 
-### Other Tested platform
+### Other Tested Platforms
 
 * Linux
     * Arm64
@@ -45,7 +45,7 @@ Currently, under heavy development. Language specification is subject to change 
 
 ## How to use
 
-1. build and install
+### 1. build and install
 
 * install from source
 
@@ -63,7 +63,7 @@ $ sudo make install
     * Fedora 40, 41, 42, 43
     * openSUSE 16, Tumbleweed
 
-2. run in interactive mode
+### 2. run in interactive mode
 
 ```sh
 $ arsh
