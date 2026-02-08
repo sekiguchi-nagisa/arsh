@@ -1,0 +1,304 @@
+
+source $SCRIPT_DIR/test_helper.arsh
+
+# \p
+assert diff <(redump '\p' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Char
+  token: (pos = 0, size = 2)
+  codePoint: U+0070, p
+EOF
+)
+
+assert diff <(redump '\p' 'u') <(<<'EOF'
+1:1 [error] invalid unicode property escape: `\p'
+ at (pos = 0, size = 2)
+EOF
+)
+
+assert diff <(redump '\p' 'v') <(<<'EOF'
+1:1 [error] invalid unicode property escape: `\p'
+ at (pos = 0, size = 2)
+EOF
+)
+
+# \p{
+assert diff <(redump '\P{' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Seq
+  token: (pos = 0, size = 3)
+  patterns:
+    - kind: Char
+      token: (pos = 0, size = 2)
+      codePoint: U+0050, P
+    - kind: Char
+      token: (pos = 2, size = 1)
+      codePoint: U+007B, {
+EOF
+)
+
+assert diff <(redump '\p{' 'u') <(<<'EOF'
+1:1 [error] invalid unicode property escape: `\p{'
+ at (pos = 0, size = 3)
+EOF
+)
+
+assert diff <(redump '\p{' 'v') <(<<'EOF'
+1:1 [error] invalid unicode property escape: `\p{'
+ at (pos = 0, size = 3)
+EOF
+)
+
+# \p{C
+assert diff <(redump '\p{C' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Seq
+  token: (pos = 0, size = 4)
+  patterns:
+    - kind: Char
+      token: (pos = 0, size = 2)
+      codePoint: U+0070, p
+    - kind: Char
+      token: (pos = 2, size = 1)
+      codePoint: U+007B, {
+    - kind: Char
+      token: (pos = 3, size = 1)
+      codePoint: U+0043, C
+EOF
+)
+
+assert diff <(redump '\p{C' 'u') <(<<'EOF'
+1:1 [error] invalid unicode property escape: `\p{C'
+ at (pos = 0, size = 4)
+EOF
+)
+
+assert diff <(redump '\p{C' 'v') <(<<'EOF'
+1:1 [error] invalid unicode property escape: `\p{C'
+ at (pos = 0, size = 4)
+EOF
+)
+
+
+assert diff <(redump '\P{C' 'u') <(<<'EOF'
+1:1 [error] invalid unicode property escape: `\P{C'
+ at (pos = 0, size = 4)
+EOF
+)
+
+assert diff <(redump '\P{C' 'v') <(<<'EOF'
+1:1 [error] invalid unicode property escape: `\P{C'
+ at (pos = 0, size = 4)
+EOF
+)
+
+# \p{あ}
+assert diff <(redump '\p{あ}' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Seq
+  token: (pos = 0, size = 7)
+  patterns:
+    - kind: Char
+      token: (pos = 0, size = 2)
+      codePoint: U+0070, p
+    - kind: Char
+      token: (pos = 2, size = 1)
+      codePoint: U+007B, {
+    - kind: Char
+      token: (pos = 3, size = 3)
+      codePoint: U+3042, あ
+    - kind: Char
+      token: (pos = 6, size = 1)
+      codePoint: U+007D, }
+EOF
+)
+
+assert diff <(redump '\P{あ}' 'u') <(<<'EOF'
+1:1 [error] unrecognized property value: あ
+ at (pos = 0, size = 7)
+EOF
+)
+
+assert diff <(redump '\P{あ}' 'v') <(<<'EOF'
+1:1 [error] unrecognized property value: あ
+ at (pos = 0, size = 7)
+EOF
+)
+
+# \p{Co}
+assert diff <(redump '\p{Co}' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Seq
+  token: (pos = 0, size = 6)
+  patterns:
+    - kind: Char
+      token: (pos = 0, size = 2)
+      codePoint: U+0070, p
+    - kind: Char
+      token: (pos = 2, size = 1)
+      codePoint: U+007B, {
+    - kind: Char
+      token: (pos = 3, size = 1)
+      codePoint: U+0043, C
+    - kind: Char
+      token: (pos = 4, size = 1)
+      codePoint: U+006F, o
+    - kind: Char
+      token: (pos = 5, size = 1)
+      codePoint: U+007D, }
+EOF
+)
+
+assert diff <(redump '\p{Co}' 'u') <(<<'EOF'
+flag: (mode = u, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Property
+  token: (pos = 0, size = 6)
+  property: UNICODE
+  value: gc=Private_Use
+  invert: false
+EOF
+)
+
+assert diff <(redump '\p{Co}' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Property
+  token: (pos = 0, size = 6)
+  property: UNICODE
+  value: gc=Private_Use
+  invert: false
+EOF
+)
+
+# \p{GC=C}
+assert diff <(redump '\p{GC=C}' 'u') <(<<'EOF'
+1:1 [error] unrecognized property name: GC
+ at (pos = 0, size = 8)
+EOF
+)
+
+assert diff <(redump ' \P{GC=C}' 'v') <(<<'EOF'
+1:2 [error] unrecognized property name: GC
+ at (pos = 1, size = 8)
+EOF
+)
+
+# \p{Arab}
+assert diff <(redump 'w\p{Arab}' 'u') <(<<'EOF'
+1:2 [error] unrecognized property value: Arab
+ at (pos = 1, size = 8)
+EOF
+)
+
+assert diff <(redump 'w\P{Arab}' 'v') <(<<'EOF'
+1:2 [error] unrecognized property value: Arab
+ at (pos = 1, size = 8)
+EOF
+)
+
+# \p{Script=Arab}
+assert diff <(redump '\p{Script=Arab}' 'u') <(<<'EOF'
+flag: (mode = u, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Property
+  token: (pos = 0, size = 15)
+  property: UNICODE
+  value: sc=Arabic
+  invert: false
+EOF
+)
+
+assert diff <(redump '\p{Script_Extensions=Arab}' 'vi') <(<<'EOF'
+flag: (mode = v, modifier = i)
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Property
+  token: (pos = 0, size = 26)
+  property: UNICODE
+  value: scx=Arabic
+  invert: false
+EOF
+)
+
+# \P{Term}
+assert diff <(redump '\P{Term}' 'u') <(<<'EOF'
+flag: (mode = u, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Property
+  token: (pos = 0, size = 8)
+  property: NOT_UNICODE
+  value: Terminal_Punctuation
+  invert: true
+EOF
+)
+
+assert diff <(redump '\P{Term}' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Property
+  token: (pos = 0, size = 8)
+  property: NOT_UNICODE
+  value: Terminal_Punctuation
+  invert: true
+EOF
+)
+
+# \p{RGI_Emoji}
+assert diff <(redump '\p{RGI_Emoji}' 'u') <(<<'EOF'
+1:1 [error] unrecognized property value: RGI_Emoji
+ at (pos = 0, size = 13)
+EOF
+)
+
+assert diff <(redump '\p{RGI_Emoji}' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Property
+  token: (pos = 0, size = 13)
+  property: EMOJI
+  value: RGI_Emoji
+  invert: false
+EOF
+)
+
+assert diff <(redump '\P{RGI_Emoji}' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Property
+  token: (pos = 0, size = 13)
+  property: NOT_EMOJI
+  value: RGI_Emoji
+  invert: true
+EOF
+)

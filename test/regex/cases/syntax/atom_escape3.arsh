@@ -1,0 +1,168 @@
+
+source $SCRIPT_DIR/test_helper.arsh
+
+# \c
+assert diff <(redump '\c' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Seq
+  token: (pos = 0, size = 2)
+  patterns:
+    - kind: Char
+      token: (pos = 0, size = 1)
+      codePoint: U+005C, \
+    - kind: Char
+      token: (pos = 1, size = 1)
+      codePoint: U+0063, c
+EOF
+)
+
+assert diff <(redump '\c' 'u') <(<<'EOF'
+1:1 [error] invalid escape: `\c'
+ at (pos = 0, size = 2)
+EOF
+)
+
+assert diff <(redump '\c' 'v') <(<<'EOF'
+1:1 [error] invalid escape: `\c'
+ at (pos = 0, size = 2)
+EOF
+)
+
+# \c (invalid char)
+assert diff <(redump ' \c@' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Seq
+  token: (pos = 0, size = 4)
+  patterns:
+    - kind: Char
+      token: (pos = 0, size = 1)
+      codePoint: U+0020, \x20
+    - kind: Char
+      token: (pos = 1, size = 1)
+      codePoint: U+005C, \
+    - kind: Char
+      token: (pos = 2, size = 1)
+      codePoint: U+0063, c
+    - kind: Char
+      token: (pos = 3, size = 1)
+      codePoint: U+0040, @
+EOF
+)
+
+assert diff <(redump ' \c@' 'u') <(<<'EOF'
+1:2 [error] invalid escape: `\c@'
+ at (pos = 1, size = 3)
+EOF
+)
+
+assert diff <(redump ' \c@' 'v') <(<<'EOF'
+1:2 [error] invalid escape: `\c@'
+ at (pos = 1, size = 3)
+EOF
+)
+
+assert diff <(redump '\cあ' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Seq
+  token: (pos = 0, size = 5)
+  patterns:
+    - kind: Char
+      token: (pos = 0, size = 1)
+      codePoint: U+005C, \
+    - kind: Char
+      token: (pos = 1, size = 1)
+      codePoint: U+0063, c
+    - kind: Char
+      token: (pos = 2, size = 3)
+      codePoint: U+3042, あ
+EOF
+)
+
+assert diff <(redump ' \cあ' 'u') <(<<'EOF'
+1:2 [error] invalid escape: `\cあ'
+ at (pos = 1, size = 5)
+EOF
+)
+
+assert diff <(redump ' \cあ' 'v') <(<<'EOF'
+1:2 [error] invalid escape: `\cあ'
+ at (pos = 1, size = 5)
+EOF
+)
+
+# \cj
+assert diff <(redump '\cj' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Char
+  token: (pos = 0, size = 3)
+  codePoint: U+000A, \x0A
+EOF
+)
+
+assert diff <(redump '\cj' 'u') <(<<'EOF'
+flag: (mode = u, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Char
+  token: (pos = 0, size = 3)
+  codePoint: U+000A, \x0A
+EOF
+)
+
+assert diff <(redump '\cj' 'um') <(<<'EOF'
+flag: (mode = u, modifier = m)
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Char
+  token: (pos = 0, size = 3)
+  codePoint: U+000A, \x0A
+EOF
+)
+
+# \cJ
+assert diff <(redump '\cJ' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Char
+  token: (pos = 0, size = 3)
+  codePoint: U+000A, \x0A
+EOF
+)
+
+assert diff <(redump '\cJ' 'u') <(<<'EOF'
+flag: (mode = u, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Char
+  token: (pos = 0, size = 3)
+  codePoint: U+000A, \x0A
+EOF
+)
+
+assert diff <(redump '\cJ' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Char
+  token: (pos = 0, size = 3)
+  codePoint: U+000A, \x0A
+EOF
+)

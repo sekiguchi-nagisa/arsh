@@ -1,0 +1,260 @@
+
+source $SCRIPT_DIR/test_helper.arsh
+
+# \b
+assert diff <(redump '\b' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Boundary
+  token: (pos = 0, size = 2)
+  boundary: WORD
+EOF
+)
+
+assert diff <(redump '\b' 'uim') <(<<'EOF'
+flag: (mode = u, modifier = im)
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Boundary
+  token: (pos = 0, size = 2)
+  boundary: WORD
+EOF
+)
+
+assert diff <(redump '\b' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Boundary
+  token: (pos = 0, size = 2)
+  boundary: WORD
+EOF
+)
+
+# \B
+assert diff <(redump '\B' 'uim') <(<<'EOF'
+flag: (mode = u, modifier = im)
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Boundary
+  token: (pos = 0, size = 2)
+  boundary: NOT_WORD
+EOF
+)
+
+assert diff <(redump '\B' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Boundary
+  token: (pos = 0, size = 2)
+  boundary: NOT_WORD
+EOF
+)
+
+# \d
+assert diff <(redump '\d' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Property
+  token: (pos = 0, size = 2)
+  property: DIGIT
+  value: 0
+  invert: false
+EOF
+)
+
+assert diff <(redump '\d' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Property
+  token: (pos = 0, size = 2)
+  property: DIGIT
+  value: 0
+  invert: false
+EOF
+)
+
+# \D
+assert diff <(redump '\D' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Property
+  token: (pos = 0, size = 2)
+  property: NOT_DIGIT
+  value: 0
+  invert: true
+EOF
+)
+
+assert diff <(redump '\D' 'iu') <(<<'EOF'
+flag: (mode = u, modifier = i)
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Property
+  token: (pos = 0, size = 2)
+  property: NOT_DIGIT
+  value: 0
+  invert: true
+EOF
+)
+
+assert diff <(redump '\D' 'vs') <(<<'EOF'
+flag: (mode = v, modifier = s)
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Property
+  token: (pos = 0, size = 2)
+  property: NOT_DIGIT
+  value: 0
+  invert: true
+EOF
+)
+
+# \s
+assert diff <(redump '\s' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Property
+  token: (pos = 0, size = 2)
+  property: SPACE
+  value: 0
+  invert: false
+EOF
+)
+
+assert diff <(redump '\s' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Property
+  token: (pos = 0, size = 2)
+  property: SPACE
+  value: 0
+  invert: false
+EOF
+)
+
+# \S
+assert diff <(redump '\S' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Property
+  token: (pos = 0, size = 2)
+  property: NOT_SPACE
+  value: 0
+  invert: true
+EOF
+)
+
+assert diff <(redump '\S' 'u') <(<<'EOF'
+flag: (mode = u, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Property
+  token: (pos = 0, size = 2)
+  property: NOT_SPACE
+  value: 0
+  invert: true
+EOF
+)
+
+assert diff <(redump '\S' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Property
+  token: (pos = 0, size = 2)
+  property: NOT_SPACE
+  value: 0
+  invert: true
+EOF
+)
+
+# \w
+assert diff <(redump '\w' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Property
+  token: (pos = 0, size = 2)
+  property: WORD
+  value: 0
+  invert: false
+EOF
+)
+
+assert diff <(redump '\w' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Property
+  token: (pos = 0, size = 2)
+  property: WORD
+  value: 0
+  invert: false
+EOF
+)
+
+# \W
+assert diff <(redump '\W' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Property
+  token: (pos = 0, size = 2)
+  property: NOT_WORD
+  value: 0
+  invert: true
+EOF
+)
+
+assert diff <(redump '\W' 'u') <(<<'EOF'
+flag: (mode = u, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Property
+  token: (pos = 0, size = 2)
+  property: NOT_WORD
+  value: 0
+  invert: true
+EOF
+)
+
+assert diff <(redump '\W' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Property
+  token: (pos = 0, size = 2)
+  property: NOT_WORD
+  value: 0
+  invert: true
+EOF
+)

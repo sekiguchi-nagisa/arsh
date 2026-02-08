@@ -300,7 +300,7 @@ std::unique_ptr<Node> Parser::parseAtomEscape() {
       str += StringRef(this->iter, len);
       this->iter += len;
     }
-    this->reportError(this->getTokenFrom(start), "invalid unicode escape: `\\c%s'", str.c_str());
+    this->reportError(this->getTokenFrom(start), "invalid escape: `\\c%s'", str.c_str());
     return nullptr;
   }
   case '0':
@@ -384,7 +384,7 @@ std::unique_ptr<Node> Parser::parseAtomEscape() {
       goto CHAR;
     }
     std::string str = StringRef(old, this->iter - old).toString();
-    this->reportError(this->getTokenFrom(start), "invalid unicode escape: `\\x%s'", str.c_str());
+    this->reportError(this->getTokenFrom(start), "invalid escape: `\\x%s'", str.c_str());
     return nullptr;
   }
   case 'u': {

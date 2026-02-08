@@ -1,0 +1,145 @@
+
+source $SCRIPT_DIR/test_helper.arsh
+
+# \x
+assert diff <(redump 'a\x' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Seq
+  token: (pos = 0, size = 3)
+  patterns:
+    - kind: Char
+      token: (pos = 0, size = 1)
+      codePoint: U+0061, a
+    - kind: Char
+      token: (pos = 1, size = 2)
+      codePoint: U+0078, x
+EOF
+)
+
+assert diff <(redump 'a\x' 'u') <(<<'EOF'
+1:2 [error] invalid escape: `\x'
+ at (pos = 1, size = 2)
+EOF
+)
+
+assert diff <(redump 'ab\x' 'v') <(<<'EOF'
+1:3 [error] invalid escape: `\x'
+ at (pos = 2, size = 2)
+EOF
+)
+
+# \x (invalid char)
+assert diff <(redump '\xZ' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Seq
+  token: (pos = 0, size = 3)
+  patterns:
+    - kind: Char
+      token: (pos = 0, size = 2)
+      codePoint: U+0078, x
+    - kind: Char
+      token: (pos = 2, size = 1)
+      codePoint: U+005A, Z
+EOF
+)
+
+assert diff <(redump '\xZ' 'u') <(<<'EOF'
+1:1 [error] invalid escape: `\xZ'
+ at (pos = 0, size = 3)
+EOF
+)
+
+assert diff <(redump '\xZ' 'v') <(<<'EOF'
+1:1 [error] invalid escape: `\xZ'
+ at (pos = 0, size = 3)
+EOF
+)
+
+assert diff <(redump '\xAZ' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Seq
+  token: (pos = 0, size = 4)
+  patterns:
+    - kind: Char
+      token: (pos = 0, size = 2)
+      codePoint: U+0078, x
+    - kind: Char
+      token: (pos = 2, size = 1)
+      codePoint: U+0041, A
+    - kind: Char
+      token: (pos = 3, size = 1)
+      codePoint: U+005A, Z
+EOF
+)
+
+assert diff <(redump 'aa\xAZ' 'u') <(<<'EOF'
+1:3 [error] invalid escape: `\xAZ'
+ at (pos = 2, size = 4)
+EOF
+)
+
+assert diff <(redump 'aa\xAZ' 'v') <(<<'EOF'
+1:3 [error] invalid escape: `\xAZ'
+ at (pos = 2, size = 4)
+EOF
+)
+
+assert diff <(redump '\xFFF' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Seq
+  token: (pos = 0, size = 5)
+  patterns:
+    - kind: Char
+      token: (pos = 0, size = 4)
+      codePoint: U+00FF, ÿ
+    - kind: Char
+      token: (pos = 4, size = 1)
+      codePoint: U+0046, F
+EOF
+)
+
+assert diff <(redump '\xFFF' 'usi') <(<<'EOF'
+flag: (mode = u, modifier = is)
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Seq
+  token: (pos = 0, size = 5)
+  patterns:
+    - kind: Char
+      token: (pos = 0, size = 4)
+      codePoint: U+00FF, ÿ
+    - kind: Char
+      token: (pos = 4, size = 1)
+      codePoint: U+0046, F
+EOF
+)
+
+assert diff <(redump '\xFFF' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Seq
+  token: (pos = 0, size = 5)
+  patterns:
+    - kind: Char
+      token: (pos = 0, size = 4)
+      codePoint: U+00FF, ÿ
+    - kind: Char
+      token: (pos = 4, size = 1)
+      codePoint: U+0046, F
+EOF
+)

@@ -17,6 +17,8 @@
 #include <cstdio>
 #include <utility>
 
+#include <misc/opt.hpp>
+
 #include "regex/dump.h"
 #include "regex/parser.h"
 
@@ -24,6 +26,11 @@ using namespace arsh;
 
 static void usage(FILE *fp, char **argv) {
   fprintf(fp, "usage: %s pattern [modifiers]\n", argv[0]);
+}
+
+static void invalidOption(char **argv, int opt) {
+  fprintf(stderr, "invalid option: -%c", opt);
+  usage(stderr, argv);
 }
 
 static std::pair<unsigned int, unsigned int> formatLoc(StringRef src, Token token) {
@@ -40,8 +47,17 @@ static std::pair<unsigned int, unsigned int> formatLoc(StringRef src, Token toke
 }
 
 int main(int argc, char **argv) {
+  opt::GetOptState optState("h");
   auto iter = argv + 1;
   const auto end = argv + argc;
+  for (int opt; (opt = optState(iter, end)) != -1;) {
+    if (opt == 'h') {
+      usage(stdout, argv);
+      return 2;
+    }
+    invalidOption(argv, opt);
+    return 1;
+  }
   if (iter == end) {
     fputs("need pattern\n", stderr);
     usage(stderr, argv);

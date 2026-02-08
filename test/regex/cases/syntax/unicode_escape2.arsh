@@ -1,0 +1,275 @@
+
+source $SCRIPT_DIR/test_helper.arsh
+
+# \u{
+assert diff <(redump '\u{' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Seq
+  token: (pos = 0, size = 3)
+  patterns:
+    - kind: Char
+      token: (pos = 0, size = 2)
+      codePoint: U+0075, u
+    - kind: Char
+      token: (pos = 2, size = 1)
+      codePoint: U+007B, {
+EOF
+)
+
+assert diff <(redump 'a\u{' 'u') <(<<'EOF'
+1:2 [error] invalid unicode escape: `\u{'
+ at (pos = 1, size = 3)
+EOF
+)
+
+assert diff <(redump 'a\u{' 'v') <(<<'EOF'
+1:2 [error] invalid unicode escape: `\u{'
+ at (pos = 1, size = 3)
+EOF
+)
+
+# \u{F
+assert diff <(redump '\u{F' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Seq
+  token: (pos = 0, size = 4)
+  patterns:
+    - kind: Char
+      token: (pos = 0, size = 2)
+      codePoint: U+0075, u
+    - kind: Char
+      token: (pos = 2, size = 1)
+      codePoint: U+007B, {
+    - kind: Char
+      token: (pos = 3, size = 1)
+      codePoint: U+0046, F
+EOF
+)
+
+assert diff <(redump 'a\u{F' 'u') <(<<'EOF'
+1:2 [error] invalid unicode escape: `\u{F'
+ at (pos = 1, size = 4)
+EOF
+)
+
+assert diff <(redump 'a\u{F' 'v') <(<<'EOF'
+1:2 [error] invalid unicode escape: `\u{F'
+ at (pos = 1, size = 4)
+EOF
+)
+
+# \u{}
+assert diff <(redump '\u{}' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Seq
+  token: (pos = 0, size = 4)
+  patterns:
+    - kind: Char
+      token: (pos = 0, size = 2)
+      codePoint: U+0075, u
+    - kind: Char
+      token: (pos = 2, size = 1)
+      codePoint: U+007B, {
+    - kind: Char
+      token: (pos = 3, size = 1)
+      codePoint: U+007D, }
+EOF
+)
+
+assert diff <(redump '\u{}' 'u') <(<<'EOF'
+1:1 [error] invalid unicode escape: `\u{}'
+ at (pos = 0, size = 4)
+EOF
+)
+
+assert diff <(redump '\u{}' 'v') <(<<'EOF'
+1:1 [error] invalid unicode escape: `\u{}'
+ at (pos = 0, size = 4)
+EOF
+)
+
+# \u{1W}
+assert diff <(redump '\u{1W}' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Seq
+  token: (pos = 0, size = 6)
+  patterns:
+    - kind: Char
+      token: (pos = 0, size = 2)
+      codePoint: U+0075, u
+    - kind: Char
+      token: (pos = 2, size = 1)
+      codePoint: U+007B, {
+    - kind: Char
+      token: (pos = 3, size = 1)
+      codePoint: U+0031, 1
+    - kind: Char
+      token: (pos = 4, size = 1)
+      codePoint: U+0057, W
+    - kind: Char
+      token: (pos = 5, size = 1)
+      codePoint: U+007D, }
+EOF
+)
+
+assert diff <(redump '\u{1W}' 'u') <(<<'EOF'
+1:1 [error] invalid unicode escape: `\u{1W'
+ at (pos = 0, size = 5)
+EOF
+)
+
+assert diff <(redump '\u{1W}' 'v') <(<<'EOF'
+1:1 [error] invalid unicode escape: `\u{1W'
+ at (pos = 0, size = 5)
+EOF
+)
+
+# \u{7058}
+assert diff <(redump '\u{7058}' '') <(<<'EOF'  # recognized as repeat
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Repeat
+  token: (pos = 0, size = 8)
+  repeat: (min = 7058, max = 7058)
+  greedy: true
+  pattern:
+    kind: Char
+    token: (pos = 0, size = 2)
+    codePoint: U+0075, u
+EOF
+)
+
+assert diff <(redump '\u{7058}' 'u') <(<<'EOF'
+flag: (mode = u, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Char
+  token: (pos = 0, size = 8)
+  codePoint: U+7058, 灘
+EOF
+)
+
+assert diff <(redump '\u{7058}' 'iv') <(<<'EOF'
+flag: (mode = v, modifier = i)
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Char
+  token: (pos = 0, size = 8)
+  codePoint: U+7058, 灘
+EOF
+)
+
+# \u{FFFFFFF}
+assert diff <(redump '\u{FFFFFFF}' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Seq
+  token: (pos = 0, size = 11)
+  patterns:
+    - kind: Char
+      token: (pos = 0, size = 2)
+      codePoint: U+0075, u
+    - kind: Char
+      token: (pos = 2, size = 1)
+      codePoint: U+007B, {
+    - kind: Char
+      token: (pos = 3, size = 1)
+      codePoint: U+0046, F
+    - kind: Char
+      token: (pos = 4, size = 1)
+      codePoint: U+0046, F
+    - kind: Char
+      token: (pos = 5, size = 1)
+      codePoint: U+0046, F
+    - kind: Char
+      token: (pos = 6, size = 1)
+      codePoint: U+0046, F
+    - kind: Char
+      token: (pos = 7, size = 1)
+      codePoint: U+0046, F
+    - kind: Char
+      token: (pos = 8, size = 1)
+      codePoint: U+0046, F
+    - kind: Char
+      token: (pos = 9, size = 1)
+      codePoint: U+0046, F
+    - kind: Char
+      token: (pos = 10, size = 1)
+      codePoint: U+007D, }
+EOF
+)
+
+assert diff <(redump ' \u{FFFFFFF}' 'u') <(<<'EOF'
+1:2 [error] invalid unicode escape: `\u{FFFFFFF}'
+ at (pos = 1, size = 11)
+EOF
+)
+
+assert diff <(redump ' \u{FFFFFFF}' 'v') <(<<'EOF'
+1:2 [error] invalid unicode escape: `\u{FFFFFFF}'
+ at (pos = 1, size = 11)
+EOF
+)
+
+# \u{D888} (surrogate)
+assert diff <(redump '\u{D888}' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Seq
+  token: (pos = 0, size = 8)
+  patterns:
+    - kind: Char
+      token: (pos = 0, size = 2)
+      codePoint: U+0075, u
+    - kind: Char
+      token: (pos = 2, size = 1)
+      codePoint: U+007B, {
+    - kind: Char
+      token: (pos = 3, size = 1)
+      codePoint: U+0044, D
+    - kind: Char
+      token: (pos = 4, size = 1)
+      codePoint: U+0038, 8
+    - kind: Char
+      token: (pos = 5, size = 1)
+      codePoint: U+0038, 8
+    - kind: Char
+      token: (pos = 6, size = 1)
+      codePoint: U+0038, 8
+    - kind: Char
+      token: (pos = 7, size = 1)
+      codePoint: U+007D, }
+EOF
+)
+
+assert diff <(redump '\u{D888}' 'u') <(<<'EOF'
+1:1 [error] unicode escape generate invalid UTF-8 (surrogate): `U+D888'
+ at (pos = 0, size = 8)
+EOF
+)
+
+assert diff <(redump '\u{D888}' 'v') <(<<'EOF'
+1:1 [error] unicode escape generate invalid UTF-8 (surrogate): `U+D888'
+ at (pos = 0, size = 8)
+EOF
+)

@@ -1,0 +1,11 @@
+
+importenv REDUMP_PATH
+$REDUMP_PATH = $REDUMP_PATH.realpath()
+
+assert test -x $REDUMP_PATH
+
+assert command -v diff &>> /dev/null
+
+redump() {
+    call $REDUMP_PATH $@ 2>&1
+}

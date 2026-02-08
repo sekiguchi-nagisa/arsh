@@ -1,0 +1,257 @@
+
+source $SCRIPT_DIR/test_helper.arsh
+
+# ${
+assert diff <(redump '${' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Seq
+  token: (pos = 0, size = 2)
+  patterns:
+    - kind: Boundary
+      token: (pos = 0, size = 1)
+      boundary: END
+    - kind: Char
+      token: (pos = 1, size = 1)
+      codePoint: U+007B, {
+EOF
+)
+
+assert diff <(redump '${' 'u') <(<<'EOF'
+1:2 [error] lone quantifier bracket `{'
+ at (pos = 1, size = 1)
+EOF
+)
+
+assert diff <(redump '2{' 'v') <(<<'EOF'
+1:2 [error] invalid quantifier: `{'
+ at (pos = 1, size = 1)
+EOF
+)
+
+# a{Q}
+assert diff <(redump 'a{Q}' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Seq
+  token: (pos = 0, size = 4)
+  patterns:
+    - kind: Char
+      token: (pos = 0, size = 1)
+      codePoint: U+0061, a
+    - kind: Char
+      token: (pos = 1, size = 1)
+      codePoint: U+007B, {
+    - kind: Char
+      token: (pos = 2, size = 1)
+      codePoint: U+0051, Q
+    - kind: Char
+      token: (pos = 3, size = 1)
+      codePoint: U+007D, }
+EOF
+)
+
+assert diff <(redump 'a{Q}' 'u') <(<<'EOF'
+1:3 [error] must be positive decimal number: `Q'
+ at (pos = 2, size = 1)
+EOF
+)
+
+# \d{1
+assert diff <(redump '\d{1' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Seq
+  token: (pos = 0, size = 4)
+  patterns:
+    - kind: Property
+      token: (pos = 0, size = 2)
+      property: DIGIT
+      value: 0
+      invert: false
+    - kind: Char
+      token: (pos = 2, size = 1)
+      codePoint: U+007B, {
+    - kind: Char
+      token: (pos = 3, size = 1)
+      codePoint: U+0031, 1
+EOF
+)
+
+assert diff <(redump '\d{1' 'u') <(<<'EOF'
+1:3 [error] unclosed quantifier: `{1'
+ at (pos = 2, size = 2)
+EOF
+)
+
+assert diff <(redump '\S{1,' 'u') <(<<'EOF'
+1:3 [error] invalid quantifier: `{1,'
+ at (pos = 2, size = 3)
+EOF
+)
+
+assert diff <(redump '\S{1, 2}' 'u') <(<<'EOF'
+1:6 [error] must be positive decimal number: ` 2'
+ at (pos = 5, size = 2)
+EOF
+)
+
+assert diff <(redump '\S{1,a' 'u') <(<<'EOF'
+1:6 [error] must be positive decimal number: `a'
+ at (pos = 5, size = 1)
+EOF
+)
+
+assert diff <(redump '\S{-1}' 'u') <(<<'EOF'
+1:4 [error] must be positive decimal number: `-1'
+ at (pos = 3, size = 2)
+EOF
+)
+
+assert diff <(redump '\S{1,2' 'u') <(<<'EOF'
+1:3 [error] unclosed quantifier: `{1,2'
+ at (pos = 2, size = 4)
+EOF
+)
+
+assert diff <(redump '\W{1,21111111111111' 'u') <(<<'EOF'
+1:6 [error] too large quantifier number: `21111111111111'
+ at (pos = 5, size = 14)
+EOF
+)
+
+assert diff <(redump 'Q{2,1}' '') <(<<'EOF'
+1:2 [error] numbers out of order in {} quantifier
+ at (pos = 1, size = 5)
+EOF
+)
+
+assert diff <(redump 'Q{2,1}' 'u') <(<<'EOF'
+1:2 [error] numbers out of order in {} quantifier
+ at (pos = 1, size = 5)
+EOF
+)
+
+# w{2}
+assert diff <(redump 'w{2}' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Repeat
+  token: (pos = 0, size = 4)
+  repeat: (min = 2, max = 2)
+  greedy: true
+  pattern:
+    kind: Char
+    token: (pos = 0, size = 1)
+    codePoint: U+0077, w
+EOF
+)
+
+# w{2,}
+assert diff <(redump 'w{2,}' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Repeat
+  token: (pos = 0, size = 5)
+  repeat: (min = 2, max = unlimited)
+  greedy: true
+  pattern:
+    kind: Char
+    token: (pos = 0, size = 1)
+    codePoint: U+0077, w
+EOF
+)
+
+# w{2,4}
+assert diff <(redump 'w{2,4}' 'u') <(<<'EOF'
+flag: (mode = u, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Repeat
+  token: (pos = 0, size = 6)
+  repeat: (min = 2, max = 4)
+  greedy: true
+  pattern:
+    kind: Char
+    token: (pos = 0, size = 1)
+    codePoint: U+0077, w
+EOF
+)
+
+# 2{010}?
+assert diff <(redump '2{010}?' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Repeat
+  token: (pos = 0, size = 7)
+  repeat: (min = 10, max = 10)
+  greedy: false
+  pattern:
+    kind: Char
+    token: (pos = 0, size = 1)
+    codePoint: U+0032, 2
+EOF
+)
+
+assert diff <(redump '2{010}?' 'u') <(<<'EOF'
+flag: (mode = u, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Repeat
+  token: (pos = 0, size = 7)
+  repeat: (min = 10, max = 10)
+  greedy: false
+  pattern:
+    kind: Char
+    token: (pos = 0, size = 1)
+    codePoint: U+0032, 2
+EOF
+)
+
+# 2{010,}?
+assert diff <(redump '2{010,}?' 'u') <(<<'EOF'
+flag: (mode = u, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Repeat
+  token: (pos = 0, size = 8)
+  repeat: (min = 10, max = unlimited)
+  greedy: false
+  pattern:
+    kind: Char
+    token: (pos = 0, size = 1)
+    codePoint: U+0032, 2
+EOF
+)
+
+# 2{010,00111}?
+assert diff <(redump '2{010,00111}?' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Repeat
+  token: (pos = 0, size = 13)
+  repeat: (min = 10, max = 111)
+  greedy: false
+  pattern:
+    kind: Char
+    token: (pos = 0, size = 1)
+    codePoint: U+0032, 2
+EOF
+)

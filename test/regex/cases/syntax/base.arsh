@@ -1,0 +1,136 @@
+source $SCRIPT_DIR/test_helper.arsh
+
+# empty
+assert diff <(redump '' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Empty
+  token: (pos = 0, size = 0)
+EOF
+)
+
+# .
+assert diff <(redump '.' '') <(<< 'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Any
+  token: (pos = 0, size = 1)
+EOF
+)
+
+assert diff <(redump '.\.' 'mv') <(<< 'EOF'
+flag: (mode = v, modifier = m)
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Seq
+  token: (pos = 0, size = 3)
+  patterns:
+    - kind: Any
+      token: (pos = 0, size = 1)
+    - kind: Char
+      token: (pos = 1, size = 2)
+      codePoint: U+002E, .
+EOF
+)
+
+# char
+assert diff <(redump 'c' '') <(<< 'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Char
+  token: (pos = 0, size = 1)
+  codePoint: U+0063, c
+EOF
+)
+
+assert diff <(redump 'あc' 'u') <(<< 'EOF'
+flag: (mode = u, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Seq
+  token: (pos = 0, size = 4)
+  patterns:
+    - kind: Char
+      token: (pos = 0, size = 3)
+      codePoint: U+3042, あ
+    - kind: Char
+      token: (pos = 3, size = 1)
+      codePoint: U+0063, c
+EOF
+)
+
+# ^
+assert diff <(redump '^' '') <(<< 'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Boundary
+  token: (pos = 0, size = 1)
+  boundary: START
+EOF
+)
+
+assert diff <(redump '^' 'u') <(<< 'EOF'
+flag: (mode = u, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Boundary
+  token: (pos = 0, size = 1)
+  boundary: START
+EOF
+)
+
+assert diff <(redump '^' 'v') <(<< 'EOF'
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Boundary
+  token: (pos = 0, size = 1)
+  boundary: START
+EOF
+)
+
+# $
+assert diff <(redump '$' '') <(<< 'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Boundary
+  token: (pos = 0, size = 1)
+  boundary: END
+EOF
+)
+
+assert diff <(redump '$' 'u') <(<< 'EOF'
+flag: (mode = u, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Boundary
+  token: (pos = 0, size = 1)
+  boundary: END
+EOF
+)
+
+assert diff <(redump '$' 'v') <(<< 'EOF'
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Boundary
+  token: (pos = 0, size = 1)
+  boundary: END
+EOF
+)

@@ -20,6 +20,13 @@ for $d in $(ls $exec_test_dir) {
     }
 }
 
+# copy from regex/cases/
+echo copy test cases from $SCRIPT_DIR/../test/regex/cases
+for d in @($SCRIPT_DIR/../test/regex/cases/**/*.{ds,arsh}) {
+    var dirbase = $d.dirname().basename()
+    cp $d $dir/regex_${dirbase}_${$d.basename()}
+}
+
 # copy from module dir
 let mod = "$SCRIPT_DIR/../share/arsh/modules".realpath()
 echo copy scripts from $mod
