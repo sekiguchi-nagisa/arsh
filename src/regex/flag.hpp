@@ -77,43 +77,66 @@ public:
     return parse(ref, Mode::UNICODE, err);
   }
 
-  static Optional<Flag> parse(const StringRef ref, const Mode defaultMode, std::string *err) {
+  static Optional<Modifier> parseModifier(const StringRef ref, std::string *err) {
+    if (auto ret = parse(ref, Mode::LEGACY, err, true); ret.hasValue()) {
+      return ret.unwrap().modifiers();
+    }
+    return {};
+  }
+
+  static Optional<Flag> parse(const StringRef ref, const Mode defaultMode, std::string *err,
+                              bool onlyModifier = false) {
     Optional<Mode> mode;
     Modifier modifiers{};
     for (char ch : ref) {
       switch (ch) {
 #define GEN_CASE(E, S, D)                                                                          \
   case S:                                                                                          \
+    if (hasFlag(modifiers, Modifier::E)) {                                                         \
+      if (err) {                                                                                   \
+        *err += "`";                                                                               \
+        *err += (S);                                                                               \
+        *err += "' modifier has already been specified";                                           \
+      }                                                                                            \
+      return {};                                                                                   \
+    }                                                                                              \
     setFlag(modifiers, Modifier::E);                                                               \
-    break;
+    continue;
         EACH_RE_MODIFIER(GEN_CASE)
 #undef GEN_CASE
       case 'u':
-        if (mode.hasValue() && mode.unwrap() != Mode::UNICODE) {
-          if (err) {
-            *err += "cannot specify `u' flag, since `v' flag has already been specified";
+        if (!onlyModifier) {
+          if (mode.hasValue()) {
+            if (err) {
+              *err += "flag has already been specified";
+            }
+            return {};
           }
-          return {};
+          mode = Mode::UNICODE;
+          continue;
         }
-        mode = Mode::UNICODE;
         break;
       case 'v':
-        if (mode.hasValue() && mode.unwrap() != Mode::UNICODE_SET) {
-          if (err) {
-            *err += "cannot specify `v' flag, since `u' flag has already been specified";
+        if (!onlyModifier) {
+          if (mode.hasValue()) {
+            if (err) {
+              *err += "flag has already been specified";
+            }
+            return {};
           }
-          return {};
+          mode = Mode::UNICODE_SET;
+          continue;
         }
-        mode = Mode::UNICODE_SET;
         break;
       default:
-        if (err) {
-          *err += "invalid regex flag: `";
-          *err += ch;
-          *err += '\'';
-        }
-        return {};
+        break;
       }
+      if (err) {
+        *err += onlyModifier ? "invalid modifier: `" : "invalid regex flag: `";
+        *err += ch;
+        *err += '\'';
+      }
+      return {};
     }
     return Flag(mode.hasValue() ? mode.unwrap() : defaultMode, modifiers);
   }

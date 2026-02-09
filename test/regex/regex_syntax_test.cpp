@@ -18,31 +18,70 @@ TEST(RegexFlag, base) {
   ASSERT_TRUE(flag.unwrap().has(regex::Modifier::IGNORE_CASE | regex::Modifier::DOT_ALL |
                                 regex::Modifier::MULTILINE));
 
-  flag = regex::Flag::parse("vimissvsssssmmm", nullptr);
-  ASSERT_TRUE(flag.hasValue());
-  ASSERT_TRUE(flag.unwrap().is(regex::Mode::UNICODE_SET));
-  ASSERT_TRUE(flag.unwrap().has(regex::Modifier::IGNORE_CASE | regex::Modifier::DOT_ALL |
-                                regex::Modifier::MULTILINE));
-
   std::string err;
+  flag = regex::Flag::parse("vimissvsssssmmm", &err);
+  ASSERT_FALSE(flag.hasValue());
+  ASSERT_EQ("`i' modifier has already been specified", err);
+
+  err.clear();
+  flag = regex::Flag::parse("vmissvsssssmmm", &err);
+  ASSERT_FALSE(flag.hasValue());
+  ASSERT_EQ("`s' modifier has already been specified", err);
+  err.clear();
+  flag = regex::Flag::parse("vmisvsssssmmm", &err);
+  ASSERT_FALSE(flag.hasValue());
+  ASSERT_EQ("flag has already been specified", err);
+
+  err.clear();
+  flag = regex::Flag::parse("vmismmm", &err);
+  ASSERT_FALSE(flag.hasValue());
+  ASSERT_EQ("`m' modifier has already been specified", err);
+
+  err.clear();
   flag = regex::Flag::parse("ymq", &err);
   ASSERT_FALSE(flag.hasValue());
   ASSERT_EQ("invalid regex flag: `y'", err);
 
   err.clear();
-  flag = regex::Flag::parse("mmmgu", &err);
+  flag = regex::Flag::parse("mgu", &err);
   ASSERT_FALSE(flag.hasValue());
   ASSERT_EQ("invalid regex flag: `g'", err);
 
   err.clear();
   flag = regex::Flag::parse("mummv", &err);
   ASSERT_FALSE(flag.hasValue());
-  ASSERT_EQ("cannot specify `v' flag, since `u' flag has already been specified", err);
+  ASSERT_EQ("`m' modifier has already been specified", err);
 
   err.clear();
   flag = regex::Flag::parse("vvviu", &err);
   ASSERT_FALSE(flag.hasValue());
-  ASSERT_EQ("cannot specify `u' flag, since `v' flag has already been specified", err);
+  ASSERT_EQ("flag has already been specified", err);
+}
+
+TEST(RegexFlag, onlyModifier) {
+  std::string err;
+  auto modifiers = regex::Flag::parseModifier("a", &err);
+  ASSERT_FALSE(modifiers.hasValue());
+  ASSERT_EQ("invalid modifier: `a'", err);
+
+  err.clear();
+  modifiers = regex::Flag::parseModifier("v", &err);
+  ASSERT_FALSE(modifiers.hasValue());
+  ASSERT_EQ("invalid modifier: `v'", err);
+
+  err.clear();
+  modifiers = regex::Flag::parseModifier("u", &err);
+  ASSERT_FALSE(modifiers.hasValue());
+  ASSERT_EQ("invalid modifier: `u'", err);
+
+  err.clear();
+  modifiers = regex::Flag::parseModifier("imi", &err);
+  ASSERT_FALSE(modifiers.hasValue());
+  ASSERT_EQ("`i' modifier has already been specified", err);
+
+  modifiers = regex::Flag::parseModifier("i", nullptr);
+  ASSERT_TRUE(modifiers.hasValue());
+  ASSERT_TRUE(hasFlag(modifiers.unwrap(), regex::Modifier::IGNORE_CASE));
 }
 
 #ifndef BIN_PATH
