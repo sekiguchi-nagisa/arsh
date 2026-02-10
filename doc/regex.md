@@ -34,10 +34,10 @@
 | ^                    | ✔️         | ❌         | ❌                       |
 | $                    | ✔️         | ❌         | ❌                       |
 | abc                  | ✔️         | ❌         | ❌                       |
-| (?=pattern)          | ❌          | ❌         | ❌                       |
-| (?!pattern)          | ❌          | ❌         | ❌                       |
-| (?\<=pattern)        | ❌          | ❌         | ❌                       |
-| (?\<!pattern)        | ❌          | ❌         | ❌                       |
+| (?=pattern)          | ✔️         | ❌         | ❌                       |
+| (?!pattern)          | ✔️         | ❌         | ❌                       |
+| (?\<=pattern)        | ✔️         | ❌         | ❌                       |
+| (?\<!pattern)        | ✔️         | ❌         | ❌                       |
 | (?ims-ims:pattern)   | ✔️         | ❌         | ❌                       |
 | \k\<name>            | ✔️         | ❌         | ❌                       |
 | (?\<name>pattern)    | ❌          | ❌         | ❌                       |

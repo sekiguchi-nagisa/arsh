@@ -101,3 +101,106 @@ pattern:
       token: (pos = 3, size = 0)
 EOF
 )
+
+# (?-m:){1}
+assert diff <(redump '(?-m:){1,}' 'mu') <(<<'EOF'
+flag: (mode = u, modifier = m)
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Repeat
+  token: (pos = 0, size = 10)
+  repeat: (min = 1, max = unlimited)
+  greedy: true
+  pattern:
+    kind: Group
+    token: (pos = 0, size = 6)
+    group: MODIFIER
+    setModifiers:
+    unsetModifiers: m
+    pattern:
+      kind: Empty
+      token: (pos = 5, size = 0)
+EOF
+)
+
+# (?=a){0,3}
+assert diff <(redump '(?=a){0,3}' 'm') <(<<'EOF'  # only allowed in legacy mode
+flag: (mode = , modifier = m)
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Repeat
+  token: (pos = 0, size = 10)
+  repeat: (min = 0, max = 3)
+  greedy: true
+  pattern:
+    kind: LookAround
+    token: (pos = 0, size = 5)
+    type: LOOK_AHEAD
+    pattern:
+      kind: Char
+      token: (pos = 3, size = 1)
+      codePoint: U+0061, a
+EOF
+)
+
+assert diff <(redump '(?=a){0,3}' 'mu') <(<<'EOF'
+1:6 [error] `{' quantifier is not allowed after lookaround
+ at (pos = 5, size = 1)
+EOF
+)
+
+
+# (?!a)?
+assert diff <(redump '(?!a)?' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Repeat
+  token: (pos = 0, size = 6)
+  repeat: (min = 0, max = 1)
+  greedy: true
+  pattern:
+    kind: LookAround
+    token: (pos = 0, size = 5)
+    type: LOOK_AHEAD_NOT
+    pattern:
+      kind: Char
+      token: (pos = 3, size = 1)
+      codePoint: U+0061, a
+EOF
+)
+
+assert diff <(redump '(?!a){1}' 'mu') <(<<'EOF'
+1:6 [error] `{' quantifier is not allowed after lookaround
+ at (pos = 5, size = 1)
+EOF
+)
+
+# (?<=aa)*
+assert diff <(redump '(?<=aa)*' 'm') <(<<'EOF'
+1:8 [error] `*' quantifier is not allowed after lookaround
+ at (pos = 7, size = 1)
+EOF
+)
+
+assert diff <(redump '(?<=aa)+' 'mv') <(<<'EOF'
+1:8 [error] `+' quantifier is not allowed after lookaround
+ at (pos = 7, size = 1)
+EOF
+)
+
+# (?<!aa)*
+assert diff <(redump '(?<!aa)*' 'm') <(<<'EOF'
+1:8 [error] `*' quantifier is not allowed after lookaround
+ at (pos = 7, size = 1)
+EOF
+)
+
+assert diff <(redump '(?<!aa)?' 'mv') <(<<'EOF'
+1:8 [error] `?' quantifier is not allowed after lookaround
+ at (pos = 7, size = 1)
+EOF
+)

@@ -103,7 +103,7 @@ EOF
 )
 
 # \||\|
-assert diff <(redump '|\|' '') <(<<'EOF'
+assert diff <(redump '\||\|' '') <(<<'EOF'
 flag: (mode = , modifier = )
 captureGroupCount: 0
 namedCaptureGroups: []

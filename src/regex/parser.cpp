@@ -157,6 +157,18 @@ SyntaxTree Parser::operator()(const StringRef src, const Flag f) {
           NamedCaptureGroups(std::move(offsetMap), std::move(entries))};
 }
 
+static bool isQuantifierStart(char ch) {
+  switch (ch) {
+  case '?':
+  case '*':
+  case '+':
+  case '{':
+    return true;
+  default:
+    return false;
+  }
+}
+
 std::unique_ptr<Node> Parser::parse() {
   this->frames.emplace_back();
 
@@ -200,9 +212,17 @@ std::unique_ptr<Node> Parser::parse() {
       return nullptr;
     case ')':
       if (auto node = this->exitGroup()) {
-        if (isa<LookAroundNode>(*node)) {
-          this->append(std::move(node));
-          continue;
+        if (isa<LookAroundNode>(*node) && !this->isEnd() && isQuantifierStart(*this->iter)) {
+          if (auto &la = cast<LookAroundNode>(*node);
+              this->flag.is(Mode::LEGACY) &&
+              (la.getType() == LookAroundNode::Type::LOOK_AHEAD ||
+               la.getType() == LookAroundNode::Type::LOOK_AHEAD_NOT)) {
+            atomNode = std::move(node);
+            goto REPEAT; // only allow look-ahead in legacy mode
+          }
+          this->reportError(this->curToken(), "`%c' quantifier is not allowed after lookaround",
+                            *this->iter);
+          return nullptr;
         }
         atomNode = std::move(node);
         goto REPEAT;
