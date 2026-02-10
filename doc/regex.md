@@ -30,7 +30,7 @@
 | \uHHHH               | ✔️         | ❌         | ❌                       |
 | \u{HHH}              | ✔️         | ❌         | ❌                       |
 | syntax escape        | ❌          | ❌         | ❌                       |
-| pattern1\|pattern2   | ❌          | ❌         | ❌                       |
+| pattern1\|pattern2   | ✔️         | ❌         | ❌                       |
 | ^                    | ✔️         | ❌         | ❌                       |
 | $                    | ✔️         | ❌         | ❌                       |
 | abc                  | ✔️         | ❌         | ❌                       |

@@ -17,7 +17,6 @@
 #ifndef ARSH_REGEX_PARSER_H
 #define ARSH_REGEX_PARSER_H
 
-#include "misc/inlined_stack.hpp"
 #include "misc/string_ref.hpp"
 
 #include "node.h"

@@ -1,0 +1,121 @@
+
+source $SCRIPT_DIR/test_helper.arsh
+
+# |
+assert diff <(redump '|' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Alt
+  token: (pos = 0, size = 1)
+  patterns:
+    - kind: Empty
+      token: (pos = 0, size = 0)
+    - kind: Empty
+      token: (pos = 1, size = 0)
+EOF
+)
+
+# |
+assert diff <(redump ' |' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Alt
+  token: (pos = 0, size = 2)
+  patterns:
+    - kind: Char
+      token: (pos = 0, size = 1)
+      codePoint: U+0020, \x20
+    - kind: Empty
+      token: (pos = 2, size = 0)
+EOF
+)
+
+# |a
+assert diff <(redump '|a' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Alt
+  token: (pos = 0, size = 2)
+  patterns:
+    - kind: Empty
+      token: (pos = 0, size = 0)
+    - kind: Char
+      token: (pos = 1, size = 1)
+      codePoint: U+0061, a
+EOF
+)
+
+# ab|abc
+assert diff <(redump 'ab|abc' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Alt
+  token: (pos = 0, size = 6)
+  patterns:
+    - kind: Seq
+      token: (pos = 0, size = 2)
+      patterns:
+        - kind: Char
+          token: (pos = 0, size = 1)
+          codePoint: U+0061, a
+        - kind: Char
+          token: (pos = 1, size = 1)
+          codePoint: U+0062, b
+    - kind: Seq
+      token: (pos = 3, size = 3)
+      patterns:
+        - kind: Char
+          token: (pos = 3, size = 1)
+          codePoint: U+0061, a
+        - kind: Char
+          token: (pos = 4, size = 1)
+          codePoint: U+0062, b
+        - kind: Char
+          token: (pos = 5, size = 1)
+          codePoint: U+0063, c
+EOF
+)
+
+# ||
+assert diff <(redump '||' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Alt
+  token: (pos = 0, size = 2)
+  patterns:
+    - kind: Empty
+      token: (pos = 0, size = 0)
+    - kind: Empty
+      token: (pos = 1, size = 0)
+    - kind: Empty
+      token: (pos = 2, size = 0)
+EOF
+)
+
+# \||\|
+assert diff <(redump '|\|' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Alt
+  token: (pos = 0, size = 5)
+  patterns:
+    - kind: Char
+      token: (pos = 0, size = 2)
+      codePoint: U+007C, |
+    - kind: Char
+      token: (pos = 3, size = 2)
+      codePoint: U+007C, |
+EOF
+)
