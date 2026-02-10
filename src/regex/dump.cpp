@@ -79,6 +79,15 @@ std::string TreeDumper::operator()(const SyntaxTree &tree) {
   return std::move(this->buf);
 }
 
+static void toStringModifier(Modifier m, std::string &out) {
+#define GEN_IF(E, S, D)                                                                            \
+  if (hasFlag(m, Modifier::E)) {                                                                   \
+    out += (S);                                                                                    \
+  }
+  EACH_RE_MODIFIER(GEN_IF)
+#undef GEN_TABLE
+}
+
 void TreeDumper::dump(const char *fieldName, Flag flag) {
   std::string str = "(mode = ";
   switch (flag.mode()) {
@@ -92,14 +101,8 @@ void TreeDumper::dump(const char *fieldName, Flag flag) {
     break;
   }
   str += ", modifier = ";
-#define GEN_IF(E, S, D)                                                                            \
-  if (flag.has(Modifier::E)) {                                                                     \
-    str += (S);                                                                                    \
-  }
-  EACH_RE_MODIFIER(GEN_IF)
-#undef GEN_TABLE
+  toStringModifier(flag.modifiers(), str);
   str += ')';
-
   this->dump(fieldName, str);
 }
 
@@ -240,6 +243,12 @@ void TreeDumper::dumpRaw(const Node &node) {
   E(GroupNode::Type, MODIFIER)
     DUMP_ENUM("group", n.getType(), EACH_RE_GROUP);
 #undef EACH_RE_GROUP
+    std::string str;
+    toStringModifier(n.getSetModifiers(), str);
+    this->dump("setModifiers", str);
+    str.clear();
+    toStringModifier(n.getUnsetModifiers(), str);
+    this->dump("unsetModifiers", str);
     this->dump("pattern", *n.getPattern());
     break;
   }

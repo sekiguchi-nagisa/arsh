@@ -21,7 +21,7 @@
 #include <vector>
 
 #include "capture.h"
-#include "flag.hpp"
+#include "flag.h"
 #include "misc/enum_util.hpp"
 #include "misc/noncopyable.h"
 #include "misc/rtti.hpp"
@@ -439,13 +439,20 @@ public:
     MODIFIER,    // (?ims-ims:pattern)
   };
 
-  GroupNode(Token start, Type type, std::unique_ptr<Node> &&pattern, Token end)
+  GroupNode(Token start, Type type, Modifier set, Modifier unset, std::unique_ptr<Node> &&pattern,
+            Token end)
       : NestedNodeWithRtti(start, std::move(pattern)) {
     this->u8 = toUnderlying(type);
+    this->u16 = toUnderlying(set);
+    this->u32 = toUnderlying(unset);
     this->updateToken(end);
   }
 
   Type getType() const { return static_cast<Type>(this->u8); }
+
+  Modifier getSetModifiers() const { return static_cast<Modifier>(this->u16); }
+
+  Modifier getUnsetModifiers() const { return static_cast<Modifier>(this->u32); }
 };
 
 class SyntaxTree {

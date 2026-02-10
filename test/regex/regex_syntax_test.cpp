@@ -2,7 +2,7 @@
 #include "../test_common.h"
 
 #include <regex/dump.h>
-#include <regex/flag.hpp>
+#include <regex/flag.h>
 #include <regex/parser.h>
 
 using namespace arsh;
@@ -79,9 +79,26 @@ TEST(RegexFlag, onlyModifier) {
   ASSERT_FALSE(modifiers.hasValue());
   ASSERT_EQ("`i' modifier has already been specified", err);
 
+  modifiers = regex::Flag::parseModifier("", nullptr);
+  ASSERT_TRUE(modifiers.hasValue());
+  ASSERT_TRUE(hasFlag(modifiers.unwrap(), regex::Modifier::NONE));
+  ASSERT_EQ(regex::Modifier::NONE, modifiers.unwrap());
+
   modifiers = regex::Flag::parseModifier("i", nullptr);
   ASSERT_TRUE(modifiers.hasValue());
   ASSERT_TRUE(hasFlag(modifiers.unwrap(), regex::Modifier::IGNORE_CASE));
+}
+
+TEST(RegexFlag, str) {
+  regex::Flag flag;
+  ASSERT_EQ("", flag.str());
+  flag = regex::Flag(regex::Mode::LEGACY, regex::Modifier::DOT_ALL);
+  ASSERT_EQ("s", flag.str());
+  flag = regex::Flag(regex::Mode::UNICODE, regex::Modifier::MULTILINE);
+  ASSERT_EQ("mu", flag.str());
+  flag = regex::Flag(regex::Mode::UNICODE_SET,
+                     regex::Modifier::MULTILINE | regex::Modifier::IGNORE_CASE);
+  ASSERT_EQ("imv", flag.str());
 }
 
 #ifndef BIN_PATH

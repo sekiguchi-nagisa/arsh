@@ -1,0 +1,190 @@
+
+source $SCRIPT_DIR/test_helper.arsh
+
+# ()
+assert diff <(redump '()' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 1
+namedCaptureGroups: []
+pattern:
+  kind: Group
+  token: (pos = 0, size = 2)
+  group: CAPTURE
+  setModifiers:
+  unsetModifiers:
+  pattern:
+    kind: Empty
+    token: (pos = 1, size = 0)
+EOF
+)
+
+assert diff <(redump '()' 'u') <(<<'EOF'
+flag: (mode = u, modifier = )
+captureGroupCount: 1
+namedCaptureGroups: []
+pattern:
+  kind: Group
+  token: (pos = 0, size = 2)
+  group: CAPTURE
+  setModifiers:
+  unsetModifiers:
+  pattern:
+    kind: Empty
+    token: (pos = 1, size = 0)
+EOF
+)
+
+# (|)
+assert diff <(redump '(|)' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 1
+namedCaptureGroups: []
+pattern:
+  kind: Group
+  token: (pos = 0, size = 3)
+  group: CAPTURE
+  setModifiers:
+  unsetModifiers:
+  pattern:
+    kind: Alt
+    token: (pos = 1, size = 1)
+    patterns:
+      - kind: Empty
+        token: (pos = 1, size = 0)
+      - kind: Empty
+        token: (pos = 2, size = 0)
+EOF
+)
+
+# (())
+assert diff <(redump '(())' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 2
+namedCaptureGroups: []
+pattern:
+  kind: Group
+  token: (pos = 0, size = 4)
+  group: CAPTURE
+  setModifiers:
+  unsetModifiers:
+  pattern:
+    kind: Group
+    token: (pos = 1, size = 2)
+    group: CAPTURE
+    setModifiers:
+    unsetModifiers:
+    pattern:
+      kind: Empty
+      token: (pos = 2, size = 0)
+EOF
+)
+
+
+# ((.))
+assert diff <(redump '((.))' 'vi') <(<<'EOF'
+flag: (mode = v, modifier = i)
+captureGroupCount: 2
+namedCaptureGroups: []
+pattern:
+  kind: Group
+  token: (pos = 0, size = 5)
+  group: CAPTURE
+  setModifiers:
+  unsetModifiers:
+  pattern:
+    kind: Group
+    token: (pos = 1, size = 3)
+    group: CAPTURE
+    setModifiers:
+    unsetModifiers:
+    pattern:
+      kind: Any
+      token: (pos = 2, size = 1)
+EOF
+)
+
+# (\()\)
+assert diff <(redump '(\()\)' 'vi') <(<<'EOF'
+flag: (mode = v, modifier = i)
+captureGroupCount: 1
+namedCaptureGroups: []
+pattern:
+  kind: Seq
+  token: (pos = 0, size = 6)
+  patterns:
+    - kind: Group
+      token: (pos = 0, size = 4)
+      group: CAPTURE
+      setModifiers:
+      unsetModifiers:
+      pattern:
+        kind: Char
+        token: (pos = 1, size = 2)
+        codePoint: U+0028, (
+    - kind: Char
+      token: (pos = 4, size = 2)
+      codePoint: U+0029, )
+EOF
+)
+
+# )
+assert diff <(redump ')' 'u') <(<<'EOF'
+1:1 [error] unmatched `)'
+ at (pos = 0, size = 1)
+EOF
+)
+
+# ())
+assert diff <(redump '())' '') <(<<'EOF'
+1:3 [error] unmatched `)'
+ at (pos = 2, size = 1)
+EOF
+)
+
+# ((
+assert diff <(redump '((' '') <(<<'EOF'
+1:3 [error] unclosed group
+ at (pos = 2, size = 0)
+EOF
+)
+
+# ((
+assert diff <(redump '(a' '') <(<<'EOF'
+1:3 [error] unclosed group
+ at (pos = 2, size = 0)
+EOF
+)
+
+# (a\w())
+assert diff <(redump '(a\w())' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 2
+namedCaptureGroups: []
+pattern:
+  kind: Group
+  token: (pos = 0, size = 7)
+  group: CAPTURE
+  setModifiers:
+  unsetModifiers:
+  pattern:
+    kind: Seq
+    token: (pos = 1, size = 5)
+    patterns:
+      - kind: Char
+        token: (pos = 1, size = 1)
+        codePoint: U+0061, a
+      - kind: Property
+        token: (pos = 2, size = 2)
+        property: WORD
+        value: 0
+        invert: false
+      - kind: Group
+        token: (pos = 4, size = 2)
+        group: CAPTURE
+        setModifiers:
+        unsetModifiers:
+        pattern:
+          kind: Empty
+          token: (pos = 5, size = 0)
+EOF
+)

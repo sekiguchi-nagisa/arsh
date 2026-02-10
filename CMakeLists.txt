@@ -242,6 +242,7 @@ endif ()
 add_library(regex STATIC
         src/regex/parser.cpp
         src/regex/dump.cpp
+        src/regex/flag.cpp
 )
 target_link_libraries(regex unicode)
 if (BUILD_SHARED_LIB)

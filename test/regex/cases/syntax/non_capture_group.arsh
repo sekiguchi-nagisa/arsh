@@ -1,0 +1,108 @@
+
+source $SCRIPT_DIR/test_helper.arsh
+
+# (?
+assert diff <(redump '(?' '') <(<<'EOF'
+1:1 [error] invalid group: `(?'
+ at (pos = 0, size = 2)
+EOF
+)
+
+# (?
+assert diff <(redump '(?:' '') <(<<'EOF'
+1:4 [error] unclosed group
+ at (pos = 3, size = 0)
+EOF
+)
+
+# (?:)
+assert diff <(redump '(?:)' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Group
+  token: (pos = 0, size = 4)
+  group: NON_CAPTURE
+  setModifiers:
+  unsetModifiers:
+  pattern:
+    kind: Empty
+    token: (pos = 3, size = 0)
+EOF
+)
+
+# (?:|)
+assert diff <(redump '(?:|)' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Group
+  token: (pos = 0, size = 5)
+  group: NON_CAPTURE
+  setModifiers:
+  unsetModifiers:
+  pattern:
+    kind: Alt
+    token: (pos = 3, size = 1)
+    patterns:
+      - kind: Empty
+        token: (pos = 3, size = 0)
+      - kind: Empty
+        token: (pos = 4, size = 0)
+EOF
+)
+
+# (?:|.)
+assert diff <(redump '(?:|.)' 'svm') <(<<'EOF'
+flag: (mode = v, modifier = ms)
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Group
+  token: (pos = 0, size = 6)
+  group: NON_CAPTURE
+  setModifiers:
+  unsetModifiers:
+  pattern:
+    kind: Alt
+    token: (pos = 3, size = 2)
+    patterns:
+      - kind: Empty
+        token: (pos = 3, size = 0)
+      - kind: Any
+        token: (pos = 4, size = 1)
+EOF
+)
+
+# (?:(?:あ))
+assert diff <(redump '(?:(?:あ))' 'u') <(<<'EOF'
+flag: (mode = u, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Group
+  token: (pos = 0, size = 11)
+  group: NON_CAPTURE
+  setModifiers:
+  unsetModifiers:
+  pattern:
+    kind: Group
+    token: (pos = 3, size = 7)
+    group: NON_CAPTURE
+    setModifiers:
+    unsetModifiers:
+    pattern:
+      kind: Char
+      token: (pos = 6, size = 3)
+      codePoint: U+3042, あ
+EOF
+)
+
+# (?:(?:あ))
+assert diff <(redump '(?:(?:あ)' '') <(<<'EOF'
+1:11 [error] unclosed group
+ at (pos = 10, size = 0)
+EOF
+)

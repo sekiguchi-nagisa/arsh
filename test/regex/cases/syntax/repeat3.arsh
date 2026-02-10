@@ -1,0 +1,103 @@
+
+source $SCRIPT_DIR/test_helper.arsh
+
+# (a)?
+assert diff <(redump ' (a)?' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 1
+namedCaptureGroups: []
+pattern:
+  kind: Seq
+  token: (pos = 0, size = 5)
+  patterns:
+    - kind: Char
+      token: (pos = 0, size = 1)
+      codePoint: U+0020, \x20
+    - kind: Repeat
+      token: (pos = 1, size = 4)
+      repeat: (min = 0, max = 1)
+      greedy: true
+      pattern:
+        kind: Group
+        token: (pos = 1, size = 3)
+        group: CAPTURE
+        setModifiers:
+        unsetModifiers:
+        pattern:
+          kind: Char
+          token: (pos = 2, size = 1)
+          codePoint: U+0061, a
+EOF
+)
+
+# ()+
+assert diff <(redump '()+' 'u') <(<<'EOF'
+flag: (mode = u, modifier = )
+captureGroupCount: 1
+namedCaptureGroups: []
+pattern:
+  kind: Repeat
+  token: (pos = 0, size = 3)
+  repeat: (min = 1, max = unlimited)
+  greedy: true
+  pattern:
+    kind: Group
+    token: (pos = 0, size = 2)
+    group: CAPTURE
+    setModifiers:
+    unsetModifiers:
+    pattern:
+      kind: Empty
+      token: (pos = 1, size = 0)
+EOF
+)
+
+# ()*
+assert diff <(redump '(())*' 'mu') <(<<'EOF'
+flag: (mode = u, modifier = m)
+captureGroupCount: 2
+namedCaptureGroups: []
+pattern:
+  kind: Repeat
+  token: (pos = 0, size = 5)
+  repeat: (min = 0, max = unlimited)
+  greedy: true
+  pattern:
+    kind: Group
+    token: (pos = 0, size = 4)
+    group: CAPTURE
+    setModifiers:
+    unsetModifiers:
+    pattern:
+      kind: Group
+      token: (pos = 1, size = 2)
+      group: CAPTURE
+      setModifiers:
+      unsetModifiers:
+      pattern:
+        kind: Empty
+        token: (pos = 2, size = 0)
+EOF
+)
+
+# (?:){1}
+assert diff <(redump '(?:){1}' 'mu') <(<<'EOF'
+flag: (mode = u, modifier = m)
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Repeat
+  token: (pos = 0, size = 7)
+  repeat: (min = 1, max = 1)
+  greedy: true
+  pattern:
+    kind: Group
+    token: (pos = 0, size = 4)
+    group: NON_CAPTURE
+    setModifiers:
+    unsetModifiers:
+    pattern:
+      kind: Empty
+      token: (pos = 3, size = 0)
+EOF
+)

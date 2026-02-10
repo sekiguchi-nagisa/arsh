@@ -72,15 +72,16 @@ int Parser::nextValidCodePoint() {
   return codePoint;
 }
 
-static void append(std::unique_ptr<Node> &node, std::unique_ptr<Node> &&tmp) {
-  if (!node) {
-    node = std::move(tmp);
-  } else if (isa<AltNode>(*node)) {
-    cast<AltNode>(*node).appendToLast(std::move(tmp));
-  } else if (isa<SeqNode>(*node)) {
-    cast<SeqNode>(*node).append(std::move(tmp));
+void Parser::append(std::unique_ptr<Node> &&node) {
+  auto &frame = this->frames.back();
+  if (!frame.node) {
+    frame.node = std::move(node);
+  } else if (isa<AltNode>(*frame.node)) {
+    cast<AltNode>(*frame.node).appendToLast(std::move(node));
+  } else if (isa<SeqNode>(*frame.node)) {
+    cast<SeqNode>(*frame.node).append(std::move(node));
   } else {
-    node = std::make_unique<SeqNode>(std::move(node), std::move(tmp));
+    frame.node = std::make_unique<SeqNode>(std::move(frame.node), std::move(node));
   }
 }
 
@@ -115,6 +116,7 @@ SyntaxTree Parser::operator()(const StringRef src, const Flag f) {
   this->iter = this->begin();
   this->namedRefNodes.clear();
   this->error.reset();
+  this->frames.clear();
 
   // actual parse function
   auto node = this->parse();
@@ -156,24 +158,24 @@ SyntaxTree Parser::operator()(const StringRef src, const Flag f) {
 }
 
 std::unique_ptr<Node> Parser::parse() {
-  std::unique_ptr<Node> node;
+  this->frames.emplace_back();
 
-  while (this->iter != this->end()) {
+  while (!this->isEnd()) {
     std::unique_ptr<Node> atomNode;
     switch (*this->iter) {
     case '^':
-      append(node, std::make_unique<BoundaryNode>(this->curToken(), BoundaryNode::Type::START));
+      this->append(std::make_unique<BoundaryNode>(this->curToken(), BoundaryNode::Type::START));
       this->iter++;
       continue;
     case '$':
-      append(node, std::make_unique<BoundaryNode>(this->curToken(), BoundaryNode::Type::END));
+      this->append(std::make_unique<BoundaryNode>(this->curToken(), BoundaryNode::Type::END));
       this->iter++;
       continue;
     case '\\': {
       this->iter++;
       if (auto r = this->parseAtomEscape()) {
         if (isa<BoundaryNode>(*r)) {
-          append(node, std::move(r));
+          this->append(std::move(r));
           continue;
         }
         atomNode = std::move(r);
@@ -192,9 +194,19 @@ std::unique_ptr<Node> Parser::parse() {
       return nullptr;
     }
     case '(':
-      goto REPEAT; // TODO
+      if (this->enterGroup()) {
+        continue;
+      }
+      return nullptr;
     case ')':
-      this->reportError(this->curToken(), "unmatched `)'");
+      if (auto node = this->exitGroup()) {
+        if (isa<LookAroundNode>(*node)) {
+          this->append(std::move(node));
+          continue;
+        }
+        atomNode = std::move(node);
+        goto REPEAT;
+      }
       return nullptr;
     case '[':
       goto REPEAT; // TODO
@@ -215,7 +227,8 @@ std::unique_ptr<Node> Parser::parse() {
       atomNode = std::make_unique<CharNode>(this->curToken(), *this->iter);
       this->iter++;
       goto REPEAT;
-    case '|':
+    case '|': {
+      auto node = std::move(this->curNode());
       if (!node) {
         node = std::make_unique<EmptyNode>(this->curPos());
       }
@@ -226,9 +239,11 @@ std::unique_ptr<Node> Parser::parse() {
       } else {
         node = std::make_unique<AltNode>(std::move(node));
       }
-      cast<AltNode>(*node).appendNull(); // for next alternative
+      this->curNode() = std::move(node);
+      cast<AltNode>(*this->curNode()).appendNull(); // for next alternative
       this->iter++;
       continue;
+    }
     default: {
       const auto old = this->iter;
       if (int codePoint = this->nextValidCodePoint(); codePoint > -1) {
@@ -244,9 +259,15 @@ std::unique_ptr<Node> Parser::parse() {
     if (!atomNode) {
       return nullptr;
     }
-    append(node, std::move(atomNode));
+    this->append(std::move(atomNode));
   }
 
+  if (this->frames.size() > 1) {
+    this->reportUnclosedGroup(this->getTokenFrom(this->iter));
+    return nullptr;
+  }
+  auto node = std::move(this->curNode());
+  this->frames.pop_back();
   if (!node) {
     node = std::make_unique<EmptyNode>(this->curPos());
   } else if (isa<AltNode>(*node) && !cast<AltNode>(*node).getPatterns().back()) {
@@ -813,6 +834,160 @@ Optional<unsigned short> Parser::parseQuantifierDigits(const char *prefixStart,
     return {};
   }
   return static_cast<unsigned short>(ret.value);
+}
+
+Optional<Modifier> Parser::parseModifiers(char end) {
+  const auto old = this->iter;
+  std::string value;
+  while (!this->isEnd() && *this->iter != end && *this->iter != ':' && *this->iter != ')') {
+    value += *this->iter++;
+  }
+  std::string err;
+  auto ret = Flag::parseModifier(value, &err);
+  if (!ret.hasValue()) {
+    this->reportError(this->getTokenFrom(old), "%s", err.c_str());
+    return {};
+  }
+  return ret.unwrap();
+}
+
+bool Parser::enterGroup() {
+  assert(this->startsWith("("));
+  const auto old = this->iter;
+  this->iter++;
+  if (this->frames.size() == STACK_DEPTH_LIMIT) {
+    this->reportOverflow(this->getTokenFrom(old));
+    return false;
+  }
+  if (!this->startsWith("?")) { // capture group
+    this->frames.emplace_back(this->getTokenFrom(old), GroupNode::Type::CAPTURE);
+    this->captureGroupCount++;
+    return true;
+  }
+  this->iter++; // consume ?
+  if (this->isEnd()) {
+    goto INVALID;
+  }
+  switch (*this->iter) {
+  case '=':
+    this->iter++;
+    this->frames.emplace_back(this->getTokenFrom(old), LookAroundNode::Type::LOOK_AHEAD);
+    return true;
+  case '!':
+    this->iter++;
+    this->frames.emplace_back(this->getTokenFrom(old), LookAroundNode::Type::LOOK_AHEAD_NOT);
+    return true;
+  case ':':
+    this->iter++;
+    this->frames.emplace_back(this->getTokenFrom(old), GroupNode::Type::NON_CAPTURE);
+    return true;
+  default:
+    break;
+  }
+  if (this->startsWith("<=")) {
+    this->iter += 2;
+    this->frames.emplace_back(this->getTokenFrom(old), LookAroundNode::Type::LOOK_BEHIND);
+    return true;
+  }
+  if (this->startsWith("<!")) {
+    this->iter += 2;
+    this->frames.emplace_back(this->getTokenFrom(old), LookAroundNode::Type::LOOK_BEHIND_NOT);
+    return true;
+  }
+  if (*this->iter == '<') {
+    auto name = this->parseCaptureGroupName(old, false);
+    if (name.empty()) {
+      return false;
+    }
+    if (auto i = this->namedCaptureGroups.find(name); i != this->namedCaptureGroups.end()) {
+      this->reportError(this->getTokenFrom(old), "duplicated capture group name: `%s'",
+                        name.c_str());
+      return false;
+    }
+    unsigned int index = ++this->captureGroupCount;
+    FlexBuffer<unsigned int> values;
+    values.push_back(index);
+    this->namedCaptureGroups.emplace(std::move(name), std::move(values));
+    this->frames.emplace_back(this->getTokenFrom(old), GroupNode::Type::CAPTURE);
+    return true;
+  }
+
+  // parse modifiers
+  {
+    Modifier set = Modifier::NONE;
+    if (auto ret = this->parseModifiers('-'); ret.hasValue()) {
+      set = ret.unwrap();
+    } else {
+      return false;
+    }
+    Modifier unset = Modifier::NONE;
+    if (this->startsWith("-")) {
+      this->iter++;
+      if (auto ret = this->parseModifiers(':'); ret.hasValue()) {
+        unset = ret.unwrap();
+      } else {
+        return false;
+      }
+    }
+    if (set == unset && set == Modifier::NONE) { // (?-)
+      goto INVALID;
+    }
+    if (!this->startsWith(":")) {
+      goto INVALID;
+    }
+    this->iter++;
+    constexpr std::pair<Modifier, char> targets[] = {
+#define GEN_TABLE(E, S, D) {Modifier::E, S},
+        EACH_RE_MODIFIER(GEN_TABLE)
+#undef GEN_TABLE
+    };
+    for (auto &[m, c] : targets) {
+      if (hasFlag(set, m) && hasFlag(unset, m)) {
+        this->reportError(this->getTokenFrom(old), "repeated modifier in group: `%c'", c);
+        return false;
+      }
+    }
+    this->frames.emplace_back(this->getTokenFrom(old), set, unset);
+    return true;
+  }
+
+INVALID:
+  this->reportError(this->getTokenFrom(old), "invalid group: `%s'",
+                    this->getStrRefFrom(old).toString().c_str());
+  return false;
+}
+
+std::unique_ptr<Node> Parser::exitGroup() {
+  assert(this->startsWith(")"));
+  if (this->frames.size() == 1) {
+    this->reportError(this->curToken(), "unmatched `)'");
+    return nullptr;
+  }
+  const auto old = this->iter;
+  this->iter++;
+  auto &frame = this->frames.back();
+  assert(frame.type != FrameType::NONE);
+  auto node = std::move(frame.node);
+  if (!node) {
+    node = std::make_unique<EmptyNode>(this->getTokenFrom(old).pos);
+  } else if (isa<AltNode>(*node) && !cast<AltNode>(*node).getPatterns().back()) {
+    cast<AltNode>(*node).appendToLast(std::make_unique<EmptyNode>(this->getTokenFrom(old).pos));
+  }
+  switch (frame.type) {
+  case FrameType::NONE:
+    break; // unreachable
+  case FrameType::GROUP:
+    node =
+        std::make_unique<GroupNode>(frame.start, frame.groupType, frame.setModifiers,
+                                    frame.unsetModifiers, std::move(node), this->getTokenFrom(old));
+    break;
+  case FrameType::LOOK_AROUND:
+    node = std::make_unique<LookAroundNode>(frame.start, frame.lookaroundType, std::move(node),
+                                            this->getTokenFrom(old));
+    break;
+  }
+  this->frames.pop_back();
+  return node;
 }
 
 } // namespace arsh::regex

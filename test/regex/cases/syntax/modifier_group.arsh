@@ -1,0 +1,161 @@
+
+source $SCRIPT_DIR/test_helper.arsh
+
+# (?-
+assert diff <(redump ' (?-' 'u') <(<<'EOF'
+1:2 [error] invalid group: `(?-'
+ at (pos = 1, size = 3)
+EOF
+)
+
+# (?a
+assert diff <(redump '(?a' 'u') <(<<'EOF'
+1:3 [error] invalid modifier: `a'
+ at (pos = 2, size = 1)
+EOF
+)
+
+# (?im2
+assert diff <(redump '(?im2' 'u') <(<<'EOF'
+1:3 [error] invalid modifier: `2'
+ at (pos = 2, size = 3)
+EOF
+)
+
+# (?imあ
+assert diff <(redump '(?imあ' 'u') <(<<'EOF'
+1:3 [error] invalid modifier: `あ'
+ at (pos = 2, size = 5)
+EOF
+)
+
+# (?ii:)
+assert diff <(redump '(?ii:)' '') <(<<'EOF'
+1:3 [error] `i' modifier has already been specified
+ at (pos = 2, size = 2)
+EOF
+)
+
+# (?i:)
+assert diff <(redump '(?i:)' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Group
+  token: (pos = 0, size = 5)
+  group: MODIFIER
+  setModifiers: i
+  unsetModifiers:
+  pattern:
+    kind: Empty
+    token: (pos = 4, size = 0)
+EOF
+)
+
+# (?i-)
+assert diff <(redump '(?i-)' '') <(<<'EOF'
+1:1 [error] invalid group: `(?i-'
+ at (pos = 0, size = 4)
+EOF
+)
+
+# (?-)
+assert diff <(redump '(?-)' '') <(<<'EOF'
+1:1 [error] invalid group: `(?-'
+ at (pos = 0, size = 3)
+EOF
+)
+
+# (?-:)
+assert diff <(redump '(?-:)' '') <(<<'EOF'
+1:1 [error] invalid group: `(?-'
+ at (pos = 0, size = 3)
+EOF
+)
+
+# (?i-:a)
+assert diff <(redump '(?i-:a)' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Group
+  token: (pos = 0, size = 7)
+  group: MODIFIER
+  setModifiers: i
+  unsetModifiers:
+  pattern:
+    kind: Char
+    token: (pos = 5, size = 1)
+    codePoint: U+0061, a
+EOF
+)
+
+# (?i-i)
+assert diff <(redump '(?i-i)' '') <(<<'EOF'
+1:1 [error] invalid group: `(?i-i'
+ at (pos = 0, size = 5)
+EOF
+)
+
+# (?i-i:)
+assert diff <(redump '(?i-i:)' '') <(<<'EOF'
+1:1 [error] repeated modifier in group: `i'
+ at (pos = 0, size = 6)
+EOF
+)
+
+# (?i-m:a)
+assert diff <(redump '(?i-m:a)' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Group
+  token: (pos = 0, size = 8)
+  group: MODIFIER
+  setModifiers: i
+  unsetModifiers: m
+  pattern:
+    kind: Char
+    token: (pos = 6, size = 1)
+    codePoint: U+0061, a
+EOF
+)
+
+# (?i-sm:a)
+assert diff <(redump '(?i-sm:a)' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Group
+  token: (pos = 0, size = 9)
+  group: MODIFIER
+  setModifiers: i
+  unsetModifiers: ms
+  pattern:
+    kind: Char
+    token: (pos = 7, size = 1)
+    codePoint: U+0061, a
+EOF
+)
+
+# (?-smi:\B)
+assert diff <(redump '(?-msi:\B)' 'u') <(<<'EOF'
+flag: (mode = u, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Group
+  token: (pos = 0, size = 10)
+  group: MODIFIER
+  setModifiers:
+  unsetModifiers: ims
+  pattern:
+    kind: Boundary
+    token: (pos = 7, size = 2)
+    boundary: NOT_WORD
+EOF
+)

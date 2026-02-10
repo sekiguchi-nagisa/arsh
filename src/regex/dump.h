@@ -57,8 +57,10 @@ private:
 
   void dump(const char *fieldName, StringRef ref) {
     this->field(fieldName);
-    this->append(' ');
-    this->append(ref);
+    if (!ref.empty()) {
+      this->append(' ');
+      this->append(ref);
+    }
     this->newline();
   }
 

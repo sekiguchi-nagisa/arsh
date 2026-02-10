@@ -42,6 +42,45 @@ public:
     explicit CheckerFrame(std::unique_ptr<Node> &node) : node(&node), index(0) {}
   };
 
+  enum class FrameType : unsigned char {
+    NONE,
+    GROUP,
+    LOOK_AROUND,
+  };
+
+  struct Frame {
+    FrameType type{FrameType::NONE};
+    union {
+      LookAroundNode::Type lookaroundType;
+      GroupNode::Type groupType;
+    };
+    Modifier setModifiers{Modifier::NONE};
+    Modifier unsetModifiers{Modifier::NONE};
+    Token start;
+    std::unique_ptr<Node> node;
+
+    Frame() = default;
+
+    explicit Frame(std::unique_ptr<Node> &&node) : node(std::move(node)) {
+      this->groupType = GroupNode::Type::NON_CAPTURE;
+    }
+
+    Frame(Token start, LookAroundNode::Type lookaroundType)
+        : type(FrameType::LOOK_AROUND), start(start) {
+      this->lookaroundType = lookaroundType;
+    }
+
+    Frame(Token start, GroupNode::Type groupType) : type(FrameType::GROUP), start(start) {
+      this->groupType = groupType;
+    }
+
+    Frame(Token start, Modifier set, Modifier unset) : type(FrameType::GROUP), start(start) {
+      this->groupType = GroupNode::Type::MODIFIER;
+      this->setModifiers = set;
+      this->unsetModifiers = unset;
+    }
+  };
+
 private:
   static constexpr unsigned int STACK_DEPTH_LIMIT = 256;
 
@@ -53,6 +92,7 @@ private:
   std::unordered_map<std::string, FlexBuffer<unsigned int>> namedCaptureGroups;
   std::vector<BackRefNode *> namedRefNodes; // for lazy named backref check
   std::unique_ptr<Error> error{nullptr};
+  std::vector<Frame> frames;
 
   CodePointSet idStartSet;
   CodePointSet idContinueSet;
@@ -81,13 +121,13 @@ private:
 
   void reportError(Token token, const char *fmt, ...) __attribute__((format(printf, 3, 4)));
 
-  void reportOverflow() {
-    this->reportError(this->getTokenFrom(this->begin()), "deeply nested regular expression");
-  }
+  void reportOverflow(Token token) { this->reportError(token, "deeply nested regular expression"); }
 
   void reportUndefinedNamedRef(Token token, const char *name) {
     this->reportError(token, "undefined capture group name: `%s'", name);
   }
+
+  void reportUnclosedGroup(Token token) { this->reportError(token, "unclosed group"); }
 
   const char *begin() const { return this->ref.begin(); }
 
@@ -99,7 +139,11 @@ private:
     return StringRef(this->iter, this->end() - this->iter).startsWith(prefix);
   }
 
+  auto &curNode() { return this->frames.back().node; }
+
   int nextValidCodePoint();
+
+  void append(std::unique_ptr<Node> &&node);
 
   std::unique_ptr<Node> parse();
 
@@ -136,6 +180,12 @@ private:
 
   Optional<unsigned short> parseQuantifierDigits(const char *prefixStart, bool ignoreError,
                                                  char end);
+
+  Optional<Modifier> parseModifiers(char end);
+
+  bool enterGroup();
+
+  std::unique_ptr<Node> exitGroup();
 };
 
 } // namespace arsh::regex

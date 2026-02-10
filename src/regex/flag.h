@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 
-#ifndef ARSH_REGEX_FLAG_HPP
-#define ARSH_REGEX_FLAG_HPP
+#ifndef ARSH_REGEX_FLAG_H
+#define ARSH_REGEX_FLAG_H
 
 #include "misc/enum_util.hpp"
 #include "misc/flag_util.hpp"
@@ -73,6 +73,8 @@ public:
     return toUnderlying(this->mode()) >= toUnderlying(Mode::UNICODE);
   }
 
+  std::string str() const;
+
   static Optional<Flag> parse(const StringRef ref, std::string *err) {
     return parse(ref, Mode::UNICODE, err);
   }
@@ -84,64 +86,10 @@ public:
     return {};
   }
 
-  static Optional<Flag> parse(const StringRef ref, const Mode defaultMode, std::string *err,
-                              bool onlyModifier = false) {
-    Optional<Mode> mode;
-    Modifier modifiers{};
-    for (char ch : ref) {
-      switch (ch) {
-#define GEN_CASE(E, S, D)                                                                          \
-  case S:                                                                                          \
-    if (hasFlag(modifiers, Modifier::E)) {                                                         \
-      if (err) {                                                                                   \
-        *err += "`";                                                                               \
-        *err += (S);                                                                               \
-        *err += "' modifier has already been specified";                                           \
-      }                                                                                            \
-      return {};                                                                                   \
-    }                                                                                              \
-    setFlag(modifiers, Modifier::E);                                                               \
-    continue;
-        EACH_RE_MODIFIER(GEN_CASE)
-#undef GEN_CASE
-      case 'u':
-        if (!onlyModifier) {
-          if (mode.hasValue()) {
-            if (err) {
-              *err += "flag has already been specified";
-            }
-            return {};
-          }
-          mode = Mode::UNICODE;
-          continue;
-        }
-        break;
-      case 'v':
-        if (!onlyModifier) {
-          if (mode.hasValue()) {
-            if (err) {
-              *err += "flag has already been specified";
-            }
-            return {};
-          }
-          mode = Mode::UNICODE_SET;
-          continue;
-        }
-        break;
-      default:
-        break;
-      }
-      if (err) {
-        *err += onlyModifier ? "invalid modifier: `" : "invalid regex flag: `";
-        *err += ch;
-        *err += '\'';
-      }
-      return {};
-    }
-    return Flag(mode.hasValue() ? mode.unwrap() : defaultMode, modifiers);
-  }
+  static Optional<Flag> parse(StringRef ref, Mode defaultMode, std::string *err,
+                              bool onlyModifier = false);
 };
 
 } // namespace arsh::regex
 
-#endif // ARSH_REGEX_FLAG_HPP
+#endif // ARSH_REGEX_FLAG_H
