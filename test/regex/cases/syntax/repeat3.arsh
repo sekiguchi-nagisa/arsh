@@ -21,6 +21,7 @@ pattern:
         kind: Group
         token: (pos = 1, size = 3)
         group: CAPTURE
+        index: 1
         setModifiers:
         unsetModifiers:
         pattern:
@@ -44,6 +45,7 @@ pattern:
     kind: Group
     token: (pos = 0, size = 2)
     group: CAPTURE
+    index: 1
     setModifiers:
     unsetModifiers:
     pattern:
@@ -66,12 +68,14 @@ pattern:
     kind: Group
     token: (pos = 0, size = 4)
     group: CAPTURE
+    index: 1
     setModifiers:
     unsetModifiers:
     pattern:
       kind: Group
       token: (pos = 1, size = 2)
       group: CAPTURE
+      index: 2
       setModifiers:
       unsetModifiers:
       pattern:
@@ -94,6 +98,7 @@ pattern:
     kind: Group
     token: (pos = 0, size = 4)
     group: NON_CAPTURE
+    index: 0
     setModifiers:
     unsetModifiers:
     pattern:
@@ -116,11 +121,36 @@ pattern:
     kind: Group
     token: (pos = 0, size = 6)
     group: MODIFIER
+    index: 0
     setModifiers:
     unsetModifiers: m
     pattern:
       kind: Empty
       token: (pos = 5, size = 0)
+EOF
+)
+
+# (?<a>:){1}
+assert diff <(redump '(?<a>:){1}' 'mu') <(<<'EOF'
+flag: (mode = u, modifier = m)
+captureGroupCount: 1
+namedCaptureGroups: [a: 1]
+pattern:
+  kind: Repeat
+  token: (pos = 0, size = 10)
+  repeat: (min = 1, max = 1)
+  greedy: true
+  pattern:
+    kind: Group
+    token: (pos = 0, size = 7)
+    group: CAPTURE
+    index: 1
+    setModifiers:
+    unsetModifiers:
+    pattern:
+      kind: Char
+      token: (pos = 5, size = 1)
+      codePoint: U+003A, :
 EOF
 )
 

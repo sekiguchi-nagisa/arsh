@@ -10,6 +10,7 @@ pattern:
   kind: Group
   token: (pos = 0, size = 2)
   group: CAPTURE
+  index: 1
   setModifiers:
   unsetModifiers:
   pattern:
@@ -26,6 +27,7 @@ pattern:
   kind: Group
   token: (pos = 0, size = 2)
   group: CAPTURE
+  index: 1
   setModifiers:
   unsetModifiers:
   pattern:
@@ -43,6 +45,7 @@ pattern:
   kind: Group
   token: (pos = 0, size = 3)
   group: CAPTURE
+  index: 1
   setModifiers:
   unsetModifiers:
   pattern:
@@ -65,12 +68,14 @@ pattern:
   kind: Group
   token: (pos = 0, size = 4)
   group: CAPTURE
+  index: 1
   setModifiers:
   unsetModifiers:
   pattern:
     kind: Group
     token: (pos = 1, size = 2)
     group: CAPTURE
+    index: 2
     setModifiers:
     unsetModifiers:
     pattern:
@@ -89,12 +94,14 @@ pattern:
   kind: Group
   token: (pos = 0, size = 5)
   group: CAPTURE
+  index: 1
   setModifiers:
   unsetModifiers:
   pattern:
     kind: Group
     token: (pos = 1, size = 3)
     group: CAPTURE
+    index: 2
     setModifiers:
     unsetModifiers:
     pattern:
@@ -115,6 +122,7 @@ pattern:
     - kind: Group
       token: (pos = 0, size = 4)
       group: CAPTURE
+      index: 1
       setModifiers:
       unsetModifiers:
       pattern:
@@ -164,6 +172,7 @@ pattern:
   kind: Group
   token: (pos = 0, size = 7)
   group: CAPTURE
+  index: 1
   setModifiers:
   unsetModifiers:
   pattern:
@@ -181,6 +190,7 @@ pattern:
       - kind: Group
         token: (pos = 4, size = 2)
         group: CAPTURE
+        index: 2
         setModifiers:
         unsetModifiers:
         pattern:

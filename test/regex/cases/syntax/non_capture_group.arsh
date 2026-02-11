@@ -24,6 +24,7 @@ pattern:
   kind: Group
   token: (pos = 0, size = 4)
   group: NON_CAPTURE
+  index: 0
   setModifiers:
   unsetModifiers:
   pattern:
@@ -41,6 +42,7 @@ pattern:
   kind: Group
   token: (pos = 0, size = 5)
   group: NON_CAPTURE
+  index: 0
   setModifiers:
   unsetModifiers:
   pattern:
@@ -63,6 +65,7 @@ pattern:
   kind: Group
   token: (pos = 0, size = 6)
   group: NON_CAPTURE
+  index: 0
   setModifiers:
   unsetModifiers:
   pattern:
@@ -85,12 +88,14 @@ pattern:
   kind: Group
   token: (pos = 0, size = 11)
   group: NON_CAPTURE
+  index: 0
   setModifiers:
   unsetModifiers:
   pattern:
     kind: Group
     token: (pos = 3, size = 7)
     group: NON_CAPTURE
+    index: 0
     setModifiers:
     unsetModifiers:
     pattern:

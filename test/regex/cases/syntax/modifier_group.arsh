@@ -45,6 +45,7 @@ pattern:
   kind: Group
   token: (pos = 0, size = 5)
   group: MODIFIER
+  index: 0
   setModifiers: i
   unsetModifiers:
   pattern:
@@ -83,6 +84,7 @@ pattern:
   kind: Group
   token: (pos = 0, size = 7)
   group: MODIFIER
+  index: 0
   setModifiers: i
   unsetModifiers:
   pattern:
@@ -115,6 +117,7 @@ pattern:
   kind: Group
   token: (pos = 0, size = 8)
   group: MODIFIER
+  index: 0
   setModifiers: i
   unsetModifiers: m
   pattern:
@@ -133,6 +136,7 @@ pattern:
   kind: Group
   token: (pos = 0, size = 9)
   group: MODIFIER
+  index: 0
   setModifiers: i
   unsetModifiers: ms
   pattern:
@@ -151,6 +155,7 @@ pattern:
   kind: Group
   token: (pos = 0, size = 10)
   group: MODIFIER
+  index: 0
   setModifiers:
   unsetModifiers: ims
   pattern:

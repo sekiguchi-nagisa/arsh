@@ -433,26 +433,34 @@ public:
 
 class GroupNode : public NestedNodeWithRtti<NodeKind::Group> {
 public:
+  static_assert(sizeof(Modifier) == sizeof(uint8_t));
+
   enum class Type : unsigned char {
-    CAPTURE,     // (pattern)
+    CAPTURE,     // (pattern), (?<name>pattern)
     NON_CAPTURE, // (?:pattern)
     MODIFIER,    // (?ims-ims:pattern)
   };
 
-  GroupNode(Token start, Type type, Modifier set, Modifier unset, std::unique_ptr<Node> &&pattern,
-            Token end)
+  GroupNode(Token start, Type type, unsigned int groupIndex, Modifier set, Modifier unset,
+            std::unique_ptr<Node> &&pattern, Token end)
       : NestedNodeWithRtti(start, std::move(pattern)) {
     this->u8 = toUnderlying(type);
-    this->u16 = toUnderlying(set);
-    this->u32 = toUnderlying(unset);
+    this->u16 = (toUnderlying(set) << 8) | toUnderlying(unset);
+    this->u32 = groupIndex;
     this->updateToken(end);
   }
 
   Type getType() const { return static_cast<Type>(this->u8); }
 
-  Modifier getSetModifiers() const { return static_cast<Modifier>(this->u16); }
+  Modifier getSetModifiers() const { return static_cast<Modifier>(this->u16 >> 8); }
 
-  Modifier getUnsetModifiers() const { return static_cast<Modifier>(this->u32); }
+  Modifier getUnsetModifiers() const { return static_cast<Modifier>(this->u16 & 0xFF); }
+
+  /**
+   *
+   * @return   * if not a capture group, return 0
+   */
+  unsigned int getGroupIndex() const { return this->u32; }
 };
 
 class SyntaxTree {

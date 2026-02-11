@@ -32,15 +32,6 @@ public:
     Error(Token token, std::string &&message) : token(token), message(std::move(message)) {}
   };
 
-  struct CheckerFrame {
-    std::unique_ptr<Node> *node;
-    unsigned int index;
-
-    CheckerFrame() = default;
-
-    explicit CheckerFrame(std::unique_ptr<Node> &node) : node(&node), index(0) {}
-  };
-
   enum class FrameType : unsigned char {
     NONE,
     GROUP,
@@ -55,8 +46,11 @@ public:
     };
     Modifier setModifiers{Modifier::NONE};
     Modifier unsetModifiers{Modifier::NONE};
+    unsigned int groupIndex{0};
     Token start;
     std::unique_ptr<Node> node;
+    std::unordered_set<std::string> existingGroupNames;
+    std::unordered_set<std::string> mergedExistingGroupNames;
 
     Frame() = default;
 
@@ -69,7 +63,8 @@ public:
       this->lookaroundType = lookaroundType;
     }
 
-    Frame(Token start, GroupNode::Type groupType) : type(FrameType::GROUP), start(start) {
+    Frame(Token start, GroupNode::Type groupType, unsigned int groupIndex)
+        : type(FrameType::GROUP), groupIndex(groupIndex), start(start) {
       this->groupType = groupType;
     }
 
@@ -77,6 +72,12 @@ public:
       this->groupType = GroupNode::Type::MODIFIER;
       this->setModifiers = set;
       this->unsetModifiers = unset;
+    }
+
+    void clearAndMergeGroupNames() {
+      this->mergedExistingGroupNames.insert(this->existingGroupNames.begin(),
+                                            this->existingGroupNames.end());
+      this->existingGroupNames.clear();
     }
   };
 
@@ -165,6 +166,15 @@ private:
   bool hasNameCaptureGroup() const {
     return !this->namedCaptureGroups.empty(); // TODO: lazy fill
   }
+
+  /**
+   *
+   *@param prefixStart
+   * @param name must not be empty
+   * @return
+   * if failed, return 0
+   */
+  unsigned int addNewNamedCaptureGroup(const char *prefixStart, std::string &&name);
 
   /**
    * parse capture group name

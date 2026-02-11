@@ -261,6 +261,7 @@ std::unique_ptr<Node> Parser::parse() {
       }
       this->curNode() = std::move(node);
       cast<AltNode>(*this->curNode()).appendNull(); // for next alternative
+      this->frames.back().clearAndMergeGroupNames();
       this->iter++;
       continue;
     }
@@ -624,6 +625,27 @@ std::unique_ptr<Node> Parser::parseNamedBackRef() {
   return node;
 }
 
+unsigned int Parser::addNewNamedCaptureGroup(const char *prefixStart, std::string &&name) {
+  const auto end = this->frames.rend();
+  for (auto cur = this->frames.rbegin(); cur != end; ++cur) {
+    if (auto i = cur->existingGroupNames.find(name); i != cur->existingGroupNames.end()) {
+      this->reportError(this->getTokenFrom(prefixStart), "duplicated capture group name: `%s'",
+                        name.c_str());
+      return 0;
+    }
+  }
+  this->frames.back().existingGroupNames.emplace(name);
+  const unsigned int index = ++this->captureGroupCount;
+  if (auto i = this->namedCaptureGroups.find(name); i != this->namedCaptureGroups.end()) {
+    i->second.push_back(index);
+  } else {
+    FlexBuffer<unsigned int> values;
+    values.push_back(index);
+    this->namedCaptureGroups.emplace(std::move(name), std::move(values));
+  }
+  return index;
+}
+
 static bool isJSIdStartAscii(int codePoint) {
   return (codePoint >= 'a' && codePoint <= 'z') || (codePoint >= 'A' && codePoint <= 'Z') ||
          codePoint == '_' || codePoint == '$';
@@ -880,8 +902,8 @@ bool Parser::enterGroup() {
     return false;
   }
   if (!this->startsWith("?")) { // capture group
-    this->frames.emplace_back(this->getTokenFrom(old), GroupNode::Type::CAPTURE);
-    this->captureGroupCount++;
+    unsigned int index = ++this->captureGroupCount;
+    this->frames.emplace_back(this->getTokenFrom(old), GroupNode::Type::CAPTURE, index);
     return true;
   }
   this->iter++; // consume ?
@@ -899,7 +921,7 @@ bool Parser::enterGroup() {
     return true;
   case ':':
     this->iter++;
-    this->frames.emplace_back(this->getTokenFrom(old), GroupNode::Type::NON_CAPTURE);
+    this->frames.emplace_back(this->getTokenFrom(old), GroupNode::Type::NON_CAPTURE, 0);
     return true;
   default:
     break;
@@ -919,17 +941,11 @@ bool Parser::enterGroup() {
     if (name.empty()) {
       return false;
     }
-    if (auto i = this->namedCaptureGroups.find(name); i != this->namedCaptureGroups.end()) {
-      this->reportError(this->getTokenFrom(old), "duplicated capture group name: `%s'",
-                        name.c_str());
-      return false;
+    if (const unsigned int index = this->addNewNamedCaptureGroup(old, std::move(name))) {
+      this->frames.emplace_back(this->getTokenFrom(old), GroupNode::Type::CAPTURE, index);
+      return true;
     }
-    unsigned int index = ++this->captureGroupCount;
-    FlexBuffer<unsigned int> values;
-    values.push_back(index);
-    this->namedCaptureGroups.emplace(std::move(name), std::move(values));
-    this->frames.emplace_back(this->getTokenFrom(old), GroupNode::Type::CAPTURE);
-    return true;
+    return false;
   }
 
   // parse modifiers
@@ -997,16 +1013,19 @@ std::unique_ptr<Node> Parser::exitGroup() {
   case FrameType::NONE:
     break; // unreachable
   case FrameType::GROUP:
-    node =
-        std::make_unique<GroupNode>(frame.start, frame.groupType, frame.setModifiers,
-                                    frame.unsetModifiers, std::move(node), this->getTokenFrom(old));
+    node = std::make_unique<GroupNode>(frame.start, frame.groupType, frame.groupIndex,
+                                       frame.setModifiers, frame.unsetModifiers, std::move(node),
+                                       this->getTokenFrom(old));
     break;
   case FrameType::LOOK_AROUND:
     node = std::make_unique<LookAroundNode>(frame.start, frame.lookaroundType, std::move(node),
                                             this->getTokenFrom(old));
     break;
   }
+  this->frames.back().clearAndMergeGroupNames();
+  auto mergedNames = std::move(this->frames.back().mergedExistingGroupNames);
   this->frames.pop_back();
+  this->frames.back().existingGroupNames.insert(mergedNames.begin(), mergedNames.end());
   return node;
 }
 

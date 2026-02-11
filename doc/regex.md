@@ -40,7 +40,7 @@
 | (?\<!pattern)        | ✔️         | ❌         | ❌                       |
 | (?ims-ims:pattern)   | ✔️         | ❌         | ❌                       |
 | \k\<name>            | ✔️         | ❌         | ❌                       |
-| (?\<name>pattern)    | ❌          | ❌         | ❌                       |
+| (?\<name>pattern)    | ✔️         | ❌         | ❌                       |
 | (?:pattern)          | ✔️         | ❌         | ❌                       |
 | ?                    | ✔️         | ❌         | ❌                       |
 | *                    | ✔️         | ❌         | ❌                       |

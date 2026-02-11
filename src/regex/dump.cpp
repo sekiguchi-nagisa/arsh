@@ -50,6 +50,7 @@ static void format(const NamedCaptureEntry &entry, std::string &out) {
       }
       out += std::to_string(entry[i]);
     }
+    out += ']';
   } else {
     out += std::to_string(entry.getIndex());
   }
@@ -63,7 +64,7 @@ static std::string format(const NamedCaptureGroups &namedCaptureGroups) {
       ret += ", ";
     }
     ret += name;
-    ret += ':';
+    ret += ": ";
     format(entry, ret);
   }
   ret += ']';
@@ -243,6 +244,7 @@ void TreeDumper::dumpRaw(const Node &node) {
   E(GroupNode::Type, MODIFIER)
     DUMP_ENUM("group", n.getType(), EACH_RE_GROUP);
 #undef EACH_RE_GROUP
+    this->dumpAs("index", "%d", n.getGroupIndex());
     std::string str;
     toStringModifier(n.getSetModifiers(), str);
     this->dump("setModifiers", str);
