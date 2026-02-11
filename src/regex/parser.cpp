@@ -111,7 +111,10 @@ SyntaxTree Parser::operator()(const StringRef src, const Flag f) {
   this->ref = src;
   this->flag = f;
   this->overflow = false;
+  this->captureGroupResolved = false;
   this->captureGroupCount = 0;
+  this->prefetchedCaptureGroupCount = 0;
+  this->prefetchedNamedCaptureGroupCount = 0;
   this->namedCaptureGroups.clear();
   this->iter = this->begin();
   this->namedRefNodes.clear();
@@ -354,24 +357,9 @@ std::unique_ptr<Node> Parser::parseAtomEscape() {
   case '6':
   case '7':
   case '8':
-  case '9': {
-    const auto old = this->iter++;
-    while (!this->isEnd() && isDigit(*this->iter)) {
-      this->iter++;
-    }
-    StringRef tmp(old, static_cast<unsigned int>(this->iter - old));
-    if (tmp == "0") {
-      codePoint = '\0';
-      goto CHAR;
-    }
-    auto ret = convertToNum10<unsigned int>(tmp.begin(), tmp.end());
-    if (ret.value < this->captureGroupCount) {
-      return std::make_unique<BackRefNode>(this->getTokenFrom(start), ret.value);
-    }
-    this->reportError(this->getTokenFrom(start),
-                      "backref index is greater than capture group count: `%d'", ret.value);
-    return nullptr;
-  }
+  case '9':
+    this->iter--;
+    return this->parseBackRefOrOctal();
   case 'b':
     this->iter++;
     return std::make_unique<BoundaryNode>(this->getTokenFrom(start), BoundaryNode::Type::WORD);
@@ -605,11 +593,62 @@ INVALID:
   return nullptr;
 }
 
+std::unique_ptr<Node> Parser::parseBackRefOrOctal() {
+  assert(this->startsWith("\\"));
+  const auto start = this->iter;
+  this->iter++; // consume '\\'
+  const auto old = this->iter;
+  while (!this->isEnd() && isDigit(*this->iter)) {
+    this->iter++;
+  }
+  StringRef tmp(old, static_cast<unsigned int>(this->iter - old));
+  assert(!tmp.empty());
+  if (tmp == "0") {
+    return std::make_unique<CharNode>(this->getTokenFrom(start), '\0');
+  }
+  if (tmp[0] == '0') { // octal
+    if (this->flag.isEitherUnicodeMode()) {
+      this->reportError(this->getTokenFrom(start), "invalid decimal escape: `%s'",
+                        tmp.toString().c_str());
+      return nullptr;
+    }
+  } else {
+    auto ret = convertToNum10<unsigned int>(tmp.begin(), tmp.end());
+    assert(ret);
+    this->resolveCaptureGroups();
+    if (ret.value <= this->prefetchedCaptureGroupCount && ret.value > 0) {
+      return std::make_unique<BackRefNode>(this->getTokenFrom(start), ret.value);
+    }
+    if (this->flag.isEitherUnicodeMode()) {
+      this->reportError(this->getTokenFrom(start),
+                        "backref index is greater than capture group count: `%d'", ret.value);
+      return nullptr;
+    }
+  }
+
+  // treat as octal
+  this->iter = old;
+  if (!isOctal(*this->iter)) {
+    char ch = *this->iter++;
+    return std::make_unique<CharNode>(this->getTokenFrom(start), ch);
+  }
+  int codePoint = 0;
+  for (unsigned int i = 0; i < 3 && !this->isEnd() && isOctal(*this->iter); i++) {
+    char ch = *this->iter++;
+    codePoint *= 8;
+    codePoint += (ch - '0');
+  }
+  return std::make_unique<CharNode>(this->getTokenFrom(start), codePoint);
+}
+
 std::unique_ptr<Node> Parser::parseNamedBackRef() {
   const auto old = this->iter;
   assert(this->startsWith("\\k"));
   this->iter += 2;
   auto name = this->parseCaptureGroupName(old, this->flag.is(Mode::LEGACY));
+  if (!name.empty()) {
+    this->resolveCaptureGroups();
+  }
   if (name.empty() || !this->hasNameCaptureGroup()) {
     if (this->flag.is(Mode::LEGACY)) {
       this->iter = old + 2;
@@ -625,7 +664,7 @@ std::unique_ptr<Node> Parser::parseNamedBackRef() {
   return node;
 }
 
-unsigned int Parser::addNewNamedCaptureGroup(const char *prefixStart, std::string &&name) {
+unsigned int Parser::newNamedCaptureGroup(const char *prefixStart, std::string &&name) {
   const auto end = this->frames.rend();
   for (auto cur = this->frames.rbegin(); cur != end; ++cur) {
     if (auto i = cur->existingGroupNames.find(name); i != cur->existingGroupNames.end()) {
@@ -634,16 +673,67 @@ unsigned int Parser::addNewNamedCaptureGroup(const char *prefixStart, std::strin
       return 0;
     }
   }
-  this->frames.back().existingGroupNames.emplace(name);
-  const unsigned int index = ++this->captureGroupCount;
-  if (auto i = this->namedCaptureGroups.find(name); i != this->namedCaptureGroups.end()) {
-    i->second.push_back(index);
-  } else {
-    FlexBuffer<unsigned int> values;
-    values.push_back(index);
-    this->namedCaptureGroups.emplace(std::move(name), std::move(values));
+  if (const unsigned int index = this->newCaptureGroup(prefixStart)) {
+    this->frames.back().existingGroupNames.emplace(name);
+    if (auto i = this->namedCaptureGroups.find(name); i != this->namedCaptureGroups.end()) {
+      i->second.push_back(index);
+    } else {
+      FlexBuffer<unsigned int> values;
+      values.push_back(index);
+      this->namedCaptureGroups.emplace(std::move(name), std::move(values));
+    }
+    return index;
   }
-  return index;
+  return 0;
+}
+
+void Parser::resolveCaptureGroups() {
+  if (this->captureGroupResolved) {
+    return;
+  }
+  const auto old = this->iter;
+  this->captureGroupResolved = true;
+  this->prefetchedCaptureGroupCount = this->captureGroupCount;
+  this->prefetchedNamedCaptureGroupCount = this->namedCaptureGroups.size();
+  int classLevel = 0;
+  while (!this->isEnd()) {
+    switch (*this->iter) {
+    case '\\':
+      this->iter++;
+      if (!this->isEnd()) {
+        this->iter++; // skip next char
+      }
+      continue;
+    case '(':
+      this->iter++;
+      if (classLevel != 0) { // within char class
+        continue;
+      }
+      if (this->startsWith("?")) {
+        this->iter++;
+        if (this->startsWith("<")) {
+          this->iter++;
+          if (!this->startsWith("=") && !this->startsWith("!")) { // maybe named capture group
+            this->prefetchedCaptureGroupCount++;
+            this->prefetchedNamedCaptureGroupCount++;
+          }
+        }
+      } else {
+        this->prefetchedCaptureGroupCount++;
+      }
+      continue;
+    case '[':
+      classLevel++;
+      continue;
+    case ']':
+      classLevel--;
+      continue;
+    default:
+      this->iter++;
+      break;
+    }
+  }
+  this->iter = old;
 }
 
 static bool isJSIdStartAscii(int codePoint) {
@@ -902,9 +992,11 @@ bool Parser::enterGroup() {
     return false;
   }
   if (!this->startsWith("?")) { // capture group
-    unsigned int index = ++this->captureGroupCount;
-    this->frames.emplace_back(this->getTokenFrom(old), GroupNode::Type::CAPTURE, index);
-    return true;
+    if (unsigned int index = this->newCaptureGroup(old)) {
+      this->frames.emplace_back(this->getTokenFrom(old), GroupNode::Type::CAPTURE, index);
+      return true;
+    }
+    return false;
   }
   this->iter++; // consume ?
   if (this->isEnd()) {
@@ -941,7 +1033,7 @@ bool Parser::enterGroup() {
     if (name.empty()) {
       return false;
     }
-    if (const unsigned int index = this->addNewNamedCaptureGroup(old, std::move(name))) {
+    if (const unsigned int index = this->newNamedCaptureGroup(old, std::move(name))) {
       this->frames.emplace_back(this->getTokenFrom(old), GroupNode::Type::CAPTURE, index);
       return true;
     }

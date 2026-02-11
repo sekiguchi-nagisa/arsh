@@ -1,0 +1,208 @@
+
+source $SCRIPT_DIR/test_helper.arsh
+
+# (?<s>)\k<a>
+assert diff <(redump '(?<s>)\k<a>' '') <(<<'EOF'
+1:7 [error] undefined capture group name: `a'
+ at (pos = 6, size = 5)
+EOF
+)
+
+assert diff <(redump '(?<s>)\k<a>' 'u') <(<<'EOF'
+1:7 [error] undefined capture group name: `a'
+ at (pos = 6, size = 5)
+EOF
+)
+
+# \k<a>()()(?:((?<s>)))
+assert diff <(redump '\k<a>()()(?:((?<s>)))' '') <(<<'EOF'
+1:1 [error] undefined capture group name: `a'
+ at (pos = 0, size = 5)
+EOF
+)
+
+assert diff <(redump '\k<a>()()(?:((?<s>)))' 'ui') <(<<'EOF'
+1:1 [error] undefined capture group name: `a'
+ at (pos = 0, size = 5)
+EOF
+)
+
+
+# (a)(?<A>b)\k<A>
+assert diff <(redump '(a)(?<A>b)\k<A>' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 2
+namedCaptureGroups: [A: 2]
+pattern:
+  kind: Seq
+  token: (pos = 0, size = 15)
+  patterns:
+    - kind: Group
+      token: (pos = 0, size = 3)
+      group: CAPTURE
+      index: 1
+      setModifiers:
+      unsetModifiers:
+      pattern:
+        kind: Char
+        token: (pos = 1, size = 1)
+        codePoint: U+0061, a
+    - kind: Group
+      token: (pos = 3, size = 7)
+      group: CAPTURE
+      index: 2
+      setModifiers:
+      unsetModifiers:
+      pattern:
+        kind: Char
+        token: (pos = 8, size = 1)
+        codePoint: U+0062, b
+    - kind: BackRef
+      token: (pos = 10, size = 5)
+      name: A
+      index: 0
+EOF
+)
+
+assert diff <(redump '(a)(?<A>b)\k<A>' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+captureGroupCount: 2
+namedCaptureGroups: [A: 2]
+pattern:
+  kind: Seq
+  token: (pos = 0, size = 15)
+  patterns:
+    - kind: Group
+      token: (pos = 0, size = 3)
+      group: CAPTURE
+      index: 1
+      setModifiers:
+      unsetModifiers:
+      pattern:
+        kind: Char
+        token: (pos = 1, size = 1)
+        codePoint: U+0061, a
+    - kind: Group
+      token: (pos = 3, size = 7)
+      group: CAPTURE
+      index: 2
+      setModifiers:
+      unsetModifiers:
+      pattern:
+        kind: Char
+        token: (pos = 8, size = 1)
+        codePoint: U+0062, b
+    - kind: BackRef
+      token: (pos = 10, size = 5)
+      name: A
+      index: 0
+EOF
+)
+
+# (a)(?<A>b)\k<B>(?<B>\w)*
+assert diff <(redump '(a)(?<A>b)\k<B>(?<B>\w)*' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 3
+namedCaptureGroups: [A: 2, B: 3]
+pattern:
+  kind: Seq
+  token: (pos = 0, size = 24)
+  patterns:
+    - kind: Group
+      token: (pos = 0, size = 3)
+      group: CAPTURE
+      index: 1
+      setModifiers:
+      unsetModifiers:
+      pattern:
+        kind: Char
+        token: (pos = 1, size = 1)
+        codePoint: U+0061, a
+    - kind: Group
+      token: (pos = 3, size = 7)
+      group: CAPTURE
+      index: 2
+      setModifiers:
+      unsetModifiers:
+      pattern:
+        kind: Char
+        token: (pos = 8, size = 1)
+        codePoint: U+0062, b
+    - kind: BackRef
+      token: (pos = 10, size = 5)
+      name: B
+      index: 1
+    - kind: Repeat
+      token: (pos = 15, size = 9)
+      repeat: (min = 0, max = unlimited)
+      greedy: true
+      pattern:
+        kind: Group
+        token: (pos = 15, size = 8)
+        group: CAPTURE
+        index: 3
+        setModifiers:
+        unsetModifiers:
+        pattern:
+          kind: Property
+          token: (pos = 20, size = 2)
+          property: WORD
+          value: 0
+          invert: false
+EOF
+)
+
+# \k<A>((?<A>a)|(?<A>)b)\k<A>
+assert diff <(redump '\k<A>((?<A>a)|(?<A>)b)\k<A>' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 3
+namedCaptureGroups: [A: [2, 3]]
+pattern:
+  kind: Seq
+  token: (pos = 0, size = 27)
+  patterns:
+    - kind: BackRef
+      token: (pos = 0, size = 5)
+      name: A
+      index: 0
+    - kind: Group
+      token: (pos = 5, size = 17)
+      group: CAPTURE
+      index: 1
+      setModifiers:
+      unsetModifiers:
+      pattern:
+        kind: Alt
+        token: (pos = 6, size = 15)
+        patterns:
+          - kind: Group
+            token: (pos = 6, size = 7)
+            group: CAPTURE
+            index: 2
+            setModifiers:
+            unsetModifiers:
+            pattern:
+              kind: Char
+              token: (pos = 11, size = 1)
+              codePoint: U+0061, a
+          - kind: Seq
+            token: (pos = 14, size = 7)
+            patterns:
+              - kind: Group
+                token: (pos = 14, size = 6)
+                group: CAPTURE
+                index: 3
+                setModifiers:
+                unsetModifiers:
+                pattern:
+                  kind: Empty
+                  token: (pos = 19, size = 0)
+              - kind: Char
+                token: (pos = 20, size = 1)
+                codePoint: U+0062, b
+    - kind: BackRef
+      token: (pos = 22, size = 5)
+      name: A
+      index: 0
+EOF
+)

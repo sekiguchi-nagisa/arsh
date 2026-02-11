@@ -435,6 +435,8 @@ class GroupNode : public NestedNodeWithRtti<NodeKind::Group> {
 public:
   static_assert(sizeof(Modifier) == sizeof(uint8_t));
 
+  static constexpr unsigned int CAPTURE_GROUP_INDEX_MAX = UINT16_MAX;
+
   enum class Type : unsigned char {
     CAPTURE,     // (pattern), (?<name>pattern)
     NON_CAPTURE, // (?:pattern)

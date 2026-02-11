@@ -1,0 +1,229 @@
+
+source $SCRIPT_DIR/test_helper.arsh
+
+# \0
+assert diff <(redump '\0' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Char
+  token: (pos = 0, size = 2)
+  codePoint: U+0000, \x00
+EOF
+)
+
+assert diff <(redump '\0' 'u') <(<<'EOF'
+flag: (mode = u, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Char
+  token: (pos = 0, size = 2)
+  codePoint: U+0000, \x00
+EOF
+)
+
+# \00
+assert diff <(redump '\00' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Char
+  token: (pos = 0, size = 3)
+  codePoint: U+0000, \x00
+EOF
+)
+
+assert diff <(redump '\00' 'u') <(<<'EOF'
+1:1 [error] invalid decimal escape: `00'
+ at (pos = 0, size = 3)
+EOF
+)
+
+# \000
+assert diff <(redump '\000' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Char
+  token: (pos = 0, size = 4)
+  codePoint: U+0000, \x00
+EOF
+)
+
+assert diff <(redump '\000' 'u') <(<<'EOF'
+1:1 [error] invalid decimal escape: `000'
+ at (pos = 0, size = 4)
+EOF
+)
+
+# \0001
+assert diff <(redump '\0001' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Seq
+  token: (pos = 0, size = 5)
+  patterns:
+    - kind: Char
+      token: (pos = 0, size = 4)
+      codePoint: U+0000, \x00
+    - kind: Char
+      token: (pos = 4, size = 1)
+      codePoint: U+0031, 1
+EOF
+)
+
+assert diff <(redump '\0001' 'v') <(<<'EOF'
+1:1 [error] invalid decimal escape: `0001'
+ at (pos = 0, size = 5)
+EOF
+)
+
+# \1
+assert diff <(redump '\1' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Char
+  token: (pos = 0, size = 2)
+  codePoint: U+0001, \x01
+EOF
+)
+
+assert diff <(redump '\1' 'u') <(<<'EOF'
+1:1 [error] backref index is greater than capture group count: `1'
+ at (pos = 0, size = 2)
+EOF
+)
+
+# \11
+assert diff <(redump '\11' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Char
+  token: (pos = 0, size = 3)
+  codePoint: U+0009, \x09
+EOF
+)
+
+assert diff <(redump '\11' 'u') <(<<'EOF'
+1:1 [error] backref index is greater than capture group count: `11'
+ at (pos = 0, size = 3)
+EOF
+)
+
+# \111
+assert diff <(redump '\111' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Char
+  token: (pos = 0, size = 4)
+  codePoint: U+0049, I
+EOF
+)
+
+assert diff <(redump '\111' 'u') <(<<'EOF'
+1:1 [error] backref index is greater than capture group count: `111'
+ at (pos = 0, size = 4)
+EOF
+)
+
+# \1111
+assert diff <(redump '\1111' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Seq
+  token: (pos = 0, size = 5)
+  patterns:
+    - kind: Char
+      token: (pos = 0, size = 4)
+      codePoint: U+0049, I
+    - kind: Char
+      token: (pos = 4, size = 1)
+      codePoint: U+0031, 1
+EOF
+)
+
+assert diff <(redump '\1111' 'u') <(<<'EOF'
+1:1 [error] backref index is greater than capture group count: `1111'
+ at (pos = 0, size = 5)
+EOF
+)
+
+# \8
+assert diff <(redump '\8' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Char
+  token: (pos = 0, size = 2)
+  codePoint: U+0038, 8
+EOF
+)
+
+assert diff <(redump '\8' 'v') <(<<'EOF'
+1:1 [error] backref index is greater than capture group count: `8'
+ at (pos = 0, size = 2)
+EOF
+)
+
+# \89
+assert diff <(redump '\89' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Seq
+  token: (pos = 0, size = 3)
+  patterns:
+    - kind: Char
+      token: (pos = 0, size = 2)
+      codePoint: U+0038, 8
+    - kind: Char
+      token: (pos = 2, size = 1)
+      codePoint: U+0039, 9
+EOF
+)
+
+assert diff <(redump '\89' 'v') <(<<'EOF'
+1:1 [error] backref index is greater than capture group count: `89'
+ at (pos = 0, size = 3)
+EOF
+)
+
+# \78
+assert diff <(redump '\78' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Seq
+  token: (pos = 0, size = 3)
+  patterns:
+    - kind: Char
+      token: (pos = 0, size = 2)
+      codePoint: U+0007, \x07
+    - kind: Char
+      token: (pos = 2, size = 1)
+      codePoint: U+0038, 8
+EOF
+)
+
+assert diff <(redump '\78' 'v') <(<<'EOF'
+1:1 [error] backref index is greater than capture group count: `78'
+ at (pos = 0, size = 3)
+EOF
+)

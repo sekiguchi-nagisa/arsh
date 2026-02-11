@@ -88,7 +88,10 @@ private:
   const char *iter{nullptr};
   Flag flag;
   bool overflow{false};
-  unsigned int captureGroupCount{0};
+  bool captureGroupResolved{false};
+  unsigned int captureGroupCount{0}; // will be equivalent to captureGroupCount
+  unsigned int prefetchedCaptureGroupCount{0};
+  unsigned int prefetchedNamedCaptureGroupCount{0};
   std::unordered_map<std::string, FlexBuffer<unsigned int>> namedCaptureGroups;
   std::vector<BackRefNode *> namedRefNodes; // for lazy named backref check
   std::unique_ptr<Error> error{nullptr};
@@ -161,10 +164,18 @@ private:
 
   std::unique_ptr<PropertyNode> parseUnicodePropertyEscape();
 
+  std::unique_ptr<Node> parseBackRefOrOctal();
+
   std::unique_ptr<Node> parseNamedBackRef();
 
-  bool hasNameCaptureGroup() const {
-    return !this->namedCaptureGroups.empty(); // TODO: lazy fill
+  bool hasNameCaptureGroup() const { return this->prefetchedNamedCaptureGroupCount > 0; }
+
+  unsigned int newCaptureGroup(const char *prefixStart) {
+    if (this->captureGroupCount == GroupNode::CAPTURE_GROUP_INDEX_MAX) {
+      this->reportError(this->getTokenFrom(prefixStart), "number of capture group reaches limit");
+      return 0;
+    }
+    return ++this->captureGroupCount;
   }
 
   /**
@@ -174,7 +185,9 @@ private:
    * @return
    * if failed, return 0
    */
-  unsigned int addNewNamedCaptureGroup(const char *prefixStart, std::string &&name);
+  unsigned int newNamedCaptureGroup(const char *prefixStart, std::string &&name);
+
+  void resolveCaptureGroups();
 
   /**
    * parse capture group name
