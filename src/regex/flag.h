@@ -27,7 +27,7 @@ namespace arsh::regex {
 constexpr const char *VERSION = "ES2025";
 
 enum class Mode : unsigned char {
-  LEGACY,      // legacy mode
+  BMP,         // ''
   UNICODE,     // 'u' (default)
   UNICODE_SET, // 'v'
 };
@@ -53,7 +53,7 @@ namespace arsh::regex {
 
 class Flag {
 private:
-  Mode mode_{Mode::LEGACY};
+  Mode mode_{Mode::BMP};
   Modifier modifiers_{};
 
 public:
@@ -80,7 +80,7 @@ public:
   }
 
   static Optional<Modifier> parseModifier(const StringRef ref, std::string *err) {
-    if (auto ret = parse(ref, Mode::LEGACY, err, true); ret.hasValue()) {
+    if (auto ret = parse(ref, Mode::BMP, err, true); ret.hasValue()) {
       return ret.unwrap().modifiers();
     }
     return {};

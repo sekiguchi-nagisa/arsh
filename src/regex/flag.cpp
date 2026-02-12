@@ -26,7 +26,7 @@ namespace arsh::regex {
 std::string Flag::str() const {
   unsigned int set = 0;
   switch (this->mode()) {
-  case Mode::LEGACY:
+  case Mode::BMP:
     break; // do nothing
   case Mode::UNICODE:
     setFlag(set, 1u << ('u' - 'a'));

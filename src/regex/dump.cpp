@@ -92,7 +92,7 @@ static void toStringModifier(Modifier m, std::string &out) {
 void TreeDumper::dump(const char *fieldName, Flag flag) {
   std::string str = "(mode = ";
   switch (flag.mode()) {
-  case Mode::LEGACY:
+  case Mode::BMP:
     break;
   case Mode::UNICODE:
     str += 'u';

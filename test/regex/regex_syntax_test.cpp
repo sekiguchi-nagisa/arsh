@@ -92,7 +92,7 @@ TEST(RegexFlag, onlyModifier) {
 TEST(RegexFlag, str) {
   regex::Flag flag;
   ASSERT_EQ("", flag.str());
-  flag = regex::Flag(regex::Mode::LEGACY, regex::Modifier::DOT_ALL);
+  flag = regex::Flag(regex::Mode::BMP, regex::Modifier::DOT_ALL);
   ASSERT_EQ("s", flag.str());
   flag = regex::Flag(regex::Mode::UNICODE, regex::Modifier::MULTILINE);
   ASSERT_EQ("mu", flag.str());

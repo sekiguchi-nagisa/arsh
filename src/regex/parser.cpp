@@ -217,9 +217,8 @@ std::unique_ptr<Node> Parser::parse() {
       if (auto node = this->exitGroup()) {
         if (isa<LookAroundNode>(*node) && !this->isEnd() && isQuantifierStart(*this->iter)) {
           if (auto &la = cast<LookAroundNode>(*node);
-              this->flag.is(Mode::LEGACY) &&
-              (la.getType() == LookAroundNode::Type::LOOK_AHEAD ||
-               la.getType() == LookAroundNode::Type::LOOK_AHEAD_NOT)) {
+              this->flag.is(Mode::BMP) && (la.getType() == LookAroundNode::Type::LOOK_AHEAD ||
+                                           la.getType() == LookAroundNode::Type::LOOK_AHEAD_NOT)) {
             atomNode = std::move(node);
             goto REPEAT; // only allow look-ahead in legacy mode
           }
@@ -279,7 +278,7 @@ std::unique_ptr<Node> Parser::parse() {
     }
 
   REPEAT:
-    atomNode = this->tryToParseQuantifier(std::move(atomNode), this->flag.is(Mode::LEGACY));
+    atomNode = this->tryToParseQuantifier(std::move(atomNode), this->flag.is(Mode::BMP));
     if (!atomNode) {
       return nullptr;
     }
@@ -335,7 +334,7 @@ std::unique_ptr<Node> Parser::parseAtomEscape() {
       this->iter++;
       goto CHAR;
     }
-    if (this->flag.is(Mode::LEGACY)) {
+    if (this->flag.is(Mode::BMP)) {
       this->iter--; // only consume '\\'
       codePoint = '\\';
       goto CHAR;
@@ -386,7 +385,7 @@ std::unique_ptr<Node> Parser::parseAtomEscape() {
     return std::make_unique<PropertyNode>(this->getTokenFrom(start), PropertyNode::Type::NOT_WORD);
   case 'p':
   case 'P':
-    if (this->flag.is(Mode::LEGACY)) {
+    if (this->flag.is(Mode::BMP)) {
       codePoint = static_cast<unsigned char>(*this->iter++);
       goto CHAR;
     }
@@ -408,7 +407,7 @@ std::unique_ptr<Node> Parser::parseAtomEscape() {
       goto CHAR;
     }
   INVALID_HEX:
-    if (this->flag.is(Mode::LEGACY)) {
+    if (this->flag.is(Mode::BMP)) {
       this->iter = old;
       codePoint = 'x';
       goto CHAR;
@@ -419,11 +418,11 @@ std::unique_ptr<Node> Parser::parseAtomEscape() {
   }
   case 'u': {
     this->iter--;
-    codePoint = this->parseUnicodeEscape(this->flag.is(Mode::LEGACY));
+    codePoint = this->parseUnicodeEscape(this->flag.is(Mode::BMP));
     if (UnicodeUtil::isValidCodePoint(codePoint)) {
       goto CHAR;
     }
-    if (this->flag.is(Mode::LEGACY) && !this->hasError()) {
+    if (this->flag.is(Mode::BMP) && !this->hasError()) {
       this->iter = start;
       this->iter += 2;
       codePoint = 'u';
@@ -441,7 +440,7 @@ std::unique_ptr<Node> Parser::parseAtomEscape() {
     }
     codePoint = this->nextValidCodePoint();
     if (codePoint > -1) {
-      if (this->flag.is(Mode::LEGACY)) {
+      if (this->flag.is(Mode::BMP)) {
         goto CHAR;
       }
       char data[5];
@@ -650,12 +649,12 @@ std::unique_ptr<Node> Parser::parseNamedBackRef() {
   const auto old = this->iter;
   assert(this->startsWith("\\k"));
   this->iter += 2;
-  auto name = this->parseCaptureGroupName(old, this->flag.is(Mode::LEGACY));
+  auto name = this->parseCaptureGroupName(old, this->flag.is(Mode::BMP));
   if (!name.empty()) {
     this->resolveCaptureGroups();
   }
   if (name.empty() || !this->hasNameCaptureGroup()) {
-    if (this->flag.is(Mode::LEGACY)) {
+    if (this->flag.is(Mode::BMP)) {
       this->iter = old + 2;
       return std::make_unique<CharNode>(this->getTokenFrom(old), 'k');
     }
