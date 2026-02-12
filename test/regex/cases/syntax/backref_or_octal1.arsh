@@ -227,3 +227,27 @@ assert diff <(redump '\78' 'v') <(<<'EOF'
  at (pos = 0, size = 3)
 EOF
 )
+
+# \777 (larger than 255)
+assert diff <(redump '\777' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Seq
+  token: (pos = 0, size = 4)
+  patterns:
+    - kind: Char
+      token: (pos = 0, size = 3)
+      codePoint: U+003F, ?
+    - kind: Char
+      token: (pos = 3, size = 1)
+      codePoint: U+0037, 7
+EOF
+)
+
+assert diff <(redump '\777' 'u') <(<<'EOF'
+1:1 [error] backref index is greater than capture group count: `777'
+ at (pos = 0, size = 4)
+EOF
+)

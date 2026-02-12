@@ -634,9 +634,14 @@ std::unique_ptr<Node> Parser::parseBackRefOrOctal() {
   }
   int codePoint = 0;
   for (unsigned int i = 0; i < 3 && !this->isEnd() && isOctal(*this->iter); i++) {
-    char ch = *this->iter++;
+    const int oldCodePoint = codePoint;
     codePoint *= 8;
-    codePoint += (ch - '0');
+    codePoint += (*this->iter - '0');
+    if (codePoint >= UINT8_MAX) {
+      codePoint = oldCodePoint;
+      break;
+    }
+    this->iter++;
   }
   return std::make_unique<CharNode>(this->getTokenFrom(start), codePoint);
 }
