@@ -45,14 +45,6 @@ struct UnicodeUtil {
   static constexpr const char *REPLACEMENT_CHAR_UTF8 = "\xEF\xBF\xBD";
 
   /**
-   * if b is illegal start byte of UTF-8, skip it.
-   */
-  static size_t utf8NextPos(size_t pos, unsigned char b) {
-    unsigned int size = utf8ByteSize(b);
-    return pos + (size > 0 ? size : 1);
-  }
-
-  /**
    * if b is illegal start byte of UTF-8, return always 0.
    */
   static unsigned int utf8ByteSize(unsigned char b);
