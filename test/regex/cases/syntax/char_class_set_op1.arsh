@@ -1,0 +1,354 @@
+
+source $SCRIPT_DIR/test_helper.arsh
+
+# [a&&b]
+assert diff <(redump '[a&&b]' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 6)
+  class: UNION
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 1)
+      codePoint: U+0061, a
+    - kind: Char
+      token: (pos = 2, size = 1)
+      codePoint: U+0026, &
+    - kind: Char
+      token: (pos = 3, size = 1)
+      codePoint: U+0026, &
+    - kind: Char
+      token: (pos = 4, size = 1)
+      codePoint: U+0062, b
+EOF
+)
+
+assert diff <(redump '[a&&b]' 'u') <(<<'EOF'
+flag: (mode = u, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 6)
+  class: UNION
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 1)
+      codePoint: U+0061, a
+    - kind: Char
+      token: (pos = 2, size = 1)
+      codePoint: U+0026, &
+    - kind: Char
+      token: (pos = 3, size = 1)
+      codePoint: U+0026, &
+    - kind: Char
+      token: (pos = 4, size = 1)
+      codePoint: U+0062, b
+EOF
+)
+
+assert diff <(redump '[a&&b]' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 6)
+  class: INTERSECT
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 1)
+      codePoint: U+0061, a
+    - kind: Property
+      token: (pos = 2, size = 2)
+      property: INTERSECT
+      value: 0
+      invert: false
+    - kind: Char
+      token: (pos = 4, size = 1)
+      codePoint: U+0062, b
+EOF
+)
+
+# [a&&
+assert diff <(redump '[a&&' 'v') <(<<'EOF'
+1:3 [error] set operation needs operand: `&&'
+ at (pos = 2, size = 2)
+EOF
+)
+
+# [a&&]
+assert diff <(redump '[a&&]' 'v') <(<<'EOF'
+1:3 [error] set operation needs operand: `&&'
+ at (pos = 2, size = 2)
+EOF
+)
+
+# [a&&&]
+assert diff <(redump '[a&&&]' 'v') <(<<'EOF'
+1:5 [error] invalid character in character class: `&'
+ at (pos = 4, size = 1)
+EOF
+)
+
+# [a&&b&&c]
+assert diff <(redump '[a&&b&&c]' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 9)
+  class: INTERSECT
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 1)
+      codePoint: U+0061, a
+    - kind: Property
+      token: (pos = 2, size = 2)
+      property: INTERSECT
+      value: 0
+      invert: false
+    - kind: Char
+      token: (pos = 4, size = 1)
+      codePoint: U+0062, b
+    - kind: Property
+      token: (pos = 5, size = 2)
+      property: INTERSECT
+      value: 0
+      invert: false
+    - kind: Char
+      token: (pos = 7, size = 1)
+      codePoint: U+0063, c
+EOF
+)
+
+# [a--b]
+assert diff <(redump '[a--b]' '') <(<<'EOF'
+1:2 [error] character range out of order
+ at (pos = 1, size = 3)
+EOF
+)
+
+assert diff <(redump '[a--b]' 'u') <(<<'EOF'
+1:2 [error] character range out of order
+ at (pos = 1, size = 3)
+EOF
+)
+
+assert diff <(redump '[a--b]' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 6)
+  class: SUBTRACT
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 1)
+      codePoint: U+0061, a
+    - kind: Property
+      token: (pos = 2, size = 2)
+      property: SUBTRACT
+      value: 0
+      invert: false
+    - kind: Char
+      token: (pos = 4, size = 1)
+      codePoint: U+0062, b
+EOF
+)
+
+# [a--
+assert diff <(redump '[a--' 'v') <(<<'EOF'
+1:3 [error] set operation needs operand: `--'
+ at (pos = 2, size = 2)
+EOF
+)
+
+# [a--]
+assert diff <(redump '[a--]' 'v') <(<<'EOF'
+1:3 [error] set operation needs operand: `--'
+ at (pos = 2, size = 2)
+EOF
+)
+
+# [a--b--c]
+assert diff <(redump '[a--b--c]' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 9)
+  class: SUBTRACT
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 1)
+      codePoint: U+0061, a
+    - kind: Property
+      token: (pos = 2, size = 2)
+      property: SUBTRACT
+      value: 0
+      invert: false
+    - kind: Char
+      token: (pos = 4, size = 1)
+      codePoint: U+0062, b
+    - kind: Property
+      token: (pos = 5, size = 2)
+      property: SUBTRACT
+      value: 0
+      invert: false
+    - kind: Char
+      token: (pos = 7, size = 1)
+      codePoint: U+0063, c
+EOF
+)
+
+# [ab&&c]
+assert diff <(redump '[ab&&c]' 'v') <(<<'EOF'
+1:1 [error] cannot combine different set operation
+ at (pos = 0, size = 5)
+EOF
+)
+
+# [ab--c]
+assert diff <(redump '[ab--c]' 'v') <(<<'EOF'
+1:1 [error] cannot combine different set operation
+ at (pos = 0, size = 5)
+EOF
+)
+
+# [a&&cd]
+assert diff <(redump '[a&&cd]' 'v') <(<<'EOF'
+1:1 [error] cannot combine different set operation
+ at (pos = 0, size = 6)
+EOF
+)
+
+# [a--cd]
+assert diff <(redump '[a--cd]' 'v') <(<<'EOF'
+1:1 [error] cannot combine different set operation
+ at (pos = 0, size = 6)
+EOF
+)
+
+# [a-c&&d]
+assert diff <(redump '[a-c&&d]' 'v') <(<<'EOF'
+1:1 [error] cannot combine different set operation
+ at (pos = 0, size = 6)
+EOF
+)
+
+# [a&&d-c]
+assert diff <(redump '[a&&d-c]' 'v') <(<<'EOF'
+1:1 [error] cannot combine different set operation
+ at (pos = 0, size = 6)
+EOF
+)
+
+# [a-c--d]
+assert diff <(redump '[a-c--d]' 'v') <(<<'EOF'
+1:1 [error] cannot combine different set operation
+ at (pos = 0, size = 6)
+EOF
+)
+
+# [a--c-d]
+assert diff <(redump '[a--c-d]' 'v') <(<<'EOF'
+1:1 [error] cannot combine different set operation
+ at (pos = 0, size = 6)
+EOF
+)
+
+# [a&&c--d]
+assert diff <(redump '[a&&c--d]' 'v') <(<<'EOF'
+1:1 [error] cannot combine different set operation
+ at (pos = 0, size = 7)
+EOF
+)
+
+# [a--c&&d]
+assert diff <(redump '[a--c&&d]' 'v') <(<<'EOF'
+1:1 [error] cannot combine different set operation
+ at (pos = 0, size = 7)
+EOF
+)
+
+# [ab[\w]]
+assert diff <(redump '[ab[\w]]' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Seq
+  token: (pos = 0, size = 8)
+  patterns:
+    - kind: CharClass
+      token: (pos = 0, size = 7)
+      class: UNION
+      invert: false
+      chars:
+        - kind: Char
+          token: (pos = 1, size = 1)
+          codePoint: U+0061, a
+        - kind: Char
+          token: (pos = 2, size = 1)
+          codePoint: U+0062, b
+        - kind: Char
+          token: (pos = 3, size = 1)
+          codePoint: U+005B, [
+        - kind: Property
+          token: (pos = 4, size = 2)
+          property: WORD
+          value: 0
+          invert: false
+    - kind: Char
+      token: (pos = 7, size = 1)
+      codePoint: U+005D, ]
+EOF
+)
+
+assert diff <(redump '[ab[\w]]' 'u') <(<<'EOF'
+1:8 [error] unmatched `]'
+ at (pos = 7, size = 1)
+EOF
+)
+
+assert diff <(redump '[ab[\w]]' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 8)
+  class: UNION
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 1)
+      codePoint: U+0061, a
+    - kind: Char
+      token: (pos = 2, size = 1)
+      codePoint: U+0062, b
+    - kind: CharClass
+      token: (pos = 3, size = 4)
+      class: UNION
+      invert: false
+      chars:
+        - kind: Property
+          token: (pos = 4, size = 2)
+          property: WORD
+          value: 0
+          invert: false
+EOF
+)

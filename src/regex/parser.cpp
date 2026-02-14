@@ -25,6 +25,58 @@
 
 namespace arsh::regex {
 
+// ###########################
+// ##     CharClassNode     ##
+// ###########################
+
+static bool mayContainStringsImpl(const Node &node) {
+  if (isa<PropertyNode>(node)) {
+    return cast<PropertyNode>(node).getType() == PropertyNode::Type::EMOJI;
+  }
+  if (isa<CharClassNode>(node)) {
+    return cast<CharClassNode>(node).mayContainStrings();
+  }
+  return false; // TODO: \q{substring}
+}
+
+bool CharClassNode::finalize(Token endToken) {
+  this->updateToken(endToken);
+  this->u32 = 0;
+  switch (this->getType()) {
+  case Type::UNION:
+  case Type::RANGE:
+    for (auto &e : this->getChars()) {
+      if (mayContainStringsImpl(*e)) {
+        this->u32++;
+        goto END;
+      }
+    }
+    break;
+  case Type::INTERSECT:
+    for (auto &e : this->getChars()) {
+      if (isCharClassOp(*e)) {
+        continue;
+      }
+      if (!mayContainStringsImpl(*e)) {
+        this->u32 = 0;
+        goto END;
+      }
+    }
+    this->u32++;
+    break;
+  case Type::SUBTRACT:
+    if (mayContainStringsImpl(*this->getChars()[0])) {
+      this->u32++;
+    }
+    break;
+  }
+END:
+  if (this->isInvert()) {
+    return !this->mayContainStrings();
+  }
+  return true;
+}
+
 // #####################
 // ##     AltNode     ##
 // #####################
@@ -1262,10 +1314,13 @@ std::unique_ptr<Node> Parser::parseCharClass() {
       this->iter++;
       break;
     case ']': {
-      this->curCharClass().updateToken(this->curToken());
+      if (!this->curCharClass().finalize(this->curToken())) {
+        this->reportError(this->curCharClass().getToken(),
+                          "negated character class may contain strings");
+        return nullptr;
+      }
       this->iter++;
       classLevel--;
-      // TODO: check range
       if (classLevel) {
         node = std::move(this->frames.back().node);
         this->frames.pop_back();
@@ -1301,8 +1356,111 @@ std::unique_ptr<Node> Parser::parseCharClass() {
     }
     }
 
-    // op
-    this->curCharClass().add(std::move(node));
+    // check char range
+    if (this->curCharClass().hasUnterminatedCharOp() && this->curCharClass().isUnionOrRange()) {
+      auto &left = cast<CharNode>(
+          *this->curCharClass().getChars()[this->curCharClass().getChars().size() - 2]);
+      if (!isa<CharNode>(*node)) {
+        if (this->flag.is(Mode::BMP)) {
+          auto token = this->curCharClass().getChars().back()->getToken();
+          this->curCharClass().refChars().pop_back();
+          this->curCharClass().add(std::make_unique<CharNode>(token, '-'));
+        } else {
+          auto old = this->begin() + left.getToken().pos;
+          this->reportError(this->getTokenFrom(old), "invalid character range");
+          return nullptr;
+        }
+      } else {
+        auto &right = cast<CharNode>(*node);
+        if (left.getCodePoint() > right.getCodePoint()) {
+          auto old = this->begin() + left.getToken().pos;
+          this->reportError(this->getTokenFrom(old), "character range out of order");
+          return nullptr;
+        }
+      }
+    }
+
+    // resolve set operation
+    if (this->flag.is(Mode::UNICODE_SET)) {
+      auto &curClass = this->curCharClass();
+      if (curClass.hasUnterminatedCharOp() || curCharClass().isUnionOrRange()) {
+        curClass.add(std::move(node));
+      } else {
+        const auto cur = this->begin() + curClass.getToken().pos;
+        this->reportError(this->getTokenFrom(cur), "cannot combine different set operation");
+        return nullptr;
+      }
+      const auto old = this->iter;
+      Token op;
+      Optional<PropertyNode::Type> opType;
+      auto classType = CharClassNode::Type::UNION;
+      if (this->startsWith("&&")) {
+        this->iter += 2;
+        if (this->startsWith("&")) { // not allow `&&&`
+          const auto old2 = this->iter;
+          const char ch = *this->iter++;
+          this->reportError(this->getTokenFrom(old2), "invalid character in character class: `%c'",
+                            ch);
+          return nullptr;
+        }
+        op = this->getTokenFrom(old);
+        opType = PropertyNode::Type::INTERSECT;
+        classType = CharClassNode::Type::INTERSECT;
+      } else if (this->startsWith("--")) {
+        this->iter += 2;
+        op = this->getTokenFrom(old);
+        opType = PropertyNode::Type::SUBTRACT;
+        classType = CharClassNode::Type::SUBTRACT;
+      } else if (this->startsWith("-")) {
+        this->iter += 1;
+        op = this->getTokenFrom(old);
+        opType = PropertyNode::Type::RANGE;
+        classType = CharClassNode::Type::RANGE;
+      }
+      if (classType != CharClassNode::Type::UNION) {
+        if (!curClass.isCompatible(classType)) {
+          const auto cur = this->begin() + curClass.getToken().pos;
+          this->reportError(this->getTokenFrom(cur), "cannot combine different set operation");
+          return nullptr;
+        }
+        curClass.setType(classType);
+        if (classType == CharClassNode::Type::RANGE &&
+            !isa<CharNode>(*curClass.getChars().back())) {
+          const auto cur = this->begin() + curClass.getChars().back()->getToken().pos;
+          this->reportError(this->getTokenFrom(cur), "invalid character range");
+          return nullptr;
+        }
+        curClass.add(std::make_unique<PropertyNode>(op, opType.unwrap()));
+        if (this->isEnd() || this->startsWith("]")) { // need more operand
+          auto &opNode = *curClass.getChars().back();
+          this->reportError(opNode.getToken(), "set operation needs operand: `%s'",
+                            this->toStrRef(opNode.getToken()).toString().c_str());
+          return nullptr;
+        }
+      }
+    } else {
+      auto &curClass = this->curCharClass();
+      curClass.add(std::move(node));
+      if (this->startsWith("-")) {
+        Token token = this->curToken();
+        this->iter++;
+        if (this->isEnd() || this->startsWith("]")) { // end
+          curClass.add(std::make_unique<CharNode>(token, '-'));
+          continue;
+        }
+        if (!isa<CharNode>(*curClass.getChars().back())) {
+          if (this->flag.is(Mode::BMP)) {
+            curClass.add(std::make_unique<CharNode>(token, '-'));
+            continue;
+          }
+          const auto cur = this->begin() + curClass.getChars().back()->getToken().pos;
+          this->reportError(this->getTokenFrom(cur), "invalid character range");
+          return nullptr;
+        }
+        curClass.setType(CharClassNode::Type::RANGE);
+        curClass.add(std::make_unique<PropertyNode>(token, PropertyNode::Type::RANGE));
+      }
+    }
   }
   if (this->isEnd()) {
     this->reportError(this->curCharClass().getToken(), "unclosed character class");

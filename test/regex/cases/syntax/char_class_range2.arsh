@@ -1,0 +1,253 @@
+
+source $SCRIPT_DIR/test_helper.arsh
+
+# [-a]
+assert diff <(redump '[-a]' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 4)
+  class: UNION
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 1)
+      codePoint: U+002D, -
+    - kind: Char
+      token: (pos = 2, size = 1)
+      codePoint: U+0061, a
+EOF
+)
+
+assert diff <(redump '[-a]' 'u') <(<<'EOF'
+flag: (mode = u, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 4)
+  class: UNION
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 1)
+      codePoint: U+002D, -
+    - kind: Char
+      token: (pos = 2, size = 1)
+      codePoint: U+0061, a
+EOF
+)
+
+assert diff <(redump '[-a]' 'v') <(<<'EOF'
+1:2 [error] invalid character in character class: `-'
+ at (pos = 1, size = 1)
+EOF
+)
+
+# [a-]
+assert diff <(redump '[a-]' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 4)
+  class: UNION
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 1)
+      codePoint: U+0061, a
+    - kind: Char
+      token: (pos = 2, size = 1)
+      codePoint: U+002D, -
+EOF
+)
+
+assert diff <(redump '[a-]' 'u') <(<<'EOF'
+flag: (mode = u, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 4)
+  class: UNION
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 1)
+      codePoint: U+0061, a
+    - kind: Char
+      token: (pos = 2, size = 1)
+      codePoint: U+002D, -
+EOF
+)
+
+assert diff <(redump '[a-]' 'v') <(<<'EOF'
+1:3 [error] set operation needs operand: `-'
+ at (pos = 2, size = 1)
+EOF
+)
+
+# [\W-]
+assert diff <(redump '[\W-]' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 5)
+  class: UNION
+  invert: false
+  chars:
+    - kind: Property
+      token: (pos = 1, size = 2)
+      property: NOT_WORD
+      value: 0
+      invert: true
+    - kind: Char
+      token: (pos = 3, size = 1)
+      codePoint: U+002D, -
+EOF
+)
+
+assert diff <(redump '[\W-]' 'u') <(<<'EOF'
+flag: (mode = u, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 5)
+  class: UNION
+  invert: false
+  chars:
+    - kind: Property
+      token: (pos = 1, size = 2)
+      property: NOT_WORD
+      value: 0
+      invert: true
+    - kind: Char
+      token: (pos = 3, size = 1)
+      codePoint: U+002D, -
+EOF
+)
+
+assert diff <(redump '[\W-]' 'v') <(<<'EOF'
+1:2 [error] invalid character range
+ at (pos = 1, size = 3)
+EOF
+)
+
+# [\w-b]
+assert diff <(redump '[\s-b]' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 6)
+  class: UNION
+  invert: false
+  chars:
+    - kind: Property
+      token: (pos = 1, size = 2)
+      property: SPACE
+      value: 0
+      invert: false
+    - kind: Char
+      token: (pos = 3, size = 1)
+      codePoint: U+002D, -
+    - kind: Char
+      token: (pos = 4, size = 1)
+      codePoint: U+0062, b
+EOF
+)
+
+assert diff <(redump '[\s-b]' 'u') <(<<'EOF'
+1:2 [error] invalid character range
+ at (pos = 1, size = 3)
+EOF
+)
+
+assert diff <(redump '[\s-b]' 'v') <(<<'EOF'
+1:2 [error] invalid character range
+ at (pos = 1, size = 3)
+EOF
+)
+
+# [1-\d]
+assert diff <(redump '[1-\d]' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 6)
+  class: RANGE
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 1)
+      codePoint: U+0031, 1
+    - kind: Char
+      token: (pos = 2, size = 1)
+      codePoint: U+002D, -
+    - kind: Property
+      token: (pos = 3, size = 2)
+      property: DIGIT
+      value: 0
+      invert: false
+EOF
+)
+
+assert diff <(redump '[1-\d]' 'u') <(<<'EOF'
+1:2 [error] invalid character range
+ at (pos = 1, size = 4)
+EOF
+)
+
+assert diff <(redump '[1-\d]' 'v') <(<<'EOF'
+1:2 [error] invalid character range
+ at (pos = 1, size = 4)
+EOF
+)
+
+# [9-1]
+assert diff <(redump '[9-1]' '') <(<<'EOF'
+1:2 [error] character range out of order
+ at (pos = 1, size = 3)
+EOF
+)
+
+assert diff <(redump '[9-1]' 'u') <(<<'EOF'
+1:2 [error] character range out of order
+ at (pos = 1, size = 3)
+EOF
+)
+
+assert diff <(redump '[9-1]' 'v') <(<<'EOF'
+1:2 [error] character range out of order
+ at (pos = 1, size = 3)
+EOF
+)
+
+# [aん-あ]
+assert diff <(redump '[aん-あ]' '') <(<<'EOF'
+1:3 [error] character range out of order
+ at (pos = 2, size = 7)
+EOF
+)
+
+assert diff <(redump '[aん-あ]' 'u') <(<<'EOF'
+1:3 [error] character range out of order
+ at (pos = 2, size = 7)
+EOF
+)
+
+assert diff <(redump '[aん-あ]' 'v') <(<<'EOF'
+1:3 [error] character range out of order
+ at (pos = 2, size = 7)
+EOF
+)

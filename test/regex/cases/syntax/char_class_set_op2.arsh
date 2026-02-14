@@ -1,0 +1,239 @@
+
+source $SCRIPT_DIR/test_helper.arsh
+
+# [^\p{C}]
+assert diff <(redump '[^\p{C}]' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 8)
+  class: UNION
+  invert: true
+  chars:
+    - kind: Property
+      token: (pos = 2, size = 5)
+      property: UNICODE
+      value: gc=Other
+      invert: false
+EOF
+)
+
+# [^\w[^\p{C}]]
+assert diff <(redump '[^\w[^\p{C}]]' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 13)
+  class: UNION
+  invert: true
+  chars:
+    - kind: Property
+      token: (pos = 2, size = 2)
+      property: WORD
+      value: 0
+      invert: false
+    - kind: CharClass
+      token: (pos = 4, size = 8)
+      class: UNION
+      invert: true
+      chars:
+        - kind: Property
+          token: (pos = 6, size = 5)
+          property: UNICODE
+          value: gc=Other
+          invert: false
+EOF
+)
+
+# [^\p{RGI_Emoji}]
+assert diff <(redump '[^\p{RGI_Emoji}]' 'v') <(<<'EOF'
+1:1 [error] negated character class may contain strings
+ at (pos = 0, size = 16)
+EOF
+)
+
+# [^a[\p{RGI_Emoji}]]
+assert diff <(redump '[^a[\p{RGI_Emoji}]]' 'v') <(<<'EOF'
+1:1 [error] negated character class may contain strings
+ at (pos = 0, size = 19)
+EOF
+)
+
+# [^\w--\S]
+assert diff <(redump '[^\w--\S]' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 9)
+  class: SUBTRACT
+  invert: true
+  chars:
+    - kind: Property
+      token: (pos = 2, size = 2)
+      property: WORD
+      value: 0
+      invert: false
+    - kind: Property
+      token: (pos = 4, size = 2)
+      property: SUBTRACT
+      value: 0
+      invert: false
+    - kind: Property
+      token: (pos = 6, size = 2)
+      property: NOT_SPACE
+      value: 0
+      invert: true
+EOF
+)
+
+# [^\p{RGI_Emoji}--\S]
+assert diff <(redump '[^\p{RGI_Emoji}--\S]' 'v') <(<<'EOF'
+1:1 [error] negated character class may contain strings
+ at (pos = 0, size = 20)
+EOF
+)
+
+# [^\p{RGI_Emoji}--\p{RGI_Emoji}--d]
+assert diff <(redump '[^\p{RGI_Emoji}--\p{RGI_Emoji}--d]' 'v') <(<<'EOF'
+1:1 [error] negated character class may contain strings
+ at (pos = 0, size = 34)
+EOF
+)
+
+# [^e--[\p{RGI_Emoji}]]
+assert diff <(redump '[^e--[\p{RGI_Emoji}]]' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 21)
+  class: SUBTRACT
+  invert: true
+  chars:
+    - kind: Char
+      token: (pos = 2, size = 1)
+      codePoint: U+0065, e
+    - kind: Property
+      token: (pos = 3, size = 2)
+      property: SUBTRACT
+      value: 0
+      invert: false
+    - kind: CharClass
+      token: (pos = 5, size = 15)
+      class: UNION
+      invert: false
+      chars:
+        - kind: Property
+          token: (pos = 6, size = 13)
+          property: EMOJI
+          value: RGI_Emoji
+          invert: false
+EOF
+)
+
+# [^e&&[\p{RGI_Emoji}]]
+assert diff <(redump '[^e&&[\p{RGI_Emoji}]]' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 21)
+  class: INTERSECT
+  invert: true
+  chars:
+    - kind: Char
+      token: (pos = 2, size = 1)
+      codePoint: U+0065, e
+    - kind: Property
+      token: (pos = 3, size = 2)
+      property: INTERSECT
+      value: 0
+      invert: false
+    - kind: CharClass
+      token: (pos = 5, size = 15)
+      class: UNION
+      invert: false
+      chars:
+        - kind: Property
+          token: (pos = 6, size = 13)
+          property: EMOJI
+          value: RGI_Emoji
+          invert: false
+EOF
+)
+
+# [^\p{RGI_Emoji}&&w]
+assert diff <(redump '[^\p{RGI_Emoji}&&w]' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 19)
+  class: INTERSECT
+  invert: true
+  chars:
+    - kind: Property
+      token: (pos = 2, size = 13)
+      property: EMOJI
+      value: RGI_Emoji
+      invert: false
+    - kind: Property
+      token: (pos = 15, size = 2)
+      property: INTERSECT
+      value: 0
+      invert: false
+    - kind: Char
+      token: (pos = 17, size = 1)
+      codePoint: U+0077, w
+EOF
+)
+
+# [^a&&\w]
+assert diff <(redump '[^a&&\w]' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 8)
+  class: INTERSECT
+  invert: true
+  chars:
+    - kind: Char
+      token: (pos = 2, size = 1)
+      codePoint: U+0061, a
+    - kind: Property
+      token: (pos = 3, size = 2)
+      property: INTERSECT
+      value: 0
+      invert: false
+    - kind: Property
+      token: (pos = 5, size = 2)
+      property: WORD
+      value: 0
+      invert: false
+EOF
+)
+
+# [^\p{RGI_Emoji}&&\p{Basic_Emoji}]
+assert diff <(redump '[^\p{RGI_Emoji}&&\p{Basic_Emoji}]' 'v') <(<<'EOF'
+1:1 [error] negated character class may contain strings
+ at (pos = 0, size = 33)
+EOF
+)
+
+# [a&&[^\p{RGI_Emoji}&&\p{Basic_Emoji}]]
+assert diff <(redump '[a&&[^\p{RGI_Emoji}&&\p{Basic_Emoji}]]' 'v') <(<<'EOF'
+1:5 [error] negated character class may contain strings
+ at (pos = 4, size = 33)
+EOF
+)

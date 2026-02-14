@@ -1,0 +1,345 @@
+
+source $SCRIPT_DIR/test_helper.arsh
+
+# [a-c]
+assert diff <(redump '[a-c]' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 5)
+  class: RANGE
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 1)
+      codePoint: U+0061, a
+    - kind: Property
+      token: (pos = 2, size = 1)
+      property: RANGE
+      value: 0
+      invert: false
+    - kind: Char
+      token: (pos = 3, size = 1)
+      codePoint: U+0063, c
+EOF
+)
+
+assert diff <(redump '[a-c]' 'u') <(<<'EOF'
+flag: (mode = u, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 5)
+  class: RANGE
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 1)
+      codePoint: U+0061, a
+    - kind: Property
+      token: (pos = 2, size = 1)
+      property: RANGE
+      value: 0
+      invert: false
+    - kind: Char
+      token: (pos = 3, size = 1)
+      codePoint: U+0063, c
+EOF
+)
+
+assert diff <(redump '[a-c]' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 5)
+  class: RANGE
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 1)
+      codePoint: U+0061, a
+    - kind: Property
+      token: (pos = 2, size = 1)
+      property: RANGE
+      value: 0
+      invert: false
+    - kind: Char
+      token: (pos = 3, size = 1)
+      codePoint: U+0063, c
+EOF
+)
+
+# [あ-お]
+assert diff <(redump '[あ-お]' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 9)
+  class: RANGE
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 3)
+      codePoint: U+3042, あ
+    - kind: Property
+      token: (pos = 4, size = 1)
+      property: RANGE
+      value: 0
+      invert: false
+    - kind: Char
+      token: (pos = 5, size = 3)
+      codePoint: U+304A, お
+EOF
+)
+
+assert diff <(redump '[あ-お]' 'u') <(<<'EOF'
+flag: (mode = u, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 9)
+  class: RANGE
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 3)
+      codePoint: U+3042, あ
+    - kind: Property
+      token: (pos = 4, size = 1)
+      property: RANGE
+      value: 0
+      invert: false
+    - kind: Char
+      token: (pos = 5, size = 3)
+      codePoint: U+304A, お
+EOF
+)
+
+assert diff <(redump '[あ-お]' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 9)
+  class: RANGE
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 3)
+      codePoint: U+3042, あ
+    - kind: Property
+      token: (pos = 4, size = 1)
+      property: RANGE
+      value: 0
+      invert: false
+    - kind: Char
+      token: (pos = 5, size = 3)
+      codePoint: U+304A, お
+EOF
+)
+
+# [a0-9]
+assert diff <(redump '[a0-9]' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 6)
+  class: RANGE
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 1)
+      codePoint: U+0061, a
+    - kind: Char
+      token: (pos = 2, size = 1)
+      codePoint: U+0030, 0
+    - kind: Property
+      token: (pos = 3, size = 1)
+      property: RANGE
+      value: 0
+      invert: false
+    - kind: Char
+      token: (pos = 4, size = 1)
+      codePoint: U+0039, 9
+EOF
+)
+
+assert diff <(redump '[a0-9]' 'u') <(<<'EOF'
+flag: (mode = u, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 6)
+  class: RANGE
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 1)
+      codePoint: U+0061, a
+    - kind: Char
+      token: (pos = 2, size = 1)
+      codePoint: U+0030, 0
+    - kind: Property
+      token: (pos = 3, size = 1)
+      property: RANGE
+      value: 0
+      invert: false
+    - kind: Char
+      token: (pos = 4, size = 1)
+      codePoint: U+0039, 9
+EOF
+)
+
+assert diff <(redump '[a0-9]' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 6)
+  class: RANGE
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 1)
+      codePoint: U+0061, a
+    - kind: Char
+      token: (pos = 2, size = 1)
+      codePoint: U+0030, 0
+    - kind: Property
+      token: (pos = 3, size = 1)
+      property: RANGE
+      value: 0
+      invert: false
+    - kind: Char
+      token: (pos = 4, size = 1)
+      codePoint: U+0039, 9
+EOF
+)
+
+# [^a-zA-Z_]
+assert diff <(redump '[^a-zA-Z_]' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 10)
+  class: RANGE
+  invert: true
+  chars:
+    - kind: Char
+      token: (pos = 2, size = 1)
+      codePoint: U+0061, a
+    - kind: Property
+      token: (pos = 3, size = 1)
+      property: RANGE
+      value: 0
+      invert: false
+    - kind: Char
+      token: (pos = 4, size = 1)
+      codePoint: U+007A, z
+    - kind: Char
+      token: (pos = 5, size = 1)
+      codePoint: U+0041, A
+    - kind: Property
+      token: (pos = 6, size = 1)
+      property: RANGE
+      value: 0
+      invert: false
+    - kind: Char
+      token: (pos = 7, size = 1)
+      codePoint: U+005A, Z
+    - kind: Char
+      token: (pos = 8, size = 1)
+      codePoint: U+005F, _
+EOF
+)
+
+assert diff <(redump '[^a-zA-Z_]' 'u') <(<<'EOF'
+flag: (mode = u, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 10)
+  class: RANGE
+  invert: true
+  chars:
+    - kind: Char
+      token: (pos = 2, size = 1)
+      codePoint: U+0061, a
+    - kind: Property
+      token: (pos = 3, size = 1)
+      property: RANGE
+      value: 0
+      invert: false
+    - kind: Char
+      token: (pos = 4, size = 1)
+      codePoint: U+007A, z
+    - kind: Char
+      token: (pos = 5, size = 1)
+      codePoint: U+0041, A
+    - kind: Property
+      token: (pos = 6, size = 1)
+      property: RANGE
+      value: 0
+      invert: false
+    - kind: Char
+      token: (pos = 7, size = 1)
+      codePoint: U+005A, Z
+    - kind: Char
+      token: (pos = 8, size = 1)
+      codePoint: U+005F, _
+EOF
+)
+
+assert diff <(redump '[^a-zA-Z_]' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 10)
+  class: RANGE
+  invert: true
+  chars:
+    - kind: Char
+      token: (pos = 2, size = 1)
+      codePoint: U+0061, a
+    - kind: Property
+      token: (pos = 3, size = 1)
+      property: RANGE
+      value: 0
+      invert: false
+    - kind: Char
+      token: (pos = 4, size = 1)
+      codePoint: U+007A, z
+    - kind: Char
+      token: (pos = 5, size = 1)
+      codePoint: U+0041, A
+    - kind: Property
+      token: (pos = 6, size = 1)
+      property: RANGE
+      value: 0
+      invert: false
+    - kind: Char
+      token: (pos = 7, size = 1)
+      codePoint: U+005A, Z
+    - kind: Char
+      token: (pos = 8, size = 1)
+      codePoint: U+005F, _
+EOF
+)

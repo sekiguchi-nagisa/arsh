@@ -267,6 +267,8 @@ void TreeDumper::dumpRaw(const Node &node) {
 void TreeDumper::dumpRaw(const PropertyNode &node) {
 #define EACH_RE_PROPERTY(E)                                                                        \
   E(PropertyNode::Type, RANGE)                                                                     \
+  E(PropertyNode::Type, INTERSECT)                                                                 \
+  E(PropertyNode::Type, SUBTRACT)                                                                  \
   E(PropertyNode::Type, DIGIT)                                                                     \
   E(PropertyNode::Type, NOT_DIGIT)                                                                 \
   E(PropertyNode::Type, WORD)                                                                      \

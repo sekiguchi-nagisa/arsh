@@ -202,40 +202,12 @@ public:
   int getCodePoint() const { return static_cast<int>(this->u32); }
 };
 
-class CharClassNode : public ListNodeWithRtti<NodeKind::CharClass> {
-public:
-  enum class Type : unsigned char {
-    UNION,     // default
-    RANGE,     // have char ranges
-    INTERSECT, // &&
-    SUBTRACT,  // --
-  };
-
-  explicit CharClassNode(Token token, bool invert) : ListNodeWithRtti(token) {
-    this->u8 = invert ? 1 : 0;
-    this->setType(Type::UNION);
-  }
-
-  void add(std::unique_ptr<Node> &&node) {
-    this->updateToken(node->getToken());
-    this->patterns.push_back(std::move(node));
-  }
-
-  bool isInvert() const { return this->u8 == 1; }
-
-  void setType(const Type t) { this->u16 = toUnderlying(t); }
-
-  Type getType() const { return static_cast<Type>(this->u16); }
-
-  const auto &getChars() const { return this->patterns; }
-
-  auto &refChars() { return this->patterns; }
-};
-
 class PropertyNode : public NodeWithRtti<NodeKind::Property> {
 public:
   enum class Type : unsigned char {
     RANGE,       // - (dummy property for char class range)
+    INTERSECT,   // && (dummy property for char class set operation)
+    SUBTRACT,    // -- (dummy property for char class set operation)
     DIGIT,       // \d
     NOT_DIGIT,   // \D
     WORD,        // \w
@@ -301,11 +273,89 @@ public:
       return this->getType();
     }
   }
+
+  bool isCharClassOp() const {
+    switch (this->getType()) {
+    case Type::RANGE:
+    case Type::INTERSECT:
+    case Type::SUBTRACT:
+      return true;
+    default:
+      return false;
+    }
+  }
 };
 
 inline bool isProperty(const Node &node, PropertyNode::Type t) {
   return isa<PropertyNode>(node) && cast<PropertyNode>(node).getType() == t;
 }
+
+inline bool isCharClassOp(const Node &node) {
+  return isa<PropertyNode>(node) && cast<PropertyNode>(node).isCharClassOp();
+}
+
+class CharClassNode : public ListNodeWithRtti<NodeKind::CharClass> {
+public:
+  enum class Type : unsigned char {
+    UNION,     // default
+    RANGE,     // have char ranges
+    INTERSECT, // &&
+    SUBTRACT,  // --
+  };
+
+  explicit CharClassNode(Token token, bool invert) : ListNodeWithRtti(token) {
+    this->u8 = invert ? 1 : 0;
+    this->setType(Type::UNION);
+  }
+
+  void add(std::unique_ptr<Node> &&node) {
+    this->updateToken(node->getToken());
+    this->patterns.push_back(std::move(node));
+  }
+
+  bool isInvert() const { return this->u8 == 1; }
+
+  void setType(const Type t) { this->u16 = toUnderlying(t); }
+
+  Type getType() const { return static_cast<Type>(this->u16); }
+
+  bool mayContainStrings() const { return this->u32 > 0; }
+
+  bool isUnionOrRange() const {
+    return this->getType() == Type::UNION || this->getType() == Type::RANGE;
+  }
+
+  const auto &getChars() const { return this->patterns; }
+
+  auto &refChars() { return this->patterns; }
+
+  /**
+   * [a-ba-] [b--a--] [b&&a&&]
+   * @return
+   */
+  bool hasUnterminatedCharOp() const {
+    return !this->getChars().empty() && isa<PropertyNode>(*this->getChars().back()) &&
+           cast<PropertyNode>(*this->getChars().back()).isCharClassOp();
+  }
+
+  bool isCompatible(const Type other) const {
+    if (this->getChars().size() == 1) {
+      return true;
+    }
+    if (this->getType() == other) {
+      return true;
+    }
+    if (this->getType() == Type::UNION && other == Type::RANGE) {
+      return true;
+    }
+    if (this->getType() == Type::RANGE && other == Type::UNION) {
+      return true;
+    }
+    return false;
+  }
+
+  bool finalize(Token endToken);
+};
 
 class BoundaryNode : public NodeWithRtti<NodeKind::Boundary> {
 public:

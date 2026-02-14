@@ -120,7 +120,11 @@ private:
     return token;
   }
 
-  StringRef getStrRefFrom(const char *begin) const { return StringRef(begin, this->iter - begin); }
+  StringRef getStrRefFrom(const char *begin) const {
+    return StringRef(begin, this->iter - begin); // NOLINT
+  }
+
+  StringRef toStrRef(Token token) const { return this->ref.slice(token.pos, token.endPos()); }
 
   void reportError(Token token, const char *fmt, ...) __attribute__((format(printf, 3, 4)));
 
