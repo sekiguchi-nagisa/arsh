@@ -1,0 +1,240 @@
+
+source $SCRIPT_DIR/test_helper.arsh
+
+# for class set reserved double punctuator (unicode set mode)
+
+var targets = [
+    ('&', '0026'), ('!', '0021'), ('#', '0023'), ('$', '0024'), ('%', '0025'), ('*', '002A'),
+    ('+', '002B'), (',', '002C'), ('.', '002E'), (':', '003A'), (';', '003B'), ('<', '003C'),
+    ('=', '003D'), ('>', '003E'), ('?', '003F'), ('@', '0040'), ('`', '0060'),
+    ('~', '007E'),
+    #('^', '005E'),
+]
+
+for target in $targets {
+    assert diff <(redump "[${target._0}]" '') <(<<EOF
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 3)
+  class: UNION
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 1)
+      codePoint: U+${target._1}, ${target._0}
+EOF
+    )
+
+    assert diff <(redump "[${target._0}]" 'u') <(<<EOF
+flag: (mode = u, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 3)
+  class: UNION
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 1)
+      codePoint: U+${target._1}, ${target._0}
+EOF
+    )
+
+    assert diff <(redump "[${target._0}]" 'v') <(<<EOF
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 3)
+  class: UNION
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 1)
+      codePoint: U+${target._1}, ${target._0}
+EOF
+    )
+
+    assert diff <(redump "[${target._0}${target._0}]" '') <(<<EOF
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 4)
+  class: UNION
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 1)
+      codePoint: U+${target._1}, ${target._0}
+    - kind: Char
+      token: (pos = 2, size = 1)
+      codePoint: U+${target._1}, ${target._0}
+EOF
+    )
+
+    assert diff <(redump "[${target._0}${target._0}]" 'u') <(<<EOF
+flag: (mode = u, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 4)
+  class: UNION
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 1)
+      codePoint: U+${target._1}, ${target._0}
+    - kind: Char
+      token: (pos = 2, size = 1)
+      codePoint: U+${target._1}, ${target._0}
+EOF
+    )
+
+    assert diff <(redump "[${target._0}${target._0}]" 'v') <(<<EOF
+1:2 [error] invalid set operation in character class: \`${target._0}${target._0}'
+ at (pos = 1, size = 2)
+EOF
+    )
+}
+
+# [^]
+assert diff <(redump '[^]' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 3)
+  class: UNION
+  invert: true
+  chars:
+EOF
+)
+
+assert diff <(redump '[^]' 'u') <(<<'EOF'
+flag: (mode = u, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 3)
+  class: UNION
+  invert: true
+  chars:
+EOF
+)
+
+assert diff <(redump '[^]' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 3)
+  class: UNION
+  invert: true
+  chars:
+EOF
+)
+
+# [^^]
+assert diff <(redump '[^^]' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 4)
+  class: UNION
+  invert: true
+  chars:
+    - kind: Char
+      token: (pos = 2, size = 1)
+      codePoint: U+005E, ^
+EOF
+)
+
+assert diff <(redump '[^^]' 'u') <(<<'EOF'
+flag: (mode = u, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 4)
+  class: UNION
+  invert: true
+  chars:
+    - kind: Char
+      token: (pos = 2, size = 1)
+      codePoint: U+005E, ^
+EOF
+)
+
+assert diff <(redump '[^^]' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 4)
+  class: UNION
+  invert: true
+  chars:
+    - kind: Char
+      token: (pos = 2, size = 1)
+      codePoint: U+005E, ^
+EOF
+)
+
+# [^^^]
+assert diff <(redump '[^^^]' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 5)
+  class: UNION
+  invert: true
+  chars:
+    - kind: Char
+      token: (pos = 2, size = 1)
+      codePoint: U+005E, ^
+    - kind: Char
+      token: (pos = 3, size = 1)
+      codePoint: U+005E, ^
+EOF
+)
+
+assert diff <(redump '[^^^]' 'u') <(<<'EOF'
+flag: (mode = u, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 5)
+  class: UNION
+  invert: true
+  chars:
+    - kind: Char
+      token: (pos = 2, size = 1)
+      codePoint: U+005E, ^
+    - kind: Char
+      token: (pos = 3, size = 1)
+      codePoint: U+005E, ^
+EOF
+)
+
+assert diff <(redump '[^^^]' 'v') <(<<'EOF'
+1:3 [error] invalid set operation in character class: `^^'
+ at (pos = 2, size = 2)
+EOF
+)

@@ -184,6 +184,13 @@ void TreeDumper::dumpRaw(const Node &node) {
     break;
   }
   case NodeKind::CharClass:
+#define EACH_RE_CHAR_CLASS(E)                                                                      \
+  E(CharClassNode::Type, UNION)                                                                    \
+  E(CharClassNode::Type, RANGE)                                                                    \
+  E(CharClassNode::Type, INTERSECT)                                                                \
+  E(CharClassNode::Type, SUBTRACT)
+    DUMP_ENUM("class", cast<CharClassNode>(node).getType(), EACH_RE_CHAR_CLASS);
+#undef EACH_RE_CHAR_CLASS
     this->dump("invert", cast<CharClassNode>(node).isInvert());
     this->dump("chars", cast<CharClassNode>(node).getChars());
     break;

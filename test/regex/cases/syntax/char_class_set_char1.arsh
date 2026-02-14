@@ -1,0 +1,560 @@
+
+source $SCRIPT_DIR/test_helper.arsh
+
+# for class set reserved punctuator (unicode set mode)
+
+# [\&]
+assert diff <(redump '[\&]' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 4)
+  class: UNION
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 2)
+      codePoint: U+0026, &
+EOF
+)
+
+assert diff <(redump '[\&]' 'u') <(<<'EOF'
+1:2 [error] invalid escape: `\&'
+ at (pos = 1, size = 2)
+EOF
+)
+
+assert diff <(redump '[\&]' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 4)
+  class: UNION
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 2)
+      codePoint: U+0026, &
+EOF
+)
+
+# [\-]
+assert diff <(redump '[\-]' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 4)
+  class: UNION
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 2)
+      codePoint: U+002D, -
+EOF
+)
+
+assert diff <(redump '[\-]' 'u') <(<<'EOF'
+flag: (mode = u, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 4)
+  class: UNION
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 2)
+      codePoint: U+002D, -
+EOF
+)
+
+assert diff <(redump '[\-]' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 4)
+  class: UNION
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 2)
+      codePoint: U+002D, -
+EOF
+)
+
+# [\!]
+assert diff <(redump '[\!]' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 4)
+  class: UNION
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 2)
+      codePoint: U+0021, !
+EOF
+)
+
+assert diff <(redump '[\!]' 'u') <(<<'EOF'
+1:2 [error] invalid escape: `\!'
+ at (pos = 1, size = 2)
+EOF
+)
+
+assert diff <(redump '[\!]' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 4)
+  class: UNION
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 2)
+      codePoint: U+0021, !
+EOF
+)
+
+# [\#]
+assert diff <(redump '[\#]' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 4)
+  class: UNION
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 2)
+      codePoint: U+0023, #
+EOF
+)
+
+assert diff <(redump '[\#]' 'u') <(<<'EOF'
+1:2 [error] invalid escape: `\#'
+ at (pos = 1, size = 2)
+EOF
+)
+
+assert diff <(redump '[\#]' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 4)
+  class: UNION
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 2)
+      codePoint: U+0023, #
+EOF
+)
+
+# [\%]
+assert diff <(redump '[\%]' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 4)
+  class: UNION
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 2)
+      codePoint: U+0025, %
+EOF
+)
+
+assert diff <(redump '[\%]' 'u') <(<<'EOF'
+1:2 [error] invalid escape: `\%'
+ at (pos = 1, size = 2)
+EOF
+)
+
+assert diff <(redump '[\%]' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 4)
+  class: UNION
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 2)
+      codePoint: U+0025, %
+EOF
+)
+
+# [\,]
+assert diff <(redump '[\,]' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 4)
+  class: UNION
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 2)
+      codePoint: U+002C, ,
+EOF
+)
+
+assert diff <(redump '[\,]' 'u') <(<<'EOF'
+1:2 [error] invalid escape: `\,'
+ at (pos = 1, size = 2)
+EOF
+)
+
+assert diff <(redump '[\,]' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 4)
+  class: UNION
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 2)
+      codePoint: U+002C, ,
+EOF
+)
+
+# [\:]
+assert diff <(redump '[\:]' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 4)
+  class: UNION
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 2)
+      codePoint: U+003A, :
+EOF
+)
+
+assert diff <(redump '[\:]' 'u') <(<<'EOF'
+1:2 [error] invalid escape: `\:'
+ at (pos = 1, size = 2)
+EOF
+)
+
+assert diff <(redump '[\:]' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 4)
+  class: UNION
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 2)
+      codePoint: U+003A, :
+EOF
+)
+
+# [\;]
+assert diff <(redump '[\;]' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 4)
+  class: UNION
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 2)
+      codePoint: U+003B, ;
+EOF
+)
+
+assert diff <(redump '[\;]' 'u') <(<<'EOF'
+1:2 [error] invalid escape: `\;'
+ at (pos = 1, size = 2)
+EOF
+)
+
+assert diff <(redump '[\;]' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 4)
+  class: UNION
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 2)
+      codePoint: U+003B, ;
+EOF
+)
+
+# [\<]
+assert diff <(redump '[\<]' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 4)
+  class: UNION
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 2)
+      codePoint: U+003C, <
+EOF
+)
+
+assert diff <(redump '[\<]' 'u') <(<<'EOF'
+1:2 [error] invalid escape: `\<'
+ at (pos = 1, size = 2)
+EOF
+)
+
+assert diff <(redump '[\<]' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 4)
+  class: UNION
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 2)
+      codePoint: U+003C, <
+EOF
+)
+
+# [\=]
+assert diff <(redump '[\=]' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 4)
+  class: UNION
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 2)
+      codePoint: U+003D, =
+EOF
+)
+
+assert diff <(redump '[\=]' 'u') <(<<'EOF'
+1:2 [error] invalid escape: `\='
+ at (pos = 1, size = 2)
+EOF
+)
+
+assert diff <(redump '[\=]' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 4)
+  class: UNION
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 2)
+      codePoint: U+003D, =
+EOF
+)
+
+# [\>]
+assert diff <(redump '[\>]' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 4)
+  class: UNION
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 2)
+      codePoint: U+003E, >
+EOF
+)
+
+assert diff <(redump '[\>]' 'u') <(<<'EOF'
+1:2 [error] invalid escape: `\>'
+ at (pos = 1, size = 2)
+EOF
+)
+
+assert diff <(redump '[\>]' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 4)
+  class: UNION
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 2)
+      codePoint: U+003E, >
+EOF
+)
+
+# [\@]
+assert diff <(redump '[\@]' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 4)
+  class: UNION
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 2)
+      codePoint: U+0040, @
+EOF
+)
+
+assert diff <(redump '[\@]' 'u') <(<<'EOF'
+1:2 [error] invalid escape: `\@'
+ at (pos = 1, size = 2)
+EOF
+)
+
+assert diff <(redump '[\@]' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 4)
+  class: UNION
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 2)
+      codePoint: U+0040, @
+EOF
+)
+
+# [\`]
+assert diff <(redump '[\`]' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 4)
+  class: UNION
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 2)
+      codePoint: U+0060, `
+EOF
+)
+
+assert diff <(redump '[\`]' 'u') <(<<'EOF'
+1:2 [error] invalid escape: `\`'
+ at (pos = 1, size = 2)
+EOF
+)
+
+assert diff <(redump '[\`]' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 4)
+  class: UNION
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 2)
+      codePoint: U+0060, `
+EOF
+)
+
+# [\~]
+assert diff <(redump '[\~]' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 4)
+  class: UNION
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 2)
+      codePoint: U+007E, ~
+EOF
+)
+
+assert diff <(redump '[\~]' 'u') <(<<'EOF'
+1:2 [error] invalid escape: `\~'
+ at (pos = 1, size = 2)
+EOF
+)
+
+assert diff <(redump '[\~]' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 4)
+  class: UNION
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 2)
+      codePoint: U+007E, ~
+EOF
+)

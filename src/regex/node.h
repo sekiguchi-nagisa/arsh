@@ -204,8 +204,16 @@ public:
 
 class CharClassNode : public ListNodeWithRtti<NodeKind::CharClass> {
 public:
+  enum class Type : unsigned char {
+    UNION,     // default
+    RANGE,     // have char ranges
+    INTERSECT, // &&
+    SUBTRACT,  // --
+  };
+
   explicit CharClassNode(Token token, bool invert) : ListNodeWithRtti(token) {
     this->u8 = invert ? 1 : 0;
+    this->setType(Type::UNION);
   }
 
   void add(std::unique_ptr<Node> &&node) {
@@ -214,6 +222,10 @@ public:
   }
 
   bool isInvert() const { return this->u8 == 1; }
+
+  void setType(const Type t) { this->u16 = toUnderlying(t); }
+
+  Type getType() const { return static_cast<Type>(this->u16); }
 
   const auto &getChars() const { return this->patterns; }
 

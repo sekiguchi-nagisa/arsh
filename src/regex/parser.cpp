@@ -85,28 +85,6 @@ void Parser::append(std::unique_ptr<Node> &&node) {
   }
 }
 
-static bool isSyntaxChar(const char ch) {
-  switch (ch) {
-  case '^':
-  case '$':
-  case '\\':
-  case '.':
-  case '*':
-  case '+':
-  case '?':
-  case '(':
-  case ')':
-  case '[':
-  case ']':
-  case '{':
-  case '}':
-  case '|':
-    return true;
-  default:
-    return false;
-  }
-}
-
 SyntaxTree Parser::operator()(const StringRef src, const Flag f) {
   this->ref = src;
   this->flag = f;
@@ -187,8 +165,7 @@ std::unique_ptr<Node> Parser::parse() {
       this->iter++;
       continue;
     case '\\': {
-      this->iter++;
-      if (auto r = this->parseAtomEscape()) {
+      if (auto r = this->parseAtomEscape(false)) {
         if (isa<BoundaryNode>(*r)) {
           this->append(std::move(r));
           continue;
@@ -231,7 +208,8 @@ std::unique_ptr<Node> Parser::parse() {
       }
       return nullptr;
     case '[':
-      goto REPEAT; // TODO
+      atomNode = this->parseCharClass();
+      goto REPEAT;
     case ']':
       if (this->flag.isEitherUnicodeMode()) {
         this->reportError(this->curToken(), "unmatched `]'");
@@ -299,8 +277,101 @@ std::unique_ptr<Node> Parser::parse() {
   return node;
 }
 
-std::unique_ptr<Node> Parser::parseAtomEscape() {
-  const auto start = this->iter - 1;
+static bool isSyntaxChar(const char ch) {
+  switch (ch) {
+  case '^':
+  case '$':
+  case '\\':
+  case '.':
+  case '*':
+  case '+':
+  case '?':
+  case '(':
+  case ')':
+  case '[':
+  case ']':
+  case '{':
+  case '}':
+  case '|':
+    return true;
+  default:
+    return false;
+  }
+}
+
+static bool isClassSetReservedPunctuator(const char ch) {
+  switch (ch) {
+  case '&':
+  case '-':
+  case '!':
+  case '#':
+  case '%':
+  case ',':
+  case ':':
+  case ';':
+  case '<':
+  case '=':
+  case '>':
+  case '@':
+  case '`':
+  case '~':
+    return true;
+  default:
+    return false;
+  }
+}
+
+static bool isClassSetSyntaxCharacter(const char ch) {
+  switch (ch) {
+  case '(':
+  case ')':
+  case '[':
+  case ']':
+  case '{':
+  case '}':
+  case '/':
+  case '-':
+  case '\\':
+  case '|':
+    return true;
+  default:
+    return false;
+  }
+}
+
+static bool startsWithClassSetReservedDoublePunctuator(const StringRef ref) {
+  if (ref.size() < 2) {
+    return false;
+  }
+  switch (ref[0]) {
+  case '&':
+  case '!':
+  case '#':
+  case '$':
+  case '%':
+  case '*':
+  case '+':
+  case ',':
+  case '.':
+  case ':':
+  case ';':
+  case '<':
+  case '=':
+  case '>':
+  case '?':
+  case '@':
+  case '^':
+  case '`':
+  case '~':
+    return ref[0] == ref[1];
+  default:
+    return false;
+  }
+}
+
+std::unique_ptr<Node> Parser::parseAtomEscape(const bool inCharClass) {
+  assert(this->startsWith("\\"));
+  const auto start = this->iter++;
   if (this->isEnd()) {
     this->reportError(this->getTokenFrom(start), "\\ at end of pattern");
     return nullptr;
@@ -358,12 +429,22 @@ std::unique_ptr<Node> Parser::parseAtomEscape() {
   case '8':
   case '9':
     this->iter--;
-    return this->parseBackRefOrOctal();
+    return this->parseBackRefOrOctal(inCharClass);
   case 'b':
     this->iter++;
+    if (inCharClass) {
+      return std::make_unique<CharNode>(this->getTokenFrom(start), '\b');
+    }
     return std::make_unique<BoundaryNode>(this->getTokenFrom(start), BoundaryNode::Type::WORD);
   case 'B':
     this->iter++;
+    if (inCharClass) {
+      if (this->flag.isEitherUnicodeMode()) {
+        this->reportError(this->getTokenFrom(start), "invalid escape: `\\B'");
+        return nullptr;
+      }
+      return std::make_unique<CharNode>(this->getTokenFrom(start), 'B');
+    }
     return std::make_unique<BoundaryNode>(this->getTokenFrom(start), BoundaryNode::Type::NOT_WORD);
   case 'd':
     this->iter++;
@@ -432,9 +513,21 @@ std::unique_ptr<Node> Parser::parseAtomEscape() {
   }
   case 'k':
     this->iter--;
-    return this->parseNamedBackRef();
+    return this->parseNamedBackRef(inCharClass);
+  case '-':
+    this->iter++;
+    if (inCharClass || !this->flag.isEitherUnicodeMode()) {
+      return std::make_unique<CharNode>(this->getTokenFrom(start), '-');
+    }
+    this->reportError(this->getTokenFrom(start), "invalid escape: `\\-'");
+    return nullptr;
   default:
     if (this->flag.isEitherUnicodeMode() && (isSyntaxChar(*this->iter) || *this->iter == '/')) {
+      codePoint = static_cast<unsigned char>(*this->iter++);
+      goto CHAR;
+    }
+    if (inCharClass && this->flag.is(Mode::UNICODE_SET) &&
+        isClassSetReservedPunctuator(*this->iter)) {
       codePoint = static_cast<unsigned char>(*this->iter++);
       goto CHAR;
     }
@@ -592,7 +685,7 @@ INVALID:
   return nullptr;
 }
 
-std::unique_ptr<Node> Parser::parseBackRefOrOctal() {
+std::unique_ptr<Node> Parser::parseBackRefOrOctal(const bool inCharClass) {
   assert(this->startsWith("\\"));
   const auto start = this->iter;
   this->iter++; // consume '\\'
@@ -611,7 +704,7 @@ std::unique_ptr<Node> Parser::parseBackRefOrOctal() {
                         tmp.toString().c_str());
       return nullptr;
     }
-  } else {
+  } else if (!inCharClass) {
     auto ret = convertToNum10<unsigned int>(tmp.begin(), tmp.end());
     assert(ret);
     this->resolveCaptureGroups();
@@ -626,6 +719,11 @@ std::unique_ptr<Node> Parser::parseBackRefOrOctal() {
   }
 
   // treat as octal
+  if (this->flag.isEitherUnicodeMode()) {
+    this->reportError(this->getTokenFrom(start), "invalid decimal escape: `%s'",
+                      tmp.toString().c_str());
+    return nullptr;
+  }
   this->iter = old;
   if (!isOctal(*this->iter)) {
     char ch = *this->iter++;
@@ -645,10 +743,17 @@ std::unique_ptr<Node> Parser::parseBackRefOrOctal() {
   return std::make_unique<CharNode>(this->getTokenFrom(start), codePoint);
 }
 
-std::unique_ptr<Node> Parser::parseNamedBackRef() {
+std::unique_ptr<Node> Parser::parseNamedBackRef(const bool inCharClass) {
   const auto old = this->iter;
   assert(this->startsWith("\\k"));
   this->iter += 2;
+  if (inCharClass) {
+    if (this->flag.isEitherUnicodeMode()) {
+      this->reportError(this->getTokenFrom(old), "invalid escape: `\\k'");
+      return nullptr;
+    }
+    return std::make_unique<CharNode>(this->getTokenFrom(old), 'k');
+  }
   auto name = this->parseCaptureGroupName(old, this->flag.is(Mode::BMP));
   if (!name.empty()) {
     this->resolveCaptureGroups();
@@ -1122,6 +1227,91 @@ std::unique_ptr<Node> Parser::exitGroup() {
   auto mergedNames = std::move(this->frames.back().mergedExistingGroupNames);
   this->frames.pop_back();
   this->frames.back().existingGroupNames.insert(mergedNames.begin(), mergedNames.end());
+  return node;
+}
+
+std::unique_ptr<Node> Parser::parseCharClass() {
+  assert(this->startsWith("["));
+  int classLevel = 0;
+  while (!this->isEnd()) {
+    std::unique_ptr<Node> node;
+    switch (*this->iter) {
+    case '\\':
+      if (auto atomNode = this->parseAtomEscape(true)) {
+        node = std::move(atomNode);
+        break;
+      }
+      return nullptr;
+    case '[':
+      if (classLevel == 0 || this->flag.is(Mode::UNICODE_SET)) {
+        const auto old = this->iter++;
+        if (this->frames.size() == STACK_DEPTH_LIMIT) {
+          this->reportOverflow(this->getTokenFrom(old));
+          return nullptr;
+        }
+        classLevel++;
+        bool invert = false;
+        if (this->startsWith("^")) {
+          this->iter++;
+          invert = true;
+        }
+        this->frames.emplace_back(std::make_unique<CharClassNode>(this->getTokenFrom(old), invert));
+        continue;
+      }
+      node = std::make_unique<CharNode>(this->curToken(), '[');
+      this->iter++;
+      break;
+    case ']': {
+      this->curCharClass().updateToken(this->curToken());
+      this->iter++;
+      classLevel--;
+      // TODO: check range
+      if (classLevel) {
+        node = std::move(this->frames.back().node);
+        this->frames.pop_back();
+        break;
+      }
+      goto END;
+    }
+    default: {
+      if (this->flag.is(Mode::UNICODE_SET)) {
+        const auto old = this->iter;
+        if (const auto rem = this->remain(); startsWithClassSetReservedDoublePunctuator(rem)) {
+          const auto op = rem.substr(0, 2).toString();
+          this->iter += 2;
+          this->reportError(this->getTokenFrom(old),
+                            "invalid set operation in character class: `%s'", op.c_str());
+          return nullptr;
+        }
+        if (!this->isEnd() && isClassSetSyntaxCharacter(*this->iter)) {
+          const char ch = *this->iter++;
+          this->reportError(this->getTokenFrom(old), "invalid character in character class: `%c'",
+                            ch);
+          return nullptr;
+        }
+      }
+      // consume char
+      const auto o = this->iter;
+      int codePoint = this->nextValidCodePoint();
+      if (codePoint == -1) {
+        return nullptr;
+      }
+      node = std::make_unique<CharNode>(this->getTokenFrom(o), codePoint);
+      break;
+    }
+    }
+
+    // op
+    this->curCharClass().add(std::move(node));
+  }
+  if (this->isEnd()) {
+    this->reportError(this->curCharClass().getToken(), "unclosed character class");
+    return nullptr;
+  }
+
+END:
+  auto node = std::move(this->frames.back().node);
+  this->frames.pop_back();
   return node;
 }
 

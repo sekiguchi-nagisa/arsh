@@ -1,0 +1,145 @@
+
+source $SCRIPT_DIR/test_helper.arsh
+
+# [
+assert diff <(redump '[' '') <(<<'EOF'
+1:1 [error] unclosed character class
+ at (pos = 0, size = 1)
+EOF
+)
+
+assert diff <(redump '[' 'u') <(<<'EOF'
+1:1 [error] unclosed character class
+ at (pos = 0, size = 1)
+EOF
+)
+
+# []
+assert diff <(redump '[]' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 2)
+  class: UNION
+  invert: false
+  chars:
+EOF
+)
+
+assert diff <(redump '[]' 'u') <(<<'EOF'
+flag: (mode = u, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 2)
+  class: UNION
+  invert: false
+  chars:
+EOF
+)
+
+# [^]
+assert diff <(redump '[^]' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 3)
+  class: UNION
+  invert: true
+  chars:
+EOF
+)
+
+assert diff <(redump '[^]' 'vi') <(<<'EOF'
+flag: (mode = v, modifier = i)
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 3)
+  class: UNION
+  invert: true
+  chars:
+EOF
+)
+
+# [a]
+assert diff <(redump '[a]' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 3)
+  class: UNION
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 1)
+      codePoint: U+0061, a
+EOF
+)
+
+assert diff <(redump '[a]' 'u') <(<<'EOF'
+flag: (mode = u, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 3)
+  class: UNION
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 1)
+      codePoint: U+0061, a
+EOF
+)
+
+# [abc]
+assert diff <(redump '[abc]' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 5)
+  class: UNION
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 1)
+      codePoint: U+0061, a
+    - kind: Char
+      token: (pos = 2, size = 1)
+      codePoint: U+0062, b
+    - kind: Char
+      token: (pos = 3, size = 1)
+      codePoint: U+0063, c
+EOF
+)
+
+# [^あい]
+assert diff <(redump '[^あい]' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 9)
+  class: UNION
+  invert: true
+  chars:
+    - kind: Char
+      token: (pos = 2, size = 3)
+      codePoint: U+3042, あ
+    - kind: Char
+      token: (pos = 5, size = 3)
+      codePoint: U+3044, い
+EOF
+)

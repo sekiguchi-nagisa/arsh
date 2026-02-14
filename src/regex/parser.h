@@ -138,11 +138,15 @@ private:
 
   bool isEnd() const { return this->iter == this->end(); }
 
-  bool startsWith(StringRef prefix) const {
-    return StringRef(this->iter, this->end() - this->iter).startsWith(prefix);
+  StringRef remain() const {
+    return StringRef(this->iter, this->end() - this->iter); // NOLINT
   }
 
+  bool startsWith(StringRef prefix) const { return this->remain().startsWith(prefix); }
+
   auto &curNode() { return this->frames.back().node; }
+
+  auto &curCharClass() { return cast<CharClassNode>(*this->curNode()); }
 
   int nextValidCodePoint();
 
@@ -150,7 +154,7 @@ private:
 
   std::unique_ptr<Node> parse();
 
-  std::unique_ptr<Node> parseAtomEscape();
+  std::unique_ptr<Node> parseAtomEscape(bool inCharClass);
 
   int parseUnicodeEscapeBMP(bool ignoreError);
 
@@ -164,9 +168,9 @@ private:
 
   std::unique_ptr<PropertyNode> parseUnicodePropertyEscape();
 
-  std::unique_ptr<Node> parseBackRefOrOctal();
+  std::unique_ptr<Node> parseBackRefOrOctal(bool inCharClass);
 
-  std::unique_ptr<Node> parseNamedBackRef();
+  std::unique_ptr<Node> parseNamedBackRef(bool inCharClass);
 
   bool hasNameCaptureGroup() const { return this->prefetchedNamedCaptureGroupCount > 0; }
 
@@ -208,6 +212,8 @@ private:
   bool enterGroup();
 
   std::unique_ptr<Node> exitGroup();
+
+  std::unique_ptr<Node> parseCharClass();
 };
 
 } // namespace arsh::regex

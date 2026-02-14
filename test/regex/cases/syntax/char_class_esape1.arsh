@@ -1,0 +1,226 @@
+
+source $SCRIPT_DIR/test_helper.arsh
+
+# [\b]
+assert diff <(redump '[\b]' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 4)
+  class: UNION
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 2)
+      codePoint: U+0008, \x08
+EOF
+)
+
+# [\B]
+assert diff <(redump '[\B]' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 4)
+  class: UNION
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 2)
+      codePoint: U+0042, B
+EOF
+)
+
+assert diff <(redump '[\B]' 'u') <(<<'EOF'
+1:2 [error] invalid escape: `\B'
+ at (pos = 1, size = 2)
+EOF
+)
+
+assert diff <(redump '[\B]' 'v') <(<<'EOF'
+1:2 [error] invalid escape: `\B'
+ at (pos = 1, size = 2)
+EOF
+)
+
+# [\k]
+assert diff <(redump '[\k]' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 4)
+  class: UNION
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 2)
+      codePoint: U+006B, k
+EOF
+)
+
+assert diff <(redump '[\k]' 'u') <(<<'EOF'
+1:2 [error] invalid escape: `\k'
+ at (pos = 1, size = 2)
+EOF
+)
+
+assert diff <(redump '[\k]' 'v') <(<<'EOF'
+1:2 [error] invalid escape: `\k'
+ at (pos = 1, size = 2)
+EOF
+)
+
+# [\-]
+assert diff <(redump '[\-]' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 4)
+  class: UNION
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 2)
+      codePoint: U+002D, -
+EOF
+)
+
+assert diff <(redump '[\-]' 'u') <(<<'EOF'
+flag: (mode = u, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 4)
+  class: UNION
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 2)
+      codePoint: U+002D, -
+EOF
+)
+
+assert diff <(redump '[\-]' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 4)
+  class: UNION
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 2)
+      codePoint: U+002D, -
+EOF
+)
+
+# [\0]
+assert diff <(redump '[\0]' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 4)
+  class: UNION
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 2)
+      codePoint: U+0000, \x00
+EOF
+)
+
+assert diff <(redump '[\0]' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 4)
+  class: UNION
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 2)
+      codePoint: U+0000, \x00
+EOF
+)
+
+# [\111] (octal escape)
+assert diff <(redump '[\111]' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 6)
+  class: UNION
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 4)
+      codePoint: U+0049, I
+EOF
+)
+
+assert diff <(redump '[\111]' 'u') <(<<'EOF'
+1:2 [error] invalid decimal escape: `111'
+ at (pos = 1, size = 4)
+EOF
+)
+
+# ()()[\1]
+assert diff <(redump '()()[\1]' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 2
+namedCaptureGroups: []
+pattern:
+  kind: Seq
+  token: (pos = 0, size = 8)
+  patterns:
+    - kind: Group
+      token: (pos = 0, size = 2)
+      group: CAPTURE
+      index: 1
+      setModifiers:
+      unsetModifiers:
+      pattern:
+        kind: Empty
+        token: (pos = 1, size = 0)
+    - kind: Group
+      token: (pos = 2, size = 2)
+      group: CAPTURE
+      index: 2
+      setModifiers:
+      unsetModifiers:
+      pattern:
+        kind: Empty
+        token: (pos = 3, size = 0)
+    - kind: CharClass
+      token: (pos = 4, size = 4)
+      class: UNION
+      invert: false
+      chars:
+        - kind: Char
+          token: (pos = 5, size = 2)
+          codePoint: U+0001, \x01
+EOF
+)
+
+assert diff <(redump '()()[\1]' 'v') <(<<'EOF'
+1:6 [error] invalid decimal escape: `1'
+ at (pos = 5, size = 2)
+EOF
+)

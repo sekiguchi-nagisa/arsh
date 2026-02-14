@@ -1,0 +1,277 @@
+
+source $SCRIPT_DIR/test_helper.arsh
+
+# for class set syntax character (unicode set mode)
+
+# [(]
+assert diff <(redump '[(]' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 3)
+  class: UNION
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 1)
+      codePoint: U+0028, (
+EOF
+)
+
+assert diff <(redump '[(]' 'u') <(<<'EOF'
+flag: (mode = u, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 3)
+  class: UNION
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 1)
+      codePoint: U+0028, (
+EOF
+)
+
+assert diff <(redump '[(]' 'v') <(<<'EOF'
+1:2 [error] invalid character in character class: `('
+ at (pos = 1, size = 1)
+EOF
+)
+
+# [)]
+assert diff <(redump '[)]' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 3)
+  class: UNION
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 1)
+      codePoint: U+0029, )
+EOF
+)
+
+assert diff <(redump '[)]' 'u') <(<<'EOF'
+flag: (mode = u, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 3)
+  class: UNION
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 1)
+      codePoint: U+0029, )
+EOF
+)
+
+assert diff <(redump '[)]' 'v') <(<<'EOF'
+1:2 [error] invalid character in character class: `)'
+ at (pos = 1, size = 1)
+EOF
+)
+
+# [{]
+assert diff <(redump '[{]' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 3)
+  class: UNION
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 1)
+      codePoint: U+007B, {
+EOF
+)
+
+assert diff <(redump '[{]' 'u') <(<<'EOF'
+flag: (mode = u, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 3)
+  class: UNION
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 1)
+      codePoint: U+007B, {
+EOF
+)
+
+assert diff <(redump '[{]' 'v') <(<<'EOF'
+1:2 [error] invalid character in character class: `{'
+ at (pos = 1, size = 1)
+EOF
+)
+
+# [}]
+assert diff <(redump '[}]' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 3)
+  class: UNION
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 1)
+      codePoint: U+007D, }
+EOF
+)
+
+assert diff <(redump '[}]' 'u') <(<<'EOF'
+flag: (mode = u, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 3)
+  class: UNION
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 1)
+      codePoint: U+007D, }
+EOF
+)
+
+assert diff <(redump '[}]' 'v') <(<<'EOF'
+1:2 [error] invalid character in character class: `}'
+ at (pos = 1, size = 1)
+EOF
+)
+
+# [/]
+assert diff <(redump '[/]' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 3)
+  class: UNION
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 1)
+      codePoint: U+002F, /
+EOF
+)
+
+assert diff <(redump '[/]' 'u') <(<<'EOF'
+flag: (mode = u, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 3)
+  class: UNION
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 1)
+      codePoint: U+002F, /
+EOF
+)
+
+assert diff <(redump '[/]' 'v') <(<<'EOF'
+1:2 [error] invalid character in character class: `/'
+ at (pos = 1, size = 1)
+EOF
+)
+
+# [-]
+assert diff <(redump '[-]' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 3)
+  class: UNION
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 1)
+      codePoint: U+002D, -
+EOF
+)
+
+assert diff <(redump '[-]' 'u') <(<<'EOF'
+flag: (mode = u, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 3)
+  class: UNION
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 1)
+      codePoint: U+002D, -
+EOF
+)
+
+assert diff <(redump '[-]' 'v') <(<<'EOF'
+1:2 [error] invalid character in character class: `-'
+ at (pos = 1, size = 1)
+EOF
+)
+
+# [|]
+assert diff <(redump '[|]' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 3)
+  class: UNION
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 1)
+      codePoint: U+007C, |
+EOF
+)
+
+assert diff <(redump '[|]' 'u') <(<<'EOF'
+flag: (mode = u, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 3)
+  class: UNION
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 1)
+      codePoint: U+007C, |
+EOF
+)
+
+assert diff <(redump '[|]' 'v') <(<<'EOF'
+1:2 [error] invalid character in character class: `|'
+ at (pos = 1, size = 1)
+EOF
+)
