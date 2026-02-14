@@ -245,7 +245,6 @@ public:
     UNICODE,     // \p{C}
     NOT_UNICODE, // \P{C}
     EMOJI,       // \p{RGI_Emoji}
-    NOT_EMOJI,   // `P{RGI_Emoji}
   };
 
   PropertyNode(Token token, Type t) : NodeWithRtti(token) { this->u8 = toUnderlying(t); }
@@ -260,8 +259,8 @@ public:
     this->u16 = n << 8 | v;
   }
 
-  PropertyNode(Token token, RGIEmojiSeq seq, bool invert) : NodeWithRtti(token) {
-    this->u8 = toUnderlying(invert ? Type::NOT_EMOJI : Type::EMOJI);
+  PropertyNode(Token token, RGIEmojiSeq seq) : NodeWithRtti(token) {
+    this->u8 = toUnderlying(Type::EMOJI);
     static_assert(sizeof(RGIEmojiSeq) <= sizeof(uint16_t));
     this->u16 = toUnderlying(seq);
   }
@@ -282,7 +281,6 @@ public:
     case Type::NOT_WORD:
     case Type::NOT_SPACE:
     case Type::NOT_UNICODE:
-    case Type::NOT_EMOJI:
       return true;
     default:
       return false;
@@ -299,8 +297,6 @@ public:
       return Type::SPACE;
     case Type::NOT_UNICODE:
       return Type::UNICODE;
-    case Type::NOT_EMOJI:
-      return Type::EMOJI;
     default:
       return this->getType();
     }

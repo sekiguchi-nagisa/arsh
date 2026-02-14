@@ -291,14 +291,7 @@ EOF
 )
 
 assert diff <(redump '\P{RGI_Emoji}' 'v') <(<<'EOF'
-flag: (mode = v, modifier = )
-captureGroupCount: 0
-namedCaptureGroups: []
-pattern:
-  kind: Property
-  token: (pos = 0, size = 13)
-  property: NOT_EMOJI
-  value: RGI_Emoji
-  invert: true
+1:1 [error] unrecognized property value: RGI_Emoji
+ at (pos = 0, size = 13)
 EOF
 )

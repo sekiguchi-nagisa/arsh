@@ -648,9 +648,9 @@ std::unique_ptr<PropertyNode> Parser::parseUnicodePropertyEscape() {
     }
     if (*this->iter == '}') {
       this->iter++;
-      if (this->flag.is(Mode::UNICODE_SET)) {
+      if (this->flag.is(Mode::UNICODE_SET) && !invert) {
         if (auto ret = ucp::parseEmojiProperty(left); ret.hasValue()) {
-          return std::make_unique<PropertyNode>(this->getTokenFrom(old), ret.unwrap(), invert);
+          return std::make_unique<PropertyNode>(this->getTokenFrom(old), ret.unwrap());
         }
       }
       std::string err;

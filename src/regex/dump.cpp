@@ -275,8 +275,7 @@ void TreeDumper::dumpRaw(const PropertyNode &node) {
   E(PropertyNode::Type, NOT_SPACE)                                                                 \
   E(PropertyNode::Type, UNICODE)                                                                   \
   E(PropertyNode::Type, NOT_UNICODE)                                                               \
-  E(PropertyNode::Type, EMOJI)                                                                     \
-  E(PropertyNode::Type, NOT_EMOJI)
+  E(PropertyNode::Type, EMOJI)
   DUMP_ENUM("property", node.getType(), EACH_RE_PROPERTY);
 #undef EACH_RE_PROPERTY
 
