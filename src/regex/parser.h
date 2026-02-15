@@ -210,11 +210,11 @@ private:
   /**
    * parse capture group name
    * @param prefixStart for error message
-   * @param ignoreError
+   * @param mayIgnoreError
    * @return
    * if error, return empty
    */
-  std::string parseCaptureGroupName(const char *prefixStart, bool ignoreError);
+  std::string parseCaptureGroupName(const char *prefixStart, bool mayIgnoreError);
 
   std::unique_ptr<Node> tryToParseQuantifier(std::unique_ptr<Node> &&node, bool ignoreError);
 

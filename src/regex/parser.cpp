@@ -798,14 +798,14 @@ std::unique_ptr<Node> Parser::parseBackRefOrOctal(const bool inCharClass) {
     }
   } else if (!inCharClass) {
     auto ret = convertToNum10<unsigned int>(tmp.begin(), tmp.end());
-    assert(ret);
     this->resolveCaptureGroups();
-    if (ret.value <= this->prefetchedCaptureGroupCount && ret.value > 0) {
+    if (ret && ret.value <= this->prefetchedCaptureGroupCount && ret.value > 0) {
       return std::make_unique<BackRefNode>(this->getTokenFrom(start), ret.value);
     }
     if (this->flag.isEitherUnicodeMode()) {
       this->reportError(this->getTokenFrom(start),
-                        "backref index is greater than capture group count: `%d'", ret.value);
+                        "backref index is greater than capture group count: `%s'",
+                        tmp.toString().c_str());
       return nullptr;
     }
   }
@@ -851,7 +851,7 @@ std::unique_ptr<Node> Parser::parseNamedBackRef(const bool inCharClass) {
     this->resolveCaptureGroups();
   }
   if (name.empty() || !this->hasNameCaptureGroup()) {
-    if (this->flag.is(Mode::BMP)) {
+    if (this->flag.is(Mode::BMP) && !this->hasError()) {
       this->iter = old + 2;
       return std::make_unique<CharNode>(this->getTokenFrom(old), 'k');
     }
@@ -925,9 +925,11 @@ void Parser::resolveCaptureGroups() {
       continue;
     case '[':
       classLevel++;
+      this->iter++;
       continue;
     case ']':
       classLevel--;
+      this->iter++;
       continue;
     default:
       this->iter++;
@@ -983,10 +985,10 @@ static void appendCodePoint(std::string &out, int codePoint) {
     cp__;                                                                                          \
   })
 
-std::string Parser::parseCaptureGroupName(const char *prefixStart, const bool ignoreError) {
+std::string Parser::parseCaptureGroupName(const char *prefixStart, const bool mayIgnoreError) {
   const auto old = this->iter;
   if (!this->startsWith("<")) {
-    if (!ignoreError) {
+    if (!mayIgnoreError) {
       this->reportError(this->getTokenFrom(prefixStart), "%s is not followed by <",
                         this->getStrRefFrom(prefixStart).toString().c_str());
     }
@@ -1003,7 +1005,7 @@ std::string Parser::parseCaptureGroupName(const char *prefixStart, const bool ig
   }
   if (codePoint == '\\') {
     this->iter--;
-    codePoint = TRY_CP(this->parseUnicodeEscape(ignoreError));
+    codePoint = TRY_CP(this->parseUnicodeEscape(mayIgnoreError));
   }
   appendCodePoint(name, codePoint);
   if (!isJSIdStart(this->idStartSet, codePoint)) {
@@ -1018,7 +1020,7 @@ std::string Parser::parseCaptureGroupName(const char *prefixStart, const bool ig
     }
     if (codePoint == '\\') {
       this->iter--;
-      codePoint = TRY_CP(this->parseUnicodeEscape(ignoreError));
+      codePoint = TRY_CP(this->parseUnicodeEscape(mayIgnoreError));
     }
     appendCodePoint(name, codePoint);
     if (!isJSIdContinue(this->idContinueSet, codePoint)) {
@@ -1029,14 +1031,14 @@ std::string Parser::parseCaptureGroupName(const char *prefixStart, const bool ig
 
 END:
   if (!name.empty() && this->isEnd()) {
-    if (!ignoreError) {
+    if (!mayIgnoreError) {
       this->reportError(this->getTokenFrom(old), "unclosed capture group name: `%s'", name.c_str());
     }
     return "";
   }
 
 INVALID:
-  if (!ignoreError) {
+  if (!mayIgnoreError) {
     this->reportError(this->getTokenFrom(old),
                       "capture group name must contain valid identifier: `%s'", name.c_str());
   }
@@ -1046,6 +1048,9 @@ INVALID:
 std::unique_ptr<Node> Parser::tryToParseQuantifier(std::unique_ptr<Node> &&node,
                                                    const bool ignoreError) {
   assert(node);
+  if (this->isEnd()) {
+    return node;
+  }
   const auto old = this->iter;
   bool greedy = true;
   switch (*this->iter) {

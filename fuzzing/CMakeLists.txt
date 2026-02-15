@@ -22,3 +22,11 @@ target_link_libraries(rpc_fuzzer jsonrpc)
 
 add_executable(printf_fuzzer printf_fuzzer.cpp)
 target_link_libraries(printf_fuzzer ${ARSH_LIB})
+
+
+#======================#
+#     regex_fuzzer     #
+#======================#
+
+add_executable(regex_fuzzer regex_fuzzer.cpp)
+target_link_libraries(regex_fuzzer regex unicode)

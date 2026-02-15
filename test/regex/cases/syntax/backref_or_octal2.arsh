@@ -200,3 +200,103 @@ pattern:
         token: (pos = 9, size = 0)
 EOF
 )
+
+# ()\888888888888888888888888
+assert diff <(redump '()\888888888888888888888888' '') <(<<'EOF'
+flag: (mode = u, modifier = )
+captureGroupCount: 1
+namedCaptureGroups: []
+pattern:
+  kind: Seq
+  token: (pos = 0, size = 27)
+  patterns:
+    - kind: Group
+      token: (pos = 0, size = 2)
+      group: CAPTURE
+      index: 1
+      setModifiers:
+      unsetModifiers:
+      pattern:
+        kind: Empty
+        token: (pos = 1, size = 0)
+    - kind: Char
+      token: (pos = 2, size = 2)
+      codePoint: U+0038, 8
+    - kind: Char
+      token: (pos = 4, size = 1)
+      codePoint: U+0038, 8
+    - kind: Char
+      token: (pos = 5, size = 1)
+      codePoint: U+0038, 8
+    - kind: Char
+      token: (pos = 6, size = 1)
+      codePoint: U+0038, 8
+    - kind: Char
+      token: (pos = 7, size = 1)
+      codePoint: U+0038, 8
+    - kind: Char
+      token: (pos = 8, size = 1)
+      codePoint: U+0038, 8
+    - kind: Char
+      token: (pos = 9, size = 1)
+      codePoint: U+0038, 8
+    - kind: Char
+      token: (pos = 10, size = 1)
+      codePoint: U+0038, 8
+    - kind: Char
+      token: (pos = 11, size = 1)
+      codePoint: U+0038, 8
+    - kind: Char
+      token: (pos = 12, size = 1)
+      codePoint: U+0038, 8
+    - kind: Char
+      token: (pos = 13, size = 1)
+      codePoint: U+0038, 8
+    - kind: Char
+      token: (pos = 14, size = 1)
+      codePoint: U+0038, 8
+    - kind: Char
+      token: (pos = 15, size = 1)
+      codePoint: U+0038, 8
+    - kind: Char
+      token: (pos = 16, size = 1)
+      codePoint: U+0038, 8
+    - kind: Char
+      token: (pos = 17, size = 1)
+      codePoint: U+0038, 8
+    - kind: Char
+      token: (pos = 18, size = 1)
+      codePoint: U+0038, 8
+    - kind: Char
+      token: (pos = 19, size = 1)
+      codePoint: U+0038, 8
+    - kind: Char
+      token: (pos = 20, size = 1)
+      codePoint: U+0038, 8
+    - kind: Char
+      token: (pos = 21, size = 1)
+      codePoint: U+0038, 8
+    - kind: Char
+      token: (pos = 22, size = 1)
+      codePoint: U+0038, 8
+    - kind: Char
+      token: (pos = 23, size = 1)
+      codePoint: U+0038, 8
+    - kind: Char
+      token: (pos = 24, size = 1)
+      codePoint: U+0038, 8
+    - kind: Char
+      token: (pos = 25, size = 1)
+      codePoint: U+0038, 8
+    - kind: Char
+      token: (pos = 26, size = 1)
+      codePoint: U+0038, 8
+EOF
+)
+
+# ()\888888888888888888888888
+assert diff <(redump '()\888888888888888888888888' 'u') <(<<'EOF'
+1:3 [error] backref index is greater than capture group count: `888888888888888888888888'
+ at (pos = 2, size = 25)
+EOF
+)
