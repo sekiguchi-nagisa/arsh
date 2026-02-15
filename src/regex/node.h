@@ -461,6 +461,12 @@ public:
     this->append(std::move(node));
   }
 
+  /**
+   * for \q{substring}
+   * @param token
+   */
+  explicit AltNode(Token token) : ListNodeWithRtti(token) { this->appendNull(); }
+
   void append(std::unique_ptr<Node> &&node) {
     this->updateToken(node->getToken());
     this->patterns.push_back(std::move(node));

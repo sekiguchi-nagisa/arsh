@@ -237,3 +237,141 @@ assert diff <(redump '[a&&[^\p{RGI_Emoji}&&\p{Basic_Emoji}]]' 'v') <(<<'EOF'
  at (pos = 4, size = 33)
 EOF
 )
+
+# [^\q{}]
+assert diff <(redump '[^\q{}]' 'v') <(<<'EOF'
+1:1 [error] negated character class may contain strings
+ at (pos = 0, size = 7)
+EOF
+)
+
+# [^\q{1}]
+assert diff <(redump '[^\q{1}]' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 8)
+  class: UNION
+  invert: true
+  chars:
+    - kind: Alt
+      token: (pos = 2, size = 5)
+      patterns:
+        - kind: Char
+          token: (pos = 5, size = 1)
+          codePoint: U+0031, 1
+EOF
+)
+
+# [^\q{あ}]
+assert diff <(redump '[^\q{あ}]' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 10)
+  class: UNION
+  invert: true
+  chars:
+    - kind: Alt
+      token: (pos = 2, size = 7)
+      patterns:
+        - kind: Char
+          token: (pos = 5, size = 3)
+          codePoint: U+3042, あ
+EOF
+)
+
+# [^\q{あ}\q{1}]
+assert diff <(redump '[^\q{あ}\q{1}]' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 15)
+  class: UNION
+  invert: true
+  chars:
+    - kind: Alt
+      token: (pos = 2, size = 7)
+      patterns:
+        - kind: Char
+          token: (pos = 5, size = 3)
+          codePoint: U+3042, あ
+    - kind: Alt
+      token: (pos = 9, size = 5)
+      patterns:
+        - kind: Char
+          token: (pos = 12, size = 1)
+          codePoint: U+0031, 1
+EOF
+)
+
+# [^\q{1|}]
+assert diff <(redump '[^\q{1|}]' 'v') <(<<'EOF'
+1:1 [error] negated character class may contain strings
+ at (pos = 0, size = 9)
+EOF
+)
+
+# [^\q{|1}]
+assert diff <(redump '[^\q{|1}]' 'v') <(<<'EOF'
+1:1 [error] negated character class may contain strings
+ at (pos = 0, size = 9)
+EOF
+)
+
+# [^\q{|}]
+assert diff <(redump '[^\q{|}]' 'v') <(<<'EOF'
+1:1 [error] negated character class may contain strings
+ at (pos = 0, size = 8)
+EOF
+)
+
+# [^\q{a|b}]
+assert diff <(redump '[^\q{a|b}]' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 10)
+  class: UNION
+  invert: true
+  chars:
+    - kind: Alt
+      token: (pos = 2, size = 7)
+      patterns:
+        - kind: Char
+          token: (pos = 5, size = 1)
+          codePoint: U+0061, a
+        - kind: Char
+          token: (pos = 7, size = 1)
+          codePoint: U+0062, b
+EOF
+)
+
+# [^\q{ab}]
+assert diff <(redump '[^\q{ab}]' 'v') <(<<'EOF'
+1:1 [error] negated character class may contain strings
+ at (pos = 0, size = 9)
+EOF
+)
+
+# [^\q{a|ab}]
+assert diff <(redump '[^\q{a|ab}]' 'v') <(<<'EOF'
+1:1 [error] negated character class may contain strings
+ at (pos = 0, size = 11)
+EOF
+)
+
+# [^\q{ab|a}]
+assert diff <(redump '[^\q{ab|a}]' 'v') <(<<'EOF'
+1:1 [error] negated character class may contain strings
+ at (pos = 0, size = 11)
+EOF
+)

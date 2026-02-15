@@ -20,7 +20,7 @@
 | [operand1--operand2]  | ✔️         | ❌         | ❌                       |
 | [^operand1&&operand2] | ✔️         | ❌         | ❌                       |
 | [^operand1--operand2] | ✔️         | ❌         | ❌                       |
-| [\q{substring}]       | ❌          | ❌         | ❌                       |
+| [\q{substring}]       | ✔️         | ❌         | ❌                       |
 | \f                    | ✔️         | ❌         | ❌                       |
 | \n                    | ✔️         | ❌         | ❌                       |
 | \r                    | ✔️         | ❌         | ❌                       |

@@ -158,7 +158,17 @@ private:
 
   std::unique_ptr<Node> parse();
 
-  std::unique_ptr<Node> parseAtomEscape(bool inCharClass);
+  enum class EscapeParseOp : unsigned char { // not change enum order
+    DEFAULT,
+    IN_CHAR_CLASS,
+    IN_CLASS_STRING,
+  };
+
+  static bool inCharClass(EscapeParseOp op) {
+    return toUnderlying(op) >= toUnderlying(EscapeParseOp::IN_CHAR_CLASS);
+  }
+
+  std::unique_ptr<Node> parseAtomEscape(EscapeParseOp op);
 
   int parseUnicodeEscapeBMP(bool ignoreError);
 
@@ -218,6 +228,10 @@ private:
   std::unique_ptr<Node> exitGroup();
 
   std::unique_ptr<Node> parseCharClass();
+
+  std::unique_ptr<Node> parseCodePointInCharClass();
+
+  std::unique_ptr<Node> parseClassString();
 };
 
 } // namespace arsh::regex
