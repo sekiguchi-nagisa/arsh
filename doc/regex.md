@@ -34,7 +34,9 @@
 | syntax escape         | ❌          | ❌         | ❌                       |
 | pattern1\|pattern2    | ✔️         | ❌         | ❌                       |
 | ^                     | ✔️         | ❌         | ❌                       |
+| ^ (multiline)         | ✔️         | ❌         | ❌                       |
 | $                     | ✔️         | ❌         | ❌                       |
+| $ (multiline)         | ✔️         | ❌         | ❌                       |
 | abc                   | ✔️         | ❌         | ❌                       |
 | (?=pattern)           | ✔️         | ❌         | ❌                       |
 | (?!pattern)           | ✔️         | ❌         | ❌                       |
@@ -61,8 +63,8 @@
 | \p{property=value}    | ✔️         | ❌         | ❌                       |
 | \P{property=value}    | ✔️         | ❌         | ❌                       |
 | \p{RGI_Emoji}         | ✔️         | ❌         | ❌                       |
-| \P{RGI_Emoji}         | ✔️         | ❌         | ❌                       |
 | .                     | ✔️         | ❌         | ❌                       |
+| . (dot-all)           | ✔️         | ❌         | ❌                       |
 | \b                    | ✔️         | ❌         | ❌                       |
 | \B                    | ✔️         | ❌         | ❌                       |
 | \X (extension)        | ❌          | ❌         | ❌                       |
