@@ -1049,7 +1049,7 @@ std::unique_ptr<Node> Parser::tryToParseQuantifier(std::unique_ptr<Node> &&node,
                                                    const bool ignoreError) {
   assert(node);
   if (this->isEnd()) {
-    return node;
+    return std::move(node);
   }
   const auto old = this->iter;
   bool greedy = true;
