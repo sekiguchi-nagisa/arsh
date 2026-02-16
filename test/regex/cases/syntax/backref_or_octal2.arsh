@@ -203,7 +203,7 @@ EOF
 
 # ()\888888888888888888888888
 assert diff <(redump '()\888888888888888888888888' '') <(<<'EOF'
-flag: (mode = u, modifier = )
+flag: (mode = , modifier = )
 captureGroupCount: 1
 namedCaptureGroups: []
 pattern:
