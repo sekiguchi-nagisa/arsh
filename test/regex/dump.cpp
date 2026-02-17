@@ -20,12 +20,13 @@
 #include <misc/opt.hpp>
 
 #include "regex/dump.h"
+#include "regex/emit.h"
 #include "regex/parser.h"
 
 using namespace arsh;
 
 static void usage(FILE *fp, char **argv) {
-  fprintf(fp, "usage: %s pattern [modifiers]\n", argv[0]);
+  fprintf(fp, "usage: %s [-m text] pattern [modifiers]\n", argv[0]);
 }
 
 static void invalidOption(char **argv, int opt) {
@@ -46,17 +47,61 @@ static std::pair<unsigned int, unsigned int> formatLoc(StringRef src, Token toke
   return {line, pos};
 }
 
+static const char *toString(const regex::MatchStatus s) {
+  switch (s) {
+  case regex::MatchStatus::OK:
+    break;
+  case regex::MatchStatus::FAIL:
+    return "failed";
+  case regex::MatchStatus::INVALID_UTF8:
+    return "input string is invalid UTF-8";
+  case regex::MatchStatus::INPUT_LIMIT:
+    return "size of input string is too large";
+  case regex::MatchStatus::CANCEL:
+    return "canceled";
+  case regex::MatchStatus::TIMEOUT:
+    return "timeout";
+  case regex::MatchStatus::STACK_LIMIT:
+    return "stack depth reaches limit";
+  }
+  return "";
+}
+
+static std::string formatCaptures(const FlexBuffer<regex::Capture> &captures) {
+  std::string ret;
+  for (auto &c : captures) {
+    if (!c) {
+      ret += "(unset)\n";
+      continue;
+    }
+    ret += "(offset=";
+    ret += std::to_string(c.offset);
+    ret += ", size=";
+    ret += std::to_string(c.size);
+    ret += ")\n";
+  }
+  return ret;
+}
+
 int main(int argc, char **argv) {
-  opt::GetOptState optState("h");
+  opt::GetOptState optState("hm:");
+  StringRef text;
+  bool shouldMatch = false;
   auto iter = argv + 1;
   const auto end = argv + argc;
   for (int opt; (opt = optState(iter, end)) != -1;) {
-    if (opt == 'h') {
+    switch (opt) {
+    case 'm':
+      shouldMatch = true;
+      text = optState.optArg.data();
+      break;
+    case 'h':
       usage(stdout, argv);
       return 2;
+    default:
+      invalidOption(argv, opt);
+      return 1;
     }
-    invalidOption(argv, opt);
-    return 1;
   }
   if (iter == end) {
     fputs("need pattern\n", stderr);
@@ -86,6 +131,26 @@ int main(int argc, char **argv) {
     return 1;
   }
 
+  if (shouldMatch) {
+    regex::CodeGen codeGen;
+    auto re = codeGen(std::move(tree));
+    if (!re.hasValue()) {
+      fprintf(stderr, "%s\n", codeGen.getError().c_str());
+      return 1;
+    }
+    FlexBuffer<regex::Capture> captures;
+    auto status = regex::match(re.unwrap(), text, captures);
+    fputs("input: `", stdout);
+    fwrite(text.data(), sizeof(char), text.size(), stdout);
+    fputs("'\n", stdout);
+    if (status == regex::MatchStatus::OK) {
+      auto str = formatCaptures(captures);
+      fprintf(stdout, "%s\n", str.c_str());
+      return 0;
+    }
+    fprintf(stdout, "%s\n", toString(status));
+    return 1;
+  }
   regex::TreeDumper dumper;
   auto buf = dumper(tree);
   fwrite(buf.c_str(), sizeof(char), buf.size(), stdout);

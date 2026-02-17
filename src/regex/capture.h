@@ -19,7 +19,9 @@
 
 #include <cstdint>
 #include <cstdlib>
+#include <vector>
 
+#include "misc/array_ref.hpp"
 #include "misc/buffer.hpp"
 #include "misc/noncopyable.h"
 #include "misc/string_ref.hpp"
@@ -74,13 +76,15 @@ public:
 };
 
 class NamedCaptureGroups {
+public:
+  using Entry = std::pair<std::string, NamedCaptureEntry>;
+
 private:
   StrRefMap<unsigned short> offsetMap; // name to entry offset
-  std::vector<std::pair<std::string, NamedCaptureEntry>> entries;
+  std::vector<Entry> entries;
 
 public:
-  NamedCaptureGroups(StrRefMap<unsigned short> &&offsetMap,
-                     std::vector<std::pair<std::string, NamedCaptureEntry>> &&entries)
+  NamedCaptureGroups(StrRefMap<unsigned short> &&offsetMap, std::vector<Entry> &&entries)
       : offsetMap(std::move(offsetMap)), entries(std::move(entries)) {}
 
   const auto &getEntries() const { return this->entries; }
@@ -93,6 +97,19 @@ public:
     }
     return nullptr;
   }
+
+  ArrayRef<Entry> toArrayRef() const { return {this->entries.data(), this->entries.size()}; }
+};
+
+struct Capture {
+  const uint32_t offset;
+  const uint32_t size;
+
+  Capture(uint32_t offset, uint32_t size) : offset(offset), size(size) {}
+
+  Capture() : Capture(UINT32_MAX, UINT32_MAX) {}
+
+  explicit operator bool() const { return this->offset == UINT32_MAX && this->size == UINT32_MAX; }
 };
 
 } // namespace arsh::regex

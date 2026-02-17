@@ -109,9 +109,19 @@ public:
     --this->usedSize;
   }
 
+  void clear() {
+    while (this->size()) {
+      this->pop();
+    }
+  }
+
   T &back() { return this->ptr[this->usedSize - 1]; }
 
   T &front() { return this->ptr[0]; }
+
+  const T &back() const { return this->ptr[this->usedSize - 1]; }
+
+  const T &front() const { return this->ptr[0]; }
 };
 
 END_MISC_LIB_NAMESPACE_DECL
