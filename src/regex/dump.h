@@ -20,23 +20,17 @@
 #include "misc/string_ref.hpp"
 #include "misc/token.hpp"
 #include "node.h"
+#include "regex.h"
 
 #include <memory>
 #include <vector>
 
 namespace arsh::regex {
 
-class TreeDumper {
-private:
+struct DumperBase {
   std::string buf;
   unsigned int indentLevel{0};
 
-public:
-  TreeDumper() = default;
-
-  std::string operator()(const SyntaxTree &tree);
-
-private:
   void enterIndent() { this->indentLevel++; }
 
   void leaveIndent() { this->indentLevel--; }
@@ -70,27 +64,38 @@ private:
 
   void dump(const char *fieldName, Flag flag);
 
-  void dump(const char *fieldName, Token token) { this->dump(fieldName, token.str()); }
-
   void dump(const char *fieldName, bool v) { this->dump(fieldName, v ? "true" : "false"); }
+};
+
+class TreeDumper {
+private:
+  DumperBase base;
+
+public:
+  TreeDumper() = default;
+
+  std::string operator()(const SyntaxTree &tree);
+
+private:
+  void dump(const char *fieldName, Token token) { this->base.dump(fieldName, token.str()); }
 
   void dump(const char *fieldName, const Node &node) {
-    this->field(fieldName);
-    this->newline();
-    this->enterIndent();
+    this->base.field(fieldName);
+    this->base.newline();
+    this->base.enterIndent();
     this->dump(node, false);
-    this->leaveIndent();
+    this->base.leaveIndent();
   }
 
   void dump(const Node &node, const bool inArray) {
-    this->indent();
+    this->base.indent();
     this->dumpNodeHeader(node, inArray);
     if (inArray) {
-      this->enterIndent();
+      this->base.enterIndent();
     }
     this->dumpRaw(node);
     if (inArray) {
-      this->leaveIndent();
+      this->base.leaveIndent();
     }
   }
 
@@ -103,20 +108,39 @@ private:
   void dumpNodeHeader(const Node &node, bool inArray);
 
   void dumpNodesHead(const char *fieldName) {
-    this->field(fieldName);
-    this->newline();
-    this->enterIndent();
+    this->base.field(fieldName);
+    this->base.newline();
+    this->base.enterIndent();
   }
 
   void dumpNodesBody(const Node &node) {
-    this->indent();
+    this->base.indent();
     this->dumpNodeHeader(node, true);
-    this->enterIndent();
+    this->base.enterIndent();
     this->dumpRaw(node);
-    this->leaveIndent();
+    this->base.leaveIndent();
   }
 
-  void dumpNodesTail() { this->leaveIndent(); }
+  void dumpNodesTail() { this->base.leaveIndent(); }
+};
+
+class RegexDumper {
+private:
+  DumperBase base;
+
+public:
+  std::string operator()(const Regex &regex);
+
+private:
+  void dump(const char *name, const FlexBuffer<Inst> &ins) {
+    this->base.field(name);
+    this->base.newline();
+    this->base.enterIndent();
+    this->dump(ins);
+    this->base.leaveIndent();
+  }
+
+  void dump(const FlexBuffer<Inst> &ins);
 };
 
 } // namespace arsh::regex

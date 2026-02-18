@@ -84,9 +84,10 @@ static std::string formatCaptures(const FlexBuffer<regex::Capture> &captures) {
 }
 
 int main(int argc, char **argv) {
-  opt::GetOptState optState("hm:");
+  opt::GetOptState optState("hdm:");
   StringRef text;
   bool shouldMatch = false;
+  bool dumpRegex = false;
   auto iter = argv + 1;
   const auto end = argv + argc;
   for (int opt; (opt = optState(iter, end)) != -1;) {
@@ -94,6 +95,9 @@ int main(int argc, char **argv) {
     case 'm':
       shouldMatch = true;
       text = optState.optArg.data();
+      break;
+    case 'd':
+      dumpRegex = true;
       break;
     case 'h':
       usage(stdout, argv);
@@ -131,12 +135,18 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  if (shouldMatch) {
+  if (dumpRegex || shouldMatch) {
     regex::CodeGen codeGen;
     auto re = codeGen(std::move(tree));
     if (!re.hasValue()) {
       fprintf(stderr, "%s\n", codeGen.getError().c_str());
       return 1;
+    }
+    if (dumpRegex) {
+      regex::RegexDumper dumper;
+      auto buf = dumper(re.unwrap());
+      fwrite(buf.c_str(), sizeof(char), buf.size(), stdout);
+      return 0;
     }
     FlexBuffer<regex::Capture> captures;
     auto status = regex::match(re.unwrap(), text, captures);

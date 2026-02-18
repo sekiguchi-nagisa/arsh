@@ -15,6 +15,7 @@
  */
 
 #include "dump.h"
+#include "misc/format.hpp"
 #include "misc/unicode.hpp"
 #include "node.h"
 
@@ -24,10 +25,10 @@
 namespace arsh::regex {
 
 // ########################
-// ##     TreeDumper     ##
+// ##     DumperBase     ##
 // ########################
 
-void TreeDumper::dumpAs(const char *fieldName, const char *fmt, ...) { // NOLINT
+void DumperBase::dumpAs(const char *fieldName, const char *fmt, ...) { // NOLINT
   va_list arg;
 
   va_start(arg, fmt);
@@ -39,6 +40,37 @@ void TreeDumper::dumpAs(const char *fieldName, const char *fmt, ...) { // NOLINT
   this->dump(fieldName, str);
   free(str);
 }
+
+static void toStringModifier(Modifier m, std::string &out) {
+#define GEN_IF(E, S, D)                                                                            \
+  if (hasFlag(m, Modifier::E)) {                                                                   \
+    out += (S);                                                                                    \
+  }
+  EACH_RE_MODIFIER(GEN_IF)
+#undef GEN_TABLE
+}
+
+void DumperBase::dump(const char *fieldName, Flag flag) {
+  std::string str = "(mode = ";
+  switch (flag.mode()) {
+  case Mode::BMP:
+    break;
+  case Mode::UNICODE:
+    str += 'u';
+    break;
+  case Mode::UNICODE_SET:
+    str += 'v';
+    break;
+  }
+  str += ", modifier = ";
+  toStringModifier(flag.modifiers(), str);
+  str += ')';
+  this->dump(fieldName, str);
+}
+
+// ########################
+// ##     TreeDumper     ##
+// ########################
 
 static void format(const NamedCaptureEntry &entry, std::string &out) {
   if (entry.hasMultipleIndices()) {
@@ -72,39 +104,12 @@ static std::string format(const NamedCaptureGroups &namedCaptureGroups) {
 }
 
 std::string TreeDumper::operator()(const SyntaxTree &tree) {
-  this->indentLevel = 0;
-  this->dump("flag", tree.getFlag());
-  this->dump("captureGroupCount", std::to_string(tree.getCaptureGroupCount()));
-  this->dump("namedCaptureGroups", format(tree.getNamedCaptureGroups()));
+  this->base.indentLevel = 0;
+  this->base.dump("flag", tree.getFlag());
+  this->base.dump("captureGroupCount", std::to_string(tree.getCaptureGroupCount()));
+  this->base.dump("namedCaptureGroups", format(tree.getNamedCaptureGroups()));
   this->dump("pattern", *tree.getPattern());
-  return std::move(this->buf);
-}
-
-static void toStringModifier(Modifier m, std::string &out) {
-#define GEN_IF(E, S, D)                                                                            \
-  if (hasFlag(m, Modifier::E)) {                                                                   \
-    out += (S);                                                                                    \
-  }
-  EACH_RE_MODIFIER(GEN_IF)
-#undef GEN_TABLE
-}
-
-void TreeDumper::dump(const char *fieldName, Flag flag) {
-  std::string str = "(mode = ";
-  switch (flag.mode()) {
-  case Mode::BMP:
-    break;
-  case Mode::UNICODE:
-    str += 'u';
-    break;
-  case Mode::UNICODE_SET:
-    str += 'v';
-    break;
-  }
-  str += ", modifier = ";
-  toStringModifier(flag.modifiers(), str);
-  str += ')';
-  this->dump(fieldName, str);
+  return std::move(this->base.buf);
 }
 
 void TreeDumper::dump(const char *fieldName, const std::vector<std::unique_ptr<Node>> &nodes) {
@@ -130,17 +135,17 @@ static const char *toString(NodeKind kind) {
 
 void TreeDumper::dumpNodeHeader(const Node &node, const bool inArray) {
   if (inArray) {
-    this->append("- ");
+    this->base.append("- ");
   }
-  this->append("kind: ");
-  this->append(toString(node.getKind()));
-  this->newline();
+  this->base.append("kind: ");
+  this->base.append(toString(node.getKind()));
+  this->base.newline();
   if (inArray) {
-    this->enterIndent();
+    this->base.enterIndent();
   }
   this->dump("token", node.getToken());
   if (inArray) {
-    this->leaveIndent();
+    this->base.leaveIndent();
   }
 }
 
@@ -159,7 +164,7 @@ void TreeDumper::dumpNodeHeader(const Node &node, const bool inArray) {
 #define DUMP_ENUM(f, val, EACH_ENUM)                                                               \
   do {                                                                                             \
     auto v__ = ENUM_TO_STR(val, EACH_ENUM);                                                        \
-    this->dump(f, v__);                                                                            \
+    this->base.dump(f, v__);                                                                       \
   } while (false)
 
 void TreeDumper::dumpRaw(const Node &node) {
@@ -180,7 +185,7 @@ void TreeDumper::dumpRaw(const Node &node) {
       assert(len);
       str += StringRef(data, len);
     }
-    this->dumpAs("codePoint", "U+%04X, %s", codePoint, str.c_str());
+    this->base.dumpAs("codePoint", "U+%04X, %s", codePoint, str.c_str());
     break;
   }
   case NodeKind::CharClass:
@@ -191,7 +196,7 @@ void TreeDumper::dumpRaw(const Node &node) {
   E(CharClassNode::Type, SUBTRACT)
     DUMP_ENUM("class", cast<CharClassNode>(node).getType(), EACH_RE_CHAR_CLASS);
 #undef EACH_RE_CHAR_CLASS
-    this->dump("invert", cast<CharClassNode>(node).isInvert());
+    this->base.dump("invert", cast<CharClassNode>(node).isInvert());
     this->dump("chars", cast<CharClassNode>(node).getChars());
     break;
   case NodeKind::Property:
@@ -208,8 +213,8 @@ void TreeDumper::dumpRaw(const Node &node) {
     break;
   case NodeKind::BackRef: {
     auto &n = cast<BackRefNode>(node);
-    this->dump("name", n.getName());
-    this->dumpAs("index", "%d", n.getIndex());
+    this->base.dump("name", n.getName());
+    this->base.dumpAs("index", "%d", n.getIndex());
     break;
   }
   case NodeKind::Repeat: {
@@ -220,8 +225,8 @@ void TreeDumper::dumpRaw(const Node &node) {
     } else {
       limit = std::to_string(n.getMax());
     }
-    this->dumpAs("repeat", "(min = %d, max = %s)", n.getMin(), limit.c_str());
-    this->dump("greedy", n.isGreedy());
+    this->base.dumpAs("repeat", "(min = %d, max = %s)", n.getMin(), limit.c_str());
+    this->base.dump("greedy", n.isGreedy());
     this->dump("pattern", *n.getPattern());
     break;
   }
@@ -251,13 +256,13 @@ void TreeDumper::dumpRaw(const Node &node) {
   E(GroupNode::Type, MODIFIER)
     DUMP_ENUM("group", n.getType(), EACH_RE_GROUP);
 #undef EACH_RE_GROUP
-    this->dumpAs("index", "%d", n.getGroupIndex());
+    this->base.dumpAs("index", "%d", n.getGroupIndex());
     std::string str;
     toStringModifier(n.getSetModifiers(), str);
-    this->dump("setModifiers", str);
+    this->base.dump("setModifiers", str);
     str.clear();
     toStringModifier(n.getUnsetModifiers(), str);
-    this->dump("unsetModifiers", str);
+    this->base.dump("unsetModifiers", str);
     this->dump("pattern", *n.getPattern());
     break;
   }
@@ -303,8 +308,105 @@ void TreeDumper::dumpRaw(const PropertyNode &node) {
   } else {
     str = "0";
   }
-  this->dump("value", str.c_str());
-  this->dump("invert", node.isInvert());
+  this->base.dump("value", str.c_str());
+  this->base.dump("invert", node.isInvert());
+}
+
+// #########################
+// ##     RegexDumper     ##
+// #########################
+
+std::string RegexDumper::operator()(const Regex &regex) {
+  this->base.indentLevel = 0;
+  this->base.dump("flag", regex.getFlag());
+  this->base.dump("captureGroupCount", std::to_string(regex.getCaptureGroupCount()));
+  this->base.dump("namedCaptureGroups", format(regex.getNamedCaptureGroups()));
+  this->dump("instructions", regex.getInstSeq());
+  return std::move(this->base.buf);
+}
+
+class Padding {
+private:
+  unsigned int width;
+
+public:
+  explicit Padding(unsigned int maxNum) {
+    this->width = countDigits(maxNum > 0 ? maxNum - 1 : maxNum);
+  }
+
+  std::string operator()(unsigned int n) const { return padLeft(n, this->width, ' '); }
+};
+
+static const char *toString(const OpCode op) {
+  switch (op) {
+#define GEN_CASE(E)                                                                                \
+  case OpCode::E:                                                                                  \
+    return #E;
+    EACH_RE_OPCODE(GEN_CASE)
+#undef GEN_CASE
+  }
+  return "";
+}
+
+void RegexDumper::dump(const FlexBuffer<Inst> &ins) {
+  Padding padding(ins.size());
+  for (auto *inst = ins.begin(); inst != ins.end();) {
+    std::string lineNum = padding(inst - ins.begin());
+    std::string str = toString(inst->op);
+    switch (inst->op) {
+    case OpCode::Nop:
+      inst += sizeof(NopIns);
+      break;
+    case OpCode::Match:
+      inst += sizeof(MatchIns);
+      break;
+    case OpCode::Jump:
+      str += "(target=";
+      str += std::to_string(cast<JumpIns>(*inst).getTarget());
+      str += ')';
+      inst += sizeof(JumpIns);
+      break;
+    case OpCode::Alt:
+      str += "(second=";
+      str += std::to_string(cast<AltIns>(*inst).getSecond());
+      str += ')';
+      inst += sizeof(AltIns);
+      break;
+    case OpCode::Start:
+      str += "(multiline=";
+      str += cast<StartIns>(*inst).multiline ? "true" : "false";
+      str += ')';
+      inst += sizeof(StartIns);
+      break;
+    case OpCode::End:
+      str += "(multiline=";
+      str += cast<EndIns>(*inst).multiline ? "true" : "false";
+      str += ')';
+      inst += sizeof(EndIns);
+      break;
+    case OpCode::Any:
+      inst += sizeof(AnyIns);
+      break;
+    case OpCode::AnyExceptNL:
+      inst += sizeof(AnyExceptNLIns);
+      break;
+    case OpCode::Char: {
+      const int codePoint = cast<CharIns>(*inst).getCodePoint();
+      char b[16];
+      snprintf(b, std::size(b), "U+%04X", codePoint);
+      str += "(codePoint=";
+      str += b;
+      str += ":";
+      unsigned int len = UnicodeUtil::codePointToUtf8(codePoint, b);
+      assert(len);
+      str += StringRef(b, len);
+      str += ')';
+      inst += sizeof(CharIns);
+      break;
+    }
+    }
+    this->base.dump(lineNum.c_str(), str);
+  }
 }
 
 } // namespace arsh::regex
