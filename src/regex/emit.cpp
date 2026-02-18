@@ -32,6 +32,7 @@ Optional<Regex> CodeGen::operator()(SyntaxTree &&tree) {
   }
 
   // finalize
+  this->builder.emit<MatchIns>();
   auto flag = tree.getFlag();
   auto count = tree.getCaptureGroupCount();
   return Regex(flag, count, std::move(this->builder).build(),

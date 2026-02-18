@@ -3,6 +3,7 @@
 
 #include <regex/dump.h>
 #include <regex/flag.h>
+#include <regex/input.h>
 #include <regex/parser.h>
 
 using namespace arsh;
@@ -99,6 +100,157 @@ TEST(RegexFlag, str) {
   flag = regex::Flag(regex::Mode::UNICODE_SET,
                      regex::Modifier::MULTILINE | regex::Modifier::IGNORE_CASE);
   ASSERT_EQ("imv", flag.str());
+}
+
+TEST(InputTest, base) {
+  {
+    StringRef text = "12あ\xFFい\xFF";
+    regex::Input input;
+    ASSERT_EQ(regex::Input::Status::INVALID_UTF8, regex::Input::create(text, input));
+  }
+
+  {
+    constexpr size_t size = static_cast<size_t>(UINT32_MAX) + 1;
+    StringRef text("sss", size);
+    ASSERT_EQ(size, text.size());
+    ASSERT_TRUE(text.size() > regex::Input::INPUT_MAX);
+    regex::Input input;
+    ASSERT_EQ(regex::Input::Status::TOO_LARGE, regex::Input::create(text, input));
+  }
+}
+
+TEST(InputTest, forward) {
+  StringRef text = "12ÿþあ𤅕い";
+  regex::Input input;
+  ASSERT_EQ(regex::Input::Status::OK, regex::Input::create(text, input));
+
+  ASSERT_TRUE(input.isBegin());
+  ASSERT_EQ('1', input.cur());
+  ASSERT_EQ('1', input.consumeForward());
+  ASSERT_TRUE(input.available());
+  ASSERT_EQ('2', input.cur());
+  ASSERT_EQ('2', input.consumeForward());
+  ASSERT_TRUE(input.available());
+  ASSERT_EQ(0xFF, input.cur());
+  ASSERT_EQ(0xFF, input.consumeForward());
+  ASSERT_TRUE(input.available());
+  ASSERT_EQ(0xFE, input.cur());
+  ASSERT_EQ(0xFE, input.consumeForward());
+  ASSERT_TRUE(input.available());
+  ASSERT_EQ(0x3042, input.cur());
+  ASSERT_EQ(0x3042, input.consumeForward());
+  ASSERT_TRUE(input.available());
+  ASSERT_EQ(0x24155, input.cur());
+  ASSERT_EQ(0x24155, input.consumeForward());
+  ASSERT_TRUE(input.available());
+  ASSERT_EQ(0x3044, input.cur());
+  ASSERT_EQ(0x3044, input.consumeForward());
+  ASSERT_TRUE(input.isEnd());
+  ASSERT_FALSE(input.available());
+}
+
+TEST(InputTest, backward) {
+  // 1byte
+  {
+    StringRef text = "1";
+    regex::Input input;
+    ASSERT_EQ(regex::Input::Status::OK, regex::Input::create(text, input));
+    while (input.available()) {
+      input.consumeForward();
+    }
+    ASSERT_TRUE(input.isEnd());
+    ASSERT_FALSE(input.available());
+    ASSERT_EQ('\0', *input.getIter());
+    ASSERT_EQ('1', input.prev());
+    ASSERT_EQ('1', input.consumeBackward());
+    ASSERT_EQ('1', input.cur());
+  }
+
+  // 2 byte
+  {
+    StringRef text = "ÿ";
+    regex::Input input;
+    ASSERT_EQ(regex::Input::Status::OK, regex::Input::create(text, input));
+    while (input.available()) {
+      input.consumeForward();
+    }
+    ASSERT_TRUE(input.isEnd());
+    ASSERT_FALSE(input.available());
+    ASSERT_EQ('\0', *input.getIter());
+    ASSERT_EQ(0xFF, input.prev());
+    ASSERT_EQ(0xFF, input.consumeBackward());
+    ASSERT_EQ(0xFF, input.cur());
+  }
+
+  // 3 byte
+  {
+    StringRef text = "あ";
+    regex::Input input;
+    ASSERT_EQ(regex::Input::Status::OK, regex::Input::create(text, input));
+    while (input.available()) {
+      input.consumeForward();
+    }
+    ASSERT_TRUE(input.isEnd());
+    ASSERT_FALSE(input.available());
+    ASSERT_EQ('\0', *input.getIter());
+    ASSERT_EQ(0x3042, input.prev());
+    ASSERT_EQ(0x3042, input.consumeBackward());
+    ASSERT_EQ(0x3042, input.cur());
+  }
+
+  // 4byte
+  {
+    StringRef text = "𤅕";
+    regex::Input input;
+    ASSERT_EQ(regex::Input::Status::OK, regex::Input::create(text, input));
+    while (input.available()) {
+      input.consumeForward();
+    }
+    ASSERT_TRUE(input.isEnd());
+    ASSERT_FALSE(input.available());
+    ASSERT_EQ('\0', *input.getIter());
+    ASSERT_EQ(0x24155, input.prev());
+    ASSERT_EQ(0x24155, input.consumeBackward());
+    ASSERT_EQ(0x24155, input.cur());
+  }
+
+  StringRef text = "12ÿþあ𤅕い";
+  regex::Input input;
+  ASSERT_EQ(regex::Input::Status::OK, regex::Input::create(text, input));
+  while (input.available()) {
+    input.consumeForward();
+  }
+  ASSERT_TRUE(input.isEnd());
+  ASSERT_FALSE(input.available());
+  ASSERT_EQ(0x3044, input.prev());
+  ASSERT_EQ(0x3044, input.consumeBackward());
+  ASSERT_EQ(0x3044, input.cur());
+  ASSERT_TRUE(input.available());
+  ASSERT_EQ(0x24155, input.prev());
+  ASSERT_EQ(0x24155, input.consumeBackward());
+  ASSERT_EQ(0x24155, input.cur());
+  ASSERT_TRUE(input.available());
+  ASSERT_EQ(0x3042, input.prev());
+  ASSERT_EQ(0x3042, input.consumeBackward());
+  ASSERT_EQ(0x3042, input.cur());
+  ASSERT_TRUE(input.available());
+  ASSERT_EQ(0xFE, input.prev());
+  ASSERT_EQ(0xFE, input.consumeBackward());
+  ASSERT_EQ(0xFE, input.cur());
+  ASSERT_TRUE(input.available());
+  ASSERT_EQ(0xFF, input.prev());
+  ASSERT_EQ(0xFF, input.consumeBackward());
+  ASSERT_EQ(0xFF, input.cur());
+  ASSERT_TRUE(input.available());
+  ASSERT_EQ('2', input.prev());
+  ASSERT_EQ('2', input.consumeBackward());
+  ASSERT_EQ('2', input.cur());
+  ASSERT_TRUE(input.available());
+  ASSERT_EQ('1', input.prev());
+  ASSERT_EQ('1', input.consumeBackward());
+  ASSERT_EQ('1', input.cur());
+  ASSERT_TRUE(input.available());
+  ASSERT_TRUE(input.isBegin());
 }
 
 #ifndef BIN_PATH

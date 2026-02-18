@@ -140,12 +140,10 @@ int main(int argc, char **argv) {
     }
     FlexBuffer<regex::Capture> captures;
     auto status = regex::match(re.unwrap(), text, captures);
-    fputs("input: `", stdout);
-    fwrite(text.data(), sizeof(char), text.size(), stdout);
-    fputs("'\n", stdout);
+    fprintf(stdout, "input: `%s'\n", text.toString().c_str());
     if (status == regex::MatchStatus::OK) {
       auto str = formatCaptures(captures);
-      fprintf(stdout, "%s\n", str.c_str());
+      fwrite(str.c_str(), sizeof(char), str.size(), stdout);
       return 0;
     }
     fprintf(stdout, "%s\n", toString(status));

@@ -31,6 +31,8 @@ private:
   NamedCaptureGroups named;
 
 public:
+  static constexpr size_t MAX_STACK_DEPTH = UINT16_MAX >> 2;
+
   Regex(Flag flag, unsigned int count, FlexBuffer<Inst> &&seq, NamedCaptureGroups &&named)
       : flag(flag), captureGroupCount(count), instSeq(std::move(seq)), named(std::move(named)) {}
 

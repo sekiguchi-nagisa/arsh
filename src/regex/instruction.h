@@ -28,6 +28,8 @@ namespace arsh::regex {
   OP(Match)                                                                                        \
   OP(Jump)                                                                                         \
   OP(Alt)                                                                                          \
+  OP(Start)                                                                                        \
+  OP(End)                                                                                          \
   OP(Any)                                                                                          \
   OP(AnyExceptNL)                                                                                  \
   OP(Char)
@@ -92,6 +94,24 @@ struct AltIns : InstWithRtti<OpCode::Alt> {
     memcpy(&t, this->second, sizeof(uint32_t));
     return t;
   }
+};
+
+/**
+ * ^
+ */
+struct StartIns : InstWithRtti<OpCode::Start> {
+  bool multiline;
+
+  explicit StartIns(bool ml) : multiline(ml) {}
+};
+
+/**
+ * $
+ */
+struct EndIns : InstWithRtti<OpCode::End> {
+  bool multiline;
+
+  explicit EndIns(bool ml) : multiline(ml) {}
 };
 
 /**

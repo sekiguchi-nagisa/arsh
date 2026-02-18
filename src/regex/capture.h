@@ -102,14 +102,10 @@ public:
 };
 
 struct Capture {
-  const uint32_t offset;
-  const uint32_t size;
+  uint32_t offset{UINT32_MAX};
+  uint32_t size{UINT32_MAX};
 
-  Capture(uint32_t offset, uint32_t size) : offset(offset), size(size) {}
-
-  Capture() : Capture(UINT32_MAX, UINT32_MAX) {}
-
-  explicit operator bool() const { return this->offset == UINT32_MAX && this->size == UINT32_MAX; }
+  explicit operator bool() const { return this->offset != UINT32_MAX && this->size != UINT32_MAX; }
 };
 
 } // namespace arsh::regex
