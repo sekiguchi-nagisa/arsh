@@ -1,0 +1,96 @@
+
+source $SCRIPT_DIR/../syntax/test_helper.arsh
+
+# empty
+assert diff <(redump -m '' '' '') <(<<'EOF'
+input: `'
+(offset=0, size=0)
+EOF
+)
+
+assert diff <(redump -m 's' '' '') <(<<'EOF'
+input: `s'
+(offset=0, size=0)
+EOF
+)
+
+# any
+assert diff <(redump -m '' '.' '') <(<<'EOF'
+input: `'
+failed
+EOF
+)
+
+assert diff <(redump -m 'a' '.' '') <(<<'EOF'
+input: `a'
+(offset=0, size=1)
+EOF
+)
+
+assert diff <(redump -m 'ÿ' '.' '') <(<<'EOF'
+input: `ÿ'
+(offset=0, size=2)
+EOF
+)
+
+assert diff <(redump -m 'あ' '.' '') <(<<'EOF'
+input: `あ'
+(offset=0, size=3)
+EOF
+)
+
+assert diff <(redump -m '𤅕' '.' '') <(<<'EOF'  # match non-bmp char even if bmp mode
+input: `𤅕'
+(offset=0, size=4)
+EOF
+)
+
+# any with newline
+assert diff <(redump -m $'\n' '.' '') <(<<EOF
+input: \`${$'\n'}'
+failed
+EOF
+)
+
+assert diff <(redump -m $'\r' '.' '') <(<<EOF
+input: \`${$'\r'}'
+failed
+EOF
+)
+
+assert diff <(redump -m $'\u2028' '.' '') <(<<EOF
+input: \`${$'\u2028'}'
+failed
+EOF
+)
+
+assert diff <(redump -m $'\u2029' '.' '') <(<<EOF
+input: \`${$'\u2029'}'
+failed
+EOF
+)
+
+# any dotall
+assert diff <(redump -m $'\n' '.' 's') <(<<EOF
+input: \`${$'\n'}'
+(offset=0, size=1)
+EOF
+)
+
+assert diff <(redump -m $'\r' '.' 's') <(<<EOF
+input: \`${$'\r'}'
+(offset=0, size=1)
+EOF
+)
+
+assert diff <(redump -m $'\u2028' '.' 's') <(<<EOF
+input: \`${$'\u2028'}'
+(offset=0, size=3)
+EOF
+)
+
+assert diff <(redump -m $'\u2029' '.' 's') <(<<EOF
+input: \`${$'\u2029'}'
+(offset=0, size=3)
+EOF
+)

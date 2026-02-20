@@ -63,8 +63,8 @@
 | \p{property=value}    | ✔️         | ❌         | ❌                       |
 | \P{property=value}    | ✔️         | ❌         | ❌                       |
 | \p{RGI_Emoji}         | ✔️         | ❌         | ❌                       |
-| .                     | ✔️         | ❌         | ❌                       |
-| . (dot-all)           | ✔️         | ❌         | ❌                       |
+| .                     | ✔️         | ✔️        | ❌                       |
+| . (dot-all)           | ✔️         | ✔️        | ❌                       |
 | \b                    | ✔️         | ❌         | ❌                       |
 | \B                    | ✔️         | ❌         | ❌                       |
 | \X (extension)        | ❌          | ❌         | ❌                       |

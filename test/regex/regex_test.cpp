@@ -275,7 +275,7 @@ static std::vector<std::string> getTargetTestCases(const char *dir) {
   return ret;
 }
 
-struct RegexSyntaxTest : public ::testing::TestWithParam<std::string> {
+struct RegexTest : public ::testing::TestWithParam<std::string> {
   static void doTest() {
     auto result =
         ProcBuilder{BIN_PATH, GetParam().c_str()}.addEnv("REDUMP_PATH", REDUMP_PATH).exec();
@@ -284,12 +284,12 @@ struct RegexSyntaxTest : public ::testing::TestWithParam<std::string> {
   }
 };
 
-TEST_P(RegexSyntaxTest, base) {
+TEST_P(RegexTest, base) {
   printf(" case: %s\n", this->GetParam().c_str());
   ASSERT_NO_FATAL_FAILURE(doTest());
 }
 
-INSTANTIATE_TEST_SUITE_P(RegexSyntaxTest, RegexSyntaxTest,
+INSTANTIATE_TEST_SUITE_P(RegexTest, RegexTest,
                          ::testing::ValuesIn(getTargetTestCases(REGEX_TEST_DIR)));
 
 int main(int argc, char **argv) {
