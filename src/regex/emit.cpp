@@ -101,6 +101,8 @@ bool CodeGen::generate(const Node &node) {
     }
     break;
   case NodeKind::Alt:
+    TRY(this->generateAlt(cast<AltNode>(node)));
+    break;
   case NodeKind::LookAround:
     this->todo(node);
     return false;
@@ -130,6 +132,27 @@ bool CodeGen::generate(const Node &node) {
     }
     break;
   }
+  }
+  return true;
+}
+
+bool CodeGen::generateAlt(const AltNode &node) {
+  const unsigned int size = node.getPatterns().size();
+  std::vector<InstructionBuilder::ReservedPoint> jumps;
+  for (unsigned int i = 0; i < size; i++) {
+    if (i == size - 1) {
+      TRY(this->generate(*node.getPatterns()[i]));
+      continue;
+    }
+    auto point = this->builder.emitReservedPoint<AltIns>();
+    TRY(this->generate(*node.getPatterns()[i]));
+    jumps.push_back(this->builder.emitReservedPoint<JumpIns>());
+    auto addr = this->builder.currentAddr();
+    this->builder.emitAt<AltIns>(point, addr);
+  }
+  unsigned int addr = this->builder.currentAddr();
+  for (auto &e : jumps) {
+    this->builder.emitAt<JumpIns>(e, addr);
   }
   return true;
 }

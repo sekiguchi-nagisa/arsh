@@ -36,6 +36,8 @@ private:
   FlexBuffer<Inst> buf;
 
 public:
+  unsigned int currentAddr() const { return this->buf.size(); }
+
   template <typename T>
   ReservedPoint emitReservedPoint() {
     static_assert(std::is_base_of_v<Inst, T>);
@@ -79,6 +81,8 @@ private:
   Modifier modifiers() const { return this->modifierStack.back(); }
 
   void todo(const Node &node, const char *str = nullptr); // TODO: remove
+
+  bool generateAlt(const AltNode &node);
 };
 
 } // namespace arsh::regex

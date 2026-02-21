@@ -1,0 +1,60 @@
+
+source $SCRIPT_DIR/../syntax/test_helper.arsh
+
+# a|b
+assert diff <(redump -m 'a' 'a|b' '') <(<<'EOF'
+input: `a'
+(offset=0, size=1)
+EOF
+)
+
+assert diff <(redump -m 'b' 'a|b' '') <(<<'EOF'
+input: `b'
+(offset=0, size=1)
+EOF
+)
+
+assert diff <(redump -m '123ab' 'a|b' '') <(<<'EOF'
+input: `123ab'
+(offset=3, size=1)
+EOF
+)
+
+assert diff <(redump -m '123ba' 'a|b' '') <(<<'EOF'
+input: `123ba'
+(offset=3, size=1)
+EOF
+)
+
+# aa|aaa
+assert diff <(redump -m 'aaa' 'aa|aaa' '') <(<<'EOF'
+input: `aaa'
+(offset=0, size=2)
+EOF
+)
+
+# aaa|aab
+assert diff <(redump -m 'aaab' 'aaa|aab' '') <(<<'EOF'
+input: `aaab'
+(offset=0, size=3)
+EOF
+)
+
+# (?:ab|abd)c
+assert diff <(redump -m '2abc' '(?:ab|abd)c' '') <(<<'EOF'
+input: `2abc'
+(offset=1, size=3)
+EOF
+)
+
+assert diff <(redump -m '2abdc' '(?:ab|abd)c' '') <(<<'EOF'
+input: `2abdc'
+(offset=1, size=4)
+EOF
+)
+
+assert diff <(redump -m '2abde' '(?:ab|abd)c' '') <(<<'EOF'
+input: `2abde'
+failed
+EOF
+)

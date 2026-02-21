@@ -34,13 +34,13 @@ enum class BacktrackOp : unsigned char {
 union Backtrack {
   BacktrackOp op;
 
-  union {
+  struct {
     BacktrackOp op;
     uint32_t target;
     const char *iter;
   } setIns;
 
-  union {
+  struct {
     BacktrackOp op;
     uint32_t index;
     Capture capture;
