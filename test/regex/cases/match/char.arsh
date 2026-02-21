@@ -1,0 +1,124 @@
+
+source $SCRIPT_DIR/../syntax/test_helper.arsh
+
+# 1
+assert diff <(redump -m '122' '1' '') <(<<'EOF'
+input: `122'
+(offset=0, size=1)
+EOF
+)
+
+# ÿ
+assert diff <(redump -m 'ÿ2' 'ÿ' '') <(<<'EOF'
+input: `ÿ2'
+(offset=0, size=2)
+EOF
+)
+
+# あ
+assert diff <(redump -m 'あい' 'あ' '') <(<<'EOF'
+input: `あい'
+(offset=0, size=3)
+EOF
+)
+
+# 𤅕
+assert diff <(redump -m '𤅕い' '𤅕' '') <(<<'EOF'
+input: `𤅕い'
+(offset=0, size=4)
+EOF
+)
+
+# \n
+assert diff <(redump -m $'\n' '\n' '') <(<<EOF
+input: \`${$'\n'}'
+(offset=0, size=1)
+EOF
+)
+
+# \r
+assert diff <(redump -m $'\r' '\r' '') <(<<EOF
+input: \`${$'\r'}'
+(offset=0, size=1)
+EOF
+)
+
+# \f
+assert diff <(redump -m $'\f' '\f' '') <(<<EOF
+input: \`${$'\f'}'
+(offset=0, size=1)
+EOF
+)
+
+# \t
+assert diff <(redump -m $'\t' '\t' '') <(<<EOF
+input: \`${$'\t'}'
+(offset=0, size=1)
+EOF
+)
+
+# \v
+assert diff <(redump -m $'\v' '\v' '') <(<<EOF
+input: \`${$'\v'}'
+(offset=0, size=1)
+EOF
+)
+
+# \xFF
+assert diff <(redump -m 'ÿ2' '\xFF' '') <(<<'EOF'
+input: `ÿ2'
+(offset=0, size=2)
+EOF
+)
+
+# \cj
+assert diff <(redump -m $'\x0A' '\cj' '') <(<<EOF
+input: \`${$'\x0A'}'
+(offset=0, size=1)
+EOF
+)
+
+# \cJ
+assert diff <(redump -m $'\x0A' '\cJ' '') <(<<EOF
+input: \`${$'\x0A'}'
+(offset=0, size=1)
+EOF
+)
+
+# \c@   
+assert diff <(redump -m '\c@' '\c@' '') <(<<'EOF'   # invalid escape
+input: `\c@'
+(offset=0, size=3)
+EOF
+)
+
+# unanchord
+assert diff <(redump -m '123abあい' 'あ' '') <(<<'EOF'
+input: `123abあい'
+(offset=5, size=3)
+EOF
+)
+
+assert diff <(redump -m '123abあい' '\u3042' '') <(<<'EOF'
+input: `123abあい'
+(offset=5, size=3)
+EOF
+)
+
+assert diff <(redump -m '123abあ𤅕い' '\u{24155}' 'u') <(<<'EOF'
+input: `123abあ𤅕い'
+(offset=8, size=4)
+EOF
+)
+
+assert diff <(redump -m '123abあ𤅕い' '\uD850\uDD55' '') <(<<'EOF'
+input: `123abあ𤅕い'
+(offset=8, size=4)
+EOF
+)
+
+assert diff <(redump -m '123abあ𤅕い' '\uD850\uDD55' 'u') <(<<'EOF'
+input: `123abあ𤅕い'
+(offset=8, size=4)
+EOF
+)

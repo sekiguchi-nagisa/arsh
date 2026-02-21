@@ -1,0 +1,22 @@
+
+source $SCRIPT_DIR/../syntax/test_helper.arsh
+
+# 123
+assert diff <(redump -m '122' '122' '') <(<<'EOF'
+input: `122'
+(offset=0, size=3)
+EOF
+)
+
+assert diff <(redump -m '122' '123' '') <(<<'EOF'
+input: `122'
+failed
+EOF
+)
+
+# あ9
+assert diff <(redump -m '122あ9w' 'あ9' '') <(<<'EOF'
+input: `122あ9w'
+(offset=3, size=4)
+EOF
+)
