@@ -22,28 +22,102 @@
 
 namespace arsh::regex {
 
-struct Frame {
-  const char *iter{nullptr};
-  const Inst *inst{nullptr};
-
-  Frame() = default;
-
-  Frame(const Input &input, const Inst *ins) : iter(input.getIter()), inst(ins) {}
-};
-
 #define likely(x) __builtin_expect(!!(x), 1)
 #define unlikely(x) __builtin_expect(!!(x), 0)
+
+enum class BacktrackOp : unsigned char {
+  None,
+  SetIns,
+  SetCapture,
+};
+
+union Backtrack {
+  BacktrackOp op;
+
+  union {
+    BacktrackOp op;
+    uint32_t target;
+    const char *iter;
+  } setIns;
+
+  union {
+    BacktrackOp op;
+    uint32_t index;
+    Capture capture;
+  } setCapture;
+
+private:
+  explicit Backtrack(BacktrackOp op) : op(op) {}
+
+public:
+  Backtrack() : op(BacktrackOp::None) {}
+
+  static Backtrack newSetIns(const Input &input, uint32_t target) {
+    Backtrack bt(BacktrackOp::SetIns);
+    bt.setIns.iter = input.getIter();
+    bt.setIns.target = target;
+    return bt;
+  }
+
+  static Backtrack newSetCapture(uint32_t index, Capture capture) {
+    Backtrack bt(BacktrackOp::SetCapture);
+    bt.setCapture.index = index;
+    bt.setCapture.capture = capture;
+    return bt;
+  }
+};
+
+class BacktrackStack {
+private:
+  static_assert(std::is_trivially_copy_constructible_v<Backtrack>);
+  const Inst *const begin;
+  InlinedStack<Backtrack, 3> bts;
+
+public:
+  explicit BacktrackStack(const Inst *begin) : begin(begin) {}
+
+  const Inst *getBeginInst() const { return this->begin; }
+
+  bool push(Backtrack bt) {
+    if (unlikely(this->bts.size() == Regex::MAX_STACK_DEPTH)) {
+      return false;
+    }
+    this->bts.push(bt);
+    return true;
+  }
+
+  bool backtrack(const Inst *&inst, Input &input, FlexBuffer<Capture> &captures) {
+    while (this->bts.size()) {
+      auto &bt = this->bts.back();
+      switch (bt.op) {
+      case BacktrackOp::None:
+        this->bts.pop();
+        return true; // do nothing
+      case BacktrackOp::SetIns:
+        inst = this->begin + bt.setIns.target;
+        input.setIter(bt.setIns.iter);
+        this->bts.pop();
+        return true;
+      case BacktrackOp::SetCapture:
+        captures[bt.setCapture.index] = bt.setCapture.capture;
+        this->bts.pop();
+        break;
+      }
+    }
+    return false;
+  }
+};
+
+#define TRY(E)                                                                                     \
+  do {                                                                                             \
+    if (unlikely(!(E))) {                                                                          \
+      return MatchStatus::STACK_LIMIT;                                                             \
+    }                                                                                              \
+  } while (false)
 
 #define vmdispatch(op) switch (op)
 #define vmcase(OP) case OpCode::OP:
 #define vmnext continue;
-
-#define CHECK_STACK_DEPTH(ss)                                                                      \
-  do {                                                                                             \
-    if (unlikely((ss).size() == Regex::MAX_STACK_DEPTH)) {                                         \
-      return MatchStatus::STACK_LIMIT;                                                             \
-    }                                                                                              \
-  } while (false)
 
 MatchStatus match(const Regex &regex, const StringRef text, FlexBuffer<Capture> &captures) {
   // prepare
@@ -54,17 +128,14 @@ MatchStatus match(const Regex &regex, const StringRef text, FlexBuffer<Capture> 
     return MatchStatus::INVALID_UTF8;
   }
   const char *oldIter = input.getIter();
-  const Inst *const startIns = regex.getInstSeq().data();
+  const Inst *inst = regex.getInstSeq().data();
   captures.resize(regex.getCaptureGroupCount() + 1);
-  InlinedStack<Frame, 3> frames;
-  frames.push(Frame(input, startIns));
+  BacktrackStack bts(inst);
+  bts.push(Backtrack()); // push dummy
 
   // match
 BACKTRACK:
-  while (frames.size()) {
-    const Inst *inst = frames.back().inst;
-    input.setIter(frames.back().iter);
-    frames.pop();
+  while (bts.backtrack(inst, input, captures)) {
     while (true) {
       vmdispatch(inst->op) {
         vmcase(Nop) {
@@ -78,13 +149,12 @@ BACKTRACK:
         }
         vmcase(Jump) {
           auto &ins = cast<JumpIns>(*inst);
-          inst = startIns + ins.getTarget();
+          inst = bts.getBeginInst() + ins.getTarget();
           vmnext;
         }
         vmcase(Alt) {
-          CHECK_STACK_DEPTH(frames);
           auto &ins = cast<AltIns>(*inst);
-          frames.push(Frame(input, startIns + ins.getSecond())); // push second branch addr
+          TRY(bts.push(Backtrack::newSetIns(input, ins.getSecond())));
           inst += sizeof(AltIns);
           vmnext;
         }
@@ -133,14 +203,15 @@ BACKTRACK:
       }
     }
   }
-  // increment input and redo until end-of-input
+  // increment input and redo until end-of-input. TODO: remove
   input.setIter(oldIter);
   if (input.available()) {
     input.consumeForward();
+    oldIter = input.getIter();
+    inst = bts.getBeginInst();
     captures.clear();
     captures.resize(regex.getCaptureGroupCount() + 1);
-    oldIter = input.getIter();
-    frames.push(Frame(input, startIns));
+    bts.push(Backtrack()); // dummy
     goto BACKTRACK;
   }
   return MatchStatus::FAIL;
