@@ -1,0 +1,134 @@
+
+source $SCRIPT_DIR/../syntax/test_helper.arsh
+
+# ^
+assert diff <(redump -m 'aaab' '^' '') <(<<'EOF'
+input: `aaab'
+(offset=0, size=0)
+EOF
+)
+
+assert diff <(redump -m 'aaab' '^b' '') <(<<'EOF'
+input: `aaab'
+failed
+EOF
+)
+
+# ^b
+## \n
+assert diff <(redump -m $'aaa\nb' '^b' '') <(<<EOF
+input: \`aaa${$'\n'}b'
+failed
+EOF
+)
+
+assert diff <(redump -m $'aaa\nb' '^b' 'm') <(<<EOF
+input: \`aaa${$'\n'}b'
+(offset=4, size=1)
+EOF
+)
+
+## \r
+assert diff <(redump -m $'aaa\rb' '^b' '') <(<<EOF
+input: \`aaa${$'\r'}b'
+failed
+EOF
+)
+
+assert diff <(redump -m $'aaa\rb' '^b' 'm') <(<<EOF
+input: \`aaa${$'\r'}b'
+(offset=4, size=1)
+EOF
+)
+
+## \u2028
+assert diff <(redump -m $'aaa\u2028b' '^b' '') <(<<EOF
+input: \`aaa${$'\u2028'}b'
+failed
+EOF
+)
+
+assert diff <(redump -m $'aaa\u2028b' '^b' 'm') <(<<EOF
+input: \`aaa${$'\u2028'}b'
+(offset=6, size=1)
+EOF
+)
+
+## \u2029
+assert diff <(redump -m $'aaa\u2029b' '^b' '') <(<<EOF
+input: \`aaa${$'\u2029'}b'
+failed
+EOF
+)
+
+assert diff <(redump -m $'aaa\u2029b' '^b' 'm') <(<<EOF
+input: \`aaa${$'\u2029'}b'
+(offset=6, size=1)
+EOF
+)
+
+# $
+assert diff <(redump -m 'aaab' '$' '') <(<<'EOF'
+input: `aaab'
+(offset=4, size=0)
+EOF
+)
+
+assert diff <(redump -m 'aaab' 'a$' '') <(<<'EOF'
+input: `aaab'
+failed
+EOF
+)
+
+# ^b
+## \n
+assert diff <(redump -m $'aaa\nb' 'a$' '') <(<<EOF
+input: \`aaa${$'\n'}b'
+failed
+EOF
+)
+
+assert diff <(redump -m $'aaa\nb' 'a$' 'm') <(<<EOF
+input: \`aaa${$'\n'}b'
+(offset=2, size=1)
+EOF
+)
+
+## \r
+assert diff <(redump -m $'aaa\rb' 'a$' '') <(<<EOF
+input: \`aaa${$'\r'}b'
+failed
+EOF
+)
+
+assert diff <(redump -m $'aaa\rb' 'a$' 'm') <(<<EOF
+input: \`aaa${$'\r'}b'
+(offset=2, size=1)
+EOF
+)
+
+## \u2028
+assert diff <(redump -m $'aaa\u2028b' 'a$' '') <(<<EOF
+input: \`aaa${$'\u2028'}b'
+failed
+EOF
+)
+
+assert diff <(redump -m $'aaa\u2028b' 'a$' 'm') <(<<EOF
+input: \`aaa${$'\u2028'}b'
+(offset=2, size=1)
+EOF
+)
+
+## \u2029
+assert diff <(redump -m $'aaa\u2029b' 'a$' '') <(<<EOF
+input: \`aaa${$'\u2029'}b'
+failed
+EOF
+)
+
+assert diff <(redump -m $'aaa\u2029b' 'a$' 'm') <(<<EOF
+input: \`aaa${$'\u2029'}b'
+(offset=2, size=1)
+EOF
+)

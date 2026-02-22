@@ -90,7 +90,23 @@ bool CodeGen::generate(const Node &node) {
     break;
   case NodeKind::CharClass:
   case NodeKind::Property:
-  case NodeKind::Boundary:
+    this->todo(node);
+    return false;
+  case NodeKind::Boundary: {
+    switch (cast<BoundaryNode>(node).getType()) {
+    case BoundaryNode::Type::START:
+      this->builder.emit<StartIns>(hasFlag(this->modifiers(), Modifier::MULTILINE));
+      return true;
+    case BoundaryNode::Type::END:
+      this->builder.emit<EndIns>(hasFlag(this->modifiers(), Modifier::MULTILINE));
+      return true;
+    case BoundaryNode::Type::WORD:
+    case BoundaryNode::Type::NOT_WORD:
+      this->todo(node, "WORD boundary");
+      return false;
+    }
+    break;
+  }
   case NodeKind::BackRef:
   case NodeKind::Repeat:
     this->todo(node);
