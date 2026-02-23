@@ -1,0 +1,197 @@
+
+source $SCRIPT_DIR/../syntax/test_helper.arsh
+
+# \^
+assert diff <(redump -m '012^' '\^' '') <(<<'EOF'
+input: `012^'
+(offset=3, size=1)
+EOF
+)
+
+assert diff <(redump -m '0123' '\^' '') <(<<'EOF'
+input: `0123'
+failed
+EOF
+)
+
+# \$
+assert diff <(redump -m '012$' '\$' '') <(<<'EOF'
+input: `012$'
+(offset=3, size=1)
+EOF
+)
+
+assert diff <(redump -m '0123' '\$' '') <(<<'EOF'
+input: `0123'
+failed
+EOF
+)
+
+# \\
+assert diff <(redump -m '012\' '\\' '') <(<<'EOF'
+input: `012\'
+(offset=3, size=1)
+EOF
+)
+
+assert diff <(redump -m '0123' '\\' '') <(<<'EOF'
+input: `0123'
+failed
+EOF
+)
+
+# \.
+assert diff <(redump -m '012.' '\.' '') <(<<'EOF'
+input: `012.'
+(offset=3, size=1)
+EOF
+)
+
+assert diff <(redump -m '0123' '\.' '') <(<<'EOF'
+input: `0123'
+failed
+EOF
+)
+
+# \*
+assert diff <(redump -m '012*' '\*' '') <(<<'EOF'
+input: `012*'
+(offset=3, size=1)
+EOF
+)
+
+assert diff <(redump -m '0123' '\*' '') <(<<'EOF'
+input: `0123'
+failed
+EOF
+)
+
+# \+
+assert diff <(redump -m '012+' '\+' '') <(<<'EOF'
+input: `012+'
+(offset=3, size=1)
+EOF
+)
+
+assert diff <(redump -m '0123' '\+' '') <(<<'EOF'
+input: `0123'
+failed
+EOF
+)
+
+# \?
+assert diff <(redump -m '012?' '\?' '') <(<<'EOF'
+input: `012?'
+(offset=3, size=1)
+EOF
+)
+
+assert diff <(redump -m '0123' '\?' '') <(<<'EOF'
+input: `0123'
+failed
+EOF
+)
+
+# \(
+assert diff <(redump -m '012(' '\(' '') <(<<'EOF'
+input: `012('
+(offset=3, size=1)
+EOF
+)
+
+assert diff <(redump -m '0123' '\(' '') <(<<'EOF'
+input: `0123'
+failed
+EOF
+)
+
+# \)
+assert diff <(redump -m '012)' '\)' '') <(<<'EOF'
+input: `012)'
+(offset=3, size=1)
+EOF
+)
+
+assert diff <(redump -m '0123' '\)' '') <(<<'EOF'
+input: `0123'
+failed
+EOF
+)
+
+# \[
+assert diff <(redump -m '012[' '\[' '') <(<<'EOF'
+input: `012['
+(offset=3, size=1)
+EOF
+)
+
+assert diff <(redump -m '0123' '\[' '') <(<<'EOF'
+input: `0123'
+failed
+EOF
+)
+
+# \]
+assert diff <(redump -m '012]' '\]' '') <(<<'EOF'
+input: `012]'
+(offset=3, size=1)
+EOF
+)
+
+assert diff <(redump -m '0123' '\]' '') <(<<'EOF'
+input: `0123'
+failed
+EOF
+)
+
+# \{
+assert diff <(redump -m '012{' '\{' '') <(<<'EOF'
+input: `012{'
+(offset=3, size=1)
+EOF
+)
+
+assert diff <(redump -m '0123' '\{' '') <(<<'EOF'
+input: `0123'
+failed
+EOF
+)
+
+# \}
+assert diff <(redump -m '012}' '\}' '') <(<<'EOF'
+input: `012}'
+(offset=3, size=1)
+EOF
+)
+
+assert diff <(redump -m '0123' '\}' '') <(<<'EOF'
+input: `0123'
+failed
+EOF
+)
+
+# \|
+assert diff <(redump -m '012|' '\|' '') <(<<'EOF'
+input: `012|'
+(offset=3, size=1)
+EOF
+)
+
+assert diff <(redump -m '0123' '\|' '') <(<<'EOF'
+input: `0123'
+failed
+EOF
+)
+
+# \/
+assert diff <(redump -m '012/' '\/' '') <(<<'EOF'
+input: `012/'
+(offset=3, size=1)
+EOF
+)
+
+assert diff <(redump -m '0123' '\/' '') <(<<'EOF'
+input: `0123'
+failed
+EOF
+)

@@ -32,7 +32,7 @@
 | \xHH                          | ✔️         | ✔️        | ❌                       | ❌                              |
 | \uHHHH                        | ✔️         | ✔️        | ❌                       | ❌                              |
 | \u{HHH}                       | ✔️         | ✔️        | ❌                       | ❌                              |
-| syntax escape                 | ❌          | ❌         | ❌                       | ❌                              |
+| syntax escape                 | ✔️         | ✔️        | ❌                       | ❌                              |
 | pattern1\|pattern2            | ✔️         | ✔️        | ❌                       | ❌                              |
 | ^                             | ✔️         | ✔️        | ❌                       | ❌                              |
 | ^ (multiline)                 | ✔️         | ✔️        | ❌                       | ❌                              |

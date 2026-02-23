@@ -1,0 +1,512 @@
+
+source $SCRIPT_DIR/test_helper.arsh
+
+# \^
+assert diff <(redump '\^' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Char
+  token: (pos = 0, size = 2)
+  codePoint: U+005E, ^
+EOF
+)
+
+assert diff <(redump '\^' 'u') <(<<'EOF'
+flag: (mode = u, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Char
+  token: (pos = 0, size = 2)
+  codePoint: U+005E, ^
+EOF
+)
+
+assert diff <(redump '\^' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Char
+  token: (pos = 0, size = 2)
+  codePoint: U+005E, ^
+EOF
+)
+
+# \$
+assert diff <(redump '\$' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Char
+  token: (pos = 0, size = 2)
+  codePoint: U+0024, $
+EOF
+)
+
+assert diff <(redump '\$' 'u') <(<<'EOF'
+flag: (mode = u, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Char
+  token: (pos = 0, size = 2)
+  codePoint: U+0024, $
+EOF
+)
+
+assert diff <(redump '\$' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Char
+  token: (pos = 0, size = 2)
+  codePoint: U+0024, $
+EOF
+)
+
+# \\
+assert diff <(redump '\\' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Char
+  token: (pos = 0, size = 2)
+  codePoint: U+005C, \
+EOF
+)
+
+assert diff <(redump '\\' 'u') <(<<'EOF'
+flag: (mode = u, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Char
+  token: (pos = 0, size = 2)
+  codePoint: U+005C, \
+EOF
+)
+
+assert diff <(redump '\\' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Char
+  token: (pos = 0, size = 2)
+  codePoint: U+005C, \
+EOF
+)
+
+# \.
+assert diff <(redump '\.' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Char
+  token: (pos = 0, size = 2)
+  codePoint: U+002E, .
+EOF
+)
+
+assert diff <(redump '\.' 'u') <(<<'EOF'
+flag: (mode = u, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Char
+  token: (pos = 0, size = 2)
+  codePoint: U+002E, .
+EOF
+)
+
+assert diff <(redump '\.' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Char
+  token: (pos = 0, size = 2)
+  codePoint: U+002E, .
+EOF
+)
+
+# \*
+assert diff <(redump '\*' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Char
+  token: (pos = 0, size = 2)
+  codePoint: U+002A, *
+EOF
+)
+
+assert diff <(redump '\*' 'u') <(<<'EOF'
+flag: (mode = u, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Char
+  token: (pos = 0, size = 2)
+  codePoint: U+002A, *
+EOF
+)
+
+assert diff <(redump '\*' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Char
+  token: (pos = 0, size = 2)
+  codePoint: U+002A, *
+EOF
+)
+
+# \+
+assert diff <(redump '\+' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Char
+  token: (pos = 0, size = 2)
+  codePoint: U+002B, +
+EOF
+)
+
+assert diff <(redump '\+' 'u') <(<<'EOF'
+flag: (mode = u, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Char
+  token: (pos = 0, size = 2)
+  codePoint: U+002B, +
+EOF
+)
+
+assert diff <(redump '\+' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Char
+  token: (pos = 0, size = 2)
+  codePoint: U+002B, +
+EOF
+)
+
+# \?
+assert diff <(redump '\?' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Char
+  token: (pos = 0, size = 2)
+  codePoint: U+003F, ?
+EOF
+)
+
+assert diff <(redump '\?' 'u') <(<<'EOF'
+flag: (mode = u, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Char
+  token: (pos = 0, size = 2)
+  codePoint: U+003F, ?
+EOF
+)
+
+assert diff <(redump '\?' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Char
+  token: (pos = 0, size = 2)
+  codePoint: U+003F, ?
+EOF
+)
+
+# \(
+assert diff <(redump '\(' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Char
+  token: (pos = 0, size = 2)
+  codePoint: U+0028, (
+EOF
+)
+
+assert diff <(redump '\(' 'u') <(<<'EOF'
+flag: (mode = u, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Char
+  token: (pos = 0, size = 2)
+  codePoint: U+0028, (
+EOF
+)
+
+assert diff <(redump '\(' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Char
+  token: (pos = 0, size = 2)
+  codePoint: U+0028, (
+EOF
+)
+
+# \)
+assert diff <(redump '\)' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Char
+  token: (pos = 0, size = 2)
+  codePoint: U+0029, )
+EOF
+)
+
+assert diff <(redump '\)' 'u') <(<<'EOF'
+flag: (mode = u, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Char
+  token: (pos = 0, size = 2)
+  codePoint: U+0029, )
+EOF
+)
+
+assert diff <(redump '\)' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Char
+  token: (pos = 0, size = 2)
+  codePoint: U+0029, )
+EOF
+)
+
+# \[
+assert diff <(redump '\[' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Char
+  token: (pos = 0, size = 2)
+  codePoint: U+005B, [
+EOF
+)
+
+assert diff <(redump '\[' 'u') <(<<'EOF'
+flag: (mode = u, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Char
+  token: (pos = 0, size = 2)
+  codePoint: U+005B, [
+EOF
+)
+
+assert diff <(redump '\[' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Char
+  token: (pos = 0, size = 2)
+  codePoint: U+005B, [
+EOF
+)
+
+# \]
+assert diff <(redump '\]' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Char
+  token: (pos = 0, size = 2)
+  codePoint: U+005D, ]
+EOF
+)
+
+assert diff <(redump '\]' 'u') <(<<'EOF'
+flag: (mode = u, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Char
+  token: (pos = 0, size = 2)
+  codePoint: U+005D, ]
+EOF
+)
+
+assert diff <(redump '\]' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Char
+  token: (pos = 0, size = 2)
+  codePoint: U+005D, ]
+EOF
+)
+
+# \{
+assert diff <(redump '\{' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Char
+  token: (pos = 0, size = 2)
+  codePoint: U+007B, {
+EOF
+)
+
+assert diff <(redump '\{' 'u') <(<<'EOF'
+flag: (mode = u, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Char
+  token: (pos = 0, size = 2)
+  codePoint: U+007B, {
+EOF
+)
+
+assert diff <(redump '\{' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Char
+  token: (pos = 0, size = 2)
+  codePoint: U+007B, {
+EOF
+)
+
+# \}
+assert diff <(redump '\}' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Char
+  token: (pos = 0, size = 2)
+  codePoint: U+007D, }
+EOF
+)
+
+assert diff <(redump '\}' 'u') <(<<'EOF'
+flag: (mode = u, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Char
+  token: (pos = 0, size = 2)
+  codePoint: U+007D, }
+EOF
+)
+
+assert diff <(redump '\}' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Char
+  token: (pos = 0, size = 2)
+  codePoint: U+007D, }
+EOF
+)
+
+# \|
+assert diff <(redump '\|' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Char
+  token: (pos = 0, size = 2)
+  codePoint: U+007C, |
+EOF
+)
+
+assert diff <(redump '\|' 'u') <(<<'EOF'
+flag: (mode = u, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Char
+  token: (pos = 0, size = 2)
+  codePoint: U+007C, |
+EOF
+)
+
+assert diff <(redump '\|' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Char
+  token: (pos = 0, size = 2)
+  codePoint: U+007C, |
+EOF
+)
+
+# \/
+assert diff <(redump '\/' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Char
+  token: (pos = 0, size = 2)
+  codePoint: U+002F, /
+EOF
+)
+
+assert diff <(redump '\/' 'u') <(<<'EOF'
+flag: (mode = u, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Char
+  token: (pos = 0, size = 2)
+  codePoint: U+002F, /
+EOF
+)
+
+assert diff <(redump '\/' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Char
+  token: (pos = 0, size = 2)
+  codePoint: U+002F, /
+EOF
+)
