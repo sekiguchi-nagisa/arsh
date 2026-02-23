@@ -1,6 +1,7 @@
 #include <cstdint>
 
 #include <regex/dump.h>
+#include <regex/emit.h>
 #include <regex/parser.h>
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
@@ -19,6 +20,12 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
       regex::TreeDumper dumper;
       auto buf = dumper(tree);
       assert(buf.size());
+      regex::CodeGen codeGen;
+      if (auto re = codeGen(std::move(tree)); re.hasValue()) {
+        regex::RegexDumper reDumper;
+        buf = reDumper(re.unwrap());
+        assert(buf.size());
+      }
     }
   }
   return 0;
