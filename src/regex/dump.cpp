@@ -404,6 +404,18 @@ void RegexDumper::dump(const FlexBuffer<Inst> &ins) {
       inst += sizeof(CharIns);
       break;
     }
+    case OpCode::BeginCapture:
+      str += "(captureIndex=";
+      str += std::to_string(cast<BeginCaptureIns>(*inst).getCaptureIndex());
+      str += ')';
+      inst += sizeof(BeginCaptureIns);
+      break;
+    case OpCode::EndCapture:
+      str += "(captureIndex=";
+      str += std::to_string(cast<EndCaptureIns>(*inst).getCaptureIndex());
+      str += ')';
+      inst += sizeof(EndCaptureIns);
+      break;
     }
     this->base.dump(lineNum.c_str(), str);
   }

@@ -524,7 +524,7 @@ public:
 
   /**
    *
-   * @return   * if not a capture group, return 0
+   * @return if not a capture group, return 0
    */
   unsigned int getGroupIndex() const { return this->u32; }
 };

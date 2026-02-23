@@ -200,6 +200,20 @@ BACKTRACK:
           }
           goto BACKTRACK;
         }
+        vmcase(BeginCapture) {
+          auto &ins = cast<BeginCaptureIns>(*inst);
+          captures[ins.getCaptureIndex()].offset = input.getIter() - input.getBegin();
+          TRY(bts.push(Backtrack::newSetCapture(ins.getCaptureIndex(), Capture())));
+          inst += sizeof(BeginCaptureIns);
+          vmnext;
+        }
+        vmcase(EndCapture) {
+          auto &ins = cast<EndCaptureIns>(*inst);
+          captures[ins.getCaptureIndex()].size =
+              input.getIter() - (input.getBegin() + captures[ins.getCaptureIndex()].offset);
+          inst += sizeof(EndCaptureIns);
+          vmnext;
+        }
       }
     }
   }

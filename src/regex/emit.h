@@ -83,6 +83,8 @@ private:
   void todo(const Node &node, const char *str = nullptr); // TODO: remove
 
   bool generateAlt(const AltNode &node);
+
+  bool generateGroup(const GroupNode &node);
 };
 
 } // namespace arsh::regex

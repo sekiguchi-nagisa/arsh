@@ -1,0 +1,88 @@
+
+source $SCRIPT_DIR/../syntax/test_helper.arsh
+
+# (a)
+assert diff <(redump -m '12a' '(a)' '') <(<<'EOF'
+input: `12a'
+(offset=2, size=1)
+(offset=2, size=1)
+EOF
+)
+
+# (あ)
+assert diff <(redump -m '12aあr' '(あ)' '') <(<<'EOF'
+input: `12aあr'
+(offset=3, size=3)
+(offset=3, size=3)
+EOF
+)
+
+# (あい)r
+assert diff <(redump -m '12aあいr' '(あい)r' '') <(<<'EOF'
+input: `12aあいr'
+(offset=3, size=7)
+(offset=3, size=6)
+EOF
+)
+
+# (ab)|(cd)
+assert diff <(redump -m 'ab' '(ab)|(cd)' '') <(<<'EOF'
+input: `ab'
+(offset=0, size=2)
+(offset=0, size=2)
+(unset)
+EOF
+)
+
+assert diff <(redump -m 'cd' '(ab)|(cd)' '') <(<<'EOF'
+input: `cd'
+(offset=0, size=2)
+(unset)
+(offset=0, size=2)
+EOF
+)
+
+# (ab|abd)c
+assert diff <(redump -m '2abc' '(ab|abd)c' '') <(<<'EOF'
+input: `2abc'
+(offset=1, size=3)
+(offset=1, size=2)
+EOF
+)
+
+assert diff <(redump -m '2abdc' '(ab|abd)c' '') <(<<'EOF'
+input: `2abdc'
+(offset=1, size=4)
+(offset=1, size=3)
+EOF
+)
+
+# ((?<first>ab)|(?<second>abd))c
+assert diff <(redump -m '2abc' '((?<first>ab)|(?<second>abd))c' '') <(<<'EOF'
+input: `2abc'
+(offset=1, size=3)
+(offset=1, size=2)
+(offset=1, size=2)
+(unset)
+EOF
+)
+
+assert diff <(redump -m '2abdc' '((?<first>ab)|(?<second>abd))c' '') <(<<'EOF'
+input: `2abdc'
+(offset=1, size=4)
+(offset=1, size=3)
+(unset)
+(offset=1, size=3)
+EOF
+)
+
+# (?:(a)|(ab))(?:(c)|(bc))
+assert diff <(redump -m 'abc' '(?:(a)|(ab))(?:(c)|(bc))' '') <(<<'EOF'
+input: `abc'
+(offset=0, size=3)
+(offset=0, size=1)
+(unset)
+(unset)
+(offset=1, size=2)
+EOF
+)

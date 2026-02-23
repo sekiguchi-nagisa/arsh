@@ -122,32 +122,9 @@ bool CodeGen::generate(const Node &node) {
   case NodeKind::LookAround:
     this->todo(node);
     return false;
-  case NodeKind::Group: {
-    auto &groupNode = cast<GroupNode>(node);
-    switch (groupNode.getType()) {
-    case GroupNode::Type::CAPTURE:
-      this->todo(node, "support capture group");
-      return false;
-    case GroupNode::Type::NON_CAPTURE:
-      break;
-    case GroupNode::Type::MODIFIER: {
-      auto newModifier = this->modifiers();
-      if (auto set = groupNode.getSetModifiers(); set != Modifier::NONE) {
-        setFlag(newModifier, set);
-      }
-      if (auto unset = groupNode.getUnsetModifiers(); unset != Modifier::NONE) {
-        unsetFlag(newModifier, unset);
-      }
-      this->modifierStack.push(newModifier);
-      break;
-    }
-    }
-    TRY(this->generate(*groupNode.getPattern()));
-    if (groupNode.getType() == GroupNode::Type::MODIFIER) {
-      this->modifierStack.pop();
-    }
+  case NodeKind::Group:
+    TRY(this->generateGroup(cast<GroupNode>(node)));
     break;
-  }
   }
   return true;
 }
@@ -169,6 +146,33 @@ bool CodeGen::generateAlt(const AltNode &node) {
   unsigned int addr = this->builder.currentAddr();
   for (auto &e : jumps) {
     this->builder.emitAt<JumpIns>(e, addr);
+  }
+  return true;
+}
+
+bool CodeGen::generateGroup(const GroupNode &node) {
+  switch (node.getType()) {
+  case GroupNode::Type::CAPTURE:
+    assert(node.getGroupIndex());
+    this->builder.emit<BeginCaptureIns>(node.getGroupIndex());
+    TRY(this->generate(*node.getPattern()));
+    this->builder.emit<EndCaptureIns>(node.getGroupIndex());
+    return true;
+  case GroupNode::Type::NON_CAPTURE:
+    return this->generate(*node.getPattern());
+  case GroupNode::Type::MODIFIER: {
+    auto newModifier = this->modifiers();
+    if (auto set = node.getSetModifiers(); set != Modifier::NONE) {
+      setFlag(newModifier, set);
+    }
+    if (auto unset = node.getUnsetModifiers(); unset != Modifier::NONE) {
+      unsetFlag(newModifier, unset);
+    }
+    this->modifierStack.push(newModifier);
+    TRY(this->generate(*node.getPattern()));
+    this->modifierStack.pop();
+    return true;
+  }
   }
   return true;
 }

@@ -32,7 +32,9 @@ namespace arsh::regex {
   OP(End)                                                                                          \
   OP(Any)                                                                                          \
   OP(AnyExceptNL)                                                                                  \
-  OP(Char)
+  OP(Char)                                                                                         \
+  OP(BeginCapture)                                                                                 \
+  OP(EndCapture)
 
 enum class OpCode : uint8_t {
 #define GEN_ENUM(E) E,
@@ -136,6 +138,29 @@ struct CharIns : InstWithRtti<OpCode::Char> {
     int32_t codePoint;
     memcpy(&codePoint, this->code, sizeof(uint32_t));
     return codePoint;
+  }
+};
+
+struct BeginCaptureIns : InstWithRtti<OpCode::BeginCapture> {
+  uint8_t captureIndex[2];
+
+  explicit BeginCaptureIns(uint16_t index) { memcpy(this->captureIndex, &index, sizeof(uint16_t)); }
+
+  uint16_t getCaptureIndex() const {
+    uint16_t index;
+    memcpy(&index, this->captureIndex, sizeof(uint16_t));
+    return index;
+  }
+};
+
+struct EndCaptureIns : InstWithRtti<OpCode::EndCapture> {
+  uint8_t captureIndex[2];
+  explicit EndCaptureIns(uint16_t index) { memcpy(this->captureIndex, &index, sizeof(uint16_t)); }
+
+  uint16_t getCaptureIndex() const {
+    uint16_t index;
+    memcpy(&index, this->captureIndex, sizeof(uint16_t));
+    return index;
   }
 };
 
