@@ -587,7 +587,8 @@ std::unique_ptr<Node> Parser::parseAtomEscape(const EscapeParseOp op) {
   }
   case 'u': {
     this->iter--;
-    codePoint = this->parseUnicodeEscape(this->flag.is(Mode::BMP));
+    codePoint = this->parseUnicodeEscape(
+        {.mayIgnoreError = this->flag.is(Mode::BMP), .forceUnicodeMode = false});
     if (UnicodeUtil::isValidCodePoint(codePoint)) {
       goto CHAR;
     }
@@ -672,10 +673,10 @@ INVALID:
   return -1;
 }
 
-int Parser::parseUnicodeEscape(const bool mayIgnoreError) {
+int Parser::parseUnicodeEscape(const UnicodeEscapeParseOpt opt) {
   int codePoint = 0;
   const auto old = this->iter;
-  if (this->flag.isEitherUnicodeMode() && this->startsWith("\\u{")) {
+  if ((this->flag.isEitherUnicodeMode() || opt.forceUnicodeMode) && this->startsWith("\\u{")) {
     this->iter += 3;
     bool arithOverflow = false;
     while (!this->isEnd() && isHex(*this->iter)) {
@@ -690,7 +691,7 @@ int Parser::parseUnicodeEscape(const bool mayIgnoreError) {
       if (!this->isEnd()) {
         this->iter++;
       }
-      if (!mayIgnoreError) {
+      if (!opt.mayIgnoreError) {
         this->reportError(this->getTokenFrom(old), "invalid unicode escape: `%s'",
                           StringRef(old, this->iter - old).toString().c_str());
       }
@@ -698,7 +699,7 @@ int Parser::parseUnicodeEscape(const bool mayIgnoreError) {
     }
     this->iter++;
   } else {
-    codePoint = this->parseUnicodeEscapeBMP(mayIgnoreError);
+    codePoint = this->parseUnicodeEscapeBMP(opt.mayIgnoreError);
     if (codePoint < 0) {
       return -1;
     }
@@ -1005,7 +1006,8 @@ std::string Parser::parseCaptureGroupName(const char *prefixStart, const bool ma
   }
   if (codePoint == '\\') {
     this->iter--;
-    codePoint = TRY_CP(this->parseUnicodeEscape(mayIgnoreError));
+    codePoint = TRY_CP(
+        this->parseUnicodeEscape({.mayIgnoreError = mayIgnoreError, .forceUnicodeMode = true}));
   }
   appendCodePoint(name, codePoint);
   if (!isJSIdStart(this->idStartSet, codePoint)) {
@@ -1020,7 +1022,8 @@ std::string Parser::parseCaptureGroupName(const char *prefixStart, const bool ma
     }
     if (codePoint == '\\') {
       this->iter--;
-      codePoint = TRY_CP(this->parseUnicodeEscape(mayIgnoreError));
+      codePoint = TRY_CP(
+          this->parseUnicodeEscape({.mayIgnoreError = mayIgnoreError, .forceUnicodeMode = true}));
     }
     appendCodePoint(name, codePoint);
     if (!isJSIdContinue(this->idContinueSet, codePoint)) {

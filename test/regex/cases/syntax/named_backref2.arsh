@@ -206,3 +206,79 @@ pattern:
       index: 0
 EOF
 )
+
+# (?<\uD850\uDD55>s)\k<\u{24155}>    # always allow \u{} notation in group name even if bmp mode
+assert diff <(redump '(?<\uD850\uDD55>s)\k<\u{24155}>' '') <(<<'EOF'
+flag: (mode = , modifier = )
+captureGroupCount: 1
+namedCaptureGroups: [𤅕: 1]
+pattern:
+  kind: Seq
+  token: (pos = 0, size = 31)
+  patterns:
+    - kind: Group
+      token: (pos = 0, size = 18)
+      group: CAPTURE
+      index: 1
+      setModifiers:
+      unsetModifiers:
+      pattern:
+        kind: Char
+        token: (pos = 16, size = 1)
+        codePoint: U+0073, s
+    - kind: BackRef
+      token: (pos = 18, size = 13)
+      name: 𤅕
+      index: 0
+EOF
+)
+
+assert diff <(redump '(?<\uD850\uDD55>s)\k<\u{24155}>' 'u') <(<<'EOF'
+flag: (mode = u, modifier = )
+captureGroupCount: 1
+namedCaptureGroups: [𤅕: 1]
+pattern:
+  kind: Seq
+  token: (pos = 0, size = 31)
+  patterns:
+    - kind: Group
+      token: (pos = 0, size = 18)
+      group: CAPTURE
+      index: 1
+      setModifiers:
+      unsetModifiers:
+      pattern:
+        kind: Char
+        token: (pos = 16, size = 1)
+        codePoint: U+0073, s
+    - kind: BackRef
+      token: (pos = 18, size = 13)
+      name: 𤅕
+      index: 0
+EOF
+)
+
+assert diff <(redump '(?<\uD850\uDD55>s)\k<\u{24155}>' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+captureGroupCount: 1
+namedCaptureGroups: [𤅕: 1]
+pattern:
+  kind: Seq
+  token: (pos = 0, size = 31)
+  patterns:
+    - kind: Group
+      token: (pos = 0, size = 18)
+      group: CAPTURE
+      index: 1
+      setModifiers:
+      unsetModifiers:
+      pattern:
+        kind: Char
+        token: (pos = 16, size = 1)
+        codePoint: U+0073, s
+    - kind: BackRef
+      token: (pos = 18, size = 13)
+      name: 𤅕
+      index: 0
+EOF
+)

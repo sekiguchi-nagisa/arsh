@@ -172,13 +172,18 @@ private:
 
   int parseUnicodeEscapeBMP(bool ignoreError);
 
+  struct UnicodeEscapeParseOpt {
+    bool mayIgnoreError;   // if true, ignore parse error (always report surrogate code point)
+    bool forceUnicodeMode; // if true, always allow \u{UUUUUU} notation
+  };
+
   /**
    *
-   * @param mayIgnoreError
+   * @param opt
    * if true, ignore parse error (always report surrogate code point event if true)
    * @return
    */
-  int parseUnicodeEscape(bool mayIgnoreError);
+  int parseUnicodeEscape(UnicodeEscapeParseOpt opt);
 
   std::unique_ptr<PropertyNode> parseUnicodePropertyEscape();
 
