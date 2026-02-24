@@ -17,6 +17,7 @@
 
 #### Core
 
+- **Breaking Change**: not allow surrogate code in escaped string ``ex. \uD800``
 - allow trailing comma in function arguments
 - unquote backslash of prefix env names like command name
 

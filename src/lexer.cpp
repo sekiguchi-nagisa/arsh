@@ -325,6 +325,9 @@ bool Lexer::escapedSingleToString(Token token, std::string &out) const {
       auto ret = parseEscapeSeq(iter, end, false);
       switch (ret.kind) {
       case EscapeSeqResult::OK_CODE: {
+        if (!UnicodeUtil::isValidCodePoint(ret.codePoint)) {
+          return false;
+        }
         char buf[4];
         unsigned int size = UnicodeUtil::codePointToUtf8(ret.codePoint, buf);
         assert(size);

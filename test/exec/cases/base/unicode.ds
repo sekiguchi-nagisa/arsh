@@ -46,7 +46,7 @@ for e in $expected {
 }
 
 $ex = 324
-try { $ucd.category($'\uD800') } catch e { $ex = $e; } # surrogate
+try { $ucd.category($'\xED\xA0\x80') } catch e { $ex = $e; } # surrogate
 assert ($ex as ArgumentError).message() == 'must be valid single utf8 code point'
 
 $ex = 34
@@ -237,7 +237,7 @@ for e in $expected {
 }
 
 $ex = 324
-try { $ucd.script($'\uD800') } catch e { $ex = $e; } # surrogate
+try { $ucd.script($'\xED\xA0\x80') } catch e { $ex = $e; } # surrogate
 assert ($ex as ArgumentError).message() == 'must be valid single utf8 code point'
 
 $ex = 34
