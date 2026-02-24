@@ -17,9 +17,15 @@
 
 #### Core
 
-- **Breaking Change**: not allow surrogate code in escaped string ``ex. \uD800``
+- **Breaking Change**: not allow surrogate code of Unicode escape (``ex. \uD800``)
+- **Breaking Change**: octal escape larger than 255 is now truncated (up to 255, `& 0xFF`)
+    - ``$'\777''`` is equivalent to ``$'\377''``
 - allow trailing comma in function arguments
 - unquote backslash of prefix env names like command name
+
+#### Builtin
+
+- **Breaking Change**: in builtin echo and printf, octal escape larger than 255 is truncated
 
 ## [0.40.0] - 2025-12-30
 

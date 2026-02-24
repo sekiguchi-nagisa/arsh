@@ -12,6 +12,8 @@ assert "$(echo -neW -n 'hello\t\nworld' && echo world)" == '-neW -n hello\t\nwor
 assert("$(echo -e 'hello\c' world)" == "hello")
 assert("$(echo -e 'hello\t\nworld')" == $'hello\t\nworld')
 assert("$(echo -e '\0101\066')" == "A6")    # octal number
+assert "$(echo -e '\0377')" == $'\uFF'       # octal
+assert "$(echo -e '\0777')" == $'\uFF'       # octal escape greater than 255 is truncated (& 0xFF)
 assert("$(echo -e '\x09\x7E')" == $'\t~')   # hex number
 assert("$(echo -e '\x9\x7e')" == $'\t~')    # hex number
 assert "$(echo -e '\xC2\xA3')" == $'\xC2\xA3'   # hex (utf-8)

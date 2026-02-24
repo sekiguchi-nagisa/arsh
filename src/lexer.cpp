@@ -540,7 +540,7 @@ EscapeSeqResult parseEscapeSeq(const char *begin, const char *end, bool needOcta
         break;
       }
     }
-    return ok(static_cast<int>(code), static_cast<unsigned short>(begin - old));
+    return ok(static_cast<int>(code & 0xFF), static_cast<unsigned short>(begin - old));
   }
 }
 

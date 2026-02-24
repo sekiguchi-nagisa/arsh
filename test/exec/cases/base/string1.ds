@@ -12,6 +12,8 @@ assert('a\o' == $'a\o')
 assert " $ " == ' $ '
 assert "$" == '$'
 assert($'\101\066' == "A6")     # octal
+assert $'\377' == $'\uFF'
+assert $'\777' == $'\377'  # octal escape greater than 255 is truncated (& 0xFF)
 assert($'\x09\x7E' == $'\t~')  # hex
 assert($'\x09\x7e' == $'\t~')  # hex
 assert($'\r' == $'\x0D')    # hex

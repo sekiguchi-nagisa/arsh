@@ -118,6 +118,10 @@ printf -v var '%s=%b\n' 'key\tvalue1' 'key\tvalue2'  # %b directive (interpret e
 assert $reply['var'] == 'key\tvalue1=' + $'key\tvalue2\n'
 
 $reply.clear()
+printf -v var '%s=%b\n' 'key\0777value1' 'key\0777value2'  # %b directive (interpret escape sequence)
+assert $reply['var'] == 'key\0777value1=' + $'key\377value2\n' # truncated (octal escape up to 255)
+
+$reply.clear()
 printf -v var '(%b)'  # %b directive (no-arg)
 assert $reply['var'] == '()'
 
