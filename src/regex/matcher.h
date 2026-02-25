@@ -17,6 +17,7 @@
 #ifndef ARSH_REGEX_MATCHER_H
 #define ARSH_REGEX_MATCHER_H
 
+#include "misc/codepoint_set.hpp"
 #include "misc/flag_util.hpp"
 
 namespace arsh::regex {
@@ -53,6 +54,12 @@ public:
   }
 
   const auto &getSets() const { return this->sets; }
+};
+
+enum class MatcherType : unsigned char {
+  ASCII,
+  OWNED_CODE_POINT_SET,
+  BORROWED_CODE_POINT_SET,
 };
 
 } // namespace arsh::regex
