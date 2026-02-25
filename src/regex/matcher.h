@@ -32,21 +32,27 @@ inline bool isWord(int codePoint) {
 
 class AsciiSet {
 private:
-  uint64_t high; // 64-127
-  uint64_t low;  // 0-63
+  uint64_t sets[2]{};
 
 public:
-  AsciiSet(uint64_t head, uint64_t tail) : high(head), low(tail) {}
+  AsciiSet(uint64_t first, uint64_t second) : sets{first, second} {}
 
-  bool contains(const int codePoint) const {
-    if (codePoint < 128 && codePoint > -1) {
-      if (codePoint < 64) {
-        return hasFlag(this->low, static_cast<uint64_t>(1) << static_cast<uint64_t>(codePoint));
-      }
-      return hasFlag(this->high, static_cast<uint64_t>(1) << static_cast<uint64_t>(codePoint - 64));
+  void add(int codePoint) {
+    if (codePoint <= 127 && codePoint > -1) {
+      setFlag(this->sets[static_cast<unsigned int>(codePoint) / 64],
+              static_cast<uint64_t>(1) << (static_cast<unsigned int>(codePoint) % 64));
+    }
+  }
+
+  bool contains(int codePoint) const {
+    if (codePoint <= 127 && codePoint > -1) {
+      return hasFlag(this->sets[static_cast<unsigned int>(codePoint) / 64],
+                     static_cast<uint64_t>(1) << (static_cast<unsigned int>(codePoint) % 64));
     }
     return false;
   }
+
+  const auto &getSets() const { return this->sets; }
 };
 
 } // namespace arsh::regex
