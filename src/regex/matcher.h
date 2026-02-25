@@ -17,6 +17,8 @@
 #ifndef ARSH_REGEX_MATCHER_H
 #define ARSH_REGEX_MATCHER_H
 
+#include "misc/flag_util.hpp"
+
 namespace arsh::regex {
 
 inline bool isLineTerminator(int codePoint) {
@@ -27,6 +29,25 @@ inline bool isWord(int codePoint) {
   return (codePoint >= 'A' && codePoint <= 'Z') || (codePoint >= 'a' && codePoint <= 'z') ||
          (codePoint >= '0' && codePoint <= '9') || codePoint == '_';
 }
+
+class AsciiSet {
+private:
+  uint64_t high; // 64-127
+  uint64_t low;  // 0-63
+
+public:
+  AsciiSet(uint64_t head, uint64_t tail) : high(head), low(tail) {}
+
+  bool contains(const int codePoint) const {
+    if (codePoint < 128 && codePoint > -1) {
+      if (codePoint < 64) {
+        return hasFlag(this->low, static_cast<uint64_t>(1) << static_cast<uint64_t>(codePoint));
+      }
+      return hasFlag(this->high, static_cast<uint64_t>(1) << static_cast<uint64_t>(codePoint - 64));
+    }
+    return false;
+  }
+};
 
 } // namespace arsh::regex
 
