@@ -2,6 +2,7 @@
 #include "../test_common.h"
 
 #include <regex/dump.h>
+#include <regex/emit.h>
 #include <regex/flag.h>
 #include <regex/input.h>
 #include <regex/parser.h>
@@ -291,6 +292,48 @@ TEST_P(RegexTest, base) {
 
 INSTANTIATE_TEST_SUITE_P(RegexTest, RegexTest,
                          ::testing::ValuesIn(getTargetTestCases(REGEX_TEST_DIR)));
+
+static Optional<regex::Regex> compile(StringRef pattern, regex::Flag flag = regex::Flag()) {
+  regex::Parser parser;
+  if (auto tree = parser(pattern, flag)) {
+    regex::CodeGen codegen;
+    return codegen(std::move(tree));
+  }
+  return {};
+}
+
+TEST(RegexMatchTest, null) {
+  char data[] = {'a', 'b', '\0', 'c', 'd'};
+  StringRef text(data, sizeof(data));
+
+  auto re = compile("ab.");
+  ASSERT_TRUE(re.hasValue());
+  FlexBuffer<regex::Capture> captures;
+  auto status = regex::match(re.unwrap(), text, captures);
+  ASSERT_EQ(regex::MatchStatus::OK, status);
+  ASSERT_EQ(1, captures.size());
+  ASSERT_EQ(0, captures[0].offset);
+  ASSERT_EQ(3, captures[0].size);
+
+  re = compile("\\0");
+  ASSERT_TRUE(re.hasValue());
+  status = regex::match(re.unwrap(), text, captures);
+  ASSERT_EQ(regex::MatchStatus::OK, status);
+  ASSERT_EQ(1, captures.size());
+  ASSERT_EQ(2, captures[0].offset);
+  ASSERT_EQ(1, captures[0].size);
+
+  re = compile("\\00");
+  ASSERT_TRUE(re.hasValue());
+  status = regex::match(re.unwrap(), text, captures);
+  ASSERT_EQ(regex::MatchStatus::OK, status);
+  ASSERT_EQ(1, captures.size());
+  ASSERT_EQ(2, captures[0].offset);
+  ASSERT_EQ(1, captures[0].size);
+
+  re = compile("\\00", regex::Flag(regex::Mode::UNICODE, {}));
+  ASSERT_FALSE(re.hasValue());
+}
 
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);

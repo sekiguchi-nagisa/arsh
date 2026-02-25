@@ -129,6 +129,7 @@ MatchStatus match(const Regex &regex, const StringRef text, FlexBuffer<Capture> 
   }
   const char *oldIter = input.getIter();
   const Inst *inst = regex.getInstSeq().data();
+  captures.clear();
   captures.resize(regex.getCaptureGroupCount() + 1);
   BacktrackStack bts(inst);
   bts.push(Backtrack()); // push dummy
