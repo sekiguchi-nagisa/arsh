@@ -23,6 +23,11 @@ inline bool isLineTerminator(int codePoint) {
   return codePoint == '\n' || codePoint == '\r' || codePoint == 0x2028 || codePoint == 0x2029;
 }
 
+inline bool isWord(int codePoint) {
+  return (codePoint >= 'A' && codePoint <= 'Z') || (codePoint >= 'a' && codePoint <= 'z') ||
+         (codePoint >= '0' && codePoint <= '9') || codePoint == '_';
+}
+
 } // namespace arsh::regex
 
 #endif // ARSH_REGEX_MATCHER_H

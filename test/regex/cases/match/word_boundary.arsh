@@ -1,0 +1,113 @@
+
+source $SCRIPT_DIR/../syntax/test_helper.arsh
+
+# \ba
+assert diff <(redump -m 'abcd' '\ba' '') <(<<'EOF'
+input: `abcd'
+(offset=0, size=1)
+EOF
+)
+
+assert diff <(redump -m ' abcd' '\ba' '') <(<<'EOF'
+input: ` abcd'
+(offset=1, size=1)
+EOF
+)
+
+assert diff <(redump -m '@@@abcd' '\ba' '') <(<<'EOF'
+input: `@@@abcd'
+(offset=3, size=1)
+EOF
+)
+
+assert diff <(redump -m '11abcd' '\ba' '') <(<<'EOF'
+input: `11abcd'
+failed
+EOF
+)
+
+# c\b
+assert diff <(redump -m 'abc' 'c\b' '') <(<<'EOF'
+input: `abc'
+(offset=2, size=1)
+EOF
+)
+
+assert diff <(redump -m ' abc' 'c\b' '') <(<<'EOF'
+input: ` abc'
+(offset=3, size=1)
+EOF
+)
+
+assert diff <(redump -m 'abc ' 'c\b' '') <(<<'EOF'
+input: `abc '
+(offset=2, size=1)
+EOF
+)
+
+assert diff <(redump -m 'abc@@' 'c\b' '') <(<<'EOF'
+input: `abc@@'
+(offset=2, size=1)
+EOF
+)
+
+assert diff <(redump -m 'abc_@' '_\b' '') <(<<'EOF'
+input: `abc_@'
+(offset=3, size=1)
+EOF
+)
+
+# \B
+assert diff <(redump -m ' abc' '\B ' '') <(<<'EOF'
+input: ` abc'
+(offset=0, size=1)
+EOF
+)
+
+assert diff <(redump -m 'abc ' '\B ' '') <(<<'EOF'
+input: `abc '
+failed
+EOF
+)
+
+assert diff <(redump -m 'abc ' ' \B' '') <(<<'EOF'
+input: `abc '
+(offset=3, size=1)
+EOF
+)
+
+assert diff <(redump -m ' abc' ' \B' '') <(<<'EOF'
+input: ` abc'
+failed
+EOF
+)
+
+assert diff <(redump -m 'abcd' 'c\B' '') <(<<'EOF'
+input: `abcd'
+(offset=2, size=1)
+EOF
+)
+
+assert diff <(redump -m 'abc0' 'c\B' '') <(<<'EOF'
+input: `abc0'
+(offset=2, size=1)
+EOF
+)
+
+assert diff <(redump -m 'abcQ' 'c\B' '') <(<<'EOF'
+input: `abcQ'
+(offset=2, size=1)
+EOF
+)
+
+assert diff <(redump -m 'abc_' 'c\B' '') <(<<'EOF'
+input: `abc_'
+(offset=2, size=1)
+EOF
+)
+
+assert diff <(redump -m 'abc@' 'c\B' '') <(<<'EOF'
+input: `abc@'
+failed
+EOF
+)

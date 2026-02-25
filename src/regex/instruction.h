@@ -30,6 +30,7 @@ namespace arsh::regex {
   OP(Alt)                                                                                          \
   OP(Start)                                                                                        \
   OP(End)                                                                                          \
+  OP(Word)                                                                                         \
   OP(Any)                                                                                          \
   OP(AnyExceptNL)                                                                                  \
   OP(Char)                                                                                         \
@@ -114,6 +115,15 @@ struct EndIns : InstWithRtti<OpCode::End> {
   bool multiline;
 
   explicit EndIns(bool ml) : multiline(ml) {}
+};
+
+/**
+ * for word boundary (\\b \\B)
+ */
+struct WordIns : InstWithRtti<OpCode::Word> {
+  bool invert;
+
+  explicit WordIns(bool invert) : invert(invert) {}
 };
 
 /**

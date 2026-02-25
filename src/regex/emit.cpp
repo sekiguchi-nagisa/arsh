@@ -93,7 +93,8 @@ bool CodeGen::generate(const Node &node) {
     this->todo(node);
     return false;
   case NodeKind::Boundary: {
-    switch (cast<BoundaryNode>(node).getType()) {
+    auto t = cast<BoundaryNode>(node).getType();
+    switch (t) {
     case BoundaryNode::Type::START:
       this->builder.emit<StartIns>(hasFlag(this->modifiers(), Modifier::MULTILINE));
       return true;
@@ -102,8 +103,8 @@ bool CodeGen::generate(const Node &node) {
       return true;
     case BoundaryNode::Type::WORD:
     case BoundaryNode::Type::NOT_WORD:
-      this->todo(node, "WORD boundary");
-      return false;
+      this->builder.emit<WordIns>(t == BoundaryNode::Type::NOT_WORD);
+      return true;
     }
     break;
   }
