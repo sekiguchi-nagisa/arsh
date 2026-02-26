@@ -53,7 +53,12 @@ public:
     return false;
   }
 
-  const auto &getSets() const { return this->sets; }
+  void complement() {
+    this->sets[0] = ~this->sets[0];
+    this->sets[1] = ~this->sets[1];
+  }
+
+  const auto &underlying() const { return this->sets; }
 };
 
 enum class MatcherType : unsigned char {
