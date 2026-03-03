@@ -39,6 +39,13 @@ public:
 
   void add(int first, int last);
 
+  template <unsigned int N>
+  void add(const int (&data)[N]) {
+    this->add(data, N);
+  }
+
+  void add(const int *data, unsigned int len);
+
   void add(const CodePointSetBuilder &other);
 
   /**

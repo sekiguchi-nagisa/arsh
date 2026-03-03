@@ -108,6 +108,8 @@
     E(Single_Quote) \
     E(XID_Continue_Delta) \
     E(XID_Start_Delta) \
+    E(ESRegexClassDigit) \
+    E(ESRegexClassWord) \
 
 
 #define EACH_UCP_LONE_PROPERTY_PRIME(E) \
@@ -171,5 +173,5 @@
     E(XID_Start) \
     /* end */
 
-#define UCP_LONE_PROPERTY_PRIME_INTERNAL_SIZE 17
-#define UCP_LONE_PROPERTY_SIZE 70
+#define UCP_LONE_PROPERTY_PRIME_INTERNAL_SIZE 19
+#define UCP_LONE_PROPERTY_SIZE 72

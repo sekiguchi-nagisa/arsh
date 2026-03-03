@@ -60,6 +60,16 @@ void CodePointSetBuilder::add(int first, int last) {
   this->sortAndCompact();
 }
 
+void CodePointSetBuilder::add(const int *data, const unsigned int len) {
+  for (unsigned int i = 0; i < len; i++) {
+    int codePoint = data[i];
+    if (UnicodeUtil::isCodePoint(codePoint)) {
+      this->codePointRanges.emplace_back(codePoint, codePoint);
+    }
+  }
+  this->sortAndCompact();
+}
+
 void CodePointSetBuilder::complement() {
   std::vector<std::pair<int, int>> buf;
   const unsigned int size = this->codePointRanges.size();

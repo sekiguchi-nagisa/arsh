@@ -318,8 +318,6 @@ static Optional<Lone> parseLone(const StringRef ref) {
   return {};
 }
 
-constexpr Property fromLone(Lone l) { return {Property::Name::Lone, toUnderlying(l)}; }
-
 static bool getLoneSet(const Lone lone, BuilderOrSet out) {
   switch (lone) {
 #define GEN_CASE(E) case Lone::E:
@@ -336,10 +334,10 @@ static bool getLoneSet(const Lone lone, BuilderOrSet out) {
     // Generated from: Lowercase + Uppercase + Lt + Lm + Lo + Nl + Other_Alphabetic
     CodePointSetBuilder builder;
     constexpr Property combs[] = {
-        fromLone(Lone::Lowercase),        fromLone(Lone::Uppercase),
-        Property::category(Category::Lt), Property::category(Category::Lm),
-        Property::category(Category::Lo), Property::category(Category::Nl),
-        fromLone(Lone::Other_Alphabetic),
+        Property::lone(Lone::Lowercase),        Property::lone(Lone::Uppercase),
+        Property::category(Category::Lt),       Property::category(Category::Lm),
+        Property::category(Category::Lo),       Property::category(Category::Nl),
+        Property::lone(Lone::Other_Alphabetic),
     };
     for (auto &p : combs) {
       getPropertySet(p, BuilderOrSet(builder));
@@ -376,8 +374,8 @@ static bool getLoneSet(const Lone lone, BuilderOrSet out) {
     constexpr Property combs[] = {
         Property::category(Category::Mn), Property::category(Category::Me),
         Property::category(Category::Cf), Property::category(Category::Lm),
-        Property::category(Category::Sk), fromLone(Lone::MidLetter),
-        fromLone(Lone::MidNumLet),        fromLone(Lone::Single_Quote),
+        Property::category(Category::Sk), Property::lone(Lone::MidLetter),
+        Property::lone(Lone::MidNumLet),  Property::lone(Lone::Single_Quote),
     };
     for (auto &p : combs) {
       getPropertySet(p, BuilderOrSet(builder));
@@ -393,8 +391,8 @@ static bool getLoneSet(const Lone lone, BuilderOrSet out) {
     // Generated from: Lowercase + Uppercase + Lt
     CodePointSetBuilder builder;
     constexpr Property combs[] = {
-        fromLone(Lone::Lowercase),
-        fromLone(Lone::Uppercase),
+        Property::lone(Lone::Lowercase),
+        Property::lone(Lone::Uppercase),
         Property::category(Category::Lt),
     };
     for (auto &p : combs) {
@@ -417,14 +415,14 @@ static bool getLoneSet(const Lone lone, BuilderOrSet out) {
      */
     CodePointSetBuilder builder;
     constexpr Property combs[] = {
-        fromLone(Lone::Other_Default_Ignorable_Code_Point),
+        Property::lone(Lone::Other_Default_Ignorable_Code_Point),
         Property::category(Category::Cf),
-        fromLone(Lone::Variation_Selector),
+        Property::lone(Lone::Variation_Selector),
     };
     for (auto &p : combs) {
       getPropertySet(p, BuilderOrSet(builder));
     }
-    builder.sub(getPropertySet(fromLone(Lone::White_Space)).ref());
+    builder.sub(getPropertySet(Property::lone(Lone::White_Space)).ref());
     {
       CodePointSetBuilder tmp;
       tmp.add(0xFFF9, 0xFFFB);
@@ -433,7 +431,7 @@ static bool getLoneSet(const Lone lone, BuilderOrSet out) {
       tmp.add(0x13430, 0x1343F);
       builder.sub(tmp.build().ref());
     }
-    builder.sub(getPropertySet(fromLone(Lone::Prepended_Concatenation_Mark)).ref());
+    builder.sub(getPropertySet(Property::lone(Lone::Prepended_Concatenation_Mark)).ref());
 
     if (out.isBuilder) {
       out.builder->add(builder);
@@ -453,7 +451,7 @@ static bool getLoneSet(const Lone lone, BuilderOrSet out) {
         Property::category(Category::C),
         Property::category(Category::Zl),
         Property::category(Category::Zp),
-        fromLone(Lone::Grapheme_Extend),
+        Property::lone(Lone::Grapheme_Extend),
     };
     for (auto &p : combs) {
       getPropertySet(p, BuilderOrSet(builder));
@@ -472,7 +470,7 @@ static bool getLoneSet(const Lone lone, BuilderOrSet out) {
     constexpr Property combs[] = {
         Property::category(Category::Me),
         Property::category(Category::Mn),
-        fromLone(Lone::Other_Grapheme_Extend),
+        Property::lone(Lone::Other_Grapheme_Extend),
     };
     for (auto &p : combs) {
       getPropertySet(p, BuilderOrSet(builder));
@@ -494,15 +492,15 @@ static bool getLoneSet(const Lone lone, BuilderOrSet out) {
      */
     CodePointSetBuilder builder;
     constexpr Property combs[] = {
-        fromLone(Lone::ID_Start),         Property::category(Category::Mn),
+        Property::lone(Lone::ID_Start),   Property::category(Category::Mn),
         Property::category(Category::Mc), Property::category(Category::Nd),
-        Property::category(Category::Pc), fromLone(Lone::Other_ID_Continue),
+        Property::category(Category::Pc), Property::lone(Lone::Other_ID_Continue),
     };
     for (auto &p : combs) {
       getPropertySet(p, BuilderOrSet(builder));
     }
-    builder.sub(getPropertySet(fromLone(Lone::Pattern_Syntax)).ref());
-    builder.sub(getPropertySet(fromLone(Lone::Pattern_White_Space)).ref());
+    builder.sub(getPropertySet(Property::lone(Lone::Pattern_Syntax)).ref());
+    builder.sub(getPropertySet(Property::lone(Lone::Pattern_White_Space)).ref());
     if (out.isBuilder) {
       out.builder->add(builder);
     } else {
@@ -519,13 +517,13 @@ static bool getLoneSet(const Lone lone, BuilderOrSet out) {
     constexpr Property combs[] = {
         Property::category(Category::L),
         Property::category(Category::Nl),
-        fromLone(Lone::Other_ID_Start),
+        Property::lone(Lone::Other_ID_Start),
     };
     for (auto &p : combs) {
       getPropertySet(p, BuilderOrSet(builder));
     }
-    builder.sub(getPropertySet(fromLone(Lone::Pattern_Syntax)).ref());
-    builder.sub(getPropertySet(fromLone(Lone::Pattern_White_Space)).ref());
+    builder.sub(getPropertySet(Property::lone(Lone::Pattern_Syntax)).ref());
+    builder.sub(getPropertySet(Property::lone(Lone::Pattern_White_Space)).ref());
     if (out.isBuilder) {
       out.builder->add(builder);
     } else {
@@ -537,7 +535,7 @@ static bool getLoneSet(const Lone lone, BuilderOrSet out) {
     // Generated from: Ll + Other_Lowercase
     CodePointSetBuilder builder;
     getPropertySet(Property::category(Category::Ll), BuilderOrSet(builder));
-    getPropertySet(fromLone(Lone::Other_Lowercase), BuilderOrSet(builder));
+    getPropertySet(Property::lone(Lone::Other_Lowercase), BuilderOrSet(builder));
     if (out.isBuilder) {
       out.builder->add(builder);
     } else {
@@ -549,7 +547,7 @@ static bool getLoneSet(const Lone lone, BuilderOrSet out) {
     // Generated from: Sm + Other_Math
     CodePointSetBuilder builder;
     getPropertySet(Property::category(Category::Sm), BuilderOrSet(builder));
-    getPropertySet(fromLone(Lone::Other_Math), BuilderOrSet(builder));
+    getPropertySet(Property::lone(Lone::Other_Math), BuilderOrSet(builder));
     if (out.isBuilder) {
       out.builder->add(builder);
     } else {
@@ -561,7 +559,7 @@ static bool getLoneSet(const Lone lone, BuilderOrSet out) {
     // Generated from: Lu + Other_Uppercase
     CodePointSetBuilder builder;
     getPropertySet(Property::category(Category::Lu), BuilderOrSet(builder));
-    getPropertySet(fromLone(Lone::Other_Uppercase), BuilderOrSet(builder));
+    getPropertySet(Property::lone(Lone::Other_Uppercase), BuilderOrSet(builder));
     if (out.isBuilder) {
       out.builder->add(builder);
     } else {
@@ -571,8 +569,8 @@ static bool getLoneSet(const Lone lone, BuilderOrSet out) {
   }
   case Lone::XID_Continue: {
     CodePointSetBuilder builder;
-    getPropertySet(fromLone(Lone::ID_Continue), BuilderOrSet(builder));
-    builder.sub(getPropertySet(fromLone(Lone::XID_Continue_Delta)).ref());
+    getPropertySet(Property::lone(Lone::ID_Continue), BuilderOrSet(builder));
+    builder.sub(getPropertySet(Property::lone(Lone::XID_Continue_Delta)).ref());
     if (out.isBuilder) {
       out.builder->add(builder);
     } else {
@@ -582,8 +580,23 @@ static bool getLoneSet(const Lone lone, BuilderOrSet out) {
   }
   case Lone::XID_Start: {
     CodePointSetBuilder builder;
-    getPropertySet(fromLone(Lone::ID_Start), BuilderOrSet(builder));
-    builder.sub(getPropertySet(fromLone(Lone::XID_Start_Delta)).ref());
+    getPropertySet(Property::lone(Lone::ID_Start), BuilderOrSet(builder));
+    builder.sub(getPropertySet(Property::lone(Lone::XID_Start_Delta)).ref());
+    if (out.isBuilder) {
+      out.builder->add(builder);
+    } else {
+      *out.set = builder.build();
+    }
+    return true;
+  }
+  case Lone::ESRegexClassSpace: { // WhiteSpace + LineTerminator
+    CodePointSetBuilder builder;
+    constexpr int codes[] = {
+        0x0009, 0x000B, 0x000C, 0xFEFF, // WhiteSpace (except for Space_Separator)
+        0x000A, 0x000D, 0x2028, 0x2029, // LineTerminator
+    };
+    builder.add(codes);
+    getPropertySet(Property::category(Category::Zs), BuilderOrSet(builder)); // Space_Separator
     if (out.isBuilder) {
       out.builder->add(builder);
     } else {
@@ -673,7 +686,7 @@ Optional<Property> parseProperty(StringRef name, StringRef value, std::string *e
       return Property::category(ret.unwrap());
     }
     if (auto ret = parseLone(value); ret.hasValue()) {
-      return fromLone(ret.unwrap());
+      return Property::lone(ret.unwrap());
     }
     break;
   }

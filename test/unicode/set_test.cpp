@@ -254,6 +254,18 @@ TEST(UCPTest, lone) {
   ASSERT_EQ("", ucp::toString(ucp::Lone::Other_Alphabetic, true));
   ASSERT_EQ("", ucp::toString(ucp::Lone::Other_Alphabetic, false));
   ASSERT_FALSE(ucp::parseProperty("Other_Alphabetic", nullptr).hasValue());
+
+  ASSERT_EQ("", ucp::toString(ucp::Lone::ESRegexClassDigit, true));
+  ASSERT_EQ("", ucp::toString(ucp::Lone::ESRegexClassDigit, false));
+  ASSERT_FALSE(ucp::parseProperty("ESRegexClassDigit", nullptr).hasValue());
+
+  ASSERT_EQ("", ucp::toString(ucp::Lone::ESRegexClassWord, true));
+  ASSERT_EQ("", ucp::toString(ucp::Lone::ESRegexClassWord, false));
+  ASSERT_FALSE(ucp::parseProperty("ESRegexClassWord", nullptr).hasValue());
+
+  ASSERT_EQ("", ucp::toString(ucp::Lone::ESRegexClassSpace, true));
+  ASSERT_EQ("", ucp::toString(ucp::Lone::ESRegexClassSpace, false));
+  ASSERT_FALSE(ucp::parseProperty("ESRegexClassSpace", nullptr).hasValue());
 }
 
 static void addRange(CodePointSetBuilder &builder, const int first, const int last) {
@@ -542,6 +554,85 @@ TEST_P(PropertyNameTest, base) { ASSERT_NO_FATAL_FAILURE(doTest()); }
 
 INSTANTIATE_TEST_SUITE_P(PropertyNameTest, PropertyNameTest,
                          ::testing::ValuesIn(property_name_test_table));
+
+TEST(ESRegexClassTest, digit) {
+  auto set = ucp::getPropertySet(ucp::Property::lone(ucp::Lone::ESRegexClassDigit));
+  ASSERT_TRUE(set.ref().contains('0'));
+  ASSERT_TRUE(set.ref().contains('1'));
+  ASSERT_TRUE(set.ref().contains('2'));
+  ASSERT_TRUE(set.ref().contains('3'));
+  ASSERT_TRUE(set.ref().contains('4'));
+  ASSERT_TRUE(set.ref().contains('5'));
+  ASSERT_TRUE(set.ref().contains('6'));
+  ASSERT_TRUE(set.ref().contains('7'));
+  ASSERT_TRUE(set.ref().contains('8'));
+  ASSERT_TRUE(set.ref().contains('9'));
+  ASSERT_FALSE(set.ref().contains('A'));
+  ASSERT_FALSE(set.ref().contains(0xFF10)); // ０
+  ASSERT_FALSE(set.ref().contains(0xFF11)); // １
+  ASSERT_FALSE(set.ref().contains(0xFF12));
+  ASSERT_FALSE(set.ref().contains(0xFF13));
+  ASSERT_FALSE(set.ref().contains(0xFF14));
+  ASSERT_FALSE(set.ref().contains(0xFF15));
+  ASSERT_FALSE(set.ref().contains(0xFF16));
+  ASSERT_FALSE(set.ref().contains(0xFF17));
+  ASSERT_FALSE(set.ref().contains(0xFF18));
+  ASSERT_FALSE(set.ref().contains(0xFF19)); // ９
+}
+
+TEST(ESRegexClassTest, word) {
+  auto set = ucp::getPropertySet(ucp::Property::lone(ucp::Lone::ESRegexClassWord));
+  for (int i = 0; i < 10; i++) {
+    int code = '0' + i;
+    ASSERT_TRUE(set.ref().contains(code));
+  }
+  for (int i = 'a'; i <= 'z'; i++) {
+    int lower = i;
+    ASSERT_TRUE(set.ref().contains(lower));
+    int upper = 'A' + (i - 'a');
+    ASSERT_TRUE(set.ref().contains(upper));
+  }
+  ASSERT_TRUE(set.ref().contains('_'));
+  ASSERT_FALSE(set.ref().contains(0xFF15));
+  ASSERT_FALSE(set.ref().contains(0x3042));
+  ASSERT_FALSE(set.ref().contains(0x0410));
+}
+
+TEST(ESRegexClassTest, space) {
+  auto set = ucp::getPropertySet(ucp::Property::lone(ucp::Lone::ESRegexClassSpace));
+  ASSERT_TRUE(set.ref().contains(' '));
+  ASSERT_TRUE(set.ref().contains('\t'));
+  ASSERT_TRUE(set.ref().contains('\r'));
+  ASSERT_TRUE(set.ref().contains('\n'));
+  ASSERT_TRUE(set.ref().contains('\f'));
+  ASSERT_TRUE(set.ref().contains('\v'));
+  ASSERT_TRUE(set.ref().contains(0x2028));
+  ASSERT_TRUE(set.ref().contains(0x2029));
+  ASSERT_TRUE(set.ref().contains(0xFEFF));
+  ASSERT_TRUE(set.ref().contains(0x00A0));
+  ASSERT_TRUE(set.ref().contains(0x1680));
+  ASSERT_TRUE(set.ref().contains(0x2000));
+  ASSERT_TRUE(set.ref().contains(0x2001));
+  ASSERT_TRUE(set.ref().contains(0x2002));
+  ASSERT_TRUE(set.ref().contains(0x2003));
+  ASSERT_TRUE(set.ref().contains(0x2004));
+  ASSERT_TRUE(set.ref().contains(0x2005));
+  ASSERT_TRUE(set.ref().contains(0x2006));
+  ASSERT_TRUE(set.ref().contains(0x2007));
+  ASSERT_TRUE(set.ref().contains(0x2008));
+  ASSERT_TRUE(set.ref().contains(0x2009));
+  ASSERT_TRUE(set.ref().contains(0x200A));
+  ASSERT_TRUE(set.ref().contains(0x202F));
+  ASSERT_TRUE(set.ref().contains(0x205F));
+  ASSERT_TRUE(set.ref().contains(0x3000));
+
+  ASSERT_FALSE(set.ref().contains(0xFF15));
+  ASSERT_FALSE(set.ref().contains(0x3042));
+  ASSERT_FALSE(set.ref().contains(0x0410));
+  ASSERT_FALSE(set.ref().contains(0x200C));
+  ASSERT_FALSE(set.ref().contains(0x200D));
+  ASSERT_FALSE(set.ref().contains(0x0085));
+}
 
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
