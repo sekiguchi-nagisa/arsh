@@ -322,6 +322,7 @@ std::string RegexDumper::operator()(const Regex &regex) {
   this->base.dump("captureGroupCount", std::to_string(regex.getCaptureGroupCount()));
   this->base.dump("namedCaptureGroups", format(regex.getNamedCaptureGroups()));
   this->dump("instructions", regex.getInstSeq());
+  this->dump("matchers", regex.getMatchers());
   return std::move(this->base.buf);
 }
 
@@ -347,6 +348,8 @@ static const char *toString(const OpCode op) {
   }
   return "";
 }
+
+static void appendBool(std::string &out, bool b) { out += b ? "true" : "false"; }
 
 void RegexDumper::dump(const FlexBuffer<Inst> &ins) {
   Padding padding(ins.size());
@@ -374,19 +377,19 @@ void RegexDumper::dump(const FlexBuffer<Inst> &ins) {
       break;
     case OpCode::Start:
       str += "(multiline=";
-      str += cast<StartIns>(*inst).multiline ? "true" : "false";
+      appendBool(str, cast<StartIns>(*inst).multiline);
       str += ')';
       inst += sizeof(StartIns);
       break;
     case OpCode::End:
       str += "(multiline=";
-      str += cast<EndIns>(*inst).multiline ? "true" : "false";
+      appendBool(str, cast<EndIns>(*inst).multiline);
       str += ')';
       inst += sizeof(EndIns);
       break;
     case OpCode::Word:
       str += "(invert=";
-      str += cast<WordIns>(*inst).invert ? "true" : "false";
+      appendBool(str, cast<WordIns>(*inst).invert);
       str += ')';
       inst += sizeof(WordIns);
       break;
@@ -410,6 +413,16 @@ void RegexDumper::dump(const FlexBuffer<Inst> &ins) {
       inst += sizeof(CharIns);
       break;
     }
+    case OpCode::CharSet: {
+      auto &charSet = cast<CharSetIns>(*inst);
+      str += "(matcherIndex=";
+      str += std::to_string(charSet.getMatcherIndex());
+      str += ", invert=";
+      appendBool(str, charSet.invert);
+      str += ')';
+      inst += sizeof(CharSetIns);
+      break;
+    }
     case OpCode::BeginCapture:
       str += "(captureIndex=";
       str += std::to_string(cast<BeginCaptureIns>(*inst).getCaptureIndex());
@@ -425,6 +438,70 @@ void RegexDumper::dump(const FlexBuffer<Inst> &ins) {
     }
     this->base.dump(lineNum.c_str(), str);
   }
+}
+
+void RegexDumper::dump(ArrayRef<Matcher> matchers) {
+  Padding padding(matchers.size());
+  for (unsigned int i = 0; i < matchers.size(); i++) {
+    std::string lineNum = padding(i);
+    std::string str;
+    toString(matchers[i], str);
+    if (!str.empty() && str.back() == '\n') {
+      str.pop_back();
+    }
+    this->base.dump(lineNum.c_str(), str);
+  }
+}
+
+static void toString(const CodePointSetRef ref, std::string &out) {
+  std::vector<std::pair<int, int>> ranges;
+  for (auto &e : ref.getBMPRanges()) {
+    ranges.emplace_back(e.firstBMP(), e.lastBMP());
+  }
+  for (auto &e : ref.getPackedNonBMPRanges()) {
+    ranges.emplace_back(e.firstNonBMP(), e.lastNonBMP());
+  }
+  for (auto &e : ref.getNonBMPRanges()) {
+    ranges.emplace_back(e.firstNonBMP(), e.lastNonBMP());
+  }
+  std::sort(ranges.begin(), ranges.end(), CodePointSetBuilder::Compare());
+
+  for (auto &[first, last] : ranges) {
+    char buf[128];
+    snprintf(buf, std::size(buf), "{ 0x%04X, 0x%04X },\n", first, last);
+    out += buf;
+  }
+}
+
+void toString(const Matcher &matcher, std::string &out) {
+  switch (matcher.type()) {
+  case MatcherType::ASCII:
+    out += "AsciiSet\n";
+    break;
+  case MatcherType::OWNED_CODE_POINT_SET:
+    out += "CodePointSet(owned)\n";
+    break;
+  case MatcherType::BORROWED_CODE_POINT_SET:
+    out += "CodePointSet(borrowed)\n";
+    break;
+  }
+  CodePointSet set;
+  if (matcher.type() == MatcherType::ASCII) {
+    std::vector<int> codes;
+    auto asciiSet = matcher.asAsciiSet();
+    for (int c = 0; c <= 127; c++) {
+      if (asciiSet.contains(c)) {
+        codes.push_back(c);
+      }
+    }
+    CodePointSetBuilder builder;
+    builder.add(codes.data(), codes.size());
+    set = builder.build();
+  } else {
+    auto ref = matcher.asCodePointSetRef();
+    set = CodePointSet::borrow(ref);
+  }
+  toString(set.ref(), out);
 }
 
 } // namespace arsh::regex

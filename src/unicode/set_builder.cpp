@@ -188,12 +188,6 @@ CodePointSet CodePointSetBuilder::build() {
   return CodePointSet::take(bmpSize, std::move(tmp));
 }
 
-struct Compare {
-  bool operator()(const std::pair<int, int> &x, const std::pair<int, int> &y) const {
-    return x.first < y.first || (x.first == y.first && x.second < y.second);
-  }
-};
-
 void CodePointSetBuilder::sortAndCompact() {
   if (this->codePointRanges.size() < 2) {
     return;

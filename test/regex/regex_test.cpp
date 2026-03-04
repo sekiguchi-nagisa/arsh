@@ -335,6 +335,107 @@ TEST(RegexMatchTest, null) {
   ASSERT_FALSE(re.hasValue());
 }
 
+TEST(MatcherTest, ascii) {
+  regex::AsciiSet set;
+  set.add(7);
+  ASSERT_TRUE(set.contains(7));
+  set.add(8);
+  ASSERT_TRUE(set.contains(8));
+  set.add(12);
+  ASSERT_TRUE(set.contains(12));
+  set.add(64);
+  ASSERT_TRUE(set.contains(64));
+  set.add(3);
+  ASSERT_TRUE(set.contains(3));
+  set.add(127);
+  ASSERT_TRUE(set.contains(127));
+  set.add(128);
+  ASSERT_FALSE(set.contains(128));
+
+  regex::Matcher matcher(set);
+  ASSERT_FALSE(matcher.contains(3)); // truncate 0~7
+  ASSERT_FALSE(matcher.asAsciiSet().contains(3));
+  ASSERT_FALSE(matcher.contains(7)); // truncate 0~7
+  ASSERT_FALSE(matcher.asAsciiSet().contains(7));
+  ASSERT_TRUE(matcher.contains(8));
+  ASSERT_TRUE(matcher.asAsciiSet().contains(8));
+  ASSERT_TRUE(matcher.contains(12));
+  ASSERT_TRUE(matcher.asAsciiSet().contains(12));
+  ASSERT_TRUE(matcher.contains(64));
+  ASSERT_TRUE(matcher.asAsciiSet().contains(64));
+  ASSERT_TRUE(matcher.contains(127));
+  ASSERT_TRUE(matcher.asAsciiSet().contains(127));
+  ASSERT_FALSE(matcher.contains(128));
+  ASSERT_FALSE(matcher.asAsciiSet().contains(128));
+
+  const char *expect = R"(AsciiSet
+{ 0x0008, 0x0008 },
+{ 0x000C, 0x000C },
+{ 0x0040, 0x0040 },
+{ 0x007F, 0x007F },
+)";
+  std::string actual;
+  toString(matcher, actual);
+  ASSERT_EQ(expect, actual);
+}
+
+TEST(MatcherTest, codePointSet) {
+  {
+    auto set = ucp::getPropertySet(ucp::Property::lone(ucp::Lone::ESRegexClassDigit));
+    regex::Matcher matcher(std::move(set));
+    const char *expect = R"(CodePointSet(borrowed)
+{ 0x0030, 0x0039 },
+)";
+    std::string actual;
+    toString(matcher, actual);
+    ASSERT_EQ(expect, actual);
+  }
+
+  {
+    auto set = ucp::getPropertySet(ucp::Property::lone(ucp::Lone::ESRegexClassWord));
+    regex::Matcher matcher(std::move(set));
+    const char *expect = R"(CodePointSet(borrowed)
+{ 0x0030, 0x0039 },
+{ 0x0041, 0x005A },
+{ 0x005F, 0x005F },
+{ 0x0061, 0x007A },
+)";
+    std::string actual;
+    toString(matcher, actual);
+    ASSERT_EQ(expect, actual);
+  }
+
+  {
+    auto set = ucp::getPropertySet(ucp::Property::lone(ucp::Lone::Any));
+    regex::Matcher matcher(std::move(set));
+    const char *expect = R"(CodePointSet(borrowed)
+{ 0x0000, 0xFFFF },
+{ 0x10000, 0x10FFFF },
+)";
+    std::string actual;
+    toString(matcher, actual);
+    ASSERT_EQ(expect, actual);
+  }
+
+  {
+    auto set = ucp::getPropertySet(ucp::Property::category(ucp::Category::Z));
+    regex::Matcher matcher(std::move(set));
+    const char *expect = R"(CodePointSet(owned)
+{ 0x0020, 0x0020 },
+{ 0x00A0, 0x00A0 },
+{ 0x1680, 0x1680 },
+{ 0x2000, 0x200A },
+{ 0x2028, 0x2029 },
+{ 0x202F, 0x202F },
+{ 0x205F, 0x205F },
+{ 0x3000, 0x3000 },
+)";
+    std::string actual;
+    toString(matcher, actual);
+    ASSERT_EQ(expect, actual);
+  }
+}
+
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

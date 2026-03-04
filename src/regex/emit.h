@@ -66,8 +66,10 @@ public:
 
 class CodeGen {
 private:
+  Mode mode{};
   std::string err;
   InstructionBuilder builder;
+  std::vector<Matcher> matchers;
   InlinedStack<Modifier, 4> modifierStack;
 
 public:
@@ -85,6 +87,16 @@ private:
   bool generateAlt(const AltNode &node);
 
   bool generateGroup(const GroupNode &node);
+
+  bool generateProperty(const PropertyNode &node);
+
+  static bool toCodePointSet(ucp::BuilderOrSet builderOrSet, const PropertyNode &node);
+
+  bool generateCharClass(const CharClassNode &node);
+
+  bool appendToAsciiSet(AsciiSet &set, const Node &node);
+
+  Optional<unsigned short> emitMatcher(Matcher &&matcher);
 };
 
 } // namespace arsh::regex

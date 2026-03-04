@@ -129,6 +129,7 @@ MatchStatus match(const Regex &regex, const StringRef text, FlexBuffer<Capture> 
   }
   const char *oldIter = input.getIter();
   const Inst *inst = regex.getInstSeq().data();
+  const auto matchers = regex.getMatchers();
   captures.clear();
   captures.resize(regex.getCaptureGroupCount() + 1);
   BacktrackStack bts(inst);
@@ -208,6 +209,20 @@ BACKTRACK:
           if (input.available() && input.consumeForward() == ins.getCodePoint()) {
             inst += sizeof(CharIns);
             vmnext;
+          }
+          goto BACKTRACK;
+        }
+        vmcase(CharSet) {
+          auto &ins = cast<CharSetIns>(*inst);
+          if (input.available()) {
+            bool s = matchers[ins.getMatcherIndex()].contains(input.consumeForward());
+            if (ins.invert) {
+              s = !s;
+            }
+            if (s) {
+              inst += sizeof(CharSetIns);
+              vmnext
+            }
           }
           goto BACKTRACK;
         }

@@ -24,6 +24,13 @@
 namespace arsh {
 
 class CodePointSetBuilder {
+public:
+  struct Compare {
+    bool operator()(const std::pair<int, int> &x, const std::pair<int, int> &y) const {
+      return x.first < y.first || (x.first == y.first && x.second < y.second);
+    }
+  };
+
 private:
   // code point range (inclusive, inclusive)
   std::vector<std::pair<int, int>> codePointRanges;

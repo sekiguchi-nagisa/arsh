@@ -20,6 +20,8 @@
 #include "capture.h"
 #include "flag.h"
 #include "instruction.h"
+#include "matcher.h"
+#include "misc/array_ref.hpp"
 
 namespace arsh::regex {
 
@@ -28,19 +30,24 @@ private:
   Flag flag;
   unsigned int captureGroupCount; // 1-based index. if 0, indicate no captures
   FlexBuffer<Inst> instSeq;
+  std::vector<Matcher> matchers;
   NamedCaptureGroups named;
 
 public:
-  static constexpr size_t MAX_STACK_DEPTH = UINT16_MAX >> 2;
+  static constexpr size_t MAX_STACK_DEPTH = UINT16_MAX;
 
-  Regex(Flag flag, unsigned int count, FlexBuffer<Inst> &&seq, NamedCaptureGroups &&named)
-      : flag(flag), captureGroupCount(count), instSeq(std::move(seq)), named(std::move(named)) {}
+  Regex(Flag flag, unsigned int count, FlexBuffer<Inst> &&seq, std::vector<Matcher> &&matchers,
+        NamedCaptureGroups &&named)
+      : flag(flag), captureGroupCount(count), instSeq(std::move(seq)),
+        matchers(std::move(matchers)), named(std::move(named)) {}
 
   Flag getFlag() const { return this->flag; }
 
   unsigned int getCaptureGroupCount() const { return this->captureGroupCount; }
 
   const auto &getInstSeq() const { return this->instSeq; }
+
+  ArrayRef<Matcher> getMatchers() const { return {this->matchers.data(), this->matchers.size()}; }
 
   const auto &getNamedCaptureGroups() const { return this->named; }
 };

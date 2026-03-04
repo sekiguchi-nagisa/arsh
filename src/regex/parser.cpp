@@ -31,7 +31,7 @@ namespace arsh::regex {
 
 static bool mayContainStringsImpl(const Node &node) {
   if (isa<PropertyNode>(node)) {
-    return cast<PropertyNode>(node).getType() == PropertyNode::Type::EMOJI;
+    return cast<PropertyNode>(node).mayContainString();
   }
   if (isa<CharClassNode>(node)) {
     return cast<CharClassNode>(node).mayContainStrings();

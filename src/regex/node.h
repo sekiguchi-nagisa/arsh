@@ -284,6 +284,18 @@ public:
       return false;
     }
   }
+
+  bool mayContainString() const { return this->getNormalizedType() == Type::EMOJI; }
+
+  bool onlyAscii() const {
+    switch (this->getType()) {
+    case Type::DIGIT:
+    case Type::WORD:
+      return true;
+    default:
+      return false;
+    }
+  }
 };
 
 inline bool isProperty(const Node &node, PropertyNode::Type t) {

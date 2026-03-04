@@ -1,0 +1,130 @@
+
+source $SCRIPT_DIR/../syntax/test_helper.arsh
+
+# \p{Lu}
+assert diff <(redump -m '12@-_3aB)' '\p{Lu}' 'u') <(<<'EOF'
+input: `12@-_3aB)'
+(offset=7, size=1)
+EOF
+)
+
+assert diff <(redump -m '12@-_3aB)' '\p{gc=Lu}' 'u') <(<<'EOF'
+input: `12@-_3aB)'
+(offset=7, size=1)
+EOF
+)
+
+assert diff <(redump -m '12@-_3aB)' '\p{General_Category=Lu}' 'u') <(<<'EOF'
+input: `12@-_3aB)'
+(offset=7, size=1)
+EOF
+)
+
+assert diff <(redump -m '@' '\p{General_Category=Lu}' 'u') <(<<'EOF'
+input: `@'
+failed
+EOF
+)
+
+# \P{Lu}
+assert diff <(redump -m 'A12@-_3aB)' '\P{Lu}' 'u') <(<<'EOF'
+input: `A12@-_3aB)'
+(offset=1, size=1)
+EOF
+)
+
+assert diff <(redump -m 'A12@-_3aB)' '\P{gc=Lu}' 'u') <(<<'EOF'
+input: `A12@-_3aB)'
+(offset=1, size=1)
+EOF
+)
+
+assert diff <(redump -m 'A12@-_3aB)' '\P{General_Category=Lu}' 'u') <(<<'EOF'
+input: `A12@-_3aB)'
+(offset=1, size=1)
+EOF
+)
+
+assert diff <(redump -m 'A' '\P{General_Category=Lu}' 'u') <(<<'EOF'
+input: `A'
+failed
+EOF
+)
+
+# \p{sc=Latin}
+assert diff <(redump -m '12@-_3aB)' '\p{sc=Latin}' 'u') <(<<'EOF'
+input: `12@-_3aB)'
+(offset=6, size=1)
+EOF
+)
+
+assert diff <(redump -m '12@-_3aB)' '\p{Script=Latn}' 'u') <(<<'EOF'
+input: `12@-_3aB)'
+(offset=6, size=1)
+EOF
+)
+
+assert diff <(redump -m '@-_)' '\p{Script=Latn}' 'u') <(<<'EOF'
+input: `@-_)'
+failed
+EOF
+)
+
+# \P{sc=Latin}
+assert diff <(redump -m 'wあ12@-_3aB)' '\P{sc=Latin}' 'u') <(<<'EOF'
+input: `wあ12@-_3aB)'
+(offset=1, size=3)
+EOF
+)
+
+assert diff <(redump -m 'wあ12@-_3aB)' '\P{Script=Latn}' 'u') <(<<'EOF'
+input: `wあ12@-_3aB)'
+(offset=1, size=3)
+EOF
+)
+
+assert diff <(redump -m 'waB' '\P{Script=Latn}' 'u') <(<<'EOF'
+input: `waB'
+failed
+EOF
+)
+
+# \p{scx=Arab}
+assert diff <(redump -m $'@\U0670' '\p{scx=Arab}' 'u') <(<<EOF
+input: \`${$'@\U0670'}'
+(offset=1, size=2)
+EOF
+)
+
+assert diff <(redump -m $'@\U0670' '\p{Script_Extensions=Arabic}' 'u') <(<<EOF
+input: \`${$'@\U0670'}'
+(offset=1, size=2)
+EOF
+)
+
+# \P{scx=Arab}
+assert diff <(redump -m $'@\U0670' '\P{scx=Arab}' 'u') <(<<EOF
+input: \`${$'@\U0670'}'
+(offset=0, size=1)
+EOF
+)
+
+assert diff <(redump -m $'@\U0670' '\P{Script_Extensions=Arabic}' 'u') <(<<EOF
+input: \`${$'@\U0670'}'
+(offset=0, size=1)
+EOF
+)
+
+# \p{Math}
+assert diff <(redump -m $'w@+,' '\p{Math}' 'u') <(<<'EOF'
+input: `w@+,'
+(offset=2, size=1)
+EOF
+)
+
+# \P{Math}
+assert diff <(redump -m $'-+w@+A' '\P{Math}' 'u') <(<<'EOF'
+input: `-+w@+A'
+(offset=0, size=1)
+EOF
+)

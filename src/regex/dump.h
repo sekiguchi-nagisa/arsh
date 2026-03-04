@@ -140,8 +140,20 @@ private:
     this->base.leaveIndent();
   }
 
+  void dump(const char *name, ArrayRef<Matcher> matchers) {
+    this->base.field(name);
+    this->base.newline();
+    this->base.enterIndent();
+    this->dump(matchers);
+    this->base.leaveIndent();
+  }
+
   void dump(const FlexBuffer<Inst> &ins);
+
+  void dump(ArrayRef<Matcher> matchers);
 };
+
+void toString(const Matcher &matcher, std::string &out);
 
 } // namespace arsh::regex
 

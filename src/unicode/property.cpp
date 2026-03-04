@@ -141,6 +141,8 @@ static bool getCategorySet(const Category category, BuilderOrSet out) {
     for (auto c : lookupCategoryCombination(category).combination) {
       if (unsigned int index = toUnderlying(c); index < categoryTableSize()) {
         b->add(getCategoryTable(index));
+      } else {
+        break; // sentinel
       }
     }
     if (!out.isBuilder) {

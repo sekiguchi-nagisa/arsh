@@ -1,0 +1,110 @@
+
+source $SCRIPT_DIR/../syntax/test_helper.arsh
+
+# \d
+assert diff <(redump -m 'abc123' '\d' '') <(<<'EOF'
+input: `abc123'
+(offset=3, size=1)
+EOF
+)
+
+assert diff <(redump -m 'abc23' '\d' '') <(<<'EOF'
+input: `abc23'
+(offset=3, size=1)
+EOF
+)
+
+assert diff <(redump -m 'あ' '\d' '') <(<<'EOF'
+input: `あ'
+failed
+EOF
+)
+
+# \D
+assert diff <(redump -m '012' '\D' '') <(<<'EOF'
+input: `012'
+failed
+EOF
+)
+
+assert diff <(redump -m '23ab' '\D' '') <(<<'EOF'
+input: `23ab'
+(offset=2, size=1)
+EOF
+)
+
+assert diff <(redump -m '23あ@' '\D\D' '') <(<<'EOF'
+input: `23あ@'
+(offset=2, size=4)
+EOF
+)
+
+# \w
+assert diff <(redump -m 'abc123' '\w' '') <(<<'EOF'
+input: `abc123'
+(offset=0, size=1)
+EOF
+)
+
+assert diff <(redump -m '@Aabc123' '\w' '') <(<<'EOF'
+input: `@Aabc123'
+(offset=1, size=1)
+EOF
+)
+
+assert diff <(redump -m 'あzR0_' '\w\w\w\w' '') <(<<'EOF'
+input: `あzR0_'
+(offset=3, size=4)
+EOF
+)
+
+assert diff <(redump -m '-!@#$%^&*()+=|\~[]}{:;"?><,./' '\w' '') <(<<'EOF'
+input: `-!@#$%^&*()+=|\~[]}{:;"?><,./'
+failed
+EOF
+)
+
+# \W
+assert diff <(redump -m 'abc123_AZ' '\W' '') <(<<'EOF'
+input: `abc123_AZ'
+failed
+EOF
+)
+
+assert diff <(redump -m '-!@#$%^&*()+=|\~[]}{:;"?><,./' '\W' '') <(<<'EOF'
+input: `-!@#$%^&*()+=|\~[]}{:;"?><,./'
+(offset=0, size=1)
+EOF
+)
+
+assert diff <(redump -m '12aA_あ' '\W' '') <(<<'EOF'
+input: `12aA_あ'
+(offset=5, size=3)
+EOF
+)
+
+# \s
+assert diff <(redump -m 'this is a pen' '\s' '') <(<<'EOF'
+input: `this is a pen'
+(offset=4, size=1)
+EOF
+)
+
+assert diff <(redump -m $'@ \t\r\n\v\f\U2028' '\s\s\s\s\s\s\s' '') <(<<EOF
+input: \`${$'@ \t\r\n\v\f\U2028'}'
+(offset=1, size=9)
+EOF
+)
+
+# \S
+assert diff <(redump -m $' \t\r\n\v\f\U2028@' '\S' '') <(<<EOF
+input: \`${$' \t\r\n\v\f\U2028@'}'
+(offset=9, size=1)
+EOF
+)
+
+assert diff <(redump -m $' \t\r\n\v\f\U2028' '\S' '') <(<<EOF
+input: \`${$' \t\r\n\v\f\U2028'}'
+failed
+EOF
+)
