@@ -153,7 +153,7 @@ private:
   void dump(ArrayRef<Matcher> matchers);
 };
 
-void toString(const Matcher &matcher, std::string &out);
+void toString(const Matcher &matcher, std::string &out, bool putHeader = true);
 
 } // namespace arsh::regex
 

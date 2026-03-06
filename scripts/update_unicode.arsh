@@ -53,3 +53,6 @@ call $BIN_NAME $SCRIPT_DIR/unicode/gen_word_break_test.ds $test/unicode/word_bre
 
 echo try to update $test/unicode/ucp_property_test.in
 call $BIN_NAME $SCRIPT_DIR/unicode/gen_property_test.arsh --type=cpp $test/unicode/ucp_property_test.in
+
+echo try to update $test/regex/charset_matcher_test.in
+call $BIN_NAME $SCRIPT_DIR/unicode/gen_charset_matcher_test.arsh $test/regex/charset_matcher_test.in

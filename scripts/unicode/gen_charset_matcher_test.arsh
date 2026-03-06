@@ -1,0 +1,68 @@
+#!/usr/bin/env arsh
+
+[<CLI(toplevel:$true)>]
+type _Param() {
+    [<Arg(required:$true, help: "specify output file")>]
+    var output = ""
+}
+
+source ./guniset_helper.arsh
+
+shctl set errraise
+
+type CharSetTestCase {
+    let caseId: Int
+    let pattern: String
+    let flag: String
+    let query: String
+    var bmpSize: Int?   # fill later
+}
+
+function emitTable() for CharSetTestCase {
+    var set = $createCodePointSet($this.query)
+    $this.bmpSize = $set.bmp.size()
+    echo "static constexpr BMPCodePointRange charset_test_table_${this.caseId}[] = {"
+    $set.emit()
+    echo "};"
+}
+
+function emitCase() for CharSetTestCase {
+    echo "      {R\"(${this.pattern})\", \"${this.flag}\", ${$this.bmpSize!}, charset_test_table_${this.caseId}},"
+}
+
+function create(args: [[String]]): [CharSetTestCase] {
+    var ret: [CharSetTestCase]
+    var c = 0
+    for arg in $args {
+        $ret.add(new CharSetTestCase($caseId:$c, $pattern:$arg[0], $flag:$arg[1], $query:$arg[2]))
+        $c++
+    }
+    return $ret
+}
+
+# charset matcher test case definition
+let defs = $create([
+@('\s' '' 'U+0009 + U+000B + U+000C + U+0020 + U+00A0 + U+FEFF + gc:Space_Separator + U+000A + U+000D + U+2028 + U+2029'),
+@('\S' '' '!(U+0009 + U+000B + U+000C + U+0020 + U+00A0 + U+FEFF + gc:Space_Separator + U+000A + U+000D + U+2028 + U+2029)'),
+])
+
+_main(param : _Param) {
+    {
+        auto_gen_header
+
+        ## generate table
+        for def in $defs {
+            $def.emitTable()
+        }
+
+        ## generate case
+        echo
+        echo "static constexpr CharSetMatcherEntry charSetMatcherCases[] = {"
+        for def in $defs {
+            $def.emitCase()
+        }
+        echo "};"
+    } with > ${param.output}
+}
+
+shctl is-sourced || _main $@

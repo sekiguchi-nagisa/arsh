@@ -254,45 +254,6 @@ TEST(InputTest, backward) {
   ASSERT_TRUE(input.isBegin());
 }
 
-#ifndef BIN_PATH
-#error require BIN_PATH
-#endif
-
-#ifndef REDUMP_PATH
-#error require REDUMP_PATH
-#endif
-
-#ifndef REGEX_TEST_DIR
-#error require REGEX_TEST_DIR
-#endif
-
-static std::vector<std::string> getTargetTestCases(const char *dir) {
-  auto ret = getFileList(dir, true);
-  assert(!ret.empty());
-  ret.erase(std::remove_if(ret.begin(), ret.end(),
-                           [](const std::string &v) { return !StringRef(v).endsWith(".arsh"); }),
-            ret.end());
-  std::sort(ret.begin(), ret.end());
-  return ret;
-}
-
-struct RegexTest : public ::testing::TestWithParam<std::string> {
-  static void doTest() {
-    auto result =
-        ProcBuilder{BIN_PATH, GetParam().c_str()}.addEnv("REDUMP_PATH", REDUMP_PATH).exec();
-    ASSERT_EQ(WaitStatus::EXITED, result.kind);
-    ASSERT_EQ(0, result.value);
-  }
-};
-
-TEST_P(RegexTest, base) {
-  printf(" case: %s\n", this->GetParam().c_str());
-  ASSERT_NO_FATAL_FAILURE(doTest());
-}
-
-INSTANTIATE_TEST_SUITE_P(RegexTest, RegexTest,
-                         ::testing::ValuesIn(getTargetTestCases(REGEX_TEST_DIR)));
-
 static Optional<regex::Regex> compile(StringRef pattern, regex::Flag flag = regex::Flag()) {
   regex::Parser parser;
   if (auto tree = parser(pattern, flag)) {
@@ -435,6 +396,64 @@ TEST(MatcherTest, codePointSet) {
     ASSERT_EQ(expect, actual);
   }
 }
+
+struct BMPCodePointRangeEntry {
+  const BMPCodePointRange *ptr;
+  unsigned int size;
+
+  template <unsigned int N>
+  constexpr BMPCodePointRangeEntry(const BMPCodePointRange (&data)[N]) noexcept // NOLINT
+      : ptr(data), size(std::size(data)) {}
+};
+
+struct CharSetMatcherEntry {
+  const char *pattern;
+  const char *flag;
+  unsigned short bmpSize;
+  BMPCodePointRangeEntry entry;
+};
+
+std::ostream &operator<<(std::ostream &stream, const CharSetMatcherEntry &e) {
+  return stream << e.pattern;
+}
+
+struct CharSetMatcherTest : public ::testing::TestWithParam<CharSetMatcherEntry> {
+  static void doTest() {
+    std::string err;
+    auto flag = regex::Flag::parse(GetParam().flag, regex::Mode::BMP, &err);
+    ASSERT_EQ("", err);
+    ASSERT_TRUE(flag.hasValue());
+    regex::Parser parser;
+    auto tree = parser(GetParam().pattern, flag.unwrap());
+    ASSERT_FALSE(parser.hasError());
+    ASSERT_TRUE(tree);
+    regex::CodeGen codeGen;
+    auto re = codeGen(std::move(tree));
+    ASSERT_TRUE(re.hasValue());
+    ASSERT_EQ("", codeGen.getError());
+    ASSERT_EQ(1, re.unwrap().getMatchers().size()); // exact one matcher
+
+    std::string expected;
+    auto &param = GetParam();
+    toString(
+        regex::Matcher(CodePointSet::borrow(param.bmpSize, 0, param.entry.ptr, param.entry.size)),
+        expected, false);
+
+    std::string actual;
+    toString(re.unwrap().getMatchers()[0], actual, false);
+    ASSERT_EQ(expected, actual);
+  }
+};
+
+TEST_P(CharSetMatcherTest, base) {
+  printf(" case: %s\n", this->GetParam().pattern);
+  ASSERT_NO_FATAL_FAILURE(doTest());
+}
+
+#include "charset_matcher_test.in"
+
+INSTANTIATE_TEST_SUITE_P(CharSetMatcherTest, CharSetMatcherTest,
+                         ::testing::ValuesIn(charSetMatcherCases));
 
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);

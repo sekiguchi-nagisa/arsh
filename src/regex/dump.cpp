@@ -473,17 +473,19 @@ static void toString(const CodePointSetRef ref, std::string &out) {
   }
 }
 
-void toString(const Matcher &matcher, std::string &out) {
-  switch (matcher.type()) {
-  case MatcherType::ASCII:
-    out += "AsciiSet\n";
-    break;
-  case MatcherType::OWNED_CODE_POINT_SET:
-    out += "CodePointSet(owned)\n";
-    break;
-  case MatcherType::BORROWED_CODE_POINT_SET:
-    out += "CodePointSet(borrowed)\n";
-    break;
+void toString(const Matcher &matcher, std::string &out, bool putHeader) {
+  if (putHeader) {
+    switch (matcher.type()) {
+    case MatcherType::ASCII:
+      out += "AsciiSet\n";
+      break;
+    case MatcherType::OWNED_CODE_POINT_SET:
+      out += "CodePointSet(owned)\n";
+      break;
+    case MatcherType::BORROWED_CODE_POINT_SET:
+      out += "CodePointSet(borrowed)\n";
+      break;
+    }
   }
   CodePointSet set;
   if (matcher.type() == MatcherType::ASCII) {
