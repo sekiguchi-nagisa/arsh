@@ -94,7 +94,7 @@ public:
     const bool owned = set.isOwned();
     this->first = static_cast<uint64_t>(set.getBMPSize()) << 48;
     this->first |= static_cast<uint64_t>(set.getPackedNonBMPSize()) << 32;
-    this->first |= static_cast<uint64_t>(set.getSize() << 8);
+    this->first |= static_cast<uint64_t>(set.getSize()) << 8;
     this->first |= toUnderlying(owned ? MatcherType::OWNED_CODE_POINT_SET
                                       : MatcherType::BORROWED_CODE_POINT_SET);
     this->ptr = std::move(set).take();
@@ -102,7 +102,7 @@ public:
 
   explicit Matcher(AsciiSet set) noexcept {
     this->first = set.underlying()[0];
-    this->first &= ~(0xFF);
+    this->first &= ~(0xFF); // always ignore the first 8bit
     this->first |= toUnderlying(MatcherType::ASCII);
     this->second = set.underlying()[1];
   }
@@ -152,9 +152,7 @@ private:
     return static_cast<unsigned short>((this->first >> 32) & 0xFFFF);
   }
 
-  unsigned int getSize() const {
-    return static_cast<unsigned int>((this->first >> 8) & 0xFFFFFFFF);
-  }
+  unsigned int getSize() const { return static_cast<unsigned int>((this->first >> 8) & 0xFFFFFF); }
 };
 
 } // namespace arsh::regex

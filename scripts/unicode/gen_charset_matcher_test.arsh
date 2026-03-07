@@ -44,6 +44,151 @@ function create(args: [[String]]): [CharSetTestCase] {
 let defs = $create([
 @('\s' '' 'U+0009 + U+000B + U+000C + U+0020 + U+00A0 + U+FEFF + gc:Space_Separator + U+000A + U+000D + U+2028 + U+2029'),
 @('\S' '' '!(U+0009 + U+000B + U+000C + U+0020 + U+00A0 + U+FEFF + gc:Space_Separator + U+000A + U+000D + U+2028 + U+2029)'),
+
+@('\p{Cc}' 'u' 'gc:Cc'),
+@('\P{Cc}' 'u' '!gc:Cc'),
+@('\p{Lt}' 'u' 'gc:Lt'),
+@('\P{Lt}' 'u' '!gc:Lt'),
+@('\p{sc=Adlm}' 'u' 'sc:Adlm'),
+@('\P{sc=Adlm}' 'u' '!sc:Adlm'),
+@('\p{scx=Deva}' 'u' 'scx:Deva'),
+@('\P{scx=Deva}' 'u' '!scx:Deva'),
+@('\p{Emoji}' 'u' 'emoji:Emoji'),
+@('\P{Emoji}' 'u' '!emoji:Emoji'),
+@('\p{Changes_When_Casefolded}' 'u' 'dcp:Changes_When_Casefolded'),
+@('\P{Changes_When_Casefolded}' 'u' '!dcp:Changes_When_Casefolded'),
+@('\p{Any}' 'u' 'U+0..U+10FFFF'),
+# @('\P{Any}' 'u' '!(U+0..U+10FFFF)'),
+@('\p{Assigned}' 'u' '!gc:Cn'),
+@('\P{Assigned}' 'u' 'gc:Cn'),
+@('\p{QMark}' 'u' 'prop:Quotation_Mark'),
+@('\P{QMark}' 'u' '! prop:Quotation_Mark'),
+
+@('[^a]' '' '(U+0061)'),
+@('[^a]' 'v' '!(U+0061)'),
+
+@('[a2@]' '' 'U+0061 + U+0032 + U+0040'),
+@('[^a2@]' '' 'U+0061 + U+0032 + U+0040'),
+@('[^a2@]' 'v' '!(U+0061 + U+0032 + U+0040)'),
+
+@('[\0\x01\x07]' '' 'U+0000 + U+0001 + U+0007'),
+@('[^\0\x01\x07]' '' 'U+0000 + U+0001 + U+0007'),
+@('[^\0\x01\x07]' 'v' '!(U+0000 + U+0001 + U+0007)'),
+
+@('[\0\x01\x07%$.\b]' '' 'U+0000 + U+0001 + U+0007+ U+25 + U+24 + U+2E + U+08'),
+@('[^\0\x01\x07%$.\b]' '' 'U+0000 + U+0001 + U+0007+ U+25 + U+24 + U+2E + U+08'),
+@('[^\0\x01\x07%$.\b]' 'v' '!(U+0000 + U+0001 + U+0007+ U+25 + U+24 + U+2E + U+08)'),
+
+@('[\0\x01\x07あう%$.\b]' '' 'U+0000 + U+0001 + U+0007 + U+3042 + U+3046 + U+25 + U+24 + U+2E + U+08'),
+@('[^\0\x01\x07あう%$.\b]' '' 'U+0000 + U+0001 + U+0007 + U+3042 + U+3046 + U+25 + U+24 + U+2E + U+08'),
+@('[^\0\x01\x07あう%$.\b]' 'v' '!(U+0000 + U+0001 + U+0007 + U+3042 + U+3046 + U+25 + U+24 + U+2E + U+08)'),
+
+@('[0-9A-Za-z_]' '' 'U+30..U+39 + U+41..U+5A + U+61..U+7A + 5F'),
+@('[^0-9A-Za-z_]' '' 'U+30..U+39 + U+41..U+5A + U+61..U+7A + 5F'),
+@('[^0-9A-Za-z_]' 'v' '!(U+30..U+39 + U+41..U+5A + U+61..U+7A + 5F)'),
+
+@('[\x00-\x07]' '' 'U+00..U+07'),
+@('[^\x00-\x07]' '' 'U+00..U+07'),
+@('[^\x00-\x07]' 'v' '!(U+00..U+07)'),
+
+@('[あ-お]' '' 'U+3042..U+304A'),
+@('[^あ-お]' '' 'U+3042..U+304A'),
+@('[^あ-お]' 'v' '!(U+3042..U+304A)'),
+
+@('[あ-お0-9A-Za-z_\x00-\x07]' '' 'U+3042..U+304A + U+00..U+07 + U+30..U+39 + U+41..U+5A + U+61..U+7A + 5F'),
+@('[^あ-お0-9A-Za-z_\x00-\x07]' '' 'U+3042..U+304A + U+00..U+07 + U+30..U+39 + U+41..U+5A + U+61..U+7A + 5F'),
+@('[^あ-お0-9A-Za-z_\x00-\x07]' 'v' '!(U+3042..U+304A + U+00..U+07 + U+30..U+39 + U+41..U+5A + U+61..U+7A + 5F)'),
+
+@('[\s]' '' 'U+0009 + U+000B + U+000C + U+0020 + U+00A0 + U+FEFF + gc:Space_Separator + U+000A + U+000D + U+2028 + U+2029'),
+@('[^\s]' '' '(U+0009 + U+000B + U+000C + U+0020 + U+00A0 + U+FEFF + gc:Space_Separator + U+000A + U+000D + U+2028 + U+2029)'),
+@('[^\s]' 'v' '!(U+0009 + U+000B + U+000C + U+0020 + U+00A0 + U+FEFF + gc:Space_Separator + U+000A + U+000D + U+2028 + U+2029)'),
+
+@('[\S]' '' '!(U+0009 + U+000B + U+000C + U+0020 + U+00A0 + U+FEFF + gc:Space_Separator + U+000A + U+000D + U+2028 + U+2029)'),
+@('[^\S]' '' '!(U+0009 + U+000B + U+000C + U+0020 + U+00A0 + U+FEFF + gc:Space_Separator + U+000A + U+000D + U+2028 + U+2029)'),
+@('[^\S]' 'v' '(U+0009 + U+000B + U+000C + U+0020 + U+00A0 + U+FEFF + gc:Space_Separator + U+000A + U+000D + U+2028 + U+2029)'),
+
+@('[\s\w0-9\d]' '' '(U+0009 + U+000B + U+000C + U+0020 + U+00A0 + U+FEFF + gc:Space_Separator + U+000A + U+000D + U+2028 + U+2029 + U+30..U+39 + U+41..U+5A + U+61..U+7A + 5F)'),
+@('[^\s\w0-9\d]' '' '(U+0009 + U+000B + U+000C + U+0020 + U+00A0 + U+FEFF + gc:Space_Separator + U+000A + U+000D + U+2028 + U+2029 + U+30..U+39 + U+41..U+5A + U+61..U+7A + 5F)'),
+@('[^\s\w0-9\d]' 'v' '!(U+0009 + U+000B + U+000C + U+0020 + U+00A0 + U+FEFF + gc:Space_Separator + U+000A + U+000D + U+2028 + U+2029 + U+30..U+39 + U+41..U+5A + U+61..U+7A + 5F)'),
+
+@('[\p{Cc}]' 'u' 'gc:Cc'),
+@('[\P{Cc}]' 'u' '!gc:Cc'),
+@('[^\p{Cc}]' 'u' 'gc:Cc'),
+@('[^\P{Cc}]' 'u' '!gc:Cc'),
+@('[^\p{Cc}]' 'v' '!gc:Cc'),
+@('[^\P{Cc}]' 'v' '!!gc:Cc'),
+
+@('[\p{Lt}]' 'u' 'gc:Lt'),
+@('[\P{Lt}]' 'u' '!gc:Lt'),
+@('[^\p{Lt}]' 'u' 'gc:Lt'),
+@('[^\P{Lt}]' 'u' '!gc:Lt'),
+@('[^\p{Lt}]' 'v' '!gc:Lt'),
+@('[^\P{Lt}]' 'v' '!!gc:Lt'),
+
+@('[\p{sc=Adlm}]' 'u' 'sc:Adlm'),
+@('[\P{sc=Adlm}]' 'u' '!sc:Adlm'),
+@('[^\p{sc=Adlm}]' 'u' 'sc:Adlm'),
+@('[^\P{sc=Adlm}]' 'u' '!sc:Adlm'),
+@('[^\p{sc=Adlm}]' 'v' '!sc:Adlm'),
+@('[^\P{sc=Adlm}]' 'v' '!!sc:Adlm'),
+
+@('[\p{scx=Deva}]' 'u' 'scx:Deva'),
+@('[\P{scx=Deva}]' 'u' '!scx:Deva'),
+@('[^\p{scx=Deva}]' 'u' 'scx:Deva'),
+@('[^\P{scx=Deva}]' 'u' '!scx:Deva'),
+@('[^\p{scx=Deva}]' 'v' '!scx:Deva'),
+@('[^\P{scx=Deva}]' 'v' '!!scx:Deva'),
+
+@('[\p{Emoji}]' 'u' 'emoji:Emoji'),
+@('[\P{Emoji}]' 'u' '!emoji:Emoji'),
+@('[^\p{Emoji}]' 'u' 'emoji:Emoji'),
+@('[^\P{Emoji}]' 'u' '!emoji:Emoji'),
+@('[^\p{Emoji}]' 'v' '!emoji:Emoji'),
+@('[^\P{Emoji}]' 'v' '!!emoji:Emoji'),
+
+@('[\p{Changes_When_Casefolded}]' 'u' 'dcp:Changes_When_Casefolded'),
+@('[\P{Changes_When_Casefolded}]' 'u' '!dcp:Changes_When_Casefolded'),
+@('[^\p{Changes_When_Casefolded}]' 'u' 'dcp:Changes_When_Casefolded'),
+@('[^\P{Changes_When_Casefolded}]' 'u' '!dcp:Changes_When_Casefolded'),
+@('[^\p{Changes_When_Casefolded}]' 'v' '!dcp:Changes_When_Casefolded'),
+@('[^\P{Changes_When_Casefolded}]' 'v' '!!dcp:Changes_When_Casefolded'),
+
+@('[\p{Any}]' 'u' 'U+0..U+10FFFF'),
+# @('[\P{Any}]' 'u' '!(U+0..U+10FFFF)'),
+@('[^\p{Any}]' 'u' 'U+0..U+10FFFF'),
+# @('[^\P{Any}]' 'u' '!(U+0..U+10FFFF)'),
+# @('[^\p{Any}]' 'v' '!U+0..U+10FFFF'),
+@('[^\P{Any}]' 'v' '!!(U+0..U+10FFFF)'),
+
+@('[\p{Assigned}]' 'u' '!gc:Cn'),
+@('[\P{Assigned}]' 'u' 'gc:Cn'),
+@('[^\p{Assigned}]' 'u' '!gc:Cn'),
+@('[^\P{Assigned}]' 'u' 'gc:Cn'),
+@('[^\p{Assigned}]' 'v' '!!gc:Cn'),
+@('[^\P{Assigned}]' 'v' '!gc:Cn'),
+
+@('[\p{QMark}]' 'u' 'prop:Quotation_Mark'),
+@('[\P{QMark}]' 'u' '! prop:Quotation_Mark'),
+@('[^\p{QMark}]' 'u' 'prop:Quotation_Mark'),
+@('[^\P{QMark}]' 'u' '! prop:Quotation_Mark'),
+@('[^\p{QMark}]' 'v' '!prop:Quotation_Mark'),
+@('[^\P{QMark}]' 'v' '!! prop:Quotation_Mark'),
+
+@('[\p{Ideographic}]' 'u' '(prop:Ideographic)'),
+@('[\P{Ideographic}]' 'u' '!(prop:Ideographic)'),
+@('[^\p{Ideographic}]' 'u' '(prop:Ideographic)'),
+@('[^\P{Ideographic}]' 'u' '!(prop:Ideographic)'),
+@('[^\p{Ideographic}]' 'v' '!(prop:Ideographic)'),
+@('[^\P{Ideographic}]' 'v' '!!(prop:Ideographic)'),
+
+@('[\p{QMark}\P{Ideographic}]' 'u' '(prop:Quotation_Mark + !(prop:Ideographic))'),
+@('[^\p{QMark}\P{Ideographic}]' 'u' '(prop:Quotation_Mark + !(prop:Ideographic))'),
+@('[^\p{QMark}\P{Ideographic}]' 'v' '!(prop:Quotation_Mark + !(prop:Ideographic))'),
+
+@('[\p{QMark}\P{Ideographic}\p{Bidi_M}]' 'u' '(prop:Quotation_Mark + !(prop:Ideographic) + dbp:Bidi_Mirrored)'),
+@('[^\p{QMark}\P{Ideographic}\p{Bidi_M}]' 'u' '(prop:Quotation_Mark + !(prop:Ideographic) + dbp:Bidi_Mirrored)'),
+@('[^\p{QMark}\P{Ideographic}\p{Bidi_M}]' 'v' '!(prop:Quotation_Mark + !(prop:Ideographic) + dbp:Bidi_Mirrored)'),
+
 ])
 
 _main(param : _Param) {

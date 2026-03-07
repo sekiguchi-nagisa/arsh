@@ -90,11 +90,7 @@ private:
 
   bool generateProperty(const PropertyNode &node);
 
-  static bool toCodePointSet(ucp::BuilderOrSet builderOrSet, const PropertyNode &node);
-
   bool generateCharClass(const CharClassNode &node);
-
-  bool appendToAsciiSet(AsciiSet &set, const Node &node);
 
   Optional<unsigned short> emitMatcher(Matcher &&matcher);
 };

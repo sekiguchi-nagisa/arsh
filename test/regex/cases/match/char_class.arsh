@@ -1,0 +1,244 @@
+
+source $SCRIPT_DIR/../syntax/test_helper.arsh
+
+# []
+assert diff <(redump -m '' '[]' '') <(<<'EOF'
+input: `'
+failed
+EOF
+)
+
+assert diff <(redump -m 'abc' '[]' '') <(<<'EOF'
+input: `abc'
+failed
+EOF
+)
+
+# [^]
+assert diff <(redump -m '' '[^]' '') <(<<'EOF'
+input: `'
+failed
+EOF
+)
+
+assert diff <(redump -m 'a' '[^]' '') <(<<'EOF'
+input: `a'
+(offset=0, size=1)
+EOF
+)
+
+assert diff <(redump -m 'あ' '[^]' '') <(<<'EOF'
+input: `あ'
+(offset=0, size=3)
+EOF
+)
+
+assert diff <(redump -m $'\n' '[^]' '') <(<<EOF     # also match newline
+input: \`${$'\n'}'
+(offset=0, size=1)
+EOF
+)
+
+assert diff <(redump -m $'\r' '[^]' '') <(<<EOF     # also match newline
+input: \`${$'\r'}'
+(offset=0, size=1)
+EOF
+)
+
+# [a]
+assert diff <(redump -m 'あabc' '[a]' '') <(<<'EOF'
+input: `あabc'
+(offset=3, size=1)
+EOF
+)
+
+assert diff <(redump -m 'あbc' '[a]' '') <(<<'EOF'
+input: `あbc'
+failed
+EOF
+)
+
+# [あ]
+assert diff <(redump -m 'aあbc' '[あ]' '') <(<<'EOF'
+input: `aあbc'
+(offset=1, size=3)
+EOF
+)
+
+assert diff <(redump -m 'いbc' '[あ]' '') <(<<'EOF'
+input: `いbc'
+failed
+EOF
+)
+
+# [abc]
+assert diff <(redump -m 'あabc' '[abc]' '') <(<<'EOF'
+input: `あabc'
+(offset=3, size=1)
+EOF
+)
+
+assert diff <(redump -m 'あbca' '[abc]' '') <(<<'EOF'
+input: `あbca'
+(offset=3, size=1)
+EOF
+)
+
+assert diff <(redump -m 'あcab' '[abc]' '') <(<<'EOF'
+input: `あcab'
+(offset=3, size=1)
+EOF
+)
+
+assert diff <(redump -m 'あい' '[abc]' '') <(<<'EOF'
+input: `あい'
+failed
+EOF
+)
+
+
+# [あい@]
+assert diff <(redump -m 'あab@cい' '[あい@]' '') <(<<'EOF'
+input: `あab@cい'
+(offset=0, size=3)
+EOF
+)
+
+assert diff <(redump -m 'ab@cいあ' '[あい@]' '') <(<<'EOF'
+input: `ab@cいあ'
+(offset=2, size=1)
+EOF
+)
+
+assert diff <(redump -m 'abcいあ@' '[あい@]' '') <(<<'EOF'
+input: `abcいあ@'
+(offset=3, size=3)
+EOF
+)
+
+assert diff <(redump -m 'abcう' '[あい@]' '') <(<<'EOF'
+input: `abcう'
+failed
+EOF
+)
+
+# [.*?]
+assert diff <(redump -m 'ab.' '[.*?]' '') <(<<'EOF'
+input: `ab.'
+(offset=2, size=1)
+EOF
+)
+
+assert diff <(redump -m 'a?b.' '[.*?]' '') <(<<'EOF'
+input: `a?b.'
+(offset=1, size=1)
+EOF
+)
+
+# [^abc]
+assert diff <(redump -m 'あabc' '[^abc]' '') <(<<'EOF'
+input: `あabc'
+(offset=0, size=3)
+EOF
+)
+
+assert diff <(redump -m 'abc' '[^abc]' '') <(<<'EOF'
+input: `abc'
+failed
+EOF
+)
+
+assert diff <(redump -m 'あabc' '[^abc]' 'v') <(<<'EOF'
+input: `あabc'
+(offset=0, size=3)
+EOF
+)
+
+assert diff <(redump -m 'abc' '[^abc]' 'v') <(<<'EOF'
+input: `abc'
+failed
+EOF
+)
+
+# [^あい@]
+assert diff <(redump -m 'あab@cい' '[^あい@]' '') <(<<'EOF'
+input: `あab@cい'
+(offset=3, size=1)
+EOF
+)
+
+assert diff <(redump -m '@いあ' '[^あい@]' '') <(<<'EOF'
+input: `@いあ'
+failed
+EOF
+)
+
+assert diff <(redump -m 'あab@cい' '[^あい@]' 'v') <(<<'EOF'
+input: `あab@cい'
+(offset=3, size=1)
+EOF
+)
+
+assert diff <(redump -m '@いあ' '[^あい@]' 'v') <(<<'EOF'
+input: `@いあ'
+failed
+EOF
+)
+
+# [A-Z0-9]
+assert diff <(redump -m 'あab@Cい' '[A-Z0-9]' '') <(<<'EOF'
+input: `あab@Cい'
+(offset=6, size=1)
+EOF
+)
+
+assert diff <(redump -m 'あab2@Cい' '[A-Z0-9]' '') <(<<'EOF'
+input: `あab2@Cい'
+(offset=5, size=1)
+EOF
+)
+
+assert diff <(redump -m 'あav@い' '[A-Z0-9]' '') <(<<'EOF'
+input: `あav@い'
+failed
+EOF
+)
+
+# [^A-Z0-9]
+assert diff <(redump -m 'あab@Cい' '[^A-Z0-9]' '') <(<<'EOF'
+input: `あab@Cい'
+(offset=0, size=3)
+EOF
+)
+
+assert diff <(redump -m 'AVC08' '[^A-Z0-9]' '') <(<<'EOF'
+input: `AVC08'
+failed
+EOF
+)
+
+# [あ-お]
+assert diff <(redump -m 'ab@Cい' '[あ-お]' '') <(<<'EOF'
+input: `ab@Cい'
+(offset=4, size=3)
+EOF
+)
+
+assert diff <(redump -m 'ab@Cん' '[あ-お]' '') <(<<'EOF'
+input: `ab@Cん'
+failed
+EOF
+)
+
+# [^あ-お]
+assert diff <(redump -m 'ab@Cい' '[^あ-お]' '') <(<<'EOF'
+input: `ab@Cい'
+(offset=0, size=1)
+EOF
+)
+
+assert diff <(redump -m 'いお' '[^あ-お]' '') <(<<'EOF'
+input: `いお'
+failed
+EOF
+)

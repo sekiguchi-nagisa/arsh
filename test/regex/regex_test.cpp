@@ -414,7 +414,7 @@ struct CharSetMatcherEntry {
 };
 
 std::ostream &operator<<(std::ostream &stream, const CharSetMatcherEntry &e) {
-  return stream << e.pattern;
+  return stream << "/" << e.pattern << "/" << e.flag;
 }
 
 struct CharSetMatcherTest : public ::testing::TestWithParam<CharSetMatcherEntry> {
