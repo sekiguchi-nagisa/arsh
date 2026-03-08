@@ -24,6 +24,7 @@
 namespace arsh {
 
 enum class CaseFoldOp : unsigned char {
+  NONE = 0u,
   FULL_FOLD = 1u << 0u,
   TURKIC = 1u << 1u,
 };
@@ -33,7 +34,7 @@ struct allow_enum_bitop<CaseFoldOp> : std::true_type {};
 
 class CaseFoldingResult {
 public:
-  static constexpr size_t FULL_FOLD_ENTRY_SIZE = 3;
+  static constexpr unsigned int FULL_FOLD_ENTRY_SIZE = 3;
   using FullFoldingEntry = std::array<uint16_t, FULL_FOLD_ENTRY_SIZE>;
 
 private:
@@ -60,6 +61,10 @@ public:
 };
 
 CaseFoldingResult doCaseFolding(int codePoint, CaseFoldOp op);
+
+inline int doSimpleCaseFolding(const int codePoint) {
+  return doCaseFolding(codePoint, CaseFoldOp::NONE).getSimpleFolding();
+}
 
 } // namespace arsh
 

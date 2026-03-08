@@ -17,9 +17,10 @@
 #ifndef ARSH_UNICODE_SET_BUILDER_H
 #define ARSH_UNICODE_SET_BUILDER_H
 
+#include <functional>
 #include <vector>
 
-#include "../misc/codepoint_set.hpp"
+#include "misc/codepoint_set.hpp"
 
 namespace arsh {
 
@@ -66,6 +67,11 @@ public:
   void complement();
 
   /**
+   * apply simple case folding to every element
+   */
+  void foldCase();
+
+  /**
    * build code point set. after return, still maintains an original buffer
    * @return
    */
@@ -74,6 +80,8 @@ public:
   void clear() { this->codePointRanges.clear(); }
 
 private:
+  void removeBy(bool compact, const std::function<bool(int)> &func);
+
   void remove(CodePointSetRef ref, bool negate);
 
   void sortAndCompact(); // TODO: lazy compaction

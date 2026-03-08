@@ -16,8 +16,9 @@
 
 #include <cassert>
 
-#include "../misc/buffer.hpp"
-#include "../misc/unicode.hpp"
+#include "case_fold.h"
+#include "misc/buffer.hpp"
+#include "misc/unicode.hpp"
 #include "set_builder.h"
 
 namespace arsh {
@@ -100,7 +101,7 @@ void CodePointSetBuilder::complement() {
   this->codePointRanges = std::move(buf);
 }
 
-void CodePointSetBuilder::remove(const CodePointSetRef ref, const bool negate) {
+void CodePointSetBuilder::removeBy(const bool compact, const std::function<bool(int)> &func) {
   /**
    * consider the following cases
    * (1,5), if func(5) == true
@@ -117,11 +118,7 @@ void CodePointSetBuilder::remove(const CodePointSetRef ref, const bool negate) {
   for (unsigned int index = 0; index < oldEnd; index++) {
     for (int codePoint = this->codePointRanges[index].first;
          codePoint <= this->codePointRanges[index].second; codePoint++) {
-      bool matched = ref.contains(codePoint);
-      if (negate) {
-        matched = !matched;
-      }
-      if (!matched) {
+      if (const bool matched = func(codePoint); !matched) {
         continue;
       }
       auto &range = this->codePointRanges[index];
@@ -154,6 +151,43 @@ void CodePointSetBuilder::remove(const CodePointSetRef ref, const bool negate) {
   // compact
   this->codePointRanges.erase(this->codePointRanges.begin() + (lastIndex + 1),
                               this->codePointRanges.begin() + oldEnd);
+  if (compact) {
+    this->sortAndCompact(); // NOLINT
+  }
+}
+
+void CodePointSetBuilder::remove(const CodePointSetRef ref, const bool negate) {
+  this->removeBy(true, [&ref, negate](int codePoint) {
+    bool r = ref.contains(codePoint);
+    if (negate) {
+      r = !r;
+    }
+    return r;
+  });
+}
+
+void CodePointSetBuilder::foldCase() {
+  // collect affected code points
+  std::unordered_map<int, int> foldMap;
+  for (auto &[first, last] : this->codePointRanges) {
+    for (int c = first; c <= last; c++) {
+      int f = doSimpleCaseFolding(c);
+      if (c != f) {
+        foldMap.emplace(c, f);
+      }
+    }
+  }
+
+  // remove affected code points
+  this->removeBy(false, [&foldMap](int codePoint) {
+    auto iter = foldMap.find(codePoint);
+    return iter != foldMap.end();
+  });
+
+  // add changed code points
+  for (auto &e : foldMap) {
+    this->codePointRanges.emplace_back(e.second, e.second);
+  }
   this->sortAndCompact();
 }
 
