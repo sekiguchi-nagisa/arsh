@@ -399,8 +399,10 @@ void RegexDumper::dump(const FlexBuffer<Inst> &ins) {
     case OpCode::AnyExceptNL:
       inst += sizeof(AnyExceptNLIns);
       break;
-    case OpCode::Char: {
-      const int codePoint = cast<CharIns>(*inst).getCodePoint();
+    case OpCode::Char:
+    case OpCode::IChar: {
+      const int codePoint = isa<CharIns>(*inst) ? cast<CharIns>(*inst).getCodePoint()
+                                                : cast<ICharIns>(*inst).getCodePoint();
       char b[16];
       snprintf(b, std::size(b), "U+%04X", codePoint);
       str += "(codePoint=";

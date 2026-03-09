@@ -34,6 +34,7 @@ namespace arsh::regex {
   OP(Any)                                                                                          \
   OP(AnyExceptNL)                                                                                  \
   OP(Char)                                                                                         \
+  OP(IChar)                                                                                        \
   OP(CharSet)                                                                                      \
   OP(BeginCapture)                                                                                 \
   OP(EndCapture)
@@ -152,19 +153,28 @@ struct CharIns : InstWithRtti<OpCode::Char> {
   }
 };
 
+/**
+ * match a single code point (ignore-case)
+ */
+struct ICharIns : InstWithRtti<OpCode::IChar> {
+  uint8_t code[4];
+
+  explicit ICharIns(int codePoint) { memcpy(this->code, &codePoint, sizeof(uint32_t)); }
+
+  int32_t getCodePoint() const {
+    int32_t codePoint;
+    memcpy(&codePoint, this->code, sizeof(uint32_t));
+    return codePoint;
+  }
+};
+
 struct CharSetIns : InstWithRtti<OpCode::CharSet> {
   bool invert;
-  uint8_t index[2];
+  uint16_t index;
 
-  explicit CharSetIns(uint16_t matcherIndex, bool invert) : invert(invert) {
-    memcpy(this->index, &matcherIndex, sizeof(uint16_t));
-  }
+  explicit CharSetIns(uint16_t matcherIndex, bool invert) : invert(invert), index(matcherIndex) {}
 
-  uint16_t getMatcherIndex() const {
-    uint16_t matcherIndex;
-    memcpy(&matcherIndex, this->index, sizeof(uint16_t));
-    return matcherIndex;
-  }
+  uint16_t getMatcherIndex() const { return this->index; }
 };
 
 struct BeginCaptureIns : InstWithRtti<OpCode::BeginCapture> {

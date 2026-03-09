@@ -19,6 +19,7 @@
 #include "misc/inlined_stack.hpp"
 #include "misc/rtti.hpp"
 #include "regex.h"
+#include "unicode/case_fold.h"
 
 namespace arsh::regex {
 
@@ -208,6 +209,15 @@ BACKTRACK:
           auto &ins = cast<CharIns>(*inst);
           if (input.available() && input.consumeForward() == ins.getCodePoint()) {
             inst += sizeof(CharIns);
+            vmnext;
+          }
+          goto BACKTRACK;
+        }
+        vmcase(IChar) {
+          auto &ins = cast<ICharIns>(*inst);
+          if (input.available() &&
+              doSimpleCaseFolding(input.consumeForward()) == ins.getCodePoint()) {
+            inst += sizeof(ICharIns);
             vmnext;
           }
           goto BACKTRACK;

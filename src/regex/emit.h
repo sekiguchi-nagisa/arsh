@@ -84,6 +84,8 @@ private:
 
   void todo(const Node &node, const char *str = nullptr); // TODO: remove
 
+  int mayBeSimpleCaseFolding(int codePoint) const; // TODO: apply to code point set
+
   bool generateAlt(const AltNode &node);
 
   bool generateGroup(const GroupNode &node);

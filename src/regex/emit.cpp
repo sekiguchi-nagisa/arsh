@@ -15,6 +15,7 @@
  */
 
 #include "emit.h"
+#include "unicode/case_fold.h"
 
 namespace arsh::regex {
 
@@ -62,6 +63,13 @@ void CodeGen::todo(const Node &node, const char *str) {
   }
 }
 
+int CodeGen::mayBeSimpleCaseFolding(int codePoint) const {
+  if (this->mode != Mode::UNICODE_SET || !hasFlag(this->modifiers(), Modifier::IGNORE_CASE)) {
+    return codePoint;
+  }
+  return doSimpleCaseFolding(codePoint);
+}
+
 #define TRY(E)                                                                                     \
   do {                                                                                             \
     if (!(E)) {                                                                                    \
@@ -83,8 +91,7 @@ bool CodeGen::generate(const Node &node) {
     break;
   case NodeKind::Char:
     if (hasFlag(this->modifiers(), Modifier::IGNORE_CASE)) {
-      this->todo(node, "ignore-case");
-      return false;
+      this->builder.emit<ICharIns>(doSimpleCaseFolding(cast<CharNode>(node).getCodePoint()));
     } else {
       this->builder.emit<CharIns>(cast<CharNode>(node).getCodePoint());
     }

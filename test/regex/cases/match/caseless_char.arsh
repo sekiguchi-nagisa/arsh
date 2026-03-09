@@ -1,0 +1,87 @@
+
+source $SCRIPT_DIR/../syntax/test_helper.arsh
+
+# X
+assert diff <(redump -m '0ax' 'X' '') <(<<'EOF'
+input: `0ax'
+failed
+EOF
+)
+
+assert diff <(redump -m '0ax' 'X' 'i') <(<<'EOF'
+input: `0ax'
+(offset=2, size=1)
+EOF
+)
+
+assert diff <(redump -m '0ax' 'X' 'iv') <(<<'EOF'
+input: `0ax'
+(offset=2, size=1)
+EOF
+)
+
+# x
+assert diff <(redump -m '0aXyx' 'x' '') <(<<'EOF'
+input: `0aXyx'
+(offset=4, size=1)
+EOF
+)
+
+assert diff <(redump -m '0aXyx' 'x' 'i') <(<<'EOF'
+input: `0aXyx'
+(offset=2, size=1)
+EOF
+)
+
+# \u24C2\uFE0F
+assert diff <(redump -m $'0a\u24DC\uFE0F' '\u24C2\uFE0F' 'u') <(<<EOF
+input: \`${$'0a\u24DC\uFE0F'}'
+failed
+EOF
+)
+
+assert diff <(redump -m $'0a\u24DC\uFE0F' '\u24C2\uFE0F' 'ui') <(<<EOF
+input: \`${$'0a\u24DC\uFE0F'}'
+(offset=2, size=6)
+EOF
+)
+
+# \u24DC\uFE0F
+assert diff <(redump -m $'0a\u24C2\uFE0F' '\u{24DC}\u{FE0F}' 'u') <(<<EOF
+input: \`${$'0a\u24C2\uFE0F'}'
+failed
+EOF
+)
+
+assert diff <(redump -m $'0a\u24C2\uFE0F' '\u{24DC}\u{FE0F}' 'iu') <(<<EOF
+input: \`${$'0a\u24C2\uFE0F'}'
+(offset=2, size=6)
+EOF
+)
+
+# \xD6\u{1040C}
+assert diff <(redump -m $'0a\u00F6\U10434' '\xD6\u{1040C}' 'u') <(<<EOF
+input: \`${$'0a\uF6\U10434'}'
+failed
+EOF
+)
+
+assert diff <(redump -m $'0a\u00F6\U10434' '\xD6\u{1040C}' 'iu') <(<<EOF
+input: \`${$'0a\u00F6\U10434'}'
+(offset=2, size=6)
+EOF
+)
+
+# \xD6\u{1040C}
+assert diff <(redump -m $'0a\u00D6\U1040C' '\xF6\u{10434}' 'u') <(<<EOF
+input: \`${$'0a\u00D6\U1040C'}'
+failed
+EOF
+)
+
+# \xD6\u{1040C}
+assert diff <(redump -m $'0a\u00D6\U1040C' '\xF6\u{10434}' 'iu') <(<<EOF
+input: \`${$'0a\u00D6\U1040C'}'
+(offset=2, size=6)
+EOF
+)

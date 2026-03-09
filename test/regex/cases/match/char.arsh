@@ -92,7 +92,7 @@ input: `\c@'
 EOF
 )
 
-# unanchord
+# unanchored
 assert diff <(redump -m '123abあい' 'あ' '') <(<<'EOF'
 input: `123abあい'
 (offset=5, size=3)
