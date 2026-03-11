@@ -82,6 +82,8 @@ private:
 
   Modifier modifiers() const { return this->modifierStack.back(); }
 
+  bool has(Modifier m) const { return hasFlag(this->modifiers(), m); }
+
   void todo(const Node &node, const char *str = nullptr); // TODO: remove
 
   int mayBeSimpleCaseFolding(int codePoint) const; // TODO: apply to code point set

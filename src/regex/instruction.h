@@ -31,6 +31,7 @@ namespace arsh::regex {
   OP(Start)                                                                                        \
   OP(End)                                                                                          \
   OP(Word)                                                                                         \
+  OP(IWord)                                                                                        \
   OP(Any)                                                                                          \
   OP(AnyExceptNL)                                                                                  \
   OP(Char)                                                                                         \
@@ -126,6 +127,15 @@ struct WordIns : InstWithRtti<OpCode::Word> {
   bool invert;
 
   explicit WordIns(bool invert) : invert(invert) {}
+};
+
+/**
+ * for word boundary (\\b \\B, ignore-case)
+ */
+struct IWordIns : InstWithRtti<OpCode::IWord> {
+  bool invert;
+
+  explicit IWordIns(bool invert) : invert(invert) {}
 };
 
 /**

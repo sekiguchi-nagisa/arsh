@@ -187,6 +187,16 @@ BACKTRACK:
           }
           goto BACKTRACK;
         }
+        vmcase(IWord) {
+          const bool invert = cast<IWordIns>(*inst).invert;
+          const bool prevIsWord = !input.isBegin() && isWord(doSimpleCaseFolding(input.prev()));
+          const bool curIsWord = !input.isEnd() && isWord(doSimpleCaseFolding(input.cur()));
+          if (invert ? prevIsWord == curIsWord : prevIsWord != curIsWord) {
+            inst += sizeof(IWordIns);
+            vmnext;
+          }
+          goto BACKTRACK;
+        }
         vmcase(Any) {
           if (input.available()) {
             input.consumeForward();

@@ -1,0 +1,58 @@
+
+source $SCRIPT_DIR/../syntax/test_helper.arsh
+
+# \b
+assert diff <(redump -m '@@@abcd' '\b' 'i') <(<<'EOF'
+input: `@@@abcd'
+(offset=3, size=0)
+EOF
+)
+
+assert diff <(redump -m $'@@@\u017F bcd' '\b' '') <(<<EOF
+input: \`${$'@@@\u017F bcd'}'
+(offset=6, size=0)
+EOF
+)
+
+assert diff <(redump -m $'@@@\u017F bcd' '\b' 'i') <(<<EOF
+input: \`${$'@@@\u017F bcd'}'
+(offset=3, size=0)
+EOF
+)
+
+assert diff <(redump -m $'@@@\u212A bcd' '\b' '') <(<<EOF
+input: \`${$'@@@\u212A bcd'}'
+(offset=7, size=0)
+EOF
+)
+
+assert diff <(redump -m $'@@@\u212A bcd' '\b' 'i') <(<<EOF
+input: \`${$'@@@\u212A bcd'}'
+(offset=3, size=0)
+EOF
+)
+
+# @@@\B
+assert diff <(redump -m $'@@@\u017F bcd' '@@@\B' '') <(<<EOF
+input: \`${$'@@@\u017F bcd'}'
+(offset=0, size=3)
+EOF
+)
+
+assert diff <(redump -m $'@@@\u017F bcd' '@@@\B' 'i') <(<<EOF
+input: \`${$'@@@\u017F bcd'}'
+failed
+EOF
+)
+
+assert diff <(redump -m $'@@@\u212A bcd' '@@@\B' '') <(<<EOF
+input: \`${$'@@@\u212A bcd'}'
+(offset=0, size=3)
+EOF
+)
+
+assert diff <(redump -m $'@@@\u212A bcd' '@@@\B' 'i') <(<<EOF
+input: \`${$'@@@\u212A bcd'}'
+failed
+EOF
+)

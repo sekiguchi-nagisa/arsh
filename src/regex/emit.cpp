@@ -64,7 +64,7 @@ void CodeGen::todo(const Node &node, const char *str) {
 }
 
 int CodeGen::mayBeSimpleCaseFolding(int codePoint) const {
-  if (this->mode != Mode::UNICODE_SET || !hasFlag(this->modifiers(), Modifier::IGNORE_CASE)) {
+  if (this->mode != Mode::UNICODE_SET || !this->has(Modifier::IGNORE_CASE)) {
     return codePoint;
   }
   return doSimpleCaseFolding(codePoint);
@@ -83,14 +83,14 @@ bool CodeGen::generate(const Node &node) {
     this->builder.emit<NopIns>();
     break;
   case NodeKind::Any:
-    if (hasFlag(this->modifiers(), Modifier::DOT_ALL)) {
+    if (this->has(Modifier::DOT_ALL)) {
       this->builder.emit<AnyIns>();
     } else {
       this->builder.emit<AnyExceptNLIns>();
     }
     break;
   case NodeKind::Char:
-    if (hasFlag(this->modifiers(), Modifier::IGNORE_CASE)) {
+    if (this->has(Modifier::IGNORE_CASE)) {
       this->builder.emit<ICharIns>(doSimpleCaseFolding(cast<CharNode>(node).getCodePoint()));
     } else {
       this->builder.emit<CharIns>(cast<CharNode>(node).getCodePoint());
@@ -104,14 +104,18 @@ bool CodeGen::generate(const Node &node) {
     auto t = cast<BoundaryNode>(node).getType();
     switch (t) {
     case BoundaryNode::Type::START:
-      this->builder.emit<StartIns>(hasFlag(this->modifiers(), Modifier::MULTILINE));
+      this->builder.emit<StartIns>(this->has(Modifier::MULTILINE));
       return true;
     case BoundaryNode::Type::END:
-      this->builder.emit<EndIns>(hasFlag(this->modifiers(), Modifier::MULTILINE));
+      this->builder.emit<EndIns>(this->has(Modifier::MULTILINE));
       return true;
     case BoundaryNode::Type::WORD:
     case BoundaryNode::Type::NOT_WORD:
-      this->builder.emit<WordIns>(t == BoundaryNode::Type::NOT_WORD);
+      if (this->has(Modifier::IGNORE_CASE)) {
+        this->builder.emit<IWordIns>(t == BoundaryNode::Type::NOT_WORD);
+      } else {
+        this->builder.emit<WordIns>(t == BoundaryNode::Type::NOT_WORD);
+      }
       return true;
     }
     break;
@@ -313,7 +317,7 @@ static bool toCodePointSet(ucp::BuilderOrSet builderOrSet, const PropertyNode &n
 }
 
 bool CodeGen::generateProperty(const PropertyNode &node) {
-  if (hasFlag(this->modifiers(), Modifier::IGNORE_CASE)) {
+  if (this->has(Modifier::IGNORE_CASE)) {
     this->todo(node, "ignore-case");
     return false;
   }
@@ -424,7 +428,7 @@ static void appendToCodePointSet(CodePointSetBuilder &builder, const unsigned in
 }
 
 bool CodeGen::generateCharClass(const CharClassNode &node) {
-  if (hasFlag(this->modifiers(), Modifier::IGNORE_CASE)) {
+  if (this->has(Modifier::IGNORE_CASE)) {
     this->todo(node, "ignore-case");
     return false;
   }

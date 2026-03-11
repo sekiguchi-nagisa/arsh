@@ -388,8 +388,10 @@ void RegexDumper::dump(const FlexBuffer<Inst> &ins) {
       inst += sizeof(EndIns);
       break;
     case OpCode::Word:
+    case OpCode::IWord:
       str += "(invert=";
-      appendBool(str, cast<WordIns>(*inst).invert);
+      appendBool(str,
+                 isa<WordIns>(*inst) ? cast<WordIns>(*inst).invert : cast<IWordIns>(*inst).invert);
       str += ')';
       inst += sizeof(WordIns);
       break;
