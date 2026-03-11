@@ -28,61 +28,81 @@
 
 namespace arsh {
 
+class EscapeSeqInterpreter {
+private:
+  const StringRef ref;
+  size_t pos{0};
+  char buf[4]{};
+
+public:
+  explicit EscapeSeqInterpreter(StringRef ref) : ref(ref) {}
+
+  explicit operator bool() const { return this->pos < ref.size(); }
+
+  bool operator()(StringRef &out, std::string *err);
+};
+
+bool EscapeSeqInterpreter::operator()(StringRef &out, std::string *err) {
+  assert(static_cast<bool>(*this));
+  if (this->ref[this->pos] != '\\') {
+    const auto retPos = this->ref.find('\\', this->pos);
+    const auto sub = this->ref.slice(this->pos, retPos);
+    out = sub;
+    this->pos = std::min(retPos, this->ref.size());
+    return true;
+  }
+  const auto ret = parseEscapeSeq(this->ref.begin() + this->pos, this->ref.end(), true);
+  switch (ret.kind) {
+  case EscapeSeqResult::OK_CODE: {
+    if (!UnicodeUtil::isValidCodePoint(ret.codePoint) && err) {
+      *err = "invalid code point";
+      return false;
+    }
+    unsigned int byteSize = UnicodeUtil::codePointToUtf8(ret.codePoint, this->buf);
+    out = StringRef(this->buf, byteSize);
+    this->pos += ret.consumedSize;
+    return true;
+  }
+  case EscapeSeqResult::OK_BYTE: {
+    auto b = static_cast<unsigned int>(ret.codePoint);
+    this->buf[0] = static_cast<char>(static_cast<unsigned char>(b));
+    out = StringRef(this->buf, 1);
+    this->pos += ret.consumedSize;
+    return true;
+  }
+  case EscapeSeqResult::RANGE:
+    if (err) {
+      *err = "invalid code point";
+      return false;
+    }
+    this->pos += ret.consumedSize; // skip invalid code
+    return true;
+  case EscapeSeqResult::UNKNOWN:
+    if (ref[pos + 1] == 'c') {
+      return false; // stop further printing
+    }
+    break;
+  default:
+    break;
+  }
+  this->buf[0] = this->ref[this->pos];
+  out = StringRef(this->buf, 1);
+  this->pos++;
+  return true;
+}
+
 template <typename T>
 static constexpr bool interpret_consumer_requirement_v =
     std::is_same_v<bool, std::invoke_result_t<T, StringRef>>;
 
 template <typename T, enable_when<interpret_consumer_requirement_v<T>> = nullptr>
-static bool interpretEscapeSeq(const StringRef ref, T callback) {
-  const auto size = ref.size();
-  for (StringRef::size_type pos = 0; pos < size;) {
-    const auto retPos = ref.find('\\', pos);
-    const auto sub = ref.slice(pos, retPos);
-    if (!callback(sub)) {
+static bool interpretEscapeSeq(const StringRef ref, std::string *err, T callback) {
+  EscapeSeqInterpreter interpreter(ref);
+  while (interpreter) {
+    StringRef sub;
+    if (!interpreter(sub, err) || !callback(sub)) {
       return false;
     }
-    if (retPos == StringRef::npos) {
-      break;
-    }
-    pos = retPos;
-    const auto ret = parseEscapeSeq(ref.begin() + pos, ref.end(), true);
-    switch (ret.kind) {
-    case EscapeSeqResult::OK_CODE: {
-      char buf[5];
-      unsigned int byteSize = UnicodeUtil::codePointToUtf8(ret.codePoint, buf);
-      if (!callback(StringRef(buf, byteSize))) {
-        return false;
-      }
-      pos += ret.consumedSize;
-      continue;
-    }
-    case EscapeSeqResult::OK_BYTE: {
-      auto b = static_cast<unsigned int>(ret.codePoint);
-      char buf[1];
-      buf[0] = static_cast<char>(static_cast<unsigned char>(b));
-      if (!callback(StringRef(buf, 1))) {
-        return false;
-      }
-      pos += ret.consumedSize;
-      continue;
-    }
-    case EscapeSeqResult::RANGE:
-      pos += ret.consumedSize; // skip invalid code
-      continue;
-    case EscapeSeqResult::UNKNOWN:
-      if (ref[pos + 1] == 'c') {
-        return false; // stop further printing
-      }
-      break;
-    default:
-      break;
-    }
-    char buf[1];
-    buf[0] = ref[pos];
-    if (!callback(StringRef(buf, 1))) {
-      return false;
-    }
-    pos++;
   }
   return true;
 }
@@ -234,7 +254,7 @@ private:
    * if stop printing, return -1
    */
   bool appendAndInterpretEscape(StringRef ref) {
-    return interpretEscapeSeq(ref, [this](StringRef sub) { return this->append(sub); });
+    return interpretEscapeSeq(ref, nullptr, [&](StringRef sub) { return this->append(sub); });
   }
 
   void numberError(StringRef invalidNum, char conversion, StringRef message) {
@@ -449,12 +469,12 @@ bool FormatPrinter::appendAsStr(FormatFlag flags, int width, int precision, char
       return this->appendAndInterpretEscape(ref);
     } else {
       std::string str;
-      bool r = interpretEscapeSeq(ref, [&str](StringRef sub) {
-        const bool s = checkedAppend(sub, StringObject::MAX_SIZE, str);
-        if (!s) {
+      bool r = interpretEscapeSeq(ref, nullptr, [&str](StringRef sub) {
+        const bool r = checkedAppend(sub, StringObject::MAX_SIZE, str);
+        if (!r) {
           errno = ENOMEM;
         }
-        return s;
+        return r;
       });
       return r && this->appendWithPadding(width, str, precision, leftAdjust);
     }
@@ -1002,7 +1022,7 @@ DO_ECHO:
 
     auto arg = argvObj[index].asStrRef();
     if (interpEscape) {
-      bool r = interpretEscapeSeq(arg, [](StringRef sub) {
+      const bool r = interpretEscapeSeq(arg, nullptr, [](StringRef sub) {
         return fwrite(sub.data(), sizeof(char), sub.size(), stdout) == sub.size();
       });
       if (!r) {
