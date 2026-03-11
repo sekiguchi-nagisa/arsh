@@ -45,8 +45,8 @@ function gen_property_test_table(output: String) {
     }
     for target in $targets {
         var ss = $sample("gc:$target")
-        $ss.empty() && continue
-        printf "    {\"gc\", \"%s\", {%s}},\n" $target ${$ss.join(", ")}
+        var ss2 = $sample("!(gc:$target)")
+        printf "    {\"gc\", \"%s\", {%s}, {%s}},\n" $target ${$ss.join(", ")} ${$ss2.join(", ")}
     } with >> $output
 
     # script
@@ -56,8 +56,9 @@ function gen_property_test_table(output: String) {
     }
     for target in $targets {
         var ss = $sample("sc:$target")
-        $ss.empty() && continue
-        printf "    {\"sc\", \"%s\", {%s}},\n" $target ${$ss.join(", ")}
+        var ss2 = $sample("!(sc:$target)")
+
+        printf "    {\"sc\", \"%s\", {%s}, {%s}},\n" $target ${$ss.join(", ")} ${$ss2.join(", ")}
     } with >> $output
 
     # script extension
@@ -68,8 +69,9 @@ function gen_property_test_table(output: String) {
     for target in $targets {
         var ss = $sample("scx:$target")
         $ss.empty() && continue
+        var ss2 =$sample("!(scx:$target)")
         assert !$ss.join(", ").empty() : "<$ss>"
-        printf "    {\"scx\", \"%s\", {%s}},\n" $target ${$ss.join(", ")}
+        printf "    {\"scx\", \"%s\", {%s}, {%s}},\n" $target ${$ss.join(", ")} ${$ss2.join(", ")}
     } with >> $output
 
     # lone property
@@ -85,8 +87,10 @@ function gen_property_test_table(output: String) {
             continue
         }
         var ss = $sample($query)
+        var ss2 = $sample("!($query)")
         assert !$ss.join(", ").empty() : "<$ss>"
-        printf "    {\"\", \"%s\", {%s}},\n" ${def.name} ${$ss.join(", ")}
+        $ss2 = $ss2.empty() ? ['0xFFFFFFF'] : $ss2
+        printf "    {\"\", \"%s\", {%s}, {%s}},\n" ${def.name} ${$ss.join(", ")} ${$ss2.join(", ")}
     } with >> $output
 
     {

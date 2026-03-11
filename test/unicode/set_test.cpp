@@ -537,13 +537,26 @@ struct CodePointArray {
   template <typename... T>
   constexpr CodePointArray(int first, T &&...remain) // NOLINT
       : codePoints(toArray(first, std::forward<T>(remain)...)), usedSize(sizeof...(T) + 1) {}
+
+  const int *begin() const { return this->codePoints.data(); }
+
+  const int *end() const { return this->codePoints.data() + this->usedSize; }
 };
 
 struct PROPERTY_TEST_ENTRY {
   StringRef property;
   StringRef value;
-  CodePointArray array;
+  CodePointArray trueCodes;
+  CodePointArray falseCodes;
 };
+
+// for error message
+inline std::ostream &operator<<(std::ostream &stream, const PROPERTY_TEST_ENTRY &e) {
+  if (e.property.empty()) {
+    return stream << e.value.toString();
+  }
+  return stream << e.property.toString() << "=" << e.value.toString();
+}
 
 #define PROPERTY_NAME_TEST_ENTRY std::vector<std::pair<const char *, const char *>>
 
@@ -554,14 +567,24 @@ struct PropertyTest : public ::testing::TestWithParam<PROPERTY_TEST_ENTRY> {
     auto &entry = GetParam();
     auto property = ucp::parseProperty(entry.property, entry.value, nullptr);
     ASSERT_TRUE(property.hasValue());
-    for (unsigned int i = 0; i < entry.array.usedSize; i++) {
-      const int codePoint = entry.array.codePoints[i];
+    ASSERT_TRUE(entry.trueCodes.end() - entry.trueCodes.begin() > 0);
+    for (int codePoint : entry.trueCodes) {
       auto out = format("%s, %s = 0x%04X", entry.property.toString().c_str(),
                         entry.value.toString().c_str(), codePoint);
       SCOPED_TRACE(out);
       auto set = ucp::getPropertySet(property.unwrap());
       ASSERT_TRUE(set);
       ASSERT_TRUE(set.ref().contains(codePoint));
+    }
+
+    ASSERT_TRUE(entry.falseCodes.end() - entry.falseCodes.begin() > 0);
+    for (int codePoint : entry.falseCodes) {
+      auto out = format("%s, %s = 0x%04X", entry.property.toString().c_str(),
+                        entry.value.toString().c_str(), codePoint);
+      SCOPED_TRACE(out);
+      auto set = ucp::getPropertySet(property.unwrap());
+      ASSERT_TRUE(set);
+      ASSERT_FALSE(set.ref().contains(codePoint));
     }
   }
 };
