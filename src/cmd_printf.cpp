@@ -254,7 +254,7 @@ private:
    * if stop printing, return -1
    */
   bool appendAndInterpretEscape(StringRef ref) {
-    return interpretEscapeSeq(ref, nullptr, [&](StringRef sub) { return this->append(sub); });
+    return interpretEscapeSeq(ref, &this->error, [&](StringRef sub) { return this->append(sub); });
   }
 
   void numberError(StringRef invalidNum, char conversion, StringRef message) {
@@ -469,7 +469,7 @@ bool FormatPrinter::appendAsStr(FormatFlag flags, int width, int precision, char
       return this->appendAndInterpretEscape(ref);
     } else {
       std::string str;
-      bool r = interpretEscapeSeq(ref, nullptr, [&str](StringRef sub) {
+      bool r = interpretEscapeSeq(ref, &this->error, [&str](StringRef sub) {
         const bool r = checkedAppend(sub, StringObject::MAX_SIZE, str);
         if (!r) {
           errno = ENOMEM;

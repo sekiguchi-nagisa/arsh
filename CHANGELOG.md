@@ -26,6 +26,11 @@
 #### Builtin
 
 - **Breaking Change**: in builtin echo and printf, octal escape larger than 255 is truncated
+- **Breaking Change**: builtin printf ``%b`` specifier does not allow invalid code point
+  ```shell
+  printf '%b' '\UFFFFFF'  # out-of-range code point
+  printf '%b' '\uD800'  # surrogate
+  ```
 
 ## [0.40.0] - 2025-12-30
 
