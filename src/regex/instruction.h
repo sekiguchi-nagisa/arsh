@@ -74,17 +74,25 @@ struct NopIns : InstWithRtti<OpCode::Nop> {};
  */
 struct MatchIns : InstWithRtti<OpCode::Match> {};
 
+#define WRITE_TO_INS_FIELD(src, dest)                                                              \
+  static_assert(sizeof(this->dest) == sizeof(src));                                                \
+  memcpy(this->dest, &(src), sizeof(src))
+
+#define READ_FROM_INS_FIELD(src, dest)                                                             \
+  static_assert(sizeof(this->src) == sizeof(dest));                                                \
+  memcpy(&(dest), this->src, sizeof(dest))
+
 /**
  * goto specified target
  */
 struct JumpIns : InstWithRtti<OpCode::Jump> {
   uint8_t target[4];
 
-  explicit JumpIns(uint32_t target) { memcpy(this->target, &target, sizeof(uint32_t)); }
+  explicit JumpIns(uint32_t target) { WRITE_TO_INS_FIELD(target, target); }
 
   uint32_t getTarget() const {
     uint32_t t;
-    memcpy(&t, this->target, sizeof(uint32_t));
+    READ_FROM_INS_FIELD(target, t);
     return t;
   }
 };
@@ -95,11 +103,11 @@ struct JumpIns : InstWithRtti<OpCode::Jump> {
 struct AltIns : InstWithRtti<OpCode::Alt> {
   uint8_t second[4]; // second branch
 
-  explicit AltIns(uint32_t target) { memcpy(this->second, &target, sizeof(uint32_t)); }
+  explicit AltIns(uint32_t target) { WRITE_TO_INS_FIELD(target, second); }
 
   uint32_t getSecond() const {
     uint32_t t;
-    memcpy(&t, this->second, sizeof(uint32_t));
+    READ_FROM_INS_FIELD(second, t);
     return t;
   }
 };
@@ -156,11 +164,11 @@ struct AnyExceptNLIns : InstWithRtti<OpCode::AnyExceptNL> {};
 struct CharIns : InstWithRtti<OpCode::Char> {
   uint8_t code[4];
 
-  explicit CharIns(int codePoint) { memcpy(this->code, &codePoint, sizeof(uint32_t)); }
+  explicit CharIns(int codePoint) { WRITE_TO_INS_FIELD(codePoint, code); }
 
   int32_t getCodePoint() const {
     int32_t codePoint;
-    memcpy(&codePoint, this->code, sizeof(uint32_t));
+    READ_FROM_INS_FIELD(code, codePoint);
     return codePoint;
   }
 };
@@ -171,11 +179,11 @@ struct CharIns : InstWithRtti<OpCode::Char> {
 struct ICharIns : InstWithRtti<OpCode::IChar> {
   uint8_t code[4];
 
-  explicit ICharIns(int codePoint) { memcpy(this->code, &codePoint, sizeof(uint32_t)); }
+  explicit ICharIns(int codePoint) { WRITE_TO_INS_FIELD(codePoint, code); }
 
   int32_t getCodePoint() const {
     int32_t codePoint;
-    memcpy(&codePoint, this->code, sizeof(uint32_t));
+    READ_FROM_INS_FIELD(code, codePoint);
     return codePoint;
   }
 };
@@ -185,12 +193,12 @@ struct CharSetIns : InstWithRtti<OpCode::CharSet> {
   uint8_t index[2]; //
 
   explicit CharSetIns(uint16_t matcherIndex, bool invert) : invert(invert) {
-    memcpy(this->index, &matcherIndex, sizeof(uint16_t));
+    WRITE_TO_INS_FIELD(matcherIndex, index);
   }
 
   uint16_t getMatcherIndex() const {
     uint16_t matcherIndex;
-    memcpy(&matcherIndex, this->index, sizeof(uint16_t));
+    READ_FROM_INS_FIELD(index, matcherIndex);
     return matcherIndex;
   }
 };
@@ -198,11 +206,13 @@ struct CharSetIns : InstWithRtti<OpCode::CharSet> {
 struct BeginCaptureIns : InstWithRtti<OpCode::BeginCapture> {
   uint8_t captureIndex[2];
 
-  explicit BeginCaptureIns(uint16_t index) { memcpy(this->captureIndex, &index, sizeof(uint16_t)); }
+  explicit BeginCaptureIns(uint16_t index) {
+    WRITE_TO_INS_FIELD(index, captureIndex);
+  }
 
   uint16_t getCaptureIndex() const {
     uint16_t index;
-    memcpy(&index, this->captureIndex, sizeof(uint16_t));
+    READ_FROM_INS_FIELD(captureIndex, index);
     return index;
   }
 };
@@ -210,11 +220,13 @@ struct BeginCaptureIns : InstWithRtti<OpCode::BeginCapture> {
 struct EndCaptureIns : InstWithRtti<OpCode::EndCapture> {
   uint8_t captureIndex[2];
 
-  explicit EndCaptureIns(uint16_t index) { memcpy(this->captureIndex, &index, sizeof(uint16_t)); }
+  explicit EndCaptureIns(uint16_t index) {
+    WRITE_TO_INS_FIELD(index, captureIndex);
+  }
 
   uint16_t getCaptureIndex() const {
     uint16_t index;
-    memcpy(&index, this->captureIndex, sizeof(uint16_t));
+    READ_FROM_INS_FIELD(captureIndex, index);
     return index;
   }
 };
@@ -224,12 +236,12 @@ struct BackRefIns : InstWithRtti<OpCode::BackRef> {
   uint8_t index[2];
 
   BackRefIns(uint16_t refIndex, bool named) : named(named) {
-    memcpy(this->index, &refIndex, sizeof(uint16_t));
+    WRITE_TO_INS_FIELD(refIndex, index);
   }
 
   uint16_t getRefIndex() const {
     uint16_t refIndex;
-    memcpy(&refIndex, this->index, sizeof(uint16_t));
+    READ_FROM_INS_FIELD(index, refIndex);
     return refIndex;
   }
 };
@@ -239,12 +251,12 @@ struct IBackRefIns : InstWithRtti<OpCode::IBackRef> {
   uint8_t index[2];
 
   IBackRefIns(uint16_t refIndex, bool named) : named(named) {
-    memcpy(this->index, &refIndex, sizeof(uint16_t));
+    WRITE_TO_INS_FIELD(refIndex, index);
   }
 
   uint16_t getRefIndex() const {
     uint16_t refIndex;
-    memcpy(&refIndex, this->index, sizeof(uint16_t));
+    READ_FROM_INS_FIELD(index, refIndex);
     return refIndex;
   }
 };
