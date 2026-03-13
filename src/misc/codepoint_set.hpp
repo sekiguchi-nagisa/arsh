@@ -113,6 +113,8 @@ private:
   static_assert(sizeof(BMPCodePointRange) == sizeof(uint32_t));
   static_assert(sizeof(NonBMPCodePointRange) == sizeof(uint32_t) * 2);
   static_assert(sizeof(PackedNonBMPCodePointRange) == sizeof(uint32_t));
+  static_assert(alignof(BMPCodePointRange) == alignof(NonBMPCodePointRange));
+  static_assert(alignof(BMPCodePointRange) == alignof(PackedNonBMPCodePointRange));
   static_assert(std::is_trivially_destructible_v<BMPCodePointRange>);
   static_assert(std::is_trivially_destructible_v<NonBMPCodePointRange>);
   static_assert(std::is_trivially_destructible_v<PackedNonBMPCodePointRange>);

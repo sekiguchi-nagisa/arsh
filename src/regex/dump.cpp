@@ -442,7 +442,7 @@ void RegexDumper::dump(const FlexBuffer<Inst> &ins) {
     case OpCode::BackRef: {
       auto &backRef = cast<BackRefIns>(*inst);
       str += "(index=";
-      str += std::to_string(backRef.index);
+      str += std::to_string(backRef.getRefIndex());
       str += ", named=";
       appendBool(str, backRef.named);
       str += ')';
@@ -452,7 +452,7 @@ void RegexDumper::dump(const FlexBuffer<Inst> &ins) {
     case OpCode::IBackRef: {
       auto &backRef = cast<IBackRefIns>(*inst);
       str += "(index=";
-      str += std::to_string(backRef.index);
+      str += std::to_string(backRef.getRefIndex());
       str += ", named=";
       appendBool(str, backRef.named);
       str += ')';

@@ -182,11 +182,17 @@ struct ICharIns : InstWithRtti<OpCode::IChar> {
 
 struct CharSetIns : InstWithRtti<OpCode::CharSet> {
   bool invert;
-  uint16_t index;
+  uint8_t index[2]; //
 
-  explicit CharSetIns(uint16_t matcherIndex, bool invert) : invert(invert), index(matcherIndex) {}
+  explicit CharSetIns(uint16_t matcherIndex, bool invert) : invert(invert) {
+    memcpy(this->index, &matcherIndex, sizeof(uint16_t));
+  }
 
-  uint16_t getMatcherIndex() const { return this->index; }
+  uint16_t getMatcherIndex() const {
+    uint16_t matcherIndex;
+    memcpy(&matcherIndex, this->index, sizeof(uint16_t));
+    return matcherIndex;
+  }
 };
 
 struct BeginCaptureIns : InstWithRtti<OpCode::BeginCapture> {
@@ -203,6 +209,7 @@ struct BeginCaptureIns : InstWithRtti<OpCode::BeginCapture> {
 
 struct EndCaptureIns : InstWithRtti<OpCode::EndCapture> {
   uint8_t captureIndex[2];
+
   explicit EndCaptureIns(uint16_t index) { memcpy(this->captureIndex, &index, sizeof(uint16_t)); }
 
   uint16_t getCaptureIndex() const {
@@ -214,20 +221,37 @@ struct EndCaptureIns : InstWithRtti<OpCode::EndCapture> {
 
 struct BackRefIns : InstWithRtti<OpCode::BackRef> {
   bool named;
-  uint16_t index;
+  uint8_t index[2];
 
-  BackRefIns(uint16_t index, bool named) : named(named), index(index) {}
+  BackRefIns(uint16_t refIndex, bool named) : named(named) {
+    memcpy(this->index, &refIndex, sizeof(uint16_t));
+  }
+
+  uint16_t getRefIndex() const {
+    uint16_t refIndex;
+    memcpy(&refIndex, this->index, sizeof(uint16_t));
+    return refIndex;
+  }
 };
 
 struct IBackRefIns : InstWithRtti<OpCode::IBackRef> {
   bool named;
-  uint16_t index;
+  uint8_t index[2];
 
-  IBackRefIns(uint16_t index, bool named) : named(named), index(index) {}
+  IBackRefIns(uint16_t refIndex, bool named) : named(named) {
+    memcpy(this->index, &refIndex, sizeof(uint16_t));
+  }
+
+  uint16_t getRefIndex() const {
+    uint16_t refIndex;
+    memcpy(&refIndex, this->index, sizeof(uint16_t));
+    return refIndex;
+  }
 };
 
 #define GEN_TYPE_ASSERT(E)                                                                         \
-  static_assert(std::is_trivially_copyable_v<E##Ins> && std::is_trivially_destructible_v<E##Ins>);
+  static_assert(std::is_trivially_copyable_v<E##Ins> && std::is_trivially_destructible_v<E##Ins>); \
+  static_assert(alignof(E##Ins) == alignof(Inst));
 
 EACH_RE_OPCODE(GEN_TYPE_ASSERT)
 

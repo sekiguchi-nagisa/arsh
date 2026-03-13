@@ -280,9 +280,9 @@ BACKTRACK:
           Capture capture;
           if (ins.named) {
             capture = resolveNamedBackRef(
-                regex.getNamedCaptureGroups().toArrayRef()[ins.index].second, captures);
+                regex.getNamedCaptureGroups().toArrayRef()[ins.getRefIndex()].second, captures);
           } else {
-            capture = captures[ins.index];
+            capture = captures[ins.getRefIndex()];
           }
           if (capture) {
             StringRef ref(input.getBegin() + capture.offset, capture.size);
@@ -298,9 +298,9 @@ BACKTRACK:
           Capture capture;
           if (ins.named) {
             capture = resolveNamedBackRef(
-                regex.getNamedCaptureGroups().toArrayRef()[ins.index].second, captures);
+                regex.getNamedCaptureGroups().toArrayRef()[ins.getRefIndex()].second, captures);
           } else {
-            capture = captures[ins.index];
+            capture = captures[ins.getRefIndex()];
           }
           if (capture) {
             const StringRef ref(input.getBegin() + capture.offset, capture.size);
