@@ -233,6 +233,8 @@ pattern:
       token: (pos = 3, size = 8)
       repeat: (min = 3042, max = 3042)
       greedy: true
+      firstGroupIndex: 0
+      lastGroupIndex: 0
       pattern:
         kind: Char
         token: (pos = 3, size = 2)

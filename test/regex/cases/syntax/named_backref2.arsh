@@ -136,6 +136,8 @@ pattern:
       token: (pos = 15, size = 9)
       repeat: (min = 0, max = unlimited)
       greedy: true
+      firstGroupIndex: 3
+      lastGroupIndex: 3
       pattern:
         kind: Group
         token: (pos = 15, size = 8)

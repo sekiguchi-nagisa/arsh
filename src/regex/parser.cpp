@@ -89,6 +89,63 @@ END:
   return true;
 }
 
+// ########################
+// ##     RepeatNode     ##
+// ########################
+
+static void countGroupsImpl(std::pair<uint16_t, uint16_t> &count, const Node &node) {
+  switch (node.getKind()) {
+  case NodeKind::Empty:
+  case NodeKind::Any:
+  case NodeKind::Char:
+  case NodeKind::CharClass:
+  case NodeKind::Property:
+  case NodeKind::Boundary:
+  case NodeKind::BackRef:
+    break;
+  case NodeKind::Repeat: {
+    auto &repeat = cast<RepeatNode>(node);
+    if (auto index = repeat.getFirstGroupIndex()) {
+      if (!count.first) {
+        count.first = index;
+      }
+      assert(repeat.getLastGroupIndex());
+      assert(count.second < repeat.getLastGroupIndex());
+      count.second = repeat.getLastGroupIndex();
+    }
+    break;
+  }
+  case NodeKind::Seq:
+  case NodeKind::Alt:
+    for (auto &e : cast<ListNode>(node).getPatterns()) {
+      countGroupsImpl(count, *e);
+    }
+    break;
+  case NodeKind::LookAround:
+    countGroupsImpl(count, *cast<LookAroundNode>(node).getPattern());
+    break;
+  case NodeKind::Group: {
+    auto &group = cast<GroupNode>(node);
+    if (group.getType() == GroupNode::Type::CAPTURE) {
+      if (!count.first) {
+        assert(group.getGroupIndex());
+        count.first = group.getGroupIndex();
+      }
+      assert(count.second < group.getGroupIndex());
+      count.second = group.getGroupIndex();
+    }
+    countGroupsImpl(count, *group.getPattern());
+    break;
+  }
+  }
+}
+
+std::pair<uint16_t, uint16_t> RepeatNode::countGroups(const Node &node) {
+  std::pair<uint16_t, uint16_t> count{0, 0};
+  countGroupsImpl(count, node);
+  return count;
+}
+
 // #####################
 // ##     AltNode     ##
 // #####################

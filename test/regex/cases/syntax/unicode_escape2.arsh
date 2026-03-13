@@ -146,6 +146,8 @@ pattern:
   token: (pos = 0, size = 8)
   repeat: (min = 7058, max = 7058)
   greedy: true
+  firstGroupIndex: 0
+  lastGroupIndex: 0
   pattern:
     kind: Char
     token: (pos = 0, size = 2)

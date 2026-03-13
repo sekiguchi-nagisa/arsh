@@ -1,0 +1,243 @@
+
+source $SCRIPT_DIR/test_helper.arsh
+
+# ((a)(.))?(.)
+assert diff <(redump '((a)(.))?(.)' 'u') <(<<'EOF'
+flag: (mode = u, modifier = )
+captureGroupCount: 4
+namedCaptureGroups: []
+pattern:
+  kind: Seq
+  token: (pos = 0, size = 12)
+  patterns:
+    - kind: Repeat
+      token: (pos = 0, size = 9)
+      repeat: (min = 0, max = 1)
+      greedy: true
+      firstGroupIndex: 1
+      lastGroupIndex: 3
+      pattern:
+        kind: Group
+        token: (pos = 0, size = 8)
+        group: CAPTURE
+        index: 1
+        setModifiers:
+        unsetModifiers:
+        pattern:
+          kind: Seq
+          token: (pos = 1, size = 6)
+          patterns:
+            - kind: Group
+              token: (pos = 1, size = 3)
+              group: CAPTURE
+              index: 2
+              setModifiers:
+              unsetModifiers:
+              pattern:
+                kind: Char
+                token: (pos = 2, size = 1)
+                codePoint: U+0061, a
+            - kind: Group
+              token: (pos = 4, size = 3)
+              group: CAPTURE
+              index: 3
+              setModifiers:
+              unsetModifiers:
+              pattern:
+                kind: Any
+                token: (pos = 5, size = 1)
+    - kind: Group
+      token: (pos = 9, size = 3)
+      group: CAPTURE
+      index: 4
+      setModifiers:
+      unsetModifiers:
+      pattern:
+        kind: Any
+        token: (pos = 10, size = 1)
+EOF
+)
+
+# ((a)((.))((.)|(.))*(\w))?(.)
+assert diff <(redump '((a)((.))((.)|(.))*(\w))?(.)' 'u') <(<<'EOF'
+flag: (mode = u, modifier = )
+captureGroupCount: 9
+namedCaptureGroups: []
+pattern:
+  kind: Seq
+  token: (pos = 0, size = 28)
+  patterns:
+    - kind: Repeat
+      token: (pos = 0, size = 25)
+      repeat: (min = 0, max = 1)
+      greedy: true
+      firstGroupIndex: 1
+      lastGroupIndex: 8
+      pattern:
+        kind: Group
+        token: (pos = 0, size = 24)
+        group: CAPTURE
+        index: 1
+        setModifiers:
+        unsetModifiers:
+        pattern:
+          kind: Seq
+          token: (pos = 1, size = 22)
+          patterns:
+            - kind: Group
+              token: (pos = 1, size = 3)
+              group: CAPTURE
+              index: 2
+              setModifiers:
+              unsetModifiers:
+              pattern:
+                kind: Char
+                token: (pos = 2, size = 1)
+                codePoint: U+0061, a
+            - kind: Group
+              token: (pos = 4, size = 5)
+              group: CAPTURE
+              index: 3
+              setModifiers:
+              unsetModifiers:
+              pattern:
+                kind: Group
+                token: (pos = 5, size = 3)
+                group: CAPTURE
+                index: 4
+                setModifiers:
+                unsetModifiers:
+                pattern:
+                  kind: Any
+                  token: (pos = 6, size = 1)
+            - kind: Repeat
+              token: (pos = 9, size = 10)
+              repeat: (min = 0, max = unlimited)
+              greedy: true
+              firstGroupIndex: 5
+              lastGroupIndex: 7
+              pattern:
+                kind: Group
+                token: (pos = 9, size = 9)
+                group: CAPTURE
+                index: 5
+                setModifiers:
+                unsetModifiers:
+                pattern:
+                  kind: Alt
+                  token: (pos = 10, size = 7)
+                  patterns:
+                    - kind: Group
+                      token: (pos = 10, size = 3)
+                      group: CAPTURE
+                      index: 6
+                      setModifiers:
+                      unsetModifiers:
+                      pattern:
+                        kind: Any
+                        token: (pos = 11, size = 1)
+                    - kind: Group
+                      token: (pos = 14, size = 3)
+                      group: CAPTURE
+                      index: 7
+                      setModifiers:
+                      unsetModifiers:
+                      pattern:
+                        kind: Any
+                        token: (pos = 15, size = 1)
+            - kind: Group
+              token: (pos = 19, size = 4)
+              group: CAPTURE
+              index: 8
+              setModifiers:
+              unsetModifiers:
+              pattern:
+                kind: Property
+                token: (pos = 20, size = 2)
+                property: WORD
+                value: 0
+                invert: false
+    - kind: Group
+      token: (pos = 25, size = 3)
+      group: CAPTURE
+      index: 9
+      setModifiers:
+      unsetModifiers:
+      pattern:
+        kind: Any
+        token: (pos = 26, size = 1)
+EOF
+)
+
+# ((.))(?:(?=(?<=(?<R>(){1,2}))))??
+assert diff <(redump '((.))(?:(?=(?<=(?<R>(){1,2}))))??' 'u') <(<<'EOF'
+flag: (mode = u, modifier = )
+captureGroupCount: 4
+namedCaptureGroups: [R: 3]
+pattern:
+  kind: Seq
+  token: (pos = 0, size = 33)
+  patterns:
+    - kind: Group
+      token: (pos = 0, size = 5)
+      group: CAPTURE
+      index: 1
+      setModifiers:
+      unsetModifiers:
+      pattern:
+        kind: Group
+        token: (pos = 1, size = 3)
+        group: CAPTURE
+        index: 2
+        setModifiers:
+        unsetModifiers:
+        pattern:
+          kind: Any
+          token: (pos = 2, size = 1)
+    - kind: Repeat
+      token: (pos = 5, size = 28)
+      repeat: (min = 0, max = 1)
+      greedy: false
+      firstGroupIndex: 3
+      lastGroupIndex: 4
+      pattern:
+        kind: Group
+        token: (pos = 5, size = 26)
+        group: NON_CAPTURE
+        index: 0
+        setModifiers:
+        unsetModifiers:
+        pattern:
+          kind: LookAround
+          token: (pos = 8, size = 22)
+          type: LOOK_AHEAD
+          pattern:
+            kind: LookAround
+            token: (pos = 11, size = 18)
+            type: LOOK_BEHIND
+            pattern:
+              kind: Group
+              token: (pos = 15, size = 13)
+              group: CAPTURE
+              index: 3
+              setModifiers:
+              unsetModifiers:
+              pattern:
+                kind: Repeat
+                token: (pos = 20, size = 7)
+                repeat: (min = 1, max = 2)
+                greedy: true
+                firstGroupIndex: 4
+                lastGroupIndex: 4
+                pattern:
+                  kind: Group
+                  token: (pos = 20, size = 2)
+                  group: CAPTURE
+                  index: 4
+                  setModifiers:
+                  unsetModifiers:
+                  pattern:
+                    kind: Empty
+                    token: (pos = 21, size = 0)
+EOF
+)

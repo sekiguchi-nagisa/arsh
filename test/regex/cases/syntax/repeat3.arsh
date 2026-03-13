@@ -17,6 +17,8 @@ pattern:
       token: (pos = 1, size = 4)
       repeat: (min = 0, max = 1)
       greedy: true
+      firstGroupIndex: 1
+      lastGroupIndex: 1
       pattern:
         kind: Group
         token: (pos = 1, size = 3)
@@ -41,6 +43,8 @@ pattern:
   token: (pos = 0, size = 3)
   repeat: (min = 1, max = unlimited)
   greedy: true
+  firstGroupIndex: 1
+  lastGroupIndex: 1
   pattern:
     kind: Group
     token: (pos = 0, size = 2)
@@ -64,6 +68,8 @@ pattern:
   token: (pos = 0, size = 5)
   repeat: (min = 0, max = unlimited)
   greedy: true
+  firstGroupIndex: 1
+  lastGroupIndex: 2
   pattern:
     kind: Group
     token: (pos = 0, size = 4)
@@ -94,6 +100,8 @@ pattern:
   token: (pos = 0, size = 7)
   repeat: (min = 1, max = 1)
   greedy: true
+  firstGroupIndex: 0
+  lastGroupIndex: 0
   pattern:
     kind: Group
     token: (pos = 0, size = 4)
@@ -117,6 +125,8 @@ pattern:
   token: (pos = 0, size = 10)
   repeat: (min = 1, max = unlimited)
   greedy: true
+  firstGroupIndex: 0
+  lastGroupIndex: 0
   pattern:
     kind: Group
     token: (pos = 0, size = 6)
@@ -140,6 +150,8 @@ pattern:
   token: (pos = 0, size = 10)
   repeat: (min = 1, max = 1)
   greedy: true
+  firstGroupIndex: 1
+  lastGroupIndex: 1
   pattern:
     kind: Group
     token: (pos = 0, size = 7)
@@ -164,6 +176,8 @@ pattern:
   token: (pos = 0, size = 10)
   repeat: (min = 0, max = 3)
   greedy: true
+  firstGroupIndex: 0
+  lastGroupIndex: 0
   pattern:
     kind: LookAround
     token: (pos = 0, size = 5)
@@ -192,6 +206,8 @@ pattern:
   token: (pos = 0, size = 6)
   repeat: (min = 0, max = 1)
   greedy: true
+  firstGroupIndex: 0
+  lastGroupIndex: 0
   pattern:
     kind: LookAround
     token: (pos = 0, size = 5)

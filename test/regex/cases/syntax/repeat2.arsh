@@ -148,6 +148,8 @@ pattern:
   token: (pos = 0, size = 4)
   repeat: (min = 2, max = 2)
   greedy: true
+  firstGroupIndex: 0
+  lastGroupIndex: 0
   pattern:
     kind: Char
     token: (pos = 0, size = 1)
@@ -165,6 +167,8 @@ pattern:
   token: (pos = 0, size = 5)
   repeat: (min = 2, max = unlimited)
   greedy: true
+  firstGroupIndex: 0
+  lastGroupIndex: 0
   pattern:
     kind: Char
     token: (pos = 0, size = 1)
@@ -182,6 +186,8 @@ pattern:
   token: (pos = 0, size = 6)
   repeat: (min = 2, max = 4)
   greedy: true
+  firstGroupIndex: 0
+  lastGroupIndex: 0
   pattern:
     kind: Char
     token: (pos = 0, size = 1)
@@ -199,6 +205,8 @@ pattern:
   token: (pos = 0, size = 7)
   repeat: (min = 10, max = 10)
   greedy: false
+  firstGroupIndex: 0
+  lastGroupIndex: 0
   pattern:
     kind: Char
     token: (pos = 0, size = 1)
@@ -215,6 +223,8 @@ pattern:
   token: (pos = 0, size = 7)
   repeat: (min = 10, max = 10)
   greedy: false
+  firstGroupIndex: 0
+  lastGroupIndex: 0
   pattern:
     kind: Char
     token: (pos = 0, size = 1)
@@ -232,6 +242,8 @@ pattern:
   token: (pos = 0, size = 8)
   repeat: (min = 10, max = unlimited)
   greedy: false
+  firstGroupIndex: 0
+  lastGroupIndex: 0
   pattern:
     kind: Char
     token: (pos = 0, size = 1)
@@ -249,6 +261,8 @@ pattern:
   token: (pos = 0, size = 13)
   repeat: (min = 10, max = 111)
   greedy: false
+  firstGroupIndex: 0
+  lastGroupIndex: 0
   pattern:
     kind: Char
     token: (pos = 0, size = 1)

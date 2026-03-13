@@ -196,7 +196,7 @@ void TreeDumper::dumpRaw(const Node &node) {
   E(CharClassNode::Type, SUBTRACT)
     DUMP_ENUM("class", cast<CharClassNode>(node).getType(), EACH_RE_CHAR_CLASS);
 #undef EACH_RE_CHAR_CLASS
-    this->base.dump("invert", cast<CharClassNode>(node).isInvert());
+    this->base.dumpBool("invert", cast<CharClassNode>(node).isInvert());
     this->dump("chars", cast<CharClassNode>(node).getChars());
     break;
   case NodeKind::Property:
@@ -226,7 +226,9 @@ void TreeDumper::dumpRaw(const Node &node) {
       limit = std::to_string(n.getMax());
     }
     this->base.dumpAs("repeat", "(min = %d, max = %s)", n.getMin(), limit.c_str());
-    this->base.dump("greedy", n.isGreedy());
+    this->base.dumpBool("greedy", n.isGreedy());
+    this->base.dumpAs("firstGroupIndex", "%d", n.getFirstGroupIndex());
+    this->base.dumpAs("lastGroupIndex", "%d", n.getLastGroupIndex());
     this->dump("pattern", *n.getPattern());
     break;
   }
@@ -309,7 +311,7 @@ void TreeDumper::dumpRaw(const PropertyNode &node) {
     str = "0";
   }
   this->base.dump("value", str.c_str());
-  this->base.dump("invert", node.isInvert());
+  this->base.dumpBool("invert", node.isInvert());
 }
 
 // #########################

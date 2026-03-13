@@ -415,6 +415,10 @@ public:
 };
 
 class RepeatNode : public NestedNodeWithRtti<NodeKind::Repeat> {
+private:
+  uint16_t firstGroupIndex;
+  uint16_t lastGroupIndex;
+
 public:
   static constexpr unsigned int QUANTIFIER_MAX = UINT16_MAX;
 
@@ -427,6 +431,9 @@ public:
     this->u8 = greedy ? 1 : 0;
     this->u16 = min;
     this->u32 = max;
+    auto [first, last] = countGroups(*this->getPattern());
+    this->firstGroupIndex = first;
+    this->lastGroupIndex = last;
   }
 
   static std::unique_ptr<RepeatNode> option(std::unique_ptr<Node> &&pattern, bool greedy,
@@ -451,6 +458,13 @@ public:
   unsigned int getMax() const { return this->u32; }
 
   bool isUnlimited() const { return this->getMax() == UNLIMIT; }
+
+  uint16_t getFirstGroupIndex() const { return this->firstGroupIndex; }
+
+  uint16_t getLastGroupIndex() const { return this->lastGroupIndex; }
+
+private:
+  static std::pair<uint16_t, uint16_t> countGroups(const Node &node);
 };
 
 class SeqNode : public ListNodeWithRtti<NodeKind::Seq> {

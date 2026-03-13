@@ -64,7 +64,10 @@ struct DumperBase {
 
   void dump(const char *fieldName, Flag flag);
 
-  void dump(const char *fieldName, bool v) { this->dump(fieldName, v ? "true" : "false"); }
+  template <typename T, enable_when<std::is_same_v<T, bool>> = nullptr>
+  void dumpBool(const char *fieldName, T v) {
+    this->dump(fieldName, v ? "true" : "false");
+  }
 };
 
 class TreeDumper {
