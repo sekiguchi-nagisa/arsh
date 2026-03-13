@@ -219,6 +219,7 @@ SyntaxTree Parser::operator()(const StringRef src, const Flag f) {
   this->namedCaptureGroups.clear();
   this->iter = this->begin();
   this->namedRefNodes.clear();
+  this->loopCount = 0;
   this->error.reset();
   this->frames.clear();
 
@@ -257,8 +258,8 @@ SyntaxTree Parser::operator()(const StringRef src, const Flag f) {
     }
   }
 
-  return {this->flag, this->captureGroupCount, std::move(node),
-          NamedCaptureGroups(std::move(offsetMap), std::move(entries))};
+  return {this->flag, this->loopCount, std::move(node),
+          NamedCaptureGroups(std::move(offsetMap), std::move(entries)), this->captureGroupCount};
 }
 
 static bool isQuantifierStart(char ch) {
@@ -1120,21 +1121,33 @@ std::unique_ptr<Node> Parser::tryToParseQuantifier(std::unique_ptr<Node> &&node,
       this->iter++;
       greedy = false;
     }
-    return RepeatNode::option(std::move(node), greedy, this->getTokenFrom(old));
+    if (auto loopIndex = this->newLoopIndex(old); loopIndex.hasValue()) {
+      return RepeatNode::option(loopIndex.unwrap(), std::move(node), greedy,
+                                this->getTokenFrom(old));
+    }
+    return nullptr;
   case '*':
     this->iter++;
     if (this->startsWith("?")) {
       this->iter++;
       greedy = false;
     }
-    return RepeatNode::zeroOrMore(std::move(node), greedy, this->getTokenFrom(old));
+    if (auto loopIndex = this->newLoopIndex(old); loopIndex.hasValue()) {
+      return RepeatNode::zeroOrMore(loopIndex.unwrap(), std::move(node), greedy,
+                                    this->getTokenFrom(old));
+    }
+    return nullptr;
   case '+':
     this->iter++;
     if (this->startsWith("?")) {
       this->iter++;
       greedy = false;
     }
-    return RepeatNode::oneOrMore(std::move(node), greedy, this->getTokenFrom(old));
+    if (auto loopIndex = this->newLoopIndex(old); loopIndex.hasValue()) {
+      return RepeatNode::oneOrMore(loopIndex.unwrap(), std::move(node), greedy,
+                                   this->getTokenFrom(old));
+    }
+    return nullptr;
   case '{': {
     this->iter++;
     unsigned short min = 0;
@@ -1192,7 +1205,11 @@ std::unique_ptr<Node> Parser::tryToParseQuantifier(std::unique_ptr<Node> &&node,
       this->reportError(this->getTokenFrom(old), "numbers out of order in {} quantifier");
       return nullptr;
     }
-    return std::make_unique<RepeatNode>(std::move(node), min, max, greedy, this->getTokenFrom(old));
+    if (auto loopIndex = this->newLoopIndex(old); loopIndex.hasValue()) {
+      return std::make_unique<RepeatNode>(loopIndex.unwrap(), std::move(node), min, max, greedy,
+                                          this->getTokenFrom(old));
+    }
+    return nullptr;
   }
   default:
     return std::move(node);
@@ -1227,7 +1244,7 @@ Optional<unsigned short> Parser::parseQuantifierDigits(const char *prefixStart,
   }
   if (ret.value > RepeatNode::QUANTIFIER_MAX) {
     if (!ignoreError) {
-      this->reportError(this->getTokenFrom(old), "too large quantifier number: `%s'",
+      this->reportError(this->getTokenFrom(old), "too large number in {} quantifier: `%s'",
                         digits.c_str());
     }
     return {};

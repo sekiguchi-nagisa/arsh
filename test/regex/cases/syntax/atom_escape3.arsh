@@ -4,6 +4,7 @@ source $SCRIPT_DIR/test_helper.arsh
 # \c
 assert diff <(redump '\c' '') <(<<'EOF'
 flag: (mode = , modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -34,6 +35,7 @@ EOF
 # \c (invalid char)
 assert diff <(redump ' \c@' '') <(<<'EOF'
 flag: (mode = , modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -69,6 +71,7 @@ EOF
 
 assert diff <(redump '\cあ' '') <(<<'EOF'
 flag: (mode = , modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -102,6 +105,7 @@ EOF
 # \cj
 assert diff <(redump '\cj' '') <(<<'EOF'
 flag: (mode = , modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -113,6 +117,7 @@ EOF
 
 assert diff <(redump '\cj' 'u') <(<<'EOF'
 flag: (mode = u, modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -124,6 +129,7 @@ EOF
 
 assert diff <(redump '\cj' 'um') <(<<'EOF'
 flag: (mode = u, modifier = m)
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -136,6 +142,7 @@ EOF
 # \cJ
 assert diff <(redump '\cJ' '') <(<<'EOF'
 flag: (mode = , modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -147,6 +154,7 @@ EOF
 
 assert diff <(redump '\cJ' 'u') <(<<'EOF'
 flag: (mode = u, modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -158,6 +166,7 @@ EOF
 
 assert diff <(redump '\cJ' 'v') <(<<'EOF'
 flag: (mode = v, modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:

@@ -106,6 +106,7 @@ static std::string format(const NamedCaptureGroups &namedCaptureGroups) {
 std::string TreeDumper::operator()(const SyntaxTree &tree) {
   this->base.indentLevel = 0;
   this->base.dump("flag", tree.getFlag());
+  this->base.dumpAs("loopCount", "%d", tree.getLoopCount());
   this->base.dump("captureGroupCount", std::to_string(tree.getCaptureGroupCount()));
   this->base.dump("namedCaptureGroups", format(tree.getNamedCaptureGroups()));
   this->dump("pattern", *tree.getPattern());
@@ -227,6 +228,7 @@ void TreeDumper::dumpRaw(const Node &node) {
     }
     this->base.dumpAs("repeat", "(min = %d, max = %s)", n.getMin(), limit.c_str());
     this->base.dumpBool("greedy", n.isGreedy());
+    this->base.dumpAs("loopIndex", "%d", n.getLoopIndex());
     this->base.dumpAs("firstGroupIndex", "%d", n.getFirstGroupIndex());
     this->base.dumpAs("lastGroupIndex", "%d", n.getLastGroupIndex());
     this->dump("pattern", *n.getPattern());
@@ -321,6 +323,7 @@ void TreeDumper::dumpRaw(const PropertyNode &node) {
 std::string RegexDumper::operator()(const Regex &regex) {
   this->base.indentLevel = 0;
   this->base.dump("flag", regex.getFlag());
+  this->base.dumpAs("loopCount", "%d", regex.getLoopCount());
   this->base.dump("captureGroupCount", std::to_string(regex.getCaptureGroupCount()));
   this->base.dump("namedCaptureGroups", format(regex.getNamedCaptureGroups()));
   this->dump("instructions", regex.getInstSeq());

@@ -4,6 +4,7 @@ source $SCRIPT_DIR/test_helper.arsh
 # \b
 assert diff <(redump '\b' '') <(<<'EOF'
 flag: (mode = , modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -15,6 +16,7 @@ EOF
 
 assert diff <(redump '\b' 'uim') <(<<'EOF'
 flag: (mode = u, modifier = im)
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -26,6 +28,7 @@ EOF
 
 assert diff <(redump '\b' 'v') <(<<'EOF'
 flag: (mode = v, modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -38,6 +41,7 @@ EOF
 # \B
 assert diff <(redump '\B' 'uim') <(<<'EOF'
 flag: (mode = u, modifier = im)
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -49,6 +53,7 @@ EOF
 
 assert diff <(redump '\B' '') <(<<'EOF'
 flag: (mode = , modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -61,6 +66,7 @@ EOF
 # \d
 assert diff <(redump '\d' '') <(<<'EOF'
 flag: (mode = , modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -74,6 +80,7 @@ EOF
 
 assert diff <(redump '\d' 'v') <(<<'EOF'
 flag: (mode = v, modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -88,6 +95,7 @@ EOF
 # \D
 assert diff <(redump '\D' '') <(<<'EOF'
 flag: (mode = , modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -101,6 +109,7 @@ EOF
 
 assert diff <(redump '\D' 'iu') <(<<'EOF'
 flag: (mode = u, modifier = i)
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -114,6 +123,7 @@ EOF
 
 assert diff <(redump '\D' 'vs') <(<<'EOF'
 flag: (mode = v, modifier = s)
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -128,6 +138,7 @@ EOF
 # \s
 assert diff <(redump '\s' '') <(<<'EOF'
 flag: (mode = , modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -141,6 +152,7 @@ EOF
 
 assert diff <(redump '\s' 'v') <(<<'EOF'
 flag: (mode = v, modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -155,6 +167,7 @@ EOF
 # \S
 assert diff <(redump '\S' '') <(<<'EOF'
 flag: (mode = , modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -168,6 +181,7 @@ EOF
 
 assert diff <(redump '\S' 'u') <(<<'EOF'
 flag: (mode = u, modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -181,6 +195,7 @@ EOF
 
 assert diff <(redump '\S' 'v') <(<<'EOF'
 flag: (mode = v, modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -195,6 +210,7 @@ EOF
 # \w
 assert diff <(redump '\w' '') <(<<'EOF'
 flag: (mode = , modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -208,6 +224,7 @@ EOF
 
 assert diff <(redump '\w' 'v') <(<<'EOF'
 flag: (mode = v, modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -222,6 +239,7 @@ EOF
 # \W
 assert diff <(redump '\W' '') <(<<'EOF'
 flag: (mode = , modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -235,6 +253,7 @@ EOF
 
 assert diff <(redump '\W' 'u') <(<<'EOF'
 flag: (mode = u, modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -248,6 +267,7 @@ EOF
 
 assert diff <(redump '\W' 'v') <(<<'EOF'
 flag: (mode = v, modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:

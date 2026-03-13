@@ -4,6 +4,7 @@ source $SCRIPT_DIR/test_helper.arsh
 # [a-c]
 assert diff <(redump '[a-c]' '') <(<<'EOF'
 flag: (mode = , modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -28,6 +29,7 @@ EOF
 
 assert diff <(redump '[a-c]' 'u') <(<<'EOF'
 flag: (mode = u, modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -52,6 +54,7 @@ EOF
 
 assert diff <(redump '[a-c]' 'v') <(<<'EOF'
 flag: (mode = v, modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -77,6 +80,7 @@ EOF
 # [あ-お]
 assert diff <(redump '[あ-お]' '') <(<<'EOF'
 flag: (mode = , modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -101,6 +105,7 @@ EOF
 
 assert diff <(redump '[あ-お]' 'u') <(<<'EOF'
 flag: (mode = u, modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -125,6 +130,7 @@ EOF
 
 assert diff <(redump '[あ-お]' 'v') <(<<'EOF'
 flag: (mode = v, modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -150,6 +156,7 @@ EOF
 # [a0-9]
 assert diff <(redump '[a0-9]' '') <(<<'EOF'
 flag: (mode = , modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -177,6 +184,7 @@ EOF
 
 assert diff <(redump '[a0-9]' 'u') <(<<'EOF'
 flag: (mode = u, modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -204,6 +212,7 @@ EOF
 
 assert diff <(redump '[a0-9]' 'v') <(<<'EOF'
 flag: (mode = v, modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -232,6 +241,7 @@ EOF
 # [^a-zA-Z_]
 assert diff <(redump '[^a-zA-Z_]' '') <(<<'EOF'
 flag: (mode = , modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -270,6 +280,7 @@ EOF
 
 assert diff <(redump '[^a-zA-Z_]' 'u') <(<<'EOF'
 flag: (mode = u, modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -308,6 +319,7 @@ EOF
 
 assert diff <(redump '[^a-zA-Z_]' 'v') <(<<'EOF'
 flag: (mode = v, modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:

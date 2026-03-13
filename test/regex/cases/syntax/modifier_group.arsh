@@ -39,6 +39,7 @@ EOF
 # (?i:)
 assert diff <(redump '(?i:)' '') <(<<'EOF'
 flag: (mode = , modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -78,6 +79,7 @@ EOF
 # (?i-:a)
 assert diff <(redump '(?i-:a)' '') <(<<'EOF'
 flag: (mode = , modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -111,6 +113,7 @@ EOF
 # (?i-m:a)
 assert diff <(redump '(?i-m:a)' '') <(<<'EOF'
 flag: (mode = , modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -130,6 +133,7 @@ EOF
 # (?i-sm:a)
 assert diff <(redump '(?i-sm:a)' '') <(<<'EOF'
 flag: (mode = , modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -149,6 +153,7 @@ EOF
 # (?-smi:\B)
 assert diff <(redump '(?-msi:\B)' 'u') <(<<'EOF'
 flag: (mode = u, modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:

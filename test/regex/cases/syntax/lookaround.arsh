@@ -11,6 +11,7 @@ EOF
 # (?=)
 assert diff <(redump '(?=)' '') <(<<'EOF'
 flag: (mode = , modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -26,6 +27,7 @@ EOF
 # (?=|)
 assert diff <(redump '(?=|)' '') <(<<'EOF'
 flag: (mode = , modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -46,6 +48,7 @@ EOF
 # (?=ab)
 assert diff <(redump '(?=ab)' '') <(<<'EOF'
 flag: (mode = , modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -75,6 +78,7 @@ EOF
 # (?!)
 assert diff <(redump '(?!)' 'u') <(<<'EOF'
 flag: (mode = u, modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -90,6 +94,7 @@ EOF
 # (?!(?!a))
 assert diff <(redump '(?!(?!a))' 'u') <(<<'EOF'
 flag: (mode = u, modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -124,6 +129,7 @@ EOF
 # (?<=)
 assert diff <(redump '(?<=)' '') <(<<'EOF'
 flag: (mode = , modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -139,6 +145,7 @@ EOF
 # (?<=|)
 assert diff <(redump '(?<=|)' '') <(<<'EOF'
 flag: (mode = , modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -166,6 +173,7 @@ EOF
 # (?<!)
 assert diff <(redump '(?<!)' '') <(<<'EOF'
 flag: (mode = , modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:

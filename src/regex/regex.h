@@ -28,6 +28,7 @@ namespace arsh::regex {
 class Regex {
 private:
   Flag flag;
+  unsigned short loopCount;
   unsigned int captureGroupCount; // 1-based index. if 0, indicate no captures
   FlexBuffer<Inst> instSeq;
   std::vector<Matcher> matchers;
@@ -36,12 +37,14 @@ private:
 public:
   static constexpr size_t MAX_STACK_DEPTH = UINT16_MAX;
 
-  Regex(Flag flag, unsigned int count, FlexBuffer<Inst> &&seq, std::vector<Matcher> &&matchers,
-        NamedCaptureGroups &&named)
-      : flag(flag), captureGroupCount(count), instSeq(std::move(seq)),
+  Regex(Flag flag, unsigned short loopCount, FlexBuffer<Inst> &&seq,
+        std::vector<Matcher> &&matchers, NamedCaptureGroups &&named, unsigned int count)
+      : flag(flag), loopCount(loopCount), captureGroupCount(count), instSeq(std::move(seq)),
         matchers(std::move(matchers)), named(std::move(named)) {}
 
   Flag getFlag() const { return this->flag; }
+
+  unsigned short getLoopCount() const { return this->loopCount; }
 
   unsigned int getCaptureGroupCount() const { return this->captureGroupCount; }
 

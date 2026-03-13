@@ -4,6 +4,7 @@ source $SCRIPT_DIR/test_helper.arsh
 # \p
 assert diff <(redump '\p' '') <(<<'EOF'
 flag: (mode = , modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -28,6 +29,7 @@ EOF
 # \p{
 assert diff <(redump '\P{' '') <(<<'EOF'
 flag: (mode = , modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -58,6 +60,7 @@ EOF
 # \p{C
 assert diff <(redump '\p{C' '') <(<<'EOF'
 flag: (mode = , modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -104,6 +107,7 @@ EOF
 # \p{あ}
 assert diff <(redump '\p{あ}' '') <(<<'EOF'
 flag: (mode = , modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -140,6 +144,7 @@ EOF
 # \p{Co}
 assert diff <(redump '\p{Co}' '') <(<<'EOF'
 flag: (mode = , modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -166,6 +171,7 @@ EOF
 
 assert diff <(redump '\p{Co}' 'u') <(<<'EOF'
 flag: (mode = u, modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -179,6 +185,7 @@ EOF
 
 assert diff <(redump '\p{Co}' 'v') <(<<'EOF'
 flag: (mode = v, modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -219,6 +226,7 @@ EOF
 # \p{Script=Arab}
 assert diff <(redump '\p{Script=Arab}' 'u') <(<<'EOF'
 flag: (mode = u, modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -232,6 +240,7 @@ EOF
 
 assert diff <(redump '\p{Script_Extensions=Arab}' 'vi') <(<<'EOF'
 flag: (mode = v, modifier = i)
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -246,6 +255,7 @@ EOF
 # \P{Term}
 assert diff <(redump '\P{Term}' 'u') <(<<'EOF'
 flag: (mode = u, modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -259,6 +269,7 @@ EOF
 
 assert diff <(redump '\P{Term}' 'v') <(<<'EOF'
 flag: (mode = v, modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -279,6 +290,7 @@ EOF
 
 assert diff <(redump '\p{RGI_Emoji}' 'v') <(<<'EOF'
 flag: (mode = v, modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:

@@ -416,17 +416,20 @@ public:
 
 class RepeatNode : public NestedNodeWithRtti<NodeKind::Repeat> {
 private:
+  uint16_t loopIndex;
   uint16_t firstGroupIndex;
   uint16_t lastGroupIndex;
 
 public:
   static constexpr unsigned int QUANTIFIER_MAX = UINT16_MAX;
 
+  static constexpr unsigned int LOOP_INDEX_MAX = UINT16_MAX;
+
   static constexpr unsigned int UNLIMIT = UINT32_MAX;
 
-  RepeatNode(std::unique_ptr<Node> &&pattern, unsigned short min, unsigned int max, bool greedy,
-             Token end)
-      : NestedNodeWithRtti(pattern->getToken(), std::move(pattern)) {
+  RepeatNode(unsigned short loopIndex, std::unique_ptr<Node> &&pattern, unsigned short min,
+             unsigned int max, bool greedy, Token end)
+      : NestedNodeWithRtti(pattern->getToken(), std::move(pattern)), loopIndex(loopIndex) {
     this->updateToken(end);
     this->u8 = greedy ? 1 : 0;
     this->u16 = min;
@@ -436,19 +439,19 @@ public:
     this->lastGroupIndex = last;
   }
 
-  static std::unique_ptr<RepeatNode> option(std::unique_ptr<Node> &&pattern, bool greedy,
-                                            Token end) {
-    return std::make_unique<RepeatNode>(std::move(pattern), 0, 1, greedy, end);
+  static std::unique_ptr<RepeatNode>
+  option(unsigned short loopIndex, std::unique_ptr<Node> &&pattern, bool greedy, Token end) {
+    return std::make_unique<RepeatNode>(loopIndex, std::move(pattern), 0, 1, greedy, end);
   }
 
-  static std::unique_ptr<RepeatNode> zeroOrMore(std::unique_ptr<Node> &&pattern, bool greedy,
-                                                Token end) {
-    return std::make_unique<RepeatNode>(std::move(pattern), 0, UNLIMIT, greedy, end);
+  static std::unique_ptr<RepeatNode>
+  zeroOrMore(unsigned short loopIndex, std::unique_ptr<Node> &&pattern, bool greedy, Token end) {
+    return std::make_unique<RepeatNode>(loopIndex, std::move(pattern), 0, UNLIMIT, greedy, end);
   }
 
-  static std::unique_ptr<RepeatNode> oneOrMore(std::unique_ptr<Node> &&pattern, bool greedy,
-                                               Token end) {
-    return std::make_unique<RepeatNode>(std::move(pattern), 1, UNLIMIT, greedy, end);
+  static std::unique_ptr<RepeatNode>
+  oneOrMore(unsigned short loopIndex, std::unique_ptr<Node> &&pattern, bool greedy, Token end) {
+    return std::make_unique<RepeatNode>(loopIndex, std::move(pattern), 1, UNLIMIT, greedy, end);
   }
 
   bool isGreedy() const { return this->u8 == 1; }
@@ -458,6 +461,8 @@ public:
   unsigned int getMax() const { return this->u32; }
 
   bool isUnlimited() const { return this->getMax() == UNLIMIT; }
+
+  uint16_t getLoopIndex() const { return this->loopIndex; }
 
   uint16_t getFirstGroupIndex() const { return this->firstGroupIndex; }
 
@@ -558,17 +563,20 @@ public:
 class SyntaxTree {
 private:
   Flag flag;
+  unsigned short loopCount;
   unsigned int captureGroupCount;
   std::unique_ptr<Node> pattern;
   NamedCaptureGroups namedCaptureGroups;
 
 public:
-  SyntaxTree(Flag flag, unsigned int count, std::unique_ptr<Node> pattern,
-             NamedCaptureGroups &&namedCaptureGroups)
-      : flag(flag), captureGroupCount(count), pattern(std::move(pattern)),
+  SyntaxTree(Flag flag, unsigned short loopCount, std::unique_ptr<Node> pattern,
+             NamedCaptureGroups &&namedCaptureGroups, unsigned int count)
+      : flag(flag), loopCount(loopCount), captureGroupCount(count), pattern(std::move(pattern)),
         namedCaptureGroups(std::move(namedCaptureGroups)) {}
 
   Flag getFlag() const { return this->flag; }
+
+  auto getLoopCount() const { return this->loopCount; }
 
   const auto &getPattern() const { return this->pattern; }
 

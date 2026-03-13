@@ -31,6 +31,7 @@ EOF
 # (a)(?<A>b)\k<A>
 assert diff <(redump '(a)(?<A>b)\k<A>' '') <(<<'EOF'
 flag: (mode = , modifier = )
+loopCount: 0
 captureGroupCount: 2
 namedCaptureGroups: [A: 2]
 pattern:
@@ -66,6 +67,7 @@ EOF
 
 assert diff <(redump '(a)(?<A>b)\k<A>' 'v') <(<<'EOF'
 flag: (mode = v, modifier = )
+loopCount: 0
 captureGroupCount: 2
 namedCaptureGroups: [A: 2]
 pattern:
@@ -102,6 +104,7 @@ EOF
 # (a)(?<A>b)\k<B>(?<B>\w)*
 assert diff <(redump '(a)(?<A>b)\k<B>(?<B>\w)*' '') <(<<'EOF'
 flag: (mode = , modifier = )
+loopCount: 1
 captureGroupCount: 3
 namedCaptureGroups: [A: 2, B: 3]
 pattern:
@@ -136,6 +139,7 @@ pattern:
       token: (pos = 15, size = 9)
       repeat: (min = 0, max = unlimited)
       greedy: true
+      loopIndex: 0
       firstGroupIndex: 3
       lastGroupIndex: 3
       pattern:
@@ -157,6 +161,7 @@ EOF
 # \k<A>((?<A>a)|(?<A>)b)\k<A>
 assert diff <(redump '\k<A>((?<A>a)|(?<A>)b)\k<A>' '') <(<<'EOF'
 flag: (mode = , modifier = )
+loopCount: 0
 captureGroupCount: 3
 namedCaptureGroups: [A: [2, 3]]
 pattern:
@@ -212,6 +217,7 @@ EOF
 # (?<\uD850\uDD55>s)\k<\u{24155}>    # always allow \u{} notation in group name even if bmp mode
 assert diff <(redump '(?<\uD850\uDD55>s)\k<\u{24155}>' '') <(<<'EOF'
 flag: (mode = , modifier = )
+loopCount: 0
 captureGroupCount: 1
 namedCaptureGroups: [𤅕: 1]
 pattern:
@@ -237,6 +243,7 @@ EOF
 
 assert diff <(redump '(?<\uD850\uDD55>s)\k<\u{24155}>' 'u') <(<<'EOF'
 flag: (mode = u, modifier = )
+loopCount: 0
 captureGroupCount: 1
 namedCaptureGroups: [𤅕: 1]
 pattern:
@@ -262,6 +269,7 @@ EOF
 
 assert diff <(redump '(?<\uD850\uDD55>s)\k<\u{24155}>' 'v') <(<<'EOF'
 flag: (mode = v, modifier = )
+loopCount: 0
 captureGroupCount: 1
 namedCaptureGroups: [𤅕: 1]
 pattern:

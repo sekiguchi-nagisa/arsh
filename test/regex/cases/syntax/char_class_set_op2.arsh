@@ -4,6 +4,7 @@ source $SCRIPT_DIR/test_helper.arsh
 # [^\p{C}]
 assert diff <(redump '[^\p{C}]' 'v') <(<<'EOF'
 flag: (mode = v, modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -23,6 +24,7 @@ EOF
 # [^\w[^\p{C}]]
 assert diff <(redump '[^\w[^\p{C}]]' 'v') <(<<'EOF'
 flag: (mode = v, modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -66,6 +68,7 @@ EOF
 # [^\w--\S]
 assert diff <(redump '[^\w--\S]' 'v') <(<<'EOF'
 flag: (mode = v, modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -109,6 +112,7 @@ EOF
 # [^e--[\p{RGI_Emoji}]]
 assert diff <(redump '[^e--[\p{RGI_Emoji}]]' 'v') <(<<'EOF'
 flag: (mode = v, modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -141,6 +145,7 @@ EOF
 # [^e&&[\p{RGI_Emoji}]]
 assert diff <(redump '[^e&&[\p{RGI_Emoji}]]' 'v') <(<<'EOF'
 flag: (mode = v, modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -173,6 +178,7 @@ EOF
 # [^\p{RGI_Emoji}&&w]
 assert diff <(redump '[^\p{RGI_Emoji}&&w]' 'v') <(<<'EOF'
 flag: (mode = v, modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -200,6 +206,7 @@ EOF
 # [^a&&\w]
 assert diff <(redump '[^a&&\w]' 'v') <(<<'EOF'
 flag: (mode = v, modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -248,6 +255,7 @@ EOF
 # [^\q{1}]
 assert diff <(redump '[^\q{1}]' 'v') <(<<'EOF'
 flag: (mode = v, modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -268,6 +276,7 @@ EOF
 # [^\q{あ}]
 assert diff <(redump '[^\q{あ}]' 'v') <(<<'EOF'
 flag: (mode = v, modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -288,6 +297,7 @@ EOF
 # [^\q{あ}\q{1}]
 assert diff <(redump '[^\q{あ}\q{1}]' 'v') <(<<'EOF'
 flag: (mode = v, modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -335,6 +345,7 @@ EOF
 # [^\q{a|b}]
 assert diff <(redump '[^\q{a|b}]' 'v') <(<<'EOF'
 flag: (mode = v, modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:

@@ -94,6 +94,7 @@ private:
   unsigned int prefetchedNamedCaptureGroupCount{0};
   std::unordered_map<std::string, FlexBuffer<unsigned int>> namedCaptureGroups;
   std::vector<BackRefNode *> namedRefNodes; // for lazy named backref check
+  unsigned short loopCount{0};
   std::unique_ptr<Error> error{nullptr};
   std::vector<Frame> frames;
 
@@ -225,6 +226,15 @@ private:
 
   Optional<unsigned short> parseQuantifierDigits(const char *prefixStart, bool ignoreError,
                                                  char end);
+
+  Optional<unsigned short> newLoopIndex(const char *prefixStart) {
+    static_assert(RepeatNode::LOOP_INDEX_MAX <= UINT16_MAX);
+    if (this->loopCount == RepeatNode::LOOP_INDEX_MAX) {
+      this->reportError(this->getTokenFrom(prefixStart), "number of quantifier reaches limit");
+      return {};
+    }
+    return this->loopCount++;
+  }
 
   Optional<Modifier> parseModifiers(char end);
 

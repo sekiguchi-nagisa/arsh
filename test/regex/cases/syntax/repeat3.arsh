@@ -4,6 +4,7 @@ source $SCRIPT_DIR/test_helper.arsh
 # (a)?
 assert diff <(redump ' (a)?' '') <(<<'EOF'
 flag: (mode = , modifier = )
+loopCount: 1
 captureGroupCount: 1
 namedCaptureGroups: []
 pattern:
@@ -17,6 +18,7 @@ pattern:
       token: (pos = 1, size = 4)
       repeat: (min = 0, max = 1)
       greedy: true
+      loopIndex: 0
       firstGroupIndex: 1
       lastGroupIndex: 1
       pattern:
@@ -36,6 +38,7 @@ EOF
 # ()+
 assert diff <(redump '()+' 'u') <(<<'EOF'
 flag: (mode = u, modifier = )
+loopCount: 1
 captureGroupCount: 1
 namedCaptureGroups: []
 pattern:
@@ -43,6 +46,7 @@ pattern:
   token: (pos = 0, size = 3)
   repeat: (min = 1, max = unlimited)
   greedy: true
+  loopIndex: 0
   firstGroupIndex: 1
   lastGroupIndex: 1
   pattern:
@@ -61,6 +65,7 @@ EOF
 # ()*
 assert diff <(redump '(())*' 'mu') <(<<'EOF'
 flag: (mode = u, modifier = m)
+loopCount: 1
 captureGroupCount: 2
 namedCaptureGroups: []
 pattern:
@@ -68,6 +73,7 @@ pattern:
   token: (pos = 0, size = 5)
   repeat: (min = 0, max = unlimited)
   greedy: true
+  loopIndex: 0
   firstGroupIndex: 1
   lastGroupIndex: 2
   pattern:
@@ -93,6 +99,7 @@ EOF
 # (?:){1}
 assert diff <(redump '(?:){1}' 'mu') <(<<'EOF'
 flag: (mode = u, modifier = m)
+loopCount: 1
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -100,6 +107,7 @@ pattern:
   token: (pos = 0, size = 7)
   repeat: (min = 1, max = 1)
   greedy: true
+  loopIndex: 0
   firstGroupIndex: 0
   lastGroupIndex: 0
   pattern:
@@ -118,6 +126,7 @@ EOF
 # (?-m:){1}
 assert diff <(redump '(?-m:){1,}' 'mu') <(<<'EOF'
 flag: (mode = u, modifier = m)
+loopCount: 1
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -125,6 +134,7 @@ pattern:
   token: (pos = 0, size = 10)
   repeat: (min = 1, max = unlimited)
   greedy: true
+  loopIndex: 0
   firstGroupIndex: 0
   lastGroupIndex: 0
   pattern:
@@ -143,6 +153,7 @@ EOF
 # (?<a>:){1}
 assert diff <(redump '(?<a>:){1}' 'mu') <(<<'EOF'
 flag: (mode = u, modifier = m)
+loopCount: 1
 captureGroupCount: 1
 namedCaptureGroups: [a: 1]
 pattern:
@@ -150,6 +161,7 @@ pattern:
   token: (pos = 0, size = 10)
   repeat: (min = 1, max = 1)
   greedy: true
+  loopIndex: 0
   firstGroupIndex: 1
   lastGroupIndex: 1
   pattern:
@@ -169,6 +181,7 @@ EOF
 # (?=a){0,3}
 assert diff <(redump '(?=a){0,3}' 'm') <(<<'EOF'  # only allowed in legacy mode
 flag: (mode = , modifier = m)
+loopCount: 1
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -176,6 +189,7 @@ pattern:
   token: (pos = 0, size = 10)
   repeat: (min = 0, max = 3)
   greedy: true
+  loopIndex: 0
   firstGroupIndex: 0
   lastGroupIndex: 0
   pattern:
@@ -199,6 +213,7 @@ EOF
 # (?!a)?
 assert diff <(redump '(?!a)?' '') <(<<'EOF'
 flag: (mode = , modifier = )
+loopCount: 1
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -206,6 +221,7 @@ pattern:
   token: (pos = 0, size = 6)
   repeat: (min = 0, max = 1)
   greedy: true
+  loopIndex: 0
   firstGroupIndex: 0
   lastGroupIndex: 0
   pattern:

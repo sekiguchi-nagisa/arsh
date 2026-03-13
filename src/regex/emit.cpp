@@ -37,8 +37,9 @@ Optional<Regex> CodeGen::operator()(SyntaxTree &&tree) {
   this->builder.emit<MatchIns>();
   auto flag = tree.getFlag();
   auto count = tree.getCaptureGroupCount();
-  return Regex(flag, count, std::move(this->builder).build(), std::move(this->matchers),
-               std::move(tree).takeNamedCaptureGroups());
+  auto loopCount = tree.getLoopCount();
+  return Regex(flag, loopCount, std::move(this->builder).build(), std::move(this->matchers),
+               std::move(tree).takeNamedCaptureGroups(), count);
 }
 
 static const char *toString(NodeKind kind) { // TODO: remove

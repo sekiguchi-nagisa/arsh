@@ -4,6 +4,7 @@ source $SCRIPT_DIR/test_helper.arsh
 # あ?
 assert diff <(redump 'あ?' '') <(<<'EOF'
 flag: (mode = , modifier = )
+loopCount: 1
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -11,6 +12,7 @@ pattern:
   token: (pos = 0, size = 4)
   repeat: (min = 0, max = 1)
   greedy: true
+  loopIndex: 0
   firstGroupIndex: 0
   lastGroupIndex: 0
   pattern:
@@ -22,6 +24,7 @@ EOF
 
 assert diff <(redump 'あ?' 'u') <(<<'EOF'
 flag: (mode = u, modifier = )
+loopCount: 1
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -29,6 +32,7 @@ pattern:
   token: (pos = 0, size = 4)
   repeat: (min = 0, max = 1)
   greedy: true
+  loopIndex: 0
   firstGroupIndex: 0
   lastGroupIndex: 0
   pattern:
@@ -40,6 +44,7 @@ EOF
 
 assert diff <(redump '\u{3042}?' '') <(<<'EOF'
 flag: (mode = , modifier = )
+loopCount: 1
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -47,6 +52,7 @@ pattern:
   token: (pos = 0, size = 9)
   repeat: (min = 3042, max = 3042)
   greedy: false
+  loopIndex: 0
   firstGroupIndex: 0
   lastGroupIndex: 0
   pattern:
@@ -58,6 +64,7 @@ EOF
 
 assert diff <(redump '\u{3042}?' 'u') <(<<'EOF'
 flag: (mode = u, modifier = )
+loopCount: 1
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -65,6 +72,7 @@ pattern:
   token: (pos = 0, size = 9)
   repeat: (min = 0, max = 1)
   greedy: true
+  loopIndex: 0
   firstGroupIndex: 0
   lastGroupIndex: 0
   pattern:
@@ -77,6 +85,7 @@ EOF
 # あ??
 assert diff <(redump ' あ??' '') <(<<'EOF'
 flag: (mode = , modifier = )
+loopCount: 1
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -90,6 +99,7 @@ pattern:
       token: (pos = 1, size = 5)
       repeat: (min = 0, max = 1)
       greedy: false
+      loopIndex: 0
       firstGroupIndex: 0
       lastGroupIndex: 0
       pattern:
@@ -101,6 +111,7 @@ EOF
 
 assert diff <(redump ' あ??' 'v') <(<<'EOF'
 flag: (mode = v, modifier = )
+loopCount: 1
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -114,6 +125,7 @@ pattern:
       token: (pos = 1, size = 5)
       repeat: (min = 0, max = 1)
       greedy: false
+      loopIndex: 0
       firstGroupIndex: 0
       lastGroupIndex: 0
       pattern:
@@ -126,6 +138,7 @@ EOF
 # a*
 assert diff <(redump 'a*' '') <(<<'EOF'
 flag: (mode = , modifier = )
+loopCount: 1
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -133,6 +146,7 @@ pattern:
   token: (pos = 0, size = 2)
   repeat: (min = 0, max = unlimited)
   greedy: true
+  loopIndex: 0
   firstGroupIndex: 0
   lastGroupIndex: 0
   pattern:
@@ -145,6 +159,7 @@ EOF
 # a*?
 assert diff <(redump 'a*?' '') <(<<'EOF'
 flag: (mode = , modifier = )
+loopCount: 1
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -152,6 +167,7 @@ pattern:
   token: (pos = 0, size = 3)
   repeat: (min = 0, max = unlimited)
   greedy: false
+  loopIndex: 0
   firstGroupIndex: 0
   lastGroupIndex: 0
   pattern:
@@ -177,6 +193,7 @@ EOF
 # \w+
 assert diff <(redump '\w+' '') <(<<'EOF'
 flag: (mode = , modifier = )
+loopCount: 1
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -184,6 +201,7 @@ pattern:
   token: (pos = 0, size = 3)
   repeat: (min = 1, max = unlimited)
   greedy: true
+  loopIndex: 0
   firstGroupIndex: 0
   lastGroupIndex: 0
   pattern:
@@ -198,6 +216,7 @@ EOF
 # .+?
 assert diff <(redump '.+?' 'v') <(<<'EOF'
 flag: (mode = v, modifier = )
+loopCount: 1
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -205,6 +224,7 @@ pattern:
   token: (pos = 0, size = 3)
   repeat: (min = 1, max = unlimited)
   greedy: false
+  loopIndex: 0
   firstGroupIndex: 0
   lastGroupIndex: 0
   pattern:

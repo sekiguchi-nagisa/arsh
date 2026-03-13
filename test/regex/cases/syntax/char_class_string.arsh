@@ -4,6 +4,7 @@ source $SCRIPT_DIR/test_helper.arsh
 # [\q]
 assert diff <(redump '[\q]' '') <(<<'EOF'
 flag: (mode = , modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -33,6 +34,7 @@ EOF
 # [\q{]
 assert diff <(redump '[\q{]' '') <(<<'EOF'
 flag: (mode = , modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -84,6 +86,7 @@ EOF
 # [\q{}]
 assert diff <(redump '[\q{}]' '') <(<<'EOF'
 flag: (mode = , modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -112,6 +115,7 @@ EOF
 
 assert diff <(redump '[\q{}]' 'v') <(<<'EOF'
 flag: (mode = v, modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -131,6 +135,7 @@ EOF
 # [\q{1}]
 assert diff <(redump '[\q{1}]' 'v') <(<<'EOF'
 flag: (mode = v, modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -151,6 +156,7 @@ EOF
 # [\q{\b}]
 assert diff <(redump '[\q{\b}]' 'v') <(<<'EOF'
 flag: (mode = v, modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -235,6 +241,7 @@ EOF
 # [\q{|}]
 assert diff <(redump '[\q{|}]' 'v') <(<<'EOF'
 flag: (mode = v, modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -256,6 +263,7 @@ EOF
 # [\q{a|}]
 assert diff <(redump '[\q{a|}]' 'v') <(<<'EOF'
 flag: (mode = v, modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -278,6 +286,7 @@ EOF
 # [\q{a|}]
 assert diff <(redump '[\q{|\n}]' 'v') <(<<'EOF'
 flag: (mode = v, modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -300,6 +309,7 @@ EOF
 # [\q{ab|\u7058\u{24155}}]
 assert diff <(redump '[\q{ab|\u7058\u{24155}}]' 'v') <(<<'EOF'
 flag: (mode = v, modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:

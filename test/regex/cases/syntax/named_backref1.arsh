@@ -4,6 +4,7 @@ source $SCRIPT_DIR/test_helper.arsh
 # \k
 assert diff <(redump '\k' '') <(<<'EOF'
 flag: (mode = , modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -28,6 +29,7 @@ EOF
 # \k<
 assert diff <(redump '\k<' '') <(<<'EOF'
 flag: (mode = , modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -58,6 +60,7 @@ EOF
 # \k<2
 assert diff <(redump '\k<2' '') <(<<'EOF'
 flag: (mode = , modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -140,6 +143,7 @@ EOF
 # \k<あ1>
 assert diff <(redump '\k<あ1>' '') <(<<'EOF'
 flag: (mode = , modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -179,6 +183,7 @@ EOF
 # \k<\u30421>
 assert diff <(redump '\k<\u30421>' '') <(<<'EOF'
 flag: (mode = , modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -217,6 +222,7 @@ EOF
 
 assert diff <(redump '\k<\u{3042}1>' '') <(<<'EOF'
 flag: (mode = , modifier = )
+loopCount: 1
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -233,6 +239,7 @@ pattern:
       token: (pos = 3, size = 8)
       repeat: (min = 3042, max = 3042)
       greedy: true
+      loopIndex: 0
       firstGroupIndex: 0
       lastGroupIndex: 0
       pattern:

@@ -4,6 +4,7 @@ source $SCRIPT_DIR/test_helper.arsh
 # ()
 assert diff <(redump '()' '') <(<<'EOF'
 flag: (mode = , modifier = )
+loopCount: 0
 captureGroupCount: 1
 namedCaptureGroups: []
 pattern:
@@ -21,6 +22,7 @@ EOF
 
 assert diff <(redump '()' 'u') <(<<'EOF'
 flag: (mode = u, modifier = )
+loopCount: 0
 captureGroupCount: 1
 namedCaptureGroups: []
 pattern:
@@ -39,6 +41,7 @@ EOF
 # (|)
 assert diff <(redump '(|)' '') <(<<'EOF'
 flag: (mode = , modifier = )
+loopCount: 0
 captureGroupCount: 1
 namedCaptureGroups: []
 pattern:
@@ -62,6 +65,7 @@ EOF
 # (())
 assert diff <(redump '(())' '') <(<<'EOF'
 flag: (mode = , modifier = )
+loopCount: 0
 captureGroupCount: 2
 namedCaptureGroups: []
 pattern:
@@ -88,6 +92,7 @@ EOF
 # ((.))
 assert diff <(redump '((.))' 'vi') <(<<'EOF'
 flag: (mode = v, modifier = i)
+loopCount: 0
 captureGroupCount: 2
 namedCaptureGroups: []
 pattern:
@@ -113,6 +118,7 @@ EOF
 # (\()\)
 assert diff <(redump '(\()\)' 'vi') <(<<'EOF'
 flag: (mode = v, modifier = i)
+loopCount: 0
 captureGroupCount: 1
 namedCaptureGroups: []
 pattern:
@@ -166,6 +172,7 @@ EOF
 # (a\w())
 assert diff <(redump '(a\w())' '') <(<<'EOF'
 flag: (mode = , modifier = )
+loopCount: 0
 captureGroupCount: 2
 namedCaptureGroups: []
 pattern:

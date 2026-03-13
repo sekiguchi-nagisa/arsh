@@ -4,6 +4,7 @@ source $SCRIPT_DIR/test_helper.arsh
 # |
 assert diff <(redump '|' '') <(<<'EOF'
 flag: (mode = , modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -20,6 +21,7 @@ EOF
 # |
 assert diff <(redump ' |' '') <(<<'EOF'
 flag: (mode = , modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -37,6 +39,7 @@ EOF
 # |a
 assert diff <(redump '|a' 'v') <(<<'EOF'
 flag: (mode = v, modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -54,6 +57,7 @@ EOF
 # ab|abc
 assert diff <(redump 'ab|abc' 'v') <(<<'EOF'
 flag: (mode = v, modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -87,6 +91,7 @@ EOF
 # ||
 assert diff <(redump '||' '') <(<<'EOF'
 flag: (mode = , modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
@@ -105,6 +110,7 @@ EOF
 # \||\|
 assert diff <(redump '\||\|' '') <(<<'EOF'
 flag: (mode = , modifier = )
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 pattern:
