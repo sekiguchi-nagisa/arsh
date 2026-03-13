@@ -120,7 +120,15 @@ bool CodeGen::generate(const Node &node) {
     }
     break;
   }
-  case NodeKind::BackRef:
+  case NodeKind::BackRef: {
+    auto &backRefNode = cast<BackRefNode>(node);
+    if (this->has(Modifier::IGNORE_CASE)) {
+      this->builder.emit<IBackRefIns>(backRefNode.getIndex(), backRefNode.isNamed());
+    } else {
+      this->builder.emit<BackRefIns>(backRefNode.getIndex(), backRefNode.isNamed());
+    }
+    break;
+  }
   case NodeKind::Repeat:
     this->todo(node);
     return false;

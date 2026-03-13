@@ -1,0 +1,44 @@
+
+source $SCRIPT_DIR/../syntax/test_helper.arsh
+
+# (abc)\1
+assert diff <(redump -m '123abcabc' '(abc)\1' '') <(<<'EOF'
+input: `123abcabc'
+(offset=3, size=6)
+(offset=3, size=3)
+EOF
+)
+
+# (abc)\2
+assert diff <(redump -m '123abcabc' '(abc)\2' '') <(<<'EOF'
+input: `123abcabc'
+failed
+EOF
+)
+
+assert diff <(redump -m $'123abc\x02' '(abc)\2' '') <(<<EOF
+input: \`123abc${$'\x02'}'
+(offset=3, size=4)
+(offset=3, size=3)
+EOF
+)
+
+assert diff <(redump -m '123abcabc' '(abc)\2' 'u' 2>&1) <(<<'EOF'
+1:6 [error] backref index is greater than capture group count: `2'
+ at (pos = 5, size = 2)
+EOF
+)
+
+# (abc)\101
+assert diff <(redump -m '123abcabc' '(abc)\101' '') <(<<'EOF'
+input: `123abcabc'
+failed
+EOF
+)
+
+assert diff <(redump -m '123abcabc' '(abc)\101' 'i') <(<<'EOF'
+input: `123abcabc'
+(offset=3, size=4)
+(offset=3, size=3)
+EOF
+)

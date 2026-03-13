@@ -109,6 +109,20 @@ public:
   }
 };
 
+static Capture resolveNamedBackRef(const NamedCaptureEntry &entry,
+                                   const FlexBuffer<Capture> &captures) {
+  if (entry.hasMultipleIndices()) {
+    for (unsigned int i = 0; i < entry.getSize(); i++) {
+      unsigned int capIndex = entry[i];
+      if (auto cap = captures[capIndex]) {
+        return cap;
+      }
+    }
+    return {};
+  }
+  return captures[entry.getIndex()];
+}
+
 #define TRY(E)                                                                                     \
   do {                                                                                             \
     if (unlikely(!(E))) {                                                                          \
@@ -248,7 +262,8 @@ BACKTRACK:
         }
         vmcase(BeginCapture) {
           auto &ins = cast<BeginCaptureIns>(*inst);
-          captures[ins.getCaptureIndex()].offset = input.getIter() - input.getBegin();
+          captures[ins.getCaptureIndex()] = {
+              .offset = static_cast<uint32_t>(input.getIter() - input.getBegin()), .size = 0};
           TRY(bts.push(Backtrack::newSetCapture(ins.getCaptureIndex(), Capture())));
           inst += sizeof(BeginCaptureIns);
           vmnext;
@@ -258,6 +273,50 @@ BACKTRACK:
           captures[ins.getCaptureIndex()].size =
               input.getIter() - (input.getBegin() + captures[ins.getCaptureIndex()].offset);
           inst += sizeof(EndCaptureIns);
+          vmnext;
+        }
+        vmcase(BackRef) {
+          auto &ins = cast<BackRefIns>(*inst);
+          Capture capture;
+          if (ins.named) {
+            capture = resolveNamedBackRef(
+                regex.getNamedCaptureGroups().toArrayRef()[ins.index].second, captures);
+          } else {
+            capture = captures[ins.index];
+          }
+          if (capture) {
+            StringRef ref(input.getBegin() + capture.offset, capture.size);
+            if (!input.expectPrefix(ref)) {
+              goto BACKTRACK;
+            }
+          }
+          inst += sizeof(BackRefIns);
+          vmnext;
+        }
+        vmcase(IBackRef) {
+          auto &ins = cast<IBackRefIns>(*inst);
+          Capture capture;
+          if (ins.named) {
+            capture = resolveNamedBackRef(
+                regex.getNamedCaptureGroups().toArrayRef()[ins.index].second, captures);
+          } else {
+            capture = captures[ins.index];
+          }
+          if (capture) {
+            const StringRef ref(input.getBegin() + capture.offset, capture.size);
+            const char *end = ref.end();
+            for (const char *iter = ref.begin(); iter != end;) {
+              int codePoint;
+              unsigned int byteSize = UnicodeUtil::utf8ToCodePoint(iter, end, codePoint);
+              assert(byteSize);
+              iter += byteSize;
+              codePoint = doSimpleCaseFolding(codePoint);
+              if (!input.available() || codePoint != doSimpleCaseFolding(input.consumeForward())) {
+                goto BACKTRACK;
+              }
+            }
+          }
+          inst += sizeof(IBackRefIns);
           vmnext;
         }
       }

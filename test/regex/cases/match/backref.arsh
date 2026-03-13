@@ -1,0 +1,98 @@
+
+source $SCRIPT_DIR/../syntax/test_helper.arsh
+
+# (.).\1
+assert diff <(redump -m '123sas' '(.).\1' '') <(<<'EOF'
+input: `123sas'
+(offset=3, size=3)
+(offset=3, size=1)
+EOF
+)
+
+assert diff <(redump -m '123saS' '(.).\1' 'i') <(<<'EOF'
+input: `123saS'
+(offset=3, size=3)
+(offset=3, size=1)
+EOF
+)
+
+# (?<prev>.).\k<prev>
+assert diff <(redump -m '123sas' '(?<prev>.).\k<prev>' 'u') <(<<'EOF'
+input: `123sas'
+(offset=3, size=3)
+(offset=3, size=1)
+EOF
+)
+
+assert diff <(redump -m '123Sas' '(?<prev>.).\k<prev>' 'ui') <(<<'EOF'
+input: `123Sas'
+(offset=3, size=3)
+(offset=3, size=1)
+EOF
+)
+
+# (?:a|(b))\1c
+assert diff <(redump -m '123ac' '(?:a|(b))\1c' 'u') <(<<'EOF'
+input: `123ac'
+(offset=3, size=2)
+(unset)
+EOF
+)
+
+assert diff <(redump -m '123ac' '(?:a|(b))\1c' 'iu') <(<<'EOF'
+input: `123ac'
+(offset=3, size=2)
+(unset)
+EOF
+)
+
+# \1(あい)
+assert diff <(redump -m 'あい' '\1(あい)' 'u') <(<<'EOF'
+input: `あい'
+(offset=0, size=6)
+(offset=0, size=6)
+EOF
+)
+
+assert diff <(redump -m 'あい' '\1(あい)' 'ui') <(<<'EOF'
+input: `あい'
+(offset=0, size=6)
+(offset=0, size=6)
+EOF
+)
+
+# (?<it>ABC\k<it>)
+assert diff <(redump -m '@ABC' '(?<it>ABC\k<it>)' 'u') <(<<'EOF'
+input: `@ABC'
+(offset=1, size=3)
+(offset=1, size=3)
+EOF
+)
+
+assert diff <(redump -m '@ABC' '(?<it>ABC\k<it>)' 'ui') <(<<'EOF'
+input: `@ABC'
+(offset=1, size=3)
+(offset=1, size=3)
+EOF
+)
+
+# (?<year>\d\d\d\d)-\d\d|\d\d-(?<year>\d\d\d\d)
+assert diff <(redump -m '2025-12 2025'
+    '((?<year>\d\d\d\d)-\d\d|\d\d-(?<year>\d\d\d\d)) \k<year>' 'u') <(<<'EOF'
+input: `2025-12 2025'
+(offset=0, size=12)
+(offset=0, size=7)
+(offset=0, size=4)
+(unset)
+EOF
+)
+
+assert diff <(redump -m '12-2025 2025'
+    '((?<year>\d\d\d\d)-\d\d|\d\d-(?<year>\d\d\d\d)) \k<year>' 'u') <(<<'EOF'
+input: `12-2025 2025'
+(offset=0, size=12)
+(offset=0, size=7)
+(unset)
+(offset=3, size=4)
+EOF
+)

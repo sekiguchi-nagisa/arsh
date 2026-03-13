@@ -439,6 +439,26 @@ void RegexDumper::dump(const FlexBuffer<Inst> &ins) {
       str += ')';
       inst += sizeof(EndCaptureIns);
       break;
+    case OpCode::BackRef: {
+      auto &backRef = cast<BackRefIns>(*inst);
+      str += "(index=";
+      str += std::to_string(backRef.index);
+      str += ", named=";
+      appendBool(str, backRef.named);
+      str += ')';
+      inst += sizeof(BackRefIns);
+      break;
+    }
+    case OpCode::IBackRef: {
+      auto &backRef = cast<IBackRefIns>(*inst);
+      str += "(index=";
+      str += std::to_string(backRef.index);
+      str += ", named=";
+      appendBool(str, backRef.named);
+      str += ')';
+      inst += sizeof(IBackRefIns);
+      break;
+    }
     }
     this->base.dump(lineNum.c_str(), str);
   }

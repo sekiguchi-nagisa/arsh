@@ -38,7 +38,9 @@ namespace arsh::regex {
   OP(IChar)                                                                                        \
   OP(CharSet)                                                                                      \
   OP(BeginCapture)                                                                                 \
-  OP(EndCapture)
+  OP(EndCapture)                                                                                   \
+  OP(BackRef)                                                                                      \
+  OP(IBackRef)
 
 enum class OpCode : uint8_t {
 #define GEN_ENUM(E) E,
@@ -208,6 +210,20 @@ struct EndCaptureIns : InstWithRtti<OpCode::EndCapture> {
     memcpy(&index, this->captureIndex, sizeof(uint16_t));
     return index;
   }
+};
+
+struct BackRefIns : InstWithRtti<OpCode::BackRef> {
+  bool named;
+  uint16_t index;
+
+  BackRefIns(uint16_t index, bool named) : named(named), index(index) {}
+};
+
+struct IBackRefIns : InstWithRtti<OpCode::IBackRef> {
+  bool named;
+  uint16_t index;
+
+  IBackRefIns(uint16_t index, bool named) : named(named), index(index) {}
 };
 
 #define GEN_TYPE_ASSERT(E)                                                                         \

@@ -160,6 +160,14 @@ public:
     codePoint |= (*this->iter & masks[len - 1]) << shift;
     return static_cast<int>(codePoint);
   }
+
+  bool expectPrefix(StringRef prefix) {
+    if (StringRef(this->iter, this->end - this->iter).startsWith(prefix)) {
+      this->iter += prefix.size();
+      return true;
+    }
+    return false;
+  }
 };
 
 } // namespace arsh::regex

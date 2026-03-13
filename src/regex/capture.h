@@ -105,7 +105,9 @@ struct Capture {
   uint32_t offset{UINT32_MAX};
   uint32_t size{UINT32_MAX};
 
-  explicit operator bool() const { return this->offset != UINT32_MAX && this->size != UINT32_MAX; }
+  bool isUnset() const { return this->offset == UINT32_MAX && this->size == UINT32_MAX; }
+
+  explicit operator bool() const { return !this->isUnset(); }
 };
 
 } // namespace arsh::regex
