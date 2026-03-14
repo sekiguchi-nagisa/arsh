@@ -444,6 +444,14 @@ void RegexDumper::dump(const FlexBuffer<Inst> &ins) {
       str += ')';
       inst += sizeof(EndCaptureIns);
       break;
+    case OpCode::ResetCaptures:
+      str += "(firstIndex=";
+      str += std::to_string(cast<ResetCapturesIns>(*inst).getFirstIndex());
+      str += ", lastIndex=";
+      str += std::to_string(cast<ResetCapturesIns>(*inst).getLastIndex());
+      str += ')';
+      inst += sizeof(ResetCapturesIns);
+      break;
     case OpCode::BackRef: {
       auto &backRef = cast<BackRefIns>(*inst);
       str += "(index=";
@@ -464,6 +472,28 @@ void RegexDumper::dump(const FlexBuffer<Inst> &ins) {
       inst += sizeof(IBackRefIns);
       break;
     }
+    case OpCode::BeginLoop: {
+      auto &loop = cast<BeginLoopIns>(*inst);
+      str += "(loopIndex=";
+      str += std::to_string(loop.getLoopIndex());
+      str += ", greedy=";
+      appendBool(str, loop.greedy);
+      str += ", min=";
+      str += std::to_string(loop.getMin());
+      str += ", max=";
+      str += std::to_string(loop.getMax());
+      str += ", outer=";
+      str += std::to_string(loop.getOuter());
+      str += ')';
+      inst += sizeof(BeginLoopIns);
+      break;
+    }
+    case OpCode::EndLoop:
+      str += "(target=";
+      str += std::to_string(cast<EndLoopIns>(*inst).getTarget());
+      str += ')';
+      inst += sizeof(EndLoopIns);
+      break;
     }
     this->base.dump(lineNum.c_str(), str);
   }

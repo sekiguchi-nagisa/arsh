@@ -73,6 +73,8 @@ public:
 
   void setIter(const char *old) { this->iter = old; }
 
+  unsigned int getOffset() const { return this->iter - this->begin; }
+
   const char *getBegin() const { return this->begin; }
 
   int cur() const {

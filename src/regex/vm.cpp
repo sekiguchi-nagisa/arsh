@@ -26,10 +26,19 @@ namespace arsh::regex {
 #define likely(x) __builtin_expect(!!(x), 1)
 #define unlikely(x) __builtin_expect(!!(x), 0)
 
+struct LoopState {
+  uint16_t count{0};
+  uint32_t inputOffset{0};
+
+  LoopState() = default;
+};
+
 enum class BacktrackOp : unsigned char {
   None,
   SetIns,
   SetCapture,
+  SetLoopState,
+  NonGreedyLoop,
 };
 
 union Backtrack {
@@ -46,6 +55,18 @@ union Backtrack {
     uint32_t index;
     Capture capture;
   } setCapture;
+
+  struct {
+    BacktrackOp op;
+    uint16_t loopIndex;
+    LoopState state;
+  } setLoopState;
+
+  struct {
+    BacktrackOp op;
+    uint16_t loopIndex;
+    LoopState state;
+  } setNonGreedyLoop;
 
 private:
   explicit Backtrack(BacktrackOp op) : op(op) {}
@@ -64,6 +85,20 @@ public:
     Backtrack bt(BacktrackOp::SetCapture);
     bt.setCapture.index = index;
     bt.setCapture.capture = capture;
+    return bt;
+  }
+
+  static Backtrack newSetLoopState(uint16_t loopIndex, LoopState state) {
+    Backtrack bt(BacktrackOp::SetLoopState);
+    bt.setLoopState.loopIndex = loopIndex;
+    bt.setLoopState.state = state;
+    return bt;
+  }
+
+  static Backtrack newNonGreedyLoop(uint16_t loopIndex, LoopState state) {
+    Backtrack bt(BacktrackOp::NonGreedyLoop);
+    bt.setNonGreedyLoop.loopIndex = loopIndex;
+    bt.setNonGreedyLoop.state = state;
     return bt;
   }
 };
@@ -87,7 +122,8 @@ public:
     return true;
   }
 
-  bool backtrack(const Inst *&inst, Input &input, FlexBuffer<Capture> &captures) {
+  bool backtrack(const Inst *&inst, Input &input, FlexBuffer<Capture> &captures,
+                 FlexBuffer<LoopState> &loopStates) {
     while (this->bts.size()) {
       auto &bt = this->bts.back();
       switch (bt.op) {
@@ -103,9 +139,40 @@ public:
         captures[bt.setCapture.index] = bt.setCapture.capture;
         this->bts.pop();
         break;
+      case BacktrackOp::SetLoopState:
+        loopStates[bt.setLoopState.loopIndex] = bt.setLoopState.state;
+        this->bts.pop();
+        break;
+      case BacktrackOp::NonGreedyLoop: {
+        const auto loopIndex = bt.setNonGreedyLoop.loopIndex;
+        loopStates[loopIndex] = bt.setNonGreedyLoop.state;
+        this->bts.pop();
+        auto extra = this->bts.back();
+        assert(extra.op == BacktrackOp::SetIns);
+        inst = this->begin + extra.setIns.target;
+        input.setIter(extra.setIns.iter);
+        this->bts.pop();
+        inst += sizeof(BeginLoopIns); // goto loop body
+        return this->prepareLoopBody(input, loopIndex, loopStates[loopIndex]);
+      }
       }
     }
     return false;
+  }
+
+  bool prepareLoopBody(const Input &input, uint16_t loopIndex, LoopState &loop) {
+    if (!this->push(Backtrack::newSetLoopState(loopIndex, loop))) {
+      return false;
+    }
+    loop.count++;
+    loop.inputOffset = input.getOffset();
+    return true;
+  }
+
+  bool prepareNonGreedyLoop(const Input &input, const Inst *beginInst, const LoopState &loop) {
+    return this->push(Backtrack::newSetIns(input, beginInst - this->getBeginInst())) &&
+           this->push(
+               Backtrack::newNonGreedyLoop(cast<BeginLoopIns>(*beginInst).getLoopIndex(), loop));
   }
 };
 
@@ -147,12 +214,14 @@ MatchStatus match(const Regex &regex, const StringRef text, FlexBuffer<Capture> 
   const auto matchers = regex.getMatchers();
   captures.clear();
   captures.resize(regex.getCaptureGroupCount() + 1);
+  FlexBuffer<LoopState> loopStates;
+  loopStates.resize(regex.getLoopCount());
   BacktrackStack bts(inst);
   bts.push(Backtrack()); // push dummy
 
   // match
 BACKTRACK:
-  while (bts.backtrack(inst, input, captures)) {
+  while (bts.backtrack(inst, input, captures, loopStates)) {
     while (true) {
       vmdispatch(inst->op) {
         vmcase(Nop) {
@@ -262,8 +331,7 @@ BACKTRACK:
         }
         vmcase(BeginCapture) {
           auto &ins = cast<BeginCaptureIns>(*inst);
-          captures[ins.getCaptureIndex()] = {
-              .offset = static_cast<uint32_t>(input.getIter() - input.getBegin()), .size = 0};
+          captures[ins.getCaptureIndex()] = {.offset = input.getOffset(), .size = 0};
           TRY(bts.push(Backtrack::newSetCapture(ins.getCaptureIndex(), Capture())));
           inst += sizeof(BeginCaptureIns);
           vmnext;
@@ -271,9 +339,19 @@ BACKTRACK:
         vmcase(EndCapture) {
           auto &ins = cast<EndCaptureIns>(*inst);
           captures[ins.getCaptureIndex()].size =
-              input.getIter() - (input.getBegin() + captures[ins.getCaptureIndex()].offset);
+              input.getOffset() - captures[ins.getCaptureIndex()].offset;
           inst += sizeof(EndCaptureIns);
           vmnext;
+        }
+        vmcase(ResetCaptures) {
+          auto &ins = cast<ResetCapturesIns>(*inst);
+          const auto last = ins.getLastIndex();
+          for (uint16_t i = ins.getFirstIndex(); i <= last; i++) {
+            TRY(bts.push(Backtrack::newSetCapture(i, captures[i]))); // save original capture
+            captures[i] = Capture();
+          }
+          inst += sizeof(ResetCapturesIns);
+          vmnext
         }
         vmcase(BackRef) {
           auto &ins = cast<BackRefIns>(*inst);
@@ -317,6 +395,33 @@ BACKTRACK:
             }
           }
           inst += sizeof(IBackRefIns);
+          vmnext;
+        }
+        vmcase(BeginLoop) {
+          loopStates[cast<BeginLoopIns>(*inst).getLoopIndex()] = LoopState();
+          goto LOOP;
+        }
+        vmcase(EndLoop) {
+          inst = bts.getBeginInst() + cast<EndLoopIns>(*inst).getTarget();
+        LOOP:
+          auto &loopIns = cast<BeginLoopIns>(*inst);
+          auto &loop = loopStates[loopIns.getLoopIndex()];
+          if (loop.inputOffset == input.getOffset() && loop.count > loopIns.getMin()) {
+            goto BACKTRACK; // after minimum repeat, if not consume input, backtrack
+          }
+          if (const auto count = loop.count; count < loopIns.getMin()) {
+            TRY(bts.prepareLoopBody(input, loopIns.getLoopIndex(), loop));
+            inst += sizeof(BeginLoopIns);
+          } else if (count == loopIns.getMax()) {
+            inst = bts.getBeginInst() + loopIns.getOuter();
+          } else if (loopIns.greedy) {
+            TRY(bts.push(Backtrack::newSetIns(input, loopIns.getOuter())));
+            TRY(bts.prepareLoopBody(input, loopIns.getLoopIndex(), loop));
+            inst += sizeof(BeginLoopIns);
+          } else {
+            TRY(bts.prepareNonGreedyLoop(input, inst, loop));
+            inst = bts.getBeginInst() + loopIns.getOuter();
+          }
           vmnext;
         }
       }

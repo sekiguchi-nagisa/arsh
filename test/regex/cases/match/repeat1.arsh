@@ -1,0 +1,153 @@
+
+source $SCRIPT_DIR/../syntax/test_helper.arsh
+
+# a*
+assert diff <(redump -m 'aaa' 'a*' '') <(<<'EOF'
+input: `aaa'
+(offset=0, size=3)
+EOF
+)
+
+assert diff <(redump -m ' aaa' 'a*' '') <(<<'EOF'
+input: ` aaa'
+(offset=0, size=0)
+EOF
+)
+
+# [ab]*
+assert diff <(redump -m 'aba' '[ab]*' '') <(<<'EOF'
+input: `aba'
+(offset=0, size=3)
+EOF
+)
+
+assert diff <(redump -m ' aba' '[ab]*' '') <(<<'EOF'
+input: ` aba'
+(offset=0, size=0)
+EOF
+)
+
+# a+
+assert diff <(redump -m 'aba' 'a+' '') <(<<'EOF'
+input: `aba'
+(offset=0, size=1)
+EOF
+)
+
+assert diff <(redump -m 'ba' 'a+' '') <(<<'EOF'
+input: `ba'
+(offset=1, size=1)
+EOF
+)
+
+# a{0}
+assert diff <(redump -m '2025-12-31' 'a{0}' 'u') <(<<'EOF'
+input: `2025-12-31'
+(offset=0, size=0)
+EOF
+)
+
+# a{1}
+assert diff <(redump -m 'abc' 'b{1}' 'u') <(<<'EOF'
+input: `abc'
+(offset=1, size=1)
+EOF
+)
+
+# \w{2,}
+assert diff <(redump -m 'abcdefg@f4' '\w{2,}' 'u') <(<<'EOF'
+input: `abcdefg@f4'
+(offset=0, size=7)
+EOF
+)
+
+# [ab]+[abc]c
+assert diff <(redump -m 'abbc' '[ab]+[abc]c' '') <(<<'EOF'
+input: `abbc'
+(offset=0, size=4)
+EOF
+)
+
+assert diff <(redump -m '@abbc' '[ab]+[abc]c' '') <(<<'EOF'
+input: `@abbc'
+(offset=1, size=4)
+EOF
+)
+
+# (aa|aabaac|ba)*
+assert diff <(redump -m 'aabaac' '(aa|aabaac|ba)*' '') <(<<'EOF'
+input: `aabaac'
+(offset=0, size=4)
+(offset=2, size=2)
+EOF
+)
+
+# ([A-Z]())+
+assert diff <(redump -m 'ABC' '([A-Z]())+' '') <(<<'EOF'
+input: `ABC'
+(offset=0, size=3)
+(offset=2, size=1)
+(offset=3, size=0)
+EOF
+)
+
+# a[a-z]{2,4}
+assert diff <(redump -m 'abcdefghi' 'a[a-z]{2,4}' '') <(<<'EOF'
+input: `abcdefghi'
+(offset=0, size=5)
+EOF
+)
+
+# (aa|aabaac|ba|b|c)*
+assert diff <(redump -m 'aabaac' '(aa|aabaac|ba|b|c)*' '') <(<<'EOF'
+input: `aabaac'
+(offset=0, size=4)
+(offset=2, size=2)
+EOF
+)
+
+# ^(a+)\1*,\1+$
+assert diff <(redump -m 'aaaaaaaaaa,aaaaaaaaaaaaaaa' '^(a+)\1*,\1+$' '') <(<<'EOF'
+input: `aaaaaaaaaa,aaaaaaaaaaaaaaa'
+(offset=0, size=26)
+(offset=0, size=5)
+EOF
+)
+
+# (z)((a+)?(b+)?(c))*
+assert diff <(redump -m 'zaacbbbcac' '(z)((a+)?(b+)?(c))*' '') <(<<'EOF'
+input: `zaacbbbcac'
+(offset=0, size=10)
+(offset=0, size=1)
+(offset=8, size=2)
+(offset=8, size=1)
+(unset)
+(offset=9, size=1)
+EOF
+)
+
+# (a*)*
+assert diff <(redump -m 'b' '(a*)*' '') <(<<'EOF'
+input: `b'
+(offset=0, size=0)
+(unset)
+EOF
+)
+
+# (a*)b\1+
+assert diff <(redump -m 'baaaac' '(a*)b\1+' '') <(<<'EOF'
+input: `baaaac'
+(offset=0, size=1)
+(offset=0, size=0)
+EOF
+)
+
+# ^(\d{4})-(\d{2})-(\d{2})$
+assert diff <(redump -m '2025-12-31' '^(\d{4})-(\d{2})-(\d{2})$' '') <(<<'EOF'
+input: `2025-12-31'
+(offset=0, size=10)
+(offset=0, size=4)
+(offset=5, size=2)
+(offset=8, size=2)
+EOF
+)

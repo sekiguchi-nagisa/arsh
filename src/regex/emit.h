@@ -96,6 +96,8 @@ private:
 
   bool generateCharClass(const CharClassNode &node);
 
+  bool generateRepeat(const RepeatNode &node);
+
   Optional<unsigned short> emitMatcher(Matcher &&matcher);
 };
 

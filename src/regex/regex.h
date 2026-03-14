@@ -35,7 +35,7 @@ private:
   NamedCaptureGroups named;
 
 public:
-  static constexpr size_t MAX_STACK_DEPTH = UINT16_MAX;
+  static constexpr size_t MAX_STACK_DEPTH = 0xFFFFFF;
 
   Regex(Flag flag, unsigned short loopCount, FlexBuffer<Inst> &&seq,
         std::vector<Matcher> &&matchers, NamedCaptureGroups &&named, unsigned int count)

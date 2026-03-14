@@ -39,8 +39,11 @@ namespace arsh::regex {
   OP(CharSet)                                                                                      \
   OP(BeginCapture)                                                                                 \
   OP(EndCapture)                                                                                   \
+  OP(ResetCaptures)                                                                                \
   OP(BackRef)                                                                                      \
-  OP(IBackRef)
+  OP(IBackRef)                                                                                     \
+  OP(BeginLoop)                                                                                    \
+  OP(EndLoop)
 
 enum class OpCode : uint8_t {
 #define GEN_ENUM(E) E,
@@ -206,9 +209,7 @@ struct CharSetIns : InstWithRtti<OpCode::CharSet> {
 struct BeginCaptureIns : InstWithRtti<OpCode::BeginCapture> {
   uint8_t captureIndex[2];
 
-  explicit BeginCaptureIns(uint16_t index) {
-    WRITE_TO_INS_FIELD(index, captureIndex);
-  }
+  explicit BeginCaptureIns(uint16_t index) { WRITE_TO_INS_FIELD(index, captureIndex); }
 
   uint16_t getCaptureIndex() const {
     uint16_t index;
@@ -220,9 +221,7 @@ struct BeginCaptureIns : InstWithRtti<OpCode::BeginCapture> {
 struct EndCaptureIns : InstWithRtti<OpCode::EndCapture> {
   uint8_t captureIndex[2];
 
-  explicit EndCaptureIns(uint16_t index) {
-    WRITE_TO_INS_FIELD(index, captureIndex);
-  }
+  explicit EndCaptureIns(uint16_t index) { WRITE_TO_INS_FIELD(index, captureIndex); }
 
   uint16_t getCaptureIndex() const {
     uint16_t index;
@@ -231,13 +230,33 @@ struct EndCaptureIns : InstWithRtti<OpCode::EndCapture> {
   }
 };
 
+struct ResetCapturesIns : InstWithRtti<OpCode::ResetCaptures> {
+  uint8_t firstIndex[2];
+  uint8_t lastIndex[2];
+
+  ResetCapturesIns(uint16_t first, uint16_t last) {
+    WRITE_TO_INS_FIELD(first, firstIndex);
+    WRITE_TO_INS_FIELD(last, lastIndex);
+  }
+
+  uint16_t getFirstIndex() const {
+    uint16_t index;
+    READ_FROM_INS_FIELD(firstIndex, index);
+    return index;
+  }
+
+  uint16_t getLastIndex() const {
+    uint16_t index;
+    READ_FROM_INS_FIELD(lastIndex, index);
+    return index;
+  }
+};
+
 struct BackRefIns : InstWithRtti<OpCode::BackRef> {
   bool named;
   uint8_t index[2];
 
-  BackRefIns(uint16_t refIndex, bool named) : named(named) {
-    WRITE_TO_INS_FIELD(refIndex, index);
-  }
+  BackRefIns(uint16_t refIndex, bool named) : named(named) { WRITE_TO_INS_FIELD(refIndex, index); }
 
   uint16_t getRefIndex() const {
     uint16_t refIndex;
@@ -250,14 +269,64 @@ struct IBackRefIns : InstWithRtti<OpCode::IBackRef> {
   bool named;
   uint8_t index[2];
 
-  IBackRefIns(uint16_t refIndex, bool named) : named(named) {
-    WRITE_TO_INS_FIELD(refIndex, index);
-  }
+  IBackRefIns(uint16_t refIndex, bool named) : named(named) { WRITE_TO_INS_FIELD(refIndex, index); }
 
   uint16_t getRefIndex() const {
     uint16_t refIndex;
     READ_FROM_INS_FIELD(index, refIndex);
     return refIndex;
+  }
+};
+
+struct BeginLoopIns : InstWithRtti<OpCode::BeginLoop> {
+  bool greedy;
+  uint8_t loopIndex[2];
+  uint8_t min[2];
+  uint8_t max[4];
+  uint8_t outer[4];
+
+  BeginLoopIns(uint16_t loopIndex, uint16_t min, uint32_t max, bool greedy, uint32_t outer)
+      : greedy(greedy) {
+    WRITE_TO_INS_FIELD(loopIndex, loopIndex);
+    WRITE_TO_INS_FIELD(min, min);
+    WRITE_TO_INS_FIELD(max, max);
+    WRITE_TO_INS_FIELD(outer, outer);
+  }
+
+  uint16_t getLoopIndex() const {
+    uint16_t index;
+    READ_FROM_INS_FIELD(loopIndex, index);
+    return index;
+  }
+
+  uint16_t getMin() const {
+    uint16_t v;
+    READ_FROM_INS_FIELD(min, v);
+    return v;
+  }
+
+  uint32_t getMax() const {
+    uint32_t v;
+    READ_FROM_INS_FIELD(max, v);
+    return v;
+  }
+
+  uint32_t getOuter() const {
+    uint32_t v;
+    READ_FROM_INS_FIELD(outer, v);
+    return v;
+  }
+};
+
+struct EndLoopIns : InstWithRtti<OpCode::EndLoop> {
+  uint8_t target[4]; // must be begin loop addr
+
+  explicit EndLoopIns(uint32_t addr) { WRITE_TO_INS_FIELD(addr, target); }
+
+  uint32_t getTarget() const {
+    uint32_t t;
+    READ_FROM_INS_FIELD(target, t);
+    return t;
   }
 };
 

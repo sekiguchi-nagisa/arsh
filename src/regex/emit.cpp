@@ -131,8 +131,7 @@ bool CodeGen::generate(const Node &node) {
     break;
   }
   case NodeKind::Repeat:
-    this->todo(node);
-    return false;
+    return this->generateRepeat(cast<RepeatNode>(node));
   case NodeKind::Seq:
     for (auto &e : cast<SeqNode>(node).getPatterns()) {
       TRY(this->generate(*e));
@@ -472,6 +471,27 @@ bool CodeGen::generateCharClass(const CharClassNode &node) {
     }
   }
   return false;
+}
+
+bool CodeGen::generateRepeat(const RepeatNode &node) {
+  if (node.getMax() == 0) { // do nothing
+    return true;
+  }
+  if (node.getMin() == 1 && node.getMax() == 1) {
+    return this->generate(*node.getPattern());
+  }
+  const unsigned int beginAddr = this->builder.currentAddr();
+  const auto p = this->builder.emitReservedPoint<BeginLoopIns>();
+  if (node.getFirstGroupIndex()) {
+    assert(node.getFirstGroupIndex() <= node.getLastGroupIndex());
+    this->builder.emit<ResetCapturesIns>(node.getFirstGroupIndex(), node.getLastGroupIndex());
+  }
+  TRY(this->generate(*node.getPattern()));
+  this->builder.emit<EndLoopIns>(beginAddr);
+  const unsigned int outerAddr = this->builder.currentAddr();
+  this->builder.emitAt<BeginLoopIns>(p, node.getLoopIndex(), node.getMin(), node.getMax(),
+                                     node.isGreedy(), outerAddr);
+  return true;
 }
 
 Optional<unsigned short> CodeGen::emitMatcher(Matcher &&matcher) {
