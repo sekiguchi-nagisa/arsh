@@ -187,6 +187,11 @@ public:
     return true;
   }
 
+  bool prepareGreedyLoop(const Input &input, const BeginLoopIns &loopIns, LoopState &loop) {
+    return this->push(Backtrack::newSetIns(input, loopIns.getOuter())) &&
+           this->prepareLoopBody(input, loopIns.getLoopIndex(), loop);
+  }
+
   bool prepareNonGreedyLoop(const Input &input, const Inst *beginInst, const LoopState &loop) {
     return this->push(Backtrack::newSetIns(input, beginInst - this->getBeginInst())) &&
            this->push(
@@ -444,8 +449,7 @@ BACKTRACK:
           } else if (count == loopIns.getMax()) {
             inst = bts.getBeginInst() + loopIns.getOuter();
           } else if (loopIns.greedy) {
-            TRY(bts.push(Backtrack::newSetIns(input, loopIns.getOuter())));
-            TRY(bts.prepareLoopBody(input, loopIns.getLoopIndex(), loop));
+            TRY(bts.prepareGreedyLoop(input, loopIns, loop));
             inst += sizeof(BeginLoopIns);
           } else {
             TRY(bts.prepareNonGreedyLoop(input, inst, loop));
