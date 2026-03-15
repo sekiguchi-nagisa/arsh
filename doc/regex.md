@@ -43,7 +43,7 @@
 | (?!pattern)                 | ✔️         | ✔️        | -                       | ❌                              |
 | (?\<=pattern)               | ✔️         | ❌         | -                       | ❌                              |
 | (?\<!pattern)               | ✔️         | ❌         | -                       | ❌                              |
-| (?ims-ims:pattern)          | ✔️         | ❌         | ❌                       | ❌                              |
+| (?ims-ims:pattern)          | ✔️         | ✔️        | ✔️                      | ❌                              |
 | \k\<name>                   | ✔️         | ✔️        | ✔️                      | ❌                              |
 | (?\<name>pattern)           | ✔️         | ✔️        | ✔️                      | ❌                              |
 | (?:pattern)                 | ✔️         | ✔️        | ✔️                      | ❌                              |
