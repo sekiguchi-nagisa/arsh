@@ -27,7 +27,7 @@ namespace arsh::regex {
 #define unlikely(x) __builtin_expect(!!(x), 0)
 
 struct LoopState {
-  uint16_t count{0};
+  uint32_t count{0};
   uint32_t inputOffset{0};
 
   LoopState() = default;
