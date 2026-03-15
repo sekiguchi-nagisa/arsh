@@ -98,6 +98,8 @@ private:
 
   bool generateRepeat(const RepeatNode &node);
 
+  bool generateLookAround(const LookAroundNode &node);
+
   Optional<unsigned short> emitMatcher(Matcher &&matcher);
 };
 

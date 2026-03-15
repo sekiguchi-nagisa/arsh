@@ -494,6 +494,17 @@ void RegexDumper::dump(const FlexBuffer<Inst> &ins) {
       str += ')';
       inst += sizeof(EndLoopIns);
       break;
+    case OpCode::BeginLookAhead:
+      str += "(negate=";
+      appendBool(str, cast<BeginLookAheadIns>(*inst).negate);
+      str += ", target=";
+      str += std::to_string(cast<BeginLookAheadIns>(*inst).getTarget());
+      str += ')';
+      inst += sizeof(BeginLookAheadIns);
+      break;
+    case OpCode::EndLookAhead:
+      inst += sizeof(EndLookAheadIns);
+      break;
     }
     this->base.dump(lineNum.c_str(), str);
   }

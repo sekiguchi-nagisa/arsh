@@ -140,8 +140,7 @@ bool CodeGen::generate(const Node &node) {
   case NodeKind::Alt:
     return this->generateAlt(cast<AltNode>(node));
   case NodeKind::LookAround:
-    this->todo(node);
-    return false;
+    return this->generateLookAround(cast<LookAroundNode>(node));
   case NodeKind::Group:
     return this->generateGroup(cast<GroupNode>(node));
   }
@@ -491,6 +490,19 @@ bool CodeGen::generateRepeat(const RepeatNode &node) {
   const unsigned int outerAddr = this->builder.currentAddr();
   this->builder.emitAt<BeginLoopIns>(p, node.getLoopIndex(), node.getMin(), node.getMax(),
                                      node.isGreedy(), outerAddr);
+  return true;
+}
+
+bool CodeGen::generateLookAround(const LookAroundNode &node) {
+  if (!node.isLookAhead()) {
+    this->todo(node, "look-behind");
+    return false;
+  }
+  const auto p = this->builder.emitReservedPoint<BeginLookAheadIns>();
+  TRY(this->generate(*node.getPattern()));
+  const auto endAddr = this->builder.currentAddr();
+  this->builder.emit<EndLookAheadIns>();
+  this->builder.emitAt<BeginLookAheadIns>(p, endAddr, node.isNegate());
   return true;
 }
 

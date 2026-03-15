@@ -39,6 +39,7 @@ enum class BacktrackOp : unsigned char {
   SetCapture,
   SetLoopState,
   NonGreedyLoop,
+  LookAround,
 };
 
 union Backtrack {
@@ -67,6 +68,14 @@ union Backtrack {
     uint16_t loopIndex;
     LoopState state;
   } nonGreedyLoop;
+
+  struct {
+    BacktrackOp op;
+    bool negate;
+    bool matched;
+    uint32_t target;
+    const char *iter;
+  } lookAround;
 
 private:
   explicit Backtrack(BacktrackOp op) : op(op) {}
@@ -101,6 +110,15 @@ public:
     bt.nonGreedyLoop.state = state;
     return bt;
   }
+
+  static Backtrack newLookAround(const Input &input, uint32_t target, bool negate) {
+    Backtrack bt(BacktrackOp::LookAround);
+    bt.lookAround.negate = negate;
+    bt.lookAround.matched = !negate;
+    bt.lookAround.iter = input.getIter();
+    bt.lookAround.target = target;
+    return bt;
+  }
 };
 
 class BacktrackStack {
@@ -125,7 +143,7 @@ public:
   bool backtrack(const Inst *&inst, Input &input, FlexBuffer<Capture> &captures,
                  FlexBuffer<LoopState> &loopStates) {
     while (this->bts.size()) {
-      const auto bt = this->bts.back();
+      auto bt = this->bts.back();
       this->bts.pop();
       switch (bt.op) {
       case BacktrackOp::None:
@@ -151,6 +169,10 @@ public:
         inst += sizeof(BeginLoopIns); // goto loop body
         return this->prepareLoopBody(input, loopIndex, loopStates[loopIndex]);
       }
+      case BacktrackOp::LookAround:
+        inst = this->begin + bt.lookAround.target;
+        bt.lookAround.matched = bt.lookAround.negate; // if negative lookaround, matched
+        return this->push(bt);
       }
     }
     return false;
@@ -169,6 +191,17 @@ public:
     return this->push(Backtrack::newSetIns(input, beginInst - this->getBeginInst())) &&
            this->push(
                Backtrack::newNonGreedyLoop(cast<BeginLoopIns>(*beginInst).getLoopIndex(), loop));
+  }
+
+  bool cleanupLookAround(Input &input) {
+    while (this->bts.size() && this->bts.back().op != BacktrackOp::LookAround) {
+      this->bts.pop();
+    }
+    assert(this->bts.size());
+    auto bt = this->bts.back();
+    this->bts.pop();
+    input.setIter(bt.lookAround.iter);
+    return bt.lookAround.matched;
   }
 };
 
@@ -419,6 +452,19 @@ BACKTRACK:
             inst = bts.getBeginInst() + loopIns.getOuter();
           }
           vmnext;
+        }
+        vmcase(BeginLookAhead) {
+          auto &lookAhead = cast<BeginLookAheadIns>(*inst);
+          TRY(bts.push(Backtrack::newLookAround(input, lookAhead.getTarget(), lookAhead.negate)));
+          inst += sizeof(BeginLookAheadIns);
+          vmnext;
+        }
+        vmcase(EndLookAhead) {
+          if (bts.cleanupLookAround(input)) {
+            inst += sizeof(EndLookAheadIns);
+            vmnext;
+          }
+          goto BACKTRACK;
         }
       }
     }

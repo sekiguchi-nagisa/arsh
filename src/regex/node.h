@@ -524,6 +524,30 @@ public:
   }
 
   Type getType() const { return static_cast<Type>(this->u8); }
+
+  bool isLookAhead() const {
+    switch (this->getType()) {
+    case Type::LOOK_AHEAD:
+    case Type::LOOK_AHEAD_NOT:
+      return true;
+    case Type::LOOK_BEHIND:
+    case Type::LOOK_BEHIND_NOT:
+      return false;
+    }
+    return false;
+  }
+
+  bool isNegate() const {
+    switch (this->getType()) {
+    case Type::LOOK_AHEAD_NOT:
+    case Type::LOOK_BEHIND_NOT:
+      return true;
+    case Type::LOOK_AHEAD:
+    case Type::LOOK_BEHIND:
+      return false;
+    }
+    return false;
+  }
 };
 
 class GroupNode : public NestedNodeWithRtti<NodeKind::Group> {

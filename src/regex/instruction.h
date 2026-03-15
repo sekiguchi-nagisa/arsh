@@ -43,7 +43,9 @@ namespace arsh::regex {
   OP(BackRef)                                                                                      \
   OP(IBackRef)                                                                                     \
   OP(BeginLoop)                                                                                    \
-  OP(EndLoop)
+  OP(EndLoop)                                                                                      \
+  OP(BeginLookAhead)                                                                               \
+  OP(EndLookAhead)
 
 enum class OpCode : uint8_t {
 #define GEN_ENUM(E) E,
@@ -329,6 +331,23 @@ struct EndLoopIns : InstWithRtti<OpCode::EndLoop> {
     return t;
   }
 };
+
+struct BeginLookAheadIns : InstWithRtti<OpCode::BeginLookAhead> {
+  bool negate;
+  uint8_t target[4]; // must be the end of look-ahead addr
+
+  BeginLookAheadIns(uint32_t target, bool negate) : negate(negate) {
+    WRITE_TO_INS_FIELD(target, target);
+  }
+
+  uint32_t getTarget() const {
+    uint32_t t;
+    READ_FROM_INS_FIELD(target, t);
+    return t;
+  }
+};
+
+struct EndLookAheadIns : InstWithRtti<OpCode::EndLookAhead> {};
 
 #define GEN_TYPE_ASSERT(E)                                                                         \
   static_assert(std::is_trivially_copyable_v<E##Ins> && std::is_trivially_destructible_v<E##Ins>); \

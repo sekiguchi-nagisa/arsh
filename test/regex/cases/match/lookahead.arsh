@@ -1,0 +1,96 @@
+
+source $SCRIPT_DIR/../syntax/test_helper.arsh
+
+# (?=(a+))
+assert diff <(redump -m 'baaabac' '(?=(a+))' '') <(<<'EOF'
+input: `baaabac'
+(offset=1, size=0)
+(offset=1, size=3)
+EOF
+)
+
+# (?=(a+))a*b\1
+assert diff <(redump -m 'baaabac' '(?=(a+))a*b\1' '') <(<<'EOF'
+input: `baaabac'
+(offset=3, size=3)
+(offset=3, size=1)
+EOF
+)
+
+# (.*?)a(?!(a+)b\2c)\2(.*)
+assert diff <(redump -m 'baaabaac' '(.*?)a(?!(a+)b\2c)\2(.*)' 'u') <(<<'EOF'
+input: `baaabaac'
+(offset=0, size=8)
+(offset=0, size=2)
+(unset)
+(offset=3, size=5)
+EOF
+)
+
+# (?=a)?b
+assert diff <(redump -m 'b' '(?=a)?b' '') <(<<'EOF'
+input: `b'
+(offset=0, size=1)
+EOF
+)
+
+# (?=a)+b
+assert diff <(redump -m 'b' '(?=a)+b' '') <(<<'EOF'
+input: `b'
+failed
+EOF
+)
+
+# ^.*?(?=[,.])
+assert diff <(redump -m 'Hello, world!' '^.*?(?=[,.])' '') <(<<'EOF'
+input: `Hello, world!'
+(offset=0, size=5)
+EOF
+)
+
+assert diff <(redump -m 'Thank you.' '^.*?(?=[,.])' '') <(<<'EOF'
+input: `Thank you.'
+(offset=0, size=9)
+EOF
+)
+
+# ^(?!(?:break|case|catch)$)[$_\p{ID_Start}][$\u200c\u200d\p{ID_Continue}]*$
+assert diff <(redump -m 'break'
+    '^(?!(?:break|case|catch)$)[$_\p{ID_Start}][$\u200c\u200d\p{ID_Continue}]*$' 'u') <(<<'EOF'
+input: `break'
+failed
+EOF
+)
+
+assert diff <(redump -m 'cases'
+    '^(?!(?:break|case|catch)$)[$_\p{ID_Start}][$\u200c\u200d\p{ID_Continue}]*$' 'u') <(<<'EOF'
+input: `cases'
+(offset=0, size=5)
+EOF
+)
+
+assert diff <(redump -m 'foo'
+    '^(?!(?:break|case|catch)$)[$_\p{ID_Start}][$\u200c\u200d\p{ID_Continue}]*$' 'u') <(<<'EOF'
+input: `foo'
+(offset=0, size=3)
+EOF
+)
+
+# ^(?=\p{ASCII}$)\p{ID_Start}$
+assert diff <(redump -m 'a' '^(?=\p{ASCII}$)\p{ID_Start}$' 'u') <(<<'EOF'
+input: `a'
+(offset=0, size=1)
+EOF
+)
+
+assert diff <(redump -m ':' '^(?=\p{ASCII}$)\p{ID_Start}$' 'u') <(<<'EOF'
+input: `:'
+failed
+EOF
+)
+
+assert diff <(redump -m 'α' '^(?=\p{ASCII}$)\p{ID_Start}$' 'u') <(<<'EOF'
+input: `α'
+failed
+EOF
+)
