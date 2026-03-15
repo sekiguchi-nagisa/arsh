@@ -66,7 +66,7 @@ union Backtrack {
     BacktrackOp op;
     uint16_t loopIndex;
     LoopState state;
-  } setNonGreedyLoop;
+  } nonGreedyLoop;
 
 private:
   explicit Backtrack(BacktrackOp op) : op(op) {}
@@ -97,8 +97,8 @@ public:
 
   static Backtrack newNonGreedyLoop(uint16_t loopIndex, LoopState state) {
     Backtrack bt(BacktrackOp::NonGreedyLoop);
-    bt.setNonGreedyLoop.loopIndex = loopIndex;
-    bt.setNonGreedyLoop.state = state;
+    bt.nonGreedyLoop.loopIndex = loopIndex;
+    bt.nonGreedyLoop.state = state;
     return bt;
   }
 };
@@ -125,33 +125,29 @@ public:
   bool backtrack(const Inst *&inst, Input &input, FlexBuffer<Capture> &captures,
                  FlexBuffer<LoopState> &loopStates) {
     while (this->bts.size()) {
-      auto &bt = this->bts.back();
+      const auto bt = this->bts.back();
+      this->bts.pop();
       switch (bt.op) {
       case BacktrackOp::None:
-        this->bts.pop();
         return true; // do nothing
       case BacktrackOp::SetIns:
         inst = this->begin + bt.setIns.target;
         input.setIter(bt.setIns.iter);
-        this->bts.pop();
         return true;
       case BacktrackOp::SetCapture:
         captures[bt.setCapture.index] = bt.setCapture.capture;
-        this->bts.pop();
         break;
       case BacktrackOp::SetLoopState:
         loopStates[bt.setLoopState.loopIndex] = bt.setLoopState.state;
-        this->bts.pop();
         break;
       case BacktrackOp::NonGreedyLoop: {
-        const auto loopIndex = bt.setNonGreedyLoop.loopIndex;
-        loopStates[loopIndex] = bt.setNonGreedyLoop.state;
+        const auto loopIndex = bt.nonGreedyLoop.loopIndex;
+        loopStates[loopIndex] = bt.nonGreedyLoop.state;
+        const auto extra = this->bts.back();
         this->bts.pop();
-        auto extra = this->bts.back();
         assert(extra.op == BacktrackOp::SetIns);
         inst = this->begin + extra.setIns.target;
         input.setIter(extra.setIns.iter);
-        this->bts.pop();
         inst += sizeof(BeginLoopIns); // goto loop body
         return this->prepareLoopBody(input, loopIndex, loopStates[loopIndex]);
       }
