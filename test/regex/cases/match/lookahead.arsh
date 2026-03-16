@@ -94,3 +94,33 @@ input: `α'
 failed
 EOF
 )
+
+# (?=(\w+)#)|.
+assert diff <(redump -m 'aaaa#' '(?=(\w+)#)|.' 'u') <(<<'EOF'
+input: `aaaa#'
+(offset=0, size=0)
+(offset=0, size=4)
+EOF
+)
+
+assert diff <(redump -m 'aaaa@' '(?=(\w+)#)|.' 'u') <(<<'EOF'
+input: `aaaa@'
+(offset=0, size=1)
+(unset)
+EOF
+)
+
+# (?!(\w+)#)|.
+assert diff <(redump -m 'aaaa#' '(?!(\w+)#)|.' 'u') <(<<'EOF'
+input: `aaaa#'
+(offset=0, size=1)
+(unset)
+EOF
+)
+
+assert diff <(redump -m 'aaaa@' '(?!(\w+)#)|.' 'u') <(<<'EOF'
+input: `aaaa@'
+(offset=0, size=0)
+(unset)
+EOF
+)

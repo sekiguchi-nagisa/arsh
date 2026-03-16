@@ -16,7 +16,6 @@
 
 #include "input.h"
 #include "matcher.h"
-#include "misc/inlined_stack.hpp"
 #include "misc/rtti.hpp"
 #include "regex.h"
 #include "unicode/case_fold.h"
@@ -124,19 +123,19 @@ public:
 class BacktrackStack {
 private:
   static_assert(std::is_trivially_copy_constructible_v<Backtrack>);
-  const Inst *const begin;
-  InlinedStack<Backtrack, 3> bts;
+  const Inst *const start;
+  std::vector<Backtrack> bts;
 
 public:
-  explicit BacktrackStack(const Inst *begin) : begin(begin) {}
+  explicit BacktrackStack(const Inst *start) : start(start) {}
 
-  const Inst *getBeginInst() const { return this->begin; }
+  const Inst *getStartInst() const { return this->start; }
 
   bool push(Backtrack bt) {
     if (unlikely(this->bts.size() == Regex::MAX_STACK_DEPTH)) {
       return false;
     }
-    this->bts.push(bt);
+    this->bts.push_back(bt);
     return true;
   }
 
@@ -144,12 +143,12 @@ public:
                  FlexBuffer<LoopState> &loopStates) {
     while (this->bts.size()) {
       auto bt = this->bts.back();
-      this->bts.pop();
+      this->bts.pop_back();
       switch (bt.op) {
       case BacktrackOp::None:
         return true; // do nothing
       case BacktrackOp::SetIns:
-        inst = this->begin + bt.setIns.target;
+        inst = this->getStartInst() + bt.setIns.target;
         input.setIter(bt.setIns.iter);
         return true;
       case BacktrackOp::SetCapture:
@@ -162,15 +161,15 @@ public:
         const auto loopIndex = bt.nonGreedyLoop.loopIndex;
         loopStates[loopIndex] = bt.nonGreedyLoop.state;
         const auto extra = this->bts.back();
-        this->bts.pop();
+        this->bts.pop_back();
         assert(extra.op == BacktrackOp::SetIns);
-        inst = this->begin + extra.setIns.target;
+        inst = this->getStartInst() + extra.setIns.target;
         input.setIter(extra.setIns.iter);
         inst += sizeof(BeginLoopIns); // goto loop body
         return this->prepareLoopBody(input, loopIndex, loopStates[loopIndex]);
       }
       case BacktrackOp::LookAround:
-        inst = this->begin + bt.lookAround.target;
+        inst = this->getStartInst() + bt.lookAround.target;
         bt.lookAround.matched = bt.lookAround.negate; // if negative lookaround, matched
         return this->push(bt);
       }
@@ -193,20 +192,40 @@ public:
   }
 
   bool prepareNonGreedyLoop(const Input &input, const Inst *beginInst, const LoopState &loop) {
-    return this->push(Backtrack::newSetIns(input, beginInst - this->getBeginInst())) &&
+    return this->push(Backtrack::newSetIns(input, beginInst - this->getStartInst())) &&
            this->push(
                Backtrack::newNonGreedyLoop(cast<BeginLoopIns>(*beginInst).getLoopIndex(), loop));
   }
 
-  bool cleanupLookAround(Input &input) {
+  bool cleanupLookAround(Input &input, FlexBuffer<Capture> &captures,
+                         FlexBuffer<LoopState> &loopStates) {
+    // find original lookaround state
+    bool negate = false;
+    bool matched = true;
+    for (ssize_t i = static_cast<ssize_t>(this->bts.size()) - 1; i > -1; i--) {
+      if (auto &bt = this->bts[i]; bt.op == BacktrackOp::LookAround) {
+        negate = bt.lookAround.negate;
+        matched = bt.lookAround.matched;
+        break;
+      }
+    }
+
     while (this->bts.size() && this->bts.back().op != BacktrackOp::LookAround) {
-      this->bts.pop();
+      if (negate) {
+        const Inst *inst; // dummy
+        /**
+         * force unwind states
+         * (after negative lookaround, capture groups are always unset)
+         */
+        this->backtrack(inst, input, captures, loopStates);
+      } else {
+        this->bts.pop_back();
+      }
     }
     assert(this->bts.size());
-    auto bt = this->bts.back();
-    this->bts.pop();
-    input.setIter(bt.lookAround.iter);
-    return bt.lookAround.matched;
+    input.setIter(this->bts.back().lookAround.iter);
+    this->bts.pop_back();
+    return matched;
   }
 };
 
@@ -269,7 +288,7 @@ BACKTRACK:
         }
         vmcase(Jump) {
           auto &ins = cast<JumpIns>(*inst);
-          inst = bts.getBeginInst() + ins.getTarget();
+          inst = bts.getStartInst() + ins.getTarget();
           vmnext;
         }
         vmcase(Alt) {
@@ -436,7 +455,7 @@ BACKTRACK:
           goto LOOP;
         }
         vmcase(EndLoop) {
-          inst = bts.getBeginInst() + cast<EndLoopIns>(*inst).getTarget();
+          inst = bts.getStartInst() + cast<EndLoopIns>(*inst).getTarget();
         LOOP:
           auto &loopIns = cast<BeginLoopIns>(*inst);
           auto &loop = loopStates[loopIns.getLoopIndex()];
@@ -447,13 +466,13 @@ BACKTRACK:
             TRY(bts.prepareLoopBody(input, loopIns.getLoopIndex(), loop));
             inst += sizeof(BeginLoopIns);
           } else if (count == loopIns.getMax()) {
-            inst = bts.getBeginInst() + loopIns.getOuter();
+            inst = bts.getStartInst() + loopIns.getOuter();
           } else if (loopIns.greedy) {
             TRY(bts.prepareGreedyLoop(input, loopIns, loop));
             inst += sizeof(BeginLoopIns);
           } else {
             TRY(bts.prepareNonGreedyLoop(input, inst, loop));
-            inst = bts.getBeginInst() + loopIns.getOuter();
+            inst = bts.getStartInst() + loopIns.getOuter();
           }
           vmnext;
         }
@@ -464,7 +483,7 @@ BACKTRACK:
           vmnext;
         }
         vmcase(EndLookAhead) {
-          if (bts.cleanupLookAround(input)) {
+          if (bts.cleanupLookAround(input, captures, loopStates)) {
             inst += sizeof(EndLookAheadIns);
             vmnext;
           }
@@ -478,7 +497,7 @@ BACKTRACK:
   if (input.available()) {
     input.consumeForward();
     oldIter = input.getIter();
-    inst = bts.getBeginInst();
+    inst = bts.getStartInst();
     captures.clear();
     captures.resize(regex.getCaptureGroupCount() + 1);
     bts.push(Backtrack()); // dummy
