@@ -28,8 +28,6 @@ namespace arsh::regex {
 struct LoopState {
   uint32_t count{0};
   uint32_t inputOffset{0};
-
-  LoopState() = default;
 };
 
 enum class BacktrackOp : unsigned char {
@@ -197,35 +195,28 @@ public:
                Backtrack::newNonGreedyLoop(cast<BeginLoopIns>(*beginInst).getLoopIndex(), loop));
   }
 
-  bool cleanupLookAround(Input &input, FlexBuffer<Capture> &captures,
-                         FlexBuffer<LoopState> &loopStates) {
+  bool cleanupLookAround(Input &input, FlexBuffer<Capture> &captures) {
     // find original lookaround state
     bool negate = false;
-    bool matched = true;
     for (ssize_t i = static_cast<ssize_t>(this->bts.size()) - 1; i > -1; i--) {
       if (auto &bt = this->bts[i]; bt.op == BacktrackOp::LookAround) {
         negate = bt.lookAround.negate;
-        matched = bt.lookAround.matched;
         break;
       }
     }
 
     while (this->bts.size() && this->bts.back().op != BacktrackOp::LookAround) {
-      if (negate) {
-        const Inst *inst; // dummy
-        /**
-         * force unwind states
-         * (after negative lookaround, capture groups are always unset)
-         */
-        this->backtrack(inst, input, captures, loopStates);
-      } else {
-        this->bts.pop_back();
+      if (negate && this->bts.back().op == BacktrackOp::SetCapture) {
+        auto bt = this->bts.back();
+        captures[bt.setCapture.index] = bt.setCapture.capture; // force reset capture
       }
+      this->bts.pop_back();
     }
     assert(this->bts.size());
-    input.setIter(this->bts.back().lookAround.iter);
+    auto bt = this->bts.back();
+    input.setIter(bt.lookAround.iter);
     this->bts.pop_back();
-    return matched;
+    return bt.lookAround.matched;
   }
 };
 
@@ -252,7 +243,7 @@ static Capture resolveNamedBackRef(const NamedCaptureEntry &entry,
 
 #define vmdispatch(op) switch (op)
 #define vmcase(OP) case OpCode::OP:
-#define vmnext continue;
+#define vmnext continue
 
 MatchStatus match(const Regex &regex, const StringRef text, FlexBuffer<Capture> &captures) {
   // prepare
@@ -377,7 +368,7 @@ BACKTRACK:
             }
             if (s) {
               inst += sizeof(CharSetIns);
-              vmnext
+              vmnext;
             }
           }
           goto BACKTRACK;
@@ -404,7 +395,7 @@ BACKTRACK:
             captures[i] = Capture();
           }
           inst += sizeof(ResetCapturesIns);
-          vmnext
+          vmnext;
         }
         vmcase(BackRef) {
           auto &ins = cast<BackRefIns>(*inst);
@@ -483,7 +474,7 @@ BACKTRACK:
           vmnext;
         }
         vmcase(EndLookAhead) {
-          if (bts.cleanupLookAround(input, captures, loopStates)) {
+          if (bts.cleanupLookAround(input, captures)) {
             inst += sizeof(EndLookAheadIns);
             vmnext;
           }
