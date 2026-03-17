@@ -241,9 +241,20 @@ static Capture resolveNamedBackRef(const NamedCaptureEntry &entry,
     }                                                                                              \
   } while (false)
 
+#if defined(__GNUC__)
+#define USE_THREADED_CODE
+#else
+#endif
+
+#ifdef USE_THREADED_CODE
+#define vmdispatch(op) goto *jumpTable[toUnderlying(op)];
+#define vmcase(OP) L_##OP:
+#define vmnext vmdispatch(inst->op)
+#else
 #define vmdispatch(op) switch (op)
 #define vmcase(OP) case OpCode::OP:
 #define vmnext continue
+#endif
 
 MatchStatus match(const Regex &regex, const StringRef text, FlexBuffer<Capture> &captures) {
   // prepare
@@ -262,6 +273,14 @@ MatchStatus match(const Regex &regex, const StringRef text, FlexBuffer<Capture> 
   loopStates.resize(regex.getLoopCount());
   BacktrackStack bts(inst);
   bts.push(Backtrack()); // push dummy
+
+#ifdef USE_THREADED_CODE
+  static const void *jumpTable[] = {
+#define GEN_TABLE(E) &&L_##E,
+      EACH_RE_OPCODE(GEN_TABLE)
+#undef GEN_TABLE
+  };
+#endif
 
   // match
 BACKTRACK:
