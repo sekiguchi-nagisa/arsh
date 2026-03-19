@@ -189,6 +189,15 @@ let defs = $create([
 @('[^\p{QMark}\P{Ideographic}\p{Bidi_M}]' 'u' '(prop:Quotation_Mark + !(prop:Ideographic) + dbp:Bidi_Mirrored)'),
 @('[^\p{QMark}\P{Ideographic}\p{Bidi_M}]' 'v' '!(prop:Quotation_Mark + !(prop:Ideographic) + dbp:Bidi_Mirrored)'),
 
+@('[\q{A|B|C|!}]' 'v' '(U+41 + U+42 + U+43 + U+21)'),
+@('[^\q{A|B|C|!}]' 'v' '!(U+41 + U+42 + U+43 + U+21)'),
+
+@('[\q{A|B|C|!}あ&\q{い|う}]' 'v' '(U+41 + U+42 + U+43 + U+21 + U+3042 + U+26 + U+3044 + U+3046)'),
+@('[^\q{A|B|C|!}あ&\q{い|う}]' 'v' '!(U+41 + U+42 + U+43 + U+21 + U+3042 + U+26 + U+3044 + U+3046)'),
+
+@('[\q{A|B|C|!}[あ&\q{い|う}]]' 'v' '(U+41 + U+42 + U+43 + U+21 + (U+3042 + U+26 + U+3044 + U+3046))'),
+@('[^\q{A|B|C|!}[^あ&\q{い|う}]]' 'v' '!(U+41 + U+42 + U+43 + U+21 + !(U+3042 + U+26 + U+3044 + U+3046))'),
+
 ])
 
 _main(param : _Param) {

@@ -428,10 +428,33 @@ static void appendToCodePointSet(CodePointSetBuilder &builder, const unsigned in
     }
     break;
   }
+  case NodeKind::Alt: { // for \q{A}, \q{A|B}
+    auto &altNode = cast<AltNode>(node);
+    const unsigned int size = altNode.getPatterns().size();
+    for (unsigned int i = 0; i < size; i++) {
+      auto &child = *altNode.getPatterns()[i];
+      assert(isa<CharNode>(child));
+      appendToCodePointSet(builder, level + 1, mode, child);
+    }
+    break;
+  }
   default:
     assert(false); // unreachable
     break;
   }
+}
+
+static bool isSingleCharClass(const CharClassNode &node) {
+  if (node.getChars().size() == 1 && !node.isInvert()) {
+    if (auto *altNode = checked_cast<AltNode>(node.getChars()[0].get())) {
+      if (altNode->getPatterns().size() == 1 && isa<CharNode>(*altNode->getPatterns()[0])) {
+        return true; // [\q{A}]
+      }
+    } else {
+      return true;
+    }
+  }
+  return false;
 }
 
 bool CodeGen::generateCharClass(const CharClassNode &node) {
@@ -440,7 +463,7 @@ bool CodeGen::generateCharClass(const CharClassNode &node) {
     return false;
   }
 
-  if (node.getChars().size() == 1 && !node.isInvert()) {
+  if (isSingleCharClass(node)) {
     return this->generate(*node.getChars()[0]);
   }
   if (node.getChars().empty() && node.isInvert()) { // [^]

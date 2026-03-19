@@ -13478,6 +13478,60 @@ static constexpr BMPCodePointRange charset_test_table_116[] = {
     { 0x30000 }, { 0x3134A },
     { 0x31350 }, { 0x33479 },
 };
+static constexpr BMPCodePointRange charset_test_table_117[] = {
+    // BMP
+    { 0x0021, 0x0021 },
+    { 0x0041, 0x0043 },
+    // Non-BMP
+};
+static constexpr BMPCodePointRange charset_test_table_118[] = {
+    // BMP
+    { 0x0000, 0x0020 },
+    { 0x0022, 0x0040 },
+    { 0x0044, 0xFFFF },
+    // Non-BMP
+    { 0x10000 }, { 0x10FFFF },
+};
+static constexpr BMPCodePointRange charset_test_table_119[] = {
+    // BMP
+    { 0x0021, 0x0021 },
+    { 0x0026, 0x0026 },
+    { 0x0041, 0x0043 },
+    { 0x3042, 0x3042 },
+    { 0x3044, 0x3044 },
+    { 0x3046, 0x3046 },
+    // Non-BMP
+};
+static constexpr BMPCodePointRange charset_test_table_120[] = {
+    // BMP
+    { 0x0000, 0x0020 },
+    { 0x0022, 0x0025 },
+    { 0x0027, 0x0040 },
+    { 0x0044, 0x3041 },
+    { 0x3043, 0x3043 },
+    { 0x3045, 0x3045 },
+    { 0x3047, 0xFFFF },
+    // Non-BMP
+    { 0x10000 }, { 0x10FFFF },
+};
+static constexpr BMPCodePointRange charset_test_table_121[] = {
+    // BMP
+    { 0x0021, 0x0021 },
+    { 0x0026, 0x0026 },
+    { 0x0041, 0x0043 },
+    { 0x3042, 0x3042 },
+    { 0x3044, 0x3044 },
+    { 0x3046, 0x3046 },
+    // Non-BMP
+};
+static constexpr BMPCodePointRange charset_test_table_122[] = {
+    // BMP
+    { 0x0026, 0x0026 },
+    { 0x3042, 0x3042 },
+    { 0x3044, 0x3044 },
+    { 0x3046, 0x3046 },
+    // Non-BMP
+};
 
 static constexpr CharSetMatcherEntry charSetMatcherCases[] = {
       {R"(\s)", "", 10, charset_test_table_0},
@@ -13597,4 +13651,10 @@ static constexpr CharSetMatcherEntry charSetMatcherCases[] = {
       {R"([\p{QMark}\P{Ideographic}\p{Bidi_M}])", "u", 8, charset_test_table_114},
       {R"([^\p{QMark}\P{Ideographic}\p{Bidi_M}])", "u", 8, charset_test_table_115},
       {R"([^\p{QMark}\P{Ideographic}\p{Bidi_M}])", "v", 7, charset_test_table_116},
+      {R"([\q{A|B|C|!}])", "v", 2, charset_test_table_117},
+      {R"([^\q{A|B|C|!}])", "v", 3, charset_test_table_118},
+      {R"([\q{A|B|C|!}あ&\q{い|う}])", "v", 6, charset_test_table_119},
+      {R"([^\q{A|B|C|!}あ&\q{い|う}])", "v", 7, charset_test_table_120},
+      {R"([\q{A|B|C|!}[あ&\q{い|う}]])", "v", 6, charset_test_table_121},
+      {R"([^\q{A|B|C|!}[^あ&\q{い|う}]])", "v", 4, charset_test_table_122},
 };

@@ -242,3 +242,30 @@ input: `いお'
 failed
 EOF
 )
+
+# [\q{@}]
+assert diff <(redump -m 'AB@V' '[\q{@}]' 'v') <(<<'EOF'
+input: `AB@V'
+(offset=2, size=1)
+EOF
+)
+
+# [\q{A|V}]
+assert diff <(redump -m 'ABV' '[\q{A|V}]' 'v') <(<<'EOF'
+input: `ABV'
+(offset=0, size=1)
+EOF
+)
+
+assert diff <(redump -m 'BVA' '[\q{A|V}]' 'v') <(<<'EOF'
+input: `BVA'
+(offset=1, size=1)
+EOF
+)
+
+# [\q{A|V}@]
+assert diff <(redump -m '@ABV' '[\q{A|V}@]' 'v') <(<<'EOF'
+input: `@ABV'
+(offset=0, size=1)
+EOF
+)
