@@ -94,3 +94,34 @@ input: \`${$'\u2029'}'
 (offset=0, size=3)
 EOF
 )
+
+# any with ignore-case
+assert diff <(redump -m 'A' '.' 'i') <(<<'EOF'
+input: `A'
+(offset=0, size=1)
+EOF
+)
+
+assert diff <(redump -m 'a' '.' 'i') <(<<'EOF'
+input: `a'
+(offset=0, size=1)
+EOF
+)
+
+assert diff <(redump -m 'a' '.' 'is') <(<<'EOF'
+input: `a'
+(offset=0, size=1)
+EOF
+)
+
+assert diff <(redump -m $'\u2028' '.' 'si') <(<<EOF
+input: \`${$'\u2028'}'
+(offset=0, size=3)
+EOF
+)
+
+assert diff <(redump -m $'\u2029' '.' 'si') <(<<EOF
+input: \`${$'\u2029'}'
+(offset=0, size=3)
+EOF
+)

@@ -48,6 +48,12 @@ failed
 EOF
 )
 
+assert diff <(redump -m $'aaa\u2028b' '^b' 'i') <(<<EOF
+input: \`aaa${$'\u2028'}b'
+failed
+EOF
+)
+
 assert diff <(redump -m $'aaa\u2028b' '^b' 'm') <(<<EOF
 input: \`aaa${$'\u2028'}b'
 (offset=6, size=1)
@@ -114,6 +120,12 @@ failed
 EOF
 )
 
+assert diff <(redump -m $'aaa\u2028b' 'a$' 'i') <(<<EOF
+input: \`aaa${$'\u2028'}b'
+failed
+EOF
+)
+
 assert diff <(redump -m $'aaa\u2028b' 'a$' 'm') <(<<EOF
 input: \`aaa${$'\u2028'}b'
 (offset=2, size=1)
@@ -128,6 +140,12 @@ EOF
 )
 
 assert diff <(redump -m $'aaa\u2029b' 'a$' 'm') <(<<EOF
+input: \`aaa${$'\u2029'}b'
+(offset=2, size=1)
+EOF
+)
+
+assert diff <(redump -m $'aaa\u2029b' 'a$' 'mi') <(<<EOF
 input: \`aaa${$'\u2029'}b'
 (offset=2, size=1)
 EOF
