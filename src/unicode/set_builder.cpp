@@ -54,10 +54,17 @@ void CodePointSetBuilder::add(const CodePointSetBuilder &other) {
   this->sortAndCompact();
 }
 
-void CodePointSetBuilder::addRange(int first, int last) {
-  int actualFirst = std::max(0, std::min(first, last));
-  int actualLast = std::min(UnicodeUtil::CODE_POINT_MAX, std::max(first, last));
-  this->codePointRanges.emplace_back(actualFirst, actualLast);
+void CodePointSetBuilder::addRange(int first, int last, const bool caseFold) {
+  const int actualFirst = std::max(0, std::min(first, last));
+  const int actualLast = std::min(UnicodeUtil::CODE_POINT_MAX, std::max(first, last));
+  if (caseFold) {
+    for (int c = actualFirst; c <= actualLast; c++) {
+      int code = doSimpleCaseFolding(c);
+      this->codePointRanges.emplace_back(code, code);
+    }
+  } else {
+    this->codePointRanges.emplace_back(actualFirst, actualLast);
+  }
   this->sortAndCompact();
 }
 
@@ -176,6 +183,9 @@ void CodePointSetBuilder::foldCase() {
         foldMap.emplace(c, f);
       }
     }
+  }
+  if (foldMap.empty()) {
+    return;
   }
 
   // remove affected code points

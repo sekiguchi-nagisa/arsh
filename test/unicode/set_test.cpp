@@ -268,18 +268,10 @@ TEST(UCPTest, lone) {
   ASSERT_FALSE(ucp::parseProperty("ESRegexClassSpace", nullptr).hasValue());
 }
 
-static void addRange(CodePointSetBuilder &builder, const int first, const int last) {
-  int newFirst = std::max(0, std::min(first, last));
-  int newLast = std::min(UnicodeUtil::CODE_POINT_MAX, std::max(first, last));
-  BMPCodePointRange ranges[] = {{static_cast<uint32_t>(newFirst)},
-                                {static_cast<uint32_t>(newLast)}};
-  builder.add({0, ranges, std::size(ranges)});
-}
-
 static CodePointSet set(std::vector<std::pair<int, int>> &&ranges) {
   CodePointSetBuilder builder;
   for (auto [first, last] : ranges) {
-    addRange(builder, first, last);
+    builder.addRange(first, last);
   }
   return builder.build();
 }
@@ -512,6 +504,20 @@ TEST(SetBuilderTest, caseFold) {
 
   //
   builder.foldCase();
+  ASSERT_EQ(3, builder.getCodePointRanges().size());
+  ASSERT_EQ('0', builder.getCodePointRanges()[0].first);
+  ASSERT_EQ('9', builder.getCodePointRanges()[0].second);
+  ASSERT_EQ('_', builder.getCodePointRanges()[1].first);
+  ASSERT_EQ('_', builder.getCodePointRanges()[1].second);
+  ASSERT_EQ('a', builder.getCodePointRanges()[2].first);
+  ASSERT_EQ('z', builder.getCodePointRanges()[2].second);
+}
+
+TEST(SetBuilderTest, caseFoldRange) {
+  CodePointSetBuilder builder;
+  builder.addRange('A', 'Z', true);
+  builder.addRange('0', '9', true);
+  builder.addRange('_', '_', true);
   ASSERT_EQ(3, builder.getCodePointRanges().size());
   ASSERT_EQ('0', builder.getCodePointRanges()[0].first);
   ASSERT_EQ('9', builder.getCodePointRanges()[0].second);

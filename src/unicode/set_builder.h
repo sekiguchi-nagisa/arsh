@@ -45,7 +45,7 @@ public:
    */
   void add(CodePointSetRef ref);
 
-  void addRange(int first, int last);
+  void addRange(int first, int last, bool caseFold = false);
 
   template <unsigned int N>
   void add(const int (&data)[N]) {
