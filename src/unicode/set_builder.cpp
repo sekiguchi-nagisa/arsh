@@ -54,7 +54,7 @@ void CodePointSetBuilder::add(const CodePointSetBuilder &other) {
   this->sortAndCompact();
 }
 
-void CodePointSetBuilder::add(int first, int last) {
+void CodePointSetBuilder::addRange(int first, int last) {
   int actualFirst = std::max(0, std::min(first, last));
   int actualLast = std::min(UnicodeUtil::CODE_POINT_MAX, std::max(first, last));
   this->codePointRanges.emplace_back(actualFirst, actualLast);

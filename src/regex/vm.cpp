@@ -392,6 +392,21 @@ BACKTRACK:
           }
           goto BACKTRACK;
         }
+        vmcase(ICharSet) {
+          auto &ins = cast<ICharSetIns>(*inst);
+          if (input.available()) {
+            bool s = matchers[ins.getMatcherIndex()].contains(
+                doSimpleCaseFolding(input.consumeForward()));
+            if (ins.invert) {
+              s = !s;
+            }
+            if (s) {
+              inst += sizeof(ICharSetIns);
+              vmnext;
+            }
+          }
+          goto BACKTRACK;
+        }
         vmcase(BeginCapture) {
           auto &ins = cast<BeginCaptureIns>(*inst);
           captures[ins.getCaptureIndex()] = {.offset = input.getOffset(), .size = 0};

@@ -1,0 +1,128 @@
+
+source $SCRIPT_DIR/../syntax/test_helper.arsh
+
+# \d
+assert diff <(redump -m 'abc123' '\d' 'i') <(<<'EOF'
+input: `abc123'
+(offset=3, size=1)
+EOF
+)
+
+assert diff <(redump -m 'abc23' '\d' 'i') <(<<'EOF'
+input: `abc23'
+(offset=3, size=1)
+EOF
+)
+
+assert diff <(redump -m 'abc123' '\d' 'iu') <(<<'EOF'
+input: `abc123'
+(offset=3, size=1)
+EOF
+)
+
+assert diff <(redump -m 'abc23' '\d' 'iu') <(<<'EOF'
+input: `abc23'
+(offset=3, size=1)
+EOF
+)
+
+assert diff <(redump -m 'abc123' '\d' 'iv') <(<<'EOF'
+input: `abc123'
+(offset=3, size=1)
+EOF
+)
+
+assert diff <(redump -m 'abc23' '\d' 'iv') <(<<'EOF'
+input: `abc23'
+(offset=3, size=1)
+EOF
+)
+
+# \D
+assert diff <(redump -m '012' '\D' 'i') <(<<'EOF'
+input: `012'
+failed
+EOF
+)
+
+assert diff <(redump -m '23ab' '\D' 'i') <(<<'EOF'
+input: `23ab'
+(offset=2, size=1)
+EOF
+)
+
+assert diff <(redump -m '23ab' '\D' 'vi') <(<<'EOF'
+input: `23ab'
+(offset=2, size=1)
+EOF
+)
+
+# \w
+assert diff <(redump -m 'abc123' '\w' 'i') <(<<'EOF'
+input: `abc123'
+(offset=0, size=1)
+EOF
+)
+
+assert diff <(redump -m $'@@\u017F#$' '\w' '') <(<<EOF
+input: \`${$'@@\u017F#$'}'
+failed
+EOF
+)
+
+assert diff <(redump -m $'@@\u017F#$' '\w' 'i') <(<<EOF
+input: \`${$'@@\u017F#$'}'
+(offset=2, size=2)
+EOF
+)
+
+# \W
+assert diff <(redump -m 'abc123' '\W' 'i') <(<<'EOF'
+input: `abc123'
+failed
+EOF
+)
+
+assert diff <(redump -m 'abc123@{]' '\W' 'iu') <(<<'EOF'
+input: `abc123@{]'
+(offset=6, size=1)
+EOF
+)
+
+assert diff <(redump -m $'ab\u017F' '\W' 'iu') <(<<EOF
+input: \`${$'ab\u017F'}'
+failed
+EOF
+)
+
+assert diff <(redump -m $'ab\u017F' '\W' 'iv') <(<<EOF
+input: \`${$'ab\u017F'}'
+failed
+EOF
+)
+
+# \s
+assert diff <(redump -m 'this is a pen' '\s' 'ui') <(<<'EOF'
+input: `this is a pen'
+(offset=4, size=1)
+EOF
+)
+
+assert diff <(redump -m $'@ \t\r\n\v\f\U2028' '\s\s\s\s\s\s\s' 'ui') <(<<EOF
+input: \`${$'@ \t\r\n\v\f\U2028'}'
+(offset=1, size=9)
+EOF
+)
+
+# \S
+assert diff <(redump -m $' \t\r\n\v\f\U2028@' '\S' 'ui') <(<<EOF
+input: \`${$' \t\r\n\v\f\U2028@'}'
+(offset=9, size=1)
+EOF
+)
+
+assert diff <(redump -m $' \t\r\n\v\f\U2028' '\S' 'ui') <(<<EOF
+input: \`${$' \t\r\n\v\f\U2028'}'
+failed
+EOF
+)

@@ -15,6 +15,8 @@
  */
 
 #include "emit.h"
+
+#include "misc/unicode.hpp"
 #include "unicode/case_fold.h"
 
 namespace arsh::regex {
@@ -65,10 +67,28 @@ void CodeGen::todo(const Node &node, const char *str) {
 }
 
 int CodeGen::mayBeSimpleCaseFolding(int codePoint) const {
-  if (this->mode != Mode::UNICODE_SET || !this->has(Modifier::IGNORE_CASE)) {
-    return codePoint;
+  if (this->needSimpleCaseFolding()) {
+    return doSimpleCaseFolding(codePoint);
   }
-  return doSimpleCaseFolding(codePoint);
+  return codePoint;
+}
+
+void CodeGen::mayBeSimpleCaseFolding(CodePointSetBuilder &setBuilder) const {
+  if (this->needSimpleCaseFolding()) {
+    setBuilder.foldCase();
+  }
+}
+
+void CodeGen::complement(CodePointSetBuilder &setBuilder) const {
+  if (this->needSimpleCaseFolding()) {
+    CodePointSetBuilder newBuilder;
+    newBuilder.addRange(0, UnicodeUtil::CODE_POINT_MAX);
+    newBuilder.foldCase();
+    newBuilder.sub(setBuilder.build().ref());
+    setBuilder = std::move(newBuilder);
+  } else {
+    setBuilder.complement();
+  }
 }
 
 #define TRY(E)                                                                                     \
@@ -299,7 +319,7 @@ static void appendToAsciiSet(AsciiSet &set, const Node &node) {
   }
 }
 
-static bool toCodePointSet(ucp::BuilderOrSet builderOrSet, const PropertyNode &node) {
+bool CodeGen::toCodePointSet(ucp::BuilderOrSet builderOrSet, const PropertyNode &node) const {
   switch (node.getNormalizedType()) {
   case PropertyNode::Type::RANGE:
   case PropertyNode::Type::INTERSECT:
@@ -313,8 +333,12 @@ static bool toCodePointSet(ucp::BuilderOrSet builderOrSet, const PropertyNode &n
     break; // normally unreachable
   case PropertyNode::Type::DIGIT:
     return ucp::getPropertySet(ucp::Property::lone(ucp::Lone::ESRegexClassDigit), builderOrSet);
-  case PropertyNode::Type::WORD:
-    return ucp::getPropertySet(ucp::Property::lone(ucp::Lone::ESRegexClassWord), builderOrSet);
+  case PropertyNode::Type::WORD: {
+    const auto p = this->hasEitherUnicodeFlag() && this->has(Modifier::IGNORE_CASE)
+                       ? ucp::Lone::ESRegexClassExtendWord
+                       : ucp::Lone::ESRegexClassWord;
+    return ucp::getPropertySet(ucp::Property::lone(p), builderOrSet);
+  }
   case PropertyNode::Type::SPACE:
     return ucp::getPropertySet(ucp::Property::lone(ucp::Lone::ESRegexClassSpace), builderOrSet);
   case PropertyNode::Type::UNICODE:
@@ -323,59 +347,94 @@ static bool toCodePointSet(ucp::BuilderOrSet builderOrSet, const PropertyNode &n
   return true;
 }
 
-bool CodeGen::generateProperty(const PropertyNode &node) {
-  if (this->has(Modifier::IGNORE_CASE)) {
-    this->todo(node, "ignore-case");
-    return false;
+static AsciiSet foldCase(const AsciiSet set) {
+  AsciiSet newSet;
+  for (int i = 0; i < 128; i++) {
+    int code = i;
+    if (set.contains(code)) {
+      code = doSimpleCaseFolding(code);
+      assert(code >= 0 && code < 128);
+      newSet.add(code);
+    }
   }
+  return newSet;
+}
 
+bool CodeGen::generateProperty(const PropertyNode &node) {
   if (node.onlyAscii()) {
     AsciiSet set;
     appendToAsciiSet(set, node);
+    if (this->has(Modifier::IGNORE_CASE)) {
+      set = foldCase(set);
+    }
     if (auto index = this->emitMatcher(Matcher(set)); index.hasValue()) {
-      this->builder.emit<CharSetIns>(index.unwrap(), false);
+      if (this->has(Modifier::IGNORE_CASE)) {
+        this->builder.emit<ICharSetIns>(index.unwrap(), false);
+      } else {
+        this->builder.emit<CharSetIns>(index.unwrap(), false);
+      }
       return true;
     }
   } else if (node.mayContainString()) {
+    if (this->has(Modifier::IGNORE_CASE)) {
+      this->todo(node, "ignore-case");
+      return false;
+    }
     this->todo(node, "support emoji seq");
     return false;
   } else {
     CodePointSet set;
     CodePointSetBuilder setBuilder;
-    const bool r = toCodePointSet(
-        node.isInvert() ? ucp::BuilderOrSet(setBuilder) : ucp::BuilderOrSet(set), node);
+    const bool useBuilder = node.isInvert() || this->has(Modifier::IGNORE_CASE);
+    const bool r = this->toCodePointSet(
+        useBuilder ? ucp::BuilderOrSet(setBuilder) : ucp::BuilderOrSet(set), node);
     assert(r);
     static_cast<void>(r);
-    if (node.isInvert()) {
-      setBuilder.complement();
+    if (useBuilder) {
+      this->mayBeSimpleCaseFolding(setBuilder);
+      if (node.isInvert()) {
+        this->complement(setBuilder);
+      }
+      if (this->has(Modifier::IGNORE_CASE)) {
+        setBuilder.foldCase();
+      }
       set = setBuilder.build();
     }
     if (auto index = this->emitMatcher(Matcher(std::move(set))); index.hasValue()) {
-      this->builder.emit<CharSetIns>(index.unwrap(), false);
+      if (this->has(Modifier::IGNORE_CASE)) {
+        this->builder.emit<ICharSetIns>(index.unwrap(), false);
+      } else {
+        this->builder.emit<CharSetIns>(index.unwrap(), false);
+      }
       return true;
     }
   }
   return false;
 }
 
-static void appendToCodePointSet(CodePointSetBuilder &builder, const unsigned int level,
-                                 const Mode mode, const Node &node) {
+void CodeGen::appendToCodePointSet(CodePointSetBuilder &setBuilder, const unsigned int level,
+                                   const Node &node) const {
   switch (node.getKind()) {
   case NodeKind::Char: {
     int codePoint = cast<CharNode>(node).getCodePoint();
-    builder.add(codePoint, codePoint);
+    codePoint = this->mayBeSimpleCaseFolding(codePoint);
+    setBuilder.addRange(codePoint, codePoint);
     break;
   }
   case NodeKind::Property: {
     auto &p = cast<PropertyNode>(node);
+    const bool useSubBuilder = p.isInvert() || this->has(Modifier::IGNORE_CASE);
     CodePointSetBuilder subBuilder;
-    CodePointSetBuilder *builderPtr = p.isInvert() ? &subBuilder : &builder;
-    const bool r = toCodePointSet(ucp::BuilderOrSet(*builderPtr), p);
+    CodePointSetBuilder *builderPtr = useSubBuilder ? &subBuilder : &setBuilder;
+    const bool r = this->toCodePointSet(ucp::BuilderOrSet(*builderPtr), p);
     assert(r);
     static_cast<void>(r);
-    if (p.isInvert()) {
-      subBuilder.complement();
-      builder.add(subBuilder);
+    if (useSubBuilder) {
+      this->mayBeSimpleCaseFolding(subBuilder);
+      if (p.isInvert()) {
+        this->complement(subBuilder);
+      }
+      setBuilder.add(subBuilder);
     }
     break;
   }
@@ -384,23 +443,25 @@ static void appendToCodePointSet(CodePointSetBuilder &builder, const unsigned in
     assert(!classNode.mayContainStrings());
     const unsigned int size = classNode.getChars().size();
     CodePointSetBuilder classBuilder;
-    CodePointSetBuilder *builderPtr = level ? &classBuilder : &builder;
+    CodePointSetBuilder *builderPtr = level ? &classBuilder : &setBuilder;
     switch (classNode.getType()) {
     case CharClassNode::Type::UNION:
     case CharClassNode::Type::RANGE: {
       for (unsigned int i = 0; i < size; i++) {
-        auto rangeConsumer = [&builderPtr](int first, int last) { builderPtr->add(first, last); };
+        auto rangeConsumer = [&builderPtr](int first, int last) {
+          builderPtr->addRange(first, last);
+        };
         if (intoCharRange(classNode, i, rangeConsumer)) {
           i += 2;
         } else {
-          appendToCodePointSet(*builderPtr, level + 1, mode, *classNode.getChars()[i]);
+          this->appendToCodePointSet(*builderPtr, level + 1, *classNode.getChars()[i]);
         }
       }
       break;
     }
     case CharClassNode::Type::INTERSECT:
     case CharClassNode::Type::SUBTRACT: {
-      appendToCodePointSet(*builderPtr, level + 1, mode, *classNode.getChars()[0]);
+      appendToCodePointSet(*builderPtr, level + 1, *classNode.getChars()[0]);
       for (unsigned int i = 1; i < size; i++) {
         auto &e = *classNode.getChars()[i];
         if (isProperty(e, PropertyNode::Type::INTERSECT) ||
@@ -408,7 +469,7 @@ static void appendToCodePointSet(CodePointSetBuilder &builder, const unsigned in
           continue;
         }
         CodePointSetBuilder sub;
-        appendToCodePointSet(sub, 0, mode, e);
+        this->appendToCodePointSet(sub, 0, e);
         auto set = sub.build();
         if (classNode.getType() == CharClassNode::Type::INTERSECT) {
           builderPtr->intersect(set.ref());
@@ -420,21 +481,19 @@ static void appendToCodePointSet(CodePointSetBuilder &builder, const unsigned in
       break;
     }
     }
-    if (classNode.isInvert() && mode == Mode::UNICODE_SET) {
-      builderPtr->complement();
+    if (classNode.isInvert() && this->mode == Mode::UNICODE_SET) {
+      this->complement(*builderPtr);
     }
     if (level) {
-      builder.add(classBuilder);
+      setBuilder.add(classBuilder);
     }
     break;
   }
   case NodeKind::Alt: { // for \q{A}, \q{A|B}
     auto &altNode = cast<AltNode>(node);
-    const unsigned int size = altNode.getPatterns().size();
-    for (unsigned int i = 0; i < size; i++) {
-      auto &child = *altNode.getPatterns()[i];
-      assert(isa<CharNode>(child));
-      appendToCodePointSet(builder, level + 1, mode, child);
+    for (auto &e : altNode.getPatterns()) {
+      assert(isa<CharNode>(*e));
+      this->appendToCodePointSet(setBuilder, level + 1, *e);
     }
     break;
   }
@@ -458,11 +517,6 @@ static bool isSingleCharClass(const CharClassNode &node) {
 }
 
 bool CodeGen::generateCharClass(const CharClassNode &node) {
-  if (this->has(Modifier::IGNORE_CASE)) {
-    this->todo(node, "ignore-case");
-    return false;
-  }
-
   if (isSingleCharClass(node)) {
     return this->generate(*node.getChars()[0]);
   }
@@ -473,22 +527,40 @@ bool CodeGen::generateCharClass(const CharClassNode &node) {
   if (isAsciiSet(node)) {
     AsciiSet set;
     appendToAsciiSet(set, node);
+    if (this->has(Modifier::IGNORE_CASE)) {
+      set = foldCase(set);
+    }
     if (auto index = this->emitMatcher(Matcher(set)); index.hasValue()) {
-      this->builder.emit<CharSetIns>(index.unwrap(), false);
+      if (this->has(Modifier::IGNORE_CASE)) {
+        this->builder.emit<ICharSetIns>(index.unwrap(), false);
+      } else {
+        this->builder.emit<CharSetIns>(index.unwrap(), false);
+      }
       return true;
     }
   } else if (node.mayContainStrings()) {
+    if (this->has(Modifier::IGNORE_CASE)) {
+      this->todo(node, "ignore-case");
+      return false;
+    }
     this->todo(node, "support string class");
     return false;
   } else {
     CodePointSetBuilder setBuilder;
-    appendToCodePointSet(setBuilder, 0, this->mode, node);
+    this->appendToCodePointSet(setBuilder, 0, node);
     bool invert = false;
     if (node.isInvert() && this->mode != Mode::UNICODE_SET) {
       invert = true;
     }
+    if (this->has(Modifier::IGNORE_CASE)) {
+      setBuilder.foldCase();
+    }
     if (auto index = this->emitMatcher(Matcher(setBuilder.build())); index.hasValue()) {
-      this->builder.emit<CharSetIns>(index.unwrap(), invert);
+      if (this->has(Modifier::IGNORE_CASE)) {
+        this->builder.emit<ICharSetIns>(index.unwrap(), invert);
+      } else {
+        this->builder.emit<CharSetIns>(index.unwrap(), invert);
+      }
       return true;
     }
   }

@@ -37,6 +37,7 @@ namespace arsh::regex {
   OP(Char)                                                                                         \
   OP(IChar)                                                                                        \
   OP(CharSet)                                                                                      \
+  OP(ICharSet)                                                                                     \
   OP(BeginCapture)                                                                                 \
   OP(EndCapture)                                                                                   \
   OP(ResetCaptures)                                                                                \
@@ -195,9 +196,24 @@ struct ICharIns : InstWithRtti<OpCode::IChar> {
 
 struct CharSetIns : InstWithRtti<OpCode::CharSet> {
   bool invert;
-  uint8_t index[2]; //
+  uint8_t index[2];
 
   explicit CharSetIns(uint16_t matcherIndex, bool invert) : invert(invert) {
+    WRITE_TO_INS_FIELD(matcherIndex, index);
+  }
+
+  uint16_t getMatcherIndex() const {
+    uint16_t matcherIndex;
+    READ_FROM_INS_FIELD(index, matcherIndex);
+    return matcherIndex;
+  }
+};
+
+struct ICharSetIns : InstWithRtti<OpCode::ICharSet> {
+  bool invert;
+  uint8_t index[2];
+
+  explicit ICharSetIns(uint16_t matcherIndex, bool invert) : invert(invert) {
     WRITE_TO_INS_FIELD(matcherIndex, index);
   }
 

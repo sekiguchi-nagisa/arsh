@@ -86,7 +86,24 @@ private:
 
   void todo(const Node &node, const char *str = nullptr); // TODO: remove
 
-  int mayBeSimpleCaseFolding(int codePoint) const; // TODO: apply to code point set
+  bool toCodePointSet(ucp::BuilderOrSet builderOrSet, const PropertyNode &node) const;
+
+  void appendToCodePointSet(CodePointSetBuilder &setBuilder, unsigned int level,
+                            const Node &node) const;
+
+  bool hasEitherUnicodeFlag() const {
+    return this->mode == Mode::UNICODE || this->mode == Mode::UNICODE_SET;
+  }
+
+  bool needSimpleCaseFolding() const {
+    return this->mode == Mode::UNICODE_SET && this->has(Modifier::IGNORE_CASE);
+  }
+
+  int mayBeSimpleCaseFolding(int codePoint) const;
+
+  void mayBeSimpleCaseFolding(CodePointSetBuilder &setBuilder) const;
+
+  void complement(CodePointSetBuilder &setBuilder) const;
 
   bool generateAlt(const AltNode &node);
 

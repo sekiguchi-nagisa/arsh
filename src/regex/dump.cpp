@@ -432,6 +432,16 @@ void RegexDumper::dump(const FlexBuffer<Inst> &ins) {
       inst += sizeof(CharSetIns);
       break;
     }
+    case OpCode::ICharSet: {
+      auto &charSet = cast<ICharSetIns>(*inst);
+      str += "(matcherIndex=";
+      str += std::to_string(charSet.getMatcherIndex());
+      str += ", invert=";
+      appendBool(str, charSet.invert);
+      str += ')';
+      inst += sizeof(CharSetIns);
+      break;
+    }
     case OpCode::BeginCapture:
       str += "(captureIndex=";
       str += std::to_string(cast<BeginCaptureIns>(*inst).getCaptureIndex());

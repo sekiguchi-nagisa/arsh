@@ -486,10 +486,10 @@ TEST(SetBuilderTest, complement2) {
 
 TEST(SetBuilderTest, caseFold) {
   CodePointSetBuilder builder;
-  builder.add('A', 'Z');
-  builder.add('0', '9');
-  builder.add('_', '_');
-  builder.add('e', 'i');
+  builder.addRange('A', 'Z');
+  builder.addRange('0', '9');
+  builder.addRange('_', '_');
+  builder.addRange('e', 'i');
   ASSERT_EQ(4, builder.getCodePointRanges().size());
   ASSERT_EQ('0', builder.getCodePointRanges()[0].first);
   ASSERT_EQ('9', builder.getCodePointRanges()[0].second);
