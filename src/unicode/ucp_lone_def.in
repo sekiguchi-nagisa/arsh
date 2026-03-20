@@ -110,6 +110,7 @@
     E(XID_Start_Delta) \
     E(ESRegexClassDigit) \
     E(ESRegexClassWord) \
+    E(ESRegexClassExtendWord) \
 
 
 #define EACH_UCP_LONE_PROPERTY_PRIME(E) \
@@ -173,5 +174,5 @@
     E(XID_Start) \
     /* end */
 
-#define UCP_LONE_PROPERTY_PRIME_INTERNAL_SIZE 19
-#define UCP_LONE_PROPERTY_SIZE 72
+#define UCP_LONE_PROPERTY_PRIME_INTERNAL_SIZE 20
+#define UCP_LONE_PROPERTY_SIZE 73

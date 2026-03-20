@@ -55,6 +55,8 @@ type LoneProperty(n: String, a: String, p: String?) {
         "XID_Start_Delta" => "dcp:ID_Start - dcp:XID_Start"
         "ESRegexClassDigit" => "U+0030..U+0039"  # [0-9]
         "ESRegexClassWord" => "U+0030..U+0039 + U+0041..U+005A + U+0061..U+007A + U+005F" # [0-9A-Za-z_]
+        "ESRegexClassExtendWord" => "U+0030..U+0039 + U+0041..U+005A + U+0061..U+007A + U+005F + " +
+                                    "@unfold(U+0030..U+0039 + U+0041..U+005A + U+0061..U+007A + U+005F)"
         else => $prefix && !$combinedSet.get($name)  ? $prefix! + ":" + $name : $none
     }
 }
@@ -156,6 +158,7 @@ let internals = $create([  # for internally used property
 @(XID_Start_Delta                     -  dummy), # dummy property for XID_Start
 @(ESRegexClassDigit                   -  dummy), # for regex \d
 @(ESRegexClassWord                    -  dummy), # for regex \w
+@(ESRegexClassExtendWord              -  dummy), # for regex \w (unicode mode and ignore-case)
 ])
 
 

@@ -1122,6 +1122,15 @@ static constexpr PROPERTY_SET_RANGE lone_set_prime_table[] = {
     { 0x005F, 0x005F },
     { 0x0061, 0x007A },
     // Non-BMP
+    /* ESRegexClassExtendWord */
+    // BMP
+    { 0x0030, 0x0039 },
+    { 0x0041, 0x005A },
+    { 0x005F, 0x005F },
+    { 0x0061, 0x007A },
+    { 0x017F, 0x017F },
+    { 0x212A, 0x212A },
+    // Non-BMP
     /* for external used property */
     /* ASCII */
     // BMP
@@ -6014,44 +6023,45 @@ static constexpr PROPERTY_SET_RANGE_TABLE_OFFSET lone_set_prime_table_offset[] =
     {1002, 15, 0, 15}, // XID_Start_Delta
     {1017, 1, 0, 1}, // ESRegexClassDigit
     {1018, 4, 0, 4}, // ESRegexClassWord
-    {1022, 1, 0, 1}, // ASCII
-    {1023, 3, 0, 3}, // ASCII_Hex_Digit
-    {1026, 1, 0, 3}, // Any
-    {1029, 4, 0, 4}, // Bidi_Control
-    {1033, 109, 5, 114}, // Bidi_Mirrored
-    {1147, 618, 12, 630}, // Changes_When_Casefolded
-    {1777, 111, 20, 131}, // Changes_When_Casemapped
-    {1908, 606, 12, 618}, // Changes_When_Lowercased
-    {2526, 761, 86, 849}, // Changes_When_NFKC_Casefolded
-    {3375, 621, 12, 633}, // Changes_When_Titlecased
-    {4008, 622, 12, 634}, // Changes_When_Uppercased
-    {4642, 22, 2, 24}, // Dash
-    {4666, 7, 1, 8}, // Deprecated
-    {4674, 144, 76, 220}, // Diacritic
-    {4894, 90, 61, 151}, // Emoji
-    {5045, 6, 4, 10}, // Emoji_Component
-    {5055, 0, 1, 1}, // Emoji_Modifier
-    {5056, 3, 37, 40}, // Emoji_Modifier_Base
-    {5096, 33, 48, 81}, // Emoji_Presentation
-    {5177, 87, 69, 156}, // Extended_Pictographic
-    {5333, 26, 17, 43}, // Extender
-    {5376, 6, 0, 6}, // Hex_Digit
-    {5382, 3, 0, 3}, // IDS_Binary_Operator
-    {5385, 1, 0, 1}, // IDS_Trinary_Operator
-    {5386, 7, 7, 28}, // Ideographic
-    {5414, 1, 0, 1}, // Join_Control
-    {5415, 7, 0, 7}, // Logical_Order_Exception
-    {5422, 2, 16, 18}, // Noncharacter_Code_Point
-    {5440, 28, 0, 28}, // Pattern_Syntax
-    {5468, 5, 0, 5}, // Pattern_White_Space
-    {5473, 13, 0, 13}, // Quotation_Mark
-    {5486, 3, 0, 3}, // Radical
-    {5489, 0, 1, 1}, // Regional_Indicator
-    {5490, 55, 33, 88}, // Sentence_Terminal
-    {5578, 18, 16, 34}, // Soft_Dotted
-    {5612, 73, 43, 116}, // Terminal_Punctuation
-    {5728, 9, 1, 22}, // Unified_Ideograph
-    {5750, 3, 1, 4}, // Variation_Selector
-    {5754, 10, 0, 10}, // White_Space
+    {1022, 6, 0, 6}, // ESRegexClassExtendWord
+    {1028, 1, 0, 1}, // ASCII
+    {1029, 3, 0, 3}, // ASCII_Hex_Digit
+    {1032, 1, 0, 3}, // Any
+    {1035, 4, 0, 4}, // Bidi_Control
+    {1039, 109, 5, 114}, // Bidi_Mirrored
+    {1153, 618, 12, 630}, // Changes_When_Casefolded
+    {1783, 111, 20, 131}, // Changes_When_Casemapped
+    {1914, 606, 12, 618}, // Changes_When_Lowercased
+    {2532, 761, 86, 849}, // Changes_When_NFKC_Casefolded
+    {3381, 621, 12, 633}, // Changes_When_Titlecased
+    {4014, 622, 12, 634}, // Changes_When_Uppercased
+    {4648, 22, 2, 24}, // Dash
+    {4672, 7, 1, 8}, // Deprecated
+    {4680, 144, 76, 220}, // Diacritic
+    {4900, 90, 61, 151}, // Emoji
+    {5051, 6, 4, 10}, // Emoji_Component
+    {5061, 0, 1, 1}, // Emoji_Modifier
+    {5062, 3, 37, 40}, // Emoji_Modifier_Base
+    {5102, 33, 48, 81}, // Emoji_Presentation
+    {5183, 87, 69, 156}, // Extended_Pictographic
+    {5339, 26, 17, 43}, // Extender
+    {5382, 6, 0, 6}, // Hex_Digit
+    {5388, 3, 0, 3}, // IDS_Binary_Operator
+    {5391, 1, 0, 1}, // IDS_Trinary_Operator
+    {5392, 7, 7, 28}, // Ideographic
+    {5420, 1, 0, 1}, // Join_Control
+    {5421, 7, 0, 7}, // Logical_Order_Exception
+    {5428, 2, 16, 18}, // Noncharacter_Code_Point
+    {5446, 28, 0, 28}, // Pattern_Syntax
+    {5474, 5, 0, 5}, // Pattern_White_Space
+    {5479, 13, 0, 13}, // Quotation_Mark
+    {5492, 3, 0, 3}, // Radical
+    {5495, 0, 1, 1}, // Regional_Indicator
+    {5496, 55, 33, 88}, // Sentence_Terminal
+    {5584, 18, 16, 34}, // Soft_Dotted
+    {5618, 73, 43, 116}, // Terminal_Punctuation
+    {5734, 9, 1, 22}, // Unified_Ideograph
+    {5756, 3, 1, 4}, // Variation_Selector
+    {5760, 10, 0, 10}, // White_Space
 };
 

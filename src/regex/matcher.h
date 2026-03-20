@@ -19,6 +19,7 @@
 
 #include "misc/codepoint_set.hpp"
 #include "misc/flag_util.hpp"
+#include "unicode/property.h"
 
 namespace arsh::regex {
 
@@ -29,6 +30,10 @@ inline bool isLineTerminator(int codePoint) {
 inline bool isWord(int codePoint) {
   return (codePoint >= 'A' && codePoint <= 'Z') || (codePoint >= 'a' && codePoint <= 'z') ||
          (codePoint >= '0' && codePoint <= '9') || codePoint == '_';
+}
+
+inline bool isExtendWord(int codePoint) {
+  return ucp::hasPrimeLoneProperty(codePoint, ucp::Lone::ESRegexClassExtendWord);
 }
 
 class AsciiSet {
