@@ -1,0 +1,176 @@
+
+source $SCRIPT_DIR/../syntax/test_helper.arsh
+
+# []
+assert diff <(redump -m '' '[]' 'ui') <(<<'EOF'
+input: `'
+failed
+EOF
+)
+
+assert diff <(redump -m 'abc' '[]' 'ui') <(<<'EOF'
+input: `abc'
+failed
+EOF
+)
+
+assert diff <(redump -m '' '[]' 'vi') <(<<'EOF'
+input: `'
+failed
+EOF
+)
+
+assert diff <(redump -m 'abc' '[]' 'vi') <(<<'EOF'
+input: `abc'
+failed
+EOF
+)
+
+# [^]
+assert diff <(redump -m '' '[^]' 'ui') <(<<'EOF'
+input: `'
+failed
+EOF
+)
+
+assert diff <(redump -m 'a' '[^]' 'ui') <(<<'EOF'
+input: `a'
+(offset=0, size=1)
+EOF
+)
+
+assert diff <(redump -m 'あ' '[^]' 'ui') <(<<'EOF'
+input: `あ'
+(offset=0, size=3)
+EOF
+)
+
+assert diff <(redump -m '' '[^]' 'vi') <(<<'EOF'
+input: `'
+failed
+EOF
+)
+
+assert diff <(redump -m 'a' '[^]' 'vi') <(<<'EOF'
+input: `a'
+(offset=0, size=1)
+EOF
+)
+
+assert diff <(redump -m 'A' '[^]' 'vi') <(<<'EOF'
+input: `A'
+(offset=0, size=1)
+EOF
+)
+
+assert diff <(redump -m 'あ' '[^]' 'vi') <(<<'EOF'
+input: `あ'
+(offset=0, size=3)
+EOF
+)
+
+# [a]
+assert diff <(redump -m 'あabc' '[a]' 'ui') <(<<'EOF'
+input: `あabc'
+(offset=3, size=1)
+EOF
+)
+
+assert diff <(redump -m 'あbcA' '[a]' 'ui') <(<<'EOF'
+input: `あbcA'
+(offset=5, size=1)
+EOF
+)
+
+# [A]
+assert diff <(redump -m 'あabc' '[A]' 'ui') <(<<'EOF'
+input: `あabc'
+(offset=3, size=1)
+EOF
+)
+
+assert diff <(redump -m 'あbcA' '[A]' 'ui') <(<<'EOF'
+input: `あbcA'
+(offset=5, size=1)
+EOF
+)
+
+# [E-f]+
+var p = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz[\]^_`'
+assert diff <(redump -m $p '[E-f]+' 'ui') <(<<EOF
+input: \`${p}'
+(offset=0, size=${$p.size()})
+EOF
+)
+
+assert diff <(redump -m $p '[E-f]+' 'vi') <(<<EOF
+input: \`${p}'
+(offset=0, size=${$p.size()})
+EOF
+)
+
+$p = '0123朶456789{|}あい !#@$()/'
+assert diff <(redump -m $p '[E-f]+' 'ui') <(<<EOF
+input: \`${p}'
+failed
+EOF
+)
+
+# [^E-f]+
+$p = '0123朶456789{|}あい !#@$()/'
+assert diff <(redump -m $p '[^E-f]+' 'ui') <(<<EOF
+input: \`${p}'
+(offset=0, size=${$p.size()})
+EOF
+)
+
+assert diff <(redump -m $p '[^E-f]+' 'vi') <(<<EOF
+input: \`${p}'
+(offset=0, size=${$p.size()})
+EOF
+)
+
+$p = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz[\]^_`'
+assert diff <(redump -m $p '[^E-f]+' 'ui') <(<<EOF
+input: \`${p}'
+failed
+EOF
+)
+
+assert diff <(redump -m $p '[^E-f]+' 'vi') <(<<EOF
+input: \`${p}'
+failed
+EOF
+)
+
+# [\q{A}]
+assert diff <(redump -m 'AB@V' '[\q{A}]' 'vi') <(<<'EOF'
+input: `AB@V'
+(offset=0, size=1)
+EOF
+)
+
+assert diff <(redump -m '@abe' '[\q{A}]' 'vi') <(<<'EOF'
+input: `@abe'
+(offset=1, size=1)
+EOF
+)
+
+# [\q{A|V}]
+assert diff <(redump -m 'BVA' '[\q{A|V}]' 'iv') <(<<'EOF'
+input: `BVA'
+(offset=1, size=1)
+EOF
+)
+
+assert diff <(redump -m '@a)v' '[\q{A|V}]' 'iv') <(<<'EOF'
+input: `@a)v'
+(offset=1, size=1)
+EOF
+)
+
+assert diff <(redump -m '@va)v' '[\q{A|V}]' 'iv') <(<<'EOF'
+input: `@va)v'
+(offset=1, size=1)
+EOF
+)

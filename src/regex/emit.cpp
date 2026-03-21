@@ -334,9 +334,8 @@ bool CodeGen::toCodePointSet(ucp::BuilderOrSet builderOrSet, const PropertyNode 
   case PropertyNode::Type::DIGIT:
     return ucp::getPropertySet(ucp::Property::lone(ucp::Lone::ESRegexClassDigit), builderOrSet);
   case PropertyNode::Type::WORD: {
-    const auto p = this->hasEitherUnicodeFlag() && this->has(Modifier::IGNORE_CASE)
-                       ? ucp::Lone::ESRegexClassExtendWord
-                       : ucp::Lone::ESRegexClassWord;
+    const auto p = this->has(Modifier::IGNORE_CASE) ? ucp::Lone::ESRegexClassExtendWord
+                                                    : ucp::Lone::ESRegexClassWord;
     return ucp::getPropertySet(ucp::Property::lone(p), builderOrSet);
   }
   case PropertyNode::Type::SPACE:
@@ -448,8 +447,8 @@ void CodeGen::appendToCodePointSet(CodePointSetBuilder &setBuilder, const unsign
     case CharClassNode::Type::UNION:
     case CharClassNode::Type::RANGE: {
       for (unsigned int i = 0; i < size; i++) {
-        auto rangeConsumer = [&builderPtr](int first, int last) {
-          builderPtr->addRange(first, last);
+        auto rangeConsumer = [&builderPtr, this](int first, int last) {
+          builderPtr->addRange(first, last, this->needSimpleCaseFolding());
         };
         if (intoCharRange(classNode, i, rangeConsumer)) {
           i += 2;

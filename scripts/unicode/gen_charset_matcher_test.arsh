@@ -44,6 +44,17 @@ function create(args: [[String]]): [CharSetTestCase] {
 let defs = $create([
 @('\s' '' 'U+0009 + U+000B + U+000C + U+0020 + U+00A0 + U+FEFF + gc:Space_Separator + U+000A + U+000D + U+2028 + U+2029'),
 @('\S' '' '!(U+0009 + U+000B + U+000C + U+0020 + U+00A0 + U+FEFF + gc:Space_Separator + U+000A + U+000D + U+2028 + U+2029)'),
+@('\s' 'iu' '@fold(U+0009 + U+000B + U+000C + U+0020 + U+00A0 + U+FEFF + gc:Space_Separator + U+000A + U+000D + U+2028 + U+2029)'),
+@('\S' 'iu' '@fold(!(U+0009 + U+000B + U+000C + U+0020 + U+00A0 + U+FEFF + gc:Space_Separator + U+000A + U+000D + U+2028 + U+2029))'),
+@('\s' 'iv' '@fold(U+0009 + U+000B + U+000C + U+0020 + U+00A0 + U+FEFF + gc:Space_Separator + U+000A + U+000D + U+2028 + U+2029)'),
+@('\S' 'iv' '@fold(U+00..U+10FFFF) - @fold(U+0009 + U+000B + U+000C + U+0020 + U+00A0 + U+FEFF + gc:Space_Separator + U+000A + U+000D + U+2028 + U+2029)'),
+
+@('\w' '' '(U+30..U+39 + U+41..U+5A + U+5F + U+61..U+7A)'),
+@('\W' '' '!(U+30..U+39 + U+41..U+5A + U+5F + U+61..U+7A)'),
+@('\w' 'iu' '@fold(U+30..U+39 + U+41..U+5A + U+5F + U+61..U+7A + @unfold(U+30..U+39 + U+41..U+5A + U+5F + U+61..U+7A))'),
+@('\W' 'iu' '@fold(!(U+30..U+39 + U+41..U+5A + U+5F + U+61..U+7A + @unfold(U+30..U+39 + U+41..U+5A + U+5F + U+61..U+7A)))'),
+@('\w' 'iv' '@fold(U+30..U+39 + U+41..U+5A + U+5F + U+61..U+7A + @unfold(U+30..U+39 + U+41..U+5A + U+5F + U+61..U+7A))'),
+@('\W' 'iv' '@fold(U+00..U+10FFFF) - @fold(U+30..U+39 + U+41..U+5A + U+5F + U+61..U+7A + @unfold(U+30..U+39 + U+41..U+5A + U+5F + U+61..U+7A))'),
 
 @('\p{Cc}' 'u' 'gc:Cc'),
 @('\P{Cc}' 'u' '!gc:Cc'),
@@ -111,6 +122,21 @@ let defs = $create([
 @('[^\s\w0-9\d]' '' '(U+0009 + U+000B + U+000C + U+0020 + U+00A0 + U+FEFF + gc:Space_Separator + U+000A + U+000D + U+2028 + U+2029 + U+30..U+39 + U+41..U+5A + U+61..U+7A + 5F)'),
 @('[^\s\w0-9\d]' 'v' '!(U+0009 + U+000B + U+000C + U+0020 + U+00A0 + U+FEFF + gc:Space_Separator + U+000A + U+000D + U+2028 + U+2029 + U+30..U+39 + U+41..U+5A + U+61..U+7A + 5F)'),
 
+@('[A-Z]' 'iu' '@fold(U+41..U+5A)'),
+@('[^A-Z]' 'iu' '@fold(U+41..U+5A)'),
+@('[A-Z]' 'iv' '@fold(U+41..U+5A)'),
+@('[^A-Z]' 'iv' '@fold(U+00..U+10FFFF) - @fold(U+41..U+5A)'),
+
+@('[E-F]' 'iu' '@fold(U+45..U+46)'),
+@('[^E-F]' 'iu' '@fold(U+45..U+46)'),
+@('[E-F]' 'iv' '@fold(U+45..U+46)'),
+@('[^E-F]' 'iv' '@fold(U+0..U+10FFFF) - @fold(U+45..U+46)'),
+
+@('[E-fあ-おん]' 'iu' '@fold(U+45..U+66 + U+3042..U+304A + U+3093)'),
+@('[^E-fあ-おん]' 'iu' '@fold(U+45..U+66 + U+3042..U+304A + U+3093)'),
+@('[E-fあ-おん]' 'iv' '@fold(U+45..U+66 + U+3042..U+304A + U+3093)'),
+@('[^E-fあ-おん]' 'iv' '@fold(U+0..U+10FFFF) - @fold(U+45..U+66 + U+3042..U+304A + U+3093)'),
+
 @('[\p{Cc}]' 'u' 'gc:Cc'),
 @('[\P{Cc}]' 'u' '!gc:Cc'),
 @('[^\p{Cc}]' 'u' 'gc:Cc'),
@@ -138,6 +164,12 @@ let defs = $create([
 @('[^\P{scx=Deva}]' 'u' '!scx:Deva'),
 @('[^\p{scx=Deva}]' 'v' '!scx:Deva'),
 @('[^\P{scx=Deva}]' 'v' '!!scx:Deva'),
+
+@('\p{gc=Lowercase_Letter}' 'iu' '@fold(gc:Ll)'),
+@('\p{gc=Lowercase_Letter}' 'iv' '@fold(gc:Ll)'),
+@('\P{gc=Lowercase_Letter}' 'iu' '@fold(!(gc:Ll))'),
+@('\P{gc=Lowercase_Letter}' 'iv' '@fold(U+00..U+10FFFF) - @fold(gc:Ll)'),
+@('[^\P{gc=Lowercase_Letter}]' 'iv' '@fold(gc:Ll)'),
 
 @('[\p{Emoji}]' 'u' 'emoji:Emoji'),
 @('[\P{Emoji}]' 'u' '!emoji:Emoji'),
@@ -189,6 +221,10 @@ let defs = $create([
 @('[^\p{QMark}\P{Ideographic}\p{Bidi_M}]' 'u' '(prop:Quotation_Mark + !(prop:Ideographic) + dbp:Bidi_Mirrored)'),
 @('[^\p{QMark}\P{Ideographic}\p{Bidi_M}]' 'v' '!(prop:Quotation_Mark + !(prop:Ideographic) + dbp:Bidi_Mirrored)'),
 
+@('[\p{QMark}\P{Ideographic}\p{Bidi_M}]' 'ui' '@fold(prop:Quotation_Mark + !(prop:Ideographic) + dbp:Bidi_Mirrored)'),
+@('[^\p{QMark}\P{Ideographic}\p{Bidi_M}]' 'ui' '@fold(prop:Quotation_Mark + !(prop:Ideographic) + dbp:Bidi_Mirrored)'),
+@('[^\p{QMark}\P{Ideographic}\p{Bidi_M}]' 'vi' '@fold(U+00..U+10FFFF) - (@fold(prop:Quotation_Mark) + (@fold(U+00..U+10FFFF) - @fold(prop:Ideographic)) + @fold(dbp:Bidi_Mirrored))'),
+
 @('[\q{A|B|C|!}]' 'v' '(U+41 + U+42 + U+43 + U+21)'),
 @('[^\q{A|B|C|!}]' 'v' '!(U+41 + U+42 + U+43 + U+21)'),
 
@@ -197,6 +233,10 @@ let defs = $create([
 
 @('[\q{A|B|C|!}[あ&\q{い|う}]]' 'v' '(U+41 + U+42 + U+43 + U+21 + (U+3042 + U+26 + U+3044 + U+3046))'),
 @('[^\q{A|B|C|!}[^あ&\q{い|う}]]' 'v' '!(U+41 + U+42 + U+43 + U+21 + !(U+3042 + U+26 + U+3044 + U+3046))'),
+
+@('[\q{A|B|C|!}[あ&\q{い|う}]]' 'vi' '@fold(U+41 + U+42 + U+43 + U+21 + (U+3042 + U+26 + U+3044 + U+3046))'),
+@('[^\q{A|B|C|!}[^あ&\q{い|う}]]' 'iv' '@fold(U+00..U+10FFFF) - (@fold(U+41 + U+42 + U+43 + U+21) + (@fold(U+0..U+10FFFF) - @fold(U+3042 + U+26 + U+3044 + U+3046)))'),
+
 
 ])
 
