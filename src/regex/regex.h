@@ -17,11 +17,15 @@
 #ifndef ARSH_REGEX_REGEX_H
 #define ARSH_REGEX_REGEX_H
 
+#include <functional>
+
 #include "capture.h"
 #include "flag.h"
 #include "instruction.h"
 #include "matcher.h"
 #include "misc/array_ref.hpp"
+#include "misc/resource.hpp"
+#include "misc/time_util.hpp"
 
 namespace arsh::regex {
 
@@ -36,6 +40,7 @@ private:
 
 public:
   static constexpr size_t MAX_STACK_DEPTH = 0xFFFFFF;
+  static constexpr unsigned int TIMER_CHECK_INTERVAL = UINT16_MAX >> 1;
 
   Regex(Flag flag, unsigned short loopCount, FlexBuffer<Inst> &&seq,
         std::vector<Matcher> &&matchers, NamedCaptureGroups &&named, unsigned int count)
@@ -55,6 +60,43 @@ public:
   const auto &getNamedCaptureGroups() const { return this->named; }
 };
 
+class Timer {
+public:
+  enum class Status : unsigned char {
+    None,
+    Canceled,
+    Expired,
+  };
+
+private:
+  const std::chrono::milliseconds limit;
+  timestamp base;
+  std::function<bool()> cancelToken; // return true if canceled
+
+public:
+  explicit Timer(std::chrono::milliseconds limit) : limit(limit) {}
+
+  void setCancelToken(std::function<bool()> &&c) { this->cancelToken = std::move(c); }
+
+  static timestamp now() { return getCurrentTimestamp(); }
+
+  void start() { this->base = now(); }
+
+  std::chrono::milliseconds elapsed() const {
+    return std::chrono::duration_cast<std::chrono::milliseconds>(now() - this->base);
+  }
+
+  Status check() const {
+    if (this->elapsed() >= this->limit) {
+      return Status::Expired;
+    }
+    if (this->cancelToken && this->cancelToken()) {
+      return Status::Canceled;
+    }
+    return Status::None;
+  }
+};
+
 enum class MatchStatus : unsigned char {
   OK,           // successfully matched
   FAIL,         // no matches
@@ -67,7 +109,8 @@ enum class MatchStatus : unsigned char {
 
 const char *toString(MatchStatus s);
 
-MatchStatus match(const Regex &regex, StringRef text, FlexBuffer<Capture> &captures);
+MatchStatus match(const Regex &regex, StringRef text, FlexBuffer<Capture> &captures,
+                  ObserverPtr<Timer> timer = nullptr);
 
 } // namespace arsh::regex
 

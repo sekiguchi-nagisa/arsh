@@ -57,7 +57,8 @@ static std::string formatCaptures(const FlexBuffer<regex::Capture> &captures) {
 
 static void match(const regex::Regex &re, const StringRef input, const bool print) {
   FlexBuffer<regex::Capture> captures;
-  auto status = regex::match(re, input, captures); // TODO: timeout
+  regex::Timer timer(std::chrono::seconds(2));
+  auto status = regex::match(re, input, captures, makeObserver(timer));
   if (print) {
     fprintf(stderr, "input: `%s'\n", input.toString().c_str());
   }

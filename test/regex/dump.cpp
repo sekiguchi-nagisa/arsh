@@ -26,7 +26,7 @@
 using namespace arsh;
 
 static void usage(FILE *fp, char **argv) {
-  fprintf(fp, "usage: %s [-m text] pattern [modifiers]\n", argv[0]);
+  fprintf(fp, "usage: %s [-t timeout-msec][-m text] pattern [modifiers]\n", argv[0]);
 }
 
 static void invalidOption(char **argv, int opt) {
@@ -63,11 +63,25 @@ static std::string formatCaptures(const FlexBuffer<regex::Capture> &captures) {
   return ret;
 }
 
+static Optional<std::chrono::milliseconds> parseMsec(const char *str) {
+  if (str) {
+    auto ret = convertToNum10<int>(str);
+    if (!ret) {
+      return {};
+    }
+    if (ret.value > -1) {
+      return std::chrono::milliseconds(ret.value);
+    }
+  }
+  return std::chrono::milliseconds::max();
+}
+
 int main(int argc, char **argv) {
-  opt::GetOptState optState("hdm:");
+  opt::GetOptState optState("hdm:t:");
   StringRef text;
   bool shouldMatch = false;
   bool dumpRegex = false;
+  const char *timeoutMsecStr = nullptr;
   auto iter = argv + 1;
   const auto end = argv + argc;
   for (int opt; (opt = optState(iter, end)) != -1;) {
@@ -79,6 +93,9 @@ int main(int argc, char **argv) {
     case 'd':
       dumpRegex = true;
       break;
+    case 't':
+      timeoutMsecStr = optState.optArg.data();
+      break;
     case 'h':
       usage(stdout, argv);
       return 2;
@@ -86,6 +103,12 @@ int main(int argc, char **argv) {
       invalidOption(argv, opt);
       return 1;
     }
+  }
+  auto timeout = parseMsec(timeoutMsecStr);
+  if (!timeout.hasValue()) {
+    fprintf(stderr, "invalid timeout msec: %s\n", timeoutMsecStr);
+    usage(stderr, argv);
+    return 1;
   }
   if (iter == end) {
     fputs("need pattern\n", stderr);
@@ -129,7 +152,8 @@ int main(int argc, char **argv) {
       return 0;
     }
     FlexBuffer<regex::Capture> captures;
-    auto status = regex::match(re.unwrap(), text, captures);
+    regex::Timer timer(timeout.unwrap());
+    auto status = regex::match(re.unwrap(), text, captures, makeObserver(timer));
     fprintf(stdout, "input: `%s'\n", text.toString().c_str());
     if (status == regex::MatchStatus::OK) {
       auto str = formatCaptures(captures);

@@ -276,7 +276,8 @@ static Capture resolveNamedBackRef(const NamedCaptureEntry &entry,
 #define vmnext continue
 #endif
 
-MatchStatus match(const Regex &regex, const StringRef text, FlexBuffer<Capture> &captures) {
+MatchStatus match(const Regex &regex, const StringRef text, FlexBuffer<Capture> &captures,
+                  ObserverPtr<Timer> timer) {
   // prepare
   Input input;
   if (auto s = Input::create(text, input); s == Input::Status::TOO_LARGE) {
@@ -287,12 +288,17 @@ MatchStatus match(const Regex &regex, const StringRef text, FlexBuffer<Capture> 
   const char *oldIter = input.getIter();
   const Inst *inst = regex.getInstSeq().data();
   const auto matchers = regex.getMatchers();
+  unsigned int btCount = 0;
   captures.clear();
   captures.resize(regex.getCaptureGroupCount() + 1);
   FlexBuffer<LoopState> loopStates;
   loopStates.resize(regex.getLoopCount());
   BacktrackStack bts(inst);
   bts.push(Backtrack()); // push dummy
+
+  if (timer) {
+    timer->start();
+  }
 
 #ifdef USE_THREADED_CODE
   static const void *jumpTable[] = {
@@ -305,6 +311,20 @@ MatchStatus match(const Regex &regex, const StringRef text, FlexBuffer<Capture> 
   // match
 BACKTRACK:
   while (bts.backtrack(inst, input, captures, loopStates)) {
+    if (++btCount == Regex::TIMER_CHECK_INTERVAL) {
+      btCount = 0;
+      if (timer) {
+        switch (timer->check()) {
+        case Timer::Status::None:
+          break;
+        case Timer::Status::Canceled:
+          return MatchStatus::CANCEL;
+        case Timer::Status::Expired:
+          return MatchStatus::TIMEOUT;
+        }
+      }
+    }
+
     while (true) {
       vmdispatch(inst->op) {
         vmcase(Nop) {
