@@ -65,6 +65,8 @@ enum class MatchStatus : unsigned char {
   STACK_LIMIT,  // stack size reaches limits
 };
 
+const char *toString(MatchStatus s);
+
 MatchStatus match(const Regex &regex, StringRef text, FlexBuffer<Capture> &captures);
 
 } // namespace arsh::regex

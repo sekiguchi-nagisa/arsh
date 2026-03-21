@@ -39,26 +39,6 @@ static Target create(const uint8_t *data, const size_t size) {
   };
 }
 
-static const char *toString(const regex::MatchStatus s) {
-  switch (s) {
-  case regex::MatchStatus::OK:
-    break;
-  case regex::MatchStatus::FAIL:
-    return "failed";
-  case regex::MatchStatus::INVALID_UTF8:
-    return "input string is invalid UTF-8";
-  case regex::MatchStatus::INPUT_LIMIT:
-    return "size of input string is too large";
-  case regex::MatchStatus::CANCEL:
-    return "canceled";
-  case regex::MatchStatus::TIMEOUT:
-    return "timeout";
-  case regex::MatchStatus::STACK_LIMIT:
-    return "stack depth reaches limit";
-  }
-  return "";
-}
-
 static std::string formatCaptures(const FlexBuffer<regex::Capture> &captures) {
   std::string ret;
   for (auto &c : captures) {
@@ -108,23 +88,29 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
     };
     for (auto modifier : modifiers) {
       auto tree = parser(pattern, regex::Flag(mode, modifier));
-      if (!parser.hasError()) {
-        regex::TreeDumper dumper;
-        auto buf = dumper(tree);
+      if (parser.hasError()) {
+        if (print) {
+          auto token = parser.getError()->token;
+          fprintf(stderr, "[error] %s\n at %s\n", parser.getError()->message.c_str(),
+                  token.str().c_str());
+        }
+        continue;
+      }
+      regex::TreeDumper dumper;
+      auto buf = dumper(tree);
+      assert(buf.size());
+      if (print) {
+        fprintf(stderr, "%s\n", buf.c_str());
+      }
+      regex::CodeGen codeGen;
+      if (auto re = codeGen(std::move(tree)); re.hasValue()) {
+        regex::RegexDumper reDumper;
+        buf = reDumper(re.unwrap());
         assert(buf.size());
         if (print) {
           fprintf(stderr, "%s\n", buf.c_str());
         }
-        regex::CodeGen codeGen;
-        if (auto re = codeGen(std::move(tree)); re.hasValue()) {
-          regex::RegexDumper reDumper;
-          buf = reDumper(re.unwrap());
-          assert(buf.size());
-          if (print) {
-            fprintf(stderr, "%s\n", buf.c_str());
-          }
-          match(re.unwrap(), input, print);
-        }
+        match(re.unwrap(), input, print);
       }
     }
   }

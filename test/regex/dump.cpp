@@ -47,26 +47,6 @@ static std::pair<unsigned int, unsigned int> formatLoc(StringRef src, Token toke
   return {line, pos};
 }
 
-static const char *toString(const regex::MatchStatus s) {
-  switch (s) {
-  case regex::MatchStatus::OK:
-    break;
-  case regex::MatchStatus::FAIL:
-    return "failed";
-  case regex::MatchStatus::INVALID_UTF8:
-    return "input string is invalid UTF-8";
-  case regex::MatchStatus::INPUT_LIMIT:
-    return "size of input string is too large";
-  case regex::MatchStatus::CANCEL:
-    return "canceled";
-  case regex::MatchStatus::TIMEOUT:
-    return "timeout";
-  case regex::MatchStatus::STACK_LIMIT:
-    return "stack depth reaches limit";
-  }
-  return "";
-}
-
 static std::string formatCaptures(const FlexBuffer<regex::Capture> &captures) {
   std::string ret;
   for (auto &c : captures) {

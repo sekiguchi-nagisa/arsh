@@ -22,6 +22,26 @@
 
 namespace arsh::regex {
 
+const char *toString(const MatchStatus s) {
+  switch (s) {
+  case MatchStatus::OK:
+    break;
+  case MatchStatus::FAIL:
+    return "failed";
+  case MatchStatus::INVALID_UTF8:
+    return "input string is invalid UTF-8";
+  case MatchStatus::INPUT_LIMIT:
+    return "size of input string is too large";
+  case MatchStatus::CANCEL:
+    return "canceled";
+  case MatchStatus::TIMEOUT:
+    return "timeout";
+  case MatchStatus::STACK_LIMIT:
+    return "stack depth reaches limit";
+  }
+  return "";
+}
+
 #define likely(x) __builtin_expect(!!(x), 1)
 #define unlikely(x) __builtin_expect(!!(x), 0)
 
