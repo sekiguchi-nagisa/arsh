@@ -1,0 +1,171 @@
+
+source $SCRIPT_DIR/test_helper.arsh
+
+# [A-Z-z]
+assert diff <(redump '[A-Z-z]' '') <(<<'EOF'
+flag: (mode = , modifier = )
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 7)
+  class: RANGE
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 1)
+      codePoint: U+0041, A
+    - kind: Property
+      token: (pos = 2, size = 1)
+      property: RANGE
+      value: 0
+      invert: false
+    - kind: Char
+      token: (pos = 3, size = 1)
+      codePoint: U+005A, Z
+    - kind: Char
+      token: (pos = 4, size = 1)
+      codePoint: U+002D, -
+    - kind: Char
+      token: (pos = 5, size = 1)
+      codePoint: U+007A, z
+EOF
+)
+
+assert diff <(redump '[A-Z-z]' 'u') <(<<'EOF'
+flag: (mode = u, modifier = )
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 7)
+  class: RANGE
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 1)
+      codePoint: U+0041, A
+    - kind: Property
+      token: (pos = 2, size = 1)
+      property: RANGE
+      value: 0
+      invert: false
+    - kind: Char
+      token: (pos = 3, size = 1)
+      codePoint: U+005A, Z
+    - kind: Char
+      token: (pos = 4, size = 1)
+      codePoint: U+002D, -
+    - kind: Char
+      token: (pos = 5, size = 1)
+      codePoint: U+007A, z
+EOF
+)
+
+assert diff <(redump '[A-Z-z]' 'v') <(<<'EOF'
+1:5 [error] invalid character range
+ at (pos = 4, size = 1)
+EOF
+)
+
+# [A\wZ-z]
+assert diff <(redump '[A\wZ-z]' '') <(<<'EOF'
+flag: (mode = , modifier = )
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 8)
+  class: RANGE
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 1)
+      codePoint: U+0041, A
+    - kind: Property
+      token: (pos = 2, size = 2)
+      property: WORD
+      value: 0
+      invert: false
+    - kind: Char
+      token: (pos = 4, size = 1)
+      codePoint: U+005A, Z
+    - kind: Property
+      token: (pos = 5, size = 1)
+      property: RANGE
+      value: 0
+      invert: false
+    - kind: Char
+      token: (pos = 6, size = 1)
+      codePoint: U+007A, z
+EOF
+)
+
+assert diff <(redump '[A\wZ-z]' 'u') <(<<'EOF'
+flag: (mode = u, modifier = )
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 8)
+  class: RANGE
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 1)
+      codePoint: U+0041, A
+    - kind: Property
+      token: (pos = 2, size = 2)
+      property: WORD
+      value: 0
+      invert: false
+    - kind: Char
+      token: (pos = 4, size = 1)
+      codePoint: U+005A, Z
+    - kind: Property
+      token: (pos = 5, size = 1)
+      property: RANGE
+      value: 0
+      invert: false
+    - kind: Char
+      token: (pos = 6, size = 1)
+      codePoint: U+007A, z
+EOF
+)
+
+assert diff <(redump '[A\wZ-z]' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 8)
+  class: RANGE
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 1)
+      codePoint: U+0041, A
+    - kind: Property
+      token: (pos = 2, size = 2)
+      property: WORD
+      value: 0
+      invert: false
+    - kind: Char
+      token: (pos = 4, size = 1)
+      codePoint: U+005A, Z
+    - kind: Property
+      token: (pos = 5, size = 1)
+      property: RANGE
+      value: 0
+      invert: false
+    - kind: Char
+      token: (pos = 6, size = 1)
+      codePoint: U+007A, z
+EOF
+)

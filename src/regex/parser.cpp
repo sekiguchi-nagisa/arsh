@@ -1534,11 +1534,19 @@ std::unique_ptr<Node> Parser::parseCharClass() {
           return nullptr;
         }
         curClass.setType(classType);
-        if (classType == CharClassNode::Type::RANGE &&
-            !isa<CharNode>(*curClass.getChars().back())) {
-          const auto cur = this->begin() + curClass.getChars().back()->getToken().pos;
-          this->reportError(this->getTokenFrom(cur), "invalid character range");
-          return nullptr;
+        if (classType == CharClassNode::Type::RANGE) {
+          const char *cur = nullptr;
+          if (!isa<CharNode>(*curClass.getChars().back())) { // ex. [\w-]
+            cur = this->begin() + curClass.getChars().back()->getToken().pos;
+          } else if (const auto size = curClass.getChars().size();
+                     size > 1 && isProperty(*curClass.getChars()[size - 2],
+                                            PropertyNode::Type::RANGE)) { // ex. [A-Z-]
+            cur = old;
+          }
+          if (cur) {
+            this->reportError(this->getTokenFrom(cur), "invalid character range");
+            return nullptr;
+          }
         }
         curClass.add(std::make_unique<PropertyNode>(op, opType.unwrap()));
         if (this->isEnd() || this->startsWith("]")) { // need more operand
@@ -1567,8 +1575,14 @@ std::unique_ptr<Node> Parser::parseCharClass() {
           this->reportError(this->getTokenFrom(cur), "invalid character range");
           return nullptr;
         }
-        curClass.setType(CharClassNode::Type::RANGE);
-        curClass.add(std::make_unique<PropertyNode>(token, PropertyNode::Type::RANGE));
+        if (const auto size = curClass.getChars().size();
+            size == 1 || !isProperty(*curClass.getChars()[size - 2],
+                                     PropertyNode::Type::RANGE)) { // [a] [a-zv]
+          curClass.setType(CharClassNode::Type::RANGE);
+          curClass.add(std::make_unique<PropertyNode>(token, PropertyNode::Type::RANGE));
+        } else {
+          curClass.add(std::make_unique<CharNode>(token, '-'));
+        }
       }
     }
   }
