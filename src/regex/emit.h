@@ -71,6 +71,7 @@ private:
   InstructionBuilder builder;
   std::vector<Matcher> matchers;
   InlinedStack<Modifier, 4> modifierStack;
+  std::vector<bool> directions; // true: forward, false: backward
 
 public:
   const auto &getError() const { return this->err; }
@@ -81,6 +82,10 @@ private:
   [[nodiscard]] bool generate(const Node &node); // actual entry point
 
   Modifier modifiers() const { return this->modifierStack.back(); }
+
+  bool direction() const { return this->directions.back(); }
+
+  bool inLookBehind() const { return !this->direction(); }
 
   bool has(Modifier m) const { return hasFlag(this->modifiers(), m); }
 
@@ -104,6 +109,8 @@ private:
   void mayBeSimpleCaseFolding(CodePointSetBuilder &setBuilder) const;
 
   void complement(CodePointSetBuilder &setBuilder) const;
+
+  bool generateSeq(const SeqNode &node);
 
   bool generateAlt(const AltNode &node);
 

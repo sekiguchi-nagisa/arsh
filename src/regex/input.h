@@ -65,6 +65,8 @@ public:
 
   bool available() const { return this->iter != this->end; }
 
+  bool availableBackward() const { return this->iter != this->begin; }
+
   bool isBegin() const { return this->iter == this->begin; }
 
   bool isEnd() const { return this->iter == this->end; }

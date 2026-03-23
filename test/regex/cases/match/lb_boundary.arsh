@@ -1,0 +1,88 @@
+
+source $SCRIPT_DIR/../syntax/test_helper.arsh
+
+# (?<=\b)
+assert diff <(redump -m 'abc' '(?<=\b)' '') <(<<'EOF'
+input: `abc'
+(offset=0, size=0)
+EOF
+)
+
+assert diff <(redump -m '@@' '(?<=\b)' '') <(<<'EOF'
+input: `@@'
+failed
+EOF
+)
+
+# (?<!\b)
+assert diff <(redump -m 'abc' '(?<!\b)' '') <(<<'EOF'
+input: `abc'
+(offset=1, size=0)
+EOF
+)
+
+assert diff <(redump -m 'a' '(?<!\b)' '') <(<<'EOF'
+input: `a'
+failed
+EOF
+)
+
+# (?<=^\b)
+assert diff <(redump -m 'abc' '(?<=^\b)' '') <(<<'EOF'
+input: `abc'
+(offset=0, size=0)
+EOF
+)
+
+# (?<=\b$)
+assert diff <(redump -m 'abc' '(?<=\b$)' '') <(<<'EOF'
+input: `abc'
+(offset=3, size=0)
+EOF
+)
+
+# (?<=\B)
+assert diff <(redump -m 'abc@' '(?<=\B)' '') <(<<'EOF'
+input: `abc@'
+(offset=1, size=0)
+EOF
+)
+
+# (?<=\B$)
+assert diff <(redump -m 'abc@' '(?<=\B$)' '') <(<<'EOF'
+input: `abc@'
+(offset=4, size=0)
+EOF
+)
+
+assert diff <(redump -m 'abc' '(?<=\B$)' '') <(<<'EOF'
+input: `abc'
+failed
+EOF
+)
+
+# (?<=^\B)
+assert diff <(redump -m $'abc@\n@' '(?<=^\B)' 'm') <(<<EOF
+input: \`${$'abc@\n@'}'
+(offset=5, size=0)
+EOF
+)
+
+assert diff <(redump -m $'abc@\na' '(?<=^\B)' 'm') <(<<EOF
+input: \`${$'abc@\na'}'
+failed
+EOF
+)
+
+# (?<=\B$)
+assert diff <(redump -m $'abc\n' '(?<=\B$)' 'm') <(<<EOF
+input: \`${$'abc\n'}'
+(offset=4, size=0)
+EOF
+)
+
+assert diff <(redump -m $'abc\na' '(?<=\B$)' 'm') <(<<EOF
+input: \`${$'abc\na'}'
+failed
+EOF
+)

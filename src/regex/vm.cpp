@@ -311,7 +311,7 @@ MatchStatus match(const Regex &regex, const StringRef text, FlexBuffer<Capture> 
   // match
 BACKTRACK:
   while (bts.backtrack(inst, input, captures, loopStates)) {
-    if (++btCount == Regex::TIMER_CHECK_INTERVAL) {
+    if (unlikely(++btCount == Regex::TIMER_CHECK_INTERVAL)) {
       btCount = 0;
       if (timer) {
         switch (timer->check()) {
@@ -401,6 +401,16 @@ BACKTRACK:
           }
           goto BACKTRACK;
         }
+        vmcase(LBAny) {
+          if (input.availableBackward()) {
+            int codePoint = input.consumeBackward();
+            if (cast<LBAnyIns>(*inst).dotAll || !isLineTerminator(codePoint)) {
+              inst += sizeof(LBAnyIns);
+              vmnext;
+            }
+          }
+          goto BACKTRACK;
+        }
         vmcase(Char) {
           auto &ins = cast<CharIns>(*inst);
           if (input.available() && input.consumeForward() == ins.getCodePoint()) {
@@ -415,6 +425,20 @@ BACKTRACK:
               doSimpleCaseFolding(input.consumeForward()) == ins.getCodePoint()) {
             inst += sizeof(ICharIns);
             vmnext;
+          }
+          goto BACKTRACK;
+        }
+        vmcase(LBChar) {
+          auto &ins = cast<LBCharIns>(*inst);
+          if (input.availableBackward()) {
+            int codePoint = input.consumeBackward();
+            if (ins.ignoreCase) {
+              codePoint = doSimpleCaseFolding(codePoint);
+            }
+            if (codePoint == ins.getCodePoint()) {
+              inst += sizeof(LBCharIns);
+              vmnext;
+            }
           }
           goto BACKTRACK;
         }
@@ -541,15 +565,15 @@ BACKTRACK:
           }
           vmnext;
         }
-        vmcase(BeginLookAhead) {
-          auto &lookAhead = cast<BeginLookAheadIns>(*inst);
+        vmcase(BeginLookAround) {
+          auto &lookAhead = cast<BeginLookAroundIns>(*inst);
           TRY(bts.push(Backtrack::newLookAround(input, lookAhead.getTarget(), lookAhead.negate)));
-          inst += sizeof(BeginLookAheadIns);
+          inst += sizeof(BeginLookAroundIns);
           vmnext;
         }
-        vmcase(EndLookAhead) {
+        vmcase(EndLookAround) {
           if (bts.cleanupLookAround(input, captures)) {
-            inst += sizeof(EndLookAheadIns);
+            inst += sizeof(EndLookAroundIns);
             vmnext;
           }
           goto BACKTRACK;

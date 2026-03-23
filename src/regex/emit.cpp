@@ -28,8 +28,11 @@ namespace arsh::regex {
 Optional<Regex> CodeGen::operator()(SyntaxTree &&tree) {
   // prepare
   this->mode = tree.getFlag().mode();
+  this->err.clear();
   this->modifierStack.clear();
   this->modifierStack.push(tree.getFlag().modifiers());
+  this->directions.clear();
+  this->directions.push_back(true);
 
   if (!this->generate(*tree.getPattern())) {
     return {};
@@ -104,14 +107,22 @@ bool CodeGen::generate(const Node &node) {
     this->builder.emit<NopIns>();
     break;
   case NodeKind::Any:
-    if (this->has(Modifier::DOT_ALL)) {
+    if (this->inLookBehind()) {
+      this->builder.emit<LBAnyIns>(this->has(Modifier::DOT_ALL));
+    } else if (this->has(Modifier::DOT_ALL)) {
       this->builder.emit<AnyIns>();
     } else {
       this->builder.emit<AnyExceptNLIns>();
     }
     break;
   case NodeKind::Char:
-    if (this->has(Modifier::IGNORE_CASE)) {
+    if (this->inLookBehind()) {
+      int codePoint = cast<CharNode>(node).getCodePoint();
+      if (this->has(Modifier::IGNORE_CASE)) {
+        codePoint = doSimpleCaseFolding(codePoint);
+      }
+      this->builder.emit<LBCharIns>(codePoint, this->has(Modifier::IGNORE_CASE));
+    } else if (this->has(Modifier::IGNORE_CASE)) {
       this->builder.emit<ICharIns>(doSimpleCaseFolding(cast<CharNode>(node).getCodePoint()));
     } else {
       this->builder.emit<CharIns>(cast<CharNode>(node).getCodePoint());
@@ -142,6 +153,10 @@ bool CodeGen::generate(const Node &node) {
     break;
   }
   case NodeKind::BackRef: {
+    if (this->inLookBehind()) {
+      this->todo(node, "look-behind");
+      return false;
+    }
     auto &backRefNode = cast<BackRefNode>(node);
     if (this->has(Modifier::IGNORE_CASE)) {
       this->builder.emit<IBackRefIns>(backRefNode.getIndex(), backRefNode.isNamed());
@@ -153,16 +168,27 @@ bool CodeGen::generate(const Node &node) {
   case NodeKind::Repeat:
     return this->generateRepeat(cast<RepeatNode>(node));
   case NodeKind::Seq:
-    for (auto &e : cast<SeqNode>(node).getPatterns()) {
-      TRY(this->generate(*e));
-    }
-    break;
+    return this->generateSeq(cast<SeqNode>(node));
   case NodeKind::Alt:
     return this->generateAlt(cast<AltNode>(node));
   case NodeKind::LookAround:
     return this->generateLookAround(cast<LookAroundNode>(node));
   case NodeKind::Group:
     return this->generateGroup(cast<GroupNode>(node));
+  }
+  return true;
+}
+
+bool CodeGen::generateSeq(const SeqNode &node) {
+  if (this->direction()) {
+    for (auto &e : node.getPatterns()) {
+      TRY(this->generate(*e));
+    }
+  } else {
+    const auto end = node.getPatterns().rend();
+    for (auto iter = node.getPatterns().rbegin(); iter != end; ++iter) {
+      TRY(this->generate(**iter));
+    }
   }
   return true;
 }
@@ -191,6 +217,10 @@ bool CodeGen::generateAlt(const AltNode &node) {
 bool CodeGen::generateGroup(const GroupNode &node) {
   switch (node.getType()) {
   case GroupNode::Type::CAPTURE:
+    if (this->inLookBehind()) {
+      this->todo(node, "look-behind");
+      return false;
+    }
     assert(node.getGroupIndex());
     this->builder.emit<BeginCaptureIns>(node.getGroupIndex());
     TRY(this->generate(*node.getPattern()));
@@ -360,6 +390,10 @@ static AsciiSet foldCase(const AsciiSet set) {
 }
 
 bool CodeGen::generateProperty(const PropertyNode &node) {
+  if (this->inLookBehind()) {
+    this->todo(node, "look-behind");
+    return false;
+  }
   if (node.onlyAscii()) {
     AsciiSet set;
     appendToAsciiSet(set, node);
@@ -516,6 +550,10 @@ static bool isSingleCharClass(const CharClassNode &node) {
 }
 
 bool CodeGen::generateCharClass(const CharClassNode &node) {
+  if (this->inLookBehind()) {
+    this->todo(node, "look-behind");
+    return false;
+  }
   if (isSingleCharClass(node)) {
     return this->generate(*node.getChars()[0]);
   }
@@ -567,6 +605,10 @@ bool CodeGen::generateCharClass(const CharClassNode &node) {
 }
 
 bool CodeGen::generateRepeat(const RepeatNode &node) {
+  if (this->inLookBehind()) {
+    this->todo(node, "look-behind");
+    return false;
+  }
   if (node.getMax() == 0) { // do nothing
     return true;
   }
@@ -588,15 +630,13 @@ bool CodeGen::generateRepeat(const RepeatNode &node) {
 }
 
 bool CodeGen::generateLookAround(const LookAroundNode &node) {
-  if (!node.isLookAhead()) {
-    this->todo(node, "look-behind");
-    return false;
-  }
-  const auto p = this->builder.emitReservedPoint<BeginLookAheadIns>();
+  const auto p = this->builder.emitReservedPoint<BeginLookAroundIns>();
+  this->directions.push_back(node.isLookAhead());
   TRY(this->generate(*node.getPattern()));
+  this->directions.pop_back();
   const auto endAddr = this->builder.currentAddr();
-  this->builder.emit<EndLookAheadIns>();
-  this->builder.emitAt<BeginLookAheadIns>(p, endAddr, node.isNegate());
+  this->builder.emit<EndLookAroundIns>();
+  this->builder.emitAt<BeginLookAroundIns>(p, endAddr, node.isNegate());
   return true;
 }
 

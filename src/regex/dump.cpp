@@ -406,6 +406,12 @@ void RegexDumper::dump(const FlexBuffer<Inst> &ins) {
     case OpCode::AnyExceptNL:
       inst += sizeof(AnyExceptNLIns);
       break;
+    case OpCode::LBAny:
+      str += "(dotAll=";
+      appendBool(str, cast<LBAnyIns>(*inst).dotAll);
+      str += ')';
+      inst += sizeof(LBAnyIns);
+      break;
     case OpCode::Char:
     case OpCode::IChar: {
       const int codePoint = isa<CharIns>(*inst) ? cast<CharIns>(*inst).getCodePoint()
@@ -420,6 +426,22 @@ void RegexDumper::dump(const FlexBuffer<Inst> &ins) {
       str += StringRef(b, len);
       str += ')';
       inst += sizeof(CharIns);
+      break;
+    }
+    case OpCode::LBChar: {
+      auto &charIns = cast<LBCharIns>(*inst);
+      char b[16];
+      snprintf(b, std::size(b), "U+%04X", charIns.getCodePoint());
+      str += "(ignoreCase=";
+      appendBool(str, charIns.ignoreCase);
+      str += ", codePoint=";
+      str += b;
+      str += ":";
+      unsigned int len = UnicodeUtil::codePointToUtf8(charIns.getCodePoint(), b);
+      assert(len);
+      str += StringRef(b, len);
+      str += ')';
+      inst += sizeof(LBCharIns);
       break;
     }
     case OpCode::CharSet: {
@@ -504,16 +526,16 @@ void RegexDumper::dump(const FlexBuffer<Inst> &ins) {
       str += ')';
       inst += sizeof(EndLoopIns);
       break;
-    case OpCode::BeginLookAhead:
+    case OpCode::BeginLookAround:
       str += "(negate=";
-      appendBool(str, cast<BeginLookAheadIns>(*inst).negate);
+      appendBool(str, cast<BeginLookAroundIns>(*inst).negate);
       str += ", target=";
-      str += std::to_string(cast<BeginLookAheadIns>(*inst).getTarget());
+      str += std::to_string(cast<BeginLookAroundIns>(*inst).getTarget());
       str += ')';
-      inst += sizeof(BeginLookAheadIns);
+      inst += sizeof(BeginLookAroundIns);
       break;
-    case OpCode::EndLookAhead:
-      inst += sizeof(EndLookAheadIns);
+    case OpCode::EndLookAround:
+      inst += sizeof(EndLookAroundIns);
       break;
     }
     this->base.dump(lineNum.c_str(), str);

@@ -34,8 +34,10 @@ namespace arsh::regex {
   OP(IWord)                                                                                        \
   OP(Any)                                                                                          \
   OP(AnyExceptNL)                                                                                  \
+  OP(LBAny)                                                                                        \
   OP(Char)                                                                                         \
   OP(IChar)                                                                                        \
+  OP(LBChar)                                                                                       \
   OP(CharSet)                                                                                      \
   OP(ICharSet)                                                                                     \
   OP(BeginCapture)                                                                                 \
@@ -45,8 +47,8 @@ namespace arsh::regex {
   OP(IBackRef)                                                                                     \
   OP(BeginLoop)                                                                                    \
   OP(EndLoop)                                                                                      \
-  OP(BeginLookAhead)                                                                               \
-  OP(EndLookAhead)
+  OP(BeginLookAround)                                                                              \
+  OP(EndLookAround)
 
 enum class OpCode : uint8_t {
 #define GEN_ENUM(E) E,
@@ -165,6 +167,15 @@ struct AnyIns : InstWithRtti<OpCode::Any> {};
 struct AnyExceptNLIns : InstWithRtti<OpCode::AnyExceptNL> {};
 
 /**
+ * match any code point within look-behind
+ */
+struct LBAnyIns : InstWithRtti<OpCode::LBAny> {
+  bool dotAll;
+
+  explicit LBAnyIns(bool dotAll) : dotAll(dotAll) {}
+};
+
+/**
  * match a single code point
  */
 struct CharIns : InstWithRtti<OpCode::Char> {
@@ -186,6 +197,21 @@ struct ICharIns : InstWithRtti<OpCode::IChar> {
   uint8_t code[4];
 
   explicit ICharIns(int codePoint) { WRITE_TO_INS_FIELD(codePoint, code); }
+
+  int32_t getCodePoint() const {
+    int32_t codePoint;
+    READ_FROM_INS_FIELD(code, codePoint);
+    return codePoint;
+  }
+};
+
+struct LBCharIns : InstWithRtti<OpCode::LBChar> {
+  bool ignoreCase;
+  uint8_t code[4];
+
+  explicit LBCharIns(int codePoint, bool ignoreCase) : ignoreCase(ignoreCase) {
+    WRITE_TO_INS_FIELD(codePoint, code);
+  }
 
   int32_t getCodePoint() const {
     int32_t codePoint;
@@ -348,11 +374,11 @@ struct EndLoopIns : InstWithRtti<OpCode::EndLoop> {
   }
 };
 
-struct BeginLookAheadIns : InstWithRtti<OpCode::BeginLookAhead> {
+struct BeginLookAroundIns : InstWithRtti<OpCode::BeginLookAround> {
   bool negate;
   uint8_t target[4]; // must be the end of look-ahead addr
 
-  BeginLookAheadIns(uint32_t target, bool negate) : negate(negate) {
+  BeginLookAroundIns(uint32_t target, bool negate) : negate(negate) {
     WRITE_TO_INS_FIELD(target, target);
   }
 
@@ -363,7 +389,7 @@ struct BeginLookAheadIns : InstWithRtti<OpCode::BeginLookAhead> {
   }
 };
 
-struct EndLookAheadIns : InstWithRtti<OpCode::EndLookAhead> {};
+struct EndLookAroundIns : InstWithRtti<OpCode::EndLookAround> {};
 
 #define GEN_TYPE_ASSERT(E)                                                                         \
   static_assert(std::is_trivially_copyable_v<E##Ins> && std::is_trivially_destructible_v<E##Ins>); \

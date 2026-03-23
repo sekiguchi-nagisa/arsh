@@ -1,0 +1,48 @@
+
+source $SCRIPT_DIR/../syntax/test_helper.arsh
+
+# (?<=.)
+assert diff <(redump -m '' '(?<=.)' '') <(<<'EOF'
+input: `'
+failed
+EOF
+)
+
+assert diff <(redump -m $'\nあbc' '(?<=.)' '') <(<<EOF
+input: \`${$'\nあbc'}'
+(offset=4, size=0)
+EOF
+)
+
+assert diff <(redump -m $'\nあbc' '(?<=.)' 's') <(<<EOF
+input: \`${$'\nあbc'}'
+(offset=1, size=0)
+EOF
+)
+
+
+# (?<!.)
+assert diff <(redump -m '' '(?<!.)' '') <(<<'EOF'
+input: `'
+(offset=0, size=0)
+EOF
+)
+
+assert diff <(redump -m 'abc' '(?<!.)' '') <(<<'EOF'
+input: `abc'
+(offset=0, size=0)
+EOF
+)
+
+# (?<!.).
+assert diff <(redump -m $'\nあa1' '(?<!.).' '') <(<<EOF
+input: \`${$'\nあa1'}'
+(offset=1, size=3)
+EOF
+)
+
+assert diff <(redump -m $'\nあa1' '(?<!.).' 's') <(<<EOF
+input: \`${$'\nあa1'}'
+(offset=0, size=1)
+EOF
+)
