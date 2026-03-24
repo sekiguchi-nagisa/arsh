@@ -284,6 +284,14 @@ TEST(RegexMatchTest, null) {
   ASSERT_EQ(2, captures[0].offset);
   ASSERT_EQ(1, captures[0].size);
 
+  re = compile("(?<=\\0)");
+  ASSERT_TRUE(re.hasValue());
+  status = regex::match(re.unwrap(), text, captures);
+  ASSERT_EQ(regex::MatchStatus::OK, status);
+  ASSERT_EQ(1, captures.size());
+  ASSERT_EQ(3, captures[0].offset);
+  ASSERT_EQ(0, captures[0].size);
+
   re = compile("\\00");
   ASSERT_TRUE(re.hasValue());
   status = regex::match(re.unwrap(), text, captures);
@@ -291,6 +299,14 @@ TEST(RegexMatchTest, null) {
   ASSERT_EQ(1, captures.size());
   ASSERT_EQ(2, captures[0].offset);
   ASSERT_EQ(1, captures[0].size);
+
+  re = compile("(?<=\\00)");
+  ASSERT_TRUE(re.hasValue());
+  status = regex::match(re.unwrap(), text, captures);
+  ASSERT_EQ(regex::MatchStatus::OK, status);
+  ASSERT_EQ(1, captures.size());
+  ASSERT_EQ(3, captures[0].offset);
+  ASSERT_EQ(0, captures[0].size);
 
   re = compile("\\00", regex::Flag(regex::Mode::UNICODE, {}));
   ASSERT_FALSE(re.hasValue());

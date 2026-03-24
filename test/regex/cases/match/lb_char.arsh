@@ -1,3 +1,187 @@
 
 source $SCRIPT_DIR/../syntax/test_helper.arsh
 
+# (?<=a)\d
+assert diff <(redump -m '1a2b3' '(?<=a)\d' '') <(<<'EOF'
+input: `1a2b3'
+(offset=2, size=1)
+EOF
+)
+
+assert diff <(redump -m '1A2B3' '(?<=a)\d' '') <(<<'EOF'
+input: `1A2B3'
+failed
+EOF
+)
+
+assert diff <(redump -m '1A2B3' '(?<=a)\d' 'i') <(<<'EOF'
+input: `1A2B3'
+(offset=2, size=1)
+EOF
+)
+
+# (?<!\n)\w
+assert diff <(redump -m $'\nabc12' '(?<!\n)\w' '') <(<<EOF
+input: \`${$'\nabc12'}'
+(offset=2, size=1)
+EOF
+)
+
+assert diff <(redump -m $'\nABC12' '(?<!\n)\w' 'i') <(<<EOF
+input: \`${$'\nABC12'}'
+(offset=2, size=1)
+EOF
+)
+
+assert diff <(redump -m $'\n2' '(?<!\n)\w' '') <(<<EOF
+input: \`${$'\n2'}'
+failed
+EOF
+)
+
+# (?<!\r)\w
+assert diff <(redump -m $'\rabc12' '(?<!\r)\w' '') <(<<EOF
+input: \`${$'\rabc12'}'
+(offset=2, size=1)
+EOF
+)
+
+assert diff <(redump -m $'\rABC12' '(?<!\r)\w' 'i') <(<<EOF
+input: \`${$'\rABC12'}'
+(offset=2, size=1)
+EOF
+)
+
+assert diff <(redump -m $'\r2' '(?<!\r)\w' '') <(<<EOF
+input: \`${$'\r2'}'
+failed
+EOF
+)
+
+# (?<!\f)\w
+assert diff <(redump -m $'\fabc12' '(?<!\f)\w' '') <(<<EOF
+input: \`${$'\fabc12'}'
+(offset=2, size=1)
+EOF
+)
+
+assert diff <(redump -m $'\fABC12' '(?<!\f)\w' 'i') <(<<EOF
+input: \`${$'\fABC12'}'
+(offset=2, size=1)
+EOF
+)
+
+assert diff <(redump -m $'\f2' '(?<!\f)\w' '') <(<<EOF
+input: \`${$'\f2'}'
+failed
+EOF
+)
+
+# (?<!\t)\w
+assert diff <(redump -m $'\tabc12' '(?<!\t)\w' '') <(<<EOF
+input: \`${$'\tabc12'}'
+(offset=2, size=1)
+EOF
+)
+
+assert diff <(redump -m $'\tABC12' '(?<!\t)\w' 'i') <(<<EOF
+input: \`${$'\tABC12'}'
+(offset=2, size=1)
+EOF
+)
+
+assert diff <(redump -m $'\t2' '(?<!\t)\w' '') <(<<EOF
+input: \`${$'\t2'}'
+failed
+EOF
+)
+
+# (?<!\v)\w
+assert diff <(redump -m $'\vabc12' '(?<!\v)\w' '') <(<<EOF
+input: \`${$'\vabc12'}'
+(offset=2, size=1)
+EOF
+)
+
+assert diff <(redump -m $'\vABC12' '(?<!\v)\w' 'i') <(<<EOF
+input: \`${$'\vABC12'}'
+(offset=2, size=1)
+EOF
+)
+
+assert diff <(redump -m $'\v2' '(?<!\v)\w' '') <(<<EOF
+input: \`${$'\v2'}'
+failed
+EOF
+)
+
+# (?<=\cj)
+assert diff <(redump -m $'\x0A' '(?<=\cj)' '') <(<<EOF
+input: \`${$'\x0A'}'
+(offset=1, size=0)
+EOF
+)
+
+# (?<=\cJ)
+assert diff <(redump -m $'\x0A' '(?<=\cJ)' 'i') <(<<EOF
+input: \`${$'\x0A'}'
+(offset=1, size=0)
+EOF
+)
+
+# (?<=\x5A)\d
+assert diff <(redump -m '1Z2b3' '(?<=\x5A)\d+' '') <(<<'EOF'
+input: `1Z2b3'
+(offset=2, size=1)
+EOF
+)
+
+assert diff <(redump -m '1z2b3' '(?<=\x5A)\d+' '') <(<<'EOF'
+input: `1z2b3'
+failed
+EOF
+)
+
+assert diff <(redump -m '1z2b3' '(?<=\x5A)\d+' 'i') <(<<'EOF'
+input: `1z2b3'
+(offset=2, size=1)
+EOF
+)
+
+# (?<=\u24C2\uFE0F)
+assert diff <(redump -m 'Ⓜ️' '(?<=\u24C2\uFE0F)' '') <(<<'EOF'
+input: `Ⓜ️'
+(offset=6, size=0)
+EOF
+)
+
+assert diff <(redump -m $'\u24DC\uFE0F' '(?<=\u24C2\uFE0F)' '') <(<<EOF
+input: \`${$'\u24DC\uFE0F'}'
+failed
+EOF
+)
+
+assert diff <(redump -m $'\u24DC\uFE0F' '(?<=\u24C2\uFE0F)' 'i') <(<<EOF
+input: \`${$'\u24DC\uFE0F'}'
+(offset=6, size=0)
+EOF
+)
+
+# (?<=\u{10400})
+assert diff <(redump -m $'\U10400' '(?<=\u{10400})' 'u') <(<<EOF
+input: \`${$'\U10400'}'
+(offset=4, size=0)
+EOF
+)
+
+assert diff <(redump -m $'\U10428' '(?<=\u{10400})' 'u') <(<<EOF
+input: \`${$'\U10428'}'
+failed
+EOF
+)
+
+assert diff <(redump -m $'\U10428' '(?<=\u{10400})' 'iu') <(<<EOF
+input: \`${$'\U10428'}'
+(offset=4, size=0)
+EOF
+)
