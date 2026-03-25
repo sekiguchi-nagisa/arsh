@@ -85,3 +85,94 @@ input: \`${$'0a\u00D6\U1040C'}'
 (offset=2, size=6)
 EOF
 )
+
+# \n
+assert diff <(redump -m $'\n' '\n' 'i') <(<<EOF
+input: \`${$'\n'}'
+(offset=0, size=1)
+EOF
+)
+
+assert diff <(redump -m 'A' '\n' 'i') <(<<'EOF'
+input: `A'
+failed
+EOF
+)
+
+# \r
+assert diff <(redump -m $'\r' '\r' 'i') <(<<EOF
+input: \`${$'\r'}'
+(offset=0, size=1)
+EOF
+)
+
+assert diff <(redump -m 'A' '\r' 'i') <(<<'EOF'
+input: `A'
+failed
+EOF
+)
+
+# \f
+assert diff <(redump -m $'\f' '\f' 'i') <(<<EOF
+input: \`${$'\f'}'
+(offset=0, size=1)
+EOF
+)
+
+assert diff <(redump -m 'B' '\f' 'i') <(<<'EOF'
+input: `B'
+failed
+EOF
+)
+
+# \t
+assert diff <(redump -m $'\t' '\t' 'i') <(<<EOF
+input: \`${$'\t'}'
+(offset=0, size=1)
+EOF
+)
+
+assert diff <(redump -m 'C' '\t' 'i') <(<<'EOF'
+input: `C'
+failed
+EOF
+)
+
+# \v
+assert diff <(redump -m $'\v' '\v' 'i') <(<<EOF
+input: \`${$'\v'}'
+(offset=0, size=1)
+EOF
+)
+
+assert diff <(redump -m 'D' '\v' 'i') <(<<'EOF'
+input: `D'
+failed
+EOF
+)
+
+# \cj
+assert diff <(redump -m $'\x0A' '\cj' 'i') <(<<EOF
+input: \`${$'\x0A'}'
+(offset=0, size=1)
+EOF
+)
+
+assert diff <(redump -m 'E' '\cj' 'i') <(<<'EOF'
+input: `E'
+failed
+EOF
+)
+
+# \cJ
+assert diff <(redump -m $'\x0A' '\cJ' 'i') <(<<EOF
+input: \`${$'\x0A'}'
+(offset=0, size=1)
+EOF
+)
+
+assert diff <(redump -m 'F' '\cJ' 'i') <(<<'EOF'
+input: `F'
+failed
+EOF
+)
