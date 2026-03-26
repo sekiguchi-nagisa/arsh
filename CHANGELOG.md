@@ -32,6 +32,10 @@
   printf '%b' '\uD800'  # surrogate
   ```
 
+### Fixed
+
+- fix io-redirection if src fd and target fd are some number
+
 ## [0.40.0] - 2025-12-30
 
 ### Added

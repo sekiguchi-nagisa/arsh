@@ -166,12 +166,18 @@ static int redirectToFile(const StringRef fileName, const RedirOpenFlag openFlag
   if (fd < 0) {
     return errno;
   }
-  if (dup2(fd, newFd) < 0) {
-    int e = errno;
+  /*
+   * in some situations, `fd` and `newFd` are some number
+   *  (ex. if `newFd` is 3 and 3 is not allocated, newly opened `fd` will be 3)
+   */
+  if (fd != newFd) {
+    if (dup2(fd, newFd) < 0) {
+      int e = errno;
+      close(fd);
+      return e;
+    }
     close(fd);
-    return e;
   }
-  close(fd);
   return 0;
 }
 

@@ -194,15 +194,19 @@ constexpr int RESERVED_FD_LIMIT = 10;
 
 inline bool remapFD(int &fd) {
   int r = fcntl(fd, F_DUPFD, RESERVED_FD_LIMIT);
+  int old = errno;
   close(fd);
   fd = r;
+  errno = old;
   return r != -1;
 }
 
 inline bool remapFDCloseOnExec(int &fd) {
   int r = fcntl(fd, F_DUPFD_CLOEXEC, RESERVED_FD_LIMIT);
+  int old = errno;
   close(fd);
   fd = r;
+  errno = old;
   return r != -1;
 }
 
