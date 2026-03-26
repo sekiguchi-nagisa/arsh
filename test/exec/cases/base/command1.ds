@@ -63,7 +63,9 @@ assert($? != 0)
 ls hfreure 2>&1 | grep ls
 assert($? == 0)
 
-if (! test -e /dev/fd/3) {
+if $OSTYPE != "linux" {
+    echo skip
+} elif (! test -e /dev/fd/3) {
     assert "$(/proc/self/fd/3 -e echo hello 3<$BIN_NAME)" == 'hello'
 } elif (! test -e /dev/fd/4) {
     assert "$(/proc/self/fd/4 -e echo hello 4<$BIN_NAME)" == 'hello'
