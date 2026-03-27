@@ -59,10 +59,10 @@
 | {count}?                    | ✔️         | ✔️        | -                       | ❌                              |
 | {min,}?                     | ✔️         | ✔️        | -                       | ❌                              |
 | {min,max}?                  | ✔️         | ✔️        | -                       | ❌                              |
-| \p{loneProperty}            | ✔️         | ✔️        | ❌                       | ❌                              |
-| \P{loneProperty}            | ✔️         | ✔️        | ❌                       | ❌                              |
-| \p{property=value}          | ✔️         | ✔️        | ❌                       | ❌                              |
-| \P{property=value}          | ✔️         | ✔️        | ❌                       | ❌                              |
+| \p{loneProperty}            | ✔️         | ✔️        | ✔️                      | ❌                              |
+| \P{loneProperty}            | ✔️         | ✔️        | ✔️                      | ❌                              |
+| \p{property=value}          | ✔️         | ✔️        | ✔️                      | ❌                              |
+| \P{property=value}          | ✔️         | ✔️        | ✔️                      | ❌                              |
 | \p{RGI_Emoji}               | ✔️         | ❌         | ❌                       | ❌                              |
 | .                           | ✔️         | ✔️        | ✔️                      | ✔️                             |
 | . (dot-all)                 | ✔️         | ✔️        | ✔️                      | ✔️                             |

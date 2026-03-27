@@ -478,7 +478,7 @@ struct CharSetMatcherTest : public ::testing::TestWithParam<CharSetMatcherEntry>
 };
 
 TEST_P(CharSetMatcherTest, base) {
-  printf(" case: %s\n", this->GetParam().pattern);
+  printf(" case: %s/%s\n", this->GetParam().pattern, this->GetParam().flag);
   ASSERT_NO_FATAL_FAILURE(doTest());
 }
 

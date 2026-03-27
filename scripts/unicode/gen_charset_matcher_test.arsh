@@ -75,6 +75,11 @@ let defs = $create([
 @('\p{QMark}' 'u' 'prop:Quotation_Mark'),
 @('\P{QMark}' 'u' '! prop:Quotation_Mark'),
 
+@('\p{sc=Latin}' 'ui' '@fold(sc:Latin)'),
+@('\p{sc=Latin}' 'vi' '@fold(sc:Latin)'),
+@('\P{sc=Latin}' 'ui' '@fold(! sc:Latin)'),
+@('\P{sc=Latin}' 'vi' '@fold(U+0..U+10FFFF) - @fold(sc:Latin)'),
+
 @('[^a]' '' '(U+0061)'),
 @('[^a]' 'v' '!(U+0061)'),
 
@@ -170,6 +175,15 @@ let defs = $create([
 @('\P{gc=Lowercase_Letter}' 'iu' '@fold(!(gc:Ll))'),
 @('\P{gc=Lowercase_Letter}' 'iv' '@fold(U+00..U+10FFFF) - @fold(gc:Ll)'),
 @('[^\P{gc=Lowercase_Letter}]' 'iv' '@fold(gc:Ll)'),
+
+@('[\p{sc=Latin}@]' 'ui' '@fold(sc:Latin) + U+40'),
+@('[\p{sc=Latin}@]' 'vi' '@fold(sc:Latin) + U+40'),
+@('[\P{sc=Latin}@]' 'ui' '@fold(!sc:Latin + U+40)'),
+@('[\P{sc=Latin}@]' 'vi' '@fold(U+00..U+10FFFF)-  @fold(sc:Latin) + U+40'),
+@('[^\p{sc=Latin}@]' 'ui' '@fold(sc:Latin + U+40)'),
+@('[^\p{sc=Latin}@]' 'vi' '@fold(U+00..U+10FFFF) - @fold(sc:Latin + U+40)'),
+@('[^\P{sc=Latin}@]' 'ui' '@fold(!(sc:Latin) + U+40)'),
+@('[^\P{sc=Latin}@]' 'vi' '@fold(U+0..U+10FFFF) - (@fold(U+0..U+10FFFF) - @fold(sc:Latin) + U+40)'),
 
 @('[\p{Emoji}]' 'u' 'emoji:Emoji'),
 @('[\P{Emoji}]' 'u' '!emoji:Emoji'),
