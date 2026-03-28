@@ -25,7 +25,7 @@ assert("$(echo -e '\b')" == $'\x08')
 assert("$(echo -e '\e')" == $'\x1B')
 assert("$(echo -e '\f')" == $'\x0c')
 assert("$(echo -en '\v' && echo @)" == $'\013'+ '@')
-assert("$(echo -e '\G')" == $'\G' && $'\G' == '\G') # invalid escape sequence
+assert("$(echo -e '\G')" == $'\\G' && $'\\G' == '\G') # invalid escape sequence
 assert "$(echo -e '\u7058')" == '灘'
 assert "$(echo -e '\U7058')" == '灘'
 assert "$(echo -e '\U07058')" == '灘'

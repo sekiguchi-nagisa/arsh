@@ -874,11 +874,15 @@ void TypeChecker::visitStringNode(StringNode &node) {
   switch (node.getKind()) {
   case StringNode::STRING:
     if (!node.isInit()) {
+      std::string err;
       std::string value;
-      if (this->lexer.get().singleToString(node.getActualToken(), value)) {
+      if (this->lexer.get().singleToString(node.getActualToken(), value, &err)) {
         node.setValue(std::move(value));
       } else {
-        this->reportError<IllegalStrEscape>(node.getActualToken(), value.c_str());
+        if (!err.empty()) {
+          err.insert(0, ", ");
+        }
+        this->reportError<IllegalStrEscape>(node.getActualToken(), value.c_str(), err.c_str());
       }
     }
     break;

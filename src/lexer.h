@@ -244,9 +244,12 @@ public:
 
   /**
    * convert single quote string literal token to string.
-   * if token is illegal format(ex. illegal escape sequence), return false.
+   * if token is illegal format(ex. illegal escape sequence), return false and set error message.
+   * @param token
+   * @param out
+   * @param err
    */
-  bool singleToString(Token token, std::string &out) const;
+  bool singleToString(Token token, std::string &out, std::string *err) const;
 
   /**
    * convert double quote string element token to string.

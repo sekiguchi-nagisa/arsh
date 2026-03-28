@@ -2614,37 +2614,37 @@ TEST_F(EscapeSeqTest, error) {
 
   ref = "\\x";
   ret = parseEscapeSeq(ref.begin(), ref.end(), EscapeSeqOption::NONE);
-  ASSERT_EQ(EscapeSeqResult::NEED_CHARS, ret.kind);
+  ASSERT_EQ(EscapeSeqResult::NEED_HEX, ret.kind);
   ASSERT_EQ(-1, ret.codePoint);
   ASSERT_EQ(2, ret.consumedSize);
 
   ref = "\\xQ";
   ret = parseEscapeSeq(ref.begin(), ref.end(), EscapeSeqOption::NONE);
-  ASSERT_EQ(EscapeSeqResult::NEED_CHARS, ret.kind);
+  ASSERT_EQ(EscapeSeqResult::NEED_HEX, ret.kind);
   ASSERT_EQ(-1, ret.codePoint);
   ASSERT_EQ(2, ret.consumedSize);
 
   ref = "\\uQ";
   ret = parseEscapeSeq(ref.begin(), ref.end(), EscapeSeqOption::NONE);
-  ASSERT_EQ(EscapeSeqResult::NEED_CHARS, ret.kind);
+  ASSERT_EQ(EscapeSeqResult::NEED_HEX, ret.kind);
   ASSERT_EQ(-1, ret.codePoint);
   ASSERT_EQ(2, ret.consumedSize);
 
   ref = "\\u";
   ret = parseEscapeSeq(ref.begin(), ref.end(), EscapeSeqOption::NONE);
-  ASSERT_EQ(EscapeSeqResult::NEED_CHARS, ret.kind);
+  ASSERT_EQ(EscapeSeqResult::NEED_HEX, ret.kind);
   ASSERT_EQ(-1, ret.codePoint);
   ASSERT_EQ(2, ret.consumedSize);
 
   ref = "\\UQ";
   ret = parseEscapeSeq(ref.begin(), ref.end(), EscapeSeqOption::NONE);
-  ASSERT_EQ(EscapeSeqResult::NEED_CHARS, ret.kind);
+  ASSERT_EQ(EscapeSeqResult::NEED_HEX, ret.kind);
   ASSERT_EQ(-1, ret.codePoint);
   ASSERT_EQ(2, ret.consumedSize);
 
   ref = "\\U";
   ret = parseEscapeSeq(ref.begin(), ref.end(), EscapeSeqOption::NONE);
-  ASSERT_EQ(EscapeSeqResult::NEED_CHARS, ret.kind);
+  ASSERT_EQ(EscapeSeqResult::NEED_HEX, ret.kind);
   ASSERT_EQ(-1, ret.codePoint);
   ASSERT_EQ(2, ret.consumedSize);
 
@@ -2662,13 +2662,13 @@ TEST_F(EscapeSeqTest, error) {
 
   ref = "\\c";
   ret = parseEscapeSeq(ref.begin(), ref.end(), EscapeSeqOption::CONTROL_CHAR);
-  ASSERT_EQ(EscapeSeqResult::NEED_CHARS, ret.kind);
+  ASSERT_EQ(EscapeSeqResult::NEED_ALPHA, ret.kind);
   ASSERT_EQ(-1, ret.codePoint);
   ASSERT_EQ(2, ret.consumedSize);
 
   ref = "\\c@";
   ret = parseEscapeSeq(ref.begin(), ref.end(), EscapeSeqOption::CONTROL_CHAR);
-  ASSERT_EQ(EscapeSeqResult::NEED_CHARS, ret.kind);
+  ASSERT_EQ(EscapeSeqResult::NEED_ALPHA, ret.kind);
   ASSERT_EQ(-1, ret.codePoint);
   ASSERT_EQ(2, ret.consumedSize);
 

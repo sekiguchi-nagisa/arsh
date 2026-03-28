@@ -221,7 +221,7 @@ EscapeSeqResult parseEscapeSeq(const char *begin, const char *end, const EscapeS
   case 'c':
     if (hasFlag(option, EscapeSeqOption::CONTROL_CHAR)) {
       if (begin == end || !isLetter(*begin)) {
-        return err(EscapeSeqResult::NEED_CHARS, static_cast<unsigned short>(begin - old));
+        return err(EscapeSeqResult::NEED_ALPHA, static_cast<unsigned short>(begin - old));
       }
       const unsigned char ch = static_cast<unsigned char>(*(begin++)) % 32;
       return okByte(ch, static_cast<unsigned short>(begin - old));
@@ -244,7 +244,7 @@ EscapeSeqResult parseEscapeSeq(const char *begin, const char *end, const EscapeS
   case 'u':
   case 'U': {
     if (begin == end || !isHex(*begin)) {
-      return err(EscapeSeqResult::NEED_CHARS, static_cast<unsigned short>(begin - old));
+      return err(EscapeSeqResult::NEED_HEX, static_cast<unsigned short>(begin - old));
     }
     unsigned int limit = next == 'x' ? 2 : next == 'u' ? 4 : 8;
     unsigned int code = hexToNum(*(begin++));

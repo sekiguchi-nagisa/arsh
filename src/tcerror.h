@@ -83,7 +83,7 @@ struct TCErrorDetail : TCError {
 #define DEFINE_TCError(E, fmt) DEFINE_TCErrorImpl(TypeCheckError::Type::ERROR, E, fmt)
 #define DEFINE_TCWarn(E, fmt) DEFINE_TCErrorImpl(TypeCheckError::Type::WARN, E, fmt)
 
-DEFINE_TCError(IllegalStrEscape, "illegal escape sequence: `%s'");
+DEFINE_TCError(IllegalStrEscape, "illegal escape sequence: `%s'%s");
 DEFINE_TCError(OutOfRangeInt, "out of range Int literal, must be INT64");
 DEFINE_TCError(OutOfRangeFloat, "out of range Float literal, must be FP64");
 DEFINE_TCError(InsideLoop, "only available inside loop (for, while, do-while)");

@@ -17,9 +17,13 @@
 
 #### Core
 
-- **Breaking Change**: not allow surrogate code of Unicode escape (``ex. \uD800``)
-- **Breaking Change**: octal escape larger than 255 is now truncated (up to 255, `& 0xFF`)
-    - ``$'\777''`` is equivalent to ``$'\377''``
+- **Breaking Change**: overhaul escape sequence handling in dollar single quoted string
+    - not allow surrogate code of Unicode escape (``ex. \uD800``)
+    - octal escape larger than 255 is now truncated (up to 255, `& 0xFF`)
+        - ``$'\777''`` is equivalent to ``$'\377''``
+    - support `\cx` escape sequence (generate control character)
+    - unsupported escape sequences are now semantic error
+    - improve error message
 - allow trailing comma in function arguments
 - unquote backslash of prefix env names like command name
 

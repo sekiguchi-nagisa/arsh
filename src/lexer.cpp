@@ -301,7 +301,7 @@ bool Lexer::tryExitHereDocMode(unsigned int startPos) {
   return false;
 }
 
-bool Lexer::singleToString(Token token, std::string &out) const {
+bool Lexer::singleToString(Token token, std::string &out, std::string *err) const {
   if (!this->startsWith(token, '$')) { // single quoted
     if (token.size >= 2) {
       token.pos++;
@@ -323,6 +323,10 @@ bool Lexer::singleToString(Token token, std::string &out) const {
       switch (ret.kind) {
       case EscapeSeqResult::OK_CODE: {
         if (!UnicodeUtil::isValidCodePoint(ret.codePoint)) {
+          if (err) {
+            *err += "invalid code point (surrogate)";
+          }
+          out.assign(iter, ret.consumedSize);
           return false;
         }
         char buf[4];
@@ -340,6 +344,18 @@ bool Lexer::singleToString(Token token, std::string &out) const {
         iter += ret.consumedSize;
         continue;
       }
+      case EscapeSeqResult::END:
+        break; // unreachable
+      case EscapeSeqResult::NEED_HEX:
+        if (err) {
+          *err += "need one or more hex characters";
+        }
+        break;
+      case EscapeSeqResult::NEED_ALPHA:
+        if (err) {
+          *err += "need alphabet";
+        }
+        break;
       case EscapeSeqResult::UNKNOWN:
         if (*(iter + 1) == '\'') {
           iter += 2;
@@ -347,10 +363,14 @@ bool Lexer::singleToString(Token token, std::string &out) const {
           continue;
         }
         break;
-      default:
-        out.assign(iter, ret.consumedSize);
-        return false;
+      case EscapeSeqResult::RANGE:
+        if (err) {
+          *err += "out of range code point";
+        }
+        break;
       }
+      out.assign(iter, ret.consumedSize);
+      return false;
     }
     out += *(iter++);
   }

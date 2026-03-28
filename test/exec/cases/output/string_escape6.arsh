@@ -1,0 +1,11 @@
+# RUN: exec $cmd $self
+
+#    CHECKERR: [semantic error] illegal escape sequence: `\UFFFFFF', out of range code point
+# CHECKERR_RE:  --> .+/output/string_escape6\.arsh:9:1$
+#    CHECKERR: $'ABC\UFFFFFF'
+#    CHECKERR: ^~~~~~~~~~~~~~
+# STATUS: 1
+
+$'ABC\UFFFFFF'
+
+assert $false

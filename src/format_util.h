@@ -115,7 +115,8 @@ struct EscapeSeqResult {
     OK_CODE,    // success as code point
     OK_BYTE,    // success as byte
     END,        // reach end
-    NEED_CHARS, // need one or more characters
+    NEED_HEX,   // need one or more hex characters
+    NEED_ALPHA, // need alphabet
     UNKNOWN,    // unknown escape sequence
     RANGE,      // out-of-range unicode (U+000000~U+10FFFF)
   } kind;
