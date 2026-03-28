@@ -31,6 +31,8 @@ assert $'\u7058' == '灘'
 assert $'\U20118' == '𠄘'
 assert $'\u00A3' == '£'
 assert $'\u00A3' == $'\xC2\xA3'
+assert $'\cJ' == $'\n'
+assert $'\cj' == $'\n'
 
 assert('a
 b' == "a

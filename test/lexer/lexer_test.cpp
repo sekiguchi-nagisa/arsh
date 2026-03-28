@@ -2521,12 +2521,13 @@ TEST(LineNumTest, case4) {
   (int[]) { __VA_ARGS__ }
 
 struct EscapeSeqTest : public ::testing::Test {
-  static void assertEscape(StringRef ref, std::vector<int> &&codes, bool needPrefix = false) {
+  static void assertEscape(StringRef ref, std::vector<int> &&codes,
+                           EscapeSeqOption option = EscapeSeqOption::NONE) {
     std::vector<int> out;
     const char *begin = ref.begin();
     const char *end = ref.end();
     while (begin != end) {
-      auto ret = parseEscapeSeq(begin, end, needPrefix);
+      auto ret = parseEscapeSeq(begin, end, option);
       if (ret) {
         out.push_back(ret.codePoint);
         begin += ret.consumedSize;
@@ -2538,13 +2539,15 @@ struct EscapeSeqTest : public ::testing::Test {
   }
 
   template <unsigned int N>
-  void assertEscape(StringRef ref, const int (&codes)[N], bool needPrefix = false) {
+  static void assertEscape(StringRef ref, const int (&codes)[N],
+                           EscapeSeqOption option = EscapeSeqOption::NONE) {
     std::vector<int> expect(std::begin(codes), std::end(codes));
-    assertEscape(ref, std::move(expect), needPrefix);
+    assertEscape(ref, std::move(expect), option);
   }
 
-  void assertEscape(StringRef ref, int code, bool needPrefix = false) {
-    assertEscape(ref, ARRAY(code), needPrefix);
+  static void assertEscape(StringRef ref, int code,
+                           EscapeSeqOption option = EscapeSeqOption::NONE) {
+    assertEscape(ref, ARRAY(code), option);
   }
 };
 
@@ -2568,100 +2571,121 @@ TEST_F(EscapeSeqTest, base) {
   ASSERT_NO_FATAL_FAILURE(this->assertEscape("\\x", ARRAY('\\', 'x')));
   ASSERT_NO_FATAL_FAILURE(this->assertEscape("\\", ARRAY('\\')));
   ASSERT_NO_FATAL_FAILURE(this->assertEscape("s\\0", ARRAY('s', '\0')));
-  ASSERT_NO_FATAL_FAILURE(this->assertEscape("\\0123", ARRAY('\123'), true));
-  ASSERT_NO_FATAL_FAILURE(this->assertEscape("\\0123", ARRAY('\012', '3'), false));
+  ASSERT_NO_FATAL_FAILURE(
+      this->assertEscape("\\0123", ARRAY('\123'), EscapeSeqOption::NEED_OCTAL_PREFIX));
+  ASSERT_NO_FATAL_FAILURE(this->assertEscape("\\0123", ARRAY('\012', '3'), EscapeSeqOption::NONE));
   ASSERT_NO_FATAL_FAILURE(this->assertEscape("\\uA9", 0xa9));
   ASSERT_NO_FATAL_FAILURE(this->assertEscape("\\u2328", 0x2328));
   ASSERT_NO_FATAL_FAILURE(this->assertEscape("\\U2328", 0x2328));
+  ASSERT_NO_FATAL_FAILURE(this->assertEscape("\\cj", 0x0A, EscapeSeqOption::CONTROL_CHAR));
+  ASSERT_NO_FATAL_FAILURE(this->assertEscape("\\cJ", 0x0A, EscapeSeqOption::CONTROL_CHAR));
 }
 
 TEST_F(EscapeSeqTest, error) {
   StringRef ref = "\\z";
-  auto ret = parseEscapeSeq(ref.begin(), ref.end(), false);
+  auto ret = parseEscapeSeq(ref.begin(), ref.end(), EscapeSeqOption::NONE);
   ASSERT_EQ(EscapeSeqResult::UNKNOWN, ret.kind);
   ASSERT_EQ(-1, ret.codePoint);
   ASSERT_EQ(2, ret.consumedSize);
 
   ref = "34";
-  ret = parseEscapeSeq(ref.begin(), ref.end(), false);
+  ret = parseEscapeSeq(ref.begin(), ref.end(), EscapeSeqOption::NONE);
   ASSERT_EQ(EscapeSeqResult::END, ret.kind);
   ASSERT_EQ(-1, ret.codePoint);
   ASSERT_EQ(0, ret.consumedSize);
 
   ref = "";
-  ret = parseEscapeSeq(ref.begin(), ref.end(), false);
+  ret = parseEscapeSeq(ref.begin(), ref.end(), EscapeSeqOption::NONE);
   ASSERT_EQ(EscapeSeqResult::END, ret.kind);
   ASSERT_EQ(-1, ret.codePoint);
   ASSERT_EQ(0, ret.consumedSize);
 
   ref = "\\";
-  ret = parseEscapeSeq(ref.begin(), ref.end(), false);
+  ret = parseEscapeSeq(ref.begin(), ref.end(), EscapeSeqOption::NONE);
   ASSERT_EQ(EscapeSeqResult::END, ret.kind);
   ASSERT_EQ(-1, ret.codePoint);
   ASSERT_EQ(0, ret.consumedSize);
 
   ref = "\\x1w";
-  ret = parseEscapeSeq(ref.begin(), ref.end(), false);
+  ret = parseEscapeSeq(ref.begin(), ref.end(), EscapeSeqOption::NONE);
   ASSERT_EQ(EscapeSeqResult::OK_BYTE, ret.kind);
   ASSERT_EQ('\x01', ret.codePoint);
   ASSERT_EQ(3, ret.consumedSize);
 
   ref = "\\x";
-  ret = parseEscapeSeq(ref.begin(), ref.end(), false);
+  ret = parseEscapeSeq(ref.begin(), ref.end(), EscapeSeqOption::NONE);
   ASSERT_EQ(EscapeSeqResult::NEED_CHARS, ret.kind);
   ASSERT_EQ(-1, ret.codePoint);
   ASSERT_EQ(2, ret.consumedSize);
 
   ref = "\\xQ";
-  ret = parseEscapeSeq(ref.begin(), ref.end(), false);
+  ret = parseEscapeSeq(ref.begin(), ref.end(), EscapeSeqOption::NONE);
   ASSERT_EQ(EscapeSeqResult::NEED_CHARS, ret.kind);
   ASSERT_EQ(-1, ret.codePoint);
   ASSERT_EQ(2, ret.consumedSize);
 
   ref = "\\uQ";
-  ret = parseEscapeSeq(ref.begin(), ref.end(), false);
+  ret = parseEscapeSeq(ref.begin(), ref.end(), EscapeSeqOption::NONE);
   ASSERT_EQ(EscapeSeqResult::NEED_CHARS, ret.kind);
   ASSERT_EQ(-1, ret.codePoint);
   ASSERT_EQ(2, ret.consumedSize);
 
   ref = "\\u";
-  ret = parseEscapeSeq(ref.begin(), ref.end(), false);
+  ret = parseEscapeSeq(ref.begin(), ref.end(), EscapeSeqOption::NONE);
   ASSERT_EQ(EscapeSeqResult::NEED_CHARS, ret.kind);
   ASSERT_EQ(-1, ret.codePoint);
   ASSERT_EQ(2, ret.consumedSize);
 
   ref = "\\UQ";
-  ret = parseEscapeSeq(ref.begin(), ref.end(), false);
+  ret = parseEscapeSeq(ref.begin(), ref.end(), EscapeSeqOption::NONE);
   ASSERT_EQ(EscapeSeqResult::NEED_CHARS, ret.kind);
   ASSERT_EQ(-1, ret.codePoint);
   ASSERT_EQ(2, ret.consumedSize);
 
   ref = "\\U";
-  ret = parseEscapeSeq(ref.begin(), ref.end(), false);
+  ret = parseEscapeSeq(ref.begin(), ref.end(), EscapeSeqOption::NONE);
   ASSERT_EQ(EscapeSeqResult::NEED_CHARS, ret.kind);
   ASSERT_EQ(-1, ret.codePoint);
   ASSERT_EQ(2, ret.consumedSize);
 
   ref = "\\123";
-  ret = parseEscapeSeq(ref.begin(), ref.end(), true);
+  ret = parseEscapeSeq(ref.begin(), ref.end(), EscapeSeqOption::NEED_OCTAL_PREFIX);
   ASSERT_EQ(EscapeSeqResult::UNKNOWN, ret.kind);
   ASSERT_EQ(-1, ret.codePoint);
   ASSERT_EQ(2, ret.consumedSize);
 
+  ref = "\\c";
+  ret = parseEscapeSeq(ref.begin(), ref.end(), EscapeSeqOption::NONE);
+  ASSERT_EQ(EscapeSeqResult::UNKNOWN, ret.kind);
+  ASSERT_EQ(-1, ret.codePoint);
+  ASSERT_EQ(2, ret.consumedSize);
+
+  ref = "\\c";
+  ret = parseEscapeSeq(ref.begin(), ref.end(), EscapeSeqOption::CONTROL_CHAR);
+  ASSERT_EQ(EscapeSeqResult::NEED_CHARS, ret.kind);
+  ASSERT_EQ(-1, ret.codePoint);
+  ASSERT_EQ(2, ret.consumedSize);
+
+  ref = "\\c@";
+  ret = parseEscapeSeq(ref.begin(), ref.end(), EscapeSeqOption::CONTROL_CHAR);
+  ASSERT_EQ(EscapeSeqResult::NEED_CHARS, ret.kind);
+  ASSERT_EQ(-1, ret.codePoint);
+  ASSERT_EQ(2, ret.consumedSize);
+
   ref = "\\UFFFFFF";
-  ret = parseEscapeSeq(ref.begin(), ref.end(), false);
+  ret = parseEscapeSeq(ref.begin(), ref.end(), EscapeSeqOption::NONE);
   ASSERT_EQ(EscapeSeqResult::RANGE, ret.kind);
   ASSERT_EQ(-1, ret.codePoint);
   ASSERT_EQ(8, ret.consumedSize);
 
   ref = "\\UFFFFFFF";
-  ret = parseEscapeSeq(ref.begin(), ref.end(), false);
+  ret = parseEscapeSeq(ref.begin(), ref.end(), EscapeSeqOption::NONE);
   ASSERT_EQ(EscapeSeqResult::RANGE, ret.kind);
   ASSERT_EQ(-1, ret.codePoint);
   ASSERT_EQ(9, ret.consumedSize);
 
   ref = "\\UFFFFFFFF";
-  ret = parseEscapeSeq(ref.begin(), ref.end(), false);
+  ret = parseEscapeSeq(ref.begin(), ref.end(), EscapeSeqOption::NONE);
   ASSERT_EQ(EscapeSeqResult::RANGE, ret.kind);
   ASSERT_EQ(-1, ret.codePoint);
   ASSERT_EQ(10, ret.consumedSize);

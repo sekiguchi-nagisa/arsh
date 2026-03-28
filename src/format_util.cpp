@@ -16,6 +16,7 @@
 
 #include "format_util.h"
 #include "constant.h"
+#include "misc/format.hpp"
 #include "misc/num_util.hpp"
 #include "misc/unicode.hpp"
 
@@ -176,6 +177,109 @@ std::string unquoteCmdArgLiteral(const StringRef ref, bool unescape) {
     str += ch;
   }
   return str;
+}
+
+static EscapeSeqResult okByte(unsigned char b, unsigned short size) {
+  return {
+      .kind = EscapeSeqResult::OK_BYTE,
+      .consumedSize = size,
+      .codePoint = b,
+  };
+}
+
+static EscapeSeqResult ok(int code, unsigned short size) {
+  return {
+      .kind = EscapeSeqResult::OK_CODE,
+      .consumedSize = size,
+      .codePoint = code,
+  };
+}
+
+static EscapeSeqResult ok(char ch) { return ok(ch, 2); }
+
+static EscapeSeqResult err(EscapeSeqResult::Kind k, unsigned short size) {
+  return {
+      .kind = k,
+      .consumedSize = size,
+      .codePoint = -1,
+  };
+}
+
+EscapeSeqResult parseEscapeSeq(const char *begin, const char *end, const EscapeSeqOption option) {
+  if (begin == end || *begin != '\\' || (begin + 1) == end) {
+    return err(EscapeSeqResult::END, 0);
+  }
+  const char *old = begin;
+  begin++; // consume '\'
+  switch (const char next = *(begin++); next) {
+  case '\\':
+    return ok('\\');
+  case 'a':
+    return ok('\a');
+  case 'b':
+    return ok('\b');
+  case 'c':
+    if (hasFlag(option, EscapeSeqOption::CONTROL_CHAR)) {
+      if (begin == end || !isLetter(*begin)) {
+        return err(EscapeSeqResult::NEED_CHARS, static_cast<unsigned short>(begin - old));
+      }
+      const unsigned char ch = static_cast<unsigned char>(*(begin++)) % 32;
+      return okByte(ch, static_cast<unsigned short>(begin - old));
+    }
+    return err(EscapeSeqResult::UNKNOWN, static_cast<unsigned short>(begin - old));
+  case 'e':
+  case 'E':
+    return ok('\033');
+  case 'f':
+    return ok('\f');
+  case 'n':
+    return ok('\n');
+  case 'r':
+    return ok('\r');
+  case 't':
+    return ok('\t');
+  case 'v':
+    return ok('\v');
+  case 'x':
+  case 'u':
+  case 'U': {
+    if (begin == end || !isHex(*begin)) {
+      return err(EscapeSeqResult::NEED_CHARS, static_cast<unsigned short>(begin - old));
+    }
+    unsigned int limit = next == 'x' ? 2 : next == 'u' ? 4 : 8;
+    unsigned int code = hexToNum(*(begin++));
+    for (unsigned int i = 1; i < limit; i++) {
+      if (begin != end && isHex(*begin)) {
+        code *= 16;
+        code += hexToNum(*(begin++));
+      } else {
+        break;
+      }
+    }
+    if (limit == 2) { // byte
+      assert(code <= UINT8_MAX);
+      return okByte(static_cast<unsigned char>(code), static_cast<unsigned short>(begin - old));
+    } else if (code <= 0x10FFFF) {
+      return ok(static_cast<int>(code), static_cast<unsigned short>(begin - old));
+    } else {
+      return err(EscapeSeqResult::RANGE, static_cast<unsigned short>(begin - old));
+    }
+  }
+  default:
+    if (!isOctal(next) || (hasFlag(option, EscapeSeqOption::NEED_OCTAL_PREFIX) && next != '0')) {
+      return err(EscapeSeqResult::UNKNOWN, static_cast<unsigned short>(begin - old));
+    }
+    unsigned int code = next - '0';
+    for (unsigned int i = hasFlag(option, EscapeSeqOption::NEED_OCTAL_PREFIX) ? 0 : 1; i < 3; i++) {
+      if (begin != end && isOctal(*begin)) {
+        code *= 8;
+        code += *(begin++) - '0';
+      } else {
+        break;
+      }
+    }
+    return ok(static_cast<int>(code & 0xFF), static_cast<unsigned short>(begin - old));
+  }
 }
 
 } // namespace arsh

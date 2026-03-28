@@ -249,12 +249,6 @@ public:
   bool singleToString(Token token, std::string &out) const;
 
   /**
-   * convert escaped single quote string literal token to string.
-   * if token is illegal format(ex. illegal escape sequence), return false.
-   */
-  bool escapedSingleToString(Token token, std::string &out) const;
-
-  /**
    * convert double quote string element token to string.
    */
   std::string doubleElementToString(Token token, bool skipDouble = false) const;
@@ -352,32 +346,6 @@ private:
 };
 
 using LexerPtr = IntrusivePtr<Lexer>;
-
-struct EscapeSeqResult {
-  enum Kind : unsigned char {
-    OK_CODE,    // success as code point
-    OK_BYTE,    // success as byte
-    END,        // reach end
-    NEED_CHARS, // need one or more characters
-    UNKNOWN,    // unknown escape sequence
-    RANGE,      // out-of-range unicode (U+000000~U+10FFFF)
-  } kind;
-  unsigned short consumedSize;
-  int codePoint;
-
-  explicit operator bool() const { return this->kind == OK_CODE || this->kind == OK_BYTE; }
-};
-
-/**
- * common escape sequence handling
- * @param begin
- * must be start with '\'
- * @param end
- * @param needOctalPrefix
- * if true, octal escape sequence start with '0'
- * @return
- */
-EscapeSeqResult parseEscapeSeq(const char *begin, const char *end, bool needOctalPrefix);
 
 } // namespace arsh
 

@@ -302,18 +302,15 @@ bool Lexer::tryExitHereDocMode(unsigned int startPos) {
 }
 
 bool Lexer::singleToString(Token token, std::string &out) const {
-  if (this->startsWith(token, '$')) {
-    return this->escapedSingleToString(token, out);
+  if (!this->startsWith(token, '$')) { // single quoted
+    if (token.size >= 2) {
+      token.pos++;
+      token.size -= 2;
+    }
+    out = this->toTokenText(token);
+    return true;
   }
-  if (token.size >= 2) {
-    token.pos++;
-    token.size -= 2;
-  }
-  out = this->toTokenText(token);
-  return true;
-}
 
-bool Lexer::escapedSingleToString(Token token, std::string &out) const {
   StringRef ref = this->toStrRef(token);
   if (ref.size() >= 3) {
     ref.removePrefix(2); // prefix $'
@@ -322,7 +319,7 @@ bool Lexer::escapedSingleToString(Token token, std::string &out) const {
   const char *end = ref.end();
   for (const char *iter = ref.begin(); iter != end;) {
     if (*iter == '\\') {
-      auto ret = parseEscapeSeq(iter, end, false);
+      auto ret = parseEscapeSeq(iter, end, EscapeSeqOption::CONTROL_CHAR);
       switch (ret.kind) {
       case EscapeSeqResult::OK_CODE: {
         if (!UnicodeUtil::isValidCodePoint(ret.codePoint)) {
@@ -448,100 +445,6 @@ std::pair<double, bool> Lexer::toDouble(Token token) const {
   auto ret = convertToDouble(this->toTokenText(token).c_str());
   assert(ret || ret.kind == DoubleConversionResult::OUT_OF_RANGE);
   return {ret.value, static_cast<bool>(ret)};
-}
-
-static EscapeSeqResult okByte(unsigned char b, unsigned short size) {
-  return {
-      .kind = EscapeSeqResult::OK_BYTE,
-      .consumedSize = size,
-      .codePoint = b,
-  };
-}
-
-static EscapeSeqResult ok(int code, unsigned short size) {
-  return {
-      .kind = EscapeSeqResult::OK_CODE,
-      .consumedSize = size,
-      .codePoint = code,
-  };
-}
-
-static EscapeSeqResult ok(char ch) { return ok(ch, 2); }
-
-static EscapeSeqResult err(EscapeSeqResult::Kind k, unsigned short size) {
-  return {
-      .kind = k,
-      .consumedSize = size,
-      .codePoint = -1,
-  };
-}
-
-EscapeSeqResult parseEscapeSeq(const char *begin, const char *end, bool needOctalPrefix) {
-  if (begin == end || *begin != '\\' || (begin + 1) == end) {
-    return err(EscapeSeqResult::END, 0);
-  }
-  const char *old = begin;
-  begin++; // consume '\'
-  switch (const char next = *(begin++); next) {
-  case '\\':
-    return ok('\\');
-  case 'a':
-    return ok('\a');
-  case 'b':
-    return ok('\b');
-  case 'e':
-  case 'E':
-    return ok('\033');
-  case 'f':
-    return ok('\f');
-  case 'n':
-    return ok('\n');
-  case 'r':
-    return ok('\r');
-  case 't':
-    return ok('\t');
-  case 'v':
-    return ok('\v');
-  case 'x':
-  case 'u':
-  case 'U': {
-    if (begin == end || !isHex(*begin)) {
-      return err(EscapeSeqResult::NEED_CHARS, static_cast<unsigned short>(begin - old));
-    }
-    unsigned int limit = next == 'x' ? 2 : next == 'u' ? 4 : 8;
-    unsigned int code = hexToNum(*(begin++));
-    for (unsigned int i = 1; i < limit; i++) {
-      if (begin != end && isHex(*begin)) {
-        code *= 16;
-        code += hexToNum(*(begin++));
-      } else {
-        break;
-      }
-    }
-    if (limit == 2) { // byte
-      assert(code <= UINT8_MAX);
-      return okByte(static_cast<unsigned char>(code), static_cast<unsigned short>(begin - old));
-    } else if (code <= 0x10FFFF) {
-      return ok(static_cast<int>(code), static_cast<unsigned short>(begin - old));
-    } else {
-      return err(EscapeSeqResult::RANGE, static_cast<unsigned short>(begin - old));
-    }
-  }
-  default:
-    if (!isOctal(next) || (needOctalPrefix && next != '0')) {
-      return err(EscapeSeqResult::UNKNOWN, static_cast<unsigned short>(begin - old));
-    }
-    unsigned int code = next - '0';
-    for (unsigned int i = needOctalPrefix ? 0 : 1; i < 3; i++) {
-      if (begin != end && isOctal(*begin)) {
-        code *= 8;
-        code += *(begin++) - '0';
-      } else {
-        break;
-      }
-    }
-    return ok(static_cast<int>(code & 0xFF), static_cast<unsigned short>(begin - old));
-  }
 }
 
 } // namespace arsh

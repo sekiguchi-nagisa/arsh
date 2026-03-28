@@ -19,6 +19,7 @@
 
 #include <cstdarg>
 
+#include "misc/enum_util.hpp"
 #include "misc/string_ref.hpp"
 
 namespace arsh {
@@ -99,6 +100,40 @@ inline bool appendAsUnescaped(const StringRef value, const size_t maxSize, std::
   }
   return true;
 }
+
+enum class EscapeSeqOption : unsigned char {
+  NONE = 0,
+  NEED_OCTAL_PREFIX = 1u << 0u, // octal escape sequence starts with '0'
+  CONTROL_CHAR = 1u << 1u,      // interpret \cx escape sequence
+};
+
+template <>
+struct allow_enum_bitop<EscapeSeqOption> : std::true_type {};
+
+struct EscapeSeqResult {
+  enum Kind : unsigned char {
+    OK_CODE,    // success as code point
+    OK_BYTE,    // success as byte
+    END,        // reach end
+    NEED_CHARS, // need one or more characters
+    UNKNOWN,    // unknown escape sequence
+    RANGE,      // out-of-range unicode (U+000000~U+10FFFF)
+  } kind;
+  unsigned short consumedSize;
+  int codePoint;
+
+  explicit operator bool() const { return this->kind == OK_CODE || this->kind == OK_BYTE; }
+};
+
+/**
+ * common escape sequence handling
+ * @param begin
+ * must be start with '\'
+ * @param end
+ * @param option
+ * @return
+ */
+EscapeSeqResult parseEscapeSeq(const char *begin, const char *end, EscapeSeqOption option);
 
 } // namespace arsh
 

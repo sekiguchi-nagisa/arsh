@@ -51,7 +51,8 @@ bool EscapeSeqInterpreter::operator()(StringRef &out, std::string *err) {
     this->pos = std::min(retPos, this->ref.size());
     return true;
   }
-  const auto ret = parseEscapeSeq(this->ref.begin() + this->pos, this->ref.end(), true);
+  const auto ret = parseEscapeSeq(this->ref.begin() + this->pos, this->ref.end(),
+                                  EscapeSeqOption::NEED_OCTAL_PREFIX);
   switch (ret.kind) {
   case EscapeSeqResult::OK_CODE: {
     if (!UnicodeUtil::isValidCodePoint(ret.codePoint) && err) {
@@ -78,7 +79,7 @@ bool EscapeSeqInterpreter::operator()(StringRef &out, std::string *err) {
     this->pos += ret.consumedSize; // skip invalid code
     return true;
   case EscapeSeqResult::UNKNOWN:
-    if (ref[pos + 1] == 'c') {
+    if (this->ref[this->pos + 1] == 'c') {
       return false; // stop further printing
     }
     break;
