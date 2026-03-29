@@ -471,6 +471,24 @@ BACKTRACK:
           }
           goto BACKTRACK;
         }
+        vmcase(LBCharSet) {
+          auto &ins = cast<LBCharSetIns>(*inst);
+          if (input.availableBackward()) {
+            int codePoint = input.consumeBackward();
+            if (ins.ignoreCase) {
+              codePoint = doSimpleCaseFolding(codePoint);
+            }
+            bool s = matchers[ins.getMatcherIndex()].contains(codePoint);
+            if (ins.invert) {
+              s = !s;
+            }
+            if (s) {
+              inst += sizeof(LBCharSetIns);
+              vmnext;
+            }
+          }
+          goto BACKTRACK;
+        }
         vmcase(BeginCapture) {
           auto &ins = cast<BeginCaptureIns>(*inst);
           captures[ins.getCaptureIndex()] = {.offset = input.getOffset(), .size = 0};
@@ -566,8 +584,8 @@ BACKTRACK:
           vmnext;
         }
         vmcase(BeginLookAround) {
-          auto &lookAhead = cast<BeginLookAroundIns>(*inst);
-          TRY(bts.push(Backtrack::newLookAround(input, lookAhead.getTarget(), lookAhead.negate)));
+          auto &lookAround = cast<BeginLookAroundIns>(*inst);
+          TRY(bts.push(Backtrack::newLookAround(input, lookAround.getTarget(), lookAround.negate)));
           inst += sizeof(BeginLookAroundIns);
           vmnext;
         }

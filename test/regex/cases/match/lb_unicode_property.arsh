@@ -1,0 +1,48 @@
+
+source $SCRIPT_DIR/../syntax/test_helper.arsh
+
+# (?<=\p{Lu})
+assert diff <(redump -m '12@-_3aB)' '(?<=\p{Lu})' 'u') <(<<'EOF'
+input: `12@-_3aB)'
+(offset=8, size=0)
+EOF
+)
+
+assert diff <(redump -m '12@-_3aB)' '(?<=\p{Lu})' 'iu') <(<<'EOF'
+input: `12@-_3aB)'
+(offset=7, size=0)
+EOF
+)
+
+# (?<=\P{Lu}).
+assert diff <(redump -m 'A12@-_3aB)' '(?<=\P{Lu}).' 'u') <(<<'EOF'
+input: `A12@-_3aB)'
+(offset=2, size=1)
+EOF
+)
+
+assert diff <(redump -m 'A12@-_3aB)' '(?<=\P{Lu}).' 'iu') <(<<'EOF'
+input: `A12@-_3aB)'
+(offset=1, size=1)
+EOF
+)
+
+# (?<=\p{sc=Latin})
+assert diff <(redump -m '12@-_3aB)' '(?<=\p{sc=Latin})' 'u') <(<<'EOF'
+input: `12@-_3aB)'
+(offset=7, size=0)
+EOF
+)
+
+assert diff <(redump -m '12@-_3aB)' '(?<=\p{sc=Latin})' 'ui') <(<<'EOF'
+input: `12@-_3aB)'
+(offset=7, size=0)
+EOF
+)
+
+# (?<=\P{sc=Latin})
+assert diff <(redump -m 'wあ12@-_3aB)' '(?<=\P{sc=Latin})' 'iu') <(<<'EOF'
+input: `wあ12@-_3aB)'
+(offset=4, size=0)
+EOF
+)

@@ -390,10 +390,6 @@ static AsciiSet foldCase(const AsciiSet set) {
 }
 
 bool CodeGen::generateProperty(const PropertyNode &node) {
-  if (this->inLookBehind()) {
-    this->todo(node, "look-behind");
-    return false;
-  }
   if (node.onlyAscii()) {
     AsciiSet set;
     appendToAsciiSet(set, node);
@@ -401,14 +397,14 @@ bool CodeGen::generateProperty(const PropertyNode &node) {
       set = foldCase(set);
     }
     if (auto index = this->emitMatcher(Matcher(set)); index.hasValue()) {
-      if (this->has(Modifier::IGNORE_CASE)) {
-        this->builder.emit<ICharSetIns>(index.unwrap(), false);
-      } else {
-        this->builder.emit<CharSetIns>(index.unwrap(), false);
-      }
+      this->emitCharSetIns(index.unwrap(), false);
       return true;
     }
   } else if (node.mayContainString()) {
+    if (this->inLookBehind()) {
+      this->todo(node, "look-behind");
+      return false;
+    }
     if (this->has(Modifier::IGNORE_CASE)) {
       this->todo(node, "ignore-case");
       return false;
@@ -434,11 +430,7 @@ bool CodeGen::generateProperty(const PropertyNode &node) {
       set = setBuilder.build();
     }
     if (auto index = this->emitMatcher(Matcher(std::move(set))); index.hasValue()) {
-      if (this->has(Modifier::IGNORE_CASE)) {
-        this->builder.emit<ICharSetIns>(index.unwrap(), false);
-      } else {
-        this->builder.emit<CharSetIns>(index.unwrap(), false);
-      }
+      this->emitCharSetIns(index.unwrap(), false);
       return true;
     }
   }
@@ -550,15 +542,15 @@ static bool isSingleCharClass(const CharClassNode &node) {
 }
 
 bool CodeGen::generateCharClass(const CharClassNode &node) {
-  if (this->inLookBehind()) {
-    this->todo(node, "look-behind");
-    return false;
-  }
   if (isSingleCharClass(node)) {
     return this->generate(*node.getChars()[0]);
   }
   if (node.getChars().empty() && node.isInvert()) { // [^]
-    this->builder.emit<AnyIns>();
+    if (this->inLookBehind()) {
+      this->builder.emit<LBAnyIns>(true);
+    } else {
+      this->builder.emit<AnyIns>();
+    }
     return true;
   }
   if (isAsciiSet(node)) {
@@ -568,14 +560,14 @@ bool CodeGen::generateCharClass(const CharClassNode &node) {
       set = foldCase(set);
     }
     if (auto index = this->emitMatcher(Matcher(set)); index.hasValue()) {
-      if (this->has(Modifier::IGNORE_CASE)) {
-        this->builder.emit<ICharSetIns>(index.unwrap(), false);
-      } else {
-        this->builder.emit<CharSetIns>(index.unwrap(), false);
-      }
+      this->emitCharSetIns(index.unwrap(), false);
       return true;
     }
   } else if (node.mayContainStrings()) {
+    if (this->inLookBehind()) {
+      this->todo(node, "look-behind");
+      return false;
+    }
     if (this->has(Modifier::IGNORE_CASE)) {
       this->todo(node, "ignore-case");
       return false;
@@ -593,11 +585,7 @@ bool CodeGen::generateCharClass(const CharClassNode &node) {
       setBuilder.foldCase();
     }
     if (auto index = this->emitMatcher(Matcher(setBuilder.build())); index.hasValue()) {
-      if (this->has(Modifier::IGNORE_CASE)) {
-        this->builder.emit<ICharSetIns>(index.unwrap(), invert);
-      } else {
-        this->builder.emit<CharSetIns>(index.unwrap(), invert);
-      }
+      this->emitCharSetIns(index.unwrap(), invert);
       return true;
     }
   }

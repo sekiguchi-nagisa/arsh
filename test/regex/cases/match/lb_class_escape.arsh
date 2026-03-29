@@ -1,0 +1,132 @@
+
+source $SCRIPT_DIR/../syntax/test_helper.arsh
+
+# (?<=\d).
+assert diff <(redump -m 'sa1b2@' '(?<=\d).' '') <(<<'EOF'
+input: `sa1b2@'
+(offset=3, size=1)
+EOF
+)
+
+assert diff <(redump -m 'aaa' '(?<=\d).' '') <(<<'EOF'
+input: `aaa'
+failed
+EOF
+)
+
+# (?<=\d)[AB]
+assert diff <(redump -m 'sa1b2@' '(?<=\d)[AB]' 'i') <(<<'EOF'
+input: `sa1b2@'
+(offset=3, size=1)
+EOF
+)
+
+assert diff <(redump -m 'sa@' '(?<=\d)[AB]' 'i') <(<<'EOF'
+input: `sa@'
+failed
+EOF
+)
+
+# (?<=\D).
+assert diff <(redump -m 'sa1b2@' '(?<=\D).' '') <(<<'EOF'
+input: `sa1b2@'
+(offset=1, size=1)
+EOF
+)
+
+assert diff <(redump -m '1234' '(?<=\D).' '') <(<<'EOF'
+input: `1234'
+failed
+EOF
+)
+
+# (?<=\D)[AB]
+assert diff <(redump -m 'sa1b2@' '(?<=\D)[AB]' 'i') <(<<'EOF'
+input: `sa1b2@'
+(offset=1, size=1)
+EOF
+)
+
+assert diff <(redump -m 'a1234' '(?<=\D)[AB]' 'i') <(<<'EOF'
+input: `a1234'
+failed
+EOF
+)
+
+# (?<=\W\w).
+assert diff <(redump -m 'あzR0_' '(?<=\W\w).' '') <(<<'EOF'
+input: `あzR0_'
+(offset=4, size=1)
+EOF
+)
+
+# (?<=\w).
+assert diff <(redump -m '-!@#$%^&*()+=|\~[]}{:;"?><,./' '(?<=\w).' '') <(<<'EOF'
+input: `-!@#$%^&*()+=|\~[]}{:;"?><,./'
+failed
+EOF
+)
+
+# (?<=\w).
+assert diff <(redump -m $'@@\u017F#$' '(?<=\w).' '') <(<<EOF
+input: \`${$'@@\u017F#$'}'
+failed
+EOF
+)
+
+assert diff <(redump -m $'@@\u017F#$' '(?<=\w).' 'i') <(<<EOF
+input: \`${$'@@\u017F#$'}'
+(offset=4, size=1)
+EOF
+)
+
+# (?<=\W).
+assert diff <(redump -m 'abc123' '(?<=\W).' '') <(<<'EOF'
+input: `abc123'
+failed
+EOF
+)
+
+assert diff <(redump -m 'abc123@{]' '(?<=\W).' 'ui') <(<<'EOF'
+input: `abc123@{]'
+(offset=7, size=1)
+EOF
+)
+
+assert diff <(redump -m $'ab\u017F@' '(?<=\W).' 'v') <(<<EOF
+input: \`${$'ab\u017F@'}'
+(offset=4, size=1)
+EOF
+)
+
+assert diff <(redump -m $'ab\u017F@' '(?<=\W).' 'iv') <(<<EOF
+input: \`${$'ab\u017F@'}'
+failed
+EOF
+)
+
+# (?<=\s)\S
+assert diff <(redump -m $'@ \t\r\n\v\f\U2028#' '(?<=\s)\S' 'u') <(<<EOF
+input: \`${$'@ \t\r\n\v\f\U2028#'}'
+(offset=10, size=1)
+EOF
+)
+
+assert diff <(redump -m $'@ \t\r\n\v\f\U2028#' '(?<=\s)\S' 'iu') <(<<EOF
+input: \`${$'@ \t\r\n\v\f\U2028#'}'
+(offset=10, size=1)
+EOF
+)
+
+# (?<=\S)
+assert diff <(redump -m $' \t\r\n\v\f\U2028@' '(?<=\S)' 'u') <(<<EOF
+input: \`${$' \t\r\n\v\f\U2028@'}'
+(offset=10, size=0)
+EOF
+)
+
+assert diff <(redump -m $' \t\r\n\v\f\U2028' '(?<=\S)' 'ui') <(<<EOF
+input: \`${$' \t\r\n\v\f\U2028'}'
+failed
+EOF
+)

@@ -1,0 +1,130 @@
+
+source $SCRIPT_DIR/../syntax/test_helper.arsh
+
+# (?<=[])
+assert diff <(redump -m '' '(?<=[])' '') <(<<'EOF'
+input: `'
+failed
+EOF
+)
+
+# (?<![])
+assert diff <(redump -m '' '(?<![])' 'i') <(<<'EOF'
+input: `'
+(offset=0, size=0)
+EOF
+)
+
+# (?<=[^])
+assert diff <(redump -m '' '(?<=[^])' '') <(<<'EOF'
+input: `'
+failed
+EOF
+)
+
+assert diff <(redump -m '12' '(?<=[^])' '') <(<<'EOF'
+input: `12'
+(offset=1, size=0)
+EOF
+)
+
+assert diff <(redump -m 'あ' '(?<=[^])' 'iv') <(<<'EOF'
+input: `あ'
+(offset=3, size=0)
+EOF
+)
+
+assert diff <(redump -m $'\n' '(?<=[^])' '') <(<<EOF     # also match newline
+input: \`${$'\n'}'
+(offset=1, size=0)
+EOF
+)
+
+assert diff <(redump -m $'\r' '(?<=[^])' '') <(<<EOF     # also match newline
+input: \`${$'\r'}'
+(offset=1, size=0)
+EOF
+)
+
+# (?<=[a]).
+assert diff <(redump -m 'あabc' '(?<=[a]).' '') <(<<'EOF'
+input: `あabc'
+(offset=4, size=1)
+EOF
+)
+
+assert diff <(redump -m 'あABC' '(?<=[a]).' '') <(<<'EOF'
+input: `あABC'
+failed
+EOF
+)
+
+assert diff <(redump -m 'あABC' '(?<=[a]).' 'i') <(<<'EOF'
+input: `あABC'
+(offset=4, size=1)
+EOF
+)
+
+# (?<![abc])\W
+assert diff <(redump -m 'abc&*' '(?<![abc])\W' '') <(<<'EOF'
+input: `abc&*'
+(offset=4, size=1)
+EOF
+)
+
+assert diff <(redump -m 'ABC&*' '(?<![abc])\W' '') <(<<'EOF'
+input: `ABC&*'
+(offset=3, size=1)
+EOF
+)
+
+assert diff <(redump -m 'ABC&*' '(?<![abc])\W' 'i') <(<<'EOF'
+input: `ABC&*'
+(offset=4, size=1)
+EOF
+)
+
+# (?<=[^abc])\W
+assert diff <(redump -m 'abc&*' '(?<=[^abc])\W' '') <(<<'EOF'
+input: `abc&*'
+(offset=4, size=1)
+EOF
+)
+
+assert diff <(redump -m 'ABC&*' '(?<=[^abc])\W' '') <(<<'EOF'
+input: `ABC&*'
+(offset=3, size=1)
+EOF
+)
+
+assert diff <(redump -m 'ABC&*' '(?<=[^abc])\W' 'i') <(<<'EOF'
+input: `ABC&*'
+(offset=4, size=1)
+EOF
+)
+
+# (?<=[A-Z0-9]).
+assert diff <(redump -m 'あab@Cい' '(?<=[A-Z0-9]).' '') <(<<'EOF'
+input: `あab@Cい'
+(offset=7, size=3)
+EOF
+)
+
+assert diff <(redump -m 'あab@Cい' '(?<=[A-Z0-9]).' 'i') <(<<'EOF'
+input: `あab@Cい'
+(offset=4, size=1)
+EOF
+)
+
+# (?<=[^A-Z0-9]).
+assert diff <(redump -m 'ABab@Cい' '(?<=[^A-Z0-9]).' '') <(<<'EOF'
+input: `ABab@Cい'
+(offset=3, size=1)
+EOF
+)
+
+assert diff <(redump -m 'ABab@Cい' '(?<=[^A-Z0-9]).' 'i') <(<<'EOF'
+input: `ABab@Cい'
+(offset=5, size=1)
+EOF
+)

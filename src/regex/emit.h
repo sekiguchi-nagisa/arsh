@@ -120,6 +120,16 @@ private:
 
   bool generateCharClass(const CharClassNode &node);
 
+  void emitCharSetIns(unsigned int matcherIndex, bool invert) {
+    if (this->inLookBehind()) {
+      this->builder.emit<LBCharSetIns>(matcherIndex, invert, this->has(Modifier::IGNORE_CASE));
+    } else if (this->has(Modifier::IGNORE_CASE)) {
+      this->builder.emit<ICharSetIns>(matcherIndex, invert);
+    } else {
+      this->builder.emit<CharSetIns>(matcherIndex, invert);
+    }
+  }
+
   bool generateRepeat(const RepeatNode &node);
 
   bool generateLookAround(const LookAroundNode &node);

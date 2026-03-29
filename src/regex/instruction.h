@@ -40,6 +40,7 @@ namespace arsh::regex {
   OP(LBChar)                                                                                       \
   OP(CharSet)                                                                                      \
   OP(ICharSet)                                                                                     \
+  OP(LBCharSet)                                                                                    \
   OP(BeginCapture)                                                                                 \
   OP(EndCapture)                                                                                   \
   OP(ResetCaptures)                                                                                \
@@ -209,7 +210,7 @@ struct LBCharIns : InstWithRtti<OpCode::LBChar> {
   bool ignoreCase;
   uint8_t code[4];
 
-  explicit LBCharIns(int codePoint, bool ignoreCase) : ignoreCase(ignoreCase) {
+  LBCharIns(int codePoint, bool ignoreCase) : ignoreCase(ignoreCase) {
     WRITE_TO_INS_FIELD(codePoint, code);
   }
 
@@ -224,7 +225,7 @@ struct CharSetIns : InstWithRtti<OpCode::CharSet> {
   bool invert;
   uint8_t index[2];
 
-  explicit CharSetIns(uint16_t matcherIndex, bool invert) : invert(invert) {
+  CharSetIns(uint16_t matcherIndex, bool invert) : invert(invert) {
     WRITE_TO_INS_FIELD(matcherIndex, index);
   }
 
@@ -239,7 +240,24 @@ struct ICharSetIns : InstWithRtti<OpCode::ICharSet> {
   bool invert;
   uint8_t index[2];
 
-  explicit ICharSetIns(uint16_t matcherIndex, bool invert) : invert(invert) {
+  ICharSetIns(uint16_t matcherIndex, bool invert) : invert(invert) {
+    WRITE_TO_INS_FIELD(matcherIndex, index);
+  }
+
+  uint16_t getMatcherIndex() const {
+    uint16_t matcherIndex;
+    READ_FROM_INS_FIELD(index, matcherIndex);
+    return matcherIndex;
+  }
+};
+
+struct LBCharSetIns : InstWithRtti<OpCode::LBCharSet> {
+  bool invert;
+  bool ignoreCase;
+  uint8_t index[2];
+
+  LBCharSetIns(uint16_t matcherIndex, bool invert, bool ignoreCase)
+      : invert(invert), ignoreCase(ignoreCase) {
     WRITE_TO_INS_FIELD(matcherIndex, index);
   }
 
