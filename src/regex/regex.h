@@ -109,7 +109,7 @@ enum class MatchStatus : unsigned char {
 
 const char *toString(MatchStatus s);
 
-MatchStatus match(const Regex &regex, StringRef text, FlexBuffer<Capture> &captures,
+MatchStatus match(const Regex &regex, StringRef text, std::vector<Capture> &captures,
                   ObserverPtr<Timer> timer = nullptr);
 
 } // namespace arsh::regex

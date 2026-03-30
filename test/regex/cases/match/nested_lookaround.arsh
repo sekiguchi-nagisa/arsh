@@ -1,0 +1,51 @@
+
+source $SCRIPT_DIR/../syntax/test_helper.arsh
+
+# derived from: test262/test/built-ins/RegExp/lookBehind/nested-lookaround.js
+
+# (?<=ab(?=c)\wd)\w\w
+assert diff <(redump -m 'abcdef' '(?<=ab(?=c)\wd)\w\w' '') <(<<'EOF'
+input: `abcdef'
+(offset=4, size=2)
+EOF
+)
+
+# (?<=a(?=([^a]{2})d)\w{3})\w\w
+assert diff <(redump -m 'abcdef' '(?<=a(?=([^a]{2})d)\w{3})\w\w' '') <(<<'EOF'
+input: `abcdef'
+(offset=4, size=2)
+(offset=1, size=2)
+EOF
+)
+
+# (?<=a(?=([bc]{2}(?<!a{2}))d)\w{3})\w\w
+assert diff <(redump -m 'abcdef' '(?<=a(?=([bc]{2}(?<!a{2}))d)\w{3})\w\w' '') <(<<'EOF'
+input: `abcdef'
+(offset=4, size=2)
+(offset=1, size=2)
+EOF
+)
+
+# ^faaao?(?<=^f[oa]+(?=o))
+assert diff <(redump -m 'faaao' '^faaao?(?<=^f[oa]+(?=o))' '') <(<<'EOF'
+input: `faaao'
+(offset=0, size=4)
+EOF
+)
+
+# (?<=a(?=([bc]{2}(?<!a*))d)\w{3})\w\w
+assert diff <(redump -m 'abcdef' '(?<=a(?=([bc]{2}(?<!a*))d)\w{3})\w\w' '') <(<<'EOF'
+input: `abcdef'
+failed
+EOF
+)
+
+# (?<=(.*?)a(?!(a+)b\2c)\2(.*)).
+assert diff <(redump -m 'baaabaac' '(?<=(.*?)a(?!(a+)b\2c)\2(.*)).' 'u') <(<<'EOF'
+input: `baaabaac'
+(offset=3, size=1)
+(offset=2, size=0)
+(unset)
+(offset=3, size=0)
+EOF
+)

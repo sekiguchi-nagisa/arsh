@@ -47,7 +47,7 @@ static std::pair<unsigned int, unsigned int> formatLoc(StringRef src, Token toke
   return {line, pos};
 }
 
-static std::string formatCaptures(const FlexBuffer<regex::Capture> &captures) {
+static std::string formatCaptures(const std::vector<regex::Capture> &captures) {
   std::string ret;
   for (auto &c : captures) {
     if (!c) {
@@ -151,7 +151,7 @@ int main(int argc, char **argv) {
       fwrite(buf.c_str(), sizeof(char), buf.size(), stdout);
       return 0;
     }
-    FlexBuffer<regex::Capture> captures;
+    std::vector<regex::Capture> captures;
     regex::Timer timer(timeout.unwrap());
     auto status = regex::match(re.unwrap(), text, captures, makeObserver(timer));
     fprintf(stdout, "input: `%s'\n", text.toString().c_str());

@@ -592,10 +592,6 @@ bool CodeGen::generateCharClass(const CharClassNode &node) {
 }
 
 bool CodeGen::generateRepeat(const RepeatNode &node) {
-  if (this->inLookBehind()) {
-    this->todo(node, "look-behind");
-    return false;
-  }
   if (node.getMax() == 0) { // do nothing
     return true;
   }

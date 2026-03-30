@@ -269,7 +269,7 @@ TEST(RegexMatchTest, null) {
 
   auto re = compile("ab.");
   ASSERT_TRUE(re.hasValue());
-  FlexBuffer<regex::Capture> captures;
+  std::vector<regex::Capture> captures;
   auto status = regex::match(re.unwrap(), text, captures);
   ASSERT_EQ(regex::MatchStatus::OK, status);
   ASSERT_EQ(1, captures.size());

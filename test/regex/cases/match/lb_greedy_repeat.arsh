@@ -1,0 +1,68 @@
+
+source $SCRIPT_DIR/../syntax/test_helper.arsh
+
+# (?<=[ab]?)
+assert diff <(redump -m 'aba' '(?<=[ab]?)' '') <(<<'EOF'
+input: `aba'
+(offset=0, size=0)
+EOF
+)
+
+# (?<=[ab]*)
+assert diff <(redump -m 'aba' '(?<=[ab]*)' '') <(<<'EOF'
+input: `aba'
+(offset=0, size=0)
+EOF
+)
+
+# (?<=[ab]+)
+assert diff <(redump -m 'aba' '(?<=[ab]+)' '') <(<<'EOF'
+input: `aba'
+(offset=1, size=0)
+EOF
+)
+
+# (?<=[ab]{2})
+assert diff <(redump -m 'aba' '(?<=[ab]{2})' '') <(<<'EOF'
+input: `aba'
+(offset=2, size=0)
+EOF
+)
+
+# (?<=[ab]{2,})
+assert diff <(redump -m 'aba' '(?<=[ab]{2,})' '') <(<<'EOF'
+input: `aba'
+(offset=2, size=0)
+EOF
+)
+
+# (?<=[ab]{2,8})
+assert diff <(redump -m 'aba' '(?<=[ab]{2,8})' '') <(<<'EOF'
+input: `aba'
+(offset=2, size=0)
+EOF
+)
+
+# (?<=(b+))c
+assert diff <(redump -m 'abbbbbbc' '(?<=(b+))c' '') <(<<'EOF'
+input: `abbbbbbc'
+(offset=7, size=1)
+(offset=1, size=6)
+EOF
+)
+
+# (?<=(b\d+))c
+assert diff <(redump -m 'aB1234c' '(?<=(b\d+))c' 'i') <(<<'EOF'
+input: `aB1234c'
+(offset=6, size=1)
+(offset=1, size=5)
+EOF
+)
+
+# (?<=((?:b\d{2})+))c
+assert diff <(redump -m 'ab12b23B34c' '(?<=((?:b\d{2})+))c' 'i') <(<<'EOF'
+input: `ab12b23B34c'
+(offset=10, size=1)
+(offset=1, size=9)
+EOF
+)

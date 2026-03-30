@@ -39,7 +39,7 @@ static Target create(const uint8_t *data, const size_t size) {
   };
 }
 
-static std::string formatCaptures(const FlexBuffer<regex::Capture> &captures) {
+static std::string formatCaptures(const std::vector<regex::Capture> &captures) {
   std::string ret;
   for (auto &c : captures) {
     if (!c) {
@@ -56,7 +56,7 @@ static std::string formatCaptures(const FlexBuffer<regex::Capture> &captures) {
 }
 
 static void match(const regex::Regex &re, const StringRef input, const bool print) {
-  FlexBuffer<regex::Capture> captures;
+  std::vector<regex::Capture> captures;
   regex::Timer timer(std::chrono::seconds(2));
   auto status = regex::match(re, input, captures, makeObserver(timer));
   if (print) {

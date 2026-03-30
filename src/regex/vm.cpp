@@ -157,8 +157,8 @@ public:
     return true;
   }
 
-  bool backtrack(const Inst *&inst, Input &input, FlexBuffer<Capture> &captures,
-                 FlexBuffer<LoopState> &loopStates) {
+  bool backtrack(const Inst *&inst, Input &input, std::vector<Capture> &captures,
+                 std::vector<LoopState> &loopStates) {
     while (this->bts.size()) {
       auto bt = this->bts.back();
       this->bts.pop_back();
@@ -215,7 +215,7 @@ public:
                Backtrack::newNonGreedyLoop(cast<BeginLoopIns>(*beginInst).getLoopIndex(), loop));
   }
 
-  bool cleanupLookAround(Input &input, FlexBuffer<Capture> &captures) {
+  bool cleanupLookAround(Input &input, std::vector<Capture> &captures) {
     // find original lookaround state
     bool negate = false;
     for (ssize_t i = static_cast<ssize_t>(this->bts.size()) - 1; i > -1; i--) {
@@ -241,7 +241,7 @@ public:
 };
 
 static Capture resolveNamedBackRef(const NamedCaptureEntry &entry,
-                                   const FlexBuffer<Capture> &captures) {
+                                   const std::vector<Capture> &captures) {
   if (entry.hasMultipleIndices()) {
     for (unsigned int i = 0; i < entry.getSize(); i++) {
       unsigned int capIndex = entry[i];
@@ -276,7 +276,7 @@ static Capture resolveNamedBackRef(const NamedCaptureEntry &entry,
 #define vmnext continue
 #endif
 
-MatchStatus match(const Regex &regex, const StringRef text, FlexBuffer<Capture> &captures,
+MatchStatus match(const Regex &regex, const StringRef text, std::vector<Capture> &captures,
                   ObserverPtr<Timer> timer) {
   // prepare
   Input input;
@@ -291,7 +291,7 @@ MatchStatus match(const Regex &regex, const StringRef text, FlexBuffer<Capture> 
   unsigned int btCount = 0;
   captures.clear();
   captures.resize(regex.getCaptureGroupCount() + 1);
-  FlexBuffer<LoopState> loopStates;
+  std::vector<LoopState> loopStates;
   loopStates.resize(regex.getLoopCount());
   BacktrackStack bts(inst);
   bts.push(Backtrack()); // push dummy
@@ -491,25 +491,29 @@ BACKTRACK:
         }
         vmcase(BeginCapture) {
           auto &ins = cast<BeginCaptureIns>(*inst);
-          captures[ins.getCaptureIndex()] = {.offset = input.getOffset(), .size = 0};
-          TRY(bts.push(Backtrack::newSetCapture(ins.getCaptureIndex(), Capture())));
+          const unsigned int index = ins.getCaptureIndex();
+          captures[index] = {.offset = input.getOffset(), .size = 0};
+          TRY(bts.push(Backtrack::newSetCapture(index, Capture())));
           inst += sizeof(BeginCaptureIns);
           vmnext;
         }
         vmcase(EndCapture) {
           auto &ins = cast<EndCaptureIns>(*inst);
-          captures[ins.getCaptureIndex()].size =
-              input.getOffset() - captures[ins.getCaptureIndex()].offset;
+          const unsigned int index = ins.getCaptureIndex();
+          auto &capture = captures[index];
+          assert(capture.offset <= input.getOffset());
+          capture.size = input.getOffset() - capture.offset;
           inst += sizeof(EndCaptureIns);
           vmnext;
         }
         vmcase(LBEndCapture) {
           auto &ins = cast<LBEndCaptureIns>(*inst);
-          auto &capture = captures[ins.getCaptureIndex()];
-          const auto beginOffset = capture.offset;
+          const unsigned int index = ins.getCaptureIndex();
+          auto &capture = captures[index];
+          const unsigned int actualEndOffset = capture.offset + capture.size;
           capture.offset = input.getOffset();
-          assert(capture.offset <= beginOffset);
-          capture.size = beginOffset - capture.offset;
+          assert(capture.offset <= actualEndOffset);
+          capture.size = actualEndOffset - capture.offset;
           inst += sizeof(LBEndCaptureIns);
           vmnext;
         }

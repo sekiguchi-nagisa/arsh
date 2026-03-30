@@ -1,0 +1,91 @@
+
+source $SCRIPT_DIR/../syntax/test_helper.arsh
+
+# (?<=(?i:Hello) world)
+assert diff <(redump -m 'Hello world' '(?<=(?i:Hello) world)' '') <(<<'EOF'
+input: `Hello world'
+(offset=11, size=0)
+EOF
+)
+
+assert diff <(redump -m 'hello world' '(?<=(?i:Hello) world)' '') <(<<'EOF'
+input: `hello world'
+(offset=11, size=0)
+EOF
+)
+
+assert diff <(redump -m 'HELLO world' '(?<=(?i:Hello) world)' '') <(<<'EOF'
+input: `HELLO world'
+(offset=11, size=0)
+EOF
+)
+
+assert diff <(redump -m 'HELLO WORLD' '(?<=(?i:Hello) world)' '') <(<<'EOF'
+input: `HELLO WORLD'
+failed
+EOF
+)
+
+# (?<=Hello (?-i:world))/i
+assert diff <(redump -m 'Hello world' '(?<=Hello (?-i:world))' 'i') <(<<'EOF'
+input: `Hello world'
+(offset=11, size=0)
+EOF
+)
+
+assert diff <(redump -m 'hello world' '(?<=Hello (?-i:world))' 'i') <(<<'EOF'
+input: `hello world'
+(offset=11, size=0)
+EOF
+)
+
+assert diff <(redump -m 'HELLO world' '(?<=Hello (?-i:world))' 'i') <(<<'EOF'
+input: `HELLO world'
+(offset=11, size=0)
+EOF
+)
+
+assert diff <(redump -m 'HELLO WORLD' '(?<=Hello (?-i:world))' 'i') <(<<'EOF'
+input: `HELLO WORLD'
+failed
+EOF
+)
+
+# (?<=(?-m:^)---\n^title:.*^slug:.*^---)/ms
+var s = '---
+title: "Modifier: (?ims-ims:...)"
+slug: Web/JavaScript/Reference/Regular_expressions/Modifier
+---'
+assert diff <(redump -m $s
+    '(?<=(?-m:^)---\n^title:.*^slug:.*^---)' 'ms') <(<<EOF
+input: \`$s'
+(offset=${$s.size()}, size=0)
+EOF
+)
+
+$s = $'\n' + $s
+assert diff <(redump -m $s
+    '(?<=(?-m:^)---\n^title:.*^slug:.*^---)' 'ms') <(<<EOF
+input: \`$s'
+failed
+EOF
+)
+
+# (?<=(?:var|let|const) (?i:foo|bar)\b)
+assert diff <(redump -m 'let foo;' '(?<=(?:var|let|const) (?i:foo|bar)\b)' '') <(<<'EOF'
+input: `let foo;'
+(offset=7, size=0)
+EOF
+)
+
+assert diff <(redump -m 'const BAR = 1;' '(?<=(?:var|let|const) (?i:foo|bar)\b)' '') <(<<'EOF'
+input: `const BAR = 1;'
+(offset=9, size=0)
+EOF
+)
+
+assert diff <(redump -m 'Let foo be a number' '(?<=(?:var|let|const) (?i:foo|bar)\b)' '') <(<<'EOF'
+input: `Let foo be a number'
+failed
+EOF
+)
