@@ -1,0 +1,114 @@
+
+source $SCRIPT_DIR/../syntax/test_helper.arsh
+
+# (?<=(.).\1)
+assert diff <(redump -m '123sas' '(?<=(.).\1)' '') <(<<'EOF'
+input: `123sas'
+(offset=2, size=0)
+(offset=0, size=1)
+EOF
+)
+
+# (?<=\1.(.))
+assert diff <(redump -m '123sas' '(?<=\1.(.))' '') <(<<'EOF'
+input: `123sas'
+(offset=6, size=0)
+(offset=5, size=1)
+EOF
+)
+
+assert diff <(redump -m '123saS' '(?<=\1.(.))' '') <(<<'EOF'
+input: `123saS'
+failed
+EOF
+)
+
+assert diff <(redump -m '123saS' '(?<=\1.(.))' 'i') <(<<'EOF'
+input: `123saS'
+(offset=6, size=0)
+(offset=5, size=1)
+EOF
+)
+
+# (?<=\k<prev>.(?<prev>.))
+assert diff <(redump -m '123sas' '(?<=\k<prev>.(?<prev>.))' 'u') <(<<'EOF'
+input: `123sas'
+(offset=6, size=0)
+(offset=5, size=1)
+EOF
+)
+
+assert diff <(redump -m '123Sas' '(?<=\k<prev>.(?<prev>.))' 'u') <(<<'EOF'
+input: `123Sas'
+failed
+EOF
+)
+
+assert diff <(redump -m '123Sas' '(?<=\k<prev>.(?<prev>.))' 'iu') <(<<'EOF'
+input: `123Sas'
+(offset=6, size=0)
+(offset=5, size=1)
+EOF
+)
+
+# (?<=(?:a|(b))\1c)
+assert diff <(redump -m '123ac' '(?<=(?:a|(b))\1c)' 'u') <(<<'EOF'
+input: `123ac'
+(offset=5, size=0)
+(unset)
+EOF
+)
+
+assert diff <(redump -m '123bBc' '(?<=(?:a|(b))\1c)' 'u') <(<<'EOF'
+input: `123bBc'
+failed
+EOF
+)
+
+assert diff <(redump -m '123bBc' '(?<=(?:a|(b))\1c)' 'ui') <(<<'EOF'
+input: `123bBc'
+(offset=6, size=0)
+(offset=4, size=1)
+EOF
+)
+
+# (?<=\1(あい))
+assert diff <(redump -m 'あい' '(?<=\1(あい))' 'u') <(<<'EOF'
+input: `あい'
+failed
+EOF
+)
+
+# (?<=(あい)\1)
+assert diff <(redump -m 'あい' '(?<=(あい)\1)' 'u') <(<<'EOF'
+input: `あい'
+(offset=6, size=0)
+(offset=0, size=6)
+EOF
+)
+
+# (?<=(?<it>ABC\k<it>))
+assert diff <(redump -m '@ABC' '(?<=(?<it>ABC\k<it>))' 'u') <(<<'EOF'
+input: `@ABC'
+(offset=4, size=0)
+(offset=1, size=3)
+EOF
+)
+
+assert diff <(redump -m '@AbC' '(?<=(?<it>ABC\k<it>))' 'iu') <(<<'EOF'
+input: `@AbC'
+(offset=4, size=0)
+(offset=1, size=3)
+EOF
+)
+
+# (?<=((?<year>\d\d\d\d)-\d\d|\d\d-(?<year>\d\d\d\d)) \k<year>)
+assert diff <(redump -m '2025-12 2025'
+    '(?<=((?<year>\d\d\d\d)-\d\d|\d\d-(?<year>\d\d\d\d)) \k<year>)' 'u') <(<<'EOF'
+input: `2025-12 2025'
+(offset=8, size=0)
+(offset=0, size=7)
+(offset=0, size=4)
+(unset)
+EOF
+)

@@ -503,6 +503,16 @@ BACKTRACK:
           inst += sizeof(EndCaptureIns);
           vmnext;
         }
+        vmcase(LBEndCapture) {
+          auto &ins = cast<LBEndCaptureIns>(*inst);
+          auto &capture = captures[ins.getCaptureIndex()];
+          const auto beginOffset = capture.offset;
+          capture.offset = input.getOffset();
+          assert(capture.offset <= beginOffset);
+          capture.size = beginOffset - capture.offset;
+          inst += sizeof(LBEndCaptureIns);
+          vmnext;
+        }
         vmcase(ResetCaptures) {
           auto &ins = cast<ResetCapturesIns>(*inst);
           const auto last = ins.getLastIndex();
@@ -524,7 +534,7 @@ BACKTRACK:
           }
           if (capture) {
             StringRef ref(input.getBegin() + capture.offset, capture.size);
-            if (!input.expectPrefix(ref)) {
+            if (!input.expectForward(ref)) {
               goto BACKTRACK;
             }
           }
@@ -555,6 +565,35 @@ BACKTRACK:
             }
           }
           inst += sizeof(IBackRefIns);
+          vmnext;
+        }
+        vmcase(LBBackRef) {
+          auto &ins = cast<LBBackRefIns>(*inst);
+          Capture capture;
+          if (ins.named) {
+            capture = resolveNamedBackRef(
+                regex.getNamedCaptureGroups().toArrayRef()[ins.getRefIndex()].second, captures);
+          } else {
+            capture = captures[ins.getRefIndex()];
+          }
+          if (capture) {
+            const StringRef ref(input.getBegin() + capture.offset, capture.size);
+            if (ins.ignoreCase) {
+              const char *begin = ref.begin();
+              for (const char *iter = ref.end(); iter != begin;) {
+                const int codePoint = doSimpleCaseFolding(unsafePrevUtf8(iter));
+                if (!input.availableBackward() ||
+                    codePoint != doSimpleCaseFolding(input.consumeBackward())) {
+                  goto BACKTRACK;
+                }
+              }
+            } else {
+              if (!input.expectBackward(ref)) {
+                goto BACKTRACK;
+              }
+            }
+          }
+          inst += sizeof(LBBackRefIns);
           vmnext;
         }
         vmcase(BeginLoop) {

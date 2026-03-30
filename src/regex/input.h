@@ -22,6 +22,24 @@
 
 namespace arsh::regex {
 
+/**
+ *
+ * @param iter must be valid utf8
+ * @return
+ */
+inline int unsafePrevUtf8(const char *&iter) {
+  constexpr unsigned char masks[] = {0xFF, 0x1F, 0x0F, 0x07};
+  unsigned int codePoint = 0;
+  unsigned int len;
+  unsigned int shift = 0;
+  while ((len = UnicodeUtil::utf8ByteSize(*--iter)) == 0) {
+    codePoint |= (*iter & 0x3F) << shift;
+    shift += 6;
+  }
+  codePoint |= (*iter & masks[len - 1]) << shift;
+  return static_cast<int>(codePoint);
+}
+
 class Input {
 public:
   static constexpr size_t INPUT_MAX = UINT32_MAX;
@@ -135,39 +153,27 @@ public:
   }
 
   int prev() const {
-    constexpr unsigned char masks[] = {0xFF, 0x1F, 0x0F, 0x07};
-    unsigned int codePoint = 0;
-    unsigned int len;
-    int offset = 0;
-    unsigned int shift = 0;
-    while ((len = UnicodeUtil::utf8ByteSize(this->iter[--offset])) == 0) {
-      codePoint |= (this->iter[offset] & 0x3F) << shift;
-      shift += 6;
-    }
-    codePoint |= (this->iter[offset] & masks[len - 1]) << shift;
-    return static_cast<int>(codePoint);
+    auto i = this->iter;
+    return unsafePrevUtf8(i);
   }
 
   /**
    * for look-behind.
    * @return
    */
-  int consumeBackward() {
-    constexpr unsigned char masks[] = {0xFF, 0x1F, 0x0F, 0x07};
-    unsigned int codePoint = 0;
-    unsigned int len;
-    unsigned int shift = 0;
-    while ((len = UnicodeUtil::utf8ByteSize(*--this->iter)) == 0) {
-      codePoint |= (*this->iter & 0x3F) << shift;
-      shift += 6;
+  int consumeBackward() { return unsafePrevUtf8(this->iter); }
+
+  bool expectForward(StringRef needle) {
+    if (StringRef(this->iter, this->end - this->iter).startsWith(needle)) {
+      this->iter += needle.size();
+      return true;
     }
-    codePoint |= (*this->iter & masks[len - 1]) << shift;
-    return static_cast<int>(codePoint);
+    return false;
   }
 
-  bool expectPrefix(StringRef prefix) {
-    if (StringRef(this->iter, this->end - this->iter).startsWith(prefix)) {
-      this->iter += prefix.size();
+  bool expectBackward(StringRef needle) {
+    if (StringRef(this->begin, this->iter - this->begin).endsWith(needle)) {
+      this->iter -= needle.size();
       return true;
     }
     return false;

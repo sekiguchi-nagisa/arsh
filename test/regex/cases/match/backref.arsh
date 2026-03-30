@@ -76,7 +76,7 @@ input: `@ABC'
 EOF
 )
 
-# (?<year>\d\d\d\d)-\d\d|\d\d-(?<year>\d\d\d\d)
+# ((?<year>\d\d\d\d)-\d\d|\d\d-(?<year>\d\d\d\d)) \k<year>
 assert diff <(redump -m '2025-12 2025'
     '((?<year>\d\d\d\d)-\d\d|\d\d-(?<year>\d\d\d\d)) \k<year>' 'u') <(<<'EOF'
 input: `2025-12 2025'

@@ -43,9 +43,11 @@ namespace arsh::regex {
   OP(LBCharSet)                                                                                    \
   OP(BeginCapture)                                                                                 \
   OP(EndCapture)                                                                                   \
+  OP(LBEndCapture)                                                                                 \
   OP(ResetCaptures)                                                                                \
   OP(BackRef)                                                                                      \
   OP(IBackRef)                                                                                     \
+  OP(LBBackRef)                                                                                    \
   OP(BeginLoop)                                                                                    \
   OP(EndLoop)                                                                                      \
   OP(BeginLookAround)                                                                              \
@@ -292,6 +294,18 @@ struct EndCaptureIns : InstWithRtti<OpCode::EndCapture> {
   }
 };
 
+struct LBEndCaptureIns : InstWithRtti<OpCode::LBEndCapture> {
+  uint8_t captureIndex[2];
+
+  explicit LBEndCaptureIns(uint16_t index) { WRITE_TO_INS_FIELD(index, captureIndex); }
+
+  uint16_t getCaptureIndex() const {
+    uint16_t index;
+    READ_FROM_INS_FIELD(captureIndex, index);
+    return index;
+  }
+};
+
 struct ResetCapturesIns : InstWithRtti<OpCode::ResetCaptures> {
   uint8_t firstIndex[2];
   uint8_t lastIndex[2];
@@ -332,6 +346,23 @@ struct IBackRefIns : InstWithRtti<OpCode::IBackRef> {
   uint8_t index[2];
 
   IBackRefIns(uint16_t refIndex, bool named) : named(named) { WRITE_TO_INS_FIELD(refIndex, index); }
+
+  uint16_t getRefIndex() const {
+    uint16_t refIndex;
+    READ_FROM_INS_FIELD(index, refIndex);
+    return refIndex;
+  }
+};
+
+struct LBBackRefIns : InstWithRtti<OpCode::LBBackRef> {
+  bool named;
+  bool ignoreCase;
+  uint8_t index[2];
+
+  LBBackRefIns(uint16_t refIndex, bool named, bool ignoreCase)
+      : named(named), ignoreCase(ignoreCase) {
+    WRITE_TO_INS_FIELD(refIndex, index);
+  }
 
   uint16_t getRefIndex() const {
     uint16_t refIndex;

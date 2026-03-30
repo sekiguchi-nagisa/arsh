@@ -483,8 +483,11 @@ void RegexDumper::dump(const FlexBuffer<Inst> &ins) {
       inst += sizeof(BeginCaptureIns);
       break;
     case OpCode::EndCapture:
+    case OpCode::LBEndCapture:
       str += "(captureIndex=";
-      str += std::to_string(cast<EndCaptureIns>(*inst).getCaptureIndex());
+      str += std::to_string(isa<EndCaptureIns>(*inst)
+                                ? cast<EndCaptureIns>(*inst).getCaptureIndex()
+                                : cast<LBEndCaptureIns>(*inst).getCaptureIndex());
       str += ')';
       inst += sizeof(EndCaptureIns);
       break;
@@ -514,6 +517,18 @@ void RegexDumper::dump(const FlexBuffer<Inst> &ins) {
       appendBool(str, backRef.named);
       str += ')';
       inst += sizeof(IBackRefIns);
+      break;
+    }
+    case OpCode::LBBackRef: {
+      auto &backRef = cast<LBBackRefIns>(*inst);
+      str += "(index=";
+      str += std::to_string(backRef.getRefIndex());
+      str += ", named=";
+      appendBool(str, backRef.named);
+      str += ", ignoreCase=";
+      appendBool(str, backRef.ignoreCase);
+      str += ')';
+      inst += sizeof(LBBackRefIns);
       break;
     }
     case OpCode::BeginLoop: {

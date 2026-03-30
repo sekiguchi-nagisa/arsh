@@ -153,12 +153,11 @@ bool CodeGen::generate(const Node &node) {
     break;
   }
   case NodeKind::BackRef: {
-    if (this->inLookBehind()) {
-      this->todo(node, "look-behind");
-      return false;
-    }
     auto &backRefNode = cast<BackRefNode>(node);
-    if (this->has(Modifier::IGNORE_CASE)) {
+    if (this->inLookBehind()) {
+      this->builder.emit<LBBackRefIns>(backRefNode.getIndex(), backRefNode.isNamed(),
+                                       this->has(Modifier::IGNORE_CASE));
+    } else if (this->has(Modifier::IGNORE_CASE)) {
       this->builder.emit<IBackRefIns>(backRefNode.getIndex(), backRefNode.isNamed());
     } else {
       this->builder.emit<BackRefIns>(backRefNode.getIndex(), backRefNode.isNamed());
@@ -217,14 +216,14 @@ bool CodeGen::generateAlt(const AltNode &node) {
 bool CodeGen::generateGroup(const GroupNode &node) {
   switch (node.getType()) {
   case GroupNode::Type::CAPTURE:
-    if (this->inLookBehind()) {
-      this->todo(node, "look-behind");
-      return false;
-    }
     assert(node.getGroupIndex());
     this->builder.emit<BeginCaptureIns>(node.getGroupIndex());
     TRY(this->generate(*node.getPattern()));
-    this->builder.emit<EndCaptureIns>(node.getGroupIndex());
+    if (this->inLookBehind()) {
+      this->builder.emit<LBEndCaptureIns>(node.getGroupIndex());
+    } else {
+      this->builder.emit<EndCaptureIns>(node.getGroupIndex());
+    }
     return true;
   case GroupNode::Type::NON_CAPTURE:
     return this->generate(*node.getPattern());
