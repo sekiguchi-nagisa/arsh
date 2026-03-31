@@ -13,6 +13,10 @@
     - ``script``: query Unicode Script of code point (single utf8 char)
     - ``emojiSeq``: query Emoji sequence property of character (single grapheme cluster)
 
+#### Misc
+
+- add experimental regular expression engin (ES2025 compatible)
+
 ### Changed
 
 #### Core
