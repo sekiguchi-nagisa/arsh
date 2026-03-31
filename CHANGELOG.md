@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## [0.41.0] - 2026-03-31
 
 ### Added
 
@@ -27,7 +27,7 @@
         - ``$'\777''`` is equivalent to ``$'\377''``
     - support `\cx` escape sequence (generate control character)
     - unsupported escape sequences are now semantic error
-    - improve error message
+    - improve error messages
 - allow trailing comma in function arguments
 - unquote backslash of prefix env names like command name
 
