@@ -1,0 +1,130 @@
+
+source $SCRIPT_DIR/../syntax/test_helper.arsh
+
+# (?<=a*?)
+assert diff <(redump -m 'aaa' '(?<=a*?)' '') <(<<'EOF'
+input: `aaa'
+(offset=0, size=0)
+EOF
+)
+
+# (?<=a*?a)
+assert diff <(redump -m 'aaa' '(?<=a*?a)' '') <(<<'EOF'
+input: `aaa'
+(offset=1, size=0)
+EOF
+)
+
+# (?<=a*?ab)
+assert diff <(redump -m 'aaab' '(?<=a*?ab)' '') <(<<'EOF'
+input: `aaab'
+(offset=4, size=0)
+EOF
+)
+
+# (?<=a*?b)
+assert diff <(redump -m 'aaab' '(?<=a*?b)' '') <(<<'EOF'
+input: `aaab'
+(offset=4, size=0)
+EOF
+)
+
+# (?<=(a+?)+?b)
+assert diff <(redump -m 'aaab' '(?<=(a+?)+?b)' '') <(<<'EOF'
+input: `aaab'
+(offset=4, size=0)
+(offset=2, size=1)
+EOF
+)
+
+# (?<=^a*?$)
+assert diff <(redump -m 'aaa' '(?<=^a*?$)' '') <(<<'EOF'
+input: `aaa'
+(offset=3, size=0)
+EOF
+)
+
+# (?<=a*?$)
+assert diff <(redump -m 'aaa' '(?<=a*?$)' '') <(<<'EOF'
+input: `aaa'
+(offset=3, size=0)
+EOF
+)
+
+# (?<=a[a-z]{2,4}?)
+assert diff <(redump -m 'abcdefghi' '(?<=a[a-z]{2,4}?)' '') <(<<'EOF'
+input: `abcdefghi'
+(offset=3, size=0)
+EOF
+)
+
+# (?<=(a?b??)*)
+assert diff <(redump -m 'ab' '(?<=(a?b??)*)' '') <(<<'EOF'
+input: `ab'
+(offset=0, size=0)
+(unset)
+EOF
+)
+
+# (?<=\w+?)
+assert diff <(redump -m 'abc' '(?<=\w+?)' '') <(<<'EOF'
+input: `abc'
+(offset=1, size=0)
+EOF
+)
+
+# (?<=\w*?)
+assert diff <(redump -m 'abc' '(?<=\w*?)' '') <(<<'EOF'
+input: `abc'
+(offset=0, size=0)
+EOF
+)
+
+# (?<=\w??)
+assert diff <(redump -m 'abc' '(?<=\w??)' '') <(<<'EOF'
+input: `abc'
+(offset=0, size=0)
+EOF
+)
+
+# (?<=\w{3}?)
+assert diff <(redump -m ' abcd' '(?<=\w{3}?)' '') <(<<'EOF'
+input: ` abcd'
+(offset=4, size=0)
+EOF
+)
+
+# (?<=a{0}?)
+assert diff <(redump -m '2025-12-31' '(?<=a{0}?)' 'u') <(<<'EOF'
+input: `2025-12-31'
+(offset=0, size=0)
+EOF
+)
+
+# (?<=b{1}?)
+assert diff <(redump -m 'abc' '(?<=b{1}?)' 'u') <(<<'EOF'
+input: `abc'
+(offset=2, size=0)
+EOF
+)
+
+# (?<=\w{3,4}?)
+assert diff <(redump -m ' abcd' '(?<=\w{3,4}?)' '') <(<<'EOF'
+input: ` abcd'
+(offset=4, size=0)
+EOF
+)
+
+# (?<=\w{2,}\w)
+assert diff <(redump -m 'abcdefgh' '(?<=\w{2,}\w)' '') <(<<'EOF'
+input: `abcdefgh'
+(offset=3, size=0)
+EOF
+)
+
+# (?<=\w{2,}?\w)
+assert diff <(redump -m 'abcdefgh' '(?<=\w{2,}?\w)' '') <(<<'EOF'
+input: `abcdefgh'
+(offset=3, size=0)
+EOF
+)

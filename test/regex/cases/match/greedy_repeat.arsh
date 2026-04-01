@@ -126,6 +126,17 @@ input: `zaacbbbcac'
 EOF
 )
 
+assert diff <(redump -m 'zaAcbBbcAc' '(z)((a+)?(b+)?(c))*' 'i') <(<<'EOF'
+input: `zaAcbBbcAc'
+(offset=0, size=10)
+(offset=0, size=1)
+(offset=8, size=2)
+(offset=8, size=1)
+(unset)
+(offset=9, size=1)
+EOF
+)
+
 # (a*)*
 assert diff <(redump -m 'b' '(a*)*' '') <(<<'EOF'
 input: `b'

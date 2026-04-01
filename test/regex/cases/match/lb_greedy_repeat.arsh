@@ -66,3 +66,23 @@ input: `ab12b23B34c'
 (offset=1, size=9)
 EOF
 )
+
+# (?<=(z)((a+)?(b+)?(c))*)
+assert diff <(redump -m 'zaacbbbcac' '(?<=(z)((a+)?(b+)?(c))*)' '') <(<<'EOF'
+input: `zaacbbbcac'
+(offset=1, size=0)
+(offset=0, size=1)
+(unset)
+(unset)
+(unset)
+(unset)
+EOF
+)
+
+# (?<=(a*)*)
+assert diff <(redump -m 'b' '(?<=(a*)*)' '') <(<<'EOF'
+input: `b'
+(offset=0, size=0)
+(unset)
+EOF
+)
