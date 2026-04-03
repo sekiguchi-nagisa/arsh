@@ -158,8 +158,7 @@ public:
     return true;
   }
 
-  bool backtrack(const Inst *&inst, Input &input, std::vector<Capture> &captures,
-                 std::vector<LoopState> &loopStates) {
+  bool backtrack(const Inst *&inst, Input &input, Capture *captures, LoopState *loopStates) {
     while (this->bts.size()) {
       auto bt = this->bts.back();
       this->bts.pop_back();
@@ -216,7 +215,7 @@ public:
                Backtrack::newNonGreedyLoop(cast<BeginLoopIns>(*beginInst).getLoopIndex(), loop));
   }
 
-  bool cleanupLookAround(Input &input, std::vector<Capture> &captures) {
+  bool cleanupLookAround(Input &input, Capture *captures) {
     // find original lookaround state
     bool negate = false;
     for (ssize_t i = static_cast<ssize_t>(this->bts.size()) - 1; i > -1; i--) {
@@ -241,19 +240,52 @@ public:
   }
 };
 
-static Capture resolveNamedBackRef(const NamedCaptureEntry &entry,
-                                   const std::vector<Capture> &captures) {
-  if (entry.hasMultipleIndices()) {
-    for (unsigned int i = 0; i < entry.getSize(); i++) {
-      unsigned int capIndex = entry[i];
-      if (auto cap = captures[capIndex]) {
-        return cap;
-      }
-    }
-    return {};
+class MatchContext {
+private:
+  const Regex &regex;
+  Input input;
+  std::vector<Capture> &captures;
+  std::vector<LoopState> loops;
+
+public:
+  MatchContext(const Regex &regex, const Input &input, std::vector<Capture> &captures)
+      : regex(regex), input(input), captures(captures) {
+    this->captures.clear();
+    this->captures.resize(this->regex.getCaptureGroupCount() + 1);
+    this->loops.resize(this->regex.getLoopCount());
   }
-  return captures[entry.getIndex()];
-}
+
+  Capture *getCaptures() const { return this->captures.data(); }
+
+  LoopState *getLoops() { return this->loops.data(); }
+
+  Input copyInput() const { return this->input; }
+
+  void syncInput(const Input &in) { this->input = in; }
+
+  const Inst *getInst() const { return this->regex.getInstSeq().data(); }
+
+  void clearCaptures() const {
+    this->captures.clear();
+    this->captures.resize(this->regex.getCaptureGroupCount() + 1);
+  }
+
+  ArrayRef<Matcher> getMatchers() const { return this->regex.getMatchers(); }
+
+  Capture resolveNamedBackRef(unsigned int refIndex) const {
+    auto &entry = this->regex.getNamedCaptureGroups().toArrayRef()[refIndex].second;
+    if (entry.hasMultipleIndices()) {
+      for (unsigned int i = 0; i < entry.getSize(); i++) {
+        unsigned int capIndex = entry[i];
+        if (auto cap = this->captures[capIndex]) {
+          return cap;
+        }
+      }
+      return {};
+    }
+    return this->captures[entry.getIndex()];
+  }
+};
 
 #define TRY(E)                                                                                     \
   do {                                                                                             \
@@ -277,26 +309,17 @@ static Capture resolveNamedBackRef(const NamedCaptureEntry &entry,
 #define vmnext continue
 #endif
 
-MatchStatus match(const Regex &regex, const StringRef text, std::vector<Capture> &captures,
-                  ObserverPtr<Timer> timer) {
+MatchStatus match(MatchContext &ctx, ObserverPtr<Timer> timer) {
   // prepare
-  Input input;
-  if (auto s = Input::create(text, input); s == Input::Status::TOO_LARGE) {
-    return MatchStatus::INPUT_LIMIT;
-  } else if (s == Input::Status::INVALID_UTF8) {
-    return MatchStatus::INVALID_UTF8;
-  }
+  Input input = ctx.copyInput();
   const char *oldIter = input.getIter();
-  const Inst *inst = regex.getInstSeq().data();
-  const auto matchers = regex.getMatchers();
+  const Inst *inst = ctx.getInst();
+  const auto matchers = ctx.getMatchers();
+  LoopState *loopStates = ctx.getLoops();
+  Capture *captures = ctx.getCaptures();
   unsigned int btCount = 0;
-  captures.clear();
-  captures.resize(regex.getCaptureGroupCount() + 1);
-  std::vector<LoopState> loopStates;
-  loopStates.resize(regex.getLoopCount());
   BacktrackStack bts(inst);
   bts.push(Backtrack()); // push dummy
-
   if (timer) {
     timer->start();
   }
@@ -335,6 +358,7 @@ BACKTRACK:
         vmcase(Match) {
           captures[0].offset = oldIter - input.getBegin();
           captures[0].size = input.getIter() - oldIter;
+          ctx.syncInput(input);
           return MatchStatus::OK;
         }
         vmcase(Jump) {
@@ -545,8 +569,7 @@ BACKTRACK:
           auto &ins = cast<BackRefIns>(*inst);
           Capture capture;
           if (ins.named) {
-            capture = resolveNamedBackRef(
-                regex.getNamedCaptureGroups().toArrayRef()[ins.getRefIndex()].second, captures);
+            capture = ctx.resolveNamedBackRef(ins.getRefIndex());
           } else {
             capture = captures[ins.getRefIndex()];
           }
@@ -563,8 +586,7 @@ BACKTRACK:
           auto &ins = cast<IBackRefIns>(*inst);
           Capture capture;
           if (ins.named) {
-            capture = resolveNamedBackRef(
-                regex.getNamedCaptureGroups().toArrayRef()[ins.getRefIndex()].second, captures);
+            capture = ctx.resolveNamedBackRef(ins.getRefIndex());
           } else {
             capture = captures[ins.getRefIndex()];
           }
@@ -589,8 +611,7 @@ BACKTRACK:
           auto &ins = cast<LBBackRefIns>(*inst);
           Capture capture;
           if (ins.named) {
-            capture = resolveNamedBackRef(
-                regex.getNamedCaptureGroups().toArrayRef()[ins.getRefIndex()].second, captures);
+            capture = ctx.resolveNamedBackRef(ins.getRefIndex());
           } else {
             capture = captures[ins.getRefIndex()];
           }
@@ -662,12 +683,25 @@ BACKTRACK:
     input.consumeForward();
     oldIter = input.getIter();
     inst = bts.getStartInst();
-    captures.clear();
-    captures.resize(regex.getCaptureGroupCount() + 1);
+    ctx.clearCaptures();
+    captures = ctx.getCaptures();
     bts.push(Backtrack()); // dummy
     goto BACKTRACK;
   }
+  ctx.syncInput(input);
   return MatchStatus::FAIL;
+}
+
+MatchStatus match(const Regex &regex, const StringRef text, std::vector<Capture> &captures,
+                  const ObserverPtr<Timer> timer) {
+  Input input;
+  if (auto s = Input::create(text, input); s == Input::Status::TOO_LARGE) {
+    return MatchStatus::INPUT_LIMIT;
+  } else if (s == Input::Status::INVALID_UTF8) {
+    return MatchStatus::INVALID_UTF8;
+  }
+  MatchContext ctx(regex, input, captures);
+  return match(ctx, timer);
 }
 
 } // namespace arsh::regex
