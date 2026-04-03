@@ -222,7 +222,8 @@ SyntaxTree Parser::operator()(const StringRef src, const Flag f) {
   this->loopCount = 0;
   this->error.reset();
   this->frames.clear();
-  this->directions.resize(1, true);
+  this->directions.clear();
+  this->directions.push_back(true);
 
   // actual parse function
   auto node = this->parse();
