@@ -286,7 +286,8 @@ void TreeDumper::dumpRaw(const PropertyNode &node) {
   E(PropertyNode::Type, NOT_SPACE)                                                                 \
   E(PropertyNode::Type, UNICODE)                                                                   \
   E(PropertyNode::Type, NOT_UNICODE)                                                               \
-  E(PropertyNode::Type, EMOJI)
+  E(PropertyNode::Type, EMOJI)                                                                     \
+  E(PropertyNode::Type, GRAPHEME)
   DUMP_ENUM("property", node.getType(), EACH_RE_PROPERTY);
 #undef EACH_RE_PROPERTY
 
@@ -411,6 +412,9 @@ void RegexDumper::dump(const FlexBuffer<Inst> &ins) {
       appendBool(str, cast<LBAnyIns>(*inst).dotAll);
       str += ')';
       inst += sizeof(LBAnyIns);
+      break;
+    case OpCode::Grapheme:
+      inst += sizeof(GraphemeIns);
       break;
     case OpCode::Char:
     case OpCode::IChar: {

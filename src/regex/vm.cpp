@@ -19,6 +19,7 @@
 #include "misc/rtti.hpp"
 #include "regex.h"
 #include "unicode/case_fold.h"
+#include "unicode/grapheme.h"
 
 namespace arsh::regex {
 
@@ -408,6 +409,19 @@ BACKTRACK:
               inst += sizeof(LBAnyIns);
               vmnext;
             }
+          }
+          goto BACKTRACK;
+        }
+        vmcase(Grapheme) {
+          if (input.available()) {
+            StringRef ref(input.getIter(), input.getEnd() - input.getIter());
+            size_t byteSize = 0;
+            iterateGraphemeUntil(ref, 1, [&byteSize](const GraphemeCluster &grapheme) {
+              byteSize = grapheme.getRef().size();
+            });
+            input.setIter(input.getIter() + byteSize);
+            inst += sizeof(GraphemeIns);
+            vmnext;
           }
           goto BACKTRACK;
         }

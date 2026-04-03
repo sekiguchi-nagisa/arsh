@@ -358,6 +358,7 @@ bool CodeGen::toCodePointSet(ucp::BuilderOrSet builderOrSet, const PropertyNode 
   case PropertyNode::Type::NOT_SPACE:
   case PropertyNode::Type::NOT_UNICODE:
   case PropertyNode::Type::EMOJI:
+  case PropertyNode::Type::GRAPHEME:
     assert(false);
     break; // normally unreachable
   case PropertyNode::Type::DIGIT:
@@ -400,6 +401,10 @@ bool CodeGen::generateProperty(const PropertyNode &node) {
       return true;
     }
   } else if (node.mayContainString()) {
+    if (node.getNormalizedType() == PropertyNode::Type::GRAPHEME) {
+      this->builder.emit<GraphemeIns>();
+      return true;
+    }
     if (this->inLookBehind()) {
       this->todo(node, "look-behind");
       return false;

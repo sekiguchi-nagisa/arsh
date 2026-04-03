@@ -97,6 +97,8 @@ public:
 
   const char *getBegin() const { return this->begin; }
 
+  const char *getEnd() const { return this->end; }
+
   int cur() const {
     const unsigned int len = UnicodeUtil::utf8ByteSize(*this->iter);
     int codePoint = 0;

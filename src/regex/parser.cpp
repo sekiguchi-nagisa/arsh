@@ -222,6 +222,7 @@ SyntaxTree Parser::operator()(const StringRef src, const Flag f) {
   this->loopCount = 0;
   this->error.reset();
   this->frames.clear();
+  this->directions.resize(1, true);
 
   // actual parse function
   auto node = this->parse();
@@ -643,6 +644,21 @@ std::unique_ptr<Node> Parser::parseAtomEscape(const EscapeParseOp op) {
     }
     goto INVALID_ESCAPE;
   }
+  case 'X':
+    if (this->flag.is(Mode::BMP)) {
+      codePoint = static_cast<unsigned char>(*this->iter++);
+      goto CHAR;
+    }
+    this->iter++;
+    if (op != EscapeParseOp::DEFAULT) {
+      goto INVALID_ESCAPE;
+    }
+    if (!this->direction()) {
+      this->reportError(this->getTokenFrom(start),
+                        "variable length class escape is not allowed in lookbehind");
+      return nullptr;
+    }
+    return std::make_unique<PropertyNode>(this->getTokenFrom(start), PropertyNode::Type::GRAPHEME);
   case 'u': {
     this->iter--;
     codePoint = this->parseUnicodeEscape(
@@ -1290,10 +1306,12 @@ bool Parser::enterGroup() {
   case '=':
     this->iter++;
     this->frames.emplace_back(this->getTokenFrom(old), LookAroundNode::Type::LOOK_AHEAD);
+    this->directions.push_back(true);
     return true;
   case '!':
     this->iter++;
     this->frames.emplace_back(this->getTokenFrom(old), LookAroundNode::Type::LOOK_AHEAD_NOT);
+    this->directions.push_back(true);
     return true;
   case ':':
     this->iter++;
@@ -1305,11 +1323,13 @@ bool Parser::enterGroup() {
   if (this->startsWith("<=")) {
     this->iter += 2;
     this->frames.emplace_back(this->getTokenFrom(old), LookAroundNode::Type::LOOK_BEHIND);
+    this->directions.push_back(false);
     return true;
   }
   if (this->startsWith("<!")) {
     this->iter += 2;
     this->frames.emplace_back(this->getTokenFrom(old), LookAroundNode::Type::LOOK_BEHIND_NOT);
+    this->directions.push_back(false);
     return true;
   }
   if (*this->iter == '<') {
@@ -1394,6 +1414,7 @@ std::unique_ptr<Node> Parser::exitGroup() {
                                        this->getTokenFrom(old));
     break;
   case FrameType::LOOK_AROUND:
+    this->directions.pop_back();
     node = std::make_unique<LookAroundNode>(frame.start, frame.lookaroundType, std::move(node),
                                             this->getTokenFrom(old));
     break;

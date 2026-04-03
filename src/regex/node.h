@@ -217,6 +217,7 @@ public:
     UNICODE,     // \p{C}
     NOT_UNICODE, // \P{C}
     EMOJI,       // \p{RGI_Emoji}
+    GRAPHEME,    // \X
   };
 
   PropertyNode(Token token, Type t) : NodeWithRtti(token) { this->u8 = toUnderlying(t); }
@@ -285,7 +286,10 @@ public:
     }
   }
 
-  bool mayContainString() const { return this->getNormalizedType() == Type::EMOJI; }
+  bool mayContainString() const {
+    auto t = this->getNormalizedType();
+    return t == Type::EMOJI || t == Type::GRAPHEME;
+  }
 
   bool onlyAscii() const {
     switch (this->getType()) {

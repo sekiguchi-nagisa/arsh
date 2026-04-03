@@ -35,6 +35,7 @@ namespace arsh::regex {
   OP(Any)                                                                                          \
   OP(AnyExceptNL)                                                                                  \
   OP(LBAny)                                                                                        \
+  OP(Grapheme)                                                                                     \
   OP(Char)                                                                                         \
   OP(IChar)                                                                                        \
   OP(LBChar)                                                                                       \
@@ -177,6 +178,8 @@ struct LBAnyIns : InstWithRtti<OpCode::LBAny> {
 
   explicit LBAnyIns(bool dotAll) : dotAll(dotAll) {}
 };
+
+struct GraphemeIns : InstWithRtti<OpCode::Grapheme> {};
 
 /**
  * match a single code point

@@ -97,6 +97,7 @@ private:
   unsigned short loopCount{0};
   std::unique_ptr<Error> error{nullptr};
   std::vector<Frame> frames;
+  std::vector<bool> directions;
 
   CodePointSet idStartSet;
   CodePointSet idContinueSet;
@@ -142,6 +143,8 @@ private:
   const char *end() const { return this->ref.end(); }
 
   bool isEnd() const { return this->iter == this->end(); }
+
+  bool direction() const { return this->directions.back(); }
 
   StringRef remain() const {
     return StringRef(this->iter, this->end() - this->iter); // NOLINT

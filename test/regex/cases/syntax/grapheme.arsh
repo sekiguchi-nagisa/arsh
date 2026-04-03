@@ -1,0 +1,216 @@
+
+source $SCRIPT_DIR/test_helper.arsh
+
+# \X
+assert diff <(redump '\X' '') <(<<'EOF'
+flag: (mode = , modifier = )
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Char
+  token: (pos = 0, size = 2)
+  codePoint: U+0058, X
+EOF
+)
+
+assert diff <(redump '\X' 'u') <(<<'EOF'
+flag: (mode = u, modifier = )
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Property
+  token: (pos = 0, size = 2)
+  property: GRAPHEME
+  value: 0
+  invert: false
+EOF
+)
+
+assert diff <(redump '\X' 'vi') <(<<'EOF'
+flag: (mode = v, modifier = i)
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Property
+  token: (pos = 0, size = 2)
+  property: GRAPHEME
+  value: 0
+  invert: false
+EOF
+)
+
+# [\X]
+assert diff <(redump '[\X]' '') <(<<'EOF'
+flag: (mode = , modifier = )
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: CharClass
+  token: (pos = 0, size = 4)
+  class: UNION
+  invert: false
+  chars:
+    - kind: Char
+      token: (pos = 1, size = 2)
+      codePoint: U+0058, X
+EOF
+)
+
+assert diff <(redump '[\X]' 'u') <(<<'EOF'
+1:2 [error] invalid escape: `\X'
+ at (pos = 1, size = 2)
+EOF
+)
+
+assert diff <(redump '[\X]' 'v') <(<<'EOF'
+1:2 [error] invalid escape: `\X'
+ at (pos = 1, size = 2)
+EOF
+)
+
+assert diff <(redump '[\q{23|\X}]' 'v') <(<<'EOF'
+1:8 [error] invalid escape: `\X'
+ at (pos = 7, size = 2)
+EOF
+)
+
+# (?=\X)
+assert diff <(redump '(?=\X)' 'u') <(<<'EOF'
+flag: (mode = u, modifier = )
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: LookAround
+  token: (pos = 0, size = 6)
+  type: LOOK_AHEAD
+  pattern:
+    kind: Property
+    token: (pos = 3, size = 2)
+    property: GRAPHEME
+    value: 0
+    invert: false
+EOF
+)
+
+assert diff <(redump '(?=\X)' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: LookAround
+  token: (pos = 0, size = 6)
+  type: LOOK_AHEAD
+  pattern:
+    kind: Property
+    token: (pos = 3, size = 2)
+    property: GRAPHEME
+    value: 0
+    invert: false
+EOF
+)
+
+# (?!\X)
+assert diff <(redump '(?!\X)' 'u') <(<<'EOF'
+flag: (mode = u, modifier = )
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: LookAround
+  token: (pos = 0, size = 6)
+  type: LOOK_AHEAD_NOT
+  pattern:
+    kind: Property
+    token: (pos = 3, size = 2)
+    property: GRAPHEME
+    value: 0
+    invert: false
+EOF
+)
+
+assert diff <(redump '(?!\X)' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: LookAround
+  token: (pos = 0, size = 6)
+  type: LOOK_AHEAD_NOT
+  pattern:
+    kind: Property
+    token: (pos = 3, size = 2)
+    property: GRAPHEME
+    value: 0
+    invert: false
+EOF
+)
+
+# (?<=\X)
+assert diff <(redump '(?<=\X)' 'u') <(<<'EOF'
+1:5 [error] variable length class escape is not allowed in lookbehind
+ at (pos = 4, size = 2)
+EOF
+)
+
+assert diff <(redump '(?<=\X)' 'v') <(<<'EOF'
+1:5 [error] variable length class escape is not allowed in lookbehind
+ at (pos = 4, size = 2)
+EOF
+)
+
+# (?<!\X)
+assert diff <(redump '(?<!\X)' 'u') <(<<'EOF'
+1:5 [error] variable length class escape is not allowed in lookbehind
+ at (pos = 4, size = 2)
+EOF
+)
+
+assert diff <(redump '(?<!\X)' 'v') <(<<'EOF'
+1:5 [error] variable length class escape is not allowed in lookbehind
+ at (pos = 4, size = 2)
+EOF
+)
+
+# (?<=(\X))
+assert diff <(redump '(?<=(\X))' 'u') <(<<'EOF'
+1:6 [error] variable length class escape is not allowed in lookbehind
+ at (pos = 5, size = 2)
+EOF
+)
+
+# (?<=(?=\X))
+assert diff <(redump '(?<=(?=\X))' 'u') <(<<'EOF'
+flag: (mode = u, modifier = )
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: LookAround
+  token: (pos = 0, size = 11)
+  type: LOOK_BEHIND
+  pattern:
+    kind: LookAround
+    token: (pos = 4, size = 6)
+    type: LOOK_AHEAD
+    pattern:
+      kind: Property
+      token: (pos = 7, size = 2)
+      property: GRAPHEME
+      value: 0
+      invert: false
+EOF
+)
+
+# (?<=(?=(?<!\X)))
+assert diff <(redump '(?<=(?=(?<!\X)))' 'v') <(<<'EOF'
+1:12 [error] variable length class escape is not allowed in lookbehind
+ at (pos = 11, size = 2)
+EOF
+)
