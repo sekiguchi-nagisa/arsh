@@ -46,9 +46,6 @@ const char *toString(const MatchStatus s) {
   return "";
 }
 
-#define likely(x) __builtin_expect(!!(x), 1)
-#define unlikely(x) __builtin_expect(!!(x), 0)
-
 struct LoopState {
   uint32_t count{0};
   uint32_t inputOffset{0};

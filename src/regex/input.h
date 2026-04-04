@@ -20,6 +20,14 @@
 #include "misc/string_ref.hpp"
 #include "misc/unicode.hpp"
 
+#ifndef likely
+#define likely(x) __builtin_expect(!!(x), 1)
+#endif
+
+#ifndef unlikely
+#define unlikely(x) __builtin_expect(!!(x), 0)
+#endif
+
 namespace arsh::regex {
 
 /**
@@ -28,32 +36,28 @@ namespace arsh::regex {
  * @return
  */
 inline int unsafeNextUtf8(const char *&iter) {
+  const unsigned char b = *iter;
+  if (likely(b < 128)) {
+    iter++;
+    return b;
+  }
   const char *tmp = iter;
-  const unsigned int len = UnicodeUtil::utf8ByteSize(*tmp);
+  const unsigned int len = UnicodeUtil::utf8ByteSize(b);
   int codePoint = 0;
-  switch (len) {
-  case 1:
-    codePoint = static_cast<unsigned char>(*tmp);
-    break;
-  case 2:
+  if (len == 2) {
     codePoint = static_cast<int>((static_cast<unsigned int>(tmp[0] & 0x1F) << 6) |
                                  static_cast<unsigned int>(tmp[1] & 0x3F));
-    break;
-  case 3:
+  } else if (len == 3) {
     codePoint = static_cast<int>((static_cast<unsigned int>(tmp[0] & 0x0F) << 12) |
                                  (static_cast<unsigned int>(tmp[1] & 0x3F) << 6) |
                                  static_cast<unsigned int>(tmp[2] & 0x3F));
-    break;
-  case 4:
+  } else { // len == 4
     codePoint = static_cast<int>((static_cast<unsigned int>(tmp[0] & 0x07) << 18) |
                                  (static_cast<unsigned int>(tmp[1] & 0x3F) << 12) |
                                  (static_cast<unsigned int>(tmp[2] & 0x3F) << 6) |
                                  static_cast<unsigned int>(tmp[3] & 0x3F));
-  default:
-    break;
   }
-  tmp += len;
-  iter = tmp;
+  iter += len;
   return codePoint;
 }
 
