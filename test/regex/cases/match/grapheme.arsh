@@ -8,6 +8,12 @@ input: `🇯🇵🇯🇵🇯🇵'
 EOF
 )
 
+assert diff <(redump -m '' '\X' 'u') <(<<'EOF'
+input: `'
+failed
+EOF
+)
+
 # \X{3}
 assert diff <(redump -m '🇯🇵🇯🇵🇯🇵' '\X{3}' 'iu') <(<<'EOF'
 input: `🇯🇵🇯🇵🇯🇵'
@@ -18,5 +24,11 @@ EOF
 assert diff <(redump -m '🇯🇵🇯あ2' '\X{3}' 'u') <(<<'EOF'
 input: `🇯🇵🇯あ2'
 (offset=0, size=15)
+EOF
+)
+
+assert diff <(redump -m '🇯🇵🇯' '\X{3}' 'u') <(<<'EOF'
+input: `🇯🇵🇯'
+failed
 EOF
 )

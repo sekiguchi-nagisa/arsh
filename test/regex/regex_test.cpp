@@ -328,6 +328,19 @@ TEST(RegexMatchTest, null) {
   ASSERT_FALSE(re.hasValue());
 }
 
+TEST(RegexMatchTest, error) {
+  auto re = compile("ab.");
+  ASSERT_TRUE(re.hasValue());
+  std::vector<regex::Capture> captures;
+  StringRef text = "\xFF\xFF\xFF";
+  auto status = regex::match(re.unwrap(), text, captures, nullptr);
+  ASSERT_EQ(regex::MatchStatus::INVALID_UTF8, status);
+
+  text = StringRef("ss", static_cast<size_t>(UINT32_MAX) * 2);
+  status = regex::match(re.unwrap(), text, captures, nullptr);
+  ASSERT_EQ(regex::MatchStatus::INPUT_LIMIT, status);
+}
+
 class RegexReplaceTest : public ::testing::Test {
 public:
   struct TestParam {
