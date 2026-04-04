@@ -67,31 +67,31 @@ union Backtrack {
   BacktrackOp op;
 
   struct {
-    BacktrackOp op;
+    BacktrackOp op; // NOLINT
     uint32_t target;
     const char *iter;
   } setIns;
 
   struct {
-    BacktrackOp op;
+    BacktrackOp op; // NOLINT
     uint32_t index;
     Capture capture;
   } setCapture;
 
   struct {
-    BacktrackOp op;
+    BacktrackOp op; // NOLINT
     uint16_t loopIndex;
     LoopState state;
   } setLoopState;
 
   struct {
-    BacktrackOp op;
+    BacktrackOp op; // NOLINT
     uint16_t loopIndex;
     LoopState state;
   } nonGreedyLoop;
 
   struct {
-    BacktrackOp op;
+    BacktrackOp op; // NOLINT
     bool negate;
     bool matched;
     uint32_t target;
@@ -602,14 +602,11 @@ BACKTRACK:
             const StringRef ref(input.getBegin() + capture.offset, capture.size);
             const char *end = ref.end();
             for (const char *iter = ref.begin(); iter != end;) {
-              int codePoint;
-              unsigned int byteSize = UnicodeUtil::utf8ToCodePoint(iter, end, codePoint);
-              assert(byteSize);
-              iter += byteSize;
-              codePoint = doSimpleCaseFolding(codePoint);
-              if (!input.available() || codePoint != doSimpleCaseFolding(input.consumeForward())) {
-                goto BACKTRACK;
+              if (input.available() && doSimpleCaseFolding(unsafeNextUtf8(iter)) ==
+                                           doSimpleCaseFolding(input.consumeForward())) {
+                continue;
               }
+              goto BACKTRACK;
             }
           }
           inst += sizeof(IBackRefIns);
@@ -628,11 +625,11 @@ BACKTRACK:
             if (ins.ignoreCase) {
               const char *begin = ref.begin();
               for (const char *iter = ref.end(); iter != begin;) {
-                const int codePoint = doSimpleCaseFolding(unsafePrevUtf8(iter));
-                if (!input.availableBackward() ||
-                    codePoint != doSimpleCaseFolding(input.consumeBackward())) {
-                  goto BACKTRACK;
+                if (input.availableBackward() && doSimpleCaseFolding(unsafePrevUtf8(iter)) ==
+                                                     doSimpleCaseFolding(input.consumeBackward())) {
+                  continue;
                 }
+                goto BACKTRACK;
               }
             } else {
               if (!input.expectBackward(ref)) {

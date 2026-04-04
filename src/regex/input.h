@@ -27,6 +27,41 @@ namespace arsh::regex {
  * @param iter must be valid utf8
  * @return
  */
+inline int unsafeNextUtf8(const char *&iter) {
+  const char *tmp = iter;
+  const unsigned int len = UnicodeUtil::utf8ByteSize(*tmp);
+  int codePoint = 0;
+  switch (len) {
+  case 1:
+    codePoint = static_cast<unsigned char>(*tmp);
+    break;
+  case 2:
+    codePoint = static_cast<int>((static_cast<unsigned int>(tmp[0] & 0x1F) << 6) |
+                                 static_cast<unsigned int>(tmp[1] & 0x3F));
+    break;
+  case 3:
+    codePoint = static_cast<int>((static_cast<unsigned int>(tmp[0] & 0x0F) << 12) |
+                                 (static_cast<unsigned int>(tmp[1] & 0x3F) << 6) |
+                                 static_cast<unsigned int>(tmp[2] & 0x3F));
+    break;
+  case 4:
+    codePoint = static_cast<int>((static_cast<unsigned int>(tmp[0] & 0x07) << 18) |
+                                 (static_cast<unsigned int>(tmp[1] & 0x3F) << 12) |
+                                 (static_cast<unsigned int>(tmp[2] & 0x3F) << 6) |
+                                 static_cast<unsigned int>(tmp[3] & 0x3F));
+  default:
+    break;
+  }
+  tmp += len;
+  iter = tmp;
+  return codePoint;
+}
+
+/**
+ *
+ * @param iter must be valid utf8
+ * @return
+ */
 inline int unsafePrevUtf8(const char *&iter) {
   constexpr unsigned char masks[] = {0xFF, 0x1F, 0x0F, 0x07};
   unsigned int codePoint = 0;
@@ -100,59 +135,11 @@ public:
   const char *getEnd() const { return this->end; }
 
   int cur() const {
-    const unsigned int len = UnicodeUtil::utf8ByteSize(*this->iter);
-    int codePoint = 0;
-    switch (len) {
-    case 1:
-      codePoint = static_cast<unsigned char>(this->iter[0]);
-      break;
-    case 2:
-      codePoint = static_cast<int>((static_cast<unsigned int>(this->iter[0] & 0x1F) << 6) |
-                                   static_cast<unsigned int>(this->iter[1] & 0x3F));
-      break;
-    case 3:
-      codePoint = static_cast<int>((static_cast<unsigned int>(this->iter[0] & 0x0F) << 12) |
-                                   (static_cast<unsigned int>(this->iter[1] & 0x3F) << 6) |
-                                   static_cast<unsigned int>(this->iter[2] & 0x3F));
-      break;
-    case 4:
-      codePoint = static_cast<int>((static_cast<unsigned int>(this->iter[0] & 0x07) << 18) |
-                                   (static_cast<unsigned int>(this->iter[1] & 0x3F) << 12) |
-                                   (static_cast<unsigned int>(this->iter[2] & 0x3F) << 6) |
-                                   static_cast<unsigned int>(this->iter[3] & 0x3F));
-    default:
-      break;
-    }
-    return codePoint;
+    auto i = this->iter;
+    return unsafeNextUtf8(i);
   }
 
-  int consumeForward() {
-    const unsigned int len = UnicodeUtil::utf8ByteSize(*this->iter);
-    int codePoint = 0;
-    switch (len) {
-    case 1:
-      codePoint = static_cast<unsigned char>(this->iter[0]);
-      break;
-    case 2:
-      codePoint = static_cast<int>((static_cast<unsigned int>(this->iter[0] & 0x1F) << 6) |
-                                   static_cast<unsigned int>(this->iter[1] & 0x3F));
-      break;
-    case 3:
-      codePoint = static_cast<int>((static_cast<unsigned int>(this->iter[0] & 0x0F) << 12) |
-                                   (static_cast<unsigned int>(this->iter[1] & 0x3F) << 6) |
-                                   static_cast<unsigned int>(this->iter[2] & 0x3F));
-      break;
-    case 4:
-      codePoint = static_cast<int>((static_cast<unsigned int>(this->iter[0] & 0x07) << 18) |
-                                   (static_cast<unsigned int>(this->iter[1] & 0x3F) << 12) |
-                                   (static_cast<unsigned int>(this->iter[2] & 0x3F) << 6) |
-                                   static_cast<unsigned int>(this->iter[3] & 0x3F));
-    default:
-      break;
-    }
-    this->iter += len;
-    return codePoint;
-  }
+  int consumeForward() { return unsafeNextUtf8(this->iter); }
 
   int prev() const {
     auto i = this->iter;
