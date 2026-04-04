@@ -724,7 +724,9 @@ static MatchStatus interpretReplacePattern(const MatchContext &ctx, const Replac
   for (size_t pos = 0;;) {
     auto retPos = param.replacement.find('$', pos);
     const auto sub = param.replacement.slice(pos, retPos);
-    TRY(param.consumer && param.consumer(sub));
+    if (param.consumer) {
+      TRY(param.consumer(sub));
+    }
     if (retPos == StringRef::npos) {
       break;
     }
@@ -812,7 +814,9 @@ static MatchStatus interpretReplacePattern(const MatchContext &ctx, const Replac
       }
       return MatchStatus::INVALID_REPLACE_PATTERN;
     }
-    TRY(param.consumer && param.consumer(inserting));
+    if (param.consumer) {
+      TRY(param.consumer(inserting));
+    }
     pos = retPos;
   }
   return MatchStatus::OK;
@@ -831,14 +835,18 @@ MatchStatus replace(const Regex &regex, const ReplaceParam &param, const Observe
   do {
     matchStartOffset = input.getOffset();
     if (auto s = match(ctx, timer); s == MatchStatus::OK) {
-      TRY(param.consumer && param.consumer(param.text.slice(matchStartOffset, captures[0].offset)));
+      if (param.consumer) {
+        TRY(param.consumer(param.text.slice(matchStartOffset, captures[0].offset)));
+      }
       if (auto s2 = interpretReplacePattern(ctx, param); s2 != MatchStatus::OK) {
         return s2;
       }
       if (input.available() && matchStartOffset == input.getOffset()) { // not consume input
         input.consumeForward();
-        TRY(param.consumer && param.consumer(StringRef(input.getBegin() + matchStartOffset,
-                                                       input.getOffset() - matchStartOffset)));
+        if (param.consumer) {
+          TRY(param.consumer(StringRef(input.getBegin() + matchStartOffset,
+                                       input.getOffset() - matchStartOffset)));
+        }
       }
     } else if (s == MatchStatus::FAIL) {
       input.setIter(input.getBegin() + matchStartOffset);
@@ -847,7 +855,9 @@ MatchStatus replace(const Regex &regex, const ReplaceParam &param, const Observe
       return s;
     }
   } while (param.global && input.getOffset() != matchStartOffset);
-  TRY(param.consumer && param.consumer(input.remainForward()));
+  if (param.consumer) {
+    TRY(param.consumer(input.remainForward()));
+  }
   return MatchStatus::OK;
 }
 

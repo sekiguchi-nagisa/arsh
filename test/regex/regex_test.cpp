@@ -562,6 +562,20 @@ TEST_F(RegexReplaceTest, replaceError2) {
                                              regex::MatchStatus::INPUT_LIMIT, ""));
 }
 
+TEST_F(RegexReplaceTest, replaceNop) {
+  auto re = compile("(.)(?=(.+))");
+  ASSERT_TRUE(re.hasValue());
+  const regex::ReplaceParam param = {
+      .text = "abcdefghijklmnopqrstuvwxyzABC@",
+      .replacement = "$2$2$2$2$2$2$`$'$`$'$`$'$`$'",
+      .global = true,
+      .err = nullptr,
+      .consumer = nullptr,
+  };
+  auto s = regex::replace(re.unwrap(), param, nullptr);
+  ASSERT_EQ(regex::MatchStatus::OK, s);
+}
+
 TEST_F(RegexReplaceTest, replaceTimeout) {
   auto re = compile("^(([a-zA-Z0-9あ-ん])+)+$");
   ASSERT_TRUE(re.hasValue());
