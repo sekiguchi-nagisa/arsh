@@ -105,12 +105,26 @@ enum class MatchStatus : unsigned char {
   CANCEL,       // interrupted
   TIMEOUT,      // timeout
   STACK_LIMIT,  // stack size reaches limits
+
+  /* for replace api */
+  INVALID_REPLACE_PATTERN, // invalid replacement string format
+  REPLACED_LIMIT,          // replaced string reaches limit
 };
 
 const char *toString(MatchStatus s);
 
 MatchStatus match(const Regex &regex, StringRef text, std::vector<Capture> &captures,
-                  ObserverPtr<Timer> timer = nullptr);
+                  ObserverPtr<Timer> timer);
+
+struct ReplaceParam {
+  StringRef text;
+  StringRef replacement;
+  bool global; // if true, replace all
+  std::string *err;
+  std::function<bool(StringRef)> consumer;
+};
+
+MatchStatus replace(const Regex &regex, const ReplaceParam &param, ObserverPtr<Timer> timer);
 
 } // namespace arsh::regex
 

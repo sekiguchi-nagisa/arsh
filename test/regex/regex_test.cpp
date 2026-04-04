@@ -270,7 +270,7 @@ TEST(RegexMatchTest, null) {
   auto re = compile("ab.");
   ASSERT_TRUE(re.hasValue());
   std::vector<regex::Capture> captures;
-  auto status = regex::match(re.unwrap(), text, captures);
+  auto status = regex::match(re.unwrap(), text, captures, nullptr);
   ASSERT_EQ(regex::MatchStatus::OK, status);
   ASSERT_EQ(1, captures.size());
   ASSERT_EQ(0, captures[0].offset);
@@ -278,7 +278,7 @@ TEST(RegexMatchTest, null) {
 
   re = compile("\\0");
   ASSERT_TRUE(re.hasValue());
-  status = regex::match(re.unwrap(), text, captures);
+  status = regex::match(re.unwrap(), text, captures, nullptr);
   ASSERT_EQ(regex::MatchStatus::OK, status);
   ASSERT_EQ(1, captures.size());
   ASSERT_EQ(2, captures[0].offset);
@@ -286,7 +286,7 @@ TEST(RegexMatchTest, null) {
 
   re = compile("\\0", regex::Flag(regex::Mode::UNICODE, regex::Modifier::IGNORE_CASE));
   ASSERT_TRUE(re.hasValue());
-  status = regex::match(re.unwrap(), text, captures);
+  status = regex::match(re.unwrap(), text, captures, nullptr);
   ASSERT_EQ(regex::MatchStatus::OK, status);
   ASSERT_EQ(1, captures.size());
   ASSERT_EQ(2, captures[0].offset);
@@ -294,7 +294,7 @@ TEST(RegexMatchTest, null) {
 
   re = compile("(?<=\\0)");
   ASSERT_TRUE(re.hasValue());
-  status = regex::match(re.unwrap(), text, captures);
+  status = regex::match(re.unwrap(), text, captures, nullptr);
   ASSERT_EQ(regex::MatchStatus::OK, status);
   ASSERT_EQ(1, captures.size());
   ASSERT_EQ(3, captures[0].offset);
@@ -302,7 +302,7 @@ TEST(RegexMatchTest, null) {
 
   re = compile("(?<=\\0)", regex::Flag(regex::Mode::UNICODE, regex::Modifier::IGNORE_CASE));
   ASSERT_TRUE(re.hasValue());
-  status = regex::match(re.unwrap(), text, captures);
+  status = regex::match(re.unwrap(), text, captures, nullptr);
   ASSERT_EQ(regex::MatchStatus::OK, status);
   ASSERT_EQ(1, captures.size());
   ASSERT_EQ(3, captures[0].offset);
@@ -310,7 +310,7 @@ TEST(RegexMatchTest, null) {
 
   re = compile("\\00");
   ASSERT_TRUE(re.hasValue());
-  status = regex::match(re.unwrap(), text, captures);
+  status = regex::match(re.unwrap(), text, captures, nullptr);
   ASSERT_EQ(regex::MatchStatus::OK, status);
   ASSERT_EQ(1, captures.size());
   ASSERT_EQ(2, captures[0].offset);
@@ -318,7 +318,7 @@ TEST(RegexMatchTest, null) {
 
   re = compile("(?<=\\00)");
   ASSERT_TRUE(re.hasValue());
-  status = regex::match(re.unwrap(), text, captures);
+  status = regex::match(re.unwrap(), text, captures, nullptr);
   ASSERT_EQ(regex::MatchStatus::OK, status);
   ASSERT_EQ(1, captures.size());
   ASSERT_EQ(3, captures[0].offset);
@@ -326,6 +326,251 @@ TEST(RegexMatchTest, null) {
 
   re = compile("\\00", regex::Flag(regex::Mode::UNICODE, {}));
   ASSERT_FALSE(re.hasValue());
+}
+
+class RegexReplaceTest : public ::testing::Test {
+public:
+  struct TestParam {
+    StringRef text;
+    StringRef replace;
+    bool global;
+  };
+
+  static void assertReplace(const StringRef pattern, const regex::Flag flag, const TestParam &param,
+                            const std::string &expectOut) {
+    auto re = compile(pattern, flag);
+    ASSERT_TRUE(re.hasValue());
+    std::string out;
+    std::string err;
+    auto appender = [&out](StringRef ref) {
+      out += ref;
+      return true;
+    };
+    regex::ReplaceParam replaceParam = {
+        .text = param.text,
+        .replacement = param.replace,
+        .global = param.global,
+        .err = &err,
+        .consumer = appender,
+    };
+    auto s = regex::replace(re.unwrap(), replaceParam, nullptr);
+    ASSERT_EQ(regex::MatchStatus::OK, s);
+    ASSERT_EQ(expectOut, out);
+    ASSERT_EQ("", err);
+  }
+
+  static void assertReplaceError(const StringRef pattern, const regex::Flag flag,
+                                 const TestParam &param, regex::MatchStatus expectStatus,
+                                 const std::string &expectErr) {
+    auto re = compile(pattern, flag);
+    ASSERT_TRUE(re.hasValue());
+    std::string out;
+    std::string err;
+    auto appender = [&out](StringRef ref) {
+      out += ref;
+      return out.size() < 1024;
+    };
+    regex::ReplaceParam replaceParam = {
+        .text = param.text,
+        .replacement = param.replace,
+        .global = param.global,
+        .err = &err,
+        .consumer = appender,
+    };
+    auto s = regex::replace(re.unwrap(), replaceParam, nullptr);
+    ASSERT_EQ(expectStatus, s);
+    ASSERT_EQ(expectErr, err);
+  }
+};
+
+TEST_F(RegexReplaceTest, replace) {
+  ASSERT_NO_FATAL_FAILURE(assertReplace("", {}, {"", "@", true}, "@"));
+  ASSERT_NO_FATAL_FAILURE(assertReplace("", {}, {"", "@", false}, "@"));
+  ASSERT_NO_FATAL_FAILURE(assertReplace("", {}, {"AB", "@", true}, "@A@B@"));
+  ASSERT_NO_FATAL_FAILURE(assertReplace("", {}, {"AB", "@", false}, "@AB"));
+  ASSERT_NO_FATAL_FAILURE(assertReplace("\\d+|", {}, {"", "@", true}, "@"));
+  ASSERT_NO_FATAL_FAILURE(assertReplace("\\d+|", {}, {"", "@", false}, "@"));
+  ASSERT_NO_FATAL_FAILURE(
+      assertReplace("\\d+", {}, {"2025-12-23 (火)", "@", false}, "@-12-23 (火)"));
+  ASSERT_NO_FATAL_FAILURE(assertReplace("\\d+", {}, {"2025-12-23", "@", true}, "@-@-@"));
+  ASSERT_NO_FATAL_FAILURE(assertReplace("\\d+", {}, {"2025-12-23", "@", false}, "@-12-23"));
+  ASSERT_NO_FATAL_FAILURE(assertReplace("\\d+", {}, {"2025-12-23 (火)", "@", true}, "@-@-@ (火)"));
+  ASSERT_NO_FATAL_FAILURE(
+      assertReplace("\\d+", {}, {"2025-12-23 (火)", "@", false}, "@-12-23 (火)"));
+
+  // no matches
+  ASSERT_NO_FATAL_FAILURE(
+      assertReplace("@{4}", {}, {"2025-12-23 (火)", "", true}, "2025-12-23 (火)"));
+  ASSERT_NO_FATAL_FAILURE(
+      assertReplace("@{4}", {}, {"2025-12-23 (火)", "", false}, "2025-12-23 (火)"));
+
+  // $$
+  ASSERT_NO_FATAL_FAILURE(assertReplace("\\d+", {}, {"2025-12-23 (火)", "$$", true}, "$-$-$ (火)"));
+  ASSERT_NO_FATAL_FAILURE(
+      assertReplace("\\d+", {}, {"2025-12-23 (火)", "$$", false}, "$-12-23 (火)"));
+  ASSERT_NO_FATAL_FAILURE(
+      assertReplace("\\d+|", {}, {"2025-12-23 (火)", "$$", true}, "$$-$$-$$ $($火$)$"));
+  ASSERT_NO_FATAL_FAILURE(
+      assertReplace("\\d+|", {}, {"2025-12-23 (火)", "$$", false}, "$-12-23 (火)"));
+
+  // $&
+  ASSERT_NO_FATAL_FAILURE(
+      assertReplace("\\d+", {}, {"2025-12-23 (火)", "$&", true}, "2025-12-23 (火)"));
+  ASSERT_NO_FATAL_FAILURE(
+      assertReplace("\\d+", {}, {"2025-12-23 (火)", "$&", false}, "2025-12-23 (火)"));
+  ASSERT_NO_FATAL_FAILURE(
+      assertReplace("\\d+|", {}, {"2025-12-23 (火)", "$&", true}, "2025-12-23 (火)"));
+  ASSERT_NO_FATAL_FAILURE(
+      assertReplace("\\d+|", {}, {"2025-12-23 (火)", "$&", false}, "2025-12-23 (火)"));
+
+  // $`
+  ASSERT_NO_FATAL_FAILURE(
+      assertReplace("\\d+", {}, {"2025-12-23 (火)", "$`", true}, "-2025--2025-12- (火)"));
+  ASSERT_NO_FATAL_FAILURE(
+      assertReplace("\\d+", {}, {"2025-12-23 (火)", "$`", false}, "-12-23 (火)"));
+  ASSERT_NO_FATAL_FAILURE(assertReplace("\\d+|", {}, {"2025-12-23 (火)", "$`", true},
+                                        "2025-2025-2025-12-2025-12-2025-12-23 2025-12-23 "
+                                        "(2025-12-23 (火2025-12-23 (火)2025-12-23 (火)"));
+  ASSERT_NO_FATAL_FAILURE(
+      assertReplace("\\d+|", {}, {"2025-12-23 (火)", "$`", false}, "-12-23 (火)"));
+
+  // $'
+  ASSERT_NO_FATAL_FAILURE(assertReplace("\\d+", {}, {"2025-12-23 (火)", "$'", true},
+                                        "-12-23 (火)--23 (火)- (火) (火)"));
+  ASSERT_NO_FATAL_FAILURE(
+      assertReplace("\\d+", {}, {"2025-12-23 (火)", "$'", false}, "-12-23 (火)-12-23 (火)"));
+  ASSERT_NO_FATAL_FAILURE(
+      assertReplace("\\d+|", {}, {"2025-12-23 (火)", "$'", true},
+                    "-12-23 (火)-12-23 (火)--23 (火)-23 (火)- (火) (火) (火)(火)火))"));
+  ASSERT_NO_FATAL_FAILURE(
+      assertReplace("\\d+|", {}, {"2025-12-23 (火)", "$'", false}, "-12-23 (火)-12-23 (火)"));
+
+  // $1
+  ASSERT_NO_FATAL_FAILURE(
+      assertReplace("(\\d+)", {}, {"2025-12-23 (火)", "$1", true}, "2025-12-23 (火)"));
+  ASSERT_NO_FATAL_FAILURE(
+      assertReplace("(\\d+)", {}, {"2025-12-23 (火)", "$1", false}, "2025-12-23 (火)"));
+  ASSERT_NO_FATAL_FAILURE(
+      assertReplace("(\\d+)|", {}, {"2025-12-23 (火)", "$1", true}, "2025-12-23 (火)"));
+  ASSERT_NO_FATAL_FAILURE(
+      assertReplace("(\\d+)|", {}, {"2025-12-23 (火)", "$1", false}, "2025-12-23 (火)"));
+  ASSERT_NO_FATAL_FAILURE(
+      assertReplace("(\\d)+|", {}, {"2025-12-23 (火)", "$1", true}, "5-2-3 (火)"));
+  ASSERT_NO_FATAL_FAILURE(
+      assertReplace("(\\d)+|", {}, {"2025-12-23 (火)", "$1", false}, "5-12-23 (火)"));
+  ASSERT_NO_FATAL_FAILURE(
+      assertReplace("(\\d)+|()", {}, {"2025-12-23 (火)", "$2", true}, "-- (火)"));
+  ASSERT_NO_FATAL_FAILURE(
+      assertReplace("(\\d)+|()", {}, {"2025-12-23 (火)", "$2", false}, "-12-23 (火)"));
+
+  // $<name>
+  ASSERT_NO_FATAL_FAILURE(assertReplace("(?<year>\\d{4})-\\d{2}|\\d{2}-(?<year>\\d{4})", {},
+                                        {"2025-12-23", "year=$<year>", true}, "year=2025-23"));
+  ASSERT_NO_FATAL_FAILURE(assertReplace("(?<year>\\d{4})-\\d{2}|\\d{2}-(?<year>\\d{4})", {},
+                                        {"2025-12-23", "year=$<year>", false}, "year=2025-23"));
+  ASSERT_NO_FATAL_FAILURE(assertReplace("(?<year>\\d{4})-\\d{2}|\\d{2}-(?<year>\\d{4})", {},
+                                        {"12-2025 23", "year=$<year>", true}, "year=2025 23"));
+  ASSERT_NO_FATAL_FAILURE(assertReplace("(?<year>\\d{4})-\\d{2}|\\d{2}-(?<year>\\d{4})", {},
+                                        {"12-2025 23", "year=$<year>", false}, "year=2025 23"));
+}
+
+TEST_F(RegexReplaceTest, replaceError1) {
+  // $
+  ASSERT_NO_FATAL_FAILURE(assertReplaceError(".", {}, {"abc", "$", true},
+                                             regex::MatchStatus::INVALID_REPLACE_PATTERN,
+                                             "invalid replace pattern: `$'"));
+  ASSERT_NO_FATAL_FAILURE(assertReplace("12", {}, {"abc", "$", true}, "abc"));
+
+  // $Q
+  ASSERT_NO_FATAL_FAILURE(assertReplaceError(".", {}, {"abc", "$Q", true},
+                                             regex::MatchStatus::INVALID_REPLACE_PATTERN,
+                                             "invalid replace pattern: `$'"));
+  ASSERT_NO_FATAL_FAILURE(assertReplace("12", {}, {"abc", "$Q", true}, "abc"));
+
+  // $00
+  ASSERT_NO_FATAL_FAILURE(assertReplaceError(".", {}, {"abc", "$00", true},
+                                             regex::MatchStatus::INVALID_REPLACE_PATTERN,
+                                             "undefined capture group index: `00'"));
+  ASSERT_NO_FATAL_FAILURE(assertReplace("12", {}, {"abc", "$00", true}, "abc"));
+
+  // $0
+  ASSERT_NO_FATAL_FAILURE(assertReplaceError(".", {}, {"abc", "$0", true},
+                                             regex::MatchStatus::INVALID_REPLACE_PATTERN,
+                                             "undefined capture group index: `0'"));
+  ASSERT_NO_FATAL_FAILURE(assertReplace("12", {}, {"abc", "$0", true}, "abc"));
+
+  // $3
+  ASSERT_NO_FATAL_FAILURE(assertReplaceError("(.)", {}, {"abc", "$3", true},
+                                             regex::MatchStatus::INVALID_REPLACE_PATTERN,
+                                             "undefined capture group index: `3'"));
+  ASSERT_NO_FATAL_FAILURE(assertReplace("(12)", {}, {"abc", "$3", true}, "abc"));
+
+  // $9999999999999999999999999999
+  ASSERT_NO_FATAL_FAILURE(
+      assertReplaceError("(.)", {}, {"abc", "$9999999999999999999999999999", true},
+                         regex::MatchStatus::INVALID_REPLACE_PATTERN,
+                         "undefined capture group index: `9999999999999999999999999999'"));
+  ASSERT_NO_FATAL_FAILURE(
+      assertReplace("(12)", {}, {"abc", "$9999999999999999999999999999", true}, "abc"));
+
+  // $<
+  ASSERT_NO_FATAL_FAILURE(assertReplaceError("(.)", {}, {"abc", "$<", true},
+                                             regex::MatchStatus::INVALID_REPLACE_PATTERN,
+                                             "replace pattern `$<' must end with `>'"));
+  ASSERT_NO_FATAL_FAILURE(assertReplace("(12)", {}, {"abc", "$<", true}, "abc"));
+  // $<abc
+  ASSERT_NO_FATAL_FAILURE(assertReplaceError("(.)", {}, {"abc", "$<abc", true},
+                                             regex::MatchStatus::INVALID_REPLACE_PATTERN,
+                                             "replace pattern `$<' must end with `>'"));
+  ASSERT_NO_FATAL_FAILURE(assertReplace("(12)", {}, {"abc", "$<abc", true}, "abc"));
+
+  // $<>
+  ASSERT_NO_FATAL_FAILURE(assertReplaceError("(.)", {}, {"abc", "$<>", true},
+                                             regex::MatchStatus::INVALID_REPLACE_PATTERN,
+                                             "undefined capture group name: `'"));
+  ASSERT_NO_FATAL_FAILURE(assertReplace("(12)", {}, {"abc", "$<>", true}, "abc"));
+
+  // $<ABC>
+  ASSERT_NO_FATAL_FAILURE(assertReplaceError("(?<AAA>.)", {}, {"abc", "@=$<ABC>", true},
+                                             regex::MatchStatus::INVALID_REPLACE_PATTERN,
+                                             "undefined capture group name: `ABC'"));
+  ASSERT_NO_FATAL_FAILURE(assertReplace("(?<AAA>12)", {}, {"abc", "@=$<ABC>", true}, "abc"));
+}
+
+TEST_F(RegexReplaceTest, replaceError2) {
+  ASSERT_NO_FATAL_FAILURE(assertReplaceError(
+      "(.)(?=(.+))", {}, {"abcdefghijklmnopqrstu", "$2$2$2$2$2$2$`$'$`$'$`$'$`$'", true},
+      regex::MatchStatus::REPLACED_LIMIT, ""));
+  ASSERT_NO_FATAL_FAILURE(assertReplaceError("(.)(?=(.+))", {}, {"\xFF\xFF\xFF", "", true},
+                                             regex::MatchStatus::INVALID_UTF8, ""));
+
+  StringRef dummy("", static_cast<size_t>(UINT32_MAX) * 2);
+  ASSERT_NO_FATAL_FAILURE(assertReplaceError("(.)(?=(.+))", {}, {dummy, "", true},
+                                             regex::MatchStatus::INPUT_LIMIT, ""));
+}
+
+TEST_F(RegexReplaceTest, replaceTimeout) {
+  auto re = compile("^(([a-zA-Z0-9あ-ん])+)+$");
+  ASSERT_TRUE(re.hasValue());
+  const regex::ReplaceParam param = {
+      .text = "abcdefghijklmnopqrstuvwxyzABC@",
+      .replacement = "",
+      .global = true,
+      .err = nullptr,
+      .consumer = nullptr,
+  };
+  {
+    regex::Timer timer(std::chrono::milliseconds(200));
+    auto s = regex::replace(re.unwrap(), param, makeObserver(timer));
+    ASSERT_EQ(regex::MatchStatus::TIMEOUT, s);
+  }
+
+  {
+    regex::Timer timer(std::chrono::seconds(5));
+    timer.setCancelToken([] { return true; });
+    auto s = regex::replace(re.unwrap(), param, makeObserver(timer));
+    ASSERT_EQ(regex::MatchStatus::CANCEL, s);
+  }
 }
 
 TEST(MatcherTest, ascii) {

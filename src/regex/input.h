@@ -165,16 +165,24 @@ public:
    */
   int consumeBackward() { return unsafePrevUtf8(this->iter); }
 
+  StringRef remainForward() const {
+    return {this->iter, static_cast<size_t>(this->end - this->iter)};
+  }
+
   bool expectForward(StringRef needle) {
-    if (StringRef(this->iter, this->end - this->iter).startsWith(needle)) {
+    if (this->remainForward().startsWith(needle)) {
       this->iter += needle.size();
       return true;
     }
     return false;
   }
 
+  StringRef remainBackward() const {
+    return {this->begin, static_cast<size_t>(this->iter - this->begin)};
+  }
+
   bool expectBackward(StringRef needle) {
-    if (StringRef(this->begin, this->iter - this->begin).endsWith(needle)) {
+    if (this->remainBackward().endsWith(needle)) {
       this->iter -= needle.size();
       return true;
     }

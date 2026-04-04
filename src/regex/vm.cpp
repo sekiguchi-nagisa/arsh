@@ -39,6 +39,9 @@ const char *toString(const MatchStatus s) {
     return "timeout";
   case MatchStatus::STACK_LIMIT:
     return "stack depth reaches limit";
+  case MatchStatus::INVALID_REPLACE_PATTERN:
+  case MatchStatus::REPLACED_LIMIT:
+    break;
   }
   return "";
 }
@@ -243,17 +246,17 @@ public:
 class MatchContext {
 private:
   const Regex &regex;
-  Input input;
+  Input &input;
   std::vector<Capture> &captures;
   std::vector<LoopState> loops;
 
 public:
-  MatchContext(const Regex &regex, const Input &input, std::vector<Capture> &captures)
+  MatchContext(const Regex &regex, Input &input, std::vector<Capture> &captures)
       : regex(regex), input(input), captures(captures) {
-    this->captures.clear();
-    this->captures.resize(this->regex.getCaptureGroupCount() + 1);
     this->loops.resize(this->regex.getLoopCount());
   }
+
+  const Regex &getRegex() const { return this->regex; }
 
   Capture *getCaptures() const { return this->captures.data(); }
 
@@ -274,6 +277,10 @@ public:
 
   Capture resolveNamedBackRef(unsigned int refIndex) const {
     auto &entry = this->regex.getNamedCaptureGroups().toArrayRef()[refIndex].second;
+    return this->resolveNamedBackRef(entry);
+  }
+
+  Capture resolveNamedBackRef(const NamedCaptureEntry &entry) const {
     if (entry.hasMultipleIndices()) {
       for (unsigned int i = 0; i < entry.getSize(); i++) {
         unsigned int capIndex = entry[i];
@@ -309,13 +316,14 @@ public:
 #define vmnext continue
 #endif
 
-MatchStatus match(MatchContext &ctx, ObserverPtr<Timer> timer) {
+static MatchStatus match(MatchContext &ctx, ObserverPtr<Timer> timer) {
   // prepare
   Input input = ctx.copyInput();
   const char *oldIter = input.getIter();
   const Inst *inst = ctx.getInst();
   const auto matchers = ctx.getMatchers();
   LoopState *loopStates = ctx.getLoops();
+  ctx.clearCaptures();
   Capture *captures = ctx.getCaptures();
   unsigned int btCount = 0;
   BacktrackStack bts(inst);
@@ -438,7 +446,7 @@ BACKTRACK:
         }
         vmcase(Grapheme) {
           if (input.available()) {
-            StringRef ref(input.getIter(), input.getEnd() - input.getIter());
+            StringRef ref = input.remainForward();
             size_t byteSize = 0;
             iterateGraphemeUntil(ref, 1, [&byteSize](const GraphemeCluster &grapheme) {
               byteSize = grapheme.getRef().size();
@@ -548,7 +556,7 @@ BACKTRACK:
           auto &ins = cast<LBEndCaptureIns>(*inst);
           const unsigned int index = ins.getCaptureIndex();
           auto &capture = captures[index];
-          const unsigned int actualEndOffset = capture.offset + capture.size;
+          const unsigned int actualEndOffset = capture.endOffset();
           capture.offset = input.getOffset();
           assert(capture.offset <= actualEndOffset);
           capture.size = actualEndOffset - capture.offset;
@@ -702,6 +710,145 @@ MatchStatus match(const Regex &regex, const StringRef text, std::vector<Capture>
   }
   MatchContext ctx(regex, input, captures);
   return match(ctx, timer);
+}
+
+#undef TRY
+#define TRY(E)                                                                                     \
+  do {                                                                                             \
+    if (unlikely(!(E))) {                                                                          \
+      return MatchStatus::REPLACED_LIMIT;                                                          \
+    }                                                                                              \
+  } while (false)
+
+static MatchStatus interpretReplacePattern(const MatchContext &ctx, const ReplaceParam &param) {
+  for (size_t pos = 0;;) {
+    auto retPos = param.replacement.find('$', pos);
+    const auto sub = param.replacement.slice(pos, retPos);
+    TRY(param.consumer && param.consumer(sub));
+    if (retPos == StringRef::npos) {
+      break;
+    }
+    retPos++;
+    if (retPos == param.replacement.size()) { // end with '$'
+      if (param.err) {
+        *param.err += "invalid replace pattern: `$'";
+      }
+      return MatchStatus::INVALID_REPLACE_PATTERN;
+    }
+    StringRef inserting;
+    switch (param.replacement[retPos]) {
+    case '$':
+      inserting = "$";
+      retPos++;
+      break;
+    case '&':
+      inserting = param.text.substr(ctx.getCaptures()[0].offset, ctx.getCaptures()[0].size);
+      retPos++;
+      break;
+    case '`':
+      inserting = param.text.substr(0, ctx.getCaptures()[0].offset);
+      retPos++;
+      break;
+    case '\'':
+      inserting = param.text.substr(ctx.getCaptures()[0].endOffset());
+      retPos++;
+      break;
+    case '0':
+    case '1':
+    case '2':
+    case '3':
+    case '4':
+    case '5':
+    case '6':
+    case '7':
+    case '8':
+    case '9': {
+      const auto startPos = retPos++;
+      while (retPos < param.replacement.size() && isDecimal(param.replacement[retPos])) {
+        retPos++;
+      }
+      StringRef num = param.replacement.slice(startPos, retPos);
+      if (auto ret = convertToNum10<unsigned int>(num.begin(), num.end());
+          ret && ret.value <= ctx.getRegex().getCaptureGroupCount() && ret.value > 0) {
+        if (auto cap = ctx.getCaptures()[ret.value]) {
+          inserting = param.text.substr(cap.offset, cap.size);
+        }
+        break;
+      }
+      if (param.err) {
+        *param.err += "undefined capture group index: `";
+        *param.err += num;
+        *param.err += '\'';
+      }
+      return MatchStatus::INVALID_REPLACE_PATTERN;
+    }
+    case '<': {
+      retPos++;
+      auto p = param.replacement.find('>', retPos);
+      if (p == StringRef::npos) {
+        if (param.err) {
+          *param.err += "replace pattern `$<' must end with `>'";
+        }
+        return MatchStatus::INVALID_REPLACE_PATTERN;
+      }
+      auto name = param.replacement.slice(retPos, p);
+      if (auto *e = ctx.getRegex().getNamedCaptureGroups().find(name)) {
+        if (auto cap = ctx.resolveNamedBackRef(*e)) {
+          inserting = param.text.substr(cap.offset, cap.size);
+        }
+        retPos = p + 1;
+        break;
+      }
+      if (param.err) {
+        *param.err += "undefined capture group name: `";
+        *param.err += name;
+        *param.err += '\'';
+      }
+      return MatchStatus::INVALID_REPLACE_PATTERN;
+    }
+    default:
+      if (param.err) {
+        *param.err += "invalid replace pattern: `$'";
+      }
+      return MatchStatus::INVALID_REPLACE_PATTERN;
+    }
+    TRY(param.consumer && param.consumer(inserting));
+    pos = retPos;
+  }
+  return MatchStatus::OK;
+}
+
+MatchStatus replace(const Regex &regex, const ReplaceParam &param, const ObserverPtr<Timer> timer) {
+  Input input;
+  if (auto s = Input::create(param.text, input); s == Input::Status::TOO_LARGE) {
+    return MatchStatus::INPUT_LIMIT;
+  } else if (s == Input::Status::INVALID_UTF8) {
+    return MatchStatus::INVALID_UTF8;
+  }
+  std::vector<Capture> captures;
+  MatchContext ctx(regex, input, captures);
+  unsigned int matchStartOffset = 0;
+  do {
+    matchStartOffset = input.getOffset();
+    if (auto s = match(ctx, timer); s == MatchStatus::OK) {
+      TRY(param.consumer && param.consumer(param.text.slice(matchStartOffset, captures[0].offset)));
+      if (auto s2 = interpretReplacePattern(ctx, param); s2 != MatchStatus::OK) {
+        return s2;
+      }
+      if (input.available() && matchStartOffset == input.getOffset()) { // not consume input
+        input.consumeForward();
+        TRY(param.consumer && param.consumer(StringRef(input.getBegin() + matchStartOffset,
+                                                       input.getOffset() - matchStartOffset)));
+      }
+    } else if (s == MatchStatus::FAIL) {
+      input.setIter(input.getBegin() + matchStartOffset);
+      break;
+    } else {
+      return s;
+    }
+  } while (param.global && input.getOffset() != matchStartOffset);
+  TRY(param.consumer && param.consumer(input.remainForward()));
+  return MatchStatus::OK;
 }
 
 } // namespace arsh::regex
