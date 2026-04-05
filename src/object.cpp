@@ -210,27 +210,63 @@ ObjPtr<UnixFdObject> UnixFdObject::dupWithCloseOnExec() const {
 
 bool RegexObject::match(ARState &state, const StringRef ref, MatchResult *ret) {
   assert(ref.size() <= StringObject::MAX_SIZE);
-  std::string errorStr;
-  const int matchCount = this->re.match(ref, errorStr);
-  if (!errorStr.empty()) {
-    raiseError(state, TYPE::RegexMatchError, std::move(errorStr));
-  }
-  if (ret && matchCount > 0) {
-    ret->groups.reserve(matchCount); // not check iterator invalidation
-    for (int i = 0; i < matchCount; i++) {
-      PCRECapture capture; // NOLINT
-      const bool set = this->re.getCaptureAt(i, capture);
-      if (i == 0) {
-        ret->start = capture.begin;
-        ret->end = capture.end;
+  std::vector<regex::Capture> captures;
+  regex::Timer timer(std::chrono::seconds(1));
+  timer.setCancelToken([] { return ARState::hasSignal(SIGINT); });
+  auto status = regex::match(this->re, ref, captures, makeObserver(timer));
+  switch (status) {
+  case regex::MatchStatus::OK:
+    if (ret) {
+      ret->start = captures[0].offset;
+      ret->end = captures[0].endOffset();
+      for (auto &cap : captures) {
+        ret->groups.push_back(cap ? Value::createStr(ref.substr(cap.offset, cap.size))
+                                  : Value::createInvalid()); // not check size
       }
-      auto v =
-          set ? Value::createStr(ref.slice(capture.begin, capture.end)) : Value::createInvalid();
-      ret->groups.push_back(std::move(v)); // not check size
+      ASSERT_ARRAY_SIZE(ret->groups);
     }
-    ASSERT_ARRAY_SIZE(ret->groups);
+    return true;
+  case regex::MatchStatus::FAIL:
+    return false;
+  case regex::MatchStatus::CANCEL:
+    raiseSystemError(state, EINTR, "regex matching canceled");
+    return false;
+  default:
+    raiseError(state, TYPE::RegexMatchError, regex::toString(status));
+    return false;
   }
-  return matchCount > 0;
+}
+
+Value RegexObject::replace(ARState &state, StringRef text, StringRef replacement, bool global) {
+  std::string err;
+  auto ret = Value::createStr();
+  auto appender = [&state, &ret](StringRef ref) { return ret.appendAsStr(state, ref); };
+  const regex::ReplaceParam param = {
+      .text = text,
+      .replacement = replacement,
+      .global = global,
+      .err = &err,
+      .consumer = appender,
+  };
+  regex::Timer timer(std::chrono::seconds(1));
+  timer.setCancelToken([] { return ARState::hasSignal(SIGINT); });
+  auto status = regex::replace(this->re, param, makeObserver(timer));
+  switch (status) {
+  case regex::MatchStatus::OK:
+    return ret;
+  case regex::MatchStatus::CANCEL:
+    raiseSystemError(state, EINTR, "regex replace canceled");
+    return {};
+  case regex::MatchStatus::REPLACED_LIMIT:
+    assert(state.hasError());
+    return {};
+  default:
+    if (err.empty()) {
+      err = regex::toString(status);
+    }
+    raiseError(state, TYPE::RegexMatchError, std::move(err));
+    return {};
+  }
 }
 
 // ##########################

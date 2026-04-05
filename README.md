@@ -18,8 +18,6 @@ Currently, under heavy development. Language specification is subject to change 
 * Python 3.7 or later (for building `re2c`)
 * make/ninja
 * gcc/clang (need gnu++17 support)
-* libpcre2-8 10.30 or later
-    * need UTF-8 and Unicode property support
 
 ### Optional Requirement
 

@@ -537,7 +537,15 @@ void ByteCodeGenerator::visitStringNode(StringNode &node) {
 void ByteCodeGenerator::visitStringExprNode(StringExprNode &node) { this->generateConcat(node); }
 
 void ByteCodeGenerator::visitRegexNode(RegexNode &node) {
-  this->emitLdcIns(Value::create<RegexObject>(node.extractRE()));
+  if (!this->reCodeGen) {
+    this->reCodeGen = std::make_unique<regex::CodeGen>();
+  }
+  auto re = (*this->reCodeGen)(std::move(node.extractReTree().unwrap()));
+  if (re.hasValue()) {
+    this->emitLdcIns(Value::create<RegexObject>(node.getReStr(), std::move(re.unwrap())));
+  } else {
+    this->reportError<TooLargeRegex>(node, node.getReStr().c_str());
+  }
 }
 
 void ByteCodeGenerator::visitArrayNode(ArrayNode &node) {

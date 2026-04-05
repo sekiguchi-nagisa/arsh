@@ -25,6 +25,7 @@
 #include "misc/buffer.hpp"
 #include "misc/hash.hpp"
 #include "node.h"
+#include "regex/parser.h"
 #include "scope.h"
 #include "tcerror.h"
 
@@ -305,6 +306,8 @@ protected:
   FlexBuffer<const Type *> requiredTypes;
 
   AttributeMap attributeMap;
+
+  std::unique_ptr<regex::Parser> reParser; // lazy init
 
   std::vector<TypeCheckError> errors;
 

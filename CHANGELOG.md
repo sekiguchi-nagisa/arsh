@@ -1,5 +1,15 @@
 # Changelog
 
+## Unreleased
+
+### Changed
+
+#### Core
+
+- **Breaking Change**: replace PCRE2 with own regex engine
+    - now regex syntax and semantics are compatible with ECMAScript regular expression (ES2025)
+    - enable Unicode mode by default
+
 ## [0.41.0] - 2026-03-31
 
 ### Added

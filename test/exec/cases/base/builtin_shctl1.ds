@@ -60,7 +60,7 @@ if (test -e /dev/full) {
 
 # info
 assert $reply.empty()
-assert shctl info | grep %regex | grep PCRE2
+assert shctl info | grep %regex | grep ES20
 assert shctl info | grep VERSION | grep $VERSION
 assert shctl info | grep %compiler
 assert shctl info | grep MACHTYPE | grep $MACHTYPE
@@ -74,7 +74,7 @@ $? = 0
 assert shctl info
 assert !$reply.empty()
 assert !$reply['%regex'].empty()
-assert $reply['%regex'] =~ $/PCRE2 \d+\.\d+/
+assert $reply['%regex'] =~ $/ES\d{4}/
 assert $reply['VERSION'] == $VERSION
 assert !$reply['%compiler'].empty()
 assert $reply["MACHTYPE"] == $MACHTYPE

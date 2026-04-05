@@ -533,7 +533,7 @@ bool Stringifier::addAsStr(const Value &value) {
       case ObjectKind::RegexMatch:
       case ObjectKind::Array: {
         const auto view = isa<ArrayObject>(v.get()) ? typeAs<ArrayObject>(v).view()
-                                                    : typeAs<RegexMatchObject>(v).groupsView();
+                                                    : typeAs<RegexMatchObject>(v).capturesView();
         if (view.empty()) { // for empty
           TRY(this->appender("[]"));
           continue;
@@ -624,7 +624,7 @@ bool Stringifier::addAsInterp(const Value &value) {
       case ObjectKind::RegexMatch:
       case ObjectKind::Array: {
         const auto view = isa<ArrayObject>(v.get()) ? typeAs<ArrayObject>(v).view()
-                                                    : typeAs<RegexMatchObject>(v).groupsView();
+                                                    : typeAs<RegexMatchObject>(v).capturesView();
         auto &frame = frames.back();
         for (; frame.i < view.size() && view[frame.i].isInvalid(); frame.i++)
           ;
@@ -769,7 +769,7 @@ bool addAsCmdArg(ARState &state, Value &&value, ArrayObject &argv, Value &redir)
       case ObjectKind::RegexMatch:
       case ObjectKind::Array: {
         const auto view = isa<ArrayObject>(arg.get()) ? typeAs<ArrayObject>(arg).view()
-                                                      : typeAs<RegexMatchObject>(arg).groupsView();
+                                                      : typeAs<RegexMatchObject>(arg).capturesView();
         if (auto &frame = frames.back(); frame.i < view.size()) {
           GOTO_NEXT3(frames, StrFrame(view[frame.i++]));
         }

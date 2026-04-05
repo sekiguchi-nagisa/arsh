@@ -29,7 +29,7 @@
 #include "misc/noncopyable.h"
 #include "misc/rtti.hpp"
 #include "misc/token.hpp"
-#include "regex_wrapper.h"
+#include "regex/node.h"
 #include "token_kind.h"
 #include "type.h"
 
@@ -531,13 +531,12 @@ class RegexNode : public WithRtti<Node, NodeKind::Regex> {
 private:
   /**
    * string representation of regex.
-   * TODO: delete it.
    */
   std::string reStr;
 
   std::string reFlag;
 
-  PCRE re;
+  Optional<regex::SyntaxTree> reTree;
 
 public:
   RegexNode(Token token, std::string &&str, std::string &&flag)
@@ -549,15 +548,11 @@ public:
 
   const std::string &getReFlag() const { return this->reFlag; }
 
-  /**
-   * build regex
-   * @param errorStr
-   * @return
-   * if failed, return false and set error message to errorStr
-   */
-  bool buildRegex(std::string &errorStr);
+  void setReTree(regex::SyntaxTree &&tree) { this->reTree = std::move(tree); }
 
-  PCRE extractRE() { return std::move(this->re); }
+  const auto &getReTree() const { return this->reTree; }
+
+  Optional<regex::SyntaxTree> extractReTree() { return std::move(this->reTree); }
 
   void dump(NodeDumper &dumper) const override;
 };

@@ -36,7 +36,7 @@ const char *toString(const MatchStatus s) {
   case MatchStatus::CANCEL:
     return "canceled";
   case MatchStatus::TIMEOUT:
-    return "timeout";
+    return "match timeout";
   case MatchStatus::STACK_LIMIT:
     return "stack depth reaches limit";
   case MatchStatus::INVALID_REPLACE_PATTERN:

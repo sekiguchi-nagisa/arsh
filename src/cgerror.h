@@ -79,6 +79,7 @@ using base_of_t = std::enable_if_t<std::is_base_of_v<B, T>, T>;
 DEFINE_CGError(TooLargeFunc, "too large function: `%s'");
 DEFINE_CGError(TooLargeUdc, "too large user-defined command: `%s'");
 DEFINE_CGError(TooLargeToplevel, "too large top-level script: `%s'");
+DEFINE_CGError(TooLargeRegex, "too large regex: `%s'");
 
 #undef DEFINE_CGError
 

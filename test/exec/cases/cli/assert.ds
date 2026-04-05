@@ -21,7 +21,7 @@ $msg = "[runtime error]
 AssertionFailed: failed
 binary expression \`<LHS> =~ <RHS>' is false
   <LHS>: String = $OSTYPE
-  <RHS>: Regex = mac
+  <RHS>: Regex = /mac/u
     from (string):1 '<toplevel>()'"
 
 $expect("$(ds -c 'assert $OSTYPE =~ $/mac/ : "failed"' 2>&1)", 1, $msg)

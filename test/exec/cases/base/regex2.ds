@@ -24,8 +24,8 @@ $names.clear()
 $names = $m.names()
 assert $names.size() == 4
 assert $names[0] == 'begin'
-assert $names[1] == 'end'
-assert $names[2] == 'p'
-assert $names[3] == 'with_space'
+assert $names[1] == 'with_space'
+assert $names[2] == 'end'
+assert $names[3] == 'p'
 
 assert $/.*/.match('aa')!.names().empty()

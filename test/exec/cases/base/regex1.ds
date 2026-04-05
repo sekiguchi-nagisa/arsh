@@ -6,7 +6,7 @@ assert ! $/$/.isMultiLine()
 assert ! $/$/.isDotAll()
 assert $/$/ims.isCaseless()
 assert $/$/ism.isMultiLine()
-assert $/$/iissm.isDotAll()
+# assert $/$/iissm.isDotAll()
 
 assert !new Regex("ss").isCaseless()
 assert !new Regex("ss").isMultiLine()
@@ -14,9 +14,6 @@ assert !new Regex("ss").isDotAll()
 assert !new Regex("ss", "").isCaseless()
 assert !new Regex("ss", "").isMultiLine()
 assert !new Regex("ss", "").isDotAll()
-assert new Regex("ss", "iissm").isCaseless()
-assert new Regex("ss", "sism").isMultiLine()
-assert new Regex("ss", "iissm").isDotAll()
 
 assert $/\\/ =~ '\'
 assert $/a/ =~ 'bac'
@@ -29,6 +26,7 @@ assert new Regex('\/s') =~ 's/s'
 assert new Regex('\\/s') !~ 's/s'
 assert new Regex("\/s") =~ 's/s'
 assert new Regex("\\/s") =~ 's/s'
+assert new Regex($'hh\x00', "") =~ $'hh\x00'
 
 assert $/^.$/ =~ "あ"
 
@@ -36,15 +34,15 @@ assert $/\s/ =~ ' '
 assert $/\s/ =~ "　"
 
 assert $/\w/ =~ 'a'
-assert $/\w/ =~ '感'
+assert $/\w/ !~ '感'
 
-assert $/\p{Hiragana}/ =~ 'う'
-assert $/\p{Hiragana}/ !~ '1'
-assert $/\p{Hiragana}/ !~ 'ナ'
+assert $/\p{sc=Hiragana}/ =~ 'う'
+assert $/\p{sc=Hiragana}/ !~ '1'
+assert $/\p{sc=Hiragana}/ !~ 'ナ'
 
-assert $/\p{Katakana}/ !~ 'う'
-assert $/\p{Katakana}/ !~ '1'
-assert $/\p{Katakana}/ =~ 'ナ'
+assert $/\p{sc=Katakana}/ !~ 'う'
+assert $/\p{sc=Katakana}/ !~ '1'
+assert $/\p{sc=Katakana}/ =~ 'ナ'
 
 assert $/^\X\X\X$/ =~ "🇯🇵🇯🇵🇯🇵"  # unicode 9 or later
 assert $/^\X$/ !~ "🇯🇵🇯🇵🇯🇵"     # before unicode 9,  assert $/^\X$/ =~ "🇯🇵🇯🇵🇯🇵"
@@ -105,10 +103,27 @@ try {
 }
 
 try {
-    new Regex($'hh\x00', "")
+    assert new Regex("ss", "iissm").isCaseless()
     assert false
 } catch $e {
     assert $e is RegexSyntaxError
+    assert $e.message() == "\`i' modifier has already been specified"
+}
+
+try {
+    assert new Regex("ss", "sism").isMultiLine()
+    assert false
+} catch $e {
+    assert $e is RegexSyntaxError
+    assert $e.message() == "\`s' modifier has already been specified"
+}
+
+try {
+    assert new Regex("ss", "mism").isDotAll()
+    assert false
+} catch $e {
+    assert $e is RegexSyntaxError
+    assert $e.message() == "\`m' modifier has already been specified"
 }
 
 var a = $/hello (world)\(!!/.match("hello world(!!")
@@ -121,12 +136,13 @@ assert $a!.end() == 14
 
 assert ! $/hufure/.match("")
 
-assert $/a|(b)/.match('a')!.count() == 1
+assert $/a|(b)/.match('a')!.count() == 2
 
 $a = $/(a|(b))c/.match('1あ234ac 567')
-assert $a!.count() == 2
+assert $a!.count() == 3
 assert $a!.group(0)! == 'ac'
 assert $a!.group(1)! == 'a'
+assert !$a!.group(2)
 assert $a!.start() == 7
 assert $a!.end() == 9
 
@@ -139,7 +155,7 @@ assert $a!.group(3)! == 'c'
 assert $a!.group(4)!.empty()
 
 # toString
-assert $/\/de/ as String == '\/de'
+assert $/\/de/ as String == '/\/de/u'
 
 # replace
 assert $/ /.replace(" hello world !! ", "") == "helloworld!!"
@@ -183,7 +199,7 @@ try {
     $ex = $e
 }
 assert $ex is RegexMatchError
-assert ($ex as RegexMatchError).message() == 'match limit exceeded'
+assert ($ex as RegexMatchError).message() == 'match timeout'
 
 $ex = 34 as Any
 try {
@@ -193,7 +209,7 @@ try {
     $ex = $e
 }
 assert $ex is RegexMatchError
-assert ($ex as RegexMatchError).message() == 'match limit exceeded'
+assert ($ex as RegexMatchError).message() == 'match timeout'
 
 $ex = 34 as Any
 try {
@@ -203,7 +219,7 @@ try {
     $ex = $e
 }
 assert $ex is RegexMatchError
-assert ($ex as RegexMatchError).message() == 'match limit exceeded'
+assert ($ex as RegexMatchError).message() == 'match timeout'
 
 $ex = 34 as Any
 try {
@@ -213,7 +229,7 @@ try {
     $ex = $e
 }
 assert $ex is RegexMatchError
-assert ($ex as RegexMatchError).message() == 'match limit exceeded'
+assert ($ex as RegexMatchError).message() == 'match timeout'
 
 $ex = 34 as Any
 try {
@@ -223,7 +239,7 @@ try {
     $ex = $e
 }
 assert $ex is RegexMatchError
-assert ($ex as RegexMatchError).message() == 'match limit exceeded'
+assert ($ex as RegexMatchError).message() == 'match timeout'
 
 $ex = 34 as Any
 try {
@@ -233,7 +249,7 @@ try {
     $ex = $e
 }
 assert $ex is RegexMatchError
-assert ($ex as RegexMatchError).message() == 'match limit exceeded'
+assert ($ex as RegexMatchError).message() == 'match timeout'
 
 $ex = 34 as Any
 try {
@@ -243,7 +259,7 @@ try {
     $ex = $e
 }
 assert $ex is RegexMatchError
-assert ($ex as RegexMatchError).message() == 'unknown substring'
+assert ($ex as RegexMatchError).message() == "undefined capture group index: \`1'"
 
 $ex = 34 as Any
 try {
@@ -253,4 +269,4 @@ try {
     $ex = $e
 }
 assert $ex is RegexMatchError
-assert ($ex as RegexMatchError).message() == 'UTF-8 error: illegal byte (0xfe or 0xff)'
+assert ($ex as RegexMatchError).message() == 'input string is invalid UTF-8'

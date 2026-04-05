@@ -28,6 +28,7 @@
 #include "object.h"
 #include "opcode.h"
 #include "ordered_map.h"
+#include "regex/emit.h"
 
 #define ASSERT_BYTE_SIZE(op, size) assert(getByteSize(op) == (size))
 
@@ -180,6 +181,8 @@ private:
   const MethodHandle *handle_STR{nullptr};
 
   std::vector<CodeBuilder> builders;
+
+  std::unique_ptr<regex::CodeGen> reCodeGen; // lazy init
 
   CodeGenError error;
 

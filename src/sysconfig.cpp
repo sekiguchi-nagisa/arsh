@@ -19,7 +19,7 @@
 #include "constant.h"
 #include "misc/files.hpp"
 #include "misc/unicode_version.in"
-#include "regex_wrapper.h"
+#include "regex/flag.h"
 #include "sysconfig.h"
 #include <config.h>
 
@@ -30,7 +30,7 @@ SysConfig::SysConfig() {
       {VERSION, X_INFO_VERSION_CORE}, {COMPILER, X_INFO_CPP " " X_INFO_CPP_V},
       {UNICODE, UNICODE_VERSION_STR}, {DATA_DIR, X_DATA_DIR},
       {MODULE_DIR, X_MODULE_DIR},     {OSTYPE, BUILD_OS},
-      {MACHTYPE, BUILD_ARCH},
+      {MACHTYPE, BUILD_ARCH},         {REGEX, regex::VERSION},
   };
 
   const char *home;
@@ -70,19 +70,6 @@ SysConfig::SysConfig() {
 
     this->values.emplace(DATA_HOME, std::move(dataHome));
     this->values.emplace(MODULE_HOME, std::move(moduleHome));
-  }
-
-  {
-    std::string value;
-    if (const auto version = PCRE::version()) {
-      value += "PCRE2 ";
-      value += std::to_string(version.major);
-      value += ".";
-      value += std::to_string(version.minor);
-    } else {
-      value = "null";
-    }
-    this->values.emplace(REGEX, std::move(value));
   }
 }
 

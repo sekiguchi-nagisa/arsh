@@ -32,7 +32,7 @@
 #include "misc/rtti.hpp"
 #include "misc/string_ref.hpp"
 #include "object_util.h"
-#include "regex_wrapper.h"
+#include "regex/regex.h"
 #include "type.h"
 #include "value.h"
 #include <config.h>
@@ -784,7 +784,8 @@ struct ObjectConstructor<UnixFdObject, Arg...> {
 
 class RegexObject : public ObjectWithRtti<ObjectKind::Regex> {
 private:
-  PCRE re;
+  std::string pattern;
+  regex::Regex re;
 
 public:
   struct MatchResult {
@@ -793,7 +794,13 @@ public:
     size_t end;                // end byte offset of match string
   };
 
-  explicit RegexObject(PCRE &&re) : ObjectWithRtti(TYPE::Regex), re(std::move(re)) {}
+  explicit RegexObject(StringRef pattern, regex::Regex &&re)
+      : ObjectWithRtti(TYPE::Regex), re(std::move(re)) {
+    this->pattern = "/";
+    this->pattern += pattern;
+    this->pattern += '/';
+    this->pattern += this->re.getFlag().str();
+  }
 
   bool search(ARState &state, StringRef ref) { return this->match(state, ref, nullptr); }
 
@@ -808,31 +815,29 @@ public:
    */
   bool match(ARState &state, StringRef ref, MatchResult *ret);
 
-  bool replace(StringRef target, StringRef replacement, std::string &output, bool global) {
-    return this->re.substitute(target, replacement, global, StringObject::MAX_SIZE, output) >= 0;
-  }
+  Value replace(ARState &state, StringRef text, StringRef replacement, bool global);
 
-  const PCRE &getRE() const { return this->re; }
+  const auto &getRE() const { return this->re; }
 
-  const char *getStr() const { return this->re.getPattern(); }
+  const std::string &getStr() const { return this->pattern; }
 };
 
 class RegexMatchObject : public ObjectWithRtti<ObjectKind::RegexMatch> {
 private:
   ObjPtr<RegexObject> reObj;
-  std::vector<Value> groups;
+  std::vector<Value> captures;
   unsigned int startOffset;
   unsigned int endOffset;
 
 public:
   RegexMatchObject(ObjPtr<RegexObject> &&reObj, RegexObject::MatchResult &&matchResults)
       : ObjectWithRtti(TYPE::RegexMatch), reObj(std::move(reObj)),
-        groups(std::move(matchResults.groups)), startOffset(matchResults.start),
+        captures(std::move(matchResults.groups)), startOffset(matchResults.start),
         endOffset(matchResults.end) {}
 
   const auto &getRE() const { return this->reObj->getRE(); }
 
-  ArrayRef<Value> groupsView() const { return {this->groups.data(), this->groups.size()}; }
+  ArrayRef<Value> capturesView() const { return {this->captures.data(), this->captures.size()}; }
 
   unsigned int getStartOffset() const { return this->startOffset; }
 

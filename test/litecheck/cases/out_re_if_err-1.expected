@@ -1,4 +1,4 @@
 CHECK_RE_IF on line 5,
-    Expect: fkore
+    Expect: /fkore/u
     Actual: 
 stdout is mismatched

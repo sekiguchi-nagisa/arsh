@@ -904,9 +904,20 @@ void TypeChecker::visitStringExprNode(StringExprNode &node) {
 }
 
 void TypeChecker::visitRegexNode(RegexNode &node) {
-  std::string e;
-  if (!node.buildRegex(e)) {
-    this->reportError<RegexSyntax>(node.getActualToken(), e.c_str());
+  if (!this->reParser) {
+    this->reParser = std::make_unique<regex::Parser>();
+  }
+  std::string err;
+  auto modifiers = regex::Flag::parseModifier(node.getReFlag(), &err);
+  if (!modifiers.hasValue()) {
+    this->reportError<RegexSyntax>(node.getActualToken(), err.c_str());
+  }
+  const regex::Flag flag(regex::Mode::UNICODE,
+                         modifiers.hasValue() ? modifiers.unwrap() : regex::Modifier::NONE);
+  node.setReTree((*this->reParser)(node.getReStr(), flag));
+  if (this->reParser->hasError()) {
+    this->reportError<RegexSyntax>(node.getActualToken(),
+                                   this->reParser->getError()->message.c_str());
   }
   node.setType(this->typePool().get(TYPE::Regex));
 }

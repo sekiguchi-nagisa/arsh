@@ -176,7 +176,7 @@ DEFINE_TCError(InvalidUnnamedArg, "not allow unnamed arguments after named argum
 DEFINE_TCError(UndefinedNamedArg, "undefined named argument: `%s'%s");
 DEFINE_TCError(RepeatedNamedArg, "named argument: `%s' is repeated");
 DEFINE_TCError(MissingNamedArg, "missing named argument: `%s'");
-DEFINE_TCError(RegexSyntax, "regex syntax error: `%s'");
+DEFINE_TCError(RegexSyntax, "regex syntax error: %s");
 DEFINE_TCError(NoCommonSuper, "cannot resolve common super type from %s");
 DEFINE_TCError(ConcatParam, "concatenation of `%s' type expression is not allowed");
 DEFINE_TCError(FuncDepthLimit, "nested function depth reaches limit");

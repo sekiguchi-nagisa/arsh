@@ -33,6 +33,7 @@
 #include "misc/num_util.hpp"
 #include "object_util.h"
 #include "ordered_map.h"
+#include "regex/emit.h"
 #include "signals.h"
 #include "unicode/case_fold.h"
 #include "unicode/property.h"
@@ -1235,6 +1236,26 @@ ARSH_METHOD stringIter_next(RuntimeContext &ctx) {
 // ##     Regex     ##
 // ###################
 
+static ObjPtr<RegexObject> compileRegex(StringRef pattern, StringRef flagStr, std::string &err) {
+  auto modifiers = regex::Flag::parseModifier(flagStr, &err);
+  if (!modifiers.hasValue()) {
+    return {};
+  }
+  regex::Flag flag(regex::Mode::UNICODE, modifiers.unwrap());
+  regex::Parser parser;
+  auto tree = parser(pattern, flag);
+  if (parser.hasError()) {
+    err = parser.getError()->message;
+    return {};
+  }
+  regex::CodeGen codeGen;
+  if (auto re = codeGen(std::move(tree)); re.hasValue()) {
+    return createObject<RegexObject>(pattern, std::move(re.unwrap()));
+  }
+  err = codeGen.getError();
+  return {};
+}
+
 //!bind: function $OP_INIT($this : Regex, $str : String, $flag : Option<String>) : Regex
 ARSH_METHOD regex_init(RuntimeContext &ctx) {
   SUPPRESS_WARNING(regex_init);
@@ -1242,10 +1263,8 @@ ARSH_METHOD regex_init(RuntimeContext &ctx) {
   auto v = LOCAL(2);
   auto flagStr = v.isInvalid() ? "" : v.asStrRef();
   std::string errorStr;
-  if (auto flag = PCRE::parseCompileFlag(flagStr, errorStr); flag.hasValue()) {
-    if (auto re = PCRE::compile(pattern, flag.unwrap(), errorStr)) {
-      RET(Value::create<RegexObject>(std::move(re)));
-    }
+  if (auto re = compileRegex(pattern, flagStr, errorStr)) {
+    RET(re);
   }
   raiseError(ctx, TYPE::RegexSyntaxError, std::move(errorStr));
   RET_ERROR;
@@ -1255,24 +1274,24 @@ ARSH_METHOD regex_init(RuntimeContext &ctx) {
 ARSH_METHOD regex_isCaseless(RuntimeContext &ctx) {
   SUPPRESS_WARNING(regex_isCaseless);
   auto &re = typeAs<RegexObject>(LOCAL(0));
-  auto flag = re.getRE().getCompileFlag();
-  RET_BOOL(hasFlag(flag, PCRECompileFlag::CASELESS));
+  auto flag = re.getRE().getFlag();
+  RET_BOOL(flag.has(regex::Modifier::IGNORE_CASE));
 }
 
 //!bind: function isMultiLine($this : Regex) : Bool
 ARSH_METHOD regex_isMultiLine(RuntimeContext &ctx) {
   SUPPRESS_WARNING(regex_isMultiLine);
   auto &re = typeAs<RegexObject>(LOCAL(0));
-  auto flag = re.getRE().getCompileFlag();
-  RET_BOOL(hasFlag(flag, PCRECompileFlag::MULTILINE));
+  auto flag = re.getRE().getFlag();
+  RET_BOOL(flag.has(regex::Modifier::MULTILINE));
 }
 
 //!bind: function isDotAll($this : Regex) : Bool
 ARSH_METHOD regex_isDotAll(RuntimeContext &ctx) {
   SUPPRESS_WARNING(regex_isDotAll);
   auto &re = typeAs<RegexObject>(LOCAL(0));
-  auto flag = re.getRE().getCompileFlag();
-  RET_BOOL(hasFlag(flag, PCRECompileFlag::DOTALL));
+  auto flag = re.getRE().getFlag();
+  RET_BOOL(flag.has(regex::Modifier::DOT_ALL));
 }
 
 //!bind: function $OP_MATCH($this : Regex, $target : String) : Bool
@@ -1311,13 +1330,8 @@ ARSH_METHOD regex_replace(RuntimeContext &ctx) {
   SUPPRESS_WARNING(regex_replace);
   auto &re = typeAs<RegexObject>(LOCAL(0));
   const bool once = LOCAL(3).isInvalid() ? false : LOCAL(3).asBool();
-  if (std::string out; re.replace(LOCAL(1).asStrRef(), LOCAL(2).asStrRef(), out, !once)) {
-    assert(out.size() <= StringObject::MAX_SIZE);
-    RET(Value::createStr(std::move(out)));
-  } else {
-    raiseError(ctx, TYPE::RegexMatchError, std::move(out));
-    RET_ERROR;
-  }
+  auto ret = re.replace(ctx, LOCAL(1).asStrRef(), LOCAL(2).asStrRef(), !once);
+  RET(ret);
 }
 
 // ########################
@@ -1342,13 +1356,13 @@ ARSH_METHOD match_end(RuntimeContext &ctx) {
 ARSH_METHOD match_count(RuntimeContext &ctx) {
   SUPPRESS_WARNING(match_count);
   const auto &match = typeAs<RegexMatchObject>(LOCAL(0));
-  RET(Value::createInt(static_cast<int64_t>(match.groupsView().size())));
+  RET(Value::createInt(static_cast<int64_t>(match.capturesView().size())));
 }
 
 //!bind: function group($this : RegexMatch, $index: Int) : Option<String>
 ARSH_METHOD match_group(RuntimeContext &ctx) {
   SUPPRESS_WARNING(match_group);
-  auto groups = typeAs<RegexMatchObject>(LOCAL(0)).groupsView();
+  auto groups = typeAs<RegexMatchObject>(LOCAL(0)).capturesView();
   if (int64_t index = LOCAL(1).asInt();
       index > -1 && static_cast<uint64_t>(index) < groups.size()) {
     RET(groups[index]);
@@ -1360,10 +1374,18 @@ ARSH_METHOD match_group(RuntimeContext &ctx) {
 ARSH_METHOD match_named(RuntimeContext &ctx) {
   SUPPRESS_WARNING(match_named);
   const auto &obj = typeAs<RegexMatchObject>(LOCAL(0));
-  auto groups = obj.groupsView();
-  const int index = obj.getRE().getGroupIndexByName(LOCAL(1).asStrRef());
-  if (index > -1 && static_cast<uint64_t>(index) < groups.size()) {
-    RET(groups[index]);
+  auto groups = obj.capturesView();
+  if (auto *entry = obj.getRE().getNamedCaptureGroups().find(LOCAL(1).asStrRef())) {
+    if (entry->hasMultipleIndices()) {
+      for (unsigned int i = 0; i < entry->getSize(); i++) {
+        unsigned int capIndex = (*entry)[i];
+        if (!groups[capIndex].isInvalid()) {
+          RET(groups[capIndex]);
+        }
+      }
+    } else {
+      RET(groups[entry->getIndex()]);
+    }
   }
   RET(Value::createInvalid());
 }
@@ -1372,10 +1394,10 @@ ARSH_METHOD match_named(RuntimeContext &ctx) {
 ARSH_METHOD match_names(RuntimeContext &ctx) {
   SUPPRESS_WARNING(match_names);
   const auto &obj = typeAs<RegexMatchObject>(LOCAL(0));
-  const auto table = obj.getRE().getNamedGroupTable();
-  std::vector<Value> values(table.size);
-  for (unsigned int i = 0; i < table.size; i++) {
-    values[i] = Value::createStr(table[i].second);
+  auto &entries = obj.getRE().getNamedCaptureGroups().getEntries();
+  std::vector<Value> values(entries.size());
+  for (unsigned int i = 0; i < entries.size(); i++) {
+    values[i] = Value::createStr(entries[i].first);
   }
   auto ret = Value::create<ArrayObject>(ctx.typePool.get(TYPE::StringArray), std::move(values));
   RET(ret);

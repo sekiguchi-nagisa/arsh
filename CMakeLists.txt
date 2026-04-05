@@ -37,7 +37,6 @@ option(USE_SAFE_CAST "check object cast" OFF)
 option(FUZZING_BUILD_MODE "enable fuzzing-aware build" OFF)
 option(USE_LTO "enable Link Time Optimization" OFF)
 option(USE_EXTRA_TEST "enable system extra test cases" OFF)
-option(USE_PCRE "enable pcre2 support" ON)
 option(BUILD_SHARED_LIB "build shared library" OFF)
 option(USE_CTEST "enable CTest" ON)
 
@@ -108,7 +107,6 @@ show_option(USE_SAFE_CAST)
 show_option(FUZZING_BUILD_MODE)
 show_option(USE_LTO)
 show_option(USE_EXTRA_TEST)
-show_option(USE_PCRE)
 show_option(BUILD_SHARED_LIB)
 show_option(USE_CTEST)
 
@@ -120,15 +118,6 @@ show_option(USE_CTEST)
 find_package(Threads REQUIRED)
 
 check_program(git)
-
-
-#++++++++++++++++++++++#
-#     find libpcre     #
-#++++++++++++++++++++++#
-
-if (USE_PCRE)
-    find_package(PCRE2 10.30 REQUIRED)
-endif ()
 
 
 #+++++++++++++++++++++++++++#
@@ -259,7 +248,6 @@ set(BIN_NAME arsh)
 
 include_directories(src)
 include_directories(include)
-include_directories(${PCRE2_INCLUDE_DIR})
 
 set(ARSH_SRC
         src/arsh.cpp
@@ -286,7 +274,6 @@ set(ARSH_SRC
         src/type_checker_attr.cpp
         src/frontend.cpp
         src/signals.cpp
-        src/regex_wrapper.cpp
         src/job.cpp
         src/redir.cpp
         src/state.cpp
@@ -350,13 +337,13 @@ endif ()
 
 set(ARSH_STATIC arsh_static)
 add_library(${ARSH_STATIC} STATIC $<TARGET_OBJECTS:arsh_obj>)
-target_link_libraries(${ARSH_STATIC} unicode ${PCRE2_LIBRARY})
+target_link_libraries(${ARSH_STATIC} unicode regex)
 
 if (BUILD_SHARED_LIB)
     set(ARSH_LIB arsh_lib)
     add_library(${ARSH_LIB} SHARED $<TARGET_OBJECTS:arsh_obj>)
     set_target_properties(${ARSH_LIB} PROPERTIES OUTPUT_NAME arsh)
-    target_link_libraries(${ARSH_LIB} unicode ${PCRE2_LIBRARY})
+    target_link_libraries(${ARSH_LIB} unicode regex)
 else ()
     set(ARSH_LIB arsh_static)
 endif ()
@@ -467,6 +454,4 @@ message(STATUS "CMAKE_CXX_FLAGS_RELEASE          = ${CMAKE_CXX_FLAGS_RELEASE}")
 message(STATUS "CMAKE_CXX_FLAGS_RELWITHDEBINFO   = ${CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
 message(STATUS "CMAKE_CXX_FLAGS_MINSIZEREL       = ${CMAKE_CXX_FLAGS_MINSIZEREL}")
 message(STATUS "CMAKE_INSTALL_PREFIX             = ${CMAKE_INSTALL_PREFIX}")
-message(STATUS "PCRE2_INCLUDE_DIR                = ${PCRE2_INCLUDE_DIR}")
-message(STATUS "PCRE2_LIBRARY                    = ${PCRE2_LIBRARY}")
 message("")

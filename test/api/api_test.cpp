@@ -162,7 +162,7 @@ TEST_F(APITest, config) {
   ASSERT_EQ(X_INFO_CPP " " X_INFO_CPP_V, value);
 
   value = ARState_config(this->state, AR_CONFIG_REGEX);
-  ASSERT_TRUE(value.startsWith("PCRE"));
+  ASSERT_TRUE(value.startsWith("ES"));
 
   value = ARState_config(this->state, AR_CONFIG_VERSION);
   {

@@ -188,13 +188,6 @@ void StringExprNode::dump(NodeDumper &dumper) const { DUMP(nodes); }
 // ##     RegexNode     ##
 // #######################
 
-bool RegexNode::buildRegex(std::string &errorStr) {
-  if (auto flag = PCRE::parseCompileFlag(this->reFlag, errorStr); flag.hasValue()) {
-    this->re = PCRE::compile(StringRef(this->reStr), flag.unwrap(), errorStr);
-  }
-  return static_cast<bool>(this->re);
-}
-
 void RegexNode::dump(NodeDumper &dumper) const {
   DUMP(reStr);
   DUMP(reFlag);
