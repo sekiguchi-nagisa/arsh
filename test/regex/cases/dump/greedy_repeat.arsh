@@ -1,0 +1,191 @@
+
+source $SCRIPT_DIR/../syntax/test_helper.arsh
+
+# a*
+assert diff <(redump -d 'a*' '') <(<<'EOF'
+flag: (mode = , modifier = )
+loopCount: 1
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+   0: BeginLoop(loopIndex=0, greedy=true, min=0, max=4294967295, outer=24)
+  14: Char(codePoint=U+0061:a)
+  19: EndLoop(target=0)
+  24: Match
+matchers:
+EOF
+)
+
+# a+
+assert diff <(redump -d 'a+' '') <(<<'EOF'
+flag: (mode = , modifier = )
+loopCount: 1
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+   0: BeginLoop(loopIndex=0, greedy=true, min=1, max=4294967295, outer=24)
+  14: Char(codePoint=U+0061:a)
+  19: EndLoop(target=0)
+  24: Match
+matchers:
+EOF
+)
+
+# a?
+assert diff <(redump -d 'a?' '') <(<<'EOF'
+flag: (mode = , modifier = )
+loopCount: 1
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+   0: BeginLoop(loopIndex=0, greedy=true, min=0, max=1, outer=24)
+  14: Char(codePoint=U+0061:a)
+  19: EndLoop(target=0)
+  24: Match
+matchers:
+EOF
+)
+
+# a{0}
+assert diff <(redump -d 'a{0}' '') <(<<'EOF'
+flag: (mode = , modifier = )
+loopCount: 1
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+  0: Match
+matchers:
+EOF
+)
+
+# [\w]{001}
+assert diff <(redump -d '[\w]{001}' '') <(<<'EOF'
+flag: (mode = , modifier = )
+loopCount: 1
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+  0: CharSet(matcherIndex=0, invert=false)
+  4: Match
+matchers:
+  0: AsciiSet
+{ 0x0030, 0x0039 },
+{ 0x0041, 0x005A },
+{ 0x005F, 0x005F },
+{ 0x0061, 0x007A },
+EOF
+)
+
+# a{0012}
+assert diff <(redump -d 'a{0012}' '') <(<<'EOF'
+flag: (mode = , modifier = )
+loopCount: 1
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+   0: BeginLoop(loopIndex=0, greedy=true, min=12, max=12, outer=24)
+  14: Char(codePoint=U+0061:a)
+  19: EndLoop(target=0)
+  24: Match
+matchers:
+EOF
+)
+
+
+# .{2,}
+assert diff <(redump -d '.{2,}' '') <(<<'EOF'
+flag: (mode = , modifier = )
+loopCount: 1
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+   0: BeginLoop(loopIndex=0, greedy=true, min=2, max=4294967295, outer=20)
+  14: AnyExceptNL
+  15: EndLoop(target=0)
+  20: Match
+matchers:
+EOF
+)
+
+# a[a-z]{2,4}
+assert diff <(redump -d 'a[a-z]{2,4}' '') <(<<'EOF'
+flag: (mode = , modifier = )
+loopCount: 1
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+   0: Char(codePoint=U+0061:a)
+   5: BeginLoop(loopIndex=0, greedy=true, min=2, max=4, outer=28)
+  19: CharSet(matcherIndex=0, invert=false)
+  23: EndLoop(target=5)
+  28: Match
+matchers:
+  0: AsciiSet
+{ 0x0061, 0x007A },
+EOF
+)
+
+# ^(a+)\1*,\1+$
+assert diff <(redump -d '^(a+)\1*,\1+$' 'i') <(<<'EOF'
+flag: (mode = , modifier = i)
+loopCount: 3
+captureGroupCount: 1
+namedCaptureGroups: []
+instructions:
+   0: Start(multiline=false)
+   2: BeginCapture(captureIndex=1)
+   5: BeginLoop(loopIndex=0, greedy=true, min=1, max=4294967295, outer=29)
+  19: IChar(codePoint=U+0061:a)
+  24: EndLoop(target=5)
+  29: EndCapture(captureIndex=1)
+  32: BeginLoop(loopIndex=1, greedy=true, min=0, max=4294967295, outer=55)
+  46: IBackRef(index=1, named=false)
+  50: EndLoop(target=32)
+  55: IChar(codePoint=U+002C:,)
+  60: BeginLoop(loopIndex=2, greedy=true, min=1, max=4294967295, outer=83)
+  74: IBackRef(index=1, named=false)
+  78: EndLoop(target=60)
+  83: End(multiline=false)
+  85: Match
+matchers:
+EOF
+)
+
+# (z)((a+)?(b+)?(c))*
+assert diff <(redump -d '(z)((a+)?(b+)?(c))*' '') <(<<'EOF'
+flag: (mode = , modifier = )
+loopCount: 5
+captureGroupCount: 5
+namedCaptureGroups: []
+instructions:
+    0: BeginCapture(captureIndex=1)
+    3: Char(codePoint=U+007A:z)
+    8: EndCapture(captureIndex=1)
+   11: BeginLoop(loopIndex=4, greedy=true, min=0, max=4294967295, outer=160)
+   25: ResetCaptures(firstIndex=2, lastIndex=5)
+   30: BeginCapture(captureIndex=2)
+   33: BeginLoop(loopIndex=1, greedy=true, min=0, max=1, outer=87)
+   47: ResetCaptures(firstIndex=3, lastIndex=3)
+   52: BeginCapture(captureIndex=3)
+   55: BeginLoop(loopIndex=0, greedy=true, min=1, max=4294967295, outer=79)
+   69: Char(codePoint=U+0061:a)
+   74: EndLoop(target=55)
+   79: EndCapture(captureIndex=3)
+   82: EndLoop(target=33)
+   87: BeginLoop(loopIndex=3, greedy=true, min=0, max=1, outer=141)
+  101: ResetCaptures(firstIndex=4, lastIndex=4)
+  106: BeginCapture(captureIndex=4)
+  109: BeginLoop(loopIndex=2, greedy=true, min=1, max=4294967295, outer=133)
+  123: Char(codePoint=U+0062:b)
+  128: EndLoop(target=109)
+  133: EndCapture(captureIndex=4)
+  136: EndLoop(target=87)
+  141: BeginCapture(captureIndex=5)
+  144: Char(codePoint=U+0063:c)
+  149: EndCapture(captureIndex=5)
+  152: EndCapture(captureIndex=2)
+  155: EndLoop(target=11)
+  160: Match
+matchers:
+EOF
+)

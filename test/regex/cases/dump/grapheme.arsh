@@ -1,0 +1,54 @@
+
+source $SCRIPT_DIR/../syntax/test_helper.arsh
+
+# \X
+assert diff <(redump -d '\X' 'u') <(<<'EOF'
+flag: (mode = u, modifier = )
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+  0: Grapheme
+  1: Match
+matchers:
+EOF
+)
+
+assert diff <(redump -d '\X' 'ui') <(<<'EOF'
+flag: (mode = u, modifier = i)
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+  0: Grapheme
+  1: Match
+matchers:
+EOF
+)
+
+assert diff <(redump -d '\X' 'vi') <(<<'EOF'
+flag: (mode = v, modifier = i)
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+  0: Grapheme
+  1: Match
+matchers:
+EOF
+)
+
+# \X(?ims:\X)\X
+assert diff <(redump -d '\X(?ims:\X)\X' 'u') <(<<'EOF'
+flag: (mode = u, modifier = )
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+  0: Grapheme
+  1: Grapheme
+  2: Grapheme
+  3: Match
+matchers:
+EOF
+)

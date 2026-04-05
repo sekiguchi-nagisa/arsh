@@ -1,0 +1,113 @@
+
+source $SCRIPT_DIR/../syntax/test_helper.arsh
+
+# ^$($|^)
+assert diff <(redump -d '^$($|^)' 'u') <(<<'EOF'
+flag: (mode = u, modifier = )
+loopCount: 0
+captureGroupCount: 1
+namedCaptureGroups: []
+instructions:
+   0: Start(multiline=false)
+   2: End(multiline=false)
+   4: BeginCapture(captureIndex=1)
+   7: Alt(second=19)
+  12: End(multiline=false)
+  14: Jump(target=21)
+  19: Start(multiline=false)
+  21: EndCapture(captureIndex=1)
+  24: Match
+matchers:
+EOF
+)
+
+# ^(?m:^$)$
+assert diff <(redump -d '^(?m:^$)$' 'u') <(<<'EOF'
+flag: (mode = u, modifier = )
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+  0: Start(multiline=false)
+  2: Start(multiline=true)
+  4: End(multiline=true)
+  6: End(multiline=false)
+  8: Match
+matchers:
+EOF
+)
+
+# ^(?-m:^$)$
+assert diff <(redump -d '^(?-m:^$)$' 'ums') <(<<'EOF'
+flag: (mode = u, modifier = ms)
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+  0: Start(multiline=true)
+  2: Start(multiline=false)
+  4: End(multiline=false)
+  6: End(multiline=true)
+  8: Match
+matchers:
+EOF
+)
+
+# \b\B
+assert diff <(redump -d '\b\B' '') <(<<'EOF'
+flag: (mode = , modifier = )
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+  0: Word(invert=false)
+  2: Word(invert=true)
+  4: Match
+matchers:
+EOF
+)
+
+assert diff <(redump -d '\b\B' 'i') <(<<'EOF'
+flag: (mode = , modifier = i)
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+  0: IWord(invert=false)
+  2: IWord(invert=true)
+  4: Match
+matchers:
+EOF
+)
+
+# \b(?m-i:\B$)
+assert diff <(redump -d '\b(?m-i:\B$)' 'i') <(<<'EOF'
+flag: (mode = , modifier = i)
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+  0: IWord(invert=false)
+  2: Word(invert=true)
+  4: End(multiline=true)
+  6: Match
+matchers:
+EOF
+)
+
+# (?<=\b(?m-i:\B$))
+assert diff <(redump -d '(?<=\b(?m-i:\B$))' 'i') <(<<'EOF'
+flag: (mode = , modifier = i)
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+   0: BeginLookAround(negate=false, target=12)
+   6: End(multiline=true)
+   8: Word(invert=true)
+  10: IWord(invert=false)
+  12: EndLookAround
+  13: Match
+matchers:
+EOF
+)

@@ -1,0 +1,63 @@
+
+source $SCRIPT_DIR/../syntax/test_helper.arsh
+
+assert diff <(redump -d '.(?s:.)' '') <(<<'EOF'
+flag: (mode = , modifier = )
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+  0: AnyExceptNL
+  1: Any
+  2: Match
+matchers:
+EOF
+)
+
+assert diff <(redump -d '.(?-s:.)' 'si') <(<<'EOF'
+flag: (mode = , modifier = is)
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+  0: Any
+  1: AnyExceptNL
+  2: Match
+matchers:
+EOF
+)
+
+assert diff <(redump -d '(?<=.1(?-s:.)2)' 's') <(<<'EOF'
+flag: (mode = , modifier = s)
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+   0: BeginLookAround(negate=false, target=22)
+   6: LBChar(ignoreCase=false, codePoint=U+0032:2)
+  12: LBAny(dotAll=false)
+  14: LBChar(ignoreCase=false, codePoint=U+0031:1)
+  20: LBAny(dotAll=true)
+  22: EndLookAround
+  23: Match
+matchers:
+EOF
+)
+
+assert diff <(redump -d '(?<=.1(?-s:.2)).' 'si') <(<<'EOF'
+flag: (mode = , modifier = is)
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+   0: BeginLookAround(negate=false, target=22)
+   6: LBChar(ignoreCase=true, codePoint=U+0032:2)
+  12: LBAny(dotAll=false)
+  14: LBChar(ignoreCase=true, codePoint=U+0031:1)
+  20: LBAny(dotAll=true)
+  22: EndLookAround
+  23: Any
+  24: Match
+matchers:
+EOF
+)

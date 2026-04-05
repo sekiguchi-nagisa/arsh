@@ -1,0 +1,122 @@
+
+source $SCRIPT_DIR/../syntax/test_helper.arsh
+
+# a*?
+assert diff <(redump -d 'a*?' '') <(<<'EOF'
+flag: (mode = , modifier = )
+loopCount: 1
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+   0: BeginLoop(loopIndex=0, greedy=false, min=0, max=4294967295, outer=24)
+  14: Char(codePoint=U+0061:a)
+  19: EndLoop(target=0)
+  24: Match
+matchers:
+EOF
+)
+
+# a+?
+assert diff <(redump -d 'a+?' '') <(<<'EOF'
+flag: (mode = , modifier = )
+loopCount: 1
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+   0: BeginLoop(loopIndex=0, greedy=false, min=1, max=4294967295, outer=24)
+  14: Char(codePoint=U+0061:a)
+  19: EndLoop(target=0)
+  24: Match
+matchers:
+EOF
+)
+
+# a??
+assert diff <(redump -d 'a??' '') <(<<'EOF'
+flag: (mode = , modifier = )
+loopCount: 1
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+   0: BeginLoop(loopIndex=0, greedy=false, min=0, max=1, outer=24)
+  14: Char(codePoint=U+0061:a)
+  19: EndLoop(target=0)
+  24: Match
+matchers:
+EOF
+)
+
+# a{0}?
+assert diff <(redump -d 'a{0}?' '') <(<<'EOF'
+flag: (mode = , modifier = )
+loopCount: 1
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+  0: Match
+matchers:
+EOF
+)
+
+# a{1}?
+assert diff <(redump -d 'a{1}?' '') <(<<'EOF'
+flag: (mode = , modifier = )
+loopCount: 1
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+  0: Char(codePoint=U+0061:a)
+  5: Match
+matchers:
+EOF
+)
+
+# a{2}?
+assert diff <(redump -d 'a{2}?' '') <(<<'EOF'
+flag: (mode = , modifier = )
+loopCount: 1
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+   0: BeginLoop(loopIndex=0, greedy=false, min=2, max=2, outer=24)
+  14: Char(codePoint=U+0061:a)
+  19: EndLoop(target=0)
+  24: Match
+matchers:
+EOF
+)
+
+# a[a-z]{2,4}?
+assert diff <(redump -d 'a[a-z]{2,4}?' '') <(<<'EOF'
+flag: (mode = , modifier = )
+loopCount: 1
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+   0: Char(codePoint=U+0061:a)
+   5: BeginLoop(loopIndex=0, greedy=false, min=2, max=4, outer=28)
+  19: CharSet(matcherIndex=0, invert=false)
+  23: EndLoop(target=5)
+  28: Match
+matchers:
+  0: AsciiSet
+{ 0x0061, 0x007A },
+EOF
+)
+
+# <.+?>
+assert diff <(redump -d '<.+?>' '') <(<<'EOF'
+flag: (mode = , modifier = )
+loopCount: 1
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+   0: Char(codePoint=U+003C:<)
+   5: BeginLoop(loopIndex=0, greedy=false, min=1, max=4294967295, outer=25)
+  19: AnyExceptNL
+  20: EndLoop(target=5)
+  25: Char(codePoint=U+003E:>)
+  30: Match
+matchers:
+EOF
+)

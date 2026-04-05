@@ -1,0 +1,44 @@
+
+source $SCRIPT_DIR/../syntax/test_helper.arsh
+
+#
+assert diff <(redump -d '' 'u') <(<<'EOF'
+flag: (mode = u, modifier = )
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+  0: Nop
+  1: Match
+matchers:
+EOF
+)
+
+# (?:)
+assert diff <(redump -d '(?:)' 'u') <(<<'EOF'
+flag: (mode = u, modifier = )
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+  0: Nop
+  1: Match
+matchers:
+EOF
+)
+
+# (?ims:(?<=(?:)))(?:)
+assert diff <(redump -d '(?ims:(?<=(?:)))(?:)' '') <(<<'EOF'
+flag: (mode = , modifier = )
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+  0: BeginLookAround(negate=false, target=7)
+  6: Nop
+  7: EndLookAround
+  8: Nop
+  9: Match
+matchers:
+EOF
+)

@@ -1,0 +1,133 @@
+
+source $SCRIPT_DIR/../syntax/test_helper.arsh
+
+# A
+assert diff <(redump -d 'A' '') <(<<'EOF'
+flag: (mode = , modifier = )
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+  0: Char(codePoint=U+0041:A)
+  5: Match
+matchers:
+EOF
+)
+
+assert diff <(redump -d 'A' 'i') <(<<'EOF'
+flag: (mode = , modifier = i)
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+  0: IChar(codePoint=U+0061:a)
+  5: Match
+matchers:
+EOF
+)
+
+# ÿ
+assert diff <(redump -d 'ÿ' '') <(<<'EOF'
+flag: (mode = , modifier = )
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+  0: Char(codePoint=U+00FF:ÿ)
+  5: Match
+matchers:
+EOF
+)
+
+assert diff <(redump -d 'ÿ' 'i') <(<<'EOF'
+flag: (mode = , modifier = i)
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+  0: IChar(codePoint=U+00FF:ÿ)
+  5: Match
+matchers:
+EOF
+)
+
+# あ
+assert diff <(redump -d 'あ' 'u') <(<<'EOF'
+flag: (mode = u, modifier = )
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+  0: Char(codePoint=U+3042:あ)
+  5: Match
+matchers:
+EOF
+)
+
+assert diff <(redump -d 'あ' 'iu') <(<<'EOF'
+flag: (mode = u, modifier = i)
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+  0: IChar(codePoint=U+3042:あ)
+  5: Match
+matchers:
+EOF
+)
+
+# 𤅕
+assert diff <(redump -d '𤅕' 'u') <(<<'EOF'
+flag: (mode = u, modifier = )
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+  0: Char(codePoint=U+24155:𤅕)
+  5: Match
+matchers:
+EOF
+)
+
+assert diff <(redump -d '𤅕' 'ui') <(<<'EOF'
+flag: (mode = u, modifier = i)
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+  0: IChar(codePoint=U+24155:𤅕)
+  5: Match
+matchers:
+EOF
+)
+
+# (?<!A)a
+assert diff <(redump -d '(?<!A)a' 'u') <(<<'EOF'
+flag: (mode = u, modifier = )
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+   0: BeginLookAround(negate=true, target=12)
+   6: LBChar(ignoreCase=false, codePoint=U+0041:A)
+  12: EndLookAround
+  13: Char(codePoint=U+0061:a)
+  18: Match
+matchers:
+EOF
+)
+
+assert diff <(redump -d '(?<!A)a' 'iu') <(<<'EOF'
+flag: (mode = u, modifier = i)
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+   0: BeginLookAround(negate=true, target=12)
+   6: LBChar(ignoreCase=true, codePoint=U+0061:a)
+  12: EndLookAround
+  13: IChar(codePoint=U+0061:a)
+  18: Match
+matchers:
+EOF
+)

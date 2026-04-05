@@ -1,0 +1,116 @@
+
+source $SCRIPT_DIR/../syntax/test_helper.arsh
+
+# (.).\1
+assert diff <(redump -d '(.).\1' '') <(<<'EOF'
+flag: (mode = , modifier = )
+loopCount: 0
+captureGroupCount: 1
+namedCaptureGroups: []
+instructions:
+   0: BeginCapture(captureIndex=1)
+   3: AnyExceptNL
+   4: EndCapture(captureIndex=1)
+   7: AnyExceptNL
+   8: BackRef(index=1, named=false)
+  12: Match
+matchers:
+EOF
+)
+
+assert diff <(redump -d '(.).\1' 'i') <(<<'EOF'
+flag: (mode = , modifier = i)
+loopCount: 0
+captureGroupCount: 1
+namedCaptureGroups: []
+instructions:
+   0: BeginCapture(captureIndex=1)
+   3: AnyExceptNL
+   4: EndCapture(captureIndex=1)
+   7: AnyExceptNL
+   8: IBackRef(index=1, named=false)
+  12: Match
+matchers:
+EOF
+)
+
+# (.)(?<=.\1)
+assert diff <(redump -d '(.)(?<=.\1)' '') <(<<'EOF'
+flag: (mode = , modifier = )
+loopCount: 0
+captureGroupCount: 1
+namedCaptureGroups: []
+instructions:
+   0: BeginCapture(captureIndex=1)
+   3: AnyExceptNL
+   4: EndCapture(captureIndex=1)
+   7: BeginLookAround(negate=false, target=20)
+  13: LBBackRef(index=1, named=false, ignoreCase=false)
+  18: LBAny(dotAll=false)
+  20: EndLookAround
+  21: Match
+matchers:
+EOF
+)
+
+assert diff <(redump -d '(.)(?<=.\1)' 'ism') <(<<'EOF'
+flag: (mode = , modifier = ims)
+loopCount: 0
+captureGroupCount: 1
+namedCaptureGroups: []
+instructions:
+   0: BeginCapture(captureIndex=1)
+   3: Any
+   4: EndCapture(captureIndex=1)
+   7: BeginLookAround(negate=false, target=20)
+  13: LBBackRef(index=1, named=false, ignoreCase=true)
+  18: LBAny(dotAll=true)
+  20: EndLookAround
+  21: Match
+matchers:
+EOF
+)
+
+# (?<prev>.).(\k<prev>)\2
+assert diff <(redump -d '(?<prev>.).(\k<prev>)\2' '') <(<<'EOF'
+flag: (mode = , modifier = )
+loopCount: 0
+captureGroupCount: 2
+namedCaptureGroups: [prev: 1]
+instructions:
+   0: BeginCapture(captureIndex=1)
+   3: AnyExceptNL
+   4: EndCapture(captureIndex=1)
+   7: AnyExceptNL
+   8: BeginCapture(captureIndex=2)
+  11: BackRef(index=0, named=true)
+  15: EndCapture(captureIndex=2)
+  18: BackRef(index=2, named=false)
+  22: Match
+matchers:
+EOF
+)
+
+# (?<=(?<prev>.)).(?=(?i:(\k<prev>)))\2
+assert diff <(redump -d '(?<=(?<prev>.)).(?=(?i:(\k<prev>)))\2' '') <(<<'EOF'
+flag: (mode = , modifier = )
+loopCount: 0
+captureGroupCount: 2
+namedCaptureGroups: [prev: 1]
+instructions:
+   0: BeginLookAround(negate=false, target=14)
+   6: BeginCapture(captureIndex=1)
+   9: LBAny(dotAll=false)
+  11: LBEndCapture(captureIndex=1)
+  14: EndLookAround
+  15: AnyExceptNL
+  16: BeginLookAround(negate=false, target=32)
+  22: BeginCapture(captureIndex=2)
+  25: IBackRef(index=0, named=true)
+  29: EndCapture(captureIndex=2)
+  32: EndLookAround
+  33: BackRef(index=2, named=false)
+  37: Match
+matchers:
+EOF
+)
