@@ -182,6 +182,12 @@ void bindBuiltins(Consumer &consumer, const SysConfig &config, TypePool &pool, N
   binder.bind(CVAR_ARG0, "arsh");
 
   /**
+   * global timeout of regex method
+   * must be Int
+   */
+  binder.bind("REGEX_TIMEOUT", 1000, HandleAttr());
+
+  /**
    * process id of current process.
    * must be Int
    */

@@ -13,7 +13,7 @@ function assertArray($x : Array<String>, $y : Array<String>) {
         'DIRSTACK', 'DYNA_UDCS', 'EAW', 'EUID', 'FALSE', 'False', 'HOME', 'IFS', 'JOB', 'LINES', 'LINE_EDIT', 'LOGNAME', 
         'MACHTYPE', 'MODULE', 'MODULE_DIR', 'MODULE_HOME', 'NONE', 'None', 'OLDPWD',
         'OSTYPE', 'PATH', 'PID', 'PIPESTATUS', 'PPID', 'PWD',
-        'RANDOM', 'REPLY', 'SCRIPT_DIR', 'SCRIPT_NAME', 'SECONDS', 'SIG',
+        'RANDOM', 'REGEX_TIMEOUT', 'REPLY', 'SCRIPT_DIR', 'SCRIPT_NAME', 'SECONDS', 'SIG',
         'SIGABRT', 'SIGALRM', 'SIGCHLD', 'SIGCONT', 'SIGFPE', 'SIGHUP',
         'SIGILL', 'SIGINT', 'SIGKILL', 'SIGPIPE', 'SIGQUIT', 'SIGSEGV',
         'SIGSTOP', 'SIGTERM', 'SIGTSTP', 'SIGTTIN', 'SIGTTOU', 'SIGUSR1', 'SIGUSR2', 'SIGWINCH',

@@ -9,7 +9,7 @@ ARCode: top level
   code size: 20
   max stack depth: 6
   number of local variable: 0
-  number of global variable: 56
+  number of global variable: 57
 Code:
    0: LOAD_CONST  2
    2: NEW_CMD
@@ -41,7 +41,7 @@ ARCode: top level
   code size: 20
   max stack depth: 6
   number of local variable: 0
-  number of global variable: 56
+  number of global variable: 57
 Code:
    0: LOAD_CONST  2
    2: NEW_CMD
@@ -74,10 +74,10 @@ ARCode: top level
   code size: 53
   max stack depth: 4
   number of local variable: 2
-  number of global variable: 56
+  number of global variable: 57
 Code:
    0: TRY_GUARD0
-   1: LOAD_GLOBAL  26
+   1: LOAD_GLOBAL  27
    4: STORE_LOCAL  0
    6: LOAD_CONST  2
    8: PIPELINE_LP 2  6  13
@@ -121,10 +121,10 @@ ARCode: top level
   code size: 36
   max stack depth: 3
   number of local variable: 2
-  number of global variable: 56
+  number of global variable: 57
 Code:
    0: TRY_GUARD0
-   1: LOAD_GLOBAL  26
+   1: LOAD_GLOBAL  27
    4: STORE_LOCAL  0
    6: NEW_REDIR
    7: LOAD_CONST  2

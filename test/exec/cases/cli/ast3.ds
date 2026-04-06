@@ -41,7 +41,7 @@ nodes:
     curIndex: 0
     pathList:
 maxVarNum: 0
-maxGVarNum: 58
+maxGVarNum: 59
 
 sourceName: \"$mod\"
 nodes:
@@ -198,7 +198,7 @@ nodes:
     srcIndex: 0
     maxVarNum: 0
 maxVarNum: 0
-maxGVarNum: 58
+maxGVarNum: 59
 
 sourceName: \"$mod\"
 nodes:
@@ -351,7 +351,7 @@ nodes:
     attrNodes:
     maxVarNum: 1
     handle:
-      index: 57
+      index: 58
       kind: \"FUNC\"
       attribute: \"READ_ONLY | GLOBAL\"
     resolvedType: \"(Int) -> Void\""

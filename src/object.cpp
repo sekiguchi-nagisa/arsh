@@ -210,7 +210,6 @@ ObjPtr<UnixFdObject> UnixFdObject::dupWithCloseOnExec() const {
 
 bool RegexObject::match(ARState &state, const StringRef ref, int64_t timeoutMSec,
                         MatchResult *ret) const {
-  assert(ref.size() <= StringObject::MAX_SIZE);
   std::vector<regex::Capture> captures;
   auto timeout =
       timeoutMSec < 0 ? std::chrono::milliseconds::max() : std::chrono::milliseconds(timeoutMSec);

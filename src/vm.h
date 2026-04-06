@@ -201,6 +201,8 @@ public:
 
   int64_t subshellLevel() const { return this->getGlobal(BuiltinVarOffset::SUBSHELL).asInt(); }
 
+  int64_t regexTimeout() const { return this->getGlobal(BuiltinVarOffset::REGEX_TIMEOUT).asInt(); }
+
   void incSubShellLevel() {
     const auto level = this->subshellLevel() + 1;
     this->setGlobal(BuiltinVarOffset::SUBSHELL, Value::createInt(level));

@@ -2,6 +2,12 @@
 
 ## Unreleased
 
+### Added
+
+#### Builtin
+
+- add ``REGEX_TIMEOUT`` variable for global timout milliseconds of regex methods
+
 ### Changed
 
 #### Core
@@ -14,6 +20,7 @@
 
 - add ``timeout`` param to ``Regex#match``, ``Regex#replace``
     - now specify match timeout milliseconds
+    - if timeout param is not specified, use ``REGEX_TIMEOUT`` variable
 - now cancel regex methods by SIGINT
 
 ## [0.41.0] - 2026-03-31

@@ -254,6 +254,72 @@ SystemError: regex replace canceled, caused by `%s'
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED, "\n"));
 }
 
+TEST_F(InteractiveTest, regex_ctrlc3) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+
+  // timeout
+  std::string src =
+      "$REGEX_TIMEOUT=100; $/^(([a-zA-Z0-9])+)+$/ =~ 'abcdefghijklmnopqrstuvwxyzABC@'";
+  std::string err = format(R"([runtime error]
+RegexMatchError: match timeout
+    from (stdin):1 '<toplevel>()'
+)");
+  this->sendLine(src.c_str());
+  std::this_thread::sleep_for(std::chrono::milliseconds(150));
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + src + "\n" + PROMPT, err));
+
+  // interrupt
+  src = "$REGEX_TIMEOUT=100000; $/^(([a-zA-Z0-9])+)+$/ !~ 'abcdefghijklmnopqrstuvwxyzABC@'";
+  err = format(R"([runtime error]
+SystemError: regex match canceled, caused by `%s'
+    from (stdin):2 '<toplevel>()'
+)",
+               strerror(EINTR));
+  this->sendLine(src.c_str());
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + src + "\n"));
+  this->send(CTRL_C);
+  ASSERT_NO_FATAL_FAILURE(this->expect(promptAfterCtrlC(PROMPT), err));
+
+  this->send(CTRL_D);
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED, "\n"));
+}
+
+TEST_F(InteractiveTest, regex_ctrlc4) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+
+  // timeout
+  std::string src =
+      "$REGEX_TIMEOUT=100; 'abcdefghijklmnopqrstuvwxyzABC@' =~ $/^(([a-zA-Z0-9])+)+$/";
+  std::string err = format(R"([runtime error]
+RegexMatchError: match timeout
+    from (stdin):1 '<toplevel>()'
+)");
+  this->sendLine(src.c_str());
+  std::this_thread::sleep_for(std::chrono::milliseconds(150));
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + src + "\n" + PROMPT, err));
+
+  // interrupt
+  src = "$REGEX_TIMEOUT=100000; 'abcdefghijklmnopqrstuvwxyzABC@' !~ $/^(([a-zA-Z0-9])+)+$/";
+  err = format(R"([runtime error]
+SystemError: regex match canceled, caused by `%s'
+    from (stdin):2 '<toplevel>()'
+)",
+               strerror(EINTR));
+  this->sendLine(src.c_str());
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + src + "\n"));
+  this->send(CTRL_C);
+  ASSERT_NO_FATAL_FAILURE(this->expect(promptAfterCtrlC(PROMPT), err));
+
+  this->send(CTRL_D);
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED, "\n"));
+}
+
 TEST_F(InteractiveTest, ctrlz1) {
   this->invoke("--quiet", "--norc");
 

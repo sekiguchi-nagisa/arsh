@@ -296,6 +296,7 @@ const char *toString(HandleKind kind);
   OP(UNCAPTURED, (1u << 4u))
 
 enum class HandleAttr : unsigned char {
+  NONE = 0u,
 #define GEN_ENUM(E, V) E = (V),
   EACH_HANDLE_ATTR(GEN_ENUM)
 #undef GEN_ENUM

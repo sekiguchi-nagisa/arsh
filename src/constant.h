@@ -29,28 +29,29 @@ namespace arsh {
  * enum order is corresponding to builtin variable declaration order.
  */
 enum class BuiltinVarOffset : unsigned char {
-  DUMMY_,      // dummy entry (indicate builtin module object)
-  SCRIPT_NAME, // SCRIPT_NAME
-  SCRIPT_DIR,  // SCRIPT_DIR
-  REPLY,       // REPLY (for read command)
-  REPLY_VAR,   // reply (for read command)
-  DYNA_UDCS,   // DYNA_UDCS (for dynamic registered command)
-  MODULE,      // MODULE
-  RANDOM,      // RANDOM
-  SECONDS,     // SECONDS
-  THROWN,      // THROWN
-  IFS,         // IFS
-  EAW,         // EAW
-  COMPREPLY,   // COMPREPLY
-  DIRSTACK,    // DIRSTACK (for directory stack)
-  PIPESTATUS,  // PIPESTATUS
-  SUBSHELL,    // SUBSHELL (for subshell level)
-  LINES,       // LINES
-  COLUMNS,     // COLUMNS
-  EXIT_STATUS, // ?
-  ARGS,        // @, ARGS
-  ARG0,        // 0, ARG0 (for script name)
-  PID,         // PID (current process)
+  DUMMY_,        // dummy entry (indicate builtin module object)
+  SCRIPT_NAME,   // SCRIPT_NAME
+  SCRIPT_DIR,    // SCRIPT_DIR
+  REPLY,         // REPLY (for read command)
+  REPLY_VAR,     // reply (for read command)
+  DYNA_UDCS,     // DYNA_UDCS (for dynamic registered command)
+  MODULE,        // MODULE
+  RANDOM,        // RANDOM
+  SECONDS,       // SECONDS
+  THROWN,        // THROWN
+  IFS,           // IFS
+  EAW,           // EAW
+  COMPREPLY,     // COMPREPLY
+  DIRSTACK,      // DIRSTACK (for directory stack)
+  PIPESTATUS,    // PIPESTATUS
+  SUBSHELL,      // SUBSHELL (for subshell level)
+  LINES,         // LINES
+  COLUMNS,       // COLUMNS
+  EXIT_STATUS,   // ?
+  ARGS,          // @, ARGS
+  ARG0,          // 0, ARG0 (for script name)
+  REGEX_TIMEOUT, // REGEX_TIMEOUT (for timeout milliseconds)
+  PID,           // PID (current process)
 };
 
 inline unsigned int toIndex(BuiltinVarOffset offset) { return toUnderlying(offset); }
