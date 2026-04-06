@@ -189,6 +189,71 @@ TEST_F(InteractiveTest, lastpipe_ctrlc3) {
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(130, WaitStatus::EXITED, "\n"));
 }
 
+TEST_F(InteractiveTest, regex_ctrlc1) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+
+  // timeout
+  std::string src = "$/^(([a-zA-Z0-9])+)+$/.match('abcdefghijklmnopqrstuvwxyzABC@', 100)";
+  std::string err = format(R"([runtime error]
+RegexMatchError: match timeout
+    from (stdin):1 '<toplevel>()'
+)");
+  this->sendLine(src.c_str());
+  std::this_thread::sleep_for(std::chrono::milliseconds(300));
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + src + "\n" + PROMPT, err));
+
+  // interrupt
+  src = "$/^(([a-zA-Z0-9])+)+$/.match('abcdefghijklmnopqrstuvwxyzABC@', 30000)";
+  err = format(R"([runtime error]
+SystemError: regex match canceled, caused by `%s'
+    from (stdin):2 '<toplevel>()'
+)",
+               strerror(EINTR));
+  this->sendLine(src.c_str());
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + src + "\n"));
+  this->send(CTRL_C);
+  ASSERT_NO_FATAL_FAILURE(this->expect(promptAfterCtrlC(PROMPT), err));
+
+  this->send(CTRL_D);
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED, "\n"));
+}
+
+TEST_F(InteractiveTest, regex_ctrlc2) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+
+  // timeout
+  std::string src =
+      "$/^(([a-zA-Z0-9])+)+$/.replace('abcdefghijklmnopqrstuvwxyzABC@', '', $timeout:100)";
+  std::string err = format(R"([runtime error]
+RegexMatchError: match timeout
+    from (stdin):1 '<toplevel>()'
+)");
+  this->sendLine(src.c_str());
+  std::this_thread::sleep_for(std::chrono::milliseconds(300));
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + src + "\n" + PROMPT, err));
+
+  // interrupt
+  src = "$/^(([a-zA-Z0-9])+)+$/.replace('abcdefghijklmnopqrstuvwxyzABC@', '', $timeout:30000)";
+  err = format(R"([runtime error]
+SystemError: regex replace canceled, caused by `%s'
+    from (stdin):2 '<toplevel>()'
+)",
+               strerror(EINTR));
+  this->sendLine(src.c_str());
+  std::this_thread::sleep_for(std::chrono::milliseconds(100));
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + src + "\n"));
+  this->send(CTRL_C);
+  ASSERT_NO_FATAL_FAILURE(this->expect(promptAfterCtrlC(PROMPT), err));
+
+  this->send(CTRL_D);
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED, "\n"));
+}
+
 TEST_F(InteractiveTest, ctrlz1) {
   this->invoke("--quiet", "--norc");
 

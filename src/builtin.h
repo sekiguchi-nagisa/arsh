@@ -1056,7 +1056,7 @@ ARSH_METHOD string_match(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_match);
   auto str = LOCAL(0).asStrRef();
   auto &re = typeAs<RegexObject>(LOCAL(1));
-  bool r = TRY(re.search(ctx, str));
+  bool r = TRY(re.search(ctx, str, 1000));
   RET_BOOL(r);
 }
 
@@ -1065,7 +1065,7 @@ ARSH_METHOD string_unmatch(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_unmatch);
   auto str = LOCAL(0).asStrRef();
   auto &re = typeAs<RegexObject>(LOCAL(1));
-  bool r = !TRY(re.search(ctx, str));
+  bool r = !TRY(re.search(ctx, str, 1000));
   RET_BOOL(r);
 }
 
@@ -1299,7 +1299,7 @@ ARSH_METHOD regex_search(RuntimeContext &ctx) {
   SUPPRESS_WARNING(regex_search);
   auto &re = typeAs<RegexObject>(LOCAL(0));
   auto ref = LOCAL(1).asStrRef();
-  bool r = TRY(re.search(ctx, ref));
+  bool r = TRY(re.search(ctx, ref, 1000));
   RET_BOOL(r);
 }
 
@@ -1308,29 +1308,36 @@ ARSH_METHOD regex_unmatch(RuntimeContext &ctx) {
   SUPPRESS_WARNING(regex_unmatch);
   auto &re = typeAs<RegexObject>(LOCAL(0));
   auto ref = LOCAL(1).asStrRef();
-  bool r = !TRY(re.search(ctx, ref));
+  bool r = !TRY(re.search(ctx, ref, 1000));
   RET_BOOL(r);
 }
 
-//!bind: function match($this: Regex, $target : String) : Option<RegexMatch>
+//!bind: function match($this: Regex, $target : String, $timeout: Option<Int>) : Option<RegexMatch>
 ARSH_METHOD regex_match(RuntimeContext &ctx) {
   SUPPRESS_WARNING(regex_match);
   auto re = toObjPtr<RegexObject>(LOCAL(0));
   const auto ref = LOCAL(1).asStrRef();
-
-  if (RegexObject::MatchResult result; TRY(re->match(ctx, ref, &result))) {
+  int64_t timeoutMSec = 1000;
+  if (!LOCAL(2).isInvalid()) {
+    timeoutMSec = LOCAL(2).asInt();
+  }
+  if (RegexObject::MatchResult result; TRY(re->match(ctx, ref, timeoutMSec, &result))) {
     auto ret = Value::create<RegexMatchObject>(std::move(re), std::move(result));
     RET(ret);
   }
   RET(Value::createInvalid());
 }
 
-//!bind: function replace($this: Regex, $target : String, $repl : String, $once: Option<Bool>) : String
+//!bind: function replace($this: Regex, $target : String, $repl : String, $once: Option<Bool>, $timeout: Option<Int>) : String
 ARSH_METHOD regex_replace(RuntimeContext &ctx) {
   SUPPRESS_WARNING(regex_replace);
   auto &re = typeAs<RegexObject>(LOCAL(0));
   const bool once = LOCAL(3).isInvalid() ? false : LOCAL(3).asBool();
-  auto ret = re.replace(ctx, LOCAL(1).asStrRef(), LOCAL(2).asStrRef(), !once);
+  int64_t timeoutMSec = 1000;
+  if (!LOCAL(4).isInvalid()) {
+    timeoutMSec = LOCAL(4).asInt();
+  }
+  auto ret = re.replace(ctx, LOCAL(1).asStrRef(), LOCAL(2).asStrRef(), !once, timeoutMSec);
   RET(ret);
 }
 

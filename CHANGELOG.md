@@ -10,6 +10,12 @@
     - now regex syntax and semantics are compatible with ECMAScript regular expression (ES2025)
     - enable Unicode mode by default
 
+#### Builtin
+
+- add ``timeout`` param to ``Regex#match``, ``Regex#replace``
+    - now specify match timeout milliseconds
+- now cancel regex methods by SIGINT
+
 ## [0.41.0] - 2026-03-31
 
 ### Added

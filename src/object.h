@@ -802,20 +802,24 @@ public:
     this->pattern += this->re.getFlag().str();
   }
 
-  bool search(ARState &state, StringRef ref) { return this->match(state, ref, nullptr); }
+  bool search(ARState &state, StringRef ref, int64_t timeoutMSec) const {
+    return this->match(state, ref, timeoutMSec, nullptr);
+  }
 
   /**
    * @param state
    * if it has error, set error to state
    * @param ref
+   * @param timeoutMSec
    * @param ret
    * may be null
    * @return
    * if not matched, return false
    */
-  bool match(ARState &state, StringRef ref, MatchResult *ret);
+  bool match(ARState &state, StringRef ref, int64_t timeoutMSec, MatchResult *ret) const;
 
-  Value replace(ARState &state, StringRef text, StringRef replacement, bool global);
+  Value replace(ARState &state, StringRef text, StringRef replacement, bool global,
+                int64_t timeoutMSec) const;
 
   const auto &getRE() const { return this->re; }
 

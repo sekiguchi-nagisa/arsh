@@ -298,9 +298,9 @@ function %OP_MATCH(target: String): Bool for Regex
 
 function %OP_UNMATCH(target: String): Bool for Regex
 
-function match(target: String): RegexMatch? for Regex
+function match(target: String, timeout: Int?): RegexMatch? for Regex
 
-function replace(target: String, repl: String, once: Bool?): String for Regex
+function replace(target: String, repl: String, once: Bool?, timeout: Int?): String for Regex
 ```
 
 ## RegexMatch type

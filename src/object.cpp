@@ -208,10 +208,13 @@ ObjPtr<UnixFdObject> UnixFdObject::dupWithCloseOnExec() const {
 // ##     RegexObject     ##
 // #########################
 
-bool RegexObject::match(ARState &state, const StringRef ref, MatchResult *ret) {
+bool RegexObject::match(ARState &state, const StringRef ref, int64_t timeoutMSec,
+                        MatchResult *ret) const {
   assert(ref.size() <= StringObject::MAX_SIZE);
   std::vector<regex::Capture> captures;
-  regex::Timer timer(std::chrono::seconds(1));
+  auto timeout =
+      timeoutMSec < 0 ? std::chrono::milliseconds::max() : std::chrono::milliseconds(timeoutMSec);
+  regex::Timer timer(timeout);
   timer.setCancelToken([] { return ARState::hasSignal(SIGINT); });
   auto status = regex::match(this->re, ref, captures, makeObserver(timer));
   switch (status) {
@@ -229,7 +232,7 @@ bool RegexObject::match(ARState &state, const StringRef ref, MatchResult *ret) {
   case regex::MatchStatus::FAIL:
     return false;
   case regex::MatchStatus::CANCEL:
-    raiseSystemError(state, EINTR, "regex matching canceled");
+    raiseSystemError(state, EINTR, "regex match canceled");
     return false;
   default:
     raiseError(state, TYPE::RegexMatchError, regex::toString(status));
@@ -237,7 +240,8 @@ bool RegexObject::match(ARState &state, const StringRef ref, MatchResult *ret) {
   }
 }
 
-Value RegexObject::replace(ARState &state, StringRef text, StringRef replacement, bool global) {
+Value RegexObject::replace(ARState &state, StringRef text, StringRef replacement, bool global,
+                           int64_t timeoutMSec) const {
   std::string err;
   auto ret = Value::createStr();
   auto appender = [&state, &ret](StringRef ref) { return ret.appendAsStr(state, ref); };
@@ -248,7 +252,9 @@ Value RegexObject::replace(ARState &state, StringRef text, StringRef replacement
       .err = &err,
       .consumer = appender,
   };
-  regex::Timer timer(std::chrono::seconds(1));
+  auto timeout =
+      timeoutMSec < 0 ? std::chrono::milliseconds::max() : std::chrono::milliseconds(timeoutMSec);
+  regex::Timer timer(timeout);
   timer.setCancelToken([] { return ARState::hasSignal(SIGINT); });
   auto status = regex::replace(this->re, param, makeObserver(timer));
   switch (status) {
