@@ -33,6 +33,9 @@ Optional<Regex> CodeGen::operator()(SyntaxTree &&tree) {
   this->modifierStack.push(tree.getFlag().modifiers());
   this->directions.clear();
   this->directions.push_back(true);
+  this->namedCaptureGroups = makeObserver(tree.getNamedCaptureGroups());
+  this->resolvedCaptures.clear();
+  this->resolvedCaptures.resize(tree.getCaptureGroupCount() + 1, CaptureState::NOT_OPENED);
 
   if (!this->generate(*tree.getPattern())) {
     return {};
@@ -152,18 +155,9 @@ bool CodeGen::generate(const Node &node) {
     }
     break;
   }
-  case NodeKind::BackRef: {
-    auto &backRefNode = cast<BackRefNode>(node);
-    if (this->inLookBehind()) {
-      this->builder.emit<LBBackRefIns>(backRefNode.getIndex(), backRefNode.isNamed(),
-                                       this->has(Modifier::IGNORE_CASE));
-    } else if (this->has(Modifier::IGNORE_CASE)) {
-      this->builder.emit<IBackRefIns>(backRefNode.getIndex(), backRefNode.isNamed());
-    } else {
-      this->builder.emit<BackRefIns>(backRefNode.getIndex(), backRefNode.isNamed());
-    }
-    break;
-  }
+  case NodeKind::BackRef:
+    this->generateBackRef(cast<BackRefNode>(node));
+    return true;
   case NodeKind::Repeat:
     return this->generateRepeat(cast<RepeatNode>(node));
   case NodeKind::Seq:
@@ -218,7 +212,9 @@ bool CodeGen::generateGroup(const GroupNode &node) {
   case GroupNode::Type::CAPTURE:
     assert(node.getGroupIndex());
     this->builder.emit<BeginCaptureIns>(node.getGroupIndex());
+    this->resolvedCaptures[node.getGroupIndex()] = CaptureState::NOT_CLOSED;
     TRY(this->generate(*node.getPattern()));
+    this->resolvedCaptures[node.getGroupIndex()] = CaptureState::CLOSED;
     if (this->inLookBehind()) {
       this->builder.emit<LBEndCaptureIns>(node.getGroupIndex());
     } else {
@@ -594,6 +590,40 @@ bool CodeGen::generateCharClass(const CharClassNode &node) {
     }
   }
   return false;
+}
+
+void CodeGen::generateBackRef(const BackRefNode &node) {
+  if (node.isNamed()) {
+    auto *entry = this->namedCaptureGroups->find(node.getName());
+    assert(entry);
+    if (entry->hasMultipleIndices()) {
+      unsigned int closedCount = 0;
+      for (unsigned int i = 0; i < entry->getSize(); i++) {
+        auto state = this->resolvedCaptures[(*entry)[i]];
+        if (state == CaptureState::CLOSED) {
+          closedCount++;
+        } else if (state == CaptureState::NOT_CLOSED) {
+          return; // refer to its own group, ex. (?:(?<A>.)|(?<A>\k<A>))
+        }
+      }
+      if (!closedCount) {
+        return;
+      }
+    } else if (this->resolvedCaptures[entry->getIndex()] != CaptureState::CLOSED) {
+      return; // invalid capture, do nothing
+    }
+  } else if (this->resolvedCaptures[node.getIndex()] != CaptureState::CLOSED) {
+    return; // invalid capture, do nothing
+  }
+
+  if (this->inLookBehind()) {
+    this->builder.emit<LBBackRefIns>(node.getIndex(), node.isNamed(),
+                                     this->has(Modifier::IGNORE_CASE));
+  } else if (this->has(Modifier::IGNORE_CASE)) {
+    this->builder.emit<IBackRefIns>(node.getIndex(), node.isNamed());
+  } else {
+    this->builder.emit<BackRefIns>(node.getIndex(), node.isNamed());
+  }
 }
 
 bool CodeGen::generateRepeat(const RepeatNode &node) {

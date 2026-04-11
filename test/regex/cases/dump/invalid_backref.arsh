@@ -1,0 +1,305 @@
+
+source $SCRIPT_DIR/../syntax/test_helper.arsh
+
+# (\1)
+assert diff <(redump -d '(\1)' '') <(<<'EOF'
+flag: (mode = , modifier = )
+loopCount: 0
+captureGroupCount: 1
+namedCaptureGroups: []
+instructions:
+  0: BeginCapture(captureIndex=1)
+  3: EndCapture(captureIndex=1)
+  6: Match
+matchers:
+EOF
+)
+
+# (.\1.)
+assert diff <(redump -d '(.\1.)' '') <(<<'EOF'
+flag: (mode = , modifier = )
+loopCount: 0
+captureGroupCount: 1
+namedCaptureGroups: []
+instructions:
+  0: BeginCapture(captureIndex=1)
+  3: AnyExceptNL
+  4: AnyExceptNL
+  5: EndCapture(captureIndex=1)
+  8: Match
+matchers:
+EOF
+)
+
+# \1()
+assert diff <(redump -d '\1()' '') <(<<'EOF'
+flag: (mode = , modifier = )
+loopCount: 0
+captureGroupCount: 1
+namedCaptureGroups: []
+instructions:
+  0: BeginCapture(captureIndex=1)
+  3: Nop
+  4: EndCapture(captureIndex=1)
+  7: Match
+matchers:
+EOF
+)
+
+# \1(\d)
+assert diff <(redump -d '\1(\d)' '') <(<<'EOF'
+flag: (mode = , modifier = )
+loopCount: 0
+captureGroupCount: 1
+namedCaptureGroups: []
+instructions:
+   0: BeginCapture(captureIndex=1)
+   3: CharSet(matcherIndex=0, invert=false)
+   7: EndCapture(captureIndex=1)
+  10: Match
+matchers:
+  0: AsciiSet
+{ 0x0030, 0x0039 },
+EOF
+)
+
+# (?<A>\k<A>)
+assert diff <(redump -d '(?<A>\k<A>)' '') <(<<'EOF'
+flag: (mode = , modifier = )
+loopCount: 0
+captureGroupCount: 1
+namedCaptureGroups: [A: 1]
+instructions:
+  0: BeginCapture(captureIndex=1)
+  3: EndCapture(captureIndex=1)
+  6: Match
+matchers:
+EOF
+)
+
+# (?<A>.\k<A>.)
+assert diff <(redump -d '(?<A>.\k<A>.)' '') <(<<'EOF'
+flag: (mode = , modifier = )
+loopCount: 0
+captureGroupCount: 1
+namedCaptureGroups: [A: 1]
+instructions:
+  0: BeginCapture(captureIndex=1)
+  3: AnyExceptNL
+  4: AnyExceptNL
+  5: EndCapture(captureIndex=1)
+  8: Match
+matchers:
+EOF
+)
+
+# \k<A>(?<A>.)
+assert diff <(redump -d '\k<A>(?<A>.)' '') <(<<'EOF'
+flag: (mode = , modifier = )
+loopCount: 0
+captureGroupCount: 1
+namedCaptureGroups: [A: 1]
+instructions:
+  0: BeginCapture(captureIndex=1)
+  3: AnyExceptNL
+  4: EndCapture(captureIndex=1)
+  7: Match
+matchers:
+EOF
+)
+
+# (?<A>\k<A>)|(?<A>A)
+assert diff <(redump -d '(?<A>\k<A>)|(?<A>A)' '') <(<<'EOF'
+flag: (mode = , modifier = )
+loopCount: 0
+captureGroupCount: 2
+namedCaptureGroups: [A: [1, 2]]
+instructions:
+   0: Alt(second=16)
+   5: BeginCapture(captureIndex=1)
+   8: EndCapture(captureIndex=1)
+  11: Jump(target=27)
+  16: BeginCapture(captureIndex=2)
+  19: Char(codePoint=U+0041:A)
+  24: EndCapture(captureIndex=2)
+  27: Match
+matchers:
+EOF
+)
+
+# (?<A>B)|(?<A>A\k<A>)
+assert diff <(redump -d '(?<A>B)|(?<A>A\k<A>)' '') <(<<'EOF'
+flag: (mode = , modifier = )
+loopCount: 0
+captureGroupCount: 2
+namedCaptureGroups: [A: [1, 2]]
+instructions:
+   0: Alt(second=21)
+   5: BeginCapture(captureIndex=1)
+   8: Char(codePoint=U+0042:B)
+  13: EndCapture(captureIndex=1)
+  16: Jump(target=32)
+  21: BeginCapture(captureIndex=2)
+  24: Char(codePoint=U+0041:A)
+  29: EndCapture(captureIndex=2)
+  32: Match
+matchers:
+EOF
+)
+
+# \k<A>(?<A>B)|(?<A>A)
+assert diff <(redump -d '\k<A>(?<A>B)|(?<A>A)' '') <(<<'EOF'
+flag: (mode = , modifier = )
+loopCount: 0
+captureGroupCount: 2
+namedCaptureGroups: [A: [1, 2]]
+instructions:
+   0: Alt(second=21)
+   5: BeginCapture(captureIndex=1)
+   8: Char(codePoint=U+0042:B)
+  13: EndCapture(captureIndex=1)
+  16: Jump(target=32)
+  21: BeginCapture(captureIndex=2)
+  24: Char(codePoint=U+0041:A)
+  29: EndCapture(captureIndex=2)
+  32: Match
+matchers:
+EOF
+)
+
+# (?<A>B)|\k<A>(?<A>A)
+assert diff <(redump -d '(?<A>B)|\k<A>(?<A>A)' '') <(<<'EOF' # valid backref
+flag: (mode = , modifier = )
+loopCount: 0
+captureGroupCount: 2
+namedCaptureGroups: [A: [1, 2]]
+instructions:
+   0: Alt(second=21)
+   5: BeginCapture(captureIndex=1)
+   8: Char(codePoint=U+0042:B)
+  13: EndCapture(captureIndex=1)
+  16: Jump(target=36)
+  21: BackRef(index=0, named=true)
+  25: BeginCapture(captureIndex=2)
+  28: Char(codePoint=U+0041:A)
+  33: EndCapture(captureIndex=2)
+  36: Match
+matchers:
+EOF
+)
+
+# \k<A>(?:(?<A>B)|(?<A>A))
+assert diff <(redump -d '\k<A>(?:(?<A>B)|(?<A>A))' '') <(<<'EOF'
+flag: (mode = , modifier = )
+loopCount: 0
+captureGroupCount: 2
+namedCaptureGroups: [A: [1, 2]]
+instructions:
+   0: Alt(second=21)
+   5: BeginCapture(captureIndex=1)
+   8: Char(codePoint=U+0042:B)
+  13: EndCapture(captureIndex=1)
+  16: Jump(target=32)
+  21: BeginCapture(captureIndex=2)
+  24: Char(codePoint=U+0041:A)
+  29: EndCapture(captureIndex=2)
+  32: Match
+matchers:
+EOF
+)
+
+# (?<=()\1A)
+assert diff <(redump -d '(?<=()\1A)' '') <(<<'EOF'
+flag: (mode = , modifier = )
+loopCount: 0
+captureGroupCount: 1
+namedCaptureGroups: []
+instructions:
+   0: BeginLookAround(negate=false, target=19)
+   6: LBChar(ignoreCase=false, codePoint=U+0041:A)
+  12: BeginCapture(captureIndex=1)
+  15: Nop
+  16: LBEndCapture(captureIndex=1)
+  19: EndLookAround
+  20: Match
+matchers:
+EOF
+)
+
+# (?<=(\1)A)
+assert diff <(redump -d '(?<=(\1)A)' '') <(<<'EOF'
+flag: (mode = , modifier = )
+loopCount: 0
+captureGroupCount: 1
+namedCaptureGroups: []
+instructions:
+   0: BeginLookAround(negate=false, target=18)
+   6: LBChar(ignoreCase=false, codePoint=U+0041:A)
+  12: BeginCapture(captureIndex=1)
+  15: LBEndCapture(captureIndex=1)
+  18: EndLookAround
+  19: Match
+matchers:
+EOF
+)
+
+# (?<=(?<A>)\k<A>.)
+assert diff <(redump -d '(?<=(?<A>)\k<A>.)' '') <(<<'EOF'
+flag: (mode = , modifier = )
+loopCount: 0
+captureGroupCount: 1
+namedCaptureGroups: [A: 1]
+instructions:
+   0: BeginLookAround(negate=false, target=15)
+   6: LBAny(dotAll=false)
+   8: BeginCapture(captureIndex=1)
+  11: Nop
+  12: LBEndCapture(captureIndex=1)
+  15: EndLookAround
+  16: Match
+matchers:
+EOF
+)
+
+# (?<=(?<A>\k<A>)|(?<A>A))
+assert diff <(redump -d '(?<=(?<A>\k<A>)|(?<A>A))' '') <(<<'EOF'
+flag: (mode = , modifier = )
+loopCount: 0
+captureGroupCount: 2
+namedCaptureGroups: [A: [1, 2]]
+instructions:
+   0: BeginLookAround(negate=false, target=34)
+   6: Alt(second=22)
+  11: BeginCapture(captureIndex=1)
+  14: LBEndCapture(captureIndex=1)
+  17: Jump(target=34)
+  22: BeginCapture(captureIndex=2)
+  25: LBChar(ignoreCase=false, codePoint=U+0041:A)
+  31: LBEndCapture(captureIndex=2)
+  34: EndLookAround
+  35: Match
+matchers:
+EOF
+)
+
+# (?<=(?<A>B)|(?<A>A\k<A>))
+assert diff <(redump -d '(?<=(?<A>B)|(?<A>A\k<A>))' '') <(<<'EOF'
+flag: (mode = , modifier = )
+loopCount: 0
+captureGroupCount: 2
+namedCaptureGroups: [A: [1, 2]]
+instructions:
+   0: BeginLookAround(negate=false, target=40)
+   6: Alt(second=28)
+  11: BeginCapture(captureIndex=1)
+  14: LBChar(ignoreCase=false, codePoint=U+0042:B)
+  20: LBEndCapture(captureIndex=1)
+  23: Jump(target=40)
+  28: BeginCapture(captureIndex=2)
+  31: LBChar(ignoreCase=false, codePoint=U+0041:A)
+  37: LBEndCapture(captureIndex=2)
+  40: EndLookAround
+  41: Match
+matchers:
+EOF
+)

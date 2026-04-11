@@ -65,6 +65,13 @@ public:
 };
 
 class CodeGen {
+public:
+  enum class CaptureState : unsigned char {
+    NOT_OPENED,
+    NOT_CLOSED,
+    CLOSED,
+  };
+
 private:
   Mode mode{};
   std::string err;
@@ -72,6 +79,8 @@ private:
   std::vector<Matcher> matchers;
   InlinedStack<Modifier, 4> modifierStack;
   std::vector<bool> directions; // true: forward, false: backward
+  ObserverPtr<const NamedCaptureGroups> namedCaptureGroups;
+  std::vector<CaptureState> resolvedCaptures;
 
 public:
   const auto &getError() const { return this->err; }
@@ -129,6 +138,8 @@ private:
       this->builder.emit<CharSetIns>(matcherIndex, invert);
     }
   }
+
+  void generateBackRef(const BackRefNode &node);
 
   bool generateRepeat(const RepeatNode &node);
 
