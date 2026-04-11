@@ -1,0 +1,204 @@
+
+source $SCRIPT_DIR/../syntax/test_helper.arsh
+
+# [\w&&\d]
+assert diff <(redump -d '[\w&&\d]' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+  0: CharSet(matcherIndex=0, invert=false)
+  4: Match
+matchers:
+  0: CodePointSet(owned)
+{ 0x0030, 0x0039 },
+EOF
+)
+
+assert diff <(redump -d '[\w&&\d]' 'vi') <(<<'EOF'
+flag: (mode = v, modifier = i)
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+  0: ICharSet(matcherIndex=0, invert=false)
+  4: Match
+matchers:
+  0: CodePointSet(owned)
+{ 0x0030, 0x0039 },
+EOF
+)
+
+# [\w&&\D]
+assert diff <(redump -d '[\w&&\D]' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+  0: CharSet(matcherIndex=0, invert=false)
+  4: Match
+matchers:
+  0: CodePointSet(owned)
+{ 0x0041, 0x005A },
+{ 0x005F, 0x005F },
+{ 0x0061, 0x007A },
+EOF
+)
+
+assert diff <(redump -d '[\w&&\D]' 'iv') <(<<'EOF'
+flag: (mode = v, modifier = i)
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+  0: ICharSet(matcherIndex=0, invert=false)
+  4: Match
+matchers:
+  0: CodePointSet(owned)
+{ 0x005F, 0x005F },
+{ 0x0061, 0x007A },
+EOF
+)
+
+# [\p{ASCII}&&\W&&\D]
+assert diff <(redump -d '[\p{ASCII}&&\W&&\D]' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+  0: CharSet(matcherIndex=0, invert=false)
+  4: Match
+matchers:
+  0: CodePointSet(owned)
+{ 0x0000, 0x002F },
+{ 0x003A, 0x0040 },
+{ 0x005B, 0x005E },
+{ 0x0060, 0x0060 },
+{ 0x007B, 0x007F },
+EOF
+)
+
+# (?<=[\d&&[\p{ASCII}&&\W&&\D]])
+assert diff <(redump -d '(?<=[\d&&[\p{ASCII}&&\W&&\D]])' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+   0: BeginLookAround(negate=false, target=11)
+   6: LBCharSet(matcherIndex=0, invert=false, ignoreCase=false)
+  11: EndLookAround
+  12: Match
+matchers:
+  0: CodePointSet(owned)
+EOF
+)
+
+assert diff <(redump -d '(?<=[\d&&[\p{ASCII}&&\W&&\D]])' 'iv') <(<<'EOF'
+flag: (mode = v, modifier = i)
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+   0: BeginLookAround(negate=false, target=11)
+   6: LBCharSet(matcherIndex=0, invert=false, ignoreCase=true)
+  11: EndLookAround
+  12: Match
+matchers:
+  0: CodePointSet(owned)
+EOF
+)
+
+# [\p{ASCII}--\w]
+assert diff <(redump -d '[\p{ASCII}--\w]' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+  0: CharSet(matcherIndex=0, invert=false)
+  4: Match
+matchers:
+  0: CodePointSet(owned)
+{ 0x0000, 0x002F },
+{ 0x003A, 0x0040 },
+{ 0x005B, 0x005E },
+{ 0x0060, 0x0060 },
+{ 0x007B, 0x007F },
+EOF
+)
+
+assert diff <(redump -d '[\p{ASCII}--\w]' 'vi') <(<<'EOF'
+flag: (mode = v, modifier = i)
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+  0: ICharSet(matcherIndex=0, invert=false)
+  4: Match
+matchers:
+  0: CodePointSet(owned)
+{ 0x0000, 0x002F },
+{ 0x003A, 0x0040 },
+{ 0x005B, 0x005E },
+{ 0x0060, 0x0060 },
+{ 0x007B, 0x007F },
+EOF
+)
+
+# [\p{ASCII}--\w--[<=>]]
+assert diff <(redump -d '[\p{ASCII}--\w--[<=>]]' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+  0: CharSet(matcherIndex=0, invert=false)
+  4: Match
+matchers:
+  0: CodePointSet(owned)
+{ 0x0000, 0x002F },
+{ 0x003A, 0x003B },
+{ 0x003F, 0x0040 },
+{ 0x005B, 0x005E },
+{ 0x0060, 0x0060 },
+{ 0x007B, 0x007F },
+EOF
+)
+
+# [\p{ASCII}--\W--[<=>]]
+assert diff <(redump -d '[\p{ASCII}--\W--[<=>]]' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+  0: CharSet(matcherIndex=0, invert=false)
+  4: Match
+matchers:
+  0: CodePointSet(owned)
+{ 0x0030, 0x0039 },
+{ 0x0041, 0x005A },
+{ 0x005F, 0x005F },
+{ 0x0061, 0x007A },
+EOF
+)
+
+assert diff <(redump -d '[\p{ASCII}--\W--[<=>]]' 'vi') <(<<'EOF'
+flag: (mode = v, modifier = i)
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+  0: ICharSet(matcherIndex=0, invert=false)
+  4: Match
+matchers:
+  0: CodePointSet(owned)
+{ 0x0030, 0x0039 },
+{ 0x005F, 0x005F },
+{ 0x0061, 0x007A },
+EOF
+)

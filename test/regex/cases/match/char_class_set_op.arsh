@@ -1,0 +1,192 @@
+
+source $SCRIPT_DIR/../syntax/test_helper.arsh
+
+# [\w&&\d]
+assert diff <(redump -m 'a' '[\w&&\d]' 'v') <(<<'EOF'
+input: `a'
+failed
+EOF
+)
+
+assert diff <(redump -m 'a' '[\w&&\d]' 'vi') <(<<'EOF'
+input: `a'
+failed
+EOF
+)
+
+assert diff <(redump -m 'A' '[\w&&\d]' 'v') <(<<'EOF'
+input: `A'
+failed
+EOF
+)
+
+assert diff <(redump -m '9' '[\w&&\d]' 'v') <(<<'EOF'
+input: `9'
+(offset=0, size=1)
+EOF
+)
+
+assert diff <(redump -m '9' '[\w&&\d]' 'iv') <(<<'EOF'
+input: `9'
+(offset=0, size=1)
+EOF
+)
+
+# [\w&&\d&&[^19]]
+assert diff <(redump -m '9' '[\w&&\d&&[^19]]' 'iv') <(<<'EOF'
+input: `9'
+failed
+EOF
+)
+
+assert diff <(redump -m '8' '[\w&&\d&&[^19]]' 'iv') <(<<'EOF'
+input: `8'
+(offset=0, size=1)
+EOF
+)
+
+# (?<=[\w&&\d&&[^19]])
+assert diff <(redump -m '9' '(?<=[\w&&\d&&[^19]])' 'v') <(<<'EOF'
+input: `9'
+failed
+EOF
+)
+
+assert diff <(redump -m '9' '(?<=[\w&&\d&&[^19]])' 'iv') <(<<'EOF'
+input: `9'
+failed
+EOF
+)
+
+assert diff <(redump -m '8' '(?<=[\w&&\d&&[^19]])' 'v') <(<<'EOF'
+input: `8'
+(offset=1, size=0)
+EOF
+)
+
+# [^\w&&\d]
+assert diff <(redump -m 'a' '[^\w&&\d]' 'v') <(<<'EOF'
+input: `a'
+(offset=0, size=1)
+EOF
+)
+
+assert diff <(redump -m 'a' '[^\w&&\d]' 'iv') <(<<'EOF'
+input: `a'
+(offset=0, size=1)
+EOF
+)
+
+assert diff <(redump -m 'あ' '[^\w&&\d]' 'v') <(<<'EOF'
+input: `あ'
+(offset=0, size=3)
+EOF
+)
+
+assert diff <(redump -m '0' '[^\w&&\d]' 'v') <(<<'EOF'
+input: `0'
+failed
+EOF
+)
+
+# (?<=[^\w&&\d])
+assert diff <(redump -m 'あ' '(?<=[^\w&&\d])' 'v') <(<<'EOF'
+input: `あ'
+(offset=3, size=0)
+EOF
+)
+
+assert diff <(redump -m '缶' '(?<=[^\w&&\d])' 'iv') <(<<'EOF'
+input: `缶'
+(offset=3, size=0)
+EOF
+)
+
+# [\p{ASCII}--\w--[<=>]]
+assert diff <(redump -m 'あ' '[\p{ASCII}--\w--[<=>]]' 'v') <(<<'EOF'
+input: `あ'
+failed
+EOF
+)
+
+assert diff <(redump -m '#' '[\p{ASCII}--\w--[<=>]]' 'v') <(<<'EOF'
+input: `#'
+(offset=0, size=1)
+EOF
+)
+
+assert diff <(redump -m '@' '[\p{ASCII}--\w--[<=>]]' 'iv') <(<<'EOF'
+input: `@'
+(offset=0, size=1)
+EOF
+)
+
+assert diff <(redump -m 'A' '[\p{ASCII}--\w--[<=>]]' 'iv') <(<<'EOF'
+input: `A'
+failed
+EOF
+)
+
+# (?<=[\p{ASCII}--\w--[<=>]])
+assert diff <(redump -m '@' '(?<=[\p{ASCII}--\w--[<=>]])' 'v') <(<<'EOF'
+input: `@'
+(offset=1, size=0)
+EOF
+)
+
+assert diff <(redump -m '!' '(?<=[\p{ASCII}--\w--[<=>]])' 'vi') <(<<'EOF'
+input: `!'
+(offset=1, size=0)
+EOF
+)
+
+assert diff <(redump -m 'X' '(?<=[\p{ASCII}--\w--[<=>]])' 'vi') <(<<'EOF'
+input: `X'
+failed
+EOF
+)
+
+
+# [^\p{ASCII}--\w--[<=>]]
+assert diff <(redump -m 'あ' '[^\p{ASCII}--\w--[<=>]]' 'v') <(<<'EOF'
+input: `あ'
+(offset=0, size=3)
+EOF
+)
+
+assert diff <(redump -m 'a' '[^\p{ASCII}--\w--[<=>]]' 'v') <(<<'EOF'
+input: `a'
+(offset=0, size=1)
+EOF
+)
+
+assert diff <(redump -m 'a' '[^\p{ASCII}--\w--[<=>]]' 'vi') <(<<'EOF'
+input: `a'
+(offset=0, size=1)
+EOF
+)
+
+assert diff <(redump -m '@' '[^\p{ASCII}--\w--[<=>]]' 'vi') <(<<'EOF'
+input: `@'
+failed
+EOF
+)
+
+# (?<=[^\p{ASCII}--\w--[<=>]])
+assert diff <(redump -m 'あ' '(?<=[^\p{ASCII}--\w--[<=>]])' 'v') <(<<'EOF'
+input: `あ'
+(offset=3, size=0)
+EOF
+)
+
+assert diff <(redump -m 'a' '(?<=[^\p{ASCII}--\w--[<=>]])' 'vi') <(<<'EOF'
+input: `a'
+(offset=1, size=0)
+EOF
+)
+
+assert diff <(redump -m '&' '(?<=[^\p{ASCII}--\w--[<=>]])' 'vi') <(<<'EOF'
+input: `&'
+failed
+EOF
+)
