@@ -38,7 +38,7 @@ namespace arsh::regex {
 inline int unsafeNextUtf8(const char *&iter) {
   const unsigned char b = *iter;
   if (likely(b < 128)) {
-    iter++;
+    ++iter;
     return b;
   }
   const char *tmp = iter;
