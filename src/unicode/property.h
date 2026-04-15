@@ -57,7 +57,6 @@ enum class Lone : unsigned char {
 #define GEN_ENUM(E) E,
   EACH_UCP_LONE_PROPERTY(GEN_ENUM)
 #undef GEN_ENUM
-      ESRegexClassSpace, // for regex \s
 };
 
 // Unicode Property api

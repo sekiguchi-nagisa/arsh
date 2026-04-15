@@ -591,21 +591,6 @@ static bool getLoneSet(const Lone lone, BuilderOrSet out) {
     }
     return true;
   }
-  case Lone::ESRegexClassSpace: { // WhiteSpace + LineTerminator
-    CodePointSetBuilder builder;
-    constexpr int codes[] = {
-        0x0009, 0x000B, 0x000C, 0xFEFF, // WhiteSpace (except for Space_Separator)
-        0x000A, 0x000D, 0x2028, 0x2029, // LineTerminator
-    };
-    builder.add(codes);
-    getPropertySet(Property::category(Category::Zs), BuilderOrSet(builder)); // Space_Separator
-    if (out.isBuilder) {
-      out.builder->add(builder);
-    } else {
-      *out.set = builder.build();
-    }
-    return true;
-  }
   }
   return false; // normally unreachable (for a broken lone property)
 }

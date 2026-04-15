@@ -1111,6 +1111,19 @@ static constexpr PROPERTY_SET_RANGE lone_set_prime_table[] = {
     { 0xFE7E, 0xFE7E },
     { 0xFF9E, 0xFF9F },
     // Non-BMP
+    /* ESRegexClassSpace */
+    // BMP
+    { 0x0009, 0x000D },
+    { 0x0020, 0x0020 },
+    { 0x00A0, 0x00A0 },
+    { 0x1680, 0x1680 },
+    { 0x2000, 0x200A },
+    { 0x2028, 0x2029 },
+    { 0x202F, 0x202F },
+    { 0x205F, 0x205F },
+    { 0x3000, 0x3000 },
+    { 0xFEFF, 0xFEFF },
+    // Non-BMP
     /* ESRegexClassDigit */
     // BMP
     { 0x0030, 0x0039 },
@@ -6021,47 +6034,48 @@ static constexpr PROPERTY_SET_RANGE_TABLE_OFFSET lone_set_prime_table_offset[] =
     {989, 1, 0, 1}, // Single_Quote
     {990, 12, 0, 12}, // XID_Continue_Delta
     {1002, 15, 0, 15}, // XID_Start_Delta
-    {1017, 1, 0, 1}, // ESRegexClassDigit
-    {1018, 4, 0, 4}, // ESRegexClassWord
-    {1022, 6, 0, 6}, // ESRegexClassExtendWord
-    {1028, 1, 0, 1}, // ASCII
-    {1029, 3, 0, 3}, // ASCII_Hex_Digit
-    {1032, 1, 0, 3}, // Any
-    {1035, 4, 0, 4}, // Bidi_Control
-    {1039, 109, 5, 114}, // Bidi_Mirrored
-    {1153, 618, 12, 630}, // Changes_When_Casefolded
-    {1783, 111, 20, 131}, // Changes_When_Casemapped
-    {1914, 606, 12, 618}, // Changes_When_Lowercased
-    {2532, 761, 86, 849}, // Changes_When_NFKC_Casefolded
-    {3381, 621, 12, 633}, // Changes_When_Titlecased
-    {4014, 622, 12, 634}, // Changes_When_Uppercased
-    {4648, 22, 2, 24}, // Dash
-    {4672, 7, 1, 8}, // Deprecated
-    {4680, 144, 76, 220}, // Diacritic
-    {4900, 90, 61, 151}, // Emoji
-    {5051, 6, 4, 10}, // Emoji_Component
-    {5061, 0, 1, 1}, // Emoji_Modifier
-    {5062, 3, 37, 40}, // Emoji_Modifier_Base
-    {5102, 33, 48, 81}, // Emoji_Presentation
-    {5183, 87, 69, 156}, // Extended_Pictographic
-    {5339, 26, 17, 43}, // Extender
-    {5382, 6, 0, 6}, // Hex_Digit
-    {5388, 3, 0, 3}, // IDS_Binary_Operator
-    {5391, 1, 0, 1}, // IDS_Trinary_Operator
-    {5392, 7, 7, 28}, // Ideographic
-    {5420, 1, 0, 1}, // Join_Control
-    {5421, 7, 0, 7}, // Logical_Order_Exception
-    {5428, 2, 16, 18}, // Noncharacter_Code_Point
-    {5446, 28, 0, 28}, // Pattern_Syntax
-    {5474, 5, 0, 5}, // Pattern_White_Space
-    {5479, 13, 0, 13}, // Quotation_Mark
-    {5492, 3, 0, 3}, // Radical
-    {5495, 0, 1, 1}, // Regional_Indicator
-    {5496, 55, 33, 88}, // Sentence_Terminal
-    {5584, 18, 16, 34}, // Soft_Dotted
-    {5618, 73, 43, 116}, // Terminal_Punctuation
-    {5734, 9, 1, 22}, // Unified_Ideograph
-    {5756, 3, 1, 4}, // Variation_Selector
-    {5760, 10, 0, 10}, // White_Space
+    {1017, 10, 0, 10}, // ESRegexClassSpace
+    {1027, 1, 0, 1}, // ESRegexClassDigit
+    {1028, 4, 0, 4}, // ESRegexClassWord
+    {1032, 6, 0, 6}, // ESRegexClassExtendWord
+    {1038, 1, 0, 1}, // ASCII
+    {1039, 3, 0, 3}, // ASCII_Hex_Digit
+    {1042, 1, 0, 3}, // Any
+    {1045, 4, 0, 4}, // Bidi_Control
+    {1049, 109, 5, 114}, // Bidi_Mirrored
+    {1163, 618, 12, 630}, // Changes_When_Casefolded
+    {1793, 111, 20, 131}, // Changes_When_Casemapped
+    {1924, 606, 12, 618}, // Changes_When_Lowercased
+    {2542, 761, 86, 849}, // Changes_When_NFKC_Casefolded
+    {3391, 621, 12, 633}, // Changes_When_Titlecased
+    {4024, 622, 12, 634}, // Changes_When_Uppercased
+    {4658, 22, 2, 24}, // Dash
+    {4682, 7, 1, 8}, // Deprecated
+    {4690, 144, 76, 220}, // Diacritic
+    {4910, 90, 61, 151}, // Emoji
+    {5061, 6, 4, 10}, // Emoji_Component
+    {5071, 0, 1, 1}, // Emoji_Modifier
+    {5072, 3, 37, 40}, // Emoji_Modifier_Base
+    {5112, 33, 48, 81}, // Emoji_Presentation
+    {5193, 87, 69, 156}, // Extended_Pictographic
+    {5349, 26, 17, 43}, // Extender
+    {5392, 6, 0, 6}, // Hex_Digit
+    {5398, 3, 0, 3}, // IDS_Binary_Operator
+    {5401, 1, 0, 1}, // IDS_Trinary_Operator
+    {5402, 7, 7, 28}, // Ideographic
+    {5430, 1, 0, 1}, // Join_Control
+    {5431, 7, 0, 7}, // Logical_Order_Exception
+    {5438, 2, 16, 18}, // Noncharacter_Code_Point
+    {5456, 28, 0, 28}, // Pattern_Syntax
+    {5484, 5, 0, 5}, // Pattern_White_Space
+    {5489, 13, 0, 13}, // Quotation_Mark
+    {5502, 3, 0, 3}, // Radical
+    {5505, 0, 1, 1}, // Regional_Indicator
+    {5506, 55, 33, 88}, // Sentence_Terminal
+    {5594, 18, 16, 34}, // Soft_Dotted
+    {5628, 73, 43, 116}, // Terminal_Punctuation
+    {5744, 9, 1, 22}, // Unified_Ideograph
+    {5766, 3, 1, 4}, // Variation_Selector
+    {5770, 10, 0, 10}, // White_Space
 };
 
