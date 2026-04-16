@@ -126,6 +126,8 @@ struct ReplaceParam {
 
 MatchStatus replace(const Regex &regex, const ReplaceParam &param, ObserverPtr<Timer> timer);
 
+bool escape(StringRef ref, size_t maxSize, std::string &out);
+
 } // namespace arsh::regex
 
 #endif // ARSH_REGEX_REGEX_H

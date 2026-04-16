@@ -600,6 +600,45 @@ TEST_F(RegexReplaceTest, replaceTimeout) {
   }
 }
 
+struct RegexEscapeParam {
+  StringRef in;
+  StringRef out;
+};
+
+std::ostream &operator<<(std::ostream &stream, const RegexEscapeParam &param) {
+  return stream << "original: " << param.in.toString() << ", escaped: " << param.out.toString();
+}
+
+struct RegexEscapeTest : public ::testing::TestWithParam<RegexEscapeParam> {
+  static void doTest() {
+    auto &param = GetParam();
+    std::string out;
+    ASSERT_TRUE(regex::escape(param.in, out.max_size(), out));
+    ASSERT_EQ(param.out.toString(), out);
+  }
+};
+
+TEST_P(RegexEscapeTest, base) { ASSERT_NO_FATAL_FAILURE(doTest()); }
+
+static constexpr RegexEscapeParam regexEscapeParams[] = {
+    {"", ""},
+    {"A", "\\x41"},
+    {"1ae", "\\x31ae"},
+    {"foo", "\\x66oo"},
+    {"$OSTYPE", "\\$OSTYPE"},
+    {"(Hey)", "\\(Hey\\)"},
+    {"foo-bar", "\\x66oo\\x2dbar"},
+    {"^$\\.*+?()[]{}|/", R"(\^\$\\\.\*\+\?\(\)\[\]\{\}\|\/)"},
+    {",-=<>#&!%:;@~'`\"", R"(\x2c\x2d\x3d\x3c\x3e\x23\x26\x21\x25\x3a\x3b\x40\x7e\x27\x60\x22)"},
+    {"\f\n\r\t\v ", R"(\f\n\r\t\v\x20)"},
+    {"foo\u2028bar", "\\x66oo\\u2028bar"},
+
+    // not support surrogate
+    /*{toUtf8({'f', 'o', 'o', 0xD800, 'b', 'a', 'r'}), "\\x66oo\\ud800bar"},*/
+};
+
+INSTANTIATE_TEST_SUITE_P(RegexEscapeTest, RegexEscapeTest, ::testing::ValuesIn(regexEscapeParams));
+
 TEST(MatcherTest, ascii) {
   regex::AsciiSet set;
   set.add(7);

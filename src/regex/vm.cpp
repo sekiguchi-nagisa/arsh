@@ -16,6 +16,7 @@
 
 #include "input.h"
 #include "matcher.h"
+#include "misc/format.hpp"
 #include "misc/rtti.hpp"
 #include "regex.h"
 #include "unicode/case_fold.h"
@@ -853,6 +854,116 @@ MatchStatus replace(const Regex &regex, const ReplaceParam &param, const Observe
     TRY(param.consumer(input.remainForward()));
   }
   return MatchStatus::OK;
+}
+
+#undef TRY
+#define TRY(E)                                                                                     \
+  do {                                                                                             \
+    if (unlikely(!(E))) {                                                                          \
+      return false;                                                                                \
+    }                                                                                              \
+  } while (false)
+
+bool escape(const StringRef ref, const size_t maxSize, std::string &out) {
+  const char *const end = ref.end();
+  const char *iter = ref.begin();
+  if (iter != end && isLetterOrDigit(*iter)) {
+    char ch = *(iter++);
+    char data[16];
+    snprintf(data, std::size(data), "\\x%02x", ch);
+    TRY(checkedAppend(data, maxSize, out));
+  }
+  for (; iter != end; ++iter) {
+    char buf[16];
+    switch (*iter) {
+    case '^':
+    case '$':
+    case '\\':
+    case '.':
+    case '*':
+    case '+':
+    case '?':
+    case '(':
+    case ')':
+    case '[':
+    case ']':
+    case '{':
+    case '}':
+    case '|':
+    case '/':
+      buf[0] = '\\';
+      buf[1] = *iter;
+      buf[2] = '\0';
+      break;
+    case ',':
+    case '-':
+    case '=':
+    case '<':
+    case '>':
+    case '#':
+    case '&':
+    case '!':
+    case '%':
+    case ':':
+    case ';':
+    case '@':
+    case '~':
+    case '\'':
+    case '`':
+    case '"':
+      snprintf(buf, std::size(buf), "\\x%02x", *iter);
+      break;
+    case '\f':
+      buf[0] = '\\';
+      buf[1] = 'f';
+      buf[2] = '\0';
+      break;
+    case '\n':
+      buf[0] = '\\';
+      buf[1] = 'n';
+      buf[2] = '\0';
+      break;
+    case '\r':
+      buf[0] = '\\';
+      buf[1] = 'r';
+      buf[2] = '\0';
+      break;
+    case '\t':
+      buf[0] = '\\';
+      buf[1] = 't';
+      buf[2] = '\0';
+      break;
+    case '\v':
+      buf[0] = '\\';
+      buf[1] = 'v';
+      buf[2] = '\0';
+      break;
+    case ' ':
+      buf[0] = '\\';
+      buf[1] = 'x';
+      buf[2] = '2';
+      buf[3] = '0';
+      buf[4] = '\0';
+      break;
+    default:
+      int codePoint;
+      if (unsigned int len = UnicodeUtil::utf8ToCodePoint(iter, end, codePoint)) {
+        if (ucp::hasPrimeLoneProperty(codePoint, ucp::Lone::ESRegexClassSpace)) {
+          snprintf(buf, std::size(buf), "\\u%04x", codePoint);
+        } else {
+          memcpy(buf, iter, len);
+          buf[len] = '\0';
+        }
+        iter += len - 1;
+      } else {
+        buf[0] = *iter;
+        buf[1] = '\0';
+      }
+      break;
+    }
+    TRY(checkedAppend(buf, maxSize, out));
+  }
+  return true;
 }
 
 } // namespace arsh::regex
