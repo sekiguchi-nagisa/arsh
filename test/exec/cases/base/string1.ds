@@ -495,8 +495,8 @@ assert $'\U10500'.foldCase() == $'\U10500'
 # assert ''
 $ex = 234
 try { $invalid.foldCase(); } catch e{ $ex = $e; }
-assert $ex is InvalidOperationError
-assert ($ex as InvalidOperationError).message() == 'must be UTF-8 encoded'
+assert $ex is ArgumentError
+assert ($ex as ArgumentError).message() == 'must be UTF-8 encoded'
 
 # string cast
 assert(("fre" + 3.14) is String)

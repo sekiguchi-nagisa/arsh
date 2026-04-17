@@ -1181,7 +1181,7 @@ ARSH_METHOD string_foldCase(RuntimeContext &ctx) {
       iter += byteSize;
       old = iter;
     } else {
-      raiseError(ctx, TYPE::InvalidOperationError, "must be UTF-8 encoded");
+      raiseError(ctx, TYPE::ArgumentError, "must be UTF-8 encoded");
       RET_ERROR;
     }
   }
