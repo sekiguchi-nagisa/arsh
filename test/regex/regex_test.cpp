@@ -625,6 +625,7 @@ static constexpr RegexEscapeParam regexEscapeParams[] = {
     {"A", "\\x41"},
     {"1ae", "\\x31ae"},
     {"foo", "\\x66oo"},
+    {"_A", "_A"},
     {"$OSTYPE", "\\$OSTYPE"},
     {"(Hey)", "\\(Hey\\)"},
     {"foo-bar", "\\x66oo\\x2dbar"},
@@ -638,6 +639,50 @@ static constexpr RegexEscapeParam regexEscapeParams[] = {
 };
 
 INSTANTIATE_TEST_SUITE_P(RegexEscapeTest, RegexEscapeTest, ::testing::ValuesIn(regexEscapeParams));
+
+static std::vector<std::pair<std::string, std::string>> initAsciiOrLetterBaseCases() {
+  std::vector<std::pair<std::string, std::string>> values;
+  for (char c = 'a'; c <= 'z'; c++) {
+    std::string before;
+    before.resize(5, c);
+    char data[16];
+    snprintf(data, std::size(data), "\\x%02x", c);
+    std::string after = data;
+    after.append(4, c);
+    values.emplace_back(std::move(before), std::move(after));
+  }
+  for (char c = 'A'; c <= 'Z'; c++) {
+    std::string before;
+    before.resize(5, c);
+    char data[16];
+    snprintf(data, std::size(data), "\\x%02x", c);
+    std::string after = data;
+    after.append(4, c);
+    values.emplace_back(std::move(before), std::move(after));
+  }
+  for (char c = '0'; c <= '9'; c++) {
+    std::string before;
+    before.resize(5, c);
+    char data[16];
+    snprintf(data, std::size(data), "\\x%02x", c);
+    std::string after = data;
+    after.append(4, c);
+    values.emplace_back(std::move(before), std::move(after));
+  }
+  return values;
+}
+
+static std::vector<RegexEscapeParam> getAsciiLetterOrDigitCases() {
+  static const auto base = initAsciiOrLetterBaseCases();
+  std::vector<RegexEscapeParam> params;
+  for (auto &[before, after] : base) {
+    params.push_back(RegexEscapeParam{.in = before, .out = after});
+  }
+  return params;
+}
+
+INSTANTIATE_TEST_SUITE_P(RegexEscapeTest2, RegexEscapeTest,
+                         ::testing::ValuesIn(getAsciiLetterOrDigitCases()));
 
 TEST(MatcherTest, ascii) {
   regex::AsciiSet set;
