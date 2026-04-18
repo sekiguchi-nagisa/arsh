@@ -15,6 +15,7 @@
  */
 
 #include <cstdio>
+#include <vector>
 
 #include <misc/opt.hpp>
 #include <unicode/emoji_seq.hpp>
