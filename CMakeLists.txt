@@ -211,8 +211,11 @@ add_custom_command(OUTPUT ${emoji_trie_src}
 #     unicode     #
 #=================#
 
-add_library(unicode STATIC
+add_library(casefold STATIC
         src/unicode/case_fold.cpp
+)
+
+add_library(unicode STATIC
         src/unicode/grapheme.cpp
         src/unicode/word.cpp
         src/unicode/property.cpp
@@ -220,6 +223,7 @@ add_library(unicode STATIC
         ${emoji_trie_src}
 )
 add_dependencies(unicode gen_emoji_trie)
+target_link_libraries(unicode casefold)
 if (BUILD_SHARED_LIB)
     set_target_properties(unicode PROPERTIES POSITION_INDEPENDENT_CODE ON)
 endif ()
