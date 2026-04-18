@@ -76,18 +76,41 @@ int main(int argc, char **argv) {
     return 1;
   }
 
+  std::vector<std::pair<std::string, RGIEmojiSeq>> foldSeq;
   EmojiRadixTree tree;
   for (auto [p, codes] : emoji_seq_table) {
     auto str = codes.toUTF8();
     if (!tree.add(str, p)) {
       fatal("cannot insert emoji seq: %s", str.c_str());
     }
+    auto fold = codes.toUTF8CaseFold();
+    if (fold != str) {
+      if (!tree.add(fold, p | RGIEmojiSeq::CASE_IGNORE)) {
+        fatal("cannot insert emoji seq: %s", str.c_str());
+      }
+      foldSeq.emplace_back(std::move(fold), p);
+    }
   }
   auto buf = serialize(tree);
   for (auto [p, codes] : emoji_seq_table) {
     auto str = codes.toUTF8();
     if (lookupRGIEmojiSeqFrom(str, buf.data(), buf.size()) != p) {
-      fatal("cannot lookup emoji seq: %s", str.c_str());
+      fatal("cannot lookup emoji seq: %s\n", str.c_str());
+    }
+    auto fold = codes.toUTF8CaseFold();
+    if (fold != str) {
+      if (lookupRGIEmojiSeqFrom(fold, buf.data(), buf.size()) != (p | RGIEmojiSeq::CASE_IGNORE)) {
+        fatal("cannot lookup emoji seq: %s\n", str.c_str());
+      }
+    }
+  }
+  // check fold seq
+  if (foldSeq.empty()) {
+    fatal("fold emoji seq is not found\n");
+  }
+  for (auto &[seq, p] : foldSeq) {
+    if (lookupRGIEmojiSeqFrom(seq, buf.data(), buf.size()) != (RGIEmojiSeq::CASE_IGNORE | p)) {
+      fatal("not found: %s\n", seq.c_str());
     }
   }
   return emit(fp, argv[0], buf);

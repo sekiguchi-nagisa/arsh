@@ -38,6 +38,7 @@ enum class RGIEmojiSeq : unsigned char {
 #define GEN_ENUM(E, B) E = (B),
   EACH_RGI_EMOJI_SEQ(GEN_ENUM)
 #undef GEN_ENUM
+      CASE_IGNORE = 1u << 7u,
 };
 
 template <>

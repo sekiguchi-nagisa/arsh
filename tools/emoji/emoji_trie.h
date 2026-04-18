@@ -23,6 +23,7 @@
 
 #include <misc/buffer.hpp>
 #include <misc/unicode.hpp>
+#include <unicode/case_fold.h>
 #include <unicode/emoji_seq.hpp>
 
 namespace arsh {
@@ -99,6 +100,17 @@ struct CodePointArray {
     std::string str;
     for (unsigned int i = 0; i < this->usedSize; i++) {
       int code = this->codePoints[i];
+      char buf[4];
+      unsigned int len = UnicodeUtil::codePointToUtf8(code, buf);
+      str += StringRef(buf, len);
+    }
+    return str;
+  }
+
+  std::string toUTF8CaseFold() const {
+    std::string str;
+    for (unsigned int i = 0; i < this->usedSize; i++) {
+      int code = doSimpleCaseFolding(this->codePoints[i]);
       char buf[4];
       unsigned int len = UnicodeUtil::codePointToUtf8(code, buf);
       str += StringRef(buf, len);
