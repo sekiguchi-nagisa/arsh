@@ -677,7 +677,7 @@ bool appendAndEscapeGlobMeta(const StringRef ref, const size_t maxSize, std::str
 
   const char *const end = ref.end();
   const char *start = ref.begin();
-
+  out.reserve(out.size() + ref.size());
   for (const char *iter = ref.begin(); iter != end; ++iter) {
     switch (*iter) {
     case '?':

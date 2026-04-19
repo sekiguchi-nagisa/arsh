@@ -867,6 +867,7 @@ MatchStatus replace(const Regex &regex, const ReplaceParam &param, const Observe
 bool escape(const StringRef ref, const size_t maxSize, std::string &out) {
   const char *const end = ref.end();
   const char *iter = ref.begin();
+  out.reserve(ref.size() + out.size());
   if (iter != end && isLetterOrDigit(*iter)) {
     char ch = *(iter++);
     char data[16];
@@ -875,6 +876,7 @@ bool escape(const StringRef ref, const size_t maxSize, std::string &out) {
   }
   for (; iter != end; ++iter) {
     char buf[16];
+    unsigned int len = 0;
     switch (*iter) {
     case '^':
     case '$':
@@ -893,7 +895,7 @@ bool escape(const StringRef ref, const size_t maxSize, std::string &out) {
     case '/':
       buf[0] = '\\';
       buf[1] = *iter;
-      buf[2] = '\0';
+      len = 2;
       break;
     case ',':
     case '-':
@@ -910,58 +912,64 @@ bool escape(const StringRef ref, const size_t maxSize, std::string &out) {
     case '~':
     case '\'':
     case '`':
-    case '"':
-      snprintf(buf, std::size(buf), "\\x%02x", *iter);
+    case '"': {
+      const char *table = "0123456789abcdef";
+      buf[0] = '\\';
+      buf[1] = 'x';
+      buf[2] = table[*iter / 16];
+      buf[3] = table[*iter % 16];
+      len = 4;
       break;
+    }
     case '\f':
       buf[0] = '\\';
       buf[1] = 'f';
-      buf[2] = '\0';
+      len = 2;
       break;
     case '\n':
       buf[0] = '\\';
       buf[1] = 'n';
-      buf[2] = '\0';
+      len = 2;
       break;
     case '\r':
       buf[0] = '\\';
       buf[1] = 'r';
-      buf[2] = '\0';
+      len = 2;
       break;
     case '\t':
       buf[0] = '\\';
       buf[1] = 't';
-      buf[2] = '\0';
+      len = 2;
       break;
     case '\v':
       buf[0] = '\\';
       buf[1] = 'v';
-      buf[2] = '\0';
+      len = 2;
       break;
     case ' ':
       buf[0] = '\\';
       buf[1] = 'x';
       buf[2] = '2';
       buf[3] = '0';
-      buf[4] = '\0';
+      len = 4;
       break;
     default:
       int codePoint;
-      if (unsigned int len = UnicodeUtil::utf8ToCodePoint(iter, end, codePoint)) {
+      if (unsigned int byteSize = UnicodeUtil::utf8ToCodePoint(iter, end, codePoint)) {
         if (ucp::hasPrimeLoneProperty(codePoint, ucp::Lone::ESRegexClassSpace)) {
-          snprintf(buf, std::size(buf), "\\u%04x", codePoint);
+          len = snprintf(buf, std::size(buf), "\\u%04x", codePoint);
         } else {
-          memcpy(buf, iter, len);
-          buf[len] = '\0';
+          memcpy(buf, iter, byteSize);
+          len = byteSize;
         }
-        iter += len - 1;
+        iter += byteSize - 1;
       } else {
         buf[0] = *iter;
-        buf[1] = '\0';
+        len = 1;
       }
       break;
     }
-    TRY(checkedAppend(buf, maxSize, out));
+    TRY(checkedAppend(StringRef(buf, len), maxSize, out));
   }
   return true;
 }

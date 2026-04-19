@@ -28,6 +28,7 @@
 #include "arg_parser.h"
 #include "candidates.h"
 #include "format_util.h"
+#include "glob.h"
 #include "line_editor.h"
 #include "misc/files.hpp"
 #include "misc/num_util.hpp"
@@ -1214,6 +1215,29 @@ ARSH_METHOD string_dequote(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_dequote);
   auto ref = LOCAL(0).asStrRef();
   auto ret = unquoteCmdArgLiteral(ref, true);
+  RET(Value::createStr(std::move(ret)));
+}
+
+//!bind: function escape($this: String, $type: String): String
+ARSH_METHOD string_escape(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(string_escape);
+  auto ref = LOCAL(0).asStrRef();
+  auto type = LOCAL(1).asStrRef();
+  std::string ret;
+  if (type == "glob") {
+    if (!appendAndEscapeGlobMeta(ref, StringObject::MAX_SIZE, ret)) {
+      raiseStringLimit(ctx);
+      RET_ERROR;
+    }
+  } else if (type == "regex") {
+    if (!regex::escape(ref, StringObject::MAX_SIZE, ret)) {
+      raiseStringLimit(ctx);
+      RET_ERROR;
+    }
+  } else {
+    raiseError(ctx, TYPE::ArgumentError, "escape type must be `glob' or `regex'");
+    RET_ERROR;
+  }
   RET(Value::createStr(std::move(ret)));
 }
 

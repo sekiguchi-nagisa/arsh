@@ -200,6 +200,8 @@ function foldCase(full: Bool?, turkic: Bool?): String for String
 function quote(cmd: Bool?): String for String
 
 function dequote(): String for String
+
+function escape(type: String): String for String
 ```
 
 ## FD type
