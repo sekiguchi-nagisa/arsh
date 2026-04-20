@@ -34,5 +34,5 @@ set(TEST_NAME emoji_test)
 add_executable(${TEST_NAME}
         emoji_test.cpp
 )
-target_link_libraries(${TEST_NAME} gtest gtest_main emoji_trie unicode test_common)
+target_link_libraries(${TEST_NAME} gtest gtest_main unicode radix test_common)
 add_test(${TEST_NAME} ${TEST_NAME})

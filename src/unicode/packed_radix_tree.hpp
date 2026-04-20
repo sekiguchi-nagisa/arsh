@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-#ifndef ARSH_UNICODE_EMOJI_SEQ_H
-#define ARSH_UNICODE_EMOJI_SEQ_H
+#ifndef ARSH_UNICODE_PACKED_RADIX_TREE_HPP
+#define ARSH_UNICODE_PACKED_RADIX_TREE_HPP
 
 #include <algorithm>
 
-#include "../misc/enum_util.hpp"
-#include "../misc/string_ref.hpp"
+#include "misc/enum_util.hpp"
+#include "misc/string_ref.hpp"
 
 namespace arsh {
 
@@ -133,4 +133,4 @@ inline RGIEmojiSeq lookupRGIEmojiSeqFrom(StringRef ref, const uint8_t *const ptr
 
 } // namespace arsh
 
-#endif // ARSH_UNICODE_EMOJI_SEQ_H
+#endif // ARSH_UNICODE_PACKED_RADIX_TREE_HPP

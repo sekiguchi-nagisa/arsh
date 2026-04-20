@@ -18,9 +18,10 @@
 #include <vector>
 
 #include <misc/opt.hpp>
-#include <unicode/emoji_seq.hpp>
+#include <unicode/packed_radix_tree.hpp>
+#include <unicode/radix_tree.h>
 
-#include "emoji_trie.h"
+#include "code_pointer_helper.hpp"
 
 using namespace arsh;
 
@@ -92,7 +93,10 @@ int main(int argc, char **argv) {
       foldSeq.emplace_back(std::move(fold), p);
     }
   }
-  auto buf = serialize(tree);
+  FlexBuffer<uint8_t> buf;
+  if (!serialize(tree, buf)) {
+    fatal("too large radix tree");
+  }
   for (auto [p, codes] : emoji_seq_table) {
     auto str = codes.toUTF8();
     if (lookupRGIEmojiSeqFrom(str, buf.data(), buf.size()) != p) {

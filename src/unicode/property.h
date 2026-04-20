@@ -20,7 +20,7 @@
 #include "../misc/enum_util.hpp"
 #include "../misc/result.hpp"
 #include "../misc/string_ref.hpp"
-#include "emoji_seq.hpp"
+#include "packed_radix_tree.hpp"
 #include "set_builder.h"
 
 #include "ucp_general_category_def.in"

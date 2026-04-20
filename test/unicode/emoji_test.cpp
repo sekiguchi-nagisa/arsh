@@ -1,7 +1,9 @@
 #include "../test_common.h"
 
-#include "../tools/emoji/emoji_trie.h"
 #include <unicode/property.h>
+#include <unicode/radix_tree.h>
+
+#include "../tools/emoji/code_pointer_helper.hpp"
 
 using namespace arsh;
 
@@ -129,11 +131,9 @@ TEST(EmojiTrieTest, all) {
   ASSERT_EQ(RGIEmojiSeq::RGI_Emoji_Modifier_Sequence, tree.find("✌🏼"));
   ASSERT_EQ(RGIEmojiSeq::RGI_Emoji_Modifier_Sequence, tree.find("👦🏽"));
   ASSERT_EQ(RGIEmojiSeq::RGI_Emoji_Modifier_Sequence, tree.find("🧓🏻"));
-  ASSERT_EQ(RGIEmojiSeq::RGI_Emoji_ZWJ_Sequence,
-            tree.find("👨🏻‍❤️‍💋‍👨🏻"));
+  ASSERT_EQ(RGIEmojiSeq::RGI_Emoji_ZWJ_Sequence, tree.find("👨🏻‍❤️‍💋‍👨🏻"));
   ASSERT_EQ(RGIEmojiSeq::RGI_Emoji_ZWJ_Sequence, tree.find("👨‍👧"));
-  ASSERT_EQ(RGIEmojiSeq::RGI_Emoji_ZWJ_Sequence,
-            tree.find("👨🏽‍❤️‍💋‍👨🏾"));
+  ASSERT_EQ(RGIEmojiSeq::RGI_Emoji_ZWJ_Sequence, tree.find("👨🏽‍❤️‍💋‍👨🏾"));
   ASSERT_EQ(RGIEmojiSeq::RGI_Emoji_ZWJ_Sequence, tree.find("👩🏼‍🤝‍👩🏽"));
   ASSERT_EQ(RGIEmojiSeq::RGI_Emoji_ZWJ_Sequence, tree.find("🫱🏼‍🫲🏻"));
   ASSERT_EQ(RGIEmojiSeq::RGI_Emoji_ZWJ_Sequence, tree.find("⛹🏽‍♂️"));

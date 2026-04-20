@@ -18,7 +18,7 @@
 #include <list>
 #include <vector>
 
-#include "emoji_trie.h"
+#include "radix_tree.h"
 
 namespace arsh {
 
@@ -122,15 +122,15 @@ EmojiRadixTree *EmojiRadixTree::getOrCreate(char ch) {
   return this->children.emplace(ch, std::make_unique<EmojiRadixTree>()).first->second.get();
 }
 
-FlexBuffer<uint8_t> serialize(const EmojiRadixTree &radixTree) {
+bool serialize(const EmojiRadixTree &radixTree, FlexBuffer<uint8_t> &buf) {
   /**
    * maintains tree start offset
    * [(tree0, 0), (tree1, offset1)]
    */
   std::list<std::pair<const EmojiRadixTree *, unsigned int>> targets;
   targets.emplace_back(&radixTree, 0);
+  buf.clear();
 
-  FlexBuffer<uint8_t> buf;
   while (targets.size()) {
     const auto &tree = *targets.front().first;
     assert(tree.getPrefix().size() <= UINT8_MAX);
@@ -154,7 +154,9 @@ FlexBuffer<uint8_t> serialize(const EmojiRadixTree &radixTree) {
     for (auto &e : children) {
       targets.emplace_back(e, targets.back().second + targets.back().first->packedSize());
       unsigned int childOffset = targets.back().second;
-      assert(childOffset <= ((1u << 8 * RadixChildIter::CHILD_OFFSET_BYTES) - 1));
+      if (childOffset > ((1u << 8 * RadixChildIter::CHILD_OFFSET_BYTES) - 1)) {
+        return false; // too large tree
+      }
       for (unsigned int i = 0; i < RadixChildIter::CHILD_OFFSET_BYTES; i++) {
         unsigned int shift = (RadixChildIter::CHILD_OFFSET_BYTES - 1 - i) * 8;
         buf.push_back((childOffset >> shift) & 0xFF);
@@ -162,7 +164,7 @@ FlexBuffer<uint8_t> serialize(const EmojiRadixTree &radixTree) {
     }
     targets.pop_front();
   }
-  return buf;
+  return true;
 }
 
 } // namespace arsh
