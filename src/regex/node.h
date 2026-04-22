@@ -232,9 +232,9 @@ public:
     this->u16 = n << 8 | v;
   }
 
-  PropertyNode(Token token, RGIEmojiSeq seq) : NodeWithRtti(token) {
+  PropertyNode(Token token, ucp::RGIEmojiSeq seq) : NodeWithRtti(token) {
     this->u8 = toUnderlying(Type::EMOJI);
-    static_assert(sizeof(RGIEmojiSeq) <= sizeof(uint16_t));
+    static_assert(sizeof(ucp::RGIEmojiSeq) <= sizeof(uint16_t));
     this->u16 = toUnderlying(seq);
   }
 
@@ -246,7 +246,7 @@ public:
     return {n, v};
   }
 
-  RGIEmojiSeq getEmojiSeq() const { return static_cast<RGIEmojiSeq>(this->u16); }
+  ucp::RGIEmojiSeq getEmojiSeq() const { return static_cast<ucp::RGIEmojiSeq>(this->u16); }
 
   bool isInvert() const {
     switch (this->getType()) {

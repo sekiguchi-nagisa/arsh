@@ -18,7 +18,7 @@
 #include <vector>
 
 #include <misc/opt.hpp>
-#include <unicode/packed_radix_tree.hpp>
+#include <unicode/property.h>
 #include <unicode/radix_tree.h>
 
 #include "code_pointer_helper.hpp"
@@ -26,9 +26,11 @@
 using namespace arsh;
 
 struct EMOJI_SEQ_ENTRY {
-  RGIEmojiSeq property;
+  ucp::RGIEmojiSeq property;
   CodePointArray codes;
 };
+
+using namespace arsh::ucp;
 
 #include "./emoji_seq.in"
 
@@ -55,6 +57,11 @@ static int emit(FILE *fp, const char *bin, const FlexBuffer<uint8_t> &buf) {
   return 0;
 }
 
+static RGIEmojiSeq lookupRGIEmojiSeqFrom(StringRef ref, const uint8_t *const ptr,
+                                         const size_t size) {
+  return static_cast<RGIEmojiSeq>(PackedRadixTree(ptr, size).find(ref));
+}
+
 int main(int argc, char **argv) {
   opt::GetOptState optState("h");
   auto iter = argv + 1;
@@ -79,15 +86,15 @@ int main(int argc, char **argv) {
   }
 
   std::vector<std::pair<std::string, RGIEmojiSeq>> foldSeq;
-  EmojiRadixTree tree;
+  RadixTree tree;
   for (auto [p, codes] : emoji_seq_table) {
     auto str = codes.toUTF8();
-    if (!tree.add(str, p)) {
+    if (!tree.add(str, toUnderlying(p))) {
       fatal("cannot insert emoji seq: %s", str.c_str());
     }
     auto fold = codes.toUTF8CaseFold();
     if (fold != str) {
-      if (!tree.add(fold, p | RGIEmojiSeq::CASE_IGNORE)) {
+      if (!tree.add(fold, toUnderlying(p | RGIEmojiSeq::CASE_IGNORE))) {
         fatal("cannot insert emoji seq: %s", str.c_str());
       }
       foldSeq.emplace_back(std::move(fold), p);
@@ -104,7 +111,8 @@ int main(int argc, char **argv) {
     }
     auto fold = codes.toUTF8CaseFold();
     if (fold != str) {
-      if (lookupRGIEmojiSeqFrom(fold, buf.data(), buf.size()) != (p | RGIEmojiSeq::CASE_IGNORE)) {
+      if (lookupRGIEmojiSeqFrom(fold, buf.data(), buf.size()) !=
+          (p | ucp::RGIEmojiSeq::CASE_IGNORE)) {
         fatal("cannot lookup emoji seq: %s\n", str.c_str());
       }
     }
@@ -114,7 +122,7 @@ int main(int argc, char **argv) {
     fatal("fold emoji seq is not found\n");
   }
   for (auto &[seq, p] : foldSeq) {
-    if (lookupRGIEmojiSeqFrom(seq, buf.data(), buf.size()) != (RGIEmojiSeq::CASE_IGNORE | p)) {
+    if (lookupRGIEmojiSeqFrom(seq, buf.data(), buf.size()) != (ucp::RGIEmojiSeq::CASE_IGNORE | p)) {
       fatal("not found: %s\n", seq.c_str());
     }
   }

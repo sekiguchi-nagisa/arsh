@@ -16,10 +16,12 @@
 
 #include "property.h"
 
-#include "../misc/codepoint_set.hpp"
-#include "../misc/enum_util.hpp"
-#include "../misc/format.hpp"
-#include "../misc/unicode.hpp"
+#include "misc/codepoint_set.hpp"
+#include "misc/enum_util.hpp"
+#include "misc/flag_util.hpp"
+#include "misc/format.hpp"
+#include "misc/unicode.hpp"
+#include "radix_tree.h"
 
 namespace arsh::ucp {
 
@@ -734,8 +736,11 @@ const char *toString(RGIEmojiSeq p) {
 #include <packed_emoji_trie.h>
 
 RGIEmojiSeq getEmojiProperty(StringRef ref) {
-  return lookupRGIEmojiSeqFrom(ref, packed_emoji_radix_tree_table,
-                               std::size(packed_emoji_radix_tree_table));
+  PackedRadixTree tree(packed_emoji_radix_tree_table, std::size(packed_emoji_radix_tree_table));
+  if (auto p = static_cast<RGIEmojiSeq>(tree.find(ref)); !hasFlag(p, RGIEmojiSeq::CASE_IGNORE)) {
+    return p;
+  }
+  return RGIEmojiSeq::None;
 }
 
 } // namespace arsh::ucp

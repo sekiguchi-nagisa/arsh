@@ -17,10 +17,9 @@
 #ifndef ARSH_UNICODE_PROPERTY_H
 #define ARSH_UNICODE_PROPERTY_H
 
-#include "../misc/enum_util.hpp"
-#include "../misc/result.hpp"
-#include "../misc/string_ref.hpp"
-#include "packed_radix_tree.hpp"
+#include "misc/enum_util.hpp"
+#include "misc/result.hpp"
+#include "misc/string_ref.hpp"
 #include "set_builder.h"
 
 #include "ucp_general_category_def.in"
@@ -148,6 +147,23 @@ inline bool isExtendedPictographic(int codePoint) {
   return hasPrimeLoneProperty(codePoint, Lone::Extended_Pictographic);
 }
 
+#define EACH_RGI_EMOJI_SEQ(E)                                                                      \
+  E(Basic_Emoji, (1u << 0u))                                                                       \
+  E(Emoji_Keycap_Sequence, (1u << 1u))                                                             \
+  E(RGI_Emoji_Modifier_Sequence, (1u << 2u))                                                       \
+  E(RGI_Emoji_Flag_Sequence, (1u << 3u))                                                           \
+  E(RGI_Emoji_Tag_Sequence, (1u << 4u))                                                            \
+  E(RGI_Emoji_ZWJ_Sequence, (1u << 5u))                                                            \
+  E(RGI_Emoji, ((1u << 6u) - 1u))
+
+enum class RGIEmojiSeq : unsigned char {
+  None = 0,
+#define GEN_ENUM(E, B) E = (B),
+  EACH_RGI_EMOJI_SEQ(GEN_ENUM)
+#undef GEN_ENUM
+      CASE_IGNORE = 1u << 7u,
+};
+
 Optional<RGIEmojiSeq> parseEmojiProperty(StringRef ref);
 
 const char *toString(RGIEmojiSeq p);
@@ -155,5 +171,10 @@ const char *toString(RGIEmojiSeq p);
 RGIEmojiSeq getEmojiProperty(StringRef ref);
 
 } // namespace arsh::ucp
+
+namespace arsh {
+template <>
+struct allow_enum_bitop<ucp::RGIEmojiSeq> : std::true_type {};
+} // namespace arsh
 
 #endif // ARSH_UNICODE_PROPERTY_H
