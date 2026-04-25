@@ -735,9 +735,14 @@ const char *toString(RGIEmojiSeq p) {
 
 #include <packed_emoji_trie.h>
 
+PackedRadixTree getEmojiTrie() {
+  return {longest_packed_emoji_string_size, packed_emoji_radix_tree_table,
+          std::size(packed_emoji_radix_tree_table)};
+}
+
 RGIEmojiSeq getEmojiProperty(StringRef ref) {
-  PackedRadixTree tree(packed_emoji_radix_tree_table, std::size(packed_emoji_radix_tree_table));
-  if (auto p = static_cast<RGIEmojiSeq>(tree.find(ref)); !hasFlag(p, RGIEmojiSeq::CASE_IGNORE)) {
+  if (auto p = static_cast<RGIEmojiSeq>(getEmojiTrie().find(ref));
+      !hasFlag(p, RGIEmojiSeq::CASE_IGNORE)) {
     return p;
   }
   return RGIEmojiSeq::None;

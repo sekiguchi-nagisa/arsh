@@ -17,6 +17,7 @@
 #ifndef ARSH_UNICODE_RADIX_TREE_H
 #define ARSH_UNICODE_RADIX_TREE_H
 
+#include <functional>
 #include <memory>
 #include <unordered_map>
 
@@ -80,10 +81,14 @@ private:
    * | ... next node
    */
   const uint8_t *ptr;
+  unsigned short longestStringSize;
   unsigned int size;
 
 public:
-  PackedRadixTree(const uint8_t *ptr, unsigned int size) : ptr(ptr), size(size) {}
+  PackedRadixTree(unsigned short longestStringSize, const uint8_t *ptr, unsigned int size)
+      : ptr(ptr), longestStringSize(longestStringSize), size(size) {}
+
+  unsigned short getLongestStringSize() const { return this->longestStringSize; }
 
   uint8_t find(StringRef ref) const {
     for (unsigned int offset = 0; offset < this->size;) {
@@ -163,6 +168,10 @@ public:
   bool add(StringRef seq, uint8_t p);
 
   uint8_t find(StringRef seq) const;
+
+  size_t longestStringSize() const;
+
+  void iterate(const std::function<bool(StringRef, unsigned char)> &walker) const;
 
 private:
   RadixTree *getOrCreate(char ch);

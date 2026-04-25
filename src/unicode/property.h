@@ -20,6 +20,7 @@
 #include "misc/enum_util.hpp"
 #include "misc/result.hpp"
 #include "misc/string_ref.hpp"
+#include "radix_tree.h"
 #include "set_builder.h"
 
 #include "ucp_general_category_def.in"
@@ -167,6 +168,8 @@ enum class RGIEmojiSeq : unsigned char {
 Optional<RGIEmojiSeq> parseEmojiProperty(StringRef ref);
 
 const char *toString(RGIEmojiSeq p);
+
+PackedRadixTree getEmojiTrie();
 
 RGIEmojiSeq getEmojiProperty(StringRef ref);
 

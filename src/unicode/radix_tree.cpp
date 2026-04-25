@@ -114,6 +114,42 @@ static uint8_t findImpl(const RadixTree *tree, StringRef seq) {
 
 uint8_t RadixTree::find(const StringRef seq) const { return findImpl(this, seq); }
 
+static size_t longestStringSizeImpl(const RadixTree &tree) {
+  size_t maxChildSize = 0;
+  for (auto &e : tree.getChildren()) {
+    auto size = longestStringSizeImpl(*e.second);
+    maxChildSize = std::max(maxChildSize, size);
+  }
+  return tree.getPrefix().size() + maxChildSize;
+}
+
+size_t RadixTree::longestStringSize() const { return longestStringSizeImpl(*this); }
+
+static bool iterateImpl(std::string &buf, const RadixTree &tree,
+                        const std::function<bool(StringRef, unsigned char)> &walker) {
+  buf += tree.getPrefix();
+  if (auto p = tree.getProperty()) {
+    if (!walker(buf, p)) {
+      return false; // break iteration
+    }
+  }
+  const auto oldSize = buf.size();
+  for (auto &e : tree.getChildren()) {
+    buf.resize(oldSize);
+    if (!iterateImpl(buf, *e.second, walker)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+void RadixTree::iterate(const std::function<bool(StringRef, unsigned char)> &walker) const {
+  if (walker) {
+    std::string buf;
+    iterateImpl(buf, *this, walker);
+  }
+}
+
 RadixTree *RadixTree::getOrCreate(char ch) {
   auto iter = this->children.find(ch);
   if (iter != this->children.end()) {

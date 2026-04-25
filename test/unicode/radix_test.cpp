@@ -8,6 +8,29 @@
 using namespace arsh;
 using namespace arsh::ucp;
 
+static std::vector<std::string> list(const RadixTree &tree) {
+  std::vector<std::string> values;
+  tree.iterate([&values](StringRef ref, unsigned char) {
+    values.push_back(ref.toString());
+    return true;
+  });
+  return values;
+}
+
+TEST(RadixTest, base) {
+  RadixTree tree;
+  ASSERT_EQ(0, tree.longestStringSize());
+  ASSERT_EQ(std::vector<std::string>{}, list(tree));
+
+  // do nothing
+  ASSERT_FALSE(tree.add("", 0));
+  ASSERT_EQ(0, tree.longestStringSize());
+  ASSERT_TRUE(tree.add("", 1));
+  ASSERT_EQ(0, tree.longestStringSize());
+
+  // add
+}
+
 TEST(EmojiTrieTest, base) {
   RadixTree tree;
   ASSERT_TRUE(tree.empty());
