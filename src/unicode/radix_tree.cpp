@@ -37,9 +37,15 @@ static StringRef findCommonPrefix(StringRef x, StringRef y) {
   return x.slice(0, i);
 }
 
-bool RadixTree::add(StringRef seq, uint8_t p) {
+RadixTree::AddStatus RadixTree::add(StringRef seq, uint8_t p) {
+  if (seq.empty()) {
+    return AddStatus::EMPTY;
+  }
   if (!p) {
-    return false;
+    return AddStatus::NONE_PROPERTY;
+  }
+  if (seq.size() > PACKED_RADIX_MAX_STRING_SIZE) {
+    return AddStatus::TOO_LARGE;
   }
   for (auto *tree = this;;) {
     const auto common = findCommonPrefix(tree->prefix, seq);
@@ -48,14 +54,14 @@ bool RadixTree::add(StringRef seq, uint8_t p) {
       if (seq.empty()) {
         if (!tree->property) {
           tree->property = p;
-          return true;
+          return AddStatus::OK;
         }
         break; // already inserted
       }
       if (tree->prefix.empty() && tree->children.empty() && !tree->property) {
         tree->prefix = seq.toString();
         tree->property = p;
-        return true;
+        return AddStatus::OK;
       }
       tree = tree->getOrCreate(seq[0]);
     } else { // split
@@ -81,12 +87,12 @@ bool RadixTree::add(StringRef seq, uint8_t p) {
       tree->property = 0;
       if (seq.empty()) {
         tree->property = p;
-        return true;
+        return AddStatus::OK;
       }
       tree = tree->getOrCreate(seq[0]);
     }
   }
-  return false;
+  return AddStatus::ADDED;
 }
 
 static uint8_t findImpl(const RadixTree *tree, StringRef seq) {
@@ -158,26 +164,32 @@ RadixTree *RadixTree::getOrCreate(char ch) {
   return this->children.emplace(ch, std::make_unique<RadixTree>()).first->second.get();
 }
 
-bool serialize(const RadixTree &radixTree, FlexBuffer<uint8_t> &buf) {
+static bool serialize(const RadixTree &radixTree, FlexBuffer<uint8_t> &buf,
+                      const unsigned char childOffsetBytes) {
   /**
    * maintains tree start offset
-   * [(tree0, 0), (tree1, offset1)]
+   * [(tree0, 1), (tree1, offset1)]
    */
   std::list<std::pair<const RadixTree *, unsigned int>> targets;
-  targets.emplace_back(&radixTree, 0);
-  buf.clear();
+  targets.emplace_back(&radixTree, 1);
 
+  buf.clear();
+  buf.push_back(childOffsetBytes);
   while (targets.size()) {
     const auto &tree = *targets.front().first;
-    assert(tree.getPrefix().size() <= UINT8_MAX);
-    buf.push_back(tree.getPrefix().size());
+    assert(tree.getPrefix().size() <= PACKED_RADIX_MAX_STRING_SIZE);
+    assert(tree.getChildren().size() <= PACKED_RADIX_MAX_N_CHILDREN);
+    const unsigned int meta = static_cast<unsigned int>(tree.getPrefix().size()) << 9 |
+                              static_cast<unsigned int>(tree.getChildren().size());
+    for (unsigned int i = 0; i < PACKED_RADIX_META_BYTES; i++) {
+      unsigned int shift = (PACKED_RADIX_META_BYTES - 1 - i) * 8;
+      buf.push_back((meta >> shift) & 0xFF);
+    }
     buf.append(reinterpret_cast<const uint8_t *>(tree.getPrefix().c_str()),
                tree.getPrefix().size());
     buf.push_back(tree.getProperty());
 
     // write child offset
-    assert(tree.getChildren().size() <= UINT8_MAX);
-    buf.push_back(tree.getChildren().size());
     std::vector<const RadixTree *> children;
     for (auto &e : tree.getChildren()) {
       assert(!e.second->getPrefix().empty());
@@ -187,19 +199,29 @@ bool serialize(const RadixTree &radixTree, FlexBuffer<uint8_t> &buf) {
       return x->getPrefix()[0] < y->getPrefix()[0];
     });
     for (auto &e : children) {
-      targets.emplace_back(e, targets.back().second + targets.back().first->packedSize());
+      targets.emplace_back(e, targets.back().second +
+                                  targets.back().first->packedSize(childOffsetBytes));
       unsigned int childOffset = targets.back().second;
-      if (childOffset > ((1u << 8 * PackedRadixChildIter::CHILD_OFFSET_BYTES) - 1)) {
+      if (childOffset > ((1u << 8 * childOffsetBytes) - 1)) {
         return false; // too large tree
       }
-      for (unsigned int i = 0; i < PackedRadixChildIter::CHILD_OFFSET_BYTES; i++) {
-        unsigned int shift = (PackedRadixChildIter::CHILD_OFFSET_BYTES - 1 - i) * 8;
+      for (unsigned int i = 0; i < childOffsetBytes; i++) {
+        unsigned int shift = (childOffsetBytes - 1 - i) * 8;
         buf.push_back((childOffset >> shift) & 0xFF);
       }
     }
     targets.pop_front();
   }
   return true;
+}
+
+bool serialize(const RadixTree &radixTree, FlexBuffer<uint8_t> &buf) {
+  for (unsigned char childOffsetBytes = 2; childOffsetBytes <= 3; childOffsetBytes++) {
+    if (serialize(radixTree, buf, childOffsetBytes)) {
+      return true;
+    }
+  }
+  return false;
 }
 
 } // namespace arsh

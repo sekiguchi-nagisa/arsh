@@ -100,13 +100,13 @@ int main(int argc, char **argv) {
   size_t maxBytes = 0;
   for (auto [p, codes] : emoji_seq_table) {
     auto str = codes.toUTF8();
-    if (!tree.add(str, toUnderlying(p))) {
+    if (tree.add(str, toUnderlying(p)) != RadixTree::AddStatus::OK) {
       fatal("cannot insert emoji seq: %s\n", str.c_str());
     }
     maxBytes = std::max(maxBytes, str.size());
     auto fold = codes.toUTF8CaseFold();
     if (fold != str) {
-      if (!tree.add(fold, toUnderlying(p | RGIEmojiSeq::CASE_IGNORE))) {
+      if (tree.add(fold, toUnderlying(p | RGIEmojiSeq::CASE_IGNORE)) != RadixTree::AddStatus::OK) {
         fatal("cannot insert emoji seq: %s\n", str.c_str());
       }
       maxBytes = std::max(maxBytes, fold.size());

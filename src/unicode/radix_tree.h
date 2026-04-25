@@ -26,12 +26,17 @@
 
 namespace arsh {
 
+constexpr unsigned int PACKED_RADIX_META_BYTES = 3;
+constexpr unsigned int PACKED_RADIX_MAX_STRING_SIZE = (1u << 15) - 1;
+constexpr unsigned int PACKED_RADIX_MAX_N_CHILDREN = 1u << 8;
+
 struct PackedRadixChildIter {
-  static constexpr unsigned int CHILD_OFFSET_BYTES = 2;
 
   const uint8_t *ptr{nullptr};
 
   unsigned int offset{0};
+
+  unsigned char childOffsetBytes{0};
 
   using difference_type = std::ptrdiff_t;
 
@@ -43,22 +48,24 @@ struct PackedRadixChildIter {
 
   using iterator_category = std::forward_iterator_tag;
 
-  PackedRadixChildIter(const uint8_t *ptr, size_t offset, size_t n)
-      : ptr(ptr), offset(offset + (n * CHILD_OFFSET_BYTES)) {}
+  PackedRadixChildIter(const uint8_t *ptr, size_t offset, size_t n, unsigned char childOffsetBytes)
+      : ptr(ptr), offset(offset + (n * childOffsetBytes)), childOffsetBytes(childOffsetBytes) {}
 
   unsigned int childOffset() const {
     unsigned int ret = 0;
-    for (unsigned int i = 0; i < CHILD_OFFSET_BYTES; i++) {
+    for (unsigned int i = 0; i < this->childOffsetBytes; i++) {
       ret <<= 8;
       ret |= this->ptr[this->offset + i];
     }
     return ret;
   }
 
-  auto operator*() const { return static_cast<char>(this->ptr[this->childOffset() + 1]); }
+  auto operator*() const {
+    return static_cast<char>(this->ptr[this->childOffset() + PACKED_RADIX_META_BYTES]);
+  }
 
   auto operator-(const PackedRadixChildIter &other) const {
-    return (this->offset - other.offset) / CHILD_OFFSET_BYTES;
+    return (this->offset - other.offset) / this->childOffsetBytes;
   }
 
   bool operator==(const PackedRadixChildIter &other) const { return this->offset == other.offset; }
@@ -66,7 +73,7 @@ struct PackedRadixChildIter {
   bool operator!=(const PackedRadixChildIter &other) const { return this->offset != other.offset; }
 
   auto &operator++() {
-    this->offset += CHILD_OFFSET_BYTES;
+    this->offset += this->childOffsetBytes;
     return *this;
   }
 };
@@ -76,9 +83,12 @@ private:
   /*
    * `ptr` confirm the following binary format
    *
-   * | prefix len (1 byte, up to 64 code points) | prefix (N bytes) | property (1 byte) |
-   * | n_child (1 byte, up to 256 children) | 1 child (3 bytes) | ... | N child (3 bytes) |
-   * | ... next node
+   * | header (1 byte, child offset bytes (2 or 3)) |
+   * | ---- node ---- |
+   * | meta (3 bytes, prefix len: 15 bit, n_children: 9 bit (up to 256)) |
+   * | prefix (N bytes) | property (1 byte) |
+   * | 0-child (3 bytes) | ... | N-child (up to 255) (3 bytes) |
+   * | ... next nodes
    */
   const uint8_t *ptr;
   unsigned short longestStringSize;
@@ -90,9 +100,16 @@ public:
 
   unsigned short getLongestStringSize() const { return this->longestStringSize; }
 
+  unsigned char getChildOffsetBytes() const { return this->ptr[0]; }
+
   uint8_t find(StringRef ref) const {
-    for (unsigned int offset = 0; offset < this->size;) {
-      const unsigned int prefixLen = this->ptr[offset++];
+    const unsigned char childOffsetBytes = this->getChildOffsetBytes();
+    for (unsigned int offset = 1; offset < this->size;) {
+      const unsigned int meta = static_cast<unsigned int>(this->ptr[offset]) << 16 |
+                                static_cast<unsigned int>(this->ptr[offset + 1]) << 8 |
+                                this->ptr[offset + 2];
+      offset += PACKED_RADIX_META_BYTES;
+      const unsigned int prefixLen = meta >> 9;
       const StringRef prefix(reinterpret_cast<const char *>(this->ptr) + offset, prefixLen);
       if (!ref.startsWith(prefix)) {
         break;
@@ -107,9 +124,9 @@ public:
         break;
       }
       // visit children
-      const unsigned int n = this->ptr[offset++];
-      const PackedRadixChildIter begin(this->ptr, offset, 0);
-      const PackedRadixChildIter end(this->ptr, offset, n);
+      const unsigned int n = meta & 0x1FF;
+      const PackedRadixChildIter begin(this->ptr, offset, 0, childOffsetBytes);
+      const PackedRadixChildIter end(this->ptr, offset, n, childOffsetBytes);
       const auto iter = std::lower_bound(begin, end, ref[0]);
       if (iter != end && *iter == ref[0]) {
         offset = iter.childOffset();
@@ -147,15 +164,22 @@ public:
 
   bool empty() const { return this->prefix.empty() && this->children.empty(); }
 
-  unsigned int packedSize() const {
+  unsigned int packedSize(const unsigned char childOffsetBytes) const {
     unsigned int size = 0;
-    size += 1; // prefix len
+    size += PACKED_RADIX_META_BYTES; // meta (prefix len + n_children)
     size += this->prefix.size();
     size += 1; // property
-    size += 1; // n_child
-    size += this->children.size() * PackedRadixChildIter::CHILD_OFFSET_BYTES;
+    size += this->children.size() * childOffsetBytes;
     return size;
   }
+
+  enum class AddStatus : unsigned char {
+    OK,
+    ADDED,         // already added
+    EMPTY,         // empty string
+    NONE_PROPERTY, // empty property (0)
+    TOO_LARGE,     // too large string
+  };
 
   /**
    *
@@ -165,7 +189,7 @@ public:
    * if already found, return false
    * if p is None, return false
    */
-  bool add(StringRef seq, uint8_t p);
+  AddStatus add(StringRef seq, uint8_t p);
 
   uint8_t find(StringRef seq) const;
 
