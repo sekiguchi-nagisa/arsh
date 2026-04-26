@@ -59,10 +59,6 @@ static int emit(FILE *fp, const char *bin, const FlexBuffer<uint8_t> &buf,
   return 0;
 }
 
-static RGIEmojiSeq lookup(const PackedRadixTree &emojiTrie, StringRef ref) {
-  return static_cast<RGIEmojiSeq>(emojiTrie.find(ref));
-}
-
 static std::vector<std::pair<std::string, unsigned char>> collect(const RadixTree &tree) {
   std::vector<std::pair<std::string, unsigned char>> values;
   tree.iterate([&values](StringRef ref, unsigned char p) {
@@ -129,12 +125,17 @@ int main(int argc, char **argv) {
   const PackedRadixTree emojiTrie(maxBytes, buf.data(), buf.size());
   for (auto [p, codes] : emoji_seq_table) {
     auto str = codes.toUTF8();
-    if (lookup(emojiTrie, str) != p) {
+    if (emojiTrie.find(str) != toUnderlying(p) ||
+        emojiTrie.findLongestMatched(str) !=
+            std::make_pair<uint16_t, uint8_t>(str.size(), toUnderlying(p))) {
       fatal("cannot lookup emoji seq: %s\n", str.c_str());
     }
     auto fold = codes.toUTF8CaseFold();
     if (fold != str) {
-      if (lookup(emojiTrie, fold) != (p | RGIEmojiSeq::CASE_IGNORE)) {
+      if (emojiTrie.find(fold) != toUnderlying(p | RGIEmojiSeq::CASE_IGNORE) ||
+          emojiTrie.findLongestMatched(fold) !=
+              std::make_pair<uint16_t, uint8_t>(fold.size(),
+                                                toUnderlying(p | RGIEmojiSeq::CASE_IGNORE))) {
         fatal("cannot lookup emoji seq: %s\n", str.c_str());
       }
     }
@@ -144,7 +145,10 @@ int main(int argc, char **argv) {
     fatal("fold emoji seq is not found\n");
   }
   for (auto &[seq, p] : foldSeq) {
-    if (lookup(emojiTrie, seq) != (RGIEmojiSeq::CASE_IGNORE | p)) {
+    if (emojiTrie.find(seq) != toUnderlying(RGIEmojiSeq::CASE_IGNORE | p) ||
+        emojiTrie.findLongestMatched(seq) !=
+            std::make_pair<uint16_t, uint8_t>(seq.size(),
+                                              toUnderlying(RGIEmojiSeq::CASE_IGNORE | p))) {
       fatal("not found: %s\n", seq.c_str());
     }
   }

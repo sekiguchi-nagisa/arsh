@@ -130,6 +130,34 @@ TEST(RadixTest, base) {
   ASSERT_EQ(RGI_Emoji_Flag_Sequence, packedTree.find("BBBB"));
   ASSERT_EQ(RGI_Emoji_Tag_Sequence, packedTree.find("BB"));
   ASSERT_EQ(RGI_Emoji_ZWJ_Sequence, packedTree.find("AAACD"));
+
+  auto ret = packedTree.findLongestMatched("");
+  ASSERT_EQ(0, ret.first);
+  ASSERT_EQ(0, ret.second);
+  ret = packedTree.findLongestMatched("A");
+  ASSERT_EQ(0, ret.first);
+  ASSERT_EQ(0, ret.second);
+  ret = packedTree.findLongestMatched("AA");
+  ASSERT_EQ(0, ret.first);
+  ASSERT_EQ(0, ret.second);
+  ret = packedTree.findLongestMatched("AAA");
+  ASSERT_EQ(3, ret.first);
+  ASSERT_EQ(Basic_Emoji, ret.second);
+  ret = packedTree.findLongestMatched("AAAC");
+  ASSERT_EQ(3, ret.first);
+  ASSERT_EQ(Basic_Emoji, ret.second);
+  ret = packedTree.findLongestMatched("AAACD");
+  ASSERT_EQ(5, ret.first);
+  ASSERT_EQ(RGI_Emoji_ZWJ_Sequence, ret.second);
+  ret = packedTree.findLongestMatched("AAACDE");
+  ASSERT_EQ(5, ret.first);
+  ASSERT_EQ(RGI_Emoji_ZWJ_Sequence, ret.second);
+  ret = packedTree.findLongestMatched("BBB");
+  ASSERT_EQ(2, ret.first);
+  ASSERT_EQ(RGI_Emoji_Tag_Sequence, ret.second);
+  ret = packedTree.findLongestMatched("BBBBB");
+  ASSERT_EQ(4, ret.first);
+  ASSERT_EQ(RGI_Emoji_Flag_Sequence, ret.second);
 }
 
 int main(int argc, char **argv) {

@@ -44,7 +44,7 @@ RadixTree::AddStatus RadixTree::add(StringRef seq, uint8_t p) {
   if (!p) {
     return AddStatus::NONE_PROPERTY;
   }
-  if (seq.size() > PACKED_RADIX_MAX_STRING_SIZE) {
+  if (seq.size() > MAX_STRING_SIZE) {
     return AddStatus::TOO_LARGE;
   }
   for (auto *tree = this;;) {
@@ -177,12 +177,12 @@ static bool serialize(const RadixTree &radixTree, FlexBuffer<uint8_t> &buf,
   buf.push_back(childOffsetBytes);
   while (targets.size()) {
     const auto &tree = *targets.front().first;
-    assert(tree.getPrefix().size() <= PACKED_RADIX_MAX_STRING_SIZE);
-    assert(tree.getChildren().size() <= PACKED_RADIX_MAX_N_CHILDREN);
+    assert(tree.getPrefix().size() <= RadixTree::MAX_STRING_SIZE);
+    assert(tree.getChildren().size() <= RadixTree::MAX_N_CHILDREN);
     const unsigned int meta = static_cast<unsigned int>(tree.getPrefix().size()) << 9 |
                               static_cast<unsigned int>(tree.getChildren().size());
-    for (unsigned int i = 0; i < PACKED_RADIX_META_BYTES; i++) {
-      unsigned int shift = (PACKED_RADIX_META_BYTES - 1 - i) * 8;
+    for (unsigned int i = 0; i < PackedRadixChildIter::META_BYTES; i++) {
+      unsigned int shift = (PackedRadixChildIter::META_BYTES - 1 - i) * 8;
       buf.push_back((meta >> shift) & 0xFF);
     }
     buf.append(reinterpret_cast<const uint8_t *>(tree.getPrefix().c_str()),

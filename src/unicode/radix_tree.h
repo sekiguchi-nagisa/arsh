@@ -26,11 +26,8 @@
 
 namespace arsh {
 
-constexpr unsigned int PACKED_RADIX_META_BYTES = 3;
-constexpr unsigned int PACKED_RADIX_MAX_STRING_SIZE = (1u << 15) - 1;
-constexpr unsigned int PACKED_RADIX_MAX_N_CHILDREN = 1u << 8;
-
 struct PackedRadixChildIter {
+  static constexpr unsigned int META_BYTES = 3;
 
   const uint8_t *ptr{nullptr};
 
@@ -60,9 +57,7 @@ struct PackedRadixChildIter {
     return ret;
   }
 
-  auto operator*() const {
-    return static_cast<char>(this->ptr[this->childOffset() + PACKED_RADIX_META_BYTES]);
-  }
+  auto operator*() const { return static_cast<char>(this->ptr[this->childOffset() + META_BYTES]); }
 
   auto operator-(const PackedRadixChildIter &other) const {
     return (this->offset - other.offset) / this->childOffsetBytes;
@@ -103,12 +98,20 @@ public:
   unsigned char getChildOffsetBytes() const { return this->ptr[0]; }
 
   uint8_t find(StringRef ref) const {
+    auto [len, p] = this->findLongestMatched(ref);
+    return ref.size() == len ? p : 0;
+  }
+
+  std::pair<uint16_t, uint8_t> findLongestMatched(StringRef ref) const {
     const unsigned char childOffsetBytes = this->getChildOffsetBytes();
+    const auto orgSize = ref.size();
+    uint8_t latestProperty = 0;
+    uint16_t latestMatchedSize = 0;
     for (unsigned int offset = 1; offset < this->size;) {
       const unsigned int meta = static_cast<unsigned int>(this->ptr[offset]) << 16 |
                                 static_cast<unsigned int>(this->ptr[offset + 1]) << 8 |
                                 this->ptr[offset + 2];
-      offset += PACKED_RADIX_META_BYTES;
+      offset += PackedRadixChildIter::META_BYTES;
       const unsigned int prefixLen = meta >> 9;
       const StringRef prefix(reinterpret_cast<const char *>(this->ptr) + offset, prefixLen);
       if (!ref.startsWith(prefix)) {
@@ -117,10 +120,11 @@ public:
       offset += prefixLen;
       auto property = this->ptr[offset++];
       ref.removePrefix(prefixLen);
+      if (property) {
+        latestProperty = property;
+        latestMatchedSize = orgSize - ref.size();
+      }
       if (ref.empty()) {
-        if (property != 0) { // reach edge
-          return property;
-        }
         break;
       }
       // visit children
@@ -135,7 +139,7 @@ public:
         break;
       }
     }
-    return 0;
+    return {latestMatchedSize, latestProperty};
   }
 };
 
@@ -146,6 +150,9 @@ private:
   std::unordered_map<char, std::unique_ptr<RadixTree>> children;
 
 public:
+  static constexpr unsigned int MAX_STRING_SIZE = (1u << 15) - 1;
+  static constexpr unsigned int MAX_N_CHILDREN = 1u << 8;
+
   RadixTree() = default;
 
   explicit RadixTree(StringRef prefix, uint8_t property)
@@ -166,7 +173,7 @@ public:
 
   unsigned int packedSize(const unsigned char childOffsetBytes) const {
     unsigned int size = 0;
-    size += PACKED_RADIX_META_BYTES; // meta (prefix len + n_children)
+    size += PackedRadixChildIter::META_BYTES; // meta (prefix len + n_children)
     size += this->prefix.size();
     size += 1; // property
     size += this->children.size() * childOffsetBytes;
