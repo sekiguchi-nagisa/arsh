@@ -28,7 +28,7 @@ TEST(EmojiTrieTest, all) {
   // re-lookup
   for (auto &[p, codes] : emoji_seq_table) {
     std::string str = codes.toUTF8();
-    ASSERT_EQ(RadixTree::AddStatus::OK, tree.add(str, toUnderlying(p)));
+    ASSERT_EQ(RadixTree::AddStatus::ADDED, tree.add(str, toUnderlying(p)));
     ASSERT_EQ(toUnderlying(p), tree.find(str));
   }
 
