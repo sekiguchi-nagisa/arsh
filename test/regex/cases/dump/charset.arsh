@@ -418,3 +418,29 @@ matchers:
 { 0x3042, 0x3093 },
 EOF
 )
+
+# \p{RGI_Emoji_ZWJ_Sequence}
+assert diff <(redump -d '\p{RGI_Emoji_ZWJ_Sequence}' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+  0: Emoji(emoji=RGI_Emoji_ZWJ_Sequence)
+  2: Match
+matchers:
+EOF
+)
+
+# \p{RGI_Emoji}
+assert diff <(redump -d '[\p{RGI_Emoji}]' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+  0: Emoji(emoji=RGI_Emoji)
+  2: Match
+matchers:
+EOF
+)

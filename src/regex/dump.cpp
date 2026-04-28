@@ -357,6 +357,35 @@ static const char *toString(const OpCode op) {
 
 static void appendBool(std::string &out, bool b) { out += b ? "true" : "false"; }
 
+static void appendEmojiSeq(std::string &out, const ucp::RGIEmojiSeq seq) {
+  unsigned int count = 0;
+  if (hasFlag(seq, ucp::RGIEmojiSeq::RGI_Emoji)) {
+    out += toString(seq);
+    count++;
+  } else {
+    constexpr ucp::RGIEmojiSeq table[] = {
+#define GEN_ENUM(E, D) ucp::RGIEmojiSeq::E,
+        EACH_RGI_EMOJI_SEQ(GEN_ENUM)
+#undef GEN_ENUM
+    };
+    for (auto e : table) {
+      if (hasFlag(seq, e)) {
+        if (count) {
+          out += "|";
+        }
+        out += toString(e);
+        count++;
+      }
+    }
+  }
+  if (hasFlag(seq, ucp::RGIEmojiSeq::CASE_IGNORE)) {
+    if (count) {
+      out += "|";
+    }
+    out += "case-ignore";
+  }
+}
+
 void RegexDumper::dump(const FlexBuffer<Inst> &ins) {
   Padding padding(ins.size());
   for (auto *inst = ins.begin(); inst != ins.end();) {
@@ -478,6 +507,14 @@ void RegexDumper::dump(const FlexBuffer<Inst> &ins) {
       appendBool(str, charSet.ignoreCase);
       str += ')';
       inst += sizeof(LBCharSetIns);
+      break;
+    }
+    case OpCode::Emoji: {
+      auto seq = static_cast<ucp::RGIEmojiSeq>(cast<EmojiIns>(*inst).emoji);
+      str += "(emoji=";
+      appendEmojiSeq(str, seq);
+      str += ')';
+      inst += sizeof(EmojiIns);
       break;
     }
     case OpCode::BeginCapture:

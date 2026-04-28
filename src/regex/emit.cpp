@@ -409,8 +409,9 @@ bool CodeGen::generateProperty(const PropertyNode &node) {
       this->todo(node, "ignore-case");
       return false;
     }
-    this->todo(node, "support emoji seq");
-    return false;
+    assert(node.getNormalizedType() == PropertyNode::Type::EMOJI);
+    this->builder.emit<EmojiIns>(toUnderlying(node.getEmojiSeq()));
+    return true;
   } else {
     CodePointSet set;
     CodePointSetBuilder setBuilder;

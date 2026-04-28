@@ -68,7 +68,7 @@
 | \P{loneProperty}                    | ✔️         | ✔️        | ✔️                      | ✔️                             |
 | \p{property=value}                  | ✔️         | ✔️        | ✔️                      | ✔️                             |
 | \P{property=value}                  | ✔️         | ✔️        | ✔️                      | ✔️                             |
-| \p{RGI_Emoji}                       | ✔️         | ❌         | ❌                       | ❌                              |
+| \p{RGI_Emoji}                       | ✔️         | ✔️        | ❌                       | ❌                              |
 | \p{RGI_Emoji} (in char class)       | ✔️         | ❌         | ❌                       | ❌                              |
 | .                                   | ✔️         | ✔️        | ✔️                      | ✔️                             |
 | . (dot-all)                         | ✔️         | ✔️        | ✔️                      | ✔️                             |

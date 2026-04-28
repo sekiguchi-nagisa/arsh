@@ -533,6 +533,17 @@ BACKTRACK:
           }
           goto BACKTRACK;
         }
+        vmcase(Emoji) {
+          if (input.available()) {
+            auto [s, p] = ucp::getEmojiTrie().findLongestMatched(input.remainForward());
+            if (p && hasFlag(cast<EmojiIns>(*inst).emoji, p)) {
+              input.setIter(input.getIter() + s);
+              inst += sizeof(EmojiIns);
+              vmnext;
+            }
+          }
+          goto BACKTRACK;
+        }
         vmcase(BeginCapture) {
           auto &ins = cast<BeginCaptureIns>(*inst);
           const unsigned int index = ins.getCaptureIndex();

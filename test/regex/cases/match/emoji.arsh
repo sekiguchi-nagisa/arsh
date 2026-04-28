@@ -1,0 +1,201 @@
+
+source $SCRIPT_DIR/../syntax/test_helper.arsh
+
+# \p{Basic_Emoji}
+assert diff <(redump -m '⚡' '\p{Basic_Emoji}' 'v') <(<<'EOF'
+input: `⚡'
+(offset=0, size=3)
+EOF
+)
+
+assert diff <(redump -m '🪾' '\p{Basic_Emoji}' 'v') <(<<'EOF'
+input: `🪾'
+(offset=0, size=4)
+EOF
+)
+
+assert diff <(redump -m '↕️' '[\p{Basic_Emoji}]' 'v') <(<<'EOF'
+input: `↕️'
+(offset=0, size=6)
+EOF
+)
+
+assert diff <(redump -m '↕' '[\p{Basic_Emoji}]' 'v') <(<<'EOF'
+input: `↕'
+failed
+EOF
+)
+
+assert diff <(redump -m '❤️' '[\p{Basic_Emoji}]' 'v') <(<<'EOF'
+input: `❤️'
+(offset=0, size=6)
+EOF
+)
+
+assert diff <(redump -m '🕷️' '[\p{Basic_Emoji}]' 'v') <(<<'EOF'
+input: `🕷️'
+(offset=0, size=7)
+EOF
+)
+
+assert diff <(redump -m '🕷' '[\p{Basic_Emoji}]' 'v') <(<<'EOF'
+input: `🕷'
+failed
+EOF
+)
+
+assert diff <(redump -m 'Q' '\p{Basic_Emoji}' 'v') <(<<'EOF'
+input: `Q'
+failed
+EOF
+)
+
+# \p{Emoji_Keycap_Sequence}
+assert diff <(redump -m '⚡' '\p{Emoji_Keycap_Sequence}' 'v') <(<<'EOF'
+input: `⚡'
+failed
+EOF
+)
+
+assert diff <(redump -m '#️⃣' '\p{Emoji_Keycap_Sequence}' 'v') <(<<'EOF'
+input: `#️⃣'
+(offset=0, size=7)
+EOF
+)
+
+assert diff <(redump -m '7️⃣' '\p{Emoji_Keycap_Sequence}' 'v') <(<<'EOF'
+input: `7️⃣'
+(offset=0, size=7)
+EOF
+)
+
+# \p{RGI_Emoji_Flag_Sequence}
+assert diff <(redump -m '⚡' '\p{RGI_Emoji_Flag_Sequence}' 'v') <(<<'EOF'
+input: `⚡'
+failed
+EOF
+)
+
+assert diff <(redump -m '🇧🇬' '\p{RGI_Emoji_Flag_Sequence}' 'v') <(<<'EOF'
+input: `🇧🇬'
+(offset=0, size=8)
+EOF
+)
+
+assert diff <(redump -m '🇧' '\p{RGI_Emoji_Flag_Sequence}' 'v') <(<<'EOF'
+input: `🇧'
+failed
+EOF
+)
+
+assert diff <(redump -m '🇯🇵' '[\p{RGI_Emoji_Flag_Sequence}]' 'v') <(<<'EOF'
+input: `🇯🇵'
+(offset=0, size=8)
+EOF
+)
+
+assert diff <(redump -m '🇯🇯"' '[\p{RGI_Emoji_Flag_Sequence}]' 'v') <(<<'EOF'
+input: `🇯🇯"'
+failed
+EOF
+)
+
+# \p{RGI_Emoji_Tag_Sequence}
+assert diff <(redump -m '⚡' '\p{RGI_Emoji_Tag_Sequence}' 'v') <(<<'EOF'
+input: `⚡'
+failed
+EOF
+)
+
+assert diff <(redump -m '🇧' '\p{RGI_Emoji_Tag_Sequence}' 'v') <(<<'EOF'
+input: `🇧'
+failed
+EOF
+)
+
+assert diff <(redump -m '🇯🇵' '\p{RGI_Emoji_Tag_Sequence}' 'v') <(<<'EOF'
+input: `🇯🇵'
+failed
+EOF
+)
+
+assert diff <(redump -m '🏴󠁧󠁢󠁥󠁮󠁧󠁿' '\p{RGI_Emoji_Tag_Sequence}' 'v') <(<<'EOF'
+input: `🏴󠁧󠁢󠁥󠁮󠁧󠁿'
+(offset=0, size=28)
+EOF
+)
+
+# \p{RGI_Emoji_Modifier_Sequence}
+assert diff <(redump -m '⚡' '\p{RGI_Emoji_Modifier_Sequence}' 'v') <(<<'EOF'
+input: `⚡'
+failed
+EOF
+)
+
+assert diff <(redump -m '✌🏼' '\p{RGI_Emoji_Modifier_Sequence}' 'v') <(<<'EOF'
+input: `✌🏼'
+(offset=0, size=7)
+EOF
+)
+
+assert diff <(redump -m '🧓🏻' '\p{RGI_Emoji_Modifier_Sequence}' 'v') <(<<'EOF'
+input: `🧓🏻'
+(offset=0, size=8)
+EOF
+)
+
+# \p{RGI_Emoji_ZWJ_Sequence}
+assert diff <(redump -m '⚡' '\p{RGI_Emoji_ZWJ_Sequence}' 'v') <(<<'EOF'
+input: `⚡'
+failed
+EOF
+)
+
+assert diff <(redump -m '⛹🏽‍♂️' '\p{RGI_Emoji_ZWJ_Sequence}' 'v') <(<<'EOF'
+input: `⛹🏽‍♂️'
+(offset=0, size=16)
+EOF
+)
+
+assert diff <(redump -m '🧑🏼‍🫯‍🧑🏿' '\p{RGI_Emoji_ZWJ_Sequence}' 'v') <(<<'EOF'
+input: `🧑🏼‍🫯‍🧑🏿'
+(offset=0, size=26)
+EOF
+)
+
+# \p{RGI_Emoji}
+assert diff <(redump -m '⚡' '\p{RGI_Emoji}' 'v') <(<<'EOF'
+input: `⚡'
+(offset=0, size=3)
+EOF
+)
+
+assert diff <(redump -m '7️⃣' '\p{RGI_Emoji}' 'v') <(<<'EOF'
+input: `7️⃣'
+(offset=0, size=7)
+EOF
+)
+
+assert diff <(redump -m '🇧🇬' '\p{RGI_Emoji}' 'v') <(<<'EOF'
+input: `🇧🇬'
+(offset=0, size=8)
+EOF
+)
+
+assert diff <(redump -m '🏴󠁧󠁢󠁥󠁮󠁧󠁿' '\p{RGI_Emoji}' 'v') <(<<'EOF'
+input: `🏴󠁧󠁢󠁥󠁮󠁧󠁿'
+(offset=0, size=28)
+EOF
+)
+
+assert diff <(redump -m '🧓🏻' '\p{RGI_Emoji}' 'v') <(<<'EOF'
+input: `🧓🏻'
+(offset=0, size=8)
+EOF
+)
+
+assert diff <(redump -m '🧑🏼‍🫯‍🧑🏿' '\p{RGI_Emoji}' 'v') <(<<'EOF'
+input: `🧑🏼‍🫯‍🧑🏿'
+(offset=0, size=26)
+EOF
+)
