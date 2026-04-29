@@ -8,6 +8,7 @@
 
 - add ``REGEX_TIMEOUT`` variable for global timout milliseconds of regex methods
 - add ``String#escape`` method for escaping meta-characters of glob and regex patterns
+- add ``Regex#isUnicodeSet`` method. if specified `v` flag, return true
 
 ### Changed
 

@@ -1318,6 +1318,14 @@ ARSH_METHOD regex_isDotAll(RuntimeContext &ctx) {
   RET_BOOL(flag.has(regex::Modifier::DOT_ALL));
 }
 
+//!bind: function isUnicodeSet($this : Regex) : Bool
+ARSH_METHOD regex_isUnicodeSet(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(regex_isUnicodeSet);
+  auto &re = typeAs<RegexObject>(LOCAL(0));
+  auto flag = re.getRE().getFlag();
+  RET_BOOL(flag.is(regex::Mode::UNICODE_SET));
+}
+
 //!bind: function $OP_MATCH($this : Regex, $target : String) : Bool
 ARSH_METHOD regex_search(RuntimeContext &ctx) {
   SUPPRESS_WARNING(regex_search);

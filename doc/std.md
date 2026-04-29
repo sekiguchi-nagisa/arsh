@@ -296,6 +296,8 @@ function isMultiLine(): Bool for Regex
 
 function isDotAll(): Bool for Regex
 
+function isUnicodeSet(): Bool for Regex
+
 function %OP_MATCH(target: String): Bool for Regex
 
 function %OP_UNMATCH(target: String): Bool for Regex

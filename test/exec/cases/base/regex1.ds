@@ -6,6 +6,7 @@ assert ! $/$/.isMultiLine()
 assert ! $/$/.isDotAll()
 assert $/$/ims.isCaseless()
 assert $/$/ism.isMultiLine()
+assert ! $//.isUnicodeSet()
 # assert $/$/iissm.isDotAll()
 
 assert !new Regex("ss").isCaseless()
@@ -14,6 +15,7 @@ assert !new Regex("ss").isDotAll()
 assert !new Regex("ss", "").isCaseless()
 assert !new Regex("ss", "").isMultiLine()
 assert !new Regex("ss", "").isDotAll()
+assert !new Regex("ss", "").isUnicodeSet()
 
 assert $/\\/ =~ '\'
 assert $/a/ =~ 'bac'
