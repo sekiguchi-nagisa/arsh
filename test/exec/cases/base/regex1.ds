@@ -158,6 +158,7 @@ assert $a!.group(4)!.empty()
 
 # toString
 assert $/\/de/ as String == '/\/de/u'
+assert $/\de/ims as String == '/\de/imsu'
 
 # replace
 assert $/ /.replace(" hello world !! ", "") == "helloworld!!"
@@ -236,7 +237,7 @@ assert ($ex as RegexMatchError).message() == 'match timeout'
 $ex = 34 as Any
 try {
     var m  = $/^(([a-z])+.)+[A-Z]([a-z])+$/.match('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa')
-    assert $false
+    assert $m
 } catch $e {
     $ex = $e
 }
