@@ -254,6 +254,47 @@ TEST(InputTest, backward) {
   ASSERT_TRUE(input.isBegin());
 }
 
+TEST(InputTest, remainForward) {
+  StringRef text = "12ÿþあ𤅕い";
+  regex::Input input;
+  ASSERT_EQ(regex::Input::Status::OK, regex::Input::create(text, input));
+
+  ASSERT_EQ("1", input.remainForwardAtLeast(1).toString());
+  ASSERT_EQ("12", input.remainForwardAtLeast(2).toString());
+  ASSERT_EQ("12ÿ", input.remainForwardAtLeast(3).toString());
+  ASSERT_EQ("12ÿ", input.remainForwardAtLeast(4).toString());
+  ASSERT_EQ("12ÿþ", input.remainForwardAtLeast(5).toString());
+  ASSERT_EQ("12ÿþ", input.remainForwardAtLeast(6).toString());
+  ASSERT_EQ("12ÿþあ", input.remainForwardAtLeast(7).toString());
+  ASSERT_EQ("12ÿþあ𤅕い", input.remainForwardAtLeast(60).toString());
+
+  while (input.available()) {
+    input.consumeForward();
+  }
+  ASSERT_EQ("", input.remainForwardAtLeast(1).toString());
+}
+
+TEST(InputTest, remainBackward) {
+  StringRef text = "12ÿþあ𤅕い";
+  regex::Input input;
+  ASSERT_EQ(regex::Input::Status::OK, regex::Input::create(text, input));
+  ASSERT_EQ("", input.remainBackwardAtLeast(1).toString());
+  ASSERT_EQ("", input.remainBackwardAtLeast(10).toString());
+
+  while (input.available()) {
+    input.consumeForward();
+  }
+  ASSERT_EQ("い", input.remainBackwardAtLeast(1).toString());
+  ASSERT_EQ("い", input.remainBackwardAtLeast(2).toString());
+  ASSERT_EQ("い", input.remainBackwardAtLeast(3).toString());
+  ASSERT_EQ("𤅕い", input.remainBackwardAtLeast(4).toString());
+  ASSERT_EQ("𤅕い", input.remainBackwardAtLeast(5).toString());
+  ASSERT_EQ("𤅕い", input.remainBackwardAtLeast(6).toString());
+  ASSERT_EQ("𤅕い", input.remainBackwardAtLeast(7).toString());
+  ASSERT_EQ("あ𤅕い", input.remainBackwardAtLeast(8).toString());
+  ASSERT_EQ("12ÿþあ𤅕い", input.remainBackwardAtLeast(69).toString());
+}
+
 static Optional<regex::Regex> compile(StringRef pattern, regex::Flag flag = regex::Flag()) {
   regex::Parser parser;
   if (auto tree = parser(pattern, flag)) {

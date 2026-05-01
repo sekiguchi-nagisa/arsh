@@ -160,6 +160,15 @@ public:
     return {this->iter, static_cast<size_t>(this->end - this->iter)};
   }
 
+  StringRef remainForwardAtLeast(unsigned int bytes) const {
+    const auto old = this->iter;
+    auto cur = old;
+    while (cur - old < bytes && cur < this->end) {
+      unsafeNextUtf8(cur);
+    }
+    return {this->iter, static_cast<size_t>(cur - this->iter)};
+  }
+
   bool expectForward(StringRef needle) {
     if (this->remainForward().startsWith(needle)) {
       this->iter += needle.size();
@@ -170,6 +179,15 @@ public:
 
   StringRef remainBackward() const {
     return {this->begin, static_cast<size_t>(this->iter - this->begin)};
+  }
+
+  StringRef remainBackwardAtLeast(unsigned int bytes) const {
+    const auto old = this->iter;
+    auto cur = old;
+    while (old - cur < bytes && cur > this->begin) {
+      unsafePrevUtf8(cur);
+    }
+    return {cur, static_cast<size_t>(this->iter - cur)};
   }
 
   bool expectBackward(StringRef needle) {
