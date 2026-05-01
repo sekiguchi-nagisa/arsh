@@ -163,7 +163,7 @@ public:
   StringRef remainForwardAtLeast(unsigned int bytes) const {
     const auto old = this->iter;
     auto cur = old;
-    while (cur - old < bytes && cur < this->end) {
+    while (static_cast<unsigned int>(cur - old) < bytes && cur < this->end) {
       unsafeNextUtf8(cur);
     }
     return {this->iter, static_cast<size_t>(cur - this->iter)};
@@ -184,7 +184,7 @@ public:
   StringRef remainBackwardAtLeast(unsigned int bytes) const {
     const auto old = this->iter;
     auto cur = old;
-    while (old - cur < bytes && cur > this->begin) {
+    while (static_cast<unsigned int>(old - cur) < bytes && cur > this->begin) {
       unsafePrevUtf8(cur);
     }
     return {cur, static_cast<size_t>(this->iter - cur)};
