@@ -512,10 +512,14 @@ void RegexDumper::dump(const FlexBuffer<Inst> &ins) {
       break;
     }
     case OpCode::Emoji:
-    case OpCode::IEmoji: {
+    case OpCode::IEmoji:
+    case OpCode::LBEmoji: {
       static_assert(sizeof(EmojiIns) == sizeof(IEmojiIns));
-      auto seq = static_cast<ucp::RGIEmojiSeq>(isa<EmojiIns>(*inst) ? cast<EmojiIns>(*inst).emoji
-                                                                    : cast<IEmojiIns>(*inst).emoji);
+      static_assert(sizeof(EmojiIns) == sizeof(LBEmojiIns));
+      auto seq =
+          static_cast<ucp::RGIEmojiSeq>(isa<EmojiIns>(*inst)    ? cast<EmojiIns>(*inst).emoji
+                                        : isa<IEmojiIns>(*inst) ? cast<IEmojiIns>(*inst).emoji
+                                                                : cast<LBEmojiIns>(*inst).emoji);
       str += "(emoji=";
       appendEmojiSeq(str, seq);
       str += ')';

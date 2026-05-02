@@ -403,10 +403,12 @@ bool CodeGen::generateProperty(const PropertyNode &node) {
     }
     assert(node.getNormalizedType() == PropertyNode::Type::EMOJI);
     if (this->inLookBehind()) {
-      this->todo(node, "look-behind");
-      return false;
-    }
-    if (this->has(Modifier::IGNORE_CASE)) {
+      auto emoji = node.getEmojiSeq();
+      if (this->has(Modifier::IGNORE_CASE)) {
+        setFlag(emoji, ucp::RGIEmojiSeq::CASE_IGNORE);
+      }
+      this->builder.emit<LBEmojiIns>(toUnderlying(emoji));
+    } else if (this->has(Modifier::IGNORE_CASE)) {
       this->builder.emit<IEmojiIns>(
           toUnderlying(node.getEmojiSeq() | ucp::RGIEmojiSeq::CASE_IGNORE));
     } else {

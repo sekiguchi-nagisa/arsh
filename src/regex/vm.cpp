@@ -293,9 +293,8 @@ public:
 };
 
 static std::pair<unsigned int, unsigned char>
-caselessFindLongestMatched(const PackedRadixTree tree, const Input &input, std::string &foldBuf) {
+caselessFindLongestMatched(const PackedRadixTree tree, StringRef ref, std::string &foldBuf) {
   foldBuf.clear();
-  StringRef ref = input.remainForwardAtLeast(tree.getLongestStringSize());
   const char *iter = ref.begin();
   const char *end = ref.end();
   while (iter != end) {
@@ -306,6 +305,36 @@ caselessFindLongestMatched(const PackedRadixTree tree, const Input &input, std::
     foldBuf.append(data, len);
   }
   return tree.findLongestMatched(foldBuf);
+}
+
+static std::pair<unsigned int, unsigned char>
+caselessFindLongestMatched(const PackedRadixTree tree, const Input &input, std::string &foldBuf) {
+  const StringRef ref = input.remainForwardAtLeast(tree.getLongestStringSize());
+  return caselessFindLongestMatched(tree, ref, foldBuf);
+}
+
+static std::pair<unsigned int, unsigned char> findBackwardLongestMatched(const PackedRadixTree tree,
+                                                                         const Input &input,
+                                                                         std::string &foldBuf,
+                                                                         bool caseFold) {
+  unsigned int prevSize = 0;
+  for (unsigned int size = tree.getLongestStringSize(); size > 0; size--) {
+    StringRef ref = input.remainBackwardAtLeast(size);
+    if (ref.size() == prevSize) {
+      continue;
+    }
+    if (caseFold) {
+      if (auto [s, p] = caselessFindLongestMatched(tree, ref, foldBuf); s == ref.size()) {
+        return {s, p};
+      }
+    } else {
+      if (auto [s, p] = tree.findLongestMatched(ref); s == ref.size()) {
+        return {s, p};
+      }
+    }
+    prevSize = size;
+  }
+  return {0, 0};
 }
 
 #define TRY(E)                                                                                     \
@@ -563,11 +592,23 @@ BACKTRACK:
         }
         vmcase(IEmoji) {
           if (input.available()) {
-            auto trie = ucp::getEmojiTrie();
-            auto [s, p] = caselessFindLongestMatched(trie, input, foldBuf);
+            auto [s, p] = caselessFindLongestMatched(ucp::getEmojiTrie(), input, foldBuf);
             if (p && hasFlag(cast<IEmojiIns>(*inst).emoji, p)) {
               input.setIter(input.getIter() + s);
               inst += sizeof(IEmojiIns);
+              vmnext;
+            }
+          }
+          goto BACKTRACK;
+        }
+        vmcase(LBEmoji) {
+          if (input.availableBackward()) {
+            const auto emoji = cast<LBEmojiIns>(*inst).emoji;
+            const bool fold = hasFlag(emoji, toUnderlying(ucp::RGIEmojiSeq::CASE_IGNORE));
+            auto [s, p] = findBackwardLongestMatched(ucp::getEmojiTrie(), input, foldBuf, fold);
+            if (p && hasFlag(emoji, p)) {
+              input.setIter(input.getIter() - s);
+              inst += sizeof(LBEmojiIns);
               vmnext;
             }
           }
