@@ -401,16 +401,17 @@ bool CodeGen::generateProperty(const PropertyNode &node) {
       this->builder.emit<GraphemeIns>();
       return true;
     }
+    assert(node.getNormalizedType() == PropertyNode::Type::EMOJI);
     if (this->inLookBehind()) {
       this->todo(node, "look-behind");
       return false;
     }
     if (this->has(Modifier::IGNORE_CASE)) {
-      this->todo(node, "ignore-case");
-      return false;
+      this->builder.emit<IEmojiIns>(
+          toUnderlying(node.getEmojiSeq() | ucp::RGIEmojiSeq::CASE_IGNORE));
+    } else {
+      this->builder.emit<EmojiIns>(toUnderlying(node.getEmojiSeq()));
     }
-    assert(node.getNormalizedType() == PropertyNode::Type::EMOJI);
-    this->builder.emit<EmojiIns>(toUnderlying(node.getEmojiSeq()));
     return true;
   } else {
     CodePointSet set;

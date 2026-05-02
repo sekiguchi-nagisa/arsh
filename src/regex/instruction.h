@@ -43,6 +43,7 @@ namespace arsh::regex {
   OP(ICharSet)                                                                                     \
   OP(LBCharSet)                                                                                    \
   OP(Emoji)                                                                                        \
+  OP(IEmoji)                                                                                       \
   OP(BeginCapture)                                                                                 \
   OP(EndCapture)                                                                                   \
   OP(LBEndCapture)                                                                                 \
@@ -278,6 +279,12 @@ struct EmojiIns : InstWithRtti<OpCode::Emoji> {
   uint8_t emoji;
 
   explicit EmojiIns(uint8_t emoji) : emoji(emoji) {}
+};
+
+struct IEmojiIns : InstWithRtti<OpCode::IEmoji> {
+  uint8_t emoji;
+
+  explicit IEmojiIns(uint8_t emoji) : emoji(emoji) {}
 };
 
 struct BeginCaptureIns : InstWithRtti<OpCode::BeginCapture> {

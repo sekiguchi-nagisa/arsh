@@ -292,6 +292,22 @@ public:
   }
 };
 
+static std::pair<unsigned int, unsigned char>
+caselessFindLongestMatched(const PackedRadixTree tree, const Input &input, std::string &foldBuf) {
+  foldBuf.clear();
+  StringRef ref = input.remainForwardAtLeast(tree.getLongestStringSize());
+  const char *iter = ref.begin();
+  const char *end = ref.end();
+  while (iter != end) {
+    int codePoint = doSimpleCaseFolding(unsafeNextUtf8(iter));
+    char data[4];
+    const auto len = UnicodeUtil::codePointToUtf8(codePoint, data);
+    assert(len);
+    foldBuf.append(data, len);
+  }
+  return tree.findLongestMatched(foldBuf);
+}
+
 #define TRY(E)                                                                                     \
   do {                                                                                             \
     if (unlikely(!(E))) {                                                                          \
@@ -326,6 +342,7 @@ static MatchStatus match(MatchContext &ctx, ObserverPtr<Timer> timer) {
   unsigned int btCount = 0;
   BacktrackStack bts(inst);
   bts.push(Backtrack()); // push dummy
+  std::string foldBuf;
   if (timer) {
     timer->start();
   }
@@ -539,6 +556,18 @@ BACKTRACK:
             if (p && hasFlag(cast<EmojiIns>(*inst).emoji, p)) {
               input.setIter(input.getIter() + s);
               inst += sizeof(EmojiIns);
+              vmnext;
+            }
+          }
+          goto BACKTRACK;
+        }
+        vmcase(IEmoji) {
+          if (input.available()) {
+            auto trie = ucp::getEmojiTrie();
+            auto [s, p] = caselessFindLongestMatched(trie, input, foldBuf);
+            if (p && hasFlag(cast<IEmojiIns>(*inst).emoji, p)) {
+              input.setIter(input.getIter() + s);
+              inst += sizeof(IEmojiIns);
               vmnext;
             }
           }

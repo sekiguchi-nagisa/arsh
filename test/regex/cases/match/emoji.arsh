@@ -194,8 +194,45 @@ input: `🧓🏻'
 EOF
 )
 
+assert diff <(redump -m '🧓🏻' '\p{RGI_Emoji}' 'vi') <(<<'EOF'
+input: `🧓🏻'
+(offset=0, size=8)
+EOF
+)
+
 assert diff <(redump -m '🧑🏼‍🫯‍🧑🏿' '\p{RGI_Emoji}' 'v') <(<<'EOF'
 input: `🧑🏼‍🫯‍🧑🏿'
 (offset=0, size=26)
+EOF
+)
+
+assert diff <(redump -m '🧑🏼‍🫯‍🧑🏿' '\p{RGI_Emoji}' 'vi') <(<<'EOF'
+input: `🧑🏼‍🫯‍🧑🏿'
+(offset=0, size=26)
+EOF
+)
+
+## caseless
+assert diff <(redump -m 'Ⓜ️' '\p{RGI_Emoji}' 'v') <(<<'EOF'
+input: `Ⓜ️'
+(offset=0, size=6)
+EOF
+)
+
+assert diff <(redump -m 'Ⓜ️' '\p{RGI_Emoji}' 'iv') <(<<'EOF'
+input: `Ⓜ️'
+(offset=0, size=6)
+EOF
+)
+
+assert diff <(redump -m 'ⓜ️' '\p{RGI_Emoji}' 'v') <(<<'EOF'
+input: `ⓜ️'
+failed
+EOF
+)
+
+assert diff <(redump -m 'ⓜ️' '\p{RGI_Emoji}' 'iv') <(<<'EOF' # fold
+input: `ⓜ️'
+(offset=0, size=6)
 EOF
 )

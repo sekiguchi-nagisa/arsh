@@ -432,6 +432,20 @@ matchers:
 EOF
 )
 
+
+# \p{RGI_Emoji_ZWJ_Sequence}
+assert diff <(redump -d '\p{RGI_Emoji_ZWJ_Sequence}' 'vi') <(<<'EOF'
+flag: (mode = v, modifier = i)
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+  0: IEmoji(emoji=RGI_Emoji_ZWJ_Sequence|case-ignore)
+  2: Match
+matchers:
+EOF
+)
+
 # \p{RGI_Emoji}
 assert diff <(redump -d '[\p{RGI_Emoji}]' 'v') <(<<'EOF'
 flag: (mode = v, modifier = )
@@ -440,6 +454,18 @@ captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
   0: Emoji(emoji=RGI_Emoji)
+  2: Match
+matchers:
+EOF
+)
+
+assert diff <(redump -d '[\p{RGI_Emoji}]' 'vi') <(<<'EOF'
+flag: (mode = v, modifier = i)
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+  0: IEmoji(emoji=RGI_Emoji|case-ignore)
   2: Match
 matchers:
 EOF

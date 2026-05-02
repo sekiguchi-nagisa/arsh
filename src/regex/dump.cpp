@@ -360,7 +360,7 @@ static void appendBool(std::string &out, bool b) { out += b ? "true" : "false"; 
 static void appendEmojiSeq(std::string &out, const ucp::RGIEmojiSeq seq) {
   unsigned int count = 0;
   if (hasFlag(seq, ucp::RGIEmojiSeq::RGI_Emoji)) {
-    out += toString(seq);
+    out += toString(ucp::RGIEmojiSeq::RGI_Emoji);
     count++;
   } else {
     constexpr ucp::RGIEmojiSeq table[] = {
@@ -424,6 +424,7 @@ void RegexDumper::dump(const FlexBuffer<Inst> &ins) {
       break;
     case OpCode::Word:
     case OpCode::IWord:
+      static_assert(sizeof(WordIns) == sizeof(IWordIns));
       str += "(invert=";
       appendBool(str,
                  isa<WordIns>(*inst) ? cast<WordIns>(*inst).invert : cast<IWordIns>(*inst).invert);
@@ -447,6 +448,7 @@ void RegexDumper::dump(const FlexBuffer<Inst> &ins) {
       break;
     case OpCode::Char:
     case OpCode::IChar: {
+      static_assert(sizeof(CharIns) == sizeof(ICharIns));
       const int codePoint = isa<CharIns>(*inst) ? cast<CharIns>(*inst).getCodePoint()
                                                 : cast<ICharIns>(*inst).getCodePoint();
       char b[16];
@@ -509,8 +511,11 @@ void RegexDumper::dump(const FlexBuffer<Inst> &ins) {
       inst += sizeof(LBCharSetIns);
       break;
     }
-    case OpCode::Emoji: {
-      auto seq = static_cast<ucp::RGIEmojiSeq>(cast<EmojiIns>(*inst).emoji);
+    case OpCode::Emoji:
+    case OpCode::IEmoji: {
+      static_assert(sizeof(EmojiIns) == sizeof(IEmojiIns));
+      auto seq = static_cast<ucp::RGIEmojiSeq>(isa<EmojiIns>(*inst) ? cast<EmojiIns>(*inst).emoji
+                                                                    : cast<IEmojiIns>(*inst).emoji);
       str += "(emoji=";
       appendEmojiSeq(str, seq);
       str += ')';
@@ -525,6 +530,7 @@ void RegexDumper::dump(const FlexBuffer<Inst> &ins) {
       break;
     case OpCode::EndCapture:
     case OpCode::LBEndCapture:
+      static_assert(sizeof(EndCaptureIns) == sizeof(LBEndCaptureIns));
       str += "(captureIndex=";
       str += std::to_string(isa<EndCaptureIns>(*inst)
                                 ? cast<EndCaptureIns>(*inst).getCaptureIndex()

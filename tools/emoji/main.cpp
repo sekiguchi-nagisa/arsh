@@ -34,7 +34,7 @@ using namespace arsh::ucp;
 
 #include "./emoji_seq.in"
 
-static void usage(FILE *fp, char **argv) { fprintf(fp, "usage: %s [output path]\n", argv[0]); }
+static void usage(FILE *fp, char **argv) { fprintf(fp, "usage: %s [-d] [output path]\n", argv[0]); }
 
 static void invalidOption(char **argv, int opt) {
   fprintf(stderr, "invalid option: -%c", opt);
@@ -69,10 +69,15 @@ static std::vector<std::pair<std::string, unsigned char>> collect(const RadixTre
 }
 
 int main(int argc, char **argv) {
-  opt::GetOptState optState("h");
+  opt::GetOptState optState("hd");
   auto iter = argv + 1;
   const auto end = argv + argc;
+  bool debug = false;
   for (int opt; (opt = optState(iter, end)) != -1;) {
+    if (opt == 'd') {
+      debug = true;
+      continue;
+    }
     if (opt == 'h') {
       usage(stdout, argv);
       return 2;
@@ -96,12 +101,20 @@ int main(int argc, char **argv) {
   size_t maxBytes = 0;
   for (auto [p, codes] : emoji_seq_table) {
     auto str = codes.toUTF8();
+    if (debug) {
+      fprintf(stdout, "try to insert emoji seq:(%s, %zu)\n", str.c_str(), str.size());
+    }
     if (tree.add(str, toUnderlying(p)) != RadixTree::AddStatus::OK) {
       fatal("cannot insert emoji seq: %s\n", str.c_str());
     }
     maxBytes = std::max(maxBytes, str.size());
     auto fold = codes.toUTF8CaseFold();
     if (fold != str) {
+      if (debug) {
+        fprintf(stdout, "found fold emoji seq, original:(%s, %zu), fold:(%s, %zu)\n", str.c_str(),
+                str.size(), fold.c_str(), fold.size());
+        fprintf(stdout, "try to insert emoji seq:(%s, %zu)\n", fold.c_str(), fold.size());
+      }
       if (tree.add(fold, toUnderlying(p | RGIEmojiSeq::CASE_IGNORE)) != RadixTree::AddStatus::OK) {
         fatal("cannot insert emoji seq: %s\n", str.c_str());
       }
