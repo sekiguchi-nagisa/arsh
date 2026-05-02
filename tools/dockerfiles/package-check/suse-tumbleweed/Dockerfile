@@ -1,6 +1,6 @@
 FROM opensuse/tumbleweed
 
-RUN zypper refresh && zypper in -y sudo systemd-sysvinit glibc-locale shadow cmake
+RUN zypper refresh && zypper in -y sudo glibc-locale cmake
 
 RUN useradd -m tux
 RUN groupadd -g 2001 admin && usermod -G admin tux  && echo '%admin ALL=(ALL) NOPASSWD: ALL' >> /etc/sudoers
