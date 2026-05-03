@@ -407,12 +407,11 @@ bool CodeGen::generateProperty(const PropertyNode &node) {
       if (this->has(Modifier::IGNORE_CASE)) {
         setFlag(emoji, ucp::RGIEmojiSeq::CASE_IGNORE);
       }
-      this->builder.emit<LBEmojiIns>(toUnderlying(emoji));
+      this->builder.emit<LBEmojiOrIns>(emoji, 0);
     } else if (this->has(Modifier::IGNORE_CASE)) {
-      this->builder.emit<IEmojiIns>(
-          toUnderlying(node.getEmojiSeq() | ucp::RGIEmojiSeq::CASE_IGNORE));
+      this->builder.emit<IEmojiOrIns>(node.getEmojiSeq() | ucp::RGIEmojiSeq::CASE_IGNORE, 0);
     } else {
-      this->builder.emit<EmojiIns>(toUnderlying(node.getEmojiSeq()));
+      this->builder.emit<EmojiOrIns>(node.getEmojiSeq(), 0);
     }
     return true;
   } else {

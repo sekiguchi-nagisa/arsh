@@ -8,8 +8,8 @@ loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
-  0: Emoji(emoji=RGI_Emoji_ZWJ_Sequence)
-  2: Match
+  0: EmojiOr(emoji=RGI_Emoji_ZWJ_Sequence, nextOffset=0)
+  3: Match
 matchers:
 EOF
 )
@@ -20,8 +20,8 @@ loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
-  0: IEmoji(emoji=RGI_Emoji_ZWJ_Sequence|case-ignore)
-  2: Match
+  0: IEmojiOr(emoji=RGI_Emoji_ZWJ_Sequence|case-ignore, nextOffset=0)
+  3: Match
 matchers:
 EOF
 )
@@ -33,8 +33,8 @@ loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
-  0: Emoji(emoji=RGI_Emoji)
-  2: Match
+  0: EmojiOr(emoji=RGI_Emoji, nextOffset=0)
+  3: Match
 matchers:
 EOF
 )
@@ -45,8 +45,8 @@ loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
-  0: IEmoji(emoji=RGI_Emoji|case-ignore)
-  2: Match
+  0: IEmojiOr(emoji=RGI_Emoji|case-ignore, nextOffset=0)
+  3: Match
 matchers:
 EOF
 )
@@ -58,10 +58,10 @@ loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
-  0: BeginLookAround(negate=false, target=8)
-  6: LBEmoji(emoji=RGI_Emoji_ZWJ_Sequence)
-  8: EndLookAround
-  9: Match
+   0: BeginLookAround(negate=false, target=9)
+   6: LBEmojiOr(emoji=RGI_Emoji_ZWJ_Sequence, nextOffset=0)
+   9: EndLookAround
+  10: Match
 matchers:
 EOF
 )
@@ -72,10 +72,10 @@ loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
-  0: BeginLookAround(negate=false, target=8)
-  6: LBEmoji(emoji=RGI_Emoji_ZWJ_Sequence|case-ignore)
-  8: EndLookAround
-  9: Match
+   0: BeginLookAround(negate=false, target=9)
+   6: LBEmojiOr(emoji=RGI_Emoji_ZWJ_Sequence|case-ignore, nextOffset=0)
+   9: EndLookAround
+  10: Match
 matchers:
 EOF
 )
@@ -87,10 +87,10 @@ loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
-  0: BeginLookAround(negate=false, target=8)
-  6: LBEmoji(emoji=RGI_Emoji)
-  8: EndLookAround
-  9: Match
+   0: BeginLookAround(negate=false, target=9)
+   6: LBEmojiOr(emoji=RGI_Emoji, nextOffset=0)
+   9: EndLookAround
+  10: Match
 matchers:
 EOF
 )
@@ -101,10 +101,10 @@ loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
-  0: BeginLookAround(negate=false, target=8)
-  6: LBEmoji(emoji=RGI_Emoji|case-ignore)
-  8: EndLookAround
-  9: Match
+   0: BeginLookAround(negate=false, target=9)
+   6: LBEmojiOr(emoji=RGI_Emoji|case-ignore, nextOffset=0)
+   9: EndLookAround
+  10: Match
 matchers:
 EOF
 )

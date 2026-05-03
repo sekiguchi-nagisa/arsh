@@ -21,6 +21,8 @@
 #include <cstring>
 #include <type_traits>
 
+#include "unicode/emoji_seq.hpp"
+
 namespace arsh::regex {
 
 #define EACH_RE_OPCODE(OP)                                                                         \
@@ -42,9 +44,9 @@ namespace arsh::regex {
   OP(CharSet)                                                                                      \
   OP(ICharSet)                                                                                     \
   OP(LBCharSet)                                                                                    \
-  OP(Emoji)                                                                                        \
-  OP(IEmoji)                                                                                       \
-  OP(LBEmoji)                                                                                      \
+  OP(EmojiOr)                                                                                      \
+  OP(IEmojiOr)                                                                                     \
+  OP(LBEmojiOr)                                                                                    \
   OP(BeginCapture)                                                                                 \
   OP(EndCapture)                                                                                   \
   OP(LBEndCapture)                                                                                 \
@@ -276,22 +278,28 @@ struct LBCharSetIns : InstWithRtti<OpCode::LBCharSet> {
   }
 };
 
-struct EmojiIns : InstWithRtti<OpCode::Emoji> {
-  uint8_t emoji;
+struct EmojiOrIns : InstWithRtti<OpCode::EmojiOr> {
+  ucp::RGIEmojiSeq emoji;
+  uint8_t nextOffset;
 
-  explicit EmojiIns(uint8_t emoji) : emoji(emoji) {}
+  explicit EmojiOrIns(ucp::RGIEmojiSeq emoji, uint8_t nextOffset)
+      : emoji(emoji), nextOffset(nextOffset) {}
 };
 
-struct IEmojiIns : InstWithRtti<OpCode::IEmoji> {
-  uint8_t emoji;
+struct IEmojiOrIns : InstWithRtti<OpCode::IEmojiOr> {
+  ucp::RGIEmojiSeq emoji;
+  uint8_t nextOffset;
 
-  explicit IEmojiIns(uint8_t emoji) : emoji(emoji) {}
+  explicit IEmojiOrIns(ucp::RGIEmojiSeq emoji, uint8_t nextOffset)
+      : emoji(emoji), nextOffset(nextOffset) {}
 };
 
-struct LBEmojiIns : InstWithRtti<OpCode::LBEmoji> {
-  uint8_t emoji;
+struct LBEmojiOrIns : InstWithRtti<OpCode::LBEmojiOr> {
+  ucp::RGIEmojiSeq emoji;
+  uint8_t nextOffset;
 
-  explicit LBEmojiIns(uint8_t emoji) : emoji(emoji) {}
+  explicit LBEmojiOrIns(ucp::RGIEmojiSeq emoji, uint8_t nextOffset)
+      : emoji(emoji), nextOffset(nextOffset) {}
 };
 
 struct BeginCaptureIns : InstWithRtti<OpCode::BeginCapture> {

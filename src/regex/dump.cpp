@@ -511,19 +511,34 @@ void RegexDumper::dump(const FlexBuffer<Inst> &ins) {
       inst += sizeof(LBCharSetIns);
       break;
     }
-    case OpCode::Emoji:
-    case OpCode::IEmoji:
-    case OpCode::LBEmoji: {
-      static_assert(sizeof(EmojiIns) == sizeof(IEmojiIns));
-      static_assert(sizeof(EmojiIns) == sizeof(LBEmojiIns));
-      auto seq =
-          static_cast<ucp::RGIEmojiSeq>(isa<EmojiIns>(*inst)    ? cast<EmojiIns>(*inst).emoji
-                                        : isa<IEmojiIns>(*inst) ? cast<IEmojiIns>(*inst).emoji
-                                                                : cast<LBEmojiIns>(*inst).emoji);
+    case OpCode::EmojiOr: {
+      auto &emoji = cast<EmojiOrIns>(*inst);
       str += "(emoji=";
-      appendEmojiSeq(str, seq);
+      appendEmojiSeq(str, emoji.emoji);
+      str += ", nextOffset=";
+      str += std::to_string(emoji.nextOffset);
       str += ')';
-      inst += sizeof(EmojiIns);
+      inst += sizeof(EmojiOrIns);
+      break;
+    }
+    case OpCode::IEmojiOr: {
+      auto &emoji = cast<IEmojiOrIns>(*inst);
+      str += "(emoji=";
+      appendEmojiSeq(str, emoji.emoji);
+      str += ", nextOffset=";
+      str += std::to_string(emoji.nextOffset);
+      str += ')';
+      inst += sizeof(IEmojiOrIns);
+      break;
+    }
+    case OpCode::LBEmojiOr: {
+      auto &emoji = cast<LBEmojiOrIns>(*inst);
+      str += "(emoji=";
+      appendEmojiSeq(str, emoji.emoji);
+      str += ", nextOffset=";
+      str += std::to_string(emoji.nextOffset);
+      str += ')';
+      inst += sizeof(LBEmojiOrIns);
       break;
     }
     case OpCode::BeginCapture:

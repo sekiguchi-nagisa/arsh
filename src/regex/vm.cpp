@@ -579,37 +579,49 @@ BACKTRACK:
           }
           goto BACKTRACK;
         }
-        vmcase(Emoji) {
+        vmcase(EmojiOr) {
           if (input.available()) {
+            const auto altOffset = cast<EmojiOrIns>(*inst).nextOffset;
             auto [s, p] = ucp::getEmojiTrie().findLongestMatched(input.remainForward());
-            if (p && hasFlag(cast<EmojiIns>(*inst).emoji, p)) {
+            if (p && hasFlag(toUnderlying(cast<EmojiOrIns>(*inst).emoji), p)) {
               input.setIter(input.getIter() + s);
-              inst += sizeof(EmojiIns);
+              inst += sizeof(EmojiOrIns) + altOffset;
               vmnext;
+            }
+            if (altOffset) {
+              vmnext; // try next
             }
           }
           goto BACKTRACK;
         }
-        vmcase(IEmoji) {
+        vmcase(IEmojiOr) {
           if (input.available()) {
+            const auto altOffset = cast<IEmojiOrIns>(*inst).nextOffset;
             auto [s, p] = caselessFindLongestMatched(ucp::getEmojiTrie(), input, foldBuf);
-            if (p && hasFlag(cast<IEmojiIns>(*inst).emoji, p)) {
+            if (p && hasFlag(toUnderlying(cast<IEmojiOrIns>(*inst).emoji), p)) {
               input.setIter(input.getIter() + s);
-              inst += sizeof(IEmojiIns);
+              inst += sizeof(IEmojiOrIns) + altOffset;
               vmnext;
+            }
+            if (altOffset) {
+              vmnext; // try next
             }
           }
           goto BACKTRACK;
         }
-        vmcase(LBEmoji) {
+        vmcase(LBEmojiOr) {
           if (input.availableBackward()) {
-            const auto emoji = cast<LBEmojiIns>(*inst).emoji;
-            const bool fold = hasFlag(emoji, toUnderlying(ucp::RGIEmojiSeq::CASE_IGNORE));
+            const auto altOffset = cast<LBEmojiOrIns>(*inst).nextOffset;
+            const auto emoji = cast<LBEmojiOrIns>(*inst).emoji;
+            const bool fold = hasFlag(emoji, ucp::RGIEmojiSeq::CASE_IGNORE);
             auto [s, p] = findBackwardLongestMatched(ucp::getEmojiTrie(), input, foldBuf, fold);
-            if (p && hasFlag(emoji, p)) {
+            if (p && hasFlag(toUnderlying(emoji), p)) {
               input.setIter(input.getIter() - s);
-              inst += sizeof(LBEmojiIns);
+              inst += sizeof(LBEmojiOrIns) + altOffset;
               vmnext;
+            }
+            if (altOffset) {
+              vmnext; // try next
             }
           }
           goto BACKTRACK;
