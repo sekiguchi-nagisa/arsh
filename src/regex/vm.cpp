@@ -581,14 +581,15 @@ BACKTRACK:
         }
         vmcase(EmojiOr) {
           if (input.available()) {
-            const auto altOffset = cast<EmojiOrIns>(*inst).nextOffset;
+            const auto nextOffset = cast<EmojiOrIns>(*inst).nextOffset;
             auto [s, p] = ucp::getEmojiTrie().findLongestMatched(input.remainForward());
             if (p && hasFlag(toUnderlying(cast<EmojiOrIns>(*inst).emoji), p)) {
               input.setIter(input.getIter() + s);
-              inst += sizeof(EmojiOrIns) + altOffset;
+              inst += sizeof(EmojiOrIns) + nextOffset;
               vmnext;
             }
-            if (altOffset) {
+            if (nextOffset) {
+              inst += sizeof(EmojiOrIns);
               vmnext; // try next
             }
           }
@@ -596,14 +597,15 @@ BACKTRACK:
         }
         vmcase(IEmojiOr) {
           if (input.available()) {
-            const auto altOffset = cast<IEmojiOrIns>(*inst).nextOffset;
+            const auto nextOffset = cast<IEmojiOrIns>(*inst).nextOffset;
             auto [s, p] = caselessFindLongestMatched(ucp::getEmojiTrie(), input, foldBuf);
             if (p && hasFlag(toUnderlying(cast<IEmojiOrIns>(*inst).emoji), p)) {
               input.setIter(input.getIter() + s);
-              inst += sizeof(IEmojiOrIns) + altOffset;
+              inst += sizeof(IEmojiOrIns) + nextOffset;
               vmnext;
             }
-            if (altOffset) {
+            if (nextOffset) {
+              inst += sizeof(IEmojiOrIns);
               vmnext; // try next
             }
           }
@@ -611,16 +613,104 @@ BACKTRACK:
         }
         vmcase(LBEmojiOr) {
           if (input.availableBackward()) {
-            const auto altOffset = cast<LBEmojiOrIns>(*inst).nextOffset;
+            const auto nextOffset = cast<LBEmojiOrIns>(*inst).nextOffset;
             const auto emoji = cast<LBEmojiOrIns>(*inst).emoji;
             const bool fold = hasFlag(emoji, ucp::RGIEmojiSeq::CASE_IGNORE);
             auto [s, p] = findBackwardLongestMatched(ucp::getEmojiTrie(), input, foldBuf, fold);
             if (p && hasFlag(toUnderlying(emoji), p)) {
               input.setIter(input.getIter() - s);
-              inst += sizeof(LBEmojiOrIns) + altOffset;
+              inst += sizeof(LBEmojiOrIns) + nextOffset;
               vmnext;
             }
-            if (altOffset) {
+            if (nextOffset) {
+              inst += sizeof(LBEmojiOrIns);
+              vmnext; // try next
+            }
+          }
+          goto BACKTRACK;
+        }
+        vmcase(StrSetOr) {
+          if (input.available()) {
+            auto &strSet = cast<StrSetOrIns>(*inst);
+            const auto nextOffset = strSet.nextOffset;
+            unsigned int consumedSize = 0;
+            if (auto [s, p] = matchers[strSet.getIndex()].asRadixTree().findLongestMatched(
+                    input.remainForward());
+                p) {
+              consumedSize = s;
+            }
+            if (toUnderlying(strSet.emoji)) {
+              auto [s, p] = ucp::getEmojiTrie().findLongestMatched(input.remainForward());
+              if (p && hasFlag(toUnderlying(strSet.emoji), p)) {
+                consumedSize = std::max<unsigned int>(consumedSize, s);
+              }
+            }
+            if (consumedSize) {
+              input.setIter(input.getIter() + consumedSize);
+              inst += sizeof(StrSetOrIns) + nextOffset;
+              vmnext;
+            }
+            if (nextOffset) {
+              inst += sizeof(StrSetOrIns);
+              vmnext; // try next
+            }
+          }
+          goto BACKTRACK;
+        }
+        vmcase(IStrSetOr) {
+          if (input.available()) {
+            auto &strSet = cast<IStrSetOrIns>(*inst);
+            const auto nextOffset = strSet.nextOffset;
+            unsigned int consumedSize = 0;
+            if (auto [s, p] = caselessFindLongestMatched(matchers[strSet.getIndex()].asRadixTree(),
+                                                         input, foldBuf);
+                p) {
+              consumedSize = s;
+            }
+            if (toUnderlying(strSet.emoji)) {
+              auto [s, p] = caselessFindLongestMatched(ucp::getEmojiTrie(), input, foldBuf);
+              if (p && hasFlag(toUnderlying(strSet.emoji), p)) {
+                consumedSize = std::max<unsigned int>(consumedSize, s);
+              }
+            }
+            if (consumedSize) {
+              input.setIter(input.getIter() + consumedSize);
+              inst += sizeof(IStrSetOrIns) + nextOffset;
+              vmnext;
+            }
+            if (nextOffset) {
+              inst += sizeof(IStrSetOrIns);
+              vmnext; // try next
+            }
+          }
+          goto BACKTRACK;
+        }
+        vmcase(LBStrSetOr) {
+          if (input.availableBackward()) {
+            auto &strSet = cast<LBStrSetOrIns>(*inst);
+            const auto nextOffset = strSet.nextOffset;
+            unsigned int consumedSize = 0;
+            auto emoji = strSet.emoji;
+            const bool fold = hasFlag(emoji, ucp::RGIEmojiSeq::CASE_IGNORE);
+            unsetFlag(emoji, ucp::RGIEmojiSeq::CASE_IGNORE);
+            if (auto [s, p] = findBackwardLongestMatched(matchers[strSet.getIndex()].asRadixTree(),
+                                                         input, foldBuf, fold);
+                p) {
+              consumedSize = s;
+            }
+            if (toUnderlying(emoji)) {
+              auto [s, p] = findBackwardLongestMatched(ucp::getEmojiTrie(), input, foldBuf, fold);
+              if (p && hasFlag(toUnderlying(strSet.emoji), p)) {
+                consumedSize = std::max<unsigned int>(consumedSize, s);
+              }
+            }
+            if (consumedSize) {
+              input.setIter(input.getIter() - consumedSize);
+              inst += sizeof(LBStrSetOrIns) + nextOffset;
+              vmnext;
+            }
+            if (nextOffset) {
+              inst += sizeof(LBStrSetOrIns);
               vmnext; // try next
             }
           }

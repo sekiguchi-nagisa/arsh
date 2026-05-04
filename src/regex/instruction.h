@@ -47,6 +47,9 @@ namespace arsh::regex {
   OP(EmojiOr)                                                                                      \
   OP(IEmojiOr)                                                                                     \
   OP(LBEmojiOr)                                                                                    \
+  OP(StrSetOr)                                                                                     \
+  OP(IStrSetOr)                                                                                    \
+  OP(LBStrSetOr)                                                                                   \
   OP(BeginCapture)                                                                                 \
   OP(EndCapture)                                                                                   \
   OP(LBEndCapture)                                                                                 \
@@ -300,6 +303,57 @@ struct LBEmojiOrIns : InstWithRtti<OpCode::LBEmojiOr> {
 
   explicit LBEmojiOrIns(ucp::RGIEmojiSeq emoji, uint8_t nextOffset)
       : emoji(emoji), nextOffset(nextOffset) {}
+};
+
+struct StrSetOrIns : InstWithRtti<OpCode::StrSetOr> {
+  ucp::RGIEmojiSeq emoji;
+  uint8_t index[2];
+  uint8_t nextOffset;
+
+  StrSetOrIns(ucp::RGIEmojiSeq emoji, uint16_t index, uint8_t nextOffset)
+      : emoji(emoji), nextOffset(nextOffset) {
+    WRITE_TO_INS_FIELD(index, index);
+  }
+
+  uint16_t getIndex() const {
+    uint16_t value;
+    READ_FROM_INS_FIELD(index, value);
+    return value;
+  }
+};
+
+struct IStrSetOrIns : InstWithRtti<OpCode::IStrSetOr> {
+  ucp::RGIEmojiSeq emoji;
+  uint8_t index[2];
+  uint8_t nextOffset;
+
+  IStrSetOrIns(ucp::RGIEmojiSeq emoji, uint16_t index, uint8_t nextOffset)
+      : emoji(emoji), nextOffset(nextOffset) {
+    WRITE_TO_INS_FIELD(index, index);
+  }
+
+  uint16_t getIndex() const {
+    uint16_t value;
+    READ_FROM_INS_FIELD(index, value);
+    return value;
+  }
+};
+
+struct LBStrSetOrIns : InstWithRtti<OpCode::LBStrSetOr> {
+  ucp::RGIEmojiSeq emoji;
+  uint8_t index[2];
+  uint8_t nextOffset;
+
+  LBStrSetOrIns(ucp::RGIEmojiSeq emoji, uint16_t index, uint8_t nextOffset)
+      : emoji(emoji), nextOffset(nextOffset) {
+    WRITE_TO_INS_FIELD(index, index);
+  }
+
+  uint16_t getIndex() const {
+    uint16_t value;
+    READ_FROM_INS_FIELD(index, value);
+    return value;
+  }
 };
 
 struct BeginCaptureIns : InstWithRtti<OpCode::BeginCapture> {

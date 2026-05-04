@@ -541,6 +541,42 @@ void RegexDumper::dump(const FlexBuffer<Inst> &ins) {
       inst += sizeof(LBEmojiOrIns);
       break;
     }
+    case OpCode::StrSetOr: {
+      auto &strSet = cast<StrSetOrIns>(*inst);
+      str += "(emoji=";
+      appendEmojiSeq(str, strSet.emoji);
+      str += ", index=";
+      str += std::to_string(strSet.getIndex());
+      str += ", nextOffset=";
+      str += std::to_string(strSet.nextOffset);
+      str += ')';
+      inst += sizeof(StrSetOrIns);
+      break;
+    }
+    case OpCode::IStrSetOr: {
+      auto &strSet = cast<IStrSetOrIns>(*inst);
+      str += "(emoji=";
+      appendEmojiSeq(str, strSet.emoji);
+      str += ", index=";
+      str += std::to_string(strSet.getIndex());
+      str += ", nextOffset=";
+      str += std::to_string(strSet.nextOffset);
+      str += ')';
+      inst += sizeof(IStrSetOrIns);
+      break;
+    }
+    case OpCode::LBStrSetOr: {
+      auto &strSet = cast<LBStrSetOrIns>(*inst);
+      str += "(emoji=";
+      appendEmojiSeq(str, strSet.emoji);
+      str += ", index=";
+      str += std::to_string(strSet.getIndex());
+      str += ", nextOffset=";
+      str += std::to_string(strSet.nextOffset);
+      str += ')';
+      inst += sizeof(LBStrSetOrIns);
+      break;
+    }
     case OpCode::BeginCapture:
       str += "(captureIndex=";
       str += std::to_string(cast<BeginCaptureIns>(*inst).getCaptureIndex());
