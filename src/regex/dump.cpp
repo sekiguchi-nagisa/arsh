@@ -668,6 +668,12 @@ static void toString(const CodePointSetRef ref, std::string &out) {
   }
 }
 
+static void putHex(unsigned char b, std::string &out) {
+  const char *hex = "0123456789ABCDEF";
+  out += hex[b / 16];
+  out += hex[b % 16];
+}
+
 void toString(const Matcher &matcher, std::string &out, bool putHeader) {
   if (putHeader) {
     switch (matcher.type()) {
@@ -680,25 +686,47 @@ void toString(const Matcher &matcher, std::string &out, bool putHeader) {
     case MatcherType::BORROWED_CODE_POINT_SET:
       out += "CodePointSet(borrowed)\n";
       break;
+    case MatcherType::RADIX_TREE:
+      out += "RadixTree\n";
+      break;
     }
   }
-  CodePointSet set;
-  if (matcher.type() == MatcherType::ASCII) {
-    std::vector<int> codes;
-    auto asciiSet = matcher.asAsciiSet();
-    for (int c = 0; c <= 127; c++) {
-      if (asciiSet.contains(c)) {
-        codes.push_back(c);
+  switch (matcher.type()) {
+  case MatcherType::ASCII:
+  case MatcherType::OWNED_CODE_POINT_SET:
+  case MatcherType::BORROWED_CODE_POINT_SET: {
+    CodePointSet set;
+    if (matcher.type() == MatcherType::ASCII) {
+      std::vector<int> codes;
+      auto asciiSet = matcher.asAsciiSet();
+      for (int c = 0; c <= 127; c++) {
+        if (asciiSet.contains(c)) {
+          codes.push_back(c);
+        }
       }
+      CodePointSetBuilder builder;
+      builder.add(codes.data(), codes.size());
+      set = builder.build();
+    } else {
+      auto ref = matcher.asCodePointSetRef();
+      set = CodePointSet::borrow(ref);
     }
-    CodePointSetBuilder builder;
-    builder.add(codes.data(), codes.size());
-    set = builder.build();
-  } else {
-    auto ref = matcher.asCodePointSetRef();
-    set = CodePointSet::borrow(ref);
+    toString(set.ref(), out);
+    break;
   }
-  toString(set.ref(), out);
+  case MatcherType::RADIX_TREE:
+    matcher.asRadixTree().iterate([&out](StringRef ref, unsigned char p) {
+      out += "property: 0x";
+      putHex(p, out);
+      out += ", string: 0x";
+      for (char ch : ref) {
+        putHex(ch, out);
+      }
+      out += '\n';
+      return true;
+    });
+    break;
+  }
 }
 
 } // namespace arsh::regex

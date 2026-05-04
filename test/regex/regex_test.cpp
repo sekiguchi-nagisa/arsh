@@ -826,6 +826,50 @@ TEST(MatcherTest, codePointSet) {
   }
 }
 
+TEST(MatcherTest, radixTree1) {
+  RadixTree tree;
+  tree.add("AAA", 1);
+  tree.add("BB", 2);
+  tree.add("AAACD", 3);
+  tree.add("BBBB", 4);
+
+  FlexBuffer<uint8_t> buf;
+  ASSERT_TRUE(serialize(tree, buf));
+  regex::Matcher matcher(std::move(buf), tree.longestStringSize());
+  ASSERT_EQ(regex::MatcherType::RADIX_TREE, matcher.type());
+  std::string out;
+  toString(matcher, out, true);
+  const char *expect = R"(RadixTree
+property: 0x01, string: 0x414141
+property: 0x03, string: 0x4141414344
+property: 0x02, string: 0x4242
+property: 0x04, string: 0x42424242
+)";
+  ASSERT_EQ(expect, out);
+}
+
+TEST(MatcherTest, radixTree2) {
+  RadixTree tree;
+  tree.add("ああ", 1);
+  tree.add("あいう", 2);
+  tree.add("あいい", 3);
+  tree.add("い", 4);
+
+  FlexBuffer<uint8_t> buf;
+  ASSERT_TRUE(serialize(tree, buf));
+  regex::Matcher matcher(std::move(buf), tree.longestStringSize());
+  ASSERT_EQ(regex::MatcherType::RADIX_TREE, matcher.type());
+  std::string out;
+  toString(matcher, out, true);
+  const char *expect = R"(RadixTree
+property: 0x01, string: 0xE38182E38182
+property: 0x03, string: 0xE38182E38184E38184
+property: 0x02, string: 0xE38182E38184E38186
+property: 0x04, string: 0xE38184
+)";
+  ASSERT_EQ(expect, out);
+}
+
 struct BMPCodePointRangeEntry {
   const BMPCodePointRange *ptr;
   unsigned int size;

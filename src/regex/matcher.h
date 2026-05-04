@@ -20,6 +20,7 @@
 #include "misc/codepoint_set.hpp"
 #include "misc/flag_util.hpp"
 #include "unicode/property.h"
+#include "unicode/radix_tree.h"
 
 namespace arsh::regex {
 
@@ -67,6 +68,7 @@ enum class MatcherType : unsigned char {
   ASCII,
   OWNED_CODE_POINT_SET,
   BORROWED_CODE_POINT_SET,
+  RADIX_TREE,
 };
 
 class Matcher {
@@ -83,11 +85,15 @@ private:
    *
    * if MatcherType is *_CODE_POINT_SET
    * | 16bit (bmpSize) | 16bit (packedBmpSize) | 24bit (size) | 8bit (MatcherType=*_CODE_POINT_SET)
+   *
+   * if MatcherType is RADIX_TREE
+   * | 32bit (size) | 16bit (longestStringSize) | 8bit (dummy) | 8bit (MatcherType=RADIX_TREE)
    */
   uint64_t first;
   union {
     uint64_t second;        // if MatcherType is ASCII
     BMPCodePointRange *ptr; // if MatcherType is OWNED_CODE_POINT_SET or BORROWED_CODE_POINT_SET
+    uint8_t *radix;         // if MatcherType is RADIX_TREE
   };
 
 public:
@@ -112,9 +118,18 @@ public:
     this->second = set.underlying()[1];
   }
 
+  Matcher(FlexBuffer<uint8_t> &&radixBuf, unsigned short longestStringSize) noexcept {
+    this->first = static_cast<uint64_t>(radixBuf.size()) << 32;
+    this->first |= static_cast<uint64_t>(longestStringSize) << 16;
+    this->first |= toUnderlying(MatcherType::RADIX_TREE);
+    this->radix = std::move(radixBuf).take();
+  }
+
   Matcher(Matcher &&o) noexcept : first(o.first) {
     if (o.type() == MatcherType::ASCII) {
       this->second = o.second;
+    } else if (o.type() == MatcherType::RADIX_TREE) {
+      this->radix = o.radix;
     } else {
       this->ptr = o.ptr;
     }
@@ -124,6 +139,8 @@ public:
   ~Matcher() {
     if (type() == MatcherType::OWNED_CODE_POINT_SET) {
       free(this->ptr);
+    } else if (type() == MatcherType::RADIX_TREE) {
+      free(this->radix);
     }
   }
 
@@ -150,7 +167,13 @@ public:
     return this->asCodePointSetRef().contains(codePoint);
   }
 
+  PackedRadixTree asRadixTree() const {
+    return {this->getLongestStringSize(), this->radix, this->getRadixSize()};
+  }
+
 private:
+  // for CodePointSetRef
+
   unsigned short getBMPSize() const { return static_cast<unsigned short>(this->first >> 48); }
 
   unsigned short getPackedBMPSize() const {
@@ -158,6 +181,13 @@ private:
   }
 
   unsigned int getSize() const { return static_cast<unsigned int>((this->first >> 8) & 0xFFFFFF); }
+
+  // for PackedRadixTree
+  unsigned short getLongestStringSize() const {
+    return static_cast<unsigned short>((this->first >> 16) & 0xFFFF);
+  }
+
+  unsigned int getRadixSize() const { return static_cast<unsigned int>(this->first >> 32); }
 };
 
 } // namespace arsh::regex
