@@ -22,6 +22,38 @@
 
 namespace arsh {
 
+bool PackedRadixTree::iterate(std::string &buf, unsigned int offset,
+                              const std::function<bool(StringRef, unsigned char)> &walker) const {
+  const unsigned char childOffsetBytes = this->getChildOffsetBytes();
+  if (offset < this->size) {
+    const unsigned int meta = static_cast<unsigned int>(this->ptr[offset]) << 16 |
+                              static_cast<unsigned int>(this->ptr[offset + 1]) << 8 |
+                              this->ptr[offset + 2];
+    offset += PackedRadixChildIter::META_BYTES;
+    const unsigned int prefixLen = meta >> 9;
+    const StringRef prefix(reinterpret_cast<const char *>(this->ptr) + offset, prefixLen);
+    offset += prefixLen;
+    buf += prefix;
+    if (auto property = this->ptr[offset++]) {
+      if (!walker(buf, property)) {
+        return false; // break iteration
+      }
+    }
+    // visit children
+    const auto oldSize = buf.size();
+    const unsigned int n = meta & 0x1FF;
+    PackedRadixChildIter iter(this->ptr, offset, 0, childOffsetBytes);
+    const PackedRadixChildIter end(this->ptr, offset, n, childOffsetBytes);
+    for (; iter != end; ++iter) {
+      buf.resize(oldSize);
+      if (!this->iterate(buf, iter.childOffset(), walker)) {
+        return false;
+      }
+    }
+  }
+  return true;
+}
+
 // #######################
 // ##     RadixTree     ##
 // #######################

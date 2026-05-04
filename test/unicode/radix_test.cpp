@@ -14,6 +14,15 @@ static std::vector<std::string> list(const RadixTree &tree) {
   return values;
 }
 
+static std::vector<std::string> list(const PackedRadixTree tree) {
+  std::vector<std::string> values;
+  tree.iterate([&values](StringRef ref, unsigned char) {
+    values.push_back(ref.toString());
+    return true;
+  });
+  return values;
+}
+
 template <typename... Arg>
 static std::vector<std::string> slist(Arg &&...args) {
   return std::vector<std::string>{std::forward<Arg>(args)...};
@@ -130,6 +139,8 @@ TEST(RadixTest, base) {
   ASSERT_EQ(RGI_Emoji_Flag_Sequence, packedTree.find("BBBB"));
   ASSERT_EQ(RGI_Emoji_Tag_Sequence, packedTree.find("BB"));
   ASSERT_EQ(RGI_Emoji_ZWJ_Sequence, packedTree.find("AAACD"));
+  ASSERT_EQ(5, packedTree.getLongestStringSize());
+  ASSERT_EQ(slist("AAA", "AAACD", "BB", "BBBB"), list(packedTree));
 
   auto ret = packedTree.findLongestMatched("");
   ASSERT_EQ(0, ret.first);

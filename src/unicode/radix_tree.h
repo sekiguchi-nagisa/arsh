@@ -141,6 +141,17 @@ public:
     }
     return {latestMatchedSize, latestProperty};
   }
+
+  void iterate(const std::function<bool(StringRef, unsigned char)> &walker) const {
+    if (walker) {
+      std::string buf;
+      this->iterate(buf, 1, walker);
+    }
+  }
+
+private:
+  bool iterate(std::string &buf, unsigned int offset,
+               const std::function<bool(StringRef, unsigned char)> &walker) const;
 };
 
 class RadixTree {

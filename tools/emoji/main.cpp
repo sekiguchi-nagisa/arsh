@@ -68,6 +68,15 @@ static std::vector<std::pair<std::string, unsigned char>> collect(const RadixTre
   return values;
 }
 
+static std::vector<std::pair<std::string, unsigned char>> collect(const PackedRadixTree tree) {
+  std::vector<std::pair<std::string, unsigned char>> values;
+  tree.iterate([&values](StringRef ref, unsigned char p) {
+    values.emplace_back(ref.toString(), p);
+    return true;
+  });
+  return values;
+}
+
 int main(int argc, char **argv) {
   opt::GetOptState optState("hd");
   auto iter = argv + 1;
@@ -172,6 +181,12 @@ int main(int argc, char **argv) {
       expectSize != allEmoji.size()) {
     fatal("broken emoji list, expect: %zu, actual: %zu\n", expectSize, allEmoji.size());
   }
+  for (auto &[s, p] : allEmoji) {
+    if (emojiTrie.find(s) != p) {
+      fatal("not found: %s\n", s.c_str());
+    }
+  }
+  allEmoji = collect(emojiTrie);
   for (auto &[s, p] : allEmoji) {
     if (emojiTrie.find(s) != p) {
       fatal("not found: %s\n", s.c_str());
