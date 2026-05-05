@@ -39,6 +39,8 @@ private:
 public:
   const auto &getCodePointRanges() const { return this->codePointRanges; }
 
+  explicit operator bool() const { return this->getCodePointRanges().size(); }
+
   /**
    * for union
    * @param ref
@@ -75,7 +77,7 @@ public:
    * build code point set. after return, still maintains an original buffer
    * @return
    */
-  CodePointSet build();
+  CodePointSet build() const;
 
   void clear() { this->codePointRanges.clear(); }
 

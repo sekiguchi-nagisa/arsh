@@ -144,7 +144,7 @@ public:
     }
   }
 
-  Matcher &operator=(Matcher &o) noexcept {
+  Matcher &operator=(Matcher &&o) noexcept {
     if (this != std::addressof(o)) {
       this->~Matcher();
       new (this) Matcher(std::move(o));

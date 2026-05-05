@@ -158,7 +158,7 @@ void CodePointSetBuilder::removeBy(const bool compact, const std::function<bool(
   // compact
   this->codePointRanges.erase(this->codePointRanges.begin() + (lastIndex + 1),
                               this->codePointRanges.begin() + oldEnd);
-  if (compact) {
+  if (compact) {            // NOLINT
     this->sortAndCompact(); // NOLINT
   }
 }
@@ -201,7 +201,7 @@ void CodePointSetBuilder::foldCase() {
   this->sortAndCompact();
 }
 
-CodePointSet CodePointSetBuilder::build() {
+CodePointSet CodePointSetBuilder::build() const {
   FlexBuffer<BMPCodePointRange> tmp;
   tmp.reserve(this->codePointRanges.size() / 2);
   unsigned short bmpSize = 0;

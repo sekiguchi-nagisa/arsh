@@ -108,3 +108,83 @@ instructions:
 matchers:
 EOF
 )
+
+# [\p{Emoji_Keycap_Sequence}[あ-う]\w\p{Basic_Emoji}]
+assert diff <(redump -d '[\p{Emoji_Keycap_Sequence}[あ-う]\w\p{Basic_Emoji}]' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+  0: EmojiOr(emoji=Basic_Emoji|Emoji_Keycap_Sequence, nextOffset=4)
+  3: CharSet(matcherIndex=0, invert=false)
+  7: Match
+matchers:
+  0: CodePointSet(owned)
+{ 0x0030, 0x0039 },
+{ 0x0041, 0x005A },
+{ 0x005F, 0x005F },
+{ 0x0061, 0x007A },
+{ 0x3042, 0x3046 },
+EOF
+)
+
+assert diff <(redump -d '[\p{Emoji_Keycap_Sequence}[あ-う]\w\p{Basic_Emoji}]' 'vi') <(<<'EOF'
+flag: (mode = v, modifier = i)
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+  0: IEmojiOr(emoji=Basic_Emoji|Emoji_Keycap_Sequence|case-ignore, nextOffset=4)
+  3: ICharSet(matcherIndex=0, invert=false)
+  7: Match
+matchers:
+  0: CodePointSet(owned)
+{ 0x0030, 0x0039 },
+{ 0x005F, 0x005F },
+{ 0x0061, 0x007A },
+{ 0x3042, 0x3046 },
+EOF
+)
+
+# (?<=[\p{Emoji_Keycap_Sequence}[あ-う]\w\p{Basic_Emoji}])
+assert diff <(redump -d '(?<=[\p{Emoji_Keycap_Sequence}[あ-う]\w\p{Basic_Emoji}])' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+   0: BeginLookAround(negate=false, target=14)
+   6: LBEmojiOr(emoji=Basic_Emoji|Emoji_Keycap_Sequence, nextOffset=5)
+   9: LBCharSet(matcherIndex=0, invert=false, ignoreCase=false)
+  14: EndLookAround
+  15: Match
+matchers:
+  0: CodePointSet(owned)
+{ 0x0030, 0x0039 },
+{ 0x0041, 0x005A },
+{ 0x005F, 0x005F },
+{ 0x0061, 0x007A },
+{ 0x3042, 0x3046 },
+EOF
+)
+
+assert diff <(redump -d '(?<=[\p{Emoji_Keycap_Sequence}[あ-う]\w\p{Basic_Emoji}])' 'vi') <(<<'EOF'
+flag: (mode = v, modifier = i)
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+   0: BeginLookAround(negate=false, target=14)
+   6: LBEmojiOr(emoji=Basic_Emoji|Emoji_Keycap_Sequence|case-ignore, nextOffset=5)
+   9: LBCharSet(matcherIndex=0, invert=false, ignoreCase=true)
+  14: EndLookAround
+  15: Match
+matchers:
+  0: CodePointSet(owned)
+{ 0x0030, 0x0039 },
+{ 0x005F, 0x005F },
+{ 0x0061, 0x007A },
+{ 0x3042, 0x3046 },
+EOF
+)

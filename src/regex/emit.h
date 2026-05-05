@@ -64,6 +64,40 @@ public:
   FlexBuffer<Inst> build() && { return std::move(this->buf); }
 };
 
+struct StrSetBuilder {
+  CodePointSetBuilder codePoints;
+  RadixTree radix;
+  ucp::RGIEmojiSeq emoji{ucp::RGIEmojiSeq::None};
+
+  bool hasEmoji() const {
+    auto e = this->emoji;
+    unsetFlag(e, ucp::RGIEmojiSeq::CASE_IGNORE);
+    return toUnderlying(e);
+  }
+
+  bool inEmoji(StringRef ref) const {
+    if (this->hasEmoji()) {
+      auto p = ucp::getEmojiTrie().find(ref);
+      return p && hasFlag(toUnderlying(this->emoji), p);
+    }
+    return false;
+  }
+
+  void add(ucp::RGIEmojiSeq e) { setFlag(this->emoji, e); }
+
+  void add(int codePoint) { this->codePoints.addRange(codePoint, codePoint); }
+
+  void add(StringRef ref);
+
+  void addRange(int first, int last, bool fold) { this->codePoints.addRange(first, last, fold); }
+
+  void add(const StrSetBuilder &builder);
+
+  void intersect(const StrSetBuilder &builder);
+
+  void sub(const StrSetBuilder &builder);
+};
+
 class CodeGen {
 public:
   enum class CaptureState : unsigned char {
@@ -98,12 +132,9 @@ private:
 
   bool has(Modifier m) const { return hasFlag(this->modifiers(), m); }
 
-  void todo(const Node &node, const char *str = nullptr); // TODO: remove
-
   bool toCodePointSet(ucp::BuilderOrSet builderOrSet, const PropertyNode &node) const;
 
-  void appendToCodePointSet(CodePointSetBuilder &setBuilder, unsigned int level,
-                            const Node &node) const;
+  void generateStrSet(StrSetBuilder &setBuilder, unsigned int level, const Node &node);
 
   bool hasEitherUnicodeFlag() const {
     return this->mode == Mode::UNICODE || this->mode == Mode::UNICODE_SET;
