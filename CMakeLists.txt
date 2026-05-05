@@ -214,10 +214,16 @@ add_custom_command(OUTPUT ${emoji_trie_src}
 add_library(casefold STATIC
         src/unicode/case_fold.cpp
 )
+if (BUILD_SHARED_LIB)
+    set_target_properties(casefold PROPERTIES POSITION_INDEPENDENT_CODE ON)
+endif ()
 
 add_library(radix STATIC
         src/unicode/radix_tree.cpp
 )
+if (BUILD_SHARED_LIB)
+    set_target_properties(radix PROPERTIES POSITION_INDEPENDENT_CODE ON)
+endif ()
 
 add_library(unicode STATIC
         src/unicode/grapheme.cpp
