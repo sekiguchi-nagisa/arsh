@@ -59,6 +59,7 @@ enum class BacktrackOp : unsigned char {
   SetLoopState,
   NonGreedyLoop,
   LookAround,
+  RadixState,
 };
 
 union Backtrack {
@@ -95,6 +96,11 @@ union Backtrack {
     uint32_t target;
     const char *iter;
   } lookAround;
+
+  struct {
+    BacktrackOp op; // NOLINT
+    uint32_t consumedSize;
+  } radixState;
 
 private:
   explicit Backtrack(BacktrackOp op) : op(op) {}
@@ -138,6 +144,12 @@ public:
     bt.lookAround.target = target;
     return bt;
   }
+
+  static Backtrack newRadixState(uint32_t consumedSize) {
+    Backtrack bt(BacktrackOp::RadixState);
+    bt.radixState.consumedSize = consumedSize;
+    return bt;
+  }
 };
 
 class BacktrackStack {
@@ -157,6 +169,12 @@ public:
     }
     this->bts.push_back(bt);
     return true;
+  }
+
+  unsigned int getRadixState() const { return this->bts.back().radixState.consumedSize; }
+
+  void updateRadixState(unsigned int newSize) {
+    this->bts.back().radixState.consumedSize = newSize;
   }
 
   bool backtrack(const Inst *&inst, Input &input, Capture *captures, LoopState *loopStates) {
@@ -191,6 +209,8 @@ public:
         inst = this->getStartInst() + bt.lookAround.target;
         bt.lookAround.matched = bt.lookAround.negate; // if negative lookaround, matched
         return this->push(bt);
+      case BacktrackOp::RadixState:
+        break;
       }
     }
     return false;
@@ -292,7 +312,7 @@ public:
   }
 };
 
-static std::pair<unsigned int, unsigned char>
+static std::pair<unsigned short, unsigned char>
 caselessFindLongestMatched(const PackedRadixTree tree, StringRef ref, std::string &foldBuf) {
   foldBuf.clear();
   const char *iter = ref.begin();
@@ -307,18 +327,17 @@ caselessFindLongestMatched(const PackedRadixTree tree, StringRef ref, std::strin
   return tree.findLongestMatched(foldBuf);
 }
 
-static std::pair<unsigned int, unsigned char>
+static std::pair<unsigned short, unsigned char>
 caselessFindLongestMatched(const PackedRadixTree tree, const Input &input, std::string &foldBuf) {
   const StringRef ref = input.remainForwardAtLeast(tree.getLongestStringSize());
   return caselessFindLongestMatched(tree, ref, foldBuf);
 }
 
-static std::pair<unsigned int, unsigned char> findBackwardLongestMatched(const PackedRadixTree tree,
-                                                                         const Input &input,
-                                                                         std::string &foldBuf,
-                                                                         bool caseFold) {
+static std::pair<unsigned short, unsigned char>
+findBackwardLongestMatched(const PackedRadixTree tree, const Input &input, unsigned int initStrSize,
+                           std::string &foldBuf, bool caseFold) {
   unsigned int prevSize = 0;
-  for (unsigned int size = tree.getLongestStringSize(); size > 0; size--) {
+  for (unsigned int size = initStrSize; size > 0; size--) {
     StringRef ref = input.remainBackwardAtLeast(size);
     if (ref.size() == prevSize) {
       continue;
@@ -335,6 +354,12 @@ static std::pair<unsigned int, unsigned char> findBackwardLongestMatched(const P
     prevSize = size;
   }
   return {0, 0};
+}
+
+static std::pair<unsigned short, unsigned char>
+findBackwardLongestMatched(const PackedRadixTree tree, const Input &input, std::string &foldBuf,
+                           bool caseFold) {
+  return findBackwardLongestMatched(tree, input, tree.getLongestStringSize(), foldBuf, caseFold);
 }
 
 #define TRY(E)                                                                                     \
@@ -712,6 +737,120 @@ BACKTRACK:
             if (nextOffset) {
               inst += sizeof(LBStrSetOrIns);
               vmnext; // try next
+            }
+          }
+          goto BACKTRACK;
+        }
+        vmcase(PrepareRadix) {
+          inst += sizeof(PrepareRadixIns);
+          auto &radixIns = cast<RadixOrEmojiIns>(*inst);
+          unsigned int longestStrSize = 0;
+          if (radixIns.hasEmoji()) {
+            longestStrSize = ucp::getEmojiTrie().getLongestStringSize();
+          }
+          if (radixIns.hasRadix) {
+            longestStrSize = std::max<unsigned int>(
+                longestStrSize, matchers[radixIns.getIndex()].asRadixTree().getLongestStringSize());
+          }
+          longestStrSize = input.remainForwardAtLeast(longestStrSize).size();
+          TRY(bts.push(Backtrack::newRadixState(longestStrSize)));
+          goto RADIX_OR_EMOJI;
+        }
+        vmcase(RadixOrEmoji) {
+          {
+            const unsigned int oldSize = bts.getRadixState();
+            for (unsigned int i = oldSize; i > 0; --i) {
+              unsigned int size = input.remainForwardAtLeast(i).size();
+              if (size == oldSize) {
+                continue;
+              }
+              bts.updateRadixState(i);
+              break;
+            }
+          }
+        RADIX_OR_EMOJI:
+          auto &radixIns = cast<RadixOrEmojiIns>(*inst);
+          if (const auto strSize = bts.getRadixState(); strSize && input.available()) {
+            const StringRef ref(input.getIter(), strSize);
+            unsigned int consumedSize = 0;
+            if (radixIns.hasEmoji()) {
+              auto radix = ucp::getEmojiTrie();
+              auto [s, p] = radixIns.ignoreCase() ? caselessFindLongestMatched(radix, ref, foldBuf)
+                                                  : radix.findLongestMatched(ref);
+              if (p && hasFlag(toUnderlying(radixIns.emoji), p)) {
+                consumedSize = s;
+              }
+            }
+            if (radixIns.hasRadix) {
+              auto radix = matchers[radixIns.getIndex()].asRadixTree();
+              auto [s, p] = radixIns.ignoreCase() ? caselessFindLongestMatched(radix, ref, foldBuf)
+                                                  : radix.findLongestMatched(ref);
+              if (p) {
+                consumedSize = std::max<unsigned int>(consumedSize, s);
+              }
+            }
+            if (consumedSize) {
+              bts.updateRadixState(consumedSize);
+              TRY(bts.push(Backtrack::newSetIns(input, inst - bts.getStartInst())));
+              input.setIter(input.getIter() + consumedSize);
+              inst += sizeof(RadixOrEmojiIns);
+              vmnext;
+            }
+          }
+          goto BACKTRACK;
+        }
+        vmcase(PrepareLBRadix) {
+          inst += sizeof(PrepareLBRadixIns);
+          auto &radixIns = cast<LBRadixOrEmojiIns>(*inst);
+          unsigned int longestStrSize = 0;
+          if (radixIns.hasEmoji()) {
+            longestStrSize = ucp::getEmojiTrie().getLongestStringSize();
+          }
+          if (radixIns.hasRadix) {
+            longestStrSize = std::max<unsigned int>(
+                longestStrSize, matchers[radixIns.getIndex()].asRadixTree().getLongestStringSize());
+          }
+          longestStrSize = input.remainBackwardAtLeast(longestStrSize).size();
+          TRY(bts.push(Backtrack::newRadixState(longestStrSize)));
+          goto LBRADIX_OR_EMOJI;
+        }
+        vmcase(LBRadixOrEmoji) {
+          {
+            const unsigned int oldSize = bts.getRadixState();
+            for (unsigned int i = oldSize; i > 0; --i) {
+              unsigned int size = input.remainBackwardAtLeast(i).size();
+              if (size == oldSize) {
+                continue;
+              }
+              bts.updateRadixState(i);
+              break;
+            }
+          }
+        LBRADIX_OR_EMOJI:
+          auto &radixIns = cast<LBRadixOrEmojiIns>(*inst);
+          if (const auto strSize = bts.getRadixState(); strSize && input.availableBackward()) {
+            unsigned int consumedSize = 0;
+            if (radixIns.hasEmoji()) {
+              auto [s, p] = findBackwardLongestMatched(ucp::getEmojiTrie(), input, strSize, foldBuf,
+                                                       radixIns.ignoreCase());
+              if (p && hasFlag(toUnderlying(radixIns.emoji), p)) {
+                consumedSize = s;
+              }
+            }
+            if (radixIns.hasRadix) {
+              auto [s, p] =
+                  findBackwardLongestMatched(matchers[radixIns.getIndex()].asRadixTree(), input,
+                                             strSize, foldBuf, radixIns.ignoreCase());
+              if (p) {
+                consumedSize = std::max<unsigned int>(consumedSize, s);
+              }
+            }
+            if (consumedSize) {
+              bts.updateRadixState(consumedSize);
+              TRY(bts.push(Backtrack::newSetIns(input, inst - bts.getStartInst())));
+              input.setIter(input.getIter() + consumedSize);
+              inst += sizeof(LBRadixOrEmojiIns);
+              vmnext;
             }
           }
           goto BACKTRACK;

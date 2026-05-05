@@ -577,6 +577,36 @@ void RegexDumper::dump(const FlexBuffer<Inst> &ins) {
       inst += sizeof(LBStrSetOrIns);
       break;
     }
+    case OpCode::PrepareRadix:
+      inst += sizeof(PrepareRadixIns);
+      break;
+    case OpCode::RadixOrEmoji: {
+      auto &radix = cast<RadixOrEmojiIns>(*inst);
+      str += "(emoji=";
+      appendEmojiSeq(str, radix.emoji);
+      str += ", hasRadix=";
+      appendBool(str, radix.hasRadix);
+      str += ", index=";
+      str += std::to_string(radix.getIndex());
+      str += ')';
+      inst += sizeof(RadixOrEmojiIns);
+      break;
+    }
+    case OpCode::PrepareLBRadix:
+      inst += sizeof(PrepareLBRadixIns);
+      break;
+    case OpCode::LBRadixOrEmoji: {
+      auto &radix = cast<LBRadixOrEmojiIns>(*inst);
+      str += "(emoji=";
+      appendEmojiSeq(str, radix.emoji);
+      str += ", hasRadix=";
+      appendBool(str, radix.hasRadix);
+      str += ", index=";
+      str += std::to_string(radix.getIndex());
+      str += ')';
+      inst += sizeof(LBRadixOrEmojiIns);
+      break;
+    }
     case OpCode::BeginCapture:
       str += "(captureIndex=";
       str += std::to_string(cast<BeginCaptureIns>(*inst).getCaptureIndex());

@@ -50,6 +50,10 @@ namespace arsh::regex {
   OP(StrSetOr)                                                                                     \
   OP(IStrSetOr)                                                                                    \
   OP(LBStrSetOr)                                                                                   \
+  OP(PrepareRadix)                                                                                 \
+  OP(RadixOrEmoji)                                                                                 \
+  OP(PrepareLBRadix)                                                                               \
+  OP(LBRadixOrEmoji)                                                                               \
   OP(BeginCapture)                                                                                 \
   OP(EndCapture)                                                                                   \
   OP(LBEndCapture)                                                                                 \
@@ -354,6 +358,60 @@ struct LBStrSetOrIns : InstWithRtti<OpCode::LBStrSetOr> {
     READ_FROM_INS_FIELD(index, value);
     return value;
   }
+};
+
+struct PrepareRadixIns : InstWithRtti<OpCode::PrepareRadix> {};
+
+struct RadixOrEmojiIns : InstWithRtti<OpCode::RadixOrEmoji> {
+  ucp::RGIEmojiSeq emoji;
+  bool hasRadix;
+  uint8_t index[2];
+
+  RadixOrEmojiIns(ucp::RGIEmojiSeq emoji, bool hasRadix, uint16_t index)
+      : emoji(emoji), hasRadix(hasRadix) {
+    WRITE_TO_INS_FIELD(index, index);
+  }
+
+  uint16_t getIndex() const {
+    uint16_t value;
+    READ_FROM_INS_FIELD(index, value);
+    return value;
+  }
+
+  bool hasEmoji() const {
+    auto e = this->emoji;
+    unsetFlag(e, ucp::RGIEmojiSeq::CASE_IGNORE);
+    return toUnderlying(e);
+  }
+
+  bool ignoreCase() const { return hasFlag(this->emoji, ucp::RGIEmojiSeq::CASE_IGNORE); }
+};
+
+struct PrepareLBRadixIns : InstWithRtti<OpCode::PrepareLBRadix> {};
+
+struct LBRadixOrEmojiIns : InstWithRtti<OpCode::LBRadixOrEmoji> {
+  ucp::RGIEmojiSeq emoji;
+  bool hasRadix;
+  uint8_t index[2];
+
+  LBRadixOrEmojiIns(ucp::RGIEmojiSeq emoji, bool hasRadix, uint16_t index)
+      : emoji(emoji), hasRadix(hasRadix) {
+    WRITE_TO_INS_FIELD(index, index);
+  }
+
+  uint16_t getIndex() const {
+    uint16_t value;
+    READ_FROM_INS_FIELD(index, value);
+    return value;
+  }
+
+  bool hasEmoji() const {
+    auto e = this->emoji;
+    unsetFlag(e, ucp::RGIEmojiSeq::CASE_IGNORE);
+    return toUnderlying(e);
+  }
+
+  bool ignoreCase() const { return hasFlag(this->emoji, ucp::RGIEmojiSeq::CASE_IGNORE); }
 };
 
 struct BeginCaptureIns : InstWithRtti<OpCode::BeginCapture> {

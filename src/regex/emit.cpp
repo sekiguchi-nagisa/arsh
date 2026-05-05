@@ -444,16 +444,16 @@ bool CodeGen::generateProperty(const PropertyNode &node) {
       return true;
     }
     assert(node.getNormalizedType() == PropertyNode::Type::EMOJI);
+    auto emoji = node.getEmojiSeq();
+    if (this->has(Modifier::IGNORE_CASE)) {
+      setFlag(emoji, ucp::RGIEmojiSeq::CASE_IGNORE);
+    }
     if (this->inLookBehind()) {
-      auto emoji = node.getEmojiSeq();
-      if (this->has(Modifier::IGNORE_CASE)) {
-        setFlag(emoji, ucp::RGIEmojiSeq::CASE_IGNORE);
-      }
-      this->builder.emit<LBEmojiOrIns>(emoji, 0);
-    } else if (this->has(Modifier::IGNORE_CASE)) {
-      this->builder.emit<IEmojiOrIns>(node.getEmojiSeq() | ucp::RGIEmojiSeq::CASE_IGNORE, 0);
+      this->builder.emit<PrepareLBRadixIns>();
+      this->builder.emit<LBRadixOrEmojiIns>(emoji, false, 0);
     } else {
-      this->builder.emit<EmojiOrIns>(node.getEmojiSeq(), 0);
+      this->builder.emit<PrepareRadixIns>();
+      this->builder.emit<RadixOrEmojiIns>(emoji, false, 0);
     }
     return true;
   } else {

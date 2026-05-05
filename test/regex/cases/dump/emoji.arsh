@@ -8,8 +8,9 @@ loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
-  0: EmojiOr(emoji=RGI_Emoji_ZWJ_Sequence, nextOffset=0)
-  3: Match
+  0: PrepareRadix
+  1: RadixOrEmoji(emoji=RGI_Emoji_ZWJ_Sequence, hasRadix=false, index=0)
+  6: Match
 matchers:
 EOF
 )
@@ -20,8 +21,9 @@ loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
-  0: IEmojiOr(emoji=RGI_Emoji_ZWJ_Sequence|case-ignore, nextOffset=0)
-  3: Match
+  0: PrepareRadix
+  1: RadixOrEmoji(emoji=RGI_Emoji_ZWJ_Sequence|case-ignore, hasRadix=false, index=0)
+  6: Match
 matchers:
 EOF
 )
@@ -33,8 +35,9 @@ loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
-  0: EmojiOr(emoji=RGI_Emoji, nextOffset=0)
-  3: Match
+  0: PrepareRadix
+  1: RadixOrEmoji(emoji=RGI_Emoji, hasRadix=false, index=0)
+  6: Match
 matchers:
 EOF
 )
@@ -45,8 +48,9 @@ loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
-  0: IEmojiOr(emoji=RGI_Emoji|case-ignore, nextOffset=0)
-  3: Match
+  0: PrepareRadix
+  1: RadixOrEmoji(emoji=RGI_Emoji|case-ignore, hasRadix=false, index=0)
+  6: Match
 matchers:
 EOF
 )
@@ -58,10 +62,11 @@ loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
-   0: BeginLookAround(negate=false, target=9)
-   6: LBEmojiOr(emoji=RGI_Emoji_ZWJ_Sequence, nextOffset=0)
-   9: EndLookAround
-  10: Match
+   0: BeginLookAround(negate=false, target=12)
+   6: PrepareLBRadix
+   7: LBRadixOrEmoji(emoji=RGI_Emoji_ZWJ_Sequence, hasRadix=false, index=0)
+  12: EndLookAround
+  13: Match
 matchers:
 EOF
 )
@@ -72,10 +77,11 @@ loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
-   0: BeginLookAround(negate=false, target=9)
-   6: LBEmojiOr(emoji=RGI_Emoji_ZWJ_Sequence|case-ignore, nextOffset=0)
-   9: EndLookAround
-  10: Match
+   0: BeginLookAround(negate=false, target=12)
+   6: PrepareLBRadix
+   7: LBRadixOrEmoji(emoji=RGI_Emoji_ZWJ_Sequence|case-ignore, hasRadix=false, index=0)
+  12: EndLookAround
+  13: Match
 matchers:
 EOF
 )
@@ -87,10 +93,11 @@ loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
-   0: BeginLookAround(negate=false, target=9)
-   6: LBEmojiOr(emoji=RGI_Emoji, nextOffset=0)
-   9: EndLookAround
-  10: Match
+   0: BeginLookAround(negate=false, target=12)
+   6: PrepareLBRadix
+   7: LBRadixOrEmoji(emoji=RGI_Emoji, hasRadix=false, index=0)
+  12: EndLookAround
+  13: Match
 matchers:
 EOF
 )
@@ -101,10 +108,11 @@ loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
-   0: BeginLookAround(negate=false, target=9)
-   6: LBEmojiOr(emoji=RGI_Emoji|case-ignore, nextOffset=0)
-   9: EndLookAround
-  10: Match
+   0: BeginLookAround(negate=false, target=12)
+   6: PrepareLBRadix
+   7: LBRadixOrEmoji(emoji=RGI_Emoji|case-ignore, hasRadix=false, index=0)
+  12: EndLookAround
+  13: Match
 matchers:
 EOF
 )
