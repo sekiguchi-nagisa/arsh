@@ -571,12 +571,15 @@ void CodeGen::generateStrSet(StrSetBuilder &setBuilder, const unsigned int level
     }
     break;
   }
-  case NodeKind::Alt: { // for \q{A}, \q{A|B}, \q{AA|B}
+  case NodeKind::Alt: { // for \q{}, \q{A}, \q{A|B}, \q{AA|B}
     auto &altNode = cast<AltNode>(node);
     std::string buf;
     for (auto &e : altNode.getPatterns()) {
       if (isa<CharNode>(*e)) {
         this->generateStrSet(setBuilder, level + 1, *e);
+        continue;
+      }
+      if (isa<EmptyNode>(*e)) {
         continue;
       }
       assert(isa<SeqNode>(*e));
@@ -717,11 +720,14 @@ bool CodeGen::generateCharClass(const CharClassNode &node) {
       this->builder.emitAt<EmojiOrIns>(point, setBuilder.emoji, nextOffset);
     }
     return true;
-  } else if (auto index = this->emitMatcher(Matcher(setBuilder.codePoints.build()));
-             index.hasValue()) {
-    assert(!node.mayContainStrings());
-    this->emitCharSetIns(index.unwrap(), invert);
-    return true;
+  } else {
+    if (node.mayContainStrings() && !setBuilder.codePoints) {
+      return true; // for [\q{}], [\q{|}] (do nothing)
+    }
+    if (auto index = this->emitMatcher(Matcher(setBuilder.codePoints.build())); index.hasValue()) {
+      this->emitCharSetIns(index.unwrap(), invert);
+      return true;
+    }
   }
   return false;
 }

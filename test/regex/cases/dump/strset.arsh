@@ -1,0 +1,230 @@
+
+source $SCRIPT_DIR/../syntax/test_helper.arsh
+
+# [\q{}]
+assert diff <(redump -d '[\q{}]' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+  0: Match
+matchers:
+EOF
+)
+
+assert diff <(redump -d '[\q{}]' 'vi') <(<<'EOF'
+flag: (mode = v, modifier = i)
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+  0: Match
+matchers:
+EOF
+)
+
+# [\q{|}\q{||}\q{}]
+assert diff <(redump -d '[\q{|}\q{||}\q{}]' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+  0: Match
+matchers:
+EOF
+)
+
+assert diff <(redump -d '[\q{|}\q{||}\q{}]' 'iv') <(<<'EOF'
+flag: (mode = v, modifier = i)
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+  0: Match
+matchers:
+EOF
+)
+
+# (?<![\q{|}\q{||}\q{}])
+assert diff <(redump -d '(?<![\q{|}\q{||}\q{}])' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+  0: BeginLookAround(negate=true, target=6)
+  6: EndLookAround
+  7: Match
+matchers:
+EOF
+)
+
+assert diff <(redump -d '(?<![\q{|}\q{||}\q{}])' 'vi') <(<<'EOF'
+flag: (mode = v, modifier = i)
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+  0: BeginLookAround(negate=true, target=6)
+  6: EndLookAround
+  7: Match
+matchers:
+EOF
+)
+
+# [\q{A|あ|}]
+assert diff <(redump -d '[\q{A|あ|}]' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+  0: CharSet(matcherIndex=0, invert=false)
+  4: Match
+matchers:
+  0: CodePointSet(owned)
+{ 0x0041, 0x0041 },
+{ 0x3042, 0x3042 },
+EOF
+)
+
+assert diff <(redump -d '[\q{A|あ|}]' 'vi') <(<<'EOF'
+flag: (mode = v, modifier = i)
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+  0: ICharSet(matcherIndex=0, invert=false)
+  4: Match
+matchers:
+  0: CodePointSet(owned)
+{ 0x0061, 0x0061 },
+{ 0x3042, 0x3042 },
+EOF
+)
+
+# [\q{AB|あ}]
+assert diff <(redump -d '[\q{AB|あ}]' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+  0: StrSetOr(emoji=, index=1, nextOffset=4)
+  5: CharSet(matcherIndex=0, invert=false)
+  9: Match
+matchers:
+  0: CodePointSet(owned)
+{ 0x3042, 0x3042 },
+  1: RadixTree
+property: 0x01, string: 0x4142
+EOF
+)
+
+assert diff <(redump -d '[\q{AB|あ}]' 'vi') <(<<'EOF'
+flag: (mode = v, modifier = i)
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+  0: IStrSetOr(emoji=case-ignore, index=1, nextOffset=4)
+  5: ICharSet(matcherIndex=0, invert=false)
+  9: Match
+matchers:
+  0: CodePointSet(owned)
+{ 0x3042, 0x3042 },
+  1: RadixTree
+property: 0x01, string: 0x6162
+EOF
+)
+
+# [\q{|AB|あ||い|ABC|}]
+assert diff <(redump -d '[\q{|AB|あ||い|ABC|}]' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+  0: StrSetOr(emoji=, index=1, nextOffset=4)
+  5: CharSet(matcherIndex=0, invert=false)
+  9: Match
+matchers:
+  0: CodePointSet(owned)
+{ 0x3042, 0x3042 },
+{ 0x3044, 0x3044 },
+  1: RadixTree
+property: 0x01, string: 0x4142
+property: 0x01, string: 0x414243
+EOF
+)
+
+assert diff <(redump -d '[\q{|AB|あ||い|ABC|}]' 'iv') <(<<'EOF'
+flag: (mode = v, modifier = i)
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+  0: IStrSetOr(emoji=case-ignore, index=1, nextOffset=4)
+  5: ICharSet(matcherIndex=0, invert=false)
+  9: Match
+matchers:
+  0: CodePointSet(owned)
+{ 0x3042, 0x3042 },
+{ 0x3044, 0x3044 },
+  1: RadixTree
+property: 0x01, string: 0x6162
+property: 0x01, string: 0x616263
+EOF
+)
+
+# (?<=[\q{AB}[\q{あ}い]\q{ABC|}\q{}[\w]])
+assert diff <(redump -d '(?<=[\q{AB}[\q{あ}い]\q{ABC|}\q{}[\w]])' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+   0: BeginLookAround(negate=false, target=16)
+   6: LBStrSetOr(emoji=, index=1, nextOffset=5)
+  11: LBCharSet(matcherIndex=0, invert=false, ignoreCase=false)
+  16: EndLookAround
+  17: Match
+matchers:
+  0: CodePointSet(owned)
+{ 0x0030, 0x0039 },
+{ 0x0041, 0x005A },
+{ 0x005F, 0x005F },
+{ 0x0061, 0x007A },
+{ 0x3042, 0x3042 },
+{ 0x3044, 0x3044 },
+  1: RadixTree
+property: 0x01, string: 0x4142
+property: 0x01, string: 0x414243
+EOF
+)
+
+assert diff <(redump -d '(?<=[\q{AB}[\q{あ}い]\q{ABC|}\q{}[\w]])' 'iv') <(<<'EOF'
+flag: (mode = v, modifier = i)
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+   0: BeginLookAround(negate=false, target=16)
+   6: LBStrSetOr(emoji=case-ignore, index=1, nextOffset=5)
+  11: LBCharSet(matcherIndex=0, invert=false, ignoreCase=true)
+  16: EndLookAround
+  17: Match
+matchers:
+  0: CodePointSet(owned)
+{ 0x0030, 0x0039 },
+{ 0x005F, 0x005F },
+{ 0x0061, 0x007A },
+{ 0x3042, 0x3042 },
+{ 0x3044, 0x3044 },
+  1: RadixTree
+property: 0x01, string: 0x6162
+property: 0x01, string: 0x616263
+EOF
+)

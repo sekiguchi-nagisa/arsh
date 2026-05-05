@@ -1,0 +1,87 @@
+
+source $SCRIPT_DIR/../syntax/test_helper.arsh
+
+# (?<=[\p{Emoji_Keycap_Sequence}[あ-う]\w\p{Basic_Emoji}])
+assert diff <(redump -m 'い' '(?<=[\p{Emoji_Keycap_Sequence}[あ-う]\w\p{Basic_Emoji}])' 'v') <(<<'EOF'
+input: `い'
+(offset=3, size=0)
+EOF
+)
+
+assert diff <(redump -m 'い' '(?<=[\p{Emoji_Keycap_Sequence}[あ-う]\w\p{Basic_Emoji}])' 'vi') <(<<'EOF'
+input: `い'
+(offset=3, size=0)
+EOF
+)
+
+assert diff <(redump -m 'W' '(?<=[\p{Emoji_Keycap_Sequence}[あ-う]\w\p{Basic_Emoji}])' 'v') <(<<'EOF'
+input: `W'
+(offset=1, size=0)
+EOF
+)
+
+assert diff <(redump -m 'W' '(?<=[\p{Emoji_Keycap_Sequence}[あ-う]\w\p{Basic_Emoji}])' 'iv') <(<<'EOF'
+input: `W'
+(offset=1, size=0)
+EOF
+)
+
+assert diff <(redump -m '4' '(?<=[\p{Emoji_Keycap_Sequence}[あ-う]\w\p{Basic_Emoji}])' 'v') <(<<'EOF'
+input: `4'
+(offset=1, size=0)
+EOF
+)
+
+assert diff <(redump -m '4' '(?<=[\p{Emoji_Keycap_Sequence}[あ-う]\w\p{Basic_Emoji}])' 'vi') <(<<'EOF'
+input: `4'
+(offset=1, size=0)
+EOF
+)
+
+assert diff <(redump -m $'\u017F' '(?<=[\p{Emoji_Keycap_Sequence}[あ-う]\w\p{Basic_Emoji}])' 'v') <(<<EOF
+input: \`${$'\u017F'}'
+failed
+EOF
+)
+
+assert diff <(redump -m $'\u017F' '(?<=[\p{Emoji_Keycap_Sequence}[あ-う]\w\p{Basic_Emoji}])' 'vi') <(<<EOF
+input: \`${$'\u017F'}'
+(offset=2, size=0)
+EOF
+)
+
+assert diff <(redump -m '⚡' '(?<=[\p{Emoji_Keycap_Sequence}[あ-う]\w\p{Basic_Emoji}])' 'v') <(<<'EOF'
+input: `⚡'
+(offset=3, size=0)
+EOF
+)
+
+assert diff <(redump -m '⚡' '(?<=[\p{Emoji_Keycap_Sequence}[あ-う]\w\p{Basic_Emoji}])' 'iv') <(<<'EOF'
+input: `⚡'
+(offset=3, size=0)
+EOF
+)
+
+assert diff <(redump -m '(↔️)' '(?<=[\p{Emoji_Keycap_Sequence}[あ-う]\w\p{Basic_Emoji}])' 'v') <(<<'EOF'
+input: `(↔️)'
+(offset=7, size=0)
+EOF
+)
+
+assert diff <(redump -m '(↔️)' '(?<=[\p{Emoji_Keycap_Sequence}[あ-う]\w\p{Basic_Emoji}])' 'iv') <(<<'EOF'
+input: `(↔️)'
+(offset=7, size=0)
+EOF
+)
+
+assert diff <(redump -m '(7️⃣)' '(?<=[\p{Emoji_Keycap_Sequence}[あ-う]\w\p{Basic_Emoji}])' 'v') <(<<'EOF'
+input: `(7️⃣)'
+(offset=2, size=0)
+EOF
+)
+
+assert diff <(redump -m '(7️⃣)' '(?<=[\p{Emoji_Keycap_Sequence}[あ-う]\w\p{Basic_Emoji}])' 'vi') <(<<'EOF'
+input: `(7️⃣)'
+(offset=2, size=0)
+EOF
+)
