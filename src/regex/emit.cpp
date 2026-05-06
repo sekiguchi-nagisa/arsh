@@ -60,6 +60,16 @@ void StrSetBuilder::sub(const StrSetBuilder &builder) { // TODO
 // #####################
 
 static void normalizeStrCharClass(Node &node) {
+  if (isa<NestedNode>(node)) {
+    normalizeStrCharClass(*cast<NestedNode>(node).getPattern());
+    return;
+  }
+  if (isa<ListNode>(node) && !isa<CharClassNode>(node)) {
+    for (auto &e : cast<ListNode>(node).getPatterns()) {
+      normalizeStrCharClass(*e);
+    }
+    return;
+  }
   if (!isa<CharClassNode>(node)) {
     return;
   }
