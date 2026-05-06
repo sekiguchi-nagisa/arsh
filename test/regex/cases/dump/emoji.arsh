@@ -9,8 +9,8 @@ captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
   0: PrepareRadix
-  1: RadixOrEmoji(emoji=RGI_Emoji_ZWJ_Sequence, hasRadix=false, index=0)
-  6: Match
+  1: RadixOrEmoji(emoji=RGI_Emoji_ZWJ_Sequence, hasRadix=false, index=0, nextOffset=0)
+  7: Match
 matchers:
 EOF
 )
@@ -22,8 +22,8 @@ captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
   0: PrepareRadix
-  1: RadixOrEmoji(emoji=RGI_Emoji_ZWJ_Sequence|case-ignore, hasRadix=false, index=0)
-  6: Match
+  1: RadixOrEmoji(emoji=RGI_Emoji_ZWJ_Sequence|case-ignore, hasRadix=false, index=0, nextOffset=0)
+  7: Match
 matchers:
 EOF
 )
@@ -36,8 +36,8 @@ captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
   0: PrepareRadix
-  1: RadixOrEmoji(emoji=RGI_Emoji, hasRadix=false, index=0)
-  6: Match
+  1: RadixOrEmoji(emoji=RGI_Emoji, hasRadix=false, index=0, nextOffset=0)
+  7: Match
 matchers:
 EOF
 )
@@ -49,8 +49,8 @@ captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
   0: PrepareRadix
-  1: RadixOrEmoji(emoji=RGI_Emoji|case-ignore, hasRadix=false, index=0)
-  6: Match
+  1: RadixOrEmoji(emoji=RGI_Emoji|case-ignore, hasRadix=false, index=0, nextOffset=0)
+  7: Match
 matchers:
 EOF
 )
@@ -62,11 +62,11 @@ loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
-   0: BeginLookAround(negate=false, target=12)
+   0: BeginLookAround(negate=false, target=13)
    6: PrepareLBRadix
-   7: LBRadixOrEmoji(emoji=RGI_Emoji_ZWJ_Sequence, hasRadix=false, index=0)
-  12: EndLookAround
-  13: Match
+   7: LBRadixOrEmoji(emoji=RGI_Emoji_ZWJ_Sequence, hasRadix=false, index=0, nextOffset=0)
+  13: EndLookAround
+  14: Match
 matchers:
 EOF
 )
@@ -77,11 +77,11 @@ loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
-   0: BeginLookAround(negate=false, target=12)
+   0: BeginLookAround(negate=false, target=13)
    6: PrepareLBRadix
-   7: LBRadixOrEmoji(emoji=RGI_Emoji_ZWJ_Sequence|case-ignore, hasRadix=false, index=0)
-  12: EndLookAround
-  13: Match
+   7: LBRadixOrEmoji(emoji=RGI_Emoji_ZWJ_Sequence|case-ignore, hasRadix=false, index=0, nextOffset=0)
+  13: EndLookAround
+  14: Match
 matchers:
 EOF
 )
@@ -93,11 +93,11 @@ loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
-   0: BeginLookAround(negate=false, target=12)
+   0: BeginLookAround(negate=false, target=13)
    6: PrepareLBRadix
-   7: LBRadixOrEmoji(emoji=RGI_Emoji, hasRadix=false, index=0)
-  12: EndLookAround
-  13: Match
+   7: LBRadixOrEmoji(emoji=RGI_Emoji, hasRadix=false, index=0, nextOffset=0)
+  13: EndLookAround
+  14: Match
 matchers:
 EOF
 )
@@ -108,11 +108,11 @@ loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
-   0: BeginLookAround(negate=false, target=12)
+   0: BeginLookAround(negate=false, target=13)
    6: PrepareLBRadix
-   7: LBRadixOrEmoji(emoji=RGI_Emoji|case-ignore, hasRadix=false, index=0)
-  12: EndLookAround
-  13: Match
+   7: LBRadixOrEmoji(emoji=RGI_Emoji|case-ignore, hasRadix=false, index=0, nextOffset=0)
+  13: EndLookAround
+  14: Match
 matchers:
 EOF
 )
@@ -124,9 +124,10 @@ loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
-  0: EmojiOr(emoji=Basic_Emoji|Emoji_Keycap_Sequence, nextOffset=4)
-  3: CharSet(matcherIndex=0, invert=false)
-  7: Match
+   0: PrepareRadix
+   1: RadixOrEmoji(emoji=Basic_Emoji|Emoji_Keycap_Sequence, hasRadix=false, index=0, nextOffset=4)
+   7: CharSet(matcherIndex=0, invert=false)
+  11: Match
 matchers:
   0: CodePointSet(owned)
 { 0x0030, 0x0039 },
@@ -143,9 +144,10 @@ loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
-  0: IEmojiOr(emoji=Basic_Emoji|Emoji_Keycap_Sequence|case-ignore, nextOffset=4)
-  3: ICharSet(matcherIndex=0, invert=false)
-  7: Match
+   0: PrepareRadix
+   1: RadixOrEmoji(emoji=Basic_Emoji|Emoji_Keycap_Sequence|case-ignore, hasRadix=false, index=0, nextOffset=4)
+   7: ICharSet(matcherIndex=0, invert=false)
+  11: Match
 matchers:
   0: CodePointSet(owned)
 { 0x0030, 0x0039 },
@@ -162,11 +164,12 @@ loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
-   0: BeginLookAround(negate=false, target=14)
-   6: LBEmojiOr(emoji=Basic_Emoji|Emoji_Keycap_Sequence, nextOffset=5)
-   9: LBCharSet(matcherIndex=0, invert=false, ignoreCase=false)
-  14: EndLookAround
-  15: Match
+   0: BeginLookAround(negate=false, target=18)
+   6: PrepareLBRadix
+   7: LBRadixOrEmoji(emoji=Basic_Emoji|Emoji_Keycap_Sequence, hasRadix=false, index=0, nextOffset=5)
+  13: LBCharSet(matcherIndex=0, invert=false, ignoreCase=false)
+  18: EndLookAround
+  19: Match
 matchers:
   0: CodePointSet(owned)
 { 0x0030, 0x0039 },
@@ -183,11 +186,12 @@ loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
-   0: BeginLookAround(negate=false, target=14)
-   6: LBEmojiOr(emoji=Basic_Emoji|Emoji_Keycap_Sequence|case-ignore, nextOffset=5)
-   9: LBCharSet(matcherIndex=0, invert=false, ignoreCase=true)
-  14: EndLookAround
-  15: Match
+   0: BeginLookAround(negate=false, target=18)
+   6: PrepareLBRadix
+   7: LBRadixOrEmoji(emoji=Basic_Emoji|Emoji_Keycap_Sequence|case-ignore, hasRadix=false, index=0, nextOffset=5)
+  13: LBCharSet(matcherIndex=0, invert=false, ignoreCase=true)
+  18: EndLookAround
+  19: Match
 matchers:
   0: CodePointSet(owned)
 { 0x0030, 0x0039 },

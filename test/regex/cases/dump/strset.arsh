@@ -81,8 +81,9 @@ loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
-  0: CharSet(matcherIndex=0, invert=false)
-  4: Match
+  0: Alt(second=9)
+  5: CharSet(matcherIndex=0, invert=false)
+  9: Match
 matchers:
   0: CodePointSet(owned)
 { 0x0041, 0x0041 },
@@ -96,8 +97,9 @@ loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
-  0: ICharSet(matcherIndex=0, invert=false)
-  4: Match
+  0: Alt(second=9)
+  5: ICharSet(matcherIndex=0, invert=false)
+  9: Match
 matchers:
   0: CodePointSet(owned)
 { 0x0061, 0x0061 },
@@ -112,14 +114,15 @@ loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
-  0: StrSetOr(emoji=, index=1, nextOffset=4)
-  5: CharSet(matcherIndex=0, invert=false)
-  9: Match
+   0: PrepareRadix
+   1: RadixOrEmoji(emoji=, hasRadix=true, index=0, nextOffset=4)
+   7: CharSet(matcherIndex=1, invert=false)
+  11: Match
 matchers:
-  0: CodePointSet(owned)
-{ 0x3042, 0x3042 },
-  1: RadixTree
+  0: RadixTree
 property: 0x01, string: 0x4142
+  1: CodePointSet(owned)
+{ 0x3042, 0x3042 },
 EOF
 )
 
@@ -129,14 +132,15 @@ loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
-  0: IStrSetOr(emoji=case-ignore, index=1, nextOffset=4)
-  5: ICharSet(matcherIndex=0, invert=false)
-  9: Match
+   0: PrepareRadix
+   1: RadixOrEmoji(emoji=case-ignore, hasRadix=true, index=0, nextOffset=4)
+   7: ICharSet(matcherIndex=1, invert=false)
+  11: Match
 matchers:
-  0: CodePointSet(owned)
-{ 0x3042, 0x3042 },
-  1: RadixTree
+  0: RadixTree
 property: 0x01, string: 0x6162
+  1: CodePointSet(owned)
+{ 0x3042, 0x3042 },
 EOF
 )
 
@@ -147,16 +151,18 @@ loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
-  0: StrSetOr(emoji=, index=1, nextOffset=4)
-  5: CharSet(matcherIndex=0, invert=false)
-  9: Match
+   0: Alt(second=16)
+   5: PrepareRadix
+   6: RadixOrEmoji(emoji=, hasRadix=true, index=0, nextOffset=4)
+  12: CharSet(matcherIndex=1, invert=false)
+  16: Match
 matchers:
-  0: CodePointSet(owned)
-{ 0x3042, 0x3042 },
-{ 0x3044, 0x3044 },
-  1: RadixTree
+  0: RadixTree
 property: 0x01, string: 0x4142
 property: 0x01, string: 0x414243
+  1: CodePointSet(owned)
+{ 0x3042, 0x3042 },
+{ 0x3044, 0x3044 },
 EOF
 )
 
@@ -166,16 +172,18 @@ loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
-  0: IStrSetOr(emoji=case-ignore, index=1, nextOffset=4)
-  5: ICharSet(matcherIndex=0, invert=false)
-  9: Match
+   0: Alt(second=16)
+   5: PrepareRadix
+   6: RadixOrEmoji(emoji=case-ignore, hasRadix=true, index=0, nextOffset=4)
+  12: ICharSet(matcherIndex=1, invert=false)
+  16: Match
 matchers:
-  0: CodePointSet(owned)
-{ 0x3042, 0x3042 },
-{ 0x3044, 0x3044 },
-  1: RadixTree
+  0: RadixTree
 property: 0x01, string: 0x6162
 property: 0x01, string: 0x616263
+  1: CodePointSet(owned)
+{ 0x3042, 0x3042 },
+{ 0x3044, 0x3044 },
 EOF
 )
 
@@ -186,22 +194,24 @@ loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
-   0: BeginLookAround(negate=false, target=16)
-   6: LBStrSetOr(emoji=, index=1, nextOffset=5)
-  11: LBCharSet(matcherIndex=0, invert=false, ignoreCase=false)
-  16: EndLookAround
-  17: Match
+   0: BeginLookAround(negate=false, target=23)
+   6: Alt(second=23)
+  11: PrepareLBRadix
+  12: LBRadixOrEmoji(emoji=, hasRadix=true, index=0, nextOffset=5)
+  18: LBCharSet(matcherIndex=1, invert=false, ignoreCase=false)
+  23: EndLookAround
+  24: Match
 matchers:
-  0: CodePointSet(owned)
+  0: RadixTree
+property: 0x01, string: 0x4142
+property: 0x01, string: 0x414243
+  1: CodePointSet(owned)
 { 0x0030, 0x0039 },
 { 0x0041, 0x005A },
 { 0x005F, 0x005F },
 { 0x0061, 0x007A },
 { 0x3042, 0x3042 },
 { 0x3044, 0x3044 },
-  1: RadixTree
-property: 0x01, string: 0x4142
-property: 0x01, string: 0x414243
 EOF
 )
 
@@ -211,20 +221,140 @@ loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
-   0: BeginLookAround(negate=false, target=16)
-   6: LBStrSetOr(emoji=case-ignore, index=1, nextOffset=5)
-  11: LBCharSet(matcherIndex=0, invert=false, ignoreCase=true)
-  16: EndLookAround
-  17: Match
+   0: BeginLookAround(negate=false, target=23)
+   6: Alt(second=23)
+  11: PrepareLBRadix
+  12: LBRadixOrEmoji(emoji=case-ignore, hasRadix=true, index=0, nextOffset=5)
+  18: LBCharSet(matcherIndex=1, invert=false, ignoreCase=true)
+  23: EndLookAround
+  24: Match
 matchers:
-  0: CodePointSet(owned)
+  0: RadixTree
+property: 0x01, string: 0x6162
+property: 0x01, string: 0x616263
+  1: CodePointSet(owned)
 { 0x0030, 0x0039 },
 { 0x005F, 0x005F },
 { 0x0061, 0x007A },
 { 0x3042, 0x3042 },
 { 0x3044, 0x3044 },
-  1: RadixTree
+EOF
+)
+
+# [\q{AB|ABC}[\q{AB}[\q{ABC}]]]
+assert diff <(redump -d '[\q{AB|ABC}[\q{AB}[\q{ABC}]]]' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+  0: PrepareRadix
+  1: RadixOrEmoji(emoji=, hasRadix=true, index=0, nextOffset=0)
+  7: Match
+matchers:
+  0: RadixTree
+property: 0x01, string: 0x4142
+property: 0x01, string: 0x414243
+EOF
+)
+
+assert diff <(redump -d '[\q{AB|ABC}[\q{AB}[\q{ABC}]]]' 'vi') <(<<'EOF'
+flag: (mode = v, modifier = i)
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+  0: PrepareRadix
+  1: RadixOrEmoji(emoji=case-ignore, hasRadix=true, index=0, nextOffset=0)
+  7: Match
+matchers:
+  0: RadixTree
 property: 0x01, string: 0x6162
 property: 0x01, string: 0x616263
+EOF
+)
+
+# [\q{AB|ABC}[\q{AB}[\q{ABC}\q{|}]]]
+assert diff <(redump -d '[\q{AB|ABC}[\q{AB}[\q{ABC}\q{|}]]]' 'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+   0: Alt(second=12)
+   5: PrepareRadix
+   6: RadixOrEmoji(emoji=, hasRadix=true, index=0, nextOffset=0)
+  12: Match
+matchers:
+  0: RadixTree
+property: 0x01, string: 0x4142
+property: 0x01, string: 0x414243
+EOF
+)
+
+assert diff <(redump -d '[\q{AB|ABC}[\q{AB}[\q{ABC}\q{|}]]]' 'iv') <(<<'EOF'
+flag: (mode = v, modifier = i)
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+   0: Alt(second=12)
+   5: PrepareRadix
+   6: RadixOrEmoji(emoji=case-ignore, hasRadix=true, index=0, nextOffset=0)
+  12: Match
+matchers:
+  0: RadixTree
+property: 0x01, string: 0x6162
+property: 0x01, string: 0x616263
+EOF
+)
+
+# [\q{あいう}\q{↔️}\p{Basic_Emoji}\p{Emoji_Keycap_Sequence}[\p{RGI_Emoji_Modifier_Sequence}\q{Ⓜ️|}\p{RGI_Emoji_Modifier_Sequence}\p{RGI_Emoji_Flag_Sequence}]\p{RGI_Emoji_Tag_Sequence}\p{RGI_Emoji_ZWJ_Sequence}\w\q{あいう|あい}]
+assert diff <(redump -d
+    '[\q{あいう}\q{↔️}\p{Basic_Emoji}\p{Emoji_Keycap_Sequence}[\p{RGI_Emoji_Modifier_Sequence}\q{Ⓜ️|}\p{RGI_Emoji_Modifier_Sequence}\p{RGI_Emoji_Flag_Sequence}]\p{RGI_Emoji_Tag_Sequence}\p{RGI_Emoji_ZWJ_Sequence}\w\q{あいう|あい}]'
+     'v') <(<<'EOF'
+flag: (mode = v, modifier = )
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+   0: Alt(second=16)
+   5: PrepareRadix
+   6: RadixOrEmoji(emoji=RGI_Emoji, hasRadix=true, index=0, nextOffset=4)
+  12: CharSet(matcherIndex=1, invert=false)
+  16: Match
+matchers:
+  0: RadixTree
+property: 0x01, string: 0xE38182E38184
+property: 0x01, string: 0xE38182E38184E38186
+  1: CodePointSet(owned)
+{ 0x0030, 0x0039 },
+{ 0x0041, 0x005A },
+{ 0x005F, 0x005F },
+{ 0x0061, 0x007A },
+EOF
+)
+
+assert diff <(redump -d
+    '[\q{あいう}\q{↔️}\p{Basic_Emoji}\p{Emoji_Keycap_Sequence}[\p{RGI_Emoji_Modifier_Sequence}\q{Ⓜ️|}\p{RGI_Emoji_Modifier_Sequence}\p{RGI_Emoji_Flag_Sequence}]\p{RGI_Emoji_Tag_Sequence}\p{RGI_Emoji_ZWJ_Sequence}\w\q{あいう|あい}]'
+     'vi') <(<<'EOF'
+flag: (mode = v, modifier = i)
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+   0: Alt(second=16)
+   5: PrepareRadix
+   6: RadixOrEmoji(emoji=RGI_Emoji|case-ignore, hasRadix=true, index=0, nextOffset=4)
+  12: ICharSet(matcherIndex=1, invert=false)
+  16: Match
+matchers:
+  0: RadixTree
+property: 0x01, string: 0xE38182E38184
+property: 0x01, string: 0xE38182E38184E38186
+  1: CodePointSet(owned)
+{ 0x0030, 0x0039 },
+{ 0x005F, 0x005F },
+{ 0x0061, 0x007A },
 EOF
 )

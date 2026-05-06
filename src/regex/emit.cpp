@@ -33,6 +33,9 @@ void StrSetBuilder::add(StringRef ref) {
 
 void StrSetBuilder::add(const StrSetBuilder &builder) {
   this->add(builder.emoji);
+  if (builder.emptySeq) {
+    this->emptySeq = true;
+  }
   this->codePoints.add(builder.codePoints);
   builder.radix.iterate([this](StringRef ref, unsigned char p) {
     if (!this->inEmoji(ref)) {
@@ -450,10 +453,10 @@ bool CodeGen::generateProperty(const PropertyNode &node) {
     }
     if (this->inLookBehind()) {
       this->builder.emit<PrepareLBRadixIns>();
-      this->builder.emit<LBRadixOrEmojiIns>(emoji, false, 0);
+      this->builder.emit<LBRadixOrEmojiIns>(emoji, false, 0, 0);
     } else {
       this->builder.emit<PrepareRadixIns>();
-      this->builder.emit<RadixOrEmojiIns>(emoji, false, 0);
+      this->builder.emit<RadixOrEmojiIns>(emoji, false, 0, 0);
     }
     return true;
   } else {
@@ -580,6 +583,7 @@ void CodeGen::generateStrSet(StrSetBuilder &setBuilder, const unsigned int level
         continue;
       }
       if (isa<EmptyNode>(*e)) {
+        setBuilder.emptySeq = true;
         continue;
       }
       assert(isa<SeqNode>(*e));
@@ -655,79 +659,76 @@ bool CodeGen::generateCharClass(const CharClassNode &node) {
   if (this->has(Modifier::IGNORE_CASE)) {
     setBuilder.codePoints.foldCase();
   }
-  if (!setBuilder.radix.empty()) {
-    assert(node.mayContainStrings());
-    FlexBuffer<uint8_t> buf;
-    if (!serialize(setBuilder.radix, buf)) {
-      this->err = "too large string set";
-      return false;
+  if (setBuilder.radix.empty() && !setBuilder.hasEmoji()) { // for charset or empty seq (\q{})
+    if (setBuilder.emptySeq && !setBuilder.codePoints) {
+      return true; // do nothing
     }
-    const auto point = this->inLookBehind() ? this->builder.emitReservedPoint<LBStrSetOrIns>()
-                       : this->has(Modifier::IGNORE_CASE)
-                           ? this->builder.emitReservedPoint<IStrSetOrIns>()
-                           : this->builder.emitReservedPoint<StrSetOrIns>();
-    const unsigned int addr = this->builder.currentAddr();
-    if (setBuilder.codePoints) {
-      auto index = this->emitMatcher(Matcher(setBuilder.codePoints.build()));
-      if (!index.hasValue()) {
-        return false;
-      }
-      this->emitCharSetIns(index.unwrap(), invert);
-    }
-    if (auto index =
-            this->emitMatcher(Matcher(std::move(buf), setBuilder.radix.longestStringSize()));
-        index.hasValue()) {
-      const unsigned char nextOffset = this->builder.currentAddr() - addr;
-      if (this->inLookBehind()) {
-        auto emoji = setBuilder.emoji;
-        if (this->has(Modifier::IGNORE_CASE)) {
-          setFlag(emoji, ucp::RGIEmojiSeq::CASE_IGNORE);
-        }
-        this->builder.emitAt<LBStrSetOrIns>(point, emoji, index.unwrap(), nextOffset);
-      } else if (this->has(Modifier::IGNORE_CASE)) {
-        this->builder.emitAt<IStrSetOrIns>(point, setBuilder.emoji | ucp::RGIEmojiSeq::CASE_IGNORE,
-                                           index.unwrap(), nextOffset);
-      } else {
-        this->builder.emitAt<StrSetOrIns>(point, setBuilder.emoji, index.unwrap(), nextOffset);
-      }
-      return true;
-    }
-  } else if (setBuilder.hasEmoji()) {
-    assert(node.mayContainStrings());
-    const auto point = this->inLookBehind() ? this->builder.emitReservedPoint<LBEmojiOrIns>()
-                       : this->has(Modifier::IGNORE_CASE)
-                           ? this->builder.emitReservedPoint<IEmojiOrIns>()
-                           : this->builder.emitReservedPoint<EmojiOrIns>();
-    const unsigned int addr = this->builder.currentAddr();
-    if (setBuilder.codePoints) {
-      auto index = this->emitMatcher(Matcher(setBuilder.codePoints.build()));
-      if (!index.hasValue()) {
-        return false;
-      }
-      this->emitCharSetIns(index.unwrap(), invert);
-    }
-    const unsigned char nextOffset = this->builder.currentAddr() - addr;
-    if (this->inLookBehind()) {
-      auto emoji = setBuilder.emoji;
-      if (this->has(Modifier::IGNORE_CASE)) {
-        setFlag(emoji, ucp::RGIEmojiSeq::CASE_IGNORE);
-      }
-      this->builder.emitAt<LBEmojiOrIns>(point, emoji, nextOffset);
-    } else if (this->has(Modifier::IGNORE_CASE)) {
-      this->builder.emitAt<IEmojiOrIns>(point, setBuilder.emoji | ucp::RGIEmojiSeq::CASE_IGNORE,
-                                        nextOffset);
-    } else {
-      this->builder.emitAt<EmojiOrIns>(point, setBuilder.emoji, nextOffset);
-    }
-    return true;
-  } else {
-    if (node.mayContainStrings() && !setBuilder.codePoints) {
-      return true; // for [\q{}], [\q{|}] (do nothing)
+    Optional<InstructionBuilder::ReservedPoint> point;
+    if (setBuilder.emptySeq) { // [\w\q{}] => (?:[\w] | )
+      point = this->builder.emitReservedPoint<AltIns>();
     }
     if (auto index = this->emitMatcher(Matcher(setBuilder.codePoints.build())); index.hasValue()) {
       this->emitCharSetIns(index.unwrap(), invert);
+      if (point.hasValue()) {
+        unsigned int addr = this->builder.currentAddr();
+        this->builder.emitAt<AltIns>(point.unwrap(), addr);
+      }
       return true;
     }
+  } else {
+    // prepare
+    assert(node.mayContainStrings());
+    auto emoji = setBuilder.emoji;
+    if (this->has(Modifier::IGNORE_CASE)) {
+      setFlag(emoji, ucp::RGIEmojiSeq::CASE_IGNORE);
+    }
+    Optional<unsigned short> radixIndex;
+    if (!setBuilder.radix.empty()) {
+      FlexBuffer<uint8_t> buf;
+      if (!serialize(setBuilder.radix, buf)) {
+        this->err = "too large string set";
+        return false;
+      }
+      radixIndex = this->emitMatcher(Matcher(std::move(buf), setBuilder.radix.longestStringSize()));
+      if (!radixIndex.hasValue()) {
+        return false;
+      }
+    }
+
+    // emit codes
+    Optional<InstructionBuilder::ReservedPoint> point;
+    if (setBuilder.emptySeq) { // [\w\q{}] => (?:[\w] | )
+      point = this->builder.emitReservedPoint<AltIns>();
+    }
+    if (this->inLookBehind()) {
+      this->builder.emit<PrepareLBRadixIns>();
+    } else {
+      this->builder.emit<PrepareRadixIns>();
+    }
+    auto reservedPoint = this->inLookBehind() ? this->builder.emitReservedPoint<LBRadixOrEmojiIns>()
+                                              : this->builder.emitReservedPoint<RadixOrEmojiIns>();
+    const unsigned int oldAddr = this->builder.currentAddr();
+    if (setBuilder.codePoints) {
+      auto index = this->emitMatcher(Matcher(setBuilder.codePoints.build()));
+      if (!index.hasValue()) {
+        return false;
+      }
+      this->emitCharSetIns(index.unwrap(), invert);
+    }
+    const unsigned char nextOffset = this->builder.currentAddr() - oldAddr;
+    const unsigned short index = radixIndex.hasValue() ? radixIndex.unwrap() : 0;
+    if (this->inLookBehind()) {
+      this->builder.emitAt<LBRadixOrEmojiIns>(reservedPoint, emoji, radixIndex.hasValue(), index,
+                                              nextOffset);
+    } else {
+      this->builder.emitAt<RadixOrEmojiIns>(reservedPoint, emoji, radixIndex.hasValue(), index,
+                                            nextOffset);
+    }
+    if (point.hasValue()) {
+      unsigned int addr = this->builder.currentAddr();
+      this->builder.emitAt<AltIns>(point.unwrap(), addr);
+    }
+    return true;
   }
   return false;
 }

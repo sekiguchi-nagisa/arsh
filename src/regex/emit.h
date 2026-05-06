@@ -68,6 +68,7 @@ struct StrSetBuilder {
   CodePointSetBuilder codePoints;
   RadixTree radix;
   ucp::RGIEmojiSeq emoji{ucp::RGIEmojiSeq::None};
+  bool emptySeq{false};
 
   bool hasEmoji() const {
     auto e = this->emoji;

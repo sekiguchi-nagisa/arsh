@@ -511,72 +511,6 @@ void RegexDumper::dump(const FlexBuffer<Inst> &ins) {
       inst += sizeof(LBCharSetIns);
       break;
     }
-    case OpCode::EmojiOr: {
-      auto &emoji = cast<EmojiOrIns>(*inst);
-      str += "(emoji=";
-      appendEmojiSeq(str, emoji.emoji);
-      str += ", nextOffset=";
-      str += std::to_string(emoji.nextOffset);
-      str += ')';
-      inst += sizeof(EmojiOrIns);
-      break;
-    }
-    case OpCode::IEmojiOr: {
-      auto &emoji = cast<IEmojiOrIns>(*inst);
-      str += "(emoji=";
-      appendEmojiSeq(str, emoji.emoji);
-      str += ", nextOffset=";
-      str += std::to_string(emoji.nextOffset);
-      str += ')';
-      inst += sizeof(IEmojiOrIns);
-      break;
-    }
-    case OpCode::LBEmojiOr: {
-      auto &emoji = cast<LBEmojiOrIns>(*inst);
-      str += "(emoji=";
-      appendEmojiSeq(str, emoji.emoji);
-      str += ", nextOffset=";
-      str += std::to_string(emoji.nextOffset);
-      str += ')';
-      inst += sizeof(LBEmojiOrIns);
-      break;
-    }
-    case OpCode::StrSetOr: {
-      auto &strSet = cast<StrSetOrIns>(*inst);
-      str += "(emoji=";
-      appendEmojiSeq(str, strSet.emoji);
-      str += ", index=";
-      str += std::to_string(strSet.getIndex());
-      str += ", nextOffset=";
-      str += std::to_string(strSet.nextOffset);
-      str += ')';
-      inst += sizeof(StrSetOrIns);
-      break;
-    }
-    case OpCode::IStrSetOr: {
-      auto &strSet = cast<IStrSetOrIns>(*inst);
-      str += "(emoji=";
-      appendEmojiSeq(str, strSet.emoji);
-      str += ", index=";
-      str += std::to_string(strSet.getIndex());
-      str += ", nextOffset=";
-      str += std::to_string(strSet.nextOffset);
-      str += ')';
-      inst += sizeof(IStrSetOrIns);
-      break;
-    }
-    case OpCode::LBStrSetOr: {
-      auto &strSet = cast<LBStrSetOrIns>(*inst);
-      str += "(emoji=";
-      appendEmojiSeq(str, strSet.emoji);
-      str += ", index=";
-      str += std::to_string(strSet.getIndex());
-      str += ", nextOffset=";
-      str += std::to_string(strSet.nextOffset);
-      str += ')';
-      inst += sizeof(LBStrSetOrIns);
-      break;
-    }
     case OpCode::PrepareRadix:
       inst += sizeof(PrepareRadixIns);
       break;
@@ -588,6 +522,8 @@ void RegexDumper::dump(const FlexBuffer<Inst> &ins) {
       appendBool(str, radix.hasRadix);
       str += ", index=";
       str += std::to_string(radix.getIndex());
+      str += ", nextOffset=";
+      str += std::to_string(radix.nextOffset);
       str += ')';
       inst += sizeof(RadixOrEmojiIns);
       break;
@@ -603,6 +539,8 @@ void RegexDumper::dump(const FlexBuffer<Inst> &ins) {
       appendBool(str, radix.hasRadix);
       str += ", index=";
       str += std::to_string(radix.getIndex());
+      str += ", nextOffset=";
+      str += std::to_string(radix.nextOffset);
       str += ')';
       inst += sizeof(LBRadixOrEmojiIns);
       break;

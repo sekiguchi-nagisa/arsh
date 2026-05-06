@@ -44,12 +44,6 @@ namespace arsh::regex {
   OP(CharSet)                                                                                      \
   OP(ICharSet)                                                                                     \
   OP(LBCharSet)                                                                                    \
-  OP(EmojiOr)                                                                                      \
-  OP(IEmojiOr)                                                                                     \
-  OP(LBEmojiOr)                                                                                    \
-  OP(StrSetOr)                                                                                     \
-  OP(IStrSetOr)                                                                                    \
-  OP(LBStrSetOr)                                                                                   \
   OP(PrepareRadix)                                                                                 \
   OP(RadixOrEmoji)                                                                                 \
   OP(PrepareLBRadix)                                                                               \
@@ -285,90 +279,16 @@ struct LBCharSetIns : InstWithRtti<OpCode::LBCharSet> {
   }
 };
 
-struct EmojiOrIns : InstWithRtti<OpCode::EmojiOr> {
-  ucp::RGIEmojiSeq emoji;
-  uint8_t nextOffset;
-
-  explicit EmojiOrIns(ucp::RGIEmojiSeq emoji, uint8_t nextOffset)
-      : emoji(emoji), nextOffset(nextOffset) {}
-};
-
-struct IEmojiOrIns : InstWithRtti<OpCode::IEmojiOr> {
-  ucp::RGIEmojiSeq emoji;
-  uint8_t nextOffset;
-
-  explicit IEmojiOrIns(ucp::RGIEmojiSeq emoji, uint8_t nextOffset)
-      : emoji(emoji), nextOffset(nextOffset) {}
-};
-
-struct LBEmojiOrIns : InstWithRtti<OpCode::LBEmojiOr> {
-  ucp::RGIEmojiSeq emoji;
-  uint8_t nextOffset;
-
-  explicit LBEmojiOrIns(ucp::RGIEmojiSeq emoji, uint8_t nextOffset)
-      : emoji(emoji), nextOffset(nextOffset) {}
-};
-
-struct StrSetOrIns : InstWithRtti<OpCode::StrSetOr> {
-  ucp::RGIEmojiSeq emoji;
-  uint8_t index[2];
-  uint8_t nextOffset;
-
-  StrSetOrIns(ucp::RGIEmojiSeq emoji, uint16_t index, uint8_t nextOffset)
-      : emoji(emoji), nextOffset(nextOffset) {
-    WRITE_TO_INS_FIELD(index, index);
-  }
-
-  uint16_t getIndex() const {
-    uint16_t value;
-    READ_FROM_INS_FIELD(index, value);
-    return value;
-  }
-};
-
-struct IStrSetOrIns : InstWithRtti<OpCode::IStrSetOr> {
-  ucp::RGIEmojiSeq emoji;
-  uint8_t index[2];
-  uint8_t nextOffset;
-
-  IStrSetOrIns(ucp::RGIEmojiSeq emoji, uint16_t index, uint8_t nextOffset)
-      : emoji(emoji), nextOffset(nextOffset) {
-    WRITE_TO_INS_FIELD(index, index);
-  }
-
-  uint16_t getIndex() const {
-    uint16_t value;
-    READ_FROM_INS_FIELD(index, value);
-    return value;
-  }
-};
-
-struct LBStrSetOrIns : InstWithRtti<OpCode::LBStrSetOr> {
-  ucp::RGIEmojiSeq emoji;
-  uint8_t index[2];
-  uint8_t nextOffset;
-
-  LBStrSetOrIns(ucp::RGIEmojiSeq emoji, uint16_t index, uint8_t nextOffset)
-      : emoji(emoji), nextOffset(nextOffset) {
-    WRITE_TO_INS_FIELD(index, index);
-  }
-
-  uint16_t getIndex() const {
-    uint16_t value;
-    READ_FROM_INS_FIELD(index, value);
-    return value;
-  }
-};
-
 struct PrepareRadixIns : InstWithRtti<OpCode::PrepareRadix> {};
 
 struct RadixOrEmojiIns : InstWithRtti<OpCode::RadixOrEmoji> {
   ucp::RGIEmojiSeq emoji;
   bool hasRadix;
   uint8_t index[2];
+  uint8_t nextOffset;
 
-  RadixOrEmojiIns(ucp::RGIEmojiSeq emoji, bool hasRadix, uint16_t index)
-      : emoji(emoji), hasRadix(hasRadix) {
+  RadixOrEmojiIns(ucp::RGIEmojiSeq emoji, bool hasRadix, uint16_t index, uint8_t nextOffset)
+      : emoji(emoji), hasRadix(hasRadix), nextOffset(nextOffset) {
     WRITE_TO_INS_FIELD(index, index);
   }
 
@@ -393,9 +313,10 @@ struct LBRadixOrEmojiIns : InstWithRtti<OpCode::LBRadixOrEmoji> {
   ucp::RGIEmojiSeq emoji;
   bool hasRadix;
   uint8_t index[2];
+  uint8_t nextOffset;
 
-  LBRadixOrEmojiIns(ucp::RGIEmojiSeq emoji, bool hasRadix, uint16_t index)
-      : emoji(emoji), hasRadix(hasRadix) {
+  LBRadixOrEmojiIns(ucp::RGIEmojiSeq emoji, bool hasRadix, uint16_t index, uint8_t nextOffset)
+      : emoji(emoji), hasRadix(hasRadix), nextOffset(nextOffset) {
     WRITE_TO_INS_FIELD(index, index);
   }
 
