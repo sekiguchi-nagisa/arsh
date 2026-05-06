@@ -61,6 +61,8 @@ inline int unsafeNextUtf8(const char *&iter) {
   return codePoint;
 }
 
+inline void unsafeNextUtf8Noreturn(const char *&iter) { iter += UnicodeUtil::utf8ByteSize(*iter); }
+
 /**
  *
  * @param iter must be valid utf8
@@ -77,6 +79,16 @@ inline int unsafePrevUtf8(const char *&iter) {
   }
   codePoint |= (*iter & masks[len - 1]) << shift;
   return static_cast<int>(codePoint);
+}
+
+inline void unsafeRemovePrefixUtf8(StringRef &ref) {
+  ref.removePrefix(UnicodeUtil::utf8ByteSize(ref[0]));
+}
+
+inline void unsafeRemoveSuffixUtf8(StringRef &ref) {
+  const char *iter = ref.end();
+  unsafePrevUtf8(iter);
+  ref.removeSuffix(ref.end() - iter);
 }
 
 class Input {
@@ -164,7 +176,7 @@ public:
     const auto old = this->iter;
     auto cur = old;
     while (static_cast<unsigned int>(cur - old) < bytes && cur < this->end) {
-      unsafeNextUtf8(cur);
+      cur += UnicodeUtil::utf8ByteSize(*cur);
     }
     return {this->iter, static_cast<size_t>(cur - this->iter)};
   }

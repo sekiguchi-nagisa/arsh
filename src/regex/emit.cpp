@@ -667,8 +667,7 @@ bool CodeGen::generateCharClass(const CharClassNode &node) {
     if (setBuilder.emptySeq) { // [\w\q{}] => (?:[\w] | )
       point = this->builder.emitReservedPoint<AltIns>();
     }
-    if (auto index = this->emitMatcher(Matcher(setBuilder.codePoints.build())); index.hasValue()) {
-      this->emitCharSetIns(index.unwrap(), invert);
+    if (this->tryToEmitCharSetIns(setBuilder.codePoints, invert)) {
       if (point.hasValue()) {
         unsigned int addr = this->builder.currentAddr();
         this->builder.emitAt<AltIns>(point.unwrap(), addr);
@@ -709,11 +708,9 @@ bool CodeGen::generateCharClass(const CharClassNode &node) {
                                               : this->builder.emitReservedPoint<RadixOrEmojiIns>();
     const unsigned int oldAddr = this->builder.currentAddr();
     if (setBuilder.codePoints) {
-      auto index = this->emitMatcher(Matcher(setBuilder.codePoints.build()));
-      if (!index.hasValue()) {
+      if (!this->tryToEmitCharSetIns(setBuilder.codePoints, invert)) {
         return false;
       }
-      this->emitCharSetIns(index.unwrap(), invert);
     }
     const unsigned char nextOffset = this->builder.currentAddr() - oldAddr;
     const unsigned short index = radixIndex.hasValue() ? radixIndex.unwrap() : 0;
@@ -728,6 +725,15 @@ bool CodeGen::generateCharClass(const CharClassNode &node) {
       unsigned int addr = this->builder.currentAddr();
       this->builder.emitAt<AltIns>(point.unwrap(), addr);
     }
+    return true;
+  }
+  return false;
+}
+
+bool CodeGen::tryToEmitCharSetIns(const CodePointSetBuilder &setBuilder, bool invert) {
+  // TODO: optimize simple case (eliminate code point set emission)
+  if (auto index = this->emitMatcher(Matcher(setBuilder.build())); index.hasValue()) {
+    this->emitCharSetIns(index.unwrap(), invert);
     return true;
   }
   return false;

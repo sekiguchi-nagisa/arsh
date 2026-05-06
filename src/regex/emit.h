@@ -171,6 +171,8 @@ private:
     }
   }
 
+  bool tryToEmitCharSetIns(const CodePointSetBuilder &setBuilder, bool invert);
+
   void generateBackRef(const BackRefNode &node);
 
   bool generateRepeat(const RepeatNode &node);
