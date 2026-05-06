@@ -714,7 +714,7 @@ BACKTRACK:
             if (consumedSize) {
               bts.updateRadixState(consumedSize);
               TRY(bts.push(Backtrack::newSetIns(input, inst - bts.getStartInst())));
-              input.setIter(input.getIter() + consumedSize);
+              input.setIter(input.getIter() - consumedSize);
               inst += sizeof(LBRadixOrEmojiIns) + nextOffset;
               vmnext;
             }

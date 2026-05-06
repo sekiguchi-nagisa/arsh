@@ -85,3 +85,216 @@ input: `(7️⃣)'
 (offset=2, size=0)
 EOF
 )
+
+# (?<=[\q{}])
+assert diff <(redump -m '' '(?<=[\q{}])' 'v') <(<<'EOF'
+input: `'
+(offset=0, size=0)
+EOF
+)
+
+assert diff <(redump -m '' '(?<=[\q{}])' 'vi') <(<<'EOF'
+input: `'
+(offset=0, size=0)
+EOF
+)
+
+assert diff <(redump -m 'あ' '(?<=[\q{}])' 'v') <(<<'EOF'
+input: `あ'
+(offset=0, size=0)
+EOF
+)
+
+assert diff <(redump -m 'あ' '(?<=[\q{}])' 'vi') <(<<'EOF'
+input: `あ'
+(offset=0, size=0)
+EOF
+)
+
+# (?<=[\q{|_}\w])
+assert diff <(redump -m '' '(?<=[\q{|_}\w])' 'v') <(<<'EOF'
+input: `'
+(offset=0, size=0)
+EOF
+)
+
+assert diff <(redump -m '' '(?<=[\q{|_}\w])' 'vi') <(<<'EOF'
+input: `'
+(offset=0, size=0)
+EOF
+)
+
+assert diff <(redump -m 'AA' '(?<=[\q{|_}\w])' 'v') <(<<'EOF'
+input: `AA'
+(offset=0, size=0)
+EOF
+)
+
+assert diff <(redump -m 'AA' '(?<=[\q{|_}\w])' 'vi') <(<<'EOF'
+input: `AA'
+(offset=0, size=0)
+EOF
+)
+
+assert diff <(redump -m '_' '(?<=[\q{|_}\w])' 'v') <(<<'EOF'
+input: `_'
+(offset=0, size=0)
+EOF
+)
+
+assert diff <(redump -m 'あ' '(?<=[\q{|_}\w])' 'v') <(<<'EOF'
+input: `あ'
+(offset=0, size=0)
+EOF
+)
+
+assert diff <(redump -m 'あ' '(?<=[\q{|_}\w])' 'vi') <(<<'EOF'
+input: `あ'
+(offset=0, size=0)
+EOF
+)
+
+# (?<=[\q{ABC|AB|A}])
+assert diff <(redump -m 'AC' '(?<=[\q{ABC|AB|A}])' 'v') <(<<'EOF'
+input: `AC'
+(offset=1, size=0)
+EOF
+)
+
+assert diff <(redump -m 'AC' '(?<=[\q{ABC|AB|A}])' 'vi') <(<<'EOF'
+input: `AC'
+(offset=1, size=0)
+EOF
+)
+
+assert diff <(redump -m 'ABD' '(?<=[\q{ABC|AB|A}])' 'v') <(<<'EOF'
+input: `ABD'
+(offset=1, size=0)
+EOF
+)
+
+assert diff <(redump -m 'abd' '(?<=[\q{ABC|AB|A}])' 'v') <(<<'EOF'
+input: `abd'
+failed
+EOF
+)
+
+assert diff <(redump -m 'abd' '(?<=[\q{ABC|AB|A}])' 'vi') <(<<'EOF'
+input: `abd'
+(offset=1, size=0)
+EOF
+)
+
+assert diff <(redump -m 'ABC' '(?<=[\q{ABC|AB|A}])' 'v') <(<<'EOF'
+input: `ABC'
+(offset=1, size=0)
+EOF
+)
+
+assert diff <(redump -m 'abc' '(?<=[\q{ABC|AB|A}])' 'vi') <(<<'EOF'
+input: `abc'
+(offset=1, size=0)
+EOF
+)
+
+# (?<=[\q{ABC|AB|A}]CD)
+assert diff <(redump -m 'ABCD' '(?<=[\q{ABC|AB|A}]CD)' 'v') <(<<'EOF'
+input: `ABCD'
+(offset=4, size=0)
+EOF
+)
+
+assert diff <(redump -m 'AbcD' '(?<=[\q{ABC|AB|A}]CD)' 'vi') <(<<'EOF'
+input: `AbcD'
+(offset=4, size=0)
+EOF
+)
+
+assert diff <(redump -m 'ABCCD' '(?<=[\q{ABC|AB|A}]CD)' 'v') <(<<'EOF'
+input: `ABCCD'
+(offset=5, size=0)
+EOF
+)
+
+assert diff <(redump -m 'ABcCd' '(?<=[\q{ABC|AB|A}]CD)' 'iv') <(<<'EOF'
+input: `ABcCd'
+(offset=5, size=0)
+EOF
+)
+
+assert diff <(redump -m 'ABCd' '(?<=[\q{ABC|AB|A}]CD)' 'v') <(<<'EOF'
+input: `ABCd'
+failed
+EOF
+)
+
+assert diff <(redump -m 'ABCd' '(?<=[\q{ABC|AB|A}]CD)' 'vi') <(<<'EOF'
+input: `ABCd'
+(offset=4, size=0)
+EOF
+)
+
+## caseless
+assert diff <(redump -m 'Ⓜ️' '(?<=[[\p{RGI_Emoji}]\w[あ-ん\q{あいう|あい}]])' 'v') <(<<'EOF'
+input: `Ⓜ️'
+(offset=6, size=0)
+EOF
+)
+
+assert diff <(redump -m 'Ⓜ️' '(?<=[[\p{RGI_Emoji}]\w[あ-ん\q{あいう|あい}]])' 'iv') <(<<'EOF'
+input: `Ⓜ️'
+(offset=6, size=0)
+EOF
+)
+
+assert diff <(redump -m 'ⓜ️' '(?<=[[\p{RGI_Emoji}]\w[あ-ん\q{あいう|あい}]])' 'v') <(<<'EOF'
+input: `ⓜ️'
+failed
+EOF
+)
+
+assert diff <(redump -m 'ⓜ️' '(?<=[[\p{RGI_Emoji}]\w[あ-ん\q{あいう|あい}]])' 'iv') <(<<'EOF'
+input: `ⓜ️'
+(offset=6, size=0)
+EOF
+)
+
+assert diff <(redump -m $'\u017F{}' '(?<=([[\p{RGI_Emoji}]\w[あ-ん\q{あいう|あい}]]).*)' 'v') <(<<EOF
+input: \`${$'\u017F{}'}'
+failed
+EOF
+)
+
+assert diff <(redump -m $'\u017F{}' '(?<=([[\p{RGI_Emoji}]\w[あ-ん\q{あいう|あい}]]).*)' 'iv') <(<<EOF
+input: \`${$'\u017F{}'}'
+(offset=2, size=0)
+(offset=0, size=2)
+EOF
+)
+
+assert diff <(redump -m $'\u017F{}' '(?<=([[\p{RGI_Emoji}]\w[あ-ん\q{あいう|あい|}]]).*)' 'v') <(<<EOF
+input: \`${$'\u017F{}'}'
+(offset=0, size=0)
+(offset=0, size=0)
+EOF
+)
+
+assert diff <(redump -m $'\u017F{}' '(?<=([[\p{RGI_Emoji}]\w[あ-ん\q{あいう|あい|}]]).*)' 'vi') <(<<EOF
+input: \`${$'\u017F{}'}'
+(offset=0, size=0)
+(offset=0, size=0)
+EOF
+)
+
+assert diff <(redump -m $'\u017F{}' '(?<=([[\p{RGI_Emoji}]\q{s\{}]).*)' 'v') <(<<EOF
+input: \`${$'\u017F{}'}'
+failed
+EOF
+)
+
+assert diff <(redump -m $'\u017F{}' '(?<=([[\p{RGI_Emoji}]\q{s\{}]).*)' 'iv') <(<<EOF
+input: \`${$'\u017F{}'}'
+(offset=3, size=0)
+(offset=0, size=3)
+EOF
+)
