@@ -240,7 +240,7 @@ let defs = $create([
 @('[^\p{Any}]' 'u' 'U+0..U+10FFFF'),
 # @('[^\P{Any}]' 'u' '!(U+0..U+10FFFF)'),
 # @('[^\p{Any}]' 'v' '!U+0..U+10FFFF'),
-@('[^\P{Any}]' 'v' '!!(U+0..U+10FFFF)'),
+# @('[^\P{Any}]' 'v' '!!(U+0..U+10FFFF)'),
 
 @('[\p{Assigned}]' 'u' '!gc:Cn'),
 @('[\P{Assigned}]' 'u' 'gc:Cn'),

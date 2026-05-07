@@ -88,7 +88,7 @@ instructions:
   0: CharSet(matcherIndex=0, invert=true)
   4: Match
 matchers:
-  0: CodePointSet(owned)
+  0: AsciiSet
 { 0x0041, 0x0041 },
 EOF
 )
@@ -118,7 +118,7 @@ instructions:
   0: ICharSet(matcherIndex=0, invert=true)
   4: Match
 matchers:
-  0: CodePointSet(owned)
+  0: AsciiSet
 { 0x0061, 0x0061 },
 EOF
 )
@@ -327,7 +327,7 @@ instructions:
   0: CharSet(matcherIndex=0, invert=false)
   4: Match
 matchers:
-  0: CodePointSet(owned)
+  0: AsciiSet
 { 0x0041, 0x0041 },
 { 0x0056, 0x0056 },
 EOF
@@ -342,7 +342,7 @@ instructions:
   0: ICharSet(matcherIndex=0, invert=false)
   4: Match
 matchers:
-  0: CodePointSet(owned)
+  0: AsciiSet
 { 0x0061, 0x0061 },
 { 0x0076, 0x0076 },
 EOF
@@ -358,7 +358,7 @@ instructions:
   0: CharSet(matcherIndex=0, invert=false)
   4: Match
 matchers:
-  0: CodePointSet(owned)
+  0: AsciiSet
 { 0x0023, 0x0023 },
 { 0x0028, 0x0028 },
 { 0x0040, 0x007A },
@@ -374,7 +374,7 @@ instructions:
   0: ICharSet(matcherIndex=0, invert=false)
   4: Match
 matchers:
-  0: CodePointSet(owned)
+  0: AsciiSet
 { 0x0023, 0x0023 },
 { 0x0028, 0x0028 },
 { 0x0040, 0x0040 },
@@ -416,5 +416,32 @@ matchers:
 { 0x0061, 0x007A },
   1: CodePointSet(owned)
 { 0x3042, 0x3093 },
+EOF
+)
+
+assert diff <(redump -d '[\p{Any}]' 'u') <(<<'EOF'
+flag: (mode = u, modifier = )
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+  0: CharSet(matcherIndex=0, invert=false)
+  4: Match
+matchers:
+  0: CodePointSet(borrowed)
+{ 0x0000, 0xFFFF },
+{ 0x10000, 0x10FFFF },
+EOF
+)
+
+assert diff <(redump -d '[\p{Any}2345]' 'u') <(<<'EOF'
+flag: (mode = u, modifier = )
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+  0: Any
+  1: Match
+matchers:
 EOF
 )

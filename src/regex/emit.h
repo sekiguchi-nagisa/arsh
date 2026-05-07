@@ -161,6 +161,8 @@ private:
 
   bool generateCharClass(const CharClassNode &node);
 
+  void emitCharIns(int codePoint);
+
   void emitCharSetIns(unsigned int matcherIndex, bool invert) {
     if (this->inLookBehind()) {
       this->builder.emit<LBCharSetIns>(matcherIndex, invert, this->has(Modifier::IGNORE_CASE));

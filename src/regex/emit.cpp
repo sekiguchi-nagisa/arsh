@@ -174,17 +174,7 @@ bool CodeGen::generate(const Node &node) {
     }
     break;
   case NodeKind::Char:
-    if (this->inLookBehind()) {
-      int codePoint = cast<CharNode>(node).getCodePoint();
-      if (this->has(Modifier::IGNORE_CASE)) {
-        codePoint = doSimpleCaseFolding(codePoint);
-      }
-      this->builder.emit<LBCharIns>(codePoint, this->has(Modifier::IGNORE_CASE));
-    } else if (this->has(Modifier::IGNORE_CASE)) {
-      this->builder.emit<ICharIns>(doSimpleCaseFolding(cast<CharNode>(node).getCodePoint()));
-    } else {
-      this->builder.emit<CharIns>(cast<CharNode>(node).getCodePoint());
-    }
+    this->emitCharIns(cast<CharNode>(node).getCodePoint());
     break;
   case NodeKind::CharClass:
     return this->generateCharClass(cast<CharClassNode>(node));
@@ -315,90 +305,6 @@ static bool intoCharRange(const CharClassNode &node, unsigned int offset, Func f
   return false;
 }
 
-static bool isAsciiSet(const Node &node) {
-  switch (node.getKind()) {
-  case NodeKind::Char: {
-    const auto codePoint = cast<CharNode>(node).getCodePoint();
-    return Matcher::withinAsciiSet(codePoint);
-  }
-  case NodeKind::Property: {
-    auto &propertyNode = cast<PropertyNode>(node);
-    return propertyNode.onlyAscii();
-  }
-  case NodeKind::CharClass: {
-    auto &classNode = cast<CharClassNode>(node);
-    for (auto &e : classNode.getChars()) {
-      if (isProperty(*e, PropertyNode::Type::RANGE)) {
-        continue;
-      }
-      if (!isAsciiSet(*e)) {
-        return false;
-      }
-    }
-    return !classNode.isInvert();
-  }
-  default:
-    return false;
-  }
-}
-
-static void appendToAsciiSet(AsciiSet &set, const Node &node) {
-  switch (node.getKind()) {
-  case NodeKind::Char: {
-    auto &charNode = cast<CharNode>(node);
-    assert(Matcher::withinAsciiSet(charNode.getCodePoint()));
-    set.add(charNode.getCodePoint());
-    break;
-  }
-  case NodeKind::Property: {
-    auto &propertyNode = cast<PropertyNode>(node);
-    assert(propertyNode.onlyAscii());
-    if (propertyNode.getType() == PropertyNode::Type::DIGIT) {
-      for (char i = 0; i < 10; i++) {
-        set.add('0' + i);
-      }
-    } else {
-      assert(propertyNode.getType() == PropertyNode::Type::WORD);
-      for (char i = 0; i < 10; i++) {
-        set.add('0' + i);
-      }
-      for (char i = 'a'; i <= 'z'; i++) {
-        set.add(i);
-        set.add('A' + (i - 'a'));
-      }
-      set.add('_');
-    }
-    break;
-  }
-  case NodeKind::CharClass: {
-    auto &classNode = cast<CharClassNode>(node);
-    assert(!classNode.isInvert());
-    assert(classNode.getType() == CharClassNode::Type::UNION ||
-           classNode.getType() == CharClassNode::Type::RANGE);
-    const unsigned int size = classNode.getChars().size();
-    for (unsigned int i = 0; i < size; i++) {
-      auto rangeConsumer = [&set](int first, int last) {
-        assert(Matcher::withinAsciiSet(first));
-        assert(Matcher::withinAsciiSet(last));
-        for (int c = first; c <= last; c++) {
-          set.add(c);
-        }
-      };
-      if (intoCharRange(classNode, i, rangeConsumer)) {
-        i += 2;
-      } else {
-        auto &e = classNode.getChars()[i];
-        appendToAsciiSet(set, *e);
-      }
-    }
-    break;
-  }
-  default:
-    assert(false);
-    break; // unreachable
-  }
-}
-
 bool CodeGen::toCodePointSet(ucp::BuilderOrSet builderOrSet, const PropertyNode &node) const {
   switch (node.getNormalizedType()) {
   case PropertyNode::Type::RANGE:
@@ -443,7 +349,21 @@ static AsciiSet foldCase(const AsciiSet set) {
 bool CodeGen::generateProperty(const PropertyNode &node) {
   if (node.onlyAscii()) {
     AsciiSet set;
-    appendToAsciiSet(set, node);
+    if (node.getType() == PropertyNode::Type::DIGIT) {
+      for (char i = 0; i < 10; i++) {
+        set.add('0' + i);
+      }
+    } else {
+      assert(node.getType() == PropertyNode::Type::WORD);
+      for (char i = 0; i < 10; i++) {
+        set.add('0' + i);
+      }
+      for (char i = 'a'; i <= 'z'; i++) {
+        set.add(i);
+        set.add('A' + (i - 'a'));
+      }
+      set.add('_');
+    }
     if (this->has(Modifier::IGNORE_CASE)) {
       set = foldCase(set);
     }
@@ -619,41 +539,12 @@ void CodeGen::generateStrSet(StrSetBuilder &setBuilder, const unsigned int level
 }
 
 static bool isSingleCharClass(const CharClassNode &node) {
-  if (node.getChars().size() == 1 && !node.isInvert()) {
-    if (auto *altNode = checked_cast<AltNode>(node.getChars()[0].get())) {
-      if (altNode->getPatterns().size() == 1 && isa<CharNode>(*altNode->getPatterns()[0])) {
-        return true; // [\q{A}]
-      }
-    } else {
-      return true;
-    }
-  }
-  return false;
+  return node.getChars().size() == 1 && !node.isInvert() && !isa<AltNode>(*node.getChars()[0]);
 }
 
 bool CodeGen::generateCharClass(const CharClassNode &node) {
   if (isSingleCharClass(node)) {
     return this->generate(*node.getChars()[0]);
-  }
-  if (node.getChars().empty() && node.isInvert()) { // [^]
-    if (this->inLookBehind()) {
-      this->builder.emit<LBAnyIns>(true);
-    } else {
-      this->builder.emit<AnyIns>();
-    }
-    return true;
-  }
-  if (isAsciiSet(node)) {
-    AsciiSet set;
-    appendToAsciiSet(set, node);
-    if (this->has(Modifier::IGNORE_CASE)) {
-      set = foldCase(set);
-    }
-    if (auto index = this->emitMatcher(Matcher(set)); index.hasValue()) {
-      this->emitCharSetIns(index.unwrap(), false);
-      return true;
-    }
-    return false;
   }
 
   // generate str set or char set
@@ -740,8 +631,68 @@ bool CodeGen::generateCharClass(const CharClassNode &node) {
   return false;
 }
 
+void CodeGen::emitCharIns(int codePoint) {
+  if (this->inLookBehind()) {
+    if (this->has(Modifier::IGNORE_CASE)) {
+      codePoint = doSimpleCaseFolding(codePoint);
+    }
+    this->builder.emit<LBCharIns>(codePoint, this->has(Modifier::IGNORE_CASE));
+  } else if (this->has(Modifier::IGNORE_CASE)) {
+    this->builder.emit<ICharIns>(doSimpleCaseFolding(codePoint));
+  } else {
+    this->builder.emit<CharIns>(codePoint);
+  }
+}
+
+static Optional<AsciiSet> tryToGenerateAsciiSet(const CodePointSetBuilder &setBuilder) {
+  AsciiSet set;
+  for (auto [first, last] : setBuilder.getCodePointRanges()) {
+    if (Matcher::withinAsciiSet(first) && Matcher::withinAsciiSet(last)) {
+      for (; first <= last; first++) {
+        set.add(first);
+      }
+      continue;
+    }
+    return {};
+  }
+  return set;
+}
+
 bool CodeGen::tryToEmitCharSetIns(const CodePointSetBuilder &setBuilder, bool invert) {
-  // TODO: optimize simple case (eliminate code point set emission)
+  if (setBuilder.getCodePointRanges().empty()) {
+    if (invert) {
+      if (this->inLookBehind()) {
+        this->builder.emit<LBAnyIns>(true);
+      } else {
+        this->builder.emit<AnyIns>();
+      }
+      return true;
+    }
+  }
+  if (setBuilder.getCodePointRanges().size() == 1 && !invert) {
+    auto [first, last] = setBuilder.getCodePointRanges()[0];
+    if (first == last) { // only contains single code point
+      this->emitCharIns(first);
+      return true;
+    }
+    if (first == 0 && last == UnicodeUtil::CODE_POINT_MAX) { // Any
+      if (this->inLookBehind()) {
+        this->builder.emit<LBAnyIns>(true);
+      } else {
+        this->builder.emit<AnyIns>();
+      }
+      return true;
+    }
+  }
+
+  if (auto set = tryToGenerateAsciiSet(setBuilder); set.hasValue()) {
+    if (auto index = this->emitMatcher(Matcher(set.unwrap())); index.hasValue()) {
+      this->emitCharSetIns(index.unwrap(), invert);
+      return true;
+    }
+    return false;
+  }
+
   if (auto index = this->emitMatcher(Matcher(setBuilder.build())); index.hasValue()) {
     this->emitCharSetIns(index.unwrap(), invert);
     return true;

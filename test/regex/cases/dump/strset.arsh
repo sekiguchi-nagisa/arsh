@@ -115,14 +115,12 @@ captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
    0: PrepareRadix
-   1: RadixOrEmoji(emoji=, hasRadix=true, index=0, nextOffset=4)
-   7: CharSet(matcherIndex=1, invert=false)
-  11: Match
+   1: RadixOrEmoji(emoji=, hasRadix=true, index=0, nextOffset=5)
+   7: Char(codePoint=U+3042:あ)
+  12: Match
 matchers:
   0: RadixTree
 property: 0x01, string: 0x4142
-  1: CodePointSet(owned)
-{ 0x3042, 0x3042 },
 EOF
 )
 
@@ -133,14 +131,12 @@ captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
    0: PrepareRadix
-   1: RadixOrEmoji(emoji=case-ignore, hasRadix=true, index=0, nextOffset=4)
-   7: ICharSet(matcherIndex=1, invert=false)
-  11: Match
+   1: RadixOrEmoji(emoji=case-ignore, hasRadix=true, index=0, nextOffset=5)
+   7: IChar(codePoint=U+3042:あ)
+  12: Match
 matchers:
   0: RadixTree
 property: 0x01, string: 0x6162
-  1: CodePointSet(owned)
-{ 0x3042, 0x3042 },
 EOF
 )
 
@@ -327,7 +323,7 @@ matchers:
   0: RadixTree
 property: 0x01, string: 0xE38182E38184
 property: 0x01, string: 0xE38182E38184E38186
-  1: CodePointSet(owned)
+  1: AsciiSet
 { 0x0030, 0x0039 },
 { 0x0041, 0x005A },
 { 0x005F, 0x005F },
@@ -352,7 +348,7 @@ matchers:
   0: RadixTree
 property: 0x01, string: 0xE38182E38184
 property: 0x01, string: 0xE38182E38184E38186
-  1: CodePointSet(owned)
+  1: AsciiSet
 { 0x0030, 0x0039 },
 { 0x005F, 0x005F },
 { 0x0061, 0x007A },
