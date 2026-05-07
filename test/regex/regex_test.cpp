@@ -259,40 +259,38 @@ TEST(InputTest, remainForward) {
   regex::Input input;
   ASSERT_EQ(regex::Input::Status::OK, regex::Input::create(text, input));
 
-  ASSERT_EQ("1", input.remainForwardAtLeast(1).toString());
-  ASSERT_EQ("12", input.remainForwardAtLeast(2).toString());
-  ASSERT_EQ("12ÿ", input.remainForwardAtLeast(3).toString());
-  ASSERT_EQ("12ÿ", input.remainForwardAtLeast(4).toString());
-  ASSERT_EQ("12ÿþ", input.remainForwardAtLeast(5).toString());
-  ASSERT_EQ("12ÿþ", input.remainForwardAtLeast(6).toString());
-  ASSERT_EQ("12ÿþあ", input.remainForwardAtLeast(7).toString());
-  ASSERT_EQ("12ÿþあ𤅕い", input.remainForwardAtLeast(60).toString());
+  ASSERT_EQ("1", input.remainForwardOfCodePoints(1).toString());
+  ASSERT_EQ("12", input.remainForwardOfCodePoints(2).toString());
+  ASSERT_EQ("12ÿ", input.remainForwardOfCodePoints(3).toString());
+  ASSERT_EQ("12ÿþ", input.remainForwardOfCodePoints(4).toString());
+  ASSERT_EQ("12ÿþあ", input.remainForwardOfCodePoints(5).toString());
+  ASSERT_EQ("12ÿþあ𤅕い", input.remainForwardOfCodePoints(7).toString());
+  ASSERT_EQ("12ÿþあ𤅕い", input.remainForwardOfCodePoints(70).toString());
 
   while (input.available()) {
     input.consumeForward();
   }
-  ASSERT_EQ("", input.remainForwardAtLeast(1).toString());
+  ASSERT_EQ("", input.remainForwardOfCodePoints(1).toString());
 }
 
 TEST(InputTest, remainBackward) {
   StringRef text = "12ÿþあ𤅕い";
   regex::Input input;
   ASSERT_EQ(regex::Input::Status::OK, regex::Input::create(text, input));
-  ASSERT_EQ("", input.remainBackwardAtLeast(1).toString());
-  ASSERT_EQ("", input.remainBackwardAtLeast(10).toString());
+  ASSERT_EQ("", input.remainBackwardOfCodePoints(1).toString());
+  ASSERT_EQ("", input.remainBackwardOfCodePoints(10).toString());
 
   while (input.available()) {
     input.consumeForward();
   }
-  ASSERT_EQ("い", input.remainBackwardAtLeast(1).toString());
-  ASSERT_EQ("い", input.remainBackwardAtLeast(2).toString());
-  ASSERT_EQ("い", input.remainBackwardAtLeast(3).toString());
-  ASSERT_EQ("𤅕い", input.remainBackwardAtLeast(4).toString());
-  ASSERT_EQ("𤅕い", input.remainBackwardAtLeast(5).toString());
-  ASSERT_EQ("𤅕い", input.remainBackwardAtLeast(6).toString());
-  ASSERT_EQ("𤅕い", input.remainBackwardAtLeast(7).toString());
-  ASSERT_EQ("あ𤅕い", input.remainBackwardAtLeast(8).toString());
-  ASSERT_EQ("12ÿþあ𤅕い", input.remainBackwardAtLeast(69).toString());
+  ASSERT_EQ("い", input.remainBackwardOfCodePoints(1).toString());
+  ASSERT_EQ("𤅕い", input.remainBackwardOfCodePoints(2).toString());
+  ASSERT_EQ("あ𤅕い", input.remainBackwardOfCodePoints(3).toString());
+  ASSERT_EQ("þあ𤅕い", input.remainBackwardOfCodePoints(4).toString());
+  ASSERT_EQ("ÿþあ𤅕い", input.remainBackwardOfCodePoints(5).toString());
+  ASSERT_EQ("2ÿþあ𤅕い", input.remainBackwardOfCodePoints(6).toString());
+  ASSERT_EQ("12ÿþあ𤅕い", input.remainBackwardOfCodePoints(7).toString());
+  ASSERT_EQ("12ÿþあ𤅕い", input.remainBackwardOfCodePoints(69).toString());
 }
 
 static Optional<regex::Regex> compile(StringRef pattern, regex::Flag flag = regex::Flag()) {
@@ -835,7 +833,7 @@ TEST(MatcherTest, radixTree1) {
 
   FlexBuffer<uint8_t> buf;
   ASSERT_TRUE(serialize(tree, buf));
-  regex::Matcher matcher(std::move(buf), tree.longestStringSize());
+  regex::Matcher matcher(std::move(buf), tree.maxCodePointCount());
   ASSERT_EQ(regex::MatcherType::RADIX_TREE, matcher.type());
   std::string out;
   toString(matcher, out, true);
@@ -857,7 +855,7 @@ TEST(MatcherTest, radixTree2) {
 
   FlexBuffer<uint8_t> buf;
   ASSERT_TRUE(serialize(tree, buf));
-  regex::Matcher matcher(std::move(buf), tree.longestStringSize());
+  regex::Matcher matcher(std::move(buf), tree.maxCodePointCount());
   ASSERT_EQ(regex::MatcherType::RADIX_TREE, matcher.type());
   std::string out;
   toString(matcher, out, true);

@@ -633,16 +633,16 @@ BACKTRACK:
         vmcase(PrepareRadix) {
           inst += sizeof(PrepareRadixIns);
           auto &radixIns = cast<RadixOrEmojiIns>(*inst);
-          unsigned int longestStrSize = 0;
+          unsigned int codePointCount = 0;
           if (radixIns.hasEmoji()) {
-            longestStrSize = ucp::getEmojiTrie().getLongestStringSize();
+            codePointCount = ucp::getEmojiTrie().getMaxCodePointCount();
           }
           if (radixIns.hasRadix) {
-            longestStrSize = std::max<unsigned int>(
-                longestStrSize, matchers[radixIns.getIndex()].asRadixTree().getLongestStringSize());
+            codePointCount = std::max<unsigned int>(
+                codePointCount, matchers[radixIns.getIndex()].asRadixTree().getMaxCodePointCount());
           }
-          longestStrSize = input.remainForwardAtLeast(longestStrSize).size();
-          TRY(bts.push(Backtrack::newRadixState(longestStrSize)));
+          unsigned int size = input.remainForwardOfCodePoints(codePointCount).size();
+          TRY(bts.push(Backtrack::newRadixState(size)));
           goto RADIX_OR_EMOJI;
         }
         vmcase(RadixOrEmoji) {
@@ -688,16 +688,16 @@ BACKTRACK:
         vmcase(PrepareLBRadix) {
           inst += sizeof(PrepareLBRadixIns);
           auto &radixIns = cast<LBRadixOrEmojiIns>(*inst);
-          unsigned int longestStrSize = 0;
+          unsigned int codePointCount = 0;
           if (radixIns.hasEmoji()) {
-            longestStrSize = ucp::getEmojiTrie().getLongestStringSize();
+            codePointCount = ucp::getEmojiTrie().getMaxCodePointCount();
           }
           if (radixIns.hasRadix) {
-            longestStrSize = std::max<unsigned int>(
-                longestStrSize, matchers[radixIns.getIndex()].asRadixTree().getLongestStringSize());
+            codePointCount = std::max<unsigned int>(
+                codePointCount, matchers[radixIns.getIndex()].asRadixTree().getMaxCodePointCount());
           }
-          longestStrSize = input.remainBackwardAtLeast(longestStrSize).size();
-          TRY(bts.push(Backtrack::newRadixState(longestStrSize)));
+          unsigned int size = input.remainBackwardOfCodePoints(codePointCount).size();
+          TRY(bts.push(Backtrack::newRadixState(size)));
           goto LBRADIX_OR_EMOJI;
         }
         vmcase(LBRadixOrEmoji) {

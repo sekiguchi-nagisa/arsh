@@ -589,7 +589,7 @@ bool CodeGen::generateCharClass(const CharClassNode &node) {
         this->err = "too large string set";
         return false;
       }
-      radixIndex = this->emitMatcher(Matcher(std::move(buf), setBuilder.radix.longestStringSize()));
+      radixIndex = this->emitMatcher(Matcher(std::move(buf), setBuilder.radix.maxCodePointCount()));
       if (!radixIndex.hasValue()) {
         return false;
       }

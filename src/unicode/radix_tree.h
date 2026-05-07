@@ -86,14 +86,14 @@ private:
    * | ... next nodes
    */
   const uint8_t *ptr;
-  unsigned short longestStringSize;
+  unsigned short maxCodePointCount;
   unsigned int size;
 
 public:
-  PackedRadixTree(unsigned short longestStringSize, const uint8_t *ptr, unsigned int size)
-      : ptr(ptr), longestStringSize(longestStringSize), size(size) {}
+  PackedRadixTree(unsigned short maxCodePointCount, const uint8_t *ptr, unsigned int size)
+      : ptr(ptr), maxCodePointCount(maxCodePointCount), size(size) {}
 
-  unsigned short getLongestStringSize() const { return this->longestStringSize; }
+  unsigned short getMaxCodePointCount() const { return this->maxCodePointCount; }
 
   unsigned char getChildOffsetBytes() const { return this->ptr[0]; }
 
@@ -211,7 +211,11 @@ public:
 
   uint8_t find(StringRef seq) const;
 
-  size_t longestStringSize() const;
+  /**
+   * get max code point count of strings
+   * @return
+   */
+  unsigned int maxCodePointCount() const;
 
   void iterate(const std::function<bool(StringRef, unsigned char)> &walker) const;
 

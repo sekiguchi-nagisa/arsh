@@ -736,7 +736,7 @@ const char *toString(RGIEmojiSeq p) {
 #include <packed_emoji_trie.h>
 
 PackedRadixTree getEmojiTrie() {
-  return {longest_packed_emoji_string_size, packed_emoji_radix_tree_table,
+  return {max_packed_emoji_code_point_count, packed_emoji_radix_tree_table,
           std::size(packed_emoji_radix_tree_table)};
 }
 

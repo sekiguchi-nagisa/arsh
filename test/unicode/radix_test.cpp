@@ -40,14 +40,14 @@ enum RGIEmojiSeq : unsigned char {
 
 TEST(RadixTest, base) {
   RadixTree tree;
-  ASSERT_EQ(0, tree.longestStringSize());
+  ASSERT_EQ(0, tree.maxCodePointCount());
   ASSERT_EQ(slist(), list(tree));
 
   // do nothing
   ASSERT_EQ(RadixTree::AddStatus::NONE_PROPERTY, tree.add("ss", 0));
-  ASSERT_EQ(0, tree.longestStringSize());
+  ASSERT_EQ(0, tree.maxCodePointCount());
   ASSERT_EQ(RadixTree::AddStatus::EMPTY, tree.add("", 1));
-  ASSERT_EQ(0, tree.longestStringSize());
+  ASSERT_EQ(0, tree.maxCodePointCount());
 
   // add AAA
   ASSERT_EQ(RadixTree::AddStatus::OK, tree.add("AAA", Basic_Emoji));
@@ -58,7 +58,7 @@ TEST(RadixTest, base) {
   ASSERT_EQ(Basic_Emoji, tree.getProperty());
   ASSERT_EQ(0, tree.getChildren().size());
   ASSERT_EQ(slist("AAA"), list(tree));
-  ASSERT_EQ(3, tree.longestStringSize());
+  ASSERT_EQ(3, tree.maxCodePointCount());
 
   // add BBBB
   ASSERT_EQ(RadixTree::AddStatus::OK, tree.add("BBBB", RGI_Emoji_Flag_Sequence));
@@ -76,7 +76,7 @@ TEST(RadixTest, base) {
   ASSERT_EQ(RGI_Emoji_Flag_Sequence, tree.childAt('B')->getProperty());
   ASSERT_EQ(0, tree.childAt('B')->getChildren().size());
   ASSERT_EQ(slist("AAA", "BBBB"), list(tree));
-  ASSERT_EQ(4, tree.longestStringSize());
+  ASSERT_EQ(4, tree.maxCodePointCount());
 
   // add BB
   ASSERT_EQ(RadixTree::AddStatus::OK, tree.add("BB", RGI_Emoji_Tag_Sequence));
@@ -101,7 +101,7 @@ TEST(RadixTest, base) {
   ASSERT_EQ(RGI_Emoji_Flag_Sequence, tree.childAt('B')->childAt('B')->getProperty());
   ASSERT_EQ(0, tree.childAt('B')->childAt('B')->getChildren().size());
   ASSERT_EQ(slist("AAA", "BB", "BBBB"), list(tree));
-  ASSERT_EQ(4, tree.longestStringSize());
+  ASSERT_EQ(4, tree.maxCodePointCount());
 
   // add AAACD
   ASSERT_EQ(RadixTree::AddStatus::OK, tree.add("AAACD", RGI_Emoji_ZWJ_Sequence));
@@ -129,17 +129,17 @@ TEST(RadixTest, base) {
   ASSERT_EQ(RGI_Emoji_Flag_Sequence, tree.childAt('B')->childAt('B')->getProperty());
   ASSERT_EQ(0, tree.childAt('B')->childAt('B')->getChildren().size());
   ASSERT_EQ(slist("AAA", "AAACD", "BB", "BBBB"), list(tree));
-  ASSERT_EQ(5, tree.longestStringSize());
+  ASSERT_EQ(5, tree.maxCodePointCount());
 
   // serialize
   FlexBuffer<uint8_t> buf;
   ASSERT_TRUE(serialize(tree, buf));
-  PackedRadixTree packedTree(tree.longestStringSize(), buf.data(), buf.size());
+  PackedRadixTree packedTree(tree.maxCodePointCount(), buf.data(), buf.size());
   ASSERT_EQ(Basic_Emoji, packedTree.find("AAA"));
   ASSERT_EQ(RGI_Emoji_Flag_Sequence, packedTree.find("BBBB"));
   ASSERT_EQ(RGI_Emoji_Tag_Sequence, packedTree.find("BB"));
   ASSERT_EQ(RGI_Emoji_ZWJ_Sequence, packedTree.find("AAACD"));
-  ASSERT_EQ(5, packedTree.getLongestStringSize());
+  ASSERT_EQ(5, packedTree.getMaxCodePointCount());
   ASSERT_EQ(slist("AAA", "AAACD", "BB", "BBBB"), list(packedTree));
 
   auto ret = packedTree.findLongestMatched("");

@@ -20,6 +20,8 @@
 
 #include "radix_tree.h"
 
+#include "misc/unicode.hpp"
+
 namespace arsh {
 
 bool PackedRadixTree::iterate(std::string &buf, unsigned int offset,
@@ -152,16 +154,25 @@ static uint8_t findImpl(const RadixTree *tree, StringRef seq) {
 
 uint8_t RadixTree::find(const StringRef seq) const { return findImpl(this, seq); }
 
-static size_t longestStringSizeImpl(const RadixTree &tree) {
-  size_t maxChildSize = 0;
-  for (auto &e : tree.getChildren()) {
-    auto size = longestStringSizeImpl(*e.second);
-    maxChildSize = std::max(maxChildSize, size);
-  }
-  return tree.getPrefix().size() + maxChildSize;
+unsigned int RadixTree::maxCodePointCount() const {
+  unsigned int count = 0;
+  this->iterate([&count](StringRef ref, unsigned char) {
+    unsigned int c = 0;
+    const char *iter = ref.begin();
+    const char *end = ref.end();
+    while (iter != end) {
+      if (unsigned int len = UnicodeUtil::utf8ValidateChar(iter, end)) {
+        iter += len;
+      } else {
+        ++iter;
+      }
+      c++;
+    }
+    count = std::max(count, c);
+    return true;
+  });
+  return count;
 }
-
-size_t RadixTree::longestStringSize() const { return longestStringSizeImpl(*this); }
 
 static bool iterateImpl(std::string &buf, const RadixTree &tree,
                         const std::function<bool(StringRef, unsigned char)> &walker) {

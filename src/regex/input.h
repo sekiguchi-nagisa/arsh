@@ -172,11 +172,12 @@ public:
     return {this->iter, static_cast<size_t>(this->end - this->iter)};
   }
 
-  StringRef remainForwardAtLeast(unsigned int bytes) const {
-    const auto old = this->iter;
-    auto cur = old;
-    while (static_cast<unsigned int>(cur - old) < bytes && cur < this->end) {
+  StringRef remainForwardOfCodePoints(unsigned int codePointCount) const {
+    unsigned int count = 0;
+    auto cur = this->iter;
+    while (count < codePointCount && cur < this->end) {
       cur += UnicodeUtil::utf8ByteSize(*cur);
+      count++;
     }
     return {this->iter, static_cast<size_t>(cur - this->iter)};
   }
@@ -193,11 +194,12 @@ public:
     return {this->begin, static_cast<size_t>(this->iter - this->begin)};
   }
 
-  StringRef remainBackwardAtLeast(unsigned int bytes) const {
-    const auto old = this->iter;
-    auto cur = old;
-    while (static_cast<unsigned int>(old - cur) < bytes && cur > this->begin) {
+  StringRef remainBackwardOfCodePoints(unsigned int codePointCount) const {
+    unsigned int count = 0;
+    auto cur = this->iter;
+    while (count < codePointCount && cur > this->begin) {
       unsafePrevUtf8(cur);
+      count++;
     }
     return {cur, static_cast<size_t>(this->iter - cur)};
   }
