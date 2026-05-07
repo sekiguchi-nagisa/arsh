@@ -87,11 +87,11 @@ public:
   }
 
   Status check() const {
-    if (this->elapsed() >= this->limit) {
-      return Status::Expired;
-    }
     if (this->cancelToken && this->cancelToken()) {
       return Status::Canceled;
+    }
+    if (this->elapsed() >= this->limit) {
+      return Status::Expired;
     }
     return Status::None;
   }
