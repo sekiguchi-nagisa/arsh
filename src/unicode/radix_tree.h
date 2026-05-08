@@ -209,6 +209,15 @@ public:
    */
   AddStatus add(StringRef seq, uint8_t p);
 
+  /**
+   *
+   * @param seq
+   * @return
+   * if removed, return true.
+   * if not removed (do nothing), return false
+   */
+  bool remove(StringRef seq) { return remove(seq, *this); }
+
   uint8_t find(StringRef seq) const;
 
   /**
@@ -221,6 +230,8 @@ public:
 
 private:
   RadixTree *getOrCreate(char ch);
+
+  static bool remove(StringRef seq, RadixTree &tree);
 };
 
 bool serialize(const RadixTree &radixTree, FlexBuffer<uint8_t> &buf);

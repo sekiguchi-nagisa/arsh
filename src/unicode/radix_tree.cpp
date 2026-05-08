@@ -129,7 +129,51 @@ RadixTree::AddStatus RadixTree::add(StringRef seq, uint8_t p) {
   return AddStatus::ADDED;
 }
 
-static uint8_t findImpl(const RadixTree *tree, StringRef seq) {
+bool RadixTree::remove(StringRef seq, RadixTree &tree) {
+  if (!seq.startsWith(tree.getPrefix())) {
+    return false;
+  }
+  seq.removePrefix(tree.getPrefix().size());
+  if (seq.empty()) {
+    if (tree.getProperty()) { // reach edge
+      tree.property = 0;
+      if (tree.getChildren().empty()) {
+        tree.prefix.clear();
+      }
+      if (tree.getChildren().size() == 1) {
+        auto child = std::move(tree.children.begin()->second);
+        tree.prefix += child->prefix;
+        tree.property = child->property;
+        tree.children = std::move(child->children);
+      }
+      return true;
+    }
+    return false;
+  }
+  // visit children
+  const auto iter = tree.getChildren().find(seq[0]);
+  if (iter != tree.getChildren().end() && iter->first == seq[0]) {
+    if (remove(seq, *iter->second)) {
+      if (iter->second->empty()) {
+        tree.children.erase(iter);
+      }
+      if (tree.getChildren().empty() && !tree.property) {
+        tree.prefix.clear();
+      }
+      if (tree.getChildren().size() == 1 && !tree.property) { // merge child
+        auto child = std::move(tree.children.begin()->second);
+        tree.prefix += child->prefix;
+        tree.property = child->property;
+        tree.children = std::move(child->children);
+      }
+      return true;
+    }
+  }
+  return false;
+}
+
+uint8_t RadixTree::find(StringRef seq) const {
+  const auto *tree = this;
   while (true) {
     if (!seq.startsWith(tree->getPrefix())) {
       break;
@@ -151,8 +195,6 @@ static uint8_t findImpl(const RadixTree *tree, StringRef seq) {
   }
   return 0;
 }
-
-uint8_t RadixTree::find(const StringRef seq) const { return findImpl(this, seq); }
 
 unsigned int RadixTree::maxCodePointCount() const {
   unsigned int count = 0;

@@ -171,6 +171,63 @@ TEST(RadixTest, base) {
   ASSERT_EQ(RGI_Emoji_Flag_Sequence, ret.second);
 }
 
+TEST(RadixTest, remove) {
+  RadixTree tree;
+  ASSERT_EQ(0, tree.maxCodePointCount());
+  ASSERT_EQ(slist(), list(tree));
+  ASSERT_FALSE(tree.remove(""));
+  ASSERT_FALSE(tree.remove("12"));
+
+  ASSERT_EQ(RadixTree::AddStatus::OK, tree.add("AAA", Basic_Emoji));
+  ASSERT_EQ(RadixTree::AddStatus::OK, tree.add("BBBB", RGI_Emoji_Flag_Sequence));
+  ASSERT_EQ(RadixTree::AddStatus::OK, tree.add("BB", RGI_Emoji_Tag_Sequence));
+  ASSERT_EQ(RadixTree::AddStatus::OK, tree.add("AAACD", RGI_Emoji_ZWJ_Sequence));
+
+  ASSERT_FALSE(tree.remove(""));
+  ASSERT_FALSE(tree.remove("A"));
+  ASSERT_FALSE(tree.remove("AA"));
+
+  // remove BB
+  ASSERT_TRUE(tree.remove("BB"));
+  ASSERT_FALSE(tree.find("BB"));
+  ASSERT_EQ(RGI_Emoji_Flag_Sequence, tree.find("BBBB"));
+  ASSERT_EQ(2, tree.getChildren().size());
+  ASSERT_EQ("BBBB", tree.childAt('B')->getPrefix());
+  ASSERT_EQ(0, tree.childAt('B')->getChildren().size());
+  ASSERT_EQ(1, tree.childAt('A')->getChildren().size());
+  ASSERT_EQ(slist("AAA", "AAACD", "BBBB"), list(tree));
+
+  // remove AAACD
+  ASSERT_TRUE(tree.remove("AAACD"));
+  ASSERT_FALSE(tree.find("AAACD"));
+  ASSERT_EQ(Basic_Emoji, tree.find("AAA"));
+  ASSERT_EQ(2, tree.getChildren().size());
+  ASSERT_EQ("", tree.getPrefix());
+  ASSERT_EQ("BBBB", tree.childAt('B')->getPrefix());
+  ASSERT_EQ(0, tree.childAt('B')->getChildren().size());
+  ASSERT_EQ(RGI_Emoji_Flag_Sequence, tree.childAt('B')->getProperty());
+  ASSERT_EQ("AAA", tree.childAt('A')->getPrefix());
+  ASSERT_EQ(0, tree.childAt('A')->getChildren().size());
+  ASSERT_EQ(Basic_Emoji, tree.childAt('A')->getProperty());
+  ASSERT_EQ(slist("AAA", "BBBB"), list(tree));
+
+  // remove BBBB
+  ASSERT_TRUE(tree.remove("BBBB"));
+  ASSERT_FALSE(tree.find("BBBB"));
+  ASSERT_EQ(Basic_Emoji, tree.find("AAA"));
+  ASSERT_EQ(0, tree.getChildren().size());
+  ASSERT_EQ("AAA", tree.getPrefix());
+  ASSERT_EQ(Basic_Emoji, tree.getProperty());
+  ASSERT_EQ(slist("AAA"), list(tree));
+
+  // remove AAA
+  ASSERT_TRUE(tree.remove("AAA"));
+  ASSERT_FALSE(tree.find("AAA"));
+  ASSERT_EQ(0, tree.getChildren().size());
+  ASSERT_EQ("", tree.getPrefix());
+  ASSERT_EQ(0, tree.getProperty());
+}
+
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
