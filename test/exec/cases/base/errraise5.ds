@@ -5,7 +5,7 @@ shctl set errraise
 ## raise in last-pipe (external)
 var ex = 345 as Any
 try {
-    ls | for a in $STDIN { 
+    ls | for a in $STDIN { sleep 0.3
         sh -c 'exit 56'; echo $a; }
 } catch e { $ex = $e; }
 assert ($ex as ExecError).message() == "\`sh' command exits with non-zero status: \`56'"
