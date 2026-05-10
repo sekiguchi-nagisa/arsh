@@ -722,8 +722,9 @@ void toString(const Matcher &matcher, std::string &out, bool putHeader) {
     matcher.asRadixTree().iterate([&out](StringRef ref, unsigned char p) {
       out += "property: 0x";
       putHex(p, out);
-      out += ", string: 0x";
+      out += ", string: ";
       for (char ch : ref) {
+        out += "\\x";
         putHex(ch, out);
       }
       out += '\n';

@@ -838,10 +838,10 @@ TEST(MatcherTest, radixTree1) {
   std::string out;
   toString(matcher, out, true);
   const char *expect = R"(RadixTree
-property: 0x01, string: 0x414141
-property: 0x03, string: 0x4141414344
-property: 0x02, string: 0x4242
-property: 0x04, string: 0x42424242
+property: 0x01, string: \x41\x41\x41
+property: 0x03, string: \x41\x41\x41\x43\x44
+property: 0x02, string: \x42\x42
+property: 0x04, string: \x42\x42\x42\x42
 )";
   ASSERT_EQ(expect, out);
 }
@@ -860,10 +860,10 @@ TEST(MatcherTest, radixTree2) {
   std::string out;
   toString(matcher, out, true);
   const char *expect = R"(RadixTree
-property: 0x01, string: 0xE38182E38182
-property: 0x03, string: 0xE38182E38184E38184
-property: 0x02, string: 0xE38182E38184E38186
-property: 0x04, string: 0xE38184
+property: 0x01, string: \xE3\x81\x82\xE3\x81\x82
+property: 0x03, string: \xE3\x81\x82\xE3\x81\x84\xE3\x81\x84
+property: 0x02, string: \xE3\x81\x82\xE3\x81\x84\xE3\x81\x86
+property: 0x04, string: \xE3\x81\x84
 )";
   ASSERT_EQ(expect, out);
 }
