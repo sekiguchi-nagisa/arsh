@@ -45,14 +45,208 @@ void StrSetBuilder::add(const StrSetBuilder &builder) {
   });
 }
 
-void StrSetBuilder::intersect(const StrSetBuilder &builder) { // TODO
-  auto set = builder.codePoints.build();
-  this->codePoints.intersect(set.ref());
+template <typename Func>
+constexpr bool cp_iter_requirement_v = std::is_same_v<bool, std::invoke_result_t<Func, StringRef>>;
+
+template <typename Func, enable_when<cp_iter_requirement_v<Func>> = nullptr>
+static void iterateAsStr(const CodePointSetBuilder &builder, Func func) {
+  for (auto [first, last] : builder.getCodePointRanges()) {
+    for (; first <= last; first++) {
+      char buf[4];
+      unsigned int len = UnicodeUtil::codePointToUtf8(first, buf);
+      assert(len);
+      if (!func(StringRef(buf, len))) {
+        return;
+      }
+    }
+  }
 }
 
-void StrSetBuilder::sub(const StrSetBuilder &builder) { // TODO
-  auto set = builder.codePoints.build();
-  this->codePoints.sub(set.ref());
+template <typename Func, enable_when<cp_iter_requirement_v<Func>> = nullptr>
+static void iterateEmoji(const ucp::RGIEmojiSeq emoji, Func func) {
+  if (StrSetBuilder::hasEmoji(emoji)) {
+    ucp::getEmojiTrie().iterate([&](StringRef ref, unsigned char p) {
+      if (hasFlag(toUnderlying(emoji), p)) {
+        if (!func(ref)) {
+          return false;
+        }
+      }
+      return true;
+    });
+  }
+}
+
+static void mergeEmoji(ucp::RGIEmojiSeq &emoji, RadixTree &radixTree) {
+  iterateEmoji(emoji, [&radixTree](StringRef ref) {
+    radixTree.add(ref, 1);
+    return true;
+  });
+  emoji = ucp::RGIEmojiSeq::None;
+}
+
+static bool findFromEmoji(const ucp::RGIEmojiSeq emoji, const StringRef ref) {
+  auto p = ucp::getEmojiTrie().find(ref);
+  return p && hasFlag(toUnderlying(emoji), p);
+}
+
+static Optional<int> tryToCodePoint(const StringRef ref) {
+  int codePoint = -1;
+  const char *iter = ref.begin();
+  if (unsigned int len = UnicodeUtil::utf8ToCodePoint(iter, ref.end(), codePoint);
+      len && iter + len == ref.end()) {
+    return codePoint;
+  }
+  return {};
+}
+
+void StrSetBuilder::intersect(const StrSetBuilder &builder) {
+  StrSetBuilder newBuilder(hasFlag(this->emoji, ucp::RGIEmojiSeq::CASE_IGNORE));
+  newBuilder.emptySeq = this->emptySeq && builder.emptySeq;
+
+  // emoji
+  newBuilder.emoji = this->emoji & builder.emoji;
+  if (hasFlag(this->emoji, ucp::RGIEmojiSeq::CASE_IGNORE)) {
+    setFlag(newBuilder.emoji, ucp::RGIEmojiSeq::CASE_IGNORE);
+  }
+  if (this->hasEmoji()) {
+    builder.radix.iterate([&](StringRef ref, unsigned char) {
+      if (findFromEmoji(this->emoji, ref)) {
+        newBuilder.radix.add(ref, 1);
+      }
+      return true;
+    });
+    iterateAsStr(builder.codePoints, [&](StringRef ref) {
+      if (findFromEmoji(this->emoji, ref)) {
+        newBuilder.radix.add(ref, 1);
+      }
+      return true;
+    });
+  }
+
+  // radix
+  if (!this->radix.empty()) {
+    iterateEmoji(builder.emoji, [&](StringRef ref) {
+      if (this->radix.find(ref)) {
+        newBuilder.radix.add(ref, 1);
+      }
+      return true;
+    });
+    builder.radix.iterate([&](StringRef ref, unsigned char) {
+      if (this->radix.find(ref)) {
+        newBuilder.radix.add(ref, 1);
+      }
+      return true;
+    });
+    iterateAsStr(builder.codePoints, [&](StringRef ref) {
+      if (this->radix.find(ref)) {
+        newBuilder.radix.add(ref, 1);
+      }
+      return true;
+    });
+  }
+
+  // codepoints
+  if (this->codePoints) {
+    auto set = this->codePoints.build();
+    iterateEmoji(builder.emoji, [&](StringRef ref) {
+      if (auto cp = tryToCodePoint(ref); cp.hasValue() && set.ref().contains(cp.unwrap())) {
+        newBuilder.codePoints.addRange(cp.unwrap(), cp.unwrap());
+      }
+      return true;
+    });
+    builder.radix.iterate([&](StringRef ref, unsigned char) {
+      if (auto cp = tryToCodePoint(ref); cp.hasValue() && set.ref().contains(cp.unwrap())) {
+        newBuilder.codePoints.addRange(cp.unwrap(), cp.unwrap());
+      }
+      return true;
+    });
+    if (builder.codePoints) {
+      set = builder.codePoints.build();
+      this->codePoints.intersect(set.ref());
+      newBuilder.codePoints.add(this->codePoints);
+    }
+  }
+
+  *this = std::move(newBuilder);
+}
+
+void StrSetBuilder::sub(const StrSetBuilder &builder) {
+  if (this->emptySeq == builder.emptySeq && this->emptySeq) {
+    this->emptySeq = false;
+  }
+
+  // emoji
+  const bool ignoreCase = hasFlag(this->emoji, ucp::RGIEmojiSeq::CASE_IGNORE);
+  unsetFlag(this->emoji, builder.emoji);
+  if (ignoreCase) {
+    setFlag(this->emoji, ucp::RGIEmojiSeq::CASE_IGNORE);
+  }
+  if (this->hasEmoji()) {
+    builder.radix.iterate([&](StringRef ref, unsigned char) {
+      if (findFromEmoji(this->emoji, ref)) {
+        mergeEmoji(this->emoji, this->radix);
+        return false;
+      }
+      return true;
+    });
+  }
+  if (this->hasEmoji()) {
+    iterateAsStr(builder.codePoints, [&](StringRef ref) {
+      if (findFromEmoji(this->emoji, ref)) {
+        mergeEmoji(this->emoji, this->radix);
+        return false;
+      }
+      return true;
+    });
+  }
+
+  // radix
+  if (!this->radix.empty()) {
+    iterateEmoji(builder.emoji, [&](StringRef ref) {
+      this->radix.remove(ref);
+      return !this->radix.empty();
+    });
+  }
+  if (!this->radix.empty()) {
+    builder.radix.iterate([&](StringRef ref, unsigned char) {
+      this->radix.remove(ref);
+      return !this->radix.empty();
+    });
+  }
+  if (!this->radix.empty()) {
+    iterateAsStr(builder.codePoints, [&](StringRef ref) {
+      this->radix.remove(ref);
+      return !this->radix.empty();
+    });
+  }
+
+  // codepoint
+  CodePointSetBuilder sub;
+  if (this->codePoints) {
+    iterateEmoji(builder.emoji, [&](StringRef ref) {
+      if (auto cp = tryToCodePoint(ref); cp.hasValue()) {
+        sub.addRange(cp.unwrap(), cp.unwrap());
+      }
+      return true;
+    });
+    auto set = sub.build();
+    this->codePoints.sub(set.ref());
+  }
+  if (this->codePoints) {
+    sub.clear();
+    builder.radix.iterate([&](StringRef ref, unsigned char) {
+      if (auto cp = tryToCodePoint(ref); cp.hasValue()) {
+        sub.addRange(cp.unwrap(), cp.unwrap());
+      }
+      return true;
+    });
+    auto set = sub.build();
+    this->codePoints.sub(set.ref());
+  }
+  if (this->codePoints) {
+    auto set = builder.codePoints.build();
+    this->codePoints.sub(set.ref());
+  }
 }
 
 // #####################
@@ -416,7 +610,7 @@ bool CodeGen::generateProperty(const PropertyNode &node) {
 }
 
 void CodeGen::generateStrSet(StrSetBuilder &setBuilder, const unsigned int level,
-                             const Node &node) {
+                             const Node &node) const {
   switch (node.getKind()) {
   case NodeKind::Char: {
     int codePoint = cast<CharNode>(node).getCodePoint();
@@ -437,7 +631,7 @@ void CodeGen::generateStrSet(StrSetBuilder &setBuilder, const unsigned int level
     }
 
     const bool useSubBuilder = p.isInvert() || this->has(Modifier::IGNORE_CASE);
-    StrSetBuilder subBuilder;
+    StrSetBuilder subBuilder(this->has(Modifier::IGNORE_CASE));
     StrSetBuilder *builderPtr = useSubBuilder ? &subBuilder : &setBuilder;
     const bool r = this->toCodePointSet(ucp::BuilderOrSet(builderPtr->codePoints), p);
     assert(r);
@@ -454,7 +648,7 @@ void CodeGen::generateStrSet(StrSetBuilder &setBuilder, const unsigned int level
   case NodeKind::CharClass: {
     auto &classNode = cast<CharClassNode>(node);
     const unsigned int size = classNode.getChars().size();
-    StrSetBuilder classBuilder;
+    StrSetBuilder classBuilder(this->has(Modifier::IGNORE_CASE));
     StrSetBuilder *builderPtr = level ? &classBuilder : &setBuilder;
     switch (classNode.getType()) {
     case CharClassNode::Type::UNION:
@@ -473,10 +667,6 @@ void CodeGen::generateStrSet(StrSetBuilder &setBuilder, const unsigned int level
     }
     case CharClassNode::Type::INTERSECT:
     case CharClassNode::Type::SUBTRACT: {
-      if (classNode.mayContainStrings()) { // TODO
-        this->err += "todo: support intersect or subtract";
-        return;
-      }
       generateStrSet(*builderPtr, level + 1, *classNode.getChars()[0]);
       for (unsigned int i = 1; i < size; i++) {
         auto &e = *classNode.getChars()[i];
@@ -484,7 +674,7 @@ void CodeGen::generateStrSet(StrSetBuilder &setBuilder, const unsigned int level
             isProperty(e, PropertyNode::Type::SUBTRACT)) {
           continue;
         }
-        StrSetBuilder sub;
+        StrSetBuilder sub(this->has(Modifier::IGNORE_CASE));
         this->generateStrSet(sub, 0, e);
         if (classNode.getType() == CharClassNode::Type::INTERSECT) {
           builderPtr->intersect(sub);
@@ -548,7 +738,7 @@ bool CodeGen::generateCharClass(const CharClassNode &node) {
   }
 
   // generate str set or char set
-  StrSetBuilder setBuilder;
+  StrSetBuilder setBuilder(this->has(Modifier::IGNORE_CASE));
   this->generateStrSet(setBuilder, 0, node);
   if (!this->err.empty()) { // TODO
     return false;

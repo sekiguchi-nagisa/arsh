@@ -70,11 +70,13 @@ struct StrSetBuilder {
   ucp::RGIEmojiSeq emoji{ucp::RGIEmojiSeq::None};
   bool emptySeq{false};
 
-  bool hasEmoji() const {
-    auto e = this->emoji;
-    unsetFlag(e, ucp::RGIEmojiSeq::CASE_IGNORE);
-    return toUnderlying(e);
+  explicit StrSetBuilder(bool ignoreCase) {
+    if (ignoreCase) {
+      setFlag(this->emoji, ucp::RGIEmojiSeq::CASE_IGNORE);
+    }
   }
+
+  bool hasEmoji() const { return hasEmoji(this->emoji); }
 
   bool inEmoji(StringRef ref) const {
     if (this->hasEmoji()) {
@@ -97,6 +99,11 @@ struct StrSetBuilder {
   void intersect(const StrSetBuilder &builder);
 
   void sub(const StrSetBuilder &builder);
+
+  static bool hasEmoji(ucp::RGIEmojiSeq emoji) {
+    unsetFlag(emoji, ucp::RGIEmojiSeq::CASE_IGNORE);
+    return !empty(emoji);
+  }
 };
 
 class CodeGen {
@@ -135,7 +142,7 @@ private:
 
   bool toCodePointSet(ucp::BuilderOrSet builderOrSet, const PropertyNode &node) const;
 
-  void generateStrSet(StrSetBuilder &setBuilder, unsigned int level, const Node &node);
+  void generateStrSet(StrSetBuilder &setBuilder, unsigned int level, const Node &node) const;
 
   bool hasEitherUnicodeFlag() const {
     return this->mode == Mode::UNICODE || this->mode == Mode::UNICODE_SET;
