@@ -1261,13 +1261,12 @@ ARSH_METHOD stringIter_next(RuntimeContext &ctx) {
 // ###################
 
 static ObjPtr<RegexObject> compileRegex(StringRef pattern, StringRef flagStr, std::string &err) {
-  auto modifiers = regex::Flag::parseModifier(flagStr, &err);
-  if (!modifiers.hasValue()) {
+  auto flag = regex::Flag::parse(flagStr, &err);
+  if (!flag.hasValue()) {
     return {};
   }
-  regex::Flag flag(regex::Mode::UNICODE, modifiers.unwrap());
   regex::Parser parser;
-  auto tree = parser(pattern, flag);
+  auto tree = parser(pattern, flag.unwrap());
   if (parser.hasError()) {
     err = parser.getError()->message;
     return {};

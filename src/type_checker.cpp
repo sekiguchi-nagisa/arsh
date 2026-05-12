@@ -908,13 +908,12 @@ void TypeChecker::visitRegexNode(RegexNode &node) {
     this->reParser = std::make_unique<regex::Parser>();
   }
   std::string err;
-  auto modifiers = regex::Flag::parseModifier(node.getReFlag(), &err);
-  if (!modifiers.hasValue()) {
+  auto flag = regex::Flag::parse(node.getReFlag(), &err);
+  if (!flag.hasValue()) {
     this->reportError<RegexSyntax>(node.getActualToken(), err.c_str());
+    flag = regex::Flag(regex::Mode::UNICODE, regex::Modifier::NONE);
   }
-  const regex::Flag flag(regex::Mode::UNICODE,
-                         modifiers.hasValue() ? modifiers.unwrap() : regex::Modifier::NONE);
-  node.setReTree((*this->reParser)(node.getReStr(), flag));
+  node.setReTree((*this->reParser)(node.getReStr(), flag.unwrap()));
   if (this->reParser->hasError()) {
     this->reportError<RegexSyntax>(node.getActualToken(),
                                    this->reParser->getError()->message.c_str());
