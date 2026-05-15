@@ -168,6 +168,33 @@ void TreeDumper::dumpNodeHeader(const Node &node, const bool inArray) {
     this->base.dump(f, v__);                                                                       \
   } while (false)
 
+static void putHex(unsigned char b, std::string &out) {
+  const char *hex = "0123456789ABCDEF";
+  out += hex[b / 16];
+  out += hex[b % 16];
+}
+
+static void escapeUtf8(const StringRef ref, std::string &out) {
+  for (char ch : ref) {
+    out += "\\x";
+    putHex(ch, out);
+  }
+}
+
+static std::string codePointToPrintable(const int codePoint) {
+  char data[4];
+  unsigned int len = UnicodeUtil::codePointToUtf8(codePoint, data);
+  assert(len);
+  StringRef ref(data, len);
+  std::string str;
+  if (codePoint <= 32 || codePoint == 127 || (codePoint >= 0x80 && codePoint <= 0x9F)) {
+    escapeUtf8(ref, str);
+  } else {
+    str += ref;
+  }
+  return str;
+}
+
 void TreeDumper::dumpRaw(const Node &node) {
   switch (node.getKind()) {
   case NodeKind::Empty:
@@ -175,17 +202,7 @@ void TreeDumper::dumpRaw(const Node &node) {
     break;
   case NodeKind::Char: {
     int codePoint = cast<CharNode>(node).getCodePoint();
-    std::string str;
-    if (codePoint <= 32 || codePoint == 127) {
-      char d[16];
-      snprintf(d, std::size(d), "\\x%02X", codePoint);
-      str += d;
-    } else {
-      char data[4];
-      unsigned int len = UnicodeUtil::codePointToUtf8(codePoint, data);
-      assert(len);
-      str += StringRef(data, len);
-    }
+    auto str = codePointToPrintable(codePoint);
     this->base.dumpAs("codePoint", "U+%04X, %s", codePoint, str.c_str());
     break;
   }
@@ -456,9 +473,7 @@ void RegexDumper::dump(const FlexBuffer<Inst> &ins) {
       str += "(codePoint=";
       str += b;
       str += ":";
-      unsigned int len = UnicodeUtil::codePointToUtf8(codePoint, b);
-      assert(len);
-      str += StringRef(b, len);
+      str += codePointToPrintable(codePoint);
       str += ')';
       inst += sizeof(CharIns);
       break;
@@ -472,9 +487,7 @@ void RegexDumper::dump(const FlexBuffer<Inst> &ins) {
       str += ", codePoint=";
       str += b;
       str += ":";
-      unsigned int len = UnicodeUtil::codePointToUtf8(charIns.getCodePoint(), b);
-      assert(len);
-      str += StringRef(b, len);
+      str += codePointToPrintable(charIns.getCodePoint());
       str += ')';
       inst += sizeof(LBCharIns);
       break;
@@ -672,12 +685,6 @@ static void toString(const CodePointSetRef ref, std::string &out) {
   }
 }
 
-static void putHex(unsigned char b, std::string &out) {
-  const char *hex = "0123456789ABCDEF";
-  out += hex[b / 16];
-  out += hex[b % 16];
-}
-
 void toString(const Matcher &matcher, std::string &out, bool putHeader) {
   if (putHeader) {
     switch (matcher.type()) {
@@ -723,10 +730,7 @@ void toString(const Matcher &matcher, std::string &out, bool putHeader) {
       out += "property: 0x";
       putHex(p, out);
       out += ", string: ";
-      for (char ch : ref) {
-        out += "\\x";
-        putHex(ch, out);
-      }
+      escapeUtf8(ref, out);
       out += '\n';
       return true;
     });
