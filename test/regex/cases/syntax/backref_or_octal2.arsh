@@ -307,3 +307,41 @@ assert diff <(redump '()\888888888888888888888888' 'u') <(<<'EOF'
  at (pos = 2, size = 25)
 EOF
 )
+
+# ]\1.][(]
+assert diff <(redump ']\1.][(]') <(<<'EOF'
+flag: (mode = , modifier = )
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Seq
+  token: (pos = 0, size = 8)
+  patterns:
+    - kind: Char
+      token: (pos = 0, size = 1)
+      codePoint: U+005D, ]
+    - kind: Char
+      token: (pos = 1, size = 2)
+      codePoint: U+0001, \x01
+    - kind: Any
+      token: (pos = 3, size = 1)
+    - kind: Char
+      token: (pos = 4, size = 1)
+      codePoint: U+005D, ]
+    - kind: CharClass
+      token: (pos = 5, size = 3)
+      class: UNION
+      invert: false
+      chars:
+        - kind: Char
+          token: (pos = 6, size = 1)
+          codePoint: U+0028, (
+EOF
+)
+
+assert diff <(redump ']\1.][(]' 'u') <(<<'EOF'
+1:1 [error] unmatched `]'
+ at (pos = 0, size = 1)
+EOF
+)

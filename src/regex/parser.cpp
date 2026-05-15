@@ -1000,11 +1000,15 @@ void Parser::resolveCaptureGroups() {
       }
       continue;
     case '[':
-      classLevel++;
+      if (!classLevel || this->flag.is(Mode::UNICODE_SET)) {
+        classLevel++;
+      }
       this->iter++;
       continue;
     case ']':
-      classLevel--;
+      if (classLevel) {
+        classLevel--;
+      }
       this->iter++;
       continue;
     default:

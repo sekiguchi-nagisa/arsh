@@ -131,3 +131,20 @@ instructions:
 matchers:
 EOF
 )
+
+# ]\1.][(]
+assert diff <(redump -d ']\1.][(]' '') <(<<'EOF'
+flag: (mode = , modifier = )
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+   0: Char(codePoint=U+005D:])
+   5: Char(codePoint=U+0001:\x01)
+  10: AnyExceptNL
+  11: Char(codePoint=U+005D:])
+  16: Char(codePoint=U+0028:()
+  21: Match
+matchers:
+EOF
+)
