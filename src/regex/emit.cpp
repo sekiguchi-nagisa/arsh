@@ -46,23 +46,27 @@ void StrSetBuilder::add(const StrSetBuilder &builder) {
 }
 
 template <typename Func>
-constexpr bool cp_iter_requirement_v = std::is_same_v<bool, std::invoke_result_t<Func, StringRef>>;
+constexpr bool cp_iter_requirement_v =
+    std::is_same_v<bool, std::invoke_result_t<Func, StringRef, int>>;
 
 template <typename Func, enable_when<cp_iter_requirement_v<Func>> = nullptr>
-static void iterateAsStr(const CodePointSetBuilder &builder, Func func) {
+static void iterateCodes(const CodePointSetBuilder &builder, Func func) {
   for (auto [first, last] : builder.getCodePointRanges()) {
     for (; first <= last; first++) {
       char buf[4];
       unsigned int len = UnicodeUtil::codePointToUtf8(first, buf);
       assert(len);
-      if (!func(StringRef(buf, len))) {
+      if (!func(StringRef(buf, len), first)) {
         return;
       }
     }
   }
 }
 
-template <typename Func, enable_when<cp_iter_requirement_v<Func>> = nullptr>
+template <typename Func>
+constexpr bool str_iter_requirement_v = std::is_same_v<bool, std::invoke_result_t<Func, StringRef>>;
+
+template <typename Func, enable_when<str_iter_requirement_v<Func>> = nullptr>
 static void iterateEmoji(const ucp::RGIEmojiSeq emoji, Func func) {
   if (StrSetBuilder::hasEmoji(emoji)) {
     ucp::getEmojiTrie().iterate([&](StringRef ref, unsigned char p) {
@@ -115,9 +119,9 @@ void StrSetBuilder::intersect(const StrSetBuilder &builder) {
       }
       return true;
     });
-    iterateAsStr(builder.codePoints, [&](StringRef ref) {
+    iterateCodes(builder.codePoints, [&](StringRef ref, int codePoint) {
       if (findFromEmoji(this->emoji, ref)) {
-        newBuilder.radix.add(ref, 1);
+        newBuilder.codePoints.addRange(codePoint, codePoint);
       }
       return true;
     });
@@ -137,9 +141,9 @@ void StrSetBuilder::intersect(const StrSetBuilder &builder) {
       }
       return true;
     });
-    iterateAsStr(builder.codePoints, [&](StringRef ref) {
+    iterateCodes(builder.codePoints, [&](StringRef ref, int codePoint) {
       if (this->radix.find(ref)) {
-        newBuilder.radix.add(ref, 1);
+        newBuilder.codePoints.addRange(codePoint, codePoint);
       }
       return true;
     });
@@ -191,7 +195,7 @@ void StrSetBuilder::sub(const StrSetBuilder &builder) {
     });
   }
   if (this->hasEmoji()) {
-    iterateAsStr(builder.codePoints, [&](StringRef ref) {
+    iterateCodes(builder.codePoints, [&](StringRef ref, int) {
       if (findFromEmoji(this->emoji, ref)) {
         mergeEmoji(this->emoji, this->radix);
         return false;
@@ -214,7 +218,7 @@ void StrSetBuilder::sub(const StrSetBuilder &builder) {
     });
   }
   if (!this->radix.empty()) {
-    iterateAsStr(builder.codePoints, [&](StringRef ref) {
+    iterateCodes(builder.codePoints, [&](StringRef ref, int) {
       this->radix.remove(ref);
       return !this->radix.empty();
     });
@@ -740,9 +744,6 @@ bool CodeGen::generateCharClass(const CharClassNode &node) {
   // generate str set or char set
   StrSetBuilder setBuilder(this->has(Modifier::IGNORE_CASE));
   this->generateStrSet(setBuilder, 0, node);
-  if (!this->err.empty()) { // TODO
-    return false;
-  }
   bool invert = false;
   if (node.isInvert() && this->mode != Mode::UNICODE_SET) {
     invert = true;

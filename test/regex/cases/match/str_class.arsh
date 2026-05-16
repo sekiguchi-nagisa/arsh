@@ -291,3 +291,28 @@ input: \`${$'\u017F{}'}'
 (offset=0, size=3)
 EOF
 )
+
+# [\r\n\u2028\u2029\q{\r\n}]
+assert diff <(redump -m $'@\u2029' '[\r\n\u2028\u2029\q{\r\n}]' 'v') <(<<EOF
+input: \`${$'@\u2029'}'
+(offset=1, size=3)
+EOF
+)
+
+assert diff <(redump -m $'@\n' '[\r\n\u2028\u2029\q{\r\n}]' 'v') <(<<EOF
+input: \`${$'@\n'}'
+(offset=1, size=1)
+EOF
+)
+
+assert diff <(redump -m $'@\r' '[\r\n\u2028\u2029\q{\r\n}]' 'v') <(<<EOF
+input: \`${$'@\r'}'
+(offset=1, size=1)
+EOF
+)
+
+assert diff <(redump -m $'@\r\n' '[\r\n\u2028\u2029\q{\r\n}]' 'v') <(<<EOF
+input: \`${$'@\r\n'}'
+(offset=1, size=2)
+EOF
+)

@@ -102,6 +102,25 @@ input: `缶'
 EOF
 )
 
+# [\p{Script=Greek}&&\p{Letter}]
+assert diff <(redump -m 'π' '[\p{Script=Greek}&&\p{Letter}]' 'v') <(<<'EOF'
+input: `π'
+(offset=0, size=2)
+EOF
+)
+
+assert diff <(redump -m 'Σ' '[\p{Script=Greek}&&\p{Letter}]' 'v') <(<<'EOF'
+input: `Σ'
+(offset=0, size=2)
+EOF
+)
+
+assert diff <(redump -m 'α' '[\p{Script=Greek}&&\p{Letter}]' 'v') <(<<'EOF'
+input: `α'
+(offset=0, size=2)
+EOF
+)
+
 # [\p{ASCII}--\w--[<=>]]
 assert diff <(redump -m 'あ' '[\p{ASCII}--\w--[<=>]]' 'v') <(<<'EOF'
 input: `あ'
