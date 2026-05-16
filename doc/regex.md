@@ -18,13 +18,13 @@
 | [^abc]                              | ✔️         | ✔️        | ✔️                      | ✔️                             |
 | [^A-Z]                              | ✔️         | ✔️        | ✔️                      | ✔️                             |
 | [operand1&&operand2]                | ✔️         | ✔️        | ✔️                      | ✔️                             |
-| [operand1&&operand2] (with string)  | ✔️         | ✔️        | ✔️                      | ❌                              |
+| [operand1&&operand2] (with string)  | ✔️         | ✔️        | ✔️                      | ️✔️                            |
 | [operand1--operand2]                | ✔️         | ✔️        | ✔️                      | ✔️                             |
-| [operand1--operand2] (with string)  | ✔️         | ✔️        | ✔️                      | ❌                              |
+| [operand1--operand2] (with string)  | ✔️         | ✔️        | ✔️                      | ️✔️                            |
 | [^operand1&&operand2]               | ✔️         | ✔️        | ✔️                      | ✔️                             |
-| [^operand1&&operand2] (with string) | ✔️         | ✔️        | ✔️                      | ❌                              |
+| [^operand1&&operand2] (with string) | ✔️         | ✔️        | ✔️                      | ✔️                             |
 | [^operand1--operand2]               | ✔️         | ✔️        | ✔️                      | ✔️                             |
-| [^operand1--operand2] (with string) | ✔️         | ✔️        | ✔️                      | ❌                              |
+| [^operand1--operand2] (with string) | ✔️         | ✔️        | ✔️                      | ✔️                             |
 | [\q{substring}]                     | ✔️         | ✔️        | ✔️                      | ✔️                             |
 | [\q{substring}] (char only)         | ✔️         | ✔️        | ✔️                      | ✔️                             |
 | \f                                  | ✔️         | ✔️        | ✔️                      | ✔️                             |

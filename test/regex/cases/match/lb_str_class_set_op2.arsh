@@ -1,0 +1,313 @@
+
+source $SCRIPT_DIR/../syntax/test_helper.arsh
+
+# for subtract
+
+# (?<=[\q{}--\q{}])
+assert diff <(redump -m '' '(?<=[\q{}--\q{}])' 'v') <(<<'EOF'
+input: `'
+failed
+EOF
+)
+
+assert diff <(redump -m 'a' '(?<=[\q{}--\q{}])' 'v') <(<<'EOF'
+input: `a'
+failed
+EOF
+)
+
+# (?<=[\q{ABC}--\q{}])
+assert diff <(redump -m '' '(?<=[\q{ABC}--\q{}])' 'v') <(<<'EOF'
+input: `'
+failed
+EOF
+)
+
+assert diff <(redump -m 'ABC' '(?<=[\q{ABC}--\q{}])' 'v') <(<<'EOF'
+input: `ABC'
+(offset=3, size=0)
+EOF
+)
+
+# (?<=[\q{ABC|}--\q{}])
+assert diff <(redump -m '' '(?<=[\q{ABC|}--\q{}])' 'v') <(<<'EOF'
+input: `'
+failed
+EOF
+)
+
+assert diff <(redump -m 'ABC' '(?<=[\q{ABC|}--\q{}])' 'v') <(<<'EOF'
+input: `ABC'
+(offset=3, size=0)
+EOF
+)
+
+# (?<=[\q{}--\q{ABC}])
+assert diff <(redump -m '' '(?<=[\q{}--\q{ABC}])' 'v') <(<<'EOF'
+input: `'
+(offset=0, size=0)
+EOF
+)
+
+assert diff <(redump -m 'ABC' '(?<=[\q{}--\q{ABC}])' 'v') <(<<'EOF'
+input: `ABC'
+(offset=0, size=0)
+EOF
+)
+
+# (?<=[\q{ABC|ABB|ACD}--\q{ABC}])
+assert diff <(redump -m 'ABC' '(?<=[\q{ABC|ABB|ACD}--\q{ABC}])' 'v') <(<<'EOF'
+input: `ABC'
+failed
+EOF
+)
+
+assert diff <(redump -m 'ABB' '(?<=[\q{ABC|ABB|ACD}--\q{ABC}])' 'v') <(<<'EOF'
+input: `ABB'
+(offset=3, size=0)
+EOF
+)
+
+assert diff <(redump -m 'AbC' '(?<=[\q{ABC|ABB|ACD}--\q{ABC}])' 'vi') <(<<'EOF'
+input: `AbC'
+failed
+EOF
+)
+
+assert diff <(redump -m 'AbB' '(?<=[\q{ABC|ABB|ACD}--\q{ABC}])' 'vi') <(<<'EOF'
+input: `AbB'
+(offset=3, size=0)
+EOF
+)
+
+# (?<=[\q{A|B|C|ABB}--\q{ABC|ABB|ACD}--\q{ABC}])
+assert diff <(redump -m 'ABB' '(?<=[\q{A|B|C|ABB}--\q{ABC|ABB|ACD}--\q{ABC}])' 'v') <(<<'EOF'
+input: `ABB'
+(offset=1, size=0)
+EOF
+)
+
+assert diff <(redump -m 'ACD' '(?<=[\q{A|B|C|ABB}--\q{ABC|ABB|ACD}--\q{ABC}])' 'v') <(<<'EOF'
+input: `ACD'
+(offset=1, size=0)
+EOF
+)
+
+assert diff <(redump -m 'A' '(?<=[\q{A|B|C|ABB}--\q{ABC|ABB|ACD}--\q{ABC}])' 'v') <(<<'EOF'
+input: `A'
+(offset=1, size=0)
+EOF
+)
+
+assert diff <(redump -m 'a' '(?<=[\q{A|B|C|ABB}--\q{ABC|ABB|ACD}--\q{ABC}])' 'v') <(<<'EOF'
+input: `a'
+failed
+EOF
+)
+
+assert diff <(redump -m 'a' '(?<=[\q{A|B|C|ABB}--\q{ABC|ABB|ACD}--\q{ABC}])' 'vi') <(<<'EOF'
+input: `a'
+(offset=1, size=0)
+EOF
+)
+
+# (?<=[^\q{A|B|C}--\q{ABC|ABB|ACD}--\q{ABC}])
+assert diff <(redump -m 'ABB' '(?<=[^\q{A|B|C}--\q{ABC|ABB|ACD}--\q{ABC}])' 'v') <(<<'EOF'
+input: `ABB'
+failed
+EOF
+)
+
+assert diff <(redump -m 'D' '(?<=[^\q{A|B|C}--\q{ABC|ABB|ACD}--\q{ABC}])' 'v') <(<<'EOF'
+input: `D'
+(offset=1, size=0)
+EOF
+)
+
+assert diff <(redump -m 'b' '(?<=[^\q{A|B|C}--\q{ABC|ABB|ACD}--\q{ABC}])' 'v') <(<<'EOF'
+input: `b'
+(offset=1, size=0)
+EOF
+)
+
+assert diff <(redump -m 'b' '(?<=[^\q{A|B|C}--\q{ABC|ABB|ACD}--\q{ABC}])' 'iv') <(<<'EOF'
+input: `b'
+failed
+EOF
+)
+
+# (?<=[\p{RGI_Emoji_Flag_Sequence}--\q{🇺🇸|🇨🇳|🇷🇺|🇬🇧|🇫🇷}])
+assert diff <(redump -m 'a' '(?<=[\p{RGI_Emoji_Flag_Sequence}--\q{🇺🇸|🇨🇳|🇷🇺|🇬🇧|🇫🇷}])' 'v') <(<<'EOF'
+input: `a'
+failed
+EOF
+)
+
+assert diff <(redump -m '🇷🇺' '(?<=[\p{RGI_Emoji_Flag_Sequence}--\q{🇺🇸|🇨🇳|🇷🇺|🇬🇧|🇫🇷}])' 'v') <(<<'EOF'
+input: `🇷🇺'
+failed
+EOF
+)
+
+assert diff <(redump -m '🇫🇷' '(?<=[\p{RGI_Emoji_Flag_Sequence}--\q{🇺🇸|🇨🇳|🇷🇺|🇬🇧|🇫🇷}])' 'v') <(<<'EOF'
+input: `🇫🇷'
+failed
+EOF
+)
+
+assert diff <(redump -m '🇯🇯' '(?<=[\p{RGI_Emoji_Flag_Sequence}--\q{🇺🇸|🇨🇳|🇷🇺|🇬🇧|🇫🇷}])' 'v') <(<<'EOF'
+input: `🇯🇯'
+failed
+EOF
+)
+
+assert diff <(redump -m '🇯🇵' '(?<=[\p{RGI_Emoji_Flag_Sequence}--\q{🇺🇸|🇨🇳|🇷🇺|🇬🇧|🇫🇷}])' 'v') <(<<'EOF'
+input: `🇯🇵'
+(offset=8, size=0)
+EOF
+)
+
+assert diff <(redump -m '🇧🇬' '(?<=[\p{RGI_Emoji_Flag_Sequence}--\q{🇺🇸|🇨🇳|🇷🇺|🇬🇧|🇫🇷}])' 'v') <(<<'EOF'
+input: `🇧🇬'
+(offset=8, size=0)
+EOF
+)
+
+# (?<=[\q{🇺🇸|🇨🇳|🇷🇺|🇬🇧|🇫🇷}--\p{RGI_Emoji_Flag_Sequence}])
+assert diff <(redump -m '🇯🇯' '(?<=[\q{🇺🇸|🇨🇳|🇷🇺|🇬🇧|🇫🇷}--\p{RGI_Emoji_Flag_Sequence}])' 'v') <(<<'EOF'
+input: `🇯🇯'
+failed
+EOF
+)
+
+assert diff <(redump -m '🇯🇵' '(?<=[\q{🇺🇸|🇨🇳|🇷🇺|🇬🇧|🇫🇷}--\p{RGI_Emoji_Flag_Sequence}])' 'v') <(<<'EOF'
+input: `🇯🇵'
+failed
+EOF
+)
+
+assert diff <(redump -m '🇧🇬' '(?<=[\q{🇺🇸|🇨🇳|🇷🇺|🇬🇧|🇫🇷}--\p{RGI_Emoji_Flag_Sequence}])' 'v') <(<<'EOF'
+input: `🇧🇬'
+failed
+EOF
+)
+
+assert diff <(redump -m '' '(?<=[\q{🇺🇸|🇨🇳|🇷🇺|🇬🇧|🇫🇷}--\p{RGI_Emoji_Flag_Sequence}])' 'v') <(<<'EOF'
+input: `'
+failed
+EOF
+)
+
+# (?<=[\p{RGI_Emoji}--\q{Ⓜ️}])
+assert diff <(redump -m 'Ⓜ️' '(?<=[\p{RGI_Emoji}--\q{Ⓜ️}])' 'v') <(<<'EOF'
+input: `Ⓜ️'
+failed
+EOF
+)
+
+assert diff <(redump -m 'ⓜ️' '(?<=[\p{RGI_Emoji}--\q{Ⓜ️}])' 'v') <(<<'EOF'
+input: `ⓜ️'
+failed
+EOF
+)
+
+assert diff <(redump -m '🇺🇸' '(?<=[\p{RGI_Emoji}--\q{Ⓜ️}])' 'v') <(<<'EOF'
+input: `🇺🇸'
+(offset=8, size=0)
+EOF
+)
+
+assert diff <(redump -m 'Ⓜ️' '(?<=[\p{RGI_Emoji}--\q{Ⓜ️}])' 'vi') <(<<'EOF'
+input: `Ⓜ️'
+failed
+EOF
+)
+
+assert diff <(redump -m 'ⓜ️' '(?<=[\p{RGI_Emoji}--\q{Ⓜ️}])' 'vi') <(<<'EOF'
+input: `ⓜ️'
+failed
+EOF
+)
+
+assert diff <(redump -m '🇺🇸' '(?<=[\p{RGI_Emoji}--\q{Ⓜ️}])' 'vi') <(<<'EOF'
+input: `🇺🇸'
+(offset=8, size=0)
+EOF
+)
+
+# (?<=[\p{RGI_Emoji}--\q{ⓜ️}])
+assert diff <(redump -m 'Ⓜ️' '(?<=[\p{RGI_Emoji}--\q{ⓜ️}])' 'v') <(<<'EOF'
+input: `Ⓜ️'
+(offset=6, size=0)
+EOF
+)
+
+assert diff <(redump -m 'ⓜ️' '(?<=[\p{RGI_Emoji}--\q{ⓜ️}])' 'v') <(<<'EOF'
+input: `ⓜ️'
+failed
+EOF
+)
+
+assert diff <(redump -m 'Ⓜ️' '(?<=[\p{RGI_Emoji}--\q{ⓜ️}])' 'iv') <(<<'EOF'
+input: `Ⓜ️'
+failed
+EOF
+)
+
+assert diff <(redump -m 'ⓜ️' '(?<=[\p{RGI_Emoji}--\q{ⓜ️}])' 'iv') <(<<'EOF'
+input: `ⓜ️'
+failed
+EOF
+)
+
+# (?<=[\q{ⓜ️}--\p{RGI_Emoji}])
+assert diff <(redump -m 'Ⓜ️' '(?<=[\q{ⓜ️}--\p{RGI_Emoji}])' 'v') <(<<'EOF'
+input: `Ⓜ️'
+failed
+EOF
+)
+
+assert diff <(redump -m 'ⓜ️' '(?<=[\q{ⓜ️}--\p{RGI_Emoji}])' 'v') <(<<'EOF'
+input: `ⓜ️'
+(offset=6, size=0)
+EOF
+)
+
+assert diff <(redump -m 'Ⓜ️' '(?<=[\q{ⓜ️}--\p{RGI_Emoji}])' 'iv') <(<<'EOF'
+input: `Ⓜ️'
+failed
+EOF
+)
+
+assert diff <(redump -m 'ⓜ️' '(?<=[\q{ⓜ️}--\p{RGI_Emoji}])' 'vi') <(<<'EOF'
+input: `ⓜ️'
+failed
+EOF
+)
+
+# (?<=[\p{Emoji}--\p{RGI_Emoji}])
+assert diff <(redump -m '🗺' '(?<=[\p{Emoji}--\p{RGI_Emoji}])' 'v') <(<<'EOF'
+input: `🗺'
+(offset=4, size=0)
+EOF
+)
+
+assert diff <(redump -m 'あ' '(?<=[\p{Emoji}--\p{RGI_Emoji}])' 'v') <(<<'EOF'
+input: `あ'
+failed
+EOF
+)
+
+
+# (?<=[^\p{Emoji}--\p{RGI_Emoji}])
+assert diff <(redump -m '🗺' '(?<=[^\p{Emoji}--\p{RGI_Emoji}])' 'v') <(<<'EOF'
+input: `🗺'
+failed
+EOF
+)
+
+assert diff <(redump -m 'あ' '(?<=[^\p{Emoji}--\p{RGI_Emoji}])' 'v') <(<<'EOF'
+input: `あ'
+(offset=3, size=0)
+EOF
+)

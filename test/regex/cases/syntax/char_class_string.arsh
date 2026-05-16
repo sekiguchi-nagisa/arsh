@@ -341,3 +341,10 @@ pattern:
               codePoint: U+24155, 𤅕
 EOF
 )
+
+# [^\q{}]
+assert diff <(redump '[^\q{|}]' 'v') <(<<'EOF'
+1:1 [error] negated character class may contain strings
+ at (pos = 0, size = 8)
+EOF
+)
