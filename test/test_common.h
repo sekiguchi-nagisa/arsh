@@ -316,6 +316,12 @@ protected:
   }
 };
 
+std::vector<std::string> findExecTestCasesFromDirs(const std::vector<std::string> &dirs);
+
+inline std::vector<std::string> findExecTestCasesFromDir(const std::string &dir) {
+  return findExecTestCasesFromDirs({dir});
+}
+
 #define INIT_TEMP_FILE_FACTORY(NAME) arsh::TempFileFactory("arsh_" #NAME)
 
 #endif // ARSH_TEST_COMMON_H

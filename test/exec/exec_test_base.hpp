@@ -7,8 +7,6 @@
 #include <fstream>
 
 #include <directive.h>
-#include <misc/files.hpp>
-#include <misc/string_ref.hpp>
 
 #include "../test_common.h"
 
@@ -36,26 +34,6 @@ int parse(const std::string &src, T &&...args) {
 template <typename... T>
 int parse(const char *src, T &&...args) {
   return Extractor(src)(std::forward<T>(args)...);
-}
-
-inline std::vector<std::string> getSortedFileList(const char *dir,
-                                                  const std::vector<std::string> &ignored = {}) {
-  auto ret = getFileList(dir, true);
-  assert(!ret.empty());
-  ret.erase(std::remove_if(ret.begin(), ret.end(),
-                           [&ignored](const std::string &v) {
-                             for (auto &i : ignored) {
-                               if (StringRef(v).startsWith(i)) {
-                                 return true;
-                               }
-                             }
-                             const StringRef ref = v;
-                             return !ref.endsWith(".ds") && !ref.endsWith(".arsh");
-                           }),
-            ret.end());
-  std::sort(ret.begin(), ret.end());
-  ret.erase(std::unique(ret.begin(), ret.end()), ret.end());
-  return ret;
 }
 
 class ExecTest : public ::testing::TestWithParam<std::string>, public TempFileFactory {

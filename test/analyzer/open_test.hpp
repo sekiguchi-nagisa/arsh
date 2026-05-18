@@ -51,21 +51,4 @@ struct OpenTest : public ::testing::TestWithParam<std::string> {
   }
 };
 
-inline std::vector<std::string> getSortedFileList(const char *dir, const char *ignored = nullptr) {
-  auto ret = getFileList(dir, true);
-  assert(!ret.empty());
-  ret.erase(std::remove_if(ret.begin(), ret.end(),
-                           [ignored](const std::string &v) {
-                             StringRef ref = v;
-                             if (ignored && ref.startsWith(ignored)) {
-                               return true;
-                             }
-                             return !ref.endsWith(".ds") && !ref.endsWith(".arsh");
-                           }),
-            ret.end());
-  std::sort(ret.begin(), ret.end());
-  ret.erase(std::unique(ret.begin(), ret.end()), ret.end());
-  return ret;
-}
-
 #endif // ARSH_TEST_ANALYZER_OPEN_TEST_HPP

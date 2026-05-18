@@ -16,7 +16,12 @@
 
 #include <cstdarg>
 
+#include <misc/files.hpp>
+#include <misc/string_ref.hpp>
+
 #include "test_common.h"
+
+using namespace arsh;
 
 std::string format(const char *fmt, ...) {
   va_list arg;
@@ -155,4 +160,23 @@ std::pair<std::string, std::string> InteractiveShellBase::readAll() {
                          }
                        });
   return {this->screen.toString(), std::move(err)};
+}
+
+std::vector<std::string> findExecTestCasesFromDirs(const std::vector<std::string> &dirs) {
+  std::vector<std::string> values;
+  for (auto &dir : dirs) {
+    auto ret = getFileList(dir.c_str(), true);
+    assert(!ret.empty());
+    ret.erase(std::remove_if(ret.begin(), ret.end(),
+                             [](const std::string &v) {
+                               const StringRef ref = v;
+                               return !ref.endsWith(".ds") && !ref.endsWith(".arsh");
+                             }),
+              ret.end());
+    for (auto &e : ret) {
+      values.push_back(std::move(e));
+    }
+  }
+  std::sort(values.begin(), values.end());
+  return values;
 }

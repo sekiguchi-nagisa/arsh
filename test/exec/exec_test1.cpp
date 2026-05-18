@@ -6,7 +6,7 @@ TEST_P(ExecTest, baseTest) {
 }
 
 INSTANTIATE_TEST_SUITE_P(ExecTest, ExecTest,
-                         ::testing::ValuesIn(getSortedFileList(EXEC_TEST_DIR "/base")));
+                         ::testing::ValuesIn(findExecTestCasesFromDir(EXEC_TEST_DIR "/base")));
 
 TEST(Base, case1) {
   std::string line(R"(type=3 lineNum=1 chars=0 kind="SystemError" fileName="../hoge.ds")");
