@@ -761,7 +761,7 @@ int Parser::parseUnicodeEscape(const UnicodeEscapeParseOpt opt) {
                         sadd_overflow(codePoint, static_cast<int>(hexToNum(ch)), codePoint);
       }
     }
-    if (this->isEnd() || *this->iter != '}' || this->iter - old == 3 ||
+    if (arithOverflow || this->isEnd() || *this->iter != '}' || this->iter - old == 3 ||
         !UnicodeUtil::isCodePoint(codePoint)) {
       if (!this->isEnd()) {
         this->iter++;
@@ -902,7 +902,7 @@ std::unique_ptr<Node> Parser::parseBackRefOrOctal(const bool inCharClass) {
     const int oldCodePoint = codePoint;
     codePoint *= 8;
     codePoint += (*this->iter - '0');
-    if (codePoint >= UINT8_MAX) {
+    if (codePoint > UINT8_MAX) {
       codePoint = oldCodePoint;
       break;
     }
