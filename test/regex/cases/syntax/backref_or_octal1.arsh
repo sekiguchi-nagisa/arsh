@@ -240,6 +240,19 @@ assert diff <(redump '\78' 'v') <(<<'EOF'
 EOF
 )
 
+# \377 (255)
+assert diff <(redump '\377' '') <(<<'EOF'
+flag: (mode = , modifier = )
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Char
+  token: (pos = 0, size = 4)
+  codePoint: U+00FF, ÿ
+EOF
+)
+
 # \777 (larger than 255)
 assert diff <(redump '\777' '') <(<<'EOF'
 flag: (mode = , modifier = )
