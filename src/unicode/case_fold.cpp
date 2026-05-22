@@ -31,7 +31,8 @@ using CaseMappingFullFoldEntry = uint16_t[CaseFoldingResult::FULL_FOLD_ENTRY_SIZ
 #define CASE_FOLD_F_ENTRY CaseMappingFullFoldEntry
 #define CASE_FOLD_T_ENTRY CaseMappingShortEntry
 
-#include "case_fold.in"
+#include "full_case_fold.in"
+#include "simple_case_fold.in"
 
 #undef CASE_FOLD_shortC_ENTRY
 #undef CASE_FOLD_longC_ENTRY
