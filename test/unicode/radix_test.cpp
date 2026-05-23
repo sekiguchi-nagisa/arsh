@@ -1,4 +1,4 @@
-#include "../test_common.h"
+#include "gtest/gtest.h"
 
 #include <unicode/radix_tree.h>
 

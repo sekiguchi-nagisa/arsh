@@ -2,7 +2,8 @@
 
 shctl set errraise
 
-var src = "$SCRIPT_DIR/../src".realpath()
+let src = "$SCRIPT_DIR/../src".realpath()
+let test = "$SCRIPT_DIR/../test"
 
 mkdir -p unicode-temp && cd unicode-temp
 
@@ -22,9 +23,9 @@ call $BIN_NAME $SCRIPT_DIR/unicode/gen_grapheme_break_property.ds $src/unicode/g
 echo try to update $src/unicode/word_break_property.in
 call $BIN_NAME $SCRIPT_DIR/unicode/gen_word_break_property.ds $src/unicode/word_break_property.in
 
-echo try to update $src/unicode/simple_case_fold.in and $src/unicode/full_case_fold.in
+echo try to update $src/unicode/simple_case_fold.in and $src/unicode/full_case_fold.in and $test/unicode/case_fold.in
 call $BIN_NAME $SCRIPT_DIR/unicode/gen_case_fold.arsh  \
-    --simple $src/unicode/simple_case_fold.in --full $src/unicode/full_case_fold.in
+    --simple $src/unicode/simple_case_fold.in --full $src/unicode/full_case_fold.in --test $test/unicode/case_fold.in
 
 echo try to update $src/unicode/emoji_variation.in
 call $BIN_NAME $SCRIPT_DIR/unicode/gen_emoji_variation.arsh $src/unicode/emoji_variation.in
@@ -44,8 +45,6 @@ call $BIN_NAME $SCRIPT_DIR/unicode/gen_emoji_seq_table.arsh $tools/emoji/emoji_s
 
 
 ## for test case
-var test = "$SCRIPT_DIR/../test"
-
 echo try to update $test/unicode/grapheme_break_test.in
 call $BIN_NAME $SCRIPT_DIR/unicode/gen_grapheme_break_test.ds $test/unicode/grapheme_break_test.in
 

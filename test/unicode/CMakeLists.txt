@@ -46,5 +46,17 @@ set(TEST_NAME radix_test)
 add_executable(${TEST_NAME}
         radix_test.cpp
 )
-target_link_libraries(${TEST_NAME} gtest gtest_main radix test_common)
+target_link_libraries(${TEST_NAME} gtest gtest_main radix)
+add_test(${TEST_NAME} ${TEST_NAME})
+
+
+#===================#
+#     fold_test     #
+#===================#
+
+set(TEST_NAME fold_test)
+add_executable(${TEST_NAME}
+        fold_test.cpp
+)
+target_link_libraries(${TEST_NAME} gtest gtest_main casefold test_common)
 add_test(${TEST_NAME} ${TEST_NAME})

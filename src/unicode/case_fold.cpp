@@ -101,7 +101,7 @@ CaseFoldingResult doCaseFolding(int codePoint, CaseFoldOp op) {
   }
 
   auto iter = std::lower_bound(std::begin(case_fold_longC_table), std::end(case_fold_longC_table),
-                               codePoint, CompareShortEntry());
+                               codePoint, CompareLongEntry());
   if (iter != std::end(case_fold_longC_table) && iter->first == codePoint) {
     return CaseFoldingResult(iter->second);
   }
