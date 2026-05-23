@@ -16,71 +16,52 @@
 
 #include <algorithm>
 
-#include "misc/array_ref.hpp"
-#include "misc/unicode.hpp"
 #include "unicode/case_fold.h"
 
 namespace arsh {
 
-using CaseMappingShortEntry = std::pair<uint16_t, uint16_t>;
-using CaseMappingFullFoldEntry = uint16_t[CaseFoldingResult::FULL_FOLD_ENTRY_SIZE + 1];
+#include "simple_case_fold_table.h"
 
-#define CASE_FOLD_shortC_ENTRY CaseMappingShortEntry
-#define CASE_FOLD_longC_ENTRY std::pair<int, int>
-#define CASE_FOLD_S_ENTRY CaseMappingShortEntry
-#define CASE_FOLD_F_ENTRY CaseMappingFullFoldEntry
-#define CASE_FOLD_T_ENTRY CaseMappingShortEntry
+static bool isSimpleCaseFoldTarget(int codePoint) {
+  return codePoint >= 0 && codePoint <= max_fold_code_point;
+}
+
+static uint32_t lookupSimpleCaseFoldEntry(unsigned int cp) {
+  const auto index = simple_case_fold_block_indexes[cp >> simple_case_fold_block_shift];
+  return simple_case_fold_blocks[(index * simple_case_fold_block_size) +
+                                 (cp % simple_case_fold_block_size)];
+}
+
+int doSimpleCaseFolding(int codePoint) {
+  if (isSimpleCaseFoldTarget(codePoint)) {
+    auto entry = lookupSimpleCaseFoldEntry(static_cast<unsigned int>(codePoint));
+    int delta = static_cast<int>(entry & ~1) / 2;
+    return codePoint + delta;
+  }
+  return codePoint;
+}
+
+using CASE_FOLD_T_ENTRY = std::pair<uint16_t, uint16_t>; // NOLINT
+using CASE_FOLD_F_ENTRY = uint16_t[CaseFoldingResult::FULL_FOLD_ENTRY_SIZE + 1];
 
 #include "full_case_fold.in"
-#include "simple_case_fold.in"
-
-#undef CASE_FOLD_shortC_ENTRY
-#undef CASE_FOLD_longC_ENTRY
-#undef CASE_FOLD_S_ENTRY
-#undef CASE_FOLD_F_ENTRY
-#undef CASE_FOLD_T_ENTRY
-
-using CaseMappingRange = ArrayRef<CaseMappingShortEntry>;
-
-struct CompareShortEntry {
-  bool operator()(const CaseMappingShortEntry &x, uint16_t y) const { return x.first < y; }
-
-  bool operator()(uint16_t x, const CaseMappingShortEntry &y) const { return x < y.first; }
-};
-
-struct CompareLongEntry {
-  bool operator()(const std::pair<int, int> &x, int y) const { return x.first < y; }
-
-  bool operator()(int x, const std::pair<int, int> &y) const { return x < y.first; }
-};
 
 struct CompareFullFoldEntry {
-  bool operator()(const CaseMappingFullFoldEntry &x, uint16_t y) const { return x[0] < y; }
+  bool operator()(const CASE_FOLD_F_ENTRY &x, uint16_t y) const { return x[0] < y; }
 
-  bool operator()(uint16_t x, const CaseMappingFullFoldEntry &y) const { return x < y[0]; }
+  bool operator()(uint16_t x, const CASE_FOLD_F_ENTRY &y) const { return x < y[0]; }
 };
 
-static CaseFoldingResult doCaseFoldingBMP(uint16_t codePoint, const CaseFoldOp op) {
-  CaseMappingRange targets[3];
-  unsigned int targetSize = 0;
+CaseFoldingResult doCaseFolding(int codePoint, const CaseFoldOp op) {
   if (hasFlag(op, CaseFoldOp::TURKIC)) {
-    targets[targetSize++] = CaseMappingRange(case_fold_T_table);
-  }
-  targets[targetSize++] = CaseMappingRange(case_fold_shortC_table);
-  if (!hasFlag(op, CaseFoldOp::FULL_FOLD)) {
-    targets[targetSize++] = CaseMappingRange(case_fold_S_table);
-  }
-
-  for (unsigned int i = 0; i < targetSize; i++) {
-    const auto ref = targets[i];
-    auto iter = std::lower_bound(ref.begin(), ref.end(), codePoint, CompareShortEntry());
-    if (iter != ref.end() && iter->first == codePoint) {
-      return CaseFoldingResult(iter->second);
+    for (auto [before, after] : case_fold_T_table) {
+      if (before == codePoint) {
+        return CaseFoldingResult(after);
+      }
     }
   }
-
-  // full case folding
   if (hasFlag(op, CaseFoldOp::FULL_FOLD)) {
+    // for 'F'
     auto iter = std::lower_bound(std::begin(case_fold_F_table), std::end(case_fold_F_table),
                                  codePoint, CompareFullFoldEntry());
     if (iter != std::end(case_fold_F_table) && (*iter)[0] == codePoint) {
@@ -90,22 +71,17 @@ static CaseFoldingResult doCaseFoldingBMP(uint16_t codePoint, const CaseFoldOp o
       }
       return CaseFoldingResult(entry);
     }
+    // for 'C'
+    if (isSimpleCaseFoldTarget(codePoint)) {
+      auto entry = lookupSimpleCaseFoldEntry(static_cast<unsigned int>(codePoint));
+      int delta = static_cast<int>(entry & ~1) / 2;
+      if ((entry & 0x01) == 0) { // only allow 'C'
+        return CaseFoldingResult(codePoint + delta);
+      }
+    }
+    return CaseFoldingResult(codePoint);
   }
-
-  return CaseFoldingResult(codePoint);
-}
-
-CaseFoldingResult doCaseFolding(int codePoint, CaseFoldOp op) {
-  if (UnicodeUtil::isBmpCodePoint(codePoint)) {
-    return doCaseFoldingBMP(static_cast<uint16_t>(codePoint), op);
-  }
-
-  auto iter = std::lower_bound(std::begin(case_fold_longC_table), std::end(case_fold_longC_table),
-                               codePoint, CompareLongEntry());
-  if (iter != std::end(case_fold_longC_table) && iter->first == codePoint) {
-    return CaseFoldingResult(iter->second);
-  }
-  return CaseFoldingResult(codePoint);
+  return CaseFoldingResult(doSimpleCaseFolding(codePoint));
 }
 
 } // namespace arsh

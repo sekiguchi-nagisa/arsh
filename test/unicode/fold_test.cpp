@@ -34,6 +34,7 @@ struct FoldTest : public ::testing::TestWithParam<FOLD_TEST_ENTRY> {
     auto ret = arsh::doCaseFolding(param.before, arsh::CaseFoldOp::NONE);
     auto retTurkic = arsh::doCaseFolding(param.before, arsh::CaseFoldOp::TURKIC);
     auto retFull = arsh::doCaseFolding(param.before, arsh::CaseFoldOp::FULL_FOLD);
+    auto code = arsh::doSimpleCaseFolding(param.before);
 
     switch (param.type) {
     case 'C':
@@ -41,6 +42,7 @@ struct FoldTest : public ::testing::TestWithParam<FOLD_TEST_ENTRY> {
       ASSERT_EQ(param.after, ret.getSimpleFolding());
       ASSERT_FALSE(retFull.isFullFolding());
       ASSERT_EQ(param.after, retFull.getSimpleFolding());
+      ASSERT_EQ(param.after, code);
       break;
     case 'S':
       ASSERT_FALSE(ret.isFullFolding());
@@ -48,6 +50,7 @@ struct FoldTest : public ::testing::TestWithParam<FOLD_TEST_ENTRY> {
       ASSERT_FALSE(retTurkic.isFullFolding());
       ASSERT_EQ(param.after, retTurkic.getSimpleFolding());
       ASSERT_FALSE(retFull.equals(param.after));
+      ASSERT_EQ(param.after, code);
       break;
     case 'T':
       ASSERT_FALSE(ret.isFullFolding());
@@ -111,6 +114,7 @@ struct NoFoldTest : public ::testing::TestWithParam<int> {
     ret = arsh::doCaseFolding(param, arsh::CaseFoldOp::FULL_FOLD | arsh::CaseFoldOp::TURKIC);
     ASSERT_FALSE(ret.isFullFolding());
     ASSERT_EQ(param, ret.getSimpleFolding());
+    ASSERT_EQ(param, arsh::doSimpleCaseFolding(param));
   }
 };
 
@@ -128,6 +132,8 @@ TEST(TurkicFoldTest, base) {
   ASSERT_FALSE(ret.isFullFolding());
   ASSERT_EQ(0x0130, ret.getSimpleFolding());
 
+  ASSERT_EQ(0x0069, arsh::doSimpleCaseFolding(0x0069));
+
   ret = arsh::doCaseFolding(0x0130, arsh::CaseFoldOp::TURKIC);
   ASSERT_FALSE(ret.isFullFolding());
   ASSERT_EQ(0x0069, ret.getSimpleFolding());
@@ -141,6 +147,8 @@ TEST(TurkicFoldTest, base) {
   ret = arsh::doCaseFolding(0x0130, arsh::CaseFoldOp::TURKIC | arsh::CaseFoldOp::FULL_FOLD);
   ASSERT_FALSE(ret.isFullFolding());
   ASSERT_EQ(0x0069, ret.getSimpleFolding());
+
+  ASSERT_EQ(0x0130, arsh::doSimpleCaseFolding(0x0130));
 }
 
 int main(int argc, char **argv) {

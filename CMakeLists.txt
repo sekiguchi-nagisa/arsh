@@ -206,6 +206,18 @@ add_custom_command(OUTPUT ${emoji_trie_src}
         DEPENDS gen_emoji_trie
 )
 
+#=========================================#
+#     generate simple case fold table     #
+#=========================================#
+
+set(simple_case_fold_table_src ${CMAKE_CURRENT_BINARY_DIR}/src/simple_case_fold_table.h)
+add_custom_command(OUTPUT ${simple_case_fold_table_src}
+        COMMAND ${CMAKE_CURRENT_BINARY_DIR}/tools/casefold/gen_casefold_table
+        ${simple_case_fold_table_src}
+        MAIN_DEPENDENCY ${CMAKE_CURRENT_SOURCE_DIR}/src/unicode/simple_case_fold.in
+        DEPENDS gen_casefold_table
+)
+
 
 #=================#
 #     unicode     #
@@ -213,7 +225,9 @@ add_custom_command(OUTPUT ${emoji_trie_src}
 
 add_library(casefold STATIC
         src/unicode/case_fold.cpp
+        ${simple_case_fold_table_src}
 )
+add_dependencies(casefold gen_casefold_table)
 if (BUILD_SHARED_LIB)
     set_target_properties(casefold PROPERTIES POSITION_INDEPENDENT_CODE ON)
 endif ()
@@ -335,6 +349,7 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/analyzer)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/inspect)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/helper)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/emoji)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/casefold)
 
 
 set(CMAKE_MACOSX_RPATH ON)

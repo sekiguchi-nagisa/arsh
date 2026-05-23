@@ -62,9 +62,7 @@ public:
 
 CaseFoldingResult doCaseFolding(int codePoint, CaseFoldOp op);
 
-inline int doSimpleCaseFolding(const int codePoint) {
-  return doCaseFolding(codePoint, CaseFoldOp::NONE).getSimpleFolding();
-}
+int doSimpleCaseFolding(int codePoint);
 
 } // namespace arsh
 
