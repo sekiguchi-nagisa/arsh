@@ -36,8 +36,8 @@ assert $PIPESTATUS[2] == 1
 ff() { return $1.toInt() ?? 99; }
 $ex = 45643652
 try {
-    ls | for a in $STDIN { 
-        ff 67; echo $a; } | { sleep 0.5
+    /bin/echo hey | for a in $STDIN {
+        ff 67; echo $a; } | { sleep 0.1
             ff 145; }
 } catch e { $ex = $e; }
 assert ($ex as ExecError).message() == "\`ff' command exits with non-zero status: \`145'"
