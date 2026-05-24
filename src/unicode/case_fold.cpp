@@ -16,6 +16,7 @@
 
 #include <algorithm>
 
+#include "misc/unicode.hpp"
 #include "unicode/case_fold.h"
 
 namespace arsh {
@@ -62,20 +63,22 @@ CaseFoldingResult doCaseFolding(int codePoint, const CaseFoldOp op) {
   }
   if (hasFlag(op, CaseFoldOp::FULL_FOLD)) {
     // for 'F'
-    auto iter = std::lower_bound(std::begin(case_fold_F_table), std::end(case_fold_F_table),
-                                 codePoint, CompareFullFoldEntry());
-    if (iter != std::end(case_fold_F_table) && (*iter)[0] == codePoint) {
-      CaseFoldingResult::FullFoldingEntry entry;
-      for (unsigned int i = 1; i < std::size(*iter); i++) {
-        entry[i - 1] = (*iter)[i];
+    if (UnicodeUtil::isBmpCodePoint(codePoint)) {
+      auto iter = std::lower_bound(std::begin(case_fold_F_table), std::end(case_fold_F_table),
+                                   codePoint, CompareFullFoldEntry());
+      if (iter != std::end(case_fold_F_table) && (*iter)[0] == codePoint) {
+        CaseFoldingResult::FullFoldingEntry entry;
+        for (unsigned int i = 1; i < std::size(*iter); i++) {
+          entry[i - 1] = (*iter)[i];
+        }
+        return CaseFoldingResult(entry);
       }
-      return CaseFoldingResult(entry);
     }
     // for 'C'
     if (isSimpleCaseFoldTarget(codePoint)) {
       auto entry = lookupSimpleCaseFoldEntry(static_cast<unsigned int>(codePoint));
-      int delta = static_cast<int>(entry & ~1) / 2;
       if ((entry & 0x01) == 0) { // only allow 'C'
+        int delta = static_cast<int>(entry & ~1) / 2;
         return CaseFoldingResult(codePoint + delta);
       }
     }
