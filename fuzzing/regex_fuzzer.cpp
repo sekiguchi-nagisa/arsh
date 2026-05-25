@@ -57,7 +57,7 @@ static std::string formatCaptures(const std::vector<regex::Capture> &captures) {
 
 static void match(const regex::Regex &re, const StringRef input, const bool print) {
   std::vector<regex::Capture> captures;
-  regex::Timer timer(std::chrono::seconds(2));
+  regex::Timer timer(std::chrono::milliseconds(300));
   auto status = regex::match(re, input, captures, makeObserver(timer));
   if (print) {
     fprintf(stderr, "input: `%s'\n", input.toString().c_str());
