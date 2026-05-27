@@ -188,7 +188,7 @@ static constexpr BuiltinCmdDesc table[] = {
      "[-p prompt] [-t timeout] [-u fd] [name ...]",
      "    Read from standard input.\n"
      "    Options:\n"
-     "      -d delim   use first byte of DELIM as input terminator"
+     "      -d delim   use first byte of DELIM as input terminator\n"
      "      -f ifs     use specified field separator instead of IFS\n"
      "      -n nbytes  read NBYTES (exclude backslash escape)\n"
      "      -N nbytes  read NBYTES (exclude backslash escape), ignore delimiter, field splitting\n"
