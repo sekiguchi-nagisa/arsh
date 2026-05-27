@@ -24,10 +24,15 @@
 
 - **Breaking Change**: ``String#foldCase`` method now throw ``ArgumentError`` instead of
   ``InvalidOperationError`` when pass invalid UTF-8
+- **Breaking Change**: change directory to empty dir is now error due to posix compatibility
 - add ``timeout`` param to ``Regex#match``, ``Regex#replace``
     - now specify match timeout milliseconds
     - if timeout param is not specified, use ``REGEX_TIMEOUT`` variable
 - now cancel regex methods by SIGINT
+
+### Fixed
+
+- fix help message of builtin read command
 
 ## [0.41.0] - 2026-03-31
 

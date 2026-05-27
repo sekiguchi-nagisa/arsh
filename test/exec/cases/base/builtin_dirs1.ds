@@ -25,7 +25,10 @@ if (test -e /dev/full) {
 }
 
 ## invalid
-assert pushd 2>&1 | grep '^builtin_dirs1.ds:28: pushd: no other directory$'
+assert "$(pushd '' 2>&1)" =~ $/pushd: : No such file or directory/
+assert $? == 1
+
+assert pushd 2>&1 | grep '^builtin_dirs1.ds:31: pushd: no other directory$'
 assert $PIPESTATUS[0] == 1
 
 assert pushd -999999999999999999999 2>&1 | grep ': pushd: -999999999999999999999: invalid number'
@@ -47,7 +50,7 @@ assert $PIPESTATUS[0] == 1
 assert pushd +1 2>&1 | grep ': pushd: /fjreifreiareafr: No such file or directory' 
 assert $PIPESTATUS[0] == 1
 
-assert pushd 2>&1 | grep '^builtin_dirs1.ds:50: pushd: /fjreifreiareafr: No such file or directory' 
+assert pushd 2>&1 | grep '^builtin_dirs1.ds:53: pushd: /fjreifreiareafr: No such file or directory'
 assert $PIPESTATUS[0] == 1
 
 ## truncate DIRSTACK
@@ -61,7 +64,7 @@ assert $DIRSTACK.size() == 255
 
 ## limit
 assert "$(pushd 2>&1 /home)" == 
-    "${$SCRIPT_NAME.basename()}:63: pushd: directory stack size reaches limit (up to 255)"
+    "${$SCRIPT_NAME.basename()}:66: pushd: directory stack size reaches limit (up to 255)"
 
 ## iteration invalidation
 $DIRSTACK.addAll(IFS=$'\n' $(seq 1 10))

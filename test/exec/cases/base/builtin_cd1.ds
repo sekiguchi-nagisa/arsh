@@ -28,13 +28,14 @@ assert "$(cd %25~あああ𩒐.ds 2>&1)" =~ $/cd: %25~あああ𩒐.ds: No such 
 $HOME = ''
 
 cd ~    # if HOME is empty, not change PWD, but OLDPWD is changed
-assert($? == 0)
+assert($? == 1)
 assert($OLDPWD == $PWD)
 
 # empty arg
 cd "$(echo)"    # not change PWD, but OLDPWD is changed
-assert($? == 0)
+assert($? == 1)
 assert($OLDPWD == $PWD)
+assert "$(cd '' 2>&1)" =~ $/cd: : No such file or directory/
 
 # option '-'
 assert("$(cd -)" == $OLDPWD)

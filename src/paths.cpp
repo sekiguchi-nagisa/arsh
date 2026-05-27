@@ -309,17 +309,14 @@ bool changeWorkingDir(std::string &logicalWorkingDir, StringRef dest, const bool
     return false;
   }
 
-  const bool tryChdir = !dest.empty();
   const char *ptr = dest.data();
   std::string actualDest;
-  if (tryChdir) {
-    if (useLogical) {
-      actualDest = expandDots(logicalWorkingDir.c_str(), ptr);
-      ptr = actualDest.c_str();
-    }
-    if (chdir(ptr) != 0) {
-      return false;
-    }
+  if (useLogical) {
+    actualDest = expandDots(logicalWorkingDir.c_str(), ptr);
+    ptr = actualDest.c_str();
+  }
+  if (chdir(ptr) != 0) {
+    return false;
   }
 
   // update OLDPWD
@@ -330,16 +327,14 @@ bool changeWorkingDir(std::string &logicalWorkingDir, StringRef dest, const bool
   setenv(ENV_OLDPWD, oldpwd, 1);
 
   // update PWD
-  if (tryChdir) {
-    if (useLogical) {
-      setenv(ENV_PWD, actualDest.c_str(), 1);
-      logicalWorkingDir = std::move(actualDest);
-    } else {
-      auto cwd = getCWD();
-      if (cwd != nullptr) {
-        setenv(ENV_PWD, cwd.get(), 1);
-        logicalWorkingDir = cwd.get();
-      }
+  if (useLogical) {
+    setenv(ENV_PWD, actualDest.c_str(), 1);
+    logicalWorkingDir = std::move(actualDest);
+  } else {
+    auto cwd = getCWD();
+    if (cwd != nullptr) {
+      setenv(ENV_PWD, cwd.get(), 1);
+      logicalWorkingDir = cwd.get();
     }
   }
   return true;
