@@ -213,9 +213,9 @@ assert $cc2[2] == 6
 
 # shuffle
 assert new [Int]().shuffle() == new [Int]()
-assert [1,2,3, 4].shuffle() != [1,2,3, 4].shuffle()
-assert [1,2,3,4].shuffle() != [1,2,3, 4]
-assert [1,2,3, 4].shuffle(42) == [1,2,3, 4].shuffle(42)  # specify seed
+assert $(seq 1 500).shuffle() != $(seq 1 500).shuffle()
+assert $(seq 1 500).shuffle() != $(seq 1 500)
+assert $(seq 1 500).shuffle(42) == $(seq 1 500).shuffle(42)  # seeded
 
 # inheritance
 assert([34, 43] is Array<Int>)
