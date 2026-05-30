@@ -11,6 +11,7 @@ INSTANTIATE_TEST_SUITE_P(ExecTest, ExecTest,
                              EXEC_TEST_DIR "/cli",
                              EXEC_TEST_DIR "/module",
                              EXEC_TEST_DIR "/syntax",
+                             EXEC_TEST_DIR "/generated",
                          })));
 
 int main(int argc, char **argv) {

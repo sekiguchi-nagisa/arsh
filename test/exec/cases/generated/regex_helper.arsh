@@ -1,0 +1,54 @@
+
+var REGEX_TEST_PASS_COUNT = 0
+
+function assertRegex(pattern: Regex, matches: [String], noMatches: [String]) {
+    assert !$matches.empty() || !$noMatches.empty()
+
+    for m in $matches {
+        assert $pattern =~ $m
+    }
+    for m in $noMatches {
+        assert $pattern !~ $m
+    }
+    $REGEX_TEST_PASS_COUNT++
+}
+
+function _ignoreError(func: ()->Void) {
+    try {
+        try {
+            throw new Error('dummy')
+        } finally {
+            $func()
+        }
+    } catch e {
+        $e.show()
+    }
+}
+
+_main() {
+    $assertRegex($/A/i, ['A', 'a'], new [String]())
+    assert $REGEX_TEST_PASS_COUNT == 1
+    $assertRegex($/A/i, new [String](), ['w', ''])
+    assert $REGEX_TEST_PASS_COUNT == 2
+    $assertRegex($/A/i, ['A', 'a'], ['B', '', 'D'])
+    assert $REGEX_TEST_PASS_COUNT == 3
+
+    $REGEX_TEST_PASS_COUNT = 0
+
+    $_ignoreError(function()=>{
+        $assertRegex($/\w/, new [String](), new [String]())
+    })
+    assert $REGEX_TEST_PASS_COUNT == 0
+
+    $_ignoreError(function()=>{
+        $assertRegex($/\w/, ['A', 'a', '@', 'v'], ['!', ' ', '*'])
+    })
+    assert $REGEX_TEST_PASS_COUNT == 0
+
+    $_ignoreError(function()=>{
+        $assertRegex($/\w/, ['A', 'a', 'v'], ['!', 'E', '*'])
+    })
+    assert $REGEX_TEST_PASS_COUNT == 0
+}
+
+shctl is-sourced || _main

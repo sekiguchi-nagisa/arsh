@@ -98,28 +98,13 @@ protected:
   }
 };
 
-static std::vector<std::string> getTargetCases(const char *dir) {
-  auto real = getRealpath(dir);
-  auto ret = getFileList(real.get(), true);
-  assert(!ret.empty());
-  ret.erase(std::remove_if(ret.begin(), ret.end(),
-                           [](const std::string &v) {
-                             const StringRef ref = v;
-                             return !ref.endsWith(".ds") && !ref.endsWith(".arsh");
-                           }),
-            ret.end());
-  std::sort(ret.begin(), ret.end());
-  ret.erase(std::unique(ret.begin(), ret.end()), ret.end());
-  return ret;
-}
-
 TEST_P(ASTDumpTest, base) {
   printf("@@ test script %s\n", GetParam().c_str());
   ASSERT_NO_FATAL_FAILURE(this->doTest());
 }
 
 INSTANTIATE_TEST_SUITE_P(ASTDumpTest, ASTDumpTest,
-                         ::testing::ValuesIn(getTargetCases(EXEC_TEST_DIR "/base")));
+                         ::testing::ValuesIn(findExecTestCasesFromDir(EXEC_TEST_DIR "/base")));
 
 static std::vector<std::string> getSortedFileList(const char *dir) {
   auto ret = getFileList(dir, true);

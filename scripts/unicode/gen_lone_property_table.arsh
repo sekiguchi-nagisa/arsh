@@ -1,6 +1,6 @@
 #!/usr/bin/env arsh
 
-source ./guniset_helper.arsh
+source $SCRIPT_DIR/guniset_helper.arsh
 
 [<CLI(toplevel:$true)>]
 type _Param() {

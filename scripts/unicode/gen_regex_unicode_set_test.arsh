@@ -1,0 +1,260 @@
+#!/usr/bin/env arsh
+
+source $SCRIPT_DIR/guniset_helper.arsh
+
+[<CLI(toplevel:$true)>]
+type _Param() {
+    [<Arg(required:$true, help: "specify output file")>]
+    var output = ""
+}
+
+function codesToLiteral(codes: [Int]): String {
+    assert (printf -v var '\U%04X' $codes) : "$codes"
+    return "\$'" + $reply['var'] + "'"
+}
+
+function codesToUTF8(codes: [Int]): String? {
+    var literal = $codesToLiteral($codes)
+    return try { $MODULE._func($literal)()! as String as String?; } catch e { $none; }
+}
+
+function escapeUTF8(str: String): String {
+    assert $str.validate()
+    var ret = "$'"
+    for code in $str.codes() {
+        printf -v var '\U%04X' $code
+        $ret += '\U' + $reply['var']
+    }
+    return $ret
+}
+
+let _rand8 = {
+    var ss: [Int]
+    for(var i = 0; $i < 256; $i++) {
+        $ss.add($i)
+    }
+    function() => {
+        $ss.shuffle(42)
+        $ss[0]
+    }
+}
+
+function genCode(): Int {
+    var code = 0
+    while($true) {
+        $code = $_rand8() << 16 or $_rand8() << 8 or $_rand8()
+        $code = $code and ((1 << 21) - 1)
+        if $code <=0x10FFFF && ($code < 0xD800 || $code > 0xDFFF){
+            break
+        }
+    }
+    return $code
+}
+
+function mutateCodes(codes: [Int]) {
+    for(var i = 0; $i < $codes.size(); $i++) {
+        $codes[$i] = $genCode()
+    }
+}
+
+type StrSet {
+    let _map: [String: Bool]   # (utf8, _)
+}
+
+function sample(limit: Int): [(String, String)] for StrSet {
+    var ret: [(String, String)]
+    for k,_ in $this._map {
+        $ret.add(($escapeUTF8($k), $k))
+    }
+    return $ret.shuffle(42).slice(0, $limit < 0 ? 0 : $limit)
+}
+
+function sampleNoExists(limit: Int): [(String, String)] for StrSet {
+    var ret = $this.sample($limit)
+    for(var i = 0; $i < $ret.size(); $i++) {
+        var e = $ret[$i]
+        var n = $e._1
+        var codes = $n.codes()
+        do {
+            $mutateCodes($codes)
+            $n = $codesToUTF8($codes) ?? continue
+        } while $this._map.get($n)
+        $ret[$i] = ($escapeUTF8($n), $n)
+    }
+    return $ret
+}
+
+let _emojiSeqCache: [String: StrSet]
+
+type SetGen {
+    let type: String
+    let ops: [String]
+}
+
+function toSet(): StrSet for SetGen {
+    return case $this.type {
+        'codepoint' => {
+            var map: [String:Bool]
+            for e in <(guniset sample --ratio 10 --format=string -- ${$this.ops[0]}) {
+                $map.put($e, $true)
+            }
+            new StrSet($map)
+        }
+        'list' => {
+            var map: [String: Bool]
+            for e in $this.ops {
+                $map.put($e, $true)
+            }
+            new StrSet($map)
+        }
+        'emoji' => $_emojiSeqCache[$this.ops[0]]
+        else => throw new Error("unsupported: ${this.type}")
+    }
+}
+
+function sampleCodePoints(limit: Int): ([(String, String)], [(String, String)]) for SetGen {
+    assert $this.type == 'codepoint'
+    var matches: [(String, String)]
+    var noMatches: [(String, String)]
+    for e in <(guniset sample --seed 42 --limit $limit -- ${$this.ops[0]}) {
+        var codes = [$e.slice(2).toInt(16)!]
+        $matches.add(($codesToLiteral($codes), $codesToUTF8($codes) ?? continue))
+    }
+    for e in <(guniset sample --seed 42 --limit $limit -- "!(${$this.ops[0]})") {
+        var codes = [$e.slice(2).toInt(16)!]
+        $noMatches.add(($codesToLiteral($codes), $codesToUTF8($codes) ?? continue))
+    }
+    return ($matches, $noMatches)
+}
+
+function set(setop: String): SetGen {
+    return new SetGen('codepoint', [$setop])
+}
+
+function list(ss: [String]): SetGen {
+    return new SetGen('list', $ss)
+}
+
+function emoji(prop: String): SetGen {
+    if !$_emojiSeqCache.get($prop) {
+        var map: [String: Bool]
+        for e in <(guniset strings --format=string -- $prop) {
+            $map.put($e, $true)
+        }
+        $_emojiSeqCache[$prop] = new StrSet($map)
+    }
+    return new SetGen('emoji', [$prop])
+}
+
+function emitCase(p: Regex, macthes: [(String,String)], noMacthes: [(String, String)]) {
+    printf '$assertRegex(\n'
+    printf "\t\$pattern: \$$p,\n"
+    printf "\t\$matches: [\n"
+    printf "\t\t%s,  # %s\n" $macthes
+    printf "\t],\n"
+    printf "\t\$noMatches: [\n"
+    printf "\t\t%s,  # %s\n" $noMacthes
+    printf "\t],\n)\n"
+}
+
+type TestCase {
+    let pattern: Regex
+    let matches: [(String,String)]
+    let noMatches: [(String,String)]
+}
+
+function emit() for TestCase {
+    echo '$assertRegex('
+    printf "\t\$pattern: \$${this.pattern},\n"
+    if $this.matches.empty() {
+        printf "\t\$matches: new [String](),\n"
+    } else {
+        printf "\t\$matches: [\n"
+        printf "\t\t%s,  # %s\n" ${this.matches}
+        printf "\t],\n"
+    }
+    if $this.noMatches.empty() {
+        printf "\t\$noMatches: new [String](),\n"
+    } else {
+        printf "\t\$noMatches: [\n"
+        printf "\t\t%s,  # %s\n" ${this.noMatches}
+        printf "\t],\n"
+    }
+    echo ")"
+}
+
+type TestScript() {
+    let cases: [TestCase]
+}
+
+function emit() for TestScript {
+    echo "#\$test(\$status = 0, \$out = \$'pass: ${$this.cases.size()}\n')"
+    echo
+    echo "# Auto-generated by scripts/unicode/$(basename $ARG0)"
+    echo
+    echo 'source $SCRIPT_DIR/regex_helper.arsh'
+    echo
+    for case in $this.cases {
+        $case.emit()
+    }
+    echo 'echo pass: $REGEX_TEST_PASS_COUNT'
+}
+
+function def(p: Regex, ss: SetGen) for TestScript {
+    case $ss.type {
+        'codepoint' => {
+            var ret = $ss.sampleCodePoints(5)
+            $this.cases.add(new TestCase($p, $matches:$ret._0, $noMatches:$ret._1))
+        }
+        else => {
+            var strSet = $ss.toSet()
+            $this.cases.add(new TestCase($p, $matches:$strSet.sample(5), $noMatches:$strSet.sampleNoExists(5)))
+        }
+    }
+}
+
+type TestScripts() {
+    let scripts: [String:TestScript]
+}
+
+function testScript(name: String, builder: (TestScript)-> Void) for TestScripts {
+    var script = new TestScript()
+    $builder($script)
+    assert !$this.scripts.put($name, $script)
+}
+
+
+let _builder = function(tss: TestScripts) => {
+    $tss.testScript('regex_unicode_property_gc.arsh', function(ts: TestScript)=>{
+        for line in <(guniset enum gc) {
+            for cat in $line.split(', ') {
+                $ts.def(new Regex("^[\\p{$cat}]\$", 'u'), $set("gc:$cat"))
+            }
+        }
+    })
+    $tss.testScript('regex_unicode_property_sc.arsh', function(ts: TestScript)=>{
+        for line in <(guniset enum sc) {
+            for cat in $line.split(', ') {
+                $ts.def(new Regex("^[\\p{Script=$cat}]\$", 'u'), $set("sc:$cat"))
+            }
+        }
+    })
+    $tss.testScript('regex_unicode_property_scx.arsh', function(ts: TestScript)=>{
+        for line in <(guniset enum sc) {
+            for cat in $line.split(', ') {
+                $ts.def(new Regex("^[\\p{Script_Extensions=$cat}]\$", 'u'), $set("scx:$cat"))
+            }
+        }
+    })
+}
+
+
+_main(param : _Param) {
+    var scripts: TestScripts
+    $_builder($scripts)
+    for name, script in $scripts.scripts {
+        $script.emit() with > ${param.output}/$name
+    }
+}
+
+shctl is-sourced || _main $@

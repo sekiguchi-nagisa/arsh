@@ -14,7 +14,7 @@ $param.parse($@)
 let out = $param.output
 write() { echo $@ >> $out; }
 
-source ./guniset_helper.arsh
+source $SCRIPT_DIR/guniset_helper.arsh
 
 shctl set errraise
 

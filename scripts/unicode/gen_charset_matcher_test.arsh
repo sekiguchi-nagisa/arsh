@@ -6,7 +6,7 @@ type _Param() {
     var output = ""
 }
 
-source ./guniset_helper.arsh
+source $SCRIPT_DIR/guniset_helper.arsh
 
 shctl set errraise
 

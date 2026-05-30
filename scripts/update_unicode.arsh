@@ -56,3 +56,6 @@ call $BIN_NAME $SCRIPT_DIR/unicode/gen_property_test.arsh --type=cpp $test/unico
 
 echo try to update $test/regex/charset_matcher_test.in
 call $BIN_NAME $SCRIPT_DIR/unicode/gen_charset_matcher_test.arsh $test/regex/charset_matcher_test.in
+
+echo try to update $test/exec/cases/generated
+call $BIN_NAME $SCRIPT_DIR/unicode/gen_regex_unicode_set_test.arsh $test/exec/cases/generated
