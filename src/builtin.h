@@ -1881,6 +1881,15 @@ ARSH_METHOD array_sortBy(RuntimeContext &ctx) {
   RET_ERROR;
 }
 
+//!bind: function shuffle($this: Array<T0>): Array<T0>
+ARSH_METHOD array_shuffle(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(array_shuffle);
+  auto &obj = typeAs<ArrayObject>(LOCAL(0));
+  CHECK_ITER_INVALIDATION(obj);
+  std::shuffle(obj.begin(), obj.end(), ctx.getRng());
+  RET(LOCAL(0));
+}
+
 //!bind: function searchSorted($this: Array<T0>, $target: T0): Int where T0 : Ord_
 ARSH_METHOD array_search(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_search);

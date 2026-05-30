@@ -211,6 +211,11 @@ assert $cc2[0] == 3
 assert $cc2[1] == 4
 assert $cc2[2] == 6
 
+# shuffle
+assert new [Int]().shuffle() == new [Int]()
+assert [1,2,3, 4].shuffle() != [1,2,3, 4].shuffle()
+assert [1,2,3,4].shuffle() != [1,2,3, 4]
+
 # inheritance
 assert([34, 43] is Array<Int>)
 assert([34] is Any)

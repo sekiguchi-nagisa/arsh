@@ -13,6 +13,7 @@
     - ``codes``: split string into a code point array
     - ``escapeGlob``: escape glob meta characters
     - ``escapeRegex``: escape regex meta characters
+- add ``Array#shuffle`` method
 
 ### Changed
 

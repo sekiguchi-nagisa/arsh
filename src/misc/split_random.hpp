@@ -40,6 +40,8 @@ private:
   uint64_t x1;
 
 public:
+  using result_type = uint64_t;
+
   explicit L64X128MixRNG(uint64_t seed) : L64X128MixRNG(seed, 42, 42, 42) {}
 
   L64X128MixRNG(uint64_t a, uint64_t s, uint64_t x0, uint64_t x1)
@@ -83,6 +85,12 @@ public:
     uint64_t xx1 = this->next();
     return {aa, ss, xx0, xx1};
   }
+
+  uint64_t operator()() { return this->next(); }
+
+  static constexpr uint64_t max() { return UINT64_MAX; }
+
+  static constexpr uint64_t min() { return 0; }
 
 private:
   static uint64_t rotateLeft(uint64_t x, unsigned int k) { return (x << k) | (x >> (64 - k)); }
