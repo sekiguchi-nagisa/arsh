@@ -256,11 +256,7 @@ const SignalEntry *findSignalEntryByName(StringRef ref) {
 }
 
 const SignalEntry *findSignalEntryByNum(int sigNum) {
-  static constexpr SignalEntry dummy = {
-      .abbrName = "0",
-      .kind = SignalEntry::Kind::OTHER,
-      .sigNum = 0,
-  };
+  static constexpr SignalEntry dummy = {"0", SignalEntry::Kind::OTHER, 0};
   if (sigNum == 0) {
     return &dummy;
   }
