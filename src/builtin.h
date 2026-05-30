@@ -1239,24 +1239,25 @@ ARSH_METHOD string_dequote(RuntimeContext &ctx) {
   RET(Value::createStr(std::move(ret)));
 }
 
-//!bind: function escape($this: String, $type: String): String
-ARSH_METHOD string_escape(RuntimeContext &ctx) {
-  SUPPRESS_WARNING(string_escape);
+//!bind: function escapeGlob($this: String): String
+ARSH_METHOD string_escapeGlob(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(string_escapeGlob);
   auto ref = LOCAL(0).asStrRef();
-  auto type = LOCAL(1).asStrRef();
   std::string ret;
-  if (type == "glob") {
-    if (!appendAndEscapeGlobMeta(ref, StringObject::MAX_SIZE, ret)) {
-      raiseStringLimit(ctx);
-      RET_ERROR;
-    }
-  } else if (type == "regex") {
-    if (!regex::escape(ref, StringObject::MAX_SIZE, ret)) {
-      raiseStringLimit(ctx);
-      RET_ERROR;
-    }
-  } else {
-    raiseError(ctx, TYPE::ArgumentError, "escape type must be `glob' or `regex'");
+  if (!appendAndEscapeGlobMeta(ref, StringObject::MAX_SIZE, ret)) {
+    raiseStringLimit(ctx);
+    RET_ERROR;
+  }
+  RET(Value::createStr(std::move(ret)));
+}
+
+//!bind: function escapeRegex($this: String): String
+ARSH_METHOD string_escapeRegex(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(string_escapeGlob);
+  auto ref = LOCAL(0).asStrRef();
+  std::string ret;
+  if (!regex::escape(ref, StringObject::MAX_SIZE, ret)) {
+    raiseStringLimit(ctx);
     RET_ERROR;
   }
   RET(Value::createStr(std::move(ret)));

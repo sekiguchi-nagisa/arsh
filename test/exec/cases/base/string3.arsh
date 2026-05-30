@@ -1,24 +1,17 @@
 
 # for escape
-## invalid
-var ex = 2345 as Any
-try { assert "**".escape('') == ''; } catch e { $ex = $e; }
-assert ($ex as ArgumentError).message() == "escape type must be \`glob' or \`regex'"
-
-$ex = 2345
-try { assert "**".escape('hhh') == ''; } catch e { $ex = $e; }
-assert ($ex as ArgumentError).message() == "escape type must be \`glob' or \`regex'"
-
 ## glob
-assert "**/*.txt".escape('glob') == '\*\*/\*.txt'
-assert "t?".escape('glob') == 't\?'
-assert '[a-v]*'.escape('glob') == '\[a\-v\]\*'
-assert '[^a-v][!a]?'.escape('glob') == '\[\^a\-v\]\[\!a\]\?'
+assert "**/*.txt".escapeGlob() == '\*\*/\*.txt'
+assert "t?".escapeGlob() == 't\?'
+assert '[a-v]*'.escapeGlob() == '\[a\-v\]\*'
+assert '[^a-v][!a]?'.escapeGlob() == '\[\^a\-v\]\[\!a\]\?'
+assert '!'.escapeGlob() == '\!'
 
 ## regex
-assert '^.*?$'.escape('regex') == '\^\.\*\?\$'
-assert 'hello!!'.escape('regex') == '\x68ello\x21\x21'
-assert '[^A-z]*'.escape('regex') == '\[\^A\x2dz\]\*'
+assert '^.*?$'.escapeRegex() == '\^\.\*\?\$'
+assert 'hello!!'.escapeRegex() == '\x68ello\x21\x21'
+assert '[^A-z]*'.escapeRegex() == '\[\^A\x2dz\]\*'
+assert '!'.escapeRegex() == '\x21'
 
 ## too large result
 var large = "!"
@@ -26,10 +19,10 @@ for(var i = 0; $i < 30; $i++) {
     $large += $large
 }
 
-$ex = 2345
-try { assert $large.escape('glob') == ''; } catch e { $ex = $e; }
+var ex = 23 as Any
+try { assert $large.escapeGlob() == ''; } catch e { $ex = $e; }
 assert ($ex as OutOfRangeError).message() == "reach String size limit"
 
 $ex = 2345
-try { assert $large.escape('regex') == ''; } catch e { $ex = $e; }
+try { assert $large.escapeRegex() == ''; } catch e { $ex = $e; }
 assert ($ex as OutOfRangeError).message() == "reach String size limit"

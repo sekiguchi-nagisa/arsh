@@ -203,7 +203,9 @@ function quote(cmd: Bool?): String for String
 
 function dequote(): String for String
 
-function escape(type: String): String for String
+function escapeGlob(): String for String
+
+function escapeRegex(): String for String
 ```
 
 ## FD type
