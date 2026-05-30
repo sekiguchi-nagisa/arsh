@@ -165,7 +165,8 @@ std::pair<std::string, std::string> InteractiveShellBase::readAll() {
 std::vector<std::string> findExecTestCasesFromDirs(const std::vector<std::string> &dirs) {
   std::vector<std::string> values;
   for (auto &dir : dirs) {
-    auto ret = getFileList(dir.c_str(), true);
+    auto real = getRealpath(dir.c_str());
+    auto ret = getFileList(real.get(), true);
     assert(!ret.empty());
     ret.erase(std::remove_if(ret.begin(), ret.end(),
                              [](const std::string &v) {
