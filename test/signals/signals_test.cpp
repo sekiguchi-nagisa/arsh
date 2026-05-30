@@ -121,6 +121,8 @@ TEST(Signal, base) {
   ASSERT_EQ(SIGTSTP, findSignalEntryByName("tStP")->sigNum);
   ASSERT_EQ(SIGTSTP, findSignalEntryByName("SigTStp")->sigNum);
   ASSERT_EQ(nullptr, findSignalEntryByName("HOGED"));
+  ASSERT_EQ(nullptr, findSignalEntryByName("0"));
+  ASSERT_EQ(nullptr, findSignalEntryByName("EXIT"));
 
   char b[] = "INT\0";
   ASSERT_EQ(nullptr, findSignalEntryByName(StringRef(b, std::size(b) - 1)));
@@ -129,6 +131,8 @@ TEST(Signal, base) {
   ASSERT_STREQ("SEGV", findSignalEntryByNum(SIGSEGV)->abbrName);
   ASSERT_EQ(nullptr, findSignalEntryByNum(-12));
   ASSERT_EQ("SIGUSR2", findSignalEntryByNum(SIGUSR2)->toFullName());
+
+  ASSERT_STREQ("0", findSignalEntryByNum(0)->abbrName);
 }
 
 TEST(Signal, sigset) {

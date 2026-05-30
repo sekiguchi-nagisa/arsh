@@ -64,12 +64,18 @@ assert { kill -l 1 hup; $?; } == 0
 assert "$(kill -l 9)" == 'KILL'
 assert "$(kill -l 00009)" == 'KILL'
 
+assert "$(kill -l 0)" == "0"
+assert "$(kill -l 127 2>&1)" =~ $/kill: 127: invalid signal specification/
+assert "$(kill -l 128)" == "0"
+assert "$(kill -l 129)" == "HUP"
+assert "$(kill -l 137)" == "KILL"
+
 assert "$(kill -l 9999999999999999999999999999999 2>&1)" == 
-       "${$SCRIPT_NAME.basename()}:67: kill: 9999999999999999999999999999999: invalid signal specification"
+       "${$SCRIPT_NAME.basename()}:73: kill: 9999999999999999999999999999999: invalid signal specification"
 assert {kill -l 9999999999999999999999999999999; $?} == 1
 
 assert "$(kill -l 9 hoge 1 2>&1)" == "KILL
-${$SCRIPT_NAME.basename()}:71: kill: hoge: invalid signal specification
+${$SCRIPT_NAME.basename()}:77: kill: hoge: invalid signal specification
 HUP"
 assert {kill -l 9 hoge 1; $?} == 1
 
@@ -85,7 +91,7 @@ if (test -e /dev/full) {
 
 
 # kill specified proc
-assert "$(kill hoge 2>&1)" == "${$SCRIPT_NAME.basename()}:88: kill: hoge: arguments must be pid or job id"
+assert "$(kill hoge 2>&1)" == "${$SCRIPT_NAME.basename()}:94: kill: hoge: arguments must be pid or job id"
 assert { kill hoge; $?; } == 1
 
 var j = for(;;) { true; } &
@@ -98,7 +104,7 @@ $j = for(;;) { true; } &
 kill -9 ${$j.pid(0)!}
 assert $? == 0
 assert $j.wait() == 128 + $SIGKILL.value()
-assert "$(kill -9 999999999 2>&1)" == "${$SCRIPT_NAME.basename()}:101: kill: 999999999: No such process"
+assert "$(kill -9 999999999 2>&1)" == "${$SCRIPT_NAME.basename()}:107: kill: 999999999: No such process"
 assert { kill -9 999999999; $?; } == 1
 
 $j = for(;;) { true; } &
@@ -106,17 +112,30 @@ assert { kill -9 999999999 ${$j.pid(0)!}; $?; } == 0
 assert $j.wait() == 128 + $SIGKILL.value()
 
 # kill specified job
-assert "$(kill %-456 2>&1)" == "${$SCRIPT_NAME.basename()}:109: kill: %-456: no such job"
+assert "$(kill %-456 2>&1)" == "${$SCRIPT_NAME.basename()}:115: kill: %-456: no such job"
 assert { kill %-234; $?; } == 1
 
-assert "$(kill %hoge 2>&1)" == "${$SCRIPT_NAME.basename()}:112: kill: %hoge: arguments must be pid or job id"
+assert "$(kill %hoge 2>&1)" == "${$SCRIPT_NAME.basename()}:118: kill: %hoge: arguments must be pid or job id"
 assert { kill %hoge; $?; } == 1
 
 $j = for(;;) { true; } &
-assert "$(kill -9 $j 2>&1)".startsWith("${$SCRIPT_NAME.basename()}:116: kill: $j: ")  # not kill parent process job
+assert "$(kill -9 $j 2>&1)".startsWith("${$SCRIPT_NAME.basename()}:122: kill: $j: ")  # not kill parent process job
 assert $? == 1
 assert { kill -9 $j; $?; } == 0
 assert $j.wait() == 128 + $SIGKILL.value()
+
+$j = for(;;) { true; } &
+kill -0 ${$j.pid(0)!}
+assert $? == 0
+assert $j.poll()
+kill -0 $j
+assert $? == 0
+assert $j.poll()
+kill -9 $j
+assert $? == 0
+assert $j.wait() == 128 + $SIGKILL.value()
+assert "$(kill -0 999999999 2>&1)" =~ $/kill: 999999999: No such process/
+assert $? == 1
 
 # help
 assert help kill | grep '^kill: kill \[-s signal] pid | jobspec ... or kill -l \[signal...]'

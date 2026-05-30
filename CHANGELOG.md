@@ -29,6 +29,9 @@
     - now specify match timeout milliseconds
     - if timeout param is not specified, use ``REGEX_TIMEOUT`` variable
 - now cancel regex methods by SIGINT
+- fix signal number handling of builtin kill command like other shell
+    - accept `0` signal number (do nothing)
+    - ``-l`` option also accept exit status
 
 ### Fixed
 

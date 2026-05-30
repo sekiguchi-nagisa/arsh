@@ -20,7 +20,7 @@
 
 namespace arsh {
 
-// job control related builtin commands
+// job-control-related builtin commands
 
 static auto toInt32(StringRef str) { return convertToNum10<int32_t>(str.begin(), str.end()); }
 
@@ -38,15 +38,20 @@ static const SignalEntry *findSig(StringRef ref) {
 static bool printNumOrName(StringRef str, int &errNum) {
   std::string value;
   if (!str.empty() && isDecimal(*str.data())) {
-    const auto ret = toInt32(str);
-    if (!ret) {
+    int num = 0;
+    if (const auto ret = toInt32(str)) {
+      num = ret.value;
+    } else {
       return false;
     }
-    auto *e = findSignalEntryByNum(ret.value);
-    if (e == nullptr) {
+    if (num >= WaitResult::SIGNALED_STATUS_OFFSET) {
+      num -= WaitResult::SIGNALED_STATUS_OFFSET;
+    }
+    if (auto *e = findSignalEntryByNum(num)) {
+      value = e->abbrName;
+    } else {
       return false;
     }
-    value = e->abbrName;
   } else {
     auto *e = findSignalEntryByName(str);
     if (!e) {
