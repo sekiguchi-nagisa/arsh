@@ -10,6 +10,7 @@
 - add ``String#escape`` method for escaping meta-characters of glob and regex patterns
 - add ``Regex#isUnicodeSet`` method. if specified `v` flag, return true
 - support Unicode set mode via ``v`` flag
+- add ``String#codes`` method for split string into a code point array
 
 ### Changed
 

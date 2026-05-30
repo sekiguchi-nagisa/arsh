@@ -655,6 +655,27 @@ ARSH_METHOD string_bytes(RuntimeContext &ctx) {
   RET(value);
 }
 
+//!bind: function codes($this: String): Array<Int>
+ARSH_METHOD string_codes(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(string_codes);
+  auto ref = LOCAL(0).asStrRef();
+  auto value = Value::create<ArrayObject>(ctx.typePool.get(TYPE::IntArray));
+  auto &array = typeAs<ArrayObject>(value);
+  const auto end = ref.end();
+  for (auto iter = ref.begin(); iter != end;) {
+    int code = 0;
+    if (unsigned int len = UnicodeUtil::utf8ToCodePoint(iter, end, code)) {
+      iter += len;
+    } else {
+      code = static_cast<unsigned char>(*iter);
+      iter += 1;
+    }
+    array.append(Value::createInt(code)); // not check iterator invalidation
+  }
+  ASSERT_ARRAY_SIZE(array);
+  RET(value);
+}
+
 //!bind: function chars($this : String, $replace: Option<Bool>) : Array<String>
 ARSH_METHOD string_chars(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_chars);

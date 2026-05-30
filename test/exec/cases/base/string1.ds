@@ -245,6 +245,16 @@ $bytes = $'\xFE\xFA'.bytes() # get raw bytes even if bad encoding
 assert $bytes.size() == 2
 assert $bytes == [0xFE, 0xFA]
 
+var codes = "".codes()
+assert $codes.empty()
+$codes = $'@\x00'.codes()
+assert $codes.size() == 2
+assert $codes[0] == 0x40
+assert $codes[1] == 0
+$codes = $'\xFE\xFA'.codes()
+assert $codes.size() == 2
+assert $codes == [0xFE, 0xFA]
+
 var gca = "あ👨‍👨‍👦い🌏う90🇯🇵".chars()
 assert $gca.size() == 8
 assert $gca[0] == 'あ'

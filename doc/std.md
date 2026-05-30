@@ -145,6 +145,8 @@ function count(): Int for String
 
 function bytes(): [Int] for String
 
+function codes(): [Int] for String
+
 function chars(replace: Bool?): [String] for String
 
 function words(replace: Bool?): [String] for String
