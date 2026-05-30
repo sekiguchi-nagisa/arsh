@@ -486,7 +486,7 @@ function sort(): [T0] where T0 : Ord_ for [T0]
 
 function sortBy(comp: (T0, T0) -> Int): [T0] for [T0]
 
-function shuffle(): [T0] for [T0]
+function shuffle(seed: Int?): [T0] for [T0]
 
 function searchSorted(target: T0): Int where T0 : Ord_ for [T0]
 

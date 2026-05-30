@@ -1881,12 +1881,14 @@ ARSH_METHOD array_sortBy(RuntimeContext &ctx) {
   RET_ERROR;
 }
 
-//!bind: function shuffle($this: Array<T0>): Array<T0>
+//!bind: function shuffle($this: Array<T0>, $seed: Option<Int>): Array<T0>
 ARSH_METHOD array_shuffle(RuntimeContext &ctx) {
   SUPPRESS_WARNING(array_shuffle);
   auto &obj = typeAs<ArrayObject>(LOCAL(0));
   CHECK_ITER_INVALIDATION(obj);
-  std::shuffle(obj.begin(), obj.end(), ctx.getRng());
+  const auto seed = LOCAL(1).isInvalid() ? ctx.getRng().next() : LOCAL(1).asInt();
+  L64X128MixRNG rng(seed);
+  std::shuffle(obj.begin(), obj.end(), rng);
   RET(LOCAL(0));
 }
 

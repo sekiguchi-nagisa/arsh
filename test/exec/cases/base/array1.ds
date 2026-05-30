@@ -215,6 +215,7 @@ assert $cc2[2] == 6
 assert new [Int]().shuffle() == new [Int]()
 assert [1,2,3, 4].shuffle() != [1,2,3, 4].shuffle()
 assert [1,2,3,4].shuffle() != [1,2,3, 4]
+assert [1,2,3, 4].shuffle(42) == [1,2,3, 4].shuffle(42)  # specify seed
 
 # inheritance
 assert([34, 43] is Array<Int>)
