@@ -140,7 +140,7 @@ private:
 
   bool has(Modifier m) const { return hasFlag(this->modifiers(), m); }
 
-  bool toCodePointSet(ucp::BuilderOrSet builderOrSet, const PropertyNode &node) const;
+  void toCodePointSet(ucp::BuilderOrSet builderOrSet, const PropertyNode &node) const;
 
   void generateStrSet(StrSetBuilder &setBuilder, unsigned int level, const Node &node) const;
 

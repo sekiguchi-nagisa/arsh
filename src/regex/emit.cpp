@@ -503,7 +503,7 @@ static bool intoCharRange(const CharClassNode &node, unsigned int offset, Func f
   return false;
 }
 
-bool CodeGen::toCodePointSet(ucp::BuilderOrSet builderOrSet, const PropertyNode &node) const {
+void CodeGen::toCodePointSet(ucp::BuilderOrSet builderOrSet, const PropertyNode &node) const {
   switch (node.getNormalizedType()) {
   case PropertyNode::Type::RANGE:
   case PropertyNode::Type::INTERSECT:
@@ -517,18 +517,21 @@ bool CodeGen::toCodePointSet(ucp::BuilderOrSet builderOrSet, const PropertyNode 
     assert(false);
     break; // normally unreachable
   case PropertyNode::Type::DIGIT:
-    return ucp::getPropertySet(ucp::Property::lone(ucp::Lone::ESRegexClassDigit), builderOrSet);
+    ucp::getPropertySet(ucp::Property::lone(ucp::Lone::ESRegexClassDigit), builderOrSet);
+    break;
   case PropertyNode::Type::WORD: {
     const auto p = this->has(Modifier::IGNORE_CASE) ? ucp::Lone::ESRegexClassExtendWord
                                                     : ucp::Lone::ESRegexClassWord;
-    return ucp::getPropertySet(ucp::Property::lone(p), builderOrSet);
+    ucp::getPropertySet(ucp::Property::lone(p), builderOrSet);
+    break;
   }
   case PropertyNode::Type::SPACE:
-    return ucp::getPropertySet(ucp::Property::lone(ucp::Lone::ESRegexClassSpace), builderOrSet);
+    ucp::getPropertySet(ucp::Property::lone(ucp::Lone::ESRegexClassSpace), builderOrSet);
+    break;
   case PropertyNode::Type::UNICODE:
-    return ucp::getPropertySet(node.getUCP(), builderOrSet);
+    ucp::getPropertySet(node.getUCP(), builderOrSet);
+    break;
   }
-  return true;
 }
 
 static AsciiSet foldCase(const AsciiSet set) {
@@ -591,10 +594,7 @@ bool CodeGen::generateProperty(const PropertyNode &node) {
     CodePointSet set;
     CodePointSetBuilder setBuilder;
     const bool useBuilder = node.isInvert() || this->has(Modifier::IGNORE_CASE);
-    const bool r = this->toCodePointSet(
-        useBuilder ? ucp::BuilderOrSet(setBuilder) : ucp::BuilderOrSet(set), node);
-    assert(r);
-    static_cast<void>(r);
+    this->toCodePointSet(useBuilder ? ucp::BuilderOrSet(setBuilder) : ucp::BuilderOrSet(set), node);
     if (useBuilder) {
       this->mayBeSimpleCaseFolding(setBuilder);
       if (node.isInvert()) {
@@ -637,9 +637,7 @@ void CodeGen::generateStrSet(StrSetBuilder &setBuilder, const unsigned int level
     const bool useSubBuilder = p.isInvert() || this->has(Modifier::IGNORE_CASE);
     StrSetBuilder subBuilder(this->has(Modifier::IGNORE_CASE));
     StrSetBuilder *builderPtr = useSubBuilder ? &subBuilder : &setBuilder;
-    const bool r = this->toCodePointSet(ucp::BuilderOrSet(builderPtr->codePoints), p);
-    assert(r);
-    static_cast<void>(r);
+    this->toCodePointSet(ucp::BuilderOrSet(builderPtr->codePoints), p);
     if (useSubBuilder) {
       this->mayBeSimpleCaseFolding(subBuilder.codePoints);
       if (p.isInvert()) {
