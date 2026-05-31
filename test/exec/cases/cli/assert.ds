@@ -27,6 +27,15 @@ binary expression \`<LHS> =~ <RHS>' is false
 $expect("$(ds -c 'assert $OSTYPE =~ $/mac/ : "failed"' 2>&1)", 1, $msg)
 
 $msg = "[runtime error]
+AssertionFailed: failed
+binary expression \`<LHS> !~ <RHS>' is false
+  <LHS>: String = $OSTYPE
+  <RHS>: Regex = /.*/u
+    from (string):1 '<toplevel>()'"
+
+$expect("$(ds -c 'assert $OSTYPE !~ $/.*/ : "failed"' 2>&1)", 1, $msg)
+
+$msg = "[runtime error]
 AssertionFailed: not Error type
 binary expression \`<EXPR> is <TYPE>' is false
   <EXPR>: Int
@@ -54,13 +63,13 @@ binary expression \`<LHS> == <RHS>' is false
 $expect("$(ds -c 'assert 34 == 43' 2>&1)", 1, $msg)
 
 $msg = "[runtime error]
-AssertionFailed: \`\$SIG_DFL == \$SIG_IGN'
-binary expression \`<LHS> == <RHS>' is false
+AssertionFailed: \`\$SIG_DFL != \$SIG_DFL'
+binary expression \`<LHS> != <RHS>' is false
   <LHS>: (Signal) -> Void = function(SIG_DFL)
-  <RHS>: (Signal) -> Void = function(SIG_IGN)
+  <RHS>: (Signal) -> Void = function(SIG_DFL)
     from (string):1 '<toplevel>()'"
 
-$expect("$(ds -c 'assert $SIG_DFL == $SIG_IGN' 2>&1)", 1, $msg)
+$expect("$(ds -c 'assert $SIG_DFL != $SIG_DFL' 2>&1)", 1, $msg)
 
 $msg = "[runtime error]
 AssertionFailed: \`(\"\") as Any is Float'

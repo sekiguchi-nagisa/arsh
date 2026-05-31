@@ -17,7 +17,6 @@
 #ifndef ARSH_SYMBOL_H
 #define ARSH_SYMBOL_H
 
-#include <cstddef>
 #include <cstdint>
 
 #include "misc/flag_util.hpp"
@@ -439,9 +438,11 @@ inline const char *toString(ExpandMeta meta) {
 
 enum class AssertOp : unsigned char {
   DEFAULT,
-  EQ,    // ==
-  MATCH, // =~
-  IS,    // is
+  EQ,      // ==
+  NE,      // !=
+  MATCH,   // =~
+  UNMATCH, // !~
+  IS,      // is
 };
 
 inline const char *toString(AssertOp op) {
@@ -449,11 +450,15 @@ inline const char *toString(AssertOp op) {
   case AssertOp::DEFAULT:
     return "DEFAULT";
   case AssertOp::EQ:
-    return "EQ";
+    return "==";
+  case AssertOp::NE:
+    return "!=";
   case AssertOp::MATCH:
-    return "MATCH";
+    return "=~";
+  case AssertOp::UNMATCH:
+    return "!~";
   case AssertOp::IS:
-    return "IS";
+    return "is";
   }
   return "";
 }

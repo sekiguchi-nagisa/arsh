@@ -1268,6 +1268,23 @@ void TypeChecker::visitForkNode(ForkNode &node) {
   node.setType(*type);
 }
 
+static AssertOp resolveAssertOp(TokenKind kind) {
+  switch (kind) {
+  case TokenKind::EQ:
+    return AssertOp::EQ;
+  case TokenKind::NE:
+    return AssertOp::NE;
+  case TokenKind::MATCH:
+    return AssertOp::MATCH;
+  case TokenKind::UNMATCH:
+    return AssertOp::UNMATCH;
+  case TokenKind::IS:
+    return AssertOp::IS;
+  default:
+    return AssertOp::DEFAULT;
+  }
+}
+
 void TypeChecker::visitAssertNode(AssertNode &node) {
   this->checkTypeWithCoercion(this->typePool().get(TYPE::Bool), node.refCondNode());
   this->checkType(this->typePool().get(TYPE::String), node.getMessageNode());
@@ -1275,11 +1292,7 @@ void TypeChecker::visitAssertNode(AssertNode &node) {
     auto &binaryNode = cast<BinaryOpNode>(node.getCondNode());
     if (isa<ApplyNode>(binaryNode.getOptNode())) {
       auto &applyNode = cast<ApplyNode>(*binaryNode.getOptNode());
-      const auto opKind = binaryNode.getOp();
-      const auto op = opKind == TokenKind::EQ      ? AssertOp::EQ
-                      : opKind == TokenKind::MATCH ? AssertOp::MATCH
-                                                   : AssertOp::DEFAULT;
-      applyNode.setAssertOp(op);
+      applyNode.setAssertOp(resolveAssertOp(binaryNode.getOp()));
     }
   } else if (isa<TypeOpNode>(node.getCondNode())) {
     if (auto &typeOpNode = cast<TypeOpNode>(node.getCondNode());

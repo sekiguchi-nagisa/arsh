@@ -23,6 +23,7 @@
     - now regex syntax and semantics are compatible with ECMAScript regular expression (ES2025)
     - enable Unicode mode by default
 - optimize simple case folding
+- improve the assert error message of ``!=``, ``!~`` binary expression
 
 #### Builtin
 

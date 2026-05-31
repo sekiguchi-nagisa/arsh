@@ -118,9 +118,11 @@ void raiseAssertFail(ARState &st, Value &&msg, const AssertOp op, Value &&left, 
   case AssertOp::DEFAULT:
     break;
   case AssertOp::EQ:
-  case AssertOp::MATCH: {
+  case AssertOp::NE:
+  case AssertOp::MATCH:
+  case AssertOp::UNMATCH: {
     value += "\nbinary expression `<LHS> ";
-    value += op == AssertOp::EQ ? "==" : "=~";
+    value += toString(op);
     value += " <RHS>' is false\n";
     value += "  <LHS>: ";
     value += st.typePool.get(left.getTypeID()).getNameRef();
