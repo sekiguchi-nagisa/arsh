@@ -174,7 +174,7 @@ void CodePointSetBuilder::remove(const ArrayRef<std::pair<int, int>> targetRange
   std::vector<std::pair<int, int>> newRanges;
 
   unsigned int index = 0;
-  for (const auto [first, last] : this->codePointRanges) {
+  for (const auto &[first, last] : this->codePointRanges) {
     int cur = first;
     while (cur <= last) {
       while (index < targetRanges.size() && cur > targetRanges[index].second) {
