@@ -84,7 +84,13 @@ public:
 private:
   void removeBy(bool compact, const std::function<bool(int)> &func);
 
-  void remove(CodePointSetRef ref, bool negate);
+  /**
+   * remove codepoints from ranges
+   * @param ref
+   * @param invert
+   * if true, invert remove (intersect)
+   */
+  void remove(CodePointSetRef ref, bool invert);
 
   void sortAndCompact(); // TODO: lazy compaction
 };

@@ -163,14 +163,53 @@ void CodePointSetBuilder::removeBy(const bool compact, const std::function<bool(
   }
 }
 
-void CodePointSetBuilder::remove(const CodePointSetRef ref, const bool negate) {
-  this->removeBy(true, [&ref, negate](int codePoint) {
-    bool r = ref.contains(codePoint);
-    if (negate) {
-      r = !r;
+void CodePointSetBuilder::remove(const CodePointSetRef ref, const bool invert) {
+  CodePointSetBuilder refBuilder;
+  refBuilder.add(ref);
+  const ArrayRef refRanges(refBuilder.getCodePointRanges().data(),
+                           refBuilder.getCodePointRanges().size());
+  std::vector<std::pair<int, int>> newRanges;
+
+  unsigned int refIndex = 0;
+  for (const auto [first, last] : this->codePointRanges) {
+    int cur = first;
+    while (cur <= last) {
+      while (refIndex < refRanges.size() && cur > refRanges[refIndex].second) {
+        refIndex++;
+      }
+      if (refIndex == refRanges.size() || last < refRanges[refIndex].first) { // not within range
+        if (!invert) {
+          newRanges.emplace_back(cur, last);
+        }
+        break;
+      }
+      /**
+       * overlap range
+       *
+       * (cur, last)=(12, 50), range=(10, 30) -> overlap=(12, 30)
+       * => if invert==false, (31, 50)
+       * => if invert==true, (12, 30)
+       * (cur, last)=(12, 50), range=(20, 30) -> overlap=(20, 30)
+       * => if invert==false, (12, 19), (31, 50)
+       * => if invert==true, (20, 30)
+       * (cur, last)=(12, 50), range=(20, 60) -> overlap=(20, 50)
+       * => if invert==false, (12, 19)
+       * => if invert==true, (20, 50)
+       */
+      int overlapFirst = std::max(cur, refRanges[refIndex].first);
+      int overlapLast = std::min(last, refRanges[refIndex].second);
+      if (invert) {
+        newRanges.emplace_back(overlapFirst, overlapLast);
+      } else if (cur < overlapFirst) {
+        newRanges.emplace_back(cur, overlapFirst - 1);
+      }
+      cur = overlapLast + 1;
+      if (refRanges[refIndex].second <= last) {
+        refIndex++;
+      }
     }
-    return r;
-  });
+  }
+  this->codePointRanges = std::move(newRanges);
 }
 
 void CodePointSetBuilder::foldCase() {
