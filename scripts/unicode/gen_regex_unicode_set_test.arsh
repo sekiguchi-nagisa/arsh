@@ -1,6 +1,7 @@
 #!/usr/bin/env arsh
 
 source $SCRIPT_DIR/guniset_helper.arsh
+source $SCRIPT_DIR/gen_lone_property_table.arsh as _lone_table
 
 [<CLI(toplevel:$true)>]
 type _Param() {
@@ -20,12 +21,7 @@ function codesToUTF8(codes: [Int]): String? {
 
 function escapeUTF8(str: String): String {
     assert $str.validate()
-    var ret = "$'"
-    for code in $str.codes() {
-        printf -v var '\U%04X' $code
-        $ret += '\U' + $reply['var']
-    }
-    return $ret
+    return $codesToLiteral($str.codes())
 }
 
 let _rand8 = {
@@ -118,11 +114,11 @@ function sampleCodePoints(limit: Int): ([(String, String)], [(String, String)]) 
     var noMatches: [(String, String)]
     for e in <(guniset sample --seed 42 --limit $limit -- ${$this.ops[0]}) {
         var codes = [$e.slice(2).toInt(16)!]
-        $matches.add(($codesToLiteral($codes), $codesToUTF8($codes) ?? continue))
+        $matches.add(($codesToLiteral($codes), $codesToUTF8($codes) ?? {echo 1>&2 "[warn] ignore: $e"; continue; }))
     }
     for e in <(guniset sample --seed 42 --limit $limit -- "!(${$this.ops[0]})") {
         var codes = [$e.slice(2).toInt(16)!]
-        $noMatches.add(($codesToLiteral($codes), $codesToUTF8($codes) ?? continue))
+        $noMatches.add(($codesToLiteral($codes), $codesToUTF8($codes) ?? {echo 1>&2 "[warn] ignore: $e"; continue; }))
     }
     return ($matches, $noMatches)
 }
@@ -144,17 +140,6 @@ function emoji(prop: String): SetGen {
         $_emojiSeqCache[$prop] = new StrSet($map)
     }
     return new SetGen('emoji', [$prop])
-}
-
-function emitCase(p: Regex, macthes: [(String,String)], noMacthes: [(String, String)]) {
-    printf '$assertRegex(\n'
-    printf "\t\$pattern: \$$p,\n"
-    printf "\t\$matches: [\n"
-    printf "\t\t%s,  # %s\n" $macthes
-    printf "\t],\n"
-    printf "\t\$noMatches: [\n"
-    printf "\t\t%s,  # %s\n" $noMacthes
-    printf "\t],\n)\n"
 }
 
 type TestCase {
@@ -203,12 +188,12 @@ function emit() for TestScript {
 function def(p: Regex, ss: SetGen) for TestScript {
     case $ss.type {
         'codepoint' => {
-            var ret = $ss.sampleCodePoints(5)
+            var ret = $ss.sampleCodePoints(10)
             $this.cases.add(new TestCase($p, $matches:$ret._0, $noMatches:$ret._1))
         }
         else => {
             var strSet = $ss.toSet()
-            $this.cases.add(new TestCase($p, $matches:$strSet.sample(5), $noMatches:$strSet.sampleNoExists(5)))
+            $this.cases.add(new TestCase($p, $matches:$strSet.sample(10), $noMatches:$strSet.sampleNoExists(10)))
         }
     }
 }
@@ -221,6 +206,19 @@ function testScript(name: String, builder: (TestScript)-> Void) for TestScripts 
     var script = new TestScript()
     $builder($script)
     assert !$this.scripts.put($name, $script)
+}
+
+function getQuery(def : _lone_table.LoneProperty): String? {
+    let query = if let q = $def.query {
+        $q
+    } elif let p = $def.prefix {
+        "$p:${def.name}"
+    } elif $def.name == 'Assigned' {
+        "!(cat:Cn)"
+    } else {
+        $none
+    }
+    return $query
 }
 
 
@@ -240,11 +238,37 @@ let _builder = function(tss: TestScripts) => {
         }
     })
     $tss.testScript('regex_unicode_property_scx.arsh', function(ts: TestScript)=>{
-        for line in <(guniset enum sc) {
+        for line in <(guniset enum scx) {
             for cat in $line.split(', ') {
                 $ts.def(new Regex("^[\\p{Script_Extensions=$cat}]\$", 'u'), $set("scx:$cat"))
             }
         }
+    })
+    $tss.testScript('regex_unicode_property_lone.arsh', function(ts) => {
+        for def in $_lone_table.defs {
+            let query = $getQuery($def) ?? { echo 1>&2 "[warn] ignore: ${def.name}"; continue; }
+            var ss = [$def.name]
+            if let abbr = $def.abbr {
+                $ss.add($abbr)
+            }
+            for name in $ss {
+                $ts.def(new Regex("^[\\p{${name}}]\$", 'u'), $set($query))
+            }
+        }
+        var defs = $_lone_table.defs.copy().shuffle(42)
+        for(var i = 0; $i < 10; $i+=2) {
+            let query1 = $getQuery($defs[$i]) ?? { echo 1>&2 "[warn] ignore: ${$defs[$i].name}"; continue; }
+            let query2 = $getQuery($defs[$i+1]) ?? { echo 1>&2 "[warn] ignore: ${$defs[$i+1].name}"; continue; }
+            $ts.def(new Regex("^[\\p{${$defs[$i].name}}\\p{${$defs[$i+1].name}}]\$", 'u'), $set($query1 + " + " + $query2))
+        }
+    })
+    $tss.testScript('regex_unicode_property_emoji.arsh', function(ts) =>{
+        for name in ['Basic_Emoji', 'Emoji_Keycap_Sequence', 'RGI_Emoji_Flag_Sequence',
+                'RGI_Emoji_Modifier_Sequence', 'RGI_Emoji_Tag_Sequence', 
+                'RGI_Emoji_ZWJ_Sequence', 'RGI_Emoji'] {
+            $ts.def(new Regex("^[\\p{${name}}]\$", 'v'), $emoji($name))
+        }
+        # $ts.def($/\p{}/v, $emoji($name))
     })
 }
 
