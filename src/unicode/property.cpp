@@ -430,10 +430,10 @@ static bool getLoneSet(const Lone lone, BuilderOrSet out) {
     {
       CodePointSetBuilder tmp;
       tmp.addRange(0xFFF9, 0xFFFB);
-      builder.sub(tmp.build().ref());
+      builder.sub(tmp);
       tmp.clear();
       tmp.addRange(0x13430, 0x1343F);
-      builder.sub(tmp.build().ref());
+      builder.sub(tmp);
     }
     builder.sub(getPropertySet(Property::lone(Lone::Prepended_Concatenation_Mark)).ref());
 

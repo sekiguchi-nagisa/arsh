@@ -165,8 +165,7 @@ void StrSetBuilder::intersect(const StrSetBuilder &builder) {
       return true;
     });
     if (builder.codePoints) {
-      set = builder.codePoints.build();
-      this->codePoints.intersect(set.ref());
+      this->codePoints.intersect(builder.codePoints);
       newBuilder.codePoints.add(this->codePoints);
     }
   }
@@ -233,8 +232,7 @@ void StrSetBuilder::sub(const StrSetBuilder &builder) {
       }
       return true;
     });
-    auto set = sub.build();
-    this->codePoints.sub(set.ref());
+    this->codePoints.sub(sub);
   }
   if (this->codePoints) {
     sub.clear();
@@ -244,12 +242,10 @@ void StrSetBuilder::sub(const StrSetBuilder &builder) {
       }
       return true;
     });
-    auto set = sub.build();
-    this->codePoints.sub(set.ref());
+    this->codePoints.sub(sub);
   }
   if (this->codePoints) {
-    auto set = builder.codePoints.build();
-    this->codePoints.sub(set.ref());
+    this->codePoints.sub(builder.codePoints);
   }
 }
 
@@ -343,7 +339,7 @@ void CodeGen::complement(CodePointSetBuilder &setBuilder) const {
     CodePointSetBuilder newBuilder;
     newBuilder.addRange(0, UnicodeUtil::CODE_POINT_MAX);
     newBuilder.foldCase();
-    newBuilder.sub(setBuilder.build().ref());
+    newBuilder.sub(setBuilder);
     setBuilder = std::move(newBuilder);
   } else {
     setBuilder.complement();

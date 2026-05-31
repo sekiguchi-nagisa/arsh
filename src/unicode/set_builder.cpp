@@ -164,20 +164,23 @@ void CodePointSetBuilder::removeBy(const bool compact, const std::function<bool(
 }
 
 void CodePointSetBuilder::remove(const CodePointSetRef ref, const bool invert) {
-  CodePointSetBuilder refBuilder;
-  refBuilder.add(ref);
-  const ArrayRef refRanges(refBuilder.getCodePointRanges().data(),
-                           refBuilder.getCodePointRanges().size());
+  CodePointSetBuilder builder;
+  builder.add(ref);
+  this->remove(builder.toArrayRef(), invert);
+}
+
+void CodePointSetBuilder::remove(const ArrayRef<std::pair<int, int>> targetRanges,
+                                 const bool invert) {
   std::vector<std::pair<int, int>> newRanges;
 
-  unsigned int refIndex = 0;
+  unsigned int index = 0;
   for (const auto [first, last] : this->codePointRanges) {
     int cur = first;
     while (cur <= last) {
-      while (refIndex < refRanges.size() && cur > refRanges[refIndex].second) {
-        refIndex++;
+      while (index < targetRanges.size() && cur > targetRanges[index].second) {
+        index++;
       }
-      if (refIndex == refRanges.size() || last < refRanges[refIndex].first) { // not within range
+      if (index == targetRanges.size() || last < targetRanges[index].first) { // not within range
         if (!invert) {
           newRanges.emplace_back(cur, last);
         }
@@ -196,16 +199,16 @@ void CodePointSetBuilder::remove(const CodePointSetRef ref, const bool invert) {
        * => if invert==false, (12, 19)
        * => if invert==true, (20, 50)
        */
-      int overlapFirst = std::max(cur, refRanges[refIndex].first);
-      int overlapLast = std::min(last, refRanges[refIndex].second);
+      int overlapFirst = std::max(cur, targetRanges[index].first);
+      int overlapLast = std::min(last, targetRanges[index].second);
       if (invert) {
         newRanges.emplace_back(overlapFirst, overlapLast);
       } else if (cur < overlapFirst) {
         newRanges.emplace_back(cur, overlapFirst - 1);
       }
       cur = overlapLast + 1;
-      if (refRanges[refIndex].second <= last) {
-        refIndex++;
+      if (targetRanges[index].second <= last) {
+        index++;
       }
     }
   }
@@ -213,31 +216,21 @@ void CodePointSetBuilder::remove(const CodePointSetRef ref, const bool invert) {
 }
 
 void CodePointSetBuilder::foldCase() {
-  // collect affected code points
-  std::unordered_map<int, int> foldMap;
-  for (auto &[first, last] : this->codePointRanges) {
-    for (int c = first; c <= last; c++) {
-      int f = doSimpleCaseFolding(c);
-      if (c != f) {
-        foldMap.emplace(c, f);
-      }
-    }
-  }
-  if (foldMap.empty()) {
-    return;
-  }
-
   // remove affected code points
-  this->removeBy(false, [&foldMap](int codePoint) {
-    auto iter = foldMap.find(codePoint);
-    return iter != foldMap.end();
+  std::vector<int> folds;
+  this->removeBy(false, [&folds](int codePoint) {
+    const int after = doSimpleCaseFolding(codePoint);
+    if (after != codePoint) {
+      folds.push_back(after);
+      return true;
+    }
+    return false;
   });
 
-  // add changed code points
-  for (auto &e : foldMap) {
-    this->codePointRanges.emplace_back(e.second, e.second);
+  // add fold code points
+  if (folds.size()) {
+    this->add(folds.data(), folds.size());
   }
-  this->sortAndCompact();
 }
 
 CodePointSet CodePointSetBuilder::build() const {

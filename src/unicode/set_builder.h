@@ -39,6 +39,10 @@ private:
 public:
   const auto &getCodePointRanges() const { return this->codePointRanges; }
 
+  ArrayRef<std::pair<int, int>> toArrayRef() const {
+    return {this->codePointRanges.data(), this->codePointRanges.size()};
+  }
+
   explicit operator bool() const { return this->getCodePointRanges().size(); }
 
   /**
@@ -64,7 +68,11 @@ public:
    */
   void sub(const CodePointSetRef ref) { this->remove(ref, false); }
 
+  void sub(const CodePointSetBuilder &builder) { this->remove(builder.toArrayRef(), false); }
+
   void intersect(const CodePointSetRef ref) { this->remove(ref, true); }
+
+  void intersect(const CodePointSetBuilder &builder) { this->remove(builder.toArrayRef(), true); }
 
   void complement();
 
@@ -91,6 +99,8 @@ private:
    * if true, invert remove (intersect)
    */
   void remove(CodePointSetRef ref, bool invert);
+
+  void remove(ArrayRef<std::pair<int, int>> targetRanges, bool invert);
 
   void sortAndCompact(); // TODO: lazy compaction
 };
