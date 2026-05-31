@@ -23,18 +23,18 @@
     - now regex syntax and semantics are compatible with ECMAScript regular expression (ES2025)
     - enable Unicode mode by default
 - optimize simple case folding
-- improve the assert error message of ``!=``, ``!~`` binary expression
+- improve the assertion error message of ``!=``, ``!~`` binary expression
 
 #### Builtin
 
 - **Breaking Change**: ``String#foldCase`` method now throw ``ArgumentError`` instead of
   ``InvalidOperationError`` when pass invalid UTF-8
-- **Breaking Change**: change directory to empty dir is now error due to posix compatibility
+- **Breaking Change**: changing directory to empty dir is now an error due to posix compatibility
 - add ``timeout`` param to ``Regex#match``, ``Regex#replace``
     - now specify match timeout milliseconds
     - if timeout param is not specified, use ``REGEX_TIMEOUT`` variable
 - now cancel regex methods by SIGINT
-- fix signal number handling of builtin kill command like other shell
+- fix signal number handling of builtin kill command like other shells
     - accept `0` signal number (do nothing)
     - ``-l`` option also accept exit status
 
