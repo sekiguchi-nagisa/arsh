@@ -94,11 +94,11 @@ struct StrSetBuilder {
 
   void addRange(int first, int last, bool fold) { this->codePoints.addRange(first, last, fold); }
 
-  void add(const StrSetBuilder &builder);
+  void add(StrSetBuilder &&builder);
 
-  void intersect(const StrSetBuilder &builder);
+  void intersect(StrSetBuilder &&builder);
 
-  void sub(const StrSetBuilder &builder);
+  void sub(StrSetBuilder &&builder);
 
   static bool hasEmoji(ucp::RGIEmojiSeq emoji) {
     unsetFlag(emoji, ucp::RGIEmojiSeq::CASE_IGNORE);
@@ -180,7 +180,7 @@ private:
     }
   }
 
-  bool tryToEmitCharSetIns(const CodePointSetBuilder &setBuilder, bool invert);
+  bool tryToEmitCharSetIns(CodePointSetBuilder &setBuilder, bool invert);
 
   void generateBackRef(const BackRefNode &node);
 

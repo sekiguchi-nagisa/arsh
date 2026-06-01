@@ -31,7 +31,7 @@ void StrSetBuilder::add(StringRef ref) {
   }
 }
 
-void StrSetBuilder::add(const StrSetBuilder &builder) {
+void StrSetBuilder::add(StrSetBuilder &&builder) {
   this->add(builder.emoji);
   if (builder.emptySeq) {
     this->emptySeq = true;
@@ -50,8 +50,8 @@ constexpr bool cp_iter_requirement_v =
     std::is_same_v<bool, std::invoke_result_t<Func, StringRef, int>>;
 
 template <typename Func, enable_when<cp_iter_requirement_v<Func>> = nullptr>
-static void iterateCodes(const CodePointSetBuilder &builder, Func func) {
-  for (auto [first, last] : builder.getCodePointRanges()) {
+static void iterateCodes(CodePointSetBuilder &builder, Func func) {
+  for (auto [first, last] : builder.toCompactArrayRef()) {
     for (; first <= last; first++) {
       char buf[4];
       unsigned int len = UnicodeUtil::codePointToUtf8(first, buf);
@@ -103,7 +103,7 @@ static Optional<int> tryToCodePoint(const StringRef ref) {
   return {};
 }
 
-void StrSetBuilder::intersect(const StrSetBuilder &builder) {
+void StrSetBuilder::intersect(StrSetBuilder &&builder) {
   StrSetBuilder newBuilder(hasFlag(this->emoji, ucp::RGIEmojiSeq::CASE_IGNORE));
   newBuilder.emptySeq = this->emptySeq && builder.emptySeq;
 
@@ -173,7 +173,7 @@ void StrSetBuilder::intersect(const StrSetBuilder &builder) {
   *this = std::move(newBuilder);
 }
 
-void StrSetBuilder::sub(const StrSetBuilder &builder) {
+void StrSetBuilder::sub(StrSetBuilder &&builder) {
   if (this->emptySeq == builder.emptySeq && this->emptySeq) {
     this->emptySeq = false;
   }
@@ -675,10 +675,10 @@ void CodeGen::generateStrSet(StrSetBuilder &setBuilder, const unsigned int level
         StrSetBuilder sub(this->has(Modifier::IGNORE_CASE));
         this->generateStrSet(sub, 0, e);
         if (classNode.getType() == CharClassNode::Type::INTERSECT) {
-          builderPtr->intersect(sub);
+          builderPtr->intersect(std::move(sub));
         } else {
           assert(classNode.getType() == CharClassNode::Type::SUBTRACT);
-          builderPtr->sub(sub);
+          builderPtr->sub(std::move(sub));
         }
       }
       break;
@@ -688,7 +688,7 @@ void CodeGen::generateStrSet(StrSetBuilder &setBuilder, const unsigned int level
       this->complement(builderPtr->codePoints);
     }
     if (level) {
-      setBuilder.add(classBuilder);
+      setBuilder.add(std::move(classBuilder));
     }
     break;
   }
@@ -829,9 +829,9 @@ void CodeGen::emitCharIns(int codePoint) {
   }
 }
 
-static Optional<AsciiSet> tryToGenerateAsciiSet(const CodePointSetBuilder &setBuilder) {
+static Optional<AsciiSet> tryToGenerateAsciiSet(CodePointSetBuilder &setBuilder) {
   AsciiSet set;
-  for (auto [first, last] : setBuilder.getCodePointRanges()) {
+  for (auto [first, last] : setBuilder.toCompactArrayRef()) {
     if (Matcher::withinAsciiSet(first) && Matcher::withinAsciiSet(last)) {
       for (; first <= last; first++) {
         set.add(first);
@@ -843,8 +843,9 @@ static Optional<AsciiSet> tryToGenerateAsciiSet(const CodePointSetBuilder &setBu
   return set;
 }
 
-bool CodeGen::tryToEmitCharSetIns(const CodePointSetBuilder &setBuilder, bool invert) {
-  if (setBuilder.getCodePointRanges().empty()) {
+bool CodeGen::tryToEmitCharSetIns(CodePointSetBuilder &setBuilder, bool invert) {
+  const auto ranges = setBuilder.toCompactArrayRef();
+  if (ranges.empty()) {
     if (invert) {
       if (this->inLookBehind()) {
         this->builder.emit<LBAnyIns>(true);
@@ -854,8 +855,8 @@ bool CodeGen::tryToEmitCharSetIns(const CodePointSetBuilder &setBuilder, bool in
       return true;
     }
   }
-  if (setBuilder.getCodePointRanges().size() == 1 && !invert) {
-    auto [first, last] = setBuilder.getCodePointRanges()[0];
+  if (ranges.size() == 1 && !invert) {
+    auto [first, last] = ranges[0];
     if (first == last) { // only contains single code point
       this->emitCharIns(first);
       return true;

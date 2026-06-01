@@ -290,11 +290,11 @@ TEST(SetBuilderTest, add) {
 
   CodePointSetBuilder builder;
   builder.add(ref);
-  ASSERT_EQ(4, builder.getCodePointRanges().size());
-  ASSERT_EQ(std::make_pair(0, 100), builder.getCodePointRanges()[0]);
-  ASSERT_EQ(std::make_pair(200, 300), builder.getCodePointRanges()[1]);
-  ASSERT_EQ(std::make_pair(400, 500), builder.getCodePointRanges()[2]);
-  ASSERT_EQ(std::make_pair(UINT16_MAX - 100, UINT16_MAX + 100), builder.getCodePointRanges()[3]);
+  ASSERT_EQ(4, builder.toCompactArrayRef().size());
+  ASSERT_EQ(std::make_pair(0, 100), builder.toCompactArrayRef()[0]);
+  ASSERT_EQ(std::make_pair(200, 300), builder.toCompactArrayRef()[1]);
+  ASSERT_EQ(std::make_pair(400, 500), builder.toCompactArrayRef()[2]);
+  ASSERT_EQ(std::make_pair(UINT16_MAX - 100, UINT16_MAX + 100), builder.toCompactArrayRef()[3]);
   auto set = builder.build();
   ref = set.ref();
   ASSERT_EQ(4, ref.getBMPRanges().size());
@@ -336,32 +336,32 @@ TEST(SetBuilderTest, sub) {
   auto other =
       set({{0, 10}, {50, 60}, {150, 180}, {280, 300}, {UINT16_MAX + 100, UINT16_MAX + 200}});
   builder.sub(other.ref());
-  ASSERT_EQ(5, builder.getCodePointRanges().size());
-  ASSERT_EQ(11, builder.getCodePointRanges()[0].first);
-  ASSERT_EQ(49, builder.getCodePointRanges()[0].second);
-  ASSERT_EQ(61, builder.getCodePointRanges()[1].first);
-  ASSERT_EQ(100, builder.getCodePointRanges()[1].second);
-  ASSERT_EQ(200, builder.getCodePointRanges()[2].first);
-  ASSERT_EQ(279, builder.getCodePointRanges()[2].second);
-  ASSERT_EQ(400, builder.getCodePointRanges()[3].first);
-  ASSERT_EQ(500, builder.getCodePointRanges()[3].second);
-  ASSERT_EQ(UINT16_MAX - 100, builder.getCodePointRanges()[4].first);
-  ASSERT_EQ(UINT16_MAX + 99, builder.getCodePointRanges()[4].second);
+  ASSERT_EQ(5, builder.toCompactArrayRef().size());
+  ASSERT_EQ(11, builder.toCompactArrayRef()[0].first);
+  ASSERT_EQ(49, builder.toCompactArrayRef()[0].second);
+  ASSERT_EQ(61, builder.toCompactArrayRef()[1].first);
+  ASSERT_EQ(100, builder.toCompactArrayRef()[1].second);
+  ASSERT_EQ(200, builder.toCompactArrayRef()[2].first);
+  ASSERT_EQ(279, builder.toCompactArrayRef()[2].second);
+  ASSERT_EQ(400, builder.toCompactArrayRef()[3].first);
+  ASSERT_EQ(500, builder.toCompactArrayRef()[3].second);
+  ASSERT_EQ(UINT16_MAX - 100, builder.toCompactArrayRef()[4].first);
+  ASSERT_EQ(UINT16_MAX + 99, builder.toCompactArrayRef()[4].second);
 
   //
   builder = CodePointSetBuilder();
   builder.add(ref);
   other = set({{0, 250}, {280, 290}, {300, 350}, {400, 450}, {480, 500}});
   builder.sub(other.ref());
-  ASSERT_EQ(4, builder.getCodePointRanges().size());
-  ASSERT_EQ(251, builder.getCodePointRanges()[0].first);
-  ASSERT_EQ(279, builder.getCodePointRanges()[0].second);
-  ASSERT_EQ(291, builder.getCodePointRanges()[1].first);
-  ASSERT_EQ(299, builder.getCodePointRanges()[1].second);
-  ASSERT_EQ(451, builder.getCodePointRanges()[2].first);
-  ASSERT_EQ(479, builder.getCodePointRanges()[2].second);
-  ASSERT_EQ(UINT16_MAX - 100, builder.getCodePointRanges()[3].first);
-  ASSERT_EQ(UINT16_MAX + 100, builder.getCodePointRanges()[3].second);
+  ASSERT_EQ(4, builder.toCompactArrayRef().size());
+  ASSERT_EQ(251, builder.toCompactArrayRef()[0].first);
+  ASSERT_EQ(279, builder.toCompactArrayRef()[0].second);
+  ASSERT_EQ(291, builder.toCompactArrayRef()[1].first);
+  ASSERT_EQ(299, builder.toCompactArrayRef()[1].second);
+  ASSERT_EQ(451, builder.toCompactArrayRef()[2].first);
+  ASSERT_EQ(479, builder.toCompactArrayRef()[2].second);
+  ASSERT_EQ(UINT16_MAX - 100, builder.toCompactArrayRef()[3].first);
+  ASSERT_EQ(UINT16_MAX + 100, builder.toCompactArrayRef()[3].second);
 }
 
 TEST(SetBuilderTest, intersect) {
@@ -382,41 +382,41 @@ TEST(SetBuilderTest, intersect) {
   auto other =
       set({{0, 10}, {50, 60}, {150, 180}, {280, 300}, {UINT16_MAX + 100, UINT16_MAX + 200}});
   builder.intersect(other.ref());
-  ASSERT_EQ(4, builder.getCodePointRanges().size());
-  ASSERT_EQ(0, builder.getCodePointRanges()[0].first);
-  ASSERT_EQ(10, builder.getCodePointRanges()[0].second);
-  ASSERT_EQ(50, builder.getCodePointRanges()[1].first);
-  ASSERT_EQ(60, builder.getCodePointRanges()[1].second);
-  ASSERT_EQ(280, builder.getCodePointRanges()[2].first);
-  ASSERT_EQ(300, builder.getCodePointRanges()[2].second);
-  ASSERT_EQ(UINT16_MAX + 100, builder.getCodePointRanges()[3].first);
-  ASSERT_EQ(UINT16_MAX + 100, builder.getCodePointRanges()[3].second);
+  ASSERT_EQ(4, builder.toCompactArrayRef().size());
+  ASSERT_EQ(0, builder.toCompactArrayRef()[0].first);
+  ASSERT_EQ(10, builder.toCompactArrayRef()[0].second);
+  ASSERT_EQ(50, builder.toCompactArrayRef()[1].first);
+  ASSERT_EQ(60, builder.toCompactArrayRef()[1].second);
+  ASSERT_EQ(280, builder.toCompactArrayRef()[2].first);
+  ASSERT_EQ(300, builder.toCompactArrayRef()[2].second);
+  ASSERT_EQ(UINT16_MAX + 100, builder.toCompactArrayRef()[3].first);
+  ASSERT_EQ(UINT16_MAX + 100, builder.toCompactArrayRef()[3].second);
 
   //
   builder = CodePointSetBuilder();
   builder.add(ref);
   other = set({{0, 250}, {280, 290}, {300, 350}, {400, 450}, {480, 500}});
   builder.intersect(other.ref());
-  ASSERT_EQ(6, builder.getCodePointRanges().size());
-  ASSERT_EQ(0, builder.getCodePointRanges()[0].first);
-  ASSERT_EQ(100, builder.getCodePointRanges()[0].second);
-  ASSERT_EQ(200, builder.getCodePointRanges()[1].first);
-  ASSERT_EQ(250, builder.getCodePointRanges()[1].second);
-  ASSERT_EQ(280, builder.getCodePointRanges()[2].first);
-  ASSERT_EQ(290, builder.getCodePointRanges()[2].second);
-  ASSERT_EQ(300, builder.getCodePointRanges()[3].first);
-  ASSERT_EQ(300, builder.getCodePointRanges()[3].second);
-  ASSERT_EQ(400, builder.getCodePointRanges()[4].first);
-  ASSERT_EQ(450, builder.getCodePointRanges()[4].second);
-  ASSERT_EQ(480, builder.getCodePointRanges()[5].first);
-  ASSERT_EQ(500, builder.getCodePointRanges()[5].second);
+  ASSERT_EQ(6, builder.toCompactArrayRef().size());
+  ASSERT_EQ(0, builder.toCompactArrayRef()[0].first);
+  ASSERT_EQ(100, builder.toCompactArrayRef()[0].second);
+  ASSERT_EQ(200, builder.toCompactArrayRef()[1].first);
+  ASSERT_EQ(250, builder.toCompactArrayRef()[1].second);
+  ASSERT_EQ(280, builder.toCompactArrayRef()[2].first);
+  ASSERT_EQ(290, builder.toCompactArrayRef()[2].second);
+  ASSERT_EQ(300, builder.toCompactArrayRef()[3].first);
+  ASSERT_EQ(300, builder.toCompactArrayRef()[3].second);
+  ASSERT_EQ(400, builder.toCompactArrayRef()[4].first);
+  ASSERT_EQ(450, builder.toCompactArrayRef()[4].second);
+  ASSERT_EQ(480, builder.toCompactArrayRef()[5].first);
+  ASSERT_EQ(500, builder.toCompactArrayRef()[5].second);
 
   //
   builder = CodePointSetBuilder();
   builder.add(ref);
   other = set({{UINT16_MAX + 200, UINT16_MAX + 1000}});
   builder.intersect(other.ref());
-  ASSERT_EQ(0, builder.getCodePointRanges().size());
+  ASSERT_EQ(0, builder.toCompactArrayRef().size());
 }
 
 TEST(SetBuilderTest, complement1) {
@@ -436,44 +436,44 @@ TEST(SetBuilderTest, complement1) {
   CodePointSetBuilder builder;
   builder.add(ref);
   builder.complement();
-  ASSERT_EQ(4, builder.getCodePointRanges().size());
-  ASSERT_EQ(101, builder.getCodePointRanges()[0].first);
-  ASSERT_EQ(199, builder.getCodePointRanges()[0].second);
-  ASSERT_EQ(301, builder.getCodePointRanges()[1].first);
-  ASSERT_EQ(399, builder.getCodePointRanges()[1].second);
-  ASSERT_EQ(501, builder.getCodePointRanges()[2].first);
-  ASSERT_EQ(UINT16_MAX - 101, builder.getCodePointRanges()[2].second);
-  ASSERT_EQ(UINT16_MAX + 101, builder.getCodePointRanges()[3].first);
-  ASSERT_EQ(UnicodeUtil::CODE_POINT_MAX, builder.getCodePointRanges()[3].second);
+  ASSERT_EQ(4, builder.toCompactArrayRef().size());
+  ASSERT_EQ(101, builder.toCompactArrayRef()[0].first);
+  ASSERT_EQ(199, builder.toCompactArrayRef()[0].second);
+  ASSERT_EQ(301, builder.toCompactArrayRef()[1].first);
+  ASSERT_EQ(399, builder.toCompactArrayRef()[1].second);
+  ASSERT_EQ(501, builder.toCompactArrayRef()[2].first);
+  ASSERT_EQ(UINT16_MAX - 101, builder.toCompactArrayRef()[2].second);
+  ASSERT_EQ(UINT16_MAX + 101, builder.toCompactArrayRef()[3].first);
+  ASSERT_EQ(UnicodeUtil::CODE_POINT_MAX, builder.toCompactArrayRef()[3].second);
 
   //
   builder.complement();
-  ASSERT_EQ(4, builder.getCodePointRanges().size());
-  ASSERT_EQ(0, builder.getCodePointRanges()[0].first);
-  ASSERT_EQ(100, builder.getCodePointRanges()[0].second);
-  ASSERT_EQ(200, builder.getCodePointRanges()[1].first);
-  ASSERT_EQ(300, builder.getCodePointRanges()[1].second);
-  ASSERT_EQ(400, builder.getCodePointRanges()[2].first);
-  ASSERT_EQ(500, builder.getCodePointRanges()[2].second);
-  ASSERT_EQ(UINT16_MAX - 100, builder.getCodePointRanges()[3].first);
-  ASSERT_EQ(UINT16_MAX + 100, builder.getCodePointRanges()[3].second);
+  ASSERT_EQ(4, builder.toCompactArrayRef().size());
+  ASSERT_EQ(0, builder.toCompactArrayRef()[0].first);
+  ASSERT_EQ(100, builder.toCompactArrayRef()[0].second);
+  ASSERT_EQ(200, builder.toCompactArrayRef()[1].first);
+  ASSERT_EQ(300, builder.toCompactArrayRef()[1].second);
+  ASSERT_EQ(400, builder.toCompactArrayRef()[2].first);
+  ASSERT_EQ(500, builder.toCompactArrayRef()[2].second);
+  ASSERT_EQ(UINT16_MAX - 100, builder.toCompactArrayRef()[3].first);
+  ASSERT_EQ(UINT16_MAX + 100, builder.toCompactArrayRef()[3].second);
 
   //
   auto codePointSet = builder.build();
   builder.complement();
   builder.add(codePointSet.ref());
-  ASSERT_EQ(1, builder.getCodePointRanges().size());
-  ASSERT_EQ(0, builder.getCodePointRanges()[0].first);
-  ASSERT_EQ(UnicodeUtil::CODE_POINT_MAX, builder.getCodePointRanges()[0].second);
+  ASSERT_EQ(1, builder.toCompactArrayRef().size());
+  ASSERT_EQ(0, builder.toCompactArrayRef()[0].first);
+  ASSERT_EQ(UnicodeUtil::CODE_POINT_MAX, builder.toCompactArrayRef()[0].second);
 }
 
 TEST(SetBuilderTest, complement2) {
   CodePointSetBuilder builder;
-  ASSERT_EQ(0, builder.getCodePointRanges().size());
+  ASSERT_EQ(0, builder.toCompactArrayRef().size());
   builder.complement();
-  ASSERT_EQ(1, builder.getCodePointRanges().size());
-  ASSERT_EQ(0, builder.getCodePointRanges()[0].first);
-  ASSERT_EQ(UnicodeUtil::CODE_POINT_MAX, builder.getCodePointRanges()[0].second);
+  ASSERT_EQ(1, builder.toCompactArrayRef().size());
+  ASSERT_EQ(0, builder.toCompactArrayRef()[0].first);
+  ASSERT_EQ(UnicodeUtil::CODE_POINT_MAX, builder.toCompactArrayRef()[0].second);
 }
 
 TEST(SetBuilderTest, caseFold) {
@@ -482,35 +482,35 @@ TEST(SetBuilderTest, caseFold) {
   builder.addRange('0', '9');
   builder.addRange('_', '_');
   builder.addRange('e', 'i');
-  ASSERT_EQ(4, builder.getCodePointRanges().size());
-  ASSERT_EQ('0', builder.getCodePointRanges()[0].first);
-  ASSERT_EQ('9', builder.getCodePointRanges()[0].second);
-  ASSERT_EQ('A', builder.getCodePointRanges()[1].first);
-  ASSERT_EQ('Z', builder.getCodePointRanges()[1].second);
-  ASSERT_EQ('_', builder.getCodePointRanges()[2].first);
-  ASSERT_EQ('_', builder.getCodePointRanges()[2].second);
-  ASSERT_EQ('e', builder.getCodePointRanges()[3].first);
-  ASSERT_EQ('i', builder.getCodePointRanges()[3].second);
+  ASSERT_EQ(4, builder.toCompactArrayRef().size());
+  ASSERT_EQ('0', builder.toCompactArrayRef()[0].first);
+  ASSERT_EQ('9', builder.toCompactArrayRef()[0].second);
+  ASSERT_EQ('A', builder.toCompactArrayRef()[1].first);
+  ASSERT_EQ('Z', builder.toCompactArrayRef()[1].second);
+  ASSERT_EQ('_', builder.toCompactArrayRef()[2].first);
+  ASSERT_EQ('_', builder.toCompactArrayRef()[2].second);
+  ASSERT_EQ('e', builder.toCompactArrayRef()[3].first);
+  ASSERT_EQ('i', builder.toCompactArrayRef()[3].second);
 
   //
   builder.foldCase();
-  ASSERT_EQ(3, builder.getCodePointRanges().size());
-  ASSERT_EQ('0', builder.getCodePointRanges()[0].first);
-  ASSERT_EQ('9', builder.getCodePointRanges()[0].second);
-  ASSERT_EQ('_', builder.getCodePointRanges()[1].first);
-  ASSERT_EQ('_', builder.getCodePointRanges()[1].second);
-  ASSERT_EQ('a', builder.getCodePointRanges()[2].first);
-  ASSERT_EQ('z', builder.getCodePointRanges()[2].second);
+  ASSERT_EQ(3, builder.toCompactArrayRef().size());
+  ASSERT_EQ('0', builder.toCompactArrayRef()[0].first);
+  ASSERT_EQ('9', builder.toCompactArrayRef()[0].second);
+  ASSERT_EQ('_', builder.toCompactArrayRef()[1].first);
+  ASSERT_EQ('_', builder.toCompactArrayRef()[1].second);
+  ASSERT_EQ('a', builder.toCompactArrayRef()[2].first);
+  ASSERT_EQ('z', builder.toCompactArrayRef()[2].second);
 
   //
   builder.foldCase();
-  ASSERT_EQ(3, builder.getCodePointRanges().size());
-  ASSERT_EQ('0', builder.getCodePointRanges()[0].first);
-  ASSERT_EQ('9', builder.getCodePointRanges()[0].second);
-  ASSERT_EQ('_', builder.getCodePointRanges()[1].first);
-  ASSERT_EQ('_', builder.getCodePointRanges()[1].second);
-  ASSERT_EQ('a', builder.getCodePointRanges()[2].first);
-  ASSERT_EQ('z', builder.getCodePointRanges()[2].second);
+  ASSERT_EQ(3, builder.toCompactArrayRef().size());
+  ASSERT_EQ('0', builder.toCompactArrayRef()[0].first);
+  ASSERT_EQ('9', builder.toCompactArrayRef()[0].second);
+  ASSERT_EQ('_', builder.toCompactArrayRef()[1].first);
+  ASSERT_EQ('_', builder.toCompactArrayRef()[1].second);
+  ASSERT_EQ('a', builder.toCompactArrayRef()[2].first);
+  ASSERT_EQ('z', builder.toCompactArrayRef()[2].second);
 }
 
 TEST(SetBuilderTest, caseFoldRange) {
@@ -518,13 +518,13 @@ TEST(SetBuilderTest, caseFoldRange) {
   builder.addRange('A', 'Z', true);
   builder.addRange('0', '9', true);
   builder.addRange('_', '_', true);
-  ASSERT_EQ(3, builder.getCodePointRanges().size());
-  ASSERT_EQ('0', builder.getCodePointRanges()[0].first);
-  ASSERT_EQ('9', builder.getCodePointRanges()[0].second);
-  ASSERT_EQ('_', builder.getCodePointRanges()[1].first);
-  ASSERT_EQ('_', builder.getCodePointRanges()[1].second);
-  ASSERT_EQ('a', builder.getCodePointRanges()[2].first);
-  ASSERT_EQ('z', builder.getCodePointRanges()[2].second);
+  ASSERT_EQ(3, builder.toCompactArrayRef().size());
+  ASSERT_EQ('0', builder.toCompactArrayRef()[0].first);
+  ASSERT_EQ('9', builder.toCompactArrayRef()[0].second);
+  ASSERT_EQ('_', builder.toCompactArrayRef()[1].first);
+  ASSERT_EQ('_', builder.toCompactArrayRef()[1].second);
+  ASSERT_EQ('a', builder.toCompactArrayRef()[2].first);
+  ASSERT_EQ('z', builder.toCompactArrayRef()[2].second);
 }
 
 constexpr unsigned int MAX_TEST_CODEPOINT_SIZE = 10;

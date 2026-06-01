@@ -28,30 +28,29 @@ namespace arsh {
 // #################################
 
 void CodePointSetBuilder::add(CodePointSetRef ref) {
+  this->codePointRanges.reserve(this->codePointRanges.size() + ref.getSize());
   auto bmpRanges = ref.getBMPRanges();
-  this->codePointRanges.reserve(this->codePointRanges.size() + bmpRanges.size());
   for (auto &e : bmpRanges) {
     this->codePointRanges.emplace_back(e.firstBMP(), e.lastBMP());
   }
   auto packedRanges = ref.getPackedNonBMPRanges();
-  this->codePointRanges.reserve(this->codePointRanges.size() + packedRanges.size());
   for (auto &e : packedRanges) {
     this->codePointRanges.emplace_back(e.firstNonBMP(), e.lastNonBMP());
   }
   auto nonBmpRanges = ref.getNonBMPRanges();
-  this->codePointRanges.reserve(this->codePointRanges.size() + nonBmpRanges.size());
   for (auto &e : nonBmpRanges) {
     this->codePointRanges.emplace_back(e.firstNonBMP(), e.lastNonBMP());
   }
-  this->sortAndCompact();
+  this->dirty = true;
 }
 
 void CodePointSetBuilder::add(const CodePointSetBuilder &other) {
-  this->codePointRanges.reserve(this->codePointRanges.size() + other.getCodePointRanges().size());
-  for (auto &e : other.getCodePointRanges()) {
+  this->codePointRanges.reserve(this->codePointRanges.size() +
+                                other.getRawCodePointRanges().size());
+  for (auto &e : other.getRawCodePointRanges()) {
     this->codePointRanges.push_back(e);
   }
-  this->sortAndCompact();
+  this->dirty = true;
 }
 
 void CodePointSetBuilder::addRange(int first, int last, const bool caseFold) {
@@ -65,7 +64,7 @@ void CodePointSetBuilder::addRange(int first, int last, const bool caseFold) {
   } else {
     this->codePointRanges.emplace_back(actualFirst, actualLast);
   }
-  this->sortAndCompact();
+  this->dirty = true;
 }
 
 void CodePointSetBuilder::add(const int *data, const unsigned int len) {
@@ -75,10 +74,11 @@ void CodePointSetBuilder::add(const int *data, const unsigned int len) {
       this->codePointRanges.emplace_back(codePoint, codePoint);
     }
   }
-  this->sortAndCompact();
+  this->dirty = true;
 }
 
 void CodePointSetBuilder::complement() {
+  this->tryToSortAndCompact();
   std::vector<std::pair<int, int>> buf;
   const unsigned int size = this->codePointRanges.size();
   for (unsigned int i = 0; i < size; i++) {
@@ -109,6 +109,8 @@ void CodePointSetBuilder::complement() {
 }
 
 void CodePointSetBuilder::removeBy(const bool compact, const std::function<bool(int)> &func) {
+  this->tryToSortAndCompact();
+
   /**
    * consider the following cases
    * (1,5), if func(5) == true
@@ -166,11 +168,12 @@ void CodePointSetBuilder::removeBy(const bool compact, const std::function<bool(
 void CodePointSetBuilder::remove(const CodePointSetRef ref, const bool invert) {
   CodePointSetBuilder builder;
   builder.add(ref);
-  this->remove(builder.toArrayRef(), invert);
+  this->remove(builder, invert);
 }
 
-void CodePointSetBuilder::remove(const ArrayRef<std::pair<int, int>> targetRanges,
-                                 const bool invert) {
+void CodePointSetBuilder::remove(CodePointSetBuilder &builder, const bool invert) {
+  this->tryToSortAndCompact();
+  auto targetRanges = builder.toCompactArrayRef();
   std::vector<std::pair<int, int>> newRanges;
 
   unsigned int index = 0;
@@ -233,7 +236,8 @@ void CodePointSetBuilder::foldCase() {
   }
 }
 
-CodePointSet CodePointSetBuilder::build() const {
+CodePointSet CodePointSetBuilder::build() {
+  this->tryToSortAndCompact();
   FlexBuffer<BMPCodePointRange> tmp;
   tmp.reserve(this->codePointRanges.size() / 2);
   unsigned short bmpSize = 0;

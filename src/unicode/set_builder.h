@@ -33,17 +33,24 @@ public:
   };
 
 private:
+  bool dirty{false};
+
   // code point range (inclusive, inclusive)
   std::vector<std::pair<int, int>> codePointRanges;
 
 public:
-  const auto &getCodePointRanges() const { return this->codePointRanges; }
-
-  ArrayRef<std::pair<int, int>> toArrayRef() const {
+  ArrayRef<std::pair<int, int>> toCompactArrayRef() {
+    this->tryToSortAndCompact();
     return {this->codePointRanges.data(), this->codePointRanges.size()};
   }
 
-  explicit operator bool() const { return this->getCodePointRanges().size(); }
+  /**
+   * get current code point ranges. normally unused.
+   * @return
+   */
+  const auto &getRawCodePointRanges() const { return this->codePointRanges; }
+
+  explicit operator bool() const { return this->getRawCodePointRanges().size(); }
 
   /**
    * for union
@@ -68,11 +75,11 @@ public:
    */
   void sub(const CodePointSetRef ref) { this->remove(ref, false); }
 
-  void sub(const CodePointSetBuilder &builder) { this->remove(builder.toArrayRef(), false); }
+  void sub(CodePointSetBuilder &builder) { this->remove(builder, false); }
 
   void intersect(const CodePointSetRef ref) { this->remove(ref, true); }
 
-  void intersect(const CodePointSetBuilder &builder) { this->remove(builder.toArrayRef(), true); }
+  void intersect(CodePointSetBuilder &builder) { this->remove(builder, true); }
 
   void complement();
 
@@ -85,7 +92,7 @@ public:
    * build code point set. after return, still maintains an original buffer
    * @return
    */
-  CodePointSet build() const;
+  CodePointSet build();
 
   void clear() { this->codePointRanges.clear(); }
 
@@ -100,9 +107,16 @@ private:
    */
   void remove(CodePointSetRef ref, bool invert);
 
-  void remove(ArrayRef<std::pair<int, int>> targetRanges, bool invert);
+  void remove(CodePointSetBuilder &builder, bool invert);
 
-  void sortAndCompact(); // TODO: lazy compaction
+  void sortAndCompact();
+
+  void tryToSortAndCompact() {
+    if (this->dirty) {
+      this->dirty = false;
+      this->sortAndCompact();
+    }
+  }
 };
 
 } // namespace arsh
