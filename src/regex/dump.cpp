@@ -558,6 +558,18 @@ void RegexDumper::dump(const FlexBuffer<Inst> &ins) {
       inst += sizeof(LBRadixOrEmojiIns);
       break;
     }
+    case OpCode::String:
+      str += "(index=";
+      str += std::to_string(cast<StringIns>(*inst).getIndex());
+      str += ')';
+      inst += sizeof(StringIns);
+      break;
+    case OpCode::LBString:
+      str += "(index=";
+      str += std::to_string(cast<LBStringIns>(*inst).getIndex());
+      str += ')';
+      inst += sizeof(LBStringIns);
+      break;
     case OpCode::BeginCapture:
       str += "(captureIndex=";
       str += std::to_string(cast<BeginCaptureIns>(*inst).getCaptureIndex());
@@ -700,6 +712,9 @@ void toString(const Matcher &matcher, std::string &out, bool putHeader) {
     case MatcherType::RADIX_TREE:
       out += "RadixTree\n";
       break;
+    case MatcherType::STRING:
+      out += "String\n";
+      break;
     }
   }
   switch (matcher.type()) {
@@ -734,6 +749,10 @@ void toString(const Matcher &matcher, std::string &out, bool putHeader) {
       out += '\n';
       return true;
     });
+    break;
+  case MatcherType::STRING:
+    escapeUtf8(matcher.asStrRef(), out);
+    out += '\n';
     break;
   }
 }

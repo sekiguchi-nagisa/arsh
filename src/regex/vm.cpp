@@ -740,6 +740,20 @@ BACKTRACK:
           }
           goto BACKTRACK;
         }
+        vmcase(String) {
+          if (input.expectForward(matchers[cast<StringIns>(*inst).getIndex()].asStrRef())) {
+            inst += sizeof(StringIns);
+            vmnext;
+          }
+          goto BACKTRACK;
+        }
+        vmcase(LBString) {
+          if (input.expectBackward(matchers[cast<LBStringIns>(*inst).getIndex()].asStrRef())) {
+            inst += sizeof(LBStringIns);
+            vmnext;
+          }
+          goto BACKTRACK;
+        }
         vmcase(BeginCapture) {
           auto &ins = cast<BeginCaptureIns>(*inst);
           const unsigned int index = ins.getCaptureIndex();

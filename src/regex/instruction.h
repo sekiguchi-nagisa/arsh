@@ -48,6 +48,8 @@ namespace arsh::regex {
   OP(RadixOrEmoji)                                                                                 \
   OP(PrepareLBRadix)                                                                               \
   OP(LBRadixOrEmoji)                                                                               \
+  OP(String)                                                                                       \
+  OP(LBString)                                                                                     \
   OP(BeginCapture)                                                                                 \
   OP(EndCapture)                                                                                   \
   OP(LBEndCapture)                                                                                 \
@@ -333,6 +335,30 @@ struct LBRadixOrEmojiIns : InstWithRtti<OpCode::LBRadixOrEmoji> {
   }
 
   bool ignoreCase() const { return hasFlag(this->emoji, ucp::RGIEmojiSeq::CASE_IGNORE); }
+};
+
+struct StringIns : InstWithRtti<OpCode::String> {
+  uint8_t index[2];
+
+  explicit StringIns(uint16_t stringIndex) { WRITE_TO_INS_FIELD(stringIndex, index); }
+
+  uint16_t getIndex() const {
+    uint16_t stringIndex;
+    READ_FROM_INS_FIELD(index, stringIndex);
+    return stringIndex;
+  }
+};
+
+struct LBStringIns : InstWithRtti<OpCode::LBString> {
+  uint8_t index[2];
+
+  explicit LBStringIns(uint16_t stringIndex) { WRITE_TO_INS_FIELD(stringIndex, index); }
+
+  uint16_t getIndex() const {
+    uint16_t stringIndex;
+    READ_FROM_INS_FIELD(index, stringIndex);
+    return stringIndex;
+  }
 };
 
 struct BeginCaptureIns : InstWithRtti<OpCode::BeginCapture> {

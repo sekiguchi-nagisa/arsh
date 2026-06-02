@@ -69,6 +69,7 @@ enum class MatcherType : unsigned char {
   OWNED_CODE_POINT_SET,
   BORROWED_CODE_POINT_SET,
   RADIX_TREE,
+  STRING,
 };
 
 class Matcher {
@@ -94,6 +95,7 @@ private:
     uint64_t second;        // if MatcherType is ASCII
     BMPCodePointRange *ptr; // if MatcherType is OWNED_CODE_POINT_SET or BORROWED_CODE_POINT_SET
     uint8_t *radix;         // if MatcherType is RADIX_TREE
+    char *str;              // if MatcherType is STRING
   };
 
 public:
@@ -125,11 +127,19 @@ public:
     this->radix = std::move(radixBuf).take();
   }
 
+  explicit Matcher(ByteBuffer &&buf) noexcept {
+    this->first = static_cast<uint64_t>(buf.size()) << 32;
+    this->first |= toUnderlying(MatcherType::STRING);
+    this->str = std::move(buf).take();
+  }
+
   Matcher(Matcher &&o) noexcept : first(o.first) {
     if (o.type() == MatcherType::ASCII) {
       this->second = o.second;
     } else if (o.type() == MatcherType::RADIX_TREE) {
       this->radix = o.radix;
+    } else if (o.type() == MatcherType::STRING) {
+      this->str = o.str;
     } else {
       this->ptr = o.ptr;
     }
@@ -141,6 +151,8 @@ public:
       free(this->ptr);
     } else if (type() == MatcherType::RADIX_TREE) {
       free(this->radix);
+    } else if (type() == MatcherType::STRING) {
+      free(this->str);
     }
   }
 
@@ -170,6 +182,8 @@ public:
   PackedRadixTree asRadixTree() const {
     return {this->getLongestStringSize(), this->radix, this->getRadixSize()};
   }
+
+  StringRef asStrRef() const { return {this->str, static_cast<size_t>(this->getRadixSize())}; }
 
 private:
   // for CodePointSetRef
