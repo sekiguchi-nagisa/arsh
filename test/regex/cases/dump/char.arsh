@@ -139,12 +139,62 @@ loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
-   0: Char(codePoint=U+005D:])
-   5: Char(codePoint=U+0001:\x01)
-  10: AnyExceptNL
-  11: Char(codePoint=U+005D:])
-  16: Char(codePoint=U+0028:()
-  21: Match
+   0: String(index=0)
+   3: AnyExceptNL
+   4: Char(codePoint=U+005D:])
+   9: Char(codePoint=U+0028:()
+  14: Match
 matchers:
+  0: String
+\x5D\x01
+EOF
+)
+
+# .あ.あい.123
+assert diff <(redump -d '.あ.あい.123' '') <(<<'EOF'
+flag: (mode = , modifier = )
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+   0: AnyExceptNL
+   1: Char(codePoint=U+3042:あ)
+   6: AnyExceptNL
+   7: String(index=0)
+  10: AnyExceptNL
+  11: String(index=1)
+  14: Match
+matchers:
+  0: String
+\xE3\x81\x82\xE3\x81\x84
+  1: String
+\x31\x32\x33
+EOF
+)
+
+# (?<=.あ.あい.123)@!
+assert diff <(redump -d '(?<=.あ.あい.123)@!' '') <(<<'EOF'
+flag: (mode = , modifier = )
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+   0: BeginLookAround(negate=false, target=24)
+   6: LBString(index=0)
+   9: LBAny(dotAll=false)
+  11: LBString(index=1)
+  14: LBAny(dotAll=false)
+  16: LBChar(ignoreCase=false, codePoint=U+3042:あ)
+  22: LBAny(dotAll=false)
+  24: EndLookAround
+  25: String(index=2)
+  28: Match
+matchers:
+  0: String
+\x31\x32\x33
+  1: String
+\xE3\x81\x82\xE3\x81\x84
+  2: String
+\x40\x21
 EOF
 )

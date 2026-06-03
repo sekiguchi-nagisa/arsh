@@ -413,13 +413,56 @@ bool CodeGen::generate(const Node &node) {
 
 bool CodeGen::generateSeq(const SeqNode &node) {
   if (this->direction()) {
-    for (auto &e : node.getPatterns()) {
-      TRY(this->generate(*e));
+    const auto end = node.getPatterns().end();
+    for (auto iter = node.getPatterns().begin(); iter != end;) {
+      if (!this->has(Modifier::IGNORE_CASE) && isa<CharNode>(**iter) && iter + 1 != end &&
+          isa<CharNode>(**(iter + 1))) {
+        ByteBuffer buf;
+        while (iter != end && isa<CharNode>(**iter)) {
+          char data[4];
+          unsigned int len =
+              UnicodeUtil::codePointToUtf8(cast<CharNode>(**iter).getCodePoint(), data);
+          buf.append(data, len);
+          ++iter;
+        }
+        if (auto index = this->emitMatcher(Matcher(std::move(buf))); index.hasValue()) {
+          this->builder.emit<StringIns>(index.unwrap());
+        } else {
+          return false;
+        }
+      } else {
+        TRY(this->generate(**iter));
+        ++iter;
+      }
     }
   } else {
     const auto end = node.getPatterns().rend();
-    for (auto iter = node.getPatterns().rbegin(); iter != end; ++iter) {
-      TRY(this->generate(**iter));
+    for (auto iter = node.getPatterns().rbegin(); iter != end;) {
+      if (!this->has(Modifier::IGNORE_CASE) && isa<CharNode>(**iter) && iter + 1 != end &&
+          isa<CharNode>(**(iter + 1))) {
+        auto last = iter;
+        auto first = last;
+        while (iter != end && isa<CharNode>(**iter)) {
+          first = iter;
+          ++iter;
+        }
+        ByteBuffer buf;
+        while (first >= last) {
+          char data[4];
+          unsigned int len =
+              UnicodeUtil::codePointToUtf8(cast<CharNode>(**first).getCodePoint(), data);
+          buf.append(data, len);
+          --first;
+        }
+        if (auto index = this->emitMatcher(Matcher(std::move(buf))); index.hasValue()) {
+          this->builder.emit<LBStringIns>(index.unwrap());
+        } else {
+          return false;
+        }
+      } else {
+        TRY(this->generate(**iter));
+        ++iter;
+      }
     }
   }
   return true;
