@@ -421,7 +421,6 @@ static MatchStatus match(MatchContext &ctx, ObserverPtr<Timer> timer) {
   Capture *captures = ctx.getCaptures();
   unsigned int btCount = 0;
   BacktrackStack bts(inst);
-  bts.push(Backtrack()); // push dummy
   std::string foldBuf;
   if (timer) {
     timer->start();
@@ -435,7 +434,31 @@ static MatchStatus match(MatchContext &ctx, ObserverPtr<Timer> timer) {
   };
 #endif
 
+START:
+  // search string
+  if (inst->op == OpCode::Char || inst->op == OpCode::String) {
+    char data[4];
+    StringRef needle;
+    if (inst->op == OpCode::Char) {
+      int codePoint = cast<CharIns>(*inst).getCodePoint();
+      unsigned int len = UnicodeUtil::codePointToUtf8(codePoint, data);
+      needle = StringRef(data, len);
+      inst += sizeof(CharIns);
+    } else {
+      needle = matchers[cast<StringIns>(*inst).getIndex()].asStrRef();
+      inst += sizeof(StringIns);
+    }
+    if (auto retPos = input.remainForward().find(needle); retPos == StringRef::npos) {
+      oldIter = input.getEnd();
+      goto BACKTRACK;
+    } else {
+      oldIter = input.getIter() + retPos;
+      input.setIter(input.getIter() + retPos + needle.size());
+    }
+  }
+
   // match
+  bts.push(Backtrack()); // dummy
 BACKTRACK:
   while (bts.backtrack(inst, input, captures, loopStates)) {
     if (unlikely(++btCount == Regex::TIMER_CHECK_INTERVAL)) {
@@ -901,7 +924,7 @@ BACKTRACK:
       }
     }
   }
-  // increment input and redo until end-of-input. TODO: remove
+  // increment input and redo until end-of-input.
   input.setIter(oldIter);
   if (input.available()) {
     input.consumeForward();
@@ -909,8 +932,7 @@ BACKTRACK:
     inst = bts.getStartInst();
     ctx.clearCaptures();
     captures = ctx.getCaptures();
-    bts.push(Backtrack()); // dummy
-    goto BACKTRACK;
+    goto START;
   }
   ctx.syncInput(input);
   return MatchStatus::FAIL;
