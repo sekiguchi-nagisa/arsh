@@ -455,6 +455,21 @@ START:
       oldIter = input.getIter() + retPos;
       input.setIter(input.getIter() + retPos + needle.size());
     }
+  } else if (inst->op == OpCode::CharSet) {
+    const unsigned int index = cast<CharSetIns>(*inst).getMatcherIndex();
+    const bool invert = cast<CharSetIns>(*inst).invert;
+    bool matched = false;
+    inst += sizeof(CharSetIns);
+    while (input.available()) {
+      oldIter = input.getIter();
+      if (matchers[index].contains(input.consumeForward()) != invert) {
+        matched = true;
+        break;
+      }
+    }
+    if (!matched) {
+      goto BACKTRACK;
+    }
   }
 
   // match
