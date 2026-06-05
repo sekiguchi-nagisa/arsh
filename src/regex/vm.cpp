@@ -609,10 +609,13 @@ BACKTRACK:
         vmcase(CharSet) {
           auto &ins = cast<CharSetIns>(*inst);
           if (input.available()) {
-            bool s = matchers[ins.getMatcherIndex()].contains(input.consumeForward());
-            if (ins.invert) {
-              s = !s;
-            }
+            /**
+             * contain==true, invert==true => false
+             * contain==true, invert==false => true
+             * contain==false, invert==true => true
+             * contain==false, invert==false => false
+             */
+            bool s = matchers[ins.getMatcherIndex()].contains(input.consumeForward()) != ins.invert;
             if (s) {
               inst += sizeof(CharSetIns);
               vmnext;
@@ -624,10 +627,7 @@ BACKTRACK:
           auto &ins = cast<ICharSetIns>(*inst);
           if (input.available()) {
             bool s = matchers[ins.getMatcherIndex()].contains(
-                doSimpleCaseFolding(input.consumeForward()));
-            if (ins.invert) {
-              s = !s;
-            }
+                         doSimpleCaseFolding(input.consumeForward())) != ins.invert;
             if (s) {
               inst += sizeof(ICharSetIns);
               vmnext;
@@ -642,10 +642,7 @@ BACKTRACK:
             if (ins.ignoreCase) {
               codePoint = doSimpleCaseFolding(codePoint);
             }
-            bool s = matchers[ins.getMatcherIndex()].contains(codePoint);
-            if (ins.invert) {
-              s = !s;
-            }
+            bool s = matchers[ins.getMatcherIndex()].contains(codePoint) != ins.invert;
             if (s) {
               inst += sizeof(LBCharSetIns);
               vmnext;
