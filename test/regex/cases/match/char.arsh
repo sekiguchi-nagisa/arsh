@@ -122,3 +122,21 @@ input: `123abあ𤅕い'
 (offset=8, size=4)
 EOF
 )
+
+assert diff <(redump -m '()あい@!あいうえ#あいうえお' 'あい.\p{L}\p{L}' 'u') <(<<'EOF'
+input: `()あい@!あいうえ#あいうえお'
+(offset=23, size=15)
+EOF
+)
+
+assert diff <(redump -m '()あい@!あいうえ#あいうえお' 'あけ.\p{L}\p{L}' 'u') <(<<'EOF'
+input: `()あい@!あいうえ#あいうえお'
+failed
+EOF
+)
+
+assert diff <(redump -m '@())い@!あいうえ@あいうえお' '~\p{L}+' 'u') <(<<'EOF'
+input: `@())い@!あいうえ@あいうえお'
+failed
+EOF
+)
