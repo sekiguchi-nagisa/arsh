@@ -1240,10 +1240,10 @@ std::unique_ptr<Node> Parser::tryToParseQuantifier(std::unique_ptr<Node> &&node,
 Optional<unsigned short> Parser::parseQuantifierDigits(const char *prefixStart,
                                                        const bool ignoreError, const char end) {
   const auto old = this->iter;
-  std::string digits;
   while (!this->isEnd() && *this->iter != end && *this->iter != '}') {
-    digits += *this->iter++;
+    this->iter++;
   }
+  StringRef digits(old, this->iter - old);
   if (digits.empty()) {
     if (!this->isEnd()) {
       this->iter++;
@@ -1255,18 +1255,18 @@ Optional<unsigned short> Parser::parseQuantifierDigits(const char *prefixStart,
     return {};
   }
 
-  auto ret = convertToNum10<uint64_t>(digits.c_str(), digits.c_str() + digits.size());
+  auto ret = convertToNum10<uint64_t>(digits.begin(), digits.end());
   if (!ret) {
     if (!ignoreError) {
       this->reportError(this->getTokenFrom(old), "must be positive decimal number: `%s'",
-                        digits.c_str());
+                        digits.toString().c_str());
     }
     return {};
   }
   if (ret.value > RepeatNode::QUANTIFIER_MAX) {
     if (!ignoreError) {
       this->reportError(this->getTokenFrom(old), "too large number in {} quantifier: `%s'",
-                        digits.c_str());
+                        digits.toString().c_str());
     }
     return {};
   }
@@ -1275,10 +1275,10 @@ Optional<unsigned short> Parser::parseQuantifierDigits(const char *prefixStart,
 
 Optional<Modifier> Parser::parseModifiers(char end) {
   const auto old = this->iter;
-  std::string value;
   while (!this->isEnd() && *this->iter != end && *this->iter != ':' && *this->iter != ')') {
-    value += *this->iter++;
+    this->iter++;
   }
+  StringRef value(old, this->iter - old);
   std::string err;
   auto ret = Flag::parseModifier(value, &err);
   if (!ret.hasValue()) {

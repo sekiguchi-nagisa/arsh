@@ -197,6 +197,7 @@ public:
       case BacktrackOp::NonGreedyLoop: {
         const auto loopIndex = bt.nonGreedyLoop.loopIndex;
         loopStates[loopIndex] = bt.nonGreedyLoop.state;
+        assert(!this->bts.empty());
         const auto extra = this->bts.back();
         this->bts.pop_back();
         assert(extra.op == BacktrackOp::SetIns);
@@ -1169,10 +1170,11 @@ bool escape(const StringRef ref, const size_t maxSize, std::string &out) {
     case '`':
     case '"': {
       const char *table = "0123456789abcdef";
+      const auto ch = static_cast<unsigned char>(*iter);
       buf[0] = '\\';
       buf[1] = 'x';
-      buf[2] = table[*iter / 16];
-      buf[3] = table[*iter % 16];
+      buf[2] = table[ch / 16];
+      buf[3] = table[ch % 16];
       len = 4;
       break;
     }

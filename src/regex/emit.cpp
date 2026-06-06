@@ -841,7 +841,8 @@ bool CodeGen::generateCharClass(const CharClassNode &node) {
         return false;
       }
     }
-    const unsigned char nextOffset = this->builder.currentAddr() - oldAddr;
+    const unsigned int nextOffset = this->builder.currentAddr() - oldAddr;
+    assert(nextOffset <= UINT8_MAX);
     const unsigned short index = radixIndex.hasValue() ? radixIndex.unwrap() : 0;
     if (this->inLookBehind()) {
       this->builder.emitAt<LBRadixOrEmojiIns>(reservedPoint, emoji, radixIndex.hasValue(), index,
@@ -997,7 +998,7 @@ bool CodeGen::generateLookAround(const LookAroundNode &node) {
 
 Optional<unsigned short> CodeGen::emitMatcher(Matcher &&matcher) {
   unsigned int index = this->matchers.size();
-  if (index == UINT16_MAX) {
+  if (index > UINT16_MAX) {
     this->err += "number of matcher index reaches limit";
     return {};
   }
