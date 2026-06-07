@@ -351,7 +351,7 @@ int GlobPatternScanner::consumeCharSetPart(const bool first, std::string *err) {
     return codePoint;
   }
   if (err) {
-    *err = "invalid utf-8 sequence";
+    *err = "invalid UTF-8 sequence";
   }
   return -1;
 }

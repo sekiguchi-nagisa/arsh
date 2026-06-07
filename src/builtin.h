@@ -2970,7 +2970,7 @@ ARSH_METHOD unicode_category(RuntimeContext &ctx) {
       }
     }
   }
-  raiseError(ctx, TYPE::ArgumentError, "must be valid single utf8 code point");
+  raiseError(ctx, TYPE::ArgumentError, "must be valid single UTF-8 code point");
   RET_ERROR;
 }
 
@@ -2986,7 +2986,7 @@ ARSH_METHOD unicode_script(RuntimeContext &ctx) {
       }
     }
   }
-  raiseError(ctx, TYPE::ArgumentError, "must be valid single utf8 code point");
+  raiseError(ctx, TYPE::ArgumentError, "must be valid single UTF-8 code point");
   RET_ERROR;
 }
 

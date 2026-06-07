@@ -47,11 +47,11 @@ for e in $expected {
 
 $ex = 324
 try { $ucd.category($'\xED\xA0\x80') } catch e { $ex = $e; } # surrogate
-assert ($ex as ArgumentError).message() == 'must be valid single utf8 code point'
+assert ($ex as ArgumentError).message() == 'must be valid single UTF-8 code point'
 
 $ex = 34
 try { $ucd.category($'あ1') } catch e { $ex = $e; }
-assert ($ex as ArgumentError).message() == 'must be valid single utf8 code point'
+assert ($ex as ArgumentError).message() == 'must be valid single UTF-8 code point'
 
 # script (for Unicode 17)
 $expected = [
@@ -238,11 +238,11 @@ for e in $expected {
 
 $ex = 324
 try { $ucd.script($'\xED\xA0\x80') } catch e { $ex = $e; } # surrogate
-assert ($ex as ArgumentError).message() == 'must be valid single utf8 code point'
+assert ($ex as ArgumentError).message() == 'must be valid single UTF-8 code point'
 
 $ex = 34
 try { $ucd.script($'あ1') } catch e { $ex = $e; }
-assert ($ex as ArgumentError).message() == 'must be valid single utf8 code point'
+assert ($ex as ArgumentError).message() == 'must be valid single UTF-8 code point'
 
 # emoji sequence property (for Unicode 17)
 $expected = [

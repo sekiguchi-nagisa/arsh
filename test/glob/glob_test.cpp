@@ -254,7 +254,7 @@ TEST_F(GlobTest, parse_charset1) {
   ASSERT_NO_FATAL_FAILURE(checkCharSet(
       "[12\\/", {GlobPatternScanner::CharSetStatus::SYNTAX_ERROR, "need character after `\\'"}));
   ASSERT_NO_FATAL_FAILURE(checkCharSet(
-      "[12\xFF", {GlobPatternScanner::CharSetStatus::SYNTAX_ERROR, "invalid utf-8 sequence"}));
+      "[12\xFF", {GlobPatternScanner::CharSetStatus::SYNTAX_ERROR, "invalid UTF-8 sequence"}));
 }
 
 TEST_F(GlobTest, parse_charset2) {

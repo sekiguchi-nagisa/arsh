@@ -66,7 +66,7 @@ Optional<Flag> Flag::parse(const StringRef ref, const Mode defaultMode, std::str
       iter += len;
     } else {
       if (err) {
-        *err += "invalid utf8 byte";
+        *err += "invalid UTF-8 byte";
       }
       return {};
     }
