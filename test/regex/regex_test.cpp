@@ -58,6 +58,17 @@ TEST(RegexFlag, base) {
   flag = regex::Flag::parse("vvviu", &err);
   ASSERT_FALSE(flag.hasValue());
   ASSERT_EQ("flag has already been specified", err);
+
+  err.clear();
+  flag = regex::Flag::parse("viu", &err);
+  ASSERT_FALSE(flag.hasValue());
+  ASSERT_EQ("flag has already been specified", err);
+
+  // invalid utf8
+  err.clear();
+  flag = regex::Flag::parse("\xFF\xFE", &err);
+  ASSERT_FALSE(flag.hasValue());
+  ASSERT_EQ("invalid UTF-8 byte", err);
 }
 
 TEST(RegexFlag, onlyModifier) {
@@ -89,6 +100,12 @@ TEST(RegexFlag, onlyModifier) {
   modifiers = regex::Flag::parseModifier("i", nullptr);
   ASSERT_TRUE(modifiers.hasValue());
   ASSERT_TRUE(hasFlag(modifiers.unwrap(), regex::Modifier::IGNORE_CASE));
+
+  // invalid utf8
+  err.clear();
+  modifiers = regex::Flag::parseModifier("\xFE\xFF", &err);
+  ASSERT_FALSE(modifiers.hasValue());
+  ASSERT_EQ("invalid UTF-8 byte", err);
 }
 
 TEST(RegexFlag, str) {

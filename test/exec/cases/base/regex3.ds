@@ -1,0 +1,39 @@
+
+# deep nested pattern
+var pattern = "1"
+for(var i = 0; $i < 65535; $i++) {
+    $pattern = "(${pattern})"
+}
+
+var ex = 21 as Any
+try { new Regex($pattern); } catch e { $ex = $e; }
+assert $ex is RegexSyntaxError
+assert ($ex as RegexSyntaxError).message() == 'deeply nested regular expression'
+
+# capture group limit
+$pattern = ""
+for(var i = 0; $i < 65535; $i++) {
+    $pattern += "()"
+}
+
+$ex = 2345
+assert new Regex($pattern) =~ 'aaa'
+
+$pattern += "()"
+$ex = 2345
+try { new Regex($pattern); } catch e { $ex = $e; }
+assert $ex is RegexSyntaxError
+assert ($ex as RegexSyntaxError).message() == 'number of capture group reaches limit'
+
+# loop index limit
+$pattern = ""
+for(var i = 0; $i < 65535; $i++) {
+    $pattern += "(?:)*"
+}
+assert new Regex($pattern) =~ 'sss'
+
+$pattern += "(?:)*"
+$ex = 223
+try { new Regex($pattern); } catch e { $ex = $e; }
+assert $ex is RegexSyntaxError
+assert ($ex as RegexSyntaxError).message() == 'number of quantifier reaches limit'
