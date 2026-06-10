@@ -634,8 +634,11 @@ StringRef Property::toStringValue(const bool longName) const {
   return "";
 }
 
-Optional<Property> parseProperty(StringRef name, StringRef value, std::string *err) {
-  static const StrRefMap<Property::Name> propertyNames = {
+static StrRefMap<Property::Name> initPropertyNameMap() {
+  static constexpr struct {
+    const char *name;
+    Property::Name p;
+  } table[] = {
       {"General_Category", Property::Name::General_Category},
       {"gc", Property::Name::General_Category},
       {"Script", Property::Name::Script},
@@ -643,6 +646,15 @@ Optional<Property> parseProperty(StringRef name, StringRef value, std::string *e
       {"Script_Extensions", Property::Name::Script_Extensions},
       {"scx", Property::Name::Script_Extensions},
   };
+  StrRefMap<Property::Name> map;
+  for (auto [name, p] : table) {
+    map.emplace(name, p);
+  }
+  return map;
+}
+
+Optional<Property> parseProperty(StringRef name, StringRef value, std::string *err) {
+  static const auto propertyNames = initPropertyNameMap();
   // resolve property name
   Property::Name prefix;
   if (name.empty()) {
@@ -708,12 +720,21 @@ bool hasPrimeLoneProperty(int codePoint, Lone lone) {
   return false;
 }
 
-Optional<RGIEmojiSeq> parseEmojiProperty(StringRef ref) {
-  static const StrRefMap<RGIEmojiSeq> propertyNames = {
-#define GEN_TABLE(E, B) {#E, RGIEmojiSeq::E},
+static StrRefMap<RGIEmojiSeq> initEmojiNameMap() {
+  static constexpr RGIEmojiSeq table[] = {
+#define GEN_TABLE(E, B) RGIEmojiSeq::E,
       EACH_RGI_EMOJI_SEQ(GEN_TABLE)
 #undef GEN_TABLE
   };
+  StrRefMap<RGIEmojiSeq> propertyNames;
+  for (auto &seq : table) {
+    propertyNames.emplace(toString(seq), seq);
+  }
+  return propertyNames;
+}
+
+Optional<RGIEmojiSeq> parseEmojiProperty(StringRef ref) {
+  static const auto propertyNames = initEmojiNameMap();
   if (const auto iter = propertyNames.find(ref); iter != propertyNames.end()) {
     return iter->second;
   }

@@ -266,6 +266,62 @@ TEST(UCPTest, lone) {
   ASSERT_EQ("", ucp::toString(ucp::Lone::ESRegexClassSpace, true));
   ASSERT_EQ("", ucp::toString(ucp::Lone::ESRegexClassSpace, false));
   ASSERT_FALSE(ucp::parseProperty("ESRegexClassSpace", nullptr).hasValue());
+
+  ASSERT_TRUE(ucp::hasPrimeLoneProperty('\n', ucp::Lone::ESRegexClassSpace));
+  ASSERT_FALSE(ucp::hasPrimeLoneProperty('@', ucp::Lone::ESRegexClassSpace));
+  ASSERT_FALSE(ucp::hasPrimeLoneProperty('@', static_cast<ucp::Lone>(200)));
+}
+
+TEST(UCPTest, invalid) {
+  {
+    ucp::Property property(static_cast<ucp::Property::Name>(100), toUnderlying(ucp::Category::Cc));
+    CodePointSetBuilder builder;
+    bool r = ucp::getPropertySet(property, ucp::BuilderOrSet(builder));
+    ASSERT_FALSE(r);
+  }
+  {
+    auto property = ucp::Property::category(static_cast<ucp::Category>(200));
+    CodePointSetBuilder builder;
+    bool r = ucp::getPropertySet(property, ucp::BuilderOrSet(builder));
+    ASSERT_FALSE(r);
+  }
+  {
+    ucp::Property property(ucp::Property::Name::Script, 250);
+    CodePointSetBuilder builder;
+    bool r = ucp::getPropertySet(property, ucp::BuilderOrSet(builder));
+    ASSERT_FALSE(r);
+  }
+  {
+    auto property = ucp::Property::lone(static_cast<ucp::Lone>(200));
+    CodePointSetBuilder builder;
+    bool r = ucp::getPropertySet(property, ucp::BuilderOrSet(builder));
+    ASSERT_FALSE(r);
+  }
+
+  std::string err;
+  auto property = ucp::parseProperty("AAA", "BBB", &err);
+  ASSERT_FALSE(property.hasValue());
+  ASSERT_EQ("unrecognized property name: AAA", err);
+
+  err.clear();
+  property = ucp::parseProperty("General_Category", "BBB", &err);
+  ASSERT_FALSE(property.hasValue());
+  ASSERT_EQ("unrecognized property value: BBB", err);
+
+  err.clear();
+  property = ucp::parseProperty("sc", "BBB", &err);
+  ASSERT_FALSE(property.hasValue());
+  ASSERT_EQ("unrecognized property value: BBB", err);
+
+  err.clear();
+  property = ucp::parseProperty("scx", "CCC", &err);
+  ASSERT_FALSE(property.hasValue());
+  ASSERT_EQ("unrecognized property value: CCC", err);
+
+  err.clear();
+  property = ucp::parseProperty("DDD", &err);
+  ASSERT_FALSE(property.hasValue());
+  ASSERT_EQ("unrecognized property value: DDD", err);
 }
 
 static CodePointSet set(std::vector<std::pair<int, int>> &&ranges) {
@@ -578,9 +634,19 @@ struct PropertyTest : public ::testing::TestWithParam<PROPERTY_TEST_ENTRY> {
       auto out = format("%s, %s = 0x%04X", entry.property.toString().c_str(),
                         entry.value.toString().c_str(), codePoint);
       SCOPED_TRACE(out);
-      auto set = ucp::getPropertySet(property.unwrap());
-      ASSERT_TRUE(set);
-      ASSERT_TRUE(set.ref().contains(codePoint));
+      {
+        auto set = ucp::getPropertySet(property.unwrap());
+        ASSERT_TRUE(set);
+        ASSERT_TRUE(set.ref().contains(codePoint));
+      }
+      {
+        CodePointSetBuilder builder;
+        bool s = ucp::getPropertySet(property.unwrap(), ucp::BuilderOrSet(builder));
+        ASSERT_TRUE(s);
+        auto set = builder.build();
+        ASSERT_TRUE(set);
+        ASSERT_TRUE(set.ref().contains(codePoint));
+      }
     }
 
     ASSERT_TRUE(entry.falseCodes.end() - entry.falseCodes.begin() > 0);
@@ -588,9 +654,19 @@ struct PropertyTest : public ::testing::TestWithParam<PROPERTY_TEST_ENTRY> {
       auto out = format("%s, %s = 0x%04X", entry.property.toString().c_str(),
                         entry.value.toString().c_str(), codePoint);
       SCOPED_TRACE(out);
-      auto set = ucp::getPropertySet(property.unwrap());
-      ASSERT_TRUE(set);
-      ASSERT_FALSE(set.ref().contains(codePoint));
+      {
+        auto set = ucp::getPropertySet(property.unwrap());
+        ASSERT_TRUE(set);
+        ASSERT_FALSE(set.ref().contains(codePoint));
+      }
+      {
+        CodePointSetBuilder builder;
+        bool s = ucp::getPropertySet(property.unwrap(), ucp::BuilderOrSet(builder));
+        ASSERT_TRUE(s);
+        auto set = builder.build();
+        ASSERT_TRUE(set);
+        ASSERT_FALSE(set.ref().contains(codePoint));
+      }
     }
   }
 };
