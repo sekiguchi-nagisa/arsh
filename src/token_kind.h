@@ -429,9 +429,10 @@ const char *toString(TokenKind kind);
 // for operator precedence parsing
 
 enum class OperatorAttr : unsigned char {
-  INFIX = 1 << 0,
-  PREFIX = 1 << 1,
-  RASSOC = 1 << 2,
+  NONE = 0u,
+  INFIX = 1u << 0u,
+  PREFIX = 1u << 1u,
+  RASSOC = 1u << 2u,
 };
 
 template <>

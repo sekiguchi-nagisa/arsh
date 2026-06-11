@@ -173,6 +173,7 @@ public:
   OP(SIGN, (1u << 4u), '+')
 
 enum class FormatFlag : unsigned char {
+  NONE = 0u,
 #define GEN_ENUM(E, F, C) E = (F),
   EACH_FORMAT_FLAG(GEN_ENUM)
 #undef GEN_ENUM

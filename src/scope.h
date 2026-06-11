@@ -428,6 +428,7 @@ public:
 using ModResult = Union<const char *, unsigned int, ModLoadingError>;
 
 enum class ModLoadOption : unsigned char {
+  NONE = 0u,
   IGNORE_NON_REG_FILE = 1u << 0u,
 };
 

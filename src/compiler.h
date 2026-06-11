@@ -106,6 +106,7 @@ private:
 };
 
 enum class CompileOption : unsigned char {
+  NONE = 0u,
   LOAD_TO_ROOT = 1u << 0u,
   PARSE_ONLY = 1u << 1u,
   CHECK_ONLY = 1u << 2u,

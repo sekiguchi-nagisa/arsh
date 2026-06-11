@@ -417,6 +417,7 @@ template <>
 struct allow_enum_bitop<CmdResolver::Op> : std::true_type {};
 
 enum class CmdCallAttr : unsigned char {
+  NONE = 0u,
   SET_VAR = 1u << 0u,
   NEED_FORK = 1u << 1u, // for external command
   RAISE = 1u << 2u,

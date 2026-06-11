@@ -176,6 +176,7 @@ class ProcTable;
 class JobTable;
 
 enum class JobInfoFormat : unsigned short {
+  NONE = 0u,
   JOB_ID = 1u << 0u,
   STATE = 1u << 1u,
   CUR_JOB = 1u << 2u,

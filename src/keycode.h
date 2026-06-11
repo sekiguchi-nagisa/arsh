@@ -69,6 +69,7 @@ inline ssize_t readRetryWithTimeout(int fd, char *buf, size_t bufSize, int timeo
 
 // for kitty keyboard protocol
 enum class ModifierKey : unsigned char {
+  NONE = 0u,
 #define GEN_ENUM(E, D, S) E = (D),
   EACH_MODIFIER_KEY(GEN_ENUM)
 #undef GEN_ENUM

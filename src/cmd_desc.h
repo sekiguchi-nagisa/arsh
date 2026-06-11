@@ -71,6 +71,7 @@ ArrayRef<SHCTLSubCmdEntry> getSHCTLSubCmdEntries();
 
 // set/unset via 'shctl' command
 enum class RuntimeOption : unsigned short {
+  NONE = 0u,
 #define GEN_ENUM(E, V, N) E = (V),
   EACH_RUNTIME_OPTION(GEN_ENUM)
 #undef GEN_ENUM

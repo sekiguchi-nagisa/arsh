@@ -659,6 +659,7 @@ ObjPtr<T> toObjPtr(Value &&value) noexcept {
 }
 
 enum class ConcatOp : unsigned char {
+  NONE = 0u,
   APPEND = 1u << 0u,
   INTERPOLATE = 1u << 1u,
 };

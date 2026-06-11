@@ -29,6 +29,7 @@
 namespace arsh {
 
 enum class ArgEntryAttr : unsigned char {
+  NONE = 0u,
   REQUIRED = 1u << 0u,    // require option
   POSITIONAL = 1u << 1u,  // positional argument
   REMAIN = 1u << 2u,      // remain argument (last positional argument that accept string array)

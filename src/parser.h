@@ -28,6 +28,7 @@
 namespace arsh {
 
 enum class ParserOption : unsigned char {
+  NONE = 0u,
   SINGLE_EXPR = 1u << 0u,
   NEED_HERE_END = 1u << 1u,     // for line continuation checking
   COLLECT_SIGNATURE = 1u << 2u, // for signature help

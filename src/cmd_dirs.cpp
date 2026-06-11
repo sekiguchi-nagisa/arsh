@@ -115,6 +115,7 @@ END:
 }
 
 enum class PrintDirOp : unsigned char {
+  NONE = 0u,
   FULL_PATH = 1u << 0u,
   PER_LINE = 1u << 1u,
   LINENO = 1u << 2u,

@@ -23,6 +23,7 @@
 namespace arsh {
 
 enum class FrontEndOption : unsigned char {
+  NONE = 0u,
   PARSE_ONLY = 1 << 0,
   TOPLEVEL = 1 << 1,
   ERROR_RECOVERY = 1 << 2,

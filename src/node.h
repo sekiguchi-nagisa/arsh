@@ -661,7 +661,7 @@ public:
 
 class VarNode : public WithRtti<AssignableNode, NodeKind::Var> {
 public:
-  enum ExtraOp : unsigned int {
+  enum ExtraOp : unsigned char {
     NONE,
     ARGS_LEN,
     POSITIONAL_ARG,

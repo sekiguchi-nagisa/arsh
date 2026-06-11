@@ -67,7 +67,7 @@ public:
   // helper method for logger setting.
   template <typename Func>
   void sync(Func func) {
-    std::lock_guard<std::mutex> guard(this->outMutex);
+    std::scoped_lock guard(this->outMutex);
     func();
   }
 

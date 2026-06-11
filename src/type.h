@@ -258,7 +258,7 @@ public:
   int getNumTypeIndex() const {
     static_assert(toUnderlying(TYPE::Int) + 1 == toUnderlying(TYPE::Float));
     if (this->typeId() >= toUnderlying(TYPE::Int) && this->typeId() <= toUnderlying(TYPE::Float)) {
-      return this->typeId() - toUnderlying(TYPE::Int);
+      return static_cast<int>(this->typeId()) - static_cast<int>(toUnderlying(TYPE::Int));
     }
     return -1;
   }
@@ -700,6 +700,7 @@ class ArgEntry;
 class CLIRecordType : public RecordType {
 public:
   enum class Attr : unsigned char {
+    NONE = 0u,
     VERBOSE = 1u << 0u,    // verbose usage message
     TOPLEVEL = 1u << 1u,   // default cli name is toplevel arg0
     HAS_SUBCMD = 1u << 2u, // contains sub-commands
@@ -736,6 +737,7 @@ template <>
 struct allow_enum_bitop<CLIRecordType::Attr> : std::true_type {};
 
 enum class ImportedModKind : unsigned char {
+  NONE = 0u,
   GLOBAL = 1u << 0u,
   INLINED = 1u << 1u,
 };
@@ -744,6 +746,7 @@ template <>
 struct allow_enum_bitop<ImportedModKind> : std::true_type {};
 
 enum class ModAttr : unsigned char {
+  NONE = 0u,
   HAS_ERRORS = 1u << 0u,  // there any errors in this module
   UNREACHABLE = 1u << 1u, // last statement in this module is Nothing type
 };
