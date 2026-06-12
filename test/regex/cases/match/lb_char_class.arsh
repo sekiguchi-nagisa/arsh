@@ -128,3 +128,34 @@ input: `ABab@Cい'
 (offset=5, size=1)
 EOF
 )
+
+# (?<=[\w\W])
+assert diff <(redump -m '' '(?<=[\w\W])' '') <(<<'EOF'
+input: `'
+failed
+EOF
+)
+
+assert diff <(redump -m '12' '(?<=[\w\W])' '') <(<<'EOF'
+input: `12'
+(offset=1, size=0)
+EOF
+)
+
+assert diff <(redump -m 'あ' '(?<=[\w\W])' 'iv') <(<<'EOF'
+input: `あ'
+(offset=3, size=0)
+EOF
+)
+
+assert diff <(redump -m $'\n' '(?<=[\w\W])' '') <(<<EOF     # also match newline
+input: \`${$'\n'}'
+(offset=1, size=0)
+EOF
+)
+
+assert diff <(redump -m $'\r' '(?<=[\w\W])' '') <(<<EOF     # also match newline
+input: \`${$'\r'}'
+(offset=1, size=0)
+EOF
+)

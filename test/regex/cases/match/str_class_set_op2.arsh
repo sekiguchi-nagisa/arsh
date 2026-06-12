@@ -311,3 +311,34 @@ input: `あ'
 (offset=0, size=3)
 EOF
 )
+
+# [[\p{Basic_Emoji}--[\u23F0-\u267F]--[\u26BD-\u26BE]]&&\p{Emoji}]
+assert diff <(redump -m '🐓' '[[\p{Basic_Emoji}--[\u23F0-\u267F]--[\u26BD-\u26BE]]&&\p{Emoji}]' 'v') <(<<'EOF'
+input: `🐓'
+(offset=0, size=4)
+EOF
+)
+
+assert diff <(redump -m '🤿' '[[\p{Basic_Emoji}--[\u23F0-\u267F]--[\u26BD-\u26BE]]&&\p{Emoji}]' 'v') <(<<'EOF'
+input: `🤿'
+(offset=0, size=4)
+EOF
+)
+
+assert diff <(redump -m '⚽' '[[\p{Basic_Emoji}--[\u23F0-\u267F]--[\u26BD-\u26BE]]&&\p{Emoji}]' 'v') <(<<'EOF'
+input: `⚽'
+failed
+EOF
+)
+
+assert diff <(redump -m '⏳' '[[\p{Basic_Emoji}--[\u23F0-\u267F]--[\u26BD-\u26BE]]&&\p{Emoji}]' 'v') <(<<'EOF'
+input: `⏳'
+failed
+EOF
+)
+
+assert diff <(redump -m '🎖️' '[[\p{Basic_Emoji}--[\u23F0-\u267F]--[\u26BD-\u26BE]]&&\p{Emoji}]' 'v') <(<<'EOF'
+input: `🎖️'
+failed
+EOF
+)
