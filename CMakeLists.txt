@@ -350,6 +350,7 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/inspect)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/helper)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/emoji)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/casefold)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/test262regex)
 
 
 set(CMAKE_MACOSX_RPATH ON)

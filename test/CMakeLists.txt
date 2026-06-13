@@ -44,6 +44,7 @@ add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/brace)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/litecheck)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/edit)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/regex)
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/test262regex)
 
 include_directories(${CMAKE_SOURCE_DIR}/tools/json)
 add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/json)
