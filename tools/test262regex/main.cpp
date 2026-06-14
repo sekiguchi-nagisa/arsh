@@ -17,7 +17,7 @@
 #include <misc/opt.hpp>
 #include <misc/resource.hpp>
 
-#include "js.h"
+#include "js_lexer.h"
 #include "meta.h"
 
 using namespace arsh;
@@ -29,6 +29,42 @@ static void usage(FILE *fp, char **argv) {
 static void invalidOption(char **argv, int opt) {
   fprintf(stderr, "invalid option: -%c", opt);
   usage(stderr, argv);
+}
+
+static std::string toString(const std::vector<std::string> &values) {
+  std::string ret = "[";
+  for (unsigned int i = 0; i < values.size(); i++) {
+    if (i > 0) {
+      ret += ", ";
+    }
+    ret += values[i];
+  }
+  ret += "]";
+  return ret;
+}
+
+static const char *toString(re262::TestMetaData::Phase phase) {
+  switch (phase) {
+  case re262::TestMetaData::Phase::PARSE:
+    return "parse";
+  case re262::TestMetaData::Phase::RUNTIME:
+    return "runtime";
+  }
+  return "";
+}
+
+static void print(FILE *fp, const re262::TestMetaData &data) {
+  fprintf(fp,
+          "--- meta-data ---\n"
+          "author: %s\ndescription: %s\ninfo: %s\nesid: %s\n"
+          "features: %s\nincludes: %s\n",
+          data.author.c_str(), data.description.c_str(), data.info.c_str(), data.esid.c_str(),
+          toString(data.features).c_str(), toString(data.includes).c_str());
+  if (data.negative.has_value()) {
+    auto &negative = data.negative.value();
+    fprintf(fp, "negative:\n  phase: %s\n  type: %s\n", toString(negative.phase),
+            negative.type.c_str());
+  }
 }
 
 int main(int argc, char **argv) {
@@ -68,6 +104,23 @@ int main(int argc, char **argv) {
     fprintf(stderr, "[meta-data error] %s\n  at %s\n", err.c_str(), filename);
     return 1;
   }
-  (void)debug;
+  if (debug) {
+    print(stderr, metaData.value());
+  }
+
+  re262::JSLexer lexer(filename, input);
+  re262::JSTokenKind kind = re262::JSTokenKind::INVALID;
+  do {
+    Token token;
+    kind = lexer.nextToken(token);
+    if (debug) {
+      fprintf(stderr, "(%s, %s)\n", re262::toString(kind), lexer.toTokenText(token).c_str());
+    }
+    if (re262::isInvalidToken(kind)) {
+      fprintf(stderr, "[syntax error] invalid token: %s\n  at %s\n",
+              lexer.toTokenText(token).c_str(), filename);
+      return 1;
+    }
+  } while (kind != re262::JSTokenKind::EOS);
   return 0;
 }
