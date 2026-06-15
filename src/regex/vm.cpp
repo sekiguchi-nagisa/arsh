@@ -15,6 +15,7 @@
  */
 
 #include "input.h"
+#include "instruction.h"
 #include "matcher.h"
 #include "misc/format.hpp"
 #include "misc/rtti.hpp"

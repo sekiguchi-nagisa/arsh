@@ -46,27 +46,12 @@ public:
   static constexpr size_type MAX_SIZE = static_cast<size_type>(-1);
 
 private:
-  static_assert(std::is_unsigned_v<SIZE_T>, "need unsigned type");
-
-  static_assert(std::is_standard_layout_v<T> && std::is_trivially_copyable_v<T>, "forbidden type");
-
   size_type cap_;
   size_type size_;
 
   T *data_;
 
-  void moveElements(iterator src, iterator dest) noexcept {
-    if (src == dest) {
-      return;
-    }
-
-    memmove(dest, src, sizeof(T) * (this->end() - src));
-    if (src < dest) {
-      this->size_ += (dest - src);
-    } else {
-      this->size_ -= (src - dest);
-    }
-  }
+  void moveElements(iterator src, iterator dest) noexcept;
 
   /**
    * if out of range, abort
@@ -257,6 +242,23 @@ public:
 // ########################
 // ##     FlexBuffer     ##
 // ########################
+
+template <typename T, typename SIZE_T>
+void FlexBuffer<T, SIZE_T>::moveElements(iterator src, iterator dest) noexcept {
+  static_assert(std::is_unsigned_v<SIZE_T>, "need unsigned type");
+  static_assert(std::is_standard_layout_v<T> && std::is_trivially_copyable_v<T>, "forbidden type");
+
+  if (src == dest) {
+    return;
+  }
+
+  memmove(dest, src, sizeof(T) * (this->end() - src));
+  if (src < dest) {
+    this->size_ += (dest - src);
+  } else {
+    this->size_ -= (src - dest);
+  }
+}
 
 template <typename T, typename SIZE_T>
 void FlexBuffer<T, SIZE_T>::checkRange(size_type index) const noexcept {

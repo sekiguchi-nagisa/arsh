@@ -21,13 +21,14 @@
 
 #include "capture.h"
 #include "flag.h"
-#include "instruction.h"
 #include "matcher.h"
 #include "misc/array_ref.hpp"
 #include "misc/resource.hpp"
 #include "misc/time_util.hpp"
 
 namespace arsh::regex {
+
+struct Inst;
 
 class Regex {
 private:

@@ -21,6 +21,7 @@
 #include <cstring>
 #include <type_traits>
 
+#include "misc/flag_util.hpp"
 #include "unicode/emoji_seq.hpp"
 
 namespace arsh::regex {

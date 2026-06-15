@@ -17,6 +17,7 @@
 #ifndef ARSH_REGEX_EMIT_H
 #define ARSH_REGEX_EMIT_H
 
+#include "instruction.h"
 #include "misc/buffer.hpp"
 #include "misc/inlined_stack.hpp"
 #include "misc/result.hpp"

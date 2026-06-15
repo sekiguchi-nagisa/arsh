@@ -15,6 +15,7 @@
  */
 
 #include "dump.h"
+#include "instruction.h"
 #include "misc/format.hpp"
 #include "misc/unicode.hpp"
 #include "node.h"
