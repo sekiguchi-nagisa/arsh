@@ -7,12 +7,12 @@ mkdir -p build-em
 cd build-em || exit 1
 
 # first normal build
-cmake "$ROOT" -DBUILD_SHARED_LIB=off -DUSE_CTEST=off -G Ninja
+cmake "$ROOT" -DBUILD_SHARED_LIB=off -G Ninja
 ninja
 
 # second build by emscripten
 rm -rf CMake*
 rm -rf .ninja_*
 
-emcmake cmake "$ROOT" -DBUILD_SHARED_LIB=off -DUSE_CTEST=off -G Ninja
+emcmake cmake "$ROOT" -DBUILD_SHARED_LIB=off -G Ninja
 ninja

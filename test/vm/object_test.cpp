@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 
 #include <cmath>
+#include <csignal>
 
 #include <misc/split_random.hpp>
 #include <object.h>
