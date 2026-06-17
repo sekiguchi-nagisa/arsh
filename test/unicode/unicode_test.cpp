@@ -232,8 +232,8 @@ TEST_F(UnicodeTest, illegal) {
 }
 
 TEST_F(UnicodeTest, utf16) {
-  unsigned short high = 0xD867;
-  unsigned short low = 0xDE3D;
+  const char16_t high = 0xD867;
+  const char16_t low = 0xDE3D;
 
   ASSERT_TRUE(UnicodeUtil::isHighSurrogate(high));
   ASSERT_FALSE(UnicodeUtil::isHighSurrogate(low));
@@ -251,6 +251,22 @@ TEST_F(UnicodeTest, utf16) {
   ASSERT_TRUE(UnicodeUtil::isSupplementaryCodePoint(code));
   ASSERT_FALSE(UnicodeUtil::isBmpCodePoint(code));
   ASSERT_EQ(0x29E3D, code);
+
+  auto ret = UnicodeUtil::codePointToUtf16(0x1234);
+  ASSERT_EQ(ret.first, ret.second);
+  ASSERT_EQ(0x1234, ret.first);
+
+  ret = UnicodeUtil::codePointToUtf16(high);
+  ASSERT_EQ(ret.first, ret.second);
+  ASSERT_EQ(high, ret.first);
+
+  ret = UnicodeUtil::codePointToUtf16(low);
+  ASSERT_EQ(ret.first, ret.second);
+  ASSERT_EQ(low, ret.first);
+
+  ret = UnicodeUtil::codePointToUtf16(0x29E3D);
+  ASSERT_EQ(high, ret.first);
+  ASSERT_EQ(low, ret.second);
 }
 
 TEST_F(UnicodeTest, graphemeBreakProperty) {

@@ -123,12 +123,22 @@ struct UnicodeUtil {
    * @param low
    * @return
    */
-  static int utf16ToCodePoint(int high, int low) {
+  static int utf16ToCodePoint(char16_t high, char16_t low) {
     if (isHighSurrogate(high) && isLowSurrogate(low)) {
       return static_cast<int>((static_cast<unsigned int>(high - 0xD800) << 10) +
                               static_cast<unsigned int>(low - 0xDC00) + 0x10000);
     }
     return -1;
+  }
+
+  static std::pair<char16_t, char16_t> codePointToUtf16(int codePoint) {
+    if (isBmpCodePoint(codePoint)) {
+      return {static_cast<char16_t>(codePoint), static_cast<char16_t>(codePoint)};
+    }
+    const auto code = static_cast<unsigned int>(codePoint) - 0x10000;
+    const auto high = static_cast<char16_t>((code >> 10) + 0xD800);
+    const auto low = static_cast<char16_t>((code & 0x3FF) + 0xDC00);
+    return {high, low};
   }
 
   /**

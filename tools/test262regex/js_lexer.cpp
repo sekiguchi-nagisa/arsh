@@ -192,14 +192,10 @@ std::optional<std::u16string> JSLexer::unquoteString(StringRef ref, std::string 
         break;
       }
     }
-    if (UnicodeUtil::isBmpCodePoint(codePoint)) {
-      ret += static_cast<char16_t>(codePoint);
-    } else {
-      assert(UnicodeUtil::isValidCodePoint(codePoint));
-      const auto code = static_cast<unsigned int>(codePoint) - 0x10000;
-      const auto high = static_cast<char16_t>((code >> 10) + 0xD800);
-      const auto low = static_cast<char16_t>((code & 0x3FF) + 0xDC00);
-      ret += high;
+    assert(UnicodeUtil::isCodePoint(codePoint));
+    auto [high, low] = UnicodeUtil::codePointToUtf16(codePoint);
+    ret += high;
+    if (high != low) {
       ret += low;
     }
   }
