@@ -17,6 +17,7 @@
 #include <misc/opt.hpp>
 #include <misc/resource.hpp>
 
+#include "js.h"
 #include "js_lexer.h"
 #include "meta.h"
 

@@ -17,6 +17,118 @@
 #ifndef ARSH_TOOLS_TEST262_REGEX_JS_H
 #define ARSH_TOOLS_TEST262_REGEX_JS_H
 
-namespace arsh::re262 {} // namespace arsh::re262
+#include <functional>
+#include <memory>
+#include <string>
+#include <unordered_map>
+#include <variant>
+#include <vector>
+
+#include "misc/result.hpp"
+#include "misc/string_ref.hpp"
+#include "regex/regex.h"
+
+namespace arsh::re262 {
+
+using JSStringPtr = std::shared_ptr<std::u16string>;
+
+struct JSRegex;
+using JSRegexPtr = std::shared_ptr<JSRegex>;
+
+struct JSFunction;
+using JSFunctionPtr = std::shared_ptr<JSFunction>;
+
+struct JSArray;
+using JSArrayPtr = std::shared_ptr<JSArray>;
+
+struct JSObject;
+using JSObjectPtr = std::shared_ptr<JSObject>;
+
+using JSValue = std::variant<std::monostate, bool, double, JSStringPtr, JSRegexPtr, JSFunctionPtr,
+                             JSArrayPtr, JSObjectPtr>;
+
+inline bool isUndefined(const JSValue &value) {
+  return std::holds_alternative<std::monostate>(value);
+}
+
+struct JSThrown {
+  JSValue value;
+};
+
+class JSEnv;
+
+struct JSObject {
+  std::unordered_map<std::string, JSValue> values;
+};
+
+#define EACH_JS_EXTRA_RE_FLAG(E)                                                                   \
+  E(HAS_INDICES, (1u << 0u))                                                                       \
+  E(GLOBAL, (1u << 1u))                                                                            \
+  E(STICKY, (1u << 2u))
+
+struct JSRegex : JSObject {
+  enum class ExtraFlag : unsigned char {
+    NONE = 0u,
+#define GEN_ENUM(E, D) E = (D),
+    EACH_JS_EXTRA_RE_FLAG(GEN_ENUM)
+#undef GEN_ENUM
+  };
+
+  regex::Regex regex;
+  ExtraFlag extra;
+};
+
+struct JSFunction : JSObject {
+  std::vector<std::string> params;
+  std::weak_ptr<JSEnv> definedEnv;
+  std::function<Result<JSValue, JSThrown>(std::shared_ptr<JSEnv>)> impl;
+};
+
+struct JSArray {
+  std::vector<JSValue> values;
+};
+
+class JSEnv : public std::enable_shared_from_this<JSEnv> {
+private:
+  std::shared_ptr<JSEnv> parent;
+  std::unordered_map<std::string, JSValue> values;
+
+  explicit JSEnv(std::shared_ptr<JSEnv> parent) : parent(std::move(parent)) {}
+
+public:
+  static std::shared_ptr<JSEnv> createGlobal() {
+    return std::shared_ptr<JSEnv>(new JSEnv(nullptr));
+  }
+
+  std::shared_ptr<JSEnv> createChild() {
+    return std::shared_ptr<JSEnv>(new JSEnv(this->shared_from_this()));
+  }
+
+  const auto &getParent() const { return this->parent; }
+
+  void define(const std::string &name, JSValue value);
+
+  const JSValue *find(const std::string &name) const;
+
+  const JSValue *assign(const std::string &name, JSValue value);
+
+  std::shared_ptr<JSEnv> findGlobalEnv() {
+    auto tmp = this->shared_from_this();
+    while (tmp->getParent()) {
+      tmp = tmp->getParent();
+    }
+    return tmp;
+  }
+};
+
+Result<JSValue, JSThrown> jsEval(const char *sourceName, StringRef source,
+                                 std::shared_ptr<JSEnv> global = nullptr);
+
+} // namespace arsh::re262
+
+namespace arsh {
+template <>
+struct allow_enum_bitop<re262::JSRegex::ExtraFlag> : std::true_type {};
+} // namespace arsh
 
 #endif // ARSH_TOOLS_TEST262_REGEX_JS_H
