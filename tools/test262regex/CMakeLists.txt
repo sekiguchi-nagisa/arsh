@@ -17,10 +17,11 @@ add_gen_lexer_target(
 
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 add_library(re262_static STATIC
-        js.cpp
         meta.cpp
+        js.cpp
         js_lexer.cpp
         ${lexer_src}
+        js_regex.cpp
 )
 target_link_libraries(re262_static regex)
 

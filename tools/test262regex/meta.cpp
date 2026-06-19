@@ -17,7 +17,8 @@
 #include <variant>
 
 #include "meta.h"
-#include "misc/format.hpp"
+
+#include <misc/format.hpp>
 
 namespace arsh::re262 {
 

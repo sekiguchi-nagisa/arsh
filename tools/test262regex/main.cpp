@@ -18,7 +18,6 @@
 #include <misc/resource.hpp>
 
 #include "js.h"
-#include "js_lexer.h"
 #include "meta.h"
 
 using namespace arsh;
@@ -109,19 +108,8 @@ int main(int argc, char **argv) {
     print(stderr, metaData.value());
   }
 
-  re262::JSLexer lexer(filename, input);
-  re262::JSTokenKind kind = re262::JSTokenKind::INVALID;
-  do {
-    Token token;
-    kind = lexer.nextToken(token);
-    if (debug) {
-      fprintf(stderr, "(%s, %s)\n", re262::toString(kind), lexer.toTokenText(token).c_str());
-    }
-    if (re262::isInvalidToken(kind)) {
-      fprintf(stderr, "[syntax error] invalid token: %s\n  at %s\n",
-              lexer.toTokenText(token).c_str(), filename);
-      return 1;
-    }
-  } while (kind != re262::JSTokenKind::EOS);
+  auto env = re262::initJSEnv();
+  auto ret = re262::jsEval(filename, input, env, debug);
+  // TODO: check meta data
   return 0;
 }

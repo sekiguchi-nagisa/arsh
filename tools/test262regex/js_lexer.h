@@ -19,7 +19,7 @@
 
 #include <optional>
 
-#include "misc/lexer_base.hpp"
+#include <misc/lexer_base.hpp>
 
 namespace arsh::re262 {
 
@@ -63,11 +63,14 @@ const char *toString(JSTokenKind kind);
 class JSLexer : public LexerBase {
 private:
   bool prevNewLine{false};
+  bool verbose{false};
 
 public:
   JSLexer(const char *sourceName, StringRef src) : LexerBase(sourceName, src.data(), src.size()) {}
 
   bool hasPrevNewLine() const { return this->prevNewLine; }
+
+  void setVerbose(bool set) { this->verbose = set; }
 
   JSTokenKind nextToken(Token &token);
 

@@ -16,11 +16,183 @@
 
 #include "js.h"
 #include "js_lexer.h"
+#include "js_regex.h"
+
+#include <constant.h>
+#include <misc/parser_base.hpp>
+#include <misc/unicode.hpp>
 
 namespace arsh::re262 {
 
+// ###################
+// ##     JSEnv     ##
+// ###################
+
+void JSEnv::define(const std::string &name, JSValue value) {
+  this->values[name] = std::move(value);
+}
+
+const JSValue *JSEnv::find(const std::string &name) const {
+  for (auto *ptr = this; ptr; ptr = ptr->parent.get()) {
+    if (auto iter = ptr->values.find(name); iter != ptr->values.end()) {
+      return &iter->second;
+    }
+  }
+  return nullptr;
+}
+
+const JSValue *JSEnv::assign(const std::string &name, JSValue value) {
+  for (auto *ptr = this; ptr; ptr = ptr->parent.get()) {
+    if (auto iter = ptr->values.find(name); iter != ptr->values.end()) {
+      iter->second = std::move(value);
+      return &iter->second;
+    }
+  }
+  return nullptr;
+}
+
+static JSValue findProperty(const std::shared_ptr<JSEnv> &env, const JSValue &recv,
+                            const std::string &name) {
+  (void)env;
+  (void)recv;
+  (void)name;
+
+  return {};
+}
+
+static std::u16string toUTF16(StringRef ref) {
+  std::u16string value;
+  const char *end = ref.end();
+  for (const char *iter = ref.begin(); iter != end;) {
+    int codePoint;
+    if (unsigned int len = UnicodeUtil::utf8ToCodePoint(iter, end, codePoint); len) {
+      iter += len;
+    } else { // put dummy
+      iter++;
+      codePoint = UnicodeUtil::REPLACEMENT_CHAR_CODE;
+    }
+    auto [high, low] = UnicodeUtil::codePointToUtf16(codePoint);
+    value += high;
+    if (high != low) {
+      value += low;
+    }
+  }
+  return value;
+}
+
+static JSStringPtr newJSString(StringRef ref) {
+  return std::make_shared<std::u16string>(toUTF16(ref));
+}
+
+static bool toBool(const JSValue &value) {
+  if (std::holds_alternative<bool>(value)) {
+    return std::get<bool>(value);
+  }
+  if (isUndefined(value)) {
+    return false;
+  }
+  if (std::holds_alternative<double>(value)) {
+    auto d = std::get<double>(value);
+    if (d == 0 || std::isnan(d)) {
+      return false;
+    }
+    return true;
+  }
+  if (std::holds_alternative<std::nullptr_t>(value)) {
+    return false;
+  }
+  return true;
+}
+
+static auto callJSFunction(const JSFunctionPtr &func, JSValue &&recv, std::vector<JSValue> &&args) {
+  auto funcEnv = func->definedEnv.lock()->createChild();
+  funcEnv->define(builtin::THIS, std::move(recv));
+  const size_t maxArgs = std::max(func->params.size(), args.size());
+  for (size_t i = 0; i < maxArgs; i++) {
+    if (i < func->params.size()) {
+      funcEnv->define(func->params[i], std::move(args[i]));
+    }
+  }
+  return func->impl(func, funcEnv);
+}
+
+static auto throwReferenceError(const std::shared_ptr<JSEnv> &global, const std::string &message) {
+  auto v = global->findOrUndef(builtin::REF_ERROR);
+  auto func = std::get<JSFunctionPtr>(v);
+  if (auto ret = callJSFunction(func, JSValue(), {newJSString(message)})) {
+    return Err(JSThrown{std::move(ret.asOk())});
+  } else {
+    return Err(std::move(ret.asErr()));
+  }
+}
+
+static auto throwTypeError(const std::shared_ptr<JSEnv> &global, const std::string &message) {
+  auto v = global->findOrUndef(builtin::TYPE_ERROR);
+  auto func = std::get<JSFunctionPtr>(v);
+  if (auto ret = callJSFunction(func, JSValue(), {newJSString(message)})) {
+    return Err(JSThrown{std::move(ret.asOk())});
+  } else {
+    return Err(std::move(ret.asErr()));
+  }
+}
+
+static auto throwSyntaxError(const std::shared_ptr<JSEnv> &global, const char *sourceName,
+                             unsigned int lineNum, const std::string &message) {
+  auto v = global->findOrUndef(builtin::SYNTAX_ERROR);
+  auto func = std::get<JSFunctionPtr>(v);
+  std::vector<JSValue> args;
+  args.emplace_back(newJSString(message));
+  if (sourceName) {
+    args.emplace_back(newJSString(sourceName));
+    if (lineNum) {
+      args.emplace_back(static_cast<double>(lineNum));
+    }
+  }
+  if (auto ret = callJSFunction(func, JSValue(), std::move(args))) {
+    return Err(JSThrown{std::move(ret.asOk())});
+  } else {
+    return Err(std::move(ret.asErr()));
+  }
+}
+
+// for builtin
+
+static void defineError(const std::shared_ptr<JSEnv> &global, const char *name) {
+  auto func = std::make_shared<JSFunction>(); // TODO: prototype chain
+  func->params = {"message", "fileName", "lineNumber"};
+  func->definedEnv = global;
+  func->values["name"] = std::make_shared<std::u16string>(toUTF16(name));
+  func->impl = [](const JSFunctionPtr &func,
+                  const std::shared_ptr<JSEnv> &env) -> Result<JSValue, JSThrown> {
+    JSObjectPtr obj;
+    if (auto v = env->findOrUndef(builtin::THIS); std::holds_alternative<JSObjectPtr>(v)) {
+      obj = std::get<JSObjectPtr>(v);
+    } else {
+      obj = std::make_shared<JSObject>();
+    }
+    env->assign(builtin::THIS, obj);
+    obj->values[builtin::PROTO] = func;
+    for (auto &param : func->params) {
+      obj->values[param] = env->findOrUndef(param);
+    }
+    return Ok(obj);
+  };
+  global->define(name, std::move(func));
+}
+
+std::shared_ptr<JSEnv> initJSEnv() {
+  auto global = JSEnv::createGlobal();
+  defineError(global, builtin::SYNTAX_ERROR);
+  defineError(global, builtin::TYPE_ERROR);
+  defineError(global, builtin::REF_ERROR);
+  return global;
+}
+
 // for node definition
+
 struct Node;
+
+struct NullLiteral {};
 
 struct BoolLiteral {
   bool value;
@@ -60,6 +232,11 @@ struct CallExpr {
   std::vector<std::unique_ptr<Node>> args;
 };
 
+struct UnaryExpr {
+  std::string op;
+  std::unique_ptr<Node> expr;
+};
+
 struct VarDecl { // currently only support `const`
   std::string name;
   std::unique_ptr<Node> expr;
@@ -67,55 +244,300 @@ struct VarDecl { // currently only support `const`
 
 struct Node {
   using Underlying =
-      std::variant<BoolLiteral, NumberLiteral, StringLiteral, RegexLiteral, ArrayLiteral,
-                   ObjectLiteral, NameExpr, AccessExpr, CallExpr, VarDecl>;
+      std::variant<NullLiteral, BoolLiteral, NumberLiteral, StringLiteral, RegexLiteral,
+                   ArrayLiteral, ObjectLiteral, NameExpr, AccessExpr, CallExpr, UnaryExpr, VarDecl>;
   Underlying value;
+
+  explicit Node(Underlying v) : value(std::move(v)) {}
 };
 
-// ###################
-// ##     JSEnv     ##
-// ###################
+// ######################
+// ##     JSParser     ##
+// ######################
 
-void JSEnv::define(const std::string &name, JSValue value) {
-  this->values[name] = std::move(value);
+#define EACH_LA_JS_PRIMARY(OP)                                                                     \
+  OP(NIL)                                                                                          \
+  OP(TRUE)                                                                                         \
+  OP(FALSE)                                                                                        \
+  OP(NUMBER)                                                                                       \
+  OP(STRING)                                                                                       \
+  OP(REGEX)                                                                                        \
+  OP(IDENTIFIER)                                                                                   \
+  OP(LB)                                                                                           \
+  OP(LBC)                                                                                          \
+  OP(LP)
+
+#define EACH_LA_JS_EXPRESSION(OP)                                                                  \
+  OP(NOT)                                                                                          \
+  EACH_LA_JS_PRIMARY(OP)
+
+#define EACH_LA_JS_STATEMENT(OP)                                                                   \
+  OP(CONST)                                                                                        \
+  EACH_LA_JS_EXPRESSION(OP)
+
+#define GEN_LA_CASE(CASE) case JSTokenKind::CASE:
+#define GEN_LA_ALTER(CASE) JSTokenKind::CASE,
+
+#define E_ALTER(...)                                                                               \
+  do {                                                                                             \
+    this->reportNoViableAlterError((JSTokenKind[]){__VA_ARGS__});                                  \
+    return nullptr;                                                                                \
+  } while (false)
+
+#define TRY(expr)                                                                                  \
+  ({                                                                                               \
+    auto v = expr;                                                                                 \
+    if (unlikely(this->hasError())) {                                                              \
+      return nullptr;                                                                              \
+    }                                                                                              \
+    std::forward<decltype(v)>(v);                                                                  \
+  })
+
+class JSParser : public ParserBase<JSTokenKind, JSLexer> {
+public:
+  struct Error {
+    std::string sourceName;
+    unsigned int lineNum;
+    std::string message;
+    std::string detail;
+  };
+
+  explicit JSParser(JSLexer &lex) {
+    this->lexer = &lex;
+    this->fetchNext();
+  }
+
+  std::unique_ptr<Node> operator()() { return this->parseStatement(); }
+
+  explicit operator bool() const { return !isEOSToken(this->curKind); }
+
+  std::optional<Error> formatError() const;
+
+private:
+  std::unique_ptr<Node> parseStatement();
+
+  std::unique_ptr<Node> parseExpression();
+
+  std::unique_ptr<Node> parseUnaryExpression();
+
+  std::unique_ptr<Node> parseMemberExpression();
+
+  std::unique_ptr<Node> parseWithArguments(std::unique_ptr<Node> &&node);
+
+  std::unique_ptr<Node> parsePrimary();
+
+  std::unique_ptr<Node> parseNumber();
+
+  std::unique_ptr<Node> parseObject();
+
+  std::unique_ptr<Node> parseArray();
+};
+
+std::optional<JSParser::Error> JSParser::formatError() const {
+  if (!this->hasError()) {
+    return {};
+  }
+
+  const unsigned int lineNum = this->lexer->getLineNumByPos(this->getError().getErrorToken().pos);
+  std::string str;
+  str += this->lexer->getSourceName();
+  str += ':';
+  str += std::to_string(lineNum);
+  str += ": error: ";
+  str += this->getError().getMessage();
+  str += '\n';
+
+  auto eToken = this->getError().getErrorToken();
+  auto errorToken = this->lexer->shiftEOS(eToken);
+  auto lineToken = this->lexer->getLineToken(errorToken);
+
+  str += this->lexer->formatTokenText(lineToken);
+  str += this->lexer->formatLineMarker(lineToken, errorToken);
+  str += '\n';
+
+  Error err = {.sourceName = this->lexer->getSourceName(),
+               .lineNum = lineNum,
+               .message = this->getError().getMessage(),
+               .detail = std::move(str)};
+  return err;
 }
 
-const JSValue *JSEnv::find(const std::string &name) const {
-  for (auto *ptr = this; ptr; ptr = ptr->parent.get()) {
-    if (auto iter = ptr->values.find(name); iter != ptr->values.end()) {
-      return &iter->second;
+std::unique_ptr<Node> JSParser::parseStatement() {
+  switch (this->curKind) {
+  case JSTokenKind::CONST: {
+    this->consume();
+    Token token = TRY(this->expect(JSTokenKind::IDENTIFIER));
+    TRY(this->expect(JSTokenKind::ASSIGN));
+    auto expr = TRY(this->parseExpression());
+    TRY(this->expect(JSTokenKind::LINE_END));
+    return std::make_unique<Node>(VarDecl{this->lexer->toTokenText(token), std::move(expr)});
+  }
+    // clang-format off
+  EACH_LA_JS_EXPRESSION(GEN_LA_CASE) {
+    auto expr = TRY(this->parseExpression());
+    TRY(this->expect(JSTokenKind::LINE_END));
+    return expr;
+  }
+    // clang-format on
+  default:
+    E_ALTER(EACH_LA_JS_STATEMENT(GEN_LA_ALTER));
+  }
+}
+
+std::unique_ptr<Node> JSParser::parseExpression() { return this->parseUnaryExpression(); }
+
+std::unique_ptr<Node> JSParser::parseUnaryExpression() {
+  switch (this->curKind) {
+  case JSTokenKind::NOT: {
+    Token token = this->expect(JSTokenKind::NOT);
+    auto expr = TRY(this->parseUnaryExpression());
+    return std::make_unique<Node>(UnaryExpr{this->lexer->toTokenText(token), std::move(expr)});
+  }
+  default:
+    return this->parseMemberExpression();
+  }
+}
+
+std::unique_ptr<Node> JSParser::parseMemberExpression() {
+  auto node = TRY(this->parsePrimary());
+  while (true) {
+    switch (this->curKind) {
+    case JSTokenKind::DOT: {
+      this->consume();
+      Token token = TRY(this->expect(JSTokenKind::IDENTIFIER));
+      node = std::make_unique<Node>(AccessExpr{std::move(node), this->lexer->toTokenText(token)});
+      continue;
+    }
+    case JSTokenKind::LP:
+      node = TRY(this->parseWithArguments(std::move(node)));
+      continue;
+    default:
+      goto END;
     }
   }
+END:
+  return node;
+}
+
+std::unique_ptr<Node> JSParser::parseWithArguments(std::unique_ptr<Node> &&node) {
+  TRY(this->expect(JSTokenKind::LP));
+  CallExpr call;
+  call.func = std::move(node);
+  while (this->curKind != JSTokenKind::RP) {
+    call.args.push_back(TRY(this->parseExpression()));
+    if (this->curKind == JSTokenKind::COMMA) {
+      this->consume();
+    } else if (this->curKind != JSTokenKind::RP) {
+      E_ALTER(JSTokenKind::COMMA, JSTokenKind::RP);
+    }
+  }
+  TRY(this->expect(JSTokenKind::RP));
+  return std::make_unique<Node>(std::move(call));
+}
+
+std::unique_ptr<Node> JSParser::parsePrimary() {
+  switch (this->curKind) {
+  case JSTokenKind::NIL:
+    this->consume();
+    return std::make_unique<Node>(NullLiteral{});
+  case JSTokenKind::TRUE:
+    this->consume();
+    return std::make_unique<Node>(BoolLiteral{true});
+  case JSTokenKind::FALSE:
+    this->consume();
+    return std::make_unique<Node>(BoolLiteral{false});
+  case JSTokenKind::NUMBER:
+    return this->parseNumber();
+  case JSTokenKind::STRING: {
+    auto token = this->expect(JSTokenKind::STRING);
+    std::string err;
+    if (auto str = this->lexer->toString(token, &err); str.has_value()) {
+      return std::make_unique<Node>(
+          StringLiteral{std::make_shared<std::u16string>(std::move(str.value()))});
+    }
+    this->reportTokenFormatError(JSTokenKind::STRING, token, "out of range");
+    return nullptr;
+  }
+  case JSTokenKind::REGEX: {
+    auto token = this->expect(JSTokenKind::REGEX);
+    std::string err;
+    if (auto ret = createJSRegexFromLiteral(this->lexer->toStrRef(token), &err)) {
+      return std::make_unique<Node>(RegexLiteral{std::move(ret)});
+    }
+    this->reportTokenFormatError(JSTokenKind::REGEX, token, std::move(err));
+    return nullptr;
+  }
+  case JSTokenKind::IDENTIFIER: {
+    auto token = this->expect(JSTokenKind::IDENTIFIER);
+    return std::make_unique<Node>(NameExpr{this->lexer->toTokenText(token)});
+  }
+  case JSTokenKind::LB:
+    return this->parseArray();
+  case JSTokenKind::LBC:
+    return this->parseObject();
+  case JSTokenKind::LP: {
+    this->consume();
+    auto node = this->parseExpression();
+    TRY(this->expect(JSTokenKind::RP));
+    return node;
+  }
+  default:
+    E_ALTER(EACH_LA_JS_PRIMARY(GEN_LA_ALTER));
+  }
+}
+
+std::unique_ptr<Node> JSParser::parseNumber() {
+  Token token = TRY(this->expect(JSTokenKind::NUMBER));
+  std::string data;
+  data.reserve(token.size);
+  for (char ch : this->lexer->toStrRef(token)) {
+    if (ch == '_') {
+      continue;
+    }
+    data += ch;
+  }
+  if (auto ret = convertToDouble(data.c_str())) {
+    return std::make_unique<Node>(NumberLiteral{ret.value});
+  }
+  this->reportTokenFormatError(JSTokenKind::NUMBER, token, "out of range");
   return nullptr;
 }
 
-const JSValue *JSEnv::assign(const std::string &name, JSValue value) {
-  for (auto *ptr = this; ptr; ptr = ptr->parent.get()) {
-    if (auto iter = ptr->values.find(name); iter != ptr->values.end()) {
-      iter->second = std::move(value);
-      return &iter->second;
+std::unique_ptr<Node> JSParser::parseObject() {
+  TRY(this->expect(JSTokenKind::LBC));
+  ObjectLiteral object;
+  while (this->curKind != JSTokenKind::RBC) {
+    Token token = TRY(this->expect(JSTokenKind::IDENTIFIER));
+    TRY(this->expect(JSTokenKind::COLON));
+    auto expr = TRY(this->parseExpression());
+    object.values.emplace_back(this->lexer->toTokenText(token), std::move(expr));
+    if (this->curKind == JSTokenKind::COMMA) {
+      this->consume();
+    } else if (this->curKind != JSTokenKind::RBC) {
+      E_ALTER(JSTokenKind::COMMA, JSTokenKind::RBC);
     }
   }
-  return nullptr;
+  TRY(this->expect(JSTokenKind::RBC));
+  return std::make_unique<Node>(std::move(object));
 }
 
-static JSValue findProperty(const std::shared_ptr<JSEnv> &env, const JSValue &recv,
-                            const std::string &name) {
-  (void)env;
-  (void)recv;
-  (void)name;
-
-  return {};
+std::unique_ptr<Node> JSParser::parseArray() {
+  TRY(this->expect(JSTokenKind::LB));
+  ArrayLiteral array;
+  while (this->curKind != JSTokenKind::RB) {
+    auto node = TRY(this->parseExpression());
+    array.values.push_back(std::move(node));
+    if (this->curKind == JSTokenKind::COMMA) {
+      this->consume();
+    } else if (this->curKind != JSTokenKind::RB) {
+      E_ALTER(JSTokenKind::COMMA, JSTokenKind::RB);
+    }
+  }
+  TRY(this->expect(JSTokenKind::RB));
+  return std::make_unique<Node>(std::move(array));
 }
 
-static auto throwReferenceError(const std::shared_ptr<JSEnv> &, const std::string &) {
-  return Err(JSThrown{12.0}); // TODO: lookuo
-}
-
-static auto throwTypeError(const std::shared_ptr<JSEnv> &, const std::string &) {
-  return Err(JSThrown{12.0}); // TODO: lookuo
-}
-
+#undef TRY
 #define TRY(...)                                                                                   \
   ({                                                                                               \
     auto v__ = (__VA_ARGS__);                                                                      \
@@ -166,27 +588,21 @@ static Result<JSValue, JSThrown> evalCallExpr(const CallExpr &callExpr,
   } else {
     return throwTypeError(env, "not a function");
   }
-  auto funcEnv = func->definedEnv.lock()->createChild();
-  funcEnv->define("this", std::move(recv));
-  const size_t maxArgs = std::max(func->params.size(), callExpr.args.size());
-  for (size_t i = 0; i < maxArgs; i++) {
-    JSValue arg;
-    if (i < callExpr.args.size()) {
-      arg = TRY(evaluate(*callExpr.args[i], env));
-    }
-    if (i < func->params.size()) {
-      funcEnv->define(func->params[i], std::move(arg));
-    }
+  std::vector<JSValue> args;
+  for (auto &e : callExpr.args) {
+    args.push_back(TRY(evaluate(*e, env)));
   }
-  return func->impl(std::move(funcEnv));
+  return callJSFunction(func, std::move(recv), std::move(args));
 }
 
 static Result<JSValue, JSThrown> evaluate(const Node &node, const std::shared_ptr<JSEnv> &env) {
   return std::visit(
       [env](auto &&element) -> Result<JSValue, JSThrown> {
         using T = std::decay_t<decltype(element)>;
-        if constexpr (std::is_same_v<T, BoolLiteral> || std::is_same_v<T, NumberLiteral> ||
-                      std::is_same_v<T, StringLiteral> || std::is_same_v<T, RegexLiteral>) {
+        if constexpr (std::is_same_v<T, NullLiteral>) {
+          return Ok(nullptr);
+        } else if constexpr (std::is_same_v<T, BoolLiteral> || std::is_same_v<T, NumberLiteral> ||
+                             std::is_same_v<T, StringLiteral> || std::is_same_v<T, RegexLiteral>) {
           return Ok(element.value);
         } else if constexpr (std::is_same_v<T, ArrayLiteral>) {
           return evalArray(element, env);
@@ -202,21 +618,50 @@ static Result<JSValue, JSThrown> evaluate(const Node &node, const std::shared_pt
           return Ok(findProperty(env, recv, element.name));
         } else if constexpr (std::is_same_v<T, CallExpr>) {
           return evalCallExpr(element, env);
+        } else if constexpr (std::is_same_v<T, UnaryExpr>) {
+          auto value = TRY(evaluate(*element.expr, env));
+          if (element.op == "!") {
+            value = !toBool(value);
+          }
+          return Ok(std::move(value));
         } else if constexpr (std::is_same_v<T, VarDecl>) {
           auto value = TRY(evaluate(*element.expr, env));
           env->define(element.name, std::move(value));
           return Ok(JSValue());
+        } else {
+          static_assert(false);
         }
-        return Err(JSThrown{JSValue(12.0)}); // TODO
       },
       node.value);
 }
 
 Result<JSValue, JSThrown> jsEval(const char *sourceName, StringRef source,
-                                 const std::shared_ptr<JSEnv> &global) {
-  JSLexer lexer(sourceName, source);
-  std::unique_ptr<Node> node;
-  return evaluate(*node, global);
+                                 std::shared_ptr<JSEnv> global, bool debug) {
+  if (!global) {
+    global = initJSEnv();
+  }
+  std::vector<std::unique_ptr<Node>> nodes;
+  {
+    JSLexer lexer(sourceName, source);
+    lexer.setVerbose(debug);
+    JSParser parser(lexer);
+    while (parser) {
+      if (auto node = parser()) {
+        nodes.push_back(std::move(node));
+      } else {
+        auto error = parser.formatError();
+        fputs(error.value().detail.c_str(), stderr);
+        fflush(stderr);
+        return throwSyntaxError(global, error.value().sourceName.c_str(), error.value().lineNum,
+                                error.value().message);
+      }
+    }
+  }
+  JSValue last;
+  for (auto &node : nodes) {
+    last = TRY(evaluate(*node, global));
+  }
+  return Ok(std::move(last));
 }
 
 } // namespace arsh::re262

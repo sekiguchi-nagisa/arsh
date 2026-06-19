@@ -24,9 +24,9 @@
 #include <variant>
 #include <vector>
 
-#include "misc/result.hpp"
-#include "misc/string_ref.hpp"
-#include "regex/regex.h"
+#include <misc/result.hpp>
+#include <misc/string_ref.hpp>
+#include <regex/regex.h>
 
 namespace arsh::re262 {
 
@@ -44,8 +44,8 @@ using JSArrayPtr = std::shared_ptr<JSArray>;
 struct JSObject;
 using JSObjectPtr = std::shared_ptr<JSObject>;
 
-using JSValue = std::variant<std::monostate, bool, double, JSStringPtr, JSRegexPtr, JSFunctionPtr,
-                             JSArrayPtr, JSObjectPtr>;
+using JSValue = std::variant<std::monostate, std::nullptr_t, bool, double, JSStringPtr, JSRegexPtr,
+                             JSFunctionPtr, JSArrayPtr, JSObjectPtr>;
 
 inline bool isUndefined(const JSValue &value) {
   return std::holds_alternative<std::monostate>(value);
@@ -81,12 +81,28 @@ struct JSRegex : JSObject {
 struct JSFunction : JSObject {
   std::vector<std::string> params;
   std::weak_ptr<JSEnv> definedEnv;
-  std::function<Result<JSValue, JSThrown>(std::shared_ptr<JSEnv>)> impl;
+  std::function<Result<JSValue, JSThrown>(const JSFunctionPtr &, const std::shared_ptr<JSEnv> &)>
+      impl;
 };
 
 struct JSArray {
   std::vector<JSValue> values;
 };
+
+namespace builtin {
+
+// for builtin constructor
+constexpr const char *SYNTAX_ERROR = "SyntaxError";
+constexpr const char *REF_ERROR = "ReferenceError";
+constexpr const char *TYPE_ERROR = "TypeError";
+constexpr const char *REGEXP = "RegExp";
+
+// for builtin field
+constexpr const char *THIS = "this";
+constexpr const char *PROTOTYPE = "prototype";
+constexpr const char *PROTO = "__proto__";
+
+} // namespace builtin
 
 class JSEnv : public std::enable_shared_from_this<JSEnv> {
 private:
@@ -110,6 +126,13 @@ public:
 
   const JSValue *find(const std::string &name) const;
 
+  JSValue findOrUndef(const std::string &name) const {
+    if (auto *ret = this->find(name)) {
+      return *ret;
+    }
+    return {};
+  }
+
   const JSValue *assign(const std::string &name, JSValue value);
 
   std::shared_ptr<JSEnv> findGlobalEnv() {
@@ -121,8 +144,10 @@ public:
   }
 };
 
+std::shared_ptr<JSEnv> initJSEnv();
+
 Result<JSValue, JSThrown> jsEval(const char *sourceName, StringRef source,
-                                 std::shared_ptr<JSEnv> global = nullptr);
+                                 std::shared_ptr<JSEnv> global = nullptr, bool debug = false);
 
 } // namespace arsh::re262
 

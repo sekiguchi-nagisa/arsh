@@ -21,7 +21,7 @@
 #include <string>
 #include <vector>
 
-#include "misc/string_ref.hpp"
+#include <misc/string_ref.hpp>
 
 namespace arsh::re262 {
 

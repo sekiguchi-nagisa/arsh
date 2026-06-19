@@ -99,6 +99,8 @@ INIT:
     "false"                { RET(FALSE); }
     "null"                 { RET(NIL); }
     "const"                { RET(CONST); }
+    "this"                 { RET(KEYWORD); }
+    "throw"                { RET(KEYWORD); }
     INT FRAC? EXP?         { RET(NUMBER); }
     HEX_INT                { RET(NUMBER); }
     ['] SCHAR* [']         { UPDATE_LN(); RET(STRING); }
@@ -141,6 +143,9 @@ EOS:
 
 RET:
   this->prevNewLine = foundNewLine;
+  if (this->verbose) {
+    fprintf(stderr, "(%s, %s)\n", re262::toString(kind), this->toTokenText(token).c_str());
+  }
   return kind;
 }
 
