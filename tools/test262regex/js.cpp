@@ -629,7 +629,7 @@ static Result<JSValue, JSThrown> evaluate(const Node &node, const std::shared_pt
           env->define(element.name, std::move(value));
           return Ok(JSValue());
         } else {
-          static_assert(false);
+          fatal("unreachable");
         }
       },
       node.value);
