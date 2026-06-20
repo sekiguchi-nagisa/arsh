@@ -34,7 +34,6 @@ Currently, under heavy development. Language specification is subject to change 
 * Linux
     * Arm64
 * macOS
-    * x86-64
     * Arm64
 * Windows x64
     * Cygwin
