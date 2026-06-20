@@ -59,10 +59,8 @@ using JSArrayPtr = std::shared_ptr<JSArray>;
 struct JSObject;
 using JSObjectPtr = std::shared_ptr<JSObject>;
 
-struct JSValue : std::variant<std::monostate, std::nullptr_t, bool, double, JSStringPtr, JSRegexPtr,
-                              JSFunctionPtr, JSArrayPtr, JSObjectPtr> {
-  using variant::variant;
-};
+using JSValue = std::variant<std::monostate, std::nullptr_t, bool, double, JSStringPtr, JSRegexPtr,
+                             JSFunctionPtr, JSArrayPtr, JSObjectPtr>;
 
 inline bool isUndefined(const JSValue &value) {
   return std::holds_alternative<std::monostate>(value);
