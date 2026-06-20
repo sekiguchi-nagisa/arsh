@@ -18,9 +18,9 @@
 #define ARSH_TOOLS_TEST262_REGEX_JS_H
 
 #include <functional>
+#include <map>
 #include <memory>
 #include <string>
-#include <unordered_map>
 #include <variant>
 #include <vector>
 
@@ -29,6 +29,21 @@
 #include <regex/regex.h>
 
 namespace arsh::re262 {
+
+namespace builtin {
+
+// for builtin constructor
+constexpr const char *SYNTAX_ERROR = "SyntaxError";
+constexpr const char *REF_ERROR = "ReferenceError";
+constexpr const char *TYPE_ERROR = "TypeError";
+constexpr const char *REGEXP = "RegExp";
+
+// for builtin field
+constexpr const char *THIS = "this";
+constexpr const char *PROTOTYPE = "prototype";
+constexpr const char *PROTO = "__proto__";
+
+} // namespace builtin
 
 using JSStringPtr = std::shared_ptr<std::u16string>;
 
@@ -58,56 +73,63 @@ struct JSThrown {
 class JSEnv;
 
 struct JSObject {
-  std::unordered_map<std::string, JSValue> values;
+  std::map<std::string, JSValue> values;
 };
 
 #define EACH_JS_EXTRA_RE_FLAG(E)                                                                   \
-  E(HAS_INDICES, (1u << 0u))                                                                       \
-  E(GLOBAL, (1u << 1u))                                                                            \
-  E(STICKY, (1u << 2u))
+  E(HAS_INDICES, (1u << 0u), 'd') /* d */                                                          \
+  E(GLOBAL, (1u << 1u), 'g')      /* g */                                                          \
+  E(STICKY, (1u << 2u), 'y')      /* y */
 
-struct JSRegex : JSObject {
+struct JSRegex {
   enum class ExtraFlag : unsigned char {
     NONE = 0u,
-#define GEN_ENUM(E, D) E = (D),
+#define GEN_ENUM(E, D, S) E = (D),
     EACH_JS_EXTRA_RE_FLAG(GEN_ENUM)
 #undef GEN_ENUM
   };
 
+  JSObjectPtr proto; // __PROTO__
+  std::string pattern;
   regex::Regex regex;
   ExtraFlag extra;
+  int lastIndex{0}; // utf16 offset
+
+  JSRegex(JSObjectPtr proto, std::string pattern, regex::Regex regex, ExtraFlag extra)
+      : proto(std::move(proto)), pattern(std::move(pattern)), regex(std::move(regex)),
+        extra(extra) {}
 };
 
 struct JSFunction : JSObject {
   std::vector<std::string> params;
   std::weak_ptr<JSEnv> definedEnv;
-  std::function<Result<JSValue, JSThrown>(const JSFunctionPtr &, const std::shared_ptr<JSEnv> &)>
-      impl;
+
+  using Impl = std::function<Result<JSValue, JSThrown>(const JSFunctionPtr &,
+                                                       const std::shared_ptr<JSEnv> &)>;
+  Impl impl;
 };
+
+/**
+ *
+ * @param env
+ * @param name
+ * @param params
+ * @param prototype if constructor, not null
+ * @param impl
+ * @return
+ */
+JSFunctionPtr createJSFunction(const std::shared_ptr<JSEnv> &env, const char *name,
+                               std::vector<std::string> &&params, JSObjectPtr &&prototype,
+                               JSFunction::Impl &&impl);
 
 struct JSArray {
   std::vector<JSValue> values;
 };
 
-namespace builtin {
-
-// for builtin constructor
-constexpr const char *SYNTAX_ERROR = "SyntaxError";
-constexpr const char *REF_ERROR = "ReferenceError";
-constexpr const char *TYPE_ERROR = "TypeError";
-constexpr const char *REGEXP = "RegExp";
-
-// for builtin field
-constexpr const char *THIS = "this";
-constexpr const char *PROTOTYPE = "prototype";
-constexpr const char *PROTO = "__proto__";
-
-} // namespace builtin
-
 class JSEnv : public std::enable_shared_from_this<JSEnv> {
 private:
   std::shared_ptr<JSEnv> parent;
-  std::unordered_map<std::string, JSValue> values;
+  std::map<std::string, JSValue> values;
 
   explicit JSEnv(std::shared_ptr<JSEnv> parent) : parent(std::move(parent)) {}
 
@@ -143,6 +165,41 @@ public:
     return tmp;
   }
 };
+
+std::u16string toUTF16(StringRef ref);
+
+inline JSStringPtr newJSString(StringRef ref) {
+  return std::make_shared<std::u16string>(toUTF16(ref));
+}
+
+void toWTF8(const std::u16string &value, std::string &out);
+
+inline std::string toWTF8(const std::u16string &value) {
+  std::string out;
+  toWTF8(value, out);
+  return out;
+}
+
+void toPrettyString(const JSValue &value, std::string &out);
+
+inline std::string toPrettyString(const JSValue &value) {
+  std::string out;
+  toPrettyString(value, out);
+  return out;
+}
+
+void toString(const JSValue &value, std::string &out);
+
+inline std::string toString(const JSValue &value) {
+  std::string out;
+  toString(value, out);
+  return out;
+}
+
+ErrHolder<JSThrown> throwSyntaxError(const std::shared_ptr<JSEnv> &env, const char *sourceName,
+                                     unsigned int lineNum, const std::string &message);
+
+ErrHolder<JSThrown> throwTypeError(const std::shared_ptr<JSEnv> &env, const std::string &message);
 
 std::shared_ptr<JSEnv> initJSEnv();
 

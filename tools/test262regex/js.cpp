@@ -60,7 +60,7 @@ static JSValue findProperty(const std::shared_ptr<JSEnv> &env, const JSValue &re
   return {};
 }
 
-static std::u16string toUTF16(StringRef ref) {
+std::u16string toUTF16(StringRef ref) {
   std::u16string value;
   const char *end = ref.end();
   for (const char *iter = ref.begin(); iter != end;) {
@@ -80,8 +80,104 @@ static std::u16string toUTF16(StringRef ref) {
   return value;
 }
 
-static JSStringPtr newJSString(StringRef ref) {
-  return std::make_shared<std::u16string>(toUTF16(ref));
+static bool isInteger(double d) { return d == std::floor(d); }
+
+void toWTF8(const std::u16string &value, std::string &out) {
+  for (size_t i = 0; i < value.size(); i++) {
+    int codePoint = value[i];
+    if (UnicodeUtil::isHighSurrogate(codePoint) && i + 1 < value.size() &&
+        UnicodeUtil::isLowSurrogate(value[i + 1])) {
+      codePoint = UnicodeUtil::utf16ToCodePoint(codePoint, value[i + 1]);
+      i++;
+    }
+    char buf[4];
+    if (unsigned int len = UnicodeUtil::codePointToUtf8(codePoint, buf)) {
+      out.append(buf, len);
+    }
+  }
+}
+
+void toPrettyString(const JSValue &value, std::string &out) {
+  if (isUndefined(value)) {
+    out += "undefined";
+  } else if (std::holds_alternative<std::nullptr_t>(value)) {
+    out += "null";
+  } else if (std::holds_alternative<bool>(value)) {
+    out += std::get<bool>(value) ? "true" : "false";
+  } else if (std::holds_alternative<double>(value)) {
+    auto d = std::get<double>(value);
+    if (d == 0.0) {
+      out += '0';
+    } else if (std::isnan(d)) {
+      out += "NaN";
+    } else if (std::isinf(d)) {
+      out += std::signbit(d) ? "-Infinity" : "Infinity";
+    } else if (isInteger(d)) {
+      out += std::to_string(static_cast<int64_t>(d));
+    } else {
+      out += std::to_string(d);
+    }
+  } else if (std::holds_alternative<JSStringPtr>(value)) {
+    toWTF8(*std::get<JSStringPtr>(value), out);
+  } else if (std::holds_alternative<JSRegexPtr>(value)) {
+    out += toString(*std::get<JSRegexPtr>(value));
+  } else if (std::holds_alternative<JSFunctionPtr>(value)) {
+    out += "[Function: ";
+    toWTF8(*std::get<JSStringPtr>(std::get<JSFunctionPtr>(value)->values.at("name")), out);
+    out += ']';
+  } else if (std::holds_alternative<JSArrayPtr>(value)) {
+    auto &array = std::get<JSArrayPtr>(value);
+    out += '[';
+    for (unsigned int i = 0; i < array->values.size(); i++) {
+      if (i > 0) {
+        out += ',';
+      }
+      out += ' ';
+      toPrettyString(array->values[i], out);
+    }
+    if (array->values.size()) {
+      out += ' ';
+    }
+    out += ']';
+  } else if (std::holds_alternative<JSObjectPtr>(value) &&
+             std::get<JSObjectPtr>(value)->values.size()) {
+    auto &obj = std::get<JSObjectPtr>(value);
+    out += '{';
+    unsigned int count = 0;
+    for (auto &[k, v] : obj->values) {
+      if (count++ > 0) {
+        out += ',';
+      }
+      out += ' ';
+      out += k;
+      out += ": ";
+      toPrettyString(v, out);
+    }
+    out += " }";
+  } else {
+    out += "{}";
+  }
+}
+
+void toString(const JSValue &value, std::string &out) {
+  if (std::holds_alternative<std::nullptr_t>(value) || isUndefined(value)) { // do nothing
+  } else if (std::holds_alternative<JSFunctionPtr>(value)) {
+    out += "function ";
+    toWTF8(*std::get<JSStringPtr>(std::get<JSFunctionPtr>(value)->values.at("name")), out);
+    out += "() { [native code] }";
+  } else if (std::holds_alternative<JSArrayPtr>(value)) {
+    auto &array = std::get<JSArrayPtr>(value);
+    for (unsigned int i = 0; i < array->values.size(); i++) {
+      if (i > 0) {
+        out += ',';
+      }
+      toString(array->values[i], out);
+    }
+  } else if (std::holds_alternative<JSObjectPtr>(value)) {
+    out += "[object Object]";
+  } else {
+    toPrettyString(value, out);
+  }
 }
 
 static bool toBool(const JSValue &value) {
@@ -106,18 +202,20 @@ static bool toBool(const JSValue &value) {
 
 static auto callJSFunction(const JSFunctionPtr &func, JSValue &&recv, std::vector<JSValue> &&args) {
   auto funcEnv = func->definedEnv.lock()->createChild();
+  assert(funcEnv);
   funcEnv->define(builtin::THIS, std::move(recv));
   const size_t maxArgs = std::max(func->params.size(), args.size());
   for (size_t i = 0; i < maxArgs; i++) {
-    if (i < func->params.size()) {
+    if (i < func->params.size() && i < args.size()) {
       funcEnv->define(func->params[i], std::move(args[i]));
     }
   }
   return func->impl(func, funcEnv);
 }
 
-static auto throwReferenceError(const std::shared_ptr<JSEnv> &global, const std::string &message) {
-  auto v = global->findOrUndef(builtin::REF_ERROR);
+static auto throwReferenceError(const std::shared_ptr<JSEnv> &env, const std::string &message) {
+  auto v = env->findGlobalEnv()->findOrUndef(builtin::REF_ERROR);
+  assert(std::holds_alternative<JSFunctionPtr>(v));
   auto func = std::get<JSFunctionPtr>(v);
   if (auto ret = callJSFunction(func, JSValue(), {newJSString(message)})) {
     return Err(JSThrown{std::move(ret.asOk())});
@@ -126,8 +224,9 @@ static auto throwReferenceError(const std::shared_ptr<JSEnv> &global, const std:
   }
 }
 
-static auto throwTypeError(const std::shared_ptr<JSEnv> &global, const std::string &message) {
-  auto v = global->findOrUndef(builtin::TYPE_ERROR);
+ErrHolder<JSThrown> throwTypeError(const std::shared_ptr<JSEnv> &env, const std::string &message) {
+  auto v = env->findGlobalEnv()->findOrUndef(builtin::TYPE_ERROR);
+  assert(std::holds_alternative<JSFunctionPtr>(v));
   auto func = std::get<JSFunctionPtr>(v);
   if (auto ret = callJSFunction(func, JSValue(), {newJSString(message)})) {
     return Err(JSThrown{std::move(ret.asOk())});
@@ -136,9 +235,10 @@ static auto throwTypeError(const std::shared_ptr<JSEnv> &global, const std::stri
   }
 }
 
-static auto throwSyntaxError(const std::shared_ptr<JSEnv> &global, const char *sourceName,
-                             unsigned int lineNum, const std::string &message) {
-  auto v = global->findOrUndef(builtin::SYNTAX_ERROR);
+ErrHolder<JSThrown> throwSyntaxError(const std::shared_ptr<JSEnv> &env, const char *sourceName,
+                                     unsigned int lineNum, const std::string &message) {
+  auto v = env->findGlobalEnv()->findOrUndef(builtin::SYNTAX_ERROR);
+  assert(std::holds_alternative<JSFunctionPtr>(v));
   auto func = std::get<JSFunctionPtr>(v);
   std::vector<JSValue> args;
   args.emplace_back(newJSString(message));
@@ -156,35 +256,50 @@ static auto throwSyntaxError(const std::shared_ptr<JSEnv> &global, const char *s
 }
 
 // for builtin
+JSFunctionPtr createJSFunction(const std::shared_ptr<JSEnv> &env, const char *name,
+                               std::vector<std::string> &&params, JSObjectPtr &&prototype,
+                               JSFunction::Impl &&impl) {
+  auto func = std::make_shared<JSFunction>();
+  func->params = std::move(params);
+  func->definedEnv = env;
+  func->values["name"] = std::make_shared<std::u16string>(toUTF16(name));
+  if (prototype) {
+    func->values[builtin::PROTOTYPE] = std::move(prototype);
+  }
+  func->impl = std::move(impl);
+  return func;
+}
 
 static void defineError(const std::shared_ptr<JSEnv> &global, const char *name) {
-  auto func = std::make_shared<JSFunction>(); // TODO: prototype chain
-  func->params = {"message", "fileName", "lineNumber"};
-  func->definedEnv = global;
-  func->values["name"] = std::make_shared<std::u16string>(toUTF16(name));
-  func->impl = [](const JSFunctionPtr &func,
-                  const std::shared_ptr<JSEnv> &env) -> Result<JSValue, JSThrown> {
-    JSObjectPtr obj;
-    if (auto v = env->findOrUndef(builtin::THIS); std::holds_alternative<JSObjectPtr>(v)) {
-      obj = std::get<JSObjectPtr>(v);
-    } else {
-      obj = std::make_shared<JSObject>();
-    }
-    env->assign(builtin::THIS, obj);
-    obj->values[builtin::PROTO] = func;
-    for (auto &param : func->params) {
-      obj->values[param] = env->findOrUndef(param);
-    }
-    return Ok(obj);
-  };
+  auto prototype = std::make_shared<JSObject>();
+  prototype->values["name"] = newJSString(name);
+  auto func = createJSFunction(
+      global, name, {"message", "fileName", "lineNumber"}, std::move(prototype),
+      [](const JSFunctionPtr &func,
+         const std::shared_ptr<JSEnv> &env) -> Result<JSValue, JSThrown> {
+        JSObjectPtr obj;
+        if (auto v = env->findOrUndef(builtin::THIS); std::holds_alternative<JSObjectPtr>(v)) {
+          obj = std::get<JSObjectPtr>(v);
+        } else {
+          obj = std::make_shared<JSObject>();
+        }
+        env->assign(builtin::THIS, obj);
+        obj->values[builtin::PROTO] = func;
+        for (auto &param : func->params) {
+          obj->values[param] = env->findOrUndef(param);
+        }
+        return Ok(obj);
+      });
   global->define(name, std::move(func));
 }
 
 std::shared_ptr<JSEnv> initJSEnv() {
   auto global = JSEnv::createGlobal();
+  global->define("undefined", JSValue());
   defineError(global, builtin::SYNTAX_ERROR);
   defineError(global, builtin::TYPE_ERROR);
   defineError(global, builtin::REF_ERROR);
+  defineJSRegex(global);
   return global;
 }
 
@@ -294,6 +409,9 @@ struct Node {
   })
 
 class JSParser : public ParserBase<JSTokenKind, JSLexer> {
+private:
+  std::shared_ptr<JSEnv> global;
+
 public:
   struct Error {
     std::string sourceName;
@@ -302,7 +420,7 @@ public:
     std::string detail;
   };
 
-  explicit JSParser(JSLexer &lex) {
+  JSParser(const std::shared_ptr<JSEnv> &global, JSLexer &lex) : global(global) {
     this->lexer = &lex;
     this->fetchNext();
   }
@@ -461,7 +579,11 @@ std::unique_ptr<Node> JSParser::parsePrimary() {
   case JSTokenKind::REGEX: {
     auto token = this->expect(JSTokenKind::REGEX);
     std::string err;
-    if (auto ret = createJSRegexFromLiteral(this->lexer->toStrRef(token), &err)) {
+    auto prototype =
+        findProperty(this->global, this->global->findOrUndef(builtin::REGEXP), builtin::PROTOTYPE);
+    assert(std::holds_alternative<JSObjectPtr>(prototype));
+    if (auto ret = createJSRegexFromLiteral(std::get<JSObjectPtr>(prototype),
+                                            this->lexer->toStrRef(token), &err)) {
       return std::make_unique<Node>(RegexLiteral{std::move(ret)});
     }
     this->reportTokenFormatError(JSTokenKind::REGEX, token, std::move(err));
@@ -563,7 +685,6 @@ static Result<JSValue, JSThrown> evalArray(const ArrayLiteral &literal,
 static Result<JSValue, JSThrown> evalObject(const ObjectLiteral &literal,
                                             const std::shared_ptr<JSEnv> &env) {
   JSObjectPtr object = std::make_shared<JSObject>();
-  object->values.reserve(literal.values.size());
   for (auto &[k, v] : literal.values) {
     auto value = TRY(evaluate(*v, env));
     object->values[k] = std::move(value);
@@ -612,7 +733,9 @@ static Result<JSValue, JSThrown> evaluate(const Node &node, const std::shared_pt
           if (auto *v = env->find(element.name)) {
             return Ok(*v);
           }
-          return throwReferenceError(env, element.name);
+          std::string message = element.name;
+          message += " is not defined";
+          return throwReferenceError(env, message);
         } else if constexpr (std::is_same_v<T, AccessExpr>) {
           auto recv = TRY(evaluate(*element.recv, env));
           return Ok(findProperty(env, recv, element.name));
@@ -644,7 +767,7 @@ Result<JSValue, JSThrown> jsEval(const char *sourceName, StringRef source,
   {
     JSLexer lexer(sourceName, source);
     lexer.setVerbose(debug);
-    JSParser parser(lexer);
+    JSParser parser(global, lexer);
     while (parser) {
       if (auto node = parser()) {
         nodes.push_back(std::move(node));

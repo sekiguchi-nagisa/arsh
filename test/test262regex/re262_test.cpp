@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 
 #include "../tools/test262regex/js_lexer.h"
+#include "../tools/test262regex/js_regex.h"
 #include "../tools/test262regex/meta.h"
 
 using namespace arsh;
@@ -692,6 +693,237 @@ TEST_F(JSLexerTest, string2) {
   ASSERT_NO_FATAL_FAILURE(
       checkStringErr(R"E("\u{FFFFFF}")E", "out-of-range code point: \\U+FFFFFF"));
   ASSERT_NO_FATAL_FAILURE(checkStringErr(R"E("12\")E", "broken escape sequence: \\"));
+}
+
+TEST(JSRegexTest, literal) {
+  auto env = initJSEnv();
+  {
+    std::string err;
+    auto ret = createJSRegexFromLiteral(nullptr, "", &err);
+    ASSERT_FALSE(ret);
+    ASSERT_EQ("invalid regular expression literal", err);
+  }
+  {
+    std::string err;
+    auto ret = createJSRegexFromLiteral(nullptr, "dd", &err);
+    ASSERT_FALSE(ret);
+    ASSERT_EQ("invalid regular expression literal", err);
+  }
+  {
+    std::string err;
+    auto ret = createJSRegexFromLiteral(nullptr, "/dd", &err);
+    ASSERT_FALSE(ret);
+    ASSERT_EQ("invalid regular expression literal", err);
+  }
+  {
+    std::string err;
+    auto ret = createJSRegexFromLiteral(nullptr, "/dd/@", &err);
+    ASSERT_FALSE(ret);
+    ASSERT_EQ("invalid regular expression flags", err);
+  }
+  {
+    std::string err;
+    auto ret = createJSRegexFromLiteral(nullptr, "/dd/iysugdm", &err);
+    ASSERT_TRUE(ret);
+    ASSERT_EQ("", err);
+    ASSERT_EQ("/dd/dgimsuy", toPrettyString(ret));
+  }
+}
+
+TEST(JSRegexTest, exec) {
+  auto env = initJSEnv();
+  {
+    std::string err;
+    auto ret = createJSRegexFromLiteral(nullptr, "/ABC/i", &err);
+    ASSERT_TRUE(ret);
+    ASSERT_EQ("", err);
+    auto obj = execJSRegex(*ret, newJSString("123"));
+    ASSERT_TRUE(obj.has_value());
+    ASSERT_FALSE(obj.value());
+  }
+  {
+    std::string err;
+    auto ret = createJSRegexFromLiteral(nullptr, "/ABC/i", &err);
+    ASSERT_TRUE(ret);
+    ASSERT_EQ("", err);
+    auto obj = execJSRegex(*ret, newJSString("aBc"));
+    ASSERT_TRUE(obj.has_value());
+    ASSERT_TRUE(obj.value());
+    ASSERT_EQ("{ 0: aBc, groups: undefined, index: 0, input: aBc }", toPrettyString(obj.value()));
+  }
+  {
+    std::string err;
+    auto ret = createJSRegexFromLiteral(nullptr, "/ABC/di", &err);
+    ASSERT_TRUE(ret);
+    ASSERT_EQ("", err);
+    auto obj = execJSRegex(*ret, newJSString("aBc"));
+    ASSERT_TRUE(obj.has_value());
+    ASSERT_TRUE(obj.value());
+    ASSERT_EQ("{ 0: aBc, groups: undefined, index: 0, indices: { 0: [ 0, 3 ], groups: undefined }, "
+              "input: aBc }",
+              toPrettyString(obj.value()));
+  }
+
+  {
+    std::string err;
+    auto ret = createJSRegexFromLiteral(nullptr, "/(?<first>.)(?<second>.)/", &err);
+    ASSERT_TRUE(ret);
+    ASSERT_EQ("", err);
+    auto obj = execJSRegex(*ret, newJSString("aあ12b"));
+    ASSERT_TRUE(obj.has_value());
+    ASSERT_TRUE(obj.value());
+    ASSERT_EQ("{ 0: aあ, 1: a, 2: あ, groups: { first: a, second: あ }, index: 0, input: aあ12b }",
+              toPrettyString(obj.value()));
+  }
+  {
+    std::string err;
+    auto ret = createJSRegexFromLiteral(nullptr, "/(?<first>.)(?<second>.)/d", &err);
+    ASSERT_TRUE(ret);
+    ASSERT_EQ("", err);
+    auto obj = execJSRegex(*ret, newJSString("aあ12b"));
+    ASSERT_TRUE(obj.has_value());
+    ASSERT_TRUE(obj.value());
+    ASSERT_EQ("{ 0: aあ, 1: a, 2: あ, groups: { first: a, second: あ }, index: 0, indices: { 0: [ "
+              "0, 2 ], 1: [ 0, 1 ], 2: [ 1, 2 ], groups: { first: [ 0, 1 ], second: [ 1, 2 ] } }, "
+              "input: aあ12b }",
+              toPrettyString(obj.value()));
+  }
+}
+
+TEST(JSTest, literal1) {
+  {
+    auto ret = jsEval("dummy", "null;");
+    ASSERT_TRUE(ret);
+    ASSERT_TRUE(std::holds_alternative<std::nullptr_t>(ret.asOk()));
+    ASSERT_EQ("null", toPrettyString(ret.asOk()));
+  }
+
+  {
+    auto ret = jsEval("dummy", "true;");
+    ASSERT_TRUE(ret);
+    ASSERT_TRUE(std::holds_alternative<bool>(ret.asOk()));
+    ASSERT_TRUE(std::get<bool>(ret.asOk()));
+    ASSERT_EQ("true", toPrettyString(ret.asOk()));
+  }
+
+  {
+    auto ret = jsEval("dummy", "false;");
+    ASSERT_TRUE(ret);
+    ASSERT_TRUE(std::holds_alternative<bool>(ret.asOk()));
+    ASSERT_FALSE(std::get<bool>(ret.asOk()));
+    ASSERT_EQ("false", toPrettyString(ret.asOk()));
+  }
+
+  {
+    auto ret = jsEval("dummy", "123;");
+    ASSERT_TRUE(ret);
+    ASSERT_TRUE(std::holds_alternative<double>(ret.asOk()));
+    ASSERT_EQ(123, std::get<double>(ret.asOk()));
+    ASSERT_EQ("123", toPrettyString(ret.asOk()));
+  }
+
+  {
+    auto ret = jsEval("dummy", "123.0;");
+    ASSERT_TRUE(ret);
+    ASSERT_TRUE(std::holds_alternative<double>(ret.asOk()));
+    ASSERT_EQ(123.0, std::get<double>(ret.asOk()));
+    ASSERT_EQ("123", toPrettyString(ret.asOk()));
+  }
+
+  {
+    auto ret = jsEval("dummy", "3.14;");
+    ASSERT_TRUE(ret);
+    ASSERT_TRUE(std::holds_alternative<double>(ret.asOk()));
+    ASSERT_EQ(3.14, std::get<double>(ret.asOk()));
+    ASSERT_EQ(std::to_string(3.14), toPrettyString(ret.asOk()));
+  }
+
+  {
+    auto ret = jsEval("dummy", "0xFE12;");
+    ASSERT_TRUE(ret);
+    ASSERT_TRUE(std::holds_alternative<double>(ret.asOk()));
+    ASSERT_EQ(0xFE12, std::get<double>(ret.asOk()));
+    ASSERT_EQ(std::to_string(0xFE12), toPrettyString(ret.asOk()));
+  }
+
+  {
+    auto ret = jsEval("dummy", "'12ÿþあ𤅕い';");
+    ASSERT_TRUE(ret);
+    ASSERT_TRUE(std::holds_alternative<JSStringPtr>(ret.asOk()));
+    ASSERT_EQ(u"12ÿþあ𤅕い", *std::get<JSStringPtr>(ret.asOk()));
+    ASSERT_EQ("12ÿþあ𤅕い", toPrettyString(ret.asOk()));
+  }
+}
+
+TEST(JSTest, literal2) {
+  {
+    auto ret = jsEval("dummy", "[123,false,null,[],['s']];");
+    ASSERT_TRUE(ret);
+    ASSERT_TRUE(std::holds_alternative<JSArrayPtr>(ret.asOk()));
+    ASSERT_EQ("[ 123, false, null, [], [ s ] ]", toPrettyString(ret.asOk()));
+    ASSERT_EQ("123,false,,,s", toString(ret.asOk()));
+  }
+
+  /*{
+    auto ret = jsEval("dummy", "/1234/sg;");
+    ASSERT_TRUE(ret);
+    ASSERT_TRUE(std::holds_alternative<JSRegexPtr>(ret.asOk()));
+    ASSERT_EQ("/1234/gs", toPrettyString(ret.asOk()));
+  }*/
+}
+
+TEST(JSTest, nameRef) {
+  {
+    auto ret = jsEval("dummy", "undefined;");
+    ASSERT_TRUE(ret);
+    ASSERT_TRUE(isUndefined(ret.asOk()));
+    ASSERT_EQ("undefined", toPrettyString(ret.asOk()));
+    ASSERT_EQ("", toString(ret.asOk()));
+  }
+  {
+    auto ret = jsEval("dummy", "RegExp;");
+    ASSERT_TRUE(ret);
+    ASSERT_TRUE(std::holds_alternative<JSFunctionPtr>(ret.asOk()));
+    ASSERT_EQ("[Function: RegExp]", toPrettyString(ret.asOk()));
+    ASSERT_EQ("function RegExp() { [native code] }", toString(ret.asOk()));
+  }
+  {
+    auto ret = jsEval("dummy", "SyntaxError;");
+    ASSERT_TRUE(ret);
+    ASSERT_TRUE(std::holds_alternative<JSFunctionPtr>(ret.asOk()));
+    ASSERT_EQ("[Function: SyntaxError]", toPrettyString(ret.asOk()));
+    ASSERT_EQ("function SyntaxError() { [native code] }", toString(ret.asOk()));
+  }
+}
+
+TEST(JSTest, nameError) {
+  auto ret = jsEval("dummy", "hoge;");
+  ASSERT_FALSE(ret);
+  ASSERT_TRUE(std::holds_alternative<JSObjectPtr>(ret.asErr().value));
+  auto &obj = std::get<JSObjectPtr>(ret.asErr().value);
+  auto iter = obj->values.find("message");
+  ASSERT_TRUE(iter != obj->values.end());
+  ASSERT_TRUE(std::holds_alternative<JSStringPtr>(iter->second));
+  ASSERT_EQ(toUTF16("hoge is not defined"), *std::get<JSStringPtr>(iter->second));
+}
+
+TEST(JSTest, funcCall) {
+  /*{
+    auto ret = jsEval("dummy", "RegExp('12', 'ysgd');");
+    ASSERT_TRUE(ret);
+    ASSERT_TRUE(std::holds_alternative<JSRegexPtr>(ret.asErr().value));
+    ASSERT_EQ("/12/dgsy", toPrettyString(ret.asOk()));
+  }*/
+}
+
+TEST(JSTest, funcCallError) {
+  {
+    auto ret = jsEval("dummy", "undefined();");
+    ASSERT_FALSE(ret);
+    ASSERT_TRUE(std::holds_alternative<JSObjectPtr>(ret.asErr().value));
+    /*ASSERT_EQ("undefined", toPrettyString(ret.asErr().value));
+    ASSERT_EQ("", toString(ret.asErr().value));*/
+  }
 }
 
 int main(int argc, char **argv) {

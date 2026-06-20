@@ -19,11 +19,36 @@
 
 #include "js.h"
 
+#include <optional>
+
 namespace arsh::re262 {
 
-JSRegexPtr createJSRegexFrom(StringRef pattern, StringRef flagStr, std::string *err);
+void defineJSRegex(const std::shared_ptr<JSEnv> &global);
 
-JSRegexPtr createJSRegexFromLiteral(StringRef literal, std::string *err);
+JSRegexPtr createJSRegexFrom(const JSObjectPtr &prototype, StringRef pattern, StringRef flagStr,
+                             std::string *err);
+
+JSRegexPtr createJSRegexFromLiteral(const JSObjectPtr &prototype, StringRef literal,
+                                    std::string *err);
+
+std::string toStringFlags(const JSRegex &regex);
+
+std::string toString(const JSRegex &regex);
+
+JSValue getOwnProperty(const JSRegex &regex, const std::string &name);
+
+void setOwnProperty(JSRegex &regex, const std::string &name, JSValue &&value);
+
+/**
+ *
+ * @param regex
+ * @param str
+ * @return
+ * if matched, return the match result
+ * if not matched, return null
+ * if `str` has lone-surrogate, return {}
+ */
+std::optional<JSObjectPtr> execJSRegex(JSRegex &regex, const JSStringPtr &str);
 
 } // namespace arsh::re262
 
