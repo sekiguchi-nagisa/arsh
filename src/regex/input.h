@@ -17,6 +17,7 @@
 #ifndef ARSH_REGEX_INPUT_H
 #define ARSH_REGEX_INPUT_H
 
+#include "misc/result.hpp"
 #include "misc/string_ref.hpp"
 #include "misc/unicode.hpp"
 
@@ -95,8 +96,7 @@ class Input {
 public:
   static constexpr size_t INPUT_MAX = UINT32_MAX;
 
-  enum class Status : unsigned char {
-    OK,
+  enum class Error : unsigned char {
     TOO_LARGE,
     INVALID_UTF8,
   };
@@ -111,21 +111,28 @@ private:
 public:
   Input() = default;
 
-  static Status create(StringRef text, Input &input) {
+  static Result<Input, Error> create(const StringRef text, const unsigned int codePointOffset = 0) {
     if (text.size() > INPUT_MAX) {
-      return Status::TOO_LARGE;
+      return Err(Error::TOO_LARGE);
     }
     auto iter = text.begin();
+    unsigned int offset = 0;
     const auto end = text.end();
-    while (iter != end) {
+    for (unsigned int count = 0; iter != end; count++) {
       if (const auto len = UnicodeUtil::utf8ValidateChar(iter, end)) {
         iter += len;
+        if (count < codePointOffset) {
+          offset += len;
+        }
         continue;
       }
-      return Status::INVALID_UTF8;
+      return Err(Error::INVALID_UTF8);
     }
-    input = Input(text);
-    return Status::OK;
+    Input input(text);
+    if (offset) {
+      input.iter += offset;
+    }
+    return Ok(input);
   }
 
   explicit operator bool() const {

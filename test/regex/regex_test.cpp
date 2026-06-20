@@ -123,8 +123,9 @@ TEST(RegexFlag, str) {
 TEST(InputTest, base) {
   {
     StringRef text = "12あ\xFFい\xFF";
-    regex::Input input;
-    ASSERT_EQ(regex::Input::Status::INVALID_UTF8, regex::Input::create(text, input));
+    auto ret = regex::Input::create(text);
+    ASSERT_FALSE(ret);
+    ASSERT_EQ(regex::Input::Error::INVALID_UTF8, ret.asErr());
   }
 
   {
@@ -132,15 +133,87 @@ TEST(InputTest, base) {
     StringRef text("sss", size);
     ASSERT_EQ(size, text.size());
     ASSERT_TRUE(text.size() > regex::Input::INPUT_MAX);
-    regex::Input input;
-    ASSERT_EQ(regex::Input::Status::TOO_LARGE, regex::Input::create(text, input));
+    auto ret = regex::Input::create(text);
+    ASSERT_FALSE(ret);
+    ASSERT_EQ(regex::Input::Error::TOO_LARGE, ret.asErr());
+  }
+}
+
+TEST(InputTest, offset) {
+  const StringRef text = "12ÿþあ𤅕い";
+  {
+    auto ret = regex::Input::create(text, 1);
+    ASSERT_TRUE(ret);
+    auto &input = ret.asOk();
+    ASSERT_EQ(1, input.getOffset());
+    ASSERT_EQ("2ÿþあ𤅕い", input.remainForward().toString());
+  }
+  {
+    auto ret = regex::Input::create(text, 2);
+    ASSERT_TRUE(ret);
+    auto &input = ret.asOk();
+    ASSERT_EQ(2, input.getOffset());
+    ASSERT_EQ("ÿþあ𤅕い", input.remainForward().toString());
+  }
+  {
+    auto ret = regex::Input::create(text, 3);
+    ASSERT_TRUE(ret);
+    auto &input = ret.asOk();
+    ASSERT_EQ(4, input.getOffset());
+    ASSERT_EQ("þあ𤅕い", input.remainForward().toString());
+  }
+  {
+    auto ret = regex::Input::create(text, 4);
+    ASSERT_TRUE(ret);
+    auto &input = ret.asOk();
+    ASSERT_EQ(6, input.getOffset());
+    ASSERT_EQ("あ𤅕い", input.remainForward().toString());
+  }
+  {
+    auto ret = regex::Input::create(text, 5);
+    ASSERT_TRUE(ret);
+    auto &input = ret.asOk();
+    ASSERT_EQ(9, input.getOffset());
+    ASSERT_EQ("𤅕い", input.remainForward().toString());
+  }
+  {
+    auto ret = regex::Input::create(text, 6);
+    ASSERT_TRUE(ret);
+    auto &input = ret.asOk();
+    ASSERT_EQ(13, input.getOffset());
+    ASSERT_EQ("い", input.remainForward().toString());
+  }
+  {
+    auto ret = regex::Input::create(text, 7);
+    ASSERT_TRUE(ret);
+    auto &input = ret.asOk();
+    ASSERT_EQ(16, input.getOffset());
+    ASSERT_EQ("", input.remainForward().toString());
+    ASSERT_FALSE(input.available());
+  }
+  {
+    auto ret = regex::Input::create(text, 8);
+    ASSERT_TRUE(ret);
+    auto &input = ret.asOk();
+    ASSERT_EQ(16, input.getOffset());
+    ASSERT_EQ("", input.remainForward().toString());
+    ASSERT_FALSE(input.available());
+  }
+  {
+    auto ret = regex::Input::create(text, 88);
+    ASSERT_TRUE(ret);
+    auto &input = ret.asOk();
+    ASSERT_EQ(16, input.getOffset());
+    ASSERT_EQ("", input.remainForward().toString());
+    ASSERT_FALSE(input.available());
   }
 }
 
 TEST(InputTest, forward) {
   StringRef text = "12ÿþあ𤅕い";
-  regex::Input input;
-  ASSERT_EQ(regex::Input::Status::OK, regex::Input::create(text, input));
+  auto ret = regex::Input::create(text);
+  ASSERT_TRUE(ret);
+  auto &input = ret.asOk();
 
   ASSERT_TRUE(input.isBegin());
   ASSERT_EQ('1', input.cur());
@@ -171,8 +244,9 @@ TEST(InputTest, backward) {
   // 1byte
   {
     StringRef text = "1";
-    regex::Input input;
-    ASSERT_EQ(regex::Input::Status::OK, regex::Input::create(text, input));
+    auto ret = regex::Input::create(text);
+    ASSERT_TRUE(ret);
+    auto &input = ret.asOk();
     while (input.available()) {
       input.consumeForward();
     }
@@ -187,8 +261,9 @@ TEST(InputTest, backward) {
   // 2 byte
   {
     StringRef text = "ÿ";
-    regex::Input input;
-    ASSERT_EQ(regex::Input::Status::OK, regex::Input::create(text, input));
+    auto ret = regex::Input::create(text);
+    ASSERT_TRUE(ret);
+    auto &input = ret.asOk();
     while (input.available()) {
       input.consumeForward();
     }
@@ -203,8 +278,9 @@ TEST(InputTest, backward) {
   // 3 byte
   {
     StringRef text = "あ";
-    regex::Input input;
-    ASSERT_EQ(regex::Input::Status::OK, regex::Input::create(text, input));
+    auto ret = regex::Input::create(text);
+    ASSERT_TRUE(ret);
+    auto &input = ret.asOk();
     while (input.available()) {
       input.consumeForward();
     }
@@ -219,8 +295,9 @@ TEST(InputTest, backward) {
   // 4byte
   {
     StringRef text = "𤅕";
-    regex::Input input;
-    ASSERT_EQ(regex::Input::Status::OK, regex::Input::create(text, input));
+    auto ret = regex::Input::create(text);
+    ASSERT_TRUE(ret);
+    auto &input = ret.asOk();
     while (input.available()) {
       input.consumeForward();
     }
@@ -233,8 +310,9 @@ TEST(InputTest, backward) {
   }
 
   StringRef text = "12ÿþあ𤅕い";
-  regex::Input input;
-  ASSERT_EQ(regex::Input::Status::OK, regex::Input::create(text, input));
+  auto ret = regex::Input::create(text);
+  ASSERT_TRUE(ret);
+  auto &input = ret.asOk();
   while (input.available()) {
     input.consumeForward();
   }
@@ -273,8 +351,9 @@ TEST(InputTest, backward) {
 
 TEST(InputTest, remainForward) {
   StringRef text = "12ÿþあ𤅕い";
-  regex::Input input;
-  ASSERT_EQ(regex::Input::Status::OK, regex::Input::create(text, input));
+  auto ret = regex::Input::create(text);
+  ASSERT_TRUE(ret);
+  auto &input = ret.asOk();
 
   ASSERT_EQ("1", input.remainForwardOfCodePoints(1).toString());
   ASSERT_EQ("12", input.remainForwardOfCodePoints(2).toString());
@@ -292,8 +371,9 @@ TEST(InputTest, remainForward) {
 
 TEST(InputTest, remainBackward) {
   StringRef text = "12ÿþあ𤅕い";
-  regex::Input input;
-  ASSERT_EQ(regex::Input::Status::OK, regex::Input::create(text, input));
+  auto ret = regex::Input::create(text);
+  ASSERT_TRUE(ret);
+  auto &input = ret.asOk();
   ASSERT_EQ("", input.remainBackwardOfCodePoints(1).toString());
   ASSERT_EQ("", input.remainBackwardOfCodePoints(10).toString());
 

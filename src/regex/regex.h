@@ -114,8 +114,13 @@ enum class MatchStatus : unsigned char {
 
 const char *toString(MatchStatus s);
 
-MatchStatus match(const Regex &regex, StringRef text, std::vector<Capture> &captures,
-                  ObserverPtr<Timer> timer);
+MatchStatus match(const Regex &regex, StringRef text, unsigned int codePointOffset,
+                  std::vector<Capture> &captures, ObserverPtr<Timer> timer);
+
+inline MatchStatus match(const Regex &regex, StringRef text, std::vector<Capture> &captures,
+                         ObserverPtr<Timer> timer) {
+  return match(regex, text, 0, captures, timer);
+}
 
 struct ReplaceParam {
   StringRef text;

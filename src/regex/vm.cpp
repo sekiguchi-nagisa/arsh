@@ -952,13 +952,18 @@ BACKTRACK:
   return MatchStatus::FAIL;
 }
 
-MatchStatus match(const Regex &regex, const StringRef text, std::vector<Capture> &captures,
-                  const ObserverPtr<Timer> timer) {
+MatchStatus match(const Regex &regex, const StringRef text, unsigned int codePointOffset,
+                  std::vector<Capture> &captures, const ObserverPtr<Timer> timer) {
   Input input;
-  if (auto s = Input::create(text, input); s == Input::Status::TOO_LARGE) {
-    return MatchStatus::INPUT_LIMIT;
-  } else if (s == Input::Status::INVALID_UTF8) {
-    return MatchStatus::INVALID_UTF8;
+  if (auto ret = Input::create(text, codePointOffset)) {
+    input = ret.asOk();
+  } else {
+    switch (ret.asErr()) {
+    case Input::Error::TOO_LARGE:
+      return MatchStatus::INPUT_LIMIT;
+    case Input::Error::INVALID_UTF8:
+      return MatchStatus::INVALID_UTF8;
+    }
   }
   MatchContext ctx(regex, input, captures);
   return match(ctx, timer);
@@ -1076,10 +1081,15 @@ static MatchStatus interpretReplacePattern(const MatchContext &ctx, const Replac
 
 MatchStatus replace(const Regex &regex, const ReplaceParam &param, const ObserverPtr<Timer> timer) {
   Input input;
-  if (auto s = Input::create(param.text, input); s == Input::Status::TOO_LARGE) {
-    return MatchStatus::INPUT_LIMIT;
-  } else if (s == Input::Status::INVALID_UTF8) {
-    return MatchStatus::INVALID_UTF8;
+  if (auto ret = Input::create(param.text)) {
+    input = ret.asOk();
+  } else {
+    switch (ret.asErr()) {
+    case Input::Error::TOO_LARGE:
+      return MatchStatus::INPUT_LIMIT;
+    case Input::Error::INVALID_UTF8:
+      return MatchStatus::INVALID_UTF8;
+    }
   }
   std::vector<Capture> captures;
   MatchContext ctx(regex, input, captures);
