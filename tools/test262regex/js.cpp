@@ -58,8 +58,9 @@ static JSValue findOwnProperty(const JSValue &recv, const std::string &name) {
         if constexpr (std::is_same_v<T, JSRegexPtr> || std::is_same_v<T, JSFunctionPtr> ||
                       std::is_same_v<T, JSObjectPtr>) {
           return getOwnProperty(*element, name);
+        } else {
+          return {};
         }
-        return {};
       },
       recv);
 }
