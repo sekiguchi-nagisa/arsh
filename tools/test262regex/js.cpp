@@ -51,13 +51,42 @@ const JSValue *JSEnv::assign(const std::string &name, JSValue value) {
   return nullptr;
 }
 
-static JSValue findProperty(const std::shared_ptr<JSEnv> &env, const JSValue &recv,
-                            const std::string &name) {
-  (void)env;
-  (void)recv;
-  (void)name;
+static JSValue findOwnProperty(const JSValue &recv, const std::string &name) {
+  return std::visit(
+      [name](auto &&element) -> JSValue {
+        using T = std::decay_t<decltype(element)>;
+        if constexpr (std::is_same_v<T, JSRegexPtr> || std::is_same_v<T, JSFunctionPtr> ||
+                      std::is_same_v<T, JSObjectPtr>) {
+          return getOwnProperty(*element, name);
+        }
+        return {};
+      },
+      recv);
+}
 
-  return {};
+static Result<JSValue, JSThrown> findProperty(const std::shared_ptr<JSEnv> &env,
+                                              const JSValue &recv, const std::string &name) {
+  if (isUndefined(recv) || std::holds_alternative<std::nullptr_t>(recv)) {
+    std::string message = "Cannot read properties of ";
+    toPrettyString(recv, message);
+    message += " (reading '";
+    message += name;
+    message += "')";
+    return throwTypeError(env, message);
+  }
+  JSValue actualRecv = recv;
+  JSValue ret;
+  const bool proto = name == builtin::PROTO;
+  while (!isUndefined(actualRecv)) {
+    ret = findOwnProperty(actualRecv, name);
+    if (!isUndefined(ret)) {
+      break;
+    }
+    if (!proto) {
+      actualRecv = findOwnProperty(actualRecv, builtin::PROTO);
+    }
+  }
+  return Ok(ret);
 }
 
 std::u16string toUTF16(StringRef ref) {
@@ -197,6 +226,9 @@ static bool toBool(const JSValue &value) {
   if (std::holds_alternative<std::nullptr_t>(value)) {
     return false;
   }
+  if (std::holds_alternative<JSStringPtr>(value) && std::get<JSStringPtr>(value)->empty()) {
+    return false;
+  }
   return true;
 }
 
@@ -262,7 +294,7 @@ JSFunctionPtr createJSFunction(const std::shared_ptr<JSEnv> &env, const char *na
   auto func = std::make_shared<JSFunction>();
   func->params = std::move(params);
   func->definedEnv = env;
-  func->values["name"] = std::make_shared<std::u16string>(toUTF16(name));
+  func->values["name"] = newJSString(name);
   if (prototype) {
     func->values[builtin::PROTOTYPE] = std::move(prototype);
   }
@@ -456,7 +488,8 @@ std::optional<JSParser::Error> JSParser::formatError() const {
     return {};
   }
 
-  const unsigned int lineNum = this->lexer->getLineNumByPos(this->getError().getErrorToken().pos);
+  auto errorToken = this->lexer->shiftEOS(this->getError().getErrorToken());
+  const unsigned int lineNum = this->lexer->getLineNumByPos(errorToken.pos);
   std::string str;
   str += this->lexer->getSourceName();
   str += ':';
@@ -465,8 +498,6 @@ std::optional<JSParser::Error> JSParser::formatError() const {
   str += this->getError().getMessage();
   str += '\n';
 
-  auto eToken = this->getError().getErrorToken();
-  auto errorToken = this->lexer->shiftEOS(eToken);
   auto lineToken = this->lexer->getLineToken(errorToken);
 
   str += this->lexer->formatTokenText(lineToken);
@@ -581,8 +612,9 @@ std::unique_ptr<Node> JSParser::parsePrimary() {
     std::string err;
     auto prototype =
         findProperty(this->global, this->global->findOrUndef(builtin::REGEXP), builtin::PROTOTYPE);
-    assert(std::holds_alternative<JSObjectPtr>(prototype));
-    if (auto ret = createJSRegexFromLiteral(std::get<JSObjectPtr>(prototype),
+    assert(prototype);
+    assert(std::holds_alternative<JSObjectPtr>(prototype.asOk()));
+    if (auto ret = createJSRegexFromLiteral(std::get<JSObjectPtr>(prototype.asOk()),
                                             this->lexer->toStrRef(token), &err)) {
       return std::make_unique<Node>(RegexLiteral{std::move(ret)});
     }
@@ -699,7 +731,7 @@ static Result<JSValue, JSThrown> evalCallExpr(const CallExpr &callExpr,
   if (std::holds_alternative<AccessExpr>(callExpr.func->value)) {
     auto &access = std::get<AccessExpr>(callExpr.func->value);
     recv = TRY(evaluate(*access.recv, env));
-    callee = findProperty(env, recv, access.name);
+    callee = TRY(findProperty(env, recv, access.name));
   } else {
     callee = TRY(evaluate(*callExpr.func, env));
   }
@@ -738,7 +770,7 @@ static Result<JSValue, JSThrown> evaluate(const Node &node, const std::shared_pt
           return throwReferenceError(env, message);
         } else if constexpr (std::is_same_v<T, AccessExpr>) {
           auto recv = TRY(evaluate(*element.recv, env));
-          return Ok(findProperty(env, recv, element.name));
+          return findProperty(env, recv, element.name);
         } else if constexpr (std::is_same_v<T, CallExpr>) {
           return evalCallExpr(element, env);
         } else if constexpr (std::is_same_v<T, UnaryExpr>) {

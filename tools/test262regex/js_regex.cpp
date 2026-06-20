@@ -41,7 +41,10 @@ static JSFunctionPtr createRegExpExec(const std::shared_ptr<JSEnv> &global) {
     }
     assert(regex);
     if (auto ret = execJSRegex(*regex, str)) {
-      return Ok(ret.value() ? std::move(ret.value()) : nullptr);
+      if (ret.value()) {
+        return Ok(std::move(ret.value()));
+      }
+      return Ok(nullptr);
     }
     return throwTypeError(env, "Method RegExp.prototype.exec called on incompatible `str` param "
                                "(lone surrogate or too large)");
@@ -66,7 +69,7 @@ static JSFunctionPtr createRegExpTest(const std::shared_ptr<JSEnv> &global) {
     }
     assert(regex);
     if (auto ret = execJSRegex(*regex, str)) {
-      return Ok(static_cast<bool>(ret));
+      return Ok(static_cast<bool>(ret.value()));
     }
     return throwTypeError(env, "Method RegExp.prototype.test called on incompatible `str` param "
                                "(lone surrogate or too large)");
@@ -235,7 +238,7 @@ JSValue getOwnProperty(const JSRegex &regex, const std::string &name) {
   if (name == "unicodeSets") {
     return regex.regex.getFlag().is(regex::Mode::UNICODE_SET);
   }
-  return {};
+  return getOwnProperty(*regex.proto, name);
 }
 
 void setOwnProperty(JSRegex &regex, const std::string &name, JSValue &&value) {
@@ -375,7 +378,7 @@ std::optional<JSObjectPtr> execJSRegex(JSRegex &regex, const JSStringPtr &str) {
   if (regex.lastIndex < 0) {
     startOffset = 0;
   } else if (static_cast<size_t>(regex.lastIndex) > str->size()) {
-    return {};
+    return nullptr;
   } else {
     startOffset = toCodePointOffset(*str, static_cast<unsigned int>(regex.lastIndex));
   }

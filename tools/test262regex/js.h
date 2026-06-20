@@ -59,8 +59,10 @@ using JSArrayPtr = std::shared_ptr<JSArray>;
 struct JSObject;
 using JSObjectPtr = std::shared_ptr<JSObject>;
 
-using JSValue = std::variant<std::monostate, std::nullptr_t, bool, double, JSStringPtr, JSRegexPtr,
-                             JSFunctionPtr, JSArrayPtr, JSObjectPtr>;
+struct JSValue : std::variant<std::monostate, std::nullptr_t, bool, double, JSStringPtr, JSRegexPtr,
+                              JSFunctionPtr, JSArrayPtr, JSObjectPtr> {
+  using variant::variant;
+};
 
 inline bool isUndefined(const JSValue &value) {
   return std::holds_alternative<std::monostate>(value);
@@ -75,6 +77,13 @@ class JSEnv;
 struct JSObject {
   std::map<std::string, JSValue> values;
 };
+
+inline JSValue getOwnProperty(const JSObject &obj, const std::string &name) {
+  if (auto iter = obj.values.find(name); iter != obj.values.end()) {
+    return iter->second;
+  }
+  return {};
+}
 
 #define EACH_JS_EXTRA_RE_FLAG(E)                                                                   \
   E(HAS_INDICES, (1u << 0u), 'd') /* d */                                                          \
