@@ -66,26 +66,25 @@ static JSValue findOwnProperty(const JSValue &recv, const std::string &name) {
 }
 
 static Result<JSValue, JSThrown> findProperty(const std::shared_ptr<JSEnv> &env,
-                                              const JSValue &recv, const std::string &name) {
-  if (isUndefined(recv) || std::holds_alternative<std::nullptr_t>(recv)) {
+                                              unsigned int callerLineNum, const JSValue &recv,
+                                              const std::string &name) {
+  if (isUndefined(recv) || isNull(recv)) {
     std::string message = "Cannot read properties of ";
     toPrettyString(recv, message);
     message += " (reading '";
     message += name;
     message += "')";
-    return throwTypeError(env, message);
+    return throwError(env, builtin::TYPE_ERROR, callerLineNum, message);
   }
   JSValue actualRecv = recv;
   JSValue ret;
   const bool proto = name == builtin::PROTO;
   while (!isUndefined(actualRecv)) {
     ret = findOwnProperty(actualRecv, name);
-    if (!isUndefined(ret)) {
+    if (!isUndefined(ret) || proto) {
       break;
     }
-    if (!proto) {
-      actualRecv = findOwnProperty(actualRecv, builtin::PROTO);
-    }
+    actualRecv = findOwnProperty(actualRecv, builtin::PROTO);
   }
   return Ok(ret);
 }
@@ -130,7 +129,7 @@ void toWTF8(const std::u16string &value, std::string &out) {
 void toPrettyString(const JSValue &value, std::string &out) {
   if (isUndefined(value)) {
     out += "undefined";
-  } else if (std::holds_alternative<std::nullptr_t>(value)) {
+  } else if (isNull(value)) {
     out += "null";
   } else if (std::holds_alternative<bool>(value)) {
     out += std::get<bool>(value) ? "true" : "false";
@@ -190,7 +189,7 @@ void toPrettyString(const JSValue &value, std::string &out) {
 }
 
 void toString(const JSValue &value, std::string &out) {
-  if (std::holds_alternative<std::nullptr_t>(value) || isUndefined(value)) { // do nothing
+  if (isNull(value) || isUndefined(value)) { // do nothing
   } else if (std::holds_alternative<JSFunctionPtr>(value)) {
     out += "function ";
     toWTF8(*std::get<JSStringPtr>(std::get<JSFunctionPtr>(value)->values.at("name")), out);
@@ -224,7 +223,7 @@ static bool toBool(const JSValue &value) {
     }
     return true;
   }
-  if (std::holds_alternative<std::nullptr_t>(value)) {
+  if (isNull(value)) {
     return false;
   }
   if (std::holds_alternative<JSStringPtr>(value) && std::get<JSStringPtr>(value)->empty()) {
@@ -233,10 +232,13 @@ static bool toBool(const JSValue &value) {
   return true;
 }
 
-static auto callJSFunction(const JSFunctionPtr &func, JSValue &&recv, std::vector<JSValue> &&args) {
+static auto callJSFunction(const std::shared_ptr<JSEnv> &caller, unsigned int callerLineNum,
+                           const JSFunctionPtr &func, JSValue &&recv, std::vector<JSValue> &&args) {
   auto funcEnv = func->definedEnv.lock()->createChild();
   assert(funcEnv);
   funcEnv->define(builtin::THIS, std::move(recv));
+  funcEnv->define(JSEnv::CALLER_FILENAME, caller->findOrUndef(JSEnv::DEFINED_FILENAME));
+  funcEnv->define(JSEnv::CALLER_LINENO, static_cast<double>(callerLineNum));
   const size_t maxArgs = std::max(func->params.size(), args.size());
   for (size_t i = 0; i < maxArgs; i++) {
     if (i < func->params.size() && i < args.size()) {
@@ -246,46 +248,76 @@ static auto callJSFunction(const JSFunctionPtr &func, JSValue &&recv, std::vecto
   return func->impl(func, funcEnv);
 }
 
-static auto throwReferenceError(const std::shared_ptr<JSEnv> &env, const std::string &message) {
-  auto v = env->findGlobalEnv()->findOrUndef(builtin::REF_ERROR);
-  assert(std::holds_alternative<JSFunctionPtr>(v));
-  auto func = std::get<JSFunctionPtr>(v);
-  if (auto ret = callJSFunction(func, JSValue(), {newJSString(message)})) {
-    return Err(JSThrown{std::move(ret.asOk())});
-  } else {
-    return Err(std::move(ret.asErr()));
-  }
-}
-
-ErrHolder<JSThrown> throwTypeError(const std::shared_ptr<JSEnv> &env, const std::string &message) {
-  auto v = env->findGlobalEnv()->findOrUndef(builtin::TYPE_ERROR);
-  assert(std::holds_alternative<JSFunctionPtr>(v));
-  auto func = std::get<JSFunctionPtr>(v);
-  if (auto ret = callJSFunction(func, JSValue(), {newJSString(message)})) {
-    return Err(JSThrown{std::move(ret.asOk())});
-  } else {
-    return Err(std::move(ret.asErr()));
-  }
-}
-
-ErrHolder<JSThrown> throwSyntaxError(const std::shared_ptr<JSEnv> &env, const char *sourceName,
-                                     unsigned int lineNum, const std::string &message) {
-  auto v = env->findGlobalEnv()->findOrUndef(builtin::SYNTAX_ERROR);
+ErrHolder<JSThrown> throwError(const std::shared_ptr<JSEnv> &env, const char *name,
+                               unsigned int lineNum, const std::string &message) {
+  auto v = env->findGlobalEnv()->findOrUndef(name);
   assert(std::holds_alternative<JSFunctionPtr>(v));
   auto func = std::get<JSFunctionPtr>(v);
   std::vector<JSValue> args;
   args.emplace_back(newJSString(message));
-  if (sourceName) {
-    args.emplace_back(newJSString(sourceName));
+  if (auto fileName = env->findOrUndef(JSEnv::DEFINED_FILENAME); !isUndefined(fileName)) {
+    args.emplace_back(fileName);
     if (lineNum) {
       args.emplace_back(static_cast<double>(lineNum));
     }
   }
-  if (auto ret = callJSFunction(func, JSValue(), std::move(args))) {
+  if (auto ret = callJSFunction(env, lineNum, func, JSValue(), std::move(args))) {
     return Err(JSThrown{std::move(ret.asOk())});
   } else {
     return Err(std::move(ret.asErr()));
   }
+}
+
+bool strictlyEquals(const JSValue &x, const JSValue &y) {
+  if (x.index() != y.index()) {
+    return false;
+  }
+  if (std::holds_alternative<double>(x)) {
+    auto xv = std::get<double>(x);
+    auto yv = std::get<double>(y);
+    return xv == yv;
+  }
+  if (isUndefined(x) || isNull(x)) {
+    return true;
+  }
+  if (std::holds_alternative<JSStringPtr>(x)) {
+    auto &xv = *std::get<JSStringPtr>(x);
+    auto &yv = *std::get<JSStringPtr>(y);
+    return xv == yv;
+  }
+  if (std::holds_alternative<bool>(x)) {
+    auto xv = std::get<bool>(x);
+    auto yv = std::get<bool>(y);
+    return xv == yv;
+  }
+  return x == y;
+}
+
+Result<JSValue, JSThrown> isInstanceOf(const std::shared_ptr<JSEnv> &env, unsigned int lineNum,
+                                       const JSValue &value, const JSValue &constructor) {
+  if (!std::holds_alternative<JSFunctionPtr>(constructor)) {
+    return throwError(env, builtin::TYPE_ERROR, lineNum,
+                      "Right-hand side of instanceof is not callable");
+  }
+  if (isUndefined(value) || isNull(value)) {
+    return Ok(false);
+  }
+
+  const auto prototype = findProperty(env, lineNum, constructor, builtin::PROTOTYPE);
+  if (!prototype || isUndefined(prototype.asOk()) || isNull(prototype.asOk())) {
+    return Ok(false);
+  }
+  for (auto target = value;;) {
+    auto proto = findProperty(env, lineNum, target, builtin::PROTO);
+    if (!proto || isUndefined(proto.asOk()) || isNull(proto.asOk())) {
+      return Ok(false);
+    }
+    if (strictlyEquals(proto.asOk(), prototype.asOk())) {
+      break;
+    }
+    target = proto.asOk();
+  }
+  return Ok(true);
 }
 
 // for builtin
@@ -391,12 +423,14 @@ struct VarDecl { // currently only support `const`
 };
 
 struct Node {
+  unsigned int lineNum;
+
   using Underlying =
       std::variant<NullLiteral, BoolLiteral, NumberLiteral, StringLiteral, RegexLiteral,
                    ArrayLiteral, ObjectLiteral, NameExpr, AccessExpr, CallExpr, UnaryExpr, VarDecl>;
   Underlying value;
 
-  explicit Node(Underlying v) : value(std::move(v)) {}
+  Node(unsigned int lineNum, Underlying v) : lineNum(lineNum), value(std::move(v)) {}
 };
 
 // ######################
@@ -520,7 +554,8 @@ std::unique_ptr<Node> JSParser::parseStatement() {
     TRY(this->expect(JSTokenKind::ASSIGN));
     auto expr = TRY(this->parseExpression());
     TRY(this->expect(JSTokenKind::LINE_END));
-    return std::make_unique<Node>(VarDecl{this->lexer->toTokenText(token), std::move(expr)});
+    return std::make_unique<Node>(this->lexer->getLineNumByPos(token.pos),
+                                  VarDecl{this->lexer->toTokenText(token), std::move(expr)});
   }
     // clang-format off
   EACH_LA_JS_EXPRESSION(GEN_LA_CASE) {
@@ -541,7 +576,8 @@ std::unique_ptr<Node> JSParser::parseUnaryExpression() {
   case JSTokenKind::NOT: {
     Token token = this->expect(JSTokenKind::NOT);
     auto expr = TRY(this->parseUnaryExpression());
-    return std::make_unique<Node>(UnaryExpr{this->lexer->toTokenText(token), std::move(expr)});
+    return std::make_unique<Node>(this->lexer->getLineNumByPos(token.pos),
+                                  UnaryExpr{this->lexer->toTokenText(token), std::move(expr)});
   }
   default:
     return this->parseMemberExpression();
@@ -555,7 +591,9 @@ std::unique_ptr<Node> JSParser::parseMemberExpression() {
     case JSTokenKind::DOT: {
       this->consume();
       Token token = TRY(this->expect(JSTokenKind::IDENTIFIER));
-      node = std::make_unique<Node>(AccessExpr{std::move(node), this->lexer->toTokenText(token)});
+      unsigned int lineNum = node->lineNum;
+      node = std::make_unique<Node>(lineNum,
+                                    AccessExpr{std::move(node), this->lexer->toTokenText(token)});
       continue;
     }
     case JSTokenKind::LP:
@@ -572,6 +610,7 @@ END:
 std::unique_ptr<Node> JSParser::parseWithArguments(std::unique_ptr<Node> &&node) {
   TRY(this->expect(JSTokenKind::LP));
   CallExpr call;
+  unsigned int lineNum = node->lineNum;
   call.func = std::move(node);
   while (this->curKind != JSTokenKind::RP) {
     call.args.push_back(TRY(this->parseExpression()));
@@ -582,20 +621,23 @@ std::unique_ptr<Node> JSParser::parseWithArguments(std::unique_ptr<Node> &&node)
     }
   }
   TRY(this->expect(JSTokenKind::RP));
-  return std::make_unique<Node>(std::move(call));
+  return std::make_unique<Node>(lineNum, std::move(call));
 }
 
 std::unique_ptr<Node> JSParser::parsePrimary() {
   switch (this->curKind) {
-  case JSTokenKind::NIL:
-    this->consume();
-    return std::make_unique<Node>(NullLiteral{});
-  case JSTokenKind::TRUE:
-    this->consume();
-    return std::make_unique<Node>(BoolLiteral{true});
-  case JSTokenKind::FALSE:
-    this->consume();
-    return std::make_unique<Node>(BoolLiteral{false});
+  case JSTokenKind::NIL: {
+    Token token = this->expect(JSTokenKind::NIL);
+    return std::make_unique<Node>(this->lexer->getLineNumByPos(token.pos), NullLiteral{});
+  }
+  case JSTokenKind::TRUE: {
+    Token token = this->expect(JSTokenKind::TRUE);
+    return std::make_unique<Node>(this->lexer->getLineNumByPos(token.pos), BoolLiteral{true});
+  }
+  case JSTokenKind::FALSE: {
+    Token token = this->expect(JSTokenKind::FALSE);
+    return std::make_unique<Node>(this->lexer->getLineNumByPos(token.pos), BoolLiteral{false});
+  }
   case JSTokenKind::NUMBER:
     return this->parseNumber();
   case JSTokenKind::STRING: {
@@ -603,6 +645,7 @@ std::unique_ptr<Node> JSParser::parsePrimary() {
     std::string err;
     if (auto str = this->lexer->toString(token, &err); str.has_value()) {
       return std::make_unique<Node>(
+          this->lexer->getLineNumByPos(token.pos),
           StringLiteral{std::make_shared<std::u16string>(std::move(str.value()))});
     }
     this->reportTokenFormatError(JSTokenKind::STRING, token, "out of range");
@@ -610,21 +653,23 @@ std::unique_ptr<Node> JSParser::parsePrimary() {
   }
   case JSTokenKind::REGEX: {
     auto token = this->expect(JSTokenKind::REGEX);
+    unsigned int lineNum = this->lexer->getLineNumByPos(token.pos);
     std::string err;
-    auto prototype =
-        findProperty(this->global, this->global->findOrUndef(builtin::REGEXP), builtin::PROTOTYPE);
+    auto prototype = findProperty(this->global, lineNum, this->global->findOrUndef(builtin::REGEXP),
+                                  builtin::PROTOTYPE);
     assert(prototype);
     assert(std::holds_alternative<JSObjectPtr>(prototype.asOk()));
     if (auto ret = createJSRegexFromLiteral(std::get<JSObjectPtr>(prototype.asOk()),
                                             this->lexer->toStrRef(token), &err)) {
-      return std::make_unique<Node>(RegexLiteral{std::move(ret)});
+      return std::make_unique<Node>(lineNum, RegexLiteral{std::move(ret)});
     }
     this->reportTokenFormatError(JSTokenKind::REGEX, token, std::move(err));
     return nullptr;
   }
   case JSTokenKind::IDENTIFIER: {
     auto token = this->expect(JSTokenKind::IDENTIFIER);
-    return std::make_unique<Node>(NameExpr{this->lexer->toTokenText(token)});
+    return std::make_unique<Node>(this->lexer->getLineNumByPos(token.pos),
+                                  NameExpr{this->lexer->toTokenText(token)});
   }
   case JSTokenKind::LB:
     return this->parseArray();
@@ -652,14 +697,15 @@ std::unique_ptr<Node> JSParser::parseNumber() {
     data += ch;
   }
   if (auto ret = convertToDouble(data.c_str())) {
-    return std::make_unique<Node>(NumberLiteral{ret.value});
+    return std::make_unique<Node>(this->lexer->getLineNumByPos(token.pos),
+                                  NumberLiteral{ret.value});
   }
   this->reportTokenFormatError(JSTokenKind::NUMBER, token, "out of range");
   return nullptr;
 }
 
 std::unique_ptr<Node> JSParser::parseObject() {
-  TRY(this->expect(JSTokenKind::LBC));
+  Token start = TRY(this->expect(JSTokenKind::LBC));
   ObjectLiteral object;
   while (this->curKind != JSTokenKind::RBC) {
     Token token = TRY(this->expect(JSTokenKind::IDENTIFIER));
@@ -673,11 +719,11 @@ std::unique_ptr<Node> JSParser::parseObject() {
     }
   }
   TRY(this->expect(JSTokenKind::RBC));
-  return std::make_unique<Node>(std::move(object));
+  return std::make_unique<Node>(this->lexer->getLineNumByPos(start.pos), std::move(object));
 }
 
 std::unique_ptr<Node> JSParser::parseArray() {
-  TRY(this->expect(JSTokenKind::LB));
+  Token token = TRY(this->expect(JSTokenKind::LB));
   ArrayLiteral array;
   while (this->curKind != JSTokenKind::RB) {
     auto node = TRY(this->parseExpression());
@@ -689,7 +735,7 @@ std::unique_ptr<Node> JSParser::parseArray() {
     }
   }
   TRY(this->expect(JSTokenKind::RB));
-  return std::make_unique<Node>(std::move(array));
+  return std::make_unique<Node>(this->lexer->getLineNumByPos(token.pos), std::move(array));
 }
 
 #undef TRY
@@ -725,14 +771,14 @@ static Result<JSValue, JSThrown> evalObject(const ObjectLiteral &literal,
   return Ok(std::move(object));
 }
 
-static Result<JSValue, JSThrown> evalCallExpr(const CallExpr &callExpr,
+static Result<JSValue, JSThrown> evalCallExpr(const CallExpr &callExpr, const unsigned int lineNum,
                                               const std::shared_ptr<JSEnv> &env) {
   JSValue callee;
   JSValue recv;
   if (std::holds_alternative<AccessExpr>(callExpr.func->value)) {
     auto &access = std::get<AccessExpr>(callExpr.func->value);
     recv = TRY(evaluate(*access.recv, env));
-    callee = TRY(findProperty(env, recv, access.name));
+    callee = TRY(findProperty(env, lineNum, recv, access.name));
   } else {
     callee = TRY(evaluate(*callExpr.func, env));
   }
@@ -740,18 +786,18 @@ static Result<JSValue, JSThrown> evalCallExpr(const CallExpr &callExpr,
   if (std::holds_alternative<JSFunctionPtr>(callee)) {
     func = std::get<JSFunctionPtr>(callee);
   } else {
-    return throwTypeError(env, "not a function");
+    return throwError(env, builtin::TYPE_ERROR, lineNum, "not a function");
   }
   std::vector<JSValue> args;
   for (auto &e : callExpr.args) {
     args.push_back(TRY(evaluate(*e, env)));
   }
-  return callJSFunction(func, std::move(recv), std::move(args));
+  return callJSFunction(env, lineNum, func, std::move(recv), std::move(args));
 }
 
 static Result<JSValue, JSThrown> evaluate(const Node &node, const std::shared_ptr<JSEnv> &env) {
   return std::visit(
-      [env](auto &&element) -> Result<JSValue, JSThrown> {
+      [env, lineNum = node.lineNum](auto &&element) -> Result<JSValue, JSThrown> {
         using T = std::decay_t<decltype(element)>;
         if constexpr (std::is_same_v<T, NullLiteral>) {
           return Ok(nullptr);
@@ -768,12 +814,12 @@ static Result<JSValue, JSThrown> evaluate(const Node &node, const std::shared_pt
           }
           std::string message = element.name;
           message += " is not defined";
-          return throwReferenceError(env, message);
+          return throwError(env, builtin::REF_ERROR, lineNum, message);
         } else if constexpr (std::is_same_v<T, AccessExpr>) {
           auto recv = TRY(evaluate(*element.recv, env));
-          return findProperty(env, recv, element.name);
+          return findProperty(env, lineNum, recv, element.name);
         } else if constexpr (std::is_same_v<T, CallExpr>) {
-          return evalCallExpr(element, env);
+          return evalCallExpr(element, lineNum, env);
         } else if constexpr (std::is_same_v<T, UnaryExpr>) {
           auto value = TRY(evaluate(*element.expr, env));
           if (element.op == "!") {
@@ -786,7 +832,7 @@ static Result<JSValue, JSThrown> evaluate(const Node &node, const std::shared_pt
             std::string message = "'";
             message += element.name;
             message += "' is already defined";
-            return throwTypeError(env, message);
+            return throwError(env, builtin::TYPE_ERROR, lineNum, message);
           }
           return Ok(JSValue());
         } else {
@@ -803,6 +849,10 @@ Result<JSValue, JSThrown> jsEval(const char *sourceName, StringRef source,
   }
   std::vector<std::unique_ptr<Node>> nodes;
   {
+    auto fileName = newJSString(sourceName);
+    if (!global->define(JSEnv::DEFINED_FILENAME, fileName)) {
+      global->assign(JSEnv::DEFINED_FILENAME, fileName);
+    }
     JSLexer lexer(sourceName, source);
     lexer.setVerbose(debug);
     JSParser parser(global, lexer);
@@ -813,8 +863,8 @@ Result<JSValue, JSThrown> jsEval(const char *sourceName, StringRef source,
         auto error = parser.formatError();
         fputs(error.value().detail.c_str(), stderr);
         fflush(stderr);
-        return throwSyntaxError(global, error.value().sourceName.c_str(), error.value().lineNum,
-                                error.value().message);
+        return throwError(global, builtin::SYNTAX_ERROR, error.value().lineNum,
+                          error.value().message);
       }
     }
   }

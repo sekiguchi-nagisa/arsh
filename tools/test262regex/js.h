@@ -66,6 +66,8 @@ inline bool isUndefined(const JSValue &value) {
   return std::holds_alternative<std::monostate>(value);
 }
 
+inline bool isNull(const JSValue &value) { return std::holds_alternative<std::nullptr_t>(value); }
+
 struct JSThrown {
   JSValue value;
 };
@@ -136,11 +138,16 @@ struct JSArray {
 class JSEnv : public std::enable_shared_from_this<JSEnv> {
 private:
   std::shared_ptr<JSEnv> parent;
-  std::map<std::string, JSValue> values;
+  std::map<std::string, JSValue> values; // NOLINT
 
   explicit JSEnv(std::shared_ptr<JSEnv> parent) : parent(std::move(parent)) {}
 
 public:
+  // for stack trace
+  static constexpr const char *DEFINED_FILENAME = ":filename";
+  static constexpr const char *CALLER_FILENAME = "caller:filename";
+  static constexpr const char *CALLER_LINENO = "caller:lineno";
+
   static std::shared_ptr<JSEnv> createGlobal() {
     return std::shared_ptr<JSEnv>(new JSEnv(nullptr));
   }
@@ -203,10 +210,13 @@ inline std::string toString(const JSValue &value) {
   return out;
 }
 
-ErrHolder<JSThrown> throwSyntaxError(const std::shared_ptr<JSEnv> &env, const char *sourceName,
-                                     unsigned int lineNum, const std::string &message);
+ErrHolder<JSThrown> throwError(const std::shared_ptr<JSEnv> &env, const char *name,
+                               unsigned int lineNum, const std::string &message);
 
-ErrHolder<JSThrown> throwTypeError(const std::shared_ptr<JSEnv> &env, const std::string &message);
+bool strictlyEquals(const JSValue &x, const JSValue &y);
+
+Result<JSValue, JSThrown> isInstanceOf(const std::shared_ptr<JSEnv> &env, unsigned int lineNum,
+                                       const JSValue &value, const JSValue &constructor);
 
 std::shared_ptr<JSEnv> initJSEnv();
 
