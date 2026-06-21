@@ -151,7 +151,7 @@ public:
 
   const auto &getParent() const { return this->parent; }
 
-  void define(const std::string &name, JSValue value);
+  bool define(const std::string &name, JSValue value);
 
   const JSValue *find(const std::string &name) const;
 

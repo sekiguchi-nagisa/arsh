@@ -28,8 +28,8 @@ namespace arsh::re262 {
 // ##     JSEnv     ##
 // ###################
 
-void JSEnv::define(const std::string &name, JSValue value) {
-  this->values[name] = std::move(value);
+bool JSEnv::define(const std::string &name, JSValue value) {
+  return this->values.emplace(name, std::move(value)).second;
 }
 
 const JSValue *JSEnv::find(const std::string &name) const {
@@ -317,7 +317,7 @@ static void defineError(const std::shared_ptr<JSEnv> &global, const char *name) 
           obj = std::make_shared<JSObject>();
         }
         env->assign(builtin::THIS, obj);
-        obj->values[builtin::PROTO] = func;
+        obj->values[builtin::PROTO] = func->values.at(builtin::PROTOTYPE);
         for (auto &param : func->params) {
           obj->values[param] = env->findOrUndef(param);
         }
@@ -782,7 +782,12 @@ static Result<JSValue, JSThrown> evaluate(const Node &node, const std::shared_pt
           return Ok(std::move(value));
         } else if constexpr (std::is_same_v<T, VarDecl>) {
           auto value = TRY(evaluate(*element.expr, env));
-          env->define(element.name, std::move(value));
+          if (!env->define(element.name, std::move(value))) { // TODO: should be syntax error
+            std::string message = "'";
+            message += element.name;
+            message += "' is already defined";
+            return throwTypeError(env, message);
+          }
           return Ok(JSValue());
         } else {
           fatal("unreachable");
