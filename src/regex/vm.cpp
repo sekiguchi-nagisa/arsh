@@ -103,53 +103,36 @@ union Backtrack {
     uint32_t consumedSize;
   } radixState;
 
-private:
-  explicit Backtrack(BacktrackOp op) : op(op) {}
-
-public:
-  Backtrack() : op(BacktrackOp::None) {}
+  static Backtrack dummy() { return {.op = BacktrackOp::None}; }
 
   static Backtrack newSetIns(const Input &input, uint32_t target) {
-    Backtrack bt(BacktrackOp::SetIns);
-    bt.setIns.iter = input.getIter();
-    bt.setIns.target = target;
-    return bt;
+    return {.setIns = {.op = BacktrackOp::SetIns, .target = target, .iter = input.getIter()}};
   }
 
   static Backtrack newSetCapture(uint32_t index, Capture capture) {
-    Backtrack bt(BacktrackOp::SetCapture);
-    bt.setCapture.index = index;
-    bt.setCapture.capture = capture;
-    return bt;
+    return {.setCapture = {.op = BacktrackOp::SetCapture, .index = index, .capture = capture}};
   }
 
   static Backtrack newSetLoopState(uint16_t loopIndex, LoopState state) {
-    Backtrack bt(BacktrackOp::SetLoopState);
-    bt.setLoopState.loopIndex = loopIndex;
-    bt.setLoopState.state = state;
-    return bt;
+    return {
+        .setLoopState = {.op = BacktrackOp::SetLoopState, .loopIndex = loopIndex, .state = state}};
   }
 
   static Backtrack newNonGreedyLoop(uint16_t loopIndex, LoopState state) {
-    Backtrack bt(BacktrackOp::NonGreedyLoop);
-    bt.nonGreedyLoop.loopIndex = loopIndex;
-    bt.nonGreedyLoop.state = state;
-    return bt;
+    return {.nonGreedyLoop = {
+                .op = BacktrackOp::NonGreedyLoop, .loopIndex = loopIndex, .state = state}};
   }
 
   static Backtrack newLookAround(const Input &input, uint32_t target, bool negate) {
-    Backtrack bt(BacktrackOp::LookAround);
-    bt.lookAround.negate = negate;
-    bt.lookAround.matched = !negate;
-    bt.lookAround.iter = input.getIter();
-    bt.lookAround.target = target;
-    return bt;
+    return {.lookAround = {.op = BacktrackOp::LookAround,
+                           .negate = negate,
+                           .matched = !negate,
+                           .target = target,
+                           .iter = input.getIter()}};
   }
 
   static Backtrack newRadixState(uint32_t consumedSize) {
-    Backtrack bt(BacktrackOp::RadixState);
-    bt.radixState.consumedSize = consumedSize;
-    return bt;
+    return {.radixState = {.op = BacktrackOp::RadixState, .consumedSize = consumedSize}};
   }
 };
 
@@ -475,7 +458,7 @@ START:
   }
 
   // match
-  bts.push(Backtrack()); // dummy
+  bts.push(Backtrack::dummy()); // dummy
 BACKTRACK:
   while (bts.backtrack(inst, input, captures, loopStates)) {
     if (unlikely(++btCount == Regex::TIMER_CHECK_INTERVAL)) {

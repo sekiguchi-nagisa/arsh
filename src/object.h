@@ -274,26 +274,22 @@ private:
   static constexpr auto EMPTY = TValue{.u64 = toUnderlying(ValueTag::EMPTY)};
   static constexpr auto INVALID = TValue{.u64 = toUnderlying(ValueKind::INVALID)};
 
-  Value(ValueKind kind, uint64_t value) noexcept {
-    this->tv = TValue::encodeTaggedUInt(kind, value);
-  }
+  explicit Value(TValue v) : RawValue{.tv = v} {}
 
-  Value(ValueKind kind, uint16_t u16, uint32_t u32) noexcept {
-    this->tv = TValue::encodeTaggedUInt(kind, static_cast<uint64_t>(u16) << 32 |
-                                                  static_cast<uint64_t>(u32));
-  }
+  Value(ValueKind kind, uint64_t value) noexcept : Value(TValue::encodeTaggedUInt(kind, value)) {}
 
-  explicit Value(int64_t value) noexcept {
-    this->tv = TValue::encodeTaggedInt(ValueKind::SMALL_INT, value);
-  }
+  Value(ValueKind kind, uint16_t u16, uint32_t u32) noexcept
+      : Value(TValue::encodeTaggedUInt(kind, static_cast<uint64_t>(u16) << 32 |
+                                                 static_cast<uint64_t>(u32))) {}
 
-  explicit Value(bool value) noexcept {
-    this->tv = TValue::encodeTaggedInt(ValueKind::BOOL, value ? 1 : 0);
-  }
+  explicit Value(int64_t value) noexcept
+      : Value(TValue::encodeTaggedInt(ValueKind::SMALL_INT, value)) {}
 
-  explicit Value(double value) noexcept {
-    this->tv = TValue::encodeTaggedFloat<ValueTag::FLOAT>(value);
-  }
+  explicit Value(bool value) noexcept
+      : Value(TValue::encodeTaggedInt(ValueKind::BOOL, value ? 1 : 0)) {}
+
+  explicit Value(double value) noexcept
+      : Value(TValue::encodeTaggedFloat<ValueTag::FLOAT>(value)) {}
 
   /**
    * for small string construction
@@ -305,16 +301,15 @@ private:
   }
 
 public:
-  explicit Value(Object *o) noexcept {
+  explicit Value(Object *o) noexcept : RawValue{.tv = {.ptr = o}} {
     assert(o);
     o->refCount++;
-    this->tv.ptr = o;
   }
 
   /**
    * equivalent to Value(nullptr)
    */
-  Value() noexcept { this->tv = EMPTY; }
+  Value() noexcept : Value(EMPTY) {}
 
   Value(std::nullptr_t) noexcept : Value() {} // NOLINT
 
@@ -558,40 +553,32 @@ public:
     return Value(ObjectConstructor<T, A...>::construct(std::forward<A>(args)...));
   }
 
-  static Value createNum(unsigned int v) { return Value(ValueKind::NUMBER, v); }
+  static Value createNum(unsigned int v) { return {ValueKind::NUMBER, v}; }
 
   static Value createStackGuard(StackGuardType t, unsigned int level = 0) {
     static_assert(sizeof(StackGuardType) <= sizeof(uint16_t));
-    return Value(ValueKind::STACK_GUARD, toUnderlying(t), level);
+    return {ValueKind::STACK_GUARD, toUnderlying(t), level};
   }
 
   static Value createDummy(const Type &type, unsigned int v1 = 0) {
-    return Value(ValueKind::DUMMY, v1, type.typeId());
+    return {ValueKind::DUMMY, static_cast<uint16_t>(v1), type.typeId()};
   }
 
   static Value createExpandMeta(ExpandMeta meta, unsigned int v) {
     static_assert(sizeof(ExpandMeta) <= sizeof(uint16_t));
-    return Value(ValueKind::EXPAND_META, toUnderlying(meta), v);
+    return {ValueKind::EXPAND_META, toUnderlying(meta), v};
   }
 
   static Value createBraceRangeAttr(BraceRange::Kind kind, unsigned int digits) {
     static_assert(sizeof(BraceRange::Kind) <= sizeof(uint16_t));
-    return Value(ValueKind::BRACE_RANGE_ATTR, toUnderlying(kind), digits);
+    return {ValueKind::BRACE_RANGE_ATTR, toUnderlying(kind), digits};
   }
 
-  static Value createInvalid() {
-    Value value;
-    value.tv = INVALID;
-    return value;
-  }
+  static Value createInvalid() { return Value(INVALID); }
 
   static Value createBool(bool v) { return Value(v); }
 
-  static Value createSig(int num) {
-    Value ret;
-    ret.tv = TValue::encodeTaggedInt(ValueKind::SIG, num);
-    return ret;
-  }
+  static Value createSig(int num) { return Value(TValue::encodeTaggedInt(ValueKind::SIG, num)); }
 
   static Value createInt(int64_t num) {
     if (TValue::withinInt56(num)) {
