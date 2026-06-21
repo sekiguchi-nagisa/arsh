@@ -36,7 +36,7 @@ namespace arsh::regex {
  * @param iter must be valid utf8
  * @return
  */
-inline int unsafeNextUtf8(const char *&iter) {
+[[gnu::always_inline]] inline int unsafeNextUtf8(const char *&iter) {
   const unsigned char b = *iter;
   if (likely(b < 128)) {
     ++iter;
@@ -69,7 +69,7 @@ inline void unsafeNextUtf8Noreturn(const char *&iter) { iter += UnicodeUtil::utf
  * @param iter must be valid utf8
  * @return
  */
-inline int unsafePrevUtf8(const char *&iter) {
+[[gnu::always_inline]] inline int unsafePrevUtf8(const char *&iter) {
   constexpr unsigned char masks[] = {0xFF, 0x1F, 0x0F, 0x07};
   unsigned int codePoint = 0;
   unsigned int len;
@@ -157,14 +157,14 @@ public:
 
   const char *getEnd() const { return this->end; }
 
-  int cur() const {
+  [[gnu::always_inline]] int cur() const {
     auto i = this->iter;
     return unsafeNextUtf8(i);
   }
 
-  int consumeForward() { return unsafeNextUtf8(this->iter); }
+  [[gnu::always_inline]] int consumeForward() { return unsafeNextUtf8(this->iter); }
 
-  int prev() const {
+  [[gnu::always_inline]] int prev() const {
     auto i = this->iter;
     return unsafePrevUtf8(i);
   }
@@ -173,7 +173,7 @@ public:
    * for look-behind.
    * @return
    */
-  int consumeBackward() { return unsafePrevUtf8(this->iter); }
+  [[gnu::always_inline]] int consumeBackward() { return unsafePrevUtf8(this->iter); }
 
   StringRef remainForward() const {
     return {this->iter, static_cast<size_t>(this->end - this->iter)};
