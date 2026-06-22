@@ -1255,7 +1255,7 @@ TEST(JSTest, error) {
 
   ret = jsEval("dummy2", "\nSyntaxError('failed');", env, false, &err);
   ASSERT_TRUE(ret);
-  ASSERT_EQ("{ __proto__: { __proto__: { name: Error }, name: TypeError }, fileName: dummy2, "
+  ASSERT_EQ("{ __proto__: { __proto__: { name: Error }, name: SyntaxError }, fileName: dummy2, "
             "lineNumber: 2, "
             "message: failed }",
             toPrettyString(ret.asOk()));
