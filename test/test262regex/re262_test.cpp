@@ -792,18 +792,26 @@ TEST(JSRegexTest, exec) {
 
 TEST(JSTest, syntaxError) {
   {
-    auto ret = jsEval("dummy", "hoge(23");
+    std::string err;
+    auto ret = jsEval("dummy", "hoge(23", nullptr, false, &err);
     ASSERT_FALSE(ret);
     ASSERT_TRUE(std::holds_alternative<JSObjectPtr>(ret.asErr().value));
-    ASSERT_EQ("{ __proto__: { name: SyntaxError }, fileName: dummy, lineNumber: 1, message: "
+    ASSERT_EQ("{ __proto__: { __proto__: { name: Error }, name: SyntaxError }, fileName: dummy, "
+              "lineNumber: 1, message: "
               "expected `,', `)' }",
               toPrettyString(ret.asErr().value));
+    const char *expect = R"(dummy:1 [error] expected `,', `)'
+hoge(23
+       ^
+)";
+    ASSERT_EQ(expect, err);
   }
   {
     auto ret = jsEval("dummy", "hoge\n(23");
     ASSERT_FALSE(ret);
     ASSERT_TRUE(std::holds_alternative<JSObjectPtr>(ret.asErr().value));
-    ASSERT_EQ("{ __proto__: { name: SyntaxError }, fileName: dummy, lineNumber: 2, message: "
+    ASSERT_EQ("{ __proto__: { __proto__: { name: Error }, name: SyntaxError }, fileName: dummy, "
+              "lineNumber: 2, message: "
               "expected `,', `)' }",
               toPrettyString(ret.asErr().value));
   }
@@ -811,7 +819,8 @@ TEST(JSTest, syntaxError) {
     auto ret = jsEval("dummy", "hoge;\n/\\p{ACII}/u");
     ASSERT_FALSE(ret);
     ASSERT_TRUE(std::holds_alternative<JSObjectPtr>(ret.asErr().value));
-    ASSERT_EQ("{ __proto__: { name: SyntaxError }, fileName: dummy, lineNumber: 2, message: "
+    ASSERT_EQ("{ __proto__: { __proto__: { name: Error }, name: SyntaxError }, fileName: dummy, "
+              "lineNumber: 2, message: "
               "unrecognized property value: ACII }",
               toPrettyString(ret.asErr().value));
   }
@@ -933,7 +942,8 @@ TEST(JSTest, nameError) {
   auto ret = jsEval("dummy", "hoge;");
   ASSERT_FALSE(ret);
   ASSERT_TRUE(std::holds_alternative<JSObjectPtr>(ret.asErr().value));
-  ASSERT_EQ("{ __proto__: { name: ReferenceError }, fileName: dummy, lineNumber: 1, "
+  ASSERT_EQ("{ __proto__: { __proto__: { name: Error }, name: ReferenceError }, fileName: dummy, "
+            "lineNumber: 1, "
             "message: hoge is not defined }",
             toPrettyString(ret.asErr().value));
 }
@@ -952,7 +962,8 @@ TEST(JSTest, funcCallError) {
     auto ret = jsEval("dummy", "undefined();");
     ASSERT_FALSE(ret);
     ASSERT_TRUE(std::holds_alternative<JSObjectPtr>(ret.asErr().value));
-    ASSERT_EQ("{ __proto__: { name: TypeError }, fileName: dummy, lineNumber: 1, "
+    ASSERT_EQ("{ __proto__: { __proto__: { name: Error }, name: TypeError }, fileName: dummy, "
+              "lineNumber: 1, "
               "message: not a function }",
               toPrettyString(ret.asErr().value));
   }
@@ -1008,7 +1019,8 @@ TEST(JSTest, fieldError) {
     auto ret = jsEval("dummy", "null.hoge;");
     ASSERT_FALSE(ret);
     ASSERT_TRUE(std::holds_alternative<JSObjectPtr>(ret.asErr().value));
-    ASSERT_EQ("{ __proto__: { name: TypeError }, fileName: dummy, lineNumber: 1, "
+    ASSERT_EQ("{ __proto__: { __proto__: { name: Error }, name: TypeError }, fileName: dummy, "
+              "lineNumber: 1, "
               "message: Cannot read properties of null (reading 'hoge') }",
               toPrettyString(ret.asErr().value));
   }
@@ -1016,7 +1028,8 @@ TEST(JSTest, fieldError) {
     auto ret = jsEval("dummy2", "\n\nundefined.test;");
     ASSERT_FALSE(ret);
     ASSERT_TRUE(std::holds_alternative<JSObjectPtr>(ret.asErr().value));
-    ASSERT_EQ("{ __proto__: { name: TypeError }, fileName: dummy2, lineNumber: 3, "
+    ASSERT_EQ("{ __proto__: { __proto__: { name: Error }, name: TypeError }, fileName: dummy2, "
+              "lineNumber: 3, "
               "message: Cannot read properties of undefined (reading 'test') }",
               toPrettyString(ret.asErr().value));
   }
@@ -1055,7 +1068,8 @@ TEST(JSTest, methodCallError) {
     auto ret = jsEval("dummy", "RegExp('12', 'ysgd').fjeria();");
     ASSERT_FALSE(ret);
     ASSERT_TRUE(std::holds_alternative<JSObjectPtr>(ret.asErr().value));
-    ASSERT_EQ("{ __proto__: { name: TypeError }, fileName: dummy, lineNumber: 1, "
+    ASSERT_EQ("{ __proto__: { __proto__: { name: Error }, name: TypeError }, fileName: dummy, "
+              "lineNumber: 1, "
               "message: not a function }",
               toPrettyString(ret.asErr().value));
   }
@@ -1063,7 +1077,8 @@ TEST(JSTest, methodCallError) {
     auto ret = jsEval("dummy", "RegExp.prototype.test('12');");
     ASSERT_FALSE(ret);
     ASSERT_TRUE(std::holds_alternative<JSObjectPtr>(ret.asErr().value));
-    ASSERT_EQ("{ __proto__: { name: TypeError }, fileName: dummy, lineNumber: 1, "
+    ASSERT_EQ("{ __proto__: { __proto__: { name: Error }, name: TypeError }, fileName: dummy, "
+              "lineNumber: 1, "
               "message: Method RegExp.prototype.test called on incompatible receiver }",
               toPrettyString(ret.asErr().value));
   }
@@ -1071,7 +1086,8 @@ TEST(JSTest, methodCallError) {
     auto ret = jsEval("dummy", "RegExp.prototype.exec('12');");
     ASSERT_FALSE(ret);
     ASSERT_TRUE(std::holds_alternative<JSObjectPtr>(ret.asErr().value));
-    ASSERT_EQ("{ __proto__: { name: TypeError }, fileName: dummy, lineNumber: 1, "
+    ASSERT_EQ("{ __proto__: { __proto__: { name: Error }, name: TypeError }, fileName: dummy, "
+              "lineNumber: 1, "
               "message: Method RegExp.prototype.exec called on incompatible receiver }",
               toPrettyString(ret.asErr().value));
   }
@@ -1082,7 +1098,8 @@ TEST(JSTest, regexMethodError) {
     auto ret = jsEval("dummy", "RegExp('12', 'ysgd').test('\\uD800');");
     ASSERT_FALSE(ret);
     ASSERT_TRUE(std::holds_alternative<JSObjectPtr>(ret.asErr().value));
-    ASSERT_EQ("{ __proto__: { name: TypeError }, fileName: dummy, lineNumber: 1, "
+    ASSERT_EQ("{ __proto__: { __proto__: { name: Error }, name: TypeError }, fileName: dummy, "
+              "lineNumber: 1, "
               "message: Method RegExp.prototype.test called on incompatible `str` param (lone "
               "surrogate or too large) }",
               toPrettyString(ret.asErr().value));
@@ -1091,7 +1108,8 @@ TEST(JSTest, regexMethodError) {
     auto ret = jsEval("dummy1", "12;\nRegExp('12', 'ysgd').exec('\\uDC00');");
     ASSERT_FALSE(ret);
     ASSERT_TRUE(std::holds_alternative<JSObjectPtr>(ret.asErr().value));
-    ASSERT_EQ("{ __proto__: { name: TypeError }, fileName: dummy1, lineNumber: 2, "
+    ASSERT_EQ("{ __proto__: { __proto__: { name: Error }, name: TypeError }, fileName: dummy1, "
+              "lineNumber: 2, "
               "message: Method RegExp.prototype.exec called on incompatible `str` param (lone "
               "surrogate or too large) }",
               toPrettyString(ret.asErr().value));
@@ -1109,7 +1127,7 @@ TEST(JSTest, proto) {
     auto ret = jsEval("dummy", "SyntaxError().__proto__;");
     ASSERT_TRUE(ret);
     ASSERT_TRUE(std::holds_alternative<JSObjectPtr>(ret.asOk()));
-    ASSERT_EQ("{ name: SyntaxError }", toPrettyString(ret.asOk()));
+    ASSERT_EQ("{ __proto__: { name: Error }, name: SyntaxError }", toPrettyString(ret.asOk()));
   }
 }
 
@@ -1186,13 +1204,15 @@ TEST(JSTest, varDecl) {
     ret = jsEval("dummy", "(DDD)('aa', 'e');", env);
     ASSERT_FALSE(ret);
     ASSERT_TRUE(std::holds_alternative<JSObjectPtr>(ret.asErr().value));
-    ASSERT_EQ("{ __proto__: { name: SyntaxError }, fileName: dummy, lineNumber: 1, "
+    ASSERT_EQ("{ __proto__: { __proto__: { name: Error }, name: SyntaxError }, fileName: dummy, "
+              "lineNumber: 1, "
               "message: invalid regular expression flags }",
               toPrettyString(ret.asErr().value));
 
     ret = jsEval("dummy2", "const DDD = null;", env);
     ASSERT_FALSE(ret);
-    ASSERT_EQ("{ __proto__: { name: TypeError }, fileName: dummy2, lineNumber: 1, "
+    ASSERT_EQ("{ __proto__: { __proto__: { name: Error }, name: TypeError }, fileName: dummy2, "
+              "lineNumber: 1, "
               "message: 'DDD' is already defined }",
               toPrettyString(ret.asErr().value));
   }
@@ -1200,19 +1220,63 @@ TEST(JSTest, varDecl) {
 
 TEST(JSTest, instanceOf) {
   auto env = initJSEnv();
-  auto ret = jsEval("dummy2", "const undefined = null;", env);
+  std::string err;
+  auto ret = jsEval("dummy2", "const undefined = null;", env, false, &err);
   ASSERT_FALSE(ret);
-  ASSERT_EQ("{ __proto__: { name: TypeError }, fileName: dummy2, lineNumber: 1, "
+  ASSERT_EQ("{ __proto__: { __proto__: { name: Error }, name: TypeError }, fileName: dummy2, "
+            "lineNumber: 1, "
             "message: 'undefined' is already defined }",
             toPrettyString(ret.asErr().value));
+  ASSERT_EQ("", err);
 
   auto ret2 = isInstanceOf(env, 0, ret.asErr().value, env->findOrUndef(builtin::TYPE_ERROR));
+  ASSERT_TRUE(ret2);
+  ASSERT_TRUE(std::get<bool>(ret2.asOk()));
+
+  ret2 = isInstanceOf(env, 0, ret.asErr().value, env->findOrUndef(builtin::ERROR));
   ASSERT_TRUE(ret2);
   ASSERT_TRUE(std::get<bool>(ret2.asOk()));
 
   ret2 = isInstanceOf(env, 0, ret.asErr().value, env->findOrUndef(builtin::SYNTAX_ERROR));
   ASSERT_TRUE(ret2);
   ASSERT_FALSE(std::get<bool>(ret2.asOk()));
+}
+
+TEST(JSTest, error) {
+  auto env = initJSEnv();
+  std::string err;
+  auto ret = jsEval("dummy1", "TypeError();", env, false, &err);
+  ASSERT_TRUE(ret);
+  ASSERT_EQ("{ __proto__: { __proto__: { name: Error }, name: TypeError }, fileName: dummy1, "
+            "lineNumber: 1, "
+            "message:  }",
+            toPrettyString(ret.asOk()));
+  ASSERT_EQ("", err);
+
+  ret = jsEval("dummy2", "\nSyntaxError('failed');", env, false, &err);
+  ASSERT_TRUE(ret);
+  ASSERT_EQ("{ __proto__: { __proto__: { name: Error }, name: TypeError }, fileName: dummy2, "
+            "lineNumber: 2, "
+            "message: failed }",
+            toPrettyString(ret.asOk()));
+  ASSERT_EQ("", err);
+}
+
+TEST(JSTest, evalResult) {
+  auto env = initJSEnv();
+  auto ret = jsEval("dummy1", "12;", env);
+  ASSERT_TRUE(ret);
+  auto out = formatEvalResult(env, ret);
+  ASSERT_EQ("12\n", out);
+
+  ret = jsEval("dummy2", "hogehoge;", env);
+  ASSERT_FALSE(ret);
+  out = formatEvalResult(env, ret);
+  ASSERT_EQ(R"([uncaught]
+ReferenceError: hogehoge is not defined
+    at dummy2:1
+)",
+            out);
 }
 
 int main(int argc, char **argv) {

@@ -33,6 +33,7 @@ namespace arsh::re262 {
 namespace builtin {
 
 // for builtin constructor
+constexpr const char *ERROR = "Error";
 constexpr const char *SYNTAX_ERROR = "SyntaxError";
 constexpr const char *REF_ERROR = "ReferenceError";
 constexpr const char *TYPE_ERROR = "TypeError";
@@ -221,7 +222,11 @@ Result<JSValue, JSThrown> isInstanceOf(const std::shared_ptr<JSEnv> &env, unsign
 std::shared_ptr<JSEnv> initJSEnv();
 
 Result<JSValue, JSThrown> jsEval(const char *sourceName, StringRef source,
-                                 std::shared_ptr<JSEnv> global = nullptr, bool debug = false);
+                                 std::shared_ptr<JSEnv> global = nullptr, bool debug = false,
+                                 std::string *syntaxErr = nullptr);
+
+std::string formatEvalResult(const std::shared_ptr<JSEnv> &env,
+                             const Result<JSValue, JSThrown> &result);
 
 } // namespace arsh::re262
 

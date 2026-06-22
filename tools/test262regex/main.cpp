@@ -23,7 +23,7 @@
 using namespace arsh;
 
 static void usage(FILE *fp, char **argv) {
-  fprintf(fp, "usage: %s [-d] [test case path]\n", argv[0]);
+  fprintf(fp, "usage: %s [-d] [-n] [test case path]\n", argv[0]);
 }
 
 static void invalidOption(char **argv, int opt) {
@@ -68,13 +68,18 @@ static void print(FILE *fp, const re262::TestMetaData &data) {
 }
 
 int main(int argc, char **argv) {
-  opt::GetOptState optState("hd");
+  opt::GetOptState optState("hdn");
   auto iter = argv + 1;
   const auto end = argv + argc;
   bool debug = false;
+  bool checkMeta = true;
   for (int opt; (opt = optState(iter, end)) != -1;) {
     if (opt == 'd') {
       debug = true;
+      continue;
+    }
+    if (opt == 'n') {
+      checkMeta = false;
       continue;
     }
     if (opt == 'h') {
@@ -98,18 +103,26 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  std::string err;
-  auto metaData = re262::TestMetaData::extractFrom(input, &err);
-  if (!metaData.has_value()) {
-    fprintf(stderr, "[meta-data error] %s\n  at %s\n", err.c_str(), filename);
-    return 1;
-  }
-  if (debug) {
-    print(stderr, metaData.value());
+  std::optional<re262::TestMetaData> metaData;
+  if (checkMeta) {
+    std::string err;
+    metaData = re262::TestMetaData::extractFrom(input, &err);
+    if (!metaData.has_value()) {
+      fprintf(stderr, "[meta-data error] %s\n  at %s\n", err.c_str(), filename);
+      return 1;
+    }
+    if (debug) {
+      print(stderr, metaData.value());
+    }
   }
 
   auto env = re262::initJSEnv();
-  auto ret = re262::jsEval(filename, input, env, debug);
-  // TODO: check meta data
-  return 0;
+  std::string syntaxErr;
+  auto ret = re262::jsEval(filename, input, env, debug, &syntaxErr);
+  if (!syntaxErr.empty()) {
+    fputs(syntaxErr.c_str(), stderr);
+  }
+  auto out = re262::formatEvalResult(env, ret);
+  fputs(out.c_str(), stderr);
+  return ret ? 0 : 1;
 }

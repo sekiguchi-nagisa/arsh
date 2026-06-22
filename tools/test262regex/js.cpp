@@ -335,35 +335,68 @@ JSFunctionPtr createJSFunction(const std::shared_ptr<JSEnv> &env, const char *na
   return func;
 }
 
-static void defineError(const std::shared_ptr<JSEnv> &global, const char *name) {
+static Result<JSValue, JSThrown> errorConstructorImpl(const JSFunctionPtr &func,
+                                                      const std::shared_ptr<JSEnv> &env) {
+  JSObjectPtr obj;
+  if (auto v = env->findOrUndef(builtin::THIS); std::holds_alternative<JSObjectPtr>(v)) {
+    obj = std::get<JSObjectPtr>(v);
+  } else {
+    obj = std::make_shared<JSObject>();
+  }
+  env->assign(builtin::THIS, obj);
+  obj->values[builtin::PROTO] = func->values.at(builtin::PROTOTYPE);
+  assert(func->params.size() == 3);
+  // message
+  auto v = env->findOrUndef(func->params[0]);
+  if (isUndefined(v)) {
+    v = newJSString("");
+  }
+  obj->values[func->params[0]] = v;
+
+  // fileName
+  v = env->findOrUndef(func->params[1]);
+  if (isUndefined(v)) {
+    v = env->findOrUndef(JSEnv::CALLER_FILENAME);
+  }
+  obj->values[func->params[1]] = v;
+
+  // lineNumber
+  v = env->findOrUndef(func->params[2]);
+  if (isUndefined(v)) {
+    v = env->findOrUndef(JSEnv::CALLER_LINENO);
+  }
+  obj->values[func->params[2]] = v;
+  return Ok(obj);
+}
+
+static void defineError(const std::shared_ptr<JSEnv> &global) {
+  auto prototype = std::make_shared<JSObject>();
+  prototype->values["name"] = newJSString(builtin::ERROR);
+  auto func = createJSFunction(global, builtin::ERROR, {"message", "fileName", "lineNumber"},
+                               std::move(prototype), errorConstructorImpl);
+  global->define(builtin::ERROR, std::move(func));
+}
+
+static void defineDerivedError(const std::shared_ptr<JSEnv> &global, const char *name) {
+  auto errorConstructor = global->findOrUndef(builtin::ERROR);
+  assert(std::holds_alternative<JSFunctionPtr>(errorConstructor));
+  auto errorPrototype =
+      getOwnProperty(*std::get<JSFunctionPtr>(errorConstructor), builtin::PROTOTYPE);
   auto prototype = std::make_shared<JSObject>();
   prototype->values["name"] = newJSString(name);
-  auto func = createJSFunction(
-      global, name, {"message", "fileName", "lineNumber"}, std::move(prototype),
-      [](const JSFunctionPtr &func,
-         const std::shared_ptr<JSEnv> &env) -> Result<JSValue, JSThrown> {
-        JSObjectPtr obj;
-        if (auto v = env->findOrUndef(builtin::THIS); std::holds_alternative<JSObjectPtr>(v)) {
-          obj = std::get<JSObjectPtr>(v);
-        } else {
-          obj = std::make_shared<JSObject>();
-        }
-        env->assign(builtin::THIS, obj);
-        obj->values[builtin::PROTO] = func->values.at(builtin::PROTOTYPE);
-        for (auto &param : func->params) {
-          obj->values[param] = env->findOrUndef(param);
-        }
-        return Ok(obj);
-      });
+  prototype->values[builtin::PROTO] = errorPrototype;
+  auto func = createJSFunction(global, name, {"message", "fileName", "lineNumber"},
+                               std::move(prototype), errorConstructorImpl);
   global->define(name, std::move(func));
 }
 
 std::shared_ptr<JSEnv> initJSEnv() {
   auto global = JSEnv::createGlobal();
   global->define("undefined", JSValue());
-  defineError(global, builtin::SYNTAX_ERROR);
-  defineError(global, builtin::TYPE_ERROR);
-  defineError(global, builtin::REF_ERROR);
+  defineError(global);
+  defineDerivedError(global, builtin::SYNTAX_ERROR);
+  defineDerivedError(global, builtin::TYPE_ERROR);
+  defineDerivedError(global, builtin::REF_ERROR);
   defineJSRegex(global);
   return global;
 }
@@ -529,7 +562,7 @@ std::optional<JSParser::Error> JSParser::formatError() const {
   str += this->lexer->getSourceName();
   str += ':';
   str += std::to_string(lineNum);
-  str += ": error: ";
+  str += " [error] ";
   str += this->getError().getMessage();
   str += '\n';
 
@@ -843,7 +876,8 @@ static Result<JSValue, JSThrown> evaluate(const Node &node, const std::shared_pt
 }
 
 Result<JSValue, JSThrown> jsEval(const char *sourceName, StringRef source,
-                                 std::shared_ptr<JSEnv> global, bool debug) {
+                                 std::shared_ptr<JSEnv> global, const bool debug,
+                                 std::string *syntaxErr) {
   if (!global) {
     global = initJSEnv();
   }
@@ -861,8 +895,9 @@ Result<JSValue, JSThrown> jsEval(const char *sourceName, StringRef source,
         nodes.push_back(std::move(node));
       } else {
         auto error = parser.formatError();
-        fputs(error.value().detail.c_str(), stderr);
-        fflush(stderr);
+        if (syntaxErr) {
+          *syntaxErr = std::move(error.value().detail);
+        }
         return throwError(global, builtin::SYNTAX_ERROR, error.value().lineNum,
                           error.value().message);
       }
@@ -873,6 +908,40 @@ Result<JSValue, JSThrown> jsEval(const char *sourceName, StringRef source,
     last = TRY(evaluate(*node, global));
   }
   return Ok(std::move(last));
+}
+
+std::string formatEvalResult(const std::shared_ptr<JSEnv> &env,
+                             const Result<JSValue, JSThrown> &result) {
+  std::string out;
+  auto &v = result ? result.asOk() : result.asErr().value;
+  if (!result) {
+    out += "[uncaught]\n";
+  }
+  if (auto ret = isInstanceOf(env, 0, v, env->findGlobalEnv()->findOrUndef(builtin::ERROR));
+      ret && std::get<bool>(ret.asOk())) {
+    if (auto r = findProperty(env, 1, v, "name")) {
+      toPrettyString(r.asOk(), out);
+    }
+    if (auto r = findProperty(env, 1, v, "message")) {
+      out += ": ";
+      toPrettyString(r.asOk(), out);
+      out += '\n';
+    }
+    if (auto r = findProperty(env, 1, v, "fileName")) {
+      out += "    at ";
+      toPrettyString(r.asOk(), out);
+      out += ":";
+      r = findProperty(env, 1, v, "lineNumber");
+      if (r) {
+        toPrettyString(r.asOk(), out);
+      }
+      out += '\n';
+    }
+  } else {
+    toPrettyString(v, out);
+    out += '\n';
+  }
+  return out;
 }
 
 } // namespace arsh::re262

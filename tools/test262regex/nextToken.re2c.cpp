@@ -101,6 +101,7 @@ INIT:
     "const"                { RET(CONST); }
     "this"                 { RET(KEYWORD); }
     "throw"                { RET(KEYWORD); }
+    "new"                  { RET(KEYWORD); }
     INT FRAC? EXP?         { RET(NUMBER); }
     HEX_INT                { RET(NUMBER); }
     ['] SCHAR* [']         { UPDATE_LN(); RET(STRING); }
