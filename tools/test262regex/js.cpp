@@ -377,7 +377,7 @@ static void defineError(const std::shared_ptr<JSEnv> &global) {
   global->define(builtin::ERROR, std::move(func));
 }
 
-static void defineDerivedError(const std::shared_ptr<JSEnv> &global, const char *name) {
+void defineDerivedError(const std::shared_ptr<JSEnv> &global, const char *name) {
   auto errorConstructor = global->findOrUndef(builtin::ERROR);
   assert(std::holds_alternative<JSFunctionPtr>(errorConstructor));
   auto errorPrototype =

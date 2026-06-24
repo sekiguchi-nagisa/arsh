@@ -1,5 +1,6 @@
 #include "gtest/gtest.h"
 
+#include "../tools/test262regex/harness.h"
 #include "../tools/test262regex/js_lexer.h"
 #include "../tools/test262regex/js_regex.h"
 #include "../tools/test262regex/meta.h"
@@ -1275,6 +1276,104 @@ TEST(JSTest, evalResult) {
   ASSERT_EQ(R"([uncaught]
 ReferenceError: hogehoge is not defined
     at dummy2:1
+)",
+            out);
+}
+
+TEST(JSTest, harness1) {
+  auto env = initJSEnv();
+  includeHarness(env);
+
+  auto ret = jsEval("dummy1", "assert(true, 'hey');", env);
+  ASSERT_TRUE(ret);
+  auto out = formatEvalResult(env, ret);
+  ASSERT_EQ("undefined\n", out);
+
+  ret = jsEval("dummy1", "\nassert(false, 'hey');", env);
+  ASSERT_FALSE(ret);
+  out = formatEvalResult(env, ret);
+  ASSERT_EQ(R"([uncaught]
+Test262Error: hey
+    at dummy1:2
+)",
+            out);
+
+  ret = jsEval("dummy1", "\n\nassert(1234);", env);
+  ASSERT_FALSE(ret);
+  out = formatEvalResult(env, ret);
+  ASSERT_EQ(R"([uncaught]
+Test262Error: Expected true but got 1234
+    at dummy1:3
+)",
+            out);
+}
+
+TEST(JSTest, harness2) {
+  auto env = initJSEnv();
+  includeHarness(env);
+
+  auto ret = jsEval("dummy1", "assert.sameValue(true, 'hey');", env);
+  ASSERT_FALSE(ret);
+  auto out = formatEvalResult(env, ret);
+  ASSERT_EQ(R"([uncaught]
+Test262Error: Expected SameValue(«true», «hey») to be true
+    at dummy1:1
+)",
+            out);
+
+  ret = jsEval("dummy1", "assert.sameValue(true, 'hey', 'failed');", env);
+  ASSERT_FALSE(ret);
+  out = formatEvalResult(env, ret);
+  ASSERT_EQ(R"([uncaught]
+Test262Error: failed Expected SameValue(«true», «hey») to be true
+    at dummy1:1
+)",
+            out);
+
+  ret = jsEval("dummy1", "assert.sameValue(true, /./.test('s'));", env);
+  ASSERT_TRUE(ret);
+  out = formatEvalResult(env, ret);
+  ASSERT_EQ("undefined\n", out);
+}
+
+TEST(JSTest, harness3) {
+  auto env = initJSEnv();
+  includeHarness(env);
+
+  auto ret = jsEval("dummy1", "assert.notSameValue(12.0, 12);", env);
+  ASSERT_FALSE(ret);
+  auto out = formatEvalResult(env, ret);
+  ASSERT_EQ(R"([uncaught]
+Test262Error: Expected SameValue(«12», «12») to be false
+    at dummy1:1
+)",
+            out);
+
+  ret = jsEval("dummy1", "assert.notSameValue('hey', 'hey', 'failed');", env);
+  ASSERT_FALSE(ret);
+  out = formatEvalResult(env, ret);
+  ASSERT_EQ(R"([uncaught]
+Test262Error: failed Expected SameValue(«hey», «hey») to be false
+    at dummy1:1
+)",
+            out);
+
+  ret = jsEval("dummy1", "assert.notSameValue(1234, /./.test('s'));", env);
+  ASSERT_TRUE(ret);
+  out = formatEvalResult(env, ret);
+  ASSERT_EQ("undefined\n", out);
+}
+
+TEST(JSTest, harness4) {
+  auto env = initJSEnv();
+  includeHarness(env);
+
+  auto ret = jsEval("dummy1", "\n\n$DONOTEVALUATE();", env);
+  ASSERT_FALSE(ret);
+  auto out = formatEvalResult(env, ret);
+  ASSERT_EQ(R"([uncaught]
+Test262Error: Test262: This statement should not be evaluate
+    at dummy1:3
 )",
             out);
 }

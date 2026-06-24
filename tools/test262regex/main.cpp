@@ -17,6 +17,7 @@
 #include <misc/opt.hpp>
 #include <misc/resource.hpp>
 
+#include "harness.h"
 #include "js.h"
 #include "meta.h"
 
@@ -117,6 +118,7 @@ int main(int argc, char **argv) {
   }
 
   auto env = re262::initJSEnv();
+  re262::includeHarness(env);
   std::string syntaxErr;
   auto ret = re262::jsEval(filename, input, env, debug, &syntaxErr);
   if (!syntaxErr.empty()) {

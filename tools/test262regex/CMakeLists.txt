@@ -22,6 +22,7 @@ add_library(re262_static STATIC
         js_lexer.cpp
         ${lexer_src}
         js_regex.cpp
+        harness.cpp
 )
 target_link_libraries(re262_static regex)
 
