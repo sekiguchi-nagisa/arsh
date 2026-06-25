@@ -53,7 +53,9 @@ public:
     ASSERT_EQ(0u, UnicodeUtil::utf8ToCodePoint(buf, bufSize, codePoint));
     ASSERT_EQ(-1, codePoint);
 
-    ASSERT_EQ(-1, UnicodeUtil::utf8ToCodePoint(buf, bufSize));
+    codePoint = 0;
+    UnicodeUtil::utf8ToCodePoint(buf, bufSize, codePoint);
+    ASSERT_EQ(-1, codePoint);
   }
 
   template <unsigned int N>
@@ -63,7 +65,8 @@ public:
 
   static void assertCodePoint2Utf8(const char *ch, unsigned int byteSize) {
     char buf[4];
-    int codePoint = UnicodeUtil::utf8ToCodePoint(ch, byteSize);
+    int codePoint = 0;
+    UnicodeUtil::utf8ToCodePoint(ch, byteSize, codePoint);
     unsigned int size = UnicodeUtil::codePointToUtf8(codePoint, buf);
     ASSERT_EQ(byteSize, size);
     std::string before(ch, byteSize);
@@ -124,6 +127,36 @@ TEST_F(UnicodeTest, codePoint) {
   ASSERT_NO_FATAL_FAILURE(this->assertCodePoint(0x25E56, "𥹖"));
   ASSERT_NO_FATAL_FAILURE(this->assertCodePoint(UnicodeUtil::REPLACEMENT_CHAR_CODE,
                                                 UnicodeUtil::REPLACEMENT_CHAR_UTF8));
+}
+
+TEST_F(UnicodeTest, surrogate) {
+  {
+    const char *str = "\xEd\xA0\x80"; // 0xD800
+    ASSERT_FALSE(UnicodeUtil::utf8ValidateChar(str, str + strlen(str)));
+    ASSERT_TRUE(UnicodeUtil::utf8ValidateChar(str, str + strlen(str), true));
+    int codePoint = 0;
+    unsigned int s = UnicodeUtil::utf8ToCodePoint(str, str + strlen(str), codePoint);
+    ASSERT_FALSE(s);
+    ASSERT_EQ(-1, codePoint);
+    codePoint = 0;
+    s = UnicodeUtil::utf8ToCodePoint(str, str + strlen(str), codePoint, true);
+    ASSERT_TRUE(s);
+    ASSERT_EQ(0xD800, codePoint);
+  }
+
+  {
+    const char *str = "\xED\xBF\xBF"; // 0xDFFF
+    ASSERT_FALSE(UnicodeUtil::utf8ValidateChar(str, str + strlen(str)));
+    ASSERT_TRUE(UnicodeUtil::utf8ValidateChar(str, str + strlen(str), true));
+    int codePoint = 0;
+    unsigned int s = UnicodeUtil::utf8ToCodePoint(str, str + strlen(str), codePoint);
+    ASSERT_FALSE(s);
+    ASSERT_EQ(-1, codePoint);
+    codePoint = 0;
+    s = UnicodeUtil::utf8ToCodePoint(str, str + strlen(str), codePoint, true);
+    ASSERT_TRUE(s);
+    ASSERT_EQ(0xDFFF, codePoint);
+  }
 }
 
 TEST_F(UnicodeTest, multi) {

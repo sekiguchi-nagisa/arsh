@@ -54,36 +54,26 @@ struct UnicodeUtil {
    * @param begin0
    * @param end0
    * exclusive
+   * @param allowSurrogate
    * @return
    * if first character is invalid UTF-8, return 0.
    * Otherwise, return byte size.
    */
-  static unsigned int utf8ValidateChar(const char *begin0, const char *end0);
-
-  /**
-   * if illegal UTF-8 code, return -1.
-   * otherwise, return converted code.
-   */
-  static int utf8ToCodePoint(const char *buf, std::size_t bufSize) {
-    return utf8ToCodePoint(buf, buf + bufSize);
-  }
-
-  static int utf8ToCodePoint(const char *begin, const char *end) {
-    int codePoint = 0;
-    utf8ToCodePoint(begin, end, codePoint);
-    return codePoint;
-  }
+  static unsigned int utf8ValidateChar(const char *begin0, const char *end0,
+                                       bool allowSurrogate = false);
 
   /**
    * write converted value to codePoint.
    * if illegal UTF-8 code, write -1 and return 0.
    * otherwise, return byte size of UTF-8.
    */
-  static unsigned int utf8ToCodePoint(const char *buf, std::size_t bufSize, int &codePoint) {
-    return utf8ToCodePoint(buf, buf + bufSize, codePoint);
+  static unsigned int utf8ToCodePoint(const char *buf, std::size_t bufSize, int &codePoint,
+                                      bool allowSurrogate = false) {
+    return utf8ToCodePoint(buf, buf + bufSize, codePoint, allowSurrogate);
   }
 
-  static unsigned int utf8ToCodePoint(const char *begin, const char *end, int &codePoint);
+  static unsigned int utf8ToCodePoint(const char *begin, const char *end, int &codePoint,
+                                      bool allowSurrogate = false);
 
   /**
    *
@@ -189,7 +179,8 @@ unsigned int UnicodeUtil<T>::utf8ByteSize(unsigned char b) {
 }
 
 template <bool T>
-unsigned int UnicodeUtil<T>::utf8ValidateChar(const char *begin0, const char *end0) {
+unsigned int UnicodeUtil<T>::utf8ValidateChar(const char *begin0, const char *end0,
+                                              bool allowSurrogate) {
   auto begin = reinterpret_cast<const unsigned char *>(begin0);
   auto end = reinterpret_cast<const unsigned char *>(end0);
 
@@ -213,8 +204,8 @@ unsigned int UnicodeUtil<T>::utf8ValidateChar(const char *begin0, const char *en
     return 2;
   } else if ((begin[0] & 0xF0) == 0xE0) { // 1110xxxx 10xxxxxx 10xxxxxx
     if (begin + 2 >= end || (begin[1] & 0xC0) != 0x80 || (begin[2] & 0xC0) != 0x80 ||
-        (begin[0] == 0xE0 && (begin[1] & 0xE0) == 0x80) ||
-        (begin[0] == 0xED && (begin[1] & 0xE0) == 0xA0)) {
+        (begin[0] == 0xE0 && (begin[1] & 0xE0) == 0x80) ||                    // overlong
+        (begin[0] == 0xED && (begin[1] & 0xE0) == 0xA0 && !allowSurrogate)) { // surrogate
       return 0;
     }
     return 3;
@@ -230,8 +221,9 @@ unsigned int UnicodeUtil<T>::utf8ValidateChar(const char *begin0, const char *en
 }
 
 template <bool T>
-unsigned int UnicodeUtil<T>::utf8ToCodePoint(const char *begin0, const char *end0, int &codePoint) {
-  const unsigned int size = utf8ValidateChar(begin0, end0);
+unsigned int UnicodeUtil<T>::utf8ToCodePoint(const char *begin0, const char *end0, int &codePoint,
+                                             bool allowSurrogate) {
+  const unsigned int size = utf8ValidateChar(begin0, end0, allowSurrogate);
   auto begin = reinterpret_cast<const unsigned char *>(begin0);
   switch (size) {
   case 1:

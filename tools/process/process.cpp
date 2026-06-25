@@ -525,7 +525,8 @@ void Screen::addChar(int ch) {
 }
 
 void Screen::addCodePoint(const char *begin, const char *end) {
-  int code = arsh::UnicodeUtil::utf8ToCodePoint(begin, end);
+  int code = 0;
+  arsh::UnicodeUtil::utf8ToCodePoint(begin, end, code);
   if (isascii(code)) {
     this->addChar(code);
   } else {
