@@ -1280,6 +1280,27 @@ ReferenceError: hogehoge is not defined
             out);
 }
 
+TEST(JSTest, toNumber) {
+  double d = toNumber(JSValue());
+  ASSERT_TRUE(std::isnan(d));
+  d = toNumber(static_cast<double>(1234));
+  ASSERT_EQ(1234, d);
+  d = toNumber(true);
+  ASSERT_EQ(1, d);
+  d = toNumber(false);
+  ASSERT_EQ(0, d);
+  d = toNumber(nullptr);
+  ASSERT_EQ(0, d);
+  d = toNumber(newJSString(""));
+  ASSERT_EQ(0, d);
+  d = toNumber(newJSString("3.14"));
+  ASSERT_EQ(3.14, d);
+  d = toNumber(newJSString("-3.14"));
+  ASSERT_EQ(-3.14, d);
+  d = toNumber(newJSString("fakroi"));
+  ASSERT_TRUE(std::isnan(d));
+}
+
 TEST(JSTest, harness1) {
   auto env = initJSEnv();
   includeHarness(env);

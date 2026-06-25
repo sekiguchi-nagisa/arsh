@@ -213,6 +213,8 @@ inline std::string toString(const JSValue &value) {
   return out;
 }
 
+double toNumber(const JSValue &value);
+
 ErrHolder<JSThrown> throwError(const std::shared_ptr<JSEnv> &env, const char *name,
                                unsigned int lineNum, const std::string &message);
 

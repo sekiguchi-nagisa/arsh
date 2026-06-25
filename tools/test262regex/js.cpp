@@ -232,6 +232,31 @@ static bool toBool(const JSValue &value) {
   return true;
 }
 
+double toNumber(const JSValue &value) {
+  if (std::holds_alternative<double>(value)) {
+    return std::get<double>(value);
+  }
+  if (isUndefined(value)) {
+    return std::nan("");
+  }
+  if (isNull(value) || (std::holds_alternative<bool>(value) && !std::get<bool>(value))) {
+    return +0.0;
+  }
+  if (std::holds_alternative<bool>(value) && std::get<bool>(value)) {
+    return 1;
+  }
+  if (std::holds_alternative<JSStringPtr>(value)) {
+    if (auto tmp = toWTF8(*std::get<JSStringPtr>(value)); tmp.empty()) {
+      return 0.0;
+    } else if (!StringRef(tmp).hasNullChar()) {
+      if (auto ret = convertToDouble(tmp.c_str())) {
+        return ret.value;
+      }
+    }
+  }
+  return std::nan("");
+}
+
 static auto callJSFunction(const std::shared_ptr<JSEnv> &caller, unsigned int callerLineNum,
                            const JSFunctionPtr &func, JSValue &&recv, std::vector<JSValue> &&args) {
   auto funcEnv = func->definedEnv.lock()->createChild();
