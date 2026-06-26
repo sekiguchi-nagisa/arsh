@@ -1206,7 +1206,7 @@ bool escape(const StringRef ref, const size_t maxSize, std::string &out) {
       break;
     default:
       int codePoint;
-      if (unsigned int byteSize = UnicodeUtil::utf8ToCodePoint(iter, end, codePoint)) {
+      if (unsigned int byteSize = UnicodeUtil::wtf8ToCodePoint(iter, end, codePoint)) {
         if (ucp::hasPrimeLoneProperty(codePoint, ucp::Lone::ESRegexClassSpace)) {
           len = snprintf(buf, std::size(buf), "\\u%04x", codePoint);
         } else {

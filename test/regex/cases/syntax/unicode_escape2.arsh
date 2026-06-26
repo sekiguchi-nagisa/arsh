@@ -240,8 +240,8 @@ assert diff <(redump ' \u{FFFFFFF}' 'v') <(<<'EOF'
 EOF
 )
 
-# \u{D888} (surrogate)
-assert diff <(redump '\u{D888}' '') <(<<'EOF'
+# \u{DE86} (surrogate)
+assert diff <(redump '\u{DE86}' '') <(<<'EOF'
 flag: (mode = , modifier = )
 loopCount: 0
 captureGroupCount: 0
@@ -261,27 +261,39 @@ pattern:
       codePoint: U+0044, D
     - kind: Char
       token: (pos = 4, size = 1)
-      codePoint: U+0038, 8
+      codePoint: U+0045, E
     - kind: Char
       token: (pos = 5, size = 1)
       codePoint: U+0038, 8
     - kind: Char
       token: (pos = 6, size = 1)
-      codePoint: U+0038, 8
+      codePoint: U+0036, 6
     - kind: Char
       token: (pos = 7, size = 1)
       codePoint: U+007D, }
 EOF
 )
 
-assert diff <(redump '\u{D888}' 'u') <(<<'EOF'
-1:1 [error] unicode escape generate invalid UTF-8 (surrogate): `U+D888'
- at (pos = 0, size = 8)
+assert diff <(redump '\u{DE86}' 'u') <(<<EOF
+flag: (mode = u, modifier = )
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Char
+  token: (pos = 0, size = 8)
+  codePoint: U+DE86, ${$'\xED\xBA\x86'}
 EOF
 )
 
-assert diff <(redump '\u{D888}' 'v') <(<<'EOF'
-1:1 [error] unicode escape generate invalid UTF-8 (surrogate): `U+D888'
- at (pos = 0, size = 8)
+assert diff <(redump '\u{DE86}' 'v') <(<<EOF
+flag: (mode = v, modifier = )
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Char
+  token: (pos = 0, size = 8)
+  codePoint: U+DE86, ${$'\xED\xBA\x86'}
 EOF
 )

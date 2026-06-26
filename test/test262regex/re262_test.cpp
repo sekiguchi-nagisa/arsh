@@ -1050,6 +1050,31 @@ TEST(JSTest, methodCall) {
     ASSERT_FALSE(std::get<bool>(ret.asOk()));
   }
   {
+    auto ret = jsEval("dummy", "RegExp('12').test('\\uD800');");
+    ASSERT_TRUE(ret);
+    ASSERT_TRUE(std::holds_alternative<bool>(ret.asOk()));
+    ASSERT_FALSE(std::get<bool>(ret.asOk()));
+  }
+  {
+    auto ret = jsEval("dummy", "RegExp('\\uD800').test('12\\uD800');");
+    ASSERT_TRUE(ret);
+    ASSERT_TRUE(std::holds_alternative<bool>(ret.asOk()));
+    ASSERT_TRUE(std::get<bool>(ret.asOk()));
+  }
+  {
+    auto ret = jsEval("dummy1", "12;\nRegExp('12').exec('\\uDC00');");
+    ASSERT_TRUE(ret);
+    ASSERT_TRUE(isNull(ret.asOk()));
+  }
+  {
+    auto ret = jsEval("dummy1", "12;\nRegExp('\\uDC00').exec('@\\uDC00');");
+    ASSERT_TRUE(ret);
+    ASSERT_TRUE(std::holds_alternative<JSObjectPtr>(ret.asOk()));
+    ASSERT_EQ("{ 0: \xED\xB0\x80, groups: undefined, index: 1, input: "
+              "@\xED\xB0\x80 }",
+              toPrettyString(ret.asOk()));
+  }
+  {
     auto ret = jsEval("dummy", "RegExp('12', 'ysgd').exec('ww');");
     ASSERT_TRUE(ret);
     ASSERT_TRUE(std::holds_alternative<std::nullptr_t>(ret.asOk()));
@@ -1094,28 +1119,6 @@ TEST(JSTest, methodCallError) {
   }
 }
 
-TEST(JSTest, regexMethodError) {
-  {
-    auto ret = jsEval("dummy", "RegExp('12', 'ysgd').test('\\uD800');");
-    ASSERT_FALSE(ret);
-    ASSERT_TRUE(std::holds_alternative<JSObjectPtr>(ret.asErr().value));
-    ASSERT_EQ("{ __proto__: { __proto__: { name: Error }, name: TypeError }, fileName: dummy, "
-              "lineNumber: 1, "
-              "message: Method RegExp.prototype.test called on incompatible `str` param (lone "
-              "surrogate or too large) }",
-              toPrettyString(ret.asErr().value));
-  }
-  {
-    auto ret = jsEval("dummy1", "12;\nRegExp('12', 'ysgd').exec('\\uDC00');");
-    ASSERT_FALSE(ret);
-    ASSERT_TRUE(std::holds_alternative<JSObjectPtr>(ret.asErr().value));
-    ASSERT_EQ("{ __proto__: { __proto__: { name: Error }, name: TypeError }, fileName: dummy1, "
-              "lineNumber: 2, "
-              "message: Method RegExp.prototype.exec called on incompatible `str` param (lone "
-              "surrogate or too large) }",
-              toPrettyString(ret.asErr().value));
-  }
-}
 TEST(JSTest, proto) {
   {
     auto ret = jsEval("dummy", "/23/.__proto__;");

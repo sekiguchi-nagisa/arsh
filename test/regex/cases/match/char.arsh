@@ -92,6 +92,34 @@ input: `\c@'
 EOF
 )
 
+# \u3042
+assert diff <(redump -m  '@あ' '\u3042' '') <(<<'EOF'
+input: `@あ'
+(offset=1, size=3)
+EOF
+)
+
+# \u{24155}
+assert diff <(redump -m '@あ𤅕' '\u{24155}' 'u') <(<<'EOF'
+input: `@あ𤅕'
+(offset=4, size=4)
+EOF
+)
+
+# \uDE86
+assert diff <(redump -m $'#\xED\xBA\x86' '\uDE86' '') <(<<EOF # surrogate
+input: \`${$'#\xED\xBA\x86'}'
+(offset=1, size=3)
+EOF
+)
+
+# \u{00d888}
+assert diff <(redump -m $'#\xED\xA2\x88' '\u{00d888}' 'v') <(<<EOF # surrogate
+input: \`${$'#\xED\xA2\x88'}'
+(offset=1, size=3)
+EOF
+)
+
 # unanchored
 assert diff <(redump -m '123abあい' 'あ' '') <(<<'EOF'
 input: `123abあい'

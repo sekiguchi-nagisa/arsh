@@ -61,7 +61,7 @@ Optional<Flag> Flag::parse(const StringRef ref, const Mode defaultMode, std::str
   while (iter != end) {
     int codePoint = -1;
     StringRef utf8;
-    if (unsigned int len = UnicodeUtil::utf8ToCodePoint(iter, end, codePoint)) {
+    if (unsigned int len = UnicodeUtil::wtf8ToCodePoint(iter, end, codePoint)) {
       utf8 = StringRef(iter, len);
       iter += len;
     } else {

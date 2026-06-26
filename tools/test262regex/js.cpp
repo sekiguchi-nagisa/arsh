@@ -94,7 +94,7 @@ std::u16string toUTF16(StringRef ref) {
   const char *end = ref.end();
   for (const char *iter = ref.begin(); iter != end;) {
     int codePoint;
-    if (unsigned int len = UnicodeUtil::utf8ToCodePoint(iter, end, codePoint); len) {
+    if (unsigned int len = UnicodeUtil::wtf8ToCodePoint(iter, end, codePoint); len) {
       iter += len;
     } else { // put dummy
       iter++;

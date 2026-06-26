@@ -201,7 +201,7 @@ public:
 
   /**
    *
-   * @param seq
+   * @param seq must WTF-8 string
    * @param p
    * @return
    * if already found, return false
@@ -211,7 +211,7 @@ public:
 
   /**
    *
-   * @param seq
+   * @param seq must be WTF-8 string
    * @return
    * if removed, return true.
    * if not removed (do nothing), return false

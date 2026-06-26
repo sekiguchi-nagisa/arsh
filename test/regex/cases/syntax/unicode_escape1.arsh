@@ -205,20 +205,38 @@ EOF
 )
 
 # \D888 (surrogate)
-assert diff <(redump '\uD888' '') <(<<'EOF'
-1:1 [error] unicode escape generate invalid UTF-8 (surrogate): `U+D888'
- at (pos = 0, size = 6)
+assert diff <(redump '\uD888' '') <(<<EOF
+flag: (mode = , modifier = )
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Char
+  token: (pos = 0, size = 6)
+  codePoint: U+D888, ${$'\xED\xA2\x88'}
 EOF
 )
 
-assert diff <(redump '\uD888' 'u') <(<<'EOF'
-1:1 [error] unicode escape generate invalid UTF-8 (surrogate): `U+D888'
- at (pos = 0, size = 6)
+assert diff <(redump '\uD888' 'u') <(<<EOF
+flag: (mode = u, modifier = )
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Char
+  token: (pos = 0, size = 6)
+  codePoint: U+D888, ${$'\xED\xA2\x88'}
 EOF
 )
 
-assert diff <(redump '\uD888' 'v') <(<<'EOF'
-1:1 [error] unicode escape generate invalid UTF-8 (surrogate): `U+D888'
- at (pos = 0, size = 6)
+assert diff <(redump '\uD888' 'v') <(<<EOF
+flag: (mode = v, modifier = )
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Char
+  token: (pos = 0, size = 6)
+  codePoint: U+D888, ${$'\xED\xA2\x88'}
 EOF
 )

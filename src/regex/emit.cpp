@@ -96,7 +96,7 @@ static bool findFromEmoji(const ucp::RGIEmojiSeq emoji, const StringRef ref) {
 static Optional<int> tryToCodePoint(const StringRef ref) {
   int codePoint = -1;
   const char *iter = ref.begin();
-  if (unsigned int len = UnicodeUtil::utf8ToCodePoint(iter, ref.end(), codePoint);
+  if (unsigned int len = UnicodeUtil::wtf8ToCodePoint(iter, ref.end(), codePoint);
       len && iter + len == ref.end()) {
     return codePoint;
   }

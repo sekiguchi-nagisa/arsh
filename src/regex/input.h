@@ -119,7 +119,7 @@ public:
     unsigned int offset = 0;
     const auto end = text.end();
     for (unsigned int count = 0; iter != end; count++) {
-      if (const auto len = UnicodeUtil::utf8ValidateChar(iter, end)) {
+      if (const auto len = UnicodeUtil::wtf8ValidateChar(iter, end)) {
         iter += len;
         if (count < codePointOffset) {
           offset += len;

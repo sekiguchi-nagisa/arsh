@@ -182,11 +182,7 @@ void Parser::reportError(Token token, const char *fmt, ...) { // NOLINT
 
 int Parser::nextValidCodePoint() {
   int codePoint = -1;
-  if (unsigned int len = UnicodeUtil::utf8ToCodePoint(this->iter, this->end(), codePoint)) {
-    if (!UnicodeUtil::isValidCodePoint(codePoint)) {
-      this->reportError(this->curToken(len), "invalid UTF-8 (surrogate): `U+%04X'", codePoint);
-      return -1;
-    }
+  if (unsigned int len = UnicodeUtil::wtf8ToCodePoint(this->iter, this->end(), codePoint)) {
     this->iter += len;
   } else {
     this->reportError(this->curToken(), "invalid UTF-8 byte: `%02X'", *this->iter);
@@ -540,7 +536,7 @@ std::unique_ptr<Node> Parser::parseAtomEscape(const EscapeParseOp op) {
       goto CHAR;
     }
     std::string str;
-    if (unsigned int len = UnicodeUtil::utf8ValidateChar(this->iter, this->end())) {
+    if (unsigned int len = UnicodeUtil::wtf8ValidateChar(this->iter, this->end())) {
       str += StringRef(this->iter, len);
       this->iter += len;
     }
@@ -664,7 +660,7 @@ std::unique_ptr<Node> Parser::parseAtomEscape(const EscapeParseOp op) {
     this->iter--;
     codePoint = this->parseUnicodeEscape(
         {.mayIgnoreError = this->flag.is(Mode::BMP), .forceUnicodeMode = false});
-    if (UnicodeUtil::isValidCodePoint(codePoint)) {
+    if (UnicodeUtil::isCodePoint(codePoint)) {
       goto CHAR;
     }
     if (this->flag.is(Mode::BMP) && !this->hasError()) {
@@ -709,7 +705,7 @@ std::unique_ptr<Node> Parser::parseAtomEscape(const EscapeParseOp op) {
   }
 
 CHAR:
-  assert(UnicodeUtil::isValidCodePoint(codePoint));
+  assert(UnicodeUtil::isCodePoint(codePoint));
   return std::make_unique<CharNode>(this->getTokenFrom(start), codePoint);
 
 INVALID_ESCAPE:
@@ -781,18 +777,12 @@ int Parser::parseUnicodeEscape(const UnicodeEscapeParseOpt opt) {
     if (UnicodeUtil::isHighSurrogate(codePoint)) {
       const auto old2 = this->iter;
       int low = this->parseUnicodeEscapeBMP(true); // always ignore error
-      if (auto c = UnicodeUtil::utf16ToCodePoint(codePoint, low);
-          UnicodeUtil::isValidCodePoint(c)) {
+      if (auto c = UnicodeUtil::utf16ToCodePoint(codePoint, low); UnicodeUtil::isCodePoint(c)) {
         codePoint = c;
       } else {
         this->iter = old2;
       }
     }
-  }
-  if (!UnicodeUtil::isValidCodePoint(codePoint)) {
-    this->reportError(this->getTokenFrom(old),
-                      "unicode escape generate invalid UTF-8 (surrogate): `U+%04X'", codePoint);
-    return -1;
   }
   return codePoint;
 }
@@ -1047,7 +1037,7 @@ static bool isJSIdContinue(CodePointSet &cache, const int codePoint) {
 }
 
 static void appendCodePoint(std::string &out, int codePoint) {
-  assert(UnicodeUtil::isValidCodePoint(codePoint));
+  assert(UnicodeUtil::isCodePoint(codePoint));
   char b[4];
   unsigned int len = UnicodeUtil::codePointToUtf8(codePoint, b);
   out.append(b, len);

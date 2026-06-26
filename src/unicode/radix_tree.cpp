@@ -203,7 +203,7 @@ unsigned int RadixTree::maxCodePointCount() const {
     const char *iter = ref.begin();
     const char *end = ref.end();
     while (iter != end) {
-      if (unsigned int len = UnicodeUtil::utf8ValidateChar(iter, end)) {
+      if (unsigned int len = UnicodeUtil::wtf8ValidateChar(iter, end)) {
         iter += len;
       } else {
         ++iter;

@@ -62,6 +62,10 @@ struct UnicodeUtil {
   static unsigned int utf8ValidateChar(const char *begin0, const char *end0,
                                        bool allowSurrogate = false);
 
+  static unsigned int wtf8ValidateChar(const char *begin0, const char *end0) {
+    return utf8ValidateChar(begin0, end0, true);
+  }
+
   /**
    * write converted value to codePoint.
    * if illegal UTF-8 code, write -1 and return 0.
@@ -74,6 +78,10 @@ struct UnicodeUtil {
 
   static unsigned int utf8ToCodePoint(const char *begin, const char *end, int &codePoint,
                                       bool allowSurrogate = false);
+
+  static unsigned int wtf8ToCodePoint(const char *begin, const char *end, int &codePoint) {
+    return utf8ToCodePoint(begin, end, codePoint, true);
+  }
 
   /**
    *

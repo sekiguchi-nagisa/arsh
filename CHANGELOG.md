@@ -22,6 +22,7 @@
 - **Breaking Change**: replace PCRE2 with own regex engine
     - now regex syntax and semantics are compatible with ECMAScript regular expression (ES2025)
     - enable Unicode mode by default
+    - allow WTF-8 string (pattern and input) for ECMAScript compatibility
 - optimize simple case folding
 - improve the assertion error message of ``!=``, ``!~`` binary expression
 
