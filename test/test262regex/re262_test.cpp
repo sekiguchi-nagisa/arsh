@@ -1,6 +1,5 @@
 #include "gtest/gtest.h"
 
-#include "../tools/test262regex/harness.h"
 #include "../tools/test262regex/js_lexer.h"
 #include "../tools/test262regex/js_regex.h"
 #include "../tools/test262regex/meta.h"

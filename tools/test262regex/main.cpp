@@ -17,7 +17,6 @@
 #include <misc/opt.hpp>
 #include <misc/resource.hpp>
 
-#include "harness.h"
 #include "js.h"
 #include "meta.h"
 

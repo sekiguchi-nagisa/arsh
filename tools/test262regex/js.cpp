@@ -65,9 +65,9 @@ static JSValue findOwnProperty(const JSValue &recv, const std::string &name) {
       recv);
 }
 
-static Result<JSValue, JSThrown> findProperty(const std::shared_ptr<JSEnv> &env,
-                                              unsigned int callerLineNum, const JSValue &recv,
-                                              const std::string &name) {
+Result<JSValue, JSThrown> findProperty(const std::shared_ptr<JSEnv> &env,
+                                       unsigned int callerLineNum, const JSValue &recv,
+                                       const std::string &name) {
   if (isUndefined(recv) || isNull(recv)) {
     std::string message = "Cannot read properties of ";
     toPrettyString(recv, message);
@@ -126,7 +126,21 @@ void toWTF8(const std::u16string &value, std::string &out) {
   }
 }
 
-void toPrettyString(const JSValue &value, std::string &out) {
+static void formatCodePoints(const std::u16string &value, std::string &out) {
+  for (size_t i = 0; i < value.size(); i++) {
+    int codePoint = value[i];
+    if (UnicodeUtil::isHighSurrogate(codePoint) && i + 1 < value.size() &&
+        UnicodeUtil::isLowSurrogate(value[i + 1])) {
+      codePoint = UnicodeUtil::utf16ToCodePoint(codePoint, value[i + 1]);
+      i++;
+    }
+    char buf[16];
+    snprintf(buf, std::size(buf), "U+%06X", codePoint);
+    out += buf;
+  }
+}
+
+void toPrettyString(const JSValue &value, std::string &out, const bool escape) {
   if (isUndefined(value)) {
     out += "undefined";
   } else if (isNull(value)) {
@@ -147,7 +161,8 @@ void toPrettyString(const JSValue &value, std::string &out) {
       out += std::to_string(d);
     }
   } else if (std::holds_alternative<JSStringPtr>(value)) {
-    toWTF8(*std::get<JSStringPtr>(value), out);
+    escape ? formatCodePoints(*std::get<JSStringPtr>(value), out)
+           : toWTF8(*std::get<JSStringPtr>(value), out);
   } else if (std::holds_alternative<JSRegexPtr>(value)) {
     out += toString(*std::get<JSRegexPtr>(value));
   } else if (std::holds_alternative<JSFunctionPtr>(value)) {
@@ -162,7 +177,7 @@ void toPrettyString(const JSValue &value, std::string &out) {
         out += ',';
       }
       out += ' ';
-      toPrettyString(array->values[i], out);
+      toPrettyString(array->values[i], out, escape);
     }
     if (array->values.size()) {
       out += ' ';
@@ -180,7 +195,7 @@ void toPrettyString(const JSValue &value, std::string &out) {
       out += ' ';
       out += k;
       out += ": ";
-      toPrettyString(v, out);
+      toPrettyString(v, out, escape);
     }
     out += " }";
   } else {
@@ -257,8 +272,9 @@ double toNumber(const JSValue &value) {
   return std::nan("");
 }
 
-static auto callJSFunction(const std::shared_ptr<JSEnv> &caller, unsigned int callerLineNum,
-                           const JSFunctionPtr &func, JSValue &&recv, std::vector<JSValue> &&args) {
+Result<JSValue, JSThrown> callJSFunction(const std::shared_ptr<JSEnv> &caller,
+                                         unsigned int callerLineNum, const JSFunctionPtr &func,
+                                         JSValue &&recv, std::vector<JSValue> &&args) {
   auto funcEnv = func->definedEnv.lock()->createChild();
   assert(funcEnv);
   funcEnv->define(builtin::THIS, std::move(recv));
@@ -422,6 +438,7 @@ std::shared_ptr<JSEnv> initJSEnv() {
   defineDerivedError(global, builtin::SYNTAX_ERROR);
   defineDerivedError(global, builtin::TYPE_ERROR);
   defineDerivedError(global, builtin::REF_ERROR);
+  defineDerivedError(global, builtin::RANGE_ERROR);
   defineJSRegex(global);
   return global;
 }

@@ -37,6 +37,7 @@ constexpr const char *ERROR = "Error";
 constexpr const char *SYNTAX_ERROR = "SyntaxError";
 constexpr const char *REF_ERROR = "ReferenceError";
 constexpr const char *TYPE_ERROR = "TypeError";
+constexpr const char *RANGE_ERROR = "RangeError";
 constexpr const char *REGEXP = "RegExp";
 
 // for builtin field
@@ -197,7 +198,7 @@ inline std::string toWTF8(const std::u16string &value) {
   return out;
 }
 
-void toPrettyString(const JSValue &value, std::string &out);
+void toPrettyString(const JSValue &value, std::string &out, bool escape = false);
 
 inline std::string toPrettyString(const JSValue &value) {
   std::string out;
@@ -215,6 +216,14 @@ inline std::string toString(const JSValue &value) {
 
 double toNumber(const JSValue &value);
 
+Result<JSValue, JSThrown> findProperty(const std::shared_ptr<JSEnv> &env,
+                                       unsigned int callerLineNum, const JSValue &recv,
+                                       const std::string &name);
+
+Result<JSValue, JSThrown> callJSFunction(const std::shared_ptr<JSEnv> &caller,
+                                         unsigned int callerLineNum, const JSFunctionPtr &func,
+                                         JSValue &&recv, std::vector<JSValue> &&args);
+
 ErrHolder<JSThrown> throwError(const std::shared_ptr<JSEnv> &env, const char *name,
                                unsigned int lineNum, const std::string &message);
 
@@ -224,6 +233,8 @@ Result<JSValue, JSThrown> isInstanceOf(const std::shared_ptr<JSEnv> &env, unsign
                                        const JSValue &value, const JSValue &constructor);
 
 std::shared_ptr<JSEnv> initJSEnv();
+
+void includeHarness(const std::shared_ptr<JSEnv> &global);
 
 Result<JSValue, JSThrown> jsEval(const char *sourceName, StringRef source,
                                  std::shared_ptr<JSEnv> global = nullptr, bool debug = false,
