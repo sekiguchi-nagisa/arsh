@@ -19,18 +19,10 @@
 
 namespace arsh::re262 {
 
-static unsigned int callerLineNum(const std::shared_ptr<JSEnv> &env) {
-  unsigned int lineNum = 0;
-  if (auto v = env->findOrUndef(JSEnv::CALLER_LINENO); std::holds_alternative<double>(v)) {
-    lineNum = static_cast<unsigned int>(std::get<double>(v));
-  }
-  return lineNum;
-}
-
 constexpr const char *TEST262_ERROR = "Test262Error";
 
-static auto throwTest262Error(const std::shared_ptr<JSEnv> &global, const std::string &message) {
-  return throwError(global, TEST262_ERROR, callerLineNum(global), message);
+static auto throwTest262Error(const std::shared_ptr<JSEnv> &global, JSString &&message) {
+  return throwError(global, TEST262_ERROR, global->callerLineNum(), std::move(message));
 }
 
 static void defineDoNotEvaluate(const std::shared_ptr<JSEnv> &global) {
@@ -38,7 +30,7 @@ static void defineDoNotEvaluate(const std::shared_ptr<JSEnv> &global) {
   auto func = createJSFunction(
       global, name, {}, nullptr,
       [](const JSFunctionPtr &, const std::shared_ptr<JSEnv> &env) -> Result<JSValue, JSThrown> {
-        return throwTest262Error(env, "Test262: This statement should not be evaluate");
+        return throwTest262Error(env, u"Test262: This statement should not be evaluate");
       });
   global->define(name, std::move(func));
 }
@@ -62,18 +54,18 @@ static JSFunctionPtr createSameValue(const std::shared_ptr<JSEnv> &global, bool 
     if (isSameValueImpl(actual, expected) == same) {
       return Ok(JSValue());
     }
-    std::string str;
+    JSString str;
     if (!isUndefined(message)) {
       toString(message, str);
-      str += ' ';
+      str += u' ';
     }
-    str += "Expected SameValue(«";
+    str += u"Expected SameValue(«";
     toPrettyString(actual, str);
-    str += "», «";
+    str += u"», «";
     toPrettyString(expected, str);
-    str += "») to be ";
-    str += same ? "true" : "false";
-    return throwTest262Error(env, str);
+    str += u"») to be ";
+    str += same ? u"true" : u"false";
+    return throwTest262Error(env, std::move(str));
   };
   return createJSFunction(global, same ? "sameValue" : "notSameValue",
                           {"actual", "expected", "message"}, nullptr, std::move(impl));
@@ -84,14 +76,14 @@ static Result<JSValue, JSThrown> assertImpl(const std::shared_ptr<JSEnv> &env,
   if (std::holds_alternative<bool>(mustBeTrue) && std::get<bool>(mustBeTrue)) {
     return Ok(JSValue());
   }
-  std::string str;
+  JSString str;
   if (isUndefined(message)) {
-    str = "Expected true but got ";
+    str = u"Expected true but got ";
     toPrettyString(mustBeTrue, str);
   } else {
     str = toString(message);
   }
-  return throwTest262Error(env, str);
+  return throwTest262Error(env, std::move(str));
 }
 
 static void defineAssert(const std::shared_ptr<JSEnv> &global) {
@@ -120,9 +112,9 @@ static Result<JSValue, JSThrown> toCodePoint(const std::shared_ptr<JSEnv> &env,
                                              const JSValue &value) {
   auto d = toNumber(value);
   if (std::isnan(d) || d < 0 || d > UnicodeUtil::CODE_POINT_MAX) {
-    std::string str = "Invalid code point ";
-    str += std::to_string(d);
-    return throwError(env, builtin::RANGE_ERROR, callerLineNum(env), str);
+    JSString str = u"Invalid code point ";
+    toUTF16(std::to_string(d), str);
+    return throwError(env, builtin::RANGE_ERROR, env->callerLineNum(), std::move(str));
   }
   return Ok(d);
 }
@@ -154,17 +146,18 @@ static void defineBuildString(const std::shared_ptr<JSEnv> &global) {
   auto impl = [](const JSFunctionPtr &func,
                  const std::shared_ptr<JSEnv> &env) -> Result<JSValue, JSThrown> {
     auto args = env->findOrUndef(func->params[0]);
-    auto v = TRY(findProperty(env, callerLineNum(env), args, "loneCodePoints"));
+    auto v = TRY(findProperty(env, env->callerLineNum(), args, "loneCodePoints"));
     std::u16string out;
     TRY(codePointsToString(env, v, out));
-    v = TRY(findProperty(env, callerLineNum(env), args, "ranges"));
+    v = TRY(findProperty(env, env->callerLineNum(), args, "ranges"));
     if (!isUndefined(v)) {
       if (!std::holds_alternative<JSArrayPtr>(v)) {
-        return throwError(env, builtin::TYPE_ERROR, callerLineNum(env), "ranges must be Array");
+        return throwError(env, builtin::TYPE_ERROR, env->callerLineNum(), u"ranges must be Array");
       }
       for (auto &e : std::get<JSArrayPtr>(v)->values) {
         if (!std::holds_alternative<JSArrayPtr>(e)) {
-          return throwError(env, builtin::TYPE_ERROR, callerLineNum(env), "ranges must be Array");
+          return throwError(env, builtin::TYPE_ERROR, env->callerLineNum(),
+                            u"ranges must be Array");
         }
         auto &range = std::get<JSArrayPtr>(e)->values;
         const auto first = static_cast<int>(std::get<double>(TRY(toCodePoint(env, range.at(0)))));
@@ -201,22 +194,22 @@ static std::vector<int> intoCodePoints(const std::u16string &value) {
 static Result<JSValue, JSThrown> assertRegExpTest(const std::shared_ptr<JSEnv> &env,
                                                   const JSValue &regExp, const JSValue &expression,
                                                   const JSValue &string, const bool shouldMatch) {
-  auto func = TRY(findProperty(env, callerLineNum(env), regExp, "test"));
+  auto func = TRY(findProperty(env, env->callerLineNum(), regExp, "test"));
   assert(std::holds_alternative<JSFunctionPtr>(func));
-  auto ret = TRY(callJSFunction(env, callerLineNum(env), std::get<JSFunctionPtr>(func),
+  auto ret = TRY(callJSFunction(env, env->callerLineNum(), std::get<JSFunctionPtr>(func),
                                 JSValue(regExp), {string}));
   assert(std::holds_alternative<bool>(ret));
   if (std::get<bool>(ret) != shouldMatch) {
-    std::string out = "`";
+    JSString out = u"`";
     toString(expression, out);
-    out += "` should ";
-    out += shouldMatch ? "" : "not ";
-    out += "match ";
+    out += u"` should ";
+    out += shouldMatch ? u"" : u"not ";
+    out += u"match ";
     toString(string, out);
-    out += " (";
+    out += u" (";
     toPrettyString(string, out, true);
-    out += ")";
-    return assertImpl(env, false, newJSString(out));
+    out += u")";
+    return assertImpl(env, false, std::make_shared<JSString>(out));
   }
   return Ok(nullptr);
 }
@@ -229,7 +222,7 @@ static void defineTestPropertyEscapes(const std::shared_ptr<JSEnv> &global) {
     auto string = env->findOrUndef(func->params[1]);
     auto expression = env->findOrUndef(func->params[2]);
     if (!std::holds_alternative<JSStringPtr>(string)) {
-      return throwError(env, builtin::TYPE_ERROR, callerLineNum(env), "must be String");
+      return throwError(env, builtin::TYPE_ERROR, env->callerLineNum(), u"must be String");
     }
     auto codes = intoCodePoints(*std::get<JSStringPtr>(string));
     for (auto &code : codes) {

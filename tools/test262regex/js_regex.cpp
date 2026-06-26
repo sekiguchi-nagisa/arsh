@@ -27,22 +27,18 @@ namespace arsh::re262 {
 static JSFunctionPtr createRegExpExec(const std::shared_ptr<JSEnv> &global) {
   auto impl = [](const JSFunctionPtr &,
                  const std::shared_ptr<JSEnv> &env) -> Result<JSValue, JSThrown> {
-    unsigned int lineNum = 0;
-    if (auto l = env->findOrUndef(JSEnv::CALLER_LINENO); std::holds_alternative<double>(l)) {
-      lineNum = static_cast<unsigned int>(std::get<double>(l));
-    }
     JSRegexPtr regex;
     if (auto v = env->findOrUndef(builtin::THIS); std::holds_alternative<JSRegexPtr>(v)) {
       regex = std::get<JSRegexPtr>(v);
     } else {
-      return throwError(env, builtin::TYPE_ERROR, lineNum,
-                        "Method RegExp.prototype.exec called on incompatible receiver");
+      return throwError(env, builtin::TYPE_ERROR, env->callerLineNum(),
+                        u"Method RegExp.prototype.exec called on incompatible receiver");
     }
     JSStringPtr str;
     if (auto v = env->findOrUndef("str"); std::holds_alternative<JSStringPtr>(v)) {
       str = std::get<JSStringPtr>(v);
     } else {
-      str = newJSString(toString(v));
+      str = std::make_shared<JSString>(toString(v));
     }
     assert(regex);
     if (auto ret = execJSRegex(*regex, str)) {
@@ -51,7 +47,7 @@ static JSFunctionPtr createRegExpExec(const std::shared_ptr<JSEnv> &global) {
       }
       return Ok(nullptr);
     }
-    return throwError(env, builtin::RANGE_ERROR, lineNum, "too large string");
+    return throwError(env, builtin::RANGE_ERROR, env->callerLineNum(), u"too large string");
   };
   return createJSFunction(global, "exec", {"str"}, nullptr, std::move(impl));
 }
@@ -59,28 +55,24 @@ static JSFunctionPtr createRegExpExec(const std::shared_ptr<JSEnv> &global) {
 static JSFunctionPtr createRegExpTest(const std::shared_ptr<JSEnv> &global) {
   auto impl = [](const JSFunctionPtr &,
                  const std::shared_ptr<JSEnv> &env) -> Result<JSValue, JSThrown> {
-    unsigned int lineNum = 0;
-    if (auto l = env->findOrUndef(JSEnv::CALLER_LINENO); std::holds_alternative<double>(l)) {
-      lineNum = static_cast<unsigned int>(std::get<double>(l));
-    }
     JSRegexPtr regex;
     if (auto v = env->findOrUndef(builtin::THIS); std::holds_alternative<JSRegexPtr>(v)) {
       regex = std::get<JSRegexPtr>(v);
     } else {
-      return throwError(env, builtin::TYPE_ERROR, lineNum,
-                        "Method RegExp.prototype.test called on incompatible receiver");
+      return throwError(env, builtin::TYPE_ERROR, env->callerLineNum(),
+                        u"Method RegExp.prototype.test called on incompatible receiver");
     }
     JSStringPtr str;
     if (auto v = env->findOrUndef("str"); std::holds_alternative<JSStringPtr>(v)) {
       str = std::get<JSStringPtr>(v);
     } else {
-      str = newJSString(toString(v));
+      str = std::make_shared<JSString>(toString(v));
     }
     assert(regex);
     if (auto ret = execJSRegex(*regex, str); ret.has_value()) {
       return Ok(static_cast<bool>(ret.value()));
     }
-    return throwError(env, builtin::RANGE_ERROR, lineNum, "too large string");
+    return throwError(env, builtin::RANGE_ERROR, env->callerLineNum(), u"too large string");
   };
   return createJSFunction(global, "test", {"str"}, nullptr, std::move(impl));
 }
@@ -108,11 +100,7 @@ void defineJSRegex(const std::shared_ptr<JSEnv> &global) {
           env->assign(builtin::THIS, obj);
           return Ok(std::move(obj));
         }
-        unsigned int lineNum = 0;
-        if (auto v = env->findOrUndef(JSEnv::CALLER_LINENO); std::holds_alternative<double>(v)) {
-          lineNum = static_cast<unsigned int>(std::get<double>(v));
-        }
-        return throwError(env, builtin::SYNTAX_ERROR, lineNum, err);
+        return throwError(env, builtin::SYNTAX_ERROR, env->callerLineNum(), toUTF16(err));
       });
   global->define(builtin::REGEXP, std::move(func));
 }

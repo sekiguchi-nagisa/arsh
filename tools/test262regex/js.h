@@ -47,7 +47,8 @@ constexpr const char *PROTO = "__proto__";
 
 } // namespace builtin
 
-using JSStringPtr = std::shared_ptr<std::u16string>;
+using JSString = std::u16string;
+using JSStringPtr = std::shared_ptr<JSString>;
 
 struct JSRegex;
 using JSRegexPtr = std::shared_ptr<JSRegex>;
@@ -182,13 +183,25 @@ public:
     }
     return tmp;
   }
+
+  unsigned int callerLineNum() const {
+    unsigned int lineNum = 0;
+    if (auto v = this->findOrUndef(CALLER_LINENO); std::holds_alternative<double>(v)) {
+      lineNum = static_cast<unsigned int>(std::get<double>(v));
+    }
+    return lineNum;
+  }
 };
 
-std::u16string toUTF16(StringRef ref);
+void toUTF16(StringRef ref, std::u16string &out);
 
-inline JSStringPtr newJSString(StringRef ref) {
-  return std::make_shared<std::u16string>(toUTF16(ref));
+inline std::u16string toUTF16(StringRef ref) {
+  std::u16string out;
+  toUTF16(ref, out);
+  return out;
 }
+
+inline JSStringPtr newJSString(StringRef ref) { return std::make_shared<JSString>(toUTF16(ref)); }
 
 void toWTF8(const std::u16string &value, std::string &out);
 
@@ -198,18 +211,18 @@ inline std::string toWTF8(const std::u16string &value) {
   return out;
 }
 
-void toPrettyString(const JSValue &value, std::string &out, bool escape = false);
+void toPrettyString(const JSValue &value, std::u16string &out, bool escape = false);
 
-inline std::string toPrettyString(const JSValue &value) {
-  std::string out;
+inline std::u16string toPrettyString(const JSValue &value) {
+  std::u16string out;
   toPrettyString(value, out);
   return out;
 }
 
-void toString(const JSValue &value, std::string &out);
+void toString(const JSValue &value, std::u16string &out);
 
-inline std::string toString(const JSValue &value) {
-  std::string out;
+inline std::u16string toString(const JSValue &value) {
+  std::u16string out;
   toString(value, out);
   return out;
 }
@@ -225,7 +238,7 @@ Result<JSValue, JSThrown> callJSFunction(const std::shared_ptr<JSEnv> &caller,
                                          JSValue &&recv, std::vector<JSValue> &&args);
 
 ErrHolder<JSThrown> throwError(const std::shared_ptr<JSEnv> &env, const char *name,
-                               unsigned int lineNum, const std::string &message);
+                               unsigned int lineNum, JSString &&message);
 
 bool strictlyEquals(const JSValue &x, const JSValue &y);
 

@@ -69,12 +69,12 @@ Result<JSValue, JSThrown> findProperty(const std::shared_ptr<JSEnv> &env,
                                        unsigned int callerLineNum, const JSValue &recv,
                                        const std::string &name) {
   if (isUndefined(recv) || isNull(recv)) {
-    std::string message = "Cannot read properties of ";
+    JSString message = u"Cannot read properties of ";
     toPrettyString(recv, message);
-    message += " (reading '";
-    message += name;
-    message += "')";
-    return throwError(env, builtin::TYPE_ERROR, callerLineNum, message);
+    message += u" (reading '";
+    toUTF16(name, message);
+    message += u"')";
+    return throwError(env, builtin::TYPE_ERROR, callerLineNum, std::move(message));
   }
   JSValue actualRecv = recv;
   JSValue ret;
@@ -89,8 +89,7 @@ Result<JSValue, JSThrown> findProperty(const std::shared_ptr<JSEnv> &env,
   return Ok(ret);
 }
 
-std::u16string toUTF16(StringRef ref) {
-  std::u16string value;
+void toUTF16(StringRef ref, std::u16string &out) {
   const char *end = ref.end();
   for (const char *iter = ref.begin(); iter != end;) {
     int codePoint;
@@ -101,12 +100,11 @@ std::u16string toUTF16(StringRef ref) {
       codePoint = UnicodeUtil::REPLACEMENT_CHAR_CODE;
     }
     auto [high, low] = UnicodeUtil::codePointToUtf16(codePoint);
-    value += high;
+    out += high;
     if (high != low) {
-      value += low;
+      out += low;
     }
   }
-  return value;
 }
 
 static bool isInteger(double d) { return d == std::floor(d); }
@@ -126,7 +124,7 @@ void toWTF8(const std::u16string &value, std::string &out) {
   }
 }
 
-static void formatCodePoints(const std::u16string &value, std::string &out) {
+static void formatCodePoints(const std::u16string &value, std::u16string &out) {
   for (size_t i = 0; i < value.size(); i++) {
     int codePoint = value[i];
     if (UnicodeUtil::isHighSurrogate(codePoint) && i + 1 < value.size() &&
@@ -136,79 +134,82 @@ static void formatCodePoints(const std::u16string &value, std::string &out) {
     }
     char buf[16];
     snprintf(buf, std::size(buf), "U+%06X", codePoint);
-    out += buf;
+    toUTF16(buf, out);
   }
 }
 
-void toPrettyString(const JSValue &value, std::string &out, const bool escape) {
+void toPrettyString(const JSValue &value, std::u16string &out, const bool escape) {
   if (isUndefined(value)) {
-    out += "undefined";
+    out += u"undefined";
   } else if (isNull(value)) {
-    out += "null";
+    out += u"null";
   } else if (std::holds_alternative<bool>(value)) {
-    out += std::get<bool>(value) ? "true" : "false";
+    out += std::get<bool>(value) ? u"true" : u"false";
   } else if (std::holds_alternative<double>(value)) {
     auto d = std::get<double>(value);
     if (d == 0.0) {
-      out += '0';
+      out += u'0';
     } else if (std::isnan(d)) {
-      out += "NaN";
+      out += u"NaN";
     } else if (std::isinf(d)) {
-      out += std::signbit(d) ? "-Infinity" : "Infinity";
+      out += std::signbit(d) ? u"-Infinity" : u"Infinity";
     } else if (isInteger(d)) {
-      out += std::to_string(static_cast<int64_t>(d));
+      toUTF16(std::to_string(static_cast<int64_t>(d)), out);
     } else {
-      out += std::to_string(d);
+      toUTF16(std::to_string(d), out);
     }
   } else if (std::holds_alternative<JSStringPtr>(value)) {
-    escape ? formatCodePoints(*std::get<JSStringPtr>(value), out)
-           : toWTF8(*std::get<JSStringPtr>(value), out);
+    if (escape) {
+      formatCodePoints(*std::get<JSStringPtr>(value), out);
+    } else {
+      out += *std::get<JSStringPtr>(value);
+    }
   } else if (std::holds_alternative<JSRegexPtr>(value)) {
-    out += toString(*std::get<JSRegexPtr>(value));
+    toUTF16(toString(*std::get<JSRegexPtr>(value)), out);
   } else if (std::holds_alternative<JSFunctionPtr>(value)) {
-    out += "[Function: ";
-    toWTF8(*std::get<JSStringPtr>(std::get<JSFunctionPtr>(value)->values.at("name")), out);
-    out += ']';
+    out += u"[Function: ";
+    out += *std::get<JSStringPtr>(std::get<JSFunctionPtr>(value)->values.at("name"));
+    out += u']';
   } else if (std::holds_alternative<JSArrayPtr>(value)) {
     auto &array = std::get<JSArrayPtr>(value);
-    out += '[';
+    out += u'[';
     for (unsigned int i = 0; i < array->values.size(); i++) {
       if (i > 0) {
-        out += ',';
+        out += u',';
       }
-      out += ' ';
+      out += u' ';
       toPrettyString(array->values[i], out, escape);
     }
     if (array->values.size()) {
-      out += ' ';
+      out += u' ';
     }
-    out += ']';
+    out += u']';
   } else if (std::holds_alternative<JSObjectPtr>(value) &&
              std::get<JSObjectPtr>(value)->values.size()) {
     auto &obj = std::get<JSObjectPtr>(value);
-    out += '{';
+    out += u'{';
     unsigned int count = 0;
     for (auto &[k, v] : obj->values) {
       if (count++ > 0) {
-        out += ',';
+        out += u',';
       }
-      out += ' ';
-      out += k;
-      out += ": ";
+      out += u' ';
+      toUTF16(k, out);
+      out += u": ";
       toPrettyString(v, out, escape);
     }
-    out += " }";
+    out += u" }";
   } else {
-    out += "{}";
+    out += u"{}";
   }
 }
 
-void toString(const JSValue &value, std::string &out) {
+void toString(const JSValue &value, std::u16string &out) {
   if (isNull(value) || isUndefined(value)) { // do nothing
   } else if (std::holds_alternative<JSFunctionPtr>(value)) {
-    out += "function ";
-    toWTF8(*std::get<JSStringPtr>(std::get<JSFunctionPtr>(value)->values.at("name")), out);
-    out += "() { [native code] }";
+    out += u"function ";
+    out += *std::get<JSStringPtr>(std::get<JSFunctionPtr>(value)->values.at("name"));
+    out += u"() { [native code] }";
   } else if (std::holds_alternative<JSArrayPtr>(value)) {
     auto &array = std::get<JSArrayPtr>(value);
     for (unsigned int i = 0; i < array->values.size(); i++) {
@@ -218,7 +219,7 @@ void toString(const JSValue &value, std::string &out) {
       toString(array->values[i], out);
     }
   } else if (std::holds_alternative<JSObjectPtr>(value)) {
-    out += "[object Object]";
+    out += u"[object Object]";
   } else {
     toPrettyString(value, out);
   }
@@ -290,12 +291,12 @@ Result<JSValue, JSThrown> callJSFunction(const std::shared_ptr<JSEnv> &caller,
 }
 
 ErrHolder<JSThrown> throwError(const std::shared_ptr<JSEnv> &env, const char *name,
-                               unsigned int lineNum, const std::string &message) {
+                               unsigned int lineNum, JSString &&message) {
   auto v = env->findGlobalEnv()->findOrUndef(name);
   assert(std::holds_alternative<JSFunctionPtr>(v));
   auto func = std::get<JSFunctionPtr>(v);
   std::vector<JSValue> args;
-  args.emplace_back(newJSString(message));
+  args.emplace_back(std::make_shared<JSString>(std::move(message)));
   if (auto fileName = env->findOrUndef(JSEnv::DEFINED_FILENAME); !isUndefined(fileName)) {
     args.emplace_back(fileName);
     if (lineNum) {
@@ -338,7 +339,7 @@ Result<JSValue, JSThrown> isInstanceOf(const std::shared_ptr<JSEnv> &env, unsign
                                        const JSValue &value, const JSValue &constructor) {
   if (!std::holds_alternative<JSFunctionPtr>(constructor)) {
     return throwError(env, builtin::TYPE_ERROR, lineNum,
-                      "Right-hand side of instanceof is not callable");
+                      u"Right-hand side of instanceof is not callable");
   }
   if (isUndefined(value) || isNull(value)) {
     return Ok(false);
@@ -861,7 +862,7 @@ static Result<JSValue, JSThrown> evalCallExpr(const CallExpr &callExpr, const un
   if (std::holds_alternative<JSFunctionPtr>(callee)) {
     func = std::get<JSFunctionPtr>(callee);
   } else {
-    return throwError(env, builtin::TYPE_ERROR, lineNum, "not a function");
+    return throwError(env, builtin::TYPE_ERROR, lineNum, u"not a function");
   }
   std::vector<JSValue> args;
   for (auto &e : callExpr.args) {
@@ -887,9 +888,10 @@ static Result<JSValue, JSThrown> evaluate(const Node &node, const std::shared_pt
           if (auto *v = env->find(element.name)) {
             return Ok(*v);
           }
-          std::string message = element.name;
-          message += " is not defined";
-          return throwError(env, builtin::REF_ERROR, lineNum, message);
+          JSString message;
+          toUTF16(element.name, message);
+          message += u" is not defined";
+          return throwError(env, builtin::REF_ERROR, lineNum, std::move(message));
         } else if constexpr (std::is_same_v<T, AccessExpr>) {
           auto recv = TRY(evaluate(*element.recv, env));
           return findProperty(env, lineNum, recv, element.name);
@@ -904,10 +906,10 @@ static Result<JSValue, JSThrown> evaluate(const Node &node, const std::shared_pt
         } else if constexpr (std::is_same_v<T, VarDecl>) {
           auto value = TRY(evaluate(*element.expr, env));
           if (!env->define(element.name, std::move(value))) { // TODO: should be syntax error
-            std::string message = "'";
-            message += element.name;
-            message += "' is already defined";
-            return throwError(env, builtin::TYPE_ERROR, lineNum, message);
+            JSString message = u"'";
+            toUTF16(element.name, message);
+            message += u"' is already defined";
+            return throwError(env, builtin::TYPE_ERROR, lineNum, std::move(message));
           }
           return Ok(JSValue());
         } else {
@@ -940,8 +942,9 @@ Result<JSValue, JSThrown> jsEval(const char *sourceName, StringRef source,
         if (syntaxErr) {
           *syntaxErr = std::move(error.value().detail);
         }
-        return throwError(global, builtin::SYNTAX_ERROR, error.value().lineNum,
-                          error.value().message);
+        JSString message;
+        toUTF16(error.value().message, message);
+        return throwError(global, builtin::SYNTAX_ERROR, error.value().lineNum, std::move(message));
       }
     }
   }
@@ -954,10 +957,10 @@ Result<JSValue, JSThrown> jsEval(const char *sourceName, StringRef source,
 
 std::string formatEvalResult(const std::shared_ptr<JSEnv> &env,
                              const Result<JSValue, JSThrown> &result) {
-  std::string out;
+  JSString out;
   auto &v = result ? result.asOk() : result.asErr().value;
   if (!result) {
-    out += "[uncaught]\n";
+    out += u"[uncaught]\n";
   }
   if (auto ret = isInstanceOf(env, 0, v, env->findGlobalEnv()->findOrUndef(builtin::ERROR));
       ret && std::get<bool>(ret.asOk())) {
@@ -965,25 +968,25 @@ std::string formatEvalResult(const std::shared_ptr<JSEnv> &env,
       toPrettyString(r.asOk(), out);
     }
     if (auto r = findProperty(env, 1, v, "message")) {
-      out += ": ";
+      out += u": ";
       toPrettyString(r.asOk(), out);
-      out += '\n';
+      out += u'\n';
     }
     if (auto r = findProperty(env, 1, v, "fileName")) {
-      out += "    at ";
+      out += u"    at ";
       toPrettyString(r.asOk(), out);
-      out += ":";
+      out += u":";
       r = findProperty(env, 1, v, "lineNumber");
       if (r) {
         toPrettyString(r.asOk(), out);
       }
-      out += '\n';
+      out += u'\n';
     }
   } else {
     toPrettyString(v, out);
-    out += '\n';
+    out += u'\n';
   }
-  return out;
+  return toWTF8(out);
 }
 
 } // namespace arsh::re262
