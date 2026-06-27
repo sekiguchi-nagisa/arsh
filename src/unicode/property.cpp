@@ -166,10 +166,10 @@ static bool getCategorySet(const Category category, BuilderOrSet out) {
         builder.add(getCategoryTable(toUnderlying(c)));
       }
     }
-    if (auto tmp = builder.build(); out.isBuilder) {
-      out.builder->add(tmp.ref());
+    if (out.isBuilder) {
+      out.builder->add(builder);
     } else {
-      *out.set = std::move(tmp);
+      *out.set = builder.build();
     }
     return true;
   }
@@ -247,10 +247,10 @@ static bool getScriptSet(const Script script, BuilderOrSet out) {
       builder.add(getScriptTable(i));
     }
     builder.complement();
-    if (auto tmp = builder.build(); out.isBuilder) {
-      out.builder->add(tmp.ref());
+    if (out.isBuilder) {
+      out.builder->add(builder);
     } else {
-      *out.set = std::move(tmp);
+      *out.set = builder.build();
     }
     return true;
   }
