@@ -74,7 +74,11 @@ $sizeMap.clear()
 $offset = 0
 write "static constexpr PROPERTY_SET_RANGE scriptx_set_table[] = {"
 for cate in $cates {
-    var set = $createCodePointSet("scx:$cate", $true)
+    var set = if $cate == 'Zyyy' || $cate == 'Zinh' {
+        $createCodePointSet("scx:$cate", $true)
+    } else {
+        $createCodePointSet("scx:$cate - sc:$cate", $true)
+    }
     $set.empty() && continue
     write "    /* $cate */"
     $set.emit() with >> $out

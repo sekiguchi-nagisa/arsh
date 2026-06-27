@@ -42,6 +42,7 @@
 ### Fixed
 
 - fix help message of builtin read command
+- ``Script_Extension`` charset definition
 
 ## [0.41.0] - 2026-03-31
 

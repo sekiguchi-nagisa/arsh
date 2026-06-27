@@ -5453,30 +5453,30 @@ static constexpr BMPCodePointRange charset_test_table_33[] = {
 static constexpr BMPCodePointRange charset_test_table_34[] = {
     // BMP
     { 0x02BC, 0x02BC },
-    { 0x0951, 0x0952 },
-    { 0x0964, 0x096F },
+    { 0x0900, 0x0952 },
+    { 0x0955, 0x097F },
     { 0x1CD0, 0x1CF6 },
     { 0x1CF8, 0x1CF9 },
     { 0x20F0, 0x20F0 },
     { 0xA830, 0xA839 },
-    { 0xA8F1, 0xA8F1 },
-    { 0xA8F3, 0xA8F3 },
+    { 0xA8E0, 0xA8FF },
     // Non-BMP
+    { 0x11B00 }, { 0x11B09 },
 };
 static constexpr BMPCodePointRange charset_test_table_35[] = {
     // BMP
     { 0x0000, 0x02BB },
-    { 0x02BD, 0x0950 },
-    { 0x0953, 0x0963 },
-    { 0x0970, 0x1CCF },
+    { 0x02BD, 0x08FF },
+    { 0x0953, 0x0954 },
+    { 0x0980, 0x1CCF },
     { 0x1CF7, 0x1CF7 },
     { 0x1CFA, 0x20EF },
     { 0x20F1, 0xA82F },
-    { 0xA83A, 0xA8F0 },
-    { 0xA8F2, 0xA8F2 },
-    { 0xA8F4, 0xFFFF },
+    { 0xA83A, 0xA8DF },
+    { 0xA900, 0xFFFF },
     // Non-BMP
-    { 0x10000 }, { 0x10FFFF },
+    { 0x10000 }, { 0x11AFF },
+    { 0x11B0A }, { 0x10FFFF },
 };
 static constexpr BMPCodePointRange charset_test_table_36[] = {
     // BMP
@@ -14599,86 +14599,86 @@ static constexpr BMPCodePointRange charset_test_table_133[] = {
 static constexpr BMPCodePointRange charset_test_table_134[] = {
     // BMP
     { 0x02BC, 0x02BC },
-    { 0x0951, 0x0952 },
-    { 0x0964, 0x096F },
+    { 0x0900, 0x0952 },
+    { 0x0955, 0x097F },
     { 0x1CD0, 0x1CF6 },
     { 0x1CF8, 0x1CF9 },
     { 0x20F0, 0x20F0 },
     { 0xA830, 0xA839 },
-    { 0xA8F1, 0xA8F1 },
-    { 0xA8F3, 0xA8F3 },
+    { 0xA8E0, 0xA8FF },
     // Non-BMP
+    { 0x11B00 }, { 0x11B09 },
 };
 static constexpr BMPCodePointRange charset_test_table_135[] = {
     // BMP
     { 0x0000, 0x02BB },
-    { 0x02BD, 0x0950 },
-    { 0x0953, 0x0963 },
-    { 0x0970, 0x1CCF },
+    { 0x02BD, 0x08FF },
+    { 0x0953, 0x0954 },
+    { 0x0980, 0x1CCF },
     { 0x1CF7, 0x1CF7 },
     { 0x1CFA, 0x20EF },
     { 0x20F1, 0xA82F },
-    { 0xA83A, 0xA8F0 },
-    { 0xA8F2, 0xA8F2 },
-    { 0xA8F4, 0xFFFF },
+    { 0xA83A, 0xA8DF },
+    { 0xA900, 0xFFFF },
     // Non-BMP
-    { 0x10000 }, { 0x10FFFF },
+    { 0x10000 }, { 0x11AFF },
+    { 0x11B0A }, { 0x10FFFF },
 };
 static constexpr BMPCodePointRange charset_test_table_136[] = {
     // BMP
     { 0x02BC, 0x02BC },
-    { 0x0951, 0x0952 },
-    { 0x0964, 0x096F },
+    { 0x0900, 0x0952 },
+    { 0x0955, 0x097F },
     { 0x1CD0, 0x1CF6 },
     { 0x1CF8, 0x1CF9 },
     { 0x20F0, 0x20F0 },
     { 0xA830, 0xA839 },
-    { 0xA8F1, 0xA8F1 },
-    { 0xA8F3, 0xA8F3 },
+    { 0xA8E0, 0xA8FF },
     // Non-BMP
+    { 0x11B00 }, { 0x11B09 },
 };
 static constexpr BMPCodePointRange charset_test_table_137[] = {
     // BMP
     { 0x0000, 0x02BB },
-    { 0x02BD, 0x0950 },
-    { 0x0953, 0x0963 },
-    { 0x0970, 0x1CCF },
+    { 0x02BD, 0x08FF },
+    { 0x0953, 0x0954 },
+    { 0x0980, 0x1CCF },
     { 0x1CF7, 0x1CF7 },
     { 0x1CFA, 0x20EF },
     { 0x20F1, 0xA82F },
-    { 0xA83A, 0xA8F0 },
-    { 0xA8F2, 0xA8F2 },
-    { 0xA8F4, 0xFFFF },
+    { 0xA83A, 0xA8DF },
+    { 0xA900, 0xFFFF },
     // Non-BMP
-    { 0x10000 }, { 0x10FFFF },
+    { 0x10000 }, { 0x11AFF },
+    { 0x11B0A }, { 0x10FFFF },
 };
 static constexpr BMPCodePointRange charset_test_table_138[] = {
     // BMP
     { 0x0000, 0x02BB },
-    { 0x02BD, 0x0950 },
-    { 0x0953, 0x0963 },
-    { 0x0970, 0x1CCF },
+    { 0x02BD, 0x08FF },
+    { 0x0953, 0x0954 },
+    { 0x0980, 0x1CCF },
     { 0x1CF7, 0x1CF7 },
     { 0x1CFA, 0x20EF },
     { 0x20F1, 0xA82F },
-    { 0xA83A, 0xA8F0 },
-    { 0xA8F2, 0xA8F2 },
-    { 0xA8F4, 0xFFFF },
+    { 0xA83A, 0xA8DF },
+    { 0xA900, 0xFFFF },
     // Non-BMP
-    { 0x10000 }, { 0x10FFFF },
+    { 0x10000 }, { 0x11AFF },
+    { 0x11B0A }, { 0x10FFFF },
 };
 static constexpr BMPCodePointRange charset_test_table_139[] = {
     // BMP
     { 0x02BC, 0x02BC },
-    { 0x0951, 0x0952 },
-    { 0x0964, 0x096F },
+    { 0x0900, 0x0952 },
+    { 0x0955, 0x097F },
     { 0x1CD0, 0x1CF6 },
     { 0x1CF8, 0x1CF9 },
     { 0x20F0, 0x20F0 },
     { 0xA830, 0xA839 },
-    { 0xA8F1, 0xA8F1 },
-    { 0xA8F3, 0xA8F3 },
+    { 0xA8E0, 0xA8FF },
     // Non-BMP
+    { 0x11B00 }, { 0x11B09 },
 };
 static constexpr BMPCodePointRange charset_test_table_140[] = {
     // BMP
@@ -34052,8 +34052,8 @@ static constexpr CharSetMatcherEntry charSetMatcherCases[] = {
       {R"((?<=\P{Lt}))", "u", 11, charset_test_table_31},
       {R"(\p{sc=Adlm})", "u", 0, charset_test_table_32},
       {R"(\P{sc=Adlm})", "u", 1, charset_test_table_33},
-      {R"(\p{scx=Deva})", "u", 9, charset_test_table_34},
-      {R"(\P{scx=Deva})", "u", 10, charset_test_table_35},
+      {R"(\p{scx=Deva})", "u", 8, charset_test_table_34},
+      {R"(\P{scx=Deva})", "u", 9, charset_test_table_35},
       {R"(\p{Emoji})", "u", 90, charset_test_table_36},
       {R"(\P{Emoji})", "u", 91, charset_test_table_37},
       {R"(\p{Changes_When_Casefolded})", "u", 618, charset_test_table_38},
@@ -34152,12 +34152,12 @@ static constexpr CharSetMatcherEntry charSetMatcherCases[] = {
       {R"([^\P{sc=Adlm}])", "u", 1, charset_test_table_131},
       {R"([^\p{sc=Adlm}])", "v", 1, charset_test_table_132},
       {R"([^\P{sc=Adlm}])", "v", 0, charset_test_table_133},
-      {R"([\p{scx=Deva}])", "u", 9, charset_test_table_134},
-      {R"([\P{scx=Deva}])", "u", 10, charset_test_table_135},
-      {R"([^\p{scx=Deva}])", "u", 9, charset_test_table_136},
-      {R"([^\P{scx=Deva}])", "u", 10, charset_test_table_137},
-      {R"([^\p{scx=Deva}])", "v", 10, charset_test_table_138},
-      {R"([^\P{scx=Deva}])", "v", 9, charset_test_table_139},
+      {R"([\p{scx=Deva}])", "u", 8, charset_test_table_134},
+      {R"([\P{scx=Deva}])", "u", 9, charset_test_table_135},
+      {R"([^\p{scx=Deva}])", "u", 8, charset_test_table_136},
+      {R"([^\P{scx=Deva}])", "u", 9, charset_test_table_137},
+      {R"([^\p{scx=Deva}])", "v", 9, charset_test_table_138},
+      {R"([^\P{scx=Deva}])", "v", 8, charset_test_table_139},
       {R"(\p{gc=Lowercase_Letter})", "iu", 621, charset_test_table_140},
       {R"(\p{gc=Lowercase_Letter})", "iv", 621, charset_test_table_141},
       {R"(\P{gc=Lowercase_Letter})", "iu", 663, charset_test_table_142},

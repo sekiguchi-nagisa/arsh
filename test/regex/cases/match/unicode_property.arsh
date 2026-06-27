@@ -115,6 +115,48 @@ input: \`${$'@\U0670'}'
 EOF
 )
 
+# \p{scx=Adlam}
+assert diff <(redump -m $'@\U01E900' '\p{scx=Adlam}' 'u') <(<<EOF  # fallback to sc=Adlam
+input: \`${$'@\U01E900'}'
+(offset=1, size=4)
+EOF
+)
+
+# \p{sc=Adlam}
+assert diff <(redump -m $'@\U01E900' '\p{sc=Adlam}' 'u') <(<<EOF
+input: \`${$'@\U01E900'}'
+(offset=1, size=4)
+EOF
+)
+
+# \p{Script=Common}
+assert diff <(redump -m $'\UB7' '\p{Script=Common}' 'u') <(<<EOF
+input: \`${$'\UB7'}'
+(offset=0, size=2)
+EOF
+)
+
+# \P{Script=Common}
+assert diff <(redump -m $'\UB7' '\P{Script=Common}' 'u') <(<<EOF
+input: \`${$'\UB7'}'
+failed
+EOF
+)
+
+# \p{Script_Extensions=Common}
+assert diff <(redump -m $'\UB7' '\p{Script_Extensions=Common}' 'u') <(<<EOF
+input: \`${$'\UB7'}'
+failed
+EOF
+)
+
+# \P{Script_Extensions=Common}
+assert diff <(redump -m $'\UB7' '\P{Script_Extensions=Common}' 'u') <(<<EOF
+input: \`${$'\UB7'}'
+(offset=0, size=2)
+EOF
+)
+
 # \p{Math}
 assert diff <(redump -m $'w@+,' '\p{Math}' 'u') <(<<'EOF'
 input: `w@+,'

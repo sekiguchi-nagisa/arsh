@@ -270,11 +270,25 @@ static bool getScriptXSet(const Script script, BuilderOrSet out) {
   default:
     break;
   }
-  if (ref.getSize()) {
+  if (script == Script::Zyyy || script == Script::Zinh) { // Common, Inherited
+    assert(ref.getSize());
     if (out.isBuilder) {
       out.builder->add(ref);
     } else {
       *out.set = CodePointSet::borrow(ref);
+    }
+    return true;
+  }
+
+  CodePointSetBuilder builder;
+  if (ref.getSize()) {
+    builder.add(ref);
+  }
+  if (getScriptSet(script, BuilderOrSet(builder))) {
+    if (out.isBuilder) {
+      out.builder->add(builder);
+    } else {
+      *out.set = builder.build();
     }
     return true;
   }

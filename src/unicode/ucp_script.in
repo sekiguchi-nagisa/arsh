@@ -1845,6 +1845,171 @@ static constexpr PROPERTY_SET_RANGE_TABLE_OFFSET script_set_table_offset_except_
 };
 
 static constexpr PROPERTY_SET_RANGE scriptx_set_table[] = {
+    /* Zyyy */
+    // BMP
+    { 0x0000, 0x0040 },
+    { 0x005B, 0x0060 },
+    { 0x007B, 0x00A9 },
+    { 0x00AB, 0x00B6 },
+    { 0x00B8, 0x00B9 },
+    { 0x00BB, 0x00BF },
+    { 0x00D7, 0x00D7 },
+    { 0x00F7, 0x00F7 },
+    { 0x02B9, 0x02BB },
+    { 0x02BD, 0x02C6 },
+    { 0x02C8, 0x02C8 },
+    { 0x02CC, 0x02CC },
+    { 0x02CE, 0x02D6 },
+    { 0x02D8, 0x02D8 },
+    { 0x02DA, 0x02DF },
+    { 0x02E5, 0x02E9 },
+    { 0x02EC, 0x02FF },
+    { 0x037E, 0x037E },
+    { 0x0385, 0x0385 },
+    { 0x0387, 0x0387 },
+    { 0x0605, 0x0605 },
+    { 0x06DD, 0x06DD },
+    { 0x08E2, 0x08E2 },
+    { 0x0E3F, 0x0E3F },
+    { 0x0FD5, 0x0FD8 },
+    { 0x2000, 0x200B },
+    { 0x200E, 0x202E },
+    { 0x2030, 0x204E },
+    { 0x2050, 0x2059 },
+    { 0x205B, 0x205C },
+    { 0x205E, 0x2064 },
+    { 0x2066, 0x2070 },
+    { 0x2074, 0x207E },
+    { 0x2080, 0x208E },
+    { 0x20A0, 0x20C1 },
+    { 0x2100, 0x2125 },
+    { 0x2127, 0x2129 },
+    { 0x212C, 0x2131 },
+    { 0x2133, 0x214D },
+    { 0x214F, 0x215F },
+    { 0x2189, 0x218B },
+    { 0x2190, 0x2429 },
+    { 0x2440, 0x244A },
+    { 0x2460, 0x27FF },
+    { 0x2900, 0x2B73 },
+    { 0x2B76, 0x2BFF },
+    { 0x2E00, 0x2E16 },
+    { 0x2E18, 0x2E2F },
+    { 0x2E32, 0x2E3B },
+    { 0x2E3D, 0x2E40 },
+    { 0x2E42, 0x2E42 },
+    { 0x2E44, 0x2E5D },
+    { 0x3000, 0x3000 },
+    { 0x3004, 0x3004 },
+    { 0x3012, 0x3012 },
+    { 0x3020, 0x3020 },
+    { 0x3036, 0x3036 },
+    { 0x3248, 0x325F },
+    { 0x327F, 0x327F },
+    { 0x32B1, 0x32BF },
+    { 0x32CC, 0x32CF },
+    { 0x3371, 0x337A },
+    { 0x3380, 0x33DF },
+    { 0x33FF, 0x33FF },
+    { 0x4DC0, 0x4DFF },
+    { 0xA708, 0xA721 },
+    { 0xA788, 0xA78A },
+    { 0xAB5B, 0xAB5B },
+    { 0xAB6A, 0xAB6B },
+    { 0xFE10, 0xFE19 },
+    { 0xFE30, 0xFE44 },
+    { 0xFE47, 0xFE52 },
+    { 0xFE54, 0xFE66 },
+    { 0xFE68, 0xFE6B },
+    { 0xFEFF, 0xFEFF },
+    { 0xFF01, 0xFF20 },
+    { 0xFF3B, 0xFF40 },
+    { 0xFF5B, 0xFF60 },
+    { 0xFFE0, 0xFFE6 },
+    { 0xFFE8, 0xFFEE },
+    { 0xFFF9, 0xFFFD },
+    // Packed-Non-BMP
+    PACKED(0x10190, 0x1019C),
+    PACKED(0x101D0, 0x101FC),
+    PACKED(0x1CC00, 0x1CCFC),
+    PACKED(0x1CD00, 0x1CEB3),
+    PACKED(0x1CEBA, 0x1CED0),
+    PACKED(0x1CEE0, 0x1CEF0),
+    PACKED(0x1CF50, 0x1CFC3),
+    PACKED(0x1D000, 0x1D0F5),
+    PACKED(0x1D100, 0x1D126),
+    PACKED(0x1D129, 0x1D166),
+    PACKED(0x1D16A, 0x1D17A),
+    PACKED(0x1D183, 0x1D184),
+    PACKED(0x1D18C, 0x1D1A9),
+    PACKED(0x1D1AE, 0x1D1EA),
+    PACKED(0x1D2C0, 0x1D2D3),
+    PACKED(0x1D2E0, 0x1D2F3),
+    PACKED(0x1D300, 0x1D356),
+    PACKED(0x1D372, 0x1D378),
+    PACKED(0x1D400, 0x1D454),
+    PACKED(0x1D456, 0x1D49C),
+    PACKED(0x1D49E, 0x1D49F),
+    PACKED(0x1D4A2, 0x1D4A2),
+    PACKED(0x1D4A5, 0x1D4A6),
+    PACKED(0x1D4A9, 0x1D4AC),
+    PACKED(0x1D4AE, 0x1D4B9),
+    PACKED(0x1D4BB, 0x1D4BB),
+    PACKED(0x1D4BD, 0x1D4C3),
+    PACKED(0x1D4C5, 0x1D505),
+    PACKED(0x1D507, 0x1D50A),
+    PACKED(0x1D50D, 0x1D514),
+    PACKED(0x1D516, 0x1D51C),
+    PACKED(0x1D51E, 0x1D539),
+    PACKED(0x1D53B, 0x1D53E),
+    PACKED(0x1D540, 0x1D544),
+    PACKED(0x1D546, 0x1D546),
+    PACKED(0x1D54A, 0x1D550),
+    PACKED(0x1D552, 0x1D6A5),
+    PACKED(0x1D6A8, 0x1D7CB),
+    PACKED(0x1D7CE, 0x1D7FF),
+    PACKED(0x1EC71, 0x1ECB4),
+    PACKED(0x1ED01, 0x1ED3D),
+    PACKED(0x1F000, 0x1F02B),
+    PACKED(0x1F030, 0x1F093),
+    PACKED(0x1F0A0, 0x1F0AE),
+    PACKED(0x1F0B1, 0x1F0BF),
+    PACKED(0x1F0C1, 0x1F0CF),
+    PACKED(0x1F0D1, 0x1F0F5),
+    PACKED(0x1F100, 0x1F1AD),
+    PACKED(0x1F1E6, 0x1F1FF),
+    PACKED(0x1F201, 0x1F202),
+    PACKED(0x1F210, 0x1F23B),
+    PACKED(0x1F240, 0x1F248),
+    PACKED(0x1F260, 0x1F265),
+    PACKED(0x1F300, 0x1F6D8),
+    PACKED(0x1F6DC, 0x1F6EC),
+    PACKED(0x1F6F0, 0x1F6FC),
+    PACKED(0x1F700, 0x1F7D9),
+    PACKED(0x1F7E0, 0x1F7EB),
+    PACKED(0x1F7F0, 0x1F7F0),
+    PACKED(0x1F800, 0x1F80B),
+    PACKED(0x1F810, 0x1F847),
+    PACKED(0x1F850, 0x1F859),
+    PACKED(0x1F860, 0x1F887),
+    PACKED(0x1F890, 0x1F8AD),
+    PACKED(0x1F8B0, 0x1F8BB),
+    PACKED(0x1F8C0, 0x1F8C1),
+    PACKED(0x1F8D0, 0x1F8D8),
+    PACKED(0x1F900, 0x1FA57),
+    PACKED(0x1FA60, 0x1FA6D),
+    PACKED(0x1FA70, 0x1FA7C),
+    PACKED(0x1FA80, 0x1FA8A),
+    PACKED(0x1FA8E, 0x1FAC6),
+    PACKED(0x1FAC8, 0x1FAC8),
+    PACKED(0x1FACD, 0x1FADC),
+    PACKED(0x1FADF, 0x1FAEA),
+    PACKED(0x1FAEF, 0x1FAF8),
+    PACKED(0x1FB00, 0x1FB92),
+    PACKED(0x1FB94, 0x1FBFA),
+    PACKED(0xE0001, 0xE0001),
+    PACKED(0xE0020, 0xE007F),
+    // Non-BMP
     /* Latn */
     // BMP
     { 0x00B7, 0x00B7 },
@@ -1883,7 +2048,7 @@ static constexpr PROPERTY_SET_RANGE scriptx_set_table[] = {
     { 0x0313, 0x0313 },
     { 0x0342, 0x0342 },
     { 0x0345, 0x0345 },
-    { 0x0374, 0x0375 },
+    { 0x0374, 0x0374 },
     { 0x1DC0, 0x1DC1 },
     { 0x205D, 0x205D },
     // Non-BMP
@@ -1896,15 +2061,13 @@ static constexpr PROPERTY_SET_RANGE scriptx_set_table[] = {
     { 0x0308, 0x0308 },
     { 0x030B, 0x030B },
     { 0x0311, 0x0311 },
-    { 0x0483, 0x0487 },
+    { 0x0485, 0x0486 },
     { 0x1DF8, 0x1DF8 },
     { 0x2E43, 0x2E43 },
-    { 0xA66F, 0xA66F },
     // Non-BMP
     /* Armn */
     // BMP
     { 0x0308, 0x0308 },
-    { 0x0589, 0x0589 },
     // Non-BMP
     /* Hebr */
     // BMP
@@ -1913,18 +2076,14 @@ static constexpr PROPERTY_SET_RANGE scriptx_set_table[] = {
     /* Arab */
     // BMP
     { 0x060C, 0x060C },
-    { 0x061B, 0x061C },
+    { 0x061B, 0x061B },
     { 0x061F, 0x061F },
     { 0x0640, 0x0640 },
     { 0x064B, 0x0655 },
-    { 0x0660, 0x0669 },
     { 0x0670, 0x0670 },
-    { 0x06D4, 0x06D4 },
     { 0x204F, 0x204F },
     { 0x2E41, 0x2E41 },
     { 0xFD3E, 0xFD3F },
-    { 0xFDF2, 0xFDF2 },
-    { 0xFDFD, 0xFDFD },
     // Packed-Non-BMP
     PACKED(0x102E0, 0x102FB),
     // Non-BMP
@@ -1958,20 +2117,17 @@ static constexpr PROPERTY_SET_RANGE scriptx_set_table[] = {
     // BMP
     { 0x02BC, 0x02BC },
     { 0x0951, 0x0952 },
-    { 0x0964, 0x096F },
+    { 0x0964, 0x0965 },
     { 0x1CD0, 0x1CF6 },
     { 0x1CF8, 0x1CF9 },
     { 0x20F0, 0x20F0 },
     { 0xA830, 0xA839 },
-    { 0xA8F1, 0xA8F1 },
-    { 0xA8F3, 0xA8F3 },
     // Non-BMP
     /* Beng */
     // BMP
     { 0x02BC, 0x02BC },
     { 0x0951, 0x0952 },
     { 0x0964, 0x0965 },
-    { 0x09E6, 0x09EF },
     { 0x1CD0, 0x1CD0 },
     { 0x1CD2, 0x1CD2 },
     { 0x1CD5, 0x1CD6 },
@@ -1987,14 +2143,12 @@ static constexpr PROPERTY_SET_RANGE scriptx_set_table[] = {
     // BMP
     { 0x0951, 0x0952 },
     { 0x0964, 0x0965 },
-    { 0x0A66, 0x0A6F },
     { 0xA830, 0xA839 },
     // Non-BMP
     /* Gujr */
     // BMP
     { 0x0951, 0x0952 },
     { 0x0964, 0x0965 },
-    { 0x0AE6, 0x0AEF },
     { 0xA830, 0xA839 },
     // Non-BMP
     /* Orya */
@@ -2008,15 +2162,12 @@ static constexpr PROPERTY_SET_RANGE scriptx_set_table[] = {
     // BMP
     { 0x0951, 0x0952 },
     { 0x0964, 0x0965 },
-    { 0x0BE6, 0x0BF3 },
     { 0x1CDA, 0x1CDA },
     { 0xA8F3, 0xA8F3 },
     // Packed-Non-BMP
     PACKED(0x11301, 0x11301),
     PACKED(0x11303, 0x11303),
     PACKED(0x1133B, 0x1133C),
-    PACKED(0x11FD0, 0x11FD1),
-    PACKED(0x11FD3, 0x11FD3),
     // Non-BMP
     /* Telu */
     // BMP
@@ -2031,7 +2182,6 @@ static constexpr PROPERTY_SET_RANGE scriptx_set_table[] = {
     // BMP
     { 0x0951, 0x0952 },
     { 0x0964, 0x0965 },
-    { 0x0CE6, 0x0CEF },
     { 0x1CD0, 0x1CD0 },
     { 0x1CD2, 0x1CD3 },
     { 0x1CDA, 0x1CDA },
@@ -2065,7 +2215,6 @@ static constexpr PROPERTY_SET_RANGE scriptx_set_table[] = {
     // Non-BMP
     /* Mymr */
     // BMP
-    { 0x1040, 0x1049 },
     { 0xA92E, 0xA92E },
     // Non-BMP
     /* Geor */
@@ -2204,6 +2353,38 @@ static constexpr PROPERTY_SET_RANGE scriptx_set_table[] = {
     { 0x0304, 0x0305 },
     { 0x0308, 0x0308 },
     { 0x0331, 0x0331 },
+    // Non-BMP
+    /* Zinh */
+    // BMP
+    { 0x030F, 0x030F },
+    { 0x0312, 0x0312 },
+    { 0x0314, 0x0322 },
+    { 0x0326, 0x032C },
+    { 0x032F, 0x032F },
+    { 0x0332, 0x0341 },
+    { 0x0343, 0x0344 },
+    { 0x0346, 0x0357 },
+    { 0x0359, 0x035D },
+    { 0x035F, 0x0362 },
+    { 0x0953, 0x0954 },
+    { 0x1AB0, 0x1ADD },
+    { 0x1AE0, 0x1AEB },
+    { 0x1DC2, 0x1DF7 },
+    { 0x1DF9, 0x1DF9 },
+    { 0x1DFB, 0x1DFF },
+    { 0x200C, 0x200D },
+    { 0x20D0, 0x20EF },
+    { 0xFE00, 0xFE0F },
+    { 0xFE20, 0xFE2D },
+    // Packed-Non-BMP
+    PACKED(0x101FD, 0x101FD),
+    PACKED(0x1CF00, 0x1CF2D),
+    PACKED(0x1CF30, 0x1CF46),
+    PACKED(0x1D167, 0x1D169),
+    PACKED(0x1D17B, 0x1D182),
+    PACKED(0x1D185, 0x1D18B),
+    PACKED(0x1D1AA, 0x1D1AD),
+    PACKED(0xE0100, 0xE01EF),
     // Non-BMP
     /* Tglg */
     // BMP
@@ -2416,9 +2597,7 @@ static constexpr PROPERTY_SET_RANGE scriptx_set_table[] = {
     { 0x1CF8, 0x1CF9 },
     { 0x20F0, 0x20F0 },
     // Packed-Non-BMP
-    PACKED(0x11301, 0x11301),
-    PACKED(0x11303, 0x11303),
-    PACKED(0x1133B, 0x1133C),
+    PACKED(0x1133B, 0x1133B),
     PACKED(0x11FD0, 0x11FD1),
     PACKED(0x11FD3, 0x11FD3),
     // Non-BMP
@@ -2441,8 +2620,6 @@ static constexpr PROPERTY_SET_RANGE scriptx_set_table[] = {
     /* Mani */
     // BMP
     { 0x0640, 0x0640 },
-    // Packed-Non-BMP
-    PACKED(0x10AF2, 0x10AF2),
     // Non-BMP
     /* Modi */
     // BMP
@@ -2615,102 +2792,104 @@ static constexpr PROPERTY_SET_RANGE scriptx_set_table[] = {
 };
 
 #define EACH_UCP_SCRIPT_EXTENSION(E) \
-    E(Latn, 0, 25, 0, 25) \
-    E(Grek, 25, 11, 0, 11) \
-    E(Cyrl, 36, 11, 0, 11) \
-    E(Armn, 47, 2, 0, 2) \
-    E(Hebr, 49, 1, 0, 1) \
-    E(Arab, 50, 13, 1, 14) \
-    E(Syrc, 64, 14, 0, 14) \
-    E(Thaa, 78, 6, 0, 6) \
-    E(Deva, 84, 9, 0, 9) \
-    E(Beng, 93, 14, 0, 14) \
-    E(Guru, 107, 4, 0, 4) \
-    E(Gujr, 111, 4, 0, 4) \
-    E(Orya, 115, 4, 0, 4) \
-    E(Taml, 119, 5, 5, 10) \
-    E(Telu, 129, 6, 0, 6) \
-    E(Knda, 135, 9, 0, 9) \
-    E(Mlym, 144, 5, 0, 5) \
-    E(Sinh, 149, 2, 0, 2) \
-    E(Thai, 151, 4, 0, 4) \
-    E(Tibt, 155, 1, 0, 1) \
-    E(Mymr, 156, 2, 0, 2) \
-    E(Geor, 158, 5, 0, 5) \
-    E(Hang, 163, 8, 0, 8) \
-    E(Ethi, 171, 1, 0, 1) \
-    E(Cher, 172, 5, 0, 5) \
-    E(Runr, 177, 1, 0, 1) \
-    E(Mong, 178, 5, 0, 5) \
-    E(Hira, 183, 13, 0, 13) \
-    E(Kana, 196, 15, 0, 15) \
-    E(Bopo, 211, 12, 0, 12) \
-    E(Hani, 223, 24, 2, 26) \
-    E(Yiii, 249, 5, 0, 5) \
-    E(Goth, 254, 4, 0, 4) \
-    E(Tglg, 258, 1, 0, 1) \
-    E(Hano, 259, 1, 0, 1) \
-    E(Buhd, 260, 1, 0, 1) \
-    E(Tagb, 261, 1, 0, 1) \
-    E(Limb, 262, 1, 0, 1) \
-    E(Tale, 263, 4, 0, 4) \
-    E(Linb, 267, 0, 3, 3) \
-    E(Shaw, 270, 1, 0, 1) \
-    E(Cprt, 271, 0, 3, 3) \
-    E(Bugi, 274, 1, 0, 1) \
-    E(Copt, 275, 6, 1, 7) \
-    E(Glag, 282, 10, 0, 10) \
-    E(Tfng, 292, 4, 0, 4) \
-    E(Sylo, 296, 2, 0, 2) \
-    E(Phag, 298, 4, 0, 4) \
-    E(Nkoo, 302, 4, 0, 4) \
-    E(Kali, 306, 1, 0, 1) \
-    E(Lyci, 307, 1, 0, 1) \
-    E(Cari, 308, 4, 0, 4) \
-    E(Lydi, 312, 2, 0, 2) \
-    E(Avst, 314, 2, 0, 2) \
-    E(Samr, 316, 1, 0, 1) \
-    E(Lisu, 317, 3, 0, 3) \
-    E(Java, 320, 1, 0, 1) \
-    E(Orkh, 321, 2, 0, 2) \
-    E(Kthi, 323, 3, 0, 3) \
-    E(Mand, 326, 1, 0, 1) \
-    E(Cakm, 327, 2, 0, 2) \
-    E(Mero, 329, 1, 0, 1) \
-    E(Shrd, 330, 9, 0, 9) \
-    E(Takr, 339, 2, 0, 2) \
-    E(Aghb, 341, 3, 0, 3) \
-    E(Dupl, 344, 5, 1, 6) \
-    E(Elba, 350, 2, 0, 2) \
-    E(Gran, 352, 8, 5, 13) \
-    E(Khoj, 365, 2, 0, 2) \
-    E(Lina, 367, 0, 1, 1) \
-    E(Mahj, 368, 3, 0, 3) \
-    E(Mani, 371, 1, 1, 2) \
-    E(Modi, 373, 1, 0, 1) \
-    E(Perm, 374, 5, 0, 5) \
-    E(Phlp, 379, 1, 0, 1) \
-    E(Sind, 380, 2, 0, 2) \
-    E(Tirh, 382, 6, 0, 6) \
-    E(Mult, 388, 1, 0, 1) \
-    E(Hung, 389, 4, 0, 4) \
-    E(Adlm, 393, 4, 0, 4) \
-    E(Newa, 397, 7, 0, 7) \
-    E(Osge, 404, 4, 0, 4) \
-    E(Tang, 408, 2, 0, 2) \
-    E(Gonm, 410, 1, 0, 1) \
-    E(Dogr, 411, 2, 0, 2) \
-    E(Gong, 413, 2, 0, 2) \
-    E(Rohg, 415, 5, 0, 5) \
-    E(Sogd, 420, 1, 0, 1) \
-    E(Nand, 421, 7, 0, 7) \
-    E(Yezi, 428, 4, 0, 4) \
-    E(Cpmn, 432, 0, 1, 1) \
-    E(Ougr, 433, 1, 1, 2) \
-    E(Toto, 435, 1, 0, 1) \
-    E(Gara, 436, 3, 0, 3) \
-    E(Gukh, 439, 1, 0, 1) \
-    E(Onao, 440, 1, 0, 1) \
-    E(Sunu, 441, 6, 0, 6) \
-    E(Todr, 447, 6, 0, 6) \
-    E(Tutg, 453, 5, 0, 5)
+    E(Zyyy, 0, 81, 80, 161) \
+    E(Latn, 161, 25, 0, 25) \
+    E(Grek, 186, 11, 0, 11) \
+    E(Cyrl, 197, 10, 0, 10) \
+    E(Armn, 207, 1, 0, 1) \
+    E(Hebr, 208, 1, 0, 1) \
+    E(Arab, 209, 9, 1, 10) \
+    E(Syrc, 219, 14, 0, 14) \
+    E(Thaa, 233, 6, 0, 6) \
+    E(Deva, 239, 7, 0, 7) \
+    E(Beng, 246, 13, 0, 13) \
+    E(Guru, 259, 3, 0, 3) \
+    E(Gujr, 262, 3, 0, 3) \
+    E(Orya, 265, 4, 0, 4) \
+    E(Taml, 269, 4, 3, 7) \
+    E(Telu, 276, 6, 0, 6) \
+    E(Knda, 282, 8, 0, 8) \
+    E(Mlym, 290, 5, 0, 5) \
+    E(Sinh, 295, 2, 0, 2) \
+    E(Thai, 297, 4, 0, 4) \
+    E(Tibt, 301, 1, 0, 1) \
+    E(Mymr, 302, 1, 0, 1) \
+    E(Geor, 303, 5, 0, 5) \
+    E(Hang, 308, 8, 0, 8) \
+    E(Ethi, 316, 1, 0, 1) \
+    E(Cher, 317, 5, 0, 5) \
+    E(Runr, 322, 1, 0, 1) \
+    E(Mong, 323, 5, 0, 5) \
+    E(Hira, 328, 13, 0, 13) \
+    E(Kana, 341, 15, 0, 15) \
+    E(Bopo, 356, 12, 0, 12) \
+    E(Hani, 368, 24, 2, 26) \
+    E(Yiii, 394, 5, 0, 5) \
+    E(Goth, 399, 4, 0, 4) \
+    E(Zinh, 403, 20, 8, 28) \
+    E(Tglg, 431, 1, 0, 1) \
+    E(Hano, 432, 1, 0, 1) \
+    E(Buhd, 433, 1, 0, 1) \
+    E(Tagb, 434, 1, 0, 1) \
+    E(Limb, 435, 1, 0, 1) \
+    E(Tale, 436, 4, 0, 4) \
+    E(Linb, 440, 0, 3, 3) \
+    E(Shaw, 443, 1, 0, 1) \
+    E(Cprt, 444, 0, 3, 3) \
+    E(Bugi, 447, 1, 0, 1) \
+    E(Copt, 448, 6, 1, 7) \
+    E(Glag, 455, 10, 0, 10) \
+    E(Tfng, 465, 4, 0, 4) \
+    E(Sylo, 469, 2, 0, 2) \
+    E(Phag, 471, 4, 0, 4) \
+    E(Nkoo, 475, 4, 0, 4) \
+    E(Kali, 479, 1, 0, 1) \
+    E(Lyci, 480, 1, 0, 1) \
+    E(Cari, 481, 4, 0, 4) \
+    E(Lydi, 485, 2, 0, 2) \
+    E(Avst, 487, 2, 0, 2) \
+    E(Samr, 489, 1, 0, 1) \
+    E(Lisu, 490, 3, 0, 3) \
+    E(Java, 493, 1, 0, 1) \
+    E(Orkh, 494, 2, 0, 2) \
+    E(Kthi, 496, 3, 0, 3) \
+    E(Mand, 499, 1, 0, 1) \
+    E(Cakm, 500, 2, 0, 2) \
+    E(Mero, 502, 1, 0, 1) \
+    E(Shrd, 503, 9, 0, 9) \
+    E(Takr, 512, 2, 0, 2) \
+    E(Aghb, 514, 3, 0, 3) \
+    E(Dupl, 517, 5, 1, 6) \
+    E(Elba, 523, 2, 0, 2) \
+    E(Gran, 525, 8, 3, 11) \
+    E(Khoj, 536, 2, 0, 2) \
+    E(Lina, 538, 0, 1, 1) \
+    E(Mahj, 539, 3, 0, 3) \
+    E(Mani, 542, 1, 0, 1) \
+    E(Modi, 543, 1, 0, 1) \
+    E(Perm, 544, 5, 0, 5) \
+    E(Phlp, 549, 1, 0, 1) \
+    E(Sind, 550, 2, 0, 2) \
+    E(Tirh, 552, 6, 0, 6) \
+    E(Mult, 558, 1, 0, 1) \
+    E(Hung, 559, 4, 0, 4) \
+    E(Adlm, 563, 4, 0, 4) \
+    E(Newa, 567, 7, 0, 7) \
+    E(Osge, 574, 4, 0, 4) \
+    E(Tang, 578, 2, 0, 2) \
+    E(Gonm, 580, 1, 0, 1) \
+    E(Dogr, 581, 2, 0, 2) \
+    E(Gong, 583, 2, 0, 2) \
+    E(Rohg, 585, 5, 0, 5) \
+    E(Sogd, 590, 1, 0, 1) \
+    E(Nand, 591, 7, 0, 7) \
+    E(Yezi, 598, 4, 0, 4) \
+    E(Cpmn, 602, 0, 1, 1) \
+    E(Ougr, 603, 1, 1, 2) \
+    E(Toto, 605, 1, 0, 1) \
+    E(Gara, 606, 3, 0, 3) \
+    E(Gukh, 609, 1, 0, 1) \
+    E(Onao, 610, 1, 0, 1) \
+    E(Sunu, 611, 6, 0, 6) \
+    E(Todr, 617, 6, 0, 6) \
+    E(Tutg, 623, 5, 0, 5)
