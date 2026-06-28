@@ -1,0 +1,7 @@
+# RUN: echo hello
+
+// RUN: echo hello double-slash
+
+// CHECK: hello double-slash
+
+#CHECKERR_RE_IF: 

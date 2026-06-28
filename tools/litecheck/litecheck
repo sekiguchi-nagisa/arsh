@@ -71,7 +71,7 @@ type Directive(t : String, l : String, n : Int) {
     let ln = $n     # line number
 }
 
-function _parse_directives(path : String) : [String: [Directive]] {
+function _parse_directives(path : String, dprefix: String) : [String: [Directive]] {
     var map = [
         $RUN : new [Directive](),
         $REQUIRE : new [Directive](),
@@ -80,6 +80,7 @@ function _parse_directives(path : String) : [String: [Directive]] {
         $STATUS : new [Directive](),
     ]
 
+    let pattern = new Regex("^${$dprefix.escapeRegex()} *(RUN|CHECK|CHECKERR|CHECK_IF|CHECKERR_IF|CHECK_RE|CHECKERR_RE|CHECK_RE_IF|CHECKERR_RE_IF|STATUS|REQUIRE):(.*)")
     var lines = $_lines($path)
     if !$lines.empty() && $lines[0].startsWith($SHEBANG) {
         $map[$RUN].add(new Directive($SHEBANG, $lines[0], 1))
@@ -87,7 +88,7 @@ function _parse_directives(path : String) : [String: [Directive]] {
     for(var i = 0; $i < $lines.size(); $i++) {
         var line = $lines[$i]
         var ln = $i + 1
-        var matched = $/^# *(RUN|CHECK|CHECKERR|CHECK_IF|CHECKERR_IF|CHECK_RE|CHECKERR_RE|CHECK_RE_IF|CHECKERR_RE_IF|STATUS|REQUIRE):(.*)/.match($line)
+        var matched = $pattern.match($line)
         if let m = $matched {
             var type = $m.group(1)!
             $line = $m.group(2)!
@@ -312,6 +313,9 @@ type Param() {
 
     [<Arg(required: $true, help: "target test script (must include litecheck directives)")>]
     var file = ""
+
+    [<Option(short: "p", help: 'directive comment start prefix. default is `#`')>]
+    var prefix = "#"
 }
 
 # entry point
@@ -327,8 +331,11 @@ litecheck(p : Param) {
         (test -f $cmd && test -x $cmd) || _usage ${$p.usage("must be executable: \`$b'")}
     }
 
+    # check prefix
+    let dprefix = $p.prefix.ifEmpty("#")!
+
     # read directive
-    var map = $_parse_directives($self)
+    var map = $_parse_directives($self, $dprefix)
 
     # check pre-condition
     for d in $map[$REQUIRE] {

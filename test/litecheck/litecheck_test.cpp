@@ -59,7 +59,14 @@ struct LitecheckTest : public ::testing::TestWithParam<std::string> {
   }
 
   static void doTest() {
+    fprintf(stderr, "%s\n", GetParam().c_str());
+
     ASSERT_TRUE(StringRef(GetParam()).endsWith(".test"));
+
+    bool doubleSlash = ({
+      auto dirname = getBasename(getDirname(GetParam()));
+      dirname == "double-slash";
+    });
 
     // parse status
     int status = ({
@@ -93,7 +100,8 @@ struct LitecheckTest : public ::testing::TestWithParam<std::string> {
       readAll(input);
     });
 
-    auto result = litecheck(GetParam()).execAndGetResult(false);
+    auto builder = doubleSlash ? litecheck("-p", "//", GetParam()) : litecheck(GetParam());
+    auto result = builder.execAndGetResult(false);
     ASSERT_EQ(WaitStatus::EXITED, result.status.kind);
     ASSERT_EQ(status, result.status.value);
     ASSERT_EQ(expected, result.err);
@@ -116,6 +124,7 @@ Arguments:
 
 Options:
   -b BIN      target executable file
+  -p PREFIX   directive comment start prefix. default is `#`
   -h, --help  show this help message
 )";
   ASSERT_NO_FATAL_FAILURE(this->expect(litecheck(), 1, "", err));
@@ -128,6 +137,7 @@ Arguments:
 
 Options:
   -b BIN      target executable file
+  -p PREFIX   directive comment start prefix. default is `#`
   -h, --help  show this help message
 )";
   ASSERT_NO_FATAL_FAILURE(this->expect(litecheck("34"), 2, "", err));
@@ -140,6 +150,7 @@ Arguments:
 
 Options:
   -b BIN      target executable file
+  -p PREFIX   directive comment start prefix. default is `#`
   -h, --help  show this help message
 )";
   ASSERT_NO_FATAL_FAILURE(this->expect(litecheck("."), 2, "", err));
@@ -152,6 +163,7 @@ Arguments:
 
 Options:
   -b BIN      target executable file
+  -p PREFIX   directive comment start prefix. default is `#`
   -h, --help  show this help message
 )";
   ASSERT_NO_FATAL_FAILURE(this->expect(litecheck("-q"), 2, "", err));
@@ -164,6 +176,7 @@ Arguments:
 
 Options:
   -b BIN      target executable file
+  -p PREFIX   directive comment start prefix. default is `#`
   -h, --help  show this help message
 )";
   ASSERT_NO_FATAL_FAILURE(this->expect(litecheck("-b"), 2, "", err));
@@ -176,6 +189,7 @@ Arguments:
 
 Options:
   -b BIN      target executable file
+  -p PREFIX   directive comment start prefix. default is `#`
   -h, --help  show this help message
 )";
   ASSERT_NO_FATAL_FAILURE(this->expect(litecheck("-b", "123", LITECHECK_PATH), 2, "", err));
@@ -188,6 +202,7 @@ Arguments:
 
 Options:
   -b BIN      target executable file
+  -p PREFIX   directive comment start prefix. default is `#`
   -h, --help  show this help message
 )";
   ASSERT_NO_FATAL_FAILURE(this->expect(litecheck("-b", ".", LITECHECK_PATH), 2, "", err));
