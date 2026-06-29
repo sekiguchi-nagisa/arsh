@@ -242,12 +242,66 @@ static void defineTestPropertyEscapes(const std::shared_ptr<JSEnv> &global) {
   global->define(name, std::move(func));
 }
 
+static JSStringPtr joinAsString(const JSArrayPtr &array) {
+  JSString ret;
+  for (auto &e : array->values) {
+    JSStringPtr str;
+    if (std::holds_alternative<JSStringPtr>(e)) {
+      str = std::get<JSStringPtr>(e);
+    } else {
+      str = std::make_shared<JSString>(toString(e));
+    }
+    ret += *str;
+  }
+  return std::make_shared<JSString>(std::move(ret));
+}
+
+static void defineTestPropertyOfStrings(const std::shared_ptr<JSEnv> &global) {
+  const char *name = "testPropertyOfStrings";
+  auto impl = [](const JSFunctionPtr &func,
+                 const std::shared_ptr<JSEnv> &env) -> Result<JSValue, JSThrown> {
+    auto args = env->findOrUndef(func->params[0]);
+    auto regExp = TRY(findProperty(env, env->callerLineNum(), args, "regExp"));
+    auto expression = TRY(findProperty(env, env->callerLineNum(), args, "expression"));
+    auto matchStrings = TRY(findProperty(env, env->callerLineNum(), args, "matchStrings"));
+    auto nonMatchStrings = TRY(findProperty(env, env->callerLineNum(), args, "nonMatchStrings"));
+    // check match strings
+    if (!std::holds_alternative<JSArrayPtr>(matchStrings)) {
+      return throwError(env, builtin::TYPE_ERROR, env->callerLineNum(),
+                        u"matchStrings must be Array");
+    }
+    if (auto allMatchStrings = joinAsString(std::get<JSArrayPtr>(matchStrings));
+        !assertRegExpTest(env, regExp, expression, allMatchStrings, true)) {
+      for (auto &string : std::get<JSArrayPtr>(matchStrings)->values) {
+        TRY(assertRegExpTest(env, regExp, expression, string, true));
+      }
+    }
+    // check non-match strings
+    if (!std::holds_alternative<JSArrayPtr>(nonMatchStrings)) {
+      return throwError(env, builtin::TYPE_ERROR, env->callerLineNum(),
+                        u"nonMatchStrings must be Array");
+    }
+    if (auto allNonMatchStrings = joinAsString(std::get<JSArrayPtr>(nonMatchStrings));
+        !allNonMatchStrings->empty() &&
+        !assertRegExpTest(env, regExp, expression, allNonMatchStrings, false)) {
+      for (auto &string : std::get<JSArrayPtr>(nonMatchStrings)->values) {
+        TRY(assertRegExpTest(env, regExp, expression, string, false));
+      }
+    }
+    return Ok(JSValue());
+  };
+  auto func = createJSFunction(global, name, {"args"}, nullptr, std::move(impl));
+  global->define(name, func);
+  global->define("testExtendedCharacterClass", std::move(func));
+}
+
 void includeHarness(const std::shared_ptr<JSEnv> &global) {
   defineDerivedError(global, TEST262_ERROR);
   defineDoNotEvaluate(global);
   defineAssert(global);
   defineBuildString(global);
   defineTestPropertyEscapes(global);
+  defineTestPropertyOfStrings(global);
 }
 
 } // namespace arsh::re262
