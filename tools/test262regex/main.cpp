@@ -27,7 +27,7 @@ static void usage(FILE *fp, char **argv) {
 }
 
 static void invalidOption(char **argv, int opt) {
-  fprintf(stderr, "invalid option: -%c", opt);
+  fprintf(stderr, "invalid option: -%c\n", opt);
   usage(stderr, argv);
 }
 
@@ -43,16 +43,6 @@ static std::string toString(const std::vector<std::string> &values) {
   return ret;
 }
 
-static const char *toString(re262::TestMetaData::Phase phase) {
-  switch (phase) {
-  case re262::TestMetaData::Phase::PARSE:
-    return "parse";
-  case re262::TestMetaData::Phase::RUNTIME:
-    return "runtime";
-  }
-  return "";
-}
-
 static void print(FILE *fp, const re262::TestMetaData &data) {
   fprintf(fp,
           "--- meta-data ---\n"
@@ -62,7 +52,7 @@ static void print(FILE *fp, const re262::TestMetaData &data) {
           toString(data.features).c_str(), toString(data.includes).c_str());
   if (data.negative.has_value()) {
     auto &negative = data.negative.value();
-    fprintf(fp, "negative:\n  phase: %s\n  type: %s\n", toString(negative.phase),
+    fprintf(fp, "negative:\n  phase: %s\n  type: %s\n", re262::toString(negative.phase),
             negative.type.c_str());
   }
 }
@@ -86,7 +76,7 @@ int main(int argc, char **argv) {
       usage(stdout, argv);
       return 2;
     }
-    invalidOption(argv, opt);
+    invalidOption(argv, optState.optOpt);
     return 1;
   }
   if (iter == end) {
@@ -120,10 +110,34 @@ int main(int argc, char **argv) {
   re262::includeHarness(env);
   std::string syntaxErr;
   auto ret = re262::jsEval(filename, input, env, debug, &syntaxErr);
+  auto out = re262::formatEvalResult(env, ret);
+
   if (!syntaxErr.empty()) {
     fputs(syntaxErr.c_str(), stderr);
   }
-  auto out = re262::formatEvalResult(env, ret);
-  fputs(out.c_str(), stderr);
-  return ret ? 0 : 1;
+  if (metaData.has_value() && metaData.value().negative.has_value()) {
+    auto &negative = metaData.value().negative.value();
+    if (ret) {
+      fprintf(stderr, "expected: %s\nactual: %s\n", re262::format(negative).c_str(), out.c_str());
+      return 1;
+    }
+    if (!syntaxErr.empty() && negative.phase != re262::TestMetaData::Phase::PARSE) {
+      fprintf(stderr, "expected: %s\nactual: SyntaxError\n", re262::format(negative).c_str());
+      return 1;
+    }
+    auto error = env->findOrUndef(negative.type);
+    if (auto v = re262::isInstanceOf(env, 1, ret.asErr().value, error);
+        !v || !std::holds_alternative<bool>(v.asOk()) || !std::get<bool>(v.asOk())) {
+      out = re262::formatEvalResult(env, v);
+      fprintf(stderr, "expected: %s\nactual: %s\n", re262::format(negative).c_str(), out.c_str());
+      return 1;
+    }
+  } else if (!ret) {
+    fprintf(stderr, "%s\n", out.c_str());
+    return 1;
+  }
+  if (debug) {
+    fprintf(stderr, "%s\n", out.c_str());
+  }
+  return 0;
 }

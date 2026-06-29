@@ -1,8 +1,24 @@
-#include "gtest/gtest.h"
+#include "../test_common.h"
 
 #include "../tools/test262regex/js_lexer.h"
 #include "../tools/test262regex/js_regex.h"
 #include "../tools/test262regex/meta.h"
+
+#ifndef BIN_PATH
+#error require BIN_PATH
+#endif
+
+#ifndef RE262_PATH
+#error require RE262_PATH
+#endif
+
+#ifndef RE262_TEST_DIR
+#error require RE262_TEST_DIR
+#endif
+
+#ifndef LITECHECK_PATH
+#error require LITECHECK_PATH
+#endif
 
 using namespace arsh;
 using namespace arsh::re262;
@@ -1271,15 +1287,14 @@ TEST(JSTest, evalResult) {
   auto ret = jsEval("dummy1", "12;", env);
   ASSERT_TRUE(ret);
   auto out = formatEvalResult(env, ret);
-  ASSERT_EQ("12\n", out);
+  ASSERT_EQ("12", out);
 
   ret = jsEval("dummy2", "hogehoge;", env);
   ASSERT_FALSE(ret);
   out = formatEvalResult(env, ret);
   ASSERT_EQ(R"([uncaught]
 ReferenceError: hogehoge is not defined
-    at dummy2:1
-)",
+    at dummy2:1)",
             out);
 }
 
@@ -1311,15 +1326,14 @@ TEST(JSTest, harness1) {
   auto ret = jsEval("dummy1", "assert(true, 'hey');", env);
   ASSERT_TRUE(ret);
   auto out = formatEvalResult(env, ret);
-  ASSERT_EQ("undefined\n", out);
+  ASSERT_EQ("undefined", out);
 
   ret = jsEval("dummy1", "\nassert(false, 'hey');", env);
   ASSERT_FALSE(ret);
   out = formatEvalResult(env, ret);
   ASSERT_EQ(R"([uncaught]
 Test262Error: hey
-    at dummy1:2
-)",
+    at dummy1:2)",
             out);
 
   ret = jsEval("dummy1", "\n\nassert(1234);", env);
@@ -1327,8 +1341,7 @@ Test262Error: hey
   out = formatEvalResult(env, ret);
   ASSERT_EQ(R"([uncaught]
 Test262Error: Expected true but got 1234
-    at dummy1:3
-)",
+    at dummy1:3)",
             out);
 }
 
@@ -1341,8 +1354,7 @@ TEST(JSTest, harness2) {
   auto out = formatEvalResult(env, ret);
   ASSERT_EQ(R"([uncaught]
 Test262Error: Expected SameValue(«true», «hey») to be true
-    at dummy1:1
-)",
+    at dummy1:1)",
             out);
 
   ret = jsEval("dummy1", "assert.sameValue(true, 'hey', 'failed');", env);
@@ -1350,14 +1362,13 @@ Test262Error: Expected SameValue(«true», «hey») to be true
   out = formatEvalResult(env, ret);
   ASSERT_EQ(R"([uncaught]
 Test262Error: failed Expected SameValue(«true», «hey») to be true
-    at dummy1:1
-)",
+    at dummy1:1)",
             out);
 
   ret = jsEval("dummy1", "assert.sameValue(true, /./.test('s'));", env);
   ASSERT_TRUE(ret);
   out = formatEvalResult(env, ret);
-  ASSERT_EQ("undefined\n", out);
+  ASSERT_EQ("undefined", out);
 }
 
 TEST(JSTest, harness3) {
@@ -1369,8 +1380,7 @@ TEST(JSTest, harness3) {
   auto out = formatEvalResult(env, ret);
   ASSERT_EQ(R"([uncaught]
 Test262Error: Expected SameValue(«12», «12») to be false
-    at dummy1:1
-)",
+    at dummy1:1)",
             out);
 
   ret = jsEval("dummy1", "assert.notSameValue('hey', 'hey', 'failed');", env);
@@ -1378,14 +1388,13 @@ Test262Error: Expected SameValue(«12», «12») to be false
   out = formatEvalResult(env, ret);
   ASSERT_EQ(R"([uncaught]
 Test262Error: failed Expected SameValue(«hey», «hey») to be false
-    at dummy1:1
-)",
+    at dummy1:1)",
             out);
 
   ret = jsEval("dummy1", "assert.notSameValue(1234, /./.test('s'));", env);
   ASSERT_TRUE(ret);
   out = formatEvalResult(env, ret);
-  ASSERT_EQ("undefined\n", out);
+  ASSERT_EQ("undefined", out);
 }
 
 TEST(JSTest, harness4) {
@@ -1397,10 +1406,41 @@ TEST(JSTest, harness4) {
   auto out = formatEvalResult(env, ret);
   ASSERT_EQ(R"([uncaught]
 Test262Error: Test262: This statement should not be evaluate
-    at dummy1:3
-)",
+    at dummy1:3)",
             out);
 }
+
+static std::vector<std::string> getTargetTestCases(const char *dir) {
+  auto ret = getFileList(dir, true);
+  assert(!ret.empty());
+  ret.erase(std::remove_if(ret.begin(), ret.end(),
+                           [](const std::string &v) { return !StringRef(v).endsWith(".js"); }),
+            ret.end());
+  std::sort(ret.begin(), ret.end());
+  return ret;
+}
+
+struct Re262Test : ::testing::TestWithParam<std::string> {
+  static void doTest() {
+    const char *scriptName = GetParam().c_str();
+    ProcBuilder builder = {BIN_PATH, LITECHECK_PATH, "-p", "//", "-b", RE262_PATH, scriptName};
+    auto result = builder.exec();
+    ASSERT_EQ(WaitStatus::EXITED, result.kind);
+    if (result.value == 125) {
+      printf("  [skip] %s\n", scriptName);
+    } else {
+      ASSERT_EQ(0, result.value);
+    }
+  }
+};
+
+TEST_P(Re262Test, base) {
+  printf(" case: %s\n", this->GetParam().c_str());
+  ASSERT_NO_FATAL_FAILURE(doTest());
+}
+
+INSTANTIATE_TEST_SUITE_P(Re262Test, Re262Test,
+                         ::testing::ValuesIn(getTargetTestCases(RE262_TEST_DIR)));
 
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);

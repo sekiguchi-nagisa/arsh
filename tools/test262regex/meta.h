@@ -49,6 +49,17 @@ struct TestMetaData {
   static std::optional<TestMetaData> extractFrom(StringRef input, std::string *err);
 };
 
+const char *toString(TestMetaData::Phase phase);
+
+inline std::string format(const TestMetaData::Negative &negative) {
+  std::string str = "negative(phase=";
+  str += toString(negative.phase);
+  str += ", type=";
+  str += negative.type;
+  str += ')';
+  return str;
+}
+
 } // namespace arsh::re262
 
 #endif // ARSH_TOOLS_TEST262_REGEX_META_H

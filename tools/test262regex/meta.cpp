@@ -228,4 +228,14 @@ std::optional<TestMetaData> TestMetaData::extractFrom(const StringRef input, std
   return meta;
 }
 
+const char *toString(TestMetaData::Phase phase) {
+  switch (phase) {
+  case TestMetaData::Phase::PARSE:
+    return "parse";
+  case TestMetaData::Phase::RUNTIME:
+    return "runtime";
+  }
+  return "";
+}
+
 } // namespace arsh::re262

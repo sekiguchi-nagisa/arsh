@@ -970,21 +970,18 @@ std::string formatEvalResult(const std::shared_ptr<JSEnv> &env,
     if (auto r = findProperty(env, 1, v, "message")) {
       out += u": ";
       toPrettyString(r.asOk(), out);
-      out += u'\n';
     }
     if (auto r = findProperty(env, 1, v, "fileName")) {
-      out += u"    at ";
+      out += u"\n    at ";
       toPrettyString(r.asOk(), out);
       out += u":";
       r = findProperty(env, 1, v, "lineNumber");
       if (r) {
         toPrettyString(r.asOk(), out);
       }
-      out += u'\n';
     }
   } else {
     toPrettyString(v, out);
-    out += u'\n';
   }
   return toWTF8(out);
 }
