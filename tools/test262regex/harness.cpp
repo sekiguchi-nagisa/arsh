@@ -119,41 +119,30 @@ static Result<JSValue, JSThrown> toCodePoint(const std::shared_ptr<JSEnv> &env,
   return Ok(d);
 }
 
-static Result<JSValue, JSThrown> codePointsToString(const std::shared_ptr<JSEnv> &env,
-                                                    const JSValue &value, std::u16string &out) {
-  if (std::holds_alternative<JSArrayPtr>(value)) {
-    for (auto &e : std::get<JSArrayPtr>(value)->values) {
-      int codePoint = static_cast<int>(std::get<double>(TRY(toCodePoint(env, e))));
-      auto [high, low] = UnicodeUtil::codePointToUtf16(codePoint);
-      out += high;
-      if (high != low) {
-        out += low;
-      }
-    }
-  } else {
-    int codePoint = static_cast<int>(std::get<double>(TRY(toCodePoint(env, value))));
-    auto [high, low] = UnicodeUtil::codePointToUtf16(codePoint);
-    out += high;
-    if (high != low) {
-      out += low;
-    }
-  }
-  return Ok(nullptr);
-}
-
 static void defineBuildString(const std::shared_ptr<JSEnv> &global) {
   const char *name = "buildString";
   auto impl = [](const JSFunctionPtr &func,
                  const std::shared_ptr<JSEnv> &env) -> Result<JSValue, JSThrown> {
     auto args = env->findOrUndef(func->params[0]);
-    auto v = TRY(findProperty(env, env->callerLineNum(), args, "loneCodePoints"));
     std::u16string out;
-    TRY(codePointsToString(env, v, out));
-    v = TRY(findProperty(env, env->callerLineNum(), args, "ranges"));
-    if (!isUndefined(v)) {
-      if (!std::holds_alternative<JSArrayPtr>(v)) {
-        return throwError(env, builtin::TYPE_ERROR, env->callerLineNum(), u"ranges must be Array");
+    // loneCodePoints
+    if (auto v = TRY(findProperty(env, env->callerLineNum(), args, "loneCodePoints"));
+        std::holds_alternative<JSArrayPtr>(v)) {
+      for (auto &e : std::get<JSArrayPtr>(v)->values) {
+        int codePoint = static_cast<int>(std::get<double>(TRY(toCodePoint(env, e))));
+        auto [high, low] = UnicodeUtil::codePointToUtf16(codePoint);
+        out += high;
+        if (high != low) {
+          out += low;
+        }
       }
+    } else {
+      return throwError(env, builtin::TYPE_ERROR, env->callerLineNum(),
+                        u"loneCodePoints must be Array");
+    }
+    // ranges
+    if (auto v = TRY(findProperty(env, env->callerLineNum(), args, "ranges"));
+        std::holds_alternative<JSArrayPtr>(v)) {
       for (auto &e : std::get<JSArrayPtr>(v)->values) {
         if (!std::holds_alternative<JSArrayPtr>(e)) {
           return throwError(env, builtin::TYPE_ERROR, env->callerLineNum(),
@@ -170,6 +159,8 @@ static void defineBuildString(const std::shared_ptr<JSEnv> &global) {
           }
         }
       }
+    } else {
+      return throwError(env, builtin::TYPE_ERROR, env->callerLineNum(), u"ranges must be Array");
     }
     return Ok(std::make_shared<std::u16string>(std::move(out)));
   };

@@ -32,6 +32,6 @@ testPropertyEscapes(
 
 //    CHECKERR: [uncaught]
 //    CHECKERR: Test262Error: `[\u3042-\u3099@*]` should match | (U+00007C)
-// CHECKERR_RE:     at .+\/test\/test262regex\/cases\/nomatch\.js:27
+// CHECKERR_RE:     at .+\/test\/test262regex\/cases\/nomatch1\.js:27
 
 // STATUS: 1
