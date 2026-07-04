@@ -337,7 +337,7 @@ static JSValue toNamedGroupIndices(const regex::Regex &re, const StringRef ref,
 
 static JSValue toIndices(const regex::Regex &re, const StringRef ref,
                          const std::vector<regex::Capture> &captures) {
-  auto indices = std::make_shared<JSObject>();
+  auto indices = std::make_shared<JSArray>();
   for (unsigned int i = 0; i < captures.size(); i++) {
     auto &cap = captures[i];
     JSValue value;
@@ -347,21 +347,19 @@ static JSValue toIndices(const regex::Regex &re, const StringRef ref,
           static_cast<double>(toUTF16Offset(ref, cap.offset + cap.size)),
       }});
     }
-    indices->values[std::to_string(i)] = std::move(value);
+    indices->array.push_back(std::move(value));
   }
   indices->values["groups"] = toNamedGroupIndices(re, ref, captures);
   return indices;
 }
 
-static std::pair<JSObjectPtr, unsigned int>
+static std::pair<JSArrayPtr, unsigned int>
 toMatchResult(const JSRegex &regex, const JSStringPtr &str, const StringRef ref,
               const std::vector<regex::Capture> &captures) {
-  auto obj = std::make_shared<JSObject>();
+  auto obj = std::make_shared<JSArray>();
   unsigned int lastIndex = toUTF16Offset(ref, captures[0].offset + captures[0].size);
-  for (unsigned int i = 0; i < captures.size(); i++) {
-    auto &cap = captures[i];
-    obj->values[std::to_string(i)] =
-        cap ? newJSString(ref.substr(cap.offset, cap.size)) : JSValue();
+  for (auto &cap : captures) {
+    obj->array.push_back(cap ? newJSString(ref.substr(cap.offset, cap.size)) : JSValue());
   }
   obj->values["index"] = static_cast<double>(toUTF16Offset(ref, captures[0].offset));
   obj->values["input"] = str;
@@ -372,7 +370,7 @@ toMatchResult(const JSRegex &regex, const JSStringPtr &str, const StringRef ref,
   return {obj, lastIndex};
 }
 
-std::optional<JSObjectPtr> execJSRegex(JSRegex &regex, const JSStringPtr &str) {
+std::optional<JSArrayPtr> execJSRegex(JSRegex &regex, const JSStringPtr &str) {
   assert(str);
   unsigned int startOffset = 0;
   if (regex.lastIndex < 0) {

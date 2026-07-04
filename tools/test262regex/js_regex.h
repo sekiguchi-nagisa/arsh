@@ -46,9 +46,9 @@ void setOwnProperty(JSRegex &regex, const std::string &name, JSValue &&value);
  * @return
  * if matched, return the match result
  * if not matched, return null
- * if `str` has lone-surrogate, return {}
+ * if `str` has lone-surrogate, return none
  */
-std::optional<JSObjectPtr> execJSRegex(JSRegex &regex, const JSStringPtr &str);
+std::optional<JSArrayPtr> execJSRegex(JSRegex &regex, const JSStringPtr &str);
 
 } // namespace arsh::re262
 

@@ -72,11 +72,11 @@ static JSFunctionPtr createSameValue(const std::shared_ptr<JSEnv> &global, bool 
 }
 
 static bool compareArrayImpl(const JSArray &x, const JSArray &y) {
-  if (x.values.size() != y.values.size()) {
+  if (x.array.size() != y.array.size()) {
     return false;
   }
-  for (size_t i = 0; i < x.values.size(); i++) {
-    if (!isSameValueImpl(x.values[i], y.values[i])) {
+  for (size_t i = 0; i < x.array.size(); i++) {
+    if (!isSameValueImpl(x.array[i], y.array[i])) {
       return false;
     }
   }
@@ -178,7 +178,7 @@ static void defineBuildString(const std::shared_ptr<JSEnv> &global) {
     // loneCodePoints
     if (auto v = TRY(findProperty(env, args, "loneCodePoints"));
         std::holds_alternative<JSArrayPtr>(v)) {
-      for (auto &e : std::get<JSArrayPtr>(v)->values) {
+      for (auto &e : std::get<JSArrayPtr>(v)->array) {
         int codePoint = static_cast<int>(std::get<double>(TRY(toCodePoint(env, e))));
         auto [high, low] = UnicodeUtil::codePointToUtf16(codePoint);
         out += high;
@@ -191,11 +191,11 @@ static void defineBuildString(const std::shared_ptr<JSEnv> &global) {
     }
     // ranges
     if (auto v = TRY(findProperty(env, args, "ranges")); std::holds_alternative<JSArrayPtr>(v)) {
-      for (auto &e : std::get<JSArrayPtr>(v)->values) {
+      for (auto &e : std::get<JSArrayPtr>(v)->array) {
         if (!std::holds_alternative<JSArrayPtr>(e)) {
           return throwError(env, builtin::TYPE_ERROR, u"ranges must be Array");
         }
-        auto &range = std::get<JSArrayPtr>(e)->values;
+        auto &range = std::get<JSArrayPtr>(e)->array;
         const auto first = static_cast<int>(std::get<double>(TRY(toCodePoint(env, range.at(0)))));
         const auto last = static_cast<int>(std::get<double>(TRY(toCodePoint(env, range.at(1)))));
         for (int codePoint = first; codePoint <= last; codePoint++) {
@@ -282,7 +282,7 @@ static void defineTestPropertyEscapes(const std::shared_ptr<JSEnv> &global) {
 
 static JSStringPtr joinAsString(const JSArrayPtr &array) {
   JSString ret;
-  for (auto &e : array->values) {
+  for (auto &e : array->array) {
     JSStringPtr str;
     if (std::holds_alternative<JSStringPtr>(e)) {
       str = std::get<JSStringPtr>(e);
@@ -309,7 +309,7 @@ static void defineTestPropertyOfStrings(const std::shared_ptr<JSEnv> &global) {
     }
     if (auto allMatchStrings = joinAsString(std::get<JSArrayPtr>(matchStrings));
         !assertRegExpTest(env, regExp, expression, allMatchStrings, true)) {
-      for (auto &string : std::get<JSArrayPtr>(matchStrings)->values) {
+      for (auto &string : std::get<JSArrayPtr>(matchStrings)->array) {
         TRY(assertRegExpTest(env, regExp, expression, string, true));
       }
     }
@@ -321,7 +321,7 @@ static void defineTestPropertyOfStrings(const std::shared_ptr<JSEnv> &global) {
       if (auto allNonMatchStrings = joinAsString(std::get<JSArrayPtr>(nonMatchStrings));
           !allNonMatchStrings->empty() &&
           !assertRegExpTest(env, regExp, expression, allNonMatchStrings, false)) {
-        for (auto &string : std::get<JSArrayPtr>(nonMatchStrings)->values) {
+        for (auto &string : std::get<JSArrayPtr>(nonMatchStrings)->array) {
           TRY(assertRegExpTest(env, regExp, expression, string, false));
         }
       }

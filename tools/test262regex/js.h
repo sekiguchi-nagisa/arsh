@@ -136,8 +136,12 @@ JSFunctionPtr createJSFunction(const std::shared_ptr<JSEnv> &env, const char *na
 
 void defineDerivedError(const std::shared_ptr<JSEnv> &global, const char *name);
 
-struct JSArray {
-  std::vector<JSValue> values;
+struct JSArray : JSObject {
+  std::vector<JSValue> array;
+
+  JSArray() = default;
+
+  JSArray(std::initializer_list<JSValue> list) : array(list.begin(), list.end()) {}
 };
 
 class JSEnv : public std::enable_shared_from_this<JSEnv> {

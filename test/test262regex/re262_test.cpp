@@ -869,7 +869,7 @@ TEST(JSRegexTest, exec) {
     auto obj = execJSRegex(*ret, newJSString("aBc"));
     ASSERT_TRUE(obj.has_value());
     ASSERT_TRUE(obj.value());
-    ASSERT_EQ(u"{ 0: aBc, groups: undefined, index: 0, input: aBc }", toPrettyString(obj.value()));
+    ASSERT_EQ(u"[ aBc, groups: undefined, index: 0, input: aBc ]", toPrettyString(obj.value()));
   }
   {
     std::string err;
@@ -879,10 +879,9 @@ TEST(JSRegexTest, exec) {
     auto obj = execJSRegex(*ret, newJSString("aBc"));
     ASSERT_TRUE(obj.has_value());
     ASSERT_TRUE(obj.value());
-    ASSERT_EQ(
-        u"{ 0: aBc, groups: undefined, index: 0, indices: { 0: [ 0, 3 ], groups: undefined }, "
-        "input: aBc }",
-        toPrettyString(obj.value()));
+    ASSERT_EQ(u"[ aBc, groups: undefined, index: 0, indices: [ [ 0, 3 ], groups: undefined ], "
+              "input: aBc ]",
+              toPrettyString(obj.value()));
   }
 
   {
@@ -893,7 +892,7 @@ TEST(JSRegexTest, exec) {
     auto obj = execJSRegex(*ret, newJSString("aあ12b"));
     ASSERT_TRUE(obj.has_value());
     ASSERT_TRUE(obj.value());
-    ASSERT_EQ(u"{ 0: aあ, 1: a, 2: あ, groups: { first: a, second: あ }, index: 0, input: aあ12b }",
+    ASSERT_EQ(u"[ aあ, a, あ, groups: { first: a, second: あ }, index: 0, input: aあ12b ]",
               toPrettyString(obj.value()));
   }
   {
@@ -904,9 +903,9 @@ TEST(JSRegexTest, exec) {
     auto obj = execJSRegex(*ret, newJSString("aあ12b"));
     ASSERT_TRUE(obj.has_value());
     ASSERT_TRUE(obj.value());
-    ASSERT_EQ(u"{ 0: aあ, 1: a, 2: あ, groups: { first: a, second: あ }, index: 0, indices: { 0: [ "
-              "0, 2 ], 1: [ 0, 1 ], 2: [ 1, 2 ], groups: { first: [ 0, 1 ], second: [ 1, 2 ] } }, "
-              "input: aあ12b }",
+    ASSERT_EQ(u"[ aあ, a, あ, groups: { first: a, second: あ }, index: 0, indices: [ [ "
+              "0, 2 ], [ 0, 1 ], [ 1, 2 ], groups: { first: [ 0, 1 ], second: [ 1, 2 ] } ], "
+              "input: aあ12b ]",
               toPrettyString(obj.value()));
   }
 }
@@ -1189,9 +1188,9 @@ TEST(JSTest, methodCall) {
   {
     auto ret = jsEval("dummy1", "12;\nRegExp('\\uDC00').exec('@\\uDC00');");
     ASSERT_TRUE(ret);
-    ASSERT_TRUE(std::holds_alternative<JSObjectPtr>(ret.asOk()));
-    ASSERT_EQ(toUTF16("{ 0: \xED\xB0\x80, groups: undefined, index: 1, input: "
-                      "@\xED\xB0\x80 }"),
+    ASSERT_TRUE(std::holds_alternative<JSArrayPtr>(ret.asOk()));
+    ASSERT_EQ(toUTF16("[ \xED\xB0\x80, groups: undefined, index: 1, input: "
+                      "@\xED\xB0\x80 ]"),
               toPrettyString(ret.asOk()));
   }
   {
@@ -1202,9 +1201,9 @@ TEST(JSTest, methodCall) {
   {
     auto ret = jsEval("dummy", "RegExp('12', 'ysgd').exec('12');");
     ASSERT_TRUE(ret);
-    ASSERT_TRUE(std::holds_alternative<JSObjectPtr>(ret.asOk()));
-    ASSERT_EQ(u"{ 0: 12, groups: undefined, index: 0, indices: { 0: [ 0, 2 ], groups: undefined }, "
-              "input: 12 }",
+    ASSERT_TRUE(std::holds_alternative<JSArrayPtr>(ret.asOk()));
+    ASSERT_EQ(u"[ 12, groups: undefined, index: 0, indices: [ [ 0, 2 ], groups: undefined ], "
+              "input: 12 ]",
               toPrettyString(ret.asOk()));
   }
 }

@@ -51,12 +51,19 @@ const JSValue *JSEnv::assign(const std::string &name, JSValue value) {
   return nullptr;
 }
 
+static JSValue getOwnProperty(const JSArray &recv, const std::string &name) {
+  if (name == "length") {
+    return static_cast<double>(recv.array.size());
+  }
+  return getOwnProperty(static_cast<JSObject>(recv), name);
+}
+
 static JSValue findOwnProperty(const JSValue &recv, const std::string &name) {
   return std::visit(
       [name](auto &&element) -> JSValue {
         using T = std::decay_t<decltype(element)>;
         if constexpr (std::is_same_v<T, JSRegexPtr> || std::is_same_v<T, JSFunctionPtr> ||
-                      std::is_same_v<T, JSObjectPtr>) {
+                      std::is_same_v<T, JSObjectPtr> || std::is_same_v<T, JSArrayPtr>) {
           return getOwnProperty(*element, name);
         } else {
           return {};
@@ -173,14 +180,27 @@ void toPrettyString(const JSValue &value, std::u16string &out, const bool escape
   } else if (std::holds_alternative<JSArrayPtr>(value)) {
     auto &array = std::get<JSArrayPtr>(value);
     out += u'[';
-    for (unsigned int i = 0; i < array->values.size(); i++) {
+    for (unsigned int i = 0; i < array->array.size(); i++) {
       if (i > 0) {
         out += u',';
       }
       out += u' ';
-      toPrettyString(array->values[i], out, escape);
+      toPrettyString(array->array[i], out, escape);
     }
-    if (array->values.size()) {
+    if (array->values.size() && array->array.size()) {
+      out += u",";
+    }
+    unsigned int count = 0;
+    for (auto &[k, v] : array->values) {
+      if (count++ > 0) {
+        out += u',';
+      }
+      out += u' ';
+      toUTF16(k, out);
+      out += u": ";
+      toPrettyString(v, out, escape);
+    }
+    if (array->array.size() || array->values.size()) {
       out += u' ';
     }
     out += u']';
@@ -212,11 +232,11 @@ void toString(const JSValue &value, std::u16string &out) {
     out += u"() { [native code] }";
   } else if (std::holds_alternative<JSArrayPtr>(value)) {
     auto &array = std::get<JSArrayPtr>(value);
-    for (unsigned int i = 0; i < array->values.size(); i++) {
+    for (unsigned int i = 0; i < array->array.size(); i++) {
       if (i > 0) {
         out += ',';
       }
-      toString(array->values[i], out);
+      toString(array->array[i], out);
     }
   } else if (std::holds_alternative<JSObjectPtr>(value)) {
     out += u"[object Object]";
@@ -829,10 +849,10 @@ static Result<JSValue, JSThrown> evaluate(const Node &node, const std::shared_pt
 static Result<JSValue, JSThrown> evalArray(const ArrayLiteral &literal,
                                            const std::shared_ptr<JSEnv> &env) {
   JSArrayPtr array = std::make_shared<JSArray>();
-  array->values.reserve(literal.values.size());
+  array->array.reserve(literal.values.size());
   for (auto &e : literal.values) {
     auto ret = TRY(evaluate(*e, env));
-    array->values.push_back(std::move(ret));
+    array->array.push_back(std::move(ret));
   }
   return Ok(std::move(array));
 }
