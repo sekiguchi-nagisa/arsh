@@ -25,6 +25,7 @@ check_exe() {
     }
 }
 
+shctl info
 shctl set errraise
 
 ## version
