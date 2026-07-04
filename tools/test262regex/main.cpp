@@ -23,7 +23,13 @@
 using namespace arsh;
 
 static void usage(FILE *fp, char **argv) {
-  fprintf(fp, "usage: %s [-d] [-n] [test case path]\n", argv[0]);
+  fprintf(fp, R"E(usage: %s [-dnm] [test case path]
+Option:
+  -d  enable debug print
+  -n  no meta-data check
+  -m  meta-data only (not evaluate)
+)E",
+          argv[0]);
 }
 
 static void invalidOption(char **argv, int opt) {
@@ -58,26 +64,30 @@ static void print(FILE *fp, const re262::TestMetaData &data) {
 }
 
 int main(int argc, char **argv) {
-  opt::GetOptState optState("hdn");
+  opt::GetOptState optState("hdnm");
   auto iter = argv + 1;
   const auto end = argv + argc;
   bool debug = false;
   bool checkMeta = true;
+  bool eval = true;
   for (int opt; (opt = optState(iter, end)) != -1;) {
-    if (opt == 'd') {
+    switch (opt) {
+    case 'd':
       debug = true;
-      continue;
-    }
-    if (opt == 'n') {
+      break;
+    case 'n':
       checkMeta = false;
-      continue;
-    }
-    if (opt == 'h') {
+      break;
+    case 'm':
+      eval = false;
+      break;
+    case 'h':
       usage(stdout, argv);
       return 2;
+    default:
+      invalidOption(argv, optState.optOpt);
+      return 1;
     }
-    invalidOption(argv, optState.optOpt);
-    return 1;
   }
   if (iter == end) {
     fprintf(stderr, "need test case path\n");
@@ -104,6 +114,9 @@ int main(int argc, char **argv) {
     if (debug) {
       print(stderr, metaData.value());
     }
+  }
+  if (!eval) {
+    return 0;
   }
 
   auto env = re262::initJSEnv();
