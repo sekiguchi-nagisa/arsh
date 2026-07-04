@@ -86,7 +86,7 @@ JSTokenKind JSLexer::nextToken(Token &token) {
     REGEX = "/" RE_BODY "/" RE_FLAGS;
 
     SINGLE_COMMENT = "//" [^\000\r\n\u2028\u2029]*;
-    MULTI_COMMENT = "/"[*] [^\000]* [*]"/";
+    MULTI_COMMENT = "/"[*] ([^\000*] | ([*] [^\000/]) )* [*]"/";
   */
 
   bool foundNewLine = false;

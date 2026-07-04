@@ -597,6 +597,40 @@ testPropertyOfStrings({
   ASSERT_EQ(expected2, values2);
 }
 
+TEST_F(JSLexerTest, comment) {
+  const char *src = R"E(
+/*---
+this is a comment1
+---*/
+
+$DONOTEVALUATE();
+
+/**/
+
+/*
+this is a comment2
+*/
+12;
+// this is a comment3
+34;
+)E";
+
+  JSLexer lexer("(source)", src);
+  auto values = tokenize(lexer);
+  std::vector<std::pair<JSTokenKind, std::string>> expected = {
+      {JSTokenKind::IDENTIFIER, "$DONOTEVALUATE"},
+      {JSTokenKind::LP, "("},
+      {JSTokenKind::RP, ")"},
+      {JSTokenKind::LINE_END, ";"},
+      {JSTokenKind::NUMBER, "12"},
+      {JSTokenKind::LINE_END, ";"},
+      {JSTokenKind::NUMBER, "34"},
+      {JSTokenKind::LINE_END, ";"},
+      {JSTokenKind::EOS, ""},
+  };
+  ASSERT_EQ(expected, values);
+}
+
 TEST_F(JSLexerTest, string1) {
   ASSERT_NO_FATAL_FAILURE(checkString(R"E("")E", u""));
   ASSERT_NO_FATAL_FAILURE(checkString(R"E("1")E", u"1"));
