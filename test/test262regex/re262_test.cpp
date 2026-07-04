@@ -363,6 +363,38 @@ $DONOTEVALUATE();
   ASSERT_EQ("SyntaxError", ret.value().negative.value().type);
 }
 
+TEST(MetaDataTest, oldESID) {
+  const char *input = R"(
+/*---
+es5id: 15.10.1_A1_T10
+features: [regexp-unicode-property-escapes]
+includes: [regExpUtils.js]
+---*/
+
+const matchSymbols = buildString({
+  loneCodePoints: [
+   2345,
+)";
+  auto ret = TestMetaData::extractFrom(input, nullptr);
+  ASSERT_TRUE(ret.has_value());
+  ASSERT_EQ("15.10.1_A1_T10", ret.value().esid);
+
+  input = R"(
+/*---
+es6id: 21.1.2
+features: [regexp-unicode-property-escapes]
+includes: [regExpUtils.js]
+---*/
+
+const matchSymbols = buildString({
+  loneCodePoints: [
+   2345,
+)";
+  ret = TestMetaData::extractFrom(input, nullptr);
+  ASSERT_TRUE(ret.has_value());
+  ASSERT_EQ("21.1.2", ret.value().esid);
+}
+
 std::vector<std::pair<JSTokenKind, std::string>> tokenize(JSLexer &lexer) {
   std::vector<std::pair<JSTokenKind, std::string>> values;
   JSTokenKind kind = JSTokenKind::INVALID;

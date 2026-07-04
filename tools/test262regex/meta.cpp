@@ -202,7 +202,8 @@ std::optional<TestMetaData> TestMetaData::extractFrom(const StringRef input, std
       meta.description = std::move(std::get<std::string>(value));
     } else if (key == "info" && std::holds_alternative<std::string>(value)) {
       meta.info = std::move(std::get<std::string>(value));
-    } else if (key == "esid" && std::holds_alternative<std::string>(value)) {
+    } else if ((key == "esid" || key == "es5id" || key == "es6id") &&
+               std::holds_alternative<std::string>(value)) {
       meta.esid = std::move(std::get<std::string>(value));
     } else if (key == "features" && std::holds_alternative<std::vector<std::string>>(value)) {
       meta.features = std::move(std::get<std::vector<std::string>>(value));
