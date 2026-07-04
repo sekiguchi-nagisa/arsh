@@ -21,22 +21,40 @@
 #include <string>
 #include <vector>
 
+#include <misc/enum_util.hpp>
 #include <misc/string_ref.hpp>
 
 namespace arsh::re262 {
 
+#define EACH_TEST_META_PHASE(E)                                                                    \
+  E(PARSE, "parse")                                                                                \
+  E(RUNTIME, "runtime")
+
+#define EACH_TEST_META_FLAG(E)                                                                     \
+  E(ONLY_STRICT, "onlyStrict", (1u << 0u))                                                         \
+  E(NO_STRICT, "noStrict", (1u << 1u))                                                             \
+  E(GENERATED, "generated", (1u << 2u))
+
 struct TestMetaData {
+  enum class Flag : unsigned char {
+    NONE = 0,
+#define GEN_ENUM(E, S, D) E = (D),
+    EACH_TEST_META_FLAG(GEN_ENUM)
+#undef GEN_ENUM
+  };
+
   std::string author;
   std::string description;
   std::string info;
   std::string esid;
   std::vector<std::string> features;
   std::vector<std::string> includes;
+  Flag flags{Flag::NONE};
 
   enum class Phase : unsigned char {
-    PARSE,
-    // RESOLUTION,
-    RUNTIME,
+#define GEN_ENUM(E, S) E,
+    EACH_TEST_META_PHASE(GEN_ENUM)
+#undef GEN_ENUM
   };
 
   struct Negative {
@@ -48,6 +66,8 @@ struct TestMetaData {
 
   static std::optional<TestMetaData> extractFrom(StringRef input, std::string *err);
 };
+
+std::string toString(TestMetaData::Flag flags);
 
 const char *toString(TestMetaData::Phase phase);
 
@@ -61,5 +81,10 @@ inline std::string format(const TestMetaData::Negative &negative) {
 }
 
 } // namespace arsh::re262
+
+namespace arsh {
+template <>
+struct allow_enum_bitop<re262::TestMetaData::Flag> : std::true_type {};
+} // namespace arsh
 
 #endif // ARSH_TOOLS_TEST262_REGEX_META_H

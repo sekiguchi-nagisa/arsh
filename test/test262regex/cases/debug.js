@@ -20,6 +20,7 @@ assert(true);
 // CHECKERR: esid: sample
 // CHECKERR: features: [regexp-unicode-property-escapes]
 // CHECKERR: includes: [regExpUtils.js]
+// CHECKERR_RE: ^flags: $
 // CHECKERR: (<Identifier>, assert)
 // CHECKERR: ((, ()
 // CHECKERR: (true, true)

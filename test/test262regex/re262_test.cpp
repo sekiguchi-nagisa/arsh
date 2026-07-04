@@ -172,6 +172,25 @@ negative:
   ret = TestMetaData::extractFrom(input, &err);
   ASSERT_FALSE(ret.has_value());
   ASSERT_EQ("phase or type are not provided", err);
+
+  err.clear();
+  input = R"(/*---
+author: my
+flags: 1234
+---*/)";
+  ret = TestMetaData::extractFrom(input, &err);
+  ASSERT_FALSE(ret.has_value());
+  ASSERT_EQ("unrecognized attribute: flags\nflags: 1234", err);
+
+  err.clear();
+  input = R"(/*---
+author: my
+flags: [generated, huga]
+---*/)";
+  ret = TestMetaData::extractFrom(input, &err);
+  ASSERT_FALSE(ret.has_value());
+  ASSERT_EQ("unrecognized value in flags: huga, must be `onlyStrict', `noStrict' or `generated'",
+            err);
 }
 
 TEST(MetaDataTest, base) {
@@ -393,6 +412,25 @@ const matchSymbols = buildString({
   ret = TestMetaData::extractFrom(input, nullptr);
   ASSERT_TRUE(ret.has_value());
   ASSERT_EQ("21.1.2", ret.value().esid);
+}
+
+TEST(MetaDataTest, flags) {
+  const char *input = R"(
+/*---
+es5id: 15.10.1_A1_T10
+features: [regexp-unicode-property-escapes]
+includes: [regExpUtils.js]
+flags: [generated]
+---*/
+
+const matchSymbols = buildString({
+  loneCodePoints: [
+   2345,
+)";
+  auto ret = TestMetaData::extractFrom(input, nullptr);
+  ASSERT_TRUE(ret.has_value());
+  ASSERT_EQ("15.10.1_A1_T10", ret.value().esid);
+  ASSERT_TRUE(hasFlag(ret.value().flags, TestMetaData::Flag::GENERATED));
 }
 
 std::vector<std::pair<JSTokenKind, std::string>> tokenize(JSLexer &lexer) {

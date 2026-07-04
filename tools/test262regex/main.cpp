@@ -53,9 +53,10 @@ static void print(FILE *fp, const re262::TestMetaData &data) {
   fprintf(fp,
           "--- meta-data ---\n"
           "author: %s\ndescription: %s\ninfo: %s\nesid: %s\n"
-          "features: %s\nincludes: %s\n",
+          "features: %s\nincludes: %s\nflags: %s\n",
           data.author.c_str(), data.description.c_str(), data.info.c_str(), data.esid.c_str(),
-          toString(data.features).c_str(), toString(data.includes).c_str());
+          toString(data.features).c_str(), toString(data.includes).c_str(),
+          toString(data.flags).c_str());
   if (data.negative.has_value()) {
     auto &negative = data.negative.value();
     fprintf(fp, "negative:\n  phase: %s\n  type: %s\n", re262::toString(negative.phase),

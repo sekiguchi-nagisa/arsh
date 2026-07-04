@@ -18,6 +18,7 @@
 
 #include "meta.h"
 
+#include <misc/flag_util.hpp>
 #include <misc/format.hpp>
 
 namespace arsh::re262 {
@@ -84,6 +85,81 @@ static std::string readUntilIndentEnd(const std::vector<StringRef> &lines, unsig
   return ret;
 }
 
+static constexpr struct {
+  const char *name;
+  TestMetaData::Flag flag;
+} testMetaFlags[] = {
+#define GEN_TABLE(E, S, D) {S, TestMetaData::Flag::E},
+    EACH_TEST_META_FLAG(GEN_TABLE)
+#undef GEN_TABLE
+};
+
+static std::optional<TestMetaData::Flag> resolveFlags(const std::vector<std::string> &values,
+                                                      std::string *err) {
+  TestMetaData::Flag flags{};
+  for (auto &value : values) {
+    bool found = false;
+    for (auto &[name, flag] : testMetaFlags) {
+      if (value == name) {
+        setFlag(flags, flag);
+        found = true;
+        break;
+      }
+    }
+    if (!found) {
+      if (err) {
+        *err += "unrecognized value in flags: ";
+        *err += value;
+        *err += ", must be";
+        static_assert(std::size(testMetaFlags) > 2);
+        for (size_t i = 0; i < std::size(testMetaFlags); i++) {
+          if (i == std::size(testMetaFlags) - 1) {
+            *err += " or";
+          } else if (i > 0) {
+            *err += ",";
+          }
+          *err += " `";
+          *err += testMetaFlags[i].name;
+          *err += "'";
+        }
+      }
+      return {};
+    }
+  }
+  return flags;
+}
+
+static std::optional<TestMetaData::Phase> resolvePhase(StringRef value, std::string *err) {
+  constexpr struct {
+    const char *name;
+    TestMetaData::Phase phase;
+  } table[] = {
+#define GEN_TABLE(E, S) {S, TestMetaData::Phase::E},
+      EACH_TEST_META_PHASE(GEN_TABLE)
+#undef GEN_TABLE
+  };
+  static_assert(std::size(table) == 2);
+  for (auto &[name, phase] : table) {
+    if (value == name) {
+      return phase;
+    }
+  }
+  if (err) {
+    *err += "unrecognized value in phase: ";
+    *err += value;
+    *err += ", must be";
+    for (size_t i = 0; i < std::size(table); i++) {
+      if (i == std::size(table) - 1) {
+        *err += " or";
+      }
+      *err += " `";
+      *err += table[i].name;
+      *err += "'";
+    }
+  }
+  return {};
+}
+
 static std::optional<TestMetaData::Negative> parseNegative(const std::vector<StringRef> &lines,
                                                            unsigned int &index, std::string *err) {
   TestMetaData::Negative negative;
@@ -111,16 +187,9 @@ static std::optional<TestMetaData::Negative> parseNegative(const std::vector<Str
     auto key = trim(line.slice(0, retPos));
     auto value = trim(line.substr(retPos + 1));
     if (key == "phase") {
-      if (value == "parse") {
-        phase = TestMetaData::Phase::PARSE;
-      } else if (value == "runtime") {
-        phase = TestMetaData::Phase::RUNTIME;
+      if (auto r = resolvePhase(value, err)) {
+        phase = r.value();
       } else {
-        if (err) {
-          *err += "unrecognized value in phase: ";
-          *err += value;
-          *err += ", must be `parse' or `runtime'";
-        }
         return {};
       }
     } else if (key == "type") {
@@ -209,13 +278,19 @@ std::optional<TestMetaData> TestMetaData::extractFrom(const StringRef input, std
       meta.features = std::move(std::get<std::vector<std::string>>(value));
     } else if (key == "includes" && std::holds_alternative<std::vector<std::string>>(value)) {
       meta.includes = std::move(std::get<std::vector<std::string>>(value));
-    } else if (key == "negative" && tmp.empty()) {
-      index++;
-      auto negative = parseNegative(lines, index, err);
-      if (!negative.has_value()) {
+    } else if (key == "flags" && std::holds_alternative<std::vector<std::string>>(value)) {
+      if (auto r = resolveFlags(std::get<std::vector<std::string>>(value), err)) {
+        meta.flags = r.value();
+      } else {
         return {};
       }
-      meta.negative = std::move(negative);
+    } else if (key == "negative" && tmp.empty()) {
+      index++;
+      if (auto negative = parseNegative(lines, index, err)) {
+        meta.negative = std::move(negative);
+      } else {
+        return {};
+      }
     } else {
       if (err) {
         *err += "unrecognized attribute: ";
@@ -237,6 +312,19 @@ const char *toString(TestMetaData::Phase phase) {
     return "runtime";
   }
   return "";
+}
+
+std::string toString(TestMetaData::Flag flags) {
+  std::string out;
+  for (auto [name, flag] : testMetaFlags) {
+    if (!out.empty()) {
+      out += " | ";
+    }
+    if (hasFlag(flags, flag)) {
+      out += name;
+    }
+  }
+  return out;
 }
 
 } // namespace arsh::re262
