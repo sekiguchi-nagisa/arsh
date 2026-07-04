@@ -26,6 +26,6 @@ assert.sameValue(matchSymbols, '@*ぁあぃいァアィ', 'failed,');
 
 //    CHECKERR: [uncaught]
 //    CHECKERR: Test262Error: failed, Expected SameValue(«@*ぁあぃいァアィイ», «@*ぁあぃいァアィ») to be true
-// CHECKERR_RE:     at .+\/test\/test262regex\/cases\/same_value2\.js:23
+// CHECKERR_RE:     at .+\/test\/test262regex\/cases\/sameValue2\.js:23
 
 // STATUS: 1

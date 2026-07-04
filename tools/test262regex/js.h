@@ -233,12 +233,22 @@ Result<JSValue, JSThrown> findProperty(const std::shared_ptr<JSEnv> &env,
                                        unsigned int callerLineNum, const JSValue &recv,
                                        const std::string &name);
 
+inline Result<JSValue, JSThrown> findProperty(const std::shared_ptr<JSEnv> &env,
+                                              const JSValue &recv, const std::string &name) {
+  return findProperty(env, env->callerLineNum(), recv, name);
+}
+
 Result<JSValue, JSThrown> callJSFunction(const std::shared_ptr<JSEnv> &caller,
                                          unsigned int callerLineNum, const JSFunctionPtr &func,
                                          JSValue &&recv, std::vector<JSValue> &&args);
 
 ErrHolder<JSThrown> throwError(const std::shared_ptr<JSEnv> &env, const char *name,
                                unsigned int lineNum, JSString &&message);
+
+inline ErrHolder<JSThrown> throwError(const std::shared_ptr<JSEnv> &env, const char *name,
+                                      JSString &&message) {
+  return throwError(env, name, env->callerLineNum(), std::move(message));
+}
 
 bool strictlyEquals(const JSValue &x, const JSValue &y);
 

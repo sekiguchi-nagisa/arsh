@@ -31,7 +31,7 @@ static JSFunctionPtr createRegExpExec(const std::shared_ptr<JSEnv> &global) {
     if (auto v = env->findOrUndef(builtin::THIS); std::holds_alternative<JSRegexPtr>(v)) {
       regex = std::get<JSRegexPtr>(v);
     } else {
-      return throwError(env, builtin::TYPE_ERROR, env->callerLineNum(),
+      return throwError(env, builtin::TYPE_ERROR,
                         u"Method RegExp.prototype.exec called on incompatible receiver");
     }
     JSStringPtr str;
@@ -47,7 +47,7 @@ static JSFunctionPtr createRegExpExec(const std::shared_ptr<JSEnv> &global) {
       }
       return Ok(nullptr);
     }
-    return throwError(env, builtin::RANGE_ERROR, env->callerLineNum(), u"too large string");
+    return throwError(env, builtin::RANGE_ERROR, u"too large string");
   };
   return createJSFunction(global, "exec", {"str"}, nullptr, std::move(impl));
 }
@@ -59,7 +59,7 @@ static JSFunctionPtr createRegExpTest(const std::shared_ptr<JSEnv> &global) {
     if (auto v = env->findOrUndef(builtin::THIS); std::holds_alternative<JSRegexPtr>(v)) {
       regex = std::get<JSRegexPtr>(v);
     } else {
-      return throwError(env, builtin::TYPE_ERROR, env->callerLineNum(),
+      return throwError(env, builtin::TYPE_ERROR,
                         u"Method RegExp.prototype.test called on incompatible receiver");
     }
     JSStringPtr str;
@@ -72,7 +72,7 @@ static JSFunctionPtr createRegExpTest(const std::shared_ptr<JSEnv> &global) {
     if (auto ret = execJSRegex(*regex, str); ret.has_value()) {
       return Ok(static_cast<bool>(ret.value()));
     }
-    return throwError(env, builtin::RANGE_ERROR, env->callerLineNum(), u"too large string");
+    return throwError(env, builtin::RANGE_ERROR, u"too large string");
   };
   return createJSFunction(global, "test", {"str"}, nullptr, std::move(impl));
 }
@@ -100,7 +100,7 @@ void defineJSRegex(const std::shared_ptr<JSEnv> &global) {
           env->assign(builtin::THIS, obj);
           return Ok(std::move(obj));
         }
-        return throwError(env, builtin::SYNTAX_ERROR, env->callerLineNum(), toUTF16(err));
+        return throwError(env, builtin::SYNTAX_ERROR, toUTF16(err));
       });
   global->define(builtin::REGEXP, std::move(func));
 }

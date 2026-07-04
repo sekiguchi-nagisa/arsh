@@ -27,6 +27,6 @@ testPropertyOfStrings({
 
 //    CHECKERR: [uncaught]
 //    CHECKERR: Test262Error: `\p{RGI_Emoji}` should not match 🫵🏻 (U+01FAF5U+01F3FB)
-// CHECKERR_RE:     at .+\/test\/test262regex\/cases\/nomatch3\.js:14
+// CHECKERR_RE:     at .+\/test\/test262regex\/cases\/testPropertyOfStrings_fail2\.js:14
 
 // STATUS: 1

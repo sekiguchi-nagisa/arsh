@@ -25,6 +25,6 @@ assert.notSameValue(matchSymbols, '@*ぁあぃいァアィイ');
 // CHECK_RE: ^$
 //    CHECKERR: [uncaught]
 //    CHECKERR: Test262Error: Expected SameValue(«@*ぁあぃいァアィイ», «@*ぁあぃいァアィイ») to be false
-// CHECKERR_RE:     at .+\/test\/test262regex\/cases\/not_same_value2\.js:23
+// CHECKERR_RE:     at .+\/test\/test262regex\/cases\/notSameValue2\.js:23
 
 // STATUS: 1
