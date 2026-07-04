@@ -754,11 +754,14 @@ TEST_F(InteractiveTest, changeTCPGRPInChild) {
   this->invoke("--quiet", "--norc");
 
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
-  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
-      "call $BIN_NAME -c 'shctl set monitor; ls > /dev/null;' &", ": Job = %1"));
-  std::this_thread::sleep_for(std::chrono::milliseconds(500));
-  std::string err = format("[warn] retry readLine, caused by `%s'\n", strerror(EIO));
-  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("", "", err.c_str()));
+  {
+    auto cleanup = this->withTimeout(800);
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
+        "call $BIN_NAME -c 'shctl set monitor; ls > /dev/null;' &", ": Job = %1"));
+    std::string err = format("[warn] retry readLine, caused by `%s'\n", strerror(EIO));
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));
+    ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("", "", err.c_str()));
+  }
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 0));
 }
 
