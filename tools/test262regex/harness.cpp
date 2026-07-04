@@ -71,6 +71,55 @@ static JSFunctionPtr createSameValue(const std::shared_ptr<JSEnv> &global, bool 
                           {"actual", "expected", "message"}, nullptr, std::move(impl));
 }
 
+static bool compareArrayImpl(const JSArray &x, const JSArray &y) {
+  if (x.values.size() != y.values.size()) {
+    return false;
+  }
+  for (size_t i = 0; i < x.values.size(); i++) {
+    if (!isSameValueImpl(x.values[i], y.values[i])) {
+      return false;
+    }
+  }
+  return true;
+}
+
+static JSFunctionPtr createCompareArray(const std::shared_ptr<JSEnv> &global) {
+  auto impl = [](const JSFunctionPtr &func,
+                 const std::shared_ptr<JSEnv> &env) -> Result<JSValue, JSThrown> {
+    auto actual = env->findOrUndef(func->params[0]);
+    auto expected = env->findOrUndef(func->params[1]);
+    auto message = env->findOrUndef(func->params[2]);
+    if (!std::holds_alternative<JSArrayPtr>(actual)) {
+      JSString str = u"Actual argument ";
+      toPrettyString(actual, str);
+      str += u" must be Array";
+      return throwError(env, builtin::TYPE_ERROR, std::move(str));
+    }
+    if (!std::holds_alternative<JSArrayPtr>(expected)) {
+      JSString str = u"Expected argument ";
+      toPrettyString(expected, str);
+      str += u" must be Array";
+      return throwError(env, builtin::TYPE_ERROR, std::move(str));
+    }
+    if (compareArrayImpl(*std::get<JSArrayPtr>(actual), *std::get<JSArrayPtr>(expected))) {
+      return Ok(JSValue());
+    }
+    JSString str;
+    str += u"Actual ";
+    toPrettyString(actual, str);
+    str += u" and Expected ";
+    toPrettyString(expected, str);
+    str += u" should have same content.";
+    if (!isUndefined(message)) {
+      str += u" ";
+      toString(message, str);
+    }
+    return throwTest262Error(env, std::move(str));
+  };
+  return createJSFunction(global, "compareArray", {"actual", "expected", "message"}, nullptr,
+                          std::move(impl));
+}
+
 static Result<JSValue, JSThrown> assertImpl(const std::shared_ptr<JSEnv> &env,
                                             const JSValue &mustBeTrue, const JSValue &message) {
   if (std::holds_alternative<bool>(mustBeTrue) && std::get<bool>(mustBeTrue)) {
@@ -96,6 +145,7 @@ static void defineAssert(const std::shared_ptr<JSEnv> &global) {
                                });
   func->values["sameValue"] = createSameValue(global, true);
   func->values["notSameValue"] = createSameValue(global, false);
+  func->values["compareArray"] = createCompareArray(global);
   global->define("assert", std::move(func));
 }
 
@@ -264,14 +314,16 @@ static void defineTestPropertyOfStrings(const std::shared_ptr<JSEnv> &global) {
       }
     }
     // check non-match strings
-    if (!std::holds_alternative<JSArrayPtr>(nonMatchStrings)) {
-      return throwError(env, builtin::TYPE_ERROR, u"nonMatchStrings must be Array");
-    }
-    if (auto allNonMatchStrings = joinAsString(std::get<JSArrayPtr>(nonMatchStrings));
-        !allNonMatchStrings->empty() &&
-        !assertRegExpTest(env, regExp, expression, allNonMatchStrings, false)) {
-      for (auto &string : std::get<JSArrayPtr>(nonMatchStrings)->values) {
-        TRY(assertRegExpTest(env, regExp, expression, string, false));
+    if (!isUndefined(nonMatchStrings)) {
+      if (!std::holds_alternative<JSArrayPtr>(nonMatchStrings)) {
+        return throwError(env, builtin::TYPE_ERROR, u"nonMatchStrings must be Array");
+      }
+      if (auto allNonMatchStrings = joinAsString(std::get<JSArrayPtr>(nonMatchStrings));
+          !allNonMatchStrings->empty() &&
+          !assertRegExpTest(env, regExp, expression, allNonMatchStrings, false)) {
+        for (auto &string : std::get<JSArrayPtr>(nonMatchStrings)->values) {
+          TRY(assertRegExpTest(env, regExp, expression, string, false));
+        }
       }
     }
     return Ok(JSValue());
