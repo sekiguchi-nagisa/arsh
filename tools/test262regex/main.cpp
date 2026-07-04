@@ -117,18 +117,21 @@ int main(int argc, char **argv) {
   }
   if (metaData.has_value() && metaData.value().negative.has_value()) {
     auto &negative = metaData.value().negative.value();
+    const auto actualPhase =
+        syntaxErr.empty() ? re262::TestMetaData::Phase::RUNTIME : re262::TestMetaData::Phase::PARSE;
     if (ret) {
       fprintf(stderr, "expected: %s\nactual: %s\n", re262::format(negative).c_str(), out.c_str());
       return 1;
     }
-    if (!syntaxErr.empty() && negative.phase != re262::TestMetaData::Phase::PARSE) {
-      fprintf(stderr, "expected: %s\nactual: SyntaxError\n", re262::format(negative).c_str());
+    if (actualPhase != negative.phase) {
+      fprintf(stderr, "expected: phase=%s\nactual: phase=%s\n", re262::toString(negative.phase),
+              re262::toString(actualPhase));
       return 1;
     }
+
     auto error = env->findOrUndef(negative.type);
     if (auto v = re262::isInstanceOf(env, 1, ret.asErr().value, error);
         !v || !std::holds_alternative<bool>(v.asOk()) || !std::get<bool>(v.asOk())) {
-      out = re262::formatEvalResult(env, v);
       fprintf(stderr, "expected: %s\nactual: %s\n", re262::format(negative).c_str(), out.c_str());
       return 1;
     }
