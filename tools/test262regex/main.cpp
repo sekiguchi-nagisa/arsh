@@ -144,8 +144,8 @@ int main(int argc, char **argv) {
     }
 
     auto error = env->findOrUndef(negative.type);
-    if (auto v = re262::isInstanceOf(env, 1, ret.asErr().value, error);
-        !v || !std::holds_alternative<bool>(v.asOk()) || !std::get<bool>(v.asOk())) {
+    if (auto v = re262::isInstanceOf(env, 1, ret.value, error);
+        !v || !std::holds_alternative<bool>(v.value) || !std::get<bool>(v.value)) {
       fprintf(stderr, "expected: %s\nactual: %s\n", re262::format(negative).c_str(), out.c_str());
       return 1;
     }

@@ -25,8 +25,7 @@
 namespace arsh::re262 {
 
 static JSFunctionPtr createRegExpExec(const std::shared_ptr<JSEnv> &global) {
-  auto impl = [](const JSFunctionPtr &,
-                 const std::shared_ptr<JSEnv> &env) -> Result<JSValue, JSThrown> {
+  auto impl = [](const JSFunctionPtr &, const std::shared_ptr<JSEnv> &env) -> JSResult {
     JSRegexPtr regex;
     if (auto v = env->findOrUndef(builtin::THIS); std::holds_alternative<JSRegexPtr>(v)) {
       regex = std::get<JSRegexPtr>(v);
@@ -53,8 +52,7 @@ static JSFunctionPtr createRegExpExec(const std::shared_ptr<JSEnv> &global) {
 }
 
 static JSFunctionPtr createRegExpTest(const std::shared_ptr<JSEnv> &global) {
-  auto impl = [](const JSFunctionPtr &,
-                 const std::shared_ptr<JSEnv> &env) -> Result<JSValue, JSThrown> {
+  auto impl = [](const JSFunctionPtr &, const std::shared_ptr<JSEnv> &env) -> JSResult {
     JSRegexPtr regex;
     if (auto v = env->findOrUndef(builtin::THIS); std::holds_alternative<JSRegexPtr>(v)) {
       regex = std::get<JSRegexPtr>(v);
@@ -70,7 +68,8 @@ static JSFunctionPtr createRegExpTest(const std::shared_ptr<JSEnv> &global) {
     }
     assert(regex);
     if (auto ret = execJSRegex(*regex, str); ret.has_value()) {
-      return Ok(static_cast<bool>(ret.value()));
+      const bool r = static_cast<bool>(ret.value());
+      return Ok(r);
     }
     return throwError(env, builtin::RANGE_ERROR, u"too large string");
   };
@@ -83,8 +82,7 @@ void defineJSRegex(const std::shared_ptr<JSEnv> &global) {
   prototype->values["exec"] = createRegExpExec(global);
   auto func = createJSFunction(
       global, builtin::REGEXP, {"pattern", "flags"}, std::move(prototype),
-      [](const JSFunctionPtr &self,
-         const std::shared_ptr<JSEnv> &env) -> Result<JSValue, JSThrown> {
+      [](const JSFunctionPtr &self, const std::shared_ptr<JSEnv> &env) -> JSResult {
         std::string pattern;
         if (auto v = env->findOrUndef("pattern"); std::holds_alternative<JSStringPtr>(v)) {
           pattern = toWTF8(*std::get<JSStringPtr>(v));

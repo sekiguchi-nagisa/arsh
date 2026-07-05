@@ -72,9 +72,8 @@ static JSValue findOwnProperty(const JSValue &recv, const std::string &name) {
       recv);
 }
 
-Result<JSValue, JSThrown> findProperty(const std::shared_ptr<JSEnv> &env,
-                                       unsigned int callerLineNum, const JSValue &recv,
-                                       const std::string &name) {
+JSResult findProperty(const std::shared_ptr<JSEnv> &env, unsigned int callerLineNum,
+                      const JSValue &recv, const std::string &name) {
   if (isUndefined(recv) || isNull(recv)) {
     JSString message = u"Cannot read properties of ";
     toPrettyString(recv, message);
@@ -93,7 +92,7 @@ Result<JSValue, JSThrown> findProperty(const std::shared_ptr<JSEnv> &env,
     }
     actualRecv = findOwnProperty(actualRecv, builtin::PROTO);
   }
-  return Ok(ret);
+  return Ok(std::move(ret));
 }
 
 void toUTF16(StringRef ref, std::u16string &out) {
@@ -293,9 +292,8 @@ double toNumber(const JSValue &value) {
   return std::nan("");
 }
 
-Result<JSValue, JSThrown> callJSFunction(const std::shared_ptr<JSEnv> &caller,
-                                         unsigned int callerLineNum, const JSFunctionPtr &func,
-                                         JSValue &&recv, std::vector<JSValue> &&args) {
+JSResult callJSFunction(const std::shared_ptr<JSEnv> &caller, unsigned int callerLineNum,
+                        const JSFunctionPtr &func, JSValue &&recv, std::vector<JSValue> &&args) {
   auto funcEnv = func->definedEnv.lock()->createChild();
   assert(funcEnv);
   funcEnv->define(builtin::THIS, std::move(recv));
@@ -310,8 +308,8 @@ Result<JSValue, JSThrown> callJSFunction(const std::shared_ptr<JSEnv> &caller,
   return func->impl(func, funcEnv);
 }
 
-ErrHolder<JSThrown> throwError(const std::shared_ptr<JSEnv> &env, const char *name,
-                               unsigned int lineNum, JSString &&message) {
+JSResult throwError(const std::shared_ptr<JSEnv> &env, const char *name, unsigned int lineNum,
+                    JSString &&message) {
   auto v = env->findGlobalEnv()->findOrUndef(name);
   assert(std::holds_alternative<JSFunctionPtr>(v));
   auto func = std::get<JSFunctionPtr>(v);
@@ -323,11 +321,7 @@ ErrHolder<JSThrown> throwError(const std::shared_ptr<JSEnv> &env, const char *na
       args.emplace_back(static_cast<double>(lineNum));
     }
   }
-  if (auto ret = callJSFunction(env, lineNum, func, JSValue(), std::move(args))) {
-    return Err(JSThrown{std::move(ret.asOk())});
-  } else {
-    return Err(std::move(ret.asErr()));
-  }
+  return Err(callJSFunction(env, lineNum, func, JSValue(), std::move(args)));
 }
 
 bool strictlyEquals(const JSValue &x, const JSValue &y) {
@@ -355,8 +349,8 @@ bool strictlyEquals(const JSValue &x, const JSValue &y) {
   return x == y;
 }
 
-Result<JSValue, JSThrown> isInstanceOf(const std::shared_ptr<JSEnv> &env, unsigned int lineNum,
-                                       const JSValue &value, const JSValue &constructor) {
+JSResult isInstanceOf(const std::shared_ptr<JSEnv> &env, unsigned int lineNum, const JSValue &value,
+                      const JSValue &constructor) {
   if (!std::holds_alternative<JSFunctionPtr>(constructor)) {
     return throwError(env, builtin::TYPE_ERROR, lineNum,
                       u"Right-hand side of instanceof is not callable");
@@ -366,18 +360,18 @@ Result<JSValue, JSThrown> isInstanceOf(const std::shared_ptr<JSEnv> &env, unsign
   }
 
   const auto prototype = findProperty(env, lineNum, constructor, builtin::PROTOTYPE);
-  if (!prototype || isUndefined(prototype.asOk()) || isNull(prototype.asOk())) {
+  if (!prototype || isUndefined(prototype.value) || isNull(prototype.value)) {
     return Ok(false);
   }
   for (auto target = value;;) {
     auto proto = findProperty(env, lineNum, target, builtin::PROTO);
-    if (!proto || isUndefined(proto.asOk()) || isNull(proto.asOk())) {
+    if (!proto || isUndefined(proto.value) || isNull(proto.value)) {
       return Ok(false);
     }
-    if (strictlyEquals(proto.asOk(), prototype.asOk())) {
+    if (strictlyEquals(proto.value, prototype.value)) {
       break;
     }
-    target = proto.asOk();
+    target = std::move(proto.value);
   }
   return Ok(true);
 }
@@ -405,8 +399,7 @@ static JSObjectPtr newObject(const JSFunctionPtr &func) {
   return obj;
 }
 
-static Result<JSValue, JSThrown> errorConstructorImpl(const JSFunctionPtr &func,
-                                                      const std::shared_ptr<JSEnv> &env) {
+static JSResult errorConstructorImpl(const JSFunctionPtr &func, const std::shared_ptr<JSEnv> &env) {
   JSObjectPtr obj;
   if (auto v = env->findOrUndef(builtin::THIS); std::holds_alternative<JSObjectPtr>(v)) {
     obj = std::get<JSObjectPtr>(v);
@@ -798,8 +791,8 @@ std::unique_ptr<Node> JSParser::parsePrimary() {
     auto prototype = findProperty(this->global, lineNum, this->global->findOrUndef(builtin::REGEXP),
                                   builtin::PROTOTYPE);
     assert(prototype);
-    assert(std::holds_alternative<JSObjectPtr>(prototype.asOk()));
-    if (auto ret = createJSRegexFromLiteral(std::get<JSObjectPtr>(prototype.asOk()),
+    assert(std::holds_alternative<JSObjectPtr>(prototype.value));
+    if (auto ret = createJSRegexFromLiteral(std::get<JSObjectPtr>(prototype.value),
                                             this->lexer->toStrRef(token), &err)) {
       return std::make_unique<Node>(lineNum, RegexLiteral{std::move(ret)});
     }
@@ -885,13 +878,12 @@ std::unique_ptr<Node> JSParser::parseArray() {
     if (!v__) {                                                                                    \
       return v__;                                                                                  \
     }                                                                                              \
-    std::move(v__.asOk());                                                                         \
+    std::move(v__.value);                                                                          \
   })
 
-static Result<JSValue, JSThrown> evaluate(const Node &node, const std::shared_ptr<JSEnv> &env);
+static JSResult evaluate(const Node &node, const std::shared_ptr<JSEnv> &env);
 
-static Result<JSValue, JSThrown> evalArray(const ArrayLiteral &literal,
-                                           const std::shared_ptr<JSEnv> &env) {
+static JSResult evalArray(const ArrayLiteral &literal, const std::shared_ptr<JSEnv> &env) {
   JSArrayPtr array = std::make_shared<JSArray>();
   array->array.reserve(literal.values.size());
   for (auto &e : literal.values) {
@@ -901,8 +893,7 @@ static Result<JSValue, JSThrown> evalArray(const ArrayLiteral &literal,
   return Ok(std::move(array));
 }
 
-static Result<JSValue, JSThrown> evalObject(const ObjectLiteral &literal,
-                                            const std::shared_ptr<JSEnv> &env) {
+static JSResult evalObject(const ObjectLiteral &literal, const std::shared_ptr<JSEnv> &env) {
   JSObjectPtr object = std::make_shared<JSObject>();
   for (auto &[k, v] : literal.values) {
     auto value = TRY(evaluate(*v, env));
@@ -911,8 +902,8 @@ static Result<JSValue, JSThrown> evalObject(const ObjectLiteral &literal,
   return Ok(std::move(object));
 }
 
-static Result<JSValue, JSThrown> evalCallExpr(const CallExpr &callExpr, const unsigned int lineNum,
-                                              const std::shared_ptr<JSEnv> &env) {
+static JSResult evalCallExpr(const CallExpr &callExpr, const unsigned int lineNum,
+                             const std::shared_ptr<JSEnv> &env) {
   JSValue callee;
   JSValue recv;
   if (callExpr.newExpr) {
@@ -940,9 +931,9 @@ static Result<JSValue, JSThrown> evalCallExpr(const CallExpr &callExpr, const un
   return callJSFunction(env, lineNum, func, std::move(recv), std::move(args));
 }
 
-static Result<JSValue, JSThrown> evaluate(const Node &node, const std::shared_ptr<JSEnv> &env) {
+static JSResult evaluate(const Node &node, const std::shared_ptr<JSEnv> &env) {
   return std::visit(
-      [env, lineNum = node.lineNum](auto &&element) -> Result<JSValue, JSThrown> {
+      [env, lineNum = node.lineNum](auto &&element) -> JSResult {
         using T = std::decay_t<decltype(element)>;
         if constexpr (std::is_same_v<T, NullLiteral>) {
           return Ok(nullptr);
@@ -955,7 +946,7 @@ static Result<JSValue, JSThrown> evaluate(const Node &node, const std::shared_pt
           return evalObject(element, env);
         } else if constexpr (std::is_same_v<T, NameExpr>) {
           if (auto *v = env->find(element.name)) {
-            return Ok(*v);
+            return Ok(JSValue(*v));
           }
           JSString message;
           toUTF16(element.name, message);
@@ -988,9 +979,8 @@ static Result<JSValue, JSThrown> evaluate(const Node &node, const std::shared_pt
       node.value);
 }
 
-Result<JSValue, JSThrown> jsEval(const char *sourceName, StringRef source,
-                                 std::shared_ptr<JSEnv> global, const bool debug,
-                                 std::string *syntaxErr) {
+JSResult jsEval(const char *sourceName, StringRef source, std::shared_ptr<JSEnv> global,
+                const bool debug, std::string *syntaxErr) {
   if (!global) {
     global = initJSEnv();
   }
@@ -1024,29 +1014,28 @@ Result<JSValue, JSThrown> jsEval(const char *sourceName, StringRef source,
   return Ok(std::move(last));
 }
 
-std::string formatEvalResult(const std::shared_ptr<JSEnv> &env,
-                             const Result<JSValue, JSThrown> &result) {
+std::string formatEvalResult(const std::shared_ptr<JSEnv> &env, const JSResult &result) {
   JSString out;
-  auto &v = result ? result.asOk() : result.asErr().value;
+  auto &v = result.value;
   if (!result) {
     out += u"[uncaught]\n";
   }
   if (auto ret = isInstanceOf(env, 0, v, env->findGlobalEnv()->findOrUndef(builtin::ERROR));
-      ret && std::get<bool>(ret.asOk())) {
+      ret && std::get<bool>(ret.value)) {
     if (auto r = findProperty(env, 1, v, "name")) {
-      toPrettyString(r.asOk(), out);
+      toPrettyString(r.value, out);
     }
     if (auto r = findProperty(env, 1, v, "message")) {
       out += u": ";
-      toPrettyString(r.asOk(), out);
+      toPrettyString(r.value, out);
     }
     if (auto r = findProperty(env, 1, v, "fileName")) {
       out += u"\n    at ";
-      toPrettyString(r.asOk(), out);
+      toPrettyString(r.value, out);
       out += u":";
       r = findProperty(env, 1, v, "lineNumber");
       if (r) {
-        toPrettyString(r.asOk(), out);
+        toPrettyString(r.value, out);
       }
     }
   } else {

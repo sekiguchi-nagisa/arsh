@@ -29,7 +29,7 @@ static void defineDoNotEvaluate(const std::shared_ptr<JSEnv> &global) {
   const char *name = "$DONOTEVALUATE";
   auto func = createJSFunction(
       global, name, {}, nullptr,
-      [](const JSFunctionPtr &, const std::shared_ptr<JSEnv> &env) -> Result<JSValue, JSThrown> {
+      [](const JSFunctionPtr &, const std::shared_ptr<JSEnv> &env) -> JSResult {
         return throwTest262Error(env, u"Test262: This statement should not be evaluate");
       });
   global->define(name, std::move(func));
@@ -46,8 +46,7 @@ static bool isSameValueImpl(const JSValue &x, const JSValue &y) {
 }
 
 static JSFunctionPtr createSameValue(const std::shared_ptr<JSEnv> &global, bool same) {
-  auto impl = [same](const JSFunctionPtr &func,
-                     const std::shared_ptr<JSEnv> &env) -> Result<JSValue, JSThrown> {
+  auto impl = [same](const JSFunctionPtr &func, const std::shared_ptr<JSEnv> &env) -> JSResult {
     auto actual = env->findOrUndef(func->params[0]);
     auto expected = env->findOrUndef(func->params[1]);
     auto message = env->findOrUndef(func->params[2]);
@@ -84,8 +83,7 @@ static bool compareArrayImpl(const JSArray &x, const JSArray &y) {
 }
 
 static JSFunctionPtr createCompareArray(const std::shared_ptr<JSEnv> &global) {
-  auto impl = [](const JSFunctionPtr &func,
-                 const std::shared_ptr<JSEnv> &env) -> Result<JSValue, JSThrown> {
+  auto impl = [](const JSFunctionPtr &func, const std::shared_ptr<JSEnv> &env) -> JSResult {
     auto actual = env->findOrUndef(func->params[0]);
     auto expected = env->findOrUndef(func->params[1]);
     auto message = env->findOrUndef(func->params[2]);
@@ -120,8 +118,8 @@ static JSFunctionPtr createCompareArray(const std::shared_ptr<JSEnv> &global) {
                           std::move(impl));
 }
 
-static Result<JSValue, JSThrown> assertImpl(const std::shared_ptr<JSEnv> &env,
-                                            const JSValue &mustBeTrue, const JSValue &message) {
+static JSResult assertImpl(const std::shared_ptr<JSEnv> &env, const JSValue &mustBeTrue,
+                           const JSValue &message) {
   if (std::holds_alternative<bool>(mustBeTrue) && std::get<bool>(mustBeTrue)) {
     return Ok(JSValue());
   }
@@ -136,13 +134,13 @@ static Result<JSValue, JSThrown> assertImpl(const std::shared_ptr<JSEnv> &env,
 }
 
 static void defineAssert(const std::shared_ptr<JSEnv> &global) {
-  auto func = createJSFunction(global, "assert", {"mustBeTrue", "message"}, nullptr,
-                               [](const JSFunctionPtr &func,
-                                  const std::shared_ptr<JSEnv> &env) -> Result<JSValue, JSThrown> {
-                                 auto mustBeTrue = env->findOrUndef(func->params[0]);
-                                 auto message = env->findOrUndef(func->params[1]);
-                                 return assertImpl(env, mustBeTrue, message);
-                               });
+  auto func = createJSFunction(
+      global, "assert", {"mustBeTrue", "message"}, nullptr,
+      [](const JSFunctionPtr &func, const std::shared_ptr<JSEnv> &env) -> JSResult {
+        auto mustBeTrue = env->findOrUndef(func->params[0]);
+        auto message = env->findOrUndef(func->params[1]);
+        return assertImpl(env, mustBeTrue, message);
+      });
   func->values["sameValue"] = createSameValue(global, true);
   func->values["notSameValue"] = createSameValue(global, false);
   func->values["compareArray"] = createCompareArray(global);
@@ -155,11 +153,10 @@ static void defineAssert(const std::shared_ptr<JSEnv> &global) {
     if (!v__) {                                                                                    \
       return v__;                                                                                  \
     }                                                                                              \
-    std::move(v__.asOk());                                                                         \
+    std::move(v__.value);                                                                          \
   })
 
-static Result<JSValue, JSThrown> toCodePoint(const std::shared_ptr<JSEnv> &env,
-                                             const JSValue &value) {
+static JSResult toCodePoint(const std::shared_ptr<JSEnv> &env, const JSValue &value) {
   auto d = toNumber(value);
   if (std::isnan(d) || d < 0 || d > UnicodeUtil::CODE_POINT_MAX) {
     JSString str = u"Invalid code point ";
@@ -171,8 +168,7 @@ static Result<JSValue, JSThrown> toCodePoint(const std::shared_ptr<JSEnv> &env,
 
 static void defineBuildString(const std::shared_ptr<JSEnv> &global) {
   const char *name = "buildString";
-  auto impl = [](const JSFunctionPtr &func,
-                 const std::shared_ptr<JSEnv> &env) -> Result<JSValue, JSThrown> {
+  auto impl = [](const JSFunctionPtr &func, const std::shared_ptr<JSEnv> &env) -> JSResult {
     auto args = env->findOrUndef(func->params[0]);
     std::u16string out;
     // loneCodePoints
@@ -229,9 +225,9 @@ static std::vector<int> intoCodePoints(const std::u16string &value) {
   return ret;
 }
 
-static Result<JSValue, JSThrown> assertRegExpTest(const std::shared_ptr<JSEnv> &env,
-                                                  const JSValue &regExp, const JSValue &expression,
-                                                  const JSValue &string, const bool shouldMatch) {
+static JSResult assertRegExpTest(const std::shared_ptr<JSEnv> &env, const JSValue &regExp,
+                                 const JSValue &expression, const JSValue &string,
+                                 const bool shouldMatch) {
   auto func = TRY(findProperty(env, regExp, "test"));
   assert(std::holds_alternative<JSFunctionPtr>(func));
   auto ret = TRY(callJSFunction(env, env->callerLineNum(), std::get<JSFunctionPtr>(func),
@@ -254,8 +250,7 @@ static Result<JSValue, JSThrown> assertRegExpTest(const std::shared_ptr<JSEnv> &
 
 static void defineTestPropertyEscapes(const std::shared_ptr<JSEnv> &global) {
   const char *name = "testPropertyEscapes";
-  auto impl = [](const JSFunctionPtr &func,
-                 const std::shared_ptr<JSEnv> &env) -> Result<JSValue, JSThrown> {
+  auto impl = [](const JSFunctionPtr &func, const std::shared_ptr<JSEnv> &env) -> JSResult {
     auto regExp = env->findOrUndef(func->params[0]);
     auto string = env->findOrUndef(func->params[1]);
     auto expression = env->findOrUndef(func->params[2]);
@@ -296,8 +291,7 @@ static JSStringPtr joinAsString(const JSArrayPtr &array) {
 
 static void defineTestPropertyOfStrings(const std::shared_ptr<JSEnv> &global) {
   const char *name = "testPropertyOfStrings";
-  auto impl = [](const JSFunctionPtr &func,
-                 const std::shared_ptr<JSEnv> &env) -> Result<JSValue, JSThrown> {
+  auto impl = [](const JSFunctionPtr &func, const std::shared_ptr<JSEnv> &env) -> JSResult {
     auto args = env->findOrUndef(func->params[0]);
     auto regExp = TRY(findProperty(env, args, "regExp"));
     auto expression = TRY(findProperty(env, args, "expression"));

@@ -24,8 +24,6 @@
 #include <variant>
 #include <vector>
 
-#include <misc/result.hpp>
-#include <misc/string_ref.hpp>
 #include <regex/regex.h>
 
 namespace arsh::re262 {
@@ -71,10 +69,6 @@ inline bool isUndefined(const JSValue &value) {
 
 inline bool isNull(const JSValue &value) { return std::holds_alternative<std::nullptr_t>(value); }
 
-struct JSThrown {
-  JSValue value;
-};
-
 class JSEnv;
 
 struct JSObject {
@@ -112,12 +106,30 @@ struct JSRegex {
         extra(extra) {}
 };
 
+struct JSResult {
+  enum class Status : unsigned char {
+    OK,
+    ERR,
+    RETURN,
+  } status;
+
+  JSValue value;
+
+  explicit operator bool() const { return this->status == Status::OK; }
+};
+
+inline JSResult Ok(JSValue &&value) { return {JSResult::Status::OK, std::move(value)}; }
+
+inline JSResult Err(JSResult &&ret) { return {JSResult::Status::ERR, std::move(ret.value)}; }
+
+inline JSResult Err(JSValue &&value) { return {JSResult::Status::ERR, std::move(value)}; }
+
 struct JSFunction : JSObject {
   std::vector<std::string> params;
   std::weak_ptr<JSEnv> definedEnv;
 
-  using Impl = std::function<Result<JSValue, JSThrown>(const JSFunctionPtr &,
-                                                       const std::shared_ptr<JSEnv> &)>;
+  using Impl = std::function<JSResult(const JSFunctionPtr &, const std::shared_ptr<JSEnv> &)>;
+
   Impl impl;
 };
 
@@ -233,42 +245,38 @@ inline std::u16string toString(const JSValue &value) {
 
 double toNumber(const JSValue &value);
 
-Result<JSValue, JSThrown> findProperty(const std::shared_ptr<JSEnv> &env,
-                                       unsigned int callerLineNum, const JSValue &recv,
-                                       const std::string &name);
+JSResult findProperty(const std::shared_ptr<JSEnv> &env, unsigned int callerLineNum,
+                      const JSValue &recv, const std::string &name);
 
-inline Result<JSValue, JSThrown> findProperty(const std::shared_ptr<JSEnv> &env,
-                                              const JSValue &recv, const std::string &name) {
+inline JSResult findProperty(const std::shared_ptr<JSEnv> &env, const JSValue &recv,
+                             const std::string &name) {
   return findProperty(env, env->callerLineNum(), recv, name);
 }
 
-Result<JSValue, JSThrown> callJSFunction(const std::shared_ptr<JSEnv> &caller,
-                                         unsigned int callerLineNum, const JSFunctionPtr &func,
-                                         JSValue &&recv, std::vector<JSValue> &&args);
+JSResult callJSFunction(const std::shared_ptr<JSEnv> &caller, unsigned int callerLineNum,
+                        const JSFunctionPtr &func, JSValue &&recv, std::vector<JSValue> &&args);
 
-ErrHolder<JSThrown> throwError(const std::shared_ptr<JSEnv> &env, const char *name,
-                               unsigned int lineNum, JSString &&message);
+JSResult throwError(const std::shared_ptr<JSEnv> &env, const char *name, unsigned int lineNum,
+                    JSString &&message);
 
-inline ErrHolder<JSThrown> throwError(const std::shared_ptr<JSEnv> &env, const char *name,
-                                      JSString &&message) {
+inline JSResult throwError(const std::shared_ptr<JSEnv> &env, const char *name,
+                           JSString &&message) {
   return throwError(env, name, env->callerLineNum(), std::move(message));
 }
 
 bool strictlyEquals(const JSValue &x, const JSValue &y);
 
-Result<JSValue, JSThrown> isInstanceOf(const std::shared_ptr<JSEnv> &env, unsigned int lineNum,
-                                       const JSValue &value, const JSValue &constructor);
+JSResult isInstanceOf(const std::shared_ptr<JSEnv> &env, unsigned int lineNum, const JSValue &value,
+                      const JSValue &constructor);
 
 std::shared_ptr<JSEnv> initJSEnv();
 
 void includeHarness(const std::shared_ptr<JSEnv> &global);
 
-Result<JSValue, JSThrown> jsEval(const char *sourceName, StringRef source,
-                                 std::shared_ptr<JSEnv> global = nullptr, bool debug = false,
-                                 std::string *syntaxErr = nullptr);
+JSResult jsEval(const char *sourceName, StringRef source, std::shared_ptr<JSEnv> global = nullptr,
+                bool debug = false, std::string *syntaxErr = nullptr);
 
-std::string formatEvalResult(const std::shared_ptr<JSEnv> &env,
-                             const Result<JSValue, JSThrown> &result);
+std::string formatEvalResult(const std::shared_ptr<JSEnv> &env, const JSResult &result);
 
 } // namespace arsh::re262
 
