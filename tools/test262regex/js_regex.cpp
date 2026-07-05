@@ -140,6 +140,9 @@ JSRegexPtr createJSRegexFrom(const JSObjectPtr &prototype, StringRef pattern, St
     return nullptr;
   }
   const auto [flag, extra] = ret.value();
+  if (pattern.empty()) {
+    pattern = "(?:)";
+  }
   regex::Parser parser;
   auto tree = parser(pattern, flag);
   if (parser.hasError()) {

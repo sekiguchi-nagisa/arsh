@@ -35,6 +35,7 @@ namespace arsh::re262 {
   OP(TRUE, "true")                                                                                 \
   OP(FALSE, "false")                                                                               \
   OP(NIL, "null")                                                                                  \
+  OP(NEW, "new")                                                                                   \
   OP(ASSIGN, "=")                                                                                  \
   OP(NOT, "!")                                                                                     \
   OP(LP, "(")                                                                                      \

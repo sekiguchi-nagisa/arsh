@@ -1365,6 +1365,24 @@ TEST(JSTest, instanceOf) {
   ASSERT_FALSE(std::get<bool>(ret2.asOk()));
 }
 
+TEST(JSTest, newObject) {
+  auto env = initJSEnv();
+  auto ret = jsEval("dummy2", "new SyntaxError('hey');", env);
+  ASSERT_TRUE(ret);
+  ASSERT_EQ(u"{ __proto__: { __proto__: { name: Error }, name: SyntaxError }, fileName: dummy2, "
+            "lineNumber: 1, "
+            "message: hey }",
+            toPrettyString(ret.asOk()));
+
+  ret = jsEval("dummy2", "new RegExp('hey', 'v');", env);
+  ASSERT_TRUE(ret);
+  ASSERT_EQ(u"/hey/v", toPrettyString(ret.asOk()));
+
+  ret = jsEval("dummy2", "new RegExp();", env);
+  ASSERT_TRUE(ret);
+  ASSERT_EQ(u"/(?:)/", toPrettyString(ret.asOk()));
+}
+
 TEST(JSTest, error) {
   auto env = initJSEnv();
   std::string err;

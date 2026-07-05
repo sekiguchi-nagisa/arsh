@@ -46,7 +46,7 @@ void setOwnProperty(JSRegex &regex, const std::string &name, JSValue &&value);
  * @return
  * if matched, return the match result
  * if not matched, return null
- * if `str` has lone-surrogate, return none
+ * if `str` too large, return none
  */
 std::optional<JSArrayPtr> execJSRegex(JSRegex &regex, const JSStringPtr &str);
 

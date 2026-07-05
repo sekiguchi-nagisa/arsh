@@ -397,16 +397,23 @@ JSFunctionPtr createJSFunction(const std::shared_ptr<JSEnv> &env, const char *na
   return func;
 }
 
+static JSObjectPtr newObject(const JSFunctionPtr &func) {
+  auto obj = std::make_shared<JSObject>();
+  if (auto prototype = getOwnProperty(*func, builtin::PROTOTYPE); !isUndefined(prototype)) {
+    obj->values[builtin::PROTO] = std::move(prototype);
+  }
+  return obj;
+}
+
 static Result<JSValue, JSThrown> errorConstructorImpl(const JSFunctionPtr &func,
                                                       const std::shared_ptr<JSEnv> &env) {
   JSObjectPtr obj;
   if (auto v = env->findOrUndef(builtin::THIS); std::holds_alternative<JSObjectPtr>(v)) {
     obj = std::get<JSObjectPtr>(v);
   } else {
-    obj = std::make_shared<JSObject>();
+    obj = newObject(func);
   }
   env->assign(builtin::THIS, obj);
-  obj->values[builtin::PROTO] = func->values.at(builtin::PROTOTYPE);
   assert(func->params.size() == 3);
   // message
   auto v = env->findOrUndef(func->params[0]);
@@ -506,6 +513,7 @@ struct AccessExpr {
 struct CallExpr {
   std::unique_ptr<Node> func;
   std::vector<std::unique_ptr<Node>> args;
+  bool newExpr{false};
 };
 
 struct UnaryExpr {
@@ -547,6 +555,7 @@ struct Node {
 
 #define EACH_LA_JS_EXPRESSION(OP)                                                                  \
   OP(NOT)                                                                                          \
+  OP(NEW)                                                                                          \
   EACH_LA_JS_PRIMARY(OP)
 
 #define EACH_LA_JS_STATEMENT(OP)                                                                   \
@@ -600,6 +609,8 @@ private:
   std::unique_ptr<Node> parseExpression();
 
   std::unique_ptr<Node> parseUnaryExpression();
+
+  std::unique_ptr<Node> parseCallExpression();
 
   std::unique_ptr<Node> parseMemberExpression();
 
@@ -675,12 +686,14 @@ std::unique_ptr<Node> JSParser::parseUnaryExpression() {
     return std::make_unique<Node>(this->lexer->getLineNumByPos(token.pos),
                                   UnaryExpr{this->lexer->toTokenText(token), std::move(expr)});
   }
-  default:
+  case JSTokenKind::NEW:
     return this->parseMemberExpression();
+  default:
+    return this->parseCallExpression();
   }
 }
 
-std::unique_ptr<Node> JSParser::parseMemberExpression() {
+std::unique_ptr<Node> JSParser::parseCallExpression() {
   auto node = TRY(this->parsePrimary());
   while (true) {
     switch (this->curKind) {
@@ -695,11 +708,42 @@ std::unique_ptr<Node> JSParser::parseMemberExpression() {
     case JSTokenKind::LP:
       node = TRY(this->parseWithArguments(std::move(node)));
       continue;
+    case JSTokenKind::LB: // TODO: index
     default:
       goto END;
     }
   }
 END:
+  return node;
+}
+
+std::unique_ptr<Node> JSParser::parseMemberExpression() {
+  TRY(this->expect(JSTokenKind::NEW));
+  std::unique_ptr<Node> node;
+  if (this->curKind == JSTokenKind::NEW) {
+    node = TRY(this->parseMemberExpression());
+  } else {
+    node = TRY(this->parsePrimary());
+    while (true) {
+      switch (this->curKind) {
+      case JSTokenKind::DOT: {
+        this->consume();
+        Token token = TRY(this->expect(JSTokenKind::IDENTIFIER));
+        unsigned int lineNum = node->lineNum;
+        node = std::make_unique<Node>(lineNum,
+                                      AccessExpr{std::move(node), this->lexer->toTokenText(token)});
+        continue;
+      }
+      case JSTokenKind::LB: // TODO: index
+      default:
+        goto END;
+      }
+    }
+  }
+END:
+  node = TRY(this->parseWithArguments(std::move(node)));
+  assert(std::holds_alternative<CallExpr>(node->value));
+  std::get<CallExpr>(node->value).newExpr = true;
   return node;
 }
 
@@ -871,7 +915,9 @@ static Result<JSValue, JSThrown> evalCallExpr(const CallExpr &callExpr, const un
                                               const std::shared_ptr<JSEnv> &env) {
   JSValue callee;
   JSValue recv;
-  if (std::holds_alternative<AccessExpr>(callExpr.func->value)) {
+  if (callExpr.newExpr) {
+    callee = TRY(evaluate(*callExpr.func, env));
+  } else if (std::holds_alternative<AccessExpr>(callExpr.func->value)) {
     auto &access = std::get<AccessExpr>(callExpr.func->value);
     recv = TRY(evaluate(*access.recv, env));
     callee = TRY(findProperty(env, lineNum, recv, access.name));
@@ -881,6 +927,9 @@ static Result<JSValue, JSThrown> evalCallExpr(const CallExpr &callExpr, const un
   JSFunctionPtr func;
   if (std::holds_alternative<JSFunctionPtr>(callee)) {
     func = std::get<JSFunctionPtr>(callee);
+    if (callExpr.newExpr) {
+      recv = newObject(func);
+    }
   } else {
     return throwError(env, builtin::TYPE_ERROR, lineNum, u"not a function");
   }

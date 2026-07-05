@@ -99,10 +99,10 @@ INIT:
     "false"                { RET(FALSE); }
     "null"                 { RET(NIL); }
     "const"                { RET(CONST); }
+    "new"                  { RET(NEW); }
     "this"                 { RET(KEYWORD); }
     "throw"                { RET(KEYWORD); }
     "let"                  { RET(KEYWORD); }
-    "new"                  { RET(KEYWORD); }
     "break"                { RET(KEYWORD); }
     "continue"             { RET(KEYWORD); }
     "case"                 { RET(KEYWORD); }
