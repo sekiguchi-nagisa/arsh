@@ -1383,6 +1383,17 @@ TEST(JSTest, newObject) {
   ASSERT_EQ(u"/(?:)/", toPrettyString(ret.value));
 }
 
+TEST(JSTest, function) {
+  auto env = initJSEnv();
+  auto ret = jsEval("dummy1", "let f = function(re, ss) { return re.test(ss); };", env);
+  ASSERT_TRUE(ret);
+  ASSERT_EQ(u"undefined", toPrettyString(ret.value));
+
+  ret = jsEval("dummy1", "f(/./, '1234');", env);
+  ASSERT_TRUE(ret);
+  ASSERT_EQ("true", formatEvalResult(env, ret));
+}
+
 TEST(JSTest, error) {
   auto env = initJSEnv();
   std::string err;
@@ -1464,6 +1475,21 @@ Test262Error: hey
 Test262Error: Expected true but got 1234
     at dummy1:3)",
             out);
+
+  ret = jsEval("dummy1", "let g = function(re, ss) { assert(re.test(ss)); 23;};", env);
+  ASSERT_TRUE(ret);
+  ASSERT_EQ("undefined", formatEvalResult(env, ret));
+
+  ret = jsEval("dummy1", "g(/\\w/, 'w');", env);
+  ASSERT_TRUE(ret);
+  ASSERT_EQ("undefined", formatEvalResult(env, ret));
+
+  ret = jsEval("dummy1", "g(/\\w/, '@');", env);
+  ASSERT_FALSE(ret);
+  ASSERT_EQ(R"([uncaught]
+Test262Error: Expected true but got false
+    at dummy1:1)",
+            formatEvalResult(env, ret));
 }
 
 TEST(JSTest, harness2) {

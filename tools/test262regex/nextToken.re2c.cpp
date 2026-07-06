@@ -99,10 +99,13 @@ INIT:
     "false"                { RET(FALSE); }
     "null"                 { RET(NIL); }
     "const"                { RET(CONST); }
+    "let"                  { RET(LET); }
+    "var"                  { RET(VAR); }
+    "return"               { RET(RETURN); }
     "new"                  { RET(NEW); }
+    "function"             { RET(FUNCTION); }
     "this"                 { RET(KEYWORD); }
     "throw"                { RET(KEYWORD); }
-    "let"                  { RET(KEYWORD); }
     "break"                { RET(KEYWORD); }
     "continue"             { RET(KEYWORD); }
     "case"                 { RET(KEYWORD); }
@@ -113,13 +116,10 @@ INIT:
     "else"                 { RET(KEYWORD); }
     "finally"              { RET(KEYWORD); }
     "for"                  { RET(KEYWORD); }
-    "function"             { RET(KEYWORD); }
     "if"                   { RET(KEYWORD); }
     "instanceof"           { RET(KEYWORD); }
-    "return"               { RET(KEYWORD); }
     "try"                  { RET(KEYWORD); }
     "typeof"               { RET(KEYWORD); }
-    "var"                  { RET(KEYWORD); }
     "while"                { RET(KEYWORD); }
     "with"                 { RET(KEYWORD); }
     INT FRAC? EXP?         { RET(NUMBER); }

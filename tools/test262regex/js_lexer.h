@@ -32,10 +32,14 @@ namespace arsh::re262 {
   OP(KEYWORD, "<Keyword>")       /* for reserved keyword (not implemented) */                      \
   OP(IDENTIFIER, "<Identifier>") /* ascii only. `[A-Za-z_$][0-9A-Za-z_$]*` */                      \
   OP(CONST, "const")                                                                               \
+  OP(VAR, "var")                                                                                   \
+  OP(LET, "let")                                                                                   \
   OP(TRUE, "true")                                                                                 \
   OP(FALSE, "false")                                                                               \
   OP(NIL, "null")                                                                                  \
   OP(NEW, "new")                                                                                   \
+  OP(FUNCTION, "function")                                                                         \
+  OP(RETURN, "return")                                                                             \
   OP(ASSIGN, "=")                                                                                  \
   OP(NOT, "!")                                                                                     \
   OP(LP, "(")                                                                                      \

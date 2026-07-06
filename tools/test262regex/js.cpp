@@ -494,6 +494,12 @@ struct ObjectLiteral {
   std::vector<std::pair<std::string, std::unique_ptr<Node>>> values;
 };
 
+struct FuncLiteral {
+  std::string name;
+  std::vector<std::string> params;
+  std::shared_ptr<std::vector<std::unique_ptr<Node>>> nodes;
+};
+
 struct NameExpr {
   std::string name;
 };
@@ -515,16 +521,26 @@ struct UnaryExpr {
 };
 
 struct VarDecl { // currently only support `const`
+  enum class Kind : unsigned char {
+    CONST,
+    LET,
+    VAR,
+  } kind;
+
   std::string name;
   std::unique_ptr<Node> expr;
+};
+
+struct Return {
+  std::unique_ptr<Node> expr; // maybe null
 };
 
 struct Node {
   unsigned int lineNum;
 
-  using Underlying =
-      std::variant<NullLiteral, BoolLiteral, NumberLiteral, StringLiteral, RegexLiteral,
-                   ArrayLiteral, ObjectLiteral, NameExpr, AccessExpr, CallExpr, UnaryExpr, VarDecl>;
+  using Underlying = std::variant<NullLiteral, BoolLiteral, NumberLiteral, StringLiteral,
+                                  RegexLiteral, ArrayLiteral, ObjectLiteral, FuncLiteral, NameExpr,
+                                  AccessExpr, CallExpr, UnaryExpr, VarDecl, Return>;
   Underlying value;
 
   Node(unsigned int lineNum, Underlying v) : lineNum(lineNum), value(std::move(v)) {}
@@ -542,6 +558,7 @@ struct Node {
   OP(STRING)                                                                                       \
   OP(REGEX)                                                                                        \
   OP(IDENTIFIER)                                                                                   \
+  OP(FUNCTION)                                                                                     \
   OP(LB)                                                                                           \
   OP(LBC)                                                                                          \
   OP(LP)
@@ -553,6 +570,9 @@ struct Node {
 
 #define EACH_LA_JS_STATEMENT(OP)                                                                   \
   OP(CONST)                                                                                        \
+  OP(LET)                                                                                          \
+  OP(VAR)                                                                                          \
+  OP(RETURN)                                                                                       \
   EACH_LA_JS_EXPRESSION(OP)
 
 #define GEN_LA_CASE(CASE) case JSTokenKind::CASE:
@@ -616,6 +636,8 @@ private:
   std::unique_ptr<Node> parseObject();
 
   std::unique_ptr<Node> parseArray();
+
+  std::unique_ptr<Node> parseFunction();
 };
 
 std::optional<JSParser::Error> JSParser::formatError() const {
@@ -646,16 +668,40 @@ std::optional<JSParser::Error> JSParser::formatError() const {
   return err;
 }
 
+static VarDecl::Kind toVarKind(JSTokenKind kind) {
+  switch (kind) {
+  case JSTokenKind::CONST:
+    return VarDecl::Kind::CONST;
+  case JSTokenKind::LET:
+    return VarDecl::Kind::LET;
+  default:
+    break;
+  }
+  return VarDecl::Kind::VAR;
+}
+
 std::unique_ptr<Node> JSParser::parseStatement() {
   switch (this->curKind) {
-  case JSTokenKind::CONST: {
+  case JSTokenKind::CONST:
+  case JSTokenKind::LET:
+  case JSTokenKind::VAR: {
+    const auto kind = toVarKind(this->curKind);
     this->consume();
     Token token = TRY(this->expect(JSTokenKind::IDENTIFIER));
     TRY(this->expect(JSTokenKind::ASSIGN));
     auto expr = TRY(this->parseExpression());
     TRY(this->expect(JSTokenKind::LINE_END));
     return std::make_unique<Node>(this->lexer->getLineNumByPos(token.pos),
-                                  VarDecl{this->lexer->toTokenText(token), std::move(expr)});
+                                  VarDecl{kind, this->lexer->toTokenText(token), std::move(expr)});
+  }
+  case JSTokenKind::RETURN: {
+    Token token = TRY(this->expect(JSTokenKind::RETURN));
+    std::unique_ptr<Node> node;
+    if (this->curKind != JSTokenKind::LINE_END) {
+      node = TRY(this->parseExpression());
+    }
+    TRY(this->expect(JSTokenKind::LINE_END));
+    return std::make_unique<Node>(this->lexer->getLineNumByPos(token.pos), Return{std::move(node)});
   }
     // clang-format off
   EACH_LA_JS_EXPRESSION(GEN_LA_CASE) {
@@ -804,6 +850,8 @@ std::unique_ptr<Node> JSParser::parsePrimary() {
     return std::make_unique<Node>(this->lexer->getLineNumByPos(token.pos),
                                   NameExpr{this->lexer->toTokenText(token)});
   }
+  case JSTokenKind::FUNCTION:
+    return this->parseFunction();
   case JSTokenKind::LB:
     return this->parseArray();
   case JSTokenKind::LBC:
@@ -871,6 +919,29 @@ std::unique_ptr<Node> JSParser::parseArray() {
   return std::make_unique<Node>(this->lexer->getLineNumByPos(token.pos), std::move(array));
 }
 
+std::unique_ptr<Node> JSParser::parseFunction() {
+  Token token = TRY(this->expect(JSTokenKind::FUNCTION));
+  FuncLiteral func;
+  func.nodes = std::make_shared<std::vector<std::unique_ptr<Node>>>();
+  TRY(this->expect(JSTokenKind::LP));
+  while (this->curKind != JSTokenKind::RP) {
+    Token nameToken = TRY(this->expect(JSTokenKind::IDENTIFIER));
+    func.params.push_back(this->lexer->toTokenText(nameToken));
+    if (this->curKind == JSTokenKind::COMMA) {
+      this->consume();
+    } else if (this->curKind != JSTokenKind::RP) {
+      E_ALTER(JSTokenKind::COMMA, JSTokenKind::RP);
+    }
+  }
+  TRY(this->expect(JSTokenKind::RP));
+  TRY(this->expect(JSTokenKind::LBC));
+  while (this->curKind != JSTokenKind::RBC) {
+    func.nodes->push_back(TRY(this->parseStatement()));
+  }
+  TRY(this->expect(JSTokenKind::RBC));
+  return std::make_unique<Node>(this->lexer->getLineNumByPos(token.pos), std::move(func));
+}
+
 #undef TRY
 #define TRY(...)                                                                                   \
   ({                                                                                               \
@@ -931,6 +1002,25 @@ static JSResult evalCallExpr(const CallExpr &callExpr, const unsigned int lineNu
   return callJSFunction(env, lineNum, func, std::move(recv), std::move(args));
 }
 
+static JSResult evalFunc(const FuncLiteral &literal, const std::shared_ptr<JSEnv> &env) {
+  assert(literal.name.empty());
+  auto impl = [nodes = literal.nodes](const JSFunctionPtr &,
+                                      const std::shared_ptr<JSEnv> &env) -> JSResult {
+    for (auto &node : *nodes) {
+      switch (auto [status, value] = evaluate(*node, env); status) {
+      case JSResult::Status::OK:
+        continue;
+      case JSResult::Status::ERR:
+        return Err(std::move(value));
+      case JSResult::Status::RETURN:
+        return Ok(std::move(value));
+      }
+    }
+    return Ok(JSValue());
+  };
+  return Ok(createJSFunction(env, "", std::vector(literal.params), nullptr, std::move(impl)));
+}
+
 static JSResult evaluate(const Node &node, const std::shared_ptr<JSEnv> &env) {
   return std::visit(
       [env, lineNum = node.lineNum](auto &&element) -> JSResult {
@@ -944,6 +1034,8 @@ static JSResult evaluate(const Node &node, const std::shared_ptr<JSEnv> &env) {
           return evalArray(element, env);
         } else if constexpr (std::is_same_v<T, ObjectLiteral>) {
           return evalObject(element, env);
+        } else if constexpr (std::is_same_v<T, FuncLiteral>) {
+          return evalFunc(element, env);
         } else if constexpr (std::is_same_v<T, NameExpr>) {
           if (auto *v = env->find(element.name)) {
             return Ok(JSValue(*v));
@@ -972,6 +1064,12 @@ static JSResult evaluate(const Node &node, const std::shared_ptr<JSEnv> &env) {
             return throwError(env, builtin::TYPE_ERROR, lineNum, std::move(message));
           }
           return Ok(JSValue());
+        } else if constexpr (std::is_same_v<T, Return>) {
+          JSValue ret;
+          if (auto &n = element.expr) {
+            ret = TRY(evaluate(*n, env));
+          }
+          return JSResult{JSResult::Status::RETURN, std::move(ret)};
         } else {
           fatal("unreachable");
         }
