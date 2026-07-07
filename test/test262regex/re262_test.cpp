@@ -1381,6 +1381,10 @@ TEST(JSTest, newObject) {
   ret = jsEval("dummy2", "new RegExp();", env);
   ASSERT_TRUE(ret);
   ASSERT_EQ(u"/(?:)/", toPrettyString(ret.value));
+
+  ret = jsEval("dummy2", "new RegExp(/1234/i, 'vm');", env);
+  ASSERT_TRUE(ret);
+  ASSERT_EQ(u"/1234/mv", toPrettyString(ret.value));
 }
 
 TEST(JSTest, function) {

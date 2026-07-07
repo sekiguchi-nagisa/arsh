@@ -84,13 +84,14 @@ void defineJSRegex(const std::shared_ptr<JSEnv> &global) {
       global, builtin::REGEXP, {"pattern", "flags"}, std::move(prototype),
       [](const JSFunctionPtr &self, const std::shared_ptr<JSEnv> &env) -> JSResult {
         std::string pattern;
-        if (auto v = env->findOrUndef("pattern"); std::holds_alternative<JSStringPtr>(v)) {
-          pattern = toWTF8(*std::get<JSStringPtr>(v));
-        }
         std::string flags;
-        if (auto v = env->findOrUndef("flags"); std::holds_alternative<JSStringPtr>(v)) {
-          flags = toWTF8(*std::get<JSStringPtr>(v));
+        if (auto v = env->findOrUndef("pattern"); std::holds_alternative<JSRegexPtr>(v)) {
+          pattern = std::get<JSRegexPtr>(v)->pattern;
+          flags = toStringFlags(*std::get<JSRegexPtr>(v));
+        } else {
+          pattern = toWTF8(toString(v));
         }
+        flags = toWTF8(toString(env->findOrUndef("flags")));
         std::string err;
         auto prototype = self->values.at(builtin::PROTOTYPE);
         assert(std::holds_alternative<JSObjectPtr>(prototype));
