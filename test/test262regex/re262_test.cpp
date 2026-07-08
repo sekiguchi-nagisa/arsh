@@ -1561,6 +1561,26 @@ Test262Error: Test262: This statement should not be evaluate
             out);
 }
 
+TEST(JSTest, harness5) {
+  auto env = initJSEnv();
+  includeHarness(env);
+
+  auto ret = jsEval("dummy1",
+                    "assert.throws(TypeError, function() { $DONOTEVALUATE(); }, 'failed');", env);
+  ASSERT_FALSE(ret);
+  auto out = formatEvalResult(env, ret);
+  ASSERT_EQ(R"([uncaught]
+Test262Error: failed Expected a TypeError but got a [object Object]
+    at dummy1:1)",
+            out);
+
+  ret = jsEval("dummy1", "assert.throws(Test262Error, function() { $DONOTEVALUATE(); }, 'failed');",
+               env);
+  ASSERT_TRUE(ret);
+  out = formatEvalResult(env, ret);
+  ASSERT_EQ("undefined", out);
+}
+
 static std::vector<std::string> getTargetTestCases(const char *dir) {
   auto ret = getFileList(dir, true);
   assert(!ret.empty());

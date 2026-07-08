@@ -19,6 +19,15 @@
 
 namespace arsh::re262 {
 
+#define TRY(...)                                                                                   \
+  ({                                                                                               \
+    auto v__ = (__VA_ARGS__);                                                                      \
+    if (!v__) {                                                                                    \
+      return v__;                                                                                  \
+    }                                                                                              \
+    std::move(v__.value);                                                                          \
+  })
+
 constexpr const char *TEST262_ERROR = "Test262Error";
 
 static auto throwTest262Error(const std::shared_ptr<JSEnv> &global, JSString &&message) {
@@ -118,6 +127,51 @@ static JSFunctionPtr createCompareArray(const std::shared_ptr<JSEnv> &global) {
                           std::move(impl));
 }
 
+static JSFunctionPtr createThrows(const std::shared_ptr<JSEnv> &global) {
+  auto impl = [](const JSFunctionPtr &func, const std::shared_ptr<JSEnv> &env) -> JSResult {
+    auto expectedConstructor = env->findOrUndef(func->params[0]);
+    auto callback = env->findOrUndef(func->params[1]);
+    auto message = env->findOrUndef(func->params[2]);
+    if (!std::holds_alternative<JSFunctionPtr>(callback) ||
+        !std::holds_alternative<JSFunctionPtr>(callback)) {
+      return throwTest262Error(
+          env,
+          u"assert.throws requires two arguments: the error constructor and a function to run");
+    }
+    JSString str;
+    if (!isUndefined(message)) {
+      toString(message, str);
+      str += u' ';
+    }
+    auto [status, thrown] =
+        callJSFunction(env, env->callerLineNum(), std::get<JSFunctionPtr>(callback), nullptr, {});
+    if (status != JSResult::Status::ERR) { // no thrown
+      str += u"Expect a ";
+      auto v = TRY(findProperty(env, expectedConstructor, "name"));
+      toString(v, str);
+      str += u" to be thrown but no exception was thrown at all";
+      return throwTest262Error(env, std::move(str));
+    }
+
+    if (isNull(thrown) || !std::holds_alternative<JSObjectPtr>(thrown)) {
+      str += u"Thrown value was not an object";
+      return throwTest262Error(env, std::move(str));
+    }
+    auto ret = TRY(isInstanceOf(env, env->callerLineNum(), thrown, expectedConstructor));
+    if (!std::get<bool>(ret)) {
+      str += u"Expected a ";
+      auto v = TRY(findProperty(env, expectedConstructor, "name"));
+      toString(v, str);
+      str += u" but got a ";
+      toString(thrown, str);
+      return throwTest262Error(env, std::move(str));
+    }
+    return Ok(JSValue());
+  };
+  return createJSFunction(global, "throws", {"expectedErrorConstructor", "func", "message"},
+                          nullptr, std::move(impl));
+}
+
 static JSResult assertImpl(const std::shared_ptr<JSEnv> &env, const JSValue &mustBeTrue,
                            const JSValue &message) {
   if (std::holds_alternative<bool>(mustBeTrue) && std::get<bool>(mustBeTrue)) {
@@ -144,17 +198,9 @@ static void defineAssert(const std::shared_ptr<JSEnv> &global) {
   func->values["sameValue"] = createSameValue(global, true);
   func->values["notSameValue"] = createSameValue(global, false);
   func->values["compareArray"] = createCompareArray(global);
+  func->values["throws"] = createThrows(global);
   global->define("assert", std::move(func));
 }
-
-#define TRY(...)                                                                                   \
-  ({                                                                                               \
-    auto v__ = (__VA_ARGS__);                                                                      \
-    if (!v__) {                                                                                    \
-      return v__;                                                                                  \
-    }                                                                                              \
-    std::move(v__.value);                                                                          \
-  })
 
 static JSResult toCodePoint(const std::shared_ptr<JSEnv> &env, const JSValue &value) {
   auto d = toNumber(value);
