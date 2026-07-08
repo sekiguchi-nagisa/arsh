@@ -11,14 +11,10 @@ features: [regexp-unicode-property-escapes]
 includes: [regExpUtils.js]
 ---*/
 
-assert.throws(SyntaxError, function () {
-    new RegExp(/234/i, 'G');
-    assert(false);
-}, "failed");
+const r = console.log(12, false, null, undefined, /1234/u);
 
-console.log('hey');
+assert.sameValue(r, undefined);
 
-// CHECK: hey
+// CHECK: 12 false null undefined /1234/u
 // CHECKERR_RE: ^$
-
 // STATUS: 0

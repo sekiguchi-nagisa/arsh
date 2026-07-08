@@ -302,9 +302,10 @@ JSResult callJSFunction(const std::shared_ptr<JSEnv> &caller, unsigned int calle
   const size_t maxArgs = std::max(func->params.size(), args.size());
   for (size_t i = 0; i < maxArgs; i++) {
     if (i < func->params.size() && i < args.size()) {
-      funcEnv->define(func->params[i], std::move(args[i]));
+      funcEnv->define(func->params[i], args[i]);
     }
   }
+  funcEnv->define(builtin::ARGS, std::make_shared<JSArray>(std::move(args)));
   return func->impl(func, funcEnv);
 }
 
@@ -452,6 +453,27 @@ void defineDerivedError(const std::shared_ptr<JSEnv> &global, const char *name) 
   global->define(name, std::move(func));
 }
 
+static void defineConsole(const std::shared_ptr<JSEnv> &global) {
+  auto impl = [](const JSFunctionPtr &, const std::shared_ptr<JSEnv> &env) -> JSResult {
+    auto args = env->findOrUndef(builtin::ARGS);
+    assert(std::holds_alternative<JSArrayPtr>(args));
+    unsigned int count = 0;
+    for (auto &arg : std::get<JSArrayPtr>(args)->array) {
+      if (count++ > 0) {
+        fputc(' ', stdout);
+      }
+      std::string out = toWTF8(toPrettyString(arg));
+      fwrite(out.data(), sizeof(char), out.size(), stdout);
+    }
+    fputc('\n', stdout);
+    fflush(stdout);
+    return Ok(JSValue());
+  };
+  auto obj = std::make_shared<JSObject>();
+  obj->values["log"] = createJSFunction(global, "log", {"message"}, nullptr, std::move(impl));
+  global->define("console", std::move(obj));
+}
+
 std::shared_ptr<JSEnv> initJSEnv() {
   auto global = JSEnv::createGlobal();
   global->define("undefined", JSValue());
@@ -461,6 +483,7 @@ std::shared_ptr<JSEnv> initJSEnv() {
   defineDerivedError(global, builtin::REF_ERROR);
   defineDerivedError(global, builtin::RANGE_ERROR);
   defineJSRegex(global);
+  defineConsole(global);
   return global;
 }
 
@@ -617,6 +640,8 @@ public:
   std::optional<Error> formatError() const;
 
 private:
+  Token expectVarDeclIdentifier();
+
   std::unique_ptr<Node> parseStatement();
 
   std::unique_ptr<Node> parseExpression();
@@ -639,6 +664,16 @@ private:
 
   std::unique_ptr<Node> parseFunction();
 };
+
+Token JSParser::expectVarDeclIdentifier() {
+  auto token = this->expect(JSTokenKind::IDENTIFIER);
+  if (!this->hasError()) {
+    if (this->lexer->toStrRef(token) == "arguments") {
+      this->reportTokenFormatError(JSTokenKind::IDENTIFIER, token, "unexpected `arguments'");
+    }
+  }
+  return token;
+}
 
 std::optional<JSParser::Error> JSParser::formatError() const {
   if (!this->hasError()) {
@@ -687,7 +722,7 @@ std::unique_ptr<Node> JSParser::parseStatement() {
   case JSTokenKind::VAR: {
     const auto kind = toVarKind(this->curKind);
     this->consume();
-    Token token = TRY(this->expect(JSTokenKind::IDENTIFIER));
+    Token token = TRY(this->expectVarDeclIdentifier());
     TRY(this->expect(JSTokenKind::ASSIGN));
     auto expr = TRY(this->parseExpression());
     TRY(this->expect(JSTokenKind::LINE_END));
@@ -925,7 +960,7 @@ std::unique_ptr<Node> JSParser::parseFunction() {
   func.nodes = std::make_shared<std::vector<std::unique_ptr<Node>>>();
   TRY(this->expect(JSTokenKind::LP));
   while (this->curKind != JSTokenKind::RP) {
-    Token nameToken = TRY(this->expect(JSTokenKind::IDENTIFIER));
+    Token nameToken = TRY(this->expectVarDeclIdentifier());
     func.params.push_back(this->lexer->toTokenText(nameToken));
     if (this->curKind == JSTokenKind::COMMA) {
       this->consume();

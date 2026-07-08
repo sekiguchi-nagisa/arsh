@@ -42,6 +42,7 @@ constexpr const char *REGEXP = "RegExp";
 constexpr const char *THIS = "this";
 constexpr const char *PROTOTYPE = "prototype";
 constexpr const char *PROTO = "__proto__";
+constexpr const char *ARGS = "arguments";
 
 } // namespace builtin
 
@@ -152,6 +153,8 @@ struct JSArray : JSObject {
   std::vector<JSValue> array;
 
   JSArray() = default;
+
+  explicit JSArray(std::vector<JSValue> &&array) : array(std::move(array)) {}
 
   JSArray(std::initializer_list<JSValue> list) : array(list.begin(), list.end()) {}
 };
