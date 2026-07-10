@@ -64,6 +64,7 @@ JSTokenKind JSLexer::nextToken(Token &token) {
     re2c:define:YYFILL@len = #;
     re2c:define:YYFILL = "if(!this->fill(#)) { REACH_EOS(); }";
     re2c:yyfill:enable = 0;
+    re2c:eof = 0;
     re2c:indent:top = 1;
     re2c:indent:string = "    ";
 
@@ -72,21 +73,21 @@ JSTokenKind JSLexer::nextToken(Token &token) {
     HEX_INT = ("0x"|"0X") HEX ("_"? HEX)*;
     FRAC = "." [0-9]+;
     EXP = [eE] [+-] [0-9]+;
-    SCHAR = "\\" [^\000] | [^\\'\000];
-    DCHAR = "\\" [^\000] | [^\\"\000];
+    SCHAR = "\\" [^] | [^\\'];
+    DCHAR = "\\" [^] | [^\\"];
     ID_PART = [0-9A-Za-z_$];
     ID_START = [A-Za-z_$];
 
-    RE_BS_SEQ = "\\" [^\000\r\n\u2028\u2029];
-    RE_CLASS = "[" ( [^\000\r\n\u2028\u2029\\\]] | RE_BS_SEQ )*  "]";
-    RE_FIRST_CHAR = [^\000\r\n\u2028\u2029*\\/[] | RE_BS_SEQ | RE_CLASS;
-    RE_CHAR = [^\000\r\n\u2028\u2029\\/[] | RE_BS_SEQ | RE_CLASS;
+    RE_BS_SEQ = "\\" [^\r\n\u2028\u2029];
+    RE_CLASS = "[" ( [^\r\n\u2028\u2029\\\]] | RE_BS_SEQ )*  "]";
+    RE_FIRST_CHAR = [^\r\n\u2028\u2029*\\/[] | RE_BS_SEQ | RE_CLASS;
+    RE_CHAR = [^\r\n\u2028\u2029\\/[] | RE_BS_SEQ | RE_CLASS;
     RE_BODY = RE_FIRST_CHAR RE_CHAR*;
     RE_FLAGS = ID_PART*;
     REGEX = "/" RE_BODY "/" RE_FLAGS;
 
-    SINGLE_COMMENT = "//" [^\000\r\n\u2028\u2029]*;
-    MULTI_COMMENT = "/"[*] ([^\000*] | ([*] [^\000/]) )* [*]"/";
+    SINGLE_COMMENT = "//" [^\r\n\u2028\u2029]*;
+    MULTI_COMMENT = "/"[*] ([^*] | ([*] [^/]) )* [*]"/";
   */
 
   bool foundNewLine = false;
@@ -145,7 +146,7 @@ INIT:
     [\r\n\u2028\u2029]+    { UPDATE_LN(); FIND_NEW_LINE(); }
     SINGLE_COMMENT         { SKIP(); }
     MULTI_COMMENT          { UPDATE_LN(); SKIP(); }
-    "\000"                 { REACH_EOS(); }
+    $                      { REACH_EOS(); }
 
     *                      { RET(INVALID); }
   */

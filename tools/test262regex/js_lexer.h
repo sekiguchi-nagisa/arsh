@@ -71,7 +71,9 @@ private:
   bool verbose{false};
 
 public:
-  JSLexer(const char *sourceName, StringRef src) : LexerBase(sourceName, src.data(), src.size()) {}
+  JSLexer(const char *sourceName, StringRef src) : LexerBase(sourceName, src.data(), src.size()) {
+    this->limit--;
+  }
 
   bool hasPrevNewLine() const { return this->prevNewLine; }
 
