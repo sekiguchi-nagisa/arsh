@@ -24,6 +24,15 @@
 
 namespace arsh::re262 {
 
+#define TRY(...)                                                                                   \
+  ({                                                                                               \
+    auto v__ = (__VA_ARGS__);                                                                      \
+    if (!v__) {                                                                                    \
+      return v__;                                                                                  \
+    }                                                                                              \
+    std::move(v__.value);                                                                          \
+  })
+
 // ###################
 // ##     JSEnv     ##
 // ###################
@@ -83,6 +92,10 @@ JSResult findProperty(const std::shared_ptr<JSEnv> &env, unsigned int callerLine
     return throwError(env, builtin::TYPE_ERROR, callerLineNum, std::move(message));
   }
   JSValue actualRecv = recv;
+  if (std::holds_alternative<JSStringPtr>(recv)) {
+    actualRecv = env->findGlobalEnv()->findOrUndef(builtin::STRING);
+    actualRecv = getOwnProperty(*std::get<JSFunctionPtr>(actualRecv), builtin::PROTOTYPE);
+  }
   JSValue ret;
   const bool proto = name == builtin::PROTO;
   while (!isUndefined(actualRecv)) {
@@ -474,6 +487,45 @@ static void defineConsole(const std::shared_ptr<JSEnv> &global) {
   global->define("console", std::move(obj));
 }
 
+static JSFunctionPtr createStringMatch(const std::shared_ptr<JSEnv> &global) {
+  auto impl = [](const JSFunctionPtr &func, const std::shared_ptr<JSEnv> &env) -> JSResult {
+    JSRegexPtr regex;
+    if (auto arg = env->findOrUndef(func->params[0]); std::holds_alternative<JSRegexPtr>(arg)) {
+      regex = std::get<JSRegexPtr>(arg);
+    } else {
+      auto regexConstructor = env->findGlobalEnv()->findOrUndef(builtin::REGEXP);
+      auto ret = TRY(callJSFunction(env, env->callerLineNum(),
+                                    std::get<JSFunctionPtr>(regexConstructor), nullptr, {arg}));
+      regex = std::get<JSRegexPtr>(ret);
+    }
+    auto matchFunc = TRY(findProperty(env, regex, builtin::SYMBOL_MATCH));
+    return callJSFunction(env, env->callerLineNum(), std::get<JSFunctionPtr>(matchFunc), regex,
+                          {env->findOrUndef(builtin::THIS)});
+  };
+  return createJSFunction(global, "match", {"regexp"}, nullptr, std::move(impl));
+}
+
+static void defineString(const std::shared_ptr<JSEnv> &global) {
+  auto constructorImpl = [](const JSFunctionPtr &func,
+                            const std::shared_ptr<JSEnv> &env) -> JSResult {
+    auto thing = env->findOrUndef(func->params[0]);
+    JSString str; // TODO: new String()
+    if (isUndefined(thing)) {
+      str = u"undefined";
+    } else if (isNull(thing)) {
+      str = u"null";
+    } else {
+      str = toString(thing);
+    }
+    return Ok(std::make_shared<JSString>(std::move(str)));
+  };
+  auto prototype = std::make_shared<JSObject>();
+  prototype->values["match"] = createStringMatch(global);
+  auto func = createJSFunction(global, builtin::STRING, {"thing"}, std::move(prototype),
+                               std::move(constructorImpl));
+  global->define(builtin::STRING, std::move(func));
+}
+
 std::shared_ptr<JSEnv> initJSEnv() {
   auto global = JSEnv::createGlobal();
   global->define("undefined", JSValue());
@@ -482,6 +534,7 @@ std::shared_ptr<JSEnv> initJSEnv() {
   defineDerivedError(global, builtin::TYPE_ERROR);
   defineDerivedError(global, builtin::REF_ERROR);
   defineDerivedError(global, builtin::RANGE_ERROR);
+  defineString(global);
   defineJSRegex(global);
   defineConsole(global);
   return global;
@@ -607,6 +660,7 @@ struct Node {
     return nullptr;                                                                                \
   } while (false)
 
+#undef TRY
 #define TRY(expr)                                                                                  \
   ({                                                                                               \
     auto v = expr;                                                                                 \

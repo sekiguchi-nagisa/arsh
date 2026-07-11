@@ -37,12 +37,15 @@ constexpr const char *REF_ERROR = "ReferenceError";
 constexpr const char *TYPE_ERROR = "TypeError";
 constexpr const char *RANGE_ERROR = "RangeError";
 constexpr const char *REGEXP = "RegExp";
+constexpr const char *STRING = "String";
 
-// for builtin field
+// for builtin variable/property
 constexpr const char *THIS = "this";
 constexpr const char *PROTOTYPE = "prototype";
 constexpr const char *PROTO = "__proto__";
 constexpr const char *ARGS = "arguments";
+
+constexpr const char *SYMBOL_MATCH = "@@match"; // Symbol.match
 
 } // namespace builtin
 

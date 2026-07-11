@@ -76,10 +76,38 @@ static JSFunctionPtr createRegExpTest(const std::shared_ptr<JSEnv> &global) {
   return createJSFunction(global, "test", {"str"}, nullptr, std::move(impl));
 }
 
+static JSFunctionPtr createRegExpMatch(const std::shared_ptr<JSEnv> &global) {
+  auto impl = [](const JSFunctionPtr &, const std::shared_ptr<JSEnv> &env) -> JSResult {
+    JSRegexPtr regex;
+    if (auto v = env->findOrUndef(builtin::THIS); std::holds_alternative<JSRegexPtr>(v)) {
+      regex = std::get<JSRegexPtr>(v);
+    } else {
+      return throwError(env, builtin::TYPE_ERROR,
+                        u"Method RegExp.prototype[Symbol.match] called on incompatible receiver");
+    }
+    JSStringPtr str;
+    if (auto v = env->findOrUndef("str"); std::holds_alternative<JSStringPtr>(v)) {
+      str = std::get<JSStringPtr>(v);
+    } else {
+      str = std::make_shared<JSString>(toString(v));
+    }
+    assert(regex);
+    if (auto ret = execJSRegex(*regex, str)) { // TODO: global match
+      if (ret.value()) {
+        return Ok(std::move(ret.value()));
+      }
+      return Ok(nullptr);
+    }
+    return throwError(env, builtin::RANGE_ERROR, u"too large string");
+  };
+  return createJSFunction(global, builtin::SYMBOL_MATCH, {"str"}, nullptr, std::move(impl));
+}
+
 void defineJSRegex(const std::shared_ptr<JSEnv> &global) {
   auto prototype = std::make_shared<JSObject>();
   prototype->values["test"] = createRegExpTest(global);
   prototype->values["exec"] = createRegExpExec(global);
+  prototype->values[builtin::SYMBOL_MATCH] = createRegExpMatch(global);
   auto func = createJSFunction(
       global, builtin::REGEXP, {"pattern", "flags"}, std::move(prototype),
       [](const JSFunctionPtr &self, const std::shared_ptr<JSEnv> &env) -> JSResult {
@@ -375,15 +403,19 @@ toMatchResult(const JSRegex &regex, const JSStringPtr &str, const StringRef ref,
 std::optional<JSArrayPtr> execJSRegex(JSRegex &regex, const JSStringPtr &str) {
   assert(str);
   unsigned int startOffset = 0;
-  if (regex.lastIndex < 0) {
-    startOffset = 0;
-  } else if (static_cast<size_t>(regex.lastIndex) > str->size()) {
-    return nullptr;
-  } else {
-    startOffset = toCodePointOffset(*str, static_cast<unsigned int>(regex.lastIndex));
+  if (hasFlag(regex.extra, JSRegex::ExtraFlag::GLOBAL) ||
+      hasFlag(regex.extra, JSRegex::ExtraFlag::STICKY)) {
+    if (regex.lastIndex < 0) {
+      startOffset = 0;
+    } else if (static_cast<size_t>(regex.lastIndex) > str->size()) {
+      return nullptr;
+    } else {
+      startOffset = toCodePointOffset(*str, static_cast<unsigned int>(regex.lastIndex));
+    }
   }
   std::vector<regex::Capture> captures;
   const std::string text = toWTF8(*str);
+  regex.lastIndex = 0;
   auto s = regex::match(regex.regex, text, startOffset, captures, nullptr);
   switch (s) {
   case regex::MatchStatus::OK: {

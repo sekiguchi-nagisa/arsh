@@ -13,7 +13,10 @@ includes: [regExpUtils.js]
 
 assert(/./s.test('\n'));
 assert.sameValue(/(.)(.)/.exec(''), null);
+assert.sameValue(''.match('..'), null);
 assert.compareArray(/(.)(.)/.exec('あい'), ['あい', 'あ', 'い']);
+assert.compareArray("あい".match(/(.)(.)/), ['あい', 'あ', 'い']);
+assert.compareArray("あい".match(), ['']);
 
 const pattern = /(.)(.)$/di;
 assert(pattern.hasIndices);
