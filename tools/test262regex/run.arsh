@@ -1,0 +1,71 @@
+#!/usr/bin/env arsh
+
+[<CLI(verbose:$true)>]
+type _Test() {
+    [<Option(required:$true, help:"executable path of re262")>]
+    var bin = ""
+
+    [<Option(required:$true, help:"root dir of test262")>]
+    var path = ""
+
+    [<Arg(required:$true, help:"output dir of test results")>]
+    var output = ""
+
+    [<Option(help:"number of jobs (default is 4)")>]
+    var job = 4
+}
+
+function run() for _Test {
+    let testCases = @(${this.path}/test/{,annexB}/built-ins/RegExp/**/*.js).shuffle(42)
+    let size = $testCases.size()
+    let chunkSize = $size / $this.job
+    for(var i = 0; $i < $size; $i += $chunkSize) {
+        var chunk = $testCases.slice($i, $i+$chunkSize).sort()
+        for f in $chunk {
+            $f = $f.realpath()
+            printf -v var "%s/%04X.txt" ${this.output} $RANDOM
+            var ret = $reply['var']
+            echo "run: $f > $ret"
+            printf -- "%s\n---\n" $f >| $ret
+            call ${this.bin} $f 2>> $ret || $true
+            printf -- "---\n%d\n" $? >> $ret
+        } &
+    }
+    wait
+}
+
+[<CLI(verbose:$true)>]
+type _Report() {
+    [<Option(required:$true, help:"root dir of test results")>]
+    var path = ""
+
+    [<Arg(required:$true, help:"test report path")>]
+    var output = ""
+}
+
+function run() for _Report {
+
+}
+
+[<CLI(toplevel:$true)>]
+type _Param() {
+    [<SubCmd(help:"run test cases")>]
+    var test: _Test?
+
+    [<SubCmd(help:"report test results")>]
+    var report: _Report?
+}
+
+_main(param: _Param) {
+    shctl set errraise
+    if let test = $param.test {
+        $test.run()
+    } elif let report = $param.report {
+        $report.run()
+    } else {
+        echo 1>&2 ${$param.usage('require subcommand')}
+        return 1
+    }
+}
+
+shctl is-sourced || _main $@ || true
