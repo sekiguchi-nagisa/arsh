@@ -352,10 +352,8 @@ Value OrderedMapObject::put(ARState &st, Value &&key, Value &&value) {
 
 Value OrderedMapIterObject::next(TypePool &pool) {
   auto &entry = this->nextEntry();
-  const auto *keyType = &pool.get(entry.getKey().getTypeID());
-  const auto *valueType = &pool.get(entry.getValue().getTypeID());
-
-  auto *type = pool.createTupleType({keyType, valueType}).take();
+  auto &mapType = cast<MapType>(pool.get(this->getTypeID()));
+  auto *type = pool.createTupleType({&mapType.getKeyType(), &mapType.getValueType()}).take();
   auto value = Value::create<BaseObject>(cast<TupleType>(*type));
   typeAs<BaseObject>(value)[0] = entry.getKey();
   typeAs<BaseObject>(value)[1] = entry.getValue();

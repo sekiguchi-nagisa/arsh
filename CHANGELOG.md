@@ -1,5 +1,11 @@
 # Changelog
 
+## Unreleased
+
+### Fixed
+
+- fix key-value tuple type of map iteration
+
 ## [0.42.0] - 2026-07-02
 
 ### Added
