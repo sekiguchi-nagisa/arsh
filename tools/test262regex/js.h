@@ -99,10 +99,10 @@ struct JSRegex {
 #undef GEN_ENUM
   };
 
-  JSObjectPtr proto; // __PROTO__
-  std::string pattern;
-  regex::Regex regex;
-  ExtraFlag extra;
+  const JSObjectPtr proto; // __PROTO__
+  const std::string pattern;
+  const regex::Regex regex;
+  const ExtraFlag extra;
   int lastIndex{0}; // utf16 offset
 
   JSRegex(JSObjectPtr proto, std::string pattern, regex::Regex regex, ExtraFlag extra)

@@ -17,6 +17,10 @@ assert.sameValue(''.match('..'), null);
 assert.compareArray(/(.)(.)/.exec('あい'), ['あい', 'あ', 'い']);
 assert.compareArray("あい".match(/(.)(.)/), ['あい', 'あ', 'い']);
 assert.compareArray("あい".match(), ['']);
+assert.compareArray("あい".match(/(.)/), ['あ', 'あ']);
+assert.compareArray("あい".match(/(.)/g), ['あ', 'い']);
+console.log("あい".match(/(.)/));
+console.log("あい".match(/(.)/g));
 
 const pattern = /(.)(.)$/di;
 assert(pattern.hasIndices);
@@ -36,6 +40,7 @@ assert.compareArray(ret, ['あい', 'あ', 'い']);
 assert.sameValue(ret.length, 3);
 
 
-// CHECK_RE: ^$
+// CHECK: [ あ, あ, groups: undefined, index: 0, input: あい ]
+// CHECK: [ あ, い ]
 // CHECKERR_RE: ^$
 // STATUS: 0

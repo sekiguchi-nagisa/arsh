@@ -24,6 +24,15 @@
 
 namespace arsh::re262 {
 
+#define TRY(...)                                                                                   \
+  ({                                                                                               \
+    auto v__ = (__VA_ARGS__);                                                                      \
+    if (!v__) {                                                                                    \
+      return v__;                                                                                  \
+    }                                                                                              \
+    std::move(v__.value);                                                                          \
+  })
+
 static JSFunctionPtr createRegExpExec(const std::shared_ptr<JSEnv> &global) {
   auto impl = [](const JSFunctionPtr &, const std::shared_ptr<JSEnv> &env) -> JSResult {
     JSRegexPtr regex;
@@ -40,13 +49,7 @@ static JSFunctionPtr createRegExpExec(const std::shared_ptr<JSEnv> &global) {
       str = std::make_shared<JSString>(toString(v));
     }
     assert(regex);
-    if (auto ret = execJSRegex(*regex, str)) {
-      if (ret.value()) {
-        return Ok(std::move(ret.value()));
-      }
-      return Ok(nullptr);
-    }
-    return throwError(env, builtin::RANGE_ERROR, u"too large string");
+    return execJSRegex(env, *regex, str);
   };
   return createJSFunction(global, "exec", {"str"}, nullptr, std::move(impl));
 }
@@ -67,11 +70,8 @@ static JSFunctionPtr createRegExpTest(const std::shared_ptr<JSEnv> &global) {
       str = std::make_shared<JSString>(toString(v));
     }
     assert(regex);
-    if (auto ret = execJSRegex(*regex, str); ret.has_value()) {
-      const bool r = static_cast<bool>(ret.value());
-      return Ok(r);
-    }
-    return throwError(env, builtin::RANGE_ERROR, u"too large string");
+    auto ret = TRY(execJSRegex(env, *regex, str));
+    return Ok(std::holds_alternative<JSArrayPtr>(ret));
   };
   return createJSFunction(global, "test", {"str"}, nullptr, std::move(impl));
 }
@@ -92,13 +92,23 @@ static JSFunctionPtr createRegExpMatch(const std::shared_ptr<JSEnv> &global) {
       str = std::make_shared<JSString>(toString(v));
     }
     assert(regex);
-    if (auto ret = execJSRegex(*regex, str)) { // TODO: global match
-      if (ret.value()) {
-        return Ok(std::move(ret.value()));
-      }
-      return Ok(nullptr);
+    auto ret = TRY(execJSRegex(env, *regex, str));
+    if (isNull(ret) || !hasFlag(regex->extra, JSRegex::ExtraFlag::GLOBAL)) {
+      return Ok(std::move(ret));
     }
-    return throwError(env, builtin::RANGE_ERROR, u"too large string");
+
+    // for global
+    auto array = std::get<JSArrayPtr>(ret);
+    array->array.resize(1); // only maintain first element
+    array->values.clear();
+    while (true) {
+      ret = TRY(execJSRegex(env, *regex, str));
+      if (isNull(ret)) {
+        break;
+      }
+      array->array.push_back(std::get<JSArrayPtr>(ret)->array[0]);
+    }
+    return Ok(std::move(array));
   };
   return createJSFunction(global, builtin::SYMBOL_MATCH, {"str"}, nullptr, std::move(impl));
 }

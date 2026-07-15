@@ -50,6 +50,17 @@ void setOwnProperty(JSRegex &regex, const std::string &name, JSValue &&value);
  */
 std::optional<JSArrayPtr> execJSRegex(JSRegex &regex, const JSStringPtr &str);
 
+inline JSResult execJSRegex(const std::shared_ptr<JSEnv> &env, JSRegex &regex,
+                            const JSStringPtr &str) {
+  if (auto ret = execJSRegex(regex, str)) {
+    if (ret.value()) {
+      return Ok(std::move(ret.value()));
+    }
+    return Ok(nullptr);
+  }
+  return throwError(env, builtin::RANGE_ERROR, u"too large string");
+}
+
 } // namespace arsh::re262
 
 #endif // ARSH_TOOLS_TEST262_JS_REGEX_H
