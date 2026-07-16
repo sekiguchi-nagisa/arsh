@@ -76,6 +76,15 @@ static JSFunctionPtr createRegExpTest(const std::shared_ptr<JSEnv> &global) {
   return createJSFunction(global, "test", {"str"}, nullptr, std::move(impl));
 }
 
+static unsigned int nextUTF16Index(const JSString &str, unsigned int index, bool unicode) {
+  index++;
+  if (unicode && index < str.size() && UnicodeUtil::isHighSurrogate(str[index - 1]) &&
+      UnicodeUtil::isLowSurrogate(str[index])) {
+    index++;
+  }
+  return index;
+}
+
 static JSFunctionPtr createRegExpMatch(const std::shared_ptr<JSEnv> &global) {
   auto impl = [](const JSFunctionPtr &, const std::shared_ptr<JSEnv> &env) -> JSResult {
     JSRegexPtr regex;
@@ -92,6 +101,9 @@ static JSFunctionPtr createRegExpMatch(const std::shared_ptr<JSEnv> &global) {
       str = std::make_shared<JSString>(toString(v));
     }
     assert(regex);
+    if (hasFlag(regex->extra, JSRegex::ExtraFlag::GLOBAL)) {
+      regex->lastIndex = 0;
+    }
     auto ret = TRY(execJSRegex(env, *regex, str));
     if (isNull(ret) || !hasFlag(regex->extra, JSRegex::ExtraFlag::GLOBAL)) {
       return Ok(std::move(ret));
@@ -101,7 +113,13 @@ static JSFunctionPtr createRegExpMatch(const std::shared_ptr<JSEnv> &global) {
     auto array = std::get<JSArrayPtr>(ret);
     array->array.resize(1); // only maintain first element
     array->values.clear();
+    int lastIndex = 0;
     while (true) {
+      if (lastIndex == regex->lastIndex) {
+        regex->lastIndex = nextUTF16Index(*str, static_cast<unsigned int>(regex->lastIndex),
+                                          regex->regex.getFlag().isEitherUnicodeMode());
+      }
+      lastIndex = regex->lastIndex;
       ret = TRY(execJSRegex(env, *regex, str));
       if (isNull(ret)) {
         break;
@@ -422,10 +440,10 @@ std::optional<JSArrayPtr> execJSRegex(JSRegex &regex, const JSStringPtr &str) {
     } else {
       startOffset = toCodePointOffset(*str, static_cast<unsigned int>(regex.lastIndex));
     }
+    regex.lastIndex = 0;
   }
   std::vector<regex::Capture> captures;
   const std::string text = toWTF8(*str);
-  regex.lastIndex = 0;
   auto s = regex::match(regex.regex, text, startOffset, captures, nullptr);
   switch (s) {
   case regex::MatchStatus::OK: {

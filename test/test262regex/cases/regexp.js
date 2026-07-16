@@ -21,6 +21,8 @@ assert.compareArray("あい".match(/(.)/), ['あ', 'あ']);
 assert.compareArray("あい".match(/(.)/g), ['あ', 'い']);
 console.log("あい".match(/(.)/));
 console.log("あい".match(/(.)/g));
+console.log("😄".match(/(?:)/g));
+console.log("😄".match(/(?:)/gu));
 
 const pattern = /(.)(.)$/di;
 assert(pattern.hasIndices);
@@ -42,5 +44,7 @@ assert.sameValue(ret.length, 3);
 
 // CHECK: [ あ, あ, groups: undefined, index: 0, input: あい ]
 // CHECK: [ あ, い ]
+// CHECK: [ , ,  ]
+// CHECK: [ ,  ]
 // CHECKERR_RE: ^$
 // STATUS: 0
