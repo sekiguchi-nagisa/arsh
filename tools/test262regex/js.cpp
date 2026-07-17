@@ -93,6 +93,9 @@ JSResult findProperty(const std::shared_ptr<JSEnv> &env, unsigned int callerLine
   }
   JSValue actualRecv = recv;
   if (std::holds_alternative<JSStringPtr>(recv)) {
+    if (name == "length") {
+      return Ok(static_cast<double>(std::get<JSStringPtr>(recv)->size()));
+    }
     actualRecv = env->findGlobalEnv()->findOrUndef(builtin::STRING);
     actualRecv = getOwnProperty(*std::get<JSFunctionPtr>(actualRecv), builtin::PROTOTYPE);
   }
@@ -505,6 +508,36 @@ static JSFunctionPtr createStringMatch(const std::shared_ptr<JSEnv> &global) {
   return createJSFunction(global, "match", {"regexp"}, nullptr, std::move(impl));
 }
 
+static JSFunctionPtr createStringSlice(const std::shared_ptr<JSEnv> &global) {
+  auto impl = [](const JSFunctionPtr &func, const std::shared_ptr<JSEnv> &env) -> JSResult {
+    auto &thisStr = *std::get<JSStringPtr>(env->findOrUndef(builtin::THIS));
+    size_t startIndex = 0;
+    if (auto v = toNumber(env->findOrUndef(func->params[0])); !std::isnan(v)) {
+      auto index = static_cast<ssize_t>(v);
+      if (index < 0) {
+        startIndex = std::max<ssize_t>(index + static_cast<ssize_t>(thisStr.size()), 0);
+      } else {
+        startIndex = std::min(static_cast<size_t>(index), thisStr.size());
+      }
+    }
+    size_t endIndex = thisStr.size();
+    if (auto v = toNumber(env->findOrUndef(func->params[1])); !std::isnan(v)) {
+      auto index = static_cast<ssize_t>(v);
+      if (index < 0) {
+        endIndex = std::max<ssize_t>(index + static_cast<ssize_t>(thisStr.size()), 0);
+      } else {
+        endIndex = std::min(static_cast<size_t>(index), thisStr.size());
+      }
+    }
+    JSString newStr;
+    for (; startIndex < endIndex; startIndex++) {
+      newStr += thisStr[startIndex];
+    }
+    return Ok(std::make_shared<JSString>(std::move(newStr)));
+  };
+  return createJSFunction(global, "slice", {"indexStart", "indexEnd"}, nullptr, std::move(impl));
+}
+
 static void defineString(const std::shared_ptr<JSEnv> &global) {
   auto constructorImpl = [](const JSFunctionPtr &func,
                             const std::shared_ptr<JSEnv> &env) -> JSResult {
@@ -521,6 +554,7 @@ static void defineString(const std::shared_ptr<JSEnv> &global) {
   };
   auto prototype = std::make_shared<JSObject>();
   prototype->values["match"] = createStringMatch(global);
+  prototype->values["slice"] = createStringSlice(global);
   auto func = createJSFunction(global, builtin::STRING, {"thing"}, std::move(prototype),
                                std::move(constructorImpl));
   global->define(builtin::STRING, std::move(func));
@@ -641,6 +675,8 @@ struct Node {
 
 #define EACH_LA_JS_EXPRESSION(OP)                                                                  \
   OP(NOT)                                                                                          \
+  OP(ADD)                                                                                          \
+  OP(SUB)                                                                                          \
   OP(NEW)                                                                                          \
   EACH_LA_JS_PRIMARY(OP)
 
@@ -808,8 +844,11 @@ std::unique_ptr<Node> JSParser::parseExpression() { return this->parseUnaryExpre
 
 std::unique_ptr<Node> JSParser::parseUnaryExpression() {
   switch (this->curKind) {
-  case JSTokenKind::NOT: {
-    Token token = this->expect(JSTokenKind::NOT);
+  case JSTokenKind::NOT:
+  case JSTokenKind::ADD:
+  case JSTokenKind::SUB: {
+    Token token = this->curToken;
+    this->consume();
     auto expr = TRY(this->parseUnaryExpression());
     return std::make_unique<Node>(this->lexer->getLineNumByPos(token.pos),
                                   UnaryExpr{this->lexer->toTokenText(token), std::move(expr)});
@@ -1142,6 +1181,10 @@ static JSResult evaluate(const Node &node, const std::shared_ptr<JSEnv> &env) {
           auto value = TRY(evaluate(*element.expr, env));
           if (element.op == "!") {
             value = !toBool(value);
+          } else if (element.op == "+") {
+            value = toNumber(value);
+          } else if (element.op == "-") {
+            value = -toNumber(value);
           }
           return Ok(std::move(value));
         } else if constexpr (std::is_same_v<T, VarDecl>) {

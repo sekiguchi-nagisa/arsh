@@ -76,10 +76,11 @@ static JSFunctionPtr createRegExpTest(const std::shared_ptr<JSEnv> &global) {
   return createJSFunction(global, "test", {"str"}, nullptr, std::move(impl));
 }
 
-static unsigned int nextUTF16Index(const JSString &str, unsigned int index, bool unicode) {
+static int nextUTF16Index(const JSString &str, int index, bool unicode) {
+  assert(index > -1);
   index++;
-  if (unicode && index < str.size() && UnicodeUtil::isHighSurrogate(str[index - 1]) &&
-      UnicodeUtil::isLowSurrogate(str[index])) {
+  if (unicode && static_cast<unsigned int>(index) < str.size() &&
+      UnicodeUtil::isHighSurrogate(str[index - 1]) && UnicodeUtil::isLowSurrogate(str[index])) {
     index++;
   }
   return index;

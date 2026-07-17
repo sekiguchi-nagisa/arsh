@@ -41,6 +41,8 @@ namespace arsh::re262 {
   OP(FUNCTION, "function")                                                                         \
   OP(RETURN, "return")                                                                             \
   OP(ASSIGN, "=")                                                                                  \
+  OP(ADD, "+")                                                                                     \
+  OP(SUB, "-")                                                                                     \
   OP(NOT, "!")                                                                                     \
   OP(LP, "(")                                                                                      \
   OP(RP, ")")                                                                                      \

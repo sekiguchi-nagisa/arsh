@@ -131,6 +131,8 @@ INIT:
     ID_START ID_PART*      { RET(IDENTIFIER); }
     "="                    { RET(ASSIGN); }
     "!"                    { RET(NOT); }
+    "+"                    { RET(ADD); }
+    "-"                    { RET(SUB); }
     "("                    { RET(LP); }
     ")"                    { RET(RP); }
     "{"                    { RET(LBC); }
