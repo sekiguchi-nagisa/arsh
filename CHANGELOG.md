@@ -4,7 +4,7 @@
 
 ### Fixed
 
-- fix key-value tuple type of map iteration
+- fix key-value tuple type construction during map iteration
 
 ## [0.42.0] - 2026-07-02
 
@@ -937,8 +937,7 @@
 - **Breaking Change**: change to-string of collection having invalid value
     - now emit ``(invalid)`` instead of throwing ``UnwrappingError``
 - **Breaking Change**: not overwrite the following environmental variables at startup time for
-  compatibility with other
-  shells
+  compatibility with other shells
     - ``HOME``, ``LOGNAME``, ``USER``
     - some command manually set theme and affect own child process behavior (ex. sudo)
 - add ``toplevel`` parameter to ``CLI`` attribute
@@ -1437,8 +1436,7 @@
 - introduce dynamic registered user-defined commands
     - before lookup external command, lookup ``Command`` object from builtin ``DYNA_UDCS`` variable
         - builtin ``command`` command checks existence of dynamic registered commands, but does not
-          call theme (
-          builtin ``eval`` command can call these commands)
+          call theme (builtin ``eval`` command can call these commands)
         - ``Module#_fullname`` method also supports theme
     - also complete dynamic registered command names
 - add ``clobber`` runtime option
@@ -1719,8 +1717,7 @@
         - if corresponding signal is not found, ``Signals#[]`` method throws``KeyNotFoundError``
     - add ``Signal#trap`` method for get and set signal handler corresponding to signal
 - **Breaking Change**: replace invalid utf8 byte with replacement character (U+FFFD) in the
-  following
-  String methods
+  following String methods
     - ``charAt``
     - ``chars``
     - ``width``
@@ -2176,8 +2173,8 @@
 - **Breaking Change**: change internal hash/equality function of ``Map<Float, T>`` object
     - now check equality by total order
     - change hash code
-        - hash(-0.0) != hash(0.0)
-        - hash(NAN) == hash(NAN)
+        - ``hash(-0.0) != hash(0.0)``
+        - ``hash(NAN) == hash(NAN)``
 - **Breaking Change**: fix string representation of ``Float`` object
     - ``inf`` => ``Infinity``
     - ``-inf`` => ``-Infinity``
@@ -2401,8 +2398,7 @@
 - **Breaking Change**: use ``typedef`` keyword for type alias definition
     - ``alias`` keyword is still reserved keyword for future usage
 - **Breaking Change**: when access undefined environmental variable, throw ``IllegalAccessError``
-  instead
-  of ``SystemError``
+  instead of ``SystemError``
 - **Breaking Change**: evaluate script within separate module context
 - **Breaking Change**: after runtime error, not discard symbol state
 - **Breaking Change**: when modifying map object during iteration, always throw
@@ -3226,7 +3222,7 @@
 - if expression
 - expression with io redirection
 - support signal handling (except for posix real-time signal)
-- loop expression(for, for-in. while, do-while)
+- loop expression (for, for-in. while, do-while)
     - break statement return value
 - put comma in last element of array and map literal
 - reactivate LLVM fuzz target
@@ -3394,17 +3390,17 @@
 
 ### Added
 
-- add some string api(count, slice, indexOf, startsWith, ...etc.)
-- prompt string interpretation(PS1/PS2)
+- add some string api (count, slice, indexOf, startsWith, ...etc.)
+- prompt string interpretation (PS1/PS2)
 - add some built-in command (command, eval, exec, pwd)
 - user-defined command
-- add some float api(isNan, isFinite)
+- add some float api (isNan, isFinite)
 - block statement
-- add debug function(checked-cast, logging)
+- add debug function (checked-cast, logging)
 
 ### Changed
 
-- import-env/export-env(default value or exception raising)
+- import-env/export-env (default value or exception raising)
 - string literal definition
 - map literal syntax
 - remove back-quote literal
