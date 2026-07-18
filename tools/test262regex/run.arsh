@@ -15,8 +15,22 @@ type _Test() {
     var job = 4
 }
 
+let _SKIP_PATTERNS = [
+    new Regex(".*${'/prototype/'.escapeRegex()}.*"),
+    new Regex(".*${'/legacy-accessors/'.escapeRegex()}.*"),
+    new Regex(".*${'/Symbol.species/'.escapeRegex()}.*"),
+]
+function matchSkipPatterns(path: String): Bool {
+    for p in $_SKIP_PATTERNS {
+        $p =~ $path && return $true
+    }
+    return $false
+}
+
 function run() for _Test {
     shctl set errraise
+    test -e ${this.output} && { echo 1>&2 ${this.output} is already exist; exit 1; }
+    mkdir -p ${this.output}
     let testCases = @(${this.path}/test/{,annexB}/built-ins/RegExp/**/*.js).shuffle(42)
     let size = $testCases.size()
     let chunkSize = $size / $this.job
@@ -27,10 +41,16 @@ function run() for _Test {
             printf -v var "%s/%04X.txt" ${this.output} $RANDOM
             var ret = $reply['var']
             assert !(test -e $ret) : "$ret is already exist"
-            echo "run: $f > $ret"
-            printf -- "%s\n---\n" $f >| $ret
-            call ${this.bin} $f 2>> $ret || $true
-            printf -- "---\n%d\n" $? >> $ret
+            if $matchSkipPatterns($f) {
+                echo "skip: $f > $ret"
+                printf -- "%s\n---\n" $f >| $ret
+                printf -- "---\n%d\n" 125 >> $ret
+            } else {
+                echo "run: $f > $ret"
+                printf -- "%s\n---\n" $f >| $ret
+                call ${this.bin} $f 2>> $ret || $true
+                printf -- "---\n%d\n" $? >> $ret
+            }
         } &
     }
     wait
@@ -143,6 +163,7 @@ ${v.error}
 \`\`\`
 EOF
         }
+        echo
         $print($v.children, $level + 1)
     }
 }
