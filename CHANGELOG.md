@@ -5,6 +5,7 @@
 ### Fixed
 
 - fix key-value tuple type construction during map iteration
+- ``String#escapeRegex`` method correctly escape lone surrogates
 
 ## [0.42.0] - 2026-07-02
 

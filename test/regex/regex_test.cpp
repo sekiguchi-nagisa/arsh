@@ -769,9 +769,7 @@ static constexpr RegexEscapeParam regexEscapeParams[] = {
     {",-=<>#&!%:;@~'`\"", R"(\x2c\x2d\x3d\x3c\x3e\x23\x26\x21\x25\x3a\x3b\x40\x7e\x27\x60\x22)"},
     {"\f\n\r\t\v ", R"(\f\n\r\t\v\x20)"},
     {"foo\u2028bar", "\\x66oo\\u2028bar"},
-
-    // not support surrogate
-    /*{toUtf8({'f', 'o', 'o', 0xD800, 'b', 'a', 'r'}), "\\x66oo\\ud800bar"},*/
+    {"foo\xED\xA0\x80 bar\xED\xBf\xBF", R"(\x66oo\ud800\x20bar\udfff)"},
 };
 
 INSTANTIATE_TEST_SUITE_P(RegexEscapeTest, RegexEscapeTest, ::testing::ValuesIn(regexEscapeParams));
