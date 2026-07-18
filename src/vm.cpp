@@ -178,7 +178,7 @@ bool VM::checkCast(ARState &state, const Type &targetType) {
     str += stackTopType.getNameRef();
     str += "' to `";
     str += targetType.getNameRef();
-    str += "'";
+    str += '\'';
     raiseError(state, TYPE::TypeCastError, std::move(str));
     return false;
   }
@@ -425,7 +425,7 @@ ERROR:
   if (procSize == 1 && !lastPipe) { // subshell
     message = "child process exits with non-zero status: `";
     message += std::to_string(exitStatus);
-    message += "'";
+    message += '\'';
   } else {
     message = "pipeline has non-zero status: `";
     message += std::to_string(exitStatus);
@@ -815,7 +815,7 @@ static void raiseInvalidCmdError(ARState &state, StringRef ref) {
       message += ch;
     }
   }
-  message += "'";
+  message += '\'';
   raiseSystemError(state, EINVAL, std::move(message));
 }
 
@@ -971,7 +971,7 @@ static bool checkCmdExecError(ARState &state, StringRef cmdName, CmdCallAttr att
     appendAsPrintable(cmdName, SYS_LIMIT_ERROR_MSG_MAX, message);
     message += "' command exits with non-zero status: `";
     message += std::to_string(status);
-    message += "'";
+    message += '\'';
     raiseError(state, TYPE::ExecError, std::move(message), status);
     return false;
   }
@@ -1059,7 +1059,7 @@ bool VM::callCommand(ARState &state, const ResolvedCmd &cmd, ObjPtr<ArrayObject>
   case ResolvedCmd::ILLEGAL_UDC: {
     std::string value = "attempt to access uninitialized user-defined command: `";
     value += array[0].asStrRef();
-    value += "'";
+    value += '\'';
     raiseError(state, TYPE::IllegalAccessError, std::move(value));
     return false;
   }
@@ -1602,7 +1602,7 @@ bool VM::mainLoop(ARState &state) {
         value += stackTopType.getNameRef();
         value += " = ";
         value += ref;
-        value += "\n";
+        value += '\n';
         fwrite(value.c_str(), sizeof(char), value.size(), stdout);
         fflush(stdout);
         state.stack.popNoReturn();

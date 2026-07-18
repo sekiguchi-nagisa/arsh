@@ -37,6 +37,7 @@
 namespace arsh {
 
 enum class EvalOP : unsigned char {
+  NONE = 0u,
   PROPAGATE = 1u << 0u, // propagate uncaught exceptions to caller (except for subshell).
 };
 

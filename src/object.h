@@ -244,20 +244,20 @@ enum class ValueTag : unsigned char {
 
 enum class ValueKind : unsigned char {
   EMPTY = toUnderlying(ValueTag::EMPTY),
-  OBJECT = toUnderlying(ValueTag::OBJECT),                      // not null
-  NUMBER = (0x1 << 3) | toUnderlying(ValueTag::UINT),           // uint64_t
-  BRACE_RANGE_ATTR = (0x2 << 3) | toUnderlying(ValueTag::UINT), // [uint16_t uint32_t]
-  STACK_GUARD = (0x3 << 3) | toUnderlying(ValueTag::UINT),      // [uint16_t uint32_t]
-  DUMMY = (0x4 << 3) | toUnderlying(ValueTag::UINT),            // [uint16_t, DSType(uint32_t)]
+  OBJECT = toUnderlying(ValueTag::OBJECT),                       // not null
+  NUMBER = (0x1 << 3u) | toUnderlying(ValueTag::UINT),           // uint64_t
+  BRACE_RANGE_ATTR = (0x2 << 3u) | toUnderlying(ValueTag::UINT), // [uint16_t uint32_t]
+  STACK_GUARD = (0x3 << 3u) | toUnderlying(ValueTag::UINT),      // [uint16_t uint32_t]
+  DUMMY = (0x4 << 3u) | toUnderlying(ValueTag::UINT),            // [uint16_t, DSType(uint32_t)]
   EXPAND_META =
-      (0x5 << 3) |
+      (0x5 << 3u) |
       toUnderlying(ValueTag::UINT), // [uint16_t, uint32_t], for glob meta, '?', '*', '{', ',', '}'
-  INVALID = (0x6 << 3) | toUnderlying(ValueTag::UINT),
+  INVALID = (0x6 << 3u) | toUnderlying(ValueTag::UINT),
 
-  BOOL = (0x1 << 3) | toUnderlying(ValueTag::INT),
-  SIG = (0x2 << 3) | toUnderlying(ValueTag::INT),       // int64_t
-  SMALL_INT = (0x3 << 3) | toUnderlying(ValueTag::INT), // int64_t
-  COMMON_FLOAT = toUnderlying(ValueTag::FLOAT),         // double
+  BOOL = (0x1 << 3u) | toUnderlying(ValueTag::INT),
+  SIG = (0x2 << 3u) | toUnderlying(ValueTag::INT),       // int64_t
+  SMALL_INT = (0x3 << 3u) | toUnderlying(ValueTag::INT), // int64_t
+  COMMON_FLOAT = toUnderlying(ValueTag::FLOAT),          // double
   SMALL_STR = toUnderlying(ValueTag::STRING),
 };
 

@@ -121,7 +121,7 @@ bool LineEditorObject::setConfig(ARState &state, StringRef name, const Value &va
     raiseError(state, TYPE::ArgumentError, std::move(message));
     return false;
   }
-  if (const auto &type = toType(state.typePool, *config); type.typeId() != value.getTypeID()) {
+  if (const auto &type = toType(state.typePool, *config); !value.hasType(type.typeId())) {
     std::string message = "`";
     message += name;
     message += "' config require `";
@@ -135,7 +135,7 @@ bool LineEditorObject::setConfig(ARState &state, StringRef name, const Value &va
   switch (*config) {
   case EditConfig::KILL_RING_SIZE:
     if (auto v = value.asInt(); v < 0) {
-      message += "`";
+      message += '`';
       message += name;
       message += "' config only accept positive number";
       break;
@@ -222,10 +222,10 @@ Value LineEditorObject::getConfigs(ARState &state) const {
         if (auto iter = this->escapeSeqMap.getValues().find(cl);
             iter != this->escapeSeqMap.getValues().end()) {
           if (!code.empty()) {
-            code += " ";
+            code += ' ';
           }
           code += name;
-          code += "=";
+          code += '=';
           code += iter->second;
         }
       }

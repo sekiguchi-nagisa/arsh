@@ -42,21 +42,17 @@ namespace arsh::regex {
     ++iter;
     return b;
   }
-  const char *tmp = iter;
+  const auto *tmp = reinterpret_cast<const unsigned char *>(iter);
   const unsigned int len = UnicodeUtil::utf8ByteSize(b);
   int codePoint = 0;
   if (len == 2) {
-    codePoint = static_cast<int>((static_cast<unsigned int>(tmp[0] & 0x1F) << 6) |
-                                 static_cast<unsigned int>(tmp[1] & 0x3F));
+    codePoint = static_cast<int>(((tmp[0] & 0x1Fu) << 6u) | (tmp[1] & 0x3Fu));
   } else if (len == 3) {
-    codePoint = static_cast<int>((static_cast<unsigned int>(tmp[0] & 0x0F) << 12) |
-                                 (static_cast<unsigned int>(tmp[1] & 0x3F) << 6) |
-                                 static_cast<unsigned int>(tmp[2] & 0x3F));
+    codePoint =
+        static_cast<int>(((tmp[0] & 0x0Fu) << 12u) | ((tmp[1] & 0x3Fu) << 6u) | (tmp[2] & 0x3Fu));
   } else { // len == 4
-    codePoint = static_cast<int>((static_cast<unsigned int>(tmp[0] & 0x07) << 18) |
-                                 (static_cast<unsigned int>(tmp[1] & 0x3F) << 12) |
-                                 (static_cast<unsigned int>(tmp[2] & 0x3F) << 6) |
-                                 static_cast<unsigned int>(tmp[3] & 0x3F));
+    codePoint = static_cast<int>(((tmp[0] & 0x07u) << 18u) | ((tmp[1] & 0x3Fu) << 12u) |
+                                 ((tmp[2] & 0x3Fu) << 6u) | (tmp[3] & 0x3Fu));
   }
   iter += len;
   return codePoint;
@@ -75,10 +71,10 @@ inline void unsafeNextUtf8Noreturn(const char *&iter) { iter += UnicodeUtil::utf
   unsigned int len;
   unsigned int shift = 0;
   while ((len = UnicodeUtil::utf8ByteSize(*--iter)) == 0) {
-    codePoint |= (*iter & 0x3F) << shift;
+    codePoint |= (static_cast<unsigned char>(*iter) & 0x3Fu) << shift;
     shift += 6;
   }
-  codePoint |= (*iter & masks[len - 1]) << shift;
+  codePoint |= (static_cast<unsigned char>(*iter) & masks[len - 1]) << shift;
   return static_cast<int>(codePoint);
 }
 

@@ -118,7 +118,7 @@ static JSFunctionPtr createCompareArray(const std::shared_ptr<JSEnv> &global) {
     toPrettyString(expected, str);
     str += u" should have same content.";
     if (!isUndefined(message)) {
-      str += u" ";
+      str += u' ';
       toString(message, str);
     }
     return throwTest262Error(env, std::move(str));
@@ -288,7 +288,7 @@ static JSResult assertRegExpTest(const std::shared_ptr<JSEnv> &env, const JSValu
     toString(string, out);
     out += u" (";
     toPrettyString(string, out, true);
-    out += u")";
+    out += u')';
     return assertImpl(env, false, std::make_shared<JSString>(out));
   }
   return Ok(nullptr);

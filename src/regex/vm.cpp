@@ -267,7 +267,7 @@ public:
 
   Input copyInput() const { return this->input; }
 
-  void syncInput(const Input &in) { this->input = in; }
+  void syncInput(const Input &in) const { this->input = in; }
 
   const Inst *getInst() const { return this->regex.getInstSeq().data(); }
 
@@ -615,8 +615,7 @@ BACKTRACK:
              * contain==false, invert==true => true
              * contain==false, invert==false => false
              */
-            bool s = matchers[ins.getMatcherIndex()].contains(input.consumeForward()) != ins.invert;
-            if (s) {
+            if (matchers[ins.getMatcherIndex()].contains(input.consumeForward()) != ins.invert) {
               inst += sizeof(CharSetIns);
               vmnext;
             }
@@ -642,8 +641,7 @@ BACKTRACK:
             if (ins.ignoreCase) {
               codePoint = doSimpleCaseFolding(codePoint);
             }
-            bool s = matchers[ins.getMatcherIndex()].contains(codePoint) != ins.invert;
-            if (s) {
+            if (matchers[ins.getMatcherIndex()].contains(codePoint) != ins.invert) {
               inst += sizeof(LBCharSetIns);
               vmnext;
             }
