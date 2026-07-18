@@ -16,6 +16,7 @@ type _Test() {
 }
 
 function run() for _Test {
+    shctl set errraise
     let testCases = @(${this.path}/test/{,annexB}/built-ins/RegExp/**/*.js).shuffle(42)
     let size = $testCases.size()
     let chunkSize = $size / $this.job
@@ -25,6 +26,7 @@ function run() for _Test {
             $f = $f.realpath()
             printf -v var "%s/%04X.txt" ${this.output} $RANDOM
             var ret = $reply['var']
+            assert !(test -e $ret) : "$ret is already exist"
             echo "run: $f > $ret"
             printf -- "%s\n---\n" $f >| $ret
             call ${this.bin} $f 2>> $ret || $true
@@ -43,8 +45,130 @@ type _Report() {
     var output = ""
 }
 
-function run() for _Report {
+type Path {
+    let kind: Int
+    let value: String
+}
+function fromDir(path: String): Path {
+    return new Path(0, $path)
+}
+function fromFile(path: String): Path {
+    return new Path(1, $path)
+}
 
+type Entry() {
+    var pass = 0
+    var fail = 0
+    var skip = 0
+    var content = ""
+    var error = ""
+    let children: [Path: Entry]
+}
+
+function load(path: String): (String, Entry) {
+    var lines : [String]
+    for line in <(< $path) {
+        $lines.add($line)
+    }
+    var casePath = $lines.shift()
+    $lines.shift() == "---" || throw new Error('broken format');
+    var error : [String]
+    while($lines[0] != '---') {
+        $error.add($lines.shift())
+    }
+    assert $lines.size() == 2
+    assert $lines[0] == '---'
+    var status = $lines[1].toInt()!
+    let entry = new Entry()
+    $entry.error = $error.join($'\n')
+    $entry.content = $casePath
+    case $status {
+        0 => { $entry.pass++; }
+        125 => { $entry.skip++; }
+        else => { $entry.fail++; }
+    }
+    return ($casePath, $entry)
+}
+
+function append(root: [Path: Entry], segments: [String], entry: Entry) {
+    if $segments.size() == 1 {
+        var key = $fromFile($segments[0])
+        var r = $root.put($key, $entry)
+        assert !$r
+        return
+    }
+
+    assert $segments.size() > 1
+    var dir = $fromDir($segments.shift())
+    var e = $root.get($dir) ?? {
+        var e = new Entry()
+        $root[$dir] = $e
+        $e
+    }
+    $append($e.children, $segments, $entry)
+}
+
+function update(entry : Entry) {
+    for _, child in $entry.children {
+        $update($child)
+        $entry.pass += $child.pass
+        $entry.fail += $child.fail
+        $entry.skip += $child.skip
+    }
+}
+
+function print(root: [Path: Entry], level: Int) {
+    var p = ""
+    for(var i = 0; $i < $level; $i++) {
+        $p += "#"
+    }
+
+    var keys: [Path]
+    for k, _  in $root {
+        $keys.add($k)
+    }
+    $keys.sort()
+
+    for k in $keys {
+        var v = $root[$k]
+        if $v.content.empty() {
+            printf "%s %s (pass:%d, fail:%d, skip:%d)\n" $p ${k.value} ${v.pass} ${v.fail} ${v.skip}
+        } else {
+            printf "%s [%s](%s) (pass:%d, fail:%d, skip:%d)\n" $p ${$v.content.basename()} ${v.content} ${v.pass} ${v.fail} ${v.skip}
+        }
+        if !$v.error.empty() {
+            cat << EOF
+\`\`\`
+${v.error}
+\`\`\`
+EOF
+        }
+        $print($v.children, $level + 1)
+    }
+}
+
+function run() for _Report {
+    shctl set errraise
+    let entries : [(String, Entry)]
+    for path in @(${this.path}/*.txt) {
+        var tmp = $load($path)
+        var casePath = $tmp._0
+        var index = $casePath.lastIndexOf("/test262/")
+        assert $index != -1
+        $casePath = $casePath.slice($index + "/test262/".size())
+        $entries.add(($casePath, $tmp._1))
+    }
+    $entries.sortBy(function(x, y)=> $x._0.compare($y._0))
+
+    var root: [Path: Entry]
+    for entry in $entries {
+        $append($root, $entry._0.split('/'), $entry._1)
+    }
+    for _, e in $root {
+        $update($e)
+    }
+
+    $print($root, 1) with > ${this.output}
 }
 
 [<CLI(toplevel:$true)>]
@@ -57,7 +181,6 @@ type _Param() {
 }
 
 _main(param: _Param) {
-    shctl set errraise
     if let test = $param.test {
         $test.run()
     } elif let report = $param.report {
@@ -68,4 +191,4 @@ _main(param: _Param) {
     }
 }
 
-shctl is-sourced || _main $@ || true
+shctl is-sourced || _main $@
