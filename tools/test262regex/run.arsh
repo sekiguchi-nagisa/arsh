@@ -19,6 +19,7 @@ let _SKIP_PATTERNS = [
     new Regex(".*${'/prototype/'.escapeRegex()}.*"),
     new Regex(".*${'/legacy-accessors/'.escapeRegex()}.*"),
     new Regex(".*${'/Symbol.species/'.escapeRegex()}.*"),
+    new Regex(".*${'/cross-realm.js'}"),
 ]
 function matchSkipPatterns(path: String): Bool {
     for p in $_SKIP_PATTERNS {
@@ -34,7 +35,9 @@ function run() for _Test {
     let testCases = @(${this.path}/test/{,annexB}/built-ins/RegExp/**/*.js).shuffle(42)
     let size = $testCases.size()
     let chunkSize = $size / $this.job
+    var count = -1
     for(var i = 0; $i < $size; $i += $chunkSize) {
+        $count++
         var chunk = $testCases.slice($i, $i+$chunkSize).sort()
         for f in $chunk {
             $f = $f.realpath()
@@ -42,11 +45,11 @@ function run() for _Test {
             var ret = $reply['var']
             assert !(test -e $ret) : "$ret is already exist"
             if $matchSkipPatterns($f) {
-                echo "skip: $f > $ret"
+                echo "$count: skip: $f > $ret"
                 printf -- "%s\n---\n" $f >| $ret
                 printf -- "---\n%d\n" 125 >> $ret
             } else {
-                echo "run: $f > $ret"
+                echo "$count: run: $f > $ret"
                 printf -- "%s\n---\n" $f >| $ret
                 call ${this.bin} $f 2>> $ret || $true
                 printf -- "---\n%d\n" $? >> $ret

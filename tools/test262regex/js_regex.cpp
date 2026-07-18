@@ -76,7 +76,7 @@ static JSFunctionPtr createRegExpTest(const std::shared_ptr<JSEnv> &global) {
   return createJSFunction(global, "test", {"str"}, nullptr, std::move(impl));
 }
 
-static int nextUTF16Index(const JSString &str, int index, bool unicode) {
+static int nextUTF16Index(const JSString &str, int index, const bool unicode) {
   assert(index > -1);
   index++;
   if (unicode && static_cast<unsigned int>(index) < str.size() &&
@@ -117,8 +117,8 @@ static JSFunctionPtr createRegExpMatch(const std::shared_ptr<JSEnv> &global) {
     int lastIndex = 0;
     while (true) {
       if (lastIndex == regex->lastIndex) {
-        regex->lastIndex = nextUTF16Index(*str, static_cast<unsigned int>(regex->lastIndex),
-                                          regex->regex.getFlag().isEitherUnicodeMode());
+        regex->lastIndex =
+            nextUTF16Index(*str, regex->lastIndex, regex->regex.getFlag().isEitherUnicodeMode());
       }
       lastIndex = regex->lastIndex;
       ret = TRY(execJSRegex(env, *regex, str));
@@ -130,6 +130,23 @@ static JSFunctionPtr createRegExpMatch(const std::shared_ptr<JSEnv> &global) {
     return Ok(std::move(array));
   };
   return createJSFunction(global, builtin::SYMBOL_MATCH, {"str"}, nullptr, std::move(impl));
+}
+
+static JSFunctionPtr createRegExpEscape(const std::shared_ptr<JSEnv> &global) {
+  auto impl = [](const JSFunctionPtr &func, const std::shared_ptr<JSEnv> &env) -> JSResult {
+    std::string str;
+    if (auto v = env->findOrUndef(func->params[0]); std::holds_alternative<JSStringPtr>(v)) {
+      str = toWTF8(*std::get<JSStringPtr>(v));
+    } else {
+      return throwError(env, builtin::TYPE_ERROR, u"input argument must be string");
+    }
+    std::string out;
+    bool r = regex::escape(str, out.max_size(), out);
+    static_cast<void>(r);
+    assert(r);
+    return Ok(std::make_shared<JSString>(toUTF16(out)));
+  };
+  return createJSFunction(global, "escape", {"string"}, nullptr, std::move(impl));
 }
 
 void defineJSRegex(const std::shared_ptr<JSEnv> &global) {
@@ -158,6 +175,7 @@ void defineJSRegex(const std::shared_ptr<JSEnv> &global) {
         }
         return throwError(env, builtin::SYNTAX_ERROR, toUTF16(err));
       });
+  func->values["escape"] = createRegExpEscape(global);
   global->define(builtin::REGEXP, std::move(func));
 }
 
