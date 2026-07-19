@@ -1,8 +1,6 @@
 # Changelog
 
-## Unreleased
-
-### Fixed
+## [0.42.1] - 2026-07-19
 
 - fix key-value tuple type construction during map iteration
 - ``String#escapeRegex`` method correctly escape lone surrogates
