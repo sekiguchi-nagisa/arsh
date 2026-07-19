@@ -13,7 +13,7 @@
 
 #### Builtin
 
-- add ``REGEX_TIMEOUT`` variable for global timout milliseconds of regex methods
+- add ``REGEX_TIMEOUT`` variable for global timeout milliseconds of regex methods
 - add ``Regex#isUnicodeSet`` method. if specified `v` flag, return true
 - support Unicode set mode via ``v`` flag
 - add some string methods
@@ -169,7 +169,7 @@
         - when set to 100, the pager is full height
 - re-compute the pager cursor position after the window resize
 - change ``Candidates`` object constructor parameters.
-    - add ``sort`` param for suppressing candidates sorting
+    - add ``sort`` param for suppressing candidate sorting
     - add ``trimSize`` param for trim line buffer to cursor before insertion
 - add ``cmd`` param to ``String#quote`` method. now quote as command
 - improve sub-command completion
@@ -200,7 +200,7 @@
     - add some options to ``compdef`` command
         - ``--nosort``: suppress sorting of candidates
         - ``--subcmd``: define sub-command completions
-        - ``--arg-empty``: generate empty candidate
+        - ``--arg-empty``: generate empty candidates
         - ``--long-single``: long-option with single dash (``-opt`` form)
         - ``--short-opt``: short-option with optional argument (``-Oarg`` form)
     - ``--short`` option only allow single ascii character
@@ -397,7 +397,7 @@
 - various ``LineEditor`` improvements
     - automatically insert ``(``, ``()`` after completing method names
     - fix screen corruption when shrink window cols
-    - hide description/signature of completion pager if columns size is smaller than item size
+    - hide description/signature of completion pager if column size is smaller than item size
     - undo completion candidate insertion via ``ESC`` key
     - hide terminal property check characters
 
@@ -439,8 +439,8 @@
       ``ShellExit``
         - now only throw ``Throwable`` type or its derived instance
         - not allow instantiation of ``Throwable`` type
-    - add builtin ``THROWN`` variable for indicating currently thrown object
-- now get underlying job object of process substitution
+    - add builtin ``THROWN`` variable for indicating the currently thrown object
+- now get the underlying job object of process substitution
     - add ``ProcSubst`` type for indicating process substitution (``ProcSubst`` is derived type of
       ``FD``)
     - get underlying job object via ``ProcSubst#job`` method
@@ -474,7 +474,7 @@
     - now allow signal handler invocation
 - **Breaking Change**: now not ignore exceptions from finally/defer block even if currently thrown
     - maintain these exceptions and get theme via ``Throwable#suppressed`` method
-- **Breaking Change**: output redirection to existing non-regular file is no longer error if
+- **Breaking Change**: output redirection to the existing non-regular file is no longer error if
   ``clobber`` option is unset
     - like bash/zsh
 - send ``SIGHUP`` to manged jobs before process termination (even if subshell)
@@ -543,7 +543,7 @@
     - manually update theme via ``shctl winsize`` sub-command
     - also updated via ``LineEditor#readLine`` method
     - when receive ``SIGWINCH``, automatically updated
-- in ``LineEditor#readLine``, scroll lines when input rows is larger than window rows
+- in ``LineEditor#readLine``, scroll lines when input rows are larger than window rows
 - add ``String#ifEmpty`` method
 
 #### Misc
@@ -571,11 +571,11 @@
       var d = 0.1+0.2
       assert "$d".toFloat()! == $d
       ```
-- add ``help`` attribute param to ``Arg`` attribute. now specify detail message of positional
+- add ``help`` attribute param to ``Arg`` attribute. now specify the detail message of positional
   argument
 - change string representation of function/command. now generate uniq name (include module id)
 - fix assertion error message of function/command equality check (``==``)
-- improve assertion error message of ``is`` expression. now show expr type and target type
+- improve the assertion error message of ``is`` expression. now show expr type and target type
 
 #### Builtin
 
@@ -588,13 +588,13 @@
     - support ``-d`` option for specifying input delimiter
     - fix backslash escape handling. now skip newline
     - support ``-n``, ``-N`` options like bash
-- **Breaking Change**: raise ``SystemError`` when call ``Job#kill`` method to
+- **Breaking Change**: raise ``SystemError`` when call ``Job#kill`` method to the
   terminated/uncontrolled job
-- improve error checking of builtin ``kill`` command when send signal to uncontrolled job
+- improve error checking of builtin ``kill`` command when send signal to the uncontrolled job
 - add ``once`` param to ``String#replace`` and ``Regex#replace`` methods
-    - now only replace first occurrence of pattern
+    - now only replace first occurrence of the pattern
 - add ``start``, ``end`` method to ``RegexMatch`` type. now get offsets of match string
-- improve error message of builtin ``shctl`` command. now show subcommand name
+- improve the error message of builtin ``shctl`` command. now show subcommand name
 - improve resize handling of ``LineEditor#readLine`` method
     - automatically refresh line when receive ``SIGWINCH``
     - hide completion pager if row size is too small
@@ -677,7 +677,7 @@
 - **Breaking Change**: builtin ``exec`` command now throw ``SystemError`` if command execution
   failed
     - now do not exit shell itself
-- **Breaking Change**: not allow recursive ``LineEditor#readLine`` method call even if other
+- **Breaking Change**: not allow recursive ``LineEditor#readLine`` method call even if the other
   instance
     - due to prevent potential stack overflow
     - now throw ``InvalidOperationError``
@@ -704,7 +704,7 @@
 ### Fixed
 
 - fix resource leak of file descriptor (self-pipe) when fork failed
-- fix error message of invalid option in cli parser
+- fix error message of the invalid option in cli parser
 - fix ``\"`` escape handling in here document (unlike double-quoted string, not remove backslash)
 
 ## [0.33.3] - 2024-04-30
@@ -807,7 +807,7 @@
 - support additional redirection op
     - ``<>``: open file descriptor with read-write mode
     - ``<& -``, ``>& -``: close file descriptor
-- truncate large error message of internal error (up to 65535 byte)
+- truncate large error message of internal error (up to 65,535 byte)
 - rename ``GlobbingError`` with ``GlobError`` (``GlobbingError`` is defined as type-alias for
   compatibility)
 - rename ``UnwrappingError`` with ``UnwrapError`` (``UnwrappingError`` is defined as type-alias for
@@ -828,7 +828,7 @@
     - except for ``STDIN``, ``STDOUT``, ``STDERR``
     - ``FD#dup`` method always set close-on-exec flag
     - when change close-on-exec flag, call ``FD#cloexec`` method
-- ``Error`` type constructor now accept 0 status
+- ``Error`` type constructor now accepts 0 status
 - builtin ``complete`` command put completion candidate description via ``-d`` option
     - put type-signature of variable/field/function/method
     - put command type (user-defined, builtin, dynamic, external) in command name completion
@@ -1292,9 +1292,9 @@
         - ``action``: define custom key action
         - ``actions``: get read-only snapshot of current edit actions
     - add ``setHistSync`` method
-        - set callback that is called when adding current line to history
+        - set callback called when adding current line to history
     - improve unsupported terminal detection
-        - check if current process belongs to foreground process group
+        - check if the current process belongs to foreground process group
     - always use tty even if stdin/stdout is not tty
     - improve internal I/O error reporting
     - disable bracketed paste mode when restore tty setting
@@ -3002,7 +3002,7 @@
 
 - propagate fork-failure as SystemError
 - allow nested option type
-    - nested option type is simplified to single option type ex. T!! -> T!
+    - nested option type is simplified to single option type ex. ``T!! -> T!``
     - break expression returns option type value
 - add case-expression
     - use 'case' keyword
@@ -3249,7 +3249,7 @@
     - remove "search" method
     - add "=\~" / "!\~" operator
 - builtin exit command is Bottom type
-- PID, PPID type (Uint32 -> Int32)
+- PID, PPID type (Uint32 to Int32)
 
 ### Fixed
 
