@@ -1040,7 +1040,14 @@ TEST(JSTest, nameRef) {
     ASSERT_TRUE(ret);
     ASSERT_TRUE(isUndefined(ret.value));
     ASSERT_EQ(u"undefined", toPrettyString(ret.value));
-    ASSERT_EQ(u"", toString(ret.value));
+    ASSERT_EQ(u"undefined", toString(ret.value));
+  }
+  {
+    auto ret = jsEval("dummy", "null;");
+    ASSERT_TRUE(ret);
+    ASSERT_TRUE(isNull(ret.value));
+    ASSERT_EQ(u"null", toPrettyString(ret.value));
+    ASSERT_EQ(u"null", toString(ret.value));
   }
   {
     auto ret = jsEval("dummy", "RegExp;");

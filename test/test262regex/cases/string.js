@@ -11,6 +11,17 @@ features: [regexp-unicode-property-escapes]
 includes: [regExpUtils.js]
 ---*/
 
+// constructor
+assert.sameValue('null', String(null));
+assert.sameValue('undefined', String(undefined));
+assert.sameValue('true', String(true));
+assert.sameValue('false', String(false));
+assert.sameValue('', String([]));
+assert.sameValue('', String([null]));
+assert.sameValue(',,', String([null, undefined, [undefined]]));
+assert.sameValue(',,,23', String([null, undefined, [undefined, 23]]));
+assert.sameValue('/12/gim', String(/12/mgi));
+
 // for length
 assert.sameValue(0, "".length);
 assert.sameValue(1, "\0".length);

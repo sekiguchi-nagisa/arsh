@@ -11,6 +11,11 @@ features: [regexp-unicode-property-escapes]
 includes: [regExpUtils.js]
 ---*/
 
+console.log(new RegExp(null));
+console.log(new RegExp(undefined));
+console.log(new RegExp([undefined]));
+console.log(new RegExp([undefined, null]));
+
 assert(/./s.test('\n'));
 assert.sameValue(/(.)(.)/.exec(''), null);
 assert.sameValue(''.match('..'), null);
@@ -42,6 +47,11 @@ assert.compareArray(ret, ['あい', 'あ', 'い']);
 assert.sameValue(ret.length, 3);
 
 assert.sameValue("\\x66oo\\ud800bar", RegExp.escape("foo\uD800bar"));
+
+// CHECK: /null/
+// CHECK: /(?:)/
+// CHECK: /(?:)/
+// CHECK: /,/
 
 // CHECK: [ あ, あ, groups: undefined, index: 0, input: あい ]
 // CHECK: [ あ, い ]

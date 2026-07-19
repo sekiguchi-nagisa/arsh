@@ -156,18 +156,20 @@ void defineJSRegex(const std::shared_ptr<JSEnv> &global) {
   prototype->values[builtin::SYMBOL_MATCH] = createRegExpMatch(global);
   auto func = createJSFunction(
       global, builtin::REGEXP, {"pattern", "flags"}, std::move(prototype),
-      [](const JSFunctionPtr &self, const std::shared_ptr<JSEnv> &env) -> JSResult {
+      [](const JSFunctionPtr &func, const std::shared_ptr<JSEnv> &env) -> JSResult {
         std::string pattern;
         std::string flags;
-        if (auto v = env->findOrUndef("pattern"); std::holds_alternative<JSRegexPtr>(v)) {
+        if (auto v = env->findOrUndef(func->params[0]); std::holds_alternative<JSRegexPtr>(v)) {
           pattern = std::get<JSRegexPtr>(v)->pattern;
           flags = toStringFlags(*std::get<JSRegexPtr>(v));
-        } else {
+        } else if (!isUndefined(v)) {
           pattern = toWTF8(toString(v));
         }
-        flags = toWTF8(toString(env->findOrUndef("flags")));
+        if (auto v = env->findOrUndef(func->params[1]); !isUndefined(v)) {
+          flags = toWTF8(toString(v));
+        }
         std::string err;
-        auto prototype = self->values.at(builtin::PROTOTYPE);
+        auto prototype = func->values.at(builtin::PROTOTYPE);
         assert(std::holds_alternative<JSObjectPtr>(prototype));
         if (auto obj = createJSRegexFrom(std::get<JSObjectPtr>(prototype), pattern, flags, &err)) {
           env->assign(builtin::THIS, obj);

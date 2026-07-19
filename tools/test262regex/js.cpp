@@ -203,7 +203,7 @@ void toPrettyString(const JSValue &value, std::u16string &out, const bool escape
       toPrettyString(array->array[i], out, escape);
     }
     if (array->values.size() && array->array.size()) {
-      out += u",";
+      out += u',';
     }
     unsigned int count = 0;
     for (auto &[k, v] : array->values) {
@@ -240,18 +240,20 @@ void toPrettyString(const JSValue &value, std::u16string &out, const bool escape
 }
 
 void toString(const JSValue &value, std::u16string &out) {
-  if (isNull(value) || isUndefined(value)) { // do nothing
-  } else if (std::holds_alternative<JSFunctionPtr>(value)) {
+  if (std::holds_alternative<JSFunctionPtr>(value)) {
     out += u"function ";
     out += *std::get<JSStringPtr>(std::get<JSFunctionPtr>(value)->values.at("name"));
     out += u"() { [native code] }";
   } else if (std::holds_alternative<JSArrayPtr>(value)) {
     auto &array = std::get<JSArrayPtr>(value);
-    for (unsigned int i = 0; i < array->array.size(); i++) {
-      if (i > 0) {
+    unsigned int count = 0;
+    for (auto &e : array->array) {
+      if (count++ > 0) {
         out += ',';
       }
-      toString(array->array[i], out);
+      if (!isNull(e) && !isUndefined(e)) {
+        toString(e, out);
+      }
     }
   } else if (std::holds_alternative<JSObjectPtr>(value)) {
     out += u"[object Object]";
@@ -563,16 +565,8 @@ static JSFunctionPtr createStringSlice(const std::shared_ptr<JSEnv> &global) {
 static void defineString(const std::shared_ptr<JSEnv> &global) {
   auto constructorImpl = [](const JSFunctionPtr &func,
                             const std::shared_ptr<JSEnv> &env) -> JSResult {
-    auto thing = env->findOrUndef(func->params[0]);
-    JSString str; // TODO: new String()
-    if (isUndefined(thing)) {
-      str = u"undefined";
-    } else if (isNull(thing)) {
-      str = u"null";
-    } else {
-      str = toString(thing);
-    }
-    return Ok(std::make_shared<JSString>(std::move(str)));
+    auto thing = env->findOrUndef(func->params[0]); // TODO: new String
+    return Ok(std::make_shared<JSString>(toString(thing)));
   };
   auto prototype = std::make_shared<JSObject>();
   prototype->values["match"] = createStringMatch(global);
