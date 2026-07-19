@@ -1,5 +1,13 @@
 # Changelog
 
+## [Unreleased]
+
+### Changed
+
+#### Misc
+
+- enable Unicode set mode in ``litecheck`` regex pattern
+
 ## [0.42.1] - 2026-07-19
 
 - fix key-value tuple type construction during map iteration

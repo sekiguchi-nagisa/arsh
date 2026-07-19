@@ -1,4 +1,4 @@
 CHECK_RE on line 6,
-    Expect: /.+ C+/u
+    Expect: /.+ C+/v
     Actual: AAA ZZZ BBB
 stdout is mismatched

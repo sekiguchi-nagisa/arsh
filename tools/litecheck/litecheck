@@ -65,7 +65,7 @@ type Directive(t : String, l : String, n : Int) {
     assert !$l.empty()
     let line = case $type {
         "STATUS" => $_parse_num($l) ?? throw new Error("$STATUS directive must be positive number: \`$l'")
-        $/CHECK.*_RE.*/ => new Regex($l, "")
+        $/CHECK.*_RE.*/ => new Regex($l, "v")
         else => $l as Any
     }
     let ln = $n     # line number
