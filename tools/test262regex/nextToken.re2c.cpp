@@ -105,22 +105,23 @@ INIT:
     "return"               { RET(RETURN); }
     "new"                  { RET(NEW); }
     "function"             { RET(FUNCTION); }
+    "typeof"               { RET(TYPEOF); }
+    "void"                 { RET(VOID); }
+    "instanceof"           { RET(INSTANCEOF); }
+    "try"                  { RET(TRY); }
+    "catch"                { RET(CATCH); }
+    "finally"              { RET(FINALLY); }
+    "throw"                { RET(THROW); }
     "this"                 { RET(KEYWORD); }
-    "throw"                { RET(KEYWORD); }
     "break"                { RET(KEYWORD); }
     "continue"             { RET(KEYWORD); }
     "case"                 { RET(KEYWORD); }
-    "catch"                { RET(KEYWORD); }
     "class"                { RET(KEYWORD); }
     "default"              { RET(KEYWORD); }
     "do"                   { RET(KEYWORD); }
     "else"                 { RET(KEYWORD); }
-    "finally"              { RET(KEYWORD); }
     "for"                  { RET(KEYWORD); }
     "if"                   { RET(KEYWORD); }
-    "instanceof"           { RET(KEYWORD); }
-    "try"                  { RET(KEYWORD); }
-    "typeof"               { RET(KEYWORD); }
     "while"                { RET(KEYWORD); }
     "with"                 { RET(KEYWORD); }
     INT FRAC? EXP?         { RET(NUMBER); }

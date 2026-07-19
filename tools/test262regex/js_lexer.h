@@ -40,6 +40,13 @@ namespace arsh::re262 {
   OP(NEW, "new")                                                                                   \
   OP(FUNCTION, "function")                                                                         \
   OP(RETURN, "return")                                                                             \
+  OP(VOID, "void")                                                                                 \
+  OP(TYPEOF, "typeof")                                                                             \
+  OP(INSTANCEOF, "instanceof")                                                                     \
+  OP(TRY, "try")                                                                                   \
+  OP(CATCH, "catch")                                                                               \
+  OP(FINALLY, "finally")                                                                           \
+  OP(THROW, "throw")                                                                               \
   OP(ASSIGN, "=")                                                                                  \
   OP(ADD, "+")                                                                                     \
   OP(SUB, "-")                                                                                     \

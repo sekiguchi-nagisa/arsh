@@ -393,6 +393,28 @@ JSResult isInstanceOf(const std::shared_ptr<JSEnv> &env, unsigned int lineNum, c
   return Ok(true);
 }
 
+JSString typeOf(const JSValue &value) {
+  if (isUndefined(value)) {
+    return u"undefined";
+  }
+  if (isNull(value)) {
+    return u"object";
+  }
+  if (std::holds_alternative<bool>(value)) {
+    return u"boolean";
+  }
+  if (std::holds_alternative<double>(value)) {
+    return u"number";
+  }
+  if (std::holds_alternative<JSStringPtr>(value)) {
+    return u"string";
+  }
+  if (std::holds_alternative<JSFunctionPtr>(value)) {
+    return u"function";
+  }
+  return u"object";
+}
+
 // for builtin
 JSFunctionPtr createJSFunction(const std::shared_ptr<JSEnv> &env, const char *name,
                                std::vector<std::string> &&params, JSObjectPtr &&prototype,
@@ -641,8 +663,17 @@ struct VarDecl { // currently only support `const`
   std::unique_ptr<Node> expr;
 };
 
-struct Return {
+struct JumpStmt {
+  JSResult::Status status;
   std::unique_ptr<Node> expr; // maybe null
+};
+
+struct TryStmt {
+  std::vector<std::unique_ptr<Node>> tryBlock;
+  bool hasCatch;
+  std::string except; // for caught exception (maybe empty)
+  std::vector<std::unique_ptr<Node>> catchBlock;
+  std::vector<std::unique_ptr<Node>> finallyBlock;
 };
 
 struct Node {
@@ -650,7 +681,7 @@ struct Node {
 
   using Underlying = std::variant<NullLiteral, BoolLiteral, NumberLiteral, StringLiteral,
                                   RegexLiteral, ArrayLiteral, ObjectLiteral, FuncLiteral, NameExpr,
-                                  AccessExpr, CallExpr, UnaryExpr, VarDecl, Return>;
+                                  AccessExpr, CallExpr, UnaryExpr, VarDecl, JumpStmt, TryStmt>;
   Underlying value;
 
   Node(unsigned int lineNum, Underlying v) : lineNum(lineNum), value(std::move(v)) {}
@@ -678,6 +709,8 @@ struct Node {
   OP(ADD)                                                                                          \
   OP(SUB)                                                                                          \
   OP(NEW)                                                                                          \
+  OP(VOID)                                                                                         \
+  OP(TYPEOF)                                                                                       \
   EACH_LA_JS_PRIMARY(OP)
 
 #define EACH_LA_JS_STATEMENT(OP)                                                                   \
@@ -685,6 +718,8 @@ struct Node {
   OP(LET)                                                                                          \
   OP(VAR)                                                                                          \
   OP(RETURN)                                                                                       \
+  OP(THROW)                                                                                        \
+  OP(TRY)                                                                                          \
   EACH_LA_JS_EXPRESSION(OP)
 
 #define GEN_LA_CASE(CASE) case JSTokenKind::CASE:
@@ -733,6 +768,15 @@ private:
   Token expectVarDeclIdentifier();
 
   std::unique_ptr<Node> parseStatement();
+
+  /**
+   *
+   * @param nodes
+   * @return return always null
+   */
+  std::unique_ptr<Node> parseBlock(std::vector<std::unique_ptr<Node>> &nodes);
+
+  std::unique_ptr<Node> parseTryStatement();
 
   std::unique_ptr<Node> parseExpression();
 
@@ -826,8 +870,18 @@ std::unique_ptr<Node> JSParser::parseStatement() {
       node = TRY(this->parseExpression());
     }
     TRY(this->expect(JSTokenKind::LINE_END));
-    return std::make_unique<Node>(this->lexer->getLineNumByPos(token.pos), Return{std::move(node)});
+    return std::make_unique<Node>(this->lexer->getLineNumByPos(token.pos),
+                                  JumpStmt{JSResult::Status::RETURN, std::move(node)});
   }
+  case JSTokenKind::THROW: {
+    Token token = TRY(this->expect(JSTokenKind::THROW));
+    auto node = TRY(this->parseExpression());
+    TRY(this->expect(JSTokenKind::LINE_END));
+    return std::make_unique<Node>(this->lexer->getLineNumByPos(token.pos),
+                                  JumpStmt{JSResult::Status::ERR, std::move(node)});
+  }
+  case JSTokenKind::TRY:
+    return this->parseTryStatement();
     // clang-format off
   EACH_LA_JS_EXPRESSION(GEN_LA_CASE) {
     auto expr = TRY(this->parseExpression());
@@ -840,13 +894,57 @@ std::unique_ptr<Node> JSParser::parseStatement() {
   }
 }
 
+std::unique_ptr<Node> JSParser::parseBlock(std::vector<std::unique_ptr<Node>> &nodes) {
+  TRY(this->expect(JSTokenKind::LBC));
+  while (this->curKind != JSTokenKind::RBC) {
+    auto node = TRY(this->parseStatement());
+    nodes.push_back(std::move(node));
+  }
+  TRY(this->expect(JSTokenKind::RBC));
+  return nullptr;
+}
+
+std::unique_ptr<Node> JSParser::parseTryStatement() {
+  Token token = TRY(this->expect(JSTokenKind::TRY));
+  std::vector<std::unique_ptr<Node>> tryBlock;
+  TRY(this->parseBlock(tryBlock));
+  bool foundCatch = false;
+  std::string except;
+  std::vector<std::unique_ptr<Node>> catchBlock;
+  if (this->curKind == JSTokenKind::CATCH) {
+    TRY(this->expect(JSTokenKind::CATCH));
+    if (this->curKind == JSTokenKind::LP) {
+      TRY(this->expect(JSTokenKind::LP));
+      except = this->lexer->toTokenText(TRY(this->expectVarDeclIdentifier()));
+      TRY(this->expect(JSTokenKind::RP));
+    }
+    TRY(this->parseBlock(catchBlock));
+    foundCatch = true;
+  }
+  std::vector<std::unique_ptr<Node>> finallyBlock;
+  if (this->curKind == JSTokenKind::FINALLY) {
+    TRY(this->expect(JSTokenKind::FINALLY));
+    TRY(this->parseBlock(finallyBlock));
+  } else if (!foundCatch) {
+    E_ALTER(JSTokenKind::CATCH, JSTokenKind::FINALLY);
+  }
+  return std::make_unique<Node>(this->lexer->getLineNumByPos(token.pos),
+                                TryStmt{.tryBlock = std::move(tryBlock),
+                                        .hasCatch = foundCatch,
+                                        .except = std::move(except),
+                                        .catchBlock = std::move(catchBlock),
+                                        .finallyBlock = std::move(finallyBlock)});
+}
+
 std::unique_ptr<Node> JSParser::parseExpression() { return this->parseUnaryExpression(); }
 
 std::unique_ptr<Node> JSParser::parseUnaryExpression() {
   switch (this->curKind) {
   case JSTokenKind::NOT:
   case JSTokenKind::ADD:
-  case JSTokenKind::SUB: {
+  case JSTokenKind::SUB:
+  case JSTokenKind::VOID:
+  case JSTokenKind::TYPEOF: {
     Token token = this->curToken;
     this->consume();
     auto expr = TRY(this->parseUnaryExpression());
@@ -1149,6 +1247,50 @@ static JSResult evalFunc(const FuncLiteral &literal, const std::shared_ptr<JSEnv
   return Ok(createJSFunction(env, "", std::vector(literal.params), nullptr, std::move(impl)));
 }
 
+static JSResult evalUnary(const UnaryExpr &unary, const std::shared_ptr<JSEnv> &env) {
+  auto value = TRY(evaluate(*unary.expr, env));
+  if (unary.op == "!") {
+    value = !toBool(value);
+  } else if (unary.op == "+") {
+    value = toNumber(value);
+  } else if (unary.op == "-") {
+    value = -toNumber(value);
+  } else if (unary.op == "void") {
+    value = JSValue(); // always `undefined`
+  } else if (unary.op == "typeof") {
+    value = std::make_shared<JSString>(typeOf(value));
+  }
+  return Ok(std::move(value));
+}
+
+static JSResult evalBlock(const std::vector<std::unique_ptr<Node>> &nodes,
+                          const std::shared_ptr<JSEnv> &env) {
+  for (auto &node : nodes) {
+    TRY(evaluate(*node, env));
+  }
+  return Ok(JSValue());
+}
+
+static JSResult evalBlockWithNewEnv(const std::vector<std::unique_ptr<Node>> &nodes,
+                                    const std::shared_ptr<JSEnv> &env) {
+  return evalBlock(nodes, env->createChild());
+}
+
+static JSResult evalTry(const TryStmt &tryStmt, const std::shared_ptr<JSEnv> &env) {
+  auto ret = evalBlockWithNewEnv(tryStmt.tryBlock, env);
+  if (ret.status == JSResult::Status::ERR && tryStmt.hasCatch) {
+    auto catchEnv = env->createChild();
+    if (!tryStmt.except.empty()) {
+      catchEnv->define(tryStmt.except, ret.value);
+    }
+    ret = evalBlock(tryStmt.catchBlock, catchEnv);
+  }
+  if (!tryStmt.finallyBlock.empty()) {
+    TRY(evalBlockWithNewEnv(tryStmt.finallyBlock, env));
+  }
+  return ret;
+}
+
 static JSResult evaluate(const Node &node, const std::shared_ptr<JSEnv> &env) {
   return std::visit(
       [env, lineNum = node.lineNum](auto &&element) -> JSResult {
@@ -1178,15 +1320,7 @@ static JSResult evaluate(const Node &node, const std::shared_ptr<JSEnv> &env) {
         } else if constexpr (std::is_same_v<T, CallExpr>) {
           return evalCallExpr(element, lineNum, env);
         } else if constexpr (std::is_same_v<T, UnaryExpr>) {
-          auto value = TRY(evaluate(*element.expr, env));
-          if (element.op == "!") {
-            value = !toBool(value);
-          } else if (element.op == "+") {
-            value = toNumber(value);
-          } else if (element.op == "-") {
-            value = -toNumber(value);
-          }
-          return Ok(std::move(value));
+          return evalUnary(element, env);
         } else if constexpr (std::is_same_v<T, VarDecl>) {
           auto value = TRY(evaluate(*element.expr, env));
           if (!env->define(element.name, std::move(value))) { // TODO: should be syntax error
@@ -1196,12 +1330,14 @@ static JSResult evaluate(const Node &node, const std::shared_ptr<JSEnv> &env) {
             return throwError(env, builtin::TYPE_ERROR, lineNum, std::move(message));
           }
           return Ok(JSValue());
-        } else if constexpr (std::is_same_v<T, Return>) {
+        } else if constexpr (std::is_same_v<T, JumpStmt>) {
           JSValue ret;
           if (auto &n = element.expr) {
             ret = TRY(evaluate(*n, env));
           }
-          return JSResult{JSResult::Status::RETURN, std::move(ret)};
+          return JSResult{element.status, std::move(ret)};
+        } else if constexpr (std::is_same_v<T, TryStmt>) {
+          return evalTry(element, env);
         } else {
           fatal("unreachable");
         }
