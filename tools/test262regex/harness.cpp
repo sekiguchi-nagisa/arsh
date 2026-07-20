@@ -287,7 +287,7 @@ static JSResult assertRegExpTest(const std::shared_ptr<JSEnv> &env, const JSValu
     out += u"match ";
     toString(string, out);
     out += u" (";
-    toPrettyString(string, out, true);
+    toPrettyString(string, out, {.escape = true, .radix = 10});
     out += u')';
     return assertImpl(env, false, std::make_shared<JSString>(out));
   }

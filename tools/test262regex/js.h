@@ -38,6 +38,7 @@ constexpr const char *TYPE_ERROR = "TypeError";
 constexpr const char *RANGE_ERROR = "RangeError";
 constexpr const char *REGEXP = "RegExp";
 constexpr const char *STRING = "String";
+constexpr const char *NUMBER = "Number";
 
 // for builtin variable/property
 constexpr const char *THIS = "this";
@@ -233,7 +234,12 @@ inline std::string toWTF8(const std::u16string &value) {
   return out;
 }
 
-void toPrettyString(const JSValue &value, std::u16string &out, bool escape = false);
+struct PrettyStringOp {
+  bool escape{false};
+  unsigned char radix{10};
+};
+
+void toPrettyString(const JSValue &value, std::u16string &out, PrettyStringOp op = {});
 
 inline std::u16string toPrettyString(const JSValue &value) {
   std::u16string out;

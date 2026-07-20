@@ -98,6 +98,9 @@ JSResult findProperty(const std::shared_ptr<JSEnv> &env, unsigned int callerLine
     }
     actualRecv = env->findGlobalEnv()->findOrUndef(builtin::STRING);
     actualRecv = getOwnProperty(*std::get<JSFunctionPtr>(actualRecv), builtin::PROTOTYPE);
+  } else if (std::holds_alternative<double>(recv)) {
+    actualRecv = env->findGlobalEnv()->findOrUndef(builtin::NUMBER);
+    actualRecv = getOwnProperty(*std::get<JSFunctionPtr>(actualRecv), builtin::PROTOTYPE);
   }
   JSValue ret;
   const bool proto = name == builtin::PROTO;
@@ -160,7 +163,31 @@ static void formatCodePoints(const std::u16string &value, std::u16string &out) {
   }
 }
 
-void toPrettyString(const JSValue &value, std::u16string &out, const bool escape) {
+static void formatInteger(const int64_t value, std::u16string &out, const unsigned char radix) {
+  assert(radix >= 2 && radix <= 36);
+  if (value < 0) {
+    out += u'-';
+  }
+  uint64_t v;
+  if (value < 0) {
+    if (value == INT64_MIN) {
+      v = static_cast<uint64_t>(INT64_MAX) + 1;
+    } else {
+      v = -1 * value;
+    }
+  } else {
+    v = static_cast<uint64_t>(value);
+  }
+  std::u16string tmp;
+  while (v) {
+    tmp += u"0123456789abcdefghijklmnopqrstuvwxyz"[v % radix];
+    v /= radix;
+  }
+  std::reverse(tmp.begin(), tmp.end());
+  out += tmp;
+}
+
+void toPrettyString(const JSValue &value, std::u16string &out, const PrettyStringOp op) {
   if (isUndefined(value)) {
     out += u"undefined";
   } else if (isNull(value)) {
@@ -176,12 +203,12 @@ void toPrettyString(const JSValue &value, std::u16string &out, const bool escape
     } else if (std::isinf(d)) {
       out += std::signbit(d) ? u"-Infinity" : u"Infinity";
     } else if (isInteger(d)) {
-      toUTF16(std::to_string(static_cast<int64_t>(d)), out);
+      formatInteger(static_cast<int64_t>(d), out, op.radix);
     } else {
-      toUTF16(std::to_string(d), out);
+      toUTF16(std::to_string(d), out); // TODO: radix
     }
   } else if (std::holds_alternative<JSStringPtr>(value)) {
-    if (escape) {
+    if (op.escape) {
       formatCodePoints(*std::get<JSStringPtr>(value), out);
     } else {
       out += *std::get<JSStringPtr>(value);
@@ -200,7 +227,7 @@ void toPrettyString(const JSValue &value, std::u16string &out, const bool escape
         out += u',';
       }
       out += u' ';
-      toPrettyString(array->array[i], out, escape);
+      toPrettyString(array->array[i], out, op);
     }
     if (array->values.size() && array->array.size()) {
       out += u',';
@@ -213,7 +240,7 @@ void toPrettyString(const JSValue &value, std::u16string &out, const bool escape
       out += u' ';
       toUTF16(k, out);
       out += u": ";
-      toPrettyString(v, out, escape);
+      toPrettyString(v, out, op);
     }
     if (array->array.size() || array->values.size()) {
       out += u' ';
@@ -231,7 +258,7 @@ void toPrettyString(const JSValue &value, std::u16string &out, const bool escape
       out += u' ';
       toUTF16(k, out);
       out += u": ";
-      toPrettyString(v, out, escape);
+      toPrettyString(v, out, op);
     }
     out += u" }";
   } else {
@@ -303,6 +330,11 @@ double toNumber(const JSValue &value) {
       return 0.0;
     } else if (!StringRef(tmp).hasNullChar()) {
       if (auto ret = convertToDouble(tmp.c_str())) {
+        if (std::isinf(ret.value)) {
+          if (tmp != "Infinity" && tmp != "-Infinity" && tmp != "+Infinity") {
+            return std::nan("");
+          }
+        }
         return ret.value;
       }
     }
@@ -563,17 +595,56 @@ static JSFunctionPtr createStringSlice(const std::shared_ptr<JSEnv> &global) {
 }
 
 static void defineString(const std::shared_ptr<JSEnv> &global) {
-  auto constructorImpl = [](const JSFunctionPtr &func,
-                            const std::shared_ptr<JSEnv> &env) -> JSResult {
+  auto impl = [](const JSFunctionPtr &func, const std::shared_ptr<JSEnv> &env) -> JSResult {
     auto thing = env->findOrUndef(func->params[0]); // TODO: new String
     return Ok(std::make_shared<JSString>(toString(thing)));
   };
   auto prototype = std::make_shared<JSObject>();
   prototype->values["match"] = createStringMatch(global);
   prototype->values["slice"] = createStringSlice(global);
-  auto func = createJSFunction(global, builtin::STRING, {"thing"}, std::move(prototype),
-                               std::move(constructorImpl));
+  auto func =
+      createJSFunction(global, builtin::STRING, {"thing"}, std::move(prototype), std::move(impl));
   global->define(builtin::STRING, std::move(func));
+}
+
+static JSFunctionPtr createNumberToString(const std::shared_ptr<JSEnv> &global) {
+  auto impl = [](const JSFunctionPtr &func, const std::shared_ptr<JSEnv> &env) -> JSResult {
+    unsigned char radix = 10;
+    if (auto v = env->findOrUndef(func->params[0]); !isUndefined(v)) {
+      double num = toNumber(v);
+      if (!isInteger(num) || num < 2 || num > 36) {
+        return throwError(env, builtin::RANGE_ERROR, u"toString() radix argument must be 2~36");
+      }
+      radix = static_cast<unsigned char>(num);
+    }
+    double value = std::get<double>(env->findOrUndef(builtin::THIS));
+    if (!isInteger(value) && radix != 10) { // TODO: radix for float
+      return throwError(env, builtin::RANGE_ERROR,
+                        u"float value toString() radix argument must be 10");
+    }
+    JSString out;
+    toPrettyString(value, out, {.escape = false, .radix = radix});
+    return Ok(std::make_shared<JSString>(std::move(out)));
+  };
+  return createJSFunction(global, "toString", {"radix"}, nullptr, std::move(impl));
+}
+
+static void defineNumber(const std::shared_ptr<JSEnv> &global) {
+  auto impl = [](const JSFunctionPtr &func, const std::shared_ptr<JSEnv> &env) -> JSResult {
+    if (auto *v = env->find(func->params[0])) { // TODO: new Number
+      return Ok(toNumber(*v));
+    }
+    return Ok(0.0);
+  };
+  auto prototype = std::make_shared<JSObject>();
+  prototype->values["toString"] = createNumberToString(global);
+  auto func =
+      createJSFunction(global, builtin::NUMBER, {"value"}, std::move(prototype), std::move(impl));
+  global->define(builtin::NUMBER, std::move(func));
+
+  // number constant
+  global->define("NaN", std::nan(""));
+  global->define("Infinity", INFINITY);
 }
 
 std::shared_ptr<JSEnv> initJSEnv() {
@@ -585,6 +656,7 @@ std::shared_ptr<JSEnv> initJSEnv() {
   defineDerivedError(global, builtin::REF_ERROR);
   defineDerivedError(global, builtin::RANGE_ERROR);
   defineString(global);
+  defineNumber(global);
   defineJSRegex(global);
   defineConsole(global);
   return global;
