@@ -913,14 +913,14 @@ ARSH_METHOD string_contains(RuntimeContext &ctx) {
   RET_BOOL(left.contains(right));
 }
 
-//!bind: function split($this : String, $delim : String) : Array<String>
+//!bind: function split($this : String, $delim : Option<String>) : Array<String>
 ARSH_METHOD string_split(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_split);
   auto results = Value::create<ArrayObject>(ctx.typePool.get(TYPE::StringArray));
   auto &ptr = typeAs<ArrayObject>(results);
 
   auto thisStr = LOCAL(0).asStrRef();
-  auto delimStr = LOCAL(1).asStrRef();
+  auto delimStr = LOCAL(1).isInvalid() ? "" : LOCAL(1).asStrRef();
 
   if (delimStr.empty()) {
     const auto end = thisStr.end();

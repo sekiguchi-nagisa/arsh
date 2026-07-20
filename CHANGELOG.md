@@ -4,6 +4,10 @@
 
 ### Changed
 
+#### Builtin
+
+- ``String#split`` method param is now optional (pass empty string by default)
+
 #### Misc
 
 - enable Unicode set mode in ``litecheck`` regex pattern

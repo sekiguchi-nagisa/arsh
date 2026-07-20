@@ -169,7 +169,7 @@ function lastIndexOf(target: String): Int for String
 
 function contains(target: String): Bool for String
 
-function split(delim: String): [String] for String
+function split(delim: String?): [String] for String
 
 function replace(target: String, rep: String, once: Bool?): String for String
 

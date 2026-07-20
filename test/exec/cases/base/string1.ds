@@ -213,6 +213,9 @@ assert $sa[1] == $'\x00c'
 $sa = $'a\xFFあ\xFEい\xEE'.split('')
 assert $sa == ['a', $'\xFF', 'あ', $'\xFE', 'い', $'\xEE']
 
+$sa = $'a\xFFあ\xFEい\xEE'.split()
+assert $sa == ['a', $'\xFF', 'あ', $'\xFE', 'い', $'\xEE']
+
 assert "hello".replace("e", "@") == "h@llo"
 assert "hello".replace("ll", "") == "heo"
 assert "hello".replace("", "123") == "hello"
