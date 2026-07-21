@@ -6,6 +6,7 @@
 #include <misc/flag_util.hpp>
 #include <misc/format.hpp>
 #include <misc/num_util.hpp>
+#include <misc/split_random.hpp>
 #include <misc/time_util.hpp>
 
 using namespace arsh;
@@ -670,6 +671,41 @@ TEST(NumTest, double1) {
   ASSERT_FALSE(ret);
   ASSERT_EQ(DoubleConversionResult::OUT_OF_RANGE, ret.kind);
   ASSERT_EQ(HUGE_VAL, ret.value);
+}
+
+TEST(NumTest, IntStrRoundtrip) {
+  std::vector<int64_t> values;
+  values.push_back(std::numeric_limits<int64_t>::min());
+  values.push_back(std::numeric_limits<int64_t>::max());
+  values.push_back(0);
+  values.push_back(std::numeric_limits<int32_t>::min());
+  values.push_back(std::numeric_limits<int32_t>::max());
+  values.push_back(std::numeric_limits<uint32_t>::max());
+  L64X128MixRNG rng(42);
+  for (unsigned int i = 0; i < 500; i++) {
+    values.push_back(static_cast<int64_t>(rng.next()));
+  }
+
+  for (unsigned int radix = 2; radix <= 36; radix++) {
+    for (auto &v : values) {
+      SCOPED_TRACE("value=" + std::to_string(v) + ", radix=" + std::to_string(radix));
+      std::string out;
+      ASSERT_TRUE(formatInt64(v, out, radix, true));
+      auto ret = convertToNum<int64_t>(out.data(), out.data() + out.size(), radix);
+      ASSERT_TRUE(ret);
+      ASSERT_EQ(v, ret.value);
+    }
+
+    for (auto &v : values) {
+      uint64_t vv = v;
+      SCOPED_TRACE("value=" + std::to_string(vv) + ", radix=" + std::to_string(radix));
+      std::string out;
+      ASSERT_TRUE(formatInt64(vv, out, radix, false));
+      auto ret = convertToNum<uint64_t>(out.data(), out.data() + out.size(), radix);
+      ASSERT_TRUE(ret);
+      ASSERT_EQ(vv, ret.value);
+    }
+  }
 }
 
 TEST(EditDistanceTest, base) {

@@ -179,10 +179,10 @@ static void formatInteger(const int64_t value, std::u16string &out, const unsign
     v = static_cast<uint64_t>(value);
   }
   std::u16string tmp;
-  while (v) {
+  do {
     tmp += u"0123456789abcdefghijklmnopqrstuvwxyz"[v % radix];
     v /= radix;
-  }
+  } while (v);
   std::reverse(tmp.begin(), tmp.end());
   out += tmp;
 }

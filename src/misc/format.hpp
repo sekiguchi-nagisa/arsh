@@ -151,6 +151,35 @@ inline bool isValidIdentifier(const StringRef value) {
   return true;
 }
 
+inline bool formatInt64(const int64_t value, std::string &out, const unsigned int base,
+                        const bool sign) {
+  if (base < 2 || base > 36) {
+    return false;
+  }
+  bool negate = false;
+  auto tmp = static_cast<uint64_t>(value);
+  if (sign) { // treat as singed
+    if (value < 0) {
+      negate = true;
+      if (value == INT64_MIN) {
+        tmp = static_cast<uint64_t>(INT64_MAX) + 1;
+      } else {
+        tmp = static_cast<uint64_t>(-1 * value);
+      }
+    }
+  }
+  const auto oldSize = out.size();
+  do {
+    out += "0123456789abcdefghijklmnopqrstuvwxyz"[tmp % base];
+    tmp /= base;
+  } while (tmp);
+  if (negate) {
+    out += '-';
+  }
+  std::reverse(out.begin() + oldSize, out.end());
+  return true;
+}
+
 END_MISC_LIB_NAMESPACE_DECL
 
 #endif // MISC_LIB_FORMAT_HPP
