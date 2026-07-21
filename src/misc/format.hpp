@@ -17,6 +17,8 @@
 #ifndef MISC_LIB_FORMAT_HPP
 #define MISC_LIB_FORMAT_HPP
 
+#include <algorithm>
+
 #include "detect.hpp"
 #include "string_ref.hpp"
 
