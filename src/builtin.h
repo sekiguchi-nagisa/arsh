@@ -340,6 +340,21 @@ ARSH_METHOD int_toFloat(RuntimeContext &ctx) {
   RET(Value::createFloat(d));
 }
 
+//!bind: function toString($this : Int, $radix: Option<Int>, $unsigned: Option<Bool>) : Option<String>
+ARSH_METHOD int_toString(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(int_toString);
+  int64_t num = LOCAL(0).asInt();
+  auto &v = LOCAL(1);
+  const bool unsign = LOCAL(2).isInvalid() ? false : LOCAL(2).asBool();
+  if (auto radix = v.isInvalid() ? 10 : v.asInt(); radix >= 0 && radix <= UINT32_MAX) {
+    std::string out;
+    if (formatInt64(num, out, radix, !unsign)) {
+      RET(Value::createStr(std::move(out)));
+    }
+  }
+  RET(Value::createInvalid());
+}
+
 // ###################
 // ##     Float     ##
 // ###################
@@ -1041,15 +1056,23 @@ ARSH_METHOD string_sanitize(RuntimeContext &ctx) {
   }
 }
 
-//!bind: function toInt($this : String, $radix : Option<Int>) : Option<Int>
+//!bind: function toInt($this : String, $radix : Option<Int>, $unsigned: Option<Bool>) : Option<Int>
 ARSH_METHOD string_toInt(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_toInt);
   auto ref = LOCAL(0).asStrRef();
   auto &v = LOCAL(1);
+  const bool unsign = LOCAL(2).isInvalid() ? false : LOCAL(2).asBool();
   if (auto radix = v.isInvalid() ? 0 : v.asInt(); radix >= 0 && radix <= UINT32_MAX) {
-    auto ret = convertToNum<int64_t>(ref.begin(), ref.end(), static_cast<unsigned int>(radix));
-    if (ret) {
-      RET(Value::createInt(ret.value));
+    if (unsign) {
+      if (auto ret =
+              convertToNum<uint64_t>(ref.begin(), ref.end(), static_cast<unsigned int>(radix))) {
+        RET(Value::createInt(ret.value));
+      }
+    } else {
+      if (auto ret =
+              convertToNum<int64_t>(ref.begin(), ref.end(), static_cast<unsigned int>(radix))) {
+        RET(Value::createInt(ret.value));
+      }
     }
   }
   RET(Value::createInvalid());

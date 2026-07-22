@@ -63,6 +63,8 @@ function %OP_URSHIFT(target: Int): Int for Int
 function abs(): Int for Int
 
 function %OP_TO_FLOAT(): Float for Int
+
+function toString(radix: Int?, unsigned: Bool?): String? for Int
 ```
 
 ## Float type
@@ -177,7 +179,7 @@ function validate(): Bool for String
 
 function sanitize(repl: String?): String for String
 
-function toInt(radix: Int?): Int? for String
+function toInt(radix: Int?, unsigned: Bool?): Int? for String
 
 function toFloat(): Float? for String
 

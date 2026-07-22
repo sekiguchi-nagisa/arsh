@@ -2,11 +2,18 @@
 
 ## [Unreleased]
 
+### Added
+
+#### Builtin
+
+- add ``Int#toString`` for reverse method of ``String#toInt``
+
 ### Changed
 
 #### Builtin
 
 - ``String#split`` method param is now optional (pass empty string by default)
+- add ``unsigned`` param to ``String#toInt`` method. now can recognize as unsigned int
 
 #### Misc
 

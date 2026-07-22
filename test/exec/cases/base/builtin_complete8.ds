@@ -2,13 +2,14 @@
 # for -d option (description)
 ## type signature
 assert complete -d -- '$PID.'
-assert $COMPREPLY.size() == 4
+assert $COMPREPLY.size() == 5
 var args = @($COMPREPLY)
-assert $args.size() == 4
+assert $args.size() == 5
 assert $args[0] == 'abs@(): Int for Int'
 assert $args[1] == 'compare@(target: Int): Int for Int'
 assert $args[2] == 'equals@(target: Int): Bool for Int'
 assert $args[3] == 'toFloat@(): Float for Int'
+assert $args[4] == 'toString@(radix: Int?, unsigned: Bool?): String? for Int'
 
 assert complete -d -- '$COMPREPLY.a'
 $args = @($COMPREPLY)
