@@ -60,6 +60,13 @@
 #    CHECK:       "labelDetails": {
 #    CHECK:         "detail": "(): Float for Int"
 #    CHECK:       }
+#    CHECK:     },
+#    CHECK:     {
+#    CHECK:       "kind": 2,
+#    CHECK:       "label": "toString",
+#    CHECK:       "labelDetails": {
+#    CHECK:         "detail": "(radix: Int?, unsigned: Bool?): String? for Int"
+#    CHECK:       }
 #    CHECK:     }
 #    CHECK:   ]
 

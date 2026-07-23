@@ -642,29 +642,36 @@ TEST_F(InteractiveTest, lineEditorCompSuffix) {
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
       "$LINE_EDIT.setCompleter(function(m, s) => { complete -m $m -q -s -d -- $s; $COMPREPLY;})"));
   ASSERT_NO_FATAL_FAILURE(this->changePrompt("> "));
+  this->changeWinSize({.rows = 200, .cols = 125});
 
   this->send("1234.\t");
-  ASSERT_NO_FATAL_FAILURE(this->expect("> 1234.\n"
-                                       "abs (): Int for Int                 "
-                                       "compare (target: Int): Int for Int  "
-                                       "equals (target: Int): Bool for Int  "
-                                       "toFloat (): Float for Int           \n"));
+  ASSERT_NO_FATAL_FAILURE(
+      this->expect("> 1234.\n"
+                   "abs (): Int for Int                                         "
+                   "toFloat (): Float for Int                                   \n"
+                   "compare (target: Int): Int for Int                          "
+                   "toString (radix: Int?, unsigned: Bool?): String? for Int    \n"
+                   "equals (target: Int): Bool for Int                          \n"));
 
   {
     auto cleanup = this->reuseScreen();
     this->send("\t");
-    ASSERT_NO_FATAL_FAILURE(this->expect("> 1234.abs()\n"
-                                         "abs (): Int for Int                 "
-                                         "compare (target: Int): Int for Int  "
-                                         "equals (target: Int): Bool for Int  "
-                                         "toFloat (): Float for Int           \n"));
+    ASSERT_NO_FATAL_FAILURE(
+        this->expect("> 1234.abs()\n"
+                     "abs (): Int for Int                                         "
+                     "toFloat (): Float for Int                                   \n"
+                     "compare (target: Int): Int for Int                          "
+                     "toString (radix: Int?, unsigned: Bool?): String? for Int    \n"
+                     "equals (target: Int): Bool for Int                          \n"));
 
     this->send("\t");
-    ASSERT_NO_FATAL_FAILURE(this->expect("> 1234.compare(\n"
-                                         "abs (): Int for Int                 "
-                                         "compare (target: Int): Int for Int  "
-                                         "equals (target: Int): Bool for Int  "
-                                         "toFloat (): Float for Int           \n"));
+    ASSERT_NO_FATAL_FAILURE(
+        this->expect("> 1234.compare(\n"
+                     "abs (): Int for Int                                         "
+                     "toFloat (): Float for Int                                   \n"
+                     "compare (target: Int): Int for Int                          "
+                     "toString (radix: Int?, unsigned: Bool?): String? for Int    \n"
+                     "equals (target: Int): Bool for Int                          \n"));
 
     this->send(CTRL_C);
     ASSERT_NO_FATAL_FAILURE(this->expect("> 1234.compare(\n> "));
