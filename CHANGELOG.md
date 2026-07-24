@@ -10,6 +10,10 @@
 
 ### Changed
 
+#### Core
+
+- treat lone surrogate code points as single grapheme cluster in ``\X`` property escape of regex
+
 #### Builtin
 
 - ``String#split`` method param is now optional (pass empty string by default)

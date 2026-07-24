@@ -36,6 +36,8 @@ assert new Regex("\\/s") =~ 's/s'
 assert new Regex($'hh\x00', "") =~ $'hh\x00'
 
 assert $/^.$/ =~ "あ"
+assert $/^.$/ =~ $'\xED\xA0\x80'    # surrogate
+assert $/^.$/ =~ $'\xED\xBF\xBF'    # surrogate
 
 assert $/\s/ =~ ' '
 assert $/\s/ =~ "　"
@@ -53,6 +55,11 @@ assert $/\p{sc=Katakana}/ =~ 'ナ'
 
 assert $/^\X\X\X$/ =~ "🇯🇵🇯🇵🇯🇵"  # unicode 9 or later
 assert $/^\X$/ !~ "🇯🇵🇯🇵🇯🇵"     # before unicode 9,  assert $/^\X$/ =~ "🇯🇵🇯🇵🇯🇵"
+assert $/^\X$/ =~ $'\xED\xA0\x80'   # surrogate
+assert $/^\X$/ =~ $'\xED\xBF\xBF'   # surrogate
+assert $/^\X\X\X$/ !~ $'\xED\xA0\x80'    # surrogate
+assert $/^\X\X\X$/ !~ $'\xED\xBF\xBF'    # surrogate
+
 
 assert '/hoge' =~ $/\//
 

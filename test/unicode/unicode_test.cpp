@@ -366,6 +366,18 @@ TEST_F(UnicodeTest, graphemeBreakProperty) {
   p = GraphemeBoundary::getBreakProperty(UnicodeUtil::REPLACEMENT_CHAR_CODE); // placement char
   ASSERT_EQ(GraphemeBoundary::BreakProperty::Any, p);
 
+  p = GraphemeBoundary::getBreakProperty(0xD800); // surrogate
+  ASSERT_EQ(GraphemeBoundary::BreakProperty::Any, p);
+
+  p = GraphemeBoundary::getBreakProperty(0xDBFF); // surrogate
+  ASSERT_EQ(GraphemeBoundary::BreakProperty::Any, p);
+
+  p = GraphemeBoundary::getBreakProperty(0xDC00); // surrogate
+  ASSERT_EQ(GraphemeBoundary::BreakProperty::Any, p);
+
+  p = GraphemeBoundary::getBreakProperty(0xDFFF); // surrogate
+  ASSERT_EQ(GraphemeBoundary::BreakProperty::Any, p);
+
   // InCB=Consonant
   p = GraphemeBoundary::getBreakProperty(0x0915);
   ASSERT_EQ(GraphemeBoundary::BreakProperty::InCB_Consonant, p);
@@ -682,6 +694,60 @@ TEST(GraphemeBreakTestBase, scan2) {
 
   ret = scanner.next();
   ASSERT_FALSE(scanner.hasNext());
+}
+
+TEST(GraphemeBreakTestBase, scan3) { // surrogate
+  const char *str = "\xED\xA0\x80 \xED\xBF\xBF";
+  {
+    Utf8GraphemeScanner scanner(str);
+    ASSERT_TRUE(scanner.hasNext());
+
+    GraphemeCluster ret = scanner.next();
+    ASSERT_EQ("\xED", ret.getRef());
+    ASSERT_TRUE(scanner.hasNext());
+
+    ret = scanner.next();
+    ASSERT_EQ("\xA0", ret.getRef());
+    ASSERT_TRUE(scanner.hasNext());
+
+    ret = scanner.next();
+    ASSERT_EQ("\x80", ret.getRef());
+    ASSERT_TRUE(scanner.hasNext());
+
+    ret = scanner.next();
+    ASSERT_EQ(" ", ret.getRef());
+    ASSERT_TRUE(scanner.hasNext());
+
+    ret = scanner.next();
+    ASSERT_EQ("\xED", ret.getRef());
+    ASSERT_TRUE(scanner.hasNext());
+
+    ret = scanner.next();
+    ASSERT_EQ("\xBF", ret.getRef());
+    ASSERT_TRUE(scanner.hasNext());
+
+    ret = scanner.next();
+    ASSERT_EQ("\xBF", ret.getRef());
+    ASSERT_FALSE(scanner.hasNext());
+  }
+
+  // allow surrogate
+  {
+    Utf8GraphemeScanner scanner(str, true);
+    ASSERT_TRUE(scanner.hasNext());
+
+    GraphemeCluster ret = scanner.next();
+    ASSERT_EQ("\xED\xA0\x80", ret.getRef());
+    ASSERT_TRUE(scanner.hasNext());
+
+    ret = scanner.next();
+    ASSERT_EQ(" ", ret.getRef());
+    ASSERT_TRUE(scanner.hasNext());
+
+    ret = scanner.next();
+    ASSERT_EQ("\xED\xBF\xBF", ret.getRef());
+    ASSERT_FALSE(scanner.hasNext());
+  }
 }
 
 TEST(GraphemeBreakTestBase, InCB) {

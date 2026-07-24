@@ -566,7 +566,7 @@ BACKTRACK:
           if (input.available()) {
             StringRef ref = input.remainForward();
             size_t byteSize = 0;
-            iterateGraphemeUntil(ref, 1, [&byteSize](const GraphemeCluster &grapheme) {
+            iterateGraphemeUntil(ref, 1, true, [&byteSize](const GraphemeCluster &grapheme) {
               byteSize = grapheme.getRef().size();
             });
             input.setIter(input.getIter() + byteSize);

@@ -342,8 +342,10 @@ using UnicodeUtil = detail_unicode::UnicodeUtil<true>;
 struct Utf8Stream {
   const char *iter{nullptr};
   const char *end{nullptr};
+  bool allowSurrogate{false};
 
-  Utf8Stream(const char *begin, const char *end) : iter(begin), end(end) {}
+  Utf8Stream(const char *begin, const char *end, bool allowSurrogate = false)
+      : iter(begin), end(end), allowSurrogate(allowSurrogate) {}
 
   explicit operator bool() const { return this->iter != this->end; }
 
@@ -353,7 +355,8 @@ struct Utf8Stream {
 
   int nextCodePoint() {
     int codePoint = 0;
-    unsigned int size = UnicodeUtil::utf8ToCodePoint(this->iter, this->end, codePoint);
+    unsigned int size =
+        UnicodeUtil::utf8ToCodePoint(this->iter, this->end, codePoint, this->allowSurrogate);
     if (size < 1) {
       codePoint = -1;
       if (this->iter != this->end) {

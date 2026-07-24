@@ -155,8 +155,8 @@ private:
   const char *charBegin;
 
 public:
-  explicit Utf8GraphemeScanner(StringRef ref)
-      : Utf8GraphemeScanner(Utf8Stream(ref.begin(), ref.end())) {}
+  explicit Utf8GraphemeScanner(StringRef ref, bool allowSurrogate = false)
+      : Utf8GraphemeScanner(Utf8Stream(ref.begin(), ref.end(), allowSurrogate)) {}
 
   explicit Utf8GraphemeScanner(Utf8Stream &&stream, const char *charBegin = nullptr,
                                int codePoint = -1, BreakProperty p = BreakProperty::SOT)
@@ -209,14 +209,16 @@ static constexpr bool grapheme_consumer_requirement_v =
  * @param ref
  * @param limit
  * if number of grapheme clusters reach limit, break iteration
+ * @param allowSurrogate
+ * if true, accept surrogate code point
  * @param consumer
  * callback for scanned grapheme
  * @return
  * total number of scanned grapheme clusters
  */
 template <typename Func, enable_when<grapheme_consumer_requirement_v<Func>> = nullptr>
-size_t iterateGraphemeUntil(StringRef ref, size_t limit, Func consumer) {
-  Utf8GraphemeScanner scanner(Utf8Stream(ref.begin(), ref.end()));
+size_t iterateGraphemeUntil(StringRef ref, size_t limit, bool allowSurrogate, Func consumer) {
+  Utf8GraphemeScanner scanner(Utf8Stream(ref.begin(), ref.end(), allowSurrogate));
   size_t count = 0;
   for (; count < limit && scanner.hasNext(); count++) {
     GraphemeCluster ret = scanner.next();
@@ -231,6 +233,11 @@ size_t iterateGraphemeUntil(StringRef ref, size_t limit, Func consumer) {
     }
   }
   return count;
+}
+
+template <typename Func, enable_when<grapheme_consumer_requirement_v<Func>> = nullptr>
+size_t iterateGraphemeUntil(StringRef ref, size_t limit, Func consumer) {
+  return iterateGraphemeUntil(ref, limit, false, consumer);
 }
 
 template <typename Func, enable_when<grapheme_consumer_requirement_v<Func>> = nullptr>
