@@ -1,24 +1,52 @@
 #include <cstdint>
+#include <fuzzer/FuzzedDataProvider.h>
 
 #include <misc/unicode.hpp>
 #include <regex/dump.h>
 #include <regex/emit.h>
 #include <regex/parser.h>
 
+#include "../tools/json/serialize.h"
+
 using namespace arsh;
+
+#define JSONIFY(m) t(#m, m)
 
 struct Target {
   std::string pattern;
   std::string input;
+  regex::Mode mode{regex::Mode::BMP};
+  regex::Modifier modifiers{};
+
+  template <typename T>
+  void jsonify(T &t) {
+    std::vector<unsigned char> patternBytes;
+    for (auto ch : this->pattern) {
+      patternBytes.push_back(static_cast<unsigned char>(ch));
+    }
+    JSONIFY(patternBytes);
+    JSONIFY(input);
+    JSONIFY(mode);
+    JSONIFY(modifiers);
+  }
 };
 
-static std::string toValidUtf8(const StringRef ref) {
+static void dump(FILE *fp, const Target &target) {
+  auto tmp(target);
+  json::JSONSerializer serializer;
+  serializer(std::move(tmp));
+  auto &json = serializer.get();
+  auto out = json.serialize();
+  fprintf(fp, "%s\n", out.c_str());
+  fflush(fp);
+}
+
+static std::string toValidWTF8(const StringRef ref) {
   std::string ret;
   const char *end = ref.end();
   for (const char *iter = ref.begin(); iter != end;) {
     int codePoint = 0;
-    if (unsigned int len = UnicodeUtil::utf8ToCodePoint(iter, end, codePoint);
-        len && UnicodeUtil::isValidCodePoint(codePoint)) {
+    if (unsigned int len = UnicodeUtil::wtf8ToCodePoint(iter, end, codePoint)) {
       ret.append(iter, len);
       iter += len;
     } else {
@@ -29,14 +57,27 @@ static std::string toValidUtf8(const StringRef ref) {
   return ret;
 }
 
-static Target create(const uint8_t *data, const size_t size) {
-  StringRef value(reinterpret_cast<const char *>(data), size);
-  auto pattern = value.substr(0, size / 2);
-  auto input = toValidUtf8(value.slice(size / 2, value.size()));
-  return {
-      .pattern = pattern.toString(),
-      .input = std::move(input),
-  };
+static Target createTarget(const uint8_t *data, const size_t size) {
+  constexpr uint8_t MODIFIER_MASK = toUnderlying(regex::Modifier::DOT_ALL) |
+                                    toUnderlying(regex::Modifier::IGNORE_CASE) |
+                                    toUnderlying(regex::Modifier::MULTILINE);
+
+  FuzzedDataProvider fdp(data, size);
+  Target target;
+  target.mode = fdp.PickValueInArray<regex::Mode>({
+      regex::Mode::BMP,
+      regex::Mode::UNICODE,
+      regex::Mode::UNICODE_SET,
+  });
+  const uint8_t modBits = fdp.ConsumeIntegral<uint8_t>() & MODIFIER_MASK;
+  target.modifiers = static_cast<regex::Modifier>(modBits);
+
+  const size_t remaining = fdp.remaining_bytes();
+  const size_t patLen = fdp.ConsumeIntegralInRange<size_t>(0, remaining);
+  target.pattern = fdp.ConsumeBytesAsString(patLen);
+  target.input = toValidWTF8(fdp.ConsumeRemainingBytesAsString());
+
+  return target;
 }
 
 static std::string formatCaptures(const std::vector<regex::Capture> &captures) {
@@ -74,46 +115,36 @@ static void match(const regex::Regex &re, const StringRef input, const bool prin
 }
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
-  constexpr regex::Mode modes[] = {
-      regex::Mode::BMP,
-      regex::Mode::UNICODE,
-      regex::Mode::UNICODE_SET,
-  };
-  const bool print = getenv("ARSH_SUPPRESS_COMPILE_ERROR") == nullptr;
-  auto [pattern, input] = create(data, size);
+  const static bool print = getenv("ARSH_SUPPRESS_COMPILE_ERROR") == nullptr;
+  const auto target = createTarget(data, size);
+  if (getenv("ARSH_FUZZ_DUMP_TARGET")) {
+    dump(stdout, target);
+  }
   regex::Parser parser;
-  for (auto mode : modes) {
-    constexpr regex::Modifier modifiers[] = {
-        regex::Modifier::NONE,
-        regex::Modifier::DOT_ALL | regex::Modifier::IGNORE_CASE | regex::Modifier::MULTILINE,
-    };
-    for (auto modifier : modifiers) {
-      auto tree = parser(pattern, regex::Flag(mode, modifier));
-      if (parser.hasError()) {
-        if (print) {
-          auto token = parser.getError()->token;
-          fprintf(stderr, "[error] %s\n at %s\n", parser.getError()->message.c_str(),
-                  token.str().c_str());
-        }
-        continue;
-      }
-      regex::TreeDumper dumper;
-      auto buf = dumper(tree);
-      assert(buf.size());
-      if (print) {
-        fprintf(stderr, "%s\n", buf.c_str());
-      }
-      regex::CodeGen codeGen;
-      if (auto re = codeGen(std::move(tree)); re.hasValue()) {
-        regex::RegexDumper reDumper;
-        buf = reDumper(re.unwrap());
-        assert(buf.size());
-        if (print) {
-          fprintf(stderr, "%s\n", buf.c_str());
-        }
-        match(re.unwrap(), input, print);
-      }
+  auto tree = parser(target.pattern, regex::Flag(target.mode, target.modifiers));
+  if (parser.hasError()) {
+    if (print) {
+      auto token = parser.getError()->token;
+      fprintf(stderr, "[error] %s\n at %s\n", parser.getError()->message.c_str(),
+              token.str().c_str());
     }
+    return 0;
+  }
+  regex::TreeDumper dumper;
+  auto buf = dumper(tree);
+  assert(buf.size());
+  if (print) {
+    fprintf(stderr, "%s\n", buf.c_str());
+  }
+  regex::CodeGen codeGen;
+  if (auto re = codeGen(std::move(tree)); re.hasValue()) {
+    regex::RegexDumper reDumper;
+    buf = reDumper(re.unwrap());
+    assert(buf.size());
+    if (print) {
+      fprintf(stderr, "%s\n", buf.c_str());
+    }
+    match(re.unwrap(), target.input, print);
   }
   return 0;
 }

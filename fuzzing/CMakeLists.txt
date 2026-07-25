@@ -29,4 +29,4 @@ target_link_libraries(printf_fuzzer ${ARSH_LIB})
 #======================#
 
 add_executable(regex_fuzzer regex_fuzzer.cpp)
-target_link_libraries(regex_fuzzer regex unicode)
+target_link_libraries(regex_fuzzer regex unicode json)
