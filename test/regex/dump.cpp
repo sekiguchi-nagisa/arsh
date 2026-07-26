@@ -138,6 +138,9 @@ int main(int argc, char **argv) {
     } else {
       return 1;
     }
+    dumpTree = true;
+    dumpRegex = true;
+    shouldMatch = true;
   } else {
     if (iter == end) {
       fputs("need pattern\n", stderr);
