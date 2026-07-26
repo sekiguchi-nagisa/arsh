@@ -97,8 +97,6 @@ public:
   void clear() { this->codePointRanges.clear(); }
 
 private:
-  void removeBy(bool compact, const std::function<bool(int)> &func);
-
   /**
    * remove codepoints from ranges
    * @param ref

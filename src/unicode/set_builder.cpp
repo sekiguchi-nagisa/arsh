@@ -108,63 +108,6 @@ void CodePointSetBuilder::complement() {
   this->codePointRanges = std::move(buf);
 }
 
-void CodePointSetBuilder::removeBy(const bool compact, const std::function<bool(int)> &func) {
-  this->tryToSortAndCompact();
-
-  /**
-   * consider the following cases
-   * (1,5), if func(5) == true
-   * => (1,4)
-   * (1,5), if func(1) == true
-   * => (2,5)
-   * (1,5), if func(4) == true
-   * => (1,3), (5,5)
-   * (1,1), if func(1) == true
-   * => remove
-   */
-  const unsigned int oldEnd = this->codePointRanges.size();
-  int lastIndex = -1;
-  for (unsigned int index = 0; index < oldEnd; index++) {
-    for (int codePoint = this->codePointRanges[index].first;
-         codePoint <= this->codePointRanges[index].second; codePoint++) {
-      if (const bool matched = func(codePoint); !matched) {
-        continue;
-      }
-      auto &range = this->codePointRanges[index];
-      if (codePoint == range.first) {
-        if (range.first == range.second) { // remove
-          goto END;
-        }
-        range.first++;
-      } else if (codePoint == range.second) {
-        range.second--;
-      } else {
-        int newFirst = range.first;
-        int newLast = codePoint - 1;
-        range.first = codePoint + 1;
-        if (static_cast<unsigned int>(lastIndex + 1) < index) {
-          lastIndex++;
-          this->codePointRanges[lastIndex] = std::make_pair(newFirst, newLast);
-        } else {
-          this->codePointRanges.emplace_back(newFirst, newLast);
-        }
-      }
-    }
-    lastIndex++;
-    if (static_cast<unsigned int>(lastIndex) != index) {
-      this->codePointRanges[lastIndex] = this->codePointRanges[index];
-    }
-  END: {}
-  }
-
-  // compact
-  this->codePointRanges.erase(this->codePointRanges.begin() + (lastIndex + 1),
-                              this->codePointRanges.begin() + oldEnd);
-  if (compact) {            // NOLINT
-    this->sortAndCompact(); // NOLINT
-  }
-}
-
 void CodePointSetBuilder::remove(const CodePointSetRef ref, const bool invert) {
   CodePointSetBuilder builder;
   builder.add(ref);
@@ -219,19 +162,27 @@ void CodePointSetBuilder::remove(CodePointSetBuilder &builder, const bool invert
 }
 
 void CodePointSetBuilder::foldCase() {
-  // remove affected code points
+  // collect affected code points
+  CodePointSetBuilder oldBuilder;
   std::vector<int> folds;
-  this->removeBy(false, [&folds](int codePoint) {
-    const int after = doSimpleCaseFolding(codePoint);
-    if (after != codePoint) {
-      folds.push_back(after);
-      return true;
+  {
+    auto ranges = this->toCompactArrayRef();
+    for (auto [first, last] : ranges) {
+      for (int before = first; before <= last; before++) {
+        const int after = doSimpleCaseFolding(before);
+        if (before != after) {
+          folds.push_back(after);
+          oldBuilder.addRange(before, before);
+        }
+      }
     }
-    return false;
-  });
+  }
 
-  // add fold code points
   if (folds.size()) {
+    // remove old code points
+    this->sub(oldBuilder);
+
+    // add fold code points
     this->add(folds.data(), folds.size());
   }
 }
