@@ -6,33 +6,14 @@
 #include <regex/emit.h>
 #include <regex/parser.h>
 
+#include "../test/regex/dump.hpp"
 #include "../tools/json/serialize.h"
 
 using namespace arsh;
 
-#define JSONIFY(m) t(#m, m)
-
-struct Target {
-  std::string pattern;
-  std::string input;
-  regex::Mode mode{regex::Mode::BMP};
-  regex::Modifier modifiers{};
-
-  template <typename T>
-  void jsonify(T &t) {
-    std::vector<unsigned char> patternBytes;
-    for (auto ch : this->pattern) {
-      patternBytes.push_back(static_cast<unsigned char>(ch));
-    }
-    JSONIFY(patternBytes);
-    JSONIFY(input);
-    JSONIFY(mode);
-    JSONIFY(modifiers);
-  }
-};
-
-static void dump(FILE *fp, const Target &target) {
+static void dump(FILE *fp, const regex::Target &target) {
   auto tmp(target);
+  tmp.beforeSerialize();
   json::JSONSerializer serializer;
   serializer(std::move(tmp));
   auto &json = serializer.get();
@@ -57,13 +38,13 @@ static std::string toValidWTF8(const StringRef ref) {
   return ret;
 }
 
-static Target createTarget(const uint8_t *data, const size_t size) {
+static regex::Target createTarget(const uint8_t *data, const size_t size) {
   constexpr uint8_t MODIFIER_MASK = toUnderlying(regex::Modifier::DOT_ALL) |
                                     toUnderlying(regex::Modifier::IGNORE_CASE) |
                                     toUnderlying(regex::Modifier::MULTILINE);
 
   FuzzedDataProvider fdp(data, size);
-  Target target;
+  regex::Target target;
   target.mode = fdp.PickValueInArray<regex::Mode>({
       regex::Mode::BMP,
       regex::Mode::UNICODE,
@@ -80,22 +61,6 @@ static Target createTarget(const uint8_t *data, const size_t size) {
   return target;
 }
 
-static std::string formatCaptures(const std::vector<regex::Capture> &captures) {
-  std::string ret;
-  for (auto &c : captures) {
-    if (!c) {
-      ret += "(unset)\n";
-      continue;
-    }
-    ret += "(offset=";
-    ret += std::to_string(c.offset);
-    ret += ", size=";
-    ret += std::to_string(c.size);
-    ret += ")\n";
-  }
-  return ret;
-}
-
 static void match(const regex::Regex &re, const StringRef input, const bool print) {
   std::vector<regex::Capture> captures;
   regex::Timer timer(std::chrono::milliseconds(300));
@@ -104,7 +69,7 @@ static void match(const regex::Regex &re, const StringRef input, const bool prin
     fprintf(stderr, "input: `%s'\n", input.toString().c_str());
   }
   if (status == regex::MatchStatus::OK) {
-    auto str = formatCaptures(captures);
+    auto str = regex::formatCaptures(captures);
     if (print) {
       fwrite(str.c_str(), sizeof(char), str.size(), stderr);
     }
@@ -121,7 +86,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
     dump(stdout, target);
   }
   regex::Parser parser;
-  auto tree = parser(target.pattern, regex::Flag(target.mode, target.modifiers));
+  auto tree = parser(get<std::string>(target.pattern), regex::Flag(target.mode, target.modifiers));
   if (parser.hasError()) {
     if (print) {
       auto token = parser.getError()->token;
@@ -144,7 +109,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size) {
     if (print) {
       fprintf(stderr, "%s\n", buf.c_str());
     }
-    match(re.unwrap(), target.input, print);
+    match(re.unwrap(), get<std::string>(target.input), print);
   }
   return 0;
 }

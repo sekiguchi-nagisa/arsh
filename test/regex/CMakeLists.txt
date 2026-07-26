@@ -18,7 +18,7 @@ add_test(${TEST_NAME} ${TEST_NAME})
 add_executable(redump
         dump.cpp
 )
-target_link_libraries(redump regex)
+target_link_libraries(redump regex json)
 
 set(TEST_NAME regex_e2e_test)
 add_definitions("-DBIN_PATH=\"${CMAKE_BINARY_DIR}/${BIN_NAME}\"")
