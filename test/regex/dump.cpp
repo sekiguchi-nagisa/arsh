@@ -138,8 +138,7 @@ int main(int argc, char **argv) {
     } else {
       return 1;
     }
-    dumpTree = true;
-    dumpRegex = true;
+    dumpTree = dumpRegex;
     shouldMatch = true;
   } else {
     if (iter == end) {
