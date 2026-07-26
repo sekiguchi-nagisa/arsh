@@ -594,6 +594,54 @@ static JSFunctionPtr createStringSlice(const std::shared_ptr<JSEnv> &global) {
   return createJSFunction(global, "slice", {"indexStart", "indexEnd"}, nullptr, std::move(impl));
 }
 
+static JSFunctionPtr createStringFromCharCode(const std::shared_ptr<JSEnv> &global) {
+  auto impl = [](const JSFunctionPtr &, const std::shared_ptr<JSEnv> &env) -> JSResult {
+    auto args = env->findOrUndef(builtin::ARGS);
+    assert(std::holds_alternative<JSArrayPtr>(args));
+    JSString str;
+    for (auto &e : std::get<JSArrayPtr>(args)->array) {
+      if (auto d = toNumber(e); isInteger(d)) {
+        const auto v = static_cast<int64_t>(d);
+        if (v >= 0 && v <= UINT16_MAX) {
+          str += static_cast<char16_t>(v);
+          continue;
+        }
+      }
+      JSString err = u"out of range char code: ";
+      toPrettyString(e, err);
+      return throwError(env, builtin::RANGE_ERROR, std::move(err));
+    }
+    return Ok(std::make_shared<JSString>(std::move(str)));
+  };
+  return createJSFunction(global, "fromCharCode", {"num1"}, nullptr, std::move(impl));
+}
+
+static JSFunctionPtr createStringFromCodePoint(const std::shared_ptr<JSEnv> &global) {
+  auto impl = [](const JSFunctionPtr &, const std::shared_ptr<JSEnv> &env) -> JSResult {
+    auto args = env->findOrUndef(builtin::ARGS);
+    assert(std::holds_alternative<JSArrayPtr>(args));
+    JSString str;
+    for (auto &e : std::get<JSArrayPtr>(args)->array) {
+      if (auto d = toNumber(e); isInteger(d)) {
+        const auto v = static_cast<int64_t>(d);
+        if (v >= 0 && v <= UnicodeUtil::CODE_POINT_MAX) {
+          auto [high, low] = UnicodeUtil::codePointToUtf16(static_cast<int>(v));
+          str += high;
+          if (high != low) {
+            str += low;
+          }
+          continue;
+        }
+      }
+      JSString err = u"out of range code point: ";
+      toPrettyString(e, err);
+      return throwError(env, builtin::RANGE_ERROR, std::move(err));
+    }
+    return Ok(std::make_shared<JSString>(std::move(str)));
+  };
+  return createJSFunction(global, "fromCodePoint", {"num1"}, nullptr, std::move(impl));
+}
+
 static void defineString(const std::shared_ptr<JSEnv> &global) {
   auto impl = [](const JSFunctionPtr &func, const std::shared_ptr<JSEnv> &env) -> JSResult {
     auto thing = env->findOrUndef(func->params[0]); // TODO: new String
@@ -604,6 +652,8 @@ static void defineString(const std::shared_ptr<JSEnv> &global) {
   prototype->values["slice"] = createStringSlice(global);
   auto func =
       createJSFunction(global, builtin::STRING, {"thing"}, std::move(prototype), std::move(impl));
+  func->values["fromCharCode"] = createStringFromCharCode(global);
+  func->values["fromCodePoint"] = createStringFromCodePoint(global);
   global->define(builtin::STRING, std::move(func));
 }
 
