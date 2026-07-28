@@ -342,6 +342,27 @@ double toNumber(const JSValue &value) {
   return std::nan("");
 }
 
+static double toIntegerOrInf(const JSValue &value) {
+  auto num = toNumber(value);
+  if (num == 0.0 || std::isnan(num)) {
+    return 0;
+  }
+  if (std::isinf(num)) {
+    return num;
+  }
+  return std::trunc(num);
+}
+
+template <typename T, enable_when<std::is_unsigned_v<T> && sizeof(T) < sizeof(uint64_t)> = nullptr>
+static T toFixedSizeInteger(const JSValue &value) {
+  double num = toIntegerOrInf(value);
+  if (std::isinf(num)) {
+    return 0;
+  }
+  auto v = static_cast<int64_t>(num);
+  return static_cast<T>(v % static_cast<int64_t>(std::numeric_limits<T>::max() + 1));
+}
+
 JSResult callJSFunction(const std::shared_ptr<JSEnv> &caller, unsigned int callerLineNum,
                         const JSFunctionPtr &func, JSValue &&recv, std::vector<JSValue> &&args) {
   auto funcEnv = func->definedEnv.lock()->createChild();
@@ -568,21 +589,33 @@ static JSFunctionPtr createStringSlice(const std::shared_ptr<JSEnv> &global) {
   auto impl = [](const JSFunctionPtr &func, const std::shared_ptr<JSEnv> &env) -> JSResult {
     auto &thisStr = *std::get<JSStringPtr>(env->findOrUndef(builtin::THIS));
     size_t startIndex = 0;
-    if (auto v = toNumber(env->findOrUndef(func->params[0])); !std::isnan(v)) {
-      auto index = static_cast<ssize_t>(v);
-      if (index < 0) {
-        startIndex = std::max<ssize_t>(index + static_cast<ssize_t>(thisStr.size()), 0);
+    if (auto v = env->findOrUndef(func->params[0]); !isUndefined(v)) {
+      const auto num = toIntegerOrInf(v);
+      int64_t index = 0;
+      if (std::isinf(num)) {
+        index = num < 0 ? 0 : std::numeric_limits<int64_t>::max();
       } else {
-        startIndex = std::min(static_cast<size_t>(index), thisStr.size());
+        index = static_cast<int64_t>(num);
+      }
+      if (index < 0) {
+        startIndex = std::max<ssize_t>(index + static_cast<int64_t>(thisStr.size()), 0);
+      } else {
+        startIndex = std::min(static_cast<uint64_t>(index), thisStr.size());
       }
     }
     size_t endIndex = thisStr.size();
-    if (auto v = toNumber(env->findOrUndef(func->params[1])); !std::isnan(v)) {
-      auto index = static_cast<ssize_t>(v);
-      if (index < 0) {
-        endIndex = std::max<ssize_t>(index + static_cast<ssize_t>(thisStr.size()), 0);
+    if (auto v = env->findOrUndef(func->params[1]); !isUndefined(v)) {
+      const auto num = toIntegerOrInf(v);
+      int64_t index = 0;
+      if (std::isinf(num)) {
+        index = num < 0 ? 0 : std::numeric_limits<int64_t>::max();
       } else {
-        endIndex = std::min(static_cast<size_t>(index), thisStr.size());
+        index = static_cast<int64_t>(num);
+      }
+      if (index < 0) {
+        endIndex = std::max<int64_t>(index + static_cast<int64_t>(thisStr.size()), 0);
+      } else {
+        endIndex = std::min(static_cast<uint64_t>(index), thisStr.size());
       }
     }
     JSString newStr;
@@ -600,16 +633,8 @@ static JSFunctionPtr createStringFromCharCode(const std::shared_ptr<JSEnv> &glob
     assert(std::holds_alternative<JSArrayPtr>(args));
     JSString str;
     for (auto &e : std::get<JSArrayPtr>(args)->array) {
-      if (auto d = toNumber(e); isInteger(d)) {
-        const auto v = static_cast<int64_t>(d);
-        if (v >= 0 && v <= UINT16_MAX) {
-          str += static_cast<char16_t>(v);
-          continue;
-        }
-      }
-      JSString err = u"out of range char code: ";
-      toPrettyString(e, err);
-      return throwError(env, builtin::RANGE_ERROR, std::move(err));
+      char16_t v = toFixedSizeInteger<uint16_t>(e);
+      str += v;
     }
     return Ok(std::make_shared<JSString>(std::move(str)));
   };
@@ -642,6 +667,49 @@ static JSFunctionPtr createStringFromCodePoint(const std::shared_ptr<JSEnv> &glo
   return createJSFunction(global, "fromCodePoint", {"num1"}, nullptr, std::move(impl));
 }
 
+static JSFunctionPtr createStringCharAt(const std::shared_ptr<JSEnv> &global) {
+  auto impl = [](const JSFunctionPtr &func, const std::shared_ptr<JSEnv> &env) -> JSResult {
+    auto &thisStr = *std::get<JSStringPtr>(env->findOrUndef(builtin::THIS));
+    JSString str;
+    if (double v = toIntegerOrInf(env->findOrUndef(func->params[0]));
+        v >= 0 && static_cast<uint64_t>(v) < thisStr.size()) {
+      str += thisStr[static_cast<uint64_t>(v)];
+    }
+    return Ok(std::make_shared<JSString>(std::move(str)));
+  };
+  return createJSFunction(global, "charAt", {"index"}, nullptr, std::move(impl));
+}
+
+static JSFunctionPtr createStringCharCodeAt(const std::shared_ptr<JSEnv> &global) {
+  auto impl = [](const JSFunctionPtr &func, const std::shared_ptr<JSEnv> &env) -> JSResult {
+    auto &thisStr = *std::get<JSStringPtr>(env->findOrUndef(builtin::THIS));
+    if (double v = toIntegerOrInf(env->findOrUndef(func->params[0]));
+        v >= 0 && static_cast<uint64_t>(v) < thisStr.size()) {
+      return Ok(static_cast<double>(thisStr[static_cast<uint64_t>(v)]));
+    }
+    return Ok(std::nan(""));
+  };
+  return createJSFunction(global, "charCodeAt", {"index"}, nullptr, std::move(impl));
+}
+
+static JSFunctionPtr createStringCodePointAt(const std::shared_ptr<JSEnv> &global) {
+  auto impl = [](const JSFunctionPtr &func, const std::shared_ptr<JSEnv> &env) -> JSResult {
+    auto &thisStr = *std::get<JSStringPtr>(env->findOrUndef(builtin::THIS));
+    if (double v = toIntegerOrInf(env->findOrUndef(func->params[0]));
+        v >= 0 && static_cast<uint64_t>(v) < thisStr.size()) {
+      const auto index = static_cast<uint64_t>(v);
+      int codePoint = thisStr[index];
+      if (UnicodeUtil::isHighSurrogate(codePoint) && index + 1 < thisStr.size() &&
+          UnicodeUtil::isLowSurrogate(thisStr[index + 1])) {
+        codePoint = UnicodeUtil::utf16ToCodePoint(thisStr[index], thisStr[index + 1]);
+      }
+      return Ok(static_cast<double>(codePoint));
+    }
+    return Ok(JSValue());
+  };
+  return createJSFunction(global, "codePointAt", {"index"}, nullptr, std::move(impl));
+}
+
 static void defineString(const std::shared_ptr<JSEnv> &global) {
   auto impl = [](const JSFunctionPtr &func, const std::shared_ptr<JSEnv> &env) -> JSResult {
     auto thing = env->findOrUndef(func->params[0]); // TODO: new String
@@ -650,6 +718,9 @@ static void defineString(const std::shared_ptr<JSEnv> &global) {
   auto prototype = std::make_shared<JSObject>();
   prototype->values["match"] = createStringMatch(global);
   prototype->values["slice"] = createStringSlice(global);
+  prototype->values["charAt"] = createStringCharAt(global);
+  prototype->values["charCodeAt"] = createStringCharCodeAt(global);
+  prototype->values["codePointAt"] = createStringCodePointAt(global);
   auto func =
       createJSFunction(global, builtin::STRING, {"thing"}, std::move(prototype), std::move(impl));
   func->values["fromCharCode"] = createStringFromCharCode(global);
