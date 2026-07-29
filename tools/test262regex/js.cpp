@@ -132,7 +132,9 @@ void toUTF16(StringRef ref, std::u16string &out) {
   }
 }
 
-static bool isInteger(double d) { return d == std::floor(d); }
+static bool isInteger(double d) { return std::isfinite(d) && d == std::trunc(d); }
+
+static bool isSafeInteger(double d) { return isInteger(d) && std::abs(d) <= MAX_SAFE_INTEGER; }
 
 void toWTF8(const std::u16string &value, std::string &out) {
   for (size_t i = 0; i < value.size(); i++) {
@@ -202,7 +204,7 @@ void toPrettyString(const JSValue &value, std::u16string &out, const PrettyStrin
       out += u"NaN";
     } else if (std::isinf(d)) {
       out += std::signbit(d) ? u"-Infinity" : u"Infinity";
-    } else if (isInteger(d)) {
+    } else if (isSafeInteger(d)) {
       formatInteger(static_cast<int64_t>(d), out, op.radix);
     } else {
       toUTF16(std::to_string(d), out); // TODO: radix
@@ -733,13 +735,13 @@ static JSFunctionPtr createNumberToString(const std::shared_ptr<JSEnv> &global) 
     unsigned char radix = 10;
     if (auto v = env->findOrUndef(func->params[0]); !isUndefined(v)) {
       double num = toNumber(v);
-      if (!isInteger(num) || num < 2 || num > 36) {
+      if (!isSafeInteger(num) || num < 2 || num > 36) {
         return throwError(env, builtin::RANGE_ERROR, u"toString() radix argument must be 2~36");
       }
       radix = static_cast<unsigned char>(num);
     }
     double value = std::get<double>(env->findOrUndef(builtin::THIS));
-    if (!isInteger(value) && radix != 10) { // TODO: radix for float
+    if (!isSafeInteger(value) && radix != 10) { // TODO: radix for float
       return throwError(env, builtin::RANGE_ERROR,
                         u"float value toString() radix argument must be 10");
     }

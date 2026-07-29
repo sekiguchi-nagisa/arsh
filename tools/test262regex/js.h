@@ -50,6 +50,9 @@ constexpr const char *SYMBOL_MATCH = "@@match"; // Symbol.match
 
 } // namespace builtin
 
+constexpr double MAX_SAFE_INTEGER = 9007199254740991.0;
+constexpr double MIN_SAFE_INTEGER = -MAX_SAFE_INTEGER;
+
 using JSString = std::u16string;
 using JSStringPtr = std::shared_ptr<JSString>;
 
