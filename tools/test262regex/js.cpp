@@ -598,9 +598,9 @@ static JSFunctionPtr createStringSlice(const std::shared_ptr<JSEnv> &global) {
         index = static_cast<int64_t>(num);
       }
       if (index < 0) {
-        startIndex = std::max<ssize_t>(index + static_cast<int64_t>(thisStr.size()), 0);
+        startIndex = std::max<int64_t>(index + static_cast<int64_t>(thisStr.size()), 0);
       } else {
-        startIndex = std::min(static_cast<uint64_t>(index), thisStr.size());
+        startIndex = std::min<uint64_t>(static_cast<uint64_t>(index), thisStr.size());
       }
     }
     size_t endIndex = thisStr.size();
@@ -615,7 +615,7 @@ static JSFunctionPtr createStringSlice(const std::shared_ptr<JSEnv> &global) {
       if (index < 0) {
         endIndex = std::max<int64_t>(index + static_cast<int64_t>(thisStr.size()), 0);
       } else {
-        endIndex = std::min(static_cast<uint64_t>(index), thisStr.size());
+        endIndex = std::min<uint64_t>(static_cast<uint64_t>(index), thisStr.size());
       }
     }
     JSString newStr;
