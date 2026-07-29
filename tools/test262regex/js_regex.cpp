@@ -417,8 +417,7 @@ static JSValue toNamedGroupIndices(const regex::Regex &re, const StringRef ref,
 static JSValue toIndices(const regex::Regex &re, const StringRef ref,
                          const std::vector<regex::Capture> &captures) {
   auto indices = std::make_shared<JSArray>();
-  for (unsigned int i = 0; i < captures.size(); i++) {
-    auto &cap = captures[i];
+  for (auto cap : captures) {
     JSValue value;
     if (cap) {
       value = std::make_shared<JSArray>(JSArray{{
@@ -465,8 +464,7 @@ std::optional<JSArrayPtr> execJSRegex(JSRegex &regex, const JSStringPtr &str) {
   }
   std::vector<regex::Capture> captures;
   const std::string text = toWTF8(*str);
-  auto s = regex::match(regex.regex, text, startOffset, captures, nullptr);
-  switch (s) {
+  switch (regex::match(regex.regex, text, startOffset, captures, nullptr)) {
   case regex::MatchStatus::OK: {
     auto [ret, lastIndex] = toMatchResult(regex, str, text, captures);
     if (hasFlag(regex.extra, JSRegex::ExtraFlag::GLOBAL) ||

@@ -375,8 +375,7 @@ bool CodeGen::generate(const Node &node) {
   case NodeKind::Property:
     return this->generateProperty(cast<PropertyNode>(node));
   case NodeKind::Boundary: {
-    auto t = cast<BoundaryNode>(node).getType();
-    switch (t) {
+    switch (const auto t = cast<BoundaryNode>(node).getType()) {
     case BoundaryNode::Type::START:
       this->builder.emit<StartIns>(this->has(Modifier::MULTILINE));
       return true;

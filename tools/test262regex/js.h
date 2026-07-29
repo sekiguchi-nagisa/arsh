@@ -281,7 +281,7 @@ bool strictlyEquals(const JSValue &x, const JSValue &y);
 JSResult isInstanceOf(const std::shared_ptr<JSEnv> &env, unsigned int lineNum, const JSValue &value,
                       const JSValue &constructor);
 
-JSString typeOf(const JSValue &value);
+const char16_t *typeOf(const JSValue &value);
 
 std::shared_ptr<JSEnv> initJSEnv();
 

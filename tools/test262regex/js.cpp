@@ -229,7 +229,7 @@ void toPrettyString(const JSValue &value, std::u16string &out, const PrettyStrin
       out += u' ';
       toPrettyString(array->array[i], out, op);
     }
-    if (array->values.size() && array->array.size()) {
+    if (!array->values.empty() && !array->array.empty()) {
       out += u',';
     }
     unsigned int count = 0;
@@ -242,12 +242,12 @@ void toPrettyString(const JSValue &value, std::u16string &out, const PrettyStrin
       out += u": ";
       toPrettyString(v, out, op);
     }
-    if (array->array.size() || array->values.size()) {
+    if (!array->array.empty() || !array->values.empty()) {
       out += u' ';
     }
     out += u']';
   } else if (std::holds_alternative<JSObjectPtr>(value) &&
-             std::get<JSObjectPtr>(value)->values.size()) {
+             !std::get<JSObjectPtr>(value)->values.empty()) {
     auto &obj = std::get<JSObjectPtr>(value);
     out += u'{';
     unsigned int count = 0;
@@ -448,7 +448,7 @@ JSResult isInstanceOf(const std::shared_ptr<JSEnv> &env, unsigned int lineNum, c
   return Ok(true);
 }
 
-JSString typeOf(const JSValue &value) {
+const char16_t *typeOf(const JSValue &value) {
   if (isUndefined(value)) {
     return u"undefined";
   }
@@ -1017,10 +1017,12 @@ std::optional<JSParser::Error> JSParser::formatError() const {
   str += this->lexer->formatLineMarker(lineToken, errorToken);
   str += '\n';
 
-  Error err = {.sourceName = this->lexer->getSourceName(),
-               .lineNum = lineNum,
-               .message = this->getError().getMessage(),
-               .detail = std::move(str)};
+  Error err = {
+      .sourceName = this->lexer->getSourceName(),
+      .lineNum = lineNum,
+      .message = this->getError().getMessage(),
+      .detail = std::move(str),
+  };
   return err;
 }
 
@@ -1116,11 +1118,13 @@ std::unique_ptr<Node> JSParser::parseTryStatement() {
     E_ALTER(JSTokenKind::CATCH, JSTokenKind::FINALLY);
   }
   return std::make_unique<Node>(this->lexer->getLineNumByPos(token.pos),
-                                TryStmt{.tryBlock = std::move(tryBlock),
-                                        .hasCatch = foundCatch,
-                                        .except = std::move(except),
-                                        .catchBlock = std::move(catchBlock),
-                                        .finallyBlock = std::move(finallyBlock)});
+                                TryStmt{
+                                    .tryBlock = std::move(tryBlock),
+                                    .hasCatch = foundCatch,
+                                    .except = std::move(except),
+                                    .catchBlock = std::move(catchBlock),
+                                    .finallyBlock = std::move(finallyBlock),
+                                });
 }
 
 std::unique_ptr<Node> JSParser::parseExpression() { return this->parseUnaryExpression(); }
@@ -1409,6 +1413,7 @@ static JSResult evalCallExpr(const CallExpr &callExpr, const unsigned int lineNu
     return throwError(env, builtin::TYPE_ERROR, lineNum, u"not a function");
   }
   std::vector<JSValue> args;
+  args.reserve(callExpr.args.size());
   for (auto &e : callExpr.args) {
     args.push_back(TRY(evaluate(*e, env)));
   }
@@ -1549,8 +1554,7 @@ JSResult jsEval(const char *sourceName, StringRef source, std::shared_ptr<JSEnv>
     while (parser) {
       if (auto node = parser()) {
         nodes.push_back(std::move(node));
-      } else {
-        auto error = parser.formatError();
+      } else if (auto error = parser.formatError(); error.has_value()) {
         if (syntaxErr) {
           *syntaxErr = std::move(error.value().detail);
         }
@@ -1585,7 +1589,7 @@ std::string formatEvalResult(const std::shared_ptr<JSEnv> &env, const JSResult &
     if (auto r = findProperty(env, 1, v, "fileName")) {
       out += u"\n    at ";
       toPrettyString(r.value, out);
-      out += u":";
+      out += u':';
       r = findProperty(env, 1, v, "lineNumber");
       if (r) {
         toPrettyString(r.value, out);
