@@ -116,11 +116,11 @@ static std::optional<TestMetaData::Flag> resolveFlags(const std::vector<std::str
           if (i == std::size(testMetaFlags) - 1) {
             *err += " or";
           } else if (i > 0) {
-            *err += ",";
+            *err += ',';
           }
           *err += " `";
           *err += testMetaFlags[i].name;
-          *err += "'";
+          *err += '\'';
         }
       }
       return {};
@@ -154,7 +154,7 @@ static std::optional<TestMetaData::Phase> resolvePhase(StringRef value, std::str
       }
       *err += " `";
       *err += table[i].name;
-      *err += "'";
+      *err += '\'';
     }
   }
   return {};

@@ -575,7 +575,7 @@ bool TypeChecker::applyGlob(const Token token,
     if (glob.getErrNum() != 0) {
       suffix = ", caused by `";
       suffix += strerror(errNum);
-      suffix += "'";
+      suffix += '\'';
     }
     this->reportError<GlobResource>(token, suffix.c_str());
     return false;

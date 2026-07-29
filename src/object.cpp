@@ -215,8 +215,7 @@ bool RegexObject::match(ARState &state, const StringRef ref, int64_t timeoutMSec
       timeoutMSec < 0 ? std::chrono::milliseconds::max() : std::chrono::milliseconds(timeoutMSec);
   regex::Timer timer(timeout);
   timer.setCancelToken([] { return ARState::hasSignal(SIGINT); });
-  auto status = regex::match(this->re, ref, captures, makeObserver(timer));
-  switch (status) {
+  switch (const auto status = regex::match(this->re, ref, captures, makeObserver(timer))) {
   case regex::MatchStatus::OK:
     if (ret) {
       ret->start = captures[0].offset;
@@ -255,8 +254,7 @@ Value RegexObject::replace(ARState &state, StringRef text, StringRef replacement
       timeoutMSec < 0 ? std::chrono::milliseconds::max() : std::chrono::milliseconds(timeoutMSec);
   regex::Timer timer(timeout);
   timer.setCancelToken([] { return ARState::hasSignal(SIGINT); });
-  auto status = regex::replace(this->re, param, makeObserver(timer));
-  switch (status) {
+  switch (const auto status = regex::replace(this->re, param, makeObserver(timer))) {
   case regex::MatchStatus::OK:
     return ret;
   case regex::MatchStatus::CANCEL:
@@ -298,7 +296,7 @@ bool ArrayObject::checkIteratorInvalidation(ARState &state, const char *message)
     if (!ref.empty()) {
       value += " (";
       value += ref;
-      value += ")";
+      value += ')';
     }
     switch (this->lockType) {
     case LockType::NONE:

@@ -45,7 +45,7 @@ static std::string toString(const std::vector<std::string> &values) {
     }
     ret += values[i];
   }
-  ret += "]";
+  ret += ']';
   return ret;
 }
 

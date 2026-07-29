@@ -115,20 +115,27 @@ union Backtrack {
 
   static Backtrack newSetLoopState(uint16_t loopIndex, LoopState state) {
     return {
-        .setLoopState = {.op = BacktrackOp::SetLoopState, .loopIndex = loopIndex, .state = state}};
+        .setLoopState = {.op = BacktrackOp::SetLoopState, .loopIndex = loopIndex, .state = state},
+    };
   }
 
   static Backtrack newNonGreedyLoop(uint16_t loopIndex, LoopState state) {
-    return {.nonGreedyLoop = {
-                .op = BacktrackOp::NonGreedyLoop, .loopIndex = loopIndex, .state = state}};
+    return {
+        .nonGreedyLoop = {.op = BacktrackOp::NonGreedyLoop, .loopIndex = loopIndex, .state = state},
+    };
   }
 
   static Backtrack newLookAround(const Input &input, uint32_t target, bool negate) {
-    return {.lookAround = {.op = BacktrackOp::LookAround,
-                           .negate = negate,
-                           .matched = !negate,
-                           .target = target,
-                           .iter = input.getIter()}};
+    return {
+        .lookAround =
+            {
+                .op = BacktrackOp::LookAround,
+                .negate = negate,
+                .matched = !negate,
+                .target = target,
+                .iter = input.getIter(),
+            },
+    };
   }
 
   static Backtrack newRadixState(uint32_t consumedSize) {
@@ -162,7 +169,7 @@ public:
   }
 
   bool backtrack(const Inst *&inst, Input &input, Capture *captures, LoopState *loopStates) {
-    while (this->bts.size()) {
+    while (!this->bts.empty()) {
       auto bt = this->bts.back();
       this->bts.pop_back();
       switch (bt.op) {
@@ -231,14 +238,14 @@ public:
       }
     }
 
-    while (this->bts.size() && this->bts.back().op != BacktrackOp::LookAround) {
+    while (!this->bts.empty() && this->bts.back().op != BacktrackOp::LookAround) {
       if (negate && this->bts.back().op == BacktrackOp::SetCapture) {
         auto bt = this->bts.back();
         captures[bt.setCapture.index] = bt.setCapture.capture; // force reset capture
       }
       this->bts.pop_back();
     }
-    assert(this->bts.size());
+    assert(!this->bts.empty());
     auto bt = this->bts.back();
     input.setIter(bt.lookAround.iter);
     this->bts.pop_back();
@@ -380,7 +387,7 @@ findBackwardLongestMatched(const PackedRadixTree tree, StringRef ref, std::strin
     }                                                                                              \
   } while (false)
 
-#if defined(__GNUC__)
+#ifdef __GNUC__
 #define USE_THREADED_CODE
 #else
 #endif

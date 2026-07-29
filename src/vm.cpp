@@ -1445,7 +1445,7 @@ bool VM::callPipeline(ARState &state, Value &&desc, const bool lastPipe, const F
     }
 
     // set pc to the next instruction
-    state.stack.ip() += read16(state.stack.ip() + 1 + procIndex * 2) - 1;
+    state.stack.ip() += read16(state.stack.ip() + 1 + (procIndex * 2)) - 1;
   } else {
     // force terminates child processes.
     for (unsigned int i = 0; i < procIndex; i++) {
@@ -2680,11 +2680,13 @@ void VM::handleUncaughtException(ARState &state, ARError *dsError, bool inTermHo
     const unsigned int errorLineNum = getOccurredLineNum(trace);
     const char *sourceName = getOccurredSourceName(trace);
 
-    *dsError = {.kind = kind,
-                .fileName = *sourceName ? strdup(sourceName) : nullptr,
-                .lineNum = errorLineNum,
-                .chars = 0,
-                .name = strdup(kind == AR_ERROR_KIND_RUNTIME_ERROR ? errorType.getName() : "")};
+    *dsError = {
+        .kind = kind,
+        .fileName = *sourceName ? strdup(sourceName) : nullptr,
+        .lineNum = errorLineNum,
+        .chars = 0,
+        .name = strdup(kind == AR_ERROR_KIND_RUNTIME_ERROR ? errorType.getName() : ""),
+    };
   }
   state.setExitStatus(except->getStatus());
 }
