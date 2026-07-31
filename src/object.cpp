@@ -272,6 +272,34 @@ Value RegexObject::replace(ARState &state, StringRef text, StringRef replacement
   }
 }
 
+Value RegexObject::split(ARState &state, int64_t limit, StringRef ref, int64_t timeoutMSec) const {
+  unsigned int actualLimit =
+      limit > -1 && limit <= UINT32_MAX ? static_cast<unsigned int>(limit) : UINT32_MAX;
+  auto ret = createObject<ArrayObject>(state.typePool.get(TYPE::StringArray));
+  auto appender = [&ret, &state](StringRef value) {
+    return ret->append(state, Value::createStr(value));
+  };
+  auto timeout =
+      timeoutMSec < 0 ? std::chrono::milliseconds::max() : std::chrono::milliseconds(timeoutMSec);
+  regex::Timer timer(timeout);
+  timer.setCancelToken([] { return ARState::hasSignal(SIGINT); });
+  switch (auto status = regex::split(this->re, ref, actualLimit, appender, makeObserver(timer))) {
+  case regex::MatchStatus::OK:
+  case regex::MatchStatus::FAIL:
+    break;
+  case regex::MatchStatus::CANCEL:
+    raiseSystemError(state, EINTR, "regex split canceled");
+    return {};
+  case regex::MatchStatus::REPLACED_LIMIT:
+    assert(state.hasError());
+    return {};
+  default:
+    raiseError(state, TYPE::RegexMatchError, regex::toString(status));
+    return {};
+  }
+  return ret;
+}
+
 // ##########################
 // ##     Array_Object     ##
 // ##########################

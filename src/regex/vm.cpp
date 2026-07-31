@@ -1102,6 +1102,56 @@ MatchStatus replace(const Regex &regex, const ReplaceParam &param, const Observe
   return MatchStatus::OK;
 }
 
+MatchStatus split(const Regex &regex, const StringRef text, const unsigned int limit,
+                  const std::function<bool(StringRef)> &consumer, ObserverPtr<Timer> timer) {
+  if (!limit) {
+    return MatchStatus::OK;
+  }
+  if (limit == 1) {
+    TRY(!consumer || consumer(text));
+    return MatchStatus::OK;
+  }
+  Input input;
+  if (auto ret = Input::create(text)) {
+    input = ret.asOk();
+  } else {
+    switch (ret.asErr()) {
+    case Input::Error::TOO_LARGE:
+      return MatchStatus::INPUT_LIMIT;
+    case Input::Error::INVALID_UTF8:
+      return MatchStatus::INVALID_UTF8;
+    }
+  }
+  std::vector<Capture> captures;
+  MatchContext ctx(regex, input, captures);
+  bool ignoreRemain = false;
+  for (unsigned int count = 1; count < limit; count++) {
+    const unsigned int matchStartOffset = input.getOffset();
+    const auto s = match(ctx, timer);
+    if (s == MatchStatus::FAIL) {
+      input.setIter(input.getBegin() + matchStartOffset);
+      break;
+    }
+    if (s != MatchStatus::OK) {
+      return s;
+    }
+    if (matchStartOffset != input.getOffset()) {
+      TRY(!consumer || consumer(text.slice(matchStartOffset, captures[0].offset)));
+    } else if (input.available()) {
+      input.consumeForward();
+      TRY(!consumer || consumer(StringRef(input.getBegin() + matchStartOffset,
+                                          input.getOffset() - matchStartOffset)));
+    } else {
+      ignoreRemain = true;
+      break;
+    }
+  }
+  if (!ignoreRemain) {
+    TRY(!consumer || consumer(input.remainForward()));
+  }
+  return MatchStatus::OK;
+}
+
 #undef TRY
 #define TRY(E)                                                                                     \
   do {                                                                                             \

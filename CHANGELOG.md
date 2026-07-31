@@ -6,7 +6,8 @@
 
 #### Builtin
 
-- add ``Int#toString`` for reverse method of ``String#toInt``
+- add ``Int#toString`` method for reverse method of ``String#toInt``
+- add ``Regex#split`` mehtod for split string by regex pattern
 
 ### Changed
 

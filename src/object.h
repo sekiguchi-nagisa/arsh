@@ -809,6 +809,8 @@ public:
   Value replace(ARState &state, StringRef text, StringRef replacement, bool global,
                 int64_t timeoutMSec) const;
 
+  Value split(ARState &state, int64_t limit, StringRef ref, int64_t timeoutMSec) const;
+
   const auto &getRE() const { return this->re; }
 
   const std::string &getStr() const { return this->pattern; }

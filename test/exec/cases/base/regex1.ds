@@ -190,6 +190,31 @@ assert $/(\d+)/.replace('12a34ff56hh78', '$1=$1', $true) == '12=12a34ff56hh78'
 assert $/(\d\df)/.replace('12a34ff56hh78', '$1=$1', $once:$true) == '12a34f=34ff56hh78'
 assert $/(\d\d\d)/.replace('12a34ff56hh78', '$1=$1', $once:$true) == '12a34ff56hh78'
 
+# split
+assert $/-/.split("-a-b-c-") == ['', 'a', 'b', 'c', '']
+assert $/(-())/.split("-a-b-c-") == ['', 'a', 'b', 'c', '']
+assert $/(?:)/.split("-a-b-c-") == ['-', 'a', '-', 'b','-', 'c', '-']
+assert $/(())/.split("-a-b-c-") == ['-', 'a', '-', 'b','-', 'c', '-']
+assert $/(?:)/.split('').empty()
+assert $/:/.split('boo:and:foo') == ['boo', 'and', 'foo']
+assert $/:/.split('boo:and:foo', -2) == ['boo', 'and', 'foo']
+assert $/:/.split('boo:and:foo', -1) == ['boo', 'and', 'foo']
+assert $/:/.split('boo:and:foo', 0).empty()
+assert $/:/.split('boo:and:foo', 1) == ['boo:and:foo']
+assert $/:/.split('boo:and:foo', 2) == ['boo', 'and:foo']
+assert $/:/.split('boo:and:foo', 3) == ['boo', 'and','foo']
+assert $/:/.split('boo:and:foo', 5) == ['boo', 'and','foo']
+assert $/o/.split('boo:and:foo') == ['b', '', ':and:f', '', '']
+assert $/o/.split('boo:and:foo', -2) == ['b', '', ':and:f', '', '']
+assert $/o/.split('boo:and:foo', -1) == ['b', '', ':and:f', '', '']
+assert $/o/.split('boo:and:foo', 0).empty()
+assert $/o/.split('boo:and:foo', 1) == ['boo:and:foo']
+assert $/o/.split('boo:and:foo', 2) == ['b','o:and:foo']
+assert $/o/.split('boo:and:foo', 3) == ['b','', ':and:foo']
+assert $/o/.split('boo:and:foo', 4) == ['b','', ':and:f', 'o']
+assert $/o/.split('boo:and:foo', 5) == ['b','', ':and:f', '', '']
+assert $/o/.split('boo:and:foo', 6) == ['b','', ':and:f', '', '']
+
 ## replace large string
 var large = "abcdefghijklmnopqrstuvwxyz"
 $large += $large
@@ -280,6 +305,28 @@ $ex = 34 as Any
 try {
     var m  = $/dddd/.replace($'d\xFF\x12ddd', '34')
     assert $m != '@'
+} catch e {
+    $ex = $e
+}
+assert $ex is RegexMatchError
+assert ($ex as RegexMatchError).message() == 'input string is invalid UTF-8'
+
+assert $/^(([a-z])+.)+[A-Z]([a-z])+$/.split('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', 0, 10).empty() # no-timeout
+assert $/^(([a-z])+.)+[A-Z]([a-z])+$/.split('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', 1, 10) == 
+    ['aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'] # no-timeout
+$ex = 34 as Any
+try {
+    assert $/^(([a-z])+.)+[A-Z]([a-z])+$/.split('aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa', $timeout:10).empty()
+    assert $false
+} catch $e {
+    $ex = $e
+}
+assert $ex is RegexMatchError
+assert ($ex as RegexMatchError).message() == 'match timeout'
+
+$ex = 34 as Any
+try {
+    assert $/dddd/.split($'d\xFF\x12ddd') == [$'d\xFF\x12ddd']
 } catch e {
     $ex = $e
 }

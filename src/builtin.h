@@ -1131,7 +1131,7 @@ ARSH_METHOD string_realpath(RuntimeContext &ctx) {
     int errNum = errno;
     std::string value = "cannot resolve realpath of `";
     appendAsPrintable(ref, SYS_LIMIT_ERROR_MSG_MAX - 1, value);
-    value += "'"; // no check size
+    value += '\''; // no check size
     raiseSystemError(ctx, errNum, std::move(value));
     RET_ERROR;
   }
@@ -1411,6 +1411,17 @@ ARSH_METHOD regex_replace(RuntimeContext &ctx) {
   RET(ret);
 }
 
+//!bind: function split($this: Regex, $target : String, $limit: Option<Int>, $timeout: Option<Int>) : Array<String>
+ARSH_METHOD regex_split(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(regex_split);
+  auto &re = typeAs<RegexObject>(LOCAL(0));
+  StringRef text = LOCAL(1).asStrRef();
+  int64_t limit = LOCAL(2).isInvalid() ? -1 : LOCAL(2).asInt();
+  int64_t timeoutMSec = LOCAL(3).isInvalid() ? ctx.regexTimeout() : LOCAL(3).asInt();
+  auto ret = re.split(ctx, limit, text, timeoutMSec);
+  RET(ret);
+}
+
 // ########################
 // ##     RegexMatch     ##
 // ########################
@@ -1527,7 +1538,7 @@ ARSH_METHOD signal_kill(RuntimeContext &ctx) {
   str += findSignalEntryByNum(sigNum)->abbrName;
   str += " to pid(";
   str += std::to_string(static_cast<pid_t>(pid));
-  str += ")";
+  str += ')';
   raiseSystemError(ctx, errNum, std::move(str));
   RET_ERROR;
 }
