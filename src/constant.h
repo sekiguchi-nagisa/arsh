@@ -249,7 +249,7 @@ inline std::string toTypeAliasFullName(StringRef alias) {
 
 inline std::string toMethodFullName(unsigned int recvTypeId, StringRef methodName) {
   std::string name = methodName.toString();
-  name += "%";
+  name += '%';
   name += std::to_string(recvTypeId);
   name += METHOD_SYMBOL_SUFFIX;
   return name;
@@ -270,7 +270,7 @@ inline std::string toModTypeName(ModId modId) {
 
 inline std::string toQualifiedTypeName(StringRef name, ModId belongedModId) {
   std::string value = toModTypeName(belongedModId);
-  value += ".";
+  value += '.';
   value += name;
   return value;
 }

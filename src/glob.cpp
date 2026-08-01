@@ -453,7 +453,7 @@ std::string Glob::resolveBaseDir(const char *&iter) const {
   if (!this->base.empty() && baseDir[0] != '/') {
     std::string tmp = this->base;
     if (tmp.back() != '/') {
-      tmp += "/";
+      tmp += '/';
     }
     tmp += baseDir;
     baseDir = std::move(tmp);

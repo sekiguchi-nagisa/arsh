@@ -133,7 +133,7 @@ std::string toPrintable(const StringRef ref) {
 bool appendAsPrintable(StringRef ref, size_t maxSize, std::string &out) {
   const auto old = errno;
   bool status = true;
-  for (int ch : ref) { // for arm32/arm64
+  for (unsigned char ch : ref) { // for arm32/arm64
     if (unlikely(out.size() >= maxSize)) {
       if (maxSize >= 3) {
         out.resize(maxSize - 3);
@@ -142,7 +142,7 @@ bool appendAsPrintable(StringRef ref, size_t maxSize, std::string &out) {
       status = false;
       goto END;
     }
-    if ((ch >= 0 && ch < 32) || ch == 127) {
+    if (ch < 32 || ch == 127) {
       char d[16];
       snprintf(d, std::size(d), "\\x%02x", ch);
       out += d;
@@ -278,7 +278,7 @@ EscapeSeqResult parseEscapeSeq(const char *begin, const char *end, const EscapeS
         break;
       }
     }
-    return ok(static_cast<int>(code & 0xFF), static_cast<unsigned short>(begin - old));
+    return ok(static_cast<int>(code & 0xFFu), static_cast<unsigned short>(begin - old));
   }
 }
 

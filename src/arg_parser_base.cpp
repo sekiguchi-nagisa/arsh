@@ -88,7 +88,7 @@ bool ArgEntry::checkArg(StringRef arg, bool shortOpt, int64_t &out, std::string 
       err += std::to_string(this->intRange.min);
       err += ", ";
       err += std::to_string(this->intRange.max);
-      err += "]";
+      err += ']';
       return false;
     }
   }
@@ -114,7 +114,7 @@ bool ArgEntry::checkArg(StringRef arg, bool shortOpt, int64_t &out, std::string 
       }
       err += this->choice[i];
     }
-    err += "}";
+    err += '}';
     return false;
   }
   }

@@ -69,7 +69,7 @@ struct CodeEmitter {
   struct LabelTarget {
     unsigned int targetIndex;
     unsigned int baseIndex;
-    enum OffsetLen {
+    enum OffsetLen : unsigned char {
       _8,
       _16,
       _32,

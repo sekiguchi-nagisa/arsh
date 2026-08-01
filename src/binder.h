@@ -39,16 +39,16 @@ public:
       : consumer(consumer), pool(pool), scope(scope) {}
 
   template <typename T>
-  void bind(const char *varName, T v, HandleKind kind, HandleAttr attr) {
-    auto &type = this->toType(std::forward<T>(v));
+  void bind(const char *varName, T &&v, HandleKind kind, HandleAttr attr) {
+    auto &type = this->toType(v);
     auto handle = this->scope.defineHandle(varName, type, kind, attr);
     assert(static_cast<bool>(handle));
     this->consumer(*handle.asOk(), std::forward<T>(v));
   }
 
   template <typename T>
-  void bind(const char *varName, T v, HandleAttr attr = HandleAttr::READ_ONLY) {
-    this->bind(varName, std::move(v), HandleKind::VAR, attr);
+  void bind(const char *varName, T &&v, HandleAttr attr = HandleAttr::READ_ONLY) {
+    this->bind(varName, std::forward<T>(v), HandleKind::VAR, attr);
   }
 
   void bind(const char *varName, const Type &type) {

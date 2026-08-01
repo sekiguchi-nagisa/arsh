@@ -338,14 +338,14 @@ std::string LexerBase<T>::formatLineMarker(Token lineToken, Token token, int eaw
     }
     int width = UnicodeUtil::width(code, charWidth);
     if (width == 1) {
-      lineMarker += " ";
+      lineMarker += ' ';
     } else if (width == 2) {
       lineMarker += "  ";
     }
   }
   const unsigned int stopPos = token.size + token.pos;
   if (token.size == 0) {
-    lineMarker += "^";
+    lineMarker += '^';
   }
   for (unsigned int i = token.pos; i < stopPos;) {
     unsigned int prev = i;
@@ -356,7 +356,7 @@ std::string LexerBase<T>::formatLineMarker(Token lineToken, Token token, int eaw
     }
     if (code == '\t' || code == '\n') {
       if (token.size == 1) {
-        lineMarker += "^";
+        lineMarker += '^';
       } else {
         lineMarker += static_cast<char>(code);
         continue;

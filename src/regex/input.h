@@ -74,7 +74,7 @@ inline void unsafeNextUtf8Noreturn(const char *&iter) { iter += UnicodeUtil::utf
     codePoint |= (static_cast<unsigned char>(*iter) & 0x3Fu) << shift;
     shift += 6;
   }
-  codePoint |= (static_cast<unsigned char>(*iter) & masks[len - 1]) << shift;
+  codePoint |= (static_cast<unsigned int>(*iter) & masks[len - 1]) << shift;
   return static_cast<int>(codePoint);
 }
 

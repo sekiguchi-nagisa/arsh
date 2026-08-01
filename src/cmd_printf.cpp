@@ -661,7 +661,7 @@ static bool checkAltSymbolsImpl(char conversion, const StringRef alt, char next,
   }
   error += " specifiers after `";
   error += conversion;
-  error += "'";
+  error += '\'';
   return false;
 }
 

@@ -621,13 +621,13 @@ static int builtin_unsetenv(ARState &st, ArrayObject &argvObj) {
     }                                                                                              \
   } while (false)
 
-static constexpr flag8_t RLIM_HARD = 1u << 0;
-static constexpr flag8_t RLIM_SOFT = 1u << 1;
+static constexpr flag8_t RLIM_HARD = 1u << 0u;
+static constexpr flag8_t RLIM_SOFT = 1u << 1u;
 
 struct ulimitOp {
   char op;
   char resource;
-  char shift;
+  unsigned char shift;
   const char *name;
 
   bool print(flag8_set_t limOpt, unsigned int maxNameLen) const {

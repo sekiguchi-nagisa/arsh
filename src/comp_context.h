@@ -24,6 +24,7 @@
 namespace arsh {
 
 enum class CodeCompOp : unsigned int {
+  NONE = 0u,
   FILE = 1u << 0u,           /* complete file names (including directory) */
   DIR = 1u << 1u,            /* complete directory names (directory only) */
   EXEC = 1u << 2u,           /* complete executable file names (including directory) */
@@ -92,7 +93,7 @@ struct CompPrefix {
     out += this->compWordToken;
     out += ", word:";
     out += this->compWord;
-    out += ")";
+    out += ')';
     return out;
   }
 };

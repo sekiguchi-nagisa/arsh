@@ -153,13 +153,13 @@ static void loadEmbeddedScript(ARState *state, const NameScopePtr &builtin) {
 
 #define CHECK_ENUM_RANGE(val, EACH_ENUM)                                                           \
   ({                                                                                               \
-    bool __ret = false;                                                                            \
+    bool ret__ = false;                                                                            \
     switch (val) {                                                                                 \
       EACH_ENUM(GEN_CASE)                                                                          \
-      __ret = true;                                                                                \
+      ret__ = true;                                                                                \
       break;                                                                                       \
     }                                                                                              \
-    __ret;                                                                                         \
+    ret__;                                                                                         \
   })
 
 #define GUARD_ENUM_RANGE(val, EACH_ENUM, ...)                                                      \

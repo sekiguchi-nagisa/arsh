@@ -29,23 +29,23 @@ std::string Flag::str() const {
   case Mode::BMP:
     break; // do nothing
   case Mode::UNICODE:
-    setFlag(set, 1u << ('u' - 'a'));
+    setFlag(set, 1u << static_cast<unsigned int>('u' - 'a'));
     break;
   case Mode::UNICODE_SET:
-    setFlag(set, 1u << ('v' - 'a'));
+    setFlag(set, 1u << static_cast<unsigned int>('v' - 'a'));
     break;
   }
 
 #define GEN_IF(E, C, D)                                                                            \
   if (this->has(Modifier::E)) {                                                                    \
-    setFlag(set, 1u << ((C) - 'a'));                                                               \
+    setFlag(set, 1u << static_cast<unsigned int>((C) - 'a'));                                                               \
   }
   EACH_RE_MODIFIER(GEN_IF)
 #undef GEN_IF
 
   std::string value;
   for (char c = 'a'; c <= 'z'; c++) {
-    if (hasFlag(set, 1u << (c - 'a'))) {
+    if (hasFlag(set, 1u << static_cast<unsigned int>(c - 'a'))) {
       value += c;
     }
   }
@@ -75,7 +75,7 @@ Optional<Flag> Flag::parse(const StringRef ref, const Mode defaultMode, std::str
   case S:                                                                                          \
     if (hasFlag(modifiers, Modifier::E)) {                                                         \
       if (err) {                                                                                   \
-        *err += "`";                                                                               \
+        *err += '`';                                                                               \
         *err += (S);                                                                               \
         *err += "' modifier has already been specified";                                           \
       }                                                                                            \

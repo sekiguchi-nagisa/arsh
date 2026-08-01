@@ -351,9 +351,9 @@ bool LineRenderer::renderControlChar(int codePoint, const std::string *color) {
     }
     if (this->output) {
       auto v = static_cast<unsigned int>(codePoint);
-      v ^= 64;
+      v ^= 64u;
       assert(isCaretTarget(static_cast<int>(v)));
-      *this->output += "^";
+      *this->output += '^';
       *this->output += static_cast<char>(static_cast<int>(v));
     }
     this->totalCols += 2;

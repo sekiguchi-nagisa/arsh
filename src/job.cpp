@@ -309,7 +309,7 @@ static std::vector<std::string> splitPipeline(const StringRef ref) {
 
 static void formatProcState(const Proc &proc, std::string &out) {
   if (!out.empty()) {
-    out += " ";
+    out += ' ';
   }
   switch (proc.state()) {
   case Proc::State::RUNNING:
@@ -335,9 +335,9 @@ static void formatProcState(const Proc &proc, std::string &out) {
 std::string JobObject::formatInfo(JobInfoFormat fmt) const {
   std::string value;
   if (hasFlag(fmt, JobInfoFormat::JOB_ID)) {
-    value += "[";
+    value += '[';
     value += std::to_string(this->getJobID());
-    value += "]";
+    value += ']';
 
     if (hasFlag(fmt, JobInfoFormat::CUR_JOB)) {
       value += " +";
@@ -352,7 +352,7 @@ std::string JobObject::formatInfo(JobInfoFormat fmt) const {
   if (!hasFlag(fmt, JobInfoFormat::VERBOSE)) {
     if (hasFlag(fmt, JobInfoFormat::PID)) {
       if (!value.empty()) {
-        value += " ";
+        value += ' ';
       }
       value += std::to_string(this->getProcs()[0].pid());
     }
@@ -365,7 +365,7 @@ std::string JobObject::formatInfo(JobInfoFormat fmt) const {
       }
       formatPipeline(this->desc.asStrRef(), value);
     }
-    value += "\n";
+    value += '\n';
   } else {
     unsigned int prefixLen = value.size();
     size_t pidLen = 0;

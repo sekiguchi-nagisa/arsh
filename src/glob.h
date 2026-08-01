@@ -62,6 +62,7 @@ public:
 class Glob {
 public:
   enum class Option : unsigned char {
+    NONE = 0u,
     DOTGLOB = 1u << 0u,    // match file names start with '.'
     FASTGLOB = 1u << 1u,   // posix incompatible optimized search
     GLOB_LIMIT = 1u << 2u, // limit the number of readdir

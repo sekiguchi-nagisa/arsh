@@ -728,26 +728,26 @@ std::string TypePool::toReifiedTypeName(const TypeTemplate &typeTemplate,
   if (typeTemplate == this->getArrayTemplate()) {
     std::string str = "[";
     str += elementTypes[0]->getNameRef();
-    str += "]";
+    str += ']';
     return str;
   } else if (typeTemplate == this->getMapTemplate()) {
     std::string str = "[";
     str += elementTypes[0]->getNameRef();
     str += " : ";
     str += elementTypes[1]->getNameRef();
-    str += "]";
+    str += ']';
     return str;
   } else if (typeTemplate == this->getOptionTemplate()) {
     auto *type = elementTypes[0];
     std::string str;
     if (type->isFuncType()) {
-      str += "(";
+      str += '(';
     }
     str += type->getNameRef();
     if (type->isFuncType()) {
-      str += ")";
+      str += ')';
     }
-    str += "?";
+    str += '?';
     return str;
   } else {
     std::string str = typeTemplate.getName();
@@ -773,9 +773,9 @@ std::string TypePool::toTupleTypeName(const std::vector<const Type *> &elementTy
     str += elementTypes[i]->getNameRef();
   }
   if (elementTypes.size() == 1) {
-    str += ",";
+    str += ',';
   }
-  str += ")";
+  str += ')';
   return str;
 }
 

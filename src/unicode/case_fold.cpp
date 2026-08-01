@@ -36,7 +36,7 @@ static uint32_t lookupSimpleCaseFoldEntry(unsigned int cp) {
 int doSimpleCaseFolding(int codePoint) {
   if (isSimpleCaseFoldTarget(codePoint)) {
     auto entry = lookupSimpleCaseFoldEntry(static_cast<unsigned int>(codePoint));
-    int delta = static_cast<int>(entry & ~1) / 2;
+    int delta = static_cast<int>(entry & ~1u) / 2;
     return codePoint + delta;
   }
   return codePoint;
@@ -77,8 +77,8 @@ CaseFoldingResult doCaseFolding(int codePoint, const CaseFoldOp op) {
     // for 'C'
     if (isSimpleCaseFoldTarget(codePoint)) {
       auto entry = lookupSimpleCaseFoldEntry(static_cast<unsigned int>(codePoint));
-      if ((entry & 0x01) == 0) { // only allow 'C'
-        int delta = static_cast<int>(entry & ~1) / 2;
+      if ((entry & 0x01u) == 0) { // only allow 'C'
+        int delta = static_cast<int>(entry & ~1u) / 2;
         return CaseFoldingResult(codePoint + delta);
       }
     }

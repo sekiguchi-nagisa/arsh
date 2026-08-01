@@ -890,9 +890,9 @@ std::string KeyEvent::toCaret(StringRef value) {
   for (char ch : value) {
     if (isControlChar(ch)) {
       unsigned int v = static_cast<unsigned char>(ch);
-      v ^= 64;
+      v ^= 64u;
       assert(isCaretTarget(static_cast<int>(v)));
-      ret += "^";
+      ret += '^';
       ret += static_cast<char>(static_cast<int>(v));
     } else {
       ret += ch;

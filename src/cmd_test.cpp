@@ -357,11 +357,11 @@ static int eval3ArgsExpr(const ARState &st, const ArrayObject &argvObj, const St
 
 #define TRY(E)                                                                                     \
   ({                                                                                               \
-    int s = (E);                                                                                   \
-    if (s != 0 && s != 1) {                                                                        \
-      return s;                                                                                    \
+    int s__ = (E);                                                                                   \
+    if (s__ != 0 && s__ != 1) {                                                                        \
+      return s__;                                                                                    \
     }                                                                                              \
-    s;                                                                                             \
+    s__;                                                                                             \
   })
 
 class Evaluator {

@@ -59,7 +59,7 @@ static void raiseTildeError(ARState &state, const DirStackProvider &provider,
   }
   std::string str = toMessagePrefix(status);
   if (status == TildeExpandStatus::OUT_OF_RANGE) {
-    str += "(";
+    str += '(';
     str += std::to_string(provider.size());
     str += "): ";
   }
@@ -136,7 +136,7 @@ static void raiseGlobbingErrorWithNull(ARState &state, const GlobPatternWrapper 
   auto pattern = wrapper.join();
   std::string value = "glob pattern has null characters `";
   appendAsPrintable(pattern, SYS_LIMIT_ERROR_MSG_MAX - 1, value);
-  value += "'";
+  value += '\'';
   raiseError(state, TYPE::GlobError, std::move(value));
 }
 
@@ -145,7 +145,7 @@ static void raiseGlobbingError(ARState &state, const GlobPatternWrapper &pattern
   std::string value = std::move(message);
   value += " `";
   pattern.join(SYS_LIMIT_ERROR_MSG_MAX - 1, value); // FIXME:
-  value += "'";
+  value += '\'';
   raiseError(state, TYPE::GlobError, std::move(value));
 }
 

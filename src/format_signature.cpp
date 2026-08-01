@@ -73,7 +73,7 @@ void formatFuncSignature(const FunctionType &funcType, const FuncHandle &handle,
                          const std::function<void(StringRef)> &paramCallback) {
   auto params = splitParamNames(handle.getPackedParamNames());
   assert(params.size() == funcType.getParamSize());
-  out += "(";
+  out += '(';
   for (unsigned int i = 0; i < funcType.getParamSize(); i++) {
     if (i > 0) {
       out += ", ";
@@ -92,13 +92,13 @@ void formatFuncSignature(const FunctionType &funcType, const FuncHandle &handle,
 
 void formatFuncSignature(const Type &retType, unsigned int paramSize, const Type *const *paramTypes,
                          std::string &out, const std::function<void(StringRef)> &paramCallback) {
-  out += "(";
+  out += '(';
   for (unsigned int i = 0; i < paramSize; i++) {
     if (i > 0) {
       out += ", ";
     }
     const size_t offset = out.size();
-    out += "p";
+    out += 'p';
     out += std::to_string(i);
     out += ": ";
     normalizeTypeName(*paramTypes[i], out);
@@ -125,7 +125,7 @@ void formatMethodSignature(const Type *recvType, const MethodHandle &handle, std
   }
   auto params = splitParamNames(handle.getPackedParamNames());
   assert(params.size() == handle.getParamSize());
-  out += "(";
+  out += '(';
   for (unsigned int i = 0; i < handle.getParamSize(); i++) {
     if (i > 0) {
       out += ", ";
@@ -138,7 +138,7 @@ void formatMethodSignature(const Type *recvType, const MethodHandle &handle, std
       paramCallback(StringRef(out.c_str() + offset));
     }
   }
-  out += ")";
+  out += ')';
   if (recvType) {
     out += ": ";
     normalizeTypeName(handle.getReturnType(), out);
@@ -228,7 +228,7 @@ std::string Decoder::decodeType(bool replaceIface) {
   case HandleInfo::Array: {
     std::string out = "[";
     out += this->decodeType(replaceIface);
-    out += "]";
+    out += ']';
     return out;
   }
   case HandleInfo::Map: {
@@ -236,7 +236,7 @@ std::string Decoder::decodeType(bool replaceIface) {
     out += this->decodeType(replaceIface);
     out += " : ";
     out += this->decodeType(replaceIface);
-    out += "]";
+    out += ']';
     return out;
   }
   case HandleInfo::Tuple: {
@@ -245,7 +245,7 @@ std::string Decoder::decodeType(bool replaceIface) {
     std::string out = "(";
     if (size == 1) {
       out += this->decodeType(replaceIface);
-      out += ",";
+      out += ',';
     } else {
       for (unsigned int i = 0; i < size; i++) {
         if (i > 0) {
@@ -254,15 +254,15 @@ std::string Decoder::decodeType(bool replaceIface) {
         out += this->decodeType(replaceIface);
       }
     }
-    out += ")";
+    out += ')';
     return out;
   }
   case HandleInfo::Option: {
     std::string out = this->decodeType(replaceIface);
     if (isFuncType(out)) {
-      out.insert(0, "(") += ")";
+      out.insert(0, "(") += ')';
     }
-    out += "?";
+    out += '?';
     return out;
   }
   case HandleInfo::Func: {
@@ -314,7 +314,7 @@ void formatNativeMethodSignature(unsigned int nativeMethodIndex, StringRef packe
   assert(paramSize == params.size());
   auto recvTypeName = decoder.decodeType(eqOrOrd);
 
-  out += "(";
+  out += '(';
   for (unsigned int i = 0; i < paramSize; i++) {
     if (i > 0) {
       out += ", ";
@@ -327,7 +327,7 @@ void formatNativeMethodSignature(unsigned int nativeMethodIndex, StringRef packe
       paramCallback(StringRef(out.c_str() + offset));
     }
   }
-  out += ")";
+  out += ')';
   if (StringRef(funcInfo->funcName) != OP_INIT) { // method
     out += ": ";
     normalizeTypeName(returnTypeName, out);

@@ -59,7 +59,7 @@ struct Token {
     str += std::to_string(this->pos);
     str += ", size = ";
     str += std::to_string(this->size);
-    str += ")";
+    str += ')';
     return str;
   }
 };

@@ -389,7 +389,7 @@ static void appendEmojiSeq(std::string &out, const ucp::RGIEmojiSeq seq) {
     for (auto e : table) {
       if (hasFlag(seq, e)) {
         if (count) {
-          out += "|";
+          out += '|';
         }
         out += toString(e);
         count++;
@@ -398,7 +398,7 @@ static void appendEmojiSeq(std::string &out, const ucp::RGIEmojiSeq seq) {
   }
   if (hasFlag(seq, ucp::RGIEmojiSeq::CASE_IGNORE)) {
     if (count) {
-      out += "|";
+      out += '|';
     }
     out += "case-ignore";
   }
@@ -473,7 +473,7 @@ void RegexDumper::dump(const FlexBuffer<Inst> &ins) {
       snprintf(b, std::size(b), "U+%04X", codePoint);
       str += "(codePoint=";
       str += b;
-      str += ":";
+      str += ':';
       str += codePointToPrintable(codePoint);
       str += ')';
       inst += sizeof(CharIns);
@@ -487,7 +487,7 @@ void RegexDumper::dump(const FlexBuffer<Inst> &ins) {
       appendBool(str, charIns.ignoreCase);
       str += ", codePoint=";
       str += b;
-      str += ":";
+      str += ':';
       str += codePointToPrintable(charIns.getCodePoint());
       str += ')';
       inst += sizeof(LBCharIns);

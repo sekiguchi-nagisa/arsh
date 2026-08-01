@@ -236,9 +236,9 @@ std::string NameScope::importForeignHandles(const TypePool &pool, const ModType 
         suffix = " method";
         name = trimMethodFullNameSuffix(name);
       }
-      message += "`";
+      message += '`';
       message += name;
-      message += "'";
+      message += '\'';
       message += suffix;
       return message;
     }

@@ -77,9 +77,9 @@ public:
   do {                                                                                             \
     using namespace arsh;                                                                          \
     if (useLogging && Logger::instance().checkPolicy(Logger::P)) {                                 \
-      int __old = errno;                                                                           \
+      int old__ = errno;                                                                           \
       Logger::Info("%s(%s):%d: " fmt, __FILE_NAME__, __func__, __LINE__, ##__VA_ARGS__);           \
-      errno = __old;                                                                               \
+      errno = old__;                                                                               \
     }                                                                                              \
   } while (false)
 

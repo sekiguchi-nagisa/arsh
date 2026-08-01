@@ -46,6 +46,7 @@ enum class NameLookupError : unsigned char {
 };
 
 enum class NameRegisterOp : unsigned char {
+  NONE = 0u,
   AS_ALIAS = 1u << 0u,
   IGNORE_CONFLICT = 1u << 1u,
 };

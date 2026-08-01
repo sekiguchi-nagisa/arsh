@@ -231,7 +231,7 @@ std::string LexerMode::toString() const {
     value += "skipNL, ";
   }
   value += std::to_string(this->hereDepth());
-  value += ")";
+  value += ')';
   return value;
 }
 

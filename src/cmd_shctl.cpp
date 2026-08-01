@@ -177,9 +177,9 @@ static int setOption(ARState &state, const ArrayObject &argvObj, const unsigned 
     std::string value;
     for (auto &e : getRuntimeOptionEntries()) {
       value += e.name;
-      value += "=";
+      value += '=';
       value += state.has(e.option) ? "on" : "off";
-      value += " ";
+      value += ' ';
     }
     state.setGlobal(BuiltinVarOffset::REPLY, Value::createStr(std::move(value)));
     return 0;

@@ -128,7 +128,7 @@ static std::string formatDir(StringRef dir, const std::string &home) {
   std::string value;
   if (!home.empty() && dir.startsWith(home)) {
     dir.removePrefix(home.size());
-    value += "~";
+    value += '~';
   }
   appendAsPrintable(dir, value);
   return value;

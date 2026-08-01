@@ -243,7 +243,7 @@ inline int getFileList(const char *dirPath, bool recursive, std::vector<std::str
       }
       std::string name = path;
       if (name.back() != '/') {
-        name += "/";
+        name += '/';
       }
       name += entry->d_name;
       if (isDirectory(dir.get(), entry) && recursive) {
@@ -375,7 +375,7 @@ public:
     auto ptr = getRealpath(env);
     assert(ptr);
     std::string name = ptr.get();
-    name += "/";
+    name += '/';
     if (prefix && *prefix) {
       name += prefix;
     } else {

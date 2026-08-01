@@ -456,7 +456,7 @@ bool Stringifier::addAsFlatStr(const Value &value) {
       snprintf(buf, std::size(buf), "0x%zx", reinterpret_cast<uintptr_t>(&obj));
       str += buf;
     }
-    str += ")";
+    str += ')';
     return this->appender(str);
   }
   case ObjectKind::Closure: {

@@ -805,7 +805,7 @@ std::unique_ptr<Node> Parser::parse_statementImpl() {
     } else {
       std::string msg = "`";
       msg += this->lexer->toTokenText(condNode->getToken());
-      msg += "'";
+      msg += '\'';
       messageNode = std::make_unique<StringNode>(condNode->getToken(), std::move(msg));
     }
     return std::make_unique<AssertNode>(pos, std::move(condNode), std::move(messageNode));
@@ -1569,7 +1569,7 @@ std::unique_ptr<Node> Parser::parse_hereDocBody() {
           if (auto &st = this->getActiveHereDocState()) {
             suffix += this->lexer->toStrRef(st.curEntry().token);
           }
-          suffix += "'";
+          suffix += '\'';
           this->reportDetailedError(ParseErrorKind::HERE_END, 1, kinds, suffix.c_str());
         }
         return nullptr; // here-doc reach end even if EOS

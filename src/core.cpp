@@ -93,7 +93,7 @@ void raiseSystemError(ARState &st, int errorNum, std::string &&message) {
   }
   str += "caused by `";
   str += strerror(errorNum);
-  str += "'";
+  str += '\'';
   raiseError(st, TYPE::SystemError, std::move(str));
 }
 
@@ -174,14 +174,14 @@ bool printErrorAt(const ARState &state, const ArrayObject &argvObj, StringRef su
       ref = ref.substr(r + 1);
     }
     out += ref;
-    out += ":";
+    out += ':';
     out += std::to_string(lineNum);
     out += ": ";
   }
   if (const StringRef cmdName = argvObj[0].asStrRef(); !cmdName.empty()) {
     appendAsPrintable(cmdName, SYS_LIMIT_PRINTABLE_MAX, out);
     if (!sub.empty()) {
-      out += " ";
+      out += ' ';
       appendAsPrintable(sub, SYS_LIMIT_PRINTABLE_MAX, out);
     }
     out += ": ";
@@ -196,7 +196,7 @@ bool printErrorAt(const ARState &state, const ArrayObject &argvObj, StringRef su
     out += ": ";
     out += strerror(errNum);
   }
-  out += "\n";
+  out += '\n';
   return fwrite(out.c_str(), sizeof(char), out.size(), stderr) == 0;
 }
 
@@ -1075,7 +1075,7 @@ int xexecve(const char *filePath, const ArrayObject &argvObj, char *const *envp)
       }
       str += e.asCStr();
     }
-    str += "]";
+    str += ']';
     return str;
   });
 

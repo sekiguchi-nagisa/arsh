@@ -24,13 +24,13 @@ namespace arsh {
 
 enum class FrontEndOption : unsigned char {
   NONE = 0u,
-  PARSE_ONLY = 1 << 0,
-  TOPLEVEL = 1 << 1,
-  ERROR_RECOVERY = 1 << 2,
-  SINGLE_EXPR = 1 << 3,
-  REPORT_WARN = 1 << 4,
-  COLLECT_SIGNATURE = 1u << 5,
-  IMPLICIT_BLOCK = 1 << 6,
+  PARSE_ONLY = 1u << 0u,
+  TOPLEVEL = 1u << 1u,
+  ERROR_RECOVERY = 1u << 2u,
+  SINGLE_EXPR = 1u << 3u,
+  REPORT_WARN = 1u << 4u,
+  COLLECT_SIGNATURE = 1u << 5u,
+  IMPLICIT_BLOCK = 1u << 6u,
 };
 
 template <>
