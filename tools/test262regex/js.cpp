@@ -1199,7 +1199,14 @@ std::unique_ptr<Node> JSParser::parseMemberExpression() {
     }
   }
 END:
-  node = TRY(this->parseWithArguments(std::move(node)));
+  if (this->curKind != JSTokenKind::LP) { // new Type;
+    CallExpr call;
+    unsigned int lineNum = node->lineNum;
+    call.func = std::move(node);
+    node = std::make_unique<Node>(lineNum, std::move(call));
+  } else {
+    node = TRY(this->parseWithArguments(std::move(node)));
+  }
   assert(std::holds_alternative<CallExpr>(node->value));
   std::get<CallExpr>(node->value).newExpr = true;
   return node;
