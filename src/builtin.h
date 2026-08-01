@@ -659,14 +659,13 @@ ARSH_METHOD string_count(RuntimeContext &ctx) {
 ARSH_METHOD string_bytes(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_bytes);
   auto ref = LOCAL(0).asStrRef();
-  auto value = Value::create<ArrayObject>(ctx.typePool.get(TYPE::IntArray));
-  auto &array = typeAs<ArrayObject>(value);
-  array.resize(ref.size());
+  auto value = createObject<ArrayObject>(ctx.typePool.get(TYPE::IntArray));
+  value->resize(ref.size());
   const size_t size = ref.size();
   for (size_t i = 0; i < size; i++) {
-    array[i] = Value::createInt(static_cast<unsigned char>(ref[i]));
+    (*value)[i] = Value::createInt(static_cast<unsigned char>(ref[i]));
   }
-  ASSERT_ARRAY_SIZE(array);
+  ASSERT_ARRAY_SIZE(*value);
   RET(value);
 }
 
@@ -674,8 +673,7 @@ ARSH_METHOD string_bytes(RuntimeContext &ctx) {
 ARSH_METHOD string_codes(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_codes);
   auto ref = LOCAL(0).asStrRef();
-  auto value = Value::create<ArrayObject>(ctx.typePool.get(TYPE::IntArray));
-  auto &array = typeAs<ArrayObject>(value);
+  auto value = createObject<ArrayObject>(ctx.typePool.get(TYPE::IntArray));
   const auto end = ref.end();
   for (auto iter = ref.begin(); iter != end;) {
     int code = 0;
@@ -685,9 +683,9 @@ ARSH_METHOD string_codes(RuntimeContext &ctx) {
       code = static_cast<unsigned char>(*iter);
       iter += 1;
     }
-    array.append(Value::createInt(code)); // not check iterator invalidation
+    value->append(Value::createInt(code)); // not check iterator invalidation
   }
-  ASSERT_ARRAY_SIZE(array);
+  ASSERT_ARRAY_SIZE(*value);
   RET(value);
 }
 
@@ -696,15 +694,13 @@ ARSH_METHOD string_chars(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_chars);
   auto ref = LOCAL(0).asStrRef();
   const bool replaceInvalid = LOCAL(1).isInvalid() ? false : LOCAL(1).asBool();
-  auto value = Value::create<ArrayObject>(ctx.typePool.get(TYPE::StringArray));
-  auto &array = typeAs<ArrayObject>(value);
-
-  iterateGrapheme(ref, [&array, replaceInvalid](const GraphemeCluster &grapheme) {
+  auto value = createObject<ArrayObject>(ctx.typePool.get(TYPE::StringArray));
+  iterateGrapheme(ref, [&value, replaceInvalid](const GraphemeCluster &grapheme) {
     StringRef ref = grapheme.hasInvalid() && replaceInvalid ? UnicodeUtil::REPLACEMENT_CHAR_UTF8
                                                             : grapheme.getRef();
-    array.append(Value::createStr(ref)); // not check iterator invalidation
+    value->append(Value::createStr(ref)); // not check iterator invalidation
   });
-  ASSERT_ARRAY_SIZE(array);
+  ASSERT_ARRAY_SIZE(*value);
   RET(value);
 }
 
@@ -713,9 +709,8 @@ ARSH_METHOD string_words(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_words);
   auto ref = LOCAL(0).asStrRef();
   const bool replaceInvalid = LOCAL(1).isInvalid() ? false : LOCAL(1).asBool();
-  auto value = Value::create<ArrayObject>(ctx.typePool.get(TYPE::StringArray));
-  auto &array = typeAs<ArrayObject>(value);
-  iterateWord(ref, [&array, replaceInvalid](StringRef wordRef) {
+  auto value = createObject<ArrayObject>(ctx.typePool.get(TYPE::StringArray));
+  iterateWord(ref, [&value, replaceInvalid](StringRef wordRef) {
     std::string word;
     const auto *end = wordRef.end();
     for (auto *iter = wordRef.begin(); iter != end;) {
@@ -730,9 +725,9 @@ ARSH_METHOD string_words(RuntimeContext &ctx) {
         iter++;
       }
     }
-    array.append(Value::createStr(std::move(word))); // not check iterator invalidation
+    value->append(Value::createStr(std::move(word))); // not check iterator invalidation
   });
-  ASSERT_ARRAY_SIZE(array);
+  ASSERT_ARRAY_SIZE(*value);
   RET(value);
 }
 
@@ -931,9 +926,7 @@ ARSH_METHOD string_contains(RuntimeContext &ctx) {
 //!bind: function split($this : String, $delim : Option<String>) : Array<String>
 ARSH_METHOD string_split(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_split);
-  auto results = Value::create<ArrayObject>(ctx.typePool.get(TYPE::StringArray));
-  auto &ptr = typeAs<ArrayObject>(results);
-
+  auto results = createObject<ArrayObject>(ctx.typePool.get(TYPE::StringArray));
   auto thisStr = LOCAL(0).asStrRef();
   auto delimStr = LOCAL(1).isInvalid() ? "" : LOCAL(1).asStrRef();
 
@@ -944,17 +937,17 @@ ARSH_METHOD string_split(RuntimeContext &ctx) {
       if (size == 0) {
         size = 1;
       }
-      ptr.append(Value::createStr(StringRef(iter, size))); // not check iterator invalidation
+      results->append(Value::createStr(StringRef(iter, size))); // not check iterator invalidation
       iter += size;
     }
   } else {
     for (StringRef::size_type pos = 0; pos != StringRef::npos;) {
       auto ret = thisStr.find(delimStr, pos);
-      ptr.append(Value::createStr(thisStr.slice(pos, ret))); // not check iterator invalidation
+      results->append(Value::createStr(thisStr.slice(pos, ret))); // not check iterator invalidation
       pos = ret != StringRef::npos ? ret + delimStr.size() : ret;
     }
   }
-  ASSERT_ARRAY_SIZE(ptr);
+  ASSERT_ARRAY_SIZE(*results);
   RET(results);
 }
 
@@ -1593,13 +1586,12 @@ ARSH_METHOD signals_list(RuntimeContext &ctx) {
   auto ret = ctx.typePool.createArrayType(ctx.typePool.get(TYPE::Signal));
   assert(ret);
   auto type = std::move(ret).take();
-  auto v = Value::create<ArrayObject>(*type);
-  auto &array = typeAs<ArrayObject>(v);
+  auto v = createObject<ArrayObject>(*type);
   auto list = toSortedUniqueSignalEntries();
   for (auto &e : list) {
-    array.append(Value::createSig(e.sigNum)); // not check iterator invalidation
+    v->append(Value::createSig(e.sigNum)); // not check iterator invalidation
   }
-  ASSERT_ARRAY_SIZE(array);
+  ASSERT_ARRAY_SIZE(*v);
   RET(v);
 }
 
@@ -2627,13 +2619,12 @@ ARSH_METHOD edit_action(RuntimeContext &ctx) {
 ARSH_METHOD edit_actions(RuntimeContext &ctx) {
   SUPPRESS_WARNING(edit_actions);
   auto &editor = typeAs<LineEditorObject>(LOCAL(0));
-  auto value = Value::create<ArrayObject>(ctx.typePool.get(TYPE::StringArray));
-  auto &array = typeAs<ArrayObject>(value);
-  editor.getKeyBindings().fillActions([&array](StringRef action) {
-    array.append(Value::createStr(action)); // not check iterator invalidation
+  auto value = createObject<ArrayObject>(ctx.typePool.get(TYPE::StringArray));
+  editor.getKeyBindings().fillActions([&value](StringRef action) {
+    value->append(Value::createStr(action)); // not check iterator invalidation
   });
-  array.sortAsStrArray(); // not check iterator invalidation
-  ASSERT_ARRAY_SIZE(array);
+  value->sortAsStrArray(); // not check iterator invalidation
+  ASSERT_ARRAY_SIZE(*value);
   RET(value);
 }
 
