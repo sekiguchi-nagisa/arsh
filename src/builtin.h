@@ -923,16 +923,26 @@ ARSH_METHOD string_contains(RuntimeContext &ctx) {
   RET_BOOL(left.contains(right));
 }
 
-//!bind: function split($this : String, $delim : Option<String>) : Array<String>
+//!bind: function split($this : String, $delim : Option<String>, $limit: Option<Int>) : Array<String>
 ARSH_METHOD string_split(RuntimeContext &ctx) {
   SUPPRESS_WARNING(string_split);
   auto results = createObject<ArrayObject>(ctx.typePool.get(TYPE::StringArray));
   auto thisStr = LOCAL(0).asStrRef();
   auto delimStr = LOCAL(1).isInvalid() ? "" : LOCAL(1).asStrRef();
+  int64_t limit = LOCAL(2).isInvalid() ? -1 : LOCAL(2).asInt();
+  limit = limit < 0 ? INT64_MAX : limit;
+  if (limit == 0) {
+    RET(results);
+  }
+  if (limit == 1) {
+    results->append(LOCAL(0));
+    RET(results);
+  }
 
   if (delimStr.empty()) {
     const auto end = thisStr.end();
-    for (auto iter = thisStr.begin(); iter != end;) {
+    auto iter = thisStr.begin();
+    for (int64_t count = 1; iter != end && count < limit; count++) {
       unsigned int size = UnicodeUtil::utf8ValidateChar(iter, end);
       if (size == 0) {
         size = 1;
@@ -940,11 +950,19 @@ ARSH_METHOD string_split(RuntimeContext &ctx) {
       results->append(Value::createStr(StringRef(iter, size))); // not check iterator invalidation
       iter += size;
     }
+    if (iter != end) {
+      results->append(
+          Value::createStr(StringRef(iter, end - iter))); // not check iterator invalidation
+    }
   } else {
-    for (StringRef::size_type pos = 0; pos != StringRef::npos;) {
+    StringRef::size_type pos = 0;
+    for (int64_t count = 1; pos != StringRef::npos && count < limit; count++) {
       auto ret = thisStr.find(delimStr, pos);
       results->append(Value::createStr(thisStr.slice(pos, ret))); // not check iterator invalidation
       pos = ret != StringRef::npos ? ret + delimStr.size() : ret;
+    }
+    if (pos != StringRef::npos) {
+      results->append(Value::createStr(thisStr.substr(pos))); // not check iterator invalidation
     }
   }
   ASSERT_ARRAY_SIZE(*results);

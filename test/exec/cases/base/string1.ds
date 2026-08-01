@@ -169,6 +169,19 @@ assert $sa[0] == 'he'
 assert $sa[1] == ''
 assert $sa[2] == ''
 
+assert '|>a|>b|>|>c|>'.split('|>') == ['', 'a', 'b', '', 'c', '']
+assert '|>a|>b|>|>c|>'.split('|>', -1) == ['', 'a', 'b', '', 'c', '']
+assert '|>a|>b|>|>c|>'.split('|>', -100) == ['', 'a', 'b', '', 'c', '']
+assert '|>a|>b|>|>c|>'.split('|>', 0).empty()
+assert '|>a|>b|>|>c|>'.split('|>', 1) == ['|>a|>b|>|>c|>',]
+assert '|>a|>b|>|>c|>'.split('|>', 2) == ['', 'a|>b|>|>c|>',]
+assert '|>a|>b|>|>c|>'.split('|>', 3) == ['', 'a', 'b|>|>c|>',]
+assert '|>a|>b|>|>c|>'.split('|>', 4) == ['', 'a', 'b', '|>c|>',]
+assert '|>a|>b|>|>c|>'.split('|>', 5) == ['', 'a', 'b', '', 'c|>',]
+assert '|>a|>b|>|>c|>'.split('|>', 6) == ['', 'a', 'b', '', 'c', '',]
+assert '|>a|>b|>|>c|>'.split('|>', 7) == ['', 'a', 'b', '', 'c', '',]
+assert '|>a|>b|>|>c|>'.split('|>', 1000) == ['', 'a', 'b', '', 'c', '',]
+
 $sa = 'hell'.split('h')
 assert $sa.size() == 2
 assert $sa[0] == ''
@@ -179,6 +192,12 @@ assert($sa.size() == 3)
 assert($sa[0] == "こ")
 assert($sa[1] == "ば")
 assert($sa[2] == "わ")
+assert "こんばんわ".split("ん", $limit:2) == ['こ', 'ばんわ']
+assert "こんばんわ".split("ん", $limit:3) == ['こ', 'ば', 'わ']
+assert "こんばんわ".split("ん", $limit:4) == ['こ', 'ば', 'わ']
+assert "こんばんわ".split("ん", $limit:-1) == ['こ', 'ば', 'わ']
+assert "こんばんわ".split("ん", $limit:1) == ["こんばんわ"]
+assert "こんばんわ".split("ん", $limit:0).empty()
 
 $sa = "hello".split("@")
 assert($sa.size() == 1)
@@ -212,9 +231,19 @@ assert $sa[1] == $'\x00c'
 
 $sa = $'a\xFFあ\xFEい\xEE'.split('')
 assert $sa == ['a', $'\xFF', 'あ', $'\xFE', 'い', $'\xEE']
+assert $'a\xFFあ\xFEい\xEE'.split('', $limit:4) == ['a', $'\xFF', 'あ', $'\xFEい\xEE']
 
 $sa = $'a\xFFあ\xFEい\xEE'.split()
 assert $sa == ['a', $'\xFF', 'あ', $'\xFE', 'い', $'\xEE']
+assert $'a\xFFあ\xFEい\xEE'.split($limit:0).empty()
+assert $'a\xFFあ\xFEい\xEE'.split($limit:1) == [ $'a\xFFあ\xFEい\xEE']
+assert $'a\xFFあ\xFEい\xEE'.split($limit:2) == ['a', $'\xFFあ\xFEい\xEE']
+assert $'a\xFFあ\xFEい\xEE'.split($limit:3) == ['a', $'\xFF', $'あ\xFEい\xEE']
+assert $'a\xFFあ\xFEい\xEE'.split($limit:4) == ['a', $'\xFF', 'あ', $'\xFEい\xEE']
+assert $'a\xFFあ\xFEい\xEE'.split($limit:5) == ['a', $'\xFF', 'あ', $'\xFE', $'い\xEE']
+assert $'a\xFFあ\xFEい\xEE'.split($limit:6) == ['a', $'\xFF', 'あ', $'\xFE', 'い', $'\xEE']
+assert $'a\xFFあ\xFEい\xEE'.split($limit:7) == ['a', $'\xFF', 'あ', $'\xFE', 'い', $'\xEE']
+assert $'a\xFFあ\xFEい\xEE'.split($limit:-1) == ['a', $'\xFF', 'あ', $'\xFE', 'い', $'\xEE']
 
 assert "hello".replace("e", "@") == "h@llo"
 assert "hello".replace("ll", "") == "heo"
@@ -329,7 +358,7 @@ assert $invalid.width(1) == 6
 assert $invalid.width() == 
 { 
     var aa = 0 
-    for a in $gca { $aa += $a.width(); }
+    for a0 in $gca { $aa += $a0.width(); }
     $aa
 }
 

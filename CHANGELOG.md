@@ -7,7 +7,7 @@
 #### Builtin
 
 - add ``Int#toString`` method for reverse method of ``String#toInt``
-- add ``Regex#split`` mehtod for split string by regex pattern
+- add ``Regex#split`` method for split string by regex pattern
 
 ### Changed
 
@@ -17,7 +17,9 @@
 
 #### Builtin
 
-- ``String#split`` method param is now optional (pass empty string by default)
+- improve ``String#split`` method
+    - ``delim`` param is now optional (pass empty string by default)
+    - add ``limit`` param
 - add ``unsigned`` param to ``String#toInt`` method. now can recognize as unsigned int
 
 #### Misc
