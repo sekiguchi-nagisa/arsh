@@ -75,6 +75,12 @@ assert $bb.empty()
 assert $bb2.size() == 2
 assert $bb2["s"] == 1
 assert $bb2["a"] == 100
+$bb = ["s" : 1, "a" : 100]
+$bb.remove('s')
+assert $bb.size() == 1
+$bb2 = $bb.copy()
+assert $bb2.size() == 1
+assert $bb2['a'] == 100
 
 # putAll
 var cc1 = ["a" : 12, "b": 34]
@@ -90,6 +96,12 @@ assert $cc3['c'] == 56
 var cc4 = $cc3.putAll($cc3)
 assert $cc4.size() == 3
 assert $cc3.size() == 3
+
+$cc3.remove('a')
+assert $cc3.size() == 2
+var cc5 : [String: Int]
+$cc5.putAll($cc3)
+assert $cc5.size() == 2
 
 # inheritance
 assert([23 : $true] is Map<Int, Boolean>)

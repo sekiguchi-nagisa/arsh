@@ -113,7 +113,7 @@ uint64_t hashRange(const Value *begin, const Value *const end) {
 unsigned int OrderedMapEntries::add(Value &&key, uint64_t hash, Value &&value) {
   if (this->usedSize == this->capacity) {
     unsigned int newCap = this->capacity;
-    newCap += (newCap >> 1);
+    newCap += (newCap >> 1u);
     if (unlikely(newCap == 0)) {
       newCap = 4;
     }
@@ -159,6 +159,9 @@ unsigned int OrderedMapEntries::compact() {
 
 std::pair<int, OrderedMapObject::InsertStatus> OrderedMapObject::insert(Value &&key,
                                                                         Value &&value) {
+  if (unlikely(!key)) {
+    return {-1, InsertStatus::INVALID_KEY};
+  }
   if (unlikely(!this->buckets)) {
     this->buckets = std::make_unique<Bucket[]>(this->bucketLen.capacity());
   }
@@ -167,7 +170,7 @@ std::pair<int, OrderedMapObject::InsertStatus> OrderedMapObject::insert(Value &&
   if (this->probeBuckets(OrderedMapKey(key), probe)) {
     int index = this->buckets[probe.bucketIndex].entryIndex;
     assert(index != -1);
-    return {index, InsertStatus::NOP};
+    return {index, InsertStatus::INSERTED};
   }
 
   if (unlikely(this->size() == MAX_SIZE)) {
@@ -339,8 +342,9 @@ bool OrderedMapObject::checkIteratorInvalidation(ARState &state, bool isReplyVar
 Value OrderedMapObject::put(ARState &st, Value &&key, Value &&value) {
   switch (auto [index, s] = this->insert(std::move(key), Value(value)); s) {
   case InsertStatus::OK:
+  case InsertStatus::INVALID_KEY:
     return Value::createInvalid();
-  case InsertStatus::NOP:
+  case InsertStatus::INSERTED:
     std::swap((*this)[index].refValue(), value);
     return std::move(value);
   case InsertStatus::LIMIT:

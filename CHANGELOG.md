@@ -26,6 +26,10 @@
 
 - enable Unicode set mode in ``litecheck`` regex pattern
 
+### Fixed
+
+- skip invalid map entry during ``Map#putAll``, ``Map#copy`` methods
+
 ## [0.42.1] - 2026-07-19
 
 - fix key-value tuple type construction during map iteration

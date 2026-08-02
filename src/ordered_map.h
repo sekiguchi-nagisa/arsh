@@ -137,9 +137,9 @@ private:
 
     explicit BucketLen(unsigned int initCapExp) { this->setCapExp(initCapExp); }
 
-    unsigned int capExp() const { return this->value >> 27; }
+    unsigned int capExp() const { return this->value >> 27u; }
 
-    unsigned int capacity() const { return 1 << this->capExp(); }
+    unsigned int capacity() const { return 1u << this->capExp(); }
 
     unsigned int size() const { return this->value & MASK_27bit; }
 
@@ -171,7 +171,7 @@ private:
   private:
     void setCapExp(unsigned int v) {
       unsigned int newValue = this->value & MASK_27bit;
-      newValue |= v << 27;
+      newValue |= v << 27u;
       this->value = newValue;
     }
   };
@@ -211,9 +211,10 @@ public:
   const auto &getEntries() const { return this->entries; }
 
   enum class InsertStatus : unsigned char {
-    OK,    // successfully inserted
-    NOP,   // do nothing (already inserted)
-    LIMIT, // reach map size limit
+    OK,          // successfully inserted
+    INSERTED,    // already inserted
+    INVALID_KEY, // invalid (empty) key
+    LIMIT,       // reach map size limit
   };
 
   /**
@@ -222,7 +223,7 @@ public:
    * @param value
    * @return
    * if already inserted, return (entry index, false)
-   * if insertion failed (reach size limit), return (-1, false)
+   * if insertion failed (reach size limit or empty key), return (-1, false)
    * otherwise, return (entry index, true)
    */
   std::pair<int, InsertStatus> insert(Value &&key, Value &&value);

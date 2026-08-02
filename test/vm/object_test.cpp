@@ -236,12 +236,19 @@ TEST(MapTest, base) {
   ASSERT_EQ("ABC", (*obj)[retIndex].getKey().asStrRef());
   ASSERT_EQ(12, (*obj)[retIndex].getValue().asInt());
 
+  // invalid key
+  pair = obj->insert(Value(), Value::createBool(false));
+  ASSERT_EQ(1, obj->size());
+  ASSERT_EQ(1, obj->getEntries().getUsedSize());
+  ASSERT_EQ(-1, pair.first);
+  ASSERT_EQ(OrderedMapObject::InsertStatus::INVALID_KEY, pair.second);
+
   // insert already defined key
   pair = obj->insert(Value::createStr("ABC"), Value::createInt(1232));
   ASSERT_EQ(1, obj->size());
   ASSERT_EQ(1, obj->getEntries().getUsedSize());
   ASSERT_EQ(0, pair.first);
-  ASSERT_EQ(OrderedMapObject::InsertStatus::NOP, pair.second);
+  ASSERT_EQ(OrderedMapObject::InsertStatus::INSERTED, pair.second);
 
   pair = obj->insert(Value::createStr("1234"), Value::createInt(-99));
   ASSERT_EQ(2, obj->size());
@@ -338,7 +345,7 @@ TEST(MapTest, rand1) {
     const auto &keyValue = keyValues[i];
     auto pair = obj->insert(Value::createStr(keyValue.first),
                             Value::createInt(static_cast<int64_t>(keyValue.second + 9999)));
-    ASSERT_EQ(OrderedMapObject::InsertStatus::NOP, pair.second);
+    ASSERT_EQ(OrderedMapObject::InsertStatus::INSERTED, pair.second);
     ASSERT_EQ(i, pair.first);
     ASSERT_EQ(keyValue.first, (*obj)[pair.first].getKey().asStrRef());
     ASSERT_EQ(keyValue.second, (*obj)[pair.first].getValue().asInt());
