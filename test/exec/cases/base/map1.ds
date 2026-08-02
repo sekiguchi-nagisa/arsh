@@ -103,6 +103,12 @@ var cc5 : [String: Int]
 $cc5.putAll($cc3)
 assert $cc5.size() == 2
 
+# key-value
+assert new [String:Int]().keys().empty()
+assert new [String:Int]().values().empty()
+assert $cc3.keys() == ['b', 'c']
+assert $cc3.values() == [-199, 56]
+
 # inheritance
 assert([23 : $true] is Map<Int, Boolean>)
 assert(["fre" : 32] is Any)

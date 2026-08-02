@@ -145,14 +145,7 @@ function print(root: [Path: Entry], level: Int) {
     for(var i = 0; $i < $level; $i++) {
         $p += "#"
     }
-
-    var keys: [Path]
-    for k, _  in $root {
-        $keys.add($k)
-    }
-    $keys.sort()
-
-    for k in $keys {
+    for k in $root.keys().sort() {
         var v = $root[$k]
         if $v.content.empty() {
             printf "%s %s (pass:%d, fail:%d, skip:%d)\n" $p ${k.value} ${v.pass} ${v.fail} ${v.skip}

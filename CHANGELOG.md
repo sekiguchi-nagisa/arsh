@@ -8,6 +8,7 @@
 
 - add ``Int#toString`` method for reverse method of ``String#toInt``
 - add ``Regex#split`` method for split string by regex pattern
+- add ``Map#keys`` and ``Map#values`` methods
 
 ### Changed
 

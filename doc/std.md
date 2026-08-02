@@ -539,6 +539,10 @@ function swap(key: T0, value: T1): T1 for [T0 : T1]
 
 function putAll(other: [T0 : T1]): [T0 : T1] for [T0 : T1]
 
+function keys(): [T0] for [T0 : T1]
+
+function values(): [T1] for [T0 : T1]
+
 function copy(): [T0 : T1] for [T0 : T1]
 
 function clear(): Void for [T0 : T1]

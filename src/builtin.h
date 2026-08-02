@@ -2235,6 +2235,38 @@ ARSH_METHOD map_putAll(RuntimeContext &ctx) {
   RET(LOCAL(0));
 }
 
+//!bind: function keys($this: Map<T0, T1>): Array<T0>
+ARSH_METHOD map_keys(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(map_keys);
+  auto &obj = typeAs<OrderedMapObject>(LOCAL(0));
+  auto &keyType = cast<MapType>(ctx.typePool.get(obj.getTypeID())).getKeyType();
+  auto &arrayType = *ctx.typePool.createArrayType(keyType).asOk();
+  auto array = createObject<ArrayObject>(arrayType);
+  array->reserve(obj.size());
+  for (auto &e : obj.getEntries()) {
+    if (e) {
+      array->append(e.getKey()); // not check iterator invalidation
+    }
+  }
+  RET(array);
+}
+
+//!bind: function values($this: Map<T0, T1>): Array<T1>
+ARSH_METHOD map_values(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(map_values);
+  auto &obj = typeAs<OrderedMapObject>(LOCAL(0));
+  auto &valueType = cast<MapType>(ctx.typePool.get(obj.getTypeID())).getValueType();
+  auto &arrayType = *ctx.typePool.createArrayType(valueType).asOk();
+  auto array = createObject<ArrayObject>(arrayType);
+  array->reserve(obj.size());
+  for (auto &e : obj.getEntries()) {
+    if (e) {
+      array->append(e.getValue()); // not check iterator invalidation
+    }
+  }
+  RET(array);
+}
+
 //!bind: function copy($this : Map<T0, T1>) : Map<T0, T1>
 ARSH_METHOD map_copy(RuntimeContext &ctx) {
   SUPPRESS_WARNING(map_copy);
