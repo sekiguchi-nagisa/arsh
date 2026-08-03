@@ -29,6 +29,35 @@ const char *toString(JSTokenKind kind) {
   return table[static_cast<unsigned int>(kind)];
 }
 
+JSOperatorInfo getOperatorInfo(JSTokenKind kind) {
+#define INFIX JSOperatorAttr::INFIX
+#define RASSOC JSOperatorAttr::RASSOC
+
+  switch (kind) {
+#define GEN_CASE(T, P, A)                                                                          \
+  case JSTokenKind::T:                                                                             \
+    return {P, A};
+    EACH_JS_OPERATOR(GEN_CASE)
+#undef GEN_CASE
+  default:
+    return {};
+  }
+
+#undef INFIX
+#undef RASSOC
+}
+
+bool isAssignOp(JSTokenKind kind) {
+  switch (kind) {
+#define GEN_CASE(T, P, A) case JSTokenKind::T:
+    EACH_JS_ASSIGN_OP(GEN_CASE)
+#undef GEN_CASE
+    return true;
+  default:
+    return false;
+  }
+}
+
 static int nextCodePoint(const char *&iter, const char *end) {
   int codePoint;
   if (unsigned int len = UnicodeUtil::utf8ToCodePoint(iter, end, codePoint)) {

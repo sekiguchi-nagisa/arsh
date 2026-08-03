@@ -472,6 +472,26 @@ const char16_t *typeOf(const JSValue &value) {
   return u"object";
 }
 
+static double compare(const JSValue &left, const JSValue &right) {
+  if (std::holds_alternative<JSStringPtr>(left) && std::holds_alternative<JSStringPtr>(right)) {
+    auto &left0 = *std::get<JSStringPtr>(left);
+    auto &right0 = *std::get<JSStringPtr>(right);
+    return left0.compare(right0);
+  }
+  double left0 = toNumber(left);
+  double right0 = toNumber(right);
+  if (std::isnan(left0) || std::isnan(right0)) {
+    return std::nan("");
+  }
+  if (left0 < right0) {
+    return -1;
+  }
+  if (left0 > right0) {
+    return 1;
+  }
+  return 0;
+}
+
 // for builtin
 JSFunctionPtr createJSFunction(const std::shared_ptr<JSEnv> &env, const char *name,
                                std::vector<std::string> &&params, JSObjectPtr &&prototype,
@@ -479,7 +499,7 @@ JSFunctionPtr createJSFunction(const std::shared_ptr<JSEnv> &env, const char *na
   auto func = std::make_shared<JSFunction>();
   func->params = std::move(params);
   func->definedEnv = env;
-  func->values["name"] = newJSString(name);
+  func->values["name"] = newJSStringPtr(name);
   if (prototype) {
     func->values[builtin::PROTOTYPE] = std::move(prototype);
   }
@@ -507,7 +527,7 @@ static JSResult errorConstructorImpl(const JSFunctionPtr &func, const std::share
   // message
   auto v = env->findOrUndef(func->params[0]);
   if (isUndefined(v)) {
-    v = newJSString("");
+    v = newJSStringPtr("");
   }
   obj->values[func->params[0]] = v;
 
@@ -529,7 +549,7 @@ static JSResult errorConstructorImpl(const JSFunctionPtr &func, const std::share
 
 static void defineError(const std::shared_ptr<JSEnv> &global) {
   auto prototype = std::make_shared<JSObject>();
-  prototype->values["name"] = newJSString(builtin::ERROR);
+  prototype->values["name"] = newJSStringPtr(builtin::ERROR);
   auto func = createJSFunction(global, builtin::ERROR, {"message", "fileName", "lineNumber"},
                                std::move(prototype), errorConstructorImpl);
   global->define(builtin::ERROR, std::move(func));
@@ -541,7 +561,7 @@ void defineDerivedError(const std::shared_ptr<JSEnv> &global, const char *name) 
   auto errorPrototype =
       getOwnProperty(*std::get<JSFunctionPtr>(errorConstructor), builtin::PROTOTYPE);
   auto prototype = std::make_shared<JSObject>();
-  prototype->values["name"] = newJSString(name);
+  prototype->values["name"] = newJSStringPtr(name);
   prototype->values[builtin::PROTO] = errorPrototype;
   auto func = createJSFunction(global, name, {"message", "fileName", "lineNumber"},
                                std::move(prototype), errorConstructorImpl);
@@ -837,8 +857,14 @@ struct CallExpr {
 };
 
 struct UnaryExpr {
-  std::string op;
+  JSTokenKind op;
   std::unique_ptr<Node> expr;
+};
+
+struct BinaryExpr {
+  std::unique_ptr<Node> left;
+  JSTokenKind op;
+  std::unique_ptr<Node> right;
 };
 
 struct VarDecl { // currently only support `const`
@@ -868,9 +894,10 @@ struct TryStmt {
 struct Node {
   unsigned int lineNum;
 
-  using Underlying = std::variant<NullLiteral, BoolLiteral, NumberLiteral, StringLiteral,
-                                  RegexLiteral, ArrayLiteral, ObjectLiteral, FuncLiteral, NameExpr,
-                                  AccessExpr, CallExpr, UnaryExpr, VarDecl, JumpStmt, TryStmt>;
+  using Underlying =
+      std::variant<NullLiteral, BoolLiteral, NumberLiteral, StringLiteral, RegexLiteral,
+                   ArrayLiteral, ObjectLiteral, FuncLiteral, NameExpr, AccessExpr, CallExpr,
+                   UnaryExpr, BinaryExpr, VarDecl, JumpStmt, TryStmt>;
   Underlying value;
 
   Node(unsigned int lineNum, Underlying v) : lineNum(lineNum), value(std::move(v)) {}
@@ -967,7 +994,11 @@ private:
 
   std::unique_ptr<Node> parseTryStatement();
 
-  std::unique_ptr<Node> parseExpression();
+  std::unique_ptr<Node> parseExpression() {
+    return this->parseExpression(getOperatorInfo(JSTokenKind::ASSIGN).precedence);
+  }
+
+  std::unique_ptr<Node> parseExpression(JSOperatorPrecedence base);
 
   std::unique_ptr<Node> parseUnaryExpression();
 
@@ -1129,7 +1160,32 @@ std::unique_ptr<Node> JSParser::parseTryStatement() {
                                 });
 }
 
-std::unique_ptr<Node> JSParser::parseExpression() { return this->parseUnaryExpression(); }
+static bool isAssignable(const Node &node) {
+  (void)node; // TODO
+  return false;
+}
+
+std::unique_ptr<Node> JSParser::parseExpression(JSOperatorPrecedence base) {
+  auto node = TRY(this->parseUnaryExpression());
+  while (isOperator(this->curKind)) {
+    const auto info = getOperatorInfo(this->curKind);
+    if (!hasFlag(info.attr, JSOperatorAttr::INFIX) || info.precedence < base) {
+      break;
+    }
+    Token token = this->curToken;
+    JSTokenKind kind = this->scan();
+    const auto next =
+        hasFlag(info.attr, JSOperatorAttr::RASSOC) ? info.precedence : advance(info.precedence);
+    auto rightNode = this->parseExpression(next);
+    unsigned int lineNum = node->lineNum;
+    if (isAssignOp(kind) && !isAssignable(*node)) {
+      this->reportTokenFormatError(kind, token, "invalid left-hand side of assignment");
+      return nullptr;
+    }
+    node = std::make_unique<Node>(lineNum, BinaryExpr{std::move(node), kind, std::move(rightNode)});
+  }
+  return node;
+}
 
 std::unique_ptr<Node> JSParser::parseUnaryExpression() {
   switch (this->curKind) {
@@ -1139,10 +1195,10 @@ std::unique_ptr<Node> JSParser::parseUnaryExpression() {
   case JSTokenKind::VOID:
   case JSTokenKind::TYPEOF: {
     Token token = this->curToken;
-    this->consume();
+    JSTokenKind kind = this->scan();
     auto expr = TRY(this->parseUnaryExpression());
     return std::make_unique<Node>(this->lexer->getLineNumByPos(token.pos),
-                                  UnaryExpr{this->lexer->toTokenText(token), std::move(expr)});
+                                  UnaryExpr{kind, std::move(expr)});
   }
   case JSTokenKind::NEW:
     return this->parseMemberExpression();
@@ -1450,18 +1506,69 @@ static JSResult evalFunc(const FuncLiteral &literal, const std::shared_ptr<JSEnv
 
 static JSResult evalUnary(const UnaryExpr &unary, const std::shared_ptr<JSEnv> &env) {
   auto value = TRY(evaluate(*unary.expr, env));
-  if (unary.op == "!") {
-    value = !toBool(value);
-  } else if (unary.op == "+") {
-    value = toNumber(value);
-  } else if (unary.op == "-") {
-    value = -toNumber(value);
-  } else if (unary.op == "void") {
-    value = JSValue(); // always `undefined`
-  } else if (unary.op == "typeof") {
-    value = std::make_shared<JSString>(typeOf(value));
+  switch (unary.op) {
+  case JSTokenKind::NOT:
+    return Ok(!toBool(value));
+  case JSTokenKind::ADD:
+    return Ok(toNumber(value));
+  case JSTokenKind::SUB:
+    return Ok(-toNumber(value));
+  case JSTokenKind::VOID:
+    return Ok(JSValue()); // always `undefined`
+  case JSTokenKind::TYPEOF:
+    return Ok(std::make_shared<JSString>(typeOf(value)));
+  default:
+    fatal("unreachable: %s\n", toString(unary.op));
   }
-  return Ok(std::move(value));
+}
+
+static JSResult evalBinary(const BinaryExpr &binary, const std::shared_ptr<JSEnv> &env) {
+  if (binary.op == JSTokenKind::COND_AND) {
+    if (auto left = TRY(evaluate(*binary.left, env)); !toBool(left)) {
+      return Ok(std::move(left));
+    }
+    return evaluate(*binary.right, env);
+  }
+  if (binary.op == JSTokenKind::COND_OR) {
+    if (auto left = TRY(evaluate(*binary.left, env)); toBool(left)) {
+      return Ok(std::move(left));
+    }
+    return evaluate(*binary.right, env);
+  }
+  if (isAssignOp(binary.op)) {
+    fatal("unsupported: %s\n", toString(binary.op));
+  }
+  auto left = TRY(evaluate(*binary.left, env));
+  auto right = TRY(evaluate(*binary.right, env));
+  switch (binary.op) {
+  case JSTokenKind::ADD:
+    if (std::holds_alternative<JSStringPtr>(left) || std::holds_alternative<JSStringPtr>(right)) {
+      JSString str;
+      toString(left, str);
+      toString(right, str);
+      return Ok(std::make_shared<JSString>(std::move(str)));
+    }
+    return Ok(toNumber(left) + toNumber(right));
+  case JSTokenKind::SUB:
+    return Ok(toNumber(left) - toNumber(right));
+  case JSTokenKind::LT:
+    return Ok(compare(left, right) < 0);
+  case JSTokenKind::LE:
+    return Ok(compare(left, right) <= 0);
+  case JSTokenKind::GT:
+    return Ok(compare(left, right) > 0);
+  case JSTokenKind::GE:
+    return Ok(compare(left, right) >= 0);
+  case JSTokenKind::INSTANCEOF:
+    return isInstanceOf(env, env->callerLineNum(), left, right);
+  case JSTokenKind::EQ2:
+    return Ok(strictlyEquals(left, right));
+  case JSTokenKind::NE2:
+    return Ok(!strictlyEquals(left, right));
+  default:
+    fatal("unreachable: %s\n", toString(binary.op));
+  }
+  return Ok(JSValue());
 }
 
 static JSResult evalBlock(const std::vector<std::unique_ptr<Node>> &nodes,
@@ -1522,6 +1629,8 @@ static JSResult evaluate(const Node &node, const std::shared_ptr<JSEnv> &env) {
           return evalCallExpr(element, lineNum, env);
         } else if constexpr (std::is_same_v<T, UnaryExpr>) {
           return evalUnary(element, env);
+        } else if constexpr (std::is_same_v<T, BinaryExpr>) {
+          return evalBinary(element, env);
         } else if constexpr (std::is_same_v<T, VarDecl>) {
           auto value = TRY(evaluate(*element.expr, env));
           if (!env->define(element.name, std::move(value))) { // TODO: should be syntax error
@@ -1553,7 +1662,7 @@ JSResult jsEval(const char *sourceName, StringRef source, std::shared_ptr<JSEnv>
   }
   std::vector<std::unique_ptr<Node>> nodes;
   {
-    auto fileName = newJSString(sourceName);
+    auto fileName = newJSStringPtr(sourceName);
     if (!global->define(JSEnv::DEFINED_FILENAME, fileName)) {
       global->assign(JSEnv::DEFINED_FILENAME, fileName);
     }

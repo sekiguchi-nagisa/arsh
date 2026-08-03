@@ -134,6 +134,16 @@ INIT:
     "!"                    { RET(NOT); }
     "+"                    { RET(ADD); }
     "-"                    { RET(SUB); }
+    "++"                   { RET(INC); }
+    "--"                   { RET(DEC); }
+    "==="                  { RET(EQ2); }
+    "!=="                  { RET(NE2); }
+    "<"                    { RET(LT); }
+    "<="                   { RET(LE); }
+    ">"                    { RET(GT); }
+    ">="                   { RET(GE); }
+    "&&"                   { RET(COND_AND); }
+    "||"                   { RET(COND_OR); }
     "("                    { RET(LP); }
     ")"                    { RET(RP); }
     "{"                    { RET(LBC); }

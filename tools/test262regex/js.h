@@ -227,7 +227,9 @@ inline std::u16string toUTF16(StringRef ref) {
   return out;
 }
 
-inline JSStringPtr newJSString(StringRef ref) { return std::make_shared<JSString>(toUTF16(ref)); }
+inline JSStringPtr newJSStringPtr(StringRef ref) {
+  return std::make_shared<JSString>(toUTF16(ref));
+}
 
 void toWTF8(const std::u16string &value, std::string &out);
 

@@ -13,7 +13,7 @@ includes: [regExpUtils.js]
 
 assert.sameValue(12, +12);
 console.log(+12);
-assert.sameValue(-12, ---12);
+assert.sameValue(-12, -(-(-12)));
 console.log(-12);
 assert.sameValue(false, !true);
 console.log(!true);

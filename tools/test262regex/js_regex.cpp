@@ -144,7 +144,7 @@ static JSFunctionPtr createRegExpEscape(const std::shared_ptr<JSEnv> &global) {
     bool r = regex::escape(str, out.max_size(), out);
     static_cast<void>(r);
     assert(r);
-    return Ok(std::make_shared<JSString>(toUTF16(out)));
+    return Ok(newJSStringPtr(out));
   };
   return createJSFunction(global, "escape", {"string"}, nullptr, std::move(impl));
 }
@@ -288,10 +288,10 @@ JSValue getOwnProperty(const JSRegex &regex, const std::string &name) {
     return d;
   }
   if (name == "source") {
-    return newJSString(regex.pattern);
+    return newJSStringPtr(regex.pattern);
   }
   if (name == "flags") {
-    return newJSString(toStringFlags(regex));
+    return newJSStringPtr(toStringFlags(regex));
   }
   if (name == "dotAll") {
     return regex.regex.getFlag().has(regex::Modifier::DOT_ALL);
@@ -390,7 +390,7 @@ static JSValue toNamedGroups(const regex::Regex &re, const StringRef ref,
   auto groups = std::make_shared<JSObject>();
   collectNamedGroups(re, captures, [groups, ref](StringRef name, regex::Capture cap) {
     groups->values[name.toString()] =
-        cap ? newJSString(ref.substr(cap.offset, cap.size)) : JSValue();
+        cap ? newJSStringPtr(ref.substr(cap.offset, cap.size)) : JSValue();
   });
   return groups;
 }
@@ -437,7 +437,7 @@ toMatchResult(const JSRegex &regex, const JSStringPtr &str, const StringRef ref,
   auto obj = std::make_shared<JSArray>();
   unsigned int lastIndex = toUTF16Offset(ref, captures[0].offset + captures[0].size);
   for (auto &cap : captures) {
-    obj->array.push_back(cap ? newJSString(ref.substr(cap.offset, cap.size)) : JSValue());
+    obj->array.push_back(cap ? newJSStringPtr(ref.substr(cap.offset, cap.size)) : JSValue());
   }
   obj->values["index"] = static_cast<double>(toUTF16Offset(ref, captures[0].offset));
   obj->values["input"] = str;

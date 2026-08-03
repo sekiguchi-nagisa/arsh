@@ -19,6 +19,7 @@
 
 #include <optional>
 
+#include <misc/enum_util.hpp>
 #include <misc/lexer_base.hpp>
 
 namespace arsh::re262 {
@@ -51,6 +52,16 @@ namespace arsh::re262 {
   OP(ADD, "+")                                                                                     \
   OP(SUB, "-")                                                                                     \
   OP(NOT, "!")                                                                                     \
+  OP(INC, "++")                                                                                    \
+  OP(DEC, "--")                                                                                    \
+  OP(EQ2, "===")                                                                                   \
+  OP(NE2, "!==")                                                                                   \
+  OP(LT, "<")                                                                                      \
+  OP(LE, "<=")                                                                                     \
+  OP(GT, ">")                                                                                      \
+  OP(GE, ">=")                                                                                     \
+  OP(COND_AND, "&&")                                                                               \
+  OP(COND_OR, "||")                                                                                \
   OP(LP, "(")                                                                                      \
   OP(RP, ")")                                                                                      \
   OP(LBC, "{")                                                                                     \
@@ -61,6 +72,22 @@ namespace arsh::re262 {
   OP(LINE_END, ";")                                                                                \
   OP(COMMA, ",")                                                                                   \
   OP(DOT, ".")
+
+#define EACH_JS_ASSIGN_OP(OP) OP(ASSIGN, 2, INFIX | RASSOC)
+
+#define EACH_JS_OPERATOR(OP)                                                                       \
+  OP(ADD, 11, INFIX)                                                                               \
+  OP(SUB, 11, INFIX)                                                                               \
+  OP(LT, 9, INFIX)                                                                                 \
+  OP(LE, 9, INFIX)                                                                                 \
+  OP(GT, 9, INFIX)                                                                                 \
+  OP(GE, 9, INFIX)                                                                                 \
+  OP(INSTANCEOF, 9, INFIX)                                                                         \
+  OP(EQ2, 8, INFIX)                                                                                \
+  OP(NE2, 8, INFIX)                                                                                \
+  OP(COND_AND, 4, INFIX)                                                                           \
+  OP(COND_OR, 3, INFIX)                                                                            \
+  EACH_JS_ASSIGN_OP(OP)
 
 enum class JSTokenKind : unsigned char {
 #define GEN_TOKEN(T, S) T,
@@ -73,6 +100,36 @@ inline bool isInvalidToken(JSTokenKind kind) { return kind == JSTokenKind::INVAL
 inline bool isEOSToken(JSTokenKind kind) { return kind == JSTokenKind::EOS; }
 
 const char *toString(JSTokenKind kind);
+
+enum class JSOperatorAttr : unsigned char {
+  NONE = 0u,
+  INFIX = 1u << 0u,
+  RASSOC = 1u << 1u,
+};
+
+enum class JSOperatorPrecedence : unsigned char {};
+
+inline JSOperatorPrecedence advance(JSOperatorPrecedence precedence) {
+  return static_cast<JSOperatorPrecedence>(toUnderlying(precedence) + 1);
+}
+
+struct JSOperatorInfo {
+  JSOperatorPrecedence precedence;
+  JSOperatorAttr attr;
+
+  constexpr JSOperatorInfo(unsigned char precedence, JSOperatorAttr attr)
+      : precedence(JSOperatorPrecedence{precedence}), attr(attr) {}
+
+  constexpr JSOperatorInfo() : JSOperatorInfo(0, JSOperatorAttr()) {}
+
+  constexpr explicit operator bool() const { return this->precedence != JSOperatorPrecedence{0}; }
+};
+
+JSOperatorInfo getOperatorInfo(JSTokenKind kind);
+
+inline bool isOperator(JSTokenKind kind) { return static_cast<bool>(getOperatorInfo(kind)); }
+
+bool isAssignOp(JSTokenKind kind);
 
 class JSLexer : public LexerBase {
 private:
@@ -98,5 +155,12 @@ public:
 };
 
 } // namespace arsh::re262
+
+namespace arsh {
+
+template <>
+struct allow_enum_bitop<re262::JSOperatorAttr> : std::true_type {};
+
+} // namespace arsh
 
 #endif // ARSH_TOOLS_TEST262_REGEX_JS_LEXER_H

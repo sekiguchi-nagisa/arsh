@@ -857,7 +857,7 @@ TEST(JSRegexTest, exec) {
     auto ret = createJSRegexFromLiteral(nullptr, "/ABC/i", &err);
     ASSERT_TRUE(ret);
     ASSERT_EQ("", err);
-    auto obj = execJSRegex(*ret, newJSString("123"));
+    auto obj = execJSRegex(*ret, newJSStringPtr("123"));
     ASSERT_TRUE(obj.has_value());
     ASSERT_FALSE(obj.value());
   }
@@ -866,7 +866,7 @@ TEST(JSRegexTest, exec) {
     auto ret = createJSRegexFromLiteral(nullptr, "/ABC/i", &err);
     ASSERT_TRUE(ret);
     ASSERT_EQ("", err);
-    auto obj = execJSRegex(*ret, newJSString("aBc"));
+    auto obj = execJSRegex(*ret, newJSStringPtr("aBc"));
     ASSERT_TRUE(obj.has_value());
     ASSERT_TRUE(obj.value());
     ASSERT_EQ(u"[ aBc, groups: undefined, index: 0, input: aBc ]", toPrettyString(obj.value()));
@@ -876,7 +876,7 @@ TEST(JSRegexTest, exec) {
     auto ret = createJSRegexFromLiteral(nullptr, "/ABC/di", &err);
     ASSERT_TRUE(ret);
     ASSERT_EQ("", err);
-    auto obj = execJSRegex(*ret, newJSString("aBc"));
+    auto obj = execJSRegex(*ret, newJSStringPtr("aBc"));
     ASSERT_TRUE(obj.has_value());
     ASSERT_TRUE(obj.value());
     ASSERT_EQ(u"[ aBc, groups: undefined, index: 0, indices: [ [ 0, 3 ], groups: undefined ], "
@@ -889,7 +889,7 @@ TEST(JSRegexTest, exec) {
     auto ret = createJSRegexFromLiteral(nullptr, "/(?<first>.)(?<second>.)/", &err);
     ASSERT_TRUE(ret);
     ASSERT_EQ("", err);
-    auto obj = execJSRegex(*ret, newJSString("aあ12b"));
+    auto obj = execJSRegex(*ret, newJSStringPtr("aあ12b"));
     ASSERT_TRUE(obj.has_value());
     ASSERT_TRUE(obj.value());
     ASSERT_EQ(u"[ aあ, a, あ, groups: { first: a, second: あ }, index: 0, input: aあ12b ]",
@@ -900,7 +900,7 @@ TEST(JSRegexTest, exec) {
     auto ret = createJSRegexFromLiteral(nullptr, "/(?<first>.)(?<second>.)/d", &err);
     ASSERT_TRUE(ret);
     ASSERT_EQ("", err);
-    auto obj = execJSRegex(*ret, newJSString("aあ12b"));
+    auto obj = execJSRegex(*ret, newJSStringPtr("aあ12b"));
     ASSERT_TRUE(obj.has_value());
     ASSERT_TRUE(obj.value());
     ASSERT_EQ(u"[ aあ, a, あ, groups: { first: a, second: あ }, index: 0, indices: [ [ "
@@ -1458,13 +1458,13 @@ TEST(JSTest, toNumber) {
   ASSERT_EQ(0, d);
   d = toNumber(nullptr);
   ASSERT_EQ(0, d);
-  d = toNumber(newJSString(""));
+  d = toNumber(newJSStringPtr(""));
   ASSERT_EQ(0, d);
-  d = toNumber(newJSString("3.14"));
+  d = toNumber(newJSStringPtr("3.14"));
   ASSERT_EQ(3.14, d);
-  d = toNumber(newJSString("-3.14"));
+  d = toNumber(newJSStringPtr("-3.14"));
   ASSERT_EQ(-3.14, d);
-  d = toNumber(newJSString("fakroi"));
+  d = toNumber(newJSStringPtr("fakroi"));
   ASSERT_TRUE(std::isnan(d));
 }
 
