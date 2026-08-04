@@ -14,10 +14,10 @@ negative:
   type: SyntaxError
 ---*/
 
-const hoge;
+const hoge = function ();
 
-// CHECKERR_RE: .+\/test\/test262regex\/cases\/syntax_error\.js:17 \[error\] mismatched token `;', expected `='
-//    CHECKERR: const hoge;
-//    CHECKERR:           ^
+// CHECKERR_RE: .+\/test\/test262regex\/cases\/syntax_error\.js:17 \[error\] mismatched token `;', expected `\{'
+//    CHECKERR: const hoge = function ();
+//    CHECKERR:                         ^
 
 // STATUS: 0

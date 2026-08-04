@@ -1085,8 +1085,11 @@ std::unique_ptr<Node> JSParser::parseStatement() {
     const auto kind = toVarKind(this->curKind);
     this->consume();
     Token token = TRY(this->expectVarDeclIdentifier());
-    TRY(this->expect(JSTokenKind::ASSIGN));
-    auto expr = TRY(this->parseExpression());
+    std::unique_ptr<Node> expr;
+    if (this->curKind == JSTokenKind::ASSIGN) {
+      TRY(this->expect(JSTokenKind::ASSIGN));
+      expr = TRY(this->parseExpression());
+    }
     TRY(this->expect(JSTokenKind::LINE_END));
     return std::make_unique<Node>(this->lexer->getLineNumByPos(token.pos),
                                   VarDecl{kind, this->lexer->toTokenText(token), std::move(expr)});
@@ -1638,7 +1641,10 @@ static JSResult evaluate(const Node &node, const std::shared_ptr<JSEnv> &env) {
         } else if constexpr (std::is_same_v<T, BinaryExpr>) {
           return evalBinary(element, env);
         } else if constexpr (std::is_same_v<T, VarDecl>) {
-          auto value = TRY(evaluate(*element.expr, env));
+          JSValue value;
+          if (element.expr) {
+            value = TRY(evaluate(*element.expr, env));
+          }
           if (!env->define(element.name, std::move(value))) { // TODO: should be syntax error
             JSString message = u"'";
             toUTF16(element.name, message);

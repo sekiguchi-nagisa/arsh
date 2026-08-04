@@ -1348,6 +1348,15 @@ TEST(JSTest, varDecl) {
               "message: 'DDD' is already defined }",
               toPrettyString(ret.value));
   }
+  {
+    auto env = initJSEnv();
+    auto ret = jsEval("dummy", "const DDD;", env);
+    ASSERT_TRUE(ret);
+    ASSERT_TRUE(isUndefined(ret.value));
+    ret = jsEval("dummy", "DDD;", env);
+    ASSERT_TRUE(ret);
+    ASSERT_TRUE(isUndefined(ret.value));
+  }
 }
 
 TEST(JSTest, instanceOf) {
