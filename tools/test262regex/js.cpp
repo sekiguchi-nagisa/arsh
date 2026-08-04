@@ -783,16 +783,22 @@ static void defineNumber(const std::shared_ptr<JSEnv> &global) {
   prototype->values["toString"] = createNumberToString(global);
   auto func =
       createJSFunction(global, builtin::NUMBER, {"value"}, std::move(prototype), std::move(impl));
+  func->values["EPSILON"] = std::numeric_limits<double>::epsilon();
+  func->values["MAX_SAFE_INTEGER"] = MAX_SAFE_INTEGER;
+  func->values["MIN_SAFE_INTEGER"] = MIN_SAFE_INTEGER;
+  func->values["MAX_VALUE"] = std::numeric_limits<double>::max();
+  func->values["MIN_VALUE"] = std::numeric_limits<double>::min();
+  func->values["NaN"] = std::nan("");
+  func->values["NEGATIVE_INFINITY"] = -INFINITY;
+  func->values["POSITIVE_INFINITY"] = INFINITY;
   global->define(builtin::NUMBER, std::move(func));
-
-  // number constant
-  global->define("NaN", std::nan(""));
-  global->define("Infinity", INFINITY);
 }
 
 std::shared_ptr<JSEnv> initJSEnv() {
   auto global = JSEnv::createGlobal();
   global->define("undefined", JSValue());
+  global->define("NaN", std::nan(""));
+  global->define("Infinity", INFINITY);
   defineError(global);
   defineDerivedError(global, builtin::SYNTAX_ERROR);
   defineDerivedError(global, builtin::TYPE_ERROR);
