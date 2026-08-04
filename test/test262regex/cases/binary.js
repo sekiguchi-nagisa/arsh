@@ -61,6 +61,45 @@ assert('-0.0' >= 0.0);
 assert('b' >= 'a');
 assert('#' >= '#');
 
+// ===
+assert(0.0 === -0.0);
+assert('ABD' === 'ABD');
+assert(true === true);
+assert(undefined === undefined);
+assert(null === null);
+assert(!(NaN === NaN));
+
+// !==
+assert(0.000001 !== -0.0);
+assert('123' !== 123);
+assert(true !== false);
+assert(undefined !== null);
+assert(NaN !== NaN);
+
+// &&
+assert.sameValue(false, 'fcaer' && false);
+assert.sameValue(false, false && 'hey');
+assert.sameValue('', '' && false);
+assert.sameValue(undefined, undefined && 'hello');
+assert.sameValue(null, null && 'hello');
+assert.sameValue('hey', 12 && 'hey');
+assert.sameValue(-0.0, -0.0 && 'hey');
+
+// ||
+assert.sameValue(12, 12 || 'hey');
+assert.sameValue('hey', 0 || 'hey');
+assert.sameValue('hey', null || 'hey');
+assert.sameValue(null, undefined || null);
+assert.sameValue(null, NaN || null);
+assert.sameValue(Infinity, Infinity || null);
+assert.sameValue(-Infinity, -Infinity || false);
+
+// instanceof
+assert(!(12 instanceof Number));
+assert(!('hey' instanceof String));
+assert(/frea/ instanceof RegExp);
+assert(SyntaxError('error') instanceof SyntaxError);
+assert(SyntaxError('error') instanceof Error);
 
 // CHECK_RE: ^$
 // CHECKERR_RE: ^$
