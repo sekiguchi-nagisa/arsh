@@ -1012,7 +1012,9 @@ private:
 
   std::unique_ptr<Node> parseMemberExpression();
 
-  std::unique_ptr<Node> parseWithArguments(std::unique_ptr<Node> &&node);
+  std::unique_ptr<Node> parseMemberAccess(std::unique_ptr<Node> &&node);
+
+  std::unique_ptr<Node> parseWithArguments(std::unique_ptr<Node> &&node, bool isNew = false);
 
   std::unique_ptr<Node> parsePrimary();
 
@@ -1209,15 +1211,49 @@ std::unique_ptr<Node> JSParser::parseUnaryExpression() {
     return std::make_unique<Node>(this->lexer->getLineNumByPos(token.pos),
                                   UnaryExpr{kind, std::move(expr)});
   }
-  case JSTokenKind::NEW:
-    return this->parseMemberExpression();
   default:
     return this->parseCallExpression();
   }
 }
 
 std::unique_ptr<Node> JSParser::parseCallExpression() {
-  auto node = TRY(this->parsePrimary());
+  auto node = TRY(this->parseMemberExpression());
+  while (true) {
+    switch (this->curKind) {
+    case JSTokenKind::DOT:
+      // case JSTokenKind::LB:  //TODO:
+      node = TRY(this->parseMemberAccess(std::move(node)));
+      continue;
+    case JSTokenKind::LP:
+      node = TRY(this->parseWithArguments(std::move(node)));
+      continue;
+    default:
+      return node;
+    }
+  }
+}
+
+std::unique_ptr<Node> JSParser::parseMemberExpression() {
+  std::unique_ptr<Node> node;
+  if (this->curKind == JSTokenKind::NEW) {
+    this->consume();
+    auto constructor = TRY(this->parseMemberExpression());
+    if (this->curKind == JSTokenKind::LP) {
+      node = TRY(this->parseWithArguments(std::move(constructor), true));
+    } else {
+      CallExpr call;
+      unsigned int lineNum = constructor->lineNum;
+      call.func = std::move(constructor);
+      call.newExpr = true;
+      node = std::make_unique<Node>(lineNum, std::move(call));
+    }
+  } else {
+    node = TRY(this->parsePrimary());
+  }
+  return this->parseMemberAccess(std::move(node));
+}
+
+std::unique_ptr<Node> JSParser::parseMemberAccess(std::unique_ptr<Node> &&node) {
   while (true) {
     switch (this->curKind) {
     case JSTokenKind::DOT: {
@@ -1228,60 +1264,19 @@ std::unique_ptr<Node> JSParser::parseCallExpression() {
                                     AccessExpr{std::move(node), this->lexer->toTokenText(token)});
       continue;
     }
-    case JSTokenKind::LP:
-      node = TRY(this->parseWithArguments(std::move(node)));
-      continue;
-    case JSTokenKind::LB: // TODO: index
+    // case JSTokenKind::LB: // TODO: index
     default:
-      goto END;
+      return node;
     }
   }
-END:
-  return node;
 }
 
-std::unique_ptr<Node> JSParser::parseMemberExpression() {
-  TRY(this->expect(JSTokenKind::NEW));
-  std::unique_ptr<Node> node;
-  if (this->curKind == JSTokenKind::NEW) {
-    node = TRY(this->parseMemberExpression());
-  } else {
-    node = TRY(this->parsePrimary());
-    while (true) {
-      switch (this->curKind) {
-      case JSTokenKind::DOT: {
-        this->consume();
-        Token token = TRY(this->expect(JSTokenKind::IDENTIFIER));
-        unsigned int lineNum = node->lineNum;
-        node = std::make_unique<Node>(lineNum,
-                                      AccessExpr{std::move(node), this->lexer->toTokenText(token)});
-        continue;
-      }
-      case JSTokenKind::LB: // TODO: index
-      default:
-        goto END;
-      }
-    }
-  }
-END:
-  if (this->curKind != JSTokenKind::LP) { // new Type;
-    CallExpr call;
-    unsigned int lineNum = node->lineNum;
-    call.func = std::move(node);
-    node = std::make_unique<Node>(lineNum, std::move(call));
-  } else {
-    node = TRY(this->parseWithArguments(std::move(node)));
-  }
-  assert(std::holds_alternative<CallExpr>(node->value));
-  std::get<CallExpr>(node->value).newExpr = true;
-  return node;
-}
-
-std::unique_ptr<Node> JSParser::parseWithArguments(std::unique_ptr<Node> &&node) {
+std::unique_ptr<Node> JSParser::parseWithArguments(std::unique_ptr<Node> &&node, const bool isNew) {
   TRY(this->expect(JSTokenKind::LP));
   CallExpr call;
   unsigned int lineNum = node->lineNum;
   call.func = std::move(node);
+  call.newExpr = isNew;
   while (this->curKind != JSTokenKind::RP) {
     call.args.push_back(TRY(this->parseExpression()));
     if (this->curKind == JSTokenKind::COMMA) {
