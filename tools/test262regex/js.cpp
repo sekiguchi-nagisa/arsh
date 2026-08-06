@@ -224,17 +224,14 @@ void toPrettyString(const JSValue &value, std::u16string &out, const PrettyStrin
   } else if (std::holds_alternative<JSArrayPtr>(value)) {
     auto &array = std::get<JSArrayPtr>(value);
     out += u'[';
-    for (unsigned int i = 0; i < array->array.size(); i++) {
-      if (i > 0) {
+    unsigned int count = 0;
+    for (auto &e : array->array) {
+      if (count++ > 0) {
         out += u',';
       }
       out += u' ';
-      toPrettyString(array->array[i], out, op);
+      toPrettyString(e, out, op);
     }
-    if (!array->values.empty() && !array->array.empty()) {
-      out += u',';
-    }
-    unsigned int count = 0;
     for (auto &[k, v] : array->values) {
       if (k == builtin::PROTO) {
         continue;
@@ -247,7 +244,7 @@ void toPrettyString(const JSValue &value, std::u16string &out, const PrettyStrin
       out += u": ";
       toPrettyString(v, out, op);
     }
-    if (!array->array.empty() || !array->values.empty()) {
+    if (count) {
       out += u' ';
     }
     out += u']';
@@ -800,6 +797,69 @@ static void defineNumber(const std::shared_ptr<JSEnv> &global) {
   global->define(builtin::NUMBER, std::move(func));
 }
 
+JSArrayPtr createJSArray(const std::shared_ptr<JSEnv> &env) {
+  auto constructor = env->findGlobalEnv()->findOrUndef(builtin::ARRAY);
+  auto prototype = getOwnProperty(*std::get<JSFunctionPtr>(constructor), builtin::PROTOTYPE);
+  auto array = std::make_shared<JSArray>();
+  array->values[builtin::PROTO] = prototype;
+  return array;
+}
+
+static JSFunctionPtr createArrayPush(const std::shared_ptr<JSEnv> &global) {
+  auto impl = [](const JSFunctionPtr &, const std::shared_ptr<JSEnv> &env) -> JSResult {
+    auto args = env->findOrUndef(builtin::ARGS);
+    assert(std::holds_alternative<JSArrayPtr>(args));
+    auto array = std::get<JSArrayPtr>(env->findOrUndef(builtin::THIS));
+    for (auto &arg : std::get<JSArrayPtr>(args)->array) {
+      array->array.push_back(arg);
+    }
+    return Ok(static_cast<double>(array->array.size()));
+  };
+  return createJSFunction(global, "push", {"element"}, nullptr, std::move(impl));
+}
+
+static JSFunctionPtr createArrayJoin(const std::shared_ptr<JSEnv> &global) {
+  auto impl = [](const JSFunctionPtr &func, const std::shared_ptr<JSEnv> &env) -> JSResult {
+    auto array = std::get<JSArrayPtr>(env->findOrUndef(builtin::THIS));
+    auto sep = env->findOrUndef(func->params[0]);
+    JSString str;
+    unsigned int c = 0;
+    for (auto &e : array->array) {
+      if (c++ > 0) {
+        if (isUndefined(sep)) {
+          str += u',';
+        } else {
+          toString(sep, str);
+        }
+      }
+      if (!isUndefined(e) && !isNull(e)) {
+        toString(e, str);
+      }
+    }
+    return Ok(std::make_shared<JSString>(std::move(str)));
+  };
+  return createJSFunction(global, "join", {"separator"}, nullptr, std::move(impl));
+}
+
+static void defineArray(const std::shared_ptr<JSEnv> &global) {
+  auto impl = [](const JSFunctionPtr &, const std::shared_ptr<JSEnv> &env) -> JSResult {
+    auto args = env->findOrUndef(builtin::ARGS);
+    assert(std::holds_alternative<JSArrayPtr>(args));
+    auto array = createJSArray(env);
+    array->array.reserve(std::get<JSArrayPtr>(args)->array.size());
+    for (auto &e : std::get<JSArrayPtr>(args)->array) { // TODO: arrayLength
+      array->array.push_back(e);
+    }
+    return Ok(std::move(array));
+  };
+  auto prototype = std::make_shared<JSObject>();
+  prototype->values["push"] = createArrayPush(global);
+  prototype->values["join"] = createArrayJoin(global);
+  auto func =
+      createJSFunction(global, builtin::ARRAY, {"element"}, std::move(prototype), std::move(impl));
+  global->define(builtin::ARRAY, std::move(func));
+}
+
 std::shared_ptr<JSEnv> initJSEnv() {
   auto global = JSEnv::createGlobal();
   global->define("undefined", JSValue());
@@ -812,6 +872,7 @@ std::shared_ptr<JSEnv> initJSEnv() {
   defineDerivedError(global, builtin::RANGE_ERROR);
   defineString(global);
   defineNumber(global);
+  defineArray(global);
   defineJSRegex(global);
   defineConsole(global);
   return global;
@@ -1447,7 +1508,7 @@ std::unique_ptr<Node> JSParser::parseFunction() {
 static JSResult evaluate(const Node &node, const std::shared_ptr<JSEnv> &env);
 
 static JSResult evalArray(const ArrayLiteral &literal, const std::shared_ptr<JSEnv> &env) {
-  JSArrayPtr array = std::make_shared<JSArray>();
+  auto array = createJSArray(env);
   array->array.reserve(literal.values.size());
   for (auto &e : literal.values) {
     auto ret = TRY(evaluate(*e, env));

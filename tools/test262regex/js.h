@@ -39,6 +39,7 @@ constexpr const char *RANGE_ERROR = "RangeError";
 constexpr const char *REGEXP = "RegExp";
 constexpr const char *STRING = "String";
 constexpr const char *NUMBER = "Number";
+constexpr const char *ARRAY = "Array";
 
 // for builtin variable/property
 constexpr const char *THIS = "this";
@@ -165,6 +166,8 @@ struct JSArray : JSObject {
 
   JSArray(std::initializer_list<JSValue> list) : array(list.begin(), list.end()) {}
 };
+
+JSArrayPtr createJSArray(const std::shared_ptr<JSEnv> &env);
 
 class JSEnv : public std::enable_shared_from_this<JSEnv> {
 private:
