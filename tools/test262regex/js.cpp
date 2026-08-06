@@ -1266,7 +1266,7 @@ std::unique_ptr<Node> JSParser::parseMemberAccess(std::unique_ptr<Node> &&node) 
     }
     // case JSTokenKind::LB: // TODO: index
     default:
-      return node;
+      return std::move(node);
     }
   }
 }
