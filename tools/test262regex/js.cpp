@@ -236,6 +236,9 @@ void toPrettyString(const JSValue &value, std::u16string &out, const PrettyStrin
     }
     unsigned int count = 0;
     for (auto &[k, v] : array->values) {
+      if (k == builtin::PROTO) {
+        continue;
+      }
       if (count++ > 0) {
         out += u',';
       }
@@ -254,6 +257,9 @@ void toPrettyString(const JSValue &value, std::u16string &out, const PrettyStrin
     out += u'{';
     unsigned int count = 0;
     for (auto &[k, v] : obj->values) {
+      if (k == builtin::PROTO) {
+        continue;
+      }
       if (count++ > 0) {
         out += u',';
       }

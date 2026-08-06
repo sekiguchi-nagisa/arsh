@@ -916,9 +916,7 @@ TEST(JSTest, syntaxError) {
     auto ret = jsEval("dummy", "hoge(23", nullptr, false, &err);
     ASSERT_FALSE(ret);
     ASSERT_TRUE(std::holds_alternative<JSObjectPtr>(ret.value));
-    ASSERT_EQ(u"{ __proto__: { __proto__: { name: Error }, name: SyntaxError }, fileName: dummy, "
-              "lineNumber: 1, message: "
-              "expected `,', `)' }",
+    ASSERT_EQ(u"{ fileName: dummy, lineNumber: 1, message: expected `,', `)' }",
               toPrettyString(ret.value));
     const char *expect = R"(dummy:1 [error] expected `,', `)'
 hoge(23
@@ -930,18 +928,14 @@ hoge(23
     auto ret = jsEval("dummy", "hoge\n(23");
     ASSERT_FALSE(ret);
     ASSERT_TRUE(std::holds_alternative<JSObjectPtr>(ret.value));
-    ASSERT_EQ(u"{ __proto__: { __proto__: { name: Error }, name: SyntaxError }, fileName: dummy, "
-              "lineNumber: 2, message: "
-              "expected `,', `)' }",
+    ASSERT_EQ(u"{ fileName: dummy, lineNumber: 2, message: expected `,', `)' }",
               toPrettyString(ret.value));
   }
   {
     auto ret = jsEval("dummy", "hoge;\n/\\p{ACII}/u");
     ASSERT_FALSE(ret);
     ASSERT_TRUE(std::holds_alternative<JSObjectPtr>(ret.value));
-    ASSERT_EQ(u"{ __proto__: { __proto__: { name: Error }, name: SyntaxError }, fileName: dummy, "
-              "lineNumber: 2, message: "
-              "unrecognized property value: ACII }",
+    ASSERT_EQ(u"{ fileName: dummy, lineNumber: 2, message: unrecognized property value: ACII }",
               toPrettyString(ret.value));
   }
 }
@@ -1069,9 +1063,7 @@ TEST(JSTest, nameError) {
   auto ret = jsEval("dummy", "hoge;");
   ASSERT_FALSE(ret);
   ASSERT_TRUE(std::holds_alternative<JSObjectPtr>(ret.value));
-  ASSERT_EQ(u"{ __proto__: { __proto__: { name: Error }, name: ReferenceError }, fileName: dummy, "
-            "lineNumber: 1, "
-            "message: hoge is not defined }",
+  ASSERT_EQ(u"{ fileName: dummy, lineNumber: 1, message: hoge is not defined }",
             toPrettyString(ret.value));
 }
 
@@ -1089,9 +1081,7 @@ TEST(JSTest, funcCallError) {
     auto ret = jsEval("dummy", "undefined();");
     ASSERT_FALSE(ret);
     ASSERT_TRUE(std::holds_alternative<JSObjectPtr>(ret.value));
-    ASSERT_EQ(u"{ __proto__: { __proto__: { name: Error }, name: TypeError }, fileName: dummy, "
-              "lineNumber: 1, "
-              "message: not a function }",
+    ASSERT_EQ(u"{ fileName: dummy, lineNumber: 1, message: not a function }",
               toPrettyString(ret.value));
   }
 }
@@ -1147,18 +1137,16 @@ TEST(JSTest, fieldError) {
     auto ret = jsEval("dummy", "null.hoge;");
     ASSERT_FALSE(ret);
     ASSERT_TRUE(std::holds_alternative<JSObjectPtr>(ret.value));
-    ASSERT_EQ(u"{ __proto__: { __proto__: { name: Error }, name: TypeError }, fileName: dummy, "
-              "lineNumber: 1, "
-              "message: Cannot read properties of null (reading 'hoge') }",
+    ASSERT_EQ(u"{ fileName: dummy, lineNumber: 1, message: Cannot read properties of null (reading "
+              u"'hoge') }",
               toPrettyString(ret.value));
   }
   {
     auto ret = jsEval("dummy2", "\n\nundefined.test;");
     ASSERT_FALSE(ret);
     ASSERT_TRUE(std::holds_alternative<JSObjectPtr>(ret.value));
-    ASSERT_EQ(u"{ __proto__: { __proto__: { name: Error }, name: TypeError }, fileName: dummy2, "
-              "lineNumber: 3, "
-              "message: Cannot read properties of undefined (reading 'test') }",
+    ASSERT_EQ(u"{ fileName: dummy2, lineNumber: 3, message: Cannot read properties of undefined "
+              u"(reading 'test') }",
               toPrettyString(ret.value));
   }
 }
@@ -1221,27 +1209,23 @@ TEST(JSTest, methodCallError) {
     auto ret = jsEval("dummy", "RegExp('12', 'ysgd').fjeria();");
     ASSERT_FALSE(ret);
     ASSERT_TRUE(std::holds_alternative<JSObjectPtr>(ret.value));
-    ASSERT_EQ(u"{ __proto__: { __proto__: { name: Error }, name: TypeError }, fileName: dummy, "
-              "lineNumber: 1, "
-              "message: not a function }",
+    ASSERT_EQ(u"{ fileName: dummy, lineNumber: 1, message: not a function }",
               toPrettyString(ret.value));
   }
   {
     auto ret = jsEval("dummy", "RegExp.prototype.test('12');");
     ASSERT_FALSE(ret);
     ASSERT_TRUE(std::holds_alternative<JSObjectPtr>(ret.value));
-    ASSERT_EQ(u"{ __proto__: { __proto__: { name: Error }, name: TypeError }, fileName: dummy, "
-              "lineNumber: 1, "
-              "message: Method RegExp.prototype.test called on incompatible receiver }",
+    ASSERT_EQ(u"{ fileName: dummy, lineNumber: 1, message: Method RegExp.prototype.test called on "
+              u"incompatible receiver }",
               toPrettyString(ret.value));
   }
   {
     auto ret = jsEval("dummy", "RegExp.prototype.exec('12');");
     ASSERT_FALSE(ret);
     ASSERT_TRUE(std::holds_alternative<JSObjectPtr>(ret.value));
-    ASSERT_EQ(u"{ __proto__: { __proto__: { name: Error }, name: TypeError }, fileName: dummy, "
-              "lineNumber: 1, "
-              "message: Method RegExp.prototype.exec called on incompatible receiver }",
+    ASSERT_EQ(u"{ fileName: dummy, lineNumber: 1, message: Method RegExp.prototype.exec called on "
+              u"incompatible receiver }",
               toPrettyString(ret.value));
   }
 }
@@ -1259,7 +1243,7 @@ TEST(JSTest, proto) {
     auto ret = jsEval("dummy", "SyntaxError().__proto__;");
     ASSERT_TRUE(ret);
     ASSERT_TRUE(std::holds_alternative<JSObjectPtr>(ret.value));
-    ASSERT_EQ(u"{ __proto__: { name: Error }, name: SyntaxError }", toPrettyString(ret.value));
+    ASSERT_EQ(u"{ name: SyntaxError }", toPrettyString(ret.value));
   }
 }
 
@@ -1336,16 +1320,12 @@ TEST(JSTest, varDecl) {
     ret = jsEval("dummy", "(DDD)('aa', 'e');", env);
     ASSERT_FALSE(ret);
     ASSERT_TRUE(std::holds_alternative<JSObjectPtr>(ret.value));
-    ASSERT_EQ(u"{ __proto__: { __proto__: { name: Error }, name: SyntaxError }, fileName: dummy, "
-              "lineNumber: 1, "
-              "message: invalid regular expression flags }",
+    ASSERT_EQ(u"{ fileName: dummy, lineNumber: 1, message: invalid regular expression flags }",
               toPrettyString(ret.value));
 
     ret = jsEval("dummy2", "const DDD = null;", env);
     ASSERT_FALSE(ret);
-    ASSERT_EQ(u"{ __proto__: { __proto__: { name: Error }, name: TypeError }, fileName: dummy2, "
-              "lineNumber: 1, "
-              "message: 'DDD' is already defined }",
+    ASSERT_EQ(u"{ fileName: dummy2, lineNumber: 1, message: 'DDD' is already defined }",
               toPrettyString(ret.value));
   }
   {
@@ -1364,9 +1344,7 @@ TEST(JSTest, instanceOf) {
   std::string err;
   auto ret = jsEval("dummy2", "const undefined = null;", env, false, &err);
   ASSERT_FALSE(ret);
-  ASSERT_EQ(u"{ __proto__: { __proto__: { name: Error }, name: TypeError }, fileName: dummy2, "
-            "lineNumber: 1, "
-            "message: 'undefined' is already defined }",
+  ASSERT_EQ(u"{ fileName: dummy2, lineNumber: 1, message: 'undefined' is already defined }",
             toPrettyString(ret.value));
   ASSERT_EQ("", err);
 
@@ -1387,10 +1365,7 @@ TEST(JSTest, newObject) {
   auto env = initJSEnv();
   auto ret = jsEval("dummy2", "new SyntaxError('hey');", env);
   ASSERT_TRUE(ret);
-  ASSERT_EQ(u"{ __proto__: { __proto__: { name: Error }, name: SyntaxError }, fileName: dummy2, "
-            "lineNumber: 1, "
-            "message: hey }",
-            toPrettyString(ret.value));
+  ASSERT_EQ(u"{ fileName: dummy2, lineNumber: 1, message: hey }", toPrettyString(ret.value));
 
   ret = jsEval("dummy2", "new RegExp('hey', 'v');", env);
   ASSERT_TRUE(ret);
@@ -1425,18 +1400,12 @@ TEST(JSTest, error) {
   std::string err;
   auto ret = jsEval("dummy1", "TypeError();", env, false, &err);
   ASSERT_TRUE(ret);
-  ASSERT_EQ(u"{ __proto__: { __proto__: { name: Error }, name: TypeError }, fileName: dummy1, "
-            "lineNumber: 1, "
-            "message:  }",
-            toPrettyString(ret.value));
+  ASSERT_EQ(u"{ fileName: dummy1, lineNumber: 1, message:  }", toPrettyString(ret.value));
   ASSERT_EQ("", err);
 
   ret = jsEval("dummy2", "\nSyntaxError('failed');", env, false, &err);
   ASSERT_TRUE(ret);
-  ASSERT_EQ(u"{ __proto__: { __proto__: { name: Error }, name: SyntaxError }, fileName: dummy2, "
-            "lineNumber: 2, "
-            "message: failed }",
-            toPrettyString(ret.value));
+  ASSERT_EQ(u"{ fileName: dummy2, lineNumber: 2, message: failed }", toPrettyString(ret.value));
   ASSERT_EQ("", err);
 }
 
