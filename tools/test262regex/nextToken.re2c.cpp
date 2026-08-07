@@ -112,6 +112,8 @@ INIT:
     "catch"                { RET(CATCH); }
     "finally"              { RET(FINALLY); }
     "throw"                { RET(THROW); }
+    "if"                   { RET(IF); }
+    "else"                 { RET(ELSE); }
     "this"                 { RET(KEYWORD); }
     "break"                { RET(KEYWORD); }
     "continue"             { RET(KEYWORD); }
@@ -119,9 +121,7 @@ INIT:
     "class"                { RET(KEYWORD); }
     "default"              { RET(KEYWORD); }
     "do"                   { RET(KEYWORD); }
-    "else"                 { RET(KEYWORD); }
     "for"                  { RET(KEYWORD); }
-    "if"                   { RET(KEYWORD); }
     "while"                { RET(KEYWORD); }
     "with"                 { RET(KEYWORD); }
     INT FRAC? EXP?         { RET(NUMBER); }

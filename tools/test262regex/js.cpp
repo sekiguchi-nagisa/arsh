@@ -956,12 +956,21 @@ struct JumpStmt {
   std::unique_ptr<Node> expr; // maybe null
 };
 
+struct BlockStmt {
+  std::vector<std::unique_ptr<Node>> nodes;
+};
+
 struct TryStmt {
-  std::vector<std::unique_ptr<Node>> tryBlock;
-  bool hasCatch;
-  std::string except; // for caught exception (maybe empty)
-  std::vector<std::unique_ptr<Node>> catchBlock;
-  std::vector<std::unique_ptr<Node>> finallyBlock;
+  std::unique_ptr<Node> tryBlock;     // must be BlockStmt
+  std::string except;                 // for caught exception (maybe empty)
+  std::unique_ptr<Node> catchBlock;   // must be BlockStmt. maybe null
+  std::unique_ptr<Node> finallyBlock; // must be BlockStmt. maybe null
+};
+
+struct IfStmt {
+  std::unique_ptr<Node> cond;
+  std::unique_ptr<Node> thenStmt;
+  std::unique_ptr<Node> elseStmt; // maybe null
 };
 
 struct Node {
@@ -970,7 +979,7 @@ struct Node {
   using Underlying =
       std::variant<NullLiteral, BoolLiteral, NumberLiteral, StringLiteral, RegexLiteral,
                    ArrayLiteral, ObjectLiteral, FuncLiteral, NameExpr, AccessExpr, CallExpr,
-                   UnaryExpr, BinaryExpr, VarDecl, JumpStmt, TryStmt>;
+                   UnaryExpr, BinaryExpr, VarDecl, JumpStmt, BlockStmt, TryStmt, IfStmt>;
   Underlying value;
 
   Node(unsigned int lineNum, Underlying v) : lineNum(lineNum), value(std::move(v)) {}
@@ -1009,6 +1018,7 @@ struct Node {
   OP(RETURN)                                                                                       \
   OP(THROW)                                                                                        \
   OP(TRY)                                                                                          \
+  OP(IF)                                                                                           \
   EACH_LA_JS_EXPRESSION(OP)
 
 #define GEN_LA_CASE(CASE) case JSTokenKind::CASE:
@@ -1058,14 +1068,11 @@ private:
 
   std::unique_ptr<Node> parseStatement();
 
-  /**
-   *
-   * @param nodes
-   * @return return always null
-   */
-  std::unique_ptr<Node> parseBlock(std::vector<std::unique_ptr<Node>> &nodes);
+  std::unique_ptr<Node> parseBlock();
 
   std::unique_ptr<Node> parseTryStatement();
+
+  std::unique_ptr<Node> parseIfStatement();
 
   std::unique_ptr<Node> parseExpression() {
     return this->parseExpression(getOperatorInfo(JSTokenKind::ASSIGN).precedence);
@@ -1182,6 +1189,8 @@ std::unique_ptr<Node> JSParser::parseStatement() {
   }
   case JSTokenKind::TRY:
     return this->parseTryStatement();
+  case JSTokenKind::IF:
+    return this->parseIfStatement();
     // clang-format off
   EACH_LA_JS_EXPRESSION(GEN_LA_CASE) {
     auto expr = TRY(this->parseExpression());
@@ -1194,23 +1203,51 @@ std::unique_ptr<Node> JSParser::parseStatement() {
   }
 }
 
-std::unique_ptr<Node> JSParser::parseBlock(std::vector<std::unique_ptr<Node>> &nodes) {
-  TRY(this->expect(JSTokenKind::LBC));
+std::unique_ptr<Node> JSParser::parseBlock() {
+  std::vector<std::unique_ptr<Node>> nodes;
+  auto token = TRY(this->expect(JSTokenKind::LBC));
   while (this->curKind != JSTokenKind::RBC) {
     auto node = TRY(this->parseStatement());
     nodes.push_back(std::move(node));
   }
   TRY(this->expect(JSTokenKind::RBC));
-  return nullptr;
+  return std::make_unique<Node>(this->lexer->getLineNumByPos(token.pos),
+                                BlockStmt{std::move(nodes)});
+}
+
+std::unique_ptr<Node> JSParser::parseIfStatement() {
+  auto token = TRY(this->expect(JSTokenKind::IF));
+  TRY(this->expect(JSTokenKind::LP));
+  auto cond = TRY(this->parseExpression());
+  TRY(this->expect(JSTokenKind::RP));
+  std::unique_ptr<Node> thenStmt;
+  if (this->curKind == JSTokenKind::LBC) {
+    thenStmt = TRY(this->parseBlock());
+  } else {
+    thenStmt = TRY(this->parseStatement());
+  }
+  std::unique_ptr<Node> elseStmt;
+  if (this->curKind == JSTokenKind::ELSE) {
+    this->consume();
+    if (this->curKind == JSTokenKind::LBC) {
+      elseStmt = TRY(this->parseBlock());
+    } else {
+      elseStmt = TRY(this->parseStatement());
+    }
+  }
+  return std::make_unique<Node>(this->lexer->getLineNumByPos(token.pos),
+                                IfStmt{
+                                    .cond = std::move(cond),
+                                    .thenStmt = std::move(thenStmt),
+                                    .elseStmt = std::move(elseStmt),
+                                });
 }
 
 std::unique_ptr<Node> JSParser::parseTryStatement() {
   Token token = TRY(this->expect(JSTokenKind::TRY));
-  std::vector<std::unique_ptr<Node>> tryBlock;
-  TRY(this->parseBlock(tryBlock));
-  bool foundCatch = false;
+  auto tryBlock = TRY(this->parseBlock());
   std::string except;
-  std::vector<std::unique_ptr<Node>> catchBlock;
+  std::unique_ptr<Node> catchBlock;
   if (this->curKind == JSTokenKind::CATCH) {
     TRY(this->expect(JSTokenKind::CATCH));
     if (this->curKind == JSTokenKind::LP) {
@@ -1218,20 +1255,18 @@ std::unique_ptr<Node> JSParser::parseTryStatement() {
       except = this->lexer->toTokenText(TRY(this->expectVarDeclIdentifier()));
       TRY(this->expect(JSTokenKind::RP));
     }
-    TRY(this->parseBlock(catchBlock));
-    foundCatch = true;
+    catchBlock = TRY(this->parseBlock());
   }
-  std::vector<std::unique_ptr<Node>> finallyBlock;
+  std::unique_ptr<Node> finallyBlock;
   if (this->curKind == JSTokenKind::FINALLY) {
     TRY(this->expect(JSTokenKind::FINALLY));
-    TRY(this->parseBlock(finallyBlock));
-  } else if (!foundCatch) {
+    finallyBlock = TRY(this->parseBlock());
+  } else if (!catchBlock) {
     E_ALTER(JSTokenKind::CATCH, JSTokenKind::FINALLY);
   }
   return std::make_unique<Node>(this->lexer->getLineNumByPos(token.pos),
                                 TryStmt{
                                     .tryBlock = std::move(tryBlock),
-                                    .hasCatch = foundCatch,
                                     .except = std::move(except),
                                     .catchBlock = std::move(catchBlock),
                                     .finallyBlock = std::move(finallyBlock),
@@ -1642,30 +1677,37 @@ static JSResult evalBinary(const BinaryExpr &binary, const std::shared_ptr<JSEnv
   return Ok(JSValue());
 }
 
-static JSResult evalBlock(const std::vector<std::unique_ptr<Node>> &nodes,
-                          const std::shared_ptr<JSEnv> &env) {
-  for (auto &node : nodes) {
+static JSResult evalBlockWithCurrentEnv(const BlockStmt &block, const std::shared_ptr<JSEnv> &env) {
+  for (auto &node : block.nodes) {
     TRY(evaluate(*node, env));
   }
   return Ok(JSValue());
 }
 
-static JSResult evalBlockWithNewEnv(const std::vector<std::unique_ptr<Node>> &nodes,
-                                    const std::shared_ptr<JSEnv> &env) {
-  return evalBlock(nodes, env->createChild());
+static JSResult evalBlock(const BlockStmt &block, const std::shared_ptr<JSEnv> &env) {
+  return evalBlockWithCurrentEnv(block, env->createChild());
+}
+
+static JSResult evalIf(const IfStmt &ifStmt, const std::shared_ptr<JSEnv> &env) {
+  if (auto cond = TRY(evaluate(*ifStmt.cond, env)); toBool(cond)) {
+    TRY(evaluate(*ifStmt.thenStmt, env));
+  } else if (ifStmt.elseStmt) {
+    TRY(evaluate(*ifStmt.elseStmt, env));
+  }
+  return Ok(JSValue());
 }
 
 static JSResult evalTry(const TryStmt &tryStmt, const std::shared_ptr<JSEnv> &env) {
-  auto ret = evalBlockWithNewEnv(tryStmt.tryBlock, env);
-  if (ret.status == JSResult::Status::ERR && tryStmt.hasCatch) {
+  auto ret = evaluate(*tryStmt.tryBlock, env);
+  if (ret.status == JSResult::Status::ERR && tryStmt.catchBlock) {
     auto catchEnv = env->createChild();
     if (!tryStmt.except.empty()) {
       catchEnv->define(tryStmt.except, ret.value);
     }
-    ret = evalBlock(tryStmt.catchBlock, catchEnv);
+    ret = evalBlockWithCurrentEnv(std::get<BlockStmt>(tryStmt.catchBlock->value), catchEnv);
   }
-  if (!tryStmt.finallyBlock.empty()) {
-    TRY(evalBlockWithNewEnv(tryStmt.finallyBlock, env));
+  if (tryStmt.finallyBlock) {
+    TRY(evaluate(*tryStmt.finallyBlock, env));
   }
   return ret;
 }
@@ -1720,8 +1762,12 @@ static JSResult evaluate(const Node &node, const std::shared_ptr<JSEnv> &env) {
             ret = TRY(evaluate(*n, env));
           }
           return JSResult{element.status, std::move(ret)};
+        } else if constexpr (std::is_same_v<T, BlockStmt>) {
+          return evalBlock(element, env);
         } else if constexpr (std::is_same_v<T, TryStmt>) {
           return evalTry(element, env);
+        } else if constexpr (std::is_same_v<T, IfStmt>) {
+          return evalIf(element, env);
         } else {
           fatal("unreachable");
         }

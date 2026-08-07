@@ -48,6 +48,8 @@ namespace arsh::re262 {
   OP(CATCH, "catch")                                                                               \
   OP(FINALLY, "finally")                                                                           \
   OP(THROW, "throw")                                                                               \
+  OP(IF, "if")                                                                                     \
+  OP(ELSE, "else")                                                                                 \
   OP(ASSIGN, "=")                                                                                  \
   OP(ADD, "+")                                                                                     \
   OP(SUB, "-")                                                                                     \
