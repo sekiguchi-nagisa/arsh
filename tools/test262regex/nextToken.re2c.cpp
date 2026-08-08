@@ -114,14 +114,15 @@ INIT:
     "throw"                { RET(THROW); }
     "if"                   { RET(IF); }
     "else"                 { RET(ELSE); }
+    "for"                  { RET(FOR); }
+    "of"                   { RET(OF); }
+    "break"                { RET(BREAK); }
+    "continue"             { RET(CONTINUE); }
     "this"                 { RET(KEYWORD); }
-    "break"                { RET(KEYWORD); }
-    "continue"             { RET(KEYWORD); }
     "case"                 { RET(KEYWORD); }
     "class"                { RET(KEYWORD); }
     "default"              { RET(KEYWORD); }
     "do"                   { RET(KEYWORD); }
-    "for"                  { RET(KEYWORD); }
     "while"                { RET(KEYWORD); }
     "with"                 { RET(KEYWORD); }
     INT FRAC? EXP?         { RET(NUMBER); }

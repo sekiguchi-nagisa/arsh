@@ -50,6 +50,10 @@ namespace arsh::re262 {
   OP(THROW, "throw")                                                                               \
   OP(IF, "if")                                                                                     \
   OP(ELSE, "else")                                                                                 \
+  OP(FOR, "for")                                                                                   \
+  OP(OF, "of")                                                                                     \
+  OP(BREAK, "break")                                                                               \
+  OP(CONTINUE, "continue")                                                                         \
   OP(ASSIGN, "=")                                                                                  \
   OP(ADD, "+")                                                                                     \
   OP(SUB, "-")                                                                                     \

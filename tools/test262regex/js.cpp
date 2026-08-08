@@ -973,13 +973,25 @@ struct IfStmt {
   std::unique_ptr<Node> elseStmt; // maybe null
 };
 
+struct ForStmt {
+  std::unique_ptr<Node> init;  // maybe null
+  std::unique_ptr<Node> cond;  // maybe null
+  std::unique_ptr<Node> after; // maybe null
+  std::unique_ptr<Node> body;
+};
+
+struct ForOfStmt {
+  std::unique_ptr<Node> iter; // must be VarDecl
+  std::unique_ptr<Node> body;
+};
+
 struct Node {
   unsigned int lineNum;
 
-  using Underlying =
-      std::variant<NullLiteral, BoolLiteral, NumberLiteral, StringLiteral, RegexLiteral,
-                   ArrayLiteral, ObjectLiteral, FuncLiteral, NameExpr, AccessExpr, CallExpr,
-                   UnaryExpr, BinaryExpr, VarDecl, JumpStmt, BlockStmt, TryStmt, IfStmt>;
+  using Underlying = std::variant<NullLiteral, BoolLiteral, NumberLiteral, StringLiteral,
+                                  RegexLiteral, ArrayLiteral, ObjectLiteral, FuncLiteral, NameExpr,
+                                  AccessExpr, CallExpr, UnaryExpr, BinaryExpr, VarDecl, JumpStmt,
+                                  BlockStmt, TryStmt, IfStmt, ForStmt, ForOfStmt>;
   Underlying value;
 
   Node(unsigned int lineNum, Underlying v) : lineNum(lineNum), value(std::move(v)) {}
@@ -1011,14 +1023,20 @@ struct Node {
   OP(TYPEOF)                                                                                       \
   EACH_LA_JS_PRIMARY(OP)
 
-#define EACH_LA_JS_STATEMENT(OP)                                                                   \
+#define EACH_LA_JS_VAR_DECL(OP)                                                                    \
   OP(CONST)                                                                                        \
   OP(LET)                                                                                          \
-  OP(VAR)                                                                                          \
+  OP(VAR)
+
+#define EACH_LA_JS_STATEMENT(OP)                                                                   \
+  EACH_LA_JS_VAR_DECL(OP)                                                                          \
   OP(RETURN)                                                                                       \
   OP(THROW)                                                                                        \
   OP(TRY)                                                                                          \
   OP(IF)                                                                                           \
+  OP(FOR)                                                                                          \
+  OP(BREAK)                                                                                        \
+  OP(CONTINUE)                                                                                     \
   EACH_LA_JS_EXPRESSION(OP)
 
 #define GEN_LA_CASE(CASE) case JSTokenKind::CASE:
@@ -1073,6 +1091,8 @@ private:
   std::unique_ptr<Node> parseTryStatement();
 
   std::unique_ptr<Node> parseIfStatement();
+
+  std::unique_ptr<Node> parseForStatement();
 
   std::unique_ptr<Node> parseExpression() {
     return this->parseExpression(getOperatorInfo(JSTokenKind::ASSIGN).precedence);
@@ -1155,21 +1175,20 @@ static VarDecl::Kind toVarKind(JSTokenKind kind) {
 
 std::unique_ptr<Node> JSParser::parseStatement() {
   switch (this->curKind) {
-  case JSTokenKind::CONST:
-  case JSTokenKind::LET:
-  case JSTokenKind::VAR: {
-    const auto kind = toVarKind(this->curKind);
-    this->consume();
-    Token token = TRY(this->expectVarDeclIdentifier());
-    std::unique_ptr<Node> expr;
-    if (this->curKind == JSTokenKind::ASSIGN) {
-      TRY(this->expect(JSTokenKind::ASSIGN));
-      expr = TRY(this->parseExpression());
+    EACH_LA_JS_VAR_DECL(GEN_LA_CASE) {
+      const auto kind = toVarKind(this->curKind);
+      this->consume();
+      Token token = TRY(this->expectVarDeclIdentifier());
+      std::unique_ptr<Node> expr;
+      if (this->curKind == JSTokenKind::ASSIGN) {
+        TRY(this->expect(JSTokenKind::ASSIGN));
+        expr = TRY(this->parseExpression());
+      }
+      TRY(this->expect(JSTokenKind::LINE_END));
+      return std::make_unique<Node>(
+          this->lexer->getLineNumByPos(token.pos),
+          VarDecl{kind, this->lexer->toTokenText(token), std::move(expr)});
     }
-    TRY(this->expect(JSTokenKind::LINE_END));
-    return std::make_unique<Node>(this->lexer->getLineNumByPos(token.pos),
-                                  VarDecl{kind, this->lexer->toTokenText(token), std::move(expr)});
-  }
   case JSTokenKind::RETURN: {
     Token token = TRY(this->expect(JSTokenKind::RETURN));
     std::unique_ptr<Node> node;
@@ -1191,6 +1210,20 @@ std::unique_ptr<Node> JSParser::parseStatement() {
     return this->parseTryStatement();
   case JSTokenKind::IF:
     return this->parseIfStatement();
+  case JSTokenKind::BREAK: {
+    Token token = TRY(this->expect(JSTokenKind::BREAK));
+    TRY(this->expect(JSTokenKind::LINE_END));
+    return std::make_unique<Node>(this->lexer->getLineNumByPos(token.pos),
+                                  JumpStmt{JSResult::Status::BREAK, nullptr});
+  }
+  case JSTokenKind::CONTINUE: {
+    Token token = TRY(this->expect(JSTokenKind::CONTINUE));
+    TRY(this->expect(JSTokenKind::LINE_END));
+    return std::make_unique<Node>(this->lexer->getLineNumByPos(token.pos),
+                                  JumpStmt{JSResult::Status::CONTINUE, nullptr});
+  }
+  case JSTokenKind::FOR:
+    return this->parseForStatement();
     // clang-format off
   EACH_LA_JS_EXPRESSION(GEN_LA_CASE) {
     auto expr = TRY(this->parseExpression());
@@ -1240,6 +1273,72 @@ std::unique_ptr<Node> JSParser::parseIfStatement() {
                                     .cond = std::move(cond),
                                     .thenStmt = std::move(thenStmt),
                                     .elseStmt = std::move(elseStmt),
+                                });
+}
+
+std::unique_ptr<Node> JSParser::parseForStatement() {
+  Token start = TRY(this->expect(JSTokenKind::FOR));
+  bool forOf = false;
+  std::unique_ptr<Node> init;
+  TRY(this->expect(JSTokenKind::LP));
+  switch (this->curKind) {
+    EACH_LA_JS_VAR_DECL(GEN_LA_CASE) {
+      const auto kind = toVarKind(this->curKind);
+      this->consume();
+      Token token = TRY(this->expectVarDeclIdentifier());
+      std::unique_ptr<Node> expr;
+      if (this->curKind == JSTokenKind::OF) {
+        forOf = true;
+        this->consume();
+        expr = TRY(this->parseExpression());
+      } else if (this->curKind == JSTokenKind::ASSIGN) {
+        this->consume();
+        expr = TRY(this->parseExpression());
+      }
+      if (!forOf) {
+        TRY(this->expect(JSTokenKind::LINE_END));
+      }
+      init =
+          std::make_unique<Node>(this->lexer->getLineNumByPos(token.pos),
+                                 VarDecl{kind, this->lexer->toTokenText(token), std::move(expr)});
+      break;
+    }
+  default:
+    if (this->curKind != JSTokenKind::LINE_END) {
+      init = TRY(this->parseExpression());
+    }
+    TRY(this->expect(JSTokenKind::LINE_END));
+    break;
+  }
+  std::unique_ptr<Node> cond;
+  std::unique_ptr<Node> after;
+  if (!forOf) {
+    cond = TRY(this->parseExpression());
+    TRY(this->expect(JSTokenKind::LINE_END));
+    if (this->curKind != JSTokenKind::RP) {
+      after = TRY(this->parseExpression());
+    }
+  }
+  TRY(this->expect(JSTokenKind::RP));
+  std::unique_ptr<Node> body;
+  if (this->curKind == JSTokenKind::LBC) {
+    body = TRY(this->parseBlock());
+  } else {
+    body = TRY(this->parseStatement());
+  }
+  if (forOf) {
+    return std::make_unique<Node>(this->lexer->getLineNumByPos(start.pos),
+                                  ForOfStmt{
+                                      .iter = std::move(init),
+                                      .body = std::move(body),
+                                  });
+  }
+  return std::make_unique<Node>(this->lexer->getLineNumByPos(start.pos),
+                                ForStmt{
+                                    .init = std::move(init),
+                                    .cond = std::move(cond),
+                                    .after = std::move(after),
+                                    .body = std::move(body),
                                 });
 }
 
@@ -1598,6 +1697,8 @@ static JSResult evalFunc(const FuncLiteral &literal, const std::shared_ptr<JSEnv
     for (auto &node : *nodes) {
       switch (auto [status, value] = evaluate(*node, env); status) {
       case JSResult::Status::OK:
+      case JSResult::Status::BREAK:    // unreachable
+      case JSResult::Status::CONTINUE: // unreachable
         continue;
       case JSResult::Status::ERR:
         return Err(std::move(value));
@@ -1697,6 +1798,118 @@ static JSResult evalIf(const IfStmt &ifStmt, const std::shared_ptr<JSEnv> &env) 
   return Ok(JSValue());
 }
 
+static JSResult evalFor(const ForStmt &forStmt, const std::shared_ptr<JSEnv> &env) {
+  auto loopEnv = env->createChild();
+  if (forStmt.init) {
+    TRY(evaluate(*forStmt.init, loopEnv));
+  }
+  while (!forStmt.cond || toBool(TRY(evaluate(*forStmt.cond, loopEnv)))) {
+    if (forStmt.body) {
+      JSResult ret;
+      if (auto &e = forStmt.body->value; std::holds_alternative<BlockStmt>(e)) {
+        ret = evalBlockWithCurrentEnv(std::get<BlockStmt>(e), loopEnv);
+      } else {
+        ret = evaluate(*forStmt.body, loopEnv);
+      }
+      switch (ret.status) {
+      case JSResult::Status::OK:
+        break;
+      case JSResult::Status::ERR:
+      case JSResult::Status::RETURN:
+        return ret;
+      case JSResult::Status::BREAK:
+        goto BREAK;
+      case JSResult::Status::CONTINUE:
+        break;
+      }
+    }
+    if (forStmt.after) {
+      TRY(evaluate(*forStmt.after, loopEnv));
+    }
+  }
+BREAK:
+  return Ok(JSValue());
+}
+
+static std::function<std::optional<JSValue>()> toIter(const JSValue &value) {
+  if (std::holds_alternative<JSStringPtr>(value)) {
+    struct StringIter {
+      size_t index;
+      JSStringPtr str;
+
+      std::optional<JSValue> operator()() {
+        if (this->index < this->str->size()) {
+          JSString sub;
+          auto ch = (*this->str)[this->index++]; // NOLINT
+          sub += ch;
+          if (UnicodeUtil::isHighSurrogate(ch) && this->index < this->str->size()) {
+            sub += (*this->str)[this->index++]; // NOLINT
+          }
+          return std::make_shared<JSString>(std::move(sub));
+        }
+        return {};
+      }
+    };
+    return StringIter{.index = 0, .str = std::get<JSStringPtr>(value)};
+  }
+  struct ArrayIter {
+    size_t index;
+    JSArrayPtr array;
+
+    std::optional<JSValue> operator()() {
+      if (this->index < this->array->array.size()) {
+        auto v = this->array->array[this->index++];
+        return v;
+      }
+      return {};
+    }
+  };
+  return ArrayIter{.index = 0, .array = std::get<JSArrayPtr>(value)};
+}
+
+static JSResult evalForOf(const ForOfStmt &forOfStmt, const std::shared_ptr<JSEnv> &env) {
+  auto loopEnv = env->createChild();
+  auto &decl = std::get<VarDecl>(forOfStmt.iter->value);
+  auto iterable = TRY(evaluate(*decl.expr, loopEnv));
+  if (!std::holds_alternative<JSStringPtr>(iterable) &&
+      !std::holds_alternative<JSArrayPtr>(iterable)) {
+    JSString str;
+    toPrettyString(iterable, str);
+    str += u" is not iterable";
+    return throwError(loopEnv, builtin::TYPE_ERROR, std::move(str));
+  }
+  auto iter = toIter(iterable);
+  loopEnv->define(decl.name, JSValue());
+  while (true) {
+    auto next = iter();
+    if (!next) {
+      break;
+    }
+    loopEnv->assign(decl.name, std::move(next.value()));
+    if (forOfStmt.body) {
+      JSResult ret;
+      if (auto &e = forOfStmt.body->value; std::holds_alternative<BlockStmt>(e)) {
+        ret = evalBlockWithCurrentEnv(std::get<BlockStmt>(e), loopEnv);
+      } else {
+        ret = evaluate(*forOfStmt.body, loopEnv);
+      }
+      switch (ret.status) {
+      case JSResult::Status::OK:
+        break;
+      case JSResult::Status::ERR:
+      case JSResult::Status::RETURN:
+        return ret;
+      case JSResult::Status::BREAK:
+        goto BREAK;
+      case JSResult::Status::CONTINUE:
+        break;
+      }
+    }
+  }
+BREAK:
+  return Ok(JSValue());
+}
+
 static JSResult evalTry(const TryStmt &tryStmt, const std::shared_ptr<JSEnv> &env) {
   auto ret = evaluate(*tryStmt.tryBlock, env);
   if (ret.status == JSResult::Status::ERR && tryStmt.catchBlock) {
@@ -1768,6 +1981,10 @@ static JSResult evaluate(const Node &node, const std::shared_ptr<JSEnv> &env) {
           return evalTry(element, env);
         } else if constexpr (std::is_same_v<T, IfStmt>) {
           return evalIf(element, env);
+        } else if constexpr (std::is_same_v<T, ForStmt>) {
+          return evalFor(element, env);
+        } else if constexpr (std::is_same_v<T, ForOfStmt>) {
+          return evalForOf(element, env);
         } else {
           fatal("unreachable");
         }

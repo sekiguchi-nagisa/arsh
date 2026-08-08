@@ -120,6 +120,8 @@ struct JSResult {
     OK,
     ERR,
     RETURN,
+    BREAK,
+    CONTINUE,
   } status;
 
   JSValue value;
