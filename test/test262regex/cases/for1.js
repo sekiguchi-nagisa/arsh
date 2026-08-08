@@ -27,5 +27,6 @@ for (let aa of [1, false, null, undefined, NaN, "hey"]) {
 // CHECK: null
 // CHECK: undefined
 // CHECK: NaN
+// CHECK: hey
 // CHECKERR_RE: ^$
 // STATUS: 0
