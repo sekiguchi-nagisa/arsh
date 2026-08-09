@@ -365,7 +365,7 @@ static T toFixedSizeInteger(const JSValue &value) {
     return 0;
   }
   auto v = static_cast<int64_t>(num);
-  return static_cast<T>(v % static_cast<int64_t>(std::numeric_limits<T>::max() + 1));
+  return static_cast<T>(v % (static_cast<int64_t>(std::numeric_limits<T>::max()) + 1));
 }
 
 JSResult callJSFunction(const std::shared_ptr<JSEnv> &caller, unsigned int callerLineNum,
@@ -923,6 +923,11 @@ struct AccessExpr {
   std::string name;
 };
 
+struct IndexExpr {
+  std::unique_ptr<Node> recv;
+  std::unique_ptr<Node> index;
+};
+
 struct CallExpr {
   std::unique_ptr<Node> func;
   std::vector<std::unique_ptr<Node>> args;
@@ -990,8 +995,8 @@ struct Node {
 
   using Underlying = std::variant<NullLiteral, BoolLiteral, NumberLiteral, StringLiteral,
                                   RegexLiteral, ArrayLiteral, ObjectLiteral, FuncLiteral, NameExpr,
-                                  AccessExpr, CallExpr, UnaryExpr, BinaryExpr, VarDecl, JumpStmt,
-                                  BlockStmt, TryStmt, IfStmt, ForStmt, ForOfStmt>;
+                                  AccessExpr, IndexExpr, CallExpr, UnaryExpr, BinaryExpr, VarDecl,
+                                  JumpStmt, BlockStmt, TryStmt, IfStmt, ForStmt, ForOfStmt>;
   Underlying value;
 
   Node(unsigned int lineNum, Underlying v) : lineNum(lineNum), value(std::move(v)) {}
@@ -1422,7 +1427,7 @@ std::unique_ptr<Node> JSParser::parseCallExpression() {
   while (true) {
     switch (this->curKind) {
     case JSTokenKind::DOT:
-      // case JSTokenKind::LB:  //TODO:
+    case JSTokenKind::LB:
       node = TRY(this->parseMemberAccess(std::move(node)));
       continue;
     case JSTokenKind::LP:
@@ -1465,7 +1470,14 @@ std::unique_ptr<Node> JSParser::parseMemberAccess(std::unique_ptr<Node> &&node) 
                                     AccessExpr{std::move(node), this->lexer->toTokenText(token)});
       continue;
     }
-    // case JSTokenKind::LB: // TODO: index
+    case JSTokenKind::LB: {
+      this->consume();
+      unsigned int lineNum = node->lineNum;
+      auto expr = TRY(this->parseExpression());
+      TRY(this->expect(JSTokenKind::RB));
+      node = std::make_unique<Node>(lineNum, IndexExpr{std::move(node), std::move(expr)});
+      continue;
+    }
     default:
       return std::move(node);
     }
@@ -1778,6 +1790,46 @@ static JSResult evalBinary(const BinaryExpr &binary, const std::shared_ptr<JSEnv
   return Ok(JSValue());
 }
 
+static std::optional<unsigned int> toArrayIndex(const JSValue &value) {
+  if (std::holds_alternative<double>(value)) {
+    if (auto d = std::get<double>(value);
+        isSafeInteger(d) && d > -1 && static_cast<uint64_t>(d) <= UINT32_MAX) {
+      return static_cast<unsigned int>(d);
+    }
+  } else if (std::holds_alternative<JSStringPtr>(value)) {
+    const auto &str = *std::get<JSStringPtr>(value);
+    if (const auto index = toFixedSizeInteger<unsigned int>(value);
+        str == toString(static_cast<double>(index))) {
+      return index;
+    }
+  }
+  return {};
+}
+
+static JSResult evalIndex(const IndexExpr &expr, const std::shared_ptr<JSEnv> &env) {
+  auto recv = TRY(evaluate(*expr.recv, env));
+  auto index = TRY(evaluate(*expr.index, env));
+  if (auto arrayIndex = toArrayIndex(index)) {
+    if (std::holds_alternative<JSStringPtr>(recv)) {
+      if (auto &str = *std::get<JSStringPtr>(recv); arrayIndex.value() < str.size()) {
+        JSString ret;
+        ret += str[arrayIndex.value()];
+        return Ok(std::make_shared<JSString>(std::move(ret)));
+      }
+      return Ok(JSValue());
+    }
+    if (std::holds_alternative<JSArrayPtr>(recv)) {
+      if (auto &array = std::get<JSArrayPtr>(recv)->array; arrayIndex.value() < array.size()) {
+        auto v = array[arrayIndex.value()];
+        return Ok(std::move(v));
+      }
+      return Ok(JSValue());
+    }
+  }
+  auto key = toWTF8(toString(index));
+  return findProperty(env, recv, key);
+}
+
 static JSResult evalBlockWithCurrentEnv(const BlockStmt &block, const std::shared_ptr<JSEnv> &env) {
   for (auto &node : block.nodes) {
     TRY(evaluate(*node, env));
@@ -1951,6 +2003,8 @@ static JSResult evaluate(const Node &node, const std::shared_ptr<JSEnv> &env) {
         } else if constexpr (std::is_same_v<T, AccessExpr>) {
           auto recv = TRY(evaluate(*element.recv, env));
           return findProperty(env, lineNum, recv, element.name);
+        } else if constexpr (std::is_same_v<T, IndexExpr>) {
+          return evalIndex(element, env);
         } else if constexpr (std::is_same_v<T, CallExpr>) {
           return evalCallExpr(element, lineNum, env);
         } else if constexpr (std::is_same_v<T, UnaryExpr>) {
