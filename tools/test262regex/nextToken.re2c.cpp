@@ -132,6 +132,8 @@ INIT:
     REGEX                  { RET(REGEX); }
     ID_START ID_PART*      { RET(IDENTIFIER); }
     "="                    { RET(ASSIGN); }
+    "+="                   { RET(ADD_ASSIGN); }
+    "-="                   { RET(SUB_ASSIGN); }
     "!"                    { RET(NOT); }
     "+"                    { RET(ADD); }
     "-"                    { RET(SUB); }

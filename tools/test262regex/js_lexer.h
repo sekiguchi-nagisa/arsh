@@ -55,6 +55,8 @@ namespace arsh::re262 {
   OP(BREAK, "break")                                                                               \
   OP(CONTINUE, "continue")                                                                         \
   OP(ASSIGN, "=")                                                                                  \
+  OP(ADD_ASSIGN, "+=")                                                                             \
+  OP(SUB_ASSIGN, "-=")                                                                             \
   OP(ADD, "+")                                                                                     \
   OP(SUB, "-")                                                                                     \
   OP(NOT, "!")                                                                                     \
@@ -79,7 +81,10 @@ namespace arsh::re262 {
   OP(COMMA, ",")                                                                                   \
   OP(DOT, ".")
 
-#define EACH_JS_ASSIGN_OP(OP) OP(ASSIGN, 2, INFIX | RASSOC)
+#define EACH_JS_ASSIGN_OP(OP)                                                                      \
+  OP(ASSIGN, 2, INFIX | RASSOC)                                                                    \
+  OP(ADD_ASSIGN, 2, INFIX | RASSOC)                                                                \
+  OP(SUB_ASSIGN, 2, INFIX | RASSOC)
 
 #define EACH_JS_OPERATOR(OP)                                                                       \
   OP(ADD, 11, INFIX)                                                                               \

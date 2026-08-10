@@ -114,6 +114,29 @@ JSResult findProperty(const std::shared_ptr<JSEnv> &env, unsigned int callerLine
   return Ok(std::move(ret));
 }
 
+JSResult assignProperty(const std::shared_ptr<JSEnv> &env, unsigned int callerLineNum,
+                        const JSValue &recv, const std::string &name, JSValue &&value) {
+  return std::visit(
+      [&](auto &&element) -> JSResult {
+        using T = std::decay_t<decltype(element)>;
+        if constexpr (std::is_same_v<T, JSFunctionPtr> || std::is_same_v<T, JSObjectPtr> ||
+                      std::is_same_v<T, JSArrayPtr>) {
+          element->values[name] = value;
+          return Ok(std::move(value));
+        } else if constexpr (std::is_same_v<T, JSRegexPtr>) {
+          setOwnProperty(*element, name, JSValue(value));
+          return Ok(std::move(value));
+        } else {
+          JSString str = u"Cannot create property '";
+          toUTF16(name, str);
+          str += u"' on ";
+          toPrettyString(recv, str);
+          return throwError(env, builtin::TYPE_ERROR, callerLineNum, std::move(str));
+        }
+      },
+      recv);
+}
+
 void toUTF16(StringRef ref, std::u16string &out) {
   const char *end = ref.end();
   for (const char *iter = ref.begin(); iter != end;) {
@@ -945,6 +968,12 @@ struct BinaryExpr {
   std::unique_ptr<Node> right;
 };
 
+struct AssignExpr {
+  std::unique_ptr<Node> left;  // maybe null if prefix ++, --
+  JSTokenKind op;              // in addition to assign op, maybe ++, --
+  std::unique_ptr<Node> right; // maybe null if suffix ++, --
+};
+
 struct VarDecl { // currently only support `const`
   enum class Kind : unsigned char {
     CONST,
@@ -993,10 +1022,11 @@ struct ForOfStmt {
 struct Node {
   unsigned int lineNum;
 
-  using Underlying = std::variant<NullLiteral, BoolLiteral, NumberLiteral, StringLiteral,
-                                  RegexLiteral, ArrayLiteral, ObjectLiteral, FuncLiteral, NameExpr,
-                                  AccessExpr, IndexExpr, CallExpr, UnaryExpr, BinaryExpr, VarDecl,
-                                  JumpStmt, BlockStmt, TryStmt, IfStmt, ForStmt, ForOfStmt>;
+  using Underlying =
+      std::variant<NullLiteral, BoolLiteral, NumberLiteral, StringLiteral, RegexLiteral,
+                   ArrayLiteral, ObjectLiteral, FuncLiteral, NameExpr, AccessExpr, IndexExpr,
+                   CallExpr, UnaryExpr, BinaryExpr, AssignExpr, VarDecl, JumpStmt, BlockStmt,
+                   TryStmt, IfStmt, ForStmt, ForOfStmt>;
   Underlying value;
 
   Node(unsigned int lineNum, Underlying v) : lineNum(lineNum), value(std::move(v)) {}
@@ -1026,6 +1056,8 @@ struct Node {
   OP(NEW)                                                                                          \
   OP(VOID)                                                                                         \
   OP(TYPEOF)                                                                                       \
+  OP(INC)                                                                                          \
+  OP(DEC)                                                                                          \
   EACH_LA_JS_PRIMARY(OP)
 
 #define EACH_LA_JS_VAR_DECL(OP)                                                                    \
@@ -1378,8 +1410,9 @@ std::unique_ptr<Node> JSParser::parseTryStatement() {
 }
 
 static bool isAssignable(const Node &node) {
-  (void)node; // TODO
-  return false;
+  return std::holds_alternative<NameExpr>(node.value) ||
+         std::holds_alternative<AccessExpr>(node.value) ||
+         std::holds_alternative<IndexExpr>(node.value);
 }
 
 std::unique_ptr<Node> JSParser::parseExpression(JSOperatorPrecedence base) {
@@ -1395,11 +1428,17 @@ std::unique_ptr<Node> JSParser::parseExpression(JSOperatorPrecedence base) {
         hasFlag(info.attr, JSOperatorAttr::RASSOC) ? info.precedence : advance(info.precedence);
     auto rightNode = this->parseExpression(next);
     unsigned int lineNum = node->lineNum;
-    if (isAssignOp(kind) && !isAssignable(*node)) {
-      this->reportTokenFormatError(kind, token, "invalid left-hand side of assignment");
-      return nullptr;
+    if (isAssignOp(kind)) {
+      if (!isAssignable(*node)) {
+        this->reportTokenFormatError(kind, token, "invalid left-hand side of assignment");
+        return nullptr;
+      }
+      node =
+          std::make_unique<Node>(lineNum, AssignExpr{std::move(node), kind, std::move(rightNode)});
+    } else {
+      node =
+          std::make_unique<Node>(lineNum, BinaryExpr{std::move(node), kind, std::move(rightNode)});
     }
-    node = std::make_unique<Node>(lineNum, BinaryExpr{std::move(node), kind, std::move(rightNode)});
   }
   return node;
 }
@@ -1416,6 +1455,19 @@ std::unique_ptr<Node> JSParser::parseUnaryExpression() {
     auto expr = TRY(this->parseUnaryExpression());
     return std::make_unique<Node>(this->lexer->getLineNumByPos(token.pos),
                                   UnaryExpr{kind, std::move(expr)});
+  }
+  case JSTokenKind::INC:
+  case JSTokenKind::DEC: {
+    Token token = this->curToken;
+    JSTokenKind kind = this->scan();
+    auto expr = TRY(this->parseUnaryExpression());
+    if (!isAssignable(*expr)) {
+      this->reportTokenFormatError(kind, token,
+                                   "invalid left-hand side expression in prefix operation");
+      return nullptr;
+    }
+    return std::make_unique<Node>(this->lexer->getLineNumByPos(token.pos),
+                                  AssignExpr{nullptr, kind, std::move(expr)});
   }
   default:
     return this->parseCallExpression();
@@ -1434,9 +1486,30 @@ std::unique_ptr<Node> JSParser::parseCallExpression() {
       node = TRY(this->parseWithArguments(std::move(node)));
       continue;
     default:
-      return node;
+      break;
     }
+    break;
   }
+
+  // suffix op
+  switch (this->curKind) {
+  case JSTokenKind::INC:
+  case JSTokenKind::DEC: {
+    Token token = this->curToken;
+    JSTokenKind kind = this->scan();
+    if (!isAssignable(*node)) {
+      this->reportTokenFormatError(kind, token,
+                                   "invalid left-hand side expression in postfix operation");
+      return nullptr;
+    }
+    unsigned int lineNum = node->lineNum;
+    node = std::make_unique<Node>(lineNum, AssignExpr{std::move(node), kind, nullptr});
+    break;
+  }
+  default:
+    break;
+  }
+  return node;
 }
 
 std::unique_ptr<Node> JSParser::parseMemberExpression() {
@@ -1754,9 +1827,6 @@ static JSResult evalBinary(const BinaryExpr &binary, const std::shared_ptr<JSEnv
     }
     return evaluate(*binary.right, env);
   }
-  if (isAssignOp(binary.op)) {
-    fatal("unsupported: %s\n", toString(binary.op));
-  }
   auto left = TRY(evaluate(*binary.left, env));
   auto right = TRY(evaluate(*binary.right, env));
   switch (binary.op) {
@@ -1830,6 +1900,88 @@ static JSResult evalIndex(const IndexExpr &expr, const std::shared_ptr<JSEnv> &e
   return findProperty(env, recv, key);
 }
 
+static JSResult assignImpl(const Node &left, JSValue &&right, const std::shared_ptr<JSEnv> &env) {
+  if (std::holds_alternative<NameExpr>(left.value)) {
+    auto &nameExpr = std::get<NameExpr>(left.value);
+    if (!env->assign(nameExpr.name, right)) {
+      JSString str;
+      toUTF16(nameExpr.name, str);
+      str += u" is not defined";
+      return throwError(env, builtin::REF_ERROR, std::move(str));
+    }
+    return Ok(std::move(right));
+  }
+  if (std::holds_alternative<AccessExpr>(left.value)) {
+    auto &accessExpr = std::get<AccessExpr>(left.value);
+    auto recv = TRY(evaluate(*accessExpr.recv, env));
+    return assignProperty(env, recv, accessExpr.name, std::move(right));
+  }
+
+  // recv[index] = right
+  auto &indexExpr = std::get<IndexExpr>(left.value);
+  auto recv = TRY(evaluate(*indexExpr.recv, env));
+  auto index = TRY(evaluate(*indexExpr.index, env));
+  if (auto arrayIndex = toArrayIndex(index);
+      arrayIndex && std::holds_alternative<JSArrayPtr>(recv)) {
+    auto &array = std::get<JSArrayPtr>(recv)->array;
+    if (arrayIndex.value() >= array.size()) {
+      array.resize(arrayIndex.value() + 1, JSValue());
+    }
+    array[arrayIndex.value()] = right;
+    return Ok(std::move(right));
+  }
+  auto key = toWTF8(toString(index));
+  return assignProperty(env, recv, key, std::move(right));
+}
+
+static JSResult evalAssign(const AssignExpr &assign, const std::shared_ptr<JSEnv> &env) {
+  switch (assign.op) {
+  case JSTokenKind::ASSIGN: {
+    auto right = TRY(evaluate(*assign.right, env));
+    return assignImpl(*assign.left, std::move(right), env);
+  }
+  case JSTokenKind::INC:
+  case JSTokenKind::DEC: {
+    double delta = assign.op == JSTokenKind::INC ? 1 : -1;
+    if (assign.left) { // left++, left--
+      assert(!assign.right);
+      auto left = TRY(evaluate(*assign.left, env));
+      const auto oldValue = toNumber(left);
+      TRY(assignImpl(*assign.left, oldValue + delta, env));
+      return Ok(oldValue);
+    }
+    // ++right, --right
+    assert(assign.right);
+    auto left = TRY(evaluate(*assign.right, env));
+    const auto newValue = toNumber(left) + delta;
+    TRY(assignImpl(*assign.right, newValue, env));
+    return Ok(newValue);
+  }
+  default:
+    break;
+  }
+  auto left = TRY(evaluate(*assign.left, env));
+  auto right = TRY(evaluate(*assign.right, env));
+  switch (assign.op) {
+  case JSTokenKind::ADD_ASSIGN:
+    if (std::holds_alternative<JSStringPtr>(left) || std::holds_alternative<JSStringPtr>(right)) {
+      JSString str;
+      toString(left, str);
+      toString(right, str);
+      right = std::make_shared<JSString>(std::move(str));
+    } else {
+      right = toNumber(left) + toNumber(right);
+    }
+    break;
+  case JSTokenKind::SUB_ASSIGN:
+    right = toNumber(left) - toNumber(right);
+    break;
+  default:
+    fatal("unsupported assign: %s\n", toString(assign.op));
+  }
+  return assignImpl(*assign.left, std::move(right), env);
+}
+
 static JSResult evalBlockWithCurrentEnv(const BlockStmt &block, const std::shared_ptr<JSEnv> &env) {
   for (auto &node : block.nodes) {
     TRY(evaluate(*node, env));
@@ -1885,38 +2037,28 @@ BREAK:
 
 static std::function<std::optional<JSValue>()> toIter(const JSValue &value) {
   if (std::holds_alternative<JSStringPtr>(value)) {
-    struct StringIter {
-      size_t index;
-      JSStringPtr str;
-
-      std::optional<JSValue> operator()() {
-        if (this->index < this->str->size()) {
-          JSString sub;
-          auto ch = (*this->str)[this->index++]; // NOLINT
-          sub += ch;
-          if (UnicodeUtil::isHighSurrogate(ch) && this->index < this->str->size()) {
-            sub += (*this->str)[this->index++]; // NOLINT
-          }
-          return std::make_shared<JSString>(std::move(sub));
+    return [index = static_cast<size_t>(0),
+            str = std::get<JSStringPtr>(value)]() mutable -> std::optional<JSValue> {
+      if (index < str->size()) {
+        JSString sub;
+        auto ch = (*str)[index++]; // NOLINT
+        sub += ch;
+        if (UnicodeUtil::isHighSurrogate(ch) && index < str->size()) {
+          sub += (*str)[index++]; // NOLINT
         }
-        return {};
-      }
-    };
-    return StringIter{.index = 0, .str = std::get<JSStringPtr>(value)};
-  }
-  struct ArrayIter {
-    size_t index;
-    JSArrayPtr array;
-
-    std::optional<JSValue> operator()() {
-      if (this->index < this->array->array.size()) {
-        auto v = this->array->array[this->index++];
-        return v;
+        return std::make_shared<JSString>(std::move(sub));
       }
       return {};
+    };
+  }
+  return [index = static_cast<size_t>(0),
+          array = std::get<JSArrayPtr>(value)]() mutable -> std::optional<JSValue> {
+    if (index < array->array.size()) {
+      auto v = array->array[index++];
+      return v;
     }
+    return {};
   };
-  return ArrayIter{.index = 0, .array = std::get<JSArrayPtr>(value)};
 }
 
 static JSResult evalForOf(const ForOfStmt &forOfStmt, const std::shared_ptr<JSEnv> &env) {
@@ -2011,6 +2153,8 @@ static JSResult evaluate(const Node &node, const std::shared_ptr<JSEnv> &env) {
           return evalUnary(element, env);
         } else if constexpr (std::is_same_v<T, BinaryExpr>) {
           return evalBinary(element, env);
+        } else if constexpr (std::is_same_v<T, AssignExpr>) {
+          return evalAssign(element, env);
         } else if constexpr (std::is_same_v<T, VarDecl>) {
           JSValue value;
           if (element.expr) {
