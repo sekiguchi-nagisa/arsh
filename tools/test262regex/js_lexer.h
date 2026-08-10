@@ -51,6 +51,7 @@ namespace arsh::re262 {
   OP(IF, "if")                                                                                     \
   OP(ELSE, "else")                                                                                 \
   OP(FOR, "for")                                                                                   \
+  OP(WHILE, "while")                                                                               \
   OP(OF, "of")                                                                                     \
   OP(BREAK, "break")                                                                               \
   OP(CONTINUE, "continue")                                                                         \

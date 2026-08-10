@@ -172,11 +172,19 @@ struct JSArray : JSObject {
 JSArrayPtr createJSArray(const std::shared_ptr<JSEnv> &env);
 
 class JSEnv : public std::enable_shared_from_this<JSEnv> {
+public:
+  const enum class Kind : unsigned char {
+    GLOBAL,
+    FUNC,
+    BLOCK,
+  } kind;
+
 private:
   std::shared_ptr<JSEnv> parent;
   std::map<std::string, JSValue> values; // NOLINT
 
-  explicit JSEnv(std::shared_ptr<JSEnv> parent) : parent(std::move(parent)) {}
+  explicit JSEnv(std::shared_ptr<JSEnv> parent, Kind kind = Kind::BLOCK)
+      : kind(kind), parent(std::move(parent)) {}
 
 public:
   // for stack trace
@@ -185,11 +193,15 @@ public:
   static constexpr const char *CALLER_LINENO = "caller:lineno";
 
   static std::shared_ptr<JSEnv> createGlobal() {
-    return std::shared_ptr<JSEnv>(new JSEnv(nullptr));
+    return std::shared_ptr<JSEnv>(new JSEnv(nullptr, Kind::GLOBAL));
+  }
+
+  std::shared_ptr<JSEnv> createFunc() {
+    return std::shared_ptr<JSEnv>(new JSEnv(this->shared_from_this(), Kind::FUNC));
   }
 
   std::shared_ptr<JSEnv> createChild() {
-    return std::shared_ptr<JSEnv>(new JSEnv(this->shared_from_this()));
+    return std::shared_ptr<JSEnv>(new JSEnv(this->shared_from_this(), Kind::BLOCK));
   }
 
   const auto &getParent() const { return this->parent; }
@@ -210,6 +222,14 @@ public:
   std::shared_ptr<JSEnv> findGlobalEnv() {
     auto tmp = this->shared_from_this();
     while (tmp->getParent()) {
+      tmp = tmp->getParent();
+    }
+    return tmp;
+  }
+
+  std::shared_ptr<JSEnv> findGlobalOrFuncEnv() {
+    auto tmp = this->shared_from_this();
+    while (tmp->getParent() && tmp->kind == Kind::BLOCK) {
       tmp = tmp->getParent();
     }
     return tmp;

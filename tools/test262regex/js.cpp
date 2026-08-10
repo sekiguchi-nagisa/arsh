@@ -393,7 +393,7 @@ static T toFixedSizeInteger(const JSValue &value) {
 
 JSResult callJSFunction(const std::shared_ptr<JSEnv> &caller, unsigned int callerLineNum,
                         const JSFunctionPtr &func, JSValue &&recv, std::vector<JSValue> &&args) {
-  auto funcEnv = func->definedEnv.lock()->createChild();
+  auto funcEnv = func->definedEnv.lock()->createFunc();
   assert(funcEnv);
   funcEnv->define(builtin::THIS, std::move(recv));
   funcEnv->define(JSEnv::CALLER_FILENAME, caller->findOrUndef(JSEnv::DEFINED_FILENAME));
@@ -1072,6 +1072,7 @@ struct Node {
   OP(TRY)                                                                                          \
   OP(IF)                                                                                           \
   OP(FOR)                                                                                          \
+  OP(WHILE)                                                                                        \
   OP(BREAK)                                                                                        \
   OP(CONTINUE)                                                                                     \
   EACH_LA_JS_EXPRESSION(OP)
@@ -1130,6 +1131,8 @@ private:
   std::unique_ptr<Node> parseIfStatement();
 
   std::unique_ptr<Node> parseForStatement();
+
+  std::unique_ptr<Node> parseWhileStatement();
 
   std::unique_ptr<Node> parseExpression() {
     return this->parseExpression(getOperatorInfo(JSTokenKind::ASSIGN).precedence);
@@ -1259,6 +1262,8 @@ std::unique_ptr<Node> JSParser::parseStatement() {
     return std::make_unique<Node>(this->lexer->getLineNumByPos(token.pos),
                                   JumpStmt{JSResult::Status::CONTINUE, nullptr});
   }
+  case JSTokenKind::WHILE:
+    return this->parseWhileStatement();
   case JSTokenKind::FOR:
     return this->parseForStatement();
     // clang-format off
@@ -1375,6 +1380,26 @@ std::unique_ptr<Node> JSParser::parseForStatement() {
                                     .init = std::move(init),
                                     .cond = std::move(cond),
                                     .after = std::move(after),
+                                    .body = std::move(body),
+                                });
+}
+
+std::unique_ptr<Node> JSParser::parseWhileStatement() {
+  Token token = TRY(this->expect(JSTokenKind::WHILE));
+  TRY(this->expect(JSTokenKind::LP));
+  auto cond = TRY(this->parseExpression());
+  TRY(this->expect(JSTokenKind::RP));
+  std::unique_ptr<Node> body;
+  if (this->curKind == JSTokenKind::LBC) {
+    body = TRY(this->parseBlock());
+  } else {
+    body = TRY(this->parseStatement());
+  }
+  return std::make_unique<Node>(this->lexer->getLineNumByPos(token.pos),
+                                ForStmt{
+                                    .init = nullptr,
+                                    .cond = std::move(cond),
+                                    .after = nullptr,
                                     .body = std::move(body),
                                 });
 }
@@ -1982,6 +2007,25 @@ static JSResult evalAssign(const AssignExpr &assign, const std::shared_ptr<JSEnv
   return assignImpl(*assign.left, std::move(right), env);
 }
 
+static JSResult defineVar(VarDecl::Kind kind, const std::string &name, JSValue &&value,
+                          unsigned int lineNum, const std::shared_ptr<JSEnv> &env) {
+  auto targetEnv = env;
+  if (kind == VarDecl::Kind::VAR) {
+    targetEnv = targetEnv->findGlobalOrFuncEnv();
+  }
+  if (!targetEnv->define(name, value)) {
+    if (kind == VarDecl::Kind::VAR) {
+      targetEnv->assign(name, std::move(value));
+    } else { // TODO: should be syntax error
+      JSString message = u"'";
+      toUTF16(name, message);
+      message += u"' is already defined";
+      return throwError(env, builtin::TYPE_ERROR, lineNum, std::move(message));
+    }
+  }
+  return Ok(JSValue());
+}
+
 static JSResult evalBlockWithCurrentEnv(const BlockStmt &block, const std::shared_ptr<JSEnv> &env) {
   for (auto &node : block.nodes) {
     TRY(evaluate(*node, env));
@@ -2003,12 +2047,13 @@ static JSResult evalIf(const IfStmt &ifStmt, const std::shared_ptr<JSEnv> &env) 
 }
 
 static JSResult evalFor(const ForStmt &forStmt, const std::shared_ptr<JSEnv> &env) {
-  auto loopEnv = env->createChild();
+  auto loopInitEnv = env->createChild();
   if (forStmt.init) {
-    TRY(evaluate(*forStmt.init, loopEnv));
+    TRY(evaluate(*forStmt.init, loopInitEnv));
   }
-  while (!forStmt.cond || toBool(TRY(evaluate(*forStmt.cond, loopEnv)))) {
+  while (!forStmt.cond || toBool(TRY(evaluate(*forStmt.cond, loopInitEnv)))) {
     if (forStmt.body) {
+      auto loopEnv = loopInitEnv->createChild();
       JSResult ret;
       if (auto &e = forStmt.body->value; std::holds_alternative<BlockStmt>(e)) {
         ret = evalBlockWithCurrentEnv(std::get<BlockStmt>(e), loopEnv);
@@ -2028,7 +2073,7 @@ static JSResult evalFor(const ForStmt &forStmt, const std::shared_ptr<JSEnv> &en
       }
     }
     if (forStmt.after) {
-      TRY(evaluate(*forStmt.after, loopEnv));
+      TRY(evaluate(*forStmt.after, loopInitEnv));
     }
   }
 BREAK:
@@ -2061,25 +2106,25 @@ static std::function<std::optional<JSValue>()> toIter(const JSValue &value) {
   };
 }
 
-static JSResult evalForOf(const ForOfStmt &forOfStmt, const std::shared_ptr<JSEnv> &env) {
-  auto loopEnv = env->createChild();
+static JSResult evalForOf(const ForOfStmt &forOfStmt, unsigned int lineNum,
+                          const std::shared_ptr<JSEnv> &env) {
+  auto loopInitEnv = env->createChild();
   auto &decl = std::get<VarDecl>(forOfStmt.iter->value);
-  auto iterable = TRY(evaluate(*decl.expr, loopEnv));
+  auto iterable = TRY(evaluate(*decl.expr, loopInitEnv));
   if (!std::holds_alternative<JSStringPtr>(iterable) &&
       !std::holds_alternative<JSArrayPtr>(iterable)) {
     JSString str;
     toPrettyString(iterable, str);
     str += u" is not iterable";
-    return throwError(loopEnv, builtin::TYPE_ERROR, std::move(str));
+    return throwError(loopInitEnv, builtin::TYPE_ERROR, std::move(str));
   }
-  auto iter = toIter(iterable);
-  loopEnv->define(decl.name, JSValue());
-  while (true) {
+  for (auto iter = toIter(iterable);;) {
     auto next = iter();
     if (!next) {
       break;
     }
-    loopEnv->assign(decl.name, std::move(next.value()));
+    auto loopEnv = loopInitEnv->createChild();
+    TRY(defineVar(decl.kind, decl.name, std::move(next.value()), lineNum, loopEnv));
     if (forOfStmt.body) {
       JSResult ret;
       if (auto &e = forOfStmt.body->value; std::holds_alternative<BlockStmt>(e)) {
@@ -2160,13 +2205,7 @@ static JSResult evaluate(const Node &node, const std::shared_ptr<JSEnv> &env) {
           if (element.expr) {
             value = TRY(evaluate(*element.expr, env));
           }
-          if (!env->define(element.name, std::move(value))) { // TODO: should be syntax error
-            JSString message = u"'";
-            toUTF16(element.name, message);
-            message += u"' is already defined";
-            return throwError(env, builtin::TYPE_ERROR, lineNum, std::move(message));
-          }
-          return Ok(JSValue());
+          return defineVar(element.kind, element.name, std::move(value), lineNum, env);
         } else if constexpr (std::is_same_v<T, JumpStmt>) {
           JSValue ret;
           if (auto &n = element.expr) {
@@ -2182,7 +2221,7 @@ static JSResult evaluate(const Node &node, const std::shared_ptr<JSEnv> &env) {
         } else if constexpr (std::is_same_v<T, ForStmt>) {
           return evalFor(element, env);
         } else if constexpr (std::is_same_v<T, ForOfStmt>) {
-          return evalForOf(element, env);
+          return evalForOf(element, lineNum, env);
         } else {
           fatal("unreachable");
         }

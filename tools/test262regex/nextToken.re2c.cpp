@@ -118,12 +118,12 @@ INIT:
     "of"                   { RET(OF); }
     "break"                { RET(BREAK); }
     "continue"             { RET(CONTINUE); }
+    "while"                { RET(WHILE); }
     "this"                 { RET(KEYWORD); }
     "case"                 { RET(KEYWORD); }
     "class"                { RET(KEYWORD); }
     "default"              { RET(KEYWORD); }
     "do"                   { RET(KEYWORD); }
-    "while"                { RET(KEYWORD); }
     "with"                 { RET(KEYWORD); }
     INT FRAC? EXP?         { RET(NUMBER); }
     HEX_INT                { RET(NUMBER); }
