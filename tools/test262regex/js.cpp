@@ -518,6 +518,16 @@ static double compare(const JSValue &left, const JSValue &right) {
   return 0;
 }
 
+static double jsRemainder(const double left, const double right) {
+  if (std::isnan(left) || std::isnan(right) || std::isinf(left) || right == 0.0) {
+    return std::nan("");
+  }
+  if (std::isinf(right) || left == 0.0) {
+    return left;
+  }
+  return std::fmod(left, right);
+}
+
 // for builtin
 JSFunctionPtr createJSFunction(const std::shared_ptr<JSEnv> &env, const char *name,
                                std::vector<std::string> &&params, JSObjectPtr &&prototype,
@@ -1865,6 +1875,8 @@ static JSResult evalBinary(const BinaryExpr &binary, const std::shared_ptr<JSEnv
     return Ok(toNumber(left) + toNumber(right));
   case JSTokenKind::SUB:
     return Ok(toNumber(left) - toNumber(right));
+  case JSTokenKind::MOD:
+    return Ok(jsRemainder(toNumber(left), toNumber(right)));
   case JSTokenKind::LT:
     return Ok(compare(left, right) < 0);
   case JSTokenKind::LE:
@@ -2000,6 +2012,9 @@ static JSResult evalAssign(const AssignExpr &assign, const std::shared_ptr<JSEnv
     break;
   case JSTokenKind::SUB_ASSIGN:
     right = toNumber(left) - toNumber(right);
+    break;
+  case JSTokenKind::MOD_ASSIGN:
+    right = jsRemainder(toNumber(left), toNumber(right));
     break;
   default:
     fatal("unsupported assign: %s\n", toString(assign.op));

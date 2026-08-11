@@ -134,9 +134,11 @@ INIT:
     "="                    { RET(ASSIGN); }
     "+="                   { RET(ADD_ASSIGN); }
     "-="                   { RET(SUB_ASSIGN); }
+    "%="                   { RET(MOD_ASSIGN); }
     "!"                    { RET(NOT); }
     "+"                    { RET(ADD); }
     "-"                    { RET(SUB); }
+    "%"                    { RET(MOD); }
     "++"                   { RET(INC); }
     "--"                   { RET(DEC); }
     "==="                  { RET(EQ2); }

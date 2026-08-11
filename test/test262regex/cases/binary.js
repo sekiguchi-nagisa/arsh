@@ -28,6 +28,25 @@ assert.sameValue(-50, '25' - '75');
 assert.sameValue(-Infinity, -Infinity - Infinity);
 assert.sameValue(NaN, Infinity - Infinity);
 
+// %
+assert.sameValue(3, 13 % 5);
+assert.sameValue(-3, -13 % 5);
+assert.sameValue(3, 13 % -5);
+assert.sameValue(-3, -13 % -5);
+assert.sameValue(1.5, 5.5 % 2);
+assert.sameValue(1.5, 5.5 % 2);
+assert.sameValue(-0.0, -4 % 2);
+assert.sameValue(NaN, NaN % 5);
+assert.sameValue(NaN, Infinity % 5);
+assert.sameValue(NaN, Infinity % 0);
+assert.sameValue(NaN, 12 % 0);
+assert.sameValue(NaN, Infinity % Infinity);
+assert.sameValue(NaN, NaN % Infinity);
+assert.sameValue(0, 0 % Infinity);
+assert.sameValue(-0, -0.0 % Infinity);
+assert.sameValue(3, 3 % Infinity);
+assert.sameValue(0, 0 % Infinity);
+
 // <
 assert(12 < 40.9);
 assert(!(12 < NaN));

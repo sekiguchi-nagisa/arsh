@@ -58,8 +58,10 @@ namespace arsh::re262 {
   OP(ASSIGN, "=")                                                                                  \
   OP(ADD_ASSIGN, "+=")                                                                             \
   OP(SUB_ASSIGN, "-=")                                                                             \
+  OP(MOD_ASSIGN, "%=")                                                                             \
   OP(ADD, "+")                                                                                     \
   OP(SUB, "-")                                                                                     \
+  OP(MOD, "%")                                                                                     \
   OP(NOT, "!")                                                                                     \
   OP(INC, "++")                                                                                    \
   OP(DEC, "--")                                                                                    \
@@ -85,9 +87,11 @@ namespace arsh::re262 {
 #define EACH_JS_ASSIGN_OP(OP)                                                                      \
   OP(ASSIGN, 2, INFIX | RASSOC)                                                                    \
   OP(ADD_ASSIGN, 2, INFIX | RASSOC)                                                                \
-  OP(SUB_ASSIGN, 2, INFIX | RASSOC)
+  OP(SUB_ASSIGN, 2, INFIX | RASSOC)                                                                \
+  OP(MOD_ASSIGN, 2, INFIX | RASSOC)
 
 #define EACH_JS_OPERATOR(OP)                                                                       \
+  OP(MOD, 12, INFIX)                                                                               \
   OP(ADD, 11, INFIX)                                                                               \
   OP(SUB, 11, INFIX)                                                                               \
   OP(LT, 9, INFIX)                                                                                 \
