@@ -4,6 +4,8 @@
 
 set(TEST_NAME re262_test)
 
+include_directories("${CMAKE_BINARY_DIR}/tools/test262regex")
+
 add_definitions("-DBIN_PATH=\"${CMAKE_BINARY_DIR}/${BIN_NAME}\"")
 add_definitions("-DRE262_PATH=\"${CMAKE_BINARY_DIR}/tools/test262regex/re262\"")
 add_definitions("-DRE262_TEST_DIR=\"${CMAKE_CURRENT_SOURCE_DIR}/cases\"")

@@ -24,6 +24,8 @@
 
 namespace arsh::re262 {
 
+#include <js_yycond.h>
+
 #define EACH_JS_TOKEN_KIND(OP)                                                                     \
   OP(INVALID, "<invalid>")                                                                         \
   OP(EOS, "<EOS>")                                                                                 \
@@ -82,7 +84,9 @@ namespace arsh::re262 {
   OP(COLON, ":")                                                                                   \
   OP(LINE_END, ";")                                                                                \
   OP(COMMA, ",")                                                                                   \
-  OP(DOT, ".")
+  OP(DOT, ".")                                                                                     \
+  OP(BACKTICK, "`")                                                                                \
+  OP(START_INTERP, "${")
 
 #define EACH_JS_ASSIGN_OP(OP)                                                                      \
   OP(ASSIGN, 2, INFIX | RASSOC)                                                                    \
@@ -151,22 +155,39 @@ class JSLexer : public LexerBase {
 private:
   bool prevNewLine{false};
   bool verbose{false};
+  std::vector<JSLexerMode> modes;
 
 public:
   JSLexer(const char *sourceName, StringRef src) : LexerBase(sourceName, src.data(), src.size()) {
     this->limit--;
+    this->modes.push_back(yycDEFAULT);
   }
 
   bool hasPrevNewLine() const { return this->prevNewLine; }
+
+  JSLexerMode getMode() const { return this->modes.back(); }
+
+  void pushMode(JSLexerMode mode) { this->modes.push_back(mode); }
+
+  void popMode() {
+    if (this->modes.size() > 1) {
+      this->modes.pop_back();
+    }
+  }
 
   void setVerbose(bool set) { this->verbose = set; }
 
   JSTokenKind nextToken(Token &token);
 
-  static std::optional<std::u16string> unquoteString(StringRef ref, std::string *err);
+  static std::optional<std::u16string> unquoteString(StringRef ref, bool trimQuote,
+                                                     std::string *err);
 
-  std::optional<std::u16string> toString(Token token, std::string *err) const {
-    return unquoteString(this->toStrRef(token), err);
+  static std::optional<std::u16string> unquoteString(StringRef ref, std::string *err) {
+    return unquoteString(ref, true, err);
+  }
+
+  std::optional<std::u16string> toString(Token token, bool trimQuote, std::string *err) const {
+    return unquoteString(this->toStrRef(token), trimQuote, err);
   }
 };
 

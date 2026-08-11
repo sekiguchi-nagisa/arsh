@@ -776,7 +776,7 @@ TEST_F(JSLexerTest, string2) {
   {
     std::string err;
     JSLexer lex("(dummy)", "this is a pen");
-    auto ret = lex.toString(Token{}, &err);
+    auto ret = lex.toString(Token{}, true, &err);
     ASSERT_FALSE(ret.has_value());
     ASSERT_EQ("must be valid string literal", err);
   }

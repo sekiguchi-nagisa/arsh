@@ -984,6 +984,10 @@ struct AssignExpr {
   std::unique_ptr<Node> right; // maybe null if suffix ++, --
 };
 
+struct TemplateExpr {
+  std::vector<std::unique_ptr<Node>> nodes;
+};
+
 struct VarDecl { // currently only support `const`
   enum class Kind : unsigned char {
     CONST,
@@ -1035,8 +1039,8 @@ struct Node {
   using Underlying =
       std::variant<NullLiteral, BoolLiteral, NumberLiteral, StringLiteral, RegexLiteral,
                    ArrayLiteral, ObjectLiteral, FuncLiteral, NameExpr, AccessExpr, IndexExpr,
-                   CallExpr, UnaryExpr, BinaryExpr, AssignExpr, VarDecl, JumpStmt, BlockStmt,
-                   TryStmt, IfStmt, ForStmt, ForOfStmt>;
+                   CallExpr, UnaryExpr, BinaryExpr, AssignExpr, TemplateExpr, VarDecl, JumpStmt,
+                   BlockStmt, TryStmt, IfStmt, ForStmt, ForOfStmt>;
   Underlying value;
 
   Node(unsigned int lineNum, Underlying v) : lineNum(lineNum), value(std::move(v)) {}
@@ -1057,7 +1061,8 @@ struct Node {
   OP(FUNCTION)                                                                                     \
   OP(LB)                                                                                           \
   OP(LBC)                                                                                          \
-  OP(LP)
+  OP(LP)                                                                                           \
+  OP(BACKTICK)
 
 #define EACH_LA_JS_EXPRESSION(OP)                                                                  \
   OP(NOT)                                                                                          \
@@ -1164,11 +1169,15 @@ private:
 
   std::unique_ptr<Node> parseNumber();
 
+  std::unique_ptr<Node> parseString(bool trimQuote = true);
+
   std::unique_ptr<Node> parseObject();
 
   std::unique_ptr<Node> parseArray();
 
   std::unique_ptr<Node> parseFunction();
+
+  std::unique_ptr<Node> parseTemplate();
 };
 
 Token JSParser::expectVarDeclIdentifier() {
@@ -1626,17 +1635,8 @@ std::unique_ptr<Node> JSParser::parsePrimary() {
   }
   case JSTokenKind::NUMBER:
     return this->parseNumber();
-  case JSTokenKind::STRING: {
-    auto token = this->expect(JSTokenKind::STRING);
-    std::string err;
-    if (auto str = this->lexer->toString(token, &err); str.has_value()) {
-      return std::make_unique<Node>(
-          this->lexer->getLineNumByPos(token.pos),
-          StringLiteral{std::make_shared<std::u16string>(std::move(str.value()))});
-    }
-    this->reportTokenFormatError(JSTokenKind::STRING, token, "out of range");
-    return nullptr;
-  }
+  case JSTokenKind::STRING:
+    return this->parseString();
   case JSTokenKind::REGEX: {
     auto token = this->expect(JSTokenKind::REGEX);
     unsigned int lineNum = this->lexer->getLineNumByPos(token.pos);
@@ -1669,6 +1669,8 @@ std::unique_ptr<Node> JSParser::parsePrimary() {
     TRY(this->expect(JSTokenKind::RP));
     return node;
   }
+  case JSTokenKind::BACKTICK:
+    return this->parseTemplate();
   default:
     E_ALTER(EACH_LA_JS_PRIMARY(GEN_LA_ALTER));
   }
@@ -1689,6 +1691,18 @@ std::unique_ptr<Node> JSParser::parseNumber() {
                                   NumberLiteral{ret.value});
   }
   this->reportTokenFormatError(JSTokenKind::NUMBER, token, "out of range");
+  return nullptr;
+}
+
+std::unique_ptr<Node> JSParser::parseString(const bool trimQuote) {
+  auto token = TRY(this->expect(JSTokenKind::STRING));
+  std::string err;
+  if (auto str = this->lexer->toString(token, trimQuote, &err); str.has_value()) {
+    return std::make_unique<Node>(
+        this->lexer->getLineNumByPos(token.pos),
+        StringLiteral{std::make_shared<std::u16string>(std::move(str.value()))});
+  }
+  this->reportTokenFormatError(JSTokenKind::STRING, token, "out of range");
   return nullptr;
 }
 
@@ -1747,6 +1761,32 @@ std::unique_ptr<Node> JSParser::parseFunction() {
   }
   TRY(this->expect(JSTokenKind::RBC));
   return std::make_unique<Node>(this->lexer->getLineNumByPos(token.pos), std::move(func));
+}
+
+std::unique_ptr<Node> JSParser::parseTemplate() {
+  Token start = TRY(this->expect(JSTokenKind::BACKTICK));
+  std::vector<std::unique_ptr<Node>> nodes;
+  while (this->curKind != JSTokenKind::BACKTICK) {
+    switch (this->curKind) {
+    case JSTokenKind::STRING: {
+      auto node = TRY(this->parseString(false));
+      nodes.push_back(std::move(node));
+      continue;
+    }
+    case JSTokenKind::START_INTERP: {
+      this->consume();
+      auto node = TRY(this->parseExpression());
+      TRY(this->expect(JSTokenKind::RBC));
+      nodes.push_back(std::move(node));
+      continue;
+    }
+    default:
+      E_ALTER(JSTokenKind::STRING, JSTokenKind::START_INTERP);
+    }
+  }
+  TRY(this->expect(JSTokenKind::BACKTICK));
+  return std::make_unique<Node>(this->lexer->getLineNumByPos(start.pos),
+                                TemplateExpr{std::move(nodes)});
 }
 
 #undef TRY
@@ -2022,6 +2062,15 @@ static JSResult evalAssign(const AssignExpr &assign, const std::shared_ptr<JSEnv
   return assignImpl(*assign.left, std::move(right), env);
 }
 
+static JSResult evalTemplate(const TemplateExpr &temp, const std::shared_ptr<JSEnv> &env) {
+  JSString str;
+  for (auto &e : temp.nodes) {
+    auto v = TRY(evaluate(*e, env));
+    toString(v, str);
+  }
+  return Ok(std::make_shared<JSString>(std::move(str)));
+}
+
 static JSResult defineVar(VarDecl::Kind kind, const std::string &name, JSValue &&value,
                           unsigned int lineNum, const std::shared_ptr<JSEnv> &env) {
   auto targetEnv = env;
@@ -2215,6 +2264,8 @@ static JSResult evaluate(const Node &node, const std::shared_ptr<JSEnv> &env) {
           return evalBinary(element, env);
         } else if constexpr (std::is_same_v<T, AssignExpr>) {
           return evalAssign(element, env);
+        } else if constexpr (std::is_same_v<T, TemplateExpr>) {
+          return evalTemplate(element, env);
         } else if constexpr (std::is_same_v<T, VarDecl>) {
           JSValue value;
           if (element.expr) {

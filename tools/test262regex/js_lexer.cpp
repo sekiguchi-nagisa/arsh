@@ -79,15 +79,18 @@ static int parseHex(const char *&iter, const char *end, unsigned int size) {
   return codePoint;
 }
 
-std::optional<std::u16string> JSLexer::unquoteString(StringRef ref, std::string *err) {
-  if (ref.size() < 2 || ref.front() != ref.back() || (ref[0] != '\'' && ref[0] != '"')) {
-    if (err) {
-      *err += "must be valid string literal";
+std::optional<std::u16string> JSLexer::unquoteString(StringRef ref, const bool trimQuote,
+                                                     std::string *err) {
+  if (trimQuote) {
+    if (ref.size() < 2 || ref.front() != ref.back() || (ref[0] != '\'' && ref[0] != '"')) {
+      if (err) {
+        *err += "must be valid string literal";
+      }
+      return {};
     }
-    return {};
+    ref.removePrefix(1);
+    ref.removeSuffix(1);
   }
-  ref.removePrefix(1);
-  ref.removeSuffix(1);
 
   std::u16string ret;
   const char *iter = ref.begin();

@@ -47,6 +47,10 @@
     RET(INVALID);                                                                                  \
   } while (false)
 
+#define POP_MODE() this->popMode()
+
+#define PUSH_MODE(m) this->pushMode(yyc##m)
+
 namespace arsh::re262 {
 
 // #####################
@@ -55,6 +59,8 @@ namespace arsh::re262 {
 
 JSTokenKind JSLexer::nextToken(Token &token) {
   /*!re2c
+    re2c:define:YYCONDTYPE = "JSLexerMode : unsigned char";
+    re2c:define:YYGETCONDITION = this->getMode;
     re2c:define:YYCTYPE = "unsigned char";
     re2c:define:YYCURSOR = this->cursor;
     re2c:define:YYLIMIT = this->limit;
@@ -75,6 +81,7 @@ JSTokenKind JSLexer::nextToken(Token &token) {
     EXP = [eE] [+-] [0-9]+;
     SCHAR = "\\" [^] | [^\\'];
     DCHAR = "\\" [^] | [^\\"];
+    TCHAR = "\\" [^] | [^\\`$];
     ID_PART = [0-9A-Za-z_$];
     ID_START = [A-Za-z_$];
 
@@ -96,77 +103,83 @@ INIT:
   unsigned int startPos = this->getPos();
   JSTokenKind kind = JSTokenKind::INVALID;
   /*!re2c
-    "true"                 { RET(TRUE); }
-    "false"                { RET(FALSE); }
-    "null"                 { RET(NIL); }
-    "const"                { RET(CONST); }
-    "let"                  { RET(LET); }
-    "var"                  { RET(VAR); }
-    "return"               { RET(RETURN); }
-    "new"                  { RET(NEW); }
-    "function"             { RET(FUNCTION); }
-    "typeof"               { RET(TYPEOF); }
-    "void"                 { RET(VOID); }
-    "instanceof"           { RET(INSTANCEOF); }
-    "try"                  { RET(TRY); }
-    "catch"                { RET(CATCH); }
-    "finally"              { RET(FINALLY); }
-    "throw"                { RET(THROW); }
-    "if"                   { RET(IF); }
-    "else"                 { RET(ELSE); }
-    "for"                  { RET(FOR); }
-    "of"                   { RET(OF); }
-    "break"                { RET(BREAK); }
-    "continue"             { RET(CONTINUE); }
-    "while"                { RET(WHILE); }
-    "this"                 { RET(KEYWORD); }
-    "case"                 { RET(KEYWORD); }
-    "class"                { RET(KEYWORD); }
-    "default"              { RET(KEYWORD); }
-    "do"                   { RET(KEYWORD); }
-    "with"                 { RET(KEYWORD); }
-    INT FRAC? EXP?         { RET(NUMBER); }
-    HEX_INT                { RET(NUMBER); }
-    ['] SCHAR* [']         { UPDATE_LN(); RET(STRING); }
-    ["] DCHAR* ["]         { UPDATE_LN(); RET(STRING); }
-    REGEX                  { RET(REGEX); }
-    ID_START ID_PART*      { RET(IDENTIFIER); }
-    "="                    { RET(ASSIGN); }
-    "+="                   { RET(ADD_ASSIGN); }
-    "-="                   { RET(SUB_ASSIGN); }
-    "%="                   { RET(MOD_ASSIGN); }
-    "!"                    { RET(NOT); }
-    "+"                    { RET(ADD); }
-    "-"                    { RET(SUB); }
-    "%"                    { RET(MOD); }
-    "++"                   { RET(INC); }
-    "--"                   { RET(DEC); }
-    "==="                  { RET(EQ2); }
-    "!=="                  { RET(NE2); }
-    "<"                    { RET(LT); }
-    "<="                   { RET(LE); }
-    ">"                    { RET(GT); }
-    ">="                   { RET(GE); }
-    "&&"                   { RET(COND_AND); }
-    "||"                   { RET(COND_OR); }
-    "("                    { RET(LP); }
-    ")"                    { RET(RP); }
-    "{"                    { RET(LBC); }
-    "}"                    { RET(RBC); }
-    "["                    { RET(LB); }
-    "]"                    { RET(RB); }
-    ":"                    { RET(COLON); }
-    ";"                    { RET(LINE_END); }
-    ","                    { RET(COMMA); }
-    "."                    { RET(DOT); }
+    <DEFAULT>  "true"                 { RET(TRUE); }
+    <DEFAULT>  "false"                { RET(FALSE); }
+    <DEFAULT>  "null"                 { RET(NIL); }
+    <DEFAULT>  "const"                { RET(CONST); }
+    <DEFAULT>  "let"                  { RET(LET); }
+    <DEFAULT>  "var"                  { RET(VAR); }
+    <DEFAULT>  "return"               { RET(RETURN); }
+    <DEFAULT>  "new"                  { RET(NEW); }
+    <DEFAULT>  "function"             { RET(FUNCTION); }
+    <DEFAULT>  "typeof"               { RET(TYPEOF); }
+    <DEFAULT>  "void"                 { RET(VOID); }
+    <DEFAULT>  "instanceof"           { RET(INSTANCEOF); }
+    <DEFAULT>  "try"                  { RET(TRY); }
+    <DEFAULT>  "catch"                { RET(CATCH); }
+    <DEFAULT>  "finally"              { RET(FINALLY); }
+    <DEFAULT>  "throw"                { RET(THROW); }
+    <DEFAULT>  "if"                   { RET(IF); }
+    <DEFAULT>  "else"                 { RET(ELSE); }
+    <DEFAULT>  "for"                  { RET(FOR); }
+    <DEFAULT>  "of"                   { RET(OF); }
+    <DEFAULT>  "break"                { RET(BREAK); }
+    <DEFAULT>  "continue"             { RET(CONTINUE); }
+    <DEFAULT>  "while"                { RET(WHILE); }
+    <DEFAULT>  "this"                 { RET(KEYWORD); }
+    <DEFAULT>  "case"                 { RET(KEYWORD); }
+    <DEFAULT>  "class"                { RET(KEYWORD); }
+    <DEFAULT>  "default"              { RET(KEYWORD); }
+    <DEFAULT>  "do"                   { RET(KEYWORD); }
+    <DEFAULT>  "with"                 { RET(KEYWORD); }
+    <DEFAULT>  INT FRAC? EXP?         { RET(NUMBER); }
+    <DEFAULT>  HEX_INT                { RET(NUMBER); }
+    <DEFAULT>  ['] SCHAR* [']         { UPDATE_LN(); RET(STRING); }
+    <DEFAULT>  ["] DCHAR* ["]         { UPDATE_LN(); RET(STRING); }
+    <DEFAULT>  REGEX                  { RET(REGEX); }
+    <DEFAULT>  ID_START ID_PART*      { RET(IDENTIFIER); }
+    <DEFAULT>  "="                    { RET(ASSIGN); }
+    <DEFAULT>  "+="                   { RET(ADD_ASSIGN); }
+    <DEFAULT>  "-="                   { RET(SUB_ASSIGN); }
+    <DEFAULT>  "%="                   { RET(MOD_ASSIGN); }
+    <DEFAULT>  "!"                    { RET(NOT); }
+    <DEFAULT>  "+"                    { RET(ADD); }
+    <DEFAULT>  "-"                    { RET(SUB); }
+    <DEFAULT>  "%"                    { RET(MOD); }
+    <DEFAULT>  "++"                   { RET(INC); }
+    <DEFAULT>  "--"                   { RET(DEC); }
+    <DEFAULT>  "==="                  { RET(EQ2); }
+    <DEFAULT>  "!=="                  { RET(NE2); }
+    <DEFAULT>  "<"                    { RET(LT); }
+    <DEFAULT>  "<="                   { RET(LE); }
+    <DEFAULT>  ">"                    { RET(GT); }
+    <DEFAULT>  ">="                   { RET(GE); }
+    <DEFAULT>  "&&"                   { RET(COND_AND); }
+    <DEFAULT>  "||"                   { RET(COND_OR); }
+    <DEFAULT>  "("                    { RET(LP); }
+    <DEFAULT>  ")"                    { RET(RP); }
+    <DEFAULT>  "{"                    { PUSH_MODE(DEFAULT); RET(LBC); }
+    <DEFAULT>  "}"                    { POP_MODE(); RET(RBC); }
+    <DEFAULT>  "["                    { RET(LB); }
+    <DEFAULT>  "]"                    { RET(RB); }
+    <DEFAULT>  ":"                    { RET(COLON); }
+    <DEFAULT>  ";"                    { RET(LINE_END); }
+    <DEFAULT>  ","                    { RET(COMMA); }
+    <DEFAULT>  "."                    { RET(DOT); }
+    <DEFAULT>  "`"                    { PUSH_MODE(TEMPLATE); RET(BACKTICK); }
+    <DEFAULT>  [ \t\v\f\u00A0\uFEFF]+ { SKIP(); }
+    <DEFAULT>  [\r\n\u2028\u2029]+    { UPDATE_LN(); FIND_NEW_LINE(); }
+    <DEFAULT>  SINGLE_COMMENT         { SKIP(); }
+    <DEFAULT>  MULTI_COMMENT          { UPDATE_LN(); SKIP(); }
 
-    [ \t\v\f\u00A0\uFEFF]+ { SKIP(); }
-    [\r\n\u2028\u2029]+    { UPDATE_LN(); FIND_NEW_LINE(); }
-    SINGLE_COMMENT         { SKIP(); }
-    MULTI_COMMENT          { UPDATE_LN(); SKIP(); }
-    $                      { REACH_EOS(); }
+    <TEMPLATE>  TCHAR                 { UPDATE_LN(); RET(STRING); }
+    <TEMPLATE>  "$" / [^{]            { RET(STRING); }
+    <TEMPLATE>  "${"                  { PUSH_MODE(DEFAULT); RET(START_INTERP); }
+    <TEMPLATE>  "`"                   { POP_MODE(); RET(BACKTICK); }
 
-    *                      { RET(INVALID); }
+    <DEFAULT,TEMPLATE>  $             { REACH_EOS(); }
+
+    <DEFAULT,TEMPLATE>  *             { RET(INVALID); }
   */
 
 END:
