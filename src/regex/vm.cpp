@@ -1255,7 +1255,11 @@ bool escape(const StringRef ref, const size_t maxSize, std::string &out) {
       if (unsigned int byteSize = UnicodeUtil::wtf8ToCodePoint(iter, end, codePoint)) {
         if (ucp::hasPrimeLoneProperty(codePoint, ucp::Lone::ESRegexClassSpace) ||
             UnicodeUtil::isSurrogate(codePoint)) {
-          len = snprintf(buf, std::size(buf), "\\u%04x", codePoint);
+          if (codePoint <= 0xFF) {
+            len = snprintf(buf, std::size(buf), "\\x%02x", codePoint);
+          } else {
+            len = snprintf(buf, std::size(buf), "\\u%04x", codePoint);
+          }
         } else {
           memcpy(buf, iter, byteSize);
           len = byteSize;

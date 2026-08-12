@@ -770,6 +770,7 @@ static constexpr RegexEscapeParam regexEscapeParams[] = {
     {"\f\n\r\t\v ", R"(\f\n\r\t\v\x20)"},
     {"foo\u2028bar", "\\x66oo\\u2028bar"},
     {"foo\xED\xA0\x80 bar\xED\xBf\xBF", R"(\x66oo\ud800\x20bar\udfff)"},
+    {"\u00A0", R"(\xa0)"},
 };
 
 INSTANTIATE_TEST_SUITE_P(RegexEscapeTest, RegexEscapeTest, ::testing::ValuesIn(regexEscapeParams));
