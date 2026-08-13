@@ -10,10 +10,6 @@ function _fzf_select(q : String, list : [String], opts : String) : String? {
     var fzf_opt = "--scheme=history --highlight-line -n2..,.. --read0 " +
         "--height 40% --bind=ctrl-z:ignore $FZF_DEFAULT_OPTS --bind=ctrl-r:toggle-sort,alt-r:toggle-raw $opts +m"
     let eaw = $EAW == 1 ? 0 : 1
-
-    var arg = ['-q', $q]
-    if $q.empty() { $arg.clear(); }
-
     var out: [String: Int]
     for(var i = $list.size() - 1; $i > -1; $i--) {
         var e = $list[$i]
@@ -25,10 +21,9 @@ function _fzf_select(q : String, list : [String], opts : String) : String? {
 
     var ret = "$(
         for k,v in $out { printf $'%s\t%s\x00' $v $k; } | 
-            FZF_DEFAULT_OPTS=$fzf_opt RUNEWIDTH_EASTASIAN=$eaw fzf $arg
-    )".split($'\t', 2)[1]
-
-    return $ret.empty() ? $none : $ret
+            FZF_DEFAULT_OPTS=$fzf_opt RUNEWIDTH_EASTASIAN=$eaw fzf -q $q
+    )"
+    return $ret.empty() ? $none : $ret.split($'\t', 2)[1]
 }
 
 function _fzf_search_hist(q : String, list : [String]?) : String? {
