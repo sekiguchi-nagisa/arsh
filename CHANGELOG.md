@@ -23,6 +23,11 @@
     - add ``limit`` param
 - add ``unsigned`` param to ``String#toInt`` method. now can recognize as unsigned int
 
+#### Module
+
+- improve fzf based history search in fzf module.
+    - now show history number and sort chronological order
+
 #### Misc
 
 - enable Unicode set mode in ``litecheck`` regex pattern
