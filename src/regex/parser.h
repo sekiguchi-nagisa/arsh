@@ -225,10 +225,25 @@ private:
    */
   std::string parseCaptureGroupName(const char *prefixStart, bool mayIgnoreError);
 
+  /**
+   *
+   * @param node maybe null
+   * @param ignoreError
+   * @return
+   */
   std::unique_ptr<Node> tryToParseQuantifier(std::unique_ptr<Node> &&node, bool ignoreError);
 
   Optional<unsigned short> parseQuantifierDigits(const char *prefixStart, bool ignoreError,
                                                  char end);
+
+  /**
+   *
+   * @param node maybe null
+   * @param prefixStart
+   * @return
+   * if nothing to repeat (ex. look-around in unicode mode), return false and report error
+   */
+  bool checkRepeatable(const std::unique_ptr<Node> &node, const char *prefixStart);
 
   Optional<unsigned short> newLoopIndex(const char *prefixStart) {
     static_assert(RepeatNode::LOOP_INDEX_MAX <= UINT16_MAX);

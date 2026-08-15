@@ -204,8 +204,8 @@ EOF
 )
 
 assert diff <(redump '(?=a){0,3}' 'mu') <(<<'EOF'
-1:6 [error] `{' quantifier is not allowed after lookaround
- at (pos = 5, size = 1)
+1:6 [error] `{0,3}' quantifier does not follow atom
+ at (pos = 5, size = 5)
 EOF
 )
 
@@ -236,33 +236,33 @@ EOF
 )
 
 assert diff <(redump '(?!a){1}' 'mu') <(<<'EOF'
-1:6 [error] `{' quantifier is not allowed after lookaround
- at (pos = 5, size = 1)
+1:6 [error] `{1}' quantifier does not follow atom
+ at (pos = 5, size = 3)
 EOF
 )
 
 # (?<=aa)*
 assert diff <(redump '(?<=aa)*' 'm') <(<<'EOF'
-1:8 [error] `*' quantifier is not allowed after lookaround
+1:8 [error] `*' quantifier does not follow atom
  at (pos = 7, size = 1)
 EOF
 )
 
 assert diff <(redump '(?<=aa)+' 'mv') <(<<'EOF'
-1:8 [error] `+' quantifier is not allowed after lookaround
+1:8 [error] `+' quantifier does not follow atom
  at (pos = 7, size = 1)
 EOF
 )
 
 # (?<!aa)*
 assert diff <(redump '(?<!aa)*' 'm') <(<<'EOF'
-1:8 [error] `*' quantifier is not allowed after lookaround
+1:8 [error] `*' quantifier does not follow atom
  at (pos = 7, size = 1)
 EOF
 )
 
 assert diff <(redump '(?<!aa)?' 'mv') <(<<'EOF'
-1:8 [error] `?' quantifier is not allowed after lookaround
+1:8 [error] `?' quantifier does not follow atom
  at (pos = 7, size = 1)
 EOF
 )

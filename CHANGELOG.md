@@ -36,6 +36,7 @@
 
 - skip invalid map entry during ``Map#putAll``, ``Map#copy`` methods
 - fix hex format of ``String#escapeRegex`` method when passed ``\u00A0``
+- fix regex quantifier parsing
 
 ## [0.42.1] - 2026-07-19
 

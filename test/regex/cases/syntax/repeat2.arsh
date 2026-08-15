@@ -21,7 +21,7 @@ EOF
 )
 
 assert diff <(redump '${' 'u') <(<<'EOF'
-1:2 [error] lone quantifier bracket `{'
+1:2 [error] invalid quantifier: `{'
  at (pos = 1, size = 1)
 EOF
 )
@@ -284,5 +284,67 @@ pattern:
     kind: Char
     token: (pos = 0, size = 1)
     codePoint: U+0032, 2
+EOF
+)
+
+# 2{2}{1}
+assert diff <(redump '2{2}{1}' '') <(<<'EOF'
+1:5 [error] `{1}' quantifier does not follow atom
+ at (pos = 4, size = 3)
+EOF
+)
+
+assert diff <(redump '2{2}{1}' 'u') <(<<'EOF'
+1:5 [error] `{1}' quantifier does not follow atom
+ at (pos = 4, size = 3)
+EOF
+)
+
+# 2{2}{1,}
+assert diff <(redump '2{2}{1,}' '') <(<<'EOF'
+1:5 [error] `{1,}' quantifier does not follow atom
+ at (pos = 4, size = 4)
+EOF
+)
+
+assert diff <(redump '2{2}{1,}' 'u') <(<<'EOF'
+1:5 [error] `{1,}' quantifier does not follow atom
+ at (pos = 4, size = 4)
+EOF
+)
+
+# 2{2}{1
+assert diff <(redump '2{2}{1' '') <(<<'EOF'
+flag: (mode = , modifier = )
+loopCount: 1
+captureGroupCount: 0
+namedCaptureGroups: []
+pattern:
+  kind: Seq
+  token: (pos = 0, size = 6)
+  patterns:
+    - kind: Repeat
+      token: (pos = 0, size = 4)
+      repeat: (min = 2, max = 2)
+      greedy: true
+      loopIndex: 0
+      firstGroupIndex: 0
+      lastGroupIndex: 0
+      pattern:
+        kind: Char
+        token: (pos = 0, size = 1)
+        codePoint: U+0032, 2
+    - kind: Char
+      token: (pos = 4, size = 1)
+      codePoint: U+007B, {
+    - kind: Char
+      token: (pos = 5, size = 1)
+      codePoint: U+0031, 1
+EOF
+)
+
+assert diff <(redump '2{2}{1' 'v') <(<<'EOF'
+1:5 [error] unclosed quantifier: `{1'
+ at (pos = 4, size = 2)
 EOF
 )

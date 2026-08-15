@@ -260,18 +260,6 @@ SyntaxTree Parser::operator()(const StringRef src, const Flag f) {
           NamedCaptureGroups(std::move(offsetMap), std::move(entries)), this->captureGroupCount};
 }
 
-static bool isQuantifierStart(char ch) {
-  switch (ch) {
-  case '?':
-  case '*':
-  case '+':
-  case '{':
-    return true;
-  default:
-    return false;
-  }
-}
-
 std::unique_ptr<Node> Parser::parse() {
   this->frames.emplace_back();
 
@@ -303,10 +291,8 @@ std::unique_ptr<Node> Parser::parse() {
       goto REPEAT;
     case '*':
     case '+':
-    case '?': {
-      this->reportError(this->curToken(), "`%c' quantifier does not follow atom", *this->iter);
-      return nullptr;
-    }
+    case '?':
+      goto REPEAT;
     case '(':
       if (this->enterGroup()) {
         continue;
@@ -314,17 +300,6 @@ std::unique_ptr<Node> Parser::parse() {
       return nullptr;
     case ')':
       if (auto node = this->exitGroup()) {
-        if (isa<LookAroundNode>(*node) && !this->isEnd() && isQuantifierStart(*this->iter)) {
-          if (auto &la = cast<LookAroundNode>(*node);
-              this->flag.is(Mode::BMP) && (la.getType() == LookAroundNode::Type::LOOK_AHEAD ||
-                                           la.getType() == LookAroundNode::Type::LOOK_AHEAD_NOT)) {
-            atomNode = std::move(node);
-            goto REPEAT; // only allow look-ahead in legacy mode
-          }
-          this->reportError(this->curToken(), "`%c' quantifier is not allowed after lookaround",
-                            *this->iter);
-          return nullptr;
-        }
         atomNode = std::move(node);
         goto REPEAT;
       }
@@ -344,6 +319,7 @@ std::unique_ptr<Node> Parser::parse() {
       this->iter++;
       goto REPEAT;
     case '{':
+      goto REPEAT;
     case '}':
       if (this->flag.isEitherUnicodeMode()) {
         this->reportError(this->curToken(), "lone quantifier bracket `%c'", *this->iter);
@@ -383,7 +359,13 @@ std::unique_ptr<Node> Parser::parse() {
   REPEAT:
     atomNode = this->tryToParseQuantifier(std::move(atomNode), this->flag.is(Mode::BMP));
     if (!atomNode) {
-      return nullptr;
+      if (this->hasError()) {
+        return nullptr;
+      }
+      assert(*this->iter == '{');
+      assert(this->flag.is(Mode::BMP));
+      atomNode = std::make_unique<CharNode>(this->curToken(), *this->iter);
+      this->iter++;
     }
     this->append(std::move(atomNode));
   }
@@ -1119,8 +1101,8 @@ INVALID:
 
 std::unique_ptr<Node> Parser::tryToParseQuantifier(std::unique_ptr<Node> &&node,
                                                    const bool ignoreError) {
-  assert(node);
   if (this->isEnd()) {
+    assert(node);
     return std::move(node);
   }
   const auto old = this->iter;
@@ -1132,9 +1114,11 @@ std::unique_ptr<Node> Parser::tryToParseQuantifier(std::unique_ptr<Node> &&node,
       this->iter++;
       greedy = false;
     }
-    if (auto loopIndex = this->newLoopIndex(old); loopIndex.hasValue()) {
-      return RepeatNode::option(loopIndex.unwrap(), std::move(node), greedy,
-                                this->getTokenFrom(old));
+    if (this->checkRepeatable(node, old)) {
+      if (auto loopIndex = this->newLoopIndex(old); loopIndex.hasValue()) {
+        return RepeatNode::option(loopIndex.unwrap(), std::move(node), greedy,
+                                  this->getTokenFrom(old));
+      }
     }
     return nullptr;
   case '*':
@@ -1143,9 +1127,11 @@ std::unique_ptr<Node> Parser::tryToParseQuantifier(std::unique_ptr<Node> &&node,
       this->iter++;
       greedy = false;
     }
-    if (auto loopIndex = this->newLoopIndex(old); loopIndex.hasValue()) {
-      return RepeatNode::zeroOrMore(loopIndex.unwrap(), std::move(node), greedy,
-                                    this->getTokenFrom(old));
+    if (this->checkRepeatable(node, old)) {
+      if (auto loopIndex = this->newLoopIndex(old); loopIndex.hasValue()) {
+        return RepeatNode::zeroOrMore(loopIndex.unwrap(), std::move(node), greedy,
+                                      this->getTokenFrom(old));
+      }
     }
     return nullptr;
   case '+':
@@ -1154,9 +1140,11 @@ std::unique_ptr<Node> Parser::tryToParseQuantifier(std::unique_ptr<Node> &&node,
       this->iter++;
       greedy = false;
     }
-    if (auto loopIndex = this->newLoopIndex(old); loopIndex.hasValue()) {
-      return RepeatNode::oneOrMore(loopIndex.unwrap(), std::move(node), greedy,
-                                   this->getTokenFrom(old));
+    if (this->checkRepeatable(node, old)) {
+      if (auto loopIndex = this->newLoopIndex(old); loopIndex.hasValue()) {
+        return RepeatNode::oneOrMore(loopIndex.unwrap(), std::move(node), greedy,
+                                     this->getTokenFrom(old));
+      }
     }
     return nullptr;
   case '{': {
@@ -1216,13 +1204,16 @@ std::unique_ptr<Node> Parser::tryToParseQuantifier(std::unique_ptr<Node> &&node,
       this->reportError(this->getTokenFrom(old), "numbers out of order in {} quantifier");
       return nullptr;
     }
-    if (auto loopIndex = this->newLoopIndex(old); loopIndex.hasValue()) {
-      return std::make_unique<RepeatNode>(loopIndex.unwrap(), std::move(node), min, max, greedy,
-                                          this->getTokenFrom(old));
+    if (this->checkRepeatable(node, old)) {
+      if (auto loopIndex = this->newLoopIndex(old); loopIndex.hasValue()) {
+        return std::make_unique<RepeatNode>(loopIndex.unwrap(), std::move(node), min, max, greedy,
+                                            this->getTokenFrom(old));
+      }
     }
     return nullptr;
   }
   default:
+    assert(node);
     return std::move(node);
   }
 }
@@ -1261,6 +1252,27 @@ Optional<unsigned short> Parser::parseQuantifierDigits(const char *prefixStart,
     return {};
   }
   return static_cast<unsigned short>(ret.value);
+}
+
+static bool isRepeatable(const std::unique_ptr<Node> &node, const Flag flag) {
+  if (!node) {
+    return false;
+  }
+  if (isa<LookAroundNode>(*node)) { // only allow look-ahead in legacy mode
+    auto &la = cast<LookAroundNode>(*node);
+    return flag.is(Mode::BMP) && (la.getType() == LookAroundNode::Type::LOOK_AHEAD ||
+                                  la.getType() == LookAroundNode::Type::LOOK_AHEAD_NOT);
+  }
+  return true;
+}
+
+bool Parser::checkRepeatable(const std::unique_ptr<Node> &node, const char *prefixStart) {
+  if (!isRepeatable(node, this->flag)) {
+    this->reportError(this->getTokenFrom(prefixStart), "`%s' quantifier does not follow atom",
+                      this->getStrRefFrom(prefixStart).toString().c_str());
+    return false;
+  }
+  return true;
 }
 
 Optional<Modifier> Parser::parseModifiers(char end) {

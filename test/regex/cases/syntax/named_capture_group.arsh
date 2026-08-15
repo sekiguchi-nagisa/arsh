@@ -155,8 +155,8 @@ EOF
 )
 
 assert diff <(redump '(?<あい>(?<うえ>{))' 'u') <(<<'EOF'
-1:21 [error] lone quantifier bracket `{'
- at (pos = 20, size = 1)
+1:22 [error] must be positive decimal number: `))'
+ at (pos = 21, size = 2)
 EOF
 )
 
