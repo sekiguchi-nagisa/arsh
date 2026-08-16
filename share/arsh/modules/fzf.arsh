@@ -4,7 +4,7 @@
 function _gen_fzf_select_extra_options() : [String] {
     var opts : [String]
     var version = $(fzf --version 2> /dev/null).get(0) ?? ""
-    if $version =~ $/^[0-9]+\.[0-9]+\.[0-9]+$/ {
+    if $version =~ $/^[0-9]+\.[0-9]+(\.[0-9]+)?$/ {
         let parts = $version.split('.')
         let major = $parts[0].toInt() ?? 0
         let minor = $parts[1].toInt() ?? 0
@@ -12,7 +12,7 @@ function _gen_fzf_select_extra_options() : [String] {
             $opts.add("--scheme=history")
         }
         if $major >= 0 && $minor >= 52 {
-            $opts.add("--hightlight-line")
+            $opts.add("--highlight-line")
         }
         if $major >= 0 && $minor >= 66 {
             $opts.add("--bind=ctrl-r:toggle-sort,alt-r:toggle-raw")
