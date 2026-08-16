@@ -1,14 +1,36 @@
 
 # for fzf key binding
 
+function _gen_fzf_select_extra_options() : [String] {
+    var opts : [String]
+    var version = $(fzf --version 2> /dev/null).get(0) ?? ""
+    if $version =~ $/^[0-9]+\.[0-9]+\.[0-9]+$/ {
+        let parts = $version.split('.')
+        let major = $parts[0].toInt() ?? 0
+        let minor = $parts[1].toInt() ?? 0
+        if $major >= 0 && $minor >= 33 {
+            $opts.add("--scheme=history")
+        }
+        if $major >= 0 && $minor >= 52 {
+            $opts.add("--hightlight-line")
+        }
+        if $major >= 0 && $minor >= 66 {
+            $opts.add("--bind=ctrl-r:toggle-sort,alt-r:toggle-raw")
+        } else {
+            $opts.add("--bind=ctrl-r:toggle-sort")
+        }
+    }
+    return $opts
+}
+
 function _fzf_select(q : String, list : [String], opts : String) : String? {
     command -v fzf &>> /dev/null || return $none
+    var extra_opts = $_gen_fzf_select_extra_options()
 
     let old = { shctl unset err-raise; shctl set -d; $REPLY; }
     defer { shctl set -r $old; }
     importenv FZF_DEFAULT_OPTS : ""
-    var fzf_opt = "--scheme=history --highlight-line -n2..,.. --read0 " +
-        "--height 40% --bind=ctrl-z:ignore $FZF_DEFAULT_OPTS --bind=ctrl-r:toggle-sort,alt-r:toggle-raw $opts +m"
+    var fzf_opt = "-n2..,.. --read0 --height 40% --bind=ctrl-z:ignore $extra_opts $FZF_DEFAULT_OPTS $opts +m"
     let eaw = $EAW == 1 ? 0 : 1
     var out: [String: Int]
     for(var i = $list.size() - 1; $i > -1; $i--) {
