@@ -1425,6 +1425,21 @@ ReferenceError: hogehoge is not defined
             out);
 }
 
+TEST(JSTest, asi) {
+  auto env = initJSEnv();
+  auto ret = jsEval("dummy1", "var aa = 2345", env);
+  ASSERT_TRUE(ret);
+  ASSERT_EQ(u"undefined", toPrettyString(ret.value));
+
+  ret = jsEval("dummy1", "aa\n", env);
+  ASSERT_TRUE(ret);
+  ASSERT_EQ(u"2345", toPrettyString(ret.value));
+
+  ret = jsEval("dummy1", "var a = function() { return 23 }; a()\n", env);
+  ASSERT_TRUE(ret);
+  ASSERT_EQ(u"23", toPrettyString(ret.value));
+}
+
 TEST(JSTest, toNumber) {
   double d = toNumber(JSValue());
   ASSERT_TRUE(std::isnan(d));

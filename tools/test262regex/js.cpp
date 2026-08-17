@@ -1139,6 +1139,8 @@ private:
 
   std::unique_ptr<Node> parseStatement();
 
+  std::nullptr_t expectStatementEnd();
+
   std::unique_ptr<Node> parseBlock();
 
   std::unique_ptr<Node> parseTryStatement();
@@ -1243,7 +1245,7 @@ std::unique_ptr<Node> JSParser::parseStatement() {
         TRY(this->expect(JSTokenKind::ASSIGN));
         expr = TRY(this->parseExpression());
       }
-      TRY(this->expect(JSTokenKind::LINE_END));
+      TRY(this->expectStatementEnd());
       return std::make_unique<Node>(
           this->lexer->getLineNumByPos(token.pos),
           VarDecl{kind, this->lexer->toTokenText(token), std::move(expr)});
@@ -1251,17 +1253,18 @@ std::unique_ptr<Node> JSParser::parseStatement() {
   case JSTokenKind::RETURN: {
     Token token = TRY(this->expect(JSTokenKind::RETURN));
     std::unique_ptr<Node> node;
-    if (this->curKind != JSTokenKind::LINE_END) {
+    if (!this->lexer->hasPrevNewLine() && this->curKind != JSTokenKind::LINE_END &&
+        this->curKind != JSTokenKind::RBC && !isEOSToken(this->curKind)) {
       node = TRY(this->parseExpression());
     }
-    TRY(this->expect(JSTokenKind::LINE_END));
+    TRY(this->expectStatementEnd());
     return std::make_unique<Node>(this->lexer->getLineNumByPos(token.pos),
                                   JumpStmt{JSResult::Status::RETURN, std::move(node)});
   }
   case JSTokenKind::THROW: {
     Token token = TRY(this->expect(JSTokenKind::THROW));
     auto node = TRY(this->parseExpression());
-    TRY(this->expect(JSTokenKind::LINE_END));
+    TRY(this->expectStatementEnd());
     return std::make_unique<Node>(this->lexer->getLineNumByPos(token.pos),
                                   JumpStmt{JSResult::Status::ERR, std::move(node)});
   }
@@ -1271,13 +1274,13 @@ std::unique_ptr<Node> JSParser::parseStatement() {
     return this->parseIfStatement();
   case JSTokenKind::BREAK: {
     Token token = TRY(this->expect(JSTokenKind::BREAK));
-    TRY(this->expect(JSTokenKind::LINE_END));
+    TRY(this->expectStatementEnd());
     return std::make_unique<Node>(this->lexer->getLineNumByPos(token.pos),
                                   JumpStmt{JSResult::Status::BREAK, nullptr});
   }
   case JSTokenKind::CONTINUE: {
     Token token = TRY(this->expect(JSTokenKind::CONTINUE));
-    TRY(this->expect(JSTokenKind::LINE_END));
+    TRY(this->expectStatementEnd());
     return std::make_unique<Node>(this->lexer->getLineNumByPos(token.pos),
                                   JumpStmt{JSResult::Status::CONTINUE, nullptr});
   }
@@ -1288,13 +1291,24 @@ std::unique_ptr<Node> JSParser::parseStatement() {
     // clang-format off
   EACH_LA_JS_EXPRESSION(GEN_LA_CASE) {
     auto expr = TRY(this->parseExpression());
-    TRY(this->expect(JSTokenKind::LINE_END));
+    TRY(this->expectStatementEnd());
     return expr;
   }
     // clang-format on
   default:
     E_ALTER(EACH_LA_JS_STATEMENT(GEN_LA_ALTER));
   }
+}
+
+std::nullptr_t JSParser::expectStatementEnd() {
+  if (this->curKind == JSTokenKind::LINE_END) {
+    this->consume();
+  } else if (this->lexer->hasPrevNewLine() || this->curKind == JSTokenKind::RBC ||
+             isEOSToken(this->curKind)) {
+  } else {
+    this->expect(JSTokenKind::LINE_END); // for error message
+  }
+  return nullptr;
 }
 
 std::unique_ptr<Node> JSParser::parseBlock() {
@@ -1538,18 +1552,19 @@ std::unique_ptr<Node> JSParser::parseCallExpression() {
   // suffix op
   switch (this->curKind) {
   case JSTokenKind::INC:
-  case JSTokenKind::DEC: {
-    Token token = this->curToken;
-    JSTokenKind kind = this->scan();
-    if (!isAssignable(*node)) {
-      this->reportTokenFormatError(kind, token,
-                                   "invalid left-hand side expression in postfix operation");
-      return nullptr;
+  case JSTokenKind::DEC:
+    if (!this->lexer->hasPrevNewLine()) {
+      Token token = this->curToken;
+      JSTokenKind kind = this->scan();
+      if (!isAssignable(*node)) {
+        this->reportTokenFormatError(kind, token,
+                                     "invalid left-hand side expression in postfix operation");
+        return nullptr;
+      }
+      unsigned int lineNum = node->lineNum;
+      node = std::make_unique<Node>(lineNum, AssignExpr{std::move(node), kind, nullptr});
     }
-    unsigned int lineNum = node->lineNum;
-    node = std::make_unique<Node>(lineNum, AssignExpr{std::move(node), kind, nullptr});
     break;
-  }
   default:
     break;
   }
