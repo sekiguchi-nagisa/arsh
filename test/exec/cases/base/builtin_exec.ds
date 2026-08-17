@@ -1,12 +1,12 @@
 
 # help
-assert help exec | grep '^exec: exec \[-c] \[-a name] file \[args ...]'
+assert help exec | grep '^Usage: exec \[-c] \[-a name] file \[args ...]'
 assert $PIPESTATUS[0] == 0 && $PIPESTATUS[1] == 0
 
-assert exec -h| grep '^exec: exec \[-c] \[-a name] file \[args ...]'
+assert exec -h| grep '^Usage: exec \[-c] \[-a name] file \[args ...]'
 assert $PIPESTATUS[0] == 2 && $PIPESTATUS[1] == 0
 
-assert exec --help| grep '^exec: exec \[-c] \[-a name] file \[args ...]'
+assert exec --help| grep '^Usage: exec \[-c] \[-a name] file \[args ...]'
 assert $PIPESTATUS[0] == 2 && $PIPESTATUS[1] == 0
 
 # invalid

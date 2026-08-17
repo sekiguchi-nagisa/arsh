@@ -4,7 +4,7 @@ assert($? == 0)
 
 assert(true)
 
-assert(help true | grep 'true: true')
+assert(help true | grep 'Usage: true')
 assert(help true | grep 'Always success')
 
 
@@ -15,7 +15,7 @@ assert($? == 1)
 var t = false
 assert(! $t)
 
-assert(help false | grep 'false: false')
+assert(help false | grep 'Usage: false')
 assert(help false | grep 'Always failure')
 
 
@@ -24,5 +24,5 @@ assert(help false | grep 'Always failure')
 assert $? == 0
 assert (:)
 
-assert help : | grep ':: :'
+assert help : | grep 'Usage: :'
 assert help : | grep 'Null command.  Always success'

@@ -135,9 +135,9 @@ static bool printUsage(FILE *fp, StringRef prefix, bool isShortHelp = true) {
   const auto range = getBuiltinCmdDescRange();
   for (auto &e : range) {
     if (const char *cmdName = e.name; StringRef(cmdName).startsWith(prefix)) {
-      fprintf(fp, "%s: %s %s\n", cmdName, cmdName, e.usage);
+      fprintf(fp, "Usage: %s %s\n", cmdName, e.usage);
       if (!isShortHelp) {
-        fprintf(fp, "%s\n", e.detail);
+        fprintf(fp, "\n%s\n", e.detail);
       }
       matched = true;
     }

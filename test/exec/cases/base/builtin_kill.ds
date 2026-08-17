@@ -138,11 +138,11 @@ assert "$(kill -0 999999999 2>&1)" =~ $/kill: 999999999: No such process/
 assert $? == 1
 
 # help
-assert help kill | grep '^kill: kill \[-s signal] pid | jobspec ... or kill -l \[signal...]'
+assert help kill | grep '^Usage: kill \[-s signal] pid | jobspec ... or kill -l \[signal...]'
 assert $PIPESTATUS[0] == 0 && $PIPESTATUS[1] == 0
 
-assert kill -h | grep '^kill: kill \[-s signal] pid | jobspec ... or kill -l \[signal...]'
+assert kill -h | grep '^Usage: kill \[-s signal] pid | jobspec ... or kill -l \[signal...]'
 assert $PIPESTATUS[0] == 2 && $PIPESTATUS[1] == 0
 
-assert kill --help | grep '^kill: kill \[-s signal] pid | jobspec ... or kill -l \[signal...]'
+assert kill --help | grep '^Usage: kill \[-s signal] pid | jobspec ... or kill -l \[signal...]'
 assert $PIPESTATUS[0] == 2 && $PIPESTATUS[1] == 0

@@ -14,13 +14,13 @@ assert !ulimit -X
 assert $? == 2
 
 # help
-assert help ulimit | grep -E '^ulimit: ulimit \[-H \| -S\] \[-a \| -[a-zA-Z]+ \[value\]\]'
+assert help ulimit | grep -E '^Usage: ulimit \[-H \| -S\] \[-a \| -[a-zA-Z]+ \[value\]\]'
 assert $PIPESTATUS[0] == 0 && $PIPESTATUS[1] == 0
 
-assert ulimit -h| grep -E '^ulimit: ulimit \[-H \| -S] \[-a \| -[a-zA-Z]+ \[value]]'
+assert ulimit -h| grep -E '^Usage: ulimit \[-H \| -S] \[-a \| -[a-zA-Z]+ \[value]]'
 assert $PIPESTATUS[0] == 2 && $PIPESTATUS[1] == 0
 
-assert ulimit --help | grep -E '^ulimit: ulimit \[-H \| -S] \[-a \| -[a-zA-Z]+ \[value]]'
+assert ulimit --help | grep -E '^Usage: ulimit \[-H \| -S] \[-a \| -[a-zA-Z]+ \[value]]'
 assert $PIPESTATUS[0] == 2 && $PIPESTATUS[1] == 0
 
 # print resources

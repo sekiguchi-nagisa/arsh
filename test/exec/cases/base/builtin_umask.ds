@@ -8,7 +8,7 @@ function assertEQ($e : String, $a : String) {
 umask -P 2> /dev/null
 assert $? == 2
 $assertEQ("${$SCRIPT_NAME.basename()}:11: umask: -y: invalid option
-umask: umask [-p] [-S] [mode]", "$(umask -y 2>&1)")
+Usage: umask [-p] [-S] [mode]", "$(umask -y 2>&1)")
 
 if (test -e /dev/full) {
     assert "$(umask 2>&1 > /dev/full)" =~ $/umask: io error: .+/
@@ -16,13 +16,13 @@ if (test -e /dev/full) {
 }
 
 # help
-assert help umask | grep '^umask: umask \[-p] \[-S] \[mode]'
+assert help umask | grep '^Usage: umask \[-p] \[-S] \[mode]'
 assert $PIPESTATUS[0] == 0 && $PIPESTATUS[1] == 0
 
-assert umask -h | grep '^umask: umask \[-p] \[-S] \[mode]'
+assert umask -h | grep '^Usage: umask \[-p] \[-S] \[mode]'
 assert $PIPESTATUS[0] == 2 && $PIPESTATUS[1] == 0
 
-assert umask --help | grep '^umask: umask \[-p] \[-S] \[mode]'
+assert umask --help | grep '^Usage: umask \[-p] \[-S] \[mode]'
 assert $PIPESTATUS[0] == 2 && $PIPESTATUS[1] == 0
 
 # print mask

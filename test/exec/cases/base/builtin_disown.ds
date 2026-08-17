@@ -1,19 +1,19 @@
 
 # invalid option
 assert disown  -g 2>&1 | grep ': disown: -g: invalid option'
-assert disown  -g 2>&1 | grep 'disown: disown \[jobspec ...]'
+assert disown  -g 2>&1 | grep 'Usage: disown \[jobspec ...]'
 assert $PIPESTATUS[0] == 2
 
 # help
-assert help disown | grep 'disown: disown \[jobspec ...]'
+assert help disown | grep 'Usage: disown \[jobspec ...]'
 assert help disown | grep 'Remove specified jobs from job table'
 assert $PIPESTATUS[0] == 0
 
-assert disown -h| grep 'disown: disown \[jobspec ...]'
+assert disown -h| grep 'Usage: disown \[jobspec ...]'
 assert disown -h| grep 'Remove specified jobs from job table'
 assert $PIPESTATUS[0] == 2
 
-assert disown --help| grep 'disown: disown \[jobspec ...]'
+assert disown --help| grep 'Usage: disown \[jobspec ...]'
 assert disown --help| grep 'Remove specified jobs from job table'
 assert $PIPESTATUS[0] == 2
 

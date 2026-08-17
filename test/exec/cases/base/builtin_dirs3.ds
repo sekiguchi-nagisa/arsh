@@ -1,21 +1,21 @@
 
 # dirs
 ## help
-assert help dirs | grep -E '^dirs: dirs \[-clpv]'
+assert help dirs | grep -E '^Usage: dirs \[-clpv]'
 assert help dirs | grep 'Display directory stack'
 assert $PIPESTATUS[0] == 0
 
-assert dirs -h| grep -E '^dirs: dirs \[-clpv]'
+assert dirs -h| grep -E '^Usage: dirs \[-clpv]'
 assert dirs -h| grep 'Display directory stack'
 assert $PIPESTATUS[0] == 2
 
-assert dirs --help| grep -E '^dirs: dirs \[-clpv]'
+assert dirs --help| grep -E '^Usage: dirs \[-clpv]'
 assert dirs --help| grep 'Display directory stack'
 assert $PIPESTATUS[0] == 2
 
 ## invalid option
 assert dirs -u 2>&1 | grep ': dirs: -u: invalid option'
-assert dirs -u 2>&1 | grep -E '^dirs: dirs \[-clpv]'
+assert dirs -u 2>&1 | grep -E '^Usage: dirs \[-clpv]'
 assert $PIPESTATUS[0] == 2
 
 # io error

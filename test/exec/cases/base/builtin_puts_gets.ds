@@ -1,9 +1,9 @@
 
 # __gets
-assert __gets -h | grep '^__gets: __gets'
+assert __gets -h | grep '^Usage: __gets'
 assert __gets -h | grep 'Read standard input and write to standard output'
 
-assert __gets --help | grep '^__gets: __gets'
+assert __gets --help | grep '^Usage: __gets'
 assert __gets --help | grep 'Read standard input and write to standard output'
 assert $PIPESTATUS[0] == 2 && $PIPESTATUS[1] == 0
 
@@ -11,10 +11,10 @@ assert __gets -s 2>&1 > /dev/null | grep ': __gets: -s: invalid option'
 assert $PIPESTATUS[0] == 2 && $PIPESTATUS[1] == 0
 
 # __puts
-assert __puts -h | grep '^__puts: __puts \[-1 arg1] \[-2 arg2]'
+assert __puts -h | grep '^Usage: __puts \[-1 arg1] \[-2 arg2]'
 assert __puts -h | grep 'Print specified argument to standard output/error and print new line'
 
-assert __puts --help | grep '^__puts: __puts \[-1 arg1] \[-2 arg2]'
+assert __puts --help | grep '^Usage: __puts \[-1 arg1] \[-2 arg2]'
 assert __puts --help | grep 'Print specified argument to standard output/error and print new line'
 assert $PIPESTATUS[0] == 2 && $PIPESTATUS[1] == 0
 

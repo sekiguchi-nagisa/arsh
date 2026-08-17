@@ -1,10 +1,10 @@
-assert(help help | grep 'help: help \[-s] \[pattern ...]')
+assert(help help | grep 'Usage: help \[-s] \[pattern ...]')
 assert(help help | grep 'Display helpful information about builtin commands.')
-assert(help -h | grep 'help: help \[-s] \[pattern ...]')
+assert(help -h | grep 'Usage: help \[-s] \[pattern ...]')
 assert(help -h | grep 'Display helpful information about builtin commands.')
-assert(help --help | grep 'help: help \[-s] \[pattern ...]')
+assert(help --help | grep 'Usage: help \[-s] \[pattern ...]')
 assert(help --help | grep 'Display helpful information about builtin commands.')
-assert(help __ | grep '__gets: __gets' && help __ | grep '__puts: __puts')  # prefix match
+assert(help __ | grep 'Usage: __gets' && help __ | grep 'Usage: __puts')  # prefix match
 
 # -h/--help
 help -h
@@ -13,13 +13,13 @@ help --help
 assert $? == 2
 
 # -s option
-assert(help -s help | grep 'help: help \[-s] \[pattern ...]')
+assert(help -s help | grep 'Usage: help \[-s] \[pattern ...]')
 help -s help | grep 'Display helpful information about builtin commands.'
 assert($? != 0)
 
 # invalid option
 assert help --we 2>&1 | grep ': help: --we: invalid option'
-assert help --we 2>&1 | grep 'help: help \[-s] \[pattern ...]'
+assert help --we 2>&1 | grep 'Usage: help \[-s] \[pattern ...]'
 assert $PIPESTATUS[0] == 2
 
 # error

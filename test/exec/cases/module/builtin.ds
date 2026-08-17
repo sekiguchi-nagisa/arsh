@@ -3,7 +3,7 @@
 # shctl
 _extract_sub() {
     while(read -f $'\n') {
-        var matched = $/^      ([-a-z]+) +.+/.match($REPLY)
+        var matched = $/^  ([-a-z]+) +.+/.match($REPLY)
         if let m = $matched {
             echo ${$m.group(1)!}
         }
@@ -79,7 +79,7 @@ assert diff <(complete -d -q -- 'complete -' && printf "%s\n" $COMPREPLY) \
             )
 
 assert diff <(complete 'complete -A ') \
-            <(help complete | grep -E '^      [_a-z]+' | sed 's/^      //g' | cut -d ' ' -f 1 | sort)
+            <(help complete | grep -E '^  [_a-z]+' | sed 's/^  //g' | cut -d ' ' -f 1 | sort)
 assert diff <(complete -d -q -- 'complete -A s' && printf "%s\n" $COMPREPLY) \
             <(printf "%s\n" 'signal@complete signal names'    'stmt_kw@complete statement keywords')
 assert diff <(complete -d -q -- 'complete -Q' && printf "%s\n" $COMPREPLY) \

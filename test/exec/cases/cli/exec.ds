@@ -58,4 +58,4 @@ if $OSTYPE =~ $/cygwin/i {
 }
 
 # invalid option
-$expect("$(ds -e exec -u 2>&1)", 2, $'arsh: exec: -u: invalid option\nexec: exec [-c] [-a name] file [args ...]')
+$expect("$(ds -e exec -u 2>&1)", 2, $'arsh: exec: -u: invalid option\nUsage: exec [-c] [-a name] file [args ...]')

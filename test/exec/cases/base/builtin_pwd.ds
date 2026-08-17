@@ -25,11 +25,11 @@ assert(pwd --- 2>&1 | grep "${$SCRIPT_NAME.basename()}:24: pwd: ---: invalid opt
 assert(pwd --we 2>&1 | grep "${$SCRIPT_NAME.basename()}:25: pwd: --we: invalid option")
 
 # help
-help pwd | grep "pwd: pwd \[-LP]"
+help pwd | grep "Usage: pwd \[-LP]"
 assert($? == 0)
 
-assert pwd -h | grep "pwd: pwd \[-LP]"
+assert pwd -h | grep "Usage: pwd \[-LP]"
 assert $PIPESTATUS[0] == 2 && $PIPESTATUS[1] == 0
 
-assert pwd --help | grep "pwd: pwd \[-LP]"
+assert pwd --help | grep "Usage: pwd \[-LP]"
 assert $PIPESTATUS[0] == 2 && $PIPESTATUS[1] == 0

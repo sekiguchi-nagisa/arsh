@@ -1,12 +1,12 @@
 #$test($result = 'EXIT', $lineNum = 37)
 
 ## exit command options
-assert(help exit | grep 'exit: exit \[n]')
+assert(help exit | grep 'Usage: exit \[n]')
 
-assert exit -h | grep 'exit: exit \[n]'
+assert exit -h | grep 'Usage: exit \[n]'
 assert $PIPESTATUS[0] == 2 && $PIPESTATUS[1] == 0
 
-assert exit --help | grep 'exit: exit \[n]'
+assert exit --help | grep 'Usage: exit \[n]'
 assert $PIPESTATUS[0] == 2 && $PIPESTATUS[1] == 0
 
 assert "$(exit -1 2>&1)".empty()
@@ -17,13 +17,13 @@ assert "$(exit -s 2>&1)".empty()
 assert $? == 123
 
 ## _exit command options
-assert(help _exit | grep '_exit: _exit \[n]')
+assert(help _exit | grep 'Usage: _exit \[n]')
 assert $PIPESTATUS[0] == 0 && $PIPESTATUS[1] == 0
 
-assert(_exit -h | grep '_exit: _exit \[n]')
+assert(_exit -h | grep 'Usage: _exit \[n]')
 assert $PIPESTATUS[0] == 2 && $PIPESTATUS[1] == 0
 
-assert(_exit --help | grep '_exit: _exit \[n]')
+assert(_exit --help | grep 'Usage: _exit \[n]')
 assert $PIPESTATUS[0] == 2 && $PIPESTATUS[1] == 0
 
 assert "$(_exit -1 2>&1)".empty()

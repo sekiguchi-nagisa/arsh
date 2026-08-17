@@ -4,21 +4,21 @@ assert getenv -d 2>&1 | grep ': getenv: -d: invalid option'
 assert $PIPESTATUS[0] == 2
 
 ## help
-assert help getenv | grep '^getenv: getenv name'
+assert help getenv | grep '^Usage: getenv name'
 assert help getenv | grep 'Get environmental variable and store to REPLY'
 assert $PIPESTATUS[0] == 0
 
-assert getenv -h | grep '^getenv: getenv name'
+assert getenv -h | grep '^Usage: getenv name'
 assert getenv -h | grep 'Get environmental variable and store to REPLY'
 assert $PIPESTATUS[0] == 2
 
-assert getenv --help | grep '^getenv: getenv name'
+assert getenv --help | grep '^Usage: getenv name'
 assert getenv --help | grep 'Get environmental variable and store to REPLY'
 assert $PIPESTATUS[0] == 2
 
 ## error (no arg)
 $REPLY = "dummy"
-assert getenv  2>&1 | grep '^getenv: getenv name'
+assert getenv  2>&1 | grep '^Usage: getenv name'
 assert $PIPESTATUS[0] == 2
 getenv
 assert $? == 2

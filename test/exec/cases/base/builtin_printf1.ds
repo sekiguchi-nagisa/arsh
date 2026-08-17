@@ -2,16 +2,16 @@
 
 ## no format
 assert "$(printf 2>&1)" == "${$SCRIPT_NAME.basename()}:4: printf: need format string
-printf: printf [-v var] format [arguments]"
+Usage: printf [-v var] format [arguments]"
 assert $? == 2
 
 assert "$(printf -v tt 2>&1)" == "${$SCRIPT_NAME.basename()}:8: printf: need format string
-printf: printf [-v var] format [arguments]"
+Usage: printf [-v var] format [arguments]"
 assert $? == 2
 
 ## invalid option
 assert "$(printf -w 2>&1)" == "${$SCRIPT_NAME.basename()}:13: printf: -w: invalid option
-printf: printf [-v var] format [arguments]"
+Usage: printf [-v var] format [arguments]"
 assert $? == 2
 
 ## -v option no-arg

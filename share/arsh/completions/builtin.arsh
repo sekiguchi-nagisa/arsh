@@ -91,7 +91,7 @@ compdef --cmd complete --short A --desc 'show completion candidates via ACTION' 
     --arg-func $bindArgFunc(function(p) => {
         var ret: Candidates
         for line in <(complete -h) {
-            var matched = $/^      ([_a-z]+) +(.+)/.match($line) ?? continue
+            var matched = $/^  ([_a-z]+) +(.+)/.match($line) ?? continue
             if $matched.group(1)!.startsWith($p) {
                 $ret.add($matched.group(1)!, $matched.group(2)!.split('.')[0])
             }

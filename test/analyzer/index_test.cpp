@@ -133,11 +133,10 @@ TEST_F(IndexTest, hoverBuiltin) {
   ASSERT_NO_FATAL_FAILURE(this->hover("$SCRIPT_DIR", 0, "```arsh\nconst SCRIPT_DIR = '/'\n```"));
 
   // builtin command
-  ASSERT_NO_FATAL_FAILURE(
-      this->hover(":", 0,
-                  "```md\n"
-                  ":: : \n"
-                  "    Null command.  Always success (exit status is 0).\n```"));
+  ASSERT_NO_FATAL_FAILURE(this->hover(":", 0,
+                                      "```md\n"
+                                      "Usage: : \n\n"
+                                      "Null command.  Always success (exit status is 0).\n```"));
 
   // builtin tuple or method
   ASSERT_NO_FATAL_FAILURE(this->hover("var a = (34, $false, '');$a._2\n$a._2",

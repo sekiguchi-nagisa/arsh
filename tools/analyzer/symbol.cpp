@@ -81,7 +81,7 @@ std::string generateHoverContent(const SourceManager &srcMan, const SymbolIndexe
   case DeclSymbol::Kind::THIS:
   case DeclSymbol::Kind::PARAM: {
     content += DeclSymbol::getVarDeclPrefix(decl.getKind());
-    content += " ";
+    content += ' ';
     content += name;
     content += ": ";
     content += decl.getInfo();
@@ -107,7 +107,7 @@ std::string generateHoverContent(const SourceManager &srcMan, const SymbolIndexe
     });
     assert(!param.empty());
     content += DeclSymbol::getVarDeclPrefix(decl.getKind());
-    content += " ";
+    content += ' ';
     content += param;
     break;
   }
@@ -134,7 +134,7 @@ std::string generateHoverContent(const SourceManager &srcMan, const SymbolIndexe
         content.append(path, ptr - path);
       }
     }
-    content += "'";
+    content += '\'';
     break;
   }
   case DeclSymbol::Kind::FUNC:
@@ -162,12 +162,11 @@ std::string generateHoverContent(const SourceManager &srcMan, const SymbolIndexe
     auto *cmd = findCmdDesc(name.c_str());
     assert(cmd);
     content = markup ? "```md\n" : "";
+    content += "Usage: ";
     content += name;
-    content += ": ";
-    content += name;
-    content += " ";
+    content += ' ';
     content += cmd->usage;
-    content += "\n";
+    content += "\n\n";
     content += cmd->detail;
     break;
   }
@@ -275,7 +274,7 @@ std::string toString(ConstEntry entry) {
   case ConstEntry::SIG:
     value += "signal(";
     value += std::to_string(static_cast<unsigned int>(entry.data.v));
-    value += ")";
+    value += ')';
     break;
   case ConstEntry::NONE:
     value += "new Nothing?()";

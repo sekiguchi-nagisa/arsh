@@ -18,6 +18,7 @@
 
 #### Builtin
 
+- **Breaking Change**: change help message format of builtin commands
 - improve ``String#split`` method
     - ``delim`` param is now optional (pass empty string by default)
     - add ``limit`` param

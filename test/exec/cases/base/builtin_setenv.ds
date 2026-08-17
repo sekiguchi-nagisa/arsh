@@ -6,15 +6,15 @@ assert setenv -d 2>&1 | grep ': setenv: -d: invalid option'
 assert $PIPESTATUS[0] == 2
 
 ## help
-assert help setenv | grep '^setenv: setenv \[name=env ...]'
+assert help setenv | grep '^Usage: setenv \[name=env ...]'
 assert help setenv | grep 'Set environmental variables'
 assert $PIPESTATUS[0] == 0
 
-assert setenv -h| grep '^setenv: setenv \[name=env ...]'
+assert setenv -h| grep '^Usage: setenv \[name=env ...]'
 assert setenv -h| grep 'Set environmental variables'
 assert $PIPESTATUS[0] == 2
 
-assert setenv --help| grep '^setenv: setenv \[name=env ...]'
+assert setenv --help| grep '^Usage: setenv \[name=env ...]'
 assert setenv --help| grep 'Set environmental variables'
 assert $PIPESTATUS[0] == 2
 
@@ -49,15 +49,15 @@ assert unsetenv -o 2>&1 | grep ': unsetenv: -o: invalid option'
 assert $PIPESTATUS[0] == 2
 
 ## help
-assert help unsetenv | grep '^unsetenv: unsetenv \[name ...]'
+assert help unsetenv | grep '^Usage: unsetenv \[name ...]'
 assert help unsetenv | grep 'Unset environmental variables'
 assert $PIPESTATUS[0] == 0
 
-assert unsetenv  -h | grep '^unsetenv: unsetenv \[name ...]'
+assert unsetenv  -h | grep '^Usage: unsetenv \[name ...]'
 assert unsetenv -h| grep 'Unset environmental variables'
 assert $PIPESTATUS[0] == 2
 
-assert unsetenv  --help | grep '^unsetenv: unsetenv \[name ...]'
+assert unsetenv  --help | grep '^Usage: unsetenv \[name ...]'
 assert unsetenv --help| grep 'Unset environmental variables'
 assert $PIPESTATUS[0] == 2
 

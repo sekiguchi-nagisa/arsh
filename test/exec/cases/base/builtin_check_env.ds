@@ -28,11 +28,11 @@ assert($? == 1)
 checkenv HOME PATH $'HOME\000'
 assert $? == 1
 
-assert(help checkenv | grep '^checkenv: checkenv variable ...$')
-assert(checkenv -h | grep '^checkenv: checkenv variable ...$')
-assert(checkenv --help | grep '^checkenv: checkenv variable ...$')
+assert(help checkenv | grep '^Usage: checkenv variable ...$')
+assert(checkenv -h | grep '^Usage: checkenv variable ...$')
+assert(checkenv --help | grep '^Usage: checkenv variable ...$')
 assert $PIPESTATUS[0] == 2 && $PIPESTATUS[1] == 0
 assert "$(checkenv -h)" == "$(help checkenv)"
 checkenv
 assert $? == 2
-assert(checkenv 2>&1 | grep '^checkenv: checkenv variable ...$')
+assert(checkenv 2>&1 | grep '^Usage: checkenv variable ...$')

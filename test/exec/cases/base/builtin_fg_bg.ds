@@ -13,9 +13,9 @@ assert bg -q 2>&1 | grep ': bg: no job control in this shell'
 assert $PIPESTATUS[0] == 1 && $PIPESTATUS[1] == 0
 
 # help
-assert help fg | grep '^fg: fg \[job_spec]'
+assert help fg | grep '^Usage: fg \[job_spec]'
 assert $PIPESTATUS[0] == 0 && $PIPESTATUS[1] == 0
-assert help bg | grep '^bg: bg \[job_spec ...]'
+assert help bg | grep '^Usage: bg \[job_spec ...]'
 assert $PIPESTATUS[0] == 0 && $PIPESTATUS[1] == 0
 
 ## disable help if job control is disabled
@@ -30,14 +30,14 @@ assert bg --help 2>&1 | grep ': bg: no job control in this shell'
 assert $PIPESTATUS[0] == 1
 
 ## show help if job control is enabled
-assert exec $BIN_NAME -c 'shctl set monitor; fg -h' | grep '^fg: fg \[job_spec]'
+assert exec $BIN_NAME -c 'shctl set monitor; fg -h' | grep '^Usage: fg \[job_spec]'
 assert $PIPESTATUS[0] == 2
-assert exec $BIN_NAME -c 'shctl set monitor; fg --help' | grep '^fg: fg \[job_spec]'
+assert exec $BIN_NAME -c 'shctl set monitor; fg --help' | grep '^Usage: fg \[job_spec]'
 assert $PIPESTATUS[0] == 2
 
-assert exec $BIN_NAME -c 'shctl set monitor; bg -h' | grep '^bg: bg \[job_spec ...]'
+assert exec $BIN_NAME -c 'shctl set monitor; bg -h' | grep '^Usage: bg \[job_spec ...]'
 assert $PIPESTATUS[0] == 2
-assert exec $BIN_NAME -c 'shctl set monitor; bg --help' | grep '^bg: bg \[job_spec ...]'
+assert exec $BIN_NAME -c 'shctl set monitor; bg --help' | grep '^Usage: bg \[job_spec ...]'
 assert $PIPESTATUS[0] == 2
 
 ## show invalid option if job control is enabled

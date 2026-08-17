@@ -2,18 +2,18 @@
 ## invalid option
 wait -g
 assert $? == 2
-assert "$(wait -q 2>&1)" == "${$SCRIPT_NAME.basename()}:5: " +$'wait: -q: invalid option\nwait: wait [-n] [id ...]'
+assert "$(wait -q 2>&1)" == "${$SCRIPT_NAME.basename()}:5: " +$'wait: -q: invalid option\nUsage: wait [-n] [id ...]'
 
 ## help
-assert help wait | grep '^wait: wait \[-n] \[id ...]'
+assert help wait | grep '^Usage: wait \[-n] \[id ...]'
 assert help wait | grep 'Wait for termination of processes or jobs.'
 assert $PIPESTATUS[0] == 0 && $PIPESTATUS[1] == 0
 
-assert wait -h| grep '^wait: wait \[-n] \[id ...]'
+assert wait -h| grep '^Usage: wait \[-n] \[id ...]'
 assert wait   -h  | grep 'Wait for termination of processes or jobs.'
 assert $PIPESTATUS[0] == 2 && $PIPESTATUS[1] == 0
 
-assert wait --help| grep '^wait: wait \[-n] \[id ...]'
+assert wait --help| grep '^Usage: wait \[-n] \[id ...]'
 assert wait   --help  | grep 'Wait for termination of processes or jobs.'
 assert $PIPESTATUS[0] == 2 && $PIPESTATUS[1] == 0
 

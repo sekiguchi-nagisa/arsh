@@ -49,5 +49,5 @@ assert "$(echo --help)" == '--help'
 assert("$(echo -e -E 'hello\t\nworld')" == 'hello\t\nworld')
 assert("$(echo -eE 'hello\t\nworld')" == 'hello\t\nworld')
 
-assert(help echo | grep 'echo: echo \[-neE] \[arg ...]')
+assert(help echo | grep 'Usage: echo \[-neE] \[arg ...]')
 assert(help echo | grep 'Print argument to standard output and print new line.')

@@ -3,15 +3,15 @@ assert hash -e 2>&1 | grep ': hash: -e: invalid option'
 assert $PIPESTATUS[0] == 2
 
 # help
-assert help hash | grep '^hash: hash \[-r] \[command ...]'
+assert help hash | grep '^Usage: hash \[-r] \[command ...]'
 assert help hash | grep 'Cache file path of specified commands'
 assert $PIPESTATUS[0] == 0
 
-assert hash -h| grep '^hash: hash \[-r] \[command ...]'
+assert hash -h| grep '^Usage: hash \[-r] \[command ...]'
 assert hash -h| grep 'Cache file path of specified commands'
 assert $PIPESTATUS[0] == 2
 
-assert hash --help| grep '^hash: hash \[-r] \[command ...]'
+assert hash --help| grep '^Usage: hash \[-r] \[command ...]'
 assert hash --help| grep 'Cache file path of specified commands'
 assert $PIPESTATUS[0] == 2
 
