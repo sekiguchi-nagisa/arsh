@@ -156,7 +156,7 @@ function _comp_opt(deflist : _CompDef, prefix : String) : Candidates {
         $option.startsWith('-') || continue
         if $option.startsWith($prefix) {
             var long = $option.endsWith('=') && $option.size() > 2 # --opt=, -opt=
-            $ret.add($option, $space: $long ? 0 : -1, $desc: $def.desc)
+            $ret.add($option, $space: $long ? 0 : 1, $desc: $def.desc)
         } elif $prefix.startsWith($option) && $def.argType != -1 { 
             if $option.size() > 2 { # --opt=arg, -opt=arg
                 # opt -> --opt, -opt
@@ -322,12 +322,9 @@ function _comp_wrap(file : String, target : String, words : [String], cursor : I
     done
     '
 
-    var wordToken = $words.peek()
-    if $cursor >= $words.size() {
-        $wordToken = ""
-    }
+    var wordToken = $cursor < $words.size() ? $words[$cursor] : ""
     if $wordToken.endsWith('\') && !$wordToken.dequote().endsWith('\') {
-        $words[-1] = $wordToken.slice(0,-1)  # force remove trailing backslash
+        $words[$cursor] = $wordToken.slice(0,-1)  # force remove trailing backslash
     }
 
     $? = 0 # suppress error

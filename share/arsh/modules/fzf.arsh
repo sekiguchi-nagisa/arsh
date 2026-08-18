@@ -3,7 +3,7 @@
 
 function _gen_fzf_select_extra_options() : [String] {
     var opts : [String]
-    var version = $(fzf --version 2> /dev/null).get(0) ?? ""
+    var version = "$(fzf --version 2> /dev/null)".split(' ')[0]
     if $version =~ $/^[0-9]+\.[0-9]+(\.[0-9]+)?$/ {
         let parts = $version.split('.')
         let major = $parts[0].toInt() ?? 0
