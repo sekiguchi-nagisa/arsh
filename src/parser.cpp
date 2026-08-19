@@ -323,7 +323,7 @@ void Parser::resolveFileNameCompletionTarget(const CmdArgNode &cmdArgNode,
   int lastTildeOffset = -1;
   int lastInvalidOffset = -1;
   unsigned int firstAssignTokenOffset = 0;
-  unsigned int lastColoTokenOffset = 0;
+  unsigned int lastColonTokenOffset = 0;
   std::string word;
   Token wordToken = cmdArgNode.getSegmentNodes().empty()
                         ? this->curToken
@@ -350,7 +350,7 @@ void Parser::resolveFileNameCompletionTarget(const CmdArgNode &cmdArgNode,
         break;
       case ExpandMeta::COLON:
         lastColonOffset = static_cast<int>(word.size());
-        lastColoTokenOffset = wordToken.size;
+        lastColonTokenOffset = wordToken.size;
         word += toString(meta);
         break;
       default:
@@ -417,7 +417,7 @@ void Parser::resolveFileNameCompletionTarget(const CmdArgNode &cmdArgNode,
         lastTildeOffset = 0;
       }
       word = StringRef(word).substr(remainOffset).toString();
-      wordToken = wordToken.sliceFrom(lastColoTokenOffset + 1);
+      wordToken = wordToken.sliceFrom(lastColonTokenOffset + 1);
     }
     auto op = CodeCompOp::FILE;
     if (lastTildeOffset == 0) {
@@ -636,6 +636,7 @@ std::unique_ptr<TypeNode> Parser::parse_basicOrReifiedType(Token token) {
           this->makeCodeComp(CodeCompNode::TYPE, std::move(typeNode), this->curToken);
         }
         Token nameToken = TRY(this->expect(TokenKind::TYPE_NAME));
+        assert(typeNode);
         typeNode = std::make_unique<QualifiedTypeNode>(
             std::move(typeNode),
             std::make_unique<BaseTypeNode>(nameToken, this->lexer->toName(nameToken)));
@@ -1349,7 +1350,6 @@ std::unique_ptr<Node> Parser::parse_command(bool allowEmptyCmd) {
     allowEmptyCmd = false;
   } else {
     assert(lookahead_redir(CUR_KIND()));
-    assert(lookahead_redir(CUR_KIND()));
     token = this->curToken; // dummy
     token.size = 0;
   }
@@ -1985,6 +1985,7 @@ std::unique_ptr<Node> Parser::parse_suffixExpression(bool allowEmptyCmd) {
         this->makeCodeComp(CodeCompNode::MEMBER, std::move(node), this->curToken);
       }
       auto nameInfo = TRY(this->expectName(TokenKind::IDENTIFIER, &Lexer::toName));
+      assert(node);
       node = std::make_unique<AccessNode>(std::move(node), std::move(nameInfo));
       if (CUR_KIND() == TokenKind::LP && !this->hasLineTerminator()) { // treat as method call
         auto argsNode = this->parse_arguments();
@@ -2392,7 +2393,8 @@ std::unique_ptr<ArgsNode> Parser::parse_arguments(Token first) {
       auto argNode = this->parse_expression();
       if (this->incompleteNode) {
         argNode = std::move(this->incompleteNode);
-        argsNode->addNode(std::move(argNode));
+        assert(argsNode);
+        argsNode->addNode(std::move(argNode)); // NOLINT
         this->incompleteNode = std::move(argsNode);
         return nullptr;
       }
@@ -2736,7 +2738,8 @@ std::unique_ptr<Node> Parser::parse_attributes() {
         auto paramName = TRY(this->expectName(TokenKind::ATTR_NAME, &Lexer::toName));
         TRY(this->expect(TokenKind::ATTR_ASSIGN));
         auto exprNode = TRY(this->parse_expression());
-        attrNode->addParam(std::move(paramName), std::move(exprNode));
+        assert(attrNode);
+        attrNode->addParam(std::move(paramName), std::move(exprNode)); // NOLINT
       }
       const Token endToken = this->expect(TokenKind::RP); // always success
       attrNode->updateToken(endToken);
