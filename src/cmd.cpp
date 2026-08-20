@@ -249,8 +249,7 @@ static int parseExitStatus(const ARState &state, const ArrayObject &argvObj, uns
   int64_t ret = state.getGlobal(BuiltinVarOffset::EXIT_STATUS).asInt();
   if (index < argvObj.size() && index > 0) {
     const auto value = argvObj[index].asStrRef();
-    const auto pair = convertToNum10<int64_t>(value.begin(), value.end());
-    if (pair) {
+    if (const auto pair = convertToNum10<int64_t>(value.begin(), value.end())) {
       ret = pair.value;
     }
   }
@@ -868,15 +867,15 @@ static int builtin_ulimit(ARState &st, ArrayObject &argvObj) {
   } while (false)
 
 enum class PrintMaskOp : unsigned char {
-  ONLY_PRINT = 1 << 0,
-  REUSE = 1 << 1,
-  SYMBOLIC = 1 << 2,
+  ONLY_PRINT = 1u << 0u,
+  REUSE = 1u << 1u,
+  SYMBOLIC = 1u << 2u,
 };
 
 template <>
 struct allow_enum_bitop<PrintMaskOp> : std::true_type {};
 
-static int printMask(mode_t mask, PrintMaskOp op) {
+static int printMask(mode_t mask, const PrintMaskOp op) {
   errno = 0;
   if (hasFlag(op, PrintMaskOp::SYMBOLIC)) {
     char buf[std::size("u=rwx,g=rwx,o=rwx")];
@@ -895,10 +894,10 @@ static int printMask(mode_t mask, PrintMaskOp op) {
       *(ptr++) = user;
       *(ptr++) = '=';
       for (auto &perm : {'r', 'w', 'x'}) {
-        if (!(mask & 0400)) {
+        if (!(mask & 0400u)) {
           *(ptr++) = perm;
         }
-        mask <<= 1;
+        mask <<= 1u;
       }
     }
     *ptr = '\0';
@@ -923,16 +922,16 @@ static bool parseMode(const char *&value, mode_t &mode) {
   for (bool next = true; next;) {
     switch (*(value++)) {
     case 'u':
-      user |= 0700;
+      user |= 0700u;
       break;
     case 'g':
-      user |= 0070;
+      user |= 0070u;
       break;
     case 'o':
-      user |= 0007;
+      user |= 0007u;
       break;
     case 'a':
-      user |= 0777;
+      user |= 0777u;
       break;
     default: // may be [-+=]
       next = false;
@@ -941,7 +940,7 @@ static bool parseMode(const char *&value, mode_t &mode) {
     }
   }
   if (user == 0) {
-    user = 0777;
+    user = 0777u;
   }
 
   // [-+=]
@@ -955,13 +954,13 @@ static bool parseMode(const char *&value, mode_t &mode) {
   while (*value && *value != ',') {
     switch (*(value++)) {
     case 'r':
-      newMode |= 0444 & user;
+      newMode |= 0444u & user;
       break;
     case 'w':
-      newMode |= 0222 & user;
+      newMode |= 0222u & user;
       break;
     case 'x':
-      newMode |= 0111 & user;
+      newMode |= 0111u & user;
       break;
     default:
       return false;
