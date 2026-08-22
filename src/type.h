@@ -145,7 +145,7 @@ protected:
       ModId modId;
       unsigned short childSize;
     } modTypeAttr;
-  } meta;
+  } meta{};
 
   const CStrPtr name;
 
@@ -160,20 +160,21 @@ protected:
    * not directly call it.
    */
   Type(TypeKind k, unsigned int id, StringRef ref, const Type *superType)
-      : tag(toUnderlying(k) << 24 | id), name(strdup(ref.data())), superType(superType) {}
+      : tag(static_cast<unsigned int>(toUnderlying(k)) << 24u | id), name(strdup(ref.data())),
+        superType(superType) {}
 
   ~Type() = default;
 
 public:
   void destroy();
 
-  TypeKind typeKind() const { return static_cast<TypeKind>(this->tag >> 24); }
+  TypeKind typeKind() const { return static_cast<TypeKind>(this->tag >> 24u); }
 
   StringRef getNameRef() const { return {this->name.get()}; }
 
   const char *getName() const { return this->name.get(); }
 
-  unsigned int typeId() const { return this->tag & 0xFFFFFF; }
+  unsigned int typeId() const { return this->tag & 0xFFFFFFu; }
 
   bool is(TYPE type) const { return this->typeId() == toUnderlying(type); }
 
@@ -341,7 +342,7 @@ private:
 protected:
   Handle(unsigned char fmaSize, unsigned int typeId, unsigned int index, HandleKind kind,
          HandleAttr attr, ModId modId)
-      : tag(typeId << 8 | fmaSize), index(index), kind(kind), attribute(attr), modId(modId) {}
+      : tag(typeId << 8u | fmaSize), index(index), kind(kind), attribute(attr), modId(modId) {}
 
 public:
   Handle(unsigned int typeId, unsigned int fieldIndex, HandleKind kind, HandleAttr attribute,
@@ -354,7 +355,7 @@ public:
 
   ~Handle() = default;
 
-  unsigned int getTypeId() const { return this->tag >> 8; }
+  unsigned int getTypeId() const { return this->tag >> 8u; }
 
   bool isFuncHandle() const { return this->famSize() > 0 && this->is(HandleKind::FUNC); }
 
@@ -385,7 +386,7 @@ public:
   }
 
 protected:
-  unsigned char famSize() const { return static_cast<unsigned char>(this->tag & 0xFF); }
+  unsigned char famSize() const { return static_cast<unsigned char>(this->tag & 0xFFu); }
 
 private:
   /**
@@ -772,14 +773,14 @@ public:
   public:
     Imported() = default;
 
-    Imported(const ModType &type, ImportedModKind k) : value(type.typeId() << 8 | toUnderlying(k)) {
+    Imported(const ModType &type, ImportedModKind k) : value(type.typeId() << 8u | toUnderlying(k)) {
       static_assert(sizeof(decltype(type.typeId())) == 4);
       static_assert(sizeof(k) == 1);
     }
 
-    unsigned int typeId() const { return this->value >> 8; }
+    unsigned int typeId() const { return this->value >> 8u; }
 
-    ImportedModKind kind() const { return static_cast<ImportedModKind>(this->value & 0xFF); }
+    ImportedModKind kind() const { return static_cast<ImportedModKind>(this->value & 0xFFu); }
 
     bool isGlobal() const { return hasFlag(this->kind(), ImportedModKind::GLOBAL); }
 
