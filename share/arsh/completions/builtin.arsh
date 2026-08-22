@@ -33,8 +33,8 @@ $compAdd("exec", $_cmd)
 
 
 # defined by compdef
-compdef --cmd help --arg-cmd "help | cut -d ' ' -f 1"
-compdef --cmd help --short s --arg-cmd "help | cut -d ' ' -f 1"
+compdef --cmd help --arg-action "builtin|udc"
+compdef --cmd help --short s --arg-action "builtin|udc"
 compdef --cmd unsetenv --arg-action env
 compdef --cmd getenv --arg-action env
 

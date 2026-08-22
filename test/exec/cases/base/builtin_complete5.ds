@@ -97,8 +97,8 @@ assert diff <(complete -A stmt_kw i) <(for $e in $stmt { echo $e; } | grep '^i' 
 assert $(unsetenv PATH && complete -A external).empty()
 assert $(setenv PATH= && complete -A external).empty()
 
-assert diff <(complete -A builtin) <(help | cut -d ' ' -f 1 | sort)
-assert diff <(complete -A builtin e) <(help | cut -d ' ' -f 1 | grep '^e' | sort)
+assert diff <(complete -A builtin -A udc) <(help | cut -d ' ' -f 1 | sort)
+assert diff <(complete -A builtin -A udc e) <(help | cut -d ' ' -f 1 | grep '^e' | sort)
 
 hogehogehuga(){}
 \{\}() {}

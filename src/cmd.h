@@ -47,9 +47,26 @@ struct GetOptState : opt::GetOptState {
   int operator()(const ArrayObject &obj);
 };
 
-int showUsage(const ArrayObject &obj);
+/**
+ *
+ * @param fp
+ * @param obj
+ * at-least one element
+ * @param detail
+ * @return
+ * if not found corresponding usage, return false
+ */
+bool showDetailUsage(FILE *fp, const ArrayObject &obj, bool detail);
 
-int showHelp(const ArrayObject &obj);
+inline int showUsage(const ArrayObject &obj) {
+  showDetailUsage(stderr, obj, false);
+  return 2;
+}
+
+inline int showHelp(const ArrayObject &obj) {
+  showDetailUsage(stdout, obj, true);
+  return 2;
+}
 
 int invalidOptionError(const ARState &st, const ArrayObject &obj, const GetOptState &s);
 

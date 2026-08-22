@@ -737,6 +737,13 @@ private:
   void finalizeArgEntries(std::vector<ArgEntry> &&args);
 };
 
+inline const CLIRecordType *resolveCLIRecordType(const FunctionType &funcType) {
+  if (funcType.getParamSize() == 1 && funcType.getParamTypeAt(0).isCLIRecordType()) {
+    return cast<CLIRecordType>(&funcType.getParamTypeAt(0));
+  }
+  return nullptr;
+}
+
 template <>
 struct allow_enum_bitop<CLIRecordType::Attr> : std::true_type {};
 
@@ -773,7 +780,8 @@ public:
   public:
     Imported() = default;
 
-    Imported(const ModType &type, ImportedModKind k) : value(type.typeId() << 8u | toUnderlying(k)) {
+    Imported(const ModType &type, ImportedModKind k)
+        : value(type.typeId() << 8u | toUnderlying(k)) {
       static_assert(sizeof(decltype(type.typeId())) == 4);
       static_assert(sizeof(k) == 1);
     }
@@ -883,7 +891,7 @@ public:
 
   /**
    * for runtime symbol iteration
-   * iterate all visible symbols at module (own symbols, inlined imported symbols)
+   * iterate all symbols at module (own symbols, inlined imported symbols, private)
    * @param pool
    * @param searchGlobal
    * if true, also include globally imported symbols

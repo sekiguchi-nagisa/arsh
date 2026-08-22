@@ -23,6 +23,7 @@
 
 #include <arsh/arsh.h>
 
+#include "arg_parser.h"
 #include "candidates.h"
 #include "cmd_desc.h"
 #include "misc/files.hpp"
@@ -127,32 +128,22 @@ int GetOptState::operator()(const ArrayObject &obj) {
   return ret;
 }
 
-/**
- * if not found command, return false.
- */
-static bool printUsage(FILE *fp, StringRef prefix, bool isShortHelp = true) {
-  bool matched = false;
+static void printUsage(FILE *fp, const BuiltinCmdDesc &desc, const bool detail) {
+  fprintf(fp, "Usage: %s %s\n", desc.name, desc.usage);
+  if (detail) {
+    fprintf(fp, "\n%s\n", desc.detail);
+  }
+}
+
+bool showDetailUsage(FILE *fp, const ArrayObject &obj, bool detail) {
   const auto range = getBuiltinCmdDescRange();
   for (auto &e : range) {
-    if (const char *cmdName = e.name; StringRef(cmdName).startsWith(prefix)) {
-      fprintf(fp, "Usage: %s %s\n", cmdName, e.usage);
-      if (!isShortHelp) {
-        fprintf(fp, "\n%s\n", e.detail);
-      }
-      matched = true;
+    if (e.name == obj[0].asStrRef()) {
+      printUsage(fp, e, detail);
+      return true;
     }
   }
-  return matched;
-}
-
-int showUsage(const ArrayObject &obj) {
-  printUsage(stderr, obj[0].asStrRef());
-  return 2;
-}
-
-int showHelp(const ArrayObject &obj) {
-  printUsage(stdout, obj[0].asStrRef(), false);
-  return 2;
+  return false;
 }
 
 int invalidOptionError(const ARState &st, const ArrayObject &obj, const GetOptState &s) {
@@ -176,11 +167,105 @@ int parseFD(StringRef value) {
   return ret.value;
 }
 
-static void printAllUsage(FILE *fp) {
+using UdcOrBuiltin = Union<BuiltinCmdDesc, std::pair<StringRef, const Handle *>>;
+
+static std::pair<StringRef, unsigned int> toNamePair(const UdcOrBuiltin &v) {
+  using Udc = std::pair<StringRef, const Handle *>;
+  if (is<Udc>(v)) {
+    auto &vv = get<Udc>(v);
+    return {vv.first, 1};
+  }
+  return {get<BuiltinCmdDesc>(v).name, 0};
+}
+
+enum class PrintUsageOp : unsigned char {
+  SUMMARY,
+  SHORT,
+  DETAIL,
+};
+
+static void printUsage(const ARState &state, FILE *fp, const UdcOrBuiltin &v,
+                       const PrintUsageOp op) {
+  if (is<BuiltinCmdDesc>(v)) {
+    auto &desc = get<BuiltinCmdDesc>(v);
+    switch (op) {
+    case PrintUsageOp::SUMMARY:
+      fprintf(fp, "%s %s\n", desc.name, desc.usage);
+      return;
+    case PrintUsageOp::SHORT:
+    case PrintUsageOp::DETAIL:
+      printUsage(fp, desc, op == PrintUsageOp::DETAIL);
+      return;
+    }
+  }
+  using Udc = std::pair<StringRef, const Handle *>;
+  assert(is<Udc>(v));
+  auto &udc = get<Udc>(v);
+  switch (op) {
+  case PrintUsageOp::SUMMARY:
+    fprintf(fp, "%s\n", udc.first.toString().c_str());
+    break;
+  case PrintUsageOp::SHORT:
+  case PrintUsageOp::DETAIL:
+    if (auto &udcType = state.typePool.get(udc.second->getTypeId()); isa<FunctionType>(udcType)) {
+      if (auto *cliType = resolveCLIRecordType(cast<FunctionType>(udcType))) {
+        auto argParser = createArgParser(udc.first, *cliType);
+        if (auto usage = argParser.formatUsage("", true); usage.hasValue()) {
+          auto &str = usage.unwrap();
+          if (op == PrintUsageOp::SHORT) {
+            if (auto r = StringRef(str).find("\n\n"); r != StringRef::npos) {
+              str.resize(r);
+            }
+          }
+          fwrite(str.c_str(), sizeof(char), str.size(), fp);
+          fputc('\n', fp);
+          return;
+        }
+      }
+    }
+    fprintf(fp, "%s\n", udc.first.toString().c_str()); // fallback
+    break;
+  }
+}
+
+static std::vector<UdcOrBuiltin> collectVisibleUdcOrBuiltin(const ARState &state,
+                                                            const StringRef prefix) {
+  std::vector<UdcOrBuiltin> values;
+  // collect visible user-defined commands
+  auto &modType = getCurRuntimeModule(state);
+  modType.iterateSymbols(
+      state.typePool, true, [prefix, &modType, &values](StringRef name, const Handle &handle) {
+        if (isCmdFullName(name) && handle.isVisibleInMod(modType.getModId(), name) &&
+            name.startsWith(prefix)) {
+          name.removeSuffix(strlen(CMD_SYMBOL_SUFFIX));
+          values.emplace_back(std::make_pair(name, &handle));
+        }
+        return true;
+      });
+
+  // collect builtin commands
   const auto range = getBuiltinCmdDescRange();
   for (auto &e : range) {
-    fprintf(fp, "%s %s\n", e.name, e.usage);
+    if (StringRef(e.name).startsWith(prefix)) {
+      values.emplace_back(e);
+    }
   }
+
+  // sort and de-dup
+  std::sort(values.begin(), values.end(), [](const UdcOrBuiltin &x, const UdcOrBuiltin &y) {
+    auto xx = toNamePair(x);
+    auto yy = toNamePair(y);
+    if (const auto r = xx.first.compare(yy.first)) {
+      return r < 0;
+    }
+    return xx.second < yy.second;
+  });
+  auto end =
+      std::unique(values.begin(), values.end(), [](const UdcOrBuiltin &x, const UdcOrBuiltin &y) {
+        return toNamePair(x).first == toNamePair(y).first;
+      });
+  values.erase(end, values.end());
+  return values;
 }
 
 static int builtin_help(ARState &st, ArrayObject &argvObj) {
@@ -201,14 +286,21 @@ static int builtin_help(ARState &st, ArrayObject &argvObj) {
   const unsigned int size = argvObj.size();
   unsigned int index = optState.index;
   if (index == size) {
-    printAllUsage(stdout);
+    const auto values = collectVisibleUdcOrBuiltin(st, "");
+    for (auto &value : values) {
+      printUsage(st, stdout, value, PrintUsageOp::SUMMARY);
+    }
     return 0;
   }
   unsigned int count = 0;
   for (; index < size; index++) {
     const auto arg = argvObj[index].asStrRef();
-    if (printUsage(stdout, arg, shortHelp)) {
-      count++;
+    const auto values = collectVisibleUdcOrBuiltin(st, arg);
+    for (auto &value : values) {
+      if (count++ > 0) {
+        fputs("-----\n", stdout);
+      }
+      printUsage(st, stdout, value, shortHelp ? PrintUsageOp::SHORT : PrintUsageOp::DETAIL);
     }
   }
   if (count == 0) {

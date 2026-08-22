@@ -887,13 +887,6 @@ static CmdArgCompStatus completeCLIOption(const TypePool &pool, const CLIRecordT
   return CmdArgCompStatus::INVALID; // TODO: positional arguments
 }
 
-static const CLIRecordType *resolveCLIType(const FunctionType &funcType) {
-  if (funcType.getParamSize() == 1 && funcType.getParamTypeAt(0).isCLIRecordType()) {
-    return cast<CLIRecordType>(&funcType.getParamTypeAt(0));
-  }
-  return nullptr;
-}
-
 static CmdArgCompStatus tryToCallUserDefinedComp(const CodeCompletionContext &ctx,
                                                  ObserverPtr<ForeignCompHandler> comp,
                                                  const unsigned int offset,
@@ -952,7 +945,7 @@ static CmdArgCompStatus completeCmdArg(const TypePool &pool, ObserverPtr<Foreign
         return s;
       }
     }
-    if (auto *cliType = resolveCLIType(*curUdcType)) {
+    if (auto *cliType = resolveCLIRecordType(*curUdcType)) {
       return completeCLIOption(pool, cliType, cmdNode, offset, ctx.toCompPrefix(), comp, consumer);
     }
   } else if (curModType) {

@@ -1,0 +1,93 @@
+
+# for user-defined commands
+
+fff1() {}
+
+[<CLI(desc:"help message for fff2")>]
+type Param2() {
+    [<Option(help:"specify output file")>]
+    var output  = ""
+}
+
+fff2(_ : Param2) {}
+
+[<CLI(desc:"help message for fff3")>]
+type Param3() {
+    [<Option(help:"specify input file", short:"i", long:"input", opt:$true)>]
+    var input : String?
+}
+fff3(_ : Param3) {}
+
+help ff
+
+assert diff <(help fff3) <(<<'EOF'
+Usage: fff3 [OPTIONS]
+
+help message for fff3
+
+Options:
+  -i[INPUT], --input[=INPUT]  specify input file
+  -h, --help                  show this help message
+EOF
+)
+
+assert diff <(help ff) <(<<'EOF'
+fff1
+-----
+Usage: fff2 [OPTIONS]
+
+help message for fff2
+
+Options:
+  --output OUTPUT  specify output file
+  -h, --help       show this help message
+-----
+Usage: fff3 [OPTIONS]
+
+help message for fff3
+
+Options:
+  -i[INPUT], --input[=INPUT]  specify input file
+  -h, --help                  show this help message
+EOF
+)
+
+assert diff <(help -s ff) <(<<'EOF'
+fff1
+-----
+Usage: fff2 [OPTIONS]
+-----
+Usage: fff3 [OPTIONS]
+EOF
+)
+
+assert diff <(help f) <(<<'EOF'
+Usage: false 
+
+Always failure (exit status is 1).
+-----
+fff1
+-----
+Usage: fff2 [OPTIONS]
+
+help message for fff2
+
+Options:
+  --output OUTPUT  specify output file
+  -h, --help       show this help message
+-----
+Usage: fff3 [OPTIONS]
+
+help message for fff3
+
+Options:
+  -i[INPUT], --input[=INPUT]  specify input file
+  -h, --help                  show this help message
+-----
+Usage: fg [job_spec]
+
+Move job to the foreground.
+JOB_SPEC is represented as [%]? [1-9][0-9].
+If JOB_SPEC is not present, latest job is used.
+EOF
+)
