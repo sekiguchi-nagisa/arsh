@@ -64,27 +64,9 @@ void Type::walkField(const TypePool &pool,
       }
     }
     break;
-  case TypeKind::Mod: {
-    auto &modType = cast<ModType>(*this);
-    for (auto &e : modType.getHandleMap()) {
-      if (!walker(e.first, *e.second)) {
-        return;
-      }
-    }
-    unsigned int size = modType.getChildSize();
-    for (unsigned int i = 0; i < size; i++) {
-      auto child = modType.getChildAt(i);
-      if (child.isInlined()) {
-        auto &childType = cast<ModType>(pool.get(child.typeId()));
-        for (auto &e : childType.getHandleMap()) {
-          if (!walker(e.first, *e.second)) {
-            return;
-          }
-        }
-      }
-    }
+  case TypeKind::Mod:
+    cast<ModType>(*this).iterateSymbols(pool, false, walker);
     break;
-  }
   default:
     break;
   }
@@ -290,6 +272,27 @@ HandlePtr ModType::lookupImpl(const TypePool &pool, const std::string &name,
     }
   }
   return nullptr;
+}
+
+void ModType::iterateSymbols(const TypePool &pool, const bool searchGlobal,
+                             const std::function<bool(StringRef, const Handle &)> &walker) const {
+  for (auto &e : this->getHandleMap()) {
+    if (!walker(e.first, *e.second)) {
+      return;
+    }
+  }
+  const unsigned int size = this->getChildSize();
+  for (unsigned int i = 0; i < size; i++) {
+    auto child = this->getChildAt(i);
+    if (searchGlobal ? child.isGlobal() : child.isInlined()) {
+      auto &childType = cast<ModType>(pool.get(child.typeId()));
+      for (auto &e : childType.getHandleMap()) {
+        if (!walker(e.first, *e.second)) {
+          return;
+        }
+      }
+    }
+  }
 }
 
 std::unique_ptr<TypeLookupError> createTLErrorImpl(const char *kind, const char *fmt, ...) {

@@ -880,6 +880,17 @@ public:
     return nullptr;
   }
 
+  /**
+   * for runtime symbol iteration
+   * iterate all visible symbols at module (own symbols, inlined imported symbols)
+   * @param pool
+   * @param searchGlobal
+   * if true, also include globally imported symbols
+   * @param walker
+   */
+  void iterateSymbols(const TypePool &pool, bool searchGlobal,
+                      const std::function<bool(StringRef, const Handle &)> &walker) const;
+
   static bool classof(const Type *type) { return type->isModType(); }
 
 private:
