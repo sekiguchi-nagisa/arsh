@@ -173,9 +173,9 @@ static std::pair<StringRef, unsigned int> toNamePair(const UdcOrBuiltin &v) {
   using Udc = std::pair<StringRef, const Handle *>;
   if (is<Udc>(v)) {
     auto &vv = get<Udc>(v);
-    return {vv.first, 1};
+    return {vv.first, 0};
   }
-  return {get<BuiltinCmdDesc>(v).name, 0};
+  return {get<BuiltinCmdDesc>(v).name, 1};
 }
 
 enum class PrintUsageOp : unsigned char {

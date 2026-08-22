@@ -119,3 +119,7 @@ Options:
   -2    print to standard error
 EOF
 )
+
+function help(args: [String]) {
+  help $args
+}

@@ -6,6 +6,8 @@ type Param4() {}
 
 fff4(_ : Param4) {}
 
+cd() {}
+
 assert diff <(help __) <(<<'EOF'
 Usage: __gets 
 
@@ -46,5 +48,24 @@ help message for fff4
 
 Options:
   -h, --help  show this help message
+EOF
+)
+
+
+assert diff <(help cd) <(<<'EOF'
+cd
+EOF
+)
+
+assert diff <($help(["cd"])) <(<<'EOF'
+Usage: cd [-LP] [dir]
+
+Changing the current directory to DIR.  The Environment variable
+HOME is the default DIR.  A null directory name is the same as
+the current directory.
+
+Options:
+  -L  use logical directory (with symbolic link, default behavior)
+  -P  use physical directory (without symbolic link)
 EOF
 )
