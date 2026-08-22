@@ -134,11 +134,13 @@ protected:
   union {
     native_type_info_t info;
     unsigned int u32;
+
     struct {
       unsigned short depth;
       unsigned char fieldSize;
       unsigned char extraAttr;
     } recordTypeAttr;
+
     struct {
       ModId modId;
       unsigned short childSize;
@@ -434,7 +436,8 @@ struct CallSignature {
         handle(hd) {}
 };
 
-class PackedParamNames { // follow `Param0;Param1` form
+class PackedParamNames {
+  // follow `Param0;Param1` form
 private:
   CStrPtr value; // may be null (if no param)
   size_t len{0}; // not include sentinel (equivalent to strlen(value.get()))
