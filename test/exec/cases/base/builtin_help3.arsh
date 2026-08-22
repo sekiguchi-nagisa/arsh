@@ -1,0 +1,50 @@
+
+source $SCRIPT_DIR/builtin_help2.arsh
+
+[<CLI(desc:"help message for fff4")>]
+type Param4() {}
+
+fff4(_ : Param4) {}
+
+assert diff <(help __) <(<<'EOF'
+Usage: __gets 
+
+Read standard input and write to standard output.
+-----
+Usage: __puts [-1 arg1] [-2 arg2]
+
+Print specified argument to standard output/error and print new line.
+
+Options:
+  -1    print to standard output
+  -2    print to standard error
+EOF
+)
+
+assert diff <(help ff) <(<<'EOF'
+fff1
+-----
+Usage: fff2 [OPTIONS]
+
+help message for fff2
+
+Options:
+  --output OUTPUT  specify output file
+  -h, --help       show this help message
+-----
+Usage: fff3 [OPTIONS]
+
+help message for fff3
+
+Options:
+  -i[INPUT], --input[=INPUT]  specify input file
+  -h, --help                  show this help message
+-----
+Usage: fff4
+
+help message for fff4
+
+Options:
+  -h, --help  show this help message
+EOF
+)
