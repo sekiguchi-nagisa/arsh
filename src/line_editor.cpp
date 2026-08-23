@@ -432,7 +432,7 @@ void LineEditorObject::refreshLine(ARState &state, RenderingContext &ctx, bool r
   LOG(TRACE_EDIT, "[len=%u, pos=%u, oldCursorRows=%u, oldRenderedCols=%u]", ctx.buf.getUsedSize(),
       ctx.buf.getCursor(), ctx.oldCursorRows, ctx.oldRenderedCols);
   LOG(TRACE_EDIT, "(rows,cols)=(%u, %u)", winSize.rows, winSize.cols);
-  LOG(TRACE_EDIT, "renderedRows: %zu, cursor(rows,cols)=(%zu,%zu)", ret.renderedRows,
+  LOG(TRACE_EDIT, "renderedRows: %zu, cursor(rows,cols)=(%zu,%zu)", ret.renderedRows(),
       ret.cursorRows, ret.cursorCols);
 
   /*
@@ -459,14 +459,13 @@ void LineEditorObject::refreshLine(ARState &state, RenderingContext &ctx, bool r
   /* adjust too long rendered lines */
   LOG(TRACE_EDIT, "scrolling: %s", ctx.scrolling ? "true" : "false");
   ctx.scrolling = fitToWinSize(ctx, static_cast<bool>(pager), winSize.rows, ret);
-  LOG(TRACE_EDIT, "adjust renderedRows: %zu. cursorRows: %zu", ret.renderedRows, ret.cursorRows);
+  LOG(TRACE_EDIT, "adjust renderedRows: %zu. cursorRows: %zu", ret.renderedRows(), ret.cursorRows);
 
   /* set escape sequence */
-  ret.renderedLines.insert(0, ab);
-  ab = std::move(ret.renderedLines);
+  ret.appendTo(ab);
 
   /* Go up till we reach the expected position. */
-  if (const auto dist = static_cast<unsigned int>(ret.renderedRows - ret.cursorRows); dist > 0) {
+  if (const auto dist = static_cast<unsigned int>(ret.renderedRows() - ret.cursorRows); dist > 0) {
     LOG(TRACE_EDIT, "go-up %u", dist);
     snprintf(seq, std::size(seq), "\x1b[%dA", dist);
     ab += seq;

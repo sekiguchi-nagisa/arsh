@@ -25,13 +25,26 @@ namespace arsh {
 class ArrayPager;
 
 struct RenderingResult {
-  std::string renderedLines;
-  size_t renderedRows{0};
+  std::vector<std::string> renderedLines;
   size_t renderedCols{0};
   size_t cursorRows{0};
   size_t cursorCols{0};
   unsigned int promptRows{0};
   bool continueLine{false};
+
+  void appendTo(std::string &out) const {
+    for (auto &e : this->renderedLines) {
+      out += e;
+    }
+  }
+
+  std::string join() const {
+    std::string ret;
+    this->appendTo(ret);
+    return ret;
+  }
+
+  size_t renderedRows() const { return this->renderedLines.size(); }
 };
 
 struct RenderingContext {

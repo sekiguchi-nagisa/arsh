@@ -59,12 +59,11 @@ RenderingResult doRendering(const RenderingContext &ctx, ObserverPtr<const Array
 
     // render lines and compute lines row/columns length
     if (ctx.semanticPrompt) {
-      result.renderedLines += OSC133_("B");
+      result.renderedLines.back() += OSC133_("B");
     }
     renderer.setInitCols(promptCols);
     renderer.setTokenizeResult(makeObserver(ctx.tokenizeCache));
     result.continueLine = renderLines(ctx.buf, pager, renderer, ctx.errorCmdChecker);
-    result.renderedRows = renderer.getTotalRows() + 1;
     result.renderedCols = renderer.getMaxTotalCols();
     result.promptRows = static_cast<unsigned int>(promptRows + 1);
   }
@@ -85,26 +84,9 @@ RenderingResult doRendering(const RenderingContext &ctx, ObserverPtr<const Array
   return result;
 }
 
-static StringRef::size_type findNthPos(const StringRef ref, const unsigned int N,
-                                       const StringRef delim) {
-  StringRef::size_type pos = 0;
-  StringRef::size_type retPos = StringRef::npos;
-  for (unsigned int count = 0; count < N; count++) {
-    auto r = ref.find(delim, pos);
-    if (r == StringRef::npos) {
-      break;
-    }
-    pos = r + delim.size();
-    retPos = r;
-  }
-  return retPos;
-}
-
 bool fitToWinSize(const RenderingContext &ctx, const bool showPager, const unsigned int winRows,
                   RenderingResult &result) {
-  constexpr StringRef NL = "\r\n";
-
-  if (result.renderedRows <= winRows) {
+  if (result.renderedRows() <= winRows) {
     return false;
   }
 
@@ -121,7 +103,7 @@ bool fitToWinSize(const RenderingContext &ctx, const bool showPager, const unsig
       }
     }
     scrollRows = std::min(scrollRows, winRows);
-  } else if (const auto diff = result.renderedRows - result.cursorRows; diff < winRows) {
+  } else if (const auto diff = result.renderedRows() - result.cursorRows; diff < winRows) {
     scrollRows = winRows - diff;
   } else if (result.cursorRows < winRows) {
     scrollRows = result.cursorRows;
@@ -139,24 +121,22 @@ bool fitToWinSize(const RenderingContext &ctx, const bool showPager, const unsig
   // remove upper rows of window
   size_t eraseRows = result.cursorRows > scrollRows ? result.cursorRows - scrollRows : 0;
   if (showPager) {
-    eraseRows = result.renderedRows - winRows;
+    eraseRows = result.renderedRows() - winRows;
     scrollRows = result.cursorRows - eraseRows;
-  } else if (result.renderedRows - eraseRows < winRows) {
-    auto delta = winRows - (result.renderedRows - eraseRows);
+  } else if (result.renderedRows() - eraseRows < winRows) {
+    auto delta = winRows - (result.renderedRows() - eraseRows);
     eraseRows -= delta;
     scrollRows += delta;
   }
-  result.renderedRows -= eraseRows;
-  if (auto r = findNthPos(result.renderedLines, eraseRows, NL); r != StringRef::npos) {
-    result.renderedLines.erase(0, r + NL.size());
-  }
+  result.renderedLines.erase(result.renderedLines.begin(),
+                             result.renderedLines.begin() + static_cast<ssize_t>(eraseRows));
 
   // remove lower rows of window
-  if (result.renderedRows > winRows) {
-    if (auto r = findNthPos(result.renderedLines, winRows, NL); r != StringRef::npos) {
-      result.renderedLines.erase(result.renderedLines.begin() + r, result.renderedLines.end());
+  if (result.renderedRows() > winRows) {
+    result.renderedLines.resize(winRows);
+    if (auto &last = result.renderedLines.back(); StringRef(last).endsWith("\r\n")) {
+      last.resize(last.size() - 2);
     }
-    result.renderedRows = winRows;
   }
   result.cursorRows = scrollRows;
   if (eraseRows >= result.promptRows) {

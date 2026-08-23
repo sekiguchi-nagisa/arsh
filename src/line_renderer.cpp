@@ -132,7 +132,7 @@ void LineRenderer::renderWithANSI(StringRef prompt) {
       auto remain = prompt.substr(r);
       if (auto len = startsWithAnsiEscape(remain)) {
         if (this->output) {
-          *this->output += remain.substr(0, len);
+          this->line() += remain.substr(0, len);
         }
         pos = r + len;
       } else {
@@ -256,7 +256,7 @@ bool LineRenderer::render(StringRef ref, HighlightTokenClass tokenClass) {
   }
   auto *colorCode = this->findColorCode(tokenClass);
   if (colorCode && this->output) {
-    *this->output += *colorCode;
+    this->line() += *colorCode;
   }
   bool status = true;
   iterateGrapheme(ref, [&](const GraphemeCluster &grapheme) {
@@ -266,21 +266,21 @@ bool LineRenderer::render(StringRef ref, HighlightTokenClass tokenClass) {
         (void)r; // ignore return value
       }
       if (colorCode && this->output) {
-        *this->output += "\x1b[0m";
+        this->line() += "\x1b[0m";
       }
       if (this->emitNewline) {
         if (this->output) {
-          *this->output += "\r\n";
+          this->newline();
         }
         this->totalRows++;
         if (this->output) {
-          this->output->append(this->initCols, ' ');
+          this->line().append(this->initCols, ' ');
         }
         this->maxTotalCols = std::max(this->maxTotalCols, this->totalCols);
         this->totalCols = this->initCols;
       }
       if (colorCode && this->output) {
-        *this->output += *colorCode;
+        this->line() += *colorCode;
       }
     } else if (isControlChar(grapheme)) {
       return this->renderControlChar(grapheme.getRef()[0], colorCode);
@@ -298,9 +298,9 @@ bool LineRenderer::render(StringRef ref, HighlightTokenClass tokenClass) {
       }
       if (this->output) {
         if (grapheme.hasInvalid()) {
-          *this->output += UnicodeUtil::REPLACEMENT_CHAR_UTF8;
+          this->line() += UnicodeUtil::REPLACEMENT_CHAR_UTF8;
         } else {
-          *this->output += grapheme.getRef();
+          this->line() += grapheme.getRef();
         }
       }
       this->totalCols += width;
@@ -311,7 +311,7 @@ bool LineRenderer::render(StringRef ref, HighlightTokenClass tokenClass) {
     return true;
   });
   if (colorCode && status && this->output) {
-    *this->output += "\x1b[0m";
+    this->line() += "\x1b[0m";
   }
   return status;
 }
@@ -332,7 +332,7 @@ bool LineRenderer::renderControlChar(int codePoint, const std::string *color) {
       }
     }
     if (this->output) {
-      this->output->append(colLen, ' ');
+      this->line().append(colLen, ' ');
     }
     this->totalCols += colLen;
     if (this->totalCols == this->colLimit && this->breakOp == LineBreakOp::SOFT_WRAP) {
@@ -353,8 +353,8 @@ bool LineRenderer::renderControlChar(int codePoint, const std::string *color) {
       auto v = static_cast<unsigned int>(codePoint);
       v ^= 64u;
       assert(isCaretTarget(static_cast<int>(v)));
-      *this->output += '^';
-      *this->output += static_cast<char>(static_cast<int>(v));
+      this->line() += '^';
+      this->line() += static_cast<char>(static_cast<int>(v));
     }
     this->totalCols += 2;
     if (this->totalCols == this->colLimit && this->breakOp == LineBreakOp::SOFT_WRAP) {

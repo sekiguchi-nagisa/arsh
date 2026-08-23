@@ -48,11 +48,19 @@ public:
     return obj;
   }
 
+  static std::string join(const std::vector<std::string> &values) {
+    std::string ret;
+    for (auto &e : values) {
+      ret += e;
+    }
+    return ret;
+  }
+
   std::string render(const ArrayPager &pager) const {
-    std::string out;
+    std::vector<std::string> out;
     LineRenderer renderer(this->ps, 0, out);
     pager.render(renderer);
-    return out;
+    return join(out);
   }
 };
 

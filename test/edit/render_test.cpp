@@ -270,10 +270,19 @@ TEST(EncodingTest, charInvalid) {
 }
 
 class LineRendererTest : public ExpectOutput {
+protected:
+  static std::string join(const std::vector<std::string> &values) {
+    std::string ret;
+    for (auto &e : values) {
+      ret += e;
+    }
+    return ret;
+  }
+
 public:
   static bool isCompleteLine(StringRef source) {
     CharWidthProperties ps;
-    std::string out;
+    std::vector<std::string> out;
     LineRenderer renderer(ps, 0, out);
     return renderer.renderScript(source);
   }
@@ -281,29 +290,29 @@ public:
   static std::string renderPrompt(StringRef source, size_t offset = 0) {
     CharWidthProperties ps;
     ps.replaceInvalid = true;
-    std::string out;
+    std::vector<std::string> out;
     LineRenderer renderer(ps, offset, out);
     renderer.renderWithANSI(source);
-    return out;
+    return join(out);
   }
 
   static std::string renderLines(StringRef source, size_t offset = 0) {
     CharWidthProperties ps;
     ps.replaceInvalid = true;
-    std::string out;
+    std::vector<std::string> out;
     LineRenderer renderer(ps, offset, out);
     renderer.renderLines(source);
-    return out;
+    return join(out);
   }
 
   static std::string renderScript(StringRef source, size_t offset = 0,
                                   ObserverPtr<const ANSIEscapeSeqMap> seqMap = nullptr) {
     CharWidthProperties ps;
     ps.replaceInvalid = true;
-    std::string out;
+    std::vector<std::string> out;
     LineRenderer renderer(ps, offset, out, seqMap);
     renderer.renderScript(source);
-    return out;
+    return join(out);
   }
 };
 
@@ -376,7 +385,7 @@ TEST_F(LineRendererTest, script) {
 
 TEST_F(LineRendererTest, ignoreNewline) {
   CharWidthProperties ps;
-  std::string out;
+  std::vector<std::string> out;
   StringRef line = "echo 111\necho 222\necho 333\necho 444";
   {
     LineRenderer renderer(ps, 2, out);
@@ -385,12 +394,12 @@ TEST_F(LineRendererTest, ignoreNewline) {
     ASSERT_EQ(0, renderer.getTotalRows());
     ASSERT_EQ(34, renderer.getTotalCols());
   }
-  ASSERT_EQ("echo 111echo 222echo 333echo 444", out);
+  ASSERT_EQ("echo 111echo 222echo 333echo 444", join(out));
 }
 
 TEST_F(LineRendererTest, softwrap) {
   CharWidthProperties ps;
-  std::string out;
+  std::vector<std::string> out;
   StringRef line = "\t1234567890";
   {
     LineRenderer renderer(ps, 2, out);
@@ -399,9 +408,9 @@ TEST_F(LineRendererTest, softwrap) {
     ASSERT_EQ(2, renderer.getTotalRows());
     ASSERT_EQ(4, renderer.getTotalCols());
   }
-  ASSERT_EQ("  1\r\n23456\r\n7890", out);
+  ASSERT_EQ("  1\r\n23456\r\n7890", join(out));
 
-  out = "";
+  out.clear();
   line = "\t1234567890あab\r\n@";
   {
     LineRenderer renderer(ps, 3, out);
@@ -410,9 +419,9 @@ TEST_F(LineRendererTest, softwrap) {
     ASSERT_EQ(5, renderer.getTotalRows());
     ASSERT_EQ(4, renderer.getTotalCols());
   }
-  ASSERT_EQ(" 1\r\n23456\r\n7890\r\nあab\r\n^M\r\n   @", out);
+  ASSERT_EQ(" 1\r\n23456\r\n7890\r\nあab\r\n^M\r\n   @", join(out));
 
-  out = "";
+  out.clear();
   line = "1234\t@ \r";
   {
     LineRenderer renderer(ps, 0, out);
@@ -421,7 +430,7 @@ TEST_F(LineRendererTest, softwrap) {
     ASSERT_EQ(3, renderer.getTotalRows());
     ASSERT_EQ(0, renderer.getTotalCols());
   }
-  ASSERT_EQ("1234\r\n    \r\n@ ^M\r\n", out);
+  ASSERT_EQ("1234\r\n    \r\n@ ^M\r\n", join(out));
 }
 
 TEST(RendererTest, semanticPrompt) {
@@ -438,7 +447,7 @@ TEST(RendererTest, semanticPrompt) {
                          ">> \x1b]133;B\x1b\\1111\r\n"
                          "   2222\r\n"
                          "   3333";
-    ASSERT_EQ(expect, ret.renderedLines);
+    ASSERT_EQ(expect, ret.join());
   }
 
   {
@@ -448,7 +457,7 @@ TEST(RendererTest, semanticPrompt) {
                          ">> \x1b]133;B\x1b\\1111\r\n"
                          "   2222\r\n"
                          "   3333";
-    ASSERT_EQ(expect, ret.renderedLines);
+    ASSERT_EQ(expect, ret.join());
   }
 }
 
@@ -491,15 +500,15 @@ TEST_F(ScrollTest, base) {
 
   {
     auto ret = render();
-    ASSERT_EQ(12, ret.renderedRows);
+    ASSERT_EQ(12, ret.renderedRows());
     ASSERT_EQ(12, ret.cursorRows);
-    ASSERT_GE(ret.renderedRows, this->winSize.rows);
+    ASSERT_GE(ret.renderedRows(), this->winSize.rows);
     ASSERT_EQ(4, ret.renderedCols);
 
     ASSERT_TRUE(this->fit(ret));
-    ASSERT_EQ(5, ret.renderedRows);
+    ASSERT_EQ(5, ret.renderedRows());
     ASSERT_EQ(5, ret.cursorRows);
-    ASSERT_EQ("  08\r\n  09\r\n  10\r\n  11\r\n  12", ret.renderedLines);
+    ASSERT_EQ("  08\r\n  09\r\n  10\r\n  11\r\n  12", ret.join());
   }
 
   // move cursor (but not up/down)
@@ -508,9 +517,9 @@ TEST_F(ScrollTest, base) {
     ASSERT_EQ(lineBuf.getUsedSize() - 2, lineBuf.getCursor());
     auto ret = render();
     ASSERT_TRUE(this->fit(ret));
-    ASSERT_EQ(5, ret.renderedRows);
+    ASSERT_EQ(5, ret.renderedRows());
     ASSERT_EQ(5, ret.cursorRows);
-    ASSERT_EQ("  08\r\n  09\r\n  10\r\n  11\r\n  12", ret.renderedLines);
+    ASSERT_EQ("  08\r\n  09\r\n  10\r\n  11\r\n  12", ret.join());
   }
 
   // move cursor up
@@ -518,9 +527,9 @@ TEST_F(ScrollTest, base) {
     lineBuf.moveCursorUpDown(true);
     auto ret = render();
     ASSERT_TRUE(this->fit(ret));
-    ASSERT_EQ(5, ret.renderedRows);
+    ASSERT_EQ(5, ret.renderedRows());
     ASSERT_EQ(4, ret.cursorRows);
-    ASSERT_EQ("  08\r\n  09\r\n  10\r\n  11\r\n  12", ret.renderedLines);
+    ASSERT_EQ("  08\r\n  09\r\n  10\r\n  11\r\n  12", ret.join());
   }
 
   // move cursor up * 3
@@ -530,9 +539,9 @@ TEST_F(ScrollTest, base) {
     lineBuf.moveCursorUpDown(true);
     auto ret = render();
     ASSERT_TRUE(this->fit(ret));
-    ASSERT_EQ(5, ret.renderedRows);
+    ASSERT_EQ(5, ret.renderedRows());
     ASSERT_EQ(1, ret.cursorRows);
-    ASSERT_EQ("  08\r\n  09\r\n  10\r\n  11\r\n  12", ret.renderedLines);
+    ASSERT_EQ("  08\r\n  09\r\n  10\r\n  11\r\n  12", ret.join());
   }
 
   // move cursor (but not up/down)
@@ -540,9 +549,9 @@ TEST_F(ScrollTest, base) {
     lineBuf.moveCursorToEndOfLine();
     auto ret = render();
     ASSERT_TRUE(this->fit(ret));
-    ASSERT_EQ(5, ret.renderedRows);
+    ASSERT_EQ(5, ret.renderedRows());
     ASSERT_EQ(1, ret.cursorRows);
-    ASSERT_EQ("  08\r\n  09\r\n  10\r\n  11\r\n  12", ret.renderedLines);
+    ASSERT_EQ("  08\r\n  09\r\n  10\r\n  11\r\n  12", ret.join());
   }
 
   // move cursor up (scroll up)
@@ -550,9 +559,9 @@ TEST_F(ScrollTest, base) {
     lineBuf.moveCursorUpDown(true);
     auto ret = render();
     ASSERT_TRUE(this->fit(ret));
-    ASSERT_EQ(5, ret.renderedRows);
+    ASSERT_EQ(5, ret.renderedRows());
     ASSERT_EQ(1, ret.cursorRows);
-    ASSERT_EQ("  07\r\n  08\r\n  09\r\n  10\r\n  11", ret.renderedLines);
+    ASSERT_EQ("  07\r\n  08\r\n  09\r\n  10\r\n  11", ret.join());
   }
 
   // move cursor up (scroll up)
@@ -560,9 +569,9 @@ TEST_F(ScrollTest, base) {
     lineBuf.moveCursorUpDown(true);
     auto ret = render();
     ASSERT_TRUE(this->fit(ret));
-    ASSERT_EQ(5, ret.renderedRows);
+    ASSERT_EQ(5, ret.renderedRows());
     ASSERT_EQ(1, ret.cursorRows);
-    ASSERT_EQ("  06\r\n  07\r\n  08\r\n  09\r\n  10", ret.renderedLines);
+    ASSERT_EQ("  06\r\n  07\r\n  08\r\n  09\r\n  10", ret.join());
   }
 
   // move cursor down (not scroll down)
@@ -570,9 +579,9 @@ TEST_F(ScrollTest, base) {
     lineBuf.moveCursorUpDown(false);
     auto ret = render();
     ASSERT_TRUE(this->fit(ret));
-    ASSERT_EQ(5, ret.renderedRows);
+    ASSERT_EQ(5, ret.renderedRows());
     ASSERT_EQ(2, ret.cursorRows);
-    ASSERT_EQ("  06\r\n  07\r\n  08\r\n  09\r\n  10", ret.renderedLines);
+    ASSERT_EQ("  06\r\n  07\r\n  08\r\n  09\r\n  10", ret.join());
   }
 
   // move cursor begin
@@ -581,9 +590,9 @@ TEST_F(ScrollTest, base) {
     ASSERT_EQ(0, lineBuf.getCursor());
     auto ret = render();
     ASSERT_TRUE(this->fit(ret));
-    ASSERT_EQ(5, ret.renderedRows);
+    ASSERT_EQ(5, ret.renderedRows());
     ASSERT_EQ(1, ret.cursorRows);
-    ASSERT_EQ("> 01\r\n  02\r\n  03\r\n  04\r\n  05", ret.renderedLines);
+    ASSERT_EQ("> 01\r\n  02\r\n  03\r\n  04\r\n  05", ret.join());
   }
 
   // move cursor down * 6 (scroll down)
@@ -593,9 +602,9 @@ TEST_F(ScrollTest, base) {
     }
     auto ret = render();
     ASSERT_TRUE(this->fit(ret));
-    ASSERT_EQ(5, ret.renderedRows);
+    ASSERT_EQ(5, ret.renderedRows());
     ASSERT_EQ(5, ret.cursorRows);
-    ASSERT_EQ("  03\r\n  04\r\n  05\r\n  06\r\n  07", ret.renderedLines);
+    ASSERT_EQ("  03\r\n  04\r\n  05\r\n  06\r\n  07", ret.join());
   }
 
   // move cursor end
@@ -604,9 +613,9 @@ TEST_F(ScrollTest, base) {
     ASSERT_EQ(lineBuf.getUsedSize(), lineBuf.getCursor());
     auto ret = render();
     ASSERT_TRUE(this->fit(ret));
-    ASSERT_EQ(5, ret.renderedRows);
+    ASSERT_EQ(5, ret.renderedRows());
     ASSERT_EQ(5, ret.cursorRows);
-    ASSERT_EQ("  08\r\n  09\r\n  10\r\n  11\r\n  12", ret.renderedLines);
+    ASSERT_EQ("  08\r\n  09\r\n  10\r\n  11\r\n  12", ret.join());
   }
 }
 
@@ -621,14 +630,14 @@ TEST_F(ScrollTest, expandRows1) {
 
   {
     auto ret = render();
-    ASSERT_EQ(12, ret.renderedRows);
+    ASSERT_EQ(12, ret.renderedRows());
     ASSERT_EQ(10, ret.cursorRows);
-    ASSERT_GE(ret.renderedRows, this->winSize.rows);
+    ASSERT_GE(ret.renderedRows(), this->winSize.rows);
 
     ASSERT_TRUE(this->fit(ret));
-    ASSERT_EQ(5, ret.renderedRows);
+    ASSERT_EQ(5, ret.renderedRows());
     ASSERT_EQ(3, ret.cursorRows);
-    ASSERT_EQ("  08\r\n  09\r\n  10\r\n  11\r\n  12", ret.renderedLines);
+    ASSERT_EQ("  08\r\n  09\r\n  10\r\n  11\r\n  12", ret.join());
   }
 
   // expand rows
@@ -636,9 +645,9 @@ TEST_F(ScrollTest, expandRows1) {
     this->setRows(7);
     auto ret = render();
     ASSERT_TRUE(this->fit(ret));
-    ASSERT_EQ(7, ret.renderedRows);
+    ASSERT_EQ(7, ret.renderedRows());
     ASSERT_EQ(5, ret.cursorRows);
-    ASSERT_EQ("  06\r\n  07\r\n  08\r\n  09\r\n  10\r\n  11\r\n  12", ret.renderedLines);
+    ASSERT_EQ("  06\r\n  07\r\n  08\r\n  09\r\n  10\r\n  11\r\n  12", ret.join());
   }
 
   // remove line
@@ -647,9 +656,9 @@ TEST_F(ScrollTest, expandRows1) {
     lineBuf.deletePrevChar(nullptr);
     auto ret = render();
     ASSERT_TRUE(this->fit(ret));
-    ASSERT_EQ(7, ret.renderedRows);
+    ASSERT_EQ(7, ret.renderedRows());
     ASSERT_EQ(5, ret.cursorRows);
-    ASSERT_EQ("  05\r\n  06\r\n  07\r\n  08\r\n  09\r\n  11\r\n  12", ret.renderedLines);
+    ASSERT_EQ("  05\r\n  06\r\n  07\r\n  08\r\n  09\r\n  11\r\n  12", ret.join());
   }
 
   // remove lines
@@ -660,9 +669,9 @@ TEST_F(ScrollTest, expandRows1) {
     }
     auto ret = render();
     ASSERT_FALSE(this->fit(ret));
-    ASSERT_EQ(7, ret.renderedRows);
+    ASSERT_EQ(7, ret.renderedRows());
     ASSERT_EQ(5, ret.cursorRows);
-    ASSERT_EQ("> 01\r\n  02\r\n  03\r\n  04\r\n  05\r\n  11\r\n  12", ret.renderedLines);
+    ASSERT_EQ("> 01\r\n  02\r\n  03\r\n  04\r\n  05\r\n  11\r\n  12", ret.join());
   }
 
   // remove line (shrink scroll window)
@@ -671,9 +680,9 @@ TEST_F(ScrollTest, expandRows1) {
     lineBuf.deletePrevChar(nullptr);
     auto ret = render();
     ASSERT_FALSE(this->fit(ret));
-    ASSERT_EQ(6, ret.renderedRows);
+    ASSERT_EQ(6, ret.renderedRows());
     ASSERT_EQ(4, ret.cursorRows);
-    ASSERT_EQ("> 01\r\n  02\r\n  03\r\n  04\r\n  11\r\n  12", ret.renderedLines);
+    ASSERT_EQ("> 01\r\n  02\r\n  03\r\n  04\r\n  11\r\n  12", ret.join());
   }
 }
 
@@ -689,25 +698,25 @@ TEST_F(ScrollTest, expandRows2) {
 
   {
     auto ret = render();
-    ASSERT_EQ(13, ret.renderedRows);
+    ASSERT_EQ(13, ret.renderedRows());
     ASSERT_EQ(8, ret.cursorRows);
-    ASSERT_GE(ret.renderedRows, this->winSize.rows);
+    ASSERT_GE(ret.renderedRows(), this->winSize.rows);
 
     ASSERT_TRUE(this->fit(ret));
-    ASSERT_EQ(4, ret.renderedRows);
+    ASSERT_EQ(4, ret.renderedRows());
     ASSERT_EQ(4, ret.cursorRows);
-    ASSERT_EQ("  05\r\n  06\r\n  07\r\n  08", ret.renderedLines);
+    ASSERT_EQ("  05\r\n  06\r\n  07\r\n  08", ret.join());
   }
 
   {
     this->setRows(20);
     auto ret = render();
     ASSERT_FALSE(this->fit(ret));
-    ASSERT_EQ(13, ret.renderedRows);
+    ASSERT_EQ(13, ret.renderedRows());
     ASSERT_EQ(8, ret.cursorRows);
     ASSERT_EQ("> 01\r\n  02\r\n  03\r\n  04\r\n  05\r\n  06\r\n"
               "  07\r\n  08\r\n  09\r\n  10\r\n  11\r\n  12\r\n  13",
-              ret.renderedLines);
+              ret.join());
   }
 }
 
@@ -722,14 +731,14 @@ TEST_F(ScrollTest, shrinkRows) {
 
   {
     auto ret = render();
-    ASSERT_EQ(12, ret.renderedRows);
+    ASSERT_EQ(12, ret.renderedRows());
     ASSERT_EQ(2, ret.cursorRows);
-    ASSERT_GE(ret.renderedRows, this->winSize.rows);
+    ASSERT_GE(ret.renderedRows(), this->winSize.rows);
 
     ASSERT_TRUE(this->fit(ret));
-    ASSERT_EQ(5, ret.renderedRows);
+    ASSERT_EQ(5, ret.renderedRows());
     ASSERT_EQ(2, ret.cursorRows);
-    ASSERT_EQ("> 01\r\n  02\r\n  03\r\n  04\r\n  05", ret.renderedLines);
+    ASSERT_EQ("> 01\r\n  02\r\n  03\r\n  04\r\n  05", ret.join());
   }
 
   // shrink rows
@@ -737,9 +746,9 @@ TEST_F(ScrollTest, shrinkRows) {
     this->setRows(3);
     auto ret = render();
     ASSERT_TRUE(this->fit(ret));
-    ASSERT_EQ(3, ret.renderedRows);
+    ASSERT_EQ(3, ret.renderedRows());
     ASSERT_EQ(2, ret.cursorRows);
-    ASSERT_EQ("> 01\r\n  02\r\n  03", ret.renderedLines);
+    ASSERT_EQ("> 01\r\n  02\r\n  03", ret.join());
   }
 
   // down * 2
@@ -748,9 +757,9 @@ TEST_F(ScrollTest, shrinkRows) {
     lineBuf.moveCursorUpDown(false);
     auto ret = render();
     ASSERT_TRUE(this->fit(ret));
-    ASSERT_EQ(3, ret.renderedRows);
+    ASSERT_EQ(3, ret.renderedRows());
     ASSERT_EQ(3, ret.cursorRows);
-    ASSERT_EQ("  02\r\n  03\r\n  04", ret.renderedLines);
+    ASSERT_EQ("  02\r\n  03\r\n  04", ret.join());
   }
 }
 
@@ -765,14 +774,14 @@ TEST_F(ScrollTest, softwrap) {
 
   {
     auto ret = render();
-    ASSERT_EQ(20, ret.renderedRows);
+    ASSERT_EQ(20, ret.renderedRows());
     ASSERT_EQ(20, ret.cursorRows);
-    ASSERT_GE(ret.renderedRows, this->winSize.rows);
+    ASSERT_GE(ret.renderedRows(), this->winSize.rows);
     ASSERT_EQ(5, ret.renderedCols);
     ASSERT_TRUE(this->fit(ret));
-    ASSERT_EQ(5, ret.renderedRows);
+    ASSERT_EQ(5, ret.renderedRows());
     ASSERT_EQ(5, ret.cursorRows);
-    ASSERT_EQ("888\r\n  099\r\n999\r\n  100\r\n000", ret.renderedLines);
+    ASSERT_EQ("888\r\n  099\r\n999\r\n  100\r\n000", ret.join());
   }
 
   // move cursor left
@@ -781,26 +790,26 @@ TEST_F(ScrollTest, softwrap) {
       lineBuf.moveCursorToLeftByChar();
     }
     auto ret = render();
-    ASSERT_EQ(20, ret.renderedRows);
+    ASSERT_EQ(20, ret.renderedRows());
     ASSERT_EQ(19, ret.cursorRows);
-    ASSERT_GE(ret.renderedRows, this->winSize.rows);
+    ASSERT_GE(ret.renderedRows(), this->winSize.rows);
     ASSERT_TRUE(this->fit(ret));
-    ASSERT_EQ(5, ret.renderedRows);
+    ASSERT_EQ(5, ret.renderedRows());
     ASSERT_EQ(4, ret.cursorRows);
-    ASSERT_EQ("888\r\n  099\r\n999\r\n  100\r\n000", ret.renderedLines);
+    ASSERT_EQ("888\r\n  099\r\n999\r\n  100\r\n000", ret.join());
   }
 
   // move cursor up
   {
     lineBuf.moveCursorUpDown(true);
     auto ret = render();
-    ASSERT_EQ(20, ret.renderedRows);
+    ASSERT_EQ(20, ret.renderedRows());
     ASSERT_EQ(17, ret.cursorRows);
-    ASSERT_GE(ret.renderedRows, this->winSize.rows);
+    ASSERT_GE(ret.renderedRows(), this->winSize.rows);
     ASSERT_TRUE(this->fit(ret));
-    ASSERT_EQ(5, ret.renderedRows);
+    ASSERT_EQ(5, ret.renderedRows());
     ASSERT_EQ(2, ret.cursorRows);
-    ASSERT_EQ("888\r\n  099\r\n999\r\n  100\r\n000", ret.renderedLines);
+    ASSERT_EQ("888\r\n  099\r\n999\r\n  100\r\n000", ret.join());
   }
 }
 
@@ -828,34 +837,34 @@ TEST_F(ScrollTest, pager) {
 
   {
     auto ret = render(makeObserver(pager));
-    ASSERT_EQ(14, ret.renderedRows);
+    ASSERT_EQ(14, ret.renderedRows());
     ASSERT_EQ(10, ret.cursorRows);
-    ASSERT_GE(ret.renderedRows, this->winSize.rows);
+    ASSERT_GE(ret.renderedRows(), this->winSize.rows);
     ASSERT_TRUE(this->fit(ret, true));
-    ASSERT_EQ(5, ret.renderedRows);
+    ASSERT_EQ(5, ret.renderedRows());
     ASSERT_EQ(1, ret.cursorRows);
     ASSERT_EQ("  100000\r\n"
               "AAAAA     (regular file)    DDD         (named pipe)    \r\n"
               "BBBBB       (executable)    EEEE                        \r\n"
               "\x1b[7mrows 1-2/3\x1b[0m\r\n",
-              ret.renderedLines);
+              ret.join());
   }
 
   // resize
   {
     this->setRows(10);
     auto ret = render(makeObserver(pager));
-    ASSERT_EQ(14, ret.renderedRows);
+    ASSERT_EQ(14, ret.renderedRows());
     ASSERT_EQ(10, ret.cursorRows);
-    ASSERT_GE(ret.renderedRows, this->winSize.rows);
+    ASSERT_GE(ret.renderedRows(), this->winSize.rows);
     ASSERT_TRUE(this->fit(ret, true));
-    ASSERT_EQ(10, ret.renderedRows);
+    ASSERT_EQ(10, ret.renderedRows());
     ASSERT_EQ(6, ret.cursorRows);
     ASSERT_EQ("  055555\r\n  066666\r\n  077777\r\n  088888\r\n  099999\r\n  100000\r\n"
               "AAAAA     (regular file)    DDD         (named pipe)    \r\n"
               "BBBBB       (executable)    EEEE                        \r\n"
               "\x1b[7mrows 1-2/3\x1b[0m\r\n",
-              ret.renderedLines);
+              ret.join());
   }
 }
 
@@ -880,7 +889,7 @@ TEST_F(ScrollTest, semanticPrompt1) {
               "  033333\r\n"
               "  044444\r\n"
               "  055555",
-              ret.renderedLines);
+              ret.join());
   }
 
   // remove upper rows
@@ -894,7 +903,7 @@ TEST_F(ScrollTest, semanticPrompt1) {
               "  088888\r\n"
               "  099999\r\n"
               "  100000",
-              ret.renderedLines);
+              ret.join());
   }
 
   // remove upper and lower rows
@@ -910,7 +919,7 @@ TEST_F(ScrollTest, semanticPrompt1) {
               "  055555\r\n"
               "  066666\r\n"
               "  077777",
-              ret.renderedLines);
+              ret.join());
   }
 }
 
@@ -940,7 +949,7 @@ TEST_F(ScrollTest, semanticPrompt2) {
               "> \x1b]133;B\x1b\\011111\r\n"
               "  022222\r\n"
               "  033333",
-              ret.renderedLines);
+              ret.join());
   }
 }
 
@@ -986,35 +995,35 @@ TEST(ErrorHighlightTest, base) {
   {
     ctx.buf.insertToCursor("slsss -la");
     auto ret = doRendering(ctx, nullptr, makeObserver(seqMap), 100);
-    ASSERT_EQ("> \x1b[50mslsss\x1b[0m \x1b[40m-la\x1b[0m", ret.renderedLines);
+    ASSERT_EQ("> \x1b[50mslsss\x1b[0m \x1b[40m-la\x1b[0m", ret.join());
   }
 
   { // no highlight (user-defined definition)
     ctx.buf.deleteAll();
     ctx.buf.insertToCursor("slsss () {}");
     auto ret = doRendering(ctx, nullptr, makeObserver(seqMap), 100);
-    ASSERT_EQ("> \x1b[30mslsss\x1b[0m () {}", ret.renderedLines);
+    ASSERT_EQ("> \x1b[30mslsss\x1b[0m () {}", ret.join());
   }
 
   { // no highlight (user-defined definition)
     ctx.buf.deleteAll();
     ctx.buf.insertToCursor("slsss \\\n \\\n () {}");
     auto ret = doRendering(ctx, nullptr, makeObserver(seqMap), 100);
-    ASSERT_EQ("> \x1b[30mslsss\x1b[0m \\\r\n   \\\r\n   () {}", ret.renderedLines);
+    ASSERT_EQ("> \x1b[30mslsss\x1b[0m \\\r\n   \\\r\n   () {}", ret.join());
   }
 
   { // no highlight (user-defined definition)
     ctx.buf.deleteAll();
     ctx.buf.insertToCursor("(slsss \\\n \n () {})");
     auto ret = doRendering(ctx, nullptr, makeObserver(seqMap), 100);
-    ASSERT_EQ("> (\x1b[30mslsss\x1b[0m \\\r\n   \r\n   () {})", ret.renderedLines);
+    ASSERT_EQ("> (\x1b[30mslsss\x1b[0m \\\r\n   \r\n   () {})", ret.join());
   }
 
   { // no highlight (user-defined definition)
     ctx.buf.deleteAll();
     ctx.buf.insertToCursor("(slsss # this\n () {})");
     auto ret = doRendering(ctx, nullptr, makeObserver(seqMap), 100);
-    ASSERT_EQ("> (\x1b[30mslsss\x1b[0m \x1b[45m# this\x1b[0m\r\n   () {})", ret.renderedLines);
+    ASSERT_EQ("> (\x1b[30mslsss\x1b[0m \x1b[45m# this\x1b[0m\r\n   () {})", ret.join());
   }
 }
 

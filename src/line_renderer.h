@@ -76,17 +76,22 @@ private:
   /**
    * append to existing content
    */
-  ObserverPtr<std::string> output;
+  ObserverPtr<std::vector<std::string>> output;
 
   ObserverPtr<TokenizerResult> tokenizeResult;
 
 public:
-  LineRenderer(const CharWidthProperties &ps, size_t initCols, ObserverPtr<std::string> output,
+  LineRenderer(const CharWidthProperties &ps, size_t initCols,
+               ObserverPtr<std::vector<std::string>> output,
                ObserverPtr<const ANSIEscapeSeqMap> escapeSeqMap)
       : ps(ps), escapeSeqMap(escapeSeqMap), initCols(initCols), totalCols(initCols),
-        output(output) {}
+        output(output) {
+    if (this->output && this->output->empty()) {
+      this->output->emplace_back();
+    }
+  }
 
-  LineRenderer(const CharWidthProperties &ps, size_t initCols, std::string &output,
+  LineRenderer(const CharWidthProperties &ps, size_t initCols, std::vector<std::string> &output,
                ObserverPtr<const ANSIEscapeSeqMap> escapeSeqMap = nullptr)
       : LineRenderer(ps, initCols, makeObserver(output), escapeSeqMap) {}
 
@@ -151,24 +156,31 @@ private:
    */
   bool renderControlChar(int codePoint, const std::string *color);
 
+  std::string &line() const { return this->output->back(); }
+
+  void newline() const {
+    this->line() += "\r\n";
+    this->output->emplace_back();
+  }
+
   void handleSoftWrap(const std::string *color) {
     this->totalCols = 0;
     this->totalRows++;
     if (this->output) {
       if (color) {
-        *this->output += "\x1b[0m";
+        this->line() += "\x1b[0m";
       }
-      *this->output += "\r\n";
+      this->newline();
       if (color) {
-        *this->output += *color;
+        this->line() += *color;
       }
     }
     this->maxTotalCols = std::max(this->maxTotalCols, this->colLimit);
   }
 
-  void handleTruncate(char pad) {
+  void handleTruncate(const char pad) {
     if (this->output) {
-      this->output->append(this->colLimit - this->totalCols, pad);
+      this->line().append(this->colLimit - this->totalCols, pad);
     }
     this->totalCols = this->colLimit;
     this->maxTotalCols = std::max(this->maxTotalCols, this->colLimit);
