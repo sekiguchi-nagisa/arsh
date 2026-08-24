@@ -46,8 +46,8 @@ static bool renderLines(const LineBuffer &buf, ObserverPtr<const ArrayPager> pag
 RenderingResult doRendering(const RenderingContext &ctx, ObserverPtr<const ArrayPager> pager,
                             ObserverPtr<const ANSIEscapeSeqMap> escapeSeqMap,
                             unsigned int maxCols) {
-  size_t promptRows;
-  size_t promptCols;
+  unsigned int promptRows;
+  unsigned int promptCols;
   RenderingResult result;
   {
     // render prompt and compute prompt row/column length
@@ -65,7 +65,7 @@ RenderingResult doRendering(const RenderingContext &ctx, ObserverPtr<const Array
     renderer.setTokenizeResult(makeObserver(ctx.tokenizeCache));
     result.continueLine = renderLines(ctx.buf, pager, renderer, ctx.errorCmdChecker);
     result.renderedCols = renderer.getMaxTotalCols();
-    result.promptRows = static_cast<unsigned int>(promptRows + 1);
+    result.promptRows = promptRows + 1;
   }
 
   // get cursor row/column length

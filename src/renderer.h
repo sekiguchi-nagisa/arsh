@@ -26,9 +26,9 @@ class ArrayPager;
 
 struct RenderingResult {
   std::vector<std::string> renderedLines;
-  size_t renderedCols{0};
-  size_t cursorRows{0};
-  size_t cursorCols{0};
+  unsigned int renderedCols{0};
+  unsigned int cursorRows{0};
+  unsigned int cursorCols{0};
   unsigned int promptRows{0};
   bool continueLine{false};
 
@@ -44,7 +44,7 @@ struct RenderingResult {
     return ret;
   }
 
-  size_t renderedRows() const { return this->renderedLines.size(); }
+  unsigned int renderedRows() const { return this->renderedLines.size(); }
 };
 
 struct RenderingContext {

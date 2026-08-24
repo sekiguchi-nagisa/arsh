@@ -286,7 +286,7 @@ bool LineRenderer::render(StringRef ref, HighlightTokenClass tokenClass) {
       return this->renderControlChar(grapheme.getRef()[0], colorCode);
     } else {
       unsigned int width = getGraphemeWidth(this->ps, grapheme);
-      if (this->totalCols + width > this->colLimit) { // line break
+      if (static_cast<uint64_t>(this->totalCols) + width > this->colLimit) { // line break
         switch (this->breakOp) {
         case LineBreakOp::SOFT_WRAP:
           this->handleSoftWrap(colorCode);

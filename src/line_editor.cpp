@@ -409,7 +409,7 @@ static int preparePrompt(int ttyFd) {
  *
  * Rewrite the currently edited line accordingly to the buffer content,
  * cursor position, and number of columns of the terminal. */
-void LineEditorObject::refreshLine(ARState &state, RenderingContext &ctx, bool repaint,
+void LineEditorObject::refreshLine(ARState &state, RenderingContext &ctx, const bool syncNewline,
                                    ObserverPtr<ArrayPager> pager) {
   WinSize winSize;
   syncWinSize(state, &winSize);
@@ -417,7 +417,7 @@ void LineEditorObject::refreshLine(ARState &state, RenderingContext &ctx, bool r
   if (pager) {
     pager->updateWinSize({.rows = winSize.rows, .cols = winSize.cols});
   }
-  if (repaint) {
+  if (syncNewline) {
     ctx.buf.syncNewlinePosList();
   }
 
@@ -432,8 +432,8 @@ void LineEditorObject::refreshLine(ARState &state, RenderingContext &ctx, bool r
   LOG(TRACE_EDIT, "[len=%u, pos=%u, oldCursorRows=%u, oldRenderedCols=%u]", ctx.buf.getUsedSize(),
       ctx.buf.getCursor(), ctx.oldCursorRows, ctx.oldRenderedCols);
   LOG(TRACE_EDIT, "(rows,cols)=(%u, %u)", winSize.rows, winSize.cols);
-  LOG(TRACE_EDIT, "renderedRows: %zu, cursor(rows,cols)=(%zu,%zu)", ret.renderedRows(),
-      ret.cursorRows, ret.cursorCols);
+  LOG(TRACE_EDIT, "renderedRows: %u, cursor(rows,cols)=(%u,%u)", ret.renderedRows(), ret.cursorRows,
+      ret.cursorCols);
 
   /*
    * hide cursor during rendering due to suppress potential cursor flicker
@@ -459,22 +459,22 @@ void LineEditorObject::refreshLine(ARState &state, RenderingContext &ctx, bool r
   /* adjust too long rendered lines */
   LOG(TRACE_EDIT, "scrolling: %s", ctx.scrolling ? "true" : "false");
   ctx.scrolling = fitToWinSize(ctx, static_cast<bool>(pager), winSize.rows, ret);
-  LOG(TRACE_EDIT, "adjust renderedRows: %zu. cursorRows: %zu", ret.renderedRows(), ret.cursorRows);
+  LOG(TRACE_EDIT, "adjust renderedRows: %u. cursorRows: %u", ret.renderedRows(), ret.cursorRows);
 
   /* set escape sequence */
   ret.appendTo(ab);
 
   /* Go up till we reach the expected position. */
-  if (const auto dist = static_cast<unsigned int>(ret.renderedRows() - ret.cursorRows); dist > 0) {
+  if (const auto dist = ret.renderedRows() - ret.cursorRows; dist > 0) {
     LOG(TRACE_EDIT, "go-up %u", dist);
     snprintf(seq, std::size(seq), "\x1b[%dA", dist);
     ab += seq;
   }
 
   /* Set column position, zero-based. */
-  LOG(TRACE_EDIT, "set col %u", 1 + static_cast<unsigned int>(ret.cursorCols));
+  LOG(TRACE_EDIT, "set col %u", 1 + ret.cursorCols);
   if (ret.cursorCols) {
-    snprintf(seq, std::size(seq), "\r\x1b[%uC", static_cast<unsigned int>(ret.cursorCols));
+    snprintf(seq, std::size(seq), "\r\x1b[%uC", ret.cursorCols);
   } else {
     snprintf(seq, std::size(seq), "\r");
   }

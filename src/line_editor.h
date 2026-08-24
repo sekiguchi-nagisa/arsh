@@ -178,7 +178,7 @@ private:
 
   void disableRawMode();
 
-  void refreshLine(ARState &state, RenderingContext &ctx, bool repaint = true,
+  void refreshLine(ARState &state, RenderingContext &ctx, bool syncNewline = true,
                    ObserverPtr<ArrayPager> pager = nullptr);
 
   ssize_t accept(ARState &state, RenderingContext &ctx, bool expandAbbr);

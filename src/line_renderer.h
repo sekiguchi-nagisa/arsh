@@ -59,15 +59,15 @@ private:
    */
   const ObserverPtr<const ANSIEscapeSeqMap> escapeSeqMap;
 
-  size_t initCols;
+  unsigned int initCols;
 
-  size_t totalCols{0};
+  unsigned int totalCols{0};
 
-  size_t totalRows{0};
+  unsigned int totalRows{0};
 
-  size_t maxTotalCols{0};
+  unsigned int maxTotalCols{0};
 
-  size_t colLimit{static_cast<size_t>(-1)};
+  unsigned int colLimit{UINT32_MAX};
 
   bool emitNewline{true}; // if false, not append newline (\n) and not increment totalRows
 
@@ -81,7 +81,7 @@ private:
   ObserverPtr<TokenizerResult> tokenizeResult;
 
 public:
-  LineRenderer(const CharWidthProperties &ps, size_t initCols,
+  LineRenderer(const CharWidthProperties &ps, unsigned int initCols,
                ObserverPtr<std::vector<std::string>> output,
                ObserverPtr<const ANSIEscapeSeqMap> escapeSeqMap)
       : ps(ps), escapeSeqMap(escapeSeqMap), initCols(initCols), totalCols(initCols),
@@ -91,22 +91,22 @@ public:
     }
   }
 
-  LineRenderer(const CharWidthProperties &ps, size_t initCols, std::vector<std::string> &output,
+  LineRenderer(const CharWidthProperties &ps, unsigned int initCols, std::vector<std::string> &output,
                ObserverPtr<const ANSIEscapeSeqMap> escapeSeqMap = nullptr)
       : LineRenderer(ps, initCols, makeObserver(output), escapeSeqMap) {}
 
-  LineRenderer(const CharWidthProperties &ps, size_t initCols)
+  LineRenderer(const CharWidthProperties &ps, unsigned int initCols)
       : LineRenderer(ps, initCols, nullptr, nullptr) {}
 
-  void setInitCols(size_t init) { this->initCols = init; }
+  void setInitCols(unsigned int init) { this->initCols = init; }
 
-  void setColLimit(size_t limit) { this->colLimit = limit; }
+  void setColLimit(unsigned int limit) { this->colLimit = limit; }
 
-  size_t getTotalCols() const { return this->totalCols; }
+  unsigned int getTotalCols() const { return this->totalCols; }
 
-  size_t getTotalRows() const { return this->totalRows; }
+  unsigned int getTotalRows() const { return this->totalRows; }
 
-  size_t getMaxTotalCols() const { return std::max(this->maxTotalCols, this->totalCols); }
+  unsigned int getMaxTotalCols() const { return std::max(this->maxTotalCols, this->totalCols); }
 
   void setEmitNewline(bool set) { this->emitNewline = set; }
 
