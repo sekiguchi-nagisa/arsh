@@ -195,12 +195,14 @@ public:
         inst = this->getStartInst() + extra.setIns.target;
         input.setIter(extra.setIns.iter);
         inst += sizeof(BeginLoopIns); // goto loop body
-        return this->prepareLoopBody(input, loopIndex, loopStates[loopIndex]);
+        this->prepareLoopBody(input, loopIndex, loopStates[loopIndex]); // never fail (already pop)
+        return true;
       }
       case BacktrackOp::LookAround:
         inst = this->getStartInst() + bt.lookAround.target;
         bt.lookAround.matched = bt.lookAround.negate; // if negative lookaround, matched
-        return this->push(bt);
+        this->push(bt); // never fail (already pop)
+        return true;
       case BacktrackOp::RadixState:
         break;
       }
@@ -809,8 +811,8 @@ BACKTRACK:
         }
         vmcase(ResetCaptures) {
           auto &ins = cast<ResetCapturesIns>(*inst);
-          const auto last = ins.getLastIndex();
-          for (uint16_t i = ins.getFirstIndex(); i <= last; i++) {
+          const unsigned int last = ins.getLastIndex();
+          for (unsigned int i = ins.getFirstIndex(); i <= last; i++) {
             TRY(bts.push(Backtrack::newSetCapture(i, captures[i]))); // save original capture
             captures[i] = Capture();
           }
