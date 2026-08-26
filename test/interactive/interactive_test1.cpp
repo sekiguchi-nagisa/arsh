@@ -419,27 +419,37 @@ TEST_F(InteractiveTest, killRing1) {
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $a[2] == '888' : $a[2]"));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $a[3] == 'ABCDEF' : $a[3]"));
 
-  // yank-pop
-  this->send("var bb = " ESC_("y"));
+  this->send("var bb = ");
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "var bb = "));
-  this->send(CTRL_Y);
-  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "var bb = ABCDEF"));
-  this->send(ESC_("y") ESC_("y") ESC_("y"));
-  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "var bb = 1234567"));
-  this->send(ESC_("y") ESC_("y"));
-  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "var bb = 888"));
+  {
+    auto cleanup = this->reuseScreen();
 
-  this->send("\r");
-  ASSERT_NO_FATAL_FAILURE(this->expect("\n" + PROMPT));
-
+    // yank-pop
+    this->send(ESC_("y"));
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "var bb = "));
+    this->send(CTRL_Y);
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "var bb = ABCDEF"));
+    this->send(ESC_("y") ESC_("y") ESC_("y"));
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "var bb = 1234567"));
+    this->send(ESC_("y") ESC_("y"));
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "var bb = 888"));
+    this->send("\r");
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "var bb = 888\n" + PROMPT));
+  }
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("$bb", ": Int = 888"));
 
-  this->send("00" CTRL_A CTRL_Y);
-  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "ABCDEF00"));
-  this->send(ESC_("y") ESC_("y"));
-  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "999900"));
-  this->send("\r");
-  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "999900\n: Int = 999900\n" + PROMPT));
+  this->send("00");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "00"));
+  {
+    auto cleanup = this->reuseScreen();
+
+    this->send(CTRL_A CTRL_Y);
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "ABCDEF00"));
+    this->send(ESC_("y") ESC_("y"));
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "999900"));
+    this->send("\r");
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "999900\n: Int = 999900\n" + PROMPT));
+  }
 
   this->send(CTRL_D);
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
@@ -879,17 +889,23 @@ TEST_F(InteractiveTest, undo1) {
   ASSERT_NO_FATAL_FAILURE(this->expect("\n" + PROMPT));
 
   this->changePrompt("> ");
-  this->send("echo hello" ALT_ENTER "ps");
-  ASSERT_NO_FATAL_FAILURE(this->expect("> echo hello\n  ps"));
-  this->send(CTRL_Z);
-  ASSERT_NO_FATAL_FAILURE(this->expect("> echo hello\n  "));
-  this->send(CTRL_Z);
-  ASSERT_NO_FATAL_FAILURE(this->expect("> echo hello"));
-  this->send(ESC_("/") ESC_("/"));
-  ASSERT_NO_FATAL_FAILURE(this->expect("> echo hello\n  ps"));
+  this->send("echo ");
+  ASSERT_NO_FATAL_FAILURE(this->expect("> echo "));
+  {
+    auto cleanup = this->reuseScreen();
 
-  this->send(CTRL_C);
-  ASSERT_NO_FATAL_FAILURE(this->expect("\n" + PROMPT));
+    this->send("hello" ALT_ENTER "ps");
+    ASSERT_NO_FATAL_FAILURE(this->expect("> echo hello\n  ps"));
+    this->send(CTRL_Z);
+    ASSERT_NO_FATAL_FAILURE(this->expect("> echo hello\n  "));
+    this->send(CTRL_Z);
+    ASSERT_NO_FATAL_FAILURE(this->expect("> echo hello"));
+    this->send(ESC_("/") ESC_("/"));
+    ASSERT_NO_FATAL_FAILURE(this->expect("> echo hello\n  ps"));
+
+    this->send(CTRL_C);
+    ASSERT_NO_FATAL_FAILURE(this->expect("> echo hello\n  ps\n> "));
+  }
 
   this->send(CTRL_D);
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
@@ -902,29 +918,39 @@ TEST_F(InteractiveTest, undo2) {
 
   // ctrl-v
   this->changePrompt("> ");
-  this->send("1234" CTRL_V CTRL_J "@@@" CTRL_V " 111");
-  ASSERT_NO_FATAL_FAILURE(this->expect("> 1234\n  @@@ 111"));
-  this->send(CTRL_Z);
-  ASSERT_NO_FATAL_FAILURE(this->expect("> 1234\n  @@@ "));
-  this->send(CTRL_Z CTRL_Z);
-  ASSERT_NO_FATAL_FAILURE(this->expect("> 1234\n  "));
-  this->send(ESC_("/") ESC_("/"));
-  ASSERT_NO_FATAL_FAILURE(this->expect("> 1234\n  @@@ "));
+  this->send("12");
+  ASSERT_NO_FATAL_FAILURE(this->expect("> 12"));
+  {
+    auto cleanup = this->reuseScreen();
 
-  this->send(CTRL_C);
-  ASSERT_NO_FATAL_FAILURE(this->expect("\n" + PROMPT));
+    this->send("34" CTRL_V CTRL_J "@@@" CTRL_V " 111");
+    ASSERT_NO_FATAL_FAILURE(this->expect("> 1234\n  @@@ 111"));
+    this->send(CTRL_Z);
+    ASSERT_NO_FATAL_FAILURE(this->expect("> 1234\n  @@@ "));
+    this->send(CTRL_Z CTRL_Z);
+    ASSERT_NO_FATAL_FAILURE(this->expect("> 1234\n  "));
+    this->send(ESC_("/") ESC_("/"));
+    ASSERT_NO_FATAL_FAILURE(this->expect("> 1234\n  @@@ "));
+
+    this->send(CTRL_C);
+    ASSERT_NO_FATAL_FAILURE(this->expect("> 1234\n  @@@ \n> "));
+  }
 
   // bracket paste
   this->send("12345");
   ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "12345"));
-  this->send(ESC_("[200~assert '2\x1b[23m'.size() == 6") ESC_("[201~"));
-  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "12345assert '2^[[23m'.size() == 6"));
-  this->send(CTRL_Z);
-  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "12345"));
-  this->send(ESC_("/"));
-  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "12345assert '2^[[23m'.size() == 6"));
-  this->send(CTRL_C);
-  ASSERT_NO_FATAL_FAILURE(this->expect("\n" + PROMPT));
+  {
+    auto cleanup = this->reuseScreen();
+
+    this->send(ESC_("[200~assert '2\x1b[23m'.size() == 6") ESC_("[201~"));
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "12345assert '2^[[23m'.size() == 6"));
+    this->send(CTRL_Z);
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "12345"));
+    this->send(ESC_("/"));
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "12345assert '2^[[23m'.size() == 6"));
+    this->send(CTRL_C);
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "12345assert '2^[[23m'.size() == 6\n" + PROMPT));
+  }
 
   this->send(CTRL_D);
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
