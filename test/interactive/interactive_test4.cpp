@@ -474,16 +474,28 @@ TEST_F(InteractiveTest, lineEditorComp1) {
   // insert single candidates with a prefix
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect(
       "$LINE_EDIT.setCompleter(function(s,m) => new Candidates(['true']))"));
-  this->send("()" LEFT "$t\t");
-  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "($true)"));
-  this->send("\r");
-  ASSERT_NO_FATAL_FAILURE(this->expect(">>> ($true)\n: Bool = true\n>>> "));
+  this->send("()");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "()"));
+  {
+    auto cleanup = this->reuseScreen();
+
+    this->send(LEFT "$t\t");
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "($true)"));
+    this->send("\r");
+    ASSERT_NO_FATAL_FAILURE(this->expect(">>> ($true)\n: Bool = true\n>>> "));
+  }
 
   // insert single candidates without a prefix
-  this->send("()" LEFT "\t");
-  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "(true)"));
-  this->send("\r");
-  ASSERT_NO_FATAL_FAILURE(this->expect(">>> (true)\n>>> "));
+  this->send("(");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "("));
+  {
+    auto cleanup = this->reuseScreen();
+
+    this->send(")" LEFT "\t");
+    ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "(true)"));
+    this->send("\r");
+    ASSERT_NO_FATAL_FAILURE(this->expect(">>> (true)\n>>> "));
+  }
 
   // insert unprintable (invalid, null,,)
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("var aa = new LineEditor()"));
