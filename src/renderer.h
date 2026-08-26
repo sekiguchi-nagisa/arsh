@@ -27,10 +27,12 @@ class ArrayPager;
 struct RenderingResult {
   std::vector<std::string> renderedLines;
   unsigned int renderedCols{0};
-  unsigned int cursorRows{0};
+  unsigned int cursorRows{0}; // initial value is equivalent to originalCursorRows
   unsigned int cursorCols{0};
   unsigned int promptRows{0};
+  unsigned int originalCursorRows{0};
   bool continueLine{false};
+  bool scrolling{false};
 
   void appendTo(std::string &out) const {
     for (auto &e : this->renderedLines) {
@@ -45,16 +47,16 @@ struct RenderingResult {
   }
 
   unsigned int renderedRows() const { return this->renderedLines.size(); }
+
+  void clearLines() { this->renderedLines.clear(); }
+
+  void fitToWinSize(const RenderingResult &prev, bool showPager, unsigned int winRows);
 };
 
 struct RenderingContext {
   LineBuffer buf;
   const StringRef prompt;
-  unsigned int oldCursorRows{0}; // previous refresh cursor rows (relative to initial rows)
-  unsigned int oldActualCursorRows{0};
-  unsigned int oldRenderedCols{0};
   CharWidthProperties ps;
-  bool scrolling{false};
   bool semanticPrompt{false};
   std::function<bool(StringRef)> errorCmdChecker;
   mutable TokenizerResult tokenizeCache; // previously tokenized result
@@ -68,18 +70,6 @@ struct RenderingContext {
 
 RenderingResult doRendering(const RenderingContext &ctx, ObserverPtr<const ArrayPager> pager,
                             ObserverPtr<const ANSIEscapeSeqMap> escapeSeqMap, unsigned int maxCols);
-
-/**
- *
- * @param ctx
- * @param showPager
- * @param winRows
- * @param result
- * @return
- * if resize rendered lines, return true
- */
-bool fitToWinSize(const RenderingContext &ctx, bool showPager, unsigned int winRows,
-                  RenderingResult &result);
 
 } // namespace arsh
 

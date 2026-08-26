@@ -102,6 +102,8 @@ private:
    */
   std::unordered_map<std::string, std::string> abbrMap;
 
+  RenderingResult prevRendered;
+
 public:
   explicit LineEditorObject(ARState &state);
 

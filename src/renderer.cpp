@@ -80,33 +80,35 @@ RenderingResult doRendering(const RenderingContext &ctx, ObserverPtr<const Array
     }
     result.cursorCols = renderer.getTotalCols();
     result.cursorRows = promptRows + 1 + renderer.getTotalRows();
+    result.originalCursorRows = result.cursorRows;
   }
   return result;
 }
 
-bool fitToWinSize(const RenderingContext &ctx, const bool showPager, const unsigned int winRows,
-                  RenderingResult &result) {
-  if (result.renderedRows() <= winRows) {
-    return false;
+void RenderingResult::fitToWinSize(const RenderingResult &prev, const bool showPager,
+                                   const unsigned int winRows) {
+  if (this->renderedRows() <= winRows) {
+    this->scrolling = false;
+    return;
   }
 
   // update scrollRows
-  unsigned int scrollRows = ctx.oldCursorRows;
-  if (ctx.scrolling) {
-    if (ctx.oldActualCursorRows <= result.cursorRows) { // cursor down
-      scrollRows += result.cursorRows - ctx.oldActualCursorRows;
+  unsigned int scrollRows = prev.cursorRows;
+  if (prev.scrolling) {
+    if (prev.originalCursorRows <= this->cursorRows) { // cursor down
+      scrollRows += this->cursorRows - prev.originalCursorRows;
     } else { // cursor up
-      if (const auto diff = ctx.oldActualCursorRows - result.cursorRows; diff < scrollRows) {
+      if (const auto diff = prev.originalCursorRows - this->cursorRows; diff < scrollRows) {
         scrollRows -= diff;
       } else {
         scrollRows = 1;
       }
     }
     scrollRows = std::min(scrollRows, winRows);
-  } else if (const auto diff = result.renderedRows() - result.cursorRows; diff < winRows) {
+  } else if (const auto diff = this->renderedRows() - this->cursorRows; diff < winRows) {
     scrollRows = winRows - diff;
-  } else if (result.cursorRows < winRows) {
-    scrollRows = result.cursorRows;
+  } else if (this->cursorRows < winRows) {
+    scrollRows = this->cursorRows;
   } else {
     scrollRows = winRows;
   }
@@ -119,32 +121,32 @@ bool fitToWinSize(const RenderingContext &ctx, const bool showPager, const unsig
    */
 
   // remove upper rows of window
-  size_t eraseRows = result.cursorRows > scrollRows ? result.cursorRows - scrollRows : 0;
+  size_t eraseRows = this->cursorRows > scrollRows ? this->cursorRows - scrollRows : 0;
   if (showPager) {
-    eraseRows = result.renderedRows() - winRows;
-    scrollRows = result.cursorRows - eraseRows;
-  } else if (result.renderedRows() - eraseRows < winRows) {
-    auto delta = winRows - (result.renderedRows() - eraseRows);
+    eraseRows = this->renderedRows() - winRows;
+    scrollRows = this->cursorRows - eraseRows;
+  } else if (this->renderedRows() - eraseRows < winRows) {
+    auto delta = winRows - (this->renderedRows() - eraseRows);
     eraseRows -= delta;
     scrollRows += delta;
   }
-  result.renderedLines.erase(result.renderedLines.begin(),
-                             result.renderedLines.begin() + static_cast<ssize_t>(eraseRows));
+  this->renderedLines.erase(this->renderedLines.begin(),
+                            this->renderedLines.begin() + static_cast<ssize_t>(eraseRows));
 
   // remove lower rows of window
-  if (result.renderedRows() > winRows) {
-    result.renderedLines.resize(winRows);
-    if (auto &last = result.renderedLines.back(); StringRef(last).endsWith("\r\n")) {
+  if (this->renderedRows() > winRows) {
+    this->renderedLines.resize(winRows);
+    if (auto &last = this->renderedLines.back(); StringRef(last).endsWith("\r\n")) {
       last.resize(last.size() - 2);
     }
   }
-  result.cursorRows = scrollRows;
-  if (eraseRows >= result.promptRows) {
-    result.promptRows = 1;
+  this->cursorRows = scrollRows;
+  if (eraseRows >= this->promptRows) {
+    this->promptRows = 1;
   } else {
-    result.promptRows -= eraseRows;
+    this->promptRows -= eraseRows;
   }
-  return true;
+  this->scrolling = true;
 }
 
 } // namespace arsh

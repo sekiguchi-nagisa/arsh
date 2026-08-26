@@ -466,6 +466,7 @@ protected:
   WinSize winSize;
   std::string buf;
   RenderingContext ctx;
+  RenderingResult prev;
 
 public:
   ScrollTest() : buf(4096, '\0'), ctx(this->buf.data(), this->buf.size(), "> ", nullptr) {}
@@ -482,13 +483,9 @@ public:
   }
 
   bool fit(RenderingResult &result, bool showPager = false) {
-    const unsigned int actualCursorRows = result.cursorRows;
-    const bool r = fitToWinSize(ctx, showPager, this->winSize.rows, result);
-    this->ctx.scrolling = r;
-    this->ctx.oldActualCursorRows = actualCursorRows;
-    this->ctx.oldCursorRows = result.cursorRows;
-    this->ctx.oldRenderedCols = result.renderedCols;
-    return r;
+    result.fitToWinSize(this->prev, showPager, this->winSize.rows);
+    this->prev = result;
+    return result.scrolling;
   }
 };
 

@@ -427,13 +427,17 @@ void LineEditorObject::refreshLine(ARState &state, RenderingContext &ctx, const 
                              : nullptr,
                          winSize.cols);
   this->continueLine = ret.continueLine;
-  const unsigned int actualCursorRows = ret.cursorRows;
 
   LOG(TRACE_EDIT, "[len=%u, pos=%u, oldCursorRows=%u, oldRenderedCols=%u]", ctx.buf.getUsedSize(),
-      ctx.buf.getCursor(), ctx.oldCursorRows, ctx.oldRenderedCols);
+      ctx.buf.getCursor(), this->prevRendered.cursorRows, this->prevRendered.renderedCols);
   LOG(TRACE_EDIT, "(rows,cols)=(%u, %u)", winSize.rows, winSize.cols);
   LOG(TRACE_EDIT, "renderedRows: %u, cursor(rows,cols)=(%u,%u)", ret.renderedRows(), ret.cursorRows,
       ret.cursorCols);
+
+  /* adjust too long rendered lines */
+  LOG(TRACE_EDIT, "scrolling: %s", this->prevRendered.scrolling ? "true" : "false");
+  ret.fitToWinSize(this->prevRendered, static_cast<bool>(pager), winSize.rows);
+  LOG(TRACE_EDIT, "adjust renderedRows: %u. cursorRows: %u", ret.renderedRows(), ret.cursorRows);
 
   /*
    * hide cursor during rendering due to suppress potential cursor flicker
@@ -442,11 +446,11 @@ void LineEditorObject::refreshLine(ARState &state, RenderingContext &ctx, const 
 
   /* move cursor original position and clear screen */
   char seq[64];
-  if (ctx.oldRenderedCols > winSize.cols) { // clear screen due to screen corruption
+  if (this->prevRendered.renderedCols > winSize.cols) { // clear screen due to screen corruption
     ab += "\x1b[H\x1b[2J";
   } else {
-    if (ctx.oldCursorRows > 1) { // set cursor original row position
-      const auto diff = ctx.oldCursorRows - 1;
+    if (this->prevRendered.cursorRows > 1) { // set cursor original row position
+      const auto diff = this->prevRendered.cursorRows - 1;
       LOG(TRACE_EDIT, "go up cursor: %u", diff);
       snprintf(seq, std::size(seq), "\x1b[%uA", diff);
       ab += seq;
@@ -455,11 +459,6 @@ void LineEditorObject::refreshLine(ARState &state, RenderingContext &ctx, const 
     LOG(TRACE_EDIT, "clear");
     ab += "\r\x1b[0K\x1b[0J";
   }
-
-  /* adjust too long rendered lines */
-  LOG(TRACE_EDIT, "scrolling: %s", ctx.scrolling ? "true" : "false");
-  ctx.scrolling = fitToWinSize(ctx, static_cast<bool>(pager), winSize.rows, ret);
-  LOG(TRACE_EDIT, "adjust renderedRows: %u. cursorRows: %u", ret.renderedRows(), ret.cursorRows);
 
   /* set escape sequence */
   ret.appendTo(ab);
@@ -481,10 +480,7 @@ void LineEditorObject::refreshLine(ARState &state, RenderingContext &ctx, const 
   ab += seq;
   ab += "\x1b[?25h"; // show cursor (from VT220 extension)
 
-  ctx.oldCursorRows = ret.cursorRows;
-  ctx.oldActualCursorRows = actualCursorRows;
-  ctx.oldRenderedCols = ret.renderedCols;
-
+  this->prevRendered = std::move(ret);
   if (write(this->ttyFd, ab.c_str(), ab.size()) == -1) {
   } /* Can't recover from write error. */
 }
@@ -556,7 +552,7 @@ ssize_t LineEditorObject::editLine(ARState &state, RenderingContext &ctx) {
   const int errNum = errno;
   bool putNewline = true;
   if (count == -1) {
-    if (ctx.scrolling) {
+    if (this->prevRendered.scrolling) {
       linenoiseClearScreen(this->ttyFd);
       putNewline = false;
     } else if (ctx.buf.moveCursorToEndOfBuf() ||
@@ -992,6 +988,7 @@ ssize_t LineEditorObject::readline(ARState &state, StringRef prompt, char *buf, 
   this->continueLine = false;
   auto cleanup = finally([&] {
     this->lock = false;
+    this->prevRendered = {}; // reset all rendered state
     state.declReadlineCallCount();
   });
 
