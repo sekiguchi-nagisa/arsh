@@ -17,9 +17,8 @@
 #ifndef ARSH_LINE_EDITOR_H
 #define ARSH_LINE_EDITOR_H
 
-#include <termios.h>
-
 #include "keybind.h"
+#include "misc/pty.hpp"
 #include "object.h"
 #include "renderer.h"
 
@@ -54,6 +53,8 @@ private:
   LineEditorFeature features{LineEditorFeature::BRACKETED_PASTE};
 
   unsigned char pagerRatio{40};
+
+  WinSize winSize;
 
   ANSIEscapeSeqMap escapeSeqMap;
 

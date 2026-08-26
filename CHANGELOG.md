@@ -24,6 +24,7 @@
     - ``delim`` param is now optional (pass empty string by default)
     - add ``limit`` param
 - add ``unsigned`` param to ``String#toInt`` method. now can recognize as unsigned int
+- reduce screen flicker of LineEditor. now only draw modified lines
 
 #### Module
 

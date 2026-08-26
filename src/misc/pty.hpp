@@ -121,6 +121,10 @@ inline void xcfmakesane(termios &term) {
 struct WinSize {
   unsigned short rows{24};
   unsigned short cols{80};
+
+  bool operator==(const WinSize &o) const { return this->rows == o.rows && this->cols == o.cols; }
+
+  bool operator!=(const WinSize &o) const { return !(*this == o); }
 };
 
 inline std::pair<WinSize, bool> getWinSize(int fd) {

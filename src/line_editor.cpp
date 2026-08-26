@@ -411,11 +411,11 @@ static int preparePrompt(int ttyFd) {
  * cursor position, and number of columns of the terminal. */
 void LineEditorObject::refreshLine(ARState &state, RenderingContext &ctx, const bool syncNewline,
                                    ObserverPtr<ArrayPager> pager) {
-  WinSize winSize;
-  syncWinSize(state, &winSize);
+  const WinSize prevWinSize = this->winSize;
+  syncWinSize(state, &this->winSize);
 
   if (pager) {
-    pager->updateWinSize({.rows = winSize.rows, .cols = winSize.cols});
+    pager->updateWinSize({.rows = this->winSize.rows, .cols = this->winSize.cols});
   }
   if (syncNewline) {
     ctx.buf.syncNewlinePosList();
@@ -425,29 +425,44 @@ void LineEditorObject::refreshLine(ARState &state, RenderingContext &ctx, const 
                          this->hasFeature(LineEditorFeature::LANG_EXTENSION)
                              ? makeObserver(this->escapeSeqMap)
                              : nullptr,
-                         winSize.cols);
+                         this->winSize.cols);
   this->continueLine = ret.continueLine;
 
   LOG(TRACE_EDIT, "[len=%u, pos=%u, oldCursorRows=%u, oldRenderedCols=%u]", ctx.buf.getUsedSize(),
       ctx.buf.getCursor(), this->prevRendered.cursorRows, this->prevRendered.renderedCols);
-  LOG(TRACE_EDIT, "(rows,cols)=(%u, %u)", winSize.rows, winSize.cols);
+  LOG(TRACE_EDIT, "(rows,cols)=(%u, %u)", this->winSize.rows, this->winSize.cols);
   LOG(TRACE_EDIT, "renderedRows: %u, cursor(rows,cols)=(%u,%u)", ret.renderedRows(), ret.cursorRows,
       ret.cursorCols);
 
   /* adjust too long rendered lines */
   LOG(TRACE_EDIT, "scrolling: %s", this->prevRendered.scrolling ? "true" : "false");
-  ret.fitToWinSize(this->prevRendered, static_cast<bool>(pager), winSize.rows);
+  ret.fitToWinSize(this->prevRendered, static_cast<bool>(pager), this->winSize.rows);
   LOG(TRACE_EDIT, "adjust renderedRows: %u. cursorRows: %u", ret.renderedRows(), ret.cursorRows);
+
+  const bool fullDraw = this->prevRendered.renderedRows() == 0 || this->winSize != prevWinSize;
+  LOG(TRACE_EDIT, "fullDraw=%s", fullDraw ? "true" : "false");
 
   /*
    * hide cursor during rendering due to suppress potential cursor flicker
    */
   std::string ab = "\x1b[?25l"; // hide cursor (from VT220 extension)
-
-  /* move cursor original position and clear screen */
   char seq[64];
-  if (this->prevRendered.renderedCols > winSize.cols) { // clear screen due to screen corruption
-    ab += "\x1b[H\x1b[2J";
+  if (fullDraw) {
+    /* move cursor original position and clear screen */
+    if (this->prevRendered.renderedCols > this->winSize.cols) {
+      ab += "\x1b[H\x1b[2J"; // clear screen due to screen corruption
+    } else {
+      if (this->prevRendered.cursorRows > 1) { // set cursor original row position
+        const auto diff = this->prevRendered.cursorRows - 1;
+        LOG(TRACE_EDIT, "go up cursor: %u", diff);
+        snprintf(seq, std::size(seq), "\x1b[%uA", diff);
+        ab += seq;
+      }
+      /* Clean the top and bellow lines. */
+      LOG(TRACE_EDIT, "clear");
+      ab += "\r\x1b[0K\x1b[0J";
+    }
+    ret.appendTo(ab);
   } else {
     if (this->prevRendered.cursorRows > 1) { // set cursor original row position
       const auto diff = this->prevRendered.cursorRows - 1;
@@ -455,13 +470,22 @@ void LineEditorObject::refreshLine(ARState &state, RenderingContext &ctx, const 
       snprintf(seq, std::size(seq), "\x1b[%uA", diff);
       ab += seq;
     }
-    /* Clean the top and bellow lines. */
-    LOG(TRACE_EDIT, "clear");
-    ab += "\r\x1b[0K\x1b[0J";
+    const unsigned int renderedRows = ret.renderedRows();
+    for (unsigned int i = 0; i < renderedRows; i++) {
+      if (StringRef line(ret.renderedLines[i]);
+          i < this->prevRendered.renderedRows() && line == this->prevRendered.renderedLines[i]) {
+        if (line.endsWith("\r\n")) {
+          ab += "\r\n"; // not change (just down cursor)
+        }
+      } else if (i == renderedRows - 1) { // last
+        ab += "\r\x1b[0K\x1b[0J";         // clear remain
+        ab += ret.renderedLines[i];
+      } else {
+        ab += "\r\x1b[0K";
+        ab += ret.renderedLines[i];
+      }
+    }
   }
-
-  /* set escape sequence */
-  ret.appendTo(ab);
 
   /* Go up till we reach the expected position. */
   if (const auto dist = ret.renderedRows() - ret.cursorRows; dist > 0) {
@@ -803,6 +827,7 @@ ssize_t LineEditorObject::editInRawMode(ARState &state, RenderingContext &ctx) {
       continue;
     case EditActionType::CLEAR_SCREEN:
       linenoiseClearScreen(this->ttyFd);
+      this->prevRendered.clearLines();
       this->refreshLine(state, ctx);
       continue;
     case EditActionType::BACKWARD_KILL_WORD:
@@ -1108,8 +1133,7 @@ EditActionStatus LineEditorObject::completeLine(ARState &state, RenderingContext
   auto pager = ArrayPager::create(*candidates, ctx.ps, {}, this->pagerRatio);
 
   if (backward) { // enable search filter
-    WinSize winSize;
-    syncWinSize(state, &winSize);
+    syncWinSize(state, &this->winSize);
     pager.updateWinSize({.rows = winSize.rows, .cols = winSize.cols});
     pager.tryToEnableFilterMode();
   } else {
@@ -1231,6 +1255,7 @@ Value LineEditorObject::kickCallback(ARState &state, Value &&callback, CallArgs 
   }
 
   // restore state
+  this->prevRendered.clearLines();
   state.setGlobal(BuiltinVarOffset::EXIT_STATUS, std::move(oldStatus));
   state.setGlobal(BuiltinVarOffset::IFS, std::move(oldIFS));
   state.setGlobal(BuiltinVarOffset::REPLY, std::move(oldREPLY));
