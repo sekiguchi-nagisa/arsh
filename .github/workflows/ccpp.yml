@@ -116,6 +116,59 @@ jobs:
           cd build
           ctest -j4 --output-on-failure
 
+  build_on_linux_ubuntu26_04_gcc:
+    runs-on: ubuntu-26.04
+    strategy:
+      matrix:
+        cc: [ g++-15 ]
+    steps:
+      - uses: actions/checkout@v6
+      - name: prepare
+        run: |
+          sudo apt update
+          sudo apt install language-pack-ja ninja-build
+      - name: configure
+        run: |
+          mkdir build
+          cd build
+          cmake .. -G Ninja \
+                -DCMAKE_BUILD_TYPE=debug \
+                -DCMAKE_CXX_COMPILER=${{ matrix.cc }} \
+      - name: build
+        run: |
+          cd build
+          ninja
+      - name: test
+        run: |
+          cd build
+          ctest -j4 --output-on-failure
+
+  build_on_linux_ubuntu26_04_clang:
+    runs-on: ubuntu-26.04
+    strategy:
+      matrix:
+        cc: [ clang++-21, clang++-22 ]
+    steps:
+      - uses: actions/checkout@v6
+      - name: prepare
+        run: |
+          sudo apt update
+          sudo apt install language-pack-ja ninja-build clang-21 clang-22
+      - name: configure
+        run: |
+          mkdir build
+          cd build
+          cmake .. -G Ninja \
+                -DCMAKE_BUILD_TYPE=debug \
+                -DCMAKE_CXX_COMPILER=${{ matrix.cc }} \
+      - name: build
+        run: |
+          cd build
+          ninja
+      - name: test
+        run: |
+          cd build
+          ctest -j4 --output-on-failure
 
   build_on_linux_ubuntu24_04_release:
     runs-on: ubuntu-24.04
