@@ -552,9 +552,9 @@ bool VM::addExpandingPath(ARState &state, const unsigned int size, ExpandOp expa
    * stack layout
    *
    * ===========> stack grow
-   * +------+-------+--------+     +--------+----------+
-   * | argv | redir | param1 | ~~~ | paramN | paramN+1 |
-   * +------+-------+--------+     +--------+----------+
+   * +------+-------+--------+     +--------+---------------------+
+   * | argv | redir | param1 | ~~~ | paramN | paramN+1 (sentinel) |
+   * +------+-------+--------+     +--------+---------------------+
    *
    * after evaluation
    * +------+-------+
@@ -563,7 +563,7 @@ bool VM::addExpandingPath(ARState &state, const unsigned int size, ExpandOp expa
    */
   auto &argv = typeAs<ArrayObject>(state.stack.peekByOffset(size + 2));
   const auto *begin = &state.stack.peekByOffset(size);
-  const auto *end = &state.stack.peek();
+  const auto *end = &state.stack.peek();  // sentinel
   bool ret;
   if (hasFlag(expandOp, ExpandOp::BRACE)) {
     ret = applyBraceExpansion(state, argv, begin, end);
