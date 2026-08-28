@@ -155,7 +155,8 @@ static int getCursorPosition(const int ttyFd, const bool queryCursor) {
 
   /* Report cursor location */
   if (queryCursor) {
-    if (constexpr char data[] = "\x1b[6n"; write(ttyFd, data, std::size(data) - 1) != 4) {
+    constexpr char data[] = "\x1b[6n";
+    if (constexpr auto size = std::size(data) - 1; write(ttyFd, data, size) != size) {
       return -1;
     }
   }
@@ -205,8 +206,10 @@ static void linenoiseBeep(const int fd) {
  * @return
  */
 static bool underMultiplexer() {
-  if (StringRef(getenv("TERM")).contains("screen")) {
-    return true;
+  if (const char *v = getenv("TERM")) {
+    if (StringRef(v).contains("screen")) {
+      return true;
+    }
   }
   if (getenv("TMUX")) {
     return true;
@@ -472,14 +475,14 @@ void LineEditorObject::refreshLine(ARState &state, RenderingContext &ctx, const 
     }
     const unsigned int renderedRows = ret.renderedRows();
     for (unsigned int i = 0; i < renderedRows; i++) {
+      if (i == renderedRows - 1) {
+        ab += "\x1b[0J"; // always clear below lines
+      }
       if (StringRef line(ret.renderedLines[i]);
           i < this->prevRendered.renderedRows() && line == this->prevRendered.renderedLines[i]) {
         if (line.endsWith("\r\n")) {
           ab += "\r\n"; // not change (just down cursor)
         }
-      } else if (i == renderedRows - 1) { // last
-        ab += "\r\x1b[0K\x1b[0J";         // clear remain
-        ab += ret.renderedLines[i];
       } else {
         ab += "\r\x1b[0K";
         ab += ret.renderedLines[i];
@@ -488,9 +491,10 @@ void LineEditorObject::refreshLine(ARState &state, RenderingContext &ctx, const 
   }
 
   /* Go up till we reach the expected position. */
-  if (const auto dist = ret.renderedRows() - ret.cursorRows; dist > 0) {
+  if (ret.renderedRows() > ret.cursorRows) {
+    const auto dist = ret.renderedRows() - ret.cursorRows;
     LOG(TRACE_EDIT, "go-up %u", dist);
-    snprintf(seq, std::size(seq), "\x1b[%dA", dist);
+    snprintf(seq, std::size(seq), "\x1b[%uA", dist);
     ab += seq;
   }
 
@@ -519,7 +523,7 @@ ssize_t LineEditorObject::accept(ARState &state, RenderingContext &ctx, bool exp
   }
   if (!this->kickAcceptorCallback(state, ctx.buf)) {
     errno = EAGAIN;
-    return -static_cast<ssize_t>(ctx.buf.getUsedSize());
+    return -1;
   }
   return static_cast<ssize_t>(ctx.buf.getUsedSize());
 }
@@ -989,7 +993,6 @@ ssize_t LineEditorObject::editInRawMode(ARState &state, RenderingContext &ctx) {
       }
       continue;
     }
-      assert(false); // unreachable
     }
   }
 }
