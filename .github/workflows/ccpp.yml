@@ -127,6 +127,7 @@ jobs:
         run: |
           sudo apt update
           sudo apt install language-pack-ja ninja-build
+          sudo apt install coreutils-from-gnu --allow-remove-essential
       - name: configure
         run: |
           mkdir build
@@ -154,6 +155,7 @@ jobs:
         run: |
           sudo apt update
           sudo apt install language-pack-ja ninja-build clang-21 clang-22
+          sudo apt install coreutils-from-gnu --allow-remove-essential
       - name: configure
         run: |
           mkdir build
