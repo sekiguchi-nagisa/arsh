@@ -571,9 +571,9 @@ void Screen::clear() {
 }
 
 void Screen::clearFromDown() {
-  const auto end = this->bufs.end();
-  for (auto iter = this->bufs.begin() + this->row + 1; iter != end; ++iter) {
-    auto &buf = *iter;
+  this->clearLineFrom();
+  for (unsigned int i = this->row + 1; i < this->bufs.size(); i++) {
+    auto &buf = this->bufs[i];
     const auto size = buf.size();
     buf.clear();
     buf.resize(size, '\0');
