@@ -195,10 +195,10 @@ static void defineAssert(const std::shared_ptr<JSEnv> &global) {
         auto message = env->findOrUndef(func->params[1]);
         return assertImpl(env, mustBeTrue, message);
       });
-  func->values["sameValue"] = createSameValue(global, true);
-  func->values["notSameValue"] = createSameValue(global, false);
-  func->values["compareArray"] = createCompareArray(global);
-  func->values["throws"] = createThrows(global);
+  func->setProperty("sameValue", JSPropertyAttr::DEFAULT, createSameValue(global, true));
+  func->setProperty("notSameValue", JSPropertyAttr::DEFAULT, createSameValue(global, false));
+  func->setProperty("compareArray", JSPropertyAttr::DEFAULT, createCompareArray(global));
+  func->setProperty("throws", JSPropertyAttr::DEFAULT, createThrows(global));
   global->define("assert", std::move(func));
 }
 

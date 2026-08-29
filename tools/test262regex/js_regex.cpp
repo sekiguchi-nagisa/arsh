@@ -151,9 +151,9 @@ static JSFunctionPtr createRegExpEscape(const std::shared_ptr<JSEnv> &global) {
 
 void defineJSRegex(const std::shared_ptr<JSEnv> &global) {
   auto prototype = std::make_shared<JSObject>();
-  prototype->values["test"] = createRegExpTest(global);
-  prototype->values["exec"] = createRegExpExec(global);
-  prototype->values[builtin::SYMBOL_MATCH] = createRegExpMatch(global);
+  prototype->setBuiltinProperty("test", createRegExpTest(global));
+  prototype->setBuiltinProperty("exec", createRegExpExec(global));
+  prototype->setBuiltinProperty(builtin::SYMBOL_MATCH, createRegExpMatch(global));
   auto func = createJSFunction(
       global, builtin::REGEXP, {"pattern", "flags"}, std::move(prototype),
       [](const JSFunctionPtr &func, const std::shared_ptr<JSEnv> &env) -> JSResult {
@@ -169,7 +169,7 @@ void defineJSRegex(const std::shared_ptr<JSEnv> &global) {
           flags = toWTF8(toString(v));
         }
         std::string err;
-        auto prototype = func->values.at(builtin::PROTOTYPE);
+        auto prototype = func->values.at(builtin::PROTOTYPE).value;
         assert(std::holds_alternative<JSObjectPtr>(prototype));
         if (auto obj = createJSRegexFrom(std::get<JSObjectPtr>(prototype), pattern, flags, &err)) {
           env->assign(builtin::THIS, obj);
@@ -177,7 +177,7 @@ void defineJSRegex(const std::shared_ptr<JSEnv> &global) {
         }
         return throwError(env, builtin::SYNTAX_ERROR, toUTF16(err));
       });
-  func->values["escape"] = createRegExpEscape(global);
+  func->setBuiltinProperty("escape", createRegExpEscape(global));
   global->define(builtin::REGEXP, std::move(func));
 }
 
@@ -389,8 +389,8 @@ static JSValue toNamedGroups(const regex::Regex &re, const StringRef ref,
   }
   auto groups = std::make_shared<JSObject>();
   collectNamedGroups(re, captures, [groups, ref](StringRef name, regex::Capture cap) {
-    groups->values[name.toString()] =
-        cap ? newJSStringPtr(ref.substr(cap.offset, cap.size)) : JSValue();
+    groups->setProperty(name.toString(), JSPropertyAttr::DEFAULT,
+                        cap ? newJSStringPtr(ref.substr(cap.offset, cap.size)) : JSValue());
   });
   return groups;
 }
@@ -409,7 +409,7 @@ static JSValue toNamedGroupIndices(const regex::Regex &re, const StringRef ref,
           static_cast<double>(toUTF16Offset(ref, cap.offset + cap.size)),
       }});
     }
-    groups->values[name.toString()] = std::move(value);
+    groups->setProperty(name.toString(), JSPropertyAttr::DEFAULT, std::move(value));
   });
   return groups;
 }
@@ -427,7 +427,7 @@ static JSValue toIndices(const regex::Regex &re, const StringRef ref,
     }
     indices->array.push_back(std::move(value));
   }
-  indices->values["groups"] = toNamedGroupIndices(re, ref, captures);
+  indices->setProperty("groups", JSPropertyAttr::DEFAULT, toNamedGroupIndices(re, ref, captures));
   return indices;
 }
 
@@ -439,11 +439,12 @@ toMatchResult(const JSRegex &regex, const JSStringPtr &str, const StringRef ref,
   for (auto &cap : captures) {
     obj->array.push_back(cap ? newJSStringPtr(ref.substr(cap.offset, cap.size)) : JSValue());
   }
-  obj->values["index"] = static_cast<double>(toUTF16Offset(ref, captures[0].offset));
-  obj->values["input"] = str;
-  obj->values["groups"] = toNamedGroups(regex.regex, ref, captures);
+  obj->setProperty("index", JSPropertyAttr::DEFAULT,
+                   static_cast<double>(toUTF16Offset(ref, captures[0].offset)));
+  obj->setProperty("input", JSPropertyAttr::DEFAULT, str);
+  obj->setProperty("groups", JSPropertyAttr::DEFAULT, toNamedGroups(regex.regex, ref, captures));
   if (hasFlag(regex.extra, JSRegex::ExtraFlag::HAS_INDICES)) {
-    obj->values["indices"] = toIndices(regex.regex, ref, captures);
+    obj->setProperty("indices", JSPropertyAttr::DEFAULT, toIndices(regex.regex, ref, captures));
   }
   return {obj, lastIndex};
 }

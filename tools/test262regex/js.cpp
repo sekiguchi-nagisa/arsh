@@ -121,7 +121,7 @@ JSResult assignProperty(const std::shared_ptr<JSEnv> &env, unsigned int callerLi
         using T = std::decay_t<decltype(element)>;
         if constexpr (std::is_same_v<T, JSFunctionPtr> || std::is_same_v<T, JSObjectPtr> ||
                       std::is_same_v<T, JSArrayPtr>) {
-          element->values[name] = value;
+          element->setProperty(name, JSValue(value));
           return Ok(std::move(value));
         } else if constexpr (std::is_same_v<T, JSRegexPtr>) {
           setOwnProperty(*element, name, JSValue(value));
@@ -242,7 +242,7 @@ void toPrettyString(const JSValue &value, std::u16string &out, const PrettyStrin
     toUTF16(toString(*std::get<JSRegexPtr>(value)), out);
   } else if (std::holds_alternative<JSFunctionPtr>(value)) {
     out += u"[Function: ";
-    out += *std::get<JSStringPtr>(std::get<JSFunctionPtr>(value)->values.at("name"));
+    out += *std::get<JSStringPtr>(std::get<JSFunctionPtr>(value)->values.at("name").value);
     out += u']';
   } else if (std::holds_alternative<JSArrayPtr>(value)) {
     auto &array = std::get<JSArrayPtr>(value);
@@ -265,7 +265,7 @@ void toPrettyString(const JSValue &value, std::u16string &out, const PrettyStrin
       out += u' ';
       toUTF16(k, out);
       out += u": ";
-      toPrettyString(v, out, op);
+      toPrettyString(v.value, out, op);
     }
     if (count) {
       out += u' ';
@@ -286,7 +286,7 @@ void toPrettyString(const JSValue &value, std::u16string &out, const PrettyStrin
       out += u' ';
       toUTF16(k, out);
       out += u": ";
-      toPrettyString(v, out, op);
+      toPrettyString(v.value, out, op);
     }
     out += u" }";
   } else {
@@ -297,7 +297,7 @@ void toPrettyString(const JSValue &value, std::u16string &out, const PrettyStrin
 void toString(const JSValue &value, std::u16string &out) {
   if (std::holds_alternative<JSFunctionPtr>(value)) {
     out += u"function ";
-    out += *std::get<JSStringPtr>(std::get<JSFunctionPtr>(value)->values.at("name"));
+    out += *std::get<JSStringPtr>(std::get<JSFunctionPtr>(value)->values.at("name").value);
     out += u"() { [native code] }";
   } else if (std::holds_alternative<JSArrayPtr>(value)) {
     auto &array = std::get<JSArrayPtr>(value);
@@ -535,9 +535,9 @@ JSFunctionPtr createJSFunction(const std::shared_ptr<JSEnv> &env, const char *na
   auto func = std::make_shared<JSFunction>();
   func->params = std::move(params);
   func->definedEnv = env;
-  func->values["name"] = newJSStringPtr(name);
+  func->setBuiltinProperty("name", newJSStringPtr(name));
   if (prototype) {
-    func->values[builtin::PROTOTYPE] = std::move(prototype);
+    func->setBuiltinProperty(builtin::PROTOTYPE, std::move(prototype));
   }
   func->impl = std::move(impl);
   return func;
@@ -546,7 +546,7 @@ JSFunctionPtr createJSFunction(const std::shared_ptr<JSEnv> &env, const char *na
 static JSObjectPtr newObject(const JSFunctionPtr &func) {
   auto obj = std::make_shared<JSObject>();
   if (auto prototype = getOwnProperty(*func, builtin::PROTOTYPE); !isUndefined(prototype)) {
-    obj->values[builtin::PROTO] = std::move(prototype);
+    obj->setBuiltinProperty(builtin::PROTO, std::move(prototype));
   }
   return obj;
 }
@@ -565,27 +565,27 @@ static JSResult errorConstructorImpl(const JSFunctionPtr &func, const std::share
   if (isUndefined(v)) {
     v = newJSStringPtr("");
   }
-  obj->values[func->params[0]] = v;
+  obj->setBuiltinProperty(func->params[0], std::move(v));
 
   // fileName
   v = env->findOrUndef(func->params[1]);
   if (isUndefined(v)) {
     v = env->findOrUndef(JSEnv::CALLER_FILENAME);
   }
-  obj->values[func->params[1]] = v;
+  obj->setBuiltinProperty(func->params[1], std::move(v));
 
   // lineNumber
   v = env->findOrUndef(func->params[2]);
   if (isUndefined(v)) {
     v = env->findOrUndef(JSEnv::CALLER_LINENO);
   }
-  obj->values[func->params[2]] = v;
+  obj->setBuiltinProperty(func->params[2], std::move(v));
   return Ok(obj);
 }
 
 static void defineError(const std::shared_ptr<JSEnv> &global) {
   auto prototype = std::make_shared<JSObject>();
-  prototype->values["name"] = newJSStringPtr(builtin::ERROR);
+  prototype->setBuiltinProperty("name", newJSStringPtr(builtin::ERROR));
   auto func = createJSFunction(global, builtin::ERROR, {"message", "fileName", "lineNumber"},
                                std::move(prototype), errorConstructorImpl);
   global->define(builtin::ERROR, std::move(func));
@@ -597,8 +597,8 @@ void defineDerivedError(const std::shared_ptr<JSEnv> &global, const char *name) 
   auto errorPrototype =
       getOwnProperty(*std::get<JSFunctionPtr>(errorConstructor), builtin::PROTOTYPE);
   auto prototype = std::make_shared<JSObject>();
-  prototype->values["name"] = newJSStringPtr(name);
-  prototype->values[builtin::PROTO] = errorPrototype;
+  prototype->setBuiltinProperty("name", newJSStringPtr(name));
+  prototype->setBuiltinProperty(builtin::PROTO, std::move(errorPrototype));
   auto func = createJSFunction(global, name, {"message", "fileName", "lineNumber"},
                                std::move(prototype), errorConstructorImpl);
   global->define(name, std::move(func));
@@ -621,7 +621,8 @@ static void defineConsole(const std::shared_ptr<JSEnv> &global) {
     return Ok(JSValue());
   };
   auto obj = std::make_shared<JSObject>();
-  obj->values["log"] = createJSFunction(global, "log", {"message"}, nullptr, std::move(impl));
+  obj->setBuiltinProperty("log",
+                          createJSFunction(global, "log", {"message"}, nullptr, std::move(impl)));
   global->define("console", std::move(obj));
 }
 
@@ -774,15 +775,15 @@ static void defineString(const std::shared_ptr<JSEnv> &global) {
     return Ok(std::make_shared<JSString>(toString(thing)));
   };
   auto prototype = std::make_shared<JSObject>();
-  prototype->values["match"] = createStringMatch(global);
-  prototype->values["slice"] = createStringSlice(global);
-  prototype->values["charAt"] = createStringCharAt(global);
-  prototype->values["charCodeAt"] = createStringCharCodeAt(global);
-  prototype->values["codePointAt"] = createStringCodePointAt(global);
+  prototype->setBuiltinProperty("match", createStringMatch(global));
+  prototype->setBuiltinProperty("slice", createStringSlice(global));
+  prototype->setBuiltinProperty("charAt", createStringCharAt(global));
+  prototype->setBuiltinProperty("charCodeAt", createStringCharCodeAt(global));
+  prototype->setBuiltinProperty("codePointAt", createStringCodePointAt(global));
   auto func =
       createJSFunction(global, builtin::STRING, {"thing"}, std::move(prototype), std::move(impl));
-  func->values["fromCharCode"] = createStringFromCharCode(global);
-  func->values["fromCodePoint"] = createStringFromCodePoint(global);
+  func->setBuiltinProperty("fromCharCode", createStringFromCharCode(global));
+  func->setBuiltinProperty("fromCodePoint", createStringFromCodePoint(global));
   global->define(builtin::STRING, std::move(func));
 }
 
@@ -816,17 +817,17 @@ static void defineNumber(const std::shared_ptr<JSEnv> &global) {
     return Ok(0.0);
   };
   auto prototype = std::make_shared<JSObject>();
-  prototype->values["toString"] = createNumberToString(global);
+  prototype->setBuiltinProperty("toString", createNumberToString(global));
   auto func =
       createJSFunction(global, builtin::NUMBER, {"value"}, std::move(prototype), std::move(impl));
-  func->values["EPSILON"] = std::numeric_limits<double>::epsilon();
-  func->values["MAX_SAFE_INTEGER"] = MAX_SAFE_INTEGER;
-  func->values["MIN_SAFE_INTEGER"] = MIN_SAFE_INTEGER;
-  func->values["MAX_VALUE"] = std::numeric_limits<double>::max();
-  func->values["MIN_VALUE"] = std::numeric_limits<double>::min();
-  func->values["NaN"] = std::nan("");
-  func->values["NEGATIVE_INFINITY"] = -INFINITY;
-  func->values["POSITIVE_INFINITY"] = INFINITY;
+  func->setBuiltinProperty("EPSILON", std::numeric_limits<double>::epsilon());
+  func->setBuiltinProperty("MAX_SAFE_INTEGER", MAX_SAFE_INTEGER);
+  func->setBuiltinProperty("MIN_SAFE_INTEGER", MIN_SAFE_INTEGER);
+  func->setBuiltinProperty("MAX_VALUE", std::numeric_limits<double>::max());
+  func->setBuiltinProperty("MIN_VALUE", std::numeric_limits<double>::min());
+  func->setBuiltinProperty("NaN", std::nan(""));
+  func->setBuiltinProperty("NEGATIVE_INFINITY", -INFINITY);
+  func->setBuiltinProperty("POSITIVE_INFINITY", INFINITY);
   global->define(builtin::NUMBER, std::move(func));
 }
 
@@ -834,7 +835,7 @@ JSArrayPtr createJSArray(const std::shared_ptr<JSEnv> &env) {
   auto constructor = env->findGlobalEnv()->findOrUndef(builtin::ARRAY);
   auto prototype = getOwnProperty(*std::get<JSFunctionPtr>(constructor), builtin::PROTOTYPE);
   auto array = std::make_shared<JSArray>();
-  array->values[builtin::PROTO] = prototype;
+  array->setBuiltinProperty(builtin::PROTO, std::move(prototype));
   return array;
 }
 
@@ -886,8 +887,8 @@ static void defineArray(const std::shared_ptr<JSEnv> &global) {
     return Ok(std::move(array));
   };
   auto prototype = std::make_shared<JSObject>();
-  prototype->values["push"] = createArrayPush(global);
-  prototype->values["join"] = createArrayJoin(global);
+  prototype->setBuiltinProperty("push", createArrayPush(global));
+  prototype->setBuiltinProperty("join", createArrayJoin(global));
   auto func =
       createJSFunction(global, builtin::ARRAY, {"element"}, std::move(prototype), std::move(impl));
   global->define(builtin::ARRAY, std::move(func));
@@ -1830,7 +1831,7 @@ static JSResult evalObject(const ObjectLiteral &literal, const std::shared_ptr<J
   JSObjectPtr object = std::make_shared<JSObject>();
   for (auto &[k, v] : literal.values) {
     auto value = TRY(evaluate(*v, env));
-    object->values[k] = std::move(value);
+    object->setProperty(k, JSPropertyAttr::DEFAULT, std::move(value));
   }
   return Ok(std::move(object));
 }

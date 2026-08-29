@@ -78,15 +78,67 @@ inline bool isUndefined(const JSValue &value) {
 
 inline bool isNull(const JSValue &value) { return std::holds_alternative<std::nullptr_t>(value); }
 
+#define EACH_JS_PROPERTY_ATTR(E)                                                                   \
+  E(CONFIGURABLE, "configurable", (1u << 0u))                                                      \
+  E(ENUMERABLE, "enumerable", (1u << 1u))                                                          \
+  E(WRITABLE, "writable", (1u << 2u))
+
+enum class JSPropertyAttr : unsigned char {
+  NONE = 0u,
+#define GEN_ENUM(E, S, D) E = (D),
+  EACH_JS_PROPERTY_ATTR(GEN_ENUM)
+#undef GEN_ENUM
+
+      BUILTIN = CONFIGURABLE,
+  DEFAULT = CONFIGURABLE | ENUMERABLE | WRITABLE,
+};
+
+struct JSProperty {
+  JSPropertyAttr attr;
+  JSValue value;
+
+  static JSProperty withBuiltin(JSValue &&value) {
+    return {.attr = JSPropertyAttr::BUILTIN, .value = std::move(value)};
+  }
+
+  static JSProperty withDefault(JSValue &&value) {
+    return {.attr = JSPropertyAttr::DEFAULT, .value = std::move(value)};
+  }
+};
+
 class JSEnv;
 
 struct JSObject {
-  std::map<std::string, JSValue> values;
+  std::map<std::string, JSProperty> values;
+
+  void setProperty(const std::string &name, JSPropertyAttr attr, JSValue &&value) {
+    this->values[name] = {attr, std::move(value)};
+  }
+
+  void setProperty(const std::string &name, JSValue &&value) {
+    JSProperty p{.attr = JSPropertyAttr::DEFAULT, .value = std::move(value)};
+    auto pair = this->values.try_emplace(name, std::move(p));
+    if (!pair.second) {
+      p.attr = pair.first->second.attr;
+      pair.first->second = std::move(p);
+    }
+  }
+
+  void setBuiltinProperty(const std::string &name, JSValue &&value) {
+    this->setProperty(name, JSPropertyAttr::BUILTIN, std::move(value));
+  }
 };
 
-inline JSValue getOwnProperty(const JSObject &obj, const std::string &name) {
+inline const JSProperty *getOwnRawProperty(const JSObject &obj, const std::string &name) {
   if (auto iter = obj.values.find(name); iter != obj.values.end()) {
-    return iter->second;
+    return &iter->second;
+  }
+  return nullptr;
+}
+
+inline JSValue getOwnProperty(const JSObject &obj, const std::string &name) {
+  if (auto *ptr = getOwnRawProperty(obj, name)) {
+    return ptr->value;
   }
   return {};
 }
@@ -332,9 +384,10 @@ std::string formatEvalResult(const std::shared_ptr<JSEnv> &env, const JSResult &
 
 } // namespace arsh::re262
 
-namespace arsh {
 template <>
-struct allow_enum_bitop<re262::JSRegex::ExtraFlag> : std::true_type {};
-} // namespace arsh
+struct arsh::allow_enum_bitop<arsh::re262::JSPropertyAttr> : std::true_type {};
+
+template <>
+struct arsh::allow_enum_bitop<arsh::re262::JSRegex::ExtraFlag> : std::true_type {};
 
 #endif // ARSH_TOOLS_TEST262_REGEX_JS_H
