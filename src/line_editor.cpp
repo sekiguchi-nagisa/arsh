@@ -461,9 +461,9 @@ void LineEditorObject::refreshLine(ARState &state, RenderingContext &ctx, const 
         snprintf(seq, std::size(seq), "\x1b[%uA", diff);
         ab += seq;
       }
-      /* Clean the top and bellow lines. */
+      /* Clean the top and below lines. */
       LOG(TRACE_EDIT, "clear");
-      ab += "\r\x1b[0K\x1b[0J";
+      ab += "\r\x1b[0J";
     }
     ret.appendTo(ab);
   } else {
@@ -473,11 +473,9 @@ void LineEditorObject::refreshLine(ARState &state, RenderingContext &ctx, const 
       snprintf(seq, std::size(seq), "\x1b[%uA", diff);
       ab += seq;
     }
+    ab += '\r';
     const unsigned int renderedRows = ret.renderedRows();
     for (unsigned int i = 0; i < renderedRows; i++) {
-      if (i == renderedRows - 1) {
-        ab += "\x1b[0J"; // always clear below lines
-      }
       if (StringRef line(ret.renderedLines[i]);
           i < this->prevRendered.renderedRows() && line == this->prevRendered.renderedLines[i]) {
         if (line.endsWith("\r\n")) {
@@ -487,6 +485,9 @@ void LineEditorObject::refreshLine(ARState &state, RenderingContext &ctx, const 
         ab += "\r\x1b[0K";
         ab += ret.renderedLines[i];
       }
+    }
+    if (renderedRows < this->prevRendered.renderedRows()) {
+      ab += "\x1b[0J"; // clear below lines
     }
   }
 
