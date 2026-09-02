@@ -123,7 +123,7 @@ struct UnicodeUtil {
    */
   static int utf16ToCodePoint(char16_t high, char16_t low) {
     if (isHighSurrogate(high) && isLowSurrogate(low)) {
-      return static_cast<int>((static_cast<unsigned int>(high - 0xD800) << 10) +
+      return static_cast<int>((static_cast<unsigned int>(high - 0xD800) << 10u) +
                               static_cast<unsigned int>(low - 0xDC00) + 0x10000);
     }
     return -1;
@@ -134,8 +134,8 @@ struct UnicodeUtil {
       return {static_cast<char16_t>(codePoint), static_cast<char16_t>(codePoint)};
     }
     const auto code = static_cast<unsigned int>(codePoint) - 0x10000;
-    const auto high = static_cast<char16_t>((code >> 10) + 0xD800);
-    const auto low = static_cast<char16_t>((code & 0x3FF) + 0xDC00);
+    const auto high = static_cast<char16_t>((code >> 10u) + 0xD800);
+    const auto low = static_cast<char16_t>((code & 0x3FFu) + 0xDC00);
     return {high, low};
   }
 
@@ -183,7 +183,7 @@ unsigned int UnicodeUtil<T>::utf8ByteSize(unsigned char b) {
       1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
       0, 0, 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 3, 3, 4, 0,
   };
-  return packedTable[b >> 3];
+  return packedTable[b >> 3u];
 }
 
 template <bool T>
@@ -205,21 +205,22 @@ unsigned int UnicodeUtil<T>::utf8ValidateChar(const char *begin0, const char *en
    */
   if (*begin < 0x80) { // 0xxxxxxx
     return 1;
-  } else if ((begin[0] & 0xE0) == 0xC0) { // 110xxxxx 10xxxxxx
-    if (begin + 1 == end || (begin[1] & 0xC0) != 0x80 || (begin[0] & 0xFE) == 0xC0) { // overlong
+  } else if ((begin[0] & 0xE0u) == 0xC0) { // 110xxxxx 10xxxxxx
+    if (begin + 1 == end || (begin[1] & 0xC0u) != 0x80 || (begin[0] & 0xFEu) == 0xC0) { // overlong
       return 0;
     }
     return 2;
-  } else if ((begin[0] & 0xF0) == 0xE0) { // 1110xxxx 10xxxxxx 10xxxxxx
-    if (begin + 2 >= end || (begin[1] & 0xC0) != 0x80 || (begin[2] & 0xC0) != 0x80 ||
-        (begin[0] == 0xE0 && (begin[1] & 0xE0) == 0x80) ||                    // overlong
-        (begin[0] == 0xED && (begin[1] & 0xE0) == 0xA0 && !allowSurrogate)) { // surrogate
+  } else if ((begin[0] & 0xF0u) == 0xE0) { // 1110xxxx 10xxxxxx 10xxxxxx
+    if (begin + 2 >= end || (begin[1] & 0xC0u) != 0x80 || (begin[2] & 0xC0u) != 0x80 ||
+        (begin[0] == 0xE0 && (begin[1] & 0xE0u) == 0x80) ||                    // overlong
+        (begin[0] == 0xED && (begin[1] & 0xE0u) == 0xA0 && !allowSurrogate)) { // surrogate
       return 0;
     }
     return 3;
-  } else if ((begin[0] & 0xF8) == 0xF0) { // 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
-    if (begin + 3 >= end || (begin[1] & 0xC0) != 0x80 || (begin[2] & 0xC0) != 0x80 ||
-        (begin[3] & 0xC0) != 0x80 || (begin[0] == 0xF0 && (begin[1] & 0xF0) == 0x80) || // overlong
+  } else if ((begin[0] & 0xF8u) == 0xF0) { // 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
+    if (begin + 3 >= end || (begin[1] & 0xC0u) != 0x80 || (begin[2] & 0xC0u) != 0x80 ||
+        (begin[3] & 0xC0u) != 0x80 ||
+        (begin[0] == 0xF0 && (begin[1] & 0xF0u) == 0x80) ||         // overlong
         (begin[0] == 0xF4 && begin[1] > 0x8F) || begin[0] > 0xF4) { // > U+10FFFF
       return 0;
     }
@@ -238,19 +239,15 @@ unsigned int UnicodeUtil<T>::utf8ToCodePoint(const char *begin0, const char *end
     codePoint = static_cast<unsigned char>(begin[0]);
     break;
   case 2:
-    codePoint = static_cast<int>((static_cast<unsigned int>(begin[0] & 0x1F) << 6) |
-                                 static_cast<unsigned int>(begin[1] & 0x3F));
+    codePoint = static_cast<int>(((begin[0] & 0x1Fu) << 6u) | (begin[1] & 0x3Fu));
     break;
   case 3:
-    codePoint = static_cast<int>((static_cast<unsigned int>(begin[0] & 0x0F) << 12) |
-                                 (static_cast<unsigned int>(begin[1] & 0x3F) << 6) |
-                                 static_cast<unsigned int>(begin[2] & 0x3F));
+    codePoint = static_cast<int>(((begin[0] & 0x0Fu) << 12u) | ((begin[1] & 0x3Fu) << 6u) |
+                                 (begin[2] & 0x3Fu));
     break;
   case 4:
-    codePoint = static_cast<int>((static_cast<unsigned int>(begin[0] & 0x07) << 18) |
-                                 (static_cast<unsigned int>(begin[1] & 0x3F) << 12) |
-                                 (static_cast<unsigned int>(begin[2] & 0x3F) << 6) |
-                                 static_cast<unsigned int>(begin[3] & 0x3F));
+    codePoint = static_cast<int>(((begin[0] & 0x07u) << 18u) | ((begin[1] & 0x3Fu) << 12u) |
+                                 ((begin[2] & 0x3Fu) << 6u) | (begin[3] & 0x3Fu));
     break;
   default:
     codePoint = -1;
@@ -269,19 +266,19 @@ unsigned int UnicodeUtil<T>::codePointToUtf8(int codePoint, char *const buf) {
     buf[0] = static_cast<char>(codePoint);
     return 1;
   } else if (codePoint <= 0x7FF) { // 110xxxxx 10xxxxxx
-    buf[0] = static_cast<char>(0xC0 | (codePoint >> 6));
-    buf[1] = static_cast<char>(0x80 | (codePoint & 0x3F));
+    buf[0] = static_cast<char>(0xC0u | (static_cast<unsigned int>(codePoint) >> 6u));
+    buf[1] = static_cast<char>(0x80u | (static_cast<unsigned int>(codePoint) & 0x3Fu));
     return 2;
   } else if (codePoint <= 0xFFFF) { // 1110xxxx 10xxxxxx 10xxxxxx
-    buf[0] = static_cast<char>(0xE0 | (codePoint >> 12));
-    buf[1] = static_cast<char>(0x80 | ((codePoint >> 6) & 0x3F));
-    buf[2] = static_cast<char>(0x80 | (codePoint & 0x3F));
+    buf[0] = static_cast<char>(0xE0u | (static_cast<unsigned int>(codePoint) >> 12u));
+    buf[1] = static_cast<char>(0x80u | ((static_cast<unsigned int>(codePoint) >> 6u) & 0x3Fu));
+    buf[2] = static_cast<char>(0x80u | (static_cast<unsigned int>(codePoint) & 0x3Fu));
     return 3;
   } else if (codePoint <= 0x10FFFF) { // 11110xxx 10xxxxxx 10xxxxxx 10xxxxxx
-    buf[0] = static_cast<char>(0xF0 | (codePoint >> 18));
-    buf[1] = static_cast<char>(0x80 | ((codePoint >> 12) & 0x3F));
-    buf[2] = static_cast<char>(0x80 | ((codePoint >> 6) & 0x3F));
-    buf[3] = static_cast<char>(0x80 | (codePoint & 0x3F));
+    buf[0] = static_cast<char>(0xF0u | (static_cast<unsigned int>(codePoint) >> 18u));
+    buf[1] = static_cast<char>(0x80u | ((static_cast<unsigned int>(codePoint) >> 12u) & 0x3Fu));
+    buf[2] = static_cast<char>(0x80u | ((static_cast<unsigned int>(codePoint) >> 6u) & 0x3Fu));
+    buf[3] = static_cast<char>(0x80u | (static_cast<unsigned int>(codePoint) & 0x3Fu));
     return 4;
   }
   return 0;
@@ -383,16 +380,16 @@ public:
 
   static CodePointWithMeta from(unsigned int v) { return CodePointWithMeta(v); }
 
-  constexpr CodePointWithMeta(int codePoint, unsigned char meta) : value(meta << 24) {
-    this->value |= codePoint < 0 ? 0xFFFFFF : static_cast<unsigned int>(codePoint) & 0xFFFFFF;
+  constexpr CodePointWithMeta(int codePoint, unsigned char meta) : value(meta << 24u) {
+    this->value |= codePoint < 0 ? 0xFFFFFF : static_cast<unsigned int>(codePoint) & 0xFFFFFFu;
   }
 
   unsigned int getValue() const { return this->value; }
 
-  unsigned char getMeta() const { return this->value >> 24; }
+  unsigned char getMeta() const { return this->value >> 24u; }
 
   int codePoint() const {
-    unsigned int cc = this->value & 0xFFFFFF;
+    unsigned int cc = this->value & 0xFFFFFFu;
     return cc == 0xFFFFFF ? -1 : static_cast<int>(cc);
   }
 
@@ -415,14 +412,14 @@ private:
 
 public:
   constexpr CodePointPropertyInterval(int first, int last, T p)
-      : data(static_cast<uint64_t>(p) << 48 | static_cast<uint64_t>(first) << 24 |
+      : data(static_cast<uint64_t>(p) << 48u | static_cast<uint64_t>(first) << 24u |
              static_cast<uint64_t>(last)) {}
 
-  constexpr int first() const { return static_cast<int>(this->data >> 24 & 0xFFFFFF); }
+  constexpr int first() const { return static_cast<int>(this->data >> 24u & 0xFFFFFFu); }
 
-  constexpr int last() const { return static_cast<int>(this->data & 0xFFFFFF); }
+  constexpr int last() const { return static_cast<int>(this->data & 0xFFFFFFu); }
 
-  constexpr T property() const { return static_cast<T>(static_cast<uint16_t>(this->data >> 48)); }
+  constexpr T property() const { return static_cast<T>(static_cast<uint16_t>(this->data >> 48u)); }
 
   bool contains(int codePoint) const {
     return codePoint >= this->first() && codePoint <= this->last();
