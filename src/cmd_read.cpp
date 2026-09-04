@@ -14,11 +14,10 @@
  * limitations under the License.
  */
 
-#include <termios.h>
-
 #include "cmd.h"
 #include "keycode.h"
 #include "misc/num_util.hpp"
+#include "misc/pty.hpp"
 #include "ordered_map.h"
 #include "vm.h"
 
@@ -233,13 +232,13 @@ int builtin_read(ARState &state, ArrayObject &argvObj) {
   }
 
   // change tty state
-  struct termios oldTTY {};
+  struct termios oldTTY{};
   if (noEcho && isTTY) {
-    struct termios tty {};
+    struct termios tty{};
     tcgetattr(param.fd, &tty);
     oldTTY = tty;
     tty.c_lflag &= ~(ECHO | ECHOK | ECHONL);
-    tcsetattr(param.fd, TCSANOW, &tty);
+    tcsetattrWithRetry(param.fd, TCSANOW, &tty);
   }
 
   // read line
@@ -254,7 +253,7 @@ int builtin_read(ARState &state, ArrayObject &argvObj) {
 
   // restore tty setting
   if (noEcho && isTTY) {
-    tcsetattr(param.fd, TCSANOW, &oldTTY);
+    tcsetattrWithRetry(param.fd, TCSANOW, &oldTTY);
   }
 
   // report error

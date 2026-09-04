@@ -360,7 +360,7 @@ bool LineEditorObject::enableRawMode() {
   cfsetospeed(&raw, EXTB);
 
   /* put terminal in raw mode after flushing */
-  if (tcsetattr(this->ttyFd, TCSAFLUSH, &raw) < 0) {
+  if (tcsetattrWithRetry(this->ttyFd, TCSAFLUSH, &raw) < 0) {
     return false;
   }
   this->rawMode = true;
@@ -388,7 +388,7 @@ void LineEditorObject::disableRawMode() {
       disableModifyOtherKeys(this->ttyFd);
     }
     /* Don't even check the return value as it's too late. */
-    if (tcsetattr(this->ttyFd, TCSAFLUSH, &this->orgTermios) != -1) {
+    if (tcsetattrWithRetry(this->ttyFd, TCSAFLUSH, &this->orgTermios) != -1) {
       this->rawMode = false;
     }
   }

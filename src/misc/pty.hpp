@@ -118,6 +118,15 @@ inline void xcfmakesane(termios &term) {
   memcpy(term.c_cc, defchars, std::size(defchars) * sizeof(cc_t));
 }
 
+inline int tcsetattrWithRetry(const int fd, const int opt, const termios *term) {
+  int r = 0;
+  do {
+    errno = 0;
+    r = tcsetattr(fd, opt, term);
+  } while (r < 0 && errno == EINTR);
+  return r;
+}
+
 struct WinSize {
   unsigned short rows{24};
   unsigned short cols{80};

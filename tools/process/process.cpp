@@ -266,7 +266,7 @@ static void setPTYSetting(int fd, const IOConfig &config) {
     return;
   }
 
-  if (tcsetattr(fd, TCSAFLUSH, &config.term) == -1) {
+  if (arsh::tcsetattrWithRetry(fd, TCSAFLUSH, &config.term) == -1) {
     fatal_perror("failed");
   }
 
