@@ -277,29 +277,50 @@ namespace arsh {
 LineEditorObject::LineEditorObject(ARState &state)
     : ObjectWithRtti(TYPE::LineEditor), ttyFd(state.getTTYFd()) {}
 
-static void enableBracketPasteMode(std::string &out) { out += "\x1b[?2004h"; }
+static void enableTermFeatures(const int fd, const LineEditorFeature features) {
+  constexpr char BRACKET_PASTE_MODE_ON[] = "\x1b[?2004h";
 
-static void disableBracketPasteMode(std::string &out) { out += "\x1b[?2004l"; }
-
-static void enableKittyKeyboardProtocol(std::string &out) {
   /**
-   * enable the following progressive enhancement
+   * only enable the following progressive enhancement.
    * (see https://sw.kovidgoyal.net/kitty/keyboard-protocol/#progressive-enhancement)
    *
    * 0b1    Disambiguate escape codes
    * 0b100  Report alternate keys
+   *
+   * note that, do not enable `Report all keys as escape codes` due to some quirks
+   * (ex. japanses-IME, macOS opt-key)
    */
-  out += "\x1b[=5u"; // 0b101
+  constexpr char KITTY_PROTOCOL_ON[] = "\x1b[=5u"; // 0b101
+
+  constexpr char MODIFY_OTHER_KEYS_ON[] = "\x1b[>4;1m"; // enable level1
+
+  char buf[std::size(BRACKET_PASTE_MODE_ON) + std::size(KITTY_PROTOCOL_ON) +
+           std::size(MODIFY_OTHER_KEYS_ON) + 1];
+  const int len = snprintf(
+      buf, std::size(buf), "%s%s%s",
+      hasFlag(features, LineEditorFeature::BRACKETED_PASTE) ? BRACKET_PASTE_MODE_ON : "",
+      hasFlag(features, LineEditorFeature::KITTY_KEYBOARD_PROTOCOL) ? KITTY_PROTOCOL_ON : "",
+      hasFlag(features, LineEditorFeature::XTERM_MODIFY_OTHER_KEYS) ? MODIFY_OTHER_KEYS_ON : "");
+
+  if (write(fd, buf, len) == -1) { /* ignore error */
+  }
 }
 
-static void disableKittyKeyboardProtocol(std::string &out) {
-  out += "\x1b[=0u"; // reset all enhancement flags
-}
+static void disableTermFeatures(const int fd, const LineEditorFeature features) {
+  constexpr char BRACKET_PASTE_MODE_OFF[] = "\x1b[?2004l";
+  constexpr char KITTY_PROTOCOL_OFF[] = "\x1b[=0u";      // reset all enhancement flags
+  constexpr char MODIFY_OTHER_KEYS_OFF[] = "\x1b[>4;0m"; // reset (level0)
 
-static void enableModifyOtherKeys(std::string &out) { out += "\x1b[>4;1m"; }
+  char buf[std::size(BRACKET_PASTE_MODE_OFF) + std::size(KITTY_PROTOCOL_OFF) +
+           std::size(MODIFY_OTHER_KEYS_OFF) + 1];
+  const int len = snprintf(
+      buf, std::size(buf), "%s%s%s",
+      hasFlag(features, LineEditorFeature::BRACKETED_PASTE) ? BRACKET_PASTE_MODE_OFF : "",
+      hasFlag(features, LineEditorFeature::KITTY_KEYBOARD_PROTOCOL) ? KITTY_PROTOCOL_OFF : "",
+      hasFlag(features, LineEditorFeature::XTERM_MODIFY_OTHER_KEYS) ? MODIFY_OTHER_KEYS_OFF : "");
 
-static void disableModifyOtherKeys(std::string &out) {
-  out += "\x1b[>4;0m"; // reset all enhancement flags
+  if (write(fd, buf, len) == -1) { /* ignore error */
+  }
 }
 
 /* Raw mode: 1960 magic shit. */
@@ -345,37 +366,14 @@ bool LineEditorObject::enableRawMode() {
   if (tcsetattrWithRetry(this->ttyFd, TCSAFLUSH, &raw) < 0) {
     return false;
   }
-  std::string out;
-  if (this->hasFeature(LineEditorFeature::BRACKETED_PASTE)) {
-    enableBracketPasteMode(out);
-  }
-  if (this->hasFeature(LineEditorFeature::KITTY_KEYBOARD_PROTOCOL)) {
-    enableKittyKeyboardProtocol(out);
-  }
-  if (this->hasFeature(LineEditorFeature::XTERM_MODIFY_OTHER_KEYS)) {
-    enableModifyOtherKeys(out);
-  }
-  if (write(this->ttyFd, out.data(), out.size()) == -1) {
-    return false;
-  }
+  enableTermFeatures(this->ttyFd, this->features);
   this->rawMode = true;
   return true;
 }
 
 void LineEditorObject::disableRawMode() {
   if (this->rawMode) {
-    std::string out;
-    if (this->hasFeature(LineEditorFeature::BRACKETED_PASTE)) {
-      disableBracketPasteMode(out);
-    }
-    if (this->hasFeature(LineEditorFeature::KITTY_KEYBOARD_PROTOCOL)) {
-      disableKittyKeyboardProtocol(out);
-    }
-    if (this->hasFeature(LineEditorFeature::XTERM_MODIFY_OTHER_KEYS)) {
-      disableModifyOtherKeys(out);
-    }
-    if (write(this->ttyFd, out.data(), out.size()) == -1) {
-    } // ignore error
+    disableTermFeatures(this->ttyFd, this->features);
     /* Don't even check the return value as it's too late. */
     if (tcsetattrWithRetry(this->ttyFd, TCSAFLUSH, &this->orgTermios) != -1) {
       this->rawMode = false;
