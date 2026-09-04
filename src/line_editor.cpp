@@ -277,19 +277,11 @@ namespace arsh {
 LineEditorObject::LineEditorObject(ARState &state)
     : ObjectWithRtti(TYPE::LineEditor), ttyFd(state.getTTYFd()) {}
 
-static void enableBracketPasteMode(int fd) {
-  const char *s = "\x1b[?2004h";
-  if (write(fd, s, strlen(s)) == -1) {
-  }
-}
+static void enableBracketPasteMode(std::string &out) { out += "\x1b[?2004h"; }
 
-static void disableBracketPasteMode(int fd) {
-  const char *s = "\x1b[?2004l";
-  if (write(fd, s, strlen(s)) == -1) {
-  }
-}
+static void disableBracketPasteMode(std::string &out) { out += "\x1b[?2004l"; }
 
-static void enableKittyKeyboardProtocol(int fd) {
+static void enableKittyKeyboardProtocol(std::string &out) {
   /**
    * enable the following progressive enhancement
    * (see https://sw.kovidgoyal.net/kitty/keyboard-protocol/#progressive-enhancement)
@@ -297,27 +289,17 @@ static void enableKittyKeyboardProtocol(int fd) {
    * 0b1    Disambiguate escape codes
    * 0b100  Report alternate keys
    */
-  const char *s = "\x1b[=5u"; // 0b101
-  if (write(fd, s, strlen(s)) == -1) {
-  }
+  out += "\x1b[=5u"; // 0b101
 }
 
-static void disableKittyKeyboardProtocol(int fd) {
-  const char *s = "\x1b[=0u"; // reset all enhancement flags
-  if (write(fd, s, strlen(s)) == -1) {
-  }
+static void disableKittyKeyboardProtocol(std::string &out) {
+  out += "\x1b[=0u"; // reset all enhancement flags
 }
 
-static void enableModifyOtherKeys(int fd) {
-  const char *s = "\x1b[>4;1m";
-  if (write(fd, s, strlen(s)) == -1) {
-  }
-}
+static void enableModifyOtherKeys(std::string &out) { out += "\x1b[>4;1m"; }
 
-static void disableModifyOtherKeys(int fd) {
-  const char *s = "\x1b[>4;0m"; // reset all enhancement flags
-  if (write(fd, s, strlen(s)) == -1) {
-  }
+static void disableModifyOtherKeys(std::string &out) {
+  out += "\x1b[>4;0m"; // reset all enhancement flags
 }
 
 /* Raw mode: 1960 magic shit. */
@@ -363,30 +345,37 @@ bool LineEditorObject::enableRawMode() {
   if (tcsetattrWithRetry(this->ttyFd, TCSAFLUSH, &raw) < 0) {
     return false;
   }
-  this->rawMode = true;
+  std::string out;
   if (this->hasFeature(LineEditorFeature::BRACKETED_PASTE)) {
-    enableBracketPasteMode(this->ttyFd);
+    enableBracketPasteMode(out);
   }
   if (this->hasFeature(LineEditorFeature::KITTY_KEYBOARD_PROTOCOL)) {
-    enableKittyKeyboardProtocol(this->ttyFd);
+    enableKittyKeyboardProtocol(out);
   }
   if (this->hasFeature(LineEditorFeature::XTERM_MODIFY_OTHER_KEYS)) {
-    enableModifyOtherKeys(this->ttyFd);
+    enableModifyOtherKeys(out);
   }
+  if (write(this->ttyFd, out.data(), out.size()) == -1) {
+    return false;
+  }
+  this->rawMode = true;
   return true;
 }
 
 void LineEditorObject::disableRawMode() {
   if (this->rawMode) {
+    std::string out;
     if (this->hasFeature(LineEditorFeature::BRACKETED_PASTE)) {
-      disableBracketPasteMode(this->ttyFd);
+      disableBracketPasteMode(out);
     }
     if (this->hasFeature(LineEditorFeature::KITTY_KEYBOARD_PROTOCOL)) {
-      disableKittyKeyboardProtocol(this->ttyFd);
+      disableKittyKeyboardProtocol(out);
     }
     if (this->hasFeature(LineEditorFeature::XTERM_MODIFY_OTHER_KEYS)) {
-      disableModifyOtherKeys(this->ttyFd);
+      disableModifyOtherKeys(out);
     }
+    if (write(this->ttyFd, out.data(), out.size()) == -1) {
+    } // ignore error
     /* Don't even check the return value as it's too late. */
     if (tcsetattrWithRetry(this->ttyFd, TCSAFLUSH, &this->orgTermios) != -1) {
       this->rawMode = false;
