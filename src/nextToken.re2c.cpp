@@ -286,13 +286,13 @@ INIT:
     <EXPR> "<<"              { MODE(STMT); RET(LSHIFT); }
     <EXPR> ">>"              { MODE(STMT); RET(RSHIFT); }
     <EXPR> ">>>"             { MODE(STMT); RET(URSHIFT); }
-    <EXPR,CMD> "&&"          { MODE(STMT); RET(COND_AND); }
-    <EXPR,CMD> "||"          { MODE(STMT); RET(COND_OR); }
+    <STMT,EXPR,CMD> "&&"     { MODE(STMT); RET(COND_AND); }
+    <STMT,EXPR,CMD> "||"     { MODE(STMT); RET(COND_OR); }
     <EXPR> "=~"              { MODE(STMT); RET(MATCH); }
     <EXPR> "!~"              { MODE(STMT); RET(UNMATCH); }
     <EXPR> "?"               { MODE(STMT); RET(TERNARY); }
     <EXPR> "??"              { MODE(STMT); RET(NULL_COALE); }
-    <EXPR,CMD> "|"           { MODE(STMT); RET(PIPE); }
+    <STMT,EXPR,CMD> "|"      { MODE(STMT); RET(PIPE); }
 
     <EXPR> "++"              { RET(INC); }
     <EXPR> "--"              { RET(DEC); }
@@ -312,8 +312,9 @@ INIT:
     <EXPR> "is"              { RET_OR_COMP_INFIX(IS); }
     <EXPR> "in"              { MODE(STMT); RET_OR_COMP_INFIX(IN); }
     <EXPR> "with"            { MODE(CMD); RET_OR_COMP_INFIX(WITH); }
-    <EXPR,CMD> "&"           { MODE(STMT); RET(BACKGROUND); }
-    <EXPR,CMD> ("&!" | "&|") { MODE(STMT); RET(DISOWN_BG); }
+    <STMT,EXPR,CMD> "&"      { MODE(STMT); RET(BACKGROUND); }
+    <STMT,EXPR,CMD> ("&!" | "&|")
+                             { MODE(STMT); RET(DISOWN_BG); }
 
     <NAME> VAR_NAME          { MODE(EXPR); RET_OR_COMP(IDENTIFIER); }
     <EXPR> "."               { MODE(NAME); RET(ACCESSOR); }
