@@ -63,12 +63,6 @@ public:
   }
 };
 
-template <unsigned int N>
-static std::string toString(const char (&value)[N]) {
-  static_assert(N > 0);
-  return std::string(value, N - 1);
-}
-
 TEST_F(CmdlineTest, marker1) {
   // line marker of syntax error
   const char *msg = "[syntax error] expected `=', `:'\n --> (string):4:4\n   \n   ^\n";
