@@ -239,6 +239,19 @@ function _comp_opt_by_help(argv: [String], cursor: Int): Candidates? {
     return $can.size() == 0 && $proc.job().wait() != 0 ? $none : $can
 }
 
+# return -1: auto-detect, 0: nospace, 1: space
+function _format(can: String): (String, Int) {
+    test -e $can && return ($can, -1) # if file. (ideally, should recognize `complete/compgen -o` options)
+    var space = -1
+    if $can.endsWith(' ') {
+        $space = 1
+        $can = $can.slice(0,-1) # trim suffix space
+    } elif $can.startsWith('--') && $can.endsWith('=') { # `--long=`, suppress space insertion
+        $space = 0
+    }
+    return ($can, $space)
+}
+
 let INSTALL_PREFIX = $DATA_DIR.dirname().dirname()
 
 let _bash_completion_dirs = [
@@ -340,19 +353,6 @@ function _comp_wrap(file : String, target : String, words : [String], cursor : I
     }
     $ret.quote($wordToken)
     return $ret.size() == 0 ? $none : $ret
-}
-
-# return -1: auto-detect, 0: nospace, 1: space
-function _format(can: String): (String, Int) {
-    test -e $can && return ($can, -1) # if file. (ideally, should recognize `complete/compgen -o` options)
-    var space = -1
-    if $can.endsWith(' ') {
-        $space = 1
-        $can = $can.slice(0,-1) # trim suffix space
-    } elif $can.startsWith('--') && $can.endsWith('=') { # `--long=`, suppress space insertion
-        $space = 0
-    }
-    return ($can, $space)
 }
 
 # extract completion target (func, cmd). ex `complete -o default -F func cmd`

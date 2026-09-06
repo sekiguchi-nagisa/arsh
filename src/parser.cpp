@@ -82,21 +82,6 @@ Parser::Parser(Lexer &lexer, ParserOption option, ObserverPtr<CodeCompletionCont
   this->fetchNext();
 }
 
-static bool isNamedFuncOrUdc(const std::unique_ptr<Node> &node) {
-  if (!node) {
-    return false;
-  }
-
-  if (isa<UserDefinedCmdNode>(*node)) {
-    return true;
-  }
-  if (isa<FunctionNode>(*node)) {
-    const auto &funcNode = cast<FunctionNode>(*node);
-    return funcNode.isNamedFunc() || funcNode.isMethod();
-  }
-  return false;
-}
-
 std::vector<std::unique_ptr<Node>> Parser::operator()() {
   this->ignorableNewlines.clear();
   this->ignorableNewlines.push_back(false);
@@ -123,7 +108,7 @@ std::vector<std::unique_ptr<Node>> Parser::operator()() {
     }
   } else {
     while (this->curKind != TokenKind::EOS) {
-      auto node = this->parse_statement(StmtParseOpt::DISALLOW_RBC);
+      auto node = this->parse_toplevelStatement();
       bool stop = false;
       if (this->incompleteNode) {
         this->clear(); // force ignore parse error
@@ -134,20 +119,7 @@ std::vector<std::unique_ptr<Node>> Parser::operator()() {
         node = std::make_unique<ErrorNode>(this->getError().getErrorToken());
         stop = true;
       }
-
-      if (nodes.empty()) {
-        nodes.push_back(std::move(node));
-      } else if (isa<FuncListNode>(*nodes.back()) && isNamedFuncOrUdc(node)) {
-        cast<FuncListNode>(*nodes.back()).addNode(std::move(node));
-      } else if (isNamedFuncOrUdc(nodes.back()) && isNamedFuncOrUdc(node)) {
-        auto last = std::move(nodes.back());
-        nodes.pop_back();
-        auto funcList = std::make_unique<FuncListNode>(std::move(last), std::move(node));
-        nodes.push_back(std::move(funcList));
-      } else {
-        nodes.push_back(std::move(node));
-      }
-
+      nodes.push_back(std::move(node));
       if (stop) {
         break;
       }
@@ -929,6 +901,23 @@ std::unique_ptr<Node> Parser::parse_statementEnd(StmtParseOpt opt) {
     TRY(this->parse_hereDocBody());
   }
   return nullptr;
+}
+
+std::unique_ptr<Node> Parser::parse_toplevelStatement() {
+  auto node = TRY(this->parse_statementImpl());
+  this->recoverAndSkipUntilSyncPoint(StmtParseOpt::DISALLOW_RBC);
+  while (CUR_KIND() == TokenKind::COND_AND &&
+         (isValidMutualGroupElement(node) || isa<MutualGroupNode>(*node))) {
+    this->consume();
+    if (!isa<MutualGroupNode>(*node)) {
+      node = std::make_unique<MutualGroupNode>(std::move(node));
+    }
+    auto tmp = TRY(this->parse_statementImpl());
+    this->recoverAndSkipUntilSyncPoint(StmtParseOpt::DISALLOW_RBC);
+    cast<MutualGroupNode>(*node).addNode(std::move(tmp));
+  }
+  TRY(this->parse_statementEnd(StmtParseOpt::DISALLOW_RBC));
+  return node;
 }
 
 std::unique_ptr<Node> Parser::parse_typedef() {
@@ -1825,7 +1814,7 @@ std::unique_ptr<Node> Parser::parse_expressionImpl(OperatorPrecedence basePreced
   GUARD_DEEP_NESTING(guard);
 
   auto node = TRY(this->parse_unaryExpression(allowEmptyCmd));
-  while (!this->hasLineTerminator()) {
+  while (!this->hasLineTerminator() && !isValidMutualGroupElement(node)) {
     if (this->tryCompleteInfixKeywords({
 #define GEN_TABLE(E) TokenKind::E,
             EACH_INFIX_OPERATOR_KW(GEN_TABLE)

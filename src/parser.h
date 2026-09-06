@@ -324,6 +324,8 @@ protected:
 
   std::unique_ptr<Node> parse_statement(StmtParseOpt opt = StmtParseOpt::IGNORE_RBC);
 
+  std::unique_ptr<Node> parse_toplevelStatement();
+
   /**
    *
    * @param opt

@@ -1773,7 +1773,7 @@ void ByteCodeGenerator::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
   }
 }
 
-void ByteCodeGenerator::visitFuncListNode(FuncListNode &node) {
+void ByteCodeGenerator::visitMutualGroupNode(MutualGroupNode &node) {
   for (auto &e : node.getNodes()) {
     this->visit(*e);
   }

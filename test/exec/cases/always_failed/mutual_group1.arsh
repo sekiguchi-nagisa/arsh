@@ -1,0 +1,5 @@
+#$test($result = 'type', $lineNum = 5, $chars = 3, $errorKind = 'InvalidMutualGroupElement', $status = 1)
+
+function ff() {}
+ &&
+  (){}

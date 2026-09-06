@@ -2591,9 +2591,13 @@ void TypeChecker::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
   this->checkTypeUserDefinedCmd(node, FuncCheckOp::REGISTER_NAME | FuncCheckOp::CHECK_BODY);
 }
 
-void TypeChecker::visitFuncListNode(FuncListNode &node) {
+void TypeChecker::visitMutualGroupNode(MutualGroupNode &node) {
   // register names
   for (auto &e : node.getNodes()) {
+    if (!isValidMutualGroupElement(e)) {
+      this->reportError<InvalidMutualGroupElement>(*e);
+      continue;
+    }
     if (isa<FunctionNode>(*e)) {
       this->checkTypeFunction(cast<FunctionNode>(*e), FuncCheckOp::REGISTER_NAME);
     } else {
@@ -2604,6 +2608,9 @@ void TypeChecker::visitFuncListNode(FuncListNode &node) {
 
   // check body
   for (auto &e : node.getNodes()) {
+    if (!isValidMutualGroupElement(e)) {
+      continue;
+    }
     if (isa<FunctionNode>(*e)) {
       this->checkTypeFunction(cast<FunctionNode>(*e), FuncCheckOp::CHECK_BODY);
     } else {

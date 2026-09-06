@@ -81,7 +81,7 @@ namespace arsh {
   OP(PrefixAssign)                                                                                 \
   OP(Function)                                                                                     \
   OP(UserDefinedCmd)                                                                               \
-  OP(FuncList)                                                                                     \
+  OP(MutualGroup)                                                                                  \
   OP(Source)                                                                                       \
   OP(SourceList)                                                                                   \
   OP(CodeComp)                                                                                     \
@@ -2730,15 +2730,19 @@ public:
   void dump(NodeDumper &dumper) const override;
 };
 
-class FuncListNode : public WithRtti<Node, NodeKind::FuncList> {
+class MutualGroupNode : public WithRtti<Node, NodeKind::MutualGroup> {
 private:
   /**
-   * must be named function, method, user-defined command
+   * maybe named function, method, user-defined command
    */
   std::vector<std::unique_ptr<Node>> nodes;
 
 public:
-  FuncListNode(std::unique_ptr<Node> &&first, std::unique_ptr<Node> &&second)
+  explicit MutualGroupNode(std::unique_ptr<Node> &&node) : WithRtti(node->getToken()) {
+    this->addNode(std::move(node));
+  }
+
+  MutualGroupNode(std::unique_ptr<Node> &&first, std::unique_ptr<Node> &&second)
       : WithRtti(first->getToken()) {
     this->nodes.push_back(std::move(first));
     this->nodes.push_back(std::move(second));
@@ -2754,6 +2758,19 @@ public:
 
   void dump(NodeDumper &dumper) const override;
 };
+
+inline bool isValidMutualGroupElement(const std::unique_ptr<Node> &node) {
+  if (node) {
+    if (isa<UserDefinedCmdNode>(*node)) {
+      return !cast<UserDefinedCmdNode>(*node).isAnonymousCmd();
+    }
+    if (isa<FunctionNode>(*node)) {
+      const auto &funcNode = cast<FunctionNode>(*node);
+      return funcNode.isNamedFunc() || funcNode.isMethod();
+    }
+  }
+  return false;
+}
 
 class ModType;
 
@@ -3046,7 +3063,7 @@ struct NodeVisitor {
   virtual void visitPrefixAssignNode(PrefixAssignNode &node) = 0;
   virtual void visitFunctionNode(FunctionNode &node) = 0;
   virtual void visitUserDefinedCmdNode(UserDefinedCmdNode &node) = 0;
-  virtual void visitFuncListNode(FuncListNode &node) = 0;
+  virtual void visitMutualGroupNode(MutualGroupNode &node) = 0;
   virtual void visitSourceNode(SourceNode &node) = 0;
   virtual void visitSourceListNode(SourceListNode &node) = 0;
   virtual void visitCodeCompNode(CodeCompNode &node) = 0;
@@ -3106,7 +3123,7 @@ struct BaseVisitor : public NodeVisitor {
   void visitPrefixAssignNode(PrefixAssignNode &node) override { this->visitDefault(node); }
   void visitFunctionNode(FunctionNode &node) override { this->visitDefault(node); }
   void visitUserDefinedCmdNode(UserDefinedCmdNode &node) override { this->visitDefault(node); }
-  void visitFuncListNode(FuncListNode &node) override { this->visitDefault(node); }
+  void visitMutualGroupNode(MutualGroupNode &node) override { this->visitDefault(node); }
   void visitSourceNode(SourceNode &node) override { this->visitDefault(node); }
   void visitSourceListNode(SourceListNode &node) override { this->visitDefault(node); }
   void visitCodeCompNode(CodeCompNode &node) override { this->visitDefault(node); }

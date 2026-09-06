@@ -1017,9 +1017,12 @@ void SymbolIndexer::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
   this->visitUserDefinedCmdImpl(node, FuncVisitOp::VISIT_NAME | FuncVisitOp::VISIT_BODY);
 }
 
-void SymbolIndexer::visitFuncListNode(FuncListNode &node) {
+void SymbolIndexer::visitMutualGroupNode(MutualGroupNode &node) {
   // register decl
   for (auto &e : node.getNodes()) {
+    if (!isValidMutualGroupElement(e)) {
+      continue;
+    }
     if (isa<FunctionNode>(*e)) {
       this->visitFunctionImpl(cast<FunctionNode>(*e), FuncVisitOp::VISIT_NAME);
     } else if (isa<UserDefinedCmdNode>(*e)) {
@@ -1029,6 +1032,9 @@ void SymbolIndexer::visitFuncListNode(FuncListNode &node) {
 
   // register body
   for (auto &e : node.getNodes()) {
+    if (!isValidMutualGroupElement(e)) {
+      continue;
+    }
     if (isa<FunctionNode>(*e)) {
       this->visitFunctionImpl(cast<FunctionNode>(*e), FuncVisitOp::VISIT_BODY);
     } else if (isa<UserDefinedCmdNode>(*e)) {

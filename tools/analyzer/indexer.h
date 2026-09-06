@@ -431,7 +431,7 @@ protected:
   void visitPrefixAssignNode(PrefixAssignNode &node) override;
   void visitFunctionNode(FunctionNode &node) override;
   void visitUserDefinedCmdNode(UserDefinedCmdNode &node) override;
-  void visitFuncListNode(FuncListNode &node) override;
+  void visitMutualGroupNode(MutualGroupNode &node) override;
   void visitSourceNode(SourceNode &node) override;
 
 private:

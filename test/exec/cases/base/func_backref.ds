@@ -3,25 +3,27 @@ typedef INT(a : Int) { var v = $a; }
 
 function f11(a : Int) : Int {
     return $a + $f22($a)
-}
+} &&
 
-function f22(a : Int) : Int {
+(function f22(a : Int) : Int {
     c11 $a
     return $? * 100
-}
+})
+
+&&
 
 c11() {
     c22 $@
 }
 
-c22() {
+&& c22() {
     return new INT($1.size()).factorial()
-}
+} &&
 
 function factorial() : Int for INT {
     return $this.factorial_impl()
 }
-
+&&
 function factorial_impl() : Int for INT {
     return $this.v == 0 ? 1 : $this.v * new INT($this.v - 1).factorial_impl()
 }

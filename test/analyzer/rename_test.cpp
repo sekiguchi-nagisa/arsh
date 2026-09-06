@@ -559,7 +559,7 @@ typedef AAA : Error
 function size() : Int for AAA {
   return 1 + $this.size() + $this.get().size();
 }
-
+&&
 function get() : String for AAA {
   return $this.message()
 }
@@ -617,7 +617,7 @@ TEST_F(RenameTest, func) {
   const char *content = R"(
 function aaa() {
   $bbb()
-}
+} &&
 function bbb() {
   $aaa()
 }
@@ -646,7 +646,7 @@ TEST_F(RenameTest, udc) {
 fff && ls
 fff() {
   ggg  # backward ref
-}
+} &&
 ggg() {
   fff
 }

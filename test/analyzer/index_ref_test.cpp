@@ -1531,7 +1531,7 @@ TEST_F(IndexTest, backrefFunc) {
   const char *content = R"E(
   function AAA() {
     $BBB()
-  }
+  } &&
   function BBB() {
     $AAA()
   }
@@ -1567,7 +1567,7 @@ TEST_F(IndexTest, backrefMethod) {
   function AAA() for INT {
     $this.BBB()
   }
-  function BBB() for INT {
+&&function BBB() for INT {
     $this.AAA()
   }
 )E";
@@ -1601,7 +1601,7 @@ TEST_F(IndexTest, backrefUDC) {
   const char *content = R"E(
   AAA() {
     BBB 34
-  }
+  }&&
   # comment
   BBB() {
     AAA 45
@@ -1642,7 +1642,7 @@ TEST_F(IndexTest, backrefNamedArg) {
   }
   function append(begin:Int, end:Int) for AAA {
     $this.next = new AAA($begin:$begin, $end:$double($v:$end))
-  }
+  } &&
   function double($v:Int): Int { return $v*2; }
 )E";
 

@@ -207,7 +207,7 @@ void NodePass::visitUserDefinedCmdNode(UserDefinedCmdNode &node) {
   this->visit(node.getBlockNode());
 }
 
-void NodePass::visitFuncListNode(FuncListNode &node) {
+void NodePass::visitMutualGroupNode(MutualGroupNode &node) {
   this->visitingDepth--;
   this->visitEach(node.getNodes());
   this->visitingDepth++;

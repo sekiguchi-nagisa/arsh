@@ -1221,12 +1221,12 @@ nodes:
     assertOp: "DEFAULT"
 )"},
 
-    {DumpOp::typed, R"(function ff() { $gg(); }; function gg() {})", 0, 2, R"(
+    {DumpOp::typed, R"(function ff() { $gg(); } && function gg() {})", 0, 2, R"(
 nodes:
-  - nodeKind: FuncList
+  - nodeKind: MutualGroup
     token:
       pos: 0
-      size: 42
+      size: 44
     type: "Void"
     nodes:
       - nodeKind: Function
@@ -1317,13 +1317,13 @@ nodes:
         resolvedType: "() -> Void"
       - nodeKind: Function
         token:
-          pos: 26
+          pos: 28
           size: 16
         type: "Void"
         kind: "FUNC"
         funcName:
           token:
-            pos: 35
+            pos: 37
             size: 2
           name: "gg"
         paramNodes:
@@ -1340,7 +1340,7 @@ nodes:
         blockNode:
           nodeKind: Block
           token:
-            pos: 40
+            pos: 42
             size: 2
           type: "Nothing"
           nodes:

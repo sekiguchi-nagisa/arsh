@@ -14,6 +14,16 @@
 
 #### Core
 
+- **Breaking Change**: not allow implicit mutual recursive group. now explicitly specify via ``&&``
+  ```
+  function even(n : Int) : Bool {
+    return $n == 0 ? $true : $odd($n - 1)
+  }
+  &&
+  function odd(n : Int) : Bool {
+    return $n == 0 ? $false : $even($n - 1)
+  }
+  ```
 - treat lone surrogate code points as single grapheme cluster in ``\X`` property escape of regex
 
 #### Builtin

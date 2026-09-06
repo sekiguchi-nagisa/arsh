@@ -1066,7 +1066,7 @@ void UserDefinedCmdNode::dump(NodeDumper &dumper) const {
 // ##     FuncListNode     ##
 // ##########################
 
-void FuncListNode::dump(NodeDumper &dumper) const { DUMP(nodes); }
+void MutualGroupNode::dump(NodeDumper &dumper) const { DUMP(nodes); }
 
 // ########################
 // ##     SourceNode     ##
