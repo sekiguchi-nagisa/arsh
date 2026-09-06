@@ -50,6 +50,7 @@ HighlightTokenClass toTokenClass(TokenKind kind) {
   case TokenKind::WHILE:
   case TokenKind::TYPEOF:
   case TokenKind::INLINED:
+  case TokenKind::IN:
     return HighlightTokenClass::KEYWORD;
   case TokenKind::PLUS:
   case TokenKind::MINUS:
@@ -58,7 +59,6 @@ HighlightTokenClass toTokenClass(TokenKind kind) {
   case TokenKind::DEC:
   case TokenKind::UNWRAP:
   case TokenKind::CASE_ARM:
-  case TokenKind::IN:
     return HighlightTokenClass::OPERATOR;
 #define GEN_CASE(E, P, A) case TokenKind::E:
     // clang-format off
