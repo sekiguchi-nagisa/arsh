@@ -17,12 +17,13 @@
 #ifndef ARSH_REGEX_MATCH_CONTEXT_H
 #define ARSH_REGEX_MATCH_CONTEXT_H
 
+#include <cstdint>
+#include <vector>
+
 #include "input.h"
 #include "regex.h"
 
 namespace arsh::regex {
-
-class Regex;
 
 struct LoopState {
   uint32_t count{0};

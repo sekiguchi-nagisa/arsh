@@ -16,6 +16,7 @@
 
 #include "match_context.h"
 #include "misc/format.hpp"
+#include "misc/num_util.hpp"
 
 namespace arsh::regex {
 
