@@ -262,6 +262,7 @@ add_library(regex STATIC
         src/regex/flag.cpp
         src/regex/emit.cpp
         src/regex/vm.cpp
+        src/regex/regex.cpp
 )
 target_link_libraries(regex unicode)
 if (BUILD_SHARED_LIB)
