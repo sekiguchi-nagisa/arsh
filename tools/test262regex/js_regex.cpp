@@ -279,45 +279,45 @@ std::string toString(const JSRegex &regex) {
   return ret;
 }
 
-JSValue getOwnProperty(const JSRegex &regex, const std::string &name) {
+JSProperty getOwnProperty(const JSRegex &regex, const std::string &name) {
   if (name == builtin::PROTO) {
-    return regex.proto;
+    return JSProperty::withBuiltin(regex.proto);
   }
   if (name == "lastIndex") {
     const double d = regex.lastIndex;
-    return d;
+    return JSProperty::withDefault(d);
   }
   if (name == "source") {
-    return newJSStringPtr(regex.pattern);
+    return JSProperty::withBuiltin(newJSStringPtr(regex.pattern));
   }
   if (name == "flags") {
-    return newJSStringPtr(toStringFlags(regex));
+    return JSProperty::withBuiltin(newJSStringPtr(toStringFlags(regex)));
   }
   if (name == "dotAll") {
-    return regex.regex.getFlag().has(regex::Modifier::DOT_ALL);
+    return JSProperty::withBuiltin(regex.regex.getFlag().has(regex::Modifier::DOT_ALL));
   }
   if (name == "ignoreCase") {
-    return regex.regex.getFlag().has(regex::Modifier::IGNORE_CASE);
+    return JSProperty::withBuiltin(regex.regex.getFlag().has(regex::Modifier::IGNORE_CASE));
   }
   if (name == "multiline") {
-    return regex.regex.getFlag().has(regex::Modifier::MULTILINE);
+    return JSProperty::withBuiltin(regex.regex.getFlag().has(regex::Modifier::MULTILINE));
   }
   if (name == "global") {
-    return hasFlag(regex.extra, JSRegex::ExtraFlag::GLOBAL);
+    return JSProperty::withBuiltin(hasFlag(regex.extra, JSRegex::ExtraFlag::GLOBAL));
   }
   if (name == "sticky") {
-    return hasFlag(regex.extra, JSRegex::ExtraFlag::STICKY);
+    return JSProperty::withBuiltin(hasFlag(regex.extra, JSRegex::ExtraFlag::STICKY));
   }
   if (name == "hasIndices") {
-    return hasFlag(regex.extra, JSRegex::ExtraFlag::HAS_INDICES);
+    return JSProperty::withBuiltin(hasFlag(regex.extra, JSRegex::ExtraFlag::HAS_INDICES));
   }
   if (name == "unicode") {
-    return regex.regex.getFlag().is(regex::Mode::UNICODE);
+    return JSProperty::withBuiltin(regex.regex.getFlag().is(regex::Mode::UNICODE));
   }
   if (name == "unicodeSets") {
-    return regex.regex.getFlag().is(regex::Mode::UNICODE_SET);
+    return JSProperty::withBuiltin(regex.regex.getFlag().is(regex::Mode::UNICODE_SET));
   }
-  return getOwnProperty(*regex.proto, name);
+  return regex.proto->getProperty(name);
 }
 
 void setOwnProperty(JSRegex &regex, const std::string &name, JSValue &&value) {

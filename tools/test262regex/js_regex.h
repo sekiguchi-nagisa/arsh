@@ -35,7 +35,7 @@ std::string toStringFlags(const JSRegex &regex);
 
 std::string toString(const JSRegex &regex);
 
-JSValue getOwnProperty(const JSRegex &regex, const std::string &name);
+JSProperty getOwnProperty(const JSRegex &regex, const std::string &name);
 
 void setOwnProperty(JSRegex &regex, const std::string &name, JSValue &&value);
 

@@ -47,6 +47,10 @@ constexpr const char *PROTOTYPE = "prototype";
 constexpr const char *PROTO = "__proto__";
 constexpr const char *ARGS = "arguments";
 
+constexpr const char *CONFIGURABLE = "configurable";
+constexpr const char *ENUMERABLE = "enumerable";
+constexpr const char *WRITABLE = "writable";
+
 constexpr const char *SYMBOL_MATCH = "@@match"; // Symbol.match
 
 } // namespace builtin
@@ -79,13 +83,13 @@ inline bool isUndefined(const JSValue &value) {
 inline bool isNull(const JSValue &value) { return std::holds_alternative<std::nullptr_t>(value); }
 
 #define EACH_JS_PROPERTY_ATTR(E)                                                                   \
-  E(CONFIGURABLE, "configurable", (1u << 0u))                                                      \
-  E(ENUMERABLE, "enumerable", (1u << 1u))                                                          \
-  E(WRITABLE, "writable", (1u << 2u))
+  E(CONFIGURABLE, (1u << 0u))                                                                      \
+  E(ENUMERABLE, (1u << 1u))                                                                        \
+  E(WRITABLE, (1u << 2u))
 
 enum class JSPropertyAttr : unsigned char {
   NONE = 0u,
-#define GEN_ENUM(E, S, D) E = (D),
+#define GEN_ENUM(E, D) E = (D),
   EACH_JS_PROPERTY_ATTR(GEN_ENUM)
 #undef GEN_ENUM
 
@@ -94,16 +98,24 @@ enum class JSPropertyAttr : unsigned char {
 };
 
 struct JSProperty {
-  JSPropertyAttr attr;
+  bool defined{false};
+  JSPropertyAttr attr{JSPropertyAttr::NONE};
   JSValue value;
 
   static JSProperty withBuiltin(JSValue &&value) {
-    return {.attr = JSPropertyAttr::BUILTIN, .value = std::move(value)};
+    return {JSPropertyAttr::BUILTIN, std::move(value)};
   }
 
   static JSProperty withDefault(JSValue &&value) {
-    return {.attr = JSPropertyAttr::DEFAULT, .value = std::move(value)};
+    return {JSPropertyAttr::DEFAULT, std::move(value)};
   }
+
+  JSProperty() = default;
+
+  JSProperty(JSPropertyAttr attr, JSValue &&value)
+      : defined(true), attr(attr), value(std::move(value)) {}
+
+  explicit operator bool() const { return this->defined; }
 };
 
 class JSEnv;
@@ -116,7 +128,7 @@ struct JSObject {
   }
 
   void setProperty(const std::string &name, JSValue &&value) {
-    JSProperty p{.attr = JSPropertyAttr::DEFAULT, .value = std::move(value)};
+    JSProperty p{JSPropertyAttr::DEFAULT, std::move(value)};
     auto pair = this->values.try_emplace(name, std::move(p));
     if (!pair.second) {
       p.attr = pair.first->second.attr;
@@ -127,21 +139,21 @@ struct JSObject {
   void setBuiltinProperty(const std::string &name, JSValue &&value) {
     this->setProperty(name, JSPropertyAttr::BUILTIN, std::move(value));
   }
+
+  const JSProperty *getRawProperty(const std::string &name) const {
+    if (auto iter = this->values.find(name); iter != this->values.end()) {
+      return &iter->second;
+    }
+    return nullptr;
+  }
+
+  JSProperty getProperty(const std::string &name) const {
+    if (auto *ptr = this->getRawProperty(name)) {
+      return *ptr;
+    }
+    return {};
+  }
 };
-
-inline const JSProperty *getOwnRawProperty(const JSObject &obj, const std::string &name) {
-  if (auto iter = obj.values.find(name); iter != obj.values.end()) {
-    return &iter->second;
-  }
-  return nullptr;
-}
-
-inline JSValue getOwnProperty(const JSObject &obj, const std::string &name) {
-  if (auto *ptr = getOwnRawProperty(obj, name)) {
-    return ptr->value;
-  }
-  return {};
-}
 
 #define EACH_JS_EXTRA_RE_FLAG(E)                                                                   \
   E(HAS_INDICES, (1u << 0u), 'd') /* d */                                                          \
@@ -337,7 +349,13 @@ inline std::u16string toString(const JSValue &value) {
   return out;
 }
 
+bool toBool(const JSValue &value);
+
 double toNumber(const JSValue &value);
+
+JSProperty findOwnProperty(const JSValue &recv, const std::string &name);
+
+JSProperty findOwnPropertyByIndex(const JSValue &recv, const JSValue &index);
 
 JSResult findProperty(const std::shared_ptr<JSEnv> &env, unsigned int callerLineNum,
                       const JSValue &recv, const std::string &name);
@@ -346,6 +364,9 @@ inline JSResult findProperty(const std::shared_ptr<JSEnv> &env, const JSValue &r
                              const std::string &name) {
   return findProperty(env, env->callerLineNum(), recv, name);
 }
+
+JSResult findPropertyByIndex(const std::shared_ptr<JSEnv> &env, const JSValue &recv,
+                             const JSValue &index);
 
 JSResult assignProperty(const std::shared_ptr<JSEnv> &env, unsigned int callerLineNum,
                         const JSValue &recv, const std::string &name, JSValue &&value);

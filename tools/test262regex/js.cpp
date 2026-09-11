@@ -60,19 +60,28 @@ const JSValue *JSEnv::assign(const std::string &name, JSValue value) {
   return nullptr;
 }
 
-static JSValue getOwnProperty(const JSArray &recv, const std::string &name) {
+static JSProperty getOwnProperty(const JSArray &recv, const std::string &name) {
   if (name == "length") {
-    return static_cast<double>(recv.array.size());
+    return {JSPropertyAttr::WRITABLE, static_cast<double>(recv.array.size())};
   }
-  return getOwnProperty(static_cast<JSObject>(recv), name);
+  return recv.getProperty(name);
 }
 
-static JSValue findOwnProperty(const JSValue &recv, const std::string &name) {
+static JSProperty getOwnProperty(const JSString &recv, const std::string &name) {
+  if (name == "length") {
+    return {JSPropertyAttr::NONE, static_cast<double>(recv.size())};
+  }
+  return {};
+}
+
+JSProperty findOwnProperty(const JSValue &recv, const std::string &name) {
   return std::visit(
-      [name](auto &&element) -> JSValue {
+      [name](auto &&element) -> JSProperty {
         using T = std::decay_t<decltype(element)>;
-        if constexpr (std::is_same_v<T, JSRegexPtr> || std::is_same_v<T, JSFunctionPtr> ||
-                      std::is_same_v<T, JSObjectPtr> || std::is_same_v<T, JSArrayPtr>) {
+        if constexpr (std::is_same_v<T, JSFunctionPtr> || std::is_same_v<T, JSObjectPtr>) {
+          return element->getProperty(name);
+        } else if constexpr (std::is_same_v<T, JSRegexPtr> || std::is_same_v<T, JSArrayPtr> ||
+                             std::is_same_v<T, JSStringPtr>) {
           return getOwnProperty(*element, name);
         } else {
           return {};
@@ -97,19 +106,22 @@ JSResult findProperty(const std::shared_ptr<JSEnv> &env, unsigned int callerLine
       return Ok(static_cast<double>(std::get<JSStringPtr>(recv)->size()));
     }
     actualRecv = env->findGlobalEnv()->findOrUndef(builtin::STRING);
-    actualRecv = getOwnProperty(*std::get<JSFunctionPtr>(actualRecv), builtin::PROTOTYPE);
+    actualRecv =
+        std::move(std::get<JSFunctionPtr>(actualRecv)->getProperty(builtin::PROTOTYPE).value);
   } else if (std::holds_alternative<double>(recv)) {
     actualRecv = env->findGlobalEnv()->findOrUndef(builtin::NUMBER);
-    actualRecv = getOwnProperty(*std::get<JSFunctionPtr>(actualRecv), builtin::PROTOTYPE);
+    actualRecv =
+        std::move(std::get<JSFunctionPtr>(actualRecv)->getProperty(builtin::PROTOTYPE).value);
   }
   JSValue ret;
   const bool proto = name == builtin::PROTO;
   while (!isUndefined(actualRecv)) {
-    ret = findOwnProperty(actualRecv, name);
-    if (!isUndefined(ret) || proto) {
+    auto p = findOwnProperty(actualRecv, name);
+    if (!isUndefined(p.value) || proto) {
+      ret = std::move(p.value);
       break;
     }
-    actualRecv = findOwnProperty(actualRecv, builtin::PROTO);
+    actualRecv = std::move(findOwnProperty(actualRecv, builtin::PROTO).value);
   }
   return Ok(std::move(ret));
 }
@@ -317,7 +329,7 @@ void toString(const JSValue &value, std::u16string &out) {
   }
 }
 
-static bool toBool(const JSValue &value) {
+bool toBool(const JSValue &value) {
   if (std::holds_alternative<bool>(value)) {
     return std::get<bool>(value);
   }
@@ -536,6 +548,7 @@ JSFunctionPtr createJSFunction(const std::shared_ptr<JSEnv> &env, const char *na
   func->params = std::move(params);
   func->definedEnv = env;
   func->setBuiltinProperty("name", newJSStringPtr(name));
+  func->setBuiltinProperty("length", static_cast<double>(func->params.size()));
   if (prototype) {
     func->setBuiltinProperty(builtin::PROTOTYPE, std::move(prototype));
   }
@@ -545,8 +558,9 @@ JSFunctionPtr createJSFunction(const std::shared_ptr<JSEnv> &env, const char *na
 
 static JSObjectPtr newObject(const JSFunctionPtr &func) {
   auto obj = std::make_shared<JSObject>();
-  if (auto prototype = getOwnProperty(*func, builtin::PROTOTYPE); !isUndefined(prototype)) {
-    obj->setBuiltinProperty(builtin::PROTO, std::move(prototype));
+  if (auto prototype = func->getProperty(builtin::PROTOTYPE);
+      prototype && !isUndefined(prototype.value)) {
+    obj->setBuiltinProperty(builtin::PROTO, std::move(std::move(prototype.value)));
   }
   return obj;
 }
@@ -595,7 +609,7 @@ void defineDerivedError(const std::shared_ptr<JSEnv> &global, const char *name) 
   auto errorConstructor = global->findOrUndef(builtin::ERROR);
   assert(std::holds_alternative<JSFunctionPtr>(errorConstructor));
   auto errorPrototype =
-      getOwnProperty(*std::get<JSFunctionPtr>(errorConstructor), builtin::PROTOTYPE);
+      std::get<JSFunctionPtr>(errorConstructor)->getProperty(builtin::PROTOTYPE).value;
   auto prototype = std::make_shared<JSObject>();
   prototype->setBuiltinProperty("name", newJSStringPtr(name));
   prototype->setBuiltinProperty(builtin::PROTO, std::move(errorPrototype));
@@ -833,7 +847,7 @@ static void defineNumber(const std::shared_ptr<JSEnv> &global) {
 
 JSArrayPtr createJSArray(const std::shared_ptr<JSEnv> &env) {
   auto constructor = env->findGlobalEnv()->findOrUndef(builtin::ARRAY);
-  auto prototype = getOwnProperty(*std::get<JSFunctionPtr>(constructor), builtin::PROTOTYPE);
+  auto prototype = std::get<JSFunctionPtr>(constructor)->getProperty(builtin::PROTOTYPE).value;
   auto array = std::make_shared<JSArray>();
   array->setBuiltinProperty(builtin::PROTO, std::move(prototype));
   return array;
@@ -1969,9 +1983,30 @@ static std::optional<unsigned int> toArrayIndex(const JSValue &value) {
   return {};
 }
 
-static JSResult evalIndex(const IndexExpr &expr, const std::shared_ptr<JSEnv> &env) {
-  auto recv = TRY(evaluate(*expr.recv, env));
-  auto index = TRY(evaluate(*expr.index, env));
+JSProperty findOwnPropertyByIndex(const JSValue &recv, const JSValue &index) {
+  if (auto arrayIndex = toArrayIndex(index)) {
+    if (std::holds_alternative<JSStringPtr>(recv)) {
+      if (auto &str = *std::get<JSStringPtr>(recv); arrayIndex.value() < str.size()) {
+        JSString ret;
+        ret += str[arrayIndex.value()];
+        return {JSPropertyAttr::ENUMERABLE, std::make_shared<JSString>(std::move(ret))};
+      }
+      return {};
+    }
+    if (std::holds_alternative<JSArrayPtr>(recv)) {
+      if (auto &array = std::get<JSArrayPtr>(recv)->array; arrayIndex.value() < array.size()) {
+        auto v = array[arrayIndex.value()];
+        return JSProperty::withDefault(std::move(v));
+      }
+      return {};
+    }
+  }
+  auto key = toWTF8(toString(index));
+  return findOwnProperty(recv, key);
+}
+
+JSResult findPropertyByIndex(const std::shared_ptr<JSEnv> &env, const JSValue &recv,
+                             const JSValue &index) {
   if (auto arrayIndex = toArrayIndex(index)) {
     if (std::holds_alternative<JSStringPtr>(recv)) {
       if (auto &str = *std::get<JSStringPtr>(recv); arrayIndex.value() < str.size()) {
@@ -1991,6 +2026,12 @@ static JSResult evalIndex(const IndexExpr &expr, const std::shared_ptr<JSEnv> &e
   }
   auto key = toWTF8(toString(index));
   return findProperty(env, recv, key);
+}
+
+static JSResult evalIndex(const IndexExpr &expr, const std::shared_ptr<JSEnv> &env) {
+  auto recv = TRY(evaluate(*expr.recv, env));
+  auto index = TRY(evaluate(*expr.index, env));
+  return findPropertyByIndex(env, recv, index);
 }
 
 static JSResult assignImpl(const Node &left, JSValue &&right, const std::shared_ptr<JSEnv> &env) {

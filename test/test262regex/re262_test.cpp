@@ -1587,6 +1587,64 @@ Test262Error: failed Expected a TypeError but got a [object Object]
   ASSERT_EQ("undefined", out);
 }
 
+TEST(JSTest, harnessVerifyProperty1) {
+  auto env = initJSEnv();
+  includeHarness(env);
+
+  auto ret = jsEval("dummy1", "verifyProperty(null, 'AA')", env);
+  ASSERT_TRUE(ret);
+  ASSERT_EQ("true", formatEvalResult(env, ret));
+
+  ret = jsEval("dummy1", "verifyProperty(undefined, 'AA')", env);
+  ASSERT_TRUE(ret);
+  ASSERT_EQ("true", formatEvalResult(env, ret));
+}
+
+TEST(JSTest, harnessVerifyPropertyString) {
+  auto env = initJSEnv();
+  includeHarness(env);
+
+  auto ret = jsEval("dummy1", "verifyProperty('hey', 'AA')", env);
+  ASSERT_TRUE(ret);
+  ASSERT_EQ("true", formatEvalResult(env, ret));
+
+  ret = jsEval("dummy1", "verifyProperty('hey', 'A', {})", env);
+  ASSERT_FALSE(ret);
+  ASSERT_EQ(R"([uncaught]
+Test262Error: A should be an own property
+    at dummy1:1)",
+            formatEvalResult(env, ret));
+
+  ret = jsEval("dummy1", "verifyProperty('hey', 0, {})", env);
+  ASSERT_TRUE(ret);
+  ASSERT_EQ("true", formatEvalResult(env, ret));
+
+  ret = jsEval(
+      "dummy1",
+      "verifyProperty('hey', 0, {value:'h', writable:false, configurable:false, enumerable:true})",
+      env);
+  ASSERT_TRUE(ret);
+  ASSERT_EQ("true", formatEvalResult(env, ret));
+
+  ret = jsEval("dummy1", "verifyProperty('hey', 100)", env);
+  ASSERT_TRUE(ret);
+  ASSERT_EQ("true", formatEvalResult(env, ret));
+
+  ret = jsEval("dummy1", "verifyProperty('hey', 100, {})", env);
+  ASSERT_FALSE(ret);
+  ASSERT_EQ(R"([uncaught]
+Test262Error: 100 should be an own property
+    at dummy1:1)",
+            formatEvalResult(env, ret));
+
+  ret = jsEval("dummy1",
+               "verifyProperty('hey', 'length', {value:3, writable:false, configurable:false, "
+               "enumerable:false})",
+               env);
+  ASSERT_TRUE(ret);
+  ASSERT_EQ("true", formatEvalResult(env, ret));
+}
+
 static std::vector<std::string> getTargetTestCases(const char *dir) {
   auto ret = getFileList(dir, true);
   assert(!ret.empty());

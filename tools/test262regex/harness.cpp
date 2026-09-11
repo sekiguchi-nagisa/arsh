@@ -373,6 +373,108 @@ static void defineTestPropertyOfStrings(const std::shared_ptr<JSEnv> &global) {
   global->define("testExtendedCharacterClass", std::move(func));
 }
 
+static void defineVerifyProperty(const std::shared_ptr<JSEnv> &global) {
+  const char *name = "verifyProperty";
+  auto impl = [](const JSFunctionPtr &func, const std::shared_ptr<JSEnv> &env) -> JSResult {
+    auto obj = env->findOrUndef(func->params[0]);
+    auto name = env->findOrUndef(func->params[1]);
+    auto desc = env->findOrUndef(func->params[2]);
+    auto options = env->findOrUndef(func->params[3]);
+
+    JSString label;
+    if (auto r = findProperty(env, options, "label"); r && toBool(r.value)) {
+      label = toString(r.value);
+    } else {
+      label = toString(name);
+    }
+
+    const auto orgProperty = findOwnPropertyByIndex(obj, name);
+    if (isUndefined(desc)) {
+      if (orgProperty) {
+        JSString str = label;
+        str += u" descriptor should be undefined";
+        return throwTest262Error(env, std::move(str));
+      }
+      return Ok(true);
+    }
+    if (!orgProperty) {
+      JSString str = label;
+      str += u" should be an own property";
+      return throwTest262Error(env, std::move(str));
+    }
+
+    if (!std::holds_alternative<JSObjectPtr>(desc)) {
+      JSString str = u"The desc argument should be an object or undefined, but ";
+      toPrettyString(desc, str);
+      return throwTest262Error(env, std::move(str));
+    }
+
+    auto &descPtr = std::get<JSObjectPtr>(desc);
+    for (auto &e : descPtr->values) {
+      constexpr const char *names[] = {
+          "value", builtin::WRITABLE, builtin::ENUMERABLE, builtin::CONFIGURABLE, "get", "set",
+      };
+      if (!std::any_of(std::begin(names), std::end(names),
+                       [&e](const char *target) { return e.first == target; })) {
+        JSString str = u"Invalid descriptor field: ";
+        toUTF16(e.first, str);
+        return throwTest262Error(env, std::move(str));
+      }
+    }
+
+    // check property descriptor (except for set/get)
+    std::vector<JSString> failures;
+    if (auto p = descPtr->getProperty("value")) {
+      if (!isSameValueImpl(p.value, orgProperty.value)) {
+        JSString str = label;
+        str += u" descriptor value should be ";
+        toPrettyString(p.value, str);
+        failures.push_back(std::move(str));
+      }
+      if (auto v = TRY(findPropertyByIndex(env, obj, name)); !isSameValueImpl(p.value, v)) {
+        JSString str = label;
+        str += u" value should be ";
+        toPrettyString(p.value, str);
+        failures.push_back(std::move(str));
+      }
+    }
+    constexpr struct {
+      const char *attrName;
+      JSPropertyAttr attr;
+    } targets[] = {
+        {builtin::ENUMERABLE, JSPropertyAttr::ENUMERABLE},
+        {builtin::WRITABLE, JSPropertyAttr::WRITABLE},
+        {builtin::CONFIGURABLE, JSPropertyAttr::CONFIGURABLE},
+    };
+    for (auto &[attrName, attr] : targets) {
+      if (auto p = descPtr->getProperty(attrName); p && !isUndefined(p.value)) {
+        if (!isSameValueImpl(p.value, hasFlag(orgProperty.attr, attr))) {
+          JSString str = label;
+          str += u" descriptor should ";
+          str += toBool(p.value) ? u"" : u"not ";
+          str += u"be ";
+          toUTF16(attrName, str);
+          failures.push_back(std::move(str));
+        }
+      }
+    }
+
+    if (!failures.empty()) {
+      JSString str;
+      for (auto &e : failures) {
+        if (!str.empty()) {
+          str += u"; ";
+        }
+        str += e;
+      }
+      return throwTest262Error(env, std::move(str));
+    }
+    return Ok(true);
+  };
+  global->define(name, createJSFunction(global, name, {"obj", "name", "desc", "options"}, nullptr,
+                                        std::move(impl)));
+}
+
 void includeHarness(const std::shared_ptr<JSEnv> &global) {
   defineDerivedError(global, TEST262_ERROR);
   defineDoNotEvaluate(global);
@@ -380,6 +482,7 @@ void includeHarness(const std::shared_ptr<JSEnv> &global) {
   defineBuildString(global);
   defineTestPropertyEscapes(global);
   defineTestPropertyOfStrings(global);
+  defineVerifyProperty(global);
 }
 
 } // namespace arsh::re262
