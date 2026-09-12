@@ -43,6 +43,55 @@ extern "C" JIT_STENCIL_CALL int32_t jit_goto(JitContext &ctx, const Inst *ins) n
   JIT_STENCIL_TAIL return fn(ctx, ins);
 }
 
+/**
+ * the control flow trampoline referenced by the `JIT_BACKTRACK()` holes.
+ *
+ * the driver only runs the backtrack stack when a block returns to it, so a failing block instead
+ * tail-calls this trampoline: it runs the backtrack stack and tail-calls the resolved block. the
+ * whole failure/backtrack cycle therefore stays inside the JIT code, which is the point of the
+ * copy-and-patch engine.
+ *
+ * it returns `JIT_BACKTRACK_STATUS` only once the backtrack stack is empty, i.e. when the current
+ * search attempt is exhausted and the driver has to advance the search start.
+ *
+ * `inst` is the failing block's own instruction. it is the target whenever an entry pops without
+ * setting one (a `BacktrackOp::None`), which makes the block run once more. that is what the
+ * interpreter's initial `Backtrack::dummy()` does, and the re-run fails again, so the attempt then
+ * ends. taking `inst` also lets the call from a stencil be a `musttail` one, since the signature
+ * then matches a stencil's.
+ */
+extern "C" JIT_STENCIL_CALL int32_t jit_backtrack(JitContext &ctx, const Inst *inst) noexcept {
+  // `inst` seeds `target` so that it can never be left null: a `BacktrackOp::None` entry pops
+  // without writing a target, and re-running the failing block is what the driver did for it.
+  const Inst *target = inst;
+  while (ctx.bts->backtrack(target, *ctx.input, ctx.captures, ctx.loopStates)) {
+    if (unlikely(++ctx.btCount == Regex::TIMER_CHECK_INTERVAL)) {
+      ctx.btCount = 0;
+      if (ctx.timer) {
+        switch (ctx.timer->check()) {
+        case Timer::Status::None:
+          break;
+        case Timer::Status::Canceled:
+          return JIT_CANCEL_STATUS;
+        case Timer::Status::Expired:
+          return JIT_TIMEOUT_STATUS;
+        }
+      }
+    }
+
+    // `matchStart` is the start of the current attempt and is not affected by backtracking (the
+    // interpreter only updates its counterpart in `START` and when the search start advances), so
+    // it is intentionally left alone here.
+
+    const auto byteOffset =
+        static_cast<size_t>(reinterpret_cast<const char *>(target) - ctx.instSeqBase);
+    const auto fn = reinterpret_cast<JitFn>(const_cast<uint8_t *>(ctx.codeBase) +
+                                            ctx.codeOffsets[byteOffset]);
+    JIT_STENCIL_TAIL return fn(ctx, target);
+  }
+  return JIT_BACKTRACK_STATUS;
+}
+
 } // namespace arsh::regex::jit
 
 namespace arsh::regex::jit {
@@ -57,7 +106,6 @@ MatchStatus jitMatch(MatchContext &ctx, const JitCode &code, const ObserverPtr<T
   ctx.clearCaptures();
   Capture *captures = ctx.getCaptures();
   LoopState *loopStates = ctx.getLoops();
-  unsigned int btCount = 0;
   BacktrackStack bts(instSeqBegin);
   std::string foldBuf;
   if (timer) {
@@ -73,9 +121,9 @@ MatchStatus jitMatch(MatchContext &ctx, const JitCode &code, const ObserverPtr<T
   jitCtx.foldBuf = &foldBuf;
   jitCtx.ctx = &ctx;
   jitCtx.instSeqBase = reinterpret_cast<const char *>(instSeqBegin);
-  jitCtx.matchStart = oldIter;
   jitCtx.codeBase = code.code();
   jitCtx.codeOffsets = code.codeOffsets.data();
+  jitCtx.timer = timer.get();
 
 START:
   // search string (mirrors the interpreter's leading-literal fast path). `oldIter` tracks the
@@ -94,7 +142,7 @@ START:
     }
     if (const auto retPos = input.remainForward().find(needle); retPos == StringRef::npos) {
       oldIter = input.getEnd();
-      goto BACKTRACK;
+      goto ADVANCE; // the backtrack stack is empty here, so there is nothing to backtrack into
     } else {
       oldIter = input.getIter() + retPos;
       input.setIter(input.getIter() + retPos + needle.size());
@@ -113,33 +161,23 @@ START:
       }
     }
     if (!matched) {
-      goto BACKTRACK;
+      goto ADVANCE; // the backtrack stack is empty here, so there is nothing to backtrack into
     }
   }
 
   // match
-  bts.push(Backtrack::dummy()); // dummy
-BACKTRACK:
-  while (bts.backtrack(inst, input, captures, loopStates)) {
-    if (unlikely(++btCount == Regex::TIMER_CHECK_INTERVAL)) {
-      btCount = 0;
-      if (timer) {
-        switch (timer->check()) {
-        case Timer::Status::None:
-          break;
-        case Timer::Status::Canceled:
-          return MatchStatus::CANCEL;
-        case Timer::Status::Expired:
-          return MatchStatus::TIMEOUT;
-        }
-      }
-    }
-
-    // the `Match` stencil captures the start of the current attempt: it is the counterpart of the
-    // interpreter's `oldIter`. keeping it in sync here (instead of at each update site) also covers
-    // the `goto BACKTRACK` above.
-    jitCtx.matchStart = oldIter;
-
+  //
+  // a failing block does not return here: it resumes matching on its own by tail-calling
+  // `jit_backtrack`, which runs the backtrack stack. the driver is therefore only re-entered when
+  // the block matched, hit the stack limit, exhausted the attempt or the timer fired.
+  //
+  // note that the interpreter's initial `Backtrack::dummy()` is not pushed: it only existed to make
+  // the driver's backtrack loop run its body once, which is done by the direct call below.
+  //
+  // `matchStart` is (re)assigned just before the entry: the leading-literal fast path above may
+  // have moved `oldIter` past the search start.
+  jitCtx.matchStart = oldIter;
+  {
     const auto byteOffset =
         static_cast<size_t>(reinterpret_cast<const char *>(inst) - jitCtx.instSeqBase);
     const auto fn = reinterpret_cast<JitFn>(const_cast<uint8_t *>(code.code()) +
@@ -149,13 +187,18 @@ BACKTRACK:
       return MatchStatus::OK;
     case JIT_STACK_LIMIT_STATUS:
       return MatchStatus::STACK_LIMIT;
+    case JIT_TIMEOUT_STATUS:
+      return MatchStatus::TIMEOUT;
+    case JIT_CANCEL_STATUS:
+      return MatchStatus::CANCEL;
     case JIT_BACKTRACK_STATUS:
-      break; // run the backtrack stack
+      break; // the current attempt is exhausted: advance the search start
     default:
       return MatchStatus::STACK_LIMIT;
     }
   }
 
+ADVANCE:
   // increment input and redo until end-of-input.
   input.setIter(oldIter);
   if (input.available()) {
@@ -165,7 +208,6 @@ BACKTRACK:
     ctx.clearCaptures();
     captures = ctx.getCaptures();
     jitCtx.captures = captures;
-    jitCtx.matchStart = oldIter;
     goto START;
   }
   ctx.syncInput(input);

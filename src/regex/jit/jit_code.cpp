@@ -149,6 +149,8 @@ bool compileTo(JitCode &code, const Regex &regex) {
         value = successor;
       } else if (strcmp(hole.symbol, "jit_goto") == 0) {
         value = trampoline;
+      } else if (strcmp(hole.symbol, "jit_backtrack") == 0) {
+        value = reinterpret_cast<const uint8_t *>(&jit_backtrack);
       } else {
         value = static_cast<const uint8_t *>(lookupJitRuntimeSymbol(hole.symbol));
         if (!value) {

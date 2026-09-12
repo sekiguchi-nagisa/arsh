@@ -8,6 +8,8 @@
 
 - add experimental copy-and-patch JIT compiler for regex matching (Linux x86-64, Clang/GCC)
     - each regex instruction is compiled to a native stencil that tail-calls the next one
+    - backtracking also stays in the compiled code: a failing stencil tail-calls a trampoline that
+      runs the backtrack stack and jumps to the resolved stencil, without returning to the driver
     - enabled at run time via the ``ARSH_REGEX_JIT`` environment variable; when it is unset the
       interpreter is used, which is also the build fallback when the compiler lacks
       ``preserve_none``/``musttail``

@@ -99,6 +99,11 @@ from the bytecode it was copied from; only the control flow edges are patched in
 For branch targets that are not the successor, a trampoline resolves the target through the
 instruction offset table, which keeps loop back edges stack-flat.
 
+Backtracking does not return to the driver either: a failing stencil tail-calls a second trampoline
+which runs the backtrack stack and jumps straight to the resolved stencil. Because both edges are
+tail calls, a deep backtracking run stays stack-flat too, and the driver is only re-entered when the
+whole search attempt is exhausted (or the timer fires).
+
 The generated code is cached on the `Regex` object and reused across matches.
 
 ### status

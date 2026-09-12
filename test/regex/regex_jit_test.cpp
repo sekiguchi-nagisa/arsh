@@ -114,6 +114,33 @@ TEST(RegexJitTest, stencilNamesAreUnique) {
   }
 }
 
+/**
+ * a failing stencil must resume matching through the `jit_backtrack` trampoline instead of
+ * returning to the driver, so every stencil that can fail has to reference it as a patch site.
+ * `gen_jit_stencil` records an unresolved external as a hole, so a missing one would mean the edge
+ * silently went back to the driver (or that the call was not a tail call).
+ */
+TEST(RegexJitTest, backtrackTrampolineIsPatched) {
+  // these stencils only continue or jump and can never fail on their own
+  static const std::set<std::string> noBacktrack = {
+      "Nop", "Match", "Jump", "Alt", "BeginCapture", "EndCapture", "ResetCaptures",
+      "BeginLookAround", "LBEndCapture",
+  };
+  for (const auto &stencil : regex::jit::STENCILS) {
+    bool hasBacktrack = false;
+    for (unsigned int i = 0; i < stencil.holeCount; i++) {
+      if (strcmp(stencil.holes[i].symbol, "jit_backtrack") == 0) {
+        hasBacktrack = true;
+      }
+    }
+    if (noBacktrack.count(stencil.opcode) != 0) {
+      EXPECT_FALSE(hasBacktrack) << stencil.opcode << " cannot fail, so it must not backtrack";
+    } else {
+      EXPECT_TRUE(hasBacktrack) << stencil.opcode << " must resume through jit_backtrack";
+    }
+  }
+}
+
 #endif
 
 /**
@@ -294,6 +321,21 @@ TEST(RegexJitTest, deepLoopKeepsStackFlat) {
   ASSERT_EQ(2, captures.size()); // whole match + group 1
   ASSERT_EQ(0, captures[0].offset);
   ASSERT_EQ(text.size(), captures[0].size);
+}
+
+/**
+ * a deep backtracking run must not grow the machine stack either: a failing block tail-calls the
+ * `jit_backtrack` trampoline, which itself tail-calls the resolved block. if either edge became an
+ * ordinary call, the frames of the failing blocks would pile up one per backtrack step.
+ */
+TEST(RegexJitTest, deepBacktrackKeepsStackFlat) {
+  std::string text(200000, 'a');
+  auto regex = compileRegex("^a*b"); // consumes the whole input, then backtracks all of it
+  ASSERT_TRUE(regex.hasValue());
+
+  std::vector<regex::Capture> captures;
+  ASSERT_EQ(regex::MatchStatus::FAIL,
+            regex::match(regex.unwrap(), StringRef(text), captures, nullptr));
 }
 
 /**

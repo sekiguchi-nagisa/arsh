@@ -93,9 +93,13 @@ inline constexpr Capture CAPTURE_UNSET{};
 #define JIT_GOTO_ADV(n) JIT_GOTO_INST(JIT_ADVANCE(n))
 
 /**
- * return to the driver, which runs the backtrack stack.
+ * resume matching without returning to the driver.
+ *
+ * the failing block tail-calls the `jit_backtrack` trampoline, which runs the backtrack stack and
+ * then tail-calls the stencil of the resolved instruction. the machine stack therefore does not
+ * grow, and the driver is only re-entered once the attempt is exhausted.
  */
-#define JIT_BACKTRACK() return JIT_BACKTRACK_STATUS
+#define JIT_BACKTRACK() JIT_STENCIL_TAIL return jit_backtrack(ctx, inst)
 
 /**
  * return to the driver: the whole pattern matched.

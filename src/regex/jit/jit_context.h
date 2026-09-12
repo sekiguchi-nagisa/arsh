@@ -27,6 +27,7 @@ namespace arsh::regex {
 class Input;
 class MatchContext;
 class Matcher;
+class Timer;
 class BacktrackStack;
 struct Capture;
 struct LoopState;
@@ -37,13 +38,17 @@ namespace jit {
 /**
  * status returned by the JIT entry point.
  *
- * a stencil keeps running the straight-line instruction sequence by tail-calling the stencil of the
- * next instruction. it returns to the driver only on the control flow events below.
+ * a stencil keeps running the instruction sequence by tail-calling the stencil of the next
+ * instruction, and a failing block tail-calls the `jit_backtrack` trampoline instead of returning
+ * to the driver. the driver is only re-entered on the events below.
+ *
+ * `JIT_BACKTRACK_STATUS` is therefore only produced by `jit_backtrack` itself, and only when the
+ * backtrack stack is empty, i.e. the current search attempt is exhausted.
  */
 enum : int32_t {
   /**
-   * the current path failed. the driver must run the backtrack stack and re-enter the JIT at the
-   * resolved instruction.
+   * the current search attempt failed and the backtrack stack is empty. the driver must advance the
+   * search start and re-enter the JIT at the first instruction.
    */
   JIT_BACKTRACK_STATUS = -1,
 
@@ -56,6 +61,17 @@ enum : int32_t {
    * the backtrack stack reached `Regex::MAX_STACK_DEPTH`.
    */
   JIT_STACK_LIMIT_STATUS = -3,
+
+  /**
+   * the match timer expired (produced by `jit_backtrack`, which cannot return to the driver
+   * normally once it has taken over the backtracking).
+   */
+  JIT_TIMEOUT_STATUS = -4,
+
+  /**
+   * the match was canceled.
+   */
+  JIT_CANCEL_STATUS = -5,
 };
 
 /**
@@ -89,6 +105,9 @@ struct JitContext {
 
   const uint8_t *codeBase{nullptr};      // executable buffer base address
   const uint32_t *codeOffsets{nullptr};  // bytecode byte offset -> offset within the buffer
+
+  Timer *timer{nullptr};                 // vm.cpp `timer`, checked by `jit_backtrack`
+  uint32_t btCount{0};                   // backtracks since the last timer check
   // clang-format on
 };
 
@@ -103,7 +122,7 @@ using JitFn = int32_t(JIT_STENCIL_CALL *)(JitContext &ctx, const Inst *inst) noe
 /**
  * control flow placeholders.
  *
- * both are intentionally left undefined in the stencil translation units, so references to them
+ * all are intentionally left undefined in the stencil translation units, so references to them
  * become patchable "holes" (absolute 8-byte relocations).
  *
  * - `jit_next`: the compiler patches each occurrence with the address of the stencil for the
@@ -112,9 +131,14 @@ using JitFn = int32_t(JIT_STENCIL_CALL *)(JitContext &ctx, const Inst *inst) noe
  * - `jit_goto`: a fixed trampoline which resolves the target instruction through
  *   `JitContext::codeOffsets`. it is used for branch targets that are not the successor (branch
  *   targets, loop back edges, radix skip edges).
+ * - `jit_backtrack`: a fixed trampoline which runs the backtrack stack, then tail-calls the stencil
+ *   of the resolved instruction. this is what makes a failing block resume matching without going
+ *   through the driver. it takes the same two arguments as a stencil so that the call can be a
+ *   `musttail` one.
  */
 extern "C" JIT_STENCIL_CALL int32_t jit_next(JitContext &ctx, const Inst *inst) noexcept;
 extern "C" JIT_STENCIL_CALL int32_t jit_goto(JitContext &ctx, const Inst *inst) noexcept;
+extern "C" JIT_STENCIL_CALL int32_t jit_backtrack(JitContext &ctx, const Inst *inst) noexcept;
 
 } // namespace jit
 
