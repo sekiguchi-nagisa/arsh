@@ -18,6 +18,7 @@
 #define ARSH_REGEX_REGEX_H
 
 #include <functional>
+#include <memory>
 
 #include "capture.h"
 #include "flag.h"
@@ -30,7 +31,21 @@ namespace arsh::regex {
 
 struct Inst;
 
+namespace jit {
+struct JitCode;
+} // namespace jit
+
 class Regex {
+public:
+  /**
+   * the state of the lazily compiled JIT code.
+   */
+  enum class JitState : unsigned char {
+    NotTried,     // not compiled yet
+    Compiled,     // `jitCode` is usable
+    Unsupported,  // compilation is impossible for this pattern: keep using the interpreter
+  };
+
 private:
   Flag flag;
   unsigned short loopCount;
@@ -38,6 +53,8 @@ private:
   FlexBuffer<Inst> instSeq;
   std::vector<Matcher> matchers;
   NamedCaptureGroups named;
+  mutable std::shared_ptr<jit::JitCode> jitCode; // lazily compiled, only when the JIT is enabled
+  mutable JitState jitState{JitState::NotTried};
 
 public:
   static constexpr size_t MAX_STACK_DEPTH = 0xFFFFFF;
@@ -59,6 +76,25 @@ public:
   ArrayRef<Matcher> getMatchers() const { return {this->matchers.data(), this->matchers.size()}; }
 
   const auto &getNamedCaptureGroups() const { return this->named; }
+
+  /**
+   * the compiled JIT code, or null when the pattern has not been compiled yet (or the JIT is
+   * disabled / the pattern is not compilable).
+   */
+  const std::shared_ptr<jit::JitCode> &getJitCode() const { return this->jitCode; }
+
+  JitState getJitState() const { return this->jitState; }
+
+  /**
+   * record the result of compiling this pattern.
+   *
+   * a null `code` marks the pattern as unsupported, so it is never compiled again and the
+   * interpreter is used from then on.
+   */
+  void setJitCode(std::shared_ptr<jit::JitCode> code) const {
+    this->jitState = code ? JitState::Compiled : JitState::Unsupported;
+    this->jitCode = std::move(code);
+  }
 };
 
 class Timer {
@@ -106,6 +142,7 @@ enum class MatchStatus : unsigned char {
   CANCEL,       // interrupted
   TIMEOUT,      // timeout
   STACK_LIMIT,  // stack size reaches limits
+  JIT_ERROR,    // failed to allocate the JIT code buffer
 
   /* for replace api */
   INVALID_REPLACE_PATTERN, // invalid replacement string format
@@ -117,6 +154,14 @@ const char *toString(MatchStatus s);
 class MatchContext;
 
 MatchStatus match(MatchContext &ctx, ObserverPtr<Timer> timer);
+
+/**
+ * run the bytecode with the interpreter.
+ *
+ * `match(MatchContext &)` dispatches to the JIT when it is enabled and the pattern is compilable,
+ * and falls back to this function otherwise.
+ */
+MatchStatus interpret(MatchContext &ctx, ObserverPtr<Timer> timer);
 
 MatchStatus match(const Regex &regex, StringRef text, unsigned int codePointOffset,
                   std::vector<Capture> &captures, ObserverPtr<Timer> timer);

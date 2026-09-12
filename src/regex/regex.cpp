@@ -18,7 +18,52 @@
 #include "misc/format.hpp"
 #include "misc/num_util.hpp"
 
+#include <config.h> // for USE_REGEX_JIT
+
+#ifdef USE_REGEX_JIT
+#include <cstdlib>
+
+#include "jit/jit_code.h"
+#include "jit/jit_match.h"
+#endif
+
 namespace arsh::regex {
+
+#ifdef USE_REGEX_JIT
+
+/**
+ * whether the JIT should be used, resolved from `ARSH_REGEX_JIT` once per process.
+ *
+ * the variable is only read the first time, so the check is cheap after that (and the whole path
+ * compiles away when the JIT is not built in).
+ */
+static bool useRegexJit() {
+  static const bool enabled = [] {
+    const char *value = getenv("ARSH_REGEX_JIT");
+    return value && *value;
+  }();
+  return enabled;
+}
+
+/**
+ * run `ctx` through the JIT, compiling (and caching) the code on the first call.
+ *
+ * returns the match status, or `MatchStatus::JIT_ERROR` when the code buffer could not be allocated.
+ * when the pattern cannot be compiled at all, the pattern is marked unsupported and the interpreter
+ * takes over from this point on.
+ */
+static MatchStatus matchWithJit(MatchContext &ctx, ObserverPtr<Timer> timer) {
+  const Regex &regex = ctx.getRegex();
+  if (regex.getJitState() == Regex::JitState::NotTried) {
+    regex.setJitCode(jit::compile(regex));
+  }
+  if (!regex.getJitCode()) {
+    return interpret(ctx, timer); // not compilable: use the interpreter
+  }
+  return jit::jitMatch(ctx, *regex.getJitCode(), timer);
+}
+
+#endif
 
 const char *toString(const MatchStatus s) {
   switch (s) {
@@ -36,11 +81,22 @@ const char *toString(const MatchStatus s) {
     return "match timeout";
   case MatchStatus::STACK_LIMIT:
     return "stack depth reaches limit";
+  case MatchStatus::JIT_ERROR:
+    return "failed to allocate the JIT code";
   case MatchStatus::INVALID_REPLACE_PATTERN:
   case MatchStatus::REPLACED_LIMIT:
     break;
   }
   return "";
+}
+
+MatchStatus match(MatchContext &ctx, ObserverPtr<Timer> timer) {
+#ifdef USE_REGEX_JIT
+  if (useRegexJit()) {
+    return matchWithJit(ctx, timer);
+  }
+#endif
+  return interpret(ctx, timer);
 }
 
 MatchStatus match(const Regex &regex, const StringRef text, const unsigned int codePointOffset,

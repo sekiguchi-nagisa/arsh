@@ -120,6 +120,60 @@ find_package(Threads REQUIRED)
 check_program(git)
 
 
+#+++++++++++++++++++++++++++++#
+#     probe regex JIT support #
+#+++++++++++++++++++++++++++++#
+
+# the regex JIT uses copy-and-patch stencils whose ABI needs `preserve_none` (so that a tail call
+# does not have to save callee-saved registers) and `musttail` (so that "call the next instruction"
+# becomes a bare `jmp`). both the stencil translation units and the driver are only built when the
+# probe below succeeds, so an old compiler simply builds the interpreter-only engine.
+#
+# the probe also requires x86-64 Linux: the stencil extractor currently only parses ELF64, and the
+# hole size is fixed to the 8 bytes of an `R_X86_64_64` relocation.
+option(USE_REGEX_JIT "enable the experimental copy-and-patch regex JIT" ON)
+if (USE_REGEX_JIT AND UNIX AND NOT APPLE AND NOT EMSCRIPTEN
+        AND ("${CMAKE_SYSTEM_PROCESSOR}" MATCHES "x86_64|amd64"))
+    if ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "Clang")
+        set(ARSH_JIT_TAIL_ATTR "clang")
+    elseif ("${CMAKE_CXX_COMPILER_ID}" STREQUAL "GNU")
+        set(ARSH_JIT_TAIL_ATTR "gnu")
+    else ()
+        set(ARSH_JIT_TAIL_ATTR "")
+    endif ()
+
+    if (NOT ARSH_JIT_TAIL_ATTR STREQUAL "")
+        include(CheckCXXSourceCompiles)
+        set(ARSH_JIT_PROBE_SRC "
+      #include <cstdint>
+      struct Ctx { long a; };
+      extern \"C\" __attribute__((preserve_none)) int32_t jit_next(Ctx &, const void *) {
+        return 0;
+      }
+      extern \"C\" __attribute__((preserve_none)) int32_t probe(Ctx &ctx, const void *ins) {
+        [[@ARSH_JIT_TAIL_ATTR@::musttail]] return jit_next(ctx, ins);
+      }
+      int main() { return 0; }
+    ")
+        string(REPLACE "@ARSH_JIT_TAIL_ATTR@" "${ARSH_JIT_TAIL_ATTR}" ARSH_JIT_PROBE_SRC
+                "${ARSH_JIT_PROBE_SRC}")
+        check_cxx_source_compiles("${ARSH_JIT_PROBE_SRC}" ARSH_JIT_SUPPORTED)
+        if (NOT ARSH_JIT_SUPPORTED)
+            set(USE_REGEX_JIT OFF)
+        endif ()
+    else ()
+        set(USE_REGEX_JIT OFF)
+    endif ()
+elseif (USE_REGEX_JIT)
+    set(USE_REGEX_JIT OFF)
+endif ()
+if (USE_REGEX_JIT)
+    message(STATUS "regex JIT enabled")
+else ()
+    message(STATUS "regex JIT disabled")
+endif ()
+
+
 #+++++++++++++++++++++++++++#
 #     generate config.h     #
 #+++++++++++++++++++++++++++#
@@ -256,7 +310,11 @@ endif ()
 #     regex     #
 #===============#
 
-add_library(regex STATIC
+# the JIT stencils must be generated before the regex library is compiled. the subdirectory sets
+# `ARSH_JIT_ENABLED` / `ARSH_JIT_STENCIL_DATA` (and is a no-op on unsupported platforms).
+add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/tools/gen_jit_stencil)
+
+set(REGEX_SRC
         src/regex/parser.cpp
         src/regex/dump.cpp
         src/regex/flag.cpp
@@ -264,6 +322,23 @@ add_library(regex STATIC
         src/regex/vm.cpp
         src/regex/regex.cpp
 )
+
+if (USE_REGEX_JIT)
+    list(APPEND REGEX_SRC
+            src/regex/jit/code_buffer.cpp
+            src/regex/jit/jit_code.cpp
+            src/regex/jit/jit_match.cpp
+            src/regex/jit/stencil_runtime.cpp
+    )
+endif ()
+
+add_library(regex STATIC ${REGEX_SRC})
+if (USE_REGEX_JIT)
+    # PUBLIC: `jit_code.cpp` includes the generated `stencil_data.h`, and the regex test suite
+    # asserts on the extracted stencils, so the generated header directory propagates to both.
+    target_include_directories(regex PUBLIC ${ARSH_JIT_STENCIL_DIR})
+    add_dependencies(regex regex_jit_stencil_data)
+endif ()
 target_link_libraries(regex unicode)
 if (BUILD_SHARED_LIB)
     set_target_properties(regex PROPERTIES POSITION_INDEPENDENT_CODE ON)

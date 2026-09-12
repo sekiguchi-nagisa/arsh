@@ -540,6 +540,22 @@ EACH_RE_OPCODE(GEN_TYPE_ASSERT)
 
 #undef GEN_TYPE_ASSERT
 
+/**
+ * return the size in bytes of the instruction at the given address.
+ *
+ * the bytecode is byte-addressed: an instruction sequence is advanced by `sizeof(SomeIns)`.
+ */
+inline size_t getInstSize(const Inst *inst) {
+  switch (inst->op) {
+#define GEN_CASE(E)                                                                                \
+  case OpCode::E:                                                                                  \
+    return sizeof(E##Ins);
+    EACH_RE_OPCODE(GEN_CASE)
+#undef GEN_CASE
+  }
+  return 0;
+}
+
 } // namespace arsh::regex
 
 #endif // ARSH_REGEX_INSTRUCTION_H

@@ -6,8 +6,13 @@
 set(TEST_NAME regex_test)
 add_executable(${TEST_NAME}
         regex_test.cpp
+        regex_jit_test.cpp
 )
 target_link_libraries(${TEST_NAME} gtest gtest_main regex test_common)
+if (USE_REGEX_JIT)
+    # the differential test reaches into `jit/stencil_data.h` to check the extracted stencils
+    target_include_directories(${TEST_NAME} PRIVATE ${ARSH_JIT_STENCIL_DIR})
+endif ()
 add_test(${TEST_NAME} ${TEST_NAME})
 
 

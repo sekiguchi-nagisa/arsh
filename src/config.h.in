@@ -38,4 +38,8 @@
 
 #cmakedefine USE_PCRE
 
+// enable the copy-and-patch regex JIT (see `src/regex/jit`)
+
+#cmakedefine USE_REGEX_JIT
+
 #endif //ARSH_CONFIG_H

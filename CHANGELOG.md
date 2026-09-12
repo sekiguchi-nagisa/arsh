@@ -4,6 +4,15 @@
 
 ### Added
 
+#### Core
+
+- add experimental copy-and-patch JIT compiler for regex matching (Linux x86-64, Clang/GCC)
+    - each regex instruction is compiled to a native stencil that tail-calls the next one
+    - enabled at run time via the ``ARSH_REGEX_JIT`` environment variable; when it is unset the
+      interpreter is used, which is also the build fallback when the compiler lacks
+      ``preserve_none``/``musttail``
+    - the pattern is compiled lazily on first match and cached on the ``Regex`` object
+
 #### Builtin
 
 - add ``Int#toString`` method for reverse method of ``String#toInt``
