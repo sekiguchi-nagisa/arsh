@@ -19,7 +19,7 @@ let _SKIP_PATTERNS = [
     new Regex(".*${'/prototype/'.escapeRegex()}.*"),
     new Regex(".*${'/legacy-accessors/'.escapeRegex()}.*"),
     new Regex(".*${'/Symbol.species/'.escapeRegex()}.*"),
-    new Regex(".*${'/cross-realm.js'}"),
+    new Regex(".*${'/.+-realm.js'}"),
 ]
 function matchSkipPatterns(path: String): Bool {
     for p in $_SKIP_PATTERNS {

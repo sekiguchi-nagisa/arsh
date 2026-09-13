@@ -547,8 +547,9 @@ JSFunctionPtr createJSFunction(const std::shared_ptr<JSEnv> &env, const char *na
   auto func = std::make_shared<JSFunction>();
   func->params = std::move(params);
   func->definedEnv = env;
-  func->setBuiltinProperty("name", newJSStringPtr(name));
-  func->setBuiltinProperty("length", static_cast<double>(func->params.size()));
+  func->setProperty("name", JSPropertyAttr::CONFIGURABLE, newJSStringPtr(name));
+  func->setProperty("length", JSPropertyAttr::CONFIGURABLE,
+                    static_cast<double>(func->params.size()));
   if (prototype) {
     func->setBuiltinProperty(builtin::PROTOTYPE, std::move(prototype));
   }
@@ -834,14 +835,14 @@ static void defineNumber(const std::shared_ptr<JSEnv> &global) {
   prototype->setBuiltinProperty("toString", createNumberToString(global));
   auto func =
       createJSFunction(global, builtin::NUMBER, {"value"}, std::move(prototype), std::move(impl));
-  func->setBuiltinProperty("EPSILON", std::numeric_limits<double>::epsilon());
-  func->setBuiltinProperty("MAX_SAFE_INTEGER", MAX_SAFE_INTEGER);
-  func->setBuiltinProperty("MIN_SAFE_INTEGER", MIN_SAFE_INTEGER);
-  func->setBuiltinProperty("MAX_VALUE", std::numeric_limits<double>::max());
-  func->setBuiltinProperty("MIN_VALUE", std::numeric_limits<double>::min());
-  func->setBuiltinProperty("NaN", std::nan(""));
-  func->setBuiltinProperty("NEGATIVE_INFINITY", -INFINITY);
-  func->setBuiltinProperty("POSITIVE_INFINITY", INFINITY);
+  func->setProperty("EPSILON", JSPropertyAttr::NONE, std::numeric_limits<double>::epsilon());
+  func->setProperty("MAX_SAFE_INTEGER", JSPropertyAttr::NONE, MAX_SAFE_INTEGER);
+  func->setProperty("MIN_SAFE_INTEGER", JSPropertyAttr::NONE, MIN_SAFE_INTEGER);
+  func->setProperty("MAX_VALUE", JSPropertyAttr::NONE, std::numeric_limits<double>::max());
+  func->setProperty("MIN_VALUE", JSPropertyAttr::NONE, std::numeric_limits<double>::min());
+  func->setProperty("NaN", JSPropertyAttr::NONE, std::nan(""));
+  func->setProperty("NEGATIVE_INFINITY", JSPropertyAttr::NONE, -INFINITY);
+  func->setProperty("POSITIVE_INFINITY", JSPropertyAttr::NONE, INFINITY);
   global->define(builtin::NUMBER, std::move(func));
 }
 

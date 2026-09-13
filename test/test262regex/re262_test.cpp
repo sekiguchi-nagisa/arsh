@@ -1598,6 +1598,62 @@ TEST(JSTest, harnessVerifyProperty1) {
   ret = jsEval("dummy1", "verifyProperty(undefined, 'AA')", env);
   ASSERT_TRUE(ret);
   ASSERT_EQ("true", formatEvalResult(env, ret));
+
+  ret = jsEval("dummy1", "verifyProperty(RegExp, 'escape')", env);
+  ASSERT_FALSE(ret);
+  ASSERT_EQ(R"([uncaught]
+Test262Error: escape descriptor should be undefined
+    at dummy1:1)",
+            formatEvalResult(env, ret));
+
+  ret =
+      jsEval("dummy1", "verifyProperty(RegExp, 'escapeddd', {}, {label:'RegExp#escapeddd'})", env);
+  ASSERT_FALSE(ret);
+  ASSERT_EQ(R"([uncaught]
+Test262Error: RegExp#escapeddd should be an own property
+    at dummy1:1)",
+            formatEvalResult(env, ret));
+
+  ret = jsEval("dummy1", "verifyProperty(RegExp, 'escape', 'hey')", env);
+  ASSERT_FALSE(ret);
+  ASSERT_EQ(R"([uncaught]
+Test262Error: The desc argument should be an object or undefined, but hey
+    at dummy1:1)",
+            formatEvalResult(env, ret));
+
+  ret = jsEval("dummy1", "verifyProperty(RegExp, 'escape', {writable:true, hoge:false})", env);
+  ASSERT_FALSE(ret);
+  ASSERT_EQ(R"([uncaught]
+Test262Error: Invalid descriptor field: hoge
+    at dummy1:1)",
+            formatEvalResult(env, ret));
+
+  ret = jsEval("dummy1",
+               "verifyProperty(RegExp.escape, 'length', {value: 2, writable: false, enumerable: "
+               "false, configurable: true})",
+               env);
+  ASSERT_FALSE(ret);
+  ASSERT_EQ(R"([uncaught]
+Test262Error: length descriptor value should be 2; length value should be 2
+    at dummy1:1)",
+            formatEvalResult(env, ret));
+
+  ret = jsEval("dummy1",
+               "verifyProperty(RegExp.escape, 'length', {value: 1, writable: true, enumerable: "
+               "true, configurable: false})",
+               env);
+  ASSERT_FALSE(ret);
+  ASSERT_EQ(R"([uncaught]
+Test262Error: length descriptor should be enumerable; length descriptor should be writable; length descriptor should not be configurable
+    at dummy1:1)",
+            formatEvalResult(env, ret));
+
+  ret = jsEval("dummy1",
+               "verifyProperty(RegExp.escape, 'length', {value: 1, writable: false, enumerable: "
+               "false, configurable: true})",
+               env);
+  ASSERT_TRUE(ret);
+  ASSERT_EQ("true", formatEvalResult(env, ret));
 }
 
 TEST(JSTest, harnessVerifyPropertyString) {

@@ -285,7 +285,7 @@ JSProperty getOwnProperty(const JSRegex &regex, const std::string &name) {
   }
   if (name == "lastIndex") {
     const double d = regex.lastIndex;
-    return JSProperty::withDefault(d);
+    return {JSPropertyAttr::WRITABLE, d};
   }
   if (name == "source") {
     return JSProperty::withBuiltin(newJSStringPtr(regex.pattern));
