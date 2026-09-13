@@ -38,12 +38,6 @@ bool OrderedMapKey::equals(const Value &other) const {
   return Equality()(v, other); // never overflow
 }
 
-static uint64_t simpleHash(uint64_t value) {
-  uint64_t ret = UINT64_MAX;
-  rapid_mum(&value, &ret); // generate up to UINT64_MAX hash value
-  return ret;
-}
-
 // rapidhash equivalent to `wyhash64` see. https://github.com/wangyi-fudan/wyhash
 // a useful 64bit-64bit mix function to produce deterministic pseudo random numbers that can pass
 // BigCrush and PractRand
@@ -95,7 +89,7 @@ uint64_t OrderedMapKey::hash(uint64_t seed) const {
       break;
     }
   }
-  return isStr ? rapidhash_withSeed(ptr, size, seed) : simpleHash(u64);
+  return isStr ? rapidhash_withSeed(ptr, size, seed) : rapidhash64(u64, seed);
 }
 
 uint64_t hashRange(const Value *begin, const Value *const end) {
