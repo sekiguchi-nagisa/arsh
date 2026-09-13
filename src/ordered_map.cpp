@@ -172,7 +172,7 @@ std::pair<int, OrderedMapObject::InsertStatus> OrderedMapObject::insert(Value &&
   }
 
   // add entry (but not add to buckets)
-  const bool needGrow = this->bucketLen.loadFactor() > MAX_LOAD_FACTOR;
+  const bool needGrow = this->bucketLen.loadFactor(1) > MAX_LOAD_FACTOR;
   bool needCompaction = this->entries.getUsedSize() == this->entries.getCapacity() &&
                         this->entries.getUsedSize() != this->bucketLen.size();
   if (needGrow || needCompaction) {

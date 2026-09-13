@@ -162,9 +162,9 @@ private:
       return this->toBucketIndex(index + 1);
     }
 
-    double loadFactor() const {
+    double loadFactor(unsigned int insertingSize) const {
       unsigned int cap = this->capacity();
-      unsigned int size = this->size();
+      unsigned int size = this->size() + insertingSize;
       return static_cast<double>(size) / static_cast<double>(cap);
     }
 
@@ -317,6 +317,7 @@ public:
   Value next(TypePool &pool);
 
   const OrderedMapEntries::Entry &nextEntry() {
+    assert(this->hasNext());
     while (!(*this->mapObj)[this->index]) {
       this->index++;
     }
