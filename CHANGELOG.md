@@ -29,6 +29,9 @@
 #### Builtin
 
 - **Breaking Change**: change a help message format of builtin commands
+- **Breaking Change**: rename some ``Regex`` methods
+    - ``isCaseless`` to ``isIgnoreCase``
+    - ``isUnicodeSet`` to ``isUnicodeSets``
 - builtin help command also shows user-defined commands
 - improve ``String#split`` method
     - ``delim`` param is now optional (pass empty string by default)

@@ -1,26 +1,27 @@
 #$test($status = 0)
 
 # regex flags
-assert ! $/$/.isCaseless()
+assert ! $/$/.isIgnoreCase()
 assert ! $/$/.isMultiLine()
 assert ! $/$/.isDotAll()
-assert $/$/ims.isCaseless()
+assert $/$/ims.isIgnoreCase()
+assert $/$/ims.isDotAll()
 assert $/$/ism.isMultiLine()
-assert ! $//.isUnicodeSet()
+assert ! $//.isUnicodeSets()
 # assert $/$/iissm.isDotAll()
-assert $//v.isUnicodeSet()
-assert !$//u.isUnicodeSet()
+assert $//v.isUnicodeSets()
+assert !$//u.isUnicodeSets()
 
-assert !new Regex("ss").isCaseless()
+assert !new Regex("ss").isIgnoreCase()
 assert !new Regex("ss").isMultiLine()
 assert !new Regex("ss").isDotAll()
-assert !new Regex("ss").isUnicodeSet()
-assert !new Regex("ss", "").isCaseless()
+assert !new Regex("ss").isUnicodeSets()
+assert !new Regex("ss", "").isIgnoreCase()
 assert !new Regex("ss", "").isMultiLine()
 assert !new Regex("ss", "").isDotAll()
-assert !new Regex("ss", "").isUnicodeSet()
-assert !new Regex("ss", "u").isUnicodeSet()
-assert new Regex("ss", "v").isUnicodeSet()
+assert !new Regex("ss", "").isUnicodeSets()
+assert !new Regex("ss", "u").isUnicodeSets()
+assert new Regex("ss", "v").isUnicodeSets()
 
 assert $/\\/ =~ '\'
 assert $/a/ =~ 'bac'
@@ -117,7 +118,7 @@ try {
 }
 
 try {
-    assert new Regex("ss", "iissm").isCaseless()
+    assert new Regex("ss", "iissm").isIgnoreCase()
     assert false
 } catch $e {
     assert $e is RegexSyntaxError

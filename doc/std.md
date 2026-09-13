@@ -296,13 +296,13 @@ function count(): Int for Jobs
 ```
 type Regex(str: String, flag: String?)
 
-function isCaseless(): Bool for Regex
+function isIgnoreCase(): Bool for Regex
 
 function isMultiLine(): Bool for Regex
 
 function isDotAll(): Bool for Regex
 
-function isUnicodeSet(): Bool for Regex
+function isUnicodeSets(): Bool for Regex
 
 function %OP_MATCH(target: String): Bool for Regex
 

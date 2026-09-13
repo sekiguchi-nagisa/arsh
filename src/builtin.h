@@ -1349,7 +1349,7 @@ ARSH_METHOD regex_init(RuntimeContext &ctx) {
   RET_ERROR;
 }
 
-//!bind: function isCaseless($this : Regex) : Bool
+//!bind: function isIgnoreCase($this : Regex) : Bool
 ARSH_METHOD regex_isCaseless(RuntimeContext &ctx) {
   SUPPRESS_WARNING(regex_isCaseless);
   auto &re = typeAs<RegexObject>(LOCAL(0));
@@ -1373,7 +1373,7 @@ ARSH_METHOD regex_isDotAll(RuntimeContext &ctx) {
   RET_BOOL(flag.has(regex::Modifier::DOT_ALL));
 }
 
-//!bind: function isUnicodeSet($this : Regex) : Bool
+//!bind: function isUnicodeSets($this : Regex) : Bool
 ARSH_METHOD regex_isUnicodeSet(RuntimeContext &ctx) {
   SUPPRESS_WARNING(regex_isUnicodeSet);
   auto &re = typeAs<RegexObject>(LOCAL(0));
