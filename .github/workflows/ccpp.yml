@@ -45,7 +45,7 @@ jobs:
       - name: prepare
         run: |
           sudo apt update
-          sudo apt install language-pack-ja ninja-build clang-15 clang-11 clang-12
+          sudo apt install language-pack-ja ninja-build clang-11 clang-12
       - name: configure
         run: |
           mkdir build
@@ -172,20 +172,21 @@ jobs:
           cd build
           ctest -j4 --output-on-failure
 
-  build_on_linux_ubuntu24_04_release:
-    runs-on: ubuntu-24.04
+  build_on_linux_ubuntu26_04_release:
+    runs-on: ubuntu-26.04
     strategy:
       matrix:
-        cc: [ g++-14, clang++-19 ]
+        cc: [ g++-15, clang++-22 ]
         option: [ on, off ]
     steps:
       - uses: actions/checkout@v6
       - name: prepare
         run: |
           sudo apt update
-          sudo apt install language-pack-ja ninja-build lld clang-19 \
-                           lld-19 llvm-19 llvm-19-dev llvm-19-linker-tools \
+          sudo apt install language-pack-ja ninja-build lld clang-22 \
+                           lld-22 llvm-22 llvm-22-dev llvm-22-linker-tools \
                            fzf bash-completion
+          sudo apt install coreutils-from-gnu coreutils-from-uutils- --allow-remove-essential
       - name: configure
         run: |
           mkdir build
@@ -209,7 +210,7 @@ jobs:
           ninja checkinstall
 
   build_on_linux_sanitizer:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     strategy:
       matrix:
         option: [ address, undefined ]
@@ -218,14 +219,15 @@ jobs:
       - name: prepare
         run: |
           sudo apt update
-          sudo apt install language-pack-ja ninja-build clang-20 fzf bash-completion
+          sudo apt install language-pack-ja ninja-build clang-22 fzf bash-completion
+          sudo apt install coreutils-from-gnu coreutils-from-uutils- --allow-remove-essential
       - name: configure
         run: |
           mkdir build
           cd build
           cmake .. -G Ninja \
                 -DCMAKE_BUILD_TYPE=debug \
-                -DCMAKE_CXX_COMPILER=clang++-20 \
+                -DCMAKE_CXX_COMPILER=clang++-22 \
                 -DSANITIZER=${{ matrix.option }} \
                 -DUSE_EXTRA_TEST=on
       - name: build
@@ -241,20 +243,21 @@ jobs:
           ctest -j4 --output-on-failure
 
   build_on_linux_fuzzing:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@v6
       - name: prepare
         run: |
           sudo apt update
-          sudo apt install language-pack-ja ninja-build clang-20
+          sudo apt install language-pack-ja ninja-build clang-22
+          sudo apt install coreutils-from-gnu coreutils-from-uutils- --allow-remove-essential
       - name: configure
         run: |
           mkdir build
           cd build
           cmake .. -G Ninja \
                 -DFUZZING_BUILD_MODE=on \
-                -DCMAKE_CXX_COMPILER=clang++-20
+                -DCMAKE_CXX_COMPILER=clang++-22
       - name: build
         run: |
           cd build
