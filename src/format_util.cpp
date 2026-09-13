@@ -16,6 +16,7 @@
 
 #include "format_util.h"
 #include "constant.h"
+#include "misc/flag_util.hpp"
 #include "misc/format.hpp"
 #include "misc/num_util.hpp"
 #include "misc/unicode.hpp"

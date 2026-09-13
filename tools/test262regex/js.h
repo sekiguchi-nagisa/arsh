@@ -20,6 +20,7 @@
 #include <functional>
 #include <map>
 #include <memory>
+#include <numeric>
 #include <string>
 #include <variant>
 #include <vector>
@@ -81,6 +82,10 @@ inline bool isUndefined(const JSValue &value) {
 }
 
 inline bool isNull(const JSValue &value) { return std::holds_alternative<std::nullptr_t>(value); }
+
+inline bool isInteger(double d) { return std::isfinite(d) && d == std::trunc(d); }
+
+inline bool isSafeInteger(double d) { return isInteger(d) && std::abs(d) <= MAX_SAFE_INTEGER; }
 
 #define EACH_JS_PROPERTY_ATTR(E)                                                                   \
   E(CONFIGURABLE, (1u << 0u))                                                                      \
@@ -221,6 +226,8 @@ JSFunctionPtr createJSFunction(const std::shared_ptr<JSEnv> &env, const char *na
                                std::vector<std::string> &&params, JSObjectPtr &&prototype,
                                JSFunction::Impl &&impl);
 
+JSObjectPtr newObject(const JSFunctionPtr &func);
+
 void defineDerivedError(const std::shared_ptr<JSEnv> &global, const char *name);
 
 struct JSArray : JSObject {
@@ -352,6 +359,27 @@ inline std::u16string toString(const JSValue &value) {
 bool toBool(const JSValue &value);
 
 double toNumber(const JSValue &value);
+
+inline double toIntegerOrInf(const JSValue &value) {
+  auto num = toNumber(value);
+  if (num == 0.0 || std::isnan(num)) {
+    return 0;
+  }
+  if (std::isinf(num)) {
+    return num;
+  }
+  return std::trunc(num);
+}
+
+template <typename T, enable_when<std::is_unsigned_v<T> && sizeof(T) < sizeof(uint64_t)> = nullptr>
+T toFixedSizeInteger(const JSValue &value) {
+  double num = toIntegerOrInf(value);
+  if (std::isinf(num)) {
+    return 0;
+  }
+  auto v = static_cast<int64_t>(num);
+  return static_cast<T>(v % (static_cast<int64_t>(std::numeric_limits<T>::max()) + 1));
+}
 
 JSProperty findOwnProperty(const JSValue &recv, const std::string &name);
 

@@ -21,6 +21,7 @@ add_library(re262_static STATIC
         js.cpp
         js_lexer.cpp
         ${lexer_src}
+        js_eval.cpp
         js_regex.cpp
         harness.cpp
 )

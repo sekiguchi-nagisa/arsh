@@ -19,7 +19,7 @@
 
 #include <cstdint>
 
-#include "misc/flag_util.hpp"
+#include "misc/enum_util.hpp"
 #include "misc/string_ref.hpp"
 
 namespace arsh {

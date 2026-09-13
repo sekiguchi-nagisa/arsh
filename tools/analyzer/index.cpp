@@ -18,6 +18,7 @@
 
 #include "index.h"
 #include <constant.h>
+#include <misc/flag_util.hpp>
 #include <misc/num_util.hpp>
 
 namespace arsh::lsp {

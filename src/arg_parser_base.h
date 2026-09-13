@@ -21,7 +21,7 @@
 
 #include "constant.h"
 #include "misc/buffer.hpp"
-#include "misc/enum_util.hpp"
+#include "misc/flag_util.hpp"
 #include "misc/opt_parser.hpp"
 #include "misc/resource.hpp"
 #include "misc/result.hpp"
