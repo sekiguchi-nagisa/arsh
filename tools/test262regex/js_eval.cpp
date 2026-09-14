@@ -160,7 +160,7 @@ struct Node {
 // ##     JSParser     ##
 // ######################
 
-#define EACH_LA_JS_PRIMARY(OP)                                                                     \
+#define EACH_LA_JS_PRIMARY_NO_FUNC(OP)                                                             \
   OP(NIL)                                                                                          \
   OP(TRUE)                                                                                         \
   OP(FALSE)                                                                                        \
@@ -168,13 +168,16 @@ struct Node {
   OP(STRING)                                                                                       \
   OP(REGEX)                                                                                        \
   OP(IDENTIFIER)                                                                                   \
-  OP(FUNCTION)                                                                                     \
   OP(LB)                                                                                           \
   OP(LBC)                                                                                          \
   OP(LP)                                                                                           \
   OP(BACKTICK)
 
-#define EACH_LA_JS_EXPRESSION(OP)                                                                  \
+#define EACH_LA_JS_PRIMARY(OP)                                                                     \
+  EACH_LA_JS_PRIMARY_NO_FUNC(OP)                                                                   \
+  OP(FUNCTION)
+
+#define EACH_LA_JS_EXPRESSION_NO_FUNC(OP)                                                          \
   OP(NOT)                                                                                          \
   OP(ADD)                                                                                          \
   OP(SUB)                                                                                          \
@@ -183,7 +186,11 @@ struct Node {
   OP(TYPEOF)                                                                                       \
   OP(INC)                                                                                          \
   OP(DEC)                                                                                          \
-  EACH_LA_JS_PRIMARY(OP)
+  EACH_LA_JS_PRIMARY_NO_FUNC(OP)
+
+#define EACH_LA_JS_EXPRESSION(OP)                                                                  \
+  EACH_LA_JS_PRIMARY_NO_FUNC(OP)                                                                   \
+  OP(FUNCTION)
 
 #define EACH_LA_JS_VAR_DECL(OP)                                                                    \
   OP(CONST)                                                                                        \
@@ -200,7 +207,8 @@ struct Node {
   OP(WHILE)                                                                                        \
   OP(BREAK)                                                                                        \
   OP(CONTINUE)                                                                                     \
-  EACH_LA_JS_EXPRESSION(OP)
+  OP(FUNCTION)                                                                                     \
+  EACH_LA_JS_EXPRESSION_NO_FUNC(OP)
 
 #define GEN_LA_CASE(CASE) case JSTokenKind::CASE:
 #define GEN_LA_ALTER(CASE) JSTokenKind::CASE,
@@ -397,8 +405,23 @@ std::unique_ptr<Node> JSParser::parseStatement() {
     return this->parseWhileStatement();
   case JSTokenKind::FOR:
     return this->parseForStatement();
+  case JSTokenKind::FUNCTION: { // for function decl
+    Token token = this->curToken;
+    auto node = TRY(this->parseFunction());
+    auto &func = std::get<FuncLiteral>(node->value);
+    if (func.name.empty()) {
+      this->reportTokenFormatError(JSTokenKind::FUNCTION, token,
+                                   "function declaration requires a name");
+      return nullptr;
+    }
+    TRY(this->expectStatementEnd());
+    const unsigned int lineNum = node->lineNum;
+    std::string name = func.name;
+    return std::make_unique<Node>(lineNum,
+                                  VarDecl{VarDecl::Kind::VAR, std::move(name), std::move(node)});
+  }
     // clang-format off
-  EACH_LA_JS_EXPRESSION(GEN_LA_CASE) {
+  EACH_LA_JS_EXPRESSION_NO_FUNC(GEN_LA_CASE) {
     auto expr = TRY(this->parseExpression());
     TRY(this->expectStatementEnd());
     return expr;
@@ -867,6 +890,10 @@ std::unique_ptr<Node> JSParser::parseArray() {
 std::unique_ptr<Node> JSParser::parseFunction() {
   Token token = TRY(this->expect(JSTokenKind::FUNCTION));
   FuncLiteral func;
+  if (this->curKind == JSTokenKind::IDENTIFIER && !this->lexer->hasPrevNewLine()) {
+    auto nameToken = TRY(this->expectVarDeclIdentifier());
+    func.name = this->lexer->toTokenText(nameToken);
+  }
   func.nodes = std::make_shared<std::vector<std::unique_ptr<Node>>>();
   TRY(this->expect(JSTokenKind::LP));
   while (this->curKind != JSTokenKind::RP) {
@@ -975,9 +1002,11 @@ static JSResult evalCallExpr(const CallExpr &callExpr, const unsigned int lineNu
 }
 
 static JSResult evalFunc(const FuncLiteral &literal, const std::shared_ptr<JSEnv> &env) {
-  assert(literal.name.empty());
-  auto impl = [nodes = literal.nodes](const JSFunctionPtr &,
-                                      const std::shared_ptr<JSEnv> &env) -> JSResult {
+  auto impl = [nodes = literal.nodes, name = literal.name](
+                  const JSFunctionPtr &func, const std::shared_ptr<JSEnv> &env) -> JSResult {
+    if (!name.empty()) {
+      env->define(name, func);
+    }
     for (auto &node : *nodes) {
       switch (auto [status, value] = evaluate(*node, env); status) {
       case JSResult::Status::OK:
@@ -992,7 +1021,8 @@ static JSResult evalFunc(const FuncLiteral &literal, const std::shared_ptr<JSEnv
     }
     return Ok(JSValue());
   };
-  return Ok(createJSFunction(env, "", std::vector(literal.params), nullptr, std::move(impl)));
+  return Ok(createJSFunction(env, literal.name.c_str(), std::vector(literal.params), nullptr,
+                             std::move(impl)));
 }
 
 static JSResult evalUnary(const UnaryExpr &unary, const std::shared_ptr<JSEnv> &env) {
