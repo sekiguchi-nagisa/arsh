@@ -147,11 +147,29 @@ if (USE_REGEX_JIT AND UNIX AND NOT APPLE AND NOT EMSCRIPTEN
         set(ARSH_JIT_PROBE_SRC "
       #include <cstdint>
       struct Ctx { long a; };
-      extern \"C\" __attribute__((preserve_none)) int32_t jit_next(Ctx &, const void *) {
+      struct Input { const char *iter; };
+      struct Bts { long a; };
+      struct Capture { long a; };
+      struct LoopState { long a; };
+      struct Matcher { long a; };
+      using Fn = int32_t(__attribute__((preserve_none)) *)(Ctx &, Input *, Bts *, Capture *,
+                                                           LoopState *, const Matcher *);
+      extern \"C\" __attribute__((preserve_none)) int32_t jit_next(Ctx &, Input *, Bts *, Capture *,
+                                                                   LoopState *, const Matcher *) {
         return 0;
       }
-      extern \"C\" __attribute__((preserve_none)) int32_t probe(Ctx &ctx, const void *ins) {
-        [[@ARSH_JIT_TAIL_ATTR@::musttail]] return jit_next(ctx, ins);
+      extern \"C\" {
+      char jit_target[8] = {};
+      }
+      extern \"C\" __attribute__((preserve_none)) int32_t probe(Ctx &ctx, Input *input, Bts *bts,
+                                                                Capture *captures, LoopState *loops,
+                                                                const Matcher *matchers) {
+        if (input == nullptr) {
+          [[@ARSH_JIT_TAIL_ATTR@::musttail]] return jit_next(ctx, input, bts, captures, loops,
+                                                             matchers);
+        }
+        [[@ARSH_JIT_TAIL_ATTR@::musttail]] return reinterpret_cast<Fn>(jit_target)(
+            ctx, input, bts, captures, loops, matchers);
       }
       int main() { return 0; }
     ")

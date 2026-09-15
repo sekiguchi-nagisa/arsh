@@ -85,6 +85,16 @@ union Backtrack {
     return {.setIns = {.op = BacktrackOp::SetIns, .target = target, .iter = input.getIter()}};
   }
 
+  /**
+   * same as `newSetIns()`, but the target is already a bytecode offset.
+   *
+   * the JIT cannot hand its helpers a `const Inst *` to subtract from: the helpers it calls take
+   * plain values so that no stencil has to keep a bytecode pointer alive across them.
+   */
+  static Backtrack newSetInsFromOffset(uint32_t target, const char *iter) {
+    return {.setIns = {.op = BacktrackOp::SetIns, .target = target, .iter = iter}};
+  }
+
   static Backtrack newSetCapture(uint32_t index, Capture capture) {
     return {.setCapture = {.op = BacktrackOp::SetCapture, .index = index, .capture = capture}};
   }
@@ -204,6 +214,26 @@ public:
     return this->push(Backtrack::newSetIns(input, beginInst - this->getStartInst())) &&
            this->push(
                Backtrack::newNonGreedyLoop(cast<BeginLoopIns>(*beginInst).getLoopIndex(), loop));
+  }
+
+  /**
+   * value-based variants of the two `prepare*Loop()` above, for the copy-and-patch JIT.
+   *
+   * the JIT no longer hands a `BeginLoopIns` to its helpers. it reads the operands into registers
+   * and the two possible continuations (the loop body and the instruction after the loop) into code
+   * addresses, so the `outer` address cannot be recovered from the instruction; it is passed as a
+   * bytecode offset relative to the instruction sequence instead.
+   */
+  bool prepareGreedyLoop(const Input &input, uint32_t outerOffset, uint16_t loopIndex,
+                         LoopState &loop) {
+    return this->push(Backtrack::newSetInsFromOffset(outerOffset, input.getIter())) &&
+           this->prepareLoopBody(input, loopIndex, loop);
+  }
+
+  bool prepareNonGreedyLoop(const Input &input, uint32_t beginOffset, uint16_t loopIndex,
+                            const LoopState &loop) {
+    return this->push(Backtrack::newSetInsFromOffset(beginOffset, input.getIter())) &&
+           this->push(Backtrack::newNonGreedyLoop(loopIndex, loop));
   }
 
   bool cleanupLookAround(Input &input, Capture *captures) {

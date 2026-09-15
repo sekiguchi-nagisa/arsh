@@ -20,60 +20,67 @@ namespace arsh::regex::jit {
 
 /**
  * control flow and boundary assertions. none of them consume input.
+ *
+ * every operand is read from a placeholder, so the stencil never touches the bytecode. each of them
+ * also keeps the state it does not use in registers for the successor.
  */
 
 JIT_STENCIL_DEF(stencil_Nop) {
-  JIT_NEXT_TYPE(NopIns);
+  JIT_NEXT();
 }
 
 JIT_STENCIL_DEF(stencil_Match) {
-  (void)inst;
-  arsh_jit_finish(&ctx);
+  (void)bts;
+  (void)loops;
+  (void)matchers;
+  // capture 0 is the whole match, which starts where the current attempt started
+  arsh_jit_finish(ctx->ctx, input, captures, ctx->matchStart);
   JIT_MATCHED();
 }
 
 JIT_STENCIL_DEF(stencil_Jump) {
-  JIT_GOTO_OFF(JIT_INST(JumpIns).getTarget());
+  JIT_TAIL(jit_target_jump);
 }
 
 JIT_STENCIL_DEF(stencil_Alt) {
-  const auto &ins = JIT_INST(AltIns);
-  JIT_TRY(arsh_jit_push_set_ins(ctx.bts, ctx.input, ins.getSecond()));
-  JIT_NEXT_TYPE(AltIns);
+  // the second branch is only needed if the first one fails, so it is not patched as a code address
+  const auto second = JIT_IMM_I32(jit_imm_alt_second);
+  JIT_TRY(arsh_jit_push_set_ins(bts, input, static_cast<uint32_t>(second)));
+  JIT_NEXT();
 }
 
 JIT_STENCIL_DEF(stencil_Start) {
-  const auto &ins = JIT_INST(StartIns);
-  if (ctx.input->isBegin() || (ins.multiline && isLineTerminator(ctx.input->prev()))) {
-    JIT_NEXT_TYPE(StartIns);
+  const bool multiline = JIT_IMM_BOOL(jit_imm_multiline);
+  if (input->isBegin() || (multiline && isLineTerminator(input->prev()))) {
+    JIT_NEXT();
   }
   JIT_BACKTRACK();
 }
 
 JIT_STENCIL_DEF(stencil_End) {
-  const auto &ins = JIT_INST(EndIns);
-  if (ctx.input->isEnd() || (ins.multiline && isLineTerminator(ctx.input->cur()))) {
-    JIT_NEXT_TYPE(EndIns);
+  const bool multiline = JIT_IMM_BOOL(jit_imm_multiline);
+  if (input->isEnd() || (multiline && isLineTerminator(input->cur()))) {
+    JIT_NEXT();
   }
   JIT_BACKTRACK();
 }
 
 JIT_STENCIL_DEF(stencil_Word) {
-  const bool invert = JIT_INST(WordIns).invert;
-  const bool prevIsWord = !ctx.input->isBegin() && isWord(ctx.input->prev());
-  const bool curIsWord = !ctx.input->isEnd() && isWord(ctx.input->cur());
+  const bool invert = JIT_IMM_BOOL(jit_imm_invert);
+  const bool prevIsWord = !input->isBegin() && isWord(input->prev());
+  const bool curIsWord = !input->isEnd() && isWord(input->cur());
   if (invert ? prevIsWord == curIsWord : prevIsWord != curIsWord) {
-    JIT_NEXT_TYPE(WordIns);
+    JIT_NEXT();
   }
   JIT_BACKTRACK();
 }
 
 JIT_STENCIL_DEF(stencil_IWord) {
-  const bool invert = JIT_INST(IWordIns).invert;
-  const bool prevIsWord = !ctx.input->isBegin() && (arsh_jit_is_extend_word(ctx.input->prev()) != 0);
-  const bool curIsWord = !ctx.input->isEnd() && (arsh_jit_is_extend_word(ctx.input->cur()) != 0);
+  const bool invert = JIT_IMM_BOOL(jit_imm_invert);
+  const bool prevIsWord = !input->isBegin() && (arsh_jit_is_extend_word(input->prev()) != 0);
+  const bool curIsWord = !input->isEnd() && (arsh_jit_is_extend_word(input->cur()) != 0);
   if (invert ? prevIsWord == curIsWord : prevIsWord != curIsWord) {
-    JIT_NEXT_TYPE(IWordIns);
+    JIT_NEXT();
   }
   JIT_BACKTRACK();
 }
@@ -83,108 +90,111 @@ JIT_STENCIL_DEF(stencil_IWord) {
  */
 
 JIT_STENCIL_DEF(stencil_Any) {
-  if (ctx.input->available()) {
-    ctx.input->consumeForward();
-    JIT_NEXT_TYPE(AnyIns);
+  if (input->available()) {
+    input->consumeForward();
+    JIT_NEXT();
   }
   JIT_BACKTRACK();
 }
 
 JIT_STENCIL_DEF(stencil_AnyExceptNL) {
-  if (ctx.input->available()) {
-    const int codePoint = ctx.input->consumeForward();
+  if (input->available()) {
+    const int codePoint = input->consumeForward();
     if (!isLineTerminator(codePoint)) {
-      JIT_NEXT_TYPE(AnyExceptNLIns);
+      JIT_NEXT();
     }
   }
   JIT_BACKTRACK();
 }
 
 JIT_STENCIL_DEF(stencil_LBAny) {
-  if (ctx.input->availableBackward()) {
-    const int codePoint = ctx.input->consumeBackward();
-    if (JIT_INST(LBAnyIns).dotAll || !isLineTerminator(codePoint)) {
-      JIT_NEXT_TYPE(LBAnyIns);
+  const bool dotAll = JIT_IMM_BOOL(jit_imm_dot_all);
+  if (input->availableBackward()) {
+    const int codePoint = input->consumeBackward();
+    if (dotAll || !isLineTerminator(codePoint)) {
+      JIT_NEXT();
     }
   }
   JIT_BACKTRACK();
 }
 
 JIT_STENCIL_DEF(stencil_Grapheme) {
-  if (ctx.input->available()) {
-    const StringRef ref = ctx.input->remainForward();
+  if (input->available()) {
+    const StringRef ref = input->remainForward();
     const auto size = arsh_jit_grapheme_size(ref.data(), static_cast<uint32_t>(ref.size()));
-    ctx.input->setIter(ref.data() + size);
-    JIT_NEXT_TYPE(GraphemeIns);
+    input->setIter(ref.data() + size);
+    JIT_NEXT();
   }
   JIT_BACKTRACK();
 }
 
 JIT_STENCIL_DEF(stencil_Char) {
-  const auto codePoint = JIT_INST(CharIns).getCodePoint();
-  if (ctx.input->available() && ctx.input->consumeForward() == codePoint) {
-    JIT_NEXT_TYPE(CharIns);
+  const auto codePoint = JIT_IMM_I32(jit_imm_code_point);
+  if (input->available() && input->consumeForward() == codePoint) {
+    JIT_NEXT();
   }
   JIT_BACKTRACK();
 }
 
 JIT_STENCIL_DEF(stencil_IChar) {
-  const auto codePoint = JIT_INST(ICharIns).getCodePoint();
-  if (ctx.input->available() && arsh_jit_case_fold(ctx.input->consumeForward()) == codePoint) {
-    JIT_NEXT_TYPE(ICharIns);
+  const auto codePoint = JIT_IMM_I32(jit_imm_code_point);
+  if (input->available() && arsh_jit_case_fold(input->consumeForward()) == codePoint) {
+    JIT_NEXT();
   }
   JIT_BACKTRACK();
 }
 
 JIT_STENCIL_DEF(stencil_LBChar) {
-  const auto &ins = JIT_INST(LBCharIns);
-  if (ctx.input->availableBackward()) {
-    int codePoint = ctx.input->consumeBackward();
-    if (ins.ignoreCase) {
-      codePoint = arsh_jit_case_fold(codePoint);
+  const auto codePoint = JIT_IMM_I32(jit_imm_code_point);
+  const bool ignoreCase = JIT_IMM_BOOL(jit_imm_ignore_case);
+  if (input->availableBackward()) {
+    int c = input->consumeBackward();
+    if (ignoreCase) {
+      c = arsh_jit_case_fold(c);
     }
-    if (codePoint == ins.getCodePoint()) {
-      JIT_NEXT_TYPE(LBCharIns);
+    if (c == codePoint) {
+      JIT_NEXT();
     }
   }
   JIT_BACKTRACK();
 }
 
 JIT_STENCIL_DEF(stencil_CharSet) {
-  const auto &ins = JIT_INST(CharSetIns);
-  if (ctx.input->available()) {
-    const auto index = ins.getMatcherIndex();
-    const bool contain = arsh_jit_matcher_contains(ctx.matchers, index, ctx.input->consumeForward());
-    if (contain != ins.invert) {
-      JIT_NEXT_TYPE(CharSetIns);
+  const auto index = JIT_IMM_U16(jit_imm_matcher_index);
+  const bool invert = JIT_IMM_BOOL(jit_imm_invert);
+  if (input->available()) {
+    const bool contain = arsh_jit_matcher_contains(matchers, index, input->consumeForward()) != 0;
+    if (contain != invert) {
+      JIT_NEXT();
     }
   }
   JIT_BACKTRACK();
 }
 
 JIT_STENCIL_DEF(stencil_ICharSet) {
-  const auto &ins = JIT_INST(ICharSetIns);
-  if (ctx.input->available()) {
-    const auto index = ins.getMatcherIndex();
-    const bool contain = arsh_jit_matcher_contains(
-        ctx.matchers, index, arsh_jit_case_fold(ctx.input->consumeForward()));
-    if (contain != ins.invert) {
-      JIT_NEXT_TYPE(ICharSetIns);
+  const auto index = JIT_IMM_U16(jit_imm_matcher_index);
+  const bool invert = JIT_IMM_BOOL(jit_imm_invert);
+  if (input->available()) {
+    const bool contain =
+        arsh_jit_matcher_contains(matchers, index, arsh_jit_case_fold(input->consumeForward())) != 0;
+    if (contain != invert) {
+      JIT_NEXT();
     }
   }
   JIT_BACKTRACK();
 }
 
 JIT_STENCIL_DEF(stencil_LBCharSet) {
-  const auto &ins = JIT_INST(LBCharSetIns);
-  if (ctx.input->availableBackward()) {
-    const auto index = ins.getMatcherIndex();
-    int codePoint = ctx.input->consumeBackward();
-    if (ins.ignoreCase) {
+  const auto index = JIT_IMM_U16(jit_imm_matcher_index);
+  const bool invert = JIT_IMM_BOOL(jit_imm_invert);
+  const bool ignoreCase = JIT_IMM_BOOL(jit_imm_ignore_case);
+  if (input->availableBackward()) {
+    int codePoint = input->consumeBackward();
+    if (ignoreCase) {
       codePoint = arsh_jit_case_fold(codePoint);
     }
-    if (arsh_jit_matcher_contains(ctx.matchers, index, codePoint) != ins.invert) {
-      JIT_NEXT_TYPE(LBCharSetIns);
+    if ((arsh_jit_matcher_contains(matchers, index, codePoint) != 0) != invert) {
+      JIT_NEXT();
     }
   }
   JIT_BACKTRACK();

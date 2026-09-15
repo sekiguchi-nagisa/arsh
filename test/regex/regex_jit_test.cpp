@@ -34,6 +34,17 @@ Optional<regex::Regex> compileRegex(const StringRef pattern,
   return {};
 }
 
+/**
+ * whether the JIT is active for this process.
+ *
+ * `Regex` gates the JIT on `ARSH_REGEX_JIT`, so the assertions that require real machine code are
+ * only meaningful when it is set. without it `regex::match()` *is* the interpreter.
+ */
+bool isRegexJitEnabled() {
+  const char *value = getenv("ARSH_REGEX_JIT");
+  return value && *value;
+}
+
 std::string toString(const std::vector<regex::Capture> &captures) {
   std::string out;
   for (const auto &capture : captures) {
@@ -173,6 +184,16 @@ TEST_P(RegexJitDifferentialTest, matchesInterpreter) {
     ASSERT_TRUE(matchEquals(regex.unwrap(), StringRef(input)))
         << "pattern=/" << param.pattern << "/ flag=" << param.flag << " input=\"" << input << '"';
   }
+
+  // the comparison above would also pass if the driver silently fell back to the interpreter, so
+  // when the JIT is enabled assert that this pattern really was compiled to machine code.
+  if (isRegexJitEnabled()) {
+    const char *pattern = param.pattern;
+    EXPECT_EQ(regex::Regex::JitState::Compiled, regex.unwrap().getJitState())
+        << "pattern=/" << pattern << "/ was not compiled to machine code, so the comparison above "
+        << "only re-checked the interpreter";
+    EXPECT_TRUE(regex.unwrap().getJitCode());
+  }
 }
 
 INSTANTIATE_TEST_SUITE_P(
@@ -308,7 +329,8 @@ TEST(RegexJitTest, codeIsCached) {
 
 /**
  * a deep greedy loop must not grow the machine stack: the loop back edge is a tail call into the
- * `jit_goto` trampoline, which itself tail-calls the target block.
+ * loop stencil, and every branch that cannot be patched statically goes through the `jit_backtrack`
+ * trampoline, which itself tail-calls its target block.
  */
 TEST(RegexJitTest, deepLoopKeepsStackFlat) {
   std::string text(200000, 'a');

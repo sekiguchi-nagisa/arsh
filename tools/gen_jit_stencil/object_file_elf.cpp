@@ -42,37 +42,20 @@ bool isDataSection(const char *name) {
 }
 
 /**
- * demangle `_ZN4arsh5regex3jit12stencil_CharERNS1_10JitContextEPKNS0_4InstE` into `Char`.
+ * demangle `stencil_Char` into `Char`.
  *
- * the tool assumes the Itanium ABI mangling of a free function named `stencil_<opcode>` in
- * `arsh::regex::jit`, which is exactly what `JIT_STENCIL_DEF` produces. the fixed prefix and
- * suffix are checked, so a mismatch is reported instead of silently dropping a stencil.
+ * `JIT_STENCIL_DEF` gives the stencils C language linkage, so the symbol name is exactly
+ * `stencil_<opcode>`. the prefix is checked so that an unrelated function that happens to be emitted
+ * into a `.text.*` section (the stencils are compiled with `-ffunction-sections`, which names a
+ * section after every function) is skipped instead of reported.
  */
-bool extractOpcode(const StringRef mangled, std::string &out) {
-  constexpr const char *PREFIX = "_ZN4arsh5regex3jit";
+bool extractOpcode(const StringRef symbol, std::string &out) {
   constexpr const char *NAME = "stencil_";
-  constexpr const char *SUFFIX = "ERNS1_10JitContextEPKNS0_4InstE";
-  if (!mangled.startsWith(PREFIX) || !mangled.endsWith(SUFFIX)) {
+  if (!symbol.startsWith(NAME) || symbol.size() == StringRef(NAME).size()) {
     return false;
   }
-  // the mangled name is `_ZN4arsh5regex3jit<len>stencil_<opcode>E<signature>`, where `<len>` is
-  // the decimal length of `stencil_<opcode>`
-  auto rest = mangled.substr(StringRef(PREFIX).size());
-  if (rest.empty() || rest[0] < '0' || rest[0] > '9') {
-    return false;
-  }
-  size_t digits = 0;
-  unsigned int nameLen = 0;
-  while (digits < rest.size() && rest[digits] >= '0' && rest[digits] <= '9') {
-    nameLen = nameLen * 10 + static_cast<unsigned int>(rest[digits] - '0');
-    digits++;
-  }
-  rest = rest.substr(digits);
-  if (rest.size() < nameLen || !rest.startsWith(NAME)) {
-    return false;
-  }
-  out = rest.substr(StringRef(NAME).size(), nameLen - StringRef(NAME).size()).toString();
-  return !out.empty() && rest[nameLen] == 'E';
+  out = symbol.substr(StringRef(NAME).size()).toString();
+  return true;
 }
 
 } // namespace

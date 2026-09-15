@@ -18,6 +18,7 @@
 #define ARSH_REGEX_JIT_STENCIL_RUNTIME_H
 
 #include <cstdint>
+#include <string>
 
 #include "../backtrack.h"
 #include "../capture.h"
@@ -38,16 +39,20 @@ namespace arsh::regex::jit {
  * same list, so the helpers never have to be exported from the final binary.
  *
  * a stencil delegates to a helper whenever the operation manipulates a container (the backtrack
- * stack, the capture array) or consults a table (matcher, unicode property). everything else stays
- * inline in the stencil.
+ * stack, the capture array), consults a table (matcher, unicode property) or needs to address the
+ * bytecode. everything else stays inline in the stencil.
+ *
+ * the helpers take the state they need as arguments rather than through `JitContext`: the stencil
+ * already has it in registers, and passing it on keeps the helper free of any assumption about the
+ * bytecode layout. the operands a stencil no longer reads from the instruction (which matcher, how
+ * many repetitions, where to jump) are passed as plain values instead.
  *
  * the return convention is `int32_t`: `1` means "the condition held", `0` means "it did not",
  * unless documented otherwise. the helpers that return a `JIT_ACTION_*` value are documented at
  * their definition.
  *
- * the `int32_t` parameter list here is part of the ABI between the stencils and this file, so the
- * two must be kept in sync. the declarations below are generated from the same list to guarantee
- * that.
+ * the parameter lists here are part of the ABI between the stencils and this file, so the two must
+ * be kept in sync. the declarations below are generated from the same list to guarantee that.
  */
 // clang-format off
 #define EACH_JIT_RUNTIME_FN(F)                                                                     \
@@ -55,41 +60,51 @@ namespace arsh::regex::jit {
   F(arsh_jit_is_extend_word,        int32_t,  (int32_t codePoint))                                 \
   F(arsh_jit_grapheme_size,         uint32_t, (const char *data, uint32_t size))                   \
   F(arsh_jit_matcher_contains,      int32_t,  (const Matcher *matchers, uint16_t index,            \
-                                                int32_t codePoint))                                \
+                                               int32_t codePoint))                                 \
   F(arsh_jit_expect_forward,        int32_t,  (Input * input, const Matcher *matchers,             \
-                                                uint16_t index))                                   \
+                                               uint16_t index))                                    \
   F(arsh_jit_expect_backward,       int32_t,  (Input * input, const Matcher *matchers,             \
-                                                uint16_t index))                                   \
+                                               uint16_t index))                                    \
   F(arsh_jit_resolve_named_backref, void,     (const MatchContext *ctx, uint16_t refIndex,         \
-                                                Capture *out))                                     \
-  F(arsh_jit_backref_forward,      int32_t,  (Input * input, const Capture *capture,              \
-                                                const char *begin))                                \
+                                               Capture *out))                                      \
+  F(arsh_jit_backref_forward,       int32_t,  (Input * input, const Capture *capture,              \
+                                               const char *begin))                                 \
   F(arsh_jit_ibackref_forward,      int32_t,  (Input * input, const Capture *capture,              \
-                                                const char *begin))                                \
+                                               const char *begin))                                 \
   F(arsh_jit_lbbackref_backward,    int32_t,  (Input * input, const Capture *capture,              \
-                                                const char *begin, int32_t ignoreCase))            \
+                                               const char *begin, int32_t ignoreCase))             \
   F(arsh_jit_push_set_ins,          int32_t,  (BacktrackStack * bts, const Input *input,           \
-                                                uint32_t target))                                  \
+                                               uint32_t target))                                   \
   F(arsh_jit_push_set_capture,      int32_t,  (BacktrackStack * bts, uint32_t index,               \
-                                                const Capture *capture))                           \
+                                               const Capture *capture))                            \
   F(arsh_jit_push_reset_captures,   int32_t,  (BacktrackStack * bts, Capture *captures,            \
-                                                uint32_t first, uint32_t last))                    \
+                                               uint32_t first, uint32_t last))                     \
   F(arsh_jit_push_lookaround,       int32_t,  (BacktrackStack * bts, const Input *input,           \
-                                                uint32_t target, int32_t negate))                  \
+                                               uint32_t target, int32_t negate))                   \
   F(arsh_jit_cleanup_lookaround,    int32_t,  (BacktrackStack * bts, Input *input,                 \
-                                                Capture *captures))                                \
-  F(arsh_jit_finish,                void,     (JitContext * ctx))                                  \
-  F(arsh_jit_loop_step,             int32_t,  (JitContext * ctx, const BeginLoopIns *loopIns,      \
-                                                const Inst **next))                                \
-  F(arsh_jit_prepare_radix,         int32_t,  (JitContext * ctx,                                   \
-                                                const RadixOrEmojiIns *ins))                       \
-  F(arsh_jit_prepare_lb_radix,      int32_t,  (JitContext * ctx,                                   \
-                                                const LBRadixOrEmojiIns *ins))                     \
-  F(arsh_jit_radix_body,            int32_t,  (JitContext * ctx, const RadixOrEmojiIns *ins,       \
-                                                int32_t removeSuffix))                             \
-  F(arsh_jit_lb_radix_body,         int32_t,  (JitContext * ctx,                                   \
-                                                const LBRadixOrEmojiIns *ins,                      \
-                                                int32_t removePrefix))
+                                               Capture *captures))                                 \
+  F(arsh_jit_finish,                void,     (MatchContext * ctx, Input *input,                   \
+                                               Capture *captures, const char *matchStart))         \
+  F(arsh_jit_loop_step,             int32_t,  (Input * input, LoopState *loops,                   \
+                                               BacktrackStack * bts, uint16_t loopIndex,           \
+                                               uint16_t min, uint32_t max, int32_t greedy,         \
+                                               uint32_t beginOffset, uint32_t outerOffset))        \
+  F(arsh_jit_prepare_radix,         int32_t,  (const Matcher *matchers, Input *input,              \
+                                               BacktrackStack * bts, uint16_t index,               \
+                                               uint32_t emojiFlags, int32_t hasRadix))             \
+  F(arsh_jit_prepare_lb_radix,      int32_t,  (const Matcher *matchers, Input *input,              \
+                                               BacktrackStack * bts, uint16_t index,               \
+                                               uint32_t emojiFlags, int32_t hasRadix))             \
+  F(arsh_jit_radix_body,            int32_t,  (const Matcher *matchers, Input *input,              \
+                                               BacktrackStack * bts, std::string *foldBuf,         \
+                                               uint16_t index, uint32_t emojiFlags,                \
+                                               int32_t hasRadix, uint32_t radixOffset,             \
+                                               int32_t nextOffset, int32_t removeSuffix))          \
+  F(arsh_jit_lb_radix_body,         int32_t,  (const Matcher *matchers, Input *input,              \
+                                               BacktrackStack * bts, std::string *foldBuf,         \
+                                               uint16_t index, uint32_t emojiFlags,                \
+                                               int32_t hasRadix, uint32_t radixOffset,             \
+                                               int32_t nextOffset, int32_t removePrefix))
 // clang-format on
 
 extern "C" {
@@ -101,8 +116,8 @@ EACH_JIT_RUNTIME_FN(GEN_JIT_RUNTIME_DECL)
 /**
  * resolve a helper symbol name (as recorded by `tools/gen_jit_stencil`) to its run-time address.
  *
- * returns nullptr for an unknown name. the control flow placeholders (`jit_next` / `jit_goto`) are
- * handled directly by the compiler, so they are not in the table.
+ * returns nullptr for an unknown name. the control flow placeholders (`jit_next` / `jit_backtrack`)
+ * and the operand placeholders are handled directly by the compiler, so they are not in the table.
  */
 void *lookupJitRuntimeSymbol(const char *name);
 

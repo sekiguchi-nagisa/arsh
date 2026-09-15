@@ -20,21 +20,20 @@
 /**
  * copy-and-patch stencil ABI.
  *
- * every stencil has the signature `int32_t(JitContext &, const Inst *) noexcept` and uses the
- * `preserve_none` calling convention. the stencil translation units are compiled standalone (they
- * are never linked into a library) with `-fno-pic -fno-pie -mcmodel=large`, so that
+ * a stencil takes the state it works on in *argument registers* and leaves by tail-calling the
+ * stencil of the next instruction. the stencil translation units are compiled standalone (they are
+ * never linked into a library) with `-fno-pic -fno-pie -mcmodel=large`, so that
  *
- * - the compiler does not keep any callee-saved register across a call (`preserve_none`), which is
- *   what makes the tail calls below true tail calls,
+ * - the argument registers are caller-saved under `preserve_none`, so a tail call never has to
+ *   restore a callee-saved register,
  * - `musttail` (via `JIT_STENCIL_TAIL`) turns the "run the next instruction" edge into a bare `jmp`,
  * - every reference to a control flow placeholder or to a runtime helper becomes an 8-byte absolute
  *   relocation (`R_X86_64_64`) issued by a `movabs`, which `tools/gen_jit_stencil` records as a
  *   patchable "hole".
  *
- * the stencils never have their instruction operands patched into the machine code. every stencil
- * receives the address of the bytecode instruction it was copied from (`inst`) and reads the
- * operands through the regular `instruction.h` accessors. only control flow is patched, because
- * that is what makes copy-and-patch fast.
+ * a stencil never receives the bytecode instruction it was copied from, and never walks the
+ * bytecode: its operands and its branch targets are read from placeholders, which the copy-and-patch
+ * compiler patches straight into the machine code. see `jit_context.h` for the placeholder list.
  */
 #if defined(__clang__)
 #define JIT_STENCIL_CALL __attribute__((preserve_none))
@@ -47,12 +46,18 @@
 #endif
 
 /**
- * the `preserve_none` calling convention maps the first two integer arguments to `r12` and `r13`
- * (instead of `rdi` / `rsi`). a stencil therefore receives `ctx` in `r12` and `inst` in `r13`, and a
- * tail call only has to assign those two registers. `r12`/`r13` are also callee-saved under the
- * default convention, so the compiler spills them around a call to a default-convention helper and
- * restores them before the tail call — which is why a stencil may freely call helpers (the unicode
- * properties, the backtrack stack, the radix search) before continuing.
+ * the `preserve_none` convention passes its integer arguments in `r12`, `r13`, `r14`, `r15`, `rdi`
+ * and `rsi` (instead of `rdi`, `rsi`, `rdx`, `rcx`, `r8`, `r9`), and both gcc and clang save those
+ * registers around a call, so a stencil may freely call a helper and then continue with a tail call.
+ *
+ * a stencil signature therefore uses exactly six arguments: the `JitContext *` plus the five pieces
+ * of state an instruction touches (`Input`, `BacktrackStack`, `Capture`, `LoopState`, `Matcher`).
+ * the hot loop never loads them from memory, and a tail call into the next stencil needs no register
+ * shuffling at all, because the state is already in the registers that stencil expects.
+ *
+ * the list stops at six on purpose: gcc and clang disagree about the seventh `preserve_none`
+ * argument (gcc passes it on the stack, clang in `rdx`), which would make the ABI compiler-dependent
+ * and would break the tail call, since a `musttail` call may not pass extra stack arguments.
  */
 #if !defined(__x86_64__)
 #error "regex JIT currently supports x86-64 only"

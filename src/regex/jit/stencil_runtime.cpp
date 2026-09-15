@@ -29,31 +29,36 @@ namespace arsh::regex::jit {
 namespace {
 
 /**
+ * `RGIEmojiSeq::CASE_IGNORE` is not an emoji sequence, it selects case folding, so the raw flag
+ * word an instruction carries encodes two independent facts (see `RadixOrEmojiIns::hasEmoji`).
+ */
+constexpr auto RADIX_CASE_IGNORE = toUnderlying(ucp::RGIEmojiSeq::CASE_IGNORE);
+
+bool radixHasEmoji(const uint32_t flags) { return (flags & ~RADIX_CASE_IGNORE) != 0; }
+
+bool radixIgnoreCase(const uint32_t flags) { return (flags & RADIX_CASE_IGNORE) != 0; }
+
+/**
  * push the initial `RadixState` and return `JIT_ACTION_FIRST` / `JIT_ACTION_STACK_LIMIT`.
  *
  * mirrors the `PrepareRadix` / `PrepareLBRadix` prologue of the interpreter.
  */
-int32_t pushRadixState(JitContext *ctx, const bool hasEmoji, const bool hasRadix,
-                       const uint16_t matcherIndex, const bool backward) {
+int32_t pushRadixState(const Matcher *matchers, Input *input, BacktrackStack *bts, const bool hasEmoji,
+                       const bool hasRadix, const uint16_t matcherIndex, const bool backward) {
   unsigned int codePointCount = 0;
   if (hasEmoji) {
     codePointCount = ucp::getEmojiTrie().getMaxCodePointCount();
   }
   if (hasRadix) {
-    codePointCount = std::max<unsigned int>(
-        codePointCount, ctx->matchers[matcherIndex].asRadixTree().getMaxCodePointCount());
+    codePointCount =
+        std::max<unsigned int>(codePointCount, matchers[matcherIndex].asRadixTree().getMaxCodePointCount());
   }
-  const unsigned int size =
-      backward ? ctx->input->remainBackwardOfCodePoints(codePointCount).size()
-               : ctx->input->remainForwardOfCodePoints(codePointCount).size();
-  if (!ctx->bts->push(Backtrack::newRadixState(size))) {
+  const unsigned int size = backward ? input->remainBackwardOfCodePoints(codePointCount).size()
+                                     : input->remainForwardOfCodePoints(codePointCount).size();
+  if (!bts->push(Backtrack::newRadixState(size))) {
     return JIT_ACTION_STACK_LIMIT;
   }
   return JIT_ACTION_FIRST;
-}
-
-const Inst *advance(const Inst *inst, const size_t size) {
-  return reinterpret_cast<const Inst *>(reinterpret_cast<const char *>(inst) + size);
 }
 
 } // namespace
@@ -78,22 +83,22 @@ uint32_t arsh_jit_grapheme_size(const char *data, const uint32_t size) noexcept 
 }
 
 int32_t arsh_jit_matcher_contains(const Matcher *matchers, const uint16_t index,
-                                 const int32_t codePoint) noexcept {
+                                  const int32_t codePoint) noexcept {
   return matchers[index].contains(codePoint) ? 1 : 0;
 }
 
 int32_t arsh_jit_expect_forward(Input *input, const Matcher *matchers,
-                               const uint16_t index) noexcept {
+                                const uint16_t index) noexcept {
   return input->expectForward(matchers[index].asStrRef()) ? 1 : 0;
 }
 
 int32_t arsh_jit_expect_backward(Input *input, const Matcher *matchers,
-                                const uint16_t index) noexcept {
+                                 const uint16_t index) noexcept {
   return input->expectBackward(matchers[index].asStrRef()) ? 1 : 0;
 }
 
 void arsh_jit_resolve_named_backref(const MatchContext *ctx, const uint16_t refIndex,
-                                   Capture *out) noexcept {
+                                    Capture *out) noexcept {
   *out = ctx->resolveNamedBackRef(refIndex);
 }
 
@@ -104,8 +109,7 @@ int32_t arsh_jit_backref_forward(Input *input, const Capture *capture, const cha
   return 1;
 }
 
-int32_t arsh_jit_ibackref_forward(Input *input, const Capture *capture,
-                                 const char *begin) noexcept {
+int32_t arsh_jit_ibackref_forward(Input *input, const Capture *capture, const char *begin) noexcept {
   if (*capture) {
     const StringRef ref(begin + capture->offset, capture->size);
     const char *const end = ref.end();
@@ -121,7 +125,7 @@ int32_t arsh_jit_ibackref_forward(Input *input, const Capture *capture,
 }
 
 int32_t arsh_jit_lbbackref_backward(Input *input, const Capture *capture, const char *begin,
-                                   const int32_t ignoreCase) noexcept {
+                                    const int32_t ignoreCase) noexcept {
   if (*capture) {
     const StringRef ref(begin + capture->offset, capture->size);
     if (ignoreCase) {
@@ -141,17 +145,17 @@ int32_t arsh_jit_lbbackref_backward(Input *input, const Capture *capture, const 
 }
 
 int32_t arsh_jit_push_set_ins(BacktrackStack *bts, const Input *input,
-                             const uint32_t target) noexcept {
+                              const uint32_t target) noexcept {
   return bts->push(Backtrack::newSetIns(*input, target)) ? 1 : 0;
 }
 
 int32_t arsh_jit_push_set_capture(BacktrackStack *bts, const uint32_t index,
-                                 const Capture *capture) noexcept {
+                                  const Capture *capture) noexcept {
   return bts->push(Backtrack::newSetCapture(index, *capture)) ? 1 : 0;
 }
 
 int32_t arsh_jit_push_reset_captures(BacktrackStack *bts, Capture *captures, const uint32_t first,
-                                    const uint32_t last) noexcept {
+                                     const uint32_t last) noexcept {
   for (uint32_t i = first; i <= last; i++) {
     if (!bts->push(Backtrack::newSetCapture(i, captures[i]))) { // save original capture
       return 0;
@@ -162,146 +166,159 @@ int32_t arsh_jit_push_reset_captures(BacktrackStack *bts, Capture *captures, con
 }
 
 int32_t arsh_jit_push_lookaround(BacktrackStack *bts, const Input *input, const uint32_t target,
-                                const int32_t negate) noexcept {
+                                 const int32_t negate) noexcept {
   return bts->push(Backtrack::newLookAround(*input, target, negate != 0)) ? 1 : 0;
 }
 
 int32_t arsh_jit_cleanup_lookaround(BacktrackStack *bts, Input *input,
-                                   Capture *captures) noexcept {
+                                    Capture *captures) noexcept {
   return bts->cleanupLookAround(*input, captures) ? 1 : 0;
 }
 
-void arsh_jit_finish(JitContext *ctx) noexcept {
-  ctx->captures[0].offset = static_cast<unsigned int>(ctx->matchStart - ctx->input->getBegin());
-  ctx->captures[0].size = static_cast<unsigned int>(ctx->input->getIter() - ctx->matchStart);
-  ctx->ctx->syncInput(*ctx->input);
+void arsh_jit_finish(MatchContext *ctx, Input *input, Capture *captures,
+                     const char *matchStart) noexcept {
+  captures[0].offset = static_cast<unsigned int>(matchStart - input->getBegin());
+  captures[0].size = static_cast<unsigned int>(input->getIter() - matchStart);
+  ctx->syncInput(*input);
 }
 
 /**
  * the `BeginLoop` / `EndLoop` body.
  *
- * `*next` receives the instruction to continue with: the loop body (after the `BeginLoop`) or the
- * instruction after the loop (`getOuter`).
+ * the stencil already read the loop operands into registers and passed them as plain values, so the
+ * step never touches the bytecode. it returns a `JIT_ACTION_*` telling the stencil which edge to
+ * take: `FIRST` is the loop body (which keeps the loop state), `SECOND` is the instruction after the
+ * loop (`jit_target_loop_outer`, or the successor when the maximum was reached).
  */
-int32_t arsh_jit_loop_step(JitContext *ctx, const BeginLoopIns *loopIns,
-                          const Inst **next) noexcept {
-  auto &loop = ctx->loopStates[loopIns->getLoopIndex()];
-  if (loop.inputOffset == ctx->input->getOffset() && loop.count > loopIns->getMin()) {
+int32_t arsh_jit_loop_step(Input *input, LoopState *loops, BacktrackStack *bts,
+                           const uint16_t loopIndex, const uint16_t min, const uint32_t max,
+                           const int32_t greedy, const uint32_t beginOffset,
+                           const uint32_t outerOffset) noexcept {
+  auto &loop = loops[loopIndex];
+  if (loop.inputOffset == input->getOffset() && loop.count > min) {
     // after minimum repeat, if the input is not consumed, backtrack
     return JIT_ACTION_BACKTRACK;
   }
-  if (loop.count < loopIns->getMin()) {
-    if (!ctx->bts->prepareLoopBody(*ctx->input, loopIns->getLoopIndex(), loop)) {
+  if (loop.count < min) {
+    if (!bts->prepareLoopBody(*input, loopIndex, loop)) {
       return JIT_ACTION_STACK_LIMIT;
     }
-    *next = advance(loopIns, sizeof(BeginLoopIns));
-  } else if (loop.count == loopIns->getMax()) {
-    *next = reinterpret_cast<const Inst *>(ctx->instSeqBase + loopIns->getOuter());
-  } else if (loopIns->greedy) {
-    if (!ctx->bts->prepareGreedyLoop(*ctx->input, *loopIns, loop)) {
-      return JIT_ACTION_STACK_LIMIT;
-    }
-    *next = advance(loopIns, sizeof(BeginLoopIns));
-  } else {
-    if (!ctx->bts->prepareNonGreedyLoop(*ctx->input, loopIns, loop)) {
-      return JIT_ACTION_STACK_LIMIT;
-    }
-    *next = reinterpret_cast<const Inst *>(ctx->instSeqBase + loopIns->getOuter());
+    return JIT_ACTION_FIRST; // the caller tail-calls the body
   }
-  return JIT_ACTION_FIRST;
-}
-
-int32_t arsh_jit_prepare_radix(JitContext *ctx, const RadixOrEmojiIns *ins) noexcept {
-  return pushRadixState(ctx, ins->hasEmoji(), ins->hasRadix, ins->getIndex(), false);
-}
-
-int32_t arsh_jit_prepare_lb_radix(JitContext *ctx, const LBRadixOrEmojiIns *ins) noexcept {
-  return pushRadixState(ctx, ins->hasEmoji(), ins->hasRadix, ins->getIndex(), true);
-}
-
-int32_t arsh_jit_radix_body(JitContext *ctx, const RadixOrEmojiIns *ins,
-                           const int32_t removeSuffix) noexcept {
-  if (removeSuffix) {
-    StringRef ref(ctx->input->getIter(), ctx->bts->getRadixState());
-    unsafeRemoveSuffixUtf8(ref);
-    ctx->bts->updateRadixState(ref.size());
+  if (loop.count == max) {
+    return JIT_ACTION_SECOND; // the caller tail-calls the instruction after the loop
   }
-  const unsigned int strSize = ctx->bts->getRadixState();
-  if (!strSize || !ctx->input->available()) {
+  if (greedy) {
+    if (!bts->prepareGreedyLoop(*input, outerOffset, loopIndex, loop)) {
+      return JIT_ACTION_STACK_LIMIT;
+    }
+    return JIT_ACTION_FIRST;
+  }
+  if (!bts->prepareNonGreedyLoop(*input, beginOffset, loopIndex, loop)) {
+    return JIT_ACTION_STACK_LIMIT;
+  }
+  return JIT_ACTION_SECOND;
+}
+
+int32_t arsh_jit_prepare_radix(const Matcher *matchers, Input *input, BacktrackStack *bts,
+                               const uint16_t index, const uint32_t emojiFlags,
+                               const int32_t hasRadix) noexcept {
+  return pushRadixState(matchers, input, bts, radixHasEmoji(emojiFlags), hasRadix != 0, index, false);
+}
+
+int32_t arsh_jit_prepare_lb_radix(const Matcher *matchers, Input *input, BacktrackStack *bts,
+                                  const uint16_t index, const uint32_t emojiFlags,
+                                  const int32_t hasRadix) noexcept {
+  return pushRadixState(matchers, input, bts, radixHasEmoji(emojiFlags), hasRadix != 0, index, true);
+}
+
+/**
+ * the shared radix body.
+ *
+ * `remove` distinguishes a radix entered from the top of `Prepare*Radix` (whose window was just
+ * pushed) from one re-entered by backtracking (whose window is one code point too wide), so the two
+ * cases share the matching below and differ only in the shrink step.
+ *
+ * every operand was read by the stencil from its holes and is passed as a plain value: `index` and
+ * `emojiFlags`/`hasRadix` describe the radix instruction (`emojiFlags` also carries whether case
+ * folding applies), `radixOffset`/`nextOffset` where the two outcomes lead. the helper therefore
+ * never reads the bytecode. it reports which edge to take as a `JIT_ACTION_*` and pushes the
+ * backtrack entry that re-enters the instruction through `radixOffset`.
+ */
+int32_t radixBody(Input *input, BacktrackStack *bts, std::string *foldBuf, const Matcher *matchers,
+                  const uint16_t index, const uint32_t emojiFlags, const bool hasRadix,
+                  const uint32_t radixOffset, const uint32_t nextOffset, const bool backward,
+                  const bool remove) noexcept {
+  const auto emoji = static_cast<ucp::RGIEmojiSeq>(emojiFlags);
+  const bool hasEmoji = radixHasEmoji(emojiFlags);
+  const bool ignoreCase = radixIgnoreCase(emojiFlags);
+  if (remove) {
+    if (backward) {
+      StringRef ref(input->getIter() - bts->getRadixState(), bts->getRadixState());
+      unsafeRemovePrefixUtf8(ref);
+      bts->updateRadixState(ref.size());
+    } else {
+      StringRef ref(input->getIter(), bts->getRadixState());
+      unsafeRemoveSuffixUtf8(ref);
+      bts->updateRadixState(ref.size());
+    }
+  }
+  const unsigned int strSize = bts->getRadixState();
+  const bool available = backward ? input->availableBackward() : input->available();
+  if (!strSize || !available) {
     return JIT_ACTION_BACKTRACK;
   }
-  const StringRef ref(ctx->input->getIter(), strSize);
+  const StringRef ref = backward ? StringRef(input->getIter() - strSize, strSize)
+                                 : StringRef(input->getIter(), strSize);
   unsigned int consumedSize = 0;
-  if (ins->hasEmoji()) {
-    auto [s, p] = findLongestMatched(ucp::getEmojiTrie(), ref, *ctx->foldBuf, ins->ignoreCase());
-    if (p && hasFlag(toUnderlying(ins->emoji), p)) {
+  if (hasEmoji) {
+    auto [s, p] = backward
+                      ? findBackwardLongestMatched(ucp::getEmojiTrie(), ref, *foldBuf, ignoreCase)
+                      : findLongestMatched(ucp::getEmojiTrie(), ref, *foldBuf, ignoreCase);
+    // only accept the emoji sequences this instruction asked for
+    if (p && hasFlag(toUnderlying(emoji), p)) {
       consumedSize = s;
     }
   }
-  if (ins->hasRadix) {
-    auto [s, p] = findLongestMatched(ctx->matchers[ins->getIndex()].asRadixTree(), ref,
-                                     *ctx->foldBuf, ins->ignoreCase());
+  if (hasRadix) {
+    auto [s, p] = backward ? findBackwardLongestMatched(matchers[index].asRadixTree(), ref, *foldBuf,
+                                                       ignoreCase)
+                           : findLongestMatched(matchers[index].asRadixTree(), ref, *foldBuf,
+                                                ignoreCase);
     if (p) {
       consumedSize = std::max<unsigned int>(consumedSize, s);
     }
   }
   if (consumedSize) {
-    ctx->bts->updateRadixState(consumedSize);
-    const auto target =
-        static_cast<uint32_t>(reinterpret_cast<const char *>(ins) - ctx->instSeqBase);
-    if (!arsh_jit_push_set_ins(ctx->bts, ctx->input, target)) {
+    bts->updateRadixState(consumedSize);
+    // a backtrack into this instruction must re-run it one code point shorter
+    if (!bts->push(Backtrack::newSetInsFromOffset(radixOffset, input->getIter()))) {
       return JIT_ACTION_STACK_LIMIT;
     }
-    ctx->input->setIter(ctx->input->getIter() + consumedSize);
-    return JIT_ACTION_FIRST;
+    input->setIter(backward ? input->getIter() - consumedSize : input->getIter() + consumedSize);
+    return JIT_ACTION_FIRST; // the caller tail-calls the match target
   }
-  if (ins->nextOffset) {
-    return JIT_ACTION_SECOND; // try next
+  if (nextOffset) {
+    return JIT_ACTION_SECOND; // the successor is the next chained radix instruction
   }
   return JIT_ACTION_BACKTRACK;
 }
 
-int32_t arsh_jit_lb_radix_body(JitContext *ctx, const LBRadixOrEmojiIns *ins,
-                              const int32_t removePrefix) noexcept {
-  if (removePrefix) {
-    StringRef ref(ctx->input->getIter() - ctx->bts->getRadixState(), ctx->bts->getRadixState());
-    unsafeRemovePrefixUtf8(ref);
-    ctx->bts->updateRadixState(ref.size());
-  }
-  const unsigned int strSize = ctx->bts->getRadixState();
-  if (!strSize || !ctx->input->availableBackward()) {
-    return JIT_ACTION_BACKTRACK;
-  }
-  const StringRef ref(ctx->input->getIter() - strSize, strSize);
-  unsigned int consumedSize = 0;
-  if (ins->hasEmoji()) {
-    auto [s, p] =
-        findBackwardLongestMatched(ucp::getEmojiTrie(), ref, *ctx->foldBuf, ins->ignoreCase());
-    if (p && hasFlag(toUnderlying(ins->emoji), p)) {
-      consumedSize = s;
-    }
-  }
-  if (ins->hasRadix) {
-    auto [s, p] = findBackwardLongestMatched(ctx->matchers[ins->getIndex()].asRadixTree(), ref,
-                                             *ctx->foldBuf, ins->ignoreCase());
-    if (p) {
-      consumedSize = std::max<unsigned int>(consumedSize, s);
-    }
-  }
-  if (consumedSize) {
-    ctx->bts->updateRadixState(consumedSize);
-    const auto target =
-        static_cast<uint32_t>(reinterpret_cast<const char *>(ins) - ctx->instSeqBase);
-    if (!arsh_jit_push_set_ins(ctx->bts, ctx->input, target)) {
-      return JIT_ACTION_STACK_LIMIT;
-    }
-    ctx->input->setIter(ctx->input->getIter() - consumedSize);
-    return JIT_ACTION_FIRST;
-  }
-  if (ins->nextOffset) {
-    return JIT_ACTION_SECOND; // try next
-  }
-  return JIT_ACTION_BACKTRACK;
+int32_t arsh_jit_radix_body(const Matcher *matchers, Input *input, BacktrackStack *bts,
+                            std::string *foldBuf, const uint16_t index, const uint32_t emojiFlags,
+                            const int32_t hasRadix, const uint32_t radixOffset,
+                            const int32_t nextOffset, const int32_t removeSuffix) noexcept {
+  return radixBody(input, bts, foldBuf, matchers, index, emojiFlags, hasRadix != 0, radixOffset,
+                   nextOffset, false, removeSuffix != 0);
+}
+
+int32_t arsh_jit_lb_radix_body(const Matcher *matchers, Input *input, BacktrackStack *bts,
+                               std::string *foldBuf, const uint16_t index,
+                               const uint32_t emojiFlags, const int32_t hasRadix,
+                               const uint32_t radixOffset, const int32_t nextOffset,
+                               const int32_t removePrefix) noexcept {
+  return radixBody(input, bts, foldBuf, matchers, index, emojiFlags, hasRadix != 0, radixOffset,
+                   nextOffset, true, removePrefix != 0);
 }
 
 } // extern "C"
