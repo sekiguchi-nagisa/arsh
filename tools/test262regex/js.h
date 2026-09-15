@@ -404,6 +404,9 @@ inline JSResult assignProperty(const std::shared_ptr<JSEnv> &env, const JSValue 
   return assignProperty(env, env->callerLineNum(), recv, name, std::move(value));
 }
 
+JSResult assignPropertyByIndex(const std::shared_ptr<JSEnv> &env, const JSValue &recv,
+                               const JSValue &index, JSValue &&value);
+
 JSResult callJSFunction(const std::shared_ptr<JSEnv> &caller, unsigned int callerLineNum,
                         const JSFunctionPtr &func, JSValue &&recv, std::vector<JSValue> &&args);
 

@@ -1121,67 +1121,6 @@ static JSResult evalBinary(const BinaryExpr &binary, const std::shared_ptr<JSEnv
   return Ok(JSValue());
 }
 
-static std::optional<unsigned int> toArrayIndex(const JSValue &value) {
-  if (std::holds_alternative<double>(value)) {
-    if (auto d = std::get<double>(value);
-        isSafeInteger(d) && d > -1 && static_cast<uint64_t>(d) <= UINT32_MAX) {
-      return static_cast<unsigned int>(d);
-    }
-  } else if (std::holds_alternative<JSStringPtr>(value)) {
-    const auto &str = *std::get<JSStringPtr>(value);
-    if (const auto index = toFixedSizeInteger<unsigned int>(value);
-        str == toString(static_cast<double>(index))) {
-      return index;
-    }
-  }
-  return {};
-}
-
-JSProperty findOwnPropertyByIndex(const JSValue &recv, const JSValue &index) {
-  if (auto arrayIndex = toArrayIndex(index)) {
-    if (std::holds_alternative<JSStringPtr>(recv)) {
-      if (auto &str = *std::get<JSStringPtr>(recv); arrayIndex.value() < str.size()) {
-        JSString ret;
-        ret += str[arrayIndex.value()];
-        return {JSPropertyAttr::ENUMERABLE, std::make_shared<JSString>(std::move(ret))};
-      }
-      return {};
-    }
-    if (std::holds_alternative<JSArrayPtr>(recv)) {
-      if (auto &array = std::get<JSArrayPtr>(recv)->array; arrayIndex.value() < array.size()) {
-        auto v = array[arrayIndex.value()];
-        return JSProperty::withDefault(std::move(v));
-      }
-      return {};
-    }
-  }
-  auto key = toWTF8(toString(index));
-  return findOwnProperty(recv, key);
-}
-
-JSResult findPropertyByIndex(const std::shared_ptr<JSEnv> &env, const JSValue &recv,
-                             const JSValue &index) {
-  if (auto arrayIndex = toArrayIndex(index)) {
-    if (std::holds_alternative<JSStringPtr>(recv)) {
-      if (auto &str = *std::get<JSStringPtr>(recv); arrayIndex.value() < str.size()) {
-        JSString ret;
-        ret += str[arrayIndex.value()];
-        return Ok(std::make_shared<JSString>(std::move(ret)));
-      }
-      return Ok(JSValue());
-    }
-    if (std::holds_alternative<JSArrayPtr>(recv)) {
-      if (auto &array = std::get<JSArrayPtr>(recv)->array; arrayIndex.value() < array.size()) {
-        auto v = array[arrayIndex.value()];
-        return Ok(std::move(v));
-      }
-      return Ok(JSValue());
-    }
-  }
-  auto key = toWTF8(toString(index));
-  return findProperty(env, recv, key);
-}
-
 static JSResult evalIndex(const IndexExpr &expr, const std::shared_ptr<JSEnv> &env) {
   auto recv = TRY(evaluate(*expr.recv, env));
   auto index = TRY(evaluate(*expr.index, env));
@@ -1209,17 +1148,7 @@ static JSResult assignImpl(const Node &left, JSValue &&right, const std::shared_
   auto &indexExpr = std::get<IndexExpr>(left.value);
   auto recv = TRY(evaluate(*indexExpr.recv, env));
   auto index = TRY(evaluate(*indexExpr.index, env));
-  if (auto arrayIndex = toArrayIndex(index);
-      arrayIndex && std::holds_alternative<JSArrayPtr>(recv)) {
-    auto &array = std::get<JSArrayPtr>(recv)->array;
-    if (arrayIndex.value() >= array.size()) {
-      array.resize(arrayIndex.value() + 1, JSValue());
-    }
-    array[arrayIndex.value()] = right;
-    return Ok(std::move(right));
-  }
-  auto key = toWTF8(toString(index));
-  return assignProperty(env, recv, key, std::move(right));
+  return assignPropertyByIndex(env, recv, index, std::move(right));
 }
 
 static JSResult evalAssign(const AssignExpr &assign, const std::shared_ptr<JSEnv> &env) {
