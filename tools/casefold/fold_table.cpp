@@ -25,24 +25,17 @@
 
 namespace arsh::fold {
 
-using CaseMappingShortEntry = std::pair<uint16_t, uint16_t>;
+using CaseMappingEntry = std::pair<int, int>;
 
-#define CASE_FOLD_shortC_ENTRY CaseMappingShortEntry
-#define CASE_FOLD_longC_ENTRY std::pair<int, int>
-#define CASE_FOLD_S_ENTRY CaseMappingShortEntry
+#define CASE_FOLD_C_ENTRY CaseMappingEntry
+#define CASE_FOLD_S_ENTRY CaseMappingEntry
 
 #include "unicode/simple_case_fold.in"
 
-struct CompareShortEntry {
-  bool operator()(const CaseMappingShortEntry &x, uint16_t y) const { return x.first < y; }
-
-  bool operator()(uint16_t x, const CaseMappingShortEntry &y) const { return x < y.first; }
-};
-
 struct CompareLongEntry {
-  bool operator()(const std::pair<int, int> &x, int y) const { return x.first < y; }
+  bool operator()(const CaseMappingEntry &x, int y) const { return x.first < y; }
 
-  bool operator()(int x, const std::pair<int, int> &y) const { return x < y.first; }
+  bool operator()(int x, const CaseMappingEntry &y) const { return x < y.first; }
 };
 
 enum class EntryType : unsigned char {
@@ -51,19 +44,13 @@ enum class EntryType : unsigned char {
 };
 
 static std::pair<int, EntryType> lookupSimpleCaseFoldEntry(const int codePoint) {
-  if (auto iter =
-          std::lower_bound(std::begin(case_fold_shortC_table), std::end(case_fold_shortC_table),
-                           codePoint, CompareShortEntry());
-      iter != std::end(case_fold_shortC_table) && iter->first == codePoint) {
-    return {iter->second, EntryType::C};
-  }
-  if (auto iter = std::lower_bound(std::begin(case_fold_longC_table),
-                                   std::end(case_fold_longC_table), codePoint, CompareLongEntry());
-      iter != std::end(case_fold_longC_table) && iter->first == codePoint) {
+  if (auto iter = std::lower_bound(std::begin(case_fold_C_table), std::end(case_fold_C_table),
+                                   codePoint, CompareLongEntry());
+      iter != std::end(case_fold_C_table) && iter->first == codePoint) {
     return {iter->second, EntryType::C};
   }
   if (auto iter = std::lower_bound(std::begin(case_fold_S_table), std::end(case_fold_S_table),
-                                   codePoint, CompareShortEntry());
+                                   codePoint, CompareLongEntry());
       iter != std::end(case_fold_S_table) && iter->first == codePoint) {
     return {iter->second, EntryType::S};
   }
@@ -72,10 +59,7 @@ static std::pair<int, EntryType> lookupSimpleCaseFoldEntry(const int codePoint) 
 
 static int computeMaxFoldCodePoint() {
   int codePoint = 0;
-  for (auto &[before, after] : case_fold_shortC_table) {
-    codePoint = std::max<int>(codePoint, before);
-  }
-  for (auto &[before, after] : case_fold_longC_table) {
+  for (auto &[before, after] : case_fold_C_table) {
     codePoint = std::max<int>(codePoint, before);
   }
   for (auto &[before, after] : case_fold_S_table) {

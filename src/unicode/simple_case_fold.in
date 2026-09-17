@@ -6,7 +6,7 @@
 
 // clang-format off
 
-static constexpr CASE_FOLD_shortC_ENTRY case_fold_shortC_table[] = {
+static constexpr CASE_FOLD_C_ENTRY case_fold_C_table[] = {
     { 0x0041, 0x0061 },
     { 0x0042, 0x0062 },
     { 0x0043, 0x0063 },
@@ -1181,9 +1181,6 @@ static constexpr CASE_FOLD_shortC_ENTRY case_fold_shortC_table[] = {
     { 0xFF38, 0xFF58 },
     { 0xFF39, 0xFF59 },
     { 0xFF3A, 0xFF5A },
-};
-
-static constexpr CASE_FOLD_longC_ENTRY case_fold_longC_table[] = {
     { 0x10400, 0x10428 },
     { 0x10401, 0x10429 },
     { 0x10402, 0x1042A },
