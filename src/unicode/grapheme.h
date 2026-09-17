@@ -74,13 +74,17 @@ public:
   static BreakProperty getInCBExtendOrLinker(int codePoint);
 
 private:
+  int codePoint{-1};
   BreakProperty state{BreakProperty::SOT};
   bool emojiSeq{false};
 
 public:
   GraphemeBoundary() = default;
 
-  explicit GraphemeBoundary(BreakProperty property) : state(property) {}
+  explicit GraphemeBoundary(int codePoint, BreakProperty property)
+      : codePoint(codePoint), state(property) {}
+
+  int getCodePoint() const { return this->codePoint; }
 
   BreakProperty getProperty() const { return this->state; }
 
@@ -88,11 +92,11 @@ public:
 
   /**
    * check grapheme cluster boundary
-   * @param codePoint
+   * @param nextCodePoint
    * @return
    * if grapheme cluster boundary is between prev codePoint (state) and codePoint, return true
    */
-  bool checkBoundary(int codePoint);
+  bool checkBoundary(int nextCodePoint);
 };
 
 class GraphemeCluster {
@@ -120,19 +124,18 @@ public:
   using BreakProperty = GraphemeBoundary::BreakProperty;
 
 protected:
-  int codePoint{-1};
   GraphemeBoundary boundary;
   Stream stream;
 
   GraphemeScanner(Stream &&stream, int codePoint, GraphemeBoundary::BreakProperty property)
-      : codePoint(codePoint), boundary(property), stream(std::move(stream)) {}
+      : boundary(codePoint, property), stream(std::move(stream)) {}
 
 public:
   explicit GraphemeScanner(Stream &&stream) : stream(std::move(stream)) {}
 
   const auto &getStream() const { return this->stream; }
 
-  int getCodePoint() const { return this->codePoint; }
+  int getCodePoint() const { return this->boundary.getCodePoint(); }
 
   BreakProperty getProperty() const { return this->boundary.getProperty(); }
 
@@ -145,8 +148,7 @@ public:
     if (!this->stream) {
       return true;
     }
-    this->codePoint = this->stream.nextCodePoint();
-    return this->boundary.checkBoundary(this->codePoint);
+    return this->boundary.checkBoundary(this->stream.nextCodePoint());
   }
 };
 

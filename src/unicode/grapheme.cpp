@@ -65,9 +65,11 @@ GraphemeBoundary::BreakProperty GraphemeBoundary::getInCBExtendOrLinker(const in
 }
 
 // see. https://unicode.org/reports/tr29/#Grapheme_Cluster_Boundary_Rules
-bool GraphemeBoundary::checkBoundary(const int codePoint) {
-  const auto after = getBreakProperty(codePoint);
+bool GraphemeBoundary::checkBoundary(const int nextCodePoint) {
+  const auto after = getBreakProperty(nextCodePoint);
   const auto before = this->state;
+  // const auto beforeCodePoint = this->codePoint;
+  this->codePoint = nextCodePoint;
   this->state = after;
   this->emojiSeq = false;
 
@@ -119,7 +121,8 @@ bool GraphemeBoundary::checkBoundary(const int codePoint) {
     }
     break;
   case BreakProperty::InCB_Consonant:
-    if (const auto inCB = getInCBExtendOrLinker(codePoint); inCB == BreakProperty::InCB_Extend) {
+    if (const auto inCB = getInCBExtendOrLinker(nextCodePoint);
+        inCB == BreakProperty::InCB_Extend) {
       this->state = BreakProperty::InCB_Consonant;
       return false; // GB9c
     } else if (inCB == BreakProperty::InCB_Linker) {
@@ -132,7 +135,7 @@ bool GraphemeBoundary::checkBoundary(const int codePoint) {
       this->state = BreakProperty::InCB_Consonant;
       return false; // GB9c
     }
-    if (const auto inCB = getInCBExtendOrLinker(codePoint);
+    if (const auto inCB = getInCBExtendOrLinker(nextCodePoint);
         inCB == BreakProperty::InCB_Extend || inCB == BreakProperty::InCB_Linker) {
       this->state = BreakProperty::InCB_Consonant_with_Linker;
       return false; // GB9c

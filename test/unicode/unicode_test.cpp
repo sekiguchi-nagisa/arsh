@@ -8,7 +8,6 @@
 #include <unicode/word.h>
 
 #include "../test_common.h"
-#include "unicode/property.h"
 
 using namespace arsh;
 
