@@ -88,6 +88,67 @@ elseif ("${lower_type}" STREQUAL "release" OR "${lower_type}" STREQUAL "relwithd
 endif ()
 
 
+#+++++++++++++++++++++++++++++++++++++++++#
+#   optional tail-call interpreter backend  #
+#+++++++++++++++++++++++++++++++++++++++++#
+
+option(USE_TAILCALL_VM "enable the tail-call interpreter backend if supported" OFF)
+
+include(CheckCXXSourceCompiles)
+
+# `check_cxx_source_compiles` only sees CMAKE_REQUIRED_FLAGS, not the per-configuration flags,
+# so the build type flags (which carry -DNDEBUG) must be added explicitly. otherwise the check
+# below runs without NDEBUG and silently reports the backend as unsupported.
+string(TOUPPER "${CMAKE_BUILD_TYPE}" ARSH_UPPER_TYPE)
+set(CMAKE_REQUIRED_FLAGS "${CMAKE_CXX_FLAGS} ${CMAKE_CXX_FLAGS_${ARSH_UPPER_TYPE}}")
+
+# the attributes must actually compile. some compilers report them via `__has_attribute`
+# but then silently ignore them in the declaration position.
+#
+# NDEBUG is required as well: `musttail` rejects a function whose local address may escape, and
+# `assert` does exactly that, so an assertion enabled build cannot use this backend at all
+# (see vm_common.h). this is checked here so that the reported backend matches the one built.
+check_cxx_source_compiles("
+#if !defined(NDEBUG)
+#error \"assertions are enabled\"
+#endif
+struct State { const char *p; };
+#define ARSH_PRESERVE_NONE __attribute__((preserve_none))
+using Handler = ARSH_PRESERVE_NONE int (*)(const State *, int);
+static Handler table[2];
+static ARSH_PRESERVE_NONE int dispatch(const State *s, int n) {
+  __attribute__((musttail)) return table[n != 0](s, n - 1);
+}
+int main() { (void)dispatch; return 0; }
+" ARSH_HAVE_MUSTTAIL_VM)
+
+# NOTE: this backend is experimental and is OFF by default.
+# on GCC it is measurably *slower* than the switch/threaded-code interpreter (about 1.5x on
+# backtracking-heavy patterns). GCC's `preserve_none` passes only 6 arguments in registers
+# (r12-r15 are reserved as scratch), whereas the switch/threaded-code interpreter can keep the
+# VM state in the 5 callee-saved registers across the whole dispatch loop for free. clang, whose
+# `preserve_none` really provides 12 registers, comes out at roughly break-even.
+# it is kept as an opt-in so the trade-off can be re-evaluated per toolchain.
+set(ARSH_USE_TAILCALL_VM OFF)
+if (NOT USE_TAILCALL_VM)
+    if (ARSH_HAVE_MUSTTAIL_VM)
+        message(STATUS "tail-call interpreter backend: available but disabled (USE_TAILCALL_VM=OFF)")
+    else ()
+        message(STATUS "tail-call interpreter backend: unavailable")
+    endif ()
+elseif (NOT ARSH_HAVE_MUSTTAIL_VM)
+    message(STATUS "tail-call interpreter backend: disabled (require musttail and preserve_none, NDEBUG)")
+elseif (NOT CMAKE_SYSTEM_PROCESSOR MATCHES "^(x86_64|AMD64|amd64)$")
+    message(STATUS "tail-call interpreter backend: disabled (require x86-64)")
+elseif (NOT ("${SANITIZER}" STREQUAL ""))
+    message(STATUS "tail-call interpreter backend: disabled (sanitizer build)")
+else ()
+    set(ARSH_USE_TAILCALL_VM ON)
+    add_definitions(-DARSH_HAVE_MUSTTAIL_VM)
+    message(STATUS "tail-call interpreter backend: enabled")
+endif ()
+
+
 #+++++++++++++++++++++++++++++++++#
 #     set coverage build type     #
 #+++++++++++++++++++++++++++++++++#
@@ -109,6 +170,7 @@ show_option(USE_LTO)
 show_option(USE_EXTRA_TEST)
 show_option(BUILD_SHARED_LIB)
 show_option(USE_CTEST)
+show_option(USE_TAILCALL_VM)
 
 
 #+++++++++++++++++++++++++++#
@@ -262,11 +324,21 @@ add_library(regex STATIC
         src/regex/flag.cpp
         src/regex/emit.cpp
         src/regex/vm.cpp
+        src/regex/vm_tailcall.cpp
         src/regex/regex.cpp
 )
 target_link_libraries(regex unicode)
 if (BUILD_SHARED_LIB)
     set_target_properties(regex PROPERTIES POSITION_INDEPENDENT_CODE ON)
+endif ()
+
+# the tail-call interpreter is built from many small handlers which are entered by a mutual
+# tail call. -fstack-protector-strong puts a canary load/store/check (plus the TLS access) into
+# every one of them, i.e. on every dispatch, which more than offsets the gain of the tail call.
+# the frames here are tiny and hold no user-controlled buffer, so the canary is disabled only
+# for this file.
+if (ARSH_USE_TAILCALL_VM)
+    set_source_files_properties(src/regex/vm_tailcall.cpp PROPERTIES COMPILE_OPTIONS "-fno-stack-protector")
 endif ()
 
 #=================#
