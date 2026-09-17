@@ -60,7 +60,6 @@ function parse(line: String) : Entry {
             assert $false : $codeStr
         }
     } else {  # full
-        assert $code <= 0xFFFF : $codeStr
         for v in $mappingStr {
             assert $v.toInt()! <= 0xFFFF : $codeStr
         }
@@ -100,7 +99,6 @@ for line in new FD('./CaseFolding.txt') {
         }
         'F' => {
             assert $entry.mappingStr.size() > 1
-            assert $entry.code <= 0xFFFF
             $F.add($entry)
         }
         'T' => {
@@ -133,7 +131,7 @@ function emitTable(entries: [Entry], name: String) {
     echo
     echo "static constexpr CASE_FOLD_${name}_ENTRY case_fold_${name}_table[] = {"
     for e in $entries {
-        echo "    { ${$e.codeStr}, ${$e.mappingStr[0]} },"
+        echo "    { ${e.codeStr}, ${$e.mappingStr[0]} },"
     }
     echo "};"
 }
@@ -155,7 +153,7 @@ function emitTable2(entries: [Entry], name: String) {
         for(var i = 0; $i < $diff; $i++) {
             $m += ", 0x0000";
         }
-        echo "    { ${$e.codeStr}, $m },"
+        echo "    { ${e.codeStr}, $m },"
     }
     echo "};"
 }

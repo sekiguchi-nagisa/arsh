@@ -15,6 +15,7 @@
  */
 
 #include <algorithm>
+#include <limits>
 
 #include "misc/unicode.hpp"
 #include "unicode/case_fold.h"
@@ -42,15 +43,44 @@ int doSimpleCaseFolding(int codePoint) {
   return codePoint;
 }
 
-using CASE_FOLD_T_ENTRY = std::pair<uint16_t, uint16_t>; // NOLINT
-using CASE_FOLD_F_ENTRY = uint16_t[CaseFoldingResult::FULL_FOLD_ENTRY_SIZE + 1];
+struct FullFoldEntry {
+  int code;
+  CaseFoldingResult::FullFoldingEntry folds;
+
+  static constexpr void append(CaseFoldingResult::FullFoldingEntry &, unsigned int) {}
+
+  template <typename... R>
+  static constexpr void append(CaseFoldingResult::FullFoldingEntry &folds, unsigned int index,
+                               int t, R &&...remain) {
+    if (t < 0 || t > std::numeric_limits<uint16_t>::max()) {
+      throw 1243; // NOLINT
+    }
+    folds[index] = static_cast<uint16_t>(t);
+    append(folds, index + 1, std::forward<R>(remain)...);
+  }
+
+  template <typename... T>
+  static constexpr CaseFoldingResult::FullFoldingEntry init(T &&...arg) {
+    static_assert(sizeof...(T) == CaseFoldingResult::FULL_FOLD_ENTRY_SIZE);
+    CaseFoldingResult::FullFoldingEntry folds{};
+    append(folds, 0, std::forward<T>(arg)...);
+    return folds;
+  }
+
+  template <typename... T>
+  constexpr FullFoldEntry(int code, T &&...arg) // NOLINT
+      : code(code), folds{init(std::forward<T>(arg)...)} {}
+};
+
+#define CASE_FOLD_T_ENTRY std::pair<uint16_t, uint16_t>
+#define CASE_FOLD_F_ENTRY FullFoldEntry
 
 #include "full_case_fold.in"
 
 struct CompareFullFoldEntry {
-  bool operator()(const CASE_FOLD_F_ENTRY &x, uint16_t y) const { return x[0] < y; }
+  bool operator()(const FullFoldEntry &x, int y) const { return x.code < y; }
 
-  bool operator()(uint16_t x, const CASE_FOLD_F_ENTRY &y) const { return x < y[0]; }
+  bool operator()(int x, const FullFoldEntry &y) const { return x < y.code; }
 };
 
 CaseFoldingResult doCaseFolding(int codePoint, const CaseFoldOp op) {
@@ -66,10 +96,10 @@ CaseFoldingResult doCaseFolding(int codePoint, const CaseFoldOp op) {
     if (UnicodeUtil::isBmpCodePoint(codePoint)) {
       auto iter = std::lower_bound(std::begin(case_fold_F_table), std::end(case_fold_F_table),
                                    codePoint, CompareFullFoldEntry());
-      if (iter != std::end(case_fold_F_table) && (*iter)[0] == codePoint) {
+      if (iter != std::end(case_fold_F_table) && iter->code == codePoint) {
         CaseFoldingResult::FullFoldingEntry entry;
-        for (unsigned int i = 1; i < std::size(*iter); i++) {
-          entry[i - 1] = (*iter)[i];
+        for (unsigned int i = 0; i < std::size(iter->folds); i++) {
+          entry[i] = iter->folds[i];
         }
         return CaseFoldingResult(entry);
       }
