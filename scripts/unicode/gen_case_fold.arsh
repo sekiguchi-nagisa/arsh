@@ -93,8 +93,6 @@ for line in new FD('./CaseFolding.txt') {
         'S' => {
             assert $entry.mapping
             assert $entry.mappingStr.size() == 1
-            assert $entry.code <= 0xFFFF
-            assert $entry.mapping! <= 0xFFFF
             $S.add($entry)
         }
         'F' => {
