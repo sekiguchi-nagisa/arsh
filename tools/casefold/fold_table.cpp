@@ -86,12 +86,27 @@ struct BlockHasher {
   }
 };
 
+template <unsigned char N>
+constexpr int INT_X_MAX() {
+  static_assert(N <= 32);
+  static_assert(N > 0);
+  return static_cast<int>((1ull << static_cast<unsigned int>(N - 1)) - 1);
+}
+
+template <unsigned char N>
+constexpr int INT_X_MIN() {
+  static_assert(N <= 32);
+  static_assert(N > 0);
+  return -static_cast<int>(1ull << static_cast<unsigned int>(N - 1));
+}
+
 static int computeFoldEntry(const int codePoint) {
   assert(UnicodeUtil::isCodePoint(codePoint));
   auto [c, e] = lookupSimpleCaseFoldEntry(codePoint);
   int d = c - codePoint;
+  assert(d <= INT_X_MAX<31>());
+  assert(d >= INT_X_MIN<31>());
   int delta = (d * 2) + static_cast<int>(toUnderlying(e));
-  assert(delta <= INT32_MAX && delta >= INT32_MIN);
   return delta;
 }
 

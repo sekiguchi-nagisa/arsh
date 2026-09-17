@@ -17,7 +17,7 @@ struct CASE_FOLD_F_ENTRY {
   int code;
   std::array<uint16_t, arsh::CaseFoldingResult::FULL_FOLD_ENTRY_SIZE> values;
 
-  constexpr CASE_FOLD_F_ENTRY(uint16_t v0, uint16_t v1, uint16_t v2, uint16_t v3)
+  constexpr CASE_FOLD_F_ENTRY(int v0, uint16_t v1, uint16_t v2, uint16_t v3)
       : code(v0), values{v1, v2, v3} {}
 };
 
