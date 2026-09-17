@@ -20,6 +20,7 @@
 #include <unordered_map>
 
 #include "misc/hash.hpp"
+#include "misc/num_util.hpp"
 #include "misc/unicode.hpp"
 #include "unicode/case_fold.h"
 
@@ -86,26 +87,16 @@ struct BlockHasher {
   }
 };
 
-template <unsigned char N>
-constexpr int INT_X_MAX() {
-  static_assert(N <= 32);
-  static_assert(N > 0);
-  return static_cast<int>((1ull << static_cast<unsigned int>(N - 1)) - 1);
-}
-
-template <unsigned char N>
-constexpr int INT_X_MIN() {
-  static_assert(N <= 32);
-  static_assert(N > 0);
-  return -static_cast<int>(1ull << static_cast<unsigned int>(N - 1));
-}
-
 static int computeFoldEntry(const int codePoint) {
   assert(UnicodeUtil::isCodePoint(codePoint));
   auto [c, e] = lookupSimpleCaseFoldEntry(codePoint);
   int d = c - codePoint;
-  assert(d <= INT_X_MAX<31>());
-  assert(d >= INT_X_MIN<31>());
+  constexpr auto INT31_MAX = INT_X_MAX<31>();
+  constexpr auto INT31_MIN = INT_X_MIN<31>();
+  static_cast<void>(INT31_MAX);
+  static_cast<void>(INT31_MIN);
+  assert(d <= INT31_MAX);
+  assert(d >= INT31_MIN);
   int delta = (d * 2) + static_cast<int>(toUnderlying(e));
   return delta;
 }

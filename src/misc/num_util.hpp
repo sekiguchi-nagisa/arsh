@@ -457,6 +457,21 @@ inline int64_t unsignedRightShift(int64_t left, int64_t right) {
   return static_cast<int64_t>(v);
 }
 
+template <unsigned char N>
+constexpr int64_t INT_X_MAX() {
+  static_assert(N < 64);
+  static_assert(N > 2);
+  return static_cast<int64_t>(1ull << static_cast<unsigned int>(N - 1)) - 1;
+}
+
+template <unsigned char N>
+constexpr int64_t INT_X_MIN() {
+  static_assert(N < 64);
+  static_assert(N > 2);
+  return -static_cast<int64_t>(1ull << static_cast<unsigned int>(N - 1));
+}
+
+
 END_MISC_LIB_NAMESPACE_DECL
 
 #endif // MISC_LIB_NUM_UTIL_HPP

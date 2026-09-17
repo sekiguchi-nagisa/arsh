@@ -20,7 +20,7 @@
 #include <cstdint>
 #include <cstring>
 
-#include "misc/detect.hpp"
+#include "misc/num_util.hpp"
 
 namespace arsh {
 
@@ -35,11 +35,11 @@ union TaggedValue {
 
   static constexpr unsigned int MAX_STR_SIZE = sizeof(s) - 2;
 
-  T getTag() const { return static_cast<T>(this->u64 & 0x7); }
+  T getTag() const { return static_cast<T>(this->u64 & 0x7u); }
 
   bool hasTag(const T t) const { return this->getTag() == t; }
 
-  unsigned int size() const { return static_cast<unsigned int>(this->s[0]) >> 3; }
+  unsigned int size() const { return static_cast<unsigned int>(this->s[0]) >> 3u; }
 
   /**
    *
@@ -55,7 +55,7 @@ union TaggedValue {
   template <T TAG>
   void set(const char *data, const size_t size) {
     static_assert(static_cast<uint8_t>(TAG) <= 7);
-    this->s[0] = static_cast<uint8_t>((size << 3) | static_cast<uint8_t>(TAG));
+    this->s[0] = static_cast<uint8_t>((size << 3u) | static_cast<uint8_t>(TAG));
     if (data) {
       memcpy(this->s + 1, data, size);
     }
@@ -68,7 +68,7 @@ union TaggedValue {
     if (data && size) {
       size_t oldSize = this->size();
       size_t newSize = oldSize + size;
-      this->s[0] = static_cast<uint8_t>((newSize << 3) | static_cast<uint8_t>(TAG));
+      this->s[0] = static_cast<uint8_t>((newSize << 3u) | static_cast<uint8_t>(TAG));
       memcpy(this->s + 1 + oldSize, data, size);
       this->s[newSize + 1] = '\0';
     }
@@ -91,7 +91,8 @@ union TaggedValue {
     uint64_t u;
     memcpy(&u, &v, sizeof(double));
     return TaggedValue{
-        .u64 = rotateLeft(u + (static_cast<uint64_t>(1 + 2 * static_cast<uint8_t>(TAG)) << 58), 5)};
+        .u64 =
+            rotateLeft(u + (static_cast<uint64_t>(1 + 2 * static_cast<uint8_t>(TAG)) << 58u), 5)};
   }
 
   /**
@@ -105,14 +106,14 @@ union TaggedValue {
   static double decodeTaggedFloat(const TaggedValue v) {
     static_assert(static_cast<uint8_t>(TAG) <= 7);
     const uint64_t vv =
-        rotateLeft(v.u64, 59) - (static_cast<uint64_t>(1 + 2 * static_cast<uint8_t>(TAG)) << 58);
+        rotateLeft(v.u64, 59) - (static_cast<uint64_t>(1 + 2 * static_cast<uint8_t>(TAG)) << 58u);
     double d;
     memcpy(&d, &vv, sizeof(uint64_t));
     return d;
   }
 
-  static constexpr auto INT56_MAX = static_cast<int64_t>(0x7FFFFFFFFFFFFF);
-  static constexpr auto INT56_MIN = static_cast<int64_t>(0xFF80000000000000);
+  static constexpr auto INT56_MAX = INT_X_MAX<56>();
+  static constexpr auto INT56_MIN = INT_X_MIN<56>();
 
   static bool withinInt56(int64_t v) { return v >= INT56_MIN && v <= INT56_MAX; }
 
@@ -140,8 +141,8 @@ union TaggedValue {
    */
   static int64_t decodeTaggedInt(const TaggedValue v) {
     auto vv = v.u64 & ~static_cast<uint64_t>(0xFF);
-    if (vv & 0x100) { // sign
-      vv |= 0xFF;
+    if (vv & 0x100u) { // sign
+      vv |= 0xFFu;
     }
     return static_cast<int64_t>(rotateLeft(vv, 55));
   }
@@ -154,6 +155,7 @@ union TaggedValue {
    * truncate (8bit) | remain (56bit)
    * => remain (56bit) | tag (8bit)
    * @tparam U
+   * @param tag
    * @param v must be uint56
    * @return
    */
