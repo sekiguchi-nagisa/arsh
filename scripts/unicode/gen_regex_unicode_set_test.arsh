@@ -143,7 +143,7 @@ function emoji(prop: String): SetGen {
 }
 
 type TestCase {
-    let pattern: Regex
+    let pattern: String
     let matches: [(String,String)]
     let noMatches: [(String,String)]
 }
@@ -185,7 +185,7 @@ function emit() for TestScript {
     echo 'echo pass: $REGEX_TEST_PASS_COUNT'
 }
 
-function def(p: Regex, ss: SetGen) for TestScript {
+function def(p: String, ss: SetGen) for TestScript {
     case $ss.type {
         'codepoint' => {
             var ret = $ss.sampleCodePoints(10)
@@ -226,21 +226,21 @@ let _builder = function(tss: TestScripts) => {
     $tss.testScript('regex_unicode_property_gc.arsh', function(ts: TestScript)=>{
         for line in <(guniset enum gc) {
             for cat in $line.split(', ') {
-                $ts.def(new Regex("^[\\p{$cat}]\$", 'u'), $set("gc:$cat"))
+                $ts.def("/^[\\p{$cat}]\$/u", $set("gc:$cat"))
             }
         }
     })
     $tss.testScript('regex_unicode_property_sc.arsh', function(ts: TestScript)=>{
         for line in <(guniset enum sc) {
             for cat in $line.split(', ') {
-                $ts.def(new Regex("^[\\p{Script=$cat}]\$", 'u'), $set("sc:$cat"))
+                $ts.def("/^[\\p{Script=$cat}]\$/u", $set("sc:$cat"))
             }
         }
     })
     $tss.testScript('regex_unicode_property_scx.arsh', function(ts: TestScript)=>{
         for line in <(guniset enum scx) {
             for cat in $line.split(', ') {
-                $ts.def(new Regex("^[\\p{Script_Extensions=$cat}]\$", 'u'), $set("scx:$cat"))
+                $ts.def("/^[\\p{Script_Extensions=$cat}]\$/u", $set("scx:$cat"))
             }
         }
     })
@@ -252,21 +252,21 @@ let _builder = function(tss: TestScripts) => {
                 $ss.add($abbr)
             }
             for name in $ss {
-                $ts.def(new Regex("^[\\p{${name}}]\$", 'u'), $set($query))
+                $ts.def("/^[\\p{${name}}]\$/u", $set($query))
             }
         }
         var defs = $_lone_table.defs.copy().shuffle(42)
         for(var i = 0; $i < 10; $i+=2) {
             let query1 = $getQuery($defs[$i]) ?? { echo 1>&2 "[warn] ignore: ${$defs[$i].name}"; continue; }
             let query2 = $getQuery($defs[$i+1]) ?? { echo 1>&2 "[warn] ignore: ${$defs[$i+1].name}"; continue; }
-            $ts.def(new Regex("^[\\p{${$defs[$i].name}}\\p{${$defs[$i+1].name}}]\$", 'u'), $set($query1 + " + " + $query2))
+            $ts.def("/^[\\p{${$defs[$i].name}}\\p{${$defs[$i+1].name}}]\$/u", $set($query1 + " + " + $query2))
         }
     })
     $tss.testScript('regex_unicode_property_emoji.arsh', function(ts) =>{
         for name in ['Basic_Emoji', 'Emoji_Keycap_Sequence', 'RGI_Emoji_Flag_Sequence',
                 'RGI_Emoji_Modifier_Sequence', 'RGI_Emoji_Tag_Sequence', 
                 'RGI_Emoji_ZWJ_Sequence', 'RGI_Emoji'] {
-            $ts.def(new Regex("^[\\p{${name}}]\$", 'v'), $emoji($name))
+            $ts.def("/^[\\p{${name}}]\$/v", $emoji($name))
         }
         # $ts.def($/\p{}/v, $emoji($name))
     })
@@ -274,6 +274,7 @@ let _builder = function(tss: TestScripts) => {
 
 
 _main(param : _Param) {
+    shctl set errraise
     var scripts: TestScripts
     $_builder($scripts)
     for name, script in $scripts.scripts {

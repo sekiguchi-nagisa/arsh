@@ -156,6 +156,7 @@ function gen_property_name_test_table(output: String) {
 }
 
 _main(p : _Param) {
+    shctl set errraise
     case $p.type {
         'cpp' => {$gen_property_test_table($p.output); $gen_property_name_test_table($p.output); }
         'arsh' => $gen_for_arsh($p.output)

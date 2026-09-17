@@ -1,5 +1,7 @@
 #!/usr/bin/env arsh
 
+shctl set errraise
+
 if $# != 1 {
     echo "[usage] $0 [output]" 1>&2
     exit 1
@@ -14,8 +16,9 @@ test -d $work_dir || mkdir $work_dir
 
 cd $work_dir
 
-test -f GraphemeBreakTest.txt ||
-    curl https://www.unicode.org/Public/UCD/latest/ucd/auxiliary/GraphemeBreakTest.txt -o ./GraphemeBreakTest.txt
+importenv UNICODE_VERSION : "UCD/latest"
+echo try to download GraphemeBreakTest.txt from https://www.unicode.org/Public/${UNICODE_VERSION}/ucd/auxiliary/GraphemeBreakTest.txt
+curl https://www.unicode.org/Public/${UNICODE_VERSION}/ucd/auxiliary/GraphemeBreakTest.txt -o ./GraphemeBreakTest.txt
 
 
 {
@@ -25,6 +28,7 @@ test -f GraphemeBreakTest.txt ||
 
 var ret : [String]
 
+shctl unset errraise # suppress error after read
 cat ./GraphemeBreakTest.txt | for(var count = 0; read -f $'\n'; $count++) {
     if $count < 2 {
         echo $REPLY >> $out

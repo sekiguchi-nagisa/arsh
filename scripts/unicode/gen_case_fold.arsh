@@ -10,6 +10,8 @@ type _Param() {
     var test = ""
 }
 
+shctl set errraise
+
 var param = new _Param()
 try { $param.parse($@); } catch e { echo 1>&2 ${$e.message()}; exit ${$e.status()}; }
 
@@ -21,8 +23,9 @@ test -d $work_dir || mkdir $work_dir
 
 cd $work_dir
 
-test -f CaseFolding.txt ||
-    curl https://www.unicode.org/Public/UCD/latest/ucd/CaseFolding.txt -o ./CaseFolding.txt
+importenv UNICODE_VERSION : "UCD/latest"
+echo try to download CaseFolding.txt from https://www.unicode.org/Public/${UNICODE_VERSION}/ucd/CaseFolding.txt
+curl https://www.unicode.org/Public/${UNICODE_VERSION}/ucd/CaseFolding.txt -o ./CaseFolding.txt
 
 
 type Entry {
@@ -47,19 +50,19 @@ function parse(line: String) : Entry {
 
     ## validate
     assert !$mappingStr.empty()
-    if $mappingStr.size() == 1 {
+    if $mappingStr.size() == 1 { # common or simple
         $mapping = $mappingStr[0].toInt()
         if $code <= 0xFFFF {
-            assert $mapping! <= 0xFFFF
+            assert $mapping! <= 0xFFFF : $codeStr
         } elif $code <= 0xFFFFFFFF && $code > 0xFFFF {
-            assert $mapping! <= 0xFFFFFFFF
+            assert $mapping! <= 0xFFFFFFFF : $codeStr
         } else {
-            assert $false
+            assert $false : $codeStr
         }
-    } else {
-        assert $code <= 0xFFFF
+    } else {  # full
+        assert $code <= 0xFFFF : $codeStr
         for v in $mappingStr {
-            assert $v.toInt()! <= 0xFFFF
+            assert $v.toInt()! <= 0xFFFF : $codeStr
         }
     }
     return new Entry($codeStr, $status, $mappingStr, $code, $mapping)

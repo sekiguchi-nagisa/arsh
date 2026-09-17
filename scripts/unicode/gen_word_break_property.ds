@@ -1,5 +1,7 @@
 #!/usr/bin/env arsh
 
+shctl set errraise
+
 if $# != 1 {
     echo "[usage] $0 [output]" 1>&2
     exit 1
@@ -14,8 +16,9 @@ test -d $work_dir || mkdir $work_dir
 
 cd $work_dir
 
-test -f WordBreakProperty.txt ||
-    curl http://www.unicode.org/Public/UCD/latest/ucd/auxiliary/WordBreakProperty.txt -o ./WordBreakProperty.txt
+importenv UNICODE_VERSION : "UCD/latest"
+echo try to download WordBreakProperty.txt from https://www.unicode.org/Public/${UNICODE_VERSION}/ucd/auxiliary/WordBreakProperty.txt
+curl https://www.unicode.org/Public/${UNICODE_VERSION}/ucd/auxiliary/WordBreakProperty.txt -o ./WordBreakProperty.txt
 
 typedef Range {
     let begin : Int         # begin codepoint (inclusive)
@@ -99,6 +102,7 @@ var ignored = ["MidLetter":$true,"MidNumLet":$true,"Single_Quote":$true, ]
 var ranges : [Range]
 
 # WordBreakProperty.txt
+shctl unset errraise # suppress error after read
 cat ./WordBreakProperty.txt | for(var count = 0; read -f $'\n'; $count++) {
     if $count < 2 {
         echo $REPLY >> $out

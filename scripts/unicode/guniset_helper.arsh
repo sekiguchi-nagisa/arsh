@@ -43,7 +43,8 @@ install_guniset() {
             https://github.com/sekiguchi-nagisa/guniset/releases/download/v${_version}/guniset-$_version-$OSTYPE-$MACHTYPE \
             > ./guniset && chmod +x ./guniset)
 
-    ./guniset download ./
+    importenv GUNISET_UNICODE_VERSION : "latest"
+    ./guniset download --rev=$GUNISET_UNICODE_VERSION ./
 }
 
 type CodePointSet() {

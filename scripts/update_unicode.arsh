@@ -2,13 +2,27 @@
 
 shctl set errraise
 
+[<CLI(toplevel:$true)>]
+type _Param() {
+    [<Option(help: "specify Unicode version (defauilt: latest)")>]
+    var version = "latest"
+}
+
+let param = new _Param()
+try { $param.parse($@); } catch e { echo 1>&2 ${$e.message()}; exit ${$e.status()}; }
+assert $param.version == "latest" || $param.version =~ $/^\d+\.\d+\.\d+$/ : "invalid version string: ${param.version}"
+
 let src = "$SCRIPT_DIR/../src".realpath()
 let test = "$SCRIPT_DIR/../test"
 
-mkdir -p unicode-temp && cd unicode-temp
+mkdir -p unicode-temp && cd unicode-temp \
+    && rm -r ./*  # force clear old files
 
 ## prepare
+exportenv GUNISET_UNICODE_VERSION = $param.version
 call $SCRIPT_DIR/unicode/guniset_helper.arsh
+
+exportenv UNICODE_VERSION = $param.version == "latest" ? "UCD/latest" : $param.version
 
 ## generate unicode tables
 echo try to update $src/misc/unicode_version.in

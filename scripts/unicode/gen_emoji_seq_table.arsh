@@ -1,5 +1,22 @@
 #!/usr/bin/env arsh
 
+function revcomp(left: String, right: String): Int {
+    assert $left =~ $/^\d+\.\d+\.\d+$/ : "invalid version string of left-hand side"
+    assert $right =~ $/^\d+\.\d+\.\d+$/ : "invalid version string of right-hand side"
+
+    var lefts : [Int]
+    for s in $left.split('.') {
+        $lefts.add($s.toInt()!)
+    }
+    var rights : [Int]
+    for s in $right.split('.') {
+        $rights.add($s.toInt()!)
+    }
+    return $lefts.compare($rights)
+}
+
+shctl set errraise
+
 if $# != 1 {
     echo "[usage] $0 [output]" 1>&2
     exit 1
@@ -14,13 +31,23 @@ test -d $work_dir || mkdir $work_dir
 
 cd $work_dir
 
-test -f ./emoji-sequences.txt ||
-    curl https://www.unicode.org/Public/UCD/latest/emoji/emoji-sequences.txt \
-        -o ./emoji-sequences.txt
+let targets = [
+    "emoji-sequences.txt",
+    "emoji-zwj-sequences.txt"
+]
 
-test -f ./emoji-zwj-sequences.txt ||
-    curl https://www.unicode.org/Public/UCD/latest/emoji/emoji-zwj-sequences.txt \
-        -o ./emoji-zwj-sequences.txt
+importenv UNICODE_VERSION : "UCD/latest"
+for target in $targets {
+    var url = ""
+    if $UNICODE_VERSION == "UCD/latest" || $revcomp($UNICODE_VERSION, "17.0.0") >= 0 {
+        url=https://www.unicode.org/Public/${UNICODE_VERSION}/emoji/${target}
+    } else {
+        var ss = $UNICODE_VERSION.split('.')
+        url=https://www.unicode.org/Public/emoji/$ss[0].$ss[1]/${target}
+    }
+    echo try to download $url
+    curl $url -o ./${target}
+}
 
 
 type Entry {
