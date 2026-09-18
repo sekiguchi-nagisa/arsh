@@ -84,8 +84,6 @@ static const char *toString(GraphemeBoundary::BreakProperty p) {
     return "InCB_Extend";
   case GraphemeBoundary::BreakProperty::InCB_Linker:
     return "InCB_Linker";
-  case GraphemeBoundary::BreakProperty::InCB_Consonant_with_Linker:
-    break;
   }
   return "";
 }

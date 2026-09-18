@@ -51,9 +51,6 @@ public:
     InCB_Consonant,
     InCB_Extend,
     InCB_Linker,
-
-    // InCB_Consonant [InCB_Extend InCB_Linker]* InCB_Linker [InCB_Extend InCB_Linker]*
-    InCB_Consonant_with_Linker, // (at-least one InCB_Linker)
   };
 
   /**
