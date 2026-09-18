@@ -7,28 +7,28 @@ source $SCRIPT_DIR/regex_helper.arsh
 $assertRegex(
 	$pattern: $/^[\p{Basic_Emoji}]$/v,
 	$matches: [
-		$'\U1F3A0',  # 🎠
-		$'\U274E',  # ❎
-		$'\U1F4CC',  # 📌
-		$'\U2199\UFE0F',  # ↙️
-		$'\U1F5A4',  # 🖤
+		$'\U1F535',  # 🔵
+		$'\U1F3C9',  # 🏉
+		$'\U1F4CD',  # 📍
+		$'\U1F456',  # 👖
+		$'\U1F519',  # 🔙
 		$'\U1F9B8',  # 🦸
-		$'\U1FAF4',  # 🫴
+		$'\U1F971',  # 🥱
 		$'\U1F7E5',  # 🟥
-		$'\U1FAD9',  # 🫙
-		$'\U1F503',  # 🔃
+		$'\U1FAD5',  # 🫕
+		$'\U1F504',  # 🔄
 	],
 	$noMatches: [
 		$'\UD1D3B',  # 󑴻
 		$'\UC3D75',  # 󃵵
 		$'\U230E9',  # 𣃩
-		$'\U83CF7\U10C1DA',  # 򃳷􌇚
+		$'\U83CF7',  # 򃳷
+		$'\U10C1DA',  # 􌇚
 		$'\UFE3A2',  # 󾎢
 		$'\UD6E16',  # 󖸖
 		$'\UF694',  # 
 		$'\UDBE39',  # 󛸹
 		$'\U48D1D',  # 񈴝
-		$'\U9BFD9',  # 򛿙
 	],
 )
 $assertRegex(
@@ -46,16 +46,16 @@ $assertRegex(
 		$'\U0036\UFE0F\U20E3',  # 6️⃣
 	],
 	$noMatches: [
-		$'\U10683C\U298A9\UB5B85',  # 􆠼𩢩򵮅
-		$'\UCFA2C\U10E9BF\U735D0',  # 󏨬􎦿񳗐
-		$'\U1DAEF\U3A298\U9AB5B',  # 𝫯𺊘򚭛
-		$'\U5524D\UE1600\UD1D3B',  # 񕉍󡘀󑴻
-		$'\UC3D75\U230E9\U83CF7',  # 󃵵𣃩򃳷
-		$'\U10C1DA\UFE3A2\UD6E16',  # 􌇚󾎢󖸖
-		$'\UF694\UDBE39\U48D1D',  # 󛸹񈴝
 		$'\U9BFD9\U10683C\U298A9',  # 򛿙􆠼𩢩
 		$'\UB5B85\UCFA2C\U10E9BF',  # 򵮅󏨬􎦿
 		$'\U735D0\U1DAEF\U3A298',  # 񳗐𝫯𺊘
+		$'\U9AB5B\U5524D\UE1600',  # 򚭛񕉍󡘀
+		$'\UD1D3B\UC3D75\U230E9',  # 󑴻󃵵𣃩
+		$'\U83CF7\U10C1DA\UFE3A2',  # 򃳷􌇚󾎢
+		$'\UD6E16\UF694\UDBE39',  # 󖸖󛸹
+		$'\U48D1D\U9BFD9\U10683C',  # 񈴝򛿙􆠼
+		$'\U298A9\UB5B85\UCFA2C',  # 𩢩򵮅󏨬
+		$'\U10E9BF\U735D0\U1DAEF',  # 􎦿񳗐𝫯
 	],
 )
 $assertRegex(
@@ -73,16 +73,16 @@ $assertRegex(
 		$'\U1F1F1\U1F1E7',  # 🇱🇧
 	],
 	$noMatches: [
-		$'\U9AB5B\U5524D',  # 򚭛񕉍
-		$'\UE1600\UD1D3B',  # 󡘀󑴻
-		$'\UC3D75\U230E9',  # 󃵵𣃩
-		$'\U83CF7\U10C1DA',  # 򃳷􌇚
-		$'\UFE3A2\UD6E16',  # 󾎢󖸖
-		$'\UF694\UDBE39',  # 󛸹
-		$'\U48D1D\U9BFD9',  # 񈴝򛿙
-		$'\U10683C\U298A9',  # 􆠼𩢩
-		$'\UB5B85\UCFA2C',  # 򵮅󏨬
-		$'\U10E9BF\U735D0',  # 􎦿񳗐
+		$'\U3A298\U9AB5B',  # 𺊘򚭛
+		$'\U5524D\UE1600',  # 񕉍󡘀
+		$'\UD1D3B\UC3D75',  # 󑴻󃵵
+		$'\U230E9\U83CF7',  # 𣃩򃳷
+		$'\U10C1DA\UFE3A2',  # 􌇚󾎢
+		$'\UD6E16\UF694',  # 󖸖
+		$'\UDBE39\U48D1D',  # 󛸹񈴝
+		$'\U9BFD9\U10683C',  # 򛿙􆠼
+		$'\U298A9\UB5B85',  # 𩢩򵮅
+		$'\UCFA2C\U10E9BF',  # 󏨬􎦿
 	],
 )
 $assertRegex(
@@ -100,16 +100,16 @@ $assertRegex(
 		$'\U1F450\U1F3FE',  # 👐🏾
 	],
 	$noMatches: [
-		$'\U1DAEF\U3A298',  # 𝫯𺊘
-		$'\U9AB5B\U5524D',  # 򚭛񕉍
-		$'\UE1600\UD1D3B',  # 󡘀󑴻
-		$'\UC3D75\U230E9',  # 󃵵𣃩
-		$'\U83CF7\U10C1DA',  # 򃳷􌇚
-		$'\UFE3A2\UD6E16',  # 󾎢󖸖
-		$'\UF694\UDBE39',  # 󛸹
-		$'\U48D1D\U9BFD9',  # 񈴝򛿙
-		$'\U10683C\U298A9',  # 􆠼𩢩
-		$'\UB5B85\UCFA2C',  # 򵮅󏨬
+		$'\U735D0\U1DAEF',  # 񳗐𝫯
+		$'\U3A298\U9AB5B',  # 𺊘򚭛
+		$'\U5524D\UE1600',  # 񕉍󡘀
+		$'\UD1D3B\UC3D75',  # 󑴻󃵵
+		$'\U230E9\U83CF7',  # 𣃩򃳷
+		$'\U10C1DA\UFE3A2',  # 􌇚󾎢
+		$'\UD6E16\UF694',  # 󖸖
+		$'\UDBE39\U48D1D',  # 󛸹񈴝
+		$'\U9BFD9\U10683C',  # 򛿙􆠼
+		$'\U298A9\UB5B85',  # 𩢩򵮅
 	],
 )
 $assertRegex(
@@ -120,9 +120,9 @@ $assertRegex(
 		$'\U1F3F4\UE0067\UE0062\UE0065\UE006E\UE0067\UE007F',  # 🏴󠁧󠁢󠁥󠁮󠁧󠁿
 	],
 	$noMatches: [
-		$'\U10E9BF\U735D0\U1DAEF\U3A298\U9AB5B\U5524D\UE1600',  # 􎦿񳗐𝫯𺊘򚭛񕉍󡘀
-		$'\UD1D3B\UC3D75\U230E9\U83CF7\U10C1DA\UFE3A2\UD6E16',  # 󑴻󃵵𣃩򃳷􌇚󾎢󖸖
-		$'\UF694\UDBE39\U48D1D\U9BFD9\U10683C\U298A9\UB5B85',  # 󛸹񈴝򛿙􆠼𩢩򵮅
+		$'\UCFA2C\U10E9BF\U735D0\U1DAEF\U3A298\U9AB5B\U5524D',  # 󏨬􎦿񳗐𝫯𺊘򚭛񕉍
+		$'\UE1600\UD1D3B\UC3D75\U230E9\U83CF7\U10C1DA\UFE3A2',  # 󡘀󑴻󃵵𣃩򃳷􌇚󾎢
+		$'\UD6E16\UF694\UDBE39\U48D1D\U9BFD9\U10683C\U298A9',  # 󖸖󛸹񈴝򛿙􆠼𩢩
 	],
 )
 $assertRegex(
@@ -140,43 +140,43 @@ $assertRegex(
 		$'\U1F469\U1F3FF\U200D\U2764\UFE0F\U200D\U1F48B\U200D\U1F469\U1F3FD',  # 👩🏿‍❤️‍💋‍👩🏽
 	],
 	$noMatches: [
-		$'\UCFA2C\U10E9BF\U735D0\U1DAEF\U3A298\U9AB5B\U5524D\UE1600\UD1D3B\UC3D75',  # 󏨬􎦿񳗐𝫯𺊘򚭛񕉍󡘀󑴻󃵵
-		$'\U230E9\U83CF7\U10C1DA',  # 𣃩򃳷􌇚
-		$'\UFE3A2\UD6E16\UF694\UDBE39',  # 󾎢󖸖󛸹
-		$'\U48D1D\U9BFD9\U10683C\U298A9\UB5B85',  # 񈴝򛿙􆠼𩢩򵮅
-		$'\UCFA2C\U10E9BF\U735D0\U1DAEF\U3A298',  # 󏨬􎦿񳗐𝫯𺊘
-		$'\U9AB5B\U5524D\UE1600',  # 򚭛񕉍󡘀
-		$'\UD1D3B\UC3D75\U230E9\U83CF7',  # 󑴻󃵵𣃩򃳷
-		$'\U10C1DA\UFE3A2\UD6E16\UF694\UDBE39',  # 􌇚󾎢󖸖󛸹
-		$'\U48D1D\U9BFD9\U10683C\U298A9\UB5B85\UCFA2C\U10E9BF',  # 񈴝򛿙􆠼𩢩򵮅󏨬􎦿
-		$'\U735D0\U1DAEF\U3A298\U9AB5B\U5524D\UE1600\UD1D3B\UC3D75\U230E9\U83CF7',  # 񳗐𝫯𺊘򚭛񕉍󡘀󑴻󃵵𣃩򃳷
+		$'\UB5B85\UCFA2C\U10E9BF\U735D0\U1DAEF\U3A298\U9AB5B\U5524D\UE1600\UD1D3B',  # 򵮅󏨬􎦿񳗐𝫯𺊘򚭛񕉍󡘀󑴻
+		$'\UC3D75\U230E9\U83CF7',  # 󃵵𣃩򃳷
+		$'\U10C1DA\UFE3A2\UD6E16\UF694',  # 􌇚󾎢󖸖
+		$'\UDBE39\U48D1D\U9BFD9\U10683C\U298A9',  # 󛸹񈴝򛿙􆠼𩢩
+		$'\UB5B85\UCFA2C\U10E9BF\U735D0\U1DAEF',  # 򵮅󏨬􎦿񳗐𝫯
+		$'\U3A298\U9AB5B\U5524D',  # 𺊘򚭛񕉍
+		$'\UE1600\UD1D3B\UC3D75\U230E9',  # 󡘀󑴻󃵵𣃩
+		$'\U83CF7\U10C1DA\UFE3A2\UD6E16\UF694',  # 򃳷􌇚󾎢󖸖
+		$'\UDBE39\U48D1D\U9BFD9\U10683C\U298A9\UB5B85\UCFA2C',  # 󛸹񈴝򛿙􆠼𩢩򵮅󏨬
+		$'\U10E9BF\U735D0\U1DAEF\U3A298\U9AB5B\U5524D\UE1600\UD1D3B\UC3D75\U230E9',  # 􎦿񳗐𝫯𺊘򚭛񕉍󡘀󑴻󃵵𣃩
 	],
 )
 $assertRegex(
 	$pattern: $/^[\p{RGI_Emoji}]$/v,
 	$matches: [
-		$'\U1F528',  # 🔨
-		$'\U1F1F2\U1F1F2',  # 🇲🇲
-		$'\U1F469\U1F3FB\U200D\U2764\UFE0F\U200D\U1F48B\U200D\U1F468\U1F3FB',  # 👩🏻‍❤️‍💋‍👨🏻
-		$'\U1F91D\U1F3FD',  # 🤝🏽
-		$'\U1F46E\U1F3FC',  # 👮🏼
-		$'\U1F9D1\U1F3FB\U200D\U1FA70',  # 🧑🏻‍🩰
-		$'\U1F468\U1F3FB\U200D\U1F3A4',  # 👨🏻‍🎤
-		$'\U1F44F\U1F3FB',  # 👏🏻
-		$'\U1F469\U200D\U2764\UFE0F\U200D\U1F469',  # 👩‍❤️‍👩
-		$'\U1F3BD',  # 🎽
+		$'\U1F527',  # 🔧
+		$'\U26F9\U1F3FB\U200D\U2642\UFE0F',  # ⛹🏻‍♂️
+		$'\U1F385\U1F3FB',  # 🎅🏻
+		$'\U1F9D7\U1F3FB',  # 🧗🏻
+		$'\U1F9D1\U200D\U1F9D1\U200D\U1F9D2\U200D\U1F9D2',  # 🧑‍🧑‍🧒‍🧒
+		$'\U1F64E\U1F3FE',  # 🙎🏾
+		$'\U1F469\U1F3FF\U200D\U2764\UFE0F\U200D\U1F48B\U200D\U1F469\U1F3FB',  # 👩🏿‍❤️‍💋‍👩🏻
+		$'\U1F44F',  # 👏
+		$'\U1F6B5\U1F3FE\U200D\U2642\UFE0F',  # 🚵🏾‍♂️
+		$'\U1F3BC',  # 🎼
 	],
 	$noMatches: [
-		$'\U10C1DA',  # 􌇚
-		$'\UFE3A2\UD6E16',  # 󾎢󖸖
-		$'\UF694\UDBE39\U48D1D\U9BFD9\U10683C\U298A9\UB5B85\UCFA2C\U10E9BF\U735D0',  # 󛸹񈴝򛿙􆠼𩢩򵮅󏨬􎦿񳗐
-		$'\U1DAEF\U3A298',  # 𝫯𺊘
-		$'\U9AB5B\U5524D',  # 򚭛񕉍
-		$'\UE1600\UD1D3B\UC3D75\U230E9',  # 󡘀󑴻󃵵𣃩
-		$'\U83CF7\U10C1DA\UFE3A2\UD6E16',  # 򃳷􌇚󾎢󖸖
-		$'\UF694\UDBE39',  # 󛸹
-		$'\U48D1D\U9BFD9\U10683C\U298A9\UB5B85\UCFA2C',  # 񈴝򛿙􆠼𩢩򵮅󏨬
-		$'\U10E9BF',  # 􎦿
+		$'\U83CF7',  # 򃳷
+		$'\U10C1DA\UFE3A2\UD6E16\UF694\UDBE39',  # 􌇚󾎢󖸖󛸹
+		$'\U48D1D\U9BFD9',  # 񈴝򛿙
+		$'\U10683C\U298A9',  # 􆠼𩢩
+		$'\UB5B85\UCFA2C\U10E9BF\U735D0\U1DAEF\U3A298\U9AB5B',  # 򵮅󏨬􎦿񳗐𝫯𺊘򚭛
+		$'\U5524D\UE1600',  # 񕉍󡘀
+		$'\UD1D3B\UC3D75\U230E9\U83CF7\U10C1DA\UFE3A2\UD6E16\UF694\UDBE39\U48D1D',  # 󑴻󃵵𣃩򃳷􌇚󾎢󖸖󛸹񈴝
+		$'\U9BFD9',  # 򛿙
+		$'\U10683C\U298A9\UB5B85\UCFA2C\U10E9BF',  # 􆠼𩢩򵮅󏨬􎦿
+		$'\U735D0',  # 񳗐
 	],
 )
 echo pass: $REGEX_TEST_PASS_COUNT

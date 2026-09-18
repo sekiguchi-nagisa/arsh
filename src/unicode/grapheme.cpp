@@ -68,7 +68,7 @@ GraphemeBoundary::BreakProperty GraphemeBoundary::getInCBExtendOrLinker(const in
 bool GraphemeBoundary::checkBoundary(const int nextCodePoint) {
   const auto after = getBreakProperty(nextCodePoint);
   const auto before = this->state;
-  // const auto beforeCodePoint = this->codePoint;
+  const auto beforeCodePoint = this->codePoint;
   this->codePoint = nextCodePoint;
   this->state = after;
   this->emojiSeq = false;
@@ -120,25 +120,19 @@ bool GraphemeBoundary::checkBoundary(const int nextCodePoint) {
       return false; // GB8
     }
     break;
-  case BreakProperty::InCB_Consonant:
-    if (const auto inCB = getInCBExtendOrLinker(nextCodePoint);
-        inCB == BreakProperty::InCB_Extend) {
-      this->state = BreakProperty::InCB_Consonant;
-      return false; // GB9c
-    } else if (inCB == BreakProperty::InCB_Linker) {
-      this->state = BreakProperty::InCB_Consonant_with_Linker;
-      return false; // GB9c
-    }
-    break;
-  case BreakProperty::InCB_Consonant_with_Linker:
-    if (after == BreakProperty::InCB_Consonant) {
-      this->state = BreakProperty::InCB_Consonant;
-      return false; // GB9c
-    }
-    if (const auto inCB = getInCBExtendOrLinker(nextCodePoint);
-        inCB == BreakProperty::InCB_Extend || inCB == BreakProperty::InCB_Linker) {
-      this->state = BreakProperty::InCB_Consonant_with_Linker;
-      return false; // GB9c
+  case BreakProperty::Extend:
+  case BreakProperty::Any:
+  case BreakProperty::InCB_Linker:
+    if (before == BreakProperty::InCB_Linker ||
+        getInCBExtendOrLinker(beforeCodePoint) == BreakProperty::InCB_Linker) {
+      if ((after == BreakProperty::ZWJ || after == BreakProperty::Extend) &&
+          getInCBExtendOrLinker(nextCodePoint) == BreakProperty::InCB_Extend) {
+        this->state = BreakProperty::InCB_Linker; // consume InCB_Extend
+        return false;                             // GB9c
+      }
+      if (after == BreakProperty::InCB_Consonant) {
+        return false; // GB9c
+      }
     }
     break;
   default:

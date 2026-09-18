@@ -93,7 +93,7 @@ CaseFoldingResult doCaseFolding(int codePoint, const CaseFoldOp op) {
   }
   if (hasFlag(op, CaseFoldOp::FULL_FOLD)) {
     // for 'F'
-    if (UnicodeUtil::isBmpCodePoint(codePoint)) {
+    if (codePoint <= (std::end(case_fold_F_table) - 1)->code) {
       auto iter = std::lower_bound(std::begin(case_fold_F_table), std::end(case_fold_F_table),
                                    codePoint, CompareFullFoldEntry());
       if (iter != std::end(case_fold_F_table) && iter->code == codePoint) {
