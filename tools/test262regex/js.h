@@ -52,7 +52,10 @@ constexpr const char *CONFIGURABLE = "configurable";
 constexpr const char *ENUMERABLE = "enumerable";
 constexpr const char *WRITABLE = "writable";
 
-constexpr const char *SYMBOL_MATCH = "@@match"; // Symbol.match
+constexpr const char *SYMBOL_MATCH = "@@match";     // Symbol.match
+constexpr const char *SYMBOL_SEARCH = "@@search";   // Symbol.search
+constexpr const char *SYMBOL_REPLACE = "@@replace"; // Symbol.replace
+constexpr const char *SYMBOL_SPLIT = "@@split";     // Symbol.split
 
 } // namespace builtin
 

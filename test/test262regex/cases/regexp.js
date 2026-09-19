@@ -48,6 +48,11 @@ assert.sameValue(ret.length, 3);
 
 assert.sameValue("\\x66oo\\ud800bar", RegExp.escape("foo\uD800bar"));
 
+assert.sameValue("1234".search('3'), 2);
+assert.sameValue("あいうえお".search(/う/), 2);
+assert.sameValue("あいうえおう".search(/う$/), 5);
+assert.sameValue("あいうえおう".search(/3$/), -1);
+
 // CHECK: /null/
 // CHECK: /(?:)/
 // CHECK: /(?:)/

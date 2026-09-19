@@ -33,44 +33,47 @@ namespace arsh::re262 {
     std::move(v__.value);                                                                          \
   })
 
+static Result<std::pair<JSRegexPtr, JSStringPtr>, JSString>
+prepareRegexMethod(const std::shared_ptr<JSEnv> &env, const char16_t *name) {
+  JSRegexPtr regex;
+  if (auto v = env->findOrUndef(builtin::THIS); std::holds_alternative<JSRegexPtr>(v)) {
+    regex = std::get<JSRegexPtr>(v);
+  } else {
+    JSString err = u"Method RegExp.prototype";
+    if (*name != u'[') {
+      err += u'.';
+    }
+    err += name;
+    err += u" called on incompatible receiver";
+    return arsh::Err(std::move(err));
+  }
+  JSStringPtr str;
+  if (auto v = env->findOrUndef("str"); std::holds_alternative<JSStringPtr>(v)) {
+    str = std::get<JSStringPtr>(v);
+  } else {
+    str = std::make_shared<JSString>(toString(v));
+  }
+  return arsh::Ok(std::make_pair(std::move(regex), std::move(str)));
+}
+
 static JSFunctionPtr createRegExpExec(const std::shared_ptr<JSEnv> &global) {
   auto impl = [](const JSFunctionPtr &, const std::shared_ptr<JSEnv> &env) -> JSResult {
-    JSRegexPtr regex;
-    if (auto v = env->findOrUndef(builtin::THIS); std::holds_alternative<JSRegexPtr>(v)) {
-      regex = std::get<JSRegexPtr>(v);
-    } else {
-      return throwError(env, builtin::TYPE_ERROR,
-                        u"Method RegExp.prototype.exec called on incompatible receiver");
+    auto resolved = prepareRegexMethod(env, u"exec");
+    if (!resolved) {
+      return throwError(env, builtin::TYPE_ERROR, std::move(resolved.asErr()));
     }
-    JSStringPtr str;
-    if (auto v = env->findOrUndef("str"); std::holds_alternative<JSStringPtr>(v)) {
-      str = std::get<JSStringPtr>(v);
-    } else {
-      str = std::make_shared<JSString>(toString(v));
-    }
-    assert(regex);
-    return execJSRegex(env, *regex, str);
+    return execJSRegex(env, *resolved.asOk().first, resolved.asOk().second);
   };
   return createJSFunction(global, "exec", {"str"}, nullptr, std::move(impl));
 }
 
 static JSFunctionPtr createRegExpTest(const std::shared_ptr<JSEnv> &global) {
   auto impl = [](const JSFunctionPtr &, const std::shared_ptr<JSEnv> &env) -> JSResult {
-    JSRegexPtr regex;
-    if (auto v = env->findOrUndef(builtin::THIS); std::holds_alternative<JSRegexPtr>(v)) {
-      regex = std::get<JSRegexPtr>(v);
-    } else {
-      return throwError(env, builtin::TYPE_ERROR,
-                        u"Method RegExp.prototype.test called on incompatible receiver");
+    auto resolved = prepareRegexMethod(env, u"test");
+    if (!resolved) {
+      return throwError(env, builtin::TYPE_ERROR, std::move(resolved.asErr()));
     }
-    JSStringPtr str;
-    if (auto v = env->findOrUndef("str"); std::holds_alternative<JSStringPtr>(v)) {
-      str = std::get<JSStringPtr>(v);
-    } else {
-      str = std::make_shared<JSString>(toString(v));
-    }
-    assert(regex);
-    auto ret = TRY(execJSRegex(env, *regex, str));
+    auto ret = TRY(execJSRegex(env, *resolved.asOk().first, resolved.asOk().second));
     return Ok(std::holds_alternative<JSArrayPtr>(ret));
   };
   return createJSFunction(global, "test", {"str"}, nullptr, std::move(impl));
@@ -89,19 +92,13 @@ static int nextUTF16Index(const JSString &str, int index, const bool unicode) {
 static JSFunctionPtr createRegExpMatch(const std::shared_ptr<JSEnv> &global) {
   auto impl = [](const JSFunctionPtr &, const std::shared_ptr<JSEnv> &env) -> JSResult {
     JSRegexPtr regex;
-    if (auto v = env->findOrUndef(builtin::THIS); std::holds_alternative<JSRegexPtr>(v)) {
-      regex = std::get<JSRegexPtr>(v);
-    } else {
-      return throwError(env, builtin::TYPE_ERROR,
-                        u"Method RegExp.prototype[Symbol.match] called on incompatible receiver");
-    }
     JSStringPtr str;
-    if (auto v = env->findOrUndef("str"); std::holds_alternative<JSStringPtr>(v)) {
-      str = std::get<JSStringPtr>(v);
+    if (auto resolved = prepareRegexMethod(env, u"[Symbol.match]")) {
+      regex = std::move(resolved.asOk().first);
+      str = std::move(resolved.asOk().second);
     } else {
-      str = std::make_shared<JSString>(toString(v));
+      return throwError(env, builtin::TYPE_ERROR, std::move(resolved.asErr()));
     }
-    assert(regex);
     if (hasFlag(regex->extra, JSRegex::ExtraFlag::GLOBAL)) {
       regex->lastIndex = 0;
     }
@@ -132,6 +129,28 @@ static JSFunctionPtr createRegExpMatch(const std::shared_ptr<JSEnv> &global) {
   return createJSFunction(global, builtin::SYMBOL_MATCH, {"str"}, nullptr, std::move(impl));
 }
 
+static JSFunctionPtr createRegExpSearch(const std::shared_ptr<JSEnv> &global) {
+  auto impl = [](const JSFunctionPtr &, const std::shared_ptr<JSEnv> &env) -> JSResult {
+    JSRegexPtr regex;
+    JSStringPtr str;
+    if (auto resolved = prepareRegexMethod(env, u"[Symbol.search]")) {
+      regex = std::move(resolved.asOk().first);
+      str = std::move(resolved.asOk().second);
+    } else {
+      return throwError(env, builtin::TYPE_ERROR, std::move(resolved.asErr()));
+    }
+    const auto oldIndex = regex->lastIndex;
+    double startIndex = -1;
+    if (auto ret = TRY(execJSRegex(env, *regex, str)); std::holds_alternative<JSArrayPtr>(ret)) {
+      auto v = TRY(findProperty(env, ret, "index"));
+      startIndex = std::get<double>(v);
+    }
+    regex->lastIndex = oldIndex;
+    return Ok(startIndex);
+  };
+  return createJSFunction(global, builtin::SYMBOL_SEARCH, {"str"}, nullptr, std::move(impl));
+}
+
 static JSFunctionPtr createRegExpEscape(const std::shared_ptr<JSEnv> &global) {
   auto impl = [](const JSFunctionPtr &func, const std::shared_ptr<JSEnv> &env) -> JSResult {
     std::string str;
@@ -154,6 +173,7 @@ void defineJSRegex(const std::shared_ptr<JSEnv> &global) {
   prototype->setBuiltinProperty("test", createRegExpTest(global));
   prototype->setBuiltinProperty("exec", createRegExpExec(global));
   prototype->setBuiltinProperty(builtin::SYMBOL_MATCH, createRegExpMatch(global));
+  prototype->setBuiltinProperty(builtin::SYMBOL_SEARCH, createRegExpSearch(global));
   auto func = createJSFunction(
       global, builtin::REGEXP, {"pattern", "flags"}, std::move(prototype),
       [](const JSFunctionPtr &func, const std::shared_ptr<JSEnv> &env) -> JSResult {

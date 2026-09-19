@@ -659,8 +659,9 @@ static void defineConsole(const std::shared_ptr<JSEnv> &global) {
   global->define("console", std::move(obj));
 }
 
-static JSFunctionPtr createStringMatch(const std::shared_ptr<JSEnv> &global) {
-  auto impl = [](const JSFunctionPtr &func, const std::shared_ptr<JSEnv> &env) -> JSResult {
+static JSFunction::Impl regexpSymbolOp(const char *op) {
+  return [symbol = std::string(op)](const JSFunctionPtr &func,
+                                    const std::shared_ptr<JSEnv> &env) -> JSResult {
     JSRegexPtr regex;
     if (auto arg = env->findOrUndef(func->params[0]); std::holds_alternative<JSRegexPtr>(arg)) {
       regex = std::get<JSRegexPtr>(arg);
@@ -670,11 +671,34 @@ static JSFunctionPtr createStringMatch(const std::shared_ptr<JSEnv> &global) {
                                     std::get<JSFunctionPtr>(regexConstructor), nullptr, {arg}));
       regex = std::get<JSRegexPtr>(ret);
     }
-    auto matchFunc = TRY(findProperty(env, regex, builtin::SYMBOL_MATCH));
+    std::vector args = {env->findOrUndef(builtin::THIS)};
+    for (unsigned int i = 1; i < func->params.size(); i++) {
+      args.push_back(env->findOrUndef(func->params[i]));
+    }
+    auto matchFunc = TRY(findProperty(env, regex, symbol));
     return callJSFunction(env, env->callerLineNum(), std::get<JSFunctionPtr>(matchFunc), regex,
-                          {env->findOrUndef(builtin::THIS)});
+                          std::move(args));
   };
-  return createJSFunction(global, "match", {"regexp"}, nullptr, std::move(impl));
+}
+
+static JSFunctionPtr createStringMatch(const std::shared_ptr<JSEnv> &global) {
+  return createJSFunction(global, "match", {"regexp"}, nullptr,
+                          regexpSymbolOp(builtin::SYMBOL_MATCH));
+}
+
+static JSFunctionPtr createStringSearch(const std::shared_ptr<JSEnv> &global) {
+  return createJSFunction(global, "search", {"regexp"}, nullptr,
+                          regexpSymbolOp(builtin::SYMBOL_SEARCH));
+}
+
+static JSFunctionPtr createStringReplace(const std::shared_ptr<JSEnv> &global) {
+  return createJSFunction(global, "replace", {"pattern", "replacement"}, nullptr,
+                          regexpSymbolOp(builtin::SYMBOL_REPLACE));
+}
+
+static JSFunctionPtr createStringSplit(const std::shared_ptr<JSEnv> &global) {
+  return createJSFunction(global, "split", {"separator", "limit"}, nullptr,
+                          regexpSymbolOp(builtin::SYMBOL_SPLIT));
 }
 
 static JSFunctionPtr createStringSlice(const std::shared_ptr<JSEnv> &global) {
@@ -809,6 +833,9 @@ static void defineString(const std::shared_ptr<JSEnv> &global) {
   };
   auto prototype = std::make_shared<JSObject>();
   prototype->setBuiltinProperty("match", createStringMatch(global));
+  prototype->setBuiltinProperty("search", createStringSearch(global));
+  prototype->setBuiltinProperty("replace", createStringReplace(global));
+  prototype->setBuiltinProperty("split", createStringSplit(global));
   prototype->setBuiltinProperty("slice", createStringSlice(global));
   prototype->setBuiltinProperty("charAt", createStringCharAt(global));
   prototype->setBuiltinProperty("charCodeAt", createStringCharCodeAt(global));
