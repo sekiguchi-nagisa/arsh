@@ -143,6 +143,18 @@ struct ForOfStmt {
   std::unique_ptr<Node> body;
 };
 
+struct SwitchCase {
+  struct Case {
+    std::unique_ptr<Node> label; // if default, null
+    std::vector<std::unique_ptr<Node>> body;
+  };
+
+  std::unique_ptr<Node> expr;
+  std::vector<Case> caseClauses;
+  bool hasDefault{false};
+  unsigned int defaultIndex{0};
+};
+
 struct Node {
   unsigned int lineNum;
 
@@ -150,7 +162,7 @@ struct Node {
       std::variant<NullLiteral, BoolLiteral, NumberLiteral, StringLiteral, RegexLiteral,
                    ArrayLiteral, ObjectLiteral, FuncLiteral, NameExpr, AccessExpr, IndexExpr,
                    CallExpr, UnaryExpr, BinaryExpr, AssignExpr, TemplateExpr, VarDecl, JumpStmt,
-                   BlockStmt, TryStmt, IfStmt, ForStmt, ForOfStmt>;
+                   BlockStmt, TryStmt, IfStmt, ForStmt, ForOfStmt, SwitchCase>;
   Underlying value;
 
   Node(unsigned int lineNum, Underlying v) : lineNum(lineNum), value(std::move(v)) {}
@@ -205,6 +217,7 @@ struct Node {
   OP(IF)                                                                                           \
   OP(FOR)                                                                                          \
   OP(WHILE)                                                                                        \
+  OP(SWITCH)                                                                                       \
   OP(BREAK)                                                                                        \
   OP(CONTINUE)                                                                                     \
   OP(FUNCTION)                                                                                     \
@@ -267,6 +280,8 @@ private:
   std::unique_ptr<Node> parseForStatement();
 
   std::unique_ptr<Node> parseWhileStatement();
+
+  std::unique_ptr<Node> parseSwitchCaseStatement();
 
   std::unique_ptr<Node> parseExpression() {
     return this->parseExpression(getOperatorInfo(JSTokenKind::ASSIGN).precedence);
@@ -405,6 +420,8 @@ std::unique_ptr<Node> JSParser::parseStatement() {
     return this->parseWhileStatement();
   case JSTokenKind::FOR:
     return this->parseForStatement();
+  case JSTokenKind::SWITCH:
+    return this->parseSwitchCaseStatement();
   case JSTokenKind::FUNCTION: { // for function decl
     Token token = this->curToken;
     auto node = TRY(this->parseFunction());
@@ -597,6 +614,55 @@ std::unique_ptr<Node> JSParser::parseTryStatement() {
                                     .catchBlock = std::move(catchBlock),
                                     .finallyBlock = std::move(finallyBlock),
                                 });
+}
+
+static bool withinCaseClause(const JSTokenKind kind) {
+  return kind != JSTokenKind::CASE && kind != JSTokenKind::DEFAULT && kind != JSTokenKind::RBC;
+}
+
+std::unique_ptr<Node> JSParser::parseSwitchCaseStatement() { // TODO:
+  auto token = TRY(this->expect(JSTokenKind::SWITCH));
+  SwitchCase switchCase;
+  TRY(this->expect(JSTokenKind::LP));
+  switchCase.expr = TRY(this->parseExpression());
+  TRY(this->expect(JSTokenKind::RP));
+  TRY(this->expect(JSTokenKind::LBC));
+  while (this->curKind != JSTokenKind::RBC) {
+    switch (this->curKind) {
+    case JSTokenKind::CASE: {
+      this->consume();
+      SwitchCase::Case caseClause;
+      caseClause.label = TRY(this->parseExpression());
+      TRY(this->expect(JSTokenKind::COLON));
+      while (withinCaseClause(this->curKind)) {
+        caseClause.body.push_back(TRY(this->parseStatement()));
+      }
+      switchCase.caseClauses.push_back(std::move(caseClause));
+      continue;
+    }
+    case JSTokenKind::DEFAULT: {
+      if (switchCase.hasDefault) {
+        this->reportTokenFormatError(this->curKind, this->curToken,
+                                     "more than one default clause in switch statement");
+        return nullptr;
+      }
+      this->consume();
+      SwitchCase::Case defaultClause;
+      TRY(this->expect(JSTokenKind::COLON));
+      while (withinCaseClause(this->curKind)) {
+        defaultClause.body.push_back(TRY(this->parseStatement()));
+      }
+      switchCase.hasDefault = true;
+      switchCase.defaultIndex = switchCase.caseClauses.size();
+      switchCase.caseClauses.push_back(std::move(defaultClause));
+      continue;
+    }
+    default:
+      E_ALTER(JSTokenKind::CASE, JSTokenKind::DEFAULT);
+    }
+  }
+  TRY(this->expect(JSTokenKind::RBC));
+  return std::make_unique<Node>(this->lexer->getLineNumByPos(token.pos), std::move(switchCase));
 }
 
 static bool isAssignable(const Node &node) {
@@ -1368,6 +1434,44 @@ static JSResult evalTry(const TryStmt &tryStmt, const std::shared_ptr<JSEnv> &en
   return ret;
 }
 
+static JSResult evalSwitchCase(const SwitchCase &switchCase, const std::shared_ptr<JSEnv> &env) {
+  auto expr = TRY(evaluate(*switchCase.expr, env));
+  unsigned int clauseIndex = 0;
+  // find case-clause
+  for (; clauseIndex < switchCase.caseClauses.size(); clauseIndex++) {
+    auto &clause = switchCase.caseClauses[clauseIndex];
+    if (!clause.label) {
+      continue;
+    }
+    auto label = TRY(evaluate(*clause.label, env));
+    if (strictlyEquals(label, expr)) {
+      break;
+    }
+  }
+  if (clauseIndex == switchCase.caseClauses.size() && switchCase.hasDefault) { // not found
+    clauseIndex = switchCase.defaultIndex;
+  }
+
+  // eval case body
+  auto switchEnv = env->createChild();
+  for (; clauseIndex < switchCase.caseClauses.size(); clauseIndex++) {
+    for (auto &e : switchCase.caseClauses[clauseIndex].body) {
+      switch (auto ret = evaluate(*e, switchEnv); ret.status) {
+      case JSResult::Status::OK:
+        continue;
+      case JSResult::Status::ERR:
+      case JSResult::Status::RETURN:
+      case JSResult::Status::CONTINUE:
+        return ret;
+      case JSResult::Status::BREAK:
+        goto END; // break switch-case
+      }
+    }
+  }
+END:
+  return Ok(JSValue());
+}
+
 static JSResult evaluate(const Node &node, const std::shared_ptr<JSEnv> &env) {
   return std::visit(
       [env, lineNum = node.lineNum](auto &&element) -> JSResult {
@@ -1428,6 +1532,8 @@ static JSResult evaluate(const Node &node, const std::shared_ptr<JSEnv> &env) {
           return evalFor(element, env);
         } else if constexpr (std::is_same_v<T, ForOfStmt>) {
           return evalForOf(element, lineNum, env);
+        } else if constexpr (std::is_same_v<T, SwitchCase>) {
+          return evalSwitchCase(element, env);
         } else {
           fatal("unreachable");
         }

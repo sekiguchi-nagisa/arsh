@@ -57,6 +57,9 @@ namespace arsh::re262 {
   OP(OF, "of")                                                                                     \
   OP(BREAK, "break")                                                                               \
   OP(CONTINUE, "continue")                                                                         \
+  OP(SWITCH, "switch")                                                                             \
+  OP(CASE, "case")                                                                                 \
+  OP(DEFAULT, "default")                                                                           \
   OP(ASSIGN, "=")                                                                                  \
   OP(ADD_ASSIGN, "+=")                                                                             \
   OP(SUB_ASSIGN, "-=")                                                                             \
@@ -85,6 +88,7 @@ namespace arsh::re262 {
   OP(LINE_END, ";")                                                                                \
   OP(COMMA, ",")                                                                                   \
   OP(DOT, ".")                                                                                     \
+  OP(ARROW, "=>")                                                                                  \
   OP(BACKTICK, "`")                                                                                \
   OP(START_INTERP, "${")
 

@@ -126,10 +126,11 @@ INIT:
     <DEFAULT>  "break"                { RET(BREAK); }
     <DEFAULT>  "continue"             { RET(CONTINUE); }
     <DEFAULT>  "while"                { RET(WHILE); }
+    <DEFAULT>  "switch"               { RET(SWITCH); }
+    <DEFAULT>  "case"                 { RET(CASE); }
+    <DEFAULT>  "default"              { RET(DEFAULT); }
     <DEFAULT>  "this"                 { RET(KEYWORD); }
-    <DEFAULT>  "case"                 { RET(KEYWORD); }
     <DEFAULT>  "class"                { RET(KEYWORD); }
-    <DEFAULT>  "default"              { RET(KEYWORD); }
     <DEFAULT>  "do"                   { RET(KEYWORD); }
     <DEFAULT>  "with"                 { RET(KEYWORD); }
     <DEFAULT>  INT FRAC? EXP?         { RET(NUMBER); }
@@ -166,6 +167,7 @@ INIT:
     <DEFAULT>  ";"                    { RET(LINE_END); }
     <DEFAULT>  ","                    { RET(COMMA); }
     <DEFAULT>  "."                    { RET(DOT); }
+    <DEFAULT>  "=>"                   { RET(ARROW); }
     <DEFAULT>  "`"                    { PUSH_MODE(TEMPLATE); RET(BACKTICK); }
     <DEFAULT>  [ \t\v\f\u00A0\uFEFF]+ { SKIP(); }
     <DEFAULT>  [\r\n\u2028\u2029]+    { UPDATE_LN(); FIND_NEW_LINE(); }
