@@ -938,6 +938,20 @@ hoge(23
     ASSERT_EQ(u"{ fileName: dummy, lineNumber: 2, message: unrecognized property value: ACII }",
               toPrettyString(ret.value));
   }
+  {
+    auto ret = jsEval("dummy", "hoge;\n/\\y/u");
+    ASSERT_FALSE(ret);
+    ASSERT_TRUE(std::holds_alternative<JSObjectPtr>(ret.value));
+    ASSERT_EQ(u"{ fileName: dummy, lineNumber: 2, message: invalid escape: `\\y' }",
+              toPrettyString(ret.value));
+  }
+  {
+    auto ret = jsEval("dummy", "hoge;\n/\\X/u"); // not allow \X extension
+    ASSERT_FALSE(ret);
+    ASSERT_TRUE(std::holds_alternative<JSObjectPtr>(ret.value));
+    ASSERT_EQ(u"{ fileName: dummy, lineNumber: 2, message: invalid escape: `\\X' }",
+              toPrettyString(ret.value));
+  }
 }
 
 TEST(JSTest, literal1) {

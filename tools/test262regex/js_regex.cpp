@@ -317,7 +317,7 @@ JSRegexPtr createJSRegexFrom(const JSObjectPtr &prototype, StringRef pattern, St
     pattern = "(?:)";
   }
   regex::Parser parser;
-  auto tree = parser(pattern, flag);
+  auto tree = parser(pattern, flag, false); // disable extension
   if (parser.hasError()) {
     if (err) {
       *err = parser.getError()->message;

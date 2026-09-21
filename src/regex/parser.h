@@ -95,6 +95,7 @@ private:
   std::unordered_map<std::string, FlexBuffer<unsigned int>> namedCaptureGroups;
   std::vector<BackRefNode *> namedRefNodes; // for lazy named backref check
   unsigned short loopCount{0};
+  bool extension{false};
   std::unique_ptr<Error> error{nullptr};
   std::vector<Frame> frames;
   std::vector<bool> directions;
@@ -105,7 +106,7 @@ private:
 public:
   Parser() = default;
 
-  SyntaxTree operator()(StringRef src, Flag f);
+  SyntaxTree operator()(StringRef src, Flag f, bool extend = true);
 
   bool hasError() const { return static_cast<bool>(this->error); }
 

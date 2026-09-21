@@ -204,7 +204,7 @@ void Parser::append(std::unique_ptr<Node> &&node) {
   }
 }
 
-SyntaxTree Parser::operator()(const StringRef src, const Flag f) {
+SyntaxTree Parser::operator()(const StringRef src, const Flag f, const bool extend) {
   this->ref = src;
   this->flag = f;
   this->overflow = false;
@@ -216,6 +216,7 @@ SyntaxTree Parser::operator()(const StringRef src, const Flag f) {
   this->iter = this->begin();
   this->namedRefNodes.clear();
   this->loopCount = 0;
+  this->extension = extend;
   this->error.reset();
   this->frames.clear();
   this->directions.clear();
@@ -623,21 +624,6 @@ std::unique_ptr<Node> Parser::parseAtomEscape(const EscapeParseOp op) {
     }
     goto INVALID_ESCAPE;
   }
-  case 'X':
-    if (this->flag.is(Mode::BMP)) {
-      codePoint = static_cast<unsigned char>(*this->iter++);
-      goto CHAR;
-    }
-    this->iter++;
-    if (op != EscapeParseOp::DEFAULT) {
-      goto INVALID_ESCAPE;
-    }
-    if (!this->direction()) {
-      this->reportError(this->getTokenFrom(start),
-                        "variable length class escape is not allowed in lookbehind");
-      return nullptr;
-    }
-    return std::make_unique<PropertyNode>(this->getTokenFrom(start), PropertyNode::Type::GRAPHEME);
   case 'u': {
     this->iter--;
     codePoint = this->parseUnicodeEscape(
@@ -663,6 +649,17 @@ std::unique_ptr<Node> Parser::parseAtomEscape(const EscapeParseOp op) {
     }
     goto INVALID_ESCAPE;
   default:
+    if (this->flag.isEitherUnicodeMode() && *this->iter == 'X' && this->extension &&
+        op == EscapeParseOp::DEFAULT) {
+      this->iter++;
+      if (!this->direction()) {
+        this->reportError(this->getTokenFrom(start),
+                          "variable length class escape is not allowed in lookbehind");
+        return nullptr;
+      }
+      return std::make_unique<PropertyNode>(this->getTokenFrom(start),
+                                            PropertyNode::Type::GRAPHEME);
+    }
     if (this->flag.isEitherUnicodeMode() && (isSyntaxChar(*this->iter) || *this->iter == '/')) {
       codePoint = static_cast<unsigned char>(*this->iter++);
       goto CHAR;

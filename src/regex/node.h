@@ -570,16 +570,16 @@ public:
             std::unique_ptr<Node> &&pattern, Token end)
       : NestedNodeWithRtti(start, std::move(pattern)) {
     this->u8 = toUnderlying(type);
-    this->u16 = (toUnderlying(set) << 8) | toUnderlying(unset);
+    this->u16 = (toUnderlying(set) << 8u) | toUnderlying(unset);
     this->u32 = groupIndex;
     this->updateToken(end);
   }
 
   Type getType() const { return static_cast<Type>(this->u8); }
 
-  Modifier getSetModifiers() const { return static_cast<Modifier>(this->u16 >> 8); }
+  Modifier getSetModifiers() const { return static_cast<Modifier>(this->u16 >> 8u); }
 
-  Modifier getUnsetModifiers() const { return static_cast<Modifier>(this->u16 & 0xFF); }
+  Modifier getUnsetModifiers() const { return static_cast<Modifier>(this->u16 & 0xFFu); }
 
   /**
    *
