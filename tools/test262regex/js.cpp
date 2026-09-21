@@ -704,39 +704,14 @@ static JSFunctionPtr createStringSplit(const std::shared_ptr<JSEnv> &global) {
 static JSFunctionPtr createStringSlice(const std::shared_ptr<JSEnv> &global) {
   auto impl = [](const JSFunctionPtr &func, const std::shared_ptr<JSEnv> &env) -> JSResult {
     auto &thisStr = *std::get<JSStringPtr>(env->findOrUndef(builtin::THIS));
-    size_t startIndex = 0;
-    if (auto v = env->findOrUndef(func->params[0]); !isUndefined(v)) {
-      const auto num = toIntegerOrInf(v);
-      int64_t index = 0;
-      if (std::isinf(num)) {
-        index = num < 0 ? 0 : std::numeric_limits<int64_t>::max();
-      } else {
-        index = static_cast<int64_t>(num);
-      }
-      if (index < 0) {
-        startIndex = std::max<int64_t>(index + static_cast<int64_t>(thisStr.size()), 0);
-      } else {
-        startIndex = std::min<uint64_t>(static_cast<uint64_t>(index), thisStr.size());
-      }
-    }
-    size_t endIndex = thisStr.size();
+    unsigned int from = toClampedIndex(env->findOrUndef(func->params[0]), thisStr.size());
+    unsigned int to = thisStr.size();
     if (auto v = env->findOrUndef(func->params[1]); !isUndefined(v)) {
-      const auto num = toIntegerOrInf(v);
-      int64_t index = 0;
-      if (std::isinf(num)) {
-        index = num < 0 ? 0 : std::numeric_limits<int64_t>::max();
-      } else {
-        index = static_cast<int64_t>(num);
-      }
-      if (index < 0) {
-        endIndex = std::max<int64_t>(index + static_cast<int64_t>(thisStr.size()), 0);
-      } else {
-        endIndex = std::min<uint64_t>(static_cast<uint64_t>(index), thisStr.size());
-      }
+      to = toClampedIndex(v, thisStr.size());
     }
     JSString newStr;
-    for (; startIndex < endIndex; startIndex++) {
-      newStr += thisStr[startIndex];
+    for (; from < to; from++) {
+      newStr += thisStr[from];
     }
     return Ok(std::make_shared<JSString>(std::move(newStr)));
   };
@@ -935,6 +910,25 @@ static JSFunctionPtr createArrayJoin(const std::shared_ptr<JSEnv> &global) {
   return createJSFunction(global, "join", {"separator"}, nullptr, std::move(impl));
 }
 
+static JSFunctionPtr createArrayIndexOf(const std::shared_ptr<JSEnv> &global) {
+  auto impl = [](const JSFunctionPtr &func, const std::shared_ptr<JSEnv> &env) -> JSResult {
+    auto array = std::get<JSArrayPtr>(env->findOrUndef(builtin::THIS));
+    auto searchElement = env->findOrUndef(func->params[0]);
+    const unsigned int size = array->array.size();
+    if (!size) {
+      return Ok(static_cast<double>(-1));
+    }
+    for (unsigned int i = toClampedIndex(env->findOrUndef(func->params[1]), size); i < size; i++) {
+      if (strictlyEquals(array->array[i], searchElement)) {
+        return Ok(static_cast<double>(i));
+      }
+    }
+    return Ok(static_cast<double>(-1));
+  };
+  return createJSFunction(global, "indexOf", {"searchElement", "fromIndex"}, nullptr,
+                          std::move(impl));
+}
+
 static void defineArray(const std::shared_ptr<JSEnv> &global) {
   auto impl = [](const JSFunctionPtr &, const std::shared_ptr<JSEnv> &env) -> JSResult {
     auto args = env->findOrUndef(builtin::ARGS);
@@ -949,6 +943,7 @@ static void defineArray(const std::shared_ptr<JSEnv> &global) {
   auto prototype = std::make_shared<JSObject>();
   prototype->setBuiltinProperty("push", createArrayPush(global));
   prototype->setBuiltinProperty("join", createArrayJoin(global));
+  prototype->setBuiltinProperty("indexOf", createArrayIndexOf(global));
   auto func =
       createJSFunction(global, builtin::ARRAY, {"element"}, std::move(prototype), std::move(impl));
   global->define(builtin::ARRAY, std::move(func));

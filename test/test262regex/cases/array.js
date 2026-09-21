@@ -34,6 +34,12 @@ assert.compareArray([undefined, null, NaN], aa);
 assert.sameValue(',,NaN', aa.join());
 assert.sameValue('@@NaN', aa.join('@'));
 
+assert.sameValue(-1, [].indexOf(0));
+assert.sameValue(-1, [12, 'false'].indexOf(false));
+assert.sameValue(-1, [12, 'false', NaN].indexOf(NaN));
+assert.sameValue(1, [1, 2, 3, 2, 1].indexOf(2));
+assert.sameValue(3, [1, 2, 3, 2, 1].indexOf(2, 2));
+
 // CHECK_RE: ^$
 // CHECKERR_RE: ^$
 // STATUS: 0

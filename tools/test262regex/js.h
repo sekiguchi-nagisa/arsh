@@ -17,10 +17,10 @@
 #ifndef ARSH_TOOLS_TEST262_REGEX_JS_H
 #define ARSH_TOOLS_TEST262_REGEX_JS_H
 
+#include <algorithm>
 #include <functional>
 #include <map>
 #include <memory>
-#include <numeric>
 #include <string>
 #include <variant>
 #include <vector>
@@ -382,6 +382,19 @@ T toFixedSizeInteger(const JSValue &value) {
   }
   auto v = static_cast<int64_t>(num);
   return static_cast<T>(v % (static_cast<int64_t>(std::numeric_limits<T>::max()) + 1));
+}
+
+inline double toAbsoluteIndex(const JSValue &value, const unsigned int len) {
+  auto num = toIntegerOrInf(value);
+  if (std::isfinite(num) && num < 0) {
+    num = num + static_cast<double>(len);
+  }
+  return num;
+}
+
+inline unsigned int toClampedIndex(const JSValue &value, const unsigned int len) {
+  auto index = toAbsoluteIndex(value, len);
+  return static_cast<unsigned int>(std::clamp(index, 0.0, static_cast<double>(len)));
 }
 
 JSProperty findOwnProperty(const JSValue &recv, const std::string &name);
