@@ -52,6 +52,8 @@ assert.sameValue("1234".search('3'), 2);
 assert.sameValue("あいうえお".search(/う/), 2);
 assert.sameValue("あいうえおう".search(/う$/), 5);
 assert.sameValue("あいうえおう".search(/3$/), -1);
+assert.sameValue("あいう".replace(/(.)(.)/, "$2$1"), 'いあう')
+assert.sameValue("あいう".replace(/(.\d)(\d)/, "$2$1"), 'あいう')
 
 // CHECK: /null/
 // CHECK: /(?:)/

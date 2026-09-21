@@ -151,6 +151,51 @@ static JSFunctionPtr createRegExpSearch(const std::shared_ptr<JSEnv> &global) {
   return createJSFunction(global, builtin::SYMBOL_SEARCH, {"str"}, nullptr, std::move(impl));
 }
 
+static JSFunctionPtr createRegExpReplace(const std::shared_ptr<JSEnv> &global) {
+  auto impl = [](const JSFunctionPtr &, const std::shared_ptr<JSEnv> &env) -> JSResult {
+    JSRegexPtr regex;
+    JSStringPtr str;
+    if (auto resolved = prepareRegexMethod(env, u"[Symbol.replace]")) {
+      regex = std::move(resolved.asOk().first);
+      str = std::move(resolved.asOk().second);
+    } else {
+      return throwError(env, builtin::TYPE_ERROR, std::move(resolved.asErr()));
+    }
+    std::string text = toWTF8(*str);
+    std::string replacement;
+    if (auto v = env->findOrUndef("replacement"); std::holds_alternative<JSStringPtr>(v)) {
+      replacement = toWTF8(*std::get<JSStringPtr>(v));
+    } else {
+      replacement = toWTF8(toString(v));  //TODO: callback
+    }
+    std::string out;
+    std::string err;
+    const regex::ReplaceParam param = {
+        .text = text, // TODO: sticky, lastIndex
+        .replacement = replacement,
+        .global = hasFlag(regex->extra, JSRegex::ExtraFlag::GLOBAL),
+        .err = &err,
+        .consumer =
+            [&out](const StringRef ref) {
+              out += ref;
+              return true;
+            },
+    };
+    switch (const auto status = regex::replace(regex->regex, param, nullptr)) {
+    case regex::MatchStatus::OK:
+      return Ok(newJSStringPtr(out));
+    default:
+      if (err.empty()) {
+        err = regex::toString(status);
+      }
+      return throwError(env, builtin::RANGE_ERROR, toUTF16(err));
+    }
+    return Ok(nullptr);
+  };
+  return createJSFunction(global, builtin::SYMBOL_REPLACE, {"str", "replacement"}, nullptr,
+                          std::move(impl));
+}
+
 static JSFunctionPtr createRegExpEscape(const std::shared_ptr<JSEnv> &global) {
   auto impl = [](const JSFunctionPtr &func, const std::shared_ptr<JSEnv> &env) -> JSResult {
     std::string str;
@@ -174,6 +219,7 @@ void defineJSRegex(const std::shared_ptr<JSEnv> &global) {
   prototype->setBuiltinProperty("exec", createRegExpExec(global));
   prototype->setBuiltinProperty(builtin::SYMBOL_MATCH, createRegExpMatch(global));
   prototype->setBuiltinProperty(builtin::SYMBOL_SEARCH, createRegExpSearch(global));
+  prototype->setBuiltinProperty(builtin::SYMBOL_REPLACE, createRegExpReplace(global));
   auto func = createJSFunction(
       global, builtin::REGEXP, {"pattern", "flags"}, std::move(prototype),
       [](const JSFunctionPtr &func, const std::shared_ptr<JSEnv> &env) -> JSResult {
