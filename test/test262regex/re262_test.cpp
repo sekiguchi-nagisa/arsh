@@ -1115,8 +1115,10 @@ TEST(JSTest, field) {
     auto ret = jsEval("dummy", "RegExp.prototype;");
     ASSERT_TRUE(ret);
     ASSERT_TRUE(std::holds_alternative<JSObjectPtr>(ret.value));
-    ASSERT_EQ(u"{ @@match: [Function: @@match], @@replace: [Function: @@replace], @@search: "
-              u"[Function: @@search], exec: [Function: exec], "
+    ASSERT_EQ(u"{ @@match: [Function: @@match], @@replace: [Function: @@replace], "
+              u"@@search: [Function: @@search], "
+              u"@@split: [Function: @@split], "
+              u"exec: [Function: exec], "
               u"test: [Function: test] }",
               toPrettyString(ret.value));
   }
@@ -1237,9 +1239,9 @@ TEST(JSTest, proto) {
     auto ret = jsEval("dummy", "/23/.__proto__;");
     ASSERT_TRUE(ret);
     ASSERT_TRUE(std::holds_alternative<JSObjectPtr>(ret.value));
-    ASSERT_EQ(u"{ @@match: [Function: @@match], @@replace: [Function: @@replace], @@search: "
-              u"[Function: @@search], exec: [Function: "
-              u"exec], test: [Function: test] }",
+    ASSERT_EQ(u"{ @@match: [Function: @@match], @@replace: [Function: @@replace], "
+              u"@@search: [Function: @@search], @@split: [Function: @@split], "
+              u"exec: [Function: exec], test: [Function: test] }",
               toPrettyString(ret.value));
   }
 

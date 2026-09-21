@@ -166,12 +166,12 @@ static JSFunctionPtr createRegExpReplace(const std::shared_ptr<JSEnv> &global) {
     if (auto v = env->findOrUndef("replacement"); std::holds_alternative<JSStringPtr>(v)) {
       replacement = toWTF8(*std::get<JSStringPtr>(v));
     } else {
-      replacement = toWTF8(toString(v));  //TODO: callback
+      replacement = toWTF8(toString(v)); // TODO: callback
     }
     std::string out;
     std::string err;
     const regex::ReplaceParam param = {
-        .text = text, // TODO: sticky, lastIndex
+        .text = text, // TODO: sticky, lastIndex, suppress replace pattern error
         .replacement = replacement,
         .global = hasFlag(regex->extra, JSRegex::ExtraFlag::GLOBAL),
         .err = &err,
@@ -190,9 +190,39 @@ static JSFunctionPtr createRegExpReplace(const std::shared_ptr<JSEnv> &global) {
       }
       return throwError(env, builtin::RANGE_ERROR, toUTF16(err));
     }
-    return Ok(nullptr);
   };
   return createJSFunction(global, builtin::SYMBOL_REPLACE, {"str", "replacement"}, nullptr,
+                          std::move(impl));
+}
+
+static JSFunctionPtr createRegExpSplit(const std::shared_ptr<JSEnv> &global) {
+  auto impl = [](const JSFunctionPtr &, const std::shared_ptr<JSEnv> &env) -> JSResult {
+    JSRegexPtr regex;
+    JSStringPtr str;
+    if (auto resolved = prepareRegexMethod(env, u"[Symbol.split]")) {
+      regex = std::move(resolved.asOk().first);
+      str = std::move(resolved.asOk().second);
+    } else {
+      return throwError(env, builtin::TYPE_ERROR, std::move(resolved.asErr()));
+    }
+    std::string text = toWTF8(*str);
+    unsigned int limit = UINT32_MAX;
+    if (auto v = env->findOrUndef("limit"); !isUndefined(v)) {
+      limit = toFixedSizeInteger<unsigned int>(v);
+    }
+    JSArrayPtr out = std::make_shared<JSArray>();
+    auto consumer = [&out](const StringRef ref) { // TODO: append capture groups
+      out->array.emplace_back(newJSStringPtr(ref));
+      return true;
+    };
+    switch (const auto status = regex::split(regex->regex, text, limit, consumer, nullptr)) {
+    case regex::MatchStatus::OK:
+      return Ok(std::move(out));
+    default:
+      return throwError(env, builtin::RANGE_ERROR, toUTF16(regex::toString(status)));
+    }
+  };
+  return createJSFunction(global, builtin::SYMBOL_SPLIT, {"str", "limit"}, nullptr,
                           std::move(impl));
 }
 
@@ -220,6 +250,7 @@ void defineJSRegex(const std::shared_ptr<JSEnv> &global) {
   prototype->setBuiltinProperty(builtin::SYMBOL_MATCH, createRegExpMatch(global));
   prototype->setBuiltinProperty(builtin::SYMBOL_SEARCH, createRegExpSearch(global));
   prototype->setBuiltinProperty(builtin::SYMBOL_REPLACE, createRegExpReplace(global));
+  prototype->setBuiltinProperty(builtin::SYMBOL_SPLIT, createRegExpSplit(global));
   auto func = createJSFunction(
       global, builtin::REGEXP, {"pattern", "flags"}, std::move(prototype),
       [](const JSFunctionPtr &func, const std::shared_ptr<JSEnv> &env) -> JSResult {

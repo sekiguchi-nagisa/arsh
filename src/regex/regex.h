@@ -134,8 +134,26 @@ struct ReplaceParam {
   std::function<bool(StringRef)> consumer;
 };
 
+/**
+ *
+ * @param regex
+ * @param param
+ * @param timer
+ * @return
+ * return Ok even if no matches
+ */
 MatchStatus replace(const Regex &regex, const ReplaceParam &param, ObserverPtr<Timer> timer);
 
+/**
+ *
+ * @param regex
+ * @param text
+ * @param limit
+ * @param consumer
+ * @param timer
+ * @return
+ * return Ok even if no matches
+ */
 MatchStatus split(const Regex &regex, StringRef text, unsigned int limit,
                   const std::function<bool(StringRef)> &consumer, ObserverPtr<Timer> timer);
 
