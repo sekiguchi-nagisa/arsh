@@ -54,7 +54,8 @@ struct ObjectLiteral {
 struct FuncLiteral {
   std::string name;
   std::vector<std::string> params;
-  std::shared_ptr<std::vector<std::unique_ptr<Node>>> nodes;
+  std::shared_ptr<std::vector<std::unique_ptr<Node>>> nodes; // function object maintain nodes;
+  bool arrow{false};
 };
 
 struct NameExpr {
@@ -312,6 +313,10 @@ private:
   std::unique_ptr<Node> parseFunction();
 
   std::unique_ptr<Node> parseTemplate();
+
+  std::unique_ptr<Node> parseParenOrArrow();
+
+  std::unique_ptr<Node> parseArrowBody(unsigned int lineNum, std::vector<std::string> &&params);
 };
 
 Token JSParser::expectVarDeclIdentifier() {
@@ -867,6 +872,11 @@ std::unique_ptr<Node> JSParser::parsePrimary() {
   }
   case JSTokenKind::IDENTIFIER: {
     auto token = this->expect(JSTokenKind::IDENTIFIER);
+    if (this->curKind == JSTokenKind::ARROW && !this->lexer->hasPrevNewLine()) {
+      this->consume();
+      std::vector params = {this->lexer->toTokenText(token)};
+      return this->parseArrowBody(this->lexer->getLineNumByPos(token.pos), std::move(params));
+    }
     return std::make_unique<Node>(this->lexer->getLineNumByPos(token.pos),
                                   NameExpr{this->lexer->toTokenText(token)});
   }
@@ -876,12 +886,8 @@ std::unique_ptr<Node> JSParser::parsePrimary() {
     return this->parseArray();
   case JSTokenKind::LBC:
     return this->parseObject();
-  case JSTokenKind::LP: {
-    this->consume();
-    auto node = this->parseExpression();
-    TRY(this->expect(JSTokenKind::RP));
-    return node;
-  }
+  case JSTokenKind::LP:
+    return this->parseParenOrArrow();
   case JSTokenKind::BACKTICK:
     return this->parseTemplate();
   default:
@@ -1006,6 +1012,67 @@ std::unique_ptr<Node> JSParser::parseTemplate() {
                                 TemplateExpr{std::move(nodes)});
 }
 
+std::unique_ptr<Node> JSParser::parseParenOrArrow() {
+  Token start = TRY(this->expect(JSTokenKind::LP));
+  const unsigned int lineNum = this->lexer->getLineNumByPos(start.pos);
+  std::unique_ptr<Node> expr;
+  std::vector<std::string> params;
+  if (this->curKind != JSTokenKind::RP) {
+    expr = TRY(this->parseExpression());
+    if (std::holds_alternative<NameExpr>(expr->value) && this->curKind == JSTokenKind::COMMA) {
+      params.push_back(std::move(std::get<NameExpr>(expr->value).name));
+      this->consume();
+      expr = nullptr;
+      while (this->curKind != JSTokenKind::RP) {
+        auto token = TRY(this->expectVarDeclIdentifier());
+        params.push_back(this->lexer->toTokenText(token));
+        if (this->curKind == JSTokenKind::COMMA) {
+          this->consume();
+        } else if (this->curKind != JSTokenKind::RP) {
+          E_ALTER(JSTokenKind::COMMA, JSTokenKind::RP);
+        }
+      }
+    }
+  }
+  TRY(this->expect(JSTokenKind::RP));
+
+  if (!expr || // () =>, (a,b) =>
+      (this->curKind == JSTokenKind::ARROW && std::holds_alternative<NameExpr>(expr->value))) {
+    TRY(this->expect(JSTokenKind::ARROW));
+    if (expr) {
+      assert(std::holds_alternative<NameExpr>(expr->value));
+      assert(params.empty());
+      params.push_back(std::move(std::get<NameExpr>(expr->value).name));
+      expr = nullptr;
+    }
+    return this->parseArrowBody(lineNum, std::move(params));
+  }
+  assert(expr);
+  assert(params.empty());
+  return expr;
+}
+
+std::unique_ptr<Node> JSParser::parseArrowBody(const unsigned int lineNum,
+                                               std::vector<std::string> &&params) {
+  FuncLiteral func;
+  func.arrow = true;
+  func.params = std::move(params);
+  func.nodes = std::make_shared<std::vector<std::unique_ptr<Node>>>();
+  if (this->curKind == JSTokenKind::LBC) {
+    this->consume();
+    while (this->curKind != JSTokenKind::RBC) {
+      func.nodes->push_back(TRY(this->parseStatement()));
+    }
+    TRY(this->expect(JSTokenKind::RBC));
+  } else {
+    auto expr = TRY(this->parseExpression());
+    unsigned int exprLineNum = expr->lineNum;
+    func.nodes->push_back(std::make_unique<Node>(
+        exprLineNum, JumpStmt{.status = JSResult::Status::RETURN, .expr = std::move(expr)}));
+  }
+  return std::make_unique<Node>(lineNum, std::move(func));
+}
+
 #undef TRY
 #define TRY(...)                                                                                   \
   ({                                                                                               \
@@ -1068,10 +1135,14 @@ static JSResult evalCallExpr(const CallExpr &callExpr, const unsigned int lineNu
 }
 
 static JSResult evalFunc(const FuncLiteral &literal, const std::shared_ptr<JSEnv> &env) {
-  auto impl = [nodes = literal.nodes, name = literal.name](
+  auto impl = [nodes = literal.nodes, name = literal.name, arrow = literal.arrow](
                   const JSFunctionPtr &func, const std::shared_ptr<JSEnv> &env) -> JSResult {
     if (!name.empty()) {
       env->define(name, func);
+    }
+    if (arrow) { // in arrow func, this/argument always indicate parent scope theme
+      env->remove(builtin::THIS);
+      env->remove(builtin::ARGS);
     }
     for (auto &node : *nodes) {
       switch (auto [status, value] = evaluate(*node, env); status) {

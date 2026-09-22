@@ -282,6 +282,8 @@ public:
 
   bool define(const std::string &name, JSValue value);
 
+  void remove(const std::string &name) { this->values.erase(name); }
+
   const JSValue *find(const std::string &name) const;
 
   JSValue findOrUndef(const std::string &name) const {
