@@ -58,7 +58,7 @@ static bool readLine(ARState &state, const ArrayObject &argvObj, unsigned int in
   for (bool prevIsBackslash = false;
        param.nbytes < 0 || readCount < static_cast<unsigned int>(param.nbytes);
        prevIsBackslash = param.backslash && ch == '\\' && !prevIsBackslash) {
-    if (lastReadSize = readRetryEAGAINWithTimeout(param.fd, &ch, 1, param.timeoutMSec);
+    if (lastReadSize = readRetryWithTimeoutExceptSIGINT(param.fd, &ch, 1, param.timeoutMSec);
         lastReadSize <= 0) {
       break;
     }
@@ -259,7 +259,7 @@ int builtin_gets(ARState &st, ArrayObject &argvObj) {
   ssize_t readSize = 0;
   do {
     char buf[256];
-    readSize = readRetryEAGAINWithTimeout(STDIN_FILENO, buf, std::size(buf), -1);
+    readSize = readRetryWithTimeoutExceptSIGINT(STDIN_FILENO, buf, std::size(buf), -1);
     if (readSize < 0) {
       PERROR(st, argvObj, "read failed");
       return 1;

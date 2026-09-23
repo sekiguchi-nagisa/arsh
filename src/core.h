@@ -130,6 +130,18 @@ void setSignalSetting(const ARState &st);
  */
 void resetSignalSettingUnblock(ARState &state);
 
+/**
+ * primitive io function for builtin read command
+ * read retry when EAGAIN and EINTR
+ * if SIGINT happened, not retry
+ * @param fd
+ * @param buf
+ * @param bufSize
+ * @param timeoutMSec
+ * @return
+ */
+ssize_t readRetryWithTimeoutExceptSIGINT(int fd, char *buf, size_t bufSize, int timeoutMSec);
+
 void setLocaleSetting();
 
 const ModType *getRuntimeModuleByLevel(const ARState &state, unsigned int callLevel);

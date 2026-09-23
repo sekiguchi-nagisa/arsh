@@ -348,6 +348,19 @@ void resetSignalSettingUnblock(ARState &state) {
   state.sigVector.clear();
 }
 
+ssize_t readRetryWithTimeoutExceptSIGINT(const int fd, char *buf, const size_t bufSize,
+                                         const int timeoutMSec) {
+  ssize_t readSize = 0;
+  do {
+    readSize = readRetryEAGAINWithTimeout(fd, buf, bufSize, timeoutMSec);
+    /**
+     * regardless of SA_RESTART, other signals still cause EINTR in macOS.
+     * so manually retry read
+     */
+  } while (readSize < 0 && errno == EINTR && !ARState::isInterrupted());
+  return readSize;
+}
+
 void setLocaleSetting() {
   setlocale(LC_ALL, "");
   setlocale(LC_MESSAGES, "C");
