@@ -20,6 +20,7 @@
 #include <csignal>
 #include <cstdio>
 
+#include "misc/enum_util.hpp"
 #include "misc/string_ref.hpp"
 
 namespace arsh {
@@ -36,9 +37,16 @@ namespace arsh {
  */
 int waitForInputReady(int fd, int timeoutMSec, const sigset_t *mask);
 
-struct ReadWithTimeoutParam {
-  bool retry;
-  int timeoutMSec;
+enum class ReadRetry : unsigned char {
+  NONE = 0u,
+  RETRY_EAGAIN = 1u << 0u,
+  RETRY_EINTR = 1u << 1u,
+  RETRY_ALL = RETRY_EAGAIN | RETRY_EINTR,
+};
+
+struct ReadWithParam {
+  ReadRetry retry{ReadRetry::NONE};
+  int timeoutMSec{-1}; // if negative, no-timeout
 };
 
 /**
@@ -52,10 +60,16 @@ struct ReadWithTimeoutParam {
  * if error, return -1 and set errno
  * otherwise, return non-negative number
  */
-ssize_t readWithTimeout(int fd, char *buf, size_t bufSize, ReadWithTimeoutParam param);
+ssize_t readWith(int fd, char *buf, size_t bufSize, ReadWithParam param);
 
-inline ssize_t readRetryWithTimeout(int fd, char *buf, size_t bufSize, int timeoutMSec) {
-  return readWithTimeout(fd, buf, bufSize, {.retry = true, .timeoutMSec = timeoutMSec});
+inline ssize_t readRetryWithTimeout(const int fd, char *buf, const size_t bufSize,
+                                    const int timeoutMSec) {
+  return readWith(fd, buf, bufSize, {ReadRetry::RETRY_ALL, timeoutMSec});
+}
+
+inline ssize_t readRetryEAGAINWithTimeout(const int fd, char *buf, const size_t bufSize,
+                                          const int timeoutMSec) {
+  return readWith(fd, buf, bufSize, {ReadRetry::RETRY_EAGAIN, timeoutMSec});
 }
 
 /**
@@ -79,5 +93,8 @@ inline auto fwriteStrRef(FILE *fp, const StringRef ref) {
 }
 
 } // namespace arsh
+
+template <>
+struct arsh::allow_enum_bitop<arsh::ReadRetry> : std::true_type {};
 
 #endif // ARSH_IO_H

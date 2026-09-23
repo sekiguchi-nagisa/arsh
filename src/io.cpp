@@ -19,6 +19,7 @@
 #include <iterator>
 
 #include "io.h"
+#include "misc/flag_util.hpp"
 
 #ifdef __linux__
 
@@ -92,14 +93,13 @@ int waitForInputReady(const int fd, const int timeoutMSec, const sigset_t *mask)
   return waitForInputReadyImpl(fd, timeoutMSec, mask);
 }
 
-ssize_t readWithTimeout(const int fd, char *buf, const size_t bufSize,
-                        const ReadWithTimeoutParam param) {
+ssize_t readWith(const int fd, char *buf, const size_t bufSize, const ReadWithParam param) {
   if (param.timeoutMSec > -1) {
     while (true) {
       errno = 0;
       const int r = waitForInputReady(fd, param.timeoutMSec, nullptr);
       if (r != 0) {
-        if (r == -1 && param.retry && errno == EINTR) {
+        if (r == -1 && errno == EINTR && hasFlag(param.retry, ReadRetry::RETRY_EINTR)) {
           continue;
         }
         return r;
@@ -110,8 +110,13 @@ ssize_t readWithTimeout(const int fd, char *buf, const size_t bufSize,
   while (true) {
     errno = 0;
     const ssize_t readSize = read(fd, buf, bufSize);
-    if (readSize < 0 && param.retry && (errno == EINTR || errno == EAGAIN)) {
-      continue;
+    if (readSize < 0) {
+      if (errno == EINTR && hasFlag(param.retry, ReadRetry::RETRY_EINTR)) {
+        continue;
+      }
+      if (errno == EAGAIN && hasFlag(param.retry, ReadRetry::RETRY_EAGAIN)) {
+        continue;
+      }
     }
     return readSize;
   }
