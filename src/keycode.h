@@ -17,6 +17,7 @@
 #ifndef ARSH_KEYCODE_H
 #define ARSH_KEYCODE_H
 
+#include "io.h"
 #include "misc/detect.hpp"
 #include "misc/enum_util.hpp"
 #include "misc/flag_util.hpp"
@@ -34,28 +35,6 @@ inline bool isCaretTarget(int ch) { return (ch >= '@' && ch <= '_') || ch == '?'
 inline bool isAsciiPrintable(int ch) { return ch >= 32 && ch <= 126; }
 
 inline bool isShiftable(int ch) { return ch >= 'a' && ch <= 'z'; }
-
-struct ReadWithTimeoutParam {
-  bool retry;
-  int timeoutMSec;
-};
-
-/**
- *
- * @param fd
- * @param buf
- * @param bufSize
- * @param param
- * @return
- * if timeout, return -2
- * if error, return -1 and set errno
- * otherwise, return non-negative number
- */
-ssize_t readWithTimeout(int fd, char *buf, size_t bufSize, ReadWithTimeoutParam param);
-
-inline ssize_t readRetryWithTimeout(int fd, char *buf, size_t bufSize, int timeoutMSec) {
-  return readWithTimeout(fd, buf, bufSize, {.retry = true, .timeoutMSec = timeoutMSec});
-}
 
 #define EACH_MODIFIER_KEY(OP)                                                                      \
   OP(SHIFT, (1u << 0u), "shift")                                                                   \
@@ -201,7 +180,7 @@ public:
   static constexpr int DEFAULT_READ_TIMEOUT_MSEC = 100;
 
 private:
-  int fd{-1};
+  int fd{-1}; // do not close
   int timeout{DEFAULT_READ_TIMEOUT_MSEC};
   std::string keycode;      // single utf8 character (maybe raw bytes) or escape sequence
   Optional<KeyEvent> event; // recognized key event (via ANSI Escape Sequence)

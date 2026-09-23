@@ -156,7 +156,7 @@ static int getCursorPosition(const int ttyFd, const bool queryCursor) {
   /* Report cursor location */
   if (queryCursor) {
     constexpr char data[] = "\x1b[6n";
-    if (constexpr auto size = std::size(data) - 1; write(ttyFd, data, size) != size) {
+    if (constexpr auto size = std::size(data) - 1; !writeAll(ttyFd, data, size)) {
       return -1;
     }
   }
@@ -187,7 +187,7 @@ static int getCursorPosition(const int ttyFd, const bool queryCursor) {
 
 /* Clear the screen. Used to handle ctrl+l */
 static void linenoiseClearScreen(const int fd) {
-  if (constexpr char data[] = "\x1b[H\x1b[2J"; write(fd, data, std::size(data) - 1) <= 0) {
+  if (constexpr char data[] = "\x1b[H\x1b[2J"; !writeAll(fd, data, std::size(data) - 1)) {
     /* nothing to do, just to avoid warning. */
   }
 }
@@ -196,7 +196,7 @@ static void linenoiseClearScreen(const int fd) {
  * the choices were already shown. */
 static void linenoiseBeep(const int fd) {
   constexpr char data[] = "\x07";
-  ssize_t r = write(fd, data, std::size(data) - 1);
+  auto r = writeAll(fd, data, std::size(data) - 1);
   static_cast<void>(r);
   fsync(fd);
 }
@@ -237,7 +237,7 @@ static void checkProperty(CharWidthProperties &ps, const int ttyFd) {
      */
     const int s = snprintf(buf, std::size(buf), "\x1b[?25l<%s>\x1b[1K\x1b[6n\r", str);
     tcflush(ttyFd, TCIFLUSH); // force clear inbound data
-    if (s < 0 || write(ttyFd, buf, s) == -1) {
+    if (s < 0 || !writeAll(ttyFd, buf, s)) {
       break;
     }
     const int pos = getCursorPosition(ttyFd, false);
@@ -302,7 +302,7 @@ static void enableTermFeatures(const int fd, const LineEditorFeature features) {
       hasFlag(features, LineEditorFeature::KITTY_KEYBOARD_PROTOCOL) ? KITTY_PROTOCOL_ON : "",
       hasFlag(features, LineEditorFeature::XTERM_MODIFY_OTHER_KEYS) ? MODIFY_OTHER_KEYS_ON : "");
 
-  if (write(fd, buf, len) == -1) { /* ignore error */
+  if (!writeAll(fd, buf, len)) { /* ignore error */
   }
 }
 
@@ -319,7 +319,7 @@ static void disableTermFeatures(const int fd, const LineEditorFeature features) 
       hasFlag(features, LineEditorFeature::KITTY_KEYBOARD_PROTOCOL) ? KITTY_PROTOCOL_OFF : "",
       hasFlag(features, LineEditorFeature::XTERM_MODIFY_OTHER_KEYS) ? MODIFY_OTHER_KEYS_OFF : "");
 
-  if (write(fd, buf, len) == -1) { /* ignore error */
+  if (!writeAll(fd, buf, len)) { /* ignore error */
   }
 }
 
@@ -387,8 +387,8 @@ void LineEditorObject::disableRawMode() {
  */
 static int preparePrompt(int ttyFd) {
   if (getCursorPosition(ttyFd, true) > 1) {
-    const char *s = "\x1b[7m%\x1b[0m\r\n";
-    if (write(ttyFd, s, strlen(s)) == -1) {
+    constexpr char s[] = "\x1b[7m%\x1b[0m\r\n";
+    if (!writeAll(ttyFd, s, std::size(s) - 1)) {
       return -1;
     }
   }
@@ -497,7 +497,7 @@ void LineEditorObject::refreshLine(ARState &state, RenderingContext &ctx, const 
   ab += "\x1b[?25h"; // show cursor (from VT220 extension)
 
   this->prevRendered = std::move(ret);
-  if (write(this->ttyFd, ab.c_str(), ab.size()) == -1) {
+  if (!writeAll(this->ttyFd, ab)) {
   } /* Can't recover from write error. */
 }
 
@@ -1031,7 +1031,7 @@ ssize_t LineEditorObject::readline(ARState &state, StringRef prompt, char *buf, 
   }
   errno = 0;
   if (isUnsupportedTerm(this->ttyFd)) {
-    ssize_t r = write(this->ttyFd, prompt.data(), prompt.size());
+    auto r = writeAll(this->ttyFd, prompt);
     static_cast<void>(r);
     fsync(this->ttyFd);
     bufLen--; // preserve for null terminated

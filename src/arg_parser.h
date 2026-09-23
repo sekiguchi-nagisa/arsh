@@ -18,6 +18,7 @@
 #define ARSH_ARG_PARSER_H
 
 #include "arg_parser_base.h"
+#include "io.h"
 #include "object.h"
 
 namespace arsh {
@@ -80,7 +81,7 @@ CLIParseResult parseCommandLine(ARState &state, const ArrayObject &args, BaseObj
 inline void showCommandLineUsage(const ErrorObject &obj) {
   FILE *fp = obj.getStatus() == 0 ? stdout : stderr;
   auto ref = obj.getMessage().asStrRef();
-  fwrite(ref.data(), sizeof(char), ref.size(), fp);
+  fwriteStrRef(fp, ref);
   fputc('\n', fp);
   fflush(fp);
 }

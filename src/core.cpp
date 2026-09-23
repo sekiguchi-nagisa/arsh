@@ -22,6 +22,7 @@
 #include "candidates.h"
 #include "compiler.h"
 #include "format_util.h"
+#include "io.h"
 #include "logger.h"
 #include "misc/files.hpp"
 #include "misc/inlined_stack.hpp"
@@ -197,7 +198,7 @@ bool printErrorAt(const ARState &state, const ArrayObject &argvObj, StringRef su
     out += strerror(errNum);
   }
   out += '\n';
-  return fwrite(out.c_str(), sizeof(char), out.size(), stderr) == 0;
+  return fwriteStrRef(stderr, out) == out.size();
 }
 
 static bool isUnhandledSignal(int sigNum) {

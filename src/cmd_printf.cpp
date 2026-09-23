@@ -20,6 +20,7 @@
 #include <langinfo.h>
 
 #include "cmd.h"
+#include "io.h"
 #include "misc/num_util.hpp"
 #include "misc/time_util.hpp"
 #include "ordered_map.h"
@@ -239,7 +240,7 @@ private:
     if (this->useBuf) {
       status = this->strBuf.append(ref);
     } else {
-      status = fwrite(ref.data(), sizeof(char), ref.size(), this->fp) == ref.size();
+      status = fwriteStrRef(this->fp, ref) == ref.size();
     }
     if (unlikely(!status)) {
       this->formatError(errno);
@@ -1024,15 +1025,15 @@ DO_ECHO:
 
     auto arg = argvObj[index].asStrRef();
     if (interpEscape) {
-      const bool r = interpretEscapeSeq(arg, nullptr, [](StringRef sub) {
-        return fwrite(sub.data(), sizeof(char), sub.size(), stdout) == sub.size();
+      const bool r = interpretEscapeSeq(arg, nullptr, [](const StringRef sub) {
+        return fwriteStrRef(stdout, sub) == sub.size();
       });
       if (!r) {
         errNum = errno;
         goto END;
       }
     } else {
-      if (fwrite(arg.data(), sizeof(char), arg.size(), stdout) != arg.size()) {
+      if (fwriteStrRef(stdout, arg) != arg.size()) {
         errNum = errno;
         goto END;
       }

@@ -217,7 +217,7 @@ static void printUsage(const ARState &state, FILE *fp, const UdcOrBuiltin &v,
               str.resize(r);
             }
           }
-          fwrite(str.c_str(), sizeof(char), str.size(), fp);
+          fwriteStrRef(fp, str);
           fputc('\n', fp);
           return;
         }
@@ -394,7 +394,7 @@ static int builtin_gets(ARState &st, ArrayObject &argvObj) {
 }
 
 static int writeLine(StringRef ref, FILE *fp, bool flush) {
-  if (fwrite(ref.data(), sizeof(char), ref.size(), fp) != ref.size()) {
+  if (fwriteStrRef(fp, ref) != ref.size()) {
     return errno;
   }
   if (fputc('\n', fp) == EOF) {

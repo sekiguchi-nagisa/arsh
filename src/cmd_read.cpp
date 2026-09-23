@@ -15,7 +15,7 @@
  */
 
 #include "cmd.h"
-#include "keycode.h"
+#include "io.h"
 #include "misc/num_util.hpp"
 #include "misc/pty.hpp"
 #include "ordered_map.h"
@@ -227,7 +227,7 @@ int builtin_read(ARState &state, ArrayObject &argvObj) {
 
   // show prompt
   if (isTTY) {
-    fwrite(prompt.data(), sizeof(char), prompt.size(), stderr);
+    fwriteStrRef(stderr, prompt);
     fflush(stderr);
   }
 

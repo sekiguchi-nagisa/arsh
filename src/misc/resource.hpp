@@ -214,10 +214,6 @@ inline bool readAll(const FilePtr &filePtr, Buf &buf, size_t readLimit = SIZE_MA
   return readAll(filePtr.get(), buf, readLimit);
 }
 
-inline bool writeAll(const FilePtr &filePtr, const std::string &str) {
-  return fwrite(str.c_str(), sizeof(char), str.size(), filePtr.get()) == str.size();
-}
-
 struct CStrDeleter {
   void operator()(char *ptr) const { free(ptr); }
 };

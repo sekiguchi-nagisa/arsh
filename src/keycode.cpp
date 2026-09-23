@@ -14,80 +14,12 @@
  * limitations under the License.
  */
 
-#include <unistd.h>
-
 #include "keycode.h"
 #include "keyname_lex.h"
 #include "logger.h"
 #include "misc/format.hpp"
 #include "misc/num_util.hpp"
 #include "misc/unicode.hpp"
-
-#ifdef __linux__
-
-#include <poll.h>
-
-/**
- *
- * @param fd
- * @param timeoutMSec
- * @param mask
- * @return
- * if input is ready, return 0
- * if error, return -1 and set errno
- * if timeout, return -2
- */
-static int waitForInputReady(int fd, int timeoutMSec, const sigset_t *mask) {
-  struct pollfd fds[1];
-  fds[0].fd = fd;
-  fds[0].events = POLLIN;
-  const timespec timespec = {
-      .tv_sec = timeoutMSec / 1000,
-      .tv_nsec = static_cast<long>(timeoutMSec) % 1000 * 1000 * 1000,
-  };
-  int ret = ppoll(fds, std::size(fds), timeoutMSec < 0 ? nullptr : &timespec, mask);
-  if (ret <= 0) {
-    if (ret == 0) {
-      return -2;
-    }
-    return -1;
-  }
-  return 0;
-}
-
-#else
-
-#include <sys/select.h>
-
-/**
- * for macOS.
- * macOS poll is completely broken for pty
- * @param fd
- * @param timeoutMSec
- * @return
- * if input is ready, return 0
- * if error, return -1 and set errno
- * if timeout, return -2
- */
-static int waitForInputReady(int fd, int timeoutMSec, const sigset_t *mask) {
-  fd_set fds;
-  const timespec timespec = {
-      .tv_sec = timeoutMSec / 1000,
-      .tv_nsec = static_cast<long>(timeoutMSec) % 1000 * 1000 * 1000,
-  };
-  FD_ZERO(&fds);
-  FD_SET(fd, &fds);
-  int ret = pselect(fd + 1, &fds, nullptr, nullptr, timeoutMSec < 0 ? nullptr : &timespec, mask);
-  if (ret <= 0) {
-    if (ret == 0) {
-      return -2;
-    }
-    return -1;
-  }
-  return 0;
-}
-
-#endif
 
 namespace arsh {
 
@@ -926,31 +858,6 @@ std::string KeyEvent::toString() const {
 // ###########################
 // ##     KeyCodeReader     ##
 // ###########################
-
-ssize_t readWithTimeout(const int fd, char *buf, const size_t bufSize,
-                        const ReadWithTimeoutParam param) {
-  if (param.timeoutMSec > -1) {
-    while (true) {
-      errno = 0;
-      const int r = waitForInputReady(fd, param.timeoutMSec, nullptr);
-      if (r != 0) {
-        if (r == -1 && param.retry && errno == EINTR) {
-          continue;
-        }
-        return r;
-      }
-      break;
-    }
-  }
-  while (true) {
-    errno = 0;
-    const ssize_t readSize = read(fd, buf, bufSize);
-    if (readSize < 0 && param.retry && (errno == EINTR || errno == EAGAIN)) {
-      continue;
-    }
-    return readSize;
-  }
-}
 
 static ssize_t readCodePoint(int fd, char (&buf)[8]) {
   ssize_t readSize = readRetryWithTimeout(fd, &buf[0], 1, -1); // no-timeout

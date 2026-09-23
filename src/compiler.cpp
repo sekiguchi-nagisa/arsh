@@ -16,6 +16,7 @@
 
 #include "compiler.h"
 #include "format_util.h"
+#include "io.h"
 
 namespace arsh {
 
@@ -38,7 +39,7 @@ bool DefaultErrorConsumer::colorSupported() const { return this->tty; }
 
 void DefaultErrorConsumer::consume(std::string &&message) {
   if (this->fp) {
-    fwrite(message.c_str(), sizeof(char), message.size(), this->fp);
+    fwriteStrRef(this->fp, message);
     fflush(this->fp);
   }
 }

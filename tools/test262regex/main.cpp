@@ -14,8 +14,10 @@
  * limitations under the License.
  */
 
+#include <fstream>
+#include <streambuf>
+
 #include <misc/opt.hpp>
-#include <misc/resource.hpp>
 
 #include "js.h"
 #include "meta.h"
@@ -97,8 +99,8 @@ int main(int argc, char **argv) {
   }
   const char *filename = *iter;
   std::string input;
-  if (FILE *fp = fopen(filename, "r"); fp && readAll(fp, input, UINT32_MAX)) {
-    fclose(fp);
+  if (auto stream = std::ifstream(filename)) {
+    input = std::string(std::istreambuf_iterator(stream), std::istreambuf_iterator<char>());
   } else {
     perror(filename);
     return 1;

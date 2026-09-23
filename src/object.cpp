@@ -403,11 +403,11 @@ BaseObject::~BaseObject() {
 
 static void printMessage(FILE *fp, const ErrorObject &obj) {
   auto ref = obj.getName().asStrRef();
-  fwrite(ref.data(), sizeof(char), ref.size(), fp);
+  fwriteStrRef(fp, ref);
   ref = ": ";
-  fwrite(ref.data(), sizeof(char), ref.size(), fp);
+  fwriteStrRef(fp, ref);
   ref = obj.getMessage().asStrRef();
-  fwrite(ref.data(), sizeof(char), ref.size(), fp);
+  fwriteStrRef(fp, ref);
   fputc('\n', fp);
 }
 

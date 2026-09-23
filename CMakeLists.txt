@@ -331,6 +331,7 @@ set(ARSH_SRC
         src/object_util.cpp
         src/token_edit.cpp
         src/keybind.cpp
+        src/io.cpp
         ${lexer_src}
         ${bind_src}
         ${embed_src}

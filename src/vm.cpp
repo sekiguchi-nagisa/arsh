@@ -852,8 +852,8 @@ bool VM::forkAndExec(ARState &state, const char *filePath, const ArrayObject &ar
     xexecve(filePath, argvObj, nullptr);
 
     const int errNum = errno;
-    const ssize_t r = write(selfPipe[WRITE_PIPE], &errNum, sizeof(int));
-    (void)r; // FIXME:
+    if (!writeAll(selfPipe[WRITE_PIPE], &errNum, sizeof(int))) { // ignore error
+    }
     exit(-1);
   } else { // parent process
     selfPipe.close(WRITE_PIPE);
@@ -1603,7 +1603,7 @@ bool VM::mainLoop(ARState &state) {
         value += " = ";
         value += ref;
         value += '\n';
-        fwrite(value.c_str(), sizeof(char), value.size(), stdout);
+        fwriteStrRef(stdout, value);
         fflush(stdout);
         state.stack.popNoReturn();
         vmnext;
