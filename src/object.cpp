@@ -214,7 +214,7 @@ bool RegexObject::match(ARState &state, const StringRef ref, int64_t timeoutMSec
   auto timeout =
       timeoutMSec < 0 ? std::chrono::milliseconds::max() : std::chrono::milliseconds(timeoutMSec);
   regex::Timer timer(timeout);
-  timer.setCancelToken([] { return ARState::hasSignal(SIGINT); });
+  timer.setCancelToken([] { return ARState::isInterrupted(); });
   switch (const auto status = regex::match(this->re, ref, captures, makeObserver(timer))) {
   case regex::MatchStatus::OK:
     if (ret) {
@@ -253,7 +253,7 @@ Value RegexObject::replace(ARState &state, StringRef text, StringRef replacement
   auto timeout =
       timeoutMSec < 0 ? std::chrono::milliseconds::max() : std::chrono::milliseconds(timeoutMSec);
   regex::Timer timer(timeout);
-  timer.setCancelToken([] { return ARState::hasSignal(SIGINT); });
+  timer.setCancelToken([] { return ARState::isInterrupted(); });
   switch (const auto status = regex::replace(this->re, param, makeObserver(timer))) {
   case regex::MatchStatus::OK:
     return ret;
@@ -282,7 +282,7 @@ Value RegexObject::split(ARState &state, int64_t limit, StringRef ref, int64_t t
   auto timeout =
       timeoutMSec < 0 ? std::chrono::milliseconds::max() : std::chrono::milliseconds(timeoutMSec);
   regex::Timer timer(timeout);
-  timer.setCancelToken([] { return ARState::hasSignal(SIGINT); });
+  timer.setCancelToken([] { return ARState::isInterrupted(); });
   switch (auto status = regex::split(this->re, ref, actualLimit, appender, makeObserver(timer))) {
   case regex::MatchStatus::OK:
   case regex::MatchStatus::FAIL:
