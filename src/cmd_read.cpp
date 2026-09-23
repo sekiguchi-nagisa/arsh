@@ -23,6 +23,27 @@
 
 namespace arsh {
 
+static ssize_t readBytesWithRetryExceptSIGINT(const int fd, char *buf, const size_t bufSize,
+                                              const int timeoutMSec) {
+  ssize_t readSize;
+  while (true) {
+    readSize = readWithTimeout(fd, buf, bufSize, {.retry = false, .timeoutMSec = timeoutMSec});
+    if (readSize < 0) {
+      if (readSize == -2) { // timeout
+        errno = 0;
+      }
+      if (errno == EAGAIN) {
+        continue;
+      }
+      if (errno == EINTR && !ARState::isInterrupted()) {
+        continue; // retry except for SIGINT
+      }
+    }
+    break;
+  }
+  return readSize;
+}
+
 static bool setToReplyMap(ARState &state, const ArrayObject &argvObj, unsigned int index,
                           std::string &&buf) {
   auto varObj = argvObj[index];
@@ -42,27 +63,6 @@ struct ReadLineParam {
   StringRef ifs;
 };
 
-static int readByteWithRetryExceptSIGINT(const ReadLineParam &param, char &ch) {
-  int readSize;
-  while (true) {
-    readSize = static_cast<int>(
-        readWithTimeout(param.fd, &ch, 1, {.retry = false, .timeoutMSec = param.timeoutMSec}));
-    if (readSize < 0) {
-      if (readSize == -2) { // timeout
-        errno = 0;
-      }
-      if (errno == EAGAIN) {
-        continue;
-      }
-      if (errno == EINTR && !ARState::isInterrupted()) {
-        continue; // retry except for SIGINT
-      }
-    }
-    break;
-  }
-  return readSize;
-}
-
 static bool readLine(ARState &state, const ArrayObject &argvObj, unsigned int index,
                      const ReadLineParam &param) {
   // clear REPL/reply before read
@@ -73,13 +73,14 @@ static bool readLine(ARState &state, const ArrayObject &argvObj, unsigned int in
   const bool useReply = size - index == 0;
   std::string strBuf;
   unsigned int skipCount = 1;
-  int lastReadSize = 0;
+  ssize_t lastReadSize = 0;
   unsigned int readCount = 0;
   char ch;
   for (bool prevIsBackslash = false;
        param.nbytes < 0 || readCount < static_cast<unsigned int>(param.nbytes);
        prevIsBackslash = param.backslash && ch == '\\' && !prevIsBackslash) {
-    if (lastReadSize = readByteWithRetryExceptSIGINT(param, ch); lastReadSize <= 0) {
+    if (lastReadSize = readBytesWithRetryExceptSIGINT(param.fd, &ch, 1, param.timeoutMSec);
+        lastReadSize <= 0) {
       break;
     }
     readCount++;
@@ -261,6 +262,38 @@ int builtin_read(ARState &state, ArrayObject &argvObj) {
     PERROR(state, argvObj, "%d", param.fd);
   }
   return ret ? 0 : 1;
+}
+
+/**
+ * for stdin redirection test
+ */
+int builtin_gets(ARState &st, ArrayObject &argvObj) {
+  GetOptState optState("h");
+  for (int opt; (opt = optState(argvObj)) != -1;) {
+    if (opt == 'h') {
+      return showHelp(argvObj);
+    }
+    return invalidOptionError(st, argvObj, optState);
+  }
+
+  int errNum = 0;
+  ssize_t readSize = 0;
+  do {
+    char buf[256];
+    readSize = readBytesWithRetryExceptSIGINT(STDIN_FILENO, buf, std::size(buf), -1);
+    if (readSize < 0) {
+      PERROR(st, argvObj, "read failed");
+      return 1;
+    }
+    if (StringRef ref(buf, readSize); fwriteStrRef(stdout, ref) != ref.size()) {
+      errNum = errno;
+      goto END;
+    }
+  } while (readSize);
+
+END:
+  CHECK_STDOUT_ERROR(st, argvObj, errNum);
+  return 0;
 }
 
 } // namespace arsh

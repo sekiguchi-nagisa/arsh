@@ -38,6 +38,7 @@
     - add ``limit`` param
 - add ``unsigned`` param to ``String#toInt`` method. now can recognize as unsigned int
 - reduce screen flicker of LineEditor. now only draw modified lines
+- improve io error handling of builtin ``__gets`` command. now correctly report io error
 
 #### Module
 

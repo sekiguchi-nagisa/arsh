@@ -101,7 +101,7 @@ TEST_F(InteractiveTest, read_ctrlc2) {
   std::this_thread::sleep_for(std::chrono::milliseconds(500));
   this->send(CTRL_C);
   std::string err = strsignal(SIGINT);
-  err += "\n";
+  err += '\n';
   ASSERT_NO_FATAL_FAILURE(this->expect(promptAfterCtrlC(PROMPT), err));
   ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 128 + SIGINT));
 }
@@ -122,6 +122,27 @@ SystemError: read failed, caused by `%s'
   ASSERT_NO_FATAL_FAILURE(this->expect(promptAfterCtrlC(PROMPT), err));
   this->send(CTRL_D);
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(1, WaitStatus::EXITED, "\n"));
+}
+
+TEST_F(InteractiveTest, read_ctrlc4) {
+  this->invoke("--quiet", "--norc");
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+  this->sendLine("__gets");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "__gets\n"));
+  std::this_thread::sleep_for(std::chrono::milliseconds(500));
+  this->send(CTRL_C);
+
+  std::string err = format(R"((stdin):1: __gets: read failed: %s
+[runtime error]
+SystemError: %s
+    from (builtin):8 'function _DEF_SIGINT()'
+    from (stdin):1 '<toplevel>()'
+)",
+                           strerror(EINTR), strsignal(SIGINT));
+
+  ASSERT_NO_FATAL_FAILURE(this->expect(promptAfterCtrlC(PROMPT), err));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndWait("exit", 1));
 }
 
 TEST_F(InteractiveTest, tab1) {

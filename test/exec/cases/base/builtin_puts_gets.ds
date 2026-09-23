@@ -10,6 +10,11 @@ assert $PIPESTATUS[0] == 2 && $PIPESTATUS[1] == 0
 assert __gets -s 2>&1 > /dev/null | grep ': __gets: -s: invalid option'
 assert $PIPESTATUS[0] == 2 && $PIPESTATUS[1] == 0
 
+if (test -e /dev/full) {
+    assert "$(echo hello | __gets 2>&1 hello > /dev/full)" =~ $/: __gets: io error:/
+    assert $? == 1
+}
+
 # __puts
 assert __puts -h | grep '^Usage: __puts \[-1 arg1] \[-2 arg2]'
 assert __puts -h | grep 'Print specified argument to standard output/error and print new line'

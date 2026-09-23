@@ -35,7 +35,6 @@ extern char **environ; // NOLINT
 namespace arsh {
 
 // builtin command definition
-static int builtin_gets(ARState &state, ArrayObject &argvObj);
 static int builtin_puts(ARState &state, ArrayObject &argvObj);
 static int builtin_check_env(ARState &state, ArrayObject &argvObj);
 static int builtin_complete(ARState &state, ArrayObject &argvObj);
@@ -57,6 +56,7 @@ int builtin_wait(ARState &state, ArrayObject &argvObj);
 int builtin_disown(ARState &state, ArrayObject &argvObj);
 
 int builtin_read(ARState &state, ArrayObject &argvObj);
+int builtin_gets(ARState &state, ArrayObject &argvObj);
 
 int builtin_shctl(ARState &state, ArrayObject &argvObj);
 
@@ -370,28 +370,6 @@ static int builtin_exit(ARState &state, ArrayObject &argvObj) {
 static int builtin_true(ARState &, ArrayObject &) { return 0; }
 
 static int builtin_false(ARState &, ArrayObject &) { return 1; }
-
-/**
- * for stdin redirection test
- */
-static int builtin_gets(ARState &st, ArrayObject &argvObj) {
-  GetOptState optState("h");
-  for (int opt; (opt = optState(argvObj)) != -1;) {
-    if (opt == 'h') {
-      return showHelp(argvObj);
-    } else {
-      return invalidOptionError(st, argvObj, optState);
-    }
-  }
-
-  char buf[256];
-  ssize_t readSize = 0;
-  while ((readSize = read(STDIN_FILENO, buf, std::size(buf))) > 0) {
-    const ssize_t r = write(STDOUT_FILENO, buf, readSize);
-    (void)r;
-  }
-  return 0;
-}
 
 static int writeLine(StringRef ref, FILE *fp, bool flush) {
   if (fwriteStrRef(fp, ref) != ref.size()) {
