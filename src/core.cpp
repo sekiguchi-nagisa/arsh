@@ -80,7 +80,7 @@ void raiseError(ARState &st, TYPE type, std::string &&message, int64_t status) {
 
 void raiseSystemError(ARState &st, int errorNum, std::string &&message) {
   assert(errorNum != 0);
-  if (errorNum == EINTR) {
+  if (errorNum == EINTR && ARState::isInterrupted()) {
     /**
      * if EINTR, already raised SIGINT. and SIGINT handler also raises SystemError.
      * due to eliminate redundant SystemError, force clear SIGINT
@@ -99,7 +99,7 @@ void raiseSystemError(ARState &st, int errorNum, std::string &&message) {
 }
 
 static std::string toPrintable(const TypePool &pool, const Value &value) {
-  StrAppender appender(SYS_LIMIT_PRINTABLE_MAX >> 2);
+  StrAppender appender(SYS_LIMIT_PRINTABLE_MAX >> 2u);
   Stringifier stringifier(pool, appender);
   appender.setAppendOp(StrAppender::Op::PRINTABLE);
   stringifier.addAsStr(value);
@@ -108,7 +108,7 @@ static std::string toPrintable(const TypePool &pool, const Value &value) {
 
 void raiseAssertFail(ARState &st, Value &&msg, const AssertOp op, Value &&left, Value &&right) {
   static_assert(SYS_LIMIT_PRINTABLE_MAX <= SYS_LIMIT_ERROR_MSG_MAX);
-  constexpr auto MAX_PRINTABLE = SYS_LIMIT_PRINTABLE_MAX >> 2;
+  constexpr auto MAX_PRINTABLE = SYS_LIMIT_PRINTABLE_MAX >> 2u;
   std::string value;
   if (op != AssertOp::DEFAULT) {
     const StringRef ref = msg.asStrRef();
@@ -156,8 +156,8 @@ void raiseAssertFail(ARState &st, Value &&msg, const AssertOp op, Value &&left, 
   st.throwObject(std::move(except));
 }
 
-bool printErrorAt(const ARState &state, const ArrayObject &argvObj, StringRef sub, int errNum,
-                  const char *fmt, ...) {
+bool printErrorAt(const ARState &state, const ArrayObject &argvObj, const StringRef sub,
+                  const int errNum, const char *fmt, ...) {
   // get current frame
   std::string sourceName;
   unsigned int lineNum = 0;
@@ -201,7 +201,7 @@ bool printErrorAt(const ARState &state, const ArrayObject &argvObj, StringRef su
   return fwriteStrRef(stderr, out) == out.size();
 }
 
-static bool isUnhandledSignal(int sigNum) {
+static bool isUnhandledSignal(const int sigNum) {
   switch (sigNum) {
   case SIGBUS:
   case SIGSEGV:
@@ -231,9 +231,9 @@ static bool isUnhandledSignal(int sigNum) {
 }
 
 // when called this handler, all signals are blocked due to signal mask
-static void signalHandler(int sigNum) { ARState::pendingSigSet.add(sigNum); }
+static void signalHandler(const int sigNum) { ARState::pendingSigSet.add(sigNum); }
 
-static struct sigaction newSigaction(int sigNum) {
+static struct sigaction newSigaction(const int sigNum) {
   struct sigaction action{};
   if (sigNum != SIGINT) { // always restart system call except for SIGINT
     action.sa_flags = SA_RESTART;
@@ -281,7 +281,7 @@ static ObjPtr<Object> installUnblock(ARState &st, const int sigNum, ObjPtr<Objec
   return oldHandler;
 }
 
-ObjPtr<Object> installSignalHandler(ARState &st, int sigNum, ObjPtr<Object> handler) {
+ObjPtr<Object> installSignalHandler(ARState &st, const int sigNum, ObjPtr<Object> handler) {
   SignalGuard guard;
   return installUnblock(st, sigNum, std::move(handler));
 }
@@ -294,7 +294,7 @@ void installSignalHandler(ARState &st, AtomicSigSet &sigSet, const ObjPtr<Object
   }
 }
 
-void setJobControlSignalSetting(ARState &st, bool set) {
+void setJobControlSignalSetting(ARState &st, const bool set) {
   SignalGuard guard;
 
   auto DFL_handler = getBuiltinGlobal(st, VAR_SIG_DFL).toPtr();
@@ -748,10 +748,11 @@ int doCodeCompletion(ARState &st, const StringRef modDesc, const DoCodeCompletio
   auto &obj = typeAs<CandidatesObject>(st.getGlobal(BuiltinVarOffset::COMPREPLY));
   if (!ret || ARState::isInterrupted() || st.hasError()) {
     obj.clearAndShrink(); // if canceled, force clear completion results
-    if (!st.hasError()) {
+    if (st.hasError()) {
+      ARState::clearPendingSignal(SIGINT); // force ignore SIGINT
+    } else {
       raiseSystemError(st, EINTR, "code completion is cancelled");
     }
-    ARState::clearPendingSignal(SIGINT);
     errno = EINTR;
     return -1;
   }
