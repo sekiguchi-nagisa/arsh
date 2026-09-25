@@ -15,9 +15,9 @@
  */
 
 #include <poll.h>
-#include <sys/uio.h>
 
 #include <constant.h>
+#include <io.h>
 #include <misc/num_util.hpp>
 
 #include "transport.h"
@@ -69,12 +69,11 @@ ssize_t LSPTransport::send(size_t size, const char *data) {
   header += std::to_string(size);
   header += "\r\n\r\n";
 
-  const iovec vec[] = {
+  iovec vec[] = {
       {.iov_base = header.data(), .iov_len = header.size()},
       {.iov_base = const_cast<char *>(data), .iov_len = size},
   };
-  if (const ssize_t writeSize = writev(this->outputFd, vec, std::size(vec));
-      writeSize < static_cast<ssize_t>(size + header.size())) {
+  if (!writevAll(this->outputFd, vec, std::size(vec))) {
     return -1;
   }
   errno = 0;

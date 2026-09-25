@@ -137,4 +137,29 @@ bool writeAll(const int fd, const void *data, const size_t size) {
   return true;
 }
 
+bool writevAll(const int fd, iovec *vec, const unsigned short size) {
+  for (int count = size; count > 0;) {
+    ssize_t n = writev(fd, vec, count);
+    if (n < 0) {
+      if (errno == EINTR) {
+        continue;
+      }
+      return false;
+    }
+    // consume written elements
+    while (n >= 0 && count > 0) {
+      if (static_cast<size_t>(n) >= vec[0].iov_len) { // consume first element
+        n -= static_cast<ssize_t>(vec[0].iov_len);
+        vec++;
+        count--;
+      } else {
+        vec[0].iov_base = static_cast<char *>(vec[0].iov_base) + n;
+        vec[0].iov_len -= static_cast<size_t>(n);
+        break;
+      }
+    }
+  }
+  return true;
+}
+
 } // namespace arsh

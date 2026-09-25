@@ -17,6 +17,8 @@
 #ifndef ARSH_IO_H
 #define ARSH_IO_H
 
+#include <sys/uio.h>
+
 #include <csignal>
 #include <cstdio>
 
@@ -91,6 +93,19 @@ inline ssize_t readRetryEAGAINWithTimeout(const int fd, char *buf, const size_t 
 inline auto fwriteStrRef(FILE *fp, const StringRef ref) {
   return fwrite(ref.data(), sizeof(char), ref.size(), fp);
 }
+
+/**
+ * write all content to fd
+ * if EINTR, retry write
+ * if fd is non-blocking and not ready to write, return false and set errno to EAGAIN
+ * after call it, vec maybe modified
+ * @param fd
+ * @param vec
+ * @param size
+ * @return
+ * if failed, return false and set errno
+ */
+[[nodiscard]] bool writevAll(int fd, iovec *vec, unsigned short size);
 
 } // namespace arsh
 
