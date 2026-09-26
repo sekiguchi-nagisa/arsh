@@ -287,6 +287,28 @@ TEST_F(InteractiveTest, read) {
   ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
 }
 
+TEST_F(InteractiveTest, fdRead) {
+  this->invoke("--quiet", "--norc");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+
+  this->sendLine("var aa = $STDIN.read(5)");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "var aa = $STDIN.read(5)\n"));
+  this->sendLine("0123456789");
+  ASSERT_NO_FATAL_FAILURE(this->expect("0123456789\n" + PROMPT));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $aa == '01234'"));
+
+  this->sendLine("$aa = $STDIN.readAll()");
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT + "$aa = $STDIN.readAll()\n"));
+  this->sendLine("0123456789");
+  ASSERT_NO_FATAL_FAILURE(this->expect("0123456789\n"));
+  this->send(CTRL_D);
+  ASSERT_NO_FATAL_FAILURE(this->expect(PROMPT));
+  ASSERT_NO_FATAL_FAILURE(this->sendLineAndExpect("assert $aa == $'0123456789\\n'"));
+
+  this->send(CTRL_D);
+  ASSERT_NO_FATAL_FAILURE(this->waitAndExpect(0, WaitStatus::EXITED, "\n"));
+}
+
 TEST_F(InteractiveTest, throwFromLastPipe1) {
   this->invoke("--quiet", "--norc");
 

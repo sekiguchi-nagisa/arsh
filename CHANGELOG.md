@@ -9,6 +9,10 @@
 - add ``Int#toString`` method for reverse method of ``String#toInt``
 - add ``Regex#split`` method for split string by regex pattern
 - add ``Map#keys`` and ``Map#values`` methods
+- add some ``FD`` type methods
+    - ``read``: read at most specified bytes
+    - ``readAll``: read until end-of-file
+    - ``write``: write whole string
 
 ### Changed
 

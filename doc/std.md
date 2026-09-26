@@ -226,6 +226,12 @@ function unlock(): FD for FD
 
 function cloexec(set: Bool?): Void for FD
 
+function write(content: String): Int for FD
+
+function read(size: Int): String for FD
+
+function readAll(): String for FD
+
 function %OP_BOOL(): Bool for FD
 
 function %OP_NOT(): Bool for FD

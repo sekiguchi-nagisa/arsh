@@ -2465,6 +2465,59 @@ ARSH_METHOD fd_cloexec(RuntimeContext &ctx) {
   RET_VOID;
 }
 
+//!bind: function write($this: FD, $content: String): Int
+ARSH_METHOD fd_write(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(fd_write);
+  auto &fdObj = typeAs<UnixFdObject>(LOCAL(0));
+  auto ref = LOCAL(1).asStrRef();
+  if (!writeAll(fdObj.getRawFd(), ref)) {
+    raiseSystemError(ctx, errno, "write failed");
+    RET_ERROR;
+  }
+  RET(Value::createInt(ref.size())); // currently always return ref.size()
+}
+
+//!bind: function read($this: FD, $size: Int): String
+ARSH_METHOD fd_read(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(fd_read);
+  auto &fdObj = typeAs<UnixFdObject>(LOCAL(0));
+  int64_t size = LOCAL(1).asInt();
+  if (size < 0 || static_cast<size_t>(size) > SYS_LIMIT_STRING_MAX) {
+    raiseOutOfRangeError(ctx, "read size must be between 0 and INT32_MAX");
+    RET_ERROR;
+  }
+  std::string buf;
+  buf.resize(size);
+  const ssize_t readSize =
+      readRetryWithTimeoutExceptSIGINT(fdObj.getRawFd(), buf.data(), buf.size(), -1);
+  if (readSize < 0) {
+    raiseSystemError(ctx, errno, "read failed");
+    RET_ERROR;
+  }
+  buf.resize(readSize);
+  RET(Value::createStr(std::move(buf)));
+}
+
+//!bind: function readAll($this: FD): String
+ARSH_METHOD fd_readAll(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(fd_readAll);
+  auto &fdObj = typeAs<UnixFdObject>(LOCAL(0));
+  auto out = Value::createStr();
+  ssize_t readSize = 0;
+  do {
+    char buf[256];
+    readSize = readRetryWithTimeoutExceptSIGINT(fdObj.getRawFd(), buf, std::size(buf), -1);
+    if (readSize < 0) {
+      raiseSystemError(ctx, errno, "read failed");
+      RET_ERROR;
+    }
+    if (!out.appendAsStr(ctx, StringRef(buf, static_cast<size_t>(readSize)))) {
+      RET_ERROR;
+    }
+  } while (readSize);
+  RET(out);
+}
+
 //!bind: function $OP_BOOL($this : FD) : Bool
 ARSH_METHOD fd_bool(RuntimeContext &ctx) {
   SUPPRESS_WARNING(fd_bool);

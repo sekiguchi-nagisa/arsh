@@ -135,25 +135,26 @@ int Value::compare(ARState &state, const Value &o) const {
   return r;
 }
 
-bool Value::appendAsStr(ARState &state, StringRef value) {
+bool Value::appendAsStr(ARState &state, const StringRef value) {
   assert(this->hasStrRef());
-
-  const bool small = this->isSmallStr();
-  const size_t size = small ? this->tv.size() : typeAs<StringObject>(*this).size();
-  if (unlikely(size > StringObject::MAX_SIZE - value.size())) {
-    raiseStringLimit(state);
-    return false;
-  }
-
-  if (small) {
-    size_t newSize = size + value.size();
-    if (newSize <= TValue::MAX_STR_SIZE) {
-      this->tv.append<ValueTag::STRING>(value.data(), value.size());
-      return true;
+  if (!value.empty()) {
+    const bool small = this->isSmallStr();
+    const size_t size = small ? this->tv.size() : typeAs<StringObject>(*this).size();
+    if (unlikely(size > StringObject::MAX_SIZE - value.size())) {
+      raiseStringLimit(state);
+      return false;
     }
-    *this = create<StringObject>(StringRef(tv.data(), size));
+
+    if (small) {
+      size_t newSize = size + value.size();
+      if (newSize <= TValue::MAX_STR_SIZE) {
+        this->tv.append<ValueTag::STRING>(value.data(), value.size());
+        return true;
+      }
+      *this = create<StringObject>(StringRef(tv.data(), size));
+    }
+    typeAs<StringObject>(*this).unsafeAppend(value);
   }
-  typeAs<StringObject>(*this).unsafeAppend(value);
   return true;
 }
 
@@ -593,10 +594,8 @@ bool ReaderObject::nextLine(ARState &state) {
   std::string line;
   while (true) {
     if (this->remainPos == this->usedSize) {
-      const ssize_t readSize = read(this->fdObj->getRawFd(), this->buf, std::size(this->buf));
-      if (readSize == -1 && errno == EAGAIN) {
-        continue;
-      }
+      const ssize_t readSize = readRetryWithTimeoutExceptSIGINT(this->fdObj->getRawFd(), this->buf,
+                                                                std::size(this->buf), -1);
       if (readSize <= 0) {
         this->available = false;
         if (readSize < 0) {

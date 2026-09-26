@@ -352,7 +352,7 @@ ssize_t readRetryWithTimeoutExceptSIGINT(const int fd, char *buf, const size_t b
                                          const int timeoutMSec) {
   ssize_t readSize = 0;
   do {
-    readSize = readRetryEAGAINWithTimeout(fd, buf, bufSize, timeoutMSec);
+    readSize = readWith(fd, buf, bufSize, {ReadRetry::RETRY_EAGAIN, timeoutMSec});
     /**
      * regardless of SA_RESTART, other signals still cause EINTR in macOS.
      * so manually retry read

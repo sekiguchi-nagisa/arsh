@@ -69,11 +69,6 @@ inline ssize_t readRetryWithTimeout(const int fd, char *buf, const size_t bufSiz
   return readWith(fd, buf, bufSize, {ReadRetry::RETRY_ALL, timeoutMSec});
 }
 
-inline ssize_t readRetryEAGAINWithTimeout(const int fd, char *buf, const size_t bufSize,
-                                          const int timeoutMSec) {
-  return readWith(fd, buf, bufSize, {ReadRetry::RETRY_EAGAIN, timeoutMSec});
-}
-
 /**
  * write all content to fd
  * if EINTR, retry write

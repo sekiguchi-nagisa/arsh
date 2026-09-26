@@ -55,6 +55,47 @@ try {
 }
 assert $ex is SystemError
 
+## read/write
+assert echo 12345 | $STDIN.read(1) == '1'
+assert echo 12345 | $STDIN.read(2) == '12'
+assert echo 12345 | $STDIN.read(3) == '123'
+assert echo 12345 | $STDIN.read(4) == '1234'
+assert echo 12345 | $STDIN.read(5) == '12345'
+assert echo 12345 | $STDIN.read(6) == $'12345\n'
+assert echo 12345 | $STDIN.read(7) == $'12345\n'
+assert echo 0123456789 | $STDIN.readAll() == $'0123456789\n'
+assert $STDOUT.write('0123456789') | $STDIN.readAll() == '0123456789'
+assert $STDOUT.write('0123456789') | $STDIN.read(5) == '01234'
+{
+    let proc = coproc while($true) {
+        var r = $STDIN.read(100)
+        $STDOUT.write($r)
+    }
+    $proc.in().write('hey')
+    assert $proc.out().read(3) == 'hey'
+    $proc.in().write('hey2')
+    assert $proc.out().read(4) == 'hey2'
+    $proc.kill($SIGTERM)
+    assert $proc.wait() == 143
+}
+$ex = 2345
+try { $fd.read(-1); } catch e { $ex = $e; }
+assert $ex is OutOfRangeError
+assert ($ex as OutOfRangeError).message() == "read size must be between 0 and INT32_MAX"
+$ex = 2345
+try { $fd.read(10); } catch e { $ex = $e; }
+assert $ex is SystemError
+assert ($ex as SystemError).message() =~ $/read failed/
+$ex = 2345
+try { $fd.readAll(); } catch e { $ex = $e; }
+assert $ex is SystemError
+assert ($ex as SystemError).message() =~ $/read failed/
+$ex = 2345
+try { $fd.write('test'); } catch e { $ex = $e; }
+assert $ex is SystemError
+assert ($ex as SystemError).message() =~ $/write failed/
+
+
 ## redirection
 $ex = 34
 try {
