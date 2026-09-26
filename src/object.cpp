@@ -587,25 +587,24 @@ void EnvCtxObject::setAndSaveEnv(Value &&name, Value &&value) {
 // ##########################
 
 Optional<Value> ReaderObject::next(ARState &state) {
+  static_assert(SYS_LIMIT_STRING_MAX < std::numeric_limits<size_t>::max());
+  static_assert(SYS_LIMIT_STRING_MAX < std::numeric_limits<size_t>::max() - SYS_LIMIT_STRING_MAX);
+
   if (!this->fdObj && this->buf.empty()) {
     return {};
   }
 
   const StringRef delim = this->delimObj.asStrRef();
-  assert(!delim.empty());
   assert(delim.size() <= SYS_LIMIT_STRING_MAX);
+  const size_t maxBufSize = SYS_LIMIT_STRING_MAX + delim.size();
   while (true) {
-    if (this->buf.size() >= delim.size()) {
+    if (this->buf.size() >= delim.size() && !delim.empty()) {
       const StringRef ref = this->buf;
       if (const auto r = ref.find(delim, this->offset); r != StringRef::npos) {
-        auto ret = Value::createStr();
-        const bool s = ret.appendAsStr(state, ref.substr(0, r));
+        auto tmp = ref.substr(0, r).toString();
         this->buf.erase(0, r + delim.size());
         this->offset = 0;
-        if (s) {
-          return ret;
-        }
-        return {};
+        return Value::createStr(std::move(tmp));
       }
       this->offset = this->buf.size() - delim.size() + 1;
     }
@@ -614,8 +613,9 @@ Optional<Value> ReaderObject::next(ARState &state) {
       break;
     }
     char data[256];
+    const size_t size = std::clamp<size_t>(maxBufSize - this->buf.size(), 1, std::size(data));
     const ssize_t readSize =
-        readRetryWithTimeoutExceptSIGINT(this->fdObj->getRawFd(), data, std::size(data), -1);
+        readRetryWithTimeoutExceptSIGINT(this->fdObj->getRawFd(), data, size, -1);
     if (readSize <= 0) {
       const int errNum = errno;
       this->fdObj = nullptr; // clear or close fd
@@ -625,12 +625,9 @@ Optional<Value> ReaderObject::next(ARState &state) {
         return {};
       }
     }
-    static_assert(SYS_LIMIT_STRING_MAX < std::numeric_limits<size_t>::max());
-    static_assert(SYS_LIMIT_STRING_MAX < std::numeric_limits<size_t>::max() - SYS_LIMIT_STRING_MAX);
-    if (!checkedAppend(StringRef{data, static_cast<size_t>(readSize)},
-                       SYS_LIMIT_STRING_MAX + delim.size(), this->buf)) {
+    if (!checkedAppend(StringRef{data, static_cast<size_t>(readSize)}, maxBufSize, this->buf)) {
       this->buf.clear();
-      this->offset = 0;
+      this->fdObj = nullptr;
       raiseStringLimit(state);
       return {};
     }
@@ -638,10 +635,7 @@ Optional<Value> ReaderObject::next(ARState &state) {
   if (!this->buf.empty()) {
     std::string tmp;
     tmp.swap(this->buf);
-    if (tmp.size() <= SYS_LIMIT_STRING_MAX) {
-      return Value::createStr(std::move(tmp));
-    }
-    raiseStringLimit(state);
+    return Value::createStr(std::move(tmp));
   }
   return {};
 }

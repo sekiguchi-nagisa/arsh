@@ -1471,7 +1471,7 @@ class ReaderObject : public ObjectWithRtti<ObjectKind::Reader> {
 private:
   size_t offset{0};
   ObjPtr<UnixFdObject> fdObj;
-  Value delimObj; // must be non-empty String
+  const Value delimObj; // must be String (if empty string, not split)
   std::string buf;
 
 public:
