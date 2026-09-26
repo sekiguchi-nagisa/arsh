@@ -586,51 +586,64 @@ void EnvCtxObject::setAndSaveEnv(Value &&name, Value &&value) {
 // ##     ReaderObject     ##
 // ##########################
 
-bool ReaderObject::nextLine(ARState &state) {
-  if (!this->available) {
-    return false;
+Optional<Value> ReaderObject::next(ARState &state) {
+  if (!this->fdObj && this->buf.empty()) {
+    return {};
   }
 
-  std::string line;
+  const StringRef delim = this->delimObj.asStrRef();
+  assert(!delim.empty());
+  assert(delim.size() <= SYS_LIMIT_STRING_MAX);
   while (true) {
-    if (this->remainPos == this->usedSize) {
-      const ssize_t readSize = readRetryWithTimeoutExceptSIGINT(this->fdObj->getRawFd(), this->buf,
-                                                                std::size(this->buf), -1);
-      if (readSize <= 0) {
-        this->available = false;
-        if (readSize < 0) {
-          raiseSystemError(state, errno, "read failed");
-          return false;
+    if (this->buf.size() >= delim.size()) {
+      const StringRef ref = this->buf;
+      if (const auto r = ref.find(delim, this->offset); r != StringRef::npos) {
+        auto ret = Value::createStr();
+        const bool s = ret.appendAsStr(state, ref.substr(0, r));
+        this->buf.erase(0, r + delim.size());
+        this->offset = 0;
+        if (s) {
+          return ret;
         }
-        break;
+        return {};
       }
-      this->remainPos = 0;
-      this->usedSize = readSize;
+      this->offset = this->buf.size() - delim.size() + 1;
     }
 
-    // split by newline
-    StringRef ref(this->buf + this->remainPos, this->usedSize - this->remainPos);
-    for (StringRef::size_type pos = 0; pos != StringRef::npos;) {
-      const auto ret = ref.find('\n', pos);
-      if (!checkedAppend(ref.slice(pos, ret), StringObject::MAX_SIZE, line)) {
-        raiseStringLimit(state);
-        return false;
-      }
-      pos = ret;
-      if (ret != StringRef::npos) {
-        this->value = Value::createStr(std::move(line));
-        this->remainPos += pos + 1;
-        return true;
-      } else {
-        this->remainPos = this->usedSize;
+    if (!this->fdObj) {
+      break;
+    }
+    char data[256];
+    const ssize_t readSize =
+        readRetryWithTimeoutExceptSIGINT(this->fdObj->getRawFd(), data, std::size(data), -1);
+    if (readSize <= 0) {
+      const int errNum = errno;
+      this->fdObj = nullptr; // clear or close fd
+      if (readSize < 0) {
+        raiseSystemError(state, errNum, "read failed");
+        this->buf.clear();
+        return {};
       }
     }
+    static_assert(SYS_LIMIT_STRING_MAX < std::numeric_limits<size_t>::max());
+    static_assert(SYS_LIMIT_STRING_MAX < std::numeric_limits<size_t>::max() - SYS_LIMIT_STRING_MAX);
+    if (!checkedAppend(StringRef{data, static_cast<size_t>(readSize)},
+                       SYS_LIMIT_STRING_MAX + delim.size(), this->buf)) {
+      this->buf.clear();
+      this->offset = 0;
+      raiseStringLimit(state);
+      return {};
+    }
   }
-  if (!line.empty()) {
-    this->value = Value::createStr(std::move(line));
-    return true;
+  if (!this->buf.empty()) {
+    std::string tmp;
+    tmp.swap(this->buf);
+    if (tmp.size() <= SYS_LIMIT_STRING_MAX) {
+      return Value::createStr(std::move(tmp));
+    }
+    raiseStringLimit(state);
   }
-  return false;
+  return {};
 }
 
 // #########################

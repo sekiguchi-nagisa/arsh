@@ -1469,24 +1469,21 @@ public:
 
 class ReaderObject : public ObjectWithRtti<ObjectKind::Reader> {
 private:
-  bool available{true};
-  unsigned short remainPos{0};
-  unsigned short usedSize{0};
-  char buf[256]; // NOLINT
+  size_t offset{0};
   ObjPtr<UnixFdObject> fdObj;
-  Value value; // actual read line
+  Value delimObj; // must be non-empty String
+  std::string buf;
 
 public:
-  explicit ReaderObject(ObjPtr<UnixFdObject> &&fdObj)
-      : ObjectWithRtti(TYPE::Reader), fdObj(std::move(fdObj)) {
-    if (this->fdObj->getRawFd() == -1) {
-      this->available = false;
+  ReaderObject(ObjPtr<UnixFdObject> &&fdObj, Value &&delim)
+      : ObjectWithRtti(TYPE::Reader), delimObj(std::move(delim)) {
+    assert(!this->delimObj.asStrRef().empty());
+    if (fdObj->getRawFd() > -1) {
+      this->fdObj = std::move(fdObj);
     }
   }
 
-  bool nextLine(ARState &state);
-
-  Value takeLine() { return std::move(this->value); }
+  Optional<Value> next(ARState &state);
 };
 
 struct UserSysTime {

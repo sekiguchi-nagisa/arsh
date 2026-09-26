@@ -2536,7 +2536,7 @@ ARSH_METHOD fd_not(RuntimeContext &ctx) {
 ARSH_METHOD fd_iter(RuntimeContext &ctx) {
   SUPPRESS_WARNING(fd_iter);
   auto &v = LOCAL(0);
-  RET(Value::create<ReaderObject>(toObjPtr<UnixFdObject>(v)));
+  RET(Value::create<ReaderObject>(toObjPtr<UnixFdObject>(v), Value::createStr("\n")));
 }
 
 //!bind: function job($this : ProcSubst) : Job
@@ -2554,11 +2554,10 @@ ARSH_METHOD procSub_job(RuntimeContext &ctx) {
 ARSH_METHOD reader_next(RuntimeContext &ctx) {
   SUPPRESS_WARNING(reader_next);
   auto &reader = typeAs<ReaderObject>(LOCAL(0));
-  if (reader.nextLine(ctx)) {
-    RET(reader.takeLine());
-  } else { // may have error
-    RET_VOID;
+  if (auto ret = reader.next(ctx); ret.hasValue()) {
+    RET(std::move(ret.unwrap()));
   }
+  RET_VOID; // return always void regardless error
 }
 
 // #####################
