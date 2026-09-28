@@ -30,6 +30,7 @@ namespace arsh {
   OP(Bool)                                                                                         \
   OP(String)                                                                                       \
   OP(FD)                                                                                           \
+  OP(Reader)                                                                                       \
   OP(ProcSubst)                                                                                    \
   OP(Throwable)                                                                                    \
   OP(Error)                                                                                        \
@@ -46,9 +47,7 @@ namespace arsh {
   OP(Candidates)                                                                                   \
   OP(UnicodeData)
 
-#define EACH_HANDLE_INFO_TYPE_HIDDEN(OP)                                                           \
-  OP(StringIter)                                                                                   \
-  OP(Reader)
+#define EACH_HANDLE_INFO_TYPE_HIDDEN(OP) OP(StringIter)
 
 #define EACH_HANDLE_INFO_TYPE_HIDDEN_IFACE(OP)                                                     \
   OP(Eq_)                                                                                          \

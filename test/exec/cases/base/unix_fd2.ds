@@ -3,7 +3,6 @@ var ret : [String]
 
 ## end with newline
 { echo aaa && echo bbb && echo && echo ccc; } | for $e in $STDIN { $ret.add($e); }
-
 assert $ret.size() == 4
 assert $ret[0] == 'aaa'
 assert $ret[1] == 'bbb'
@@ -13,13 +12,41 @@ $ret.clear()
 
 ## not end with newline
 { echo aaa && echo 'bbb' && echo -en '\nccc'; } | for $e in $STDIN { $ret.add($e); }
-
 assert $ret.size() == 4
 assert $ret[0] == 'aaa'
 assert $ret[1] == 'bbb'
 assert $ret[2] == ''
 assert $ret[3] == 'ccc'
 $ret.clear()
+
+## delimiter
+printf "%s" "aaa\tbbb\tccc" | for $e in $STDIN.split("\t") { $ret.add($e); }
+assert $ret.size() == 3
+assert $ret[0] == 'aaa'
+assert $ret[1] == 'bbb'
+assert $ret[2] == 'ccc'
+$ret.clear()
+
+printf "%s" "aaa\r\tbbb\r\tccc\r\t" | for $e in $STDIN.split("\r\t") { $ret.add($e); }
+assert $ret.size() == 3
+assert $ret[0] == 'aaa'
+assert $ret[1] == 'bbb'
+assert $ret[2] == 'ccc'
+$ret.clear()
+
+{
+    printf "%s" "aaa\r\tbbb\r\t\r\tccc" | {
+        var r = $STDIN.split("\r\t")
+        assert $r is Reader
+        for $e in $r { $ret.add($e); }
+    }
+    assert $ret.size() == 4
+    assert $ret[0] == 'aaa'
+    assert $ret[1] == 'bbb'
+    assert $ret[2] == ''
+    assert $ret[3] == 'ccc'
+    $ret.clear()
+}
 
 ## invalid fd
 for $e in { var a = $STDIN.dup(); $a.close(); $a; } { $ret.add($e); }
@@ -55,7 +82,11 @@ assert $ret.size() == 2
 assert $ret[0] == 'aaa'
 assert $ret[1] == 'bbb'
 $ret.clear()
+
+## invalid delimiter
 $ex = 34
+try { $STDIN.split('') } catch $e { $ex = $e; }
+assert ($ex as ArgumentError).message() == 'must be non-empty delimiter'
 
 ## large input
 diff \

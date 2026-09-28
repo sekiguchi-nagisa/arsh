@@ -2539,6 +2539,18 @@ ARSH_METHOD fd_iter(RuntimeContext &ctx) {
   RET(Value::create<ReaderObject>(toObjPtr<UnixFdObject>(v), Value::createStr("\n")));
 }
 
+//!bind: function split($this : FD, $delim: String) : Reader
+ARSH_METHOD fd_split(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(fd_split);
+  auto &v = LOCAL(0);
+  auto delim = LOCAL(1);
+  if (delim.asStrRef().empty()) {
+    raiseError(ctx, TYPE::ArgumentError, "must be non-empty delimiter");
+    RET_ERROR;
+  }
+  RET(Value::create<ReaderObject>(toObjPtr<UnixFdObject>(v), std::move(delim)));
+}
+
 //!bind: function job($this : ProcSubst) : Job
 ARSH_METHOD procSub_job(RuntimeContext &ctx) {
   SUPPRESS_WARNING(procSub_job);
@@ -2549,6 +2561,12 @@ ARSH_METHOD procSub_job(RuntimeContext &ctx) {
 // ####################
 // ##     Reader     ##
 // ####################
+
+//!bind: function $OP_ITER($this: Reader): Reader
+ARSH_METHOD reader_init(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(reader_init);
+  RET(EXTRACT_LOCAL(0));
+}
 
 //!bind: function $OP_NEXT($this : Reader) : String
 ARSH_METHOD reader_next(RuntimeContext &ctx) {

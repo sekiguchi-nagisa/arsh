@@ -1477,7 +1477,6 @@ private:
 public:
   ReaderObject(ObjPtr<UnixFdObject> &&fdObj, Value &&delim)
       : ObjectWithRtti(TYPE::Reader), delimObj(std::move(delim)) {
-    assert(!this->delimObj.asStrRef().empty());
     if (fdObj->getRawFd() > -1) {
       this->fdObj = std::move(fdObj);
     }

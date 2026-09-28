@@ -181,7 +181,7 @@ var types = [
     'CLI', 'CLIError', 'Candidates', 'Command', 'Error', 'ExecError', "FD", 'Float',
     'Func', 'GlobError','GlobbingError', 'IllegalAccessError', 'Int', 'InvalidOperationError', 
     'Job', 'Jobs', 'KeyNotFoundError', 'LineEditor', "Map", 'Module', 'Nothing', 'Option',
-    'OutOfRangeError', 'ProcSubst', 'Regex', 'RegexMatch', 'RegexMatchError', 'RegexSyntaxError', 
+    'OutOfRangeError', 'ProcSubst', 'Reader', 'Regex', 'RegexMatch', 'RegexMatchError', 'RegexSyntaxError', 
     'ShellExit', 'Signal', 'Signals', 'StackOverflowError', 'String', 'SystemError', 
     'Throwable', 'TildeError', 'Tuple', 'TypeCastError',
     'UnicodeData', 'UnixFD', 'UnwrapError','UnwrappingError', 'Void', 'typeof',

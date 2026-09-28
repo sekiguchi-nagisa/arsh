@@ -64,7 +64,7 @@ TypePool::TypePool() {
   this->initBuiltinType(TYPE::StringIter, "%StringIter", TYPE::Any, info_StringIterType());
   this->initBuiltinType(TYPE::FD, "FD", TYPE::Any, info_FDType());
   this->initBuiltinType(TYPE::ProcSubst, "ProcSubst", TYPE::FD, info_ProcSubstType());
-  this->initBuiltinType(TYPE::Reader, "%Reader", TYPE::Any, info_ReaderType());
+  this->initBuiltinType(TYPE::Reader, "Reader", TYPE::Any, info_ReaderType());
   this->initBuiltinType(TYPE::Command, "Command", TYPE::Eq_, info_CommandType());
   this->initBuiltinType(TYPE::LineEditor, "LineEditor", TYPE::Any, info_LineEditorType());
   this->initBuiltinType(TYPE::CLI, "CLI", TYPE::Any, info_CLIType());

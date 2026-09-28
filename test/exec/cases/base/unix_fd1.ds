@@ -71,9 +71,9 @@ assert $STDOUT.write('0123456789') | $STDIN.read(5) == '01234'
         var r = $STDIN.read(100)
         $STDOUT.write($r)
     }
-    $proc.in().write('hey')
+    assert $proc.in().write('hey') == 3
     assert $proc.out().read(3) == 'hey'
-    $proc.in().write('hey2')
+    assert $proc.in().write('hey2') == 4
     assert $proc.out().read(4) == 'hey2'
     $proc.kill($SIGTERM)
     assert $proc.wait() == 143

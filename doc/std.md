@@ -237,6 +237,15 @@ function %OP_BOOL(): Bool for FD
 function %OP_NOT(): Bool for FD
 
 function %OP_ITER(): Reader for FD
+
+function split(delim: String): Reader for FD
+```
+
+## Reader type
+```
+function %OP_ITER(): Reader for Reader
+
+function %OP_NEXT(): String for Reader
 ```
 
 ## ProcSubst type
@@ -449,11 +458,6 @@ function emojiSeq(char: String): String for UnicodeData
 ## StringIter type
 ```
 function %OP_NEXT(): String for StringIter
-```
-
-## Reader type
-```
-function %OP_NEXT(): String for Reader
 ```
 
 ## Array type

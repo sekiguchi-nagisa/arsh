@@ -13,6 +13,7 @@
     - ``read``: read at most specified bytes
     - ``readAll``: read until end-of-file
     - ``write``: write whole string
+    - ``split``: return iterator (``Reader``) with user-specified delimiter
 
 ### Changed
 
