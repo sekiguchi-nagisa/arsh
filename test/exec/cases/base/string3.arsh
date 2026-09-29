@@ -12,6 +12,7 @@ assert '^.*?$'.escapeRegex() == '\^\.\*\?\$'
 assert 'hello!!'.escapeRegex() == '\x68ello\x21\x21'
 assert '[^A-z]*'.escapeRegex() == '\[\^A\x2dz\]\*'
 assert '!'.escapeRegex() == '\x21'
+assert $'!\xFE'.escapeRegex() == '\x21' + $'\xFE'
 
 ## too large result
 var large = "!"

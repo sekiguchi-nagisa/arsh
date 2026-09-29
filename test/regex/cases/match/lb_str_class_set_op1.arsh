@@ -137,6 +137,18 @@ input: `b'
 EOF
 )
 
+# (?<=A[\q{AB|AAB}])
+assert diff <(redump -m 'AABC' '(?<=A[\q{AB|AAB}])' 'v') <(<<'EOF'
+input: `AABC'
+(offset=3, size=0)
+EOF
+)
+
+assert diff <(redump -m 'ABC' '(?<=A[\q{AB|AAB}])' 'v') <(<<'EOF'
+input: `ABC'
+failed
+EOF
+)
 
 # (?<=[\p{RGI_Emoji_Flag_Sequence}&&\q{🇺🇸|🇨🇳|🇷🇺|🇬🇧|🇫🇷}])
 assert diff <(redump -m 'a' '(?<=[\p{RGI_Emoji_Flag_Sequence}&&\q{🇺🇸|🇨🇳|🇷🇺|🇬🇧|🇫🇷}])' 'v') <(<<'EOF'
