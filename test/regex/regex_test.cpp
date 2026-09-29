@@ -475,6 +475,7 @@ TEST(RegexMatchTest, error) {
   text = StringRef("ss", static_cast<size_t>(UINT32_MAX) * 2);
   status = regex::match(re.unwrap(), text, captures, nullptr);
   ASSERT_EQ(regex::MatchStatus::INPUT_LIMIT, status);
+  ASSERT_STREQ("size of input string is too large", regex::toString(status));
 }
 
 class RegexReplaceTest : public ::testing::Test {
@@ -624,6 +625,11 @@ TEST_F(RegexReplaceTest, replace) {
 }
 
 TEST_F(RegexReplaceTest, replaceError1) {
+  // error message
+  ASSERT_STREQ("", regex::toString(regex::MatchStatus::OK));
+  ASSERT_STREQ("", regex::toString(regex::MatchStatus::INVALID_REPLACE_PATTERN));
+  ASSERT_STREQ("", regex::toString(regex::MatchStatus::REPLACED_LIMIT));
+
   // $
   ASSERT_NO_FATAL_FAILURE(assertReplaceError(".", {}, {"abc", "$", true},
                                              regex::MatchStatus::INVALID_REPLACE_PATTERN,
@@ -733,6 +739,7 @@ TEST_F(RegexReplaceTest, replaceTimeout) {
     timer.setCancelToken([] { return true; });
     auto s = regex::replace(re.unwrap(), param, makeObserver(timer));
     ASSERT_EQ(regex::MatchStatus::CANCEL, s);
+    ASSERT_STREQ("canceled", regex::toString(s));
   }
 }
 
