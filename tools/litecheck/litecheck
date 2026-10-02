@@ -80,7 +80,7 @@ function _parse_directives(path : String, dprefix: String) : [String: [Directive
         $STATUS : new [Directive](),
     ]
 
-    let pattern = new Regex("^${$dprefix.escapeRegex()} *(RUN|CHECK|CHECKERR|CHECK_IF|CHECKERR_IF|CHECK_RE|CHECKERR_RE|CHECK_RE_IF|CHECKERR_RE_IF|STATUS|REQUIRE):(.*)")
+    let pattern = new Regex("^${$dprefix.escapeRegex()} *($RUN|$CHECK|$CHECKERR|$CHECK_IF|$CHECKERR_IF|$CHECK_RE|$CHECKERR_RE|$CHECK_RE_IF|$CHECKERR_RE_IF|$STATUS|$REQUIRE):(.*)")
     var lines = $_lines($path)
     if !$lines.empty() && $lines[0].startsWith($SHEBANG) {
         $map[$RUN].add(new Directive($SHEBANG, $lines[0], 1))
