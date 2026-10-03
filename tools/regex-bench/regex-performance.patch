@@ -1,8 +1,8 @@
 diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
-index 33391e5..326e422 100644
+index 33391e5..396baef 100644
 --- a/src/CMakeLists.txt
 +++ b/src/CMakeLists.txt
-@@ -1,13 +1,31 @@
+@@ -1,13 +1,39 @@
 -add_subdirectory(rust)
 +set(INCLUDE_RUST "local" CACHE STRING "Use rust regex crate. disabled/other.")
 +if(NOT ${INCLUDE_RUST} MATCHES "disabled")
@@ -33,10 +33,27 @@ index 33391e5..326e422 100644
 +    include(${CMAKE_CURRENT_SOURCE_DIR}/arsh.cmake)
 +endif()
 +
++# SRELL regex engine adapter (see srell.cmake/srell.cpp).
++set(INCLUDE_SRELL "disabled" CACHE STRING "Use SRELL regex engine. local/disabled.")
++if(NOT ${INCLUDE_SRELL} MATCHES "disabled")
++    add_definitions(-DINCLUDE_SRELL)
++    set(REGEX_SOURCES ${REGEX_SOURCES} srell.cpp)
++    include(${CMAKE_CURRENT_SOURCE_DIR}/srell.cmake)
++endif()
++
  if(NOT ${INCLUDE_PCRE2} MATCHES "disabled")
      add_definitions(-DINCLUDE_PCRE2)
      set(REGEX_SOURCES ${REGEX_SOURCES} pcre2.c)
-@@ -76,6 +94,8 @@ endif()
+@@ -52,7 +78,7 @@ endif()
+ if(NOT ${INCLUDE_BOOST} MATCHES "disabled")
+     add_definitions(-DINCLUDE_BOOST)
+     set(REGEX_SOURCES ${REGEX_SOURCES} boost.cpp)
+-    set(REGEX_ENGINES ${REGEX_ENGINES} boost_regex)
++    include(${CMAKE_CURRENT_SOURCE_DIR}/boost.cmake)
+ endif()
+ 
+ if(NOT ${INCLUDE_YARA} MATCHES "disabled")
+@@ -76,6 +102,8 @@ endif()
  
  add_executable(regex_perf ${REGEX_SOURCES})
  
@@ -48,10 +65,10 @@ index 33391e5..326e422 100644
 -target_link_libraries(regex_perf rregex ${REGEX_ENGINES} pthread dl)
 +target_link_libraries(regex_perf ${REGEX_RUSTLIB} ${REGEX_ENGINES} pthread dl)
 diff --git a/src/main.c b/src/main.c
-index 104f01a..63da0bd 100644
+index 104f01a..c14e632 100644
 --- a/src/main.c
 +++ b/src/main.c
-@@ -44,8 +44,13 @@ static struct engines engines [] = {
+@@ -44,8 +44,16 @@ static struct engines engines [] = {
  #ifdef INCLUDE_YARA
      {.name = "yara",        .find_all = yara_find_all},
  #endif
@@ -62,14 +79,36 @@ index 104f01a..63da0bd 100644
 +#ifdef INCLUDE_ARSH
 +    {.name = "arsh",        .find_all = arsh_find_all},
 +#endif
++#ifdef INCLUDE_SRELL
++    {.name = "srell",       .find_all = srell_find_all},
++#endif
  };
  
  static char * regex [] = {
+@@ -229,8 +237,16 @@ int main(int argc, char **argv)
+         exit(EXIT_FAILURE);
+     }
+ 
+-    struct result results[sizeof(regex)/sizeof(regex[0])][sizeof(engines)/sizeof(engines[0])] = {0};
+-    struct result engine_results[sizeof(engines)/sizeof(engines[0])] = {0};
++    /* number of enabled engines. keep at least 1 so the arrays stay valid even if
++       every engine is disabled (the binary then only prints a warning). */
++    enum { ENGINE_COUNT = sizeof(engines) / sizeof(engines[0]) };
++    enum { RESULT_COLS = ENGINE_COUNT ? ENGINE_COUNT : 1 };
++    if (ENGINE_COUNT == 0) {
++        fprintf(stderr, "No regex engine is enabled.\n");
++    }
++
++    struct result results[sizeof(regex)/sizeof(regex[0])][RESULT_COLS] = {0};
++    struct result engine_results[RESULT_COLS] = {0};
+ 
+     for (int iter = 0; iter < sizeof(regex)/sizeof(regex[0]); iter++) {
+         find_all(regex[iter], data, data_len, repeat, results[iter]);
 diff --git a/src/main.h b/src/main.h
-index 973f72a..bc137fe 100644
+index 973f72a..9c84f4f 100644
 --- a/src/main.h
 +++ b/src/main.h
-@@ -51,8 +51,13 @@ int hs_find_all(char * pattern, char * subject, int subject_len, int repeat, str
+@@ -51,8 +51,16 @@ int hs_find_all(char * pattern, char * subject, int subject_len, int repeat, str
  #ifdef INCLUDE_YARA
  int yara_find_all(char * pattern, char * subject, int subject_len, int repeat, struct result * res);
  #endif
@@ -79,6 +118,9 @@ index 973f72a..bc137fe 100644
 +#endif
 +#ifdef INCLUDE_ARSH
 +int arsh_find_all(char * pattern, char * subject, int subject_len, int repeat, struct result * res);
++#endif
++#ifdef INCLUDE_SRELL
++int srell_find_all(char * pattern, char * subject, int subject_len, int repeat, struct result * res);
 +#endif
  
  #ifdef __cplusplus

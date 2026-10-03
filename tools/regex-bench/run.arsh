@@ -2,24 +2,30 @@
 
 # Benchmark the arsh regex engine with rust-leipzig/regex-performance.
 #
+# Besides arsh, the following engines can be added as comparison targets:
+#   * std::regex (--std-regex)
+#   * SRELL      (--srell)       header-only, fetched automatically if needed
+#   * Boost.Regex (--boost)      fetched and built automatically if needed
+#
 # Steps:
 #   1. fetch rust-leipzig/regex-performance (pinned commit) into the work directory,
-#   2. apply tools/regex-bench/regex-performance.patch and copy the arsh adapter (arsh.cpp),
-#   3. build the arsh regex static libraries,
-#   4. build `regex_perf` with the arsh engine enabled,
+#   2. apply tools/regex-bench/regex-performance.patch and copy the adapters,
+#   3. build the arsh regex static libraries (and the requested comparison engines),
+#   4. build `regex_perf`,
 #   5. run it against the bundled 3200.txt.
 #
 # Usage:
-#   arsh tools/regex-bench/run.arsh                     # fetch + build + run
-#   arsh tools/regex-bench/run.arsh --repeat 3          # set repetition count
-#   arsh tools/regex-bench/run.arsh --output results.csv # also write CSV results
-#   arsh tools/regex-bench/run.arsh --keep              # keep the work directory
-#   arsh tools/regex-bench/run.arsh --setup             # only fetch + patch
+#   arsh tools/regex-bench/run.arsh                              # arsh only
+#   arsh tools/regex-bench/run.arsh --std-regex --srell --boost  # compare with others
+#   arsh tools/regex-bench/run.arsh --repeat 3 --output results.csv
+#   arsh tools/regex-bench/run.arsh --keep                       # keep the work directory
 
 shctl set errraise
 
 let REPO_URL = "https://github.com/rust-leipzig/regex-performance.git"
 let REPO_REF = "52cb0538eca86ad549f6895dbfa9a2f71bc82244" # pinned commit (2022-10-13)
+let SRELL_URL = "https://github.com/upa-url/srell.git"
+let BOOST_ARCHIVE = "https://archives.boost.io/release"
 
 [<CLI(toplevel: $true)>]
 type _Param() {
@@ -43,6 +49,59 @@ type _Param() {
 
     [<Flag(help: "only fetch and patch, do not build or run")>]
     var setup = $false
+
+    [<Flag(help: "add std::regex as a comparison target")>]
+    var stdRegex = $false
+
+    [<Flag(help: "add SRELL as a comparison target")>]
+    var srell = $false
+
+    [<Option(placeholder: "DIR", help: "use an existing SRELL source directory")>]
+    var srellDir : String?
+
+    [<Flag(help: "add Boost.Regex as a comparison target")>]
+    var boost = $false
+
+    [<Option(placeholder: "DIR", help: "use an existing Boost installation")>]
+    var boostDir : String?
+
+    [<Option(placeholder: "VER", help: "Boost version to fetch (default: latest)")>]
+    var boostVersion : String?
+}
+
+function _latestBoostVersion() : String {
+    return "$(curl -sL $BOOST_ARCHIVE/ | grep -oE '[0-9]+[.][0-9]+[.][0-9]+' | sort -V | tail -n 1)"
+}
+
+function _fetchBoost(work: String, version: String) : String {
+    let prefix = "$work/boost"
+    if (test -e "$prefix/include/boost/regex.hpp") {
+        return $prefix
+    }
+    let shortVer = $version.replace(".", "_")
+    let tarball = "$work/boost_${shortVer}.tar.bz2"
+    echo "fetch Boost $version"
+    curl -sL -o $tarball "$BOOST_ARCHIVE/$version/source/boost_${shortVer}.tar.bz2" || exit $?
+    let srcDir = "$work/boost_${shortVer}"
+    test -d $srcDir && rm -rf $srcDir
+    mkdir -p $srcDir || exit $?
+    tar xf $tarball -C $srcDir --strip-components=1 || exit $?
+    cd $srcDir || exit $?
+    ./bootstrap.sh --with-libraries=regex --prefix=$prefix > /dev/null 2>&1 || exit $?
+    ./b2 -j8 --with-regex release install > /dev/null 2>&1 || exit $?
+    cd $work || exit $?
+    test -e "$prefix/include/boost/regex.hpp" || { echo 1>&2 "boost build failed"; exit 1; }
+    return $prefix
+}
+
+function _fetchSrell(work: String) : String {
+    let src = "$work/srell"
+    if !(test -e "$src/srell-src/single-header/srell.hpp") {
+        echo "fetch $SRELL_URL"
+        git clone $SRELL_URL $src || exit $?
+    }
+    # single-header variant bundles the Unicode data tables
+    return "$src/srell-src/single-header"
 }
 
 function _fetchAndPatch(root: String, work: String) {
@@ -56,9 +115,13 @@ function _fetchAndPatch(root: String, work: String) {
     git reset --hard $REPO_REF > /dev/null 2>&1 || exit $?
     git clean -fdx > /dev/null 2>&1 || $true
 
-    cp $root/tools/regex-bench/arsh.cpp $src/src/arsh.cpp || exit $?
-    cp $root/tools/regex-bench/arsh.cmake $src/src/arsh.cmake || exit $?
-    if !(git apply $root/tools/regex-bench/regex-performance.patch) {
+    let bench = "${root}/tools/regex-bench"
+    cp $bench/arsh.cpp $src/src/arsh.cpp || exit $?
+    cp $bench/arsh.cmake $src/src/arsh.cmake || exit $?
+    cp $bench/srell.cpp $src/src/srell.cpp || exit $?
+    cp $bench/srell.cmake $src/src/srell.cmake || exit $?
+    cp $bench/boost.cmake $src/src/boost.cmake || exit $?
+    if !(git apply $bench/regex-performance.patch) {
         echo 1>&2 "failed to apply regex-performance.patch"
         exit 1
     }
@@ -73,27 +136,44 @@ function _buildArsh(root: String, work: String, buildType: String) : String {
     return $buildDir.realpath()
 }
 
-function _buildBench(root: String, work: String, arshBuild: String) : String {
+function _buildBench(root: String, work: String, arshBuild: String, srellSrc: String?, boostPrefix: String?, stdRegex: Bool) : String {
     let src = "$work/regex-performance"
     let buildDir = "$work/regex-perf-build"
     mkdir -p $buildDir || exit $?
+    cd $src || exit $?
     let srcDir = $root.realpath()
-    cmake -S $src -B $buildDir \
-        -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
-        -DCMAKE_BUILD_TYPE=Release \
-        -DINCLUDE_ARSH=local \
-        -DARSH_SOURCE_DIR=$srcDir \
-        -DARSH_BUILD_DIR=$arshBuild \
-        -DINCLUDE_RUST=disabled \
-        -DINCLUDE_PCRE2=disabled \
-        -DINCLUDE_HYPERSCAN=disabled \
-        -DINCLUDE_ONIGURUMA=disabled \
-        -DINCLUDE_TRE=disabled \
-        -DINCLUDE_CTRE=disabled \
-        -DINCLUDE_RE2=disabled \
-        -DINCLUDE_CPPSTD=disabled \
-        -DINCLUDE_BOOST=disabled \
-        -DINCLUDE_YARA=disabled || exit $?
+    var common : [String]
+    $common.add("-DCMAKE_POLICY_VERSION_MINIMUM=3.5")
+    $common.add("-DCMAKE_BUILD_TYPE=Release")
+    $common.add("-DINCLUDE_ARSH=local")
+    $common.add("-DARSH_SOURCE_DIR=$srcDir")
+    $common.add("-DARSH_BUILD_DIR=$arshBuild")
+    $common.add("-DINCLUDE_RUST=disabled")
+    $common.add("-DINCLUDE_PCRE2=disabled")
+    $common.add("-DINCLUDE_HYPERSCAN=disabled")
+    $common.add("-DINCLUDE_ONIGURUMA=disabled")
+    $common.add("-DINCLUDE_TRE=disabled")
+    $common.add("-DINCLUDE_CTRE=disabled")
+    $common.add("-DINCLUDE_RE2=disabled")
+    $common.add("-DINCLUDE_YARA=disabled")
+    if let dir = $srellSrc {
+        $common.add("-DINCLUDE_SRELL=local")
+        $common.add("-DSRELL_SOURCE_DIR=$dir")
+    } else {
+        $common.add("-DINCLUDE_SRELL=disabled")
+    }
+    if let prefix = $boostPrefix {
+        $common.add("-DINCLUDE_BOOST=system")
+        $common.add("-DBOOST_ROOT=$prefix")
+    } else {
+        $common.add("-DINCLUDE_BOOST=disabled")
+    }
+    if $stdRegex {
+        $common.add("-DINCLUDE_CPPSTD=system")
+    } else {
+        $common.add("-DINCLUDE_CPPSTD=disabled")
+    }
+    cmake -S $src -B $buildDir $common || exit $?
     cmake --build $buildDir --target regex_perf -j || exit $?
     return "$buildDir/src/regex_perf"
 }
@@ -117,8 +197,23 @@ function run() for _Param {
         return
     }
 
+    var srellSrc : String?
+    if let d = $this.srellDir {
+        $srellSrc = $d
+    } elif $this.srell {
+        $srellSrc = $_fetchSrell($work)
+    }
+
+    var boostPrefix : String?
+    if let d = $this.boostDir {
+        $boostPrefix = $d
+    } elif $this.boost {
+        let version = $this.boostVersion ?? $_latestBoostVersion()
+        $boostPrefix = $_fetchBoost($work, $version)
+    }
+
     let arshBuild = $_buildArsh($root, $work, $this.build)
-    let bin = $_buildBench($root, $work, $arshBuild)
+    let bin = $_buildBench($root, $work, $arshBuild, $srellSrc, $boostPrefix, $this.stdRegex)
 
     var args : [String]
     if let r = $this.repeat {
