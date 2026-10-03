@@ -73,10 +73,10 @@ index 33391e5..5d3b136 100644
 -target_link_libraries(regex_perf rregex ${REGEX_ENGINES} pthread dl)
 +target_link_libraries(regex_perf ${REGEX_RUSTLIB} ${REGEX_ENGINES} pthread dl)
 diff --git a/src/main.c b/src/main.c
-index 104f01a..57b0247 100644
+index 104f01a..70292dc 100644
 --- a/src/main.c
 +++ b/src/main.c
-@@ -44,8 +44,19 @@ static struct engines engines [] = {
+@@ -44,8 +44,20 @@ static struct engines engines [] = {
  #ifdef INCLUDE_YARA
      {.name = "yara",        .find_all = yara_find_all},
  #endif
@@ -86,6 +86,7 @@ index 104f01a..57b0247 100644
 +#endif
 +#ifdef INCLUDE_ARSH
 +    {.name = "arsh",        .find_all = arsh_find_all},
++    {.name = "arsh_unsafe", .find_all = arsh_unsafe_find_all},
 +#endif
 +#ifdef INCLUDE_SRELL
 +    {.name = "srell",       .find_all = srell_find_all},
@@ -96,7 +97,7 @@ index 104f01a..57b0247 100644
  };
  
  static char * regex [] = {
-@@ -229,8 +240,16 @@ int main(int argc, char **argv)
+@@ -229,8 +241,16 @@ int main(int argc, char **argv)
          exit(EXIT_FAILURE);
      }
  
@@ -116,10 +117,10 @@ index 104f01a..57b0247 100644
      for (int iter = 0; iter < sizeof(regex)/sizeof(regex[0]); iter++) {
          find_all(regex[iter], data, data_len, repeat, results[iter]);
 diff --git a/src/main.h b/src/main.h
-index 973f72a..19bd132 100644
+index 973f72a..001388c 100644
 --- a/src/main.h
 +++ b/src/main.h
-@@ -51,8 +51,19 @@ int hs_find_all(char * pattern, char * subject, int subject_len, int repeat, str
+@@ -51,8 +51,20 @@ int hs_find_all(char * pattern, char * subject, int subject_len, int repeat, str
  #ifdef INCLUDE_YARA
  int yara_find_all(char * pattern, char * subject, int subject_len, int repeat, struct result * res);
  #endif
@@ -129,6 +130,7 @@ index 973f72a..19bd132 100644
 +#endif
 +#ifdef INCLUDE_ARSH
 +int arsh_find_all(char * pattern, char * subject, int subject_len, int repeat, struct result * res);
++int arsh_unsafe_find_all(char * pattern, char * subject, int subject_len, int repeat, struct result * res);
 +#endif
 +#ifdef INCLUDE_SRELL
 +int srell_find_all(char * pattern, char * subject, int subject_len, int repeat, struct result * res);

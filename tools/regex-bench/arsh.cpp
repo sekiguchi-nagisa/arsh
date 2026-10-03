@@ -21,7 +21,11 @@
  * The benchmark harness (see main.h) expects each engine to provide
  *   int <name>_find_all(char *pattern, char *subject, int subject_len, int repeat,
  *                       struct result *res);
- * so this file implements `arsh_find_all` on top of arsh's `regex` API.
+ * so this file implements two entry points:
+ *   - `arsh_find_all`: creates a fresh MatchContext for every scan (safe, mirrors normal use).
+ *   - `arsh_unsafe_find_all`: reuses a single MatchContext across the repeated scans to avoid
+ *     re-creating its buffers. This is only safe because all scans use the same regex and text,
+ *     so it is registered separately as `arsh_unsafe` to keep the comparison honest.
  */
 
 #include <cstdio>
@@ -81,18 +85,18 @@ static Optional<regex::Regex> compilePattern(const std::string &pattern) {
 }
 
 /**
- * Count all non-overlapping matches of `re` in `text`, emulating the global (g) flag.
- * `regex::match` returns a single match from the current input offset, so repeatedly invoke it
- * until the whole input is consumed.
+ * Scan the whole input once, counting all non-overlapping matches (emulating the global (g)
+ * flag). `regex::match` returns a single match from the current input offset, so it is invoked
+ * repeatedly until the input is consumed. The input is advanced by `regex::match` itself.
+ *
+ * @param matchCtx reuseable context. its input must point to the start of the text.
+ * @param captures reuseable capture buffer.
+ * @return the match status. on OK, the number of matches is stored to `*found`.
  */
-static long long countMatches(const regex::Regex &re, const StringRef text) {
-  std::vector<regex::Capture> captures;
-  auto ctx = regex::tryToCreateMatchContext(re, text, 0, captures);
-  if (!ctx) {
-    return -1;
-  }
-  auto &matchCtx = ctx.asOk();
-  long long found = 0;
+static regex::MatchStatus
+countMatchesIn(regex::MatchContext &matchCtx, std::vector<regex::Capture> &captures,
+               long long *found) {
+  long long count = 0;
   for (;;) {
     const unsigned int startOffset = matchCtx.getInput().getOffset();
     const auto status = regex::match(matchCtx, nullptr);
@@ -100,9 +104,9 @@ static long long countMatches(const regex::Regex &re, const StringRef text) {
       break;
     }
     if (status != regex::MatchStatus::OK) {
-      return -1;
+      return status;
     }
-    found++;
+    count++;
     if (captures[0].endOffset() == startOffset) { // empty match, avoid infinite loop
       if (!matchCtx.refInput().available()) {
         break;
@@ -110,7 +114,8 @@ static long long countMatches(const regex::Regex &re, const StringRef text) {
       matchCtx.refInput().consumeForward();
     }
   }
-  return found;
+  *found = count;
+  return regex::MatchStatus::OK;
 }
 
 extern "C" int arsh_find_all(char *pattern, char *subject, int subject_len, int repeat,
@@ -118,8 +123,7 @@ extern "C" int arsh_find_all(char *pattern, char *subject, int subject_len, int 
   if (pattern == nullptr || subject == nullptr || subject_len < 0 || repeat <= 0 || res == nullptr) {
     return -1;
   }
-  const std::string patternStr(pattern);
-  auto compiled = compilePattern(patternStr);
+  auto compiled = compilePattern(pattern);
   if (!compiled.hasValue()) {
     printf("arsh compilation failed: %s\n", pattern);
     return -1;
@@ -135,17 +139,78 @@ extern "C" int arsh_find_all(char *pattern, char *subject, int subject_len, int 
 
   long long found = 0;
   do {
+    std::vector<regex::Capture> captures;
+    auto ctx = regex::tryToCreateMatchContext(re, text, 0, captures);
+    if (!ctx) {
+      free(times);
+      return -1;
+    }
     TIME_TYPE start, end;
     GET_TIME(start);
-    found = countMatches(re, text);
+    const auto status = countMatchesIn(ctx.asOk(), captures, &found);
     GET_TIME(end);
     times[repeat - 1] = TIME_DIFF_IN_MS(start, end);
+    if (status != regex::MatchStatus::OK) {
+      free(times);
+      return -1;
+    }
   } while (--repeat > 0);
 
-  if (found < 0) {
+  res->matches = static_cast<int>(found);
+  get_mean_and_derivation(times, static_cast<uint32_t>(timesLen), res);
+  free(times);
+  return 0;
+}
+
+/**
+ * Same as `arsh_find_all`, but creates the MatchContext (and its loop state buffers) only once
+ * and reuses it across the repeated scans. Only the input position is reset before each scan.
+ *
+ * This is an intentionally "unsafe" optimization: the context must not be shared between
+ * different regexes or inputs, and it bypasses the per-call UTF-8 validation of the subject.
+ * It is registered under a separate name so it can be compared with the safe entry point.
+ */
+extern "C" int arsh_unsafe_find_all(char *pattern, char *subject, int subject_len, int repeat,
+                                   struct result *res) {
+  if (pattern == nullptr || subject == nullptr || subject_len < 0 || repeat <= 0 || res == nullptr) {
+    return -1;
+  }
+  auto compiled = compilePattern(pattern);
+  if (!compiled.hasValue()) {
+    printf("arsh compilation failed: %s\n", pattern);
+    return -1;
+  }
+  const auto &re = compiled.unwrap();
+  const StringRef text(subject, static_cast<size_t>(subject_len));
+
+  double *times = static_cast<double *>(calloc(static_cast<size_t>(repeat), sizeof(double)));
+  if (times == nullptr) {
+    return -1;
+  }
+  const int timesLen = repeat;
+
+  std::vector<regex::Capture> captures;
+  auto ctx = regex::tryToCreateMatchContext(re, text, 0, captures);
+  if (!ctx) {
     free(times);
     return -1;
   }
+  auto &matchCtx = ctx.asOk();
+  const auto initialInput = matchCtx.copyInput(); // for resetting the input position
+
+  long long found = 0;
+  do {
+    matchCtx.syncInput(initialInput);
+    TIME_TYPE start, end;
+    GET_TIME(start);
+    const auto status = countMatchesIn(matchCtx, captures, &found);
+    GET_TIME(end);
+    times[repeat - 1] = TIME_DIFF_IN_MS(start, end);
+    if (status != regex::MatchStatus::OK) {
+      free(times);
+      return -1;
+    }
+  } while (--repeat > 0);
 
   res->matches = static_cast<int>(found);
   get_mean_and_derivation(times, static_cast<uint32_t>(timesLen), res);

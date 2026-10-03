@@ -9,7 +9,7 @@ time and score of each registered engine. This directory provides
 
 | file                      | description                                                             |
 |---------------------------|-------------------------------------------------------------------------|
-| `arsh.cpp` / `arsh.cmake` | adapter and build support for the arsh `regex` engine                   |
+| `arsh.cpp` / `arsh.cmake` | adapter and build support for the arsh `regex` engine (`arsh` and `arsh_unsafe`) |
 | `srell.cpp` / `srell.cmake` | adapter and build support for [SRELL](https://github.com/upa-url/srell) |
 | `quickjs.c` / `quickjs.cmake` | adapter and build support for QuickJS `libregexp`                   |
 | `boost.cmake`             | build support for Boost.Regex                                           |
@@ -105,3 +105,9 @@ $ ./src/regex_perf -f ../3200.txt -o results.csv
   upstream behavior.
 * The QuickJS adapter compiles `libregexp.c` / `libunicode.c` from the QuickJS tree and provides
   the three `lre_*` callbacks that libregexp expects from its host.
+* `arsh.cpp` registers two arsh entries: `arsh` creates a fresh `MatchContext` for every scan
+  (safe, mirrors normal use), while `arsh_unsafe` creates the context (and its loop-state
+  buffers) once and reuses it across the repeated scans, only resetting the input position. The
+  unsafe variant skips per-scan context construction and UTF-8 validation of the subject, so the
+  gap between the two shows how much of a scanned time is context setup rather than matching.
+  It is only valid because every scan uses the same regex and text.
