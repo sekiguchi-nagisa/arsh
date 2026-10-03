@@ -46,3 +46,6 @@ linenoise-*
 # Others
 .DS_Store
 default.profraw
+
+# regex-performance benchmark work directory
+.regex-bench

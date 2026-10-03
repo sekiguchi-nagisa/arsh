@@ -1,0 +1,85 @@
+diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
+index 33391e5..326e422 100644
+--- a/src/CMakeLists.txt
++++ b/src/CMakeLists.txt
+@@ -1,13 +1,31 @@
+-add_subdirectory(rust)
++set(INCLUDE_RUST "local" CACHE STRING "Use rust regex crate. disabled/other.")
++if(NOT ${INCLUDE_RUST} MATCHES "disabled")
++    add_definitions(-DINCLUDE_RUST)
++    add_subdirectory(rust)
++endif()
+ 
+ # configure files
+ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/version.h.in ${CMAKE_CURRENT_SOURCE_DIR}/version.h)
+ 
+ set(REGEX_SOURCES
+     main.c
+-    rust.c
+ )
+ 
++if(NOT ${INCLUDE_RUST} MATCHES "disabled")
++    set(REGEX_SOURCES ${REGEX_SOURCES} rust.c)
++    set(REGEX_RUSTLIB rregex)
++endif()
++
++# arsh regex engine adapter (see arsh.cmake/arsh.cpp).
++# Default is "disabled" because it needs an external arsh build tree.
++set(INCLUDE_ARSH "disabled" CACHE STRING "Use arsh regex engine. local/disabled.")
++if(NOT ${INCLUDE_ARSH} MATCHES "disabled")
++    add_definitions(-DINCLUDE_ARSH)
++    set(REGEX_SOURCES ${REGEX_SOURCES} arsh.cpp)
++    set(REGEX_ENGINES ${REGEX_ENGINES} arsh_regex_engine)
++    include(${CMAKE_CURRENT_SOURCE_DIR}/arsh.cmake)
++endif()
++
+ if(NOT ${INCLUDE_PCRE2} MATCHES "disabled")
+     add_definitions(-DINCLUDE_PCRE2)
+     set(REGEX_SOURCES ${REGEX_SOURCES} pcre2.c)
+@@ -76,6 +94,8 @@ endif()
+ 
+ add_executable(regex_perf ${REGEX_SOURCES})
+ 
+-add_dependencies(regex_perf librregex)
++if(TARGET librregex)
++    add_dependencies(regex_perf librregex)
++endif()
+ 
+-target_link_libraries(regex_perf rregex ${REGEX_ENGINES} pthread dl)
++target_link_libraries(regex_perf ${REGEX_RUSTLIB} ${REGEX_ENGINES} pthread dl)
+diff --git a/src/main.c b/src/main.c
+index 104f01a..63da0bd 100644
+--- a/src/main.c
++++ b/src/main.c
+@@ -44,8 +44,13 @@ static struct engines engines [] = {
+ #ifdef INCLUDE_YARA
+     {.name = "yara",        .find_all = yara_find_all},
+ #endif
++#ifdef INCLUDE_RUST
+     {.name = "rust_regex",  .find_all = rust_find_all},
+     {.name = "rust_regrs",  .find_all = regress_find_all},
++#endif
++#ifdef INCLUDE_ARSH
++    {.name = "arsh",        .find_all = arsh_find_all},
++#endif
+ };
+ 
+ static char * regex [] = {
+diff --git a/src/main.h b/src/main.h
+index 973f72a..bc137fe 100644
+--- a/src/main.h
++++ b/src/main.h
+@@ -51,8 +51,13 @@ int hs_find_all(char * pattern, char * subject, int subject_len, int repeat, str
+ #ifdef INCLUDE_YARA
+ int yara_find_all(char * pattern, char * subject, int subject_len, int repeat, struct result * res);
+ #endif
++#ifdef INCLUDE_RUST
+ int rust_find_all(char * pattern, char * subject, int subject_len, int repeat, struct result * res);
+ int regress_find_all(char * pattern, char * subject, int subject_len, int repeat, struct result * res);
++#endif
++#ifdef INCLUDE_ARSH
++int arsh_find_all(char * pattern, char * subject, int subject_len, int repeat, struct result * res);
++#endif
+ 
+ #ifdef __cplusplus
+ }

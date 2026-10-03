@@ -1,0 +1,150 @@
+#!/usr/bin/env arsh
+
+# Benchmark the arsh regex engine with rust-leipzig/regex-performance.
+#
+# Steps:
+#   1. fetch rust-leipzig/regex-performance (pinned commit) into the work directory,
+#   2. apply tools/regex-bench/regex-performance.patch and copy the arsh adapter (arsh.cpp),
+#   3. build the arsh regex static libraries,
+#   4. build `regex_perf` with the arsh engine enabled,
+#   5. run it against the bundled 3200.txt.
+#
+# Usage:
+#   arsh tools/regex-bench/run.arsh                     # fetch + build + run
+#   arsh tools/regex-bench/run.arsh --repeat 3          # set repetition count
+#   arsh tools/regex-bench/run.arsh --output results.csv # also write CSV results
+#   arsh tools/regex-bench/run.arsh --keep              # keep the work directory
+#   arsh tools/regex-bench/run.arsh --setup             # only fetch + patch
+
+shctl set errraise
+
+let REPO_URL = "https://github.com/rust-leipzig/regex-performance.git"
+let REPO_REF = "52cb0538eca86ad549f6895dbfa9a2f71bc82244" # pinned commit (2022-10-13)
+
+[<CLI(toplevel: $true)>]
+type _Param() {
+    [<Option(help: "number of repetitions (default: 5)")>]
+    var repeat : Int?
+
+    [<Option(placeholder: "FILE", help: "write measured data into CSV file")>]
+    var output : String?
+
+    [<Option(placeholder: "FILE", help: "benchmark input file (default: bundled 3200.txt)")>]
+    var input : String?
+
+    [<Option(help: "arsh build type (default: Release)")>]
+    var build = "Release"
+
+    [<Option(placeholder: "DIR", help: "working directory (default: .regex-bench)")>]
+    var work = ".regex-bench"
+
+    [<Flag(help: "keep the fetched work directory")>]
+    var keep = $false
+
+    [<Flag(help: "only fetch and patch, do not build or run")>]
+    var setup = $false
+}
+
+function _fetchAndPatch(root: String, work: String) {
+    let src = "$work/regex-performance"
+    if !(test -d $src) {
+        echo "fetch $REPO_URL"
+        git clone $REPO_URL $src || exit $?
+    }
+    cd $src || exit $?
+    git checkout --force $REPO_REF > /dev/null 2>&1 || exit $?
+    git reset --hard $REPO_REF > /dev/null 2>&1 || exit $?
+    git clean -fdx > /dev/null 2>&1 || $true
+
+    cp $root/tools/regex-bench/arsh.cpp $src/src/arsh.cpp || exit $?
+    cp $root/tools/regex-bench/arsh.cmake $src/src/arsh.cmake || exit $?
+    if !(git apply $root/tools/regex-bench/regex-performance.patch) {
+        echo 1>&2 "failed to apply regex-performance.patch"
+        exit 1
+    }
+    echo "patched: $src"
+}
+
+function _buildArsh(root: String, work: String, buildType: String) : String {
+    let buildDir = "$work/arsh-build"
+    mkdir -p $buildDir || exit $?
+    cmake -S $root -B $buildDir -DCMAKE_BUILD_TYPE=$buildType || exit $?
+    cmake --build $buildDir --target regex -j || exit $?
+    return $buildDir.realpath()
+}
+
+function _buildBench(root: String, work: String, arshBuild: String) : String {
+    let src = "$work/regex-performance"
+    let buildDir = "$work/regex-perf-build"
+    mkdir -p $buildDir || exit $?
+    let srcDir = $root.realpath()
+    cmake -S $src -B $buildDir \
+        -DCMAKE_POLICY_VERSION_MINIMUM=3.5 \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DINCLUDE_ARSH=local \
+        -DARSH_SOURCE_DIR=$srcDir \
+        -DARSH_BUILD_DIR=$arshBuild \
+        -DINCLUDE_RUST=disabled \
+        -DINCLUDE_PCRE2=disabled \
+        -DINCLUDE_HYPERSCAN=disabled \
+        -DINCLUDE_ONIGURUMA=disabled \
+        -DINCLUDE_TRE=disabled \
+        -DINCLUDE_CTRE=disabled \
+        -DINCLUDE_RE2=disabled \
+        -DINCLUDE_CPPSTD=disabled \
+        -DINCLUDE_BOOST=disabled \
+        -DINCLUDE_YARA=disabled || exit $?
+    cmake --build $buildDir --target regex_perf -j || exit $?
+    return "$buildDir/src/regex_perf"
+}
+
+function run() for _Param {
+    if $this.work == "" {
+        echo 1>&2 "working directory must not be empty"
+        exit 1
+    }
+    if let o = $this.output {
+        $o == "" && { echo 1>&2 "output path must not be empty"; exit 1; }
+    }
+    let root = "$SCRIPT_DIR/../..".realpath()
+    let workDir = $this.work
+    mkdir -p $workDir || exit $?
+    let work = $workDir.realpath()
+
+    $_fetchAndPatch($root, $work)
+    if $this.setup {
+        echo "setup done: $work/regex-performance"
+        return
+    }
+
+    let arshBuild = $_buildArsh($root, $work, $this.build)
+    let bin = $_buildBench($root, $work, $arshBuild)
+
+    var args : [String]
+    if let r = $this.repeat {
+        $args.add("-n")
+        $args.add("$r")
+    }
+    if let o = $this.output {
+        $args.add("-o")
+        $args.add($o)
+    }
+    $args.add("-f")
+    $args.add($this.input ?? "$work/regex-performance/3200.txt")
+
+    echo "run: $bin $args"
+    call $bin $args || exit $?
+
+    if !$this.keep {
+        rm -rf $work || $true
+    }
+}
+
+let param = new _Param()
+try {
+    $param.parse($@)
+} catch e {
+    echo 1>&2 ${$e.message()}
+    exit ${$e.status()}
+}
+$param.run()
