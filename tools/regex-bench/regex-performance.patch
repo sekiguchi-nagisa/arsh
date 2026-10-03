@@ -1,8 +1,8 @@
 diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
-index 33391e5..396baef 100644
+index 33391e5..5d3b136 100644
 --- a/src/CMakeLists.txt
 +++ b/src/CMakeLists.txt
-@@ -1,13 +1,39 @@
+@@ -1,13 +1,47 @@
 -add_subdirectory(rust)
 +set(INCLUDE_RUST "local" CACHE STRING "Use rust regex crate. disabled/other.")
 +if(NOT ${INCLUDE_RUST} MATCHES "disabled")
@@ -41,10 +41,18 @@ index 33391e5..396baef 100644
 +    include(${CMAKE_CURRENT_SOURCE_DIR}/srell.cmake)
 +endif()
 +
++# QuickJS regexp engine adapter (see quickjs.cmake/quickjs.c).
++set(INCLUDE_QUICKJS "disabled" CACHE STRING "Use QuickJS regexp engine. local/disabled.")
++if(NOT ${INCLUDE_QUICKJS} MATCHES "disabled")
++    add_definitions(-DINCLUDE_QUICKJS)
++    set(REGEX_SOURCES ${REGEX_SOURCES} quickjs.c)
++    include(${CMAKE_CURRENT_SOURCE_DIR}/quickjs.cmake)
++endif()
++
  if(NOT ${INCLUDE_PCRE2} MATCHES "disabled")
      add_definitions(-DINCLUDE_PCRE2)
      set(REGEX_SOURCES ${REGEX_SOURCES} pcre2.c)
-@@ -52,7 +78,7 @@ endif()
+@@ -52,7 +86,7 @@ endif()
  if(NOT ${INCLUDE_BOOST} MATCHES "disabled")
      add_definitions(-DINCLUDE_BOOST)
      set(REGEX_SOURCES ${REGEX_SOURCES} boost.cpp)
@@ -53,7 +61,7 @@ index 33391e5..396baef 100644
  endif()
  
  if(NOT ${INCLUDE_YARA} MATCHES "disabled")
-@@ -76,6 +102,8 @@ endif()
+@@ -76,6 +110,8 @@ endif()
  
  add_executable(regex_perf ${REGEX_SOURCES})
  
@@ -65,10 +73,10 @@ index 33391e5..396baef 100644
 -target_link_libraries(regex_perf rregex ${REGEX_ENGINES} pthread dl)
 +target_link_libraries(regex_perf ${REGEX_RUSTLIB} ${REGEX_ENGINES} pthread dl)
 diff --git a/src/main.c b/src/main.c
-index 104f01a..c14e632 100644
+index 104f01a..57b0247 100644
 --- a/src/main.c
 +++ b/src/main.c
-@@ -44,8 +44,16 @@ static struct engines engines [] = {
+@@ -44,8 +44,19 @@ static struct engines engines [] = {
  #ifdef INCLUDE_YARA
      {.name = "yara",        .find_all = yara_find_all},
  #endif
@@ -82,10 +90,13 @@ index 104f01a..c14e632 100644
 +#ifdef INCLUDE_SRELL
 +    {.name = "srell",       .find_all = srell_find_all},
 +#endif
++#ifdef INCLUDE_QUICKJS
++    {.name = "quickjs",     .find_all = quickjs_find_all},
++#endif
  };
  
  static char * regex [] = {
-@@ -229,8 +237,16 @@ int main(int argc, char **argv)
+@@ -229,8 +240,16 @@ int main(int argc, char **argv)
          exit(EXIT_FAILURE);
      }
  
@@ -105,10 +116,10 @@ index 104f01a..c14e632 100644
      for (int iter = 0; iter < sizeof(regex)/sizeof(regex[0]); iter++) {
          find_all(regex[iter], data, data_len, repeat, results[iter]);
 diff --git a/src/main.h b/src/main.h
-index 973f72a..9c84f4f 100644
+index 973f72a..19bd132 100644
 --- a/src/main.h
 +++ b/src/main.h
-@@ -51,8 +51,16 @@ int hs_find_all(char * pattern, char * subject, int subject_len, int repeat, str
+@@ -51,8 +51,19 @@ int hs_find_all(char * pattern, char * subject, int subject_len, int repeat, str
  #ifdef INCLUDE_YARA
  int yara_find_all(char * pattern, char * subject, int subject_len, int repeat, struct result * res);
  #endif
@@ -121,6 +132,9 @@ index 973f72a..9c84f4f 100644
 +#endif
 +#ifdef INCLUDE_SRELL
 +int srell_find_all(char * pattern, char * subject, int subject_len, int repeat, struct result * res);
++#endif
++#ifdef INCLUDE_QUICKJS
++int quickjs_find_all(char * pattern, char * subject, int subject_len, int repeat, struct result * res);
 +#endif
  
  #ifdef __cplusplus

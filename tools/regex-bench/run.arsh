@@ -5,6 +5,7 @@
 # Besides arsh, the following engines can be added as comparison targets:
 #   * std::regex (--std-regex)
 #   * SRELL      (--srell)       header-only, fetched automatically if needed
+#   * QuickJS    (--quickjs)     libregexp, fetched automatically if needed
 #   * Boost.Regex (--boost)      fetched and built automatically if needed
 #
 # Steps:
@@ -25,6 +26,7 @@ shctl set errraise
 let REPO_URL = "https://github.com/rust-leipzig/regex-performance.git"
 let REPO_REF = "52cb0538eca86ad549f6895dbfa9a2f71bc82244" # pinned commit (2022-10-13)
 let SRELL_URL = "https://github.com/upa-url/srell.git"
+let QUICKJS_URL = "https://github.com/quickjs-ng/quickjs.git"
 let BOOST_ARCHIVE = "https://archives.boost.io/release"
 
 [<CLI(toplevel: $true)>]
@@ -58,6 +60,12 @@ type _Param() {
 
     [<Option(placeholder: "DIR", help: "use an existing SRELL source directory")>]
     var srellDir : String?
+
+    [<Flag(help: "add QuickJS (libregexp) as a comparison target")>]
+    var quickjs = $false
+
+    [<Option(placeholder: "DIR", help: "use an existing QuickJS source directory")>]
+    var quickjsDir : String?
 
     [<Flag(help: "add Boost.Regex as a comparison target")>]
     var boost = $false
@@ -104,6 +112,15 @@ function _fetchSrell(work: String) : String {
     return "$src/srell-src/single-header"
 }
 
+function _fetchQuickjs(work: String) : String {
+    let src = "$work/quickjs"
+    if !(test -e "$src/libregexp.c") {
+        echo "fetch $QUICKJS_URL"
+        git clone --depth 1 $QUICKJS_URL $src || exit $?
+    }
+    return $src
+}
+
 function _fetchAndPatch(root: String, work: String) {
     let src = "$work/regex-performance"
     if !(test -d $src) {
@@ -121,6 +138,8 @@ function _fetchAndPatch(root: String, work: String) {
     cp $bench/srell.cpp $src/src/srell.cpp || exit $?
     cp $bench/srell.cmake $src/src/srell.cmake || exit $?
     cp $bench/boost.cmake $src/src/boost.cmake || exit $?
+    cp $bench/quickjs.c $src/src/quickjs.c || exit $?
+    cp $bench/quickjs.cmake $src/src/quickjs.cmake || exit $?
     if !(git apply $bench/regex-performance.patch) {
         echo 1>&2 "failed to apply regex-performance.patch"
         exit 1
@@ -136,7 +155,7 @@ function _buildArsh(root: String, work: String, buildType: String) : String {
     return $buildDir.realpath()
 }
 
-function _buildBench(root: String, work: String, arshBuild: String, srellSrc: String?, boostPrefix: String?, stdRegex: Bool) : String {
+function _buildBench(root: String, work: String, arshBuild: String, srellSrc: String?, quickjsSrc: String?, boostPrefix: String?, stdRegex: Bool) : String {
     let src = "$work/regex-performance"
     let buildDir = "$work/regex-perf-build"
     mkdir -p $buildDir || exit $?
@@ -161,6 +180,12 @@ function _buildBench(root: String, work: String, arshBuild: String, srellSrc: St
         $common.add("-DSRELL_SOURCE_DIR=$dir")
     } else {
         $common.add("-DINCLUDE_SRELL=disabled")
+    }
+    if let dir = $quickjsSrc {
+        $common.add("-DINCLUDE_QUICKJS=local")
+        $common.add("-DQUICKJS_SOURCE_DIR=$dir")
+    } else {
+        $common.add("-DINCLUDE_QUICKJS=disabled")
     }
     if let prefix = $boostPrefix {
         $common.add("-DINCLUDE_BOOST=system")
@@ -204,6 +229,13 @@ function run() for _Param {
         $srellSrc = $_fetchSrell($work)
     }
 
+    var quickjsSrc : String?
+    if let d = $this.quickjsDir {
+        $quickjsSrc = $d
+    } elif $this.quickjs {
+        $quickjsSrc = $_fetchQuickjs($work)
+    }
+
     var boostPrefix : String?
     if let d = $this.boostDir {
         $boostPrefix = $d
@@ -213,7 +245,7 @@ function run() for _Param {
     }
 
     let arshBuild = $_buildArsh($root, $work, $this.build)
-    let bin = $_buildBench($root, $work, $arshBuild, $srellSrc, $boostPrefix, $this.stdRegex)
+    let bin = $_buildBench($root, $work, $arshBuild, $srellSrc, $quickjsSrc, $boostPrefix, $this.stdRegex)
 
     var args : [String]
     if let r = $this.repeat {
