@@ -32,7 +32,7 @@ let QUICKJS_URL = "https://github.com/quickjs-ng/quickjs.git"
 let HERMES_URL = "https://github.com/facebook/hermes.git"
 let BOOST_ARCHIVE = "https://archives.boost.io/release"
 
-[<CLI(toplevel: $true)>]
+[<CLI(toplevel: $true, verbose:$true)>]
 type _Param() {
     [<Option(help: "number of repetitions (default: 5)")>]
     var repeat : Int?
