@@ -25,6 +25,18 @@ set(REGEX_SOURCES ${REGEX_SOURCES}
         ${QUICKJS_SOURCE_DIR}/libregexp.c
         ${QUICKJS_SOURCE_DIR}/libunicode.c)
 
+# the harness links libm through the C++ runtime, which is absent when only this C
+# engine is enabled, so link it explicitly to keep the quickjs-only build working.
+list(APPEND REGEX_ENGINES m)
+
+# libregexp/libunicode include cutils.h, which relies on POSIX/GNU declarations
+# (clock_gettime, CLOCK_MONOTONIC, readlink, pthread_condattr_setclock) that are
+# hidden by the benchmark's strict -std=c11 unless _GNU_SOURCE is defined.
+# QuickJS's own build always defines it (see its CMakeLists.txt/meson.build).
+if(NOT CMAKE_C_FLAGS MATCHES "-D_GNU_SOURCE")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_GNU_SOURCE")
+endif()
+
 if(NOT CMAKE_C_FLAGS MATCHES "-Wno-unused-parameter")
     set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wno-unused-parameter")
 endif()
