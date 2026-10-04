@@ -31,9 +31,31 @@ cmake -S . -B build
 cmake --build build --target rematch
 ```
 
-If an engine's sources are not found under `.regex-bench`, that engine is skipped with a
-configuration warning. To point at different locations, or to disable an engine, override the
-same cache variables used by `tools/regex-bench`:
+The convenience script `build_rematch.arsh` performs the whole flow using the regex-bench
+work directory as the source of the engines: it prepares (fetches and builds) the engines
+first, then configures and builds `rematch`:
+
+```sh
+$ arsh test/regex/build_rematch.arsh
+prepare engines: tools/regex-bench/run.arsh --prepare
+...
+built: <repo>/build-rematch/test/regex/rematch
+```
+
+| option             | description                                                     |
+|--------------------|-----------------------------------------------------------------|
+| `--build DIR`      | build directory (default: `build-rematch`)                      |
+| `--build-type T`   | CMake build type (default: `Release`)                           |
+| `--work DIR`       | regex-bench work directory (default: `.regex-bench`)            |
+| `--no-prepare`     | skip the engine preparation step, reuse the current work tree   |
+| `--srell-dir DIR`  | use an existing SRELL source directory                          |
+| `--quickjs-dir DIR`| use an existing QuickJS source directory                        |
+| `--hermes-dir DIR` | use an existing Hermes source directory                         |
+| `--hermes-build-dir DIR` | use an existing Hermes build directory                    |
+
+If an engine's sources are not found, that engine is skipped with a configuration warning. To
+point at different locations, or to disable an engine, override the same cache variables used
+by `tools/regex-bench`:
 
 ```sh
 cmake -S . -B build \

@@ -47,6 +47,10 @@ $ arsh tools/regex-bench/run.arsh --std-regex --srell --quickjs --hermes --boost
 4. builds `regex_perf`,
 5. runs it against the bundled `3200.txt`.
 
+`--prepare` stops after step 3 for SRELL, QuickJS and Hermes (no arsh build and no `regex_perf`)
+and prints their resolved locations. It is used by `test/regex/build_rematch.arsh` to build the
+standalone `rematch` tool from the same engine trees.
+
 ## Options
 
 | option                | description                                              |
@@ -58,6 +62,7 @@ $ arsh tools/regex-bench/run.arsh --std-regex --srell --quickjs --hermes --boost
 | `--work DIR`          | working directory (default: `.regex-bench`)              |
 | `--keep`              | keep the fetched work directory                          |
 | `--setup`             | only fetch and patch, do not build or run                |
+| `--prepare`           | only fetch and build the comparison engines, then stop   |
 | `--std-regex`         | add `std::regex` as a comparison target                  |
 | `--srell`             | add SRELL as a comparison target                         |
 | `--srell-dir DIR`     | use an existing SRELL source directory                   |

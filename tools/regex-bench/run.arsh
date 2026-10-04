@@ -21,6 +21,7 @@
 #   arsh tools/regex-bench/run.arsh --std-regex --srell --boost  # compare with others
 #   arsh tools/regex-bench/run.arsh --repeat 3 --output results.csv
 #   arsh tools/regex-bench/run.arsh --keep                       # keep the work directory
+#   arsh tools/regex-bench/run.arsh --prepare                    # only fetch/build the engines
 
 shctl set errraise
 
@@ -54,6 +55,9 @@ type _Param() {
 
     [<Flag(help: "only fetch and patch, do not build or run")>]
     var setup = $false
+
+    [<Flag(help: "only fetch and build the comparison engines, then stop")>]
+    var prepare = $false
 
     [<Flag(help: "add std::regex as a comparison target")>]
     var stdRegex = $false
@@ -291,6 +295,21 @@ function run() for _Param {
     $_fetchAndPatch($root, $work)
     if $this.setup {
         echo "setup done: $work/regex-performance"
+        return
+    }
+
+    # --prepare only fetches/builds the comparison engines and reports their locations.
+    # It is used by test/regex/build_rematch.arsh, which points the rematch build at them.
+    if $this.prepare {
+        let srellSrc = $srellDirOpt ?? $_fetchSrell($work)
+        let quickjsSrc = $quickjsDirOpt ?? $_fetchQuickjs($work)
+        let hermesSrc = $hermesDirOpt ?? $_fetchHermes($work)
+        let hermesBuild = $hermesBuildDirOpt ?? $_buildHermes($work, $hermesSrc)
+        echo "srell: $srellSrc"
+        echo "quickjs: $quickjsSrc"
+        echo "hermes: $hermesSrc"
+        echo "hermes-build: $hermesBuild"
+        echo "prepare done: $work"
         return
     }
 
