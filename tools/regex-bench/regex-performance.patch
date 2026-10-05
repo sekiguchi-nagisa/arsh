@@ -1,8 +1,8 @@
 diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
-index 33391e5..6cfba18 100644
+index 33391e5..f215889 100644
 --- a/src/CMakeLists.txt
 +++ b/src/CMakeLists.txt
-@@ -1,13 +1,56 @@
+@@ -1,13 +1,57 @@
 -add_subdirectory(rust)
 +set(INCLUDE_RUST "local" CACHE STRING "Use rust regex crate. disabled/other.")
 +if(NOT ${INCLUDE_RUST} MATCHES "disabled")
@@ -16,6 +16,7 @@ index 33391e5..6cfba18 100644
  set(REGEX_SOURCES
      main.c
 -    rust.c
++    memory_tracker.cpp
  )
  
 +if(NOT ${INCLUDE_RUST} MATCHES "disabled")
@@ -61,7 +62,7 @@ index 33391e5..6cfba18 100644
  if(NOT ${INCLUDE_PCRE2} MATCHES "disabled")
      add_definitions(-DINCLUDE_PCRE2)
      set(REGEX_SOURCES ${REGEX_SOURCES} pcre2.c)
-@@ -52,7 +95,7 @@ endif()
+@@ -52,7 +96,7 @@ endif()
  if(NOT ${INCLUDE_BOOST} MATCHES "disabled")
      add_definitions(-DINCLUDE_BOOST)
      set(REGEX_SOURCES ${REGEX_SOURCES} boost.cpp)
@@ -70,7 +71,7 @@ index 33391e5..6cfba18 100644
  endif()
  
  if(NOT ${INCLUDE_YARA} MATCHES "disabled")
-@@ -76,6 +119,8 @@ endif()
+@@ -76,6 +120,8 @@ endif()
  
  add_executable(regex_perf ${REGEX_SOURCES})
  
@@ -81,8 +82,108 @@ index 33391e5..6cfba18 100644
  
 -target_link_libraries(regex_perf rregex ${REGEX_ENGINES} pthread dl)
 +target_link_libraries(regex_perf ${REGEX_RUSTLIB} ${REGEX_ENGINES} pthread dl)
+diff --git a/src/boost.cpp b/src/boost.cpp
+index 0b4acb8..f464708 100644
+--- a/src/boost.cpp
++++ b/src/boost.cpp
+@@ -2,6 +2,7 @@
+ #include <string.h>
+ 
+ #include "main.h"
++#include "memory_tracker.h"
+ #include <boost/regex.hpp>
+ 
+ 
+@@ -17,13 +18,19 @@ extern "C" int boost_find_all(char* pattern, char* subject, int subject_len, int
+     TIME_TYPE start, end = 0;
+     int found = 0;
+ 
++    memory_tracker_init();
++    const size_t mem_base = memory_tracker_live();
+     try {
+         boost::regex rx(pattern,boost::regex::optimize );//|boost::regex::extended);
++        res->mem_instance = memory_tracker_live() - mem_base;
+         std::string text( subject, subject_len );
+ 
+         double * times = (double*) std::calloc(repeat, sizeof(double));
+         int const times_len = repeat;
+ 
++        memory_tracker_reset_peak();
++        const size_t mem_scan_base = memory_tracker_live();
++
+         do {
+             GET_TIME(start);
+             found = search_all( rx, text );
+@@ -32,7 +39,7 @@ extern "C" int boost_find_all(char* pattern, char* subject, int subject_len, int
+ 
+         } while (--repeat > 0);
+ 
+-
++        res->mem_runtime = memory_tracker_peak() - mem_scan_base;
+         res->matches = found;
+         get_mean_and_derivation(times, times_len, res);
+ 
+@@ -41,6 +48,8 @@ extern "C" int boost_find_all(char* pattern, char* subject, int subject_len, int
+         res->time = 999999;
+         res->time_sd = 0;
+         res->matches = 0;
++        res->mem_instance = 0;
++        res->mem_runtime = 0;
+     }
+ 
+     return 0;
+diff --git a/src/cppstd.cpp b/src/cppstd.cpp
+index cc8f0cc..a2cb8e5 100644
+--- a/src/cppstd.cpp
++++ b/src/cppstd.cpp
+@@ -2,6 +2,7 @@
+ #include <string.h>
+ 
+ #include "main.h"
++#include "memory_tracker.h"
+ #include <regex>
+ #include <iostream>
+ 
+@@ -18,13 +19,19 @@ extern "C" int cppstd_find_all(char* pattern, char* subject, int subject_len, in
+     TIME_TYPE start, end = 0;
+     int found = 0;
+ 
++    memory_tracker_init();
++    const size_t mem_base = memory_tracker_live();
+     try {
+         std::regex rx(pattern,std::regex::optimize);//|std::regex::extended);
++        res->mem_instance = memory_tracker_live() - mem_base;
+         std::string text( subject, subject_len );
+ 
+         double * times = (double*) std::calloc(repeat, sizeof(double));
+         int const times_len = repeat;
+ 
++        memory_tracker_reset_peak();
++        const size_t mem_scan_base = memory_tracker_live();
++
+         do {
+             GET_TIME(start);
+             found = search_all( rx, text );
+@@ -33,7 +40,7 @@ extern "C" int cppstd_find_all(char* pattern, char* subject, int subject_len, in
+ 
+         } while (--repeat > 0);
+ 
+-
++        res->mem_runtime = memory_tracker_peak() - mem_scan_base;
+         res->matches = found;
+         get_mean_and_derivation(times, times_len, res);
+ 
+@@ -43,6 +50,8 @@ extern "C" int cppstd_find_all(char* pattern, char* subject, int subject_len, in
+         res->time = 999999;
+         res->time_sd = 0;
+         res->matches = 0;
++        res->mem_instance = 0;
++        res->mem_runtime = 0;
+     }
+ 
+     return 0;
 diff --git a/src/main.c b/src/main.c
-index 104f01a..19d24aa 100644
+index 104f01a..a2afb67 100644
 --- a/src/main.c
 +++ b/src/main.c
 @@ -44,8 +44,23 @@ static struct engines engines [] = {
@@ -109,7 +210,25 @@ index 104f01a..19d24aa 100644
  };
  
  static char * regex [] = {
-@@ -229,8 +244,16 @@ int main(int argc, char **argv)
+@@ -119,6 +134,8 @@ void find_all(char* pattern, char* subject, int subject_len, int repeat, struct
+             engine_results[iter].time_sd = 0;
+             engine_results[iter].matches = 0;
+             engine_results[iter].score = 0;
++            engine_results[iter].mem_instance = 0;
++            engine_results[iter].mem_runtime = 0;
+         } else {
+             printResult(engines[iter].name, &(engine_results[iter]));
+         }
+@@ -182,7 +199,7 @@ void get_mean_and_derivation(double * times, uint32_t times_len, struct result *
+ 
+ void printResult(char * name, struct result * res)
+ {
+-    fprintf(stdout, "[%10s] time: %7.1f ms (+/- %4.1f %%), matches: %8d\n", name, res->time, (res->time_sd / res->time) * 100, res->matches);
++    fprintf(stdout, "[%10s] time: %7.1f ms (+/- %4.1f %%), matches: %8d, mem: %8zu B instance + %8zu B runtime\n", name, res->time, (res->time_sd / res->time) * 100, res->matches, res->mem_instance, res->mem_runtime);
+     fflush(stdout);
+ }
+ 
+@@ -229,8 +246,16 @@ int main(int argc, char **argv)
          exit(EXIT_FAILURE);
      }
  
@@ -128,11 +247,64 @@ index 104f01a..19d24aa 100644
  
      for (int iter = 0; iter < sizeof(regex)/sizeof(regex[0]); iter++) {
          find_all(regex[iter], data, data_len, repeat, results[iter]);
+@@ -238,12 +263,14 @@ int main(int argc, char **argv)
+         for (int iiter = 0; iiter < sizeof(engines)/sizeof(engines[0]); iiter++) {
+             engine_results[iiter].time += results[iter][iiter].time;
+             engine_results[iiter].score += results[iter][iiter].score;
++            engine_results[iiter].mem_instance += results[iter][iiter].mem_instance;
++            engine_results[iiter].mem_runtime += results[iter][iiter].mem_runtime;
+         }
+     }
+ 
+     fprintf(stdout, "-----------------\nTotal Results:\n");
+     for (int iter = 0; iter < sizeof(engines)/sizeof(engines[0]); iter++) {
+-        fprintf(stdout, "[%10s] time:  %7.1f ms, score: %6u points,\n", engines[iter].name, engine_results[iter].time, engine_results[iter].score);
++        fprintf(stdout, "[%10s] time:  %7.1f ms, score: %6u points, mem: %8zu B instance + %8zu B runtime\n", engines[iter].name, engine_results[iter].time, engine_results[iter].score, engine_results[iter].mem_instance, engine_results[iter].mem_runtime);
+     }
+ 
+     if (out_file != NULL) {
+@@ -267,6 +294,12 @@ int main(int argc, char **argv)
+         for (iter = 0; iter < sizeof(engines)/sizeof(engines[0]); iter++) {
+             fprintf(f, "%s [matches];", engines[iter].name);
+         }
++        for (iter = 0; iter < sizeof(engines)/sizeof(engines[0]); iter++) {
++            fprintf(f, "%s [mem_inst];", engines[iter].name);
++        }
++        for (iter = 0; iter < sizeof(engines)/sizeof(engines[0]); iter++) {
++            fprintf(f, "%s [mem_run];", engines[iter].name);
++        }
+         fprintf(f, "\n");
+ 
+         /* write data */
+@@ -282,6 +315,12 @@ int main(int argc, char **argv)
+             for (iiter = 0; iiter < sizeof(engines)/sizeof(engines[0]); iiter++) {
+                 fprintf(f, "%d;", results[iter][iiter].matches);
+             }
++            for (iiter = 0; iiter < sizeof(engines)/sizeof(engines[0]); iiter++) {
++                fprintf(f, "%zu;", results[iter][iiter].mem_instance);
++            }
++            for (iiter = 0; iiter < sizeof(engines)/sizeof(engines[0]); iiter++) {
++                fprintf(f, "%zu;", results[iter][iiter].mem_runtime);
++            }
+             fprintf(f, "\n");
+         }
+ 
 diff --git a/src/main.h b/src/main.h
-index 973f72a..3c823ed 100644
+index 973f72a..b3e2f84 100644
 --- a/src/main.h
 +++ b/src/main.h
-@@ -51,8 +51,23 @@ int hs_find_all(char * pattern, char * subject, int subject_len, int repeat, str
+@@ -17,6 +17,10 @@ struct result {
+     double time;
+     double time_sd;
+     int matches;
++    /* live heap bytes of the compiled regex instance (0 if the engine does not report it) */
++    size_t mem_instance;
++    /* peak heap bytes above the instance while matching (0 if the engine does not report it) */
++    size_t mem_runtime;
+ };
+ 
+ void get_mean_and_derivation(double * times, uint32_t times_len, struct result * res);
+@@ -51,8 +55,23 @@ int hs_find_all(char * pattern, char * subject, int subject_len, int repeat, str
  #ifdef INCLUDE_YARA
  int yara_find_all(char * pattern, char * subject, int subject_len, int repeat, struct result * res);
  #endif

@@ -16,6 +16,9 @@
 #   4. build `regex_perf`,
 #   5. run it against the bundled 3200.txt.
 #
+# Each engine reports its time, score, match count and heap memory usage (the size of the
+# compiled regex instance and the peak extra memory allocated while scanning the input).
+#
 # Usage:
 #   arsh tools/regex-bench/run.arsh                              # arsh only
 #   arsh tools/regex-bench/run.arsh --std-regex --srell --boost  # compare with others
@@ -174,6 +177,8 @@ function _fetchAndPatch(root: String, work: String) {
     git clean -fdx > /dev/null 2>&1 || $true
 
     let bench = "${root}/tools/regex-bench"
+    cp $bench/memory_tracker.h $src/src/memory_tracker.h || exit $?
+    cp $bench/memory_tracker.cpp $src/src/memory_tracker.cpp || exit $?
     cp $bench/arsh.cpp $src/src/arsh.cpp || exit $?
     cp $bench/arsh.cmake $src/src/arsh.cmake || exit $?
     cp $bench/srell.cpp $src/src/srell.cpp || exit $?

@@ -5,7 +5,7 @@ Support for measuring the arsh regex engine with
 the most common C++ regex engines as comparison targets.
 
 The upstream tool drives a fixed set of 18 patterns against a large text file and reports the
-time and score of each registered engine. This directory provides
+time and score of each registered engine. This directory provides:
 
 | file                      | description                                                             |
 |---------------------------|-------------------------------------------------------------------------|
@@ -14,6 +14,7 @@ time and score of each registered engine. This directory provides
 | `quickjs.c` / `quickjs.cmake` | adapter and build support for QuickJS `libregexp`                   |
 | `hermes.cpp` / `hermes.cmake` | adapter and build support for the Hermes regex engine             |
 | `boost.cmake`             | build support for Boost.Regex                                           |
+| `memory_tracker.cpp` / `memory_tracker.h` | heap accounting shared by the adapters (see "Memory measurement") |
 | `regex-performance.patch` | patch registering the engines into the upstream harness                |
 | `run.arsh`                | script which fetches, patches, builds and runs the benchmark           |
 
@@ -83,6 +84,42 @@ Hermes is large, so `--hermes` clones it and builds only the regex engine and th
 libraries it needs. When a Hermes tree is already available, pass both `--hermes-dir <source>` and
 `--hermes-build-dir <build>` to skip the clone and the build.
 
+## Memory measurement
+
+Every registered engine also reports its heap memory usage, split into two numbers:
+
+* `instance`: the live bytes of the compiled regex instance itself.
+* `runtime`: the peak extra bytes allocated while scanning the input.
+
+They are printed next to the timings and written to the CSV (`<engine> [mem_inst]` and
+`<engine> [mem_run]` columns). Both are in bytes; the printed columns are per-pattern and the
+total is summed over the 18 patterns.
+
+The measurement is provided by `memory_tracker.cpp`, which replaces the global
+malloc/calloc/realloc/free and C++ operator new/delete and accounts every live block by its usable
+size (the allocator's real footprint). Because all engines are linked into the same executable,
+each adapter measures a delta around its own work:
+
+```cpp
+const size_t base = memory_tracker_live();
+/* build the compiled regex */
+res->mem_instance = memory_tracker_live() - base;
+
+memory_tracker_reset_peak();
+const size_t scan_base = memory_tracker_live();
+/* run all the matches */
+res->mem_runtime = memory_tracker_peak() - scan_base;
+```
+
+The tracker is enabled on glibc (Linux) and is a no-op elsewhere, in which case both numbers stay
+`0`. It tracks heap allocations only: memory obtained directly from the OS (e.g. `mmap`) or held
+on the stack is not included.
+
+Because the numbers are heap deltas around an engine's own calls, a one-time module-level cache
+that a library initializes on first use is attributed to the first pattern that triggers it (for
+example, the arsh Unicode property-name map, which is built the first time a `\p{...}` pattern is
+compiled).
+
 ## Manual integration
 
 If you already have a copy of `regex-performance`, apply the changes by hand:
@@ -92,6 +129,7 @@ $ git apply /path/to/arsh/tools/regex-bench/regex-performance.patch
 $ cp /path/to/arsh/tools/regex-bench/{arsh,srell}.cpp      src/
 $ cp /path/to/arsh/tools/regex-bench/quickjs.c              src/
 $ cp /path/to/arsh/tools/regex-bench/hermes.cpp             src/
+$ cp /path/to/arsh/tools/regex-bench/memory_tracker.{h,cpp}  src/
 $ cp /path/to/arsh/tools/regex-bench/{arsh,srell,quickjs,hermes,boost}.cmake src/
 
 $ mkdir build && cd build

@@ -35,6 +35,7 @@
 #include <vector>
 
 #include "main.h"
+#include "memory_tracker.h"
 
 #ifndef BEGIN_MISC_LIB_NAMESPACE_DECL
 #define BEGIN_MISC_LIB_NAMESPACE_DECL namespace arsh {
@@ -123,12 +124,16 @@ extern "C" int arsh_find_all(char *pattern, char *subject, int subject_len, int 
   if (pattern == nullptr || subject == nullptr || subject_len < 0 || repeat <= 0 || res == nullptr) {
     return -1;
   }
+  memory_tracker_init();
+  const size_t memBase = memory_tracker_live();
   auto compiled = compilePattern(pattern);
   if (!compiled.hasValue()) {
     printf("arsh compilation failed: %s\n", pattern);
     return -1;
   }
   const auto &re = compiled.unwrap();
+  /* the compiled regex instance itself (the scan context is created per repetition below) */
+  res->mem_instance = memory_tracker_live() - memBase;
   const StringRef text(subject, static_cast<size_t>(subject_len));
 
   double *times = static_cast<double *>(calloc(static_cast<size_t>(repeat), sizeof(double)));
@@ -136,6 +141,9 @@ extern "C" int arsh_find_all(char *pattern, char *subject, int subject_len, int 
     return -1;
   }
   const int timesLen = repeat;
+
+  memory_tracker_reset_peak();
+  const size_t memScanBase = memory_tracker_live();
 
   long long found = 0;
   do {
@@ -156,6 +164,7 @@ extern "C" int arsh_find_all(char *pattern, char *subject, int subject_len, int 
     }
   } while (--repeat > 0);
 
+  res->mem_runtime = memory_tracker_peak() - memScanBase;
   res->matches = static_cast<int>(found);
   get_mean_and_derivation(times, static_cast<uint32_t>(timesLen), res);
   free(times);
@@ -175,6 +184,8 @@ extern "C" int arsh_unsafe_find_all(char *pattern, char *subject, int subject_le
   if (pattern == nullptr || subject == nullptr || subject_len < 0 || repeat <= 0 || res == nullptr) {
     return -1;
   }
+  memory_tracker_init();
+  const size_t memBase = memory_tracker_live();
   auto compiled = compilePattern(pattern);
   if (!compiled.hasValue()) {
     printf("arsh compilation failed: %s\n", pattern);
@@ -197,6 +208,11 @@ extern "C" int arsh_unsafe_find_all(char *pattern, char *subject, int subject_le
   }
   auto &matchCtx = ctx.asOk();
   const auto initialInput = matchCtx.copyInput(); // for resetting the input position
+  /* the regex instance plus the persistent scan context/buffers kept alive across repetitions */
+  res->mem_instance = memory_tracker_live() - memBase;
+
+  memory_tracker_reset_peak();
+  const size_t memScanBase = memory_tracker_live();
 
   long long found = 0;
   do {
@@ -212,6 +228,7 @@ extern "C" int arsh_unsafe_find_all(char *pattern, char *subject, int subject_le
     }
   } while (--repeat > 0);
 
+  res->mem_runtime = memory_tracker_peak() - memScanBase;
   res->matches = static_cast<int>(found);
   get_mean_and_derivation(times, static_cast<uint32_t>(timesLen), res);
   free(times);

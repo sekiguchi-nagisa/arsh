@@ -29,6 +29,7 @@
 #include <string.h>
 
 #include "main.h"
+#include "memory_tracker.h"
 
 #include <libregexp.h>
 
@@ -134,6 +135,9 @@ extern int quickjs_find_all(char *pattern, char *subject, int subject_len, int r
     int bytecodeLen = 0;
     uint8_t *bytecode = NULL;
 
+    memory_tracker_init();
+    const size_t memBase = memory_tracker_live();
+
     const char *pat = skipInlineFlags(pattern, &flags);
     errMsg[0] = '\0';
     bytecode = lre_compile(&bytecodeLen, errMsg, sizeof(errMsg), pat, strlen(pat), flags, NULL);
@@ -141,6 +145,8 @@ extern int quickjs_find_all(char *pattern, char *subject, int subject_len, int r
         printf("QuickJS compilation failed: %s (%s)\n", pattern, errMsg);
         return -1;
     }
+    /* the compiled bytecode is the regex instance (lre_exec keeps no per-instance state) */
+    res->mem_instance = memory_tracker_live() - memBase;
 
     double *times = (double *)calloc((size_t)repeat, sizeof(double));
     if (!times) {
@@ -148,6 +154,9 @@ extern int quickjs_find_all(char *pattern, char *subject, int subject_len, int r
         return -1;
     }
     const int timesLen = repeat;
+
+    memory_tracker_reset_peak();
+    const size_t memScanBase = memory_tracker_live();
 
     do {
         GET_TIME(start);
@@ -162,6 +171,7 @@ extern int quickjs_find_all(char *pattern, char *subject, int subject_len, int r
         return -1;
     }
 
+    res->mem_runtime = memory_tracker_peak() - memScanBase;
     res->matches = (int)found;
     get_mean_and_derivation(times, (uint32_t)timesLen, res);
     free(times);

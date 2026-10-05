@@ -29,6 +29,7 @@
 #include <string>
 
 #include "main.h"
+#include "memory_tracker.h"
 
 #include <srell.hpp>
 
@@ -43,12 +44,19 @@ extern "C" int srell_find_all(char *pattern, char *subject, int subject_len, int
   TIME_TYPE start = 0, end = 0;
   int found = 0;
 
+  memory_tracker_init();
+  const size_t memBase = memory_tracker_live();
   try {
     srell::regex rx(pattern, srell::regex::optimize);
+    /* the compiled regex instance (SRELL keeps the compiled program inside the object) */
+    res->mem_instance = memory_tracker_live() - memBase;
     const std::string text(subject, static_cast<size_t>(subject_len));
 
     double *times = static_cast<double *>(calloc(static_cast<size_t>(repeat), sizeof(double)));
     const int timesLen = repeat;
+
+    memory_tracker_reset_peak();
+    const size_t memScanBase = memory_tracker_live();
 
     do {
       GET_TIME(start);
@@ -57,6 +65,7 @@ extern "C" int srell_find_all(char *pattern, char *subject, int subject_len, int
       times[repeat - 1] = TIME_DIFF_IN_MS(start, end);
     } while (--repeat > 0);
 
+    res->mem_runtime = memory_tracker_peak() - memScanBase;
     res->matches = found;
     get_mean_and_derivation(times, static_cast<uint32_t>(timesLen), res);
     free(times);
@@ -65,6 +74,8 @@ extern "C" int srell_find_all(char *pattern, char *subject, int subject_len, int
     res->time = 999999;
     res->time_sd = 0;
     res->matches = 0;
+    res->mem_instance = 0;
+    res->mem_runtime = 0;
   }
   return 0;
 }
