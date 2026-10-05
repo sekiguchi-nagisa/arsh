@@ -314,8 +314,8 @@ static LeadingSearchStatus searchLeadingBytes(const Inst *&inst, Input &input, c
   StringRef needle;
   switch (inst->op) {
   case OpCode::Char: {
-    int codePoint = cast<CharIns>(*inst).getCodePoint();
-    unsigned int len = UnicodeUtil::codePointToUtf8(codePoint, data);
+    const int codePoint = cast<CharIns>(*inst).getCodePoint();
+    const unsigned int len = UnicodeUtil::codePointToUtf8(codePoint, data);
     needle = StringRef(data, len);
     inst += sizeof(CharIns);
     goto FIND_STRING;
@@ -324,7 +324,7 @@ static LeadingSearchStatus searchLeadingBytes(const Inst *&inst, Input &input, c
     needle = matchers[cast<StringIns>(*inst).getIndex()].asStrRef();
     inst += sizeof(StringIns);
   FIND_STRING:
-    if (auto retPos = input.remainForward().find(needle); retPos == StringRef::npos) {
+    if (const auto retPos = input.remainForward().find(needle); retPos == StringRef::npos) {
       oldIter = input.getEnd();
       return LeadingSearchStatus::NOT_FOUND;
     } else {
@@ -334,15 +334,43 @@ static LeadingSearchStatus searchLeadingBytes(const Inst *&inst, Input &input, c
     }
   }
   case OpCode::CharSet: {
-    const unsigned int index = cast<CharSetIns>(*inst).getMatcherIndex();
+    const auto &ins = cast<CharSetIns>(*inst);
+    const auto &matcher = matchers[ins.getMatcherIndex()];
     const bool invert = cast<CharSetIns>(*inst).invert;
     inst += sizeof(CharSetIns);
     while (input.available()) {
       oldIter = input.getIter();
-      if (matchers[index].contains(input.consumeForward()) != invert) {
+      if (matcher.contains(input.consumeForward()) != invert) {
         return LeadingSearchStatus::CONSUMED;
       }
     }
+    oldIter = input.getEnd();
+    return LeadingSearchStatus::NOT_FOUND;
+  }
+  case OpCode::IChar: {
+    const int codePoint = cast<ICharIns>(*inst).getCodePoint();
+    inst += sizeof(ICharIns);
+    while (input.available()) {
+      oldIter = input.getIter();
+      if (doSimpleCaseFolding(input.consumeForward()) == codePoint) {
+        return LeadingSearchStatus::CONSUMED;
+      }
+    }
+    oldIter = input.getEnd();
+    return LeadingSearchStatus::NOT_FOUND;
+  }
+  case OpCode::ICharSet: {
+    const auto &ins = cast<ICharSetIns>(*inst);
+    const bool invert = ins.invert;
+    const auto &matcher = matchers[ins.getMatcherIndex()];
+    inst += sizeof(ICharSetIns);
+    while (input.available()) {
+      oldIter = input.getIter();
+      if (matcher.contains(doSimpleCaseFolding(input.consumeForward())) != invert) {
+        return LeadingSearchStatus::CONSUMED;
+      }
+    }
+    oldIter = input.getEnd();
     return LeadingSearchStatus::NOT_FOUND;
   }
   default:
