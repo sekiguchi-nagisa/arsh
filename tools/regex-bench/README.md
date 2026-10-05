@@ -9,7 +9,7 @@ time and score of each registered engine. This directory provides:
 
 | file                      | description                                                             |
 |---------------------------|-------------------------------------------------------------------------|
-| `arsh.cpp` / `arsh.cmake` | adapter and build support for the arsh `regex` engine (`arsh` and `arsh_unsafe`) |
+| `arsh.cpp` / `arsh.cmake` | adapter and build support for the arsh `regex` engine                   |
 | `srell.cpp` / `srell.cmake` | adapter and build support for [SRELL](https://github.com/upa-url/srell) |
 | `quickjs.c` / `quickjs.cmake` | adapter and build support for QuickJS `libregexp`                   |
 | `hermes.cpp` / `hermes.cmake` | adapter and build support for the Hermes regex engine             |
@@ -165,9 +165,5 @@ $ ./src/regex_perf -f ../3200.txt -o results.csv
   what the VM does. Hermes' backtrack limit makes it report pattern `(.*?,){13}z` as a failure
   (`999999`), like the engines that cannot finish it. The adapter links the static libraries from
   an existing Hermes build tree and requires `HERMES_SOURCE_DIR` and `HERMES_BUILD_DIR`.
-* `arsh.cpp` registers two arsh entries: `arsh` creates a fresh `MatchContext` for every scan
-  (safe, mirrors normal use), while `arsh_unsafe` creates the context (and its loop-state
-  buffers) once and reuses it across the repeated scans, only resetting the input position. The
-  unsafe variant skips per-scan context construction and UTF-8 validation of the subject, so the
-  gap between the two shows how much of a scanned time is context setup rather than matching.
-  It is only valid because every scan uses the same regex and text.
+* The arsh adapter (`arsh.cpp`) is registered once as `arsh`; it creates a fresh `MatchContext`
+  for every scan, which mirrors normal use.

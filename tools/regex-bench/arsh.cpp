@@ -21,11 +21,8 @@
  * The benchmark harness (see main.h) expects each engine to provide
  *   int <name>_find_all(char *pattern, char *subject, int subject_len, int repeat,
  *                       struct result *res);
- * so this file implements two entry points:
- *   - `arsh_find_all`: creates a fresh MatchContext for every scan (safe, mirrors normal use).
- *   - `arsh_unsafe_find_all`: reuses a single MatchContext across the repeated scans to avoid
- *     re-creating its buffers. This is only safe because all scans use the same regex and text,
- *     so it is registered separately as `arsh_unsafe` to keep the comparison honest.
+ * so this file implements `arsh_find_all`, which creates a fresh MatchContext for every scan
+ * (safe, mirrors normal use).
  */
 
 #include <cstdio>
@@ -171,66 +168,3 @@ extern "C" int arsh_find_all(char *pattern, char *subject, int subject_len, int 
   return 0;
 }
 
-/**
- * Same as `arsh_find_all`, but creates the MatchContext (and its loop state buffers) only once
- * and reuses it across the repeated scans. Only the input position is reset before each scan.
- *
- * This is an intentionally "unsafe" optimization: the context must not be shared between
- * different regexes or inputs, and it bypasses the per-call UTF-8 validation of the subject.
- * It is registered under a separate name so it can be compared with the safe entry point.
- */
-extern "C" int arsh_unsafe_find_all(char *pattern, char *subject, int subject_len, int repeat,
-                                   struct result *res) {
-  if (pattern == nullptr || subject == nullptr || subject_len < 0 || repeat <= 0 || res == nullptr) {
-    return -1;
-  }
-  memory_tracker_init();
-  const size_t memBase = memory_tracker_live();
-  auto compiled = compilePattern(pattern);
-  if (!compiled.hasValue()) {
-    printf("arsh compilation failed: %s\n", pattern);
-    return -1;
-  }
-  const auto &re = compiled.unwrap();
-  const StringRef text(subject, static_cast<size_t>(subject_len));
-
-  double *times = static_cast<double *>(calloc(static_cast<size_t>(repeat), sizeof(double)));
-  if (times == nullptr) {
-    return -1;
-  }
-  const int timesLen = repeat;
-
-  std::vector<regex::Capture> captures;
-  auto ctx = regex::tryToCreateMatchContext(re, text, 0, captures);
-  if (!ctx) {
-    free(times);
-    return -1;
-  }
-  auto &matchCtx = ctx.asOk();
-  const auto initialInput = matchCtx.copyInput(); // for resetting the input position
-  /* the regex instance plus the persistent scan context/buffers kept alive across repetitions */
-  res->mem_instance = memory_tracker_live() - memBase;
-
-  memory_tracker_reset_peak();
-  const size_t memScanBase = memory_tracker_live();
-
-  long long found = 0;
-  do {
-    matchCtx.syncInput(initialInput);
-    TIME_TYPE start, end;
-    GET_TIME(start);
-    const auto status = countMatchesIn(matchCtx, captures, &found);
-    GET_TIME(end);
-    times[repeat - 1] = TIME_DIFF_IN_MS(start, end);
-    if (status != regex::MatchStatus::OK) {
-      free(times);
-      return -1;
-    }
-  } while (--repeat > 0);
-
-  res->mem_runtime = memory_tracker_peak() - memScanBase;
-  res->matches = static_cast<int>(found);
-  get_mean_and_derivation(times, static_cast<uint32_t>(timesLen), res);
-  free(times);
-  return 0;
-}

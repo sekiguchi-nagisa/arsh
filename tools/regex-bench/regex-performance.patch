@@ -186,7 +186,7 @@ diff --git a/src/main.c b/src/main.c
 index 104f01a..a2afb67 100644
 --- a/src/main.c
 +++ b/src/main.c
-@@ -44,8 +44,23 @@ static struct engines engines [] = {
+@@ -44,8 +44,22 @@ static struct engines engines [] = {
  #ifdef INCLUDE_YARA
      {.name = "yara",        .find_all = yara_find_all},
  #endif
@@ -196,7 +196,6 @@ index 104f01a..a2afb67 100644
 +#endif
 +#ifdef INCLUDE_ARSH
 +    {.name = "arsh",        .find_all = arsh_find_all},
-+    {.name = "arsh_unsafe", .find_all = arsh_unsafe_find_all},
 +#endif
 +#ifdef INCLUDE_SRELL
 +    {.name = "srell",       .find_all = srell_find_all},
@@ -304,7 +303,7 @@ index 973f72a..b3e2f84 100644
  };
  
  void get_mean_and_derivation(double * times, uint32_t times_len, struct result * res);
-@@ -51,8 +55,23 @@ int hs_find_all(char * pattern, char * subject, int subject_len, int repeat, str
+@@ -51,8 +55,22 @@ int hs_find_all(char * pattern, char * subject, int subject_len, int repeat, str
  #ifdef INCLUDE_YARA
  int yara_find_all(char * pattern, char * subject, int subject_len, int repeat, struct result * res);
  #endif
@@ -314,7 +313,6 @@ index 973f72a..b3e2f84 100644
 +#endif
 +#ifdef INCLUDE_ARSH
 +int arsh_find_all(char * pattern, char * subject, int subject_len, int repeat, struct result * res);
-+int arsh_unsafe_find_all(char * pattern, char * subject, int subject_len, int repeat, struct result * res);
 +#endif
 +#ifdef INCLUDE_SRELL
 +int srell_find_all(char * pattern, char * subject, int subject_len, int repeat, struct result * res);
