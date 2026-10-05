@@ -302,6 +302,54 @@ findBackwardLongestMatched(const PackedRadixTree tree, StringRef ref, std::strin
   return {0, 0};
 }
 
+enum class LeadingSearchStatus : unsigned char {
+  CONSUMED,
+  NOT_FOUND,
+  DO_NOTHING,
+};
+
+static LeadingSearchStatus searchLeadingBytes(const Inst *&inst, Input &input, const char *&oldIter,
+                                              const ArrayRef<Matcher> matchers) {
+  char data[4];
+  StringRef needle;
+  switch (inst->op) {
+  case OpCode::Char: {
+    int codePoint = cast<CharIns>(*inst).getCodePoint();
+    unsigned int len = UnicodeUtil::codePointToUtf8(codePoint, data);
+    needle = StringRef(data, len);
+    inst += sizeof(CharIns);
+    goto FIND_STRING;
+  }
+  case OpCode::String: {
+    needle = matchers[cast<StringIns>(*inst).getIndex()].asStrRef();
+    inst += sizeof(StringIns);
+  FIND_STRING:
+    if (auto retPos = input.remainForward().find(needle); retPos == StringRef::npos) {
+      oldIter = input.getEnd();
+      return LeadingSearchStatus::NOT_FOUND;
+    } else {
+      oldIter = input.getIter() + retPos;
+      input.setIter(input.getIter() + retPos + needle.size());
+      return LeadingSearchStatus::CONSUMED;
+    }
+  }
+  case OpCode::CharSet: {
+    const unsigned int index = cast<CharSetIns>(*inst).getMatcherIndex();
+    const bool invert = cast<CharSetIns>(*inst).invert;
+    inst += sizeof(CharSetIns);
+    while (input.available()) {
+      oldIter = input.getIter();
+      if (matchers[index].contains(input.consumeForward()) != invert) {
+        return LeadingSearchStatus::CONSUMED;
+      }
+    }
+    return LeadingSearchStatus::NOT_FOUND;
+  }
+  default:
+    return LeadingSearchStatus::DO_NOTHING;
+  }
+}
+
 #define TRY(E)                                                                                     \
   do {                                                                                             \
     if (unlikely(!(E))) {                                                                          \
@@ -349,41 +397,13 @@ MatchStatus match(MatchContext &ctx, ObserverPtr<Timer> timer) {
 #endif
 
 START:
-  // search string
-  if (inst->op == OpCode::Char || inst->op == OpCode::String) {
-    char data[4];
-    StringRef needle;
-    if (inst->op == OpCode::Char) {
-      int codePoint = cast<CharIns>(*inst).getCodePoint();
-      unsigned int len = UnicodeUtil::codePointToUtf8(codePoint, data);
-      needle = StringRef(data, len);
-      inst += sizeof(CharIns);
-    } else {
-      needle = matchers[cast<StringIns>(*inst).getIndex()].asStrRef();
-      inst += sizeof(StringIns);
-    }
-    if (auto retPos = input.remainForward().find(needle); retPos == StringRef::npos) {
-      oldIter = input.getEnd();
-      goto BACKTRACK;
-    } else {
-      oldIter = input.getIter() + retPos;
-      input.setIter(input.getIter() + retPos + needle.size());
-    }
-  } else if (inst->op == OpCode::CharSet) {
-    const unsigned int index = cast<CharSetIns>(*inst).getMatcherIndex();
-    const bool invert = cast<CharSetIns>(*inst).invert;
-    bool matched = false;
-    inst += sizeof(CharSetIns);
-    while (input.available()) {
-      oldIter = input.getIter();
-      if (matchers[index].contains(input.consumeForward()) != invert) {
-        matched = true;
-        break;
-      }
-    }
-    if (!matched) {
-      goto BACKTRACK;
-    }
+  switch (searchLeadingBytes(inst, input, oldIter, matchers)) {
+  case LeadingSearchStatus::CONSUMED:
+    break;
+  case LeadingSearchStatus::NOT_FOUND:
+    goto BACKTRACK;
+  case LeadingSearchStatus::DO_NOTHING:
+    break;
   }
 
   // match
