@@ -32,20 +32,20 @@ struct LoopState {
 
 class MatchContext {
 private:
-  const Regex &regex;
   Input input;
+  const unsigned int captureGroupCount;
   std::vector<Capture> &captures;
   std::vector<LoopState> loops;
 
 public:
   MatchContext(const Regex &regex, const Input &input, std::vector<Capture> &captures)
-      : regex(regex), input(input), captures(captures) {
-    this->loops.resize(this->regex.getLoopCount());
+      : input(input), captureGroupCount(regex.getCaptureGroupCount()), captures(captures) {
+    this->loops.resize(regex.getLoopCount());
   }
 
-  const Regex &getRegex() const { return this->regex; }
-
   Capture *getCaptures() const { return this->captures.data(); }
+
+  ArrayRef<Capture> toCapturesRef() const { return {this->captures.data(), this->captures.size()}; }
 
   LoopState *getLoops() { return this->loops.data(); }
 
@@ -57,31 +57,9 @@ public:
 
   Input &refInput() { return this->input; }
 
-  const Inst *getInst() const { return this->regex.getInstSeq().data(); }
-
   void clearCaptures() const {
     this->captures.clear();
-    this->captures.resize(this->regex.getCaptureGroupCount() + 1);
-  }
-
-  ArrayRef<Matcher> getMatchers() const { return this->regex.getMatchers(); }
-
-  Capture resolveNamedBackRef(unsigned int refIndex) const {
-    auto &entry = this->regex.getNamedCaptureGroups().toArrayRef()[refIndex].second;
-    return this->resolveNamedBackRef(entry);
-  }
-
-  Capture resolveNamedBackRef(const NamedCaptureEntry &entry) const {
-    if (entry.hasMultipleIndices()) {
-      for (unsigned int i = 0; i < entry.getSize(); i++) {
-        unsigned int capIndex = entry[i];
-        if (auto cap = this->captures[capIndex]) {
-          return cap;
-        }
-      }
-      return {};
-    }
-    return this->captures[entry.getIndex()];
+    this->captures.resize(this->captureGroupCount + 1);
   }
 };
 

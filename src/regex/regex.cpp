@@ -49,7 +49,7 @@ MatchStatus match(const Regex &regex, const StringRef text, const unsigned int c
   if (!ctx) {
     return ctx.asErr();
   }
-  return match(ctx.asOk(), timer);
+  return match(regex, ctx.asOk(), timer);
 }
 
 #define TRY(E)                                                                                     \
@@ -59,7 +59,8 @@ MatchStatus match(const Regex &regex, const StringRef text, const unsigned int c
     }                                                                                              \
   } while (false)
 
-static MatchStatus interpretReplacePattern(const MatchContext &ctx, const ReplaceParam &param) {
+static MatchStatus interpretReplacePattern(const Regex &regex, const MatchContext &ctx,
+                                           const ReplaceParam &param) {
   for (size_t pos = 0;;) {
     auto retPos = param.replacement.find('$', pos);
     const auto sub = param.replacement.slice(pos, retPos);
@@ -108,7 +109,7 @@ static MatchStatus interpretReplacePattern(const MatchContext &ctx, const Replac
       }
       StringRef num = param.replacement.slice(startPos, retPos);
       if (auto ret = convertToNum10<unsigned int>(num.begin(), num.end());
-          ret && ret.value <= ctx.getRegex().getCaptureGroupCount() && ret.value > 0) {
+          ret && ret.value <= regex.getCaptureGroupCount() && ret.value > 0) {
         if (auto cap = ctx.getCaptures()[ret.value]) {
           inserting = param.text.substr(cap.offset, cap.size);
         }
@@ -131,8 +132,8 @@ static MatchStatus interpretReplacePattern(const MatchContext &ctx, const Replac
         return MatchStatus::INVALID_REPLACE_PATTERN;
       }
       auto name = param.replacement.slice(retPos, p);
-      if (auto *e = ctx.getRegex().getNamedCaptureGroups().find(name)) {
-        if (auto cap = ctx.resolveNamedBackRef(*e)) {
+      if (auto *e = regex.getNamedCaptureGroups().find(name)) {
+        if (auto cap = findValidNamedCapture(*e, ctx.toCapturesRef())) {
           inserting = param.text.substr(cap.offset, cap.size);
         }
         retPos = p + 1;
@@ -166,7 +167,7 @@ MatchStatus replace(const Regex &regex, const ReplaceParam &param, const Observe
   unsigned int matchStartOffset = 0;
   do {
     matchStartOffset = ctx.asOk().getInput().getOffset();
-    const auto s = match(ctx.asOk(), timer);
+    const auto s = match(regex, ctx.asOk(), timer);
     auto &input = ctx.asOk().refInput(); // input is updated after call match
     if (s == MatchStatus::FAIL) {
       input.setIter(input.getBegin() + matchStartOffset);
@@ -176,7 +177,7 @@ MatchStatus replace(const Regex &regex, const ReplaceParam &param, const Observe
       return s;
     }
     TRY(!param.consumer || param.consumer(param.text.slice(matchStartOffset, captures[0].offset)));
-    if (auto s2 = interpretReplacePattern(ctx.asOk(), param); s2 != MatchStatus::OK) {
+    if (auto s2 = interpretReplacePattern(regex, ctx.asOk(), param); s2 != MatchStatus::OK) {
       return s2;
     }
     if (input.available() && matchStartOffset == input.getOffset()) { // not consume input
@@ -206,7 +207,7 @@ MatchStatus split(const Regex &regex, const StringRef text, const unsigned int l
   bool ignoreRemain = false;
   for (unsigned int count = 1; count < limit; count++) {
     const unsigned int matchStartOffset = ctx.asOk().getInput().getOffset();
-    const auto s = match(ctx.asOk(), timer);
+    const auto s = match(regex, ctx.asOk(), timer);
     auto &input = ctx.asOk().refInput(); // input is updated after call match
     if (s == MatchStatus::FAIL) {
       input.setIter(input.getBegin() + matchStartOffset);

@@ -302,14 +302,23 @@ findBackwardLongestMatched(const PackedRadixTree tree, StringRef ref, std::strin
   return {0, 0};
 }
 
-enum class LeadingSearchStatus : unsigned char {
+static Capture resolveBackRef(const Regex &regex, const MatchContext &ctx,
+                              const unsigned int refIndex, const bool named) {
+  const auto captures = ctx.toCapturesRef();
+  if (named) {
+    return findValidNamedCapture(*regex.getNamedCaptureGroups().findByIndex(refIndex), captures);
+  }
+  return captures[refIndex];
+}
+
+enum class PrefixSearchStatus : unsigned char {
   CONSUMED,
   NOT_FOUND,
   DO_NOTHING,
 };
 
-static LeadingSearchStatus searchLeadingBytes(const Inst *&inst, Input &input, const char *&oldIter,
-                                              const ArrayRef<Matcher> matchers) {
+static PrefixSearchStatus searchPrefix(const Inst *&inst, Input &input, const char *&oldIter,
+                                       const ArrayRef<Matcher> matchers) {
   char data[4];
   StringRef needle;
   switch (inst->op) {
@@ -326,11 +335,11 @@ static LeadingSearchStatus searchLeadingBytes(const Inst *&inst, Input &input, c
   FIND_STRING:
     if (const auto retPos = input.remainForward().find(needle); retPos == StringRef::npos) {
       oldIter = input.getEnd();
-      return LeadingSearchStatus::NOT_FOUND;
+      return PrefixSearchStatus::NOT_FOUND;
     } else {
       oldIter = input.getIter() + retPos;
       input.setIter(input.getIter() + retPos + needle.size());
-      return LeadingSearchStatus::CONSUMED;
+      return PrefixSearchStatus::CONSUMED;
     }
   }
   case OpCode::CharSet: {
@@ -341,11 +350,11 @@ static LeadingSearchStatus searchLeadingBytes(const Inst *&inst, Input &input, c
     while (input.available()) {
       oldIter = input.getIter();
       if (matcher.contains(input.consumeForward()) != invert) {
-        return LeadingSearchStatus::CONSUMED;
+        return PrefixSearchStatus::CONSUMED;
       }
     }
     oldIter = input.getEnd();
-    return LeadingSearchStatus::NOT_FOUND;
+    return PrefixSearchStatus::NOT_FOUND;
   }
   case OpCode::IChar: {
     const int codePoint = cast<ICharIns>(*inst).getCodePoint();
@@ -353,11 +362,11 @@ static LeadingSearchStatus searchLeadingBytes(const Inst *&inst, Input &input, c
     while (input.available()) {
       oldIter = input.getIter();
       if (doSimpleCaseFolding(input.consumeForward()) == codePoint) {
-        return LeadingSearchStatus::CONSUMED;
+        return PrefixSearchStatus::CONSUMED;
       }
     }
     oldIter = input.getEnd();
-    return LeadingSearchStatus::NOT_FOUND;
+    return PrefixSearchStatus::NOT_FOUND;
   }
   case OpCode::ICharSet: {
     const auto &ins = cast<ICharSetIns>(*inst);
@@ -367,14 +376,14 @@ static LeadingSearchStatus searchLeadingBytes(const Inst *&inst, Input &input, c
     while (input.available()) {
       oldIter = input.getIter();
       if (matcher.contains(doSimpleCaseFolding(input.consumeForward())) != invert) {
-        return LeadingSearchStatus::CONSUMED;
+        return PrefixSearchStatus::CONSUMED;
       }
     }
     oldIter = input.getEnd();
-    return LeadingSearchStatus::NOT_FOUND;
+    return PrefixSearchStatus::NOT_FOUND;
   }
   default:
-    return LeadingSearchStatus::DO_NOTHING;
+    return PrefixSearchStatus::DO_NOTHING;
   }
 }
 
@@ -400,12 +409,12 @@ static LeadingSearchStatus searchLeadingBytes(const Inst *&inst, Input &input, c
 #define vmnext continue
 #endif
 
-MatchStatus match(MatchContext &ctx, ObserverPtr<Timer> timer) {
+MatchStatus match(const Regex &regex, MatchContext &ctx, ObserverPtr<Timer> timer) {
   // prepare
   Input input = ctx.copyInput();
   const char *oldIter = input.getIter();
-  const Inst *inst = ctx.getInst();
-  const auto matchers = ctx.getMatchers();
+  const Inst *inst = regex.getInstSeq().data();
+  const auto matchers = regex.getMatchers();
   LoopState *loopStates = ctx.getLoops();
   ctx.clearCaptures();
   Capture *captures = ctx.getCaptures();
@@ -425,12 +434,12 @@ MatchStatus match(MatchContext &ctx, ObserverPtr<Timer> timer) {
 #endif
 
 START:
-  switch (searchLeadingBytes(inst, input, oldIter, matchers)) {
-  case LeadingSearchStatus::CONSUMED:
+  switch (searchPrefix(inst, input, oldIter, matchers)) {
+  case PrefixSearchStatus::CONSUMED:
     break;
-  case LeadingSearchStatus::NOT_FOUND:
+  case PrefixSearchStatus::NOT_FOUND:
     goto BACKTRACK;
-  case LeadingSearchStatus::DO_NOTHING:
+  case PrefixSearchStatus::DO_NOTHING:
     break;
   }
 
@@ -789,14 +798,8 @@ BACKTRACK:
         }
         vmcase(BackRef) {
           auto &ins = cast<BackRefIns>(*inst);
-          Capture capture;
-          if (ins.named) {
-            capture = ctx.resolveNamedBackRef(ins.getRefIndex());
-          } else {
-            capture = captures[ins.getRefIndex()];
-          }
-          if (capture) {
-            StringRef ref(input.getBegin() + capture.offset, capture.size);
+          if (const auto capture = resolveBackRef(regex, ctx, ins.getRefIndex(), ins.named)) {
+            const StringRef ref(input.getBegin() + capture.offset, capture.size);
             if (!input.expectForward(ref)) {
               goto BACKTRACK;
             }
@@ -806,13 +809,7 @@ BACKTRACK:
         }
         vmcase(IBackRef) {
           auto &ins = cast<IBackRefIns>(*inst);
-          Capture capture;
-          if (ins.named) {
-            capture = ctx.resolveNamedBackRef(ins.getRefIndex());
-          } else {
-            capture = captures[ins.getRefIndex()];
-          }
-          if (capture) {
+          if (const auto capture = resolveBackRef(regex, ctx, ins.getRefIndex(), ins.named)) {
             const StringRef ref(input.getBegin() + capture.offset, capture.size);
             const char *end = ref.end();
             for (const char *iter = ref.begin(); iter != end;) {
@@ -828,13 +825,7 @@ BACKTRACK:
         }
         vmcase(LBBackRef) {
           auto &ins = cast<LBBackRefIns>(*inst);
-          Capture capture;
-          if (ins.named) {
-            capture = ctx.resolveNamedBackRef(ins.getRefIndex());
-          } else {
-            capture = captures[ins.getRefIndex()];
-          }
-          if (capture) {
+          if (const auto capture = resolveBackRef(regex, ctx, ins.getRefIndex(), ins.named)) {
             const StringRef ref(input.getBegin() + capture.offset, capture.size);
             if (ins.ignoreCase) {
               const char *begin = ref.begin();

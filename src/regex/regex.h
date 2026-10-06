@@ -116,7 +116,7 @@ const char *toString(MatchStatus s);
 
 class MatchContext;
 
-MatchStatus match(MatchContext &ctx, ObserverPtr<Timer> timer);
+MatchStatus match(const Regex &regex, MatchContext &ctx, ObserverPtr<Timer> timer);
 
 MatchStatus match(const Regex &regex, StringRef text, unsigned int codePointOffset,
                   std::vector<Capture> &captures, ObserverPtr<Timer> timer);
