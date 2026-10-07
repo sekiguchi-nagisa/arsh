@@ -117,69 +117,55 @@ union Backtrack {
 class BacktrackStack {
 private:
   static_assert(std::is_trivially_copy_constructible_v<Backtrack>);
+
+  static constexpr unsigned int INIT_CAP = 6;
+
   const Inst *const start;
-  std::vector<Backtrack> bts;
+  Backtrack *ptr{nullptr};
+  unsigned int size{0};
+  unsigned int cap{INIT_CAP};
 
 public:
-  explicit BacktrackStack(const Inst *start) : start(start) {}
+  NON_COPYABLE(BacktrackStack);
+
+  static constexpr unsigned int computeMaxStackCap() {
+    unsigned int cap = 0;
+    for (unsigned int newCap = INIT_CAP; newCap <= Regex::MAX_STACK_DEPTH; newCap += newCap >> 1u) {
+      cap = newCap;
+    }
+    return cap;
+  }
+
+  explicit BacktrackStack(const Inst *start) : start(start) {
+    this->ptr = static_cast<Backtrack *>(::operator new(sizeof(Backtrack) * INIT_CAP));
+  }
+
+  ~BacktrackStack() { ::operator delete(this->ptr); }
 
   const Inst *getStartInst() const { return this->start; }
 
-  bool push(Backtrack bt) {
-    if (unlikely(this->bts.size() == Regex::MAX_STACK_DEPTH)) {
-      return false;
+  bool push(const Backtrack bt) {
+    constexpr unsigned int MAX_STACK_CAP = computeMaxStackCap();
+
+    if (this->size == this->cap) {
+      if (unlikely(this->size == MAX_STACK_CAP)) {
+        return false;
+      }
+      this->cap += this->cap >> 1u;
+      auto *newPtr = static_cast<Backtrack *>(::operator new(sizeof(Backtrack) * this->cap));
+      memcpy(newPtr, this->ptr, sizeof(Backtrack) * this->size);
+      ::operator delete(this->ptr);
+      this->ptr = newPtr;
     }
-    this->bts.push_back(bt);
+    this->ptr[this->size++] = bt;
     return true;
   }
 
-  unsigned int getRadixState() const { return this->bts.back().radixState.consumedSize; }
+  unsigned int getRadixState() const { return this->back().radixState.consumedSize; }
 
-  void updateRadixState(unsigned int newSize) {
-    this->bts.back().radixState.consumedSize = newSize;
-  }
+  void updateRadixState(unsigned int newSize) { this->back().radixState.consumedSize = newSize; }
 
-  bool backtrack(const Inst *&inst, Input &input, Capture *captures, LoopState *loopStates) {
-    while (!this->bts.empty()) {
-      auto bt = this->bts.back();
-      this->bts.pop_back();
-      switch (bt.op) {
-      case BacktrackOp::None:
-        return true; // do nothing
-      case BacktrackOp::SetIns:
-        inst = this->getStartInst() + bt.setIns.target;
-        input.setIter(bt.setIns.iter);
-        return true;
-      case BacktrackOp::SetCapture:
-        captures[bt.setCapture.index] = bt.setCapture.capture;
-        break;
-      case BacktrackOp::SetLoopState:
-        loopStates[bt.setLoopState.loopIndex] = bt.setLoopState.state;
-        break;
-      case BacktrackOp::NonGreedyLoop: {
-        const auto loopIndex = bt.nonGreedyLoop.loopIndex;
-        loopStates[loopIndex] = bt.nonGreedyLoop.state;
-        assert(!this->bts.empty());
-        const auto extra = this->bts.back();
-        this->bts.pop_back();
-        assert(extra.op == BacktrackOp::SetIns);
-        inst = this->getStartInst() + extra.setIns.target;
-        input.setIter(extra.setIns.iter);
-        inst += sizeof(BeginLoopIns);                                   // goto loop body
-        this->prepareLoopBody(input, loopIndex, loopStates[loopIndex]); // never fail (already pop)
-        return true;
-      }
-      case BacktrackOp::LookAround:
-        inst = this->getStartInst() + bt.lookAround.target;
-        bt.lookAround.matched = bt.lookAround.negate; // if negative lookaround, matched
-        this->push(bt);                               // never fail (already pop)
-        return true;
-      case BacktrackOp::RadixState:
-        break;
-      }
-    }
-    return false;
-  }
+  bool backtrack(const Inst *&inst, Input &input, Capture *captures, LoopState *loopStates);
 
   bool prepareLoopBody(const Input &input, uint16_t loopIndex, LoopState &loop) {
     if (!this->push(Backtrack::newSetLoopState(loopIndex, loop))) {
@@ -204,27 +190,78 @@ public:
   bool cleanupLookAround(Input &input, Capture *captures) {
     // find original lookaround state
     bool negate = false;
-    for (ssize_t i = static_cast<ssize_t>(this->bts.size()) - 1; i > -1; i--) {
-      if (auto &bt = this->bts[i]; bt.op == BacktrackOp::LookAround) {
+    for (ssize_t i = static_cast<ssize_t>(this->size) - 1; i > -1; i--) {
+      if (const auto &bt = this->ptr[i]; bt.op == BacktrackOp::LookAround) {
         negate = bt.lookAround.negate;
         break;
       }
     }
 
-    while (!this->bts.empty() && this->bts.back().op != BacktrackOp::LookAround) {
-      if (negate && this->bts.back().op == BacktrackOp::SetCapture) {
-        auto bt = this->bts.back();
-        captures[bt.setCapture.index] = bt.setCapture.capture; // force reset capture
+    while (!this->empty() && this->back().op != BacktrackOp::LookAround) {
+      if (negate && this->back().op == BacktrackOp::SetCapture) {
+        const auto &setCapture = this->back().setCapture;
+        captures[setCapture.index] = setCapture.capture; // force reset capture
       }
-      this->bts.pop_back();
+      this->popDiscard();
     }
-    assert(!this->bts.empty());
-    auto bt = this->bts.back();
+    assert(!this->empty());
+    const auto bt = this->pop();
     input.setIter(bt.lookAround.iter);
-    this->bts.pop_back();
     return bt.lookAround.matched;
   }
+
+private:
+  Backtrack &back() { return this->ptr[this->size - 1]; }
+
+  const Backtrack &back() const { return this->ptr[this->size - 1]; }
+
+  Backtrack pop() { return this->ptr[--this->size]; }
+
+  void popDiscard() { this->size--; }
+
+  bool empty() const { return this->size == 0; }
 };
+
+bool BacktrackStack::backtrack(const Inst *&inst, Input &input, Capture *captures,
+                               LoopState *loopStates) {
+  while (!this->empty()) {
+    auto bt = this->pop();
+    switch (bt.op) {
+    case BacktrackOp::None:
+      return true; // do nothing
+    case BacktrackOp::SetIns:
+      inst = this->getStartInst() + bt.setIns.target;
+      input.setIter(bt.setIns.iter);
+      return true;
+    case BacktrackOp::SetCapture:
+      captures[bt.setCapture.index] = bt.setCapture.capture;
+      break;
+    case BacktrackOp::SetLoopState:
+      loopStates[bt.setLoopState.loopIndex] = bt.setLoopState.state;
+      break;
+    case BacktrackOp::NonGreedyLoop: {
+      const auto loopIndex = bt.nonGreedyLoop.loopIndex;
+      loopStates[loopIndex] = bt.nonGreedyLoop.state;
+      assert(!this->empty());
+      const auto extra = this->pop();
+      assert(extra.op == BacktrackOp::SetIns);
+      inst = this->getStartInst() + extra.setIns.target;
+      input.setIter(extra.setIns.iter);
+      inst += sizeof(BeginLoopIns);                                   // goto loop body
+      this->prepareLoopBody(input, loopIndex, loopStates[loopIndex]); // never fail (already pop)
+      return true;
+    }
+    case BacktrackOp::LookAround:
+      inst = this->getStartInst() + bt.lookAround.target;
+      bt.lookAround.matched = bt.lookAround.negate; // if negative lookaround, matched
+      this->push(bt);                               // never fail (already pop)
+      return true;
+    case BacktrackOp::RadixState:
+      break;
+    }
+  }
+  return false;
+}
 
 static std::pair<unsigned short, unsigned char>
 findLongestMatched(const PackedRadixTree tree, StringRef ref, std::string &foldBuf, bool caseFold) {
