@@ -1,8 +1,8 @@
 diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
-index 33391e5..f215889 100644
+index 33391e5..6f70101 100644
 --- a/src/CMakeLists.txt
 +++ b/src/CMakeLists.txt
-@@ -1,13 +1,57 @@
+@@ -1,17 +1,73 @@
 -add_subdirectory(rust)
 +set(INCLUDE_RUST "local" CACHE STRING "Use rust regex crate. disabled/other.")
 +if(NOT ${INCLUDE_RUST} MATCHES "disabled")
@@ -59,10 +59,27 @@ index 33391e5..f215889 100644
 +    include(${CMAKE_CURRENT_SOURCE_DIR}/hermes.cmake)
 +endif()
 +
++# Node.js regexp engine adapter (see nodejs.cmake/nodejs.cpp).
++# Default is "disabled" because it runs the installed `node` executable out of process.
++set(INCLUDE_NODEJS "disabled" CACHE STRING "Use the Node.js regexp engine. local/disabled.")
++if(NOT ${INCLUDE_NODEJS} MATCHES "disabled")
++    add_definitions(-DINCLUDE_NODEJS)
++    set(REGEX_SOURCES ${REGEX_SOURCES} nodejs.cpp)
++    include(${CMAKE_CURRENT_SOURCE_DIR}/nodejs.cmake)
++endif()
++
++# PCRE2 adapter (see pcre2.cmake/pcre2.c). It links a locally built PCRE2 (with JIT support)
++# instead of the harness's vendor build, and registers the interpreted and JIT engines.
++set(INCLUDE_PCRE2 "disabled" CACHE STRING "Use PCRE2. local/disabled.")
  if(NOT ${INCLUDE_PCRE2} MATCHES "disabled")
      add_definitions(-DINCLUDE_PCRE2)
      set(REGEX_SOURCES ${REGEX_SOURCES} pcre2.c)
-@@ -52,7 +96,7 @@ endif()
+-    set(REGEX_ENGINES ${REGEX_ENGINES} pcre2-8)
++    include(${CMAKE_CURRENT_SOURCE_DIR}/pcre2.cmake)
+ endif()
+ 
+ if(NOT ${INCLUDE_HYPERSCAN} MATCHES "disabled")
+@@ -52,7 +108,7 @@ endif()
  if(NOT ${INCLUDE_BOOST} MATCHES "disabled")
      add_definitions(-DINCLUDE_BOOST)
      set(REGEX_SOURCES ${REGEX_SOURCES} boost.cpp)
@@ -71,7 +88,7 @@ index 33391e5..f215889 100644
  endif()
  
  if(NOT ${INCLUDE_YARA} MATCHES "disabled")
-@@ -76,6 +120,8 @@ endif()
+@@ -76,6 +132,8 @@ endif()
  
  add_executable(regex_perf ${REGEX_SOURCES})
  
@@ -183,10 +200,20 @@ index cc8f0cc..a2cb8e5 100644
  
      return 0;
 diff --git a/src/main.c b/src/main.c
-index 104f01a..a2afb67 100644
+index 104f01a..09b9b02 100644
 --- a/src/main.c
 +++ b/src/main.c
-@@ -44,8 +44,22 @@ static struct engines engines [] = {
+@@ -25,8 +25,7 @@ static struct engines engines [] = {
+     {.name = "cppstd",        .find_all = cppstd_find_all},
+ #endif
+ #ifdef INCLUDE_PCRE2
+-    {.name = "pcre",        .find_all = pcre2_std_find_all},
+-    {.name = "pcre-dfa",    .find_all = pcre2_dfa_find_all},
++    {.name = "pcre",        .find_all = pcre2_find_all},
+     {.name = "pcre-jit",    .find_all = pcre2_jit_find_all},
+ #endif
+ #ifdef INCLUDE_RE2
+@@ -44,8 +43,25 @@ static struct engines engines [] = {
  #ifdef INCLUDE_YARA
      {.name = "yara",        .find_all = yara_find_all},
  #endif
@@ -206,10 +233,13 @@ index 104f01a..a2afb67 100644
 +#ifdef INCLUDE_HERMES
 +    {.name = "hermes",      .find_all = hermes_find_all},
 +#endif
++#ifdef INCLUDE_NODEJS
++    {.name = "nodejs",      .find_all = nodejs_find_all},
++#endif
  };
  
  static char * regex [] = {
-@@ -119,6 +134,8 @@ void find_all(char* pattern, char* subject, int subject_len, int repeat, struct
+@@ -119,6 +135,8 @@ void find_all(char* pattern, char* subject, int subject_len, int repeat, struct
              engine_results[iter].time_sd = 0;
              engine_results[iter].matches = 0;
              engine_results[iter].score = 0;
@@ -218,7 +248,7 @@ index 104f01a..a2afb67 100644
          } else {
              printResult(engines[iter].name, &(engine_results[iter]));
          }
-@@ -182,7 +199,7 @@ void get_mean_and_derivation(double * times, uint32_t times_len, struct result *
+@@ -182,7 +200,7 @@ void get_mean_and_derivation(double * times, uint32_t times_len, struct result *
  
  void printResult(char * name, struct result * res)
  {
@@ -227,7 +257,7 @@ index 104f01a..a2afb67 100644
      fflush(stdout);
  }
  
-@@ -229,8 +246,16 @@ int main(int argc, char **argv)
+@@ -229,8 +247,16 @@ int main(int argc, char **argv)
          exit(EXIT_FAILURE);
      }
  
@@ -246,7 +276,7 @@ index 104f01a..a2afb67 100644
  
      for (int iter = 0; iter < sizeof(regex)/sizeof(regex[0]); iter++) {
          find_all(regex[iter], data, data_len, repeat, results[iter]);
-@@ -238,12 +263,14 @@ int main(int argc, char **argv)
+@@ -238,12 +264,14 @@ int main(int argc, char **argv)
          for (int iiter = 0; iiter < sizeof(engines)/sizeof(engines[0]); iiter++) {
              engine_results[iiter].time += results[iter][iiter].time;
              engine_results[iiter].score += results[iter][iiter].score;
@@ -262,7 +292,7 @@ index 104f01a..a2afb67 100644
      }
  
      if (out_file != NULL) {
-@@ -267,6 +294,12 @@ int main(int argc, char **argv)
+@@ -267,6 +295,12 @@ int main(int argc, char **argv)
          for (iter = 0; iter < sizeof(engines)/sizeof(engines[0]); iter++) {
              fprintf(f, "%s [matches];", engines[iter].name);
          }
@@ -275,7 +305,7 @@ index 104f01a..a2afb67 100644
          fprintf(f, "\n");
  
          /* write data */
-@@ -282,6 +315,12 @@ int main(int argc, char **argv)
+@@ -282,6 +316,12 @@ int main(int argc, char **argv)
              for (iiter = 0; iiter < sizeof(engines)/sizeof(engines[0]); iiter++) {
                  fprintf(f, "%d;", results[iter][iiter].matches);
              }
@@ -289,7 +319,7 @@ index 104f01a..a2afb67 100644
          }
  
 diff --git a/src/main.h b/src/main.h
-index 973f72a..b3e2f84 100644
+index 973f72a..7a20ec2 100644
 --- a/src/main.h
 +++ b/src/main.h
 @@ -17,6 +17,10 @@ struct result {
@@ -303,7 +333,17 @@ index 973f72a..b3e2f84 100644
  };
  
  void get_mean_and_derivation(double * times, uint32_t times_len, struct result * res);
-@@ -51,8 +55,22 @@ int hs_find_all(char * pattern, char * subject, int subject_len, int repeat, str
+@@ -32,8 +36,7 @@ int boost_find_all(char* pattern, char* subject, int subject_len, int repeat, st
+ int cppstd_find_all(char* pattern, char* subject, int subject_len, int repeat, struct result * res);
+ #endif
+ #ifdef INCLUDE_PCRE2
+-int pcre2_std_find_all(char* pattern, char* subject, int subject_len, int repeat, struct result * res);
+-int pcre2_dfa_find_all(char* pattern, char* subject, int subject_len, int repeat, struct result * res);
++int pcre2_find_all(char* pattern, char* subject, int subject_len, int repeat, struct result * res);
+ int pcre2_jit_find_all(char* pattern, char* subject, int subject_len, int repeat, struct result * res);
+ #endif
+ #ifdef INCLUDE_RE2
+@@ -51,8 +54,25 @@ int hs_find_all(char * pattern, char * subject, int subject_len, int repeat, str
  #ifdef INCLUDE_YARA
  int yara_find_all(char * pattern, char * subject, int subject_len, int repeat, struct result * res);
  #endif
@@ -322,6 +362,9 @@ index 973f72a..b3e2f84 100644
 +#endif
 +#ifdef INCLUDE_HERMES
 +int hermes_find_all(char * pattern, char * subject, int subject_len, int repeat, struct result * res);
++#endif
++#ifdef INCLUDE_NODEJS
++int nodejs_find_all(char * pattern, char * subject, int subject_len, int repeat, struct result * res);
 +#endif
  
  #ifdef __cplusplus

@@ -13,6 +13,8 @@ time and score of each registered engine. This directory provides:
 | `srell.cpp` / `srell.cmake` | adapter and build support for [SRELL](https://github.com/upa-url/srell) |
 | `quickjs.c` / `quickjs.cmake` | adapter and build support for QuickJS `libregexp`                   |
 | `hermes.cpp` / `hermes.cmake` | adapter and build support for the Hermes regex engine             |
+| `pcre2.c` / `pcre2.cmake` | adapter and build support for PCRE2 (interpreted and JIT)              |
+| `nodejs.cpp` / `nodejs.cmake` | adapter and build support for the Node.js regexp engine (V8)        |
 | `boost.cmake`             | build support for Boost.Regex                                           |
 | `memory_tracker.cpp` / `memory_tracker.h` | heap accounting shared by the adapters (see "Memory measurement") |
 | `regex-performance.patch` | patch registering the engines into the upstream harness                |
@@ -31,20 +33,24 @@ $ arsh tools/regex-bench/run.arsh --output results.csv
 By default only the arsh engine is measured. To compare against other engines:
 
 ```sh
-$ arsh tools/regex-bench/run.arsh --std-regex --srell --quickjs --hermes --boost
+$ arsh tools/regex-bench/run.arsh --std-regex --srell --quickjs --hermes --pcre2 --nodejs --boost
 ```
 
 * `--std-regex` adds `std::regex` (the C++ standard library, system compiler).
 * `--srell` adds SRELL; the sources are cloned automatically (header-only).
 * `--quickjs` adds QuickJS `libregexp`; the sources are cloned and compiled automatically.
 * `--hermes` adds Hermes; the sources are cloned and the regex engine is built automatically.
+* `--pcre2` adds PCRE2, both the interpreter (`pcre`) and the JIT (`pcre-jit`); the pinned
+  release is downloaded and built automatically with JIT support.
+* `--nodejs` adds the Node.js regexp engine (V8); it runs the `node` executable found on `PATH`,
+  so Node.js has to be installed.
 * `--boost` adds Boost.Regex; the latest Boost release is downloaded and built automatically.
 
 `run.arsh` performs the following steps:
 
 1. clones `rust-leipzig/regex-performance` into `.regex-bench/regex-performance` (pinned commit),
 2. applies `regex-performance.patch` and copies the adapters into it,
-3. builds the arsh `regex` libraries (and downloads/builds SRELL, QuickJS, Hermes and Boost if requested),
+3. builds the arsh `regex` libraries (and downloads/builds SRELL, QuickJS, Hermes, PCRE2 and Boost if requested),
 4. builds `regex_perf`,
 5. runs it against the bundled `3200.txt`.
 
@@ -75,6 +81,10 @@ standalone `rematch` tool from the same engine trees.
 | `--boost`             | add Boost.Regex as a comparison target                   |
 | `--boost-dir DIR`     | use an existing Boost installation (`prefix`)            |
 | `--boost-version VER` | Boost version to fetch (default: latest, e.g. `1.92.0`)  |
+| `--pcre2`             | add PCRE2 (`pcre` and `pcre-jit`) as comparison targets  |
+| `--pcre2-dir DIR`     | use an existing PCRE2 build directory                    |
+| `--nodejs`            | add the Node.js regexp engine as a comparison target     |
+| `--nodejs-bin FILE`   | use a specific Node.js executable (default: `node`)      |
 
 When a Boost installation is already available, pass `--boost-dir $(brew --prefix boost)` (macOS)
 or the `--prefix` used for `./b2 install`. SRELL builds from the bundled single-header variant, so
@@ -83,6 +93,15 @@ or the `--prefix` used for `./b2 install`. SRELL builds from the bundled single-
 Hermes is large, so `--hermes` clones it and builds only the regex engine and the support
 libraries it needs. When a Hermes tree is already available, pass both `--hermes-dir <source>` and
 `--hermes-build-dir <build>` to skip the clone and the build.
+
+`--pcre2` downloads the pinned PCRE2 release and builds the 8-bit static library with JIT support
+(`--pcre2-dir <build>` reuses an existing build). It registers two targets: `pcre` (interpreter)
+and `pcre-jit`. PCRE2 is matched in its default 8-bit mode, like the upstream harness; the
+interpreter is markedly slower than the JIT on several patterns.
+
+`--nodejs` runs the installed Node.js executable as a child process (`--nodejs-bin <file>` selects
+a specific one), so Node.js must be present. Since the engine lives in a separate process, its
+memory columns are always `0`.
 
 ## Memory measurement
 
@@ -129,8 +148,10 @@ $ git apply /path/to/arsh/tools/regex-bench/regex-performance.patch
 $ cp /path/to/arsh/tools/regex-bench/{arsh,srell}.cpp      src/
 $ cp /path/to/arsh/tools/regex-bench/quickjs.c              src/
 $ cp /path/to/arsh/tools/regex-bench/hermes.cpp             src/
+$ cp /path/to/arsh/tools/regex-bench/nodejs.cpp             src/
+$ cp /path/to/arsh/tools/regex-bench/pcre2.c                src/
 $ cp /path/to/arsh/tools/regex-bench/memory_tracker.{h,cpp}  src/
-$ cp /path/to/arsh/tools/regex-bench/{arsh,srell,quickjs,hermes,boost}.cmake src/
+$ cp /path/to/arsh/tools/regex-bench/{arsh,srell,quickjs,hermes,boost,nodejs,pcre2}.cmake src/
 
 $ mkdir build && cd build
 $ cmake .. \
@@ -140,8 +161,10 @@ $ cmake .. \
       -DINCLUDE_HERMES=local -DHERMES_SOURCE_DIR=/path/to/hermes \
                              -DHERMES_BUILD_DIR=/path/to/hermes/build \
       -DINCLUDE_BOOST=system -DBOOST_ROOT=/path/to/boost \
+      -DINCLUDE_PCRE2=local -DPCRE2_BUILD_DIR=/path/to/pcre2/build \
+      -DINCLUDE_NODEJS=local -DNODEJS_EXECUTABLE=/path/to/node \
       -DINCLUDE_CPPSTD=system \
-      -DINCLUDE_PCRE2=disabled # ... any other engine you want to skip
+      -DINCLUDE_HYPERSCAN=disabled # ... any other engine you want to skip
 $ make regex_perf
 $ ./src/regex_perf -f ../3200.txt -o results.csv
 ```
@@ -153,8 +176,9 @@ $ ./src/regex_perf -f ../3200.txt -o results.csv
 * arsh only accepts the `u`/`v` modes; benchmark subjects are matched in Unicode (`u`) mode.
 * Match counting emulates the global (`g`) flag by repeatedly calling `regex::match` and
   advancing the input, which is the same semantics the other engines use.
-* SRELL, QuickJS `libregexp` and Hermes are the closest comparison targets for arsh here: all are
-  ECMAScript-compatible Unicode engines, just like arsh. Boost.Regex additionally supports the
+* SRELL, QuickJS `libregexp`, Hermes and the Node.js engine are the closest comparison targets for
+  arsh here: all are ECMAScript-compatible Unicode engines, just like arsh. Boost.Regex
+  additionally supports the
   `(?i)` and `\p{...}` syntax used by the benchmark patterns. `std::regex` rejects `(?i)` inline
   modifiers and is therefore reported as a failure (`999999`) for those patterns, matching
   upstream behavior.
@@ -165,5 +189,11 @@ $ ./src/regex_perf -f ../3200.txt -o results.csv
   what the VM does. Hermes' backtrack limit makes it report pattern `(.*?,){13}z` as a failure
   (`999999`), like the engines that cannot finish it. The adapter links the static libraries from
   an existing Hermes build tree and requires `HERMES_SOURCE_DIR` and `HERMES_BUILD_DIR`.
+* The PCRE2 adapter (`pcre2.c`) replaces the one shipped with the harness so that the instance and
+  the scan are measured with the heap tracker; it registers `pcre` and `pcre-jit` and requires
+  `PCRE2_BUILD_DIR` pointing at a PCRE2 build with JIT support.
+* The Node.js adapter (`nodejs.cpp`) runs the `node` executable as a child process and parses the
+  timings and the match count it prints; only the scan is timed, and its memory columns are `0`
+  because the heap tracker cannot see the other process.
 * The arsh adapter (`arsh.cpp`) is registered once as `arsh`; it creates a fresh `MatchContext`
   for every scan, which mirrors normal use.

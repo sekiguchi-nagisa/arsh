@@ -8,6 +8,8 @@
 #   * QuickJS    (--quickjs)     libregexp, fetched automatically if needed
 #   * Hermes     (--hermes)      fetched and built automatically if needed
 #   * Boost.Regex (--boost)      fetched and built automatically if needed
+#   * PCRE2      (--pcre2)       fetched and built automatically if needed
+#   * Node.js    (--nodejs)      uses the installed `node` executable
 #
 # Steps:
 #   1. fetch rust-leipzig/regex-performance (pinned commit) into the work directory,
@@ -34,6 +36,8 @@ let HERMES_REF = "ade4a2b20246340d4309cf62be51f9652dcde279" # pinned commit (202
 let SRELL_URL = "https://github.com/upa-url/srell.git"
 let QUICKJS_URL = "https://github.com/quickjs-ng/quickjs.git"
 let HERMES_URL = "https://github.com/facebook/hermes.git"
+let PCRE2_URL = "https://github.com/PCRE2Project/pcre2"
+let PCRE2_VERSION = "pcre2-10.49" # pinned release (its tarball bundles the sljit JIT dependency)
 let BOOST_ARCHIVE = "https://archives.boost.io/release"
 
 [<CLI(toplevel: $true, verbose:$true)>]
@@ -94,6 +98,18 @@ type _Param() {
 
     [<Option(placeholder: "VER", help: "Boost version to fetch (default: latest)")>]
     var boostVersion : String?
+
+    [<Flag(help: "add PCRE2 (interpreted and JIT) as comparison targets")>]
+    var pcre2 = $false
+
+    [<Option(placeholder: "DIR", help: "use an existing PCRE2 build directory")>]
+    var pcre2Dir : String?
+
+    [<Flag(help: "add Node.js as a comparison target")>]
+    var nodejs = $false
+
+    [<Option(placeholder: "FILE", help: "Node.js executable (default: node from PATH)")>]
+    var nodejsBin : String?
 }
 
 function _latestBoostVersion() : String {
@@ -165,6 +181,33 @@ function _buildHermes(work: String, hermesSrc: String) : String {
     return $buildDir.realpath()
 }
 
+function _fetchPcre2(work: String) : String {
+    let src = "$work/pcre2"
+    if !(test -e "$src/CMakeLists.txt") {
+        echo "fetch PCRE2 $PCRE2_VERSION"
+        # use the release asset tarball (not the git archive): it bundles the sljit sources that
+        # the JIT needs, which are otherwise a git submodule.
+        test -e $src && rm -rf $src
+        mkdir -p $src || exit $?
+        curl -sL "$PCRE2_URL/releases/download/$PCRE2_VERSION/$PCRE2_VERSION.tar.gz" | tar xz -C $src --strip-components=1 || exit $?
+    }
+    return $src
+}
+
+function _buildPcre2(work: String, pcre2Src: String) : String {
+    let buildDir = "$work/pcre2-build"
+    if !(test -e "$buildDir/libpcre2-8.a") {
+        mkdir -p $buildDir || exit $?
+        # only the 8-bit library is needed; the JIT must be enabled explicitly
+        cmake -S $pcre2Src -B $buildDir -DCMAKE_BUILD_TYPE=Release -DPCRE2_SUPPORT_JIT=ON \
+              -DPCRE2_BUILD_PCRE2_16=OFF -DPCRE2_BUILD_PCRE2_32=OFF \
+              -DPCRE2_BUILD_TESTS=OFF -DPCRE2_BUILD_PCRE2GREP=OFF || exit $?
+        cmake --build $buildDir --target pcre2-8-static -j || exit $?
+    }
+    test -e "$buildDir/libpcre2-8.a" || { echo 1>&2 "pcre2 build failed"; exit 1; }
+    return $buildDir.realpath()
+}
+
 function _fetchAndPatch(root: String, work: String) {
     let src = "$work/regex-performance"
     if !(test -d $src) {
@@ -188,6 +231,10 @@ function _fetchAndPatch(root: String, work: String) {
     cp $bench/quickjs.cmake $src/src/quickjs.cmake || exit $?
     cp $bench/hermes.cpp $src/src/hermes.cpp || exit $?
     cp $bench/hermes.cmake $src/src/hermes.cmake || exit $?
+    cp $bench/pcre2.c $src/src/pcre2.c || exit $?
+    cp $bench/pcre2.cmake $src/src/pcre2.cmake || exit $?
+    cp $bench/nodejs.cpp $src/src/nodejs.cpp || exit $?
+    cp $bench/nodejs.cmake $src/src/nodejs.cmake || exit $?
     if !(git apply $bench/regex-performance.patch) {
         echo 1>&2 "failed to apply regex-performance.patch"
         exit 1
@@ -203,7 +250,7 @@ function _buildArsh(root: String, work: String, buildType: String) : String {
     return $buildDir.realpath()
 }
 
-function _buildBench(root: String, work: String, arshBuild: String, srellSrc: String?, quickjsSrc: String?, hermesSrc: String?, hermesBuild: String?, boostPrefix: String?, stdRegex: Bool) : String {
+function _buildBench(root: String, work: String, arshBuild: String, srellSrc: String?, quickjsSrc: String?, hermesSrc: String?, hermesBuild: String?, boostPrefix: String?, pcre2Build: String?, nodejsBin: String?, stdRegex: Bool) : String {
     let src = "$work/regex-performance"
     let buildDir = "$work/regex-perf-build"
     mkdir -p $buildDir || exit $?
@@ -216,7 +263,6 @@ function _buildBench(root: String, work: String, arshBuild: String, srellSrc: St
     $common.add("-DARSH_SOURCE_DIR=$srcDir")
     $common.add("-DARSH_BUILD_DIR=$arshBuild")
     $common.add("-DINCLUDE_RUST=disabled")
-    $common.add("-DINCLUDE_PCRE2=disabled")
     $common.add("-DINCLUDE_HYPERSCAN=disabled")
     $common.add("-DINCLUDE_ONIGURUMA=disabled")
     $common.add("-DINCLUDE_TRE=disabled")
@@ -257,6 +303,18 @@ function _buildBench(root: String, work: String, arshBuild: String, srellSrc: St
     } else {
         $common.add("-DINCLUDE_CPPSTD=disabled")
     }
+    if let dir = $pcre2Build {
+        $common.add("-DINCLUDE_PCRE2=local")
+        $common.add("-DPCRE2_BUILD_DIR=$dir")
+    } else {
+        $common.add("-DINCLUDE_PCRE2=disabled")
+    }
+    if let bin = $nodejsBin {
+        $common.add("-DINCLUDE_NODEJS=local")
+        $common.add("-DNODEJS_EXECUTABLE=$bin")
+    } else {
+        $common.add("-DINCLUDE_NODEJS=disabled")
+    }
     cmake -S $src -B $buildDir $common || exit $?
     cmake --build $buildDir --target regex_perf -j || exit $?
     return "$buildDir/src/regex_perf"
@@ -295,6 +353,14 @@ function run() for _Param {
     var boostDirOpt : String?
     if let d = $this.boostDir {
         $boostDirOpt = $d.realpath()
+    }
+    var pcre2DirOpt : String?
+    if let d = $this.pcre2Dir {
+        $pcre2DirOpt = $d.realpath()
+    }
+    var nodejsBinOpt : String?
+    if let d = $this.nodejsBin {
+        $nodejsBinOpt = $d.realpath()
     }
 
     $_fetchAndPatch($root, $work)
@@ -354,8 +420,22 @@ function run() for _Param {
         $hermesBuild = $_buildHermes($work, $d)
     }
 
+    var pcre2Build : String?
+    if let d = $pcre2DirOpt {
+        $pcre2Build = $d
+    } elif $this.pcre2 {
+        $pcre2Build = $_buildPcre2($work, $_fetchPcre2($work))
+    }
+
+    var nodejsBin : String?
+    if let d = $nodejsBinOpt {
+        $nodejsBin = $d
+    } elif $this.nodejs {
+        $nodejsBin = "node" # resolved on PATH by CMake (find_program)
+    }
+
     let arshBuild = $_buildArsh($root, $work, $this.build)
-    let bin = $_buildBench($root, $work, $arshBuild, $srellSrc, $quickjsSrc, $hermesSrc, $hermesBuild, $boostPrefix, $this.stdRegex)
+    let bin = $_buildBench($root, $work, $arshBuild, $srellSrc, $quickjsSrc, $hermesSrc, $hermesBuild, $boostPrefix, $pcre2Build, $nodejsBin, $this.stdRegex)
 
     var args : [String]
     if let r = $this.repeat {
