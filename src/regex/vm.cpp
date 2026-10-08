@@ -152,10 +152,11 @@ public:
         return false;
       }
       this->cap += this->cap >> 1u;
+      auto *oldPtr = this->ptr;
       auto *newPtr = static_cast<Backtrack *>(::operator new(sizeof(Backtrack) * this->cap));
-      memcpy(newPtr, this->ptr, sizeof(Backtrack) * this->size);
-      ::operator delete(this->ptr);
+      memcpy(newPtr, oldPtr, sizeof(Backtrack) * this->size);
       this->ptr = newPtr;
+      ::operator delete(oldPtr);
     }
     this->ptr[this->size++] = bt;
     return true;
