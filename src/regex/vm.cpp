@@ -154,8 +154,8 @@ public:
       this->cap += this->cap >> 1u;
       auto *newPtr = static_cast<Backtrack *>(::operator new(sizeof(Backtrack) * this->cap));
       memcpy(newPtr, this->ptr, sizeof(Backtrack) * this->size);
-      ::operator delete(this->ptr);
-      this->ptr = newPtr;
+      std::swap(this->ptr, newPtr);
+      ::operator delete(newPtr);
     }
     this->ptr[this->size++] = bt;
     return true;
