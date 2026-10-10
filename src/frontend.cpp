@@ -73,7 +73,7 @@ bool FrontEnd::tryToParse() {
     Parser parser(*ctx->lexer, parserOption, handler);
     ctx->nodes = parser();
     assert(!ctx->nodes.empty());
-    if (parser.hasError() || parser.getOldErrors().size()) {
+    if (parser.hasError() || !parser.getOldErrors().empty()) {
       this->curScope()->updateModAttr(ModAttr::HAS_ERRORS);
       if (this->listener) {
         for (auto &e : parser.getOldErrors()) {

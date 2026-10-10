@@ -80,7 +80,7 @@ static int64_t toReversedBegin(int64_t begin, int64_t end, int64_t step) {
   static_assert(__SIZEOF_INT128__ == 16);
   __int128 diff = static_cast<__int128>(end) - static_cast<__int128>(begin);
   __int128 n = diff / static_cast<__int128>(step);
-  __int128 value = static_cast<__int128>(begin) + n * static_cast<__int128>(step);
+  __int128 value = static_cast<__int128>(begin) + (n * static_cast<__int128>(step));
   assert(value >= INT64_MIN && value <= INT64_MAX);
   return static_cast<int64_t>(value);
 }

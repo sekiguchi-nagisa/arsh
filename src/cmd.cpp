@@ -18,6 +18,7 @@
 #include <sys/resource.h>
 #include <sys/stat.h>
 
+#include <algorithm>
 #include <cstdlib>
 #include <unordered_map>
 
@@ -757,9 +758,8 @@ static constexpr ulimitOp ulimitOps[] = {
 static unsigned int computeMaxNameLen() {
   unsigned int max = 0;
   for (auto &e : ulimitOps) {
-    if (const unsigned int len = strlen(e.name); len > max) {
-      max = len;
-    }
+    const unsigned int len = strlen(e.name);
+    max = std::max(len, max);
   }
   return max;
 }

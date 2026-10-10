@@ -515,7 +515,7 @@ Optional<KeyEvent> KeyEvent::fromEscapeSeq(const StringRef seq) {
       return KeyEvent(funcKey); // for TAB, ENTER, ESC, BACKSPACE
     }
     auto v = static_cast<unsigned char>(seq[0]);
-    v ^= 64;
+    v ^= 64u;
     assert(isCaretTarget(v));
     if (isShifted(v)) {
       v = unshift(v);
@@ -535,7 +535,7 @@ Optional<KeyEvent> KeyEvent::fromEscapeSeq(const StringRef seq) {
         }
         setFlag(modifiers, ModifierKey::CTRL);
         auto v = static_cast<unsigned char>(ch);
-        v ^= 64;
+        v ^= 64u;
         ch = v;
         if (isShifted(ch)) {
           ch = unshift(ch);
@@ -808,7 +808,7 @@ std::string KeyEvent::parseCaret(StringRef caret) {
     if (ch == '^' && i + 1 < size && isCaretTarget(caret[i + 1])) {
       i++;
       unsigned int v = static_cast<unsigned char>(caret[i]);
-      v ^= 64;
+      v ^= 64u;
       assert(isControlChar(static_cast<int>(v)));
       ch = static_cast<char>(static_cast<int>(v));
     }

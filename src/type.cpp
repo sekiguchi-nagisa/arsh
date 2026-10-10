@@ -387,7 +387,7 @@ std::unique_ptr<MethodHandle> MethodHandle::create(const Type &recv, unsigned in
                                                    PackedParamNames &&packed, ModId modId) {
   const size_t paramSize = params.size();
   assert(paramSize <= SYS_LIMIT_METHOD_PARAM_NUM);
-  void *ptr = operator new(sizeof(MethodHandle) + sizeof(uintptr_t) * paramSize);
+  void *ptr = operator new(sizeof(MethodHandle) + (sizeof(uintptr_t) * paramSize));
   const auto &actualRet = ret ? *ret : recv;
   auto *handle = new (ptr) MethodHandle(recv, index, actualRet, paramSize, modId,
                                         ret ? HandleKind::METHOD : HandleKind::CONSTRUCTOR);

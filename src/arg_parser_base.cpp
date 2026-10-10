@@ -231,9 +231,8 @@ bool ArgParser::formatPositionalOrSubCommands(std::string &value, const bool isP
         continue;
       }
     }
-    if (const unsigned int len = e.getArgName().size() + argNamePad; len > maxLenOfUsage) {
-      maxLenOfUsage = len;
-    }
+    const unsigned int len = e.getArgName().size() + argNamePad;
+    maxLenOfUsage = std::max(len, maxLenOfUsage);
   }
   std::string spaces;
   spaces.resize(maxLenOfUsage, ' ');

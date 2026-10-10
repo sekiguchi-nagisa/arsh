@@ -92,7 +92,7 @@ CompCandidate::CompCandidate(const CompPrefix &prefix, CompCandidateKind k, Stri
   assert(!v.empty());
   if (shouldQuote(k, quote)) {
     bool quoteAsCmd = false;
-    if (prefix.compWordToken.size()) { // replace prefix with compWordToken
+    if (!prefix.compWordToken.empty()) { // replace prefix with compWordToken
       assert(prefix.compWord.size() <= v.size());
       this->value += prefix.compWordToken;
       v.removePrefix(prefix.compWord.size());

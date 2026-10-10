@@ -202,7 +202,7 @@ static void replaceCandidate(CandidatesObject::Entry &entry, std::string &&repla
 }
 
 void CandidatesObject::quote(const StringRef quotedWord, bool asCmd) {
-  if (quotedWord.size()) {
+  if (!quotedWord.empty()) {
     asCmd = false;
   }
 

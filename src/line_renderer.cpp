@@ -324,7 +324,7 @@ bool LineRenderer::renderControlChar(int codePoint, const std::string *color) {
       switch (this->breakOp) {
       case LineBreakOp::SOFT_WRAP:
         this->handleSoftWrap(color);
-        colLen = TAB_WIDTH - this->totalCols % TAB_WIDTH; // re-compute tab stop
+        colLen = TAB_WIDTH - (this->totalCols % TAB_WIDTH); // re-compute tab stop
         break;
       case LineBreakOp::TRUNCATE:
         this->handleTruncate(' ');
