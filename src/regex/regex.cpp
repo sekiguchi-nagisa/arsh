@@ -191,7 +191,7 @@ MatchStatus replace(const Regex &regex, const ReplaceParam &param, const Observe
 }
 
 MatchStatus split(const Regex &regex, const StringRef text, const unsigned int limit,
-                  const std::function<bool(StringRef)> &consumer, const ObserverPtr<Timer> timer) {
+                  const FunctionRef<bool(StringRef)> consumer, const ObserverPtr<Timer> timer) {
   if (!limit) {
     return MatchStatus::OK;
   }

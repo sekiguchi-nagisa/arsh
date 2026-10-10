@@ -209,7 +209,7 @@ ObjPtr<UnixFdObject> UnixFdObject::dupWithCloseOnExec() const {
 // ##     RegexObject     ##
 // #########################
 
-bool RegexObject::match(ARState &state, const StringRef ref, int64_t timeoutMSec,
+bool RegexObject::match(ARState &state, const StringRef ref, const int64_t timeoutMSec,
                         MatchResult *ret) const {
   std::vector<regex::Capture> captures;
   auto timeout =

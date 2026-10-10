@@ -79,7 +79,8 @@ public:
     CancelToken cancel;
     Glob glob(pattern, option, dir);
     glob.setCancelToken(cancel);
-    glob.setConsumer(Consumer(this->ret));
+    Consumer consumer(this->ret);
+    glob.setConsumer(consumer);
     glob.matchExactly();
     return glob.getMatchCount();
   }
@@ -92,7 +93,8 @@ public:
     CancelToken cancel;
     Glob glob(pattern, option, baseDir);
     glob.setCancelToken(cancel);
-    glob.setConsumer(Consumer(this->ret));
+    Consumer consumer(this->ret);
+    glob.setConsumer(consumer);
     glob(nullptr);
     return glob.getMatchCount();
   }
@@ -725,13 +727,14 @@ TEST_F(GlobTest, fast) {
 TEST_F(GlobTest, fail) {
   const char *pattern = "bbb/*";
   Glob glob(pattern, Glob::Option::DOTGLOB, GLOB_TEST_WORK_DIR);
-  glob.setConsumer([&](std::string &&value) {
+  auto consumer = [&](std::string &&value) {
     if (this->ret.size() == 2) {
       return false;
     }
     this->ret.push_back(std::move(value));
     return true;
-  });
+  };
+  glob.setConsumer(consumer);
   auto s = glob.matchExactly();
   ASSERT_EQ(Glob::Status::LIMIT, s);
 }
@@ -745,10 +748,11 @@ TEST_F(GlobTest, cancel) {
   Glob glob(pattern, Glob::Option::DOTGLOB, GLOB_TEST_WORK_DIR);
   AlwaysCancel cancel;
   glob.setCancelToken(cancel);
-  glob.setConsumer([&](std::string &&value) {
+  auto consumer = [&](std::string &&value) {
     this->ret.push_back(std::move(value));
     return true;
-  });
+  };
+  glob.setConsumer(consumer);
   auto s = glob.matchExactly();
   ASSERT_EQ(Glob::Status::CANCELED, s);
 }

@@ -17,12 +17,11 @@
 #ifndef ARSH_REGEX_REGEX_H
 #define ARSH_REGEX_REGEX_H
 
-#include <functional>
-
 #include "capture.h"
 #include "flag.h"
 #include "matcher.h"
 #include "misc/array_ref.hpp"
+#include "misc/function_ref.hpp"
 #include "misc/resource.hpp"
 #include "misc/time_util.hpp"
 
@@ -72,12 +71,12 @@ public:
 private:
   const std::chrono::milliseconds limit;
   timestamp base;
-  std::function<bool()> cancelToken; // return true if canceled
+  FunctionRef<bool()> cancelToken; // return true if canceled
 
 public:
   explicit Timer(std::chrono::milliseconds limit) : limit(limit) {}
 
-  void setCancelToken(std::function<bool()> &&c) { this->cancelToken = std::move(c); }
+  void setCancelToken(FunctionRef<bool()> &&c) { this->cancelToken = c; }
 
   static timestamp now() { return getCurrentTimestamp(); }
 
@@ -131,7 +130,7 @@ struct ReplaceParam {
   StringRef replacement;
   bool global; // if true, replace all
   std::string *err;
-  std::function<bool(StringRef)> consumer;
+  FunctionRef<bool(StringRef)> consumer;
 };
 
 /**
@@ -155,7 +154,7 @@ MatchStatus replace(const Regex &regex, const ReplaceParam &param, ObserverPtr<T
  * return Ok even if no matches
  */
 MatchStatus split(const Regex &regex, StringRef text, unsigned int limit,
-                  const std::function<bool(StringRef)> &consumer, ObserverPtr<Timer> timer);
+                  FunctionRef<bool(StringRef)> consumer, ObserverPtr<Timer> timer);
 
 bool escape(StringRef ref, size_t maxSize, std::string &out);
 

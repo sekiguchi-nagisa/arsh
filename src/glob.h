@@ -17,10 +17,9 @@
 #ifndef ARSH_GLOB_H
 #define ARSH_GLOB_H
 
-#include <functional>
-
 #include "cancel.h"
 #include "misc/flag_util.hpp"
+#include "misc/function_ref.hpp"
 #include "misc/locale.hpp" // for macOS
 #include "misc/resource.hpp"
 #include "misc/string_ref.hpp"
@@ -96,7 +95,7 @@ private:
 
   ObserverPtr<const CancelToken> cancel;
 
-  std::function<bool(std::string &&)> consumer;
+  FunctionRef<bool(std::string &&)> consumer;
 
   static constexpr unsigned int READDIR_LIMIT = 16 * 1024;
 
@@ -117,7 +116,7 @@ public:
 
   int getErrNum() const { return this->errNum; }
 
-  void setConsumer(std::function<bool(std::string &&)> &&func) { this->consumer = std::move(func); }
+  void setConsumer(const FunctionRef<bool(std::string &&)> func) { this->consumer = func; }
 
   Status operator()(std::string *err) {
     auto iter = this->pattern.begin();

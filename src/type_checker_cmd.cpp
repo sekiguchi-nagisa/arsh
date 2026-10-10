@@ -550,7 +550,8 @@ bool TypeChecker::applyGlob(const Token token,
   const unsigned int oldSize = results.size();
   Glob glob(pattern, Glob::Option::FASTGLOB | Glob::Option::GLOB_LIMIT);
   glob.setCancelToken(this->cancelToken);
-  glob.setConsumer([&results](std::string &&path) { return appendPath(results, std::move(path)); });
+  auto consumer = [&results](std::string &&path) { return appendPath(results, std::move(path)); };
+  glob.setConsumer(consumer);
 
   std::string err;
   switch (const auto ret = glob(&err); ret) {

@@ -340,9 +340,10 @@ bool VM::addGlobbingPath(ARState &state, ArrayObject &argv, const Value *const b
   RuntimeCancelToken cancel;
   Glob glob(pattern, option);
   glob.setCancelToken(cancel);
-  glob.setConsumer([&argv, &state](std::string &&path) {
+  auto consumer = [&argv, &state](std::string &&path) {
     return argv.append(state, Value::createStr(std::move(path)));
-  });
+  };
+  glob.setConsumer(consumer);
 
   std::string err;
   switch (const auto ret = glob(&err); ret) {
