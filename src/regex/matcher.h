@@ -105,9 +105,9 @@ public:
 
   explicit Matcher(CodePointSet &&set) noexcept {
     const bool owned = set.isOwned();
-    this->first = static_cast<uint64_t>(set.getBMPSize()) << 48u;
-    this->first |= static_cast<uint64_t>(set.getPackedNonBMPSize()) << 32u;
-    this->first |= static_cast<uint64_t>(set.getSize()) << 8u;
+    this->first = static_cast<uint64_t>(set.getBMPSize()) << 48;
+    this->first |= static_cast<uint64_t>(set.getPackedNonBMPSize()) << 32;
+    this->first |= static_cast<uint64_t>(set.getSize()) << 8;
     this->first |= toUnderlying(owned ? MatcherType::OWNED_CODE_POINT_SET
                                       : MatcherType::BORROWED_CODE_POINT_SET);
     this->ptr = std::move(set).take();
@@ -115,20 +115,20 @@ public:
 
   explicit Matcher(AsciiSet set) noexcept {
     this->first = set.underlying()[0];
-    this->first &= ~(0xFFu); // always ignore the first 8bit
+    this->first &= ~(0xFF); // always ignore the first 8bit
     this->first |= toUnderlying(MatcherType::ASCII);
     this->second = set.underlying()[1];
   }
 
   Matcher(FlexBuffer<uint8_t> &&radixBuf, unsigned short longestStringSize) noexcept {
-    this->first = static_cast<uint64_t>(radixBuf.size()) << 32u;
-    this->first |= static_cast<uint64_t>(longestStringSize) << 16u;
+    this->first = static_cast<uint64_t>(radixBuf.size()) << 32;
+    this->first |= static_cast<uint64_t>(longestStringSize) << 16;
     this->first |= toUnderlying(MatcherType::RADIX_TREE);
     this->radix = std::move(radixBuf).take();
   }
 
   explicit Matcher(ByteBuffer &&buf) noexcept {
-    this->first = static_cast<uint64_t>(buf.size()) << 32u;
+    this->first = static_cast<uint64_t>(buf.size()) << 32;
     this->first |= toUnderlying(MatcherType::STRING);
     this->str = std::move(buf).take();
   }
@@ -164,7 +164,7 @@ public:
     return *this;
   }
 
-  MatcherType type() const { return static_cast<MatcherType>(this->first & 0xFFu); }
+  MatcherType type() const { return static_cast<MatcherType>(this->first & 0xFF); }
 
   CodePointSetRef asCodePointSetRef() const {
     return {this->getBMPSize(), this->getPackedBMPSize(), this->ptr, this->getSize()};
@@ -188,20 +188,20 @@ public:
 private:
   // for CodePointSetRef
 
-  unsigned short getBMPSize() const { return static_cast<unsigned short>(this->first >> 48u); }
+  unsigned short getBMPSize() const { return static_cast<unsigned short>(this->first >> 48); }
 
   unsigned short getPackedBMPSize() const {
-    return static_cast<unsigned short>((this->first >> 32u) & 0xFFFFu);
+    return static_cast<unsigned short>((this->first >> 32) & 0xFFFF);
   }
 
-  unsigned int getSize() const { return static_cast<unsigned int>((this->first >> 8u) & 0xFFFFFFu); }
+  unsigned int getSize() const { return static_cast<unsigned int>((this->first >> 8) & 0xFFFFFF); }
 
   // for PackedRadixTree
   unsigned short getLongestStringSize() const {
-    return static_cast<unsigned short>((this->first >> 16u) & 0xFFFFu);
+    return static_cast<unsigned short>((this->first >> 16) & 0xFFFF);
   }
 
-  unsigned int getRadixSize() const { return static_cast<unsigned int>(this->first >> 32u); }
+  unsigned int getRadixSize() const { return static_cast<unsigned int>(this->first >> 32); }
 };
 
 } // namespace arsh::regex
