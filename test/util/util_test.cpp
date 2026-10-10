@@ -5,6 +5,7 @@
 #include <misc/files.hpp>
 #include <misc/flag_util.hpp>
 #include <misc/format.hpp>
+#include <misc/function_ref.hpp>
 #include <misc/num_util.hpp>
 #include <misc/split_random.hpp>
 #include <misc/time_util.hpp>
@@ -1087,6 +1088,48 @@ TEST(DecimalTest, base) {
   ASSERT_EQ("-12345e-9", (Decimal{12345, -9, true}).toString());
   ASSERT_EQ("-12345e-10", (Decimal{12345, -10, true}).toString());
   ASSERT_EQ("-12345e-11", (Decimal{12345, -11, true}).toString());
+}
+
+static int ff1() { return 100; }
+
+static int sum(int a, int b) { return a + b; }
+
+static int count = 0;
+
+static void ff2() { count++; }
+
+static void update(int c) { count = c; }
+
+TEST(FunctionRefTest, func) {
+  {
+    FunctionRef funcRef = ff1;
+    ASSERT_EQ(100, funcRef());
+  }
+  {
+    FunctionRef funcRef = sum;
+    ASSERT_EQ(31, funcRef(23, 8));
+  }
+  {
+    FunctionRef funcRef = ff2;
+    funcRef();
+    static_assert(std::is_same_v<void, decltype(funcRef)::result_type>);
+    ASSERT_EQ(1, count);
+    funcRef();
+    ASSERT_EQ(2, count);
+  }
+  {
+    FunctionRef funcRef = update;
+    funcRef(789);
+    static_assert(std::is_same_v<void, decltype(funcRef)::result_type>);
+    ASSERT_EQ(789, count);
+  }
+}
+
+TEST(FunctionRefTest, obj) {
+  {
+    FunctionRef<int(int, int)> funcRef = [](int a, int b) -> int { return a + b; };
+    ASSERT_EQ(56, funcRef(3, 53));
+  }
 }
 
 int main(int argc, char **argv) {
