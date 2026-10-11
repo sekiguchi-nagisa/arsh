@@ -37,12 +37,13 @@ void StrSetBuilder::add(StrSetBuilder &&builder) {
     this->emptySeq = true;
   }
   this->codePoints.add(builder.codePoints);
-  builder.radix.iterate([this](StringRef ref, unsigned char p) {
+  auto walker = [this](StringRef ref, unsigned char p) {
     if (!this->inEmoji(ref)) {
       this->radix.add(ref, p);
     }
     return true;
-  });
+  };
+  builder.radix.iterate(walker);
 }
 
 template <typename Func>
@@ -69,14 +70,15 @@ constexpr bool str_iter_requirement_v = std::is_same_v<bool, std::invoke_result_
 template <typename Func, enable_when<str_iter_requirement_v<Func>> = nullptr>
 static void iterateEmoji(const ucp::RGIEmojiSeq emoji, Func func) {
   if (StrSetBuilder::hasEmoji(emoji)) {
-    ucp::getEmojiTrie().iterate([&](StringRef ref, unsigned char p) {
+    auto walker = [&](StringRef ref, unsigned char p) {
       if (hasFlag(toUnderlying(emoji), p)) {
         if (!func(ref)) {
           return false;
         }
       }
       return true;
-    });
+    };
+    ucp::getEmojiTrie().iterate(walker);
   }
 }
 
@@ -113,12 +115,13 @@ void StrSetBuilder::intersect(StrSetBuilder &&builder) {
     setFlag(newBuilder.emoji, ucp::RGIEmojiSeq::CASE_IGNORE);
   }
   if (this->hasEmoji()) {
-    builder.radix.iterate([&](StringRef ref, unsigned char) {
+    auto walker = [&](StringRef ref, unsigned char) {
       if (findFromEmoji(this->emoji, ref)) {
         newBuilder.radix.add(ref, 1);
       }
       return true;
-    });
+    };
+    builder.radix.iterate(walker);
     iterateCodes(builder.codePoints, [&](StringRef ref, int codePoint) {
       if (findFromEmoji(this->emoji, ref)) {
         newBuilder.codePoints.addRange(codePoint, codePoint);
@@ -135,12 +138,13 @@ void StrSetBuilder::intersect(StrSetBuilder &&builder) {
       }
       return true;
     });
-    builder.radix.iterate([&](StringRef ref, unsigned char) {
+    auto walker = [&](StringRef ref, unsigned char) {
       if (this->radix.find(ref)) {
         newBuilder.radix.add(ref, 1);
       }
       return true;
-    });
+    };
+    builder.radix.iterate(walker);
     iterateCodes(builder.codePoints, [&](StringRef ref, int codePoint) {
       if (this->radix.find(ref)) {
         newBuilder.codePoints.addRange(codePoint, codePoint);
@@ -158,12 +162,13 @@ void StrSetBuilder::intersect(StrSetBuilder &&builder) {
       }
       return true;
     });
-    builder.radix.iterate([&](StringRef ref, unsigned char) {
+    auto walker = [&](StringRef ref, unsigned char) {
       if (auto cp = tryToCodePoint(ref); cp.hasValue() && set.ref().contains(cp.unwrap())) {
         newBuilder.codePoints.addRange(cp.unwrap(), cp.unwrap());
       }
       return true;
-    });
+    };
+    builder.radix.iterate(walker);
     if (builder.codePoints) {
       this->codePoints.intersect(builder.codePoints);
       newBuilder.codePoints.add(this->codePoints);
@@ -185,13 +190,14 @@ void StrSetBuilder::sub(StrSetBuilder &&builder) {
     setFlag(this->emoji, ucp::RGIEmojiSeq::CASE_IGNORE);
   }
   if (this->hasEmoji()) {
-    builder.radix.iterate([&](StringRef ref, unsigned char) {
+    auto walker = [&](StringRef ref, unsigned char) {
       if (findFromEmoji(this->emoji, ref)) {
         mergeEmoji(this->emoji, this->radix);
         return false;
       }
       return true;
-    });
+    };
+    builder.radix.iterate(walker);
   }
   if (this->hasEmoji()) {
     iterateCodes(builder.codePoints, [&](StringRef ref, int) {
@@ -211,10 +217,11 @@ void StrSetBuilder::sub(StrSetBuilder &&builder) {
     });
   }
   if (!this->radix.empty()) {
-    builder.radix.iterate([&](StringRef ref, unsigned char) {
+    auto walker = [&](StringRef ref, unsigned char) {
       this->radix.remove(ref);
       return !this->radix.empty();
-    });
+    };
+    builder.radix.iterate(walker);
   }
   if (!this->radix.empty()) {
     iterateCodes(builder.codePoints, [&](StringRef ref, int) {
@@ -236,12 +243,13 @@ void StrSetBuilder::sub(StrSetBuilder &&builder) {
   }
   if (this->codePoints) {
     sub.clear();
-    builder.radix.iterate([&](StringRef ref, unsigned char) {
+    auto walker = [&](StringRef ref, unsigned char) {
       if (auto cp = tryToCodePoint(ref); cp.hasValue()) {
         sub.addRange(cp.unwrap(), cp.unwrap());
       }
       return true;
-    });
+    };
+    builder.radix.iterate(walker);
     this->codePoints.sub(sub);
   }
   if (this->codePoints) {

@@ -528,7 +528,7 @@ Optional<SignatureInformation> Analyzer::collectSignature(const SourcePtr &src,
                     FrontEndOption::ERROR_RECOVERY | FrontEndOption::COLLECT_SIGNATURE,
                     makeObserver(dummyCtx));
   Optional<SignatureInformation> info;
-  frontEnd.setSignatureHandler([&](const CallSignature &signature, const unsigned int paramIndex) {
+  auto handler = [&](const CallSignature &signature, const unsigned int paramIndex) {
     Optional<unsigned int> activeParamIndex;
     if (signature.paramSize) {
       if (paramIndex < signature.paramSize) {
@@ -593,7 +593,8 @@ Optional<SignatureInformation> Analyzer::collectSignature(const SourcePtr &src,
         .parameters = std::move(params),
         .activeParameter = activeParamIndex,
     };
-  });
+  };
+  frontEnd.setSignatureHandler(handler);
   consumeAllInput(frontEnd);
   return info;
 }

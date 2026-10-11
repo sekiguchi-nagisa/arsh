@@ -32,6 +32,7 @@
 #include "misc/buffer.hpp"
 #include "misc/flag_util.hpp"
 #include "misc/format.hpp"
+#include "misc/function_ref.hpp"
 #include "misc/noncopyable.h"
 #include "misc/resource.hpp"
 #include "misc/rtti.hpp"
@@ -229,8 +230,7 @@ public:
 
   HandlePtr lookupField(const TypePool &pool, const std::string &fieldName) const;
 
-  void walkField(const TypePool &pool,
-                 const std::function<bool(StringRef, const Handle &)> &walker) const;
+  void walkField(const TypePool &pool, FunctionRef<bool(StringRef, const Handle &)> walker) const;
 
   std::vector<const Type *> getTypeParams(const TypePool &pool) const;
 
@@ -898,7 +898,7 @@ public:
    * @param walker
    */
   void iterateSymbols(const TypePool &pool, bool searchGlobal,
-                      const std::function<bool(StringRef, const Handle &)> &walker) const;
+                      FunctionRef<bool(StringRef, const Handle &)> walker) const;
 
   static bool classof(const Type *type) { return type->isModType(); }
 

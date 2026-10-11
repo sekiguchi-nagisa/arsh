@@ -17,6 +17,7 @@
 #ifndef MISC_LIB_FUNCTION_REF_HPP
 #define MISC_LIB_FUNCTION_REF_HPP
 
+#include <cstdint>
 #include <memory>
 
 #include "detect.hpp"

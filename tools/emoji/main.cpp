@@ -61,19 +61,21 @@ static int emit(FILE *fp, const char *bin, const FlexBuffer<uint8_t> &buf,
 
 static std::vector<std::pair<std::string, unsigned char>> collect(const RadixTree &tree) {
   std::vector<std::pair<std::string, unsigned char>> values;
-  tree.iterate([&values](StringRef ref, unsigned char p) {
+  auto walker = [&values](StringRef ref, unsigned char p) {
     values.emplace_back(ref.toString(), p);
     return true;
-  });
+  };
+  tree.iterate(walker);
   return values;
 }
 
 static std::vector<std::pair<std::string, unsigned char>> collect(const PackedRadixTree tree) {
   std::vector<std::pair<std::string, unsigned char>> values;
-  tree.iterate([&values](StringRef ref, unsigned char p) {
+  auto walker = [&values](StringRef ref, unsigned char p) {
     values.emplace_back(ref.toString(), p);
     return true;
-  });
+  };
+  tree.iterate(walker);
   return values;
 }
 

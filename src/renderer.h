@@ -58,12 +58,12 @@ struct RenderingContext {
   const StringRef prompt;
   CharWidthProperties ps;
   bool semanticPrompt{false};
-  std::function<bool(StringRef)> errorCmdChecker;
+  FunctionRef<bool(StringRef)> errorCmdChecker;
   mutable TokenizerResult tokenizeCache; // previously tokenized result
 
   RenderingContext(char *data, size_t len, StringRef prompt,
-                   std::function<bool(StringRef)> &&errorCmdChecker)
-      : buf(data, len), prompt(prompt), errorCmdChecker(std::move(errorCmdChecker)) {
+                   FunctionRef<bool(StringRef)> errorCmdChecker)
+      : buf(data, len), prompt(prompt), errorCmdChecker(errorCmdChecker) {
     this->ps.replaceInvalid = true;
   }
 };

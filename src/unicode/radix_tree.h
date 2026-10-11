@@ -17,11 +17,10 @@
 #ifndef ARSH_UNICODE_RADIX_TREE_H
 #define ARSH_UNICODE_RADIX_TREE_H
 
-#include <functional>
-#include <memory>
 #include <unordered_map>
 
 #include "misc/buffer.hpp"
+#include "misc/function_ref.hpp"
 #include "misc/string_ref.hpp"
 
 namespace arsh {
@@ -142,7 +141,7 @@ public:
     return {latestMatchedSize, latestProperty};
   }
 
-  void iterate(const std::function<bool(StringRef, unsigned char)> &walker) const {
+  void iterate(const FunctionRef<bool(StringRef, unsigned char)> walker) const {
     if (walker) {
       std::string buf;
       this->iterate(buf, 1, walker);
@@ -151,7 +150,7 @@ public:
 
 private:
   bool iterate(std::string &buf, unsigned int offset,
-               const std::function<bool(StringRef, unsigned char)> &walker) const;
+               FunctionRef<bool(StringRef, unsigned char)> walker) const;
 };
 
 class RadixTree {
@@ -226,7 +225,7 @@ public:
    */
   unsigned int maxCodePointCount() const;
 
-  void iterate(const std::function<bool(StringRef, unsigned char)> &walker) const;
+  void iterate(FunctionRef<bool(StringRef, unsigned char)> walker) const;
 
 private:
   RadixTree *getOrCreate(char ch);

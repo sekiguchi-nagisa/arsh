@@ -741,16 +741,19 @@ void toString(const Matcher &matcher, std::string &out, bool putHeader) {
     toString(set.ref(), out);
     break;
   }
-  case MatcherType::RADIX_TREE:
-    matcher.asRadixTree().iterate([&out](StringRef ref, unsigned char p) {
+  case MatcherType::RADIX_TREE: {
+    auto walker = [&out](StringRef ref, unsigned char p) {
       out += "property: 0x";
       putHex(p, out);
       out += ", string: ";
       escapeUtf8(ref, out);
       out += '\n';
       return true;
-    });
+    };
+    matcher.asRadixTree().iterate(walker);
     break;
+  }
+
   case MatcherType::STRING:
     escapeUtf8(matcher.asStrRef(), out);
     out += '\n';

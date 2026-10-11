@@ -53,7 +53,7 @@ HandlePtr Type::lookupField(const TypePool &pool, const std::string &fieldName) 
 }
 
 void Type::walkField(const TypePool &pool,
-                     const std::function<bool(StringRef, const Handle &)> &walker) const {
+                     const FunctionRef<bool(StringRef, const Handle &)> walker) const {
   switch (this->typeKind()) {
   case TypeKind::Tuple:
   case TypeKind::Record:
@@ -275,7 +275,7 @@ HandlePtr ModType::lookupImpl(const TypePool &pool, const std::string &name,
 }
 
 void ModType::iterateSymbols(const TypePool &pool, const bool searchGlobal,
-                             const std::function<bool(StringRef, const Handle &)> &walker) const {
+                             const FunctionRef<bool(StringRef, const Handle &)> walker) const {
   for (auto &e : this->getHandleMap()) {
     if (!walker(e.first, *e.second)) {
       return;

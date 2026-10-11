@@ -148,7 +148,7 @@ void LineRenderer::renderWithANSI(StringRef prompt) {
 }
 
 bool LineRenderer::renderScript(const StringRef source,
-                                const std::function<bool(StringRef)> &errorCmdChecker) {
+                                const FunctionRef<bool(StringRef)> errorCmdChecker) {
   // for syntax highlight
   Tokenizer tokenEmitter(source);
   auto ret = tokenEmitter.tokenize();
