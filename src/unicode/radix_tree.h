@@ -142,10 +142,8 @@ public:
   }
 
   void iterate(const FunctionRef<bool(StringRef, unsigned char)> walker) const {
-    if (walker) {
-      std::string buf;
-      this->iterate(buf, 1, walker);
-    }
+    std::string buf;
+    this->iterate(buf, 1, walker);
   }
 
 private:

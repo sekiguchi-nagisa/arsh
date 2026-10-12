@@ -95,7 +95,7 @@ private:
 
   ObserverPtr<const CancelToken> cancel;
 
-  FunctionRef<bool(std::string &&)> consumer;
+  OptionalFuncRef<bool(std::string &&)> consumer;
 
   static constexpr unsigned int READDIR_LIMIT = 16 * 1024;
 
@@ -116,7 +116,7 @@ public:
 
   int getErrNum() const { return this->errNum; }
 
-  void setConsumer(const FunctionRef<bool(std::string &&)> func) { this->consumer = func; }
+  void setConsumer(const OptionalFuncRef<bool(std::string &&)> func) { this->consumer = func; }
 
   Status operator()(std::string *err) {
     auto iter = this->pattern.begin();
@@ -183,7 +183,7 @@ private:
                                 bool allowEmptyPattern, std::string *err);
 
   bool addResult(std::string &&path) {
-    if (this->consumer && !this->consumer(std::move(path))) {
+    if (this->consumer && !this->consumer.unwrap()(std::move(path))) {
       return false;
     }
     this->matchCount++;

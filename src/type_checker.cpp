@@ -643,7 +643,7 @@ void TypeChecker::checkArgsNode(const CallSignature &callSignature, ArgsNode &no
   }
 
   if (this->signatureHandler && hasCompInLastArg(node, CodeCompNode::Kind::CALL_SIGNATURE)) {
-    this->signatureHandler(callSignature, argSize - 1);
+    this->signatureHandler.unwrap()(callSignature, argSize - 1);
   }
 }
 

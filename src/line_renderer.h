@@ -132,7 +132,7 @@ public:
    * @return
    * reach incomplete input (need more characters), return false
    */
-  bool renderScript(StringRef source, FunctionRef<bool(StringRef)> errorCmdChecker = nullptr);
+  bool renderScript(StringRef source, OptionalFuncRef<bool(StringRef)> errorCmdChecker = nullptr);
 
   void renderLines(StringRef source) { this->render(source, HighlightTokenClass::NONE_); }
 

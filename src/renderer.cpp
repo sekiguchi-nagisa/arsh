@@ -21,7 +21,7 @@ namespace arsh {
 
 static bool renderLines(const LineBuffer &buf, ObserverPtr<const ArrayPager> pager,
                         LineRenderer &renderer,
-                        const FunctionRef<bool(StringRef)> errorCmdChecker) {
+                        const OptionalFuncRef<bool(StringRef)> errorCmdChecker) {
   StringRef lineRef = buf.get();
   if (pager) {
     auto [pos, len] = buf.findCurLineInterval(true);

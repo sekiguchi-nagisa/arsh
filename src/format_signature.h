@@ -39,10 +39,11 @@ inline std::string normalizeTypeName(const Type &type) {
 void formatVarSignature(const Type &type, std::string &out);
 
 void formatFuncSignature(const FunctionType &funcType, const FuncHandle &handle, std::string &out,
-                         FunctionRef<void(StringRef)> paramCallback = nullptr);
+                         OptionalFuncRef<void(StringRef)> paramCallback = nullptr);
 
 void formatFuncSignature(const Type &retType, unsigned int paramSize, const Type *const *paramTypes,
-                         std::string &out, FunctionRef<void(StringRef)> paramCallback = nullptr);
+                         std::string &out,
+                         OptionalFuncRef<void(StringRef)> paramCallback = nullptr);
 
 void formatFieldSignature(const Type &recvType, const Type &type, std::string &out);
 
@@ -54,11 +55,11 @@ void formatFieldSignature(const Type &recvType, const Type &type, std::string &o
  * @param paramCallback
  */
 void formatMethodSignature(const Type *recvType, const MethodHandle &handle, std::string &out,
-                           FunctionRef<void(StringRef)> paramCallback);
+                           OptionalFuncRef<void(StringRef)> paramCallback);
 
 inline void formatMethodSignature(const Type &recvType, const MethodHandle &handle,
                                   std::string &out,
-                                  const FunctionRef<void(StringRef)> paramCallback = nullptr) {
+                                  const OptionalFuncRef<void(StringRef)> paramCallback = nullptr) {
   formatMethodSignature(&recvType, handle, out, paramCallback);
 }
 
@@ -72,7 +73,7 @@ inline void formatMethodSignature(const Type &recvType, const MethodHandle &hand
  */
 void formatNativeMethodSignature(unsigned int nativeMethodIndex, StringRef packedParamType,
                                  std::string &out,
-                                 FunctionRef<void(StringRef)> paramCallback = nullptr);
+                                 OptionalFuncRef<void(StringRef)> paramCallback = nullptr);
 
 } // namespace arsh
 

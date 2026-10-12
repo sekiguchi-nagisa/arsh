@@ -148,7 +148,7 @@ void LineRenderer::renderWithANSI(StringRef prompt) {
 }
 
 bool LineRenderer::renderScript(const StringRef source,
-                                const FunctionRef<bool(StringRef)> errorCmdChecker) {
+                                const OptionalFuncRef<bool(StringRef)> errorCmdChecker) {
   // for syntax highlight
   Tokenizer tokenEmitter(source);
   auto ret = tokenEmitter.tokenize();
@@ -171,7 +171,7 @@ bool LineRenderer::renderScript(const StringRef source,
     HighlightTokenClass tokenClass = toTokenClass(ret.tokens[i].first);
     if (supportErrorHighlight && tokenClass == HighlightTokenClass::COMMAND &&
         !isUDCDeclTokenAt(ret.tokens, i)) {
-      if (!errorCmdChecker(ref)) {
+      if (!errorCmdChecker.unwrap()(ref)) {
         tokenClass = HighlightTokenClass::ERROR_;
       }
     }

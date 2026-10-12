@@ -17,6 +17,7 @@
 #ifndef MISC_LIB_FUNCTION_REF_HPP
 #define MISC_LIB_FUNCTION_REF_HPP
 
+#include <cassert>
 #include <cstdint>
 #include <memory>
 
@@ -31,9 +32,14 @@ BEGIN_MISC_LIB_NAMESPACE_DECL
 template <typename T>
 class FunctionRef;
 
+template <typename T>
+class OptionalFuncRef;
+
+namespace detail {
+
 template <typename R, typename... Arg>
-class FunctionRef<R(Arg...)> {
-private:
+class FuncRefBase {
+protected:
   using Invoker = R (*)(uintptr_t, Arg...);
   using FunctionPtr = R (*)(Arg...);
 
@@ -73,23 +79,20 @@ private:
   }
 
 public:
-  using result_type = R;
+  constexpr FuncRefBase() = default;
 
-  constexpr FunctionRef() noexcept = default;
-
-  constexpr FunctionRef(std::nullptr_t) noexcept {} // NOLINT
-
-  constexpr FunctionRef(R (*func)(Arg...)) noexcept // NOLINT
+  constexpr FuncRefBase(R (*func)(Arg...)) noexcept // NOLINT
       : callable_(reinterpret_cast<uintptr_t>(func)),
         invoker_([](const uintptr_t callable, Arg... arg) -> R {
           return invoke<FunctionPtr>(callable, std::forward<Arg>(arg)...);
         }) {}
 
-  template <typename F, typename T = std::remove_cv_t<std::remove_reference_t<F>>,
-            enable_when<!std::is_same_v<FunctionRef, T> && std::is_invocable_r_v<R, T &, Arg...> &&
-                        (std::is_convertible_v<T &, FunctionPtr> ||
-                         (std::is_lvalue_reference_v<F> && std::is_object_v<T>))> = nullptr>
-  constexpr FunctionRef(F &&func) noexcept // NOLINT
+  template <
+      typename F, typename T = std::remove_cv_t<std::remove_reference_t<F>>,
+      enable_when<!std::is_base_of_v<FuncRefBase, T> && std::is_invocable_r_v<R, T &, Arg...> &&
+                  (std::is_convertible_v<T &, FunctionPtr> ||
+                   (std::is_lvalue_reference_v<F> && std::is_object_v<T>))> = nullptr>
+  constexpr FuncRefBase(F &&func) noexcept // NOLINT
       : callable_(reinterpret_cast<uintptr_t>(toTarget<F>(std::forward<F>(func)))),
         invoker_([](const uintptr_t callable, Arg... arg) -> R {
           using Callable = std::remove_reference_t<F>;
@@ -99,8 +102,24 @@ public:
             return invoke<F>(callable, std::forward<Arg>(arg)...);
           }
         }) {}
+};
 
-  explicit operator bool() const noexcept { return this->invoker_ != nullptr; }
+} // namespace detail
+
+template <typename R, typename... Arg>
+class FunctionRef<R(Arg...)> : public detail::FuncRefBase<R, Arg...> {
+private:
+  using Base = detail::FuncRefBase<R, Arg...>;
+
+public:
+  using result_type = R;
+
+  constexpr FunctionRef(std::nullptr_t) = delete;
+
+  template <typename F>
+  constexpr FunctionRef(F &&func) noexcept : Base(std::forward<F>(func)) { // NOLINT
+    assert(this->callable_ != 0);
+  }
 
   R operator()(Arg... arg) const {
     return this->invoker_(this->callable_, std::forward<Arg>(arg)...);
@@ -109,6 +128,32 @@ public:
 
 template <typename R, typename... Arg>
 FunctionRef(R (*)(Arg...)) -> FunctionRef<R(Arg...)>;
+
+template <typename R, typename... Arg>
+class OptionalFuncRef<R(Arg...)> : public detail::FuncRefBase<R, Arg...> {
+private:
+  using Base = detail::FuncRefBase<R, Arg...>;
+
+public:
+  using result_type = R;
+
+  constexpr OptionalFuncRef() noexcept = default;
+
+  constexpr OptionalFuncRef(std::nullptr_t) noexcept {} // NOLINT
+
+  using Base::Base;
+
+  explicit operator bool() const noexcept { return this->invoker_ != nullptr; }
+
+  bool hasValue() const { return static_cast<bool>(*this); }
+
+  const FunctionRef<R(Arg...)> &unwrap() const {
+    return static_cast<const FunctionRef<R(Arg...)> &>(static_cast<const Base &>(*this));
+  }
+};
+
+template <typename R, typename... Arg>
+OptionalFuncRef(R (*)(Arg...)) -> OptionalFuncRef<R(Arg...)>;
 
 END_MISC_LIB_NAMESPACE_DECL
 

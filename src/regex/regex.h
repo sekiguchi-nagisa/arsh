@@ -71,12 +71,14 @@ public:
 private:
   const std::chrono::milliseconds limit;
   timestamp base;
-  FunctionRef<bool()> cancelToken; // return true if canceled
+  OptionalFuncRef<bool()> cancelToken; // return true if canceled
+
+  static_assert(std::is_trivially_copyable_v<decltype(cancelToken)>);
 
 public:
   explicit Timer(std::chrono::milliseconds limit) : limit(limit) {}
 
-  void setCancelToken(FunctionRef<bool()> &&c) { this->cancelToken = c; }
+  void setCancelToken(OptionalFuncRef<bool()> &&c) { this->cancelToken = c; }
 
   static timestamp now() { return getCurrentTimestamp(); }
 
@@ -87,7 +89,7 @@ public:
   }
 
   Status check() const {
-    if (this->cancelToken && this->cancelToken()) {
+    if (this->cancelToken && this->cancelToken.unwrap()()) {
       return Status::Canceled;
     }
     if (this->elapsed() >= this->limit) {

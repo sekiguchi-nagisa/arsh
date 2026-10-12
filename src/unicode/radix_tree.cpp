@@ -236,10 +236,8 @@ static bool iterateImpl(std::string &buf, const RadixTree &tree,
 }
 
 void RadixTree::iterate(const FunctionRef<bool(StringRef, unsigned char)> walker) const {
-  if (walker) {
-    std::string buf;
-    iterateImpl(buf, *this, walker);
-  }
+  std::string buf;
+  iterateImpl(buf, *this, walker);
 }
 
 RadixTree *RadixTree::getOrCreate(char ch) {

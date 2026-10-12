@@ -274,7 +274,7 @@ enum class TildeExpandStatus : unsigned char;
 class GlobPatternWrapper;
 class XORArgGroupSet;
 
-using SignatureHandler = FunctionRef<void(const CallSignature &, unsigned int)>;
+using SignatureHandler = OptionalFuncRef<void(const CallSignature &, unsigned int)>;
 
 class TypeChecker : protected NodeVisitor {
 protected:

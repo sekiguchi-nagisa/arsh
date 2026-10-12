@@ -707,12 +707,13 @@ TEST_F(RegexReplaceTest, replaceError2) {
 TEST_F(RegexReplaceTest, replaceNop) {
   auto re = compile("(.)(?=(.+))");
   ASSERT_TRUE(re.hasValue());
+  auto consumer = [](StringRef) { return true; };
   const regex::ReplaceParam param = {
       .text = "abcdefghijklmnopqrstuvwxyzABC@",
       .replacement = "$2$2$2$2$2$2$`$'$`$'$`$'$`$'",
       .global = true,
       .err = nullptr,
-      .consumer = nullptr,
+      .consumer = consumer,
   };
   auto s = regex::replace(re.unwrap(), param, nullptr);
   ASSERT_EQ(regex::MatchStatus::OK, s);
@@ -721,12 +722,13 @@ TEST_F(RegexReplaceTest, replaceNop) {
 TEST_F(RegexReplaceTest, replaceTimeout) {
   auto re = compile("^(([a-zA-Z0-9あ-ん])+)+$");
   ASSERT_TRUE(re.hasValue());
+  auto consumer = [](StringRef) { return true; };
   const regex::ReplaceParam param = {
       .text = "abcdefghijklmnopqrstuvwxyzABC@",
       .replacement = "",
       .global = true,
       .err = nullptr,
-      .consumer = nullptr,
+      .consumer = consumer,
   };
   {
     regex::Timer timer(std::chrono::milliseconds(200));

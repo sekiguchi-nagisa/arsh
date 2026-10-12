@@ -64,7 +64,7 @@ static MatchStatus interpretReplacePattern(const Regex &regex, const MatchContex
   for (size_t pos = 0;;) {
     auto retPos = param.replacement.find('$', pos);
     const auto sub = param.replacement.slice(pos, retPos);
-    TRY(!param.consumer || param.consumer(sub));
+    TRY(param.consumer(sub));
     if (retPos == StringRef::npos) {
       break;
     }
@@ -152,7 +152,7 @@ static MatchStatus interpretReplacePattern(const Regex &regex, const MatchContex
       }
       return MatchStatus::INVALID_REPLACE_PATTERN;
     }
-    TRY(!param.consumer || param.consumer(inserting));
+    TRY(param.consumer(inserting));
     pos = retPos;
   }
   return MatchStatus::OK;
@@ -176,17 +176,17 @@ MatchStatus replace(const Regex &regex, const ReplaceParam &param, const Observe
     if (s != MatchStatus::OK) {
       return s;
     }
-    TRY(!param.consumer || param.consumer(param.text.slice(matchStartOffset, captures[0].offset)));
+    TRY(param.consumer(param.text.slice(matchStartOffset, captures[0].offset)));
     if (auto s2 = interpretReplacePattern(regex, ctx.asOk(), param); s2 != MatchStatus::OK) {
       return s2;
     }
     if (input.available() && matchStartOffset == input.getOffset()) { // not consume input
       input.consumeForward();
-      TRY(!param.consumer || param.consumer(StringRef(input.getBegin() + matchStartOffset,
-                                                      input.getOffset() - matchStartOffset)));
+      TRY(param.consumer(
+          StringRef(input.getBegin() + matchStartOffset, input.getOffset() - matchStartOffset)));
     }
   } while (param.global && ctx.asOk().getInput().getOffset() != matchStartOffset);
-  TRY(!param.consumer || param.consumer(ctx.asOk().refInput().remainForward()));
+  TRY(param.consumer(ctx.asOk().refInput().remainForward()));
   return MatchStatus::OK;
 }
 
@@ -196,7 +196,7 @@ MatchStatus split(const Regex &regex, const StringRef text, const unsigned int l
     return MatchStatus::OK;
   }
   if (limit == 1) {
-    TRY(!consumer || consumer(text));
+    TRY(consumer(text));
     return MatchStatus::OK;
   }
   std::vector<Capture> captures;
@@ -217,18 +217,18 @@ MatchStatus split(const Regex &regex, const StringRef text, const unsigned int l
       return s;
     }
     if (matchStartOffset != input.getOffset()) {
-      TRY(!consumer || consumer(text.slice(matchStartOffset, captures[0].offset)));
+      TRY(consumer(text.slice(matchStartOffset, captures[0].offset)));
     } else if (input.available()) {
       input.consumeForward();
-      TRY(!consumer || consumer(StringRef(input.getBegin() + matchStartOffset,
-                                          input.getOffset() - matchStartOffset)));
+      TRY(consumer(
+          StringRef(input.getBegin() + matchStartOffset, input.getOffset() - matchStartOffset)));
     } else {
       ignoreRemain = true;
       break;
     }
   }
   if (!ignoreRemain) {
-    TRY(!consumer || consumer(ctx.asOk().refInput().remainForward()));
+    TRY(consumer(ctx.asOk().refInput().remainForward()));
   }
   return MatchStatus::OK;
 }
