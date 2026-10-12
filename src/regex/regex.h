@@ -55,7 +55,7 @@ public:
 
   const auto &getInstSeq() const { return this->instSeq; }
 
-  ArrayRef<Matcher> getMatchers() const { return {this->matchers.data(), this->matchers.size()}; }
+  ArrayRef<Matcher> getMatchers() const { return this->matchers; }
 
   const auto &getNamedCaptureGroups() const { return this->named; }
 };

@@ -41,7 +41,7 @@ private:
 public:
   ArrayRef<std::pair<int, int>> toCompactArrayRef() {
     this->tryToSortAndCompact();
-    return {this->codePointRanges.data(), this->codePointRanges.size()};
+    return this->codePointRanges;
   }
 
   /**

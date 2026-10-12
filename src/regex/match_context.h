@@ -45,7 +45,7 @@ public:
 
   Capture *getCaptures() const { return this->captures.data(); }
 
-  ArrayRef<Capture> toCapturesRef() const { return {this->captures.data(), this->captures.size()}; }
+  ArrayRef<Capture> toCapturesRef() const { return this->captures; }
 
   LoopState *getLoops() { return this->loops.data(); }
 

@@ -831,7 +831,7 @@ public:
 
   const auto &getRE() const { return this->reObj->getRE(); }
 
-  ArrayRef<Value> capturesView() const { return {this->captures.data(), this->captures.size()}; }
+  ArrayRef<Value> capturesView() const { return this->captures; }
 
   unsigned int getStartOffset() const { return this->startOffset; }
 
@@ -881,7 +881,7 @@ public:
 
   bool locking() const { return this->lockCount > 0; }
 
-  ArrayRef<Value> view() const { return {this->values.data(), this->values.size()}; }
+  ArrayRef<Value> view() const { return this->values; }
 
   const Value &operator[](const size_t index) const { return this->values[index]; }
 

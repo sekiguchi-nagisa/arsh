@@ -103,7 +103,7 @@ public:
     return nullptr;
   }
 
-  ArrayRef<Entry> toArrayRef() const { return {this->entries.data(), this->entries.size()}; }
+  ArrayRef<Entry> toArrayRef() const { return this->entries; }
 };
 
 struct Capture {
