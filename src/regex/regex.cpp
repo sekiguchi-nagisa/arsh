@@ -36,8 +36,8 @@ const char *toString(const MatchStatus s) {
     return "match timeout";
   case MatchStatus::STACK_LIMIT:
     return "stack depth reaches limit";
+  case MatchStatus::CONSUMED_LIMIT:
   case MatchStatus::INVALID_REPLACE_PATTERN:
-  case MatchStatus::REPLACED_LIMIT:
     break;
   }
   return "";
@@ -55,7 +55,7 @@ MatchStatus match(const Regex &regex, const StringRef text, const unsigned int c
 #define TRY(E)                                                                                     \
   do {                                                                                             \
     if (unlikely(!(E))) {                                                                          \
-      return MatchStatus::REPLACED_LIMIT;                                                          \
+      return MatchStatus::CONSUMED_LIMIT;                                                          \
     }                                                                                              \
   } while (false)
 
@@ -230,6 +230,34 @@ MatchStatus split(const Regex &regex, const StringRef text, const unsigned int l
   if (!ignoreRemain) {
     TRY(consumer(ctx.asOk().refInput().remainForward()));
   }
+  return MatchStatus::OK;
+}
+
+MatchStatus matchAll(const Regex &regex, const StringRef text, const unsigned int codePointOffset,
+                     const FunctionRef<bool(ArrayRef<Capture>)> consumer,
+                     const ObserverPtr<Timer> timer) {
+  std::vector<Capture> captures;
+  auto ctx = tryToCreateMatchContext(regex, text, codePointOffset, captures);
+  if (!ctx) {
+    return ctx.asErr();
+  }
+  unsigned int matchStartOffset = 0;
+  do {
+    matchStartOffset = ctx.asOk().getInput().getOffset();
+    const auto s = match(regex, ctx.asOk(), timer);
+    auto &input = ctx.asOk().refInput(); // input is updated after call match
+    if (s == MatchStatus::FAIL) {
+      input.setIter(input.getBegin() + matchStartOffset);
+      break;
+    }
+    if (s != MatchStatus::OK) {
+      return s;
+    }
+    TRY(consumer(captures));
+    if (input.available() && matchStartOffset == input.getOffset()) { // not consume input
+      input.consumeForward();
+    }
+  } while (ctx.asOk().getInput().getOffset() != matchStartOffset);
   return MatchStatus::OK;
 }
 

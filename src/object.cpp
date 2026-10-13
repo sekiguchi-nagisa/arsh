@@ -261,7 +261,7 @@ Value RegexObject::replace(ARState &state, StringRef text, StringRef replacement
   case regex::MatchStatus::CANCEL:
     raiseSystemError(state, EINTR, "regex replace canceled");
     return {};
-  case regex::MatchStatus::REPLACED_LIMIT:
+  case regex::MatchStatus::CONSUMED_LIMIT:
     assert(state.hasError());
     return {};
   default:
@@ -291,7 +291,7 @@ Value RegexObject::split(ARState &state, int64_t limit, StringRef ref, int64_t t
   case regex::MatchStatus::CANCEL:
     raiseSystemError(state, EINTR, "regex split canceled");
     return {};
-  case regex::MatchStatus::REPLACED_LIMIT:
+  case regex::MatchStatus::CONSUMED_LIMIT:
     assert(state.hasError());
     return {};
   default:

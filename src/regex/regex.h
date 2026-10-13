@@ -108,9 +108,9 @@ enum class MatchStatus : unsigned char {
   TIMEOUT,      // timeout
   STACK_LIMIT,  // stack size reaches limits
 
-  /* for replace api */
-  INVALID_REPLACE_PATTERN, // invalid replacement string format
-  REPLACED_LIMIT,          // replaced string reaches limit
+  CONSUMED_LIMIT, // for user-provided consumer. if consumer return false
+
+  INVALID_REPLACE_PATTERN, // for replace api. invalid replacement string format
 };
 
 const char *toString(MatchStatus s);
@@ -157,6 +157,19 @@ MatchStatus replace(const Regex &regex, const ReplaceParam &param, ObserverPtr<T
  */
 MatchStatus split(const Regex &regex, StringRef text, unsigned int limit,
                   FunctionRef<bool(StringRef)> consumer, ObserverPtr<Timer> timer);
+
+/**
+ *
+ * @param regex
+ * @param text
+ * @param codePointOffset
+ * @param consumer
+ * @param timer
+ * @return
+ * return Ok even if no matches
+ */
+MatchStatus matchAll(const Regex &regex, StringRef text, unsigned int codePointOffset,
+                     FunctionRef<bool(ArrayRef<Capture>)> consumer, ObserverPtr<Timer> timer);
 
 bool escape(StringRef ref, size_t maxSize, std::string &out);
 

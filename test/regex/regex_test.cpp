@@ -1,5 +1,6 @@
 
 #include "../test_common.h"
+#include "dump.hpp"
 
 #include <regex/dump.h>
 #include <regex/emit.h>
@@ -478,16 +479,16 @@ TEST(RegexMatchTest, error) {
   ASSERT_STREQ("size of input string is too large", regex::toString(status));
 }
 
-class RegexReplaceTest : public ::testing::Test {
+class RegexTest : public ::testing::Test {
 public:
-  struct TestParam {
+  struct ReplaceParam {
     StringRef text;
     StringRef replace;
     bool global;
   };
 
-  static void assertReplace(const StringRef pattern, const regex::Flag flag, const TestParam &param,
-                            const std::string &expectOut) {
+  static void assertReplace(const StringRef pattern, const regex::Flag flag,
+                            const ReplaceParam &param, const std::string &expectOut) {
     auto re = compile(pattern, flag);
     ASSERT_TRUE(re.hasValue());
     std::string out;
@@ -510,7 +511,7 @@ public:
   }
 
   static void assertReplaceError(const StringRef pattern, const regex::Flag flag,
-                                 const TestParam &param, regex::MatchStatus expectStatus,
+                                 const ReplaceParam &param, regex::MatchStatus expectStatus,
                                  const std::string &expectErr) {
     auto re = compile(pattern, flag);
     ASSERT_TRUE(re.hasValue());
@@ -531,9 +532,42 @@ public:
     ASSERT_EQ(expectStatus, s);
     ASSERT_EQ(expectErr, err);
   }
+
+  static void assertMatchAll(const StringRef pattern, const regex::Flag flag, const StringRef text,
+                             const std::vector<std::string> &expected) {
+    auto re = compile(pattern, flag);
+    ASSERT_TRUE(re.hasValue());
+    std::vector<std::string> output;
+    auto consumer = [&output](const ArrayRef<regex::Capture> captures) {
+      output.push_back(regex::formatCaptures(captures));
+      return true;
+    };
+    const auto s = regex::matchAll(re.unwrap(), text, 0, consumer, nullptr);
+    ASSERT_EQ(regex::MatchStatus::OK, s);
+    ASSERT_EQ(expected.size(), output.size());
+    for (unsigned int i = 0; i < expected.size(); i++) {
+      ASSERT_EQ(expected[i], output[i]);
+    }
+  }
+
+  static void assertMatchAllError(const StringRef pattern, const regex::Flag flag,
+                                  const StringRef text, const regex::MatchStatus expectStatus) {
+    auto re = compile(pattern, flag);
+    ASSERT_TRUE(re.hasValue());
+    std::vector<std::string> output;
+    auto consumer = [&output](const ArrayRef<regex::Capture> captures) {
+      if (output.size() == 5) {
+        return false;
+      }
+      output.push_back(regex::formatCaptures(captures));
+      return true;
+    };
+    const auto s = regex::matchAll(re.unwrap(), text, 0, consumer, nullptr);
+    ASSERT_EQ(expectStatus, s);
+  }
 };
 
-TEST_F(RegexReplaceTest, replace) {
+TEST_F(RegexTest, replace) {
   ASSERT_NO_FATAL_FAILURE(assertReplace("", {}, {"", "@", true}, "@"));
   ASSERT_NO_FATAL_FAILURE(assertReplace("", {}, {"", "@", false}, "@"));
   ASSERT_NO_FATAL_FAILURE(assertReplace("", {}, {"AB", "@", true}, "@A@B@"));
@@ -624,11 +658,11 @@ TEST_F(RegexReplaceTest, replace) {
                                         {"12-2025 23", "year=$<year>", false}, "year=2025 23"));
 }
 
-TEST_F(RegexReplaceTest, replaceError1) {
+TEST_F(RegexTest, replaceError1) {
   // error message
   ASSERT_STREQ("", regex::toString(regex::MatchStatus::OK));
   ASSERT_STREQ("", regex::toString(regex::MatchStatus::INVALID_REPLACE_PATTERN));
-  ASSERT_STREQ("", regex::toString(regex::MatchStatus::REPLACED_LIMIT));
+  ASSERT_STREQ("", regex::toString(regex::MatchStatus::CONSUMED_LIMIT));
 
   // $
   ASSERT_NO_FATAL_FAILURE(assertReplaceError(".", {}, {"abc", "$", true},
@@ -692,10 +726,10 @@ TEST_F(RegexReplaceTest, replaceError1) {
   ASSERT_NO_FATAL_FAILURE(assertReplace("(?<AAA>12)", {}, {"abc", "@=$<ABC>", true}, "abc"));
 }
 
-TEST_F(RegexReplaceTest, replaceError2) {
+TEST_F(RegexTest, replaceError2) {
   ASSERT_NO_FATAL_FAILURE(assertReplaceError(
       "(.)(?=(.+))", {}, {"abcdefghijklmnopqrstu", "$2$2$2$2$2$2$`$'$`$'$`$'$`$'", true},
-      regex::MatchStatus::REPLACED_LIMIT, ""));
+      regex::MatchStatus::CONSUMED_LIMIT, ""));
   ASSERT_NO_FATAL_FAILURE(assertReplaceError("(.)(?=(.+))", {}, {"\xFF\xFF\xFF", "", true},
                                              regex::MatchStatus::INVALID_UTF8, ""));
 
@@ -704,7 +738,7 @@ TEST_F(RegexReplaceTest, replaceError2) {
                                              regex::MatchStatus::INPUT_LIMIT, ""));
 }
 
-TEST_F(RegexReplaceTest, replaceNop) {
+TEST_F(RegexTest, replaceNop) {
   auto re = compile("(.)(?=(.+))");
   ASSERT_TRUE(re.hasValue());
   auto consumer = [](StringRef) { return true; };
@@ -719,7 +753,7 @@ TEST_F(RegexReplaceTest, replaceNop) {
   ASSERT_EQ(regex::MatchStatus::OK, s);
 }
 
-TEST_F(RegexReplaceTest, replaceTimeout) {
+TEST_F(RegexTest, replaceTimeout) {
   auto re = compile("^(([a-zA-Z0-9あ-ん])+)+$");
   ASSERT_TRUE(re.hasValue());
   auto consumer = [](StringRef) { return true; };
@@ -743,6 +777,29 @@ TEST_F(RegexReplaceTest, replaceTimeout) {
     ASSERT_EQ(regex::MatchStatus::CANCEL, s);
     ASSERT_STREQ("canceled", regex::toString(s));
   }
+}
+
+TEST_F(RegexTest, matchAll) {
+  ASSERT_NO_FATAL_FAILURE(assertMatchAll("@", {}, "@1@2@@",
+                                         {"(offset=0, size=1)\n", "(offset=2, size=1)\n",
+                                          "(offset=4, size=1)\n", "(offset=5, size=1)\n"}));
+  ASSERT_NO_FATAL_FAILURE(
+      assertMatchAll("(@(\\d))", {}, "@1@2@@",
+                     {"(offset=0, size=2)\n(offset=0, size=2)\n(offset=1, size=1)\n",
+                      "(offset=2, size=2)\n(offset=2, size=2)\n(offset=3, size=1)\n"}));
+
+  ASSERT_NO_FATAL_FAILURE(assertMatchAll("(?:)", {}, "123",
+                                         {"(offset=0, size=0)\n", "(offset=1, size=0)\n",
+                                          "(offset=2, size=0)\n", "(offset=3, size=0)\n"}));
+  ASSERT_NO_FATAL_FAILURE(assertMatchAll("(?:)", {}, "", {"(offset=0, size=0)\n"}));
+  ASSERT_NO_FATAL_FAILURE(assertMatchAll("(23)", {}, "", {}));
+  ASSERT_NO_FATAL_FAILURE(assertMatchAll("(?<x>a)|(?<x>b)", {}, "bab",
+                                         {"(offset=0, size=1)\n(unset)\n(offset=0, size=1)\n",
+                                          "(offset=1, size=1)\n(offset=1, size=1)\n(unset)\n",
+                                          "(offset=2, size=1)\n(unset)\n(offset=2, size=1)\n"}));
+
+  ASSERT_NO_FATAL_FAILURE(
+      assertMatchAllError("(.)", {}, "@1@2@@", regex::MatchStatus::CONSUMED_LIMIT));
 }
 
 struct RegexEscapeParam {
