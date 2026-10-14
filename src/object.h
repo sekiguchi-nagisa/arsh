@@ -811,6 +811,8 @@ public:
 
   Value split(ARState &state, int64_t limit, StringRef ref, int64_t timeoutMSec) const;
 
+  Value matchAll(ARState &state, StringRef ref, int64_t timeoutMSec);
+
   const auto &getRE() const { return this->re; }
 
   const std::string &getStr() const { return this->pattern; }

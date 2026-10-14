@@ -328,6 +328,8 @@ function match(target: String, timeout: Int?): RegexMatch? for Regex
 function replace(target: String, repl: String, once: Bool?, timeout: Int?): String for Regex
 
 function split(target: String, limit: Int?, timeout: Int?): [String] for Regex
+
+function matchAll(target: String, timeout: Int?): [RegexMatch] for Regex
 ```
 
 ## RegexMatch type

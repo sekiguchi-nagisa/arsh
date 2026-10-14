@@ -1,5 +1,13 @@
 # Changelog
 
+## Unreleased
+
+### Added
+
+#### Builtin
+
+- add ``Regex#matchAll`` method for all matched results
+
 ## [0.43.0] - 2026-09-30
 
 ### Added

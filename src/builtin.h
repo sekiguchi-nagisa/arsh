@@ -1433,6 +1433,16 @@ ARSH_METHOD regex_split(RuntimeContext &ctx) {
   RET(ret);
 }
 
+//!bind: function matchAll($this: Regex, $target : String, $timeout: Option<Int>) : Array<RegexMatch>
+ARSH_METHOD regex_matchAll(RuntimeContext &ctx) {
+  SUPPRESS_WARNING(regex_matchAll);
+  auto &re = typeAs<RegexObject>(LOCAL(0));
+  const auto ref = LOCAL(1).asStrRef();
+  const int64_t timeoutMSec = LOCAL(2).isInvalid() ? ctx.regexTimeout() : LOCAL(2).asInt();
+  auto ret = re.matchAll(ctx, ref, timeoutMSec);
+  RET(ret);
+}
+
 // ########################
 // ##     RegexMatch     ##
 // ########################
