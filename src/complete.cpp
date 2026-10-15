@@ -358,8 +358,7 @@ static bool completeCmdName(const CompPrefix &prefix, const NameScope &scope,
   // complete user-defined command
   if (hasFlag(option, CodeCompOp::UDC)) {
     LOG(TRACE_COMP, "try to complete udc");
-    UdcCandidateConsumer udcCandidateConsumer(prefix, consumer);
-    scope.walk(udcCandidateConsumer);
+    scope.walk(UdcCandidateConsumer(prefix, consumer));
   }
 
   // complete builtin command
