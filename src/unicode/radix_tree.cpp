@@ -263,7 +263,7 @@ static bool serialize(const RadixTree &radixTree, FlexBuffer<uint8_t> &buf,
     const auto &tree = *targets.front().first;
     assert(tree.getPrefix().size() <= RadixTree::MAX_STRING_SIZE);
     assert(tree.getChildren().size() <= RadixTree::MAX_N_CHILDREN);
-    const unsigned int meta = static_cast<unsigned int>(tree.getPrefix().size()) << 9 |
+    const unsigned int meta = static_cast<unsigned int>(tree.getPrefix().size()) << 9u |
                               static_cast<unsigned int>(tree.getChildren().size());
     for (unsigned int i = 0; i < PackedRadixChildIter::META_BYTES; i++) {
       unsigned int shift = (PackedRadixChildIter::META_BYTES - 1 - i) * 8;

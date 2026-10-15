@@ -45,7 +45,7 @@ private:
   } data;
 
 public:
-  explicit CaseFoldingResult(int code) : full(false) { this->data.simpleFolding = code; }
+  explicit CaseFoldingResult(const int code) : full(false) { this->data.simpleFolding = code; }
 
   explicit CaseFoldingResult(const FullFoldingEntry &e) : full(true) { this->data.fullFolding = e; }
 
@@ -55,7 +55,7 @@ public:
 
   const FullFoldingEntry &getFullFolding() const { return this->data.fullFolding; }
 
-  bool equals(int codePoint) const {
+  bool equals(const int codePoint) const {
     return !this->isFullFolding() && this->getSimpleFolding() == codePoint;
   }
 };

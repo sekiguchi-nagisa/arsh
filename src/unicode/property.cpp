@@ -69,7 +69,7 @@ Optional<Category> parseCategory(const StringRef ref) {
   return {};
 }
 
-constexpr unsigned int categoryTableSize() {
+static constexpr unsigned int categoryTableSize() {
   return std::size(category_set_table_offset_except_Cn);
 }
 
@@ -201,7 +201,9 @@ static auto initScriptNameMap() {
   return map;
 }
 
-constexpr unsigned int scriptTableSize() { return std::size(script_set_table_offset_except_Zzzz); }
+static constexpr unsigned int scriptTableSize() {
+  return std::size(script_set_table_offset_except_Zzzz);
+}
 
 static CodePointSetRef getScriptTable(unsigned int index) {
   assert(index < scriptTableSize());

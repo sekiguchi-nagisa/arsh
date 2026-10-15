@@ -107,11 +107,11 @@ public:
     uint8_t latestProperty = 0;
     uint16_t latestMatchedSize = 0;
     for (unsigned int offset = 1; offset < this->size;) {
-      const unsigned int meta = static_cast<unsigned int>(this->ptr[offset]) << 16 |
-                                static_cast<unsigned int>(this->ptr[offset + 1]) << 8 |
+      const unsigned int meta = static_cast<unsigned int>(this->ptr[offset]) << 16u |
+                                static_cast<unsigned int>(this->ptr[offset + 1]) << 8u |
                                 this->ptr[offset + 2];
       offset += PackedRadixChildIter::META_BYTES;
-      const unsigned int prefixLen = meta >> 9;
+      const unsigned int prefixLen = meta >> 9u;
       const StringRef prefix(reinterpret_cast<const char *>(this->ptr) + offset, prefixLen);
       if (!ref.startsWith(prefix)) {
         break;
@@ -127,7 +127,7 @@ public:
         break;
       }
       // visit children
-      const unsigned int n = meta & 0x1FF;
+      const unsigned int n = meta & 0x1FFu;
       const PackedRadixChildIter begin(this->ptr, offset, 0, childOffsetBytes);
       const PackedRadixChildIter end(this->ptr, offset, n, childOffsetBytes);
       const auto iter = std::lower_bound(begin, end, ref[0]);
@@ -158,8 +158,8 @@ private:
   std::unordered_map<char, std::unique_ptr<RadixTree>> children;
 
 public:
-  static constexpr unsigned int MAX_STRING_SIZE = (1u << 15) - 1;
-  static constexpr unsigned int MAX_N_CHILDREN = 1u << 8;
+  static constexpr unsigned int MAX_STRING_SIZE = (1u << 15u) - 1;
+  static constexpr unsigned int MAX_N_CHILDREN = 1u << 8u;
 
   RadixTree() = default;
 

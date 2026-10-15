@@ -534,7 +534,7 @@ constexpr bool range_walker_requirement_v =
     std::is_same_v<void, std::invoke_result_t<Func, int, int>>;
 
 template <typename Func, enable_when<range_walker_requirement_v<Func>> = nullptr>
-static bool intoCharRange(const CharClassNode &node, unsigned int offset, Func func) {
+static bool intoCharRange(const CharClassNode &node, const unsigned int offset, Func func) {
   if (node.getType() == CharClassNode::Type::RANGE && offset + 2 < node.getChars().size()) {
     auto &n1 = *node.getChars()[offset];
     auto &n2 = *node.getChars()[offset + 1];
