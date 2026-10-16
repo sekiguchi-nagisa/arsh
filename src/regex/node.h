@@ -608,6 +608,8 @@ public:
 
   const auto &getPattern() const { return this->pattern; }
 
+  auto &refPattern() { return this->pattern; }
+
   unsigned int getCaptureGroupCount() const { return this->captureGroupCount; }
 
   const auto &getNamedCaptureGroups() const { return this->namedCaptureGroups; }

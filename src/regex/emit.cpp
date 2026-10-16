@@ -301,7 +301,92 @@ static void normalizeStrCharClass(Node &node) {
   }
 }
 
-static void optimize(Node &node) { normalizeStrCharClass(node); }
+static bool isCharSeq(const Node &node) {
+  if (isa<CharNode>(node)) {
+    return true;
+  }
+  if (!isa<SeqNode>(node)) {
+    return false;
+  }
+  for (auto &e : cast<SeqNode>(node).getPatterns()) {
+    if (!isa<CharNode>(*e)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+static void optimizeStrAlt(std::unique_ptr<Node> &node) {
+  if (isa<NestedNode>(*node)) {
+    optimizeStrAlt(cast<NestedNode>(*node).refPattern());
+    return;
+  }
+  if (isa<SeqNode>(*node)) {
+    for (auto &e : cast<SeqNode>(*node).refPatterns()) {
+      optimizeStrAlt(e);
+    }
+    return;
+  }
+  if (!isa<AltNode>(*node)) {
+    return;
+  }
+  auto &altNode = cast<AltNode>(*node);
+  {
+    auto iter = altNode.getPatterns().begin();
+    auto end = altNode.getPatterns().end();
+    while (iter != end && isa<EmptyNode>(**(end - 1))) {
+      --end; // only allow last empty pattern (AA|B|A||)
+    }
+    for (; iter != end; ++iter) {
+      if (!isCharSeq(**iter)) {
+        return;
+      }
+    }
+  }
+  /**
+   * check alt string order
+   *
+   * (AA|A) -> accept
+   * (AA|AB) -> accept
+   * (A|AA) -> not accept
+   */
+  std::unordered_map<int, unsigned int> prefixCodeMap;
+  for (auto &e : altNode.getPatterns()) {
+    if (isa<EmptyNode>(*e)) {
+      continue;
+    }
+    int codePoint;
+    unsigned int len;
+    if (isa<CharNode>(*e)) {
+      codePoint = cast<CharNode>(*e).getCodePoint();
+      len = 1;
+    } else {
+      assert(isa<SeqNode>(*e));
+      auto &seqNode = cast<SeqNode>(*e);
+      assert(isa<CharNode>(*seqNode.getPatterns()[0]));
+      codePoint = cast<CharNode>(*seqNode.getPatterns()[0]).getCodePoint();
+      len = seqNode.getPatterns().size();
+    }
+    if (auto iter = prefixCodeMap.find(codePoint); iter != prefixCodeMap.end()) {
+      if (len <= iter->second) {
+        iter->second = len;
+      } else {
+        return;
+      }
+    } else {
+      prefixCodeMap.emplace(codePoint, len);
+    }
+  }
+  auto classNode = std::make_unique<CharClassNode>(node->getToken(), false);
+  classNode->add(std::move(node));
+  classNode->finalize(classNode->getToken());
+  node = std::move(classNode);
+}
+
+static void optimize(std::unique_ptr<Node> &node) {
+  normalizeStrCharClass(*node);
+  optimizeStrAlt(node);
+}
 
 Optional<Regex> CodeGen::operator()(SyntaxTree &&tree) {
   // prepare
@@ -315,7 +400,7 @@ Optional<Regex> CodeGen::operator()(SyntaxTree &&tree) {
   this->resolvedCaptures.clear();
   this->resolvedCaptures.resize(tree.getCaptureGroupCount() + 1, CaptureState::NOT_OPENED);
 
-  optimize(*tree.getPattern());
+  optimize(tree.refPattern());
   if (!this->generate(*tree.getPattern())) {
     return {};
   }

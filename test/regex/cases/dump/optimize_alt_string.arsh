@@ -1,0 +1,151 @@
+
+source $SCRIPT_DIR/../syntax/test_helper.arsh
+
+# 1|2
+assert diff <(redump -d '1|2' '') <(<<'EOF'
+flag: (mode = , modifier = )
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+  0: CharSet(matcherIndex=0, invert=false)
+  4: Match
+matchers:
+  0: AsciiSet
+{ 0x0031, 0x0032 },
+EOF
+)
+
+# 1|11|2
+assert diff <(redump -d '1|11|2' '') <(<<'EOF'  # not optimize
+flag: (mode = , modifier = )
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+   0: Alt(second=15)
+   5: Char(codePoint=U+0031:1)
+  10: Jump(target=33)
+  15: Alt(second=28)
+  20: String(index=0)
+  23: Jump(target=33)
+  28: Char(codePoint=U+0032:2)
+  33: Match
+matchers:
+  0: String
+\x31\x31
+EOF
+)
+
+# 11|1|2
+assert diff <(redump -d '11|1|2' '') <(<<'EOF'
+flag: (mode = , modifier = )
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+   0: PrepareRadix
+   1: RadixOrEmoji(emoji=, hasRadix=true, index=0, nextOffset=4)
+   7: CharSet(matcherIndex=1, invert=false)
+  11: Match
+matchers:
+  0: RadixTree
+property: 0x01, string: \x31\x31
+  1: AsciiSet
+{ 0x0031, 0x0032 },
+EOF
+)
+
+# (11|1|2||)
+assert diff <(redump -d '(11|1|2||)' '') <(<<'EOF'
+flag: (mode = , modifier = )
+loopCount: 0
+captureGroupCount: 1
+namedCaptureGroups: []
+instructions:
+   0: BeginCapture(captureIndex=1)
+   3: Alt(second=19)
+   8: PrepareRadix
+   9: RadixOrEmoji(emoji=, hasRadix=true, index=0, nextOffset=4)
+  15: CharSet(matcherIndex=1, invert=false)
+  19: EndCapture(captureIndex=1)
+  22: Match
+matchers:
+  0: RadixTree
+property: 0x01, string: \x31\x31
+  1: AsciiSet
+{ 0x0031, 0x0032 },
+EOF
+)
+
+# 11|1|2||3
+assert diff <(redump -d '11|1|2||3' '') <(<<'EOF'   # not optimize
+flag: (mode = , modifier = )
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+   0: Alt(second=13)
+   5: String(index=0)
+   8: Jump(target=59)
+  13: Alt(second=28)
+  18: Char(codePoint=U+0031:1)
+  23: Jump(target=59)
+  28: Alt(second=43)
+  33: Char(codePoint=U+0032:2)
+  38: Jump(target=59)
+  43: Alt(second=54)
+  48: Nop
+  49: Jump(target=59)
+  54: Char(codePoint=U+0033:3)
+  59: Match
+matchers:
+  0: String
+\x31\x31
+EOF
+)
+
+# (?<=11|1|2).
+assert diff <(redump -d '(?<=11|1|2).' 'i') <(<<'EOF'
+flag: (mode = , modifier = i)
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+   0: BeginLookAround(negate=false, target=18)
+   6: PrepareLBRadix
+   7: LBRadixOrEmoji(emoji=case-ignore, hasRadix=true, index=0, nextOffset=5)
+  13: LBCharSet(matcherIndex=1, invert=false, ignoreCase=true)
+  18: EndLookAround
+  19: AnyExceptNL
+  20: Match
+matchers:
+  0: RadixTree
+property: 0x01, string: \x31\x31
+  1: AsciiSet
+{ 0x0031, 0x0032 },
+EOF
+)
+
+# (?<!11|1|2|ああ|)
+assert diff <(redump -d '(?<!11|1|2|ああ|)' '') <(<<'EOF'
+flag: (mode = , modifier = )
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+   0: BeginLookAround(negate=true, target=23)
+   6: Alt(second=23)
+  11: PrepareLBRadix
+  12: LBRadixOrEmoji(emoji=, hasRadix=true, index=0, nextOffset=5)
+  18: LBCharSet(matcherIndex=1, invert=false, ignoreCase=false)
+  23: EndLookAround
+  24: Match
+matchers:
+  0: RadixTree
+property: 0x01, string: \xE3\x81\x82\xE3\x81\x82
+property: 0x01, string: \x31\x31
+  1: AsciiSet
+{ 0x0031, 0x0032 },
+EOF
+)
