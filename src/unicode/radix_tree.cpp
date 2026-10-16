@@ -152,7 +152,7 @@ bool RadixTree::remove(StringRef seq, RadixTree &tree) {
   }
   // visit children
   const auto iter = tree.getChildren().find(seq[0]);
-  if (iter != tree.getChildren().end() && iter->first == seq[0]) {
+  if (iter != tree.getChildren().end() && iter->first == static_cast<uint8_t>(seq[0])) {
     if (remove(seq, *iter->second)) {
       if (iter->second->empty()) {
         tree.children.erase(iter);
@@ -187,7 +187,7 @@ uint8_t RadixTree::find(StringRef seq) const {
     }
     // visit children
     const auto iter = tree->getChildren().find(seq[0]);
-    if (iter != tree->getChildren().end() && iter->first == seq[0]) {
+    if (iter != tree->getChildren().end() && iter->first == static_cast<uint8_t>(seq[0])) {
       tree = iter->second.get();
     } else {
       break;
@@ -280,7 +280,7 @@ static bool serialize(const RadixTree &radixTree, FlexBuffer<uint8_t> &buf,
       children.push_back(e.second.get());
     }
     std::sort(children.begin(), children.end(), [](const RadixTree *x, const RadixTree *y) {
-      return x->getPrefix()[0] < y->getPrefix()[0];
+      return static_cast<uint8_t>(x->getPrefix()[0]) < static_cast<uint8_t>(y->getPrefix()[0]);
     });
     for (auto &e : children) {
       targets.emplace_back(e, targets.back().second +

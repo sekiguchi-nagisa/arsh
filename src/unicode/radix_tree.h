@@ -36,11 +36,11 @@ struct PackedRadixChildIter {
 
   using difference_type = std::ptrdiff_t;
 
-  using value_type = char;
+  using value_type = uint8_t;
 
-  using reference = char &;
+  using reference = uint8_t &;
 
-  using pointer = char *;
+  using pointer = uint8_t *;
 
   using iterator_category = std::forward_iterator_tag;
 
@@ -50,13 +50,13 @@ struct PackedRadixChildIter {
   unsigned int childOffset() const {
     unsigned int ret = 0;
     for (unsigned int i = 0; i < this->childOffsetBytes; i++) {
-      ret <<= 8;
+      ret <<= 8u;
       ret |= this->ptr[this->offset + i];
     }
     return ret;
   }
 
-  auto operator*() const { return static_cast<char>(this->ptr[this->childOffset() + META_BYTES]); }
+  uint8_t operator*() const { return this->ptr[this->childOffset() + META_BYTES]; }
 
   auto operator-(const PackedRadixChildIter &other) const {
     return (this->offset - other.offset) / this->childOffsetBytes;
@@ -130,8 +130,8 @@ public:
       const unsigned int n = meta & 0x1FFu;
       const PackedRadixChildIter begin(this->ptr, offset, 0, childOffsetBytes);
       const PackedRadixChildIter end(this->ptr, offset, n, childOffsetBytes);
-      const auto iter = std::lower_bound(begin, end, ref[0]);
-      if (iter != end && *iter == ref[0]) {
+      const uint8_t p = ref[0];
+      if (const auto iter = std::lower_bound(begin, end, p); iter != end && *iter == p) {
         offset = iter.childOffset();
         assert(offset < this->size);
       } else {
@@ -155,7 +155,7 @@ class RadixTree {
 private:
   std::string prefix;
   uint8_t property{0};
-  std::unordered_map<char, std::unique_ptr<RadixTree>> children;
+  std::unordered_map<uint8_t, std::unique_ptr<RadixTree>> children;
 
 public:
   static constexpr unsigned int MAX_STRING_SIZE = (1u << 15u) - 1;
