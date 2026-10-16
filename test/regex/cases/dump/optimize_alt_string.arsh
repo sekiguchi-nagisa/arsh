@@ -127,8 +127,8 @@ property: 0x01, string: \x31\x31
 EOF
 )
 
-# (?<!11|1|2|ああ|)
-assert diff <(redump -d '(?<!11|1|2|ああ|)' '') <(<<'EOF'
+# (?<!11|1|2|333|)
+assert diff <(redump -d '(?<!11|1|2|333|)' '') <(<<'EOF'
 flag: (mode = , modifier = )
 loopCount: 0
 captureGroupCount: 0
@@ -143,8 +143,8 @@ instructions:
   24: Match
 matchers:
   0: RadixTree
-property: 0x01, string: \xE3\x81\x82\xE3\x81\x82
 property: 0x01, string: \x31\x31
+property: 0x01, string: \x33\x33\x33
   1: AsciiSet
 { 0x0031, 0x0032 },
 EOF
