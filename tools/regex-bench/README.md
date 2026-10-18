@@ -219,6 +219,21 @@ that a library initializes on first use is attributed to the first pattern that 
 example, the arsh Unicode property-name map, which is built the first time a `\p{...}` pattern is
 compiled).
 
+## CI
+
+`.github/workflows/regex-bench.yml` builds and measures this directory (and the standalone
+`rematch`) on GitHub Actions. It runs on `workflow_dispatch` and once a week (Sunday 18:00 UTC),
+and on each run it:
+
+1. builds arsh and runs the regex suites (`regex_test` / `regex_e2e_test`),
+2. fetches/builds the engines shared with `rematch` (`run.arsh --prepare`),
+3. builds `rematch` and runs `rematch_test` (`build_rematch.arsh --no-prepare --arsh-build build`),
+4. runs `run.arsh --std-regex --srell --quickjs --hermes` and uploads the CSV as an artifact.
+
+The engine trees under `.regex-bench` are cached (keyed by `run.arsh`, which pins the engine
+revisions), so only the first run pays for the Hermes clone and build. The benchmark itself takes
+several minutes because the `cppstd` and arsh rows include patterns like `(.*?,){13}z`.
+
 ## Manual integration
 
 If you already have a copy of `regex-performance`, apply the changes by hand:

@@ -1,0 +1,122 @@
+name: Regex Bench
+
+# CI for the standalone `rematch` tool and the regex-performance benchmark (tools/regex-bench).
+#
+# It builds arsh and runs the regex test suites, prepares the comparison engines the benchmark
+# and `rematch` share (SRELL / QuickJS / Hermes), builds `rematch` with its integration test and
+# measures the benchmark targets into a CSV artifact.
+#
+# Fetching and building the engines (especially Hermes) dominates the runtime, so the engine
+# trees and the Hermes build are cached under `.regex-bench` and reused on the next run.
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * 5' # weekly (Friday 00:00 UTC)
+
+# the engine cache is saved by the job itself, so overlapping runs (e.g. a scheduled run and a
+# manual one) are queued instead of racing to write the same cache entry
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build_and_bench:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    env:
+      # regex-bench work directory (the default of run.arsh / build_rematch.arsh)
+      WORK: .regex-bench
+      BUILD: build
+      REMATCH_BUILD: build-rematch
+      RESULTS: regex-bench-results.csv
+    steps:
+      - uses: actions/checkout@v6
+      # libicu-dev is needed by the Hermes regex engine (Intl); re2c is intentionally not
+      # installed so the build fetches the pinned 4.6 release itself, like the other workflows
+      - name: prepare
+        run: |
+          sudo apt update
+          sudo apt install language-pack-ja ninja-build libicu-dev
+      # Restore the engine trees fetched/built by run.arsh --prepare. The key tracks run.arsh
+      # because it pins the engine revisions; a cache hit therefore also freezes the engines
+      # until that script changes. No restore-keys fallback is used on purpose: the existence
+      # checks in run.arsh would silently reuse a stale tree, and a wrong tree is worse than
+      # a slow build.
+      - name: restore engines
+        id: restore_engines
+        uses: actions/cache/restore@v6
+        with:
+          path: |
+            ${{ env.WORK }}/hermes
+            ${{ env.WORK }}/hermes-build
+            ${{ env.WORK }}/quickjs
+            ${{ env.WORK }}/srell
+          key: regex-bench-engines-${{ runner.os }}-${{ hashFiles('tools/regex-bench/run.arsh') }}
+      - name: configure
+        run: |
+          mkdir $BUILD
+          cd $BUILD
+          cmake .. -G Ninja -DCMAKE_BUILD_TYPE=Release
+      # the arsh binary is needed to run the tools/regex-bench scripts, and the arsh regex and
+      # test support libraries are linked by rematch and its integration test
+      - name: build
+        run: |
+          cd $BUILD
+          ninja
+          sudo ninja install
+      # the regex suites are the ones this workflow cares about; the full arsh suite already
+      # runs on every push in the other workflows
+      - name: test
+        run: |
+          cd $BUILD
+          ctest -j4 --output-on-failure -R 'regex_test|regex_e2e_test'
+      # fetch/build the engines shared with rematch: the same three engines rematch embeds, so
+      # both builds share one engine tree. The step also leaves the patched regex-performance
+      # tree behind, which the benchmark step reuses.
+      - name: prepare engines
+        run: arsh tools/regex-bench/run.arsh --prepare --work $WORK
+      - name: save engines
+        if: steps.restore_engines.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: |
+            ${{ env.WORK }}/hermes
+            ${{ env.WORK }}/hermes-build
+            ${{ env.WORK }}/quickjs
+            ${{ env.WORK }}/srell
+          key: ${{ steps.restore_engines.outputs.cache-primary-key }}
+      # the engines are already prepared above and the arsh libraries are taken from the build
+      # directory of the previous steps, so the script only configures and builds rematch
+      - name: build rematch
+        run: |
+          arsh tools/regex-bench/build_rematch.arsh \
+                --no-prepare --work $WORK --arsh-build $BUILD --build $REMATCH_BUILD
+      - name: test rematch
+        run: |
+          cd $REMATCH_BUILD
+          ctest -j4 --output-on-failure
+      # the measured data goes to an absolute path because run.arsh writes it relative to the
+      # fetched regex-performance directory
+      - name: benchmark
+        run: |
+          arsh tools/regex-bench/run.arsh \
+                --std-regex --srell --quickjs --hermes --keep --work $WORK \
+                --output "$PWD/$RESULTS"
+      # the harness reports an engine that fails to build or run as a failure line instead of
+      # failing the run, so check that every requested engine made it into the measured data
+      - name: verify results
+        run: |
+          header=$(head -n 1 "$RESULTS")
+          for engine in arsh cppstd srell quickjs hermes; do
+            if ! grep -qF "$engine [ms]" <<<"$header"; then
+              echo 1>&2 "engine missing from the benchmark results: $engine"
+              exit 1
+            fi
+          done
+      - name: upload results
+        uses: actions/upload-artifact@v7
+        with:
+          name: regex-bench-results
+          path: ${{ env.RESULTS }}
+          if-no-files-found: error
