@@ -6,8 +6,11 @@
 # Node.js does not ship a linkable library for embedding, so the adapter runs the installed
 # `node` executable as a child process. Only the path to that executable is needed here.
 
-# The `node` executable to run. Defaults to the one found on PATH.
-set(NODEJS_EXECUTABLE "node" CACHE FILEPATH "path to the Node.js executable")
+# The `node` executable to run: a bare command name looked up on PATH, or an absolute path.
+# This must be a STRING, not a FILEPATH: a FILEPATH entry turns a bare name such as `node` into a
+# path relative to the current directory, after which find_program() can no longer find it on
+# PATH (mise puts Node.js on PATH, so `node` is resolved from there).
+set(NODEJS_EXECUTABLE "node" CACHE STRING "path to the Node.js executable")
 
 find_program(NODEJS_PROGRAM NAMES ${NODEJS_EXECUTABLE})
 if(NOT NODEJS_PROGRAM)

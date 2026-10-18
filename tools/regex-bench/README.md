@@ -180,8 +180,9 @@ and `pcre-jit`. PCRE2 is matched in its default 8-bit mode, like the upstream ha
 interpreter is markedly slower than the JIT on several patterns.
 
 `--nodejs` runs the installed Node.js executable as a child process (`--nodejs-bin <file>` selects
-a specific one), so Node.js must be present. Since the engine lives in a separate process, its
-memory columns are always `0`.
+a specific one), so Node.js must be present. The `node` executable is looked up on `PATH` with
+`find_program`, so a mise-managed Node.js works as long as the shims are on `PATH`. Since the engine
+lives in a separate process, its memory columns are always `0`.
 
 ## Memory measurement
 
