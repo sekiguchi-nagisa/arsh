@@ -21,15 +21,14 @@
  * The benchmark harness (see main.h) expects each engine to provide
  *   int <name>_find_all(char *pattern, char *subject, int subject_len, int repeat,
  *                       struct result *res);
- * so this file implements `arsh_find_all`, which creates a fresh MatchContext for every scan
- * (safe, mirrors normal use).
+ * so this file implements `arsh_find_all`, which counts the matches of every scan through
+ * `regex::matchAll` (a fresh match context is created inside it for every scan).
  */
 
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
 #include <string>
-#include <vector>
 
 #include "main.h"
 #include "memory_tracker.h"
@@ -43,7 +42,6 @@
 
 #include <misc/string_ref.hpp>
 #include <regex/emit.h>
-#include <regex/match_context.h>
 #include <regex/parser.h>
 #include <regex/regex.h>
 
@@ -84,36 +82,23 @@ static Optional<regex::Regex> compilePattern(const std::string &pattern) {
 
 /**
  * Scan the whole input once, counting all non-overlapping matches (emulating the global (g)
- * flag). `regex::match` returns a single match from the current input offset, so it is invoked
- * repeatedly until the input is consumed. The input is advanced by `regex::match` itself.
+ * flag) via `regex::matchAll` (the newer api, replacing the manual `regex::match` loop).
+ * The consumer only counts, so the capture data is discarded.
  *
- * @param matchCtx reuseable context. its input must point to the start of the text.
- * @param captures reuseable capture buffer.
+ * @param re the compiled regex.
+ * @param text the subject text.
  * @return the match status. on OK, the number of matches is stored to `*found`.
  */
-static regex::MatchStatus
-countMatchesIn(regex::MatchContext &matchCtx, std::vector<regex::Capture> &captures,
-               long long *found) {
+static regex::MatchStatus countMatchesIn(const regex::Regex &re, const StringRef text,
+                                         long long *found) {
   long long count = 0;
-  for (;;) {
-    const unsigned int startOffset = matchCtx.getInput().getOffset();
-    const auto status = regex::match(matchCtx, nullptr);
-    if (status == regex::MatchStatus::FAIL) {
-      break;
-    }
-    if (status != regex::MatchStatus::OK) {
-      return status;
-    }
+  auto consumer = [&count](ArrayRef<regex::Capture>) {
     count++;
-    if (captures[0].endOffset() == startOffset) { // empty match, avoid infinite loop
-      if (!matchCtx.refInput().available()) {
-        break;
-      }
-      matchCtx.refInput().consumeForward();
-    }
-  }
+    return true;
+  };
+  const auto status = regex::matchAll(re, text, 0, consumer, nullptr);
   *found = count;
-  return regex::MatchStatus::OK;
+  return status;
 }
 
 extern "C" int arsh_find_all(char *pattern, char *subject, int subject_len, int repeat,
@@ -129,7 +114,7 @@ extern "C" int arsh_find_all(char *pattern, char *subject, int subject_len, int 
     return -1;
   }
   const auto &re = compiled.unwrap();
-  /* the compiled regex instance itself (the scan context is created per repetition below) */
+  /* the compiled regex instance itself (the scan context is created inside matchAll below) */
   res->mem_instance = memory_tracker_live() - memBase;
   const StringRef text(subject, static_cast<size_t>(subject_len));
 
@@ -144,15 +129,9 @@ extern "C" int arsh_find_all(char *pattern, char *subject, int subject_len, int 
 
   long long found = 0;
   do {
-    std::vector<regex::Capture> captures;
-    auto ctx = regex::tryToCreateMatchContext(re, text, 0, captures);
-    if (!ctx) {
-      free(times);
-      return -1;
-    }
     TIME_TYPE start, end;
     GET_TIME(start);
-    const auto status = countMatchesIn(ctx.asOk(), captures, &found);
+    const auto status = countMatchesIn(re, text, &found);
     GET_TIME(end);
     times[repeat - 1] = TIME_DIFF_IN_MS(start, end);
     if (status != regex::MatchStatus::OK) {
