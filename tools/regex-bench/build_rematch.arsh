@@ -1,0 +1,120 @@
+#!/usr/bin/env arsh
+
+# Build the standalone `rematch` tool (tools/regex-bench/rematch.cpp) using the engine sources
+# fetched and built by tools/regex-bench.
+#
+# rematch lives next to the regex benchmark it belongs to and is built as its own CMake project
+# (tools/regex-bench/CMakeLists.txt), separately from the top-level arsh build. This script
+# drives the whole flow:
+#
+#   1. prepare the engines via `tools/regex-bench/run.arsh --prepare` (they are reused as-is if
+#      already present under the work directory),
+#   2. build the arsh regex libraries and the test support libraries (test_common / process /
+#      platform / gtest) they link against in the arsh build directory,
+#   3. configure and build `rematch` (all three engines by default) and its integration test.
+#
+# Usage:
+#   arsh tools/regex-bench/build_rematch.arsh                    # prepare engines and build rematch
+#   arsh tools/regex-bench/build_rematch.arsh --no-prepare       # reuse the current work directory
+#   arsh tools/regex-bench/build_rematch.arsh --build-type Debug
+#   arsh tools/regex-bench/build_rematch.arsh --work /tmp/regex-bench --build /tmp/rematch-build
+
+shctl set errraise
+
+[<CLI(toplevel: $true, verbose: $true)>]
+type _Param() {
+    [<Option(placeholder: "DIR", help: "rematch build directory (default: build-rematch)")>]
+    var build = "build-rematch"
+
+    [<Option(placeholder: "TYPE", help: "CMake build type (default: Release)")>]
+    var buildType = "Release"
+
+    [<Option(placeholder: "DIR", help: "regex-bench work directory (default: .regex-bench)")>]
+    var work = ".regex-bench"
+
+    [<Option(placeholder: "DIR", help: "arsh build directory (default: <work>/arsh-build)")>]
+    var arshBuild : String?
+
+    [<Flag(help: "do not fetch/build the engines, reuse the current work directory")>]
+    var noPrepare = $false
+
+    [<Option(placeholder: "DIR", help: "use an existing SRELL source directory")>]
+    var srellDir : String?
+
+    [<Option(placeholder: "DIR", help: "use an existing QuickJS source directory")>]
+    var quickjsDir : String?
+
+    [<Option(placeholder: "DIR", help: "use an existing Hermes source directory")>]
+    var hermesDir : String?
+
+    [<Option(placeholder: "DIR", help: "use an existing Hermes build directory")>]
+    var hermesBuildDir : String?
+}
+
+function run() for _Param {
+    let root = "$SCRIPT_DIR/../..".realpath()
+    let workDir = $this.work
+    mkdir -p $workDir || exit $?
+    let work = $workDir.realpath()
+
+    if !$this.noPrepare {
+        echo "prepare engines: tools/regex-bench/run.arsh --prepare"
+        var args : [String]
+        $args.add("--prepare")
+        $args.add("--work")
+        $args.add($work)
+        if let d = $this.srellDir {
+            $args.add("--srell-dir")
+            $args.add($d)
+        }
+        if let d = $this.quickjsDir {
+            $args.add("--quickjs-dir")
+            $args.add($d)
+        }
+        if let d = $this.hermesDir {
+            $args.add("--hermes-dir")
+            $args.add($d)
+        }
+        if let d = $this.hermesBuildDir {
+            $args.add("--hermes-build-dir")
+            $args.add($d)
+        }
+        call arsh "$root/tools/regex-bench/run.arsh" $args || exit $?
+    }
+
+    # build the arsh libraries rematch links against (regex + the test support libraries for
+    # the integration test). the top-level build is only used to produce those archives.
+    let buildType = $this.buildType
+    let arshBuildDir = $this.arshBuild ?? "$work/arsh-build"
+    mkdir -p $arshBuildDir || exit $?
+    let arshBuild = $arshBuildDir.realpath()
+    cmake -S $root -B $arshBuild "-DCMAKE_BUILD_TYPE=$buildType" || exit $?
+    cmake --build $arshBuild --target regex test_common gtest gtest_main -j || exit $?
+
+    # engine locations follow the layout used by tools/regex-bench/run.arsh
+    let srellSrc = $this.srellDir ?? "$work/srell/srell-src/single-header"
+    let quickjsSrc = $this.quickjsDir ?? "$work/quickjs"
+    let hermesSrc = $this.hermesDir ?? "$work/hermes"
+    let hermesBuild = $this.hermesBuildDir ?? "$work/hermes-build"
+
+    let build = $this.build
+    mkdir -p $build || exit $?
+    cmake -S "$root/tools/regex-bench" -B $build "-DCMAKE_BUILD_TYPE=$buildType" \
+          "-DARSH_SOURCE_DIR=$root" \
+          "-DARSH_BUILD_DIR=$arshBuild" \
+          "-DSRELL_SOURCE_DIR=$srellSrc" \
+          "-DQUICKJS_SOURCE_DIR=$quickjsSrc" \
+          "-DHERMES_SOURCE_DIR=$hermesSrc" \
+          "-DHERMES_BUILD_DIR=$hermesBuild" || exit $?
+    cmake --build $build --target rematch rematch_test -j || exit $?
+    echo "built: $build/rematch"
+}
+
+let param = new _Param()
+try {
+    $param.parse($@)
+} catch e {
+    echo 1>&2 ${$e.message()}
+    exit ${$e.status()}
+}
+$param.run()

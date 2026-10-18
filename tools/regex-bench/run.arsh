@@ -370,7 +370,7 @@ function run() for _Param {
     }
 
     # --prepare only fetches/builds the comparison engines and reports their locations.
-    # It is used by test/regex/build_rematch.arsh, which points the rematch build at them.
+    # It is used by build_rematch.arsh, which points the rematch build at them.
     if $this.prepare {
         let srellSrc = $srellDirOpt ?? $_fetchSrell($work)
         let quickjsSrc = $quickjsDirOpt ?? $_fetchQuickjs($work)

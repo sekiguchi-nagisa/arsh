@@ -19,6 +19,10 @@ time and score of each registered engine. This directory provides:
 | `memory_tracker.cpp` / `memory_tracker.h` | heap accounting shared by the adapters (see "Memory measurement") |
 | `regex-performance.patch` | patch registering the engines into the upstream harness                |
 | `run.arsh`                | script which fetches, patches, builds and runs the benchmark           |
+| `rematch.cpp` + `rematch_*.{cpp,c,h}` | standalone matcher embedding the same engines (see "Standalone matcher") |
+| `rematch_test.cpp`        | integration test for `rematch`                                          |
+| `CMakeLists.txt`          | standalone project building `rematch` / `rematch_test`                  |
+| `build_rematch.arsh`      | script which builds `rematch` from the fetched engines                  |
 
 ## Quick start
 
@@ -55,8 +59,84 @@ $ arsh tools/regex-bench/run.arsh --std-regex --srell --quickjs --hermes --pcre2
 5. runs it against the bundled `3200.txt`.
 
 `--prepare` stops after step 3 for SRELL, QuickJS and Hermes (no arsh build and no `regex_perf`)
-and prints their resolved locations. It is used by `test/regex/build_rematch.arsh` to build the
-standalone `rematch` tool from the same engine trees.
+and prints their resolved locations. It is used by `build_rematch.arsh` to build the standalone
+`rematch` tool from the same engine trees.
+
+## Standalone matcher
+
+`rematch` is a small standalone program that embeds the SRELL / QuickJS / Hermes engines used
+by the benchmark and selects one with `-e`. It is a version of the arsh `redump -m` dump tool
+and prints the same output (`input: ...` followed by one `(offset=, size=)` line per capture
+group, or `failed`), using UTF-8 byte offsets:
+
+```
+rematch -e <hermes|quickjs|srell> -m <input> <pattern> [modifiers]
+```
+
+The optional `modifiers` argument is the same flag string `redump` accepts (`u`, `v`, `i`,
+`m`, `s`); the engines that do not implement `v` (unicode sets) fall back to the closest mode.
+It is useful for cross-checking arsh against the other engines on a single pattern.
+
+`rematch` is built as its own CMake project (`CMakeLists.txt` in this directory), separately
+from the top-level arsh build. It reuses the engine sources prepared by `run.arsh` and the
+arsh regex libraries of an existing arsh build. The convenience script
+`build_rematch.arsh` performs the whole flow (prepare the engines, build the arsh libraries,
+configure and build `rematch` and its `rematch_test` integration test):
+
+```sh
+$ arsh tools/regex-bench/build_rematch.arsh
+prepare engines: tools/regex-bench/run.arsh --prepare
+...
+built: <repo>/build-rematch/rematch
+```
+
+When at least one engine is enabled, the `rematch_test` target is also built; it runs an
+engine-independent case against every enabled engine. The test links the arsh test support
+libraries (`test_common` / `process` / `platform`) and GoogleTest from the arsh build
+directory, so those targets must exist there (the script builds them).
+
+| option             | description                                                     |
+|--------------------|-----------------------------------------------------------------|
+| `--build DIR`      | rematch build directory (default: `build-rematch`)              |
+| `--build-type T`   | CMake build type (default: `Release`)                           |
+| `--work DIR`       | regex-bench work directory (default: `.regex-bench`)            |
+| `--arsh-build DIR` | arsh build directory (default: `<work>/arsh-build`)             |
+| `--no-prepare`     | skip the engine preparation step, reuse the current work tree   |
+| `--srell-dir DIR`  | use an existing SRELL source directory                          |
+| `--quickjs-dir DIR`| use an existing QuickJS source directory                        |
+| `--hermes-dir DIR` | use an existing Hermes source directory                         |
+| `--hermes-build-dir DIR` | use an existing Hermes build directory                    |
+
+If an engine's sources are not found, that engine is skipped with a configuration warning. To
+point at different locations, or to disable an engine, configure the project directly with the
+same cache variables used by the benchmark:
+
+```sh
+cmake -S tools/regex-bench -B build-rematch \
+      -DARSH_SOURCE_DIR=<arsh repo> -DARSH_BUILD_DIR=<arsh build> \
+      -DREMATCH_ENABLE_SRELL=ON   -DSRELL_SOURCE_DIR=<srell/single-header> \
+      -DREMATCH_ENABLE_QUICKJS=ON -DQUICKJS_SOURCE_DIR=<quickjs> \
+      -DREMATCH_ENABLE_HERMES=ON  -DHERMES_SOURCE_DIR=<hermes> \
+                                  -DHERMES_BUILD_DIR=<hermes-build>
+cmake --build build-rematch --target rematch
+```
+
+Examples:
+
+```sh
+$ rematch -e srell   -m '12a' '(a)' ''
+input: `12a'
+(offset=2, size=1)
+(offset=2, size=1)
+
+$ rematch -e quickjs -m 'ABC' 'abc' 'i'
+input: `ABC'
+(offset=0, size=3)
+
+$ rematch -e hermes  -m '' '.'
+input: `'
+failed
+```
 
 ## Options
 

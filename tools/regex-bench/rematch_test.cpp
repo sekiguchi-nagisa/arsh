@@ -15,7 +15,7 @@
  */
 
 /**
- * Integration test for the standalone `rematch` tool (test/regex/rematch.cpp).
+ * Integration test for the standalone `rematch` tool (tools/regex-bench/rematch.cpp).
  *
  * It exercises every engine that was enabled at configure time (REMATCH_ENGINES) with the
  * `-m` behavior of `redump`: the same output contract (`input: ...` / `(offset=, size=)` /
@@ -24,7 +24,7 @@
  * language coverage.
  */
 
-#include "../test_common.h"
+#include "test_common.h"
 
 #ifndef REMATCH_PATH
 #error require REMATCH_PATH
