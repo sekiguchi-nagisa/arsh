@@ -148,7 +148,7 @@ void LineRenderer::renderWithANSI(StringRef prompt) {
 }
 
 bool LineRenderer::renderScript(const StringRef source,
-                                const std::function<bool(StringRef)> &errorCmdChecker) {
+                                const OptionalFuncRef<bool(StringRef)> errorCmdChecker) {
   // for syntax highlight
   Tokenizer tokenEmitter(source);
   auto ret = tokenEmitter.tokenize();
@@ -171,7 +171,7 @@ bool LineRenderer::renderScript(const StringRef source,
     HighlightTokenClass tokenClass = toTokenClass(ret.tokens[i].first);
     if (supportErrorHighlight && tokenClass == HighlightTokenClass::COMMAND &&
         !isUDCDeclTokenAt(ret.tokens, i)) {
-      if (!errorCmdChecker(ref)) {
+      if (!errorCmdChecker.unwrap()(ref)) {
         tokenClass = HighlightTokenClass::ERROR_;
       }
     }
@@ -324,7 +324,7 @@ bool LineRenderer::renderControlChar(int codePoint, const std::string *color) {
       switch (this->breakOp) {
       case LineBreakOp::SOFT_WRAP:
         this->handleSoftWrap(color);
-        colLen = TAB_WIDTH - this->totalCols % TAB_WIDTH; // re-compute tab stop
+        colLen = TAB_WIDTH - (this->totalCols % TAB_WIDTH); // re-compute tab stop
         break;
       case LineBreakOp::TRUNCATE:
         this->handleTruncate(' ');

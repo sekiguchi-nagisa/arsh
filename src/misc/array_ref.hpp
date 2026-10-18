@@ -18,6 +18,7 @@
 #define MISC_LIB_ARRAY_REF_HPP
 
 #include <cstddef>
+#include <vector>
 
 BEGIN_MISC_LIB_NAMESPACE_DECL
 
@@ -36,9 +37,11 @@ public:
   constexpr ArrayRef() = default;
 
   template <size_t N>
-  constexpr explicit ArrayRef(const T (&data)[N]) : ArrayRef(data, N) {}
+  constexpr explicit ArrayRef(const T (&data)[N]) noexcept : ArrayRef(data, N) {}
 
-  constexpr ArrayRef(const T *ptr, size_t size) : ptr_(ptr), size_(size) {}
+  constexpr ArrayRef(const T *ptr, size_t size) noexcept : ptr_(ptr), size_(size) {}
+
+  ArrayRef(const std::vector<T> &value) noexcept : ArrayRef(value.data(), value.size()) {} // NOLINT
 
   const T *begin() const { return this->ptr_; }
 

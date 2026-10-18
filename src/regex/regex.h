@@ -17,12 +17,11 @@
 #ifndef ARSH_REGEX_REGEX_H
 #define ARSH_REGEX_REGEX_H
 
-#include <functional>
-
 #include "capture.h"
 #include "flag.h"
 #include "matcher.h"
 #include "misc/array_ref.hpp"
+#include "misc/function_ref.hpp"
 #include "misc/resource.hpp"
 #include "misc/time_util.hpp"
 
@@ -56,7 +55,7 @@ public:
 
   const auto &getInstSeq() const { return this->instSeq; }
 
-  ArrayRef<Matcher> getMatchers() const { return {this->matchers.data(), this->matchers.size()}; }
+  ArrayRef<Matcher> getMatchers() const { return this->matchers; }
 
   const auto &getNamedCaptureGroups() const { return this->named; }
 };
@@ -72,12 +71,14 @@ public:
 private:
   const std::chrono::milliseconds limit;
   timestamp base;
-  std::function<bool()> cancelToken; // return true if canceled
+  OptionalFuncRef<bool()> cancelToken; // return true if canceled
+
+  static_assert(std::is_trivially_copyable_v<decltype(cancelToken)>);
 
 public:
   explicit Timer(std::chrono::milliseconds limit) : limit(limit) {}
 
-  void setCancelToken(std::function<bool()> &&c) { this->cancelToken = std::move(c); }
+  void setCancelToken(OptionalFuncRef<bool()> &&c) { this->cancelToken = c; }
 
   static timestamp now() { return getCurrentTimestamp(); }
 
@@ -88,7 +89,7 @@ public:
   }
 
   Status check() const {
-    if (this->cancelToken && this->cancelToken()) {
+    if (this->cancelToken && this->cancelToken.unwrap()()) {
       return Status::Canceled;
     }
     if (this->elapsed() >= this->limit) {
@@ -107,16 +108,16 @@ enum class MatchStatus : unsigned char {
   TIMEOUT,      // timeout
   STACK_LIMIT,  // stack size reaches limits
 
-  /* for replace api */
-  INVALID_REPLACE_PATTERN, // invalid replacement string format
-  REPLACED_LIMIT,          // replaced string reaches limit
+  CONSUMED_LIMIT, // for user-provided consumer. if consumer return false
+
+  INVALID_REPLACE_PATTERN, // for replace api. invalid replacement string format
 };
 
 const char *toString(MatchStatus s);
 
 class MatchContext;
 
-MatchStatus match(MatchContext &ctx, ObserverPtr<Timer> timer);
+MatchStatus match(const Regex &regex, MatchContext &ctx, ObserverPtr<Timer> timer);
 
 MatchStatus match(const Regex &regex, StringRef text, unsigned int codePointOffset,
                   std::vector<Capture> &captures, ObserverPtr<Timer> timer);
@@ -131,7 +132,7 @@ struct ReplaceParam {
   StringRef replacement;
   bool global; // if true, replace all
   std::string *err;
-  std::function<bool(StringRef)> consumer;
+  FunctionRef<bool(StringRef)> consumer;
 };
 
 /**
@@ -155,7 +156,20 @@ MatchStatus replace(const Regex &regex, const ReplaceParam &param, ObserverPtr<T
  * return Ok even if no matches
  */
 MatchStatus split(const Regex &regex, StringRef text, unsigned int limit,
-                  const std::function<bool(StringRef)> &consumer, ObserverPtr<Timer> timer);
+                  FunctionRef<bool(StringRef)> consumer, ObserverPtr<Timer> timer);
+
+/**
+ *
+ * @param regex
+ * @param text
+ * @param codePointOffset
+ * @param consumer
+ * @param timer
+ * @return
+ * return Ok even if no matches
+ */
+MatchStatus matchAll(const Regex &regex, StringRef text, unsigned int codePointOffset,
+                     FunctionRef<bool(ArrayRef<Capture>)> consumer, ObserverPtr<Timer> timer);
 
 bool escape(StringRef ref, size_t maxSize, std::string &out);
 

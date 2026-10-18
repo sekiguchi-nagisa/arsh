@@ -36,8 +36,8 @@ const char *toString(const MatchStatus s) {
     return "match timeout";
   case MatchStatus::STACK_LIMIT:
     return "stack depth reaches limit";
+  case MatchStatus::CONSUMED_LIMIT:
   case MatchStatus::INVALID_REPLACE_PATTERN:
-  case MatchStatus::REPLACED_LIMIT:
     break;
   }
   return "";
@@ -49,21 +49,22 @@ MatchStatus match(const Regex &regex, const StringRef text, const unsigned int c
   if (!ctx) {
     return ctx.asErr();
   }
-  return match(ctx.asOk(), timer);
+  return match(regex, ctx.asOk(), timer);
 }
 
 #define TRY(E)                                                                                     \
   do {                                                                                             \
     if (unlikely(!(E))) {                                                                          \
-      return MatchStatus::REPLACED_LIMIT;                                                          \
+      return MatchStatus::CONSUMED_LIMIT;                                                          \
     }                                                                                              \
   } while (false)
 
-static MatchStatus interpretReplacePattern(const MatchContext &ctx, const ReplaceParam &param) {
+static MatchStatus interpretReplacePattern(const Regex &regex, const MatchContext &ctx,
+                                           const ReplaceParam &param) {
   for (size_t pos = 0;;) {
     auto retPos = param.replacement.find('$', pos);
     const auto sub = param.replacement.slice(pos, retPos);
-    TRY(!param.consumer || param.consumer(sub));
+    TRY(param.consumer(sub));
     if (retPos == StringRef::npos) {
       break;
     }
@@ -108,7 +109,7 @@ static MatchStatus interpretReplacePattern(const MatchContext &ctx, const Replac
       }
       StringRef num = param.replacement.slice(startPos, retPos);
       if (auto ret = convertToNum10<unsigned int>(num.begin(), num.end());
-          ret && ret.value <= ctx.getRegex().getCaptureGroupCount() && ret.value > 0) {
+          ret && ret.value <= regex.getCaptureGroupCount() && ret.value > 0) {
         if (auto cap = ctx.getCaptures()[ret.value]) {
           inserting = param.text.substr(cap.offset, cap.size);
         }
@@ -131,8 +132,8 @@ static MatchStatus interpretReplacePattern(const MatchContext &ctx, const Replac
         return MatchStatus::INVALID_REPLACE_PATTERN;
       }
       auto name = param.replacement.slice(retPos, p);
-      if (auto *e = ctx.getRegex().getNamedCaptureGroups().find(name)) {
-        if (auto cap = ctx.resolveNamedBackRef(*e)) {
+      if (auto *e = regex.getNamedCaptureGroups().find(name)) {
+        if (auto cap = findValidNamedCapture(*e, ctx.toCapturesRef())) {
           inserting = param.text.substr(cap.offset, cap.size);
         }
         retPos = p + 1;
@@ -151,7 +152,7 @@ static MatchStatus interpretReplacePattern(const MatchContext &ctx, const Replac
       }
       return MatchStatus::INVALID_REPLACE_PATTERN;
     }
-    TRY(!param.consumer || param.consumer(inserting));
+    TRY(param.consumer(inserting));
     pos = retPos;
   }
   return MatchStatus::OK;
@@ -166,7 +167,7 @@ MatchStatus replace(const Regex &regex, const ReplaceParam &param, const Observe
   unsigned int matchStartOffset = 0;
   do {
     matchStartOffset = ctx.asOk().getInput().getOffset();
-    const auto s = match(ctx.asOk(), timer);
+    const auto s = match(regex, ctx.asOk(), timer);
     auto &input = ctx.asOk().refInput(); // input is updated after call match
     if (s == MatchStatus::FAIL) {
       input.setIter(input.getBegin() + matchStartOffset);
@@ -175,27 +176,27 @@ MatchStatus replace(const Regex &regex, const ReplaceParam &param, const Observe
     if (s != MatchStatus::OK) {
       return s;
     }
-    TRY(!param.consumer || param.consumer(param.text.slice(matchStartOffset, captures[0].offset)));
-    if (auto s2 = interpretReplacePattern(ctx.asOk(), param); s2 != MatchStatus::OK) {
+    TRY(param.consumer(param.text.slice(matchStartOffset, captures[0].offset)));
+    if (auto s2 = interpretReplacePattern(regex, ctx.asOk(), param); s2 != MatchStatus::OK) {
       return s2;
     }
     if (input.available() && matchStartOffset == input.getOffset()) { // not consume input
       input.consumeForward();
-      TRY(!param.consumer || param.consumer(StringRef(input.getBegin() + matchStartOffset,
-                                                      input.getOffset() - matchStartOffset)));
+      TRY(param.consumer(
+          StringRef(input.getBegin() + matchStartOffset, input.getOffset() - matchStartOffset)));
     }
   } while (param.global && ctx.asOk().getInput().getOffset() != matchStartOffset);
-  TRY(!param.consumer || param.consumer(ctx.asOk().refInput().remainForward()));
+  TRY(param.consumer(ctx.asOk().refInput().remainForward()));
   return MatchStatus::OK;
 }
 
 MatchStatus split(const Regex &regex, const StringRef text, const unsigned int limit,
-                  const std::function<bool(StringRef)> &consumer, const ObserverPtr<Timer> timer) {
+                  const FunctionRef<bool(StringRef)> consumer, const ObserverPtr<Timer> timer) {
   if (!limit) {
     return MatchStatus::OK;
   }
   if (limit == 1) {
-    TRY(!consumer || consumer(text));
+    TRY(consumer(text));
     return MatchStatus::OK;
   }
   std::vector<Capture> captures;
@@ -206,7 +207,7 @@ MatchStatus split(const Regex &regex, const StringRef text, const unsigned int l
   bool ignoreRemain = false;
   for (unsigned int count = 1; count < limit; count++) {
     const unsigned int matchStartOffset = ctx.asOk().getInput().getOffset();
-    const auto s = match(ctx.asOk(), timer);
+    const auto s = match(regex, ctx.asOk(), timer);
     auto &input = ctx.asOk().refInput(); // input is updated after call match
     if (s == MatchStatus::FAIL) {
       input.setIter(input.getBegin() + matchStartOffset);
@@ -216,19 +217,47 @@ MatchStatus split(const Regex &regex, const StringRef text, const unsigned int l
       return s;
     }
     if (matchStartOffset != input.getOffset()) {
-      TRY(!consumer || consumer(text.slice(matchStartOffset, captures[0].offset)));
+      TRY(consumer(text.slice(matchStartOffset, captures[0].offset)));
     } else if (input.available()) {
       input.consumeForward();
-      TRY(!consumer || consumer(StringRef(input.getBegin() + matchStartOffset,
-                                          input.getOffset() - matchStartOffset)));
+      TRY(consumer(
+          StringRef(input.getBegin() + matchStartOffset, input.getOffset() - matchStartOffset)));
     } else {
       ignoreRemain = true;
       break;
     }
   }
   if (!ignoreRemain) {
-    TRY(!consumer || consumer(ctx.asOk().refInput().remainForward()));
+    TRY(consumer(ctx.asOk().refInput().remainForward()));
   }
+  return MatchStatus::OK;
+}
+
+MatchStatus matchAll(const Regex &regex, const StringRef text, const unsigned int codePointOffset,
+                     const FunctionRef<bool(ArrayRef<Capture>)> consumer,
+                     const ObserverPtr<Timer> timer) {
+  std::vector<Capture> captures;
+  auto ctx = tryToCreateMatchContext(regex, text, codePointOffset, captures);
+  if (!ctx) {
+    return ctx.asErr();
+  }
+  unsigned int matchStartOffset = 0;
+  do {
+    matchStartOffset = ctx.asOk().getInput().getOffset();
+    const auto s = match(regex, ctx.asOk(), timer);
+    auto &input = ctx.asOk().refInput(); // input is updated after call match
+    if (s == MatchStatus::FAIL) {
+      input.setIter(input.getBegin() + matchStartOffset);
+      break;
+    }
+    if (s != MatchStatus::OK) {
+      return s;
+    }
+    TRY(consumer(captures));
+    if (input.available() && matchStartOffset == input.getOffset()) { // not consume input
+      input.consumeForward();
+    }
+  } while (ctx.asOk().getInput().getOffset() != matchStartOffset);
   return MatchStatus::OK;
 }
 

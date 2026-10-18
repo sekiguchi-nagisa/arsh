@@ -17,12 +17,11 @@
 #ifndef ARSH_TYPE_CHECKER_H
 #define ARSH_TYPE_CHECKER_H
 
-#include <functional>
-
 #include "attribute.h"
 #include "cancel.h"
 #include "lexer.h"
 #include "misc/buffer.hpp"
+#include "misc/function_ref.hpp"
 #include "misc/hash.hpp"
 #include "node.h"
 #include "regex/parser.h"
@@ -275,7 +274,7 @@ enum class TildeExpandStatus : unsigned char;
 class GlobPatternWrapper;
 class XORArgGroupSet;
 
-using SignatureHandler = std::function<void(const CallSignature &, unsigned int)>;
+using SignatureHandler = OptionalFuncRef<void(const CallSignature &, unsigned int)>;
 
 class TypeChecker : protected NodeVisitor {
 protected:
@@ -333,9 +332,7 @@ public:
 
   ObserverPtr<CodeCompletionContext> getCodeCompletionHandler() const { return this->compCtx; }
 
-  void setSignatureHandler(SignatureHandler &&handler) {
-    this->signatureHandler = std::move(handler);
-  }
+  void setSignatureHandler(SignatureHandler handler) { this->signatureHandler = handler; }
 
   void setAllowWarning(bool set) { this->allowWarning = set; }
 

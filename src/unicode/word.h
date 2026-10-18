@@ -17,9 +17,9 @@
 #ifndef ARSH_UNICODE_WORD_HPP
 #define ARSH_UNICODE_WORD_HPP
 
-#include "../misc/detect.hpp"
-#include "../misc/string_ref.hpp"
-#include "../misc/unicode.hpp"
+#include "misc/detect.hpp"
+#include "misc/string_ref.hpp"
+#include "misc/unicode.hpp"
 #include "property.h"
 
 namespace arsh {

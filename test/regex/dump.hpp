@@ -17,8 +17,6 @@
 #ifndef ARSH_REGEX_TEST_DUMP_HPP
 #define ARSH_REGEX_TEST_DUMP_HPP
 
-#include <vector>
-
 #include <misc/result.hpp>
 #include <misc/unicode.hpp>
 #include <regex/capture.h>
@@ -92,7 +90,7 @@ private:
   }
 };
 
-inline std::string formatCaptures(const std::vector<Capture> &captures) {
+inline std::string formatCaptures(const ArrayRef<Capture> captures) {
   std::string ret;
   for (auto &c : captures) {
     if (!c) {

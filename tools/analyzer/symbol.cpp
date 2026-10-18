@@ -100,11 +100,12 @@ std::string generateHoverContent(const SourceManager &srcMan, const SymbolIndexe
     unsigned int paramCount = 0;
     std::string dummy;
     std::string param;
-    formatNativeMethodSignature(methodIndex, packedParamTypes, dummy, [&](const StringRef p) {
+    auto callback = [&](const StringRef p) {
       if (paramIndex == paramCount++) {
         param = p.toString();
       }
-    });
+    };
+    formatNativeMethodSignature(methodIndex, packedParamTypes, dummy, callback);
     assert(!param.empty());
     content += DeclSymbol::getVarDeclPrefix(decl.getKind());
     content += ' ';

@@ -216,7 +216,73 @@ assert $/o/.split('boo:and:foo', 4) == ['b','', ':and:f', 'o']
 assert $/o/.split('boo:and:foo', 5) == ['b','', ':and:f', '', '']
 assert $/o/.split('boo:and:foo', 6) == ['b','', ':and:f', '', '']
 
-## replace large string
+# matchAll
+assert $/(?<x>a)|(?<x>b)/.matchAll('@@@').size() == 0
+{
+    var ret = $/(?<x>a)|(?<x>b)/.matchAll('bab')
+    assert $ret.size() == 3
+    assert $ret[0].group(0)! == 'b'
+    assert !$ret[0].group(1)
+    assert $ret[0].group(2)! == 'b'
+    assert $ret[0].start() == 0
+    assert $ret[0].end() == 1
+
+    assert $ret[1].group(0)! == 'a'
+    assert $ret[1].group(1)! == 'a'
+    assert !$ret[1].group(2)
+    assert $ret[1].start() == 1
+    assert $ret[1].end() == 2
+
+    assert $ret[2].group(0)! == 'b'
+    assert !$ret[2].group(1)
+    assert $ret[2].group(2)! == 'b'
+    assert $ret[2].start() == 2
+    assert $ret[2].end() == 3
+}
+
+{
+    var ret = $/(?<x>b)|(?<x>a)/.matchAll('bab')
+    assert $ret.size() == 3
+    assert $ret[0].group(0)! == 'b'
+    assert $ret[0].group(1)! == 'b'
+    assert !$ret[0].group(2)
+    assert $ret[0].start() == 0
+    assert $ret[0].end() == 1
+
+    assert $ret[1].group(0)! == 'a'
+    assert !$ret[1].group(1)
+    assert $ret[1].group(2)! == 'a'
+    assert $ret[1].start() == 1
+    assert $ret[1].end() == 2
+
+    assert $ret[2].group(0)! == 'b'
+    assert $ret[2].group(1)! == 'b'
+    assert !$ret[2].group(2)
+    assert $ret[2].start() == 2
+    assert $ret[2].end() == 3
+}
+{
+    var ret = $/(?:)/.matchAll('')
+    assert $ret.size() == 1
+    assert $ret[0].group(0)! == ''
+    assert $ret[0].start() == 0
+    assert $ret[0].end() == 0
+}
+{
+    var ret = $/(?:)/.matchAll('ab')
+    assert $ret.size() == 3
+    assert $ret[0].group(0)! == ''
+    assert $ret[0].start() == 0
+    assert $ret[0].end() == 0
+    assert $ret[1].group(0)! == ''
+    assert $ret[1].start() == 1
+    assert $ret[1].end() == 1
+    assert $ret[2].group(0)! == ''
+    assert $ret[2].start() == 2
+    assert $ret[2].end() == 2
+}
+
+# replace large string
 var large = "abcdefghijklmnopqrstuvwxyz"
 $large += $large
 $large += $large

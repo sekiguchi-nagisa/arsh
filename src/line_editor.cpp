@@ -1048,7 +1048,7 @@ ssize_t LineEditorObject::readline(ARState &state, StringRef prompt, char *buf, 
     return static_cast<ssize_t>(len);
   }
   PathLikeChecker pathLikeChecker(state);
-  RenderingContext ctx(buf, bufLen, prompt, std::ref(pathLikeChecker));
+  RenderingContext ctx(buf, bufLen, prompt, pathLikeChecker);
   return this->editLine(state, ctx);
 }
 

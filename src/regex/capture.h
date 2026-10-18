@@ -89,8 +89,6 @@ public:
 
   const auto &getEntries() const { return this->entries; }
 
-  const auto &operator[](unsigned int offset) const { return this->entries[offset]; }
-
   const NamedCaptureEntry *find(StringRef name) const {
     if (auto iter = this->offsetMap.find(name); iter != this->offsetMap.end()) {
       return &this->entries[iter->second].second;
@@ -98,7 +96,14 @@ public:
     return nullptr;
   }
 
-  ArrayRef<Entry> toArrayRef() const { return {this->entries.data(), this->entries.size()}; }
+  const NamedCaptureEntry *findByIndex(const unsigned int index) const {
+    if (index < this->entries.size()) {
+      return &this->entries[index].second;
+    }
+    return nullptr;
+  }
+
+  ArrayRef<Entry> toArrayRef() const { return this->entries; }
 };
 
 struct Capture {
@@ -111,6 +116,20 @@ struct Capture {
 
   uint32_t endOffset() const { return this->offset + this->size; }
 };
+
+inline Capture findValidNamedCapture(const NamedCaptureEntry &entry,
+                                     const ArrayRef<Capture> captures) {
+  if (entry.hasMultipleIndices()) {
+    for (unsigned int i = 0; i < entry.getSize(); i++) {
+      unsigned int capIndex = entry[i];
+      if (auto cap = captures[capIndex]) {
+        return cap;
+      }
+    }
+    return {};
+  }
+  return captures[entry.getIndex()];
+}
 
 } // namespace arsh::regex
 

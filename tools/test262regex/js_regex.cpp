@@ -170,16 +170,16 @@ static JSFunctionPtr createRegExpReplace(const std::shared_ptr<JSEnv> &global) {
     }
     std::string out;
     std::string err;
+    auto consumer = [&out](const StringRef ref) {
+      out += ref;
+      return true;
+    };
     const regex::ReplaceParam param = {
         .text = text, // TODO: sticky, lastIndex, suppress replace pattern error
         .replacement = replacement,
         .global = hasFlag(regex->extra, JSRegex::ExtraFlag::GLOBAL),
         .err = &err,
-        .consumer =
-            [&out](const StringRef ref) {
-              out += ref;
-              return true;
-            },
+        .consumer = consumer,
     };
     switch (const auto status = regex::replace(regex->regex, param, nullptr)) {
     case regex::MatchStatus::OK:

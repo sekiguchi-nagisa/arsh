@@ -92,7 +92,7 @@ CompCandidate::CompCandidate(const CompPrefix &prefix, CompCandidateKind k, Stri
   assert(!v.empty());
   if (shouldQuote(k, quote)) {
     bool quoteAsCmd = false;
-    if (prefix.compWordToken.size()) { // replace prefix with compWordToken
+    if (!prefix.compWordToken.empty()) { // replace prefix with compWordToken
       assert(prefix.compWord.size() <= v.size());
       this->value += prefix.compWordToken;
       v.removePrefix(prefix.compWord.size());
@@ -317,21 +317,31 @@ static void completeGroupName(const CompPrefix &prefix, CompCandidateConsumer &c
   endgrent();
 }
 
-static auto udcCandidateConsumer(const CompPrefix &prefix, CompCandidateConsumer &consumer,
-                                 const bool allowPrivate = true) {
-  return [allowPrivate, &prefix, &consumer](StringRef udc, const Handle &handle) {
+class UdcCandidateConsumer {
+private:
+  const CompPrefix &prefix;
+  CompCandidateConsumer &consumer;
+  const bool allowPrivate;
+
+public:
+  UdcCandidateConsumer(const CompPrefix &prefix, CompCandidateConsumer &consumer,
+                       const bool allowPrivate = true)
+      : prefix(prefix), consumer(consumer), allowPrivate(allowPrivate) {}
+
+  bool operator()(StringRef udc, const Handle &handle) const {
     if (isCmdFullName(udc)) {
       udc.removeSuffix(strlen(CMD_SYMBOL_SUFFIX));
-      if (udc.startsWith(prefix.compWord) && (allowPrivate || !udc.startsWith("_"))) {
-        CompCandidate candidate(prefix, CompCandidateKind::COMMAND_NAME, udc, consumer.quoteType);
+      if (udc.startsWith(this->prefix.compWord) && (this->allowPrivate || !udc.startsWith("_"))) {
+        CompCandidate candidate(this->prefix, CompCandidateKind::COMMAND_NAME, udc,
+                                this->consumer.quoteType);
         candidate.setCmdNameType(handle.is(HandleKind::UDC) ? CompCandidate::CmdNameType::UDC
                                                             : CompCandidate::CmdNameType::MOD);
-        consumer(std::move(candidate));
+        this->consumer(std::move(candidate));
       }
     }
     return true;
-  };
-}
+  }
+};
 
 #define TRY(E)                                                                                     \
   do {                                                                                             \
@@ -348,7 +358,7 @@ static bool completeCmdName(const CompPrefix &prefix, const NameScope &scope,
   // complete user-defined command
   if (hasFlag(option, CodeCompOp::UDC)) {
     LOG(TRACE_COMP, "try to complete udc");
-    scope.walk(udcCandidateConsumer(prefix, consumer));
+    scope.walk(UdcCandidateConsumer(prefix, consumer));
   }
 
   // complete builtin command
@@ -904,7 +914,8 @@ static CmdArgCompStatus tryToCallUserDefinedComp(const CodeCompletionContext &ct
 static CmdArgCompStatus completeCmdArg(const TypePool &pool, ObserverPtr<ForeignCompHandler> comp,
                                        const CodeCompletionContext &ctx,
                                        CompCandidateConsumer &consumer) {
-  LOG(TRACE_COMP, "prefix:%s", ctx.toCompPrefix().toString().c_str());
+  const auto prefix = ctx.toCompPrefix();
+  LOG(TRACE_COMP, "prefix:%s", prefix.toString().c_str());
 
   const auto &cmdNode = *ctx.getCmdNode();
   auto handle = ctx.getScope().lookup(toCmdFullName(cmdNode.getNameNode().getValue()));
@@ -946,12 +957,12 @@ static CmdArgCompStatus completeCmdArg(const TypePool &pool, ObserverPtr<Foreign
       }
     }
     if (auto *cliType = resolveCLIRecordType(*curUdcType)) {
-      return completeCLIOption(pool, cliType, cmdNode, offset, ctx.toCompPrefix(), comp, consumer);
+      return completeCLIOption(pool, cliType, cmdNode, offset, prefix, comp, consumer);
     }
   } else if (curModType) {
-    LOG(TRACE_COMP, "try to complete sub-commands, prefix:%s",
-        ctx.toCompPrefix().toString().c_str());
-    curModType->walkField(pool, udcCandidateConsumer(ctx.toCompPrefix(), consumer, false));
+    LOG(TRACE_COMP, "try to complete sub-commands, prefix:%s", prefix.toString().c_str());
+    UdcCandidateConsumer udcCandidateConsumer(prefix, consumer, false);
+    curModType->walkField(pool, udcCandidateConsumer);
     return CmdArgCompStatus::OK;
   }
   return CmdArgCompStatus::INVALID;

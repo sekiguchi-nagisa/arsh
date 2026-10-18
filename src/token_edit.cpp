@@ -192,7 +192,7 @@ static bool isCursorInDummyNewline(const LineBuffer &buf, const TokenizerResult 
   const unsigned int cursor = buf.getCursor();
   if (cursor == buf.getUsedSize()) {
     if (ret.error) {
-      return ret.error->getTokenKind() == TokenKind::EOS && ret.tokens.size() > 0 &&
+      return ret.error->getTokenKind() == TokenKind::EOS && !ret.tokens.empty() &&
              ret.tokens.back().second.endPos() == cursor;
     }
     return ret.tokens.size() > 1 && ret.tokens.back().first == TokenKind::NEW_LINE &&

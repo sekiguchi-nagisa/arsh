@@ -811,6 +811,8 @@ public:
 
   Value split(ARState &state, int64_t limit, StringRef ref, int64_t timeoutMSec) const;
 
+  Value matchAll(ARState &state, StringRef ref, int64_t timeoutMSec);
+
   const auto &getRE() const { return this->re; }
 
   const std::string &getStr() const { return this->pattern; }
@@ -831,7 +833,7 @@ public:
 
   const auto &getRE() const { return this->reObj->getRE(); }
 
-  ArrayRef<Value> capturesView() const { return {this->captures.data(), this->captures.size()}; }
+  ArrayRef<Value> capturesView() const { return this->captures; }
 
   unsigned int getStartOffset() const { return this->startOffset; }
 
@@ -881,7 +883,7 @@ public:
 
   bool locking() const { return this->lockCount > 0; }
 
-  ArrayRef<Value> view() const { return {this->values.data(), this->values.size()}; }
+  ArrayRef<Value> view() const { return this->values; }
 
   const Value &operator[](const size_t index) const { return this->values[index]; }
 

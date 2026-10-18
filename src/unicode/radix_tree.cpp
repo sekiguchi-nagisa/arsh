@@ -25,14 +25,14 @@
 namespace arsh {
 
 bool PackedRadixTree::iterate(std::string &buf, unsigned int offset,
-                              const std::function<bool(StringRef, unsigned char)> &walker) const {
+                              const FunctionRef<bool(StringRef, unsigned char)> walker) const {
   const unsigned char childOffsetBytes = this->getChildOffsetBytes();
   if (offset < this->size) {
-    const unsigned int meta = static_cast<unsigned int>(this->ptr[offset]) << 16 |
-                              static_cast<unsigned int>(this->ptr[offset + 1]) << 8 |
+    const unsigned int meta = static_cast<unsigned int>(this->ptr[offset]) << 16u |
+                              static_cast<unsigned int>(this->ptr[offset + 1]) << 8u |
                               this->ptr[offset + 2];
     offset += PackedRadixChildIter::META_BYTES;
-    const unsigned int prefixLen = meta >> 9;
+    const unsigned int prefixLen = meta >> 9u;
     const StringRef prefix(reinterpret_cast<const char *>(this->ptr) + offset, prefixLen);
     offset += prefixLen;
     buf += prefix;
@@ -43,7 +43,7 @@ bool PackedRadixTree::iterate(std::string &buf, unsigned int offset,
     }
     // visit children
     const auto oldSize = buf.size();
-    const unsigned int n = meta & 0x1FF;
+    const unsigned int n = meta & 0x1FFu;
     PackedRadixChildIter iter(this->ptr, offset, 0, childOffsetBytes);
     const PackedRadixChildIter end(this->ptr, offset, n, childOffsetBytes);
     for (; iter != end; ++iter) {
@@ -152,7 +152,7 @@ bool RadixTree::remove(StringRef seq, RadixTree &tree) {
   }
   // visit children
   const auto iter = tree.getChildren().find(seq[0]);
-  if (iter != tree.getChildren().end() && iter->first == seq[0]) {
+  if (iter != tree.getChildren().end() && iter->first == static_cast<uint8_t>(seq[0])) {
     if (remove(seq, *iter->second)) {
       if (iter->second->empty()) {
         tree.children.erase(iter);
@@ -187,7 +187,7 @@ uint8_t RadixTree::find(StringRef seq) const {
     }
     // visit children
     const auto iter = tree->getChildren().find(seq[0]);
-    if (iter != tree->getChildren().end() && iter->first == seq[0]) {
+    if (iter != tree->getChildren().end() && iter->first == static_cast<uint8_t>(seq[0])) {
       tree = iter->second.get();
     } else {
       break;
@@ -198,7 +198,7 @@ uint8_t RadixTree::find(StringRef seq) const {
 
 unsigned int RadixTree::maxCodePointCount() const {
   unsigned int count = 0;
-  this->iterate([&count](StringRef ref, unsigned char) {
+  auto walker = [&count](StringRef ref, unsigned char) {
     unsigned int c = 0;
     const char *iter = ref.begin();
     const char *end = ref.end();
@@ -212,12 +212,13 @@ unsigned int RadixTree::maxCodePointCount() const {
     }
     count = std::max(count, c);
     return true;
-  });
+  };
+  this->iterate(walker);
   return count;
 }
 
 static bool iterateImpl(std::string &buf, const RadixTree &tree,
-                        const std::function<bool(StringRef, unsigned char)> &walker) {
+                        const FunctionRef<bool(StringRef, unsigned char)> walker) {
   buf += tree.getPrefix();
   if (auto p = tree.getProperty()) {
     if (!walker(buf, p)) {
@@ -234,11 +235,9 @@ static bool iterateImpl(std::string &buf, const RadixTree &tree,
   return true;
 }
 
-void RadixTree::iterate(const std::function<bool(StringRef, unsigned char)> &walker) const {
-  if (walker) {
-    std::string buf;
-    iterateImpl(buf, *this, walker);
-  }
+void RadixTree::iterate(const FunctionRef<bool(StringRef, unsigned char)> walker) const {
+  std::string buf;
+  iterateImpl(buf, *this, walker);
 }
 
 RadixTree *RadixTree::getOrCreate(char ch) {
@@ -264,11 +263,11 @@ static bool serialize(const RadixTree &radixTree, FlexBuffer<uint8_t> &buf,
     const auto &tree = *targets.front().first;
     assert(tree.getPrefix().size() <= RadixTree::MAX_STRING_SIZE);
     assert(tree.getChildren().size() <= RadixTree::MAX_N_CHILDREN);
-    const unsigned int meta = static_cast<unsigned int>(tree.getPrefix().size()) << 9 |
+    const unsigned int meta = static_cast<unsigned int>(tree.getPrefix().size()) << 9u |
                               static_cast<unsigned int>(tree.getChildren().size());
     for (unsigned int i = 0; i < PackedRadixChildIter::META_BYTES; i++) {
       unsigned int shift = (PackedRadixChildIter::META_BYTES - 1 - i) * 8;
-      buf.push_back((meta >> shift) & 0xFF);
+      buf.push_back((meta >> shift) & 0xFFu);
     }
     buf.append(reinterpret_cast<const uint8_t *>(tree.getPrefix().c_str()),
                tree.getPrefix().size());
@@ -281,18 +280,18 @@ static bool serialize(const RadixTree &radixTree, FlexBuffer<uint8_t> &buf,
       children.push_back(e.second.get());
     }
     std::sort(children.begin(), children.end(), [](const RadixTree *x, const RadixTree *y) {
-      return x->getPrefix()[0] < y->getPrefix()[0];
+      return static_cast<uint8_t>(x->getPrefix()[0]) < static_cast<uint8_t>(y->getPrefix()[0]);
     });
     for (auto &e : children) {
       targets.emplace_back(e, targets.back().second +
                                   targets.back().first->packedSize(childOffsetBytes));
       unsigned int childOffset = targets.back().second;
-      if (childOffset > ((1u << 8 * childOffsetBytes) - 1)) {
+      if (childOffset > ((1u << 8u * childOffsetBytes) - 1)) {
         return false; // too large tree
       }
       for (unsigned int i = 0; i < childOffsetBytes; i++) {
         unsigned int shift = (childOffsetBytes - 1 - i) * 8;
-        buf.push_back((childOffset >> shift) & 0xFF);
+        buf.push_back((childOffset >> shift) & 0xFFu);
       }
     }
     targets.pop_front();

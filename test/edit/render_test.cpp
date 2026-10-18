@@ -987,7 +987,7 @@ TEST(ErrorHighlightTest, base) {
   std::string buf;
   buf.resize(32);
   PathLikeChecker checker(*state);
-  RenderingContext ctx(buf.data(), buf.size(), "> ", std::ref(checker));
+  RenderingContext ctx(buf.data(), buf.size(), "> ", checker);
 
   {
     ctx.buf.insertToCursor("slsss -la");

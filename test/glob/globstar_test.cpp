@@ -20,10 +20,11 @@ static std::vector<std::string> doGlobStar(const char *pattern, Glob::Option ext
   Glob glob(pattern, option, nullptr);
   glob.setCancelToken(cancel);
   std::vector<std::string> ret;
-  glob.setConsumer([&ret](std::string &&value) {
+  auto consumer = [&ret](std::string &&value) {
     ret.push_back(std::move(value));
     return true;
-  });
+  };
+  glob.setConsumer(consumer);
   glob(nullptr);
   std::sort(ret.begin(), ret.end());
   return ret;

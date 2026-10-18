@@ -53,7 +53,7 @@ HandlePtr Type::lookupField(const TypePool &pool, const std::string &fieldName) 
 }
 
 void Type::walkField(const TypePool &pool,
-                     const std::function<bool(StringRef, const Handle &)> &walker) const {
+                     const FunctionRef<bool(StringRef, const Handle &)> walker) const {
   switch (this->typeKind()) {
   case TypeKind::Tuple:
   case TypeKind::Record:
@@ -275,7 +275,7 @@ HandlePtr ModType::lookupImpl(const TypePool &pool, const std::string &name,
 }
 
 void ModType::iterateSymbols(const TypePool &pool, const bool searchGlobal,
-                             const std::function<bool(StringRef, const Handle &)> &walker) const {
+                             const FunctionRef<bool(StringRef, const Handle &)> walker) const {
   for (auto &e : this->getHandleMap()) {
     if (!walker(e.first, *e.second)) {
       return;
@@ -387,7 +387,7 @@ std::unique_ptr<MethodHandle> MethodHandle::create(const Type &recv, unsigned in
                                                    PackedParamNames &&packed, ModId modId) {
   const size_t paramSize = params.size();
   assert(paramSize <= SYS_LIMIT_METHOD_PARAM_NUM);
-  void *ptr = operator new(sizeof(MethodHandle) + sizeof(uintptr_t) * paramSize);
+  void *ptr = operator new(sizeof(MethodHandle) + (sizeof(uintptr_t) * paramSize));
   const auto &actualRet = ret ? *ret : recv;
   auto *handle = new (ptr) MethodHandle(recv, index, actualRet, paramSize, modId,
                                         ret ? HandleKind::METHOD : HandleKind::CONSTRUCTOR);

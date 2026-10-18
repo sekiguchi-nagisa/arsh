@@ -18,6 +18,7 @@
 #define ARSH_LINE_RENDERER_H
 
 #include "highlighter_base.h"
+#include "misc/function_ref.hpp"
 #include "unicode/grapheme.h"
 
 namespace arsh {
@@ -91,7 +92,8 @@ public:
     }
   }
 
-  LineRenderer(const CharWidthProperties &ps, unsigned int initCols, std::vector<std::string> &output,
+  LineRenderer(const CharWidthProperties &ps, unsigned int initCols,
+               std::vector<std::string> &output,
                ObserverPtr<const ANSIEscapeSeqMap> escapeSeqMap = nullptr)
       : LineRenderer(ps, initCols, makeObserver(output), escapeSeqMap) {}
 
@@ -130,8 +132,7 @@ public:
    * @return
    * reach incomplete input (need more characters), return false
    */
-  bool renderScript(StringRef source,
-                    const std::function<bool(StringRef)> &errorCmdChecker = nullptr);
+  bool renderScript(StringRef source, OptionalFuncRef<bool(StringRef)> errorCmdChecker = nullptr);
 
   void renderLines(StringRef source) { this->render(source, HighlightTokenClass::NONE_); }
 

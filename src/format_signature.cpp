@@ -70,7 +70,7 @@ void formatVarSignature(const Type &type, std::string &out) {
 }
 
 void formatFuncSignature(const FunctionType &funcType, const FuncHandle &handle, std::string &out,
-                         const std::function<void(StringRef)> &paramCallback) {
+                         const OptionalFuncRef<void(StringRef)> paramCallback) {
   auto params = splitParamNames(handle.getPackedParamNames());
   assert(params.size() == funcType.getParamSize());
   out += '(';
@@ -83,7 +83,7 @@ void formatFuncSignature(const FunctionType &funcType, const FuncHandle &handle,
     out += ": ";
     normalizeTypeName(funcType.getParamTypeAt(i), out);
     if (paramCallback) {
-      paramCallback(StringRef(out.c_str() + offset));
+      paramCallback.unwrap()(StringRef(out.c_str() + offset));
     }
   }
   out += "): ";
@@ -91,7 +91,7 @@ void formatFuncSignature(const FunctionType &funcType, const FuncHandle &handle,
 }
 
 void formatFuncSignature(const Type &retType, unsigned int paramSize, const Type *const *paramTypes,
-                         std::string &out, const std::function<void(StringRef)> &paramCallback) {
+                         std::string &out, const OptionalFuncRef<void(StringRef)> paramCallback) {
   out += '(';
   for (unsigned int i = 0; i < paramSize; i++) {
     if (i > 0) {
@@ -103,7 +103,7 @@ void formatFuncSignature(const Type &retType, unsigned int paramSize, const Type
     out += ": ";
     normalizeTypeName(*paramTypes[i], out);
     if (paramCallback) {
-      paramCallback(StringRef(out.c_str() + offset));
+      paramCallback.unwrap()(StringRef(out.c_str() + offset));
     }
   }
   out += "): ";
@@ -118,7 +118,7 @@ void formatFieldSignature(const Type &recvType, const Type &type, std::string &o
 }
 
 void formatMethodSignature(const Type *recvType, const MethodHandle &handle, std::string &out,
-                           const std::function<void(StringRef)> &paramCallback) {
+                           const OptionalFuncRef<void(StringRef)> paramCallback) {
   if (recvType && handle.isEqOrOrdMethod()) {
     formatNativeMethodSignature(handle.getIndex(), recvType->getNameRef(), out, paramCallback);
     return;
@@ -135,7 +135,7 @@ void formatMethodSignature(const Type *recvType, const MethodHandle &handle, std
     out += ": ";
     normalizeTypeName(handle.getParamTypeAt(i), out);
     if (paramCallback) {
-      paramCallback(StringRef(out.c_str() + offset));
+      paramCallback.unwrap()(StringRef(out.c_str() + offset));
     }
   }
   out += ')';
@@ -297,9 +297,9 @@ std::string Decoder::decodeType(bool replaceIface) {
   return ""; // normally unreachable due to suppress gcc warning
 }
 
-void formatNativeMethodSignature(unsigned int nativeMethodIndex, StringRef packedParamType,
-                                 std::string &out,
-                                 const std::function<void(StringRef)> &paramCallback) {
+void formatNativeMethodSignature(const unsigned int nativeMethodIndex,
+                                 const StringRef packedParamType, std::string &out,
+                                 const OptionalFuncRef<void(StringRef)> paramCallback) {
   const bool eqOrOrd = !packedParamType.empty() && isEqOrOrdTypeMethod(nativeMethodIndex);
   const auto *funcInfo = &nativeFuncInfoTable()[nativeMethodIndex];
   const auto params = splitParamNames(funcInfo->params);
@@ -324,7 +324,7 @@ void formatNativeMethodSignature(unsigned int nativeMethodIndex, StringRef packe
     out += ": ";
     normalizeTypeName(decoder.decodeType(eqOrOrd), out);
     if (paramCallback) {
-      paramCallback(StringRef(out.c_str() + offset));
+      paramCallback.unwrap()(StringRef(out.c_str() + offset));
     }
   }
   out += ')';

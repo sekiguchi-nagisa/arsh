@@ -37,12 +37,13 @@ void StrSetBuilder::add(StrSetBuilder &&builder) {
     this->emptySeq = true;
   }
   this->codePoints.add(builder.codePoints);
-  builder.radix.iterate([this](StringRef ref, unsigned char p) {
+  auto walker = [this](StringRef ref, unsigned char p) {
     if (!this->inEmoji(ref)) {
       this->radix.add(ref, p);
     }
     return true;
-  });
+  };
+  builder.radix.iterate(walker);
 }
 
 template <typename Func>
@@ -69,14 +70,15 @@ constexpr bool str_iter_requirement_v = std::is_same_v<bool, std::invoke_result_
 template <typename Func, enable_when<str_iter_requirement_v<Func>> = nullptr>
 static void iterateEmoji(const ucp::RGIEmojiSeq emoji, Func func) {
   if (StrSetBuilder::hasEmoji(emoji)) {
-    ucp::getEmojiTrie().iterate([&](StringRef ref, unsigned char p) {
+    auto walker = [&](StringRef ref, unsigned char p) {
       if (hasFlag(toUnderlying(emoji), p)) {
         if (!func(ref)) {
           return false;
         }
       }
       return true;
-    });
+    };
+    ucp::getEmojiTrie().iterate(walker);
   }
 }
 
@@ -113,12 +115,13 @@ void StrSetBuilder::intersect(StrSetBuilder &&builder) {
     setFlag(newBuilder.emoji, ucp::RGIEmojiSeq::CASE_IGNORE);
   }
   if (this->hasEmoji()) {
-    builder.radix.iterate([&](StringRef ref, unsigned char) {
+    auto walker = [&](StringRef ref, unsigned char) {
       if (findFromEmoji(this->emoji, ref)) {
         newBuilder.radix.add(ref, 1);
       }
       return true;
-    });
+    };
+    builder.radix.iterate(walker);
     iterateCodes(builder.codePoints, [&](StringRef ref, int codePoint) {
       if (findFromEmoji(this->emoji, ref)) {
         newBuilder.codePoints.addRange(codePoint, codePoint);
@@ -135,12 +138,13 @@ void StrSetBuilder::intersect(StrSetBuilder &&builder) {
       }
       return true;
     });
-    builder.radix.iterate([&](StringRef ref, unsigned char) {
+    auto walker = [&](StringRef ref, unsigned char) {
       if (this->radix.find(ref)) {
         newBuilder.radix.add(ref, 1);
       }
       return true;
-    });
+    };
+    builder.radix.iterate(walker);
     iterateCodes(builder.codePoints, [&](StringRef ref, int codePoint) {
       if (this->radix.find(ref)) {
         newBuilder.codePoints.addRange(codePoint, codePoint);
@@ -158,12 +162,13 @@ void StrSetBuilder::intersect(StrSetBuilder &&builder) {
       }
       return true;
     });
-    builder.radix.iterate([&](StringRef ref, unsigned char) {
+    auto walker = [&](StringRef ref, unsigned char) {
       if (auto cp = tryToCodePoint(ref); cp.hasValue() && set.ref().contains(cp.unwrap())) {
         newBuilder.codePoints.addRange(cp.unwrap(), cp.unwrap());
       }
       return true;
-    });
+    };
+    builder.radix.iterate(walker);
     if (builder.codePoints) {
       this->codePoints.intersect(builder.codePoints);
       newBuilder.codePoints.add(this->codePoints);
@@ -185,13 +190,14 @@ void StrSetBuilder::sub(StrSetBuilder &&builder) {
     setFlag(this->emoji, ucp::RGIEmojiSeq::CASE_IGNORE);
   }
   if (this->hasEmoji()) {
-    builder.radix.iterate([&](StringRef ref, unsigned char) {
+    auto walker = [&](StringRef ref, unsigned char) {
       if (findFromEmoji(this->emoji, ref)) {
         mergeEmoji(this->emoji, this->radix);
         return false;
       }
       return true;
-    });
+    };
+    builder.radix.iterate(walker);
   }
   if (this->hasEmoji()) {
     iterateCodes(builder.codePoints, [&](StringRef ref, int) {
@@ -211,10 +217,11 @@ void StrSetBuilder::sub(StrSetBuilder &&builder) {
     });
   }
   if (!this->radix.empty()) {
-    builder.radix.iterate([&](StringRef ref, unsigned char) {
+    auto walker = [&](StringRef ref, unsigned char) {
       this->radix.remove(ref);
       return !this->radix.empty();
-    });
+    };
+    builder.radix.iterate(walker);
   }
   if (!this->radix.empty()) {
     iterateCodes(builder.codePoints, [&](StringRef ref, int) {
@@ -236,12 +243,13 @@ void StrSetBuilder::sub(StrSetBuilder &&builder) {
   }
   if (this->codePoints) {
     sub.clear();
-    builder.radix.iterate([&](StringRef ref, unsigned char) {
+    auto walker = [&](StringRef ref, unsigned char) {
       if (auto cp = tryToCodePoint(ref); cp.hasValue()) {
         sub.addRange(cp.unwrap(), cp.unwrap());
       }
       return true;
-    });
+    };
+    builder.radix.iterate(walker);
     this->codePoints.sub(sub);
   }
   if (this->codePoints) {
@@ -293,7 +301,92 @@ static void normalizeStrCharClass(Node &node) {
   }
 }
 
-static void optimize(Node &node) { normalizeStrCharClass(node); }
+static bool isCharSeq(const Node &node) {
+  if (isa<CharNode>(node)) {
+    return true;
+  }
+  if (!isa<SeqNode>(node)) {
+    return false;
+  }
+  for (auto &e : cast<SeqNode>(node).getPatterns()) {
+    if (!isa<CharNode>(*e)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+static void optimizeStrAlt(std::unique_ptr<Node> &node) {
+  if (isa<NestedNode>(*node)) {
+    optimizeStrAlt(cast<NestedNode>(*node).refPattern());
+    return;
+  }
+  if (isa<SeqNode>(*node)) {
+    for (auto &e : cast<SeqNode>(*node).refPatterns()) {
+      optimizeStrAlt(e);
+    }
+    return;
+  }
+  if (!isa<AltNode>(*node)) {
+    return;
+  }
+  auto &altNode = cast<AltNode>(*node);
+  {
+    auto iter = altNode.getPatterns().begin();
+    auto end = altNode.getPatterns().end();
+    while (iter != end && isa<EmptyNode>(**(end - 1))) {
+      --end; // only allow last empty pattern (AA|B|A||)
+    }
+    for (; iter != end; ++iter) {
+      if (!isCharSeq(**iter)) {
+        return;
+      }
+    }
+  }
+  /**
+   * check alt string order
+   *
+   * (AA|A) -> accept
+   * (AA|AB) -> accept
+   * (A|AA) -> not accept
+   */
+  std::unordered_map<int, unsigned int> prefixCodeMap;
+  for (auto &e : altNode.getPatterns()) {
+    if (isa<EmptyNode>(*e)) {
+      continue;
+    }
+    int codePoint;
+    unsigned int len;
+    if (isa<CharNode>(*e)) {
+      codePoint = cast<CharNode>(*e).getCodePoint();
+      len = 1;
+    } else {
+      assert(isa<SeqNode>(*e));
+      auto &seqNode = cast<SeqNode>(*e);
+      assert(isa<CharNode>(*seqNode.getPatterns()[0]));
+      codePoint = cast<CharNode>(*seqNode.getPatterns()[0]).getCodePoint();
+      len = seqNode.getPatterns().size();
+    }
+    if (auto iter = prefixCodeMap.find(codePoint); iter != prefixCodeMap.end()) {
+      if (len <= iter->second) {
+        iter->second = len;
+      } else {
+        return;
+      }
+    } else {
+      prefixCodeMap.emplace(codePoint, len);
+    }
+  }
+  auto classNode = std::make_unique<CharClassNode>(node->getToken(), false);
+  classNode->add(std::move(node));
+  classNode->finalize(classNode->getToken());
+  node = std::move(classNode);
+}
+
+static void optimize(std::unique_ptr<Node> &node) {
+  normalizeStrCharClass(*node);
+  optimizeStrAlt(node);
+}
 
 Optional<Regex> CodeGen::operator()(SyntaxTree &&tree) {
   // prepare
@@ -307,7 +400,7 @@ Optional<Regex> CodeGen::operator()(SyntaxTree &&tree) {
   this->resolvedCaptures.clear();
   this->resolvedCaptures.resize(tree.getCaptureGroupCount() + 1, CaptureState::NOT_OPENED);
 
-  optimize(*tree.getPattern());
+  optimize(tree.refPattern());
   if (!this->generate(*tree.getPattern())) {
     return {};
   }
@@ -526,7 +619,7 @@ constexpr bool range_walker_requirement_v =
     std::is_same_v<void, std::invoke_result_t<Func, int, int>>;
 
 template <typename Func, enable_when<range_walker_requirement_v<Func>> = nullptr>
-static bool intoCharRange(const CharClassNode &node, unsigned int offset, Func func) {
+static bool intoCharRange(const CharClassNode &node, const unsigned int offset, Func func) {
   if (node.getType() == CharClassNode::Type::RANGE && offset + 2 < node.getChars().size()) {
     auto &n1 = *node.getChars()[offset];
     auto &n2 = *node.getChars()[offset + 1];

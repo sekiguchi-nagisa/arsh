@@ -209,7 +209,22 @@ ObjPtr<UnixFdObject> UnixFdObject::dupWithCloseOnExec() const {
 // ##     RegexObject     ##
 // #########################
 
-bool RegexObject::match(ARState &state, const StringRef ref, int64_t timeoutMSec,
+static RegexObject::MatchResult toResult(const StringRef ref,
+                                         const ArrayRef<regex::Capture> captures) {
+  RegexObject::MatchResult ret = {
+      .groups = {},
+      .start = captures[0].offset,
+      .end = captures[0].endOffset(),
+  };
+  for (auto &cap : captures) {
+    ret.groups.push_back(cap ? Value::createStr(ref.substr(cap.offset, cap.size))
+                             : Value::createInvalid()); // not check size
+  }
+  ASSERT_ARRAY_SIZE(ret.groups);
+  return ret;
+}
+
+bool RegexObject::match(ARState &state, const StringRef ref, const int64_t timeoutMSec,
                         MatchResult *ret) const {
   std::vector<regex::Capture> captures;
   auto timeout =
@@ -219,13 +234,7 @@ bool RegexObject::match(ARState &state, const StringRef ref, int64_t timeoutMSec
   switch (const auto status = regex::match(this->re, ref, captures, makeObserver(timer))) {
   case regex::MatchStatus::OK:
     if (ret) {
-      ret->start = captures[0].offset;
-      ret->end = captures[0].endOffset();
-      for (auto &cap : captures) {
-        ret->groups.push_back(cap ? Value::createStr(ref.substr(cap.offset, cap.size))
-                                  : Value::createInvalid()); // not check size
-      }
-      ASSERT_ARRAY_SIZE(ret->groups);
+      *ret = toResult(ref, captures);
     }
     return true;
   case regex::MatchStatus::FAIL:
@@ -239,8 +248,8 @@ bool RegexObject::match(ARState &state, const StringRef ref, int64_t timeoutMSec
   }
 }
 
-Value RegexObject::replace(ARState &state, StringRef text, StringRef replacement, bool global,
-                           int64_t timeoutMSec) const {
+Value RegexObject::replace(ARState &state, const StringRef text, const StringRef replacement,
+                           const bool global, const int64_t timeoutMSec) const {
   std::string err;
   auto ret = Value::createStr();
   auto appender = [&state, &ret](StringRef ref) { return ret.appendAsStr(state, ref); };
@@ -251,7 +260,7 @@ Value RegexObject::replace(ARState &state, StringRef text, StringRef replacement
       .err = &err,
       .consumer = appender,
   };
-  auto timeout =
+  const auto timeout =
       timeoutMSec < 0 ? std::chrono::milliseconds::max() : std::chrono::milliseconds(timeoutMSec);
   regex::Timer timer(timeout);
   timer.setCancelToken([] { return ARState::isInterrupted(); });
@@ -261,7 +270,7 @@ Value RegexObject::replace(ARState &state, StringRef text, StringRef replacement
   case regex::MatchStatus::CANCEL:
     raiseSystemError(state, EINTR, "regex replace canceled");
     return {};
-  case regex::MatchStatus::REPLACED_LIMIT:
+  case regex::MatchStatus::CONSUMED_LIMIT:
     assert(state.hasError());
     return {};
   default:
@@ -273,25 +282,56 @@ Value RegexObject::replace(ARState &state, StringRef text, StringRef replacement
   }
 }
 
-Value RegexObject::split(ARState &state, int64_t limit, StringRef ref, int64_t timeoutMSec) const {
+Value RegexObject::split(ARState &state, const int64_t limit, const StringRef ref,
+                         const int64_t timeoutMSec) const {
   unsigned int actualLimit =
       limit > -1 && limit <= UINT32_MAX ? static_cast<unsigned int>(limit) : UINT32_MAX;
   auto ret = createObject<ArrayObject>(state.typePool.get(TYPE::StringArray));
   auto appender = [&ret, &state](StringRef value) {
     return ret->append(state, Value::createStr(value));
   };
-  auto timeout =
+  const auto timeout =
       timeoutMSec < 0 ? std::chrono::milliseconds::max() : std::chrono::milliseconds(timeoutMSec);
   regex::Timer timer(timeout);
   timer.setCancelToken([] { return ARState::isInterrupted(); });
-  switch (auto status = regex::split(this->re, ref, actualLimit, appender, makeObserver(timer))) {
+  switch (const auto status =
+              regex::split(this->re, ref, actualLimit, appender, makeObserver(timer))) {
   case regex::MatchStatus::OK:
   case regex::MatchStatus::FAIL:
     break;
   case regex::MatchStatus::CANCEL:
     raiseSystemError(state, EINTR, "regex split canceled");
     return {};
-  case regex::MatchStatus::REPLACED_LIMIT:
+  case regex::MatchStatus::CONSUMED_LIMIT:
+    assert(state.hasError());
+    return {};
+  default:
+    raiseError(state, TYPE::RegexMatchError, regex::toString(status));
+    return {};
+  }
+  return ret;
+}
+
+Value RegexObject::matchAll(ARState &state, const StringRef ref, const int64_t timeoutMSec) {
+  auto typeOrError = state.typePool.createArrayType(state.typePool.get(TYPE::RegexMatch));
+  assert(typeOrError);
+  auto ret = createObject<ArrayObject>(*typeOrError.asOk());
+  auto consumer = [&](ArrayRef<regex::Capture> captures) {
+    auto tmp = Value::create<RegexMatchObject>(ObjPtr<RegexObject>(this), toResult(ref, captures));
+    return ret->append(state, std::move(tmp));
+  };
+  const auto timeout =
+      timeoutMSec < 0 ? std::chrono::milliseconds::max() : std::chrono::milliseconds(timeoutMSec);
+  regex::Timer timer(timeout);
+  timer.setCancelToken([] { return ARState::isInterrupted(); });
+  switch (const auto status = regex::matchAll(this->re, ref, 0, consumer, makeObserver(timer))) {
+  case regex::MatchStatus::OK:
+  case regex::MatchStatus::FAIL:
+    break;
+  case regex::MatchStatus::CANCEL:
+    raiseSystemError(state, EINTR, "regex matchAll canceled");
+    return {};
+  case regex::MatchStatus::CONSUMED_LIMIT:
     assert(state.hasError());
     return {};
   default:

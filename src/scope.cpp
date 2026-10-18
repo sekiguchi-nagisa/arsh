@@ -300,8 +300,7 @@ const ModType &NameScope::toModType(TypePool &pool) const {
 
 Result<HandlePtr, NameLookupError> NameScope::lookup(const std::string &name) const {
   for (auto *scope = this; scope != nullptr; scope = scope->parent.get()) {
-    auto handle = scope->find(name);
-    if (handle) {
+    if (auto handle = scope->find(name)) {
       return Ok(std::move(handle));
     }
   }
@@ -365,13 +364,11 @@ Result<HandlePtr, NameLookupError> NameScope::lookupAndCaptureUpVar(const std::s
 
 Result<HandlePtr, NameLookupError> NameScope::lookupField(const TypePool &pool, const Type &recv,
                                                           const std::string &fieldName) const {
-  auto handle = recv.lookupField(pool, fieldName);
-  if (handle) {
+  if (auto handle = recv.lookupField(pool, fieldName)) {
     if (handle->isVisibleInMod(this->modId, fieldName)) {
       return Ok(std::move(handle));
-    } else {
-      return Err(NameLookupError::MOD_PRIVATE);
     }
+    return Err(NameLookupError::MOD_PRIVATE);
   }
   return Err(NameLookupError::NOT_FOUND);
 }

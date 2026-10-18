@@ -225,7 +225,7 @@ static int exec_interactive(ARState *state) {
       if (errno != 0) {
         if (errno == EIO && eioRetryCount < 2) { // workaround for EIO of pty read
           fprintf(stderr, "[warn] retry readLine, caused by `%s'\n", strerror(EIO));
-          std::this_thread::sleep_for(std::chrono::milliseconds((1 << eioRetryCount) * 100));
+          std::this_thread::sleep_for(std::chrono::milliseconds((1u << eioRetryCount) * 100));
           eioRetryCount++;
           continue;
         }

@@ -15,6 +15,8 @@
  */
 
 #include "codegen.h"
+
+#include <algorithm>
 #include "format_util.h"
 #include "misc/format.hpp"
 #include "redir.h"
@@ -402,7 +404,7 @@ void ByteCodeGenerator::emitPipelineIns(const std::vector<Label> &labels, bool l
   this->curBuilder().append8(size);
   for (unsigned int i = 0; i < size; i++) {
     this->curBuilder().append16(0);
-    this->curBuilder().writeLabel(offset + 2 + i * 2, labels[i], offset,
+    this->curBuilder().writeLabel(offset + 2 + (i * 2), labels[i], offset,
                                   CodeEmitter<true>::LabelTarget::_16);
   }
 }
@@ -1529,9 +1531,7 @@ void ByteCodeGenerator::visitTryNode(TryNode &node) {
   for (auto &catchNode : node.getCatchNodes()) {
     auto *innerNode = findInnerNode<CatchNode>(catchNode.get());
     unsigned int varSize = innerNode->getBlockNode().getMaxVarSize();
-    if (maxLocalSize < varSize) {
-      maxLocalSize = varSize;
-    }
+    maxLocalSize = std::max(maxLocalSize, varSize);
 
     auto &catchType = innerNode->getTypeNode().getType();
     this->catchException(beginLabel, endLabel, catchType, blockNode.getBaseIndex(),
@@ -1879,9 +1879,7 @@ static unsigned int getMaxLineNum(const LineNumEntry *table) {
   unsigned int max = 1;
   for (unsigned int i = 0; table[i]; i++) {
     unsigned int value = table[i].lineNum;
-    if (value > max) {
-      max = value;
-    }
+    max = std::max(value, max);
   }
   return max;
 }
@@ -1991,7 +1989,7 @@ void ByteCodeDumper::dumpCode(const CompiledCode &c) {
             const auto s = static_cast<unsigned int>(read8(c.getCode(), i + 1));
             fprintf(this->fp, " %d", s);
             for (unsigned int index = 0; index < s; index++) {
-              fprintf(this->fp, "  %d", read16(c.getCode(), i + 2 + index * 2));
+              fprintf(this->fp, "  %d", read16(c.getCode(), i + 2 + (index * 2)));
             }
             break;
           }
@@ -2002,7 +2000,7 @@ void ByteCodeDumper::dumpCode(const CompiledCode &c) {
         if (byteSize >= 0) {
           i += byteSize;
         } else {
-          i += -1 * byteSize + 2 * read8(c.getCode(), i + 1);
+          i += (-1 * byteSize) + (2 * read8(c.getCode(), i + 1));
         }
       }
       fputc('\n', this->fp);

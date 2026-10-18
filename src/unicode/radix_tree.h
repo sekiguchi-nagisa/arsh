@@ -17,11 +17,10 @@
 #ifndef ARSH_UNICODE_RADIX_TREE_H
 #define ARSH_UNICODE_RADIX_TREE_H
 
-#include <functional>
-#include <memory>
 #include <unordered_map>
 
 #include "misc/buffer.hpp"
+#include "misc/function_ref.hpp"
 #include "misc/string_ref.hpp"
 
 namespace arsh {
@@ -37,11 +36,11 @@ struct PackedRadixChildIter {
 
   using difference_type = std::ptrdiff_t;
 
-  using value_type = char;
+  using value_type = uint8_t;
 
-  using reference = char &;
+  using reference = uint8_t &;
 
-  using pointer = char *;
+  using pointer = uint8_t *;
 
   using iterator_category = std::forward_iterator_tag;
 
@@ -51,13 +50,13 @@ struct PackedRadixChildIter {
   unsigned int childOffset() const {
     unsigned int ret = 0;
     for (unsigned int i = 0; i < this->childOffsetBytes; i++) {
-      ret <<= 8;
+      ret <<= 8u;
       ret |= this->ptr[this->offset + i];
     }
     return ret;
   }
 
-  auto operator*() const { return static_cast<char>(this->ptr[this->childOffset() + META_BYTES]); }
+  uint8_t operator*() const { return this->ptr[this->childOffset() + META_BYTES]; }
 
   auto operator-(const PackedRadixChildIter &other) const {
     return (this->offset - other.offset) / this->childOffsetBytes;
@@ -108,11 +107,11 @@ public:
     uint8_t latestProperty = 0;
     uint16_t latestMatchedSize = 0;
     for (unsigned int offset = 1; offset < this->size;) {
-      const unsigned int meta = static_cast<unsigned int>(this->ptr[offset]) << 16 |
-                                static_cast<unsigned int>(this->ptr[offset + 1]) << 8 |
+      const unsigned int meta = static_cast<unsigned int>(this->ptr[offset]) << 16u |
+                                static_cast<unsigned int>(this->ptr[offset + 1]) << 8u |
                                 this->ptr[offset + 2];
       offset += PackedRadixChildIter::META_BYTES;
-      const unsigned int prefixLen = meta >> 9;
+      const unsigned int prefixLen = meta >> 9u;
       const StringRef prefix(reinterpret_cast<const char *>(this->ptr) + offset, prefixLen);
       if (!ref.startsWith(prefix)) {
         break;
@@ -128,11 +127,11 @@ public:
         break;
       }
       // visit children
-      const unsigned int n = meta & 0x1FF;
+      const unsigned int n = meta & 0x1FFu;
       const PackedRadixChildIter begin(this->ptr, offset, 0, childOffsetBytes);
       const PackedRadixChildIter end(this->ptr, offset, n, childOffsetBytes);
-      const auto iter = std::lower_bound(begin, end, ref[0]);
-      if (iter != end && *iter == ref[0]) {
+      const uint8_t p = ref[0];
+      if (const auto iter = std::lower_bound(begin, end, p); iter != end && *iter == p) {
         offset = iter.childOffset();
         assert(offset < this->size);
       } else {
@@ -142,27 +141,25 @@ public:
     return {latestMatchedSize, latestProperty};
   }
 
-  void iterate(const std::function<bool(StringRef, unsigned char)> &walker) const {
-    if (walker) {
-      std::string buf;
-      this->iterate(buf, 1, walker);
-    }
+  void iterate(const FunctionRef<bool(StringRef, unsigned char)> walker) const {
+    std::string buf;
+    this->iterate(buf, 1, walker);
   }
 
 private:
   bool iterate(std::string &buf, unsigned int offset,
-               const std::function<bool(StringRef, unsigned char)> &walker) const;
+               FunctionRef<bool(StringRef, unsigned char)> walker) const;
 };
 
 class RadixTree {
 private:
   std::string prefix;
   uint8_t property{0};
-  std::unordered_map<char, std::unique_ptr<RadixTree>> children;
+  std::unordered_map<uint8_t, std::unique_ptr<RadixTree>> children;
 
 public:
-  static constexpr unsigned int MAX_STRING_SIZE = (1u << 15) - 1;
-  static constexpr unsigned int MAX_N_CHILDREN = 1u << 8;
+  static constexpr unsigned int MAX_STRING_SIZE = (1u << 15u) - 1;
+  static constexpr unsigned int MAX_N_CHILDREN = 1u << 8u;
 
   RadixTree() = default;
 
@@ -226,7 +223,7 @@ public:
    */
   unsigned int maxCodePointCount() const;
 
-  void iterate(const std::function<bool(StringRef, unsigned char)> &walker) const;
+  void iterate(FunctionRef<bool(StringRef, unsigned char)> walker) const;
 
 private:
   RadixTree *getOrCreate(char ch);

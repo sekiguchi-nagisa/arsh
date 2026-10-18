@@ -347,7 +347,7 @@ bool IndexBuilder::addBuiltinMethod(const Type &recvType, unsigned int methodInd
     iteratePackedParamNames(
         nativeFuncInfoTable()[methodIndex].params, [&](StringRef paramName, bool) {
           std::string cc = content;
-          cc += ":";
+          cc += ':';
           cc += std::to_string(paramIndex);
           NameInfo newNameInfo(tokenGen.next(), mangleParamNameImpl(name, &recvType, paramName));
           this->addDecl(newNameInfo, DeclSymbol::Kind::GENERIC_METHOD_PARAM, cc.c_str(),
@@ -360,14 +360,15 @@ bool IndexBuilder::addBuiltinMethod(const Type &recvType, unsigned int methodInd
   }
   if (recvType.typeKind() == TypeKind::Builtin) {
     std::string content;
-    formatNativeMethodSignature(methodIndex, "", content, [&](StringRef ref) {
+    auto callback = [&](StringRef ref) {
       auto r = ref.find(": ");
       auto paramName = ref.substr(0, r);
       auto paramType = ref.substr(r + 2).toString();
       NameInfo newNameInfo(tokenGen.next(), mangleParamNameImpl(name, &recvType, paramName));
       this->addDecl(newNameInfo, DeclSymbol::Kind::PARAM, paramType.c_str(),
                     newNameInfo.getToken());
-    });
+    };
+    formatNativeMethodSignature(methodIndex, "", content, callback);
     return this->addDeclImpl(&recvType, nameInfo, DeclSymbol::Kind::METHOD, content.c_str(),
                              nameInfo.getToken(), DeclInsertOp::BUILTIN);
   }
@@ -509,7 +510,7 @@ void IndexBuilder::addParamTypeInfo(Token token, const Type &recvType, const Met
         assert(isa<MapType>(recvType));
         auto &mapType = cast<MapType>(recvType);
         packed += mapType.getKeyType().getNameRef();
-        packed += ";";
+        packed += ';';
         packed += mapType.getValueType().getNameRef();
       }
       bool s = this->packedParamTypesMap.addPackedParamTypes(recvType.typeId(), std::move(packed));
@@ -800,7 +801,7 @@ static std::string generateConstructorInfo(const TypePool &pool, const FunctionN
 
   std::string value;
   unsigned int size = node.getParamNodes().size();
-  value += "(";
+  value += '(';
   for (unsigned int i = 0; i < size; i++) {
     auto &paramNode = node.getParamNodes()[i];
     if (i > 0) {
@@ -816,11 +817,11 @@ static std::string generateConstructorInfo(const TypePool &pool, const FunctionN
       auto declKind = fromVarDeclKind(e->getKind());
       value += "    ";
       value += DeclSymbol::getVarDeclPrefix(declKind);
-      value += " ";
+      value += ' ';
       value += e->getVarName();
       value += ": ";
       normalizeTypeName(e->getExprNode()->getType(), value);
-      value += "\n";
+      value += '\n';
     }
   }
   for (auto &e : node.getBlockNode().getNodes()) {
@@ -829,7 +830,7 @@ static std::string generateConstructorInfo(const TypePool &pool, const FunctionN
       auto declKind = fromVarDeclKind(declNode.getKind());
       value += "    ";
       value += DeclSymbol::getVarDeclPrefix(declKind);
-      value += " ";
+      value += ' ';
       value += declNode.getVarName();
       value += ": ";
       if (declNode.getExprNode()) {
@@ -837,7 +838,7 @@ static std::string generateConstructorInfo(const TypePool &pool, const FunctionN
       } else {
         normalizeTypeName(pool.get(TYPE::String), value);
       }
-      value += "\n";
+      value += '\n';
     } else if (isa<TypeDefNode>(*e)) {
       auto &defNode = cast<TypeDefNode>(*e);
       if (defNode.getDefKind() == TypeDefNode::ALIAS) {
@@ -845,11 +846,11 @@ static std::string generateConstructorInfo(const TypePool &pool, const FunctionN
         value += defNode.getName();
         value += " = ";
         normalizeTypeName(defNode.getTargetTypeNode().getType(), value);
-        value += "\n";
+        value += '\n';
       }
     }
   }
-  value += "}";
+  value += '}';
   if (isa<CLIRecordType>(node.getResolvedType())) {
     auto &type = cast<CLIRecordType>(*node.getResolvedType());
     if (auto &entries = type.getEntries(); !entries.empty()) {
@@ -1197,7 +1198,7 @@ void SymbolIndexer::addBuiltinSymbols() {
         assert(type.is(TYPE::String));
         std::string value = "'";
         value += *ptr;
-        value += "'";
+        value += '\'';
         this->builder().addDecl(nameInfo, DeclSymbol::Kind::CONST, value.c_str(),
                                 nameInfo.getToken());
       } else if (e.second->is(HandleKind::SMALL_CONST)) {

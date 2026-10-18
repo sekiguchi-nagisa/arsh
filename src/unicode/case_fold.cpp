@@ -17,7 +17,6 @@
 #include <algorithm>
 #include <limits>
 
-#include "misc/unicode.hpp"
 #include "unicode/case_fold.h"
 
 namespace arsh {
@@ -83,7 +82,7 @@ struct CompareFullFoldEntry {
   bool operator()(int x, const FullFoldEntry &y) const { return x < y.code; }
 };
 
-CaseFoldingResult doCaseFolding(int codePoint, const CaseFoldOp op) {
+CaseFoldingResult doCaseFolding(const int codePoint, const CaseFoldOp op) {
   if (hasFlag(op, CaseFoldOp::TURKIC)) {
     for (auto [before, after] : case_fold_T_table) {
       if (before == codePoint) {

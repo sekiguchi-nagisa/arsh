@@ -18,6 +18,7 @@
 #include <sys/resource.h>
 #include <sys/stat.h>
 
+#include <algorithm>
 #include <cstdlib>
 #include <unordered_map>
 
@@ -233,15 +234,15 @@ static std::vector<UdcOrBuiltin> collectVisibleUdcOrBuiltin(const ARState &state
   std::vector<UdcOrBuiltin> values;
   // collect visible user-defined commands
   auto &modType = getCurRuntimeModule(state);
-  modType.iterateSymbols(
-      state.typePool, true, [prefix, &modType, &values](StringRef name, const Handle &handle) {
-        if (isCmdFullName(name) && handle.isVisibleInMod(modType.getModId(), name) &&
-            name.startsWith(prefix)) {
-          name.removeSuffix(strlen(CMD_SYMBOL_SUFFIX));
-          values.emplace_back(std::make_pair(name, &handle));
-        }
-        return true;
-      });
+  auto walker = [prefix, &modType, &values](StringRef name, const Handle &handle) {
+    if (isCmdFullName(name) && handle.isVisibleInMod(modType.getModId(), name) &&
+        name.startsWith(prefix)) {
+      name.removeSuffix(strlen(CMD_SYMBOL_SUFFIX));
+      values.emplace_back(std::make_pair(name, &handle));
+    }
+    return true;
+  };
+  modType.iterateSymbols(state.typePool, true, walker);
 
   // collect builtin commands
   const auto range = getBuiltinCmdDescRange();
@@ -757,9 +758,8 @@ static constexpr ulimitOp ulimitOps[] = {
 static unsigned int computeMaxNameLen() {
   unsigned int max = 0;
   for (auto &e : ulimitOps) {
-    if (const unsigned int len = strlen(e.name); len > max) {
-      max = len;
-    }
+    const unsigned int len = strlen(e.name);
+    max = std::max(len, max);
   }
   return max;
 }

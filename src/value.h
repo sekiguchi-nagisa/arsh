@@ -92,7 +92,7 @@ union TaggedValue {
     memcpy(&u, &v, sizeof(double));
     return TaggedValue{
         .u64 =
-            rotateLeft(u + (static_cast<uint64_t>(1 + 2 * static_cast<uint8_t>(TAG)) << 58u), 5)};
+            rotateLeft(u + (static_cast<uint64_t>(1 + (2 * static_cast<uint8_t>(TAG))) << 58u), 5)};
   }
 
   /**
@@ -106,7 +106,7 @@ union TaggedValue {
   static double decodeTaggedFloat(const TaggedValue v) {
     static_assert(static_cast<uint8_t>(TAG) <= 7);
     const uint64_t vv =
-        rotateLeft(v.u64, 59) - (static_cast<uint64_t>(1 + 2 * static_cast<uint8_t>(TAG)) << 58u);
+        rotateLeft(v.u64, 59) - (static_cast<uint64_t>(1 + (2 * static_cast<uint8_t>(TAG))) << 58u);
     double d;
     memcpy(&d, &vv, sizeof(uint64_t));
     return d;

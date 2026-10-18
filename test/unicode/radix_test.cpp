@@ -6,20 +6,22 @@ using namespace arsh;
 
 static std::vector<std::string> list(const RadixTree &tree) {
   std::vector<std::string> values;
-  tree.iterate([&values](StringRef ref, unsigned char) {
+  auto walker =[&values](StringRef ref, unsigned char) {
     values.push_back(ref.toString());
     return true;
-  });
+  };
+  tree.iterate(walker);
   std::sort(values.begin(), values.end());
   return values;
 }
 
 static std::vector<std::string> list(const PackedRadixTree tree) {
   std::vector<std::string> values;
-  tree.iterate([&values](StringRef ref, unsigned char) {
+  auto walker = [&values](StringRef ref, unsigned char) {
     values.push_back(ref.toString());
     return true;
-  });
+  };
+  tree.iterate(walker);
   return values;
 }
 

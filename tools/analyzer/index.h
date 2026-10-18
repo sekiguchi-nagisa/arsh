@@ -155,6 +155,7 @@ public:
   };
 
   enum class Attr : unsigned char {
+    NONE = 0u,
     GLOBAL = 1u << 0u,
     PUBLIC = 1u << 1u,
     BUILTIN = 1u << 2u, // for builtin type field/method
