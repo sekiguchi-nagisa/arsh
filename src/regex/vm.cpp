@@ -343,36 +343,29 @@ static Capture resolveBackRef(const Regex &regex, const MatchContext &ctx,
   return captures[refIndex];
 }
 
-enum class PrefixSearchStatus : unsigned char {
-  CONSUMED,
-  NOT_FOUND,
-  DO_NOTHING,
-};
-
-static PrefixSearchStatus searchPrefix(const Inst *&inst, Input &input, const char *&oldIter,
-                                       const ArrayRef<Matcher> matchers) {
-  char data[4];
-  StringRef needle;
+static bool searchPrefix(const Inst *&inst, Input &input, const char *&oldIter,
+                         const ArrayRef<Matcher> matchers) {
   switch (inst->op) {
-  case OpCode::Char: {
-    const int codePoint = cast<CharIns>(*inst).getCodePoint();
-    const unsigned int len = UnicodeUtil::codePointToUtf8(codePoint, data);
-    needle = StringRef(data, len);
-    inst += sizeof(CharIns);
-    goto FIND_STRING;
-  }
+  case OpCode::Char:
   case OpCode::String: {
-    needle = matchers[cast<StringIns>(*inst).getIndex()].asStrRef();
-    inst += sizeof(StringIns);
-  FIND_STRING:
-    if (const auto retPos = input.remainForward().find(needle); retPos == StringRef::npos) {
-      oldIter = input.getEnd();
-      return PrefixSearchStatus::NOT_FOUND;
+    char data[4];
+    StringRef needle;
+    if (inst->op == OpCode::Char) {
+      const int codePoint = cast<CharIns>(*inst).getCodePoint();
+      const unsigned int len = UnicodeUtil::codePointToUtf8(codePoint, data);
+      needle = StringRef(data, len);
+      inst += sizeof(CharIns);
     } else {
-      oldIter = input.getIter() + retPos;
-      input.setIter(input.getIter() + retPos + needle.size());
-      return PrefixSearchStatus::CONSUMED;
+      needle = matchers[cast<StringIns>(*inst).getIndex()].asStrRef();
+      inst += sizeof(StringIns);
     }
+    if (const auto retPos = input.remainForward().find(needle); retPos != StringRef::npos) {
+      oldIter = input.getIter() + retPos;
+      input.setIter(oldIter + needle.size());
+      return true;
+    }
+    oldIter = input.getEnd();
+    return false;
   }
   case OpCode::CharSet: {
     const auto &ins = cast<CharSetIns>(*inst);
@@ -382,11 +375,11 @@ static PrefixSearchStatus searchPrefix(const Inst *&inst, Input &input, const ch
     while (input.available()) {
       oldIter = input.getIter();
       if (matcher.contains(input.consumeForward()) != invert) {
-        return PrefixSearchStatus::CONSUMED;
+        return true;
       }
     }
     oldIter = input.getEnd();
-    return PrefixSearchStatus::NOT_FOUND;
+    return false;
   }
   case OpCode::IChar: {
     const int codePoint = cast<ICharIns>(*inst).getCodePoint();
@@ -394,11 +387,11 @@ static PrefixSearchStatus searchPrefix(const Inst *&inst, Input &input, const ch
     while (input.available()) {
       oldIter = input.getIter();
       if (doSimpleCaseFolding(input.consumeForward()) == codePoint) {
-        return PrefixSearchStatus::CONSUMED;
+        return true;
       }
     }
     oldIter = input.getEnd();
-    return PrefixSearchStatus::NOT_FOUND;
+    return false;
   }
   case OpCode::ICharSet: {
     const auto &ins = cast<ICharSetIns>(*inst);
@@ -408,14 +401,14 @@ static PrefixSearchStatus searchPrefix(const Inst *&inst, Input &input, const ch
     while (input.available()) {
       oldIter = input.getIter();
       if (matcher.contains(doSimpleCaseFolding(input.consumeForward())) != invert) {
-        return PrefixSearchStatus::CONSUMED;
+        return true;
       }
     }
     oldIter = input.getEnd();
-    return PrefixSearchStatus::NOT_FOUND;
+    return false;
   }
   default:
-    return PrefixSearchStatus::DO_NOTHING;
+    return true; // do nothing
   }
 }
 
@@ -466,15 +459,9 @@ MatchStatus match(const Regex &regex, MatchContext &ctx, ObserverPtr<Timer> time
 #endif
 
 START:
-  switch (searchPrefix(inst, input, oldIter, matchers)) {
-  case PrefixSearchStatus::CONSUMED:
-    break;
-  case PrefixSearchStatus::NOT_FOUND:
+  if (!searchPrefix(inst, input, oldIter, matchers)) {
     goto BACKTRACK;
-  case PrefixSearchStatus::DO_NOTHING:
-    break;
   }
-
   while (true) {
     vmdispatch(inst->op) {
       vmcase(Nop) {
