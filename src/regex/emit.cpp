@@ -414,13 +414,6 @@ Optional<Regex> CodeGen::operator()(SyntaxTree &&tree) {
                std::move(tree).takeNamedCaptureGroups(), count);
 }
 
-int CodeGen::mayBeSimpleCaseFolding(int codePoint) const {
-  if (this->needSimpleCaseFolding()) {
-    return doSimpleCaseFolding(codePoint);
-  }
-  return codePoint;
-}
-
 void CodeGen::mayBeSimpleCaseFolding(CodePointSetBuilder &setBuilder) const {
   if (this->needSimpleCaseFolding()) {
     setBuilder.foldCase();
@@ -749,7 +742,9 @@ void CodeGen::generateStrSet(StrSetBuilder &setBuilder, const unsigned int level
   switch (node.getKind()) {
   case NodeKind::Char: {
     int codePoint = cast<CharNode>(node).getCodePoint();
-    codePoint = this->mayBeSimpleCaseFolding(codePoint);
+    if (this->needSimpleCaseFolding()) {
+      codePoint = doSimpleCaseFolding(codePoint);
+    }
     setBuilder.add(codePoint);
     break;
   }
@@ -845,7 +840,13 @@ void CodeGen::generateStrSet(StrSetBuilder &setBuilder, const unsigned int level
       buf.clear();
       for (auto &c : seqNode.getPatterns()) {
         assert(isa<CharNode>(*c));
-        int codePoint = this->mayBeSimpleCaseFolding(cast<CharNode>(*c).getCodePoint());
+        int codePoint = cast<CharNode>(*c).getCodePoint();
+        if (this->has(Modifier::IGNORE_CASE)) {
+          /*
+           * always perform case folding regardless of mode for string alt optimization
+           */
+          codePoint = doSimpleCaseFolding(codePoint);
+        }
         char data[4];
         if (unsigned int len = UnicodeUtil::codePointToUtf8(codePoint, data)) {
           buf.append(data, len);

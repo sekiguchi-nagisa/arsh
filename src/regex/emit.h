@@ -153,8 +153,6 @@ private:
     return this->mode == Mode::UNICODE_SET && this->has(Modifier::IGNORE_CASE);
   }
 
-  int mayBeSimpleCaseFolding(int codePoint) const;
-
   void mayBeSimpleCaseFolding(CodePointSetBuilder &setBuilder) const;
 
   void complement(CodePointSetBuilder &setBuilder) const;
