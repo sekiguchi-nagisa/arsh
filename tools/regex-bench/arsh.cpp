@@ -92,12 +92,12 @@ static Optional<regex::Regex> compilePattern(const std::string &pattern) {
  * @return the match status. on OK, the number of matches is stored to `*found`.
  */
 static regex::MatchStatus
-countMatchesIn(regex::MatchContext &matchCtx, std::vector<regex::Capture> &captures,
+countMatchesIn(const regex::Regex &re, regex::MatchContext &matchCtx, std::vector<regex::Capture> &captures,
                long long *found) {
   long long count = 0;
   for (;;) {
     const unsigned int startOffset = matchCtx.getInput().getOffset();
-    const auto status = regex::match(matchCtx, nullptr);
+    const auto status = regex::match(re, matchCtx, nullptr);
     if (status == regex::MatchStatus::FAIL) {
       break;
     }
@@ -152,7 +152,7 @@ extern "C" int arsh_find_all(char *pattern, char *subject, int subject_len, int 
     }
     TIME_TYPE start, end;
     GET_TIME(start);
-    const auto status = countMatchesIn(ctx.asOk(), captures, &found);
+    const auto status = countMatchesIn(re, ctx.asOk(), captures, &found);
     GET_TIME(end);
     times[repeat - 1] = TIME_DIFF_IN_MS(start, end);
     if (status != regex::MatchStatus::OK) {
