@@ -149,3 +149,45 @@ property: 0x01, string: \xE3\x81\x82\xE3\x81\x82
 { 0x0031, 0x0032 },
 EOF
 )
+
+# Tom|Sawyer|Huckleberry|Finn|A|a
+assert diff <(redump -d 'Tom|Sawyer|Huckleberry|Finn|A|a' '') <(<<'EOF'
+flag: (mode = , modifier = )
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+   0: PrepareRadix
+   1: RadixOrEmoji(emoji=, hasRadix=true, index=0, nextOffset=4)
+   7: CharSet(matcherIndex=1, invert=false)
+  11: Match
+matchers:
+  0: RadixTree
+property: 0x01, string: \x46\x69\x6E\x6E
+property: 0x01, string: \x48\x75\x63\x6B\x6C\x65\x62\x65\x72\x72\x79
+property: 0x01, string: \x53\x61\x77\x79\x65\x72
+property: 0x01, string: \x54\x6F\x6D
+  1: AsciiSet
+{ 0x0041, 0x0041 },
+{ 0x0061, 0x0061 },
+EOF
+)
+
+assert diff <(redump -d 'Tom|Sawyer|Huckleberry|Finn|A|a' 'i') <(<<'EOF'
+flag: (mode = , modifier = i)
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+   0: PrepareRadix
+   1: RadixOrEmoji(emoji=case-ignore, hasRadix=true, index=0, nextOffset=5)
+   7: IChar(codePoint=U+0061:a)
+  12: Match
+matchers:
+  0: RadixTree
+property: 0x01, string: \x66\x69\x6E\x6E
+property: 0x01, string: \x68\x75\x63\x6B\x6C\x65\x62\x65\x72\x72\x79
+property: 0x01, string: \x73\x61\x77\x79\x65\x72
+property: 0x01, string: \x74\x6F\x6D
+EOF
+)
