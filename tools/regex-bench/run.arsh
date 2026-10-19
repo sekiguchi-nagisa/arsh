@@ -25,6 +25,7 @@
 #   arsh tools/regex-bench/run.arsh                              # arsh only
 #   arsh tools/regex-bench/run.arsh --std-regex --srell --boost  # compare with others
 #   arsh tools/regex-bench/run.arsh --repeat 3 --output results.csv
+#   arsh tools/regex-bench/run.arsh --cxx clang++                # build with clang++
 #   arsh tools/regex-bench/run.arsh --keep                       # keep the work directory
 #   arsh tools/regex-bench/run.arsh --prepare                    # only fetch/build the engines
 
@@ -40,6 +41,75 @@ let PCRE2_URL = "https://github.com/PCRE2Project/pcre2"
 let PCRE2_VERSION = "pcre2-10.49" # pinned release (its tarball bundles the sljit JIT dependency)
 let BOOST_ARCHIVE = "https://archives.boost.io/release"
 
+# The name of the C compiler that belongs to the specified C++ compiler
+# (e.g. clang++-18 -> clang-18, g++-12 -> gcc-12).
+function _cCompilerName(cxx: String) : String? {
+    let name = $cxx.basename()
+    if $name.startsWith("clang++") {
+        return "clang${$name.slice("clang++".size())}"
+    } elif $name.startsWith("g++") {
+        return "gcc${$name.slice("g++".size())}"
+    } elif $name == "c++" {
+        return "cc"
+    }
+    return $none
+}
+
+# Resolve the C compiler of the specified C++ compiler, or $none if there is none.
+function _cCompiler(cxx: String) : String? {
+    if let name = $_cCompilerName($cxx) {
+        if $cxx.contains("/") {
+            let path = "${$cxx.dirname()}/$name"
+            if (test -x $path) {
+                return $path
+            }
+        } elif (command -v $name &>> /dev/null) {
+            return $name
+        }
+    }
+    return $none
+}
+
+# A suffix for the build directories, so builds with different compilers do not share a
+# CMake cache. Empty when no compiler is specified (keeps the default layout).
+function _compilerTag(cxx: String?) : String {
+    if let c = $cxx {
+        let name = $_cCompilerName($c) ?? $c.basename()
+        return "-${$name.replace("+", "")}"
+    }
+    return ""
+}
+
+# Check that the specified C++ compiler is usable and report the missing one otherwise. The C
+# compiler of the same toolchain is optional (see _cCompiler) and is not required here.
+function _checkCompiler(cxx: String) {
+    if $cxx == "" {
+        echo 1>&2 "C++ compiler must not be empty"
+        exit 1
+    }
+    if $cxx.contains("/") {
+        if !(test -x $cxx) {
+            echo 1>&2 "C++ compiler not found: $cxx"
+            exit 1
+        }
+    } elif !(command -v $cxx &>> /dev/null) {
+        echo 1>&2 "C++ compiler not found: $cxx"
+        exit 1
+    }
+}
+
+# The CMake arguments selecting the specified C++ compiler (and its C compiler, if known).
+function _compilerArgs(cxx: String?) : [String] {
+    var args : [String]
+    if let c = $cxx {
+        $args.add("-DCMAKE_CXX_COMPILER=$c")
+        if let cc = $_cCompiler($c) {
+            $args.add("-DCMAKE_C_COMPILER=$cc")
+        }
+    }
+    return $args
+}
+
 [<CLI(toplevel: $true, verbose:$true)>]
 type _Param() {
     [<Option(help: "number of repetitions (default: 5)")>]
@@ -53,6 +123,9 @@ type _Param() {
 
     [<Option(help: "arsh build type (default: Release)")>]
     var build = "Release"
+
+    [<Option(placeholder: "CXX", help: "C++ compiler used to build arsh and the benchmark")>]
+    var cxx : String?
 
     [<Option(placeholder: "DIR", help: "working directory (default: .regex-bench)")>]
     var work = ".regex-bench"
@@ -196,10 +269,19 @@ function _fetchPcre2(work: String) : String {
 
 function _buildPcre2(work: String, pcre2Src: String) : String {
     let buildDir = "$work/pcre2-build"
+    # PCRE2 builds the static library without position independent code unless asked to. Such an
+    # archive cannot be linked into a PIE executable, which is what the compilers default to on
+    # most distributions (clang++ always does), so a cache without PCRE2_STATIC_PIC must be
+    # discarded and rebuilt.
+    if (test -e "$buildDir/CMakeCache.txt") && !(grep -q "PCRE2_STATIC_PIC:BOOL=ON" "$buildDir/CMakeCache.txt" &>> /dev/null) {
+        rm -rf $buildDir
+    }
     if !(test -e "$buildDir/libpcre2-8.a") {
         mkdir -p $buildDir || exit $?
-        # only the 8-bit library is needed; the JIT must be enabled explicitly
+        # only the 8-bit library is needed; the JIT must be enabled explicitly and the archive
+        # must be position independent so that it can be linked into a PIE executable
         cmake -S $pcre2Src -B $buildDir -DCMAKE_BUILD_TYPE=Release -DPCRE2_SUPPORT_JIT=ON \
+              -DPCRE2_STATIC_PIC=ON \
               -DPCRE2_BUILD_PCRE2_16=OFF -DPCRE2_BUILD_PCRE2_32=OFF \
               -DPCRE2_BUILD_TESTS=OFF -DPCRE2_BUILD_PCRE2GREP=OFF || exit $?
         cmake --build $buildDir --target pcre2-8-static -j || exit $?
@@ -242,23 +324,25 @@ function _fetchAndPatch(root: String, work: String) {
     echo "patched: $src"
 }
 
-function _buildArsh(root: String, work: String, buildType: String) : String {
-    let buildDir = "$work/arsh-build"
+function _buildArsh(root: String, work: String, buildType: String, cxx: String?) : String {
+    let buildDir = "$work/arsh-build${$_compilerTag($cxx)}"
     mkdir -p $buildDir || exit $?
-    cmake -S $root -B $buildDir -DCMAKE_BUILD_TYPE=$buildType || exit $?
+    let compilerArgs = $_compilerArgs($cxx)
+    cmake -S $root -B $buildDir -DCMAKE_BUILD_TYPE=$buildType $compilerArgs || exit $?
     cmake --build $buildDir --target regex -j || exit $?
     return $buildDir.realpath()
 }
 
-function _buildBench(root: String, work: String, arshBuild: String, srellSrc: String?, quickjsSrc: String?, hermesSrc: String?, hermesBuild: String?, boostPrefix: String?, pcre2Build: String?, nodejsBin: String?, stdRegex: Bool) : String {
+function _buildBench(root: String, work: String, arshBuild: String, srellSrc: String?, quickjsSrc: String?, hermesSrc: String?, hermesBuild: String?, boostPrefix: String?, pcre2Build: String?, nodejsBin: String?, stdRegex: Bool, cxx: String?) : String {
     let src = "$work/regex-performance"
-    let buildDir = "$work/regex-perf-build"
+    let buildDir = "$work/regex-perf-build${$_compilerTag($cxx)}"
     mkdir -p $buildDir || exit $?
     cd $src || exit $?
     let srcDir = $root.realpath()
     var common : [String]
     $common.add("-DCMAKE_POLICY_VERSION_MINIMUM=3.5")
     $common.add("-DCMAKE_BUILD_TYPE=Release")
+    $common.addAll($_compilerArgs($cxx))
     $common.add("-DINCLUDE_ARSH=local")
     $common.add("-DARSH_SOURCE_DIR=$srcDir")
     $common.add("-DARSH_BUILD_DIR=$arshBuild")
@@ -332,6 +416,14 @@ function run() for _Param {
     let workDir = $this.work
     mkdir -p $workDir || exit $?
     let work = $workDir.realpath()
+
+    # resolve the compiler before anything builds; the build directories of different
+    # compilers are kept apart (see _compilerTag)
+    var cxxOpt : String?
+    if let c = $this.cxx {
+        $_checkCompiler($c)
+        $cxxOpt = $c
+    }
 
     # resolve the user-specified directories before _fetchAndPatch changes the cwd
     var srellDirOpt : String?
@@ -434,8 +526,8 @@ function run() for _Param {
         $nodejsBin = "node" # resolved on PATH by CMake (find_program)
     }
 
-    let arshBuild = $_buildArsh($root, $work, $this.build)
-    let bin = $_buildBench($root, $work, $arshBuild, $srellSrc, $quickjsSrc, $hermesSrc, $hermesBuild, $boostPrefix, $pcre2Build, $nodejsBin, $this.stdRegex)
+    let arshBuild = $_buildArsh($root, $work, $this.build, $cxxOpt)
+    let bin = $_buildBench($root, $work, $arshBuild, $srellSrc, $quickjsSrc, $hermesSrc, $hermesBuild, $boostPrefix, $pcre2Build, $nodejsBin, $this.stdRegex, $cxxOpt)
 
     var args : [String]
     if let r = $this.repeat {

@@ -62,6 +62,23 @@ $ arsh tools/regex-bench/run.arsh --std-regex --srell --quickjs --hermes --pcre2
 and prints their resolved locations. It is used by `build_rematch.arsh` to build the standalone
 `rematch` tool from the same engine trees.
 
+`--cxx` selects the C++ compiler used for the arsh libraries and for `regex_perf` (the C
+compiler of the same toolchain is used as well, e.g. `clang++-18` selects `clang-18`):
+
+```sh
+$ arsh tools/regex-bench/run.arsh --cxx clang++
+$ arsh tools/regex-bench/run.arsh --cxx g++-14 --std-regex --output gcc.csv
+```
+
+A compiler builds into its own directories (`arsh-build-gcc`, `regex-perf-build-gcc`, ...), so the
+compilers do not overwrite each other's CMake cache and `g++`/`clang++` results can be produced
+from the same work directory. Without `--cxx` the ambient compiler (the CMake default) is used and
+the original directory names (`arsh-build`, `regex-perf-build`) are kept.
+
+The comparison engines that `run.arsh` downloads and builds itself (Hermes, PCRE2, Boost) are
+prepared once per work directory and shared, so both compiler runs measure the same engine
+libraries.
+
 ## Standalone matcher
 
 `rematch` is a small standalone program that embeds the SRELL / QuickJS / Hermes engines used
@@ -146,6 +163,7 @@ failed
 | `--output F`          | write the measured data into a CSV file                  |
 | `--input F`           | use a custom input file instead of `3200.txt`            |
 | `--build TYPE`        | arsh build type (default: `Release`)                     |
+| `--cxx CXX`           | C++ compiler used to build arsh and the benchmark        |
 | `--work DIR`          | working directory (default: `.regex-bench`)              |
 | `--keep`              | keep the fetched work directory                          |
 | `--setup`             | only fetch and patch, do not build or run                |
@@ -175,7 +193,12 @@ libraries it needs. When a Hermes tree is already available, pass both `--hermes
 `--hermes-build-dir <build>` to skip the clone and the build.
 
 `--pcre2` downloads the pinned PCRE2 release and builds the 8-bit static library with JIT support
-(`--pcre2-dir <build>` reuses an existing build). It registers two targets: `pcre` (interpreter)
+and position independent code enabled (`PCRE2_STATIC_PIC=ON`, `--pcre2-dir <build>` reuses an
+existing build). The PIC flag is required because `regex_perf` is linked as a PIE executable by
+default, and an archive built without PIC fails to link in that case with
+`relocation R_X86_64_32S ... can not be used when making a PIE object` (clang++ always links PIE,
+so the failure shows up with `--cxx clang++`). A build directory whose cache lacks
+`PCRE2_STATIC_PIC=ON` is discarded and rebuilt. It registers two targets: `pcre` (interpreter)
 and `pcre-jit`. PCRE2 is matched in its default 8-bit mode, like the upstream harness; the
 interpreter is markedly slower than the JIT on several patterns.
 
@@ -223,13 +246,14 @@ compiled).
 ## CI
 
 `.github/workflows/regex-bench.yml` builds and measures this directory (and the standalone
-`rematch`) on GitHub Actions. It runs on `workflow_dispatch` and once a week (Sunday 18:00 UTC),
+`rematch`) on GitHub Actions. It runs on `workflow_dispatch` and once a week (Friday 00:00 UTC),
 and on each run it:
 
 1. builds arsh and runs the regex suites (`regex_test` / `regex_e2e_test`),
 2. fetches/builds the engines shared with `rematch` (`run.arsh --prepare`),
 3. builds `rematch` and runs `rematch_test` (`build_rematch.arsh --no-prepare --arsh-build build`),
-4. runs `run.arsh --std-regex --srell --quickjs --hermes` and uploads the CSV as an artifact.
+4. runs `run.arsh --std-regex --srell --quickjs --hermes` with `--cxx g++` and with
+   `--cxx clang++`, and uploads both CSVs as one artifact.
 
 The engine trees under `.regex-bench` are cached (keyed by `run.arsh`, which pins the engine
 revisions), so only the first run pays for the Hermes clone and build. The benchmark itself takes

@@ -4,7 +4,7 @@ name: Regex Bench
 #
 # It builds arsh and runs the regex test suites, prepares the comparison engines the benchmark
 # and `rematch` share (SRELL / QuickJS / Hermes), builds `rematch` with its integration test and
-# measures the benchmark targets into a CSV artifact.
+# measures the benchmark targets with both g++ and clang++ into CSV artifacts.
 #
 # Fetching and building the engines (especially Hermes) dominates the runtime, so the engine
 # trees and the Hermes build are cached under `.regex-bench` and reused on the next run.
@@ -23,21 +23,23 @@ concurrency:
 jobs:
   build_and_bench:
     runs-on: ubuntu-24.04
-    timeout-minutes: 120
+    # the benchmark runs once per compiler, so allow some headroom over a single run
+    timeout-minutes: 180
     env:
       # regex-bench work directory (the default of run.arsh / build_rematch.arsh)
       WORK: .regex-bench
       BUILD: build
       REMATCH_BUILD: build-rematch
-      RESULTS: regex-bench-results.csv
+      RESULTS_DIR: regex-bench-results
     steps:
       - uses: actions/checkout@v6
-      # libicu-dev is needed by the Hermes regex engine (Intl); re2c is intentionally not
-      # installed so the build fetches the pinned 4.6 release itself, like the other workflows
+      # libicu-dev is needed by the Hermes regex engine (Intl); clang is used for the clang++
+      # benchmark run. re2c is intentionally not installed so the build fetches the pinned 4.6
+      # release itself, like the other workflows
       - name: prepare
         run: |
           sudo apt update
-          sudo apt install language-pack-ja ninja-build libicu-dev
+          sudo apt install language-pack-ja ninja-build libicu-dev clang
       # Restore the engine trees fetched/built by run.arsh --prepare. The key tracks run.arsh
       # because it pins the engine revisions; a cache hit therefore also freezes the engines
       # until that script changes. No restore-keys fallback is used on purpose: the existence
@@ -96,27 +98,43 @@ jobs:
         run: |
           cd $REMATCH_BUILD
           ctest -j4 --output-on-failure
-      # the measured data goes to an absolute path because run.arsh writes it relative to the
-      # fetched regex-performance directory
-      - name: benchmark
+      # measure with both compilers. run.arsh builds each compiler into its own directories
+      # (see --cxx), so the second run reuses the engines and the patched regex-performance
+      # tree fetched above. the measured data goes to an absolute path because run.arsh writes
+      # it relative to the fetched regex-performance directory.
+      - name: benchmark (g++)
         run: |
-          arsh tools/regex-bench/run.arsh \
+          mkdir -p "$RESULTS_DIR"
+          arsh tools/regex-bench/run.arsh --cxx g++ \
                 --std-regex --srell --quickjs --hermes --keep --work $WORK \
-                --output "$PWD/$RESULTS"
+                --output "$PWD/$RESULTS_DIR/regex-bench-results-gcc.csv"
+      - name: benchmark (clang++)
+        run: |
+          arsh tools/regex-bench/run.arsh --cxx clang++ \
+                --std-regex --srell --quickjs --hermes --keep --work $WORK \
+                --output "$PWD/$RESULTS_DIR/regex-bench-results-clang.csv"
       # the harness reports an engine that fails to build or run as a failure line instead of
       # failing the run, so check that every requested engine made it into the measured data
       - name: verify results
         run: |
-          header=$(head -n 1 "$RESULTS")
-          for engine in arsh cppstd srell quickjs hermes; do
-            if ! grep -qF "$engine [ms]" <<<"$header"; then
-              echo 1>&2 "engine missing from the benchmark results: $engine"
-              exit 1
-            fi
+          count=0
+          for result in "$RESULTS_DIR"/*.csv; do
+            count=$((count + 1))
+            header=$(head -n 1 "$result")
+            for engine in arsh cppstd srell quickjs hermes; do
+              if ! grep -qF "$engine [ms]" <<<"$header"; then
+                echo 1>&2 "engine missing from $result: $engine"
+                exit 1
+              fi
+            done
           done
+          if [ "$count" -ne 2 ]; then
+            echo 1>&2 "expected 2 result files (g++ and clang++), found $count"
+            exit 1
+          fi
       - name: upload results
         uses: actions/upload-artifact@v7
         with:
           name: regex-bench-results
-          path: ${{ env.RESULTS }}
+          path: ${{ env.RESULTS_DIR }}
           if-no-files-found: error
