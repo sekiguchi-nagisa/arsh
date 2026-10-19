@@ -294,8 +294,8 @@ $ ./src/regex_perf -f ../3200.txt -o results.csv
 * The arsh adapter maps the leading `(?i)` modifier (used by two benchmark patterns) to the arsh
   `i` flag, since arsh only accepts flags via `Flag::parse`.
 * arsh only accepts the `u`/`v` modes; benchmark subjects are matched in Unicode (`u`) mode.
-* Match counting emulates the global (`g`) flag with `regex::matchAll` (the same semantics the
-  other engines use).
+* Match counting emulates the global (`g`) flag by repeatedly calling `regex::match` and
+  advancing the input, which is the same semantics the other engines use.
 * SRELL, QuickJS `libregexp`, Hermes and the Node.js engine are the closest comparison targets for
   arsh here: all are ECMAScript-compatible Unicode engines, just like arsh. Boost.Regex
   additionally supports the
