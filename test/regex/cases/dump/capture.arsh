@@ -12,6 +12,7 @@ instructions:
    3: Char(codePoint=U+3042:あ)
    8: EndCapture(captureIndex=1)
   11: Match
+firstSet:
 matchers:
 EOF
 )
@@ -26,6 +27,7 @@ instructions:
    3: IChar(codePoint=U+3042:あ)
    8: EndCapture(captureIndex=1)
   11: Match
+firstSet:
 matchers:
 EOF
 )
@@ -43,6 +45,7 @@ instructions:
   12: EndCapture(captureIndex=1)
   15: Char(codePoint=U+3044:い)
   20: Match
+firstSet:
 matchers:
   0: AsciiSet
 { 0x0030, 0x0039 },
@@ -64,6 +67,7 @@ instructions:
   12: EndCapture(captureIndex=1)
   15: IChar(codePoint=U+3044:い)
   20: Match
+firstSet:
 matchers:
   0: AsciiSet
 { 0x0030, 0x0039 },
@@ -90,6 +94,7 @@ instructions:
   30: AnyExceptNL
   31: EndCapture(captureIndex=2)
   34: Match
+firstSet:
 matchers:
 EOF
 )
@@ -114,6 +119,7 @@ instructions:
   41: LBEndCapture(captureIndex=2)
   44: EndLookAround
   45: Match
+firstSet:
 matchers:
 EOF
 )
@@ -137,6 +143,7 @@ instructions:
   41: LBEndCapture(captureIndex=2)
   44: EndLookAround
   45: Match
+firstSet:
 matchers:
 EOF
 )
@@ -158,6 +165,7 @@ instructions:
   25: EndCapture(captureIndex=1)
   28: Char(codePoint=U+0063:c)
   33: Match
+firstSet:
 matchers:
 EOF
 )
@@ -181,6 +189,7 @@ instructions:
   35: EndCapture(captureIndex=1)
   38: Char(codePoint=U+0063:c)
   43: Match
+firstSet:
 matchers:
 EOF
 )

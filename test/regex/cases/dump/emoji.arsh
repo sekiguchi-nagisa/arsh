@@ -11,6 +11,7 @@ instructions:
   0: PrepareRadix
   1: RadixOrEmoji(emoji=RGI_Emoji_ZWJ_Sequence, hasRadix=false, index=0, nextOffset=0)
   7: Match
+firstSet:
 matchers:
 EOF
 )
@@ -24,6 +25,7 @@ instructions:
   0: PrepareRadix
   1: RadixOrEmoji(emoji=RGI_Emoji_ZWJ_Sequence|case-ignore, hasRadix=false, index=0, nextOffset=0)
   7: Match
+firstSet:
 matchers:
 EOF
 )
@@ -38,6 +40,7 @@ instructions:
   0: PrepareRadix
   1: RadixOrEmoji(emoji=RGI_Emoji, hasRadix=false, index=0, nextOffset=0)
   7: Match
+firstSet:
 matchers:
 EOF
 )
@@ -51,6 +54,7 @@ instructions:
   0: PrepareRadix
   1: RadixOrEmoji(emoji=RGI_Emoji|case-ignore, hasRadix=false, index=0, nextOffset=0)
   7: Match
+firstSet:
 matchers:
 EOF
 )
@@ -67,6 +71,7 @@ instructions:
    7: LBRadixOrEmoji(emoji=RGI_Emoji_ZWJ_Sequence, hasRadix=false, index=0, nextOffset=0)
   13: EndLookAround
   14: Match
+firstSet:
 matchers:
 EOF
 )
@@ -82,6 +87,7 @@ instructions:
    7: LBRadixOrEmoji(emoji=RGI_Emoji_ZWJ_Sequence|case-ignore, hasRadix=false, index=0, nextOffset=0)
   13: EndLookAround
   14: Match
+firstSet:
 matchers:
 EOF
 )
@@ -98,6 +104,7 @@ instructions:
    7: LBRadixOrEmoji(emoji=RGI_Emoji, hasRadix=false, index=0, nextOffset=0)
   13: EndLookAround
   14: Match
+firstSet:
 matchers:
 EOF
 )
@@ -113,6 +120,7 @@ instructions:
    7: LBRadixOrEmoji(emoji=RGI_Emoji|case-ignore, hasRadix=false, index=0, nextOffset=0)
   13: EndLookAround
   14: Match
+firstSet:
 matchers:
 EOF
 )
@@ -128,6 +136,7 @@ instructions:
    1: RadixOrEmoji(emoji=Basic_Emoji|Emoji_Keycap_Sequence, hasRadix=false, index=0, nextOffset=4)
    7: CharSet(matcherIndex=0, invert=false)
   11: Match
+firstSet:
 matchers:
   0: CodePointSet(owned)
 { 0x0030, 0x0039 },
@@ -148,6 +157,7 @@ instructions:
    1: RadixOrEmoji(emoji=Basic_Emoji|Emoji_Keycap_Sequence|case-ignore, hasRadix=false, index=0, nextOffset=4)
    7: ICharSet(matcherIndex=0, invert=false)
   11: Match
+firstSet:
 matchers:
   0: CodePointSet(owned)
 { 0x0030, 0x0039 },
@@ -170,6 +180,7 @@ instructions:
   13: LBCharSet(matcherIndex=0, invert=false, ignoreCase=false)
   18: EndLookAround
   19: Match
+firstSet:
 matchers:
   0: CodePointSet(owned)
 { 0x0030, 0x0039 },
@@ -192,6 +203,7 @@ instructions:
   13: LBCharSet(matcherIndex=0, invert=false, ignoreCase=true)
   18: EndLookAround
   19: Match
+firstSet:
 matchers:
   0: CodePointSet(owned)
 { 0x0030, 0x0039 },

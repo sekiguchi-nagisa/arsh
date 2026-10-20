@@ -14,6 +14,7 @@ instructions:
    7: AnyExceptNL
    8: BackRef(index=1, named=false)
   12: Match
+firstSet:
 matchers:
 EOF
 )
@@ -30,6 +31,7 @@ instructions:
    7: AnyExceptNL
    8: IBackRef(index=1, named=false)
   12: Match
+firstSet:
 matchers:
 EOF
 )
@@ -49,6 +51,7 @@ instructions:
   18: LBAny(dotAll=false)
   20: EndLookAround
   21: Match
+firstSet:
 matchers:
 EOF
 )
@@ -67,6 +70,7 @@ instructions:
   18: LBAny(dotAll=true)
   20: EndLookAround
   21: Match
+firstSet:
 matchers:
 EOF
 )
@@ -87,6 +91,7 @@ instructions:
   15: EndCapture(captureIndex=2)
   18: BackRef(index=2, named=false)
   22: Match
+firstSet:
 matchers:
 EOF
 )
@@ -111,6 +116,7 @@ instructions:
   32: EndLookAround
   33: BackRef(index=2, named=false)
   37: Match
+firstSet:
 matchers:
 EOF
 )

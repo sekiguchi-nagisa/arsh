@@ -9,6 +9,7 @@ captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
   0: Match
+firstSet:
 matchers:
 EOF
 )
@@ -20,6 +21,7 @@ captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
   0: Match
+firstSet:
 matchers:
 EOF
 )
@@ -32,6 +34,7 @@ captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
   0: Match
+firstSet:
 matchers:
 EOF
 )
@@ -43,6 +46,7 @@ captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
   0: Match
+firstSet:
 matchers:
 EOF
 )
@@ -57,6 +61,7 @@ instructions:
   0: BeginLookAround(negate=true, target=6)
   6: EndLookAround
   7: Match
+firstSet:
 matchers:
 EOF
 )
@@ -70,6 +75,7 @@ instructions:
   0: BeginLookAround(negate=true, target=6)
   6: EndLookAround
   7: Match
+firstSet:
 matchers:
 EOF
 )
@@ -84,6 +90,7 @@ instructions:
   0: Alt(second=9)
   5: CharSet(matcherIndex=0, invert=false)
   9: Match
+firstSet:
 matchers:
   0: CodePointSet(owned)
 { 0x0041, 0x0041 },
@@ -100,6 +107,7 @@ instructions:
   0: Alt(second=9)
   5: ICharSet(matcherIndex=0, invert=false)
   9: Match
+firstSet:
 matchers:
   0: CodePointSet(owned)
 { 0x0061, 0x0061 },
@@ -118,6 +126,7 @@ instructions:
    1: RadixOrEmoji(emoji=, hasRadix=true, index=0, nextOffset=5)
    7: Char(codePoint=U+3042:あ)
   12: Match
+firstSet:
 matchers:
   0: RadixTree
 property: 0x01, string: \x41\x42
@@ -134,6 +143,7 @@ instructions:
    1: RadixOrEmoji(emoji=case-ignore, hasRadix=true, index=0, nextOffset=5)
    7: IChar(codePoint=U+3042:あ)
   12: Match
+firstSet:
 matchers:
   0: RadixTree
 property: 0x01, string: \x61\x62
@@ -152,6 +162,7 @@ instructions:
    6: RadixOrEmoji(emoji=, hasRadix=true, index=0, nextOffset=4)
   12: CharSet(matcherIndex=1, invert=false)
   16: Match
+firstSet:
 matchers:
   0: RadixTree
 property: 0x01, string: \x41\x42
@@ -173,6 +184,7 @@ instructions:
    6: RadixOrEmoji(emoji=case-ignore, hasRadix=true, index=0, nextOffset=4)
   12: ICharSet(matcherIndex=1, invert=false)
   16: Match
+firstSet:
 matchers:
   0: RadixTree
 property: 0x01, string: \x61\x62
@@ -197,6 +209,7 @@ instructions:
   18: LBCharSet(matcherIndex=1, invert=false, ignoreCase=false)
   23: EndLookAround
   24: Match
+firstSet:
 matchers:
   0: RadixTree
 property: 0x01, string: \x41\x42
@@ -224,6 +237,7 @@ instructions:
   18: LBCharSet(matcherIndex=1, invert=false, ignoreCase=true)
   23: EndLookAround
   24: Match
+firstSet:
 matchers:
   0: RadixTree
 property: 0x01, string: \x61\x62
@@ -247,6 +261,7 @@ instructions:
   0: PrepareRadix
   1: RadixOrEmoji(emoji=, hasRadix=true, index=0, nextOffset=0)
   7: Match
+firstSet:
 matchers:
   0: RadixTree
 property: 0x01, string: \x41\x42
@@ -263,6 +278,7 @@ instructions:
   0: PrepareRadix
   1: RadixOrEmoji(emoji=case-ignore, hasRadix=true, index=0, nextOffset=0)
   7: Match
+firstSet:
 matchers:
   0: RadixTree
 property: 0x01, string: \x61\x62
@@ -281,6 +297,7 @@ instructions:
    5: PrepareRadix
    6: RadixOrEmoji(emoji=, hasRadix=true, index=0, nextOffset=0)
   12: Match
+firstSet:
 matchers:
   0: RadixTree
 property: 0x01, string: \x41\x42
@@ -298,6 +315,7 @@ instructions:
    5: PrepareRadix
    6: RadixOrEmoji(emoji=case-ignore, hasRadix=true, index=0, nextOffset=0)
   12: Match
+firstSet:
 matchers:
   0: RadixTree
 property: 0x01, string: \x61\x62
@@ -319,6 +337,7 @@ instructions:
    6: RadixOrEmoji(emoji=RGI_Emoji, hasRadix=true, index=0, nextOffset=4)
   12: CharSet(matcherIndex=1, invert=false)
   16: Match
+firstSet:
 matchers:
   0: RadixTree
 property: 0x01, string: \xE3\x81\x82\xE3\x81\x84
@@ -344,6 +363,7 @@ instructions:
    6: RadixOrEmoji(emoji=RGI_Emoji|case-ignore, hasRadix=true, index=0, nextOffset=4)
   12: ICharSet(matcherIndex=1, invert=false)
   16: Match
+firstSet:
 matchers:
   0: RadixTree
 property: 0x01, string: \xE3\x81\x82\xE3\x81\x84

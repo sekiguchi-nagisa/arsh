@@ -10,6 +10,7 @@ namedCaptureGroups: []
 instructions:
   0: Grapheme
   1: Match
+firstSet:
 matchers:
 EOF
 )
@@ -22,6 +23,7 @@ namedCaptureGroups: []
 instructions:
   0: Grapheme
   1: Match
+firstSet:
 matchers:
 EOF
 )
@@ -34,6 +36,7 @@ namedCaptureGroups: []
 instructions:
   0: Grapheme
   1: Match
+firstSet:
 matchers:
 EOF
 )
@@ -49,6 +52,7 @@ instructions:
   1: Grapheme
   2: Grapheme
   3: Match
+firstSet:
 matchers:
 EOF
 )

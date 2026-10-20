@@ -12,6 +12,7 @@ instructions:
   14: Char(codePoint=U+0061:a)
   19: EndLoop(target=0)
   24: Match
+firstSet:
 matchers:
 EOF
 )
@@ -27,6 +28,7 @@ instructions:
   14: Char(codePoint=U+0061:a)
   19: EndLoop(target=0)
   24: Match
+firstSet:
 matchers:
 EOF
 )
@@ -42,6 +44,7 @@ instructions:
   14: Char(codePoint=U+0061:a)
   19: EndLoop(target=0)
   24: Match
+firstSet:
 matchers:
 EOF
 )
@@ -54,6 +57,7 @@ captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
   0: Match
+firstSet:
 matchers:
 EOF
 )
@@ -67,6 +71,7 @@ namedCaptureGroups: []
 instructions:
   0: CharSet(matcherIndex=0, invert=false)
   4: Match
+firstSet:
 matchers:
   0: AsciiSet
 { 0x0030, 0x0039 },
@@ -87,6 +92,7 @@ instructions:
   14: Char(codePoint=U+0061:a)
   19: EndLoop(target=0)
   24: Match
+firstSet:
 matchers:
 EOF
 )
@@ -103,6 +109,7 @@ instructions:
   14: AnyExceptNL
   15: EndLoop(target=0)
   20: Match
+firstSet:
 matchers:
 EOF
 )
@@ -119,6 +126,7 @@ instructions:
   19: CharSet(matcherIndex=0, invert=false)
   23: EndLoop(target=5)
   28: Match
+firstSet:
 matchers:
   0: AsciiSet
 { 0x0061, 0x007A },
@@ -147,6 +155,7 @@ instructions:
   78: EndLoop(target=60)
   83: End(multiline=false)
   85: Match
+firstSet:
 matchers:
 EOF
 )
@@ -186,6 +195,7 @@ instructions:
   152: EndCapture(captureIndex=2)
   155: EndLoop(target=11)
   160: Match
+firstSet:
 matchers:
 EOF
 )

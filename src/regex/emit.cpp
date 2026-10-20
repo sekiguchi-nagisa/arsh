@@ -410,8 +410,9 @@ Optional<Regex> CodeGen::operator()(SyntaxTree &&tree) {
   auto flag = tree.getFlag();
   auto count = tree.getCaptureGroupCount();
   auto loopCount = tree.getLoopCount();
-  return Regex(flag, loopCount, std::move(this->builder).build(), std::move(this->matchers),
-               std::move(tree).takeNamedCaptureGroups(), count);
+  CodePointSet firstSet;
+  return Regex(flag, loopCount, std::move(this->builder).build(), std::move(firstSet),
+               std::move(this->matchers), std::move(tree).takeNamedCaptureGroups(), count);
 }
 
 void CodeGen::mayBeSimpleCaseFolding(CodePointSetBuilder &setBuilder) const {

@@ -10,6 +10,7 @@ namedCaptureGroups: []
 instructions:
   0: Nop
   1: Match
+firstSet:
 matchers:
 EOF
 )
@@ -23,6 +24,7 @@ namedCaptureGroups: []
 instructions:
   0: Nop
   1: Match
+firstSet:
 matchers:
 EOF
 )
@@ -39,6 +41,7 @@ instructions:
   7: EndLookAround
   8: Nop
   9: Match
+firstSet:
 matchers:
 EOF
 )

@@ -10,6 +10,7 @@ instructions:
   0: AnyExceptNL
   1: Any
   2: Match
+firstSet:
 matchers:
 EOF
 )
@@ -23,6 +24,7 @@ instructions:
   0: Any
   1: AnyExceptNL
   2: Match
+firstSet:
 matchers:
 EOF
 )
@@ -40,6 +42,7 @@ instructions:
   20: LBAny(dotAll=true)
   22: EndLookAround
   23: Match
+firstSet:
 matchers:
 EOF
 )
@@ -58,6 +61,7 @@ instructions:
   22: EndLookAround
   23: Any
   24: Match
+firstSet:
 matchers:
 EOF
 )

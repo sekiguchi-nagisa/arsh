@@ -344,7 +344,7 @@ static Capture resolveBackRef(const Regex &regex, const MatchContext &ctx,
 }
 
 static bool searchPrefix(const Inst *&inst, Input &input, const char *&oldIter,
-                         const ArrayRef<Matcher> matchers) {
+                         const CodePointSet &firstSet, const ArrayRef<Matcher> matchers) {
   switch (inst->op) {
   case OpCode::Char:
   case OpCode::String: {
@@ -408,6 +408,18 @@ static bool searchPrefix(const Inst *&inst, Input &input, const char *&oldIter,
     return false;
   }
   default:
+    if (firstSet) {
+      const auto ref = firstSet.ref();
+      while (input.available()) {
+        oldIter = input.getIter();
+        if (ref.contains(input.consumeForward())) {
+          input.setIter(oldIter); // not consume input
+          return true;
+        }
+      }
+      oldIter = input.getEnd();
+      return false;
+    }
     return true; // do nothing
   }
 }
@@ -459,7 +471,7 @@ MatchStatus match(const Regex &regex, MatchContext &ctx, ObserverPtr<Timer> time
 #endif
 
 START:
-  if (!searchPrefix(inst, input, oldIter, matchers)) {
+  if (!searchPrefix(inst, input, oldIter, regex.getFirstSet(), matchers)) {
     goto BACKTRACK;
   }
   while (true) {

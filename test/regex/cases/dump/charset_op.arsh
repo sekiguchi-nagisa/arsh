@@ -10,6 +10,7 @@ namedCaptureGroups: []
 instructions:
   0: CharSet(matcherIndex=0, invert=false)
   4: Match
+firstSet:
 matchers:
   0: AsciiSet
 { 0x0030, 0x0039 },
@@ -24,6 +25,7 @@ namedCaptureGroups: []
 instructions:
   0: ICharSet(matcherIndex=0, invert=false)
   4: Match
+firstSet:
 matchers:
   0: AsciiSet
 { 0x0030, 0x0039 },
@@ -39,6 +41,7 @@ namedCaptureGroups: []
 instructions:
   0: CharSet(matcherIndex=0, invert=false)
   4: Match
+firstSet:
 matchers:
   0: AsciiSet
 { 0x0041, 0x005A },
@@ -55,6 +58,7 @@ namedCaptureGroups: []
 instructions:
   0: ICharSet(matcherIndex=0, invert=false)
   4: Match
+firstSet:
 matchers:
   0: AsciiSet
 { 0x005F, 0x005F },
@@ -71,6 +75,7 @@ namedCaptureGroups: []
 instructions:
   0: CharSet(matcherIndex=0, invert=false)
   4: Match
+firstSet:
 matchers:
   0: CodePointSet(owned)
 { 0x0000, 0x002F },
@@ -92,6 +97,7 @@ instructions:
    6: LBCharSet(matcherIndex=0, invert=false, ignoreCase=false)
   11: EndLookAround
   12: Match
+firstSet:
 matchers:
   0: AsciiSet
 EOF
@@ -107,6 +113,7 @@ instructions:
    6: LBCharSet(matcherIndex=0, invert=false, ignoreCase=true)
   11: EndLookAround
   12: Match
+firstSet:
 matchers:
   0: AsciiSet
 EOF
@@ -121,6 +128,7 @@ namedCaptureGroups: []
 instructions:
   0: CharSet(matcherIndex=0, invert=false)
   4: Match
+firstSet:
 matchers:
   0: CodePointSet(owned)
 { 0x0000, 0x002F },
@@ -139,6 +147,7 @@ namedCaptureGroups: []
 instructions:
   0: ICharSet(matcherIndex=0, invert=false)
   4: Match
+firstSet:
 matchers:
   0: CodePointSet(owned)
 { 0x0000, 0x002F },
@@ -158,6 +167,7 @@ namedCaptureGroups: []
 instructions:
   0: CharSet(matcherIndex=0, invert=false)
   4: Match
+firstSet:
 matchers:
   0: CodePointSet(owned)
 { 0x0000, 0x002F },
@@ -178,6 +188,7 @@ namedCaptureGroups: []
 instructions:
   0: CharSet(matcherIndex=0, invert=false)
   4: Match
+firstSet:
 matchers:
   0: AsciiSet
 { 0x0030, 0x0039 },
@@ -195,6 +206,7 @@ namedCaptureGroups: []
 instructions:
   0: ICharSet(matcherIndex=0, invert=false)
   4: Match
+firstSet:
 matchers:
   0: AsciiSet
 { 0x0030, 0x0039 },

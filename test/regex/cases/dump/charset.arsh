@@ -10,6 +10,7 @@ namedCaptureGroups: []
 instructions:
   0: CharSet(matcherIndex=0, invert=false)
   4: Match
+firstSet:
 matchers:
   0: AsciiSet
 EOF
@@ -23,6 +24,7 @@ namedCaptureGroups: []
 instructions:
   0: ICharSet(matcherIndex=0, invert=false)
   4: Match
+firstSet:
 matchers:
   0: AsciiSet
 EOF
@@ -37,6 +39,7 @@ namedCaptureGroups: []
 instructions:
   0: Any
   1: Match
+firstSet:
 matchers:
 EOF
 )
@@ -49,6 +52,7 @@ namedCaptureGroups: []
 instructions:
   0: Any
   1: Match
+firstSet:
 matchers:
 EOF
 )
@@ -62,6 +66,7 @@ namedCaptureGroups: []
 instructions:
   0: Char(codePoint=U+0041:A)
   5: Match
+firstSet:
 matchers:
 EOF
 )
@@ -74,6 +79,7 @@ namedCaptureGroups: []
 instructions:
   0: IChar(codePoint=U+0061:a)
   5: Match
+firstSet:
 matchers:
 EOF
 )
@@ -87,6 +93,7 @@ namedCaptureGroups: []
 instructions:
   0: CharSet(matcherIndex=0, invert=true)
   4: Match
+firstSet:
 matchers:
   0: AsciiSet
 { 0x0041, 0x0041 },
@@ -101,6 +108,7 @@ namedCaptureGroups: []
 instructions:
   0: CharSet(matcherIndex=0, invert=false)
   4: Match
+firstSet:
 matchers:
   0: CodePointSet(owned)
 { 0x0000, 0x0040 },
@@ -117,6 +125,7 @@ namedCaptureGroups: []
 instructions:
   0: ICharSet(matcherIndex=0, invert=true)
   4: Match
+firstSet:
 matchers:
   0: AsciiSet
 { 0x0061, 0x0061 },
@@ -131,6 +140,7 @@ namedCaptureGroups: []
 instructions:
   0: ICharSet(matcherIndex=0, invert=true)
   4: Match
+firstSet:
 matchers:
   0: CodePointSet(owned)
 { 0x0061, 0x0061 },
@@ -146,6 +156,7 @@ namedCaptureGroups: []
 instructions:
   0: CharSet(matcherIndex=0, invert=false)
   4: Match
+firstSet:
 matchers:
   0: AsciiSet
 { 0x0042, 0x0042 },
@@ -162,6 +173,7 @@ namedCaptureGroups: []
 instructions:
   0: ICharSet(matcherIndex=0, invert=false)
   4: Match
+firstSet:
 matchers:
   0: AsciiSet
 { 0x0061, 0x0063 },
@@ -177,6 +189,7 @@ namedCaptureGroups: []
 instructions:
   0: CharSet(matcherIndex=0, invert=false)
   4: Match
+firstSet:
 matchers:
   0: CodePointSet(owned)
 { 0x0041, 0x005A },
@@ -194,6 +207,7 @@ namedCaptureGroups: []
 instructions:
   0: ICharSet(matcherIndex=0, invert=false)
   4: Match
+firstSet:
 matchers:
   0: CodePointSet(owned)
 { 0x0061, 0x007A },
@@ -212,6 +226,7 @@ instructions:
    6: LBCharSet(matcherIndex=0, invert=false, ignoreCase=false)
   11: EndLookAround
   12: Match
+firstSet:
 matchers:
   0: CodePointSet(owned)
 { 0x0041, 0x005A },
@@ -231,6 +246,7 @@ instructions:
    6: LBCharSet(matcherIndex=0, invert=true, ignoreCase=true)
   11: EndLookAround
   12: Match
+firstSet:
 matchers:
   0: CodePointSet(owned)
 { 0x0061, 0x007A },
@@ -247,6 +263,7 @@ namedCaptureGroups: []
 instructions:
   0: CharSet(matcherIndex=0, invert=false)
   4: Match
+firstSet:
 matchers:
   0: AsciiSet
 { 0x0030, 0x0039 },
@@ -264,6 +281,7 @@ namedCaptureGroups: []
 instructions:
   0: ICharSet(matcherIndex=0, invert=false)
   4: Match
+firstSet:
 matchers:
   0: AsciiSet
 { 0x0030, 0x0039 },
@@ -281,6 +299,7 @@ namedCaptureGroups: []
 instructions:
   0: CharSet(matcherIndex=0, invert=false)
   4: Match
+firstSet:
 matchers:
   0: CodePointSet(owned)
 { 0x0000, 0x002F },
@@ -301,6 +320,7 @@ namedCaptureGroups: []
 instructions:
   0: Char(codePoint=U+0040:@)
   5: Match
+firstSet:
 matchers:
 EOF
 )
@@ -313,6 +333,7 @@ namedCaptureGroups: []
 instructions:
   0: IChar(codePoint=U+0040:@)
   5: Match
+firstSet:
 matchers:
 EOF
 )
@@ -326,6 +347,7 @@ namedCaptureGroups: []
 instructions:
   0: CharSet(matcherIndex=0, invert=false)
   4: Match
+firstSet:
 matchers:
   0: AsciiSet
 { 0x0041, 0x0041 },
@@ -341,6 +363,7 @@ namedCaptureGroups: []
 instructions:
   0: ICharSet(matcherIndex=0, invert=false)
   4: Match
+firstSet:
 matchers:
   0: AsciiSet
 { 0x0061, 0x0061 },
@@ -357,6 +380,7 @@ namedCaptureGroups: []
 instructions:
   0: CharSet(matcherIndex=0, invert=false)
   4: Match
+firstSet:
 matchers:
   0: AsciiSet
 { 0x0023, 0x0023 },
@@ -373,6 +397,7 @@ namedCaptureGroups: []
 instructions:
   0: ICharSet(matcherIndex=0, invert=false)
   4: Match
+firstSet:
 matchers:
   0: AsciiSet
 { 0x0023, 0x0023 },
@@ -392,6 +417,7 @@ instructions:
   0: CharSet(matcherIndex=0, invert=false)
   4: CharSet(matcherIndex=1, invert=false)
   8: Match
+firstSet:
 matchers:
   0: AsciiSet
 { 0x0061, 0x007A },
@@ -411,6 +437,7 @@ instructions:
   0: CharSet(matcherIndex=0, invert=false)
   4: CharSet(matcherIndex=1, invert=true)
   8: Match
+firstSet:
 matchers:
   0: AsciiSet
 { 0x0061, 0x007A },
@@ -427,6 +454,7 @@ namedCaptureGroups: []
 instructions:
   0: CharSet(matcherIndex=0, invert=false)
   4: Match
+firstSet:
 matchers:
   0: CodePointSet(borrowed)
 { 0x0000, 0xFFFF },
@@ -442,6 +470,7 @@ namedCaptureGroups: []
 instructions:
   0: Any
   1: Match
+firstSet:
 matchers:
 EOF
 )
