@@ -37,7 +37,7 @@ private:
 
 public:
   constexpr BMPCodePointRange(uint16_t first, uint16_t last)
-      : value(static_cast<uint32_t>(first) << 16 | static_cast<uint32_t>(last)) {}
+      : value(static_cast<uint32_t>(first) << 16u | static_cast<uint32_t>(last)) {}
 
   /**
    * unsage api. normally unused
@@ -45,9 +45,9 @@ public:
    */
   constexpr BMPCodePointRange(uint32_t value) : value(value) {} // NOLINT
 
-  uint16_t firstBMP() const { return static_cast<uint16_t>(this->value >> 16); }
+  uint16_t firstBMP() const { return static_cast<uint16_t>(this->value >> 16u); }
 
-  uint16_t lastBMP() const { return static_cast<uint16_t>(this->value & 0xFFFF); }
+  uint16_t lastBMP() const { return static_cast<uint16_t>(this->value & 0xFFFFu); }
 
   uint32_t underlying() const { return this->value; }
 
@@ -84,7 +84,7 @@ public:
    * @param size must be less than 2048 (1<<11)
    */
   constexpr PackedNonBMPCodePointRange(int first, unsigned int size)
-      : BMPCodePointRange(static_cast<uint32_t>(first) | (size << 21)) {}
+      : BMPCodePointRange(static_cast<uint32_t>(first) | (size << 21u)) {}
 
   static constexpr auto pack(int first, int last) {
     if (first <= last && (last - first) < (1 << 11)) {
@@ -93,10 +93,10 @@ public:
     throw 23;
   }
 
-  int firstNonBMP() const { return static_cast<int>(this->underlying() & 0x1FFFFF); }
+  int firstNonBMP() const { return static_cast<int>(this->underlying() & 0x1FFFFFu); }
 
   int lastNonBMP() const {
-    return this->firstNonBMP() + static_cast<int>(this->underlying() >> 21);
+    return this->firstNonBMP() + static_cast<int>(this->underlying() >> 21u);
   }
 
   struct SearchComp {
@@ -192,7 +192,7 @@ private:
   CodePointSet(unsigned short bmpSize, unsigned short packedSize, BMPCodePointRange *ptr,
                unsigned int size, bool borrowed)
       : ptr(ptr), bmpSize(bmpSize), packedNonBmpSize(packedSize),
-        sizeWithMeta(size | ((borrowed ? 0 : 1) << 31)) {}
+        sizeWithMeta(size | ((borrowed ? 0u : 1u) << 31u)) {}
 
 public:
   static CodePointSet take(unsigned short bmpSize, unsigned short packedSize,
@@ -246,9 +246,9 @@ public:
 
   explicit operator bool() const { return this->getSize() > 0; }
 
-  bool isOwned() const { return (this->sizeWithMeta >> 31) == 1; }
+  bool isOwned() const { return (this->sizeWithMeta >> 31u) == 1; }
 
-  unsigned int getSize() const { return this->sizeWithMeta & ((1u << 31) - 1); }
+  unsigned int getSize() const { return this->sizeWithMeta & ((1u << 31u) - 1); }
 
   unsigned short getBMPSize() const { return this->bmpSize; }
 
