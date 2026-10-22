@@ -50,6 +50,23 @@ $ arsh tools/regex-bench/run.arsh --std-regex --srell --quickjs --hermes --pcre2
   so Node.js has to be installed.
 * `--boost` adds Boost.Regex; the latest Boost release is downloaded and built automatically.
 
+To measure only some of the engines, or only some of the patterns, use `--target` and
+`--pattern` (both repeatable):
+
+```sh
+$ arsh tools/regex-bench/run.arsh --target arsh --target srell
+$ arsh tools/regex-bench/run.arsh --target arsh --pattern 'Twain' --pattern '\p{Sm}'
+```
+
+`--target NAME` restricts the measured engines to the given names; naming an engine also enables
+it, so `--target hermes` fetches and builds Hermes just like `--hermes` does, and `--target
+cppstd` / `--target pcre-jit` behave like `--std-regex` / `--pcre2`. The available names are
+`arsh`, `cppstd`, `srell`, `quickjs`, `hermes`, `boost`, `pcre`, `pcre-jit` and `nodejs`; an
+unknown name is rejected before anything is fetched. `--pattern PATTERN` replaces the built-in
+18-pattern set with the given patterns, which is useful for iterating on a single pattern
+without paying for the whole set. Without either option every engine compiled into `regex_perf`
+is measured against the built-in patterns, as before.
+
 `run.arsh` performs the following steps:
 
 1. clones `rust-leipzig/regex-performance` into `.regex-bench/regex-performance` (pinned commit),
@@ -78,6 +95,33 @@ the original directory names (`arsh-build`, `regex-perf-build`) are kept.
 The comparison engines that `run.arsh` downloads and builds itself (Hermes, PCRE2, Boost) are
 prepared once per work directory and shared, so both compiler runs measure the same engine
 libraries.
+
+## Profiling
+
+`--perf BASE` runs the benchmark under `perf record` and writes the profile to `BASE.data` plus a
+text summary to `BASE.report` (the `.data` suffix is stripped from `BASE` if given, and a
+relative path is resolved against the current directory):
+
+```sh
+$ arsh tools/regex-bench/run.arsh --target arsh --pattern '[a-zA-Z]+ing' --perf profile
+...
+profile: /path/to/profile.data
+report: /path/to/profile.report
+$ head -20 profile.report
+```
+
+Combine it with `--target` / `--pattern` to keep the sampled region focused on the code you are
+interested in: the harness measures every selected pattern, so profiling the whole 18-pattern set
+mixes all of them in one profile. Sampling runs at 997 Hz so even a short run yields usable
+samples.
+
+`--perf-call-graph` additionally passes `-g` to `perf record` to record call graphs. This requires
+`kernel.perf_event_paranoid <= 1` (usually root); the script checks the setting up front and
+reports the current value instead of failing inside `perf`. Use `perf report -g` (or
+`perf report --call-graph graph`) on the recorded `BASE.data` to view the graph.
+
+The profile reflects the benchmark process as a whole, so it also covers engine startup and the
+adapters' own work. To attribute time to a single engine, profile with `--target <engine>`.
 
 ## Standalone matcher
 
@@ -162,6 +206,10 @@ failed
 | `--repeat N`          | number of repetitions (default: 5)                       |
 | `--output F`          | write the measured data into a CSV file                  |
 | `--input F`           | use a custom input file instead of `3200.txt`            |
+| `--target NAME`       | measure only the specified engine (repeatable)           |
+| `--pattern PATTERN`   | measure only the specified pattern (repeatable)          |
+| `--perf BASE`         | profile the run with `perf record` (`BASE.data` / `BASE.report`) |
+| `--perf-call-graph`   | record call graphs too (`perf record -g`, needs `perf_event_paranoid <= 1`) |
 | `--build TYPE`        | arsh build type (default: `Release`)                     |
 | `--cxx CXX`           | C++ compiler used to build arsh and the benchmark        |
 | `--work DIR`          | working directory (default: `.regex-bench`)              |
@@ -287,7 +335,11 @@ $ cmake .. \
       -DINCLUDE_HYPERSCAN=disabled # ... any other engine you want to skip
 $ make regex_perf
 $ ./src/regex_perf -f ../3200.txt -o results.csv
+$ ./src/regex_perf -f ../3200.txt -e arsh -e srell -p 'Twain'   # only some engines/patterns
 ```
+
+The patch also adds `-e NAME` (repeatable, restrict the engines) and `-p PATTERN` (repeatable,
+replace the built-in pattern set) to `regex_perf`; `-h` lists the available engine names.
 
 ## Notes
 

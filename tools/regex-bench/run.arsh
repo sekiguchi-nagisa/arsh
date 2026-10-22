@@ -28,8 +28,15 @@
 #   arsh tools/regex-bench/run.arsh --cxx clang++                # build with clang++
 #   arsh tools/regex-bench/run.arsh --keep                       # keep the work directory
 #   arsh tools/regex-bench/run.arsh --prepare                    # only fetch/build the engines
+#   arsh tools/regex-bench/run.arsh --target arsh --target srell # only the specified engines
+#   arsh tools/regex-bench/run.arsh --pattern 'Twain'            # only the specified patterns
+#   arsh tools/regex-bench/run.arsh --perf profile               # profile the run with perf
 
 shctl set errraise
+
+# the engine names known to the benchmark harness (see the engines table of
+# rust-leipzig/regex-performance). --target selects a subset of them.
+let TARGETS = ['arsh', 'cppstd', 'srell', 'quickjs', 'hermes', 'boost', 'pcre', 'pcre-jit', 'nodejs']
 
 let REPO_URL = "https://github.com/rust-leipzig/regex-performance.git"
 let REPO_REF = "52cb0538eca86ad549f6895dbfa9a2f71bc82244" # pinned commit (2022-10-13)
@@ -110,6 +117,62 @@ function _compilerArgs(cxx: String?) : [String] {
     return $args
 }
 
+# Check that `perf` is usable for recording a profile and report the reason otherwise.
+function _checkPerf(callGraph: Bool) {
+    if !(command -v perf &>> /dev/null) {
+        echo 1>&2 "perf not found (install linux-tools / perf)"
+        exit 1
+    }
+    if $callGraph {
+        var paranoid : Int?
+        if (test -r /proc/sys/kernel/perf_event_paranoid) {
+            $paranoid = "$(cat /proc/sys/kernel/perf_event_paranoid)".toInt()
+        }
+        if let level = $paranoid {
+            if $level > 1 {
+                echo 1>&2 "perf call graphs need kernel.perf_event_paranoid <= 1 (current: ${level})"
+                exit 1
+            }
+        }
+    }
+}
+
+# Run `bin args` under `perf record`, then write a text report next to the data file.
+# `base` is a path prefix: the profile goes to <base>.data and the report to <base>.report.
+function _runWithPerf(base: String, bin: String, args: [String], callGraph: Bool) {
+    let dataFile = "${base}.data"
+    let reportFile = "${base}.report"
+    let dir = $dataFile.dirname()
+    test -d $dir || mkdir -p $dir || exit $?
+
+    var perfArgs : [String]
+    $perfArgs.add("record")
+    if $callGraph {
+        $perfArgs.add("-g")
+    }
+    # the frequency is raised so a short benchmark still yields enough samples
+    $perfArgs.add("-F")
+    $perfArgs.add("997")
+    $perfArgs.add("-o")
+    $perfArgs.add($dataFile)
+    $perfArgs.add("--")
+    $perfArgs.add($bin)
+    $perfArgs.addAll($args)
+
+    echo "run: perf ${$perfArgs.join(' ')}"
+    call perf $perfArgs || exit $?
+
+    # the report is derived from the recorded data, so a failure here is not fatal.
+    # a plain `>' redirection is used because perf writes the symbol table differently when
+    # its output is not a regular file (the `with' modifier yields an empty table here)
+    if !(perf report -i $dataFile --stdio --percent-limit 0.5 > $reportFile 2>&1) {
+        echo 1>&2 "failed to write $reportFile"
+        return
+    }
+    echo "profile: $dataFile"
+    echo "report: $reportFile"
+}
+
 [<CLI(toplevel: $true, verbose:$true)>]
 type _Param() {
     [<Option(help: "number of repetitions (default: 5)")>]
@@ -120,6 +183,18 @@ type _Param() {
 
     [<Option(placeholder: "FILE", help: "benchmark input file (default: bundled 3200.txt)")>]
     var input : String?
+
+    [<Option(placeholder: "NAME", help: "benchmark only the specified engine (repeatable)")>]
+    var target : [String]
+
+    [<Option(placeholder: "PATTERN", help: "benchmark only the specified pattern (repeatable)")>]
+    var pattern : [String]
+
+    [<Option(placeholder: "BASE", help: "profile the run with perf record and write BASE.data / BASE.report")>]
+    var perf : String?
+
+    [<Flag(help: "record call graphs too (perf record -g, needs perf_event_paranoid <= 1)")>]
+    var perfCallGraph = $false
 
     [<Option(help: "arsh build type (default: Release)")>]
     var build = "Release"
@@ -412,6 +487,33 @@ function run() for _Param {
     if let o = $this.output {
         $o == "" && { echo 1>&2 "output path must not be empty"; exit 1; }
     }
+    # --target selects both the engines to build and the engines to benchmark, so an unknown
+    # name is rejected before anything is fetched or built
+    for t in $this.target {
+        if !$TARGETS.contains($t) {
+            echo 1>&2 "unknown target: ${t} (available: ${$TARGETS.join(', ')})"
+            exit 1
+        }
+    }
+    if $this.pattern.contains('') {
+        echo 1>&2 "pattern must not be empty"
+        exit 1
+    }
+    var perfBase : String?
+    if let p = $this.perf {
+        if $p == "" {
+            echo 1>&2 "--perf path must not be empty"
+            exit 1
+        }
+        # resolve the profile path before anything changes the cwd, and strip the suffix so
+        # `--perf foo.data` does not produce `foo.data.data`
+        let base = $p.endsWith(".data") ? $p.slice(0, $p.size() - ".data".size()) : $p
+        $perfBase = $base.startsWith('/') ? $base : "$PWD/$base"
+        $_checkPerf($this.perfCallGraph)
+    } elif $this.perfCallGraph {
+        echo 1>&2 "--perf-call-graph requires --perf"
+        exit 1
+    }
     let root = "$SCRIPT_DIR/../..".realpath()
     let workDir = $this.work
     mkdir -p $workDir || exit $?
@@ -476,24 +578,34 @@ function run() for _Param {
         return
     }
 
+    # a target named with --target also enables its engine, so the engine is fetched/built
+    # before the benchmark measures it
+    let srellWanted = $this.srell || $this.target.contains('srell')
+    let quickjsWanted = $this.quickjs || $this.target.contains('quickjs')
+    let hermesWanted = $this.hermes || $this.target.contains('hermes')
+    let boostWanted = $this.boost || $this.target.contains('boost')
+    let pcre2Wanted = $this.pcre2 || $this.target.contains('pcre') || $this.target.contains('pcre-jit')
+    let nodejsWanted = $this.nodejs || $this.target.contains('nodejs')
+    let stdRegexWanted = $this.stdRegex || $this.target.contains('cppstd')
+
     var srellSrc : String?
     if let d = $srellDirOpt {
         $srellSrc = $d
-    } elif $this.srell {
+    } elif $srellWanted {
         $srellSrc = $_fetchSrell($work)
     }
 
     var quickjsSrc : String?
     if let d = $quickjsDirOpt {
         $quickjsSrc = $d
-    } elif $this.quickjs {
+    } elif $quickjsWanted {
         $quickjsSrc = $_fetchQuickjs($work)
     }
 
     var boostPrefix : String?
     if let d = $boostDirOpt {
         $boostPrefix = $d
-    } elif $this.boost {
+    } elif $boostWanted {
         let version = $this.boostVersion ?? $_latestBoostVersion()
         $boostPrefix = $_fetchBoost($work, $version)
     }
@@ -501,7 +613,7 @@ function run() for _Param {
     var hermesSrc : String?
     if let d = $hermesDirOpt {
         $hermesSrc = $d
-    } elif $this.hermes {
+    } elif $hermesWanted {
         $hermesSrc = $_fetchHermes($work)
     }
 
@@ -515,19 +627,19 @@ function run() for _Param {
     var pcre2Build : String?
     if let d = $pcre2DirOpt {
         $pcre2Build = $d
-    } elif $this.pcre2 {
+    } elif $pcre2Wanted {
         $pcre2Build = $_buildPcre2($work, $_fetchPcre2($work))
     }
 
     var nodejsBin : String?
     if let d = $nodejsBinOpt {
         $nodejsBin = $d
-    } elif $this.nodejs {
+    } elif $nodejsWanted {
         $nodejsBin = "node" # resolved on PATH by CMake (find_program)
     }
 
     let arshBuild = $_buildArsh($root, $work, $this.build, $cxxOpt)
-    let bin = $_buildBench($root, $work, $arshBuild, $srellSrc, $quickjsSrc, $hermesSrc, $hermesBuild, $boostPrefix, $pcre2Build, $nodejsBin, $this.stdRegex, $cxxOpt)
+    let bin = $_buildBench($root, $work, $arshBuild, $srellSrc, $quickjsSrc, $hermesSrc, $hermesBuild, $boostPrefix, $pcre2Build, $nodejsBin, $stdRegexWanted, $cxxOpt)
 
     var args : [String]
     if let r = $this.repeat {
@@ -538,11 +650,25 @@ function run() for _Param {
         $args.add("-o")
         $args.add($o)
     }
+    # without --target/--pattern the harness measures every engine compiled into it with the
+    # built-in pattern set
+    for t in $this.target {
+        $args.add("-e")
+        $args.add($t)
+    }
+    for p in $this.pattern {
+        $args.add("-p")
+        $args.add($p)
+    }
     $args.add("-f")
     $args.add($this.input ?? "$work/regex-performance/3200.txt")
 
-    echo "run: $bin $args"
-    call $bin $args || exit $?
+    if let base = $perfBase {
+        $_runWithPerf($base, $bin, $args, $this.perfCallGraph)
+    } else {
+        echo "run: $bin $args"
+        call $bin $args || exit $?
+    }
 
     if !$this.keep {
         rm -rf $work || $true
