@@ -187,6 +187,14 @@ void CodePointSetBuilder::foldCase() {
   }
 }
 
+void CodePointSetBuilder::complementWithFoldCase() {
+  CodePointSetBuilder newBuilder;
+  newBuilder.addRange(0, UnicodeUtil::CODE_POINT_MAX);
+  newBuilder.foldCase();
+  newBuilder.sub(*this);
+  *this = std::move(newBuilder);
+}
+
 CodePointSet CodePointSetBuilder::build() {
   this->tryToSortAndCompact();
   FlexBuffer<BMPCodePointRange> tmp;

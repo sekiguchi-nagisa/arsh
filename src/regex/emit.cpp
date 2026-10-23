@@ -415,24 +415,6 @@ Optional<Regex> CodeGen::operator()(SyntaxTree &&tree) {
                std::move(this->matchers), std::move(tree).takeNamedCaptureGroups(), count);
 }
 
-void CodeGen::mayBeSimpleCaseFolding(CodePointSetBuilder &setBuilder) const {
-  if (this->needSimpleCaseFolding()) {
-    setBuilder.foldCase();
-  }
-}
-
-void CodeGen::complement(CodePointSetBuilder &setBuilder) const {
-  if (this->needSimpleCaseFolding()) {
-    CodePointSetBuilder newBuilder;
-    newBuilder.addRange(0, UnicodeUtil::CODE_POINT_MAX);
-    newBuilder.foldCase();
-    newBuilder.sub(setBuilder);
-    setBuilder = std::move(newBuilder);
-  } else {
-    setBuilder.complement();
-  }
-}
-
 #define TRY(E)                                                                                     \
   do {                                                                                             \
     if (!(E)) {                                                                                    \

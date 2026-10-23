@@ -87,6 +87,8 @@ public:
    * apply simple case folding to every element
    */
   void foldCase();
+  
+  void complementWithFoldCase();
 
   /**
    * build code point set. after return, still maintains an original buffer

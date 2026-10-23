@@ -153,9 +153,19 @@ private:
     return this->mode == Mode::UNICODE_SET && this->has(Modifier::IGNORE_CASE);
   }
 
-  void mayBeSimpleCaseFolding(CodePointSetBuilder &setBuilder) const;
+  void mayBeSimpleCaseFolding(CodePointSetBuilder &setBuilder) const {
+    if (this->needSimpleCaseFolding()) {
+      setBuilder.foldCase();
+    }
+  }
 
-  void complement(CodePointSetBuilder &setBuilder) const;
+  void complement(CodePointSetBuilder &setBuilder) const {
+    if (this->needSimpleCaseFolding()) {
+      setBuilder.complementWithFoldCase();
+    } else {
+      setBuilder.complement();
+    }
+  }
 
   bool generateSeq(const SeqNode &node);
 
