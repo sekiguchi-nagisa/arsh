@@ -247,8 +247,14 @@ default, and an archive built without PIC fails to link in that case with
 `relocation R_X86_64_32S ... can not be used when making a PIE object` (clang++ always links PIE,
 so the failure shows up with `--cxx clang++`). A build directory whose cache lacks
 `PCRE2_STATIC_PIC=ON` is discarded and rebuilt. It registers two targets: `pcre` (interpreter)
-and `pcre-jit`. PCRE2 is matched in its default 8-bit mode, like the upstream harness; the
-interpreter is markedly slower than the JIT on several patterns.
+and `pcre-jit`. The patterns are compiled like the upstream harness (`PCRE2_MULTILINE`) plus
+`PCRE2_UTF`, so the 8-bit code units are decoded as UTF-8; without `PCRE2_UTF` PCRE2 reads one byte
+per character and silently drops the matches of multi-byte characters (e.g. `\u221E` for
+`\p{Sm}`). In UTF mode `pcre2_match` re-validates the subject on every call, which would make the
+per-match loop quadratic (`[a-zA-Z]+ing` on `3200.txt` takes ~285 s), so the subject is validated
+once and the scan uses `PCRE2_NO_UTF_CHECK`; that option is only used when the subject is valid
+UTF-8, and an invalid subject is still reported as an error. The interpreter is markedly slower
+than the JIT on several patterns.
 
 `--nodejs` runs the installed Node.js executable as a child process (`--nodejs-bin <file>` selects
 a specific one), so Node.js must be present. The `node` executable is looked up on `PATH` with
@@ -355,7 +361,17 @@ replace the built-in pattern set) to `regex_perf`; `-h` lists the available engi
   modifiers and is therefore reported as a failure (`999999`) for those patterns, matching
   upstream behavior.
 * The QuickJS adapter compiles `libregexp.c` / `libunicode.c` from the QuickJS tree and provides
-  the three `lre_*` callbacks that libregexp expects from its host.
+  the three `lre_*` callbacks that libregexp expects from its host. The subject is decoded from
+  UTF-8 into UTF-16 once, before the measured region, and scanned with `cbuf_type = 1`, which is
+  what QuickJS itself does because JavaScript strings are UTF-16.
+* The SRELL adapter uses the UTF-8 traits (`srell::u8cregex` / `srell::u8csregex_iterator`) so the
+  subject is decoded into code points; plain `srell::regex` reads one byte per character and loses
+  the matches of multi-byte characters.
+* All adapters therefore scan the same sequence of code points, which is why the match counts of
+  e.g. `\p{Sm}` agree across them: only the Unicode table version and syntax support can still
+  differ. Boost rejects a bare `\p{Sm}` (it accepts it only inside a character class) and
+  `std::regex` rejects `\p{...}` and `(?i)`, so those two report a failure (`999999`) rather than
+  a different count.
 * The Hermes adapter compiles the pattern once with `UTF16RegexTraits` and executes it with
   `ASCIIRegexTraits` when the subject is 7-bit ASCII (or `UTF16RegexTraits` otherwise), mirroring
   what the VM does. Hermes' backtrack limit makes it report pattern `(.*?,){13}z` as a failure
@@ -363,7 +379,8 @@ replace the built-in pattern set) to `regex_perf`; `-h` lists the available engi
   an existing Hermes build tree and requires `HERMES_SOURCE_DIR` and `HERMES_BUILD_DIR`.
 * The PCRE2 adapter (`pcre2.c`) replaces the one shipped with the harness so that the instance and
   the scan are measured with the heap tracker; it registers `pcre` and `pcre-jit` and requires
-  `PCRE2_BUILD_DIR` pointing at a PCRE2 build with JIT support.
+  `PCRE2_BUILD_DIR` pointing at a PCRE2 build with JIT support. On an empty match it advances the
+  input by one UTF-8 code point, since the pattern is compiled with `PCRE2_UTF`.
 * The Node.js adapter (`nodejs.cpp`) runs the `node` executable as a child process and parses the
   timings and the match count it prints; only the scan is timed, and its memory columns are `0`
   because the heap tracker cannot see the other process.

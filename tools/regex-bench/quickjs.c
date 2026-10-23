@@ -21,6 +21,11 @@
  * libregexp is the ECMAScript-compatible regexp engine used by QuickJS. It is a plain C library
  * (`libregexp.c` + `libunicode.c`) which requires the host to provide the three `lre_*` callbacks
  * below. See `quickjs_find_all` for the benchmark entry point required by the harness (see main.h).
+ *
+ * The subject is decoded from UTF-8 into UTF-16 before scanning and passed to `lre_exec` with
+ * `cbuf_type = 1`, which is what QuickJS itself does (JavaScript strings are UTF-16). Scanning the
+ * UTF-8 bytes instead (`cbuf_type = 0`) would treat every byte of a multi-byte character as a
+ * separate character, so patterns like `\p{Sm}` lose non-ASCII matches (e.g. `\u221E`).
  */
 
 #include <stdbool.h>
@@ -74,24 +79,68 @@ static const char *skipInlineFlags(const char *pattern, int *flags) {
     return pattern;
 }
 
-/* advance `index` (a byte offset into a UTF-8 string) by one code point */
-static int nextCodePoint(const char *subject, int len, int index) {
-    const unsigned char b = (unsigned char)subject[index];
-    unsigned int size = 1;
+/* decode one UTF-8 code point (a malformed/truncated sequence is treated as one byte) */
+static uint32_t decodeUTF8(const unsigned char *s, uint32_t len, uint32_t *index) {
+    const uint32_t i = *index;
+    const unsigned char b = s[i];
+    uint32_t cp = b;
+    uint32_t size = 1;
     if (b >= 0xF0) {
+        cp = b & 0x07u;
         size = 4;
     } else if (b >= 0xE0) {
+        cp = b & 0x0Fu;
         size = 3;
     } else if (b >= 0xC0) {
+        cp = b & 0x1Fu;
         size = 2;
     }
-    if (index + (int)size > len) {
-        size = 1;
+    if (i + size > len) { /* truncated sequence, treat as a single byte */
+        *index = i + 1;
+        return b;
     }
-    return index + (int)size;
+    for (uint32_t k = 1; k < size; k++) {
+        cp = (cp << 6) | (s[i + k] & 0x3Fu);
+    }
+    *index = i + size;
+    return cp;
 }
 
-static long long countMatches(const uint8_t *bc, const char *subject, int subjectLen) {
+/* decode a UTF-8 string into a newly allocated UTF-16 buffer (a non-BMP code point becomes a pair) */
+static uint16_t *toUTF16(const char *input, int inputLen, uint32_t *outLen) {
+    uint16_t *out = (uint16_t *)malloc(sizeof(uint16_t) * ((size_t)inputLen + 1));
+    if (!out) {
+        *outLen = 0;
+        return NULL;
+    }
+    const unsigned char *s = (const unsigned char *)input;
+    uint32_t j = 0;
+    for (uint32_t i = 0; i < (uint32_t)inputLen;) {
+        uint32_t cp = decodeUTF8(s, (uint32_t)inputLen, &i);
+        if (cp > 0xFFFF) {
+            cp -= 0x10000;
+            out[j++] = (uint16_t)(0xD800 + (cp >> 10));
+            out[j++] = (uint16_t)(0xDC00 + (cp & 0x3FF));
+        } else {
+            out[j++] = (uint16_t)cp;
+        }
+    }
+    *outLen = j;
+    return out;
+}
+
+/* advance `index` (a UTF-16 code unit offset) by one code point (a surrogate pair counts as one) */
+static uint32_t nextCodePoint(const uint16_t *subject, uint32_t len, uint32_t index) {
+    if (index < len) {
+        const uint16_t c = subject[index];
+        if (c >= 0xD800 && c <= 0xDBFF && index + 1 < len) {
+            return index + 2;
+        }
+    }
+    return index + 1;
+}
+
+static long long countMatches(const uint8_t *bc, const uint16_t *subject, uint32_t subjectLen) {
     const int allocCount = lre_get_alloc_count(bc);
     uint8_t **capture = NULL;
     if (allocCount > 0) {
@@ -102,8 +151,8 @@ static long long countMatches(const uint8_t *bc, const char *subject, int subjec
     }
     const uint8_t *base = (const uint8_t *)subject;
     long long found = 0;
-    for (int lastIndex = 0; lastIndex <= subjectLen;) {
-        const int ret = lre_exec(capture, bc, base, lastIndex, subjectLen, 0, NULL);
+    for (uint32_t lastIndex = 0; lastIndex <= subjectLen;) {
+        const int ret = lre_exec(capture, bc, base, (int)lastIndex, (int)subjectLen, 1, NULL);
         if (ret != 1) {
             break;
         }
@@ -111,8 +160,8 @@ static long long countMatches(const uint8_t *bc, const char *subject, int subjec
             free(capture);
             return -1;
         }
-        const int start = (int)(capture[0] - base);
-        const int end = (int)(capture[1] - base);
+        const uint32_t start = (uint32_t)((const uint16_t *)capture[0] - subject);
+        const uint32_t end = (uint32_t)((const uint16_t *)capture[1] - subject);
         found++;
         lastIndex = end;
         if (end == start) { /* empty match, avoid infinite loop */
@@ -148,8 +197,17 @@ extern int quickjs_find_all(char *pattern, char *subject, int subject_len, int r
     /* the compiled bytecode is the regex instance (lre_exec keeps no per-instance state) */
     res->mem_instance = memory_tracker_live() - memBase;
 
+    /* decode the subject once; the conversion is not part of the measured region */
+    uint32_t textLen = 0;
+    uint16_t *text = toUTF16(subject, subject_len, &textLen);
+    if (!text) {
+        lre_realloc(NULL, bytecode, 0);
+        return -1;
+    }
+
     double *times = (double *)calloc((size_t)repeat, sizeof(double));
     if (!times) {
+        free(text);
         lre_realloc(NULL, bytecode, 0);
         return -1;
     }
@@ -160,10 +218,11 @@ extern int quickjs_find_all(char *pattern, char *subject, int subject_len, int r
 
     do {
         GET_TIME(start);
-        found = countMatches(bytecode, subject, subject_len);
+        found = countMatches(bytecode, text, textLen);
         GET_TIME(end);
         times[repeat - 1] = TIME_DIFF_IN_MS(start, end);
     } while (--repeat > 0);
+    free(text);
 
     if (found < 0) {
         free(times);

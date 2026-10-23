@@ -20,9 +20,18 @@
  *
  * It replaces the adapter that ships with the harness so that the compiled instance and the scan
  * are measured with the shared heap tracker (see memory_tracker.h), like the other adapters used
- * by this directory. The patterns are compiled the same way as the upstream harness does
- * (`PCRE2_MULTILINE`, 8-bit mode); note that PCRE2's interpreter is dramatically slower in UTF
- * mode on several patterns, so the benchmark keeps the byte-mode configuration.
+ * by this directory. The patterns are compiled with `PCRE2_MULTILINE` like the upstream harness,
+ * plus `PCRE2_UTF`: without it PCRE2 reads one byte per character, so the matches of a multi-byte
+ * character are lost (e.g. `\p{Sm}` on `\u221E`). The 8-bit code unit width still applies, but
+ * the subject is decoded as UTF-8.
+ *
+ * In UTF mode `pcre2_match` re-validates the subject on every call, and this adapter calls it once
+ * per match, which makes the scan quadratic in the input size (`[a-zA-Z]+ing` on `3200.txt` grows
+ * from ~0.6 s to ~285 s). The subject is therefore validated once up front and the matches are
+ * scanned with `PCRE2_NO_UTF_CHECK`. That is safe here because the pointer is only ever advanced
+ * by the byte length of whole code points, and the option is only set when the subject is valid
+ * UTF-8; an invalid subject is scanned with the check enabled, so PCRE2 reports the
+ * `PCRE2_ERROR_UTF8_ERR*` failure instead of running off into undefined behaviour.
  *
  * See `pcre2_find_all` / `pcre2_jit_find_all` for the benchmark entry points (see main.h).
  */
@@ -43,12 +52,80 @@
 /* generous JIT stack so that the heavier patterns do not hit PCRE2_ERROR_JIT_STACKLIMIT */
 #define PCRE2_JIT_STACK_SIZE (1024 * 1024)
 
+/* the byte length of the UTF-8 sequence that starts at `s[i]` (1 for a malformed byte) */
+static int utf8SequenceLength(const unsigned char *s, int len, int i) {
+    const unsigned char b = s[i];
+    int size = 1;
+    if (b >= 0xF0) {
+        size = 4;
+    } else if (b >= 0xE0) {
+        size = 3;
+    } else if (b >= 0xC0) {
+        size = 2;
+    }
+    return i + size > len ? 1 : size;
+}
+
+/**
+ * Check that the subject is valid UTF-8, with the same rules PCRE2 applies (RFC 3629: no
+ * overlong forms, no surrogate code points, nothing above U+10FFFF).
+ */
+static int isValidUTF8(const unsigned char *s, int len) {
+    int i = 0;
+    while (i < len) {
+        const unsigned char b = s[i];
+        unsigned char lo = 0x80, hi = 0xBF; /* allowed range of the second byte */
+        int size;
+        if (b < 0x80) {
+            i++;
+            continue;
+        } else if (b < 0xC2) { /* a continuation byte, or an overlong 2-byte form */
+            return 0;
+        } else if (b < 0xE0) {
+            size = 2;
+        } else if (b < 0xF0) {
+            size = 3;
+            if (b == 0xE0) {
+                lo = 0xA0; /* overlong */
+            } else if (b == 0xED) {
+                hi = 0x9F; /* surrogate */
+            }
+        } else if (b < 0xF5) {
+            size = 4;
+            if (b == 0xF0) {
+                lo = 0x90; /* overlong */
+            } else if (b == 0xF4) {
+                hi = 0x8F; /* above U+10FFFF */
+            }
+        } else {
+            return 0;
+        }
+        if (i + size > len || s[i + 1] < lo || s[i + 1] > hi) {
+            return 0;
+        }
+        for (int k = 2; k < size; k++) {
+            if ((s[i + k] & 0xC0) != 0x80) {
+                return 0;
+            }
+        }
+        i += size;
+    }
+    return 1;
+}
+
 /**
  * Scan the whole input once, counting all non-overlapping matches (emulating the global (g)
- * flag) by repeatedly matching from the end of the previous match.
+ * flag) by repeatedly matching from the end of the previous match. The pattern is compiled with
+ * `PCRE2_UTF`, so the input is advanced by one code point on an empty match (never into the
+ * middle of a multi-byte character).
+ *
+ * `matchOpts` is `PCRE2_NO_UTF_CHECK` when the subject has already been validated (see
+ * isValidUTF8) and 0 otherwise. A subject that is not valid UTF-8 is only matched by the
+ * interpreter, so that it is reported as an error instead of hitting the unchecked JIT path.
  */
 static int scanAll(pcre2_code *re, pcre2_match_data *match_data, pcre2_match_context *match_ctx,
-                   int useJit, const char *subject, int subjectLen, long long *found) {
+                   int useJit, uint32_t matchOpts, const char *subject, int subjectLen,
+                   long long *found) {
     PCRE2_SIZE *ovector = pcre2_get_ovector_pointer(match_data);
     const char *ptr = subject;
     int len = subjectLen;
@@ -56,10 +133,12 @@ static int scanAll(pcre2_code *re, pcre2_match_data *match_data, pcre2_match_con
 
     for (;;) {
         int rc;
-        if (useJit) {
-            rc = pcre2_jit_match(re, (PCRE2_SPTR)ptr, (PCRE2_SIZE)len, 0, 0, match_data, match_ctx);
+        if (useJit && matchOpts != 0) {
+            rc = pcre2_jit_match(re, (PCRE2_SPTR)ptr, (PCRE2_SIZE)len, 0, matchOpts, match_data,
+                                 match_ctx);
         } else {
-            rc = pcre2_match(re, (PCRE2_SPTR)ptr, (PCRE2_SIZE)len, 0, 0, match_data, match_ctx);
+            rc = pcre2_match(re, (PCRE2_SPTR)ptr, (PCRE2_SIZE)len, 0, matchOpts, match_data,
+                             match_ctx);
         }
         if (rc == PCRE2_ERROR_NOMATCH) {
             break;
@@ -78,8 +157,9 @@ static int scanAll(pcre2_code *re, pcre2_match_data *match_data, pcre2_match_con
             if (len <= 0) {
                 break;
             }
-            ptr++;
-            len--;
+            const int size = utf8SequenceLength((const unsigned char *)ptr, len, 0);
+            ptr += size;
+            len -= size;
         }
     }
     *found = count;
@@ -103,7 +183,7 @@ static int pcre2FindAll(char *pattern, char *subject, int subject_len, int repea
     }
     pcre2_set_newline(compCtx, PCRE2_NEWLINE_ANYCRLF);
     pcre2_code *re = pcre2_compile((PCRE2_SPTR)pattern, PCRE2_ZERO_TERMINATED,
-                                   PCRE2_MULTILINE, &errCode, &errOffset, compCtx);
+                                   PCRE2_MULTILINE | PCRE2_UTF, &errCode, &errOffset, compCtx);
     pcre2_compile_context_free(compCtx);
     if (!re) {
         printf("PCRE2 compilation failed at offset %d: [%d]\n", (int)errOffset, errCode);
@@ -161,10 +241,15 @@ static int pcre2FindAll(char *pattern, char *subject, int subject_len, int repea
     memory_tracker_reset_peak();
     const size_t memScanBase = memory_tracker_live();
 
+    /* validate the subject once: this is what lets the scan skip the per-call check */
+    const uint32_t matchOpts =
+            isValidUTF8((const unsigned char *)subject, subject_len) ? PCRE2_NO_UTF_CHECK : 0;
+
     long long found = 0;
     do {
         GET_TIME(start);
-        const int rc = scanAll(re, matchData, matchCtx, useJit, subject, subject_len, &found);
+        const int rc =
+                scanAll(re, matchData, matchCtx, useJit, matchOpts, subject, subject_len, &found);
         GET_TIME(end);
         times[repeat - 1] = TIME_DIFF_IN_MS(start, end);
         if (rc != 0) {

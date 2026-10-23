@@ -18,8 +18,11 @@
  * Adapter which registers the SRELL regex engine into the
  * `rust-leipzig/regex-performance` benchmark tool.
  *
- * SRELL is a `std::regex`-like header-only library. See `srell_find_all` for the
- * benchmark entry point required by the harness (see main.h).
+ * SRELL is a `std::regex`-like header-only library. The UTF-8 traits (`srell::u8cregex` and
+ * `srell::u8csregex_iterator`) are used so that the UTF-8 subject is decoded into code points:
+ * `srell::regex` only reads one byte per character, which drops the matches of multi-byte
+ * characters (e.g. `\p{Sm}` on `\u221E`). See `srell_find_all` for the benchmark entry point
+ * required by the harness (see main.h).
  */
 
 #include <cstdio>
@@ -33,9 +36,9 @@
 
 #include <srell.hpp>
 
-static int searchAll(srell::regex &rx, const std::string &text) {
-  auto begin = srell::sregex_iterator(text.begin(), text.end(), rx);
-  auto end = srell::sregex_iterator();
+static int searchAll(srell::u8cregex &rx, const std::string &text) {
+  auto begin = srell::u8csregex_iterator(text.begin(), text.end(), rx);
+  auto end = srell::u8csregex_iterator();
   return static_cast<int>(std::distance(begin, end));
 }
 
@@ -47,7 +50,7 @@ extern "C" int srell_find_all(char *pattern, char *subject, int subject_len, int
   memory_tracker_init();
   const size_t memBase = memory_tracker_live();
   try {
-    srell::regex rx(pattern, srell::regex::optimize);
+    srell::u8cregex rx(pattern, srell::regex_constants::optimize);
     /* the compiled regex instance (SRELL keeps the compiled program inside the object) */
     res->mem_instance = memory_tracker_live() - memBase;
     const std::string text(subject, static_cast<size_t>(subject_len));
