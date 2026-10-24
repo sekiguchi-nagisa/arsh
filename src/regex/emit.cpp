@@ -294,10 +294,6 @@ bool CodeGen::generateStrSet(const StrSetNode &node) {
   }
 
   // emit codes
-  Optional<InstructionBuilder::ReservedPoint> point;
-  if (node.hasEmpty()) { // [\w\q{}] => (?:[\w] | )
-    point = this->builder.emitReservedPoint<AltIns>();
-  }
   if (this->inLookBehind()) {
     this->builder.emit<PrepareLBRadixIns>();
   } else {
@@ -318,10 +314,6 @@ bool CodeGen::generateStrSet(const StrSetNode &node) {
   } else {
     this->builder.emitAt<RadixOrEmojiIns>(reservedPoint, emoji, radixIndex.hasValue(), index,
                                           nextOffset);
-  }
-  if (point.hasValue()) {
-    unsigned int addr = this->builder.currentAddr();
-    this->builder.emitAt<AltIns>(point.unwrap(), addr);
   }
   return true;
 }

@@ -1,0 +1,80 @@
+
+source $SCRIPT_DIR/../syntax/test_helper.arsh
+
+# .|.|
+assert diff <(redump -d '.|.|' '') <(<<'EOF'
+flag: (mode = , modifier = )
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+   0: Alt(second=11)
+   5: AnyExceptNL
+   6: Jump(target=22)
+  11: Alt(second=22)
+  16: AnyExceptNL
+  17: Jump(target=22)
+  22: Match
+firstSet:
+matchers:
+EOF
+)
+
+# .|||..|||
+assert diff <(redump -d '.|||..|||' '') <(<<'EOF'
+flag: (mode = , modifier = )
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+   0: Alt(second=11)
+   5: AnyExceptNL
+   6: Jump(target=33)
+  11: Alt(second=21)
+  16: Jump(target=33)
+  21: Alt(second=33)
+  26: AnyExceptNL
+  27: AnyExceptNL
+  28: Jump(target=33)
+  33: Match
+firstSet:
+matchers:
+EOF
+)
+
+# A|(?:B|.)
+assert diff <(redump -d 'A|(?:B|.)' '') <(<<'EOF'
+flag: (mode = , modifier = )
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+   0: Alt(second=15)
+   5: Char(codePoint=U+0041:A)
+  10: Jump(target=31)
+  15: Alt(second=30)
+  20: Char(codePoint=U+0042:B)
+  25: Jump(target=31)
+  30: AnyExceptNL
+  31: Match
+firstSet:
+matchers:
+EOF
+)
+
+
+# A|(?:B|C)
+assert diff <(redump -d 'A|(?:B|C)' '') <(<<'EOF'
+flag: (mode = , modifier = )
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+  0: CharSet(matcherIndex=0, invert=false)
+  4: Match
+firstSet:
+matchers:
+  0: AsciiSet
+{ 0x0041, 0x0043 },
+EOF
+)

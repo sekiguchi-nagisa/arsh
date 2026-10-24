@@ -57,10 +57,9 @@ private:
   std::unique_ptr<Node> chars; // for codepoint set (maybe null)
 
 public:
-  StrSetNode(Token token, ucp::RGIEmojiSeq emoji, RadixTree &&radix, bool emptySeq,
-             std::unique_ptr<Node> &&chars, bool ignoreCase)
+  StrSetNode(Token token, ucp::RGIEmojiSeq emoji, RadixTree &&radix, std::unique_ptr<Node> &&chars,
+             bool ignoreCase)
       : NodeWithRtti(token), radix(std::move(radix)), chars(std::move(chars)) {
-    this->u8 = emptySeq ? 1 : 0;
     if (ignoreCase) {
       setFlag(emoji, ucp::RGIEmojiSeq::CASE_IGNORE);
     }
@@ -70,8 +69,6 @@ public:
   bool isIgnoreCase() const {
     return hasFlag(this->getRawEmojiSeq(), ucp::RGIEmojiSeq::CASE_IGNORE);
   }
-
-  bool hasEmpty() const { return this->u8 == 1; }
 
   ucp::RGIEmojiSeq getEmojiSeq() const {
     auto tmp = this->getRawEmojiSeq();
@@ -161,6 +158,8 @@ public:
 
   void operator()(std::unique_ptr<Node> &node) { this->visit(node); }
 
+  void optimize(std::unique_ptr<Node> &node);
+
 private:
   Modifier modifiers() const { return this->modifierStack.back(); }
 
@@ -208,6 +207,8 @@ private:
   std::unique_ptr<Node> generateClassSet(const CharClassNode &node) const;
 
   std::unique_ptr<Node> generateClassSet(const PropertyNode &node) const;
+
+  void optimizeStrAlt(std::unique_ptr<Node> &node);
 };
 
 void transform(SyntaxTree &tree);

@@ -530,9 +530,13 @@ std::unique_ptr<Node> Lowering::generateClassSet(const CharClassNode &node) cons
   if (setBuilder.codePoints) {
     chars = this->tryToGenerateCharSetNode(node.getToken(), setBuilder.codePoints, invert);
   }
-  return std::make_unique<StrSetNode>(node.getToken(), setBuilder.emoji,
-                                      std::move(setBuilder.radix), setBuilder.emptySeq,
-                                      std::move(chars), this->has(Modifier::IGNORE_CASE));
+  std::unique_ptr<Node> newNode =
+      std::make_unique<StrSetNode>(node.getToken(), setBuilder.emoji, std::move(setBuilder.radix),
+                                   std::move(chars), this->has(Modifier::IGNORE_CASE));
+  if (setBuilder.emptySeq) { // [\q{AA|BB|}] => ( [\q{AA|BB}] | )
+    newNode = std::make_unique<AltNode>(std::move(newNode));
+  }
+  return newNode;
 }
 
 std::unique_ptr<Node> Lowering::generateClassSet(const PropertyNode &node) const {
@@ -542,7 +546,7 @@ std::unique_ptr<Node> Lowering::generateClassSet(const PropertyNode &node) const
     if (this->has(Modifier::IGNORE_CASE)) {
       setFlag(emoji, ucp::RGIEmojiSeq::CASE_IGNORE);
     }
-    return std::make_unique<StrSetNode>(node.getToken(), emoji, RadixTree(), false, nullptr,
+    return std::make_unique<StrSetNode>(node.getToken(), emoji, RadixTree(), nullptr,
                                         this->has(Modifier::IGNORE_CASE));
   }
   CodePointSet set;
@@ -586,101 +590,6 @@ bool Lowering::checkBackRef(const BackRefNode &node) const {
   } else if (this->resolvedCaptures[node.getIndex()] != CaptureState::CLOSED) {
     return false; // invalid capture, do nothing
   }
-  return true;
-}
-
-static bool isCharSeq(const Node &node) {
-  if (isa<CharNode>(node)) {
-    return true;
-  }
-  if (!isa<SeqNode>(node)) {
-    return false;
-  }
-  for (auto &e : cast<SeqNode>(node).getPatterns()) {
-    if (!isa<CharNode>(*e)) {
-      return false;
-    }
-  }
-  return true;
-}
-
-static bool isFoldCharSeq(const Node &node) {
-  if (isa<FoldCharNode>(node)) {
-    return true;
-  }
-  if (!isa<SeqNode>(node)) {
-    return false;
-  }
-  for (auto &e : cast<SeqNode>(node).getPatterns()) {
-    if (!isa<FoldCharNode>(*e)) {
-      return false;
-    }
-  }
-  return true;
-}
-
-static bool optimizeStrAlt(std::unique_ptr<Node> &node) {
-  if (!isa<AltNode>(*node)) {
-    return false;
-  }
-  auto &altNode = cast<AltNode>(*node);
-  {
-    auto iter = altNode.getPatterns().begin();
-    auto end = altNode.getPatterns().end();
-    while (iter != end && isa<EmptyNode>(**(end - 1))) {
-      --end; // only allow last empty pattern (AA|B|A||)
-    }
-    using Entry = decltype(*iter);
-    if (!std::all_of(iter, end, [](Entry e) { return isCharSeq(*e); }) &&
-        !std::all_of(iter, end, [](Entry e) { return isFoldCharSeq(*e); })) {
-      return false;
-    }
-  }
-  /**
-   * check alt string order
-   *
-   * (AA|A) -> accept
-   * (AA|AB) -> accept
-   * (A|AA) -> not accept
-   */
-  std::unordered_map<int, unsigned int> prefixCodeMap;
-  for (auto &e : altNode.getPatterns()) {
-    if (isa<EmptyNode>(*e)) {
-      continue;
-    }
-    int codePoint;
-    unsigned int len;
-    if (isa<CharNode>(*e)) {
-      codePoint = cast<CharNode>(*e).getCodePoint();
-      len = 1;
-    } else if (isa<FoldCharNode>(*e)) {
-      codePoint = cast<FoldCharNode>(*e).getCodePoint();
-      len = 1;
-    } else {
-      assert(isa<SeqNode>(*e));
-      auto &seqNode = cast<SeqNode>(*e);
-      if (auto &first = *seqNode.getPatterns()[0]; isa<CharNode>(first)) {
-        codePoint = cast<CharNode>(first).getCodePoint();
-      } else {
-        assert(isa<FoldCharNode>(first));
-        codePoint = cast<FoldCharNode>(first).getCodePoint();
-      }
-      len = seqNode.getPatterns().size();
-    }
-    if (auto iter = prefixCodeMap.find(codePoint); iter != prefixCodeMap.end()) {
-      if (len <= iter->second) {
-        iter->second = len;
-      } else {
-        return false;
-      }
-    } else {
-      prefixCodeMap.emplace(codePoint, len);
-    }
-  }
-  auto classNode = std::make_unique<CharClassNode>(node->getToken(), false);
-  classNode->add(std::move(node));
-  classNode->finalize(classNode->getToken());
-  node = std::move(classNode);
   return true;
 }
 
@@ -737,14 +646,29 @@ void Lowering::visit(std::unique_ptr<Node> &node) {
     }
     break;
   }
-  case NodeKind::Alt:
-    for (auto &e : cast<ListNode>(*node).refPatterns()) {
+  case NodeKind::Alt: {
+    auto &patterns = cast<AltNode>(*node).refPatterns();
+    for (auto &e : patterns) {
       this->visit(e);
     }
-    if (this->direction() && optimizeStrAlt(node)) {
-      this->visit(node);
+    {
+      const auto iter =
+          std::unique(patterns.begin(), patterns.end(),
+                      [](const std::unique_ptr<Node> &x, const std::unique_ptr<Node> &y) {
+                        return isa<EmptyNode>(*x) && isa<EmptyNode>(*y);
+                      });
+      patterns.erase(iter, patterns.end());
+      if (auto &last = *patterns.back(); patterns.size() > 1 && isa<AltNode>(last) &&
+                                         cast<AltNode>(last).getPatterns().size() > 1) {
+        auto tmp = std::move(patterns.back());
+        patterns.pop_back();
+        for (auto &e : cast<AltNode>(*tmp).refPatterns()) {
+          patterns.push_back(std::move(e));
+        }
+      }
     }
     break;
+  }
   case NodeKind::LookAround: {
     auto &n = cast<LookAroundNode>(*node);
     this->directions.push_back(n.isLookAhead());
@@ -837,9 +761,129 @@ void Lowering::visit(SeqNode &node) {
   patterns.erase(iter, patterns.end());
 }
 
+static bool isCharSeq(const Node &node) {
+  if (isa<CharNode>(node)) {
+    return true;
+  }
+  if (!isa<SeqNode>(node)) {
+    return false;
+  }
+  for (auto &e : cast<SeqNode>(node).getPatterns()) {
+    if (!isa<CharNode>(*e)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+static bool isFoldCharSeq(const Node &node) {
+  if (isa<FoldCharNode>(node)) {
+    return true;
+  }
+  if (!isa<SeqNode>(node)) {
+    return false;
+  }
+  for (auto &e : cast<SeqNode>(node).getPatterns()) {
+    if (!isa<FoldCharNode>(*e)) {
+      return false;
+    }
+  }
+  return true;
+}
+
+void Lowering::optimizeStrAlt(std::unique_ptr<Node> &node) {
+  if (!this->direction()) {
+    return;
+  }
+  if (isa<LookAroundNode>(*node)) {
+    auto &n = cast<LookAroundNode>(*node);
+    this->directions.push_back(n.isLookAhead());
+    this->optimizeStrAlt(n.refPattern());
+    this->directions.pop_back();
+    return;
+  }
+  if (isa<NestedNode>(*node)) {
+    this->optimizeStrAlt(cast<NestedNode>(*node).refPattern());
+    return;
+  }
+  if (isa<SeqNode>(*node)) {
+    for (auto &e : cast<SeqNode>(*node).refPatterns()) {
+      this->optimizeStrAlt(e);
+    }
+    return;
+  }
+  if (!isa<AltNode>(*node)) {
+    return;
+  }
+  auto &altNode = cast<AltNode>(*node);
+  {
+    auto iter = altNode.getPatterns().begin();
+    auto end = altNode.getPatterns().end();
+    while (iter != end && isa<EmptyNode>(**(end - 1))) {
+      --end; // only allow last empty pattern (AA|B|A||)
+    }
+    using Entry = decltype(*iter);
+    if (!std::all_of(iter, end, [](Entry e) { return isCharSeq(*e); }) &&
+        !std::all_of(iter, end, [](Entry e) { return isFoldCharSeq(*e); })) {
+      return;
+    }
+  }
+  /**
+   * check alt string order
+   *
+   * (AA|A) -> accept
+   * (AA|AB) -> accept
+   * (A|AA) -> not accept
+   */
+  std::unordered_map<int, unsigned int> prefixCodeMap;
+  const bool fold = isFoldCharSeq(*altNode.getPatterns()[0]);
+  for (auto &e : altNode.getPatterns()) {
+    if (isa<EmptyNode>(*e)) {
+      continue;
+    }
+    int codePoint;
+    unsigned int len;
+    if (isa<CharNode>(*e)) {
+      codePoint = cast<CharNode>(*e).getCodePoint();
+      len = 1;
+    } else if (isa<FoldCharNode>(*e)) {
+      codePoint = cast<FoldCharNode>(*e).getCodePoint();
+      len = 1;
+    } else {
+      assert(isa<SeqNode>(*e));
+      auto &seqNode = cast<SeqNode>(*e);
+      if (auto &first = *seqNode.getPatterns()[0]; isa<CharNode>(first)) {
+        codePoint = cast<CharNode>(first).getCodePoint();
+      } else {
+        assert(isa<FoldCharNode>(first));
+        codePoint = cast<FoldCharNode>(first).getCodePoint();
+      }
+      len = seqNode.getPatterns().size();
+    }
+    if (auto iter = prefixCodeMap.find(codePoint); iter != prefixCodeMap.end()) {
+      if (len <= iter->second) {
+        iter->second = len;
+      } else {
+        return;
+      }
+    } else {
+      prefixCodeMap.emplace(codePoint, len);
+    }
+  }
+  auto classNode = std::make_unique<CharClassNode>(node->getToken(), false);
+  classNode->add(std::move(node));
+  classNode->finalize(classNode->getToken());
+  this->modifierStack.push(fold ? Modifier::IGNORE_CASE : Modifier::NONE);
+  node = this->generateClassSet(*classNode);
+  this->modifierStack.pop();
+}
+
+void Lowering::optimize(std::unique_ptr<Node> &node) { this->optimizeStrAlt(node); }
+
 void transform(SyntaxTree &tree) {
-  Lowering(tree.getFlag(), tree.getCaptureGroupCount(),
-           tree.getNamedCaptureGroups())(tree.refPattern());
+  Lowering lowering(tree.getFlag(), tree.getCaptureGroupCount(), tree.getNamedCaptureGroups());
+  lowering(tree.refPattern());
+  lowering.optimize(tree.refPattern());
 }
 
 } // namespace arsh::regex
