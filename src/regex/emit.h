@@ -19,7 +19,6 @@
 
 #include "instruction.h"
 #include "misc/buffer.hpp"
-#include "misc/inlined_stack.hpp"
 #include "misc/result.hpp"
 #include "node.h"
 #include "regex.h"

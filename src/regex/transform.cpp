@@ -15,7 +15,6 @@
  */
 
 #include "transform.h"
-#include "misc/resource.hpp"
 #include "misc/unicode.hpp"
 #include "unicode/case_fold.h"
 

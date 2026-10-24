@@ -18,7 +18,6 @@
 
 #include "misc/unicode.hpp"
 #include "transform.h"
-#include "unicode/case_fold.h"
 
 namespace arsh::regex {
 
