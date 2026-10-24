@@ -42,7 +42,11 @@ namespace arsh::regex {
   OP(Seq)                                                                                          \
   OP(Alt)                                                                                          \
   OP(LookAround)                                                                                   \
-  OP(Group)
+  OP(Group)                                                                                        \
+  /* for lowering (never generated from parser) */                                                 \
+  OP(FoldChar)                                                                                     \
+  OP(CharSet)                                                                                      \
+  OP(StrSet)
 
 /**
  * for LLVM-style RTTI
@@ -113,6 +117,9 @@ public:
     case NodeKind::BackRef:
     case NodeKind::Seq:
     case NodeKind::Alt:
+    case NodeKind::FoldChar:
+    case NodeKind::CharSet:
+    case NodeKind::StrSet:
       break;
     case NodeKind::Repeat:
     case NodeKind::LookAround:
@@ -160,6 +167,9 @@ public:
     case NodeKind::Repeat:
     case NodeKind::LookAround:
     case NodeKind::Group:
+    case NodeKind::FoldChar:
+    case NodeKind::CharSet:
+    case NodeKind::StrSet:
       break;
     case NodeKind::CharClass:
     case NodeKind::Seq:
@@ -193,6 +203,13 @@ public:
 class AnyNode : public NodeWithRtti<NodeKind::Any> {
 public:
   explicit AnyNode(Token token) : NodeWithRtti(token) {}
+
+  void setModifier(const Modifier m) {
+    static_assert(sizeof(Modifier) == sizeof(uint8_t));
+    this->u8 = toUnderlying(m);
+  }
+
+  Modifier getModifier() const { return static_cast<Modifier>(this->u8); }
 };
 
 class CharNode : public NodeWithRtti<NodeKind::Char> {
@@ -386,6 +403,13 @@ public:
   BoundaryNode(Token token, Type type) : NodeWithRtti(token) { this->u8 = toUnderlying(type); }
 
   Type getType() const { return static_cast<Type>(this->u8); }
+
+  void setModifier(Modifier m) {
+    static_assert(sizeof(Modifier) <= sizeof(uint16_t));
+    this->u16 = toUnderlying(m);
+  }
+
+  Modifier getModifier() const { return static_cast<Modifier>(this->u16); }
 };
 
 class BackRefNode : public NodeWithRtti<NodeKind::BackRef> {
@@ -412,6 +436,10 @@ public:
    * @return
    */
   unsigned int getIndex() const { return this->u32; }
+
+  void setIgnoreCase(bool s) { this->u8 = s ? 1 : 0; }
+
+  bool isIgnoreCase() const { return this->u8 == 1; }
 
   const auto &getName() const { return this->name; }
 

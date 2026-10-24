@@ -288,6 +288,10 @@ void TreeDumper::dumpRaw(const Node &node) {
     this->dump("pattern", *n.getPattern());
     break;
   }
+  case NodeKind::FoldChar:
+  case NodeKind::CharSet:
+  case NodeKind::StrSet:
+    break; // normally unreachable
   }
 }
 

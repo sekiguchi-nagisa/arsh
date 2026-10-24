@@ -102,6 +102,9 @@ static void countGroupsImpl(std::pair<uint16_t, uint16_t> &count, const Node &no
   case NodeKind::Property:
   case NodeKind::Boundary:
   case NodeKind::BackRef:
+  case NodeKind::FoldChar:
+  case NodeKind::CharSet:
+  case NodeKind::StrSet:
     break;
   case NodeKind::Repeat: {
     auto &repeat = cast<RepeatNode>(node);

@@ -91,18 +91,17 @@ namedCaptureGroups: []
 instructions:
    0: Alt(second=13)
    5: String(index=0)
-   8: Jump(target=59)
+   8: Jump(target=58)
   13: Alt(second=28)
   18: Char(codePoint=U+0031:1)
-  23: Jump(target=59)
+  23: Jump(target=58)
   28: Alt(second=43)
   33: Char(codePoint=U+0032:2)
-  38: Jump(target=59)
-  43: Alt(second=54)
-  48: Nop
-  49: Jump(target=59)
-  54: Char(codePoint=U+0033:3)
-  59: Match
+  38: Jump(target=58)
+  43: Alt(second=53)
+  48: Jump(target=58)
+  53: Char(codePoint=U+0033:3)
+  58: Match
 firstSet:
 matchers:
   0: String
@@ -110,50 +109,60 @@ matchers:
 EOF
 )
 
-# (?<=11|1|2).
-assert diff <(redump -d '(?<=11|1|2).' 'i') <(<<'EOF'
+# (?<=12|1|2).
+assert diff <(redump -d '(?<=12|1|2).' 'i') <(<<'EOF'   # not optimize
 flag: (mode = , modifier = i)
 loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
-   0: BeginLookAround(negate=false, target=18)
-   6: PrepareLBRadix
-   7: LBRadixOrEmoji(emoji=case-ignore, hasRadix=true, index=0, nextOffset=5)
-  13: LBCharSet(matcherIndex=1, invert=false, ignoreCase=true)
-  18: EndLookAround
-  19: AnyExceptNL
-  20: Match
+   0: BeginLookAround(negate=false, target=50)
+   6: Alt(second=28)
+  11: LBChar(ignoreCase=true, codePoint=U+0032:2)
+  17: LBChar(ignoreCase=true, codePoint=U+0031:1)
+  23: Jump(target=50)
+  28: Alt(second=44)
+  33: LBChar(ignoreCase=true, codePoint=U+0031:1)
+  39: Jump(target=50)
+  44: LBChar(ignoreCase=true, codePoint=U+0032:2)
+  50: EndLookAround
+  51: AnyExceptNL
+  52: Match
 firstSet:
 matchers:
-  0: RadixTree
-property: 0x01, string: \x31\x31
-  1: AsciiSet
-{ 0x0031, 0x0032 },
 EOF
 )
 
-# (?<!11|1|2|ああ|)
-assert diff <(redump -d '(?<!11|1|2|ああ|)' '') <(<<'EOF'
+# (?<!11|1|23|あい|)
+assert diff <(redump -d '(?<!11|1|23|あい|)' '') <(<<'EOF'    # not optimize
 flag: (mode = , modifier = )
 loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
-   0: BeginLookAround(negate=true, target=23)
-   6: Alt(second=23)
-  11: PrepareLBRadix
-  12: LBRadixOrEmoji(emoji=, hasRadix=true, index=0, nextOffset=5)
-  18: LBCharSet(matcherIndex=1, invert=false, ignoreCase=false)
-  23: EndLookAround
-  24: Match
+   0: BeginLookAround(negate=true, target=61)
+   6: Alt(second=19)
+  11: LBString(index=0)
+  14: Jump(target=61)
+  19: Alt(second=35)
+  24: LBChar(ignoreCase=false, codePoint=U+0031:1)
+  30: Jump(target=61)
+  35: Alt(second=48)
+  40: LBString(index=1)
+  43: Jump(target=61)
+  48: Alt(second=61)
+  53: LBString(index=2)
+  56: Jump(target=61)
+  61: EndLookAround
+  62: Match
 firstSet:
 matchers:
-  0: RadixTree
-property: 0x01, string: \x31\x31
-property: 0x01, string: \xE3\x81\x82\xE3\x81\x82
-  1: AsciiSet
-{ 0x0031, 0x0032 },
+  0: String
+\x31\x31
+  1: String
+\x32\x33
+  2: String
+\xE3\x81\x82\xE3\x81\x84
 EOF
 )
 

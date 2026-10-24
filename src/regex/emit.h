@@ -65,65 +65,14 @@ public:
   FlexBuffer<Inst> build() && { return std::move(this->buf); }
 };
 
-struct StrSetBuilder {
-  CodePointSetBuilder codePoints;
-  RadixTree radix;
-  ucp::RGIEmojiSeq emoji{ucp::RGIEmojiSeq::None};
-  bool emptySeq{false};
-
-  explicit StrSetBuilder(bool ignoreCase) {
-    if (ignoreCase) {
-      setFlag(this->emoji, ucp::RGIEmojiSeq::CASE_IGNORE);
-    }
-  }
-
-  bool hasEmoji() const { return hasEmoji(this->emoji); }
-
-  bool inEmoji(StringRef ref) const {
-    if (this->hasEmoji()) {
-      auto p = ucp::getEmojiTrie().find(ref);
-      return p && hasFlag(toUnderlying(this->emoji), p);
-    }
-    return false;
-  }
-
-  void add(ucp::RGIEmojiSeq e) { setFlag(this->emoji, e); }
-
-  void add(int codePoint) { this->codePoints.addRange(codePoint, codePoint); }
-
-  void add(StringRef ref);
-
-  void addRange(int first, int last, bool fold) { this->codePoints.addRange(first, last, fold); }
-
-  void add(StrSetBuilder &&builder);
-
-  void intersect(StrSetBuilder &&builder);
-
-  void sub(StrSetBuilder &&builder);
-
-  static bool hasEmoji(ucp::RGIEmojiSeq emoji) {
-    unsetFlag(emoji, ucp::RGIEmojiSeq::CASE_IGNORE);
-    return !empty(emoji);
-  }
-};
+class StrSetNode;
 
 class CodeGen {
-public:
-  enum class CaptureState : unsigned char {
-    NOT_OPENED,
-    NOT_CLOSED,
-    CLOSED,
-  };
-
 private:
-  Mode mode{};
   std::string err;
   InstructionBuilder builder;
   std::vector<Matcher> matchers;
-  InlinedStack<Modifier, 4> modifierStack;
   std::vector<bool> directions; // true: forward, false: backward
-  ObserverPtr<const NamedCaptureGroups> namedCaptureGroups;
-  std::vector<CaptureState> resolvedCaptures;
 
 public:
   const auto &getError() const { return this->err; }
@@ -131,41 +80,11 @@ public:
   Optional<Regex> operator()(SyntaxTree &&tree);
 
 private:
-  [[nodiscard]] bool generate(const Node &node); // actual entry point
-
-  Modifier modifiers() const { return this->modifierStack.back(); }
+  [[nodiscard]] bool generate(Node &node); // actual entry point
 
   bool direction() const { return this->directions.back(); }
 
   bool inLookBehind() const { return !this->direction(); }
-
-  bool has(Modifier m) const { return hasFlag(this->modifiers(), m); }
-
-  void toCodePointSet(ucp::BuilderOrSet builderOrSet, const PropertyNode &node) const;
-
-  void generateStrSet(StrSetBuilder &setBuilder, unsigned int level, const Node &node) const;
-
-  bool hasEitherUnicodeFlag() const {
-    return this->mode == Mode::UNICODE || this->mode == Mode::UNICODE_SET;
-  }
-
-  bool needSimpleCaseFolding() const {
-    return this->mode == Mode::UNICODE_SET && this->has(Modifier::IGNORE_CASE);
-  }
-
-  void mayBeSimpleCaseFolding(CodePointSetBuilder &setBuilder) const {
-    if (this->needSimpleCaseFolding()) {
-      setBuilder.foldCase();
-    }
-  }
-
-  void complement(CodePointSetBuilder &setBuilder) const {
-    if (this->needSimpleCaseFolding()) {
-      setBuilder.complementWithFoldCase();
-    } else {
-      setBuilder.complement();
-    }
-  }
 
   bool generateSeq(const SeqNode &node);
 
@@ -173,25 +92,7 @@ private:
 
   bool generateGroup(const GroupNode &node);
 
-  bool generateProperty(const PropertyNode &node);
-
-  bool generateCharClass(const CharClassNode &node);
-
-  void emitCharIns(int codePoint);
-
-  void emitCharSetIns(unsigned int matcherIndex, bool invert) {
-    if (this->inLookBehind()) {
-      this->builder.emit<LBCharSetIns>(matcherIndex, invert, this->has(Modifier::IGNORE_CASE));
-    } else if (this->has(Modifier::IGNORE_CASE)) {
-      this->builder.emit<ICharSetIns>(matcherIndex, invert);
-    } else {
-      this->builder.emit<CharSetIns>(matcherIndex, invert);
-    }
-  }
-
-  bool tryToEmitCharSetIns(CodePointSetBuilder &setBuilder, bool invert);
-
-  void generateBackRef(const BackRefNode &node);
+  bool generateStrSet(const StrSetNode &node);
 
   bool generateRepeat(const RepeatNode &node);
 

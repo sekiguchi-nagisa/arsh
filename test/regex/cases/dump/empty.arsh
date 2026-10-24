@@ -8,8 +8,7 @@ loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
-  0: Nop
-  1: Match
+  0: Match
 firstSet:
 matchers:
 EOF
@@ -22,8 +21,7 @@ loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
-  0: Nop
-  1: Match
+  0: Match
 firstSet:
 matchers:
 EOF
@@ -36,11 +34,9 @@ loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
-  0: BeginLookAround(negate=false, target=7)
-  6: Nop
-  7: EndLookAround
-  8: Nop
-  9: Match
+  0: BeginLookAround(negate=false, target=6)
+  6: EndLookAround
+  7: Match
 firstSet:
 matchers:
 EOF

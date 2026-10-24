@@ -149,15 +149,16 @@ loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
-   0: String(index=0)
-   3: AnyExceptNL
-   4: Char(codePoint=U+005D:])
-   9: Char(codePoint=U+0028:()
-  14: Match
+  0: String(index=0)
+  3: AnyExceptNL
+  4: String(index=1)
+  7: Match
 firstSet:
 matchers:
   0: String
 \x5D\x01
+  1: String
+\x5D\x28
 EOF
 )
 
