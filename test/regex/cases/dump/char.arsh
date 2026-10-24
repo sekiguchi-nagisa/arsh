@@ -212,3 +212,19 @@ matchers:
 \x40\x21
 EOF
 )
+
+# 12(?:3(?:4))(?:56)
+assert diff <(redump -d '12(?:3(?:4))(?:56)' 'u') <(<<'EOF'
+flag: (mode = u, modifier = )
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+  0: String(index=0)
+  3: Match
+firstSet:
+matchers:
+  0: String
+\x31\x32\x33\x34\x35\x36
+EOF
+)

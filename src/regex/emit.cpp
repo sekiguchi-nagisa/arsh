@@ -327,12 +327,6 @@ bool CodeGen::generateStrSet(const StrSetNode &node) {
 }
 
 bool CodeGen::generateRepeat(const RepeatNode &node) {
-  if (node.getMax() == 0) { // do nothing
-    return true;
-  }
-  if (node.getMin() == 1 && node.getMax() == 1) {
-    return this->generate(*node.getPattern());
-  }
   const unsigned int beginAddr = this->builder.currentAddr();
   const auto p = this->builder.emitReservedPoint<BeginLoopIns>();
   if (node.getFirstGroupIndex()) {

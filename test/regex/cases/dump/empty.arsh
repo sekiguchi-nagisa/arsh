@@ -34,9 +34,7 @@ loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
-  0: BeginLookAround(negate=false, target=6)
-  6: EndLookAround
-  7: Match
+  0: Match
 firstSet:
 matchers:
 EOF

@@ -478,21 +478,7 @@ static bool isSingleCharClass(const CharClassNode &node) {
   return node.getChars().size() == 1 && !node.isInvert() && !isa<AltNode>(*node.getChars()[0]);
 }
 
-static void normalizeStrCharClass(Node &node) {
-  if (isa<NestedNode>(node)) {
-    normalizeStrCharClass(*cast<NestedNode>(node).getPattern());
-    return;
-  }
-  if (isa<ListNode>(node) && !isa<CharClassNode>(node)) {
-    for (auto &e : cast<ListNode>(node).getPatterns()) {
-      normalizeStrCharClass(*e);
-    }
-    return;
-  }
-  if (!isa<CharClassNode>(node)) {
-    return;
-  }
-  auto &classNode = cast<CharClassNode>(node);
+static void normalizeStrCharClass(CharClassNode &classNode) {
   if (!classNode.mayContainStrings() || classNode.getType() == CharClassNode::Type::INTERSECT ||
       classNode.getType() == CharClassNode::Type::SUBTRACT) {
     return;
@@ -513,9 +499,94 @@ static void normalizeStrCharClass(Node &node) {
 
   for (auto &e : classNode.refChars()) {
     if (isa<CharClassNode>(*e)) {
-      normalizeStrCharClass(*e);
+      normalizeStrCharClass(cast<CharClassNode>(*e));
     }
   }
+}
+
+std::unique_ptr<Node> Lowering::generateClassSet(const CharClassNode &node) const {
+  StrSetBuilder setBuilder(this->has(Modifier::IGNORE_CASE));
+  this->generateStrSet(setBuilder, 0, node);
+  bool invert = false;
+  if (node.isInvert() && this->mode != Mode::UNICODE_SET) {
+    invert = true;
+  }
+  if (this->has(Modifier::IGNORE_CASE)) {
+    setBuilder.codePoints.foldCase();
+  }
+  if (setBuilder.radix.empty() && !setBuilder.hasEmoji()) { // for charset or empty seq (\q{})
+    if (setBuilder.emptySeq && !setBuilder.codePoints) {
+      return std::make_unique<EmptyNode>(node.getToken().pos); // do nothing
+    }
+    auto newNode = this->tryToGenerateCharSetNode(node.getToken(), setBuilder.codePoints, invert);
+    if (setBuilder.emptySeq) { // [\w\q{}] => (?:[\w] | )
+      newNode = std::make_unique<AltNode>(std::move(newNode));
+    }
+    return newNode;
+  }
+
+  assert(node.mayContainStrings());
+  std::unique_ptr<Node> chars;
+  if (setBuilder.codePoints) {
+    chars = this->tryToGenerateCharSetNode(node.getToken(), setBuilder.codePoints, invert);
+  }
+  return std::make_unique<StrSetNode>(node.getToken(), setBuilder.emoji,
+                                      std::move(setBuilder.radix), setBuilder.emptySeq,
+                                      std::move(chars), this->has(Modifier::IGNORE_CASE));
+}
+
+std::unique_ptr<Node> Lowering::generateClassSet(const PropertyNode &node) const {
+  if (node.mayContainString()) {
+    assert(node.getNormalizedType() == PropertyNode::Type::EMOJI);
+    auto emoji = node.getEmojiSeq();
+    if (this->has(Modifier::IGNORE_CASE)) {
+      setFlag(emoji, ucp::RGIEmojiSeq::CASE_IGNORE);
+    }
+    return std::make_unique<StrSetNode>(node.getToken(), emoji, RadixTree(), false, nullptr,
+                                        this->has(Modifier::IGNORE_CASE));
+  }
+  CodePointSet set;
+  CodePointSetBuilder setBuilder;
+  const bool useBuilder = node.isInvert() || this->has(Modifier::IGNORE_CASE);
+  this->toCodePointSet(useBuilder ? ucp::BuilderOrSet(setBuilder) : ucp::BuilderOrSet(set), node);
+  if (useBuilder) {
+    this->mayBeSimpleCaseFolding(setBuilder);
+    if (node.isInvert()) {
+      this->complement(setBuilder);
+    }
+    if (this->has(Modifier::IGNORE_CASE)) {
+      setBuilder.foldCase();
+    }
+    set = setBuilder.build();
+  }
+  return std::make_unique<CharSetNode>(node.getToken(), false, std::move(set),
+                                       this->has(Modifier::IGNORE_CASE));
+}
+
+bool Lowering::checkBackRef(const BackRefNode &node) const {
+  if (node.isNamed()) {
+    auto *entry = this->namedCaptureGroups.find(node.getName());
+    assert(entry);
+    if (entry->hasMultipleIndices()) {
+      unsigned int closedCount = 0;
+      for (unsigned int i = 0; i < entry->getSize(); i++) {
+        auto state = this->resolvedCaptures[(*entry)[i]];
+        if (state == CaptureState::CLOSED) {
+          closedCount++;
+        } else if (state == CaptureState::NOT_CLOSED) {
+          return false; // refer to its own group, ex. (?:(?<A>.)|(?<A>\k<A>))
+        }
+      }
+      if (!closedCount) {
+        return false;
+      }
+    } else if (this->resolvedCaptures[entry->getIndex()] != CaptureState::CLOSED) {
+      return false; // invalid capture, do nothing
+    }
+  } else if (this->resolvedCaptures[node.getIndex()] != CaptureState::CLOSED) {
+    return false; // invalid capture, do nothing
+  }
+  return true;
 }
 
 static bool isCharSeq(const Node &node) {
@@ -613,91 +684,6 @@ static bool optimizeStrAlt(std::unique_ptr<Node> &node) {
   return true;
 }
 
-std::unique_ptr<Node> Lowering::generateClassSet(const CharClassNode &node) const {
-  StrSetBuilder setBuilder(this->has(Modifier::IGNORE_CASE));
-  this->generateStrSet(setBuilder, 0, node);
-  bool invert = false;
-  if (node.isInvert() && this->mode != Mode::UNICODE_SET) {
-    invert = true;
-  }
-  if (this->has(Modifier::IGNORE_CASE)) {
-    setBuilder.codePoints.foldCase();
-  }
-  if (setBuilder.radix.empty() && !setBuilder.hasEmoji()) { // for charset or empty seq (\q{})
-    if (setBuilder.emptySeq && !setBuilder.codePoints) {
-      return std::make_unique<EmptyNode>(node.getToken().pos); // do nothing
-    }
-    auto newNode = this->tryToGenerateCharSetNode(node.getToken(), setBuilder.codePoints, invert);
-    if (setBuilder.emptySeq) { // [\w\q{}] => (?:[\w] | )
-      newNode = std::make_unique<AltNode>(std::move(newNode));
-    }
-    return newNode;
-  }
-
-  assert(node.mayContainStrings());
-  std::unique_ptr<Node> chars;
-  if (setBuilder.codePoints) {
-    chars = this->tryToGenerateCharSetNode(node.getToken(), setBuilder.codePoints, invert);
-  }
-  return std::make_unique<StrSetNode>(node.getToken(), setBuilder.emoji,
-                                      std::move(setBuilder.radix), setBuilder.emptySeq,
-                                      std::move(chars), this->has(Modifier::IGNORE_CASE));
-}
-
-std::unique_ptr<Node> Lowering::generateClassSet(const PropertyNode &node) const {
-  if (node.mayContainString()) {
-    assert(node.getNormalizedType() == PropertyNode::Type::EMOJI);
-    auto emoji = node.getEmojiSeq();
-    if (this->has(Modifier::IGNORE_CASE)) {
-      setFlag(emoji, ucp::RGIEmojiSeq::CASE_IGNORE);
-    }
-    return std::make_unique<StrSetNode>(node.getToken(), emoji, RadixTree(), false, nullptr,
-                                        this->has(Modifier::IGNORE_CASE));
-  }
-  CodePointSet set;
-  CodePointSetBuilder setBuilder;
-  const bool useBuilder = node.isInvert() || this->has(Modifier::IGNORE_CASE);
-  this->toCodePointSet(useBuilder ? ucp::BuilderOrSet(setBuilder) : ucp::BuilderOrSet(set), node);
-  if (useBuilder) {
-    this->mayBeSimpleCaseFolding(setBuilder);
-    if (node.isInvert()) {
-      this->complement(setBuilder);
-    }
-    if (this->has(Modifier::IGNORE_CASE)) {
-      setBuilder.foldCase();
-    }
-    set = setBuilder.build();
-  }
-  return std::make_unique<CharSetNode>(node.getToken(), false, std::move(set),
-                                       this->has(Modifier::IGNORE_CASE));
-}
-
-bool Lowering::checkBackRef(const BackRefNode &node) const {
-  if (node.isNamed()) {
-    auto *entry = this->namedCaptureGroups.find(node.getName());
-    assert(entry);
-    if (entry->hasMultipleIndices()) {
-      unsigned int closedCount = 0;
-      for (unsigned int i = 0; i < entry->getSize(); i++) {
-        auto state = this->resolvedCaptures[(*entry)[i]];
-        if (state == CaptureState::CLOSED) {
-          closedCount++;
-        } else if (state == CaptureState::NOT_CLOSED) {
-          return false; // refer to its own group, ex. (?:(?<A>.)|(?<A>\k<A>))
-        }
-      }
-      if (!closedCount) {
-        return false;
-      }
-    } else if (this->resolvedCaptures[entry->getIndex()] != CaptureState::CLOSED) {
-      return false; // invalid capture, do nothing
-    }
-  } else if (this->resolvedCaptures[node.getIndex()] != CaptureState::CLOSED) {
-    return false; // invalid capture, do nothing
-  }
-  return true;
-}
-
 void Lowering::visit(std::unique_ptr<Node> &node) {
   switch (node->getKind()) {
   case NodeKind::Empty:
@@ -714,15 +700,17 @@ void Lowering::visit(std::unique_ptr<Node> &node) {
     }
     break;
   }
-  case NodeKind::CharClass:
-    normalizeStrCharClass(*node);
-    if (auto &charClass = cast<CharClassNode>(*node); isSingleCharClass(charClass)) {
+  case NodeKind::CharClass: {
+    auto &charClass = cast<CharClassNode>(*node);
+    normalizeStrCharClass(charClass);
+    if (isSingleCharClass(charClass)) {
       node = std::move(charClass.refChars()[0]);
       this->visit(node);
     } else {
       node = this->generateClassSet(charClass);
     }
     break;
+  }
   case NodeKind::Property:
     if (auto &property = cast<PropertyNode>(*node);
         property.getNormalizedType() != PropertyNode::Type::GRAPHEME) {
@@ -739,9 +727,16 @@ void Lowering::visit(std::unique_ptr<Node> &node) {
       node = std::make_unique<EmptyNode>(node->getToken().pos); // remove
     }
     break;
-  case NodeKind::Seq:
-    this->visit(cast<SeqNode>(*node));
+  case NodeKind::Seq: {
+    auto &seq = cast<SeqNode>(*node);
+    this->visit(seq);
+    if (seq.getPatterns().empty()) {
+      node = std::make_unique<EmptyNode>(node->getToken().pos);
+    } else if (seq.getPatterns().size() == 1) {
+      node = std::move(seq.refPatterns()[0]);
+    }
     break;
+  }
   case NodeKind::Alt:
     for (auto &e : cast<ListNode>(*node).refPatterns()) {
       this->visit(e);
@@ -755,11 +750,23 @@ void Lowering::visit(std::unique_ptr<Node> &node) {
     this->directions.push_back(n.isLookAhead());
     this->visit(n.refPattern());
     this->directions.pop_back();
+    if (isa<EmptyNode>(*n.getPattern()) && !n.isNegate()) {
+      node = std::move(n.refPattern()); // eliminate empty look-around
+    }
     break;
   }
-  case NodeKind::Repeat:
-    this->visit(cast<NestedNode>(*node).refPattern());
+  case NodeKind::Repeat: {
+    auto &n = cast<RepeatNode>(*node);
+    if (n.getMax() == 0) { // do nothing
+      node = std::make_unique<EmptyNode>(node->getToken().pos);
+    } else if (n.getMin() == 1 && n.getMax() == 1) {
+      node = std::move(n.refPattern());
+      this->visit(node);
+    } else {
+      this->visit(cast<NestedNode>(*node).refPattern());
+    }
     break;
+  }
   case NodeKind::Group:
     switch (auto &group = cast<GroupNode>(*node); group.getType()) {
     case GroupNode::Type::CAPTURE:
@@ -791,7 +798,7 @@ void Lowering::visit(std::unique_ptr<Node> &node) {
   case NodeKind::FoldChar:
   case NodeKind::CharSet:
   case NodeKind::StrSet:
-    break; // unreachable
+    break; // normally unreachable (do nothing)
   }
 }
 
@@ -809,6 +816,25 @@ void Lowering::visit(SeqNode &node) {
       this->visit(*iter);
     }
   }
+
+  // flatten
+  auto &patterns = node.refPatterns();
+  for (auto iter = patterns.begin(); iter != patterns.end();) {
+    if (isa<SeqNode>(**iter)) {
+      auto tmp = std::move(*iter);
+      iter = patterns.erase(iter);
+      for (auto &e : cast<SeqNode>(*tmp).refPatterns()) {
+        iter = patterns.insert(iter, std::move(e)) + 1;
+      }
+    } else {
+      ++iter;
+    }
+  }
+
+  // remove empty
+  const auto iter = std::remove_if(patterns.begin(), patterns.end(),
+                                   [](std::unique_ptr<Node> &n) { return isa<EmptyNode>(*n); });
+  patterns.erase(iter, patterns.end());
 }
 
 void transform(SyntaxTree &tree) {
