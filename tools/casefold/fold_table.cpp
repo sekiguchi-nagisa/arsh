@@ -88,15 +88,14 @@ struct BlockHasher {
 };
 
 static int computeFoldEntry(const int codePoint) {
+  constexpr auto INT31_MAX = INT_X_MAX<31>();
+  constexpr auto INT31_MIN = INT_X_MIN<31>();
   assert(UnicodeUtil::isCodePoint(codePoint));
   auto [c, e] = lookupSimpleCaseFoldEntry(codePoint);
   int d = c - codePoint;
-  constexpr auto INT31_MAX = INT_X_MAX<31>();
-  constexpr auto INT31_MIN = INT_X_MIN<31>();
-  static_cast<void>(INT31_MAX);
-  static_cast<void>(INT31_MIN);
-  assert(d <= INT31_MAX);
-  assert(d >= INT31_MIN);
+  if (d > INT31_MAX || d < INT31_MIN) {
+    fatal("broken fold entry: %d => %d, delta: %d\n", codePoint, c, d);
+  }
   int delta = (d * 2) + static_cast<int>(toUnderlying(e));
   return delta;
 }
@@ -140,11 +139,23 @@ std::pair<int, char> FoldTable::fold(int codePoint) const {
     const unsigned int index = this->blockIndexes[static_cast<unsigned int>(codePoint) >> SHIFT];
     const uint32_t v =
         this->blocks[index].values[static_cast<unsigned int>(codePoint) % BLOCK_SIZE];
-    int delta = static_cast<int>(v & ~1) / 2;
-    char t = (v & 0x01) == 1 ? 'S' : 'C';
+    int delta = static_cast<int>(v & ~1u) / 2;
+    char t = (v & 0x01u) == 1 ? 'S' : 'C';
     return {codePoint + delta, t};
   }
   return {codePoint, 'C'};
+}
+
+UnfoldTable createUnfoldTable() {
+  UnfoldTable table;
+  for (auto &[before, after] : case_fold_C_table) {
+    table.emplace_back(after, before);
+  }
+  for (auto &[before, after] : case_fold_S_table) {
+    table.emplace_back(after, before);
+  }
+  std::sort(table.begin(), table.end());
+  return table;
 }
 
 } // namespace arsh::fold

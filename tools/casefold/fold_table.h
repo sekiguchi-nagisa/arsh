@@ -28,7 +28,7 @@ namespace arsh::fold {
 class FoldTable {
 public:
   static constexpr unsigned int SHIFT = 5;
-  static constexpr unsigned int BLOCK_SIZE = 1 << SHIFT;
+  static constexpr unsigned int BLOCK_SIZE = 1u << SHIFT;
 
   struct Block {
     std::array<uint32_t, BLOCK_SIZE> values{};
@@ -61,6 +61,10 @@ public:
 
   std::pair<int, char> fold(int codePoint) const;
 };
+
+using UnfoldTable = std::vector<std::pair<int, int>>; // fold => unfold
+
+UnfoldTable createUnfoldTable();
 
 } // namespace arsh::fold
 

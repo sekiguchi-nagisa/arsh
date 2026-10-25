@@ -19,6 +19,7 @@
 
 #include <array>
 
+#include "misc/array_ref.hpp"
 #include "misc/flag_util.hpp"
 
 namespace arsh {
@@ -63,6 +64,13 @@ public:
 CaseFoldingResult doCaseFolding(int codePoint, CaseFoldOp op);
 
 int doSimpleCaseFolding(int codePoint);
+
+struct UnfoldEntry {
+  int fold;
+  int unfold;
+};
+
+ArrayRef<UnfoldEntry> doSimpleCaseUnfold(int codePoint);
 
 } // namespace arsh
 

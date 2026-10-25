@@ -149,7 +149,7 @@ instructions:
   32: BeginLoop(loopIndex=1, greedy=true, min=0, max=4294967295, outer=55)
   46: IBackRef(index=1, named=false)
   50: EndLoop(target=32)
-  55: IChar(codePoint=U+002C:,)
+  55: Char(codePoint=U+002C:,)
   60: BeginLoop(loopIndex=2, greedy=true, min=1, max=4294967295, outer=83)
   74: IBackRef(index=1, named=false)
   78: EndLoop(target=60)

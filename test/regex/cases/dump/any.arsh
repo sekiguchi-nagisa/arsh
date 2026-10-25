@@ -54,9 +54,9 @@ captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
    0: BeginLookAround(negate=false, target=22)
-   6: LBChar(ignoreCase=true, codePoint=U+0032:2)
+   6: LBChar(ignoreCase=false, codePoint=U+0032:2)
   12: LBAny(dotAll=false)
-  14: LBChar(ignoreCase=true, codePoint=U+0031:1)
+  14: LBChar(ignoreCase=false, codePoint=U+0031:1)
   20: LBAny(dotAll=true)
   22: EndLookAround
   23: Any

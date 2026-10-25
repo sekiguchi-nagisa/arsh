@@ -331,7 +331,7 @@ loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
-  0: IChar(codePoint=U+0040:@)
+  0: Char(codePoint=U+0040:@)
   5: Match
 firstSet:
 matchers:

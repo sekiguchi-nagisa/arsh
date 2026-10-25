@@ -878,7 +878,26 @@ void Lowering::optimizeStrAlt(std::unique_ptr<Node> &node) {
   this->modifierStack.pop();
 }
 
-void Lowering::optimize(std::unique_ptr<Node> &node) { this->optimizeStrAlt(node); }
+static void optimizeFoldChar(std::unique_ptr<Node> &node) {
+  if (isa<FoldCharNode>(*node)) {
+    auto &n = cast<FoldCharNode>(*node);
+    if (doSimpleCaseUnfold(n.getCodePoint()).empty()) {
+      node = std::make_unique<CharNode>(node->getToken(), n.getCodePoint());
+    }
+  } else if (isa<NestedNode>(*node)) {
+    optimizeFoldChar(cast<NestedNode>(*node).refPattern());
+  } else if (isa<ListNode>(*node)) {
+    assert(!isa<CharClassNode>(*node)); // never appeared
+    for (auto &e : cast<ListNode>(*node).refPatterns()) {
+      optimizeFoldChar(e);
+    }
+  }
+}
+
+void Lowering::optimize(std::unique_ptr<Node> &node) {
+  this->optimizeStrAlt(node);
+  optimizeFoldChar(node);
+}
 
 void transform(SyntaxTree &tree) {
   Lowering lowering(tree.getFlag(), tree.getCaptureGroupCount(), tree.getNamedCaptureGroups());

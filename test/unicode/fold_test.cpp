@@ -35,6 +35,7 @@ struct FoldTest : public ::testing::TestWithParam<FOLD_TEST_ENTRY> {
     auto retTurkic = arsh::doCaseFolding(param.before, arsh::CaseFoldOp::TURKIC);
     auto retFull = arsh::doCaseFolding(param.before, arsh::CaseFoldOp::FULL_FOLD);
     auto code = arsh::doSimpleCaseFolding(param.before);
+    auto unfolds = arsh::doSimpleCaseUnfold(param.after);
 
     switch (param.type) {
     case 'C':
@@ -43,6 +44,10 @@ struct FoldTest : public ::testing::TestWithParam<FOLD_TEST_ENTRY> {
       ASSERT_FALSE(retFull.isFullFolding());
       ASSERT_EQ(param.after, retFull.getSimpleFolding());
       ASSERT_EQ(param.after, code);
+      ASSERT_FALSE(unfolds.empty());
+      ASSERT_TRUE(
+          std::any_of(unfolds.begin(), unfolds.end(),
+                      [unfold = param.before](const auto &e) { return e.unfold == unfold; }));
       break;
     case 'S':
       ASSERT_FALSE(ret.isFullFolding());
@@ -51,6 +56,10 @@ struct FoldTest : public ::testing::TestWithParam<FOLD_TEST_ENTRY> {
       ASSERT_EQ(param.after, retTurkic.getSimpleFolding());
       ASSERT_FALSE(retFull.equals(param.after));
       ASSERT_EQ(param.after, code);
+      ASSERT_FALSE(unfolds.empty());
+      ASSERT_TRUE(
+          std::any_of(unfolds.begin(), unfolds.end(),
+                      [unfold = param.before](const auto &e) { return e.unfold == unfold; }));
       break;
     case 'T':
       ASSERT_FALSE(ret.isFullFolding());

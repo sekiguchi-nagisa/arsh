@@ -21,6 +21,8 @@
 
 namespace arsh {
 
+#define UNFOLD_ENTRY UnfoldEntry
+
 #include "simple_case_fold_table.h"
 
 static bool isSimpleCaseFoldTarget(int codePoint) {
@@ -114,6 +116,25 @@ CaseFoldingResult doCaseFolding(const int codePoint, const CaseFoldOp op) {
     return CaseFoldingResult(codePoint);
   }
   return CaseFoldingResult(doSimpleCaseFolding(codePoint));
+}
+
+struct CompareUnfoldEntry {
+  bool operator()(const UnfoldEntry &x, int y) const { return x.fold < y; }
+
+  bool operator()(int x, const UnfoldEntry &y) const { return x < y.fold; }
+};
+
+ArrayRef<UnfoldEntry> doSimpleCaseUnfold(const int codePoint) {
+  const auto iter =
+      std::lower_bound(std::begin(simple_case_unfold_table), std::end(simple_case_unfold_table),
+                       codePoint, CompareUnfoldEntry());
+  if (iter != std::end(simple_case_unfold_table) && iter->fold == codePoint) {
+    auto cur = iter + 1;
+    for (; cur != std::end(simple_case_unfold_table) && cur->fold == codePoint; ++cur)
+      ;
+    return {iter, static_cast<size_t>(cur - iter)};
+  }
+  return {};
 }
 
 } // namespace arsh

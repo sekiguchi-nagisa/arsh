@@ -24,7 +24,7 @@ captureGroupCount: 1
 namedCaptureGroups: []
 instructions:
    0: BeginCapture(captureIndex=1)
-   3: IChar(codePoint=U+3042:あ)
+   3: Char(codePoint=U+3042:あ)
    8: EndCapture(captureIndex=1)
   11: Match
 firstSet:
@@ -62,10 +62,10 @@ captureGroupCount: 1
 namedCaptureGroups: []
 instructions:
    0: BeginCapture(captureIndex=1)
-   3: IChar(codePoint=U+3042:あ)
+   3: Char(codePoint=U+3042:あ)
    8: ICharSet(matcherIndex=0, invert=false)
   12: EndCapture(captureIndex=1)
-  15: IChar(codePoint=U+3044:い)
+  15: Char(codePoint=U+3044:い)
   20: Match
 firstSet:
 matchers:

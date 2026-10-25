@@ -28,6 +28,19 @@ matchers:
 EOF
 )
 
+assert diff <(redump -d 'a' 'i') <(<<'EOF'
+flag: (mode = , modifier = i)
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+  0: IChar(codePoint=U+0061:a)
+  5: Match
+firstSet:
+matchers:
+EOF
+)
+
 # ÿ
 assert diff <(redump -d 'ÿ' '') <(<<'EOF'
 flag: (mode = , modifier = )
@@ -75,7 +88,7 @@ loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
-  0: IChar(codePoint=U+3042:あ)
+  0: Char(codePoint=U+3042:あ)
   5: Match
 firstSet:
 matchers:
@@ -102,7 +115,7 @@ loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
-  0: IChar(codePoint=U+24155:𤅕)
+  0: Char(codePoint=U+24155:𤅕)
   5: Match
 firstSet:
 matchers:

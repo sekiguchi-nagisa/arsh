@@ -116,20 +116,21 @@ loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
-   0: BeginLookAround(negate=false, target=50)
-   6: Alt(second=28)
-  11: LBChar(ignoreCase=true, codePoint=U+0032:2)
-  17: LBChar(ignoreCase=true, codePoint=U+0031:1)
-  23: Jump(target=50)
-  28: Alt(second=44)
-  33: LBChar(ignoreCase=true, codePoint=U+0031:1)
-  39: Jump(target=50)
-  44: LBChar(ignoreCase=true, codePoint=U+0032:2)
-  50: EndLookAround
-  51: AnyExceptNL
-  52: Match
+   0: BeginLookAround(negate=false, target=41)
+   6: Alt(second=19)
+  11: LBString(index=0)
+  14: Jump(target=41)
+  19: Alt(second=35)
+  24: LBChar(ignoreCase=false, codePoint=U+0031:1)
+  30: Jump(target=41)
+  35: LBChar(ignoreCase=false, codePoint=U+0032:2)
+  41: EndLookAround
+  42: AnyExceptNL
+  43: Match
 firstSet:
 matchers:
+  0: String
+\x31\x32
 EOF
 )
 
