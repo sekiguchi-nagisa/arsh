@@ -344,7 +344,7 @@ static Capture resolveBackRef(const Regex &regex, const MatchContext &ctx,
 }
 
 static bool searchPrefix(const Inst *&inst, Input &input, const char *&oldIter,
-                         const CodePointSet &firstSet, const ArrayRef<Matcher> matchers) {
+                         const FirstBitSet &firstSet, const ArrayRef<Matcher> matchers) {
   switch (inst->op) {
   case OpCode::Char:
   case OpCode::String: {
@@ -367,20 +367,6 @@ static bool searchPrefix(const Inst *&inst, Input &input, const char *&oldIter,
     oldIter = input.getEnd();
     return false;
   }
-  case OpCode::CharSet: {
-    const auto &ins = cast<CharSetIns>(*inst);
-    const auto &matcher = matchers[ins.getMatcherIndex()];
-    const bool invert = cast<CharSetIns>(*inst).invert;
-    inst += sizeof(CharSetIns);
-    while (input.available()) {
-      oldIter = input.getIter();
-      if (matcher.contains(input.consumeForward()) != invert) {
-        return true;
-      }
-    }
-    oldIter = input.getEnd();
-    return false;
-  }
   case OpCode::IChar: {
     const int codePoint = cast<ICharIns>(*inst).getCodePoint();
     inst += sizeof(ICharIns);
@@ -393,31 +379,20 @@ static bool searchPrefix(const Inst *&inst, Input &input, const char *&oldIter,
     oldIter = input.getEnd();
     return false;
   }
-  case OpCode::ICharSet: {
-    const auto &ins = cast<ICharSetIns>(*inst);
-    const bool invert = ins.invert;
-    const auto &matcher = matchers[ins.getMatcherIndex()];
-    inst += sizeof(ICharSetIns);
-    while (input.available()) {
-      oldIter = input.getIter();
-      if (matcher.contains(doSimpleCaseFolding(input.consumeForward())) != invert) {
-        return true;
-      }
-    }
-    oldIter = input.getEnd();
-    return false;
-  }
   default:
-    if (firstSet) {
-      const auto ref = firstSet.ref();
-      while (input.available()) {
-        oldIter = input.getIter();
-        if (ref.contains(input.consumeForward())) {
-          input.setIter(oldIter); // not consume input
+    if (firstSet.any()) {
+      const auto *iter = input.getIter();
+      while (iter != input.getEnd()) {
+        const auto b = static_cast<unsigned char>(*iter);
+        if (firstSet[b]) {
+          oldIter = iter;
+          input.setIter(iter); // not consume input
           return true;
         }
+        iter += UnicodeUtil::utf8ByteSize(b);
       }
-      oldIter = input.getEnd();
+      oldIter = iter;
+      input.setIter(iter);
       return false;
     }
     return true; // do nothing
@@ -471,7 +446,7 @@ MatchStatus match(const Regex &regex, MatchContext &ctx, ObserverPtr<Timer> time
 #endif
 
 START:
-  if (!searchPrefix(inst, input, oldIter, regex.getFirstSet(), matchers)) {
+  if (!searchPrefix(inst, input, oldIter, regex.getFirstBitSet(), matchers)) {
     goto BACKTRACK;
   }
   while (true) {

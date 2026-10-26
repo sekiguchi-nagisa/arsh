@@ -399,7 +399,6 @@ public:
     NOT_WORD, // \B
   };
 
-public:
   BoundaryNode(Token token, Type type) : NodeWithRtti(token) { this->u8 = toUnderlying(type); }
 
   Type getType() const { return static_cast<Type>(this->u8); }

@@ -127,6 +127,7 @@ instructions:
    7: Char(codePoint=U+3042:あ)
   12: Match
 firstSet:
+  0x41, 0xE3,
 matchers:
   0: RadixTree
 property: 0x01, string: \x41\x42
@@ -144,6 +145,7 @@ instructions:
    7: IChar(codePoint=U+3042:あ)
   12: Match
 firstSet:
+  0x41, 0x61, 0xE3,
 matchers:
   0: RadixTree
 property: 0x01, string: \x61\x62
@@ -262,6 +264,7 @@ instructions:
   1: RadixOrEmoji(emoji=, hasRadix=true, index=0, nextOffset=0)
   7: Match
 firstSet:
+  0x41,
 matchers:
   0: RadixTree
 property: 0x01, string: \x41\x42
@@ -279,6 +282,7 @@ instructions:
   1: RadixOrEmoji(emoji=case-ignore, hasRadix=true, index=0, nextOffset=0)
   7: Match
 firstSet:
+  0x41, 0x61,
 matchers:
   0: RadixTree
 property: 0x01, string: \x61\x62

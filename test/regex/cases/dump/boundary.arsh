@@ -85,18 +85,20 @@ matchers:
 EOF
 )
 
-# \b(?m-i:\B$)
-assert diff <(redump -d '\b(?m-i:\B$)' 'i') <(<<'EOF'
+# \b(?m-i:\B@$)
+assert diff <(redump -d '\b(?m-i:\B@$)' 'i') <(<<'EOF'
 flag: (mode = , modifier = i)
 loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
-  0: IWord(invert=false)
-  2: Word(invert=true)
-  4: End(multiline=true)
-  6: Match
+   0: IWord(invert=false)
+   2: Word(invert=true)
+   4: Char(codePoint=U+0040:@)
+   9: End(multiline=true)
+  11: Match
 firstSet:
+  0x40,
 matchers:
 EOF
 )

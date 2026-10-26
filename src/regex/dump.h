@@ -143,6 +143,14 @@ private:
     this->base.leaveIndent();
   }
 
+  void dump(const char *name, const FirstBitSet &set) {
+    this->base.field(name);
+    this->base.newline();
+    this->base.enterIndent();
+    this->dump(set);
+    this->base.leaveIndent();
+  }
+
   void dump(const char *name, ArrayRef<Matcher> matchers) {
     this->base.field(name);
     this->base.newline();
@@ -152,6 +160,8 @@ private:
   }
 
   void dump(const FlexBuffer<Inst> &ins);
+
+  void dump(const FirstBitSet &set);
 
   void dump(ArrayRef<Matcher> matchers);
 };

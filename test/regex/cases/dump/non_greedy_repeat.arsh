@@ -29,6 +29,7 @@ instructions:
   19: EndLoop(target=0)
   24: Match
 firstSet:
+  0x61,
 matchers:
 EOF
 )
@@ -72,6 +73,7 @@ instructions:
   0: Char(codePoint=U+0061:a)
   5: Match
 firstSet:
+  0x61,
 matchers:
 EOF
 )
@@ -88,6 +90,7 @@ instructions:
   19: EndLoop(target=0)
   24: Match
 firstSet:
+  0x61,
 matchers:
 EOF
 )
@@ -105,6 +108,7 @@ instructions:
   23: EndLoop(target=5)
   28: Match
 firstSet:
+  0x61,
 matchers:
   0: AsciiSet
 { 0x0061, 0x007A },
@@ -125,6 +129,7 @@ instructions:
   25: Char(codePoint=U+003E:>)
   30: Match
 firstSet:
+  0x3C,
 matchers:
 EOF
 )

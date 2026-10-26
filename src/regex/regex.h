@@ -17,6 +17,8 @@
 #ifndef ARSH_REGEX_REGEX_H
 #define ARSH_REGEX_REGEX_H
 
+#include <bitset>
+
 #include "capture.h"
 #include "flag.h"
 #include "matcher.h"
@@ -29,13 +31,15 @@ namespace arsh::regex {
 
 struct Inst;
 
+using FirstBitSet = std::bitset<256>;
+
 class Regex {
 private:
   Flag flag;
   unsigned short loopCount;
   unsigned int captureGroupCount; // 1-based index. if 0, indicate no captures
   FlexBuffer<Inst> instSeq;
-  CodePointSet firstSet;
+  FirstBitSet firstBitSet;
   std::vector<Matcher> matchers;
   NamedCaptureGroups named;
 
@@ -43,10 +47,10 @@ public:
   static constexpr size_t MAX_STACK_DEPTH = 0xFFFFFF;
   static constexpr unsigned int TIMER_CHECK_INTERVAL = UINT16_MAX >> 1;
 
-  Regex(Flag flag, unsigned short loopCount, FlexBuffer<Inst> &&seq, CodePointSet &&firstSet,
+  Regex(Flag flag, unsigned short loopCount, FlexBuffer<Inst> &&seq, const FirstBitSet &firstBitSet,
         std::vector<Matcher> &&matchers, NamedCaptureGroups &&named, unsigned int count)
       : flag(flag), loopCount(loopCount), captureGroupCount(count), instSeq(std::move(seq)),
-        firstSet(std::move(firstSet)), matchers(std::move(matchers)), named(std::move(named)) {}
+        firstBitSet(firstBitSet), matchers(std::move(matchers)), named(std::move(named)) {}
 
   Flag getFlag() const { return this->flag; }
 
@@ -56,7 +60,7 @@ public:
 
   const auto &getInstSeq() const { return this->instSeq; }
 
-  const CodePointSet &getFirstSet() const { return this->firstSet; }
+  const auto &getFirstBitSet() const { return this->firstBitSet; }
 
   ArrayRef<Matcher> getMatchers() const { return this->matchers; }
 

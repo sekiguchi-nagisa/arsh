@@ -343,32 +343,6 @@ void TreeDumper::dumpRaw(const PropertyNode &node) {
 // ##     RegexDumper     ##
 // #########################
 
-static void toString(const CodePointSetRef ref, std::string &out) {
-  std::vector<std::pair<int, int>> ranges;
-  for (auto &e : ref.getBMPRanges()) {
-    ranges.emplace_back(e.firstBMP(), e.lastBMP());
-  }
-  for (auto &e : ref.getPackedNonBMPRanges()) {
-    ranges.emplace_back(e.firstNonBMP(), e.lastNonBMP());
-  }
-  for (auto &e : ref.getNonBMPRanges()) {
-    ranges.emplace_back(e.firstNonBMP(), e.lastNonBMP());
-  }
-  std::sort(ranges.begin(), ranges.end(), CodePointSetBuilder::Compare());
-
-  for (auto &[first, last] : ranges) {
-    char buf[128];
-    snprintf(buf, std::size(buf), "{ 0x%04X, 0x%04X },\n", first, last);
-    out += buf;
-  }
-}
-
-static std::string toString(const CodePointSetRef ref) {
-  std::string out;
-  toString(ref, out);
-  return out;
-}
-
 std::string RegexDumper::operator()(const Regex &regex) {
   this->base.indentLevel = 0;
   this->base.dump("flag", regex.getFlag());
@@ -376,7 +350,7 @@ std::string RegexDumper::operator()(const Regex &regex) {
   this->base.dump("captureGroupCount", std::to_string(regex.getCaptureGroupCount()));
   this->base.dump("namedCaptureGroups", format(regex.getNamedCaptureGroups()));
   this->dump("instructions", regex.getInstSeq());
-  this->base.dump("firstSet", toString(regex.getFirstSet().ref()));
+  this->dump("firstSet", regex.getFirstBitSet());
   this->dump("matchers", regex.getMatchers());
   return std::move(this->base.buf);
 }
@@ -693,6 +667,52 @@ void RegexDumper::dump(const FlexBuffer<Inst> &ins) {
       break;
     }
     this->base.dump(lineNum.c_str(), str);
+  }
+}
+
+void RegexDumper::dump(const FirstBitSet &set) {
+  if (set.none()) {
+    return;
+  }
+  unsigned int c = 0;
+  for (unsigned int i = 0; i < set.size(); i++) {
+    if (set[i]) {
+      if (c % 16 == 0) {
+        this->base.append("  ");
+      } else {
+        this->base.append(' ');
+      }
+      char buf[16];
+      snprintf(buf, std::size(buf), "0x%02X,", i);
+      this->base.append(buf);
+      c++;
+      if (c % 16 == 0) {
+        this->base.newline();
+      }
+    }
+  }
+  if (this->base.buf.back() != '\n') {
+    this->base.newline();
+  }
+}
+
+static void toString(const CodePointSetRef ref, std::string &out) {
+  std::vector<std::pair<int, int>> ranges;
+  for (auto &e : ref.getBMPRanges()) {
+    ranges.emplace_back(e.firstBMP(), e.lastBMP());
+  }
+  for (auto &e : ref.getPackedNonBMPRanges()) {
+    ranges.emplace_back(e.firstNonBMP(), e.lastNonBMP());
+  }
+  for (auto &e : ref.getNonBMPRanges()) {
+    ranges.emplace_back(e.firstNonBMP(), e.lastNonBMP());
+  }
+  std::sort(ranges.begin(), ranges.end(), CodePointSetBuilder::Compare());
+
+  for (auto &[first, last] : ranges) {
+    char buf[128];
+    snprintf(buf, std::size(buf), "{ 0x%04X, 0x%04X },\n", first, last);
+    out += buf;
   }
 }
 

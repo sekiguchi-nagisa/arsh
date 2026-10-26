@@ -60,6 +60,7 @@ instructions:
    7: EndCapture(captureIndex=1)
   10: Match
 firstSet:
+  0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39,
 matchers:
   0: AsciiSet
 { 0x0030, 0x0039 },
@@ -151,6 +152,7 @@ instructions:
   29: EndCapture(captureIndex=2)
   32: Match
 firstSet:
+  0x41, 0x42,
 matchers:
 EOF
 )
@@ -172,6 +174,7 @@ instructions:
   29: EndCapture(captureIndex=2)
   32: Match
 firstSet:
+  0x41, 0x42,
 matchers:
 EOF
 )
@@ -215,6 +218,7 @@ instructions:
   29: EndCapture(captureIndex=2)
   32: Match
 firstSet:
+  0x41, 0x42,
 matchers:
 EOF
 )

@@ -73,6 +73,7 @@ instructions:
   0: CharSet(matcherIndex=0, invert=false)
   4: Match
 firstSet:
+  0x41, 0x42, 0x43,
 matchers:
   0: AsciiSet
 { 0x0041, 0x0043 },

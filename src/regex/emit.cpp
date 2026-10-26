@@ -18,8 +18,158 @@
 
 #include "misc/unicode.hpp"
 #include "transform.h"
+#include "unicode/case_fold.h"
 
 namespace arsh::regex {
+
+#define TRY(E)                                                                                     \
+  do {                                                                                             \
+    if (!(E)) {                                                                                    \
+      return false;                                                                                \
+    }                                                                                              \
+  } while (false)
+
+static void fill(const int codePoint, FirstBitSet &set, const bool fold) {
+  {
+    char buf[4];
+    UnicodeUtil::codePointToUtf8(codePoint, buf);
+    set.set(static_cast<unsigned char>(buf[0]), true);
+  }
+  if (fold) {
+    for (auto &e : doSimpleCaseUnfold(codePoint)) {
+      char buf[4];
+      UnicodeUtil::codePointToUtf8(e.unfold, buf);
+      set.set(static_cast<unsigned char>(buf[0]), true);
+    }
+  }
+}
+
+static void fill(const CodePointSetRef ref, FirstBitSet &set, const bool fold) {
+  for (auto &range : ref.getBMPRanges()) {
+    for (int first = range.firstBMP(); first <= range.lastBMP(); first++) {
+      fill(first, set, fold);
+    }
+  }
+  for (auto &range : ref.getNonBMPRanges()) {
+    for (int first = range.firstNonBMP(); first <= range.lastNonBMP(); first++) {
+      fill(first, set, fold);
+    }
+  }
+  for (auto &range : ref.getPackedNonBMPRanges()) {
+    for (int first = range.firstNonBMP(); first <= range.lastNonBMP(); first++) {
+      fill(first, set, fold);
+    }
+  }
+}
+
+static void fill(const RadixTree &radix, FirstBitSet &set, const bool fold) {
+  auto walker = [&](StringRef ref, unsigned char) {
+    int codePoint;
+    UnicodeUtil::wtf8ToCodePoint(ref.begin(), ref.end(), codePoint);
+    fill(codePoint, set, fold);
+    return true;
+  };
+  radix.iterate(walker);
+}
+
+static void fill(const ucp::RGIEmojiSeq emoji, FirstBitSet &set, const bool fold) {
+  auto walker = [&](StringRef ref, unsigned char p) {
+    if (hasFlag(toUnderlying(emoji), p)) {
+      int codePoint;
+      UnicodeUtil::wtf8ToCodePoint(ref.begin(), ref.end(), codePoint);
+      fill(codePoint, set, fold);
+    }
+    return true;
+  };
+  ucp::getEmojiTrie().iterate(walker);
+}
+
+static bool fillFirstBitSet(const Node &node, FirstBitSet &set) {
+  switch (node.getKind()) {
+  case NodeKind::Empty:
+  case NodeKind::Any:
+    break;
+  case NodeKind::Char:
+    fill(cast<CharNode>(node).getCodePoint(), set, false);
+    return true;
+  case NodeKind::CharClass:
+  case NodeKind::Property:
+  case NodeKind::Boundary:
+  case NodeKind::BackRef:
+    break;
+  case NodeKind::Repeat:
+    if (auto &n = cast<RepeatNode>(node); n.getMin() > 0) {
+      return fillFirstBitSet(*n.getPattern(), set);
+    }
+    break;
+  case NodeKind::Seq: {
+    auto &patterns = cast<SeqNode>(node).getPatterns();
+    const unsigned int size = patterns.size();
+    unsigned int i = 0;
+    for (; i < size; i++) {
+      auto &n = *patterns[i];
+      if (isa<LookAroundNode>(n)) {
+        continue;
+      }
+      if (isa<BoundaryNode>(n)) {
+        if (const auto t = cast<BoundaryNode>(n).getType();
+            t == BoundaryNode::Type::WORD || t == BoundaryNode::Type::NOT_WORD) {
+          continue;
+        }
+      }
+      break;
+    }
+    return i < size && fillFirstBitSet(*patterns[i], set);
+  }
+  case NodeKind::Alt:
+    if (auto &alt = cast<AltNode>(node); alt.getPatterns().size() > 1) {
+      for (auto &e : alt.getPatterns()) {
+        TRY(fillFirstBitSet(*e, set));
+      }
+      return true;
+    }
+    break;
+  case NodeKind::LookAround:
+    break;
+  case NodeKind::Group:
+    return fillFirstBitSet(*cast<GroupNode>(node).getPattern(), set);
+  case NodeKind::FoldChar:
+    fill(cast<FoldCharNode>(node).getCodePoint(), set, true);
+    return true;
+  case NodeKind::CharSet: {
+    auto &n = cast<CharSetNode>(node);
+    if (const auto ref = n.getSet().ref(); ref && !n.isInvert()) { // TODO: invert
+      fill(ref, set, n.isIgnoreCase());
+      return true;
+    }
+    break;
+  }
+  case NodeKind::StrSet: {
+    auto &n = cast<StrSetNode>(node);
+    if (n.hasEmoji()) {
+      auto emoji = n.getEmojiSeq();
+      if (n.isIgnoreCase()) {
+        setFlag(emoji, ucp::RGIEmojiSeq::CASE_IGNORE);
+      }
+      fill(emoji, set, n.isIgnoreCase());
+    }
+    fill(n.getRadix(), set, n.isIgnoreCase());
+    if (n.getChars()) {
+      TRY(fillFirstBitSet(*n.getChars(), set));
+    }
+    return true;
+  }
+  }
+  return false;
+}
+
+static FirstBitSet createFirstBitSet(const Node &node) {
+  FirstBitSet set;
+  if (fillFirstBitSet(node, set) && !set.all()) {
+    return set;
+  }
+  return {};
+}
 
 // #####################
 // ##     CodeGen     ##
@@ -32,6 +182,7 @@ Optional<Regex> CodeGen::operator()(SyntaxTree &&tree) {
   this->directions.push_back(true);
 
   transform(tree);
+  const auto firstSet = createFirstBitSet(*tree.getPattern()); // create before code gen
   if (!this->generate(*tree.getPattern())) {
     return {};
   }
@@ -41,17 +192,9 @@ Optional<Regex> CodeGen::operator()(SyntaxTree &&tree) {
   auto flag = tree.getFlag();
   auto count = tree.getCaptureGroupCount();
   auto loopCount = tree.getLoopCount();
-  CodePointSet firstSet;
-  return Regex(flag, loopCount, std::move(this->builder).build(), std::move(firstSet),
+  return Regex(flag, loopCount, std::move(this->builder).build(), firstSet,
                std::move(this->matchers), std::move(tree).takeNamedCaptureGroups(), count);
 }
-
-#define TRY(E)                                                                                     \
-  do {                                                                                             \
-    if (!(E)) {                                                                                    \
-      return false;                                                                                \
-    }                                                                                              \
-  } while (false)
 
 static Optional<AsciiSet> tryToGenerateAsciiSet(const CodePointSetRef ref) {
   if (ref.getSize() != ref.getBMPSize()) {

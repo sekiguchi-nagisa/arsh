@@ -11,6 +11,7 @@ instructions:
   0: Char(codePoint=U+0041:A)
   5: Match
 firstSet:
+  0x41,
 matchers:
 EOF
 )
@@ -24,6 +25,7 @@ instructions:
   0: IChar(codePoint=U+0061:a)
   5: Match
 firstSet:
+  0x41, 0x61,
 matchers:
 EOF
 )
@@ -37,6 +39,7 @@ instructions:
   0: IChar(codePoint=U+0061:a)
   5: Match
 firstSet:
+  0x41, 0x61,
 matchers:
 EOF
 )
@@ -51,6 +54,7 @@ instructions:
   0: Char(codePoint=U+00FF:ÿ)
   5: Match
 firstSet:
+  0xC3,
 matchers:
 EOF
 )
@@ -64,6 +68,7 @@ instructions:
   0: IChar(codePoint=U+00FF:ÿ)
   5: Match
 firstSet:
+  0xC3, 0xC5,
 matchers:
 EOF
 )
@@ -78,6 +83,7 @@ instructions:
   0: Char(codePoint=U+3042:あ)
   5: Match
 firstSet:
+  0xE3,
 matchers:
 EOF
 )
@@ -91,6 +97,7 @@ instructions:
   0: Char(codePoint=U+3042:あ)
   5: Match
 firstSet:
+  0xE3,
 matchers:
 EOF
 )
@@ -105,6 +112,7 @@ instructions:
   0: Char(codePoint=U+24155:𤅕)
   5: Match
 firstSet:
+  0xF0,
 matchers:
 EOF
 )
@@ -118,6 +126,7 @@ instructions:
   0: Char(codePoint=U+24155:𤅕)
   5: Match
 firstSet:
+  0xF0,
 matchers:
 EOF
 )
@@ -135,6 +144,7 @@ instructions:
   13: Char(codePoint=U+0061:a)
   18: Match
 firstSet:
+  0x61,
 matchers:
 EOF
 )
@@ -151,6 +161,7 @@ instructions:
   13: IChar(codePoint=U+0061:a)
   18: Match
 firstSet:
+  0x41, 0x61,
 matchers:
 EOF
 )
@@ -167,6 +178,7 @@ instructions:
   4: String(index=1)
   7: Match
 firstSet:
+  0x5D,
 matchers:
   0: String
 \x5D\x01
@@ -216,6 +228,7 @@ instructions:
   25: String(index=2)
   28: Match
 firstSet:
+  0x40,
 matchers:
   0: String
 \x31\x32\x33
@@ -236,6 +249,7 @@ instructions:
   0: String(index=0)
   3: Match
 firstSet:
+  0x31,
 matchers:
   0: String
 \x31\x32\x33\x34\x35\x36

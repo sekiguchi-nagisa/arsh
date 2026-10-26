@@ -11,6 +11,7 @@ instructions:
   0: CharSet(matcherIndex=0, invert=false)
   4: Match
 firstSet:
+  0x31, 0x32,
 matchers:
   0: AsciiSet
 { 0x0031, 0x0032 },
@@ -33,6 +34,7 @@ instructions:
   28: Char(codePoint=U+0032:2)
   33: Match
 firstSet:
+  0x31, 0x32,
 matchers:
   0: String
 \x31\x31
@@ -51,6 +53,7 @@ instructions:
    7: CharSet(matcherIndex=1, invert=false)
   11: Match
 firstSet:
+  0x31, 0x32,
 matchers:
   0: RadixTree
 property: 0x01, string: \x31\x31
@@ -179,6 +182,7 @@ instructions:
    7: CharSet(matcherIndex=1, invert=false)
   11: Match
 firstSet:
+  0x41, 0x46, 0x48, 0x53, 0x54, 0x61,
 matchers:
   0: RadixTree
 property: 0x01, string: \x46\x69\x6E\x6E
@@ -202,6 +206,7 @@ instructions:
    7: IChar(codePoint=U+0061:a)
   12: Match
 firstSet:
+  0x41, 0x46, 0x48, 0x53, 0x54, 0x61, 0x66, 0x68, 0x73, 0x74, 0xC5,
 matchers:
   0: RadixTree
 property: 0x01, string: \x66\x69\x6E\x6E
