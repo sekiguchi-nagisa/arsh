@@ -132,7 +132,7 @@ public:
 
   const auto &getOldErrors() const { return this->oldErrors; }
 
-  auto takeOldErrors() && { return std::move(this->oldErrors); }
+  auto takeOldErrors() { return std::move(this->oldErrors); }
 
 protected:
   /**

@@ -96,7 +96,7 @@ inline bool matchFieldSep(StringRef ifs, char ch) {
  * 0-255
  */
 inline int maskExitStatus(int64_t status) {
-  return static_cast<int>(static_cast<uint64_t>(status) & 0xFF);
+  return static_cast<int>(static_cast<uint64_t>(status) & 0xFFu);
 }
 
 } // namespace arsh

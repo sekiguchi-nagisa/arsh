@@ -246,7 +246,7 @@ public:
     static_assert(sizeof(n) == sizeof(uint8_t));
     auto v = p.getValue();
     static_assert(sizeof(v) == sizeof(uint8_t));
-    this->u16 = n << 8 | v;
+    this->u16 = static_cast<unsigned int>(n << 8u) | v;
   }
 
   PropertyNode(Token token, ucp::RGIEmojiSeq seq) : NodeWithRtti(token) {
@@ -258,8 +258,8 @@ public:
   Type getType() const { return static_cast<Type>(this->u8); }
 
   ucp::Property getUCP() const {
-    auto n = static_cast<ucp::Property::Name>(this->u16 >> 8);
-    auto v = static_cast<unsigned char>(this->u16 & 0xFF);
+    auto n = static_cast<ucp::Property::Name>(this->u16 >> 8u);
+    auto v = static_cast<unsigned char>(this->u16 & 0xFFu);
     return {n, v};
   }
 

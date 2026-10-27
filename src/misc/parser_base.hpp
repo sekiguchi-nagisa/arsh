@@ -213,7 +213,7 @@ void ParserBase<T, LexerImpl, Tracker>::reportTokenMismatchedError(T expected) {
     }
     message += "expected `";
     message += toString(expected);
-    message += "'";
+    message += '\'';
 
     std::vector<T> expectedTokens(1);
     expectedTokens[0] = expected;
@@ -240,9 +240,9 @@ void ParserBase<T, LexerImpl, Tracker>::reportNoViableAlterError(unsigned int si
         if (i > 0) {
           message += ", ";
         }
-        message += "`";
+        message += '`';
         message += toString(alters[i]);
-        message += "'";
+        message += '\'';
       }
     }
 
@@ -261,9 +261,9 @@ void ParserBase<T, LexerImpl, Tracker>::reportInvalidTokenError(unsigned int siz
       if (i > 0) {
         message += ", ";
       }
-      message += "`";
+      message += '`';
       message += toString(alters[i]);
-      message += "'";
+      message += '\'';
     }
   }
 

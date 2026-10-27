@@ -181,7 +181,7 @@ std::unique_ptr<ParseError> TokenEmitter::tokenizeAndEmit() {
   parser.setTracker(this);
   parser();
   auto curToken = parser.getCurToken();
-  this->oldErrors = std::move(parser).takeOldErrors();
+  this->oldErrors = parser.takeOldErrors();
   if (!this->oldErrors.empty() &&
       curToken.endPos() == this->oldErrors.back()->getErrorToken().endPos()) {
     auto e = std::move(this->oldErrors.back());

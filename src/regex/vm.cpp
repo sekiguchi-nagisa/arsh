@@ -258,8 +258,10 @@ bool BacktrackStack::backtrack(const Inst *&inst, Input &input, Capture *capture
   return false;
 }
 
-static std::pair<unsigned short, unsigned char>
-findLongestMatched(const PackedRadixTree tree, StringRef ref, std::string &foldBuf, bool caseFold) {
+static std::pair<unsigned short, unsigned char> findLongestMatched(const PackedRadixTree tree,
+                                                                   StringRef ref,
+                                                                   std::string &foldBuf,
+                                                                   const bool caseFold) {
   const auto old = ref;
   if (caseFold) {
     foldBuf.clear();
