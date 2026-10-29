@@ -369,33 +369,20 @@ static bool searchPrefix(const Inst *&inst, Input &input, const char *&oldIter,
     oldIter = input.getEnd();
     return false;
   }
-  case OpCode::IChar: {
-    const int codePoint = cast<ICharIns>(*inst).getCodePoint();
-    inst += sizeof(ICharIns);
-    while (input.available()) {
-      oldIter = input.getIter();
-      if (doSimpleCaseFolding(input.consumeForward()) == codePoint) {
-        return true;
-      }
-    }
-    oldIter = input.getEnd();
-    return false;
-  }
   default:
     if (firstSet.any()) {
+      bool matched = false;
       const auto *iter = input.getIter();
-      while (iter != input.getEnd()) {
+      for (const auto *end = input.getEnd(); iter != end; ++iter) {
         const auto b = static_cast<unsigned char>(*iter);
-        if (firstSet[b]) {
-          oldIter = iter;
-          input.setIter(iter); // not consume input
-          return true;
+        if (firstSet[b]) { // never match utf8 following bytes
+          matched = true;
+          break;
         }
-        iter += UnicodeUtil::utf8ByteSize(b);
       }
       oldIter = iter;
       input.setIter(iter);
-      return false;
+      return matched;
     }
     return true; // do nothing
   }
