@@ -823,7 +823,10 @@ START:
         vmnext;
       }
       vmcase(BeginLoop) {
-        loopStates[cast<BeginLoopIns>(*inst).getLoopIndex()] = LoopState();
+        const auto loopIndex = cast<BeginLoopIns>(*inst).getLoopIndex();
+        TRY(bts.push(
+            Backtrack::newSetLoopState(loopIndex, loopStates[loopIndex]))); // for nested loop
+        loopStates[loopIndex] = LoopState();
         goto LOOP;
       }
       vmcase(EndLoop) {

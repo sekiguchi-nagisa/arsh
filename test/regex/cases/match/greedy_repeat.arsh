@@ -162,3 +162,11 @@ input: `2025-12-31'
 (offset=8, size=2)
 EOF
 )
+
+# ^(?:(?:\s(?:(?:){0,1}|a))+)+$
+# see. https://github.com/boa-dev/boa/issues/5572
+assert diff <(redump -m $' a' '^(?:(?:\s(?:(?:){0,1}|a))+)+$' '') <(<<'EOF'
+input: ` a'
+(offset=0, size=2)
+EOF
+)
