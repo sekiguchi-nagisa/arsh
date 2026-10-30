@@ -705,10 +705,10 @@ void Lowering::visit(std::unique_ptr<Node> &node) {
       break;
     case GroupNode::Type::MODIFIER: {
       auto newModifier = this->modifiers();
-      if (auto set = group.getSetModifiers(); set != Modifier::NONE) {
+      if (const auto set = group.getSetModifiers(); set != Modifier::NONE) {
         setFlag(newModifier, set);
       }
-      if (auto unset = group.getUnsetModifiers(); unset != Modifier::NONE) {
+      if (const auto unset = group.getUnsetModifiers(); unset != Modifier::NONE) {
         unsetFlag(newModifier, unset);
       }
       this->modifierStack.push(newModifier);
@@ -728,15 +728,13 @@ void Lowering::visit(std::unique_ptr<Node> &node) {
 
 void Lowering::visit(SeqNode &node) {
   if (this->direction()) {
-    auto iter = node.refPatterns().begin();
-    auto end = node.refPatterns().end();
-    for (; iter != end; ++iter) {
+    const auto end = node.refPatterns().end();
+    for (auto iter = node.refPatterns().begin(); iter != end; ++iter) {
       this->visit(*iter);
     }
   } else {
-    auto iter = node.refPatterns().rbegin();
-    auto end = node.refPatterns().rend();
-    for (; iter != end; ++iter) {
+    const auto end = node.refPatterns().rend();
+    for (auto iter = node.refPatterns().rbegin(); iter != end; ++iter) {
       this->visit(*iter);
     }
   }
@@ -756,8 +754,9 @@ void Lowering::visit(SeqNode &node) {
   }
 
   // remove empty
-  const auto iter = std::remove_if(patterns.begin(), patterns.end(),
-                                   [](std::unique_ptr<Node> &n) { return isa<EmptyNode>(*n); });
+  const auto iter =
+      std::remove_if(patterns.begin(), patterns.end(),
+                     [](const std::unique_ptr<Node> &n) { return isa<EmptyNode>(*n); });
   patterns.erase(iter, patterns.end());
 }
 
@@ -768,12 +767,9 @@ static bool isCharSeq(const Node &node) {
   if (!isa<SeqNode>(node)) {
     return false;
   }
-  for (auto &e : cast<SeqNode>(node).getPatterns()) {
-    if (!isa<CharNode>(*e)) {
-      return false;
-    }
-  }
-  return true;
+  auto &patterns = cast<SeqNode>(node).getPatterns();
+  return std::all_of(patterns.begin(), patterns.end(),
+                     [](const auto &e) { return isa<CharNode>(*e); });
 }
 
 static bool isFoldCharSeq(const Node &node) {
@@ -783,12 +779,9 @@ static bool isFoldCharSeq(const Node &node) {
   if (!isa<SeqNode>(node)) {
     return false;
   }
-  for (auto &e : cast<SeqNode>(node).getPatterns()) {
-    if (!isa<FoldCharNode>(*e)) {
-      return false;
-    }
-  }
-  return true;
+  auto &patterns = cast<SeqNode>(node).getPatterns();
+  return std::all_of(patterns.begin(), patterns.end(),
+                     [](const auto &e) { return isa<FoldCharNode>(*e); });
 }
 
 void Lowering::optimizeStrAlt(std::unique_ptr<Node> &node) {
