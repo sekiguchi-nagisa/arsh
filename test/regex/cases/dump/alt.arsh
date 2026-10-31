@@ -10,11 +10,10 @@ namedCaptureGroups: []
 instructions:
    0: Alt(second=11)
    5: AnyExceptNL
-   6: Jump(target=22)
-  11: Alt(second=22)
+   6: Jump(target=17)
+  11: Alt(second=17)
   16: AnyExceptNL
-  17: Jump(target=22)
-  22: Match
+  17: Match
 firstSet:
 matchers:
 EOF
@@ -29,14 +28,13 @@ namedCaptureGroups: []
 instructions:
    0: Alt(second=11)
    5: AnyExceptNL
-   6: Jump(target=33)
+   6: Jump(target=28)
   11: Alt(second=21)
-  16: Jump(target=33)
-  21: Alt(second=33)
+  16: Jump(target=28)
+  21: Alt(second=28)
   26: AnyExceptNL
   27: AnyExceptNL
-  28: Jump(target=33)
-  33: Match
+  28: Match
 firstSet:
 matchers:
 EOF

@@ -144,21 +144,20 @@ loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
-   0: BeginLookAround(negate=true, target=61)
+   0: BeginLookAround(negate=true, target=56)
    6: Alt(second=19)
   11: LBString(index=0)
-  14: Jump(target=61)
+  14: Jump(target=56)
   19: Alt(second=35)
   24: LBChar(ignoreCase=false, codePoint=U+0031:1)
-  30: Jump(target=61)
+  30: Jump(target=56)
   35: Alt(second=48)
   40: LBString(index=1)
-  43: Jump(target=61)
-  48: Alt(second=61)
+  43: Jump(target=56)
+  48: Alt(second=56)
   53: LBString(index=2)
-  56: Jump(target=61)
-  61: EndLookAround
-  62: Match
+  56: EndLookAround
+  57: Match
 firstSet:
 matchers:
   0: String

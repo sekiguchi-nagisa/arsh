@@ -387,7 +387,9 @@ bool CodeGen::generateAlt(const AltNode &node) {
     }
     auto point = this->builder.emitReservedPoint<AltIns>();
     TRY(this->generate(*node.getPatterns()[i]));
-    jumps.push_back(this->builder.emitReservedPoint<JumpIns>());
+    if (i < size - 2 || !isa<EmptyNode>(*node.getPatterns()[i + 1])) {
+      jumps.push_back(this->builder.emitReservedPoint<JumpIns>());
+    }
     auto addr = this->builder.currentAddr();
     this->builder.emitAt<AltIns>(point, addr);
   }
