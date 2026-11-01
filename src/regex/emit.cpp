@@ -466,7 +466,7 @@ bool CodeGen::generateStrSet(const StrSetNode &node) {
 bool CodeGen::generateRepeat(const RepeatNode &node) {
   const unsigned int beginAddr = this->builder.currentAddr();
   const auto p = this->builder.emitReservedPoint<BeginLoopIns>();
-  if (node.getFirstGroupIndex()) {
+  if (node.hasInnerCaptureGroups()) {
     assert(node.getFirstGroupIndex() <= node.getLastGroupIndex());
     this->builder.emit<ResetCapturesIns>(node.getFirstGroupIndex(), node.getLastGroupIndex());
   }

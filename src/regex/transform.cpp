@@ -683,8 +683,13 @@ void Lowering::visit(std::unique_ptr<Node> &node) {
     auto &n = cast<RepeatNode>(*node);
     if (n.getMax() == 0) { // do nothing
       node = std::make_unique<EmptyNode>(node->getToken().pos);
-    } else if (n.getMin() == 1 && n.getMax() == 1) {
+    } else if (n.getMin() == 1 && n.getMax() == 1 && !n.hasInnerCaptureGroups()) {
       node = std::move(n.refPattern());
+      this->visit(node);
+    } else if (n.getMin() == 0 && n.getMax() == 1 && !n.hasInnerCaptureGroups() && n.isGreedy()) {
+      auto tmp = std::make_unique<AltNode>(std::move(n.refPattern()));
+      tmp->append(std::make_unique<EmptyNode>(tmp->getToken().pos));
+      node = std::move(tmp);
       this->visit(node);
     } else {
       this->visit(cast<NestedNode>(*node).refPattern());
@@ -809,6 +814,9 @@ void Lowering::optimizeStrAlt(std::unique_ptr<Node> &node) {
     return;
   }
   auto &altNode = cast<AltNode>(*node);
+  if (altNode.getPatterns().size() == 1) {
+    return; // not optimize
+  }
   {
     auto iter = altNode.getPatterns().begin();
     auto end = altNode.getPatterns().end();

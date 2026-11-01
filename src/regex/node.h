@@ -448,7 +448,7 @@ public:
 class RepeatNode : public NestedNodeWithRtti<NodeKind::Repeat> {
 private:
   uint16_t loopIndex;
-  uint16_t firstGroupIndex;
+  uint16_t firstGroupIndex; // if has no group, 0
   uint16_t lastGroupIndex;
 
 public:
@@ -498,6 +498,8 @@ public:
   uint16_t getFirstGroupIndex() const { return this->firstGroupIndex; }
 
   uint16_t getLastGroupIndex() const { return this->lastGroupIndex; }
+
+  bool hasInnerCaptureGroups() const { return this->getFirstGroupIndex(); }
 
 private:
   static std::pair<uint16_t, uint16_t> countGroups(const Node &node);

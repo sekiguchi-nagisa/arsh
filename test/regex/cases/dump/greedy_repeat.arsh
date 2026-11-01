@@ -41,10 +41,9 @@ loopCount: 1
 captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
-   0: BeginLoop(loopIndex=0, greedy=true, min=0, max=1, outer=24)
-  14: Char(codePoint=U+0061:a)
-  19: EndLoop(target=0)
-  24: Match
+   0: Alt(second=10)
+   5: Char(codePoint=U+0061:a)
+  10: Match
 firstSet:
 matchers:
 EOF
@@ -115,6 +114,25 @@ matchers:
 { 0x0041, 0x005A },
 { 0x005F, 0x005F },
 { 0x0061, 0x007A },
+EOF
+)
+
+# (.){1}
+assert diff <(redump -d '(.){1}' 'u') <(<<'EOF'
+flag: (mode = u, modifier = )
+loopCount: 1
+captureGroupCount: 1
+namedCaptureGroups: []
+instructions:
+   0: BeginLoop(loopIndex=0, greedy=true, min=1, max=1, outer=31)
+  14: ResetCaptures(firstIndex=1, lastIndex=1)
+  19: BeginCapture(captureIndex=1)
+  22: AnyExceptNL
+  23: EndCapture(captureIndex=1)
+  26: EndLoop(target=0)
+  31: Match
+firstSet:
+matchers:
 EOF
 )
 

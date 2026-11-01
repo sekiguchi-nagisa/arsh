@@ -112,6 +112,27 @@ matchers:
 EOF
 )
 
+# 11|1|2?
+assert diff <(redump -d '11|1|2?' '') <(<<'EOF'
+flag: (mode = , modifier = )
+loopCount: 1
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+   0: Alt(second=16)
+   5: PrepareRadix
+   6: RadixOrEmoji(emoji=, hasRadix=true, index=0, nextOffset=4)
+  12: CharSet(matcherIndex=1, invert=false)
+  16: Match
+firstSet:
+matchers:
+  0: RadixTree
+property: 0x01, string: \x31\x31
+  1: AsciiSet
+{ 0x0031, 0x0032 },
+EOF
+)
+
 # (?<=12|1|2).
 assert diff <(redump -d '(?<=12|1|2).' 'i') <(<<'EOF'   # not optimize
 flag: (mode = , modifier = i)
