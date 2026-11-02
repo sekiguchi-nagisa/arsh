@@ -814,69 +814,74 @@ void Lowering::optimizeStrAlt(std::unique_ptr<Node> &node) {
     return;
   }
   auto &altNode = cast<AltNode>(*node);
-  if (altNode.getPatterns().size() == 1) {
-    return; // not optimize
-  }
-  {
-    auto iter = altNode.getPatterns().begin();
-    auto end = altNode.getPatterns().end();
-    while (iter != end && isa<EmptyNode>(**(end - 1))) {
-      --end; // only allow last empty pattern (AA|B|A||)
-    }
-    using Entry = decltype(*iter);
-    if (!std::all_of(iter, end, [](Entry e) { return isCharSeq(*e); }) &&
-        !std::all_of(iter, end, [](Entry e) { return isFoldCharSeq(*e); })) {
-      return;
-    }
-  }
-  /**
-   * check alt string order
-   *
-   * (AA|A) -> accept
-   * (AA|AB) -> accept
-   * (A|AA) -> not accept
-   */
-  std::unordered_map<int, unsigned int> prefixCodeMap;
-  const bool fold = isFoldCharSeq(*altNode.getPatterns()[0]);
-  for (auto &e : altNode.getPatterns()) {
-    if (isa<EmptyNode>(*e)) {
-      continue;
-    }
-    int codePoint;
-    unsigned int len;
-    if (isa<CharNode>(*e)) {
-      codePoint = cast<CharNode>(*e).getCodePoint();
-      len = 1;
-    } else if (isa<FoldCharNode>(*e)) {
-      codePoint = cast<FoldCharNode>(*e).getCodePoint();
-      len = 1;
-    } else {
-      assert(isa<SeqNode>(*e));
-      auto &seqNode = cast<SeqNode>(*e);
-      if (auto &first = *seqNode.getPatterns()[0]; isa<CharNode>(first)) {
-        codePoint = cast<CharNode>(first).getCodePoint();
-      } else {
-        assert(isa<FoldCharNode>(first));
-        codePoint = cast<FoldCharNode>(first).getCodePoint();
+  if (altNode.getPatterns().size() > 1) {
+    {
+      auto iter = altNode.getPatterns().begin();
+      auto end = altNode.getPatterns().end();
+      while (iter != end && isa<EmptyNode>(**(end - 1))) {
+        --end; // only allow last empty pattern (AA|B|A||)
       }
-      len = seqNode.getPatterns().size();
-    }
-    if (auto iter = prefixCodeMap.find(codePoint); iter != prefixCodeMap.end()) {
-      if (len <= iter->second) {
-        iter->second = len;
-      } else {
-        return;
+      using Entry = decltype(*iter);
+      if (!std::all_of(iter, end, [](Entry e) { return isCharSeq(*e); }) &&
+          !std::all_of(iter, end, [](Entry e) { return isFoldCharSeq(*e); })) {
+        goto FALLBACK;
       }
-    } else {
-      prefixCodeMap.emplace(codePoint, len);
     }
+    /**
+     * check alt string order
+     *
+     * (AA|A) -> accept
+     * (AA|AB) -> accept
+     * (A|AA) -> not accept
+     */
+    std::unordered_map<int, unsigned int> prefixCodeMap;
+    const bool fold = isFoldCharSeq(*altNode.getPatterns()[0]);
+    for (auto &e : altNode.getPatterns()) {
+      if (isa<EmptyNode>(*e)) {
+        continue;
+      }
+      int codePoint;
+      unsigned int len;
+      if (isa<CharNode>(*e)) {
+        codePoint = cast<CharNode>(*e).getCodePoint();
+        len = 1;
+      } else if (isa<FoldCharNode>(*e)) {
+        codePoint = cast<FoldCharNode>(*e).getCodePoint();
+        len = 1;
+      } else {
+        assert(isa<SeqNode>(*e));
+        auto &seqNode = cast<SeqNode>(*e);
+        if (auto &first = *seqNode.getPatterns()[0]; isa<CharNode>(first)) {
+          codePoint = cast<CharNode>(first).getCodePoint();
+        } else {
+          assert(isa<FoldCharNode>(first));
+          codePoint = cast<FoldCharNode>(first).getCodePoint();
+        }
+        len = seqNode.getPatterns().size();
+      }
+      if (auto iter = prefixCodeMap.find(codePoint); iter != prefixCodeMap.end()) {
+        if (len <= iter->second) {
+          iter->second = len;
+        } else {
+          goto FALLBACK;
+        }
+      } else {
+        prefixCodeMap.emplace(codePoint, len);
+      }
+    }
+    auto classNode = std::make_unique<CharClassNode>(node->getToken(), false);
+    classNode->add(std::move(node));
+    classNode->finalize(classNode->getToken());
+    this->modifierStack.push(fold ? Modifier::IGNORE_CASE : Modifier::NONE);
+    node = this->generateClassSet(*classNode);
+    this->modifierStack.pop();
+    return;
   }
-  auto classNode = std::make_unique<CharClassNode>(node->getToken(), false);
-  classNode->add(std::move(node));
-  classNode->finalize(classNode->getToken());
-  this->modifierStack.push(fold ? Modifier::IGNORE_CASE : Modifier::NONE);
-  node = this->generateClassSet(*classNode);
-  this->modifierStack.pop();
+
+FALLBACK:
+  for (auto &e : altNode.refPatterns()) {
+    this->optimizeStrAlt(e);
+  }
 }
 
 static void optimizeFoldChar(std::unique_ptr<Node> &node) {
