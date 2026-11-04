@@ -34,8 +34,10 @@ class MatchContext {
 private:
   Input input;
   const unsigned int captureGroupCount;
+  bool prefilter{true};
   std::vector<Capture> &captures;
   std::vector<LoopState> loops;
+  std::string foldBuf;
 
 public:
   MatchContext(const Regex &regex, const Input &input, std::vector<Capture> &captures)
@@ -56,6 +58,12 @@ public:
   const Input &getInput() const { return this->input; }
 
   Input &refInput() { return this->input; }
+
+  std::string &refFoldBuf() { return this->foldBuf; }
+
+  bool isPrefilter() const { return this->prefilter; }
+
+  void setPrefilter(bool set) { this->prefilter = set; }
 
   void clearCaptures() const {
     this->captures.clear();

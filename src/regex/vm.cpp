@@ -421,7 +421,6 @@ MatchStatus match(const Regex &regex, MatchContext &ctx, ObserverPtr<Timer> time
   Capture *captures = ctx.getCaptures();
   unsigned int btCount = 0;
   BacktrackStack bts(inst);
-  std::string foldBuf;
   if (timer) {
     timer->start();
   }
@@ -435,7 +434,7 @@ MatchStatus match(const Regex &regex, MatchContext &ctx, ObserverPtr<Timer> time
 #endif
 
 START:
-  if (!searchPrefix(inst, input, oldIter, regex.getFirstBitSet(), matchers)) {
+  if (ctx.isPrefilter() && !searchPrefix(inst, input, oldIter, regex.getFirstBitSet(), matchers)) {
     goto BACKTRACK;
   }
   while (true) {
@@ -639,15 +638,15 @@ START:
           const auto nextOffset = radixIns.nextOffset;
           unsigned int consumedSize = 0;
           if (radixIns.hasEmoji()) {
-            auto [s, p] =
-                findLongestMatched(ucp::getEmojiTrie(), ref, foldBuf, radixIns.ignoreCase());
+            auto [s, p] = findLongestMatched(ucp::getEmojiTrie(), ref, ctx.refFoldBuf(),
+                                             radixIns.ignoreCase());
             if (p && hasFlag(toUnderlying(radixIns.emoji), p)) {
               consumedSize = s;
             }
           }
           if (radixIns.hasRadix) {
             auto [s, p] = findLongestMatched(matchers[radixIns.getIndex()].asRadixTree(), ref,
-                                             foldBuf, radixIns.ignoreCase());
+                                             ctx.refFoldBuf(), radixIns.ignoreCase());
             if (p) {
               consumedSize = std::max<unsigned int>(consumedSize, s);
             }
@@ -694,7 +693,7 @@ START:
           const auto nextOffset = radixIns.nextOffset;
           unsigned int consumedSize = 0;
           if (radixIns.hasEmoji()) {
-            auto [s, p] = findBackwardLongestMatched(ucp::getEmojiTrie(), ref, foldBuf,
+            auto [s, p] = findBackwardLongestMatched(ucp::getEmojiTrie(), ref, ctx.refFoldBuf(),
                                                      radixIns.ignoreCase());
             if (p && hasFlag(toUnderlying(radixIns.emoji), p)) {
               consumedSize = s;
@@ -702,7 +701,7 @@ START:
           }
           if (radixIns.hasRadix) {
             auto [s, p] = findBackwardLongestMatched(matchers[radixIns.getIndex()].asRadixTree(),
-                                                     ref, foldBuf, radixIns.ignoreCase());
+                                                     ref, ctx.refFoldBuf(), radixIns.ignoreCase());
             if (p) {
               consumedSize = std::max<unsigned int>(consumedSize, s);
             }
@@ -890,8 +889,6 @@ START:
     input.consumeForward();
     oldIter = input.getIter();
     inst = bts.getStartInst();
-    ctx.clearCaptures();
-    captures = ctx.getCaptures();
     goto START;
   }
   ctx.syncInput(input);
