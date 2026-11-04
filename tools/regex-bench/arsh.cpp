@@ -23,6 +23,12 @@
  *                       struct result *res);
  * so this file implements `arsh_find_all`, which creates a fresh MatchContext for every scan
  * (safe, mirrors normal use).
+ *
+ * It also implements `arsh_unopt_find_all`, registered as `arsh-unopt`. It matches
+ * exactly like `arsh_find_all` but disables the prefilter of the search layer, so the VM is
+ * retried at every code point instead of skipping to the next candidate start position
+ * (see MatchContext::setPrefilter). Comparing the two rows isolates how much the prefilter
+ * contributes per pattern.
  */
 
 #include <cstdio>
@@ -116,8 +122,14 @@ countMatchesIn(const regex::Regex &re, regex::MatchContext &matchCtx, std::vecto
   return regex::MatchStatus::OK;
 }
 
-extern "C" int arsh_find_all(char *pattern, char *subject, int subject_len, int repeat,
-                             struct result *res) {
+/**
+ * Run the benchmark for one pattern.
+ *
+ * @param prefilter if false, the prefilter of the search layer is disabled, so every start
+ *                  position is attempted with the VM.
+ */
+static int find_all(char *pattern, char *subject, int subject_len, int repeat, struct result *res,
+                    bool prefilter) {
   if (pattern == nullptr || subject == nullptr || subject_len < 0 || repeat <= 0 || res == nullptr) {
     return -1;
   }
@@ -150,6 +162,7 @@ extern "C" int arsh_find_all(char *pattern, char *subject, int subject_len, int 
       free(times);
       return -1;
     }
+    ctx.asOk().setPrefilter(prefilter);
     TIME_TYPE start, end;
     GET_TIME(start);
     const auto status = countMatchesIn(re, ctx.asOk(), captures, &found);
@@ -166,5 +179,15 @@ extern "C" int arsh_find_all(char *pattern, char *subject, int subject_len, int 
   get_mean_and_derivation(times, static_cast<uint32_t>(timesLen), res);
   free(times);
   return 0;
+}
+
+extern "C" int arsh_find_all(char *pattern, char *subject, int subject_len, int repeat,
+                             struct result *res) {
+  return find_all(pattern, subject, subject_len, repeat, res, true);
+}
+
+extern "C" int arsh_unopt_find_all(char *pattern, char *subject, int subject_len, int repeat,
+                                   struct result *res) {
+  return find_all(pattern, subject, subject_len, repeat, res, false);
 }
 

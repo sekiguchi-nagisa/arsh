@@ -200,7 +200,7 @@ index cc8f0cc..a2cb8e5 100644
  
      return 0;
 diff --git a/src/main.c b/src/main.c
-index 104f01a..f66eba2 100644
+index 104f01a..c20499e 100644
 --- a/src/main.c
 +++ b/src/main.c
 @@ -9,6 +9,9 @@
@@ -223,7 +223,7 @@ index 104f01a..f66eba2 100644
      {.name = "pcre-jit",    .find_all = pcre2_jit_find_all},
  #endif
  #ifdef INCLUDE_RE2
-@@ -44,11 +46,29 @@ static struct engines engines [] = {
+@@ -44,11 +46,30 @@ static struct engines engines [] = {
  #ifdef INCLUDE_YARA
      {.name = "yara",        .find_all = yara_find_all},
  #endif
@@ -233,6 +233,7 @@ index 104f01a..f66eba2 100644
 +#endif
 +#ifdef INCLUDE_ARSH
 +    {.name = "arsh",        .find_all = arsh_find_all},
++    {.name = "arsh-unopt",  .find_all = arsh_unopt_find_all},
 +#endif
 +#ifdef INCLUDE_SRELL
 +    {.name = "srell",       .find_all = srell_find_all},
@@ -254,7 +255,7 @@ index 104f01a..f66eba2 100644
      "Twain",
      "(?i)Twain",
      "[a-z]shing",
-@@ -69,6 +89,37 @@ static char * regex [] = {
+@@ -69,6 +90,37 @@ static char * regex [] = {
      "(.*?,){13}z"
  };
  
@@ -292,7 +293,7 @@ index 104f01a..f66eba2 100644
  void load(char const * file_name)
  {
      int i;
-@@ -112,15 +163,17 @@ void find_all(char* pattern, char* subject, int subject_len, int repeat, struct
+@@ -112,15 +164,17 @@ void find_all(char* pattern, char* subject, int subject_len, int repeat, struct
  
      fprintf(stdout, "-----------------\nRegex: '%s'\n", pattern);
  
@@ -313,7 +314,7 @@ index 104f01a..f66eba2 100644
          }
      }
  
-@@ -128,7 +181,7 @@ void find_all(char* pattern, char* subject, int subject_len, int repeat, struct
+@@ -128,7 +182,7 @@ void find_all(char* pattern, char* subject, int subject_len, int repeat, struct
      for (int top = 0; top < score_points; top++) {
          double best = 0;
  
@@ -322,7 +323,7 @@ index 104f01a..f66eba2 100644
              if (engine_results[iter].time > 0 &&
                  engine_results[iter].score == 0 &&
                  (best == 0 || best > engine_results[iter].time)) {
-@@ -136,7 +189,7 @@ void find_all(char* pattern, char* subject, int subject_len, int repeat, struct
+@@ -136,7 +190,7 @@ void find_all(char* pattern, char* subject, int subject_len, int repeat, struct
              }
          }
  
@@ -331,7 +332,7 @@ index 104f01a..f66eba2 100644
              if (engine_results[iter].time > 0 && best == engine_results[iter].time) {
                  engine_results[iter].score = score_points;
              }
-@@ -182,7 +235,7 @@ void get_mean_and_derivation(double * times, uint32_t times_len, struct result *
+@@ -182,7 +236,7 @@ void get_mean_and_derivation(double * times, uint32_t times_len, struct result *
  
  void printResult(char * name, struct result * res)
  {
@@ -340,7 +341,7 @@ index 104f01a..f66eba2 100644
      fflush(stdout);
  }
  
-@@ -193,11 +246,41 @@ int main(int argc, char **argv)
+@@ -193,11 +247,41 @@ int main(int argc, char **argv)
      int repeat = 5;
      int c = 0;
  
@@ -383,7 +384,7 @@ index 104f01a..f66eba2 100644
              case 'n':
                  repeat = atoi(optarg);
                  break;
-@@ -212,9 +295,12 @@ int main(int argc, char **argv)
+@@ -212,9 +296,12 @@ int main(int argc, char **argv)
                  printf("Options:\n");
                  printf("  -f\tInput file.\n");
                  printf("  -n\tSet number of repetitions. Default: 5\n");
@@ -396,7 +397,7 @@ index 104f01a..f66eba2 100644
                  exit(EXIT_SUCCESS);
          }
      }
-@@ -229,21 +315,49 @@ int main(int argc, char **argv)
+@@ -229,21 +316,49 @@ int main(int argc, char **argv)
          exit(EXIT_FAILURE);
      }
  
@@ -455,7 +456,7 @@ index 104f01a..f66eba2 100644
      }
  
      if (out_file != NULL) {
-@@ -258,29 +372,42 @@ int main(int argc, char **argv)
+@@ -258,29 +373,42 @@ int main(int argc, char **argv)
  
          /* write table header*/
          fprintf(f, "regex;");
@@ -512,7 +513,7 @@ index 104f01a..f66eba2 100644
              }
              fprintf(f, "\n");
          }
-@@ -288,6 +415,7 @@ int main(int argc, char **argv)
+@@ -288,6 +416,7 @@ int main(int argc, char **argv)
          fclose(f);
      }
  
@@ -521,7 +522,7 @@ index 104f01a..f66eba2 100644
  
      exit(EXIT_SUCCESS);
 diff --git a/src/main.h b/src/main.h
-index 973f72a..7a20ec2 100644
+index 973f72a..60499a5 100644
 --- a/src/main.h
 +++ b/src/main.h
 @@ -17,6 +17,10 @@ struct result {
@@ -545,7 +546,7 @@ index 973f72a..7a20ec2 100644
  int pcre2_jit_find_all(char* pattern, char* subject, int subject_len, int repeat, struct result * res);
  #endif
  #ifdef INCLUDE_RE2
-@@ -51,8 +54,25 @@ int hs_find_all(char * pattern, char * subject, int subject_len, int repeat, str
+@@ -51,8 +54,26 @@ int hs_find_all(char * pattern, char * subject, int subject_len, int repeat, str
  #ifdef INCLUDE_YARA
  int yara_find_all(char * pattern, char * subject, int subject_len, int repeat, struct result * res);
  #endif
@@ -555,6 +556,7 @@ index 973f72a..7a20ec2 100644
 +#endif
 +#ifdef INCLUDE_ARSH
 +int arsh_find_all(char * pattern, char * subject, int subject_len, int repeat, struct result * res);
++int arsh_unopt_find_all(char * pattern, char * subject, int subject_len, int repeat, struct result * res);
 +#endif
 +#ifdef INCLUDE_SRELL
 +int srell_find_all(char * pattern, char * subject, int subject_len, int repeat, struct result * res);

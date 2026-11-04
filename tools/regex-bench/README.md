@@ -9,7 +9,7 @@ time and score of each registered engine. This directory provides:
 
 | file                      | description                                                             |
 |---------------------------|-------------------------------------------------------------------------|
-| `arsh.cpp` / `arsh.cmake` | adapter and build support for the arsh `regex` engine                   |
+| `arsh.cpp` / `arsh.cmake` | adapter and build support for the arsh `regex` engine (`arsh` and `arsh-unopt`) |
 | `srell.cpp` / `srell.cmake` | adapter and build support for [SRELL](https://github.com/upa-url/srell) |
 | `quickjs.c` / `quickjs.cmake` | adapter and build support for QuickJS `libregexp`                   |
 | `hermes.cpp` / `hermes.cmake` | adapter and build support for the Hermes regex engine             |
@@ -50,6 +50,14 @@ $ arsh tools/regex-bench/run.arsh --std-regex --srell --quickjs --hermes --pcre2
   so Node.js has to be installed.
 * `--boost` adds Boost.Regex; the latest Boost release is downloaded and built automatically.
 
+Besides the arsh engine itself, the benchmark also exposes `arsh-unopt`, which is arsh with
+its regex prefilter disabled. It always reports the same match counts as `arsh`, so comparing the
+two rows isolates how much the prefilter contributes to each pattern:
+
+```sh
+$ arsh tools/regex-bench/run.arsh --target arsh --target arsh-unopt
+```
+
 To measure only some of the engines, or only some of the patterns, use `--target` and
 `--pattern` (both repeatable):
 
@@ -61,11 +69,11 @@ $ arsh tools/regex-bench/run.arsh --target arsh --pattern 'Twain' --pattern '\p{
 `--target NAME` restricts the measured engines to the given names; naming an engine also enables
 it, so `--target hermes` fetches and builds Hermes just like `--hermes` does, and `--target
 cppstd` / `--target pcre-jit` behave like `--std-regex` / `--pcre2`. The available names are
-`arsh`, `cppstd`, `srell`, `quickjs`, `hermes`, `boost`, `pcre`, `pcre-jit` and `nodejs`; an
-unknown name is rejected before anything is fetched. `--pattern PATTERN` replaces the built-in
-18-pattern set with the given patterns, which is useful for iterating on a single pattern
-without paying for the whole set. Without either option every engine compiled into `regex_perf`
-is measured against the built-in patterns, as before.
+`arsh`, `arsh-unopt`, `cppstd`, `srell`, `quickjs`, `hermes`, `boost`, `pcre`, `pcre-jit`
+and `nodejs`; an unknown name is rejected before anything is fetched. `--pattern PATTERN` replaces
+the built-in 18-pattern set with the given patterns, which is useful for iterating on a single
+pattern without paying for the whole set. Without either option every engine compiled into
+`regex_perf` is measured against the built-in patterns, as before.
 
 `run.arsh` performs the following steps:
 
@@ -384,5 +392,11 @@ replace the built-in pattern set) to `regex_perf`; `-h` lists the available engi
 * The Node.js adapter (`nodejs.cpp`) runs the `node` executable as a child process and parses the
   timings and the match count it prints; only the scan is timed, and its memory columns are `0`
   because the heap tracker cannot see the other process.
-* The arsh adapter (`arsh.cpp`) is registered once as `arsh`; it creates a fresh `MatchContext`
-  for every scan, which mirrors normal use.
+* The arsh adapter (`arsh.cpp`) registers two targets. `arsh` creates a fresh `MatchContext`
+  for every scan, which mirrors normal use. `arsh-unopt` runs the same compiled regex with
+  `MatchContext::setPrefilter(false)`, so the search layer stops skipping to the next candidate
+  start position and the VM is retried at every code point instead. Match results are identical
+  by construction; only the time differs, which makes the row a direct measurement of what the
+  prefilter is worth for each pattern (e.g. `Twain` 3.7 ms vs 82.8 ms, `∞|✓` 6.3 ms vs 89.4 ms,
+  while the prefilter cannot help `.{0,2}(Tom|Sawyer|Huckleberry|Finn)` since its first byte set
+  is empty and `(.*?,){13}z` spends its time inside the VM).

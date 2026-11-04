@@ -36,7 +36,9 @@ shctl set errraise
 
 # the engine names known to the benchmark harness (see the engines table of
 # rust-leipzig/regex-performance). --target selects a subset of them.
-let TARGETS = ['arsh', 'cppstd', 'srell', 'quickjs', 'hermes', 'boost', 'pcre', 'pcre-jit', 'nodejs']
+# 'arsh-unopt' is arsh with its regex prefilter disabled (see arsh.cpp), so comparing it
+# with 'arsh' shows how much the prefilter contributes per pattern.
+let TARGETS = ['arsh', 'arsh-unopt', 'cppstd', 'srell', 'quickjs', 'hermes', 'boost', 'pcre', 'pcre-jit', 'nodejs']
 
 let REPO_URL = "https://github.com/rust-leipzig/regex-performance.git"
 let REPO_REF = "52cb0538eca86ad549f6895dbfa9a2f71bc82244" # pinned commit (2022-10-13)
