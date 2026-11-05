@@ -6,6 +6,7 @@
 #include <regex/emit.h>
 #include <regex/flag.h>
 #include <regex/input.h>
+#include <regex/match_context.h>
 #include <regex/parser.h>
 
 using namespace arsh;
@@ -1087,6 +1088,56 @@ TEST_P(CharSetMatcherTest, base) {
 
 INSTANTIATE_TEST_SUITE_P(CharSetMatcherTest, CharSetMatcherTest,
                          ::testing::ValuesIn(charSetMatcherCases));
+
+/**
+ * A single search tries the pattern at every start offset until one succeeds. Each attempt must
+ * start from an all-unset capture buffer, so the captures a failed attempt has already written
+ * (e.g. inside a look-ahead) must not survive into the attempt that finally matches. The
+ * prefilter hides this, because it jumps straight to the candidate offset and the failed
+ * attempts before it never run.
+ */
+struct CaptureLeakEntry {
+  const char *pattern;
+  const char *text;
+  regex::Modifier modifiers;
+  unsigned int matchOffset;
+};
+
+std::ostream &operator<<(std::ostream &stream, const CaptureLeakEntry &entry) {
+  return stream << "/" << entry.pattern << "/ on `" << entry.text << "'";
+}
+
+struct CaptureLeakTest : public ::testing::TestWithParam<CaptureLeakEntry> {
+  static constexpr std::pair<bool, const char *> PREFILTER[] = {{true, "on"}, {false, "off"}};
+
+  static void doTest() {
+    auto &param = GetParam();
+    auto re = compile(param.pattern, regex::Flag(regex::Mode::UNICODE, param.modifiers));
+    ASSERT_TRUE(re.hasValue());
+    for (auto &[prefilter, name] : PREFILTER) {
+      std::vector<regex::Capture> captures;
+      auto ctx = regex::tryToCreateMatchContext(re.unwrap(), param.text, 0, captures);
+      ASSERT_TRUE(ctx.hasValue());
+      ctx.asOk().setPrefilter(prefilter);
+      const auto status = regex::match(re.unwrap(), ctx.asOk(), nullptr);
+      ASSERT_EQ(regex::MatchStatus::OK, status) << "prefilter " << name;
+      const auto expected = "(offset=" + std::to_string(param.matchOffset) + ", size=1)\n(unset)\n";
+      ASSERT_EQ(expected, regex::formatCaptures(captures)) << "prefilter " << name;
+    }
+  }
+};
+
+TEST_P(CaptureLeakTest, base) { ASSERT_NO_FATAL_FAILURE(doTest()); }
+
+static constexpr CaptureLeakEntry captureLeakCases[] = {
+    // group 1 is set by the look-ahead of the attempt at offset 1, then backtracked
+    {"(?=(.)*)\\s", "ab\n", regex::Modifier::MULTILINE, 2},
+    // the failed attempt at offset 1 leaves group 1 behind, the match happens at offset 2
+    {"(?:q|(?=(T))o)", "amq", regex::Modifier::NONE, 2},
+    {"(?:(?=(x)?)\\d)", "xm\no1Axz9xx", regex::Modifier::MULTILINE, 4},
+};
+
+INSTANTIATE_TEST_SUITE_P(CaptureLeakTest, CaptureLeakTest, ::testing::ValuesIn(captureLeakCases));
 
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);
