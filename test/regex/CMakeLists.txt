@@ -1,4 +1,17 @@
 
+#========================#
+#     prefilter_test     #
+#========================#
+
+set(TEST_NAME prefilter_test)
+include_directories(${CMAKE_SOURCE_DIR}/tools/json)
+add_executable(${TEST_NAME}
+        prefilter_test.cpp
+)
+target_link_libraries(${TEST_NAME} gtest gtest_main regex test_common json)
+add_test(${TEST_NAME} ${TEST_NAME})
+
+
 #====================#
 #     regex_test     #
 #====================#
