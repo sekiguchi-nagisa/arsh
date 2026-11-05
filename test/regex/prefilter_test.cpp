@@ -30,7 +30,12 @@
  * and the number of matches, which together also catch a capture leaking from one start offset
  * into the next.
  *
- * Cases are generated from a fixed seed, so a failure is reproducible. Raise the corpus with:
+ * The generator draws patterns and inputs that mix ASCII with 2, 3 and 4 byte UTF-8 code points.
+ * That matters for the prefilter, which indexes its first byte set by raw UTF-8 lead byte, and
+ * for the scan layer, which must never start a retry inside a multi-byte character.
+ *
+ * Cases are generated from a fixed seed with `L64X128MixRNG` (see src/misc/split_random.hpp), so
+ * a failure is reproducible. Raise the corpus with:
  *
  *   ARSH_RE_PREFILTER_SEED=42 ARSH_RE_PREFILTER_ITER=100000 ./test/regex/prefilter_test
  *
@@ -44,11 +49,11 @@
 #include <cstdio>
 #include <cstdlib>
 #include <iterator>
-#include <random>
 #include <string>
 #include <vector>
 
 #include <misc/num_util.hpp>
+#include <misc/split_random.hpp>
 #include <regex/emit.h>
 #include <regex/flag.h>
 #include <regex/match_context.h>
@@ -166,13 +171,47 @@ void dumpFailure(const regex::Target &target, const regex::MatchStatus onStatus,
  */
 class CaseGenerator {
 private:
-  std::mt19937 rng;
+  L64X128MixRNG rng;
 
-  int pick(const int n) { return static_cast<int>(this->rng() % static_cast<unsigned>(n)); }
+  int pick(const int n) {
+    return static_cast<int>(this->rng.next() % static_cast<unsigned int>(n));
+  }
 
+  /**
+   * ASCII atoms plus literal 2, 3 and 4 byte UTF-8 characters, so the first byte set of the
+   * prefilter is also exercised on multi-byte leading bytes.
+   */
   static constexpr const char *ATOMS[] = {
-      "a",   "b",   "T", "o", "m", "0", "9", " ",     "\\n",    "\\t",   ".",       "\\d",
-      "\\w", "\\s", "x", "q", "z", "A", "-", "[a-c]", "[^a-c]", "[abc]", "\\p{Sm}", "\\u{1F600}",
+      "a",
+      "b",
+      "T",
+      "o",
+      "m",
+      "0",
+      "9",
+      " ",
+      "\\n",
+      "\\t",
+      ".",
+      "\\d",
+      "\\w",
+      "\\s",
+      "x",
+      "q",
+      "z",
+      "A",
+      "-",
+      "[a-c]",
+      "[^a-c]",
+      "[abc]",
+      "\\p{Sm}",
+      "\\u{1F600}",
+      "\xC3\xA9",
+      "\xC3\x9F",
+      "\xCC\x81",
+      "\xE3\x81\x82",
+      "\xE2\x98\x83",
+      "\xF0\x9F\x98\x80",
   };
 
   const char *atom() { return ATOMS[this->pick(std::size(ATOMS))]; }
@@ -232,9 +271,36 @@ private:
   }
 
   std::string input() {
-    static constexpr const char *PIECES[] = {"a", "b", "c", "T",  "o",       "m", " ",
-                                             "0", "1", "9", "\n", "t",       "x", "q",
-                                             "z", "A", "B", "-",  "\xC3\xA9"};
+    /**
+     * `\xC3\xA9`, `\xE3\x81\x82` and `\xF0\x9F\x98\x80` are 2, 3 and 4 byte code points, so a
+     * candidate start offset can land inside a multi-byte character.
+     */
+    static constexpr const char *PIECES[] = {
+        "a",
+        "b",
+        "c",
+        "T",
+        "o",
+        "m",
+        " ",
+        "0",
+        "1",
+        "9",
+        "\n",
+        "t",
+        "x",
+        "q",
+        "z",
+        "A",
+        "B",
+        "-",
+        "\xC3\xA9",
+        "\xC3\x9F",
+        "\xCC\x81",
+        "\xE3\x81\x82",
+        "\xE2\x98\x83",
+        "\xF0\x9F\x98\x80",
+    };
     std::string text;
     const int size = this->pick(13);
     for (int i = 0; i < size; i++) {
@@ -244,7 +310,7 @@ private:
   }
 
 public:
-  explicit CaseGenerator(const unsigned int seed) : rng(seed) {}
+  explicit CaseGenerator(const uint64_t seed) : rng(seed) {}
 
   regex::Target next() {
     regex::Mode mode = regex::Mode::UNICODE;
@@ -327,9 +393,9 @@ struct PrefilterTest : public ::testing::Test {
     }
   }
 
-  static unsigned int envOr(const char *name, const unsigned int fallback) {
+  static uint64_t envOr(const char *name, const uint64_t fallback) {
     if (const char *str = getenv(name)) {
-      if (auto ret = convertToNum10<unsigned int>(str); ret) {
+      if (auto ret = convertToNum10<uint64_t>(str); ret) {
         return ret.value;
       }
     }
@@ -338,12 +404,13 @@ struct PrefilterTest : public ::testing::Test {
 };
 
 TEST_F(PrefilterTest, generated) {
-  const unsigned int seed = envOr("ARSH_RE_PREFILTER_SEED", DEFAULT_SEED);
-  unsigned int iter = envOr("ARSH_RE_PREFILTER_ITER", DEFAULT_ITER);
+  const auto seed = envOr("ARSH_RE_PREFILTER_SEED", DEFAULT_SEED);
+  auto iter = envOr("ARSH_RE_PREFILTER_ITER", DEFAULT_ITER);
   if (iter == 0) {
     iter = DEFAULT_ITER;
   }
-  printf(" seed: %u, iter: %u\n", seed, iter);
+  printf(" seed: %llu, iter: %llu\n", static_cast<unsigned long long>(seed),
+         static_cast<unsigned long long>(iter));
 
   CaseGenerator generator(seed);
   for (unsigned int i = 0; i < iter; i++) {
