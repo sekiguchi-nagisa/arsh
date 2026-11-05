@@ -17,6 +17,7 @@
 #ifndef ARSH_REGEX_MATCH_CONTEXT_H
 #define ARSH_REGEX_MATCH_CONTEXT_H
 
+#include <algorithm>
 #include <cstdint>
 #include <vector>
 
@@ -65,9 +66,10 @@ public:
 
   void setPrefilter(bool set) { this->prefilter = set; }
 
-  void clearCaptures() const {
-    this->captures.clear();
+  void resetState() {
     this->captures.resize(this->captureGroupCount + 1);
+    std::fill(this->captures.begin(), this->captures.end(), Capture());
+    std::fill(this->loops.begin(), this->loops.end(), LoopState());
   }
 };
 

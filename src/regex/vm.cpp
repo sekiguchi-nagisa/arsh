@@ -416,8 +416,8 @@ MatchStatus match(const Regex &regex, MatchContext &ctx, ObserverPtr<Timer> time
   const char *oldIter = input.getIter();
   const Inst *inst = regex.getInstSeq().data();
   const auto matchers = regex.getMatchers();
+  ctx.resetState();
   LoopState *loopStates = ctx.getLoops();
-  ctx.clearCaptures();
   Capture *captures = ctx.getCaptures();
   unsigned int btCount = 0;
   BacktrackStack bts(inst);
@@ -889,6 +889,8 @@ START:
     input.consumeForward();
     oldIter = input.getIter();
     inst = bts.getStartInst();
+    ctx.resetState();
+    captures = ctx.getCaptures();
     goto START;
   }
   ctx.syncInput(input);
