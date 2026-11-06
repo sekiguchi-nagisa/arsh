@@ -7,5 +7,5 @@ assert test -x $REDUMP_PATH
 assert command -v diff &>> /dev/null
 
 redump() {
-    call $REDUMP_PATH $@ 2>&1
+    call $REDUMP_PATH -p both $@ 2>&1
 }

@@ -4,6 +4,7 @@
 #include <misc/unicode.hpp>
 #include <regex/dump.h>
 #include <regex/emit.h>
+#include <regex/match_context.h>
 #include <regex/parser.h>
 
 #include "../test/regex/dump.hpp"
@@ -61,16 +62,49 @@ static regex::Target createTarget(const uint8_t *data, const size_t size) {
   return target;
 }
 
+static regex::MatchStatus matchBoth(const regex::Regex &re, const StringRef text,
+                                    std::vector<regex::Capture> &captures) {
+  auto ctx = regex::tryToCreateMatchContext(re, text, 0, captures);
+  if (!ctx) {
+    return ctx.asErr();
+  }
+  regex::Timer timer(std::chrono::milliseconds(300));
+
+  // on
+  const auto input = ctx.asOk().getInput();
+  ctx.asOk().setPrefilter(true);
+  const auto onStatus = regex::match(re, ctx.asOk(), makeObserver(timer));
+  const auto onMatches = regex::formatCaptures(captures);
+  if (onStatus == regex::MatchStatus::TIMEOUT) {
+    return onStatus;
+  }
+
+  // off
+  ctx.asOk().syncInput(input);
+  ctx.asOk().setPrefilter(false);
+  const auto offStatus = regex::match(re, ctx.asOk(), makeObserver(timer));
+  const auto offMatches = regex::formatCaptures(captures);
+  if (offStatus == regex::MatchStatus::TIMEOUT) {
+    return offStatus;
+  }
+
+  // compare results
+  if (onStatus != offStatus || onMatches != offMatches) {
+    regex::dumpDiffFailure(stderr, onStatus, onMatches, offStatus, offMatches);
+    fatal("prefilter-diff\n");
+  }
+  return onStatus;
+}
+
 static void match(const regex::Regex &re, const StringRef input, const bool print) {
   std::vector<regex::Capture> captures;
-  regex::Timer timer(std::chrono::milliseconds(300));
-  auto status = regex::match(re, input, captures, makeObserver(timer));
+  const auto status = matchBoth(re, input, captures);
   if (print) {
     fprintf(stderr, "input: `%s'\n", input.toString().c_str());
   }
   if (status == regex::MatchStatus::OK) {
-    auto str = regex::formatCaptures(captures);
     if (print) {
+      const auto str = regex::formatCaptures(captures);
       fwrite(str.c_str(), sizeof(char), str.size(), stderr);
     }
   }

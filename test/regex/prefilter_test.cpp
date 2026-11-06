@@ -148,16 +148,7 @@ void dumpFailure(const regex::Target &target, const regex::MatchStatus onStatus,
   json::JSONSerializer serializer;
   serializer(std::move(saved));
   fprintf(stderr, "prefilter-diff: %s\n", serializer.get().serialize().c_str());
-
-  size_t pos = 0;
-  const size_t size = std::min(onMatches.size(), offMatches.size());
-  while (pos < size && onMatches[pos] == offMatches[pos]) {
-    pos++;
-  }
-  fprintf(stderr, "  on : %s\n  off: %s\n", toString(onStatus), toString(offStatus));
-  fprintf(stderr, "  first difference at byte %zu\n", pos);
-  fprintf(stderr, "  on : %s\n", onMatches.substr(pos, 160).c_str());
-  fprintf(stderr, "  off: %s\n", offMatches.substr(pos, 160).c_str());
+  regex::dumpDiffFailure(stderr, onStatus, onMatches, offStatus, offMatches);
 }
 
 // #########################

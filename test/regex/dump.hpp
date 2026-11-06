@@ -19,8 +19,7 @@
 
 #include <misc/result.hpp>
 #include <misc/unicode.hpp>
-#include <regex/capture.h>
-#include <regex/flag.h>
+#include <regex/regex.h>
 
 namespace arsh::regex {
 
@@ -104,6 +103,19 @@ inline std::string formatCaptures(const ArrayRef<Capture> captures) {
     ret += ")\n";
   }
   return ret;
+}
+
+inline void dumpDiffFailure(FILE *fp, const MatchStatus onStatus, const std::string &onMatches,
+                            const MatchStatus offStatus, const std::string &offMatches) {
+  size_t pos = 0;
+  const size_t size = std::min(onMatches.size(), offMatches.size());
+  while (pos < size && onMatches[pos] == offMatches[pos]) {
+    pos++;
+  }
+  fprintf(fp, "  on : %s\n  off: %s\n", toString(onStatus), toString(offStatus));
+  fprintf(fp, "  first difference at byte %zu\n", pos);
+  fprintf(fp, "  on : %s\n", onMatches.substr(pos, 160).c_str());
+  fprintf(fp, "  off: %s\n", offMatches.substr(pos, 160).c_str());
 }
 
 } // namespace arsh::regex

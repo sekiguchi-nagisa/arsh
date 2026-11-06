@@ -24,12 +24,15 @@
 #include "dump.hpp"
 #include "regex/dump.h"
 #include "regex/emit.h"
+#include "regex/match_context.h"
 #include "regex/parser.h"
 
 using namespace arsh;
 
 static void usage(FILE *fp, char **argv) {
-  fprintf(fp, "usage: %s [-d][-t timeout-msec][-m text][-f file] pattern [modifiers]\n", argv[0]);
+  fprintf(fp,
+          "usage: %s [-d][-t timeout-msec][-m text][-f file][-p on|off|both] pattern [modifiers]\n",
+          argv[0]);
 }
 
 static void invalidOption(char **argv, int opt) {
@@ -80,14 +83,64 @@ static Optional<std::vector<regex::Target>> load(std::istream &stream, FILE *fp)
   return targets;
 }
 
+enum class PrefilterOp : unsigned char {
+  ON,
+  OFF,
+  BOTH,
+};
+
+static regex::MatchStatus doMatch(const regex::Regex &re, const regex::Target &target,
+                                  std::vector<regex::Capture> &captures,
+                                  const ObserverPtr<regex::Timer> timer, const PrefilterOp op) {
+  auto ctx = regex::tryToCreateMatchContext(re, get<std::string>(target.input), 0, captures);
+  if (!ctx) {
+    return ctx.asErr();
+  }
+  if (op != PrefilterOp::BOTH) { // try once
+    ctx.asOk().setPrefilter(op == PrefilterOp::ON);
+    return regex::match(re, ctx.asOk(), timer);
+  }
+
+  // on
+  const regex::Input input = ctx.asOk().getInput(); // save original input
+  ctx.asOk().setPrefilter(true);
+  const auto onStatus = regex::match(re, ctx.asOk(), timer);
+  const auto onMatches = regex::formatCaptures(captures);
+
+  // off
+  ctx.asOk().syncInput(input);
+  ctx.asOk().setPrefilter(false);
+  const auto offStatus = regex::match(re, ctx.asOk(), timer);
+  const auto offMatches = regex::formatCaptures(captures);
+
+  // compare results
+  if (onStatus != offStatus || onMatches != offMatches) {
+    auto saved = target;
+    saved.beforeSerialize();
+    json::JSONSerializer serializer;
+    serializer(std::move(saved));
+    fprintf(stderr, "prefilter-diff: %s\n", serializer.get().serialize().c_str());
+    regex::dumpDiffFailure(stderr, onStatus, onMatches, offStatus, offMatches);
+    return regex::MatchStatus::FAIL;
+  }
+  return onStatus;
+}
+
 int main(int argc, char **argv) {
-  opt::GetOptState optState("hdm:t:f:");
+  static StrRefMap<PrefilterOp> prefilterOps = {
+      {"on", PrefilterOp::ON},
+      {"off", PrefilterOp::OFF},
+      {"both", PrefilterOp::BOTH},
+  };
+
+  opt::GetOptState optState("hdm:t:f:p:");
   StringRef text;
   bool dumpTree = true;
   bool shouldMatch = false;
   bool dumpRegex = false;
   const char *timeoutMsecStr = nullptr;
   const char *targetFileName = nullptr;
+  PrefilterOp op = PrefilterOp::ON;
   auto iter = argv + 1;
   const auto end = argv + argc;
   for (int opt; (opt = optState(iter, end)) != -1;) {
@@ -106,6 +159,15 @@ int main(int argc, char **argv) {
       break;
     case 'f':
       targetFileName = optState.optArg.data();
+      break;
+    case 'p':
+      if (auto i = prefilterOps.find(optState.optArg); i != prefilterOps.end()) {
+        op = i->second;
+      } else {
+        fprintf(stderr, "invalid argument for -p: %s, \n", optState.optArg.toString().c_str());
+        usage(stderr, argv);
+        return 1;
+      }
       break;
     case 'h':
       usage(stdout, argv);
@@ -198,11 +260,10 @@ int main(int argc, char **argv) {
       fwrite(buf.c_str(), sizeof(char), buf.size(), stdout);
     }
     if (shouldMatch) {
-      const StringRef input = get<std::string>(target.input);
       std::vector<regex::Capture> captures;
       regex::Timer timer(timeout.unwrap());
-      auto status = regex::match(re.unwrap(), input, captures, makeObserver(timer));
-      fprintf(stdout, "input: `%s'\n", input.toString().c_str());
+      auto status = doMatch(re.unwrap(), target, captures, makeObserver(timer), op);
+      fprintf(stdout, "input: `%s'\n", get<std::string>(target.input).c_str());
       if (status != regex::MatchStatus::OK) {
         fprintf(stdout, "%s\n", toString(status));
         lastStatus = 1;
