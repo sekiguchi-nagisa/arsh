@@ -90,28 +90,22 @@ enum class PrefilterOp : unsigned char {
 };
 
 static regex::MatchStatus doMatch(const regex::Regex &re, const regex::Target &target,
-                                  std::vector<regex::Capture> &captures,
-                                  const ObserverPtr<regex::Timer> timer, const PrefilterOp op) {
-  auto ctx = regex::tryToCreateMatchContext(re, get<std::string>(target.input), 0, captures);
-  if (!ctx) {
-    return ctx.asErr();
-  }
+                                  const ObserverPtr<regex::Timer> timer, const PrefilterOp op,
+                                  std::string &out) {
   if (op != PrefilterOp::BOTH) { // try once
-    ctx.asOk().setPrefilter(op == PrefilterOp::ON);
-    return regex::match(re, ctx.asOk(), timer);
+    return regex::matchWithPrefilter(re, get<std::string>(target.input), op == PrefilterOp::ON,
+                                     timer, out);
   }
 
   // on
-  const regex::Input input = ctx.asOk().getInput(); // save original input
-  ctx.asOk().setPrefilter(true);
-  const auto onStatus = regex::match(re, ctx.asOk(), timer);
-  const auto onMatches = regex::formatCaptures(captures);
+  std::string onMatches;
+  const auto onStatus =
+      regex::matchWithPrefilter(re, get<std::string>(target.input), true, timer, onMatches);
 
   // off
-  ctx.asOk().syncInput(input);
-  ctx.asOk().setPrefilter(false);
-  const auto offStatus = regex::match(re, ctx.asOk(), timer);
-  const auto offMatches = regex::formatCaptures(captures);
+  std::string offMatches;
+  const auto offStatus =
+      regex::matchWithPrefilter(re, get<std::string>(target.input), false, timer, offMatches);
 
   // compare results
   if (onStatus != offStatus || onMatches != offMatches) {
@@ -123,6 +117,7 @@ static regex::MatchStatus doMatch(const regex::Regex &re, const regex::Target &t
     regex::dumpDiffFailure(stderr, onStatus, onMatches, offStatus, offMatches);
     return regex::MatchStatus::FAIL;
   }
+  out = onMatches;
   return onStatus;
 }
 
@@ -260,16 +255,15 @@ int main(int argc, char **argv) {
       fwrite(buf.c_str(), sizeof(char), buf.size(), stdout);
     }
     if (shouldMatch) {
-      std::vector<regex::Capture> captures;
+      std::string str;
       regex::Timer timer(timeout.unwrap());
-      auto status = doMatch(re.unwrap(), target, captures, makeObserver(timer), op);
+      auto status = doMatch(re.unwrap(), target, makeObserver(timer), op, str);
       fprintf(stdout, "input: `%s'\n", get<std::string>(target.input).c_str());
       if (status != regex::MatchStatus::OK) {
         fprintf(stdout, "%s\n", toString(status));
         lastStatus = 1;
         continue;
       }
-      auto str = formatCaptures(captures);
       fwrite(str.c_str(), sizeof(char), str.size(), stdout);
     }
     lastStatus = 0;

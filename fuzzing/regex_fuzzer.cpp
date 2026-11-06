@@ -63,27 +63,20 @@ static regex::Target createTarget(const uint8_t *data, const size_t size) {
 }
 
 static regex::MatchStatus matchBoth(const regex::Regex &re, const StringRef text,
-                                    std::vector<regex::Capture> &captures) {
-  auto ctx = regex::tryToCreateMatchContext(re, text, 0, captures);
-  if (!ctx) {
-    return ctx.asErr();
-  }
+                                    std::string &out) {
   regex::Timer timer(std::chrono::milliseconds(300));
 
   // on
-  const auto input = ctx.asOk().getInput();
-  ctx.asOk().setPrefilter(true);
-  const auto onStatus = regex::match(re, ctx.asOk(), makeObserver(timer));
-  const auto onMatches = regex::formatCaptures(captures);
+  std::string onMatches;
+  const auto onStatus = regex::matchWithPrefilter(re, text, true, makeObserver(timer), onMatches);
   if (onStatus == regex::MatchStatus::TIMEOUT) {
     return onStatus;
   }
 
   // off
-  ctx.asOk().syncInput(input);
-  ctx.asOk().setPrefilter(false);
-  const auto offStatus = regex::match(re, ctx.asOk(), makeObserver(timer));
-  const auto offMatches = regex::formatCaptures(captures);
+  std::string offMatches;
+  const auto offStatus =
+      regex::matchWithPrefilter(re, text, false, makeObserver(timer), offMatches);
   if (offStatus == regex::MatchStatus::TIMEOUT) {
     return offStatus;
   }
@@ -93,19 +86,19 @@ static regex::MatchStatus matchBoth(const regex::Regex &re, const StringRef text
     regex::dumpDiffFailure(stderr, onStatus, onMatches, offStatus, offMatches);
     fatal("prefilter-diff\n");
   }
+  out = onMatches;
   return onStatus;
 }
 
 static void match(const regex::Regex &re, const StringRef input, const bool print) {
-  std::vector<regex::Capture> captures;
-  const auto status = matchBoth(re, input, captures);
+  std::string out;
+  const auto status = matchBoth(re, input, out);
   if (print) {
     fprintf(stderr, "input: `%s'\n", input.toString().c_str());
   }
   if (status == regex::MatchStatus::OK) {
     if (print) {
-      const auto str = regex::formatCaptures(captures);
-      fwrite(str.c_str(), sizeof(char), str.size(), stderr);
+      fwrite(out.c_str(), sizeof(char), out.size(), stderr);
     }
   }
   if (print) {

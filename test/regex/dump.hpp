@@ -19,6 +19,7 @@
 
 #include <misc/result.hpp>
 #include <misc/unicode.hpp>
+#include <regex/match_context.h>
 #include <regex/regex.h>
 
 namespace arsh::regex {
@@ -116,6 +117,21 @@ inline void dumpDiffFailure(FILE *fp, const MatchStatus onStatus, const std::str
   fprintf(fp, "  first difference at byte %zu\n", pos);
   fprintf(fp, "  on : %s\n", onMatches.substr(pos, 160).c_str());
   fprintf(fp, "  off: %s\n", offMatches.substr(pos, 160).c_str());
+}
+
+inline MatchStatus matchWithPrefilter(const Regex &re, const StringRef text, const bool prefilter,
+                               const ObserverPtr<Timer> timer, std::string &out) {
+  std::vector<Capture> captures;
+  auto ctx = tryToCreateMatchContext(re, text, 0, captures);
+  if (!ctx) {
+    return ctx.asErr();
+  }
+  ctx.asOk().setPrefilter(prefilter);
+  const auto s = match(re, ctx.asOk(), timer);
+  if (s == MatchStatus::OK) {
+    out += formatCaptures(captures);
+  }
+  return s;
 }
 
 } // namespace arsh::regex
