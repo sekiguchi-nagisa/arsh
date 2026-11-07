@@ -138,7 +138,8 @@ bool FirstBytesCollector::collect(const Inst *begin, const Inst *end) {
       break;
     case OpCode::Alt: {
       auto &ins = cast<AltIns>(*begin);
-      TRY(this->collect(begin + sizeof(AltIns), this->instSeq.begin() + ins.getSecond()));
+      begin += sizeof(AltIns);
+      TRY(this->collect(begin, this->instSeq.begin() + ins.getSecond()));
       begin = this->instSeq.begin() + ins.getSecond();
       continue;
     }
@@ -207,7 +208,8 @@ bool FirstBytesCollector::collect(const Inst *begin, const Inst *end) {
       return true;
     case OpCode::BeginLoop:
       if (auto &ins = cast<BeginLoopIns>(*begin); ins.getMin() > 0) {
-        return this->collect(begin + sizeof(BeginLoopIns), this->instSeq.begin() + ins.getOuter());
+        begin += sizeof(BeginLoopIns);
+        return this->collect(begin, this->instSeq.begin() + ins.getOuter());
       }
       return false;
     case OpCode::BeginLookAround:
