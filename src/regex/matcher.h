@@ -42,19 +42,22 @@ private:
   uint64_t sets[2]{};
 
 public:
+  static constexpr int MIN = 0;
+  static constexpr int MAX = 127;
+
   AsciiSet() = default;
 
   AsciiSet(uint64_t first, uint64_t second) : sets{first, second} {}
 
   void add(int codePoint) {
-    if (codePoint <= 127 && codePoint > -1) {
+    if (codePoint <= MAX && codePoint >= MIN) {
       setFlag(this->sets[static_cast<unsigned int>(codePoint) / 64],
               static_cast<uint64_t>(1) << (static_cast<unsigned int>(codePoint) % 64));
     }
   }
 
   bool contains(int codePoint) const {
-    if (codePoint <= 127 && codePoint > -1) {
+    if (codePoint <= MAX && codePoint >= MIN) {
       return hasFlag(this->sets[static_cast<unsigned int>(codePoint) / 64],
                      static_cast<uint64_t>(1) << (static_cast<unsigned int>(codePoint) % 64));
     }

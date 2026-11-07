@@ -262,6 +262,7 @@ add_library(regex STATIC
         src/regex/flag.cpp
         src/regex/transform.cpp
         src/regex/emit.cpp
+        src/regex/prefilter.cpp
         src/regex/vm.cpp
         src/regex/regex.cpp
 )

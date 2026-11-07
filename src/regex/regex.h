@@ -22,16 +22,14 @@
 #include "capture.h"
 #include "flag.h"
 #include "matcher.h"
-#include "misc/array_ref.hpp"
 #include "misc/function_ref.hpp"
 #include "misc/resource.hpp"
 #include "misc/time_util.hpp"
+#include "prefilter.h"
 
 namespace arsh::regex {
 
 struct Inst;
-
-using FirstBitSet = std::bitset<256>;
 
 class Regex {
 private:
