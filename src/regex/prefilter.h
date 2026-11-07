@@ -40,8 +40,6 @@ public:
     STRING, // string
   }; // must not change enum order
 
-  using FirstBitSet = std::bitset<256>;
-
   struct CodePoint {
     std::array<char, 4> data; // must be single UTF-8
     unsigned char size;       // up to 4

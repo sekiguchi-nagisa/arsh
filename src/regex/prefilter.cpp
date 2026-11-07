@@ -188,11 +188,7 @@ bool FirstBytesCollector::collect(const Inst *begin, const Inst *end) {
     case OpCode::RadixOrEmoji: {
       auto &ins = cast<RadixOrEmojiIns>(*begin);
       if (ins.hasEmoji()) {
-        auto emoji = ins.emoji;
-        if (ins.ignoreCase()) {
-          unsetFlag(emoji, ucp::RGIEmojiSeq::CASE_IGNORE);
-        }
-        fill(emoji, this->set, ins.ignoreCase());
+        fill(ins.emoji, this->set, ins.ignoreCase());
       }
       if (ins.hasRadix) {
         fill(this->matchers[ins.getIndex()].asRadixTree(), this->set, ins.ignoreCase());

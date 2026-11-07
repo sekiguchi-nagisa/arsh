@@ -496,8 +496,6 @@ struct BeginLoopIns : InstWithRtti<OpCode::BeginLoop> {
     return v;
   }
 
-  bool isUnlimited() const { return this->getMax() > UINT16_MAX; }
-
   uint32_t getOuter() const {
     uint32_t v;
     READ_FROM_INS_FIELD(outer, v);
