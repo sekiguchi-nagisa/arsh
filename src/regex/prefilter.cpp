@@ -223,4 +223,11 @@ FirstBitSet createFirstBitSet(const ArrayRef<Inst> instSeq, const ArrayRef<Match
   return {};
 }
 
+Prefilter createPrefilter(const ArrayRef<Inst> instSeq, const ArrayRef<Matcher> matchers) {
+  if (FirstBytesCollector collector(instSeq, matchers); collector()) {
+    return {collector.set, 0};
+  }
+  return {};
+}
+
 } // namespace arsh::regex

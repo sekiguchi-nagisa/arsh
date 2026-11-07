@@ -345,8 +345,8 @@ static Capture resolveBackRef(const Regex &regex, const MatchContext &ctx,
   return captures[refIndex];
 }
 
-static bool searchPrefix(const Inst *&inst, Input &input, const char *&oldIter,
-                         const FirstBitSet &firstSet, const ArrayRef<Matcher> matchers) {
+static bool nextCandidates(const Inst *&inst, Input &input, const char *&oldIter,
+                           const Prefilter &prefilter, const ArrayRef<Matcher> matchers) {
   switch (inst->op) {
   case OpCode::Char:
   case OpCode::String: {
@@ -370,7 +370,15 @@ static bool searchPrefix(const Inst *&inst, Input &input, const char *&oldIter,
     return false;
   }
   default:
-    if (firstSet.any()) {
+    break;
+  }
+
+  // search match start candidates
+  switch (prefilter.getType()) {
+  case Prefilter::Type::NONE:
+    break;
+  case Prefilter::Type::BITSET:
+    if (auto &firstSet = prefilter.asBitSet(); firstSet.any()) {
       bool matched = false;
       const auto *iter = input.getIter();
       for (const auto *end = input.getEnd(); iter != end; ++iter) {
@@ -384,8 +392,12 @@ static bool searchPrefix(const Inst *&inst, Input &input, const char *&oldIter,
       input.setIter(iter);
       return matched;
     }
-    return true; // do nothing
+    break;
+  case Prefilter::Type::CHAR:
+  case Prefilter::Type::STRING:
+    break;
   }
+  return true; // do nothing
 }
 
 #define TRY(E)                                                                                     \
@@ -434,7 +446,7 @@ MatchStatus match(const Regex &regex, MatchContext &ctx, ObserverPtr<Timer> time
 #endif
 
 START:
-  if (ctx.isPrefilter() && !searchPrefix(inst, input, oldIter, regex.getFirstBitSet(), matchers)) {
+  if (ctx.isPrefilter() && !nextCandidates(inst, input, oldIter, regex.getPrefilter(), matchers)) {
     goto BACKTRACK;
   }
   while (true) {

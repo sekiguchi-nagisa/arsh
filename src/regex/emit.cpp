@@ -49,8 +49,8 @@ Optional<Regex> CodeGen::operator()(SyntaxTree &&tree) {
   auto count = tree.getCaptureGroupCount();
   auto loopCount = tree.getLoopCount();
   auto instSeq = std::move(this->builder).build();
-  auto firstSet = createFirstBitSet(ArrayRef(instSeq.data(), instSeq.size()), this->matchers);
-  return Regex(flag, loopCount, std::move(instSeq), firstSet, std::move(this->matchers),
+  auto prefilter = createPrefilter(ArrayRef(instSeq.data(), instSeq.size()), this->matchers);
+  return Regex(flag, loopCount, std::move(instSeq), prefilter, std::move(this->matchers),
                std::move(tree).takeNamedCaptureGroups(), count);
 }
 

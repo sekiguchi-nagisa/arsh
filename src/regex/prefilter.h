@@ -98,6 +98,8 @@ public:
 
 FirstBitSet createFirstBitSet(ArrayRef<Inst> instSeq, ArrayRef<Matcher> matchers);
 
+Prefilter createPrefilter(ArrayRef<Inst> instSeq, ArrayRef<Matcher> matchers);
+
 } // namespace arsh::regex
 
 #endif // ARSH_REGEX_PREFILTER_H

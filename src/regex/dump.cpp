@@ -350,7 +350,7 @@ std::string RegexDumper::operator()(const Regex &regex) {
   this->base.dump("captureGroupCount", std::to_string(regex.getCaptureGroupCount()));
   this->base.dump("namedCaptureGroups", format(regex.getNamedCaptureGroups()));
   this->dump("instructions", regex.getInstSeq());
-  this->dump("firstSet", regex.getFirstBitSet());
+  this->dump("prefilter", regex.getPrefilter());
   this->dump("matchers", regex.getMatchers());
   return std::move(this->base.buf);
 }
@@ -670,30 +670,47 @@ void RegexDumper::dump(const FlexBuffer<Inst> &ins) {
   }
 }
 
-void RegexDumper::dump(const FirstBitSet &set) {
-  if (set.none()) {
-    return;
-  }
-  unsigned int c = 0;
-  for (unsigned int i = 0; i < set.size(); i++) {
-    if (set[i]) {
-      if (c % 16 == 0) {
-        this->base.append("  ");
-      } else {
-        this->base.append(' ');
-      }
-      char buf[16];
-      snprintf(buf, std::size(buf), "0x%02X,", i);
-      this->base.append(buf);
-      c++;
-      if (c % 16 == 0) {
-        this->base.newline();
+void RegexDumper::dump(const Prefilter &prefilter) {
+  this->base.field("data");
+  this->base.newline();
+  switch (prefilter.getType()) {
+  case Prefilter::Type::NONE:
+    break;
+  case Prefilter::Type::BITSET: {
+    auto &set = prefilter.asBitSet();
+    unsigned int c = 0;
+    for (unsigned int i = 0; i < set.size(); i++) {
+      if (set[i]) {
+        if (c % 16 != 0) {
+          this->base.append(' ');
+        }
+        char buf[16];
+        snprintf(buf, std::size(buf), "0x%02X,", i);
+        this->base.append(buf);
+        c++;
+        if (c % 16 == 0) {
+          this->base.newline();
+        }
       }
     }
+    if (this->base.buf.back() != '\n') {
+      this->base.newline();
+    }
+    break;
   }
-  if (this->base.buf.back() != '\n') {
+  case Prefilter::Type::CHAR: {
+    auto &cp = prefilter.asCodePoint();
+    StringRef ref(cp.data.data(), cp.size);
+    escapeUtf8(ref, this->base.buf);
     this->base.newline();
+    break;
   }
+  case Prefilter::Type::STRING:
+    escapeUtf8(prefilter.asStrRef(), this->base.buf);
+    this->base.newline();
+    break;
+  }
+  this->base.dump("maxPrevCodePoints", std::to_string(prefilter.getMaxPrevCodePoints()));
 }
 
 static void toString(const CodePointSetRef ref, std::string &out) {

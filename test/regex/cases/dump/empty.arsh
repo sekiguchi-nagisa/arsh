@@ -9,7 +9,9 @@ captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
   0: Match
-firstSet:
+prefilter:
+  data:
+  maxPrevCodePoints: 0
 matchers:
 EOF
 )
@@ -22,7 +24,9 @@ captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
   0: Match
-firstSet:
+prefilter:
+  data:
+  maxPrevCodePoints: 0
 matchers:
 EOF
 )
@@ -35,7 +39,9 @@ captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
   0: Match
-firstSet:
+prefilter:
+  data:
+  maxPrevCodePoints: 0
 matchers:
 EOF
 )

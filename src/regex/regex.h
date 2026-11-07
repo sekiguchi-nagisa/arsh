@@ -37,7 +37,7 @@ private:
   unsigned short loopCount;
   unsigned int captureGroupCount; // 1-based index. if 0, indicate no captures
   FlexBuffer<Inst> instSeq;
-  FirstBitSet firstBitSet;
+  Prefilter prefilter;
   std::vector<Matcher> matchers;
   NamedCaptureGroups named;
 
@@ -45,10 +45,10 @@ public:
   static constexpr size_t MAX_STACK_DEPTH = 0xFFFFFF;
   static constexpr unsigned int TIMER_CHECK_INTERVAL = UINT16_MAX >> 1;
 
-  Regex(Flag flag, unsigned short loopCount, FlexBuffer<Inst> &&seq, const FirstBitSet &firstBitSet,
+  Regex(Flag flag, unsigned short loopCount, FlexBuffer<Inst> &&seq, const Prefilter &prefilter,
         std::vector<Matcher> &&matchers, NamedCaptureGroups &&named, unsigned int count)
       : flag(flag), loopCount(loopCount), captureGroupCount(count), instSeq(std::move(seq)),
-        firstBitSet(firstBitSet), matchers(std::move(matchers)), named(std::move(named)) {}
+        prefilter(prefilter), matchers(std::move(matchers)), named(std::move(named)) {}
 
   Flag getFlag() const { return this->flag; }
 
@@ -58,7 +58,7 @@ public:
 
   const auto &getInstSeq() const { return this->instSeq; }
 
-  const auto &getFirstBitSet() const { return this->firstBitSet; }
+  const auto &getPrefilter() const { return this->prefilter; }
 
   ArrayRef<Matcher> getMatchers() const { return this->matchers; }
 

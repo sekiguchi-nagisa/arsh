@@ -12,7 +12,9 @@ instructions:
   14: Char(codePoint=U+0061:a)
   19: EndLoop(target=0)
   24: Match
-firstSet:
+prefilter:
+  data:
+  maxPrevCodePoints: 0
 matchers:
 EOF
 )
@@ -28,8 +30,10 @@ instructions:
   14: Char(codePoint=U+0061:a)
   19: EndLoop(target=0)
   24: Match
-firstSet:
-  0x61,
+prefilter:
+  data:
+0x61,
+  maxPrevCodePoints: 0
 matchers:
 EOF
 )
@@ -44,7 +48,9 @@ instructions:
    0: Alt(second=10)
    5: Char(codePoint=U+0061:a)
   10: Match
-firstSet:
+prefilter:
+  data:
+  maxPrevCodePoints: 0
 matchers:
 EOF
 )
@@ -57,7 +63,9 @@ captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
   0: Match
-firstSet:
+prefilter:
+  data:
+  maxPrevCodePoints: 0
 matchers:
 EOF
 )
@@ -71,8 +79,10 @@ namedCaptureGroups: []
 instructions:
   0: Char(codePoint=U+0031:1)
   5: Match
-firstSet:
-  0x31,
+prefilter:
+  data:
+0x31,
+  maxPrevCodePoints: 0
 matchers:
 EOF
 )
@@ -86,8 +96,10 @@ namedCaptureGroups: []
 instructions:
   0: String(index=0)
   3: Match
-firstSet:
-  0x31,
+prefilter:
+  data:
+0x31,
+  maxPrevCodePoints: 0
 matchers:
   0: String
 \x31\x32\x33
@@ -103,11 +115,13 @@ namedCaptureGroups: []
 instructions:
   0: CharSet(matcherIndex=0, invert=false)
   4: Match
-firstSet:
-  0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46,
-  0x47, 0x48, 0x49, 0x4A, 0x4B, 0x4C, 0x4D, 0x4E, 0x4F, 0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56,
-  0x57, 0x58, 0x59, 0x5A, 0x5F, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67, 0x68, 0x69, 0x6A, 0x6B,
-  0x6C, 0x6D, 0x6E, 0x6F, 0x70, 0x71, 0x72, 0x73, 0x74, 0x75, 0x76, 0x77, 0x78, 0x79, 0x7A,
+prefilter:
+  data:
+0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38, 0x39, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46,
+0x47, 0x48, 0x49, 0x4A, 0x4B, 0x4C, 0x4D, 0x4E, 0x4F, 0x50, 0x51, 0x52, 0x53, 0x54, 0x55, 0x56,
+0x57, 0x58, 0x59, 0x5A, 0x5F, 0x61, 0x62, 0x63, 0x64, 0x65, 0x66, 0x67, 0x68, 0x69, 0x6A, 0x6B,
+0x6C, 0x6D, 0x6E, 0x6F, 0x70, 0x71, 0x72, 0x73, 0x74, 0x75, 0x76, 0x77, 0x78, 0x79, 0x7A,
+  maxPrevCodePoints: 0
 matchers:
   0: AsciiSet
 { 0x0030, 0x0039 },
@@ -131,7 +145,9 @@ instructions:
   23: EndCapture(captureIndex=1)
   26: EndLoop(target=0)
   31: Match
-firstSet:
+prefilter:
+  data:
+  maxPrevCodePoints: 0
 matchers:
 EOF
 )
@@ -147,8 +163,10 @@ instructions:
   14: Char(codePoint=U+0061:a)
   19: EndLoop(target=0)
   24: Match
-firstSet:
-  0x61,
+prefilter:
+  data:
+0x61,
+  maxPrevCodePoints: 0
 matchers:
 EOF
 )
@@ -165,7 +183,9 @@ instructions:
   14: AnyExceptNL
   15: EndLoop(target=0)
   20: Match
-firstSet:
+prefilter:
+  data:
+  maxPrevCodePoints: 0
 matchers:
 EOF
 )
@@ -182,8 +202,10 @@ instructions:
   19: CharSet(matcherIndex=0, invert=false)
   23: EndLoop(target=5)
   28: Match
-firstSet:
-  0x61,
+prefilter:
+  data:
+0x61,
+  maxPrevCodePoints: 0
 matchers:
   0: AsciiSet
 { 0x0061, 0x007A },
@@ -212,7 +234,9 @@ instructions:
   78: EndLoop(target=60)
   83: End(multiline=false)
   85: Match
-firstSet:
+prefilter:
+  data:
+  maxPrevCodePoints: 0
 matchers:
 EOF
 )
@@ -252,8 +276,10 @@ instructions:
   152: EndCapture(captureIndex=2)
   155: EndLoop(target=11)
   160: Match
-firstSet:
-  0x7A,
+prefilter:
+  data:
+0x7A,
+  maxPrevCodePoints: 0
 matchers:
 EOF
 )

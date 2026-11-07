@@ -14,7 +14,9 @@ instructions:
   11: Alt(second=17)
   16: AnyExceptNL
   17: Match
-firstSet:
+prefilter:
+  data:
+  maxPrevCodePoints: 0
 matchers:
 EOF
 )
@@ -35,7 +37,9 @@ instructions:
   26: AnyExceptNL
   27: AnyExceptNL
   28: Match
-firstSet:
+prefilter:
+  data:
+  maxPrevCodePoints: 0
 matchers:
 EOF
 )
@@ -55,7 +59,9 @@ instructions:
   25: Jump(target=31)
   30: AnyExceptNL
   31: Match
-firstSet:
+prefilter:
+  data:
+  maxPrevCodePoints: 0
 matchers:
 EOF
 )
@@ -70,8 +76,10 @@ namedCaptureGroups: []
 instructions:
   0: CharSet(matcherIndex=0, invert=false)
   4: Match
-firstSet:
-  0x41, 0x42, 0x43,
+prefilter:
+  data:
+0x41, 0x42, 0x43,
+  maxPrevCodePoints: 0
 matchers:
   0: AsciiSet
 { 0x0041, 0x0043 },

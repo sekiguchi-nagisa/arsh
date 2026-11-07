@@ -17,7 +17,9 @@ instructions:
   19: Start(multiline=false)
   21: EndCapture(captureIndex=1)
   24: Match
-firstSet:
+prefilter:
+  data:
+  maxPrevCodePoints: 0
 matchers:
 EOF
 )
@@ -34,7 +36,9 @@ instructions:
   4: End(multiline=true)
   6: End(multiline=false)
   8: Match
-firstSet:
+prefilter:
+  data:
+  maxPrevCodePoints: 0
 matchers:
 EOF
 )
@@ -51,7 +55,9 @@ instructions:
   4: End(multiline=false)
   6: End(multiline=true)
   8: Match
-firstSet:
+prefilter:
+  data:
+  maxPrevCodePoints: 0
 matchers:
 EOF
 )
@@ -66,7 +72,9 @@ instructions:
   0: Word(invert=false)
   2: Word(invert=true)
   4: Match
-firstSet:
+prefilter:
+  data:
+  maxPrevCodePoints: 0
 matchers:
 EOF
 )
@@ -80,7 +88,9 @@ instructions:
   0: IWord(invert=false)
   2: IWord(invert=true)
   4: Match
-firstSet:
+prefilter:
+  data:
+  maxPrevCodePoints: 0
 matchers:
 EOF
 )
@@ -97,8 +107,10 @@ instructions:
    4: Char(codePoint=U+0040:@)
    9: End(multiline=true)
   11: Match
-firstSet:
-  0x40,
+prefilter:
+  data:
+0x40,
+  maxPrevCodePoints: 0
 matchers:
 EOF
 )
@@ -116,7 +128,9 @@ instructions:
   10: IWord(invert=false)
   12: EndLookAround
   13: Match
-firstSet:
+prefilter:
+  data:
+  maxPrevCodePoints: 0
 matchers:
 EOF
 )
