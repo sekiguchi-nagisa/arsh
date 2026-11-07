@@ -32,7 +32,10 @@
  *
  * The generator draws patterns and inputs that mix ASCII with 2, 3 and 4 byte UTF-8 code points.
  * That matters for the prefilter, which indexes its first byte set by raw UTF-8 lead byte, and
- * for the scan layer, which must never start a retry inside a multi-byte character.
+ * for the scan layer, which must never start a retry inside a multi-byte character. It also
+ * draws constructs whose first byte set is empty or hard to derive: the zero width `\b` and `\B`,
+ * back references (including one inside a look-behind), and, in `v` mode, the string valued
+ * character class elements `\q{...}`, set subtraction/intersection and the emoji sequences.
  *
  * Cases are generated from a fixed seed with `L64X128MixRNG` (see src/misc/split_random.hpp), so
  * a failure is reproducible. Raise the corpus with:
@@ -158,11 +161,16 @@ void dumpFailure(const regex::Target &target, const regex::MatchStatus onStatus,
 /**
  * Generates patterns and inputs which exercise the search layer: leading literals and character
  * classes (the cases the prefilter optimizes), empty matches, look-around, and nested quantifiers.
+ * Word boundaries (`\b`, `\B`), back references and, in `v` mode, string valued character
+ * classes (`\q{...}`, set subtraction/intersection and the emoji sequence properties) are drawn
+ * as well, because a first byte set is either trivially empty or expensive to derive for them.
  * Patterns rejected by the parser in the drawn mode are skipped by the caller.
  */
 class CaseGenerator {
 private:
   L64X128MixRNG rng;
+  regex::Mode mode{regex::Mode::UNICODE};
+  unsigned int groupSerial{0}; // keeps the generated capture group names unique
 
   int pick(const int n) {
     return static_cast<int>(this->rng.next() % static_cast<unsigned int>(n));
@@ -170,7 +178,8 @@ private:
 
   /**
    * ASCII atoms plus literal 2, 3 and 4 byte UTF-8 characters, so the first byte set of the
-   * prefilter is also exercised on multi-byte leading bytes.
+   * prefilter is also exercised on multi-byte leading bytes. `\b` and `\B` are zero width, so
+   * the prefilter has to look through them to find the first byte it can match.
    */
   static constexpr const char *ATOMS[] = {
       "a",
@@ -203,9 +212,64 @@ private:
       "\xE3\x81\x82",
       "\xE2\x98\x83",
       "\xF0\x9F\x98\x80",
+      "\\b",
+      "\\B",
   };
 
-  const char *atom() { return ATOMS[this->pick(std::size(ATOMS))]; }
+  /**
+   * Atoms which the parser only accepts in `v` mode: `\q{...}` string alternatives, set
+   * subtraction and intersection (including the degenerate `[[]--[]]`), and the emoji sequence
+   * properties, whose elements are multi code point strings instead of single code points.
+   */
+  static constexpr const char *UNICODE_SET_ATOMS[] = {
+      "\\p{RGI_Emoji}",
+      "\\p{Basic_Emoji}",
+      "\\p{RGI_Emoji_ZWJ_Sequence}",
+      "\\p{RGI_Emoji_Flag_Sequence}",
+      "[\\q{ab|c}]",
+      "[\\q{}]",
+      "[\\q{ab|c|}]",
+      "[\\q{\xF0\x9F\x98\x80|ab}]",
+      "[\\p{RGI_Emoji}\\q{ab|c}]",
+      "[[a-c]--[b]]",
+      "[[a-c]&&[b-c]]",
+      "[[]--[]]",
+      "[[\\w]--[\\d]]",
+      "[[\\p{Basic_Emoji}]--[\\q{a}]]",
+      "[[\\w]&&[\\q{ab|c}]]",
+  };
+
+  bool inUnicodeSetMode() const { return this->mode == regex::Mode::UNICODE_SET; }
+
+  std::string atom() {
+    if (this->inUnicodeSetMode() && this->pick(2)) {
+      return UNICODE_SET_ATOMS[this->pick(std::size(UNICODE_SET_ATOMS))];
+    }
+    return ATOMS[this->pick(std::size(ATOMS))];
+  }
+
+  std::string nextGroupName() { return "r" + std::to_string(this->groupSerial++); }
+
+  /**
+   * A named capture group followed by a back reference to it. The name keeps the reference
+   * independent of the group numbering, so the sub-pattern stays valid wherever it is embedded.
+   * A reference to an unset group matches empty, which is the kind of zero length match the
+   * prefilter must not skip.
+   */
+  std::string backRef(const int depth) {
+    const auto name = this->nextGroupName();
+    return "(?<" + name + ">" + this->expression(depth + 1) + ")\\k<" + name + ">";
+  }
+
+  /**
+   * The same, but the group and its reference are inside a look-behind, so the VM executes the
+   * `LBBackRef` path and the prefilter cannot derive a first byte at all.
+   */
+  std::string backRefInLookBehind(const int depth) {
+    const auto name = this->nextGroupName();
+    return "(?<=(?<" + name + ">" + this->atom() + ")\\k<" + name + ">)" +
+           this->expression(depth + 1);
+  }
 
   std::string quantified(const int depth) {
     std::string inner = this->expression(depth + 1);
@@ -235,7 +299,7 @@ private:
     if (depth > 2) {
       return this->atom();
     }
-    switch (this->pick(12)) {
+    switch (this->pick(14)) {
     case 0:
     case 1:
     case 2:
@@ -251,11 +315,15 @@ private:
     case 7:
       return "(?=" + this->expression(depth + 1) + ")" + this->expression(depth + 1);
     case 8:
-      return "(?!" + std::string(this->atom()) + ")" + this->expression(depth + 1);
+      return "(?!" + this->atom() + ")" + this->expression(depth + 1);
     case 9:
-      return "(?<=" + std::string(this->atom()) + ")" + this->expression(depth + 1);
+      return "(?<=" + this->atom() + ")" + this->expression(depth + 1);
     case 10:
       return "^" + this->expression(depth + 1);
+    case 11:
+      return this->backRef(depth);
+    case 12:
+      return this->backRefInLookBehind(depth);
     default:
       return this->expression(depth + 1) + "$";
     }
@@ -264,7 +332,9 @@ private:
   std::string input() {
     /**
      * `\xC3\xA9`, `\xE3\x81\x82` and `\xF0\x9F\x98\x80` are 2, 3 and 4 byte code points, so a
-     * candidate start offset can land inside a multi-byte character.
+     * candidate start offset can land inside a multi-byte character. The emoji sequences and the
+     * `ab`/`c` pieces give the string valued classes (`\q{ab|c}`, `\p{RGI_Emoji}`) something to
+     * match, and let a retry start inside a ZWJ sequence, a keycap sequence and so on.
      */
     static constexpr const char *PIECES[] = {
         "a",
@@ -291,6 +361,11 @@ private:
         "\xE3\x81\x82",
         "\xE2\x98\x83",
         "\xF0\x9F\x98\x80",
+        "ab",
+        "\xF0\x9F\x91\xA8\xE2\x80\x8D\xF0\x9F\x91\xA7", // ZWJ sequence
+        "\xF0\x9F\x87\xAF\xF0\x9F\x87\xB5",             // flag sequence
+        "#\xEF\xB8\x8F\xE2\x83\xA3",                    // keycap sequence
+        "\xE2\x9C\x8C\xF0\x9F\x8F\xBC",                 // modifier sequence
     };
     std::string text;
     const int size = this->pick(13);
@@ -304,16 +379,16 @@ public:
   explicit CaseGenerator(const uint64_t seed) : rng(seed) {}
 
   regex::Target next() {
-    regex::Mode mode = regex::Mode::UNICODE;
+    this->groupSerial = 0;
     switch (this->pick(3)) {
     case 0:
-      mode = regex::Mode::BMP;
+      this->mode = regex::Mode::BMP;
       break;
     case 1:
-      mode = regex::Mode::UNICODE;
+      this->mode = regex::Mode::UNICODE;
       break;
     default:
-      mode = regex::Mode::UNICODE_SET;
+      this->mode = regex::Mode::UNICODE_SET;
       break;
     }
     regex::Modifier modifiers{};
@@ -327,10 +402,16 @@ public:
       setFlag(modifiers, regex::Modifier::IGNORE_CASE);
     }
 
+    std::string pattern = this->expression(0);
+    if (this->pick(6) == 0) {
+      // group 1 is the outermost group, so `\1` is a well defined numeric back reference
+      pattern = "(" + pattern + ")\\1";
+    }
+
     regex::Target target;
-    target.pattern = this->expression(0);
+    target.pattern = std::move(pattern);
     target.input = this->input();
-    target.mode = mode;
+    target.mode = this->mode;
     target.modifiers = modifiers;
     return target;
   }
@@ -411,6 +492,93 @@ TEST_F(PrefilterTest, generated) {
     ASSERT_NO_FATAL_FAILURE(compare(generator.next())) << "iteration " << i;
   }
 }
+
+/**
+ * The constructs the generator draws at random, pinned down so that lowering the number of
+ * iterations or changing the seed cannot silently drop them. Every entry is the smallest
+ * pattern/input pair which exercises one of them; nothing is hard coded about the result, only
+ * the prefilter on/off invariant is checked.
+ *
+ * The first byte set is empty for `\b` and `\B` (zero width), for a back reference (it depends on
+ * a previous match) and for `[[]--[]]` (an empty set), and it is expensive to derive for the
+ * string valued classes `\q{...}`, `[... -- ...]`, `[... && ...]` and the emoji sequences, whose
+ * elements are multi code point strings.
+ */
+struct PrefilterConstructEntry {
+  const char *pattern;
+  const char *text;
+  regex::Mode mode;
+  regex::Modifier modifiers;
+};
+
+std::ostream &operator<<(std::ostream &stream, const PrefilterConstructEntry &entry) {
+  return stream << "/" << entry.pattern << "/ on `" << entry.text << "'";
+}
+
+struct PrefilterConstructTest : public PrefilterTest,
+                                public ::testing::WithParamInterface<PrefilterConstructEntry> {
+  static void doTest() {
+    auto &param = GetParam();
+    regex::Target target;
+    target.pattern = param.pattern;
+    target.input = param.text;
+    target.mode = param.mode;
+    target.modifiers = param.modifiers;
+    compare(target);
+  }
+};
+
+TEST_P(PrefilterConstructTest, base) { ASSERT_NO_FATAL_FAILURE(doTest()); }
+
+static const PrefilterConstructEntry prefilterConstructCases[] = {
+    // zero width word boundary: the prefilter must look through it
+    {"\\b", "ab c", regex::Mode::UNICODE, regex::Modifier::NONE},
+    {"\\B", "ab c", regex::Mode::UNICODE, regex::Modifier::NONE},
+    {"\\b\\B", "ab c", regex::Mode::UNICODE, regex::Modifier::NONE},
+    {"\\b(a)\\1", "aab aab", regex::Mode::UNICODE, regex::Modifier::NONE},
+    {"\\b[\\q{ab|c}]", "abc", regex::Mode::UNICODE_SET, regex::Modifier::NONE},
+    {"[\\q{ab|c}]\\B", "abc", regex::Mode::UNICODE_SET, regex::Modifier::NONE},
+    // back reference, numeric and named, including the look-behind form
+    {"(a)\\1", "aab", regex::Mode::UNICODE, regex::Modifier::NONE},
+    {"(?<g0>a)\\k<g0>", "aab", regex::Mode::UNICODE, regex::Modifier::NONE},
+    {"(?<=(a)\\1)b", "aab", regex::Mode::UNICODE, regex::Modifier::NONE},
+    {"(?<=(?<g0>a)\\k<g0>)b", "aab", regex::Mode::UNICODE, regex::Modifier::NONE},
+    {"(a)\\1", "aAab", regex::Mode::UNICODE, regex::Modifier::IGNORE_CASE},
+    // empty string class, plain and as a set operand
+    {"[\\q{}]", "abc", regex::Mode::UNICODE_SET, regex::Modifier::NONE},
+    {"[\\q{ab|c|}]", "abc", regex::Mode::UNICODE_SET, regex::Modifier::NONE},
+    {"[[]--[]]", "abc", regex::Mode::UNICODE_SET, regex::Modifier::NONE},
+    {"[[a-c]--[b]]", "abc", regex::Mode::UNICODE_SET, regex::Modifier::NONE},
+    {"[[a-c]&&[b-c]]", "abc", regex::Mode::UNICODE_SET, regex::Modifier::NONE},
+    {"[[\\w]--[\\d]]", "a1c", regex::Mode::UNICODE_SET, regex::Modifier::NONE},
+    {"[[\\w]&&[\\q{ab|c}]]", "abc", regex::Mode::UNICODE_SET, regex::Modifier::NONE},
+    // string valued classes: \q{...} alternatives and emoji sequences
+    {"[\\q{ab|c}]", "abc", regex::Mode::UNICODE_SET, regex::Modifier::NONE},
+    {"[\\p{RGI_Emoji}\\q{ab|c}]", "abc", regex::Mode::UNICODE_SET, regex::Modifier::NONE},
+    {"[[\\p{Basic_Emoji}]--[\\q{a}]]", "abc", regex::Mode::UNICODE_SET, regex::Modifier::NONE},
+    {"\\p{RGI_Emoji}", "\xF0\x9F\x91\xA8\xE2\x80\x8D\xF0\x9F\x91\xA7", regex::Mode::UNICODE_SET,
+     regex::Modifier::NONE},
+    {"[\\p{RGI_Emoji}]", "\xF0\x9F\x91\xA8\xE2\x80\x8D\xF0\x9F\x91\xA7", regex::Mode::UNICODE_SET,
+     regex::Modifier::NONE},
+    {"[\\p{RGI_Emoji_ZWJ_Sequence}]", "\xF0\x9F\x91\xA8\xE2\x80\x8D\xF0\x9F\x91\xA7",
+     regex::Mode::UNICODE_SET, regex::Modifier::NONE},
+    {"[\\p{RGI_Emoji_Flag_Sequence}]", "\xF0\x9F\x87\xAF\xF0\x9F\x87\xB5", regex::Mode::UNICODE_SET,
+     regex::Modifier::NONE},
+    {"[\\p{RGI_Emoji_Tag_Sequence}]",
+     "\xF0\x9F\x8F\xB4\xF3\xA0\x81\xA7\xF3\xA0\x81\xA2\xF3\xA0\x81\xA5\xF3\xA0\x81\xAE"
+     "\xF3\xA0\x81\xA7\xF3\xA0\x81\xBF",
+     regex::Mode::UNICODE_SET, regex::Modifier::NONE},
+    // the retry offset may land inside a keycap, modifier or flag sequence
+    {"[\\p{Basic_Emoji}]", "#\xEF\xB8\x8F\xE2\x83\xA3\xE2\x9C\x8C\xF0\x9F\x8F\xBC",
+     regex::Mode::UNICODE_SET, regex::Modifier::NONE},
+    {"[\\p{Basic_Emoji}]", "\xC3\xA9\xF0\x9F\x98\x80\xC3\x9F", regex::Mode::UNICODE_SET,
+     regex::Modifier::NONE},
+    {"[\\p{RGI_Emoji}]", "\xF0\x9F\x91\xA8\xE2\x80\x8D\xF0\x9F\x91\xA7", regex::Mode::UNICODE_SET,
+     regex::Modifier::IGNORE_CASE},
+};
+
+INSTANTIATE_TEST_SUITE_P(PrefilterConstructTest, PrefilterConstructTest,
+                         ::testing::ValuesIn(prefilterConstructCases));
 
 /**
  * Regression cases: the smallest inputs that used to make the two runs differ, before the retry
