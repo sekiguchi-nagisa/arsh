@@ -39,6 +39,7 @@ private:
   std::vector<Capture> &captures;
   std::vector<LoopState> loops;
   std::string foldBuf;
+  unsigned int prevCodePoints{0};
 
 public:
   MatchContext(const Regex &regex, const Input &input, std::vector<Capture> &captures)
@@ -61,6 +62,8 @@ public:
   Input &refInput() { return this->input; }
 
   std::string &refFoldBuf() { return this->foldBuf; }
+
+  unsigned int &refPrevCodePoints() { return this->prevCodePoints; }
 
   bool isPrefilter() const { return this->prefilter; }
 

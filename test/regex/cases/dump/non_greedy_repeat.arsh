@@ -14,6 +14,7 @@ instructions:
   24: Match
 prefilter:
   data:
+  minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
 EOF
@@ -33,6 +34,7 @@ instructions:
 prefilter:
   data:
 0x61,
+  minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
 EOF
@@ -51,6 +53,7 @@ instructions:
   24: Match
 prefilter:
   data:
+  minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
 EOF
@@ -66,6 +69,7 @@ instructions:
   0: Match
 prefilter:
   data:
+  minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
 EOF
@@ -83,6 +87,7 @@ instructions:
 prefilter:
   data:
 0x61,
+  minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
 EOF
@@ -102,6 +107,7 @@ instructions:
 prefilter:
   data:
 0x61,
+  minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
 EOF
@@ -122,6 +128,7 @@ instructions:
 prefilter:
   data:
 0x61,
+  minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
   0: AsciiSet
@@ -145,6 +152,7 @@ instructions:
 prefilter:
   data:
 0x3C,
+  minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
 EOF

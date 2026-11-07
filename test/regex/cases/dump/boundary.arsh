@@ -19,6 +19,7 @@ instructions:
   24: Match
 prefilter:
   data:
+  minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
 EOF
@@ -38,6 +39,7 @@ instructions:
   8: Match
 prefilter:
   data:
+  minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
 EOF
@@ -57,6 +59,7 @@ instructions:
   8: Match
 prefilter:
   data:
+  minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
 EOF
@@ -74,6 +77,7 @@ instructions:
   4: Match
 prefilter:
   data:
+  minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
 EOF
@@ -90,6 +94,7 @@ instructions:
   4: Match
 prefilter:
   data:
+  minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
 EOF
@@ -110,6 +115,7 @@ instructions:
 prefilter:
   data:
 0x40,
+  minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
 EOF
@@ -130,6 +136,7 @@ instructions:
   13: Match
 prefilter:
   data:
+  minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
 EOF

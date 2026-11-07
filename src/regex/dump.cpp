@@ -698,18 +698,15 @@ void RegexDumper::dump(const Prefilter &prefilter) {
     }
     break;
   }
-  case Prefilter::Type::CHAR: {
-    auto &cp = prefilter.asCodePoint();
-    StringRef ref(cp.data.data(), cp.size);
-    escapeUtf8(ref, this->base.buf);
-    this->base.newline();
-    break;
-  }
+  case Prefilter::Type::CHAR:
   case Prefilter::Type::STRING:
-    escapeUtf8(prefilter.asStrRef(), this->base.buf);
+    escapeUtf8(prefilter.getType() == Prefilter::Type::CHAR ? prefilter.asCodePoint().asStrRef()
+                                                            : prefilter.asStrRef(),
+               this->base.buf);
     this->base.newline();
     break;
   }
+  this->base.dump("minPrevCodePoints", std::to_string(prefilter.getMinPrevCodePoints()));
   this->base.dump("maxPrevCodePoints", std::to_string(prefilter.getMaxPrevCodePoints()));
 }
 

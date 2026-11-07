@@ -345,8 +345,9 @@ static Capture resolveBackRef(const Regex &regex, const MatchContext &ctx,
   return captures[refIndex];
 }
 
-static bool nextCandidates(const Inst *&inst, Input &input, const char *&oldIter,
-                           const Prefilter &prefilter, const ArrayRef<Matcher> matchers) {
+static bool nextCandidates(const Inst *&inst, Input &input, const char *&startIter,
+                           unsigned int &prevCodePoints, const Prefilter &prefilter,
+                           const ArrayRef<Matcher> matchers) {
   switch (inst->op) {
   case OpCode::Char:
   case OpCode::String: {
@@ -362,15 +363,24 @@ static bool nextCandidates(const Inst *&inst, Input &input, const char *&oldIter
       inst += sizeof(StringIns);
     }
     if (const auto retPos = input.remainForward().find(needle); retPos != StringRef::npos) {
-      oldIter = input.getIter() + retPos;
-      input.setIter(oldIter + needle.size());
+      startIter = input.getIter() + retPos;
+      input.setIter(startIter + needle.size());
       return true;
     }
-    oldIter = input.getEnd();
+    startIter = input.getEnd();
     return false;
   }
   default:
     break;
+  }
+
+  // redo
+  if (prevCodePoints) {
+    prevCodePoints--;
+    if (prevCodePoints >= prefilter.getMinPrevCodePoints()) {
+      return true;
+    }
+    prevCodePoints = 0;
   }
 
   // search match start candidates
@@ -388,14 +398,34 @@ static bool nextCandidates(const Inst *&inst, Input &input, const char *&oldIter
           break;
         }
       }
-      oldIter = iter;
+      if (matched) {
+        while (prevCodePoints < prefilter.getMaxPrevCodePoints() && iter != input.getBegin()) {
+          prevCodePoints++;
+          unsafePrevUtf8(iter);
+        }
+      }
+      startIter = iter;
       input.setIter(iter);
       return matched;
     }
     break;
   case Prefilter::Type::CHAR:
-  case Prefilter::Type::STRING:
-    break;
+  case Prefilter::Type::STRING: {
+    const StringRef needle = prefilter.getType() == Prefilter::Type::CHAR
+                                 ? prefilter.asCodePoint().asStrRef()
+                                 : prefilter.asStrRef();
+    if (const auto retPos = input.remainForward().find(needle); retPos != StringRef::npos) {
+      startIter = input.getIter() + retPos;
+      while (prevCodePoints < prefilter.getMaxPrevCodePoints() && startIter != input.getBegin()) {
+        prevCodePoints++;
+        unsafePrevUtf8(startIter);
+      }
+      input.setIter(startIter);
+      return true;
+    }
+    startIter = input.getEnd();
+    return false;
+  }
   }
   return true; // do nothing
 }
@@ -425,10 +455,11 @@ static bool nextCandidates(const Inst *&inst, Input &input, const char *&oldIter
 MatchStatus match(const Regex &regex, MatchContext &ctx, ObserverPtr<Timer> timer) {
   // prepare
   Input input = ctx.copyInput();
-  const char *oldIter = input.getIter();
+  const char *startIter = input.getIter();
   const Inst *inst = regex.getInstSeq().data();
   const auto matchers = regex.getMatchers();
   ctx.resetState();
+  ctx.refPrevCodePoints() = 0;
   LoopState *loopStates = ctx.getLoops();
   Capture *captures = ctx.getCaptures();
   unsigned int btCount = 0;
@@ -446,7 +477,8 @@ MatchStatus match(const Regex &regex, MatchContext &ctx, ObserverPtr<Timer> time
 #endif
 
 START:
-  if (ctx.isPrefilter() && !nextCandidates(inst, input, oldIter, regex.getPrefilter(), matchers)) {
+  if (ctx.isPrefilter() && !nextCandidates(inst, input, startIter, ctx.refPrevCodePoints(),
+                                           regex.getPrefilter(), matchers)) {
     goto BACKTRACK;
   }
   while (true) {
@@ -456,8 +488,8 @@ START:
         vmnext;
       }
       vmcase(Match) {
-        captures[0].offset = oldIter - input.getBegin();
-        captures[0].size = input.getIter() - oldIter;
+        captures[0].offset = startIter - input.getBegin();
+        captures[0].size = input.getIter() - startIter;
         ctx.syncInput(input);
         return MatchStatus::OK;
       }
@@ -896,10 +928,10 @@ START:
     }
   }
   // increment input and redo until end-of-input.
-  input.setIter(oldIter);
+  input.setIter(startIter);
   if (input.available()) {
     input.consumeForward();
-    oldIter = input.getIter();
+    startIter = input.getIter();
     inst = bts.getStartInst();
     ctx.resetState();
     captures = ctx.getCaptures();

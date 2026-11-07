@@ -13,6 +13,7 @@ instructions:
 prefilter:
   data:
 0x31, 0x32,
+  minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
   0: AsciiSet
@@ -38,6 +39,7 @@ instructions:
 prefilter:
   data:
 0x31, 0x32,
+  minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
   0: String
@@ -59,6 +61,7 @@ instructions:
 prefilter:
   data:
 0x31, 0x32,
+  minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
   0: RadixTree
@@ -84,6 +87,7 @@ instructions:
   22: Match
 prefilter:
   data:
+  minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
   0: RadixTree
@@ -115,6 +119,7 @@ instructions:
   58: Match
 prefilter:
   data:
+  minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
   0: String
@@ -136,6 +141,7 @@ instructions:
   16: Match
 prefilter:
   data:
+  minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
   0: RadixTree
@@ -159,6 +165,7 @@ instructions:
   16: Match
 prefilter:
   data:
+  minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
   0: RadixTree
@@ -188,6 +195,7 @@ instructions:
   43: Match
 prefilter:
   data:
+  minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
   0: String
@@ -218,6 +226,7 @@ instructions:
   57: Match
 prefilter:
   data:
+  minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
   0: String
@@ -243,6 +252,7 @@ instructions:
 prefilter:
   data:
 0x41, 0x46, 0x48, 0x53, 0x54, 0x61,
+  minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
   0: RadixTree
@@ -269,6 +279,7 @@ instructions:
 prefilter:
   data:
 0x41, 0x46, 0x48, 0x53, 0x54, 0x61, 0x66, 0x68, 0x73, 0x74, 0xC5,
+  minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
   0: RadixTree

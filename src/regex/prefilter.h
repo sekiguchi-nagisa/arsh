@@ -43,11 +43,14 @@ public:
   struct CodePoint {
     std::array<char, 4> data; // must be single UTF-8
     unsigned char size;       // up to 4
+
+    StringRef asStrRef() const { return {this->data.data(), this->size}; }
   };
 
 private:
-  Type type;
-  unsigned int maxPrevCodePoints;
+  Type type{Type::NONE};
+  unsigned int minPrevCodePoints{0};
+  unsigned int maxPrevCodePoints{0};
   union {
     CodePoint codePoint;
     StringRef ref;
@@ -55,20 +58,25 @@ private:
   };
 
 public:
-  Prefilter() : type(Type::NONE), maxPrevCodePoints(0), ref({}) {}
+  Prefilter() : ref({}) {}
 
-  Prefilter(const FirstBitSet &set, unsigned int maxCodePoints)
-      : type(Type::BITSET), maxPrevCodePoints(maxCodePoints), set(set) {}
+  Prefilter(unsigned int minCodePoints, const FirstBitSet &set, unsigned int maxCodePoints)
+      : type(Type::BITSET), minPrevCodePoints(minCodePoints), maxPrevCodePoints(maxCodePoints),
+        set(set) {}
 
-  Prefilter(const CodePoint &codePoint, unsigned int maxCodePoints)
-      : type(Type::CHAR), maxPrevCodePoints(maxCodePoints), codePoint(codePoint) {}
+  Prefilter(unsigned int minCodePoints, const CodePoint &codePoint, unsigned int maxCodePoints)
+      : type(Type::CHAR), minPrevCodePoints(minCodePoints), maxPrevCodePoints(maxCodePoints),
+        codePoint(codePoint) {}
 
-  Prefilter(StringRef ref, unsigned int maxCodePoints)
-      : type(Type::STRING), maxPrevCodePoints(maxCodePoints), ref(ref) {}
+  Prefilter(unsigned int minCodePoints, StringRef ref, unsigned int maxCodePoints)
+      : type(Type::STRING), minPrevCodePoints(minCodePoints), maxPrevCodePoints(maxCodePoints),
+        ref(ref) {}
 
   Type getType() const { return this->type; }
 
   unsigned int getMaxPrevCodePoints() const { return this->maxPrevCodePoints; }
+
+  unsigned int getMinPrevCodePoints() const { return this->minPrevCodePoints; }
 
   const auto &asBitSet() const { return this->set; }
 

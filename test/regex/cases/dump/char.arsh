@@ -13,6 +13,7 @@ instructions:
 prefilter:
   data:
 0x41,
+  minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
 EOF
@@ -29,6 +30,7 @@ instructions:
 prefilter:
   data:
 0x41, 0x61,
+  minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
 EOF
@@ -45,6 +47,7 @@ instructions:
 prefilter:
   data:
 0x41, 0x61,
+  minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
 EOF
@@ -62,6 +65,7 @@ instructions:
 prefilter:
   data:
 0xC3,
+  minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
 EOF
@@ -78,6 +82,7 @@ instructions:
 prefilter:
   data:
 0xC3, 0xC5,
+  minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
 EOF
@@ -95,6 +100,7 @@ instructions:
 prefilter:
   data:
 0xE3,
+  minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
 EOF
@@ -111,6 +117,7 @@ instructions:
 prefilter:
   data:
 0xE3,
+  minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
 EOF
@@ -128,6 +135,7 @@ instructions:
 prefilter:
   data:
 0xF0,
+  minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
 EOF
@@ -144,6 +152,7 @@ instructions:
 prefilter:
   data:
 0xF0,
+  minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
 EOF
@@ -164,6 +173,7 @@ instructions:
 prefilter:
   data:
 0x61,
+  minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
 EOF
@@ -183,6 +193,7 @@ instructions:
 prefilter:
   data:
 0x41, 0x61,
+  minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
 EOF
@@ -202,6 +213,7 @@ instructions:
 prefilter:
   data:
 0x5D,
+  minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
   0: String
@@ -227,6 +239,7 @@ instructions:
   14: Match
 prefilter:
   data:
+  minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
   0: String
@@ -256,6 +269,7 @@ instructions:
 prefilter:
   data:
 0x40,
+  minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
   0: String
@@ -279,6 +293,7 @@ instructions:
 prefilter:
   data:
 0x31,
+  minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
   0: String

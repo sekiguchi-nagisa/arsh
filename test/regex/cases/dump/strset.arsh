@@ -11,6 +11,7 @@ instructions:
   0: Match
 prefilter:
   data:
+  minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
 EOF
@@ -25,6 +26,7 @@ instructions:
   0: Match
 prefilter:
   data:
+  minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
 EOF
@@ -40,6 +42,7 @@ instructions:
   0: Match
 prefilter:
   data:
+  minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
 EOF
@@ -54,6 +57,7 @@ instructions:
   0: Match
 prefilter:
   data:
+  minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
 EOF
@@ -71,6 +75,7 @@ instructions:
   7: Match
 prefilter:
   data:
+  minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
 EOF
@@ -87,6 +92,7 @@ instructions:
   7: Match
 prefilter:
   data:
+  minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
 EOF
@@ -104,6 +110,7 @@ instructions:
   9: Match
 prefilter:
   data:
+  minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
   0: CodePointSet(owned)
@@ -123,6 +130,7 @@ instructions:
   9: Match
 prefilter:
   data:
+  minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
   0: CodePointSet(owned)
@@ -145,6 +153,7 @@ instructions:
 prefilter:
   data:
 0x41, 0xE3,
+  minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
   0: RadixTree
@@ -165,6 +174,7 @@ instructions:
 prefilter:
   data:
 0x41, 0x61, 0xE3,
+  minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
   0: RadixTree
@@ -186,6 +196,7 @@ instructions:
   16: Match
 prefilter:
   data:
+  minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
   0: RadixTree
@@ -210,6 +221,7 @@ instructions:
   16: Match
 prefilter:
   data:
+  minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
   0: RadixTree
@@ -237,6 +249,7 @@ instructions:
   24: Match
 prefilter:
   data:
+  minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
   0: RadixTree
@@ -267,6 +280,7 @@ instructions:
   24: Match
 prefilter:
   data:
+  minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
   0: RadixTree
@@ -294,6 +308,7 @@ instructions:
 prefilter:
   data:
 0x41,
+  minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
   0: RadixTree
@@ -314,6 +329,7 @@ instructions:
 prefilter:
   data:
 0x41, 0x61,
+  minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
   0: RadixTree
@@ -335,6 +351,7 @@ instructions:
   12: Match
 prefilter:
   data:
+  minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
   0: RadixTree
@@ -355,6 +372,7 @@ instructions:
   12: Match
 prefilter:
   data:
+  minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
   0: RadixTree
@@ -379,6 +397,7 @@ instructions:
   16: Match
 prefilter:
   data:
+  minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
   0: RadixTree
@@ -407,6 +426,7 @@ instructions:
   16: Match
 prefilter:
   data:
+  minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
   0: RadixTree
