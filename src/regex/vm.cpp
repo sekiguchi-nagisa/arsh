@@ -346,7 +346,7 @@ static Capture resolveBackRef(const Regex &regex, const MatchContext &ctx,
 }
 
 static bool nextCandidates(const Inst *&inst, Input &input, const char *&startIter,
-                           unsigned int &prevCodePoints, const Prefilter &prefilter,
+                           MatchContext &ctx, const Prefilter &prefilter,
                            const ArrayRef<Matcher> matchers) {
   switch (inst->op) {
   case OpCode::Char:
@@ -375,12 +375,15 @@ static bool nextCandidates(const Inst *&inst, Input &input, const char *&startIt
   }
 
   // redo
+  unsigned int &prevCodePoints = ctx.refPrevCodePoints();
   if (prevCodePoints) {
     prevCodePoints--;
     if (prevCodePoints >= prefilter.getMinPrevCodePoints()) {
       return true;
     }
     prevCodePoints = 0;
+    input.setIter(ctx.refPrefilterFound());
+    input.consumeForward();
   }
 
   // search match start candidates
@@ -399,6 +402,7 @@ static bool nextCandidates(const Inst *&inst, Input &input, const char *&startIt
         }
       }
       if (matched) {
+        ctx.refPrefilterFound() = iter;
         while (prevCodePoints < prefilter.getMaxPrevCodePoints() && iter != input.getBegin()) {
           prevCodePoints++;
           unsafePrevUtf8(iter);
@@ -416,6 +420,7 @@ static bool nextCandidates(const Inst *&inst, Input &input, const char *&startIt
                                  : prefilter.asStrRef();
     if (const auto retPos = input.remainForward().find(needle); retPos != StringRef::npos) {
       startIter = input.getIter() + retPos;
+      ctx.refPrefilterFound() = startIter;
       while (prevCodePoints < prefilter.getMaxPrevCodePoints() && startIter != input.getBegin()) {
         prevCodePoints++;
         unsafePrevUtf8(startIter);
@@ -460,6 +465,7 @@ MatchStatus match(const Regex &regex, MatchContext &ctx, ObserverPtr<Timer> time
   const auto matchers = regex.getMatchers();
   ctx.resetState();
   ctx.refPrevCodePoints() = 0;
+  ctx.refPrefilterFound() = nullptr;
   LoopState *loopStates = ctx.getLoops();
   Capture *captures = ctx.getCaptures();
   unsigned int btCount = 0;
@@ -477,8 +483,8 @@ MatchStatus match(const Regex &regex, MatchContext &ctx, ObserverPtr<Timer> time
 #endif
 
 START:
-  if (ctx.isPrefilter() && !nextCandidates(inst, input, startIter, ctx.refPrevCodePoints(),
-                                           regex.getPrefilter(), matchers)) {
+  if (ctx.isPrefilter() &&
+      !nextCandidates(inst, input, startIter, ctx, regex.getPrefilter(), matchers)) {
     goto BACKTRACK;
   }
   while (true) {

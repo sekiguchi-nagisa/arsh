@@ -39,6 +39,7 @@ private:
   std::vector<Capture> &captures;
   std::vector<LoopState> loops;
   std::string foldBuf;
+  const char *prefilterFound{nullptr};
   unsigned int prevCodePoints{0};
 
 public:
@@ -64,6 +65,8 @@ public:
   std::string &refFoldBuf() { return this->foldBuf; }
 
   unsigned int &refPrevCodePoints() { return this->prevCodePoints; }
+
+  const char *&refPrefilterFound() { return this->prefilterFound; }
 
   bool isPrefilter() const { return this->prefilter; }
 
