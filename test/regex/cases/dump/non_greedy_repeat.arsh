@@ -86,7 +86,7 @@ instructions:
   5: Match
 prefilter:
   data:
-0x61,
+\x61
   minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
@@ -127,7 +127,7 @@ instructions:
   28: Match
 prefilter:
   data:
-0x61,
+\x61
   minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
@@ -151,7 +151,7 @@ instructions:
   30: Match
 prefilter:
   data:
-0x3C,
+\x3C
   minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:

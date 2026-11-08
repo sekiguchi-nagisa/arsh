@@ -12,7 +12,7 @@ instructions:
   5: Match
 prefilter:
   data:
-0x41,
+\x41
   minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
@@ -64,7 +64,7 @@ instructions:
   5: Match
 prefilter:
   data:
-0xC3,
+\xC3\xBF
   minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
@@ -99,7 +99,7 @@ instructions:
   5: Match
 prefilter:
   data:
-0xE3,
+\xE3\x81\x82
   minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
@@ -116,7 +116,7 @@ instructions:
   5: Match
 prefilter:
   data:
-0xE3,
+\xE3\x81\x82
   minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
@@ -134,7 +134,7 @@ instructions:
   5: Match
 prefilter:
   data:
-0xF0,
+\xF0\xA4\x85\x95
   minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
@@ -151,7 +151,7 @@ instructions:
   5: Match
 prefilter:
   data:
-0xF0,
+\xF0\xA4\x85\x95
   minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
@@ -172,7 +172,7 @@ instructions:
   18: Match
 prefilter:
   data:
-0x61,
+\x61
   minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
@@ -212,7 +212,7 @@ instructions:
   7: Match
 prefilter:
   data:
-0x5D,
+\x5D\x01
   minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
@@ -239,8 +239,9 @@ instructions:
   14: Match
 prefilter:
   data:
-  minPrevCodePoints: 0
-  maxPrevCodePoints: 0
+\xE3\x81\x82\xE3\x81\x84
+  minPrevCodePoints: 3
+  maxPrevCodePoints: 3
 matchers:
   0: String
 \xE3\x81\x82\xE3\x81\x84
@@ -268,7 +269,7 @@ instructions:
   28: Match
 prefilter:
   data:
-0x40,
+\x40\x21
   minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
@@ -292,7 +293,7 @@ instructions:
   3: Match
 prefilter:
   data:
-0x31,
+\x31\x32\x33\x34\x35\x36
   minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:

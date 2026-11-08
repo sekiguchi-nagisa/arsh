@@ -15,8 +15,11 @@
  */
 
 #include "prefilter.h"
+
+#include "input.h"
 #include "instruction.h"
 #include "matcher.h"
+#include "misc/num_util.hpp"
 #include "misc/rtti.hpp"
 #include "misc/unicode.hpp"
 #include "unicode/case_fold.h"
@@ -148,8 +151,6 @@ bool FirstBytesCollector::collect(const Inst *begin, const Inst *end) {
     case OpCode::Any:
     case OpCode::AnyExceptNL:
     case OpCode::Grapheme:
-    case OpCode::BackRef:
-    case OpCode::IBackRef:
     case OpCode::LBAny:
     case OpCode::LBChar:
     case OpCode::LBCharSet:
@@ -157,6 +158,8 @@ bool FirstBytesCollector::collect(const Inst *begin, const Inst *end) {
     case OpCode::LBRadixOrEmoji:
     case OpCode::LBString:
     case OpCode::LBEndCapture:
+    case OpCode::BackRef:
+    case OpCode::IBackRef:
     case OpCode::LBBackRef:
       return false;
     case OpCode::Char:
@@ -216,6 +219,186 @@ bool FirstBytesCollector::collect(const Inst *begin, const Inst *end) {
   return false;
 }
 
+class CodePointCounter {
+private:
+  static constexpr unsigned int MAX_COUNT = UINT8_MAX;
+
+  unsigned int min{0};
+  unsigned int max{0};
+
+public:
+  unsigned short getMin() const { return this->min; }
+
+  unsigned short getMax() const { return this->max; }
+
+  bool increment(unsigned int deltaMin, unsigned int deltaMax) {
+    if (deltaMin <= MAX_COUNT && this->min <= MAX_COUNT - deltaMin && deltaMax <= MAX_COUNT &&
+        this->max <= MAX_COUNT - deltaMax) {
+      this->min += deltaMin;
+      this->max += deltaMax;
+      return true;
+    }
+    return false;
+  }
+};
+
+struct PrefilterBuilder {
+  const ArrayRef<Inst> instSeq;
+  const ArrayRef<Matcher> matchers;
+
+  PrefilterBuilder(ArrayRef<Inst> instSeq, ArrayRef<Matcher> matchers)
+      : instSeq(instSeq), matchers(matchers) {}
+
+  Prefilter operator()() {
+    CodePointCounter counter;
+    Prefilter prefilter;
+    this->build(this->instSeq.begin(), this->instSeq.end(), counter, &prefilter);
+    return prefilter;
+  }
+
+  bool build(const Inst *inst, const Inst *end, CodePointCounter &counter, Prefilter *prefilter);
+
+private:
+  template <typename T>
+  static void tryToUpdate(Prefilter &prefilter, const CodePointCounter &counter, T &&value) {
+    Prefilter newFilter(counter.getMin(), std::forward<T>(value), counter.getMax());
+    if (prefilter.isLowPriorityThan(newFilter)) {
+      prefilter = newFilter;
+    }
+  }
+};
+
+bool PrefilterBuilder::build(const Inst *inst, const Inst *const end, CodePointCounter &counter,
+                             Prefilter *prefilter) {
+  while (inst != end) {
+    switch (inst->op) {
+    case OpCode::Nop:
+    case OpCode::Match:
+    case OpCode::Jump:
+    case OpCode::Word:
+    case OpCode::IWord:
+    case OpCode::PrepareRadix:
+    case OpCode::BeginCapture:
+    case OpCode::EndCapture:
+    case OpCode::ResetCaptures:
+    case OpCode::EndLookAround:
+    case OpCode::EndLoop:
+      inst += sizeOfInst(inst);
+      continue;
+    case OpCode::Alt: {
+      if (prefilter) {
+        FirstBytesCollector collector(this->instSeq, this->matchers);
+        if (collector.collect(inst, end) && collector.set.any()) {
+          tryToUpdate(*prefilter, counter, collector.set);
+        }
+      }
+      return false; // TODO
+    }
+    case OpCode::Start:
+    case OpCode::End:
+    case OpCode::LBAny:
+    case OpCode::Grapheme:
+    case OpCode::LBChar:
+    case OpCode::LBCharSet:
+    case OpCode::PrepareLBRadix:
+    case OpCode::LBRadixOrEmoji:
+    case OpCode::LBString:
+    case OpCode::LBEndCapture:
+    case OpCode::BackRef:
+    case OpCode::IBackRef:
+    case OpCode::LBBackRef:
+      return false;
+    case OpCode::Any:
+    case OpCode::AnyExceptNL:
+      TRY(counter.increment(1, 1));
+      inst += sizeOfInst(inst);
+      continue;
+    case OpCode::Char:
+      if (prefilter) {
+        Prefilter::CodePoint cp;
+        cp.size = UnicodeUtil::codePointToUtf8(cast<CharIns>(*inst).getCodePoint(), cp.data.data());
+        tryToUpdate(*prefilter, counter, cp);
+      }
+      TRY(counter.increment(1, 1));
+      inst += sizeof(CharIns);
+      continue;
+    case OpCode::IChar:
+    case OpCode::CharSet:
+    case OpCode::ICharSet:
+      if (prefilter) {
+        FirstBytesCollector collector(this->instSeq, this->matchers);
+        if (collector.collect(inst, end) && collector.set.any()) {
+          tryToUpdate(*prefilter, counter, collector.set);
+        }
+      }
+      TRY(counter.increment(1, 1));
+      inst += sizeOfInst(inst);
+      continue;
+    case OpCode::RadixOrEmoji: {
+      if (prefilter) {
+        FirstBytesCollector collector(this->instSeq, this->matchers);
+        if (collector.collect(inst, end) && collector.set.any()) {
+          tryToUpdate(*prefilter, counter, collector.set);
+        }
+      }
+      auto &ins = cast<RadixOrEmojiIns>(*inst);
+      unsigned int codePointCount = 1;
+      if (ins.hasEmoji()) {
+        codePointCount = ucp::getEmojiTrie().getMaxCodePointCount();
+      }
+      if (ins.hasRadix) {
+        codePointCount = std::max<unsigned int>(
+            codePointCount, matchers[ins.getIndex()].asRadixTree().getMaxCodePointCount());
+      }
+      TRY(counter.increment(1, codePointCount));
+      inst += sizeof(RadixOrEmojiIns);
+      inst += ins.nextOffset;
+      continue;
+    }
+    case OpCode::String: {
+      const StringRef ref = this->matchers[cast<StringIns>(*inst).getIndex()].asStrRef();
+      if (prefilter) {
+        tryToUpdate(*prefilter, counter, ref);
+      }
+      unsigned int count = 0;
+      for (auto iter = ref.begin(); iter != ref.end();) {
+        count++;
+        unsafeNextUtf8Noreturn(iter);
+      }
+      TRY(counter.increment(count, count));
+      inst += sizeof(StringIns);
+      continue;
+    }
+    case OpCode::BeginLoop: {
+      auto &ins = cast<BeginLoopIns>(*inst);
+      if (prefilter) {
+        FirstBytesCollector collector(this->instSeq, this->matchers);
+        if (collector.collect(inst, end) && collector.set.any()) {
+          tryToUpdate(*prefilter, counter, collector.set);
+        }
+      }
+      CodePointCounter sub;
+      {
+        const auto subBegin = inst + sizeof(BeginLoopIns);
+        const auto subEnd = this->instSeq.begin() + ins.getOuter();
+        TRY(this->build(subBegin, subEnd, sub, nullptr));
+      }
+      unsigned int deltaMin;
+      TRY(!mul_overflow(sub.getMin(), ins.getMin(), deltaMin));
+      unsigned int deltaMax;
+      TRY(!mul_overflow(sub.getMax(), ins.getMax(), deltaMax));
+      TRY(counter.increment(deltaMin, deltaMax));
+      inst = this->instSeq.begin() + ins.getOuter();
+      continue;
+    }
+    case OpCode::BeginLookAround:
+      inst = this->instSeq.begin() + cast<BeginLookAroundIns>(*inst).getTarget();
+      break; // skip look-around body
+    }
+  }
+  return true;
+}
+
 FirstBitSet createFirstBitSet(const ArrayRef<Inst> instSeq, const ArrayRef<Matcher> matchers) {
   if (FirstBytesCollector collector(instSeq, matchers); collector()) {
     return collector.set;
@@ -224,10 +407,8 @@ FirstBitSet createFirstBitSet(const ArrayRef<Inst> instSeq, const ArrayRef<Match
 }
 
 Prefilter createPrefilter(const ArrayRef<Inst> instSeq, const ArrayRef<Matcher> matchers) {
-  if (FirstBytesCollector collector(instSeq, matchers); collector()) {
-    return {0, collector.set, 0};
-  }
-  return {};
+  PrefilterBuilder builder(instSeq, matchers);
+  return builder();
 }
 
 } // namespace arsh::regex

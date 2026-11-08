@@ -581,9 +581,12 @@ INSTANTIATE_TEST_SUITE_P(PrefilterConstructTest, PrefilterConstructTest,
                          ::testing::ValuesIn(prefilterConstructCases));
 
 /**
- * Regression cases: the smallest inputs that used to make the two runs differ, before the retry
- * loop was changed to reset the capture and loop state for every start offset
- * (see `ctx.resetState()` in src/regex/vm.cpp).
+ * Regression cases: the smallest inputs that used to make the two runs differ.
+ *
+ * The first group covers the retry loop resetting the capture and loop state for every start
+ * offset (see `ctx.resetState()` in src/regex/vm.cpp). The second group covers the candidate scan
+ * rewinding its start offset before the lowest position not yet ruled out, which made it report
+ * an overlapping match at a start offset a previous attempt had already covered.
  */
 struct PrefilterRegressionEntry {
   const char *pattern;
@@ -636,6 +639,14 @@ static constexpr PrefilterRegressionEntry prefilterRegressionCases[] = {
     {"(?:q|(?=(T))o)", "amq", regex::Modifier::NONE, "(offset=2, size=1)\n(unset)\n"},
     {"(?:(?=(x)?)\\d)", "xm\no1Axz9xx", regex::Modifier::MULTILINE,
      "(offset=4, size=1)\n(unset)\n(offset=8, size=1)\n(unset)\n"},
+    // `BITSET` prefilter: the first byte set is `a`, one code point behind `AnyExceptNL`, so a
+    // candidate at offset 2 is rewound to 1 and overlaps the match found at offset 0
+    {".a", "aaa", regex::Modifier::NONE, "(offset=0, size=2)\n"},
+    {".[abc]", "aaa", regex::Modifier::NONE, "(offset=0, size=2)\n"},
+    // `CHAR` prefilter: same rewind through a multi byte needle
+    {".\\u{3042}", "\xE3\x81\x82\xE3\x81\x82\xE3\x81\x82", regex::Modifier::NONE,
+     "(offset=0, size=6)\n"},
+    {"..a", "aaaa", regex::Modifier::NONE, "(offset=0, size=3)\n"},
 };
 
 INSTANTIATE_TEST_SUITE_P(PrefilterRegressionTest, PrefilterRegressionTest,

@@ -375,6 +375,7 @@ static bool nextCandidates(const Inst *&inst, Input &input, const char *&startIt
   }
 
   // redo
+  const char *const scanStart = startIter;
   unsigned int &prevCodePoints = ctx.refPrevCodePoints();
   if (prevCodePoints) {
     prevCodePoints--;
@@ -390,29 +391,28 @@ static bool nextCandidates(const Inst *&inst, Input &input, const char *&startIt
   switch (prefilter.getType()) {
   case Prefilter::Type::NONE:
     break;
-  case Prefilter::Type::BITSET:
-    if (auto &firstSet = prefilter.asBitSet(); firstSet.any()) {
-      bool matched = false;
-      const auto *iter = input.getIter();
-      for (const auto *end = input.getEnd(); iter != end; ++iter) {
-        const auto b = static_cast<unsigned char>(*iter);
-        if (firstSet[b]) { // never match utf8 following bytes
-          matched = true;
-          break;
-        }
+  case Prefilter::Type::BITSET: {
+    auto &firstSet = prefilter.asBitSet();
+    bool matched = false;
+    const auto *iter = input.getIter();
+    for (const auto *end = input.getEnd(); iter != end; ++iter) {
+      const auto b = static_cast<unsigned char>(*iter);
+      if (firstSet[b]) { // never match utf8 following bytes
+        matched = true;
+        break;
       }
-      if (matched) {
-        ctx.refPrefilterFound() = iter;
-        while (prevCodePoints < prefilter.getMaxPrevCodePoints() && iter != input.getBegin()) {
-          prevCodePoints++;
-          unsafePrevUtf8(iter);
-        }
-      }
-      startIter = iter;
-      input.setIter(iter);
-      return matched;
     }
-    break;
+    if (matched) {
+      ctx.refPrefilterFound() = iter;
+      while (prevCodePoints < prefilter.getMaxPrevCodePoints() && iter != scanStart) {
+        prevCodePoints++;
+        unsafePrevUtf8(iter);
+      }
+    }
+    startIter = iter;
+    input.setIter(iter);
+    return matched;
+  }
   case Prefilter::Type::CHAR:
   case Prefilter::Type::STRING: {
     const StringRef needle = prefilter.getType() == Prefilter::Type::CHAR
@@ -421,7 +421,7 @@ static bool nextCandidates(const Inst *&inst, Input &input, const char *&startIt
     if (const auto retPos = input.remainForward().find(needle); retPos != StringRef::npos) {
       startIter = input.getIter() + retPos;
       ctx.refPrefilterFound() = startIter;
-      while (prevCodePoints < prefilter.getMaxPrevCodePoints() && startIter != input.getBegin()) {
+      while (prevCodePoints < prefilter.getMaxPrevCodePoints() && startIter != scanStart) {
         prevCodePoints++;
         unsafePrevUtf8(startIter);
       }

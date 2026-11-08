@@ -114,7 +114,7 @@ instructions:
   11: Match
 prefilter:
   data:
-0x40,
+\x40
   minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:

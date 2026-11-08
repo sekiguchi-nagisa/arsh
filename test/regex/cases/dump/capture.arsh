@@ -14,7 +14,7 @@ instructions:
   11: Match
 prefilter:
   data:
-0xE3,
+\xE3\x81\x82
   minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
@@ -33,7 +33,7 @@ instructions:
   11: Match
 prefilter:
   data:
-0xE3,
+\xE3\x81\x82
   minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
@@ -55,7 +55,7 @@ instructions:
   20: Match
 prefilter:
   data:
-0xE3,
+\xE3\x81\x82
   minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
@@ -81,7 +81,7 @@ instructions:
   20: Match
 prefilter:
   data:
-0xE3,
+\xE3\x81\x82
   minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:

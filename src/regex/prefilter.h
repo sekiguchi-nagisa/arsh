@@ -49,8 +49,8 @@ public:
 
 private:
   Type type{Type::NONE};
-  unsigned int minPrevCodePoints{0};
-  unsigned int maxPrevCodePoints{0};
+  unsigned short minPrevCodePoints{0};
+  unsigned short maxPrevCodePoints{0};
   union {
     CodePoint codePoint;
     StringRef ref;
@@ -60,23 +60,23 @@ private:
 public:
   Prefilter() : ref({}) {}
 
-  Prefilter(unsigned int minCodePoints, const FirstBitSet &set, unsigned int maxCodePoints)
+  Prefilter(unsigned short minCodePoints, const FirstBitSet &set, unsigned short maxCodePoints)
       : type(Type::BITSET), minPrevCodePoints(minCodePoints), maxPrevCodePoints(maxCodePoints),
         set(set) {}
 
-  Prefilter(unsigned int minCodePoints, const CodePoint &codePoint, unsigned int maxCodePoints)
+  Prefilter(unsigned short minCodePoints, const CodePoint &codePoint, unsigned short maxCodePoints)
       : type(Type::CHAR), minPrevCodePoints(minCodePoints), maxPrevCodePoints(maxCodePoints),
         codePoint(codePoint) {}
 
-  Prefilter(unsigned int minCodePoints, StringRef ref, unsigned int maxCodePoints)
+  Prefilter(unsigned short minCodePoints, StringRef ref, unsigned short maxCodePoints)
       : type(Type::STRING), minPrevCodePoints(minCodePoints), maxPrevCodePoints(maxCodePoints),
         ref(ref) {}
 
   Type getType() const { return this->type; }
 
-  unsigned int getMaxPrevCodePoints() const { return this->maxPrevCodePoints; }
+  auto getMaxPrevCodePoints() const { return this->maxPrevCodePoints; }
 
-  unsigned int getMinPrevCodePoints() const { return this->minPrevCodePoints; }
+  auto getMinPrevCodePoints() const { return this->minPrevCodePoints; }
 
   const auto &asBitSet() const { return this->set; }
 
@@ -97,7 +97,7 @@ public:
       case Type::BITSET:
         return this->asBitSet().count() > other.asBitSet().count();
       case Type::STRING:
-        return this->asStrRef() < other.asStrRef();
+        return this->asStrRef().size() < other.asStrRef().size();
       }
     }
     return false;
