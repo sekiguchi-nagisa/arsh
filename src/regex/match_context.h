@@ -72,8 +72,15 @@ public:
 
   void setPrefilter(bool set) { this->prefilter = set; }
 
-  void resetState() {
+  Capture *prepare() {
+    this->prefilterFound = nullptr;
+    this->prevCodePoints = 0;
     this->captures.resize(this->captureGroupCount + 1);
+    this->resetState();
+    return this->getCaptures();
+  }
+
+  void resetState() {
     std::fill(this->captures.begin(), this->captures.end(), Capture());
     std::fill(this->loops.begin(), this->loops.end(), LoopState());
   }
