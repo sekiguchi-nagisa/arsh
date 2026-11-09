@@ -39,7 +39,7 @@ union Backtrack {
   struct {
     BacktrackOp op; // NOLINT
     uint32_t target;
-    const char *iter;
+    uint32_t inputOffset;
   } setIns;
 
   struct {
@@ -65,7 +65,7 @@ union Backtrack {
     bool negate;
     bool matched;
     uint32_t target;
-    const char *iter;
+    uint32_t inputOffset;
   } lookAround;
 
   struct {
@@ -74,7 +74,8 @@ union Backtrack {
   } radixState;
 
   static Backtrack newSetIns(const Input &input, uint32_t target) {
-    return {.setIns = {.op = BacktrackOp::SetIns, .target = target, .iter = input.getIter()}};
+    return {
+        .setIns = {.op = BacktrackOp::SetIns, .target = target, .inputOffset = input.getOffset()}};
   }
 
   static Backtrack newSetCapture(uint32_t index, Capture capture) {
@@ -95,14 +96,11 @@ union Backtrack {
 
   static Backtrack newLookAround(const Input &input, uint32_t target, bool negate) {
     return {
-        .lookAround =
-            {
-                .op = BacktrackOp::LookAround,
-                .negate = negate,
-                .matched = !negate,
-                .target = target,
-                .iter = input.getIter(),
-            },
+        .lookAround = {.op = BacktrackOp::LookAround,
+                       .negate = negate,
+                       .matched = !negate,
+                       .target = target,
+                       .inputOffset = input.getOffset()},
     };
   }
 
@@ -203,7 +201,7 @@ public:
     }
     assert(!this->empty());
     const auto bt = this->pop();
-    input.setIter(bt.lookAround.iter);
+    input.setOffset(bt.lookAround.inputOffset);
     return bt.lookAround.matched;
   }
 
@@ -226,7 +224,7 @@ bool BacktrackStack::backtrack(const Inst *&inst, Input &input, Capture *capture
     switch (bt.op) {
     case BacktrackOp::SetIns:
       inst = this->getStartInst() + bt.setIns.target;
-      input.setIter(bt.setIns.iter);
+      input.setOffset(bt.setIns.inputOffset);
       return true;
     case BacktrackOp::SetCapture:
       captures[bt.setCapture.index] = bt.setCapture.capture;
@@ -241,7 +239,7 @@ bool BacktrackStack::backtrack(const Inst *&inst, Input &input, Capture *capture
       const auto extra = this->pop();
       assert(extra.op == BacktrackOp::SetIns);
       inst = this->getStartInst() + extra.setIns.target;
-      input.setIter(extra.setIns.iter);
+      input.setOffset(extra.setIns.inputOffset);
       inst += sizeof(BeginLoopIns);                                   // goto loop body
       this->prepareLoopBody(input, loopIndex, loopStates[loopIndex]); // never fail (already pop)
       return true;

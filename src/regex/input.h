@@ -149,6 +149,8 @@ public:
 
   unsigned int getOffset() const { return this->iter - this->begin; }
 
+  void setOffset(unsigned int offset) { this->iter = this->begin + offset; }
+
   const char *getBegin() const { return this->begin; }
 
   const char *getEnd() const { return this->end; }

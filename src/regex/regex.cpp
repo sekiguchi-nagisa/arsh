@@ -170,7 +170,7 @@ MatchStatus replace(const Regex &regex, const ReplaceParam &param, const Observe
     const auto s = match(regex, ctx.asOk(), timer);
     auto &input = ctx.asOk().refInput(); // input is updated after call match
     if (s == MatchStatus::FAIL) {
-      input.setIter(input.getBegin() + matchStartOffset);
+      input.setOffset(matchStartOffset);
       break;
     }
     if (s != MatchStatus::OK) {
@@ -210,7 +210,7 @@ MatchStatus split(const Regex &regex, const StringRef text, const unsigned int l
     const auto s = match(regex, ctx.asOk(), timer);
     auto &input = ctx.asOk().refInput(); // input is updated after call match
     if (s == MatchStatus::FAIL) {
-      input.setIter(input.getBegin() + matchStartOffset);
+      input.setOffset(matchStartOffset);
       break;
     }
     if (s != MatchStatus::OK) {
@@ -241,13 +241,13 @@ MatchStatus matchAll(const Regex &regex, const StringRef text, const unsigned in
   if (!ctx) {
     return ctx.asErr();
   }
-  unsigned int matchStartOffset = 0;
+  unsigned int matchStartOffset;
   do {
     matchStartOffset = ctx.asOk().getInput().getOffset();
     const auto s = match(regex, ctx.asOk(), timer);
     auto &input = ctx.asOk().refInput(); // input is updated after call match
     if (s == MatchStatus::FAIL) {
-      input.setIter(input.getBegin() + matchStartOffset);
+      input.setOffset(matchStartOffset);
       break;
     }
     if (s != MatchStatus::OK) {
