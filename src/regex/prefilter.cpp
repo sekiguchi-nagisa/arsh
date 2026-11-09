@@ -379,7 +379,8 @@ bool PrefilterBuilder::build(const Inst *inst, const Inst *const end, CodePointC
       }
       CodePointCounter sub;
       {
-        const auto subBegin = inst + sizeof(BeginLoopIns);
+        auto subBegin = inst;
+        subBegin += sizeof(BeginLoopIns); // due to suppress code analysis warning
         const auto subEnd = this->instSeq.begin() + ins.getOuter();
         TRY(this->build(subBegin, subEnd, sub, nullptr));
       }
