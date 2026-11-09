@@ -258,23 +258,28 @@ bool BacktrackStack::backtrack(const Inst *&inst, Input &input, Capture *capture
   return false;
 }
 
+static StringRef foldAll(const StringRef ref, std::string &buf) {
+  buf.resize(ref.size() * 4);
+  char *out = buf.data();
+  const char *iter = ref.begin();
+  const char *end = ref.end();
+  while (iter != end) {
+    const int codePoint = doSimpleCaseFolding(unsafeNextUtf8(iter));
+    const auto len = UnicodeUtil::codePointToUtf8(codePoint, out);
+    assert(len);
+    out += len;
+  }
+  buf.resize(static_cast<size_t>(out - buf.data()));
+  return buf;
+}
+
 static std::pair<unsigned short, unsigned char> findLongestMatched(const PackedRadixTree tree,
                                                                    StringRef ref,
                                                                    std::string &foldBuf,
                                                                    const bool caseFold) {
   const auto old = ref;
   if (caseFold) {
-    foldBuf.clear();
-    const char *iter = ref.begin();
-    const char *end = ref.end();
-    while (iter != end) {
-      int codePoint = doSimpleCaseFolding(unsafeNextUtf8(iter));
-      char data[4];
-      const auto len = UnicodeUtil::codePointToUtf8(codePoint, data);
-      assert(len);
-      foldBuf.append(data, len);
-    }
-    ref = foldBuf;
+    ref = foldAll(ref, foldBuf);
   }
   auto [s, p] = tree.findLongestMatched(ref);
   if (caseFold && p) { // remap to original byte size
@@ -297,17 +302,7 @@ findBackwardLongestMatched(const PackedRadixTree tree, StringRef ref, std::strin
                            const bool caseFold) {
   auto old = ref;
   if (caseFold) {
-    foldBuf.clear();
-    const char *iter = ref.begin();
-    const char *end = ref.end();
-    while (iter != end) {
-      int codePoint = doSimpleCaseFolding(unsafeNextUtf8(iter));
-      char data[4];
-      const auto len = UnicodeUtil::codePointToUtf8(codePoint, data);
-      assert(len);
-      foldBuf.append(data, len);
-    }
-    ref = foldBuf;
+    ref = foldAll(ref, foldBuf);
   }
   while (!ref.empty()) {
     auto [s, p] = tree.findLongestMatched(ref);
