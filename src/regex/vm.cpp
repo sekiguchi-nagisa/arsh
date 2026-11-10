@@ -28,7 +28,7 @@ enum class BacktrackOp : unsigned char {
   SetIns,
   SetCapture,
   SetLoopState,
-  LoopExit,
+  NonGreedyLoop,
   LookAround,
   RadixState,
 };
@@ -56,12 +56,9 @@ union Backtrack {
 
   struct {
     BacktrackOp op; // NOLINT
-    bool greedy;
     uint16_t loopIndex;
     LoopState state;
-    uint32_t target;
-    uint32_t inputOffset;
-  } loopExit;
+  } nonGreedyLoop;
 
   struct {
     BacktrackOp op; // NOLINT
@@ -91,14 +88,10 @@ union Backtrack {
     };
   }
 
-  static Backtrack newLoopExit(uint16_t loopIndex, LoopState state, bool greedy, const Input &input,
-                               uint32_t target) {
-    return {.loopExit = {.op = BacktrackOp::LoopExit,
-                         .greedy = greedy,
-                         .loopIndex = loopIndex,
-                         .state = state,
-                         .target = target,
-                         .inputOffset = input.getOffset()}};
+  static Backtrack newNonGreedyLoop(uint16_t loopIndex, LoopState state) {
+    return {
+        .nonGreedyLoop = {.op = BacktrackOp::NonGreedyLoop, .loopIndex = loopIndex, .state = state},
+    };
   }
 
   static Backtrack newLookAround(const Input &input, uint32_t target, bool negate) {
@@ -179,18 +172,14 @@ public:
   }
 
   bool prepareGreedyLoop(const Input &input, const BeginLoopIns &loopIns, LoopState &loop) {
-    if (!this->push(Backtrack::newLoopExit(loopIns.getLoopIndex(), loop, true, input,
-                                           loopIns.getOuter()))) {
-      return false;
-    }
-    loop.count++;
-    loop.inputOffset = input.getOffset();
-    return true;
+    return this->push(Backtrack::newSetIns(input, loopIns.getOuter())) &&
+           this->prepareLoopBody(input, loopIns.getLoopIndex(), loop);
   }
 
   bool prepareNonGreedyLoop(const Input &input, const Inst *beginInst, const LoopState &loop) {
-    return this->push(Backtrack::newLoopExit(cast<BeginLoopIns>(*beginInst).getLoopIndex(), loop,
-                                             false, input, beginInst - this->getStartInst()));
+    return this->push(Backtrack::newSetIns(input, beginInst - this->getStartInst())) &&
+           this->push(
+               Backtrack::newNonGreedyLoop(cast<BeginLoopIns>(*beginInst).getLoopIndex(), loop));
   }
 
   bool cleanupLookAround(Input &input, Capture *captures) {
@@ -243,14 +232,14 @@ bool BacktrackStack::backtrack(const Inst *&inst, Input &input, Capture *capture
     case BacktrackOp::SetLoopState:
       loopStates[bt.setLoopState.loopIndex] = bt.setLoopState.state;
       break;
-    case BacktrackOp::LoopExit: {
-      const auto loopIndex = bt.loopExit.loopIndex;
-      loopStates[loopIndex] = bt.loopExit.state;
-      inst = this->getStartInst() + bt.loopExit.target;
-      input.setOffset(bt.loopExit.inputOffset);
-      if (bt.loopExit.greedy) {
-        return true;
-      }
+    case BacktrackOp::NonGreedyLoop: {
+      const auto loopIndex = bt.nonGreedyLoop.loopIndex;
+      loopStates[loopIndex] = bt.nonGreedyLoop.state;
+      assert(!this->empty());
+      const auto extra = this->pop();
+      assert(extra.op == BacktrackOp::SetIns);
+      inst = this->getStartInst() + extra.setIns.target;
+      input.setOffset(extra.setIns.inputOffset);
       inst += sizeof(BeginLoopIns);                                   // goto loop body
       this->prepareLoopBody(input, loopIndex, loopStates[loopIndex]); // never fail (already pop)
       return true;
