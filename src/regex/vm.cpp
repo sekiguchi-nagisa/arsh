@@ -161,17 +161,8 @@ public:
   const Inst *getStartInst() const { return this->start; }
 
   bool push(const Backtrack bt) {
-    constexpr unsigned int MAX_STACK_CAP = computeMaxStackCap();
-
-    if (this->size == this->cap) {
-      if (unlikely(this->size == MAX_STACK_CAP)) {
-        return false;
-      }
-      this->cap += this->cap >> 1u;
-      auto *newPtr = static_cast<Backtrack *>(::operator new(sizeof(Backtrack) * this->cap));
-      memcpy(newPtr, this->ptr, sizeof(Backtrack) * this->size);
-      std::swap(this->ptr, newPtr);
-      ::operator delete(newPtr);
+    if (unlikely(!this->reserve(this->size + 1))) {
+      return false;
     }
     this->ptr[this->size++] = bt;
     return true;
@@ -184,17 +175,22 @@ public:
   bool backtrack(const Inst *&inst, Input &input, Capture *captures, LoopState *loopStates);
 
   bool prepareLoopBody(const Input &input, uint16_t loopIndex, LoopState &loop) {
-    if (!this->push(Backtrack::newSetLoopState(loopIndex, loop))) {
+    if (unlikely(!this->reserve(this->size + 1))) {
       return false;
     }
-    loop.count++;
-    loop.inputOffset = input.getOffset();
+    this->prepareLoopBodyUncheck(input, loopIndex, loop);
     return true;
   }
 
+  void prepareLoopBodyUncheck(const Input &input, uint16_t loopIndex, LoopState &loop) {
+    this->ptr[this->size++] = Backtrack::newSetLoopState(loopIndex, loop);
+    loop.count++;
+    loop.inputOffset = input.getOffset();
+  }
+
   bool prepareGreedyLoop(const Input &input, const BeginLoopIns &loopIns, LoopState &loop) {
-    if (!this->push(
-        Backtrack::newGreedyLoop(loopIns.getLoopIndex(), loop, input, loopIns.getOuter()))) {
+    if (unlikely(!this->push(
+            Backtrack::newGreedyLoop(loopIns.getLoopIndex(), loop, input, loopIns.getOuter())))) {
       return false;
     }
     loop.count++;
@@ -203,9 +199,13 @@ public:
   }
 
   bool prepareNonGreedyLoop(const Input &input, const Inst *beginInst, const LoopState &loop) {
-    return this->push(Backtrack::newSetIns(input, beginInst - this->getStartInst())) &&
-           this->push(
-               Backtrack::newNonGreedyLoop(cast<BeginLoopIns>(*beginInst).getLoopIndex(), loop));
+    if (unlikely(!this->reserve(this->size + 2))) {
+      return false;
+    }
+    this->ptr[this->size++] = Backtrack::newSetIns(input, beginInst - this->getStartInst());
+    this->ptr[this->size++] =
+        Backtrack::newNonGreedyLoop(cast<BeginLoopIns>(*beginInst).getLoopIndex(), loop);
+    return true;
   }
 
   bool cleanupLookAround(Input &input, Capture *captures) {
@@ -232,6 +232,21 @@ public:
   }
 
 private:
+  bool reserve(const unsigned int newSize) {
+    constexpr unsigned int MAX_STACK_CAP = computeMaxStackCap();
+    if (newSize > this->cap) {
+      if (unlikely(newSize > MAX_STACK_CAP)) {
+        return false;
+      }
+      this->cap = newSize + (newSize >> 1u);
+      auto *newPtr = static_cast<Backtrack *>(::operator new(sizeof(Backtrack) * this->cap));
+      memcpy(newPtr, this->ptr, sizeof(Backtrack) * this->size);
+      std::swap(this->ptr, newPtr);
+      ::operator delete(newPtr);
+    }
+    return true;
+  }
+
   Backtrack &back() { return this->ptr[this->size - 1]; }
 
   const Backtrack &back() const { return this->ptr[this->size - 1]; }
@@ -272,14 +287,15 @@ bool BacktrackStack::backtrack(const Inst *&inst, Input &input, Capture *capture
       assert(extra.op == BacktrackOp::SetIns);
       inst = this->getStartInst() + extra.setIns.target;
       input.setOffset(extra.setIns.inputOffset);
-      inst += sizeof(BeginLoopIns);                                   // goto loop body
-      this->prepareLoopBody(input, loopIndex, loopStates[loopIndex]); // never fail (already pop)
+      inst += sizeof(BeginLoopIns); // goto loop body
+      // never fail (already pop)
+      this->prepareLoopBodyUncheck(input, loopIndex, loopStates[loopIndex]);
       return true;
     }
     case BacktrackOp::LookAround:
       inst = this->getStartInst() + bt.lookAround.target;
       bt.lookAround.matched = bt.lookAround.negate; // if negative lookaround, matched
-      this->push(bt);                               // never fail (already pop)
+      this->ptr[this->size++] = bt;                 // never fail (already pop)
       return true;
     case BacktrackOp::RadixState:
       break;
