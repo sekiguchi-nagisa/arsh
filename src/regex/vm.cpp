@@ -28,6 +28,7 @@ enum class BacktrackOp : unsigned char {
   SetIns,
   SetCapture,
   SetLoopState,
+  GreedyLoop,
   NonGreedyLoop,
   LookAround,
   RadixState,
@@ -53,6 +54,14 @@ union Backtrack {
     uint16_t loopIndex;
     LoopState state;
   } setLoopState;
+
+  struct {
+    BacktrackOp op; // NOLINT
+    uint16_t loopIndex;
+    uint32_t loopCount;
+    uint32_t target;
+    uint32_t inputOffset;
+  } greedyLoop;
 
   struct {
     BacktrackOp op; // NOLINT
@@ -88,6 +97,17 @@ union Backtrack {
     };
   }
 
+  static Backtrack newGreedyLoop(uint16_t loopIndex, LoopState state, const Input &input,
+                                 uint32_t target) {
+    return {
+        .greedyLoop = {.op = BacktrackOp::GreedyLoop,
+                       .loopIndex = loopIndex,
+                       .loopCount = state.count,
+                       .target = target,
+                       .inputOffset = input.getOffset()},
+    };
+  }
+
   static Backtrack newNonGreedyLoop(uint16_t loopIndex, LoopState state) {
     return {
         .nonGreedyLoop = {.op = BacktrackOp::NonGreedyLoop, .loopIndex = loopIndex, .state = state},
@@ -112,6 +132,7 @@ union Backtrack {
 class BacktrackStack {
 private:
   static_assert(std::is_trivially_copy_constructible_v<Backtrack>);
+  static_assert(sizeof(Backtrack) == 16);
 
   static constexpr unsigned int INIT_CAP = 6;
 
@@ -172,8 +193,8 @@ public:
   }
 
   bool prepareGreedyLoop(const Input &input, const BeginLoopIns &loopIns, LoopState &loop) {
-    return this->push(Backtrack::newSetIns(input, loopIns.getOuter())) &&
-           this->prepareLoopBody(input, loopIns.getLoopIndex(), loop);
+    return this->push(
+        Backtrack::newGreedyLoop(loopIns.getLoopIndex(), loop, input, loopIns.getOuter()));
   }
 
   bool prepareNonGreedyLoop(const Input &input, const Inst *beginInst, const LoopState &loop) {
@@ -232,6 +253,12 @@ bool BacktrackStack::backtrack(const Inst *&inst, Input &input, Capture *capture
     case BacktrackOp::SetLoopState:
       loopStates[bt.setLoopState.loopIndex] = bt.setLoopState.state;
       break;
+    case BacktrackOp::GreedyLoop:
+      // only restore loop count
+      loopStates[bt.greedyLoop.loopIndex].count = bt.greedyLoop.loopCount;
+      inst = this->getStartInst() + bt.greedyLoop.target;
+      input.setOffset(bt.greedyLoop.inputOffset);
+      return true;
     case BacktrackOp::NonGreedyLoop: {
       const auto loopIndex = bt.nonGreedyLoop.loopIndex;
       loopStates[loopIndex] = bt.nonGreedyLoop.state;
