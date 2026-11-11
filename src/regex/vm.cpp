@@ -193,8 +193,13 @@ public:
   }
 
   bool prepareGreedyLoop(const Input &input, const BeginLoopIns &loopIns, LoopState &loop) {
-    return this->push(
-        Backtrack::newGreedyLoop(loopIns.getLoopIndex(), loop, input, loopIns.getOuter()));
+    if (!this->push(
+        Backtrack::newGreedyLoop(loopIns.getLoopIndex(), loop, input, loopIns.getOuter()))) {
+      return false;
+    }
+    loop.count++;
+    loop.inputOffset = input.getOffset();
+    return true;
   }
 
   bool prepareNonGreedyLoop(const Input &input, const Inst *beginInst, const LoopState &loop) {
