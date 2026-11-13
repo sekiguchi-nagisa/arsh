@@ -1,0 +1,39 @@
+{"flags": "ui", "pattern": "[a-z]", "input": "a"}
+{"flags": "ui", "pattern": "[a-z]", "input": "A"}
+{"flags": "ui", "pattern": "[a-z]", "input": "abc"}
+{"flags": "ui", "pattern": "[a-z]", "input": "ABC"}
+{"flags": "ui", "pattern": "[a-z]", "input": "AbC"}
+{"flags": "ui", "pattern": "[a-z]", "input": "1"}
+{"flags": "ui", "pattern": "[A-Z]", "input": "a"}
+{"flags": "ui", "pattern": "[A-Z]", "input": "A"}
+{"flags": "ui", "pattern": "[A-Z]", "input": "abc"}
+{"flags": "ui", "pattern": "[A-Z]", "input": "ABC"}
+{"flags": "ui", "pattern": "[A-Z]", "input": "AbC"}
+{"flags": "ui", "pattern": "[A-Z]", "input": "1"}
+{"flags": "ui", "pattern": "abc", "input": "a"}
+{"flags": "ui", "pattern": "abc", "input": "A"}
+{"flags": "ui", "pattern": "abc", "input": "abc"}
+{"flags": "ui", "pattern": "abc", "input": "ABC"}
+{"flags": "ui", "pattern": "abc", "input": "AbC"}
+{"flags": "ui", "pattern": "abc", "input": "1"}
+{"flags": "ui", "pattern": "ABC", "input": "a"}
+{"flags": "ui", "pattern": "ABC", "input": "A"}
+{"flags": "ui", "pattern": "ABC", "input": "abc"}
+{"flags": "ui", "pattern": "ABC", "input": "ABC"}
+{"flags": "ui", "pattern": "ABC", "input": "AbC"}
+{"flags": "ui", "pattern": "ABC", "input": "1"}
+{"flags": "ui", "pattern": "\\u00e9", "input": "é"}
+{"flags": "ui", "pattern": "\\u00e9", "input": "É"}
+{"flags": "ui", "pattern": "é", "input": "é"}
+{"flags": "ui", "pattern": "é", "input": "É"}
+{"flags": "ui", "pattern": "\\u03b1", "input": "Α"}
+{"flags": "ui", "pattern": "\\u03b1", "input": "α"}
+{"flags": "ui", "pattern": "あ", "input": "あ"}
+{"flags": "ui", "pattern": "[\\p{L}]", "input": "a", "unicode": "stable"}
+{"flags": "ui", "pattern": "[\\p{L}]", "input": "A", "unicode": "stable"}
+{"flags": "ui", "pattern": "[\\p{L}]", "input": "É", "unicode": "stable"}
+{"flags": "uim", "pattern": "abc", "input": "ABC"}
+{"flags": "uim", "pattern": "abc", "input": "AbC"}
+{"flags": "vi", "pattern": "[a-z]", "input": "A"}
+{"flags": "vi", "pattern": "[a-z]", "input": "a"}
+{"flags": "vi", "pattern": "é", "input": "É"}

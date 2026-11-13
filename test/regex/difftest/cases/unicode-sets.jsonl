@@ -1,0 +1,53 @@
+{"flags": "u", "pattern": "[\\p{L}--[a-z]]", "input": "abc", "requires": ["unicode-sets"], "unicode": "stable"}
+{"flags": "u", "pattern": "[\\p{L}--[a-z]]", "input": "A", "requires": ["unicode-sets"], "unicode": "stable"}
+{"flags": "u", "pattern": "[\\p{L}--[a-z]]", "input": "1", "requires": ["unicode-sets"], "unicode": "stable"}
+{"flags": "u", "pattern": "[\\p{L}--[a-z]]", "input": "あ", "requires": ["unicode-sets"], "unicode": "stable"}
+{"flags": "u", "pattern": "[\\p{L}&&[^a-z]]", "input": "abc", "requires": ["unicode-sets"], "unicode": "stable"}
+{"flags": "u", "pattern": "[\\p{L}&&[^a-z]]", "input": "A", "requires": ["unicode-sets"], "unicode": "stable"}
+{"flags": "u", "pattern": "[\\p{L}&&[^a-z]]", "input": "あ", "requires": ["unicode-sets"], "unicode": "stable"}
+{"flags": "u", "pattern": "[\\p{Lu}--[A]]", "input": "A", "requires": ["unicode-sets"], "unicode": "stable"}
+{"flags": "u", "pattern": "[\\p{Lu}--[A]]", "input": "B", "requires": ["unicode-sets"], "unicode": "stable"}
+{"flags": "u", "pattern": "[\\p{Lu}--[A]]", "input": "a", "requires": ["unicode-sets"], "unicode": "stable"}
+{"flags": "u", "pattern": "[a-z--[aeiou]]", "input": "a", "requires": ["unicode-sets"]}
+{"flags": "u", "pattern": "[a-z--[aeiou]]", "input": "b", "requires": ["unicode-sets"]}
+{"flags": "u", "pattern": "[a-z--[aeiou]]", "input": "e", "requires": ["unicode-sets"]}
+{"flags": "u", "pattern": "[a-z--[aeiou]]", "input": "z", "requires": ["unicode-sets"]}
+{"flags": "u", "pattern": "[a-z--[aeiou]]", "input": "A", "requires": ["unicode-sets"]}
+{"flags": "u", "pattern": "[\\q{abc}]", "input": "a", "requires": ["unicode-sets"]}
+{"flags": "u", "pattern": "[\\q{abc}]", "input": "b", "requires": ["unicode-sets"]}
+{"flags": "u", "pattern": "[\\q{abc}]", "input": "c", "requires": ["unicode-sets"]}
+{"flags": "u", "pattern": "[\\q{abc}]", "input": "d", "requires": ["unicode-sets"]}
+{"flags": "u", "pattern": "[\\q{abc}]", "input": "abc", "requires": ["unicode-sets"]}
+{"flags": "u", "pattern": "[\\q{abc}]", "input": "cd", "requires": ["unicode-sets"]}
+{"flags": "u", "pattern": "[\\q{abc}]", "input": "x", "requires": ["unicode-sets"]}
+{"flags": "u", "pattern": "[\\q{ab|cd}]", "input": "a", "requires": ["unicode-sets"]}
+{"flags": "u", "pattern": "[\\q{ab|cd}]", "input": "b", "requires": ["unicode-sets"]}
+{"flags": "u", "pattern": "[\\q{ab|cd}]", "input": "c", "requires": ["unicode-sets"]}
+{"flags": "u", "pattern": "[\\q{ab|cd}]", "input": "d", "requires": ["unicode-sets"]}
+{"flags": "u", "pattern": "[\\q{ab|cd}]", "input": "abc", "requires": ["unicode-sets"]}
+{"flags": "u", "pattern": "[\\q{ab|cd}]", "input": "cd", "requires": ["unicode-sets"]}
+{"flags": "u", "pattern": "[\\q{ab|cd}]", "input": "x", "requires": ["unicode-sets"]}
+{"flags": "u", "pattern": "[\\q{}]", "input": "", "requires": ["unicode-sets"]}
+{"flags": "u", "pattern": "[\\q{}]", "input": "a", "requires": ["unicode-sets"]}
+{"flags": "u", "pattern": "[\\q{a-c}]", "input": "a", "requires": ["unicode-sets"]}
+{"flags": "u", "pattern": "[\\q{a-c}]", "input": "b", "requires": ["unicode-sets"]}
+{"flags": "u", "pattern": "[\\q{a-c}]", "input": "c", "requires": ["unicode-sets"]}
+{"flags": "u", "pattern": "[\\q{a-c}]", "input": "-", "requires": ["unicode-sets"]}
+{"flags": "u", "pattern": "[\\q{a-c}]", "input": "d", "requires": ["unicode-sets"]}
+{"flags": "u", "pattern": "[\\p{L}--\\q{abc}]", "input": "a", "requires": ["unicode-sets"], "unicode": "stable"}
+{"flags": "u", "pattern": "[\\p{L}--\\q{abc}]", "input": "d", "requires": ["unicode-sets"], "unicode": "stable"}
+{"flags": "u", "pattern": "[\\p{L}--\\q{abc}]", "input": "1", "requires": ["unicode-sets"], "unicode": "stable"}
+{"flags": "u", "pattern": "[\\p{L}--\\q{abc}]", "input": "あ", "requires": ["unicode-sets"], "unicode": "stable"}
+{"flags": "u", "pattern": "[\\w--\\d]", "input": "a", "requires": ["unicode-sets"]}
+{"flags": "u", "pattern": "[\\w--\\d]", "input": "1", "requires": ["unicode-sets"]}
+{"flags": "u", "pattern": "[\\w--\\d]", "input": "_", "requires": ["unicode-sets"]}
+{"flags": "u", "pattern": "[^\\p{L}--[a-z]]", "input": "a", "requires": ["unicode-sets"], "unicode": "stable"}
+{"flags": "u", "pattern": "[^\\p{L}--[a-z]]", "input": "A", "requires": ["unicode-sets"], "unicode": "stable"}
+{"flags": "u", "pattern": "[^\\p{L}--[a-z]]", "input": "1", "requires": ["unicode-sets"], "unicode": "stable"}
+{"flags": "u", "pattern": "[\\q{abc}--\\q{b}]", "input": "a", "requires": ["unicode-sets"]}
+{"flags": "u", "pattern": "[\\q{abc}--\\q{b}]", "input": "b", "requires": ["unicode-sets"]}
+{"flags": "u", "pattern": "[\\q{abc}--\\q{b}]", "input": "c", "requires": ["unicode-sets"]}
+{"flags": "u", "pattern": "[\\q{abc}--\\q{b}]", "input": "ab", "requires": ["unicode-sets"]}
+{"flags": "u", "pattern": "[a&&b]", "input": "a", "requires": ["unicode-sets"]}
+{"flags": "u", "pattern": "[a&&b]", "input": "b", "requires": ["unicode-sets"]}
+{"flags": "u", "pattern": "[a&&b]", "input": "&", "requires": ["unicode-sets"]}

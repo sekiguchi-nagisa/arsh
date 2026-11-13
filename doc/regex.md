@@ -75,3 +75,19 @@
 | \b                                  | ✔️         | ✔️        | ✔️                      | ✔️                             |
 | \B                                  | ✔️         | ✔️        | ✔️                      | ✔️                             |
 | \X (extension)                      | ✔️         | ✔️        | ✔️                      | ✔️                             |
+
+## Testing
+
+`test/regex/cases` holds the golden output tests (`redump`) and
+`test/regex/test262regex` runs the ECMAScript Test262 regex cases.
+
+The engine is additionally checked by a differential test against the regexp engine used by Node.js
+(V8), which serves as the reference implementation of the ECMAScript RegExp semantics. It runs the
+same patterns and subjects through both engines, only in the unicode (`u`) and unicode sets (`v`)
+modes, and translates the UTF-16 offsets reported by JavaScript into the UTF-8 byte offsets arsh
+reports. See `test/regex/difftest/README.md` for the corpus format and how cases that depend on the
+Unicode data version or on newer syntax are handled.
+
+```sh
+$ ctest -R regex_difftest --output-on-failure
+```

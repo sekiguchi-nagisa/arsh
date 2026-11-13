@@ -1,0 +1,100 @@
+{"flags": "u", "pattern": "\\p{L}", "input": "a", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{L}", "input": "A", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{L}", "input": "1", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{L}", "input": "あ", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{L}", "input": " ", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{Lu}", "input": "a", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{Lu}", "input": "A", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{Lu}", "input": "1", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{Lu}", "input": "あ", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{Lu}", "input": " ", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{Ll}", "input": "a", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{Ll}", "input": "A", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{Ll}", "input": "1", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{Ll}", "input": "あ", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{Ll}", "input": " ", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{Nd}", "input": "a", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{Nd}", "input": "A", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{Nd}", "input": "1", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{Nd}", "input": "あ", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{Nd}", "input": " ", "unicode": "stable"}
+{"flags": "u", "pattern": "\\P{L}", "input": "a", "unicode": "stable"}
+{"flags": "u", "pattern": "\\P{L}", "input": "A", "unicode": "stable"}
+{"flags": "u", "pattern": "\\P{L}", "input": "1", "unicode": "stable"}
+{"flags": "u", "pattern": "\\P{L}", "input": "あ", "unicode": "stable"}
+{"flags": "u", "pattern": "\\P{L}", "input": " ", "unicode": "stable"}
+{"flags": "u", "pattern": "\\P{Lu}", "input": "a", "unicode": "stable"}
+{"flags": "u", "pattern": "\\P{Lu}", "input": "A", "unicode": "stable"}
+{"flags": "u", "pattern": "\\P{Lu}", "input": "1", "unicode": "stable"}
+{"flags": "u", "pattern": "\\P{Lu}", "input": "あ", "unicode": "stable"}
+{"flags": "u", "pattern": "\\P{Lu}", "input": " ", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{gc=Lu}", "input": "a", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{gc=Lu}", "input": "A", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{gc=Lu}", "input": "1", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{General_Category=Ll}", "input": "a", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{General_Category=Ll}", "input": "A", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{General_Category=Ll}", "input": "1", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{General_Category=Nd}", "input": "a", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{General_Category=Nd}", "input": "A", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{General_Category=Nd}", "input": "1", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{Script=Greek}", "input": "α", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{Script=Greek}", "input": "漢", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{Script=Greek}", "input": "あ", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{Script=Greek}", "input": "a", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{Script=Greek}", "input": "1", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{Script=Han}", "input": "α", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{Script=Han}", "input": "漢", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{Script=Han}", "input": "あ", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{Script=Han}", "input": "a", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{Script=Han}", "input": "1", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{Script=Hiragana}", "input": "α", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{Script=Hiragana}", "input": "漢", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{Script=Hiragana}", "input": "あ", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{Script=Hiragana}", "input": "a", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{Script=Hiragana}", "input": "1", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{Script=Latin}", "input": "α", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{Script=Latin}", "input": "漢", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{Script=Latin}", "input": "あ", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{Script=Latin}", "input": "a", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{Script=Latin}", "input": "1", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{sc=Greek}", "input": "α", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{sc=Greek}", "input": "漢", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{sc=Greek}", "input": "a", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{scx=Han}", "input": "α", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{scx=Han}", "input": "漢", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{scx=Han}", "input": "a", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{Alphabetic}", "input": "a", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{Alphabetic}", "input": " ", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{Alphabetic}", "input": " ", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{Alphabetic}", "input": "あ", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{Alphabetic}", "input": "1", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{White_Space}", "input": "a", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{White_Space}", "input": " ", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{White_Space}", "input": " ", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{White_Space}", "input": "あ", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{White_Space}", "input": "1", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{ASCII}", "input": "a", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{ASCII}", "input": " ", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{ASCII}", "input": " ", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{ASCII}", "input": "あ", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{ASCII}", "input": "1", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{Lowercase}", "input": "a", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{Lowercase}", "input": "A", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{Lowercase}", "input": "α", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{Lowercase}", "input": "Α", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{Uppercase}", "input": "a", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{Uppercase}", "input": "A", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{Uppercase}", "input": "α", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{Uppercase}", "input": "Α", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{Assigned}", "input": "a", "unicode": "versioned"}
+{"flags": "u", "pattern": "\\p{Assigned}", "input": "1", "unicode": "versioned"}
+{"flags": "u", "pattern": "\\p{Emoji}", "input": "😀", "unicode": "versioned"}
+{"flags": "u", "pattern": "\\p{Emoji}", "input": "a", "unicode": "versioned"}
+{"flags": "u", "pattern": "[\\p{Emoji}]", "input": "😀", "unicode": "versioned"}
+{"flags": "u", "pattern": "[\\p{Emoji}]", "input": "a", "unicode": "versioned"}
+{"flags": "u", "pattern": "\\p{Pattern_Syntax}", "input": "!", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{Pattern_Syntax}", "input": "‍", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{Pattern_Syntax}", "input": "a", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{Join_Control}", "input": "!", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{Join_Control}", "input": "‍", "unicode": "stable"}
+{"flags": "u", "pattern": "\\p{Join_Control}", "input": "a", "unicode": "stable"}

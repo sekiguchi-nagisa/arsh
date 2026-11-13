@@ -1,0 +1,150 @@
+{"flags": "u", "pattern": "a(?=b)", "input": ""}
+{"flags": "u", "pattern": "a(?=b)", "input": "a"}
+{"flags": "u", "pattern": "a(?=b)", "input": "ab"}
+{"flags": "u", "pattern": "a(?=b)", "input": "ac"}
+{"flags": "u", "pattern": "a(?=b)", "input": "b"}
+{"flags": "u", "pattern": "a(?=b)", "input": "ba"}
+{"flags": "u", "pattern": "a(?!b)", "input": ""}
+{"flags": "u", "pattern": "a(?!b)", "input": "a"}
+{"flags": "u", "pattern": "a(?!b)", "input": "ab"}
+{"flags": "u", "pattern": "a(?!b)", "input": "ac"}
+{"flags": "u", "pattern": "a(?!b)", "input": "b"}
+{"flags": "u", "pattern": "a(?!b)", "input": "ba"}
+{"flags": "u", "pattern": "(?=a)a", "input": ""}
+{"flags": "u", "pattern": "(?=a)a", "input": "a"}
+{"flags": "u", "pattern": "(?=a)a", "input": "ab"}
+{"flags": "u", "pattern": "(?=a)a", "input": "ac"}
+{"flags": "u", "pattern": "(?=a)a", "input": "b"}
+{"flags": "u", "pattern": "(?=a)a", "input": "ba"}
+{"flags": "u", "pattern": "(?!a)b", "input": ""}
+{"flags": "u", "pattern": "(?!a)b", "input": "a"}
+{"flags": "u", "pattern": "(?!a)b", "input": "ab"}
+{"flags": "u", "pattern": "(?!a)b", "input": "ac"}
+{"flags": "u", "pattern": "(?!a)b", "input": "b"}
+{"flags": "u", "pattern": "(?!a)b", "input": "ba"}
+{"flags": "u", "pattern": "(?<=a)b", "input": ""}
+{"flags": "u", "pattern": "(?<=a)b", "input": "ab"}
+{"flags": "u", "pattern": "(?<=a)b", "input": "cb"}
+{"flags": "u", "pattern": "(?<=a)b", "input": "b"}
+{"flags": "u", "pattern": "(?<=a)b", "input": "aab"}
+{"flags": "u", "pattern": "(?<!a)b", "input": ""}
+{"flags": "u", "pattern": "(?<!a)b", "input": "ab"}
+{"flags": "u", "pattern": "(?<!a)b", "input": "cb"}
+{"flags": "u", "pattern": "(?<!a)b", "input": "b"}
+{"flags": "u", "pattern": "(?<!a)b", "input": "aab"}
+{"flags": "u", "pattern": "(?<=a)", "input": ""}
+{"flags": "u", "pattern": "(?<=a)", "input": "ab"}
+{"flags": "u", "pattern": "(?<=a)", "input": "cb"}
+{"flags": "u", "pattern": "(?<=a)", "input": "b"}
+{"flags": "u", "pattern": "(?<=a)", "input": "aab"}
+{"flags": "u", "pattern": "(?<!a)", "input": ""}
+{"flags": "u", "pattern": "(?<!a)", "input": "ab"}
+{"flags": "u", "pattern": "(?<!a)", "input": "cb"}
+{"flags": "u", "pattern": "(?<!a)", "input": "b"}
+{"flags": "u", "pattern": "(?<!a)", "input": "aab"}
+{"flags": "u", "pattern": "(?=.*a).*", "input": ""}
+{"flags": "u", "pattern": "(?=.*a).*", "input": "a"}
+{"flags": "u", "pattern": "(?=.*a).*", "input": "abc"}
+{"flags": "u", "pattern": "(?=.*a).*", "input": "abcd"}
+{"flags": "u", "pattern": "(?=.*a).*", "input": "xyz"}
+{"flags": "u", "pattern": "(?=.{3}).*", "input": ""}
+{"flags": "u", "pattern": "(?=.{3}).*", "input": "a"}
+{"flags": "u", "pattern": "(?=.{3}).*", "input": "abc"}
+{"flags": "u", "pattern": "(?=.{3}).*", "input": "abcd"}
+{"flags": "u", "pattern": "(?=.{3}).*", "input": "xyz"}
+{"flags": "u", "pattern": "^(?=a)", "input": ""}
+{"flags": "u", "pattern": "^(?=a)", "input": "a"}
+{"flags": "u", "pattern": "^(?=a)", "input": "abc"}
+{"flags": "u", "pattern": "^(?=a)", "input": "abcd"}
+{"flags": "u", "pattern": "^(?=a)", "input": "xyz"}
+{"flags": "u", "pattern": "\\bfoo\\b", "input": ""}
+{"flags": "u", "pattern": "\\bfoo\\b", "input": "foo"}
+{"flags": "u", "pattern": "\\bfoo\\b", "input": "a foo b"}
+{"flags": "u", "pattern": "\\bfoo\\b", "input": "foobar"}
+{"flags": "u", "pattern": "\\bfoo\\b", "input": "xfoo"}
+{"flags": "u", "pattern": "\\bfoo\\b", "input": "foo "}
+{"flags": "u", "pattern": "\\Bfoo", "input": ""}
+{"flags": "u", "pattern": "\\Bfoo", "input": "foo"}
+{"flags": "u", "pattern": "\\Bfoo", "input": "a foo b"}
+{"flags": "u", "pattern": "\\Bfoo", "input": "foobar"}
+{"flags": "u", "pattern": "\\Bfoo", "input": "xfoo"}
+{"flags": "u", "pattern": "\\Bfoo", "input": "foo "}
+{"flags": "u", "pattern": "foo\\b", "input": ""}
+{"flags": "u", "pattern": "foo\\b", "input": "foo"}
+{"flags": "u", "pattern": "foo\\b", "input": "a foo b"}
+{"flags": "u", "pattern": "foo\\b", "input": "foobar"}
+{"flags": "u", "pattern": "foo\\b", "input": "xfoo"}
+{"flags": "u", "pattern": "foo\\b", "input": "foo "}
+{"flags": "u", "pattern": "\\bfoo", "input": ""}
+{"flags": "u", "pattern": "\\bfoo", "input": "foo"}
+{"flags": "u", "pattern": "\\bfoo", "input": "a foo b"}
+{"flags": "u", "pattern": "\\bfoo", "input": "foobar"}
+{"flags": "u", "pattern": "\\bfoo", "input": "xfoo"}
+{"flags": "u", "pattern": "\\bfoo", "input": "foo "}
+{"flags": "u", "pattern": "\\ba\\b", "input": "a"}
+{"flags": "u", "pattern": "\\ba\\b", "input": "ab"}
+{"flags": "u", "pattern": "\\ba\\b", "input": " a "}
+{"flags": "u", "pattern": "\\ba\\b", "input": "あ"}
+{"flags": "u", "pattern": "\\ba\\b", "input": "aあ"}
+{"flags": "u", "pattern": "\\Ba\\B", "input": "a"}
+{"flags": "u", "pattern": "\\Ba\\B", "input": "ab"}
+{"flags": "u", "pattern": "\\Ba\\B", "input": " a "}
+{"flags": "u", "pattern": "\\Ba\\B", "input": "あ"}
+{"flags": "u", "pattern": "\\Ba\\B", "input": "aあ"}
+{"flags": "u", "pattern": "\\b\\w+\\b", "input": "a"}
+{"flags": "u", "pattern": "\\b\\w+\\b", "input": "ab"}
+{"flags": "u", "pattern": "\\b\\w+\\b", "input": " a "}
+{"flags": "u", "pattern": "\\b\\w+\\b", "input": "あ"}
+{"flags": "u", "pattern": "\\b\\w+\\b", "input": "aあ"}
+{"flags": "u", "pattern": "\\b", "input": ""}
+{"flags": "u", "pattern": "\\b", "input": "a"}
+{"flags": "u", "pattern": "\\b", "input": " "}
+{"flags": "u", "pattern": "\\b", "input": "あ"}
+{"flags": "u", "pattern": "\\b", "input": "a b"}
+{"flags": "u", "pattern": "\\B", "input": ""}
+{"flags": "u", "pattern": "\\B", "input": "a"}
+{"flags": "u", "pattern": "\\B", "input": " "}
+{"flags": "u", "pattern": "\\B", "input": "あ"}
+{"flags": "u", "pattern": "\\B", "input": "a b"}
+{"flags": "um", "pattern": "^b", "input": "a\nb"}
+{"flags": "um", "pattern": "^b", "input": "a\nb\n"}
+{"flags": "um", "pattern": "^b", "input": "\nb"}
+{"flags": "um", "pattern": "a$", "input": "a\nb"}
+{"flags": "um", "pattern": "a$", "input": "a\nb\n"}
+{"flags": "um", "pattern": "a$", "input": "\nb"}
+{"flags": "um", "pattern": "^a", "input": "a\nb"}
+{"flags": "um", "pattern": "^a", "input": "a\nb\n"}
+{"flags": "um", "pattern": "^a", "input": "\nb"}
+{"flags": "um", "pattern": "b$", "input": "a\nb"}
+{"flags": "um", "pattern": "b$", "input": "a\nb\n"}
+{"flags": "um", "pattern": "b$", "input": "\nb"}
+{"flags": "um", "pattern": "^.", "input": "a\nb"}
+{"flags": "um", "pattern": "^.", "input": "ab"}
+{"flags": "um", "pattern": "^.", "input": "\n"}
+{"flags": "um", "pattern": ".$", "input": "a\nb"}
+{"flags": "um", "pattern": ".$", "input": "ab"}
+{"flags": "um", "pattern": ".$", "input": "\n"}
+{"flags": "um", "pattern": "^.*$", "input": "a\nb"}
+{"flags": "um", "pattern": "^.*$", "input": "ab"}
+{"flags": "um", "pattern": "^.*$", "input": "\n"}
+{"flags": "u", "pattern": "(?<=(a))b", "input": "ab"}
+{"flags": "u", "pattern": "(?<=(a))b", "input": "a"}
+{"flags": "u", "pattern": "(?<=(a))b", "input": "b"}
+{"flags": "u", "pattern": "(?=(a))a", "input": "ab"}
+{"flags": "u", "pattern": "(?=(a))a", "input": "a"}
+{"flags": "u", "pattern": "(?=(a))a", "input": "b"}
+{"flags": "u", "pattern": "(?<=a+)b", "input": "ab"}
+{"flags": "u", "pattern": "(?<=a+)b", "input": "aaab"}
+{"flags": "u", "pattern": "(?<=a+)b", "input": "cb"}
+{"flags": "u", "pattern": "(?<!a+)b", "input": "ab"}
+{"flags": "u", "pattern": "(?<!a+)b", "input": "aaab"}
+{"flags": "u", "pattern": "(?<!a+)b", "input": "cb"}
+{"flags": "v", "pattern": "a(?=b)", "input": "a"}
+{"flags": "v", "pattern": "a(?=b)", "input": "ab"}
+{"flags": "v", "pattern": "a(?=b)", "input": "ba"}
+{"flags": "v", "pattern": "(?<=a)b", "input": "a"}
+{"flags": "v", "pattern": "(?<=a)b", "input": "ab"}
+{"flags": "v", "pattern": "(?<=a)b", "input": "ba"}
+{"flags": "v", "pattern": "\\ba\\b", "input": "a"}
+{"flags": "v", "pattern": "\\ba\\b", "input": "ab"}
+{"flags": "v", "pattern": "\\ba\\b", "input": "ba"}

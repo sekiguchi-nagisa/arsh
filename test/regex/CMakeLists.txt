@@ -43,3 +43,10 @@ add_executable(${TEST_NAME}
 target_link_libraries(${TEST_NAME} gtest gtest_main regex test_common)
 add_dependencies(${TEST_NAME} ${BIN_NAME} redump)
 add_test(${TEST_NAME} ${TEST_NAME})
+
+
+#========================#
+#     regex_difftest     #
+#========================#
+
+add_subdirectory(difftest)
