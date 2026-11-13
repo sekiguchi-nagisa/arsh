@@ -170,3 +170,26 @@ input: ` a'
 (offset=0, size=2)
 EOF
 )
+
+# (a*){2,}
+assert diff <(redump -m 'ab' '(a*){2,}$' '') <(<<'EOF'
+input: `ab'
+(offset=2, size=0)
+(offset=2, size=0)
+EOF
+)
+
+# (x*)*y
+assert diff <(redump -m 'x' '(x*)*y' '') <(<<'EOF'
+input: `x'
+failed
+EOF
+)
+
+# (a*)*c
+assert diff <(redump -m 'abc' '(a*)*c' '') <(<<'EOF'
+input: `x'
+(offset=2, size=1)
+(unset)
+EOF
+)
