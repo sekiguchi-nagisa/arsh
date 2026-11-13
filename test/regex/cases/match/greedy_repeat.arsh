@@ -188,7 +188,7 @@ EOF
 
 # (a*)*c
 assert diff <(redump -m 'abc' '(a*)*c' '') <(<<'EOF'
-input: `x'
+input: `abc'
 (offset=2, size=1)
 (unset)
 EOF
