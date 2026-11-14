@@ -4,11 +4,6 @@
 
 ### Added
 
-#### Test
-
-- add differential test of the regex engine against the Node.js (V8) regexp engine
-- add loop-focused cases guarding the backtrack stack (nesting, lazy/greedy, empty-matching bodies, captures, lookarounds)
-
 #### Builtin
 
 - add ``Regex#matchAll`` method for all matched results
