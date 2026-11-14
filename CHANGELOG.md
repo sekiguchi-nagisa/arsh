@@ -8,6 +8,10 @@
 
 - add ``Regex#matchAll`` method for all matched results
 
+### Fixed
+
+- bugfix radix tree findLongestMatched api. now pass property mask
+
 ## [0.43.0] - 2026-09-30
 
 ### Added

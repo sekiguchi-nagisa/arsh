@@ -1,6 +1,1 @@
-{"pattern": "\\p{Basic_Emoji}", "input": "👍🏽", "flags": "v", "unicode": "stable", "xfail": true, "xfailArsh": "match [4,8)", "xfailOracle": "match [0,4)", "requires": ["unicode-sets"]}
-{"pattern": "\\p{Basic_Emoji}", "input": "👨‍👩‍👧", "flags": "v", "unicode": "stable", "xfail": true, "xfailArsh": "match [14,18)", "xfailOracle": "match [0,4)", "requires": ["unicode-sets"]}
-{"pattern": "\\p{Basic_Emoji}", "input": "🏳️‍🌈", "flags": "v", "unicode": "stable", "xfail": true, "xfailArsh": "match [10,14)", "xfailOracle": "match [0,7)", "requires": ["unicode-sets"]}
-{"pattern": "\\p{Basic_Emoji}", "input": "a👍🏽b", "flags": "v", "unicode": "stable", "xfail": true, "xfailArsh": "match [5,9)", "xfailOracle": "match [1,5)", "requires": ["unicode-sets"]}
-{"pattern": "(\\p{Basic_Emoji})+", "input": "👍🏽👍🏽", "flags": "v", "unicode": "stable", "xfail": true, "xfailArsh": "match [4,8) [4,8)", "xfailOracle": "match [0,16) [12,16)", "requires": ["unicode-sets"]}
 

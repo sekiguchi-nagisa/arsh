@@ -291,15 +291,14 @@ static StringRef foldAll(const StringRef ref, std::string &buf) {
   return buf;
 }
 
-static std::pair<unsigned short, unsigned char> findLongestMatched(const PackedRadixTree tree,
-                                                                   StringRef ref,
-                                                                   std::string &foldBuf,
-                                                                   const bool caseFold) {
+static std::pair<unsigned short, unsigned char>
+findLongestMatched(const PackedRadixTree tree, StringRef ref, std::string &foldBuf,
+                   const bool caseFold, const uint8_t propMask = PackedRadixTree::PROP_MASK_ALL) {
   const auto old = ref;
   if (caseFold) {
     ref = foldAll(ref, foldBuf);
   }
-  auto [s, p] = tree.findLongestMatched(ref);
+  auto [s, p] = tree.findLongestMatched(ref, propMask);
   if (caseFold && p) { // remap to original byte size
     ref = ref.substr(0, s);
     const char *begin = ref.begin();
@@ -317,13 +316,14 @@ static std::pair<unsigned short, unsigned char> findLongestMatched(const PackedR
 
 static std::pair<unsigned short, unsigned char>
 findBackwardLongestMatched(const PackedRadixTree tree, StringRef ref, std::string &foldBuf,
-                           const bool caseFold) {
+                           const bool caseFold,
+                           const uint8_t propMask = PackedRadixTree::PROP_MASK_ALL) {
   auto old = ref;
   if (caseFold) {
     ref = foldAll(ref, foldBuf);
   }
   while (!ref.empty()) {
-    auto [s, p] = tree.findLongestMatched(ref);
+    auto [s, p] = tree.findLongestMatched(ref, propMask);
     if (caseFold && p) { // remap to original byte size
       StringRef sub = ref.substr(0, s);
       const char *begin = sub.begin();
@@ -699,8 +699,8 @@ START:
           unsigned int consumedSize = 0;
           if (radixIns.hasEmoji()) {
             auto [s, p] = findLongestMatched(ucp::getEmojiTrie(), ref, ctx.refFoldBuf(),
-                                             radixIns.ignoreCase());
-            if (p && hasFlag(toUnderlying(radixIns.emoji), p)) {
+                                             radixIns.ignoreCase(), toUnderlying(radixIns.emoji));
+            if (p) {
               consumedSize = s;
             }
           }
@@ -753,9 +753,10 @@ START:
           const auto nextOffset = radixIns.nextOffset;
           unsigned int consumedSize = 0;
           if (radixIns.hasEmoji()) {
-            auto [s, p] = findBackwardLongestMatched(ucp::getEmojiTrie(), ref, ctx.refFoldBuf(),
-                                                     radixIns.ignoreCase());
-            if (p && hasFlag(toUnderlying(radixIns.emoji), p)) {
+            auto [s, p] =
+                findBackwardLongestMatched(ucp::getEmojiTrie(), ref, ctx.refFoldBuf(),
+                                           radixIns.ignoreCase(), toUnderlying(radixIns.emoji));
+            if (p) {
               consumedSize = s;
             }
           }

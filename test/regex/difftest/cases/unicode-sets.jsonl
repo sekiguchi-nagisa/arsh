@@ -51,3 +51,9 @@
 {"flags": "u", "pattern": "[a&&b]", "input": "a", "requires": ["unicode-sets"]}
 {"flags": "u", "pattern": "[a&&b]", "input": "b", "requires": ["unicode-sets"]}
 {"flags": "u", "pattern": "[a&&b]", "input": "&", "requires": ["unicode-sets"]}
+{"pattern": "\\p{Basic_Emoji}", "input": "👍🏽", "flags": "v", "unicode": "stable",  "requires": ["unicode-sets"]}
+{"pattern": "\\p{Basic_Emoji}", "input": "👨‍👩‍👧", "flags": "v", "unicode": "stable",  "requires": ["unicode-sets"]}
+{"pattern": "\\p{Basic_Emoji}", "input": "🏳️‍🌈", "flags": "v", "unicode": "stable", "requires": ["unicode-sets"]}
+{"pattern": "\\p{Basic_Emoji}", "input": "a👍🏽b", "flags": "v", "unicode": "stable",  "requires": ["unicode-sets"]}
+{"pattern": "(\\p{Basic_Emoji})+", "input": "👍🏽👍🏽", "flags": "v", "unicode": "stable", "requires": ["unicode-sets"]}
+

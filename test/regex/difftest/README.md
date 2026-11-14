@@ -75,31 +75,6 @@ The cases live in `cases/*.jsonl`, one JSON object per line:
 
 Because the arsh side runs in process, a case may contain a NUL byte in the pattern or the input.
 
-### Known divergences (`xfail`)
-
-A case where arsh is known to disagree with the oracle is kept in the corpus instead of being
-deleted. It records the exact result each side produced when the divergence was filed:
-
-```json
-{"pattern": "\\p{Basic_Emoji}", "input": "👍🏽", "flags": "v", "requires": ["unicode-sets"],
- "xfail": true, "xfailArsh": "match [4,8)", "xfailOracle": "match [0,4)"}
-```
-
-The harness then requires arsh to keep producing exactly `xfailArsh` and the oracle exactly
-`xfailOracle`. It fails in both directions on purpose:
-
-* arsh starts to agree with the oracle: the marker must be dropped (the bug is fixed),
-* the recorded result changes: the bug report has to be updated.
-
-`xfail` cases are reported as skipped, so a known bug does not break the build. `known-bugs.jsonl`
-currently records two families:
-
-* `\p{Basic_Emoji}` (a property of strings) matches only the trailing code point of a
-  multi-code-point emoji sequence, e.g. `👍🏽` is matched as `[4,8)` instead of `[0,4)`.
-* a greedy `?` around a body that can match empty (`(?:|a)?`, `(?:a?|b)?`) takes the empty
-  alternative and never retries the alternative that matches longer, so `(?:|a)?` matches `""`
-  instead of `"a"`.
-
 ## Loop cases (`loops.jsonl`)
 
 The backtrack stack saves and restores a loop's `LoopState` on every iteration and every retry, and

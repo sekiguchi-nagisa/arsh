@@ -89,6 +89,8 @@ private:
   unsigned int size;
 
 public:
+  static constexpr uint8_t PROP_MASK_ALL = 0xFF;
+
   PackedRadixTree(unsigned short maxCodePointCount, const uint8_t *ptr, unsigned int size)
       : ptr(ptr), maxCodePointCount(maxCodePointCount), size(size) {}
 
@@ -101,7 +103,8 @@ public:
     return ref.size() == len ? p : 0;
   }
 
-  std::pair<uint16_t, uint8_t> findLongestMatched(StringRef ref) const {
+  std::pair<uint16_t, uint8_t> findLongestMatched(StringRef ref,
+                                                  const uint8_t propMask = PROP_MASK_ALL) const {
     const unsigned char childOffsetBytes = this->getChildOffsetBytes();
     const auto orgSize = ref.size();
     uint8_t latestProperty = 0;
@@ -119,7 +122,7 @@ public:
       offset += prefixLen;
       auto property = this->ptr[offset++];
       ref.removePrefix(prefixLen);
-      if (property) {
+      if (property && (propMask & property) == property) {
         latestProperty = property;
         latestMatchedSize = orgSize - ref.size();
       }
