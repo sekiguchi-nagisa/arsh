@@ -57,3 +57,35 @@
 {"pattern": "\\p{Basic_Emoji}", "input": "a👍🏽b", "flags": "v", "unicode": "stable",  "requires": ["unicode-sets"]}
 {"pattern": "(\\p{Basic_Emoji})+", "input": "👍🏽👍🏽", "flags": "v", "unicode": "stable", "requires": ["unicode-sets"]}
 
+{"pattern": "[a&&b]", "input": "a", "flags": "vi", "requires": ["unicode-sets"]}
+{"pattern": "[a&&b]", "input": "A", "flags": "vi", "requires": ["unicode-sets"]}
+{"pattern": "[a&&b]", "input": "&", "flags": "vi", "requires": ["unicode-sets"]}
+{"pattern": "[a--b]", "input": "a", "flags": "vi", "requires": ["unicode-sets"]}
+{"pattern": "[a--b]", "input": "A", "flags": "vi", "requires": ["unicode-sets"]}
+{"pattern": "[a--b]", "input": "b", "flags": "vi", "requires": ["unicode-sets"]}
+{"pattern": "[\\p{L}--[a-z]]", "input": "A", "flags": "vi", "requires": ["unicode-sets"], "unicode": "stable"}
+{"pattern": "[\\p{L}--[a-z]]", "input": "a", "flags": "vi", "requires": ["unicode-sets"], "unicode": "stable"}
+{"pattern": "[\\p{L}--[a-z]]", "input": "1", "flags": "vi", "requires": ["unicode-sets"], "unicode": "stable"}
+{"pattern": "[\\p{Lu}--[A]]", "input": "A", "flags": "vi", "requires": ["unicode-sets"], "unicode": "stable"}
+{"pattern": "[\\p{Lu}--[A]]", "input": "B", "flags": "vi", "requires": ["unicode-sets"], "unicode": "stable"}
+{"pattern": "[\\w--\\d]", "input": "a", "flags": "vi", "requires": ["unicode-sets"]}
+{"pattern": "[\\w--\\d]", "input": "A", "flags": "vi", "requires": ["unicode-sets"]}
+{"pattern": "[\\w--\\d]", "input": "1", "flags": "vi", "requires": ["unicode-sets"]}
+{"pattern": "[\\q{ab}--b]", "input": "ab", "flags": "vi", "requires": ["unicode-sets"]}
+{"pattern": "[\\q{ab}--b]", "input": "a", "flags": "vi", "requires": ["unicode-sets"]}
+{"pattern": "[\\q{ab}--b]", "input": "AB", "flags": "vi", "requires": ["unicode-sets"]}
+{"pattern": "[\\q{a|ab}--\\q{ab}]", "input": "a", "flags": "vi", "requires": ["unicode-sets"]}
+{"pattern": "[\\q{a|ab}--\\q{ab}]", "input": "ab", "flags": "vi", "requires": ["unicode-sets"]}
+{"pattern": "[\\q{a|ab}--a]", "input": "ab", "flags": "vi", "requires": ["unicode-sets"]}
+{"pattern": "[\\p{Basic_Emoji}--\\q{😀}]", "input": "😀", "flags": "vi", "requires": ["unicode-sets"], "unicode": "stable"}
+{"pattern": "[\\p{Basic_Emoji}--\\q{😀}]", "input": "👍", "flags": "vi", "requires": ["unicode-sets"], "unicode": "stable"}
+{"pattern": "[\\p{RGI_Emoji}&&\\p{Basic_Emoji}]", "input": "👍", "flags": "vi", "requires": ["unicode-sets"], "unicode": "stable"}
+{"pattern": "[\\p{RGI_Emoji}&&\\p{Basic_Emoji}]", "input": "👍🏽", "flags": "vi", "requires": ["unicode-sets"], "unicode": "stable"}
+{"pattern": "[\\p{RGI_Emoji}--\\p{Emoji_Keycap_Sequence}]", "input": "#️⃣", "flags": "vi", "requires": ["unicode-sets"], "unicode": "stable"}
+{"pattern": "[\\p{RGI_Emoji}--\\p{Emoji_Keycap_Sequence}]", "input": "👍", "flags": "vi", "requires": ["unicode-sets"], "unicode": "stable"}
+{"pattern": "[\\P{ASCII}--\\q{a}]", "input": "a", "flags": "vi", "requires": ["unicode-sets"], "unicode": "stable"}
+{"pattern": "[\\P{ASCII}--\\q{a}]", "input": "👍", "flags": "vi", "requires": ["unicode-sets"], "unicode": "stable"}
+{"pattern": "[\\p{L}--\\P{Lowercase}]", "input": "a", "flags": "vi", "requires": ["unicode-sets"], "unicode": "stable"}
+{"pattern": "[\\p{L}--\\P{Lowercase}]", "input": "A", "flags": "vi", "requires": ["unicode-sets"], "unicode": "stable"}
+{"pattern": "[\\P{L}&&[a-z]]", "input": "a", "flags": "vi", "requires": ["unicode-sets"], "unicode": "stable"}
+{"pattern": "[\\P{L}&&[a-z]]", "input": "1", "flags": "vi", "requires": ["unicode-sets"], "unicode": "stable"}

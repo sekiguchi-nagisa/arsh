@@ -1,1 +1,10 @@
-
+{"pattern": "[a--\\q{a}]", "input": "A", "flags": "vi", "requires": ["unicode-sets"], "xfail": true, "xfailArsh": "nomatch", "xfailOracle": "match [0,1)"}
+{"pattern": "[\\q{a}]", "input": "A", "flags": "vi", "requires": ["unicode-sets"], "xfail": true, "xfailArsh": "match [0,1)", "xfailOracle": "nomatch"}
+{"pattern": "[\\p{ASCII}]", "input": "K", "flags": "vi", "requires": ["unicode-sets"], "unicode": "stable", "xfail": true, "xfailArsh": "match [0,3)", "xfailOracle": "nomatch"}
+{"pattern": "[k--\\p{ASCII}]", "input": "K", "flags": "vi", "requires": ["unicode-sets"], "unicode": "stable", "xfail": true, "xfailArsh": "nomatch", "xfailOracle": "match [0,3)"}
+{"pattern": "[\\p{Lu}&&\\p{ASCII}]", "input": "K", "flags": "vi", "requires": ["unicode-sets"], "unicode": "stable", "xfail": true, "xfailArsh": "match [0,3)", "xfailOracle": "nomatch"}
+{"pattern": "[\\p{Lowercase}&&\\q{k}]", "input": "K", "flags": "vi", "requires": ["unicode-sets"], "xfail": true, "xfailArsh": "match [0,1)", "xfailOracle": "nomatch"}
+{"pattern": "[^\\p{ASCII}]", "input": "ſ", "flags": "vi", "requires": ["unicode-sets"], "unicode": "stable", "xfail": true, "xfailArsh": "nomatch", "xfailOracle": "match [0,2)"}
+{"pattern": "[\\p{ASCII}--z]", "input": "ſ", "flags": "vi", "requires": ["unicode-sets"], "unicode": "stable", "xfail": true, "xfailArsh": "match [0,2)", "xfailOracle": "nomatch"}
+{"pattern": "[\\w&&\\p{ASCII}]", "input": "K", "flags": "vi", "requires": ["unicode-sets"], "unicode": "stable", "xfail": true, "xfailArsh": "match [0,3)", "xfailOracle": "nomatch"}
+{"pattern": "[\\D--\\p{ASCII}]", "input": "ſ", "flags": "vi", "requires": ["unicode-sets"], "unicode": "stable", "xfail": true, "xfailArsh": "nomatch", "xfailOracle": "match [0,2)"}

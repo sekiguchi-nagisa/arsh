@@ -3,6 +3,10 @@
 Differential test of the arsh regex engine against the regexp engine used by Node.js (V8), which
 is treated as the reference implementation of the ECMAScript RegExp semantics.
 
+The oracle is a reference, not an authority: where V8 itself departs from ECMA-262 the divergence is
+recorded as a known bug instead of being copied, see
+[When the oracle is wrong](#when-the-oracle-is-wrong).
+
 ```sh
 $ ctest -R regex_difftest --output-on-failure
 ```
@@ -74,6 +78,46 @@ The cases live in `cases/*.jsonl`, one JSON object per line:
 | `xfail`    | no       | the case documents a known divergence, see below                           |
 
 Because the arsh side runs in process, a case may contain a NUL byte in the pattern or the input.
+
+## When the oracle is wrong
+
+V8 is the reference implementation in practice, but it is not normative. ECMA-262 is, and where the
+two disagree the arsh behaviour is kept and the divergence is recorded instead of being adopted.
+This matters most for `i` (caseless) combined with `v` mode set operations, where
+`MaybeSimpleCaseFolding` (§22.2.2.9.5) folds the *pattern* side and `Canonicalize` (§22.2.2.7.1)
+canonicalizes the *input* side.
+
+A concrete case is `[a--\q{a}]` against `"A"` with the `vi` flags. The left and right operand denote
+the identical CharSet `{"a"}`, so the difference is the empty set and the pattern cannot match
+anything. V8 reports a match, which contradicts the identity `A -- A = ∅`; arsh and JavaScriptCore
+both reject it. A second family involves `\p{...}` under `i`: V8 treats `\p{ASCII}` (already fold
+closed) differently from the equivalent `[\x00-\x7F]` (fold applied), so two spellings of the same
+CharSet disagree with each other.
+
+`cases/known-bugs.jsonl` pins such a case down in both directions: `xfail: true` marks it, and
+`xfailArsh` / `xfailOracle` hold the exact `MatchResult::toCompactString` each side produced when the
+divergence was filed. The case then fails both when arsh starts to agree (the marker should be
+dropped) and when a recorded result changes (the bug drifted), so it stays useful in both directions
+without breaking the build:
+
+| field         | meaning                                                                   |
+|---------------|---------------------------------------------------------------------------|
+| `xfail`       | the case is a known divergence; it must keep diverging exactly as recorded |
+| `xfailArsh`   | the recorded arsh result, e.g. `nomatch` or `match [0,3)`                 |
+| `xfailOracle` | the recorded oracle result                                                |
+
+When filing a new entry, put a placeholder in both fields, run the test, and copy the
+`recorded=... actual=...` values from the failure message. Do not add an `xfail` entry for a case
+where arsh is the one that is wrong — that is an ordinary failing case and should be fixed.
+
+### Caseless set operations
+
+`i` combined with `&&` / `--` is the part of the set-operation lowering with the most cross product:
+`StrSetBuilder::intersect` and `StrSetBuilder::sub` each match an emoji bitmask, a radix tree and a
+code point set against the same three kinds on the other side, and `RGIEmojiSeq::CASE_IGNORE`
+reaches all of those paths. `unicode-sets.jsonl` therefore carries `vi` cases covering each operand
+kind (single code points, ranges, `\p{...}`, `\P{...}`, `\q{...}` string literals, properties of
+strings, nested classes) on both sides of `&&` and `--`.
 
 ## Loop cases (`loops.jsonl`)
 
