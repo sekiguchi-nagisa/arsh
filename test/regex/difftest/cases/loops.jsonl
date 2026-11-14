@@ -841,3 +841,9 @@
 {"pattern": "(?:[abc])*", "input": "AA", "flags": "v"}
 {"pattern": "(?:[abc])*", "input": "abc", "flags": "v"}
 {"pattern": "(?:[abc])*", "input": "AB", "flags": "v"}
+{"pattern": "(?:|a)?", "input": "a", "flags": "u"}
+{"pattern": "(?:|a){0,1}", "input": "a", "flags": "u"}
+{"pattern": "(?:a?|b)?", "input": "b", "flags": "u"}
+{"pattern": "(?:|ab)?", "input": "ab", "flags": "u"}
+{"pattern": "x(?:|a)?", "input": "xa", "flags": "u"}
+{"pattern": "(?:|a)?", "input": "a", "flags": "v"}

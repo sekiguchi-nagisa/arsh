@@ -3,9 +3,4 @@
 {"pattern": "\\p{Basic_Emoji}", "input": "🏳️‍🌈", "flags": "v", "unicode": "stable", "xfail": true, "xfailArsh": "match [10,14)", "xfailOracle": "match [0,7)", "requires": ["unicode-sets"]}
 {"pattern": "\\p{Basic_Emoji}", "input": "a👍🏽b", "flags": "v", "unicode": "stable", "xfail": true, "xfailArsh": "match [5,9)", "xfailOracle": "match [1,5)", "requires": ["unicode-sets"]}
 {"pattern": "(\\p{Basic_Emoji})+", "input": "👍🏽👍🏽", "flags": "v", "unicode": "stable", "xfail": true, "xfailArsh": "match [4,8) [4,8)", "xfailOracle": "match [0,16) [12,16)", "requires": ["unicode-sets"]}
-{"pattern": "(?:|a)?", "input": "a", "flags": "u", "unicode": "stable", "xfail": true, "xfailArsh": "match [0,0)", "xfailOracle": "match [0,1)"}
-{"pattern": "(?:|a){0,1}", "input": "a", "flags": "u", "unicode": "stable", "xfail": true, "xfailArsh": "match [0,0)", "xfailOracle": "match [0,1)"}
-{"pattern": "(?:a?|b)?", "input": "b", "flags": "u", "unicode": "stable", "xfail": true, "xfailArsh": "match [0,0)", "xfailOracle": "match [0,1)"}
-{"pattern": "(?:|ab)?", "input": "ab", "flags": "u", "unicode": "stable", "xfail": true, "xfailArsh": "match [0,0)", "xfailOracle": "match [0,2)"}
-{"pattern": "x(?:|a)?", "input": "xa", "flags": "u", "unicode": "stable", "xfail": true, "xfailArsh": "match [0,1)", "xfailOracle": "match [0,2)"}
-{"pattern": "(?:|a)?", "input": "a", "flags": "v", "unicode": "stable", "xfail": true, "xfailArsh": "match [0,0)", "xfailOracle": "match [0,1)"}
+

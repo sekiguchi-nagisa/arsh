@@ -158,11 +158,12 @@ loopCount: 1
 captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
-   0: Alt(second=16)
-   5: PrepareRadix
-   6: RadixOrEmoji(emoji=, hasRadix=true, index=0, nextOffset=4)
-  12: CharSet(matcherIndex=1, invert=false)
-  16: Match
+   0: BeginLoop(loopIndex=0, greedy=true, min=0, max=1, outer=30)
+  14: PrepareRadix
+  15: RadixOrEmoji(emoji=, hasRadix=true, index=0, nextOffset=4)
+  21: CharSet(matcherIndex=1, invert=false)
+  25: EndLoop(target=0)
+  30: Match
 prefilter:
   data:
   minPrevCodePoints: 0

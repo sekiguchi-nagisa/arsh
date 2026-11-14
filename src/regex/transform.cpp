@@ -593,6 +593,21 @@ bool Lowering::checkBackRef(const BackRefNode &node) const {
   return true;
 }
 
+static bool isNonNullable(const Node &node) {
+  switch (node.getKind()) {
+  case NodeKind::Any:
+  case NodeKind::Char:
+  case NodeKind::FoldChar:
+  case NodeKind::CharClass:
+  case NodeKind::Property:
+  case NodeKind::CharSet:
+  case NodeKind::StrSet:
+    return true;
+  default:
+    return false;
+  }
+}
+
 void Lowering::visit(std::unique_ptr<Node> &node) {
   switch (node->getKind()) {
   case NodeKind::Empty:
@@ -686,7 +701,8 @@ void Lowering::visit(std::unique_ptr<Node> &node) {
     } else if (n.getMin() == 1 && n.getMax() == 1 && !n.hasInnerCaptureGroups()) {
       node = std::move(n.refPattern());
       this->visit(node);
-    } else if (n.getMin() == 0 && n.getMax() == 1 && !n.hasInnerCaptureGroups() && n.isGreedy()) {
+    } else if (n.getMin() == 0 && n.getMax() == 1 && !n.hasInnerCaptureGroups() && n.isGreedy() &&
+               isNonNullable(*n.getPattern())) {
       auto tmp = std::make_unique<AltNode>(std::move(n.refPattern()));
       tmp->append(std::make_unique<EmptyNode>(tmp->getToken().pos));
       node = std::move(tmp);
