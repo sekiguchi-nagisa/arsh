@@ -46,24 +46,6 @@ void StrSetBuilder::add(StrSetBuilder &&builder) {
 }
 
 template <typename Func>
-constexpr bool cp_iter_requirement_v =
-    std::is_same_v<bool, std::invoke_result_t<Func, StringRef, int>>;
-
-template <typename Func, enable_when<cp_iter_requirement_v<Func>> = nullptr>
-static void iterateCodes(CodePointSetBuilder &builder, Func func) {
-  for (auto [first, last] : builder.toCompactArrayRef()) {
-    for (; first <= last; first++) {
-      char buf[4];
-      unsigned int len = UnicodeUtil::codePointToUtf8(first, buf);
-      assert(len);
-      if (!func(StringRef(buf, len), first)) {
-        return;
-      }
-    }
-  }
-}
-
-template <typename Func>
 constexpr bool str_iter_requirement_v = std::is_same_v<bool, std::invoke_result_t<Func, StringRef>>;
 
 template <typename Func, enable_when<str_iter_requirement_v<Func>> = nullptr>
@@ -83,7 +65,11 @@ static void iterateEmoji(const ucp::RGIEmojiSeq emoji, Func func) {
 
 static void mergeEmoji(ucp::RGIEmojiSeq &emoji, RadixTree &radixTree) {
   iterateEmoji(emoji, [&radixTree](StringRef ref) {
-    radixTree.add(ref, 1);
+    // every emoji sequence fits the radix tree limits (checked by tools/emoji when the table is
+    // generated), so a failure here means the table itself is inconsistent
+    const auto status = radixTree.add(ref, 1);
+    assert(status == RadixTree::AddStatus::OK || status == RadixTree::AddStatus::ADDED);
+    (void)status;
     return true;
   });
   emoji = ucp::RGIEmojiSeq::None;
@@ -104,7 +90,30 @@ static Optional<int> tryToCodePoint(const StringRef ref) {
   return {};
 }
 
+template <typename Func>
+constexpr bool emoji_cp_iter_requirement_v = std::is_same_v<bool, std::invoke_result_t<Func, int>>;
+
+/**
+ * iterate over the single code points of the emoji set.
+ *
+ * the emoji table is bounded (a few thousand entries) and does not grow with the pattern, so this
+ * is the cheap side when an emoji set is intersected with an arbitrary code point set.
+ */
+template <typename Func, enable_when<emoji_cp_iter_requirement_v<Func>> = nullptr>
+static void iterateEmojiCodePoints(const ucp::RGIEmojiSeq emoji, Func func) {
+  iterateEmoji(emoji, [&](StringRef ref) {
+    if (auto cp = tryToCodePoint(ref); cp.hasValue()) {
+      if (!func(cp.unwrap())) {
+        return false;
+      }
+    }
+    return true;
+  });
+}
+
 void StrSetBuilder::intersect(StrSetBuilder &&builder) {
+  assert(hasFlag(this->emoji, ucp::RGIEmojiSeq::CASE_IGNORE) ==
+         hasFlag(builder.emoji, ucp::RGIEmojiSeq::CASE_IGNORE));
   StrSetBuilder newBuilder(hasFlag(this->emoji, ucp::RGIEmojiSeq::CASE_IGNORE));
   newBuilder.emptySeq = this->emptySeq && builder.emptySeq;
 
@@ -121,12 +130,15 @@ void StrSetBuilder::intersect(StrSetBuilder &&builder) {
       return true;
     };
     builder.radix.iterate(walker);
-    iterateCodes(builder.codePoints, [&](StringRef ref, int codePoint) {
-      if (findFromEmoji(this->emoji, ref)) {
-        newBuilder.codePoints.addRange(codePoint, codePoint);
-      }
-      return true;
-    });
+    if (builder.codePoints) {
+      auto set = builder.codePoints.build();
+      iterateEmojiCodePoints(this->emoji, [&](int codePoint) {
+        if (set.ref().contains(codePoint)) {
+          newBuilder.codePoints.addRange(codePoint, codePoint);
+        }
+        return true;
+      });
+    }
   }
 
   // radix
@@ -144,12 +156,20 @@ void StrSetBuilder::intersect(StrSetBuilder &&builder) {
       return true;
     };
     builder.radix.iterate(walker);
-    iterateCodes(builder.codePoints, [&](StringRef ref, int codePoint) {
-      if (this->radix.find(ref)) {
-        newBuilder.codePoints.addRange(codePoint, codePoint);
-      }
-      return true;
-    });
+    if (builder.codePoints) {
+      /*
+       * this->radix is bounded by the pattern, while builder.codePoints may come from \p{Any}
+       * (more than a million code points), so walk this side and probe the other one
+       */
+      auto set = builder.codePoints.build();
+      auto probe = [&](StringRef ref, unsigned char) {
+        if (auto cp = tryToCodePoint(ref); cp.hasValue() && set.ref().contains(cp.unwrap())) {
+          newBuilder.codePoints.addRange(cp.unwrap(), cp.unwrap());
+        }
+        return true;
+      };
+      this->radix.iterate(probe);
+    }
   }
 
   // codepoints
@@ -178,6 +198,8 @@ void StrSetBuilder::intersect(StrSetBuilder &&builder) {
 }
 
 void StrSetBuilder::sub(StrSetBuilder &&builder) {
+  assert(hasFlag(this->emoji, ucp::RGIEmojiSeq::CASE_IGNORE) ==
+         hasFlag(builder.emoji, ucp::RGIEmojiSeq::CASE_IGNORE));
   if (this->emptySeq == builder.emptySeq && this->emptySeq) {
     this->emptySeq = false;
   }
@@ -198,9 +220,10 @@ void StrSetBuilder::sub(StrSetBuilder &&builder) {
     };
     builder.radix.iterate(walker);
   }
-  if (this->hasEmoji()) {
-    iterateCodes(builder.codePoints, [&](StringRef ref, int) {
-      if (findFromEmoji(this->emoji, ref)) {
+  if (this->hasEmoji() && builder.codePoints) {
+    auto set = builder.codePoints.build();
+    iterateEmojiCodePoints(this->emoji, [&](int codePoint) {
+      if (set.ref().contains(codePoint)) {
         mergeEmoji(this->emoji, this->radix);
         return false;
       }
@@ -222,11 +245,24 @@ void StrSetBuilder::sub(StrSetBuilder &&builder) {
     };
     builder.radix.iterate(walker);
   }
-  if (!this->radix.empty()) {
-    iterateCodes(builder.codePoints, [&](StringRef ref, int) {
+  if (!this->radix.empty() && builder.codePoints) {
+    /*
+     * this->radix is bounded by the pattern, while builder.codePoints may come from \p{Any}
+     * (more than a million code points), so walk this side and probe the other one
+     */
+    auto set = builder.codePoints.build();
+    // collect first: removing while iterating the radix tree would invalidate the traversal
+    std::vector<std::string> removed;
+    auto probe = [&](StringRef ref, unsigned char) {
+      if (auto cp = tryToCodePoint(ref); cp.hasValue() && set.ref().contains(cp.unwrap())) {
+        removed.emplace_back(ref.toString());
+      }
+      return true;
+    };
+    this->radix.iterate(probe);
+    for (auto &ref : removed) {
       this->radix.remove(ref);
-      return !this->radix.empty();
-    });
+    }
   }
 
   // codepoint
