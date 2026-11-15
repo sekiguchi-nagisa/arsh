@@ -17,8 +17,11 @@
 #include <cerrno>
 #include <csignal>
 #include <cstring>
+#include <iterator>
+#include <limits>
 #include <sys/wait.h>
 #include <unistd.h>
+#include <utility>
 
 #include <misc/fatal.h>
 
@@ -26,12 +29,69 @@
 
 namespace arsh::difftest {
 
-Oracle::~Oracle() {
+// ############################
+// ##     NodeVersion     ##
+// ############################
+
+NodeVersion NodeVersion::parse(const StringRef version) {
+  NodeVersion ret;
+  const char *iter = version.begin();
+  const char *const end = version.end();
+  if (iter != end && *iter == 'v') { // `node --version` prints a `v` prefix, the banner does not
+    ++iter;
+  }
+
+  uint32_t *const fields[] = {&ret.major, &ret.minor, &ret.patch};
+  for (size_t i = 0; i < std::size(fields); i++) {
+    const char *const begin = iter;
+    uint32_t value = 0;
+    while (iter != end && *iter >= '0' && *iter <= '9') {
+      if (value <= (std::numeric_limits<uint32_t>::max() - 9) / 10) {
+        value = value * 10 + static_cast<uint32_t>(*iter - '0');
+      }
+      ++iter;
+    }
+    if (iter == begin) { // no (more) numeric component
+      break;
+    }
+    *fields[i] = value;
+    if (i == 0) {
+      ret.valid = true;
+    }
+    // the next component follows only if there is a dot right after this one; anything else
+    // (a pre-release / build suffix, the end of the string) ends the version
+    if (iter == end || *iter != '.' || i + 1 == std::size(fields)) {
+      break;
+    }
+    ++iter;
+  }
+  return ret;
+}
+
+std::string NodeVersion::toString() const {
+  std::string ret = std::to_string(this->major) + '.' + std::to_string(this->minor) + '.' +
+                    std::to_string(this->patch);
+  return ret;
+}
+
+bool operator<(const NodeVersion &x, const NodeVersion &y) {
+  if (x.major != y.major) {
+    return x.major < y.major;
+  }
+  if (x.minor != y.minor) {
+    return x.minor < y.minor;
+  }
+  return x.patch < y.patch;
+}
+
+Oracle::~Oracle() { this->shutdown(); }
+
+void Oracle::shutdown() {
   if (this->inFD > -1) {
     close(this->inFD);
+    this->inFD = -1;
   }
   if (this->pid > -1) {
-    this->inFD = -1;
     // the oracle exits once its stdin reaches EOF; wait a little, then make sure it is gone
     for (unsigned int i = 0; i < 200; i++) {
       int status = 0;
@@ -47,11 +107,14 @@ Oracle::~Oracle() {
       int status = 0;
       while (waitpid(this->pid, &status, 0) < 0 && errno == EINTR) {
       }
+      this->pid = -1;
     }
   }
   if (this->outFD > -1) {
     close(this->outFD);
+    this->outFD = -1;
   }
+  this->readBuf.clear();
 }
 
 bool Oracle::writeAll(const std::string &data) {
@@ -147,18 +210,17 @@ bool Oracle::start(const char *nodePath, const char *scriptPath, std::string &er
 
   std::string line;
   if (!this->readLine(line, err)) {
+    this->shutdown();
     return false;
   }
   auto json = json::JSON::fromString(line.c_str());
   if (!json.isObject()) {
-    err = "invalid banner from the oracle: " + line;
-    return false;
+    return this->fail(err, "invalid banner from the oracle: " + line);
   }
   const auto &obj = json.asObject();
   if (auto iter = obj.find("status");
       iter == obj.end() || !iter->second.isString() || iter->second.asString() != "hello") {
-    err = "unexpected banner from the oracle: " + line;
-    return false;
+    return this->fail(err, "unexpected banner from the oracle: " + line);
   }
   if (auto iter = obj.find("node"); iter != obj.end() && iter->second.isString()) {
     this->nodeVersion = iter->second.asString();
@@ -171,7 +233,26 @@ bool Oracle::start(const char *nodePath, const char *scriptPath, std::string &er
       this->capabilities.features[name] = value.isBool() && value.asBool();
     }
   }
+
+  // Node.js older than the requirement cannot serve as the oracle: the corpus relies on syntax it
+  // does not implement. Reject it here as well, so a binary swapped in after configure time is
+  // reported instead of silently skipping (or, worse, diverging on) every case.
+  const auto required = NodeVersion::required();
+  const auto actual = NodeVersion::parse(this->nodeVersion);
+  if (!actual.valid) {
+    return this->fail(err, "unreadable Node.js version from the oracle banner: " + line);
+  }
+  if (actual < required) {
+    return this->fail(err, "the oracle is Node.js " + this->nodeVersion + ", but at least " +
+                               required.toString() + " is required (see NODE_MIN_VERSION)");
+  }
   return true;
+}
+
+bool Oracle::fail(std::string &err, std::string message) {
+  err = std::move(message);
+  this->shutdown();
+  return false;
 }
 
 MatchResult Oracle::match(const Case &c) {

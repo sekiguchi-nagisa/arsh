@@ -88,6 +88,9 @@ modes, and translates the UTF-16 offsets reported by JavaScript into the UTF-8 b
 reports. See `test/regex/difftest/README.md` for the corpus format and how cases that depend on the
 Unicode data version or on newer syntax are handled.
 
+The test requires Node.js 26 or newer (it can be changed with `-DNODE_MIN_VERSION=<version>`); an
+older `node` is treated like a missing one, so the test is not built at all.
+
 ```sh
 $ ctest -R regex_difftest --output-on-failure
 ```

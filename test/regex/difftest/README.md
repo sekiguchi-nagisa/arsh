@@ -11,9 +11,44 @@ recorded as a known bug instead of being copied, see
 $ ctest -R regex_difftest --output-on-failure
 ```
 
-The test is only built when a `node` executable is found. Pass `-DNODE_PROGRAM=<path to node>` to
-choose a specific one; without Node.js there is no oracle, so the target is skipped at configure
-time with a warning.
+The test is only built when a `node` executable is found, and when it is new enough for the
+corpus. Pass `-DNODE_PROGRAM=<path to node>` to choose a specific one; without Node.js there is no
+oracle, so the target is skipped at configure time with a warning. A `node` older than
+`NODE_MIN_VERSION` is treated the same way, so an old interpreter lying around on `PATH` cannot
+silently turn the run into a no-op.
+
+## Node.js version
+
+The corpus uses `v` mode set operations, inline modifiers and properties of strings, so a Node.js
+that does not implement them cannot serve as the oracle. The minimum version is therefore a
+configure-time setting:
+
+| setting            | default | meaning                                                        |
+|--------------------|---------|----------------------------------------------------------------|
+| `NODE_MIN_VERSION` | `26`    | oldest acceptable Node.js (`major`, `major.minor` or full version) |
+| `NODE_PROGRAM`     | (found on `PATH`) | the `node` executable used as the oracle             |
+
+```sh
+$ cmake -DNODE_PROGRAM=/path/to/node -DNODE_MIN_VERSION=26 ..
+```
+
+The check happens twice, because the two failure modes look different:
+
+- **At configure time** `node --version` is run and compared with `NODE_MIN_VERSION`. A version
+  that is too old is reported as a warning and the target is not created, so the build does not
+  carry a test that can only skip.
+- **At run time** the version from the oracle banner (`process.versions.node`) is compared with the
+  same requirement again, and a `node` that is too old makes the oracle fail to start. This catches
+  a binary that was swapped after configure time (a `PATH` change, a different `node` in front of
+  the one that was found), which would otherwise skip every case and report a green run.
+
+Only the numeric `major.minor.patch` is compared: the `v` prefix of `node --version` is accepted,
+a pre-release / build suffix is ignored, and a missing component counts as `0` (`26` equals
+`26.0.0`). A version string with no number at all is rejected instead of being read as `0.0.0`, so
+a malformed banner never passes the check.
+
+The skip is loud rather than silent: the reason is printed once as a warning, and every case is
+reported as skipped with that reason.
 
 ## How it works
 

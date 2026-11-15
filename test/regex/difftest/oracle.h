@@ -17,6 +17,7 @@
 #ifndef ARSH_TEST_REGEX_DIFFTEST_ORACLE_H
 #define ARSH_TEST_REGEX_DIFFTEST_ORACLE_H
 
+#include <cstdint>
 #include <map>
 #include <string>
 #include <vector>
@@ -24,6 +25,54 @@
 #include "difftest.h"
 
 namespace arsh::difftest {
+
+/**
+ * The minimum Node.js version this test was configured with (`-DNODE_MIN_VERSION=<version>`).
+ */
+#ifndef NODE_MIN_VERSION_STR
+#error require NODE_MIN_VERSION_STR
+#endif
+
+/**
+ * A Node.js version (`v26.8.2`) reduced to the numeric `major.minor.patch` triple.
+ *
+ * Only the numbers are compared: a `v` prefix is accepted because that is what `node --version`
+ * prints, while the oracle banner reports `process.versions.node` without it; a pre-release or
+ * build suffix (`-nightly...`, `+...`) is ignored; and a missing component counts as 0, so `26`
+ * and `26.0.0` denote the same version.
+ *
+ * The corpus needs an engine with `v` mode set operations, inline modifiers and properties of
+ * strings, so a Node.js older than the requirement is not usable as the oracle at all. See
+ * `NodeVersion::required`.
+ */
+struct NodeVersion {
+  uint32_t major{0};
+  uint32_t minor{0};
+  uint32_t patch{0};
+  bool valid{false}; // false if nothing numerical could be read
+
+  /**
+   * @param version `v26.8.2`, `26.8.2`, `26`, ... A string without a leading number yields an
+   * invalid version instead of being treated as 0.0.0, so a malformed version never passes a
+   * comparison by accident.
+   */
+  static NodeVersion parse(StringRef version);
+
+  /**
+   * The version required by this build, from `-DNODE_MIN_VERSION` (Node.js 26 by default).
+   */
+  static NodeVersion required() { return parse(NODE_MIN_VERSION_STR); }
+
+  std::string toString() const;
+};
+
+/**
+ * Order two versions by major, then minor, then patch. The `valid` flags are not consulted, so
+ * check them before relying on the outcome.
+ */
+bool operator<(const NodeVersion &x, const NodeVersion &y);
+
+inline bool operator>=(const NodeVersion &x, const NodeVersion &y) { return !(x < y); }
 
 /**
  * Client for the Node.js oracle (`oracle.js`), which runs the regexp engine used by Node.js (V8)
@@ -71,6 +120,10 @@ public:
   /**
    * Start `node <scriptPath>` and read the banner.
    *
+   * A Node.js older than `NodeVersion::required()` is rejected here as well as at configure time:
+   * the binary may have been swapped since then, and an unusable oracle must be reported as a
+   * failed start instead of skipping every case.
+   *
    * @param nodePath the Node.js executable
    * @return false on failure, with the reason in `err`
    */
@@ -98,6 +151,18 @@ private:
   bool writeAll(const std::string &data);
 
   json::JSON request(const Case &c, std::string &err);
+
+  /**
+   * Close the child process and its pipes, leaving the oracle in the not started state. Called by
+   * the destructor and by `start()` itself, so a start that fails after the fork (a bad banner, an
+   * unusable Node.js version) does not leave a live child behind or look like a usable oracle.
+   */
+  void shutdown();
+
+  /**
+   * Record `message` in `err` and return false, after shutting the child process down.
+   */
+  bool fail(std::string &err, std::string message);
 };
 
 } // namespace arsh::difftest

@@ -39,7 +39,8 @@
  * `unicode` is the Unicode version bundled with the Node.js executable; difftest.cpp uses it to
  * avoid comparing behavior that depends on the Unicode data version. `capabilities` reports the
  * syntax features this Node.js understands, so cases requiring a newer engine are skipped
- * instead of being reported as divergences.
+ * instead of being reported as divergences. `node` is `process.versions.node`; the harness refuses
+ * an executable older than NODE_MIN_VERSION based on it (see oracle.cpp).
  *
  * The requests are answered as soon as a full line arrives (stdin is read synchronously), and
  * every response is written with fs.writeSync so it is flushed immediately. That keeps the

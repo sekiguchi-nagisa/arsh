@@ -104,14 +104,20 @@ const char *arshUnicodeVersion() { return UNICODE_VERSION_STR; }
 /**
  * Node.js and the Unicode version it bundles are read from the oracle banner. The oracle lives for
  * the whole test binary: starting Node.js per case would dominate the run time.
+ *
+ * A `node` older than `NODE_MIN_VERSION_STR` is refused by `Oracle::start`, so the reason is kept
+ * here and reported once by `environment()`.
  */
-Oracle &oracle() {
+Oracle &oracle(std::string *err = nullptr) {
   static Oracle instance;
   static bool started = false;
   static std::string error;
   if (!started) {
     started = true;
     instance.start(NODE_PATH, ORACLE_SCRIPT_PATH, error);
+  }
+  if (err != nullptr) {
+    *err = error;
   }
   return instance;
 }
@@ -122,6 +128,7 @@ Oracle &oracle() {
  */
 struct Environment {
   bool oracleAvailable{false};
+  std::string error; // why the oracle could not be started
   std::string nodeVersion;
   std::string unicodeVersion;
   std::map<std::string, bool> features;
@@ -133,12 +140,17 @@ const Environment &environment() {
   static bool initialized = false;
   if (!initialized) {
     initialized = true;
-    auto &o = oracle();
+    auto &o = oracle(&env.error);
     env.oracleAvailable = o.isStarted();
     if (!env.oracleAvailable) {
-      // a completely skipped run must not look like a passing one, so say it out loud once
-      fprintf(stderr, "[warning] no usable Node.js oracle (" NODE_PATH "); the differential test"
-                      " compares nothing\n");
+      // a completely skipped run must not look like a passing one, so say it out loud once,
+      // together with the reason (an unusable Node.js version is the usual one)
+      fprintf(stderr, "[warning] no usable Node.js oracle (" NODE_PATH ", at least "
+                      NODE_MIN_VERSION_STR " is required); the differential test compares nothing");
+      if (!env.error.empty()) {
+        fprintf(stderr, ": %s", env.error.c_str());
+      }
+      fputc('\n', stderr);
     }
     if (env.oracleAvailable) {
       env.nodeVersion = o.getNodeVersion();
@@ -188,6 +200,9 @@ TEST_P(RegexDiffTest, base) {
   const auto &env = environment();
 
   if (!env.oracleAvailable) {
+    if (!env.error.empty()) {
+      GTEST_SKIP() << "no usable Node.js oracle: " << env.error;
+    }
     GTEST_SKIP() << "no Node.js oracle";
   }
   std::string skipReason;
@@ -324,6 +339,80 @@ TEST(RegexDiffCorpus, loopCoverage) {
   EXPECT_GT(lazy, 10u);
   EXPECT_GT(bounded, 10u);
   EXPECT_GT(lookaround, 10u);
+}
+
+/**
+ * The minimum Node.js version decides whether the oracle may be used at all, so both the parsing
+ * and the ordering are checked directly: a malformed version must not be read as `0.0.0`, and the
+ * comparison must be numeric rather than lexicographic (`26.8.2` is older than `26.10.0`).
+ */
+TEST(RegexDiffNodeVersion, parse) {
+  {
+    const auto v = NodeVersion::parse("26.8.2");
+    ASSERT_TRUE(v.valid);
+    EXPECT_EQ(26u, v.major);
+    EXPECT_EQ(8u, v.minor);
+    EXPECT_EQ(2u, v.patch);
+  }
+  {
+    // the form `node --version` prints; the banner reports `process.versions.node` without it
+    const auto v = NodeVersion::parse("v26.8.2");
+    ASSERT_TRUE(v.valid);
+    EXPECT_EQ(26u, v.major);
+    EXPECT_EQ(8u, v.minor);
+    EXPECT_EQ(2u, v.patch);
+  }
+  {
+    // a missing component counts as 0, so a bare major version is usable as a requirement
+    const auto v = NodeVersion::parse("26");
+    ASSERT_TRUE(v.valid);
+    EXPECT_EQ(26u, v.major);
+    EXPECT_EQ(0u, v.minor);
+    EXPECT_EQ(0u, v.patch);
+  }
+  {
+    const auto v = NodeVersion::parse("24.1");
+    ASSERT_TRUE(v.valid);
+    EXPECT_EQ(24u, v.major);
+    EXPECT_EQ(1u, v.minor);
+    EXPECT_EQ(0u, v.patch);
+  }
+  {
+    // a pre-release suffix belongs to a development build of that line; only the numbers compare
+    const auto v = NodeVersion::parse("27.0.0-nightly20260101");
+    ASSERT_TRUE(v.valid);
+    EXPECT_EQ(27u, v.major);
+    EXPECT_EQ(0u, v.minor);
+    EXPECT_EQ(0u, v.patch);
+  }
+  {
+    // nothing numerical: unusable, not 0.0.0
+    EXPECT_FALSE(NodeVersion::parse("").valid);
+    EXPECT_FALSE(NodeVersion::parse("v").valid);
+    EXPECT_FALSE(NodeVersion::parse("node").valid);
+  }
+}
+
+TEST(RegexDiffNodeVersion, compare) {
+  const auto v = [](const char *str) { return NodeVersion::parse(str); };
+  EXPECT_FALSE(v("26.8.2") < v("26.8.2"));
+  EXPECT_LT(v("26.8.2"), v("26.8.10")); // numeric, not lexicographic
+  EXPECT_LT(v("26.8.2"), v("26.9.0"));
+  EXPECT_LT(v("26.8.2"), v("27.0.0"));
+  EXPECT_LT(v("9.0.0"), v("26.0.0"));
+  EXPECT_LT(v("26.7.0"), v("26.8.2"));
+  EXPECT_FALSE(v("26.9.0") < v("26.8.2"));
+
+  // `26` and `26.0.0` denote the same version, so a `26` requirement accepts both
+  EXPECT_FALSE(v("26") < v("26.0.0"));
+  EXPECT_FALSE(v("26.0.0") < v("26"));
+  EXPECT_FALSE(v("26.8.2") < v("26"));
+
+  // the requirement baked in at configure time (`-DNODE_MIN_VERSION`) has to be a usable version
+  const auto required = NodeVersion::required();
+  ASSERT_TRUE(required.valid) << "NODE_MIN_VERSION_STR is not a version: " NODE_MIN_VERSION_STR;
+  EXPECT_FALSE(required < v("26.0.0"));
+  EXPECT_LT(v("25.9.9"), required);
 }
 
 /**
