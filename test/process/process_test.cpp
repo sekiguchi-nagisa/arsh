@@ -73,7 +73,7 @@ TEST_F(ProcTest, pty1) {
 
 TEST_F(ProcTest, pty2) {
   if (arsh::platform::isCygwinOrMsys(arsh::platform::platform())) {
-    return; // workaround for Cygwin
+    GTEST_SKIP() << "workaround for " << arsh::platform::toString(arsh::platform::platform());
   }
 
   IOConfig config;
@@ -100,7 +100,7 @@ TEST_F(ProcTest, pty2) {
 
 TEST_F(ProcTest, pty3) {
   if (arsh::platform::isCygwinOrMsys(arsh::platform::platform())) {
-    return; // workaround for Cygwin
+    GTEST_SKIP() << "workaround for " << arsh::platform::toString(arsh::platform::platform());
   }
 
   IOConfig config;

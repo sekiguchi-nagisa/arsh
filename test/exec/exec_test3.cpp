@@ -6,7 +6,8 @@ TEST_P(ExecTest, baseTest) {
 }
 
 INSTANTIATE_TEST_SUITE_P(ExecTest, ExecTest,
-                         ::testing::ValuesIn(findExecTestCasesFromDir(EXEC_TEST_DIR "/output")));
+                         ::testing::ValuesIn(findExecTestCasesFromDir(EXEC_TEST_DIR "/output")),
+                         ParamName);
 
 int main(int argc, char **argv) {
   ::testing::InitGoogleTest(&argc, argv);

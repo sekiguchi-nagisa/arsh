@@ -36,6 +36,15 @@ int parse(const char *src, T &&...args) {
   return Extractor(src)(std::forward<T>(args)...);
 }
 
+inline std::string ParamName(const testing::TestParamInfo<std::string> &info) {
+  std::string name = getBasename(getDirname(info.param)).toString();
+  name += "__";
+  auto base = getBasename(info.param);
+  auto r = base.find('.');
+  name += base.substr(0, r);
+  return name;
+}
+
 class ExecTest : public ::testing::TestWithParam<std::string>, public TempFileFactory {
 protected:
   std::string targetName;
@@ -52,8 +61,7 @@ public:
     ASSERT_TRUE(s);
 
     if (d.isIgnoredPlatform()) {
-      fprintf(stderr, "ignore execution: %s\n", this->getSourceName().c_str());
-      return;
+      GTEST_SKIP() << "ignore execution: " << this->getSourceName();
     }
 
     const char *scriptName = this->getSourceName().c_str();
@@ -138,9 +146,9 @@ public:
     if (*s) {
       ret = split(s, '_')[3];
     }
-    ret += "(";
+    ret += '(';
     ret += std::to_string(kind);
-    ret += ")";
+    ret += ')';
     return ret;
   }
 

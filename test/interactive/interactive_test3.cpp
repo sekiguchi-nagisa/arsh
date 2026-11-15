@@ -748,7 +748,7 @@ TEST_F(InteractiveTest, disown2) {
 
 TEST_F(InteractiveTest, changeTCPGRPInChild) {
   if (platform::isCygwinOrMsys(platform::platform())) {
-    return;
+    GTEST_SKIP() << "unsupported platform: " << platform::toString(platform::platform());
   }
 
   this->invoke("--quiet", "--norc");
@@ -767,7 +767,8 @@ TEST_F(InteractiveTest, changeTCPGRPInChild) {
 
 TEST_F(InteractiveTest, changeFDSetting) {
   if (platform::isCygwinOrMsys(platform::platform())) {
-    return; // skip since cygwin does not correctly set O_NONBLOCK
+    GTEST_SKIP() << platform::toString(platform::platform())
+                 << " does not correctly set O_NONBLOCK";
   }
 
   this->invoke("--quiet", "--norc");

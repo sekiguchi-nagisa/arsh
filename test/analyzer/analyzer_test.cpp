@@ -121,6 +121,12 @@ static ProcBuilder litecheck(const std::string &scriptPath) {
   return ProcBuilder{BIN_PATH, LITECHECK_PATH, "-b", ANALYZER_PATH}.addArg(scriptPath);
 }
 
+static std::string ParamName(const testing::TestParamInfo<std::string> &info) {
+  auto base = getBasename(info.param);
+  auto r = base.find('.');
+  return base.substr(0, r).toString();
+}
+
 struct AnalyzerTest : public ::testing::TestWithParam<std::string> {
   static void doTest() {
     auto result = litecheck(GetParam()).exec();
@@ -139,7 +145,7 @@ TEST_P(AnalyzerTest, base) {
 }
 
 INSTANTIATE_TEST_SUITE_P(AnalyzerTest, AnalyzerTest,
-                         ::testing::ValuesIn(getSortedFileList(ANALYZER_TEST_DIR)));
+                         ::testing::ValuesIn(getSortedFileList(ANALYZER_TEST_DIR)), ParamName);
 
 TEST(AnalyzerBinaryCheckTest, base) { // not contains VM* symbols
   const char *pattern = "VMState";

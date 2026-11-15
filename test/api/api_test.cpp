@@ -825,7 +825,8 @@ TEST_F(APITest, module5) {
 
 TEST_F(APITest, module6) {
   if (arsh::platform::isCygwinOrMsys(arsh::platform::platform())) {
-    return;
+    GTEST_SKIP() << "unsupported platform: "
+                 << arsh::platform::toString(arsh::platform::platform());
   }
 
   auto fileName = this->createTempFile(R"(ss$ho"\hgoe

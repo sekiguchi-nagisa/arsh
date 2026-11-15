@@ -485,7 +485,7 @@ TEST_F(InteractiveTest, winSize1) {
 
 TEST_F(InteractiveTest, winSize2) {
   if (!platform::isLinux(platform::platform())) {
-    return;
+    GTEST_SKIP() << "unsupported platform: " << platform::toString(platform::platform());
   }
 
   this->invoke("--quiet", "--norc");
@@ -607,7 +607,7 @@ TEST_F(InteractiveTest, moduleError4) {
 
 TEST_F(InteractiveTest, sourceGlobLimit) {
   if (isCygwinOrMsys(platform::platform())) {
-    return; // skip since ulimit -S -n does not work in cygwin
+    GTEST_SKIP() << "ulimit -S -n does not work in " << platform::toString(platform::platform());
   }
 
   this->invoke("--quiet", "--norc");

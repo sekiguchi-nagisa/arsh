@@ -406,7 +406,8 @@ TEST_F(CmdlineTest, signal) {
 
   if (const auto type = platform::platform();
       type == platform::PlatformType::DARWIN || platform::isCygwinOrMsys(type)) {
-    return;
+    GTEST_SKIP() << "unsupported platform: "
+             << platform::toString(platform::platform());
   }
 
   // core dump
@@ -446,7 +447,7 @@ TEST_F(CmdlineTest, locale) {
 
 TEST_F(CmdlineTest, globLimit) {
   if (platform::isCygwinOrMsys(platform::platform())) {
-    return; // skip since ulimit does not work in cygwin
+    GTEST_SKIP() << "ulimit does not work in "<< platform::toString(platform::platform());
   }
 
   std::string err = format(R"([runtime error]
@@ -591,10 +592,10 @@ TEST_F(CmdlineTest2, cwd) {
 
 TEST_F(CmdlineTest2, import1) {
   if (platform::isCygwinOrMsys(platform::platform())) {
-    return;
+    GTEST_SKIP() << "unsupported platform: " << platform::toString(platform::platform());
   }
   if (getuid() == 0) {
-    return;
+    GTEST_SKIP() << "skip due to getuid() == 0";
   }
 
   auto fileName = this->createTempFile("target.ds", "throw new Error('invalid!!')");
