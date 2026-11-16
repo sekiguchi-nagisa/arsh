@@ -171,7 +171,7 @@ bool printErrorAt(const ARState &state, const ArrayObject &argvObj, const String
     out += "arsh: ";
   } else {
     StringRef ref = sourceName;
-    if (auto r = ref.lastIndexOf("/"); r != StringRef ::npos) {
+    if (auto r = ref.lastIndexOf("/"); r != StringRef::npos) {
       ref = ref.substr(r + 1);
     }
     out += ref;
@@ -1000,30 +1000,31 @@ bool mergeSort(ARState &state, ArrayObject &arrayObj, const Value &compFunc) {
   static_assert(sizeof(frames) <= 128);
   frames.reserve(getStackDepth(arrayObj.size()));
   for (frames.push(MergeSortFrame::create(0, arrayObj.size())); frames.size(); frames.pop()) {
-  NEXT: {
-    auto &frame = frames.back();
-    if (frame.left + 1 >= frame.right) {
-      continue;
-    }
-    const unsigned int mid = (frame.left + frame.right) / 2;
-    if (frame.count < 2) {
-      unsigned int left;
-      unsigned int right;
-      if (frame.count == 0) {
-        left = frame.left;
-        right = mid;
-      } else {
-        left = mid;
-        right = frame.right;
+  NEXT:
+    {
+      auto &frame = frames.back();
+      if (frame.left + 1 >= frame.right) {
+        continue;
       }
-      frame.count++;
-      frames.push(MergeSortFrame::create(left, right));
-      goto NEXT;
+      const unsigned int mid = (frame.left + frame.right) / 2;
+      if (frame.count < 2) {
+        unsigned int left;
+        unsigned int right;
+        if (frame.count == 0) {
+          left = frame.left;
+          right = mid;
+        } else {
+          left = mid;
+          right = frame.right;
+        }
+        frame.count++;
+        frames.push(MergeSortFrame::create(left, right));
+        goto NEXT;
+      }
+      if (!merge(state, arrayObj, buf.get(), compFunc, frame.left, mid, frame.right)) {
+        return false;
+      }
     }
-    if (!merge(state, arrayObj, buf.get(), compFunc, frame.left, mid, frame.right)) {
-      return false;
-    }
-  }
   }
   return true;
 }
