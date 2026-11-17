@@ -8,6 +8,12 @@
 
 - add ``Regex#matchAll`` method for all matched results
 
+### Changed
+
+#### Core
+
+- improve assertion error message. show left/right-hand side of ``<``, ``<=``, ``>``, ``>=``
+
 ### Fixed
 
 - bugfix radix tree findLongestMatched api. now pass property mask

@@ -1274,6 +1274,14 @@ static AssertOp resolveAssertOp(TokenKind kind) {
     return AssertOp::EQ;
   case TokenKind::NE:
     return AssertOp::NE;
+  case TokenKind::LT:
+    return AssertOp::LT;
+  case TokenKind::LE:
+    return AssertOp::LE;
+  case TokenKind::GT:
+    return AssertOp::GT;
+  case TokenKind::GE:
+    return AssertOp::GE;
   case TokenKind::MATCH:
     return AssertOp::MATCH;
   case TokenKind::UNMATCH:
