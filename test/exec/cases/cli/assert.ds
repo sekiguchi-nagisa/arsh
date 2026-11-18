@@ -97,11 +97,11 @@ $msg = "$(<<'EOF'
 AssertionFailed: `0 > $@.size()'
 binary expression `<LHS> > <RHS>' is false
   <LHS>: Int = 0
-  <RHS>: Int = 0
+  <RHS>: Int = 2
     from (string):1 '<toplevel>()'
 EOF
 )"
-$expect("$(ds -c 'assert 0 > $@.size()' 2>&1)", 1, $msg)
+$expect("$(ds -c 'assert 0 > $@.size()' aaa bbb ccc 2>&1)", 1, $msg)
 
 $msg = "$(<<'EOF'
 [runtime error]
