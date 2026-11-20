@@ -4,8 +4,8 @@
 
 download_project(
         PROJ googletest
-        GIT_REPOSITORY https://github.com/sekiguchi-nagisa/googletest.git
-        GIT_TAG fe9a5fa0a55e44f202a730395789f36e5b78028c # v1.17.x-patched
+        GIT_REPOSITORY https://github.com/google/googletest.git
+        GIT_TAG 063de7e9578f82b369302001269680b4b1553359 # v1.18.0
         GIT_PROGRESS 1
         UPDATE_DISCONNECTED 0
 )
