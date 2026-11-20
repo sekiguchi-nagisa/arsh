@@ -221,7 +221,10 @@ bool FirstBytesCollector::collect(const Inst *begin, const Inst *end) {
 
 class CodePointCounter {
 private:
-  static constexpr unsigned int MAX_COUNT = UINT8_MAX;
+  static constexpr unsigned int MAX_COUNT = UINT16_MAX;
+
+  static_assert(MAX_COUNT <=
+                std::numeric_limits<decltype(Prefilter().getMaxPrevCodePoints())>::max());
 
   unsigned int min{0};
   unsigned int max{0};

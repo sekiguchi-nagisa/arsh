@@ -440,6 +440,10 @@ enum class AssertOp : unsigned char {
   DEFAULT,
   EQ,      // ==
   NE,      // !=
+  LT,      // <
+  LE,      // <=
+  GT,      // >
+  GE,      // >=
   MATCH,   // =~
   UNMATCH, // !~
   IS,      // is
@@ -453,6 +457,14 @@ inline const char *toString(AssertOp op) {
     return "==";
   case AssertOp::NE:
     return "!=";
+  case AssertOp::LT:
+    return "<";
+  case AssertOp::LE:
+    return "<=";
+  case AssertOp::GT:
+    return ">";
+  case AssertOp::GE:
+    return ">=";
   case AssertOp::MATCH:
     return "=~";
   case AssertOp::UNMATCH:

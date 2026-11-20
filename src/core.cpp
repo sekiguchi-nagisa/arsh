@@ -120,6 +120,10 @@ void raiseAssertFail(ARState &st, Value &&msg, const AssertOp op, Value &&left, 
     break;
   case AssertOp::EQ:
   case AssertOp::NE:
+  case AssertOp::LT:
+  case AssertOp::LE:
+  case AssertOp::GT:
+  case AssertOp::GE:
   case AssertOp::MATCH:
   case AssertOp::UNMATCH: {
     value += "\nbinary expression `<LHS> ";
