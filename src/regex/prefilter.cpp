@@ -503,17 +503,19 @@ bool PrefilterBuilder::resolveAnchor(const Inst *inst, const Inst *end, Prefilte
       auto &ins = cast<BeginLoopIns>(*inst);
       auto subBegin = inst;
       subBegin += sizeof(BeginLoopIns); // due to suppress code analysis warning
+      const auto subEnd = this->instSeq.begin() + ins.getOuter();
       if (ins.getMin() == 0 && ins.isUnlimited()) {
-        if (subBegin->op == OpCode::Any && noneOr(prefilter, Prefilter::Type::START)) {
+        if (subBegin->op == OpCode::Any && noneOr(prefilter, Prefilter::Type::START) &&
+            subBegin + sizeof(AnyIns) + sizeof(EndLoopIns) == subEnd) {
           prefilter = Prefilter::start(); // (?s:.)* or (?s:.)*?
           return true;
         }
-        if (subBegin->op == OpCode::AnyExceptNL && noneOr(prefilter, Prefilter::Type::LINE_START)) {
+        if (subBegin->op == OpCode::AnyExceptNL && noneOr(prefilter, Prefilter::Type::LINE_START) &&
+            subBegin + sizeof(AnyIns) + sizeof(EndLoopIns) == subEnd) {
           prefilter = Prefilter::lineStart(); // .* or .*?
           return true;
         }
       } else if (ins.getMin() > 0) {
-        const auto subEnd = this->instSeq.begin() + ins.getOuter();
         return this->resolveAnchor(subBegin, subEnd, prefilter, captureUsage);
       }
       break;

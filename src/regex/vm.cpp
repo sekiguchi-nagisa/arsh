@@ -411,11 +411,15 @@ static bool nextCandidates(const Inst *&inst, Input &input, const char *&startIt
     }
     if (prefilter.getType() == Prefilter::Type::LINE_START) {
       assert(input.getBegin() != input.getIter());
-      for (; input.available(); input.consumeForward()) {
+      while (true) {
         if (isLineTerminator(input.prev())) {
           startIter = input.getIter();
           return true;
         }
+        if (!input.available()) {
+          break;
+        }
+        input.consumeForward();
       }
     }
     startIter = input.getEnd();
