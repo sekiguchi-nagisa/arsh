@@ -440,3 +440,23 @@ prefilter:
 matchers:
 EOF
 )
+
+assert diff <(redump -d '(?:.a)*b' 's') <(<<'EOF'
+flag: (mode = , modifier = s)
+loopCount: 1
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+   0: BeginLoop(loopIndex=0, greedy=true, min=0, max=4294967295, outer=25)
+  14: Any
+  15: Char(codePoint=U+0061:a)
+  20: EndLoop(target=0)
+  25: Char(codePoint=U+0062:b)
+  30: Match
+prefilter:
+  data:
+  minPrevCodePoints: 0
+  maxPrevCodePoints: 0
+matchers:
+EOF
+)
