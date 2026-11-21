@@ -42,6 +42,30 @@ matchers:
 EOF
 )
 
+# ((^.)).\2
+assert diff <(redump -d '((^.)).\2' '') <(<<'EOF'
+flag: (mode = , modifier = )
+loopCount: 0
+captureGroupCount: 2
+namedCaptureGroups: []
+instructions:
+   0: BeginCapture(captureIndex=1)
+   3: BeginCapture(captureIndex=2)
+   6: Start(multiline=false)
+   8: AnyExceptNL
+   9: EndCapture(captureIndex=2)
+  12: EndCapture(captureIndex=1)
+  15: AnyExceptNL
+  16: BackRef(index=2, named=false)
+  20: Match
+prefilter:
+  data:
+  minPrevCodePoints: 0
+  maxPrevCodePoints: 0
+matchers:
+EOF
+)
+
 # (.)(?<=.\1)
 assert diff <(redump -d '(.)(?<=.\1)' '') <(<<'EOF'
 flag: (mode = , modifier = )

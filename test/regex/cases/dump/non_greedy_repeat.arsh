@@ -157,3 +157,126 @@ prefilter:
 matchers:
 EOF
 )
+
+# .*?
+assert diff <(redump -d '.*?' '') <(<<'EOF'
+flag: (mode = , modifier = )
+loopCount: 1
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+   0: BeginLoop(loopIndex=0, greedy=false, min=0, max=4294967295, outer=20)
+  14: AnyExceptNL
+  15: EndLoop(target=0)
+  20: Match
+prefilter:
+  data: line_start
+  minPrevCodePoints: 0
+  maxPrevCodePoints: 0
+matchers:
+EOF
+)
+
+assert diff <(redump -d '.*?' 's') <(<<'EOF'
+flag: (mode = , modifier = s)
+loopCount: 1
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+   0: BeginLoop(loopIndex=0, greedy=false, min=0, max=4294967295, outer=20)
+  14: Any
+  15: EndLoop(target=0)
+  20: Match
+prefilter:
+  data: start
+  minPrevCodePoints: 0
+  maxPrevCodePoints: 0
+matchers:
+EOF
+)
+
+# .+?
+assert diff <(redump -d '.+?' '') <(<<'EOF'
+flag: (mode = , modifier = )
+loopCount: 1
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+   0: BeginLoop(loopIndex=0, greedy=false, min=1, max=4294967295, outer=20)
+  14: AnyExceptNL
+  15: EndLoop(target=0)
+  20: Match
+prefilter:
+  data:
+  minPrevCodePoints: 0
+  maxPrevCodePoints: 0
+matchers:
+EOF
+)
+
+assert diff <(redump -d '.+?' 's') <(<<'EOF'
+flag: (mode = , modifier = s)
+loopCount: 1
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+   0: BeginLoop(loopIndex=0, greedy=false, min=1, max=4294967295, outer=20)
+  14: Any
+  15: EndLoop(target=0)
+  20: Match
+prefilter:
+  data:
+  minPrevCodePoints: 0
+  maxPrevCodePoints: 0
+matchers:
+EOF
+)
+
+# (.*?,){2}
+assert diff <(redump -d '(.*?,){2}' '') <(<<'EOF'
+flag: (mode = , modifier = )
+loopCount: 2
+captureGroupCount: 1
+namedCaptureGroups: []
+instructions:
+   0: BeginLoop(loopIndex=1, greedy=true, min=2, max=2, outer=55)
+  14: ResetCaptures(firstIndex=1, lastIndex=1)
+  19: BeginCapture(captureIndex=1)
+  22: BeginLoop(loopIndex=0, greedy=false, min=0, max=4294967295, outer=42)
+  36: AnyExceptNL
+  37: EndLoop(target=22)
+  42: Char(codePoint=U+002C:,)
+  47: EndCapture(captureIndex=1)
+  50: EndLoop(target=0)
+  55: Match
+prefilter:
+  data: line_start
+  minPrevCodePoints: 0
+  maxPrevCodePoints: 0
+matchers:
+EOF
+)
+
+assert diff <(redump -d '(.*?,){2}' 's') <(<<'EOF'
+flag: (mode = , modifier = s)
+loopCount: 2
+captureGroupCount: 1
+namedCaptureGroups: []
+instructions:
+   0: BeginLoop(loopIndex=1, greedy=true, min=2, max=2, outer=55)
+  14: ResetCaptures(firstIndex=1, lastIndex=1)
+  19: BeginCapture(captureIndex=1)
+  22: BeginLoop(loopIndex=0, greedy=false, min=0, max=4294967295, outer=42)
+  36: Any
+  37: EndLoop(target=22)
+  42: Char(codePoint=U+002C:,)
+  47: EndCapture(captureIndex=1)
+  50: EndLoop(target=0)
+  55: Match
+prefilter:
+  data: start
+  minPrevCodePoints: 0
+  maxPrevCodePoints: 0
+matchers:
+EOF
+)

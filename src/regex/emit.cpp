@@ -46,10 +46,11 @@ Optional<Regex> CodeGen::operator()(SyntaxTree &&tree) {
   // finalize
   this->builder.emit<MatchIns>();
   auto flag = tree.getFlag();
-  auto count = tree.getCaptureGroupCount();
-  auto loopCount = tree.getLoopCount();
+  const auto count = tree.getCaptureGroupCount();
+  const auto loopCount = tree.getLoopCount();
   auto instSeq = std::move(this->builder).build();
-  auto prefilter = createPrefilter(ArrayRef(instSeq.data(), instSeq.size()), this->matchers);
+  auto prefilter = createPrefilter(ArrayRef(instSeq.data(), instSeq.size()), this->matchers, count,
+                                   tree.getNamedCaptureGroups());
   return Regex(flag, loopCount, std::move(instSeq), prefilter, std::move(this->matchers),
                std::move(tree).takeNamedCaptureGroups(), count);
 }

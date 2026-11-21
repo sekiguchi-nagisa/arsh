@@ -40,6 +40,7 @@ private:
   std::vector<LoopState> loops;
   std::string foldBuf;
   const char *prefilterFound{nullptr};
+  unsigned int startOffset{0};
   unsigned int prevCodePoints{0};
 
 public:
@@ -72,10 +73,13 @@ public:
 
   void setPrefilter(bool set) { this->prefilter = set; }
 
+  unsigned int getStartOffset() const { return this->startOffset; }
+
   Capture *prepare() {
     this->prefilterFound = nullptr;
     this->prevCodePoints = 0;
     this->captures.resize(this->captureGroupCount + 1);
+    this->startOffset = this->input.getOffset();
     this->resetState();
     return this->getCaptures();
   }

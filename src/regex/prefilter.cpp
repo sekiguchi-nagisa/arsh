@@ -16,9 +16,11 @@
 
 #include "prefilter.h"
 
+#include "capture.h"
 #include "input.h"
 #include "instruction.h"
 #include "matcher.h"
+#include "misc/bitset.hpp"
 #include "misc/num_util.hpp"
 #include "misc/rtti.hpp"
 #include "misc/unicode.hpp"
@@ -248,20 +250,43 @@ public:
 struct PrefilterBuilder {
   const ArrayRef<Inst> instSeq;
   const ArrayRef<Matcher> matchers;
+  const unsigned int captureGroupCount; // 1-based index. if 0, indicate no captures
+  const NamedCaptureGroups &namedGroups;
 
-  PrefilterBuilder(ArrayRef<Inst> instSeq, ArrayRef<Matcher> matchers)
-      : instSeq(instSeq), matchers(matchers) {}
+  PrefilterBuilder(ArrayRef<Inst> instSeq, ArrayRef<Matcher> matchers,
+                   unsigned int captureGroupCount, const NamedCaptureGroups &named)
+      : instSeq(instSeq), matchers(matchers), captureGroupCount(captureGroupCount),
+        namedGroups(named) {}
 
-  Prefilter operator()() {
-    CodePointCounter counter;
-    Prefilter prefilter;
-    this->build(this->instSeq.begin(), this->instSeq.end(), counter, &prefilter);
+  Prefilter operator()() const {
+    Prefilter prefilter = this->resolveAnchor();
+    if (prefilter.getType() == Prefilter::Type::NONE) {
+      CodePointCounter counter;
+      this->build(this->instSeq.begin(), this->instSeq.end(), counter, &prefilter);
+    }
     return prefilter;
   }
 
-  bool build(const Inst *inst, const Inst *end, CodePointCounter &counter, Prefilter *prefilter);
-
 private:
+  bool build(const Inst *inst, const Inst *end, CodePointCounter &counter,
+             Prefilter *prefilter) const;
+
+  Prefilter resolveAnchor() const {
+    Prefilter prefilter;
+    Optional<const BitSet> captureUsage;
+    if (this->resolveAnchor(this->instSeq.begin(), this->instSeq.end(), prefilter, captureUsage)) {
+      assert(prefilter.getType() == Prefilter::Type::START ||
+             prefilter.getType() == Prefilter::Type::LINE_START);
+      return prefilter;
+    }
+    return {};
+  }
+
+  bool resolveAnchor(const Inst *inst, const Inst *end, Prefilter &prefilter,
+                     Optional<const BitSet> &captureUsage) const;
+
+  void tryToCollectCaptureUsage(Optional<const BitSet> &set) const;
+
   template <typename T>
   static void tryToUpdate(Prefilter &prefilter, const CodePointCounter &counter, T &&value) {
     Prefilter newFilter(counter.getMin(), std::forward<T>(value), counter.getMax());
@@ -272,7 +297,7 @@ private:
 };
 
 bool PrefilterBuilder::build(const Inst *inst, const Inst *const end, CodePointCounter &counter,
-                             Prefilter *prefilter) {
+                             Prefilter *prefilter) const {
   while (inst != end) {
     switch (inst->op) {
     case OpCode::Nop:
@@ -403,6 +428,146 @@ bool PrefilterBuilder::build(const Inst *inst, const Inst *const end, CodePointC
   return true;
 }
 
+static bool noneOr(const Prefilter &p, const Prefilter::Type t) {
+  return p.getType() == Prefilter::Type::NONE || p.getType() == t;
+}
+
+bool PrefilterBuilder::resolveAnchor(const Inst *inst, const Inst *end, Prefilter &prefilter,
+                                     Optional<const BitSet> &captureUsage) const {
+  while (inst != end) {
+    switch (inst->op) {
+    case OpCode::Nop:
+    case OpCode::Match:
+    case OpCode::Jump:
+    case OpCode::End:
+    case OpCode::Word:
+    case OpCode::IWord:
+    case OpCode::Any:
+    case OpCode::AnyExceptNL:
+    case OpCode::LBAny:
+    case OpCode::Grapheme:
+    case OpCode::Char:
+    case OpCode::IChar:
+    case OpCode::LBChar:
+    case OpCode::CharSet:
+    case OpCode::ICharSet:
+    case OpCode::LBCharSet:
+    case OpCode::PrepareRadix:
+    case OpCode::RadixOrEmoji:
+    case OpCode::PrepareLBRadix:
+    case OpCode::LBRadixOrEmoji:
+    case OpCode::String:
+    case OpCode::LBString:
+    case OpCode::EndCapture:
+    case OpCode::LBEndCapture:
+    case OpCode::BackRef:
+    case OpCode::IBackRef:
+    case OpCode::LBBackRef:
+    case OpCode::EndLoop:
+    case OpCode::BeginLookAround:
+    case OpCode::EndLookAround:
+      break;
+    case OpCode::Alt: {
+      auto &ins = cast<AltIns>(*inst);
+      inst += sizeof(AltIns);
+      TRY(this->resolveAnchor(inst, this->instSeq.begin() + ins.getSecond(), prefilter,
+                              captureUsage));
+      inst = this->instSeq.begin() + ins.getSecond();
+      continue;
+    }
+    case OpCode::Start:
+      if (cast<StartIns>(*inst).multiline) {
+        if (noneOr(prefilter, Prefilter::Type::LINE_START)) {
+          prefilter = Prefilter::lineStart();
+          return true;
+        }
+      } else if (noneOr(prefilter, Prefilter::Type::START)) {
+        prefilter = Prefilter::start();
+        return true;
+      }
+      return false;
+    case OpCode::BeginCapture: {
+      const auto captureIndex = cast<BeginCaptureIns>(*inst).getCaptureIndex();
+      inst += sizeof(BeginCaptureIns);
+      this->tryToCollectCaptureUsage(captureUsage);
+      if (this->resolveAnchor(inst, end, prefilter, captureUsage)) {
+        if (!captureUsage.unwrap().test(captureIndex)) { // capture is not referenced
+          return true;
+        }
+      }
+      break;
+    }
+    case OpCode::ResetCaptures:
+      inst += sizeof(ResetCapturesIns);
+      continue;
+    case OpCode::BeginLoop: {
+      auto &ins = cast<BeginLoopIns>(*inst);
+      auto subBegin = inst;
+      subBegin += sizeof(BeginLoopIns); // due to suppress code analysis warning
+      if (ins.getMin() == 0 && ins.isUnlimited()) {
+        if (subBegin->op == OpCode::Any && noneOr(prefilter, Prefilter::Type::START)) {
+          prefilter = Prefilter::start(); // (?s:.)* or (?s:.)*?
+          return true;
+        }
+        if (subBegin->op == OpCode::AnyExceptNL && noneOr(prefilter, Prefilter::Type::LINE_START)) {
+          prefilter = Prefilter::lineStart(); // .* or .*?
+          return true;
+        }
+      } else if (ins.getMin() > 0) {
+        const auto subEnd = this->instSeq.begin() + ins.getOuter();
+        return this->resolveAnchor(subBegin, subEnd, prefilter, captureUsage);
+      }
+      break;
+    }
+    }
+    break;
+  }
+  return false;
+}
+
+void PrefilterBuilder::tryToCollectCaptureUsage(Optional<const BitSet> &set) const {
+  if (set.hasValue()) {
+    return;
+  }
+  BitSet usage(this->captureGroupCount + 1);
+  for (auto *inst = this->instSeq.begin(); inst != this->instSeq.end(); inst += sizeOfInst(inst)) {
+    unsigned int refIndex;
+    bool named;
+    switch (inst->op) {
+    case OpCode::BackRef:
+      refIndex = cast<BackRefIns>(*inst).getRefIndex();
+      named = cast<BackRefIns>(*inst).named;
+      break;
+    case OpCode::IBackRef:
+      refIndex = cast<IBackRefIns>(*inst).getRefIndex();
+      named = cast<IBackRefIns>(*inst).named;
+      break;
+    case OpCode::LBBackRef:
+      refIndex = cast<LBBackRefIns>(*inst).getRefIndex();
+      named = cast<LBBackRefIns>(*inst).named;
+      break;
+    default:
+      continue;
+    }
+
+    // backref
+    if (named) {
+      if (auto *entry = this->namedGroups.findByIndex(refIndex)) {
+        if (entry->hasMultipleIndices()) {
+          for (unsigned int i = 0; i < entry->getSize(); i++) {
+            usage.set((*entry)[i]);
+          }
+        } else {
+          usage.set(entry->getIndex());
+        }
+      }
+    } else {
+      usage.set(refIndex);
+    }
+  }
+  set = std::move(usage);
+}
+
 FirstBitSet createFirstBitSet(const ArrayRef<Inst> instSeq, const ArrayRef<Matcher> matchers) {
   if (FirstBytesCollector collector(instSeq, matchers); collector()) {
     return collector.set;
@@ -410,8 +575,9 @@ FirstBitSet createFirstBitSet(const ArrayRef<Inst> instSeq, const ArrayRef<Match
   return {};
 }
 
-Prefilter createPrefilter(const ArrayRef<Inst> instSeq, const ArrayRef<Matcher> matchers) {
-  PrefilterBuilder builder(instSeq, matchers);
+Prefilter createPrefilter(const ArrayRef<Inst> instSeq, const ArrayRef<Matcher> matchers,
+                          const unsigned int captureGroupCount, const NamedCaptureGroups &named) {
+  PrefilterBuilder builder(instSeq, matchers, captureGroupCount, named);
   return builder();
 }
 

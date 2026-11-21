@@ -227,3 +227,40 @@ prefilter:
 matchers:
 EOF
 )
+
+# (^)
+assert diff <(redump -d '(^)' '') <(<<'EOF'
+flag: (mode = , modifier = )
+loopCount: 0
+captureGroupCount: 1
+namedCaptureGroups: []
+instructions:
+  0: BeginCapture(captureIndex=1)
+  3: Start(multiline=false)
+  5: EndCapture(captureIndex=1)
+  8: Match
+prefilter:
+  data: start
+  minPrevCodePoints: 0
+  maxPrevCodePoints: 0
+matchers:
+EOF
+)
+
+assert diff <(redump -d '(^)' 'm') <(<<'EOF'
+flag: (mode = , modifier = m)
+loopCount: 0
+captureGroupCount: 1
+namedCaptureGroups: []
+instructions:
+  0: BeginCapture(captureIndex=1)
+  3: Start(multiline=true)
+  5: EndCapture(captureIndex=1)
+  8: Match
+prefilter:
+  data: line_start
+  minPrevCodePoints: 0
+  maxPrevCodePoints: 0
+matchers:
+EOF
+)

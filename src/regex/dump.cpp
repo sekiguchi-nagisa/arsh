@@ -672,11 +672,22 @@ void RegexDumper::dump(const FlexBuffer<Inst> &ins) {
 
 void RegexDumper::dump(const Prefilter &prefilter) {
   this->base.field("data");
-  this->base.newline();
   switch (prefilter.getType()) {
   case Prefilter::Type::NONE:
+    this->base.newline();
+    break;
+  case Prefilter::Type::START:
+    this->base.append(' ');
+    this->base.append("start");
+    this->base.newline();
+    break;
+  case Prefilter::Type::LINE_START:
+    this->base.append(' ');
+    this->base.append("line_start");
+    this->base.newline();
     break;
   case Prefilter::Type::BITSET: {
+    this->base.newline();
     auto &set = prefilter.asBitSet();
     unsigned int c = 0;
     for (unsigned int i = 0; i < set.size(); i++) {
@@ -700,6 +711,7 @@ void RegexDumper::dump(const Prefilter &prefilter) {
   }
   case Prefilter::Type::CHAR:
   case Prefilter::Type::STRING:
+    this->base.newline();
     escapeUtf8(prefilter.getType() == Prefilter::Type::CHAR ? prefilter.asCodePoint().asStrRef()
                                                             : prefilter.asStrRef(),
                this->base.buf);

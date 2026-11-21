@@ -18,7 +18,7 @@ instructions:
   21: EndCapture(captureIndex=1)
   24: Match
 prefilter:
-  data:
+  data: start
   minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
@@ -38,7 +38,7 @@ instructions:
   6: End(multiline=false)
   8: Match
 prefilter:
-  data:
+  data: start
   minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
@@ -58,7 +58,109 @@ instructions:
   6: End(multiline=true)
   8: Match
 prefilter:
+  data: line_start
+  minPrevCodePoints: 0
+  maxPrevCodePoints: 0
+matchers:
+EOF
+)
+
+# ^w|(^.)
+assert diff <(redump -d '^w|(^.)' '') <(<<'EOF'
+flag: (mode = , modifier = )
+loopCount: 0
+captureGroupCount: 1
+namedCaptureGroups: []
+instructions:
+   0: Alt(second=17)
+   5: Start(multiline=false)
+   7: Char(codePoint=U+0077:w)
+  12: Jump(target=26)
+  17: BeginCapture(captureIndex=1)
+  20: Start(multiline=false)
+  22: AnyExceptNL
+  23: EndCapture(captureIndex=1)
+  26: Match
+prefilter:
+  data: start
+  minPrevCodePoints: 0
+  maxPrevCodePoints: 0
+matchers:
+EOF
+)
+
+assert diff <(redump -d '^w|(^.)' 'm') <(<<'EOF'
+flag: (mode = , modifier = m)
+loopCount: 0
+captureGroupCount: 1
+namedCaptureGroups: []
+instructions:
+   0: Alt(second=17)
+   5: Start(multiline=true)
+   7: Char(codePoint=U+0077:w)
+  12: Jump(target=26)
+  17: BeginCapture(captureIndex=1)
+  20: Start(multiline=true)
+  22: AnyExceptNL
+  23: EndCapture(captureIndex=1)
+  26: Match
+prefilter:
+  data: line_start
+  minPrevCodePoints: 0
+  maxPrevCodePoints: 0
+matchers:
+EOF
+)
+
+# ^w|(^.)|(?m:^s)
+assert diff <(redump -d '^w|(^.)|(?m:^s)' '') <(<<'EOF'
+flag: (mode = , modifier = )
+loopCount: 0
+captureGroupCount: 1
+namedCaptureGroups: []
+instructions:
+   0: Alt(second=17)
+   5: Start(multiline=false)
+   7: Char(codePoint=U+0077:w)
+  12: Jump(target=43)
+  17: Alt(second=36)
+  22: BeginCapture(captureIndex=1)
+  25: Start(multiline=false)
+  27: AnyExceptNL
+  28: EndCapture(captureIndex=1)
+  31: Jump(target=43)
+  36: Start(multiline=true)
+  38: Char(codePoint=U+0073:s)
+  43: Match
+prefilter:
   data:
+  minPrevCodePoints: 0
+  maxPrevCodePoints: 0
+matchers:
+EOF
+)
+
+assert diff <(redump -d '^w|(^.)|(?m:^s)' 'm') <(<<'EOF'
+flag: (mode = , modifier = m)
+loopCount: 0
+captureGroupCount: 1
+namedCaptureGroups: []
+instructions:
+   0: Alt(second=17)
+   5: Start(multiline=true)
+   7: Char(codePoint=U+0077:w)
+  12: Jump(target=43)
+  17: Alt(second=36)
+  22: BeginCapture(captureIndex=1)
+  25: Start(multiline=true)
+  27: AnyExceptNL
+  28: EndCapture(captureIndex=1)
+  31: Jump(target=43)
+  36: Start(multiline=true)
+  38: Char(codePoint=U+0073:s)
+  43: Match
+prefilter:
+  data: line_start
   minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:

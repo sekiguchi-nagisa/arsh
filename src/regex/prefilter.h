@@ -28,13 +28,16 @@ namespace arsh::regex {
 
 struct Inst;
 class Matcher;
+class NamedCaptureGroups;
 
 using FirstBitSet = std::bitset<256>;
 
 class Prefilter {
 public:
   enum class Type : unsigned char {
-    NONE,   // do nothing
+    NONE, // do nothing
+    START,
+    LINE_START,
     BITSET, // UTF-8 first bitset
     CHAR,   // single code point
     STRING, // string
@@ -72,6 +75,18 @@ public:
       : type(Type::STRING), minPrevCodePoints(minCodePoints), maxPrevCodePoints(maxCodePoints),
         ref(ref) {}
 
+  static Prefilter start() {
+    Prefilter p;
+    p.type = Type::START;
+    return p;
+  }
+
+  static Prefilter lineStart() {
+    Prefilter p;
+    p.type = Type::LINE_START;
+    return p;
+  }
+
   Type getType() const { return this->type; }
 
   auto getMaxPrevCodePoints() const { return this->maxPrevCodePoints; }
@@ -91,6 +106,8 @@ public:
     if (this->type == other.getType()) {
       switch (this->type) {
       case Type::NONE:
+      case Type::START:
+      case Type::LINE_START:
         return this->getMaxPrevCodePoints() < other.getMaxPrevCodePoints();
       case Type::CHAR:
         return this->asCodePoint().size < other.asCodePoint().size;
@@ -106,7 +123,8 @@ public:
 
 FirstBitSet createFirstBitSet(ArrayRef<Inst> instSeq, ArrayRef<Matcher> matchers);
 
-Prefilter createPrefilter(ArrayRef<Inst> instSeq, ArrayRef<Matcher> matchers);
+Prefilter createPrefilter(ArrayRef<Inst> instSeq, ArrayRef<Matcher> matchers,
+                          unsigned int captureGroupCount, const NamedCaptureGroups &named);
 
 } // namespace arsh::regex
 

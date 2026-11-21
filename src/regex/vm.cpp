@@ -404,6 +404,22 @@ static bool nextCandidates(const Inst *&inst, Input &input, const char *&startIt
   switch (prefilter.getType()) {
   case Prefilter::Type::NONE:
     break;
+  case Prefilter::Type::START:
+  case Prefilter::Type::LINE_START:
+    if (ctx.getStartOffset() == scanStart - input.getBegin()) {
+      return true;
+    }
+    if (prefilter.getType() == Prefilter::Type::LINE_START) {
+      assert(input.getBegin() != input.getIter());
+      for (; input.available(); input.consumeForward()) {
+        if (isLineTerminator(input.prev())) {
+          startIter = input.getIter();
+          return true;
+        }
+      }
+    }
+    startIter = input.getEnd();
+    return false;
   case Prefilter::Type::BITSET: {
     auto &firstSet = prefilter.asBitSet();
     bool matched = false;
