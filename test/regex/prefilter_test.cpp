@@ -575,6 +575,16 @@ static const PrefilterConstructEntry prefilterConstructCases[] = {
      regex::Modifier::NONE},
     {"[\\p{RGI_Emoji}]", "\xF0\x9F\x91\xA8\xE2\x80\x8D\xF0\x9F\x91\xA7", regex::Mode::UNICODE_SET,
      regex::Modifier::IGNORE_CASE},
+    // `START` / `LINE_START` anchors: the candidate scan may only jump to a position the VM can
+    // actually start from, and the empty line after a trailing terminator is one of them
+    {"^a", "ba\na", regex::Mode::UNICODE, regex::Modifier::NONE},
+    {"(?m:^a)", "b\na", regex::Mode::UNICODE, regex::Modifier::NONE},
+    {"^", "a\n", regex::Mode::UNICODE, regex::Modifier::MULTILINE},
+    {"^$", "a\n", regex::Mode::UNICODE, regex::Modifier::MULTILINE},
+    // the `(?s:.)*` / `.*` anchor, and the same shape with a longer loop body, which is not one
+    {"(?s:.)*", "a\nb", regex::Mode::UNICODE, regex::Modifier::NONE},
+    {".*", "a\nb\n", regex::Mode::UNICODE, regex::Modifier::MULTILINE},
+    {"(?:.a)*b", "ab", regex::Mode::UNICODE, regex::Modifier::NONE},
 };
 
 INSTANTIATE_TEST_SUITE_P(PrefilterConstructTest, PrefilterConstructTest,
@@ -586,7 +596,10 @@ INSTANTIATE_TEST_SUITE_P(PrefilterConstructTest, PrefilterConstructTest,
  * The first group covers the retry loop resetting the capture and loop state for every start
  * offset (see `ctx.resetState()` in src/regex/vm.cpp). The second group covers the candidate scan
  * rewinding its start offset before the lowest position not yet ruled out, which made it report
- * an overlapping match at a start offset a previous attempt had already covered.
+ * an overlapping match at a start offset a previous attempt had already covered. The third group
+ * covers the `START` / `LINE_START` prefilters jumping over a start offset that the VM can still
+ * match at: the empty line behind a trailing line terminator, and a `X*` whose body is longer
+ * than `.`, which consumes input and is therefore not free to begin at any offset.
  */
 struct PrefilterRegressionEntry {
   const char *pattern;
@@ -647,6 +660,18 @@ static constexpr PrefilterRegressionEntry prefilterRegressionCases[] = {
     {".\\u{3042}", "\xE3\x81\x82\xE3\x81\x82\xE3\x81\x82", regex::Modifier::NONE,
      "(offset=0, size=6)\n"},
     {"..a", "aaaa", regex::Modifier::NONE, "(offset=0, size=3)\n"},
+    // `LINE_START`: the empty line after a trailing terminator is a valid start offset, but the
+    // candidate scan stopped before it, so `^$` found nothing at all
+    {"^$", "a\n", regex::Modifier::MULTILINE, "(offset=2, size=0)\n(offset=2, size=0)\n"},
+    {"^$", "a\nb\n", regex::Modifier::MULTILINE, "(offset=4, size=0)\n(offset=4, size=0)\n"},
+    {"^", "a\n", regex::Modifier::MULTILINE,
+     "(offset=0, size=0)\n(offset=2, size=0)\n(offset=2, size=0)\n"},
+    {"(?m:^)", "a\n", regex::Modifier::NONE,
+     "(offset=0, size=0)\n(offset=2, size=0)\n(offset=2, size=0)\n"},
+    // `START`: `X*` is only free to start anywhere if its body is a single `.`, otherwise the
+    // loop consumes input and anchoring dropped the match at offset 1
+    {"(?:.a)*b", "ab", regex::Modifier::NONE, "(offset=1, size=1)\n"},
+    {"(?:..)*b", "xaxb", regex::Modifier::NONE, "(offset=1, size=3)\n"},
 };
 
 INSTANTIATE_TEST_SUITE_P(PrefilterRegressionTest, PrefilterRegressionTest,
