@@ -89,3 +89,29 @@ matchers:
 { 0x0041, 0x0043 },
 EOF
 )
+
+# (?:A|(?:B|C^))D
+assert diff <(redump -d '(?:A|(?:B|C^))D' '') <(<<'EOF'
+flag: (mode = , modifier = )
+loopCount: 0
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+   0: Alt(second=15)
+   5: Char(codePoint=U+0041:A)
+  10: Jump(target=37)
+  15: Alt(second=30)
+  20: Char(codePoint=U+0042:B)
+  25: Jump(target=37)
+  30: Char(codePoint=U+0043:C)
+  35: Start(multiline=false)
+  37: Char(codePoint=U+0044:D)
+  42: Match
+prefilter:
+  data:
+0x41, 0x42, 0x43,
+  minPrevCodePoints: 0
+  maxPrevCodePoints: 0
+matchers:
+EOF
+)

@@ -174,8 +174,8 @@ matchers:
 EOF
 )
 
-# (a.|(?s:b.))c
-assert diff <(redump -d '(a.|(?s:b.))c' '') <(<<'EOF'
+# (a.|(?s:b..))c
+assert diff <(redump -d '(a.|(?s:b..))c' '') <(<<'EOF'
 flag: (mode = , modifier = )
 loopCount: 0
 captureGroupCount: 1
@@ -185,17 +185,18 @@ instructions:
    3: Alt(second=19)
    8: Char(codePoint=U+0061:a)
   13: AnyExceptNL
-  14: Jump(target=25)
+  14: Jump(target=26)
   19: Char(codePoint=U+0062:b)
   24: Any
-  25: EndCapture(captureIndex=1)
-  28: Char(codePoint=U+0063:c)
-  33: Match
+  25: Any
+  26: EndCapture(captureIndex=1)
+  29: Char(codePoint=U+0063:c)
+  34: Match
 prefilter:
   data:
-0x61, 0x62,
-  minPrevCodePoints: 0
-  maxPrevCodePoints: 0
+\x63
+  minPrevCodePoints: 2
+  maxPrevCodePoints: 3
 matchers:
 EOF
 )
@@ -221,9 +222,9 @@ instructions:
   43: Match
 prefilter:
   data:
-0x61, 0x62,
-  minPrevCodePoints: 0
-  maxPrevCodePoints: 0
+\x63
+  minPrevCodePoints: 1
+  maxPrevCodePoints: 1
 matchers:
 EOF
 )

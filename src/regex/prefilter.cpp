@@ -244,6 +244,11 @@ public:
     }
     return false;
   }
+
+  void merge(const CodePointCounter &o) {
+    this->min = std::min(this->min, o.min);
+    this->max = std::max(this->max, o.max);
+  }
 };
 
 struct PrefilterBuilder {
@@ -295,6 +300,26 @@ private:
   }
 };
 
+static uint32_t findAltMergeOffset(const Inst *inst, const Inst *const end) {
+  assert(inst->op == OpCode::Alt);
+  const uint32_t second = cast<AltIns>(*inst).getSecond();
+  for (inst += sizeof(AltIns); inst != end; inst += sizeOfInst(inst)) {
+    switch (inst->op) {
+    case OpCode::Jump: {
+      auto next = inst;
+      next += sizeof(JumpIns);
+      if (next == end) {
+        return cast<JumpIns>(*inst).getTarget();
+      }
+      break;
+    }
+    default:
+      break;
+    }
+  }
+  return second;
+}
+
 bool PrefilterBuilder::build(const Inst *inst, const Inst *const end, CodePointCounter &counter,
                              Prefilter *prefilter) const {
   while (inst != end) {
@@ -319,7 +344,17 @@ bool PrefilterBuilder::build(const Inst *inst, const Inst *const end, CodePointC
           tryToUpdate(*prefilter, counter, collector.set);
         }
       }
-      return false; // TODO
+      const auto second = this->instSeq.begin() + cast<AltIns>(*inst).getSecond();
+      const auto merge = this->instSeq.begin() + findAltMergeOffset(inst, second);
+      inst += sizeof(AltIns);
+      CodePointCounter merged;
+      TRY(this->build(inst, second, merged, nullptr));
+      CodePointCounter sub;
+      TRY(this->build(second, merge, sub, nullptr));
+      merged.merge(sub);
+      TRY(counter.increment(merged.getMin(), merged.getMax()));
+      inst = merge;
+      continue;
     }
     case OpCode::Start:
     case OpCode::End:
