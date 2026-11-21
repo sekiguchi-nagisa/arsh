@@ -20,7 +20,6 @@
 #include "input.h"
 #include "instruction.h"
 #include "matcher.h"
-#include "misc/bitset.hpp"
 #include "misc/num_util.hpp"
 #include "misc/rtti.hpp"
 #include "misc/unicode.hpp"
@@ -273,7 +272,7 @@ private:
 
   Prefilter resolveAnchor() const {
     Prefilter prefilter;
-    Optional<const BitSet> captureUsage;
+    std::vector<bool> captureUsage;
     if (this->resolveAnchor(this->instSeq.begin(), this->instSeq.end(), prefilter, captureUsage)) {
       assert(prefilter.getType() == Prefilter::Type::START ||
              prefilter.getType() == Prefilter::Type::LINE_START);
@@ -283,9 +282,9 @@ private:
   }
 
   bool resolveAnchor(const Inst *inst, const Inst *end, Prefilter &prefilter,
-                     Optional<const BitSet> &captureUsage) const;
+                     std::vector<bool> &captureUsage) const;
 
-  void tryToCollectCaptureUsage(Optional<const BitSet> &set) const;
+  void tryToCollectCaptureUsage(std::vector<bool> &set) const;
 
   template <typename T>
   static void tryToUpdate(Prefilter &prefilter, const CodePointCounter &counter, T &&value) {
@@ -433,7 +432,7 @@ static bool noneOr(const Prefilter &p, const Prefilter::Type t) {
 }
 
 bool PrefilterBuilder::resolveAnchor(const Inst *inst, const Inst *end, Prefilter &prefilter,
-                                     Optional<const BitSet> &captureUsage) const {
+                                     std::vector<bool> &captureUsage) const {
   while (inst != end) {
     switch (inst->op) {
     case OpCode::Nop:
@@ -491,7 +490,7 @@ bool PrefilterBuilder::resolveAnchor(const Inst *inst, const Inst *end, Prefilte
       inst += sizeof(BeginCaptureIns);
       this->tryToCollectCaptureUsage(captureUsage);
       if (this->resolveAnchor(inst, end, prefilter, captureUsage)) {
-        if (!captureUsage.unwrap().test(captureIndex)) { // capture is not referenced
+        if (!captureUsage[captureIndex]) { // capture is not referenced
           return true;
         }
       }
@@ -525,11 +524,11 @@ bool PrefilterBuilder::resolveAnchor(const Inst *inst, const Inst *end, Prefilte
   return false;
 }
 
-void PrefilterBuilder::tryToCollectCaptureUsage(Optional<const BitSet> &set) const {
-  if (set.hasValue()) {
+void PrefilterBuilder::tryToCollectCaptureUsage(std::vector<bool> &usage) const {
+  if (!usage.empty()) {
     return;
   }
-  BitSet usage(this->captureGroupCount + 1);
+  usage.resize(this->captureGroupCount + 1, false);
   for (auto *inst = this->instSeq.begin(); inst != this->instSeq.end(); inst += sizeOfInst(inst)) {
     unsigned int refIndex;
     bool named;
@@ -555,17 +554,16 @@ void PrefilterBuilder::tryToCollectCaptureUsage(Optional<const BitSet> &set) con
       if (auto *entry = this->namedGroups.findByIndex(refIndex)) {
         if (entry->hasMultipleIndices()) {
           for (unsigned int i = 0; i < entry->getSize(); i++) {
-            usage.set((*entry)[i]);
+            usage[(*entry)[i]] = true;
           }
         } else {
-          usage.set(entry->getIndex());
+          usage[entry->getIndex()] = true;
         }
       }
     } else {
-      usage.set(refIndex);
+      usage[refIndex] = true;
     }
   }
-  set = std::move(usage);
 }
 
 FirstBitSet createFirstBitSet(const ArrayRef<Inst> instSeq, const ArrayRef<Matcher> matchers) {
