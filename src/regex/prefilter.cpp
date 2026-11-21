@@ -504,8 +504,10 @@ bool PrefilterBuilder::resolveAnchor(const Inst *inst, const Inst *end, Prefilte
       auto subBegin = inst;
       subBegin += sizeof(BeginLoopIns); // due to suppress code analysis warning
       const auto subEnd = this->instSeq.begin() + ins.getOuter();
-      if (const auto singleBody = subBegin + sizeOfInst(subBegin) + sizeof(EndLoopIns);
-          ins.getMin() == 0 && ins.isUnlimited() && singleBody == subEnd) {
+      auto next = subBegin;
+      next += sizeOfInst(next);
+      next += sizeof(EndLoopIns); // suppress code analysis warning
+      if (ins.getMin() == 0 && ins.isUnlimited() && next == subEnd) {
         if (subBegin->op == OpCode::Any && noneOr(prefilter, Prefilter::Type::START)) {
           prefilter = Prefilter::start(); // (?s:.)* or (?s:.)*?
           return true;
