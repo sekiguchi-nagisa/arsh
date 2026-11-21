@@ -406,7 +406,7 @@ static bool nextCandidates(const Inst *&inst, Input &input, const char *&startIt
     break;
   case Prefilter::Type::START:
   case Prefilter::Type::LINE_START:
-    if (ctx.getStartOffset() == scanStart - input.getBegin()) {
+    if (ctx.getStartOffset() == static_cast<unsigned int>(scanStart - input.getBegin())) {
       return true;
     }
     if (prefilter.getType() == Prefilter::Type::LINE_START) {
