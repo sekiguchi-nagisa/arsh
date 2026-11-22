@@ -466,9 +466,6 @@ void RegexDumper::dump(const FlexBuffer<Inst> &ins) {
       str += ')';
       inst += sizeof(LBAnyIns);
       break;
-    case OpCode::Grapheme:
-      inst += sizeof(GraphemeIns);
-      break;
     case OpCode::Char:
     case OpCode::IChar: {
       static_assert(sizeof(CharIns) == sizeof(ICharIns));
@@ -564,6 +561,9 @@ void RegexDumper::dump(const FlexBuffer<Inst> &ins) {
       inst += sizeof(LBRadixOrEmojiIns);
       break;
     }
+    case OpCode::Grapheme:
+      inst += sizeof(GraphemeIns);
+      break;
     case OpCode::String:
       str += "(index=";
       str += std::to_string(cast<StringIns>(*inst).getIndex());

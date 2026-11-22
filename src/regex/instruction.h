@@ -38,7 +38,6 @@ namespace arsh::regex {
   OP(Any)                                                                                          \
   OP(AnyExceptNL)                                                                                  \
   OP(LBAny)                                                                                        \
-  OP(Grapheme)                                                                                     \
   OP(Char)                                                                                         \
   OP(IChar)                                                                                        \
   OP(LBChar)                                                                                       \
@@ -49,6 +48,7 @@ namespace arsh::regex {
   OP(RadixOrEmoji)                                                                                 \
   OP(PrepareLBRadix)                                                                               \
   OP(LBRadixOrEmoji)                                                                               \
+  OP(Grapheme)                                                                                     \
   OP(String)                                                                                       \
   OP(LBString)                                                                                     \
   OP(BeginCapture)                                                                                 \

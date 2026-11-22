@@ -151,12 +151,12 @@ bool FirstBytesCollector::collect(const Inst *begin, const Inst *end) {
     case OpCode::End:
     case OpCode::Any:
     case OpCode::AnyExceptNL:
-    case OpCode::Grapheme:
     case OpCode::LBAny:
     case OpCode::LBChar:
     case OpCode::LBCharSet:
     case OpCode::PrepareLBRadix:
     case OpCode::LBRadixOrEmoji:
+    case OpCode::Grapheme:
     case OpCode::LBString:
     case OpCode::LBEndCapture:
     case OpCode::BackRef:
@@ -359,11 +359,11 @@ bool PrefilterBuilder::build(const Inst *inst, const Inst *const end, CodePointC
     case OpCode::Start:
     case OpCode::End:
     case OpCode::LBAny:
-    case OpCode::Grapheme:
     case OpCode::LBChar:
     case OpCode::LBCharSet:
     case OpCode::PrepareLBRadix:
     case OpCode::LBRadixOrEmoji:
+    case OpCode::Grapheme:
     case OpCode::LBString:
     case OpCode::LBEndCapture:
     case OpCode::BackRef:
@@ -479,7 +479,6 @@ bool PrefilterBuilder::resolveAnchor(const Inst *inst, const Inst *end, Prefilte
     case OpCode::Any:
     case OpCode::AnyExceptNL:
     case OpCode::LBAny:
-    case OpCode::Grapheme:
     case OpCode::Char:
     case OpCode::IChar:
     case OpCode::LBChar:
@@ -490,6 +489,7 @@ bool PrefilterBuilder::resolveAnchor(const Inst *inst, const Inst *end, Prefilte
     case OpCode::RadixOrEmoji:
     case OpCode::PrepareLBRadix:
     case OpCode::LBRadixOrEmoji:
+    case OpCode::Grapheme:
     case OpCode::String:
     case OpCode::LBString:
     case OpCode::EndCapture:

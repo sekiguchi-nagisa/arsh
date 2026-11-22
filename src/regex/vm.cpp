@@ -475,6 +475,13 @@ static bool nextCandidates(const Inst *&inst, Input &input, const char *&startIt
     }                                                                                              \
   } while (false)
 
+#define TRY_MATCH_CHAR(T)                                                                          \
+  if (matchChar(cast<T>(*inst), input, matchers.begin())) {                                        \
+    inst += sizeof(T);                                                                             \
+    vmnext;                                                                                        \
+  }                                                                                                \
+  goto BACKTRACK
+
 #ifdef __GNUC__
 #define USE_THREADED_CODE
 #else
@@ -576,120 +583,15 @@ START:
         }
         goto BACKTRACK;
       }
-      vmcase(Any) {
-        if (input.available()) {
-          input.consumeForward();
-          inst += sizeof(AnyIns);
-          vmnext;
-        }
-        goto BACKTRACK;
-      }
-      vmcase(AnyExceptNL) {
-        if (input.available()) {
-          int codePoint = input.consumeForward();
-          if (!isLineTerminator(codePoint)) {
-            inst += sizeof(AnyExceptNLIns);
-            vmnext;
-          }
-        }
-        goto BACKTRACK;
-      }
-      vmcase(LBAny) {
-        if (input.availableBackward()) {
-          int codePoint = input.consumeBackward();
-          if (cast<LBAnyIns>(*inst).dotAll || !isLineTerminator(codePoint)) {
-            inst += sizeof(LBAnyIns);
-            vmnext;
-          }
-        }
-        goto BACKTRACK;
-      }
-      vmcase(Grapheme) {
-        if (input.available()) {
-          StringRef ref = input.remainForward();
-          size_t byteSize = 0;
-          iterateGraphemeUntil(ref, 1, true, [&byteSize](const GraphemeCluster &grapheme) {
-            byteSize = grapheme.getRef().size();
-          });
-          input.setIter(input.getIter() + byteSize);
-          inst += sizeof(GraphemeIns);
-          vmnext;
-        }
-        goto BACKTRACK;
-      }
-      vmcase(Char) {
-        auto &ins = cast<CharIns>(*inst);
-        if (input.available() && input.consumeForward() == ins.getCodePoint()) {
-          inst += sizeof(CharIns);
-          vmnext;
-        }
-        goto BACKTRACK;
-      }
-      vmcase(IChar) {
-        auto &ins = cast<ICharIns>(*inst);
-        if (input.available() &&
-            doSimpleCaseFolding(input.consumeForward()) == ins.getCodePoint()) {
-          inst += sizeof(ICharIns);
-          vmnext;
-        }
-        goto BACKTRACK;
-      }
-      vmcase(LBChar) {
-        auto &ins = cast<LBCharIns>(*inst);
-        if (input.availableBackward()) {
-          int codePoint = input.consumeBackward();
-          if (ins.ignoreCase) {
-            codePoint = doSimpleCaseFolding(codePoint);
-          }
-          if (codePoint == ins.getCodePoint()) {
-            inst += sizeof(LBCharIns);
-            vmnext;
-          }
-        }
-        goto BACKTRACK;
-      }
-      vmcase(CharSet) {
-        auto &ins = cast<CharSetIns>(*inst);
-        if (input.available()) {
-          /**
-           * contain==true, invert==true => false
-           * contain==true, invert==false => true
-           * contain==false, invert==true => true
-           * contain==false, invert==false => false
-           */
-          if (matchers[ins.getMatcherIndex()].contains(input.consumeForward()) != ins.invert) {
-            inst += sizeof(CharSetIns);
-            vmnext;
-          }
-        }
-        goto BACKTRACK;
-      }
-      vmcase(ICharSet) {
-        auto &ins = cast<ICharSetIns>(*inst);
-        if (input.available()) {
-          bool s = matchers[ins.getMatcherIndex()].contains(
-                       doSimpleCaseFolding(input.consumeForward())) != ins.invert;
-          if (s) {
-            inst += sizeof(ICharSetIns);
-            vmnext;
-          }
-        }
-        goto BACKTRACK;
-      }
-      vmcase(LBCharSet) {
-        auto &ins = cast<LBCharSetIns>(*inst);
-        if (input.availableBackward()) {
-          int codePoint = input.consumeBackward();
-          if (ins.ignoreCase) {
-            codePoint = doSimpleCaseFolding(codePoint);
-          }
-          if (matchers[ins.getMatcherIndex()].contains(codePoint) != ins.invert) {
-            inst += sizeof(LBCharSetIns);
-            vmnext;
-          }
-        }
-        goto BACKTRACK;
-      }
+      vmcase(Any) TRY_MATCH_CHAR(AnyIns);
+      vmcase(AnyExceptNL) TRY_MATCH_CHAR(AnyExceptNLIns);
+      vmcase(LBAny) TRY_MATCH_CHAR(LBAnyIns);
+      vmcase(Char) TRY_MATCH_CHAR(CharIns);
+      vmcase(IChar) TRY_MATCH_CHAR(ICharIns);
+      vmcase(LBChar) TRY_MATCH_CHAR(LBCharIns);
+      vmcase(CharSet) TRY_MATCH_CHAR(CharSetIns);
+      vmcase(ICharSet) TRY_MATCH_CHAR(ICharSetIns);
+      vmcase(LBCharSet) TRY_MATCH_CHAR(LBCharSetIns);
       vmcase(PrepareRadix) {
         inst += sizeof(PrepareRadixIns);
         auto &radixIns = cast<RadixOrEmojiIns>(*inst);
@@ -798,6 +700,19 @@ START:
             inst += sizeof(LBRadixOrEmojiIns);
             vmnext; // try next
           }
+        }
+        goto BACKTRACK;
+      }
+      vmcase(Grapheme) {
+        if (input.available()) {
+          StringRef ref = input.remainForward();
+          size_t byteSize = 0;
+          iterateGraphemeUntil(ref, 1, true, [&byteSize](const GraphemeCluster &grapheme) {
+            byteSize = grapheme.getRef().size();
+          });
+          input.setIter(input.getIter() + byteSize);
+          inst += sizeof(GraphemeIns);
+          vmnext;
         }
         goto BACKTRACK;
       }

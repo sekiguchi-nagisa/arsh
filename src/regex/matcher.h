@@ -17,8 +17,11 @@
 #ifndef ARSH_REGEX_MATCHER_H
 #define ARSH_REGEX_MATCHER_H
 
+#include "input.h"
+#include "instruction.h"
 #include "misc/codepoint_set.hpp"
 #include "misc/flag_util.hpp"
+#include "unicode/case_fold.h"
 #include "unicode/property.h"
 #include "unicode/radix_tree.h"
 
@@ -208,6 +211,93 @@ private:
 
   unsigned int getRadixSize() const { return static_cast<unsigned int>(this->first >> 32u); }
 };
+
+template <typename T>
+bool matchChar(const T &ins, Input &input, const Matcher *matchers); // NOLINT
+
+template <>
+inline bool matchChar(const AnyIns &, Input &input, const Matcher *) {
+  if (input.available()) {
+    input.consumeForward();
+    return true;
+  }
+  return false;
+}
+
+template <>
+inline bool matchChar(const AnyExceptNLIns &, Input &input, const Matcher *) {
+  if (input.available()) {
+    const int codePoint = input.consumeForward();
+    return !isLineTerminator(codePoint);
+  }
+  return false;
+}
+
+template <>
+inline bool matchChar(const LBAnyIns &ins, Input &input, const Matcher *) {
+  if (input.availableBackward()) {
+    const int codePoint = input.consumeBackward();
+    return ins.dotAll || !isLineTerminator(codePoint);
+  }
+  return false;
+}
+
+template <>
+inline bool matchChar(const CharIns &ins, Input &input, const Matcher *) {
+  return input.available() && input.consumeForward() == ins.getCodePoint();
+}
+
+template <>
+inline bool matchChar(const ICharIns &ins, Input &input, const Matcher *) {
+  return input.available() && doSimpleCaseFolding(input.consumeForward()) == ins.getCodePoint();
+}
+
+template <>
+inline bool matchChar(const LBCharIns &ins, Input &input, const Matcher *) {
+  if (input.availableBackward()) {
+    int codePoint = input.consumeBackward();
+    if (ins.ignoreCase) {
+      codePoint = doSimpleCaseFolding(codePoint);
+    }
+    return codePoint == ins.getCodePoint();
+  }
+  return false;
+}
+
+template <>
+inline bool matchChar(const CharSetIns &ins, Input &input, const Matcher *matchers) {
+  if (input.available()) {
+    /**
+     * contain==true, invert==true => false
+     * contain==true, invert==false => true
+     * contain==false, invert==true => true
+     * contain==false, invert==false => false
+     */
+    return matchers[ins.getMatcherIndex()].contains(input.consumeForward()) != ins.invert;
+  }
+  return false;
+}
+
+template <>
+inline bool matchChar(const ICharSetIns &ins, Input &input, const Matcher *matchers) {
+  if (input.available()) {
+    const int codePoint = input.consumeForward();
+    return matchers[ins.getMatcherIndex()].contains(doSimpleCaseFolding(codePoint)) != ins.invert;
+  }
+  return false;
+}
+
+template <>
+inline bool matchChar(const LBCharSetIns &ins, Input &input, const Matcher *matchers) {
+  if (input.availableBackward()) {
+    int codePoint = input.consumeBackward();
+    if (ins.ignoreCase) {
+      codePoint = doSimpleCaseFolding(codePoint);
+    }
+    return matchers[ins.getMatcherIndex()].contains(codePoint) != ins.invert;
+  }
+  return false;
+}
 
 } // namespace arsh::regex
 
