@@ -102,15 +102,6 @@ static void fill(const PackedRadixTree radix, FirstBitSet &set, const bool fold)
   radix.iterate(walker);
 }
 
-static unsigned char sizeOfInst(const Inst *inst) {
-  constexpr unsigned char table[] = {
-#define GEN_TABLE(E) sizeof(E##Ins),
-      EACH_RE_OPCODE(GEN_TABLE)
-#undef GEN_TABLE
-  };
-  return table[toUnderlying(inst->op)];
-}
-
 struct FirstBytesCollector {
   const ArrayRef<Inst> instSeq;
   const ArrayRef<Matcher> matchers;
@@ -210,6 +201,14 @@ bool FirstBytesCollector::collect(const Inst *begin, const Inst *end) {
       if (auto &ins = cast<BeginLoopIns>(*begin); ins.getMin() > 0) {
         begin += sizeof(BeginLoopIns);
         return this->collect(begin, this->instSeq.begin() + ins.getOuter());
+      }
+      return false;
+    case OpCode::CharLoop:
+      if (auto &ins = cast<CharLoopIns>(*begin); ins.getMin() > 0 && ins.direction) {
+        begin += sizeof(CharLoopIns);
+        auto endBody = begin;
+        endBody += sizeOfInst(endBody);
+        return this->collect(begin, endBody);
       }
       return false;
     case OpCode::BeginLookAround:
@@ -454,6 +453,20 @@ bool PrefilterBuilder::build(const Inst *inst, const Inst *const end, CodePointC
       inst = this->instSeq.begin() + ins.getOuter();
       continue;
     }
+    case OpCode::CharLoop:
+      if (auto &ins = cast<CharLoopIns>(*inst); ins.direction) {
+        if (prefilter) {
+          FirstBytesCollector collector(this->instSeq, this->matchers);
+          if (collector.collect(inst, end) && collector.set.any()) {
+            tryToUpdate(*prefilter, counter, collector.set);
+          }
+        }
+        TRY(counter.increment(ins.getMin(), ins.getMax()));
+        inst += sizeof(CharLoopIns);
+        inst += sizeOfInst(inst);
+        continue;
+      }
+      return false;
     case OpCode::BeginLookAround:
       inst = this->instSeq.begin() + cast<BeginLookAroundIns>(*inst).getTarget();
       break; // skip look-around body
@@ -534,28 +547,29 @@ bool PrefilterBuilder::resolveAnchor(const Inst *inst, const Inst *end, Prefilte
     case OpCode::ResetCaptures:
       inst += sizeof(ResetCapturesIns);
       continue;
-    case OpCode::BeginLoop: {
-      auto &ins = cast<BeginLoopIns>(*inst);
-      auto subBegin = inst;
-      subBegin += sizeof(BeginLoopIns); // due to suppress code analysis warning
-      const auto subEnd = this->instSeq.begin() + ins.getOuter();
-      auto next = subBegin;
-      next += sizeOfInst(next);
-      next += sizeof(EndLoopIns); // suppress code analysis warning
-      if (ins.getMin() == 0 && ins.isUnlimited() && next == subEnd) {
-        if (subBegin->op == OpCode::Any && noneOr(prefilter, Prefilter::Type::START)) {
-          prefilter = Prefilter::start(); // (?s:.)* or (?s:.)*?
-          return true;
-        }
-        if (subBegin->op == OpCode::AnyExceptNL && noneOr(prefilter, Prefilter::Type::LINE_START)) {
-          prefilter = Prefilter::lineStart(); // .* or .*?
-          return true;
-        }
-      } else if (ins.getMin() > 0) {
+    case OpCode::BeginLoop:
+      if (auto &ins = cast<BeginLoopIns>(*inst); ins.getMin() > 0) {
+        auto subBegin = inst;
+        subBegin += sizeof(BeginLoopIns); // due to suppress code analysis warning
+        const auto subEnd = this->instSeq.begin() + ins.getOuter();
         return this->resolveAnchor(subBegin, subEnd, prefilter, captureUsage);
       }
       break;
-    }
+    case OpCode::CharLoop:
+      if (auto &ins = cast<CharLoopIns>(*inst);
+          ins.getMin() == 0 && ins.isUnlimited() && ins.direction) { // `*` or `*?`
+        auto subBegin = inst;
+        subBegin += sizeof(CharLoopIns); // due to suppress code analysis warning
+        if (subBegin->op == OpCode::Any && noneOr(prefilter, Prefilter::Type::START)) {
+          prefilter = Prefilter::start(); // `(?s:.)*` or `(?s:.)*?`
+          return true;
+        }
+        if (subBegin->op == OpCode::AnyExceptNL && noneOr(prefilter, Prefilter::Type::LINE_START)) {
+          prefilter = Prefilter::lineStart(); // `.*` or `.*?`
+          return true;
+        }
+      }
+      break;
     }
     break;
   }

@@ -323,18 +323,30 @@ bool CodeGen::generateStrSet(const StrSetNode &node) {
 }
 
 bool CodeGen::generateRepeat(const RepeatNode &node) {
-  const unsigned int beginAddr = this->builder.currentAddr();
-  const auto p = this->builder.emitReservedPoint<BeginLoopIns>();
-  if (node.hasInnerCaptureGroups()) {
-    assert(node.getFirstGroupIndex() <= node.getLastGroupIndex());
-    this->builder.emit<ResetCapturesIns>(node.getFirstGroupIndex(), node.getLastGroupIndex());
+  switch (node.getPattern()->getKind()) {
+  case NodeKind::Any:
+  case NodeKind::Char:
+  case NodeKind::FoldChar:
+  case NodeKind::CharSet: { // optimize
+    assert(!node.hasInnerCaptureGroups());
+    this->builder.emit<CharLoopIns>(node.getMin(), node.getMax(), node.isGreedy(),
+                                    this->direction());
+    return this->generate(*node.getPattern());
   }
-  TRY(this->generate(*node.getPattern()));
-  this->builder.emit<EndLoopIns>(beginAddr);
-  const unsigned int outerAddr = this->builder.currentAddr();
-  this->builder.emitAt<BeginLoopIns>(p, node.getLoopIndex(), node.getMin(), node.getMax(),
-                                     node.isGreedy(), outerAddr);
-  return true;
+  default:
+    const unsigned int beginAddr = this->builder.currentAddr();
+    const auto p = this->builder.emitReservedPoint<BeginLoopIns>();
+    if (node.hasInnerCaptureGroups()) {
+      assert(node.getFirstGroupIndex() <= node.getLastGroupIndex());
+      this->builder.emit<ResetCapturesIns>(node.getFirstGroupIndex(), node.getLastGroupIndex());
+    }
+    TRY(this->generate(*node.getPattern()));
+    this->builder.emit<EndLoopIns>(beginAddr);
+    const unsigned int outerAddr = this->builder.currentAddr();
+    this->builder.emitAt<BeginLoopIns>(p, node.getLoopIndex(), node.getMin(), node.getMax(),
+                                       node.isGreedy(), outerAddr);
+    return true;
+  }
 }
 
 bool CodeGen::generateLookAround(const LookAroundNode &node) {

@@ -24,11 +24,39 @@
 
 namespace arsh::regex {
 
+template <typename T>
+static uint32_t matchCharUntilImpl(uint32_t count, const T &ins, Input &input,
+                                   const Matcher *matchers, const uint32_t limit) {
+  for (; count < limit; count++) {
+    const auto old = input.getOffset();
+    if (!matchChar(ins, input, matchers)) {
+      input.setOffset(old);
+      break;
+    }
+  }
+  return count;
+}
+
+static uint32_t matchCharUntil(const uint32_t count, const Inst *inst, Input &input,
+                               const Matcher *matchers, const uint32_t limit) {
+  switch (inst->op) {
+#define GEN_CASE(OP)                                                                               \
+  case OpCode::OP:                                                                                 \
+    return matchCharUntilImpl(count, cast<OP##Ins>(*inst), input, matchers, limit);
+    EACH_RE_MATCH_CHAR_OP(GEN_CASE)
+#undef GEN_CASE
+  default:
+    fatal("unreachable");
+  }
+}
+
 enum class BacktrackOp : unsigned char {
   SetIns,
   SetCapture,
   SetLoopState,
   NonGreedyLoop,
+  GreedyCharLoop,
+  NonGreedyCharLoop,
   LookAround,
   RadixState,
 };
@@ -61,6 +89,13 @@ union Backtrack {
   } nonGreedyLoop;
 
   struct {
+    BacktrackOp op;  // NOLINT
+    uint32_t target; // CharLoopIns
+    uint32_t inputOffset;
+    uint32_t count;
+  } charLoop;
+
+  struct {
     BacktrackOp op; // NOLINT
     bool negate;
     bool matched;
@@ -91,6 +126,15 @@ union Backtrack {
   static Backtrack newNonGreedyLoop(uint16_t loopIndex, LoopState state) {
     return {
         .nonGreedyLoop = {.op = BacktrackOp::NonGreedyLoop, .loopIndex = loopIndex, .state = state},
+    };
+  }
+
+  static Backtrack newCharLoop(uint32_t target, const Input &input, uint32_t count, bool greedy) {
+    return {
+        .charLoop = {.op = greedy ? BacktrackOp::GreedyCharLoop : BacktrackOp::NonGreedyCharLoop,
+                     .target = target,
+                     .inputOffset = input.getOffset(),
+                     .count = count},
     };
   }
 
@@ -151,7 +195,8 @@ public:
 
   void updateRadixState(unsigned int newSize) { this->back().radixState.consumedSize = newSize; }
 
-  bool backtrack(const Inst *&inst, Input &input, Capture *captures, LoopState *loopStates);
+  bool backtrack(const Inst *&inst, Input &input, Capture *captures, LoopState *loopStates,
+                 const Matcher *matchers);
 
   void prepareLoopBodyUncheck(const Input &input, uint16_t loopIndex, LoopState &loop) {
     this->ptr[this->size++] = Backtrack::newSetLoopState(loopIndex, loop);
@@ -237,7 +282,7 @@ private:
 };
 
 bool BacktrackStack::backtrack(const Inst *&inst, Input &input, Capture *captures,
-                               LoopState *loopStates) {
+                               LoopState *loopStates, const Matcher *matchers) {
   while (!this->empty()) {
     auto bt = this->pop();
     switch (bt.op) {
@@ -262,6 +307,47 @@ bool BacktrackStack::backtrack(const Inst *&inst, Input &input, Capture *capture
       inst += sizeof(BeginLoopIns); // goto loop body
       this->prepareLoopBodyUncheck(input, loopIndex,
                                    loopStates[loopIndex]); // never fail (already pop)
+      return true;
+    }
+    case BacktrackOp::GreedyCharLoop: {
+      const auto *const loopInst = this->getStartInst() + bt.charLoop.target;
+      auto &ins = cast<CharLoopIns>(*loopInst);
+      input.setOffset(bt.charLoop.inputOffset);
+      if (bt.charLoop.count == ins.getMin()) {
+        break;
+      }
+      bt.charLoop.count--;
+      if (ins.direction) {
+        assert(input.availableBackward());
+        input.consumeBackward();
+      } else {
+        assert(input.available());
+        input.consumeForward();
+      }
+      bt.charLoop.inputOffset = input.getOffset();
+      inst = loopInst;
+      inst += sizeof(CharLoopIns);
+      inst += sizeOfInst(inst);
+      this->ptr[this->size++] = bt; // never fail (already pop)
+      return true;
+    }
+    case BacktrackOp::NonGreedyCharLoop: {
+      const auto *loopInst = this->getStartInst() + bt.charLoop.target;
+      auto &ins = cast<CharLoopIns>(*loopInst);
+      input.setOffset(bt.charLoop.inputOffset);
+      if (bt.charLoop.count == ins.getMax()) {
+        break;
+      }
+      loopInst += sizeof(CharLoopIns);
+      if (matchCharUntil(bt.charLoop.count, loopInst, input, matchers, bt.charLoop.count + 1) ==
+          bt.charLoop.count) { // not match
+        break;
+      }
+      bt.charLoop.count++;
+      bt.charLoop.inputOffset = input.getOffset();
+      inst = loopInst;
+      inst += sizeOfInst(inst);
+      this->ptr[this->size++] = bt; // never fail (already pop)
       return true;
     }
     case BacktrackOp::LookAround:
@@ -583,15 +669,9 @@ START:
         }
         goto BACKTRACK;
       }
-      vmcase(Any) TRY_MATCH_CHAR(AnyIns);
-      vmcase(AnyExceptNL) TRY_MATCH_CHAR(AnyExceptNLIns);
-      vmcase(LBAny) TRY_MATCH_CHAR(LBAnyIns);
-      vmcase(Char) TRY_MATCH_CHAR(CharIns);
-      vmcase(IChar) TRY_MATCH_CHAR(ICharIns);
-      vmcase(LBChar) TRY_MATCH_CHAR(LBCharIns);
-      vmcase(CharSet) TRY_MATCH_CHAR(CharSetIns);
-      vmcase(ICharSet) TRY_MATCH_CHAR(ICharSetIns);
-      vmcase(LBCharSet) TRY_MATCH_CHAR(LBCharSetIns);
+#define GEN_CASE(OP) vmcase(OP) TRY_MATCH_CHAR(OP##Ins);
+      EACH_RE_MATCH_CHAR_OP(GEN_CASE)
+#undef GEN_CASE
       vmcase(PrepareRadix) {
         inst += sizeof(PrepareRadixIns);
         auto &radixIns = cast<RadixOrEmojiIns>(*inst);
@@ -846,6 +926,19 @@ START:
         }
         vmnext;
       }
+      vmcase(CharLoop) {
+        const uint32_t loopInstOffset = inst - bts.getStartInst();
+        auto &ins = cast<CharLoopIns>(*inst);
+        inst += sizeof(CharLoopIns);
+        uint32_t count = matchCharUntil(0, inst, input, matchers.begin(),
+                                        ins.greedy ? ins.getMax() : ins.getMin());
+        if (count < ins.getMin()) {
+          goto BACKTRACK;
+        }
+        inst += sizeOfInst(inst);
+        TRY(bts.push(Backtrack::newCharLoop(loopInstOffset, input, count, ins.greedy)));
+        vmnext;
+      }
       vmcase(BeginLookAround) {
         auto &lookAround = cast<BeginLookAroundIns>(*inst);
         TRY(bts.push(Backtrack::newLookAround(input, lookAround.getTarget(), lookAround.negate)));
@@ -862,7 +955,7 @@ START:
     }
 
   BACKTRACK:
-    if (!bts.backtrack(inst, input, captures, loopStates)) {
+    if (!bts.backtrack(inst, input, captures, loopStates, matchers.begin())) {
       break;
     }
     if (unlikely(++btCount == Regex::TIMER_CHECK_INTERVAL)) {

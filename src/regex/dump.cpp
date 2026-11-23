@@ -654,6 +654,20 @@ void RegexDumper::dump(const FlexBuffer<Inst> &ins) {
       str += ')';
       inst += sizeof(EndLoopIns);
       break;
+    case OpCode::CharLoop: {
+      auto &loop = cast<CharLoopIns>(*inst);
+      str += "(greedy=";
+      appendBool(str, loop.greedy);
+      str += ", direction=";
+      appendBool(str, loop.direction);
+      str += ", min=";
+      str += std::to_string(loop.getMin());
+      str += ", max=";
+      str += std::to_string(loop.getMax());
+      str += ')';
+      inst += sizeof(CharLoopIns);
+      break;
+    }
     case OpCode::BeginLookAround:
       str += "(negate=";
       appendBool(str, cast<BeginLookAroundIns>(*inst).negate);

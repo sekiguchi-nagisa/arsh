@@ -26,6 +26,17 @@
 
 namespace arsh::regex {
 
+#define EACH_RE_MATCH_CHAR_OP(OP)                                                                  \
+  OP(Any)                                                                                          \
+  OP(AnyExceptNL)                                                                                  \
+  OP(LBAny)                                                                                        \
+  OP(Char)                                                                                         \
+  OP(IChar)                                                                                        \
+  OP(LBChar)                                                                                       \
+  OP(CharSet)                                                                                      \
+  OP(ICharSet)                                                                                     \
+  OP(LBCharSet)
+
 #define EACH_RE_OPCODE(OP)                                                                         \
   OP(Nop)                                                                                          \
   OP(Match)                                                                                        \
@@ -35,15 +46,7 @@ namespace arsh::regex {
   OP(End)                                                                                          \
   OP(Word)                                                                                         \
   OP(IWord)                                                                                        \
-  OP(Any)                                                                                          \
-  OP(AnyExceptNL)                                                                                  \
-  OP(LBAny)                                                                                        \
-  OP(Char)                                                                                         \
-  OP(IChar)                                                                                        \
-  OP(LBChar)                                                                                       \
-  OP(CharSet)                                                                                      \
-  OP(ICharSet)                                                                                     \
-  OP(LBCharSet)                                                                                    \
+  EACH_RE_MATCH_CHAR_OP(OP)                                                                        \
   OP(PrepareRadix)                                                                                 \
   OP(RadixOrEmoji)                                                                                 \
   OP(PrepareLBRadix)                                                                               \
@@ -60,6 +63,7 @@ namespace arsh::regex {
   OP(LBBackRef)                                                                                    \
   OP(BeginLoop)                                                                                    \
   OP(EndLoop)                                                                                      \
+  OP(CharLoop)                                                                                     \
   OP(BeginLookAround)                                                                              \
   OP(EndLookAround)
 
@@ -517,6 +521,39 @@ struct EndLoopIns : InstWithRtti<OpCode::EndLoop> {
   }
 };
 
+/**
+ *
+ * | CharLoop |
+ * | body (one of EACH_RE_MATCH_CHAR_OP, exactly 1 code point)|
+ * | outer instruction follows the body (no stored offset)|
+ */
+struct CharLoopIns : InstWithRtti<OpCode::CharLoop> {
+  bool greedy;
+  bool direction;
+  uint8_t min[2];
+  uint8_t max[4];
+
+  CharLoopIns(uint16_t min, uint32_t max, bool greedy, bool direction)
+      : greedy(greedy), direction(direction) {
+    WRITE_TO_INS_FIELD(min, min);
+    WRITE_TO_INS_FIELD(max, max);
+  }
+
+  uint16_t getMin() const {
+    uint16_t v;
+    READ_FROM_INS_FIELD(min, v);
+    return v;
+  }
+
+  uint32_t getMax() const {
+    uint32_t v;
+    READ_FROM_INS_FIELD(max, v);
+    return v;
+  }
+
+  bool isUnlimited() const { return this->getMax() == UINT32_MAX; }
+};
+
 struct BeginLookAroundIns : InstWithRtti<OpCode::BeginLookAround> {
   bool negate;
   uint8_t target[4]; // must be the end of look-ahead addr
@@ -541,6 +578,15 @@ struct EndLookAroundIns : InstWithRtti<OpCode::EndLookAround> {};
 EACH_RE_OPCODE(GEN_TYPE_ASSERT)
 
 #undef GEN_TYPE_ASSERT
+
+inline unsigned char sizeOfInst(const Inst *inst) {
+  constexpr unsigned char table[] = {
+#define GEN_TABLE(E) sizeof(E##Ins),
+      EACH_RE_OPCODE(GEN_TABLE)
+#undef GEN_TABLE
+  };
+  return table[toUnderlying(inst->op)];
+}
 
 } // namespace arsh::regex
 

@@ -8,10 +8,51 @@ loopCount: 1
 captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
-   0: BeginLoop(loopIndex=0, greedy=false, min=0, max=4294967295, outer=24)
-  14: Char(codePoint=U+0061:a)
-  19: EndLoop(target=0)
-  24: Match
+   0: CharLoop(greedy=false, direction=true, min=0, max=4294967295)
+   9: Char(codePoint=U+0061:a)
+  14: Match
+prefilter:
+  data:
+  minPrevCodePoints: 0
+  maxPrevCodePoints: 0
+matchers:
+EOF
+)
+
+# (a)*?
+assert diff <(redump -d '(a)*?' '') <(<<'EOF'
+flag: (mode = , modifier = )
+loopCount: 1
+captureGroupCount: 1
+namedCaptureGroups: []
+instructions:
+   0: BeginLoop(loopIndex=0, greedy=false, min=0, max=4294967295, outer=35)
+  14: ResetCaptures(firstIndex=1, lastIndex=1)
+  19: BeginCapture(captureIndex=1)
+  22: Char(codePoint=U+0061:a)
+  27: EndCapture(captureIndex=1)
+  30: EndLoop(target=0)
+  35: Match
+prefilter:
+  data:
+  minPrevCodePoints: 0
+  maxPrevCodePoints: 0
+matchers:
+EOF
+)
+
+# (?<=a*?)
+assert diff <(redump -d '(?<=a*?)' '') <(<<'EOF'
+flag: (mode = , modifier = )
+loopCount: 1
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+   0: BeginLookAround(negate=false, target=21)
+   6: CharLoop(greedy=false, direction=false, min=0, max=4294967295)
+  15: LBChar(ignoreCase=false, codePoint=U+0061:a)
+  21: EndLookAround
+  22: Match
 prefilter:
   data:
   minPrevCodePoints: 0
@@ -27,13 +68,55 @@ loopCount: 1
 captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
-   0: BeginLoop(loopIndex=0, greedy=false, min=1, max=4294967295, outer=24)
-  14: Char(codePoint=U+0061:a)
-  19: EndLoop(target=0)
-  24: Match
+   0: CharLoop(greedy=false, direction=true, min=1, max=4294967295)
+   9: Char(codePoint=U+0061:a)
+  14: Match
 prefilter:
   data:
 0x61,
+  minPrevCodePoints: 0
+  maxPrevCodePoints: 0
+matchers:
+EOF
+)
+
+# (a)+?
+assert diff <(redump -d '(a)+?' '') <(<<'EOF'
+flag: (mode = , modifier = )
+loopCount: 1
+captureGroupCount: 1
+namedCaptureGroups: []
+instructions:
+   0: BeginLoop(loopIndex=0, greedy=false, min=1, max=4294967295, outer=35)
+  14: ResetCaptures(firstIndex=1, lastIndex=1)
+  19: BeginCapture(captureIndex=1)
+  22: Char(codePoint=U+0061:a)
+  27: EndCapture(captureIndex=1)
+  30: EndLoop(target=0)
+  35: Match
+prefilter:
+  data:
+0x61,
+  minPrevCodePoints: 0
+  maxPrevCodePoints: 0
+matchers:
+EOF
+)
+
+# (?<=a+?)
+assert diff <(redump -d '(?<=a+?)' '') <(<<'EOF'
+flag: (mode = , modifier = )
+loopCount: 1
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+   0: BeginLookAround(negate=false, target=21)
+   6: CharLoop(greedy=false, direction=false, min=1, max=4294967295)
+  15: LBChar(ignoreCase=false, codePoint=U+0061:a)
+  21: EndLookAround
+  22: Match
+prefilter:
+  data:
   minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
@@ -47,10 +130,51 @@ loopCount: 1
 captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
-   0: BeginLoop(loopIndex=0, greedy=false, min=0, max=1, outer=24)
-  14: Char(codePoint=U+0061:a)
-  19: EndLoop(target=0)
-  24: Match
+   0: CharLoop(greedy=false, direction=true, min=0, max=1)
+   9: Char(codePoint=U+0061:a)
+  14: Match
+prefilter:
+  data:
+  minPrevCodePoints: 0
+  maxPrevCodePoints: 0
+matchers:
+EOF
+)
+
+# (a)??
+assert diff <(redump -d '(a)??' '') <(<<'EOF'
+flag: (mode = , modifier = )
+loopCount: 1
+captureGroupCount: 1
+namedCaptureGroups: []
+instructions:
+   0: BeginLoop(loopIndex=0, greedy=false, min=0, max=1, outer=35)
+  14: ResetCaptures(firstIndex=1, lastIndex=1)
+  19: BeginCapture(captureIndex=1)
+  22: Char(codePoint=U+0061:a)
+  27: EndCapture(captureIndex=1)
+  30: EndLoop(target=0)
+  35: Match
+prefilter:
+  data:
+  minPrevCodePoints: 0
+  maxPrevCodePoints: 0
+matchers:
+EOF
+)
+
+# (?<=a??)
+assert diff <(redump -d '(?<=a??)' '') <(<<'EOF'
+flag: (mode = , modifier = )
+loopCount: 1
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+   0: BeginLookAround(negate=false, target=21)
+   6: CharLoop(greedy=false, direction=false, min=0, max=1)
+  15: LBChar(ignoreCase=false, codePoint=U+0061:a)
+  21: EndLookAround
+  22: Match
 prefilter:
   data:
   minPrevCodePoints: 0
@@ -100,10 +224,9 @@ loopCount: 1
 captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
-   0: BeginLoop(loopIndex=0, greedy=false, min=2, max=2, outer=24)
-  14: Char(codePoint=U+0061:a)
-  19: EndLoop(target=0)
-  24: Match
+   0: CharLoop(greedy=false, direction=true, min=2, max=2)
+   9: Char(codePoint=U+0061:a)
+  14: Match
 prefilter:
   data:
 0x61,
@@ -121,10 +244,9 @@ captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
    0: Char(codePoint=U+0061:a)
-   5: BeginLoop(loopIndex=0, greedy=false, min=2, max=4, outer=28)
-  19: CharSet(matcherIndex=0, invert=false)
-  23: EndLoop(target=5)
-  28: Match
+   5: CharLoop(greedy=false, direction=true, min=2, max=4)
+  14: CharSet(matcherIndex=0, invert=false)
+  18: Match
 prefilter:
   data:
 \x61
@@ -144,11 +266,10 @@ captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
    0: Char(codePoint=U+003C:<)
-   5: BeginLoop(loopIndex=0, greedy=false, min=1, max=4294967295, outer=25)
-  19: AnyExceptNL
-  20: EndLoop(target=5)
-  25: Char(codePoint=U+003E:>)
-  30: Match
+   5: CharLoop(greedy=false, direction=true, min=1, max=4294967295)
+  14: AnyExceptNL
+  15: Char(codePoint=U+003E:>)
+  20: Match
 prefilter:
   data:
 \x3C
@@ -165,10 +286,9 @@ loopCount: 1
 captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
-   0: BeginLoop(loopIndex=0, greedy=false, min=0, max=4294967295, outer=20)
-  14: AnyExceptNL
-  15: EndLoop(target=0)
-  20: Match
+   0: CharLoop(greedy=false, direction=true, min=0, max=4294967295)
+   9: AnyExceptNL
+  10: Match
 prefilter:
   data: line_start
   minPrevCodePoints: 0
@@ -183,12 +303,31 @@ loopCount: 1
 captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
-   0: BeginLoop(loopIndex=0, greedy=false, min=0, max=4294967295, outer=20)
-  14: Any
-  15: EndLoop(target=0)
-  20: Match
+   0: CharLoop(greedy=false, direction=true, min=0, max=4294967295)
+   9: Any
+  10: Match
 prefilter:
   data: start
+  minPrevCodePoints: 0
+  maxPrevCodePoints: 0
+matchers:
+EOF
+)
+
+# (?<=.*?)
+assert diff <(redump -d '(?<=.*?)' '') <(<<'EOF'
+flag: (mode = , modifier = )
+loopCount: 1
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+   0: BeginLookAround(negate=false, target=17)
+   6: CharLoop(greedy=false, direction=false, min=0, max=4294967295)
+  15: LBAny(dotAll=false)
+  17: EndLookAround
+  18: Match
+prefilter:
+  data:
   minPrevCodePoints: 0
   maxPrevCodePoints: 0
 matchers:
@@ -202,10 +341,9 @@ loopCount: 1
 captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
-   0: BeginLoop(loopIndex=0, greedy=false, min=1, max=4294967295, outer=20)
-  14: AnyExceptNL
-  15: EndLoop(target=0)
-  20: Match
+   0: CharLoop(greedy=false, direction=true, min=1, max=4294967295)
+   9: AnyExceptNL
+  10: Match
 prefilter:
   data:
   minPrevCodePoints: 0
@@ -220,10 +358,29 @@ loopCount: 1
 captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
-   0: BeginLoop(loopIndex=0, greedy=false, min=1, max=4294967295, outer=20)
-  14: Any
-  15: EndLoop(target=0)
-  20: Match
+   0: CharLoop(greedy=false, direction=true, min=1, max=4294967295)
+   9: Any
+  10: Match
+prefilter:
+  data:
+  minPrevCodePoints: 0
+  maxPrevCodePoints: 0
+matchers:
+EOF
+)
+
+# (?<=.+?)
+assert diff <(redump -d '(?<=.+?)' '') <(<<'EOF'
+flag: (mode = , modifier = )
+loopCount: 1
+captureGroupCount: 0
+namedCaptureGroups: []
+instructions:
+   0: BeginLookAround(negate=false, target=17)
+   6: CharLoop(greedy=false, direction=false, min=1, max=4294967295)
+  15: LBAny(dotAll=false)
+  17: EndLookAround
+  18: Match
 prefilter:
   data:
   minPrevCodePoints: 0
@@ -239,16 +396,15 @@ loopCount: 2
 captureGroupCount: 1
 namedCaptureGroups: []
 instructions:
-   0: BeginLoop(loopIndex=1, greedy=true, min=2, max=2, outer=55)
+   0: BeginLoop(loopIndex=1, greedy=true, min=2, max=2, outer=45)
   14: ResetCaptures(firstIndex=1, lastIndex=1)
   19: BeginCapture(captureIndex=1)
-  22: BeginLoop(loopIndex=0, greedy=false, min=0, max=4294967295, outer=42)
-  36: AnyExceptNL
-  37: EndLoop(target=22)
-  42: Char(codePoint=U+002C:,)
-  47: EndCapture(captureIndex=1)
-  50: EndLoop(target=0)
-  55: Match
+  22: CharLoop(greedy=false, direction=true, min=0, max=4294967295)
+  31: AnyExceptNL
+  32: Char(codePoint=U+002C:,)
+  37: EndCapture(captureIndex=1)
+  40: EndLoop(target=0)
+  45: Match
 prefilter:
   data: line_start
   minPrevCodePoints: 0
@@ -263,16 +419,15 @@ loopCount: 2
 captureGroupCount: 1
 namedCaptureGroups: []
 instructions:
-   0: BeginLoop(loopIndex=1, greedy=true, min=2, max=2, outer=55)
+   0: BeginLoop(loopIndex=1, greedy=true, min=2, max=2, outer=45)
   14: ResetCaptures(firstIndex=1, lastIndex=1)
   19: BeginCapture(captureIndex=1)
-  22: BeginLoop(loopIndex=0, greedy=false, min=0, max=4294967295, outer=42)
-  36: Any
-  37: EndLoop(target=22)
-  42: Char(codePoint=U+002C:,)
-  47: EndCapture(captureIndex=1)
-  50: EndLoop(target=0)
-  55: Match
+  22: CharLoop(greedy=false, direction=true, min=0, max=4294967295)
+  31: Any
+  32: Char(codePoint=U+002C:,)
+  37: EndCapture(captureIndex=1)
+  40: EndLoop(target=0)
+  45: Match
 prefilter:
   data: start
   minPrevCodePoints: 0
