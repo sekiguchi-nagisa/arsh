@@ -1152,7 +1152,7 @@ std::unique_ptr<Node> Parser::tryToParseQuantifier(std::unique_ptr<Node> &&node,
     unsigned short min = 0;
     if (auto ret = this->parseQuantifierDigits(old, ignoreError, ','); ret.hasValue()) {
       min = ret.unwrap();
-    } else if (ignoreError) {
+    } else if (ignoreError && !this->hasError()) {
       this->iter = old;
       return std::move(node);
     } else {
@@ -1175,7 +1175,7 @@ std::unique_ptr<Node> Parser::tryToParseQuantifier(std::unique_ptr<Node> &&node,
       } else {
         if (auto ret = this->parseQuantifierDigits(old, ignoreError, '}'); ret.hasValue()) {
           max = ret.unwrap();
-        } else if (ignoreError) {
+        } else if (ignoreError && !this->hasError()) {
           this->iter = old;
           return std::move(node);
         } else {
@@ -1245,10 +1245,8 @@ Optional<unsigned short> Parser::parseQuantifierDigits(const char *prefixStart,
     return {};
   }
   if (ret.value > RepeatNode::QUANTIFIER_MAX) {
-    if (!ignoreError) {
-      this->reportError(this->getTokenFrom(old), "too large number in {} quantifier: `%s'",
-                        digits.toString().c_str());
-    }
+    this->reportError(this->getTokenFrom(old), "too large number in {} quantifier: `%s'",
+                      digits.toString().c_str());
     return {};
   }
   return static_cast<unsigned short>(ret.value);

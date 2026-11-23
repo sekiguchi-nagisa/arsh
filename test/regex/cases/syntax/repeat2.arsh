@@ -123,6 +123,12 @@ assert diff <(redump '\S{1,2' 'u') <(<<'EOF'
 EOF
 )
 
+assert diff <(redump '\W{1,21111111111111' '') <(<<'EOF'
+1:6 [error] too large number in {} quantifier: `21111111111111'
+ at (pos = 5, size = 14)
+EOF
+)
+
 assert diff <(redump '\W{1,21111111111111' 'u') <(<<'EOF'
 1:6 [error] too large number in {} quantifier: `21111111111111'
  at (pos = 5, size = 14)
