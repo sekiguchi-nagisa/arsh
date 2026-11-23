@@ -316,7 +316,6 @@ bool BacktrackStack::backtrack(const Inst *&inst, Input &input, Capture *capture
       if (bt.charLoop.count == ins.getMin()) {
         break;
       }
-      bt.charLoop.count--;
       if (ins.direction) {
         assert(input.availableBackward());
         input.consumeBackward();
@@ -324,6 +323,7 @@ bool BacktrackStack::backtrack(const Inst *&inst, Input &input, Capture *capture
         assert(input.available());
         input.consumeForward();
       }
+      bt.charLoop.count--;
       bt.charLoop.inputOffset = input.getOffset();
       inst = loopInst;
       inst += sizeof(CharLoopIns);
@@ -936,7 +936,9 @@ START:
           goto BACKTRACK;
         }
         inst += sizeOfInst(inst);
-        TRY(bts.push(Backtrack::newCharLoop(loopInstOffset, input, count, ins.greedy)));
+        if (ins.getMin() != ins.getMax()) { // fixed count loop, nothing to backtrack
+          TRY(bts.push(Backtrack::newCharLoop(loopInstOffset, input, count, ins.greedy)));
+        }
         vmnext;
       }
       vmcase(BeginLookAround) {
