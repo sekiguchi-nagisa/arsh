@@ -9,8 +9,9 @@ cmake_minimum_required(VERSION 3.15)
 #
 # tools/regex-bench/build_rematch.arsh drives this project: it fetches/builds the engines (via
 # run.arsh --prepare) and builds the arsh libraries the tool needs, then configures and builds
-# `rematch` here. The same cmake files that drive the benchmark (arsh.cmake / srell.cmake /
-# quickjs.cmake / hermes.cmake) are reused so both builds stay in sync.
+# `rematch` here. The SRELL / QuickJS / Hermes cmake files come from the fetched
+# regex-performance tree (the same ones the benchmark uses), so both builds stay in sync. Only
+# arsh.cmake stays here, because the arsh adapter is arsh-specific.
 #
 #   cmake -S tools/regex-bench -B build-rematch \
 #         -DARSH_SOURCE_DIR=<arsh repo> -DARSH_BUILD_DIR=<arsh build> \
@@ -54,6 +55,23 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unknown-warning-option")
 # build. This sets ARSH_SOURCE_DIR / ARSH_BUILD_DIR and imports those libraries.
 include(${CMAKE_CURRENT_SOURCE_DIR}/arsh.cmake)
 
+# The SRELL / QuickJS / Hermes build support lives in the regex-performance tree fetched by
+# run.arsh, together with their adapters, so rematch shares those files with the benchmark.
+set(REGEX_PERFORMANCE_SOURCE_DIR "${ARSH_SOURCE_DIR}/.regex-bench/regex-performance"
+        CACHE PATH "path to the fetched regex-performance tree")
+set(REGEX_PERFORMANCE_CMAKE_DIR "${REGEX_PERFORMANCE_SOURCE_DIR}/src")
+
+# the engines are skipped when the build support is missing (the work directory has not been
+# prepared yet), so a plain configure still succeeds
+if (EXISTS "${REGEX_PERFORMANCE_CMAKE_DIR}/hermes.cmake")
+    set(REMATCH_ENGINE_CMAKE_AVAILABLE ON)
+else ()
+    message(WARNING
+            "rematch: '${REGEX_PERFORMANCE_CMAKE_DIR}' does not contain the engine cmake files;"
+            " run tools/regex-bench/run.arsh --prepare first. The engines are skipped.")
+    set(REMATCH_ENGINE_CMAKE_AVAILABLE OFF)
+endif ()
+
 option(REMATCH_ENABLE_HERMES "build rematch with the Hermes engine" ON)
 option(REMATCH_ENABLE_QUICKJS "build rematch with the QuickJS engine" ON)
 option(REMATCH_ENABLE_SRELL "build rematch with the SRELL engine" ON)
@@ -88,11 +106,11 @@ set(REMATCH_ENGINES "")
 # an engine whose sources are not found is skipped with a warning, so the tool still builds with
 # the engines that are present (the engine cmake files treat a missing path as a hard error).
 if (REMATCH_ENABLE_HERMES)
-    if (HERMES_SOURCE_DIR AND HERMES_BUILD_DIR AND
+    if (REMATCH_ENGINE_CMAKE_AVAILABLE AND HERMES_SOURCE_DIR AND HERMES_BUILD_DIR AND
             EXISTS "${HERMES_SOURCE_DIR}/include/hermes/Regex/Regex.h" AND
             EXISTS "${HERMES_BUILD_DIR}/lib/Regex/libhermesRegex.a")
         set(REGEX_ENGINES "")
-        include(${CMAKE_CURRENT_SOURCE_DIR}/hermes.cmake)
+        include(${REGEX_PERFORMANCE_CMAKE_DIR}/hermes.cmake)
         list(APPEND REMATCH_ENGINES ${REGEX_ENGINES})
         list(APPEND REMATCH_SOURCES rematch_hermes.cpp)
         list(APPEND REMATCH_ENGINE_NAMES hermes)
@@ -104,9 +122,10 @@ if (REMATCH_ENABLE_HERMES)
 endif ()
 
 if (REMATCH_ENABLE_QUICKJS)
-    if (QUICKJS_SOURCE_DIR AND EXISTS "${QUICKJS_SOURCE_DIR}/libregexp.c")
+    if (REMATCH_ENGINE_CMAKE_AVAILABLE AND QUICKJS_SOURCE_DIR AND
+            EXISTS "${QUICKJS_SOURCE_DIR}/libregexp.c")
         set(REGEX_ENGINES "")
-        include(${CMAKE_CURRENT_SOURCE_DIR}/quickjs.cmake)
+        include(${REGEX_PERFORMANCE_CMAKE_DIR}/quickjs.cmake)
         list(APPEND REMATCH_ENGINES ${REGEX_ENGINES})
         list(APPEND REMATCH_SOURCES ${QUICKJS_SOURCE_DIR}/libregexp.c)
         list(APPEND REMATCH_SOURCES ${QUICKJS_SOURCE_DIR}/libunicode.c)
@@ -120,8 +139,9 @@ if (REMATCH_ENABLE_QUICKJS)
 endif ()
 
 if (REMATCH_ENABLE_SRELL)
-    if (SRELL_SOURCE_DIR AND EXISTS "${SRELL_SOURCE_DIR}/srell.hpp")
-        include(${CMAKE_CURRENT_SOURCE_DIR}/srell.cmake)
+    if (REMATCH_ENGINE_CMAKE_AVAILABLE AND SRELL_SOURCE_DIR AND
+            EXISTS "${SRELL_SOURCE_DIR}/srell.hpp")
+        include(${REGEX_PERFORMANCE_CMAKE_DIR}/srell.cmake)
         list(APPEND REMATCH_SOURCES rematch_srell.cpp)
         list(APPEND REMATCH_ENGINE_NAMES srell)
     else ()

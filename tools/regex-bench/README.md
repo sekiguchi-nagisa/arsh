@@ -1,28 +1,27 @@
 # arsh regex-performance benchmark
 
 Support for measuring the arsh regex engine with
-[rust-leipzig/regex-performance](https://github.com/rust-leipzig/regex-performance), together with
-the most common C++ regex engines as comparison targets.
+[sekiguchi-nagisa/regex-performance](https://github.com/sekiguchi-nagisa/regex-performance), a fork
+of [rust-leipzig/regex-performance](https://github.com/rust-leipzig/regex-performance). The fork
+carries the SRELL / QuickJS / Hermes / Node.js adapters and the heap memory tracker, so this
+directory only maintains the arsh-specific parts.
 
-The upstream tool drives a fixed set of 18 patterns against a large text file and reports the
-time and score of each registered engine. This directory provides:
+The upstream tool drives a fixed set of patterns against a large text file and reports the time,
+score, match count and heap usage of each registered engine. This directory provides:
 
 | file                      | description                                                             |
 |---------------------------|-------------------------------------------------------------------------|
 | `arsh.cpp` / `arsh.cmake` | adapter and build support for the arsh `regex` engine (`arsh` and `arsh-unopt`) |
-| `srell.cpp` / `srell.cmake` | adapter and build support for [SRELL](https://github.com/upa-url/srell) |
-| `quickjs.c` / `quickjs.cmake` | adapter and build support for QuickJS `libregexp`                   |
-| `hermes.cpp` / `hermes.cmake` | adapter and build support for the Hermes regex engine             |
-| `pcre2.c` / `pcre2.cmake` | adapter and build support for PCRE2 (interpreted and JIT)              |
-| `nodejs.cpp` / `nodejs.cmake` | adapter and build support for the Node.js regexp engine (V8)        |
-| `boost.cmake`             | build support for Boost.Regex                                           |
-| `memory_tracker.cpp` / `memory_tracker.h` | heap accounting shared by the adapters (see "Memory measurement") |
-| `regex-performance.patch` | patch registering the engines into the upstream harness                |
-| `run.arsh`                | script which fetches, patches, builds and runs the benchmark           |
+| `run.arsh`                | script which fetches the fork, adds the arsh adapter and runs the benchmark |
 | `rematch.cpp` + `rematch_*.{cpp,c,h}` | standalone matcher embedding the same engines (see "Standalone matcher") |
 | `rematch_test.cpp`        | integration test for `rematch`                                          |
 | `CMakeLists.txt`          | standalone project building `rematch` / `rematch_test`                  |
 | `build_rematch.arsh`      | script which builds `rematch` from the fetched engines                  |
+
+Everything else — the `srell` / `quickjs` / `hermes` / `nodejs` / `pcre2` / `boost` adapters, their
+`.cmake` files, `memory_tracker.{h,cpp}` and the `-e` / `-p` / memory-column support in the harness
+— lives in the fork and is used as-is. See its README for the engine list and the memory
+measurement.
 
 ## Quick start
 
@@ -77,11 +76,15 @@ pattern without paying for the whole set. Without either option every engine com
 
 `run.arsh` performs the following steps:
 
-1. clones `rust-leipzig/regex-performance` into `.regex-bench/regex-performance` (pinned commit),
-2. applies `regex-performance.patch` and copies the adapters into it,
+1. clones `sekiguchi-nagisa/regex-performance` into `.regex-bench/regex-performance`,
+2. copies the arsh adapter (`arsh.cpp` / `arsh.cmake`) into it,
 3. builds the arsh `regex` libraries (and downloads/builds SRELL, QuickJS, Hermes, PCRE2 and Boost if requested),
 4. builds `regex_perf`,
 5. runs it against the bundled `3200.txt`.
+
+`--repo-ref REF` checks out the given commit or branch of the fork (`master` by default), which is
+how a specific revision can be pinned; `--repo URL` fetches from another clone of the fork, for
+example a local checkout while working on the harness itself.
 
 `--prepare` stops after step 3 for SRELL, QuickJS and Hermes (no arsh build and no `regex_perf`)
 and prints their resolved locations. It is used by `build_rematch.arsh` to build the standalone
@@ -221,8 +224,10 @@ failed
 | `--build TYPE`        | arsh build type (default: `Release`)                     |
 | `--cxx CXX`           | C++ compiler used to build arsh and the benchmark        |
 | `--work DIR`          | working directory (default: `.regex-bench`)              |
+| `--repo-ref REF`      | regex-performance commit/branch to fetch (default: `master`) |
+| `--repo URL`          | regex-performance repository to fetch (default: the fork) |
 | `--keep`              | keep the fetched work directory                          |
-| `--setup`             | only fetch and patch, do not build or run                |
+| `--setup`             | only fetch and prepare, do not build or run              |
 | `--prepare`           | only fetch and build the comparison engines, then stop   |
 | `--std-regex`         | add `std::regex` as a comparison target                  |
 | `--srell`             | add SRELL as a comparison target                         |
@@ -271,19 +276,14 @@ lives in a separate process, its memory columns are always `0`.
 
 ## Memory measurement
 
-Every registered engine also reports its heap memory usage, split into two numbers:
+Every engine that is linked into the benchmark process reports its heap usage, split into two
+numbers: `instance` (live bytes of the compiled regex) and `runtime` (peak extra bytes allocated
+while scanning). They are printed next to the timings and written to the CSV as
+`<engine> [mem_inst]` / `<engine> [mem_run]`, in bytes. The Node.js engine runs out of process, so
+its columns are always `0`.
 
-* `instance`: the live bytes of the compiled regex instance itself.
-* `runtime`: the peak extra bytes allocated while scanning the input.
-
-They are printed next to the timings and written to the CSV (`<engine> [mem_inst]` and
-`<engine> [mem_run]` columns). Both are in bytes; the printed columns are per-pattern and the
-total is summed over the 18 patterns.
-
-The measurement is provided by `memory_tracker.cpp`, which replaces the global
-malloc/calloc/realloc/free and C++ operator new/delete and accounts every live block by its usable
-size (the allocator's real footprint). Because all engines are linked into the same executable,
-each adapter measures a delta around its own work:
+The measurement itself (`memory_tracker.{h,cpp}`) lives in the fork, together with the adapters
+that call it; the arsh adapter here uses the same API:
 
 ```cpp
 const size_t base = memory_tracker_live();
@@ -295,10 +295,6 @@ const size_t scan_base = memory_tracker_live();
 /* run all the matches */
 res->mem_runtime = memory_tracker_peak() - scan_base;
 ```
-
-The tracker is enabled on glibc (Linux) and is a no-op elsewhere, in which case both numbers stay
-`0`. It tracks heap allocations only: memory obtained directly from the OS (e.g. `mmap`) or held
-on the stack is not included.
 
 Because the numbers are heap deltas around an engine's own calls, a one-time module-level cache
 that a library initializes on first use is attributed to the first pattern that triggers it (for
@@ -323,17 +319,11 @@ several minutes because the `cppstd` and arsh rows include patterns like `(.*?,)
 
 ## Manual integration
 
-If you already have a copy of `regex-performance`, apply the changes by hand:
+If you already have a checkout of the fork, only the arsh adapter has to be added:
 
 ```sh
-$ git apply /path/to/arsh/tools/regex-bench/regex-performance.patch
-$ cp /path/to/arsh/tools/regex-bench/{arsh,srell}.cpp      src/
-$ cp /path/to/arsh/tools/regex-bench/quickjs.c              src/
-$ cp /path/to/arsh/tools/regex-bench/hermes.cpp             src/
-$ cp /path/to/arsh/tools/regex-bench/nodejs.cpp             src/
-$ cp /path/to/arsh/tools/regex-bench/pcre2.c                src/
-$ cp /path/to/arsh/tools/regex-bench/memory_tracker.{h,cpp}  src/
-$ cp /path/to/arsh/tools/regex-bench/{arsh,srell,quickjs,hermes,boost,nodejs,pcre2}.cmake src/
+$ cp /path/to/arsh/tools/regex-bench/arsh.cpp   src/
+$ cp /path/to/arsh/tools/regex-bench/arsh.cmake src/
 
 $ mkdir build && cd build
 $ cmake .. \
@@ -346,14 +336,16 @@ $ cmake .. \
       -DINCLUDE_PCRE2=local -DPCRE2_BUILD_DIR=/path/to/pcre2/build \
       -DINCLUDE_NODEJS=local -DNODEJS_EXECUTABLE=/path/to/node \
       -DINCLUDE_CPPSTD=system \
+      -DINCLUDE_RUST=disabled \
       -DINCLUDE_HYPERSCAN=disabled # ... any other engine you want to skip
 $ make regex_perf
 $ ./src/regex_perf -f ../3200.txt -o results.csv
 $ ./src/regex_perf -f ../3200.txt -e arsh -e srell -p 'Twain'   # only some engines/patterns
 ```
 
-The patch also adds `-e NAME` (repeatable, restrict the engines) and `-p PATTERN` (repeatable,
-replace the built-in pattern set) to `regex_perf`; `-h` lists the available engine names.
+The fetched tree already contains `-e NAME` (repeatable, restrict the engines) and `-p PATTERN`
+(repeatable, replace the built-in pattern set) together with the memory columns; `-h` lists the
+available engine names.
 
 ## Notes
 

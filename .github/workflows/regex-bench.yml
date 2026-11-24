@@ -74,8 +74,8 @@ jobs:
           cd $BUILD
           ctest -j4 --output-on-failure -R 'regex_test|regex_e2e_test'
       # fetch/build the engines shared with rematch: the same three engines rematch embeds, so
-      # both builds share one engine tree. The step also leaves the patched regex-performance
-      # tree behind, which the benchmark step reuses.
+      # both builds share one engine tree. The step also leaves the fetched regex-performance
+      # tree behind, which the benchmark step and the rematch build reuse.
       - name: prepare engines
         run: arsh tools/regex-bench/run.arsh --prepare --work $WORK
       - name: save engines

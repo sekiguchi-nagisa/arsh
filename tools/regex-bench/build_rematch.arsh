@@ -102,6 +102,7 @@ function run() for _Param {
     cmake -S "$root/tools/regex-bench" -B $build "-DCMAKE_BUILD_TYPE=$buildType" \
           "-DARSH_SOURCE_DIR=$root" \
           "-DARSH_BUILD_DIR=$arshBuild" \
+          "-DREGEX_PERFORMANCE_SOURCE_DIR=$work/regex-performance" \
           "-DSRELL_SOURCE_DIR=$srellSrc" \
           "-DQUICKJS_SOURCE_DIR=$quickjsSrc" \
           "-DHERMES_SOURCE_DIR=$hermesSrc" \
