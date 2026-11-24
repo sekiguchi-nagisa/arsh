@@ -17,6 +17,7 @@ score, match count and memory usage of each registered engine. This directory pr
 | `rematch_test.cpp`        | integration test for `rematch`                                          |
 | `CMakeLists.txt`          | standalone project building `rematch` / `rematch_test`                  |
 | `build_rematch.arsh`      | script which builds `rematch` from the fetched engines                  |
+| `summary.arsh`            | script which renders the CSV results as a markdown job summary          |
 
 Everything else — the `srell` / `quickjs` / `hermes` / `nodejs` / `pcre2` / `boost` adapters, their
 `.cmake` files, `memory_tracker.{h,cpp}` and the `-e` / `-p` / memory-column support in the harness
@@ -133,6 +134,24 @@ reports the current value instead of failing inside `perf`. Use `perf report -g`
 
 The profile reflects the benchmark process as a whole, so it also covers engine startup and the
 adapters' own work. To attribute time to a single engine, profile with `--target <engine>`.
+
+## Markdown summary
+
+`summary.arsh` renders the CSV files written by `--output` as markdown, which is what the CI
+workflow appends to `$GITHUB_STEP_SUMMARY` so that the results appear on the Actions run page.
+Each `--result NAME=FILE` pair becomes one section, which is how the g++ and clang++ runs of the
+workflow are shown side by side:
+
+```sh
+$ arsh tools/regex-bench/summary.arsh \
+      --result g++=gcc.csv --result clang++=clang.csv
+```
+
+The output starts with one table of the total time and score of every engine for both results,
+followed by a per-pattern timing table per result. A pattern the engine failed to compile, timed
+out on, or reported no matches for is shown as `n/a` and excluded from the total. A missing or
+empty CSV is rendered as "no result" instead of failing, so a run whose second compiler step
+failed still shows the data of the first one.
 
 ## Standalone matcher
 
@@ -325,7 +344,10 @@ and on each run it:
 2. fetches/builds the engines shared with `rematch` (`run.arsh --prepare`),
 3. builds `rematch` and runs `rematch_test` (`build_rematch.arsh --no-prepare --arsh-build build`),
 4. runs `run.arsh --std-regex --srell --quickjs --hermes` with `--cxx g++` and with
-   `--cxx clang++`, and uploads both CSVs as one artifact.
+   `--cxx clang++`,
+5. renders both CSVs with `summary.arsh` into `$GITHUB_STEP_SUMMARY`, so the totals and the
+   per-pattern timings of the g++ and clang++ runs are shown on the workflow run page,
+6. uploads both CSVs as one artifact.
 
 The engine trees under `.regex-bench` are cached (keyed by `run.arsh`, which pins the engine
 revisions), so only the first run pays for the Hermes clone and build. The benchmark itself takes

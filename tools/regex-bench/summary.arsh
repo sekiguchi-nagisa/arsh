@@ -1,0 +1,307 @@
+#!/usr/bin/env arsh
+
+# Render the CSV files written by `run.arsh --output` as a markdown job summary.
+#
+# GitHub Actions shows the content written to $GITHUB_STEP_SUMMARY on the run page, so the
+# workflow redirects this script into it. Each `--result NAME=FILE` pair labels one benchmark run
+# (the compilers are measured separately, so `--result gcc=... --result clang=...` shows both),
+# and every run is rendered as its own section with a totals table and a per-pattern table.
+#
+# The CSV layout is the one of the regex-performance harness: a `regex;` column followed by one
+# column per engine and metric, in the order `[ms]`, `[sp]`, `[matches]`, `[mem_inst]`,
+# `[mem_run]`. The engine names of the `[ms]` group define the engine order.
+#
+# Usage:
+#   arsh tools/regex-bench/summary.arsh --result gcc=gcc.csv --result clang=clang.csv
+#   arsh tools/regex-bench/summary.arsh --result gcc=gcc.csv >> "$GITHUB_STEP_SUMMARY"
+
+shctl set errraise
+
+# the harness reports an engine that failed to compile the pattern (or a match that did not
+# finish) with this sentinel time; a timeout is reported as a negative match count instead
+let FAILED_TIME = 999999.0
+
+# One measured CSV: the engines in column order and the per-pattern cells, indexed by pattern
+# and then by engine.
+type _Result() {
+    var label = ""
+    var engines : [String]
+    var patterns : [String]
+    var time : [[Float]]
+    var score : [[Int]]
+    var matches : [[Int]]
+    var available = $false
+}
+
+[<CLI(toplevel: $true)>]
+type _Param() {
+    [<Option(placeholder: "NAME=FILE", help: "benchmark result to render (repeatable)")>]
+    var result : [String]
+}
+
+# The value of a numeric CSV cell (the harness pads the columns with spaces, and an empty cell
+# means the engine did not report the metric).
+function _floatCell(cell: String) : Float {
+    return $cell.replace(" ", "").toFloat() ?? 0.0
+}
+
+function _intCell(cell: String) : Int {
+    return $cell.replace(" ", "").toInt() ?? 0
+}
+
+# An engine that failed to build or compile the pattern has no meaningful timing, so it is
+# excluded from the totals and shown as `n/a` in the per-pattern table. The harness reports a
+# compile/build failure as the `999999` sentinel, a timeout as a negative match count, and an
+# adapter-level failure (such as a backtrack limit) as a zero time with no matches.
+function failed(pattern: Int, engine: Int) : Bool for _Result {
+    let time = $this.time[$pattern][$engine]
+    let matches = $this.matches[$pattern][$engine]
+    return $time >= $FAILED_TIME || $matches < 0 || ($time <= 0.0 && $matches == 0)
+}
+
+# The column of the specified engine, or `$none` if this result does not contain it.
+function engineIndex(name: String) : Int? for _Result {
+    for (var engine = 0; $engine < $this.engines.size(); $engine++) {
+        if $this.engines[$engine] == $name {
+            return $engine
+        }
+    }
+    return $none
+}
+
+function totalTime(engine: Int) : Float for _Result {
+    var sum = 0.0
+    for (var pattern = 0; $pattern < $this.patterns.size(); $pattern++) {
+        if !$this.failed($pattern, $engine) {
+            $sum += $this.time[$pattern][$engine]
+        }
+    }
+    return $sum
+}
+
+function totalScore(engine: Int) : Int for _Result {
+    var sum = 0
+    for (var pattern = 0; $pattern < $this.patterns.size(); $pattern++) {
+        $sum += $this.score[$pattern][$engine]
+    }
+    return $sum
+}
+
+# The index of the first column of the specified metric group (e.g. `[ms]`), or -1 if the
+# header has no such group. A missing or unexpected layout is reported as an error instead of
+# rendering a table with shifted columns.
+function _metricStart(header: [String], metric: String) : Int {
+    for (var iter = 0; $iter < $header.size(); $iter++) {
+        let column = $header[$iter]
+        $column.empty() && continue
+        let sep = $column.indexOf(" [")
+        $sep < 0 && continue
+        if $column.slice($sep + 1) == $metric {
+            return $iter
+        }
+    }
+    return -1
+}
+
+function _loadResult(label: String, path: String) : _Result {
+    var res = new _Result()
+    $res.label = $label
+    # a missing file is not fatal: the summary is rendered after the benchmark steps, which may
+    # have failed before writing their CSV
+    if !(test -f $path) {
+        return $res
+    }
+
+    var lines : [String]
+    for line in new FD($path) {
+        $lines.add($line)
+    }
+    $lines.empty() && return $res
+
+    let header = $lines[0].split(";")
+    let msStart = $_metricStart($header, '[ms]')
+    let spStart = $_metricStart($header, '[sp]')
+    let matchStart = $_metricStart($header, '[matches]')
+    if $msStart < 0 || $spStart < 0 || $matchStart < 0 {
+        echo 1>&2 "missing [ms] / [sp] / [matches] columns in $path"
+        exit 1
+    }
+
+    # the engine names are taken from the `[ms]` group; the other groups are expected to hold the
+    # same engines in the same order
+    var engines : [String]
+    for (var iter = $msStart; $iter < $header.size(); $iter++) {
+        let column = $header[$iter]
+        if $column.empty() || !$column.endsWith("[ms]") {
+            break
+        }
+        $engines.add($column.slice(0, $column.indexOf(" [")))
+    }
+    let engineCount = $engines.size()
+    if $engineCount == 0 {
+        echo 1>&2 "no engine column in $path"
+        exit 1
+    }
+    if ($spStart - $msStart != $engineCount) || ($matchStart - $spStart != $engineCount) {
+        echo 1>&2 "unexpected metric layout in $path"
+        exit 1
+    }
+    $res.engines = $engines
+
+    for (var iter = 1; $iter < $lines.size(); $iter++) {
+        let line = $lines[$iter]
+        $line.empty() && continue
+        let cells = $line.split(";")
+        if $cells.size() < $matchStart + $engineCount {
+            echo 1>&2 "short row in $path: $line"
+            exit 1
+        }
+        $res.patterns.add($cells[0])
+        var timeRow : [Float]
+        var scoreRow : [Int]
+        var matchRow : [Int]
+        for (var engine = 0; $engine < $engineCount; $engine++) {
+            $timeRow.add($_floatCell($cells[$msStart + $engine]))
+            $scoreRow.add($_intCell($cells[$spStart + $engine]))
+            $matchRow.add($_intCell($cells[$matchStart + $engine]))
+        }
+        $res.time.add($timeRow)
+        $res.score.add($scoreRow)
+        $res.matches.add($matchRow)
+    }
+    $res.available = $true
+    return $res
+}
+
+# The pattern is placed in a code span, so only the table separator inside it has to be escaped
+# (the default pattern set contains alternations).
+function _patternCell(pattern: String) : String {
+    return $pattern.replace("|", "\\|")
+}
+
+# The engines of every result in the order they first appear (the compiler runs measure the same
+# engine set, but a partially failed run may have written only some of them).
+function _unionedEngines(results: [_Result]) : [String] {
+    var names : [String]
+    for res in $results {
+        for name in $res.engines {
+            if !$names.contains($name) {
+                $names.add($name)
+            }
+        }
+    }
+    return $names
+}
+
+# The totals of every engine, one column pair per result (`n/a` when a result did not measure the
+# engine).
+function _emitTotals(results: [_Result]) {
+    printf '| engine |'
+    for res in $results {
+        let label = $res.label
+        printf ' %s [ms] | %s score |' $label $label
+    }
+    printf '\n|:-------|'
+    for res in $results {
+        printf '%s' '-----------:|---------:|'
+    }
+    printf '\n'
+
+    for name in $_unionedEngines($results) {
+        printf '| `%s` |' $name
+        for res in $results {
+            if let engine = $res.engineIndex($name) {
+                let time = $res.totalTime($engine)
+                let score = $res.totalScore($engine)
+                printf ' %.1f | %d |' $time $score
+            } else {
+                printf '%s' ' n/a | n/a |'
+            }
+        }
+        printf '\n'
+    }
+    printf '\n'
+}
+
+# The per-pattern timings of one result, one column per engine.
+function emitPatterns() for _Result {
+    let label = $this.label
+    echo "### $label"
+    echo
+    if !$this.available {
+        printf 'No benchmark result was written for `%s`.\n' $label
+        echo
+        return
+    }
+
+    printf '%s' '| pattern |'
+    for name in $this.engines {
+        printf ' `%s` |' $name
+    }
+    printf '\n|:--------|'
+    for name in $this.engines {
+        printf '%s' '-----------:|'
+    }
+    printf '\n'
+    for (var pattern = 0; $pattern < $this.patterns.size(); $pattern++) {
+        let cell = $_patternCell($this.patterns[$pattern])
+        printf '| `%s` |' $cell
+        for (var engine = 0; $engine < $this.engines.size(); $engine++) {
+            if $this.failed($pattern, $engine) {
+                printf '%s' ' n/a |'
+            } else {
+                let time = $this.time[$pattern][$engine]
+                printf ' %.1f |' $time
+            }
+        }
+        printf '\n'
+    }
+    echo
+}
+
+function run() for _Param {
+    if $this.result.empty() {
+        echo 1>&2 "at least one --result NAME=FILE is required"
+        exit 1
+    }
+
+    var results : [_Result]
+    for spec in $this.result {
+        let sep = $spec.indexOf("=")
+        if $sep <= 0 || $sep == $spec.size() - 1 {
+            echo 1>&2 "invalid --result '$spec' (expected NAME=FILE)"
+            exit 1
+        }
+        let label = $spec.slice(0, $sep)
+        let path = $spec.slice($sep + 1)
+        $results.add($_loadResult($label, $path))
+    }
+
+    echo '## Regex Bench Results'
+    echo
+    echo 'Total time and score of every engine for each compiler, followed by the per-pattern timings in milliseconds.'
+    echo '`n/a` marks a pattern the engine failed to compile, timed out on, or reported no matches for; those'
+    echo 'patterns are excluded from the total.'
+    echo
+    echo '### Totals'
+    echo
+    let engines = $_unionedEngines($results)
+    if $engines.empty() {
+        echo 'No benchmark result was written.'
+        echo
+    } else {
+        $_emitTotals($results)
+    }
+    for res in $results {
+        $res.emitPatterns()
+    }
+}
+
+let param = new _Param()
+try {
+    $param.parse($@)
+} catch e {
+    echo 1>&2 ${$e.message()}
+    exit ${$e.status()}
+}
+$param.run()

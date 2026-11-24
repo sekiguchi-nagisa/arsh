@@ -132,6 +132,21 @@ jobs:
             echo 1>&2 "expected 2 result files (g++ and clang++), found $count"
             exit 1
           fi
+      # render the measured data on the run page: both compilers are shown, first as one table of
+      # the total time and score per engine and then per pattern. `if: always()` keeps the partial
+      # results visible when a benchmark step failed before writing its CSV: the script renders a
+      # missing or empty result as "no result" rather than failing, so a successful half of the
+      # run is never hidden.
+      - name: job summary
+        if: always()
+        run: |
+          # a failed build leaves no arsh to run the script with; the job has already failed by
+          # then, so skip the summary instead of adding a confusing error to the log
+          command -v arsh || { echo 1>&2 "arsh is not installed, skipping the summary"; exit 0; }
+          arsh tools/regex-bench/summary.arsh \
+                --result "g++=$RESULTS_DIR/regex-bench-results-gcc.csv" \
+                --result "clang++=$RESULTS_DIR/regex-bench-results-clang.csv" \
+                >> "$GITHUB_STEP_SUMMARY"
       - name: upload results
         uses: actions/upload-artifact@v7
         with:
