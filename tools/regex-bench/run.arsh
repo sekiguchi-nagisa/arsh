@@ -18,7 +18,7 @@
 #   4. build `regex_perf`,
 #   5. run it against the bundled 3200.txt.
 #
-# Each engine reports its time, score, match count and heap memory usage (the size of the
+# Each engine reports its time, score, match count and memory usage (the size of the
 # compiled regex instance and the peak extra memory allocated while scanning the input).
 #
 # Usage:

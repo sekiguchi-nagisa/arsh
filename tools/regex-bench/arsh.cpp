@@ -141,8 +141,10 @@ static int find_all(char *pattern, char *subject, int subject_len, int repeat, s
     return -1;
   }
   const auto &re = compiled.unwrap();
-  /* the compiled regex instance itself (the scan context is created per repetition below) */
-  res->mem_instance = memory_tracker_live() - memBase;
+  /* the compiled regex instance itself (the scan context is created per repetition below). The
+   * tracker only observes the heap, so the part of the instance which lives in this frame (the
+   * Regex object itself) is added explicitly. */
+  res->mem_instance = memory_tracker_live() - memBase + sizeof(regex::Regex);
   const StringRef text(subject, static_cast<size_t>(subject_len));
 
   double *times = static_cast<double *>(calloc(static_cast<size_t>(repeat), sizeof(double)));

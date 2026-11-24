@@ -7,7 +7,7 @@ carries the SRELL / QuickJS / Hermes / Node.js adapters and the heap memory trac
 directory only maintains the arsh-specific parts.
 
 The upstream tool drives a fixed set of patterns against a large text file and reports the time,
-score, match count and heap usage of each registered engine. This directory provides:
+score, match count and memory usage of each registered engine. This directory provides:
 
 | file                      | description                                                             |
 |---------------------------|-------------------------------------------------------------------------|
@@ -276,14 +276,14 @@ lives in a separate process, its memory columns are always `0`.
 
 ## Memory measurement
 
-Every engine that is linked into the benchmark process reports its heap usage, split into two
-numbers: `instance` (live bytes of the compiled regex) and `runtime` (peak extra bytes allocated
-while scanning). They are printed next to the timings and written to the CSV as
+Every engine that is linked into the benchmark process reports its memory usage, split into two
+numbers: `instance` (bytes of the compiled regex) and `runtime` (peak extra bytes allocated while
+scanning). They are printed next to the timings and written to the CSV as
 `<engine> [mem_inst]` / `<engine> [mem_run]`, in bytes. The Node.js engine runs out of process, so
 its columns are always `0`.
 
-The measurement itself (`memory_tracker.{h,cpp}`) lives in the fork, together with the adapters
-that call it; the arsh adapter here uses the same API:
+The heap measurement itself (`memory_tracker.{h,cpp}`) lives in the fork, together with the
+adapters that call it; the arsh adapter here uses the same API:
 
 ```cpp
 const size_t base = memory_tracker_live();
@@ -296,7 +296,21 @@ const size_t scan_base = memory_tracker_live();
 res->mem_runtime = memory_tracker_peak() - scan_base;
 ```
 
-Because the numbers are heap deltas around an engine's own calls, a one-time module-level cache
+The tracker only observes the heap, so memory that an engine keeps in an object on the stack is
+invisible to it. arsh keeps the `regex::Regex` instance itself in a local `Optional<Regex>`, so
+only the buffers it owns (`instSeq`, `matchers`, `named`, ...) are on the heap; the adapter adds
+the in-frame part explicitly to make `instance` the full size of the compiled regex:
+
+```cpp
+res->mem_instance = memory_tracker_live() - base + sizeof(regex::Regex);
+```
+
+The fork's `cppstd` / `boost` / `srell` / `hermes` adapters do the same with their own regex
+object (Hermes adds both its compiler object and the bytecode vector), so those rows are
+comparable with `arsh`. QuickJS keeps the whole instance in the `lre_compile` result, so its heap
+delta already is the full size.
+
+Because the numbers are deltas around an engine's own calls, a one-time module-level cache
 that a library initializes on first use is attributed to the first pattern that triggers it (for
 example, the arsh Unicode property-name map, which is built the first time a `\p{...}` pattern is
 compiled).
@@ -392,3 +406,6 @@ available engine names.
   prefilter is worth for each pattern (e.g. `Twain` 3.7 ms vs 82.8 ms, `∞|✓` 6.3 ms vs 89.4 ms,
   while the prefilter cannot help `.{0,2}(Tom|Sawyer|Huckleberry|Finn)` since its first byte set
   is empty and `(.*?,){13}z` spends its time inside the VM).
+* The `arsh` instance number includes `sizeof(regex::Regex)`: the object which holds the compiled
+  program is a stack local in the adapter, so the heap tracker would otherwise report only the
+  buffers it owns and under-state the instance by the size of that object.
