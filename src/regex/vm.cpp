@@ -445,8 +445,7 @@ static Capture resolveBackRef(const Regex &regex, const MatchContext &ctx,
 }
 
 static bool nextCandidates(const Inst *&inst, Input &input, const char *&startIter,
-                           MatchContext &ctx, const Prefilter &prefilter,
-                           const ArrayRef<Matcher> matchers) {
+                           MatchContext &ctx, const Prefilter &prefilter, const Matcher *matchers) {
   switch (inst->op) {
   case OpCode::Char:
   case OpCode::String: {
@@ -562,7 +561,7 @@ static bool nextCandidates(const Inst *&inst, Input &input, const char *&startIt
   } while (false)
 
 #define TRY_MATCH_CHAR(T)                                                                          \
-  if (matchChar(cast<T>(*inst), input, matchers.begin())) {                                        \
+  if (matchChar(cast<T>(*inst), input, matchers)) {                                                \
     inst += sizeof(T);                                                                             \
     vmnext;                                                                                        \
   }                                                                                                \
@@ -588,7 +587,7 @@ MatchStatus match(const Regex &regex, MatchContext &ctx, ObserverPtr<Timer> time
   Input input = ctx.copyInput();
   const char *startIter = input.getIter();
   const Inst *inst = regex.getInstSeq().data();
-  const auto matchers = regex.getMatchers();
+  const auto *const matchers = regex.getMatchers().begin();
   Capture *const captures = ctx.prepare();
   LoopState *const loopStates = ctx.getLoops();
   unsigned int btCount = 0;
@@ -930,8 +929,8 @@ START:
         const uint32_t loopInstOffset = inst - bts.getStartInst();
         auto &ins = cast<CharLoopIns>(*inst);
         inst += sizeof(CharLoopIns);
-        uint32_t count = matchCharUntil(0, inst, input, matchers.begin(),
-                                        ins.greedy ? ins.getMax() : ins.getMin());
+        uint32_t count =
+            matchCharUntil(0, inst, input, matchers, ins.greedy ? ins.getMax() : ins.getMin());
         if (count < ins.getMin()) {
           goto BACKTRACK;
         }
@@ -957,7 +956,7 @@ START:
     }
 
   BACKTRACK:
-    if (!bts.backtrack(inst, input, captures, loopStates, matchers.begin())) {
+    if (!bts.backtrack(inst, input, captures, loopStates, matchers)) {
       break;
     }
     if (unlikely(++btCount == Regex::TIMER_CHECK_INTERVAL)) {
