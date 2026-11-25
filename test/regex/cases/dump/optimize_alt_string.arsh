@@ -130,7 +130,7 @@ EOF
 # 11|1|2?
 assert diff <(redump -d '11|1|2?' '') <(<<'EOF'
 flag: (mode = , modifier = )
-loopCount: 1
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 instructions:

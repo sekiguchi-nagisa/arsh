@@ -37,6 +37,7 @@ Optional<Regex> CodeGen::operator()(SyntaxTree &&tree) {
   this->err.clear();
   this->directions.clear();
   this->directions.push_back(true);
+  this->loopCount = 0;
 
   transform(tree);
   if (!this->generate(*tree.getPattern())) {
@@ -47,11 +48,10 @@ Optional<Regex> CodeGen::operator()(SyntaxTree &&tree) {
   this->builder.emit<MatchIns>();
   auto flag = tree.getFlag();
   const auto count = tree.getCaptureGroupCount();
-  const auto loopCount = tree.getLoopCount();
   auto instSeq = std::move(this->builder).build();
   auto prefilter = createPrefilter(ArrayRef(instSeq.data(), instSeq.size()), this->matchers, count,
                                    tree.getNamedCaptureGroups());
-  return Regex(flag, loopCount, std::move(instSeq), prefilter, std::move(this->matchers),
+  return Regex(flag, this->loopCount, std::move(instSeq), prefilter, std::move(this->matchers),
                std::move(tree).takeNamedCaptureGroups(), count);
 }
 
@@ -334,6 +334,8 @@ bool CodeGen::generateRepeat(const RepeatNode &node) {
     return this->generate(*node.getPattern());
   }
   default:
+    const unsigned short loopIndex = this->loopCount++;
+    assert(loopIndex <= RepeatNode::LOOP_INDEX_MAX);
     const unsigned int beginAddr = this->builder.currentAddr();
     const auto p = this->builder.emitReservedPoint<BeginLoopIns>();
     if (node.hasInnerCaptureGroups()) {
@@ -343,8 +345,8 @@ bool CodeGen::generateRepeat(const RepeatNode &node) {
     TRY(this->generate(*node.getPattern()));
     this->builder.emit<EndLoopIns>(beginAddr);
     const unsigned int outerAddr = this->builder.currentAddr();
-    this->builder.emitAt<BeginLoopIns>(p, node.getLoopIndex(), node.getMin(), node.getMax(),
-                                       node.isGreedy(), outerAddr);
+    this->builder.emitAt<BeginLoopIns>(p, loopIndex, node.getMin(), node.getMax(), node.isGreedy(),
+                                       outerAddr);
     return true;
   }
 }

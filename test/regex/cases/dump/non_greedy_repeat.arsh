@@ -4,7 +4,7 @@ source $SCRIPT_DIR/../syntax/test_helper.arsh
 # a*?
 assert diff <(redump -d 'a*?' '') <(<<'EOF'
 flag: (mode = , modifier = )
-loopCount: 1
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
@@ -44,7 +44,7 @@ EOF
 # (?<=a*?)
 assert diff <(redump -d '(?<=a*?)' '') <(<<'EOF'
 flag: (mode = , modifier = )
-loopCount: 1
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
@@ -64,7 +64,7 @@ EOF
 # a+?
 assert diff <(redump -d 'a+?' '') <(<<'EOF'
 flag: (mode = , modifier = )
-loopCount: 1
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
@@ -106,7 +106,7 @@ EOF
 # (?<=a+?)
 assert diff <(redump -d '(?<=a+?)' '') <(<<'EOF'
 flag: (mode = , modifier = )
-loopCount: 1
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
@@ -126,7 +126,7 @@ EOF
 # a??
 assert diff <(redump -d 'a??' '') <(<<'EOF'
 flag: (mode = , modifier = )
-loopCount: 1
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
@@ -166,7 +166,7 @@ EOF
 # (?<=a??)
 assert diff <(redump -d '(?<=a??)' '') <(<<'EOF'
 flag: (mode = , modifier = )
-loopCount: 1
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
@@ -186,7 +186,7 @@ EOF
 # a{0}?
 assert diff <(redump -d 'a{0}?' '') <(<<'EOF'
 flag: (mode = , modifier = )
-loopCount: 1
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
@@ -202,7 +202,7 @@ EOF
 # a{1}?
 assert diff <(redump -d 'a{1}?' '') <(<<'EOF'
 flag: (mode = , modifier = )
-loopCount: 1
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
@@ -220,7 +220,7 @@ EOF
 # a{2}?
 assert diff <(redump -d 'a{2}?' '') <(<<'EOF'
 flag: (mode = , modifier = )
-loopCount: 1
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
@@ -239,7 +239,7 @@ EOF
 # a[a-z]{2,4}?
 assert diff <(redump -d 'a[a-z]{2,4}?' '') <(<<'EOF'
 flag: (mode = , modifier = )
-loopCount: 1
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
@@ -261,7 +261,7 @@ EOF
 # <.+?>
 assert diff <(redump -d '<.+?>' '') <(<<'EOF'
 flag: (mode = , modifier = )
-loopCount: 1
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
@@ -282,7 +282,7 @@ EOF
 # .*?
 assert diff <(redump -d '.*?' '') <(<<'EOF'
 flag: (mode = , modifier = )
-loopCount: 1
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
@@ -299,7 +299,7 @@ EOF
 
 assert diff <(redump -d '.*?' 's') <(<<'EOF'
 flag: (mode = , modifier = s)
-loopCount: 1
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
@@ -317,7 +317,7 @@ EOF
 # (?<=.*?)
 assert diff <(redump -d '(?<=.*?)' '') <(<<'EOF'
 flag: (mode = , modifier = )
-loopCount: 1
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
@@ -337,7 +337,7 @@ EOF
 # .+?
 assert diff <(redump -d '.+?' '') <(<<'EOF'
 flag: (mode = , modifier = )
-loopCount: 1
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
@@ -354,7 +354,7 @@ EOF
 
 assert diff <(redump -d '.+?' 's') <(<<'EOF'
 flag: (mode = , modifier = s)
-loopCount: 1
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
@@ -372,7 +372,7 @@ EOF
 # (?<=.+?)
 assert diff <(redump -d '(?<=.+?)' '') <(<<'EOF'
 flag: (mode = , modifier = )
-loopCount: 1
+loopCount: 0
 captureGroupCount: 0
 namedCaptureGroups: []
 instructions:
@@ -392,11 +392,11 @@ EOF
 # (.*?,){2}
 assert diff <(redump -d '(.*?,){2}' '') <(<<'EOF'
 flag: (mode = , modifier = )
-loopCount: 2
+loopCount: 1
 captureGroupCount: 1
 namedCaptureGroups: []
 instructions:
-   0: BeginLoop(loopIndex=1, greedy=true, min=2, max=2, outer=45)
+   0: BeginLoop(loopIndex=0, greedy=true, min=2, max=2, outer=45)
   14: ResetCaptures(firstIndex=1, lastIndex=1)
   19: BeginCapture(captureIndex=1)
   22: CharLoop(greedy=false, direction=true, min=0, max=4294967295)
@@ -415,11 +415,11 @@ EOF
 
 assert diff <(redump -d '(.*?,){2}' 's') <(<<'EOF'
 flag: (mode = , modifier = s)
-loopCount: 2
+loopCount: 1
 captureGroupCount: 1
 namedCaptureGroups: []
 instructions:
-   0: BeginLoop(loopIndex=1, greedy=true, min=2, max=2, outer=45)
+   0: BeginLoop(loopIndex=0, greedy=true, min=2, max=2, outer=45)
   14: ResetCaptures(firstIndex=1, lastIndex=1)
   19: BeginCapture(captureIndex=1)
   22: CharLoop(greedy=false, direction=true, min=0, max=4294967295)

@@ -72,6 +72,7 @@ private:
   InstructionBuilder builder;
   std::vector<Matcher> matchers;
   std::vector<bool> directions; // true: forward, false: backward
+  unsigned short loopCount{0};  // number of BeginLoopIns
 
 public:
   const auto &getError() const { return this->err; }
