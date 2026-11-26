@@ -8,3 +8,20 @@
 {"pattern": "[\\p{ASCII}--z]", "input": "ſ", "flags": "vi", "requires": ["unicode-sets"], "unicode": "stable", "xfail": true, "xfailArsh": "match [0,2)", "xfailOracle": "nomatch"}
 {"pattern": "[\\w&&\\p{ASCII}]", "input": "K", "flags": "vi", "requires": ["unicode-sets"], "unicode": "stable", "xfail": true, "xfailArsh": "match [0,3)", "xfailOracle": "nomatch"}
 {"pattern": "[\\D--\\p{ASCII}]", "input": "ſ", "flags": "vi", "requires": ["unicode-sets"], "unicode": "stable", "xfail": true, "xfailArsh": "nomatch", "xfailOracle": "match [0,2)"}
+{"pattern": "(?:(?=(a))x|(a))", "input": "a", "flags": "u", "xfail": true, "xfailArsh": "match [0,1) [0,1) [0,1)", "xfailOracle": "match [0,1) unset [0,1)"}
+{"pattern": "(?:(?=(a))x|(a))(?:)", "input": "a", "flags": "u", "xfail": true, "xfailArsh": "match [0,1) [0,1) [0,1)", "xfailOracle": "match [0,1) unset [0,1)"}
+{"pattern": "(?:(?=(a))x|(a))?", "input": "a", "flags": "u", "xfail": true, "xfailArsh": "match [0,1) [0,1) [0,1)", "xfailOracle": "match [0,1) unset [0,1)"}
+{"pattern": "(?:(?=(a))x|(a))*", "input": "a", "flags": "u", "xfail": true, "xfailArsh": "match [0,1) [0,1) [0,1)", "xfailOracle": "match [0,1) unset [0,1)"}
+{"pattern": "(?:(?=(a))x|(a))+", "input": "aa", "flags": "u", "xfail": true, "xfailArsh": "match [0,2) [1,2) [1,2)", "xfailOracle": "match [0,2) unset [1,2)"}
+{"pattern": "(?:(?=(a))x|(?=a)(a))", "input": "a", "flags": "u", "xfail": true, "xfailArsh": "match [0,1) [0,1) [0,1)", "xfailOracle": "match [0,1) unset [0,1)"}
+{"pattern": "((?=(a))x|(a))", "input": "a", "flags": "u", "xfail": true, "xfailArsh": "match [0,1) [0,1) [0,1) [0,1)", "xfailOracle": "match [0,1) [0,1) unset [0,1)"}
+{"pattern": "(?<x>(?=(a))x)|(a)", "input": "a", "flags": "u", "xfail": true, "xfailArsh": "match [0,1) unset [0,1) [0,1)", "xfailOracle": "match [0,1) unset unset [0,1)"}
+{"pattern": "(?:(?=(a))x|(?<y>a))", "input": "a", "flags": "u", "xfail": true, "xfailArsh": "match [0,1) [0,1) [0,1)", "xfailOracle": "match [0,1) unset [0,1)"}
+{"pattern": "(?:(?=(?<y>a))x|(a))", "input": "a", "flags": "u", "xfail": true, "xfailArsh": "match [0,1) [0,1) [0,1)", "xfailOracle": "match [0,1) unset [0,1)"}
+{"pattern": "(?:(?=(a))(b)x|(a))", "input": "a", "flags": "u", "xfail": true, "xfailArsh": "match [0,1) [0,1) unset [0,1)", "xfailOracle": "match [0,1) unset unset [0,1)"}
+{"pattern": "(?:(?=(a))(?:(b))x|(a))", "input": "a", "flags": "u", "xfail": true, "xfailArsh": "match [0,1) [0,1) unset [0,1)", "xfailOracle": "match [0,1) unset unset [0,1)"}
+{"pattern": "(?:(?=(a+))x|(a+))", "input": "aa", "flags": "u", "xfail": true, "xfailArsh": "match [0,2) [0,2) [0,2)", "xfailOracle": "match [0,2) unset [0,2)"}
+{"pattern": "a(?:(?<=(a))x|(a))", "input": "aa", "flags": "u", "xfail": true, "xfailArsh": "match [0,2) [0,1) [1,2)", "xfailOracle": "match [0,2) unset [1,2)"}
+{"pattern": "(?:(?=(?=(a)))x|(a))", "input": "a", "flags": "u", "xfail": true, "xfailArsh": "match [0,1) [0,1) [0,1)", "xfailOracle": "match [0,1) unset [0,1)"}
+{"pattern": "(?:(?=(a))x|(a))", "input": "a", "flags": "v", "requires": ["unicode-sets"], "xfail": true, "xfailArsh": "match [0,1) [0,1) [0,1)", "xfailOracle": "match [0,1) unset [0,1)"}
+{"pattern": "(?:(?=(a))x|(a))", "input": "A", "flags": "vi", "requires": ["unicode-sets"], "xfail": true, "xfailArsh": "match [0,1) [0,1) [0,1)", "xfailOracle": "match [0,1) unset [0,1)"}

@@ -171,6 +171,7 @@ save on the body) have repeatedly broken backtracking, so the loops are covered 
 | bounded repeats                | `{n}`, `{n,m}` nested in and next to another loop              |
 | captures across iterations     | a group must be reset when a later iteration does not set it   |
 | lookaround in a loop           | `cleanupLookAround` pops entries the loop pushed               |
+| assertion + capture in a loop  | the loop's `ResetCaptures` and the assertion's `SetCapture` are interleaved on the same stack |
 | backreference in a loop        | the capture value read on each iteration                       |
 | multi code point literals      | the radix-tree instruction reads the state from `back()`       |
 | look-behind containing a loop  | a loop run backwards                                           |
@@ -178,3 +179,88 @@ save on the body) have repeatedly broken backtracking, so the loops are covered 
 
 `RegexDiffCorpus.loopCoverage` asserts that this file keeps covering those groups, so trimming the
 corpus back to a handful of loops fails the build.
+
+## Deep nesting (`deep-nesting.jsonl`)
+
+`cleanupLookAround` walks the backtrack stack and truncates it at the `LookAround` entry, so the
+distance it has to walk and the number of entries it drops both grow with the nesting depth of the
+pattern. The same is true for an assertion that sits inside many non-capturing groups, and for a
+look-behind chain over astral text, where every level steps back one code point.
+
+`deep-nesting.jsonl` therefore builds the same shape at several depths (2, 4, 8, 16, 32, 64) with
+`(?=` / `(?<=` / `(?:` / `(` repetition, and adds a few wide patterns (30 capture groups, with an
+assertion reaching the last one, and bounded repeats over them) so the stack is pushed both deep
+and wide. Every case is still a plain comparison against the oracle, so a truncation that drops
+either too much or too little shows up as a wrong capture.
+
+`RegexDiffCorpus.featureCoverage` asserts that the depth ladders stay present in both
+`deep-nesting.jsonl` and `loops.jsonl`.
+
+## Features without a byte oriented counterpart
+
+`lookaround`, `back reference` and `unicode sets` are the parts of the ECMAScript grammar that a
+byte oriented engine has no equivalent for, and each of them has its own case file. The cases are
+not just the happy path: they are written around the places where the implementation of those
+features has to talk to the rest of the VM.
+
+### Assertions (`assertion.jsonl`, `known-bugs.jsonl`)
+
+`assertion.jsonl` covers the four assertion kinds, the nesting of one inside another, captures
+taken inside an assertion, assertions inside a loop, and a look-behind over astral text (a
+look-behind has to step back over a code point, not over a code unit).
+
+The same cases turned up a divergence that is filed in `known-bugs.jsonl` rather than fixed here:
+group 1 of
+
+```json
+{"pattern": "(?:(?=(a))x|(a))", "input": "a", "flags": "u"}
+```
+
+is reported as `[0,1)` where V8 reports it unset. The mechanism is described in
+[Capture leak out of a lookaround](#capture-leak-out-of-a-lookaround).
+
+### Capture leak out of a lookaround
+
+The VM keeps the captures it has to restore on the same backtrack stack as the retry points, and an
+assertion pushes a `LookAround` entry that `EndLookAround` is expected to pop together with
+everything above it. `cleanupLookAround` does that for the negative case, but for a *successful*
+assertion it also discards the `SetCapture` entries its body pushed. Those entries are the only
+record of the capture values from before the assertion ran, so when an enclosing alternative is
+abandoned afterwards, the backtrack pass restores the alternatives it recorded but not the capture
+group the assertion had set: the value leaks into the final match even though the alternative that
+produced it never participated.
+
+Two things follow from that and both are pinned by the entries:
+
+- the leak is invisible while nothing backtracks over it (`(?=(a))\1` is correct, because the
+  capture is meant to survive), which is why it only shows up as a *wrong group value* on an
+  otherwise successful match;
+- a capture set inside `(?!...)` is a different case and is already reset immediately, so the
+  entries for the negative assertions document correct behaviour and would only fail if that reset
+  regressed.
+
+The recorded entries cover the shapes the leak shows up in: the assertion in a plain alternation,
+inside `?` / `*` / `+`, in a capturing group, side by side with a named group, with a second capture
+after it, with a look-behind, and in a `v` / `vi` case.
+
+### Back references (`backreference.jsonl`)
+
+Besides the plain `(a)\1` shape, the file covers a reference to a group that has not participated
+yet (which matches the empty string), a reference to a group skipped by its alternative, an
+optional group, a group that matched the empty string, numeric indices above 9, named groups
+(`\k<x>`), a reference inside a loop and inside an assertion, and back references whose comparison
+depends on case folding (including `ſ`/`s`/`S` and the Kelvin sign).
+
+### Unicode sets (`unicode-sets.jsonl`)
+
+Set operations have the largest cross product, since `StrSetBuilder::intersect` / `sub` match an
+emoji bitmask, a radix tree and a code point set against the same three kinds on the other side. The
+file therefore covers nested classes (`[[a-z]--[aeiou]]`), chained operations, `\q{...}` class
+strings (with escaped punctuation, empty alternatives, astral text and quantifiers), properties of
+strings (`\p{RGI_Emoji}`, `Basic_Emoji`, the flag/keycap/modifier/tag sequences), negation, and the
+interaction of `i` with both operators. The cases that ECMA-262 rejects but a naive parser accepts
+(`[^...]` containing a string, a complement of a property of strings, the reserved double
+punctuators) are in `invalid.jsonl` next to the other grammar errors.
+
+`RegexDiffCorpus.featureCoverage` asserts that these files keep covering the groups above, in the
+same spirit as `loopCoverage`.

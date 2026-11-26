@@ -39,7 +39,10 @@
  * the bug drift unnoticed (see `cases/known-bugs.jsonl`).
  */
 
+#include <algorithm>
 #include <fstream>
+#include <functional>
+#include <utility>
 
 #include <misc/unicode_version.in>
 
@@ -339,6 +342,160 @@ TEST(RegexDiffCorpus, loopCoverage) {
   EXPECT_GT(lazy, 10u);
   EXPECT_GT(bounded, 10u);
   EXPECT_GT(lookaround, 10u);
+}
+
+/**
+ * The features of the ECMAScript grammar that do not exist in a byte oriented engine have their
+ * own case files, and each of them is easy to trim down to a handful of cases without noticing
+ * that a whole family stopped being compared. This keeps the breadth of the three feature groups
+ * honest: every lookaround kind on both sides of an alternation, every way a back reference can be
+ * written, and every operand kind the unicode sets operations accept.
+ */
+TEST(RegexDiffCorpus, featureCoverage) {
+  auto countIn = [](const char *suffix,
+                    const std::function<bool(const std::string &)> &pred) -> size_t {
+    size_t count = 0;
+    for (const auto &[file, c] : loadCorpus(DIFFTEST_CASE_DIR)) {
+      if (StringRef(file).endsWith(suffix) && pred(c.pattern)) {
+        count++;
+      }
+    }
+    return count;
+  };
+  auto hasAny = [](const std::string &p, const std::vector<const char *> &needles) {
+    for (const auto *n : needles) {
+      if (p.find(n) != std::string::npos) {
+        return true;
+      }
+    }
+    return false;
+  };
+
+  // lookaround: all four kinds, nesting, captures inside an assertion, assertions in a loop and
+  // astral input (a look-behind has to walk a code point back, not a code unit)
+  EXPECT_GT(countIn("assertion.jsonl",
+                    [](const std::string &p) { return p.find("(?=") != std::string::npos; }),
+            20u);
+  EXPECT_GT(countIn("assertion.jsonl",
+                    [](const std::string &p) { return p.find("(?!") != std::string::npos; }),
+            10u);
+  EXPECT_GT(countIn("assertion.jsonl",
+                    [](const std::string &p) { return p.find("(?<=") != std::string::npos; }),
+            30u);
+  EXPECT_GT(countIn("assertion.jsonl",
+                    [](const std::string &p) { return p.find("(?<!") != std::string::npos; }),
+            10u);
+  EXPECT_GT(countIn("assertion.jsonl",
+                    [&](const std::string &p) {
+                      return hasAny(p, {"(?=(?=", "(?!(?!", "(?<=(?<", "(?=(?=(?=", "(?<=(?<=(?<"});
+                    }),
+            8u);
+  EXPECT_GT(countIn("assertion.jsonl",
+                    [&](const std::string &p) {
+                      return hasAny(p, {"(?=(", "(?<=(", "(?=(?<", "(?<=(a"});
+                    }),
+            8u);
+  EXPECT_GT(countIn("assertion.jsonl",
+                    [](const std::string &p) { return p.find("(?:(?") != std::string::npos; }),
+            8u);
+  EXPECT_GT(countIn("assertion.jsonl",
+                    [](const std::string &p) { return p.find("\xF0") != std::string::npos; }),
+            5u);
+
+  // a capture saved below a successful lookaround has to be undone again when the enclosing
+  // alternative is abandoned; the VM currently keeps such a capture alive, so the shapes that
+  // expose it are pinned in `known-bugs.jsonl` (see README, "Capture leak out of a lookaround")
+  EXPECT_GT(
+      countIn("known-bugs.jsonl",
+              [&](const std::string &p) { return hasAny(p, {"(?=(a))x|(a)", "(?=(a+))x|(a+)"}); }),
+      8u);
+  EXPECT_GT(countIn("known-bugs.jsonl",
+                    [&](const std::string &p) { return p.find("(?<=") != std::string::npos; }),
+            0u);
+  EXPECT_GT(countIn("assertion.jsonl",
+                    [&](const std::string &p) {
+                      return hasAny(p, {"(?<=(a)|(b))", "(?=(a)|(b))", "(?<!(a)|(b))"});
+                    }),
+            4u);
+
+  // the three groups below are the ones the lookaround fix proposal called out as worth covering
+  // before changing `cleanupLookAround`: a loop that contains an assertion and a capture (the
+  // `ResetCaptures` of the loop and the `SetCapture` of the assertion end up interleaved on the
+  // stack), and patterns deep enough to push the backtrack stack hard
+  EXPECT_GT(countIn("loops.jsonl",
+                    [&](const std::string &p) {
+                      return hasAny(p, {"(?=", "(?<=", "(?!"}) && p.find('\\') != std::string::npos;
+                    }),
+            20u);
+  EXPECT_GT(countIn("loops.jsonl",
+                    [&](const std::string &p) {
+                      return hasAny(p, {"(?=", "(?<=", "(?!"}) && p.find('{') != std::string::npos;
+                    }),
+            4u);
+  EXPECT_GT(countIn("deep-nesting.jsonl",
+                    [](const std::string &p) { return p.find("(?=(?=") != std::string::npos; }),
+            8u);
+  EXPECT_GT(countIn("deep-nesting.jsonl",
+                    [](const std::string &p) { return p.find("(?<=(?<=") != std::string::npos; }),
+            3u);
+  EXPECT_GT(countIn("deep-nesting.jsonl",
+                    [](const std::string &p) { return p.find("(?:(?:") != std::string::npos; }),
+            8u);
+
+  // back reference: numeric, named, multi digit, forward (a group that has not participated yet),
+  // a group skipped by its alternative, caseless folding and astral text
+  EXPECT_GT(countIn("backreference.jsonl",
+                    [](const std::string &p) {
+                      return p.find("\\1") != std::string::npos ||
+                             p.find("\\2") != std::string::npos;
+                    }),
+            30u);
+  EXPECT_GT(countIn("backreference.jsonl",
+                    [](const std::string &p) { return p.find("\\k<") != std::string::npos; }),
+            15u);
+  EXPECT_GT(countIn("backreference.jsonl",
+                    [](const std::string &p) { return p.find("\\10") != std::string::npos; }),
+            2u);
+  EXPECT_GT(countIn("backreference.jsonl",
+                    [](const std::string &p) {
+                      return p.find("\\1(a)") != std::string::npos ||
+                             p.find("\\k<x>(?<x>") != std::string::npos;
+                    }),
+            3u);
+  EXPECT_GT(countIn("backreference.jsonl",
+                    [](const std::string &p) {
+                      return p.find("(?:(a)|b)") != std::string::npos ||
+                             p.find("(a)|\\1") != std::string::npos ||
+                             p.find("(?:(a)|(b))") != std::string::npos;
+                    }),
+            6u);
+  EXPECT_GT(countIn("backreference.jsonl",
+                    [](const std::string &p) { return p.find("\xF0") != std::string::npos; }),
+            3u);
+
+  // unicode sets: both operators, class strings, properties of strings, negation and nesting
+  EXPECT_GT(countIn("unicode-sets.jsonl",
+                    [](const std::string &p) { return p.find("&&") != std::string::npos; }),
+            15u);
+  EXPECT_GT(countIn("unicode-sets.jsonl",
+                    [](const std::string &p) { return p.find("--") != std::string::npos; }),
+            40u);
+  EXPECT_GT(countIn("unicode-sets.jsonl",
+                    [](const std::string &p) { return p.find("\\q{") != std::string::npos; }),
+            40u);
+  EXPECT_GT(countIn("unicode-sets.jsonl",
+                    [](const std::string &p) { return p.find("[[") != std::string::npos; }),
+            10u);
+  EXPECT_GT(countIn("unicode-sets.jsonl",
+                    [](const std::string &p) { return p.find("[^") != std::string::npos; }),
+            5u);
+  EXPECT_GT(countIn("unicode-sets.jsonl",
+                    [&](const std::string &p) {
+                      return hasAny(p, {"RGI_Emoji}", "Basic_Emoji", "Emoji_Keycap_Sequence",
+                                        "RGI_Emoji_Flag_Sequence", "Modifier_Sequence",
+                                        "Tag_Sequence"});
+                    }),
+            15u);
 }
 
 /**

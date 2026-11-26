@@ -47,3 +47,27 @@
 {"flags": "v", "pattern": "(", "input": "a"}
 {"flags": "v", "pattern": "[z-a]", "input": "a"}
 {"flags": "v", "pattern": "a**", "input": "a"}
+{"flags": "u", "pattern": "(?=a)*", "input": "a"}
+{"flags": "u", "pattern": "(?!a)+", "input": "a"}
+{"flags": "u", "pattern": "(?<=a)*", "input": "a"}
+{"flags": "u", "pattern": "(?<!a)?", "input": "a"}
+{"flags": "u", "pattern": "(?=a){2}", "input": "a"}
+{"flags": "u", "pattern": "(?:a)(?=b)*", "input": "ab"}
+{"flags": "u", "pattern": "\\k", "input": "a"}
+{"flags": "u", "pattern": "\\k<>", "input": "a"}
+{"flags": "u", "pattern": "(?<x>a)\\k<y>", "input": "aa"}
+{"flags": "u", "pattern": "(a)(b)\\3", "input": "ab"}
+{"flags": "u", "pattern": "(a)\\2", "input": "aa"}
+{"flags": "v", "pattern": "[a&&&b]", "input": "a", "requires": ["unicode-sets"]}
+{"flags": "v", "pattern": "[a!!b]", "input": "a", "requires": ["unicode-sets"]}
+{"flags": "v", "pattern": "[a##b]", "input": "a", "requires": ["unicode-sets"]}
+{"flags": "v", "pattern": "[a**b]", "input": "a", "requires": ["unicode-sets"]}
+{"flags": "v", "pattern": "[a,,b]", "input": "a", "requires": ["unicode-sets"]}
+{"flags": "v", "pattern": "[a::b]", "input": "a", "requires": ["unicode-sets"]}
+{"flags": "v", "pattern": "[a<<b]", "input": "a", "requires": ["unicode-sets"]}
+{"flags": "v", "pattern": "[a>>b]", "input": "a", "requires": ["unicode-sets"]}
+{"flags": "v", "pattern": "[a^^b]", "input": "a", "requires": ["unicode-sets"]}
+{"flags": "v", "pattern": "[\\P{RGI_Emoji}]", "input": "a", "requires": ["unicode-sets"]}
+{"flags": "v", "pattern": "[^\\q{a}]", "input": "a", "requires": ["unicode-sets"], "unicode": "stable"}
+{"flags": "v", "pattern": "[\\q]", "input": "a", "requires": ["unicode-sets"]}
+{"flags": "v", "pattern": "[\\q{a", "input": "a", "requires": ["unicode-sets"], "unicode": "stable"}

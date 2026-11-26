@@ -18,3 +18,12 @@
 {"flags": "u", "pattern": "(?-i:a)", "input": "A", "requires": ["modifiers"]}
 {"flags": "u", "pattern": "(?i:a)|b", "input": "A", "requires": ["modifiers"]}
 {"flags": "u", "pattern": "(?i:a)|b", "input": "b", "requires": ["modifiers"]}
+{"flags": "u", "pattern": "(?i:(?<=a))b", "input": "ab", "requires": ["modifiers"]}
+{"flags": "u", "pattern": "(?i:(?<=a))b", "input": "AB", "requires": ["modifiers"]}
+{"flags": "u", "pattern": "(?i:(?=a))a", "input": "A", "requires": ["modifiers"]}
+{"flags": "u", "pattern": "(?=(?-i:a))a", "input": "a", "requires": ["modifiers"]}
+{"flags": "u", "pattern": "(?=(?-i:a))a", "input": "A", "requires": ["modifiers"]}
+{"flags": "u", "pattern": "(?i:(?<=k))x", "input": "Kx", "requires": ["modifiers"]}
+{"flags": "u", "pattern": "(?i:(?<=k))x", "input": "kx", "requires": ["modifiers"]}
+{"flags": "u", "pattern": "(?i:(a))\\1", "input": "aA", "requires": ["modifiers"]}
+{"flags": "u", "pattern": "(?i:(?<x>k))\\k<x>", "input": "kK", "requires": ["modifiers"]}
