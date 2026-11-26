@@ -1,0 +1,104 @@
+name: Test262 RegExp
+
+# Weekly run of the ECMAScript Test262 RegExp cases against the arsh regex engine.
+#
+# `tools/test262regex/re262` evaluates the cases (`tools/test262regex/run.arsh test`), and
+# `run.arsh report` renders the results as markdown, which is appended to the job summary so the
+# pass/fail/skip counts and the failing cases show up on the run page.
+#
+# arsh does not pass every case yet, so the job reports the failures instead of failing on them:
+# the test command only fails when the run itself breaks (e.g. re262 cannot start).
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * 1' # weekly (Monday 00:00 UTC)
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  test262regex:
+    runs-on: ubuntu-24.04
+    # the run itself takes several minutes; the build dominates on a cold re2c download
+    timeout-minutes: 60
+    env:
+      BUILD: build
+      # the report strips a case path up to the last `/test262/`, so the checkout keeps this name
+      TEST262_DIR: test262
+      RESULTS_DIR: test262regex-results
+      REPORT: test262regex-report.md
+      # a step summary is rejected above 1MiB (see the job summary step)
+      SUMMARY_LIMIT: 1000000
+      # the binaries are used straight from the build tree, so no install is needed
+      ARSH: build/arsh
+      RE262: build/tools/test262regex/re262
+    steps:
+      - uses: actions/checkout@v6
+      # re2c is intentionally not installed so the build fetches the pinned 4.6 release itself,
+      # like the other workflows
+      - name: prepare
+        run: |
+          sudo apt update
+          sudo apt install language-pack-ja ninja-build
+      # the default branch is used on purpose: a weekly run is meant to notice when new upstream
+      # cases start to fail. Only the RegExp cases are read by the test command, so a shallow
+      # clone is enough.
+      - name: checkout test262
+        run: git clone --depth 1 https://github.com/tc39/test262.git "$TEST262_DIR"
+      - name: configure
+        run: |
+          mkdir "$BUILD"
+          cd "$BUILD"
+          cmake .. -G Ninja -DCMAKE_BUILD_TYPE=Release
+      # only arsh (which executes run.arsh) and the re262 runner (which evaluates the cases) are
+      # needed, so the test executables are not built
+      - name: build
+        run: |
+          cd "$BUILD"
+          ninja arsh re262
+      # one result file is written per case into $RESULTS_DIR. Failing cases do not fail this step
+      # (that would turn every weekly run red while the known failures remain), so only a broken
+      # run fails here
+      - name: test
+        run: |
+          "$ARSH" tools/test262regex/run.arsh test \
+                --bin "$RE262" \
+                --path "$TEST262_DIR" \
+                --job "$(nproc)" \
+                "$RESULTS_DIR"
+      # render the results on the run page: the first line carries the totals, the rest lists the
+      # cases with the error output of the failing ones. `if: always()` keeps a partial result
+      # visible when the test step failed, and a missing binary or result directory is skipped
+      # instead of adding a confusing error to the log.
+      - name: job summary
+        if: always()
+        run: |
+          test -x "$ARSH" || { echo 1>&2 "$ARSH is not built, skipping the summary"; exit 0; }
+          # `report` needs at least one result file, and its glob error would only hide the real
+          # failure of the test step
+          compgen -G "$RESULTS_DIR/*.txt" > /dev/null || {
+            echo 1>&2 "no test results in $RESULTS_DIR, skipping the summary"; exit 0;
+          }
+          "$ARSH" tools/test262regex/run.arsh report --path "$RESULTS_DIR" "$REPORT"
+          head -n 1 "$REPORT"
+          # the report carries the error output of every failing case, so it grows with the number
+          # of failures. Append it whole while it fits, and cut it short instead of failing the
+          # step when a step summary would exceed its size limit; the artifact has the full text.
+          if [ "$(wc -c < "$REPORT")" -le "$SUMMARY_LIMIT" ]; then
+            cat "$REPORT" >> "$GITHUB_STEP_SUMMARY"
+          else
+            head -c "$SUMMARY_LIMIT" "$REPORT" >> "$GITHUB_STEP_SUMMARY"
+            printf '\n\nthe report was truncated, see the %s artifact for the full output\n' \
+                   "test262regex-report" >> "$GITHUB_STEP_SUMMARY"
+          fi
+      # the rendered report is also kept as an artifact, because a step summary is capped at 1MiB
+      # and the full error output may not fit forever
+      - name: upload report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: test262regex-report
+          path: ${{ env.REPORT }}
+          if-no-files-found: warn
