@@ -106,12 +106,12 @@ jobs:
         run: |
           mkdir -p "$RESULTS_DIR"
           arsh tools/regex-bench/run.arsh --cxx g++ \
-                --std-regex --srell --quickjs --hermes --keep --work $WORK \
+                --srell --quickjs --hermes --keep --work $WORK \
                 --output "$PWD/$RESULTS_DIR/regex-bench-results-gcc.csv"
       - name: benchmark (clang++)
         run: |
           arsh tools/regex-bench/run.arsh --cxx clang++ \
-                --std-regex --srell --quickjs --hermes --keep --work $WORK \
+                --srell --quickjs --hermes --keep --work $WORK \
                 --output "$PWD/$RESULTS_DIR/regex-bench-results-clang.csv"
       # the harness reports an engine that fails to build or run as a failure line instead of
       # failing the run, so check that every requested engine made it into the measured data
