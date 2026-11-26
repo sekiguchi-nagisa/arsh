@@ -16,7 +16,9 @@
 
 ### Fixed
 
-- bugfix radix tree findLongestMatched api. now pass property mask
+- fix some regex features
+    - bugfix ``RGIEmoji`` matching
+    - bugfix capture groups in positive lookaround
 
 ## [0.43.0] - 2026-09-30
 

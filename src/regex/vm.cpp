@@ -232,24 +232,35 @@ public:
   }
 
   bool cleanupLookAround(Input &input, Capture *captures) {
+    assert(this->size > 0);
+
     // find original lookaround state
-    bool negate = false;
-    for (ssize_t i = static_cast<ssize_t>(this->size) - 1; i > -1; i--) {
-      if (const auto &bt = this->ptr[i]; bt.op == BacktrackOp::LookAround) {
-        negate = bt.lookAround.negate;
+    ssize_t lookaroundIndex = static_cast<ssize_t>(this->size) - 1;
+    for (; lookaroundIndex > -1; lookaroundIndex--) {
+      if (this->ptr[lookaroundIndex].op == BacktrackOp::LookAround) {
         break;
       }
     }
 
-    while (!this->empty() && this->back().op != BacktrackOp::LookAround) {
-      if (negate && this->back().op == BacktrackOp::SetCapture) {
-        const auto &setCapture = this->back().setCapture;
-        captures[setCapture.index] = setCapture.capture; // force reset capture
+    // discard state
+    assert(lookaroundIndex > -1); // EndLookAround is only reached with a pending LookAround
+    const auto bt = this->ptr[lookaroundIndex];
+    unsigned int newSize = lookaroundIndex;
+    if (bt.lookAround.negate) { // discard and restore capture state
+      for (unsigned int i = this->size - 1; i > newSize; i--) {
+        if (this->ptr[i].op == BacktrackOp::SetCapture) {
+          const auto &setCapture = this->ptr[i].setCapture;
+          captures[setCapture.index] = setCapture.capture;
+        }
       }
-      this->popDiscard();
+    } else { // discard and remain capture state
+      for (unsigned int i = lookaroundIndex + 1; i < this->size; i++) {
+        if (this->ptr[i].op == BacktrackOp::SetCapture) {
+          this->ptr[newSize++] = this->ptr[i];
+        }
+      }
     }
-    assert(!this->empty());
-    const auto bt = this->pop();
+    this->size = newSize;
     input.setOffset(bt.lookAround.inputOffset);
     return bt.lookAround.matched;
   }
@@ -275,8 +286,6 @@ private:
   const Backtrack &back() const { return this->ptr[this->size - 1]; }
 
   Backtrack pop() { return this->ptr[--this->size]; }
-
-  void popDiscard() { this->size--; }
 
   bool empty() const { return this->size == 0; }
 };

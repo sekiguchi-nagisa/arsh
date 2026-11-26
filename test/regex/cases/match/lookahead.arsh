@@ -124,3 +124,12 @@ input: `aaaa@'
 (unset)
 EOF
 )
+
+# (?:(?=(a))x|(a))
+assert diff <(redump -m 'a' '(?:(?=(a))x|(a))' 'u') <(<<'EOF'
+input: `a'
+(offset=0, size=1)
+(unset)
+(offset=0, size=1)
+EOF
+)

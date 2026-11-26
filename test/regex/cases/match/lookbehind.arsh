@@ -39,3 +39,12 @@ input: `abc'
 (offset=0, size=1)
 EOF
 )
+
+# a(?:(?<=(a))x|(a))
+assert diff <(redump -m 'aa' 'a(?:(?<=(a))x|(a))' 'u') <(<<'EOF'
+input: `aa'
+(offset=0, size=2)
+(unset)
+(offset=1, size=1)
+EOF
+)

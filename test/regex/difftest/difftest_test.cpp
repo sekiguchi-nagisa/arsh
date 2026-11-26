@@ -148,8 +148,9 @@ const Environment &environment() {
     if (!env.oracleAvailable) {
       // a completely skipped run must not look like a passing one, so say it out loud once,
       // together with the reason (an unusable Node.js version is the usual one)
-      fprintf(stderr, "[warning] no usable Node.js oracle (" NODE_PATH ", at least "
-                      NODE_MIN_VERSION_STR " is required); the differential test compares nothing");
+      fprintf(stderr,
+              "[warning] no usable Node.js oracle (" NODE_PATH ", at least " NODE_MIN_VERSION_STR
+              " is required); the differential test compares nothing");
       if (!env.error.empty()) {
         fprintf(stderr, ": %s", env.error.c_str());
       }
@@ -404,14 +405,6 @@ TEST(RegexDiffCorpus, featureCoverage) {
 
   // a capture saved below a successful lookaround has to be undone again when the enclosing
   // alternative is abandoned; the VM currently keeps such a capture alive, so the shapes that
-  // expose it are pinned in `known-bugs.jsonl` (see README, "Capture leak out of a lookaround")
-  EXPECT_GT(
-      countIn("known-bugs.jsonl",
-              [&](const std::string &p) { return hasAny(p, {"(?=(a))x|(a)", "(?=(a+))x|(a+)"}); }),
-      8u);
-  EXPECT_GT(countIn("known-bugs.jsonl",
-                    [&](const std::string &p) { return p.find("(?<=") != std::string::npos; }),
-            0u);
   EXPECT_GT(countIn("assertion.jsonl",
                     [&](const std::string &p) {
                       return hasAny(p, {"(?<=(a)|(b))", "(?=(a)|(b))", "(?<!(a)|(b))"});
