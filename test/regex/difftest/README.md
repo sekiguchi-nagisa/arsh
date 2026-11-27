@@ -203,45 +203,39 @@ byte oriented engine has no equivalent for, and each of them has its own case fi
 not just the happy path: they are written around the places where the implementation of those
 features has to talk to the rest of the VM.
 
-### Assertions (`assertion.jsonl`, `known-bugs.jsonl`)
+### Assertions (`assertion.jsonl`)
 
 `assertion.jsonl` covers the four assertion kinds, the nesting of one inside another, captures
 taken inside an assertion, assertions inside a loop, and a look-behind over astral text (a
 look-behind has to step back over a code point, not over a code unit).
 
-The same cases turned up a divergence that is filed in `known-bugs.jsonl` rather than fixed here:
-group 1 of
+A capture set inside an assertion is a capture like any other: it has to be undone again when the
+assertion is backtracked over, so the file also pairs an assertion that captures with a second
+alternative that captures, in a plain alternation and under `?` / `*` / `+` (see
+[Captures and the backtrack stack](#captures-and-the-backtrack-stack)).
 
-```json
-{"pattern": "(?:(?=(a))x|(a))", "input": "a", "flags": "u"}
-```
+### Captures and the backtrack stack
 
-is reported as `[0,1)` where V8 reports it unset. The mechanism is described in
-[Capture leak out of a lookaround](#capture-leak-out-of-a-lookaround).
+The VM keeps the captures it has to restore on the same backtrack stack as the retry points. A
+`BeginCapture` therefore pushes a `SetCapture` entry that holds the value from before the group
+was entered, and an assertion pushes a `LookAround` entry that `EndLookAround` is expected to pop
+together with everything above it.
 
-### Capture leak out of a lookaround
+`cleanupLookAround` truncates the stack at that `LookAround` entry and then treats the two kinds
+differently:
 
-The VM keeps the captures it has to restore on the same backtrack stack as the retry points, and an
-assertion pushes a `LookAround` entry that `EndLookAround` is expected to pop together with
-everything above it. `cleanupLookAround` does that for the negative case, but for a *successful*
-assertion it also discards the `SetCapture` entries its body pushed. Those entries are the only
-record of the capture values from before the assertion ran, so when an enclosing alternative is
-abandoned afterwards, the backtrack pass restores the alternatives it recorded but not the capture
-group the assertion had set: the value leaks into the final match even though the alternative that
-produced it never participated.
+- a **negative** assertion has failed its body, so nothing it captured may survive: the
+  `SetCapture` entries above the truncation point are unwound into the capture array and dropped;
+- a **positive** assertion succeeded, so its captures stay visible to the rest of the pattern. The
+  `SetCapture` entries its body pushed are the only record of the values from before the assertion
+  ran, and they are what a later backtrack pass needs in order to undo the capture when the
+  enclosing alternative is abandoned. They are therefore compacted down below the truncation point
+  instead of being discarded.
 
-Two things follow from that and both are pinned by the entries:
-
-- the leak is invisible while nothing backtracks over it (`(?=(a))\1` is correct, because the
-  capture is meant to survive), which is why it only shows up as a *wrong group value* on an
-  otherwise successful match;
-- a capture set inside `(?!...)` is a different case and is already reset immediately, so the
-  entries for the negative assertions document correct behaviour and would only fail if that reset
-  regressed.
-
-The recorded entries cover the shapes the leak shows up in: the assertion in a plain alternation,
-inside `?` / `*` / `+`, in a capturing group, side by side with a named group, with a second capture
-after it, with a look-behind, and in a `v` / `vi` case.
+The second point is what makes `(?:(?=(a))x|(a))` agree with the oracle: group 1 is set by the
+look-ahead, but the first branch then fails on `x`, so the second branch wins and group 1 has to
+read back as unset. Keeping the entries costs stack space proportional to the captures a
+successful assertion made, which is why the shapes above are covered rather than trimmed.
 
 ### Back references (`backreference.jsonl`)
 

@@ -403,16 +403,25 @@ TEST(RegexDiffCorpus, featureCoverage) {
                     [](const std::string &p) { return p.find("\xF0") != std::string::npos; }),
             5u);
 
-  // a capture saved below a successful lookaround has to be undone again when the enclosing
-  // alternative is abandoned; the VM currently keeps such a capture alive, so the shapes that
+  // a capture set inside an assertion is a capture like any other: it participates only while the
+  // assertion holds, so it has to be undone again when the enclosing alternative is abandoned and
+  // the assertion is backtracked over. `cleanupLookAround` keeps the body's `SetCapture` entries of
+  // a successful assertion for exactly that reason
   EXPECT_GT(countIn("assertion.jsonl",
                     [&](const std::string &p) {
                       return hasAny(p, {"(?<=(a)|(b))", "(?=(a)|(b))", "(?<!(a)|(b))"});
                     }),
             4u);
+  // ... and the same holds when the assertion itself sits in one branch of an alternation whose
+  // other branch captures, which is the shape that used to leak
+  EXPECT_GT(countIn("assertion.jsonl",
+                    [&](const std::string &p) {
+                      return hasAny(p, {"(?=(a))", "(?<=(a))"}) && p.find('|') != std::string::npos;
+                    }),
+            10u);
 
-  // the three groups below are the ones the lookaround fix proposal called out as worth covering
-  // before changing `cleanupLookAround`: a loop that contains an assertion and a capture (the
+  // the three groups below are the ones the lookaround fix called out as worth keeping covered
+  // while `cleanupLookAround` was changed: a loop that contains an assertion and a capture (the
   // `ResetCaptures` of the loop and the `SetCapture` of the assertion end up interleaved on the
   // stack), and patterns deep enough to push the backtrack stack hard
   EXPECT_GT(countIn("loops.jsonl",

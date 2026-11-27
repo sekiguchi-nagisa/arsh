@@ -185,6 +185,20 @@
 {"flags": "u", "pattern": "(?<!(a)|(b))c", "input": "ac"}
 {"flags": "u", "pattern": "(?=(a)|(b))a", "input": "a"}
 {"flags": "u", "pattern": "(?=(a)|(b))b", "input": "b"}
+{"flags": "u", "pattern": "((?=(a))x|(a))", "input": "a"}
+{"flags": "u", "pattern": "(?<x>(?=(a))x)|(a)", "input": "a"}
+{"flags": "u", "pattern": "(?:(?=(a))x|(?<y>a))", "input": "a"}
+{"flags": "u", "pattern": "(?:(?=(?<y>a))x|(a))", "input": "a"}
+{"flags": "u", "pattern": "(?:(?=(a))(b)x|(a))", "input": "a"}
+{"flags": "u", "pattern": "(?:(?=(a))(?:(b))x|(a))", "input": "a"}
+{"flags": "u", "pattern": "(?:(?=(a+))x|(a+))", "input": "aa"}
+{"flags": "u", "pattern": "(?:(?=(?=(a)))x|(a))", "input": "a"}
+{"flags": "u", "pattern": "a(?:(?<=(a))x|(a))", "input": "aa"}
+{"flags": "u", "pattern": "(?:(?=(a))x|(?=a)(a))", "input": "a"}
+{"flags": "u", "pattern": "(?:(?=(a))x|(a))(?:)", "input": "a"}
+{"flags": "u", "pattern": "(?:(?=(a))x|(a))", "input": "a"}
+{"flags": "v", "pattern": "(?:(?=(a))x|(a))", "input": "a", "requires": ["unicode-sets"]}
+{"flags": "vi", "pattern": "(?:(?=(a))x|(a))", "input": "A", "requires": ["unicode-sets"]}
 {"flags": "u", "pattern": "(?=(a))\\1", "input": "aa"}
 {"flags": "u", "pattern": "(?=(a))\\1", "input": "ab"}
 {"flags": "u", "pattern": "(?<=(a))\\1", "input": "aa"}

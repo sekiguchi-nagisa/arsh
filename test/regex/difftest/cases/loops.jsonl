@@ -622,6 +622,9 @@
 {"pattern": "(?:(?=(a))a)+", "input": "ab", "flags": "u"}
 {"pattern": "(?:(?=(a))a)+", "input": "aab", "flags": "u"}
 {"pattern": "(?:(?=(a))a)+", "input": "bba", "flags": "u"}
+{"pattern": "(?:(?=(a))x|(a))?", "input": "a", "flags": "u"}
+{"pattern": "(?:(?=(a))x|(a))*", "input": "a", "flags": "u"}
+{"pattern": "(?:(?=(a))x|(a))+", "input": "aa", "flags": "u"}
 {"pattern": "(a\\1)+", "input": "", "flags": "u"}
 {"pattern": "(a\\1)+", "input": "aa", "flags": "u"}
 {"pattern": "(a\\1)+", "input": "aaaa", "flags": "u"}
