@@ -147,7 +147,7 @@ static Optional<unsigned int> resolveEditAfterPos(const LineBuffer &buf,
   return buf.getUsedSize(); // if EOS
 }
 
-Optional<bool> moveCursorOrDeleteToken(LineBuffer &buf, const MoveOrDeleteTokenParam param,
+Optional<bool> tryToMoveCursorOrDeleteToken(LineBuffer &buf, const MoveOrDeleteTokenParam param,
                                        std::string *capture, TokenizerResult *cache) {
   if (auto ret = resolveEditAfterPos(buf, param, cache); ret.hasValue()) {
     const unsigned int afterPos = ret.unwrap();

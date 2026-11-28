@@ -42,25 +42,27 @@ struct MoveOrDeleteTokenParam {
  * maybe null, after call it, modify content
  * @return
  */
-Optional<bool> moveCursorOrDeleteToken(LineBuffer &buf, MoveOrDeleteTokenParam param,
-                                       std::string *capture, TokenizerResult *cache);
+Optional<bool> tryToMoveCursorOrDeleteToken(LineBuffer &buf, MoveOrDeleteTokenParam param,
+                                            std::string *capture, TokenizerResult *cache);
 
-inline Optional<bool> moveCursorToLeftByToken(LineBuffer &buf, TokenizerResult *cache = nullptr) {
-  return moveCursorOrDeleteToken(buf, {.left = true, .move = true}, nullptr, cache);
+inline Optional<bool> tryToMoveCursorToLeftByToken(LineBuffer &buf,
+                                                   TokenizerResult *cache = nullptr) {
+  return tryToMoveCursorOrDeleteToken(buf, {.left = true, .move = true}, nullptr, cache);
 }
 
-inline Optional<bool> moveCursorToRightByToken(LineBuffer &buf, TokenizerResult *cache = nullptr) {
-  return moveCursorOrDeleteToken(buf, {.left = false, .move = true}, nullptr, cache);
+inline Optional<bool> tryToMoveCursorToRightByToken(LineBuffer &buf,
+                                                    TokenizerResult *cache = nullptr) {
+  return tryToMoveCursorOrDeleteToken(buf, {.left = false, .move = true}, nullptr, cache);
 }
 
-inline Optional<bool> deletePrevToken(LineBuffer &buf, std::string *capture,
-                                      TokenizerResult *cache = nullptr) {
-  return moveCursorOrDeleteToken(buf, {.left = true, .move = false}, capture, cache);
+inline Optional<bool> tryToDeletePrevToken(LineBuffer &buf, std::string *capture,
+                                           TokenizerResult *cache = nullptr) {
+  return tryToMoveCursorOrDeleteToken(buf, {.left = true, .move = false}, capture, cache);
 }
 
-inline Optional<bool> deleteNextToken(LineBuffer &buf, std::string *capture,
-                                      TokenizerResult *cache = nullptr) {
-  return moveCursorOrDeleteToken(buf, {.left = false, .move = false}, capture, cache);
+inline Optional<bool> tryToDeleteNextToken(LineBuffer &buf, std::string *capture,
+                                           TokenizerResult *cache = nullptr) {
+  return tryToMoveCursorOrDeleteToken(buf, {.left = false, .move = false}, capture, cache);
 }
 
 using AbbrMap = std::unordered_map<std::string, std::string>;

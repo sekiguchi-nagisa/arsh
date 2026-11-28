@@ -193,7 +193,7 @@ struct LineBufferTest : public ::testing::Test {
     // delete prev token
     ASSERT_TRUE(buffer.insertToCursor(pattern.before));
     buffer.setCursor(pattern.beforePos);
-    auto ret = deletePrevToken(buffer, nullptr);
+    auto ret = tryToDeletePrevToken(buffer, nullptr);
     ASSERT_TRUE(ret.hasValue());
     ASSERT_EQ(s, ret.unwrap());
     ASSERT_EQ(pattern.after, buffer.get().toString());
@@ -203,7 +203,7 @@ struct LineBufferTest : public ::testing::Test {
     buffer.deleteAll();
     ASSERT_TRUE(buffer.insertToCursor(pattern.before));
     buffer.setCursor(pattern.beforePos);
-    ret = moveCursorToLeftByToken(buffer);
+    ret = tryToMoveCursorToLeftByToken(buffer);
     ASSERT_TRUE(ret.hasValue());
     ASSERT_EQ(s, ret.unwrap());
     ASSERT_EQ(pattern.afterPos, buffer.getCursor());
@@ -226,7 +226,7 @@ struct LineBufferTest : public ::testing::Test {
     std::string killed;
     ASSERT_TRUE(buffer.insertToCursor(pattern.before));
     buffer.setCursor(pattern.beforePos);
-    auto ret = deleteNextToken(buffer, &killed);
+    auto ret = tryToDeleteNextToken(buffer, &killed);
     ASSERT_TRUE(ret.hasValue());
     ASSERT_EQ(!killed.empty(), ret.unwrap());
     ASSERT_EQ(pattern.after, buffer.get().toString());
@@ -236,7 +236,7 @@ struct LineBufferTest : public ::testing::Test {
     buffer.deleteAll();
     ASSERT_TRUE(buffer.insertToCursor(pattern.before));
     buffer.setCursor(pattern.beforePos);
-    ret = moveCursorToRightByToken(buffer);
+    ret = tryToMoveCursorToRightByToken(buffer);
     ASSERT_TRUE(ret.hasValue());
     ASSERT_EQ(!killed.empty(), ret.unwrap());
     ASSERT_EQ(pattern.afterPos, buffer.getCursor() - killed.size());
@@ -255,14 +255,14 @@ struct LineBufferTest : public ::testing::Test {
     // delete prev token
     ASSERT_TRUE(buffer.insertToCursor(line));
     buffer.setCursor(pos);
-    auto ret = deletePrevToken(buffer, nullptr);
+    auto ret = tryToDeletePrevToken(buffer, nullptr);
     ASSERT_FALSE(ret.hasValue());
 
     // move left
     buffer.deleteAll();
     ASSERT_TRUE(buffer.insertToCursor(line));
     buffer.setCursor(pos);
-    ret = moveCursorToLeftByToken(buffer);
+    ret = tryToMoveCursorToLeftByToken(buffer);
     ASSERT_FALSE(ret.hasValue());
   }
 
@@ -279,14 +279,14 @@ struct LineBufferTest : public ::testing::Test {
     // delete prev token
     ASSERT_TRUE(buffer.insertToCursor(line));
     buffer.setCursor(pos);
-    auto ret = deleteNextToken(buffer, nullptr);
+    auto ret = tryToDeleteNextToken(buffer, nullptr);
     ASSERT_FALSE(ret.hasValue());
 
     // move left
     buffer.deleteAll();
     ASSERT_TRUE(buffer.insertToCursor(line));
     buffer.setCursor(pos);
-    ret = moveCursorToRightByToken(buffer);
+    ret = tryToMoveCursorToRightByToken(buffer);
     ASSERT_FALSE(ret.hasValue());
   }
 
@@ -899,10 +899,10 @@ TEST_F(LineBufferTest, tokenEditInvalid) {
   ASSERT_TRUE(buffer.insertToCursor("var $123"));
   ASSERT_EQ(8, buffer.getCursor());
 
-  ASSERT_FALSE(deletePrevToken(buffer, nullptr).hasValue());
-  ASSERT_FALSE(deleteNextToken(buffer, nullptr).hasValue());
-  ASSERT_FALSE(moveCursorToLeftByToken(buffer).hasValue());
-  ASSERT_FALSE(moveCursorToRightByToken(buffer).hasValue());
+  ASSERT_FALSE(tryToDeletePrevToken(buffer, nullptr).hasValue());
+  ASSERT_FALSE(tryToDeleteNextToken(buffer, nullptr).hasValue());
+  ASSERT_FALSE(tryToMoveCursorToLeftByToken(buffer).hasValue());
+  ASSERT_FALSE(tryToMoveCursorToRightByToken(buffer).hasValue());
 
   ASSERT_EQ("var $123", buffer.get());
   ASSERT_EQ(8, buffer.getCursor());

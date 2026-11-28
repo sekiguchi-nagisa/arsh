@@ -851,7 +851,8 @@ ssize_t LineEditorObject::editInRawMode(ARState &state, RenderingContext &ctx) {
     case EditActionType::BACKWARD_KILL_TOKEN:
       if (this->hasFeature(LineEditorFeature::LANG_EXTENSION)) {
         std::string capture;
-        if (auto ret = deletePrevToken(ctx.buf, &capture, &ctx.tokenizeCache); ret.hasValue()) {
+        if (auto ret = tryToDeletePrevToken(ctx.buf, &capture, &ctx.tokenizeCache);
+            ret.hasValue()) {
           if (ret.unwrap()) {
             this->killRing.add(std::move(capture));
             this->refreshLine(state, ctx);
@@ -863,7 +864,8 @@ ssize_t LineEditorObject::editInRawMode(ARState &state, RenderingContext &ctx) {
     case EditActionType::KILL_TOKEN:
       if (this->hasFeature(LineEditorFeature::LANG_EXTENSION)) {
         std::string capture;
-        if (auto ret = deleteNextToken(ctx.buf, &capture, &ctx.tokenizeCache); ret.hasValue()) {
+        if (auto ret = tryToDeleteNextToken(ctx.buf, &capture, &ctx.tokenizeCache);
+            ret.hasValue()) {
           if (ret.unwrap()) {
             this->killRing.add(std::move(capture));
             this->refreshLine(state, ctx);
@@ -874,7 +876,7 @@ ssize_t LineEditorObject::editInRawMode(ARState &state, RenderingContext &ctx) {
       goto KILL_WORD_L;
     case EditActionType::BACKWARD_TOKEN:
       if (this->hasFeature(LineEditorFeature::LANG_EXTENSION)) {
-        if (auto ret = moveCursorToLeftByToken(ctx.buf, &ctx.tokenizeCache); ret.hasValue()) {
+        if (auto ret = tryToMoveCursorToLeftByToken(ctx.buf, &ctx.tokenizeCache); ret.hasValue()) {
           if (ret.unwrap()) {
             this->refreshLine(state, ctx, false);
           }
@@ -884,7 +886,7 @@ ssize_t LineEditorObject::editInRawMode(ARState &state, RenderingContext &ctx) {
       goto BACKWARD_WORD_L;
     case EditActionType::FORWARD_TOKEN:
       if (this->hasFeature(LineEditorFeature::LANG_EXTENSION)) {
-        if (auto ret = moveCursorToRightByToken(ctx.buf, &ctx.tokenizeCache); ret.hasValue()) {
+        if (auto ret = tryToMoveCursorToRightByToken(ctx.buf, &ctx.tokenizeCache); ret.hasValue()) {
           if (ret.unwrap()) {
             this->refreshLine(state, ctx, false);
           }
